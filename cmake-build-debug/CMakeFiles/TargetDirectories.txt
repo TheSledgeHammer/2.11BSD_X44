@@ -1,0 +1,3 @@
+/home/osiris/Programming Development/C/2.11BSD/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/osiris/Programming Development/C/2.11BSD/cmake-build-debug/CMakeFiles/2_11BSD.dir
+/home/osiris/Programming Development/C/2.11BSD/cmake-build-debug/CMakeFiles/edit_cache.dir

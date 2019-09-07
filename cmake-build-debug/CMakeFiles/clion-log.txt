@@ -1,0 +1,4 @@
+/home/osiris/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/192.6262.62/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" "/home/osiris/Programming Development/C/2.11BSD"
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/osiris/Programming Development/C/2.11BSD/cmake-build-debug
