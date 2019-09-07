@@ -1,2 +1,2 @@
-# 2.11BSD
-2.11BSD port to i386/ x86
+# 2.11BSD Kernel
+2.11BSD Kernel port to i386/ x86
