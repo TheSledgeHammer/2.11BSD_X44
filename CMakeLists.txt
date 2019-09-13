@@ -8,7 +8,6 @@ include_directories(conf)
 include_directories(dev)
 include_directories(h)
 include_directories(i386)
-include_directories(pdp)
 include_directories(sys)
 
 add_executable(2_11BSD
@@ -86,14 +85,9 @@ add_executable(2_11BSD
         h/vmsystm.h
         h/wait.h
         i386/machdep.c
-        i386/reg.h
-        i386/seg.h
+        i386/include/reg.h
+        i386/sel.h
         i386/trap.c
-        pdp/machdep.c
-        pdp/machdep2.c
-        pdp/reg.h
-        pdp/seg.h
-        pdp/trap.c
         sys/ingreslock.c
         sys/init_main.c
         sys/init_sysent.c
@@ -161,4 +155,7 @@ add_executable(2_11BSD
         sys/vm_sched.c
         sys/vm_swap.c
         sys/vm_swp.c
-        sys/vm_text.c i386/kern_i386.c)
+        sys/vm_text.c
+        i386/segments.h
+        i386/specialreg.h
+        i386/cpu.c)

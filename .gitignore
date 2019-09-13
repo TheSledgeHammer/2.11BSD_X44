@@ -1,0 +1,13 @@
+*.git
+*.bin
+*.class
+*.log
+*.lock
+*.cfg
+*.gz
+*.settings
+*.iml
+*.ipr
+*.iws
+*.idea
+/cmake-build-debug

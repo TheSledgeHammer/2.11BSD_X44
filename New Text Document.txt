@@ -1,0 +1,10 @@
+2.11BSD:
+Kernel:
+- include = .h
+- sys
+
+I386:
+- include
+
+pdp:
+- contains both .h & .c

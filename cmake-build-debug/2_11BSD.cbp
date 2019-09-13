@@ -8,543 +8,531 @@
 		<Option virtualFolders="CMake Files\;"/>
 		<Build>
 			<Target title="all">
-				<Option working_dir="/home/osiris/Programming Development/C/2.11BSD/cmake-build-debug"/>
+				<Option working_dir="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="/usr/bin/gmake -j4 -f &quot;/home/osiris/Programming\ Development/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
-					<CompileFile command="/usr/bin/gmake -j4 -f &quot;/home/osiris/Programming\ Development/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/gmake -j4 -f &quot;/home/osiris/Programming\ Development/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/gmake -j4 -f &quot;/home/osiris/Programming\ Development/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="D:/Program Files/TDM-GCC/bin/mingw32-make.exe -f &quot;C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="D:/Program Files/TDM-GCC/bin/mingw32-make.exe -f &quot;C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="D:/Program Files/TDM-GCC/bin/mingw32-make.exe -f &quot;C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="D:/Program Files/TDM-GCC/bin/mingw32-make.exe -f &quot;C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="rebuild_cache">
-				<Option working_dir="/home/osiris/Programming Development/C/2.11BSD/cmake-build-debug"/>
+				<Option working_dir="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="/usr/bin/gmake -j4 -f &quot;/home/osiris/Programming\ Development/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
-					<CompileFile command="/usr/bin/gmake -j4 -f &quot;/home/osiris/Programming\ Development/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/gmake -j4 -f &quot;/home/osiris/Programming\ Development/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/gmake -j4 -f &quot;/home/osiris/Programming\ Development/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="D:/Program Files/TDM-GCC/bin/mingw32-make.exe -f &quot;C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="D:/Program Files/TDM-GCC/bin/mingw32-make.exe -f &quot;C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="D:/Program Files/TDM-GCC/bin/mingw32-make.exe -f &quot;C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="D:/Program Files/TDM-GCC/bin/mingw32-make.exe -f &quot;C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="2_11BSD">
-				<Option output="/home/osiris/Programming Development/C/2.11BSD/cmake-build-debug/2_11BSD" prefix_auto="0" extension_auto="0"/>
-				<Option working_dir="/home/osiris/Programming Development/C/2.11BSD/cmake-build-debug"/>
+				<Option output="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/2_11BSD.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug"/>
 				<Option object_output="./"/>
 				<Option type="1"/>
 				<Option compiler="gcc"/>
 				<Compiler>
-					<Add directory="/home/osiris/Programming Development/C/2.11BSD/."/>
-					<Add directory="/home/osiris/Programming Development/C/2.11BSD/conf"/>
-					<Add directory="/home/osiris/Programming Development/C/2.11BSD/dev"/>
-					<Add directory="/home/osiris/Programming Development/C/2.11BSD/h"/>
-					<Add directory="/home/osiris/Programming Development/C/2.11BSD/i386"/>
-					<Add directory="/home/osiris/Programming Development/C/2.11BSD/pdp"/>
-					<Add directory="/home/osiris/Programming Development/C/2.11BSD/sys"/>
-					<Add directory="/usr/lib/gcc/x86_64-redhat-linux/9/include"/>
-					<Add directory="/usr/local/include"/>
-					<Add directory="/usr/include"/>
+					<Add directory="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/."/>
+					<Add directory="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/conf"/>
+					<Add directory="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/dev"/>
+					<Add directory="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h"/>
+					<Add directory="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/i386"/>
+					<Add directory="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys"/>
+					<Add directory="D:/Program Files/TDM-GCC/bin/../lib/gcc/x86_64-w64-mingw32/5.1.0/include"/>
+					<Add directory="D:/Program Files/TDM-GCC/bin/../lib/gcc/x86_64-w64-mingw32/5.1.0/../../../../include"/>
+					<Add directory="D:/Program Files/TDM-GCC/bin/../lib/gcc/x86_64-w64-mingw32/5.1.0/include-fixed"/>
+					<Add directory="D:/Program Files/TDM-GCC/bin/../lib/gcc/x86_64-w64-mingw32/5.1.0/../../../../x86_64-w64-mingw32/include"/>
 				</Compiler>
 				<MakeCommands>
-					<Build command="/usr/bin/gmake -j4 -f &quot;/home/osiris/Programming\ Development/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 2_11BSD"/>
-					<CompileFile command="/usr/bin/gmake -j4 -f &quot;/home/osiris/Programming\ Development/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/gmake -j4 -f &quot;/home/osiris/Programming\ Development/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/gmake -j4 -f &quot;/home/osiris/Programming\ Development/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="D:/Program Files/TDM-GCC/bin/mingw32-make.exe -f &quot;C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 2_11BSD"/>
+					<CompileFile command="D:/Program Files/TDM-GCC/bin/mingw32-make.exe -f &quot;C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="D:/Program Files/TDM-GCC/bin/mingw32-make.exe -f &quot;C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="D:/Program Files/TDM-GCC/bin/mingw32-make.exe -f &quot;C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="2_11BSD/fast">
-				<Option output="/home/osiris/Programming Development/C/2.11BSD/cmake-build-debug/2_11BSD" prefix_auto="0" extension_auto="0"/>
-				<Option working_dir="/home/osiris/Programming Development/C/2.11BSD/cmake-build-debug"/>
+				<Option output="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/2_11BSD.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug"/>
 				<Option object_output="./"/>
 				<Option type="1"/>
 				<Option compiler="gcc"/>
 				<Compiler>
-					<Add directory="/home/osiris/Programming Development/C/2.11BSD/."/>
-					<Add directory="/home/osiris/Programming Development/C/2.11BSD/conf"/>
-					<Add directory="/home/osiris/Programming Development/C/2.11BSD/dev"/>
-					<Add directory="/home/osiris/Programming Development/C/2.11BSD/h"/>
-					<Add directory="/home/osiris/Programming Development/C/2.11BSD/i386"/>
-					<Add directory="/home/osiris/Programming Development/C/2.11BSD/pdp"/>
-					<Add directory="/home/osiris/Programming Development/C/2.11BSD/sys"/>
-					<Add directory="/usr/lib/gcc/x86_64-redhat-linux/9/include"/>
-					<Add directory="/usr/local/include"/>
-					<Add directory="/usr/include"/>
+					<Add directory="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/."/>
+					<Add directory="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/conf"/>
+					<Add directory="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/dev"/>
+					<Add directory="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h"/>
+					<Add directory="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/i386"/>
+					<Add directory="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys"/>
+					<Add directory="D:/Program Files/TDM-GCC/bin/../lib/gcc/x86_64-w64-mingw32/5.1.0/include"/>
+					<Add directory="D:/Program Files/TDM-GCC/bin/../lib/gcc/x86_64-w64-mingw32/5.1.0/../../../../include"/>
+					<Add directory="D:/Program Files/TDM-GCC/bin/../lib/gcc/x86_64-w64-mingw32/5.1.0/include-fixed"/>
+					<Add directory="D:/Program Files/TDM-GCC/bin/../lib/gcc/x86_64-w64-mingw32/5.1.0/../../../../x86_64-w64-mingw32/include"/>
 				</Compiler>
 				<MakeCommands>
-					<Build command="/usr/bin/gmake -j4 -f &quot;/home/osiris/Programming\ Development/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 2_11BSD/fast"/>
-					<CompileFile command="/usr/bin/gmake -j4 -f &quot;/home/osiris/Programming\ Development/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/gmake -j4 -f &quot;/home/osiris/Programming\ Development/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/gmake -j4 -f &quot;/home/osiris/Programming\ Development/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="D:/Program Files/TDM-GCC/bin/mingw32-make.exe -f &quot;C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 2_11BSD/fast"/>
+					<CompileFile command="D:/Program Files/TDM-GCC/bin/mingw32-make.exe -f &quot;C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="D:/Program Files/TDM-GCC/bin/mingw32-make.exe -f &quot;C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="D:/Program Files/TDM-GCC/bin/mingw32-make.exe -f &quot;C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="edit_cache">
-				<Option working_dir="/home/osiris/Programming Development/C/2.11BSD/cmake-build-debug"/>
+				<Option working_dir="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="/usr/bin/gmake -j4 -f &quot;/home/osiris/Programming\ Development/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
-					<CompileFile command="/usr/bin/gmake -j4 -f &quot;/home/osiris/Programming\ Development/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/gmake -j4 -f &quot;/home/osiris/Programming\ Development/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/gmake -j4 -f &quot;/home/osiris/Programming\ Development/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="D:/Program Files/TDM-GCC/bin/mingw32-make.exe -f &quot;C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="D:/Program Files/TDM-GCC/bin/mingw32-make.exe -f &quot;C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="D:/Program Files/TDM-GCC/bin/mingw32-make.exe -f &quot;C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="D:/Program Files/TDM-GCC/bin/mingw32-make.exe -f &quot;C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 		</Build>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/conf/checksys.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/conf/checksys.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/conf/ioconf.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/conf/ioconf.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/conf/netbind.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/conf/netbind.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/conf/param.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/conf/param.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/acct.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/acct.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/buf.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/buf.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/callout.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/callout.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/clist.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/clist.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/conf.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/conf.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/dir.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/dir.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/disk.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/disk.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/disklabel.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/disklabel.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/dk.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/dk.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/dkbad.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/dkbad.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/domain.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/domain.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/errno.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/errno.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/exec.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/exec.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/file.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/file.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/fs.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/fs.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/gprof.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/gprof.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/ingreslock.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/ingreslock.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/inode.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/inode.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/ioctl.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/ioctl.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/ioctl_compat.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/ioctl_compat.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/kernel.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/kernel.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/localopts.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/localopts.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/map.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/map.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/mbuf.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/mbuf.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/mount.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/mount.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/msgbuf.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/msgbuf.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/mtio.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/mtio.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/namei.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/namei.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/param.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/param.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/proc.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/proc.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/protosw.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/protosw.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/ptrace.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/ptrace.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/quota.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/quota.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/reboot.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/reboot.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/resource.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/resource.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/select.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/select.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/signal.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/signal.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/signalvar.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/signalvar.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/socket.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/socket.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/socketvar.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/socketvar.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/stat.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/stat.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/stddef.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/stddef.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/sysctl.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/sysctl.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/syslog.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/syslog.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/systm.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/systm.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/tablet.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/tablet.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/text.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/text.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/time.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/time.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/timeb.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/timeb.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/times.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/times.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/trace.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/trace.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/tty.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/tty.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/ttychars.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/ttychars.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/ttydefaults.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/ttydefaults.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/ttydev.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/ttydev.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/types.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/types.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/uba.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/uba.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/uio.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/uio.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/un.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/un.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/unpcb.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/unpcb.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/user.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/user.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/utsname.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/utsname.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/vcmd.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/vcmd.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/vm.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/vm.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/vmmac.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/vmmac.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/vmmeter.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/vmmeter.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/vmparam.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/vmparam.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/vmsystm.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/vmsystm.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/h/wait.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/h/wait.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/i386/kern_i386.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/i386/cpu.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/i386/machdep.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/i386/include/reg.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/i386/reg.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/i386/machdep.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/i386/seg.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/i386/segments.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/i386/trap.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/i386/sel.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/pdp/machdep.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/i386/specialreg.h">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/pdp/machdep2.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/i386/trap.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/pdp/reg.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/ingreslock.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/pdp/seg.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/init_main.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/pdp/trap.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/init_sysent.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/pdp/trap.h">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/kern_acct.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/ingreslock.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/kern_clock.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/init_main.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/kern_descrip.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/init_sysent.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/kern_exec.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/kern_acct.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/kern_exit.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/kern_clock.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/kern_fork.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/kern_descrip.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/kern_mman.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/kern_exec.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/kern_proc.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/kern_exit.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/kern_prot.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/kern_fork.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/kern_prot2.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/kern_mman.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/kern_resource.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/kern_proc.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/kern_sig.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/kern_prot.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/kern_sig2.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/kern_prot2.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/kern_subr.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/kern_resource.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/kern_synch.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/kern_sig.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/kern_sysctl.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/kern_sig2.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/kern_time.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/kern_subr.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/kern_xxx.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/kern_synch.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/quota_kern.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/kern_sysctl.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/quota_subr.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/kern_time.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/quota_sys.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/kern_xxx.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/quota_ufs.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/quota_kern.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/subr_log.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/quota_subr.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/subr_prf.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/quota_sys.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/subr_rmap.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/quota_ufs.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/subr_xxx.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/subr_log.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/sys_generic.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/subr_prf.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/sys_inode.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/subr_rmap.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/sys_kern.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/subr_xxx.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/sys_net.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/sys_generic.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/sys_pipe.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/sys_inode.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/sys_process.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/sys_kern.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/sys_socket.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/sys_net.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/syscalls.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/sys_pipe.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/tty.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/sys_process.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/tty_conf.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/sys_socket.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/tty_pty.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/syscalls.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/tty_subr.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/tty.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/tty_tb.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/tty_conf.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/tty_tty.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/tty_pty.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/ufs_alloc.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/tty_subr.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/ufs_bio.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/tty_tb.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/ufs_bmap.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/tty_tty.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/ufs_disksubr.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/ufs_alloc.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/ufs_dsort.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/ufs_bio.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/ufs_fio.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/ufs_bmap.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/ufs_inode.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/ufs_disksubr.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/ufs_mount.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/ufs_dsort.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/ufs_namei.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/ufs_fio.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/ufs_subr.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/ufs_inode.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/ufs_syscalls.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/ufs_mount.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/ufs_syscalls2.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/ufs_namei.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/uipc_domain.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/ufs_subr.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/uipc_mbuf.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/ufs_syscalls.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/uipc_proto.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/ufs_syscalls2.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/uipc_socket.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/uipc_domain.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/uipc_socket2.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/uipc_mbuf.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/uipc_syscalls.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/uipc_proto.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/uipc_usrreq.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/uipc_socket.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/vfs_vnops.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/uipc_socket2.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/vm_proc.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/uipc_syscalls.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/vm_sched.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/uipc_usrreq.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/vm_swap.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/vfs_vnops.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/vm_swp.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/vm_proc.c">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/sys/vm_text.c">
 			<Option target="2_11BSD"/>
 		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/vm_sched.c">
-			<Option target="2_11BSD"/>
-		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/vm_swap.c">
-			<Option target="2_11BSD"/>
-		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/vm_swp.c">
-			<Option target="2_11BSD"/>
-		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/sys/vm_text.c">
-			<Option target="2_11BSD"/>
-		</Unit>
-		<Unit filename="/home/osiris/Programming Development/C/2.11BSD/CMakeLists.txt">
+		<Unit filename="C:/Users/marti/OneDrive/IdeaProjects/C/2.11BSD/CMakeLists.txt">
 			<Option virtualFolder="CMake Files\"/>
 		</Unit>
 	</Project>
