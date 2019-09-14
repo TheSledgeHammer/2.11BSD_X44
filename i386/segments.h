@@ -7,6 +7,8 @@
  * 386 Segmentation Data Structures and definitions.
  */
 
+#include <h/types.h>
+
 /*
  * Selectors
  */

@@ -12,107 +12,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9633bc96-b92c-49c2-ad3c-d8f3aa161b23" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/.idea/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea/.idea.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/i386/sel.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/2_11BSD.cbp" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/2_11BSD.cbp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeCache.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeCache.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/2_11BSD.dir/DependInfo.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/2_11BSD.dir/DependInfo.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/2_11BSD.dir/build.make" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/2_11BSD.dir/build.make" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/2_11BSD.dir/cmake_clean.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/2_11BSD.dir/cmake_clean.cmake" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/New Text Document.txt" beforeDir="false" afterPath="$PROJECT_DIR$/New Text Document.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/2_11BSD.dir/depend.make" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/2_11BSD.dir/depend.make" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/2_11BSD.dir/flags.make" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/2_11BSD.dir/flags.make" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/2_11BSD.dir/link.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/2_11BSD.dir/link.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/2_11BSD.dir/progress.make" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/2_11BSD.dir/progress.make" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.14.5/CMakeCCompiler.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.14.5/CMakeCCompiler.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.14.5/CMakeDetermineCompilerABI_C.bin" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.14.5/CMakeDetermineCompilerABI_C.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.14.5/CMakeSystem.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.14.5/CMakeSystem.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/3.14.5/CompilerIdC/a.out" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/CMakeDirectoryInformation.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/CMakeDirectoryInformation.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/CMakeOutput.log" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/CMakeOutput.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Makefile.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Makefile.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Makefile2" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Makefile2" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/TargetDirectories.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/TargetDirectories.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/clion-environment.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/clion-environment.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/clion-log.txt" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/clion-log.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/feature_tests.bin" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/feature_tests.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/progress.marks" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/progress.marks" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/Makefile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/cmake_install.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/cmake_install.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/i386/kern_i386.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/i386/machdep.c" beforeDir="false" afterPath="$PROJECT_DIR$/i386/machdep.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/i386/reg.h" beforeDir="false" afterPath="$PROJECT_DIR$/i386/include/reg.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/i386/seg.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/i386/trap.c" beforeDir="false" afterPath="$PROJECT_DIR$/i386/trap.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/DEFS.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/autoconfig.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/cksum-fix" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/clock.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/clock.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/conf.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/cons.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/cons.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/cpu.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/enable34.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/enable34.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/fperr.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/frame.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/genassym.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/in_cksum.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/iopage.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/kern_pdp.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/koverlay.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/limits.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/machdep.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/machdep2.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/machparam.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/mch_KScall.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/mch_backup.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/mch_click.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/mch_copy.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/mch_cpu.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/mch_csv.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/mch_dump.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/mch_dzpdma.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/mch_fpsim.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/mch_iopage.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/mch_profile.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/mch_start.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/mch_trap.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/mch_vars.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/mch_xxx.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/mem.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/mscp.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/mscp_common.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/net_SKcall.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/net_copy.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/net_csv.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/net_mac.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/net_mbuf.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/net_scb.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/net_trap.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/net_xxx.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/psl.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/ram.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/reg.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/scb.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/seg.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/symbols.raw" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/symbols.sort" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/tags" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/tmscp.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/toy.s" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/trap.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/trap.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pdp/vmparam.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/sys/kern_sig.c" beforeDir="false" afterPath="$PROJECT_DIR$/sys/kern_sig.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/i386/segments.h" beforeDir="false" afterPath="$PROJECT_DIR$/i386/segments.h" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -181,6 +84,7 @@
       <workItem from="1567843075965" duration="1566000" />
       <workItem from="1568345222777" duration="2739000" />
       <workItem from="1568355449339" duration="3234000" />
+      <workItem from="1568453416414" duration="6118000" />
     </task>
     <servers />
   </component>
@@ -199,5 +103,16 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/sys/sys_socket.c</url>
+          <line>16</line>
+          <option name="timeStamp" value="7" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

@@ -1,10 +1,43 @@
 2.11BSD:
-Kernel:
-- include = .h
-- sys
+pdp/ram.c ->  machine/seg.h, ram.h
+Generated from GENERIC:
+- ram.h
+- ingres.h
+- param.c
+- pty.h
+- tb.h
 
-I386:
-- include
+Kernel Dependent on Arch (PDP-11):
+- int_main.c -> machine/seg.h
+- kern_clock.c -> machine/seg.h, psl.h
+- kern_exec.c -> machine/seg.h, reg.h
+- kern_exit.c -> machine/seg.h, psl.h
+- kern_fork.c -> machine/seg.h, reg.h
+- kern_mman.c -> machine/seg.h
+- kern_sig.c -> machine/seg.h
+- kern_subr.c -> machine/seg.h
+- kern_synch.c -> machine/seg.h
+- kern_sysctl.c -> machine/seg.h, cpu.h
+- subr_log.c -> machine/seg.h
+- subr_prf.c -> machine/seg.h
+- sys_generic.c -> machine/seg.h
+- sys_inode.c -> machine/seg.h
+- sys_kern.c -> machine/seg.h
+- sys_net.c -> machine/psl.h, cons.h, pdpuba/ubavar.h
+- sys_process.c -> machine/seg.h, reg.h, psl.h
+- tty_conf.c -> pdp/seg.h
+- tty_subr.c -> machine/seg.h
+- ufs_alloc.c -> machine/seg.h
+- ufs_bio.c -> ram.h
+- ufs_bmap.c -> machine/seg.h
+- ufs_disksubr.c -> machine/seg.h
+- ufs_inode.c -> machine/seg.h
+- ufs_mount.c -> machine/seg.h
+- ufs_namei.c -> machine/seg.h
+- ufs_subr.c -> machine/seg.h
+- ufs_syscalls2.c -> machine/seg.h
+- uipc_syscalls.c -> machine/seg.h, psl.h, pdpif/if_uba.h, netinet/in.h, in_systm.h
+- vm_swap -> machine/seg.h
+- vm_swp -> machine/seg.h
+- vm_text -> machine/seg.h
 
-pdp:
-- contains both .h & .c

@@ -46,6 +46,7 @@ CMakeFiles/2_11BSD.dir/conf/param.c.obj: ../h/text.h
 CMakeFiles/2_11BSD.dir/conf/param.c.obj: ../h/time.h
 CMakeFiles/2_11BSD.dir/conf/param.c.obj: ../h/types.h
 
+CMakeFiles/2_11BSD.dir/i386/cpu.c.obj: .././h/types.h
 CMakeFiles/2_11BSD.dir/i386/cpu.c.obj: ../h/proc.h
 CMakeFiles/2_11BSD.dir/i386/cpu.c.obj: ../h/signalvar.h
 CMakeFiles/2_11BSD.dir/i386/cpu.c.obj: ../i386/cpu.c
@@ -54,6 +55,7 @@ CMakeFiles/2_11BSD.dir/i386/cpu.c.obj: ../i386/sel.h
 CMakeFiles/2_11BSD.dir/i386/cpu.c.obj: ../i386/sigframe.h
 CMakeFiles/2_11BSD.dir/i386/cpu.c.obj: ../i386/specialreg.h
 
+CMakeFiles/2_11BSD.dir/i386/machdep.c.obj: .././h/types.h
 CMakeFiles/2_11BSD.dir/i386/machdep.c.obj: ../h/buf.h
 CMakeFiles/2_11BSD.dir/i386/machdep.c.obj: ../h/callout.h
 CMakeFiles/2_11BSD.dir/i386/machdep.c.obj: ../h/kernel.h
@@ -72,6 +74,7 @@ CMakeFiles/2_11BSD.dir/i386/machdep.c.obj: ../i386/segments.h
 CMakeFiles/2_11BSD.dir/i386/machdep.c.obj: ../i386/sel.h
 CMakeFiles/2_11BSD.dir/i386/machdep.c.obj: ../i386/specialreg.h
 
+CMakeFiles/2_11BSD.dir/i386/trap.c.obj: .././h/types.h
 CMakeFiles/2_11BSD.dir/i386/trap.c.obj: ../h/kernel.h
 CMakeFiles/2_11BSD.dir/i386/trap.c.obj: ../h/proc.h
 CMakeFiles/2_11BSD.dir/i386/trap.c.obj: ../h/systm.h
