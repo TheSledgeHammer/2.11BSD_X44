@@ -3,14 +3,26 @@ project(2_11BSD C)
 
 set(CMAKE_C_STANDARD 11)
 
-include_directories(.)
-include_directories(conf)
-include_directories(dev)
+include_directories(bootstrap/boot)
 include_directories(h)
 include_directories(i386)
-include_directories(sys)
+include_directories(i386/include)
+include_directories(i386/include/db)
+include_directories(i386/include/inline)
+include_directories(i386/include/inline/inet)
+include_directories(i386/include/inline/kernel)
+include_directories(i386/include/inline/string)
 
 add_executable(2_11BSD
+        bootstrap/boot/boot.c
+        bootstrap/boot/prf.c
+        bootstrap/boot/printf.c
+        bootstrap/boot/saerrno.h
+        bootstrap/boot/saio.h
+        bootstrap/boot/saioctl.h
+        bootstrap/config/breadxx.c
+        bootstrap/config/srt0_i386.c
+        bootstrap/trimhd.c
         conf/checksys.c
         conf/ioconf.c
         conf/netbind.c
@@ -84,9 +96,78 @@ add_executable(2_11BSD
         h/vmparam.h
         h/vmsystm.h
         h/wait.h
-        i386/machdep.c
+        i386/config/genassym.c
+        i386/config/isym.c
+        i386/include/db/db_machdep.h
+        i386/include/db/eflags.h
+        i386/include/inline/inet/htonl.h
+        i386/include/inline/inet/htons.h
+        i386/include/inline/inet/in_cksumiphdr.h
+        i386/include/inline/inet/ntohl.h
+        i386/include/inline/inet/ntohs.h
+        i386/include/inline/kernel/copyin.h
+        i386/include/inline/kernel/copyin_.h
+        i386/include/inline/kernel/copyinstr.h
+        i386/include/inline/kernel/copyout.h
+        i386/include/inline/kernel/copyout_.h
+        i386/include/inline/kernel/copyoutstr.h
+        i386/include/inline/kernel/copystr.h
+        i386/include/inline/kernel/imax.h
+        i386/include/inline/kernel/imin.h
+        i386/include/inline/kernel/insque.h
+        i386/include/inline/kernel/lmax.h
+        i386/include/inline/kernel/lmin.h
+        i386/include/inline/kernel/max.h
+        i386/include/inline/kernel/min.h
+        i386/include/inline/kernel/remque.h
+        i386/include/inline/kernel/remrq.h
+        i386/include/inline/kernel/setrq.h
+        i386/include/inline/kernel/ulmax.h
+        i386/include/inline/kernel/ulmin.h
+        i386/include/inline/string/bcmp.h
+        i386/include/inline/string/bcopy.h
+        i386/include/inline/string/bzero.h
+        i386/include/inline/string/ffs.h
+        i386/include/inline/string/memcmp.h
+        i386/include/inline/string/memcpy.h
+        i386/include/inline/string/memmove.h
+        i386/include/inline/string/memset.h
+        i386/include/inline/string/strlen.h
+        i386/include/inline/inet.h
+        i386/include/inline/io.h
+        i386/include/inline/kernel.h
+        i386/include/inline/stdlib.h
+        i386/include/inline/string.h
+        i386/include/ansi.h
+        i386/include/cpu.h
+        i386/include/endian.h
+        i386/include/float.h
+        i386/include/frame.h
+        i386/include/icu.h
+        i386/include/limits.h
+        i386/include/npx.h
+        i386/include/param.h
+        i386/include/pcb.h
+        i386/include/pmap.h
+        i386/include/proc.h
+        i386/include/prototypes.h
+        i386/include/psl.h
         i386/include/reg.h
+        i386/include/segments.h
+        i386/include/sel.h
+        i386/include/stdarg.h
+        i386/include/trap.h
+        i386/include/tss.h
+        i386/include/types.h
+        i386/include/vmparam.h
+        i386/asm.h
+        i386/cpu.c
+        i386/machdep.c
+        i386/pmap.c
+        i386/segments.h
         i386/sel.h
+        i386/sigframe.h
+        i386/specialreg.h
         i386/trap.c
         sys/ingreslock.c
         sys/init_main.c
@@ -155,7 +236,4 @@ add_executable(2_11BSD
         sys/vm_sched.c
         sys/vm_swap.c
         sys/vm_swp.c
-        sys/vm_text.c
-        i386/segments.h
-        i386/specialreg.h
-        i386/cpu.c)
+        sys/vm_text.c)

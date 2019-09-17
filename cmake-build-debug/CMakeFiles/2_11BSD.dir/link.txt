@@ -1,3 +1,0 @@
-C:\Users\marti\AppData\Local\JetBrains\Toolbox\apps\CLion\ch-0\192.6603.37\bin\cmake\win\bin\cmake.exe -E remove -f CMakeFiles\2_11BSD.dir/objects.a
-"D:\Program Files\TDM-GCC\bin\ar.exe" cr CMakeFiles\2_11BSD.dir/objects.a @CMakeFiles\2_11BSD.dir\objects1.rsp
-"D:\Program Files\TDM-GCC\bin\gcc.exe" -g   -Wl,--whole-archive CMakeFiles\2_11BSD.dir/objects.a -Wl,--no-whole-archive  -o 2_11BSD.exe -Wl,--out-implib,lib2_11BSD.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\2_11BSD.dir\linklibs.rsp

@@ -1,4 +1,0 @@
-ToolSet: w64 4.0 (local)@D:\Program Files\TDM-GCC
-Options: 
-
-Options:
