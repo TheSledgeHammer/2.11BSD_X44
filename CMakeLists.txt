@@ -3,7 +3,7 @@ project(2_11BSD C)
 
 set(CMAKE_C_STANDARD 11)
 
-include_directories(kernel/bootstrap/boot)
+include_directories(bootstrap/boot)
 include_directories(kernel/h)
 include_directories(kernel/i386)
 include_directories(kernel/i386/include)
@@ -14,15 +14,15 @@ include_directories(kernel/i386/include/inline/kernel)
 include_directories(kernel/i386/include/inline/string)
 
 add_executable(2_11BSD
-        kernel/bootstrap/boot/boot.c
-        kernel/bootstrap/boot/prf.c
-        kernel/bootstrap/boot/printf.c
-        kernel/bootstrap/boot/saerrno.h
-        kernel/bootstrap/boot/saio.h
-        kernel/bootstrap/boot/saioctl.h
-        kernel/bootstrap/config/breadxx.c
-        kernel/bootstrap/config/srt0_i386.c
-        kernel/bootstrap/trimhd.c
+        bootstrap/boot/boot.c
+        bootstrap/boot/prf.c
+        bootstrap/boot/printf.c
+        bootstrap/boot/saerrno.h
+        bootstrap/boot/saio.h
+        bootstrap/boot/saioctl.h
+        bootstrap/config/breadxx.c
+        bootstrap/config/srt0_i386.c
+        bootstrap/trimhd.c
         kernel/conf/checksys.c
         kernel/conf/ioconf.c
         kernel/conf/netbind.c

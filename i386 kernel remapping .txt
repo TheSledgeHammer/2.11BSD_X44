@@ -1,9 +1,8 @@
 2.11BSD:
 TODO:
 - Virtual Memory
--
+- cdefs.h
 
-pdp/ram.c -> machine/seg.h, ram.h
 Generated from GENERIC:
 - ram.h
 - ingres.h
@@ -45,3 +44,4 @@ Kernel Dependent on Arch (PDP-11):
 - vm_swp -> machine/seg.h
 - vm_text -> machine/seg.h
 
+- pdp/ram.c -> machine/seg.h, ram.h
