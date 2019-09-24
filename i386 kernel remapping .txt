@@ -1,7 +1,12 @@
-2.11BSD:
-TODO:
-- Virtual Memory
-- cdefs.h
+2.11BSD -> 386BSD
+Kernel:
+- c: src/sys(kernel)/sys -> src/kernel/kern
+- h: src/sys(kernel)/h -> src/kernel/include & src/kernel/include/sys
+
+Machine Dependent:
+- c: src/sys(kernel)/i386 -> src/kernel/kern/i386
+- h: src/sys(kernel)/i386/include -> src/kernel/include/i386
+
 
 Generated from GENERIC:
 - ram.h

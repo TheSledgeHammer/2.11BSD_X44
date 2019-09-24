@@ -1,43 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
-    <generated>
-      <config projectName="2_11BSD" targetName="2_11BSD" />
-    </generated>
+    <generated />
   </component>
-  <component name="CMakeSettings" AUTO_RELOAD="true">
+  <component name="CMakeSettings">
     <configurations>
-      <configuration PROFILE_NAME="Debug-MinGW" CONFIG_NAME="Debug" TOOLCHAIN_NAME="MinGW" />
+      <configuration PROFILE_NAME="Debug" CONFIG_NAME="Debug" />
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9633bc96-b92c-49c2-ad3c-d8f3aa161b23" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/New Text Document.txt" beforeDir="false" afterPath="$PROJECT_DIR$/i386 kernel remapping .txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/Makefile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/boot/RCS/boot.c,v" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/boot/RCS/boot.c,v" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/boot/RCS/prf.c,v" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/boot/RCS/prf.c,v" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/boot/RCS/printf.c,v" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/boot/RCS/printf.c,v" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/boot/RCS/saerrno.h,v" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/boot/RCS/saerrno.h,v" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/boot/RCS/saio.h,v" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/boot/RCS/saio.h,v" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/boot/RCS/saioctl.h,v" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/boot/RCS/saioctl.h,v" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/boot/boot.c" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/boot/boot.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/boot/prf.c" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/boot/prf.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/boot/printf.c" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/boot/printf.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/boot/saerrno.h" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/boot/saerrno.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/boot/saio.h" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/boot/saio.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/boot/saioctl.h" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/boot/saioctl.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/config/RCS/breadxx.c,v" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/config/RCS/breadxx.c,v" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/config/RCS/i386.mk,v" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/config/RCS/i386.mk,v" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/config/RCS/srt0_i386.c,v" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/config/RCS/srt0_i386.c,v" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/config/breadxx.c" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/config/breadxx.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/config/i386.mk" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/config/i386.mk" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/config/srt0_i386.c" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/config/srt0_i386.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/trimhd" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/trimhd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel/bootstrap/trimhd.c" beforeDir="false" afterPath="$PROJECT_DIR$/bootstrap/trimhd.c" afterDir="false" />
-    </list>
+    <list default="true" id="13c4327e-46ef-488b-96c7-d4195b0821a1" name="Default Changelist" comment="" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -47,30 +19,16 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug-MinGW" />
-  <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  <component name="JsFlowSettings">
+    <service-enabled>true</service-enabled>
+    <exe-path />
+    <other-services-enabled>true</other-services-enabled>
+    <auto-save>true</auto-save>
   </component>
-  <component name="ProjectId" id="1QV3Ye57xu7nEUXfMAmryazuqIJ" />
+  <component name="ProjectId" id="1RGaV9lHpFzglhdxNPBlBNiINst" />
   <component name="PropertiesComponent">
-    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
-    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="node.js.detected.package.eslint" value="true" />
-    <property name="node.js.detected.package.tslint" value="true" />
-    <property name="node.js.path.for.package.eslint" value="project" />
-    <property name="node.js.path.for.package.tslint" value="project" />
-    <property name="node.js.selected.package.eslint" value="(autodetect)" />
-    <property name="node.js.selected.package.tslint" value="(autodetect)" />
-    <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
-    <property name="nodejs_npm_path_reset_for_default_project" value="true" />
-    <property name="settings.editor.selected.configurable" value="reference.settingsdialog.project.gradle" />
-  </component>
-  <component name="RecentsManager">
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="C:\Users\marti\OneDrive\IdeaProjects\C\2.11BSD" />
-      <recent name="C:\Users\marti\OneDrive\IdeaProjects\C\2.11BSD\i386\include" />
-    </key>
+    <property name="settings.editor.selected.configurable" value="configurable.group.appearance" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -84,65 +42,22 @@
       </list>
     </option>
   </component>
-  <component name="RunManager">
-    <configuration name="2_11BSD" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="2_11BSD" TARGET_NAME="2_11BSD" CONFIG_NAME="Debug-MinGW" RUN_TARGET_PROJECT_NAME="2_11BSD" RUN_TARGET_NAME="2_11BSD">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-  </component>
   <component name="SvnConfiguration">
     <configuration />
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="9633bc96-b92c-49c2-ad3c-d8f3aa161b23" name="Default Changelist" comment="" />
-      <created>1567841985082</created>
+      <changelist id="13c4327e-46ef-488b-96c7-d4195b0821a1" name="Default Changelist" comment="" />
+      <created>1569295907974</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1567841985082</updated>
-      <workItem from="1567841989259" duration="755000" />
-      <workItem from="1567842916132" duration="48000" />
-      <workItem from="1567842964516" duration="64000" />
-      <workItem from="1567843075965" duration="1566000" />
-      <workItem from="1568345222777" duration="2739000" />
-      <workItem from="1568355449339" duration="3234000" />
-      <workItem from="1568453416414" duration="6118000" />
-      <workItem from="1568711436480" duration="999000" />
-      <workItem from="1568713261003" duration="21000" />
-      <workItem from="1568714042336" duration="53000" />
-      <workItem from="1568715866315" duration="1221000" />
-      <workItem from="1568719388604" duration="48000" />
-      <workItem from="1568719452077" duration="36000" />
-      <workItem from="1568722032873" duration="431000" />
+      <updated>1569295907974</updated>
+      <workItem from="1569295909140" duration="82000" />
+      <workItem from="1569296004202" duration="152000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
-  </component>
-  <component name="Vcs.Log.Tabs.Properties">
-    <option name="TAB_STATES">
-      <map>
-        <entry key="MAIN">
-          <value>
-            <State>
-              <option name="COLUMN_ORDER" />
-            </State>
-          </value>
-        </entry>
-      </map>
-    </option>
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/sys/sys_socket.c</url>
-          <line>16</line>
-          <option name="timeStamp" value="7" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
 </project>

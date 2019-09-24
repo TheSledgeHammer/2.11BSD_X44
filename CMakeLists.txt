@@ -1,17 +1,18 @@
 cmake_minimum_required(VERSION 3.14)
 project(2_11BSD C)
-
+set(2_11BSD_VERSION_MAJOR 1)
+set(2_11BSD_VERSION_MINOR 0)
 set(CMAKE_C_STANDARD 11)
 
 include_directories(bootstrap/boot)
 include_directories(kernel/h)
 include_directories(kernel/i386)
-include_directories(kernel/i386/include)
-include_directories(kernel/i386/include/db)
-include_directories(kernel/i386/include/inline)
-include_directories(kernel/i386/include/inline/inet)
-include_directories(kernel/i386/include/inline/kernel)
-include_directories(kernel/i386/include/inline/string)
+include_directories(kernel/i386/h)
+include_directories(kernel/i386/h/db)
+include_directories(kernel/i386/h/inline)
+include_directories(kernel/i386/h/inline/inet)
+include_directories(kernel/i386/h/inline/kernel)
+include_directories(kernel/i386/h/inline/string)
 
 add_executable(2_11BSD
         bootstrap/boot/boot.c
@@ -24,12 +25,15 @@ add_executable(2_11BSD
         bootstrap/config/srt0_i386.c
         bootstrap/trimhd.c
         kernel/conf/checksys.c
+        kernel/conf/genassym.c
         kernel/conf/ioconf.c
+        kernel/conf/isym.c
         kernel/conf/netbind.c
         kernel/conf/param.c
         kernel/h/acct.h
         kernel/h/buf.h
         kernel/h/callout.h
+        kernel/h/cdefs.h
         kernel/h/clist.h
         kernel/h/conf.h
         kernel/h/dir.h
@@ -48,6 +52,7 @@ add_executable(2_11BSD
         kernel/h/ioctl.h
         kernel/h/ioctl_compat.h
         kernel/h/kernel.h
+        kernel/h/ktrace.h
         kernel/h/localopts.h
         kernel/h/map.h
         kernel/h/mbuf.h
@@ -96,70 +101,68 @@ add_executable(2_11BSD
         kernel/h/vmparam.h
         kernel/h/vmsystm.h
         kernel/h/wait.h
-        kernel/i386/config/genassym.c
-        kernel/i386/config/isym.c
-        kernel/i386/include/db/db_machdep.h
-        kernel/i386/include/db/eflags.h
-        kernel/i386/include/inline/inet/htonl.h
-        kernel/i386/include/inline/inet/htons.h
-        kernel/i386/include/inline/inet/in_cksumiphdr.h
-        kernel/i386/include/inline/inet/ntohl.h
-        kernel/i386/include/inline/inet/ntohs.h
-        kernel/i386/include/inline/kernel/copyin.h
-        kernel/i386/include/inline/kernel/copyin_.h
-        kernel/i386/include/inline/kernel/copyinstr.h
-        kernel/i386/include/inline/kernel/copyout.h
-        kernel/i386/include/inline/kernel/copyout_.h
-        kernel/i386/include/inline/kernel/copyoutstr.h
-        kernel/i386/include/inline/kernel/copystr.h
-        kernel/i386/include/inline/kernel/imax.h
-        kernel/i386/include/inline/kernel/imin.h
-        kernel/i386/include/inline/kernel/insque.h
-        kernel/i386/include/inline/kernel/lmax.h
-        kernel/i386/include/inline/kernel/lmin.h
-        kernel/i386/include/inline/kernel/max.h
-        kernel/i386/include/inline/kernel/min.h
-        kernel/i386/include/inline/kernel/remque.h
-        kernel/i386/include/inline/kernel/remrq.h
-        kernel/i386/include/inline/kernel/setrq.h
-        kernel/i386/include/inline/kernel/ulmax.h
-        kernel/i386/include/inline/kernel/ulmin.h
-        kernel/i386/include/inline/string/bcmp.h
-        kernel/i386/include/inline/string/bcopy.h
-        kernel/i386/include/inline/string/bzero.h
-        kernel/i386/include/inline/string/ffs.h
-        kernel/i386/include/inline/string/memcmp.h
-        kernel/i386/include/inline/string/memcpy.h
-        kernel/i386/include/inline/string/memmove.h
-        kernel/i386/include/inline/string/memset.h
-        kernel/i386/include/inline/string/strlen.h
-        kernel/i386/include/inline/inet.h
-        kernel/i386/include/inline/io.h
-        kernel/i386/include/inline/kernel.h
-        kernel/i386/include/inline/stdlib.h
-        kernel/i386/include/inline/string.h
-        kernel/i386/include/ansi.h
-        kernel/i386/include/cpu.h
-        kernel/i386/include/endian.h
-        kernel/i386/include/float.h
-        kernel/i386/include/frame.h
-        kernel/i386/include/icu.h
-        kernel/i386/include/limits.h
-        kernel/i386/include/npx.h
-        kernel/i386/include/param.h
-        kernel/i386/include/pcb.h
-        kernel/i386/include/pmap.h
-        kernel/i386/include/proc.h
-        kernel/i386/include/prototypes.h
-        kernel/i386/include/psl.h
-        kernel/i386/include/reg.h
-        kernel/i386/include/segments.h
-        kernel/i386/include/sel.h
-        kernel/i386/include/stdarg.h
-        kernel/i386/include/trap.h
-        kernel/i386/include/tss.h
-        kernel/i386/include/types.h
-        kernel/i386/include/vmparam.h
+        kernel/i386/h/db/db_machdep.h
+        kernel/i386/h/db/eflags.h
+        kernel/i386/h/inline/inet/htonl.h
+        kernel/i386/h/inline/inet/htons.h
+        kernel/i386/h/inline/inet/in_cksumiphdr.h
+        kernel/i386/h/inline/inet/ntohl.h
+        kernel/i386/h/inline/inet/ntohs.h
+        kernel/i386/h/inline/kernel/copyin.h
+        kernel/i386/h/inline/kernel/copyin_.h
+        kernel/i386/h/inline/kernel/copyinstr.h
+        kernel/i386/h/inline/kernel/copyout.h
+        kernel/i386/h/inline/kernel/copyout_.h
+        kernel/i386/h/inline/kernel/copyoutstr.h
+        kernel/i386/h/inline/kernel/copystr.h
+        kernel/i386/h/inline/kernel/imax.h
+        kernel/i386/h/inline/kernel/imin.h
+        kernel/i386/h/inline/kernel/insque.h
+        kernel/i386/h/inline/kernel/lmax.h
+        kernel/i386/h/inline/kernel/lmin.h
+        kernel/i386/h/inline/kernel/max.h
+        kernel/i386/h/inline/kernel/min.h
+        kernel/i386/h/inline/kernel/remque.h
+        kernel/i386/h/inline/kernel/remrq.h
+        kernel/i386/h/inline/kernel/setrq.h
+        kernel/i386/h/inline/kernel/ulmax.h
+        kernel/i386/h/inline/kernel/ulmin.h
+        kernel/i386/h/inline/string/bcmp.h
+        kernel/i386/h/inline/string/bcopy.h
+        kernel/i386/h/inline/string/bzero.h
+        kernel/i386/h/inline/string/ffs.h
+        kernel/i386/h/inline/string/memcmp.h
+        kernel/i386/h/inline/string/memcpy.h
+        kernel/i386/h/inline/string/memmove.h
+        kernel/i386/h/inline/string/memset.h
+        kernel/i386/h/inline/string/strlen.h
+        kernel/i386/h/inline/inet.h
+        kernel/i386/h/inline/io.h
+        kernel/i386/h/inline/kernel.h
+        kernel/i386/h/inline/stdlib.h
+        kernel/i386/h/inline/string.h
+        kernel/i386/h/ansi.h
+        kernel/i386/h/cpu.h
+        kernel/i386/h/endian.h
+        kernel/i386/h/float.h
+        kernel/i386/h/frame.h
+        kernel/i386/h/icu.h
+        kernel/i386/h/limits.h
+        kernel/i386/h/npx.h
+        kernel/i386/h/param.h
+        kernel/i386/h/pcb.h
+        kernel/i386/h/pmap.h
+        kernel/i386/h/proc.h
+        kernel/i386/h/prototypes.h
+        kernel/i386/h/psl.h
+        kernel/i386/h/reg.h
+        kernel/i386/h/segments.h
+        kernel/i386/h/sel.h
+        kernel/i386/h/stdarg.h
+        kernel/i386/h/trap.h
+        kernel/i386/h/tss.h
+        kernel/i386/h/types.h
+        kernel/i386/h/vmparam.h
         kernel/i386/asm.h
         kernel/i386/cpu.c
         kernel/i386/machdep.c
