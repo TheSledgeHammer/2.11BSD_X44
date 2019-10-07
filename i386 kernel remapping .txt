@@ -1,4 +1,7 @@
-2.11BSD -> 386BSD
+2.11BSD -> 4.4BSD-Lite2
+2.11BSD vm:
+- Code is designed for pdp
+
 Kernel:
 - c: src/sys(kernel)/sys -> src/kernel/kern
 - h: src/sys(kernel)/h -> src/kernel/include & src/kernel/include/sys
@@ -50,3 +53,6 @@ Kernel Dependent on Arch (PDP-11):
 - vm_text -> machine/seg.h
 
 - pdp/ram.c -> machine/seg.h, ram.h
+
+Copied from 4.4BSD:
+- uio.c
