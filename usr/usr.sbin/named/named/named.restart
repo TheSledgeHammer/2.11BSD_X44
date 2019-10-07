@@ -1,2 +1,0 @@
-kill -9 `cat /var/run/named.pid`
-/usr/sbin/named 

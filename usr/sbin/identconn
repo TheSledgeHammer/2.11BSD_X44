@@ -1,6 +1,0 @@
-#! /bin/sh
-:
-PATH=/usr/bin:/usr/sbin:/usr/ucb:/bin ; export PATH
-
-netstat -f inet -n | grep ESTAB | itest
-
