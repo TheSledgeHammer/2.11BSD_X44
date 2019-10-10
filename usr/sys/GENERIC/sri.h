@@ -1,1 +1,0 @@
-#define NSRI	0

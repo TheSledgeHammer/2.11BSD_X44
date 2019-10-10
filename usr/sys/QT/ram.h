@@ -1,1 +1,0 @@
-#define NRAM	0

@@ -1,2 +1,0 @@
-int	vpprobe();
-	"vp",	vpprobe,	/* vp -- Versatec */

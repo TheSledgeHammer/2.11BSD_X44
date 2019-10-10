@@ -1,1 +1,0 @@
-#define NTS	2
