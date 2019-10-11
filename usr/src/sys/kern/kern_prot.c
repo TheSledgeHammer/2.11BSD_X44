@@ -14,10 +14,8 @@
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/systm.h>
-#ifdef QUOTA
-#include <sys/quota.h>
-#endif
 
+void
 getpid()
 {
 
@@ -25,12 +23,14 @@ getpid()
 	u.u_r.r_val2 = u.u_procp->p_ppid;	/* XXX - compatibility */
 }
 
+void
 getppid()
 {
 
 	u.u_r.r_val1 = u.u_procp->p_ppid;
 }
 
+void
 getpgrp()
 {
 	register struct a {
@@ -48,6 +48,7 @@ getpgrp()
 	u.u_r.r_val1 = p->p_pgrp;
 }
 
+void
 getuid()
 {
 
@@ -55,12 +56,14 @@ getuid()
 	u.u_r.r_val2 = u.u_uid;		/* XXX */
 }
 
+void
 geteuid()
 {
 
 	u.u_r.r_val1 = u.u_uid;
 }
 
+void
 getgid()
 {
 
@@ -68,6 +71,7 @@ getgid()
 	u.u_r.r_val2 = u.u_groups[0];		/* XXX */
 }
 
+void
 getegid()
 {
 
@@ -78,6 +82,7 @@ getegid()
  * getgroups and setgroups differ from 4.X because the VAX stores group
  * entries in the user structure as shorts and has to convert them to ints.
  */
+void
 getgroups()
 {
 	register struct	a {
@@ -101,6 +106,7 @@ getgroups()
 	u.u_r.r_val1 = uap->gidsetsize;
 }
 
+void
 setpgrp()
 {
 	register struct proc *p;
@@ -124,6 +130,7 @@ setpgrp()
 	p->p_pgrp = uap->pgrp;
 }
 
+void
 setgroups()
 {
 	register struct	a {
@@ -149,6 +156,7 @@ setgroups()
 /*
  * Check if gid is a member of the group set.
  */
+int
 groupmember(gid)
 	gid_t gid;
 {

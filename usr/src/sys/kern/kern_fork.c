@@ -7,9 +7,6 @@
  */
 
 #include <sys/param.h>
-#include <machine/reg.h>
-#include <machine/seg.h>
-
 #include <sys/systm.h>
 #include <sys/map.h>
 #include <sys/user.h>
@@ -20,14 +17,16 @@
 #include <vm/vm.h>
 #include <sys/text.h>
 #include <sys/kernel.h>
-#ifdef QUOTA
-#include <sys/quota.h>
-#endif
+
+//#include <machine/reg.h>
+//#include <machine/seg.h>
+
 
 /*
  * fork --
  *	fork system call
  */
+void
 fork()
 {
 	fork1(0);
@@ -37,11 +36,13 @@ fork()
  * vfork --
  *	vfork system call, fast version of fork
  */
+void
 vfork()
 {
 	fork1(1);
 }
 
+static void
 fork1(isvfork)
 {
 	register int a;
@@ -72,9 +73,7 @@ fork1(isvfork)
 	p1 = u.u_procp;
 	if (newproc(isvfork)) {
 		u.u_r.r_val1 = p1->p_pid;
-#ifndef pdp11
-		u.u_r.r_val2 = 1;  /* child */
-#endif
+
 		u.u_start = time.tv_sec;
 		/* set forked but preserve suid/gid state */
 		u.u_acflag = AFORK | (u.u_acflag & ASUGID); 
@@ -85,11 +84,7 @@ fork1(isvfork)
 	u.u_r.r_val1 = p2->p_pid;
 
 out:
-#ifdef pdp11			/* see libc/pdp/sys/fork.s */
-	u.u_ar0[R7] += NBPW;
-#else
 	u.u_r.r_val2 = 0;
-#endif
 }
 
 /*
@@ -97,6 +92,7 @@ out:
  *	Create a new process -- the internal version of system call fork.
  *	It returns 1 in the new process, 0 in the old.
  */
+int
 newproc(isvfork)
 	int isvfork;
 {

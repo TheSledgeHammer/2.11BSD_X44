@@ -22,12 +22,12 @@ struct	proc {
 	struct	proc **p_prev;	/* also zombies, and free proc's */
 	struct	proc *p_pptr;	/* pointer to process structure of parent */
 	short	p_flag;
-	short	p_uid;		/* user id, used to direct tty signals */
-	short	p_pid;		/* unique process id */
-	short	p_ppid;		/* process id of parent */
-	long	p_sig;		/* signals pending to this process */
+	short	p_uid;			/* user id, used to direct tty signals */
+	short	p_pid;			/* unique process id */
+	short	p_ppid;			/* process id of parent */
+	long	p_sig;			/* signals pending to this process */
 	char	p_stat;
-	char	p_dummy;	/* room for one more, here */
+	char	p_dummy;		/* room for one more, here */
 
 	/*
 	 * Union to overwrite information no longer needed by ZOMBIED
@@ -38,30 +38,30 @@ struct	proc {
 	 */
 	union {
 	    struct {
-		char	P_pri;		/* priority, negative is high */
-		char	P_cpu;		/* cpu usage for scheduling */
-		char	P_time;		/* resident time for scheduling */
-		char	P_nice;		/* nice for cpu usage */
-		char	P_slptime;	/* secs sleeping */
-		char	P_ptracesig;	/* used between parent & traced child */
-		struct proc *P_hash;	/* hashed based on p_pid */
-		long	P_sigmask;	/* current signal mask */
-		long	P_sigignore;	/* signals being ignored */
-		long	P_sigcatch;	/* signals being caught by user */
-		short	P_pgrp;		/* name of process group leader */
-		struct	proc *P_link;	/* linked list of running processes */
-		memaddr	P_addr;		/* address of u. area */
-		memaddr	P_daddr;	/* address of data area */
-		memaddr	P_saddr;	/* address of stack area */
-		size_t	P_dsize;	/* size of data area (clicks) */
-		size_t	P_ssize;	/* size of stack segment (clicks) */
-		caddr_t	P_wchan;	/* event process is awaiting */
-		struct	text *P_textp;	/* pointer to text structure */
+		char	P_pri;						/* priority, negative is high */
+		char	P_cpu;						/* cpu usage for scheduling */
+		char	P_time;						/* resident time for scheduling */
+		char	P_nice;						/* nice for cpu usage */
+		char	P_slptime;					/* secs sleeping */
+		char	P_ptracesig;				/* used between parent & traced child */
+		struct proc *P_hash;				/* hashed based on p_pid */
+		long	P_sigmask;					/* current signal mask */
+		long	P_sigignore;				/* signals being ignored */
+		long	P_sigcatch;					/* signals being caught by user */
+		short	P_pgrp;						/* name of process group leader */
+		struct	proc *P_link;				/* linked list of running processes */
+		memaddr	P_addr;						/* address of u. area */
+		memaddr	P_daddr;					/* address of data area */
+		memaddr	P_saddr;					/* address of stack area */
+		size_t	P_dsize;					/* size of data area (clicks) */
+		size_t	P_ssize;					/* size of stack segment (clicks) */
+		caddr_t	P_wchan;					/* event process is awaiting */
+		struct	text *P_textp;				/* pointer to text structure */
 		struct	k_itimerval P_realtimer;
 	    } p_alive;
 	    struct {
-		short	P_xstat;	/* exit status for wait */
-		struct k_rusage P_ru;	/* exit information */
+		short	P_xstat;					/* exit status for wait */
+		struct k_rusage P_ru;				/* exit information */
 	    } p_dead;
 	} p_un;
 };
@@ -128,7 +128,7 @@ int	nproc;
 #define	P_SELECT	0x4000	/* selecting; wakeup/waiting danger */
 	/*		0x8000	/* unused */
 
-#define	S_DATA	0		/* specified segment */
+#define	S_DATA	0			/* specified segment */
 #define	S_STACK	1
 
 #endif	/* !_SYS_PROC_H_ */

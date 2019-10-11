@@ -7,7 +7,6 @@
  */
 
 #include <sys/param.h>
-#include <machine/seg.h>
 
 #include <sys/user.h>
 #include <sys/proc.h>
@@ -17,6 +16,8 @@
 #include <vm/vm.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
+
+//#include <machine/seg.h>
 
 #define	SQSIZE	16	/* Must be power of 2 */
 
@@ -28,6 +29,7 @@ struct	proc *slpque[SQSIZE];
 /*
  * Recompute process priorities, once a second
  */
+void
 schedcpu()
 {
 	register struct proc *p;
@@ -75,6 +77,7 @@ schedcpu()
 /*
  * Recalculate the priority of a process after it has slept for a while.
  */
+void
 updatepri(p)
 	register struct proc *p;
 {
@@ -155,7 +158,7 @@ tsleep(ident, priority, timo)
 	if	(catch)
 		{
 		p->p_flag |= P_SINTR;
-		if	(sig = CURSIG(p))
+		if	(sig == CURSIG(p))
 			{
 			if	(p->p_wchan)
 				unsleep(p);
@@ -229,6 +232,7 @@ endtsleep(p)
  * Callers of this routine must be prepared for premature return, and check 
  * that the reason for sleeping has gone away.
  */
+void
 sleep(chan, pri)
 	caddr_t chan;
 	int pri;
@@ -262,6 +266,7 @@ sleep(chan, pri)
 /*
  * Remove a process from its wait queue
  */
+void
 unsleep(p)
 	register struct proc *p;
 {
@@ -282,6 +287,7 @@ unsleep(p)
 /*
  * Wake up all processes sleeping on chan.
  */
+void
 wakeup(chan)
 	register caddr_t chan;
 {
@@ -338,6 +344,7 @@ restart:
  * Set the process running;
  * arrange for it to be swapped in if necessary.
  */
+void
 setrun(p)
 	register struct proc *p;
 {
@@ -383,6 +390,7 @@ setrun(p)
  * is set if the priority is better
  * than the currently running process.
  */
+int
 setpri(pp)
 	register struct proc *pp;
 {
@@ -406,6 +414,7 @@ setpri(pp)
  * called and will return in at most 1hz time, e.g. it's not worth putting an
  * spl() in.
  */
+void
 swtch()
 {
 	register struct proc *p, *q;
@@ -492,6 +501,7 @@ loop:
 	longjmp(p->p_addr, n ? &u.u_ssave: &u.u_rsave);
 }
 
+void
 setrq(p)
 	register struct proc *p;
 {
@@ -517,6 +527,7 @@ setrq(p)
  * is swapped out so that it won't be selected in swtch().  It will be
  * reinserted in the qs with setrq when it is swapped back in.
  */
+void
 remrq(p)
 	register struct proc *p;
 {

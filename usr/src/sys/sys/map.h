@@ -28,20 +28,32 @@
 struct map {
 	struct mapent	*m_map;		/* start of the map */
 	struct mapent	*m_limit;	/* address of last slot in map */
-	char	*m_name;		/* name of resource */
+	char   			*m_name;	/* name of resource */
 /* we use m_name when the map overflows, in warning messages */
 };
 
 struct mapent {
 	size_t	m_size;		/* size of this segment of the map */
-	memaddr	m_addr;		/* resource-space addr of start of segment */
+	size_t	m_addr;		/* resource-space addr of start of segment */
 };
 
-extern struct	map	coremap[1];	/* space for core allocation */
-extern struct	map	swapmap[1];	/* space for swap allocation */
-
 #ifdef KERNEL
-//extern struct	map	coremap[1];	/* space for core allocation */
-//extern struct	map	swapmap[1];	/* space for swap allocation */
-//extern struct	map	ub_map[1];	/* space for UNIBUS allocation */
+extern struct map coremap[];	/* space for core allocation */
+extern struct map swapmap[];	/* space for swap allocation */
+
+/*
+ * Allocate units from the given map.
+ */
+//size_t malloc (struct map *mp, size_t nbytes);
+
+/*
+ * Free the previously allocated units at addr into the specified map.
+ */
+//void mfree (struct map *mp, size_t nbytes, size_t addr);
+
+/*
+ * Allocate resources for the three segments of a process.
+ */
+//size_t malloc3 (struct map *mp, size_t d_size, size_t s_size, size_t u_size, size_t a[3]);
+
 #endif

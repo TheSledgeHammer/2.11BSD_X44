@@ -7,7 +7,6 @@
  */
 
 #include <sys/param.h>
-#include <pdp/seg.h>
 
 #include <sys/file.h>
 #include <sys/ioctl.h>

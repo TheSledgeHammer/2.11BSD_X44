@@ -14,7 +14,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/user.h>
-#include <sys/proc.h.
+#include <sys/proc.h>
 #include <sys/inode.h>
 #include <sys/quota.h>
 #include <sys/fs.h>

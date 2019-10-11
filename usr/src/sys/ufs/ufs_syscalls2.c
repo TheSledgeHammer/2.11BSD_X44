@@ -6,7 +6,7 @@
 */
 
 #include <sys/param.h>
-#include <machine/seg.h>
+//#include <machine/seg.h>
 #include <sys/file.h>
 #include <sys/user.h>
 #include <sys/inode.h>
@@ -16,6 +16,10 @@
 #include <sys/mount.h>
 #include <sys/kernel.h>
 
+#include <sys/systm.h>
+#include <sys/proc.h>
+
+void
 statfs()
 	{
 	register struct a
@@ -38,6 +42,7 @@ statfs()
 	return(u.u_error);
 	}
 
+void
 fstatfs()
 	{
 	register struct a
@@ -56,6 +61,7 @@ fstatfs()
 	return(u.u_error);
 	}
 
+static int
 statfs1(mp, sbp)
 	struct	mount	*mp;
 	struct	statfs	*sbp;
@@ -208,6 +214,7 @@ umask()
 /*
  * Seek system call
  */
+void
 lseek()
 {
 	register struct file *fp;
@@ -244,6 +251,7 @@ lseek()
 /*
  * Synch an open file.
  */
+void
 fsync()
 {
 	register struct a {
@@ -258,6 +266,7 @@ fsync()
 	iunlock(ip);
 }
 
+void
 utimes()
 {
 	register struct a {

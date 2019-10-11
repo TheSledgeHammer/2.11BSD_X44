@@ -40,12 +40,9 @@
 
 #include <sys/param.h>
 #include <sys/user.h>
-#include <sys/acct.h>
+//#include <sys/acct.h>
 #include <sys/proc.h>
 #include <sys/systm.h>
-#ifdef QUOTA
-#include <sys/quota.h>
-#endif
 
 int
 setuid()
@@ -74,20 +71,20 @@ _setuid(uid)
 	 * Since the real user id is changing the quota references need
 	 * to be updated.
 	 */
-#ifdef QUOTA
+/*#ifdef QUOTA
         QUOTAMAP();
 	if (u.u_quota->q_uid != uid) {
 		qclean();
 		qstart(getquota((uid_t)uid, 0, 0));
 	}
 	QUOTAUNMAP();
-#endif
+#endif*/
 
 	u.u_procp->p_uid = uid;
 	u.u_uid = uid;
 	u.u_ruid = uid;
 	u.u_svuid = uid;
-	u.u_acflag |= ASUGID;
+	//u.u_acflag |= ASUGID;
 	return (u.u_error = 0);
 	}
 
@@ -136,7 +133,7 @@ _setgid(gid)
 	u.u_groups[0] = gid;		/* effective gid is u_groups[0] */
 	u.u_rgid = gid;
 	u.u_svgid = gid;
-	u.u_acflag |= ASUGID;
+	//u.u_acflag |= ASUGID;
 	return (u.u_error = 0);
 	}
 

@@ -7,15 +7,15 @@
  */
 
 #include <sys/param.h>
-#include <machine/psl.h>
-#include <machine/seg.h>
-
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/callout.h>
 #include <sys/dk.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
+
+int noproc;
+struct  callout *callfree, calltodo;
 
 /*
  * The hz hardware interval timer.
@@ -29,6 +29,7 @@
  *	profile
  */
 /*ARGSUSED*/
+void
 hardclock(dev,sp,r1,ov,nps,r0,pc,ps)
 	dev_t dev;
 	caddr_t sp, pc;
@@ -157,6 +158,7 @@ int	dk_ndrive = DK_NDRIVE;
  * update statistics accordingly.
  */
 /*ARGSUSED*/
+void
 gatherstats(pc, ps)
 	caddr_t pc;
 	int ps;
@@ -206,6 +208,7 @@ gatherstats(pc, ps)
  * Software priority level clock interrupt.
  * Run periodic events from timeout queue.
  */
+void
 softclock(pc, ps)
 	caddr_t pc;
 	int ps;
@@ -260,6 +263,7 @@ softclock(pc, ps)
 /*
  * Arrange that (*fun)(arg) is called in t/hz seconds.
  */
+void
 timeout(fun, arg, t)
 	int (*fun)();
 	caddr_t arg;
@@ -291,6 +295,7 @@ timeout(fun, arg, t)
  * untimeout is called to remove a function timeout call
  * from the callout structure.
  */
+void
 untimeout(fun, arg)
 	int (*fun)();
 	caddr_t arg;
@@ -312,6 +317,7 @@ untimeout(fun, arg)
 	splx(s);
 }
 
+void
 profil()
 {
 	register struct a {
@@ -333,6 +339,7 @@ profil()
  * Used to compute third argument to timeout() from an
  * absolute time.
  */
+int
 hzto(tv)
 	register struct timeval *tv;
 {

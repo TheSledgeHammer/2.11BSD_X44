@@ -7,14 +7,14 @@
  */
 
 #include <sys/param.h>
-#include <machine/seg.h>
-
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <vm/vm.h>
-#include <sys/text.h>
+//#include <sys/text.h>
 #include <sys/systm.h>
 
+//#include <machine/seg.h>
+void
 sbrk()
 {
 	struct a {

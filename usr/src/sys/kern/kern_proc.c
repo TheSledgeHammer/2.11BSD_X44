@@ -14,6 +14,7 @@
 /*
  * Is p an inferior of the current process?
  */
+int
 inferior(p)
 	register struct proc *p;
 {
@@ -39,6 +40,7 @@ pfind(pid)
 /*
  * init the process queues
  */
+void
 pqinit()
 {
 	register struct proc *p;

@@ -7,7 +7,7 @@
  */
 
 #include <sys/param.h>
-#include <machine/seg.h>
+//#include <machine/seg.h>
 
 #include <sys/user.h>
 #include <sys/proc.h>
@@ -25,9 +25,7 @@
 #include <sys/kernel.h>
 #include <sys/systm.h>
 #include <sys/syslog.h>
-#ifdef QUOTA
-#include <sys/quota.h>
-#endif
+
 
 extern	int	vn_closefile();
 int	ino_rw(), ino_ioctl(), ino_select();
@@ -35,6 +33,7 @@ int	ino_rw(), ino_ioctl(), ino_select();
 struct 	fileops inodeops =
 	{ ino_rw, ino_ioctl, ino_select, vn_closefile };
 
+int
 ino_rw(fp, uio)
 	struct file *fp;
 register struct uio *uio;
@@ -73,6 +72,7 @@ register struct uio *uio;
 	return (error);
 }
 
+int
 rdwri(rw, ip, base, len, offset, segflg, ioflg, aresid)
 	enum uio_rw rw;
 	struct inode *ip;
@@ -104,6 +104,7 @@ register int error;
 	return (error);
 }
 
+int
 rwip(ip, uio, ioflag)
 	register struct inode *ip;
 	register struct uio *uio;
@@ -191,26 +192,7 @@ rwip(ip, uio, ioflag)
 		psignal(u.u_procp, SIGXFSZ);
 		return (EFBIG);
 	}
-#ifdef	QUOTA
-	/*
-	 * we do bytes, see the comment on 'blocks' in ino_stat().
-	 *
-	 * the simplfying assumption is made that the entire write will
-	 * succeed, otherwise we have to check the quota on each block.
-	 * can you say slow?  i knew you could.  SMS
-	*/
-	if ((type == IFREG || type == IFDIR || type == IFLNK) && 
-	    uio->uio_rw == UIO_WRITE && !(ip->i_flag & IPIPE)) {
-		if (uio->uio_offset + uio->uio_resid > ip->i_size) {
-			QUOTAMAP();
-			error = chkdq(ip, 
-				uio->uio_offset+uio->uio_resid - ip->i_size,0);
-			QUOTAUNMAP();
-			if (error)
-				return (error);
-		}
-	}
-#endif
+
 	if (type != IFBLK)
 		dev = ip->i_dev;
 	resid = uio->uio_resid;
@@ -323,7 +305,7 @@ rwip(ip, uio, ioflag)
 	return (error);
 }
 
-
+int
 ino_ioctl(fp, com, data)
 	register struct file *fp;
 	register u_int com;
@@ -364,6 +346,7 @@ ino_ioctl(fp, com, data)
 	}
 }
 
+int
 ino_select(fp, which)
 	struct file *fp;
 	int which;
@@ -382,16 +365,12 @@ ino_select(fp, which)
 	}
 }
 
+int
 ino_stat(ip, sb)
 	register struct inode *ip;
 	register struct stat *sb;
 {
 	register struct icommon2 *ic2;
-
-#ifdef	EXTERNALITIMES
-	mapseg5(xitimes, xitdesc);
-	ic2 = &((struct icommon2 *)SEG5)[ip - inode];
-#else
 	ic2 = &ip->i_ic2;
 #endif
 
@@ -431,9 +410,6 @@ ino_stat(ip, sb)
 	sb->st_spare4[0] = 0;
 	sb->st_spare4[1] = 0;
 	sb->st_spare4[2] = 0;
-#ifdef	EXTERNALITIMES
-	normalseg5();
-#endif
 	return (0);
 }
 
@@ -443,7 +419,7 @@ ino_stat(ip, sb)
  * case in the switch statement).  Pipes and sockets do NOT come here because
  * they have their own close routines.
 */
-
+int
 closei(ip, flag)
 	register struct inode *ip;
 	int	flag;
@@ -524,6 +500,7 @@ closei(ip, flag)
  * NOTE: callers of this routine must be prepared to deal with the pseudo
  *       error return ERESTART.
  */
+int
 ino_lock(fp, cmd)
 	register struct file *fp;
 	int cmd;
@@ -599,6 +576,7 @@ again:
 /*
  * Unlock a file.
  */
+void
 ino_unlock(fp, kind)
 	register struct file *fp;
 	int kind;
@@ -632,6 +610,7 @@ ino_unlock(fp, kind)
  * Openi called to allow handler of special files to initialize and
  * validate before actual IO.
  */
+int
 openi(ip, mode)
 	register struct inode *ip;
 {
@@ -703,6 +682,7 @@ openi(ip, mode)
  * Used only by the super-user in init
  * to give ``clean'' terminals at login.
  */
+void
 vhangup()
 {
 
@@ -715,6 +695,7 @@ vhangup()
 		gsignal(u.u_ttyp->t_pgrp, SIGHUP);
 }
 
+static void
 forceclose(dev)
 	register dev_t dev;
 {

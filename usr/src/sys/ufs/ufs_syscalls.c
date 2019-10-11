@@ -15,9 +15,11 @@
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/kernel.h>
-#ifdef QUOTA
+
+#include <sys/proc.h>
+/*#ifdef QUOTA
 #include <sys/quota.h>
-#endif
+#endif*/
 
 static	int	copen();
 

@@ -50,26 +50,26 @@ int	nblkdev;
  */
 int	nchrdev;
 
-int	mpid;			/* generic for unique process id's */
+int	mpid;				/* generic for unique process id's */
 char	runin;			/* scheduling flag */
 char	runout;			/* scheduling flag */
-int	runrun;			/* scheduling flag */
+int	runrun;				/* scheduling flag */
 char	curpri;			/* more scheduling */
 
 u_int	maxmem;			/* actual max memory per process */
 
 u_int	nswap;			/* size of swap space */
-int	updlock;		/* lock for sync */
+int	updlock;			/* lock for sync */
 daddr_t	rablock;		/* block to be read ahead */
 dev_t	rootdev;		/* device of the root */
 dev_t	dumpdev;		/* device to take dumps on */
 long	dumplo;			/* offset into dumpdev */
 dev_t	swapdev;		/* swapping device */
 dev_t	pipedev;		/* pipe device */
-int	nodev();		/* no device function used in bdevsw/cdevsw */
+int	nodev();			/* no device function used in bdevsw/cdevsw */
 
-extern	int icode[];		/* user init code */
-extern	int szicode;		/* its size */
+extern	int icode[];	/* user init code */
+extern	int szicode;	/* its size */
 
 daddr_t	bmap();
 
@@ -82,13 +82,13 @@ extern int	cputype;	/* type of cpu = 40, 44, 45, 60, or 70 */
  */
 extern struct sysent
 {
-	char	sy_narg;		/* total number of arguments */
-	int	(*sy_call)();		/* handler */
+	char	sy_narg;	/* total number of arguments */
+	int	(*sy_call)();	/* handler */
 } sysent[];
 
-int	noproc;			/* no one is running just now */
+int	noproc;				/* no one is running just now */
 char	*panicstr;
-int	boothowto;		/* reboot flags, from boot */
+int	boothowto;			/* reboot flags, from boot */
 int	selwait;
 
 /* casts to keep lint happy */

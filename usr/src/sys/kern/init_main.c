@@ -7,8 +7,6 @@
  */
 
 #include <sys/param.h>
-#include <machine/seg.h>
-
 #include <sys/user.h>
 #include <sys/fs.h>
 #include <sys/mount.h>
@@ -21,16 +19,15 @@
 #include <sys/fcntl.h>
 #include <vm/vm.h>
 #include <sys/clist.h>
-#include <sys/uba.h>
 #include <sys/reboot.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/namei.h>
 #include <sys/disklabel.h>
 #include <sys/stat.h>
-#ifdef QUOTA
-#include <sys/quota.h>
-#endif
+
+//#include <sys/uba.h>
+//#include <machine/seg.h>
 
 int	netoff = 1;
 int	cmask = CMASK;
@@ -52,6 +49,7 @@ extern	struct	mapent _coremap[];
  *	fork - process 0 to schedule
  *	     - process 1 execute bootstrap
  */
+int
 main()
 {
 	extern dev_t bootdev;
@@ -99,12 +97,6 @@ main()
 	bhinit();
 	binit();
 	ubinit();
-#ifdef QUOTA
-	QUOTAMAP();
-	qtinit();
-	u.u_quota = getquota(0, 0, Q_NDQ);
-	QUOTAUNMAP();
-#endif
 	nchinit();
 	clkstart();
 
@@ -257,7 +249,7 @@ main()
 /*
  * Initialize hash links for buffers.
  */
-static
+static void
 bhinit()
 {
 	register int i;
@@ -272,7 +264,7 @@ memaddr	bpaddr;		/* physical click-address of buffers */
  * Initialize the buffer I/O system by freeing
  * all buffers and setting all device buffer lists to empty.
  */
-static
+static void
 binit()
 {
 	register struct buf *bp;
@@ -298,16 +290,13 @@ binit()
  * Initialize clist by freeing all character blocks, then count
  * number of character devices. (Once-only routine)
  */
-static
+static void
 cinit()
 {
 	register int ccp;
 	register struct cblock *cp;
 
 	ccp = (int)cfree;
-#ifdef UCB_CLIST
-	mapseg5(clststrt, clstdesc);	/* don't save, we know it's normal */
-#else
 	ccp = (ccp + CROUND) & ~CROUND;
 #endif
 	for (cp = (struct cblock *)ccp; cp <= &cfree[nclist - 1]; cp++) {
@@ -315,9 +304,7 @@ cinit()
 		cfreelist = cp;
 		cfreecount += CBSIZE;
 	}
-#ifdef UCB_CLIST
-	normalseg5();
-#endif
+
 }
 
 #ifdef INET

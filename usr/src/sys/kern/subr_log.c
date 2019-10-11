@@ -33,7 +33,7 @@
 #include <sys/inode.h>
 #include <sys/errno.h>
 #include <sys/uio.h>
-#include <machine/seg.h>
+//#include <machine/seg.h>
 #include <sys/map.h>
 
 #define LOG_RDPRI	(PZERO + 1)
@@ -59,6 +59,7 @@
 		} logsoftc[NLOG];
 
 /*ARGSUSED*/
+int
 logopen(dev, mode)
 	dev_t dev;
 	int mode;
@@ -80,6 +81,7 @@ logopen(dev, mode)
 	}
 
 /*ARGSUSED*/
+int
 logclose(dev, flag)
 	dev_t	dev;
 	int	flag;
@@ -96,6 +98,7 @@ logclose(dev, flag)
  * This is a helper function to keep knowledge of this driver's data
  * structures away from the rest of the kernel.
 */
+int
 logisopen(unit)
 	int	unit;
 	{
@@ -106,6 +109,7 @@ logisopen(unit)
 	}
 
 /*ARGSUSED*/
+int
 logread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
@@ -176,6 +180,7 @@ logread(dev, uio, flag)
 	}
 
 /*ARGSUSED*/
+int
 logselect(dev, rw)
 	dev_t dev;
 	int rw;
@@ -198,6 +203,7 @@ logselect(dev, rw)
 	return(0);
 	}
 
+void
 logwakeup(unit)
 	int	unit;
 	{
@@ -229,6 +235,7 @@ logwakeup(unit)
 }
 
 /*ARGSUSED*/
+int
 logioctl(dev, com, data, flag)
 	dev_t	dev;
 	u_int	com;
@@ -279,7 +286,7 @@ logioctl(dev, com, data, flag)
  * This is inefficient for single character writes.  Alas, changing this
  * to be buffered would affect the networking code's use of printf.  
 */
-
+int
 logwrt(buf,len,log)
 	char	*buf;
 	int	len;
@@ -348,7 +355,7 @@ out:	splx(s);
  * Initialize the log driver.  Called from the system startup code (machdep2.c).
  * All buffers are the same (MSG_BSIZE) size.
 */
-
+int
 loginit()
 	{
 register struct msgbuf *mp;

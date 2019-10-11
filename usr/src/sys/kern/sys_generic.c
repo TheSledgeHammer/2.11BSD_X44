@@ -7,7 +7,7 @@
  */
 
 #include <sys/param.h>
-#include <machine/seg.h>
+//#include <machine/seg.h>
 
 #include <sys/user.h>
 #include <sys/proc.h>
@@ -17,7 +17,6 @@
 #include <sys/ioctl.h>
 #include <sys/conf.h>
 #include <sys/uio.h>
-#include <sys/pty.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
 
@@ -36,6 +35,7 @@ extern	struct	fileops	inodeops, pipeops;
 /*
  * Read system call.
  */
+void
 read()
 {
 	register struct a {
@@ -54,6 +54,7 @@ read()
 	rwuio(&auio);
 }
 
+void
 readv()
 {
 	register struct a {
@@ -81,6 +82,7 @@ readv()
 /*
  * Write system call
  */
+void
 write()
 {
 	register struct a {
@@ -99,6 +101,7 @@ write()
 	rwuio(&auio);
 }
 
+void
 writev()
 {
 	register struct a {
@@ -123,7 +126,7 @@ writev()
 	rwuio(&auio);
 }
 
-static
+static void
 rwuio(uio)
 	register struct uio *uio;
 {
@@ -173,6 +176,7 @@ rwuio(uio)
 /*
  * Ioctl system call
  */
+void
 ioctl()
 {
 	register struct file *fp;
@@ -452,7 +456,7 @@ done:
 		}
 	return(error);
 	}
-
+int
 selscan(ibits, obits, nfd, retval)
 	fd_set *ibits, *obits;
 	int nfd, *retval;
@@ -493,6 +497,7 @@ selscan(ibits, obits, nfd, retval)
 }
 
 /*ARGSUSED*/
+int
 seltrue(dev, flag)
 	dev_t dev;
 	int flag;
@@ -501,6 +506,7 @@ seltrue(dev, flag)
 	return (1);
 }
 
+void
 selwakeup(p, coll)
 	register struct proc *p;
 	long coll;
@@ -526,6 +532,7 @@ selwakeup(p, coll)
 	restormap(map);
 }
 
+int
 sorw(fp, uio)
 	register struct file *fp;
 	register struct uio *uio;
@@ -539,6 +546,7 @@ sorw(fp, uio)
 #endif
 }
 
+int
 soctl(fp, com, data)
 	struct file *fp;
 	u_int	com;
@@ -551,6 +559,7 @@ soctl(fp, com, data)
 #endif
 }
 
+int
 sosel(fp, flag)
 	struct file *fp;
 	int	flag;
@@ -562,6 +571,7 @@ sosel(fp, flag)
 #endif
 }
 
+int
 socls(fp)
 	register struct file *fp;
 {

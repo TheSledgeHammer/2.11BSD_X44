@@ -28,12 +28,14 @@
 /*
  * System calls on descriptors.
  */
+void
 getdtablesize()
 {
 
 	u.u_r.r_val1 = NOFILE;
 }
 
+void
 dup()
 {
 	register struct a {
@@ -51,6 +53,7 @@ dup()
 	dupit(j, fp, u.u_pofile[uap->i] &~ UF_EXCLOSE);
 }
 
+void
 dup2()
 {
 	register struct a {
@@ -74,6 +77,7 @@ dup2()
 	dupit(uap->j, fp, u.u_pofile[uap->i] &~ UF_EXCLOSE);
 }
 
+void
 dupit(fd, fp, flags)
 	register int fd;
 	register struct file *fp;
@@ -90,6 +94,7 @@ dupit(fd, fp, flags)
 /*
  * The file control system call.
  */
+void
 fcntl()
 {
 	register struct file *fp;
@@ -153,6 +158,7 @@ fcntl()
 	}
 }
 
+int
 fset(fp, bit, value)
 register struct file *fp;
 	int bit, value;
@@ -166,6 +172,7 @@ register struct file *fp;
 			(caddr_t)&value));
 }
 
+int
 fgetown(fp, valuep)
 	register struct file *fp;
 	register int *valuep;
@@ -183,6 +190,7 @@ fgetown(fp, valuep)
 	return (error);
 }
 
+int
 fsetown(fp, value)
 	register struct file *fp;
 	int value;
@@ -206,6 +214,7 @@ fsetown(fp, value)
 
 extern	struct	fileops	*Fops[];
 
+int
 fioctl(fp, cmd, value)
 register struct file *fp;
 	u_int cmd;
@@ -215,6 +224,7 @@ register struct file *fp;
 	return ((*Fops[fp->f_type]->fo_ioctl)(fp, cmd, value));
 }
 
+void
 close()
 {
 	register struct a {
@@ -230,6 +240,7 @@ close()
 	/* WHAT IF u.u_error ? */
 }
 
+void
 fstat()
 {
 	register struct file *fp;
@@ -269,6 +280,7 @@ fstat()
 /*
  * Allocate a user file descriptor.
  */
+static int
 ufalloc(i)
 	register int i;
 {
@@ -344,6 +356,7 @@ getf(f)
  * Internal form of close.
  * Decrement reference count on file structure.
  */
+int
 closef(fp)
 	register struct file *fp;
 {
@@ -367,6 +380,7 @@ closef(fp)
 /*
  * Apply an advisory lock on a file descriptor.
  */
+void
 flock()
 {
 	register struct a {
@@ -407,6 +421,7 @@ flock()
  * references to this file will be direct to the other driver.
  */
 /* ARGSUSED */
+int
 fdopen(dev, mode, type)
 	dev_t dev;
 	int mode, type;
@@ -427,6 +442,7 @@ fdopen(dev, mode, type)
 /*
  * Duplicate the specified descriptor to a free descriptor.
  */
+int
 dupfdopen(indx, dfd, mode, error)
 	register int indx, dfd;
 	int mode;

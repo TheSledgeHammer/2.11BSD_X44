@@ -56,6 +56,7 @@ int	npty = NPTY;		/* for pstat -t */
 #define PF_UCNTL	0x80		/* user control mode */
 
 /*ARGSUSED*/
+int
 ptsopen(dev, flag)
 	dev_t dev;
 {
@@ -85,6 +86,7 @@ ptsopen(dev, flag)
 	return (error);
 }
 
+int
 ptsclose(dev, flag)
 	dev_t dev;
 	int flag;
@@ -96,7 +98,7 @@ ptsclose(dev, flag)
 	ttyclose(tp);
 	ptcwakeup(tp, FREAD|FWRITE);
 }
-
+int
 ptsread(dev, uio, flag)
 	dev_t dev;
 	register struct uio *uio;
@@ -143,6 +145,7 @@ again:
  * Wakeups of controlling tty will happen
  * indirectly, when tty driver calls ptsstart.
  */
+int
 ptswrite(dev, uio, flag)
 	dev_t dev;
 	register struct uio *uio;
@@ -160,6 +163,7 @@ ptswrite(dev, uio, flag)
  * Start output on pseudo-tty.
  * Wake up process selecting or sleeping for input from controlling tty.
  */
+void
 ptsstart(tp)
 	struct tty *tp;
 {
@@ -174,6 +178,7 @@ ptsstart(tp)
 	ptcwakeup(tp, FREAD);
 }
 
+void
 ptcwakeup(tp, flag)
 	struct tty *tp;
 {
@@ -198,6 +203,7 @@ ptcwakeup(tp, flag)
 }
 
 /*ARGSUSED*/
+int
 ptcopen(dev, flag)
 	dev_t dev;
 	int flag;
@@ -219,6 +225,7 @@ ptcopen(dev, flag)
 	return (0);
 }
 
+int
 ptcclose(dev, flag)
 	dev_t dev;
 	int flag;
@@ -231,6 +238,7 @@ ptcclose(dev, flag)
 	tp->t_oproc = 0;		/* mark closed */
 }
 
+int
 ptcread(dev, uio, flag)
 	dev_t dev;
 	register struct uio *uio;
@@ -294,6 +302,7 @@ ptcread(dev, uio, flag)
 	return (error);
 }
 
+void
 ptsstop(tp, flush)
 	register struct tty *tp;
 	int flush;
@@ -317,6 +326,7 @@ ptsstop(tp, flush)
 	ptcwakeup(tp, flag);
 }
 
+int
 ptcselect(dev, rw)
 	dev_t dev;
 	int rw;
@@ -378,6 +388,7 @@ ptcselect(dev, rw)
 	return (0);
 }
 
+int
 ptcwrite(dev, uio, flag)
 	dev_t dev;
 	register struct uio *uio;
@@ -462,6 +473,7 @@ block:
 }
 
 /*ARGSUSED*/
+int
 ptyioctl(dev, cmd, data, flag)
 	caddr_t data;
 	u_int cmd;

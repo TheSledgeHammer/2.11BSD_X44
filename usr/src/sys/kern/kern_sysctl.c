@@ -53,10 +53,11 @@
 #include <sys/tty.h>
 #include <vm/vm.h>
 #include <sys/map.h>
-#include <machine/seg.h>
 #include <sys/sysctl.h>
 #include <machine/cpu.h>
 #include <sys/conf.h>
+
+//#include <machine/seg.h>
 
 sysctlfn kern_sysctl;
 sysctlfn hw_sysctl;
@@ -175,6 +176,7 @@ __sysctl()
 /*
  * kernel related system variables.
  */
+int
 kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	int *name;
 	u_int namelen;
@@ -279,6 +281,7 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 /*
  * hardware related system variables.
  */
+int
 hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	int *name;
 	u_int namelen;
@@ -474,6 +477,7 @@ vm_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
  * Validate parameters and get old / set new parameters
  * for an integer-valued sysctl function.
  */
+int
 sysctl_int(oldp, oldlenp, newp, newlen, valp)
 	void *oldp;
 	size_t *oldlenp;
@@ -498,6 +502,7 @@ sysctl_int(oldp, oldlenp, newp, newlen, valp)
 /*
  * As above, but read-only.
  */
+int
 sysctl_rdint(oldp, oldlenp, newp, val)
 	void *oldp;
 	size_t *oldlenp;
@@ -520,6 +525,7 @@ sysctl_rdint(oldp, oldlenp, newp, val)
  * Validate parameters and get old / set new parameters
  * for an long-valued sysctl function.
  */
+int
 sysctl_long(oldp, oldlenp, newp, newlen, valp)
 	void *oldp;
 	size_t *oldlenp;
@@ -544,6 +550,7 @@ sysctl_long(oldp, oldlenp, newp, newlen, valp)
 /*
  * As above, but read-only.
  */
+int
 sysctl_rdlong(oldp, oldlenp, newp, val)
 	void *oldp;
 	size_t *oldlenp;
@@ -566,6 +573,7 @@ sysctl_rdlong(oldp, oldlenp, newp, val)
  * Validate parameters and get old / set new parameters
  * for a string-valued sysctl function.
  */
+int
 sysctl_string(oldp, oldlenp, newp, newlen, str, maxlen)
 	void *oldp;
 	size_t *oldlenp;
@@ -595,6 +603,7 @@ sysctl_string(oldp, oldlenp, newp, newlen, str, maxlen)
 /*
  * As above, but read-only.
  */
+int
 sysctl_rdstring(oldp, oldlenp, newp, str)
 	void *oldp;
 	size_t *oldlenp;
@@ -618,6 +627,7 @@ sysctl_rdstring(oldp, oldlenp, newp, str)
  * Validate parameters and get old / set new parameters
  * for a structure oriented sysctl function.
  */
+int
 sysctl_struct(oldp, oldlenp, newp, newlen, sp, len)
 	void *oldp;
 	size_t *oldlenp;
@@ -645,6 +655,7 @@ sysctl_struct(oldp, oldlenp, newp, newlen, sp, len)
  * Validate parameters and get old parameters
  * for a structure oriented sysctl function.
  */
+int
 sysctl_rdstruct(oldp, oldlenp, newp, sp, len)
 	void *oldp;
 	size_t *oldlenp;
@@ -666,6 +677,7 @@ sysctl_rdstruct(oldp, oldlenp, newp, sp, len)
 /*
  * Get file structures.
  */
+int
 sysctl_file(where, sizep)
 	char *where;
 	size_t *sizep;
@@ -739,6 +751,7 @@ sysctl_clockrate(where, sizep)
  * Copyout address of inode followed by inode.
  */
 /* ARGSUSED */
+int
 sysctl_inode(where, sizep)
 	char *where;
 	size_t *sizep;
@@ -832,7 +845,7 @@ sysctl_text(where, sizep)
  * try over estimating by 5 procs
  */
 #define KERN_PROCSLOP	(5 * sizeof (struct kinfo_proc))
-
+int
 sysctl_doproc(name, namelen, where, sizep)
 	int *name;
 	u_int namelen;
@@ -964,7 +977,7 @@ fill_eproc(p, ep)
  * XXX - will break (and badly).  At the present time (97/9/2) the u area
  * XXX - is 856 bytes long.
 */
-
+void
 fill_from_u(p, rup, ttp, tdp)
 	struct	proc	*p;
 	uid_t	*rup;
@@ -986,11 +999,9 @@ fill_from_u(p, rup, ttp, tdp)
 		}
 	if	(p->p_flag & SLOAD)
 		{
-		mapseg5(p->p_addr, (((USIZE - 1) << 8) | RO));
 		ttyd = ((struct user *)SEG5)->u_ttyd;
 		ttyp = ((struct user *)SEG5)->u_ttyp;
 		ruid = ((struct user *)SEG5)->u_ruid;
-		normalseg5();
 		}
 	else
 		{

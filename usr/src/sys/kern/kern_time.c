@@ -18,7 +18,7 @@
  * These routines provide the kernel entry points to get and set
  * the time-of-day.
  */
-
+void
 gettimeofday()
 {
 	register struct a {
@@ -46,6 +46,7 @@ gettimeofday()
  			sizeof (tz));
 }
 
+void
 settimeofday()
 {
 	register struct a {
@@ -72,6 +73,7 @@ settimeofday()
 	}
 }
 
+static void
 setthetime(tv)
 	register struct timeval *tv;
 	{
@@ -110,6 +112,7 @@ setthetime(tv)
 #endif
 	}
 
+void
 adjtime()
 {
 	register struct a {
@@ -153,6 +156,7 @@ adjtime()
 	    sizeof (struct timeval));
 }
 
+void
 getitimer()
 {
 	register struct a {
@@ -186,6 +190,7 @@ getitimer()
 	    sizeof (struct itimerval));
 }
 
+void
 setitimer()
 {
 	register struct a {
@@ -241,6 +246,7 @@ setitimer()
  * fix it to have at least minimal value (i.e. if it is less
  * than the resolution of the clock, round it up.)
  */
+int
 itimerfix(tv)
 	struct timeval *tv;
 {
@@ -306,6 +312,7 @@ expire:
  * it just gets very confused in this case.
  * Caveat emptor.
  */
+void
 timevaladd(t1, t2)
 	struct timeval *t1, *t2;
 {
@@ -316,6 +323,7 @@ timevaladd(t1, t2)
 }
 
 #ifdef NOT_CURRENTLY_IN_USE
+void
 timevalsub(t1, t2)
 	struct timeval *t1, *t2;
 {
@@ -326,6 +334,7 @@ timevalsub(t1, t2)
 }
 #endif
 
+static void
 timevalfix(t1)
 	struct timeval *t1;
 {

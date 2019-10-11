@@ -7,14 +7,13 @@
  */
 
 #include <sys/param.h>
-#include <machine/seg.h>
-
 #include <sys/systm.h>
 #include <sys/user.h>
 #include <sys/buf.h>
 #include <sys/uio.h>
 
 /* copied, for supervisory networking, to sys_net.c */
+int
 uiomove(cp, n, uio)
 	caddr_t cp;
 	u_int n;
@@ -86,6 +85,7 @@ uiomove(cp, n, uio)
 /*
  * Give next character to user as result of read.
  */
+int
 ureadc(c, uio)
 	register int c;
 	register struct uio *uio;
@@ -128,6 +128,7 @@ again:
 /*
  * Get next character written in by user from uio.
  */
+int
 uwritec(uio)
 	register struct uio *uio;
 {
@@ -175,6 +176,7 @@ again:
  * language helper routine, fmove, uses segment register 6 to map in the
  * user's memory.
  */
+void
 uiofmove(cp, n, uio, iov)
 	caddr_t cp;
 	register int n;

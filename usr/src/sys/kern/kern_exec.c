@@ -7,9 +7,6 @@
  */
 
 #include <sys/param.h>
-#include <machine/reg.h>
-#include <machine/seg.h>
-
 #include <sys/systm.h>
 #include <sys/map.h>
 #include <sys/user.h>
@@ -34,12 +31,14 @@ struct execa {
 	char	**envp;
 };
 
+void
 execv()
 {
 	((struct execa *)u.u_ap)->envp = NULL;
 	execve();
 }
 
+void
 execve()
 {
 	int nc;
@@ -427,6 +426,7 @@ execsigs(p)
  * Read in and set up memory for executed file.
  * u.u_error set on error
  */
+void
 getxfile(ip, ep, nargc, uid, gid)
 	struct inode *ip;
 	register struct exec *ep;

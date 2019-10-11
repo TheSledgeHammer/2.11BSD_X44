@@ -16,7 +16,7 @@
 /*
  * Resource controls and accounting.
  */
-
+void
 getpriority()
 {
 	register struct a {
@@ -69,6 +69,7 @@ getpriority()
 	u.u_r.r_val1 = low;
 }
 
+void
 setpriority()
 {
 	register struct a {
@@ -120,6 +121,7 @@ setpriority()
 		u.u_error = ESRCH;
 }
 
+static void
 donice(p, n)
 	register struct proc *p;
 	register int n;
@@ -141,6 +143,7 @@ donice(p, n)
 	p->p_nice = n;
 }
 
+void
 setrlimit()
 {
 	register struct a {
@@ -180,6 +183,7 @@ setrlimit()
 	*alimp = alim;
 }
 
+void
 getrlimit()
 {
 	register struct a {
@@ -206,6 +210,7 @@ getrlimit()
 	    (caddr_t)uap->rlp,sizeof (struct rlimit));
 }
 
+void
 getrusage()
 {
 	register struct a {
@@ -234,6 +239,7 @@ getrusage()
 		sizeof (struct rusage));
 }
 
+void
 ruadd(ru, ru2)
 	struct k_rusage *ru, *ru2;
 {
@@ -252,6 +258,7 @@ ruadd(ru, ru2)
 /*
  * Convert an internal kernel rusage structure into a `real' rusage structure.
  */
+void
 rucvt(rup, krup)
 	register struct rusage		*rup;
 	register struct k_rusage	*krup;

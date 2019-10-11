@@ -7,9 +7,6 @@
  */
 
 #include <sys/param.h>
-#include <machine/psl.h>
-#include <machine/reg.h>
-
 #include <sys/systm.h>
 #include <sys/map.h>
 #include <sys/user.h>
@@ -19,16 +16,13 @@
 #include <sys/file.h>
 #include <sys/wait.h>
 #include <sys/kernel.h>
-#ifdef QUOTA
-#include <sys/quota.h>
-#endif
-#include <sys/ingres.h>
 
 extern	int	Acctopen;	/* kern_acct.c */
 
 /*
  * exit system call: pass back caller's arg
  */
+void
 rexit()
 {
 	register struct a {
@@ -45,6 +39,7 @@ rexit()
  * list.  Save exit status and rusage for wait4().
  * Check for child processes and orphan them.
  */
+void
 exit(rv)
 {
 	register int i;
@@ -76,11 +71,6 @@ exit(rv)
 	u.u_rlimit[RLIMIT_FSIZE].rlim_cur = RLIM_INFINITY;
 	if	(Acctopen)
 		(void) acct();
-#ifdef QUOTA
-	QUOTAMAP();
-	qclean();
-	QUOTAUNMAP();
-#endif
 	/*
 	 * Freeing the user structure and kernel stack
 	 * for the current process: have to run a bit longer
@@ -104,10 +94,6 @@ exit(rv)
 	p->p_prev = &zombproc;
 	zombproc = p;
 	p->p_stat = SZOMB;
-
-#if	NINGRES > 0
-	ingres_rma(p->p_pid);		/* Remove any ingres locks */
-#endif
 
 	noproc = 1;
 	for (pp = &pidhash[PIDHASH(p->p_pid)]; *pp; pp = &(*pp)->p_hash)
@@ -164,6 +150,7 @@ again:
 		int compat;
 		};
 
+void
 wait4()
 {
 	int retval[2];
@@ -181,6 +168,7 @@ wait4()
  * Pass back status and make available for reuse the exited
  * child's proc structure.
  */
+static int
 wait1(q, uap, retval)
 	struct proc *q;
 	register struct args *uap;
@@ -277,6 +265,7 @@ loop:
  * during exit/exec(getxfile); must be called before xfree().  The child
  * must be locked in core so it will be in core when the parent runs.
  */
+void
 endvfork()
 {
 	register struct proc *rip, *rpp;

@@ -23,7 +23,7 @@
  */
 
 struct	callout {
-	int	c_time;		/* incremental time */
+	int	c_time;			/* incremental time */
 	caddr_t	c_arg;		/* argument to routine */
 	int	(*c_func)();	/* routine */
 	struct	callout *c_next;

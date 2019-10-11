@@ -26,6 +26,7 @@ extern	int	ino_ioctl();
  * Allocate an inode on the root device.  Allocate 2
  * file structures.  Put it all together with flags.
  */
+void
 pipe()
 {
 	register struct inode *ip;
@@ -86,6 +87,7 @@ pipe()
 	ip->i_flag = IACC|IUPD|ICHG|IPIPE;
 }
 
+int
 pipe_rw(fp, uio, flag)
 	register struct file *fp;
 	register struct uio *uio;
@@ -97,6 +99,7 @@ pipe_rw(fp, uio, flag)
 	return (writep(fp, uio, flag));
 }
 
+int
 readp(fp, uio, flag)
 	register struct file *fp;
 	register struct	uio *uio;
@@ -151,6 +154,7 @@ loop:
 	return (error);
 }
 
+int
 writep(fp, uio, flag)
 	struct file *fp;
 	register struct	uio *uio;
@@ -219,6 +223,7 @@ done:		IUNLOCK(ip);
 	goto loop;
 }
 
+int
 pipe_select(fp, which)
 	struct file *fp;
 	int which;
@@ -270,6 +275,7 @@ pipe_select(fp, which)
  * to the select wakeup processing.
 */
 
+int
 pipe_close(fp)
 	struct	file *fp;
 	{

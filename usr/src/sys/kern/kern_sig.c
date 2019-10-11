@@ -7,7 +7,6 @@
  */
 
 #include <sys/param.h>
-#include <machine/seg.h>
 #include <sys/systm.h>
 #include <sys/user.h>
 #include <sys/inode.h>
@@ -16,6 +15,8 @@
 #include <sys/namei.h>
 #include <sys/acct.h>
 #include <sys/signalvar.h>
+//#include <machine/seg.h>
+
 extern	char	sigprop[];	/* XXX - defined in kern_sig2.c */
 
 /*
@@ -34,6 +35,7 @@ extern	char	sigprop[];	/* XXX - defined in kern_sig2.c */
  * 1) either the real or effective user ids match OR 2) if the signal is 
  * SIGCONT and the target process is a descendant of the current process
 */
+static int
 cansignal(q, signum)
 	register struct proc *q;
 	int	signum;
@@ -55,6 +57,7 @@ cansignal(q, signum)
 /*
  * 4.3 Compatibility
 */
+void
 sigstack()
 	{
 	register struct a
@@ -82,6 +85,7 @@ out:
 	return(u.u_error = error);
 	}
 
+void
 kill()
 {
 	register struct a {
@@ -129,9 +133,10 @@ kill()
 		break;
 	}
 out:
-	return(u.u_error = error);
+	u.u_error = error;
 }
 
+void
 killpg()
 {
 	register struct a {
@@ -148,7 +153,7 @@ killpg()
 out:
 	return(u.u_error = error);
 }
-
+static int
 killpg1(signo, pgrp, all)
 	int signo, pgrp, all;
 {
@@ -184,6 +189,7 @@ killpg1(signo, pgrp, all)
  * all processes with 'pgrp' as
  * process group.
  */
+void
 gsignal(pgrp, sig)
 	register int pgrp;
 {
@@ -204,6 +210,7 @@ gsignal(pgrp, sig)
  * Send the specified signal to
  * the specified process.
  */
+void
 psignal(p, sig)
 	register struct proc *p;
 	register int sig;
@@ -394,6 +401,7 @@ out:
  *	while (signum = CURSIG(u.u_procp))
  *		postsig(signum);
  */
+void
 issignal(p)
 	register struct proc *p;
 {
@@ -539,6 +547,7 @@ issignal(p)
  * state and notify the parent via wakeup.
  * Signals are handled elsewhere.
  */
+void
 stop(p)
 	register struct proc *p;
 {
@@ -552,7 +561,7 @@ stop(p)
  * Take the action for the specified signal
  * from the current set of pending signals.
  */
-
+void
 postsig(sig)
 	int sig;
 {
@@ -615,6 +624,7 @@ postsig(sig)
  * user.h area followed by the entire
  * data+stack segments.
  */
+static int
 core()
 {
 	register struct inode *ip;

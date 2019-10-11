@@ -18,6 +18,7 @@
 #include <sys/conf.h>
 
 /*ARGSUSED*/
+int
 syopen(dev, flag)
 	dev_t dev;
 	int flag;
@@ -28,6 +29,7 @@ syopen(dev, flag)
 }
 
 /*ARGSUSED*/
+int
 syread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
@@ -39,6 +41,7 @@ syread(dev, uio, flag)
 }
 
 /*ARGSUSED*/
+int
 sywrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
@@ -49,6 +52,7 @@ sywrite(dev, uio, flag)
 }
 
 /*ARGSUSED*/
+int
 syioctl(dev, cmd, addr, flag)
 	dev_t dev;
 	u_int cmd;
@@ -67,6 +71,7 @@ syioctl(dev, cmd, addr, flag)
 }
 
 /*ARGSUSED*/
+int
 syselect(dev, flag)
 	dev_t dev;
 	int flag;

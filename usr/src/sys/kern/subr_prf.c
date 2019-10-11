@@ -8,7 +8,6 @@
 
 #include <sys/param.h>
 #include <sys/user.h>
-#include <machine/seg.h>
 #include <sys/buf.h>
 #include <sys/msgbuf.h>
 #include <sys/conf.h>
@@ -49,6 +48,7 @@ char	*panicstr;
  */
 
 /*VARARGS1*/
+void
 printf(fmt, x1)
 	char *fmt;
 	unsigned x1;
@@ -67,6 +67,7 @@ printf(fmt, x1)
  * was to be used at interrupt time.
  */
 /*VARARGS1*/
+void
 uprintf(fmt, x1)
 	char	*fmt;
 	unsigned x1;
@@ -87,6 +88,7 @@ uprintf(fmt, x1)
  * (does not sleep).
  */
 /*VARARGS2*/
+void
 tprintf(tp, fmt, x1)
 	register struct tty *tp;
 	char *fmt;
@@ -110,6 +112,7 @@ tprintf(tp, fmt, x1)
  * If there is no process reading the log yet, it writes to the console also.
  */
 /*VARARGS2*/
+void
 log(level, fmt, x1)
 	char *fmt;
 	unsigned x1;
@@ -124,6 +127,7 @@ log(level, fmt, x1)
 	logwakeup(logMSG);
 }
 
+static void
 logpri(level)
 	int level;
 {
@@ -133,6 +137,7 @@ logpri(level)
 	putchar('>', TOLOG, (struct tty *)0);
 }
 
+static void
 prf(fmt, adx, flags, ttyp)
 	register char *fmt;
 	register u_int *adx;
@@ -237,6 +242,7 @@ number:		printn((long)*adx, b, flags, ttyp);
  * Printn prints a number n in base b.
  * We don't use recursion to avoid deep kernels stacks.
  */
+void
 printn(n, b, flags, ttyp)
 	long n;
 	u_int b;
@@ -272,6 +278,7 @@ printn(n, b, flags, ttyp)
  * If we are called twice, then we avoid trying to
  * sync the disks as this often leads to recursive panics.
  */
+void
 panic(s)
 	char *s;
 {
@@ -289,6 +296,7 @@ panic(s)
 /*
  * Warn that a system table is full.
  */
+void
 tablefull(tab)
 	char *tab;
 {
@@ -299,6 +307,7 @@ tablefull(tab)
  * Hard error is the preface to plaintive error messages
  * about failing disk tranfers.
  */
+void
 harderr(bp, cp)
 	struct buf *bp;
 	char *cp;
@@ -312,6 +321,7 @@ harderr(bp, cp)
  * If destination is console then the last MSGBUFS characters
  * are saved in msgbuf for inspection later.
  */
+static void
 putchar(c, flags, tp)
 	int c, flags;
 	register struct tty *tp;

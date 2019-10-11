@@ -7,11 +7,15 @@
  */
 
 #ifdef KERNEL
+#include "types.h"
 #include "ttychars.h"
 #include "ttydev.h"
+#include "ioctl.h"
 #else
+#include <sys/types.h>
 #include <sys/ttychars.h>
 #include <sys/ttydev.h>
+#include <sys/ioctl.h>
 #endif
 
 /*
@@ -21,7 +25,7 @@
  * The routines in tty_subr.c manipulate these structures.
  */
 struct clist {
-	int	c_cc;		/* character count */
+	int	c_cc;			/* character count */
 	char	*c_cf;		/* pointer to first char */
 	char	*c_cl;		/* pointer to last char */
 };
@@ -39,6 +43,7 @@ struct tty {
 			struct	clist T_rawq;
 			struct	clist T_canq;
 		} t_t;
+
 #define	t_rawq	t_nu.t_t.T_rawq		/* raw characters or partial line */
 #define	t_canq	t_nu.t_t.T_canq		/* raw characters or partial line */
 		struct {
@@ -47,28 +52,30 @@ struct tty {
 			int	T_inbuf;
 			int	T_rec;
 		} t_n;
+
 #define	t_bufp	t_nu.t_n.T_bufp		/* buffer allocated to protocol */
 #define	t_cp	t_nu.t_n.T_cp		/* pointer into the ripped off buffer */
 #define	t_inbuf	t_nu.t_n.T_inbuf	/* number chars in the buffer */
 #define	t_rec	t_nu.t_n.T_rec		/* have a complete record */
 	} t_nu;
-	struct	clist t_outq;		/* device */
-	int	(*t_oproc)();		/* device */
-	struct	proc *t_rsel;		/* tty */
+
+	struct	clist t_outq;			/* device */
+	int	(*t_oproc)();				/* device */
+	struct	proc *t_rsel;			/* tty */
 	struct	proc *t_wsel;
-				caddr_t	T_LINEP;	/* ### */
-	caddr_t	t_addr;			/* ??? */
-	dev_t	t_dev;			/* device */
-	long	t_flags;		/* some of both */
-	long	t_state;		/* some of both */
-	short	t_pgrp;			/* tty */
-	char	t_delct;		/* tty */
-	char	t_line;			/* glue */
-	char	t_col;			/* tty */
-	char	t_ispeed, t_ospeed;	/* device */
-	char	t_rocount, t_rocol;	/* tty */
-	struct	ttychars t_chars;	/* tty */
-	struct	winsize t_winsize;	/* window size */
+	caddr_t	T_LINEP;				/* ### */
+	caddr_t	t_addr;					/* ??? */
+	dev_t	t_dev;					/* device */
+	long	t_flags;				/* some of both */
+	long	t_state;				/* some of both */
+	short	t_pgrp;					/* tty */
+	char	t_delct;				/* tty */
+	char	t_line;					/* glue */
+	char	t_col;					/* tty */
+	char	t_ispeed, t_ospeed;		/* device */
+	char	t_rocount, t_rocol;		/* tty */
+	struct	ttychars t_chars;		/* tty */
+	struct	winsize t_winsize;		/* window size */
 /* be careful of tchars & co. */
 #define	t_erase		t_chars.tc_erase
 #define	t_kill		t_chars.tc_kill

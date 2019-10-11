@@ -8,8 +8,7 @@
 
 #define	BSD	211		/* 2.11 * 10, as cpp doesn't do floats */
 
-//#include <sys/localopts.h>
-#include <sys/stddef.h>		/* for 'offsetof' */
+//#include <sys/stddef.h>		/* for 'offsetof' */
 
 /*
  * Machine type dependent parameters.
@@ -19,12 +18,12 @@
 /*
  * Machine-independent constants
  */
-#define	NMOUNT	6		/* number of mountable file systems */
-#define	MAXUPRC	20		/* max processes per user */
-#define	NOFILE	30		/* max open files per process */
-#define	CANBSIZ	256		/* max size of typewriter line */
+#define	NMOUNT	6			/* number of mountable file systems */
+#define	MAXUPRC	20			/* max processes per user */
+#define	NOFILE	30			/* max open files per process */
+#define	CANBSIZ	256			/* max size of typewriter line */
 #define	NCARGS	5120		/* # characters in exec arglist */
-#define	NGROUPS	16		/* max number groups */
+#define	NGROUPS	16			/* max number groups */
 
 #define	NOGROUP	65535		/* marker for empty group set member */
 
@@ -53,12 +52,12 @@
  */
 #include <sys/signal.h>
 
-#define	NBPW	sizeof(int)	/* number of bytes in an integer */
+#define	NBPW	sizeof(int)										/* number of bytes in an integer */
 
 #ifndef	NULL
 #define	NULL	0
 #endif
-#define	CMASK	026		/* default mask for file creation */
+#define	CMASK	026												/* default mask for file creation */
 #define	NODEV	(dev_t)(-1)
 
 #define	CLBYTES		(CLSIZE*NBPG)
@@ -72,8 +71,8 @@
 
 /* CBLOCK is the size of a clist block, must be power of 2 */
 #define	CBLOCK	32
-#define	CBSIZE	(CBLOCK - sizeof(struct cblock *))	/* data chars/clist */
-#define	CROUND	(CBLOCK - 1)				/* clist rounding */
+#define	CBSIZE	(CBLOCK - sizeof(struct cblock *))				/* data chars/clist */
+#define	CROUND	(CBLOCK - 1)									/* clist rounding */
 
 #include <sys/types.h>
 
@@ -118,7 +117,7 @@
 #define MAXHOSTNAMELEN	64
 
 #if defined(KERNEL) && defined(INET)
-#include "../machine/net_mac.h"
+#include <machine/net_mac.h>
 #endif
 
 /*

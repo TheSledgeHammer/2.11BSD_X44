@@ -21,28 +21,28 @@
  * minimize space allocated on the kernel stack.
  */
 struct nameidata {
-	caddr_t	ni_dirp;		/* pathname pointer */
-	short	ni_nameiop;		/* see below */
-	short	ni_error;		/* error return if any */
-	off_t	ni_endoff;		/* end of useful stuff in directory */
+	caddr_t	ni_dirp;			/* pathname pointer */
+	short	ni_nameiop;			/* see below */
+	short	ni_error;			/* error return if any */
+	off_t	ni_endoff;			/* end of useful stuff in directory */
 	struct	inode *ni_pdir;		/* inode of parent directory of dirp */
 	struct	inode *ni_ip;		/* inode of dirp */
 	enum	uio_seg	ni_segflg;	/* segment flag */
-	off_t	ni_offset;		/* offset in directory */
-	u_short	ni_count;		/* offset of open slot (off_t?) */
+	off_t	ni_offset;			/* offset in directory */
+	u_short	ni_count;			/* offset of open slot (off_t?) */
 	struct	direct ni_dent;		/* current directory entry */
 };
 
 /*
  * namei operations and modifiers
  */
-#define	LOOKUP		0	/* perform name lookup only */
-#define	CREATE		1	/* setup for file creation */
-#define	DELETE		2	/* setup for file deletion */
+#define	LOOKUP		0		/* perform name lookup only */
+#define	CREATE		1		/* setup for file creation */
+#define	DELETE		2		/* setup for file deletion */
 #define	LOCKPARENT	0x10	/* see the top of namei */
 #define NOCACHE		0x20	/* name must not be left in cache */
 #define FOLLOW		0x40	/* follow symbolic links */
-#define	NOFOLLOW	0x0	/* don't follow symbolic links (pseudo) */
+#define	NOFOLLOW	0x0		/* don't follow symbolic links (pseudo) */
 
 #define	NDINIT(ndp,op,flags,segflg,namep) {\
 	(ndp)->ni_nameiop = op | flags; \

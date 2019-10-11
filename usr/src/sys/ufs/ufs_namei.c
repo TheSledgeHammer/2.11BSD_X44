@@ -143,7 +143,6 @@ register int i;
 	int flag;			/* op ie, LOOKUP, CREATE, or DELETE */
 	off_t enduseful;		/* pointer past last used dir slot */
 	char	path[MAXPATHLEN];	/* current path */
-	segm	seg5;			/* save area for kernel seg5 */
 
 	lockparent = ndp->ni_nameiop & LOCKPARENT;
 	docache = (ndp->ni_nameiop & NOCACHE) ^ NOCACHE;
@@ -245,8 +244,7 @@ dirloop2:
 	 * holding long names (which would either waste space, or
 	 * add greatly to the complexity).
 	 */
-	saveseg5(seg5);
-	mapseg5(nmidesc.se_addr, nmidesc.se_desc);
+
 	if (ndp->ni_dent.d_namlen > NCHNAMLEN) {
 		nchstats.ncs_long++;
 		makeentry = 0;

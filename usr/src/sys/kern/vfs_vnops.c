@@ -62,6 +62,7 @@
  * Check permissions, and call the VOP_OPEN (openi for 2.11) or VOP_CREATE 
  * (maknode) routine.
  */
+int
 vn_open(ndp, fmode, cmode)
 	register struct nameidata *ndp;
 	int fmode, cmode;
@@ -183,6 +184,8 @@ retuerr:
  * while vn_closefile (called from the closef routine for DTYPE_INODE inodes) 
  * takes a "file *" and extracts the flags from the file structure.
  */
+
+int
 vn_close(ip, flags)
 	register struct inode *ip;
 	int flags;
@@ -205,6 +208,8 @@ vn_close(ip, flags)
  * writecheck counting we can skip the overhead of nesting another level down
  * and call closei() and irele() ourself.
  */
+
+int
 vn_closefile(fp)
 	register struct file *fp;
 	{

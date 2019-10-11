@@ -7,9 +7,9 @@
  */
 
 #include <sys/param.h>
-#include <machine/psl.h>
-#include <machine/reg.h>
-#include <machine/seg.h>
+//#include <machine/psl.h>
+//#include <machine/reg.h>
+//#include <machine/seg.h>
 
 #include <sys/systm.h>
 #include <sys/user.h>
@@ -38,6 +38,7 @@ struct
 /*
  * sys-trace system call.
  */
+void
 ptrace()
 {
 	register struct proc *p;
@@ -81,6 +82,7 @@ ptrace()
  * executes to implement the command
  * of the parent process in tracing.
  */
+int
 procxmt()
 {
 	register int i;

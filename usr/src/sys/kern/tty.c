@@ -108,6 +108,7 @@ extern	char	*nextc();
 extern	int	nldisp;
 extern	int	wakeup();
 
+void
 ttychars(tp)
 	struct tty *tp;
 {
@@ -120,6 +121,7 @@ ttychars(tp)
  * called from driver start routine (dhvstart, etc) after a transmit done
  * interrupt.  If t_outq.c_cc <= t_lowat then do the wakeup.
 */
+void
 ttyowake(tp)
 	register struct tty *tp;
 	{
@@ -143,6 +145,7 @@ ttyowake(tp)
 /*
  * Wait for output to drain, then flush input waiting.
  */
+void
 ttywflush(tp)
 	register struct tty *tp;
 {
@@ -151,6 +154,7 @@ ttywflush(tp)
 	ttyflush(tp, FREAD);
 }
 
+void
 ttywait(tp)
 	register struct tty *tp;
 {
@@ -176,6 +180,7 @@ ttywait(tp)
 /*
  * Flush all TTY queues
  */
+void
 ttyflush(tp, rw)
 	register struct tty *tp;
 {
@@ -212,6 +217,7 @@ static	int	rts = TIOCM_RTS;
 /*
  * Send stop character on input overflow.
  */
+void
 ttyblock(tp)
 	register struct tty *tp;
 	{
@@ -249,6 +255,7 @@ ttyblock(tp)
 		}
 	}
 
+void
 ttyunblock(tp)
 	register struct tty *tp;
 	{
@@ -273,6 +280,7 @@ ttyunblock(tp)
  * The name of the routine is passed to the timeout
  * subroutine and it is called during a clock interrupt.
  */
+void
 ttrstrt(tp)
 	register struct tty *tp;
 {
@@ -289,6 +297,7 @@ ttrstrt(tp)
  *
  * The spl calls were removed because the priority should already be spltty.
  */
+void
 ttstart(tp)
 	register struct tty *tp;
 	{
@@ -301,6 +310,7 @@ ttstart(tp)
  * Common code for tty ioctls.
  */
 /*ARGSUSED*/
+int
 ttioctl(tp, com, data, flag)
 	register struct tty *tp;
 	u_int com;
@@ -573,6 +583,7 @@ ttioctl(tp, com, data, flag)
 	return (0);
 }
 
+static int
 ttnread(tp)
 	register struct tty *tp;
 {
@@ -603,6 +614,7 @@ ttselect(dev, rw)
 	return(ttyselect(tp,rw));
 	}
 
+int
 ttyselect(tp,rw)
 	register struct tty *tp;
 	int	rw;
@@ -643,6 +655,7 @@ win:
  * Establish a process group for distribution of
  * quits and interrupts from the tty.
  */
+int
 ttyopen(dev, tp)
 	dev_t dev;
 	register struct tty *tp;
@@ -671,6 +684,7 @@ ttyopen(dev, tp)
 /*
  * "close" a line discipline
  */
+
 ttylclose(tp, flag)
 	register struct tty *tp;
 	int flag;
@@ -692,6 +706,7 @@ ttylclose(tp, flag)
 /*
  * clean tp on last close
  */
+void
 ttyclose(tp)
 	register struct tty *tp;
 {
@@ -706,6 +721,7 @@ ttyclose(tp)
  * Flag indicates new state of carrier.
  * Returns 0 if the line should be turned off, otherwise 1.
  */
+int
 ttymodem(tp, flag)
 	register struct tty *tp;
 	int flag;
@@ -749,6 +765,7 @@ ttymodem(tp, flag)
  * Default modem control routine (for other line disciplines).
  * Return argument flag, to turn off device on carrier drop.
  */
+int
 nullmodem(tp, flag)
 	register struct tty *tp;
 	int flag;
@@ -765,6 +782,7 @@ nullmodem(tp, flag)
  * reinput pending characters after state switch
  * call at spltty().
  */
+static void
 ttypend(tp)
 	register struct tty *tp;
 {
@@ -1133,6 +1151,7 @@ ttyoutput(c, tp)
  * Called from device's read routine after it has
  * calculated the tty-structure given as argument.
  */
+int
 ttread(tp, uio, flag)
 	register struct tty *tp;
 	struct uio *uio;
@@ -1528,19 +1547,8 @@ ttyrub(c, tp)
 			tp->t_flags |= FLUSHO;
 			tp->t_col = tp->t_rocol;
 			cp = tp->t_rawq.c_cf;
-#ifdef UCB_CLIST
-			{
-			char store;
-
-			if (cp)
-				store = lookc(cp);
-			for (; cp; cp = nextc(&tp->t_rawq, cp, &store))
-				ttyecho(store, tp);
-			}
-#else
 			for (; cp; cp = nextc(&tp->t_rawq, cp))
 				ttyecho(*cp, tp);
-#endif
 			tp->t_flags &= ~FLUSHO;
 			tp->t_state &= ~TS_CNTTB;
 			splx(s);
@@ -1573,6 +1581,7 @@ ttyrub(c, tp)
  * Crt back over cnt chars perhaps
  * erasing them.
  */
+static void
 ttyrubo(tp, cnt)
 	register struct tty *tp;
 	register int cnt;
@@ -1587,6 +1596,7 @@ ttyrubo(tp, cnt)
  * Reprint the rawq line.
  * We assume c_cc has already been checked.
  */
+static void
 ttyretype(tp)
 	register struct tty *tp;
 {
@@ -1597,25 +1607,10 @@ ttyretype(tp)
 		ttyecho(tp->t_rprntc, tp);
 	(void) ttyoutput('\n', tp);
 	s = spltty();
-#ifdef UCB_CLIST
-	{
-	char store;
-
-	if (cp = tp->t_canq.c_cf)
-		store = lookc(cp);
-	for (; cp; cp = nextc(&tp->t_canq, cp, &store))
-		ttyecho(store, tp);
-	if (cp = tp->t_rawq.c_cf)
-		store = lookc(cp);
-	for (; cp; cp = nextc(&tp->t_rawq, cp, &store))
-		ttyecho(store, tp);
-	}
-#else
 	for (cp = tp->t_canq.c_cf; cp; cp = nextc(&tp->t_canq, cp))
 		ttyecho(*cp, tp);
 	for (cp = tp->t_rawq.c_cf; cp; cp = nextc(&tp->t_rawq, cp))
 		ttyecho(*cp, tp);
-#endif
 	tp->t_state &= ~TS_ERASE;
 	splx(s);
 	tp->t_rocount = tp->t_rawq.c_cc;
@@ -1625,6 +1620,7 @@ ttyretype(tp)
 /*
  * Echo a typed character to the terminal
  */
+static void
 ttyecho(c, tp)
 	register int c;
 	register struct tty *tp;
@@ -1659,6 +1655,7 @@ ttyecho(c, tp)
 /*
  * Is c a break char for tp?
  */
+int
 ttbreakc(c, tp)
 	register int c;
 	register struct tty *tp;
@@ -1670,6 +1667,7 @@ ttbreakc(c, tp)
 /*
  * send string cp to tp
  */
+void
 ttyout(cp, tp)
 	register char *cp;
 	register struct tty *tp;
@@ -1680,6 +1678,7 @@ ttyout(cp, tp)
 		(void) ttyoutput(c, tp);
 }
 
+void
 ttwakeup(tp)
 	register struct tty *tp;
 {
