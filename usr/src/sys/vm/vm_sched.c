@@ -31,6 +31,7 @@ int	maxslp = MAXSLP;
  * It is awakened when the core situation changes and in any case once per
  * second.
  */
+void
 sched()
 {
 	register struct proc *rp;
@@ -158,6 +159,7 @@ sched()
 /*
  * Count up various things once a second
  */
+void
 vmmeter()
 {
 #ifdef UCB_METER
@@ -188,6 +190,7 @@ vmmeter()
 	}
 }
 
+void
 vmtotal()
 {
 	register struct proc *p;
@@ -343,6 +346,7 @@ long cexp[3] = {
 	0376,	/* 256 * exp(-1/180) */
 };
 
+static void
 loadav(avg, n)
 	register short	*avg;
 	register int	n;

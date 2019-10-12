@@ -7,8 +7,6 @@
  */
 
 #include <sys/param.h>
-#include <machine/seg.h>
-
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/buf.h>
@@ -21,6 +19,7 @@
 /*
  * swap I/O
  */
+void
 swap(blkno, coreaddr, count, rdflg)
 	memaddr blkno, coreaddr;
 	register int count;
@@ -120,6 +119,7 @@ swkill(p, rout)
  * raw read&write routines , systems had been running fine for several
  * months with it ifdef'd out.  9/91-sms
  */
+int
 physio(strat, bp, dev, rw, uio)
 	int (*strat)();
 	register struct buf *bp;
@@ -212,6 +212,7 @@ physio(strat, bp, dev, rw, uio)
 	return(error);
 }
 
+int
 rawrw(dev, uio, flag)
 	dev_t dev;
 	register struct uio *uio;

@@ -38,23 +38,14 @@ struct mapent {
 };
 
 #ifdef KERNEL
-extern struct map coremap[];	/* space for core allocation */
-extern struct map swapmap[];	/* space for swap allocation */
-
-/*
- * Allocate units from the given map.
- */
-size_t malloc (struct map *mp, size_t nbytes);
-
-/*
- * Free the previously allocated units at addr into the specified map.
- */
-void mfree (struct map *mp, size_t nbytes, size_t addr);
-
-/*
- * Allocate resources for the three segments of a process.
- */
-size_t malloc3 (struct map *mp, size_t d_size, size_t s_size, size_t u_size, size_t a[3]);
+#define	ARGMAPSIZE	16
+struct map *kmemmap, *mbmap;
+int	nswapmap;
+extern struct map coremap[];																/* space for core allocation */
+extern struct map swapmap[];																/* space for swap allocation */
+size_t malloc (struct map *mp, size_t nbytes); 												/* Allocate units from the given map. */
+void mfree (struct map *mp, size_t nbytes, size_t addr); 									/* Free the previously allocated units at addr into the specified map.*/
+size_t malloc3 (struct map *mp, size_t d_size, size_t s_size, size_t u_size, size_t a[3]);	/* Allocate resources for the three segments of a process.*/
 #else
 extern struct map coremap[];	/* space for core allocation */
 extern struct map swapmap[];	/* space for swap allocation */

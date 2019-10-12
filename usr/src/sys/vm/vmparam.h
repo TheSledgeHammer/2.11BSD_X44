@@ -9,12 +9,10 @@
 /*
  * Machine dependent constants
  */
-#ifdef KERNEL
-#include "../machine/vmparam.h"
-#else
+#ifndef	_VMPARAM_
+#define	_VMPARAM_
 #include <machine/vmparam.h>
 #endif
-
 /*
  * CTL_VM identifiers
  */

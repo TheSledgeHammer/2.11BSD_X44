@@ -37,10 +37,10 @@
 #include <sys/proc.h>
 #include <sys/map.h>
 #include <sys/kernel.h>
-#include <sys/malloc.h>
 
 #include <vm/vm.h>
-//#include <vm/vm_kern.h>
+#include <additions/malloc.h>
+#include <additions/vm_kern.h>
 
 struct kmembuckets bucket[MINBUCKET + 16];
 struct kmemstats kmemstats[M_LAST];

@@ -6,8 +6,11 @@
  *	@(#)systm.h	1.3 (2.11BSD GTE) 1996/5/9
  */
 
-#ifndef SUPERVISOR
+//#ifndef SUPERVISOR
+#ifndef _SYS_SYSTM_H_
+#define	_SYS_SYSTM_H_
 
+#include <machine/cpufunc.h>
 /*
  * The `securelevel' variable controls the security level of the system.
  * It can only be decreased by process 1 (/sbin/init).
@@ -36,67 +39,70 @@
  * patched by a stalking hacker.
  */
 extern int securelevel;		/* system security level */
+extern const char *panicstr;/* panic message */
+extern char version[];		/* system version */
 
-extern	char version[];		/* system version */
+extern int nblkdev;			/* number of entries in bdevsw */
+extern int nchrdev;			/* number of entries in cdevsw */
+extern int nswdev;			/* number of swap devices */
+extern int nswap;			/* size of swap space */
 
-/*
- * Nblkdev is the number of entries (rows) in the block switch.
- * Used in bounds checking on major device numbers.
- */
-int	nblkdev;
+extern int boothowto;		/* reboot flags, from boot */
+extern int selwait;			/* select timeout address */
 
-/*
- * Number of character switch entries.
- */
-int	nchrdev;
+extern int maxmem;			/* actual max memory per process */
+extern int physmem;			/* physical memory */
 
-int	mpid;				/* generic for unique process id's */
-char	runin;			/* scheduling flag */
-char	runout;			/* scheduling flag */
-int	runrun;				/* scheduling flag */
-char	curpri;			/* more scheduling */
+extern dev_t rootdev;		/* device of the root */
+extern dev_t dumpdev;		/* device to take dumps on */
+extern long	dumplo;			/* offset into dumpdev */
+extern dev_t swapdev;		/* swapping device */
+extern dev_t pipedev;		/* pipe device */
+extern int	nodev();		/* no device function used in bdevsw/cdevsw */
 
-u_int	maxmem;			/* actual max memory per process */
+extern int	mpid;			/* generic for unique process id's */
+extern char	runin;			/* scheduling flag */
+extern char	runout;			/* scheduling flag */
+extern int	runrun;			/* scheduling flag */
+extern char	curpri;			/* more scheduling */
 
-u_int	nswap;			/* size of swap space */
 int	updlock;			/* lock for sync */
 daddr_t	rablock;		/* block to be read ahead */
-dev_t	rootdev;		/* device of the root */
-dev_t	dumpdev;		/* device to take dumps on */
-long	dumplo;			/* offset into dumpdev */
-dev_t	swapdev;		/* swapping device */
-dev_t	pipedev;		/* pipe device */
-int	nodev();			/* no device function used in bdevsw/cdevsw */
 
 extern	int icode[];	/* user init code */
 extern	int szicode;	/* its size */
 
 daddr_t	bmap();
 
-ubadr_t	clstaddr;		/* UNIBUS virtual address of clists */
-
-extern int	cputype;	/* type of cpu = 40, 44, 45, 60, or 70 */
-
 /*
  * Structure of the system-entry table
  */
 extern struct sysent
 {
-	char	sy_narg;	/* total number of arguments */
-	int	(*sy_call)();	/* handler */
+	char	sy_narg;		/* total number of arguments */
+	int		(*sy_call)();	/* handler */
 } sysent[];
 
 int	noproc;				/* no one is running just now */
-char	*panicstr;
-int	boothowto;			/* reboot flags, from boot */
-int	selwait;
 
 /* casts to keep lint happy */
-#ifdef lint
 #define	insque(q,p)	_insque((caddr_t)q,(caddr_t)p)
 #define	remque(q)	_remque((caddr_t)q)
-#endif
 
 extern	bool_t	sep_id;		/* separate I/D */
 extern	char	regloc[];	/* offsets of saved user registers (trap.c) */
+
+/* Initialize the world */
+extern void startup();
+extern void cinit();
+extern void pqinit();
+extern void xinit();
+extern void ihinit();
+extern void bhinit();
+extern void binit();
+extern void ubinit();
+extern void nchinit();
+extern void clkstart();
+
 #endif
+//#endif

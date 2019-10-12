@@ -1,6 +1,9 @@
-/*
- * Copyright (c) 1987, 1991, 1993
+/* 
+ * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * The Mach Operating System project at Carnegie-Mellon University.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,63 +33,40 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)endian.h	8.1 (Berkeley) 6/11/93
+ *	@(#)vm_kern.h	8.1 (Berkeley) 6/11/93
+ *
+ *
+ * Copyright (c) 1987, 1990 Carnegie-Mellon University.
+ * All rights reserved.
+ *
+ * Authors: Avadis Tevanian, Jr., Michael Wayne Young
+ * 
+ * Permission to use, copy, modify and distribute this software and
+ * its documentation is hereby granted, provided that both the copyright
+ * notice and this permission notice appear in all copies of the
+ * software, derivative works or modified versions, and any portions
+ * thereof, and that both notices appear in supporting documentation.
+ * 
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS" 
+ * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND 
+ * FOR ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
+ * 
+ * Carnegie Mellon requests users of this software to return to
+ *
+ *  Software Distribution Coordinator  or  Software.Distribution@CS.CMU.EDU
+ *  School of Computer Science
+ *  Carnegie Mellon University
+ *  Pittsburgh PA 15213-3890
+ *
+ * any improvements or extensions that they make and grant Carnegie the
+ * rights to redistribute these changes.
  */
 
-#ifndef _ENDIAN_H_
-#define	_ENDIAN_H_
+/* Kernel memory management definitions. */
 
-/*
- * Define _NOQUAD if the compiler does NOT support 64-bit integers.
- */
-/* #define _NOQUAD */
-
-/*
- * Define the order of 32-bit words in 64-bit words.
- */
-#define _QUAD_HIGHWORD 1
-#define _QUAD_LOWWORD 0
-
-#ifndef _POSIX_SOURCE
-/*
- * Definitions for byte order, according to byte significance from low
- * address to high.
- */
-#define	LITTLE_ENDIAN	1234	/* LSB first: i386, vax */
-#define	BIG_ENDIAN	4321	    /* MSB first: 68000, ibm, net */
-#define	PDP_ENDIAN	3412	    /* LSB first in word, MSW first in long */
-
-#define	BYTE_ORDER	LITTLE_ENDIAN
-
-#include <sys/cdefs.h>
-
-__BEGIN_DECLS
-unsigned long	htonl __P((unsigned long));
-unsigned short	htons __P((unsigned short));
-unsigned long	ntohl __P((unsigned long));
-unsigned short	ntohs __P((unsigned short));
-__END_DECLS
-
-/*
- * Macros for network/external number representation conversion.
- */
-#if BYTE_ORDER == BIG_ENDIAN && !defined(lint)
-#define	ntohl(x)	(x)
-#define	ntohs(x)	(x)
-#define	htonl(x)	(x)
-#define	htons(x)	(x)
-
-#define	NTOHL(x)	(x)
-#define	NTOHS(x)	(x)
-#define	HTONL(x)	(x)
-#define	HTONS(x)	(x)
-
-#else
-
-#define	NTOHL(x)	(x) = ntohl((u_long)x)
-#define	NTOHS(x)	(x) = ntohs((u_short)x)
-#define	HTONL(x)	(x) = htonl((u_long)x)
-#define	HTONS(x)	(x) = htons((u_short)x)
-#endif
-#endif /* ! _POSIX_SOURCE */
-#endif /* !_ENDIAN_H_ */
+vm_map_t	buffer_map;
+vm_map_t	exec_map;
+vm_map_t	kernel_map;
+vm_map_t	kmem_map;
+vm_map_t	mb_map;
+vm_map_t	phys_map;

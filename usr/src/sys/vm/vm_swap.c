@@ -30,6 +30,7 @@
  * to do largest first.  Text, data, stack and u. are allocated in
  * that order, as that is likely to be in order of size.
  */
+void
 swapin(p)
 	register struct proc *p;
 {
@@ -98,6 +99,7 @@ swapin(p)
  *
  * panic: out of swap space
  */
+void
 swapout(p, freecore, odata, ostack)
 	register struct proc *p;
 	int freecore;
