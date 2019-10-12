@@ -17,7 +17,6 @@
 #include <sys/conf.h>
 #include <sys/buf.h>
 #include <sys/fcntl.h>
-#include <vm/vm.h>
 #include <sys/clist.h>
 #include <sys/reboot.h>
 #include <sys/systm.h>
@@ -26,8 +25,12 @@
 #include <sys/disklabel.h>
 #include <sys/stat.h>
 
-//#include <sys/uba.h>
-//#include <machine/seg.h>
+#include <additions/sysent.h>
+#include <additions/resourcevar.h>
+
+#include <machine/cpu.h>
+
+#include <vm/vm.h>
 
 int	netoff = 1;
 int	cmask = CMASK;
@@ -240,7 +243,7 @@ main()
 		 * return goes to location 0 of user init code
 		 * just copied out.
 		 */
-		return;
+		return 0;
 	}
 	else
 		sched();

@@ -6,7 +6,7 @@
  *	@(#)map.h	1.1 (2.10BSD Berkeley) 12/1/86
  */
 
-#include <sys/types.h>
+//#include <sys/types.h>
 
 /*
  * Resource Allocation Maps.
@@ -34,7 +34,7 @@ struct map {
 
 struct mapent {
 	size_t	m_size;		/* size of this segment of the map */
-	size_t	m_addr;		/* resource-space addr of start of segment */
+	memaddr	m_addr;		/* resource-space addr of start of segment */
 };
 
 #ifdef KERNEL
@@ -44,16 +44,21 @@ extern struct map swapmap[];	/* space for swap allocation */
 /*
  * Allocate units from the given map.
  */
-//size_t malloc (struct map *mp, size_t nbytes);
+size_t malloc (struct map *mp, size_t nbytes);
 
 /*
  * Free the previously allocated units at addr into the specified map.
  */
-//void mfree (struct map *mp, size_t nbytes, size_t addr);
+void mfree (struct map *mp, size_t nbytes, size_t addr);
 
 /*
  * Allocate resources for the three segments of a process.
  */
-//size_t malloc3 (struct map *mp, size_t d_size, size_t s_size, size_t u_size, size_t a[3]);
-
+size_t malloc3 (struct map *mp, size_t d_size, size_t s_size, size_t u_size, size_t a[3]);
+#else
+extern struct map coremap[];	/* space for core allocation */
+extern struct map swapmap[];	/* space for swap allocation */
+memaddr malloc (struct map *mp, size_t nbytes);
+void mfree (struct map *mp, size_t nbytes, size_t addr);
+memaddr malloc3 (struct map *mp, size_t d_size, size_t s_size, size_t u_size, size_t a[3]);
 #endif

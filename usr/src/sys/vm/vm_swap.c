@@ -7,7 +7,7 @@
  */
 
 #include <sys/param.h>
-#include <machine/seg.h>
+
 
 #include <sys/user.h>
 #include <sys/proc.h>
@@ -15,6 +15,13 @@
 #include <sys/map.h>
 #include <sys/buf.h>
 #include <sys/systm.h>
+
+#include <sys/proc.h>
+#include <sys/file.h>
+#include <sys/namei.h>
+#include <sys/inode.h>
+
+//#include <machine/seg.h>
 #include <vm/vm.h>
 
 /*

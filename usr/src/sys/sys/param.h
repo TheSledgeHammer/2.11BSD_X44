@@ -8,12 +8,14 @@
 
 #define	BSD	211		/* 2.11 * 10, as cpp doesn't do floats */
 
-//#include <sys/stddef.h>		/* for 'offsetof' */
+#ifndef	NULL
+#define	NULL	0
+#endif
 
-/*
- * Machine type dependent parameters.
- */
-#include <machine/machparam.h>
+#ifndef LOCORE
+#include <sys/types.h>
+#include <additions/types2.h>
+#endif
 
 /*
  * Machine-independent constants
@@ -26,6 +28,24 @@
 #define	NGROUPS	16			/* max number groups */
 
 #define	NOGROUP	65535		/* marker for empty group set member */
+
+/* More types and definitions used throughout the kernel. */
+#ifdef KERNEL
+#include <sys/cdefs.h>
+#include <sys/errno.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <sys/uio.h>
+//#include <sys/ucred.h>
+//#include <sys/rtprio.h>
+#endif
+
+/* Signals */
+#include <sys/signal.h>
+
+/* Machine type dependent parameters.*/
+#include <machine/param.h>
+#include <machine/limits.h>
 
 /*
  * Priorities
@@ -47,24 +67,22 @@
 #define	PRIMASK	0xff
 #define	PCATCH	0x100
 
-/*
- * Signals
- */
-#include <sys/signal.h>
-
 #define	NBPW	sizeof(int)										/* number of bytes in an integer */
 
-#ifndef	NULL
-#define	NULL	0
-#endif
 #define	CMASK	026												/* default mask for file creation */
 #define	NODEV	(dev_t)(-1)
 
-#define	CLBYTES		(CLSIZE*NBPG)
-#define	CLOFSET		(CLBYTES-1)
+
+/*
+ * Clustering of hardware pages on machines with ridiculously small
+ * page sizes is done here.  The paging subsystem deals with units of
+ * CLSIZE pte's describing NBPG (from machine/machparam.h) pages each.
+ */
+#define	CLBYTES			(CLSIZE*NBPG)
+#define	CLOFSET			(CLBYTES-1)
 #define	claligned(x)	((((int)(x))&CLOFSET)==0)
-#define	CLOFF		CLOFSET
-#define	CLSHIFT		(PGSHIFT + CLSIZELOG2)
+#define	CLOFF			CLOFSET
+#define	CLSHIFT			(PGSHIFT + CLSIZELOG2)
 
 /* round a number of clicks up to a whole cluster */
 #define	clrnd(i)	(((i) + (CLSIZE-1)) &~ ((long)(CLSIZE-1)))
@@ -73,8 +91,6 @@
 #define	CBLOCK	32
 #define	CBSIZE	(CBLOCK - sizeof(struct cblock *))				/* data chars/clist */
 #define	CROUND	(CBLOCK - 1)									/* clist rounding */
-
-#include <sys/types.h>
 
 /*
  * File system parameters and macros.
@@ -100,8 +116,10 @@
 /*
  * Macros for fast min/max.
  */
+#ifndef KERNEL
 #define	MIN(a,b) (((a)<(b))?(a):(b))
 #define	MAX(a,b) (((a)>(b))?(a):(b))
+#endif
 
 /*
  * Macros for counting and rounding.
