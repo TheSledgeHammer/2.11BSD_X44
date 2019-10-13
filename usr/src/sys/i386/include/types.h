@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 1982, 1986, 1993, 1994
+/*-
+ * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,41 +30,37 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)uio.h	8.5.2 (2.11BSD GTE) 12/20/94
- *
- * Copied from 4.4-Lite and modified for 2.11BSD.  Modifications were removal
- * of prototypes, limits for dynamic allocation of iovec structs and changing
- * uio_resid to u_short from int.
+ *	@(#)types.h	8.3 (Berkeley) 1/5/94
+ * $Id$
  */
 
-#ifndef _SYS_UIO_H_
-#define	_SYS_UIO_H_
+#ifndef	_MACHTYPES_H_
+#define	_MACHTYPES_H_
 
-#include <sys/types.h>
+#if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
+typedef struct _physadr {
+	int r[1];
+} *physadr;
+
+typedef struct label_t {
+	int val[6];
+} label_t;
+#endif
+
+typedef	unsigned long	vm_offset_t;
+typedef	unsigned long	vm_size_t;
+
 /*
- * XXX
- * iov_base should be a void *.
+ * Basic integral types.  Omit the typedef if
+ * not possible for a machine/compiler combination.
  */
-struct iovec {
-	char	*iov_base;	/* Base address. */
-	size_t	 iov_len;	/* Length. */
-};
+typedef	__signed char		int8_t;
+typedef	unsigned char		u_int8_t;
+typedef	short			  	int16_t;
+typedef	unsigned short		u_int16_t;
+typedef	int			  		int32_t;
+typedef	unsigned int		u_int32_t;
+typedef	long long		  	int64_t;
+typedef	unsigned long long	u_int64_t;
 
-enum	uio_rw { UIO_READ, UIO_WRITE };
-
-/* Segment flag values. */
-enum uio_seg {
-	UIO_USERSPACE,		/* from user data space */
-	UIO_SYSSPACE,		/* from system space */
-	UIO_USERISPACE		/* from user I space */
-};
-
-struct uio {
-	struct	iovec *uio_iov;
-	int	uio_iovcnt;
-	off_t	uio_offset;
-	u_short	uio_resid;
-	enum	uio_seg uio_segflg;
-	enum	uio_rw uio_rw;
-};
-#endif /* !_SYS_UIO_H_ */
+#endif	/* _MACHTYPES_H_ */

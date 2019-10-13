@@ -49,7 +49,7 @@
 #include <sys/inode.h>
 #include <sys/text.h>
 #include <sys/proc.h>
-#include <sys/vm.h>
+#include <vm/vm.h>
 #include <sys/map.h>
 #endif
 

@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 1982, 1986, 1993, 1994
+/*-
+ * Copyright (c) 1982, 1986, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,41 +30,33 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)uio.h	8.5.2 (2.11BSD GTE) 12/20/94
- *
- * Copied from 4.4-Lite and modified for 2.11BSD.  Modifications were removal
- * of prototypes, limits for dynamic allocation of iovec structs and changing
- * uio_resid to u_short from int.
+ *	@(#)dmap.h	8.2 (Berkeley) 1/4/94
  */
 
-#ifndef _SYS_UIO_H_
-#define	_SYS_UIO_H_
+#ifndef _SYS_DMAP_H_
+#define	_SYS_DMAP_H_
 
-#include <sys/types.h>
+#include <../sys/types.h>
+
 /*
- * XXX
- * iov_base should be a void *.
+ * Definitions for the mapping of vitual swap space to the physical swap
+ * area - the disk map.
  */
-struct iovec {
-	char	*iov_base;	/* Base address. */
-	size_t	 iov_len;	/* Length. */
-};
+#define	NDMAP	38		/* size of the swap area map */
 
-enum	uio_rw { UIO_READ, UIO_WRITE };
-
-/* Segment flag values. */
-enum uio_seg {
-	UIO_USERSPACE,		/* from user data space */
-	UIO_SYSSPACE,		/* from system space */
-	UIO_USERISPACE		/* from user I space */
+struct dmap {
+	swblk_t dm_size;	/* current size used by process */
+	swblk_t dm_alloc;	/* amount of physical swap space allocated */
+	swblk_t dm_map[NDMAP];	/* first disk block number in each chunk */
 };
+#ifdef KERNEL
+struct dmap zdmap;
+int dmmin, dmmax, dmtext;
+#endif
 
-struct uio {
-	struct	iovec *uio_iov;
-	int	uio_iovcnt;
-	off_t	uio_offset;
-	u_short	uio_resid;
-	enum	uio_seg uio_segflg;
-	enum	uio_rw uio_rw;
+/* The following structure is that ``returned'' from a call to vstodb(). */
+struct dblock {
+	swblk_t db_base;	/* base of physical contig drum block */
+	swblk_t db_size;	/* size of block */
 };
-#endif /* !_SYS_UIO_H_ */
+#endif	/* !_SYS_DMAP_H_ */

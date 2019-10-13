@@ -18,8 +18,8 @@
  * 28 of the di_addr address bytes are used; 7 addresses of 4
  * bytes each: 4 direct (4Kb directly accessible) and 3 indirect.
  */
-#define	NDADDR	4			/* direct addresses in inode */
-#define	NIADDR	3			/* indirect addresses in inode */
+#define	NDADDR	4					/* direct addresses in inode */
+#define	NIADDR	3					/* indirect addresses in inode */
 #define	NADDR	(NDADDR + NIADDR)	/* total addresses in inode */
 
 struct icommon2 {
@@ -95,7 +95,7 @@ struct inode {
  */
 struct dinode {
 	struct	icommon1 di_icom1;
-	daddr_t	di_addr[7];		/* 7 block addresses 4 bytes each */
+	daddr_t	di_addr[7];			/* 7 block addresses 4 bytes each */
 	u_short	di_reserved[5];		/* pad of 10 to make total size 64 */
 	u_short	di_flags;
 	struct	icommon2 di_icom2;

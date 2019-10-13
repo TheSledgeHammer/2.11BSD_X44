@@ -17,7 +17,7 @@
 #include <sys/kernel.h>
 #include <sys/systm.h>
 
-//#include <machine/seg.h>
+#include <machine/cpu.h>
 
 #define	SQSIZE	16	/* Must be power of 2 */
 

@@ -39,6 +39,7 @@
  * there are exceptions to this rule.  Note, this value is also present
  * in the bad144 program.
  */
+#include <../sys/types.h>
 #define MAXBAD	32			/* Maximum bad sectors supported */
 
 struct dkbad {

@@ -41,7 +41,7 @@
 #ifndef _LINK_H_
 #define _LINK_H_
 
-#include <additions/types2.h>
+#include <../sys/types.h>
 /*
  * A `Shared Object Descriptor' descibes a shared object that is needed
  * to complete the link edit process of the object containing it.

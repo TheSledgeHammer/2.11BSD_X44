@@ -76,11 +76,11 @@ struct buf
 #define	bfree(bp)	(bp)->b_bcount = 0
 #define	bftopaddr(bp)	((u_int)(bp)->b_un.b_addr >> 6 | (bp)->b_xmem << 10)
 
-#if defined(KERNEL) && !defined(SUPERVISOR)
+#ifdef KERNEL
 #define	BUFHSZ	16	/* must be power of 2 */
 #define	BUFHASH(dev,blkno)	((struct buf *)&bufhash[((long)(dev) + blkno) & ((long)(BUFHSZ - 1))])
-extern struct	buf buf[];		/* the buffer pool itself */
-extern int	nbuf;			/* number of buffer headers */
+extern struct	buf buf[];			/* the buffer pool itself */
+extern int		nbuf;				/* number of buffer headers */
 extern struct	bufhd bufhash[];	/* heads of hash lists */
 extern struct	buf bfreelist[];	/* heads of available lists */
 

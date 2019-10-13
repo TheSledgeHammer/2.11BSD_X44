@@ -38,7 +38,7 @@
 #define	_SYS_RESOURCEVAR_H_
 
 #include <sys/resource.h>
-#include <additions/types2.h>
+#include <../sys/types.h>
 
 /*
  * Kernel per-process accounting / statistics

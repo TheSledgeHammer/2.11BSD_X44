@@ -38,7 +38,7 @@
 
 #define KMEMSTATS
 
-#include <additions/types2.h>
+#include <../sys/types.h>
 /*
  * flags to malloc
  */

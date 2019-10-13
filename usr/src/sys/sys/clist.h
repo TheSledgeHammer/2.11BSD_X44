@@ -18,7 +18,7 @@ struct cblock {
 extern struct cblock *cfree;
 extern memaddr clststrt;
 extern u_int clstdesc;		/* PDR for clist segment when mapped */
-				/* virt. addr. of clists (0120000 - 0140000) */
+							/* virt. addr. of clists (0120000 - 0140000) */
 #else
 extern struct cblock cfree[];
 #endif
