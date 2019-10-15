@@ -52,11 +52,11 @@
 #include <sys/conf.h>
 #include <sys/file.h>
 #include <sys/callout.h>
-#include <additions/malloc.h>
+#include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/msgbuf.h>
 #include <sys/ioctl.h>
-#include <additions/sysent.h>
+#include <sys/sysent.h>
 #include <sys/tty.h>
 #include <sys/sysctl.h>
 
@@ -73,11 +73,11 @@
 #endif
 
 #include <vm/vm.h>
-#include <additions/vm_kern.h>
+#include <vm/vm_kern.h>
 #include <vm/vm_page.h>
 
 #include <sys/exec.h>
-#include <vfs/vnode.h>
+#include <sys/vnode.h>
 
 #include <net/netisr.h>
 
@@ -389,7 +389,7 @@ identifycpu()
 	extern u_long cpu_id;
 	extern char cpu_vendor[];
 	printf("CPU: ");
-	if (cpu >= 0
+	if (cpu >= 0 
 	    && cpu < (sizeof i386_cpus/sizeof(struct cpu_nameclass))) {
 		printf("%s", i386_cpus[cpu].cpu_name);
 		cpu_class = i386_cpus[cpu].cpu_class;
@@ -534,7 +534,7 @@ sendsig(catcher, sig, mask, code)
 		return;
 	}
 
-	/*
+	/* 
 	 * Build the argument list for the signal handler.
 	 */
 	if (p->p_sysent->sv_sigtbl) {
@@ -765,7 +765,7 @@ boot(arghowto)
 		if (howto & RB_DUMP) {
 			savectx(&dumppcb, 0);
 			dumppcb.pcb_ptd = rcr3();
-			dumpsys();
+			dumpsys();	
 
 			if (PANIC_REBOOT_WAIT_TIME != 0) {
 				if (PANIC_REBOOT_WAIT_TIME != -1) {
@@ -1400,7 +1400,7 @@ init386(first)
 	proc0.p_addr->u_pcb.pcb_tss.tss_ss0 = GSEL(GDATA_SEL, SEL_KPL) ;
 	_gsel_tss = GSEL(GPROC0_SEL, SEL_KPL);
 
-	((struct i386tss *)gdt_segs[GPROC0_SEL].ssd_base)->tss_ioopt =
+	((struct i386tss *)gdt_segs[GPROC0_SEL].ssd_base)->tss_ioopt = 
 		(sizeof(tss))<<16;
 
 	ltr(_gsel_tss);
@@ -1482,7 +1482,7 @@ ptrace_getregs (struct proc *p, unsigned int *addr) {
 	error = fill_regs (p, &regs);
 	if (error)
 		return error;
-
+	  
 	return copyout (&regs, addr, sizeof (regs));
 }
 
@@ -1626,3 +1626,4 @@ disk_externalize(int drive, void *userp, size_t *maxlen)
 	*maxlen -= sizeof drive;
 	return copyout(&drive, userp, sizeof drive);
 }
+

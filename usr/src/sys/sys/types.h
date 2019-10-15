@@ -26,7 +26,8 @@
 //typedef unsigned short	u_short;
 //typedef unsigned int	u_int;
 //typedef unsigned long	u_long;		/* see this! unsigned longs at last! */
-//typedef unsigned short	ushort;		/* sys III compat */
+//typedef unsigned short	ushort;		/* sys III / Sys V Compat */
+
 
 /* Obtained from FreeBSD 2.0 */
 #ifndef _POSIX_SOURCE
@@ -76,4 +77,3 @@ typedef	unsigned short	mode_t;		/* permissions */
 
 typedef char	bool_t;		/* boolean */
 typedef size_t	memaddr;	/* core or swap address */
-//typedef long	ubadr_t;	/* unibus address */

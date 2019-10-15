@@ -1,22 +1,6 @@
-2.11BSD -> 4.4BSD-Lite2
+2.11BSD -> FreeBSD 2.0 / 4.4BSD-Lite2
 2.11BSD vm:
 - Code is designed for pdp
-
-Kernel:
-- c: src/sys(kernel)/sys -> src/kernel/kern
-- h: src/sys(kernel)/h -> src/kernel/include & src/kernel/include/sys
-
-Machine Dependent:
-- c: src/sys(kernel)/i386 -> src/kernel/kern/i386
-- h: src/sys(kernel)/i386/include -> src/kernel/include/i386
-
-
-Generated from GENERIC:
-- ram.h
-- ingres.h
-- param.c
-- pty.h
-- tb.h
 
 Kernel Dependent on Arch (PDP-11):
 - int_main.c -> machine/seg.h
@@ -38,6 +22,11 @@ Kernel Dependent on Arch (PDP-11):
 - sys_process.c -> machine/seg.h, reg.h, psl.h
 - tty_conf.c -> pdp/seg.h
 - tty_subr.c -> machine/seg.h
+- vm_swap -> machine/seg.h
+- vm_swp -> machine/seg.h
+- vm_text -> machine/seg.h
+
+//UFS:
 - ufs_alloc.c -> machine/seg.h
 - ufs_bio.c -> ram.h
 - ufs_bmap.c -> machine/seg.h
@@ -48,11 +37,4 @@ Kernel Dependent on Arch (PDP-11):
 - ufs_subr.c -> machine/seg.h
 - ufs_syscalls2.c -> machine/seg.h
 - uipc_syscalls.c -> machine/seg.h, psl.h, pdpif/if_uba.h, netinet/in.h, in_systm.h
-- vm_swap -> machine/seg.h
-- vm_swp -> machine/seg.h
-- vm_text -> machine/seg.h
 
-- pdp/ram.c -> machine/seg.h, ram.h
-
-Copied from 4.4BSD:
-- uio.c

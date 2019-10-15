@@ -14,7 +14,6 @@
 
 #ifndef LOCORE
 #include <sys/types.h>
-#include <additions/types2.h>
 #endif
 
 /*

@@ -45,13 +45,13 @@
  *			Bruce Evans, Wolfgang Solfrank, and many others.
  */
 
-#include "assym.s"					/* system definitions */
-#include <machine/psl.h>			/* processor status longword defs */
-#include <machine/pte.h>			/* page table entry definitions */
-#include <sys/errno.h>				/* error return codes */
+#include "assym.s"			/* system definitions */
+#include <machine/psl.h>		/* processor status longword defs */
+#include <machine/pte.h>		/* page table entry definitions */
+#include <sys/errno.h>			/* error return codes */
 #include <machine/specialreg.h>		/* x86 special registers */
 #include <machine/cputypes.h>		/* x86 cpu type definitions */
-#include <sys/syscall.h>			/* system call numbers */
+#include <sys/syscall.h>		/* system call numbers */
 #include <machine/asmacros.h>		/* miscellaneous asm macros */
 #include "apm.h"
 #if NAPM > 0
@@ -106,41 +106,41 @@
 	.data
 
 	.globl	tmpstk
-	.space	0x1000						/* space for tmpstk - temporary stack */
+	.space	0x1000		/* space for tmpstk - temporary stack */
 tmpstk:
 /*
  * Dummy frame at top of tmpstk to help debuggers print a nice stack trace.
  */
-	.long	tmpstk+8					/* caller's %ebp */
-	.long	_cpu_switch					/* caller */
-	.long	0							/* %ebp == 0 should terminate trace */
-	.long	_mvesp						/* in case %ebp == 0 doesn't work ... */
+	.long	tmpstk+8	/* caller's %ebp */
+	.long	_cpu_switch	/* caller */
+	.long	0		/* %ebp == 0 should terminate trace */
+	.long	_mvesp		/* in case %ebp == 0 doesn't work ... */
 	.long	0x11111111, 0x22222222, 0x33333333, 0x44444444, 0x55555555
 
 	.globl	_boothowto,_bootdev
 
 	.globl	_cpu,_cold,_atdevbase,_cpu_vendor,_cpu_id,_bootinfo
 
-_cpu:	.long	0						/* are we 386, 386sx, or 486 */
-_cpu_id:	.long	0					/* stepping ID */
-_cpu_vendor:	.space	20				/* CPU origin code */
+_cpu:	.long	0				/* are we 386, 386sx, or 486 */
+_cpu_id:	.long	0			/* stepping ID */
+_cpu_vendor:	.space	20			/* CPU origin code */
 _bootinfo:	.space	BOOTINFO_SIZE		/* the bootstrapper knew it! */
-_cold:	.long	1						/* cold till we are not */
-_atdevbase:	.long	0					/* location of start of iomem in virtual */
-_atdevphys:	.long	0					/* location of device mapping ptes (phys) */
+_cold:	.long	1				/* cold till we are not */
+_atdevbase:	.long	0			/* location of start of iomem in virtual */
+_atdevphys:	.long	0			/* location of device mapping ptes (phys) */
 
-_KERNend:	.long	0					/* phys addr end of kernel (just after bss) */
+_KERNend:	.long	0			/* phys addr end of kernel (just after bss) */
 
 	.globl	_IdlePTD
-_IdlePTD:	.long	0					/* phys addr of kernel PTD */
+_IdlePTD:	.long	0			/* phys addr of kernel PTD */
 
-_KPTphys:	.long	0					/* phys addr of kernel page tables */
+_KPTphys:	.long	0			/* phys addr of kernel page tables */
 
 	.globl	_proc0paddr
-_proc0paddr:	.long	0				/* address of proc 0 address space */
+_proc0paddr:	.long	0			/* address of proc 0 address space */
 
 #ifdef BDE_DEBUGGER
-	.globl	_bdb_exists					/* flag to indicate BDE debugger is available */
+	.globl	_bdb_exists			/* flag to indicate BDE debugger is available */
 _bdb_exists:	.long	0
 #endif
 #if NAPM > 0
@@ -163,12 +163,12 @@ _bootstrap_gdt:
  * Also the entry point (jumped to directly from the boot blocks).
  */
 NON_GPROF_ENTRY(btext)
-	movw	$0x1234,0x472				/* warm boot */
+	movw	$0x1234,0x472			/* warm boot */
 	jmp	1f
 	/*
 	 * XXX now that we load at 1MB is this still really used?
 	 */
-	.org	0x500						/* space for BIOS variables */
+	.org	0x500				/* space for BIOS variables */
 
 1:
 	/* Set up a real frame, some day we will be doing returns */
@@ -546,8 +546,8 @@ NON_GPROF_ENTRY(btext)
  */
 #define	fillkpt		\
 1:	movl	%eax,(%ebx)	; \
-	addl	$NBPG,%eax	;                   /* increment physical address */ \
-	addl	$4,%ebx		;                   /* next pte */ \
+	addl	$NBPG,%eax	; /* increment physical address */ \
+	addl	$4,%ebx		; /* next pte */ \
 	loop	1b		;
 
 /*
@@ -556,76 +556,76 @@ NON_GPROF_ENTRY(btext)
  * First step - build page tables
  */
 #if defined (KGDB) || defined (BDE_DEBUGGER)
-	movl	_KERNend-KERNBASE,%ecx		    /* this much memory, */
-	shrl	$PGSHIFT,%ecx			        /* for this many PTEs */
+	movl	_KERNend-KERNBASE,%ecx		/* this much memory, */
+	shrl	$PGSHIFT,%ecx			/* for this many PTEs */
 #ifdef BDE_DEBUGGER
-	cmpl	$0xa0,%ecx			             /* XXX - cover debugger pages */
+	cmpl	$0xa0,%ecx			/* XXX - cover debugger pages */
 	jae	1f
 	movl	$0xa0,%ecx
 1:
 #endif /* BDE_DEBUGGER */
-	movl	$PG_V|PG_KW,%eax		         /* kernel R/W, valid */
-	lea	((1+UPAGES+1)*NBPG)(%esi),%ebx	     /* phys addr of kernel PT base */
-	movl	%ebx,_KPTphys-KERNBASE		     /* save in global */
+	movl	$PG_V|PG_KW,%eax		/* kernel R/W, valid */
+	lea	((1+UPAGES+1)*NBPG)(%esi),%ebx	/* phys addr of kernel PT base */
+	movl	%ebx,_KPTphys-KERNBASE		/* save in global */
 	fillkpt
 
 #else /* !KGDB && !BDE_DEBUGGER */
 	/* write protect kernel text (doesn't do a thing for 386's - only 486's) */
-	movl	$_etext-KERNBASE,%ecx		    /* get size of text */
-	addl	$NBPG-1,%ecx			        /* round up to page */
-	shrl	$PGSHIFT,%ecx			        /* for this many PTEs */
-	movl	$PG_V|PG_KR,%eax		        /* specify read only */
+	movl	$_etext-KERNBASE,%ecx		/* get size of text */
+	addl	$NBPG-1,%ecx			/* round up to page */
+	shrl	$PGSHIFT,%ecx			/* for this many PTEs */
+	movl	$PG_V|PG_KR,%eax		/* specify read only */
 #if 0
-	movl	$_etext,%ecx			        /* get size of text */
+	movl	$_etext,%ecx			/* get size of text */
 	subl	$_btext,%ecx
-	addl	$NBPG-1,%ecx			        /* round up to page */
-	shrl	$PGSHIFT,%ecx			        /* for this many PTEs */
-	movl	$_btext-KERNBASE,%eax		    /* get offset to physical memory */
-	orl	$PG_V|PG_KR,%eax		            /* specify read only */
+	addl	$NBPG-1,%ecx			/* round up to page */
+	shrl	$PGSHIFT,%ecx			/* for this many PTEs */
+	movl	$_btext-KERNBASE,%eax		/* get offset to physical memory */
+	orl	$PG_V|PG_KR,%eax		/* specify read only */
 #endif
-	lea	((1+UPAGES+1)*NBPG)(%esi),%ebx	    /* phys addr of kernel PT base */
-	movl	%ebx,_KPTphys-KERNBASE		    /* save in global */
+	lea	((1+UPAGES+1)*NBPG)(%esi),%ebx	/* phys addr of kernel PT base */
+	movl	%ebx,_KPTphys-KERNBASE		/* save in global */
 	fillkpt
 
 	/* data and bss are r/w */
-	andl	$PG_FRAME,%eax			        /* strip to just addr of bss */
-	movl	_KERNend-KERNBASE,%ecx		    /* calculate size */
+	andl	$PG_FRAME,%eax			/* strip to just addr of bss */
+	movl	_KERNend-KERNBASE,%ecx		/* calculate size */
 	subl	%eax,%ecx
 	shrl	$PGSHIFT,%ecx
-	orl	$PG_V|PG_KW,%eax		            /* valid, kernel read/write */
+	orl	$PG_V|PG_KW,%eax		/* valid, kernel read/write */
 	fillkpt
 #endif /* KGDB || BDE_DEBUGGER */
 
 /* now initialize the page dir, upages, p0stack PT, and page tables */
 
-	movl	$(1+UPAGES+1+NKPT),%ecx	        /* number of PTEs */
-	movl	%esi,%eax			            /* phys address of PTD */
-	andl	$PG_FRAME,%eax			        /* convert to PFN, should be a NOP */
-	orl	$PG_V|PG_KW,%eax		            /* valid, kernel read/write */
-	movl	%esi,%ebx			            /* calculate pte offset to ptd */
+	movl	$(1+UPAGES+1+NKPT),%ecx	/* number of PTEs */
+	movl	%esi,%eax			/* phys address of PTD */
+	andl	$PG_FRAME,%eax			/* convert to PFN, should be a NOP */
+	orl	$PG_V|PG_KW,%eax		/* valid, kernel read/write */
+	movl	%esi,%ebx			/* calculate pte offset to ptd */
 	shrl	$PGSHIFT-2,%ebx
-	addl	%esi,%ebx			            /* address of page directory */
-	addl	$((1+UPAGES+1)*NBPG),%ebx	    /* offset to kernel page tables */
+	addl	%esi,%ebx			/* address of page directory */
+	addl	$((1+UPAGES+1)*NBPG),%ebx	/* offset to kernel page tables */
 	fillkpt
 
 /* map I/O memory map */
 
-	movl    _KPTphys-KERNBASE,%ebx		    /* base of kernel page tables */
-	lea     (0xa0 * PTESIZE)(%ebx),%ebx	    /* hardwire ISA hole at KERNBASE + 0xa0000 */
-	movl	$0x100-0xa0,%ecx		        /* for this many pte s, */
+	movl    _KPTphys-KERNBASE,%ebx		/* base of kernel page tables */
+	lea     (0xa0 * PTESIZE)(%ebx),%ebx	/* hardwire ISA hole at KERNBASE + 0xa0000 */
+	movl	$0x100-0xa0,%ecx		/* for this many pte s, */
 	movl	$(0xa0000|PG_V|PG_KW|PG_N),%eax	/* valid, kernel read/write, non-cacheable */
-	movl	%ebx,_atdevphys-KERNBASE	    /* save phys addr of ptes */
+	movl	%ebx,_atdevphys-KERNBASE	/* save phys addr of ptes */
 	fillkpt
 
  /* map proc 0's kernel stack into user page table page */
 
-	movl	$UPAGES,%ecx			        /* for this many pte s, */
-	lea	(1*NBPG)(%esi),%eax		            /* physical address in proc 0 */
-	lea	(KERNBASE)(%eax),%edx		        /* change into virtual addr */
-	movl	%edx,_proc0paddr-KERNBASE	    /* save VA for proc 0 init */
-	orl	$PG_V|PG_KW,%eax		            /* valid, kernel read/write */
-	lea	((1+UPAGES)*NBPG)(%esi),%ebx	    /* addr of stack page table in proc 0 */
-	addl	$(KSTKPTEOFF * PTESIZE),%ebx    /* offset to kernel stack PTE */
+	movl	$UPAGES,%ecx			/* for this many pte s, */
+	lea	(1*NBPG)(%esi),%eax		/* physical address in proc 0 */
+	lea	(KERNBASE)(%eax),%edx		/* change into virtual addr */
+	movl	%edx,_proc0paddr-KERNBASE	/* save VA for proc 0 init */
+	orl	$PG_V|PG_KW,%eax		/* valid, kernel read/write */
+	lea	((1+UPAGES)*NBPG)(%esi),%ebx	/* addr of stack page table in proc 0 */
+	addl	$(KSTKPTEOFF * PTESIZE),%ebx	/* offset to kernel stack PTE */
 	fillkpt
 
 /*
@@ -633,28 +633,28 @@ NON_GPROF_ENTRY(btext)
  */
 	/* install a pde for temporary double map of bottom of VA */
 	movl	_KPTphys-KERNBASE,%eax
-	orl     $PG_V|PG_KW,%eax		    /* valid, kernel read/write */
-	movl	%eax,(%esi)			        /* which is where temp maps! */
+	orl     $PG_V|PG_KW,%eax		/* valid, kernel read/write */
+	movl	%eax,(%esi)			/* which is where temp maps! */
 
 	/* initialize kernel pde's */
-	movl	$(NKPT),%ecx			    /* for this many PDEs */
-	lea	(KPTDI*PDESIZE)(%esi),%ebx	    /* offset of pde for kernel */
+	movl	$(NKPT),%ecx			/* for this many PDEs */
+	lea	(KPTDI*PDESIZE)(%esi),%ebx	/* offset of pde for kernel */
 	fillkpt
 
 	/* install a pde recursively mapping page directory as a page table! */
-	movl	%esi,%eax			        /* phys address of ptd in proc 0 */
-	orl	$PG_V|PG_KW,%eax		        /* pde entry is valid */
+	movl	%esi,%eax			/* phys address of ptd in proc 0 */
+	orl	$PG_V|PG_KW,%eax		/* pde entry is valid */
 	movl	%eax,PTDPTDI*PDESIZE(%esi)	/* which is where PTmap maps! */
 
 	/* install a pde to map kernel stack for proc 0 */
 	lea	((1+UPAGES)*NBPG)(%esi),%eax	/* physical address of pt in proc 0 */
-	orl	$PG_V|PG_KW,%eax		        /* pde entry is valid */
+	orl	$PG_V|PG_KW,%eax		/* pde entry is valid */
 	movl	%eax,KSTKPTDI*PDESIZE(%esi)	/* which is where kernel stack maps! */
 
 #ifdef BDE_DEBUGGER
 	/* copy and convert stuff from old gdt and idt for debugger */
 
-	cmpl	$0x0375c339,0x96104		             /* XXX - debugger signature */
+	cmpl	$0x0375c339,0x96104		/* XXX - debugger signature */
 	jne	1f
 	movb	$1,_bdb_exists-KERNBASE
 1:
@@ -662,24 +662,24 @@ NON_GPROF_ENTRY(btext)
 	subl	$2*6,%esp
 
 	sgdt	(%esp)
-	movl	2(%esp),%esi			            /* base address of current gdt */
+	movl	2(%esp),%esi			/* base address of current gdt */
 	movl	$_gdt-KERNBASE,%edi
 	movl	%edi,2(%esp)
 	movl	$8*18/4,%ecx
 	cld
-	rep					                        /* copy gdt */
+	rep					/* copy gdt */
 	movsl
-	movl	$_gdt-KERNBASE,-8+2(%edi)	      /* adjust gdt self-ptr */
+	movl	$_gdt-KERNBASE,-8+2(%edi)	/* adjust gdt self-ptr */
 	movb	$0x92,-8+5(%edi)
 
 	sidt	6(%esp)
-	movl	6+2(%esp),%esi			          /* base address of current idt */
-	movl	8+4(%esi),%eax			          /* convert dbg descriptor to ... */
+	movl	6+2(%esp),%esi			/* base address of current idt */
+	movl	8+4(%esi),%eax			/* convert dbg descriptor to ... */
 	movw	8(%esi),%ax
-	movl	%eax,bdb_dbg_ljmp+1-KERNBASE	  /* ... immediate offset ... */
+	movl	%eax,bdb_dbg_ljmp+1-KERNBASE	/* ... immediate offset ... */
 	movl	8+2(%esi),%eax
-	movw	%ax,bdb_dbg_ljmp+5-KERNBASE	     /* ... and selector for ljmp */
-	movl	24+4(%esi),%eax			         /* same for bpt descriptor */
+	movw	%ax,bdb_dbg_ljmp+5-KERNBASE	/* ... and selector for ljmp */
+	movl	24+4(%esi),%eax			/* same for bpt descriptor */
 	movw	24(%esi),%ax
 	movl	%eax,bdb_bpt_ljmp+1-KERNBASE
 	movl	24+2(%esi),%eax
@@ -689,7 +689,7 @@ NON_GPROF_ENTRY(btext)
 	movl	%edi,6+2(%esp)
 	movl	$8*4/4,%ecx
 	cld
-	rep					                     /* copy idt */
+	rep					/* copy idt */
 	movsl
 
 	lgdt	(%esp)
@@ -700,28 +700,28 @@ NON_GPROF_ENTRY(btext)
 #endif /* BDE_DEBUGGER */
 
 	/* load base of page directory and enable mapping */
-	movl	%esi,%eax			            /* phys address of ptd in proc 0 */
-	movl	%eax,%cr3			            /* load ptd addr into mmu */
-	movl	%cr0,%eax			            /* get control word */
-	orl	$CR0_PE|CR0_PG,%eax		            /* enable paging */
-	movl	%eax,%cr0			            /* and let's page NOW! */
+	movl	%esi,%eax			/* phys address of ptd in proc 0 */
+	movl	%eax,%cr3			/* load ptd addr into mmu */
+	movl	%cr0,%eax			/* get control word */
+	orl	$CR0_PE|CR0_PG,%eax		/* enable paging */
+	movl	%eax,%cr0			/* and let's page NOW! */
 
-	pushl	$begin				            /* jump to high mem */
+	pushl	$begin				/* jump to high mem */
 	ret
 
 begin: /* now running relocated at KERNBASE where the system is linked to run */
-	movl	_atdevphys,%edx			        /* get pte PA */
-	subl	_KPTphys,%edx			        /* remove base of ptes, now have phys offset */
-	shll	$PGSHIFT-2,%edx			        /* corresponding to virt offset */
-	addl	$KERNBASE,%edx			        /* add virtual base */
+	movl	_atdevphys,%edx			/* get pte PA */
+	subl	_KPTphys,%edx			/* remove base of ptes, now have phys offset */
+	shll	$PGSHIFT-2,%edx			/* corresponding to virt offset */
+	addl	$KERNBASE,%edx			/* add virtual base */
 	movl	%edx,_atdevbase
 
 #include "sc.h"
 #include "vt.h"
 #if NSC > 0 || NVT > 0
 	/* XXX: can't scinit relocate Crtat relative to atdevbase itself? */
-	.globl _Crtat				            /* XXX - locore should not know about */
-	movl	_Crtat,%eax			            /* variables of device drivers (pccons)! */
+	.globl _Crtat				/* XXX - locore should not know about */
+	movl	_Crtat,%eax			/* variables of device drivers (pccons)! */
 	subl	$(KERNBASE+0xA0000),%eax
 	addl	%eax,%edx
 	movl	%edx,_Crtat
@@ -729,7 +729,7 @@ begin: /* now running relocated at KERNBASE where the system is linked to run */
 
 	/* set up bootstrap stack - 48 bytes */
 	movl	$_kstack+UPAGES*NBPG-4*12,%esp	/* bootstrap stack end location */
-	xorl	%eax,%eax			            /* mark end of frames */
+	xorl	%eax,%eax			/* mark end of frames */
 	movl	%eax,%ebp
 	movl	_proc0paddr,%eax
 	movl	%esi,PCB_CR3(%eax)
@@ -740,8 +740,8 @@ begin: /* now running relocated at KERNBASE where the system is linked to run */
 	movl	$_gdt+8*9,%eax			/* adjust slots 9-17 */
 	movl	$9,%ecx
 reloc_gdt:
-	movb	$KERNBASE>>24,7(%eax)   /* top byte of base addresses, was 0, */
-	addl	$8,%eax				    /* now KERNBASE>>24 */
+	movb	$KERNBASE>>24,7(%eax)		/* top byte of base addresses, was 0, */
+	addl	$8,%eax				/* now KERNBASE>>24 */
 	loop	reloc_gdt
 
 	cmpl	$0,_bdb_exists
@@ -761,18 +761,18 @@ reloc_gdt:
 
 	.globl	__ucodesel,__udatasel
 
-	pushl	$0				    /* unused */
+	pushl	$0				/* unused */
 	pushl	__udatasel			/* ss */
-	pushl	$0				    /* esp - filled in by execve() */
-	pushl	$PSL_USERSET		/* eflags (ring 0, int enab) */
+	pushl	$0				/* esp - filled in by execve() */
+	pushl	$PSL_USERSET			/* eflags (ring 0, int enab) */
 	pushl	__ucodesel			/* cs */
-	pushl	$0				    /* eip - filled in by execve() */
-	subl	$(12*4),%esp		/* space for rest of registers */
+	pushl	$0				/* eip - filled in by execve() */
+	subl	$(12*4),%esp			/* space for rest of registers */
 
 	pushl	%esp				/* call main with frame pointer */
 	call	_main				/* autoconfiguration, mountroot etc */
 
-	addl	$(13*4),%esp		/* back to a frame we can return with */
+	addl	$(13*4),%esp			/* back to a frame we can return with */
 
 	/*
 	 * now we've run main() and determined what cpu-type we are, we can
@@ -797,19 +797,19 @@ reloc_gdt:
 	movl	%cx,%es
 	movl	%ax,%fs				/* double map cs to fs */
 	movl	%cx,%gs				/* and ds to gs */
-	iret					    /* goto user! */
+	iret					/* goto user! */
 
 #define LCALL(x,y)	.byte 0x9a ; .long y ; .word x
 
 NON_GPROF_ENTRY(sigcode)
 	call	SIGF_HANDLER(%esp)
 	lea	SIGF_SC(%esp),%eax		/* scp (the call may have clobbered the */
-						        /* copy at 8(%esp)) */
+						/* copy at 8(%esp)) */
 	pushl	%eax
 	pushl	%eax				/* junk to fake return address */
 	movl	$103,%eax			/* XXX sigreturn() */
 	LCALL(0x7,0)				/* enter kernel with args on stack */
-	hlt					        /* never gets here */
+	hlt					/* never gets here */
 
 	.globl	_szsigcode
 _szsigcode:

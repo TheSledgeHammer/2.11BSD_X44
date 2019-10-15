@@ -66,11 +66,11 @@ extern char	runout;			/* scheduling flag */
 extern int	runrun;			/* scheduling flag */
 extern char	curpri;			/* more scheduling */
 
-int	updlock;			/* lock for sync */
-daddr_t	rablock;		/* block to be read ahead */
+int		updlock;			/* lock for sync */
+daddr_t	rablock;			/* block to be read ahead */
 
-extern	int icode[];	/* user init code */
-extern	int szicode;	/* its size */
+extern	int icode[];		/* user init code */
+extern	int szicode;		/* its size */
 
 daddr_t	bmap();
 

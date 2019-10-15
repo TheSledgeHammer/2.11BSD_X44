@@ -32,28 +32,29 @@
  */
 struct bufhd
 {
-	short	b_flags;		/* see defines below */
+	short	b_flags;				/* see defines below */
 	struct	buf *b_forw, *b_back;	/* fwd/bkwd pointer in chain */
 };
+
 struct buf
 {
-	short	b_flags;		/* see defines below */
+	short	b_flags;				/* see defines below */
 	struct	buf *b_forw, *b_back;	/* hash chain (2 way street) */
 	struct	buf *av_forw, *av_back;	/* position on free list if not BUSY */
-#define	b_actf	av_forw			/* alternate names for driver queue */
-#define	b_actl	av_back			/*    head - isn't history wonderful */
-	u_short	b_bcount;		/* transfer count */
-#define	b_active b_bcount		/* driver queue head: drive active */
-	char	b_error;		/* returned after I/O */
-	char	b_xmem;			/* high order core address */
-	dev_t	b_dev;			/* major+minor device name */
+#define	b_actf	av_forw				/* alternate names for driver queue */
+#define	b_actl	av_back				/*    head - isn't history wonderful */
+	u_short	b_bcount;				/* transfer count */
+#define	b_active b_bcount			/* driver queue head: drive active */
+	char	b_error;				/* returned after I/O */
+	char	b_xmem;					/* high order core address */
+	dev_t	b_dev;					/* major+minor device name */
 	union {
-	    caddr_t b_addr;		/* low order core address */
+	    caddr_t b_addr;				/* low order core address */
 	} b_un;
-	daddr_t	b_blkno;		/* block # on device */
-	u_short	b_resid;		/* words not transferred after error */
-#define	b_cylin b_resid			/* disksort */
-#define	b_errcnt b_resid		/* while i/o in progress: # retries */
+	daddr_t	b_blkno;				/* block # on device */
+	u_short	b_resid;				/* words not transferred after error */
+#define	b_cylin b_resid				/* disksort */
+#define	b_errcnt b_resid			/* while i/o in progress: # retries */
 };
 
 /*

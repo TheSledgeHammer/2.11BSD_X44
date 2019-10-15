@@ -7,7 +7,6 @@
  */
 
 #include <sys/param.h>
-//#include <machine/seg.h>
 
 #include <sys/user.h>
 #include <sys/proc.h>
@@ -26,6 +25,7 @@
 #include <sys/systm.h>
 #include <sys/syslog.h>
 
+//#include <machine/seg.h>
 
 extern	int	vn_closefile();
 int	ino_rw(), ino_ioctl(), ino_select();

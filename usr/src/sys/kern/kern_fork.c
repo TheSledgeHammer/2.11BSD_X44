@@ -18,9 +18,6 @@
 #include <sys/text.h>
 #include <sys/kernel.h>
 
-//#include <machine/reg.h>
-//#include <machine/seg.h>
-
 
 /*
  * fork --
@@ -305,7 +302,7 @@ again:
 		rpp->p_flag |= SVFDONE;
 		wakeup((caddr_t)rip);
 		/* must do estabur if dsize/ssize are different */
-		estabur(u.u_tsize,u.u_dsize,u.u_ssize,u.u_sep,RO);
+		estabur(u.u_tsize,u.u_dsize,u.u_ssize,u.u_sep,RO); /* PDP-11 seg.h */
 		rip->p_flag &= ~SVFPRNT;
 	}
 	return(0);

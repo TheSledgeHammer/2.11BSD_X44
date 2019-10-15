@@ -20,24 +20,23 @@
 #include <sys/clist.h>
 #include <sys/reboot.h>
 #include <sys/systm.h>
+#include <sys/sysent.h>
 #include <sys/kernel.h>
 #include <sys/namei.h>
 #include <sys/disklabel.h>
+#include <sys/resourcevar.h>
 #include <sys/stat.h>
-
-#include <additions/sysent.h>
-#include <additions/resourcevar.h>
 
 #include <machine/cpu.h>
 
 #include <vm/vm.h>
 
 int	netoff = 1;
-int	cmask = CMASK;
+int cmask = CMASK;
 int	securelevel;
 
 extern	size_t physmem;
-extern	struct	mapent _coremap[];
+extern	struct mapent _coremap[];
 
 /*
  * Initialization code.
@@ -71,7 +70,7 @@ main()
 	 * set up system process 0 (swapper)
 	 */
 	p = &proc[0];
-	p->p_addr = *ka6;
+	p->p_addr = *ka6; /* pdp-11 seg.h ref */
 	p->p_stat = SRUN;
 	p->p_flag |= SLOAD|SSYS;
 	p->p_nice = NZERO;
@@ -262,7 +261,7 @@ bhinit()
 		bp->b_forw = bp->b_back = (struct buf *)bp;
 }
 
-memaddr	bpaddr;		/* physical click-address of buffers */
+memaddr	bpaddr;		/* physical click-address of buffers */ /* pdp-11 unibus ref */
 /*
  * Initialize the buffer I/O system by freeing
  * all buffers and setting all device buffer lists to empty.
@@ -276,7 +275,7 @@ binit()
 
 	for (bp = bfreelist; bp < &bfreelist[BQUEUES]; bp++)
 		bp->b_forw = bp->b_back = bp->av_forw = bp->av_back = bp;
-	paddr = ((long)bpaddr) << 6;
+	paddr = ((long)bpaddr) << 6;									/* pdp-11 seg.h ref */
 	for (i = 0; i < nbuf; i++, paddr += MAXBSIZE) {
 		bp = &buf[i];
 		bp->b_dev = NODEV;
