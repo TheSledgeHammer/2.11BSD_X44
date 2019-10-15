@@ -17,15 +17,15 @@
  */
 struct bdevsw
 {
-	int	(*d_open)();
-	int	(*d_close)();
-	int	(*d_strategy)();
+	int	(*d_open)(dev_t dev, int oflags, int devtype, struct proc *p);
+	int	(*d_close)(dev_t dev, int fflag, int devtype, struct proc *p);
+	int	(*d_strategy)(dev_t dev, int fflag, int devtype, struct proc *p);
 	int	(*d_root)();		/* XXX root attach routine */
-	daddr_t	(*d_psize)();
+	daddr_t	(*d_psize)(dev_t dev);
 	int	d_flags;
 };
 
-#if defined(KERNEL) && !defined(SUPERVISOR)
+#ifdef KERNEL
 extern struct	bdevsw bdevsw[];
 #endif
 
@@ -34,17 +34,17 @@ extern struct	bdevsw bdevsw[];
  */
 struct cdevsw
 {
-	int	(*d_open)();
-	int	(*d_close)();
-	int	(*d_read)();
-	int	(*d_write)();
-	int	(*d_ioctl)();
-	int	(*d_stop)();
+	int	(*d_open)(dev_t dev, int oflags, int devtype, struct proc *p);
+	int	(*d_close)(dev_t dev, int fflag, int devtype, struct proc *);
+	int	(*d_read)(dev_t dev, struct uio *uio, int ioflag);
+	int	(*d_write)(dev_t dev, struct uio *uio, int ioflag);
+	int	(*d_ioctl)(dev_t dev, int cmd, caddr_t data, int fflag, struct proc *p);
+	int	(*d_stop)(struct tty *tp, int rw);
 	struct tty *d_ttys;
-	int	(*d_select)();
-	int	(*d_strategy)();
+	int	(*d_select)(dev_t dev, int which, struct proc *p);
+	int	(*d_strategy)(struct buf *bp);
 };
-#if defined(KERNEL) && !defined(SUPERVISOR)
+#ifdef KERNEL
 extern struct	cdevsw cdevsw[];
 #endif
 
@@ -53,17 +53,19 @@ extern struct	cdevsw cdevsw[];
  */
 struct linesw
 {
-	int	(*l_open)();
-	int	(*l_close)();
-	int	(*l_read)();
-	int	(*l_write)();
-	int	(*l_ioctl)();
-	int	(*l_rint)();
+	int	(*l_open)(dev_t dev, struct tty *tp);
+	int	(*l_close)(struct tty *tp, int flag);
+	int	(*l_read)(struct tty *tp, struct uio *uio, int flag);
+	int	(*l_write)(struct tty *tp, struct uio *uio, int flag);
+	int	(*l_ioctl)(struct tty *tp, int cmd, caddr_t data, int flag, struct proc *p);
+	int	(*l_rint)(int c, struct tty *tp);
 	int	(*l_rend)();
 	int	(*l_meta)();
-	int	(*l_start)();
-	int	(*l_modem)();
+	int	(*l_start)(struct tty *tp);
+	int	(*l_modem)(struct tty *tp, int flag);
 };
-#if defined(KERNEL) && !defined(SUPERVISOR)
+#ifdef KERNEL
 extern struct	linesw linesw[];
 #endif
+
+

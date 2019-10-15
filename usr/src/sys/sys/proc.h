@@ -29,6 +29,7 @@ struct	proc {
 	char	p_stat;
 	char	p_dummy;		/* room for one more, here */
 
+	struct 	sysentvec *p_sysent; /* System call dispatch information. */
 	/*
 	 * Union to overwrite information no longer needed by ZOMBIED
 	 * process with exit information for the parent process.  The

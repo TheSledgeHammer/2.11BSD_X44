@@ -7,7 +7,7 @@
  */
 
 
-#include <machine/pcb.h>
+
 #ifndef KERNEL
 #include <sys/errno.h>
 #include <sys/dir.h>
@@ -15,12 +15,11 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #endif
-#include <additions/resourcevar.h>
+#include <sys/resourcevar.h>
 #include <sys/signalvar.h>
 #include <vm/vm.h>		/* XXX */
 #include <sys/sysctl.h>
-
-
+#include <machine/pcb.h>
 
 /*
  * data that doesn't need to be referenced while the process is swapped.

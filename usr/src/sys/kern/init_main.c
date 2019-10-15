@@ -7,25 +7,25 @@
  */
 
 #include <sys/param.h>
-#include <sys/user.h>
-#include <sys/fs.h>
-#include <sys/mount.h>
-#include <sys/map.h>
-#include <sys/proc.h>
-#include <sys/ioctl.h>
-#include <sys/inode.h>
-#include <sys/conf.h>
-#include <sys/buf.h>
-#include <sys/fcntl.h>
-#include <sys/clist.h>
-#include <sys/reboot.h>
 #include <sys/systm.h>
-#include <sys/sysent.h>
-#include <sys/kernel.h>
-#include <sys/namei.h>
+#include <sys/buf.h>
+#include <sys/clist.h>
+#include <sys/conf.h>
 #include <sys/disklabel.h>
+#include <sys/fcntl.h>
+#include <sys/fs.h>
+#include <sys/inode.h>
+#include <sys/ioctl.h>
+#include <sys/kernel.h>
+#include <sys/map.h>
+#include <sys/mount.h>
+#include <sys/namei.h>
+#include <sys/proc.h>
+#include <sys/reboot.h>
 #include <sys/resourcevar.h>
 #include <sys/stat.h>
+#include <sys/sysent.h>
+#include <sys/user.h>
 
 #include <machine/cpu.h>
 
@@ -35,8 +35,12 @@ int	netoff = 1;
 int cmask = CMASK;
 int	securelevel;
 
+struct proc proc0;
+struct proc *curproc = &proc0;
+
 extern	size_t physmem;
 extern	struct mapent _coremap[];
+
 
 /*
  * Initialization code.
@@ -57,6 +61,8 @@ main()
 	extern dev_t bootdev;
 	extern caddr_t bootcsr;
 	register struct proc *p;
+	register struct user *u;
+	extern struct sysentvec aout_sysvec;
 	register int i;
 	register struct fs *fs;
 	time_t  toytime, toyclk();
@@ -64,27 +70,39 @@ main()
 	int	(*ioctl)();
 	struct	partinfo dpart;
 
+	register struct bdevsw bdevsw;
+	register struct cdevsw cdevsw;
+
+	/*
+	 * Initialize the current process pointer (curproc) before
+	 * any possible traps/probes to simplify trap processing.
+	 */
+
+	p = &proc0;
+	curproc = p;
+
 	startup();
 
 	/*
 	 * set up system process 0 (swapper)
 	 */
-	p = &proc[0];
-	p->p_addr = *ka6; /* pdp-11 seg.h ref */
+
+	p->p_sysent = &aout_sysvec;
+
 	p->p_stat = SRUN;
 	p->p_flag |= SLOAD|SSYS;
 	p->p_nice = NZERO;
 
-	u.u_procp = p;			/* init user structure */
-	u.u_ap = u.u_arg;
-	u.u_cmask = cmask;
-	u.u_lastfile = -1;
+	u->u_procp = p;			/* init user structure */
+	u->u_ap = u->u_arg;
+	u->u_cmask = cmask;
+	u->u_lastfile = -1;
 	for (i = 1; i < NGROUPS; i++)
-		u.u_groups[i] = NOGROUP;
-	for (i = 0; i < sizeof(u.u_rlimit)/sizeof(u.u_rlimit[0]); i++)
-		u.u_rlimit[i].rlim_cur = u.u_rlimit[i].rlim_max = 
+		u->u_groups[i] = NOGROUP;
+	for (i = 0; i < sizeof(u->u_rlimit)/sizeof(u->u_rlimit[0]); i++)
+		u->u_rlimit[i]->rlim_cur = u->u_rlimit[i].rlim_max =
 		    RLIM_INFINITY;
-	bcopy("root", u.u_login, sizeof ("root"));
+	bcopy("root", u->u_login, sizeof ("root"));
 
 	/* Initialize signal state for process 0 */
 	siginit(p);
@@ -163,7 +181,6 @@ main()
 	swsize = (*bdevsw[major(swapdev)].d_psize)(swapdev);
 	if	(swsize <= 0)
 		panic("swsiz");		/* don't want to panic, but what ? */
-
 /*
  * Next we make sure that we do not swap on a partition unless it is of
  * type FS_SWAP.  If the driver does not have an ioctl entry point or if
@@ -199,19 +216,10 @@ main()
 /* set up the root file system */
 	rootdir = iget(rootdev, &mount[0].m_filsys, (ino_t)ROOTINO);
 	iunlock(rootdir);
-	u.u_cdir = iget(rootdev, &mount[0].m_filsys, (ino_t)ROOTINO);
-	iunlock(u.u_cdir);
-	u.u_rdir = NULL;
+	u->u_cdir = iget(rootdev, &mount[0].m_filsys, (ino_t)ROOTINO);
+	iunlock(u->u_cdir);
+	u->u_rdir = NULL;
 
-#ifdef INET
-	if (netoff = netinit())
-		printf("netinit failed\n");
-	else
-		{
-		NETSETHZ();
-		NETSTART();
-		}
-#endif
 
 /*
  * This came from pdp/machdep2.c because the memory available statements
@@ -308,118 +316,3 @@ cinit()
 	}
 
 }
-
-#ifdef INET
-memaddr netdata;		/* click address of start of net data */
-
-/*
- * We are called here after all the other init routines (clist, inode,
- * unibusmap, etc...) have been called.  Open the
- * file NETNIX and read the a.out header, based on that go allocate
- * memory and read the text+data into the memory.  Set up supervisor page
- * registers, SDSA6 and SDSA7 have already been set up in mch_start.s.
- */
-
-static char NETNIX[] = "/netnix";
-
-static
-netinit()
-{
-	register u_short *ap, *dp;
-	register int i;
-	struct exec ex;
-	struct inode *ip;
-	memaddr nettext;
-	long lsize;
-	off_t	off;
-	int initdata, netdsize, nettsize, ret, err, resid;
-	char oneclick[ctob(1)];
-	struct	nameidata nd;
-	register struct	nameidata *ndp = &nd;
-
-	ret = 1;
-	NDINIT(ndp, LOOKUP, FOLLOW, UIO_SYSSPACE, NETNIX);
-	if (!(ip = namei(ndp))) {
-		printf("%s not found\n", NETNIX);
-		goto leave;
-	}
-	if ((ip->i_mode & IFMT) != IFREG || !ip->i_size) {
-		printf("%s bad inode\n", NETNIX);
-		goto leave;
-	}
-	err = rdwri(UIO_READ, ip, &ex, sizeof (ex), (off_t)0, UIO_SYSSPACE,
-			IO_UNIT, &resid);
-	if (err || resid) {
-		printf("%s header %d\n", NETNIX, ret);
-		goto leave;
-	}
-	if (ex.a_magic != A_MAGIC3) {
-		printf("%s bad magic %o\n", NETNIX, ex.a_magic);
-		goto leave;
-	}
-	lsize = (long)ex.a_data + (long)ex.a_bss;
-	if (lsize > 48L * 1024L) {
-		printf("%s 2big %ld\n", NETNIX, lsize);
-		goto leave;
-	}
-	nettsize = btoc(ex.a_text);
-	nettext = (memaddr)malloc(coremap, nettsize);
-	netdsize = btoc(ex.a_data + ex.a_bss);
-	netdata = (memaddr)malloc(coremap, netdsize);
-	initdata = ex.a_data >> 6;
-	off = sizeof (ex);
-	for (i = 0; i < nettsize; i++) {
-		err = rdwri(UIO_READ, ip, oneclick, ctob(1), off, UIO_SYSSPACE,
-				IO_UNIT, &resid);
-		if (err || resid)
-			goto release;
-		mapseg5(nettext + i, 077406);
-		bcopy(oneclick, SEG5, ctob(1));
-		off += ctob(1);
-		normalseg5();
-	}
-	for (i = 0; i < initdata; i++) {
-		err = rdwri(UIO_READ, ip, oneclick, ctob(1), off, UIO_SYSSPACE,
-				IO_UNIT, &resid);
-		if (err || resid)
-			goto release;
-		mapseg5(netdata + i, 077406);
-		bcopy(oneclick, SEG5, ctob(1));
-		normalseg5();
-		off += ctob(1);
-	}
-	if (ex.a_data & 077) {
-		err = rdwri(UIO_READ, ip, oneclick, ex.a_data & 077, off,
-				UIO_SYSSPACE, IO_UNIT, &resid);
-		if (err || resid) {
-release:		printf("%s err %d\n", NETNIX, err);
-			mfree(coremap, nettsize, nettext);
-			mfree(coremap, netdsize, netdata);
-			nettsize = netdsize = 0;
-			netdata = nettext = 0;
-			goto leave;
-		}
-		mapseg5(netdata + i, 077406);	/* i is set from above loop */
-		bcopy(oneclick, SEG5, ex.a_data & 077);
-		normalseg5();
-	}
-	for (i = 0, ap = SISA0, dp = SISD0; i < nettsize; i += stoc(1)) {
-		*ap++ = nettext + i;
-		*dp++ = ((stoc(1) - 1) << 8) | RO;
-	}
-	/* might have over run the length on the last one, patch it now */
-	if (i > nettsize)
-		*--dp -= ((i - nettsize) << 8);
-	for (i = 0, ap = SDSA0, dp = SDSD0; i < netdsize; i += stoc(1)) {
-		*ap++ = netdata + i;
-		*dp++ = ((stoc(1) - 1) << 8) | RW;
-	}
-	if (i > netdsize)
-		*--dp -= ((i - netdsize) << 8);
-	ret = 0;
-leave:	if (ip)
-		iput(ip);
-	u.u_error = 0;
-	return(ret);
-}
-#endif
