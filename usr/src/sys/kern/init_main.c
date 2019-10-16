@@ -38,9 +38,6 @@ int	securelevel;
 struct proc proc0;
 struct proc *curproc = &proc0;
 
-extern	size_t physmem;
-extern	struct mapent _coremap[];
-
 
 /*
  * Initialization code.
@@ -65,7 +62,7 @@ main()
 	extern struct sysentvec aout_sysvec;
 	register int i;
 	register struct fs *fs;
-	time_t  toytime, toyclk();
+	//time_t  toytime, toyclk();
 	daddr_t swsize;
 	int	(*ioctl)();
 	struct	partinfo dpart;
@@ -78,6 +75,7 @@ main()
 	 * any possible traps/probes to simplify trap processing.
 	 */
 
+
 	p = &proc0;
 	curproc = p;
 
@@ -86,6 +84,9 @@ main()
 	/*
 	 * set up system process 0 (swapper)
 	 */
+
+	allproc = (volatile struct proc *)p;
+	p->p_prev = (struct proc **)&allproc;
 
 	p->p_sysent = &aout_sysvec;
 
@@ -207,7 +208,7 @@ main()
 	mount_updname(fs, "/", "root", 1, 4);
 	time.tv_sec = fs->fs_time;
 	if	(toytime = toyclk())
-		time.tv_sec = toytime;
+		times.tv_sec = toytime;
 	boottime = time;
 
 /* kick off timeout driven events by calling first time */
@@ -219,24 +220,6 @@ main()
 	u->u_cdir = iget(rootdev, &mount[0].m_filsys, (ino_t)ROOTINO);
 	iunlock(u->u_cdir);
 	u->u_rdir = NULL;
-
-
-/*
- * This came from pdp/machdep2.c because the memory available statements
- * were being made _before_ memory for the networking code was allocated.
- * A side effect of moving this code is that network "attach" and MSCP 
- * "online" messages can appear before the memory sizes.  The (currently
- * safe) assumption is made that no 'free' calls are made so that the
- * size in the first entry of the core map is correct.
-*/
-	printf("\nphys mem  = %D\n", ctob((long)physmem));
-	printf("avail mem = %D\n", ctob((long)_coremap[0].m_size));
-	maxmem = MAXMEM;
-	printf("user mem  = %D\n", ctob((long)MAXMEM));
-#if NRAM > 0
-	printf("ram disk  = %D\n", ctob((long)ramsize));
-#endif
-	printf("\n");
 
 	/*
 	 * make init process
@@ -314,5 +297,4 @@ cinit()
 		cfreelist = cp;
 		cfreecount += CBSIZE;
 	}
-
 }

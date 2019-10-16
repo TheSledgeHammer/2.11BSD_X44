@@ -97,21 +97,21 @@
 #define NCR3	0xca
 #define NCR4	0xcd
 
-#define NCR_SIZE_0K	0
-#define NCR_SIZE_4K	1
-#define NCR_SIZE_8K	2
+#define NCR_SIZE_0K		0
+#define NCR_SIZE_4K		1
+#define NCR_SIZE_8K		2
 #define NCR_SIZE_16K	3
 #define NCR_SIZE_32K	4
 #define NCR_SIZE_64K	5
 #define NCR_SIZE_128K	6
 #define NCR_SIZE_256K	7
 #define NCR_SIZE_512K	8
-#define NCR_SIZE_1M	9
-#define NCR_SIZE_2M	10
-#define NCR_SIZE_4M	11
-#define NCR_SIZE_8M	12
+#define NCR_SIZE_1M		9
+#define NCR_SIZE_2M		10
+#define NCR_SIZE_4M		11
+#define NCR_SIZE_8M		12
 #define NCR_SIZE_16M	13
 #define NCR_SIZE_32M	14
-#define NCR_SIZE_4G	15
+#define NCR_SIZE_4G		15
 
 #endif /* _MACHINE_SPECIALREG_H_ */

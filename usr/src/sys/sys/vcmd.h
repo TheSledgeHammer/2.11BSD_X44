@@ -6,13 +6,10 @@
  *	@(#)vcmd.h	7.1 (Berkeley) 6/4/86
  */
 
-#ifndef _IOCTL_
-#ifdef KERNEL
-#include "ioctl.h"
-#else
+#ifndef _SYS_VCMD_H_
+#define _SYS_VCMD_H_
+
 #include <sys/ioctl.h>
-#endif
-#endif
 
 #define	VPRINT		0100
 #define	VPLOT		0200
@@ -20,3 +17,5 @@
 
 #define	VGETSTATE	_IOR(v, 0, int)
 #define	VSETSTATE	_IOW(v, 1, int)
+
+#endif

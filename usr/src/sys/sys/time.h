@@ -9,8 +9,6 @@
 #ifndef	_SYS_TIME_H_
 #define	_SYS_TIME_H_
 
-#include <sys/types.h>
-
 /*
  * Structure returned by gettimeofday(2) system call,
  * and used in other calls.
@@ -34,6 +32,7 @@ struct timezone {
 	int	tz_minuteswest;	/* minutes west of Greenwich */
 	int	tz_dsttime;	/* type of dst correction */
 };
+
 #define	DST_NONE	0	/* not on dst */
 #define	DST_USA		1	/* USA style dst */
 #define	DST_AUST	2	/* Australian style dst */
@@ -71,9 +70,6 @@ struct	itimerval {
 	struct	timeval it_value;	/* current value */
 };
 
-#ifndef KERNEL
-#include <time.h>
-#endif
 
 /*
  * Getkerninfo clock information structure
@@ -84,4 +80,32 @@ struct clockinfo {
 	int	stathz;		/* statistics clock frequency */
 	int	profhz;		/* profiling clock frequency */
 };
+
+#ifdef KERNEL
+
+int		itimerdecr __P((struct itimerval *itp,int usec));
+int		itimerfix __P((struct timeval *));
+void	microtime __P((struct timeval *));
+void	timevaladd __P((struct timeval *, struct timeval *));
+void	timevalfix __P((struct timeval *));
+void	timevalsub __P((struct timeval *, struct timeval *));
+
+#else /* not KERNEL */
+#include <time.h>
+
+#ifndef _POSIX_SOURCE
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int	adjtime __P((const struct timeval *, struct timeval *));
+int	getitimer __P((int, struct itimerval *));
+int	gettimeofday __P((struct timeval *, struct timezone *));
+int	setitimer __P((int, const struct itimerval *, struct itimerval *));
+int	settimeofday __P((const struct timeval *, const struct timezone *));
+int	utimes __P((const char *, const struct timeval *));
+__END_DECLS
+#endif /* !POSIX */
+
+#endif /* !KERNEL */
+
 #endif	/* !_SYS_TIME_H_ */

@@ -140,13 +140,13 @@ pmap_kextract(vm_offset_t va)
  */
 
 struct pmap {
-	pd_entry_t		*pm_pdir;	/* KVA of page directory */
-	boolean_t		pm_pdchanged;	/* pdir changed */
-	short			pm_dref;	/* page directory ref count */
-	short			pm_count;	/* pmap reference count */
-	simple_lock_data_t	pm_lock;	/* lock on pmap */
+	pd_entry_t				*pm_pdir;	/* KVA of page directory */
+	boolean_t				pm_pdchanged;	/* pdir changed */
+	short					pm_dref;	/* page directory ref count */
+	short					pm_count;	/* pmap reference count */
+	simple_lock_data_t		pm_lock;	/* lock on pmap */
 	struct pmap_statistics	pm_stats;	/* pmap statistics */
-	long			pm_ptpages;	/* more stats: PT pages */
+	long					pm_ptpages;	/* more stats: PT pages */
 };
 
 typedef struct pmap	*pmap_t;
@@ -175,8 +175,8 @@ extern pmap_t		kernel_pmap;
  */
 typedef struct pv_entry {
 	struct pv_entry	*pv_next;	/* next pv_entry */
-	pmap_t		pv_pmap;	/* pmap where mapping lies */
-	vm_offset_t	pv_va;		/* virtual address for mapping */
+	pmap_t			pv_pmap;	/* pmap where mapping lies */
+	vm_offset_t		pv_va;		/* virtual address for mapping */
 } *pv_entry_t;
 
 #define	PV_ENTRY_NULL	((pv_entry_t) 0)

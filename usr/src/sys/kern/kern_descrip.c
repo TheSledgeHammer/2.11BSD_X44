@@ -32,7 +32,7 @@ void
 getdtablesize()
 {
 
-	u.u_r.r_val1 = NOFILE;
+	u->u_r.r_val1 = NOFILE;
 }
 
 void
@@ -40,7 +40,7 @@ dup()
 {
 	register struct a {
 		int	i;
-	} *uap = (struct a *) u.u_ap;
+	} *uap = (struct a *) u->u_ap;
 	register struct file *fp;
 	register int j;
 
@@ -50,7 +50,7 @@ dup()
 	j = ufalloc(0);
 	if (j < 0)
 		return;
-	dupit(j, fp, u.u_pofile[uap->i] &~ UF_EXCLOSE);
+	dupit(j, fp, u->u_pofile[uap->i] &~ UF_EXCLOSE);
 }
 
 void
@@ -58,23 +58,23 @@ dup2()
 {
 	register struct a {
 		int	i, j;
-	} *uap = (struct a *) u.u_ap;
+	} *uap = (struct a *) u->u_ap;
 	register struct file *fp;
 
 	GETF(fp, uap->i);
 	if (uap->j < 0 || uap->j >= NOFILE) {
-		u.u_error = EBADF;
+		u->u_error = EBADF;
 		return;
 	}
-	u.u_r.r_val1 = uap->j;
+	u->u_r.r_val1 = uap->j;
 	if (uap->i == uap->j)
 		return;
-	if (u.u_ofile[uap->j])
+	if (u->u_ofile[uap->j])
 		/*
 		 * dup2 must succeed even if the close has an error.
 		 */
-		(void) closef(u.u_ofile[uap->j]);
-	dupit(uap->j, fp, u.u_pofile[uap->i] &~ UF_EXCLOSE);
+		(void) closef(u->u_ofile[uap->j]);
+	dupit(uap->j, fp, u->u_pofile[uap->i] &~ UF_EXCLOSE);
 }
 
 void
@@ -84,11 +84,11 @@ dupit(fd, fp, flags)
 	int flags;
 {
 
-	u.u_ofile[fd] = fp;
-	u.u_pofile[fd] = flags;
+	u->u_ofile[fd] = fp;
+	u->u_pofile[fd] = flags;
 	fp->f_count++;
-	if (fd > u.u_lastfile)
-		u.u_lastfile = fd;
+	if (fd > u->u_lastfile)
+		u->u_lastfile = fd;
 }
 
 /*
@@ -106,15 +106,15 @@ fcntl()
 	register i;
 	register char *pop;
 
-	uap = (struct a *)u.u_ap;
+	uap = (struct a *)u->u_ap;
 	if ((fp = getf(uap->fdes)) == NULL)
 		return;
-	pop = &u.u_pofile[uap->fdes];
+	pop = &u->u_pofile[uap->fdes];
 	switch(uap->cmd) {
 	case F_DUPFD:
 		i = uap->arg;
 		if (i < 0 || i >= NOFILE) {
-			u.u_error = EINVAL;
+			u->u_error = EINVAL;
 			return;
 		}
 		if ((i = ufalloc(i)) < 0)
@@ -123,7 +123,7 @@ fcntl()
 		break;
 
 	case F_GETFD:
-		u.u_r.r_val1 = *pop & 1;
+		u->u_r.r_val1 = *pop & 1;
 		break;
 
 	case F_SETFD:
@@ -131,30 +131,30 @@ fcntl()
 		break;
 
 	case F_GETFL:
-		u.u_r.r_val1 = OFLAGS(fp->f_flag);
+		u->u_r.r_val1 = OFLAGS(fp->f_flag);
 		break;
 
 	case F_SETFL:
 		fp->f_flag &= ~FCNTLFLAGS;
 		fp->f_flag |= (FFLAGS(uap->arg)) & FCNTLFLAGS;
-		u.u_error = fset(fp, FNONBLOCK, fp->f_flag & FNONBLOCK);
-		if (u.u_error)
+		u->u_error = fset(fp, FNONBLOCK, fp->f_flag & FNONBLOCK);
+		if (u->u_error)
 			break;
-		u.u_error = fset(fp, FASYNC, fp->f_flag & FASYNC);
-		if (u.u_error)
+		u->u_error = fset(fp, FASYNC, fp->f_flag & FASYNC);
+		if (u->u_error)
 			(void) fset(fp, FNONBLOCK, 0);
 		break;
 
 	case F_GETOWN:
-		u.u_error = fgetown(fp, &u.u_r.r_val1);
+		u->u_error = fgetown(fp, &u->u_r.r_val1);
 		break;
 
 	case F_SETOWN:
-		u.u_error = fsetown(fp, uap->arg);
+		u->u_error = fsetown(fp, uap->arg);
 		break;
 
 	default:
-		u.u_error = EINVAL;
+		u->u_error = EINVAL;
 	}
 }
 
@@ -229,14 +229,14 @@ close()
 {
 	register struct a {
 		int	i;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u->u_ap;
 	register struct file *fp;
 
 	GETF(fp, uap->i);
-	u.u_ofile[uap->i] = NULL;
-	while (u.u_lastfile >= 0 && u.u_ofile[u.u_lastfile] == NULL)
-		u.u_lastfile--;
-	u.u_error = closef(fp);
+	u->u_ofile[uap->i] = NULL;
+	while (u->u_lastfile >= 0 && u->u_ofile[u->u_lastfile] == NULL)
+		u->u_lastfile--;
+	u->u_error = closef(fp);
 	/* WHAT IF u.u_error ? */
 }
 
@@ -250,14 +250,14 @@ fstat()
 	} *uap;
 	struct stat ub;
 
-	uap = (struct a *)u.u_ap;
+	uap = (struct a *)u->u_ap;
 	if ((fp = getf(uap->fdes)) == NULL)
 		return;
 	switch (fp->f_type) {
 
 	case DTYPE_PIPE:
 	case DTYPE_INODE:
-		u.u_error = ino_stat((struct inode *)fp->f_data, &ub);
+		u->u_error = ino_stat((struct inode *)fp->f_data, &ub);
 		if (fp->f_type == DTYPE_PIPE)
 			ub.st_size -= fp->f_offset;
 		break;
@@ -268,11 +268,11 @@ fstat()
 		break;
 #endif
 	default:
-		u.u_error = EINVAL;
+		u->u_error = EINVAL;
 		break;
 	}
-	if (u.u_error == 0)
-		u.u_error = copyout((caddr_t)&ub, (caddr_t)uap->sb,
+	if (u->u_error == 0)
+		u->u_error = copyout((caddr_t)&ub, (caddr_t)uap->sb,
 		    sizeof (ub));
 }
 
@@ -286,14 +286,14 @@ ufalloc(i)
 {
 
 	for (; i < NOFILE; i++)
-		if (u.u_ofile[i] == NULL) {
-			u.u_r.r_val1 = i;
-			u.u_pofile[i] = 0;
-			if (i > u.u_lastfile)
-				u.u_lastfile = i;
+		if (u->u_ofile[i] == NULL) {
+			u->u_r.r_val1 = i;
+			u->u_pofile[i] = 0;
+			if (i > u->u_lastfile)
+				u->u_lastfile = i;
 			return (i);
 		}
-	u.u_error = EMFILE;
+	u->u_error = EMFILE;
 	return (-1);
 }
 
@@ -322,10 +322,10 @@ falloc()
 		if (fp->f_count == 0)
 			goto slot;
 	tablefull("file");
-	u.u_error = ENFILE;
+	u->u_error = ENFILE;
 	return (NULL);
 slot:
-	u.u_ofile[i] = fp;
+	u->u_ofile[i] = fp;
 	fp->f_count = 1;
 	fp->f_data = 0;
 	fp->f_offset = 0;
@@ -345,8 +345,8 @@ getf(f)
 {
 	register struct file *fp;
 
-	if ((unsigned)f >= NOFILE || (fp = u.u_ofile[f]) == NULL) {
-		u.u_error = EBADF;
+	if ((unsigned)f >= NOFILE || (fp = u->u_ofile[f]) == NULL) {
+		u->u_error = EBADF;
 		return (NULL);
 	}
 	return (fp);
@@ -386,14 +386,14 @@ flock()
 	register struct a {
 		int	fd;
 		int	how;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u->u_ap;
 	register struct file *fp;
 	int error;
 
 	if ((fp = getf(uap->fd)) == NULL)
 		return;
 	if (fp->f_type != DTYPE_INODE) {
-		u.u_error = EOPNOTSUPP;
+		u->u_error = EOPNOTSUPP;
 		return;
 	}
 	if (uap->how & LOCK_UN) {
@@ -405,11 +405,11 @@ flock()
 	if (uap->how & LOCK_EX)
 		uap->how &= ~LOCK_SH;
 	/* avoid work... */
-	if ((fp->f_flag & FEXLOCK) && (uap->how & LOCK_EX) ||
-	    (fp->f_flag & FSHLOCK) && (uap->how & LOCK_SH))
+	if (((fp->f_flag & FEXLOCK) && (uap->how & LOCK_EX)) ||
+	    ((fp->f_flag & FSHLOCK) && (uap->how & LOCK_SH)))
 		return;
 	error = ino_lock(fp, uap->how);
-	return(u.u_error = error);
+	//u->u_error = error;
 }
 
 /*
@@ -435,7 +435,7 @@ fdopen(dev, mode, type)
 	 * actions in dupfdopen below. Other callers of vn_open will
 	 * simply report the error.
 	 */
-	u.u_dupfd = minor(dev);
+	u->u_dupfd = minor(dev);
 	return(ENODEV);
 	}
 
@@ -458,8 +458,8 @@ dupfdopen(indx, dfd, mode, error)
 	 * falloc could allocate an already closed to-be-dup'd descriptor
 	 * as the new descriptor.
 	 */
-	fp = u.u_ofile[indx];
-	if	(dfd >= NOFILE || (wfp = u.u_ofile[dfd]) == NULL || fp == wfp)
+	fp = u->u_ofile[indx];
+	if	(dfd >= NOFILE || (wfp = u->u_ofile[dfd]) == NULL || fp == wfp)
 		return(EBADF);
 
 	/*
@@ -486,11 +486,11 @@ dupfdopen(indx, dfd, mode, error)
 		 */
 		if (((mode & (FREAD|FWRITE)) | wfp->f_flag) != wfp->f_flag)
 			return(EACCES);
-		u.u_ofile[indx] = wfp;
-		u.u_pofile[indx] = u.u_pofile[dfd];
+		u->u_ofile[indx] = wfp;
+		u->u_pofile[indx] = u->u_pofile[dfd];
 		wfp->f_count++;
-		if	(indx > u.u_lastfile)
-			u.u_lastfile = indx;
+		if	(indx > u->u_lastfile)
+			u->u_lastfile = indx;
 		return(0);
 #ifdef	haveportalfs
 	case ENXIO:
@@ -518,6 +518,7 @@ dupfdopen(indx, dfd, mode, error)
 		log(LOG_NOTICE, "dupfdopen");
 		/* FALLTHROUGH */
 #endif
+		break;
 	default:
 		return(error);
 	}

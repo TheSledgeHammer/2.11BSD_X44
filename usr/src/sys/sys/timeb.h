@@ -6,13 +6,18 @@
  *	@(#)timeb.h	7.1 (Berkeley) 6/4/86
  */
 
+#ifndef _SYS_TIMEB_H_
+#define _SYS_TIMEB_H_
+
+#include <sys/time.h>
 /*
  * Structure returned by ftime system call
  */
 struct timeb
 {
-	time_t	time;
-	unsigned short millitm;
-	short	timezone;
-	short	dstflag;
+	time_t	time;				/* seconds since the Epoch */
+	unsigned short millitm;		/* + milliseconds since the Epoch */
+	short	timezone;			/* minutes west of CUT */
+	short	dstflag;			/* DST == non-zero */
 };
+#endif

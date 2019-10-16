@@ -1,9 +1,6 @@
-/*-
- * Copyright (c) 1994
- *	The Regents of the University of California.  All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * Chuck Karish of Mindcraft, Inc.
+/*
+ * Copyright (c) 1994, Henrik Vestergaard Draboel
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -15,16 +12,14 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *	This product includes software developed by (name).
+ * 4. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
  * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
@@ -33,35 +28,43 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)utsname.h	8.1.1 (2.11BSD GTE) 2/4/95
+ *	$Id: rtprio.h,v 1.1 1994/09/01 05:12:53 davidg Exp $
  */
 
-#ifndef	_SYS_UTSNAME_H
-#define	_SYS_UTSNAME_H
+#ifndef _SYS_RTPRIO_H_
+#define _SYS_RTPRIO_H_
 
-#define SYS_NMLN	32
+/*
+ * Process realtime-priority specifications to rtprio.
+ */
 
-struct utsname {
-	char	sysname[128];	/* Name of this OS. */
-	char	nodename[128];	/* Name of this network node. */
-	char	release[128];	/* Release level. */
-	char	version[128];	/* Version level. */
-	char	machine[128];	/* Hardware type. */
+/* priority types */
+#define RTP_PRIO_REALTIME	0
+#define RTP_PRIO_NORMAL		1
+#define RTP_PRIO_IDLE		2
+
+/* priority range */
+#define RTP_PRIO_MIN		0	/* Highest priority */
+#define RTP_PRIO_MAX		31	/* Lowest priority */
+
+/*
+ * rtprio() syscall functions
+ */
+#define RTP_LOOKUP		0
+#define RTP_SET			1
+
+#ifndef LOCORE
+struct rtprio {
+	u_short type;
+	u_short prio;
 };
-
-
-#include <sys/cdefs.h>
+#endif
 
 #ifndef KERNEL
-#ifdef __STDC__
-__BEGIN_DECLS
-int	uname __P((struct utsname *));
-__END_DECLS
-#else
-extern int uname();
-#endif
-#else
-extern struct utsname utsname;
-#endif	/* KERNEL */
+#include <sys/cdefs.h>
 
-#endif	/* !_SYS_UTSNAME_H */
+__BEGIN_DECLS
+int	rtprio __P((int, pid_t, struct rtprio *));
+__END_DECLS
+#endif	/* !KERNEL */
+#endif	/* !_SYS_RTPRIO_H_ */

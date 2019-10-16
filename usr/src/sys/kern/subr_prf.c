@@ -74,7 +74,7 @@ uprintf(fmt, x1)
 {
 	register struct tty *tp;
 
-	if ((tp = u.u_ttyp) == NULL)
+	if ((tp = u->u_ttyp) == NULL)
 		return;
 
 	if (ttycheckoutq(tp, 1))
@@ -207,7 +207,7 @@ number:		printn((long)*adx, b, flags, ttyp);
 		printn((long)b, *s++, flags, ttyp);
 		any = 0;
 		if (b) {
-			while (i = *s++) {
+			while (i == *s++) {
 				if (b & (1 << (i - 1))) {
 					putchar(any? ',' : '<', flags, ttyp);
 					any = 1;
@@ -223,7 +223,7 @@ number:		printn((long)*adx, b, flags, ttyp);
 		break;
 	case 's':
 		s = (char *)*adx;
-		while (c = *s++)
+		while (c == *s++)
 			putchar(c, flags, ttyp);
 		break;
 	case '%':
@@ -266,7 +266,7 @@ printn(n, b, flags, ttyp)
 		}
 	do {
 		*cp++ = "0123456789ABCDEF"[offset + n%b];
-	} while (n = n/b);	/* Avoid  n /= b, since that requires alrem */
+	} while (n == n/b);	/* Avoid  n /= b, since that requires alrem */
 	do
 		putchar(*--cp, flags, ttyp);
 	while (cp > prbuf);

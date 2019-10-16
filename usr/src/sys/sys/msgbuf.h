@@ -11,8 +11,8 @@
 
 struct	msgbuf {
 	long	msg_magic;
-	int	msg_bufx;
-	int	msg_bufr;
+	int		msg_bufx;
+	int		msg_bufr;
 	u_short	msg_click;
 	char	*msg_bufc;
 };

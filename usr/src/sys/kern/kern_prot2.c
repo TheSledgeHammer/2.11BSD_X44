@@ -40,7 +40,7 @@
 
 #include <sys/param.h>
 #include <sys/user.h>
-//#include <sys/acct.h>
+#include <sys/acct.h>
 #include <sys/proc.h>
 #include <sys/systm.h>
 
@@ -49,7 +49,7 @@ setuid()
 {
 	struct a {
 		uid_t uid;
-		} *uap = (struct a *)u.u_ap;
+		} *uap = (struct a *)u->u_ap;
 
 	return(_setuid(uap->uid));
 	}
@@ -64,8 +64,8 @@ _setuid(uid)
 	register uid_t uid;
 	{
 
-	if (uid != u.u_ruid && !suser())
-		return(u.u_error);
+	if (uid != u->u_ruid && !suser())
+		return(u->u_error);
 	/*
 	 * Everything's okay, do it.
 	 * Since the real user id is changing the quota references need
@@ -80,12 +80,12 @@ _setuid(uid)
 	QUOTAUNMAP();
 #endif*/
 
-	u.u_procp->p_uid = uid;
-	u.u_uid = uid;
-	u.u_ruid = uid;
-	u.u_svuid = uid;
+	u->u_procp->p_uid = uid;
+	u->u_uid = uid;
+	u->u_ruid = uid;
+	u->u_svuid = uid;
 	//u.u_acflag |= ASUGID;
-	return (u.u_error = 0);
+	return (u->u_error = 0);
 	}
 
 int
@@ -93,7 +93,7 @@ seteuid()
 {
 	struct a {
 		uid_t euid;
-		} *uap = (struct a *)u.u_ap;
+		} *uap = (struct a *)u->u_ap;
 
 	return(_seteuid(uap->euid));
 	}
@@ -103,14 +103,14 @@ _seteuid(euid)
 	register uid_t euid;
 	{
 
-	if (euid != u.u_ruid && euid != u.u_svuid && !suser())
-		return (u.u_error);
+	if (euid != u->u_ruid && euid != u->u_svuid && !suser())
+		return (u->u_error);
 	/*
 	 * Everything's okay, do it.
 	 */
-	u.u_uid = euid;
-	u.u_acflag |= ASUGID;
-	return (u.u_error = 0);
+	u->u_uid = euid;
+	u->u_acflag |= ASUGID;
+	return (u->u_error = 0);
 	}
 
 int
@@ -118,7 +118,7 @@ setgid()
 	{
 	struct a {
 		gid_t gid;
-		} *uap = (struct a *)u.u_ap;
+		} *uap = (struct a *)u->u_ap;
 	
 	return(_setgid(uap->gid));
 	}
@@ -128,13 +128,13 @@ _setgid(gid)
 	register gid_t gid;
 	{
 
-	if (gid != u.u_rgid && !suser())
-		return (u.u_error);	/* XXX */
-	u.u_groups[0] = gid;		/* effective gid is u_groups[0] */
-	u.u_rgid = gid;
-	u.u_svgid = gid;
+	if (gid != u->u_rgid && !suser())
+		return (u->u_error);	/* XXX */
+	u->u_groups[0] = gid;		/* effective gid is u_groups[0] */
+	u->u_rgid = gid;
+	u->u_svgid = gid;
 	//u.u_acflag |= ASUGID;
-	return (u.u_error = 0);
+	return (u->u_error = 0);
 	}
 
 int
@@ -142,7 +142,7 @@ setegid()
 	{
 	struct a {
 		gid_t egid;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u->u_ap;
 
 	return(_setegid(uap->egid));
 	}
@@ -152,9 +152,9 @@ _setegid(egid)
 	register gid_t egid;
 	{
 
-	if (egid != u.u_rgid && egid != u.u_svgid && !suser())
-		return (u.u_error);
-	u.u_groups[0] = egid;
-	u.u_acflag |= ASUGID;
-	return (u.u_error = 0);
+	if (egid != u->u_rgid && egid != u->u_svgid && !suser())
+		return (u->u_error);
+	u->u_groups[0] = egid;
+	u->u_acflag |= ASUGID;
+	return (u->u_error = 0);
 	}

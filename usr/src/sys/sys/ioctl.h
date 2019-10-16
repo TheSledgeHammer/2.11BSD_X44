@@ -216,7 +216,7 @@ struct ttysize {
 #define	TIOCGWINSZ	_IOR(t, 104, struct winsize)	/* get window size */
 #define	TIOCSWINSZ	_IOW(t, 103, struct winsize)	/* set window size */
 #define	TIOCUCNTL	_IOW(t, 102, int)	/* pty: set/clr usr cntl mode */
-#define		UIOCCMD(n)	_IO(u, n)		/* usr cntl op "n" */
+#define	UIOCCMD(n)	_IO(u, n)		/* usr cntl op "n" */
 
 #define	OTTYDISC	0		/* old, v7 std tty driver */
 #define	NETLDISC	1		/* line discip for berk net */
@@ -224,37 +224,37 @@ struct ttysize {
 #define	TABLDISC	3		/* tablet discipline */
 #define	SLIPDISC	4		/* serial IP discipline */
 
-#define	FIOCLEX		_IO(f, 1)		/* set exclusive use on fd */
-#define	FIONCLEX	_IO(f, 2)		/* remove exclusive use */
+#define	FIOCLEX			_IO(f, 1)		/* set exclusive use on fd */
+#define	FIONCLEX		_IO(f, 2)		/* remove exclusive use */
 /* another local */
 /* should use off_t for FIONREAD but that would require types.h */
-#define	FIONREAD	_IOR(f, 127, long)	/* get # bytes to read */
-#define	FIONBIO		_IOW(f, 126, int)	/* set/clear non-blocking i/o */
-#define	FIOASYNC	_IOW(f, 125, int)	/* set/clear async i/o */
-#define	FIOSETOWN	_IOW(f, 124, int)	/* set owner */
-#define	FIOGETOWN	_IOR(f, 123, int)	/* get owner */
+#define	FIONREAD		_IOR(f, 127, long)	/* get # bytes to read */
+#define	FIONBIO			_IOW(f, 126, int)	/* set/clear non-blocking i/o */
+#define	FIOASYNC		_IOW(f, 125, int)	/* set/clear async i/o */
+#define	FIOSETOWN		_IOW(f, 124, int)	/* set owner */
+#define	FIOGETOWN		_IOR(f, 123, int)	/* get owner */
 
 /* socket i/o controls */
-#define	SIOCSHIWAT	_IOW(s,  0, int)		/* set high watermark */
-#define	SIOCGHIWAT	_IOR(s,  1, int)		/* get high watermark */
-#define	SIOCSLOWAT	_IOW(s,  2, int)		/* set low watermark */
-#define	SIOCGLOWAT	_IOR(s,  3, int)		/* get low watermark */
-#define	SIOCATMARK	_IOR(s,  7, int)		/* at oob mark? */
-#define	SIOCSPGRP	_IOW(s,  8, int)		/* set process group */
-#define	SIOCGPGRP	_IOR(s,  9, int)		/* get process group */
+#define	SIOCSHIWAT		_IOW(s,  0, int)		/* set high watermark */
+#define	SIOCGHIWAT		_IOR(s,  1, int)		/* get high watermark */
+#define	SIOCSLOWAT		_IOW(s,  2, int)		/* set low watermark */
+#define	SIOCGLOWAT		_IOR(s,  3, int)		/* get low watermark */
+#define	SIOCATMARK		_IOR(s,  7, int)		/* at oob mark? */
+#define	SIOCSPGRP		_IOW(s,  8, int)		/* set process group */
+#define	SIOCGPGRP		_IOR(s,  9, int)		/* get process group */
 
-#define	SIOCADDRT	_IOW(r, 10, struct rtentry)	/* add route */
-#define	SIOCDELRT	_IOW(r, 11, struct rtentry)	/* delete route */
+#define	SIOCADDRT		_IOW(r, 10, struct rtentry)	/* add route */
+#define	SIOCDELRT		_IOW(r, 11, struct rtentry)	/* delete route */
 
-#define	SIOCSIFADDR	_IOW(i, 12, struct ifreq)	/* set ifnet address */
-#define	SIOCGIFADDR	_IOWR(i,13, struct ifreq)	/* get ifnet address */
+#define	SIOCSIFADDR		_IOW(i, 12, struct ifreq)	/* set ifnet address */
+#define	SIOCGIFADDR		_IOWR(i,13, struct ifreq)	/* get ifnet address */
 #define	SIOCSIFDSTADDR	_IOW(i, 14, struct ifreq)	/* set p-p address */
 #define	SIOCGIFDSTADDR	_IOWR(i,15, struct ifreq)	/* get p-p address */
 #define	SIOCSIFFLAGS	_IOW(i, 16, struct ifreq)	/* set ifnet flags */
 #define	SIOCGIFFLAGS	_IOWR(i,17, struct ifreq)	/* get ifnet flags */
 #define	SIOCGIFBRDADDR	_IOWR(i,18, struct ifreq)	/* get broadcast addr */
 #define	SIOCSIFBRDADDR	_IOW(i,19, struct ifreq)	/* set broadcast addr */
-#define	SIOCGIFCONF	_IOWR(i,20, struct ifconf)	/* get ifnet list */
+#define	SIOCGIFCONF		_IOWR(i,20, struct ifconf)	/* get ifnet list */
 #define	SIOCGIFNETMASK	_IOWR(i,21, struct ifreq)	/* get net addr mask */
 #define	SIOCSIFNETMASK	_IOW(i,22, struct ifreq)	/* set net addr mask */
 #define	SIOCGIFMETRIC	_IOWR(i,23, struct ifreq)	/* get IF metric */
@@ -263,5 +263,23 @@ struct ttysize {
 #define	SIOCSARP	_IOW(i, 30, struct arpreq)	/* set arp entry */
 #define	SIOCGARP	_IOWR(i,31, struct arpreq)	/* get arp entry */
 #define	SIOCDARP	_IOW(i, 32, struct arpreq)	/* delete arp entry */
+#ifndef KERNEL
 
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int	ioctl __P((int, unsigned long, ...));
+__END_DECLS
+#endif /* !KERNEL */
+#endif /* !_SYS_IOCTL_H_ */
+
+/*
+ * Keep outside _SYS_IOCTL_H_
+ * Compatability with old terminal driver
+ *
+ * Source level -> #define USE_OLD_TTY
+ * Kernel level -> options COMPAT_43 or COMPAT_SUNOS
+ */
+#if defined(USE_OLD_TTY) || defined(COMPAT_43) || defined(COMPAT_SUNOS)
+#include <sys/ioctl_compat.h>
 #endif

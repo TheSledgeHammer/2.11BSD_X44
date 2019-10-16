@@ -5,11 +5,18 @@
  *
  *	@(#)fcntl.h	5.2 (Berkeley) 1/8/86
  */
-
+#ifndef _SYS_FCNTL_H_
+#define	_SYS_FCNTL_H_
 /*
  * Flag values accessible to open(2) and fcntl(2)-- copied from
  * <sys/file.h>.  (The first three can only be set by open.)
  */
+
+#ifndef KERNEL
+#include <sys/types.h>
+#endif
+
+
 #define	O_RDONLY	000		/* open for reading */
 #define	O_WRONLY	001		/* open for writing */
 #define	O_RDWR		002		/* open for read & write */
@@ -38,3 +45,18 @@
 #define	FTRUNC		02000		/* truncate to zero length */
 #define	FEXCL		04000		/* error if already created */
 #endif
+
+#ifndef KERNEL
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int	open __P((const char *, int, ...));
+int	creat __P((const char *, mode_t));
+int	fcntl __P((int, int, ...));
+#ifndef _POSIX_SOURCE
+int	flock __P((int, int));
+#endif /* !_POSIX_SOURCE */
+__END_DECLS
+#endif
+
+#endif /* !_SYS_FCNTL_H_ */

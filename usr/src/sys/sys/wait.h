@@ -71,3 +71,19 @@ union wait	{
 
 #define	WAIT_ANY	(-1)
 #define	WAIT_MYPGRP	0
+
+#ifndef KERNEL
+#include <sys/types.h>
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+struct rusage;	/* forward declaration */
+
+pid_t	wait __P((int *));
+pid_t	waitpid __P((pid_t, int *, int));
+#ifndef _POSIX_SOURCE
+pid_t	wait3 __P((int *, int, struct rusage *));
+pid_t	wait4 __P((pid_t, int *, int, struct rusage *));
+#endif
+__END_DECLS
+#endif

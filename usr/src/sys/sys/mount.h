@@ -72,7 +72,7 @@ struct	xmount
  * Mount flags.
  */
 #define	MNT_RDONLY	0x0001		/* read only filesystem */
-#define	MNT_SYNCHRONOUS	0x0002		/* file system written synchronously */
+#define	MNT_SYNCHRONOUS	0x0002	/* file system written synchronously */
 #define	MNT_NOEXEC	0x0004		/* can't exec from filesystem */
 #define	MNT_NOSUID	0x0008		/* don't honor setuid bits on fs */
 #define	MNT_NODEV	0x0010		/* don't interpret special files */

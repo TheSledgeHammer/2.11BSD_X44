@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986, 1993, 1994
+ * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,66 +30,36 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)uio.h	8.5.2 (2.11BSD GTE) 12/20/94
- *
- * Copied from 4.4-Lite and modified for 2.11BSD.  Modifications were removal
- * of prototypes, limits for dynamic allocation of iovec structs and changing
- * uio_resid to u_short from int.
+ *	@(#)ucred.h	8.2 (Berkeley) 1/4/94
+ * $Id: ucred.h,v 1.3 1994/08/18 22:35:51 wollman Exp $
  */
 
-#ifndef _SYS_UIO_H_
-#define	_SYS_UIO_H_
+#ifndef _SYS_UCRED_H_
+#define	_SYS_UCRED_H_
+#include <types.h>
 
 /*
- * XXX
- * iov_base should be a void *.
+ * Credentials.
  */
-struct iovec {
-	char	*iov_base;	/* Base address. */
-	size_t	 iov_len;	/* Length. */
+struct ucred {
+	u_short	cr_ref;					/* reference count */
+	uid_t	cr_uid;					/* effective user id */
+	short	cr_ngroups;				/* number of groups */
+	gid_t	cr_groups[NGROUPS];		/* groups */
 };
-
-enum	uio_rw { UIO_READ, UIO_WRITE };
-
-/* Segment flag values. */
-enum uio_seg {
-	UIO_USERSPACE,		/* from user data space */
-	UIO_SYSSPACE,		/* from system space */
-	UIO_USERISPACE		/* from user I space */
-};
-
+#define cr_gid cr_groups[0]
+#define NOCRED ((struct ucred *)-1)	/* no credential available */
+#define FSCRED ((struct ucred *)-2)	/* filesystem credential */
 
 #ifdef KERNEL
-struct uio {
-	struct	iovec *uio_iov;
-	int		uio_iovcnt;
-	off_t	uio_offset;
-	int		uio_resid;
-	enum	uio_seg uio_segflg;
-	enum	uio_rw uio_rw;
-	struct	proc *uio_procp
-};
-
-/*
- * Limits
- */
-#define UIO_MAXIOV	1024		/* max 1K of iov's */
-#define UIO_SMALLIOV	8		/* 8 on stack, else malloc */
-#endif /* KERNEL */
-
-
-#ifdef KERNEL
-
-int	uiomove __P((caddr_t, int, struct uio *));
-
-#else /* !KERNEL */
-
-#include <sys/cdefs.h>
-
-__BEGIN_DECLS
-ssize_t	readv __P((int, const struct iovec *, int));
-ssize_t	writev __P((int, const struct iovec *, int));
-__END_DECLS
+#define	crhold(cr)	(cr)->cr_ref++
+struct ucred *crget(void);
+struct ucred *crcopy(struct ucred *);
+struct ucred *crdup(struct ucred *);
+extern void crfree(struct ucred *);
+extern int suser(struct ucred *, short *);
+int	groupmember __P((gid_t, struct ucred *));
 
 #endif /* KERNEL */
-#endif /* !_SYS_UIO_H_ */
+
+#endif /* !_SYS_UCRED_H_ */

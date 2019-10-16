@@ -114,7 +114,7 @@ tsleep(ident, priority, timo)
 	int	priority;
 	u_short	timo;
 	{
-	register struct proc *p = u.u_procp;
+	register struct proc *p = u->u_procp;
 	register struct proc **qp;
 	int	s;
 	int	sig, catch = priority & PCATCH;
@@ -174,7 +174,7 @@ tsleep(ident, priority, timo)
 	else
 		sig = 0;
 	p->p_stat = SSLEEP;
-	u.u_ru.ru_nvcsw++;
+	u->u_ru.ru_nvcsw++;
 	swtch();
 resume:
 	splx(s);
@@ -189,7 +189,7 @@ resume:
 		untimeout(endtsleep, (caddr_t)p);
 	if	(catch && (sig != 0 || (sig = CURSIG(p))))
 		{
-		if	(u.u_sigintr & sigmask(sig))
+		if	(u->u_sigintr & sigmask(sig))
 			return(EINTR);
 		return(ERESTART);
 		}
@@ -242,12 +242,12 @@ sleep(chan, pri)
 	if	(pri > PZERO)
 		priority |= PCATCH;
 
-	u.u_error = tsleep(chan, priority, 0);
+	u->u_error = tsleep(chan, priority, 0);
 /*
  * sleep does not return anything.  If it was a non-interruptible sleep _or_ 
  * a successful/normal sleep (one for which a wakeup was done) then return.
 */
-	if	((priority & PCATCH) == 0 || (u.u_error == 0))
+	if	((priority & PCATCH) == 0 || (u->u_error == 0))
 		return;
 /*
  * XXX - compatibility uglyness.
@@ -259,7 +259,7 @@ sleep(chan, pri)
  * EINTR - put into u_error for trap.c to find (interrupted syscall)
  * ERESTART - system call to be restared
 */
-	longjmp(u.u_procp->p_addr, &u.u_qsave);
+	longjmp(u->u_procp->p_addr, &u->u_qsave);
 	/*NOTREACHED*/
 	}
 
@@ -304,7 +304,7 @@ wakeup(chan)
 	s = splclock();
 	qp = &slpque[HASH(chan)];
 restart:
-	for (q = qp; p = *q; ) {
+	for (q = qp; p == *q; ) {
 		if (p->p_stat != SSLEEP && p->p_stat != SSTOP)
 			panic("wakeup");
 		if (p->p_wchan==chan) {
@@ -359,7 +359,7 @@ setrun(p)
 	case SZOMB:
 	default:
 		panic("setrun");
-
+		break;
 	case SSTOP:
 	case SSLEEP:
 		unsleep(p);		/* e.g. when sending signals */
@@ -431,16 +431,16 @@ swtch()
 	cnt.v_swtch++;
 #endif
 	/* If not the idle process, resume the idle process. */
-	if (u.u_procp != &proc[0]) {
-		if (setjmp(&u.u_rsave)) {
+	if (u->u_procp != &proc[0]) {
+		if (setjmp(&u->u_rsave)) {
 			sureg();
 			return;
 		}
-		if (u.u_fpsaved == 0) {
-			savfp(&u.u_fps);
-			u.u_fpsaved = 1;
+		if (u->u_fpsaved == 0) {
+			savfp(&u->u_fps);
+			u->u_fpsaved = 1;
 		}
-		longjmp(proc[0].p_addr, &u.u_qsave);
+		longjmp(proc[0].p_addr, &u->u_qsave);
 	}
 	/*
 	 * The first save returns nonzero when proc 0 is resumed
@@ -453,7 +453,7 @@ swtch()
 	 * Thus when proc 0 is awakened by being made runnable, it will
 	 * find itself and resume itself at rsave, and return to sched().
 	 */
-	if (setjmp(&u.u_qsave)==0 && setjmp(&u.u_rsave))
+	if (setjmp(&u->u_qsave)==0 && setjmp(&u->u_rsave))
 		return;
 loop:
 	s = splhigh();
@@ -471,7 +471,7 @@ loop:
 	 * search for highest-priority runnable process
 	 */
 	for (p = qs; p; p = p->p_link) {
-		if (p->p_flag & SLOAD && p->p_pri < n) {
+		if ((p->p_flag & SLOAD) && p->p_pri < n) {
 			pp = p;
 			pq = q;
 			n = p->p_pri;
@@ -498,7 +498,7 @@ loop:
 	 */
 	n = p->p_flag & SSWAP;
 	p->p_flag &= ~SSWAP;
-	longjmp(p->p_addr, n ? &u.u_ssave: &u.u_rsave);
+	longjmp(p->p_addr, n ? &u->u_ssave: &u->u_rsave);
 }
 
 void

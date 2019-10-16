@@ -105,7 +105,7 @@ struct protosw {
 
 #define	PRU_NREQ		21
 
-#if	defined(PRUREQUESTS) && defined(SUPERVISOR)
+#ifdef PRUREQUESTS
 char *prurequests[] = {
 	"ATTACH",	"DETACH",	"BIND",		"LISTEN",
 	"CONNECT",	"ACCEPT",	"DISCONNECT",	"SHUTDOWN",
@@ -147,7 +147,7 @@ char *prurequests[] = {
 #define	PRC_IS_REDIRECT(cmd)	\
 	((cmd) >= PRC_REDIRECT_NET && (cmd) <= PRC_REDIRECT_TOSHOST)
 
-#if	defined(PRCREQUESTS) && defined(SUPERVISOR)
+#ifdef PRCREQUESTS
 char	*prcrequests[] = {
 	"IFDOWN", "ROUTEDEAD", "#2", "#3",
 	"QUENCH", "MSGSIZE", "HOSTDEAD", "HOSTUNREACH",
@@ -176,12 +176,12 @@ char	*prcrequests[] = {
 
 #define	PRCO_NCMDS	2
 
-#if	defined(PRCOREQUESTS) && defined(SUPERVISOR)
+#ifdef PRCOREQUESTS
 char	*prcorequests[] = {
 	"GETOPT", "SETOPT",
 };
 #endif
 
-#if defined(KERNEL) && defined(INET) && defined(SUPERVISOR)
+#ifdef KERNEL
 extern	struct protosw *pffindproto(), *pffindtype();
 #endif

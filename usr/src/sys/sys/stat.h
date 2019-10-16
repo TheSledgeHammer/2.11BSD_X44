@@ -9,35 +9,39 @@
 #ifndef	_STAT_H_
 #define	_STAT_H_
 
-struct	stat
+#include <sys/time.h>
+#include <sys/user.h>
+
+struct stat
 {
-	dev_t	st_dev;
-	ino_t	st_ino;
-	unsigned short st_mode;
-	short	st_nlink;
-	uid_t	st_uid;
-	gid_t	st_gid;
-	dev_t	st_rdev;
-	off_t	st_size;
-	time_t	st_atime;
-	int	st_spare1;
-	time_t	st_mtime;
-	int	st_spare2;
-	time_t	st_ctime;
-	int	st_spare3;
-	long	st_blksize;
-	long	st_blocks;
-	u_short	st_flags;
-	u_short	st_spare4[3];
+	dev_t			st_dev;		/* inode's device */
+	ino_t			st_ino;		/* inode's number */
+	unsigned short 	st_mode;	/* inode protection mode */
+	short			st_nlink;	/* number of hard links */
+	uid_t			st_uid;		/* user ID of the file's owner */
+	gid_t			st_gid;		/* group ID of the file's group */
+	dev_t			st_rdev;	/* device type */
+	off_t			st_size;	/* file size, in bytes */
+	time_t			st_atime;	/* time of last access */
+	int				st_spare1;
+	time_t			st_mtime;	/* time of last data modification */
+	int				st_spare2;
+	time_t			st_ctime;	/* time of last file status change */
+	int				st_spare3;
+	long			st_blksize;	/* optimal blocksize for I/O */
+	quad_t			st_blocks;	/* blocks allocated for file */
+	unsigned long	st_flags;	/* user defined flags for file */
+	unsigned long	st_gen;		/* file generation number */
+	unsigned long	st_spare4[3];
 };
 
 #define	S_IFMT	0170000		/* type of file */
-#define		S_IFDIR	0040000	/* directory */
-#define		S_IFCHR	0020000	/* character special */
-#define		S_IFBLK	0060000	/* block special */
-#define		S_IFREG	0100000	/* regular */
-#define		S_IFLNK	0120000	/* symbolic link */
-#define		S_IFSOCK 0140000/* socket */
+#define	S_IFDIR	0040000		/* directory */
+#define	S_IFCHR	0020000		/* character special */
+#define	S_IFBLK	0060000		/* block special */
+#define	S_IFREG	0100000		/* regular */
+#define	S_IFLNK	0120000		/* symbolic link */
+#define	S_IFSOCK 0140000	/* socket */
 #define	S_ISUID	0004000		/* set user id on execution */
 #define	S_ISGID	0002000		/* set group id on execution */
 #define	S_ISVTX	0001000		/* save swapped text even after use */
@@ -99,4 +103,25 @@ struct	stat
 #define	IMMUTABLE	(UF_IMMUTABLE | SF_IMMUTABLE)
 #endif
 
+#ifdef KERNEL
+void    cvtstat __P((struct stat *, struct ostat *));
+#else /* KERNEL */
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int		chmod __P((const char *, mode_t));
+int		fstat __P((int, struct stat *));
+int		mkdir __P((const char *, mode_t));
+int		mkfifo __P((const char *, mode_t));
+int		stat __P((const char *, struct stat *));
+mode_t	umask __P((mode_t));
+#ifndef _POSIX_SOURCE
+int		chflags __P((const char *, u_long));
+int		fchflags __P((int, u_long));
+int		fchmod __P((int, mode_t));
+int		lstat __P((const char *, struct stat *));
+#endif
+__END_DECLS
+
+#endif /* KERNEL */
 #endif /* !_STAT_H_ */

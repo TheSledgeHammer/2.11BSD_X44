@@ -12,6 +12,7 @@
 #include <sys/kernel.h>
 #include <sys/systm.h>
 
+register struct timeval *time;
 /* 
  * Time of day and interval timer support.
  *
@@ -24,8 +25,9 @@ gettimeofday()
 	register struct a {
 		struct	timeval *tp;
 		struct	timezone *tzp;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u->u_ap;
 	struct timeval atv;
+
 	int s;
 	register u_int	ms;
 
@@ -36,13 +38,13 @@ gettimeofday()
 		 */
 		s = splhigh(); atv = time; ms = lbolt; splx(s);
 		atv.tv_usec = (long)ms * mshz;
-		u.u_error = copyout((caddr_t)&atv, (caddr_t)(uap->tp),
+		u->u_error = copyout((caddr_t)&atv, (caddr_t)(uap->tp),
 			sizeof(atv));
-		if (u.u_error)
+		if (u->u_error)
 			return;
 	}
 	if (uap->tzp)
-		u.u_error = copyout((caddr_t)&tz, (caddr_t)uap->tzp,
+		u->u_error = copyout((caddr_t)&tz, (caddr_t)uap->tzp,
  			sizeof (tz));
 }
 
@@ -52,23 +54,23 @@ settimeofday()
 	register struct a {
 		struct	timeval *tv;
 		struct	timezone *tzp;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u->u_ap;
 	struct timeval atv;
 	struct timezone atz;
 
 	if (uap->tv) {
-		u.u_error = copyin((caddr_t)uap->tv, (caddr_t)&atv,
+		u->u_error = copyin((caddr_t)uap->tv, (caddr_t)&atv,
 			sizeof (struct timeval));
-		if (u.u_error)
+		if (u->u_error)
 			return;
 		setthetime(&atv);
-		if	(u.u_error)
+		if	(u->u_error)
 			return;
 	}
 	if (uap->tzp && suser()) {
-		u.u_error = copyin((caddr_t)uap->tzp, (caddr_t)&atz,
+		u->u_error = copyin((caddr_t)uap->tzp, (caddr_t)&atz,
 			sizeof (atz));
-		if (u.u_error == 0)
+		if (u->u_error == 0)
 			tz = atz;
 	}
 }
@@ -100,9 +102,9 @@ setthetime(tv)
 		}
 #endif
 /* WHAT DO WE DO ABOUT PENDING REAL-TIME TIMEOUTS??? */
-	boottime.tv_sec += tv->tv_sec - time.tv_sec;
+	boottime.tv_sec += tv->tv_sec - time->tv_sec;
 	s = splhigh();
-	time = *tv; lbolt = time.tv_usec / mshz;
+	time = *tv; lbolt = time->tv_usec / mshz;
 	splx(s);
 #ifdef	notyet
 	/*
@@ -118,26 +120,26 @@ adjtime()
 	register struct a {
 		struct timeval *delta;
 		struct timeval *olddelta;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u->u_ap;
 	struct timeval atv;
 	register int s;
 	long adjust;
 
 	if (!suser()) 
 		return;
-	u.u_error = copyin((caddr_t)uap->delta, (caddr_t)&atv,
+	u->u_error = copyin((caddr_t)uap->delta, (caddr_t)&atv,
 		sizeof (struct timeval));
-	if (u.u_error)
+	if (u->u_error)
 		return;
 	adjust = (atv.tv_sec * hz) + (atv.tv_usec / mshz);
 	/* if unstoreable values, just set the clock */
 	if (adjust > 0x7fff || adjust < 0x8000) {
 		s = splclock();
-		time.tv_sec += atv.tv_sec;
+		time->tv_sec += atv.tv_sec;
 		lbolt += atv.tv_usec / mshz;
 		while (lbolt >= hz) {
 			lbolt -= hz;
-			++time.tv_sec;
+			++time->tv_sec;
 		}
 		splx(s);
 		if (!uap->olddelta) 
@@ -162,12 +164,12 @@ getitimer()
 	register struct a {
 		u_int	which;
 		struct	itimerval *itv;
-	} *uap = (struct a *)u.u_ap;
-	struct itimerval aitv;
+	} *uap = (struct a *)u->u_ap;
+	register struct itimerval aitv;
 	register int s;
 
 	if (uap->which > ITIMER_PROF) {
-		u.u_error = EINVAL;
+		u->u_error = EINVAL;
 		return;
 	}
 	aitv.it_interval.tv_usec = 0;
@@ -186,7 +188,7 @@ getitimer()
 		aitv.it_value.tv_sec = t->it_value / hz;
 	}
 	splx(s);
-	u.u_error = copyout((caddr_t)&aitv, (caddr_t)uap->itv,
+	u->u_error = copyout((caddr_t)&aitv, (caddr_t)uap->itv,
 	    sizeof (struct itimerval));
 }
 
@@ -196,13 +198,13 @@ setitimer()
 	register struct a {
 		u_int	which;
 		struct	itimerval *itv, *oitv;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u->u_ap;
 	struct itimerval aitv;
 	register struct itimerval *aitvp;
 	int s;
 
 	if (uap->which > ITIMER_PROF) {
-		u.u_error = EINVAL;
+		u->u_error = EINVAL;
 		return;
 	}
 	aitvp = uap->itv;
@@ -212,13 +214,13 @@ setitimer()
 	}
 	if (aitvp == 0)
 		return;
-	u.u_error = copyin((caddr_t)aitvp, (caddr_t)&aitv,
+	u->u_error = copyin((caddr_t)aitvp, (caddr_t)&aitv,
 	    sizeof (struct itimerval));
-	if (u.u_error)
+	if (u->u_error)
 		return;
 	s = splclock();
 	if (uap->which == ITIMER_REAL) {
-		register struct proc *p = u.u_procp;
+		register struct proc *p = u->u_procp;
 
 		p->p_realtimer.it_value = aitv.it_value.tv_sec;
 		if (aitv.it_value.tv_usec)
@@ -228,7 +230,7 @@ setitimer()
 			++p->p_realtimer.it_interval;
 	}
 	else {
-		register struct k_itimerval *t = &u.u_timer[uap->which - 1];
+		register struct k_itimerval *t = &u->u_timer[uap->which - 1];
 
 		t->it_value = aitv.it_value.tv_sec * hz;
 		if (aitv.it_value.tv_usec)

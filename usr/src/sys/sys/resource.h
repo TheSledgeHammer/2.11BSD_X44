@@ -89,4 +89,21 @@ struct loadavg {
 	short ldavg[3];
 	int fscale;
 };
+
+
+#ifdef KERNEL
+extern struct loadavg averunnable;
+
+#else
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int	getpriority __P((int, int));
+int	getrlimit __P((int, struct rlimit *));
+int	getrusage __P((int, struct rusage *));
+int	setpriority __P((int, int, int));
+int	setrlimit __P((int, const struct rlimit *));
+__END_DECLS
+
+#endif	/* KERNEL */
 #endif	/* !_SYS_RESOURCE_H_ */

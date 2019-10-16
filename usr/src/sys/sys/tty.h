@@ -6,17 +6,11 @@
  *	@(#)tty.h	7.1.2 (2.11BSD GTE) 1997/4/10
  */
 
-#ifdef KERNEL
-#include "types.h"
-#include "ttychars.h"
-#include "ttydev.h"
-#include "ioctl.h"
-#else
-#include <sys/types.h>
-#include <sys/ttychars.h>
-#include <sys/ttydev.h>
-#include <sys/ioctl.h>
-#endif
+#ifndef _SYS_TTY_H_
+#define _SYS_TTY_H_
+
+#include <sys/termios.h>
+#include <sys/select.h>
 
 /*
  * A clist structure is the head of a linked list queue
@@ -136,6 +130,57 @@ extern	struct ttychars ttydefaults;
 #define	CONTROL		1
 #define	BACKSPACE	2
 #define	NEWLINE		3
-#define	TAB		4
+#define	TAB			4
 #define	VTAB		5
 #define	RETURN		6
+
+#ifdef KERNEL
+extern	struct ttychars ttydefaults;
+
+/* Symbolic sleep message strings. */
+extern	 char ttyin[], ttyout[], ttopen[], ttclos[], ttybg[], ttybuf[];
+
+void cblock_alloc_cblocks __P((int));
+void cblock_free_cblocks __P((int));
+int	 b_to_q __P((char *cp, int cc, struct clist *q));
+void catq __P((struct clist *from, struct clist *to));
+/* void	 clist_init __P((void)); */ /* defined in systm.h for main() */
+int	 getc __P((struct clist *q));
+void  ndflush __P((struct clist *q, int cc));
+int	 ndqb __P((struct clist *q, int flag));
+char *nextc __P((struct clist *q, char *cp, int *c));
+int	 putc __P((int c, struct clist *q));
+int	 q_to_b __P((struct clist *q, char *cp, int cc));
+int	 unputc __P((struct clist *q));
+
+int	 nullmodem __P((struct tty *tp, int flag));
+int	 tputchar __P((int c, struct tty *tp));
+int	 ttioctl __P((struct tty *tp, int com, void *data, int flag));
+int	 ttread __P((struct tty *tp, struct uio *uio, int flag));
+void ttrstrt __P((void *tp));
+int	 ttselect __P((dev_t device, int rw, struct proc *p));
+void ttsetwater __P((struct tty *tp));
+int	 ttspeedtab __P((int speed, struct speedtab *table));
+int	 ttstart __P((struct tty *tp));
+void ttwakeup __P((struct tty *tp));
+int	 ttwrite __P((struct tty *tp, struct uio *uio, int flag));
+void ttychars __P((struct tty *tp));
+int	 ttycheckoutq __P((struct tty *tp, int wait));
+int	 ttyclose __P((struct tty *tp));
+void ttyflush __P((struct tty *tp, int rw));
+void ttyinfo __P((struct tty *tp));
+int	 ttyinput __P((int c, struct tty *tp));
+int	 ttylclose __P((struct tty *tp, int flag));
+int	 ttymodem __P((struct tty *tp, int flag));
+int	 ttyopen __P((dev_t device, struct tty *tp));
+int	 ttyoutput __P((int c, struct tty *tp));
+void ttypend __P((struct tty *tp));
+void ttyretype __P((struct tty *tp));
+void ttyrub __P((int c, struct tty *tp));
+int	 ttysleep __P((struct tty *tp,
+	    void *chan, int pri, char *wmesg, int timeout));
+int	 ttywait __P((struct tty *tp));
+int	 ttywflush __P((struct tty *tp));
+#endif
+
+#endif

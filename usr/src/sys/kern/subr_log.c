@@ -75,7 +75,7 @@ logopen(dev, mode)
 	logsoftc[unit].sc_state |= LOG_OPEN;
 	if	(unit == logACCT)
 		Acctopen = 1;
-	logsoftc[unit].sc_pgid = u.u_procp->p_pid;  /* signal process only */
+	logsoftc[unit].sc_pgid = u->u_procp->p_pid;  /* signal process only */
 	logsoftc[unit].sc_overrun = 0;
 	return(0);
 	}
@@ -196,7 +196,7 @@ logselect(dev, rw)
 				splx(s);
 				return(1);
 				}
-			logsoftc[unit].sc_selp = u.u_procp;
+			logsoftc[unit].sc_selp = u->u_procp;
 			break;
 		}
 	splx(s);
@@ -220,11 +220,11 @@ logwakeup(unit)
 		selwakeup(lp->sc_selp, (long) 0);
 		lp->sc_selp = 0;
 		}
-	if	(lp->sc_state & LOG_ASYNC && (mp->msg_bufx != mp->msg_bufr))
+	if	((lp->sc_state & LOG_ASYNC) && (mp->msg_bufx != mp->msg_bufr))
 		{
 		if	(lp->sc_pgid < 0)
 			gsignal(-lp->sc_pgid, SIGIO); 
-		else if (p = pfind(lp->sc_pgid))
+		else if (p == pfind(lp->sc_pgid))
 			psignal(p, SIGIO);
 		}
 	if	(lp->sc_state & LOG_RDWAIT)

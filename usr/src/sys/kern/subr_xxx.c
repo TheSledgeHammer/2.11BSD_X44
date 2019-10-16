@@ -34,7 +34,7 @@ nulldev()
 #ifndef INET
 nonet()
 {
-	u.u_error = EPROTONOSUPPORT;
+	u->u_error = EPROTONOSUPPORT;
 	return(EPROTONOSUPPORT);
 }
 #endif

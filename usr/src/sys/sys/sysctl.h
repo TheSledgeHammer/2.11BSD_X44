@@ -349,7 +349,12 @@ int sysctl_rdstruct();
 void fill_eproc();
 
 #else	/* !KERNEL */
+#include <sys/cdefs.h>
 
-int	sysctl();
+//int	sysctl();
+__BEGIN_DECLS
+int	sysctl __P((int *, u_int, void *, size_t *, void *, size_t));
+__END_DECLS
 #endif	/* KERNEL */
+
 #endif	/* !_SYS_SYSCTL_H_ */

@@ -19,15 +19,15 @@ void
 getpid()
 {
 
-	u.u_r.r_val1 = u.u_procp->p_pid;
-	u.u_r.r_val2 = u.u_procp->p_ppid;	/* XXX - compatibility */
+	u->u_r.r_val1 = u->u_procp->p_pid;
+	u->u_r.r_val2 = u->u_procp->p_ppid;	/* XXX - compatibility */
 }
 
 void
 getppid()
 {
 
-	u.u_r.r_val1 = u.u_procp->p_ppid;
+	u->u_r.r_val1 = u->u_procp->p_ppid;
 }
 
 void
@@ -35,47 +35,47 @@ getpgrp()
 {
 	register struct a {
 		int	pid;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u->u_ap;
 	register struct proc *p;
 
 	if (uap->pid == 0)		/* silly... */
-		uap->pid = u.u_procp->p_pid;
+		uap->pid = u->u_procp->p_pid;
 	p = pfind(uap->pid);
 	if (p == 0) {
-		u.u_error = ESRCH;
+		u->u_error = ESRCH;
 		return;
 	}
-	u.u_r.r_val1 = p->p_pgrp;
+	u->u_r.r_val1 = p->p_pgrp;
 }
 
 void
 getuid()
 {
 
-	u.u_r.r_val1 = u.u_ruid;
-	u.u_r.r_val2 = u.u_uid;		/* XXX */
+	u->u_r.r_val1 = u->u_ruid;
+	u->u_r.r_val2 = u->u_uid;		/* XXX */
 }
 
 void
 geteuid()
 {
 
-	u.u_r.r_val1 = u.u_uid;
+	u->u_r.r_val1 = u->u_uid;
 }
 
 void
 getgid()
 {
 
-	u.u_r.r_val1 = u.u_rgid;
-	u.u_r.r_val2 = u.u_groups[0];		/* XXX */
+	u->u_r.r_val1 = u->u_rgid;
+	u->u_r.r_val2 = u->u_groups[0];		/* XXX */
 }
 
 void
 getegid()
 {
 
-	u.u_r.r_val1 = u.u_groups[0];
+	u->u_r.r_val1 = u->u_groups[0];
 }
 
 /*
@@ -88,22 +88,22 @@ getgroups()
 	register struct	a {
 		u_int	gidsetsize;
 		int	*gidset;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u->u_ap;
 	register gid_t *gp;
 
-	for (gp = &u.u_groups[NGROUPS]; gp > u.u_groups; gp--)
+	for (gp = &u->u_groups[NGROUPS]; gp > u->u_groups; gp--)
 		if (gp[-1] != NOGROUP)
 			break;
-	if (uap->gidsetsize < gp - u.u_groups) {
-		u.u_error = EINVAL;
+	if (uap->gidsetsize < gp - u->u_groups) {
+		u->u_error = EINVAL;
 		return;
 	}
-	uap->gidsetsize = gp - u.u_groups;
-	u.u_error = copyout((caddr_t)u.u_groups, (caddr_t)uap->gidset,
-	    uap->gidsetsize * sizeof(u.u_groups[0]));
-	if (u.u_error)
+	uap->gidsetsize = gp - u->u_groups;
+	u->u_error = copyout((caddr_t)u->u_groups, (caddr_t)uap->gidset,
+	    uap->gidsetsize * sizeof(u->u_groups[0]));
+	if (u->u_error)
 		return;
-	u.u_r.r_val1 = uap->gidsetsize;
+	u->u_r.r_val1 = uap->gidsetsize;
 }
 
 void
@@ -113,18 +113,18 @@ setpgrp()
 	register struct a {
 		int	pid;
 		int	pgrp;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u->u_ap;
 
 	if (uap->pid == 0)		/* silly... */
-		uap->pid = u.u_procp->p_pid;
+		uap->pid = u->u_procp->p_pid;
 	p = pfind(uap->pid);
 	if (p == 0) {
-		u.u_error = ESRCH;
+		u->u_error = ESRCH;
 		return;
 	}
 /* need better control mechanisms for process groups */
-	if (p->p_uid != u.u_uid && u.u_uid && !inferior(p)) {
-		u.u_error = EPERM;
+	if (p->p_uid != u->u_uid && u->u_uid && !inferior(p)) {
+		u->u_error = EPERM;
 		return;
 	}
 	p->p_pgrp = uap->pgrp;
@@ -136,20 +136,20 @@ setgroups()
 	register struct	a {
 		u_int	gidsetsize;
 		int	*gidset;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u->u_ap;
 	register gid_t *gp;
 
 	if (!suser())
 		return;
-	if (uap->gidsetsize > sizeof (u.u_groups) / sizeof (u.u_groups[0])) {
-		u.u_error = EINVAL;
+	if (uap->gidsetsize > sizeof (u->u_groups) / sizeof (u->u_groups[0])) {
+		u->u_error = EINVAL;
 		return;
 	}
-	u.u_error = copyin((caddr_t)uap->gidset, (caddr_t)u.u_groups,
-	uap->gidsetsize * sizeof (u.u_groups[0]));
-	if (u.u_error)
+	u->u_error = copyin((caddr_t)uap->gidset, (caddr_t)u->u_groups,
+	uap->gidsetsize * sizeof (u->u_groups[0]));
+	if (u->u_error)
 		return;
-	for (gp = &u.u_groups[uap->gidsetsize]; gp < &u.u_groups[NGROUPS]; gp++)		
+	for (gp = &u->u_groups[uap->gidsetsize]; gp < &u->u_groups[NGROUPS]; gp++)
 		*gp = NOGROUP;
 }
 
@@ -162,7 +162,7 @@ groupmember(gid)
 {
 	register gid_t *gp;
 
-	for (gp = u.u_groups; gp < &u.u_groups[NGROUPS] && *gp != NOGROUP; gp++)
+	for (gp = u->u_groups; gp < &u->u_groups[NGROUPS] && *gp != NOGROUP; gp++)
 		if (*gp == gid)
 			return (1);
 	return (0);
@@ -178,13 +178,13 @@ getlogin()
 		{
 		char *namebuf;
 		u_int namelen;
-		} *uap = (struct a *)u.u_ap;
+		} *uap = (struct a *)u->u_ap;
 	register int error;
 
-	if	(uap->namelen > sizeof (u.u_login))
-		uap->namelen = sizeof (u.u_login);
-	error = copyout(u.u_login, uap->namebuf, uap->namelen);
-	return(u.u_error = error);
+	if	(uap->namelen > sizeof (u->u_login))
+		uap->namelen = sizeof (u->u_login);
+	error = copyout(u->u_login, uap->namebuf, uap->namelen);
+	return(u->u_error = error);
 	}
 
 /*
@@ -201,12 +201,12 @@ setlogin()
 	register struct a
 		{
 		char *namebuf;
-		} *uap = (struct a *)u.u_ap;
+		} *uap = (struct a *)u->u_ap;
 	register int error;
 	char	newname[MAXLOGNAME + 1];
 
 	if	(!suser())
-		return(u.u_error);	/* XXX - suser should be changed! */
+		return(u->u_error);	/* XXX - suser should be changed! */
 /*
  * copinstr() wants to copy a string including a nul but u_login is not
  * necessarily nul-terminated.  Copy into a temp that is one character
@@ -216,6 +216,6 @@ setlogin()
 	bzero(newname, sizeof (newname));
 	error = copyinstr(uap->namebuf, newname, sizeof(newname), NULL);
 	if	(error == 0)
-		bcopy(newname, u.u_login, sizeof (u.u_login));
-	return(u.u_error = error);
+		bcopy(newname, u->u_login, sizeof (u->u_login));
+	return(u->u_error = error);
 	}

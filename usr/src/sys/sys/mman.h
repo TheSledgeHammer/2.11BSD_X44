@@ -80,7 +80,6 @@
 #ifndef KERNEL
 
 #include <sys/cdefs.h>
-#include <sys/types.h>
 
 __BEGIN_DECLS
 /* Some of these int's should probably be size_t's */

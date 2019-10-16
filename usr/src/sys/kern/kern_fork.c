@@ -46,12 +46,12 @@ fork1(isvfork)
 	register struct proc *p1, *p2;
 
 	a = 0;
-	if (u.u_uid != 0) {
+	if (u->u_uid != 0) {
 		for (p1 = allproc; p1; p1 = p1->p_nxt)
-			if (p1->p_uid == u.u_uid)
+			if (p1->p_uid == u->u_uid)
 				a++;
 		for (p1 = zombproc; p1; p1 = p1->p_nxt)
-			if (p1->p_uid == u.u_uid)
+			if (p1->p_uid == u->u_uid)
 				a++;
 	}
 	/*
@@ -63,25 +63,25 @@ fork1(isvfork)
 	p2 = freeproc;
 	if (p2==NULL)
 		tablefull("proc");
-	if (p2==NULL || (u.u_uid!=0 && (p2->p_nxt == NULL || a>MAXUPRC))) {
-		u.u_error = EAGAIN;
+	if (p2==NULL || (u->u_uid!=0 && (p2->p_nxt == NULL || a>MAXUPRC))) {
+		u->u_error = EAGAIN;
 		goto out;
 	}
-	p1 = u.u_procp;
+	p1 = u->u_procp;
 	if (newproc(isvfork)) {
-		u.u_r.r_val1 = p1->p_pid;
+		u->u_r.r_val1 = p1->p_pid;
 
-		u.u_start = time.tv_sec;
+		u->u_start = time.tv_sec;
 		/* set forked but preserve suid/gid state */
-		u.u_acflag = AFORK | (u.u_acflag & ASUGID); 
-		bzero(&u.u_ru, sizeof(u.u_ru));
-		bzero(&u.u_cru, sizeof(u.u_cru));
+		u->u_acflag = AFORK | (u->u_acflag & ASUGID);
+		bzero(&u->u_ru, sizeof(u->u_ru));
+		bzero(&u->u_cru, sizeof(u->u_cru));
 		return;
 	}
-	u.u_r.r_val1 = p2->p_pid;
+	u->u_r.r_val1 = p2->p_pid;
 
 out:
-	u.u_r.r_val2 = 0;
+	u->u_r.r_val2 = 0;
 }
 
 /*
@@ -148,7 +148,7 @@ again:
 	/*
 	 * Make a proc table entry for the new process.
 	 */
-	rip = u.u_procp;
+	rip = u->u_procp;
 #ifdef QUOTA
 	QUOTAMAP();
 	u.u_quota->q_cnt++;
@@ -201,8 +201,8 @@ again:
 	/*
 	 * Increase reference counts on shared objects.
 	 */
-	for (n = 0; n <= u.u_lastfile; n++) {
-		fp = u.u_ofile[n];
+	for (n = 0; n <= u->u_lastfile; n++) {
+		fp = u->u_ofile[n];
 		if (fp == NULL)
 			continue;
 		fp->f_count++;
@@ -211,15 +211,15 @@ again:
 		rip->p_textp->x_count++;
 		rip->p_textp->x_ccount++;
 	}
-	u.u_cdir->i_count++;
-	if (u.u_rdir)
-		u.u_rdir->i_count++;
+	u->u_cdir->i_count++;
+	if (u->u_rdir)
+		u->u_rdir->i_count++;
 
 	/*
 	 * When the longjmp is executed for the new process,
 	 * here's where it will resume.
 	 */
-	if (setjmp(&u.u_ssave)) {
+	if (setjmp(&u->u_ssave)) {
 		sureg();
 		return(1);
 	}
@@ -238,7 +238,7 @@ again:
 	 * Partially simulate the environment of the new process so that
 	 * when it is actually created (by copying) it will look right.
 	 */
-	u.u_procp = rpp;
+	u->u_procp = rpp;
 
 	/*
 	 * If there is not enough core for the new process, swap out the
@@ -250,7 +250,7 @@ again:
 		rpp->p_stat = SRUN;
 		swapout(rpp, X_DONTFREE, X_OLDSIZE, X_OLDSIZE);
 		rip->p_stat = SRUN;
-		u.u_procp = rip;
+		u->u_procp = rip;
 	}
 	else {
 		/*
@@ -258,7 +258,7 @@ again:
 		 */
 		rpp->p_addr = a[2];
 		copy(a1, rpp->p_addr, USIZE);
-		u.u_procp = rip;
+		u->u_procp = rip;
 		if (isvfork == 0) {
 			rpp->p_daddr = a[0];
 			copy(rip->p_daddr, rpp->p_daddr, rpp->p_dsize);
@@ -291,10 +291,10 @@ again:
 			sleep((caddr_t)rpp,PSWP+1);
 		if ((rpp->p_flag & SLOAD) == 0)
 			panic("newproc vfork");
-		u.u_dsize = rip->p_dsize = rpp->p_dsize;
+		u->u_dsize = rip->p_dsize = rpp->p_dsize;
 		rip->p_daddr = rpp->p_daddr;
 		rpp->p_dsize = 0;
-		u.u_ssize = rip->p_ssize = rpp->p_ssize;
+		u->u_ssize = rip->p_ssize = rpp->p_ssize;
 		rip->p_saddr = rpp->p_saddr;
 		rpp->p_ssize = 0;
 		rip->p_textp = rpp->p_textp;
@@ -302,7 +302,7 @@ again:
 		rpp->p_flag |= SVFDONE;
 		wakeup((caddr_t)rip);
 		/* must do estabur if dsize/ssize are different */
-		estabur(u.u_tsize,u.u_dsize,u.u_ssize,u.u_sep,RO); /* PDP-11 seg.h */
+		estabur(u->u_tsize,u->u_dsize,u->u_ssize,u->u_sep,RO); /* PDP-11 seg.h */
 		rip->p_flag &= ~SVFPRNT;
 	}
 	return(0);

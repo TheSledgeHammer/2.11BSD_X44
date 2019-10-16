@@ -32,6 +32,8 @@
 extern	struct	fileops	inodeops, pipeops;
 	struct	fileops	*Fops[] = { NULL, &inodeops, &socketops, &pipeops };
 
+register struct user *u;
+
 /*
  * Read system call.
  */
@@ -42,7 +44,7 @@ read()
 		int	fdes;
 		char	*cbuf;
 		unsigned count;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u->u_ap;
 	struct uio auio;
 	struct iovec aiov;
 
@@ -61,20 +63,20 @@ readv()
 		int	fdes;
 		struct	iovec *iovp;
 		unsigned iovcnt;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u->u_ap;
 	struct uio auio;
 	struct iovec aiov[16];		/* XXX */
 
 	if (uap->iovcnt > sizeof(aiov)/sizeof(aiov[0])) {
-		u.u_error = EINVAL;
+		u->u_error = EINVAL;
 		return;
 	}
 	auio.uio_iov = aiov;
 	auio.uio_iovcnt = uap->iovcnt;
 	auio.uio_rw = UIO_READ;
-	u.u_error = copyin((caddr_t)uap->iovp, (caddr_t)aiov,
+	u->u_error = copyin((caddr_t)uap->iovp, (caddr_t)aiov,
 	    uap->iovcnt * sizeof (struct iovec));
-	if (u.u_error)
+	if (u->u_error)
 		return;
 	rwuio(&auio);
 }
@@ -89,7 +91,7 @@ write()
 		int	fdes;
 		char	*cbuf;
 		unsigned count;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u->u_ap;
 	struct uio auio;
 	struct iovec aiov;
 
@@ -108,20 +110,20 @@ writev()
 		int	fdes;
 		struct	iovec *iovp;
 		unsigned iovcnt;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u->u_ap;
 	struct uio auio;
 	struct iovec aiov[16];		/* XXX */
 
 	if (uap->iovcnt > sizeof(aiov)/sizeof(aiov[0])) {
-		u.u_error = EINVAL;
+		u->u_error = EINVAL;
 		return;
 	}
 	auio.uio_iov = aiov;
 	auio.uio_iovcnt = uap->iovcnt;
 	auio.uio_rw = UIO_WRITE;
-	u.u_error = copyin((caddr_t)uap->iovp, (caddr_t)aiov,
+	u->u_error = copyin((caddr_t)uap->iovp, (caddr_t)aiov,
 	    uap->iovcnt * sizeof (struct iovec));
-	if (u.u_error)
+	if (u->u_error)
 		return;
 	rwuio(&auio);
 }
@@ -138,9 +140,9 @@ rwuio(uio)
 	u_int i, count;
 	off_t	total;
 
-	GETF(fp, ((struct a *)u.u_ap)->fdes);
+	GETF(fp, ((struct a *)u->u_ap)->fdes);
 	if ((fp->f_flag & (uio->uio_rw == UIO_READ ? FREAD : FWRITE)) == 0) {
-		u.u_error = EBADF;
+		u->u_error = EBADF;
 		return;
 	}
 	total =(off_t)0;
@@ -151,10 +153,10 @@ rwuio(uio)
 
 	uio->uio_resid = total;
 	if	(uio->uio_resid != total)	/* check wraparound */
-		return(u.u_error = EINVAL);
+		(u->u_error = EINVAL);
 
 	count = uio->uio_resid;
-	if	(setjmp(&u.u_qsave))
+	if	(setjmp(&u->u_qsave))
 		{
 /*
  * The ONLY way we can get here is via the longjump in sleep.  Thus signals
@@ -166,11 +168,11 @@ rwuio(uio)
 		if	(uio->uio_resid == count)
 			return;
 		else
-			u.u_error = 0;
+			u->u_error = 0;
 		}
 	else
-		u.u_error = (*Fops[fp->f_type]->fo_rw)(fp, uio);
-	u.u_r.r_val1 = count - uio->uio_resid;
+		u->u_error = (*Fops[fp->f_type]->fo_rw)(fp, uio);
+	u->u_r.r_val1 = count - uio->uio_resid;
 }
 
 /*
@@ -190,11 +192,11 @@ ioctl()
 	register u_int size;
 	char data[IOCPARM_MASK+1];
 
-	uap = (struct a *)u.u_ap;
+	uap = (struct a *)u->u_ap;
 	if ((fp = getf(uap->fdes)) == NULL)
 		return;
 	if ((fp->f_flag & (FREAD|FWRITE)) == 0) {
-		u.u_error = EBADF;
+		u->u_error = EBADF;
 		return;
 	}
 	com = uap->cmd;
@@ -203,11 +205,11 @@ ioctl()
 	k_com = (u_int)com;
 
 	if (k_com == FIOCLEX) {
-		u.u_pofile[uap->fdes] |= UF_EXCLOSE;
+		u->u_pofile[uap->fdes] |= UF_EXCLOSE;
 		return;
 	}
 	if (k_com == FIONCLEX) {
-		u.u_pofile[uap->fdes] &= ~UF_EXCLOSE;
+		u->u_pofile[uap->fdes] &= ~UF_EXCLOSE;
 		return;
 	}
 
@@ -218,18 +220,18 @@ ioctl()
 	 */
 	size = (com &~ (IOC_INOUT|IOC_VOID)) >> 16;
 	if (size > sizeof (data)) {
-		u.u_error = EFAULT;
+		u->u_error = EFAULT;
 		return;
 	}
 	if (com&IOC_IN) {
 		if (size) {
 			if (((u_int)uap->cmarg|size)&1)
-			    u.u_error =
+			    u->u_error =
 				vcopyin(uap->cmarg, (caddr_t)data, size);
 			else
-			    u.u_error =
+			    u->u_error =
 				copyin(uap->cmarg, (caddr_t)data, size);
-			if (u.u_error)
+			if (u->u_error)
 				return;
 		} else
 			*(caddr_t *)data = uap->cmarg;
@@ -245,31 +247,31 @@ ioctl()
 	switch (k_com) {
 
 	case FIONBIO:
-		u.u_error = fset(fp, FNONBLOCK, *(int *)data);
+		u->u_error = fset(fp, FNONBLOCK, *(int *)data);
 		return;
 
 	case FIOASYNC:
-		u.u_error = fset(fp, FASYNC, *(int *)data);
+		u->u_error = fset(fp, FASYNC, *(int *)data);
 		return;
 
 	case FIOSETOWN:
-		u.u_error = fsetown(fp, *(int *)data);
+		u->u_error = fsetown(fp, *(int *)data);
 		return;
 
 	case FIOGETOWN:
-		u.u_error = fgetown(fp, (int *)data);
+		u->u_error = fgetown(fp, (int *)data);
 		return;
 	}
-	u.u_error = (*Fops[fp->f_type]->fo_ioctl)(fp, k_com, data);
+	u->u_error = (*Fops[fp->f_type]->fo_ioctl)(fp, k_com, data);
 	/*
 	 * Copy any data to user, size was
 	 * already set and checked above.
 	 */
-	if (u.u_error == 0 && (com&IOC_OUT) && size)
+	if (u->u_error == 0 && (com&IOC_OUT) && size)
 		if (((u_int)uap->cmarg|size)&1)
-			u.u_error = vcopyout(data, uap->cmarg, size);
+			u->u_error = vcopyout(data, uap->cmarg, size);
 		else
-			u.u_error = copyout(data, uap->cmarg, size);
+			u->u_error = copyout(data, uap->cmarg, size);
 }
 
 int	nselcoll;
@@ -295,7 +297,7 @@ select()
 		int	nd;
 		fd_set	*in, *ou, *ex;
 		struct	timeval *tv;
-		} *uap = (struct uap *)u.u_ap;
+		} *uap = (struct uap *)u->u_ap;
 	register struct pselect_args *pselargs = (struct pselect_args *)uap;
 
 	/*
@@ -303,7 +305,7 @@ select()
 	 * number of parameters!
 	*/
 	pselargs->maskp = 0;
-	return(u.u_error = select1(pselargs, 0));
+	return(u->u_error = select1(pselargs, 0));
 	}
 
 /*
@@ -315,14 +317,15 @@ select()
 int
 pselect()
 	{
-	register struct	pselect_args *uap = (struct pselect_args *)u.u_ap;
+	register struct	pselect_args *uap = (struct pselect_args *)u->u_ap;
 
-	return(u.u_error = select1(uap, 1));
+	return(u->u_error = select1(uap, 1));
 	}
 
 /*
  * Select helper function common to both select() and pselect()
  */
+
 static int
 select1(uap, is_pselect)
 	register struct pselect_args *uap;
@@ -330,6 +333,7 @@ select1(uap, is_pselect)
 	{
 	fd_set ibits[3], obits[3];
 	struct timeval atv;
+	struct timeval time;
 	sigset_t sigmsk;
 	unsigned int timo = 0;
 	register int error, ni;
@@ -391,9 +395,9 @@ select1(uap, is_pselect)
 		}
 retry:
 	ncoll = nselcoll;
-	u.u_procp->p_flag |= P_SELECT;
-	error = selscan(ibits, obits, uap->nd, &u.u_r.r_val1);
-	if	(error || u.u_r.r_val1)
+	u->u_procp->p_flag |= P_SELECT;
+	error = selscan(ibits, obits, uap->nd, &u->u_r.r_val1);
+	if	(error || u->u_r.r_val1)
 		goto done;
 	s = splhigh();
 	if	(uap->ts)
@@ -409,13 +413,13 @@ retry:
 		if	(timo == 0)
 			timo = 1;
 		}
-	if	((u.u_procp->p_flag & P_SELECT) == 0 || nselcoll != ncoll)
+	if	((u->u_procp->p_flag & P_SELECT) == 0 || nselcoll != ncoll)
 		{
-		u.u_procp->p_flag &= ~P_SELECT;
+		u->u_procp->p_flag &= ~P_SELECT;
 		splx(s);
 		goto retry;
 		}
-	u.u_procp->p_flag &= ~P_SELECT;
+	u->u_procp->p_flag &= ~P_SELECT;
 /*
  * If doing a pselect() need to set a temporary mask while in tsleep.  
  * Returning from pselect after catching a signal the old mask has to be
@@ -423,18 +427,18 @@ retry:
 */
 	if	(uap->maskp)
 		{
-		u.u_oldmask = u.u_procp->p_sigmask;
-		u.u_psflags |= SAS_OLDMASK;
-		u.u_procp->p_sigmask = sigmsk;
+		u->u_oldmask = u->u_procp->p_sigmask;
+		u->u_psflags |= SAS_OLDMASK;
+		u->u_procp->p_sigmask = sigmsk;
 		}
 	error = tsleep(&selwait, PSOCK | PCATCH, timo);
 	if	(uap->maskp)
-		u.u_procp->p_sigmask = u.u_oldmask;
+		u->u_procp->p_sigmask = u->u_oldmask;
 	splx(s);
 	if	(error == 0)
 		goto retry;
 done:
-	u.u_procp->p_flag &= ~P_SELECT;
+	u->u_procp->p_flag &= ~P_SELECT;
 	/* select is not restarted after signals... */
 	if	(error == ERESTART)
 		error = EINTR;
@@ -482,7 +486,7 @@ selscan(ibits, obits, nfd, retval)
 			bits = ibits[which].fds_bits[i/NFDBITS];
 			while ((j = ffs(bits)) && i + --j < nfd) {
 				bits &= ~(1L << j);
-				fp = u.u_ofile[i + j];
+				fp = u->u_ofile[i + j];
 				if (fp == NULL)
 					return(EBADF);
 				if ((*Fops[fp->f_type]->fo_select)(fp,flag)) {

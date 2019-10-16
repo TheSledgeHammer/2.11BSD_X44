@@ -21,5 +21,5 @@ reboot()
 	};
 
 	if (suser())
-		boot(rootdev, ((struct a *)u.u_ap)->opt);
+		boot(rootdev, ((struct a *)u->u_ap)->opt);
 }

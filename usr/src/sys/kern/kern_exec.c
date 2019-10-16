@@ -34,7 +34,7 @@ struct execa {
 void
 execv()
 {
-	((struct execa *)u.u_ap)->envp = NULL;
+	((struct execa *)u->u_ap)->envp = NULL;
 	execve();
 }
 
@@ -44,7 +44,7 @@ execve()
 	int nc;
 	register char *cp;
 	register struct buf *bp;
-	struct execa *uap = (struct execa *)u.u_ap;
+	struct execa *uap = (struct execa *)u->u_ap;
 	int na, ne, ucp, ap;
 	register int cc;
 	unsigned len;
@@ -69,10 +69,10 @@ execve()
 	bno = 0;
 	bp = 0;
 	indir = 0;
-	uid = u.u_uid;
-	gid = u.u_groups[0];
+	uid = u->u_uid;
+	gid = u->u_groups[0];
 	if (ip->i_fs->fs_flags & MNT_NOEXEC) {
-		u.u_error = EACCES;
+		u->u_error = EACCES;
 		goto bad;
 	}
 	if ((ip->i_fs->fs_flags & MNT_NOSUID) == 0) {
@@ -84,11 +84,11 @@ execve()
   again:
 	if (access(ip, IEXEC))
 		goto bad;
-	if ((u.u_procp->p_flag & P_TRACED) && access(ip, IREAD))
+	if ((u->u_procp->p_flag & P_TRACED) && access(ip, IREAD))
 		goto bad;
 	if ((ip->i_mode & IFMT) != IFREG ||
 	    (ip->i_mode & (IEXEC|(IEXEC>>3)|(IEXEC>>6))) == 0) {
-		u.u_error = EACCES;
+		u->u_error = EACCES;
 		goto bad;
 	}
 
@@ -110,13 +110,13 @@ execve()
 	 * THE ASCII LINE.
 	 */
 	exdata.ex_shell[0] = '\0';	/* for zero length files */
-	u.u_error = rdwri(UIO_READ, ip, &exdata, sizeof(exdata), (off_t)0,
+	u->u_error = rdwri(UIO_READ, ip, &exdata, sizeof(exdata), (off_t)0,
 				UIO_SYSSPACE, IO_UNIT, &resid);
-	if (u.u_error)
+	if (u->u_error)
 		goto bad;
 	if (resid > sizeof(exdata) - sizeof(exdata.ex_exec) &&
 	    exdata.ex_shell[0] != '#') {
-		u.u_error = ENOEXEC;
+		u->u_error = ENOEXEC;
 		goto bad;
 	}
 
@@ -134,7 +134,7 @@ execve()
 		if (exdata.ex_shell[0] != '#' ||
 		    exdata.ex_shell[1] != '!' ||
 		    indir) {
-			u.u_error = ENOEXEC;
+			u->u_error = ENOEXEC;
 			goto bad;
 		}
 /*
@@ -154,7 +154,7 @@ execve()
 			cp++;
 		}
 		if (*cp != '\0') {
-			u.u_error = ENOEXEC;
+			u->u_error = ENOEXEC;
 			goto bad;
 		}
 		cp = &exdata.ex_shell[2];
@@ -192,7 +192,7 @@ execve()
 	cc = 0;
 	bno = malloc(swapmap, ctod((int)btoc(NCARGS + MAXBSIZE)));
 	if (bno == 0) {
-		swkill(u.u_procp, "exec");
+		swkill(u->u_procp, "exec");
 		goto bad;
 	}
 	/*
@@ -208,7 +208,7 @@ execve()
 		} else if (indir && (na == 1 && cfarg[0])) {
 			sharg = cfarg;
 			ap = (int)sharg;
-		} else if (indir && (na == 1 || na == 2 && cfarg[0]))
+		} else if (indir && (na == 1 || (na == 2 && cfarg[0])))
 			ap = (int)uap->fname;
 		else if (uap->argp) {
 			ap = fuword((caddr_t)uap->argp);
@@ -223,7 +223,7 @@ execve()
 			break;
 		na++;
 		if (ap == -1) {
-			u.u_error = EFAULT;
+			u->u_error = EFAULT;
 			break;
 		}
 		do {
@@ -258,7 +258,7 @@ execve()
 			cc -= len;
 		} while (error == ENOENT);
 		if (error) {
-			u.u_error = error;
+			u->u_error = error;
 			if (bp) {
 				mapout(bp);
 				bp->b_flags |= B_AGE;
@@ -276,7 +276,7 @@ execve()
 	bp = 0;
 	nc = (nc + NBPW-1) & ~(NBPW-1);
 	getxfile(ip, &exdata.ex_exec, nc + (na+4)*NBPW, uid, gid);
-	if (u.u_error) {
+	if (u->u_error) {
 badarg:
 		for (cc = 0;cc < nc; cc += CLSIZE * NBPG) {
 			daddr_t blkno;
@@ -300,7 +300,7 @@ badarg:
 	 */
 	ucp = -nc - NBPW;
 	ap = ucp - na*NBPW - 3*NBPW;
-	u.u_ar0[R6] = ap;
+	u->u_ar0[R6] = ap;
 	(void) suword((caddr_t)ap, na-ne);
 	nc = 0;
 	cc = 0;
@@ -343,18 +343,18 @@ badarg:
 		brelse(bp);
 		bp = NULL;
 	}
-	execsigs(u.u_procp);
-	for	(cp = u.u_pofile, cc = 0; cc <= u.u_lastfile; cc++, cp++)
+	execsigs(u->u_procp);
+	for	(cp = u->u_pofile, cc = 0; cc <= u->u_lastfile; cc++, cp++)
 		{
 		if	(*cp & UF_EXCLOSE)
 			{
-			(void)closef(u.u_ofile[cc]);
-			u.u_ofile[cc] = NULL;
+			(void)closef(u->u_ofile[cc]);
+			u->u_ofile[cc] = NULL;
 			*cp = 0;
 			}
 		}
-	while (u.u_lastfile >= 0 && u.u_ofile[u.u_lastfile] == NULL)
-		u.u_lastfile--;
+	while (u->u_lastfile >= 0 && u->u_ofile[u->u_lastfile] == NULL)
+		u->u_lastfile--;
 
 	/*
 	 * inline expansion of setregs(), found
@@ -362,17 +362,17 @@ badarg:
 	 *
 	 * setregs(exdata.ex_exec.a_entry);
 	 */
-	u.u_ar0[PC] = exdata.ex_exec.a_entry & ~01;
-	u.u_fps.u_fpsr = 0;
+	u->u_ar0[PC] = exdata.ex_exec.a_entry & ~01;
+	u->u_fps.u_fpsr = 0;
 
 	/*
 	 * Remember file name for accounting.
 	 */
-	u.u_acflag &= ~AFORK;
+	u->u_acflag &= ~AFORK;
 	if (indir)
-		bcopy((caddr_t)cfname, (caddr_t)u.u_comm, MAXCOMLEN);
+		bcopy((caddr_t)cfname, (caddr_t)u->u_comm, MAXCOMLEN);
 	else
-		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)u.u_comm, MAXCOMLEN);
+		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)u->u_comm, MAXCOMLEN);
 bad:
 	if (bp) {
 		mapout(bp);
@@ -412,15 +412,15 @@ execsigs(p)
 				p->p_sigignore |= mask;
 			p->p_sig &= ~mask;
 		}
-		u.u_signal[nc] = SIG_DFL;
+		u->u_signal[nc] = SIG_DFL;
 	}
 	/*
 	 * Reset stack state to the user stack (disable the alternate stack).
 	 */
-	u.u_sigstk.ss_flags = SA_DISABLE;
-	u.u_sigstk.ss_size = 0;
-	u.u_sigstk.ss_base = 0;
-	u.u_psflags = 0;
+	u->u_sigstk.ss_flags = SA_DISABLE;
+	u->u_sigstk.ss_size = 0;
+	u->u_sigstk.ss_base = 0;
+	u->u_psflags = 0;
 }
 /*
  * Read in and set up memory for executed file.
@@ -445,7 +445,7 @@ getxfile(ip, ep, nargc, uid, gid)
 			lsize = (long)ep->a_data + ep->a_text;
 			ep->a_data = (u_int)lsize;
 			if (lsize != ep->a_data) {	/* check overflow */
-				u.u_error = ENOMEM;
+				u->u_error = ENOMEM;
 				return;
 			}
 			ep->a_text = 0;
@@ -466,7 +466,7 @@ getxfile(ip, ep, nargc, uid, gid)
 	}
 
 	if (ip->i_text && (ip->i_text->x_flag & XTRC)) {
-		u.u_error = ETXTBSY;
+		u->u_error = ETXTBSY;
 		return;
 	}
 	if (ep->a_text != 0 && (ip->i_flag&ITEXT) == 0 &&
@@ -478,7 +478,7 @@ getxfile(ip, ep, nargc, uid, gid)
 			    fp->f_count > 0 &&
 			    (struct inode *)fp->f_data == ip &&
 			    (fp->f_flag&FWRITE)) {
-				u.u_error = ETXTBSY;
+				u->u_error = ETXTBSY;
 				return;
 			}
 		}
@@ -491,7 +491,7 @@ getxfile(ip, ep, nargc, uid, gid)
 	ts = btoc(ep->a_text);
 	lsize = (long)ep->a_data + ep->a_bss;
 	if (lsize != (u_int)lsize) {
-		u.u_error = ENOMEM;
+		u->u_error = ENOMEM;
 		return;
 	}
 	ds = btoc(lsize);
@@ -500,66 +500,66 @@ getxfile(ip, ep, nargc, uid, gid)
 	/*
 	 * if auto overlay get second header
 	 */
-	sovdata = u.u_ovdata;
-	u.u_ovdata.uo_ovbase = 0;
-	u.u_ovdata.uo_curov = 0;
+	sovdata = u->u_ovdata;
+	u->u_ovdata.uo_ovbase = 0;
+	u->u_ovdata.uo_curov = 0;
 	if (ovflag) {
-		u.u_error = rdwri(UIO_READ, ip, ovhead, sizeof(ovhead), 
+		u->u_error = rdwri(UIO_READ, ip, ovhead, sizeof(ovhead),
 			(off_t)sizeof(struct exec), UIO_SYSSPACE, IO_UNIT, &resid);
 		if (resid != 0)
-			u.u_error = ENOEXEC;
-		if (u.u_error) {
-			u.u_ovdata = sovdata;
+			u->u_error = ENOEXEC;
+		if (u->u_error) {
+			u->u_ovdata = sovdata;
 			return;
 		}
 		/* set beginning of overlay segment */
-		u.u_ovdata.uo_ovbase = ctos(ts);
+		u->u_ovdata.uo_ovbase = ctos(ts);
 
 		/* 0th entry is max size of the overlays */
 		ovmax = btoc(ovhead[0]);
 
 		/* set max number of segm. registers to be used */
-		u.u_ovdata.uo_nseg = ctos(ovmax);
+		u->u_ovdata.uo_nseg = ctos(ovmax);
 
 		/* set base of data space */
-		u.u_ovdata.uo_dbase = stoc(u.u_ovdata.uo_ovbase +
-		    u.u_ovdata.uo_nseg);
+		u->u_ovdata.uo_dbase = stoc(u->u_ovdata.uo_ovbase +
+		    u->u_ovdata.uo_nseg);
 
 		/*
 		 * Set up a table of offsets to each of the overlay
 		 * segements. The ith overlay runs from ov_offst[i-1]
 		 * to ov_offst[i].
 		 */
-		u.u_ovdata.uo_ov_offst[0] = ts;
+		u->u_ovdata.uo_ov_offst[0] = ts;
 		{
 			register int t, i;
 
 			/* check if any overlay is larger than ovmax */
 			for (i = 1; i <= NOVL; i++) {
 				if ((t = btoc(ovhead[i])) > ovmax) {
-					u.u_error = ENOEXEC;
-					u.u_ovdata = sovdata;
+					u->u_error = ENOEXEC;
+					u->u_ovdata = sovdata;
 					return;
 				}
-				u.u_ovdata.uo_ov_offst[i] =
-					t + u.u_ovdata.uo_ov_offst[i - 1];
+				u->u_ovdata.uo_ov_offst[i] =
+					t + u->u_ovdata.uo_ov_offst[i - 1];
 			}
 		}
 	}
 	if (overlay) {
-		if (u.u_sep == 0 && ctos(ts) != ctos(u.u_tsize) || nargc) {
-			u.u_error = ENOMEM;
+		if ((u->u_sep == 0 && ctos(ts) != ctos(u->u_tsize)) || nargc) {
+			u->u_error = ENOMEM;
 			return;
 		}
-		ds = u.u_dsize;
-		ss = u.u_ssize;
-		sep = u.u_sep;
+		ds = u->u_dsize;
+		ss = u->u_ssize;
+		sep = u->u_sep;
 		xfree();
 		xalloc(ip,ep);
-		u.u_ar0[PC] = ep->a_entry & ~01;
+		u->u_ar0[PC] = ep->a_entry & ~01;
 	} else {
 		if (estabur(ts, ds, ss, sep, RO)) {
-			u.u_ovdata = sovdata;
+			u->u_ovdata = sovdata;
 			return;
 		}
 
@@ -567,8 +567,8 @@ getxfile(ip, ep, nargc, uid, gid)
 		 * allocate and clear core at this point, committed
 		 * to the new image
 		 */
-		u.u_prof.pr_scale = 0;
-		if (u.u_procp->p_flag & SVFORK)
+		u->u_prof.pr_scale = 0;
+		if (u->u_procp->p_flag & SVFORK)
 			endvfork();
 		else
 			xfree();
@@ -580,10 +580,10 @@ getxfile(ip, ep, nargc, uid, gid)
 			if (startc != 0)
 				startc--;
 			numc = ds - startc;
-			clear(u.u_procp->p_daddr + startc, numc);
+			clear(u->u_procp->p_daddr + startc, numc);
 		}
 		expand(ss, S_STACK);
-		clear(u.u_procp->p_saddr, ss);
+		clear(u->u_procp->p_saddr, ss);
 		xalloc(ip, ep);
 
 		/*
@@ -593,7 +593,7 @@ getxfile(ip, ep, nargc, uid, gid)
 		offset = sizeof(struct exec);
 		if (ovflag) {
 			offset += sizeof(ovhead);
-			offset += (((long)u.u_ovdata.uo_ov_offst[NOVL]) << 6);
+			offset += (((long)u->u_ovdata.uo_ov_offst[NOVL]) << 6);
 		}
 		else
 			offset += ep->a_text;
@@ -603,19 +603,19 @@ getxfile(ip, ep, nargc, uid, gid)
 		/*
 		 * set SUID/SGID protections, if no tracing
 		 */
-		if ((u.u_procp->p_flag & P_TRACED)==0) {
-			u.u_uid = uid;
-			u.u_procp->p_uid = uid;
-			u.u_groups[0] = gid;
+		if ((u->u_procp->p_flag & P_TRACED)==0) {
+			u->u_uid = uid;
+			u->u_procp->p_uid = uid;
+			u->u_groups[0] = gid;
 		} else
-			psignal(u.u_procp, SIGTRAP);
-		u.u_svuid = u.u_uid;
-		u.u_svgid = u.u_groups[0];
-		u.u_acflag &= ~ASUGID;	/* start fresh setuid/gid priv use */
+			psignal(u->u_procp, SIGTRAP);
+		u->u_svuid = u->u_uid;
+		u->u_svgid = u->u_groups[0];
+		u->u_acflag &= ~ASUGID;	/* start fresh setuid/gid priv use */
 	}
-	u.u_tsize = ts;
-	u.u_dsize = ds;
-	u.u_ssize = ss;
-	u.u_sep = sep;
+	u->u_tsize = ts;
+	u->u_dsize = ds;
+	u->u_ssize = ss;
+	u->u_sep = sep;
 	estabur(ts, ds, ss, sep, RO);
 }

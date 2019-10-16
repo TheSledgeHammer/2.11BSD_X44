@@ -79,45 +79,65 @@
 
 #ifdef	SIGPROP
 char sigprop[NSIG + 1] = {
-	0,			/* unused */
-	SA_KILL,		/* SIGHUP */
-	SA_KILL,		/* SIGINT */
+	0,					/* unused */
+	SA_KILL,			/* SIGHUP */
+	SA_KILL,			/* SIGINT */
 	SA_KILL|SA_CORE,	/* SIGQUIT */
 	SA_KILL|SA_CORE,	/* SIGILL */
 	SA_KILL|SA_CORE,	/* SIGTRAP */
 	SA_KILL|SA_CORE,	/* SIGABRT */
 	SA_KILL|SA_CORE,	/* SIGEMT */
 	SA_KILL|SA_CORE,	/* SIGFPE */
-	SA_KILL,		/* SIGKILL */
+	SA_KILL,			/* SIGKILL */
 	SA_KILL|SA_CORE,	/* SIGBUS */
 	SA_KILL|SA_CORE,	/* SIGSEGV */
 	SA_KILL|SA_CORE,	/* SIGSYS */
-	SA_KILL,		/* SIGPIPE */
-	SA_KILL,		/* SIGALRM */
-	SA_KILL,		/* SIGTERM */
-	SA_IGNORE,		/* SIGURG */
-	SA_STOP,		/* SIGSTOP */
+	SA_KILL,			/* SIGPIPE */
+	SA_KILL,			/* SIGALRM */
+	SA_KILL,			/* SIGTERM */
+	SA_IGNORE,			/* SIGURG */
+	SA_STOP,			/* SIGSTOP */
 	SA_STOP|SA_TTYSTOP,	/* SIGTSTP */
 	SA_IGNORE|SA_CONT,	/* SIGCONT */
-	SA_IGNORE,		/* SIGCHLD */
+	SA_IGNORE,			/* SIGCHLD */
 	SA_STOP|SA_TTYSTOP,	/* SIGTTIN */
 	SA_STOP|SA_TTYSTOP,	/* SIGTTOU */
-	SA_IGNORE,		/* SIGIO */
-	SA_KILL,		/* SIGXCPU */
-	SA_KILL,		/* SIGXFSZ */
-	SA_KILL,		/* SIGVTALRM */
-	SA_KILL,		/* SIGPROF */
-	SA_IGNORE,		/* SIGWINCH  */
-	SA_IGNORE,		/* SIGINFO */
-	SA_KILL,		/* SIGUSR1 */
-	SA_KILL,		/* SIGUSR2 */
+	SA_IGNORE,			/* SIGIO */
+	SA_KILL,			/* SIGXCPU */
+	SA_KILL,			/* SIGXFSZ */
+	SA_KILL,			/* SIGVTALRM */
+	SA_KILL,			/* SIGPROF */
+	SA_IGNORE,			/* SIGWINCH  */
+	SA_IGNORE,			/* SIGINFO */
+	SA_KILL,			/* SIGUSR1 */
+	SA_KILL,			/* SIGUSR2 */
 };
 #endif /* SIGPROP */
 
-#ifdef	KERNEL
+
 #define	contsigmask	(sigmask(SIGCONT))
 #define	stopsigmask	(sigmask(SIGSTOP) | sigmask(SIGTSTP) | \
 			 sigmask(SIGTTIN) | sigmask(SIGTTOU))
 #define	sigcantmask	(sigmask(SIGKILL) | sigmask(SIGSTOP))
-#endif
+
+#ifdef KERNEL
+/*
+ * Machine-independent functions:
+ */
+int	coredump __P((struct proc *p));
+void	execsigs __P((struct proc *p));
+void	gsignal __P((int pgid, int sig));
+int		issig __P((struct proc *p));
+void	pgsignal __P((struct pgrp *pgrp, int sig, int checkctty));
+void	postsig __P((int sig));
+int		issignal __P((struct proc *p));
+void	psignal __P((struct proc *p, int sig));
+void	siginit __P((struct proc *p));
+void	trapsignal __P((struct proc *p, int sig, unsigned code));
+
+/*
+ * Machine-dependent functions:
+ */
+void	sendsig __P((sig_t action, int sig, int returnmask, unsigned code));
+#endif	/* KERNEL */
 #endif	/* !_SYS_SIGNALVAR_H_ */

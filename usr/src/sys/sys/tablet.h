@@ -7,14 +7,11 @@
  */
 
 #ifndef _TABLET_
+#define	_TABLET_
 /*
  * Tablet line discipline.
  */
-#ifdef KERNEL
-#include "../h/ioctl.h"
-#else
 #include <sys/ioctl.h>
-#endif
 
 /*
  * Reads on the tablet return one of the following
@@ -25,26 +22,26 @@
  * where the tablet does not directly provide the information.
  */
 struct	tbpos {
-	int	xpos, ypos;	/* raw x-y coordinates */
-	short	status;		/* buttons/pen down */
+	int	xpos, ypos;				/* raw x-y coordinates */
+	short	status;				/* buttons/pen down */
 #define	TBINPROX	0100000		/* pen in proximity of tablet */
-	short	scount;		/* sample count */
+	short	scount;				/* sample count */
 };
 
 struct	gtcopos {
-	int	xpos, ypos;	/* raw x-y coordinates */
-	short	status;		/* as above */
-	short	scount;		/* sample count */
+	int		xpos, ypos;		/* raw x-y coordinates */
+	short	status;			/* as above */
+	short	scount;			/* sample count */
 	short	xtilt, ytilt;	/* raw tilt */
 	short	pressure;
-	short	pad;		/* pad to longword boundary */
+	short	pad;			/* pad to longword boundary */
 };
 
 struct	polpos {
 	short	p_x, p_y, p_z;	/* raw 3-space coordinates */
 	short	p_azi, p_pit, p_rol;	/* azimuth, pitch, and roll */
-	short	p_stat;		/* status, as above */
-	char	p_key;		/* calculator input keyboard */
+	short	p_stat;			/* status, as above */
+	char	p_key;			/* calculator input keyboard */
 };
 
 #define BIOSMODE	_IOW(b, 1, int)		/* set mode bit(s) */
@@ -64,4 +61,5 @@ struct	polpos {
 #define		TBHDGHIRES	0x0006		/* hdg-1111b, high res */
 #define BIOSTYPE	_IOW(b, 3, int)		/* set tablet type */
 #define BIOGTYPE	_IOR(b, 4, int)		/* get tablet type*/
+
 #endif

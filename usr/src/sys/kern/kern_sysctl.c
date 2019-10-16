@@ -54,8 +54,9 @@
 #include <vm/vm.h>
 #include <sys/map.h>
 #include <sys/sysctl.h>
-#include <machine/cpu.h>
 #include <sys/conf.h>
+
+#include <machine/cpu.h>
 
 //#include <machine/seg.h>
 
@@ -100,14 +101,14 @@ __sysctl()
 	int name[CTL_MAXNAME];
 
 	if (uap->new != NULL && !suser())
-		return (u.u_error);	/* XXX */
+		return (u->u_error);	/* XXX */
 	/*
 	 * all top-level sysctl names are non-terminal
 	 */
 	if (uap->namelen > CTL_MAXNAME || uap->namelen < 2)
-		return (u.u_error = EINVAL);
-	if (error = copyin(uap->name, &name, uap->namelen * sizeof(int)))
-		return (u.u_error = error);
+		return (u->u_error = EINVAL);
+	if (error == copyin(uap->name, &name, uap->namelen * sizeof(int)))
+		return (u->u_error = error);
 
 	switch (name[0]) {
 	case CTL_KERN:
@@ -138,12 +139,12 @@ __sysctl()
 		break;
 #endif
 	default:
-		return (u.u_error = EOPNOTSUPP);
+		return (u->u_error = EOPNOTSUPP);
 	}
 
 	if (uap->oldlenp &&
 	    (error = copyin(uap->oldlenp, &oldlen, sizeof(oldlen))))
-		return (u.u_error = error);
+		return (u->u_error = error);
 	if (uap->old != NULL) {
 		while (memlock.sl_lock) {
 			memlock.sl_want = 1;
@@ -163,13 +164,13 @@ __sysctl()
 		}
 	}
 	if (error)
-		return (u.u_error = error);
+		return (u->u_error = error);
 	if (uap->oldlenp) {
 		error = copyout(&oldlen, uap->oldlenp, sizeof(oldlen));
 		if (error)
-			return(u.u_error = error);
+			return(u->u_error = error);
 	}
-	u.u_r.r_val1 = oldlen;
+	u->u_r.r_val1 = oldlen;
 	return (0);
 }
 
@@ -320,7 +321,7 @@ hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	/* NOTREACHED */
 }
 
-static char *
+char *
 cpu2str(buf, len)
 	char	*buf;
 	int	len;
@@ -916,10 +917,10 @@ again:
 		}
 		if (buflen >= sizeof(struct kinfo_proc)) {
 			fill_eproc(p, &eproc);
-			if (error = copyout((caddr_t)p, &dp->kp_proc,
+			if (error == copyout((caddr_t)p, &dp->kp_proc,
 			    sizeof(struct proc)))
 				return (error);
-			if (error = copyout((caddr_t)&eproc, &dp->kp_eproc,
+			if (error == copyout((caddr_t)&eproc, &dp->kp_eproc,
 			    sizeof(eproc)))
 				return (error);
 			dp++;
@@ -1014,7 +1015,7 @@ fill_from_u(p, rup, ttp, tdp)
 		(*bdevsw[major(swapdev)].d_strategy)(bp);
 		biowait(bp);
 
-		if	(u.u_error)
+		if	(u->u_error)
 			{
 			ttyd = NODEV;
 			ttyp = NULL;
@@ -1030,7 +1031,7 @@ fill_from_u(p, rup, ttp, tdp)
 			}
 		bp->b_flags |= B_AGE;
 		brelse(bp);
-		u.u_error = 0;		/* XXX */
+		u->u_error = 0;		/* XXX */
 		}
 out:
 	if	(rup)

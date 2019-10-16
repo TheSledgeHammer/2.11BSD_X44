@@ -19,7 +19,7 @@ inferior(p)
 	register struct proc *p;
 {
 
-	for (; p != u.u_procp; p = p->p_pptr)
+	for (; p != u->u_procp; p = p->p_pptr)
 		if (p->p_ppid == 0)
 			return (0);
 	return (1);

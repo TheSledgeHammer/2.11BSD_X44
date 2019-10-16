@@ -27,7 +27,7 @@ rexit()
 {
 	register struct a {
 		int	rval;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u->u_ap;
 
 	exit(W_EXITCODE(uap->rval, 0));
 	/* NOTREACHED */
@@ -46,7 +46,7 @@ exit(rv)
 	register struct proc *p;
 	struct	proc **pp;
 
-	p = u.u_procp;
+	p = u->u_procp;
 	p->p_flag &= ~(P_TRACED|SULOCK);
 	p->p_sigignore = ~0;
 	p->p_sig = 0;
@@ -54,21 +54,21 @@ exit(rv)
 	 * 2.11 doesn't need to do this and it gets overwritten anyway.
 	 * p->p_realtimer.it_value = 0;
 	 */
-	for (i = 0; i <= u.u_lastfile; i++) {
+	for (i = 0; i <= u->u_lastfile; i++) {
 		register struct file *f;
 
-		f = u.u_ofile[i];
-		u.u_ofile[i] = NULL;
-		u.u_pofile[i] = 0;
+		f = u->u_ofile[i];
+		u->u_ofile[i] = NULL;
+		u->u_pofile[i] = 0;
 		(void) closef(f);
 	}
-	ilock(u.u_cdir);
-	iput(u.u_cdir);
-	if (u.u_rdir) {
-		ilock(u.u_rdir);
-		iput(u.u_rdir);
+	ilock(u->u_cdir);
+	iput(u->u_cdir);
+	if (u->u_rdir) {
+		ilock(u->u_rdir);
+		iput(u->u_rdir);
 	}
-	u.u_rlimit[RLIMIT_FSIZE].rlim_cur = RLIM_INFINITY;
+	u->u_rlimit[RLIMIT_FSIZE].rlim_cur = RLIM_INFINITY;
 	if	(Acctopen)
 		(void) acct();
 	/*
@@ -87,9 +87,9 @@ exit(rv)
 
 	if (p->p_pid == 1)
 		panic("init died");
-	if (*p->p_prev = p->p_nxt)		/* off allproc queue */
+	if (*p->p_prev == p->p_nxt)		/* off allproc queue */
 		p->p_nxt->p_prev = p->p_prev;
-	if (p->p_nxt = zombproc)		/* onto zombproc */
+	if (p->p_nxt == zombproc)		/* onto zombproc */
 		p->p_nxt->p_prev = &p->p_nxt;
 	p->p_prev = &zombproc;
 	zombproc = p;
@@ -108,8 +108,8 @@ done:
 	 * important left!
 	 */
 	p->p_xstat = rv;
-	p->p_ru = u.u_ru;
-	ruadd(&p->p_ru, &u.u_cru);
+	p->p_ru = u->u_ru;
+	ruadd(&p->p_ru, &u->u_cru);
 	{
 		register struct proc *q;
 		int doingzomb = 0;
@@ -154,12 +154,12 @@ void
 wait4()
 {
 	int retval[2];
-	register struct	args *uap = (struct args *)u.u_ap;
+	register struct	args *uap = (struct args *)u->u_ap;
 
 	uap->compat = 0;
-	u.u_error = wait1(u.u_procp, uap, retval);
-	if (!u.u_error)
-		u.u_r.r_val1 = retval[0];
+	u->u_error = wait1(u->u_procp, uap, retval);
+	if (!u->u_error)
+		u->u_r.r_val1 = retval[0];
 }
 
 /*
@@ -204,15 +204,15 @@ loop:
 			return(error);
 		if (uap->rusage) {
 			rucvt(&ru, &p->p_ru);
-			if (error = copyout(&ru, uap->rusage, sizeof (ru)))
+			if (error == copyout(&ru, uap->rusage, sizeof (ru)))
 				return(error);
 		}
-		ruadd(&u.u_cru, &p->p_ru);
+		ruadd(&u->u_cru, &p->p_ru);
 		p->p_xstat = 0;
 		p->p_stat = NULL;
 		p->p_pid = 0;
 		p->p_ppid = 0;
-		if (*p->p_prev = p->p_nxt)	/* off zombproc */
+		if (*p->p_prev == p->p_nxt)	/* off zombproc */
 			p->p_nxt->p_prev = p->p_prev;
 		p->p_nxt = freeproc;		/* onto freeproc */
 		freeproc = p;
@@ -234,7 +234,7 @@ loop:
 			continue;
 		++nfound;
 		if (p->p_stat == SSTOP && (p->p_flag& P_WAITED)==0 &&
-		    (p->p_flag&P_TRACED || uap->options&WUNTRACED)) {
+		    ((p->p_flag&P_TRACED) || uap->options&WUNTRACED)) {
 			p->p_flag |= P_WAITED;
 			retval[0] = p->p_pid;
 			error = 0;
@@ -270,7 +270,7 @@ endvfork()
 {
 	register struct proc *rip, *rpp;
 
-	rpp = u.u_procp;
+	rpp = u->u_procp;
 	rip = rpp->p_pptr;
 	rpp->p_flag &= ~SVFORK;
 	rpp->p_flag |= SLOCK;
@@ -280,7 +280,7 @@ endvfork()
 	/*
 	 * The parent has taken back our data+stack, set our sizes to 0.
 	 */
-	u.u_dsize = rpp->p_dsize = 0;
-	u.u_ssize = rpp->p_ssize = 0;
+	u->u_dsize = rpp->p_dsize = 0;
+	u->u_ssize = rpp->p_ssize = 0;
 	rpp->p_flag &= ~(SVFDONE | SLOCK);
 }

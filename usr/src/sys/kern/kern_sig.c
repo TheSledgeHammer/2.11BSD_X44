@@ -40,14 +40,14 @@ cansignal(q, signum)
 	register struct proc *q;
 	int	signum;
 	{
-	register struct proc *curp = u.u_procp;
+	register struct proc *curp = u->u_procp;
 	uid_t	ruid;
 
 	fill_from_u(q, &ruid, NULL, NULL);	/* XXX */
 	if	(curp->p_uid == 0 ||		/* c effective root */
-		 u.u_ruid == ruid ||		/* c real = t real */
+		 u->u_ruid == ruid ||		/* c real = t real */
 		 curp->p_uid == ruid ||		/* c effective = t real */
-		 u.u_ruid == q->p_uid ||	/* c real = t effective */
+		 u->u_ruid == q->p_uid ||	/* c real = t effective */
 		 curp->p_uid == q->p_uid ||	/* c effective = t effective */
 		 (signum == SIGCONT && inferior(q)))
 		return(1);
@@ -64,25 +64,25 @@ sigstack()
 		{
 		struct	sigstack *nss;
 		struct	sigstack *oss;
-		} *uap = (struct a *)u.u_ap;
+		} *uap = (struct a *)u->u_ap;
 	struct sigstack ss;
 	register int error = 0;
 
-	ss.ss_sp = u.u_sigstk.ss_base;
-	ss.ss_onstack = u.u_sigstk.ss_flags & SA_ONSTACK;
+	ss.ss_sp = u->u_sigstk.ss_base;
+	ss.ss_onstack = u->u_sigstk.ss_flags & SA_ONSTACK;
 	if	(uap->oss && (error = copyout((caddr_t)&ss,
 					(caddr_t)uap->oss, sizeof (ss))))
 		goto out;
 	if	(uap->nss && (error = copyin((caddr_t)uap->nss, (caddr_t)&ss, 
 					sizeof (ss))) == 0)
 		{
-		u.u_sigstk.ss_base = ss.ss_sp;
-		u.u_sigstk.ss_size = 0;
-		u.u_sigstk.ss_flags |= (ss.ss_onstack & SA_ONSTACK);
-		u.u_psflags |= SAS_ALTSTACK;
+		u->u_sigstk.ss_base = ss.ss_sp;
+		u->u_sigstk.ss_size = 0;
+		u->u_sigstk.ss_flags |= (ss.ss_onstack & SA_ONSTACK);
+		u->u_psflags |= SAS_ALTSTACK;
 		}
 out:
-	return(u.u_error = error);
+	return;
 	}
 
 void
@@ -91,7 +91,7 @@ kill()
 	register struct a {
 		int	pid;
 		int	signo;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u->u_ap;
 	register struct proc *p;
 	register int error = 0;
 
@@ -133,7 +133,7 @@ kill()
 		break;
 	}
 out:
-	u.u_error = error;
+	u->u_error = error;
 }
 
 void
@@ -142,7 +142,7 @@ killpg()
 	register struct a {
 		int	pgrp;
 		int	signo;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u->u_ap;
 	register int error = 0;
 
 	if (uap->signo < 0 || uap->signo >= NSIG) {
@@ -151,8 +151,9 @@ killpg()
 	}
 	error = killpg1(uap->signo, uap->pgrp, 0);
 out:
-	return(u.u_error = error);
+	return;
 }
+
 static int
 killpg1(signo, pgrp, all)
 	int signo, pgrp, all;
@@ -164,13 +165,13 @@ killpg1(signo, pgrp, all)
 		/*
 		 * Zero process id means send to my process group.
 		 */
-		pgrp = u.u_procp->p_pgrp;
+		pgrp = u->u_procp->p_pgrp;
 		if (pgrp == 0)
 			return (ESRCH);
 	}
 	for (f = 0, p = allproc; p != NULL; p = p->p_nxt) {
 		if ((p->p_pgrp != pgrp && !all) || p->p_ppid == 0 ||
-		    (p->p_flag&SSYS) || (all && p == u.u_procp))
+		    (p->p_flag&SSYS) || (all && p == u->u_procp))
 			continue;
 		if (!cansignal(p, signo)) {
 			if (!all)
@@ -257,7 +258,7 @@ psignal(p, sig)
 		 * here if the action is default; don't stop the process 
 		 * below if sleeping, and don't clear any pending SIGCONT.
 		 */
-		if (prop & SA_TTYSTOP && (p->p_pptr == &proc[1]) &&
+		if ((prop & SA_TTYSTOP) && (p->p_pptr == &proc[1]) &&
 		    action == SIG_DFL)
 			return;
 		p->p_sig &= ~contsigmask;
@@ -414,7 +415,7 @@ issignal(p)
 		if (p->p_flag&SVFORK)
 			mask &= ~stopsigmask;
 		if (mask == 0)
-			return(0);		/* No signals to send */
+			return;		/* No signals to send */
 		sig = ffs(mask);
 		mask = sigmask(sig);
 		prop = sigprop[sig];
@@ -422,11 +423,11 @@ issignal(p)
 		 * We should see pending but ignored signals
 		 * only if P_TRACED was on when they were posted.
 		*/
-		if (mask & p->p_sigignore && (p->p_flag& P_TRACED) == 0) {
+		if ((mask & p->p_sigignore) && (p->p_flag& P_TRACED) == 0) {
 			p->p_sig &= ~mask;
 			continue;
 		}
-		if (p->p_flag & P_TRACED && (p->p_flag & SVFORK) == 0) {
+		if ((p->p_flag & P_TRACED) && (p->p_flag & SVFORK) == 0) {
 			/*
 			 * If traced, always stop, and stay
 			 * stopped until released by the parent.
@@ -445,7 +446,7 @@ issignal(p)
 			do {
 				stop(p);
 				swtch();
-			} while (!procxmt() && p->p_flag & P_TRACED);
+			} while (!procxmt() && (p->p_flag & P_TRACED));
 
 			/*
 			 * If parent wants us to take the signal,
@@ -475,7 +476,7 @@ issignal(p)
 			prop = sigprop[sig];
 		}
 
-		switch ((int)u.u_signal[sig]) {
+		switch ((int)u->u_signal[sig]) {
 
 		case SIG_DFL:
 			/*
@@ -500,9 +501,9 @@ issignal(p)
 			 * process group, ignore tty stop signals.
 			 */
 			if (prop & SA_STOP) {
-				if (p->p_flag & P_TRACED ||
+				if ((p->p_flag & P_TRACED) ||
 		    		    (p->p_pptr == &proc[1] &&
-				    prop & SA_TTYSTOP))
+				    (prop & SA_TTYSTOP)))
 					break;	/* == ignore */
 				p->p_ptracesig = sig;
 				if ((p->p_pptr->p_flag & P_NOCLDSTOP) == 0)
@@ -517,7 +518,7 @@ issignal(p)
 				 */
 				break;		/* == ignore */
 			} else
-				return(sig);
+				return;
 			/*NOTREACHED*/
 
 		case SIG_IGN:
@@ -535,7 +536,7 @@ issignal(p)
 			/*
 			 * This signal has an action, let postsig process it.
 			 */
-			return(sig);
+			return;
 		}
 		p->p_sig &= ~mask;		/* take the signal away! */
 	}
@@ -565,24 +566,24 @@ void
 postsig(sig)
 	int sig;
 {
-	register struct proc *p = u.u_procp;
+	register struct proc *p = u->u_procp;
 	long mask = sigmask(sig), returnmask;
 	register int (*action)();
 
-	if (u.u_fpsaved == 0) {
-		savfp(&u.u_fps);
-		u.u_fpsaved = 1;
+	if (u->u_fpsaved == 0) {
+		savfp(&u->u_fps);
+		u->u_fpsaved = 1;
 	}
 
 	p->p_sig &= ~mask;
-	action = u.u_signal[sig];
+	action = u->u_signal[sig];
 
 	if (action != SIG_DFL) {
 #ifdef DIAGNOSTIC
 		if (action == SIG_IGN || (p->p_sigmask & mask))
 			panic("postsig action");
 #endif
-		u.u_error = 0;	/* XXX - why? */
+		u->u_error = 0;	/* XXX - why? */
 		/*
 		 * Set the new mask value and also defer further
 		 * occurences of this signal.
@@ -593,21 +594,21 @@ postsig(sig)
 		 * after the signal processing is completed.
 		 */
 		(void) _splhigh();
-		if (u.u_psflags & SAS_OLDMASK) {
-			returnmask = u.u_oldmask;
-			u.u_psflags &= ~SAS_OLDMASK;
+		if (u->u_psflags & SAS_OLDMASK) {
+			returnmask = u->u_oldmask;
+			u->u_psflags &= ~SAS_OLDMASK;
 		} else
 			returnmask = p->p_sigmask;
-		p->p_sigmask |= u.u_sigmask[sig] | mask;
+		p->p_sigmask |= u->u_sigmask[sig] | mask;
 		(void) _spl0();
-		u.u_ru.ru_nsignals++;
+		u->u_ru.ru_nsignals++;
 		sendsig(action, sig, returnmask);
 		return;
 	}
-	u.u_acflag |= AXSIG;
+	u->u_acflag |= AXSIG;
 	if	(sigprop[sig] & SA_CORE)
 		{
-		u.u_arg[0] = sig;
+		u->u_arg[0] = sig;
 		if	(core())
 			sig |= 0200;
 		}
@@ -637,26 +638,26 @@ core()
 	 * Don't dump if not root and the process has used set user or
 	 * group privileges.
 	*/
-	if	(u.u_acflag & ASUGID && !suser())
+	if	((u->u_acflag & ASUGID) && !suser())
 		return(0);
-	if (ctob(USIZE+u.u_dsize+u.u_ssize) >=
-	    u.u_rlimit[RLIMIT_CORE].rlim_cur)
+	if (ctob(USIZE+u->u_dsize+u->u_ssize) >=
+	    u->u_rlimit[RLIMIT_CORE].rlim_cur)
 		return (0);
-	if (u.u_procp->p_textp && access(u.u_procp->p_textp->x_iptr, IREAD))
+	if (u->u_procp->p_textp && access(u->u_procp->p_textp->x_iptr, IREAD))
 		return (0);
-	cp = u.u_comm;
+	cp = u->u_comm;
 	np = name;
-	while	(*np++ = *cp++)
+	while	(*np++ == *cp++)
 		;
 	cp = ".core";
 	np--;
-	while	(*np++ = *cp++)
+	while	(*np++ == *cp++)
 		;
-	u.u_error = 0;
+	u->u_error = 0;
 	NDINIT(ndp, CREATE, FOLLOW, UIO_SYSSPACE, name);
 	ip = namei(ndp);
 	if (ip == NULL) {
-		if (u.u_error)
+		if (u->u_error)
 			return (0);
 		ip = maknode(0644, ndp);
 		if (ip==NULL)
@@ -665,26 +666,26 @@ core()
 	if (access(ip, IWRITE) ||
 	   (ip->i_mode&IFMT) != IFREG ||
 	   ip->i_nlink != 1) {
-		u.u_error = EFAULT;
+		u->u_error = EFAULT;
 		goto out;
 	}
 	itrunc(ip, (u_long)0, 0);
-	u.u_acflag |= ACORE;
-	u.u_error = rdwri(UIO_WRITE, ip, &u, ctob(USIZE), (off_t)0,
+	u->u_acflag |= ACORE;
+	u->u_error = rdwri(UIO_WRITE, ip, &u, ctob(USIZE), (off_t)0,
 			UIO_SYSSPACE, IO_UNIT, (int *)0);
-	if (u.u_error)
+	if (u->u_error)
 		goto out;
 
-	estabur((u_int)0, u.u_dsize, u.u_ssize, 0, RO);
-	u.u_error = rdwri(UIO_WRITE, ip, 0, ctob(u.u_dsize), (off_t)ctob(USIZE),
+	estabur((u_int)0, u->u_dsize, u->u_ssize, 0, RO);
+	u->u_error = rdwri(UIO_WRITE, ip, 0, ctob(u->u_dsize), (off_t)ctob(USIZE),
 			UIO_USERSPACE, IO_UNIT, (int *)0);
-	if (u.u_error)
+	if (u->u_error)
 		goto out;
 
-	u.u_error = rdwri(UIO_WRITE, ip, (caddr_t)(-(ctob(u.u_ssize))), ctob(u.u_ssize),
-			(off_t)ctob(USIZE) + (off_t)ctob(u.u_dsize),
+	u->u_error = rdwri(UIO_WRITE, ip, (caddr_t)(-(ctob(u->u_ssize))), ctob(u->u_ssize),
+			(off_t)ctob(USIZE) + (off_t)ctob(u->u_dsize),
 			 UIO_USERSPACE, IO_UNIT, (int *)0);
 out:
 	iput(ip);
-	return (u.u_error == 0);
+	return (u->u_error == 0);
 }

@@ -54,7 +54,7 @@ pipe()
 			break;
 		}
 		if (mp->m_filsys.fs_ronly) {
-			u.u_error = EROFS;
+			u->u_error = EROFS;
 			return;
 		}
 	}
@@ -68,16 +68,16 @@ pipe()
 		iput(ip);
 		return;
 	}
-	r = u.u_r.r_val1;
+	r = u->u_r.r_val1;
 	wf = falloc();
 	if (wf == NULL) {
 		rf->f_count = 0;
-		u.u_ofile[r] = NULL;
+		u->u_ofile[r] = NULL;
 		iput(ip);
 		return;
 	}
-	u.u_r.r_val2 = u.u_r.r_val1;
-	u.u_r.r_val1 = r;
+	u->u_r.r_val2 = u->u_r.r_val1;
+	u->u_r.r_val1 = r;
 	wf->f_flag = FWRITE;
 	rf->f_flag = FREAD;
 	rf->f_type = wf->f_type = DTYPE_PIPE;
@@ -183,7 +183,7 @@ loop:
 	 * return error and signal too.
 	 */
 	if (ip->i_count != 2) {
-		psignal(u.u_procp, SIGPIPE);
+		psignal(u->u_procp, SIGPIPE);
 		error = EPIPE;
 done:		IUNLOCK(ip);
 		return (error);
@@ -246,7 +246,7 @@ pipe_select(fp, which)
 		if ((p = ip->i_rsel) && p->p_wchan == (caddr_t)&selwait)
 			ip->i_flag |= IRCOLL;
 		else
-			ip->i_rsel = u.u_procp;
+			ip->i_rsel = u->u_procp;
 		break;
 
 	case FWRITE:
@@ -257,7 +257,7 @@ pipe_select(fp, which)
 		if ((p = ip->i_wsel) && p->p_wchan == (caddr_t)&selwait)
 			ip->i_flag |= IWCOLL;
 		else
-			ip->i_wsel = u.u_procp;
+			ip->i_wsel = u->u_procp;
 		break;
 	}
 	IUNLOCK(ip);

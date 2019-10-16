@@ -24,6 +24,7 @@
 #include <sys/kernel.h>
 #include <sys/systm.h>
 #include <sys/syslog.h>
+#include <sys/time.h>
 
 //#include <machine/seg.h>
 
@@ -58,7 +59,7 @@ register struct uio *uio;
 			ioflag |= IO_APPEND;
 		if	(fp->f_flag & FNONBLOCK)
 			ioflag |= IO_NDELAY;
-		if	(fp->f_flag & FFSYNC ||
+		if	((fp->f_flag & FFSYNC) ||
 			 (ip->i_fs->fs_flags & MNT_SYNCHRONOUS))
 			ioflag |= IO_SYNC;
 		error = rwip(ip, uio, ioflag);
@@ -138,7 +139,7 @@ rwip(ip, uio, ioflag)
 		case IFREG:
 		    if	(ioflag & IO_APPEND)
 			uio->uio_offset = ip->i_size;
-		    if	(ip->i_flags & APPEND && uio->uio_offset != ip->i_size)
+		    if	((ip->i_flags & APPEND) && uio->uio_offset != ip->i_size)
 			return(EPERM);
 		    break;
 		case IFDIR:
@@ -166,7 +167,7 @@ rwip(ip, uio, ioflag)
  * This behaviour should probably be selectable via "sysctl fs.async.dirs" and
  * "fs.async.ofsync".  A project for a rainy day.
 */
-	if (type == IFREG  || type == IFDIR && (ip->i_fs->fs_flags & MNT_ASYNC))
+	if (type == IFREG  || (type == IFDIR && (ip->i_fs->fs_flags & MNT_ASYNC)))
 		ioflag &= ~IO_SYNC;
 
 	if (type == IFCHR)
@@ -188,8 +189,8 @@ rwip(ip, uio, ioflag)
 		return (0);
 	if (uio->uio_rw == UIO_WRITE && type == IFREG &&
 	    uio->uio_offset + uio->uio_resid >
-	      u.u_rlimit[RLIMIT_FSIZE].rlim_cur) {
-		psignal(u.u_procp, SIGXFSZ);
+	      u->u_rlimit[RLIMIT_FSIZE].rlim_cur) {
+		psignal(u->u_procp, SIGXFSZ);
 		return (EFBIG);
 	}
 
@@ -216,8 +217,8 @@ rwip(ip, uio, ioflag)
 			else
 				bn = bmap(ip,lbn,B_WRITE,
 				       n == DEV_BSIZE ? flags : flags|B_CLRBUF);
-			if (u.u_error || uio->uio_rw == UIO_WRITE && (long)bn<0)
-				return (u.u_error);
+			if (u->u_error || (uio->uio_rw == UIO_WRITE && (long)bn<0))
+				return (u->u_error);
 			if (uio->uio_rw == UIO_WRITE && uio->uio_offset + n > ip->i_size &&
 			   (type == IFDIR || type == IFREG || type == IFLNK))
 				ip->i_size = uio->uio_offset + n;
@@ -255,7 +256,7 @@ rwip(ip, uio, ioflag)
 			brelse(bp);
 			break;
 		}
-		u.u_error = uiomove(mapin(bp)+on, n, uio);
+		u->u_error = uiomove(mapin(bp)+on, n, uio);
 		mapout(bp);
 		if (uio->uio_rw == UIO_READ) {
 			if (n + on == DEV_BSIZE || uio->uio_offset == ip->i_size) {
@@ -280,10 +281,10 @@ rwip(ip, uio, ioflag)
 			} else
 				bdwrite(bp);
 			ip->i_flag |= IUPD|ICHG;
-			if (u.u_ruid != 0)
+			if (u->u_ruid != 0)
 				ip->i_mode &= ~(ISUID|ISGID);
 		}
-	} while (u.u_error == 0 && uio->uio_resid && n != 0);
+	} while (u->u_error == 0 && uio->uio_resid && n != 0);
 	if (error == 0)				/* XXX */
 		error = u.u_error;		/* XXX */
 	if (error && (uio->uio_rw == UIO_WRITE) && (ioflag & IO_UNIT) && 
@@ -327,6 +328,8 @@ ino_ioctl(fp, com, data)
 		}
 		if (com == FIONBIO || com == FIOASYNC)	/* XXX */
 			return (0);			/* XXX */
+
+		break;
 		/* fall into ... */
 
 	default:
@@ -334,14 +337,14 @@ ino_ioctl(fp, com, data)
 
 	case IFCHR:
 		dev = ip->i_rdev;
-		u.u_r.r_val1 = 0;
-		if	(setjmp(&u.u_qsave))
+		u->u_r.r_val1 = 0;
+		if	(setjmp(&u->u_qsave))
 /*
  * The ONLY way we can get here is via the longjump in sleep.  Signals have
  * been checked for and u_error set accordingly.  All that remains to do 
  * is 'return'.
 */
-			return(u.u_error);
+			return(u->u_error);
 		return((*cdevsw[major(dev)].d_ioctl)(dev,com,data,fp->f_flag));
 	}
 }
@@ -372,7 +375,6 @@ ino_stat(ip, sb)
 {
 	register struct icommon2 *ic2;
 	ic2 = &ip->i_ic2;
-#endif
 
 /*
  * inlined ITIMES which takes advantage of the common times pointer.
@@ -402,6 +404,7 @@ ino_stat(ip, sb)
 	sb->st_ctime = ic2->ic_ctime;
 	sb->st_spare3 = 0;
 	sb->st_blksize = MAXBSIZE;
+
 	/*
 	 * blocks are too tough to do; it's not worth the effort.
 	 */
@@ -481,13 +484,13 @@ closei(ip, flag)
  *	  Apparently the only time "errno" is meaningful after a "close" is
  *	  when the process is interrupted.
 */
-	if	(setjmp(&u.u_qsave))
+	if	(setjmp(&u->u_qsave))
 		{
 		/*
 		 * If device close routine is interrupted,
 		 * must return so closef can clean up.
 		 */
-		if	((error = u.u_error) == 0)
+		if	((error = u->u_error) == 0)
 			error = EINTR;
 		}
 	else
@@ -688,11 +691,11 @@ vhangup()
 
 	if (!suser())
 		return;
-	if (u.u_ttyp == NULL)
+	if (u->u_ttyp == NULL)
 		return;
-	forceclose(u.u_ttyd);
-	if ((u.u_ttyp->t_state) & TS_ISOPEN)
-		gsignal(u.u_ttyp->t_pgrp, SIGHUP);
+	forceclose(u->u_ttyd);
+	if ((u->u_ttyp->t_state) & TS_ISOPEN)
+		gsignal(u->u_ttyp->t_pgrp, SIGHUP);
 }
 
 static void

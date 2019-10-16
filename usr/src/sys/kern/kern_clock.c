@@ -69,26 +69,26 @@ hardclock(dev,sp,r1,ov,nps,r0,pc,ps)
 	 * one tick.
 	 */
 	if (USERMODE(ps)) {
-		if (u.u_prof.pr_scale)
+		if (u->u_prof.pr_scale)
 			needsoft = 1;
 		/*
 		 * CPU was in user state.  Increment
 		 * user time counter, and process process-virtual time
 		 * interval timer. 
 		 */
-		u.u_ru.ru_utime++;
-		if (u.u_timer[ITIMER_VIRTUAL - 1].it_value &&
-		    !--u.u_timer[ITIMER_VIRTUAL - 1].it_value) {
-			psignal(u.u_procp, SIGVTALRM);
-			u.u_timer[ITIMER_VIRTUAL - 1].it_value =
-			    u.u_timer[ITIMER_VIRTUAL - 1].it_interval;
+		u->u_ru.ru_utime++;
+		if (u->u_timer[ITIMER_VIRTUAL - 1].it_value &&
+		    !--u->u_timer[ITIMER_VIRTUAL - 1].it_value) {
+			psignal(u->u_procp, SIGVTALRM);
+			u->u_timer[ITIMER_VIRTUAL - 1].it_value =
+			    u->u_timer[ITIMER_VIRTUAL - 1].it_interval;
 		}
 	} else {
 		/*
 		 * CPU was in system state.
 		 */
 		if (!noproc)
-			u.u_ru.ru_stime++;
+			u->u_ru.ru_stime++;
 	}
 
 	/*
@@ -100,21 +100,21 @@ hardclock(dev,sp,r1,ov,nps,r0,pc,ps)
 	 * the entire last tick.
 	 */
 	if (noproc == 0) {
-		p = u.u_procp;
+		p = u->u_procp;
 		if (++p->p_cpu == 0)
 			p->p_cpu--;
-		if ((u.u_ru.ru_utime+u.u_ru.ru_stime+1) >
-		    u.u_rlimit[RLIMIT_CPU].rlim_cur) {
+		if ((u->u_ru.ru_utime+u->u_ru.ru_stime+1) >
+		    u->u_rlimit[RLIMIT_CPU].rlim_cur) {
 			psignal(p, SIGXCPU);
-			if (u.u_rlimit[RLIMIT_CPU].rlim_cur <
-			    u.u_rlimit[RLIMIT_CPU].rlim_max)
-				u.u_rlimit[RLIMIT_CPU].rlim_cur += 5 * hz;
+			if (u->u_rlimit[RLIMIT_CPU].rlim_cur <
+			    u->u_rlimit[RLIMIT_CPU].rlim_max)
+				u->u_rlimit[RLIMIT_CPU].rlim_cur += 5 * hz;
 		}
-		if (u.u_timer[ITIMER_PROF - 1].it_value &&
-		    !--u.u_timer[ITIMER_PROF - 1].it_value) {
+		if (u->u_timer[ITIMER_PROF - 1].it_value &&
+		    !--u->u_timer[ITIMER_PROF - 1].it_value) {
 			psignal(p, SIGPROF);
-			u.u_timer[ITIMER_PROF - 1].it_value =
-			    u.u_timer[ITIMER_PROF - 1].it_interval;
+			u->u_timer[ITIMER_PROF - 1].it_value =
+			    u->u_timer[ITIMER_PROF - 1].it_interval;
 		}
 	}
 
@@ -242,10 +242,10 @@ softclock(pc, ps)
 	 * a profiling tick.
 	 */
 	if (USERMODE(ps)) {
-		register struct proc *p = u.u_procp;
+		register struct proc *p = u->u_procp;
 
-		if (u.u_prof.pr_scale)
-			addupc(pc, &u.u_prof, 1);
+		if (u->u_prof.pr_scale)
+			addupc(pc, &u->u_prof, 1);
 		/*
 		 * Check to see if process has accumulated
 		 * more than 10 minutes of user time.  If so
@@ -253,7 +253,7 @@ softclock(pc, ps)
 		 */
 
 		if (p->p_uid && p->p_nice == NZERO &&
-		    u.u_ru.ru_utime > 10L * 60L * hz) {
+		    u->u_ru.ru_utime > 10L * 60L * hz) {
 			p->p_nice = NZERO+4;
 				(void) setpri(p);
 		}
@@ -325,8 +325,8 @@ profil()
 		unsigned bufsize;
 		unsigned pcoffset;
 		unsigned pcscale;
-	} *uap = (struct a *)u.u_ap;
-	register struct uprof *upp = &u.u_prof;
+	} *uap = (struct a *)u->u_ap;
+	register struct uprof *upp = &u->u_prof;
 
 	upp->pr_base = uap->bufbase;
 	upp->pr_size = uap->bufsize;
@@ -365,10 +365,5 @@ hzto(tv)
 	else
 		ticks = 0x7fffffff;
 	splx(s);
-#ifdef pdp11
-	/* stored in an "int", so 16-bit max */
-	if (ticks > 0x7fff)
-		ticks = 0x7fff;
-#endif
 	return ((int)ticks);
 }

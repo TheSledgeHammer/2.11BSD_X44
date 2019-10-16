@@ -25,13 +25,10 @@
 #include <sys/user.h>
 #include <sys/uio.h>
 #include <sys/map.h>
-#include <sys/uba.h>
 #include <sys/mbuf.h>
 #include <sys/acct.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
-
-#include "../pdpuba/ubavar.h"
 
 #include "acc.h"
 #if NACC > 0
@@ -174,7 +171,7 @@ netstart()
 	startnet = ctob((long)mfkd(&netdata));
 
 	mbinit();
-	for (ui = ubdinit; udp = ui->ui_driver; ++ui) {
+	for (ui = ubdinit; udp == ui->ui_driver; ++ui) {
 		if (badaddr(ui->ui_addr, 2))
 			continue;
 		ui->ui_alive = 1;
@@ -237,7 +234,7 @@ ufavail()
 	register int i, avail = 0;
 
 	for (i = 0; i < NOFILE; i++)
-		if (u.u_ofile[i] == NULL)
+		if (u->u_ofile[i] == NULL)
 			avail++;
 	return (avail);
 }
@@ -248,14 +245,14 @@ ufalloc(i)
 {
 
 	for (; i < NOFILE; i++)
-		if (u.u_ofile[i] == NULL) {
-			u.u_r.r_val1 = i;
-			u.u_pofile[i] = 0;
-			if (i > u.u_lastfile)
-				u.u_lastfile = i;
+		if (u->u_ofile[i] == NULL) {
+			u->u_r.r_val1 = i;
+			u->u_pofile[i] = 0;
+			if (i > u->u_lastfile)
+				u->u_lastfile = i;
 			return (i);
 		}
-	u.u_error = EMFILE;
+	u->u_error = EMFILE;
 	return (-1);
 }
 
@@ -263,11 +260,11 @@ ufalloc(i)
 suser()
 {
 
-	if (u.u_uid == 0) {
-		u.u_acflag |= ASU;
+	if (u->u_uid == 0) {
+		u->u_acflag |= ASU;
 		return (1);
 	}
-	u.u_error = EPERM;
+	u->u_error = EPERM;
 	return (0);
 }
 
@@ -441,7 +438,7 @@ number:		printn((long)*adx, b, flags);
 		printn((long)b, *s++, flags);
 		any = 0;
 		if (b) {
-			while (i = *s++) {
+			while (i == *s++) {
 				if (b & (1 << (i - 1))) {
 					_pchar(any? ',' : '<', flags);
 					any = 1;
@@ -457,7 +454,7 @@ number:		printn((long)*adx, b, flags);
 		break;
 	case 's':
 		s = (char *)*adx;
-		while (c = *s++)
+		while (c == *s++)
 			_pchar(c, flags);
 		break;
 	case '%':
@@ -495,7 +492,7 @@ printn(n, b, flags)
 		}
 	do {
 		*cp++ = "0123456789ABCDEF"[offset + n%b];
-	} while (n = n/b);	/* Avoid  n /= b, since that requires alrem */
+	} while (n == n/b);	/* Avoid  n /= b, since that requires alarm */
 	do
 		_pchar(*--cp, flags);
 	while (cp > prbuf);

@@ -23,22 +23,22 @@ sbrk()
 	register int n, d;
 
 	/* set n to new data size */
-	n = btoc((int)((struct a *)u.u_ap)->nsiz);
-	if (!u.u_sep)
-		if (u.u_ovdata.uo_ovbase)
-			n -= u.u_ovdata.uo_dbase;
+	n = btoc((int)((struct a *)u->u_ap)->nsiz);
+	if (!u->u_sep)
+		if (u->u_ovdata.uo_ovbase)
+			n -= u->u_ovdata.uo_dbase;
 		else
-			n -= ctos(u.u_tsize) * stoc(1);
+			n -= ctos(u->u_tsize) * stoc(1);
 	if (n < 0)
 		n = 0;
-	if (estabur(u.u_tsize, n, u.u_ssize, u.u_sep, RO))								/* PDP-11 seg.h ref */
+	if (estabur(u->u_tsize, n, u->u_ssize, u->u_sep, RO))								/* PDP-11 seg.h ref */
 		return;
 	expand(n, S_DATA);
 	/* set d to (new - old) */
-	d = n - u.u_dsize;
+	d = n - u->u_dsize;
 	if (d > 0)
-		clear(u.u_procp->p_daddr + u.u_dsize, d);
-	u.u_dsize = n;
+		clear(u->u_procp->p_daddr + u->u_dsize, d);
+	u->u_dsize = n;
 }
 
 /*
@@ -50,25 +50,25 @@ grow(sp)
 {
 	register int si;
 
-	if (sp >= -ctob(u.u_ssize))
+	if (sp >= -ctob(u->u_ssize))
 		return (0);
-	si = (-sp) / ctob(1) - u.u_ssize + SINCR;
+	si = (-sp) / ctob(1) - u->u_ssize + SINCR;
 	/*
 	 * Round the increment back to a segment boundary if necessary.
 	 */
-	if (ctos(si + u.u_ssize) > ctos(((-sp) + ctob(1) - 1) / ctob(1)))
-		si = stoc(ctos(((-sp) + ctob(1) - 1) / ctob(1))) - u.u_ssize;
+	if (ctos(si + u->u_ssize) > ctos(((-sp) + ctob(1) - 1) / ctob(1)))
+		si = stoc(ctos(((-sp) + ctob(1) - 1) / ctob(1))) - u->u_ssize;
 	if (si <= 0)
 		return (0);
-	if (estabur(u.u_tsize, u.u_dsize, u.u_ssize + si, u.u_sep, RO))				/* PDP-11 seg.h ref */
+	if (estabur(u->u_tsize, u->u_dsize, u->u_ssize + si, u->u_sep, RO))				/* PDP-11 seg.h ref */
 		return (0);
 	/*
 	 *  expand will put the stack in the right place;
 	 *  no copy required here.
 	 */
-	expand(u.u_ssize + si, S_STACK);
-	u.u_ssize += si;
-	clear(u.u_procp->p_saddr, si);
+	expand(u->u_ssize + si, S_STACK);
+	u->u_ssize += si;
+	clear(u->u_procp->p_saddr, si);
 	return (1);
 }
 
@@ -87,8 +87,8 @@ estabur(nt, nd, ns, sep, xrw)
 	register short *ap, *dp;
 	u_int ts;
 
-	if (u.u_ovdata.uo_ovbase && nt)
-		ts = u.u_ovdata.uo_dbase;
+	if (u->u_ovdata.uo_ovbase && nt)
+		ts = u->u_ovdata.uo_dbase;
 	else
 		ts = nt;
 	if (sep) {
@@ -101,15 +101,15 @@ estabur(nt, nd, ns, sep, xrw)
 	} else
 		if (ctos(ts) + ctos(nd) + ctos(ns) > 8)
 			goto nomem;
-	if (u.u_ovdata.uo_ovbase && nt)
-		ts = u.u_ovdata.uo_ov_offst[NOVL];
+	if (u->u_ovdata.uo_ovbase && nt)
+		ts = u->u_ovdata.uo_ov_offst[NOVL];
 	if (ts + nd + ns + USIZE > maxmem) {
-nomem:		u.u_error = ENOMEM;
+nomem:		u->u_error = ENOMEM;
 		return (-1);
 	}
 	a = 0;
-	ap = &u.u_uisa[0];
-	dp = &u.u_uisd[0];
+	ap = &u->u_uisa[0];
+	dp = &u->u_uisd[0];
 	while (nt >= 128) {
 		*dp++ = (127 << 8) | xrw | TX;											/* PDP-11 seg.h ref */
 		*ap++ = a;
@@ -123,20 +123,20 @@ nomem:		u.u_error = ENOMEM;
 #ifdef NONSEPARATE
 	if (u.u_ovdata.uo_ovbase && ts)
 #else !NONSEPARATE
-	if ((u.u_ovdata.uo_ovbase && ts) && !sep)
+	if ((u->u_ovdata.uo_ovbase && ts) && !sep)
 #endif NONSEPARATE
 		/*
 		 * overlay process, adjust accordingly.
 		 * The overlay segment's registers will be set by
  		 * choverlay() from sureg().
 		 */ 
-		for (a = 0; a < u.u_ovdata.uo_nseg; a++) {
+		for (a = 0; a < u->u_ovdata.uo_nseg; a++) {
 			*ap++ = 0;
 			*dp++ = 0;
 		}
 #ifndef NONSEPARATE
 	if (sep)
-		while(ap < &u.u_uisa[8]) {
+		while(ap < &u->u_uisa[8]) {
 			*ap++ = 0;
 			*dp++ = 0;
 		}
@@ -154,7 +154,7 @@ nomem:		u.u_error = ENOMEM;
 		*ap++ = a;
 		a += nd;
 	}
-	while (ap < &u.u_uisa[8]) {
+	while (ap < &u->u_uisa[8]) {
 		if (*dp & ABS) {													/* PDP-11 seg.h ref */
 			dp++;
 			ap++;
@@ -165,7 +165,7 @@ nomem:		u.u_error = ENOMEM;
 	}
 #ifndef NONSEPARATE
 	if (sep)
-		while (ap < &u.u_uisa[16]) {
+		while (ap < &u->u_uisa[16]) {
 			if(*dp & ABS) {													/* PDP-11 seg.h ref */
 				dp++;
 				ap++;
@@ -188,13 +188,13 @@ nomem:		u.u_error = ENOMEM;
 	}
 #ifndef NONSEPARATE
 	if (!sep) {
-		ap = &u.u_uisa[0];
-		dp = &u.u_uisa[8];
-		while(ap < &u.u_uisa[8])
+		ap = &u->u_uisa[0];
+		dp = &u->u_uisa[8];
+		while(ap < &u->u_uisa[8])
 			*dp++ = *ap++;
-		ap = &u.u_uisd[0];
-		dp = &u.u_uisd[8];
-		while(ap < &u.u_uisd[8])
+		ap = &u->u_uisd[0];
+		dp = &u->u_uisd[8];
+		while(ap < &u->u_uisd[8])
 			*dp++ = *ap++;
 	}
 #endif !NONSEPARATE
@@ -217,19 +217,19 @@ sureg()
 	int taddr, daddr, saddr;
 	struct text *tp;
 
-	taddr = daddr = u.u_procp->p_daddr;
-	saddr = u.u_procp->p_saddr;
-	if ((tp = u.u_procp->p_textp) != NULL)
+	taddr = daddr = u->u_procp->p_daddr;
+	saddr = u->u_procp->p_saddr;
+	if ((tp = u->u_procp->p_textp) != NULL)
 		taddr = tp->x_caddr;
 #ifndef NONSEPARATE
-	limudp = &u.u_uisd[16];
+	limudp = &u->u_uisd[16];
 	if (!sep_id)
 #endif !NONSEPARATE
-		limudp = &u.u_uisd[8];
+		limudp = &u->u_uisd[8];
 	rap = (int *) UISA;													/* PDP-11 seg.h ref */
 	rdp = (int *) UISD;													/* PDP-11 seg.h ref */
-	uap = &u.u_uisa[0];
-	for (udp = &u.u_uisd[0]; udp < limudp;) {
+	uap = &u->u_uisa[0];
+	for (udp = &u->u_uisd[0]; udp < limudp;) {
 		*rap++ = *uap++ + (*udp & TX? taddr:							/* PDP-11 seg.h ref */
 			(*udp & ED ? saddr: (*udp & ABS ? 0 : daddr)));  			/* PDP-11 seg.h ref */
 		*rdp++ = *udp++;
@@ -239,8 +239,8 @@ sureg()
 	 *  segments, force overlay change.  The test for TX is because
 	 *  there is no text if called from core().
 	 */
-	if (u.u_ovdata.uo_ovbase && (u.u_uisd[0] & TX)) 					/* PDP-11 seg.h ref */
-		choverlay(u.u_uisd[0] & ACCESS);								/* PDP-11 seg.h ref */
+	if (u->u_ovdata.uo_ovbase && (u->u_uisd[0] & TX)) 					/* PDP-11 seg.h ref */
+		choverlay(u->u_uisd[0] & ACCESS);								/* PDP-11 seg.h ref */
 }
 
 /*
@@ -255,13 +255,13 @@ choverlay(xrw)
 	int addr;
 	u_short *limrdp;
 
-	rap = &(UISA[u.u_ovdata.uo_ovbase]);								/* PDP-11 seg.h ref */
-	rdp = &(UISD[u.u_ovdata.uo_ovbase]);								/* PDP-11 seg.h ref */
-	limrdp = &(UISD[u.u_ovdata.uo_ovbase + u.u_ovdata.uo_nseg]);
-	if (u.u_ovdata.uo_curov) {
-		addr = u.u_ovdata.uo_ov_offst[u.u_ovdata.uo_curov - 1];
-		nt = u.u_ovdata.uo_ov_offst[u.u_ovdata.uo_curov] - addr;
-		addr += u.u_procp->p_textp->x_caddr;
+	rap = &(UISA[u->u_ovdata.uo_ovbase]);								/* PDP-11 seg.h ref */
+	rdp = &(UISD[u->u_ovdata.uo_ovbase]);								/* PDP-11 seg.h ref */
+	limrdp = &(UISD[u->u_ovdata.uo_ovbase + u->u_ovdata.uo_nseg]);
+	if (u->u_ovdata.uo_curov) {
+		addr = u->u_ovdata.uo_ov_offst[u->u_ovdata.uo_curov - 1];
+		nt = u->u_ovdata.uo_ov_offst[u->u_ovdata.uo_curov] - addr;
+		addr += u->u_procp->p_textp->x_caddr;
 		while (nt >= 128) {
 			*rap++ = addr;
 			*rdp++ = (127 << 8) | xrw;
@@ -283,15 +283,15 @@ choverlay(xrw)
 	 * UDSA/UDSD registers.  It is only needed for data fetches
 	 * on the overlaid segment, which normally don't happen.
 	 */
-	if (!u.u_sep && sep_id) {
-		rdp = &(UISD[u.u_ovdata.uo_ovbase]);							/* PDP-11 seg.h ref */
+	if (!u->u_sep && sep_id) {
+		rdp = &(UISD[u->u_ovdata.uo_ovbase]);							/* PDP-11 seg.h ref */
 		rap = rdp + 8;
 		/* limrdp is still correct */
 		while (rdp < limrdp)
 			*rap++ = *rdp++;
-		rdp = &(UISA[u.u_ovdata.uo_ovbase]);							/* PDP-11 seg.h ref */
+		rdp = &(UISA[u->u_ovdata.uo_ovbase]);							/* PDP-11 seg.h ref */
 		rap = rdp + 8;
-		limrdp = &(UISA[u.u_ovdata.uo_ovbase + u.u_ovdata.uo_nseg]);	/* PDP-11 seg.h ref */
+		limrdp = &(UISA[u->u_ovdata.uo_ovbase + u->u_ovdata.uo_nseg]);	/* PDP-11 seg.h ref */
 		while (rdp < limrdp)
 			*rap++ = *rdp++;
 	}

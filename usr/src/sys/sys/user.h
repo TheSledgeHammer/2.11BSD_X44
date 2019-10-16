@@ -6,19 +6,23 @@
  *	@(#)user.h	1.6 (2.11BSD) 1999/9/13
  */
 
-
+#ifndef _SYS_USER_H_
+#define _SYS_USER_H_
 
 #ifndef KERNEL
-#include <sys/errno.h>
+#include <errno.h>
 #include <sys/dir.h>
 #include <sys/exec.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/uio.h>
+#include <sys/ucred.h>
 #endif
 #include <sys/resourcevar.h>
 #include <sys/signalvar.h>
 #include <vm/vm.h>		/* XXX */
 #include <sys/sysctl.h>
+
 #include <machine/pcb.h>
 
 /*
@@ -83,7 +87,7 @@ struct user {
 	short	u_uisd[16];				/* segmentation descriptor prototypes */
 	char	u_sep;					/* flag for I and D separation */
 	char	dummy1;					/* room for another char */
-					/* overlay information */
+									/* overlay information */
 	struct	u_ovd {					/* automatic overlay data */
 		short	uo_curov;			/* current overlay */
 		short	uo_ovbase;			/* base of overlay area, seg. */
@@ -106,7 +110,7 @@ struct user {
 /* 1.4 - descriptor management */
 	struct	file *u_ofile[NOFILE];	/* file structures for open files */
 	char	u_pofile[NOFILE];		/* per-process flags of open files */
-	int	u_lastfile;					/* high-water mark of u_ofile */
+	int		u_lastfile;				/* high-water mark of u_ofile */
 #define	UF_EXCLOSE 	0x1				/* auto-close on exec */
 #define	UF_MAPPED 	0x2				/* mapped from device */
 	struct	inode *u_cdir;			/* current directory */
@@ -150,4 +154,6 @@ struct user {
 
 #ifdef KERNEL
 extern	struct user u;
+#endif
+
 #endif

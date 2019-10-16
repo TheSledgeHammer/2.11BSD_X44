@@ -9,6 +9,10 @@
 #ifndef	_SYS_PROC_H_
 #define	_SYS_PROC_H_
 
+#include <machine/proc.h>		/* Machine-dependent proc substruct. */
+#include <sys/rtprio.h>			/* For struct rtprio. */
+#include <sys/select.h>			/* For struct selinfo. */
+#include <sys/time.h>			/* For structs itimerval, timeval. */
 /*
  * One structure allocated per active
  * process. It contains all data needed
@@ -66,6 +70,7 @@ struct	proc {
 	    } p_dead;
 	} p_un;
 };
+
 #define	p_pri		p_un.p_alive.P_pri
 #define	p_cpu		p_un.p_alive.P_cpu
 #define	p_time		p_un.p_alive.P_time
@@ -94,14 +99,15 @@ struct	proc {
 #define	PIDHSZ		16
 #define	PIDHASH(pid)	((pid) & (PIDHSZ - 1))
 
-#if defined(KERNEL) && !defined(SUPERVISOR)
-struct	proc *pidhash[PIDHSZ];
-struct	proc *pfind();
-struct	proc proc[], *procNPROC;	/* the proc table itself */
-struct	proc *freeproc, *zombproc, *allproc, *qs;
-			/* lists of procs in various states */
+
+extern struct proc *pidhash[PIDHSZ];	/* In param.c. */
+extern struct proc *pfind();
+extern struct proc proc[], *procNPROC;	/* the proc table itself */
+extern struct proc *freeproc;
+extern struct proc *zombproc;			/* List of zombie procs. */
+extern volatile struct proc *allproc;	/* List of active procs. */
+extern struct proc *qs;
 int	nproc;
-#endif
 
 /* stat codes */
 #define	SSLEEP	1		/* awaiting an event */

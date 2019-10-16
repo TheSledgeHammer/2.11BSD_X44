@@ -77,9 +77,9 @@
 #include <vm/vm_page.h>
 
 #include <sys/exec.h>
-#include <sys/vnode.h>
+#include <sys/inode.h>
 
-#include <net/netisr.h>
+//#include <net/netisr.h>
 
 extern vm_offset_t avail_start, avail_end;
 
@@ -161,7 +161,7 @@ extern int pager_map_size;
 #define offsetof(type, member)	((size_t)(&((type *)0)->member))
 
 void
-cpu_startup()
+startup()
 {
 	register unsigned i;
 	register caddr_t v;

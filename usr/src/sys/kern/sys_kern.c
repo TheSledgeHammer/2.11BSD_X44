@@ -110,9 +110,9 @@ unpbind(path, len, ipp, unpsock)
 		iput(ip);
 		return(EADDRINUSE);
 	}
-	if (u.u_error || !(ip = maknode(IFSOCK | 0777, ndp))) {
-		error = u.u_error;
-		u.u_error = 0;
+	if (u->u_error || !(ip = maknode(IFSOCK | 0777, ndp))) {
+		error = u->u_error;
+		u->u_error = 0;
 		return(error);
 	}
 	*ipp = ip;
@@ -141,8 +141,8 @@ unpconn(path, len, so2, ipp)
 	ip = namei(ndp);
 	*ipp = ip;
 	if (!ip || access(ip, IWRITE)) {
-		error = u.u_error;
-		u.u_error = 0;
+		error = u->u_error;
+		u->u_error = 0;
 		return(error);
 	}
 	if ((ip->i_mode & IFMT) != IFSOCK)

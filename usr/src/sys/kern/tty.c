@@ -340,11 +340,11 @@ ttioctl(tp, com, data, flag)
 	case TIOCSTI:
 	case TIOCSWINSZ:
 		while (tp->t_line == NTTYDISC &&
-		   u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp &&
-		   (u.u_procp->p_flag&SVFORK) == 0 &&
-		   !(u.u_procp->p_sigignore & sigmask(SIGTTOU)) &&
-		   !(u.u_procp->p_sigmask & sigmask(SIGTTOU))) {
-			gsignal(u.u_procp->p_pgrp, SIGTTOU);
+		   u->u_procp->p_pgrp != tp->t_pgrp && tp == u->u_ttyp &&
+		   (u->u_procp->p_flag&SVFORK) == 0 &&
+		   !(u->u_procp->p_sigignore & sigmask(SIGTTOU)) &&
+		   !(u->u_procp->p_sigmask & sigmask(SIGTTOU))) {
+			gsignal(u->u_procp->p_pgrp, SIGTTOU);
 			sleep((caddr_t)&lbolt, TTOPRI);
 		}
 		break;
@@ -439,9 +439,9 @@ ttioctl(tp, com, data, flag)
 	 * Simulate typing of a character at the terminal.
 	 */
 	case TIOCSTI:
-		if (u.u_uid && (flag & FREAD) == 0)
+		if (u->u_uid && (flag & FREAD) == 0)
 			return (EPERM);
-		if (u.u_uid && u.u_ttyp != tp)
+		if (u->u_uid && u->u_ttyp != tp)
 			return (EACCES);
 		(*linesw[tp->t_line].l_rint)(*(char *)data, tp);
 		break;
@@ -551,11 +551,11 @@ ttioctl(tp, com, data, flag)
 		struct proc *p;
 		short pgrp = *(int *)data;
 
-		if (u.u_uid && (flag & FREAD) == 0)
+		if (u->u_uid && (flag & FREAD) == 0)
 			return (EPERM);
 		p = pfind(pgrp);
 		if (p && p->p_pgrp == pgrp &&
-		    p->p_uid != u.u_uid && u.u_uid && !inferior(p))
+		    p->p_uid != u->u_uid && u->u_uid && !inferior(p))
 			return (EPERM);
 		tp->t_pgrp = pgrp;
 		break;
@@ -631,7 +631,7 @@ ttyselect(tp,rw)
 		if (tp->t_rsel && tp->t_rsel->p_wchan == (caddr_t)&selwait)
 			tp->t_state |= TS_RCOLL;
 		else
-			tp->t_rsel = u.u_procp;
+			tp->t_rsel = u->u_procp;
 		break;
 
 	case FWRITE:
@@ -640,7 +640,7 @@ ttyselect(tp,rw)
 		if (tp->t_wsel && tp->t_wsel->p_wchan == (caddr_t)&selwait)
 			tp->t_state |= TS_WCOLL;
 		else
-			tp->t_wsel = u.u_procp;
+			tp->t_wsel = u->u_procp;
 		break;
 	}
 	splx(s);
@@ -662,11 +662,11 @@ ttyopen(dev, tp)
 {
 	register struct proc *pp;
 
-	pp = u.u_procp;
+	pp = u->u_procp;
 	tp->t_dev = dev;
 	if (pp->p_pgrp == 0) {
-		u.u_ttyp = tp;
-		u.u_ttyd = dev;
+		u->u_ttyp = tp;
+		u->u_ttyd = dev;
 		if (tp->t_pgrp == 0)
 			tp->t_pgrp = pp->p_pid;
 		pp->p_pgrp = tp->t_pgrp;
@@ -1173,12 +1173,12 @@ loop:
 	/*
 	 * Hang process if it's in the background.
 	 */
-	if (tp == u.u_ttyp && u.u_procp->p_pgrp != tp->t_pgrp) {
-		if ((u.u_procp->p_sigignore & sigmask(SIGTTIN)) ||
-		   (u.u_procp->p_sigmask & sigmask(SIGTTIN)) ||
-		    u.u_procp->p_flag&SVFORK)
+	if (tp == u->u_ttyp && u->u_procp->p_pgrp != tp->t_pgrp) {
+		if ((u->u_procp->p_sigignore & sigmask(SIGTTIN)) ||
+		   (u->u_procp->p_sigmask & sigmask(SIGTTIN)) ||
+		    u->u_procp->p_flag&SVFORK)
 			return (EIO);
-		gsignal(u.u_procp->p_pgrp, SIGTTIN);
+		gsignal(u->u_procp->p_pgrp, SIGTTIN);
 		sleep((caddr_t)&lbolt, TTIPRI);
 		goto loop;
 	}
@@ -1311,11 +1311,11 @@ ttycheckoutq(tp, wait)
 
 	hiwat = TTHIWAT(tp);
 	s = spltty();
-	oldsig = u.u_procp->p_sig;
+	oldsig = u->u_procp->p_sig;
 	if (tp->t_outq.c_cc > hiwat + 200)
 	    while (tp->t_outq.c_cc > hiwat) {
 		ttstart(tp);
-		if (wait == 0 || u.u_procp->p_sig != oldsig) {
+		if (wait == 0 || u->u_procp->p_sig != oldsig) {
 			splx(s);
 			return(0);
 		}
@@ -1364,11 +1364,11 @@ loop:
 	/*
 	 * Hang the process if it's in the background.
 	 */
-	if (u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp &&
-	    (tp->t_flags&TOSTOP) && (u.u_procp->p_flag&SVFORK)==0 &&
-	    !(u.u_procp->p_sigignore & sigmask(SIGTTOU)) &&
-	    !(u.u_procp->p_sigmask & sigmask(SIGTTOU))) {
-		gsignal(u.u_procp->p_pgrp, SIGTTOU);
+	if (u->u_procp->p_pgrp != tp->t_pgrp && tp == u->u_ttyp &&
+	    (tp->t_flags&TOSTOP) && (u->u_procp->p_flag&SVFORK)==0 &&
+	    !(u->u_procp->p_sigignore & sigmask(SIGTTOU)) &&
+	    !(u->u_procp->p_sigmask & sigmask(SIGTTOU))) {
+		gsignal(u->u_procp->p_pgrp, SIGTTOU);
 		sleep((caddr_t)&lbolt, TTIPRI);
 		goto loop;
 	}

@@ -31,28 +31,28 @@ acct()
 	register struct acct *ap = &acctbuf;
 	static	short acctcnt = 0;
 
-	bcopy(u.u_comm, ap->ac_comm, sizeof(acctbuf.ac_comm));
+	bcopy(u->u_comm, ap->ac_comm, sizeof(acctbuf.ac_comm));
 /*
  * The 'user' and 'system' times need to be converted from 'hz' (linefrequency)
  * clockticks to the AHZ pseudo-tick unit of measure.  The elapsed time is
  * converted from seconds to AHZ ticks.
 */
-	ap->ac_utime = compress(((u_long)u.u_ru.ru_utime * AHZ) / hz);
-	ap->ac_stime = compress(((u_long)u.u_ru.ru_stime * AHZ) / hz);
-	ap->ac_etime = compress((u_long)(time.tv_sec - u.u_start) * AHZ);
-	ap->ac_btime = u.u_start;
-	ap->ac_uid = u.u_ruid;
-	ap->ac_gid = u.u_rgid;
-	ap->ac_mem = (u.u_dsize+u.u_ssize) / 16; /* fast ctok() */
+	ap->ac_utime = compress(((u_long)u->u_ru.ru_utime * AHZ) / hz);
+	ap->ac_stime = compress(((u_long)u->u_ru.ru_stime * AHZ) / hz);
+	ap->ac_etime = compress((u_long)(times.tv_sec - u->u_start) * AHZ);
+	ap->ac_btime = u->u_start;
+	ap->ac_uid = u->u_ruid;
+	ap->ac_gid = u->u_rgid;
+	ap->ac_mem = (u->u_dsize+u->u_ssize) / 16; /* fast ctok() */
 /*
  * Section 3.9 of the 4.3BSD book says that I/O is measured in 1/AHZ units too.
 */
-	ap->ac_io = compress((u_long)(u.u_ru.ru_inblock+u.u_ru.ru_oublock)*AHZ);
-	if	(u.u_ttyp)
-		ap->ac_tty = u.u_ttyd;
+	ap->ac_io = compress((u_long)(u->u_ru.ru_inblock+u->u_ru.ru_oublock)*AHZ);
+	if	(u->u_ttyp)
+		ap->ac_tty = u->u_ttyd;
 	else
 		ap->ac_tty = NODEV;
-	ap->ac_flag = u.u_acflag;
+	ap->ac_flag = u->u_acflag;
 /*
  * Not a lot that can be done if logwrt fails so ignore any errors.  Every
  * few (10 by default) commands call the wakeup routine.  This isn't perfect 

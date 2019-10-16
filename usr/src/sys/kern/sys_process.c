@@ -45,15 +45,15 @@ ptrace()
 		int	data;
 	} *uap;
 
-	uap = (struct a *)u.u_ap;
+	uap = (struct a *)u->u_ap;
 	if (uap->req <= 0) {
-		u.u_procp->p_flag |= P_TRACED;
+		u->u_procp->p_flag |= P_TRACED;
 		return;
 	}
 	p = pfind(uap->pid);
-	if (p == 0 || p->p_stat != SSTOP || p->p_ppid != u.u_procp->p_pid ||
+	if (p == 0 || p->p_stat != SSTOP || p->p_ppid != u->u_procp->p_pid ||
 	    !(p->p_flag & P_TRACED)) {
-		u.u_error = ESRCH;
+		u->u_error = ESRCH;
 		return;
 	}
 	while (ipc.ip_lock)
@@ -66,9 +66,9 @@ ptrace()
 	setrun(p);
 	while (ipc.ip_req > 0)
 		sleep((caddr_t)&ipc, PZERO);
-	u.u_r.r_val1 = (short)ipc.ip_data;
+	u->u_r.r_val1 = (short)ipc.ip_data;
 	if (ipc.ip_req < 0)
-		u.u_error = EIO;
+		u->u_error = EIO;
 	ipc.ip_lock = 0;
 	wakeup((caddr_t)&ipc);
 }
@@ -85,9 +85,9 @@ procxmt()
 	register *p;
 	register struct text *xp;
 
-	if (ipc.ip_lock != u.u_procp->p_pid)
+	if (ipc.ip_lock != u->u_procp->p_pid)
 		return(0);
-	u.u_procp->p_slptime = 0;
+	u->u_procp->p_slptime = 0;
 	i = ipc.ip_req;
 	ipc.ip_req = 0;
 	wakeup((caddr_t)&ipc);
@@ -123,15 +123,15 @@ procxmt()
 		/*
 		 * If text, must assure exclusive use
 		 */
-		if (xp = u.u_procp->p_textp) {
-			if (xp->x_count!=1 || xp->x_iptr->i_mode&ISVTX)
+		if (xp == u->u_procp->p_textp) {
+			if (xp->x_count!=1 || (xp->x_iptr->i_mode&ISVTX))
 				goto error;
 			xp->x_flag |= XTRC;
 		}
-		estabur(u.u_tsize, u.u_dsize, u.u_ssize, u.u_sep, RW);
+		estabur(u->u_tsize, u->u_dsize, u->u_ssize, u->u_sep, RW);
 		i = suiword((caddr_t)ipc.ip_addr, 0);
 		suiword((caddr_t)ipc.ip_addr, ipc.ip_data);
-		estabur(u.u_tsize, u.u_dsize, u.u_ssize, u.u_sep, RO);
+		estabur(u->u_tsize, u->u_dsize, u->u_ssize, u->u_sep, RO);
 		if (i<0)
 			goto error;
 		if (xp)
@@ -149,19 +149,19 @@ procxmt()
 	case PT_WRITE_U:
 		i = (int)ipc.ip_addr;
 		p = (int *)&((physadr)&u)->r[i/sizeof(int)];
-		if (p >= (int *)&u.u_fps && p < (int *)&u.u_fps.u_fpregs[6])
+		if (p >= (int *)&u->u_fps && p < (int *)&u->u_fps.u_fpregs[6])
 			goto ok;
 		for (i=0; i<8; i++)
-			if (p == &u.u_ar0[regloc[i]])
+			if (p == &u->u_ar0[regloc[i]])
 				goto ok;
-		if (p == &u.u_ar0[RPS]) {
+		if (p == &u->u_ar0[RPS]) {
 			ipc.ip_data |= PSL_USERSET;	/* user space */
 			ipc.ip_data &= ~PSL_USERCLR;	/* priority 0 */
 			goto ok;
 		}
-		if ((p == (int *)&u.u_ovdata.uo_curov) && ((ipc.ip_data >= 0) &&
-		    (ipc.ip_data <= NOVL) && u.u_ovdata.uo_ovbase)) {
-			u.u_ovdata.uo_curov = ipc.ip_data;
+		if ((p == (int *)&u->u_ovdata.uo_curov) && ((ipc.ip_data >= 0) &&
+		    (ipc.ip_data <= NOVL) && u->u_ovdata.uo_ovbase)) {
+			u->u_ovdata.uo_curov = ipc.ip_data;
 			choverlay(RW);
 			break;
 		}
@@ -174,19 +174,20 @@ procxmt()
 	/* set signal and continue */
 	/*  one version causes a trace-trap */
 	case PT_STEP:
-		u.u_ar0[RPS] |= PSL_T;
+		u->u_ar0[RPS] |= PSL_T;
+		break;
 		/* FALL THROUGH TO ... */
 	case PT_CONTINUE:
 		if ((int)ipc.ip_addr != 1)
-			u.u_ar0[PC] = (int)ipc.ip_addr;
+			u->u_ar0[PC] = (int)ipc.ip_addr;
 		if (ipc.ip_data > NSIG)
 			goto error;
-		u.u_procp->p_ptracesig = ipc.ip_data;
+		u->u_procp->p_ptracesig = ipc.ip_data;
 		return(1);
 
 	/* force exit */
 	case PT_KILL:
-		exit(u.u_procp->p_ptracesig);
+		exit(u->u_procp->p_ptracesig);
 		/*NOTREACHED*/
 
 	default:

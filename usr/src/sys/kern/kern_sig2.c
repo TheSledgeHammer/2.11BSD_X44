@@ -69,14 +69,14 @@ sigaction()
 		int	signum;
 		struct	sigaction *nsa;
 		struct	sigaction *osa;
-		} *uap = (struct a *)u.u_ap;
+		} *uap = (struct a *)u->u_ap;
 	struct sigaction vec;
 	register struct sigaction *sa;
 	register int signum;
 	u_long bit;
 	int error = 0;
 
-	u.u_pcb.pcb_sigc = uap->sigtramp;	/* save trampoline address */
+	u->u_pcb.pcb_sigc = uap->sigtramp;	/* save trampoline address */
 
 	signum = uap->signum;
 	if (signum <= 0 || signum >= NSIG)
@@ -91,15 +91,15 @@ sigaction()
 		}
 	sa = &vec;
 	if (uap->osa) {
-		sa->sa_handler = u.u_signal[signum];
-		sa->sa_mask = u.u_sigmask[signum];
+		sa->sa_handler = u->u_signal[signum];
+		sa->sa_mask = u->u_sigmask[signum];
 		bit = sigmask(signum);
 		sa->sa_flags = 0;
-		if ((u.u_sigonstack & bit) != 0)
+		if ((u->u_sigonstack & bit) != 0)
 			sa->sa_flags |= SA_ONSTACK;
-		if ((u.u_sigintr & bit) == 0)
+		if ((u->u_sigintr & bit) == 0)
 			sa->sa_flags |= SA_RESTART;
-		if (u.u_procp->p_flag & P_NOCLDSTOP)
+		if (u->u_procp->p_flag & P_NOCLDSTOP)
 			sa->sa_flags |= SA_NOCLDSTOP;
 		if ((error = copyout(sa, uap->osa, sizeof(vec))) != 0)
 			goto out;
@@ -110,7 +110,7 @@ sigaction()
 		setsigvec(signum, sa);
 	}
 out:
-	return(u.u_error = error);
+	return(u->u_error = error);
 }
 
 void
@@ -119,23 +119,23 @@ setsigvec(signum, sa)
 	register struct sigaction *sa;
 {
 	unsigned long bit;
-	register struct proc *p = u.u_procp;
+	register struct proc *p = u->u_procp;
 
 	bit = sigmask(signum);
 	/*
 	 * Change setting atomically.
 	 */
 	(void) splhigh();
-	u.u_signal[signum] = sa->sa_handler;
-	u.u_sigmask[signum] = sa->sa_mask &~ sigcantmask;
+	u->u_signal[signum] = sa->sa_handler;
+	u->u_sigmask[signum] = sa->sa_mask &~ sigcantmask;
 	if ((sa->sa_flags & SA_RESTART) == 0)
-		u.u_sigintr |= bit;
+		u->u_sigintr |= bit;
 	else
-		u.u_sigintr &= ~bit;
+		u->u_sigintr &= ~bit;
 	if (sa->sa_flags & SA_ONSTACK)
-		u.u_sigonstack |= bit;
+		u->u_sigonstack |= bit;
 	else
-		u.u_sigonstack &= ~bit;
+		u->u_sigonstack &= ~bit;
 	if (signum == SIGCHLD) {
 		if (sa->sa_flags & SA_NOCLDSTOP)
 			p->p_flag |= P_NOCLDSTOP;
@@ -149,7 +149,7 @@ setsigvec(signum, sa)
 	 * as we have to restart the process.
 	 */
 	if (sa->sa_handler == SIG_IGN ||
-	    (sigprop[signum] & SA_IGNORE && sa->sa_handler == SIG_DFL)) {
+	    ((sigprop[signum] & SA_IGNORE) && sa->sa_handler == SIG_DFL)) {
 		p->p_sig &= ~bit;		/* never to be seen again */
 		if (signum != SIGCONT)
 			p->p_sigignore |= bit;	/* easier in psignal */
@@ -174,9 +174,9 @@ fatalsig(signum)
 	int signum;
 {
 	unsigned long mask;
-	register struct proc *p = u.u_procp;
+	register struct proc *p = u->u_procp;
 
-	u.u_signal[signum] = SIG_DFL;
+	u->u_signal[signum] = SIG_DFL;
 	mask = sigmask(signum);
 	p->p_sigignore &= ~mask;
 	p->p_sigcatch &= ~mask;
@@ -195,7 +195,7 @@ siginit(p)
 	register int i;
 
 	for (i = 0; i < NSIG; i++)
-		if (sigprop[i] & SA_IGNORE && i != SIGCONT)
+		if ((sigprop[i] & SA_IGNORE) && i != SIGCONT)
 			p->p_sigignore |= sigmask(i);
 }
 
@@ -214,15 +214,15 @@ sigprocmask()
 		int how;
 		sigset_t *set;
 		sigset_t *oset;
-		} *uap = (struct a *)u.u_ap;
+		} *uap = (struct a *)u->u_ap;
 	int error = 0;
 	sigset_t oldmask, newmask;
-	register struct proc *p = u.u_procp;
+	register struct proc *p = u->u_procp;
 
 	oldmask = p->p_sigmask;
 	if	(!uap->set)	/* No new mask, go possibly return old mask */
 		goto out;
-	if	(error = copyin(uap->set, &newmask, sizeof (newmask)))
+	if	(error == copyin(uap->set, &newmask, sizeof (newmask)))
 		goto out;
 	(void) splhigh();
 
@@ -244,7 +244,7 @@ sigprocmask()
 out:
 	if	(error == 0 && uap->oset)
 		error = copyout(&oldmask, uap->oset, sizeof (oldmask));
-	return (u.u_error = error);
+	return (u->u_error = error);
 }
 
 /*
@@ -258,16 +258,16 @@ sigpending()
 	register struct a
 		{
 		struct sigset_t *set;
-		} *uap = (struct a *)u.u_ap;
+		} *uap = (struct a *)u->u_ap;
 	register int error = 0;
-	struct	proc *p = u.u_procp;
+	struct	proc *p = u->u_procp;
 
 	if	(uap->set)
 		error = copyout((caddr_t)&p->p_sig, (caddr_t)uap->set, 
 				sizeof (p->p_sig));
 	else
 		error = EINVAL;
-	return(u.u_error = error);
+	return(u->u_error = error);
 	}
 
 /*
@@ -281,9 +281,9 @@ sigsuspend()
 	register struct a
 		{
 		struct sigset_t *set;
-		} *uap = (struct a *)u.u_ap;
+		} *uap = (struct a *)u->u_ap;
 	sigset_t nmask;
-	struct proc *p = u.u_procp;
+	struct proc *p = u->u_procp;
 	int error;
 
 	if	(uap->set && (error = copyin(uap->set, &nmask, sizeof (nmask))))
@@ -293,13 +293,13 @@ sigsuspend()
  * after the signal handler has finished.  Thus, we save it here and set
  * a flag to indicate this.
 */
-	u.u_oldmask = p->p_sigmask;
-	u.u_psflags |= SAS_OLDMASK;
+	u->u_oldmask = p->p_sigmask;
+	u->u_psflags |= SAS_OLDMASK;
 	p->p_sigmask = nmask &~ sigcantmask;
 	while	(tsleep((caddr_t)&u, PPAUSE|PCATCH, 0) == 0)
 		;
 	/* always return EINTR rather than ERESTART */
-	return(u.u_error = EINTR);
+	return(u->u_error = EINTR);
 	}
 
 int
@@ -308,13 +308,13 @@ sigaltstack()
 	register struct a {
 		struct sigaltstack * nss;
 		struct sigaltstack * oss;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u->u_ap;
 	struct sigaltstack ss;
 	int error = 0;
 
-	if ((u.u_psflags & SAS_ALTSTACK) == 0)
-		u.u_sigstk.ss_flags |= SA_DISABLE;
-	if (uap->oss && (error = copyout((caddr_t)&u.u_sigstk,
+	if ((u->u_psflags & SAS_ALTSTACK) == 0)
+		u->u_sigstk.ss_flags |= SA_DISABLE;
+	if (uap->oss && (error = copyout((caddr_t)&u->u_sigstk,
 	    (caddr_t)uap->oss, sizeof (struct sigaltstack))))
 		goto out;
 	if (uap->nss == 0)
@@ -322,13 +322,13 @@ sigaltstack()
 	if ((error = copyin(uap->nss, &ss, sizeof(ss))) != 0)
 		goto out;
 	if (ss.ss_flags & SA_DISABLE) {
-		if (u.u_sigstk.ss_flags & SA_ONSTACK)
+		if (u->u_sigstk.ss_flags & SA_ONSTACK)
 			{
 			error = EINVAL;
 			goto out;
 			}
-		u.u_psflags &= ~SAS_ALTSTACK;
-		u.u_sigstk.ss_flags = ss.ss_flags;
+		u->u_psflags &= ~SAS_ALTSTACK;
+		u->u_sigstk.ss_flags = ss.ss_flags;
 		goto out;
 	}
 	if (ss.ss_size < MINSIGSTKSZ)
@@ -336,10 +336,10 @@ sigaltstack()
 		error = ENOMEM;
 		goto out;
 		}
-	u.u_psflags |= SAS_ALTSTACK;
-	u.u_sigstk = ss;
+	u->u_psflags |= SAS_ALTSTACK;
+	u->u_sigstk = ss;
 out:
-	return(u.u_error = error);
+	return(u->u_error = error);
 }
 
 int
@@ -348,9 +348,9 @@ sigwait()
 	register struct a {
 		sigset_t *set;
 		int *sig;
-		} *uap = (struct a *)u.u_ap;
+		} *uap = (struct a *)u->u_ap;
 	sigset_t wanted, sigsavail;
-	register struct proc *p = u.u_procp;
+	register struct proc *p = u->u_procp;
 	int	signo, error;
 
 	if	(uap->set == 0 || uap->sig == 0)
@@ -358,12 +358,12 @@ sigwait()
 		error = EINVAL;
 		goto out;
 		}
-	if	(error = copyin(uap->set, &wanted, sizeof (sigset_t)))
+	if	(error == copyin(uap->set, &wanted, sizeof (sigset_t)))
 		goto out;
 	
 	wanted |= sigcantmask;
 	while	((sigsavail = (wanted & p->p_sig)) == 0)
-		tsleep(&u.u_signal[0], PPAUSE | PCATCH, 0);
+		tsleep(&u->u_signal[0], PPAUSE | PCATCH, 0);
 	
 	if	(sigsavail & sigcantmask)
 		{
@@ -375,5 +375,5 @@ sigwait()
 	p->p_sig &= ~sigmask(signo);
 	error = copyout(&signo, uap->sig, sizeof (int));
 out:
-	return(u.u_error = error);
+	return(u->u_error = error);
 	}
