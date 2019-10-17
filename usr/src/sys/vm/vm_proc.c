@@ -9,7 +9,6 @@
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/proc.h>
-#include <sys/text.h>
 #include <sys/map.h>
 #include <sys/kernel.h>
 
@@ -33,7 +32,7 @@ expand(newsize,segment)
 	register int i, n;
 	int a1, a2;
 
-	p = u.u_procp;
+	p = u->u_procp;
 	if (segment == S_DATA) {
 		n = p->p_dsize;
 		p->p_dsize = newsize;
@@ -59,7 +58,7 @@ expand(newsize,segment)
 			return;
 		}
 	}
-	if (setjmp(&u.u_ssave)) {
+	if (setjmp(&u->u_ssave)) {
 		/*
 		 * If we had to swap, the stack needs moving up.
 		 */
@@ -81,9 +80,9 @@ expand(newsize,segment)
 		sureg();
 		return;
 	}
-	if (u.u_fpsaved == 0) {
-		savfp(&u.u_fps);
-		u.u_fpsaved = 1;
+	if (u->u_fpsaved == 0) {
+		savfp(&u->u_fps);
+		u->u_fpsaved = 1;
 	}
 	a2 = malloc(coremap, newsize);
 	if (a2 == NULL) {

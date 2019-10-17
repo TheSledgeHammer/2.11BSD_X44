@@ -7,7 +7,6 @@
  */
 
 #include <sys/param.h>
-
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/buf.h>
@@ -16,7 +15,6 @@
 #include <vm/vm.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
-
 #include <machine/cpu.h>
 
 #define	SQSIZE	16	/* Must be power of 2 */
@@ -30,7 +28,7 @@ struct	proc *slpque[SQSIZE];
  * Recompute process priorities, once a second
  */
 void
-schedcpu()
+schedcpu(caddr_t arg)
 {
 	register struct proc *p;
 	register int a;
@@ -133,7 +131,7 @@ tsleep(ident, priority, timo)
 		(void)_splnet();
 		noop();
 		splx(s);
-		return;
+		return(0);
 		}
 #ifdef	DIAGNOSTIC
 	if	(ident == NULL || p->p_stat != SRUN)
@@ -421,12 +419,6 @@ swtch()
 	register int n;
 	struct proc *pp, *pq;
 	int s;
-
-#ifdef DIAGNOSTIC
-	extern struct buf *hasmap;
-	if (hasmap)
-		panic("swtch hasmap");
-#endif
 #ifdef UCB_METER
 	cnt.v_swtch++;
 #endif

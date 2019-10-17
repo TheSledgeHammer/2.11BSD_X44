@@ -23,36 +23,40 @@
 #define	NADDR	(NDADDR + NIADDR)	/* total addresses in inode */
 
 struct icommon2 {
-	time_t	ic_atime;		/* time last accessed */
-	time_t	ic_mtime;		/* time last modified */
-	time_t	ic_ctime;		/* time created */
+	time_t	ic_atime;					/* time last accessed */
+	time_t	ic_mtime;					/* time last modified */
+	time_t	ic_ctime;					/* time created */
 };
 
 struct inode {
-	struct	inode *i_chain[2];	/* must be first */
+	struct	inode *i_chain[2];			/* must be first */
 	u_short	i_flag;
-	u_short	i_count;	/* reference count */
-	dev_t	i_dev;		/* device where inode resides */
-	ino_t	i_number;	/* i number, 1-to-1 with device address */
-	u_short	i_id;		/* unique identifier */
-	struct	fs *i_fs;	/* file sys associated with this inode */
+	u_short	i_count;					/* reference count */
+	dev_t	i_dev;						/* device where inode resides */
+	ino_t	i_number;					/* i number, 1-to-1 with device address */
+	u_short	i_id;						/* unique identifier */
+	struct	fs *i_fs;					/* file sys associated with this inode */
+
 	union {
 		struct {
-			u_char	I_shlockc;	/* count of shared locks */
-			u_char	I_exlockc;	/* count of exclusive locks */
+			u_char	I_shlockc;			/* count of shared locks */
+			u_char	I_exlockc;			/* count of exclusive locks */
 		} i_l;
-		struct	proc *I_rsel;	/* pipe read select */
+		struct	proc *I_rsel;			/* pipe read select */
 	} i_un0;
+
 	union {
-		struct	text *I_text;	/* text entry, if any */
-		struct	proc *I_wsel;	/* pipe write select */
+		struct	text *I_text;			/* text entry, if any */
+		struct	proc *I_wsel;			/* pipe write select */
 	} i_un1;
+
 	union {
-		daddr_t	I_addr[NADDR];		/* normal file/directory */
+		daddr_t	I_addr[NADDR];			/* normal file/directory */
 		struct {
-			daddr_t	I_db[NDADDR];	/* normal file/directory */
+			daddr_t	I_db[NDADDR];		/* normal file/directory */
 			daddr_t	I_ib[NIADDR];
 		} i_f;
+
 		struct {
 			/*
 			 * the dummy field is here so that the de/compression
@@ -60,17 +64,19 @@ struct inode {
 			 * files.
 			 */
 			u_short	I_dummy;
-			dev_t	I_rdev;		/* dev type */
+			dev_t	I_rdev;				/* dev type */
 		} i_d;
 	} i_un2;
+
 	union {
-		daddr_t	if_lastr;	/* last read (read-ahead) */
+		daddr_t	if_lastr;				/* last read (read-ahead) */
 		struct	socket *is_socket;
 		struct	{
 			struct inode  *if_freef;	/* free list forward */
 			struct inode **if_freeb;	/* free list back */
 		} i_fr;
 	} i_un3;
+
 	struct icommon1 {
 		u_short	ic_mode;	/* mode and type of file */
 		u_short	ic_nlink;	/* number of links to file */
@@ -161,9 +167,9 @@ u_short	nextinodeid;		/* unique id generator */
 memaddr	xitimes;
 u_int	xitdesc;
 #endif
-struct inode inode[];		/* the inode table itself */
-struct inode *inodeNINODE;	/* the end of the inode table */
-int	ninode;			/* the number of slots in the table */
+struct inode inode[];			/* the inode table itself */
+struct inode *inodeNINODE;		/* the end of the inode table */
+int	ninode;						/* the number of slots in the table */
 
 struct	inode *rootdir;			/* pointer to inode of root directory */
 
@@ -176,10 +182,10 @@ struct	inode *namei();
 #endif
 
 /* i_flag */
-#define	ILOCKED		0x1		/* inode is locked */
-#define	IUPD		0x2		/* file has been modified */
-#define	IACC		0x4		/* inode access time to be updated */
-#define	IMOUNT		0x8		/* inode is mounted on */
+#define	ILOCKED		0x1			/* inode is locked */
+#define	IUPD		0x2			/* file has been modified */
+#define	IACC		0x4			/* inode access time to be updated */
+#define	IMOUNT		0x8			/* inode is mounted on */
 #define	IWANT		0x10		/* some process waiting on lock */
 #define	ITEXT		0x20		/* inode is pure text prototype */
 #define	ICHG		0x40		/* inode has been changed */
@@ -208,7 +214,7 @@ struct	inode *namei();
 #define	IWRITE		0200
 #define	IEXEC		0100
 
-#if	defined(KERNEL) && !defined(SUPERVISOR)
+#ifdef KERNEL
 /*
  * Flags for va_cflags.
  */
@@ -217,11 +223,11 @@ struct	inode *namei();
 /*
  * Flags for ioflag.
  */
-#define	IO_UNIT		0x01		/* do I/O as atomic unit */
-#define	IO_APPEND	0x02		/* append write to end */
-#define	IO_SYNC		0x04		/* do I/O synchronously */
-/* #define	IO_NODELOCKED	0x08		/* not implemented */
-#define	IO_NDELAY	0x10		/* FNDELAY flag set in file table */
+#define	IO_UNIT		0x01			/* do I/O as atomic unit */
+#define	IO_APPEND	0x02			/* append write to end */
+#define	IO_SYNC		0x04			/* do I/O synchronously */
+/* #define	IO_NODELOCKED	0x08	/* not implemented */
+#define	IO_NDELAY	0x10			/* FNDELAY flag set in file table */
 
 /*
  * Token indicating no attribute value yet assigned.
@@ -262,7 +268,6 @@ struct	inode *namei();
 */
 #endif
 
-#ifndef SUPERVISOR
 #define	ILOCK(ip) { \
 	while ((ip)->i_flag & ILOCKED) { \
 		(ip)->i_flag |= IWANT; \
@@ -284,7 +289,7 @@ struct	inode *namei();
 		iupdat(ip, t1, t2, waitfor); \
 }
 
-#ifdef EXTERNALITIMES
+
 #define	ITIMES(ip, t1, t2) { \
 	if ((ip)->i_flag&(IUPD|IACC|ICHG)) { \
 		struct icommon2 *ic2= &((struct icommon2 *)SEG5)[ip-inode]; \
@@ -300,7 +305,6 @@ struct	inode *namei();
 		normalseg5(); \
 	} \
 }
-#else
 #define	ITIMES(ip, t1, t2) { \
 	if ((ip)->i_flag&(IUPD|IACC|ICHG)) { \
 		(ip)->i_flag |= IMOD; \
@@ -313,5 +317,3 @@ struct	inode *namei();
 		(ip)->i_flag &= ~(IACC|IUPD|ICHG); \
 	} \
 }
-#endif
-#endif

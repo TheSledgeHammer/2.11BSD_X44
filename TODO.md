@@ -1,24 +1,14 @@
 In Kernel:
-PDP-11 Segmentation Pointers:
+PDP-11 Segmentation Pointers: Most internal kernel reference have been removed or replaced.
 - Remove:
-    - data
-    - text
-    - stack
-    - u (user)
-- Modify:
-    - User.h: Currently contains pointers to above pdp-11 segmentation.
-    - seg.h: In PDP: KISA6, KDSA6
 - Create:
+- Add:
+
 Hardware Abstraction Layer:
 - Memory Abstraction (Physical Memory, Virtual Memory):
-    - Provided for both Kernel & User.
-    - Pointers to said memory address space.
-    - Above pointers are defined by cpu arch (i.e. x86, vax, arm)
-    - Possible if kernel knows the cpu arch's Memory Address Boundaries (Likely what NetBSD does)
-    - Page Tables will complicate this (not all arches provide the ability for page tables)
 
-Look at 3BSD & 4.3BSD for ideas in implementing the above.
 
-TODO:
-- Add:
-    - vm_unix.h: Doesn't rely on vm.h etc...
+From Plan 9:
+- Pool.c/ Pool.h: Uses tree structure with areanas (like slabs). 
+- Combined with a malloc, calloc and alloc.
+

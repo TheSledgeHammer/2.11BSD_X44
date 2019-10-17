@@ -34,22 +34,20 @@ struct map {
 
 struct mapent {
 	size_t	m_size;		/* size of this segment of the map */
-	memaddr	m_addr;		/* resource-space addr of start of segment */
+	size_t	m_addr;		/* resource-space addr of start of segment */
 };
 
 #ifdef KERNEL
-#define	ARGMAPSIZE	16
-struct map *kmemmap, *mbmap;
-int	nswapmap;
 extern struct map coremap[];																/* space for core allocation */
 extern struct map swapmap[];																/* space for swap allocation */
+
 size_t malloc (struct map *mp, size_t nbytes); 												/* Allocate units from the given map. */
 void mfree (struct map *mp, size_t nbytes, size_t addr); 									/* Free the previously allocated units at addr into the specified map.*/
 size_t malloc3 (struct map *mp, size_t d_size, size_t s_size, size_t u_size, size_t a[3]);	/* Allocate resources for the three segments of a process.*/
 #else
 extern struct map coremap[];	/* space for core allocation */
 extern struct map swapmap[];	/* space for swap allocation */
-memaddr malloc (struct map *mp, size_t nbytes);
+size_t malloc (struct map *mp, size_t nbytes);
 void mfree (struct map *mp, size_t nbytes, size_t addr);
-memaddr malloc3 (struct map *mp, size_t d_size, size_t s_size, size_t u_size, size_t a[3]);
+size_t malloc3 (struct map *mp, size_t d_size, size_t s_size, size_t u_size, size_t a[3]);
 #endif

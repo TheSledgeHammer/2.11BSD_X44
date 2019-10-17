@@ -45,7 +45,7 @@ struct vmsum
 	long	v_swpin;	/* swapins */
 	long	v_swpout;	/* swapouts */
 };
-#if defined(KERNEL) && defined(UCB_METER) && !defined(SUPERVISOR)
+#ifdef KERNEL
 struct vmrate	cnt, rate;
 struct vmsum	sum;
 #endif
@@ -67,6 +67,6 @@ struct vmtotal
 	size_t	t_armtxt;	/* active real memory used by text, clicks */
 	size_t	t_free;		/* free memory, kb */
 };
-#if defined(KERNEL) && !defined(SUPERVISOR)
+#ifdef KERNEL)
 struct	vmtotal total;
 #endif

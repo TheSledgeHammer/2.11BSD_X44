@@ -59,7 +59,7 @@ main()
 	extern caddr_t bootcsr;
 	register struct proc *p;
 	register struct user *u;
-	extern struct sysentvec aout_sysvec;
+	//extern struct sysentvec aout_sysvec; /* Remove imgact */
 	register int i;
 	register struct fs *fs;
 	//time_t  toytime, toyclk();
@@ -74,8 +74,6 @@ main()
 	 * Initialize the current process pointer (curproc) before
 	 * any possible traps/probes to simplify trap processing.
 	 */
-
-
 	p = &proc0;
 	curproc = p;
 
@@ -88,7 +86,7 @@ main()
 	allproc = (volatile struct proc *)p;
 	p->p_prev = (struct proc **)&allproc;
 
-	p->p_sysent = &aout_sysvec;
+	//p->p_sysent = &aout_sysvec;
 
 	p->p_stat = SRUN;
 	p->p_flag |= SLOAD|SSYS;

@@ -9,7 +9,6 @@
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/proc.h>
-#include <sys/text.h>
 #include <vm/vm.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
@@ -46,7 +45,7 @@ sched()
 
 	l_outpri = -20000;
 	for (rp = allproc; rp; rp = rp->p_nxt) {
-		if (rp->p_stat != SRUN || rp->p_flag & SLOAD)
+		if (rp->p_stat != SRUN || (rp->p_flag & SLOAD))
 			continue;
 		rppri = rp->p_time - rp->p_nice * 8;
 
@@ -54,7 +53,7 @@ sched()
 		 * Always bring in parents ending a vfork,
 		 * to avoid deadlock
 		 */
-		if (rppri > l_outpri || rp->p_flag & SVFPRNT) {
+		if (rppri > l_outpri || (rp->p_flag & SVFPRNT)) {
 			p = rp;
 			l_outpri = rppri;
 			if (rp->p_flag & SVFPRNT)
@@ -102,10 +101,10 @@ sched()
 		if (rp->p_stat == SZOMB ||
 		    (rp->p_flag & (SSYS|SLOCK|SULOCK|SLOAD)) != SLOAD)
 			continue;
-		if (rp->p_textp && rp->p_textp->x_flag & XLOCK)
+		if (rp->p_textp && (rp->p_textp->x_flag & XLOCK))
 			continue;
-		if (rp->p_stat == SSLEEP &&
-		    (rp->p_flag & P_SINTR) || rp->p_stat == SSTOP) {
+		if ((rp->p_stat == SSLEEP &&
+		    (rp->p_flag & P_SINTR)) || rp->p_stat == SSTOP) {
 			register int size;
 
 			if (rp->p_slptime > maxslp+10) {
@@ -142,7 +141,7 @@ sched()
 	 * least 1 second in core and the swapped-out process has spent at
 	 * least 2 seconds out.  Otherwise wait a bit and try again.
 	 */
-	if (maxsize != MINFINITY || outpri >= 2 && inage >= 1) {
+	if (maxsize != MINFINITY || (outpri >= 2 && inage >= 1)) {
 		p->p_flag &= ~SLOAD;
 		if (p->p_stat == SRUN)
 			remrq(p);

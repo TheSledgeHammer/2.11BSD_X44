@@ -11,7 +11,6 @@
 
 #include <sys/user.h>
 #include <sys/proc.h>
-#include <sys/text.h>
 #include <sys/map.h>
 #include <sys/buf.h>
 #include <sys/systm.h>
@@ -20,8 +19,6 @@
 #include <sys/file.h>
 #include <sys/namei.h>
 #include <sys/inode.h>
-
-//#include <machine/seg.h>
 #include <vm/vm.h>
 
 /*
@@ -46,7 +43,7 @@ swapin(p)
 			x = malloc(coremap, xp->x_size);
 			if (!x) {
 				xunlock(xp);
-				return(0);
+				return;
 			}
 		}
 	}
@@ -55,7 +52,7 @@ swapin(p)
 			mfree(coremap, xp->x_size, x);
 		if (xp)
 			xunlock(xp);
-		return(0);
+		return;
 	}
 	if (xp) {
 		if (x) {
@@ -86,7 +83,7 @@ swapin(p)
 #ifdef UCB_METER
 	cnt.v_swpin++;
 #endif
-	return(1);
+	return;
 }
 
 /*
@@ -144,7 +141,7 @@ swapout(p, freecore, odata, ostack)
 		s = splclock();
 		savekdsa6 = *KDSA6;
 		*KDSA6 = p->p_addr;
-		u.u_ru.ru_nswap++;
+		u->u_ru.ru_nswap++;
 		*KDSA6 = savekdsa6;
 		splx(s);
 	}

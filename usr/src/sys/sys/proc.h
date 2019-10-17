@@ -13,6 +13,9 @@
 #include <sys/rtprio.h>			/* For struct rtprio. */
 #include <sys/select.h>			/* For struct selinfo. */
 #include <sys/time.h>			/* For structs itimerval, timeval. */
+
+#include "../test/edf.h"		/* For Earliest Deadline First */
+
 /*
  * One structure allocated per active
  * process. It contains all data needed
@@ -34,6 +37,9 @@ struct	proc {
 	char	p_dummy;		/* room for one more, here */
 
 	struct 	sysentvec *p_sysent; /* System call dispatch information. */
+
+	struct Edf	*edf;		/*pointer to edf scheduler */
+
 	/*
 	 * Union to overwrite information no longer needed by ZOMBIED
 	 * process with exit information for the parent process.  The
@@ -65,8 +71,8 @@ struct	proc {
 		struct	k_itimerval P_realtimer;
 	    } p_alive;
 	    struct {
-		short	P_xstat;					/* exit status for wait */
-		struct k_rusage P_ru;				/* exit information */
+	    	short	P_xstat;					/* exit status for wait */
+	    	struct k_rusage P_ru;				/* exit information */
 	    } p_dead;
 	} p_un;
 };
@@ -106,7 +112,7 @@ extern struct proc proc[], *procNPROC;	/* the proc table itself */
 extern struct proc *freeproc;
 extern struct proc *zombproc;			/* List of zombie procs. */
 extern volatile struct proc *allproc;	/* List of active procs. */
-extern struct proc *qs;
+extern struct proc *qs;					/* queue schedule */
 int	nproc;
 
 /* stat codes */

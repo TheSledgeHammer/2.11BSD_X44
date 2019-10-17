@@ -14,18 +14,18 @@
  * someone could do it right if they felt like it.  Note that
  * the #defines aren't even sequentially numbered.
  */
-#define	TR_BREADHIT	0	/* buffer read found in cache */
+#define	TR_BREADHIT		0	/* buffer read found in cache */
 #define	TR_BREADMISS	1	/* buffer read not in cache */
-#define	TR_BWRITE	2	/* buffer written */
+#define	TR_BWRITE		2	/* buffer written */
 #define	TR_BREADHITRA	3	/* buffer read-ahead found in cache */
 #define	TR_BREADMISSRA	4	/* buffer read-ahead not in cache */
-#define	TR_BRELSE	5	/* brelse */
-#define	TR_SWAPIO	6	/* swap i/o request arrives */
-#define	TR_NUM_210	7	/* size of array for 2.10BSD
+#define	TR_BRELSE		5	/* brelse */
+#define	TR_SWAPIO		6	/* swap i/o request arrives */
+#define	TR_NUM_210		7	/* size of array for 2.10BSD
 
-#define	TR_XFODMISS	5	/* exe fod read */
-#define	TR_XFODHIT	6	/* exe fod read */
-#define	TR_BREALLOC	8	/* expand/contract a buffer */
+#define	TR_XFODMISS		5	/* exe fod read */
+#define	TR_XFODHIT		6	/* exe fod read */
+#define	TR_BREALLOC		8	/* expand/contract a buffer */
 
 /*
  * Memory allocator trace points; all trace the amount of memory involved
@@ -76,8 +76,36 @@
 #define	VTR_ENABLE	1		/* set a trace flag to 1 */
 #define	VTR_VALUE	2		/* return value of a trace flag */
 #define	VTR_UALARM	3		/* set alarm to go off (sig 16) */
-					/* in specified number of hz */
+							/* in specified number of hz */
 #define	VTR_STAMP	4		/* user specified stamp */
+
+/*
+ * Earliest Deadline First Trace Events.
+ */
+typedef enum Tevent {
+	SAdmit = 0,	/* Edf admit */
+	SRelease,	/* Edf release, waiting to be scheduled */
+	SEdf,		/* running under EDF */
+	SRun,		/* running best effort */
+	SReady,		/* runnable but not running  */
+	SSleep,		/* blocked */
+	SYield,		/* blocked waiting for release */
+	SSlice,		/* slice exhausted */
+	SDeadline,	/* proc's deadline */
+	SExpel,		/* Edf expel */
+	SDead,		/* proc dies */
+	SInts,		/* Interrupt start */
+	SInte,		/* Interrupt end */
+	SUser,		/* user event */
+	Nevent,
+} Tevent;
+
+typedef struct Traceevent	Traceevent;
+struct Traceevent {
+	u_long	pid;
+	u_long	etype;	/* Event type */
+	quad_t	time;	/* time stamp  */
+};
 
 #if defined(KERNEL) && defined(UCB_METER) && !defined(SUPERVISOR)
 u_long tracebuf[TR_NUM_210];

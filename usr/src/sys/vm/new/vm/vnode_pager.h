@@ -1,6 +1,11 @@
-/*-
- * Copyright (c) 1993, David Greenman
- * All rights reserved.
+/*
+ * Copyright (c) 1990 University of Utah.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * the Systems Programming Group of the University of Utah Computer
+ * Science Department.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -18,7 +23,7 @@
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
@@ -30,38 +35,25 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: imgact.h,v 1.7 1994/08/21 04:41:47 paul Exp $
+ *	@(#)vnode_pager.h	8.1 (Berkeley) 6/11/93
  */
-#ifndef _SYS_IMGACT_H_
-#define _SYS_IMGACT_H_
 
-#include <sys/proc.h>
-#include <sys/namei.h>
-#include <sys/inode.h>
+#ifndef	_VNODE_PAGER_
+#define	_VNODE_PAGER_	1
 
 /*
- * Modified to use inode's as 2.11BSD doesn't support vnodes
+ * VNODE pager private data.
  */
-
-struct image_params {
-	struct proc *proc;			/* our process struct */
-	struct execve_args *uap; 	/* syscall arguments */
-	//struct vnode *vnodep;		/* pointer to vnode of file to exec */
-	struct inode *vnodep;		/* pointer to inode of file to exec.*/
-	struct vattr *attr;			/* attributes of file */
-	const char *image_header; 	/* head of file to exec */
-	char *stringbase;			/* base address of tmp string storage */
-	char *stringp;				/* current 'end' pointer of tmp strings */
-	int stringspace;			/* space left in tmp string storage area */
-	int argc, envc;				/* count of argument and environment strings */
-	unsigned long entry_addr; 	/* entry address of target executable */
-	char vmspace_destroyed;		/* flag - we've blown away original vm space */
-	char interpreted;			/* flag - this executable is interpreted */
-	char interpreter_name[64]; 	/* name of the interpreter */
+struct vnpager {
+	int		vnp_flags;	/* flags */
+	struct vnode	*vnp_vp;	/* vnode */
+	vm_size_t	vnp_size;	/* vnode current size */
 };
+typedef struct vnpager	*vn_pager_t;
 
-#ifdef KERNEL
-int	exec_extract_strings __P((struct image_params *));
-int	exec_new_vmspace __P((struct image_params *));
-#endif
-#endif
+#define VN_PAGER_NULL	((vn_pager_t)0)
+
+#define	VNP_PAGING	0x01		/* vnode used for pageout */
+#define VNP_CACHED	0x02		/* vnode is cached */
+
+#endif	/* _VNODE_PAGER_ */

@@ -11,6 +11,9 @@
  * or	#include <vm.h>		 in a user program
  * is a quick way to include all the vm header files.
  */
+#ifndef VM_H
+#define VM_H
+
 #ifdef KERNEL
 #include "vmparam.h"
 #include "vmmac.h"
@@ -22,3 +25,5 @@
 #include <vm/vmmeter.h>
 #include <vm/vmsystm.h>
 #endif
+
+#endif /* VM_H */

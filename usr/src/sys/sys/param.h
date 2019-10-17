@@ -133,10 +133,6 @@
  */
 #define MAXHOSTNAMELEN	64
 
-#if defined(KERNEL) && defined(INET)
-#include <machine/net_mac.h>
-#endif
-
 /*
  * MAXMEM is the maximum core per process is allowed.  First number is Kb.
 */

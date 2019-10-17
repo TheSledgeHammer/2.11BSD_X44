@@ -40,7 +40,6 @@ swap(blkno, coreaddr, count, rdflg)
 	}
 #endif
 	bp = geteblk();			/* allocate a buffer header */
-
 	while (count) {
 		bp->b_flags = B_BUSY | B_PHYS | B_INVAL | rdflg;
 		bp->b_dev = swapdev;
@@ -74,7 +73,7 @@ swkill(p, rout)
 	char *rout;
 {
 
-	tprintf(u.u_ttyp, "sorry, pid %d killed in %s: no swap space\n", 
+	tprintf(u->u_ttyp, "sorry, pid %d killed in %s: no swap space\n",
 		p->p_pid, rout);
 	/*
 	 * To be sure no looping (e.g. in vmsched trying to
@@ -134,17 +133,17 @@ physio(strat, bp, dev, rw, uio)
 		allocbuf++;
 		bp = geteblk();
 	}
-	u.u_procp->p_flag |= SLOCK;
+	u->u_procp->p_flag |= SLOCK;
 	for ( ; uio->uio_iovcnt; uio->uio_iov++, uio->uio_iovcnt--) {
 		iov = uio->uio_iov;
 		if (iov->iov_base >= iov->iov_base + iov->iov_len) {
 			error = EFAULT;
 			break;
 		}
-		if (u.u_sep)
+		if (u->u_sep)
 			ts = 0;
 		else
-			ts = (u.u_tsize + 127) & ~0177;
+			ts = (u->u_tsize + 127) & ~0177;
 		nb = ((int)iov->iov_base >> 6) & 01777;
 		/*
 		 * Check overlap with text. (ts and nb now
@@ -161,7 +160,7 @@ physio(strat, bp, dev, rw, uio)
 		 * (remember wraparound was already checked).
 		 */
 		if (((((int)iov->iov_base + iov->iov_len) >> 6) & 01777) >= 
-			ts + u.u_dsize && nb < 1024 - u.u_ssize) {
+			ts + u->u_dsize && nb < 1024 - u->u_ssize) {
 			error = EFAULT;
 			break;
 		}
@@ -178,7 +177,7 @@ physio(strat, bp, dev, rw, uio)
 			bp->b_flags = B_BUSY|B_PHYS|B_INVAL|rw;
 			bp->b_dev = dev;
 			nb = ((int)iov->iov_base >> 6) & 01777;
-			ts = (u.u_sep ? UDSA : UISA)[nb >> 7] + (nb & 0177);
+			ts = (u->u_sep ? UDSA : UISA)[nb >> 7] + (nb & 0177);
 			bp->b_un.b_addr = (caddr_t)((ts << 6) + ((int)iov->iov_base & 077));
 			bp->b_xmem = (ts >> 10) & 077;
 			bp->b_blkno = uio->uio_offset >> PGSHIFT;
@@ -208,7 +207,7 @@ physio(strat, bp, dev, rw, uio)
 	}
 	if (allocbuf)
 		brelse(bp);
-	u.u_procp->p_flag &= ~SLOCK;
+	u->u_procp->p_flag &= ~SLOCK;
 	return(error);
 }
 

@@ -1,11 +1,9 @@
-/*-
+/* 
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
- * (c) UNIX System Laboratories, Inc.
- * All or some portions of this file are derived from material licensed
- * to the University of California by American Telephone and Telegraph
- * Co. or Unix System Laboratories, Inc. and are reproduced herein with
- * the permission of UNIX System Laboratories, Inc.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * The Mach Operating System project at Carnegie-Mellon University.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,51 +33,51 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)nlist.h	8.2 (Berkeley) 1/21/94
+ *	@(#)vm_inherit.h	8.1 (Berkeley) 6/11/93
+ *
+ *
+ * Copyright (c) 1987, 1990 Carnegie-Mellon University.
+ * All rights reserved.
+ *
+ * Authors: Avadis Tevanian, Jr., Michael Wayne Young
+ * 
+ * Permission to use, copy, modify and distribute this software and
+ * its documentation is hereby granted, provided that both the copyright
+ * notice and this permission notice appear in all copies of the
+ * software, derivative works or modified versions, and any portions
+ * thereof, and that both notices appear in supporting documentation.
+ * 
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS" 
+ * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND 
+ * FOR ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
+ * 
+ * Carnegie Mellon requests users of this software to return to
+ *
+ *  Software Distribution Coordinator  or  Software.Distribution@CS.CMU.EDU
+ *  School of Computer Science
+ *  Carnegie Mellon University
+ *  Pittsburgh PA 15213-3890
+ *
+ * any improvements or extensions that they make and grant Carnegie the
+ * rights to redistribute these changes.
  */
-
-#ifndef _NLIST_H_
-#define	_NLIST_H_
 
 /*
- * Symbol table entry format.  The #ifdef's are so that programs including
- * nlist.h can initialize nlist structures statically.
+ *	Virtual memory map inheritance definitions.
  */
-struct nlist {
-#ifdef _AOUT_INCLUDE_
-	union {
-		char *n_name;	/* symbol name (in memory) */
-		long n_strx;	/* file string table offset (on disk) */
-	} n_un;
-#else
-	char *n_name;		/* symbol name (in memory) */
-#endif
 
-#define	N_UNDF	0x00		/* undefined */
-#define	N_ABS	0x02		/* absolute address */
-#define	N_TEXT	0x04		/* text segment */
-#define	N_DATA	0x06		/* data segment */
-#define	N_BSS	0x08		/* bss segment */
-#define	N_COMM	0x12		/* common reference */
-#define	N_FN	0x1e		/* file name */
+#ifndef	_VM_INHERIT_
+#define	_VM_INHERIT_
 
-#define	N_EXT	0x01		/* external (global) bit, OR'ed in */
-#define	N_TYPE	0x1e		/* mask for all the type bits */
-	unsigned char n_type;	/* type defines */
+/*
+ *	Enumeration of valid values for vm_inherit_t.
+ */
 
-	char n_other;		/* spare */
-#define	n_hash	n_desc		/* used internally by ld(1); XXX */
-	short n_desc;		/* used by stab entries */
-	unsigned long n_value;	/* address/value of the symbol */
-};
+#define	VM_INHERIT_SHARE	((vm_inherit_t) 0)	/* share with child */
+#define	VM_INHERIT_COPY		((vm_inherit_t) 1)	/* copy into child */
+#define VM_INHERIT_NONE		((vm_inherit_t) 2)	/* absent from child */
+#define	VM_INHERIT_DONATE_COPY	((vm_inherit_t) 3)	/* copy and delete */
 
-#define	N_FORMAT	"%08x"	/* namelist value format; XXX */
-#define	N_STAB		0x0e0	/* mask for debugger symbols -- stab(5) */
+#define VM_INHERIT_DEFAULT	VM_INHERIT_COPY
 
-#include <sys/cdefs.h>
-
-__BEGIN_DECLS
-int nlist __P((const char *, struct nlist *));
-__END_DECLS
-
-#endif /* !_NLIST_H_ */
+#endif /* _VM_INHERIT_ */

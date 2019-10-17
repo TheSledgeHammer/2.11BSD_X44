@@ -47,7 +47,6 @@
 #include <sys/resource.h>
 #include <sys/file.h>
 #include <sys/inode.h>
-#include <sys/text.h>
 #include <sys/proc.h>
 #include <vm/vm.h>
 #include <sys/map.h>
@@ -73,7 +72,7 @@
  */
 struct ctlname {
 	char	*ctl_name;	/* subsystem name */
-	int	ctl_type;	/* type of name */
+	int		ctl_type;	/* type of name */
 };
 #define	CTLTYPE_NODE	1	/* name is a node */
 #define	CTLTYPE_INT	2	/* name describes a 16-bit integer */
@@ -112,31 +111,31 @@ struct ctlname {
 /*
  * CTL_KERN identifiers
  */
-#define	KERN_OSTYPE	 	 1	/* string: system version */
-#define	KERN_OSRELEASE	 	 2	/* string: system release */
-#define	KERN_OSREV	 	 3	/* int: system revision */
-#define	KERN_VERSION	 	 4	/* string: compile time info */
-#define	KERN_MAXINODES	 	 5	/* int: max inodes */
-#define	KERN_MAXPROC	 	 6	/* int: max processes */
-#define	KERN_MAXFILES	 	 7	/* int: max open files */
-#define	KERN_ARGMAX	 	 8	/* int: max arguments to exec */
-#define	KERN_SECURELVL	 	 9	/* int: system security level */
+#define	KERN_OSTYPE	 		 1	/* string: system version */
+#define	KERN_OSRELEASE		 2	/* string: system release */
+#define	KERN_OSREV	 		 3	/* int: system revision */
+#define	KERN_VERSION		 4	/* string: compile time info */
+#define	KERN_MAXINODES		 5	/* int: max inodes */
+#define	KERN_MAXPROC		 6	/* int: max processes */
+#define	KERN_MAXFILES		 7	/* int: max open files */
+#define	KERN_ARGMAX	 		 8	/* int: max arguments to exec */
+#define	KERN_SECURELVL		 9	/* int: system security level */
 #define	KERN_HOSTNAME		10	/* string: hostname */
-#define	KERN_HOSTID		11	/* int: host identifier */
+#define	KERN_HOSTID			11	/* int: host identifier */
 #define	KERN_CLOCKRATE		12	/* struct: struct clockrate */
-#define	KERN_INODE		13	/* struct: inode structures */
-#define	KERN_PROC		14	/* struct: process entries */
-#define	KERN_FILE		15	/* struct: file entries */
-#define	KERN_PROF		16	/* node: kernel profiling info */
-#define	KERN_POSIX1		17	/* int: POSIX.1 version */
+#define	KERN_INODE			13	/* struct: inode structures */
+#define	KERN_PROC			14	/* struct: process entries */
+#define	KERN_FILE			15	/* struct: file entries */
+#define	KERN_PROF			16	/* node: kernel profiling info */
+#define	KERN_POSIX1			17	/* int: POSIX.1 version */
 #define	KERN_NGROUPS		18	/* int: # of supplemental group ids */
 #define	KERN_JOB_CONTROL	19	/* int: is job control available */
 #define	KERN_SAVED_IDS		20	/* int: saved set-user/group-ID */
 #define	KERN_BOOTTIME		21	/* struct: time kernel was booted */
 #define	KERN_MAXTEXTS		22	/* int: # of text entries */
-#define	KERN_TEXT		23	/* struct: text entries */
+#define	KERN_TEXT			23	/* struct: text entries */
 #define	KERN_ACCTTHRESH		24	/* int: accounting daemon threshold */
-#define	KERN_MAXID		25	/* number of valid kern ids */
+#define	KERN_MAXID			25	/* number of valid kern ids */
 
 #ifndef	KERNEL
 #define CTL_KERN_NAMES { \
@@ -186,9 +185,9 @@ struct kinfo_proc {
 	struct	proc kp_proc;			/* proc structure */
 	struct	eproc {
 		struct	proc *e_paddr;		/* address of proc */
-		dev_t	e_tdev;			/* controlling tty dev */
-		pid_t	e_tpgid;		/* tty process group id */
-		uid_t	e_ruid;			/* real uid */
+		dev_t	e_tdev;				/* controlling tty dev */
+		pid_t	e_tpgid;			/* tty process group id */
+		uid_t	e_ruid;				/* real uid */
 	} kp_eproc;
 };
 
@@ -219,16 +218,16 @@ struct	kinfo_file {
 /*
  * CTL_HW identifiers
  */
-#define	HW_MACHINE	 1		/* string: machine class */
-#define	HW_MODEL	 2		/* string: specific machine model */
-#define	HW_NCPU		 3		/* int: number of cpus */
-#define	HW_BYTEORDER	 4		/* int: machine byte order */
-#define	HW_PHYSMEM	 5		/* int: total memory */
-#define	HW_USERMEM	 6		/* int: non-kernel memory */
-#define	HW_PAGESIZE	 7		/* int: software page size */
-#define	HW_DISKNAMES	 8		/* strings: disk drive names */
-#define	HW_DISKSTATS	 9		/* struct: diskstats[] */
-#define	HW_MAXID	10		/* number of valid hw ids */
+#define	HW_MACHINE	 	1		/* string: machine class */
+#define	HW_MODEL	 	2		/* string: specific machine model */
+#define	HW_NCPU		 	3		/* int: number of cpus */
+#define	HW_BYTEORDER	4		/* int: machine byte order */
+#define	HW_PHYSMEM	 	5		/* int: total memory */
+#define	HW_USERMEM	 	6		/* int: non-kernel memory */
+#define	HW_PAGESIZE	 	7		/* int: software page size */
+#define	HW_DISKNAMES	8		/* strings: disk drive names */
+#define	HW_DISKSTATS	9		/* struct: diskstats[] */
+#define	HW_MAXID		10		/* number of valid hw ids */
 
 #ifndef	KERNEL
 #define CTL_HW_NAMES { \
@@ -249,27 +248,27 @@ struct	kinfo_file {
 /*
  * CTL_USER definitions
  */
-#define	USER_CS_PATH		 1	/* string: _CS_PATH */
-#define	USER_BC_BASE_MAX	 2	/* int: BC_BASE_MAX */
-#define	USER_BC_DIM_MAX		 3	/* int: BC_DIM_MAX */
-#define	USER_BC_SCALE_MAX	 4	/* int: BC_SCALE_MAX */
-#define	USER_BC_STRING_MAX	 5	/* int: BC_STRING_MAX */
-#define	USER_COLL_WEIGHTS_MAX	 6	/* int: COLL_WEIGHTS_MAX */
-#define	USER_EXPR_NEST_MAX	 7	/* int: EXPR_NEST_MAX */
-#define	USER_LINE_MAX		 8	/* int: LINE_MAX */
-#define	USER_RE_DUP_MAX		 9	/* int: RE_DUP_MAX */
-#define	USER_POSIX2_VERSION	10	/* int: POSIX2_VERSION */
-#define	USER_POSIX2_C_BIND	11	/* int: POSIX2_C_BIND */
-#define	USER_POSIX2_C_DEV	12	/* int: POSIX2_C_DEV */
+#define	USER_CS_PATH		 	1	/* string: _CS_PATH */
+#define	USER_BC_BASE_MAX	 	2	/* int: BC_BASE_MAX */
+#define	USER_BC_DIM_MAX		 	3	/* int: BC_DIM_MAX */
+#define	USER_BC_SCALE_MAX	 	4	/* int: BC_SCALE_MAX */
+#define	USER_BC_STRING_MAX	 	5	/* int: BC_STRING_MAX */
+#define	USER_COLL_WEIGHTS_MAX	6	/* int: COLL_WEIGHTS_MAX */
+#define	USER_EXPR_NEST_MAX		7	/* int: EXPR_NEST_MAX */
+#define	USER_LINE_MAX			8	/* int: LINE_MAX */
+#define	USER_RE_DUP_MAX			9	/* int: RE_DUP_MAX */
+#define	USER_POSIX2_VERSION		10	/* int: POSIX2_VERSION */
+#define	USER_POSIX2_C_BIND		11	/* int: POSIX2_C_BIND */
+#define	USER_POSIX2_C_DEV		12	/* int: POSIX2_C_DEV */
 #define	USER_POSIX2_CHAR_TERM	13	/* int: POSIX2_CHAR_TERM */
 #define	USER_POSIX2_FORT_DEV	14	/* int: POSIX2_FORT_DEV */
 #define	USER_POSIX2_FORT_RUN	15	/* int: POSIX2_FORT_RUN */
 #define	USER_POSIX2_LOCALEDEF	16	/* int: POSIX2_LOCALEDEF */
-#define	USER_POSIX2_SW_DEV	17	/* int: POSIX2_SW_DEV */
-#define	USER_POSIX2_UPE		18	/* int: POSIX2_UPE */
-#define	USER_STREAM_MAX		19	/* int: POSIX2_STREAM_MAX */
-#define	USER_TZNAME_MAX		20	/* int: POSIX2_TZNAME_MAX */
-#define	USER_MAXID		21	/* number of valid user ids */
+#define	USER_POSIX2_SW_DEV		17	/* int: POSIX2_SW_DEV */
+#define	USER_POSIX2_UPE			18	/* int: POSIX2_UPE */
+#define	USER_STREAM_MAX			19	/* int: POSIX2_STREAM_MAX */
+#define	USER_TZNAME_MAX			20	/* int: POSIX2_TZNAME_MAX */
+#define	USER_MAXID				21	/* number of valid user ids */
 
 #define	CTL_USER_NAMES { \
 	{ 0, 0 }, \

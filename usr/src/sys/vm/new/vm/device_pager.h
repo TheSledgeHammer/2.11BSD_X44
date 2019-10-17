@@ -1,6 +1,11 @@
 /*
- * Copyright (c) 1994, Henrik Vestergaard Draboel
- * All rights reserved.
+ * Copyright (c) 1990 University of Utah.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * the Systems Programming Group of the University of Utah Computer
+ * Science Department.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -12,14 +17,16 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by (name).
- * 4. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
  * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
@@ -28,43 +35,19 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: rtprio.h,v 1.1 1994/09/01 05:12:53 davidg Exp $
+ *	@(#)device_pager.h	8.3 (Berkeley) 12/13/93
  */
 
-#ifndef _SYS_RTPRIO_H_
-#define _SYS_RTPRIO_H_
+#ifndef	_DEVICE_PAGER_
+#define	_DEVICE_PAGER_	1
 
 /*
- * Process realtime-priority specifications to rtprio.
+ * Device pager private data.
  */
-
-/* priority types */
-#define RTP_PRIO_REALTIME	0
-#define RTP_PRIO_NORMAL		1
-#define RTP_PRIO_IDLE		2
-
-/* priority range */
-#define RTP_PRIO_MIN		0	/* Highest priority */
-#define RTP_PRIO_MAX		31	/* Lowest priority */
-
-/*
- * rtprio() syscall functions
- */
-#define RTP_LOOKUP		0
-#define RTP_SET			1
-
-#ifndef LOCORE
-struct rtprio {
-	u_short type;
-	u_short prio;
+struct devpager {
+	struct pglist	devp_pglist;	/* list of pages allocated */
+	vm_object_t	devp_object;	/* object representing this device */
 };
-#endif
+typedef struct devpager	*dev_pager_t;
 
-#ifndef KERNEL
-#include <sys/cdefs.h>
-
-__BEGIN_DECLS
-int	rtprio __P((int, pid_t, struct rtprio *));
-__END_DECLS
-#endif	/* !KERNEL */
-#endif	/* !_SYS_RTPRIO_H_ */
+#endif	/* _DEVICE_PAGER_ */

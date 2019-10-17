@@ -5,6 +5,8 @@
  *
  *	@(#)conf.h	1.3 (2.11BSD Berkeley) 12/23/92
  */
+#ifndef _SYS_CONF_H_
+#define _SYS_CONF_H_
 
 /*
  * Declaration of block device
@@ -66,6 +68,27 @@ struct linesw
 };
 #ifdef KERNEL
 extern struct	linesw linesw[];
+#endif
+
+struct swdevt {
+	dev_t	sw_dev;
+	int	sw_flags;
+	int	sw_nblks;
+	struct	vnode *sw_vp;
+};
+#define	SW_FREED	0x01
+#define	SW_SEQUENTIAL	0x02
+#define sw_freed	sw_flags	/* XXX compat */
+
+#ifdef KERNEL
+extern struct swdevt swdevt[];
+
+int	iskmemdev __P((dev_t));
+int	iszerodev __P((dev_t));
+int	isdisk __P((dev_t, int));
+int	chrtoblk __P((dev_t));
+#endif
+
 #endif
 
 

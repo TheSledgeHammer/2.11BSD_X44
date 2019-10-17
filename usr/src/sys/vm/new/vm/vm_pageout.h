@@ -33,13 +33,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm_kern.h	8.1 (Berkeley) 6/11/93
+ *	@(#)vm_pageout.h	8.3 (Berkeley) 1/9/95
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
  * All rights reserved.
  *
- * Authors: Avadis Tevanian, Jr., Michael Wayne Young
+ * Author: Avadis Tevanian, Jr.
  * 
  * Permission to use, copy, modify and distribute this software and
  * its documentation is hereby granted, provided that both the copyright
@@ -62,11 +62,35 @@
  * rights to redistribute these changes.
  */
 
-/* Kernel memory management definitions. */
+/*
+ *	Header file for pageout daemon.
+ */
 
-vm_map_t	buffer_map;
-vm_map_t	exec_map;
-vm_map_t	kernel_map;
-vm_map_t	kmem_map;
-vm_map_t	mb_map;
-vm_map_t	phys_map;
+/*
+ *	Exported data structures.
+ */
+
+extern int	vm_pages_needed;	/* should be some "event" structure */
+simple_lock_data_t	vm_pages_needed_lock;
+
+
+/*
+ *	Exported routines.
+ */
+
+/*
+ *	Signal pageout-daemon and wait for it.
+ */
+
+#define	VM_WAIT		{ \
+			simple_lock(&vm_pages_needed_lock); \
+			thread_wakeup(&vm_pages_needed); \
+			thread_sleep(&cnt.v_free_count, \
+				&vm_pages_needed_lock, FALSE); \
+			}
+#ifdef KERNEL
+void		 vm_pageout __P((void));
+void		 vm_pageout_scan __P((void));
+void		 vm_pageout_page __P((vm_page_t, vm_object_t));
+void		 vm_pageout_cluster __P((vm_page_t, vm_object_t));
+#endif

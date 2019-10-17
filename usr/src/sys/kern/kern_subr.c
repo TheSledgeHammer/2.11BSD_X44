@@ -23,6 +23,13 @@ uiomove(cp, n, uio)
 	int error = 0;
 	register u_int cnt;
 
+#ifdef DIAGNOSTIC
+	if (uio->uio_rw != UIO_READ && uio->uio_rw != UIO_WRITE)
+		panic("uiomove: mode");
+	if (uio->uio_segflg == UIO_USERSPACE && uio->uio_procp != curproc)
+		panic("uiomove proc");
+#endif
+
 	while (n > 0 && uio->uio_resid) {
 		iov = uio->uio_iov;
 		cnt = iov->iov_len;
@@ -36,27 +43,8 @@ uiomove(cp, n, uio)
 		switch (uio->uio_segflg) {
 
 		case UIO_USERSPACE:
-			if (cnt > 100 && cp + cnt < SEG6)
-				error = uiofmove(cp, cnt, uio, iov);
-			else if ((cnt | (int)cp | (int)iov->iov_base) & 1)
-				if (uio->uio_rw == UIO_READ)
-					error = vcopyout(cp,iov->iov_base, cnt);
-				else
-					error = vcopyin(iov->iov_base, cp, cnt);
-			else {
-				if (uio->uio_rw == UIO_READ)
-					error = copyout(cp, iov->iov_base, cnt);
-				else
-					error = copyin(iov->iov_base, cp, cnt);
-			}
-			if (error)
-				return (error);
-			break;
-
 		case UIO_USERISPACE:
-			if (cnt > 100 && cp + cnt < SEG6)
-				error = uiofmove(cp, cnt, uio, iov);
-			else if (uio->uio_rw == UIO_READ)
+			if (uio->uio_rw == UIO_READ)
 				error = copyiout(cp, iov->iov_base, cnt);
 			else
 				error = copyiin(iov->iov_base, cp, cnt);
@@ -94,7 +82,7 @@ ureadc(c, uio)
 
 again:
 	if (uio->uio_iovcnt == 0)
-		panic("ureadc");
+		panic("ureadc: non-positive resid");
 	iov = uio->uio_iov;
 	if (iov->iov_len == 0 || uio->uio_resid == 0) {
 		uio->uio_iovcnt--;
@@ -139,7 +127,7 @@ uwritec(uio)
 		return (-1);
 again:
 	if (uio->uio_iovcnt <= 0)
-		panic("uwritec");
+		panic("uwritec: non-positive iovcnt");
 	iov = uio->uio_iov;
 	if (iov->iov_len == 0) {
 		uio->uio_iov++;
@@ -171,57 +159,27 @@ again:
 }
 
 /*
- * Copy bytes to/from the kernel and the user.  Uiofmove assumes the kernel
- * area being copied to or from does not overlap segment 6 - the assembly
- * language helper routine, fmove, uses segment register 6 to map in the
- * user's memory.
+ * General routine to allocate a hash table.
  */
-void
-uiofmove(cp, n, uio, iov)
-	caddr_t cp;
-	register int n;
-	struct uio *uio;
-	struct iovec *iov;
+/*
+void *
+hashinit(elements, type, hashmask)
+	int elements, type;
+	u_long *hashmask;
 {
-	register short c;
-	short on;
-	register short segr;		/* seg register (0 - 7) */
-	u_short *segd;			/* PDR map array */
-	u_short *sega;			/* PAR map array */
-	int error;
+	long hashsize;
+	LIST_HEAD(generic, generic) *hashtbl;
+	int i;
 
-#ifdef NONSEPARATE
-	segd = UISD;
-	sega = UISA;
-#else
-	if (uio->uio_segflg == UIO_USERSPACE && u.u_sep) {
-		segd = UDSD;
-		sega = UDSA;
-	}
-	else {
-		segd = UISD;
-		sega = UISA;
-	}
-#endif
-
-	segr = (short)iov->iov_base >> 13 & 07;
-	on = (short)iov->iov_base & 017777;
-	c = MIN(n, 8192-on);
-	for (;;) {
-		if (uio->uio_rw == UIO_READ)
-			error = fmove(sega[segr], segd[segr], cp, SEG6+on, c);
-		else
-			error = fmove(sega[segr], segd[segr], SEG6+on, cp, c);
-		if (error)
-			return(error);
-		n -= c;
-		if (!n)
-			return(0);
-		cp += c;
-		segr++;
-		segr &= 07;
-		on = 0;
-		c = MIN(n, 8192);
-	}
-	/*NOTREACHED*/
+	if (elements <= 0)
+		panic("hashinit: bad cnt");
+	for (hashsize = 1; hashsize <= elements; hashsize <<= 1)
+		continue;
+	hashsize >>= 1;
+	hashtbl = malloc((u_long)hashsize * sizeof(*hashtbl), type, M_WAITOK);
+	for (i = 0; i < hashsize; i++)
+		LIST_INIT(&hashtbl[i]);
+	*hashmask = hashsize - 1;
+	return (hashtbl);
 }
+*/

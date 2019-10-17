@@ -17,11 +17,11 @@
 #endif
 
 
-#define	O_RDONLY	000		/* open for reading */
-#define	O_WRONLY	001		/* open for writing */
-#define	O_RDWR		002		/* open for read & write */
+#define	O_RDONLY	000			/* open for reading */
+#define	O_WRONLY	001			/* open for writing */
+#define	O_RDWR		002			/* open for read & write */
 #define	O_NDELAY	FNDELAY		/* non-blocking open */
-					/* really non-blocking I/O for fcntl */
+								/* really non-blocking I/O for fcntl */
 #define	O_APPEND	FAPPEND		/* append on each write */
 #define	O_CREAT		FCREAT		/* open with file create */
 #define	O_TRUNC		FTRUNC		/* open with truncation */
@@ -45,6 +45,82 @@
 #define	FTRUNC		02000		/* truncate to zero length */
 #define	FEXCL		04000		/* error if already created */
 #endif
+
+/*
+ * Kernel encoding of open mode; separate read and write bits that are
+ * independently testable: 1 greater than the above.
+ *
+ * XXX
+ * FREAD and FWRITE are excluded from the #ifdef KERNEL so that TIOCFLUSH,
+ * which was documented to use FREAD/FWRITE, continues to work.
+ */
+#define FREAD       0x0001
+#define FWRITE      0x0002
+#define O_NONBLOCK  0x0004      /* no delay */
+#define O_APPEND    0x0008      /* set append mode */
+#define O_SHLOCK    0x0010      /* open with shared file lock */
+#define O_EXLOCK    0x0020      /* open with exclusive file lock */
+#define O_ASYNC     0x0040      /* signal pgrp when data ready */
+#define O_FSYNC     0x0080      /* synchronous writes */
+#define O_CREAT     0x0200      /* create if nonexistant */
+#define O_TRUNC     0x0400      /* truncate to zero length */
+#define O_EXCL      0x0800      /* error if already exists */
+#ifdef KERNEL
+#define FMARK       0x1000      /* mark during gc() */
+#define FDEFER      0x2000      /* defer for next gc pass */
+#endif
+
+/* defined by POSIX 1003.1; not 2.11BSD default, so bit is required */
+/* Not currently implemented but it may be placed on the TODO list shortly */
+#define O_NOCTTY    0x4000      /* don't assign controlling terminal */
+
+#ifdef KERNEL
+/* convert from open() flags to/from fflags; convert O_RD/WR to FREAD/FWRITE */
+#define FFLAGS(oflags)  ((oflags) + 1)
+#define OFLAGS(fflags)  ((fflags) - 1)
+
+/* bits to save after open */
+#define FMASK       (FREAD|FWRITE|FAPPEND|FASYNC|FFSYNC|FNONBLOCK)
+/* bits settable by fcntl(F_SETFL, ...) */
+#define FCNTLFLAGS  (FAPPEND|FASYNC|FFSYNC|FNONBLOCK)
+#endif
+
+/*
+ * The O_* flags used to have only F* names, which were used in the kernel
+ * and by fcntl.  We retain the F* names for the kernel f_flags field
+ * and for backward compatibility for fcntl.
+ */
+#define FAPPEND     O_APPEND    /* kernel/compat */
+#define FASYNC      O_ASYNC     /* kernel/compat */
+#define FFSYNC      O_FSYNC     /* kernel */
+#define FEXLOCK     O_EXLOCK    /* kernel */
+#define FSHLOCK     O_SHLOCK    /* kernel */
+#define FNONBLOCK   O_NONBLOCK  /* kernel */
+#define FNDELAY     O_NONBLOCK  /* compat */
+#define O_NDELAY    O_NONBLOCK  /* compat */
+
+/*
+ * Constants used for fcntl(2)
+ */
+
+/* command values */
+#define F_DUPFD     0       /* duplicate file descriptor */
+#define F_GETFD     1       /* get file descriptor flags */
+#define F_SETFD     2       /* set file descriptor flags */
+#define F_GETFL     3       /* get file status flags */
+#define F_SETFL     4       /* set file status flags */
+#define F_GETOWN    5       /* get SIGIO/SIGURG proc/pgrp */
+#define F_SETOWN    6       /* set SIGIO/SIGURG proc/pgrp */
+
+/* file descriptor flags (F_GETFD, F_SETFD) */
+#define FD_CLOEXEC  1       /* close-on-exec flag */
+
+/* lock operations for flock(2) */
+#define LOCK_SH     0x01    /* shared file lock */
+#define LOCK_EX     0x02    /* exclusive file lock */
+#define LOCK_NB     0x04    /* don't block when locking */
+#define LOCK_UN     0x08    /* unlock file */
+
 
 #ifndef KERNEL
 #include <sys/cdefs.h>

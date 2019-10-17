@@ -33,13 +33,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	from: @(#)pmap.h	8.1 (Berkeley) 6/11/93
+ *	@(#)vm_init.c	8.1 (Berkeley) 6/11/93
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
  * All rights reserved.
  *
- * Author: Avadis Tevanian, Jr.
+ * Authors: Avadis Tevanian, Jr., Michael Wayne Young
  * 
  * Permission to use, copy, modify and distribute this software and
  * its documentation is hereby granted, provided that both the copyright
@@ -60,64 +60,44 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
+ */
+
+/*
+ *	Initialize the Virtual Memory subsystem.
+ */
+
+#include <sys/param.h>
+
+#include <vm/vm.h>
+#include <vm/vm_page.h>
+#include <vm/vm_kern.h>
+
+/*
+ *	vm_init initializes the virtual memory system.
+ *	This is done only by the first cpu up.
  *
- * $Id: pmap.h,v 1.3 1994/08/06 10:25:49 davidg Exp $
+ *	The start and end address of physical memory is passed in.
  */
 
-/*
- *	Machine address mapping definitions -- machine-independent
- *	section.  [For machine-dependent section, see "machine/pmap.h".]
- */
+void vm_mem_init()
+{
+	extern vm_offset_t	avail_start, avail_end;
+	extern vm_offset_t	virtual_avail, virtual_end;
 
-#ifndef	_PMAP_VM_
-#define	_PMAP_VM_
+	/*
+	 *	Initializes resident memory structures.
+	 *	From here on, all physical memory is accounted for,
+	 *	and we use only virtual addresses.
+	 */
+	vm_set_page_size();
+	vm_page_startup(&avail_start, &avail_end);
 
-/*
- * Each machine dependent implementation is expected to
- * keep certain statistics.  They may do this anyway they
- * so choose, but are expected to return the statistics
- * in the following structure.
- */
-struct pmap_statistics {
-	long		resident_count;	/* # of pages mapped (total)*/
-	long		wired_count;	/* # of pages wired */
-};
-typedef struct pmap_statistics	*pmap_statistics_t;
-
-#include <machine/pmap.h>
-
-#ifdef KERNEL
-__BEGIN_DECLS
-void *		pmap_bootstrap_alloc	__P((int));
-void		pmap_bootstrap		__P((/* machine dependent */));
-void		pmap_change_wiring	__P((pmap_t, vm_offset_t, boolean_t));
-void		pmap_clear_modify	__P((vm_offset_t pa));
-void		pmap_clear_reference	__P((vm_offset_t pa));
-void		pmap_collect		__P((pmap_t));
-void		pmap_copy		__P((pmap_t, pmap_t, vm_offset_t, vm_size_t, vm_offset_t));
-void		pmap_copy_page		__P((vm_offset_t, vm_offset_t));
-pmap_t		pmap_create		__P((vm_size_t));
-void		pmap_destroy		__P((pmap_t));
-void		pmap_enter		__P((pmap_t, vm_offset_t, vm_offset_t, vm_prot_t, boolean_t));
-vm_offset_t	pmap_extract		__P((pmap_t, vm_offset_t));
-void		pmap_init		__P((vm_offset_t, vm_offset_t));
-boolean_t	pmap_is_modified	__P((vm_offset_t pa));
-boolean_t	pmap_is_referenced	__P((vm_offset_t pa));
-void		pmap_kenter		__P((vm_offset_t, vm_offset_t));
-void		pmap_kremove		__P((vm_offset_t));
-vm_offset_t	pmap_map		__P((vm_offset_t, vm_offset_t, vm_offset_t, int));
-void		pmap_page_protect	__P((vm_offset_t, vm_prot_t));
-void		pmap_pageable		__P((pmap_t, vm_offset_t, vm_offset_t, boolean_t));
-vm_offset_t	pmap_phys_address	__P((int));
-void		pmap_pinit		__P((pmap_t));
-void		pmap_protect		__P((pmap_t, vm_offset_t, vm_offset_t, vm_prot_t));
-void		pmap_qenter		__P((vm_offset_t, vm_page_t *, int));
-void		pmap_qremove		__P((vm_offset_t, int));
-void		pmap_reference		__P((pmap_t));
-void		pmap_release		__P((pmap_t));
-void		pmap_remove		__P((pmap_t, vm_offset_t, vm_offset_t));
-void		pmap_zero_page		__P((vm_offset_t));
-__END_DECLS
-#endif
-
-#endif /* _PMAP_VM_ */
+	/*
+	 * Initialize other VM packages
+	 */
+	vm_object_init(virtual_end - VM_MIN_KERNEL_ADDRESS);
+	vm_map_startup();
+	kmem_init(virtual_avail, virtual_end);
+	pmap_init(avail_start, avail_end);
+	vm_pager_init();
+}

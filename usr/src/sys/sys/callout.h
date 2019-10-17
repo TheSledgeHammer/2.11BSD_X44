@@ -28,7 +28,7 @@ struct	callout {
 	int	(*c_func)();	/* routine */
 	struct	callout *c_next;
 };
-#if defined(KERNEL) && !defined(SUPERVISOR)
+#ifdef KERNEL
 struct	callout *callfree, callout[], calltodo;
 int	ncallout;
 #endif

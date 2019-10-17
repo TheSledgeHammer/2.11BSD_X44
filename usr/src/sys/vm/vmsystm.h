@@ -12,7 +12,7 @@
 
 size_t	freemem;		/* remaining clicks of free memory */
 
-#if defined(KERNEL) && defined(UCB_METER) && !defined(SUPERVISOR)
+#ifdef KERNEL
 u_short	avefree;		/* moving average of remaining free clicks */
 u_short	avefree30;		/* 30 sec (avefree is 5 sec) moving average */
 
@@ -30,6 +30,6 @@ struct	forkstat
 	long	sizfork;
 	long	sizvfork;
 };
-#if defined(KERNEL) && defined(UCB_METER) && !defined(SUPERVISOR)
+#ifdef KERNEL
 struct	forkstat forkstat;
 #endif

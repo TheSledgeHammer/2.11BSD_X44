@@ -30,14 +30,14 @@
 
 
 /* Obtained from FreeBSD 2.0 */
-#ifndef _POSIX_SOURCE
+//#ifndef _POSIX_SOURCE
 typedef	unsigned char		u_char;
 typedef	unsigned short		u_short;
 typedef	unsigned int		u_int;
 typedef	unsigned long		u_long;
 typedef	unsigned short		ushort;		/* Sys V compatibility */
 typedef	unsigned int		uint;		/* Sys V compatibility */
-#endif
+//#endif
 
 typedef	unsigned long long 	u_quad_t; /* quads */
 typedef	long long			quad_t;
@@ -67,7 +67,7 @@ typedef	unsigned short		mode_t;		/* permissions */
 	long val[2];
 } quad;
 
-#define	NBBY	8		/* number of bits in a byte */
+#define	NBBY	8			/* number of bits in a byte */
 
 #ifndef howmany
 #define	howmany(x, y)	(((x)+((y)-1))/(y))
