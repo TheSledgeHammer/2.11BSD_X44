@@ -83,7 +83,6 @@ register int *aresid;
 	struct uio auio;
 	struct iovec aiov;
 register int error;
-
 	auio.uio_iov = &aiov;
 	auio.uio_iovcnt = 1;
 	aiov.iov_base = base;
@@ -282,7 +281,7 @@ rwip(ip, uio, ioflag)
 		}
 	} while (u->u_error == 0 && uio->uio_resid && n != 0);
 	if (error == 0)				/* XXX */
-		error = u.u_error;		/* XXX */
+		error = u->u_error;		/* XXX */
 	if (error && (uio->uio_rw == UIO_WRITE) && (ioflag & IO_UNIT) && 
 		(type != IFBLK)) {
 		itrunc(ip, osize, ioflag & IO_SYNC);
@@ -335,14 +334,17 @@ ino_ioctl(fp, com, data)
 		dev = ip->i_rdev;
 		u->u_r.r_val1 = 0;
 		if	(setjmp(&u->u_qsave))
+		{
 /*
  * The ONLY way we can get here is via the longjump in sleep.  Signals have
  * been checked for and u_error set accordingly.  All that remains to do 
  * is 'return'.
 */
 			return(u->u_error);
+		}
 		return((*cdevsw[major(dev)].d_ioctl)(dev,com,data,fp->f_flag));
 	}
+	return (0);
 }
 
 int

@@ -79,22 +79,20 @@
  */
 
 struct vm_object {
-	struct pglist		memq;		/* Resident memory */
+	struct pglist			memq;			/* Resident memory */
 	TAILQ_ENTRY(vm_object)	object_list;	/* list of all objects */
-	u_short			flags;		/* see below */
-	u_short			paging_in_progress; /* Paging (in or out) so
-						    don't collapse or destroy */
-	simple_lock_data_t	Lock;		/* Synchronization */
-	int			ref_count;	/* How many refs?? */
-	vm_size_t		size;		/* Object size */
-	int			resident_page_count;
-						/* number of resident pages */
-	struct vm_object	*copy;		/* Object that holds copies of
-						   my changed pages */
-	vm_pager_t		pager;		/* Where to get data */
-	vm_offset_t		paging_offset;	/* Offset into paging space */
-	struct vm_object	*shadow;	/* My shadow */
-	vm_offset_t		shadow_offset;	/* Offset in shadow */
+	u_short					flags;			/* see below */
+	u_short					paging_in_progress; /* Paging (in or out) so don't collapse or destroy */
+	simple_lock_data_t		Lock;			/* Synchronization */
+	int						ref_count;		/* How many refs?? */
+	vm_size_t				size;			/* Object size */
+	int						resident_page_count;
+											/* number of resident pages */
+	struct vm_object		*copy;			/* Object that holds copies of my changed pages */
+	vm_pager_t				pager;			/* Where to get data */
+	vm_offset_t				paging_offset;	/* Offset into paging space */
+	struct vm_object		*shadow;		/* My shadow */
+	vm_offset_t				shadow_offset;	/* Offset in shadow */
 	TAILQ_ENTRY(vm_object)	cached_list;	/* for persistence */
 };
 /*

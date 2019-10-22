@@ -31,9 +31,8 @@
 #include <sys/msgbuf.h>
 #include <sys/file.h>
 #include <sys/inode.h>
-#include <sys/errno.h>
+//#include <sys/errno.h>
 #include <sys/uio.h>
-//#include <machine/seg.h>
 #include <sys/map.h>
 
 #define LOG_RDPRI	(PZERO + 1)

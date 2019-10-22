@@ -25,7 +25,7 @@
  * other.  The second argument to expand specifies which to change.  The
  * stack segment will not have to be copied again after expansion.
  */
-expand(newsize,segment)
+expand(newsize, segment)
 	int newsize, segment;
 {
 	register struct proc *p;

@@ -69,6 +69,8 @@ vn_open(ndp, fmode, cmode)
 	{
 	register struct inode *ip;
 	register int error;
+	struct vattr vat;
+	struct vattr *vap = &vat;
 
 	if	(fmode & O_CREAT)
 		{
@@ -79,7 +81,7 @@ vn_open(ndp, fmode, cmode)
 		ip = namei(ndp);
 		if	(ip == NULL)
 			{
-			if	(u.u_error)
+			if	(u->u_error)
 				goto retuerr;
 			ip = maknode(cmode, ndp);
 			if	(ip == NULL)
@@ -119,7 +121,7 @@ vn_open(ndp, fmode, cmode)
 			{
 			if	(access(ip, IREAD))
 				{
-				error = u.u_error;	/* XXX */
+				error = u->u_error;	/* XXX */
 				goto bad;
 				}
 			}
@@ -132,7 +134,7 @@ vn_open(ndp, fmode, cmode)
 				}
 			if	(access(ip, IWRITE))
 				{
-				error = u.u_error;
+				error = u->u_error;
 				goto bad;
 				}
 			}
@@ -146,12 +148,12 @@ vn_open(ndp, fmode, cmode)
  * 2.11 returns the inode unlocked (for now).
 */
 	iunlock(ip);		/* because namei returns a locked inode */
-	if	(setjmp(&u.u_qsave))
+	if	(setjmp(&u->u_qsave))
 		{
 		error = EINTR;	/* opens are not restarted after signals */
 		goto lbad;
 		}
-	if	(error = openi(ip, fmode))
+	if	(error == openi(ip, fmode))
 		goto lbad;
 	return(0);
 /*
@@ -170,7 +172,7 @@ bad:
 	iput(ip);
 	return(error);
 retuerr:
-	return(u.u_error);	/* XXX - Bletch */
+	return(u->u_error);	/* XXX - Bletch */
 	}
 
 /*

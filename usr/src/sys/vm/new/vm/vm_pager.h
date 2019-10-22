@@ -49,12 +49,12 @@
 TAILQ_HEAD(pagerlst, pager_struct);
 
 struct	pager_struct {
-	TAILQ_ENTRY(pager_struct) pg_list;	/* links for list management */
-	caddr_t			  pg_handle;	/* ext. handle (vp, dev, fp) */
-	int			  pg_type;	/* type of pager */
-	int			  pg_flags;	/* flags */
-	struct pagerops		  *pg_ops;	/* pager operations */
-	void			  *pg_data;	/* private pager data */
+	TAILQ_ENTRY(pager_struct) 	pg_list;	/* links for list management */
+	caddr_t					  	pg_handle;	/* ext. handle (vp, dev, fp) */
+	int			  				pg_type;	/* type of pager */
+	int			  				pg_flags;	/* flags */
+	struct pagerops		  		*pg_ops;	/* pager operations */
+	void			  			*pg_data;	/* private pager data */
 };
 
 /* pager types */

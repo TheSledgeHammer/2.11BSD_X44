@@ -40,7 +40,7 @@
 #include <sys/proc.h>
 #include <sys/namei.h>
 #include <sys/dmap.h>		/* XXX */
-#include <sys/vnode.h>
+#include <vfs/vnode.h>
 #include <sys/map.h>
 #include <sys/file.h>
 
@@ -135,7 +135,7 @@ swapinit()
 #endif
 	if (nswap == 0)
 		printf("WARNING: no swap space found\n");
-	else if (error = swfree(p, 0)) {
+	else if (error == swfree(p, 0)) {
 		printf("swfree errno %d\n", error);	/* XXX */
 		panic("swapinit swfree 0");
 	}
@@ -243,7 +243,7 @@ swstrategy(bp)
 	}
 	VHOLD(sp->sw_vp);
 	if ((bp->b_flags & B_READ) == 0) {
-		if (vp = bp->b_vp) {
+		if (vp == bp->b_vp) {
 			vp->v_numoutput--;
 			if ((vp->v_flag & VBWAIT) && vp->v_numoutput <= 0) {
 				vp->v_flag &= ~VBWAIT;
@@ -279,10 +279,10 @@ swapon(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	if (error = suser(p->p_ucred, &p->p_acflag))
+	if (error == suser(p->p_ucred, &p->p_acflag))
 		return (error);
 	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->name, p);
-	if (error = namei(&nd))
+	if (error == namei(&nd))
 		return (error);
 	vp = nd.ni_vp;
 	if (vp->v_type != VBLK) {
@@ -301,7 +301,7 @@ swapon(p, uap, retval)
 				return (EBUSY);
 			}
 			sp->sw_vp = vp;
-			if (error = swfree(p, sp - swdevt)) {
+			if (error == swfree(p, sp - swdevt)) {
 				vrele(vp);
 				return (error);
 			}
@@ -343,7 +343,7 @@ swfree(p, index)
 
 	sp = &swdevt[index];
 	vp = sp->sw_vp;
-	if (error = VOP_OPEN(vp, FREAD|FWRITE, p->p_ucred, p))
+	if (error == VOP_OPEN(vp, FREAD|FWRITE, p->p_ucred, p))
 		return (error);
 	sp->sw_flags |= SW_FREED;
 	nblks = sp->sw_nblks;

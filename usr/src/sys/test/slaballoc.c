@@ -6,11 +6,11 @@
 */
 
 #include <stdint.h> /* uint8_t uintptr_t */
-#include <stdbool.h> /* bool */
-#include <stdlib.h> /* NULL */
-#include <unistd.h> /* sysconf */
+//#include <stdbool.h> /* bool */
+//#include <stdlib.h> /* NULL */
+//#include <unistd.h> /* sysconf */
 #include <sys/mman.h> /* mmap, munmap */
-#include "slaballoc.h"
+#include <slaballoc.h>
 
 /* We will safely assume the long -> size_t cast in this code */
 #define GET_PAGESIZE() sysconf(_SC_PAGESIZE)
@@ -163,3 +163,4 @@ slab_cache_dealloc(struct slab_cache *cache, void *ptr) {
 		slab_cache_push_front(cache, slab);
 	}
 }
+

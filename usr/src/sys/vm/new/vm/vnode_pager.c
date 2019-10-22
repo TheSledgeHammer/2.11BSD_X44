@@ -49,8 +49,9 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
-#include <sys/malloc.h>
-#include <sys/vnode.h>
+//#include <sys/malloc.h>
+#include <sys/map.h>
+#include <vfs/vnode.h>
 #include <sys/uio.h>
 #include <sys/mount.h>
 
@@ -144,12 +145,14 @@ vnode_pager_alloc(handle, size, prot, foff)
 		/*
 		 * Allocate pager structures
 		 */
-		pager = (vm_pager_t)malloc(sizeof *pager, M_VMPAGER, M_WAITOK);
+		//pager = (vm_pager_t)malloc(sizeof *pager, M_VMPAGER, M_WAITOK);
+		pager = (vm_pager_t)malloc(pager, sizeof *pager); /* 2.11BSD Malloc */
 		if (pager == NULL)
 			return(NULL);
 		vnp = (vn_pager_t)malloc(sizeof *vnp, M_VMPGDATA, M_WAITOK);
 		if (vnp == NULL) {
-			free((caddr_t)pager, M_VMPAGER);
+			//free((caddr_t)pager, M_VMPAGER);
+			mfree((caddr_t)pager);          /* 2.11BSD Malloc */
 			return(NULL);
 		}
 		/*
@@ -160,8 +163,10 @@ vnode_pager_alloc(handle, size, prot, foff)
 			vm_object_enter(object, pager);
 			vm_object_setpager(object, pager, 0, TRUE);
 		} else {
-			free((caddr_t)vnp, M_VMPGDATA);
-			free((caddr_t)pager, M_VMPAGER);
+			//free((caddr_t)vnp, M_VMPGDATA);
+			//free((caddr_t)pager, M_VMPAGER);
+			mfree((caddr_t)vnp);          /* 2.11BSD Malloc */
+			mfree((caddr_t)pager);          /* 2.11BSD Malloc */
 			return(NULL);
 		}
 		/*
@@ -210,7 +215,7 @@ vnode_pager_dealloc(pager)
 	if (vpagerdebug & VDB_FOLLOW)
 		printf("vnode_pager_dealloc(%x)\n", pager);
 #endif
-	if (vp = vnp->vnp_vp) {
+	if (vp == vnp->vnp_vp) {
 		vp->v_vmdata = NULL;
 		vp->v_flag &= ~VTEXT;
 #if NOTDEF
@@ -220,8 +225,10 @@ vnode_pager_dealloc(pager)
 		vrele(vp);
 	}
 	TAILQ_REMOVE(&vnode_pager_list, pager, pg_list);
-	free((caddr_t)vnp, M_VMPGDATA);
-	free((caddr_t)pager, M_VMPAGER);
+	//free((caddr_t)vnp, M_VMPGDATA);
+	//free((caddr_t)pager, M_VMPAGER);
+	mfree((caddr_t)vnp);          /* 2.11BSD Malloc */
+	mfree((caddr_t)pager);          /* 2.11BSD Malloc */
 }
 
 static int

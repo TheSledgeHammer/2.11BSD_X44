@@ -53,7 +53,9 @@
 #include <sys/buf.h>
 #include <sys/map.h>
 #include <sys/vnode.h>
-#include <sys/malloc.h>
+
+#include <sys/map.h>
+//#include <sys/malloc.h>
 
 #include <miscfs/specfs/specdev.h>
 
@@ -269,16 +271,19 @@ swap_pager_alloc(handle, size, prot, foff)
 	 * and initialize.
 	 */
 	waitok = handle ? M_WAITOK : M_NOWAIT;
-	pager = (vm_pager_t)malloc(sizeof *pager, M_VMPAGER, waitok);
+	//pager = (vm_pager_t)malloc(sizeof *pager, M_VMPAGER, waitok);
+	pager = (vm_pager_t)malloc(pager, sizeof *pager);   /* 2.11BSD Malloc */
 	if (pager == NULL)
 		return(NULL);
-	swp = (sw_pager_t)malloc(sizeof *swp, M_VMPGDATA, waitok);
+	//swp = (sw_pager_t)malloc(sizeof *swp, M_VMPGDATA, waitok);
+	swp = (sw_pager_t)malloc(swp, sizeof *swp);   /* 2.11BSD Malloc */
 	if (swp == NULL) {
 #ifdef DEBUG
 		if (swpagerdebug & SDB_FAIL)
 			printf("swpg_alloc: swpager malloc failed\n");
 #endif
-		free((caddr_t)pager, M_VMPAGER);
+		//free((caddr_t)pager, M_VMPAGER);
+		mfree((caddr_t)pager);          /* 2.11BSD Malloc */
 		return(NULL);
 	}
 	size = round_page(size);
@@ -293,11 +298,14 @@ swap_pager_alloc(handle, size, prot, foff)
 	swp->sw_bsize = swt->st_bsize;
 	swp->sw_nblocks = (btodb(size) + swp->sw_bsize - 1) / swp->sw_bsize;
 	swp->sw_blocks = (sw_blk_t)
-		malloc(swp->sw_nblocks*sizeof(*swp->sw_blocks),
-		       M_VMPGDATA, M_NOWAIT);
+		//malloc(swp->sw_nblocks*sizeof(*swp->sw_blocks),
+		  //     M_VMPGDATA, M_NOWAIT);
+		malloc(swp, swp->sw_nblocks*sizeof(*swp->sw_blocks));   /* 2.11BSD Malloc */
 	if (swp->sw_blocks == NULL) {
-		free((caddr_t)swp, M_VMPGDATA);
-		free((caddr_t)pager, M_VMPAGER);
+		//free((caddr_t)swp, M_VMPGDATA);
+		//free((caddr_t)pager, M_VMPAGER);
+		mfree((caddr_t)swp);          /* 2.11BSD Malloc */
+		mfree((caddr_t)pager);          /* 2.11BSD Malloc */
 #ifdef DEBUG
 		if (swpagerdebug & SDB_FAIL)
 			printf("swpg_alloc: sw_blocks malloc failed\n");
@@ -396,14 +404,19 @@ swap_pager_dealloc(pager)
 				printf("swpg_dealloc: blk %x\n",
 				       bp->swb_block);
 #endif
-			rmfree(swapmap, swp->sw_bsize, bp->swb_block);
+			//rmfree(swapmap, swp->sw_bsize, bp->swb_block);
+			mfree(swapmap);          /* 2.11BSD Malloc */
 		}
 	/*
 	 * Free swap management resources
 	 */
-	free((caddr_t)swp->sw_blocks, M_VMPGDATA);
-	free((caddr_t)swp, M_VMPGDATA);
-	free((caddr_t)pager, M_VMPAGER);
+	//free((caddr_t)swp->sw_blocks, M_VMPGDATA);
+	//free((caddr_t)swp, M_VMPGDATA);
+	//free((caddr_t)pager, M_VMPAGER);
+
+	mfree((caddr_t)swp->sw_blocks);	/* 2.11BSD Malloc */
+	mfree((caddr_t)swp);	/* 2.11BSD Malloc */
+	mfree((caddr_t)pager);	/* 2.11BSD Malloc */
 }
 
 static int
@@ -620,7 +633,8 @@ swap_pager_io(swp, mlist, npages, flags)
 	 * Allocate a swap block if necessary.
 	 */
 	if (swb->swb_block == 0) {
-		swb->swb_block = rmalloc(swapmap, swp->sw_bsize);
+		//swb->swb_block = rmalloc(swapmap, swp->sw_bsize);
+		swb->swb_block = malloc(swapmap, swp->sw_bsize); /* 2.11BSD Malloc */
 		if (swb->swb_block == 0) {
 #ifdef DEBUG
 			if (swpagerdebug & SDB_FAIL)

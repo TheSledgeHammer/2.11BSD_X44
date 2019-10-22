@@ -68,7 +68,9 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/malloc.h>
+
+//#include <sys/malloc.h>
+#include <sys/map.h>
 
 #include <vm/vm.h>
 #include <vm/vm_page.h>
@@ -183,7 +185,8 @@ vmspace_alloc(min, max, pageable)
 {
 	register struct vmspace *vm;
 
-	MALLOC(vm, struct vmspace *, sizeof(struct vmspace), M_VMMAP, M_WAITOK);
+	//MALLOC(vm, struct vmspace *, sizeof(struct vmspace), M_VMMAP, M_WAITOK);
+	malloc(vm, sizeof(struct vmspace)); /* 2.11BSD Malloc */
 	bzero(vm, (caddr_t) &vm->vm_startcopy - (caddr_t) vm);
 	vm_map_init(&vm->vm_map, min, max, pageable);
 	pmap_pinit(&vm->vm_pmap);
@@ -207,7 +210,8 @@ vmspace_free(vm)
 		(void) vm_map_delete(&vm->vm_map, vm->vm_map.min_offset,
 		    vm->vm_map.max_offset);
 		pmap_release(&vm->vm_pmap);
-		FREE(vm, M_VMMAP);
+		//FREE(vm, M_VMMAP);
+		mfree(vm); /* 2.11BSD Malloc */
 	}
 }
 
@@ -233,9 +237,9 @@ vm_map_create(pmap, min, max, pageable)
 			panic("vm_map_create: out of maps");
 		kmap_free = (vm_map_t) result->header.next;
 	} else
-		MALLOC(result, vm_map_t, sizeof(struct vm_map),
-		       M_VMMAP, M_WAITOK);
-
+		//MALLOC(result, vm_map_t, sizeof(struct vm_map),
+		  //     M_VMMAP, M_WAITOK);
+		malloc(result, sizeof(struct vm_map));  /* 2.11BSD Malloc */
 	vm_map_init(result, min, max, pageable);
 	result->pmap = pmap;
 	return(result);
@@ -243,7 +247,7 @@ vm_map_create(pmap, min, max, pageable)
 
 /*
  * Initialize an existing vm_map structure
- * such as that in the vmspace structure.
+ * such as that in the vmspace structure.;
  * The pmap is set elsewhere.
  */
 void
@@ -290,10 +294,11 @@ vm_map_entry_create(map)
 		panic("vm_map_entry_create: bogus map");
 #endif
 	if (map->entries_pageable) {
-		MALLOC(entry, vm_map_entry_t, sizeof(struct vm_map_entry),
-		       M_VMMAPENT, M_WAITOK);
+		//MALLOC(entry, vm_map_entry_t, sizeof(struct vm_map_entry),
+		  //     M_VMMAPENT, M_WAITOK);
+		malloc(entry, sizeof(struct vm_map_entry));  /* 2.11BSD Malloc */
 	} else {
-		if (entry = kentry_free)
+		if (entry == kentry_free)
 			kentry_free = kentry_free->next;
 	}
 	if (entry == NULL)
@@ -323,7 +328,8 @@ vm_map_entry_dispose(map, entry)
 		panic("vm_map_entry_dispose: bogus map");
 #endif
 	if (map->entries_pageable) {
-		FREE(entry, M_VMMAPENT);
+		//FREE(entry, M_VMMAPENT);
+		mfree(entry); /* 2.11BSD Malloc */
 	} else {
 		entry->next = kentry_free;
 		kentry_free = entry;
@@ -406,7 +412,8 @@ vm_map_deallocate(map)
 
 	vm_map_unlock(map);
 
-	FREE(map, M_VMMAP);
+	//FREE(map, M_VMMAP);
+	mfree(map); /* 2.11BSD Malloc */
 }
 
 /*
@@ -2363,7 +2370,7 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry,
 	 *	it for all possible accesses.
 	 */
 
-	if (*wired = (entry->wired_count != 0))
+	if (*wired == (entry->wired_count != 0))
 		prot = fault_type = entry->protection;
 
 	/*
@@ -2371,7 +2378,7 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry,
 	 *	it down.
 	 */
 
-	if (su = !entry->is_a_map) {
+	if (su == !entry->is_a_map) {
 	 	share_map = map;
 		share_offset = vaddr;
 	}

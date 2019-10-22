@@ -81,6 +81,8 @@ loadav(avg)
 		case SSLEEP:
 			if (p->p_priority > PZERO || p->p_slptime != 0)
 				continue;
+
+			break;
 			/* fall through */
 		case SRUN:
 		case SIDL:

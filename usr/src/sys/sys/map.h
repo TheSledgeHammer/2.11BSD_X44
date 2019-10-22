@@ -38,16 +38,16 @@ struct mapent {
 };
 
 #ifdef KERNEL
-extern struct map coremap[];																/* space for core allocation */
-extern struct map swapmap[];																/* space for swap allocation */
+extern struct map coremap[];																	/* space for core allocation */
+extern struct map swapmap[];																	/* space for swap allocation */
 
-size_t malloc (struct map *mp, size_t nbytes); 												/* Allocate units from the given map. */
-void mfree (struct map *mp, size_t nbytes, size_t addr); 									/* Free the previously allocated units at addr into the specified map.*/
-size_t malloc3 (struct map *mp, size_t d_size, size_t s_size, size_t u_size, size_t a[3]);	/* Allocate resources for the three segments of a process.*/
-#else
-extern struct map coremap[];	/* space for core allocation */
-extern struct map swapmap[];	/* space for swap allocation */
-size_t malloc (struct map *mp, size_t nbytes);
-void mfree (struct map *mp, size_t nbytes, size_t addr);
-size_t malloc3 (struct map *mp, size_t d_size, size_t s_size, size_t u_size, size_t a[3]);
+int	nswapmap;
+
+size_t 	malloc (struct map *mp, size_t nbytes); 												/* Allocate units from the given map. */
+void 	mfree (struct map *mp, size_t nbytes, size_t addr); 									/* Free the previously allocated units at addr into the specified map.*/
+size_t 	malloc3 (struct map *mp, size_t d_size, size_t s_size, size_t u_size, size_t a[3]);		/* Allocate resources for the three segments of a process.*/
+
+size_t	malloc	__P((struct map *mp, size_t nbytes));
+void 	mfree __P((struct map *mp, size_t nbytes, size_t addr));
+size_t 	malloc3 __P((struct map *mp, size_t d_size, size_t s_size, size_t u_size, size_t a[3]));
 #endif

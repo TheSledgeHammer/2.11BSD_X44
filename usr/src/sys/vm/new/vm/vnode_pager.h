@@ -45,9 +45,9 @@
  * VNODE pager private data.
  */
 struct vnpager {
-	int		vnp_flags;	/* flags */
+	int				vnp_flags;	/* flags */
 	struct vnode	*vnp_vp;	/* vnode */
-	vm_size_t	vnp_size;	/* vnode current size */
+	vm_size_t		vnp_size;	/* vnode current size */
 };
 typedef struct vnpager	*vn_pager_t;
 

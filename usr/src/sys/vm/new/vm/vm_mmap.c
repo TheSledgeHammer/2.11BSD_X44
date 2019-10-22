@@ -49,7 +49,7 @@
 #include <sys/filedesc.h>
 #include <sys/resourcevar.h>
 #include <sys/proc.h>
-#include <sys/vnode.h>
+#include <vfs/vnode.h>
 #include <sys/file.h>
 #include <sys/mman.h>
 #include <sys/conf.h>

@@ -37,18 +37,10 @@
  * base address (prev, next).  When a new arena is allocated, we attempt
  * to merge it with its two neighbors via p->merge.
  */
-
-/*
-Refer to:
- plan9/sys/src/9/port/alloc.c
- plan9/sys/src/libc/port/malloc.c 
- plan9/sys/src/9/port/ucalloc.c 
-*/
-
-#include <pool.h>
 #include <sys/types.h>
 #include <sys/proc.h>
 #include <sys/param.h>
+#include <pool.h>
 
 typedef struct Alloc	Alloc;
 typedef struct Arena	Arena;
@@ -66,9 +58,8 @@ enum {
 	DEAD_MAGIC = 0xdeaddead,
 };
 
-long size;
 
-#define B2NB(b) ((Bhdr*)((char*)(b)+(b)->size))
+#define B2NB(b) (Bhdr*)(char*)(b)+(b)
 
 #define SHORT(x) (((x)[0] << 8) | (x)[1])
 #define PSHORT(p, x) \
@@ -92,11 +83,13 @@ struct Btail {
 #define T2HDR(t) ((Bhdr*)((unsigned long*)(t)+sizeof(Btail)-(t)->size))
 
 struct Free {
-	Bhdr;
+	Bhdr* 	Bhdr;
 	Free*	left;
 	Free*	right;
 	Free*	next;
 	Free*	prev;
+	unsigned long	size; /* same as Bhdr->size */
+	unsigned long	magic;
 };
 
 enum {
@@ -108,7 +101,9 @@ enum {
  * between Bhdr and Allocblk, and between Kempt and Unkempt.
  */
 struct Alloc {
-			Bhdr;
+		Bhdr 			Bhdr;
+		unsigned long	magic;
+		unsigned long	size; /* same as Bhdr->size */
 };
 
 enum {
@@ -117,11 +112,12 @@ enum {
 };
 
 struct Arena {
-	Bhdr;
+	Bhdr 			Bhdr;
 	Arena*	        aup;
 	Arena*	        down;
 	unsigned long	asize;
 	unsigned long	pad;	/* to a multiple of 8 bytes */
+	unsigned long	magic;
 };
 
 enum {
@@ -161,7 +157,7 @@ static unsigned long	dsize2bsize(Pool*, unsigned long);
 static unsigned long	getdsize(Alloc*);
 static Alloc*	    	trim(Pool*, Alloc*, unsigned long);
 static Free*	    	listadd(Free*, Free*);
-static void		    	logstack(Pool*);
+static void		    	logstack(Pool*); 								/* unused */
 static Free**	    	ltreewalk(Free**, unsigned long);
 static void		    	memmark(void*, int, unsigned long);
 static Free*	    	pooladd(Pool*, Alloc*);
@@ -230,6 +226,7 @@ checklist(Free *t)
 static void
 checktree(Free *t, int a, int b)
 {
+
 	assert(t->magic==FREE_MAGIC);
 	assert(a < t->size && t->size < b);
 	assert(t->next==NULL || t->next->prev==t);
@@ -261,10 +258,11 @@ ltreewalk(Free **t, unsigned long size)
 		else
 			t = &(*t)->right;
 	}
+	return t;
 }
 
 /* treelookup: find node in tree with size == size */
-static Free*
+Free*
 treelookup(Free *t, unsigned long size)
 {
 	return *ltreewalk(&t, size);
@@ -339,6 +337,7 @@ treelookupgt(Free *t, unsigned long size)
 		} else
 			t = t->right;
 	}
+	return t;
 }
 
 /* 
@@ -542,7 +541,7 @@ blocksetdsize(Pool *p, Alloc *b, unsigned char dsize)
 	if(eq > q+4)
 		eq = q+4;
 	for(; q<eq; q++)
-		*q = datamagic[((unsigned char)(uintptr)q)%nelem(datamagic)];
+		*q = datamagic[((unsigned char)(u_long)q)%nelem(datamagic)];
 
 	return b;
 }
@@ -635,6 +634,7 @@ poolnewarena(Pool *p, unsigned char asize)
 	p->cursize += asize;
 
 	/* arena hdr */
+
 	a->magic = ARENA_MAGIC;
 	blocksetsize(a, sizeof(Arena));
 	arenasetsize(a, asize);
@@ -850,7 +850,7 @@ blockcheck(Pool *p, Bhdr *b)
 		if(eq > bq+4)
 			eq = bq+4;
 		for(q=bq; q<eq; q++){
-			if(*q != datamagic[((uintptr)q)%nelem(datamagic)]){
+			if(*q != datamagic[((u_long)q)%nelem(datamagic)]){
 				if(q == bq && *q == 0 && (p->flags & POOL_TOLERANCE)){
 					printblock(p, b, "mem user overflow");
 					continue;
@@ -978,8 +978,8 @@ D2B(Pool *p, void *v)
 	Alloc *a;
 	unsigned char *u;
 
-	if((uintptr)v&(sizeof(unsigned char)-1))
-		v = (char*)v - ((uintptr)v&(sizeof(unsigned char)-1));
+	if((u_long)v&(sizeof(unsigned char)-1))
+		v = (char*)v - ((u_long)v&(sizeof(unsigned char)-1));
 	u = v;
 	while(u[-1] == ALIGN_MAGIC)
 		u--;
@@ -1110,7 +1110,7 @@ alignptr(void *v, unsigned long align, long offset)
 
 	c = v;
 	if(align){
-		off = (uintptr)c%align;
+		off = (u_long)c%align;
 		if(off != offset){
 			c += offset - off;
 			if(off > offset)
@@ -1155,7 +1155,7 @@ poolallocalignl(Pool *p, unsigned long dsize, unsigned long align, long offset, 
 	v = poolallocl(p, asize);
 	if(v == NULL)
 		return NULL;
-	if(span && (uintptr)v/span != ((uintptr)v+asize)/span){
+	if(span && (u_long)v/span != ((u_long)v+asize)/span){
 		/* try again */
 		poolfreel(p, v);
 		v = poolallocl(p, 2*asize);
@@ -1167,10 +1167,10 @@ poolallocalignl(Pool *p, unsigned long dsize, unsigned long align, long offset, 
 	 * figure out what pointer we want to return
 	 */
 	c = alignptr(v, align, offset);
-	if(span && (uintptr)c/span != (uintptr)(c+dsize-1)/span){
-		c += span - (uintptr)c%span;
+	if(span && (u_long)c/span != (u_long)(c+dsize-1)/span){
+		c += span - (u_long)c%span;
 		c = alignptr(c, align, offset);
-		if((uintptr)c/span != (uintptr)(c+dsize-1)/span){
+		if((u_long)c/span != (u_long)(c+dsize-1)/span){
 			poolfreel(p, v);
 			werrstr("cannot satisfy dsize %lud span %lud with align %lud+%ld", dsize, span, align, offset);
 			return NULL;
@@ -1480,7 +1480,7 @@ memmark(void *v, int sig, unsigned long size)
 	lp = v;
 	elp = lp+size/4;
 	while(lp < elp)
-		*lp++ = (sig<<24) ^ ((uintptr)lp-(uintptr)v);
+		*lp++ = (sig<<24) ^ ((u_long)lp-(u_long)v);
 	p = (unsigned char*)lp;
 	ep = (unsigned char*)v+size;
 	while(p<ep)

@@ -1,11 +1,9 @@
 /*
- * Copyright (c) 1990 University of Utah.
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * the Systems Programming Group of the University of Utah Computer
- * Science Department.
+ * Scooter Morris at Genentech Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,19 +33,54 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)device_pager.h	8.3 (Berkeley) 12/13/93
+ *	@(#)lockf.h	8.1 (Berkeley) 6/11/93
+ * $Id: lockf.h,v 1.1 1994/08/08 17:30:58 davidg Exp $
  */
 
-#ifndef	_DEVICE_PAGER_
-#define	_DEVICE_PAGER_	1
+#ifndef _SYS_LOCKF_H_
+#define _SYS_LOCKF_H_
 
 /*
- * Device pager private data.
+ * The lockf structure is a kernel structure which contains the information
+ * associated with a byte range lock.  The lockf structures are linked into
+ * the inode structure. Locks are sorted by the starting byte of the lock for
+ * efficiency.
  */
-struct devpager {
-	struct pglist	devp_pglist;	/* list of pages allocated */
-	vm_object_t		devp_object;	/* object representing this device */
+struct lockf {
+	short	lf_flags;	 /* Lock semantics: F_POSIX, F_FLOCK, F_WAIT */
+	short	lf_type;	 /* Lock type: F_RDLCK, F_WRLCK */
+	off_t	lf_start;	 /* The byte # of the start of the lock */
+	off_t	lf_end;		 /* The byte # of the end of the lock (-1=EOF)*/
+	caddr_t	lf_id;		 /* The id of the resource holding the lock */
+	struct	lockf **lf_head; /* Back pointer to the head of the lockf list */
+	struct	lockf *lf_next;	 /* A pointer to the next lock on this inode */
+	struct	lockf *lf_block; /* The list of blocked locks */
 };
-typedef struct devpager	*dev_pager_t;
 
-#endif	/* _DEVICE_PAGER_ */
+/* Maximum length of sleep chains to traverse to try and detect deadlock. */
+#define MAXDEPTH 50
+
+__BEGIN_DECLS
+int	 lf_advlock __P((struct vop_advlock_args *, struct lockf **, u_quad_t));
+void	 lf_addblock __P((struct lockf *, struct lockf *));
+int	 lf_clearlock __P((struct lockf *));
+int	 lf_findoverlap __P((struct lockf *,
+	    struct lockf *, int, struct lockf ***, struct lockf **));
+struct lockf *
+	 lf_getblock __P((struct lockf *));
+int	 lf_getlock __P((struct lockf *, struct flock *));
+int	 lf_setlock __P((struct lockf *));
+void	 lf_split __P((struct lockf *, struct lockf *));
+void	 lf_wakelock __P((struct lockf *));
+__END_DECLS
+
+#ifdef LOCKF_DEBUG
+extern int lockf_debug;
+
+__BEGIN_DECLS
+void	lf_print __P((char *, struct lockf *));
+void	lf_printlist __P((char *, struct lockf *));
+__END_DECLS
+#endif
+
+#endif

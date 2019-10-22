@@ -46,7 +46,9 @@
 #include <sys/systm.h>
 #include <sys/conf.h>
 #include <sys/mman.h>
-#include <sys/malloc.h>
+
+#include <sys/map.h>
+//#include <sys/malloc.h>
 
 #include <vm/vm.h>
 #include <vm/vm_kern.h>
@@ -158,12 +160,15 @@ top:
 		/*
 		 * Allocate and initialize pager structs
 		 */
-		pager = (vm_pager_t)malloc(sizeof *pager, M_VMPAGER, M_WAITOK);
+		pager = (vm_pager_t)malloc(pager, sizeof *pager); /* 2.11BSD Malloc */
+		//pager = (vm_pager_t)malloc(sizeof *pager, M_VMPAGER, M_WAITOK);
 		if (pager == NULL)
 			return(NULL);
-		devp = (dev_pager_t)malloc(sizeof *devp, M_VMPGDATA, M_WAITOK);
+		//devp = (dev_pager_t)malloc(sizeof *devp, M_VMPGDATA, M_WAITOK);
+		devp = (dev_pager_t)malloc(devp, sizeof *devp); /* 2.11BSD Malloc */
 		if (devp == NULL) {
-			free((caddr_t)pager, M_VMPAGER);
+			//free((caddr_t)pager, M_VMPAGER);
+			mfree((caddr_t)pager);  					/* 2.11BSD Malloc */
 			return(NULL);
 		}
 		pager->pg_handle = handle;
@@ -185,8 +190,10 @@ top:
 		 * we free everything and start over.
 		 */
 		if (vm_pager_lookup(&dev_pager_list, handle)) {
-			free((caddr_t)devp, M_VMPGDATA);
-			free((caddr_t)pager, M_VMPAGER);
+			//free((caddr_t)devp, M_VMPGDATA);
+			//free((caddr_t)pager, M_VMPAGER);
+			mfree((caddr_t)devp);  						/* 2.11BSD Malloc */
+			mfree((caddr_t)pager);  					/* 2.11BSD Malloc */
 			goto top;
 		}
 		TAILQ_INSERT_TAIL(&dev_pager_list, pager, pg_list);
@@ -243,8 +250,10 @@ dev_pager_dealloc(pager)
 		TAILQ_REMOVE(&devp->devp_pglist, m, pageq);
 		dev_pager_putfake(m);
 	}
-	free((caddr_t)devp, M_VMPGDATA);
-	free((caddr_t)pager, M_VMPAGER);
+	//free((caddr_t)devp, M_VMPGDATA);
+	//free((caddr_t)pager, M_VMPAGER);
+	mfree((caddr_t)devp);  						/* 2.11BSD Malloc */
+	mfree((caddr_t)pager);  					/* 2.11BSD Malloc */
 }
 
 static int
@@ -342,7 +351,8 @@ dev_pager_getfake(paddr)
 	int i;
 
 	if (dev_pager_fakelist.tqh_first == NULL) {
-		m = (vm_page_t)malloc(PAGE_SIZE, M_VMPGDATA, M_WAITOK);
+		//m = (vm_page_t)malloc(PAGE_SIZE, M_VMPGDATA, M_WAITOK);
+		m = (vm_page_t)malloc(m, PAGE_SIZE);					/* 2.11BSD Malloc */
 		for (i = PAGE_SIZE / sizeof(*m); i > 0; i--) {
 			TAILQ_INSERT_TAIL(&dev_pager_fakelist, m, pageq);
 			m++;

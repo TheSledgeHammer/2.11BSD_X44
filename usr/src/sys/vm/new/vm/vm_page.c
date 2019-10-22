@@ -79,14 +79,14 @@
  *	page structure.
  */
 
-struct pglist	*vm_page_buckets;		/* Array of buckets */
-int		vm_page_bucket_count = 0;	/* How big is array? */
-int		vm_page_hash_mask;		/* Mask for hash function */
-simple_lock_data_t	bucket_lock;		/* lock for all buckets XXX */
+struct pglist		*vm_page_buckets;			/* Array of buckets */
+int					vm_page_bucket_count = 0;	/* How big is array? */
+int					vm_page_hash_mask;			/* Mask for hash function */
+simple_lock_data_t	bucket_lock;				/* lock for all buckets XXX */
 
-struct pglist	vm_page_queue_free;
-struct pglist	vm_page_queue_active;
-struct pglist	vm_page_queue_inactive;
+struct pglist		vm_page_queue_free;
+struct pglist		vm_page_queue_active;
+struct pglist		vm_page_queue_inactive;
 simple_lock_data_t	vm_page_queue_lock;
 simple_lock_data_t	vm_page_queue_free_lock;
 
@@ -99,7 +99,7 @@ long		last_page;
 vm_offset_t	first_phys_addr;
 vm_offset_t	last_phys_addr;
 vm_size_t	page_mask;
-int		page_shift;
+int			page_shift;
 
 /*
  *	vm_set_page_size:

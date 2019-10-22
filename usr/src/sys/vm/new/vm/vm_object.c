@@ -68,7 +68,8 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/malloc.h>
+//#include <sys/malloc.h>
+#include <sys/map.h>
 
 #include <vm/vm.h>
 #include <vm/vm_page.h>
@@ -151,8 +152,8 @@ vm_object_allocate(size)
 {
 	register vm_object_t	result;
 
-	result = (vm_object_t)
-		malloc((u_long)sizeof *result, M_VMOBJ, M_WAITOK);
+	//result = (vm_object_t)malloc((u_long)sizeof *result, M_VMOBJ, M_WAITOK);
+	result = (vm_object_t)malloc(result, sizeof *result); /* 2.11BSD Malloc */
 
 	_vm_object_allocate(size, result);
 
@@ -354,7 +355,8 @@ vm_object_terminate(object)
 	/*
 	 * Free the space for the object.
 	 */
-	free((caddr_t)object, M_VMOBJ);
+	//free((caddr_t)object, M_VMOBJ);
+	mfree((caddr_t)object); /* 2.11BSD Malloc */
 }
 
 /*
@@ -423,7 +425,7 @@ again:
 	 * Loop through the object page list cleaning as necessary.
 	 */
 	for (p = object->memq.tqh_first; p != NULL; p = p->listq.tqe_next) {
-		if ((start == end || p->offset >= start && p->offset < end) &&
+		if ((start == end || (p->offset >= start && p->offset < end)) &&
 		    !(p->flags & PG_FICTITIOUS)) {
 			if ((p->flags & PG_CLEAN) &&
 			    pmap_is_modified(VM_PAGE_TO_PHYS(p)))
@@ -934,8 +936,8 @@ vm_object_enter(object, pager)
 		return;
 
 	bucket = &vm_object_hashtable[vm_object_hash(pager)];
-	entry = (vm_object_hash_entry_t)
-		malloc((u_long)sizeof *entry, M_VMOBJHASH, M_WAITOK);
+	//entry = (vm_object_hash_entry_t)malloc((u_long)sizeof *entry, M_VMOBJHASH, M_WAITOK);
+	entry = (vm_object_hash_entry_t)malloc(entry, sizeof *entry);/* 2.11BSD Malloc */
 	entry->object = object;
 	object->flags |= OBJ_CANPERSIST;
 
@@ -968,7 +970,8 @@ vm_object_remove(pager)
 		object = entry->object;
 		if (object->pager == pager) {
 			TAILQ_REMOVE(bucket, entry, hash_links);
-			free((caddr_t)entry, M_VMOBJHASH);
+			//free((caddr_t)entry, M_VMOBJHASH);
+			free((caddr_t)entry); /* 2.11BSD Malloc */
 			break;
 		}
 	}
@@ -1187,8 +1190,8 @@ vm_object_collapse(object)
 			vm_object_count--;
 			simple_unlock(&vm_object_list_lock);
 
-			free((caddr_t)backing_object, M_VMOBJ);
-
+			//free((caddr_t)backing_object, M_VMOBJ);
+			mfree((caddr_t)backing_object);          /* 2.11BSD Malloc */
 			object_collapses++;
 		}
 		else {

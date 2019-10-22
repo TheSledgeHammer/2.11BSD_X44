@@ -49,7 +49,6 @@
 #include <sys/file.h>
 #include <sys/inode.h>
 #include <sys/ioctl.h>
-#include <sys/text.h>
 #include <sys/tty.h>
 #include <vm/vm.h>
 #include <sys/map.h>
@@ -233,7 +232,7 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		if ((error = sysctl_int(oldp, oldlenp, newp, newlen, &level)) ||
 		    newp == NULL)
 			return (error);
-		if (level < securelevel && u.u_procp->p_pid != 1)
+		if (level < securelevel && u->u_procp->p_pid != 1)
 			return (EPERM);
 		securelevel = level;
 		return (0);

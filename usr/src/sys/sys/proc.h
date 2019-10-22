@@ -14,8 +14,6 @@
 #include <sys/select.h>			/* For struct selinfo. */
 #include <sys/time.h>			/* For structs itimerval, timeval. */
 
-#include "../test/edf.h"		/* For Earliest Deadline First */
-
 /*
  * One structure allocated per active
  * process. It contains all data needed
@@ -34,11 +32,19 @@ struct	proc {
 	short	p_ppid;			/* process id of parent */
 	long	p_sig;			/* signals pending to this process */
 	char	p_stat;
-	char	p_dummy;		/* room for one more, here */
+	char	p_dummy;			/* room for one more, here */
+
+	/* Borrowed from 4.4BSD-lite2 proc.h. */
+	struct	pcred 	*p_cred;	/* Process owner's identity. */
+	struct	filedesc *p_fd;		/* Ptr to open files structure. */
+	struct	pstats 	*p_stats;	/* Accounting/statistics (PROC ONLY). */
+	struct	plimit 	*p_limit;	/* Process limits. */
+	struct	vmspace *p_vmspace;	/* Address space. */
+
+#define	p_ucred		p_cred->pc_ucred
+#define	p_rlimit	p_limit->pl_rlimit
 
 	struct 	sysentvec *p_sysent; /* System call dispatch information. */
-
-	struct Edf	*edf;		/*pointer to edf scheduler */
 
 	/*
 	 * Union to overwrite information no longer needed by ZOMBIED

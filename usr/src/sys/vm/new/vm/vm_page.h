@@ -97,18 +97,17 @@
 TAILQ_HEAD(pglist, vm_page);
 
 struct vm_page {
-	TAILQ_ENTRY(vm_page)	pageq;		/* queue info for FIFO
-						 * queue or free list (P) */
+	TAILQ_ENTRY(vm_page)	pageq;		/* queue info for FIFO* queue or free list (P) */
 	TAILQ_ENTRY(vm_page)	hashq;		/* hash table links (O)*/
 	TAILQ_ENTRY(vm_page)	listq;		/* pages in same object (O)*/
 
-	vm_object_t		object;		/* which object am I in (O,P)*/
-	vm_offset_t		offset;		/* offset into object (O,P) */
+	vm_object_t				object;		/* which object am I in (O,P)*/
+	vm_offset_t				offset;		/* offset into object (O,P) */
 
-	u_short			wire_count;	/* wired down maps refs (P) */
-	u_short			flags;		/* see below */
+	u_short					wire_count;	/* wired down maps refs (P) */
+	u_short					flags;		/* see below */
 
-	vm_offset_t		phys_addr;	/* physical address of page */
+	vm_offset_t				phys_addr;	/* physical address of page */
 };
 
 /*
@@ -162,25 +161,25 @@ struct vm_page {
  */
 
 extern
-struct pglist	vm_page_queue_free;	/* memory free queue */
+struct pglist	vm_page_queue_free;		/* memory free queue */
 extern
 struct pglist	vm_page_queue_active;	/* active memory queue */
 extern
 struct pglist	vm_page_queue_inactive;	/* inactive memory queue */
 
 extern
-vm_page_t	vm_page_array;		/* First resident page in table */
+vm_page_t	vm_page_array;				/* First resident page in table */
 extern
-long		first_page;		/* first physical page number */
-					/* ... represented in vm_page_array */
+long		first_page;					/* first physical page number */
+										/* ... represented in vm_page_array */
 extern
-long		last_page;		/* last physical page number */
-					/* ... represented in vm_page_array */
-					/* [INCLUSIVE] */
+long		last_page;					/* last physical page number */
+										/* ... represented in vm_page_array */
+										/* [INCLUSIVE] */
 extern
-vm_offset_t	first_phys_addr;	/* physical address for first_page */
+vm_offset_t	first_phys_addr;			/* physical address for first_page */
 extern
-vm_offset_t	last_phys_addr;		/* physical address for last_page */
+vm_offset_t	last_phys_addr;				/* physical address for last_page */
 
 #define VM_PAGE_TO_PHYS(entry)	((entry)->phys_addr)
 

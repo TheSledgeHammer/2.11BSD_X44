@@ -11,7 +11,6 @@
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/inode.h>
-#include <sys/text.h>
 #include <vm/vm.h>
 #include <sys/ptrace.h>
 
@@ -123,19 +122,21 @@ procxmt()
 		/*
 		 * If text, must assure exclusive use
 		 */
+		/*
 		if (xp == u->u_procp->p_textp) {
 			if (xp->x_count!=1 || (xp->x_iptr->i_mode&ISVTX))
 				goto error;
 			xp->x_flag |= XTRC;
-		}
+		}*/
 		estabur(u->u_tsize, u->u_dsize, u->u_ssize, u->u_sep, RW);
 		i = suiword((caddr_t)ipc.ip_addr, 0);
 		suiword((caddr_t)ipc.ip_addr, ipc.ip_data);
 		estabur(u->u_tsize, u->u_dsize, u->u_ssize, u->u_sep, RO);
 		if (i<0)
 			goto error;
-		if (xp)
-			xp->x_flag |= XWRIT;
+
+		/*if (xp)
+			xp->x_flag |= XWRIT;*/
 		break;
 
 	/* write user D */

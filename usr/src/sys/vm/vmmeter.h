@@ -11,23 +11,28 @@
  */
 struct vmrate
 {
+	/*
+	 * General system activity.
+	 */
 #define	v_first	v_swtch
-	u_short	v_swtch;	/* context switches */
-	u_short	v_trap;		/* calls to trap */
-	u_short	v_syscall;	/* calls to syscall() */
-	u_short	v_intr;		/* device interrupts */
-	u_short	v_soft;		/* software interrupts */
-	u_short	v_pdma;		/* pseudo-dma interrupts */
-	u_short	v_ovly;		/* overlay emts */
-	u_short	v_fpsim;	/* floating point simulator faults */
-	u_short	v_pswpin;	/* pages swapped in */
-	u_short	v_pswpout;	/* pages swapped out */
-	u_short	v_pgin;		/* pageins */
-	u_short	v_pgout;	/* pageouts */
+	u_int 	v_swtch;	/* context switches */
+	u_int 	v_trap;		/* calls to trap */
+	u_int 	v_syscall;	/* calls to syscall() */
+	u_int 	v_intr;		/* device interrupts */
+	u_int 	v_soft;		/* software interrupts */
+	u_int 	v_faults;	/* total faults taken */
+	u_int 	v_pdma;		/* pseudo-dma interrupts */
+	u_int 	v_ovly;		/* overlay emts */
+	u_int 	v_fpsim;	/* floating point simulator faults */
+	u_int 	v_pswpin;	/* pages swapped in */
+	u_int 	v_pswpout;	/* pages swapped out */
+	u_int 	v_pgin;		/* pageins */
+	u_int 	v_pgout;	/* pageouts */
 #define	v_last	v_pswpout
-	u_short	v_swpin;	/* swapins */
-	u_short	v_swpout;	/* swapouts */
+	u_int 	v_swpin;	/* swapins */
+	u_int 	v_swpout;	/* swapouts */
 };
+
 struct vmsum
 {
 	long	v_swtch;	/* context switches */
@@ -65,7 +70,7 @@ struct vmtotal
 	long	t_avmtxt;	/* active virtual memory used by text, clicks */
 	size_t	t_rmtxt;	/* real memory used by text, clicks */
 	size_t	t_armtxt;	/* active real memory used by text, clicks */
-	size_t	t_free;		/* free memory, kb */
+	size_t	t_free;		/* free memory pages, kb */
 };
 #ifdef KERNEL)
 struct	vmtotal total;
