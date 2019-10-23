@@ -5,32 +5,39 @@
  *
  *	@(#)dk.h	7.1 (Berkeley) 6/4/86
  */
+#ifndef _SYS_DKSTAT_H_
+#define _SYS_DKSTAT_H_ 1
 
 /*
  * Instrumentation
  */
-#define	CPUSTATES	4
+#define	CPUSTATES	5
 
 #define	CP_USER		0
 #define	CP_NICE		1
 #define	CP_SYS		2
-#define	CP_IDLE		3
+#define	CP_INTR		3
+#define	CP_IDLE		4
 
 #define	DK_NDRIVE	10
+#define DK_NAMELEN	8
 
-#if defined(KERNEL) && defined(UCB_METER) && !defined(SUPERVISOR)
-long	cp_time[CPUSTATES];	/* number of ticks spent in each cpu state */
-int	dk_ndrive;		/* number of drives being monitored */
-int	dk_busy;		/* bit array of drive busy flags */
-long	dk_time[DK_NDRIVE];	/* ticks spent with drive busy */
-long	dk_seek[DK_NDRIVE];	/* number of seeks */
-long	dk_xfer[DK_NDRIVE];	/* number of transfers */
-long	dk_wds[DK_NDRIVE];	/* number of clicks transfered */
-long	dk_wps[DK_NDRIVE];	/* words per second */
-char	*dk_name[DK_NDRIVE];	/* names of monitored drives */
-int	dk_unit[DK_NDRIVE];	/* unit numbers of monitored drives */
-int	dk_n;			/* number of dk numbers assigned so far */
+#ifdef KERNEL
+extern long	cp_time[CPUSTATES];		/* number of ticks spent in each cpu state */
+extern int	dk_ndrive;				/* number of drives being monitored */
+extern int	dk_busy;				/* bit array of drive busy flags */
+extern long	dk_time[DK_NDRIVE];		/* ticks spent with drive busy */
+extern long	dk_seek[DK_NDRIVE];		/* number of seeks */
+extern long	dk_xfer[DK_NDRIVE];		/* number of transfers */
+extern long	dk_wds[DK_NDRIVE];		/* number of clicks transfered */
+extern long	dk_wps[DK_NDRIVE];		/* words per second */
+extern char	dk_names[DK_NDRIVE][DK_NAMELEN];	/* name of drive */
+extern int	dk_unit[DK_NDRIVE];		/* unit numbers of monitored drives */
+extern int	dk_n;					/* number of dk numbers assigned so far */
 
-long	tk_nin;			/* number of tty characters input */
-long	tk_nout;		/* number of tty characters output */
+extern long	tk_nin;					/* number of tty characters input */
+extern long	tk_nout;				/* number of tty characters output */
+extern long tk_cancc;
+extern long tk_rawcc;
+
 #endif

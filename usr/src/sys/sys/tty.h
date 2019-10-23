@@ -19,7 +19,7 @@
  * The routines in tty_subr.c manipulate these structures.
  */
 struct clist {
-	int	c_cc;			/* character count */
+	int		c_cc;		/* character count */
 	char	*c_cf;		/* pointer to first char */
 	char	*c_cl;		/* pointer to last char */
 };
@@ -62,7 +62,7 @@ struct tty {
 	dev_t	t_dev;					/* device */
 	long	t_flags;				/* some of both */
 	long	t_state;				/* some of both */
-	short	t_pgrp;					/* tty */
+	//short	t_pgrp;					/* tty */
 	char	t_delct;				/* tty */
 	char	t_line;					/* glue */
 	char	t_col;					/* tty */
@@ -70,6 +70,10 @@ struct tty {
 	char	t_rocount, t_rocol;		/* tty */
 	struct	ttychars t_chars;		/* tty */
 	struct	winsize t_winsize;		/* window size */
+
+	struct	pgrp 	*t_pgrp;		/* Foreground process group. */
+	struct	session *t_session;	/* Enclosing session. */
+
 /* be careful of tchars & co. */
 #define	t_erase		t_chars.tc_erase
 #define	t_kill		t_chars.tc_kill
@@ -85,7 +89,18 @@ struct tty {
 #define	t_flushc	t_chars.tc_flushc
 #define	t_werasc	t_chars.tc_werasc
 #define	t_lnextc	t_chars.tc_lnextc
+
 };
+
+#define	t_cc		t_termios.c_cc
+#define	t_cflag		t_termios.c_cflag
+#define	t_iflag		t_termios.c_iflag
+#define	t_ispeed	t_termios.c_ispeed
+#define	t_lflag		t_termios.c_lflag
+#define	t_min		t_termios.c_min
+#define	t_oflag		t_termios.c_oflag
+#define	t_ospeed	t_termios.c_ospeed
+#define	t_time		t_termios.c_time
 
 #define	TTIPRI	28
 #define	TTOPRI	29

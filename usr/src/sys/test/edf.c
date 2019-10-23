@@ -242,6 +242,7 @@ releaseintr(Ureg*, time_t *t)
 			return;
 		}
 		p->state = Waitrelease;
+		break;
 		/* fall through */
 	case Waitrelease:
 		release(p);

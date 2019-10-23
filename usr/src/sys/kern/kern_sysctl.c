@@ -55,22 +55,14 @@
 #include <sys/sysctl.h>
 #include <sys/conf.h>
 
-#include <machine/cpu.h>
-
-//#include <machine/seg.h>
-
 sysctlfn kern_sysctl;
 sysctlfn hw_sysctl;
 #ifdef DEBUG
 sysctlfn debug_sysctl;
 #endif
-sysctlfn vm_sysctl;
-sysctlfn fs_sysctl;
-#ifdef	INET
-sysctlfn NET_SYSCTL;
-extern	int	net_sysctl();	/* In supervisor space */
-#endif
-sysctlfn cpu_sysctl;
+extern sysctlfn vm_sysctl;
+extern sysctlfn fs_sysctl;
+extern sysctlfn cpu_sysctl;
 
 /*
  * Locking and stats
@@ -82,7 +74,7 @@ static struct sysctl_lock {
 } memlock;
 
 struct sysctl_args {
-	int	*name;
+	int		*name;
 	u_int	namelen;
 	void	*old;
 	size_t	*oldlenp;
@@ -93,7 +85,8 @@ struct sysctl_args {
 int
 __sysctl()
 {
-	register struct sysctl_args *uap = (struct sysctl_args *)u.u_ap;
+	register struct sysctl_args *uap = (struct sysctl_args *)u->u_ap;
+	struct proc
 	int error;
 	u_int savelen, oldlen = 0;
 	sysctlfn *fn;
@@ -124,11 +117,11 @@ __sysctl()
 		fn = NET_SYSCTL;
 		break;
 #endif
-#ifdef notyet
+//#ifdef notyet
 	case CTL_FS:
 		fn = fs_sysctl;
 		break;
-#endif
+//#endif
 	case CTL_MACHDEP:
 		fn = cpu_sysctl;
 		break;
@@ -174,6 +167,14 @@ __sysctl()
 }
 
 /*
+ * Attributes stored in the kernel.
+ */
+char hostname[MAXHOSTNAMELEN];
+int hostnamelen;
+long hostid;
+int securelevel;
+
+/*
  * kernel related system variables.
  */
 int
@@ -188,8 +189,7 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	int error, level;
 	u_long longhostid;
 	char bsd[10];
-	extern int Acctthresh;		/* kern_acct.c */
-	extern char version[];
+	extern char ostype[], osrelease[], version[];
 
 	/* all sysctl names at this level are terminal */
 	if (namelen != 1 && !(name[0] == KERN_PROC || name[0] == KERN_PROF))
@@ -197,36 +197,21 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 
 	switch (name[0]) {
 	case KERN_OSTYPE:
+			return (sysctl_rdstring(oldp, oldlenp, newp, ostype));
 	case KERN_OSRELEASE:
-		/* code is cheaper than D space */
-		bsd[0]='2';bsd[1]='.';bsd[2]='1';bsd[3]='1';bsd[4]='B';
-		bsd[5]='S';bsd[6]='D';bsd[7]='\0';
-		return (sysctl_rdstring(oldp, oldlenp, newp, bsd));
-	case KERN_ACCTTHRESH:
-		level = Acctthresh;
-		error = sysctl_int(oldp, oldlenp, newp, newlen, &level);
-		if	(newp && !error)
-			{
- 			if	(level < 0 || level > 128)
-				error = EINVAL;
-			else
-				Acctthresh = level;
-			}
-		return(error);
+			return (sysctl_rdstring(oldp, oldlenp, newp, osrelease));
 	case KERN_OSREV:
-		return (sysctl_rdlong(oldp, oldlenp, newp, (long)BSD));
+		return (sysctl_rdlong(oldp, oldlenp, newp, BSD));
 	case KERN_VERSION:
 		return (sysctl_rdstring(oldp, oldlenp, newp, version));
 	case KERN_MAXINODES:
-		return(sysctl_rdint(oldp, oldlenp, newp, ninode));
+		return(sysctl_rdint(oldp, oldlenp, newp, &desiredinodes));
 	case KERN_MAXPROC:
-		return (sysctl_rdint(oldp, oldlenp, newp, nproc));
+		return (sysctl_rdint(oldp, oldlenp, newp, &maxproc));
 	case KERN_MAXFILES:
-		return (sysctl_rdint(oldp, oldlenp, newp, nfile));
-	case KERN_MAXTEXTS:
-		return (sysctl_rdint(oldp, oldlenp, newp, ntext));
+		return (sysctl_rdint(oldp, oldlenp, newp, &maxfiles));
 	case KERN_ARGMAX:
-		return (sysctl_rdint(oldp, oldlenp, newp, NCARGS));
+		return (sysctl_rdint(oldp, oldlenp, newp, ARG_MAX));
 	case KERN_SECURELVL:
 		level = securelevel;
 		if ((error = sysctl_int(oldp, oldlenp, newp, newlen, &level)) ||
@@ -266,10 +251,11 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		    newp, newlen));
 #endif
 	case KERN_NGROUPS:
-		return (sysctl_rdint(oldp, oldlenp, newp, NGROUPS));
+		return (sysctl_rdint(oldp, oldlenp, newp, NGROUPS_MAX));
 	case KERN_JOB_CONTROL:
 		return (sysctl_rdint(oldp, oldlenp, newp, 1));
 	case KERN_POSIX1:
+		return (sysctl_rdint(oldp, oldlenp, newp, _POSIX_VERSION));
 	case KERN_SAVED_IDS:
 		return (sysctl_rdint(oldp, oldlenp, newp, 0));
 	default:
@@ -290,8 +276,7 @@ hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	void *newp;
 	size_t newlen;
 {
-	char c[10];
-	char *cpu2str();
+	extern char machine[], cpu_model[];
 	extern	size_t physmem;			/* machdep2.c */
 
 	/* all sysctl names at this level are terminal */
@@ -300,41 +285,24 @@ hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 
 	switch (name[0]) {
 	case HW_MACHINE:
-		return (sysctl_rdstring(oldp, oldlenp, newp, "pdp11"));
+		return (sysctl_rdstring(oldp, oldlenp, newp, machine));
 	case HW_MODEL:
-		return (sysctl_rdstring(oldp, oldlenp, newp,
-				cpu2str(c,sizeof (c))));
+		return (sysctl_rdstring(oldp, oldlenp, newp, cpu_model));
 	case HW_NCPU:
 		return (sysctl_rdint(oldp, oldlenp, newp, 1));	/* XXX */
 	case HW_BYTEORDER:
-		return (sysctl_rdint(oldp, oldlenp, newp, ENDIAN));
+		return (sysctl_rdint(oldp, oldlenp, newp, BYTE_ORDER));
 	case HW_PHYSMEM:
-		return (sysctl_rdlong(oldp, oldlenp, newp,ctob((long)physmem)));
+		return (sysctl_rdlong(oldp, oldlenp, newp, ctob((long)physmem)));
 	case HW_USERMEM:
-		return (sysctl_rdlong(oldp, oldlenp, newp,ctob((long)freemem)));
+		return (sysctl_rdlong(oldp, oldlenp, newp, ctob((long)freemem)));
 	case HW_PAGESIZE:
-		return (sysctl_rdint(oldp, oldlenp, newp, NBPG*CLSIZE));
+		return (sysctl_rdint(oldp, oldlenp, newp, PAGE_SIZE));
 	default:
 		return (EOPNOTSUPP);
 	}
 	/* NOTREACHED */
 }
-
-char *
-cpu2str(buf, len)
-	char	*buf;
-	int	len;
-	{
-	register char *cp = buf + len;
-	register int i = cputype;
-
-	*--cp = '\0';
-	do
-		{
-		*--cp = (i % 10) + '0';
-		} while (i /= 10);
-	return(cp);
-	}
 
 #ifdef DEBUG
 /*
@@ -378,36 +346,6 @@ debug_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	/* NOTREACHED */
 }
 #endif /* DEBUG */
-
-#ifdef	INET
-/*
- * In 4.4BSD-Lite these functions were scattered amoungst the various
- * subsystems they dealt with.
- *
- * In 2.11BSD the kernel is overlaid and adding code to multiple 
- * files would have caused existing overlay structures to break.
- * This module will be large enough that it will end up in an overlay
- * by itself.  Thus centralizing all sysctl handling in one place makes
- * a lot of sense.  The one exception is the networking related syctl
- * functions.  Because the networking code is not overlaid and runs
- * in supervisor mode the sysctl handling can not be done here and
- * will be implemented in the 4.4BSD manner (by modifying the networking
- * modules).
-*/
-
-int
-NET_SYSCTL(name, namelen, oldp, oldlenp, newp, newlen)
-	int *name;
-	u_int namelen;
-	void *oldp;
-	size_t *oldlenp;
-	void *newp;
-	size_t newlen;
-{
-	return(KScall(net_sysctl, 6 * sizeof (int),
-			name, namelen, oldp, oldlenp, newp, newlen));
-}
-#endif
 
 /*
  * Bit of a hack.  2.11 currently uses 'short avenrun[3]' and a fixed scale 
@@ -792,56 +730,6 @@ sysctl_inode(where, sizep)
 }
 
 /*
- * Get text structures.  This is a 2.11BSD extension.  sysctl() is supposed
- * to be extensible...
- */
-sysctl_text(where, sizep)
-	char *where;
-	size_t *sizep;
-{
-	int buflen, error;
-	register struct text *xp;
-	struct	text *xpp;
-	char *start = where;
-	register int i;
-
-	buflen = *sizep;
-	if (where == NULL) {
-		for (i = 0, xp = text; xp < textNTEXT; xp++)
-			if (xp->x_count) i++;
-
-#define	TPTRSZ	sizeof (struct text *)
-#define	TEXTSZ	sizeof (struct text)
-		/*
-		 * overestimate by 3 text structures
-		 */
-		*sizep = (i + 3) * (TEXTSZ + TPTRSZ);
-		return (0);
-	}
-
-	/*
-	 * array of extended file structures: first the address then the
-	 * file structure.
-	 */
-	for (xp = text; xp < textNTEXT; xp++) {
-		if (xp->x_count == 0)
-			continue;
-		if (buflen < (TPTRSZ + TEXTSZ)) {
-			*sizep = where - start;
-			return (ENOMEM);
-		}
-		xpp = xp;
-		if ((error = copyout(&xpp, where, TPTRSZ)) ||
-			(error = copyout(xp, where + TPTRSZ, TEXTSZ)))
-			return (error);
-		buflen -= (TPTRSZ + TEXTSZ);
-		where += (TPTRSZ + TEXTSZ);
-	}
-	*sizep = where - start;
-	return (0);
-}
-
-/*
  * try over estimating by 5 procs
  */
 #define KERN_PROCSLOP	(5 * sizeof (struct kinfo_proc))
@@ -957,86 +845,46 @@ fill_eproc(p, ep)
 	struct	tty	*ttyp;
 
 	ep->e_paddr = p;
-	fill_from_u(p, &ep->e_ruid, &ttyp, &ep->e_tdev);
-	if	(ttyp)
-		ep->e_tpgid = ttyp->t_pgrp;
-	else
-		ep->e_tpgid = 0;
-}
-
-/*
- * Three pieces of information we need about a process are not kept in
- * the proc table: real uid, controlling terminal device, and controlling
- * terminal tty struct pointer.  For these we must look in either the u
- * area or the swap area.  If the process is still in memory this is
- * easy but if the process has been swapped out we have to read in the
- * u area.
- *
- * XXX - We rely on the fact that u_ttyp, u_ttyd, and u_ruid are all within
- * XXX - the first 1kb of the u area.  If this ever changes the logic below
- * XXX - will break (and badly).  At the present time (97/9/2) the u area
- * XXX - is 856 bytes long.
-*/
-void
-fill_from_u(p, rup, ttp, tdp)
-	struct	proc	*p;
-	uid_t	*rup;
-	struct	tty	**ttp;
-	dev_t	*tdp;
-	{
-	register struct	buf	*bp;
-	dev_t	ttyd;
-	uid_t	ruid;
-	struct	tty	*ttyp;
-	struct	user	*up;
-
-	if	(p->p_stat == SZOMB)
-		{
-		ruid = (uid_t)-2;
-		ttyp = NULL;
-		ttyd = NODEV;
-		goto out;
-		}
-	if	(p->p_flag & SLOAD)
-		{
-		ttyd = ((struct user *)SEG5)->u_ttyd;
-		ttyp = ((struct user *)SEG5)->u_ttyp;
-		ruid = ((struct user *)SEG5)->u_ruid;
-		}
-	else
-		{
-		bp = geteblk();
-		bp->b_dev = swapdev;
-		bp->b_blkno = (daddr_t)p->p_addr;
-		bp->b_bcount = DEV_BSIZE;	/* XXX */
-		bp->b_flags = B_READ;
-
-		(*bdevsw[major(swapdev)].d_strategy)(bp);
-		biowait(bp);
-
-		if	(u->u_error)
-			{
-			ttyd = NODEV;
-			ttyp = NULL;
-			ruid = (uid_t)-2;
-			}
-		else
-			{
-			up = (struct user *)mapin(bp);
-			ruid = up->u_ruid;	/* u_ruid = offset 164 */
-			ttyd = up->u_ttyd;	/* u_ttyd = offset 654 */
-			ttyp = up->u_ttyp;	/* u_ttyp = offset 652 */
-			mapout(bp);
-			}
-		bp->b_flags |= B_AGE;
-		brelse(bp);
-		u->u_error = 0;		/* XXX */
-		}
-out:
-	if	(rup)
-		*rup = ruid;
-	if	(ttp)
-		*ttp = ttyp;
-	if	(tdp)
-		*tdp = ttyd;
+	ep->e_sess = p->p_pgrp->pg_session;
+	ep->e_pcred = *p->p_cred;
+	ep->e_ucred = *p->p_ucred;
+	if (p->p_stat == SIDL || p->p_stat == SZOMB) {
+		ep->e_vm.vm_rssize = 0;
+		ep->e_vm.vm_tsize = 0;
+		ep->e_vm.vm_dsize = 0;
+		ep->e_vm.vm_ssize = 0;
+	} else {
+		register struct vmspace *vm = p->p_vmspace;
+#ifdef pmap_resident_count
+		ep->e_vm.vm_rssize = pmap_resident_count(&vm->vm_pmap); /*XXX*/
+#else
+		ep->e_vm.vm_rssize = vm->vm_rssize;
+#endif
+		ep->e_vm.vm_tsize = vm->vm_tsize;
+		ep->e_vm.vm_dsize = vm->vm_dsize;
+		ep->e_vm.vm_ssize = vm->vm_ssize;
 	}
+	if (p->p_pptr) {
+		ep->e_ppid = p->p_pptr->p_pid;
+	} else {
+		ep->e_ppid = 0;
+	}
+	ep->e_pgid = p->p_pgrp->pg_id;
+	ep->e_jobc = p->p_pgrp->pg_jobc;
+	if ((p->p_flag & P_CONTROLT) && (ttyp = ep->e_sess->s_ttyp)) {
+		ep->e_tdev = ttyp->t_dev;
+		ep->e_tpgid = ttyp->t_pgrp ? ttyp->t_pgrp->pg_id : NO_PID;
+		ep->e_tsess = ttyp->t_session;
+	} else {
+		ep->e_tdev = NODEV;
+	}
+	ep->e_flag = ep->e_sess->s_ttyvp ? EPROC_CTTY : 0;
+	if (SESS_LEADER(p)) {
+		ep->e_flag |= EPROC_SLEADER;
+	}
+	if (p->p_wmesg) {
+		strncpy(ep->e_wmesg, p->p_wmesg, WMESGLEN);
+	}
+	ep->e_xsize = ep->e_xrssize = 0;
+	ep->e_xccount = ep->e_xswrss = 0;
+}

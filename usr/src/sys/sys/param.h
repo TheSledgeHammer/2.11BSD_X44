@@ -35,7 +35,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/uio.h>
-//#include <sys/ucred.h>
+#include <sys/ucred.h>
 //#include <sys/rtprio.h>
 #endif
 
@@ -143,20 +143,3 @@
  */
 #define	MAXLOGNAME	16		/* max login name length */
 
-/*
- * Constants for setting the parameters of the kernel memory allocator.
- *
- * 2 ** MINBUCKET is the smallest unit of memory that will be
- * allocated. It must be at least large enough to hold a pointer.
- *
- * Units of memory less or equal to MAXALLOCSAVE will permanently
- * allocate physical memory; requests for these size pieces of
- * memory are quite fast. Allocations greater than MAXALLOCSAVE must
- * always allocate and free physical memory; requests for these
- * size allocations should be done infrequently as they will be slow.
- *
- * Constraints: CLBYTES <= MAXALLOCSAVE <= 2 ** (MINBUCKET + 14), and
- * MAXALLOCSIZE must be a power of two.
- */
-#define MINBUCKET		4		/* 4 => min allocation of 16 bytes */
-#define MAXALLOCSAVE	(2 * CLBYTES)

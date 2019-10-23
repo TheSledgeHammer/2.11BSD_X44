@@ -160,8 +160,8 @@ ttywait(tp)
 {
 	register int s = spltty();
 
-	while ((tp->t_outq.c_cc || tp->t_state&TS_BUSY) &&
-	    tp->t_state&TS_CARR_ON && tp->t_oproc) {
+	while ((tp->t_outq.c_cc || (tp->t_state&TS_BUSY)) &&
+			(tp->t_state&TS_CARR_ON) && tp->t_oproc) {
 		(*tp->t_oproc)(tp);
 /*
  * If the output routine drains the queue and the device is no longer busy
@@ -207,7 +207,7 @@ ttyflush(tp, rw)
 		CLR(tp->t_state, TS_WCOLL);
 		tp->t_wsel = 0;
 	}
-	if (rw & FREAD && ISSET(tp->t_state,TS_TBLOCK))
+	if ((rw & FREAD) && ISSET(tp->t_state,TS_TBLOCK))
 		ttyunblock(tp);
 	splx(s);
 }
@@ -960,7 +960,7 @@ ttyinput(c, tp)
 		goto endcase;
 	}
 	if (CCEQ(tp->t_kill,c)) {
-		if (t_flags&CRTKIL &&
+		if ((t_flags&CRTKIL) &&
 		    tp->t_rawq.c_cc == tp->t_rocount) {
 			while (tp->t_rawq.c_cc)
 				ttyrub(unputc(&tp->t_rawq), tp);
@@ -1032,7 +1032,7 @@ ttyinput(c, tp)
 		}
 		i = tp->t_col;
 		ttyecho(c, tp);
-		if (CCEQ(tp->t_eofc,c) && t_flags&ECHO) {
+		if (CCEQ(tp->t_eofc,c) && (t_flags&ECHO)) {
 			i = MIN(2, tp->t_col - i);
 			while (i > 0) {
 				(void) ttyoutput('\b', tp);
@@ -1045,7 +1045,7 @@ endcase:
 	 * If DEC-style start/stop is enabled don't restart
 	 * output until seeing the start character.
 	 */
-	if (t_flags&DECCTQ && tp->t_state&TS_TTSTOP &&
+	if ((t_flags&DECCTQ) && (tp->t_state&TS_TTSTOP) &&
 	    tp->t_startc != tp->t_stopc)
 		return;
 restartoutput:
@@ -1113,7 +1113,7 @@ ttyoutput(c, tp)
 	/*
 	 * turn <nl> to <cr><lf> if desired.
 	 */
-	if (c == '\n' && tp->t_flags&CRMOD)
+	if (c == '\n' && (tp->t_flags&CRMOD))
 		{
 		if (putc('\r', &tp->t_outq))
 			return(c);
@@ -1129,6 +1129,7 @@ ttyoutput(c, tp)
 
 	case ORDINARY:
 		col++;
+		break;
 	case CONTROL:
 		break;
 	case BACKSPACE:
@@ -1176,7 +1177,7 @@ loop:
 	if (tp == u->u_ttyp && u->u_procp->p_pgrp != tp->t_pgrp) {
 		if ((u->u_procp->p_sigignore & sigmask(SIGTTIN)) ||
 		   (u->u_procp->p_sigmask & sigmask(SIGTTIN)) ||
-		    u->u_procp->p_flag&SVFORK)
+		    (u->u_procp->p_flag&SVFORK))
 			return (EIO);
 		gsignal(u->u_procp->p_pgrp, SIGTTIN);
 		sleep((caddr_t)&lbolt, TTIPRI);
@@ -1248,7 +1249,7 @@ loop:
 	 */
 	first = 1;
 	while ((c = getc(qp)) >= 0) {
-		if (t_flags&CRMOD && c == '\r')
+		if ((t_flags&CRMOD) && c == '\r')
 			c = '\n';
 		/*
 		 * Check for delayed suspend character.
@@ -1428,7 +1429,7 @@ loop:
 					    goto loop;
 					}
 					cp++, cc--;
-					if (tp->t_flags&FLUSHO ||
+					if ((tp->t_flags&FLUSHO) ||
 					    tp->t_outq.c_cc > hiwat)
 						goto ovhiwat;
 					continue;
@@ -1456,7 +1457,7 @@ loop:
 				sleep((caddr_t)&lbolt, TTOPRI);
 				goto loop;
 			}
-			if (tp->t_flags&FLUSHO || tp->t_outq.c_cc > hiwat)
+			if ((tp->t_flags&FLUSHO) || tp->t_outq.c_cc > hiwat)
 				break;
 		}	/* while (cc > 0) */
 		ttstart(tp);
@@ -1637,11 +1638,11 @@ ttyecho(c, tp)
 		(void) ttyoutput(c, tp);
 		return;
 	}
-	if (c == '\r' && tp->t_flags&CRMOD)
+	if (c == '\r' && (tp->t_flags&CRMOD))
 		c = '\n';
 	c7 = c & 0177;
 	if (tp->t_flags&CTLECH) {
-		if (c7 <= 037 && c != '\t' && c != '\n' || c7 == 0177) {
+		if ((c7 <= 037 && c != '\t' && c != '\n') || c7 == 0177) {
 			(void) ttyoutput('^', tp);
 			if (c7 == 0177)
 				c7 = '?';
@@ -1661,7 +1662,7 @@ ttbreakc(c, tp)
 	register struct tty *tp;
 {
 	return (c == '\n' || CCEQ(tp->t_eofc,c) || CCEQ(tp->t_brkc,c) ||
-		c == '\r' && (tp->t_flags&CRMOD));
+		(c == '\r' && (tp->t_flags&CRMOD)));
 }
 
 /*
@@ -1674,7 +1675,7 @@ ttyout(cp, tp)
 {
 	register int c;
 
-	while (c = *cp++)
+	while (c == *cp++)
 		(void) ttyoutput(c, tp);
 }
 

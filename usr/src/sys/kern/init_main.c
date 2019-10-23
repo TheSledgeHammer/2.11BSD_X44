@@ -86,6 +86,7 @@ main()
 	allproc = (volatile struct proc *)p;
 	p->p_prev = (struct proc **)&allproc;
 
+
 	//p->p_sysent = &aout_sysvec;
 
 	p->p_stat = SRUN;
@@ -264,7 +265,7 @@ binit()
 
 	for (bp = bfreelist; bp < &bfreelist[BQUEUES]; bp++)
 		bp->b_forw = bp->b_back = bp->av_forw = bp->av_back = bp;
-	paddr = ((long)bpaddr) << 6;									/* pdp-11 seg.h ref */
+	paddr = ((long)bpaddr) << 6;
 	for (i = 0; i < nbuf; i++, paddr += MAXBSIZE) {
 		bp = &buf[i];
 		bp->b_dev = NODEV;
@@ -289,7 +290,7 @@ cinit()
 
 	ccp = (int)cfree;
 	ccp = (ccp + CROUND) & ~CROUND;
-#endif
+
 	for (cp = (struct cblock *)ccp; cp <= &cfree[nclist - 1]; cp++) {
 		cp->c_next = cfreelist;
 		cfreelist = cp;

@@ -11,7 +11,7 @@
 #include <sys/user.h>
 #include <sys/inode.h>
 #include <sys/proc.h>
-#include <sys/text.h>
+//#include <sys/text.h>
 #include <sys/namei.h>
 #include <sys/acct.h>
 #include <sys/signalvar.h>

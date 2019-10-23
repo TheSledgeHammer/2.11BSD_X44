@@ -31,7 +31,6 @@
 #include <sys/msgbuf.h>
 #include <sys/file.h>
 #include <sys/inode.h>
-//#include <sys/errno.h>
 #include <sys/uio.h>
 #include <sys/map.h>
 
@@ -124,20 +123,22 @@ logread(dev, uio, flag)
 	lp = &logsoftc[l];
 	mp = &msgbuf[l];
 	s = splhigh();
-	while	(mp->msg_bufr == mp->msg_bufx)
-		{
-		if	(flag & IO_NDELAY)
-			{
+	while	(mp->msg_bufr == mp->msg_bufx) {
+		if	(flag & IO_NDELAY) {
 			splx(s);
 			return(EWOULDBLOCK);
 			}
 		lp->sc_state |= LOG_RDWAIT;
-		sleep((caddr_t)mp, LOG_RDPRI);
+		if (error == sleep((caddr_t)mp, LOG_RDPRI | PCATCH, "klog", 0)) {
+			splx(0);
+			return (error);
 		}
+	}
+
+	splx(s);
 	lp->sc_state &= ~LOG_RDWAIT;
 
-	while	(uio->uio_resid)
-		{
+	while	(uio->uio_resid > 0) {
 		l = mp->msg_bufx - mp->msg_bufr;
 /*
  * If the reader and writer are equal then we have caught up and there
@@ -145,6 +146,7 @@ logread(dev, uio, flag)
 */
 		if	(l == 0)
 			break;
+
 /*
  * If the write pointer is behind the reader then only consider as
  * available for now the bytes from the read pointer thru the end of 
@@ -166,9 +168,7 @@ logread(dev, uio, flag)
 			}
 		l = MIN(l, uio->uio_resid);
 		l = MIN(l, sizeof buf);
-		mapseg5(mp->msg_click, (btoc(MSG_BSIZE) << 8) | RW);
 		bcopy(&mp->msg_bufc[mp->msg_bufr], buf, l);
-		normalseg5();
 		error = uiomove(buf, l, uio);
 		if	(error)
 			break;
@@ -291,7 +291,6 @@ logwrt(buf,len,log)
 	int	len;
 	int	log;
 	{
-	segm	s5;
 	register struct msgbuf *mp = &msgbuf[log];
 	struct	logsoftc *lp = &logsoftc[log];
 	register int	infront;
@@ -299,7 +298,6 @@ logwrt(buf,len,log)
 
 	if	(mp->msg_magic != MSG_MAGIC || (len > MSG_BSIZE))
 		return(-1);
-	saveseg5(s5);
 /*
  * Hate to do this but since this can be called from anywhere in the kernel
  * we have to hold off any interrupt service routines so they don't change
@@ -339,34 +337,11 @@ again:		infront = MSG_BSIZE - mp->msg_bufx;
 			}
 		if	(infront > len)
 			infront = len;
-		mapseg5(mp->msg_click, (btoc(MSG_BSIZE) << 8) | RW);  /* XXX */
 		bcopy(buf, &mp->msg_bufc[mp->msg_bufx], infront);
-		restorseg5(s5);
 		mp->msg_bufx += infront;
 		len -= infront;
 		buf += infront;
 		}
 out:	splx(s);
 	return(err);
-	}
-
-/*
- * Initialize the log driver.  Called from the system startup code (machdep2.c).
- * All buffers are the same (MSG_BSIZE) size.
-*/
-int
-loginit()
-	{
-register struct msgbuf *mp;
-
-	for	(mp = &msgbuf[0]; mp < &msgbuf[NLOG]; mp++)
-		{
-		mp->msg_click = malloc(coremap,btoc(MSG_BSIZE));
-		if	(!mp->msg_click)
-			return(-1);
-		mp->msg_magic = MSG_MAGIC;
-		mp->msg_bufc = SEG5;
-		mp->msg_bufx = mp->msg_bufr = 0;
-		}
-	return(0);
 	}

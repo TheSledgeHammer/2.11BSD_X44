@@ -44,12 +44,9 @@
  */
 #ifndef KERNEL
 #include <sys/time.h>
-#include <sys/resource.h>
-#include <sys/file.h>
-#include <sys/inode.h>
+#include <sys/ucred.h>
 #include <sys/proc.h>
 #include <vm/vm.h>
-#include <sys/map.h>
 #endif
 
 /*
@@ -74,8 +71,9 @@ struct ctlname {
 	char	*ctl_name;	/* subsystem name */
 	int		ctl_type;	/* type of name */
 };
+
 #define	CTLTYPE_NODE	1	/* name is a node */
-#define	CTLTYPE_INT	2	/* name describes a 16-bit integer */
+#define	CTLTYPE_INT		2	/* name describes a 16-bit integer */
 #define	CTLTYPE_STRING	3	/* name describes a string */
 #define	CTLTYPE_LONG	4	/* name describes a 32-bit number */
 #define	CTLTYPE_STRUCT	5	/* name describes a structure */
@@ -94,7 +92,6 @@ struct ctlname {
 #define	CTL_USER	8		/* user-level */
 #define	CTL_MAXID	9		/* number of valid top-level ids */
 
-#ifndef	KERNEL
 #define CTL_NAMES { \
 	{ 0, 0 }, \
 	{ "kern", CTLTYPE_NODE }, \
@@ -106,7 +103,6 @@ struct ctlname {
 	{ "machdep", CTLTYPE_NODE }, \
 	{ "user", CTLTYPE_NODE }, \
 }
-#endif
 
 /*
  * CTL_KERN identifiers
@@ -137,7 +133,6 @@ struct ctlname {
 #define	KERN_ACCTTHRESH		24	/* int: accounting daemon threshold */
 #define	KERN_MAXID			25	/* number of valid kern ids */
 
-#ifndef	KERNEL
 #define CTL_KERN_NAMES { \
 	{ 0, 0 }, \
 	{ "ostype", CTLTYPE_STRING }, \
@@ -165,7 +160,6 @@ struct ctlname {
 	{ "text", CTLTYPE_STRUCT }, \
 	{ "acctthresh", CTLTYPE_INT }, \
 }
-#endif
 
 /* 
  * KERN_PROC subtypes
@@ -185,9 +179,36 @@ struct kinfo_proc {
 	struct	proc kp_proc;			/* proc structure */
 	struct	eproc {
 		struct	proc *e_paddr;		/* address of proc */
+
 		dev_t	e_tdev;				/* controlling tty dev */
 		pid_t	e_tpgid;			/* tty process group id */
 		uid_t	e_ruid;				/* real uid */
+
+		struct	session *e_sess;	/* session pointer */
+		struct	pcred e_pcred;		/* process credentials */
+		struct	ucred e_ucred;		/* current credentials */
+
+		struct	vmspace e_vm;		/* address space */
+		pid_t	e_ppid;				/* parent process id */
+		pid_t	e_pgid;				/* process group id */
+		short	e_jobc;				/* job control counter */
+		dev_t	e_tdev;				/* controlling tty dev */
+		pid_t	e_tpgid;			/* tty process group id */
+
+		struct	session *e_tsess;	/* tty session pointer */
+
+#define	WMESGLEN	7
+		char	e_wmesg[WMESGLEN+1];/* wchan message */
+		segsz_t e_xsize;			/* text size */
+		short	e_xrssize;			/* text rss */
+		short	e_xccount;			/* text references */
+
+		short	e_xswrss;
+		long	e_flag;
+#define	EPROC_CTTY	0x01			/* controlling tty vnode active */
+#define	EPROC_SLEADER	0x02		/* session leader */
+		char	e_login[MAXLOGNAME];/* setlogin() name */
+		long	e_spare[4];
 	} kp_eproc;
 };
 
@@ -229,7 +250,6 @@ struct	kinfo_file {
 #define	HW_DISKSTATS	9		/* struct: diskstats[] */
 #define	HW_MAXID		10		/* number of valid hw ids */
 
-#ifndef	KERNEL
 #define CTL_HW_NAMES { \
 	{ 0, 0 }, \
 	{ "machine", CTLTYPE_STRING }, \
@@ -242,9 +262,7 @@ struct	kinfo_file {
 	{ "disknames", CTLTYPE_STRUCT }, \
 	{ "diskstats", CTLTYPE_STRUCT }, \
 }
-#endif
 
-#ifndef	KERNEL
 /*
  * CTL_USER definitions
  */
@@ -293,7 +311,6 @@ struct	kinfo_file {
 	{ "stream_max", CTLTYPE_INT }, \
 	{ "tzname_max", CTLTYPE_INT }, \
 }
-#endif
 
 /*
  * CTL_DEBUG definitions
@@ -338,7 +355,8 @@ extern struct ctldebug debug15, debug16, debug17, debug18, debug19;
  * interpreted.  The namelen parameter is the number of integers in
  * the name.
  */
-typedef int (sysctlfn)();
+typedef int (sysctlfn)
+    __P((int *, u_int, void *, size_t *, void *, size_t, struct proc *));
 
 int sysctl_int();
 int sysctl_rdint();
@@ -346,6 +364,13 @@ int sysctl_string();
 int sysctl_rdstring();
 int sysctl_rdstruct();
 void fill_eproc();
+
+int sysctl_int __P((void *, size_t *, void *, size_t, int *));
+int sysctl_rdint __P((void *, size_t *, void *, int));
+int sysctl_string __P((void *, size_t *, void *, size_t, char *, int));
+int sysctl_rdstring __P((void *, size_t *, void *, char *));
+int sysctl_rdstruct __P((void *, size_t *, void *, void *, int));
+void fill_eproc __P((struct proc *, struct eproc *));
 
 #else	/* !KERNEL */
 #include <sys/cdefs.h>

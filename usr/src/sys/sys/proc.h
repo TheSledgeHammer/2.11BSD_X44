@@ -4,6 +4,8 @@
  * specifies the terms and conditions for redistribution.
  *
  *	@(#)proc.h	1.5 (2.11BSD) 1999/9/5
+ *
+ *	Parts of proc.h are borrowed from 4.4BSD-lite2 / FreeBSD 2.0 proc.h.
  */
 
 #ifndef	_SYS_PROC_H_
@@ -23,28 +25,30 @@
  * is swapped with the process.
  */
 struct	proc {
-	struct	proc *p_nxt;	/* linked list of allocated proc slots */
-	struct	proc **p_prev;	/* also zombies, and free proc's */
-	struct	proc *p_pptr;	/* pointer to process structure of parent */
-	short	p_flag;
-	short	p_uid;			/* user id, used to direct tty signals */
-	short	p_pid;			/* unique process id */
-	short	p_ppid;			/* process id of parent */
-	long	p_sig;			/* signals pending to this process */
-	char	p_stat;
-	char	p_dummy;			/* room for one more, here */
+	struct	proc *p_nxt;				/* linked list of allocated proc slots */
+	struct	proc **p_prev;				/* also zombies, and free proc's */
+	struct	proc *p_pptr;				/* pointer to process structure of parent */
 
-	/* Borrowed from 4.4BSD-lite2 proc.h. */
-	struct	pcred 	*p_cred;	/* Process owner's identity. */
-	struct	filedesc *p_fd;		/* Ptr to open files structure. */
-	struct	pstats 	*p_stats;	/* Accounting/statistics (PROC ONLY). */
-	struct	plimit 	*p_limit;	/* Process limits. */
-	struct	vmspace *p_vmspace;	/* Address space. */
+	short	p_flag;
+	short	p_uid;						/* user id, used to direct tty signals */
+	short	p_pid;						/* unique process id */
+	short	p_ppid;						/* process id of parent */
+	long	p_sig;						/* signals pending to this process */
+	char	p_stat;
+	char	p_dummy;					/* room for one more, here */
+
+	/* Substructures: */
+	struct	pcred 	 	*p_cred;		/* Process owner's identity. */
+	struct	filedesc 	*p_fd;			/* Ptr to open files structure. */
+	struct	pstats 	 	*p_stats;		/* Accounting/statistics (PROC ONLY). */
+	struct	plimit 	 	*p_limit;		/* Process limits. */
+	struct	vmspace  	*p_vmspace;		/* Address space. */
 
 #define	p_ucred		p_cred->pc_ucred
 #define	p_rlimit	p_limit->pl_rlimit
 
-	struct 	sysentvec *p_sysent; /* System call dispatch information. */
+	struct 	pgrp 	 	*p_pgrp;		/* Pointer to process group. */
+	struct 	sysentvec 	*p_sysent; 		/* System call dispatch information. */
 
 	/*
 	 * Union to overwrite information no longer needed by ZOMBIED
@@ -52,6 +56,8 @@ struct	proc {
 	 * two structures have been carefully set up to use the same
 	 * amount of memory.  Must be very careful that any values in
 	 * p_alive are not used for zombies (zombproc).
+	 *
+	 * Following union may be replaced..?!
 	 */
 	union {
 	    struct {
@@ -65,7 +71,9 @@ struct	proc {
 		long	P_sigmask;					/* current signal mask */
 		long	P_sigignore;				/* signals being ignored */
 		long	P_sigcatch;					/* signals being caught by user */
-		short	P_pgrp;						/* name of process group leader */
+
+		//short	P_pgrp;						/* name of process group leader */
+
 		struct	proc *P_link;				/* linked list of running processes */
 		memaddr	P_addr;						/* address of u. area */
 		memaddr	P_daddr;					/* address of data area */
@@ -73,14 +81,39 @@ struct	proc {
 		size_t	P_dsize;					/* size of data area (clicks) */
 		size_t	P_ssize;					/* size of stack segment (clicks) */
 		caddr_t	P_wchan;					/* event process is awaiting */
-		struct	text *P_textp;				/* pointer to text structure */
+
 		struct	k_itimerval P_realtimer;
 	    } p_alive;
 	    struct {
-	    	short	P_xstat;					/* exit status for wait */
-	    	struct k_rusage P_ru;				/* exit information */
+	    	short	P_xstat;				/* exit status for wait */
+	    	struct k_rusage P_ru;			/* exit information */
 	    } p_dead;
 	} p_un;
+};
+
+struct	session {
+	int		s_count;				/* Ref cnt; pgrps in session. */
+	struct	proc *s_leader;			/* Session leader. */
+	struct	vnode *s_ttyvp;			/* Vnode of controlling terminal. */
+	struct	tty *s_ttyp;			/* Controlling terminal. */
+	char	s_login[MAXLOGNAME];	/* Setlogin() name. */
+};
+
+struct	pgrp {
+	struct	pgrp *pg_hforw;			/* Forward link in hash bucket. */
+	struct	proc *pg_mem;			/* Pointer to pgrp members. */
+	struct	session *pg_session;	/* Pointer to session. */
+	pid_t	pg_id;					/* Pgrp id. */
+	int		pg_jobc;				/* # procs qualifying pgrp for job control */
+};
+
+struct pcred {
+	struct	ucred *pc_ucred;	/* Current credentials. */
+	uid_t	p_ruid;				/* Real user id. */
+	uid_t	p_svuid;			/* Saved effective user id. */
+	gid_t	p_rgid;				/* Real group id. */
+	gid_t	p_svgid;			/* Saved effective group id. */
+	int		p_refcnt;			/* Number of references. */
 };
 
 #define	p_pri		p_un.p_alive.P_pri
@@ -93,7 +126,7 @@ struct	proc {
 #define	p_sigmask	p_un.p_alive.P_sigmask
 #define	p_sigignore	p_un.p_alive.P_sigignore
 #define	p_sigcatch	p_un.p_alive.P_sigcatch
-#define	p_pgrp		p_un.p_alive.P_pgrp
+//#define	p_pgrp		p_un.p_alive.P_pgrp
 #define	p_link		p_un.p_alive.P_link
 #define	p_addr		p_un.p_alive.P_addr
 #define	p_daddr		p_un.p_alive.P_daddr
@@ -101,7 +134,6 @@ struct	proc {
 #define	p_dsize		p_un.p_alive.P_dsize
 #define	p_ssize		p_un.p_alive.P_ssize
 #define	p_wchan		p_un.p_alive.P_wchan
-#define	p_textp		p_un.p_alive.P_textp
 #define	p_realtimer	p_un.p_alive.P_realtimer
 #define	p_clktim	p_realtimer.it_value
 
@@ -118,6 +150,7 @@ extern struct proc proc[], *procNPROC;	/* the proc table itself */
 extern struct proc *freeproc;
 extern struct proc *zombproc;			/* List of zombie procs. */
 extern volatile struct proc *allproc;	/* List of active procs. */
+
 extern struct proc *qs;					/* queue schedule */
 int	nproc;
 
@@ -141,11 +174,11 @@ int	nproc;
 #define	SVFORK		0x0100	/* process resulted from vfork() */
 #define	SVFPRNT		0x0200	/* parent in vfork, waiting for child */
 #define	SVFDONE		0x0400	/* parent has released child in vfork */
-	/*		0x0800	/* unused */
+			/*		0x0800	/* unused */
 #define	P_TIMEOUT	0x1000	/* tsleep timeout expired */
 #define	P_NOCLDSTOP	0x2000	/* no SIGCHLD signal to parent */
 #define	P_SELECT	0x4000	/* selecting; wakeup/waiting danger */
-	/*		0x8000	/* unused */
+			/*		0x8000	/* unused */
 
 #define	S_DATA	0			/* specified segment */
 #define	S_STACK	1

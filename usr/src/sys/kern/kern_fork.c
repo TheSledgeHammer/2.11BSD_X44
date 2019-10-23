@@ -15,7 +15,6 @@
 #include <sys/acct.h>
 #include <sys/file.h>
 #include <vm/vm.h>
-#include <sys/text.h>
 #include <sys/kernel.h>
 
 
@@ -149,18 +148,13 @@ again:
 	 * Make a proc table entry for the new process.
 	 */
 	rip = u->u_procp;
-#ifdef QUOTA
-	QUOTAMAP();
-	u.u_quota->q_cnt++;
-	QUOTAUNMAP();
-#endif
 	rpp->p_stat = SIDL;
 	rpp->p_realtimer.it_value = 0;
 	rpp->p_flag = SLOAD;
 	rpp->p_uid = rip->p_uid;
 	rpp->p_pgrp = rip->p_pgrp;
 	rpp->p_nice = rip->p_nice;
-	rpp->p_textp = rip->p_textp;
+	//rpp->p_textp = rip->p_textp;
 	rpp->p_pid = mpid;
 	rpp->p_ppid = rip->p_pid;
 	rpp->p_pptr = rip;
@@ -170,15 +164,6 @@ again:
 	rpp->p_sigcatch = rip->p_sigcatch;
 	rpp->p_sigignore = rip->p_sigignore;
 	/* take along any pending signals like stops? */
-#ifdef UCB_METER
-	if (isvfork) {
-		forkstat.cntvfork++;
-		forkstat.sizvfork += rip->p_dsize + rip->p_ssize;
-	} else {
-		forkstat.cntfork++;
-		forkstat.sizfork += rip->p_dsize + rip->p_ssize;
-	}
-#endif
 	rpp->p_wchan = 0;
 	rpp->p_slptime = 0;
 	{
@@ -193,7 +178,7 @@ again:
 	 * wait so that if the clock interrupts us and vmtotal walks allproc
 	 * the text pointer isn't garbage.
 	 */
-	rpp->p_nxt = allproc;			/* onto allproc */
+	rpp->p_nxt = allproc;				/* onto allproc */
 	rpp->p_nxt->p_prev = &rpp->p_nxt;	/*   (allproc is never NULL) */
 	rpp->p_prev = &allproc;
 	allproc = rpp;
@@ -207,10 +192,10 @@ again:
 			continue;
 		fp->f_count++;
 	}
-	if ((rip->p_textp != NULL) && !isvfork) {
+	/*if ((rip->p_textp != NULL) && !isvfork) {
 		rip->p_textp->x_count++;
 		rip->p_textp->x_ccount++;
-	}
+	}*/
 	u->u_cdir->i_count++;
 	if (u->u_rdir)
 		u->u_rdir->i_count++;
@@ -230,7 +215,7 @@ again:
 	rpp->p_saddr = rip->p_saddr;
 	a1 = rip->p_addr;
 	if (isvfork)
-		a[2] = malloc(coremap,USIZE);
+		a[2] = malloc(coremap, USIZE);
 	else
 		a[2] = malloc3(coremap, rip->p_dsize, rip->p_ssize, USIZE, a);
 
@@ -284,7 +269,7 @@ again:
 		}
 		rip->p_dsize = 0;
 		rip->p_ssize = 0;
-		rip->p_textp = NULL;
+		//rip->p_textp = NULL;
 		rpp->p_flag |= SVFORK;
 		rip->p_flag |= SVFPRNT;
 		while (rpp->p_flag & SVFORK)
@@ -297,12 +282,12 @@ again:
 		u->u_ssize = rip->p_ssize = rpp->p_ssize;
 		rip->p_saddr = rpp->p_saddr;
 		rpp->p_ssize = 0;
-		rip->p_textp = rpp->p_textp;
-		rpp->p_textp = NULL;
+		//rip->p_textp = rpp->p_textp;
+		//rpp->p_textp = NULL;
 		rpp->p_flag |= SVFDONE;
 		wakeup((caddr_t)rip);
 		/* must do estabur if dsize/ssize are different */
-		estabur(u->u_tsize,u->u_dsize,u->u_ssize,u->u_sep,RO); /* PDP-11 seg.h */
+		//estabur(u->u_tsize,u->u_dsize,u->u_ssize,u->u_sep,RO); /* PDP-11 seg.h */
 		rip->p_flag &= ~SVFPRNT;
 	}
 	return(0);

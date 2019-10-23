@@ -234,7 +234,7 @@ loop:
 			continue;
 		++nfound;
 		if (p->p_stat == SSTOP && (p->p_flag& P_WAITED)==0 &&
-		    ((p->p_flag&P_TRACED) || uap->options&WUNTRACED)) {
+		    ((p->p_flag&P_TRACED) || (uap->options&WUNTRACED))) {
 			p->p_flag |= P_WAITED;
 			retval[0] = p->p_pid;
 			error = 0;

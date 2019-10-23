@@ -145,7 +145,7 @@ struct dinode {
 #define	di_mtime	di_ic2.ic_mtime
 #define	di_ctime	di_ic2.ic_ctime
 
-#if defined(KERNEL) && !defined(SUPERVISOR)
+#if defined(KERNEL)
 /*
  * Invalidate an inode. Used by the namei cache to detect stale
  * information. In order to save space and also reduce somewhat the

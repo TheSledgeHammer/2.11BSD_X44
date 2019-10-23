@@ -101,7 +101,7 @@ sched()
 		if (rp->p_stat == SZOMB ||
 		    (rp->p_flag & (SSYS|SLOCK|SULOCK|SLOAD)) != SLOAD)
 			continue;
-		if (rp->p_textp && (rp->p_textp->x_flag & XLOCK))
+		if (rp.->p_textp && (rp->p_textp->x_flag & XLOCK))
 			continue;
 		if ((rp->p_stat == SSLEEP &&
 		    (rp->p_flag & P_SINTR)) || rp->p_stat == SSTOP) {

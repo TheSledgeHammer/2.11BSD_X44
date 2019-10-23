@@ -39,8 +39,10 @@
  * there are exceptions to this rule.  Note, this value is also present
  * in the bad144 program.
  */
-#include <../sys/types.h>
-#define MAXBAD	32			/* Maximum bad sectors supported */
+#ifndef _SYS_DKBAD_H_
+#define _SYS_DKBAD_H_
+
+#define MAXBAD	126			/* Maximum bad sectors supported */
 
 struct dkbad {
 	long	bt_csn;			/* cartridge serial number */
@@ -56,3 +58,5 @@ struct dkbad {
 #define	SSE	1
 #define	BSE	2
 #define	CONT	3
+
+#endif

@@ -177,6 +177,7 @@ hashinit(elements, type, hashmask)
 		continue;
 	hashsize >>= 1;
 	hashtbl = malloc((u_long)hashsize * sizeof(*hashtbl), type, M_WAITOK);
+	hashtbl = malloc(type, (u_long)hashsize * sizeof(*hashtbl));
 	for (i = 0; i < hashsize; i++)
 		LIST_INIT(&hashtbl[i]);
 	*hashmask = hashsize - 1;

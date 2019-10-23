@@ -79,35 +79,7 @@
 							/* in specified number of hz */
 #define	VTR_STAMP	4		/* user specified stamp */
 
-/*
- * Earliest Deadline First Trace Events.
- */
-typedef enum Tevent {
-	SAdmit = 0,	/* Edf admit */
-	SRelease,	/* Edf release, waiting to be scheduled */
-	SEdf,		/* running under EDF */
-	SRun,		/* running best effort */
-	SReady,		/* runnable but not running  */
-	SSleep,		/* blocked */
-	SYield,		/* blocked waiting for release */
-	SSlice,		/* slice exhausted */
-	SDeadline,	/* proc's deadline */
-	SExpel,		/* Edf expel */
-	SDead,		/* proc dies */
-	SInts,		/* Interrupt start */
-	SInte,		/* Interrupt end */
-	SUser,		/* user event */
-	Nevent,
-} Tevent;
-
-typedef struct Traceevent	Traceevent;
-struct Traceevent {
-	u_long	pid;
-	u_long	etype;	/* Event type */
-	quad_t	time;	/* time stamp  */
-};
-
-#if defined(KERNEL) && defined(UCB_METER) && !defined(SUPERVISOR)
+#ifdef KERNEL
 u_long tracebuf[TR_NUM_210];
 #define	trace(a)	tracebuf[a]++;
 #else
