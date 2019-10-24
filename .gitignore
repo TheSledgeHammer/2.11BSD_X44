@@ -10,5 +10,7 @@
 *.ipr
 *.iws
 *.idea
+*.project
+*.cproject
 cmake-build-debug
 cmake-build-debug-mingw
