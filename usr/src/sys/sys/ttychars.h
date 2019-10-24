@@ -12,6 +12,7 @@
  */
 #ifndef _TTYCHARS_
 #define	_TTYCHARS_
+
 struct ttychars {
 	char	tc_erase;	/* erase last character */
 	char	tc_kill;	/* erase entire line */

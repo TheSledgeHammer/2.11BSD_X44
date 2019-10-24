@@ -16,7 +16,7 @@
  * One for each kernel object.
  */
 struct	file {
-	int	f_flag;		/* see below */
+	int	f_flag;			/* see below */
 	char	f_type;		/* descriptor type */
 	u_char	f_count;	/* reference count */
 	short	f_msgcount;	/* references from message queue */
@@ -69,8 +69,8 @@ struct	file *falloc();
 		return; \
 	} \
 }
-#define	DTYPE_INODE	1	/* file */
+#define	DTYPE_INODE		1	/* file */
 #define	DTYPE_SOCKET	2	/* communications endpoint */
-#define	DTYPE_PIPE	3	/* I don't want to hear it, okay? */
+#define	DTYPE_PIPE		3	/* I don't want to hear it, okay? */
 #endif
 #endif	/* _SYS_FILE_H_ */

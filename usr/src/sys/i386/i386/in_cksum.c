@@ -117,13 +117,13 @@ in_cksum(m, len)
 		/*
 		 * Advance to a 486 cache line boundary.
 		 */
-		if (4 & (int) w && mlen >= 4) {
+		if ((4 & (int) w) && mlen >= 4) {
 			ADD(0);
 			MOP;
 			w += 2;
 			mlen -= 4;
 		}
-		if (8 & (int) w && mlen >= 8) {
+		if ((8 & (int) w) && mlen >= 8) {
 			ADD(0);
 			ADDC(4);
 			MOP;

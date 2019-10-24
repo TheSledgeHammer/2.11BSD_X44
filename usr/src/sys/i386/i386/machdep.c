@@ -375,10 +375,10 @@ again:
 
 struct cpu_nameclass i386_cpus[] = {
 	{ "Intel 80286",	CPUCLASS_286 },		/* CPU_286   */
-	{ "i386SX",		CPUCLASS_386 },		/* CPU_386SX */
-	{ "i386DX",		CPUCLASS_386 },		/* CPU_386   */
-	{ "i486SX",		CPUCLASS_486 },		/* CPU_486SX */
-	{ "i486DX",		CPUCLASS_486 },		/* CPU_486   */
+	{ "i386SX",			CPUCLASS_386 },		/* CPU_386SX */
+	{ "i386DX",			CPUCLASS_386 },		/* CPU_386   */
+	{ "i486SX",			CPUCLASS_486 },		/* CPU_486SX */
+	{ "i486DX",			CPUCLASS_486 },		/* CPU_486   */
 	{ "Pentium",		CPUCLASS_586 },		/* CPU_586   */
 	{ "Cy486DLC",		CPUCLASS_486 },		/* CPU_486DLC */
 };
@@ -447,6 +447,7 @@ identifycpu()
 	case CPUCLASS_586:
 #endif
 		panic("CPU class not configured");
+		break;
 	default:
 		break;
 	}

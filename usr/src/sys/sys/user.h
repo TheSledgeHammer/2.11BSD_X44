@@ -18,6 +18,9 @@
 #include <sys/uio.h>
 #include <sys/ucred.h>
 #endif
+#include <sys/param.h>
+#include <sys/syslimits.h>
+#include <sys/sysctl.h>
 #include <sys/resourcevar.h>
 #include <sys/signalvar.h>
 #include <vm/vm.h>		/* XXX */
@@ -52,8 +55,8 @@ struct user {
 	char	u_comm[MAXCOMLEN + 1];
 
 /* syscall parameters, results and catches */
-	int	u_arg[6];					/* arguments to current system call */
-	int	*u_ap;						/* pointer to arglist */
+	int		u_arg[6];				/* arguments to current system call */
+	int		*u_ap;					/* pointer to arglist */
 	label_t	u_qsave;				/* for non-local gotos on interrupts */
 	union {							/* syscall return values */
 		struct	{

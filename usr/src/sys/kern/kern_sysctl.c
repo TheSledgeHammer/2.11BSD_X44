@@ -41,19 +41,19 @@
  */
 
 #include <sys/param.h>
-#include <sys/user.h>
 #include <sys/systm.h>
-#include <sys/proc.h>
-#include <sys/buf.h>
 #include <sys/kernel.h>
+#include <sys/user.h>
+#include <sys/map.h>
+#include <sys/proc.h>
 #include <sys/file.h>
 #include <sys/inode.h>
+#include <sys/buf.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
 #include <vm/vm.h>
-#include <sys/map.h>
 #include <sys/sysctl.h>
-#include <sys/conf.h>
+
 
 sysctlfn kern_sysctl;
 sysctlfn hw_sysctl;
@@ -741,6 +741,7 @@ sysctl_doproc(name, namelen, where, sizep)
 	size_t *sizep;
 {
 	register struct proc *p;
+
 	register struct kinfo_proc *dp = (struct kinfo_proc *)where;
 	int needed = 0;
 	int buflen = where != NULL ? *sizep : 0;

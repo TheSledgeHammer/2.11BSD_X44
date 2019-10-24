@@ -10,44 +10,47 @@
 #define	_STAT_H_
 
 #include <sys/time.h>
-#include <sys/user.h>
 
 struct stat
 {
-	dev_t			st_dev;		/* inode's device */
-	ino_t			st_ino;		/* inode's number */
-	unsigned short 	st_mode;	/* inode protection mode */
-	short			st_nlink;	/* number of hard links */
-	uid_t			st_uid;		/* user ID of the file's owner */
-	gid_t			st_gid;		/* group ID of the file's group */
-	dev_t			st_rdev;	/* device type */
-	off_t			st_size;	/* file size, in bytes */
-	time_t			st_atime;	/* time of last access */
-	int				st_spare1;
-	time_t			st_mtime;	/* time of last data modification */
-	int				st_spare2;
-	time_t			st_ctime;	/* time of last file status change */
-	int				st_spare3;
-	long			st_blksize;	/* optimal blocksize for I/O */
-	quad_t			st_blocks;	/* blocks allocated for file */
-	unsigned long	st_flags;	/* user defined flags for file */
-	unsigned long	st_gen;		/* file generation number */
-	unsigned long	st_spare4[3];
+	dev_t				st_dev;		/* inode's device */
+	ino_t				st_ino;		/* inode's number */
+	unsigned short 		st_mode;	/* inode protection mode */
+	short				st_nlink;	/* number of hard links */
+	uid_t				st_uid;		/* user ID of the file's owner */
+	gid_t				st_gid;		/* group ID of the file's group */
+	dev_t				st_rdev;	/* device type */
+	off_t				st_size;	/* file size, in bytes */
+	struct	timespec	st_atime;	/* time of last access */
+	struct	timespec	st_mtime;	/* time of last data modification */
+	struct	timespec	st_ctime;	/* time of last file status change */
+	long				st_blksize;	/* optimal blocksize for I/O */
+	quad_t				st_blocks;	/* blocks allocated for file */
+	unsigned long		st_flags;	/* user defined flags for file */
+	unsigned long		st_gen;		/* file generation number */
+	int					st_spare1;
+	int					st_spare2;
+	int					st_spare3;
+	unsigned long		st_spare4[3];
 };
 
-#define	S_IFMT	0170000		/* type of file */
-#define	S_IFDIR	0040000		/* directory */
-#define	S_IFCHR	0020000		/* character special */
-#define	S_IFBLK	0060000		/* block special */
-#define	S_IFREG	0100000		/* regular */
-#define	S_IFLNK	0120000		/* symbolic link */
-#define	S_IFSOCK 0140000	/* socket */
-#define	S_ISUID	0004000		/* set user id on execution */
-#define	S_ISGID	0002000		/* set group id on execution */
-#define	S_ISVTX	0001000		/* save swapped text even after use */
-#define	S_IREAD	0000400		/* read permission, owner */
-#define	S_IWRITE 0000200	/* write permission, owner */
-#define	S_IEXEC	0000100		/* execute/search permission, owner */
+#define st_atime st_atime.ts_sec
+#define st_mtime st_mtime.ts_sec
+#define st_ctime st_ctime.ts_sec
+
+#define	S_IFMT		0170000		/* type of file */
+#define	S_IFDIR		0040000		/* directory */
+#define	S_IFCHR		0020000		/* character special */
+#define	S_IFBLK		0060000		/* block special */
+#define	S_IFREG		0100000		/* regular */
+#define	S_IFLNK		0120000		/* symbolic link */
+#define	S_IFSOCK 	0140000		/* socket */
+#define	S_ISUID		0004000		/* set user id on execution */
+#define	S_ISGID		0002000		/* set group id on execution */
+#define	S_ISVTX		0001000		/* save swapped text even after use */
+#define	S_IREAD		0000400		/* read permission, owner */
+#define	S_IWRITE 	0000200		/* write permission, owner */
+#define	S_IEXEC		0000100		/* execute/search permission, owner */
 
 /*
  * Definitions of flags in mode that are 4.4 compatible.
@@ -74,6 +77,9 @@ struct stat
 #define	S_ISCHR(m)	((m & 0170000) == 0020000)	/* char special */
 #define	S_ISBLK(m)	((m & 0170000) == 0060000)	/* block special */
 #define	S_ISREG(m)	((m & 0170000) == 0100000)	/* regular file */
+
+#define S_BLKSIZE	512		/* block size used in the stat struct */
+
 
 /*
  * Definitions of flags stored in file flags word.  Different from 4.4 because

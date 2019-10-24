@@ -19,14 +19,18 @@
 /*
  * Machine-independent constants
  */
-#define	NMOUNT	6			/* number of mountable file systems */
-#define	MAXUPRC	20			/* max processes per user */
-#define	NOFILE	30			/* max open files per process */
-#define	CANBSIZ	256			/* max size of typewriter line */
-#define	NCARGS	5120		/* # characters in exec arglist */
-#define	NGROUPS	16			/* max number groups */
+#include <sys/syslimits.h>
 
-#define	NOGROUP	65535		/* marker for empty group set member */
+#define	MAXLOGNAME		16			/* max login name length */
+#define MAXHOSTNAMELEN	256			/* max hostname size */
+#define	NMOUNT			6			/* number of mountable file systems */
+#define	MAXUPRC			CHILD_MAX	/* max processes per user */
+#define	NOFILE			OPEN_MAX	/* max open files per process */
+#define	CANBSIZ			256			/* max size of typewriter line */
+#define	NCARGS			ARG_MAX		/* # characters in exec arglist */
+#define	NGROUPS			NGROUPS_MAX	/* max number groups */
+
+#define	NOGROUP			65535		/* marker for empty group set member */
 
 /* More types and definitions used throughout the kernel. */
 #ifdef KERNEL
@@ -36,7 +40,7 @@
 #include <sys/resource.h>
 #include <sys/uio.h>
 #include <sys/ucred.h>
-//#include <sys/rtprio.h>
+#include <sys/rtprio.h>
 #endif
 
 /* Signals */
@@ -61,14 +65,14 @@
 #define	PPAUSE	40
 #define	PUSER	50
 
-#define	NZERO	0
+#define	NZERO	0				/* default "nice" */
 
 #define	PRIMASK	0xff
 #define	PCATCH	0x100
 
-#define	NBPW	sizeof(int)										/* number of bytes in an integer */
+#define	NBPW	sizeof(int)		/* number of bytes in an integer */
 
-#define	CMASK	026												/* default mask for file creation */
+#define	CMASK	026				/* default mask for file creation */
 #define	NODEV	(dev_t)(-1)
 
 
@@ -96,7 +100,8 @@
  *
  * The file system is made out of blocks of most MAXBSIZE units.
  */
-#define	MAXBSIZE	1024
+#define	MAXBSIZE	MAXPHYS
+#define MAXFRAG 	8
 
 /*
  * MAXPATHLEN defines the longest permissable path length
@@ -109,7 +114,7 @@
  * enough to allow all legitimate uses, but halt infinite loops
  * reasonably quickly.
  */
-#define MAXPATHLEN	256
+#define MAXPATHLEN	PATH_MAX
 #define MAXSYMLINKS	8
 
 /*
@@ -128,18 +133,9 @@
 #endif
 #define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
 
-/*
- * Maximum size of hostname recognized and stored in the kernel.
- */
-#define MAXHOSTNAMELEN	64
 
 /*
  * MAXMEM is the maximum core per process is allowed.  First number is Kb.
 */
 #define	MAXMEM		(300*16)
-
-/*
- * MAXLOGNAME should be >= UT_NAMESIZE (see <utmp.h>)
- */
-#define	MAXLOGNAME	16		/* max login name length */
 

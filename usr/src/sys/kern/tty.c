@@ -818,9 +818,7 @@ ttyinput(c, tp)
 	 */
 	if (t_flags&PENDIN)
 		ttypend(tp);
-#ifdef UCB_METER
-	tk_nin++;
-#endif
+
 	c &= 0377;
 
 	/*
@@ -1074,21 +1072,18 @@ ttyoutput(c, tp)
 			return (-1);
 		if (putc(c, &tp->t_outq))
 			return(c);
-#ifdef UCB_METER
 		tk_nout++;
-#endif
 		return(-1);
 	}
 
 	c &= 0177;
-#ifdef	whybother
+
 	/*
 	 * Ignore EOT in normal mode to avoid
 	 * hanging up certain terminals.
 	 */
 	if (c == CEOT && (tp->t_flags&CBREAK) == 0)
 		return(-1);
-#endif
 	/*
 	 * Turn tabs to spaces as required
 	 */
@@ -1099,17 +1094,13 @@ ttyoutput(c, tp)
 		if ((tp->t_flags&FLUSHO) == 0) {
 			s = spltty();		/* don't interrupt tabs */
 			c -= b_to_q("        ", c, &tp->t_outq);
-#ifdef UCB_METER
 			tk_nout += c;
-#endif
 			splx(s);
 		}
 		tp->t_col += c;
 		return (c ? -1 : '\t');
 	}
-#ifdef UCB_METER
-	tk_nout++;
-#endif
+
 	/*
 	 * turn <nl> to <cr><lf> if desired.
 	 */
@@ -1117,10 +1108,9 @@ ttyoutput(c, tp)
 		{
 		if (putc('\r', &tp->t_outq))
 			return(c);
-#ifdef UCB_METER
-		tk_nout++;
-#endif
 		}
+	tk_nout++;
+	tp->t_outcc++;
 	if ((tp->t_flags&FLUSHO) == 0 && putc(c, &tp->t_outq))
 		return (c);
 
@@ -1448,9 +1438,7 @@ loop:
 			ce -= i;
 			tp->t_col += ce;
 			cp += ce, cc -= ce;
-#ifdef UCB_METER
- 			tk_nout += ce;
-#endif
+			tp->t_outcc += ce;
 			if (i > 0) {
 				/* out of c-lists, wait a bit */
 				ttstart(tp);
@@ -1692,4 +1680,20 @@ ttwakeup(tp)
 	if (tp->t_state & TS_ASYNC)
 		gsignal(tp->t_pgrp, SIGIO); 
 	wakeup((caddr_t)&tp->t_rawq);
+}
+
+/*
+ * Look up a code for a specified speed in a conversion table;
+ * used by drivers to map software speed values to hardware parameters.
+ */
+int
+ttspeedtab(speed, table)
+	int speed;
+	register struct speedtab *table;
+{
+
+	for ( ; table->sp_speed != -1; table++)
+		if (table->sp_speed == speed)
+			return (table->sp_code);
+	return (-1);
 }

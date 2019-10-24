@@ -1,5 +1,5 @@
-/*-
- * Copyright (c) 1992, 1993
+/*
+ * Copyright (c) 1988, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,37 +30,31 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)select.h	8.2.1 (2.11BSD) 2000/2/28
+ *	@(#)syslimits.h	8.1 (Berkeley) 6/2/93
+ * $Id: syslimits.h,v 1.4 1994/08/08 09:12:43 davidg Exp $
  */
 
-#ifndef _SYS_SELECT_H_
-#define	_SYS_SELECT_H_
+#ifndef _SYS_SYSLIMITS_H_
+#define _SYS_SYSLIMITS_H_
 
-/*
- * Select uses bit masks of file descriptors in longs.
- * These macros manipulate such bit fields (the filesystem macros use chars).
- * FD_SETSIZE may be defined by the user, but the default here
- * should be >= NOFILE (param.h).
- */
-#ifndef	FD_SETSIZE
-#define	FD_SETSIZE	32
+#define	ARG_MAX				65536	/* max bytes for an exec function */
+#define	CHILD_MAX		   	40		/* max simultaneous processes */
+#define	LINK_MAX			32767	/* max file link count */
+#define	MAX_CANON		  	255		/* max bytes in term canon input line */
+#define	MAX_INPUT		  	255		/* max bytes in terminal input */
+#define	NAME_MAX		  	255		/* max bytes in a file name */
+#define	NGROUPS_MAX		  	16		/* max supplemental group id's */
+#define	OPEN_MAX		  	64		/* max open files per process */
+#define	PATH_MAX		 	1024	/* max bytes in pathname */
+#define	PIPE_BUF		  	512		/* max bytes for atomic pipe writes */
+
+#define	BC_BASE_MAX		   	99		/* max ibase/obase values in bc(1) */
+#define	BC_DIM_MAX		 	2048	/* max array elements in bc(1) */
+#define	BC_SCALE_MAX		99		/* max scale value in bc(1) */
+#define	BC_STRING_MAX		1000	/* max const string length in bc(1) */
+#define	COLL_WEIGHTS_MAX	0		/* max weights for order keyword */
+#define	EXPR_NEST_MAX 		32		/* max expressions nested in expr(1) */
+#define	LINE_MAX 			2048	/* max bytes in an input line */
+#define	RE_DUP_MAX		   	255		/* max RE's in interval notation */
+
 #endif
-
-typedef long	fd_mask;
-#define NFDBITS	(sizeof(fd_mask) * NBBY)	/* bits per mask */
-
-typedef	struct fd_set {
-	fd_mask	fds_bits[1];
-} fd_set;
-
-#define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1L << ((n) % NFDBITS)))
-#define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1L << ((n) % NFDBITS)))
-#define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1L << ((n) % NFDBITS)))
-#define FD_ZERO(p)	bzero((char *)(p), sizeof(*(p)))
-
-#ifndef KERNEL
-int	select();
-int	pselect();
-#endif /* !KERNEL */
-
-#endif /* !_SYS_SELECT_H_ */

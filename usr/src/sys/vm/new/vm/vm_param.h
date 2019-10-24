@@ -94,7 +94,7 @@ typedef int	boolean_t;
 #define	PAGE_SHIFT	page_shift		/* bits to shift for pages */
 #ifdef KERNEL
 extern vm_size_t	page_mask;
-extern int		page_shift;
+extern int			page_shift;
 #endif
 
 /*

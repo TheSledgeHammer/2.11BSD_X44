@@ -6,6 +6,9 @@
  *	@(#)trace.h	7.1 (Berkeley) 6/4/86
  */
 
+#ifndef _SYS_TRACE_H_
+#define _SYS_TRACE_H_
+
 /*
  * File system buffer tracing points; all trace <pack(dev, size), bn>
  *
@@ -84,4 +87,6 @@ u_long tracebuf[TR_NUM_210];
 #define	trace(a)	tracebuf[a]++;
 #else
 #define	trace(a)	;
+#endif
+
 #endif

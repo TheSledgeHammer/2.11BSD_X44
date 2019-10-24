@@ -6,10 +6,15 @@
  *	@(#)mount.h	7.2.5 (2.11BSD GTE) 1997/6/29
  */
 
+#ifndef KERNEL
+#include <sys/ucred.h>
+#endif
+#include <sys/queue.h>
+
 /*
  * file system statistics
  */
-#include <sys/fs.h>
+//#include <sys/fs.h>
 
 #define MNAMELEN 90	/* length of buffer for returned name */
 
@@ -50,7 +55,7 @@ struct statfs {
  */
 struct	mount
 {
-	dev_t	m_dev;		/* device mounted */
+	dev_t	m_dev;			/* device mounted */
 	struct	fs m_filsys;	/* superblock data */
 #define	m_flags	m_filsys.fs_flags
 	struct	inode *m_inodp;	/* pointer to mounted on inode */

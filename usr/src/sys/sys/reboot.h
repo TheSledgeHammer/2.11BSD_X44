@@ -10,10 +10,10 @@
 
 /*
  * Arguments to reboot system call.
- * These are passed to boot program in r4,
+ * These are passed to boot program in r4 or r11,
  * and on to init.
  */
-#define	RB_AUTOBOOT		0	/* flags for system auto-booting itself */
+#define	RB_AUTOBOOT		0		/* flags for system auto-booting itself */
 
 #define	RB_ASKNAME		0x001	/* ask for file name to reboot from */
 #define	RB_SINGLE		0x002	/* reboot to single user only */
@@ -27,8 +27,8 @@
 #define	RB_RDONLY		0x200	/* mount root fs read-only */
 #define	RB_AUTODEBUG	0x400	/* init runs autoconfig with "-d" (debug) */
 
-#define	RB_PANIC		0	/* reboot due to panic */
-#define	RB_BOOT			1	/* reboot due to boot() */
+#define	RB_PANIC		0		/* reboot due to panic */
+#define	RB_BOOT			1		/* reboot due to boot() */
 
 /*
  * Constants for converting boot-style device number to type,

@@ -6,7 +6,6 @@
  *	@(#)systm.h	1.3 (2.11BSD GTE) 1996/5/9
  */
 
-//#ifndef SUPERVISOR
 #ifndef _SYS_SYSTM_H_
 #define	_SYS_SYSTM_H_
 
@@ -96,13 +95,8 @@ extern	char	regloc[];	/* offsets of saved user registers (trap.c) */
 extern void startup();
 extern void cinit();
 extern void pqinit();
-extern void xinit();
 extern void ihinit();
 extern void bhinit();
 extern void binit();
-extern void ubinit();
-extern void nchinit();
-extern void clkstart();
 
 #endif
-//#endif

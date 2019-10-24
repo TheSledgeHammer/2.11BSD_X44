@@ -9,12 +9,6 @@
 #ifndef _NAMEI_
 #define	_NAMEI_
 
-#ifdef KERNEL
-#include "uio.h"
-#else
-#include <sys/uio.h>
-#endif
-
 /*
  * Encapsulation of namei parameters.
  * One of these is located in the u. area to
@@ -31,10 +25,32 @@ struct nameidata {
 	off_t	ni_offset;			/* offset in directory */
 	u_short	ni_count;			/* offset of open slot (off_t?) */
 	struct	direct ni_dent;		/* current directory entry */
+
+	/* Arguments to lookup */
+	struct	vnode *ni_startdir;	/* starting directory */
+	struct	vnode *ni_rootdir;	/* logical root directory */
+
+	/* Results: returned from/manipulated by lookup  */
+	struct	vnode *ni_vp;		/* vnode of result */
+	struct	vnode *ni_dvp;		/* vnode of intermediate directory */
+
+	struct componentname {
+		/* Arguments to lookup */
+		u_long	cn_nameiop;		/* namei operation */
+		u_long	cn_flags;		/* flags to namei */
+		struct	proc *cn_proc;	/* process requesting lookup */
+		struct	ucred *cn_cred;	/* credentials */
+
+		/* Shared between lookup and commit routines */
+		char	*cn_pnbuf;		/* pathname buffer */
+		char	*cn_nameptr;	/* pointer to looked up name */
+		long	cn_namelen;		/* length of looked up component */
+	} ni_cnd;
 };
 
+#ifdef KERNEL
 /*
- * namei operations and modifiers
+ * namei operations and modifiers, stored in ni_cnd.flags
  */
 #define	LOOKUP		0		/* perform name lookup only */
 #define	CREATE		1		/* setup for file creation */
@@ -44,16 +60,32 @@ struct nameidata {
 #define FOLLOW		0x40	/* follow symbolic links */
 #define	NOFOLLOW	0x0		/* don't follow symbolic links (pseudo) */
 
-#define	NDINIT(ndp,op,flags,segflg,namep) {\
+#define	LOCKLEAF	0x0004	/* lock inode on return */
+
+
+#define	NDINIT(ndp, op, flags, segflg, namep) {\
 	(ndp)->ni_nameiop = op | flags; \
 	(ndp)->ni_segflg = segflg; \
 	(ndp)->ni_dirp = namep; \
 	}
+#ifdef VNODE
+#define VNDINIT(ndp, op, flags, segflg, namep, p) { \
+	(ndp)->ni_cnd.cn_nameiop = op; \
+	(ndp)->ni_cnd.cn_flags = flags; \
+	(ndp)->ni_segflg = segflg; \
+	(ndp)->ni_dirp = namep; \
+	(ndp)->ni_cnd.cn_proc = p; \
+}
+#endif
+#endif
 
 /*
  * This structure describes the elements in the cache of recent
  * names looked up by namei.
  */
+
+#define	NCHNAMLEN	31	/* maximum name segment length we bother with */
+
 struct	namecache {
 	struct	namecache *nc_forw;	/* hash chain, MUST BE FIRST */
 	struct	namecache *nc_back;	/* hash chain, MUST BE FIRST */
@@ -65,15 +97,13 @@ struct	namecache {
 	dev_t	nc_idev;		/* dev of the name ref'd */
 	u_short	nc_id;			/* referenced inode's id */
 	char	nc_nlen;		/* length of name */
-#define	NCHNAMLEN	15	/* maximum name segment length we bother with */
 	char	nc_name[NCHNAMLEN];	/* segment name */
+
+	struct	vnode *nc_dvp;		/* vnode of parent of name */
+	u_long	nc_dvpid;			/* capability number of nc_dvp */
+	struct	vnode *nc_vp;		/* vnode the name refers to */
+	u_long	nc_vpid;			/* capability number of nc_vp */
 };
-#if	defined(KERNEL) && !defined(SUPERVISOR)
-struct	namecache *namecache;
-int	nchsize;
-#include <machine/seg.h>
-segm	nmidesc;
-#endif
 
 /*
  * Stats on usefulness of namei caches.
@@ -82,9 +112,12 @@ struct	nchstats {
 	long	ncs_goodhits;		/* hits that we can reall use */
 	long	ncs_badhits;		/* hits we must drop */
 	long	ncs_falsehits;		/* hits with id mismatch */
-	long	ncs_miss;		/* misses */
-	long	ncs_long;		/* long names that ignore cache */
-	long	ncs_pass2;		/* names found with passes == 2 */
+	long	ncs_miss;			/* misses */
+	long	ncs_long;			/* long names that ignore cache */
+	long	ncs_pass2;			/* names found with passes == 2 */
 	long	ncs_2passes;		/* number of times we attempt it */
+
+	struct	vnode *nc_dvp;		/* vnode of parent of name */
+	struct	vnode *nc_vp;		/* vnode the name refers to */
 };
 #endif

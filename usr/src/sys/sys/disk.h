@@ -46,7 +46,7 @@
 
 #ifndef	_SYS_DISK_H_
 #define	_SYS_DISK_H_
-#include <sys/disklabel.h>
+//#include <sys/disklabel.h>
 
 /*
  * Disk device structures.
@@ -81,11 +81,11 @@
  */
 
 struct dkdevice {
-	int	dk_bopenmask;		/* block devices open */
-	int	dk_copenmask;		/* character devices open */
-	int	dk_openmask;		/* composite (bopen|copen) */
-	int	dk_flags;		/* label state   see below */
-	memaddr	dk_label;		/* sector containing label */
+	int	dk_bopenmask;							/* block devices open */
+	int	dk_copenmask;							/* character devices open */
+	int	dk_openmask;							/* composite (bopen|copen) */
+	int	dk_flags;								/* label state   see below */
+	memaddr	dk_label;							/* sector containing label */
 	struct	partition dk_parts[MAXPARTITIONS];	/* inkernel portion */
 };
 
@@ -111,7 +111,7 @@ struct dkdevice {
 #define dkminor(unit, part)	(((unit) << 3) | (part))
 
 #ifdef KERNEL
-char	*readdisklabel();
+char *readdisklabel();
 int	setdisklabel();
 int	writedisklabel();
 #endif

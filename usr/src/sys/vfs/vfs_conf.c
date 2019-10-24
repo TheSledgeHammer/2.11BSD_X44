@@ -1,5 +1,5 @@
-/*-
- * Copyright (c) 1992, 1993
+/*
+ * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,37 +30,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)select.h	8.2.1 (2.11BSD) 2000/2/28
+ *	@(#)vfs_conf.c	8.8 (Berkeley) 3/31/94
+ * $Id: vfs_conf.c,v 1.5 1994/09/21 03:46:47 wollman Exp $
  */
 
-#ifndef _SYS_SELECT_H_
-#define	_SYS_SELECT_H_
+#include <sys/param.h>
+#include <sys/mount.h>
+#include <sys/vnode.h>
 
-/*
- * Select uses bit masks of file descriptors in longs.
- * These macros manipulate such bit fields (the filesystem macros use chars).
- * FD_SETSIZE may be defined by the user, but the default here
- * should be >= NOFILE (param.h).
- */
-#ifndef	FD_SETSIZE
-#define	FD_SETSIZE	32
-#endif
+int (*mountroot) __P((void));
+struct vnode *rootvnode;
 
-typedef long	fd_mask;
-#define NFDBITS	(sizeof(fd_mask) * NBBY)	/* bits per mask */
-
-typedef	struct fd_set {
-	fd_mask	fds_bits[1];
-} fd_set;
-
-#define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1L << ((n) % NFDBITS)))
-#define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1L << ((n) % NFDBITS)))
-#define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1L << ((n) % NFDBITS)))
-#define FD_ZERO(p)	bzero((char *)(p), sizeof(*(p)))
-
-#ifndef KERNEL
-int	select();
-int	pselect();
-#endif /* !KERNEL */
-
-#endif /* !_SYS_SELECT_H_ */

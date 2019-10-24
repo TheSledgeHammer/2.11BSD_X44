@@ -1003,8 +1003,8 @@ pmap_remove_all(pa)
 			/*
 			 * update the vm_page_t clean bit
 			 */
-			if ( (m->flags & PG_CLEAN) &&
-				((((int) *pte) & PG_M) && (pv->pv_va < USRSTACK || pv->pv_va > UPT_MAX_ADDRESS))
+			if ( ((m->flags & PG_CLEAN) &&
+				((((int) *pte) & PG_M) && (pv->pv_va < USRSTACK || pv->pv_va > UPT_MAX_ADDRESS)))
 				|| (pv->pv_va >= USRSTACK && pv->pv_va < USRSTACK+(UPAGES*NBPG))) {
 				if (pv->pv_va < clean_sva || pv->pv_va >= clean_eva) {
 					m->flags &= ~PG_CLEAN;

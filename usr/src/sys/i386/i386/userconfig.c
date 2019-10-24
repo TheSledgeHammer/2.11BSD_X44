@@ -114,19 +114,19 @@ static CmdParm dev_parms[] = {
 };
 
 static Cmd CmdList[] = {
-    { "?", 	helpfunc, 		NULL },		/* ? (help)	*/
+    { "?", 	helpfunc, 			NULL },			/* ? (help)	*/
     { "di",	set_device_disable,	dev_parms },	/* disable dev	*/
     { "dr",	set_device_drq,		int_parms },	/* drq dev #	*/
     { "en",	set_device_enable,	dev_parms },	/* enable dev	*/
-    { "ex", 	quitfunc, 		NULL },		/* exit (quit)	*/
+    { "ex", 	quitfunc, 		NULL },			/* exit (quit)	*/
     { "f",	set_device_flags,	int_parms },	/* flags dev mask */
-    { "h", 	helpfunc, 		NULL },		/* help		*/
+    { "h", 	helpfunc, 			NULL },			/* help		*/
     { "io",	set_device_mem,		addr_parms },	/* iomem dev addr */
     { "ir",	set_device_irq,		int_parms },	/* irq dev #	*/
-    { "l",	list_devices,		NULL },		/* ls, list	*/
+    { "l",	list_devices,		NULL },			/* ls, list	*/
     { "p",	set_device_ioaddr,	int_parms },	/* port dev addr */
-    { "q", 	quitfunc, 		NULL },		/* quit		*/
-    { NULL,	NULL,			NULL },
+    { "q", 	quitfunc, 			NULL },			/* quit		*/
+    { NULL,	NULL,				NULL },
 };
 
 void

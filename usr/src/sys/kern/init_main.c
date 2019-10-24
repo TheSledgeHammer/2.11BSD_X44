@@ -35,9 +35,19 @@ int	netoff = 1;
 int cmask = CMASK;
 int	securelevel;
 
+struct session session0;
+struct pgrp pgrp0;
 struct proc proc0;
+struct pcred cred0;
+struct fs0 filedesc0;
+struct plimit limit0;
+struct vmspace vmspace0;
 struct proc *curproc = &proc0;
 
+struct inode *rootvp, *swapdev_vp;
+int	boothowto;
+struct	timeval boottime;
+struct	timeval runtime;
 
 /*
  * Initialization code.
@@ -59,7 +69,7 @@ main()
 	extern caddr_t bootcsr;
 	register struct proc *p;
 	register struct user *u;
-	//extern struct sysentvec aout_sysvec; /* Remove imgact */
+	//extern struct sysentvec aout_sysvec; /* Removed imgact */
 	register int i;
 	register struct fs *fs;
 	//time_t  toytime, toyclk();
@@ -67,8 +77,8 @@ main()
 	int	(*ioctl)();
 	struct	partinfo dpart;
 
-	register struct bdevsw bdevsw;
-	register struct cdevsw cdevsw;
+	//register struct bdevsw bdevsw;
+	//register struct cdevsw cdevsw;
 
 	/*
 	 * Initialize the current process pointer (curproc) before
@@ -85,15 +95,27 @@ main()
 
 	allproc = (volatile struct proc *)p;
 	p->p_prev = (struct proc **)&allproc;
-
+	p->p_pgrp = &pgrp0;
+	pgrphash[0] = &pgrp0;
 
 	//p->p_sysent = &aout_sysvec;
 
 	p->p_stat = SRUN;
 	p->p_flag |= SLOAD|SSYS;
 	p->p_nice = NZERO;
+	p->p_rtprio.type = RTP_PRIO_NORMAL;
+	p->p_rtprio.prio = 0;
 
-	u->u_procp = p;			/* init user structure */
+	//bcopy("swapper", p->p_comm, sizeof ("swapper"));
+
+	/* Create credentials. */
+	cred0.p_refcnt = 1;
+	p->p_cred = &cred0;
+	p->p_ucred = crget();
+	p->p_ucred->cr_ngroups = 1;	/* group 0 */
+
+	/* init user structure */
+	u->u_procp = p;
 	u->u_ap = u->u_arg;
 	u->u_cmask = cmask;
 	u->u_lastfile = -1;
@@ -104,6 +126,7 @@ main()
 		    RLIM_INFINITY;
 	bcopy("root", u->u_login, sizeof ("root"));
 
+
 	/* Initialize signal state for process 0 */
 	siginit(p);
 
@@ -112,13 +135,9 @@ main()
 	 */
 	cinit();
 	pqinit();
-	xinit();
 	ihinit();
 	bhinit();
 	binit();
-	ubinit();
-	nchinit();
-	clkstart();
 
 /*
  * If the kernel is configured for the boot/load device AND the use of the
@@ -206,7 +225,7 @@ main()
 	mount[0].m_inodp = (struct inode *)1;	/* XXX */
 	mount_updname(fs, "/", "root", 1, 4);
 	time.tv_sec = fs->fs_time;
-	if	(toytime = toyclk())
+	if	(toytime == toyclk())
 		times.tv_sec = toytime;
 	boottime = time;
 

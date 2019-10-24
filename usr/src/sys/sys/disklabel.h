@@ -77,10 +77,11 @@
  * the kernel and mapped in as needed.
 */
 
+#ifndef LOCORE
 struct disklabel {
-	u_long	d_magic;		/* the magic number */
-	u_char	d_type;			/* drive type */
-	u_char	d_subtype;		/* controller/d_type specific */
+	u_long	d_magic;			/* the magic number */
+	u_char	d_type;				/* drive type */
+	u_char	d_subtype;			/* controller/d_type specific */
 	char	d_typename[16];		/* type name, e.g. "eagle" */
 	/* 
 	 * d_packname contains the pack identifier and is returned when
@@ -98,6 +99,7 @@ struct disklabel {
 	} d_un; 
 #define d_packname	d_un.un_d_packname
 #define d_boot0		d_un.un_d_boot0
+#define d_boot1		d_un.un_b.un_d_boot1
 #endif	/* ! KERNEL or STANDALONE */
 			/* disk geometry: */
 	u_short	d_secsize;		/* # of bytes per sector */
@@ -138,21 +140,21 @@ struct disklabel {
 	 * relative to sector 0 on cylinder N-1.
 	 */
 	u_short	d_rpm;			/* rotational speed */
-	u_char	d_interleave;		/* hardware sector interleave */
-	u_char	d_trackskew;		/* sector 0 skew, per track */
+	u_char	d_interleave;	/* hardware sector interleave */
+	u_char	d_trackskew;	/* sector 0 skew, per track */
 	u_char	d_cylskew;		/* sector 0 skew, per cylinder */
-	u_char	d_headswitch;		/* head swith time, usec */
+	u_char	d_headswitch;	/* head swith time, usec */
 	u_short	d_trkseek;		/* track-to-track seek, msec */
 	u_short	d_flags;		/* generic flags */
 #define NDDATA 5
 	u_long	d_drivedata[NDDATA];	/* drive-type specific information */
 #define NSPARE 5
-	u_long	d_spare[NSPARE];	/* reserved for future use */
+	u_long	d_spare[NSPARE];/* reserved for future use */
 	u_long	d_magic2;		/* the magic number (again) */
 	u_short	d_checksum;		/* xor of data incl. partitions */
 
 			/* filesystem and partition information: */
-	u_short	d_npartitions;		/* number of partitions in following */
+	u_short	d_npartitions;	/* number of partitions in following */
 	u_short	d_bbsize;		/* size of boot area at sn0, bytes */
 	u_short	d_sbsize;		/* max size of fs superblock, bytes */
 	struct	partition {		/* the partition table */
@@ -161,8 +163,28 @@ struct disklabel {
 		u_short	p_fsize;	/* filesystem basic fragment size */
 		u_char	p_fstype;	/* filesystem type, see below */
 		u_char	p_frag;		/* filesystem fragments per block */
+		union {
+			u_short	cpg;	/* UFS: FS cylinders per group */
+			u_short	sgs;	/* LFS: FS segment shift */
+		}__partition_u1;
+#define	p_cpg	__partition_u1.cpg
+#define	p_sgs	__partition_u1.sgs
 	} d_partitions[MAXPARTITIONS];	/* actually may be more */
 };
+struct cpu_disklabel {
+};
+#else /* LOCORE */
+/*
+ * offsets for asm boot files.
+ */
+.set	d_secsize,40
+.set	d_nsectors,44
+.set	d_ntracks,48
+.set	d_ncylinders,52
+.set	d_secpercyl,56
+.set	d_secperunit,60
+.set	d_end_,276		/* size of disk label */
+#endif /* LOCORE */
 
 /* d_type values: */
 #define	DTYPE_SMD		1		/* SMD, XSMD; VAX hp/up */
@@ -171,7 +193,12 @@ struct disklabel {
 #define	DTYPE_SCSI		4		/* SCSI */
 #define	DTYPE_ESDI		5		/* ESDI interface */
 #define	DTYPE_ST506		6		/* ST506 etc. */
-#define	DTYPE_FLOPPY		7		/* floppy */
+#define	DTYPE_FLOPPY	7		/* floppy */
+
+/* d_subtype values: */
+#define DSTYPE_INDOSPART	0x8			/* is inside dos partition */
+#define DSTYPE_DOSPART(s)	((s) & 3)	/* dos partition number */
+#define DSTYPE_GEOMETRY		0x10		/* drive params in label */
 
 #ifdef DKTYPENAMES
 static char *dktypenames[] = {
@@ -198,6 +225,7 @@ static char *dktypenames[] = {
 #define	FS_V6		2		/* Sixth Edition */
 #define	FS_V7		3		/* Seventh Edition */
 #define	FS_SYSV		4		/* System V */
+
 /*
  * 2.11BSD uses type 5 filesystems even though block numbers are 4 bytes
  * (rather than the packed 3 byte format) and the directory structure is
@@ -211,6 +239,7 @@ static char *dktypenames[] = {
 #define	FS_OTHER	10		/* in use, but unknown/unsupported */
 #define	FS_HPFS		11		/* OS/2 high-performance file system */
 #define	FS_ISO9660	12		/* ISO 9660, normally CD-ROM */
+#define	FS_BOOT		13		/* partition contains bootstrap */
 
 #ifdef	DKTYPENAMES
 static char *fstypenames[] = {
@@ -227,6 +256,7 @@ static char *fstypenames[] = {
 	"unknown",
 	"HPFS",
 	"ISO9660",
+	"boot",
 	0
 };
 #define FSMAXTYPES	(sizeof(fstypenames) / sizeof(fstypenames[0]) - 1)
@@ -239,7 +269,10 @@ static char *fstypenames[] = {
 #define		D_ECC		0x02		/* supports ECC */
 #define		D_BADSECT	0x04		/* supports bad sector forw. */
 #define		D_RAMDISK	0x08		/* disk emulator */
+#define		D_CHAIN		0x10		/* can do back-back transfers */
 
+
+#ifndef LOCORE
 /*
  * Structure used to perform a format
  * or other raw operation, returning data
@@ -263,6 +296,31 @@ struct partinfo {
 	struct partition *part;
 };
 
+/* DOS partition table -- located in boot block */
+#define DOSBBSECTOR	0			/* DOS boot block relative sector number */
+#define DOSPARTOFF	446
+#define NDOSPART	4
+#define	DOSPTYP_386BSD	0xa5	/* 386BSD partition type */
+#define	MBR_PTYPE_FreeBSD 0xa5	/* FreeBSD partition type */
+
+struct dos_partition {
+	unsigned char	dp_flag;	/* bootstrap flags */
+	unsigned char	dp_shd;		/* starting head */
+	unsigned char	dp_ssect;	/* starting sector */
+	unsigned char	dp_scyl;	/* starting cylinder */
+	unsigned char	dp_typ;		/* partition type */
+	unsigned char	dp_ehd;		/* end head */
+	unsigned char	dp_esect;	/* end sector */
+	unsigned char	dp_ecyl;	/* end cylinder */
+	unsigned long	dp_start;	/* absolute starting sector number */
+	unsigned long	dp_size;	/* partition size in sectors */
+};
+
+extern struct dos_partition dos_partitions[NDOSPART];
+
+#define DPSECT(s) ((s) & 0x3f)		/* isolate relevant bits of sector */
+#define DPCYL(c, s) ((c) + (((s) & 0xc0)<<2)) /* and those that are cylinder */
+
 /*
  * Disk-specific ioctls.
  */
@@ -282,13 +340,36 @@ struct partinfo {
 
 #define DIOCSBAD	_IOW(d, 110, struct dkbad)	/* set kernel dkbad */
 
+#endif /* LOCORE */
+
 #ifndef	KERNEL
 struct disklabel *getdiskbyname();
-#endif
 
-#if	defined(KERNEL) && !defined(SUPERVISOR)
+/* Here for compatability with 2.11BSD */
 memaddr	disklabelalloc();
 #define	LABELDESC	(((btoc(sizeof (struct disklabel)) - 1) << 8) | RW)
+
+
+
+#ifdef __i386
+char *	readMBRtolabel __P(( dev_t dev , void (*strat)(), register struct disklabel *lp, struct dos_partition *dp, int *cyl));
+#endif
+#endif
+
+#if !defined(KERNEL) && !defined(LOCORE)
+
+#include <sys/cdefs.h>
+__BEGIN_DECLS
+struct disklabel *getdiskbyname __P((const char *));
+__END_DECLS
+
+#endif
+
+#ifdef __i386
+/* encoding of disk minor numbers, should be elsewhere... */
+#define dkunit(dev)		(minor(dev) >> 3)
+#define dkpart(dev)		(minor(dev) & 07)
+#define dkminor(unit, part)	(((unit) << 3) | (part))
 #endif
 
 #endif	/* !_SYS_DISKLABEL_H_ */

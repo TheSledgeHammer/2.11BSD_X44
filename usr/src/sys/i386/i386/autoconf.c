@@ -48,7 +48,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/buf.h>
-#include <sys/dkstat.h>
+#include <sys/dk.h>
 #include <sys/conf.h>
 #include <sys/dmap.h>
 #include <sys/reboot.h>
@@ -179,7 +179,7 @@ setroot()
 	struct swdevt *swp;
 
 /*printf("howto %x bootdev %x ", boothowto, bootdev);*/
-	if (boothowto & RB_DFLTROOT ||
+	if ((boothowto & RB_DFLTROOT) ||
 	    (bootdev & B_MAGICMASK) != (u_long)B_DEVMAGIC)
 		return;
 	majdev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;

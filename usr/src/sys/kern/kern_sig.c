@@ -11,11 +11,9 @@
 #include <sys/user.h>
 #include <sys/inode.h>
 #include <sys/proc.h>
-//#include <sys/text.h>
 #include <sys/namei.h>
 #include <sys/acct.h>
 #include <sys/signalvar.h>
-//#include <machine/seg.h>
 
 extern	char	sigprop[];	/* XXX - defined in kern_sig2.c */
 
@@ -446,7 +444,7 @@ issignal(p)
 			do {
 				stop(p);
 				swtch();
-			} while (!procxmt() && (p->p_flag & P_TRACED));
+			} while (!trace_req(p) && (p->p_flag & P_TRACED));
 
 			/*
 			 * If parent wants us to take the signal,

@@ -34,8 +34,8 @@ struct clist {
 struct tty {
 	union {
 		struct {
-			struct	clist T_rawq;
-			struct	clist T_canq;
+			struct	clist T_rawq;	/* Device raw input queue. */
+			struct	clist T_canq;	/* Device canonical queue. */
 		} t_t;
 
 #define	t_rawq	t_nu.t_t.T_rawq		/* raw characters or partial line */
@@ -43,8 +43,8 @@ struct tty {
 		struct {
 			struct	buf *T_bufp;
 			char	*T_cp;
-			int	T_inbuf;
-			int	T_rec;
+			int		T_inbuf;
+			int		T_rec;
 		} t_n;
 
 #define	t_bufp	t_nu.t_n.T_bufp		/* buffer allocated to protocol */
@@ -53,26 +53,27 @@ struct tty {
 #define	t_rec	t_nu.t_n.T_rec		/* have a complete record */
 	} t_nu;
 
-	struct	clist t_outq;			/* device */
+	struct	clist t_outq;			/* Device output queue. */
 	int	(*t_oproc)();				/* device */
-	struct	proc *t_rsel;			/* tty */
-	struct	proc *t_wsel;
+	struct	proc *t_rsel;			/* Tty read/oob select. */
+	struct	proc *t_wsel;			/* Tty write select. */
 	caddr_t	T_LINEP;				/* ### */
 	caddr_t	t_addr;					/* ??? */
 	dev_t	t_dev;					/* device */
-	long	t_flags;				/* some of both */
-	long	t_state;				/* some of both */
+	long	t_flags;				/* Tty flags. */
+	long	t_state;				/* Device and driver (TS*) state. */
 	//short	t_pgrp;					/* tty */
 	char	t_delct;				/* tty */
-	char	t_line;					/* glue */
-	char	t_col;					/* tty */
+	char	t_line;					/* Interface to device drivers. */
+	char	t_col;					/* Tty output column. */
 	char	t_ispeed, t_ospeed;		/* device */
 	char	t_rocount, t_rocol;		/* tty */
 	struct	ttychars t_chars;		/* tty */
 	struct	winsize t_winsize;		/* window size */
 
 	struct	pgrp 	*t_pgrp;		/* Foreground process group. */
-	struct	session *t_session;	/* Enclosing session. */
+	struct	session *t_session;		/* Enclosing session. */
+	struct	termios t_termios;		/* Termios state. */
 
 /* be careful of tchars & co. */
 #define	t_erase		t_chars.tc_erase
@@ -102,15 +103,15 @@ struct tty {
 #define	t_ospeed	t_termios.c_ospeed
 #define	t_time		t_termios.c_time
 
-#define	TTIPRI	28
-#define	TTOPRI	29
+#define	TTIPRI	28	/* Sleep priority for tty reads. */
+#define	TTOPRI	29	/* Sleep priority for tty writes. */
 
 /* limits */
 #define	NSPEEDS	16
 #define	TTMASK	15
 #define	OBUFSIZ	100
 
-#if defined(KERNEL) && !defined(SUPERVISOR)
+#if defined(KERNEL)
 short	tthiwat[NSPEEDS], ttlowat[NSPEEDS];
 #define	TTHIWAT(tp)	tthiwat[(tp)->t_ospeed&TTMASK]
 #define	TTLOWAT(tp)	ttlowat[(tp)->t_ospeed&TTMASK]
@@ -132,13 +133,14 @@ extern	struct ttychars ttydefaults;
 #define	TS_RCOLL	0x000800L	/* collision in read select */
 #define	TS_WCOLL	0x001000L	/* collision in write select */
 #define	TS_ASYNC	0x004000L	/* tty in async i/o mode */
+
 /* state for intra-line fancy editing work */
+#define	TS_BKSL		0x008000L	/* State for lowercase \ work. */
 #define	TS_ERASE	0x040000L	/* within a \.../ for PRTRUB */
 #define	TS_LNCH		0x080000L	/* next character is literal */
 #define	TS_TYPEN	0x100000L	/* retyping suspended input (PENDIN) */
 #define	TS_CNTTB	0x200000L	/* counting tab width; leave FLUSHO alone */
-
-#define	TS_LOCAL	(TS_ERASE|TS_LNCH|TS_TYPEN|TS_CNTTB)
+#define	TS_LOCAL	(TS_BKSL|TS_ERASE|TS_LNCH|TS_TYPEN|TS_CNTTB)
 
 /* define partab character types */
 #define	ORDINARY	0
@@ -148,6 +150,33 @@ extern	struct ttychars ttydefaults;
 #define	TAB			4
 #define	VTAB		5
 #define	RETURN		6
+
+struct speedtab {
+	int sp_speed;			/* Speed. */
+	int sp_code;			/* Code. */
+};
+
+/* Modem control commands (driver). */
+#define	DMSET		0
+#define	DMBIS		1
+#define	DMBIC		2
+#define	DMGET		3
+
+/* Flags on a character passed to ttyinput. */
+#define	TTY_CHARMASK	0x000000ff	/* Character mask */
+#define	TTY_QUOTE	0x00000100	/* Character quoted */
+#define	TTY_ERRORMASK	0xff000000	/* Error mask */
+#define	TTY_FE		0x01000000	/* Framing error or BREAK condition */
+#define	TTY_PE		0x02000000	/* Parity error */
+
+
+/* Is tp controlling terminal for p? */
+#define	isctty(p, tp)							\
+	((p)->p_session == (tp)->t_session && (p)->p_flag & P_CONTROLT)
+
+/* Is p in background of tp? */
+#define	isbackground(p, tp)						\
+	(isctty((p), (tp)) && (p)->p_pgrp != (tp)->t_pgrp)
 
 #ifdef KERNEL
 extern	struct ttychars ttydefaults;

@@ -219,3 +219,5 @@ setlogin()
 		bcopy(newname, u->u_login, sizeof (u->u_login));
 	return(u->u_error = error);
 	}
+
+

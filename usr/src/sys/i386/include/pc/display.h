@@ -13,13 +13,13 @@
 #define	FG_RED			   4
 #define	FG_MAGENTA		   5
 #define	FG_BROWN		   6
-#define	FG_LIGHTGREY		   7
+#define	FG_LIGHTGREY	   7
 #define	FG_DARKGREY		   8
-#define	FG_LIGHTBLUE		   9
-#define	FG_LIGHTGREEN		  10
-#define	FG_LIGHTCYAN		  11
+#define	FG_LIGHTBLUE	   9
+#define	FG_LIGHTGREEN	  10
+#define	FG_LIGHTCYAN	  11
 #define	FG_LIGHTRED		  12
-#define	FG_LIGHTMAGENTA		  13
+#define	FG_LIGHTMAGENTA	  13
 #define	FG_YELLOW		  14
 #define	FG_WHITE		  15
 #define	FG_BLINK		0x80
@@ -33,11 +33,11 @@
 #define	BG_RED			0x40
 #define	BG_MAGENTA		0x50
 #define	BG_BROWN		0x60
-#define	BG_LIGHTGREY		0x70
+#define	BG_LIGHTGREY	0x70
 
 /* Monochrome attributes for foreground text */
 
-#define	FG_UNDERLINE		0x01
+#define	FG_UNDERLINE	0x01
 #define	FG_INTENSE		0x08
 
 /* Monochrome attributes for text background */

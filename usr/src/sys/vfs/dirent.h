@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1992, 1993
+ * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,37 +30,53 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)select.h	8.2.1 (2.11BSD) 2000/2/28
+ *	@(#)dirent.h	8.1 (Berkeley) 6/2/93
+ * $Id: dirent.h,v 1.2 1994/08/02 07:52:47 davidg Exp $
  */
 
-#ifndef _SYS_SELECT_H_
-#define	_SYS_SELECT_H_
+#ifndef _SYS_DIRENT_H_
+#define _SYS_DIRENT_H_
 
 /*
- * Select uses bit masks of file descriptors in longs.
- * These macros manipulate such bit fields (the filesystem macros use chars).
- * FD_SETSIZE may be defined by the user, but the default here
- * should be >= NOFILE (param.h).
+ * The dirent structure defines the format of directory entries returned by 
+ * the getdirentries(2) system call.
+ *
+ * A directory entry has a struct dirent at the front of it, containing its
+ * inode number, the length of the entry, and the length of the name
+ * contained in the entry.  These are followed by the name padded to a 4
+ * byte boundary with null bytes.  All names are guaranteed null terminated.
+ * The maximum length of a name in a directory is MAXNAMLEN.
  */
-#ifndef	FD_SETSIZE
-#define	FD_SETSIZE	32
+
+struct dirent {
+	unsigned long	d_fileno;	/* file number of entry */
+	unsigned short	d_reclen;	/* length of this record */
+	unsigned char	d_type; 	/* file type, see below */
+	unsigned char	d_namlen;	/* length of string in d_name */
+#ifdef _POSIX_SOURCE
+	char	d_name[255 + 1];	/* name must be no longer than this */
+#else
+#define	MAXNAMLEN	255
+	char	d_name[MAXNAMLEN + 1];	/* name must be no longer than this */
 #endif
+};
 
-typedef long	fd_mask;
-#define NFDBITS	(sizeof(fd_mask) * NBBY)	/* bits per mask */
+/*
+ * File types
+ */
+#define	DT_UNKNOWN	 0
+#define	DT_FIFO		 1
+#define	DT_CHR		 2
+#define	DT_DIR		 4
+#define	DT_BLK		 6
+#define	DT_REG		 8
+#define	DT_LNK		10
+#define	DT_SOCK		12
 
-typedef	struct fd_set {
-	fd_mask	fds_bits[1];
-} fd_set;
+/*
+ * Convert between stat structure types and directory types.
+ */
+#define	IFTODT(mode)	(((mode) & 0170000) >> 12)
+#define	DTTOIF(dirtype)	((dirtype) << 12)
 
-#define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1L << ((n) % NFDBITS)))
-#define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1L << ((n) % NFDBITS)))
-#define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1L << ((n) % NFDBITS)))
-#define FD_ZERO(p)	bzero((char *)(p), sizeof(*(p)))
-
-#ifndef KERNEL
-int	select();
-int	pselect();
-#endif /* !KERNEL */
-
-#endif /* !_SYS_SELECT_H_ */
+#endif

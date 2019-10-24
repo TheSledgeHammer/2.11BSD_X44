@@ -61,8 +61,8 @@ typedef struct pager_struct *vm_pager_t;
  */
 typedef struct simplelock	simple_lock_data_t;
 typedef struct simplelock	*simple_lock_t;
-typedef struct lock		lock_data_t;
-typedef struct lock		*lock_t;
+typedef struct lock			lock_data_t;
+typedef struct lock			*lock_t;
 
 #include <vm/vmmeter.h>
 #include <sys/queue.h>
@@ -85,6 +85,7 @@ struct vmspace {
 	struct	pmap vm_pmap;	/* private physical map */
 	int		vm_refcnt;		/* number of references */
 	caddr_t	vm_shm;			/* SYS5 shared memory private data XXX */
+
 /* we copy from vm_startcopy to the end of the structure on fork */
 #define vm_startcopy vm_rssize
 	segsz_t vm_rssize; 		/* current resident set size in pages */

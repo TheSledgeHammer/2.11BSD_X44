@@ -18,7 +18,7 @@
 #include <sys/fs.h>
 #include <sys/mount.h>
 #include <sys/file.h>
-#include <sys/text.h>
+//#include <sys/text.h>
 #include <sys/signalvar.h>
 extern	char	sigprop[];	/* XXX */
 

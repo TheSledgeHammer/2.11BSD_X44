@@ -12,7 +12,6 @@
 #include <vm/vm.h>
 #include <sys/systm.h>
 
-//#include <machine/seg.h>
 void
 sbrk()
 {
