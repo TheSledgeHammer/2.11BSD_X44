@@ -12,7 +12,7 @@
  * Header prepended to each a.out file.
  */
 struct	exec {
-	int	a_magic;	/* magic number */
+		 int	a_magic;	/* magic number */
 unsigned int	a_text;		/* size of text segment */
 unsigned int	a_data;		/* size of initialized data */
 unsigned int	a_bss;		/* size of uninitialized data */
@@ -24,7 +24,7 @@ unsigned int	a_flag; 	/* relocation info stripped */
 
 #define	NOVL	15		/* number of overlays */
 struct	ovlhdr {
-	int	max_ovl;	/* maximum overlay size */
+		 int	max_ovl;		/* maximum overlay size */
 unsigned int	ov_siz[NOVL];	/* size of i'th overlay */
 };
 

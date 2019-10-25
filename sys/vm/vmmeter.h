@@ -11,16 +11,17 @@
  */
 struct vmrate
 {
-	/*
-	 * General system activity.
-	 */
-#define	v_first	v_swtch
+	/* General system activity. */
+
 	u_int 	v_swtch;	/* context switches */
 	u_int 	v_trap;		/* calls to trap */
 	u_int 	v_syscall;	/* calls to syscall() */
 	u_int 	v_intr;		/* device interrupts */
 	u_int 	v_soft;		/* software interrupts */
 	u_int 	v_faults;	/* total faults taken */
+
+	/* Virtual memory activity. */
+
 	u_int 	v_pdma;		/* pseudo-dma interrupts */
 	u_int 	v_ovly;		/* overlay emts */
 	u_int 	v_fpsim;	/* floating point simulator faults */
@@ -28,10 +29,14 @@ struct vmrate
 	u_int 	v_pswpout;	/* pages swapped out */
 	u_int 	v_pgin;		/* pageins */
 	u_int 	v_pgout;	/* pageouts */
-#define	v_last	v_pswpout
 	u_int 	v_swpin;	/* swapins */
 	u_int 	v_swpout;	/* swapouts */
+
+	/* Distribution of page usages. */
+	u_int 	v_free_count;/* number of pages free */
 };
+#define	v_first	v_swtch
+#define	v_last	v_pswpout
 
 struct vmsum
 {

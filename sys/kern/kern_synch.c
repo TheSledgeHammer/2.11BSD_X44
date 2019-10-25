@@ -540,3 +540,18 @@ remrq(p)
 done:
 	splx(s);
 }
+
+/*
+ * Initialize the (doubly-linked) run queues
+ * to be empty.
+ */
+void
+rqinit()
+{
+	register int i;
+	for (i = 0; i < NQS; i++)
+	{
+		rtqs[i].ph_link = rtqs[i].ph_rlink = (struct proc *)&rtqs[i];
+		idqs[i].ph_link = idqs[i].ph_rlink = (struct proc *)&idqs[i];
+	}
+}

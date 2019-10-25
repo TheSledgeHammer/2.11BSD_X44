@@ -155,6 +155,9 @@ struct user {
 					 	 	 	 	 * extends from u + USIZE*64
 					 	 	 	 	 * backward not to reach here
 					 	 	 	 	 */
+/* 1.7 - i386 Port*/
+	struct	sigacts u_sigacts;		/* p_sigacts points here (use it!) */
+	struct	pstats u_stats;			/* p_stats points here (use it!) */
 };
 
 #ifdef KERNEL

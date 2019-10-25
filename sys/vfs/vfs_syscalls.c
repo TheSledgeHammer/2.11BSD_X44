@@ -42,7 +42,6 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/namei.h>
-#include <vfs/filedesc.h>
 #include <sys/kernel.h>
 #include <sys/file.h>
 #include <sys/stat.h>
@@ -51,10 +50,10 @@
 #include <sys/proc.h>
 #include <sys/uio.h>
 #include <sys/map.h>
-#include <vfs/dirent.h>
-
 #include <vm/vm.h>
 #include <sys/sysctl.h>
+#include "../sys/dirent.h"
+#include "../sys/filedesc.h"
 
 static int change_dir	__P((struct nameidata *ndp, struct proc *p));
 int getvnode __P((struct filedesc *, int, struct file **));

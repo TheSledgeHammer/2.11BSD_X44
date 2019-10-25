@@ -12,5 +12,8 @@
 *.idea
 *.project
 *.cproject
+*.dist
+*.settings
+*.vscode
 cmake-build-debug
 cmake-build-debug-mingw

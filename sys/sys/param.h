@@ -73,7 +73,7 @@
 #define	NBPW	sizeof(int)		/* number of bytes in an integer */
 
 #define	CMASK	026				/* default mask for file creation */
-#define	NODEV	(dev_t)(-1)
+#define	NODEV	(dev_t)(-1)		/* non-existent device */
 
 
 /*

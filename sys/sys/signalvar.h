@@ -43,6 +43,24 @@
  * For 2BSD the parts that did not apply were cut out.
  */
 
+/*
+ * Process signal actions and state, needed only within the process
+ * (not necessarily resident).
+ */
+struct	sigacts {
+	sig_t	 ps_sigact[NSIG];		/* disposition of signals */
+	sigset_t ps_catchmask[NSIG];	/* signals to be blocked */
+	sigset_t ps_sigonstack;			/* signals to take on sigstack */
+	sigset_t ps_sigintr;			/* signals that interrupt syscalls */
+	sigset_t ps_oldmask;			/* saved mask from before sigpause */
+	int		 ps_flags;				/* signal flags, below */
+	struct	 sigaltstack ps_sigstk;	/* sp & on stack state variable */
+	int		 ps_sig;				/* for core dump/debugger XXX */
+	int		 ps_code;				/* for core dump/debugger XXX */
+	int		 ps_addr;				/* for core dump/debugger XXX */
+	sigset_t ps_usertramp;			/* SunOS compat; libc sigtramp XXX */
+};
+
 /* signal flags */
 #define	SAS_OLDMASK	0x01		/* need to restore mask before pause */
 #define	SAS_ALTSTACK	0x02		/* have alternate signal stack */

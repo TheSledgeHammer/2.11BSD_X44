@@ -73,20 +73,22 @@ struct	k_rusage {				/* KERNEL RUSAGE STRUCTURE */
 #define	RLIMIT_STACK	3		/* stack size */
 #define	RLIMIT_CORE		4		/* core file size */
 #define	RLIMIT_RSS		5		/* resident set size */
+#define	RLIMIT_MEMLOCK	6		/* locked-in-memory address space */
 #define RLIMIT_NPROC	7		/* number of processes */
+#define	RLIMIT_NOFILE	8		/* number of open files */
 
-#define	RLIM_NLIMITS	8		/* number of resource limits */
+#define	RLIM_NLIMITS	9		/* number of resource limits */
 
-#define	RLIM_INFINITY	0x7fffffff
+#define	RLIM_INFINITY	(((u_quad_t)1 << 63) - 1)
 
 struct rlimit {
-	long	rlim_cur;		/* current (soft) limit */
-	long	rlim_max;		/* maximum value for rlim_cur */
+	quad_t	rlim_cur;			/* current (soft) limit */
+	quad_t	rlim_max;			/* maximum value for rlim_cur */
 };
 
 /* Load average structure. */
 struct loadavg {
-	short ldavg[3];
+	fixpt_t	 ldavg[3];
 	int fscale;
 };
 

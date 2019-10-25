@@ -33,7 +33,7 @@ struct	proc {
 	short	p_uid;						/* user id, used to direct tty signals */
 	short	p_pid;						/* unique process id */
 	short	p_ppid;						/* process id of parent */
-	long	p_sig;						/* signals pending to this process */
+
 	char	p_stat;
 	char	p_dummy;					/* room for one more, here */
 
@@ -43,12 +43,15 @@ struct	proc {
 	struct	pstats 	 	*p_stats;		/* Accounting/statistics (PROC ONLY). */
 	struct	plimit 	 	*p_limit;		/* Process limits. */
 	struct	vmspace  	*p_vmspace;		/* Address space. */
+	struct 	sigacts 	*p_sig;			/* signals pending to this process */
 
 #define	p_ucred		p_cred->pc_ucred
 #define	p_rlimit	p_limit->pl_rlimit
 
-
 #define	p_startzero	p_ysptr
+	/* scheduling */
+	struct	vnode 		*p_tracep;		/* Trace to vnode. */
+	struct	vnode 		*p_textvp;		/* Vnode of executable. */
 
 /* End area that is zeroed on creation. */
 #define	p_endzero	p_startcopy
@@ -62,9 +65,7 @@ struct	proc {
 	struct	rtprio 		p_rtprio;		/* Realtime priority. */
 
 	/* End area that is copied on creation. */
-	/* scheduling */
-	struct	vnode *p_tracep;	/* Trace to vnode. */
-	struct	vnode *p_textvp;	/* Vnode of executable. */
+	struct	user 		*p_addr;		/* Kernel virtual addr of u-area (PROC ONLY). */
 
 	/*
 	 * Union to overwrite information no longer needed by ZOMBIED
@@ -149,7 +150,7 @@ struct pcred {
 //#define p_sysent	p_un.p_alive.P_sysent;
 //#define p_rtprio	p_un.p_alive.P_rtprio;
 #define	p_link		p_un.p_alive.P_link
-#define	p_addr		p_un.p_alive.P_addr
+//#define	p_addr		p_un.p_alive.P_addr
 #define	p_daddr		p_un.p_alive.P_daddr
 #define	p_saddr		p_un.p_alive.P_saddr
 #define	p_dsize		p_un.p_alive.P_dsize
@@ -192,23 +193,48 @@ struct pcred {
 #define	S_DATA	0			/* specified segment */
 #define	S_STACK	1
 
-#ifdef KERNEL
+//#ifdef KERNEL
 #define	PID_MAX		30000
 #define	NO_PID		30001
 
 #define	PIDHSZ		16
 #define	PIDHASH(pid)	((pid) & (PIDHSZ - 1))
 
-extern struct proc *pidhash[PIDHSZ];	/* In param.c. */
+extern struct proc *pidhash[];			/* In param.c. */
+extern struct pgrp *pgrphash[];			/* In param.c. */
+extern int pidhashmask;					/* In param.c. */
+
 extern struct proc *pfind();
 extern struct proc proc[], *procNPROC;	/* the proc table itself */
 extern struct proc *freeproc;
 extern struct proc *zombproc;			/* List of zombie procs. */
 extern volatile struct proc *allproc;	/* List of active procs. */
 extern struct proc proc0;				/* Process slot for swapper. */
-extern struct proc *qs;					/* queue schedule */
 int	nproc;
 
+#define	NQS	32							/* 32 run queues. */
+extern struct prochd qs[];				/* queue schedule */
+extern struct prochd rtqs[];
+extern struct prochd idqs[];
+
+struct	prochd {
+	struct	proc *ph_link;				/* Linked list of running processes. */
+	struct	proc *ph_rlink;
+};
+
+
+int		chgproccnt __P((uid_t, int));
+int		setpri __P((struct proc *));
+void	setrun __P((struct proc *));
+void	setrq __P((struct proc *));
+void	remrq __P((struct proc *));
+void	swtch __P();
+void	sleep __P((void *chan, int pri));
+int		tsleep __P((void *chan, int pri, char *wmesg, int timo));
+void	unsleep __P((struct proc *));
+void	wakeup __P((void *chan));
+
+int	inferior __P((struct proc *));
 #endif
 
 #endif	/* !_SYS_PROC_H_ */

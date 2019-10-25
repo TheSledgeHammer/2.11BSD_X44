@@ -14,16 +14,10 @@
 #ifndef VM_H
 #define VM_H
 
-#ifdef KERNEL
-#include "vmparam.h"
-#include "vmmac.h"
-#include "vmmeter.h"
-#include "vmsystm.h"
-#else
 #include <vm/vmparam.h>
 #include <vm/vmmac.h>
 #include <vm/vmmeter.h>
 #include <vm/vmsystm.h>
-#endif
+
 
 #endif /* VM_H */

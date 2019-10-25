@@ -81,6 +81,8 @@ extern struct sysent
 	char	sy_narg;		/* total number of arguments */
 	int		(*sy_call)();	/* handler */
 } sysent[];
+extern int nsysent;
+#define	SCARG(p,k)	((p)->k.datum)	/* get arg from args pointer */
 
 int	noproc;				/* no one is running just now */
 
@@ -98,5 +100,6 @@ extern void pqinit();
 extern void ihinit();
 extern void bhinit();
 extern void binit();
+
 
 #endif

@@ -153,8 +153,8 @@
 #define trunc_page(x)		((unsigned)(x) & ~(NBPG-1))
 #define round_page(x)		((((unsigned)(x)) + NBPG - 1) & ~(NBPG-1))
 
-#define atop(x)			((unsigned)(x) >> PG_SHIFT)
-#define ptoa(x)			((unsigned)(x) << PG_SHIFT)
+#define atop(x)				((unsigned)(x) >> PG_SHIFT)
+#define ptoa(x)				((unsigned)(x) << PG_SHIFT)
 
 #define i386_round_pdr(x)	((((unsigned)(x)) + NBPDR - 1) & ~(NBPDR-1))
 #define i386_trunc_pdr(x)	((unsigned)(x) & ~(NBPDR-1))

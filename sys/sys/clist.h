@@ -10,8 +10,8 @@
  * Raw structures for the character list routines.
  */
 struct cblock {
-	struct cblock *c_next;
-	char	c_info[CBSIZE];
+	struct cblock   *c_next;
+	char			c_info[CBSIZE];
 };
 #if defined(KERNEL) && !defined(SUPERVISOR)
 #ifdef UCB_CLIST
