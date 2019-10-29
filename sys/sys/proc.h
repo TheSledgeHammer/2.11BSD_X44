@@ -15,6 +15,7 @@
 #include <sys/rtprio.h>			/* For struct rtprio. */
 #include <sys/select.h>			/* For struct selinfo. */
 #include <sys/time.h>			/* For structs itimerval, timeval. */
+#include <sys/queue.h>
 
 /*
  * One structure allocated per active
@@ -24,88 +25,91 @@
  * Other per process data (user.h)
  * is swapped with the process.
  */
-struct	proc {
-	struct	proc *p_nxt;				/* linked list of allocated proc slots */
-	struct	proc **p_prev;				/* also zombies, and free proc's */
-	struct	proc *p_pptr;				/* pointer to process structure of parent */
 
-	short	p_flag;
-	short	p_uid;						/* user id, used to direct tty signals */
+struct	proc {
+    struct	proc 		*p_nxt;			/* linked list of allocated proc slots */
+	struct	proc 		**p_prev;		/* also zombies, and free proc's */
+
+    struct	proc 		*p_forw;		/* Doubly-linked run/sleep queue. */
+	struct	proc 		*p_back;
+
+    int	    p_flag;						/* P_* flags. */
+	char	p_stat;						/* S* process status. */
+	char	p_lock;						/* Process lock count. */
+	char	p_pad1[2];
+	char	p_dummy;					/* room for one more, here */
+
+    short	p_uid;						/* user id, used to direct tty signals */
 	short	p_pid;						/* unique process id */
 	short	p_ppid;						/* process id of parent */
 
-	char	p_stat;
-	char	p_dummy;					/* room for one more, here */
-
-	/* Substructures: */
+    /* Substructures: */
 	struct	pcred 	 	*p_cred;		/* Process owner's identity. */
 	struct	filedesc 	*p_fd;			/* Ptr to open files structure. */
 	struct	pstats 	 	*p_stats;		/* Accounting/statistics (PROC ONLY). */
 	struct	plimit 	 	*p_limit;		/* Process limits. */
 	struct	vmspace  	*p_vmspace;		/* Address space. */
-	struct 	sigacts 	*p_sig;			/* signals pending to this process */
+	struct 	sigacts 	*p_sig;			/* Signal actions, state (PROC ONLY). */
 
 #define	p_ucred		p_cred->pc_ucred
 #define	p_rlimit	p_limit->pl_rlimit
 
+	struct	proc    	*p_hash;        /* hashed based on p_pid for kill+exit+... */
+    struct	proc    	*p_pgrpnxt;	    /* Pointer to next process in process group. */
+    struct	proc        *p_pptr;		/* pointer to process structure of parent */
+    struct	proc 		*p_osptr;	 	/* Pointer to older sibling processes. */
+
+
+/* The following fields are all zeroed upon creation in fork. */
 #define	p_startzero	p_ysptr
-	/* scheduling */
-	struct	vnode 		*p_tracep;		/* Trace to vnode. */
-	struct	vnode 		*p_textvp;		/* Vnode of executable. */
+	struct	proc 		*p_ysptr;	 	/* Pointer to younger siblings. */
+	struct	proc 		*p_cptr;	 	/* Pointer to youngest living child. */
+    pid_t	p_oppid;	                /* Save parent pid during ptrace. XXX */
+
+    caddr_t	            p_wchan;		/* event process is awaiting */
+	caddr_t	            p_wmesg;	 	/* Reason for sleep. */
+    char	            p_slptime;		/* Time since last blocked. */
+
+    struct	itimerval   p_realtimer;	/* Alarm timer. */
+    struct	timeval     p_rtime;	    /* Real time. */
+    char	p_ptracesig;			    /* used between parent & traced child */
+    int	    p_traceflag;		        /* Kernel trace points. */
+    struct	vnode 	    *p_tracep;		/* Trace to vnode. */
+    struct	vnode 	    *p_textvp;		/* Vnode of executable. */
+
+    caddr_t	p_wchan;			        /* event process is awaiting */
+    caddr_t	p_wmesg;	 		        /* Reason for sleep. */
 
 /* End area that is zeroed on creation. */
-#define	p_endzero	p_startcopy
+#define	p_endzero	    p_startcopy
 
 /* The following fields are all copied upon creation in fork. */
-#define	p_startcopy	p_sigmask
+#define	p_startcopy	    p_sigmask
 
-	struct 	pgrp 	 	*p_pgrp;
-	struct 	sysentvec 	*p_sysent; 		/* System call dispatch information. */
+    sigset_t p_sigmask;			        /* Current signal mask. */
+    sigset_t p_sigignore;			    /* signals being ignored */
+    sigset_t p_sigcatch;			    /* signals being caught by user */
 
-	struct	rtprio 		p_rtprio;		/* Realtime priority. */
+    u_char	p_pri;					    /* Process  priority, negative is high */
+    u_char	p_cpu;					    /* cpu usage for scheduling */
+    char	p_nice;					    /* nice for cpu usage */
+    char	p_comm[MAXCOMLEN+1];
 
-	/* End area that is copied on creation. */
-	struct	user 		*p_addr;		/* Kernel virtual addr of u-area (PROC ONLY). */
+    struct  pgrp 	    *p_pgrp;        /* Pointer to process group. */
+    struct  sysentvec   *p_sysent; 	    /* System call dispatch information. */
+    struct	rtprio 	    p_rtprio;		/* Realtime priority. */
 
-	/*
-	 * Union to overwrite information no longer needed by ZOMBIED
-	 * process with exit information for the parent process.  The
-	 * two structures have been carefully set up to use the same
-	 * amount of memory.  Must be very careful that any values in
-	 * p_alive are not used for zombies (zombproc).
-	 *
-	 * Following union may be replaced..? or merge with new procs but defined below!
-	 */
-	union {
-	    struct {
-		char	P_pri;						/* priority, negative is high */
-		char	P_cpu;						/* cpu usage for scheduling */
-		char	P_time;						/* resident time for scheduling */
-		char	P_nice;						/* nice for cpu usage */
-		char	P_slptime;					/* secs sleeping */
-		char	P_ptracesig;				/* used between parent & traced child */
-		struct proc *P_hash;				/* hashed based on p_pid */
-		long	P_sigmask;					/* current signal mask */
-		long	P_sigignore;				/* signals being ignored */
-		long	P_sigcatch;					/* signals being caught by user */
-		struct	proc 		*P_link;		/* linked list of running processes */
-		memaddr	P_addr;						/* address of u. area */
-		memaddr	P_daddr;					/* address of data area */
-		memaddr	P_saddr;					/* address of stack area */
-		size_t	P_dsize;					/* size of data area (clicks) */
-		size_t	P_ssize;					/* size of stack segment (clicks) */
-		caddr_t	P_wchan;					/* event process is awaiting */
-		caddr_t	P_wmesg;	 				/* Reason for sleep. */
+    struct	proc 	    *p_link;		/* linked list of running processes */
+    size_t  p_addr;				        /* address of u. area */
+	size_t  p_daddr;				    /* address of data area */
+	size_t  p_saddr;				    /* address of stack area */
+	size_t	p_dsize;				    /* size of data area (clicks) */
+	size_t	p_ssize;				    /* size of stack segment (clicks) */
+    struct	k_itimerval p_krealtimer;   /* timer??? in 2.11BSD */
+    u_short p_acflag;	                /* Accounting flags. */
 
-		struct	k_itimerval P_realtimer;
-	    } p_alive;
-
-	    struct {
-	    	short	P_xstat;				/* exit status for wait */
-	    	struct k_rusage P_ru;			/* exit information */
-	    } p_dead;
-
-	} p_un;
+    short	p_xstat;				    /* exit status for wait */
+	struct  rusage      p_ru;			/* exit information */
 };
 
 struct	session {
@@ -136,32 +140,6 @@ struct pcred {
 #define	p_session	p_pgrp->pg_session
 #define	p_pgid		p_pgrp->pg_id
 
-#define	p_pri		p_un.p_alive.P_pri
-#define	p_cpu		p_un.p_alive.P_cpu
-#define	p_time		p_un.p_alive.P_time
-#define	p_nice		p_un.p_alive.P_nice
-#define	p_slptime	p_un.p_alive.P_slptime
-#define	p_hash		p_un.p_alive.P_hash
-#define	p_ptracesig	p_un.p_alive.P_ptracesig
-#define	p_sigmask	p_un.p_alive.P_sigmask
-#define	p_sigignore	p_un.p_alive.P_sigignore
-#define	p_sigcatch	p_un.p_alive.P_sigcatch
-//#define	p_pgrp		p_un.p_alive.P_pgrp
-//#define p_sysent	p_un.p_alive.P_sysent;
-//#define p_rtprio	p_un.p_alive.P_rtprio;
-#define	p_link		p_un.p_alive.P_link
-//#define	p_addr		p_un.p_alive.P_addr
-#define	p_daddr		p_un.p_alive.P_daddr
-#define	p_saddr		p_un.p_alive.P_saddr
-#define	p_dsize		p_un.p_alive.P_dsize
-#define	p_ssize		p_un.p_alive.P_ssize
-#define	p_wchan		p_un.p_alive.P_wchan
-#define	p_wmesg		p_un.p_alive.P_wmesg
-#define	p_realtimer	p_un.p_alive.P_realtimer
-#define	p_clktim	p_realtimer.it_value
-#define	p_xstat		p_un.p_dead.P_xstat
-#define	p_ru		p_un.p_dead.P_ru
-
 /* stat codes */
 #define	SSLEEP	1		/* awaiting an event */
 #define	SWAIT	2		/* (abandoned state) */
@@ -190,15 +168,24 @@ struct pcred {
 #define	P_SELECT	0x4000	/* selecting; wakeup/waiting danger */
 			/*		0x8000	/* unused */
 
+
+#define	P_PPWAIT	0x00010	/* Parent is waiting for child to exec/exit. */
+#define	P_SUGID		0x00100	/* Had set id privileges since last exec. */
+#define	P_TRACED	0x00800	/* Debugged process being traced. */
+#define P_EXEC		0x04000	/* Process called exec. */
+
 #define	S_DATA	0			/* specified segment */
 #define	S_STACK	1
 
-//#ifdef KERNEL
+#ifdef KERNEL
 #define	PID_MAX		30000
 #define	NO_PID		30001
 
 #define	PIDHSZ		16
 #define	PIDHASH(pid)	((pid) & (PIDHSZ - 1))
+
+#define SESS_LEADER(p)	((p)->p_session->s_leader == (p))
+
 
 extern struct proc *pidhash[];			/* In param.c. */
 extern struct pgrp *pgrphash[];			/* In param.c. */
@@ -207,23 +194,27 @@ extern int pidhashmask;					/* In param.c. */
 extern struct proc *pfind();
 extern struct proc proc[], *procNPROC;	/* the proc table itself */
 extern struct proc *freeproc;
+
+LIST_HEAD(proclist, proc);
 extern struct proc *zombproc;			/* List of zombie procs. */
 extern volatile struct proc *allproc;	/* List of active procs. */
 extern struct proc proc0;				/* Process slot for swapper. */
-int	nproc;
+int	nproc, maxproc;						/* Current and max number of procs. */
 
 #define	NQS	32							/* 32 run queues. */
 extern struct prochd qs[];				/* queue schedule */
 extern struct prochd rtqs[];
 extern struct prochd idqs[];
-
+extern int	whichqs;					/* Bit mask summary of non-empty Q's. */
 struct	prochd {
 	struct	proc *ph_link;				/* Linked list of running processes. */
 	struct	proc *ph_rlink;
 };
 
-
 int		chgproccnt __P((uid_t, int));
+struct proc *pfind __P((pid_t));	/* Find process by id. */
+struct pgrp *pgfind __P((pid_t));	/* Find process group by id. */
+
 int		setpri __P((struct proc *));
 void	setrun __P((struct proc *));
 void	setrq __P((struct proc *));

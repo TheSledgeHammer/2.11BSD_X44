@@ -161,7 +161,7 @@ again:
 /*
  * General routine to allocate a hash table.
  */
-/*
+
 void *
 hashinit(elements, type, hashmask)
 	int elements, type;
@@ -176,11 +176,10 @@ hashinit(elements, type, hashmask)
 	for (hashsize = 1; hashsize <= elements; hashsize <<= 1)
 		continue;
 	hashsize >>= 1;
-	hashtbl = malloc((u_long)hashsize * sizeof(*hashtbl), type, M_WAITOK);
+	hashtbl = malloc((u_long)hashsize * sizeof(*hashtbl), type);
 	hashtbl = malloc(type, (u_long)hashsize * sizeof(*hashtbl));
 	for (i = 0; i < hashsize; i++)
 		LIST_INIT(&hashtbl[i]);
 	*hashmask = hashsize - 1;
 	return (hashtbl);
 }
-*/

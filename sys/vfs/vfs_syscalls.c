@@ -42,18 +42,19 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/namei.h>
+#include <sys/filedesc.h>
 #include <sys/kernel.h>
 #include <sys/file.h>
 #include <sys/stat.h>
-#include <vfs/vnode.h>
+#include <sys/vnode.h>
 #include <sys/mount.h>
 #include <sys/proc.h>
 #include <sys/uio.h>
-#include <sys/map.h>
+#include <sys/malloc.h>
+#include <sys/dirent.h>
+
 #include <vm/vm.h>
 #include <sys/sysctl.h>
-#include "../sys/dirent.h"
-#include "../sys/filedesc.h"
 
 static int change_dir	__P((struct nameidata *ndp, struct proc *p));
 int getvnode __P((struct filedesc *, int, struct file **));
@@ -92,7 +93,7 @@ mount(p, uap, retval)
 	/*
 	 * Get vnode to be covered
 	 */
-	VNDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		return (error);
@@ -221,7 +222,7 @@ unmount(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	VNDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		return (error);
@@ -359,7 +360,7 @@ quotactl(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	VNDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		return (error);
@@ -387,7 +388,7 @@ statfs(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	VNDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		return (error);
@@ -534,7 +535,7 @@ chdir(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	VNDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->path, p);
 	error = change_dir(&nd, p);
 	if (error)
 		return (error);
@@ -563,7 +564,7 @@ chroot(p, uap, retval)
 	error = suser(p->p_ucred, &p->p_acflag);
 	if (error)
 		return (error);
-	VNDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->path, p);
 	error = change_dir(&nd, p);
 	if (error)
 		return (error);
@@ -629,7 +630,7 @@ open(p, uap, retval)
 	fp = nfp;
 	flags = FFLAGS(uap->flags);
 	cmode = ((uap->mode &~ fdp->fd_cmask) & ALLPERMS) &~ S_ISTXT;
-	VNDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
 	p->p_dupfd = -indx - 1;			/* XXX check for fdopen */
 	error = vn_open(&nd, flags, cmode);
 	if (error) {
@@ -725,7 +726,7 @@ mknod(p, uap, retval)
 	error = suser(p->p_ucred, &p->p_acflag);
 	if (error)
 		return (error);
-	VNDINIT(&nd, CREATE, LOCKPARENT, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, CREATE, LOCKPARENT, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		return (error);
@@ -785,7 +786,7 @@ mkfifo(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	VNDINIT(&nd, CREATE, LOCKPARENT, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, CREATE, LOCKPARENT, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		return (error);
@@ -823,7 +824,7 @@ link(p, uap, retval)
 	struct nameidata nd;
 	int error;
 
-	VNDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		return (error);
@@ -881,7 +882,7 @@ symlink(p, uap, retval)
 	error = copyinstr(uap->path, path, MAXPATHLEN, NULL);
 	if (error)
 		goto out;
-	VNDINIT(&nd, CREATE, LOCKPARENT, UIO_USERSPACE, uap->link, p);
+	NDINIT(&nd, CREATE, LOCKPARENT, UIO_USERSPACE, uap->link, p);
 	error = namei(&nd);
 	if (error)
 		goto out;
@@ -921,7 +922,7 @@ unlink(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	VNDINIT(&nd, DELETE, LOCKPARENT, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, DELETE, LOCKPARENT, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		return (error);
@@ -1050,7 +1051,7 @@ access(p, uap, retval)
 	t_gid = cred->cr_groups[0];
 	cred->cr_uid = p->p_cred->p_ruid;
 	cred->cr_groups[0] = p->p_cred->p_rgid;
-	VNDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		goto out1;
@@ -1095,7 +1096,7 @@ ostat(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	VNDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		return (error);
@@ -1128,7 +1129,7 @@ olstat(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	VNDINIT(&nd, LOOKUP, NOFOLLOW | LOCKLEAF | LOCKPARENT, UIO_USERSPACE,
+	NDINIT(&nd, LOOKUP, NOFOLLOW | LOCKLEAF | LOCKPARENT, UIO_USERSPACE,
 	    uap->path, p);
 	error = namei(&nd);
 	if (error)
@@ -1218,7 +1219,7 @@ stat(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	VNDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		return (error);
@@ -1249,7 +1250,7 @@ lstat(p, uap, retval)
 	struct stat sb, sb1;
 	struct nameidata nd;
 
-	VNDINIT(&nd, LOOKUP, NOFOLLOW | LOCKLEAF | LOCKPARENT, UIO_USERSPACE,
+	NDINIT(&nd, LOOKUP, NOFOLLOW | LOCKLEAF | LOCKPARENT, UIO_USERSPACE,
 	    uap->path, p);
 	error = namei(&nd);
 	if (error)
@@ -1307,7 +1308,7 @@ pathconf(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	VNDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		return (error);
@@ -1337,7 +1338,7 @@ readlink(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	VNDINIT(&nd, LOOKUP, NOFOLLOW | LOCKLEAF, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, LOOKUP, NOFOLLOW | LOCKLEAF, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		return (error);
@@ -1380,7 +1381,7 @@ chflags(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	VNDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		return (error);
@@ -1453,7 +1454,7 @@ chmod(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	VNDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		return (error);
@@ -1527,7 +1528,7 @@ chown(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	VNDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		return (error);
@@ -1614,7 +1615,7 @@ utimes(p, uap, retval)
 		if (error)
 			return (error);
 	}
-	VNDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		return (error);
@@ -1656,7 +1657,7 @@ truncate(p, uap, retval)
 
 	if (uap->length < 0)
 		return(EINVAL);
-	VNDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		return (error);
@@ -1806,13 +1807,13 @@ rename(p, uap, retval)
 	struct nameidata fromnd, tond;
 	int error;
 
-	VNDINIT(&fromnd, DELETE, WANTPARENT | SAVESTART, UIO_USERSPACE,
+	NDINIT(&fromnd, DELETE, WANTPARENT | SAVESTART, UIO_USERSPACE,
 		uap->from, p);
 	error = namei(&fromnd);
 	if (error)
 		return (error);
 	fvp = fromnd.ni_vp;
-	VNDINIT(&tond, RENAME, LOCKPARENT | LOCKLEAF | NOCACHE | SAVESTART,
+	NDINIT(&tond, RENAME, LOCKPARENT | LOCKLEAF | NOCACHE | SAVESTART,
 		UIO_USERSPACE, uap->to, p);
 	error = namei(&tond);
 	if (error) {
@@ -1866,13 +1867,11 @@ out:
 		vrele(fvp);
 	}
 	vrele(tond.ni_startdir);
-	//FREE(tond.ni_cnd.cn_pnbuf, M_NAMEI); /* malloc.h */
-	mfree(tond.ni_cnd.cn_pnbuf); /* map.h */
+	FREE(tond.ni_cnd.cn_pnbuf, M_NAMEI);
 out1:
 	if (fromnd.ni_startdir)
 		vrele(fromnd.ni_startdir);
-	//FREE(fromnd.ni_cnd.cn_pnbuf, M_NAMEI); /* malloc.h */
-	mfree(fromnd.ni_cnd.cn_pnbuf); /* map.h */
+	FREE(fromnd.ni_cnd.cn_pnbuf, M_NAMEI);
 	if (error == -1)
 		return (0);
 	return (error);
@@ -1897,7 +1896,7 @@ mkdir(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	VNDINIT(&nd, CREATE, LOCKPARENT, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, CREATE, LOCKPARENT, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		return (error);
@@ -1938,7 +1937,7 @@ rmdir(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	VNDINIT(&nd, DELETE, LOCKPARENT | LOCKLEAF, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, DELETE, LOCKPARENT | LOCKLEAF, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		return (error);
@@ -2209,7 +2208,7 @@ revoke(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	VNDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
 	error = namei(&nd);
 	if (error)
 		return (error);

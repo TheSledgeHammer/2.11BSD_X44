@@ -1431,14 +1431,14 @@ vfs_export_lookup(mp, nep, nam)
 				np = (struct netcred *)
 					(*rnh->rnh_matchaddr)((caddr_t)saddr,
 							      rnh);
-				if (np && np->netc_rnodes->rn_flags & RNF_ROOT)
+				if (np && (np->netc_rnodes->rn_flags & RNF_ROOT))
 					np = NULL;
 			}
 		}
 		/*
 		 * If no address match, use the default if it exists.
 		 */
-		if (np == NULL && mp->mnt_flag & MNT_DEFEXPORTED)
+		if (np == NULL && (mp->mnt_flag & MNT_DEFEXPORTED))
 			np = &nep->ne_defexported;
 	}
 	return (np);

@@ -48,7 +48,7 @@
 #include <sys/proc.h>
 #include <sys/mount.h>
 #include <sys/namei.h>
-#include <vfs/vnode.h>
+#include <sys/vnode.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
 
@@ -298,7 +298,7 @@ vn_read(fp, uio, cred)
 	struct uio *uio;
 	struct ucred *cred;
 {
-	register struct vnode *vp = (struct vnode *)fp->f_data;
+	register struct vnode *vp = (struct vnode *)fp->f_un.f_Data;
 	int count, error;
 
 	LEASE_CHECK(vp, uio->uio_procp, cred, LEASE_READ);
@@ -321,7 +321,7 @@ vn_write(fp, uio, cred)
 	struct uio *uio;
 	struct ucred *cred;
 {
-	register struct vnode *vp = (struct vnode *)fp->f_data;
+	register struct vnode *vp = (struct vnode *)fp->f_un.f_Data;
 	int count, error, ioflag = 0;
 
 	if (vp->v_type == VREG && (fp->f_flag & O_APPEND))
@@ -416,7 +416,7 @@ vn_ioctl(fp, com, data, p)
 	caddr_t data;
 	struct proc *p;
 {
-	register struct vnode *vp = ((struct vnode *)fp->f_data);
+	register struct vnode *vp = ((struct vnode *)fp->f_un.f_Data);
 	struct vattr vattr;
 	int error;
 	

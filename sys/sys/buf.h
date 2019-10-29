@@ -40,11 +40,7 @@ struct buf
 {
 	short	b_flags;				/* see defines below */
 	struct	buf *b_forw, *b_back;	/* hash chain (2 way street) */
-	struct	buf *av_forw, *av_back;	/* position on free list if not BUSY */
-#define	b_actf	av_forw				/* alternate names for driver queue */
-#define	b_actl	av_back				/* head - isn't history wonderful */
 	u_short	b_bcount;				/* transfer count */
-#define	b_active b_bcount			/* driver queue head: drive active */
 	char	b_error;				/* returned after I/O */
 	char	b_xmem;					/* high order core address */
 	dev_t	b_dev;					/* major+minor device name */
@@ -53,9 +49,14 @@ struct buf
 	} b_un;
 	daddr_t	b_blkno;				/* block # on device */
 	u_short	b_resid;				/* words not transferred after error */
-#define	b_cylin b_resid				/* disksort */
-#define	b_errcnt b_resid			/* while i/o in progress: # retries */
 };
+
+struct	buf 		*av_forw, *av_back;	/* position on free list if not BUSY */
+#define	b_actf		av_forw				/* alternate names for driver queue */
+#define	b_actl		av_back				/* head - isn't history wonderful */
+#define	b_active 	b_bcount			/* driver queue head: drive active */
+#define	b_cylin 	b_resid				/* disksort */
+#define	b_errcnt 	b_resid				/* while i/o in progress: # retries */
 
 /*
  * We never use BQ_LOCKED or BQ_EMPTY, but if you want the 4.X block I/O

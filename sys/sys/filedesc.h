@@ -59,11 +59,11 @@ struct filedesc {
 	char	*fd_ofileflags;		/* per-process open file flags */
 	struct	vnode *fd_cdir;		/* current directory */
 	struct	vnode *fd_rdir;		/* root directory */
-	int	fd_nfiles;		/* number of open files allocated */
+	int	fd_nfiles;				/* number of open files allocated */
 	u_short	fd_lastfile;		/* high-water mark of fd_ofiles */
 	u_short	fd_freefile;		/* approx. next free file */
-	u_short	fd_cmask;		/* mask for file creation */
-	u_short	fd_refcnt;		/* reference count */
+	u_short	fd_cmask;			/* mask for file creation */
+	u_short	fd_refcnt;			/* reference count */
 };
 
 /*

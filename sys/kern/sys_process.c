@@ -71,3 +71,5 @@ ptrace()
 	ipc.ip_lock = 0;
 	wakeup((caddr_t)&ipc);
 }
+
+//pwrite, pread??

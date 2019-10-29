@@ -66,20 +66,6 @@ _setuid(uid)
 
 	if (uid != u->u_ruid && !suser())
 		return(u->u_error);
-	/*
-	 * Everything's okay, do it.
-	 * Since the real user id is changing the quota references need
-	 * to be updated.
-	 */
-/*#ifdef QUOTA
-        QUOTAMAP();
-	if (u.u_quota->q_uid != uid) {
-		qclean();
-		qstart(getquota((uid_t)uid, 0, 0));
-	}
-	QUOTAUNMAP();
-#endif*/
-
 	u->u_procp->p_uid = uid;
 	u->u_uid = uid;
 	u->u_ruid = uid;

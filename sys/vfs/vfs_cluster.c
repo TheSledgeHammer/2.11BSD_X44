@@ -250,7 +250,7 @@ skip_readahead:
 			error = VOP_STRATEGY(bp);
 
 	if (rbp)
-		if (error || rbp->b_flags & (B_DONE | B_DELWRI)) {
+		if (error || (rbp->b_flags & (B_DONE | B_DELWRI))) {
 			rbp->b_flags &= ~(B_ASYNC | B_READ);
 			brelse(rbp);
 		} else

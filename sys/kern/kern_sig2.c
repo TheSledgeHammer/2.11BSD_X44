@@ -59,8 +59,6 @@
 #include <sys/kernel.h>
 #include <sys/user.h>		/* for coredump */
 
-//static void	stop();
-
 int
 sigaction()
 {

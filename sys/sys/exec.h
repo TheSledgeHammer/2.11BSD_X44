@@ -43,4 +43,26 @@ struct	xexec {
 #define	A_MAGIC5	0430	/* auto-overlay (nonseparate) */
 #define	A_MAGIC6	0431	/* auto-overlay (separate) */
 
+
+/*
+ * Arguments to the exec system call.
+ */
+struct execve_args {
+	char	*fname;
+	char	**argv;
+	char	**envv;
+};
+
+struct execsw {
+	int (*ex_imgact)(void * /* struct image_params * */);
+	const char *ex_name;
+};
+
+#ifdef KERNEL
+extern const struct execsw **execsw;
+
+#endif
+
+#include <machine/exec.h>
+
 #endif

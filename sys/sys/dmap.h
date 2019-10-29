@@ -36,7 +36,7 @@
 #ifndef _SYS_DMAP_H_
 #define	_SYS_DMAP_H_
 
-#include <../sys/types.h>
+#include <sys/types.h>
 
 /*
  * Definitions for the mapping of virtual swap space to the physical swap

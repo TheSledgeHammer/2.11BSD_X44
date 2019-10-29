@@ -551,6 +551,7 @@ rqinit()
 	register int i;
 	for (i = 0; i < NQS; i++)
 	{
+		qs[i].ph_link = qs[i].ph_rlink = (struct proc *)&qs[i];
 		rtqs[i].ph_link = rtqs[i].ph_rlink = (struct proc *)&rtqs[i];
 		idqs[i].ph_link = idqs[i].ph_rlink = (struct proc *)&idqs[i];
 	}

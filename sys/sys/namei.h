@@ -55,12 +55,17 @@ struct nameidata {
 #define	LOOKUP		0		/* perform name lookup only */
 #define	CREATE		1		/* setup for file creation */
 #define	DELETE		2		/* setup for file deletion */
-#define	LOCKPARENT	0x10	/* see the top of namei */
-#define NOCACHE		0x20	/* name must not be left in cache */
-#define FOLLOW		0x40	/* follow symbolic links */
-#define	NOFOLLOW	0x0		/* don't follow symbolic links (pseudo) */
+#define	RENAME		3		/* setup for file renaming */
+#define	OPMASK		3		/* mask for operation */
+
 
 #define	LOCKLEAF	0x0004	/* lock inode on return */
+#define	LOCKPARENT	0x0008	/* want parent vnode returned locked */
+#define	WANTPARENT	0x0010	/* want parent vnode returned unlocked */
+#define NOCACHE		0x0020	/* name must not be left in cache */
+#define FOLLOW		0x0040	/* follow symbolic links */
+#define	NOFOLLOW	0x0000	/* don't follow symbolic links (pseudo) */
+#define	MODMASK		0x00fc	/* mask of operational modifiers */
 
 
 #define	NDINIT(ndp, op, flags, segflg, namep) {\

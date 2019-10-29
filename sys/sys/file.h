@@ -11,41 +11,44 @@
 #ifndef	_SYS_FILE_H_
 #define	_SYS_FILE_H_
 
+#ifdef KERNEL
+struct proc;
+struct uio;
 /*
  * Descriptor table entry.
  * One for each kernel object.
  */
 struct	file {
-	int	f_flag;			/* see below */
-	char	f_type;		/* descriptor type */
-	u_char	f_count;	/* reference count */
-	short	f_msgcount;	/* references from message queue */
+	struct	file *f_filef;	/* list of active files */
+	struct	file **f_fileb;	/* list of active files */
+	int		f_flag;			/* see below */
+	short	f_type;			/* descriptor type */
+	short	f_count;		/* reference count */
+	short	f_msgcount;		/* references from message queue */
 	union {
 		caddr_t	f_Data;
 		struct socket *f_Socket;
 	} f_un;
 	off_t	f_offset;
+	struct	ucred *f_cred;	/* credentials associated with descriptor */
 };
 
-#ifdef KERNEL
-struct	fileops {
-	int	(*fo_rw)();
-	int	(*fo_ioctl)();
-	int	(*fo_select)();
-	int	(*fo_close)();
-};
+struct fileops {
+	int	(*fo_rw)		__P((struct file *fp, struct uio *uio, struct ucred *cred));
+	int	(*fo_ioctl)		__P((struct file *fp, int com, caddr_t data, struct proc *p));
+	int	(*fo_select) 	__P((struct file *fp, int which, struct proc *p));
+	int	(*fo_close)		__P((struct file *fp, struct proc *p));
+} *f_ops;
 
 #define f_data		f_un.f_Data
 #define f_socket	f_un.f_Socket
 
-#ifndef SUPERVISOR
-extern struct	file file[], *fileNFILE;
-int	nfile;
-#endif
+extern struct file *filehead;	/* head of list of open files */
+extern int maxfiles;			/* kernel limit on number of open files */
+extern int nfiles;				/* actual number of open files */
 
 struct	file *getf();
 struct	file *falloc();
-#endif
 
 /*
  * Access call.
@@ -62,14 +65,15 @@ struct	file *falloc();
 #define	L_INCR		1	/* relative to current offset */
 #define	L_XTND		2	/* relative to end of file */
 
-#ifdef KERNEL
 #define	GETF(fp, fd) { \
 	if ((unsigned)(fd) >= NOFILE || ((fp) = u.u_ofile[fd]) == NULL) { \
 		u.u_error = EBADF; \
 		return; \
 	} \
 }
+
 #define	DTYPE_INODE		1	/* file */
+#define	DTYPE_VNODE		1	/* file */
 #define	DTYPE_SOCKET	2	/* communications endpoint */
 #define	DTYPE_PIPE		3	/* I don't want to hear it, okay? */
 #endif

@@ -24,13 +24,22 @@ struct timeval {
  * same makes life simpler than changing the names.
 */
 struct timespec {
-	time_t tv_sec;		/* seconds */
-	long   tv_nsec;		/* and nanoseconds */
+	long	tv_sec;		/* seconds */
+	long   	tv_nsec;	/* and nanoseconds */
 };
+
+#define	TIMEVAL_TO_TIMESPEC(tv, ts) {					\
+	(ts)->ts_sec = (tv)->tv_sec;					\
+	(ts)->ts_nsec = (tv)->tv_usec * 1000;				\
+}
+#define	TIMESPEC_TO_TIMEVAL(tv, ts) {					\
+	(tv)->tv_sec = (ts)->ts_sec;					\
+	(tv)->tv_usec = (ts)->ts_nsec / 1000;				\
+}
 
 struct timezone {
 	int	tz_minuteswest;	/* minutes west of Greenwich */
-	int	tz_dsttime;	/* type of dst correction */
+	int	tz_dsttime;		/* type of dst correction */
 };
 
 #define	DST_NONE	0	/* not on dst */
@@ -61,13 +70,13 @@ struct timezone {
 #define	ITIMER_PROF	2
 
 struct	k_itimerval {
-	long	it_interval;		/* timer interval */
-	long	it_value;		/* current value */
+	long	it_interval;			/* timer interval */
+	long	it_value;				/* current value */
 };
 
 struct	itimerval {
 	struct	timeval it_interval;	/* timer interval */
-	struct	timeval it_value;	/* current value */
+	struct	timeval it_value;		/* current value */
 };
 
 

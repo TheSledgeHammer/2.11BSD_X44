@@ -86,16 +86,16 @@ struct user {
 	size_t	u_ssize;				/* stack size (clicks) */
 
 
-	//label_t	u_ssave;				/* label variable for swapping */
-	//label_t	u_rsave;				/* save info when exchanging stacks */
+	label_t	u_ssave;				/* label variable for swapping */
+	label_t	u_rsave;				/* save info when exchanging stacks */
 	//short	u_uisa[16];				/* segmentation address prototypes */
 	//short	u_uisd[16];				/* segmentation descriptor prototypes */
 	//char	u_sep;					/* flag for I and D separation */
 	//char	dummy1;					/* room for another char */
 									/* overlay information */
 	//struct	u_ovd {					/* automatic overlay data */
-	//	short	uo_curov;			/* current overlay */
-	//	short	uo_ovbase;			/* base of overlay area, seg. */
+	//short	uo_curov;				/* current overlay */
+	//short	uo_ovbase;				/* base of overlay area, seg. */
 	//	u_short	uo_dbase;			/* start of data, clicks */
 	//	u_short	uo_ov_offst[NOVL+1];/* overlay offsets in text */
 	//	short	uo_nseg;			/* number of overlay seg. regs. */
@@ -157,7 +157,7 @@ struct user {
 					 	 	 	 	 */
 /* 1.7 - i386 Port*/
 	struct	sigacts u_sigacts;		/* p_sigacts points here (use it!) */
-	struct	pstats u_stats;			/* p_stats points here (use it!) */
+	struct	pstats 	u_stats;		/* p_stats points here (use it!) */
 };
 
 #ifdef KERNEL

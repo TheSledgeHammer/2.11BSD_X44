@@ -20,7 +20,9 @@ extern	int	errno;			/* global error number */
 #define	ENOEXEC		8		/* Exec format error */
 #define	EBADF		9		/* Bad file number */
 #define	ECHILD		10		/* No children */
+
 #define	EAGAIN		11		/* No more processes */
+
 #define	ENOMEM		12		/* Not enough core */
 #define	EACCES		13		/* Permission denied */
 #define	EFAULT		14		/* Bad address */

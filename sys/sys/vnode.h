@@ -272,7 +272,7 @@ extern void	(*lease_updatetime) __P((int deltat));
  */
 struct vnodeop_desc {
 	int	vdesc_offset;		/* offset in vector--first for speed */
-	char *vdesc_name;		/* a readable name for debugging */
+	char    *vdesc_name;		/* a readable name for debugging */
 	int	vdesc_flags;		/* VDESC_* flags */
 
 	/*

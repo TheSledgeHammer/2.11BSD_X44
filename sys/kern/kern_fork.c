@@ -154,11 +154,10 @@ again:
 	rpp->p_uid = rip->p_uid;
 	rpp->p_pgrp = rip->p_pgrp;
 	rpp->p_nice = rip->p_nice;
-	//rpp->p_textp = rip->p_textp;
 	rpp->p_pid = mpid;
 	rpp->p_ppid = rip->p_pid;
 	rpp->p_pptr = rip;
-	rpp->p_time = 0;
+	rpp->p_rtime = 0;
 	rpp->p_cpu = 0;
 	rpp->p_sigmask = rip->p_sigmask;
 	rpp->p_sigcatch = rip->p_sigcatch;
@@ -269,7 +268,6 @@ again:
 		}
 		rip->p_dsize = 0;
 		rip->p_ssize = 0;
-		//rip->p_textp = NULL;
 		rpp->p_flag |= SVFORK;
 		rip->p_flag |= SVFPRNT;
 		while (rpp->p_flag & SVFORK)
@@ -286,8 +284,6 @@ again:
 		//rpp->p_textp = NULL;
 		rpp->p_flag |= SVFDONE;
 		wakeup((caddr_t)rip);
-		/* must do estabur if dsize/ssize are different */
-		//estabur(u->u_tsize,u->u_dsize,u->u_ssize,u->u_sep,RO); /* PDP-11 seg.h */
 		rip->p_flag &= ~SVFPRNT;
 	}
 	return(0);
