@@ -10,9 +10,10 @@
 #include <sys/systm.h>
 #include <sys/user.h>
 #include <sys/proc.h>
-#include <sys/inode.h>
-#include <vm/vm.h>
 #include <sys/ptrace.h>
+
+#include <vm/vm.h>
+
 
 /*
  * Tracing variables.
@@ -30,6 +31,19 @@ struct
 	int	ip_data;
 } ipc;
 
+
+
+/*
+ * Process debugging system call.
+ */
+register struct ptrace_args {
+	int	req;
+	int	pid;
+	int	*addr;
+	int	data;
+};
+
+
 /*
  * sys-trace system call.
  */
@@ -37,12 +51,8 @@ void
 ptrace()
 {
 	register struct proc *p;
-	register struct a {
-		int	req;
-		int	pid;
-		int	*addr;
-		int	data;
-	} *uap;
+
+	struct ptrace_args *uap;
 
 	uap = (struct a *)u->u_ap;
 	if (uap->req <= 0) {

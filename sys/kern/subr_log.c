@@ -21,18 +21,18 @@
  * 'acctd'.
  */
 
-#define	NLOG	3
-	int	nlog = NLOG;
-
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/ioctl.h>
 #include <sys/msgbuf.h>
 #include <sys/file.h>
-#include <sys/inode.h>
+#include <sys/vnode.h>
 #include <sys/uio.h>
 #include <sys/map.h>
+
+#define	NLOG	3
+int	nlog = NLOG;
 
 #define LOG_RDPRI	(PZERO + 1)
 
@@ -45,16 +45,15 @@
  * test and avoid the overhead of function calls when accounting is
  * turned off.
 */
-	int	Acctopen;
-
-	struct	msgbuf	msgbuf[NLOG];
-	static	struct logsoftc
-		{
-		int	sc_state;	/* see above for possibilities */
-		struct	proc *sc_selp;	/* process waiting on select call */
-		int	sc_pgid;	/* process/group for async I/O */
-		int	sc_overrun;	/* full buffer count */
-		} logsoftc[NLOG];
+int	Acctopen;
+struct	msgbuf	msgbuf[NLOG];
+static	struct logsoftc
+{
+	int	sc_state;			/* see above for possibilities */
+	struct	proc *sc_selp;	/* process waiting on select call */
+	int	sc_pgid;			/* process/group for async I/O */
+	int	sc_overrun;			/* full buffer count */
+} logsoftc[NLOG];
 
 /*ARGSUSED*/
 int

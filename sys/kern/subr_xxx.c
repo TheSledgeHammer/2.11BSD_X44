@@ -7,12 +7,14 @@
  */
 
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/user.h>
 
 /*
  * Routine placed in illegal entries in the bdevsw and cdevsw tables.
  */
-nodev()
+int
+nodev() /* aka enodev */
 {
 
 	return (ENODEV);
@@ -22,11 +24,14 @@ nodev()
  * Null routine; placed in insignificant entries
  * in the bdevsw and cdevsw tables.
  */
-nulldev()
+int
+nulldev() /* aka nullop */
 {
 
 	return (0);
 }
+
+
 
 /*
  * socket(2) and socketpair(2) if networking not available.

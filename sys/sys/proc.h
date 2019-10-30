@@ -108,6 +108,9 @@ struct	proc {
 
     short	p_xstat;				    /* exit status for wait */
 	struct  k_rusage    p_ru;			/* exit information */
+
+/* Plan 9 EDF Port: Work in Progress: Refer to Test directory */
+	struct 	edf			*edf;			/* Earliest Deadline First Scheduler */
 };
 
 struct	session {

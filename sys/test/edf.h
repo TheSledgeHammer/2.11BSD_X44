@@ -8,9 +8,9 @@
 #ifndef _EDF_H_
 #define _EDF_H_
 
-#include <../sys/proc.h>
-#include <../sys/types.h>
-#include <../sys/time.h>
+#include <sys/proc.h>
+#include <sys/types.h>
+#include <sys/time.h>
 
 enum {
 	Maxsteps = 200 * 100 * 2,	/* 100 periods of 200 procs */
@@ -49,7 +49,7 @@ struct Edf {
 	struct proc		*testnext;
 								/* other */
 	ushort			flags;
-	struct timeval;
+	struct timeval	time;		/* Real time. */;
 								/* Stats */
 	long			edfused;
 	long			extraused;

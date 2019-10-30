@@ -8,11 +8,12 @@
  *  Missing pieces.
  *  lock: threading, process lock
  */
-#include "../test/edf.h"
+#include <test/edf.h>
+#include <test/fmt.h>
 
 #include <sys/errno.h>
 #include <sys/trace.h>
-#include "../test/fmt.h"
+
 
 /* debugging */
 enum {
