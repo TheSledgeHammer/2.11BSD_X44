@@ -263,15 +263,15 @@ again:
 		 *  Then wait for the child to finish with it.
 		 */
 		if (a[2] == NULL) {
-			mfree(coremap,rip->p_dsize,rip->p_daddr);
-			mfree(coremap,rip->p_ssize,rip->p_saddr);
+			mfree(coremap, rip->p_dsize, rip->p_daddr);
+			mfree(coremap, rip->p_ssize, rip->p_saddr);
 		}
 		rip->p_dsize = 0;
 		rip->p_ssize = 0;
 		rpp->p_flag |= SVFORK;
 		rip->p_flag |= SVFPRNT;
 		while (rpp->p_flag & SVFORK)
-			sleep((caddr_t)rpp,PSWP+1);
+			sleep((caddr_t)rpp, PSWP+1);
 		if ((rpp->p_flag & SLOAD) == 0)
 			panic("newproc vfork");
 		u->u_dsize = rip->p_dsize = rpp->p_dsize;

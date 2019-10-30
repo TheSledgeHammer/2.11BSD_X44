@@ -48,7 +48,8 @@ struct	k_rusage {				/* KERNEL RUSAGE STRUCTURE */
 #define	ru_last		ru_nivcsw
 };
 
-typedef struct k_rusage rusage;
+//typedef struct k_rusage rusage;
+
 
 /*
  * Resource limits

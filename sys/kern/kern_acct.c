@@ -4,87 +4,271 @@
  * specifies the terms and conditions for redistribution.
  *
  *	@(#)kern_acct.c	3.1 (2.11BSD) 1999/4/29
+ *	@(#)kern_acct.c	8.1 (Berkeley) 6/14/93
+ *	$Id: kern_acct.c,v 1.5 1994/09/26 21:09:00 davidg Exp $
  *
- * This module is a shadow of its former self.  This comment:
- *
- * 	SHOULD REPLACE THIS WITH A DRIVER THAT CAN BE READ TO SIMPLIFY.
- *
- * is all that is left of the original kern_acct.c module.
+ *	A modified kern_acct from FreeBSD 2.0.
+ *	The acct_process includes syncing 2.11BSD's user acct with the system.
  */
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/user.h>
-#include <sys/msgbuf.h>
+#include <sys/proc.h>
+#include <sys/mount.h>
+#include <sys/vnode.h>
+#include <sys/file.h>
+#include <sys/syslog.h>
 #include <sys/kernel.h>
+#include <sys/namei.h>
+#include <sys/errno.h>
 #include <sys/acct.h>
+#include <sys/resourcevar.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
+#include <sys/user.h>
 
-	comp_t	compress();
-	int	Acctthresh = 10;
 
 /*
- * On exit, write a record on the accounting file.
+ * Internal accounting functions.
+ * The former's operation is described in Leffler, et al., and the latter
+ * was provided by UCB with the 4.4BSD-Lite release
  */
-acct()
-	{
-	struct	acct acctbuf;
-	register struct acct *ap = &acctbuf;
-	static	short acctcnt = 0;
+comp_t	encode_comp_t __P((u_long, u_long));
+void	acctwatch __P((void *));
 
-	bcopy(u->u_comm, ap->ac_comm, sizeof(acctbuf.ac_comm));
+/* Accounting vnode pointer, and saved vnode pointer. */
+struct vnode *acctp;
+struct vnode *savacctp;
+
 /*
- * The 'user' and 'system' times need to be converted from 'hz' (linefrequency)
- * clockticks to the AHZ pseudo-tick unit of measure.  The elapsed time is
- * converted from seconds to AHZ ticks.
-*/
-	ap->ac_utime = compress(((u_long)u->u_ru.ru_utime * AHZ) / hz);
-	ap->ac_stime = compress(((u_long)u->u_ru.ru_stime * AHZ) / hz);
-	ap->ac_etime = compress((u_long)(times.tv_sec - u->u_start) * AHZ);
-	ap->ac_btime = u->u_start;
-	ap->ac_uid = u->u_ruid;
-	ap->ac_gid = u->u_rgid;
-	ap->ac_mem = (u->u_dsize+u->u_ssize) / 16; /* fast ctok() */
+ * Values associated with enabling and disabling accounting
+ */
+int	acctsuspend = 2;	/* stop accounting when < 2% free space left */
+int	acctresume = 4;		/* resume when free space risen to > 4% */
+int	acctchkfreq = 15;	/* frequency (in seconds) to check space */
+
 /*
- * Section 3.9 of the 4.3BSD book says that I/O is measured in 1/AHZ units too.
-*/
-	ap->ac_io = compress((u_long)(u->u_ru.ru_inblock+u->u_ru.ru_oublock)*AHZ);
-	if	(u->u_ttyp)
-		ap->ac_tty = u->u_ttyd;
-	else
-		ap->ac_tty = NODEV;
-	ap->ac_flag = u->u_acflag;
-/*
- * Not a lot that can be done if logwrt fails so ignore any errors.  Every
- * few (10 by default) commands call the wakeup routine.  This isn't perfect 
- * but does cut down the overhead of issuing a wakeup to the accounting daemon 
- * every single accounting record.  The threshold is settable via sysctl(8)
-*/
-	logwrt(ap, sizeof (*ap), logACCT);
-	if	(++acctcnt >= Acctthresh)
-		{
-		logwakeup(logACCT);
-		acctcnt = 0;
+ * Accounting system call.  Written based on the specification and
+ * previous implementation done by Mark Tinguely.
+ */
+struct acct_args {
+	char	*path;
+};
+
+int
+acct(p, uap, retval)
+	struct proc *p;
+	struct acct_args *uap;
+	int *retval;
+{
+		struct nameidata nd;
+		int error;
+
+		/* Make sure that the caller is root. */
+		error = suser(p->p_ucred, &p->p_acflag);
+		if (error) {
+			return (error);
 		}
-	}
+
+		/*
+		 * If accounting is to be started to a file, open that file for
+		 * writing and make sure it's a 'normal'.
+		 */
+		if (uap->path != NULL) {
+			NDINIT(&nd, LOOKUP, NOFOLLOW, UIO_USERSPACE, uap->path, p);
+			error = vn_open(&nd, FWRITE, 0);
+			if (error) {
+				return (error);
+			}
+			VOP_UNLOCK(nd.ni_vp);
+			if (nd.ni_vp->v_type != VREG) {
+				vn_close(nd.ni_vp, FWRITE, p->p_ucred, p);
+				return (EACCES);
+			}
+		}
+
+		/*
+		 * If accounting was previously enabled, kill the old space-watcher,
+		 * close the file, and (if no new file was specified, leave).
+		 */
+		if (acctp != NULLVP || savacctp != NULLVP) {
+			untimeout(acctwatch, NULL);
+			error = vn_close((acctp != NULLVP ? acctp : savacctp), FWRITE, p->p_ucred, p);
+			acctp = savacctp = NULLVP;
+		}
+		if (uap->path == NULL) {
+			return (error);
+		}
+
+		/*
+		 * Save the new accounting file vnode, and schedule the new
+		 * free space watcher.
+		 */
+		acctp = nd.ni_vp;
+		acctwatch(NULL);
+		return (error);
+}
 
 /*
- * Raise exponent and drop bits off the right of the mantissa until the
- * mantissa fits.  If we run out of exponent space, return max value (all
- * one bits).  With AHZ set to 64 this is good for close to 8.5 years:
- * (8191 * (1 << (3*7)) / 64 / 60 / 60 / 24 / 365 ~= 8.5)
+ * Write out process accounting information, on process exit.
+ * Data to be written out is specified in Leffler, et al.
+ * and are enumerated below.  (They're also noted in the system
+ * "acct.h" header file.)
  */
+
+int
+acct_process(p)
+	struct proc *p;
+{
+	struct acct acct;
+	struct k_rusage *r;
+	struct timeval ut, st, tmp;
+	int s, t;
+	struct vnode *vp;
+
+	/* If accounting isn't enabled, don't bother */
+	vp = acctp;
+	if (vp == NULLVP)
+		return (0);
+
+	/*
+	 * Get process accounting information.
+	 */
+
+	/* (1) The name of the command that ran */
+	bcopy(p->p_comm, acct.ac_comm, sizeof acct.ac_comm);
+
+	/* (2) The amount of user and system time that was used */
+	calcru(p, &ut, &st, NULL);
+	acct.ac_utime = encode_comp_t(ut.tv_sec, ut.tv_usec);
+	acct.ac_stime = encode_comp_t(st.tv_sec, st.tv_usec);
+
+	/* (3) The elapsed time the commmand ran (and its starting time) */
+	acct.ac_btime = p->p_stats->p_start.tv_sec;
+
+	s = splclock();
+	tmp = time;
+	splx(s);
+	timevalsub(&tmp, &p->p_stats->p_start);
+	acct.ac_etime = encode_comp_t(tmp.tv_sec, tmp.tv_usec);
+
+	/* (4) The average amount of memory used */
+	r = &p->p_stats->p_sru;
+	tmp = ut;
+	timevaladd(&tmp, &st);
+	t = tmp.tv_sec * hz + tmp.tv_usec / tick;
+	if (t)
+		acct.ac_mem = (r->ru_ixrss + r->ru_idrss + r->ru_isrss) / t;
+	else
+		acct.ac_mem = 0;
+
+	/* (5) The number of disk I/O operations done */
+	acct.ac_io = encode_comp_t(r->ru_inblock + r->ru_oublock, 0);
+
+	/* (6) The UID and GID of the process */
+	acct.ac_uid = p->p_cred->p_ruid;
+	acct.ac_gid = p->p_cred->p_rgid;
+
+	/* (7) The terminal from which the process was started */
+	if ((p->p_flag & P_CONTROLT) && p->p_pgrp->pg_session->s_ttyp)
+		acct.ac_tty = p->p_pgrp->pg_session->s_ttyp->t_dev;
+	else
+		acct.ac_tty = NODEV;
+
+	/* (8) The boolean flags that tell how the process terminated, etc. */
+	acct.ac_flag = p->p_acflag;
+
+	/* Sync 2.11BSD User with System acct */
+	//bcopy(acct->ac_comm, u->u_comm, sizeof(u->u_comm));
+	u->u_ru.ru_utime = acct.ac_utime;
+	u->u_ru.ru_stime = acct.ac_stime;
+	u->u_start = acct.ac_btime;
+	u->u_ruid = acct.ac_uid;
+	u->u_rgid = acct.ac_gid;
+	u->u_dsize + u->u_ssize = acct.ac_mem;
+	u->u_ru.ru_inblock + u->u_ru.ru_oublock = acct.ac_io;
+	u->u_ttyd = acct.ac_tty;
+	u->u_acflag = acct.ac_flag;
+
+	/*
+	 * Now, just write the accounting information to the file.
+	 */
+	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
+	return (vn_rdwr(UIO_WRITE, vp, (caddr_t)&acct, sizeof (acct),
+	    (off_t)0, UIO_SYSSPACE, IO_APPEND|IO_UNIT, p->p_ucred,
+	    (int *)0, p));
+}
 
 #define	MANTSIZE	13			/* 13 bit mantissa. */
 #define	EXPSIZE		3			/* Base 8 (3 bit) exponent. */
+#define	MAXFRACT	((1 << MANTSIZE) - 1)	/* Maximum fractional value. */
 
 comp_t
-compress(mant)
-	u_long mant;
-	{
-	register int exp;
+encode_comp_t(s, us)
+	u_long s, us;
+{
+	int exp, rnd;
 
-	for	(exp = 0; exp < (1 << EXPSIZE); exp++, mant >>= EXPSIZE)
-		if	(mant < (1L << MANTSIZE))
-			return(mant | (exp << MANTSIZE));
-	return(~0);
+	exp = 0;
+	rnd = 0;
+	s *= AHZ;
+	s += us / (1000000 / AHZ);	/* Maximize precision. */
+
+	while (s > MAXFRACT) {
+	rnd = s & (1 << (EXPSIZE - 1));	/* Round up? */
+		s >>= EXPSIZE;		/* Base 8 exponent == 3 bit shift. */
+		exp++;
 	}
+
+	/* If we need to round up, do it (and handle overflow correctly). */
+	if (rnd && (++s > MAXFRACT)) {
+		s >>= EXPSIZE;
+		exp++;
+	}
+
+	/* Clean it up and polish it off. */
+	exp <<= MANTSIZE;		/* Shift the exponent into place */
+	exp += s;			/* and add on the mantissa. */
+	return (exp);
+}
+
+/*
+ * Periodically check the file system to see if accounting
+ * should be turned on or off.  Beware the case where the vnode
+ * has been vgone()'d out from underneath us, e.g. when the file
+ * system containing the accounting file has been forcibly unmounted.
+ */
+/* ARGSUSED */
+void
+acctwatch(a)
+void *a;
+{
+	struct statfs sb;
+	if (savacctp != NULLVP) {
+		if (savacctp->v_type == VBAD) {
+			(void) vn_close(savacctp, FWRITE, NOCRED, NULL);
+			savacctp = NULLVP;
+			return;
+		}
+		(void)VFS_STATFS(savacctp->v_mount, &sb, (struct proc *)0);
+		if (sb.f_bavail > acctresume * sb.f_blocks / 100) {
+			acctp = savacctp;
+			savacctp = NULLVP;
+			log(LOG_NOTICE, "Accounting resumed\n");
+		}
+	} else if (acctp != NULLVP) {
+		if (acctp->v_type == VBAD) {
+			(void) vn_close(acctp, FWRITE, NOCRED, NULL);
+			acctp = NULLVP;
+			return;
+		}
+		(void)VFS_STATFS(acctp->v_mount, &sb, (struct proc *)0);
+		if (sb.f_bavail <= acctsuspend * sb.f_blocks / 100) {
+			savacctp = acctp;
+			acctp = NULLVP;
+			log(LOG_NOTICE, "Accounting suspended\n");
+		}
+	} else
+		return;
+	timeout(acctwatch, NULL, acctchkfreq * hz);
+}

@@ -98,7 +98,7 @@ main()
 	p->p_rtprio.type = RTP_PRIO_NORMAL;
 	p->p_rtprio.prio = 0;
 
-	//bcopy("swapper", p->p_comm, sizeof ("swapper"));
+	bcopy("swapper", p->p_comm, sizeof ("swapper"));
 
 	/* Create credentials. */
 	cred0.p_refcnt = 1;
@@ -129,6 +129,9 @@ main()
 	limit0.pl_rlimit[RLIMIT_MEMLOCK].rlim_cur = i / 3;
 	limit0.p_refcnt = 1;
 
+	/* init user structure */
+	init_user(p);
+
 	/* Allocate a prototype map so we have something to fork. */
 	p->p_vmspace = &vmspace0;
 	vmspace0.vm_refcnt = 1;
@@ -155,8 +158,6 @@ main()
 	/* Configure virtual memory system, set vm rlimits. */
 	vm_init_limits(p);
 
-	/* init user structure */
-	init_user(p);
 
 	/* Initialize signal state for process 0 */
 	siginit(p);

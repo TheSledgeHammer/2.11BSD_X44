@@ -5,6 +5,8 @@
  *
  *	@(#)acct.h	2.2	(2.11BSD) 1999/2/19
  */
+#ifndef _SYS_ACCT_H_
+#define _SYS_ACCT_H_
 
 /*
  * Accounting structures;
@@ -16,7 +18,7 @@ typedef	u_short comp_t;
 
 struct	acct
 {
-	char	ac_comm[10];		/* Accounting command name */
+	char	ac_comm[10];	/* Accounting command name */
 	comp_t	ac_utime;		/* Accounting user time */
 	comp_t	ac_stime;		/* Accounting system time */
 	comp_t	ac_etime;		/* Accounting elapsed time */
@@ -30,7 +32,7 @@ struct	acct
 };
 
 #define	AFORK	0001		/* has executed fork, but no exec */
-#define	ASU	0002		/* used super-user privileges */
+#define	ASU	0002			/* used super-user privileges */
 #define	ACOMPAT	0004		/* used compatibility mode */
 #define	ACORE	0010		/* dumped core */
 #define	AXSIG	0020		/* killed by a signal */
@@ -48,5 +50,6 @@ struct	acct
 #define	_PATH_ACCTDPID "/var/run/acctd.pid"
 #define	_PATH_ACCTDCF "/etc/acctd.cf"
 #define	_PATH_DEVALOG "/dev/acctlog"
+
 #endif
 

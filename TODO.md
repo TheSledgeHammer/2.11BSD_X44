@@ -1,12 +1,16 @@
 In Kernel:
-PDP-11 Segmentation Pointers: Most internal kernel reference have been removed or replaced.
-- Remove:
-- Create:
-- Add:
+Fix:
+- kern_descrip.c
+- kern_exec.c
+- kern_sig.c
 
-Hardware Abstraction Layer:
-- Memory Abstraction (Physical Memory, Virtual Memory):
-
+Contains Inodes:
+- kern_descrip.c
+- kern_exec.c
+- kern_sig.c
+- kern_sysctl.c
+- sys_kern.c
+- sys_pipe.c
 
 From Plan 9:
 - Pool.c, Pool.h, malloc.c, ucalloc.c, alloc.c, xalloc.c: Uses a tree structure. 

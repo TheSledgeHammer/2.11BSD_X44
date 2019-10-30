@@ -14,7 +14,8 @@
  * a process terminates if any are outstanding, and never returns
  * detailed information about process resource utilization (<vtimes.h>).
  */
-
+#ifndef _SYS_WAIT_H_
+#define _SYS_WAIT_H_
 /*
  * Structure of the information in the first word returned by both
  * wait and wait3.  If w_stopval==WSTOPPED, then the second structure
@@ -86,4 +87,6 @@ pid_t	wait3 __P((int *, int, struct rusage *));
 pid_t	wait4 __P((pid_t, int *, int, struct rusage *));
 #endif
 __END_DECLS
+#endif
+
 #endif

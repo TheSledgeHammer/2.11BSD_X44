@@ -85,9 +85,9 @@ struct user {
 	size_t	u_dsize;				/* data size (clicks) */
 	size_t	u_ssize;				/* stack size (clicks) */
 
-
 	label_t	u_ssave;				/* label variable for swapping */
 	label_t	u_rsave;				/* save info when exchanging stacks */
+
 	//short	u_uisa[16];				/* segmentation address prototypes */
 	//short	u_uisd[16];				/* segmentation descriptor prototypes */
 	//char	u_sep;					/* flag for I and D separation */
@@ -102,7 +102,7 @@ struct user {
 	//} u_ovdata;
 
 /* 1.3 - signal management */
-	int	(*u_signal[NSIG])();		/* disposition of signals */
+	int		(*u_signal[NSIG])();	/* disposition of signals */
 	long	u_sigmask[NSIG];		/* signals to be blocked */
 	long	u_sigonstack;			/* signals to take on sigstack */
 	long	u_sigintr;				/* signals that interrupt syscalls */
@@ -158,6 +158,8 @@ struct user {
 /* 1.7 - i386 Port*/
 	struct	sigacts u_sigacts;		/* p_sigacts points here (use it!) */
 	struct	pstats 	u_stats;		/* p_stats points here (use it!) */
+	//struct  vnode	*u_cdirv;
+	//struct  vnode	*u_rdirv;
 };
 
 #ifdef KERNEL

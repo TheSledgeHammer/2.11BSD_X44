@@ -5,7 +5,7 @@
  *
  *	@(#)proc.h	1.5 (2.11BSD) 1999/9/5
  *
- *	Parts of proc.h are borrowed from 4.4BSD-lite2 / FreeBSD 2.0 proc.h.
+ *	Parts of proc.h are borrowed from FreeBSD 2.0 proc.h.
  */
 
 #ifndef	_SYS_PROC_H_
@@ -15,7 +15,6 @@
 #include <sys/rtprio.h>			/* For struct rtprio. */
 #include <sys/select.h>			/* For struct selinfo. */
 #include <sys/time.h>			/* For structs itimerval, timeval. */
-#include <sys/queue.h>
 
 /*
  * One structure allocated per active
@@ -25,7 +24,6 @@
  * Other per process data (user.h)
  * is swapped with the process.
  */
-
 struct	proc {
     struct	proc 		*p_nxt;			/* linked list of allocated proc slots */
 	struct	proc 		**p_prev;		/* also zombies, and free proc's */
@@ -100,41 +98,41 @@ struct	proc {
     struct	rtprio 	    p_rtprio;		/* Realtime priority. */
 
     struct	proc 	    *p_link;		/* linked list of running processes */
-    size_t  p_addr;				        /* address of u. area */
-	size_t  p_daddr;				    /* address of data area */
-	size_t  p_saddr;				    /* address of stack area */
+    struct	user 		*p_addr;        /* address of u. area */
+    struct	user  		*p_daddr;		/* address of data area */
+    struct	user  		*p_saddr;		/* address of stack area */
 	size_t	p_dsize;				    /* size of data area (clicks) */
 	size_t	p_ssize;				    /* size of stack segment (clicks) */
-    struct	k_itimerval p_krealtimer;   /* timer??? in 2.11BSD */
+    struct	k_itimerval p_krealtimer;   /* Alarm Timer?? in 2.11BSD */
     u_short p_acflag;	                /* Accounting flags. */
 
     short	p_xstat;				    /* exit status for wait */
-	struct  rusage      p_ru;			/* exit information */
+	struct  k_rusage    p_ru;			/* exit information */
 };
 
 struct	session {
-	int		s_count;				/* Ref cnt; pgrps in session. */
-	struct	proc *s_leader;			/* Session leader. */
-	struct	vnode *s_ttyvp;			/* inode of controlling terminal. */
-	struct	tty *s_ttyp;			/* Controlling terminal. */
-	char	s_login[MAXLOGNAME];	/* Setlogin() name. */
+	int		s_count;					/* Ref cnt; pgrps in session. */
+	struct	proc *s_leader;				/* Session leader. */
+	struct	vnode *s_ttyvp;				/* inode of controlling terminal. */
+	struct	tty *s_ttyp;				/* Controlling terminal. */
+	char	s_login[MAXLOGNAME];		/* Setlogin() name. */
 };
 
 struct	pgrp {
-	struct	pgrp *pg_hforw;			/* Forward link in hash bucket. */
-	struct	proc *pg_mem;			/* Pointer to pgrp members. */
-	struct	session *pg_session;	/* Pointer to session. */
-	pid_t	pg_id;					/* Pgrp id. */
-	int		pg_jobc;				/* # procs qualifying pgrp for job control */
+	struct	pgrp *pg_hforw;				/* Forward link in hash bucket. */
+	struct	proc *pg_mem;				/* Pointer to pgrp members. */
+	struct	session *pg_session;		/* Pointer to session. */
+	pid_t	pg_id;						/* Pgrp id. */
+	int		pg_jobc;					/* # procs qualifying pgrp for job control */
 };
 
 struct pcred {
-	struct	ucred *pc_ucred;	/* Current credentials. */
-	uid_t	p_ruid;				/* Real user id. */
-	uid_t	p_svuid;			/* Saved effective user id. */
-	gid_t	p_rgid;				/* Real group id. */
-	gid_t	p_svgid;			/* Saved effective group id. */
-	int		p_refcnt;			/* Number of references. */
+	struct	ucred *pc_ucred;			/* Current credentials. */
+	uid_t	p_ruid;						/* Real user id. */
+	uid_t	p_svuid;					/* Saved effective user id. */
+	gid_t	p_rgid;						/* Real group id. */
+	gid_t	p_svgid;					/* Saved effective group id. */
+	int		p_refcnt;					/* Number of references. */
 };
 
 #define	p_session	p_pgrp->pg_session
@@ -195,7 +193,6 @@ extern struct proc *pfind();
 extern struct proc proc[], *procNPROC;	/* the proc table itself */
 extern struct proc *freeproc;
 
-LIST_HEAD(proclist, proc);
 extern struct proc *zombproc;			/* List of zombie procs. */
 extern volatile struct proc *allproc;	/* List of active procs. */
 extern struct proc proc0;				/* Process slot for swapper. */
@@ -212,8 +209,8 @@ struct	prochd {
 };
 
 int		chgproccnt __P((uid_t, int));
-struct proc *pfind __P((pid_t));	/* Find process by id. */
-struct pgrp *pgfind __P((pid_t));	/* Find process group by id. */
+struct proc *pfind __P((pid_t));		/* Find process by id. */
+struct pgrp *pgfind __P((pid_t));		/* Find process group by id. */
 
 int		setpri __P((struct proc *));
 void	setrun __P((struct proc *));
