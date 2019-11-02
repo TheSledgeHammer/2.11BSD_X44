@@ -26,10 +26,10 @@
 #define	RUSAGE_SELF	0
 #define	RUSAGE_CHILDREN	-1
 
-struct	k_rusage {				/* KERNEL RUSAGE STRUCTURE */
+struct	rusage {
 	struct timeval ru_utime;	/* user time used */
 	struct timeval ru_stime;	/* system time used */
-	long	ru_maxrss;
+	long	ru_maxrss;			/* max resident set size */
 #define	ru_first	ru_ixrss
 	long	ru_ixrss;			/* integral shared memory size */
 	long	ru_idrss;			/* integral unshared data " */
@@ -48,8 +48,21 @@ struct	k_rusage {				/* KERNEL RUSAGE STRUCTURE */
 #define	ru_last		ru_nivcsw
 };
 
-//typedef struct k_rusage rusage;
-
+struct	k_rusage {			/* KERNEL RUSAGE STRUCTURE */
+#define	k_ru_first	ru_utime
+	long	ru_utime;		/* user time used ('hz' ticks) */
+	long	ru_stime;		/* system time used ('hz' ticks) */
+	long	ru_ovly;		/* overlay changes */
+	long	ru_nswap;		/* swaps */
+	long	ru_inblock;		/* block input operations */
+	long	ru_oublock;		/* block output operations */
+	long	ru_msgsnd;		/* messages sent */
+	long	ru_msgrcv;		/* messages received */
+	long	ru_nsignals;	/* signals received */
+	long	ru_nvcsw;		/* voluntary context switches */
+	long	ru_nivcsw;		/* involuntary " */
+#define	k_ru_last		ru_nivcsw
+};
 
 /*
  * Resource limits
@@ -69,8 +82,13 @@ struct	k_rusage {				/* KERNEL RUSAGE STRUCTURE */
 #define	RLIM_INFINITY	(((u_quad_t)1 << 63) - 1)
 
 struct rlimit {
-	quad_t	rlim_cur;			/* current (soft) limit */
-	quad_t	rlim_max;			/* maximum value for rlim_cur */
+	quad_t	rlim_cur;		/* current (soft) limit */
+	quad_t	rlim_max;		/* maximum value for rlim_cur */
+};
+
+struct orlimit {
+	long	rlim_cur;		/* current (soft) limit */
+	long	rlim_max;		/* maximum value for rlim_cur */
 };
 
 /* Load average structure. */
@@ -89,6 +107,7 @@ extern struct loadavg averunnable;
 __BEGIN_DECLS
 int	getpriority __P((int, int));
 int	getrlimit __P((int, struct rlimit *));
+int	getkrusage __P((int, struct k_rusage *));
 int	getrusage __P((int, struct rusage *));
 int	setpriority __P((int, int, int));
 int	setrlimit __P((int, const struct rlimit *));

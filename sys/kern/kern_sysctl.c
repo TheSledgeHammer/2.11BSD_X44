@@ -47,7 +47,7 @@
 #include <sys/map.h>
 #include <sys/proc.h>
 #include <sys/file.h>
-#include <sys/inode.h>
+#include <sys/vnode.h>
 #include <sys/buf.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
@@ -173,6 +173,10 @@ char hostname[MAXHOSTNAMELEN];
 int hostnamelen;
 long hostid;
 int securelevel;
+char kernelname[MAXPATHLEN] = "/kernel";	/* XXX bloat */
+extern int vfs_update_wakeup;
+extern int vfs_update_interval;
+extern int osreldate;
 
 /*
  * kernel related system variables.
@@ -204,8 +208,8 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (sysctl_rdlong(oldp, oldlenp, newp, BSD));
 	case KERN_VERSION:
 		return (sysctl_rdstring(oldp, oldlenp, newp, version));
-	case KERN_MAXINODES:
-		return(sysctl_rdint(oldp, oldlenp, newp, &desiredinodes));
+	case KERN_MAXVNODES:
+		return(sysctl_rdint(oldp, oldlenp, newp, &desiredvnodes));
 	case KERN_MAXPROC:
 		return (sysctl_rdint(oldp, oldlenp, newp, &maxproc));
 	case KERN_MAXFILES:
@@ -237,8 +241,8 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	case KERN_BOOTTIME:
 		return (sysctl_rdstruct(oldp, oldlenp, newp, &boottime,
 		    sizeof(struct timeval)));
-	case KERN_INODE:
-		return (sysctl_inode(oldp, oldlenp));
+	case KERN_VNODE:
+		return (sysctl_vnode(oldp, oldlenp));
 	case KERN_PROC:
 		return (sysctl_doproc(name + 1, namelen - 1, oldp, oldlenp));
 	case KERN_FILE:

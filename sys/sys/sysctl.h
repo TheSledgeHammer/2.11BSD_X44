@@ -111,7 +111,8 @@ struct ctlname {
 #define	KERN_OSRELEASE		 2	/* string: system release */
 #define	KERN_OSREV	 		 3	/* int: system revision */
 #define	KERN_VERSION		 4	/* string: compile time info */
-#define	KERN_MAXINODES		 5	/* int: max inodes */
+//#define	KERN_MAXINODES		 5	/* int: max inodes */
+#define	KERN_MAXVNODES		 5	/* int: max vnode */
 #define	KERN_MAXPROC		 6	/* int: max processes */
 #define	KERN_MAXFILES		 7	/* int: max open files */
 #define	KERN_ARGMAX	 		 8	/* int: max arguments to exec */
@@ -119,7 +120,8 @@ struct ctlname {
 #define	KERN_HOSTNAME		10	/* string: hostname */
 #define	KERN_HOSTID			11	/* int: host identifier */
 #define	KERN_CLOCKRATE		12	/* struct: struct clockrate */
-#define	KERN_INODE			13	/* struct: inode structures */
+//#define	KERN_INODE			13	/* struct: inode structures */
+#define	KERN_VNODE			13	/* struct: vnode structures */
 #define	KERN_PROC			14	/* struct: process entries */
 #define	KERN_FILE			15	/* struct: file entries */
 #define	KERN_PROF			16	/* node: kernel profiling info */
@@ -131,7 +133,12 @@ struct ctlname {
 #define	KERN_MAXTEXTS		22	/* int: # of text entries */
 #define	KERN_TEXT			23	/* struct: text entries */
 #define	KERN_ACCTTHRESH		24	/* int: accounting daemon threshold */
-#define	KERN_MAXID			25	/* number of valid kern ids */
+#define KERN_DOMAINNAME		22	/* string: YP domain name */
+#define KERN_UPDATEINTERVAL	23	/* int: update process sleep time */
+#define KERN_OSRELDATE		24	/* int: OS release date */
+#define KERN_NTP_PLL		25	/* node: NTP PLL control */
+#define	KERN_BOOTFILE		26	/* string: name of booted kernel */
+#define	KERN_MAXID			27	/* number of valid kern ids */
 
 #define CTL_KERN_NAMES { \
 	{ 0, 0 }, \
@@ -139,7 +146,7 @@ struct ctlname {
 	{ "osrelease", CTLTYPE_STRING }, \
 	{ "osrevision", CTLTYPE_LONG }, \
 	{ "version", CTLTYPE_STRING }, \
-	{ "maxinodes", CTLTYPE_INT }, \
+	{ "maxvnodes", CTLTYPE_INT }, \
 	{ "maxproc", CTLTYPE_INT }, \
 	{ "maxfiles", CTLTYPE_INT }, \
 	{ "argmax", CTLTYPE_INT }, \
@@ -147,7 +154,7 @@ struct ctlname {
 	{ "hostname", CTLTYPE_STRING }, \
 	{ "hostid", CTLTYPE_LONG }, \
 	{ "clockrate", CTLTYPE_STRUCT }, \
-	{ "inode", CTLTYPE_STRUCT }, \
+	{ "vnode", CTLTYPE_STRUCT }, \
 	{ "proc", CTLTYPE_STRUCT }, \
 	{ "file", CTLTYPE_STRUCT }, \
 	{ "profiling", CTLTYPE_NODE }, \
@@ -159,6 +166,11 @@ struct ctlname {
 	{ "maxtexts", CTLTYPE_INT }, \
 	{ "text", CTLTYPE_STRUCT }, \
 	{ "acctthresh", CTLTYPE_INT }, \
+	{ "domainname", CTLTYPE_STRING }, \
+	{ "update", CTLTYPE_INT }, \
+	{ "osreldate", CTLTYPE_INT }, \
+        { "ntp_pll", CTLTYPE_NODE }, \
+	{ "bootfile", CTLTYPE_STRING }, \
 }
 
 /* 
@@ -249,6 +261,8 @@ struct	kinfo_file {
 #define	HW_DISKNAMES	8		/* strings: disk drive names */
 #define	HW_DISKSTATS	9		/* struct: diskstats[] */
 #define	HW_MAXID		10		/* number of valid hw ids */
+#define HW_DEVCONF		11		/* node: device configuration */
+#define	HW_MAXID		12		/* number of valid hw ids */
 
 #define CTL_HW_NAMES { \
 	{ 0, 0 }, \
@@ -261,6 +275,8 @@ struct	kinfo_file {
 	{ "pagesize", CTLTYPE_INT }, \
 	{ "disknames", CTLTYPE_STRUCT }, \
 	{ "diskstats", CTLTYPE_STRUCT }, \
+	{ "floatingpoint", CTLTYPE_INT }, \
+	{ "devconf", CTLTYPE_NODE }, \
 }
 
 /*
@@ -323,7 +339,7 @@ struct	kinfo_file {
 #define	CTL_DEBUG_MAXID		20
 
 #ifdef	KERNEL
-#ifdef	DEBUG
+#if	defined(DEBUG) || defined(DIAGNOSTIC)
 /*
  * CTL_DEBUG variables.
  *

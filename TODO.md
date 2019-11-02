@@ -1,4 +1,7 @@
 In Kernel:
+TODO:
+- Check 2.11BSD original: rusage & k_rusage refs
+- Adjust 2.11BSD new: if they match-up where appropriate
 Fix:
 - kern_descrip.c
 - kern_exec.c
