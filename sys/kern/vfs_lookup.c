@@ -47,7 +47,7 @@
 #include <sys/vnode.h>
 #include <sys/mount.h>
 #include <sys/errno.h>
-#include <sys/malloc.h>
+#include <sys/map.h>
 #include <sys/filedesc.h>
 #include <sys/proc.h>
 
@@ -103,7 +103,8 @@ namei(ndp)
 	 * name into the buffer.
 	 */
 	if ((cnp->cn_flags & HASBUF) == 0)
-		MALLOC(cnp->cn_pnbuf, caddr_t, MAXPATHLEN, M_NAMEI, M_WAITOK);
+		//MALLOC(cnp->cn_pnbuf, caddr_t, MAXPATHLEN, M_NAMEI, M_WAITOK);
+		malloc(cnp->cn_pnbuf, MAXPATHLEN);
 	if (ndp->ni_segflg == UIO_SYSSPACE)
 		error = copystr(ndp->ni_dirp, cnp->cn_pnbuf,
 			    MAXPATHLEN, (u_int *)&ndp->ni_pathlen);
@@ -111,7 +112,8 @@ namei(ndp)
 		error = copyinstr(ndp->ni_dirp, cnp->cn_pnbuf,
 			    MAXPATHLEN, (u_int *)&ndp->ni_pathlen);
 	if (error) {
-		free(cnp->cn_pnbuf, M_NAMEI);
+		//free(cnp->cn_pnbuf, M_NAMEI);
+		free(cnp->cn_pnbuf);
 		ndp->ni_vp = NULL;
 		return (error);
 	}
@@ -146,7 +148,8 @@ namei(ndp)
 		ndp->ni_startdir = dp;
 		error = lookup(ndp);
 		if (error) {
-			FREE(cnp->cn_pnbuf, M_NAMEI);
+			//FREE(cnp->cn_pnbuf, M_NAMEI);
+			free(cnp->cn_pnbuf);
 			return (error);
 		}
 		/*
@@ -154,7 +157,8 @@ namei(ndp)
 		 */
 		if ((cnp->cn_flags & ISSYMLINK) == 0) {
 			if ((cnp->cn_flags & (SAVENAME | SAVESTART)) == 0)
-				FREE(cnp->cn_pnbuf, M_NAMEI);
+				//FREE(cnp->cn_pnbuf, M_NAMEI);
+				free(cnp->cn_pnbuf);
 			else
 				cnp->cn_flags |= HASBUF;
 			return (0);
@@ -166,7 +170,8 @@ namei(ndp)
 			break;
 		}
 		if (ndp->ni_pathlen > 1)
-			MALLOC(cp, char *, MAXPATHLEN, M_NAMEI, M_WAITOK);
+			//MALLOC(cp, char *, MAXPATHLEN, M_NAMEI, M_WAITOK);
+			malloc(cp, MAXPATHLEN);
 		else
 			cp = cnp->cn_pnbuf;
 		aiov.iov_base = cp;
@@ -181,7 +186,8 @@ namei(ndp)
 		error = VOP_READLINK(ndp->ni_vp, &auio, cnp->cn_cred);
 		if (error) {
 			if (ndp->ni_pathlen > 1)
-				free(cp, M_NAMEI);
+				//free(cp, M_NAMEI);
+				free(cp);
 			break;
 		}
 		linklen = MAXPATHLEN - auio.uio_resid;

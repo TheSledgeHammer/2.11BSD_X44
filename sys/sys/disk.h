@@ -46,7 +46,6 @@
 
 #ifndef	_SYS_DISK_H_
 #define	_SYS_DISK_H_
-//#include <sys/disklabel.h>
 
 /*
  * Disk device structures.
@@ -79,40 +78,70 @@
  * cause much overhead since labels are read and written infrequently - when
  * mounting a drive, assigning a label, running newfs, etc.
  */
+struct buf;
 
 struct dkdevice {
+	struct	device 	 dk_dev;					/* base device */
+	struct	dkdevice *dk_next;					/* list of disks; not yet used */
+	int	dk_bps;									/* xfer rate: bytes per second */
 	int	dk_bopenmask;							/* block devices open */
 	int	dk_copenmask;							/* character devices open */
 	int	dk_openmask;							/* composite (bopen|copen) */
-	int	dk_flags;								/* label state   see below */
-	memaddr	dk_label;							/* sector containing label */
-	struct	partition dk_parts[MAXPARTITIONS];	/* inkernel portion */
+	int	dk_flags;								/* label state aka dk_state */
+	int	dk_blkshift;							/* shift to convert DEV_BSIZE to blks */
+	int	dk_byteshift;							/* shift to convert bytes to blks */
+	struct	dkdriver *dk_driver;				/* pointer to driver */
+	daddr_t	dk_labelsector;						/* sector containing label */
+	struct 	disklabel dk_label;					/* label */
+	//struct	partition dk_parts[MAXPARTITIONS];	/* inkernel portion */
 };
 
-#define	DKF_OPENING	0x0001		/* drive is being opened */
-#define	DKF_CLOSING	0x0002		/* drive is being closed */
-#define	DKF_WANTED	0x0004		/* drive is being waited for */
-#define	DKF_ALIVE	0x0008		/* drive is alive */
-#define	DKF_ONLINE	0x0010		/* drive is online */
-#define	DKF_WLABEL	0x0020		/* label area is being written */
-#define	DKF_SEEK	0x0040		/* drive is seeking */
-#define	DKF_SWAIT	0x0080		/* waiting for seek to complete */
+struct dkdriver {
+	void (*d_strategy) __P((struct buf *));
+#ifdef notyet
+	int	(*d_open) __P((dev_t dev, int ifmt, int, struct proc *));
+	int	(*d_close) __P((dev_t dev, int, int ifmt, struct proc *));
+	int	(*d_ioctl) __P((dev_t dev, int cmd, caddr_t data, int fflag,
+				struct proc *));
+	int	(*d_dump) __P((dev_t));
+	void	(*d_start) __P((struct buf *, daddr_t));
+	int	(*d_mklabel) __P((struct dkdevice *));
+#endif
+};
 
-/* encoding of disk minor numbers, should be elsewhere... but better
- * here than in ufs_disksubr.c
- *
- * Note: the controller number in bits 6 and 7 of the minor device are NOT
- *	 removed.  It is the responsibility of the driver to extract or mask
- *	 these bits.
-*/
+/* states */
+#define	DKF_CLOSING	0		/* drive is being closed */
+#define	DKF_OPENING	1		/* drive is being opened */
+#define	DKF_WANTED	2		/* drive is being waited for */
+#define DKF_RLABEL  3		/* label being read */
+#define	DKF_OPEN	4		/* label read, drive open */
+#define	DKF_OPENRAW	5		/* open without label */
+#define	DKF_WLABEL	6		/* label area is being written, */
+#define	DKF_ALIVE	7		/* drive is alive */
+#define	DKF_ONLINE	8		/* drive is online */
+#define	DKF_SEEK	9		/* drive is seeking */
+#define	DKF_SWAIT	10		/* waiting for seek to complete */
 
-#define dkunit(dev)		(minor(dev) >> 3)
-#define dkpart(dev)		(minor(dev) & 07)
-#define dkminor(unit, part)	(((unit) << 3) | (part))
+#ifdef DISKSORT_STATS
+/*
+ * Stats from disksort().
+ */
+struct disksort_stats {
+	long	ds_newhead;		/* # new queue heads created */
+	long	ds_newtail;		/* # new queue tails created */
+	long	ds_midfirst;		/* # insertions into sort list */
+	long	ds_endfirst;		/* # insertions at end of sort list */
+	long	ds_newsecond;		/* # inversions (2nd lists) created */
+	long	ds_midsecond;		/* # insertions into 2nd list */
+	long	ds_endsecond;		/* # insertions at end of 2nd list */
+};
+#endif
 
 #ifdef KERNEL
-char *readdisklabel();
-int	setdisklabel();
-int	writedisklabel();
+void	disksort __P((struct buf *, struct buf *));
+char	*readdisklabel __P((struct dkdevice *, int));
+int	setdisklabel __P((struct dkdevice *, struct disklabel *));
+int	writedisklabel __P((struct dkdevice *, int));
+int	diskerr __P((struct dkdevice *, struct buf *, char *, int, int));
 #endif
 #endif /* _SYS_DISK_H_ */

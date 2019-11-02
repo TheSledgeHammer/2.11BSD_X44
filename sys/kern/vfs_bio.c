@@ -26,7 +26,7 @@
 #include <sys/vnode.h>
 #include <sys/buf.h>
 #include <sys/mount.h>
-#include <sys/malloc.h>
+#include <sys/map.h>
 #include <sys/resourcevar.h>
 #include <sys/proc.h>
 #include <vm/vm.h>
@@ -69,7 +69,7 @@ bufinit()
 		LIST_INIT(&bufhashtbl[i]);
 
 	/* next, make a null set of free lists */
-	for(i=0;i<BUFFER_QUEUES;i++)
+	for(i=0;i<BQUEUES;i++)
 		TAILQ_INIT(&bufqueues[i]);
 
 	baddr = (caddr_t)kmem_alloc_pageable(buffer_map, MAXBSIZE * nbuf);
@@ -82,10 +82,10 @@ bufinit()
 		bp->b_vp = NULL;
 		bp->b_rcred = NOCRED;
 		bp->b_wcred = NOCRED;
-		bp->b_qindex = QUEUE_EMPTY;
+		bp->b_qindex = BQ_EMPTY;
 		bp->b_vnbufs.le_next = NOLIST;
 		bp->b_data = baddr + i * MAXBSIZE;
-		TAILQ_INSERT_TAIL(&bufqueues[QUEUE_EMPTY], bp, b_freelist);
+		TAILQ_INSERT_TAIL(&bufqueues[BQ_EMPTY], bp, b_freelist);
 		LIST_INSERT_HEAD(&invalhash, bp, b_hash);
 	}
 }
@@ -97,9 +97,9 @@ void
 bremfree(struct buf *bp)
 {
 	int s = splbio();
-	if( bp->b_qindex != QUEUE_NONE) {
+	if( bp->b_qindex != BQ_NONE) {
 		TAILQ_REMOVE(&bufqueues[bp->b_qindex], bp, b_freelist);
-		bp->b_qindex = QUEUE_NONE;
+		bp->b_qindex = BQ_NONE;
 	} else {
 		panic("bremfree: removing a buffer when not on a queue");
 	}
@@ -121,7 +121,7 @@ bread(struct vnode *vp, daddr_t blkno, int size, struct ucred *cred,
 	/* if not found in cache, do some I/O */
 	if ((bp->b_flags & B_CACHE) == 0) {
 		if (curproc && curproc->p_stats)	/* count block I/O */
-			curproc->p_stats->p_ru.ru_inblock++;
+			curproc->p_stats->p_sru.ru_inblock++;
 		bp->b_flags |= B_READ;
 		bp->b_flags &= ~(B_DONE|B_ERROR|B_INVAL);
 		if( bp->b_rcred == NOCRED) {
@@ -154,7 +154,7 @@ breadn(struct vnode *vp, daddr_t blkno, int size,
 	/* if not found in cache, do some I/O */
 	if ((bp->b_flags & B_CACHE) == 0) {
 		if (curproc && curproc->p_stats)	/* count block I/O */
-			curproc->p_stats->p_ru.ru_inblock++;
+			curproc->p_stats->p_sru.ru_inblock++;
 		bp->b_flags |= B_READ;
 		bp->b_flags &= ~(B_DONE|B_ERROR|B_INVAL);
 		if( bp->b_rcred == NOCRED) {
@@ -174,7 +174,7 @@ breadn(struct vnode *vp, daddr_t blkno, int size,
 
 		if ((rabp->b_flags & B_CACHE) == 0) {
 			if (curproc && curproc->p_stats)
-				curproc->p_stats->p_ru.ru_inblock++;
+				curproc->p_stats->p_sru.ru_inblock++;
 			rabp->b_flags |= B_READ | B_ASYNC;
 			rabp->b_flags &= ~(B_DONE|B_ERROR|B_INVAL);
 			if( rabp->b_rcred == NOCRED) {
@@ -219,7 +219,7 @@ bwrite(struct buf *bp)
 		if (oldflags & B_DELWRI) {
 			reassignbuf(bp, bp->b_vp);
 		} else if( curproc) {
-			++curproc->p_stats->p_ru.ru_oublock;
+			++curproc->p_stats->p_sru.ru_oublock;
 		}
 	}
 
@@ -231,7 +231,7 @@ bwrite(struct buf *bp)
 		if (oldflags & B_DELWRI) {
 			reassignbuf(bp, bp->b_vp);
 		} else if( curproc) {
-			++curproc->p_stats->p_ru.ru_oublock;
+			++curproc->p_stats->p_sru.ru_oublock;
 		}
 		brelse(bp);
 		return (rtval);
@@ -271,7 +271,7 @@ bdwrite(struct buf *bp)
 	bp->b_flags &= ~B_READ;
 	if( (bp->b_flags & B_DELWRI) == 0) {
 		if( curproc)
-			++curproc->p_stats->p_ru.ru_oublock;
+			++curproc->p_stats->p_sru.ru_oublock;
 		bp->b_flags |= B_DONE|B_DELWRI;
 		reassignbuf(bp, bp->b_vp);
 	}
@@ -323,36 +323,36 @@ brelse(struct buf *bp)
 			brelvp(bp);
 	}
 
-	if( bp->b_qindex != QUEUE_NONE)
+	if( bp->b_qindex != BQ_NONE)
 		panic("brelse: free buffer onto another queue???");
 
 	/* enqueue */
 	/* buffers with no memory */
 	if(bp->b_bufsize == 0) {
-		bp->b_qindex = QUEUE_EMPTY;
-		TAILQ_INSERT_HEAD(&bufqueues[QUEUE_EMPTY], bp, b_freelist);
+		bp->b_qindex = BQ_EMPTY;
+		TAILQ_INSERT_HEAD(&bufqueues[BQ_EMPTY], bp, b_freelist);
 		LIST_REMOVE(bp, b_hash);
 		LIST_INSERT_HEAD(&invalhash, bp, b_hash);
 		bp->b_dev = NODEV;
 	/* buffers with junk contents */
 	} else if(bp->b_flags & (B_ERROR|B_INVAL|B_NOCACHE)) {
-		bp->b_qindex = QUEUE_AGE;
-		TAILQ_INSERT_HEAD(&bufqueues[QUEUE_AGE], bp, b_freelist);
+		bp->b_qindex = BQ_AGE;
+		TAILQ_INSERT_HEAD(&bufqueues[BQ_AGE], bp, b_freelist);
 		LIST_REMOVE(bp, b_hash);
 		LIST_INSERT_HEAD(&invalhash, bp, b_hash);
 		bp->b_dev = NODEV;
 	/* buffers that are locked */
 	} else if(bp->b_flags & B_LOCKED) {
-		bp->b_qindex = QUEUE_LOCKED;
-		TAILQ_INSERT_TAIL(&bufqueues[QUEUE_LOCKED], bp, b_freelist);
+		bp->b_qindex = BQ_LOCKED;
+		TAILQ_INSERT_TAIL(&bufqueues[BQ_LOCKED], bp, b_freelist);
 	/* buffers with stale but valid contents */
 	} else if(bp->b_flags & B_AGE) {
-		bp->b_qindex = QUEUE_AGE;
-		TAILQ_INSERT_TAIL(&bufqueues[QUEUE_AGE], bp, b_freelist);
+		bp->b_qindex = BQ_AGE;
+		TAILQ_INSERT_TAIL(&bufqueues[BQ_AGE], bp, b_freelist);
 	/* buffers with valid and quite potentially reuseable contents */
 	} else {
-		bp->b_qindex = QUEUE_LRU;
-		TAILQ_INSERT_TAIL(&bufqueues[QUEUE_LRU], bp, b_freelist);
+		bp->b_qindex = BQ_LRU;
+		TAILQ_INSERT_TAIL(&bufqueues[BQ_LRU], bp, b_freelist);
 	}
 
 	/* unlock */
@@ -374,19 +374,19 @@ getnewbuf(int slpflag, int slptimeo)
 	s = splbio();
 start:
 	/* can we constitute a new buffer? */
-	if ((bp = bufqueues[QUEUE_EMPTY].tqh_first)) {
-		if( bp->b_qindex != QUEUE_EMPTY)
+	if ((bp = bufqueues[BQ_EMPTY].tqh_first)) {
+		if( bp->b_qindex != BQ_EMPTY)
 			panic("getnewbuf: inconsistent EMPTY queue");
 		bremfree(bp);
 		goto fillbuf;
 	}
 
-	if ((bp = bufqueues[QUEUE_AGE].tqh_first)) {
-		if( bp->b_qindex != QUEUE_AGE)
+	if ((bp = bufqueues[BQ_AGE].tqh_first)) {
+		if( bp->b_qindex != BQ_AGE)
 			panic("getnewbuf: inconsistent AGE queue");
 		bremfree(bp);
-	} else if ((bp = bufqueues[QUEUE_LRU].tqh_first)) {
-		if( bp->b_qindex != QUEUE_LRU)
+	} else if ((bp = bufqueues[BQ_LRU].tqh_first)) {
+		if( bp->b_qindex != BQ_LRU)
 			panic("getnewbuf: inconsistent LRU queue");
 		bremfree(bp);
 	} else	{
@@ -636,7 +636,7 @@ count_lock_queue()
 	struct buf *bp;
 	
 	count = 0;
-	for(bp = bufqueues[QUEUE_LOCKED].tqh_first;
+	for(bp = bufqueues[BQ_LOCKED].tqh_first;
 	    bp != NULL;
 	    bp = bp->b_freelist.tqe_next)
 		count++;

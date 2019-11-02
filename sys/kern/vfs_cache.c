@@ -41,7 +41,7 @@
 #include <sys/vnode.h>
 #include <sys/namei.h>
 #include <sys/errno.h>
-#include <sys/malloc.h>
+#include <sys/map.h>
 
 /*
  * Name caching works as follows:
@@ -208,8 +208,8 @@ cache_enter(dvp, vp, cnp)
 	 * Free the cache slot at head of lru chain.
 	 */
 	if (numcache < desiredvnodes) {
-		ncp = (struct namecache *)
-			malloc((u_long)sizeof *ncp, M_CACHE, M_WAITOK);
+		//ncp = (struct namecache *) malloc((u_long)sizeof *ncp, M_CACHE, M_WAITOK);
+		ncp = (struct namecache *) malloc(ncp, (u_long)sizeof *ncp);
 		bzero((char *)ncp, sizeof *ncp);
 		numcache++;
 	} else if (!nchhead) {

@@ -51,7 +51,7 @@
 #include <sys/ucred.h>
 #include <sys/buf.h>
 #include <sys/errno.h>
-#include <sys/malloc.h>
+#include <sys/map.h>
 #include <sys/proc.h>
 #include <vm/vm.h>
 #include <sys/sysctl.h>
@@ -132,8 +132,8 @@ vfs_opv_init(struct vnodeopv_desc **them)
 		 */
 		if (*opv_desc_vector_p == NULL) {
 			/* XXX - shouldn't be M_VNODE */
-			MALLOC(*opv_desc_vector_p, PFI*,
-			       vfs_opv_numops*sizeof(PFI), M_VNODE, M_WAITOK);
+			//MALLOC(*opv_desc_vector_p, PFI*, vfs_opv_numops*sizeof(PFI), M_VNODE, M_WAITOK);
+			malloc(*opv_desc_vector_p, vfs_opv_numops*sizeof(PFI));
 			bzero (*opv_desc_vector_p, vfs_opv_numops*sizeof(PFI));
 			DODEBUG(printf("vector at %x allocated\n",
 			    opv_desc_vector_p));

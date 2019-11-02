@@ -16,15 +16,15 @@
  */
 struct nameidata {
 	caddr_t	ni_dirp;			/* pathname pointer */
-	short	ni_nameiop;			/* see below */
-	short	ni_error;			/* error return if any */
-	off_t	ni_endoff;			/* end of useful stuff in directory */
-	struct	inode *ni_pdir;		/* inode of parent directory of dirp */
-	struct	inode *ni_ip;		/* inode of dirp */
 	enum	uio_seg	ni_segflg;	/* segment flag */
-	off_t	ni_offset;			/* offset in directory */
-	u_short	ni_count;			/* offset of open slot (off_t?) */
-	struct	direct ni_dent;		/* current directory entry */
+	//short	ni_nameiop;			/* see below */
+	//short	ni_error;			/* error return if any */
+	//off_t	ni_endoff;			/* end of useful stuff in directory */
+	//struct	inode *ni_pdir;		/* inode of parent directory of dirp */
+	//struct	inode *ni_ip;		/* inode of dirp */
+	//off_t	ni_offset;			/* offset in directory */
+	//u_short	ni_count;			/* offset of open slot (off_t?) */
+	//struct	direct ni_dent;		/* current directory entry */
 
 	/* Arguments to lookup */
 	struct	vnode *ni_startdir;	/* starting directory */
@@ -33,6 +33,11 @@ struct nameidata {
 	/* Results: returned from/manipulated by lookup  */
 	struct	vnode *ni_vp;		/* vnode of result */
 	struct	vnode *ni_dvp;		/* vnode of intermediate directory */
+
+	/* Shared between namei and lookup/commit routines. */
+	long	ni_pathlen;		/* remaining chars in path */
+	char	*ni_next;		/* next location in pathname */
+	u_long	ni_loopcnt;		/* count of symlinks encountered */
 
 	struct componentname {
 		/* Arguments to lookup */
@@ -45,6 +50,7 @@ struct nameidata {
 		char	*cn_pnbuf;		/* pathname buffer */
 		char	*cn_nameptr;	/* pointer to looked up name */
 		long	cn_namelen;		/* length of looked up component */
+		u_long	cn_hash;		/* hash value of looked up name */
 	} ni_cnd;
 };
 
@@ -67,21 +73,38 @@ struct nameidata {
 #define	NOFOLLOW	0x0000	/* don't follow symbolic links (pseudo) */
 #define	MODMASK		0x00fc	/* mask of operational modifiers */
 
+/*
+ * Namei parameter descriptors.
+ *
+ * SAVENAME may be set by either the callers of namei or by VOP_LOOKUP.
+ * If the caller of namei sets the flag (for example execve wants to
+ * know the name of the program that is being executed), then it must
+ * free the buffer. If VOP_LOOKUP sets the flag, then the buffer must
+ * be freed by either the commit routine or the VOP_ABORT routine.
+ * SAVESTART is set only by the callers of namei. It implies SAVENAME
+ * plus the addition of saving the parent directory that contains the
+ * name in ni_startdir. It allows repeated calls to lookup for the
+ * name being sought. The caller is responsible for releasing the
+ * buffer and for vrele'ing ni_startdir.
+ */
+#define	NOCROSSMOUNT	0x00100	/* do not cross mount points */
+#define	RDONLY		0x00200	/* lookup with read-only semantics */
+#define	HASBUF		0x00400	/* has allocated pathname buffer */
+#define	SAVENAME	0x00800	/* save pathanme buffer */
+#define	SAVESTART	0x01000	/* save starting directory */
+#define ISDOTDOT	0x02000	/* current component name is .. */
+#define MAKEENTRY	0x04000	/* entry is to be added to name cache */
+#define ISLASTCN	0x08000	/* this is last component of pathname */
+#define ISSYMLINK	0x10000	/* symlink needs interpretation */
+#define PARAMASK	0xfff00	/* mask of parameter descriptors */
 
-#define	NDINIT(ndp, op, flags, segflg, namep) {\
-	(ndp)->ni_nameiop = op | flags; \
-	(ndp)->ni_segflg = segflg; \
-	(ndp)->ni_dirp = namep; \
-	}
-#ifdef VNODE
-#define VNDINIT(ndp, op, flags, segflg, namep, p) { \
+#define NDINIT(ndp, op, flags, segflg, namep, p) { \
 	(ndp)->ni_cnd.cn_nameiop = op; \
 	(ndp)->ni_cnd.cn_flags = flags; \
 	(ndp)->ni_segflg = segflg; \
 	(ndp)->ni_dirp = namep; \
 	(ndp)->ni_cnd.cn_proc = p; \
 }
-#endif
 #endif
 
 /*
@@ -95,20 +118,22 @@ struct	namecache {
 	struct	namecache *nc_forw;	/* hash chain, MUST BE FIRST */
 	struct	namecache *nc_back;	/* hash chain, MUST BE FIRST */
 	struct	namecache *nc_nxt;	/* LRU chain */
-	struct	namecache **nc_prev;	/* LRU chain */
-	struct	inode *nc_ip;		/* inode the name refers to */
-	ino_t	nc_ino;			/* ino of parent of name */
-	dev_t	nc_dev;			/* dev of parent of name */
-	dev_t	nc_idev;		/* dev of the name ref'd */
-	u_short	nc_id;			/* referenced inode's id */
-	char	nc_nlen;		/* length of name */
-	char	nc_name[NCHNAMLEN];	/* segment name */
-
-	struct	vnode *nc_dvp;		/* vnode of parent of name */
+	struct	namecache **nc_prev;/* LRU chain */
+	struct	vnode 	  *nc_dvp;	/* vnode of parent of name */
 	u_long	nc_dvpid;			/* capability number of nc_dvp */
-	struct	vnode *nc_vp;		/* vnode the name refers to */
+	struct	vnode 	  *nc_vp;	/* vnode the name refers to */
 	u_long	nc_vpid;			/* capability number of nc_vp */
+	char	nc_nlen;			/* length of name */
+	char	nc_name[NCHNAMLEN];	/* segment name */
 };
+
+#ifdef KERNEL
+u_long	nextvnodeid;
+int	namei __P((struct nameidata *ndp));
+int	lookup __P((struct nameidata *ndp));
+int	relookup __P((struct vnode *dvp, struct vnode **vpp,
+	    struct componentname *cnp));
+#endif
 
 /*
  * Stats on usefulness of namei caches.
@@ -121,8 +146,5 @@ struct	nchstats {
 	long	ncs_long;			/* long names that ignore cache */
 	long	ncs_pass2;			/* names found with passes == 2 */
 	long	ncs_2passes;		/* number of times we attempt it */
-
-	struct	vnode *nc_dvp;		/* vnode of parent of name */
-	struct	vnode *nc_vp;		/* vnode the name refers to */
 };
 #endif

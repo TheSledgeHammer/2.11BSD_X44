@@ -50,7 +50,7 @@
 #include <sys/mount.h>
 #include <sys/proc.h>
 #include <sys/uio.h>
-#include <sys/malloc.h>
+#include <sys/map.h>
 #include <sys/dirent.h>
 
 #include <vm/vm.h>
@@ -1625,10 +1625,10 @@ utimes(p, uap, retval)
 	if (vp->v_mount->mnt_flag & MNT_RDONLY)
 		error = EROFS;
 	else {
-		vattr.va_atime.ts_sec = tv[0].tv_sec;
-		vattr.va_atime.ts_nsec = tv[0].tv_usec * 1000;
-		vattr.va_mtime.ts_sec = tv[1].tv_sec;
-		vattr.va_mtime.ts_nsec = tv[1].tv_usec * 1000;
+		vattr.va_atime.tv_sec = tv[0].tv_sec;
+		vattr.va_atime.tv_nsec = tv[0].tv_usec * 1000;
+		vattr.va_mtime.tv_sec = tv[1].tv_sec;
+		vattr.va_mtime.tv_nsec = tv[1].tv_usec * 1000;
 		error = VOP_SETATTR(vp, &vattr, p->p_ucred, p);
 	}
 	vput(vp);

@@ -41,7 +41,7 @@
 #include <sys/vnode.h>
 #include <sys/mount.h>
 #include <sys/trace.h>
-#include <sys/malloc.h>
+#include <sys/map.h>
 #include <sys/resourcevar.h>
 
 #ifdef DEBUG
@@ -145,7 +145,7 @@ cluster_read(vp, filesize, lblkno, size, cred, bpp)
 		bp->b_flags |= B_READ;
 		ioblkno = lblkno;
 		alreadyincore = 0;
-		curproc->p_stats->p_ru.ru_inblock++;		/* XXX */
+		curproc->p_stats->p_sru.ru_inblock++;		/* XXX */
 	}
 	/*
 	 * XXX
@@ -237,7 +237,7 @@ cluster_read(vp, filesize, lblkno, size, cred, bpp)
 		else if (rbp) {			/* case 2, 5 */
 			trace(TR_BREADMISSRA,
 			    pack(vp, (num_ra + 1) * size), ioblkno);
-			curproc->p_stats->p_ru.ru_inblock++;	/* XXX */
+			curproc->p_stats->p_sru.ru_inblock++;	/* XXX */
 		}
 	}
 
@@ -310,8 +310,8 @@ cluster_rbuild(vp, filesize, bp, lbn, blkno, size, run, flags)
 	if (bp->b_flags & (B_DONE | B_DELWRI))
 		return (bp);
 
-	b_save = malloc(sizeof(struct buf *) * run + sizeof(struct cluster_save),
-	    M_SEGMENT, M_WAITOK);
+	//b_save = malloc(sizeof(struct buf *) * run + sizeof(struct cluster_save), M_SEGMENT, M_WAITOK);
+	b_save = malloc(b_save, sizeof(struct buf *) * run + sizeof(struct cluster_save));
 	b_save->bs_bufsize = b_save->bs_bcount = size;
 	b_save->bs_nchildren = 0;
 	b_save->bs_children = (struct buf **)(b_save + 1);
@@ -326,7 +326,8 @@ cluster_rbuild(vp, filesize, bp, lbn, blkno, size, run, flags)
 				bp->b_flags &= ~B_CALL;
 				bp->b_iodone = NULL;
 				allocbuf(bp, size);
-				free(b_save, M_SEGMENT);
+				//free(b_save, M_SEGMENT);
+				free(b_save);
 			} else
 				allocbuf(bp, size * i);
 			break;
@@ -451,7 +452,8 @@ cluster_callback(bp)
 	}
 	bp->b_bcount = bsize;
 	bp->b_iodone = NULL;
-	free(b_save, M_SEGMENT);
+	//free(b_save, M_SEGMENT);
+	free(b_save);
 	if (bp->b_flags & B_ASYNC)
 		brelse(bp);
 	else {
@@ -519,7 +521,8 @@ cluster_write(bp, filesize)
 					for (bpp = buflist->bs_children;
 					     bpp < endbp; bpp++)
 						brelse(*bpp);
-					free(buflist, M_SEGMENT);
+					//free(buflist, M_SEGMENT);
+					free(buflist);
 					cluster_wbuild(vp, NULL, bp->b_bcount,
 					    vp->v_cstart, cursize, lbn);
 				} else {
@@ -529,7 +532,8 @@ cluster_write(bp, filesize)
 					for (bpp = buflist->bs_children;
 					     bpp <= endbp; bpp++)
 						bdwrite(*bpp);
-					free(buflist, M_SEGMENT);
+					//free(buflist, M_SEGMENT);
+					free(buflist);
 					vp->v_lastw = lbn;
 					vp->v_lasta = bp->b_blkno;
 					return;
@@ -643,8 +647,8 @@ redo:
 	}
 
 	--len;
-	b_save = malloc(sizeof(struct buf *) * len + sizeof(struct cluster_save),
-	    M_SEGMENT, M_WAITOK);
+	//b_save = malloc(sizeof(struct buf *) * len + sizeof(struct cluster_save), M_SEGMENT, M_WAITOK);
+	b_save = malloc(b_save, sizeof(struct buf *) * len + sizeof(struct cluster_save));
 	b_save->bs_bcount = bp->b_bcount;
 	b_save->bs_bufsize = bp->b_bufsize;
 	b_save->bs_nchildren = 0;
@@ -711,7 +715,8 @@ redo:
 		bp->b_saveaddr = b_save->bs_saveaddr;
 		bp->b_flags &= ~B_CALL;
 		bp->b_iodone = NULL;
-		free(b_save, M_SEGMENT);
+		//free(b_save, M_SEGMENT);
+		free(b_save);
 	}
 	bawrite(bp);
 	if (i < len) {
@@ -735,8 +740,8 @@ cluster_collectbufs(vp, last_bp)
 	int i, len;
 
 	len = vp->v_lastw - vp->v_cstart + 1;
-	buflist = malloc(sizeof(struct buf *) * (len + 1) + sizeof(*buflist),
-	    M_SEGMENT, M_WAITOK);
+	//buflist = malloc(sizeof(struct buf *) * (len + 1) + sizeof(*buflist), M_SEGMENT, M_WAITOK);
+	buflist = malloc(buflist, sizeof(struct buf *) * (len + 1) + sizeof(*buflist));
 	buflist->bs_nchildren = 0;
 	buflist->bs_children = (struct buf **)(buflist + 1);
 	for (lbn = vp->v_cstart, i = 0; i < len; lbn++, i++)

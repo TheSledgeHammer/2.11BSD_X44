@@ -35,194 +35,452 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vfs_vnops.c	8.14.4 (2.11BSD) 1999/9/13
+ *	@(#)vfs_vnops.c	8.2 (Berkeley) 1/21/94
+ * $Id: vfs_vnops.c,v 1.5 1994/10/02 17:35:40 phk Exp $
  */
 
 #include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
 #include <sys/file.h>
-#include <sys/user.h>
-#include <sys/namei.h>
-#include <sys/inode.h>
 #include <sys/stat.h>
+#include <sys/buf.h>
+#include <sys/proc.h>
+#include <sys/mount.h>
+#include <sys/namei.h>
+#include <sys/vnode.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
 
-/*
- * 2.11BSD does not have "vnodes", having instead only old fashioned "inodes".
- * The routine names (i.e. vn_open) were retained since the functions them-
- * selves were ported over with minimal change.  Retaining the 4.4 function
- * names also makes it easier to follow the logic flow when reading the 4.4
- * sources.  Also, changing the names from vn_* to in_* could have caused
- * confusion with the networking routines since 'in_' and 'ip_' are frequently 
- * used in the networking code.
- *
- * The tab spacing has been altered to be (to me) more readable.
-*/
+#include <vm/vm.h>
+
+struct 	fileops vnops =
+	{ vn_read, vn_write, vn_ioctl, vn_select, vn_closefile };
 
 /*
  * Common code for vnode open operations.
- * Check permissions, and call the VOP_OPEN (openi for 2.11) or VOP_CREATE 
- * (maknode) routine.
+ * Check permissions, and call the VOP_OPEN or VOP_CREATE routine.
  */
 int
 vn_open(ndp, fmode, cmode)
 	register struct nameidata *ndp;
 	int fmode, cmode;
-	{
-	register struct inode *ip;
-	register int error;
+{
+	register struct vnode *vp;
+	register struct proc *p = ndp->ni_cnd.cn_proc;
+	register struct ucred *cred = p->p_ucred;
 	struct vattr vat;
 	struct vattr *vap = &vat;
+	int error;
 
-	if	(fmode & O_CREAT)
-		{
-		if	((fmode & O_EXCL) == 0)
-			ndp->ni_nameiop |= (CREATE|FOLLOW);
-		else
-			ndp->ni_nameiop= CREATE;
-		ip = namei(ndp);
-		if	(ip == NULL)
-			{
-			if	(u->u_error)
-				goto retuerr;
-			ip = maknode(cmode, ndp);
-			if	(ip == NULL)
-				goto retuerr;
+	if (fmode & O_CREAT) {
+		ndp->ni_cnd.cn_nameiop = CREATE;
+		ndp->ni_cnd.cn_flags = LOCKPARENT | LOCKLEAF;
+		if ((fmode & O_EXCL) == 0)
+			ndp->ni_cnd.cn_flags |= FOLLOW;
+		error = namei(ndp);
+		if (error)
+			return (error);
+		if (ndp->ni_vp == NULL) {
+			VATTR_NULL(vap);
+			vap->va_type = VREG;
+			vap->va_mode = cmode;
+			LEASE_CHECK(ndp->ni_dvp, p, cred, LEASE_WRITE);
+			error = VOP_CREATE(ndp->ni_dvp, &ndp->ni_vp,
+			    &ndp->ni_cnd, vap);
+			if (error) 
+				return (error);
 			fmode &= ~O_TRUNC;
-			}
-		else
-			{
-			if	(fmode & O_EXCL)
-				{
+			vp = ndp->ni_vp;
+		} else {
+			VOP_ABORTOP(ndp->ni_dvp, &ndp->ni_cnd);
+			if (ndp->ni_dvp == ndp->ni_vp)
+				vrele(ndp->ni_dvp);
+			else
+				vput(ndp->ni_dvp);
+			ndp->ni_dvp = NULL;
+			vp = ndp->ni_vp;
+			if (fmode & O_EXCL) {
 				error = EEXIST;
 				goto bad;
-				}
-			fmode &= ~O_CREAT;
 			}
-		} 
-	else
-		{
-		ndp->ni_nameiop = LOOKUP | FOLLOW;
-		ip = namei(ndp);
-		if	(ip == NULL)
-			goto retuerr;
+			fmode &= ~O_CREAT;
 		}
-	if	((ip->i_mode & IFMT) == IFSOCK)
-		{
+	} else {
+		ndp->ni_cnd.cn_nameiop = LOOKUP;
+		ndp->ni_cnd.cn_flags = FOLLOW | LOCKLEAF;
+		error = namei(ndp);
+		if (error)
+			return (error);
+		vp = ndp->ni_vp;
+	}
+	if (vp->v_type == VSOCK) {
 		error = EOPNOTSUPP;
 		goto bad;
-		}
-	if	((ip->i_flags & APPEND) && (fmode&(FWRITE|O_APPEND)) == FWRITE)
-		{
-		error = EPERM;
-		goto bad;
-		}
-	if	((fmode & O_CREAT) == 0)
-		{
-		if	(fmode & FREAD)
-			{
-			if	(access(ip, IREAD))
-				{
-				error = u->u_error;	/* XXX */
+	}
+	if ((fmode & O_CREAT) == 0) {
+		if (fmode & FREAD) {
+			error = VOP_ACCESS(vp, VREAD, cred, p);
+			if (error)
 				goto bad;
-				}
-			}
-		if	(fmode & (FWRITE | O_TRUNC))
-			{
-			if	((ip->i_mode & IFMT) == IFDIR)
-				{
+		}
+		if (fmode & (FWRITE | O_TRUNC)) {
+			if (vp->v_type == VDIR) {
 				error = EISDIR;
 				goto bad;
-				}
-			if	(access(ip, IWRITE))
-				{
-				error = u->u_error;
-				goto bad;
-				}
 			}
+			error = vn_writechk(vp);
+			if(error)
+				goto bad;
+		        error = VOP_ACCESS(vp, VWRITE, cred, p);
+			if(error)
+				goto bad;
 		}
-	if	(fmode & O_TRUNC)
-		itrunc(ip, (off_t)0, fmode & O_FSYNC ? IO_SYNC : 0);
-/*
- * 4.4 returns the vnode locked from vn_open which means that each caller
- * has to go and unlock it.  
- *
- * 2.11 returns the inode unlocked (for now).
-*/
-	iunlock(ip);		/* because namei returns a locked inode */
-	if	(setjmp(&u->u_qsave))
-		{
-		error = EINTR;	/* opens are not restarted after signals */
-		goto lbad;
+	}
+	if (fmode & O_TRUNC) {
+		VOP_UNLOCK(vp);				/* XXX */
+		LEASE_CHECK(vp, p, cred, LEASE_WRITE);
+		VOP_LOCK(vp);				/* XXX */
+		VATTR_NULL(vap);
+		vap->va_size = 0;
+		error = VOP_SETATTR(vp, vap, cred, p);
+		if (error)
+			goto bad;
+	}
+	error = VOP_OPEN(vp, fmode, cred, p);
+	if (error)
+		goto bad;
+	if (fmode & FWRITE)
+		vp->v_writecount++;
+	/*
+	 * this is here for VMIO support
+	 */
+	if( vp->v_type == VREG) {
+		vm_object_t object;
+		vm_pager_t pager;
+		if( (vp->v_flag & VVMIO) == 0) {
+			pager = (vm_pager_t) vnode_pager_alloc(vp, 0, 0, 0);
+			object = (vm_object_t) vp->v_vmdata;
+			if( object->pager != pager)
+				panic("ufs_open: pager/object mismatch");
+			(void) vm_object_lookup( pager);
+			pager_cache( object, TRUE);
+			vp->v_flag |= VVMIO;
+		} else {
+			object = (vm_object_t) vp->v_vmdata;
+			if( !object)
+				panic("ufs_open: VMIO object missing");
+			pager = object->pager;
+			if( !pager)
+				panic("ufs_open: VMIO pager missing");
+			(void) vm_object_lookup( pager);
 		}
-	if	(error == openi(ip, fmode))
-		goto lbad;
-	return(0);
-/*
- * Gratuitous lock but it does (correctly) implement the earlier behaviour of
- * copen (it also avoids a panic in iput).
-*/
-
-lbad:
-	ilock(ip);
-
+	}
+	return (0);
 bad:
-/*
- * Do NOT do an 'ilock' here - this tag is to be used only when the inode is
- * locked (i.e. from namei).
-*/
-	iput(ip);
-	return(error);
-retuerr:
-	return(u->u_error);	/* XXX - Bletch */
-	}
+	vput(vp);
+	return (error);
+}
 
 /*
- * Inode close call.  Pipes and sockets do NOT enter here.  This routine is
- * used by the kernel to close files it opened for itself (see kern_acct.c
- * for a good example of this).  The kernel does not create sockets or pipes
- * on its own behalf.
- *
- * The difference between this routine and vn_closefile below is that vn_close
- * takes an "inode *" as a first argument and is passed the flags by the caller
- * while vn_closefile (called from the closef routine for DTYPE_INODE inodes) 
- * takes a "file *" and extracts the flags from the file structure.
+ * Check for write permissions on the specified vnode.
+ * The read-only status of the file system is checked.
+ * Also, prototype text segments cannot be written.
  */
-
 int
-vn_close(ip, flags)
-	register struct inode *ip;
+vn_writechk(vp)
+	register struct vnode *vp;
+{
+
+	/*
+	 * Disallow write attempts on read-only file systems;
+	 * unless the file is a socket or a block or character
+	 * device resident on the file system.
+	 */
+	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
+		switch (vp->v_type) {
+		case VREG: case VDIR: case VLNK:
+			return (EROFS);
+		default:
+			break;
+		}
+	}
+	/*
+	 * If there's shared text associated with
+	 * the vnode, try to free it up once.  If
+	 * we fail, we can't allow writing.
+	 */
+	if ((vp->v_flag & VTEXT) && !vnode_pager_uncache(vp))
+		return (ETXTBSY);
+	return (0);
+}
+
+/*
+ * Vnode close call
+ */
+int
+vn_close(vp, flags, cred, p)
+	register struct vnode *vp;
 	int flags;
-	{
-	register int error;
+	struct ucred *cred;
+	struct proc *p;
+{
+	int error;
 
-	error = closei(ip, flags);
-	irele(ip);			/* assumes inode is unlocked */
-	return(error);
+	if (flags & FWRITE)
+		vp->v_writecount--;
+	error = VOP_CLOSE(vp, flags, cred, p);
+	/*
+	 * this code is here for VMIO support, will eventually
+	 * be in vfs code.
+	 */
+	if (vp->v_flag & VVMIO) {
+		if( vp->v_vmdata == NULL)
+			panic("ufs_close: VMIO object missing");
+		vm_object_deallocate( (vm_object_t) vp->v_vmdata);
 	}
+	vrele(vp);
+	return (error);
+}
 
 /*
- * File table inode close routine.  This is called from 'closef()' via the
- * "Fops" table (the 'inodeops' entry).
- *
- * NOTE: pipes are a special case of inode and have their own 'pipe_close' 
- * entry in the 'pipeops' table. See sys_pipe.c for pipe_close().
- *
- * In 4.4BSD this routine called vn_close() but since 2.11 does not do the
- * writecheck counting we can skip the overhead of nesting another level down
- * and call closei() and irele() ourself.
+ * Package up an I/O request on a vnode into a uio and do it.
  */
-
 int
-vn_closefile(fp)
-	register struct file *fp;
-	{
-	register struct inode *ip = (struct inode *)fp->f_data;
+vn_rdwr(rw, vp, base, len, offset, segflg, ioflg, cred, aresid, p)
+	enum uio_rw rw;
+	struct vnode *vp;
+	caddr_t base;
+	int len;
+	off_t offset;
+	enum uio_seg segflg;
+	int ioflg;
+	struct ucred *cred;
+	int *aresid;
+	struct proc *p;
+{
+	struct uio auio;
+	struct iovec aiov;
+	int error;
+
+	if ((ioflg & IO_NODELOCKED) == 0)
+		VOP_LOCK(vp);
+	auio.uio_iov = &aiov;
+	auio.uio_iovcnt = 1;
+	aiov.iov_base = base;
+	aiov.iov_len = len;
+	auio.uio_resid = len;
+	auio.uio_offset = offset;
+	auio.uio_segflg = segflg;
+	auio.uio_rw = rw;
+	auio.uio_procp = p;
+	if (rw == UIO_READ) {
+		error = VOP_READ(vp, &auio, ioflg, cred);
+	} else {
+		error = VOP_WRITE(vp, &auio, ioflg, cred);
+	}
+	if (aresid)
+		*aresid = auio.uio_resid;
+	else
+		if (auio.uio_resid && error == 0)
+			error = EIO;
+	if ((ioflg & IO_NODELOCKED) == 0)
+		VOP_UNLOCK(vp);
+	return (error);
+}
 
 /*
- * Need to clear the inode pointer in the file structure so that the
- * inode is not seen during the scan for aliases of character or block
- * devices in closei().
-*/
-	fp->f_data = (caddr_t)0;	/* XXX */
-	irele(ip);
-	return(closei(ip, fp->f_flag));
+ * File table vnode read routine.
+ */
+int
+vn_read(fp, uio, cred)
+	struct file *fp;
+	struct uio *uio;
+	struct ucred *cred;
+{
+	register struct vnode *vp = (struct vnode *)fp->f_data;
+	int count, error;
+
+	LEASE_CHECK(vp, uio->uio_procp, cred, LEASE_READ);
+	VOP_LOCK(vp);
+	uio->uio_offset = fp->f_offset;
+	count = uio->uio_resid;
+	error = VOP_READ(vp, uio, (fp->f_flag & FNONBLOCK) ? IO_NDELAY : 0,
+		cred);
+	fp->f_offset += count - uio->uio_resid;
+	VOP_UNLOCK(vp);
+	return (error);
+}
+
+/*
+ * File table vnode write routine.
+ */
+int
+vn_write(fp, uio, cred)
+	struct file *fp;
+	struct uio *uio;
+	struct ucred *cred;
+{
+	register struct vnode *vp = (struct vnode *)fp->f_data;
+	int count, error, ioflag = 0;
+
+	if (vp->v_type == VREG && (fp->f_flag & O_APPEND))
+		ioflag |= IO_APPEND;
+	if (fp->f_flag & FNONBLOCK)
+		ioflag |= IO_NDELAY;
+	LEASE_CHECK(vp, uio->uio_procp, cred, LEASE_WRITE);
+	VOP_LOCK(vp);
+	uio->uio_offset = fp->f_offset;
+	count = uio->uio_resid;
+	error = VOP_WRITE(vp, uio, ioflag, cred);
+	if (ioflag & IO_APPEND)
+		fp->f_offset = uio->uio_offset;
+	else
+		fp->f_offset += count - uio->uio_resid;
+	VOP_UNLOCK(vp);
+	return (error);
+}
+
+/*
+ * File table vnode stat routine.
+ */
+int
+vn_stat(vp, sb, p)
+	struct vnode *vp;
+	register struct stat *sb;
+	struct proc *p;
+{
+	struct vattr vattr;
+	register struct vattr *vap;
+	int error;
+	u_short mode;
+
+	vap = &vattr;
+	error = VOP_GETATTR(vp, vap, p->p_ucred, p);
+	if (error)
+		return (error);
+	/*
+	 * Copy from vattr table
+	 */
+	sb->st_dev = vap->va_fsid;
+	sb->st_ino = vap->va_fileid;
+	mode = vap->va_mode;
+	switch (vp->v_type) {
+	case VREG:
+		mode |= S_IFREG;
+		break;
+	case VDIR:
+		mode |= S_IFDIR;
+		break;
+	case VBLK:
+		mode |= S_IFBLK;
+		break;
+	case VCHR:
+		mode |= S_IFCHR;
+		break;
+	case VLNK:
+		mode |= S_IFLNK;
+		break;
+	case VSOCK:
+		mode |= S_IFSOCK;
+		break;
+	case VFIFO:
+		mode |= S_IFIFO;
+		break;
+	default:
+		return (EBADF);
+	};
+	sb->st_mode = mode;
+	sb->st_nlink = vap->va_nlink;
+	sb->st_uid = vap->va_uid;
+	sb->st_gid = vap->va_gid;
+	sb->st_rdev = vap->va_rdev;
+	sb->st_size = vap->va_size;
+	sb->st_atime = vap->va_atime;
+	sb->st_mtime= vap->va_mtime;
+	sb->st_ctime = vap->va_ctime;
+	sb->st_blksize = vap->va_blocksize;
+	sb->st_flags = vap->va_flags;
+	sb->st_gen = vap->va_gen;
+	sb->st_blocks = vap->va_bytes / S_BLKSIZE;
+	return (0);
+}
+
+/*
+ * File table vnode ioctl routine.
+ */
+int
+vn_ioctl(fp, com, data, p)
+	struct file *fp;
+	int com;
+	caddr_t data;
+	struct proc *p;
+{
+	register struct vnode *vp = ((struct vnode *)fp->f_data);
+	struct vattr vattr;
+	int error;
+	
+	switch (vp->v_type) {
+
+	case VREG:
+	case VDIR:
+		if (com == FIONREAD) {
+			error = VOP_GETATTR(vp, &vattr, p->p_ucred, p);
+			if (error)
+				return (error);
+			*(int *)data = vattr.va_size - fp->f_offset;
+			return (0);
+		}
+		if (com == FIONBIO || com == FIOASYNC)	/* XXX */
+			return (0);			/* XXX */
+		/* fall into ... */
+	default:
+		return (ENOTTY);
+
+	case VFIFO:
+	case VCHR:
+	case VBLK:
+		error = VOP_IOCTL(vp, com, data, fp->f_flag, p->p_ucred, p);
+		if (error == 0 && com == TIOCSCTTY) {
+
+			/* Do nothing if reassigning same control tty */
+			if (p->p_session->s_ttyvp == vp)
+				return (0);
+
+			/* Get rid of reference to old control tty */
+			if (p->p_session->s_ttyvp)
+				vrele(p->p_session->s_ttyvp);
+
+			p->p_session->s_ttyvp = vp;
+			VREF(vp);
+		}
+		return (error);
 	}
+}
+
+/*
+ * File table vnode select routine.
+ */
+int
+vn_select(fp, which, p)
+	struct file *fp;
+	int which;
+	struct proc *p;
+{
+
+	return (VOP_SELECT(((struct vnode *)fp->f_data), which, fp->f_flag,
+		fp->f_cred, p));
+}
+
+/*
+ * File table vnode close routine.
+ */
+int
+vn_closefile(fp, p)
+	struct file *fp;
+	struct proc *p;
+{
+
+	return (vn_close(((struct vnode *)fp->f_data), fp->f_flag,
+		fp->f_cred, p));
+}

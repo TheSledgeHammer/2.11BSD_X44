@@ -54,7 +54,7 @@
 #include <sys/ucred.h>
 #include <sys/buf.h>
 #include <sys/errno.h>
-#include <sys/malloc.h>
+#include <sys/map.h>
 #include <sys/domain.h>
 #include <sys/mbuf.h>
 
@@ -84,7 +84,7 @@ int	vttoif_tab[9] = {
 }
 
 TAILQ_HEAD(freelst, vnode) vnode_free_list;	/* vnode free list */
-struct mntlist mountlist;			/* mounted filesystem list */
+struct mntlist mountlist;					/* mounted filesystem list */
 
 /*
  * Initialize the vnode management data structures.
@@ -299,9 +299,9 @@ vattr_null(vap)
 	vap->va_mode = vap->va_nlink = vap->va_uid = vap->va_gid =
 		vap->va_fsid = vap->va_fileid =
 		vap->va_blocksize = vap->va_rdev =
-		vap->va_atime.ts_sec = vap->va_atime.ts_nsec =
-		vap->va_mtime.ts_sec = vap->va_mtime.ts_nsec =
-		vap->va_ctime.ts_sec = vap->va_ctime.ts_nsec =
+		vap->va_atime.tv_sec = vap->va_atime.tv_nsec =
+		vap->va_mtime.tv_sec = vap->va_mtime.tv_nsec =
+		vap->va_ctime.tv_sec = vap->va_ctime.tv_nsec =
 		vap->va_flags = vap->va_gen = VNOVAL;
 	vap->va_vaflags = 0;
 }

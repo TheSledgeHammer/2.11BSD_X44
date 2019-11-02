@@ -80,8 +80,8 @@
 #ifndef LOCORE
 struct disklabel {
 	u_long	d_magic;			/* the magic number */
-	u_char	d_type;				/* drive type */
-	u_char	d_subtype;			/* controller/d_type specific */
+	short	d_type;				/* drive type */
+	short	d_subtype;			/* controller/d_type specific */
 	char	d_typename[16];		/* type name, e.g. "eagle" */
 	/* 
 	 * d_packname contains the pack identifier and is returned when

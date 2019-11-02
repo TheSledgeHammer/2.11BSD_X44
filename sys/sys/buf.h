@@ -30,69 +30,81 @@
  * We only need three words for these, so this abbreviated
  * definition saves some space.
  */
-struct bufhd
-{
-	short	b_flags;				/* see defines below */
-	struct	buf *b_forw, *b_back;	/* fwd/bkwd pointer in chain */
-};
+#ifndef _SYS_BUF_H_
+#define	_SYS_BUF_H_
+#include <sys/queue.h>
+
+#define NOLIST ((struct buf *)0x87654321)
 
 struct buf
 {
-	short	b_flags;				/* see defines below */
-	struct	buf *b_forw, *b_back;	/* hash chain (2 way street) */
-	u_short	b_bcount;				/* transfer count */
-	char	b_error;				/* returned after I/O */
+	LIST_ENTRY(buf) b_hash;			/* Hash chain. */
+	LIST_ENTRY(buf) b_vnbufs;		/* Buffer's associated vnode. */
+	TAILQ_ENTRY(buf) b_freelist;	/* Free list position if not active. */
+	struct	buf *b_actf, **b_actb;	/* Device driver queue when active. */
+	struct  proc *b_proc;			/* Associated proc; NULL if kernel. */
+	volatile long	b_flags;		/* B_* flags. */
+	int		b_qindex;				/* buffer queue index */
+	int		b_error;				/* returned after I/O */
+	long	b_bufsize;				/* Allocated buffer size. */
+	long	b_bcount;				/* transfer count */
+	long	b_resid;				/* words not transferred after error */
 	char	b_xmem;					/* high order core address */
 	dev_t	b_dev;					/* major+minor device name */
 	union {
 	    caddr_t b_addr;				/* low order core address */
 	} b_un;
-	daddr_t	b_blkno;				/* block # on device */
-	u_short	b_resid;				/* words not transferred after error */
+	void	*b_saveaddr;			/* Original b_addr for physio. */
+	daddr_t	b_lblkno;				/* Logical block number. */
+	daddr_t	b_blkno;				/* Underlying physical block number. */
+
+	void	(*b_iodone) __P((struct buf *));
+	struct	vnode *b_vp;			/* Device vnode. */
+	int	b_pfcent;					/* Center page when swapping cluster. */
+	int	b_dirtyoff;					/* Offset in buffer of dirty region. */
+	int	b_dirtyend;					/* Offset of end of dirty region. */
+	struct	ucred *b_rcred;			/* Read credentials reference. */
+	struct	ucred *b_wcred;			/* Write credentials reference. */
+	int	b_validoff;					/* Offset in buffer of valid region. */
+	int	b_validend;					/* Offset of end of valid region. */
+	daddr_t	b_pblkno;               /* physical block number */
+	caddr_t	b_savekva;              /* saved kva for transfer while bouncing */
+
+#ifndef VMIO
+	void	*b_pages[(MAXBSIZE + PAGE_SIZE - 1)/PAGE_SIZE];
+#else
+	vm_page_t	b_pages[(MAXBSIZE + PAGE_SIZE - 1)/PAGE_SIZE];
+#endif
+	int		b_npages;
 };
 
-struct	buf 		*av_forw, *av_back;	/* position on free list if not BUSY */
-#define	b_actf		av_forw				/* alternate names for driver queue */
-#define	b_actl		av_back				/* head - isn't history wonderful */
+/* Device driver compatibility definitions. */
+//struct	buf 		*av_forw, *av_back;	/* position on free list if not BUSY */
+//#define	b_actf		av_forw				/* alternate names for driver queue */
+//#define	b_actl		av_back				/* head - isn't history wonderful */
+
 #define	b_active 	b_bcount			/* driver queue head: drive active */
+#define	b_data	 	b_un.b_addr			/* b_un.b_addr is not changeable. */
 #define	b_cylin 	b_resid				/* disksort */
 #define	b_errcnt 	b_resid				/* while i/o in progress: # retries */
+#define	iodone	 	biodone				/* Old name for biodone. */
+#define	iowait	 	biowait				/* Old name for biowait. */
 
 /*
- * We never use BQ_LOCKED or BQ_EMPTY, but if you want the 4.X block I/O
- * code to drop in, you have to have BQ_AGE and BQ_LRU *after* the first
- * queue, and it only costs 6 bytes of data space.
+ * This structure describes a clustered I/O.  It is stored in the b_saveaddr
+ * field of the buffer on which I/O is done.  At I/O completion, cluster
+ * callback uses the structure to parcel I/O's to individual buffers, and
+ * then free's this structure.
  */
-#define	BQUEUES		3		/* number of free buffer queues */
+struct cluster_save {
+	long	bs_bcount;			/* Saved b_bcount. */
+	long	bs_bufsize;			/* Saved b_bufsize. */
+	void	*bs_saveaddr;		/* Saved b_addr. */
+	int		bs_nchildren;		/* Number of associated buffers. */
+	struct buf **bs_children;	/* List of associated buffers. */
+};
 
-#define	BQ_LOCKED	0		/* super-blocks &c */
-#define	BQ_LRU		1		/* lru, useful buffers */
-#define	BQ_AGE		2		/* rubbish */
-#define	BQ_EMPTY	3		/* buffer headers with no memory */
 
-/* Flags to low-level allocation routines. */
-#define B_CLRBUF	0x01	/* Request allocated buffer be cleared. */
-#define B_SYNC		0x02	/* Do all allocations synchronously. */
-
-#define	bawrite(bp)	{(bp)->b_flags |= B_ASYNC; bwrite(bp);}
-#define	bfree(bp)	(bp)->b_bcount = 0
-#define	bftopaddr(bp)	((u_int)(bp)->b_un.b_addr >> 6 | (bp)->b_xmem << 10)
-
-#ifdef KERNEL
-#define	BUFHSZ	16	/* must be power of 2 */
-#define	BUFHASH(dev,blkno)	((struct buf *)&bufhash[((long)(dev) + blkno) & ((long)(BUFHSZ - 1))])
-extern struct	buf buf[];			/* the buffer pool itself */
-extern int		nbuf;				/* number of buffer headers */
-extern struct	bufhd bufhash[];	/* heads of hash lists */
-extern struct	buf bfreelist[];	/* heads of available lists */
-
-struct	buf *balloc();
-struct	buf *getblk();
-struct	buf *geteblk();
-struct	buf *getnewbuf();
-struct	buf *bread();
-struct	buf *breada();
-#endif
 
 /*
  * These flags are kept in b_flags.
@@ -115,50 +127,93 @@ struct	buf *breada();
 #define	B_UBAREMAP	0x04000		/* addr UNIBUS virtual, not physical */
 #define	B_RAMREMAP	0x08000		/* remapped into ramdisk */
 
-/*
- * Insq/Remq for the buffer hash lists.
- */
-#define	bremhash(bp) { \
-	(bp)->b_back->b_forw = (bp)->b_forw; \
-	(bp)->b_forw->b_back = (bp)->b_back; \
-}
-#define	binshash(bp, dp) { \
-	(bp)->b_forw = (dp)->b_forw; \
-	(bp)->b_back = (dp); \
-	(dp)->b_forw->b_back = (bp); \
-	(dp)->b_forw = (bp); \
-}
+#define	B_CACHE			0x00000020	/* Bread found us in the cache. */
+#define	B_CALL			0x00000040	/* Call b_iodone from biodone. */
+#define	B_WRITEINPROG	0x01000000	/* Write in progress. */
+#define	B_NOCACHE		0x00008000	/* Do not cache block after use. */
 
 /*
- * Insq/Remq for the buffer free lists.
+ * number of buffer hash entries
  */
-#define	bremfree(bp) { \
-	(bp)->av_back->av_forw = (bp)->av_forw; \
-	(bp)->av_forw->av_back = (bp)->av_back; \
-}
-#define	binsheadfree(bp, dp) { \
-	(dp)->av_forw->av_back = (bp); \
-	(bp)->av_forw = (dp)->av_forw; \
-	(dp)->av_forw = (bp); \
-	(bp)->av_back = (dp); \
-}
-#define	binstailfree(bp, dp) { \
-	(dp)->av_back->av_forw = (bp); \
-	(bp)->av_back = (dp)->av_back; \
-	(dp)->av_back = (bp); \
-	(bp)->av_forw = (dp); \
-}
+#define	BUFHSZ	512	/* must be power of 2 */
+//#define	BUFHASH(dev, blkno)	((struct buf *)&bufhash[((long)(dev) + blkno) & ((long)(BUFHSZ - 1))])
+/*
+ * buffer hash table calculation, originally by David Greenman
+ */
+#define BUFHASH(vnp, bn)        \
+	(&bufhashtbl[(((int)(vnp) / sizeof(struct vnode))+(int)(bn)) % BUFHSZ])
 
 /*
- * Take a buffer off the free list it's on and
- * mark it as being use (B_BUSY) by a device.
+ * We never use BQ_LOCKED or BQ_EMPTY, but if you want the 4.X block I/O
+ * code to drop in, you have to have BQ_AGE and BQ_LRU *after* the first
+ * queue, and it only costs 6 bytes of data space.
  */
-#define	notavail(bp) { \
-	register int x = splbio(); \
-	bremfree(bp); \
-	(bp)->b_flags |= B_BUSY; \
-	splx(x); \
+#define	BQUEUES			5		/* number of free buffer queues */
+
+#define	BQ_NONE			0		/* on no queue */
+#define BQ_LOCKED		1		/* locked buffers */
+#define	BQ_LRU			2		/* lru, useful buffers */
+#define	BQ_AGE			3		/* rubbish */
+#define	BQ_EMPTY		4		/* buffer headers with no memory */
+
+LIST_HEAD(bufhashhdr, buf) bufhashtbl[BUFHSZ], invalhash;
+TAILQ_HEAD(bqueues, buf) bufqueues[BQUEUES];
+
+/*
+ * Zero out the buffer's data area.
+ */
+#define	clrbuf(bp) {							\
+	blkclr((bp)->b_data, (u_int)(bp)->b_bcount);			\
+	(bp)->b_resid = 0;						\
 }
 
-#define	iodone	biodone
-#define	iowait	biowait
+/* Flags to low-level allocation routines. */
+#define B_CLRBUF	0x01	/* Request allocated buffer be cleared. */
+#define B_SYNC		0x02	/* Do all allocations synchronously. */
+
+#ifdef KERNEL
+extern int		nbuf;				/* number of buffer headers */
+extern struct	buf *buf;			/* the buffer pool itself */
+extern char		*buffers;			/* The buffer contents. */
+extern int		bufpages;			/* Number of memory pages in the buffer pool. */
+extern struct	buf *swbuf;			/* Swap I/O buffer headers. */
+extern int		nswbuf;				/* Number of swap I/O buffer headers. */
+extern TAILQ_HEAD(swqueue, buf) bswlist;
+
+
+__BEGIN_DECLS
+void	bufinit __P((void));
+void	bremfree __P((struct buf *));
+int	bread __P((struct vnode *, daddr_t, int,
+	    struct ucred *, struct buf **));
+int	breadn __P((struct vnode *, daddr_t, int, daddr_t *, int *, int,
+	    struct ucred *, struct buf **));
+int	bwrite __P((struct buf *));
+void	bdwrite __P((struct buf *));
+void	bawrite __P((struct buf *));
+void	brelse __P((struct buf *));
+struct buf *getnewbuf __P((int slpflag, int slptimeo));
+struct buf *     getpbuf __P((void));
+struct buf *incore __P((struct vnode *, daddr_t));
+struct buf *getblk __P((struct vnode *, daddr_t, int, int, int));
+struct buf *geteblk __P((int));
+void	allocbuf __P((struct buf *, int));
+int	biowait __P((struct buf *));
+void	biodone __P((struct buf *));
+
+void	cluster_callback __P((struct buf *));
+int	cluster_read __P((struct vnode *, u_quad_t, daddr_t, long,
+	    struct ucred *, struct buf **));
+void	cluster_write __P((struct buf *, u_quad_t));
+u_int	minphys __P((struct buf *));
+void	vwakeup __P((struct buf *));
+void	vmapbuf __P((struct buf *));
+void	vunmapbuf __P((struct buf *));
+void	relpbuf __P((struct buf *));
+void	brelvp __P((struct buf *));
+void	bgetvp __P((struct vnode *, struct buf *));
+void	reassignbuf __P((struct buf *, struct vnode *));
+__END_DECLS
+#endif
+
+#endif /* !_SYS_BUF_H_ */
