@@ -129,8 +129,8 @@ main()
 	limit0.pl_rlimit[RLIMIT_MEMLOCK].rlim_cur = i / 3;
 	limit0.p_refcnt = 1;
 
-	/* init user structure */
-	init_user(p);
+	/* init user stack */
+	init_userstack(p);
 
 	/* Allocate a prototype map so we have something to fork. */
 	p->p_vmspace = &vmspace0;
@@ -163,13 +163,10 @@ main()
 	siginit(p);
 
 	/*
-	 * Initialize tables, protocols, and set up well-known inodes.
+	 * Initialize tables, protocols.
 	 */
 	cinit();
 	pqinit();
-	ihinit();
-	bhinit();
-	binit();
 
 	/* Kick off timeout driven events by calling first time. */
 	schedcpu(NULL);
@@ -193,11 +190,11 @@ main()
 		sched();
 }
 
-/* init user structure
- * Originally in main() as part of 2.11BSD on PDP may still be of use.
+/* init user stack structure.
+ * 2.11BSD User structure is maintained, seperated it from main for ease of reading and editing.
  */
 static void
-init_user(p)
+init_userstack(p)
 	struct proc *p;
 {
 	register struct user *u;
@@ -216,45 +213,6 @@ init_user(p)
 		u->u_rlimit[i]->rlim_cur = u->u_rlimit[i].rlim_max = RLIM_INFINITY;
 	}
 	bcopy("root", u->u_login, sizeof ("root"));
-}
-
-/*
- * Initialize hash links for buffers.
- */
-static void
-bhinit()
-{
-	register int i;
-	register struct bufhd *bp;
-
-	for (bp = bufhash, i = 0; i < BUFHSZ; i++, bp++)
-		bp->b_forw = bp->b_back = (struct buf *)bp;
-}
-
-/*
- * Initialize the buffer I/O system by freeing
- * all buffers and setting all device buffer lists to empty.
- */
-static void
-binit()
-{
-	register struct buf *bp;
-	register int i;
-	long paddr;
-
-	for (bp = bfreelist; bp < &bfreelist[BQUEUES]; bp++)
-		bp->b_forw = bp->b_back = bp->av_forw = bp->av_back = bp;
-	paddr = ((long)bpaddr) << 6;
-	for (i = 0; i < nbuf; i++, paddr += MAXBSIZE) {
-		bp = &buf[i];
-		bp->b_dev = NODEV;
-		bp->b_bcount = 0;
-		bp->b_un.b_addr = (caddr_t)loint(paddr);
-		bp->b_xmem = hiint(paddr);
-		binshash(bp, &bfreelist[BQ_AGE]);
-		bp->b_flags = B_BUSY|B_INVAL;
-		brelse(bp);
-	}
 }
 
 /*

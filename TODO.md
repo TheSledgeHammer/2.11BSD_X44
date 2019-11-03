@@ -2,18 +2,17 @@ In Kernel:
 TODO:
 - Check 2.11BSD original: rusage & k_rusage refs
 - Adjust 2.11BSD new: if they match-up where appropriate
+- Check for inodes in kernel to replace
 Fix:
 - kern_descrip.c
 - kern_exec.c
-- kern_sig.c
 
 Contains Inodes:
 - kern_descrip.c
 - kern_exec.c
-- kern_sig.c
 - kern_sysctl.c
 - sys_kern.c
-- sys_pipe.c: May be deprecated with vnodes
+- sys_pipe.c: May be deprecated with vnodes or sockets
 
 Includes Inodes, but doesn't use
 - subr_log.c: Vnodes is a drop-in?

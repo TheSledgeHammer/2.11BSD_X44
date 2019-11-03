@@ -100,9 +100,9 @@ struct vnode {
 	void 	*v_data;				/* private data for fs */
 };
 #define	v_mountedhere	v_un.vu_mountedhere
-#define	v_socket	v_un.vu_socket
-#define	v_specinfo	v_un.vu_specinfo
-#define	v_fifoinfo	v_un.vu_fifoinfo
+#define	v_socket		v_un.vu_socket
+#define	v_specinfo		v_un.vu_specinfo
+#define	v_fifoinfo		v_un.vu_fifoinfo
 
 /*
  * Vnode flags.
@@ -147,6 +147,7 @@ struct vattr {
  * Flags for va_cflags.
  */
 #define	VA_UTIMES_NULL	0x01		/* utimes argument was NULL */
+#define VA_EXCLUSIVE	0x02		/* exclusive create request */
 
 /*
  * Flags for ioflag.
@@ -177,8 +178,8 @@ struct vattr {
  * Convert between vnode types and inode formats (since POSIX.1
  * defines mode word of stat structure in terms of inode formats).
  */
-extern enum vtype	iftovt_tab[];
-extern int		vttoif_tab[];
+extern enum vtype		iftovt_tab[];
+extern int				vttoif_tab[];
 #define IFTOVT(mode)	(iftovt_tab[((mode) & S_IFMT) >> 12])
 #define VTTOIF(indx)	(vttoif_tab[(int)(indx)])
 #define MAKEIMODE(indx, mode)	(int)(VTTOIF(indx) | (mode))
@@ -192,20 +193,24 @@ extern int		vttoif_tab[];
 #define	DOCLOSE		0x0008		/* vclean: close active files */
 #define	V_SAVE		0x0001		/* vinvalbuf: sync file first */
 #define	V_SAVEMETA	0x0002		/* vinvalbuf: leave indirect blocks */
+#define	REVOKEALL	0x0001		/* vop_revoke: revoke all aliases */
 
 #ifdef DIAGNOSTIC
 #define	HOLDRELE(vp)	holdrele(vp)
 #define	VATTR_NULL(vap)	vattr_null(vap)
-#define	VHOLD(vp)	vhold(vp)
-#define	VREF(vp)	vref(vp)
+#define	VHOLD(vp)		vhold(vp)
+#define	VREF(vp)		vref(vp)
+
 
 void	holdrele __P((struct vnode *));
+void	vattr_null __P((struct vattr *));
 void	vhold __P((struct vnode *));
+void	vref __P((struct vnode *));
 #else
 #define	HOLDRELE(vp)	(vp)->v_holdcnt--	/* decrease buf or page ref */
 #define	VATTR_NULL(vap)	(*(vap) = va_null)	/* initialize a vattr */
-#define	VHOLD(vp)	(vp)->v_holdcnt++	/* increase buf or page ref */
-#define	VREF(vp)	(vp)->v_usecount++	/* increase reference */
+#define	VHOLD(vp)		(vp)->v_holdcnt++	/* increase buf or page ref */
+#define	VREF(vp)		(vp)->v_usecount++	/* increase reference */
 #endif
 
 #define	NULLVP	((struct vnode *)NULL)
@@ -271,9 +276,9 @@ extern void	(*lease_updatetime) __P((int deltat));
  * This structure describes the vnode operation taking place.
  */
 struct vnodeop_desc {
-	int	vdesc_offset;		/* offset in vector--first for speed */
-	char    *vdesc_name;		/* a readable name for debugging */
-	int	vdesc_flags;		/* VDESC_* flags */
+	int		vdesc_offset;		/* offset in vector--first for speed */
+	char 	*vdesc_name;		/* a readable name for debugging */
+	int		vdesc_flags;		/* VDESC_* flags */
 
 	/*
 	 * These ops are used by bypass routines to map and locate arguments.

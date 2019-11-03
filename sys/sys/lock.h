@@ -89,14 +89,14 @@ struct lock {
  *
  * These are flags that are passed to the lockmgr routine.
  */
-#define LK_TYPE_MASK	0x0000000f	/* type of lock sought */
-#define LK_SHARED	0x00000001		/* shared lock */
-#define LK_EXCLUSIVE	0x00000002	/* exclusive lock */
-#define LK_UPGRADE	0x00000003		/* shared-to-exclusive upgrade */
-#define LK_EXCLUPGRADE	0x00000004	/* first shared-to-exclusive upgrade */
-#define LK_DOWNGRADE	0x00000005	/* exclusive-to-shared downgrade */
-#define LK_RELEASE	0x00000006		/* release any type of lock */
-#define LK_DRAIN	0x00000007		/* wait for all lock activity to end */
+#define LK_TYPE_MASK	0x0000000f		/* type of lock sought */
+#define LK_SHARED		0x00000001		/* shared lock */
+#define LK_EXCLUSIVE	0x00000002		/* exclusive lock */
+#define LK_UPGRADE		0x00000003		/* shared-to-exclusive upgrade */
+#define LK_EXCLUPGRADE	0x00000004		/* first shared-to-exclusive upgrade */
+#define LK_DOWNGRADE	0x00000005		/* exclusive-to-shared downgrade */
+#define LK_RELEASE		0x00000006		/* release any type of lock */
+#define LK_DRAIN		0x00000007		/* wait for all lock activity to end */
 /*
  * External lock flags.
  *
@@ -105,10 +105,10 @@ struct lock {
  * set only at the release of a lock obtained by drain.
  */
 #define LK_EXTFLG_MASK	0x00000070	/* mask of external flags */
-#define LK_NOWAIT	0x00000010		/* do not sleep to await lock */
+#define LK_NOWAIT		0x00000010	/* do not sleep to await lock */
 #define LK_SLEEPFAIL	0x00000020	/* sleep, then return failure */
 #define LK_CANRECURSE	0x00000040	/* allow recursive exclusive lock */
-#define LK_REENABLE	0x00000080		/* lock is be reenabled after drain */
+#define LK_REENABLE		0x00000080	/* lock is be reenabled after drain */
 /*
  * Internal lock flags.
  *
@@ -118,8 +118,8 @@ struct lock {
 #define LK_WANT_EXCL	0x00000200	/* exclusive lock sought */
 #define LK_HAVE_EXCL	0x00000400	/* exclusive lock obtained */
 #define LK_WAITDRAIN	0x00000800	/* process waiting for lock to drain */
-#define LK_DRAINING	0x00004000		/* lock is being drained */
-#define LK_DRAINED	0x00008000		/* lock has been decommissioned */
+#define LK_DRAINING		0x00004000	/* lock is being drained */
+#define LK_DRAINED		0x00008000	/* lock has been decommissioned */
 /*
  * Control flags
  *
@@ -127,7 +127,7 @@ struct lock {
  */
 #define LK_INTERLOCK	0x00010000	/* unlock passed simple lock after
 					   getting lk_interlock */
-#define LK_RETRY	0x00020000		/* vn_lock: retry until locked */
+#define LK_RETRY		0x00020000	/* vn_lock: retry until locked */
 
 /*
  * Lock return status.
@@ -154,10 +154,8 @@ struct lock {
 
 struct proc;
 
-void lockinit __P((struct lock *, int prio, char *wmesg, int timo,
-			int flags));
-int	lockmgr __P((__volatile struct lock *, u_int flags,
-			struct simplelock *, struct proc *p));
+void lockinit __P((struct lock *, int prio, char *wmesg, int timo, int flags));
+int	lockmgr __P((__volatile struct lock *, u_int flags, struct simplelock *, struct proc *p));
 int	lockstatus __P((struct lock *));
 
 #ifdef DEBUG

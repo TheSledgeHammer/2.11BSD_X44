@@ -67,7 +67,7 @@ typedef struct lock			*lock_t;
 #include <vm/vmmeter.h>
 #include <sys/queue.h>
 #include <vm/vm_param.h>
-#include <vm/lock.h>
+#include "../../../sys/lock.h"
 #include <vm/vm_prot.h>
 #include <vm/vm_inherit.h>
 #include <vm/vm_map.h>

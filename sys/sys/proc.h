@@ -31,6 +31,7 @@ struct	proc {
     struct	proc 		*p_forw;		/* Doubly-linked run/sleep queue. */
 	struct	proc 		*p_back;
 
+
     int	    p_flag;						/* P_* flags. */
 	char	p_stat;						/* S* process status. */
 	char	p_lock;						/* Process lock count. */

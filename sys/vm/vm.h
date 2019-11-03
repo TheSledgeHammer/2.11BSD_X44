@@ -64,12 +64,29 @@ typedef struct vm_page  *vm_page_t;
 struct pager_struct;
 typedef struct pager_struct *vm_pager_t;
 
+/*
+ *	MACH VM locking type mappings to kernel types
+ */
+typedef struct simplelock	simple_lock_data_t;
+typedef struct simplelock	*simple_lock_t;
+typedef struct lock			lock_data_t;
+typedef struct lock			*lock_t;
 
 #include <vm/vmparam.h>
 #include <vm/vmmac.h>
 #include <vm/vmmeter.h>
 #include <vm/vmsystm.h>
+
 #include <sys/queue.h>
+#include <machine/cpufunc.h>
+#include "../sys/lock.h"
+#include <vm/vm_prot.h>
+#include <vm/vm_inherit.h>
+#include <vm/vm_map.h>
+#include <vm/vm_object.h>
+#include <vm/pmap.h>
+#include <vm/vm_extern.h>
+
 
 /*
  * Shareable process virtual address space.

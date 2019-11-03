@@ -121,7 +121,7 @@ acct_process(p)
 	struct proc *p;
 {
 	struct acct acct;
-	struct k_rusage *r;
+	struct rusage *r;
 	struct timeval ut, st, tmp;
 	int s, t;
 	struct vnode *vp;
@@ -177,6 +177,7 @@ acct_process(p)
 
 	/* (8) The boolean flags that tell how the process terminated, etc. */
 	acct.ac_flag = p->p_acflag;
+
 
 	/* Sync 2.11BSD User with System acct */
 	//bcopy(acct->ac_comm, u->u_comm, sizeof(u->u_comm));

@@ -97,9 +97,6 @@ extern	char	regloc[];	/* offsets of saved user registers (trap.c) */
 extern void startup();
 extern void cinit();
 extern void pqinit();
-extern void ihinit();
-extern void bhinit();
-extern void binit();
 
 
 #endif

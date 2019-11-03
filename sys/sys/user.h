@@ -8,7 +8,8 @@
 
 #ifndef _SYS_USER_H_
 #define _SYS_USER_H_
-
+#include <machine/pcb.h>
+#include <machine/param.h>
 #ifndef KERNEL
 #include <errno.h>
 #include <sys/dir.h>
@@ -26,7 +27,7 @@
 #include <vm/vm.h>		/* XXX */
 #include <sys/sysctl.h>
 
-#include <machine/pcb.h>
+
 
 /*
  * data that doesn't need to be referenced while the process is swapped.
@@ -35,6 +36,7 @@
  * user; is cross referenced with the proc structure for the same process.
  */
 #define	MAXCOMLEN	MAXNAMLEN	/* <= MAXNAMLEN, >= sizeof(ac_comm) */
+#define USIZE 		UPAGES
 
 struct	pcb {						/* fake pcb structure */
 	int	(*pcb_sigc)();				/* pointer to trampoline code in user space */
@@ -88,9 +90,9 @@ struct user {
 	label_t	u_ssave;				/* label variable for swapping */
 	label_t	u_rsave;				/* save info when exchanging stacks */
 
-	//short	u_uisa[16];				/* segmentation address prototypes */
-	//short	u_uisd[16];				/* segmentation descriptor prototypes */
 	//char	u_sep;					/* flag for I and D separation */
+	//short	u_uisa;					/* segmentation address prototypes */
+	//short	u_uisd;					/* segmentation descriptor prototypes */
 	//char	dummy1;					/* room for another char */
 									/* overlay information */
 	//struct	u_ovd {					/* automatic overlay data */
@@ -111,6 +113,8 @@ struct user {
 	char	dummy2;					/* Room for another flags byte */
 	char	u_psflags;				/* Process Signal flags */
 	struct	sigaltstack u_sigstk;	/* signal stack info */
+	struct	sigacts u_sigacts;		/* p_sigacts points here (use it!) */
+	struct	pstats 	u_stats;		/* p_stats points here (use it!) */
 
 /* 1.4 - descriptor management */
 	struct	file *u_ofile[NOFILE];	/* file structures for open files */
@@ -118,8 +122,10 @@ struct user {
 	int		u_lastfile;				/* high-water mark of u_ofile */
 #define	UF_EXCLOSE 	0x1				/* auto-close on exec */
 #define	UF_MAPPED 	0x2				/* mapped from device */
-	struct	inode *u_cdir;			/* current directory */
-	struct	inode *u_rdir;			/* root directory of current process */
+	//struct	inode *u_cdir;			/* current directory */
+	//struct	inode *u_rdir;			/* root directory of current process */
+	struct	vnode *u_vnode;			/* pointer to vnode */
+	struct  vattr *u_vattr;			/* pointer to vnode attributes */
 	struct	tty *u_ttyp;			/* controlling tty pointer */
 	dev_t	u_ttyd;					/* controlling tty dev */
 	short	u_cmask;				/* mask for file creation */
@@ -155,11 +161,10 @@ struct user {
 					 	 	 	 	 * extends from u + USIZE*64
 					 	 	 	 	 * backward not to reach here
 					 	 	 	 	 */
-/* 1.7 - i386 Port*/
-	struct	sigacts u_sigacts;		/* p_sigacts points here (use it!) */
-	struct	pstats 	u_stats;		/* p_stats points here (use it!) */
-	//struct  vnode	*u_cdirv;
-	//struct  vnode	*u_rdirv;
+
+/* 1.7 Remaining fields only for core dump and/or ptrace-- not valid at other times! */
+	struct	kinfo_proc u_kproc;	/* proc + eproc */
+	struct	md_coredump u_md;	/* machine dependent glop */
 };
 
 #ifdef KERNEL

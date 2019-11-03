@@ -9,11 +9,12 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/user.h>
-#include <sys/inode.h>
 #include <sys/proc.h>
 #include <sys/namei.h>
 #include <sys/acct.h>
 #include <sys/signalvar.h>
+#include <sys/resourcevar.h>
+#include <sys/vnode.h>
 
 extern	char	sigprop[];	/* XXX - defined in kern_sig2.c */
 
@@ -189,20 +190,13 @@ killpg1(signo, pgrp, all)
  * process group.
  */
 void
-gsignal(pgrp, sig)
-	register int pgrp;
+gsignal(pgid, signum)
+	int pgid, signum;
 {
-	register struct proc *p;
-	mapinfo	map;
+	struct pgrp *pgrp;
 
-	if (pgrp == 0)
-		return;
-	savemap(map);
-
-	for (p = allproc; p != NULL; p = p->p_nxt)
-		if (p->p_pgrp == pgrp)
-			psignal(p, sig);
-	restormap(map);
+	if (pgid && (pgrp = pgfind(pgid)))
+		pgsignal(pgrp, signum, 0);
 }
 
 /*
@@ -622,27 +616,28 @@ postsig(sig)
  * It writes UPAGES (USIZE for pdp11) block of the
  * user.h area followed by the entire
  * data+stack segments.
+ * Updates for using vnodes and vmspace.
  */
-static int
-core()
-{
-	register struct inode *ip;
-	struct	nameidata nd;
-	register struct	nameidata *ndp = &nd;
-	register char *np;
-	char	*cp, name[MAXCOMLEN + 6];
 
-	/*
-	 * Don't dump if not root and the process has used set user or
-	 * group privileges.
-	*/
-	if	((u->u_acflag & ASUGID) && !suser())
-		return(0);
-	if (ctob(USIZE+u->u_dsize+u->u_ssize) >=
-	    u->u_rlimit[RLIMIT_CORE].rlim_cur)
-		return (0);
-	if (u->u_procp->p_textp && access(u->u_procp->p_textp->x_iptr, IREAD))
-		return (0);
+static int
+core(p)
+register struct proc *p;
+{
+	register struct vnode *vp;
+	register struct pcred *pcred = p->p_cred;
+	register struct ucred *cred = pcred->pc_ucred;
+	register struct vmspace *vm = p->p_vmspace;
+	struct	nameidata nd;
+	struct vattr vattr;
+	int error, error1;
+	register char *np;
+	char *cp, name[MAXCOMLEN + 6];  	/* progname.core */
+
+	if (pcred->p_svuid != pcred->p_ruid || pcred->p_svgid != pcred->p_rgid || ((u->u_acflag & ASUGID) && !suser()))
+			return (EFAULT);
+	if (ctob(UPAGES + vm->vm_dsize + vm->vm_ssize) >= p->p_rlimit[RLIMIT_CORE].rlim_cur || ctob(USIZE + u->u_dsize+u->u_ssize) >= u->u_rlimit[RLIMIT_CORE].rlim_cur) {
+		return (EFAULT);
+	}
 	cp = u->u_comm;
 	np = name;
 	while	(*np++ == *cp++)
@@ -652,38 +647,44 @@ core()
 	while	(*np++ == *cp++)
 		;
 	u->u_error = 0;
-	NDINIT(ndp, CREATE, FOLLOW, UIO_SYSSPACE, name);
-	ip = namei(ndp);
-	if (ip == NULL) {
-		if (u->u_error)
-			return (0);
-		ip = maknode(0644, ndp);
-		if (ip==NULL)
-			return (0);
-	}
-	if (access(ip, IWRITE) ||
-	   (ip->i_mode&IFMT) != IFREG ||
-	   ip->i_nlink != 1) {
-		u->u_error = EFAULT;
-		goto out;
-	}
-	itrunc(ip, (u_long)0, 0);
-	u->u_acflag |= ACORE;
-	u->u_error = rdwri(UIO_WRITE, ip, &u, ctob(USIZE), (off_t)0,
-			UIO_SYSSPACE, IO_UNIT, (int *)0);
-	if (u->u_error)
-		goto out;
+	sprintf(name, "%s.core", cp);
+	sprintf(name, "%s.core", p->p_comm);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_SYSSPACE, name, p);
 
-	estabur((u_int)0, u->u_dsize, u->u_ssize, 0, RO);
-	u->u_error = rdwri(UIO_WRITE, ip, 0, ctob(u->u_dsize), (off_t)ctob(USIZE),
-			UIO_USERSPACE, IO_UNIT, (int *)0);
-	if (u->u_error)
-		goto out;
+	if (error == vn_open(&nd, O_CREAT | FWRITE, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) {
+			return (error);
+	}
+	vp = nd.ni_vp;
 
-	u->u_error = rdwri(UIO_WRITE, ip, (caddr_t)(-(ctob(u->u_ssize))), ctob(u->u_ssize),
-			(off_t)ctob(USIZE) + (off_t)ctob(u->u_dsize),
-			 UIO_USERSPACE, IO_UNIT, (int *)0);
+	/* Don't dump to non-regular files or files with links. */
+	if (vp->v_type != VREG || VOP_GETATTR(vp, &vattr, cred, p) || vattr.va_nlink != 1) {
+		error = EFAULT;
+		goto out;
+	}
+	VATTR_NULL(&vattr);
+	vattr.va_size = 0;
+	VOP_LEASE(vp, p, cred, LEASE_WRITE);
+	VOP_SETATTR(vp, &vattr, cred, p);
+	p->p_acflag |= ACORE ||	u->u_acflag |= ACORE;
+	bcopy(p, &p->p_addr->u_kproc.kp_eproc, sizeof(struct proc));
+	fill_eproc(p, &p->p_addr->u_kproc.kp_eproc);
+	u->u_error = error;
+	error = cpu_coredump(p, vp, cred);
+	if (error == 0) {
+		error = vn_rdwr(UIO_WRITE, vp, vm->vm_daddr, (int)ctob(vm->vm_dsize), (off_t)ctob(UPAGES), UIO_USERSPACE,
+				IO_NODELOCKED|IO_UNIT, cred, (int *) NULL, p);
+	}
+	if (error == 0) {
+		error = vn_rdwr(UIO_WRITE, vp, (caddr_t) trunc_page(USRSTACK - ctob(vm->vm_ssize)),
+				round_page(ctob(vm->vm_ssize)),
+				(off_t)ctob(UPAGES) + ctob(vm->vm_dsize), UIO_USERSPACE,
+				IO_NODELOCKED|IO_UNIT, cred, (int *) NULL, p);
+	}
 out:
-	iput(ip);
-	return (u->u_error == 0);
+	VOP_UNLOCK(vp);
+	error1 = vn_close(vp, FWRITE, cred, p);
+	if (error == 0) {
+			error = error1;
+	}
+	return (error);
 }

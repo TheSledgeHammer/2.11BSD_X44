@@ -38,13 +38,12 @@
 #include <vm/vm_prot.h>
 #include <vm/vm_param.h>
 #include <vm/vm_inherit.h>
-#include <vm/lock.h>
-/* #include <i386/thread.h> */		/* for thread_status */
 #include <machine/frame.h>		/* for struct trapframe */
 /* #include <i386/eflags.h> */
 #include <machine/psl.h>
 /* #include <i386/trap.h> */
 #include <machine/trap.h>
+#include "../../sys/lock.h"
 
 #define i386_saved_state trapframe
 
