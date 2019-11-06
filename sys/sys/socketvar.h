@@ -12,6 +12,13 @@
  *	@(#)socketvar.h	7.3.1 (2.11BSD GTE) 12/31/93
  */
 
+#ifndef _SYS_SOCKETVAR_H_
+#define _SYS_SOCKETVAR_H_
+
+#include <sys/stat.h>			/* for struct stat */
+#include <sys/filedesc.h>		/* for struct filedesc */
+#include <sys/select.h>			/* for struct selinfo */
+
 /*
  * Kernel structure per socket.
  * Contains send and receive buffer queues,
@@ -60,22 +67,26 @@ struct socket {
 		short	sb_timeo;	/* timeout (not used yet) */
 		short	sb_flags;	/* flags, see below */
 	} so_rcv, so_snd;
-#ifdef pdp11
-#define	SB_MAX		8192		/* max chars in sockbuf */
-#else
-#define	SB_MAX		(64*1024)	/* max chars in sockbuf */
-#endif
+
+#define	SB_MAX		(256*1024)	/* max chars in sockbuf */
 #define	SB_LOCK		0x01		/* lock on data queue (so_rcv only) */
 #define	SB_WANT		0x02		/* someone is waiting to lock */
 #define	SB_WAIT		0x04		/* someone is waiting for data/space */
 #define	SB_SEL		0x08		/* buffer is selected */
-#define	SB_COLL		0x10		/* collision selecting */
+#define	SB_COLL		0x20		/* collision selecting */
+#define	SB_ASYNC	0x10		/* ASYNC I/O, need signals */
+#define	SB_NOTIFY	(SB_WAIT|SB_SEL|SB_ASYNC)
+#define	SB_NOINTR	0x40		/* operations not interruptible */
+
+	caddr_t	so_tpcb;			/* Wisc. protocol control block XXX */
+	void	(*so_upcall) __P((struct socket *so, caddr_t arg, int waitf));
+	caddr_t	so_upcallarg;		/* Arg for above */
 };
 
 /*
  * Socket state bits.
  */
-#define	SS_NOFDREF		0x001	/* no file table ref any more */
+#define	SS_NOFDREF			0x001	/* no file table ref any more */
 #define	SS_ISCONNECTED		0x002	/* socket connected to a peer */
 #define	SS_ISCONNECTING		0x004	/* in process of connecting to peer */
 #define	SS_ISDISCONNECTING	0x008	/* in process of disconnecting */
@@ -151,6 +162,27 @@ struct socket {
 #define	sorwakeup(so)	sowakeup((so), &(so)->so_rcv)
 #define	sowwakeup(so)	sowakeup((so), &(so)->so_snd)
 
-#ifdef SUPERVISOR
+#ifdef KERNEL
 struct	socket *sonewconn();
+
+/* to catch callers missing new second argument to sonewconn: */
+u_long	sb_max;
+#define	sonewconn(head, connstatus)	sonewconn1((head), (connstatus))
+struct	socket *sonewconn1 __P((struct socket *head, int connstatus));
+
+/* strings for sleep message: */
+extern	char netio[], netcon[], netcls[];
+
+/* File Operations on sockets */
+int	soo_ioctl __P((struct file *fp, int com, caddr_t data, struct proc *p));
+int	soo_select __P((struct file *fp, int which, struct proc *p));
+int	soo_stat __P((struct socket *, struct stat *));
+int	soo_read __P((struct file *fp, struct uio *uio, struct ucred *cred));
+int	soo_write __P((struct file *fp, struct uio *uio, struct ucred *cred));
+int soo_close __P((struct file *fp, struct proc *p));
+
+/* From uipc_socket and friends */
+
+#endif
+
 #endif

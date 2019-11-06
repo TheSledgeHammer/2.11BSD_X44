@@ -32,7 +32,7 @@ struct	acct
 };
 
 #define	AFORK	0001		/* has executed fork, but no exec */
-#define	ASU	0002			/* used super-user privileges */
+#define	ASU		0002		/* used super-user privileges */
 #define	ACOMPAT	0004		/* used compatibility mode */
 #define	ACORE	0010		/* dumped core */
 #define	AXSIG	0020		/* killed by a signal */

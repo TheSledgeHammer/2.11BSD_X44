@@ -170,6 +170,7 @@ struct pcred {
 
 
 #define	P_PPWAIT	0x00010	/* Parent is waiting for child to exec/exit. */
+#define	P_PROFIL	0x00020	/* Has started profiling. */
 #define	P_SUGID		0x00100	/* Had set id privileges since last exec. */
 #define	P_TRACED	0x00800	/* Debugged process being traced. */
 #define P_EXEC		0x04000	/* Process called exec. */

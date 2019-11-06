@@ -277,21 +277,21 @@ ioctl()
 int	nselcoll;
 
 struct	pselect_args
-	{
+{
 	int		nd;
 	fd_set		*in;
 	fd_set		*ou;
 	fd_set		*ex;
 	struct	timespec *ts;
 	sigset_t	*maskp;
-	};
+};
 
 /*
  * Select system call.
 */
 int
 select()
-	{
+{
 	struct uap
 		{
 		int	nd;
@@ -306,7 +306,7 @@ select()
 	*/
 	pselargs->maskp = 0;
 	return(u->u_error = select1(pselargs, 0));
-	}
+}
 
 /*
  * pselect (posix select)
@@ -316,11 +316,11 @@ select()
 */
 int
 pselect()
-	{
+{
 	register struct	pselect_args *uap = (struct pselect_args *)u->u_ap;
 
 	return(u->u_error = select1(uap, 1));
-	}
+}
 
 /*
  * Select helper function common to both select() and pselect()
@@ -330,7 +330,7 @@ static int
 select1(uap, is_pselect)
 	register struct pselect_args *uap;
 	int	is_pselect;
-	{
+{
 	fd_set ibits[3], obits[3];
 	struct timeval atv;
 	struct timeval time;
@@ -459,7 +459,8 @@ done:
 #undef putbits
 		}
 	return(error);
-	}
+}
+
 int
 selscan(ibits, obits, nfd, retval)
 	fd_set *ibits, *obits;

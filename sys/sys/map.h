@@ -33,8 +33,8 @@ struct map {
 };
 
 struct mapent {
-	size_t	m_size;		/* size of this segment of the map */
-	size_t	m_addr;		/* resource-space addr of start of segment */
+	memaddr	m_size;		/* size of this segment of the map */
+	memaddr	m_addr;		/* resource-space addr of start of segment */
 };
 
 #ifdef KERNEL

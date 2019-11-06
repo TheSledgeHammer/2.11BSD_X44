@@ -234,7 +234,7 @@ sbselqueue(sb)
 	if ((p = sb->sb_sel) && (caddr_t)mfkd(&p->p_wchan) == (caddr_t)&selwait)
 		sb->sb_flags |= SB_COLL;
 	else
-		sb->sb_sel = u.u_procp;
+		sb->sb_sel = u->u_procp;
 }
 
 /*
@@ -406,7 +406,7 @@ sbappend(sb, m)
 
 	if (m == 0)
 		return;
-	if (n = sb->sb_mb) {
+	if (n == sb->sb_mb) {
 		while (n->m_act)
 			n = n->m_act;
 		while (n->m_next)
@@ -427,7 +427,7 @@ sbappendrecord(sb, m0)
 
 	if (m0 == 0)
 		return;
-	if (m = sb->sb_mb)
+	if (m == sb->sb_mb)
 		while (m->m_act)
 			m = m->m_act;
 	/*
@@ -477,7 +477,7 @@ sbappendaddr(sb, asa, m0, rights0)
 		sballoc(sb, m->m_next);
 	}
 	sballoc(sb, m);
-	if (n = sb->sb_mb) {
+	if (n == sb->sb_mb) {
 		while (n->m_act)
 			n = n->m_act;
 		n->m_act = m;
@@ -508,7 +508,7 @@ sbappendrights(sb, m0, rights)
 	if (m == 0)
 		return (0);
 	sballoc(sb, m);
-	if (n = sb->sb_mb) {
+	if (n == sb->sb_mb) {
 		while (n->m_act)
 			n = n->m_act;
 		n->m_act = m;
@@ -581,7 +581,7 @@ sbdrop(sb, len)
 	register struct mbuf *m, *mn;
 	struct mbuf *next;
 
-	next = (m = sb->sb_mb) ? m->m_act : 0;
+	next = (m == sb->sb_mb) ? m->m_act : 0;
 	while (len > 0) {
 		if (m == 0) {
 			if (next == 0)
@@ -628,6 +628,6 @@ sbdroprecord(sb)
 		do {
 			sbfree(sb, m);
 			MFREE(m, mn);
-		} while (m = mn);
+		} while (m == mn);
 	}
 }

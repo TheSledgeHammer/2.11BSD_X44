@@ -1,34 +1,31 @@
-In Kernel:
 TODO:
 - Check 2.11BSD original: rusage & k_rusage refs
 - Adjust 2.11BSD new: if they match-up where appropriate
 - Check for inodes in kernel to replace
-Fix:
+
+
+Kern:
+- int_sysent.c (systemcalls: vnodes, vfs)
+- kern_clock.c
 - kern_descrip.c
 - kern_exec.c
-
-Contains Inodes:
-- kern_descrip.c
-- kern_exec.c
-- kern_sysctl.c
-- sys_kern.c
-- sys_pipe.c: May be deprecated with vnodes or sockets
-
-Includes Inodes, but doesn't use
-- subr_log.c: Vnodes is a drop-in?
-- kern_fork.c
 - kern_exit.c
-- tty.c
-- tty_pty.c
-- tty_tb.c
+- kern_fork.c
+- kern_sysctl.c
+- subr_xxx.c
+- sys_kern.c
+- sys_pipes.c (deprecated, vnodes use sockets)
+- sys_process.c
 
+Haven't really been looked at
+- tty (all source files)
+- uipc (all source files)
 
-
-
+VM:
 
 
 From Plan 9:
-- Pool.c, Pool.h, malloc.c, ucalloc.c, alloc.c, xalloc.c: Uses a tree structure. 
+- Pool.c, Pool.h, malloc.c, ucalloc.c, ucallocb.c, allocb.c, alloc.c, xalloc.c: Uses a tree structure. 
 - edf.c, edf.h
 
 Refer to:

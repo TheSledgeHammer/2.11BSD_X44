@@ -13,8 +13,8 @@
  */
 
 #include <sys/param.h>
-#ifdef INET
 #include <sys/systm.h>
+#include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/file.h>
 #include <sys/mbuf.h>
@@ -24,16 +24,21 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 
-#include "../net/if.h"
-#include "../net/route.h"
+//#include <net/if.h>
+//#include <net/route.h>
+
+struct fileops socketops =
+    { soo_read, soo_write, soo_ioctl, soo_select, soo_close };
 
 /*ARGSUSED*/
-soo_ioctl(so, cmd, data)
-	struct socket *so;	/* remember to have the kentry routine pass */
-			   	/* a socket NOT a file pointer */
+int
+soo_ioctl(fp, cmd, data, p)
+	struct file *fp;
 	int cmd;
 	register caddr_t data;
+	struct proc *p;
 {
+	register struct socket *so = (struct socket *)fp->f_data;
 
 	switch (cmd) {
 
@@ -45,10 +50,15 @@ soo_ioctl(so, cmd, data)
 		return (0);
 
 	case FIOASYNC:
-		if (*(int *)data)
+		if (*(int *)data) {
 			so->so_state |= SS_ASYNC;
-		else
+			so->so_rcv.sb_flags |= SB_ASYNC;
+			so->so_snd.sb_flags |= SB_ASYNC;
+		} else {
 			so->so_state &= ~SS_ASYNC;
+			so->so_rcv.sb_flags &= ~SB_ASYNC;
+			so->so_snd.sb_flags &= ~SB_ASYNC;
+		}
 		return (0);
 
 	case FIONREAD:
@@ -72,19 +82,23 @@ soo_ioctl(so, cmd, data)
 	 * interface and routing ioctls should have a
 	 * different entry since a socket's unnecessary
 	 */
-#define	cmdbyte(x)	(((x) >> 8) & 0xff)
+#define	cmdbyte(x)	(((x) >> 8) & 0xff) /* IOCGROUP */
+
 	if (cmdbyte(cmd) == 'i')
-		return(u.u_error = ifioctl(so, cmd, data));
+		return(u->u_error = ifioctl(so, cmd, data));
 	if (cmdbyte(cmd) == 'r')
-		return(u.u_error = rtioctl(cmd, data));
-	return(u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_CONTROL, 
+		return(u->u_error = rtioctl(cmd, data));
+	return(u->u_error = (*so->so_proto->pr_usrreq)(so, PRU_CONTROL,
 	    (struct mbuf *)cmd, (struct mbuf *)data, (struct mbuf *)0));
 }
 
-soo_select(so, which)
-	register struct socket *so;  /* kentry() must pass socket not file */
+int
+soo_select(fp, which, p)
+	struct file *fp;
 	int which;
+	struct proc *p;
 {
+	register struct socket *so = (struct socket *)fp->f_data;
 	register int s = splnet();
 
 	switch (which) {
@@ -94,7 +108,8 @@ soo_select(so, which)
 			splx(s);
 			return (1);
 		}
-		sbselqueue(&so->so_rcv);
+		sbselqueue(&so->so_rcv.sb_sel);
+		so->so_rcv.sb_flags |= SB_SEL;
 		break;
 
 	case FWRITE:
@@ -102,16 +117,17 @@ soo_select(so, which)
 			splx(s);
 			return (1);
 		}
-		sbselqueue(&so->so_snd);
+		sbselqueue(&so->so_snd.sb_sel);
+		so->so_snd.sb_flags |= SB_SEL;
 		break;
 
 	case 0:
-		if (so->so_oobmark ||
-		    (so->so_state & SS_RCVATMARK)) {
+		if (so->so_oobmark || (so->so_state & SS_RCVATMARK)) {
 			splx(s);
 			return (1);
 		}
-		sbselqueue(&so->so_rcv);
+		sbselqueue(&so->so_rcv.sb_sel);
+		so->so_rcv.sb_flags |= SB_SEL;
 		break;
 	}
 	splx(s);
@@ -119,6 +135,7 @@ soo_select(so, which)
 }
 
 /*ARGSUSED*/
+int
 soo_stat(so, ub)
 	register struct socket *so;
 	register struct stat *ub;
@@ -129,4 +146,38 @@ soo_stat(so, ub)
 	    (struct mbuf *)ub, (struct mbuf *)0, 
 	    (struct mbuf *)0));
 }
-#endif
+
+/* ARGSUSED */
+int
+soo_read(fp, uio, cred)
+	struct file *fp;
+	struct uio *uio;
+	struct ucred *cred;
+{
+		return (soreceive((struct socket *)fp->f_data, (struct mbuf **)0,
+				uio, (struct mbuf **)0, (struct mbuf **)0, (int *)0));
+}
+
+/* ARGSUSED */
+int
+soo_write(fp, uio, cred)
+	struct file *fp;
+	struct uio *uio;
+	struct ucred *cred;
+{
+		return (sosend((struct socket *)fp->f_data, (struct mbuf *)0,
+				uio, (struct mbuf *)0, (struct mbuf *)0, 0));
+}
+
+/* ARGSUSED */
+int
+soo_close(fp, p)
+	struct file *fp;
+	struct proc *p;
+{
+		int error = 0;
+		if(fp->f_data)
+			error = soclose((struct socket *)fp->f_data);
+		fp->f_data = 0;
+		return (error);
+}
