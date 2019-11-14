@@ -1,16 +1,17 @@
-#include <stdint.h> /* uint8_t uintptr_t */
-#include <pool.h>
+/*
+ * ucalloc.c
+ *
+ *  Created on: 14 Nov 2019
+ *      Author: marti
+ */
 
-static Pool ucpool = {
-		.name		= "Uncached",
-		.maxsize	= 4*MiB,
-		.minarena	= 1*MiB-32,
-		.quantum	= 32,
-		.alloc		= ucarena,
-		.merge		= NULL,
-		.flags		= /*POOL_TOLERANCE|POOL_ANTAGONISM|POOL_PARANOIA|*/0,
-};
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <pool2.h>
 
+#define KiB		1024u			/* Kibi 0x0000000000000400 */
+#define MiB		1048576u		/* Mebi 0x0000000000100000 */
+#define GiB		1073741824u		/* Gibi 000000000040000000 */
 
 static void*
 ucarena(unsigned long size)
@@ -34,7 +35,7 @@ ucfree(void* v)
 {
 	if(v == NULL)
 		return;
-	poolfree(&ucpool, v);
+	vpoolfree(&ucpool, v);
 }
 
 void*
@@ -43,7 +44,7 @@ ucallocalign(unsigned long size, int align, int span)
 	void *v;
 
 	assert(size < ucpool.minarena-128);
-	v = poolallocalign(&ucpool, size, align, 0, span);
+	v = vpoolallocalign(&ucpool, size, align, 0, span);
 	if(v)
 		memset(v, 0, size);
 	return v;

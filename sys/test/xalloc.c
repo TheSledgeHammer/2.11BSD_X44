@@ -1,53 +1,30 @@
-#include "pool.h"
+/*
+ * xalloc.c
+ *
+ *  Created on: 14 Nov 2019
+ *      Author: marti
+ */
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <pool2.h>
+#include <xalloc.h>
 
-#define	BY2PG		(4*KiB)			/* bytes per page */
-
-#define BI2BY		8			/* bits per byte */
-#define BY2V		8			/* only used in xalloc.c */
-
-enum {
-	Nhole = 128, Magichole = 0x484F4C45, /* HOLE */
-};
-
-typedef struct Hole 	Hole;
-typedef struct Xalloc 	Xalloc;
-typedef struct Xhdr 	Xhdr;
-
-struct Hole {
-	u_long addr;
-	u_long size;
-	u_long top;
-	Hole *link;
-};
-
-struct Xhdr {
-	u_long size;
-	u_long magix;
-	char data[];
-};
-
-struct Xalloc {
-	Lock;
-	Hole hole[Nhole];
-	Hole *flist;
-	Hole *table;
-};
-
-static Xalloc xlists;
-
-void xinit(void) {
+void
+xinit(void)
+{
 	int i, n, upages, kpages;
 	u_long maxpages;
 	Confmem *m;
 	Pallocmem *pm;
+	Conf conf;
+	Palloc palloc;
 	Hole *h, *eh;
 
-	eh = &xlists.hole[Nhole - 1];
+	eh = &xlists.hole[NHOLE - 1];
 	for (h = xlists.hole; h < eh; h++)
 		h->link = h + 1;
 
 	xlists.flist = xlists.hole;
-
 	upages = conf.upages;
 	kpages = conf.npage - upages;
 	pm = palloc.mem;
@@ -78,11 +55,11 @@ void xinit(void) {
 			pm++;
 		}
 	}
-	//	xsummary();			/* call it from main if desired */
 }
 
 void*
-xspanalloc(u_long size, int align, u_long span) {
+xspanalloc(u_long size, int align, u_long span)
+{
 	u_long a, v, t;
 	a = (u_long) xalloc(size + align + span);
 	if (a == 0)
@@ -106,7 +83,8 @@ xspanalloc(u_long size, int align, u_long span) {
 }
 
 void*
-xallocz(u_long size, int zero) {
+xallocz(u_long size, int zero)
+{
 	Xhdr *p;
 	Hole *h, **l;
 
@@ -129,7 +107,7 @@ xallocz(u_long size, int zero) {
 			iunlock(&xlists);
 			if (zero)
 				memset(p, 0, size);
-			p->magix = Magichole;
+			p->magix = MAGIC_HOLE;
 			p->size = size;
 			return p->data;
 		}
@@ -140,33 +118,38 @@ xallocz(u_long size, int zero) {
 }
 
 void*
-xalloc(u_long size) {
+xalloc(u_long size)
+{
 	return xallocz(size, 1);
 }
 
-void xfree(void *p) {
+void
+xfree(void *p)
+{
 	Xhdr *x;
 
 	x = (Xhdr*) ((u_long) p - offsetof(Xhdr, data[0]));
-	if (x->magix != Magichole) {
+	if (x->magix != MAGIC_HOLE) {
 		xsummary();
-		panic("xfree(%#p) %#ux != %#lux", p, Magichole, x->magix);
+		panic("xfree(%#p) %#ux != %#lux", p, MAGIC_HOLE, x->magix);
 	}
 	xhole(PADDR((uintptr) x), x->size);
 }
 
-int xmerge(void *vp, void *vq) {
+int
+xmerge(void *vp, void *vq)
+{
 	Xhdr *p, *q;
 
 	p = (Xhdr*) (((u_long) vp - offsetof(Xhdr, data[0])));
 	q = (Xhdr*) (((u_long) vq - offsetof(Xhdr, data[0])));
-	if (p->magix != Magichole || q->magix != Magichole) {
+	if (p->magix != MAGIC_HOLE || q->magix != MAGIC_HOLE) {
 		int i;
 		u_long *wd;
 		void *badp;
 
 		xsummary();
-		badp = (p->magix != Magichole ? p : q);
+		badp = (p->magix != MAGIC_HOLE ? p : q);
 		wd = (u_long*) badp - 12;
 		for (i = 24; i-- > 0;) {
 			print("%#p: %lux", wd, *wd);
@@ -185,7 +168,9 @@ int xmerge(void *vp, void *vq) {
 	return 0;
 }
 
-void xhole(u_long addr, u_long size) {
+void
+xhole(u_long addr, u_long size)
+{
 	u_long top;
 	Hole *h, *c, **l;
 
@@ -235,29 +220,4 @@ void xhole(u_long addr, u_long size) {
 	h->link = *l;
 	*l = h;
 	iunlock(&xlists);
-}
-
-void xsummary(void) {
-	int i;
-	Hole *h;
-
-	i = 0;
-	for (h = xlists.flist; h; h = h->link)
-		i++;
-
-	print("%d holes free", i);
-	i = 0;
-	for (h = xlists.table; h; h = h->link) {
-		if (0) {
-			print("addr %#.8lux top %#.8lux size %lud\n", h->addr, h->top,
-					h->size);
-			delay(10);
-		}
-		i += h->size;
-		if (h == h->link) {
-			print("xsummary: infinite loop broken\n");
-			break;
-		}
-	}
-	print(" %d bytes free\n", i);
 }
