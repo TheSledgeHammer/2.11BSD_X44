@@ -12,7 +12,6 @@
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/signalvar.h>
-#include <sys/inode.h>
 #include <sys/file.h>
 #include <sys/ioctl.h>
 #include <sys/conf.h>
@@ -25,12 +24,13 @@
  * place.  the socketops table has to be in kernel space, but since
  * networking might not be defined an appropriate error has to be set
 */
-
+/*
 	int	sorw(), soctl(), sosel(), socls();
 	struct	fileops	socketops =
 		{ sorw, soctl, sosel, socls };
 extern	struct	fileops	inodeops, pipeops;
 	struct	fileops	*Fops[] = { NULL, &inodeops, &socketops, &pipeops };
+	*/
 
 register struct user *u;
 
@@ -171,7 +171,7 @@ rwuio(uio)
 			u->u_error = 0;
 		}
 	else
-		u->u_error = (*Fops[fp->f_type]->fo_rw)(fp, uio);
+		u->u_error = (*fp->f_ops->fo_rw)(fp, uio);
 	u->u_r.r_val1 = count - uio->uio_resid;
 }
 
@@ -262,7 +262,7 @@ ioctl()
 		u->u_error = fgetown(fp, (int *)data);
 		return;
 	}
-	u->u_error = (*Fops[fp->f_type]->fo_ioctl)(fp, k_com, data);
+	u->u_error = (*fp->f_ops->fo_ioctl)(fp, k_com, data);
 	/*
 	 * Copy any data to user, size was
 	 * already set and checked above.
@@ -490,7 +490,7 @@ selscan(ibits, obits, nfd, retval)
 				fp = u->u_ofile[i + j];
 				if (fp == NULL)
 					return(EBADF);
-				if ((*Fops[fp->f_type]->fo_select)(fp,flag)) {
+				if((*fp->f_ops->fo_select)(fp, flag)) {
 					FD_SET(i + j, &obits[which]);
 					n++;
 				}

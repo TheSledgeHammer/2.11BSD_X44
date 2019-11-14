@@ -11,7 +11,7 @@
 #include <sys/map.h>
 #include <sys/user.h>
 #include <sys/proc.h>
-#include <sys/inode.h>
+#include <sys/vnode.h>
 #include <vm/vm.h>
 #include <sys/file.h>
 #include <sys/wait.h>
@@ -44,12 +44,20 @@ exit(rv)
 {
 	register int i;
 	register struct proc *p;
-	struct	proc **pp;
+	register struct proc *q, *nq;
+	register struct	proc **pp;
+	register struct vmspace *vm;
 
+	/*
+	 * If parent is waiting for us to exit or exec,
+	 * P_PPWAIT is set; we will wakeup the parent below.
+	 */
 	p = u->u_procp;
-	p->p_flag &= ~(P_TRACED|SULOCK);
+	p->p_flag &= ~(P_TRACED | P_PPWAIT | SULOCK);
 	p->p_sigignore = ~0;
 	p->p_sig = 0;
+	untimeout(realitexpire, (caddr_t)p);
+
 	/*
 	 * 2.11 doesn't need to do this and it gets overwritten anyway.
 	 * p->p_realtimer.it_value = 0;
@@ -71,6 +79,7 @@ exit(rv)
 	u->u_rlimit[RLIMIT_FSIZE].rlim_cur = RLIM_INFINITY;
 	if	(Acctopen)
 		(void) acct();
+
 	/*
 	 * Freeing the user structure and kernel stack
 	 * for the current process: have to run a bit longer
@@ -79,7 +88,6 @@ exit(rv)
 	if (p->p_flag & SVFORK)
 		endvfork();
 	else {
-		xfree();
 		mfree(coremap, p->p_dsize, p->p_daddr);
 		mfree(coremap, p->p_ssize, p->p_saddr);
 	}
@@ -276,7 +284,7 @@ endvfork()
 	rpp->p_flag |= SLOCK;
 	wakeup((caddr_t)rpp);
 	while(!(rpp->p_flag&SVFDONE))
-		sleep((caddr_t)rip,PZERO-1);
+		sleep((caddr_t)rip, PZERO-1);
 	/*
 	 * The parent has taken back our data+stack, set our sizes to 0.
 	 */

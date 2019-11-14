@@ -3,19 +3,18 @@ TODO:
 - Adjust 2.11BSD new: if they match-up where appropriate
 - Check for inodes in kernel to replace
 
-
 Kern:
-- int_sysent.c (systemcalls: vnodes, vfs)
-- kern_clock.c
-- kern_descrip.c
-- kern_exec.c
-- kern_exit.c
-- kern_fork.c
-- kern_sysctl.c
-- subr_xxx.c
-- sys_kern.c
-- sys_pipes.c (deprecated, vnodes use sockets)
-- sys_process.c
+- int_sysent.c (systemcalls: vnodes, vfs, sockets update)
+- kern_clock.c (check a few functions/pointers exist)
+- kern_descrip.c (check a few functions/pointers exist)
+- kern_exec.c (kern_exec2.c replaces this)
+- kern_exit.c (proc[])
+- kern_fork.c (swapout(rpp, X_DONTFREE, X_OLDSIZE, X_OLDSIZE))
+- kern_sysctl.c (inode_sysctl, vm_sysctl)
+- subr_xxx.c (networking)
+- sys_kern.c (inodes)
+- sys_pipes.c (other uses?)
+- sys_process.c (ptrace)
 
 Haven't really been looked at
 - tty (all source files)
@@ -23,16 +22,15 @@ Haven't really been looked at
 
 VM:
 
+FreeBSD 3.0:
+- BTX Bootloader
 
 From Plan 9:
-- Pool.c, Pool.h, malloc.c, ucalloc.c, ucallocb.c, allocb.c, alloc.c, xalloc.c: Uses a tree structure. 
 - edf.c, edf.h
 
 Refer to:
 Plan 9:
  plan9/sys/src/9/pc/mem.h
  plan9/sys/src/9/pc/mmu.c 		(initiates memory pool)
- plan9/sys/src/9/port/alloc.c
- plan9/sys/src/libc/port/malloc.c 
- plan9/sys/src/9/port/ucalloc.c
- plan9/sys/src/9/port/xalloc.c 
+ plan9/sys/src/9/port/ucallocb.c
+ plan9/sys/src/9/port/allocb.c 

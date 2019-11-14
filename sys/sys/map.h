@@ -25,6 +25,7 @@
  * as it is used internally by the resource map routines.
  */
 
+
 struct map {
 	struct mapent	*m_map;		/* start of the map */
 	struct mapent	*m_limit;	/* address of last slot in map */
@@ -33,13 +34,13 @@ struct map {
 };
 
 struct mapent {
-	memaddr	m_size;		/* size of this segment of the map */
-	memaddr	m_addr;		/* resource-space addr of start of segment */
+	size_t 	m_size;		/* size of this segment of the map */
+	size_t 	m_addr;		/* resource-space addr of start of segment */
 };
 
 #ifdef KERNEL
-extern struct map coremap[];																	/* space for core allocation */
-extern struct map swapmap[];																	/* space for swap allocation */
+extern struct map coremap;																		/* space for core allocation */
+extern struct map swapmap;																		/* space for swap allocation */
 
 int	nswapmap;
 

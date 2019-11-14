@@ -17,11 +17,11 @@
 struct nameidata {
 	caddr_t	ni_dirp;			/* pathname pointer */
 	enum	uio_seg	ni_segflg;	/* segment flag */
-	//short	ni_nameiop;			/* see below */
+	short	ni_nameiop;			/* see below */
 	//short	ni_error;			/* error return if any */
 	//off_t	ni_endoff;			/* end of useful stuff in directory */
-	//struct	inode *ni_pdir;		/* inode of parent directory of dirp */
-	//struct	inode *ni_ip;		/* inode of dirp */
+	struct	vnode *ni_cdir;		/* current directory */
+	struct	vnode *ni_rdir;		/* root directory, if not normal root */
 	//off_t	ni_offset;			/* offset in directory */
 	//u_short	ni_count;			/* offset of open slot (off_t?) */
 	//struct	direct ni_dent;		/* current directory entry */

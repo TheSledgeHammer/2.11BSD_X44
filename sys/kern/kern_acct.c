@@ -144,12 +144,14 @@ acct_process(p)
 	acct.ac_stime = encode_comp_t(st.tv_sec, st.tv_usec);
 
 	/* (3) The elapsed time the commmand ran (and its starting time) */
-	acct.ac_btime = p->p_stats->p_start.tv_sec;
+	//u->u_start.tv_sec = p->p_stats->p_start.tv_sec;
+	acct.ac_btime = u->u_start.tv_sec;
 
 	s = splclock();
 	tmp = time;
 	splx(s);
-	timevalsub(&tmp, &p->p_stats->p_start);
+	timevalsub(&tmp, &u->u_start);
+	//timevalsub(&tmp, &p->p_stats->p_start);
 	acct.ac_etime = encode_comp_t(tmp.tv_sec, tmp.tv_usec);
 
 	/* (4) The average amount of memory used */
@@ -163,7 +165,7 @@ acct_process(p)
 		acct.ac_mem = 0;
 
 	/* (5) The number of disk I/O operations done */
-	acct.ac_io = encode_comp_t(r->ru_inblock + r->ru_oublock, 0);
+	acct.ac_io = encode_comp_t(r->ru_inblock + r->ru_oublock, (long) 0);
 
 	/* (6) The UID and GID of the process */
 	acct.ac_uid = p->p_cred->p_ruid;
@@ -176,20 +178,8 @@ acct_process(p)
 		acct.ac_tty = NODEV;
 
 	/* (8) The boolean flags that tell how the process terminated, etc. */
-	acct.ac_flag = p->p_acflag;
-
-
-	/* Sync 2.11BSD User with System acct */
-	//bcopy(acct->ac_comm, u->u_comm, sizeof(u->u_comm));
-	u->u_ru.ru_utime = acct.ac_utime;
-	u->u_ru.ru_stime = acct.ac_stime;
-	u->u_start = acct.ac_btime;
-	u->u_ruid = acct.ac_uid;
-	u->u_rgid = acct.ac_gid;
-	u->u_dsize + u->u_ssize = acct.ac_mem;
-	u->u_ru.ru_inblock + u->u_ru.ru_oublock = acct.ac_io;
-	u->u_ttyd = acct.ac_tty;
-	u->u_acflag = acct.ac_flag;
+	//u->u_acflag = p->p_acflag;
+	acct.ac_flag = u->u_acflag;
 
 	/*
 	 * Now, just write the accounting information to the file.

@@ -367,7 +367,7 @@ unp_connect(so, nam)
 		error = EPROTOTYPE;
 		goto bad;
 	}
-	if (so->so_proto->pr_flags & PR_CONNREQUIRED &&
+	if (so->so_proto->pr_flags && PR_CONNREQUIRED &&
 	    ((so2->so_options&SO_ACCEPTCONN) == 0 ||
 	    (so2 = sonewconn(so2)) == 0)) {
 		error = ECONNREFUSED;

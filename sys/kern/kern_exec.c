@@ -13,6 +13,8 @@
 #include <sys/proc.h>
 #include <sys/buf.h>
 #include <sys/inode.h>
+#include <sys/exec.h>
+#include <sys/imgact.h>
 #include <sys/acct.h>
 #include <sys/namei.h>
 #include <sys/fs.h>

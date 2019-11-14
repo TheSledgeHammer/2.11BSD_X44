@@ -11,7 +11,7 @@
 #include <sys/proc.h>
 #include <sys/file.h>
 #include <sys/systm.h>
-#include <sys/inode.h>
+//#include <sys/inode.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/conf.h>
@@ -212,16 +212,13 @@ fsetown(fp, value)
 	return (fioctl(fp, (u_int)TIOCSPGRP, (caddr_t)&value));
 }
 
-extern	struct	fileops	*Fops[];
-
 int
 fioctl(fp, cmd, value)
 register struct file *fp;
 	u_int cmd;
 	caddr_t value;
 {
-
-	return ((*Fops[fp->f_type]->fo_ioctl)(fp, cmd, value));
+	return (*fp->f_ops->fo_ioctl)(fp, cmd, value);
 }
 
 void
@@ -256,7 +253,7 @@ fstat()
 	switch (fp->f_type) {
 
 	case DTYPE_PIPE:
-	case DTYPE_INODE:
+	case DTYPE_VNODE:
 		u->u_error = ino_stat((struct inode *)fp->f_data, &ub);
 		if (fp->f_type == DTYPE_PIPE)
 			ub.st_size -= fp->f_offset;
@@ -371,8 +368,7 @@ closef(fp)
 
 	if	((fp->f_flag & (FSHLOCK|FEXLOCK)) && fp->f_type == DTYPE_INODE)
 		ino_unlock(fp, FSHLOCK|FEXLOCK);
-
-	error = (*Fops[fp->f_type]->fo_close)(fp);
+	error = (*fp->f_ops->fo_close)(fp);
 	fp->f_count = 0;
 	return(error);
 }
@@ -392,7 +388,7 @@ flock()
 
 	if ((fp = getf(uap->fd)) == NULL)
 		return;
-	if (fp->f_type != DTYPE_INODE) {
+	if (fp->f_type != DTYPE_VNODE) {
 		u->u_error = EOPNOTSUPP;
 		return;
 	}

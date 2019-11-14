@@ -45,13 +45,13 @@
  * Algorithm is first-fit.
  */
 
-memaddr
+size_t
 malloc(mp, size)
 	struct map *mp;
 	register size_t size;
 {
 	register struct mapent *bp, *ep;
-	memaddr addr;
+	size_t addr;
 	int retry;
 
 	if (!size)
@@ -80,18 +80,7 @@ again:
 			return(addr);
 		}
 	/* no entries big enough */
-	if (!retry++) {
-		if (mp == swapmap) {
-			printf("short of swap\n");
-			xumount(NODEV);
-			goto again;
-		}
-		else if (mp == coremap) {
-			xuncore(size);
-			goto again;
-		}
-	}
-	return((memaddr)NULL);
+	return (0);
 }
 
 /*
@@ -102,7 +91,7 @@ void
 mfree(mp, size, addr)
 	struct map *mp;
 	size_t size;
-	register memaddr addr;
+	register size_t  addr;
 {
 	register struct mapent *bp, *ep;
 	struct mapent *start;
@@ -191,7 +180,7 @@ mfree(mp, size, addr)
  * to be in decreasing order; generally, data, stack, then u. will be
  * best.  Returns NULL on failure, address of u. on success.
  */
-memaddr
+size_t
 malloc3(mp, d_size, s_size, u_size, a)
 	struct map *mp;
 	size_t d_size, s_size, u_size;
@@ -201,11 +190,9 @@ malloc3(mp, d_size, s_size, u_size, a)
 	register int next;
 	struct mapent *madd[3];
 	size_t sizes[3];
-	int found, retry;
+	int found;
 
 	sizes[0] = d_size; sizes[1] = s_size; sizes[2] = u_size;
-	retry = 0;
-again:
 	/*
 	 * note, this has to work for d_size and s_size of zero,
 	 * since init() comes in that way.
@@ -226,18 +213,6 @@ again:
 	for (next = 0; next < 3; ++next)
 		if (madd[next])
 			madd[next]->m_size += sizes[next];
-	if (!retry++)
-		if (mp == swapmap) {
-			printf("short of swap\n");
-			xumount(NODEV);
-			goto again;
-		}
-		else if (mp == coremap) {
-			xuncore(sizes[2]);	/* smallest to largest; */
-			xuncore(sizes[1]);	/* free up minimum space */
-			xuncore(sizes[0]);
-			goto again;
-		}
 	return((memaddr)NULL);
 
 resolve:

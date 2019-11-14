@@ -11,7 +11,7 @@
 #include <sys/map.h>
 #include <sys/user.h>
 #include <sys/proc.h>
-#include <sys/inode.h>
+#include <sys/vnode.h>
 #include <sys/acct.h>
 #include <sys/file.h>
 #include <vm/vm.h>
@@ -191,14 +191,20 @@ again:
 			continue;
 		fp->f_count++;
 	}
+	VREF(u->u_cdir);
+	if (u->u_rdir) {
+		VREF(u->u_rdir);
+	}
+
+
 	/*if ((rip->p_textp != NULL) && !isvfork) {
 		rip->p_textp->x_count++;
 		rip->p_textp->x_ccount++;
-	}*/
+	}
 	u->u_cdir->i_count++;
 	if (u->u_rdir)
 		u->u_rdir->i_count++;
-
+	*/
 	/*
 	 * When the longjmp is executed for the new process,
 	 * here's where it will resume.
@@ -207,6 +213,12 @@ again:
 		sureg();
 		return(1);
 	}
+
+	/* bump references to the text vnode (for procfs) */
+	rpp->p_textvp = rip->p_textvp;
+	if(rpp->p_textvp)
+		VREF(rpp->p_textvp);
+	rpp->p_fd = fdcopy(rip);
 
 	rpp->p_dsize = rip->p_dsize;
 	rpp->p_ssize = rip->p_ssize;
@@ -280,8 +292,6 @@ again:
 		u->u_ssize = rip->p_ssize = rpp->p_ssize;
 		rip->p_saddr = rpp->p_saddr;
 		rpp->p_ssize = 0;
-		//rip->p_textp = rpp->p_textp;
-		//rpp->p_textp = NULL;
 		rpp->p_flag |= SVFDONE;
 		wakeup((caddr_t)rip);
 		rip->p_flag &= ~SVFPRNT;

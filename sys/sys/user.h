@@ -82,6 +82,7 @@ struct user {
 	gid_t	u_rgid;					/* real group id */
 	gid_t	u_groups[NGROUPS];		/* groups, 0 terminated */
 
+
 /* 1.2 - memory management */
 	size_t	u_tsize;				/* text size (clicks) */
 	size_t	u_dsize;				/* data size (clicks) */
@@ -122,10 +123,8 @@ struct user {
 	int		u_lastfile;				/* high-water mark of u_ofile */
 #define	UF_EXCLOSE 	0x1				/* auto-close on exec */
 #define	UF_MAPPED 	0x2				/* mapped from device */
-	//struct	inode *u_cdir;			/* current directory */
-	//struct	inode *u_rdir;			/* root directory of current process */
-	struct	vnode *u_vnode;			/* pointer to vnode */
-	struct  vattr *u_vattr;			/* pointer to vnode attributes */
+#define u_cdir u_nd->ni_cdir		/* current directory */
+#define u_rdir u_nd->ni_rdir		/* root directory of current process */
 	struct	tty *u_ttyp;			/* controlling tty pointer */
 	dev_t	u_ttyd;					/* controlling tty dev */
 	short	u_cmask;				/* mask for file creation */
@@ -134,7 +133,7 @@ struct user {
 	struct	k_rusage u_ru;			/* stats for this proc */
 	struct	k_rusage u_cru;			/* sum of stats for reaped children */
 	struct	k_itimerval u_timer[2];	/* profile/virtual timers */
-	long	u_start;
+	struct 	timeval  u_start;
 	char	u_acflag;
 	char	u_dupfd;				/* XXX - see kern_descrip.c/fdopen */
 
@@ -149,12 +148,17 @@ struct user {
 	struct	rlimit u_rlimit[RLIM_NLIMITS];
 	struct	quota *u_quota;			/* user's quota structure */
 
+#define u_cmpn u_nd.ni_cnd			/* namei componentname */
+#define u_cred u_cmpn.cn_cred		/* namei componentname credentials */
+
 /* namei & co. */
-	struct	nameicache {			/* last successful directory search */
-		off_t nc_prevoffset;		/* offset at which last entry found */
-		ino_t nc_inumber;			/* inum of cached directory */
-		dev_t nc_dev;				/* dev of cached directory */
-	} u_ncache;
+	struct 	nameidata *u_nd;
+
+	//struct	nameicache {			/* last successful directory search */
+	//	off_t nc_prevoffset;		/* offset at which last entry found */
+	//	ino_t nc_inumber;			/* inum of cached directory */
+	//	dev_t nc_dev;				/* dev of cached directory */
+	//} u_ncache;
 	short	u_xxxx[2];				/* spare */
 	char	u_login[MAXLOGNAME];	/* setlogin/getlogin */
 	short	u_stack[1];				/* kernel stack per user
@@ -163,8 +167,8 @@ struct user {
 					 	 	 	 	 */
 
 /* 1.7 Remaining fields only for core dump and/or ptrace-- not valid at other times! */
-	struct	kinfo_proc u_kproc;	/* proc + eproc */
-	struct	md_coredump u_md;	/* machine dependent glop */
+	struct	kinfo_proc 	u_kproc;	/* proc + eproc */
+	struct	md_coredump u_md;		/* machine dependent glop */
 };
 
 #ifdef KERNEL

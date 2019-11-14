@@ -91,7 +91,9 @@ struct	proc {
 
     u_char	p_pri;					    /* Process  priority, negative is high */
     u_char	p_cpu;					    /* cpu usage for scheduling */
+    u_char	p_time;						/* resident time for scheduling */
     char	p_nice;					    /* nice for cpu usage */
+    char	p_slptime;					/* secs sleeping */
     char	p_comm[MAXCOMLEN+1];
 
     struct  pgrp 	    *p_pgrp;        /* Pointer to process group. */
@@ -168,7 +170,6 @@ struct pcred {
 #define	P_SELECT	0x4000	/* selecting; wakeup/waiting danger */
 			/*		0x8000	/* unused */
 
-
 #define	P_PPWAIT	0x00010	/* Parent is waiting for child to exec/exit. */
 #define	P_PROFIL	0x00020	/* Has started profiling. */
 #define	P_SUGID		0x00100	/* Had set id privileges since last exec. */
@@ -194,8 +195,8 @@ extern int pidhashmask;					/* In param.c. */
 
 extern struct proc *pfind();
 extern struct proc proc[], *procNPROC;	/* the proc table itself */
-extern struct proc *freeproc;
 
+extern struct proc *freeproc;			/* List of free procs */
 extern struct proc *zombproc;			/* List of zombie procs. */
 extern volatile struct proc *allproc;	/* List of active procs. */
 extern struct proc proc0;				/* Process slot for swapper. */

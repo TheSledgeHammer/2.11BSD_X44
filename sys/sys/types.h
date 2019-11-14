@@ -52,7 +52,7 @@ typedef	long				daddr_t;	/* disk address */
 typedef	char *				caddr_t;	/* core address */
 typedef	unsigned long		ino_t;		/* inode number*/
 typedef	long				swblk_t;	/* swap offset */
-typedef	u_int				size_t;		/* pdp-11 size? */
+typedef	unsigned long		size_t;		/* pdp-11 size? */
 typedef	int	    			ssize_t;	/* pdp-11 size? */
 typedef	long				time_t;		/* time? */
 typedef	unsigned long		dev_t;		/* device number */

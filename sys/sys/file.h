@@ -26,11 +26,13 @@ struct	file {
 	short	f_count;		/* reference count */
 	short	f_msgcount;		/* references from message queue */
 	union {
-		caddr_t	f_Data;
+		caddr_t	*f_Data;
 		struct socket *f_Socket;
 	} f_un;
+
 	off_t	f_offset;
 	struct	ucred *f_cred;	/* credentials associated with descriptor */
+	struct fileops *f_ops;
 };
 
 struct fileops {
@@ -40,7 +42,7 @@ struct fileops {
 	int	(*fo_close)		__P((struct file *fp, struct proc *p));
 } *f_ops;
 
-#define f_data		f_un.f_Data
+#define f_data		f_un->f_Data
 #define f_socket	f_un.f_Socket
 
 extern struct file *filehead;	/* head of list of open files */
