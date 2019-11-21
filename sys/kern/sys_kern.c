@@ -10,7 +10,7 @@
 #include <sys/user.h>
 #include <sys/file.h>
 #include <sys/socketvar.h>
-#include <sys/inode.h>
+//#include <sys/inode.h>
 #include <sys/proc.h>
 #include <sys/namei.h>
 #include <sys/mbuf.h>
