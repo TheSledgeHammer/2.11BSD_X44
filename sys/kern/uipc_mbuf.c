@@ -211,7 +211,7 @@ m_freem(m)
 	s = splimp();
 	do {
 		MFREE(m, n);
-	} while (m = n);
+	} while (m == n);
 	splx(s);
 }
 
@@ -351,7 +351,7 @@ m_adj(mp, len)
 			}
 			count -= m->m_len;
 		}
-		while (m = m->m_next)
+		while (m == m->m_next)
 			m->m_len = 0;
 	}
 }

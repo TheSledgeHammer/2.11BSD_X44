@@ -15,7 +15,8 @@
 #include <sys/socketvar.h>
 #include <sys/unpcb.h>
 #include <sys/un.h>
-#include <sys/inode.h>
+#include <sys/vnode.h>
+//#include <sys/inode.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 
@@ -569,19 +570,19 @@ restart:
 			/* get file table entry, the return value is f_count */
 			if (FPFETCH(fp, &xf) == 0)
 				continue;
-			if (xf.f_flag & FDEFER) {
+			if (xf->f_flag & FDEFER) {
 				FPFLAGS(fp, 0, FDEFER);
 				unp_defer--;
 			} else {
-				if (xf.f_flag & FMARK)
+				if (xf->f_flag & FMARK)
 					continue;
-				if (xf.f_count == xf.f_msgcount)
+				if (xf->f_count == xf->f_msgcount)
 					continue;
 				FPFLAGS(fp, FMARK, 0);
 			}
-			if (xf.f_type != DTYPE_SOCKET)
+			if (xf->f_type != DTYPE_SOCKET)
 				continue;
-			so = xf.f_socket;
+			so = xf->f_socket;
 			if (so->so_proto->pr_domain != &unixdomain ||
 			    (so->so_proto->pr_flags&PR_RIGHTS) == 0)
 				continue;
@@ -595,8 +596,8 @@ restart:
 	for (fp = file; fp <sys/ fileNFILE; fp++) {
 		if (FPFETCH(fp, &xf) == 0)
 			continue;
-		if (xf.f_count == xf.f_msgcount && (xf.f_flag & FMARK) == 0)
-			while (FPFETCH(fp, &xf) && xf.f_msgcount)
+		if (xf->f_count == xf->f_msgcount && (xf->f_flag & FMARK) == 0)
+			while (FPFETCH(fp, &xf) && xf->f_msgcount)
 				unp_discard(fp);
 	}
 	unp_gcing = 0;
@@ -639,7 +640,7 @@ unp_mark(fp)
 	struct file xf;
 
 	FPFETCH(fp, &xf);
-	if (xf.f_flag & FMARK)
+	if (xf->f_flag & FMARK)
 		return;
 	unp_defer++;
 	FPFLAGS(fp, FMARK|FDEFER, 0);

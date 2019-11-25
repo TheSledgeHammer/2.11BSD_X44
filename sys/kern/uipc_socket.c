@@ -60,7 +60,7 @@ socreate(dom, aso, type, proto)
 	so->so_options = 0;
 	so->so_state = 0;
 	so->so_type = type;
-	if (u.u_uid == 0)
+	if (u->u_uid == 0)
 		so->so_state = SS_PRIV;
 	so->so_proto = prp;
 	error =
@@ -230,7 +230,7 @@ soconnect(so, nam)
 	 * This allows user to disconnect by connecting to, e.g.,
 	 * a null address.
 	 */
-	if (so->so_state & (SS_ISCONNECTED|SS_ISCONNECTING) &&
+	if ((so->so_state & (SS_ISCONNECTED|SS_ISCONNECTING)) &&
 	    ((so->so_proto->pr_flags & PR_CONNREQUIRED) ||
 	    (error = sodisconnect(so))))
 		error = EISCONN;
@@ -313,7 +313,7 @@ sosend(so, nam, uio, flags, rights)
 	dontroute =
 	    (flags & MSG_DONTROUTE) && (so->so_options & SO_DONTROUTE) == 0 &&
 	    (so->so_proto->pr_flags & PR_ATOMIC);
-	u.u_ru.ru_msgsnd++;
+	u->u_ru.ru_msgsnd++;
 	if (rights)
 		rlen = rights->m_len;
 #define	snderr(errno)	{ error = errno; splx(s); goto release; }
@@ -405,7 +405,7 @@ release:
 	if (top)
 		m_freem(top);
 	if (error == EPIPE)
-		NETPSIGNAL(u.u_procp, SIGPIPE);
+		NETPSIGNAL(u->u_procp, SIGPIPE);
 	return (error);
 }
 
@@ -486,7 +486,7 @@ restart:
 		splx(s);
 		goto restart;
 	}
-	u.u_ru.ru_msgrcv++;
+	u->u_ru.ru_msgrcv++;
 	m = so->so_rcv.sb_mb;
 	if (m == 0)
 		panic("receive 1");
@@ -586,7 +586,7 @@ restart:
 			so->so_rcv.sb_mb = nextrecord;
 		else if (pr->pr_flags & PR_ATOMIC)
 			(void) sbdroprecord(&so->so_rcv);
-		if (pr->pr_flags & PR_WANTRCVD && so->so_pcb)
+		if ((pr->pr_flags & PR_WANTRCVD) && so->so_pcb)
 			(*pr->pr_usrreq)(so, PRU_RCVD, (struct mbuf *)0,
 			    (struct mbuf *)0, (struct mbuf *)0);
 		if (error == 0 && rightsp && *rightsp &&
@@ -629,7 +629,7 @@ sorflush(so)
 	asb = *sb;
 	bzero((caddr_t)sb, sizeof (*sb));
 	splx(s);
-	if (pr->pr_flags & PR_RIGHTS && pr->pr_domain->dom_dispose)
+	if ((pr->pr_flags & PR_RIGHTS) && pr->pr_domain->dom_dispose)
 		(*pr->pr_domain->dom_dispose)(asb.sb_mb);
 	sbrelease(&asb);
 }
@@ -661,6 +661,7 @@ sosetopt(so, level, optname, m0)
 				goto bad;
 			}
 			so->so_linger = mtod(m, struct linger *)->l_linger;
+			break;
 			/* fall thru... */
 
 		case SO_DEBUG:
@@ -834,9 +835,9 @@ register struct	socket	*so;
 	{
 
 	if	((so->so_options & SO_ACCEPTCONN) == 0)
-		return(u.u_error = EINVAL);
+		return(u->u_error = EINVAL);
 	if	((so->so_state & SS_NBIO) && so->so_qlen == 0)
-		return(u.u_error = EWOULDBLOCK);
+		return(u->u_error = EWOULDBLOCK);
 	while	(so->so_qlen == 0 && so->so_error == 0)
 		{
 		if	(so->so_state & SS_CANTRCVMORE)
@@ -848,9 +849,9 @@ register struct	socket	*so;
 		}
 	if	(so->so_error)
 		{
-		u.u_error = so->so_error;
+		u->u_error = so->so_error;
 		so->so_error = 0;
-		return(u.u_error);
+		return(u->u_error);
 		}
 	return(0);
 	}
@@ -884,17 +885,17 @@ register struct	socket	*so;
 
 	while	((so->so_state & SS_ISCONNECTING) && so->so_error == 0)
 		SLEEP(&so->so_timeo, PZERO+1);
-	u.u_error = so->so_error;
+	u->u_error = so->so_error;
 	so->so_error = 0;
 	so->so_state &= ~SS_ISCONNECTING;
-	return(u.u_error);
+	return(u->u_error);
 	}
 
 sogetnam(so, m)
 	register struct	socket	*so;
 	struct	mbuf	*m;
 	{
-	return(u.u_error=(*so->so_proto->pr_usrreq)(so, PRU_SOCKADDR, 0, m, 0));
+	return(u->u_error=(*so->so_proto->pr_usrreq)(so, PRU_SOCKADDR, 0, m, 0));
 	}
 
 sogetpeer(so, m)
@@ -903,7 +904,7 @@ sogetpeer(so, m)
 	{
 
 	if	((so->so_state & SS_ISCONNECTED) == 0)
-		return(u.u_error = ENOTCONN);
-	return(u.u_error=(*so->so_proto->pr_usrreq)(so, PRU_PEERADDR, 0, m, 0));
+		return(u->u_error = ENOTCONN);
+	return(u->u_error=(*so->so_proto->pr_usrreq)(so, PRU_PEERADDR, 0, m, 0));
 	}
 #endif

@@ -74,6 +74,9 @@ struct tty {
 	struct	pgrp 	*t_pgrp;		/* Foreground process group. */
 	struct	session *t_session;		/* Enclosing session. */
 	struct	termios t_termios;		/* Termios state. */
+	int		t_hiwat;				/* High water mark. */
+	int		t_lowat;				/* Low water mark. */
+	int		t_gen;					/* Generation number. */
 
 /* be careful of tchars & co. */
 #define	t_erase		t_chars.tc_erase
@@ -111,7 +114,7 @@ struct tty {
 #define	TTMASK	15
 #define	OBUFSIZ	100
 
-#if defined(KERNEL)
+#ifdef KERNEL
 short	tthiwat[NSPEEDS], ttlowat[NSPEEDS];
 #define	TTHIWAT(tp)	tthiwat[(tp)->t_ospeed&TTMASK]
 #define	TTLOWAT(tp)	ttlowat[(tp)->t_ospeed&TTMASK]

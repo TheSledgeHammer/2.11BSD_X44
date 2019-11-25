@@ -19,7 +19,8 @@
 #include <sys/tablet.h>
 #include <sys/tty.h>
 #include <sys/proc.h>
-#include <sys/inode.h>
+#include <sys/vnode.h>
+//#include <sys/inode.h>
 #include <sys/file.h>
 #include <sys/buf.h>
 #include <sys/uio.h>
@@ -157,7 +158,7 @@ tbinput(c, tp)
 	/*
 	 * Locate sync bit/byte or reset input buffer.
 	 */
-	if (c&tc->tbc_sync || tp->t_inbuf == tc->tbc_recsize) {
+	if ((c&tc->tbc_sync) || tp->t_inbuf == tc->tbc_recsize) {
 		tp->t_cp = tbp->cbuf;
 		tp->t_inbuf = 0;
 	}
@@ -294,6 +295,7 @@ tbioctl(tp, cmd, data, flag)
 			return (EINVAL);
 		tbp->tbflags &= ~TBTYPE;
 		tbp->tbflags |= *(int *)data & TBTYPE;
+		break;
 		/* fall thru... to set mode bits */
 
 	case BIOSMODE: {

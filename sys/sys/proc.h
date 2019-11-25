@@ -65,6 +65,9 @@ struct	proc {
 	struct	proc 		*p_cptr;	 	/* Pointer to youngest living child. */
     pid_t	p_oppid;	                /* Save parent pid during ptrace. XXX */
 
+    u_int	p_estcpu;	 				/* Time averaged value of p_cpticks. */
+    fixpt_t	p_pctcpu;	 				/* %cpu for this process during p_swtime */
+
     caddr_t	            p_wchan;		/* event process is awaiting */
 	caddr_t	            p_wmesg;	 	/* Reason for sleep. */
     char	            p_slptime;		/* Time since last blocked. */

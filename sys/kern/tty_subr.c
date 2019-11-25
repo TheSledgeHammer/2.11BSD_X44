@@ -11,6 +11,8 @@
 #include <sys/clist.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
+#include <sys/systm.h>
+#include <sys/buf.h>
 
 char	cwaiting;
 

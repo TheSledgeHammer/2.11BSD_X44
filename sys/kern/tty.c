@@ -17,8 +17,14 @@
 #include <sys/uio.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
-#include <sys/inode.h>
+#include <sys/vnode.h>
+//#include <sys/inode.h>
 #include <sys/syslog.h>
+#include <sys/signalvar.h>
+#include <sys/resourcevar.h>
+#include <sys/map.h>
+
+#include <vm/vm.h>
 
 /*
  * These were moved here from tty.h so that they could be easily modified
@@ -99,7 +105,7 @@ struct	ttychars ttydefaults = {
 	CERASE,	CKILL,	CINTR,	CQUIT,	CSTART,	CSTOP,	CEOF,
 	CBRK,	CSUSP,	CDSUSP, CRPRNT, CFLUSH, CWERASE,CLNEXT
 };
-
+/* Macros to clear/set/test flags. */
 #define	SET(t,f)	(t) |= (f)
 #define	CLR(t,f)	(t) &= ~(f)
 #define	ISSET(t,f)	((t) & (f))
@@ -456,7 +462,7 @@ ttioctl(tp, com, data, flag)
 		tp->t_ospeed = sg->sg_ospeed;
 		newflags = (tp->t_flags&0xffff0000) | (sg->sg_flags&0xffffL);
 		s = spltty();
-		if (tp->t_flags&RAW || newflags&RAW || com == TIOCSETP) {
+		if ((tp->t_flags&RAW) || (newflags&RAW) || com == TIOCSETP) {
 			ttywait(tp);
 			ttyflush(tp, FREAD);
 		} else if ((tp->t_flags&CBREAK) != (newflags&CBREAK)) {
@@ -1697,3 +1703,219 @@ ttspeedtab(speed, table)
 			return (table->sp_code);
 	return (-1);
 }
+
+/*FreeBSD */
+#define	TTYDEFCHARS
+
+#undef	TTYDEFCHARS
+
+/*
+ * Copy in the default termios characters.
+ */
+void
+termioschars(t)
+	struct termios *t;
+{
+
+	bcopy(ttydefaults, t->c_cc, sizeof t->c_cc);
+}
+
+
+/*
+ * Set tty hi and low water marks.
+ *
+ * Try to arrange the dynamics so there's about one second
+ * from hi to low water.
+ *
+ */
+void
+ttsetwater(tp)
+	struct tty *tp;
+{
+	register int cps, x;
+
+	#define CLAMP(x, h, l)	((x) > h ? h : ((x) < l) ? l : (x))
+
+		cps = tp->t_ospeed / 10;
+		tp->t_lowat = x = CLAMP(cps / 2, TTMAXLOWAT, TTMINLOWAT);
+		x += cps;
+		x = CLAMP(x, TTMAXHIWAT, TTMINHIWAT);
+		tp->t_hiwat = roundup(x, CBSIZE);
+	#undef	CLAMP
+}
+
+/*
+ * Report on state of foreground process group.
+ */
+void
+ttyinfo(tp)
+	register struct tty *tp;
+{
+	register struct proc *p, *pick;
+		struct timeval utime, stime;
+		int tmp;
+
+		if (ttycheckoutq(tp,0) == 0)
+			return;
+
+		/* Print load average. */
+		tmp = (averunnable.ldavg[0] * 100 + FSCALE / 2) >> FSHIFT;
+		ttyprintf(tp, "load: %d.%02d ", tmp / 100, tmp % 100);
+
+		if (tp->t_session == NULL)
+			ttyprintf(tp, "not a controlling terminal\n");
+		else if (tp->t_pgrp == NULL)
+			ttyprintf(tp, "no foreground process group\n");
+		else if ((p = tp->t_pgrp->pg_mem) == NULL)
+			ttyprintf(tp, "empty foreground process group\n");
+		else {
+			/* Pick interesting process. */
+			for (pick = NULL; p != NULL; p = p->p_pgrpnxt)
+				if (proc_compare(pick, p))
+					pick = p;
+
+			ttyprintf(tp, " cmd: %s %d [%s] ", pick->p_comm, pick->p_pid,
+			    pick->p_stat == SRUN ? "running" :
+			    pick->p_wmesg ? pick->p_wmesg : "iowait");
+
+			calcru(pick, &utime, &stime, NULL);
+
+			/* Print user time. */
+			ttyprintf(tp, "%d.%02du ",
+			    utime.tv_sec, utime.tv_usec / 10000);
+
+			/* Print system time. */
+			ttyprintf(tp, "%d.%02ds ",
+			    stime.tv_sec, stime.tv_usec / 10000);
+
+	#define	pgtok(a)	(((a) * NBPG) / 1024)
+			/* Print percentage cpu, resident set size. */
+			tmp = (pick->p_pctcpu * 10000 + FSCALE / 2) >> FSHIFT;
+			ttyprintf(tp, "%d%% %dk\n",
+			    tmp / 100,
+			    pick->p_stat == SIDL || pick->p_stat == SZOMB ? 0 :
+	#ifdef pmap_resident_count
+				pgtok(pmap_resident_count(&pick->p_vmspace->vm_pmap))
+	#else
+				pgtok(pick->p_vmspace->vm_rssize)
+	#endif
+				);
+		}
+		tp->t_rocount = 0;	/* so pending input will be retyped if BS */
+}
+
+
+/*
+ * Output char to tty; console putchar style.
+ */
+int
+tputchar(c, tp)
+	int c;
+	struct tty *tp;
+{
+	register int s;
+
+	s = spltty();
+	if (!ISSET(tp->t_state, TS_CONNECTED)) {
+		splx(s);
+		return (-1);
+	}
+	if (c == '\n')
+		(void)ttyoutput('\r', tp);
+	(void)ttyoutput(c, tp);
+	ttstart(tp);
+	splx(s);
+	return (0);
+}
+
+
+int
+ttysleep(tp, chan, pri, wmesg, timo)
+	struct tty *tp;
+	void *chan;
+	int pri, timo;
+	char *wmesg;
+{
+	int error;
+	int gen;
+
+	gen = tp->t_gen;
+	error = tsleep(chan, pri, wmesg, timo);
+	if (error)
+		return (error);
+	return (tp->t_gen == gen ? 0 : ERESTART);
+}
+
+
+/*
+ * Returns 1 if p2 is "better" than p1
+ *
+ * The algorithm for picking the "interesting" process is thus:
+ *
+ *	1) Only foreground processes are eligible - implied.
+ *	2) Runnable processes are favored over anything else.  The runner
+ *	   with the highest cpu utilization is picked (p_estcpu).  Ties are
+ *	   broken by picking the highest pid.
+ *	3) The sleeper with the shortest sleep time is next.  With ties,
+ *	   we pick out just "short-term" sleepers (P_SINTR == 0).
+ *	4) Further ties are broken by picking the highest pid.
+ */
+#define ISRUN(p)	(((p)->p_stat == SRUN) || ((p)->p_stat == SIDL))
+#define TESTAB(a, b)    ((a)<<1 | (b))
+#define ONLYA   2
+#define ONLYB   1
+#define BOTH    3
+
+static int
+proc_compare(p1, p2)
+	register struct proc *p1, *p2;
+{
+
+	if (p1 == NULL)
+		return (1);
+	/*
+	 * see if at least one of them is runnable
+	 */
+	switch (TESTAB(ISRUN(p1), ISRUN(p2))) {
+	case ONLYA:
+		return (0);
+	case ONLYB:
+		return (1);
+	case BOTH:
+		/*
+		 * tie - favor one with highest recent cpu utilization
+		 */
+		if (p2->p_estcpu > p1->p_estcpu)
+			return (1);
+		if (p1->p_estcpu > p2->p_estcpu)
+			return (0);
+		return (p2->p_pid > p1->p_pid);	/* tie - return highest pid */
+	}
+	/*
+ 	 * weed out zombies
+	 */
+	switch (TESTAB(p1->p_stat == SZOMB, p2->p_stat == SZOMB)) {
+	case ONLYA:
+		return (1);
+	case ONLYB:
+		return (0);
+	case BOTH:
+		return (p2->p_pid > p1->p_pid); /* tie - return highest pid */
+	}
+	/*
+	 * pick the one with the smallest sleep time
+	 */
+	if (p2->p_slptime > p1->p_slptime)
+		return (0);
+	if (p1->p_slptime > p2->p_slptime)
+		return (1);
+	/*
+	 * favor one sleeping in a non-interruptible sleep
+	 */
+	if ((p1->p_flag & P_SINTR) && (p2->p_flag & P_SINTR) == 0)
+		return (1);
+	if ((p2->p_flag & P_SINTR) && (p1->p_flag & P_SINTR) == 0)
+		return (0);
+	return (p2->p_pid > p1->p_pid);		/* tie - return highest pid */
+}
+

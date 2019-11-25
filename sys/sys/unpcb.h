@@ -40,7 +40,7 @@
 struct	unpcb {
 	struct	socket *unp_socket;	/* pointer back to socket */
 	struct	inode *unp_inode;	/* if associated with file */
-		ino_t	unp_ino;		/* fake inode number */
+	ino_t	unp_ino;			/* fake inode number */
 	struct	unpcb *unp_conn;	/* control block of connected socket */
 	struct	unpcb *unp_refs;	/* referencing socket linked list */
 	struct 	unpcb *unp_nextref;	/* link in unp_refs list */

@@ -23,7 +23,9 @@
 #include <sys/proc.h>
 #include <sys/uio.h>
 #include <sys/kernel.h>
-#include <sys/inode.h>
+#include <sys/vnode.h>
+
+//#include <sys/inode.h>
 
 extern	int	TTYHOG;		/* see tty.c */
 
@@ -73,7 +75,7 @@ ptsopen(dev, flag)
 		ttychars(tp);		/* Set up default chars */
 		tp->t_ispeed = tp->t_ospeed = EXTB;
 		tp->t_flags = 0;	/* No features (nor raw mode) */
-	} else if (tp->t_state&TS_XCLUDE && u.u_uid != 0)
+	} else if ((tp->t_state&TS_XCLUDE) && u->u_uid != 0)
 		return (EBUSY);
 	if (tp->t_oproc)			/* Ctrlr still around. */
 		tp->t_state |= TS_CARR_ON;
@@ -92,11 +94,13 @@ ptsclose(dev, flag)
 	int flag;
 {
 	register struct tty *tp;
+	int err;
 
 	tp = &pt_tty[minor(dev)];
-	(*linesw[tp->t_line].l_close)(tp, flag);
+	err = (*linesw[tp->t_line].l_close)(tp, flag);
 	ttyclose(tp);
 	ptcwakeup(tp, FREAD|FWRITE);
+	return (err);
 }
 int
 ptsread(dev, uio, flag)
@@ -110,12 +114,12 @@ ptsread(dev, uio, flag)
 
 again:
 	if (pti->pt_flags & PF_REMOTE) {
-		while (tp == u.u_ttyp && u.u_procp->p_pgrp != tp->t_pgrp) {
-			if ((u.u_procp->p_sigignore & sigmask(SIGTTIN)) ||
-			    (u.u_procp->p_sigmask & sigmask(SIGTTIN)) ||
-			    u.u_procp->p_flag&SVFORK)
+		while (tp == u->u_ttyp && u->u_procp->p_pgrp != tp->t_pgrp) {
+			if ((u->u_procp->p_sigignore & sigmask(SIGTTIN)) ||
+			    (u->u_procp->p_sigmask & sigmask(SIGTTIN)) ||
+			    (u->u_procp->p_flag&SVFORK))
 				return (EIO);
-			gsignal(u.u_procp->p_pgrp, SIGTTIN);
+			gsignal(u->u_procp->p_pgrp, SIGTTIN);
 			sleep((caddr_t)&lbolt, TTIPRI);
 		}
 		if (tp->t_canq.c_cc == 0) {
@@ -236,6 +240,7 @@ ptcclose(dev, flag)
 	(void)(*linesw[tp->t_line].l_modem)(tp, 0);
 	tp->t_state &= ~TS_CARR_ON;
 	tp->t_oproc = 0;		/* mark closed */
+	return (0);
 }
 
 int
@@ -257,14 +262,14 @@ ptcread(dev, uio, flag)
 	 */
 	for (;;) {
 		if (tp->t_state&TS_ISOPEN) {
-			if (pti->pt_flags&PF_PKT && pti->pt_send) {
+			if ((pti->pt_flags&PF_PKT) && pti->pt_send) {
 				error = ureadc((int)pti->pt_send, uio);
 				if (error)
 					return (error);
 				pti->pt_send = 0;
 				return (0);
 			}
-			if (pti->pt_flags&PF_UCNTL && pti->pt_ucntl) {
+			if ((pti->pt_flags&PF_UCNTL) && pti->pt_ucntl) {
 				error = ureadc((int)pti->pt_ucntl, uio);
 				if (error)
 					return (error);
@@ -351,17 +356,18 @@ ptcselect(dev, rw)
 			return (1);
 		}
 		splx(s);
+		break;
 		/* FALLTHROUGH */
 
 	case 0:					/* exceptional */
 		if ((tp->t_state&TS_ISOPEN) &&
-		    (pti->pt_flags&PF_PKT && pti->pt_send ||
-		     pti->pt_flags&PF_UCNTL && pti->pt_ucntl))
+		    (((pti->pt_flags&PF_PKT) && pti->pt_send) ||
+		     ((pti->pt_flags&PF_UCNTL) && pti->pt_ucntl)))
 			return (1);
 		if ((p = pti->pt_selr) && p->p_wchan == (caddr_t)&selwait)
 			pti->pt_flags |= PF_RCOLL;
 		else
-			pti->pt_selr = u.u_procp;
+			pti->pt_selr = u->u_procp;
 		break;
 
 
@@ -381,7 +387,7 @@ ptcselect(dev, rw)
 		if ((p = pti->pt_selw) && p->p_wchan == (caddr_t)&selwait)
 			pti->pt_flags |= PF_WCOLL;
 		else
-			pti->pt_selw = u.u_procp;
+			pti->pt_selw = u->u_procp;
 		break;
 
 	}
@@ -443,7 +449,7 @@ again:
 		while (cc > 0) {
 			if ((tp->t_rawq.c_cc + tp->t_canq.c_cc) >= TTYHOG - 2 &&
 			   (tp->t_canq.c_cc > 0 ||
-			      tp->t_flags & (RAW|CBREAK))) {
+			      (tp->t_flags & (RAW|CBREAK)))) {
 				wakeup((caddr_t)&tp->t_rawq);
 				goto block;
 			}
@@ -550,7 +556,7 @@ ptyioctl(dev, cmd, data, flag)
 	}
 #endif
 	if (error < 0) {
-		if (pti->pt_flags & PF_UCNTL &&
+		if ((pti->pt_flags & PF_UCNTL) &&
 		    (cmd & ~0xff) == UIOCCMD(0)) {
 			if (cmd & 0xff) {
 				pti->pt_ucntl = (u_char)cmd;
