@@ -19,9 +19,9 @@ Kernel: List of Complete C Files: (Ready for complilation)
 - sys_generic.c
 - sys_process.c (May need additional content)
 - sys_socket.c
-- tty.c (Not Defined: TS_CONNECTED, ERESTART, TTMINLOWAT, TTMAXLOWAT, TTMAXHIWAT, TTMINHIWAT)
+- tty.c (Not Defined:TTMINLOWAT, TTMAXLOWAT, TTMAXHIWAT, TTMINHIWAT)
 - tty_tb.c
-- tty_subr.c (Not Defined: cfreelist, cfreecount, cc)
+- tty_subr.c (Not Defined: cc)
 - tty_tty.c (4.3BSD Reno & FreeBSD use of vnodes: Current does not)
 - uipc_domain.c
 - uipc_mbuf.c

@@ -117,7 +117,9 @@ struct tty {
 #ifdef KERNEL
 short	tthiwat[NSPEEDS], ttlowat[NSPEEDS];
 #define	TTHIWAT(tp)	tthiwat[(tp)->t_ospeed&TTMASK]
-#define	TTLOWAT(tp)	ttlowat[(tp)->t_ospeed&TTMASK]
+#define	TTMLOWAT(tp)	ttlowat[(tp)->t_ospeed&TTMASK]
+#define TTMAXLOWAT 256
+#define TTMINLOWAT 32
 extern	struct ttychars ttydefaults;
 #endif
 

@@ -10,19 +10,12 @@
  * Raw structures for the character list routines.
  */
 struct cblock {
-	struct cblock   *c_next;
-	char			c_info[CBSIZE];
+	struct cblock   *c_next;			/* next cblock in queue */
+	char 			c_quote[CBQSIZE];	/* quoted characters */
+	char			c_info[CBSIZE];		/* characters */
 };
-#if defined(KERNEL) && !defined(SUPERVISOR)
-#ifdef UCB_CLIST
-extern struct cblock *cfree;
-extern memaddr clststrt;
-extern u_int clstdesc;		/* PDR for clist segment when mapped */
-							/* virt. addr. of clists (0120000 - 0140000) */
-#else
-extern struct cblock cfree[];
-#endif
-int	nclist;
-struct	cblock *cfreelist;
-int	cfreecount;
+
+#ifdef KERNEL
+extern struct cblock *cfree, *cfreelist;
+extern int cfreecount, nclist;
 #endif

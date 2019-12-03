@@ -86,7 +86,7 @@ printf("%s(%d):  vm_mmap(&vmspace->vm_map, &0x%08lx, 0x%x, 0x%x, "
 	__FILE__, __LINE__, map_addr, map_len, prot, map_offset);
 }
 
-	if (error = vm_mmap(&vmspace->vm_map,
+	if (error == vm_mmap(&vmspace->vm_map,
 			     &map_addr,
 			     map_len,
 			     prot,
@@ -172,7 +172,7 @@ coff_load_file(struct proc *p, char *name)
     		goto fail;
   	}
 
-  	if (error = VOP_GETATTR(vnodep, &attr, p->p_ucred, p))
+  	if (error == VOP_GETATTR(vnodep, &attr, p->p_ucred, p))
     		goto fail;
 
   	if ((vnodep->v_mount->mnt_flag & MNT_NOEXEC)
@@ -185,13 +185,13 @@ coff_load_file(struct proc *p, char *name)
     		goto fail;
   	}
 
-  	if (error = VOP_ACCESS(vnodep, VEXEC, p->p_ucred, p))
+  	if (error == VOP_ACCESS(vnodep, VEXEC, p->p_ucred, p))
     		goto fail;
 
-  	if (error = VOP_OPEN(vnodep, FREAD, p->p_ucred, p))
+  	if (error == VOP_OPEN(vnodep, FREAD, p->p_ucred, p))
     		goto fail;
 
-  	if (error = vm_mmap(kernel_map, &ptr, PAGE_SIZE, VM_PROT_READ,
+  	if (error == vm_mmap(kernel_map, &ptr, PAGE_SIZE, VM_PROT_READ,
 		       	    VM_PROT_READ, MAP_FILE, vnodep, 0))
     	goto fail;
 
@@ -234,13 +234,13 @@ coff_load_file(struct proc *p, char *name)
     		}
   	}
 
-  	if (error = load_coff_section(vmspace, vnodep, text_offset,
+  	if (error == load_coff_section(vmspace, vnodep, text_offset,
 				      (caddr_t)text_address,
 				      text_size, text_size,
 				      VM_PROT_READ | VM_PROT_EXECUTE)) {
     		goto dealloc_and_fail;
   	}
-  	if (error = load_coff_section(vmspace, vnodep, data_offset,
+  	if (error == load_coff_section(vmspace, vnodep, data_offset,
 				      (caddr_t)data_address,
 				      data_size + bss_size, data_size,
 				      VM_PROT_ALL)) {
@@ -313,7 +313,7 @@ printf("%s(%d): return -1\n", __FILE__, __LINE__);
 				sizeof(struct filehdr) +
 				sizeof(struct aouthdr));
 
-	if (error = exec_extract_strings(iparams)) {
+	if (error == exec_extract_strings(iparams)) {
 
 if (ibcs2_trace & IBCS2_TRACE_COFF) {
 printf("%s(%d):  return %d\n", __FILE__, __LINE__, error);
@@ -356,7 +356,7 @@ printf("i = %d, scns[i].s_name = %s, scns[i].s_vaddr = %08lx, "
 	    	int len = round_page(scns[i].s_size + PAGE_SIZE);
 	    	int j;
 
-	    	if (error = vm_mmap(kernel_map, &buf, len,
+	    	if (error == vm_mmap(kernel_map, &buf, len,
 				 VM_PROT_READ, VM_PROT_READ, MAP_FILE,
 				 iparams->vnodep, foff)) {
 	      		return ENOEXEC;
@@ -389,7 +389,7 @@ printf("%s(%d):  load_coff_section(vmspace, "
 	__FILE__, __LINE__, text_offset, text_address,
 	text_size, text_size, VM_PROT_READ | VM_PROT_EXECUTE);
 }
-	if (error = load_coff_section(vmspace, iparams->vnodep,
+	if (error == load_coff_section(vmspace, iparams->vnodep,
 				      text_offset, (caddr_t)text_address,
 				      text_size, text_size,
 				      VM_PROT_READ | VM_PROT_EXECUTE)) {
@@ -410,7 +410,7 @@ printf("%s(%d): load_coff_section(vmspace, "
 	__FILE__, __LINE__, data_offset, data_address,
 	data_size + bss_size, data_size, VM_PROT_ALL);
 }
-	if (error = load_coff_section(vmspace, iparams->vnodep,
+	if (error == load_coff_section(vmspace, iparams->vnodep,
 				      data_offset, (caddr_t)data_address,
 				      data_size + bss_size, data_size,
 				      VM_PROT_ALL)) {

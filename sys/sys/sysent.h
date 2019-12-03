@@ -34,7 +34,7 @@
  */
 
 #ifndef _SYS_SYSENT_H_
-#define _SYS_SYSENT_H_ 1
+#define _SYS_SYSENT_H_
 
 struct sysent {			/* system call table */
 	int	sy_narg;		/* number of arguments */

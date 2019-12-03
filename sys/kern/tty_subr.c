@@ -7,12 +7,12 @@
  */
 
 #include <sys/param.h>
-//#include <machine/seg.h>
 #include <sys/clist.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
 #include <sys/systm.h>
 #include <sys/buf.h>
+#include <sys/map.h>
 
 char	cwaiting;
 

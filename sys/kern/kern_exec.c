@@ -14,13 +14,13 @@
 #include <sys/buf.h>
 #include <sys/inode.h>
 #include <sys/exec.h>
-#include <sys/imgact.h>
 #include <sys/acct.h>
 #include <sys/namei.h>
 #include <sys/fs.h>
 #include <sys/mount.h>
 #include <sys/file.h>
 #include <sys/signalvar.h>
+#include "../test/imgact/sys/imgact.h"
 extern	char	sigprop[];	/* XXX */
 
 /*

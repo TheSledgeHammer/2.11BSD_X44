@@ -9,8 +9,10 @@
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/ioctl.h>
-#include <sys/tty.h>
 #include <sys/proc.h>
+#define	TTYDEFCHARS
+#include <sys/tty.h>
+#undef	TTYDEFCHARS
 #include <sys/file.h>
 #include <sys/conf.h>
 #include <sys/dk.h>
@@ -18,7 +20,6 @@
 #include <sys/kernel.h>
 #include <sys/systm.h>
 #include <sys/vnode.h>
-//#include <sys/inode.h>
 #include <sys/syslog.h>
 #include <sys/signalvar.h>
 #include <sys/resourcevar.h>
@@ -42,75 +43,96 @@
  * clist handling.
 */
 
-	int	TTYHOG = 255;
-	int	TTYBLOCK=128;
-	int	TTYUNBLOCK=64;
+int	TTYHOG = 255;
+int	TTYBLOCK = 128;
+int	TTYUNBLOCK = 64;
 
-/*
- * Table giving parity for characters and indicating
- * character classes to tty driver.  In particular,
- * if the low 6 bits are 0, then the character needs
- * no special processing on output.
- */
 
-char partab[] = {
-	0001,0201,0201,0001,0201,0001,0001,0201,
-	0202,0004,0003,0201,0005,0206,0201,0001,
-	0201,0001,0001,0201,0001,0201,0201,0001,
-	0001,0201,0201,0001,0201,0001,0001,0201,
-	0200,0000,0000,0200,0000,0200,0200,0000,
-	0000,0200,0200,0000,0200,0000,0000,0200,
-	0000,0200,0200,0000,0200,0000,0000,0200,
-	0200,0000,0000,0200,0000,0200,0200,0000,
-	0200,0000,0000,0200,0000,0200,0200,0000,
-	0000,0200,0200,0000,0200,0000,0000,0200,
-	0000,0200,0200,0000,0200,0000,0000,0200,
-	0200,0000,0000,0200,0000,0200,0200,0000,
-	0000,0200,0200,0000,0200,0000,0000,0200,
-	0200,0000,0000,0200,0000,0200,0200,0000,
-	0200,0000,0000,0200,0000,0200,0200,0000,
-	0000,0200,0200,0000,0200,0000,0000,0201,
+#define	E		0x00	/* Even parity. */
+#define	O		0x80	/* Odd parity. */
+#define	PARITY(c)		(char_type[c] & O)
 
+#define	ALPHA	0x40	/* Alpha or underscore. */
+#define	ISALPHA(c)		(char_type[(c) & TTY_CHARMASK] & ALPHA)
+
+#define	CCLASSMASK		0x3f
+#define	CCLASS(c)		(char_type[c] & CCLASSMASK)
+
+#define	BS	BACKSPACE
+#define	CC	CONTROL
+#define	CR	RETURN
+#define	NA	ORDINARY | ALPHA
+#define	NL	NEWLINE
+#define	NO	ORDINARY
+#define	TB	TAB
+#define	VT	VTAB
+
+char const char_type[] = {
+	E|CC, O|CC, O|CC, E|CC, O|CC, E|CC, E|CC, O|CC,	/* nul - bel */
+	O|BS, E|TB, E|NL, O|CC, E|VT, O|CR, O|CC, E|CC, /* bs - si */
+	O|CC, E|CC, E|CC, O|CC, E|CC, O|CC, O|CC, E|CC, /* dle - etb */
+	E|CC, O|CC, O|CC, E|CC, O|CC, E|CC, E|CC, O|CC, /* can - us */
+	O|NO, E|NO, E|NO, O|NO, E|NO, O|NO, O|NO, E|NO, /* sp - ' */
+	E|NO, O|NO, O|NO, E|NO, O|NO, E|NO, E|NO, O|NO, /* ( - / */
+	E|NA, O|NA, O|NA, E|NA, O|NA, E|NA, E|NA, O|NA, /* 0 - 7 */
+	O|NA, E|NA, E|NO, O|NO, E|NO, O|NO, O|NO, E|NO, /* 8 - ? */
+	O|NO, E|NA, E|NA, O|NA, E|NA, O|NA, O|NA, E|NA, /* @ - G */
+	E|NA, O|NA, O|NA, E|NA, O|NA, E|NA, E|NA, O|NA, /* H - O */
+	E|NA, O|NA, O|NA, E|NA, O|NA, E|NA, E|NA, O|NA, /* P - W */
+	O|NA, E|NA, E|NA, O|NO, E|NO, O|NO, O|NO, O|NA, /* X - _ */
+	E|NO, O|NA, O|NA, E|NA, O|NA, E|NA, E|NA, O|NA, /* ` - g */
+	O|NA, E|NA, E|NA, O|NA, E|NA, O|NA, O|NA, E|NA, /* h - o */
+	O|NA, E|NA, E|NA, O|NA, E|NA, O|NA, O|NA, E|NA, /* p - w */
+	E|NA, O|NA, O|NA, E|NO, O|NO, E|NO, E|NO, O|CC, /* x - del */
 	/*
-	 * 7 bit ascii ends with the last character above,
-	 * but we contine through all 256 codes for the sake
-	 * of the tty output routines which use special vax
-	 * instructions which need a 256 character trt table.
+	 * Meta chars; should be settable per character set;
+	 * for now, treat them all as normal characters.
 	 */
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+};
+#undef	BS
+#undef	CC
+#undef	CR
+#undef	NA
+#undef	NL
+#undef	NO
+#undef	TB
+#undef	VT
 
-	0007,0007,0007,0007,0007,0007,0007,0007,
-	0007,0007,0007,0007,0007,0007,0007,0007,
-	0007,0007,0007,0007,0007,0007,0007,0007,
-	0007,0007,0007,0007,0007,0007,0007,0007,
-	0007,0007,0007,0007,0007,0007,0007,0007,
-	0007,0007,0007,0007,0007,0007,0007,0007,
-	0007,0007,0007,0007,0007,0007,0007,0007,
-	0007,0007,0007,0007,0007,0007,0007,0007,
-	0007,0007,0007,0007,0007,0007,0007,0007,
-	0007,0007,0007,0007,0007,0007,0007,0007,
-	0007,0007,0007,0007,0007,0007,0007,0007,
-	0007,0007,0007,0007,0007,0007,0007,0007,
-	0007,0007,0007,0007,0007,0007,0007,0007,
-	0007,0007,0007,0007,0007,0007,0007,0007,
-	0007,0007,0007,0007,0007,0007,0007,0007,
-	0007,0007,0007,0007,0007,0007,0007,0007
+short tthiwat[16] = {
+		100, 100, 100, 100, 100, 100, 100, 200, 200, 400, 400, 400, 650, 650, 1300, 2000
 };
 
-short	tthiwat[16] =
-   { 100,100,100,100,100,100,100,200,200,400,400,400,650,650,1300,2000 };
-short	ttlowat[16] =
-   {  30, 30, 30, 30, 30, 30, 30, 50, 50,120,120,120,125,125,125,125 };
+short ttlowat[16] = {
+		30, 30, 30, 30, 30, 30, 30, 50, 50, 120, 120, 120, 125, 125, 125, 125
+};
 
 struct	ttychars ttydefaults = {
 	CERASE,	CKILL,	CINTR,	CQUIT,	CSTART,	CSTOP,	CEOF,
 	CBRK,	CSUSP,	CDSUSP, CRPRNT, CFLUSH, CWERASE,CLNEXT
 };
+
 /* Macros to clear/set/test flags. */
 #define	SET(t,f)	(t) |= (f)
 #define	CLR(t,f)	(t) &= ~(f)
 #define	ISSET(t,f)	((t) & (f))
 
-extern	char	*nextc();
+extern	char *nextc();
 extern	int	nldisp;
 extern	int	wakeup();
 
@@ -1121,7 +1143,7 @@ ttyoutput(c, tp)
 		return (c);
 
 	col = tp->t_col;
-	switch (partab[c]&077) {
+	switch (CCLASS(c)) {
 
 	case ORDINARY:
 		col++;
@@ -1410,8 +1432,7 @@ loop:
 			if (tp->t_flags & (RAW|LITOUT))
 				ce = cc;
 			else {
-				ce = cc - scanc((unsigned)cc, (caddr_t)cp,
-				   (caddr_t)partab, 077);
+				ce = cc - scanc((unsigned)cc, (caddr_t)cp, (caddr_t *)char_type, CCLASSMASK);
 				/*
 				 * If ce is zero, then we're processing
 				 * a special character through ttyoutput.
@@ -1515,51 +1536,49 @@ ttyrub(c, tp)
  * Out of the ENTIRE tty subsystem would believe this is the ONLY place
  * that the "9th" bit (quoted chars) is tested?
 */
-		if (c == ('\t'|0200) || c == ('\n'|0200))
+		if (c == ('\t' | TTY_QUOTE) || c == ('\n' | TTY_QUOTE))
 			ttyrubo(tp, 2);
-		else switch (partab[c&=0177]&0177) {
-
-		case ORDINARY:
-			ttyrubo(tp, 1);
-			break;
-
-		case VTAB:
-		case BACKSPACE:
-		case CONTROL:
-		case RETURN:
-			if (tp->t_flags&CTLECH)
-				ttyrubo(tp, 2);
-			break;
-
-		case TAB:
-			if (tp->t_rocount < tp->t_rawq.c_cc) {
-				ttyretype(tp);
-				return;
+		else {
+			CLR(c, ~TTY_CHARMASK);
+			switch (CCLASS(c)) {
+			case ORDINARY:
+				ttyrubo(tp, 1);
+				break;
+			case BACKSPACE:
+			case CONTROL:
+			case NEWLINE:
+			case RETURN:
+			case VTAB:
+				if (tp->t_flags&CTLECH)
+					ttyrubo(tp, 2);
+				break;
+			case TAB:
+				if (tp->t_rocount < tp->t_rawq.c_cc) {
+					ttyretype(tp);
+					return;
+				}
+				s = spltty();
+				savecol = tp->t_col;
+				tp->t_state |= TS_CNTTB;
+				tp->t_flags |= FLUSHO;
+				tp->t_col = tp->t_rocol;
+				cp = tp->t_rawq.c_cf;
+				for (; cp; cp = nextc(&tp->t_rawq, cp))
+					ttyecho(*cp, tp);
+				tp->t_flags &= ~FLUSHO;
+				tp->t_state &= ~TS_CNTTB;
+				splx(s);
+				/* savecol will now be length of the tab */
+				savecol -= tp->t_col;
+				tp->t_col += savecol;
+				if (savecol > 8)
+					savecol = 8;		/* overflow screw */
+				while (--savecol >= 0)
+					(void) ttyoutput('\b', tp);
+				break;
+			default:
+				panic("ttyrub");
 			}
-			s = spltty();
-			savecol = tp->t_col;
-			tp->t_state |= TS_CNTTB;
-			tp->t_flags |= FLUSHO;
-			tp->t_col = tp->t_rocol;
-			cp = tp->t_rawq.c_cf;
-			for (; cp; cp = nextc(&tp->t_rawq, cp))
-				ttyecho(*cp, tp);
-			tp->t_flags &= ~FLUSHO;
-			tp->t_state &= ~TS_CNTTB;
-			splx(s);
-			/*
-			 * savecol will now be length of the tab
-			 */
-			savecol -= tp->t_col;
-			tp->t_col += savecol;
-			if (savecol > 8)
-				savecol = 8;		/* overflow screw */
-			while (--savecol >= 0)
-				(void) ttyoutput('\b', tp);
-			break;
-
-		default:
-			panic("ttyrub");
 		}
 	} else if (tp->t_flags&PRTERA) {
 		if ((tp->t_state&TS_ERASE) == 0) {
@@ -1704,23 +1723,6 @@ ttspeedtab(speed, table)
 	return (-1);
 }
 
-/*FreeBSD */
-#define	TTYDEFCHARS
-
-#undef	TTYDEFCHARS
-
-/*
- * Copy in the default termios characters.
- */
-void
-termioschars(t)
-	struct termios *t;
-{
-
-	bcopy(ttydefaults, t->c_cc, sizeof t->c_cc);
-}
-
-
 /*
  * Set tty hi and low water marks.
  *
@@ -1816,7 +1818,7 @@ tputchar(c, tp)
 	register int s;
 
 	s = spltty();
-	if (!ISSET(tp->t_state, TS_CONNECTED)) {
+	if (!ISSET(tp->t_state, TS_CARR_ON | TS_ISOPEN) != (TS_CARR_ON | TS_ISOPEN)) {
 		splx(s);
 		return (-1);
 	}

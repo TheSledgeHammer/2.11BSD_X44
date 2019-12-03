@@ -19,3 +19,17 @@ VM: (Lowest Priority ATM: Kernel & TTY First)
 
 FreeBSD 3.0:
 - BTX Bootloader
+
+
+Executables:
+Combining: 
+- NetBSD's API (exec: aout, ecoff & elf)
+- FreeBSD's API (imgact: aout & elf)
+
+- FreeBSD provides better integration in kernel & vmspace (my opinion)
+- NetBSD provides better api support such as coff, ecoff, mach-o & xcoff (Depends on IBM's licencing of it's API??) 
+- Exchange the use of NetBSD's VMCMD with FreeBSD's vmspace and limits
+- Removes need for exec_script.h
+- Only Exception: NetBSD's exec_elf32.c & exec_elf64.c.  
+
+__LDPGSZ = machine/exec.h

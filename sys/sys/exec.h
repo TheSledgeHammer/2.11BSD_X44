@@ -36,8 +36,8 @@
  * SUCH DAMAGE.
  *
  *	@(#)exec.h	8.3 (Berkeley) 1/21/94
- * $Id: exec.h,v 1.8 1994/10/02 17:24:41 phk Exp $
- * 	@(#)exec.h	1.2 (2.11BSD GTE) 10/31/93: aout contents from this file were moved to imgact_aout.h
+ * 	$Id: exec.h,v 1.8 1994/10/02 17:24:41 phk Exp $
+ * 	@(#)exec.h	1.2 (2.11BSD GTE) 10/31/93: a_out contents from this file were moved to imgact_aout.h
  */
 #ifndef _EXEC_
 #define _EXEC_
@@ -91,14 +91,13 @@ struct execa {
 
 struct execsw {
 	int (*ex_imgact)(void * /* struct image_params * */);
+	int (*ex_exec_linker)(void * /* struct exec_linker* */);
 	const char *ex_name;
 };
 
 #ifdef KERNEL
 extern const struct execsw **execsw;
-
 #endif
 
 #include <machine/exec.h>
-
 #endif

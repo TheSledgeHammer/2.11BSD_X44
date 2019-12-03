@@ -41,8 +41,8 @@
  *	@(#)exec.h	1.2 (2.11BSD GTE) 10/31/93: originally from exec.h
  */
 
-#ifndef	_IMGACT_AOUT_H_
-#define	_IMGACT_AOUT_H_
+#ifndef _SYS_EXEC_AOUT_H_
+#define _SYS_EXEC_AOUT_H_
 
 #define N_GETMAGIC(ex) \
 	( (ex).a_midmag & 0xffff )
@@ -113,7 +113,7 @@
  * only manipulate the a_midmag field via the
  * N_SETMAGIC/N_GET{MAGIC,MID,FLAG} macros in a.out.h
  */
-struct	exec {
+struct exec {
 		 unsigned long	a_midmag;   /* htonl(flags<<26 | mid<<16 | magic) */
 		 unsigned long	a_text;		/* size of text segment */
 		 unsigned long	a_data;		/* size of initialized data */
@@ -151,4 +151,12 @@ struct	exec {
 #define EX_DYNAMIC	0x20	/* contains run-time link-edit info */
 #define EX_DPMASK	0x30	/* mask for the above */
 
-#endif /* _IMGACT_AOUT_H_ */
+#ifdef KERNEL
+/* the "a.out" format's entry in the exec switch */
+int	exec_aout_linker __P((struct exec_linker *));
+int	exec_aout_setup_stack __P((struct exec_linker *));
+int	exec_aout_prep_zmagic __P((struct exec_linker *));
+int	exec_aout_prep_nmagic __P((struct exec_linker *));
+int	exec_aout_prep_omagic __P((struct exec_linker *));
+#endif /* KERNEL */
+#endif /*_SYS_EXEC_AOUT_H_ */
