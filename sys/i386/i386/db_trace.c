@@ -31,7 +31,6 @@
 
 #include <vm/vm.h>
 #include <vm/vm_param.h>
-#include <vm/vm_prot.h>
 #include <vm/pmap.h>
 #include <sys/proc.h>
 #include <ddb/ddb.h>
@@ -40,6 +39,7 @@
 #include <ddb/db_sym.h>
 #include <ddb/db_variables.h>
 #include "../../sys/lock.h"
+#include "../../vm/new/vm/include/vm_prot.h"
 
 /*
  * Machine register set.

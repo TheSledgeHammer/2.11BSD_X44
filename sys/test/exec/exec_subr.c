@@ -6,18 +6,19 @@
  */
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/vnode.h>
 #include <sys/filedesc.h>
 #include <sys/exec.h>
-
+#include <sys/exec_linker.h>
 #include <sys/mman.h>
 
 #include <vm/vm.h>
 
 int *exec_copyout_strings __P((struct exec_linker *));
 
-static int exec_check_permissions(struct exec_linker *);
+int exec_check_permissions(struct exec_linker *);
 
 
 /* Does this need to store more than one? If Yes: NetBSD exec_subr.c new_vmcmd */
@@ -74,13 +75,17 @@ exec_mmap_to_vmspace(elp)
 	}
 
 	/* Fill in process VM information */
-	vmspace->vm_tsize = elp->el_tsize;
-	vmspace->vm_dsize = elp->el_dsize;
-	vmspace->vm_taddr = elp->el_taddr;
-	vmspace->vm_daddr = elp->el_daddr;
+	vmspace->vm_tsize = btoc(elp->el_tsize);
+	vmspace->vm_dsize = btoc(elp->el_dsize);
+	vmspace->vm_taddr = (char *) elp->el_taddr;
+	vmspace->vm_daddr = (char *) elp->el_daddr;
+	vmspace->vm_ssize = btoc(elp->el_ssize);
+	vmspace->vm_maxsaddr = (char *)elp->el_maxsaddr;
+	vmspace->vm_minsaddr = (char *)elp->el_minsaddr;
 
 	/* Fill in image_params */
 	elp->el_interpreted = 0;
+
 	elp->el_proc->p_sysent = &sysvec;
 	return 0;
 }
@@ -106,11 +111,6 @@ exec_new_vmspace(elp)
 	if (error) {
 		return(error);
 	}
-
-	vmspace->vm_ssize = SGROWSIZ >> PAGE_SHIFT;
-
-	/* Initialize maximum stack address */
-	vmspace->vm_maxsaddr = (char *)USRSTACK - MAXSSIZ;
 
 	return(0);
 }
@@ -225,7 +225,7 @@ exec_copyout_strings(elp)
  * Check permissions of file to execute.
  *	Return 0 for success or error code on failure.
  */
-static int
+int
 exec_check_permissions(elp)
 	struct exec_linker *elp;
 {

@@ -35,7 +35,6 @@
 
 /* #include <mach/i386/vm_types.h> */
 /* #include <mach/i386/vm_param.h> */
-#include <vm/vm_prot.h>
 #include <vm/vm_param.h>
 #include <vm/vm_inherit.h>
 #include <machine/frame.h>		/* for struct trapframe */
@@ -44,6 +43,7 @@
 /* #include <i386/trap.h> */
 #include <machine/trap.h>
 #include "../../sys/lock.h"
+#include "../../vm/new/vm/include/vm_prot.h"
 
 #define i386_saved_state trapframe
 

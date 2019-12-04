@@ -31,6 +31,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)vm_swap.c	8.5 (Berkeley) 2/17/94
+ * $Id: vm_swap.c,v 1.11 1994/10/22 17:53:35 phk Exp $
  */
 
 #include <sys/param.h>
@@ -40,9 +41,9 @@
 #include <sys/proc.h>
 #include <sys/namei.h>
 #include <sys/dmap.h>		/* XXX */
-#include <vfs/vnode.h>
-#include <sys/map.h>
+#include <sys/vnode.h>
 #include <sys/file.h>
+#include <sys/rlist.h>
 
 #include <miscfs/specfs/specdev.h>
 
@@ -51,11 +52,14 @@
  */
 
 int	nswap, nswdev;
+int	vm_swap_size;
 #ifdef SEQSWAP
 int	niswdev;		/* number of interleaved swap devices */
 int	niswap;			/* size of interleaved swap area */
 #endif
 
+int bswneeded;
+vm_offset_t swapbkva;		/* swap buffers kva */
 /*
  * Set up swap devices.
  * Initialize linked list of free swap
@@ -66,8 +70,6 @@ int	niswap;			/* size of interleaved swap area */
 void
 swapinit()
 {
-	register int i;
-	register struct buf *sp = swbuf;
 	register struct proc *p = &proc0;	/* XXX */
 	struct swdevt *swp;
 	int error;
@@ -133,25 +135,27 @@ swapinit()
 	    bdevvp(swdevt[0].sw_dev, &swdevt[0].sw_vp))
 		panic("swapvp");
 #endif
+	/*
+	 * If there is no swap configured, tell the user. We don't automatically
+	 * activate any swapspaces in the kernel; the user must explicitly use
+	 * swapon to enable swaping on a device.
+	 */
 	if (nswap == 0)
 		printf("WARNING: no swap space found\n");
-	else if (error == swfree(p, 0)) {
-		printf("swfree errno %d\n", error);	/* XXX */
-		panic("swapinit swfree 0");
-	}
+	for (swp = swdevt; ;swp++) {
+		if (swp->sw_dev == NODEV) {
+			if (swp->sw_vp == NULL)
+				break;
 
-	/*
-	 * Now set up swap buffer headers.
-	 */
-	bswlist.b_actf = sp;
-	for (i = 0; i < nswbuf - 1; i++, sp++) {
-		sp->b_actf = sp + 1;
-		sp->b_rcred = sp->b_wcred = p->p_ucred;
-		sp->b_vnbufs.le_next = NOLIST;
+			/* We DO enable NFS swapspaces */
+			error = swfree(p, swp - swdevt);
+			if (error) {
+				printf(
+				   "Couldn't enable swapspace %d, error = %d",
+				   swp-swdevt,error);
+			}
+		}
 	}
-	sp->b_rcred = sp->b_wcred = p->p_ucred;
-	sp->b_vnbufs.le_next = NOLIST;
-	sp->b_actf = NULL;
 }
 
 void
@@ -243,7 +247,8 @@ swstrategy(bp)
 	}
 	VHOLD(sp->sw_vp);
 	if ((bp->b_flags & B_READ) == 0) {
-		if (vp == bp->b_vp) {
+		vp = bp->b_vp;
+		if (vp) {
 			vp->v_numoutput--;
 			if ((vp->v_flag & VBWAIT) && vp->v_numoutput <= 0) {
 				vp->v_flag &= ~VBWAIT;
@@ -279,10 +284,12 @@ swapon(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	if (error == suser(p->p_ucred, &p->p_acflag))
+	error = suser(p->p_ucred, &p->p_acflag);
+	if (error)
 		return (error);
 	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->name, p);
-	if (error == namei(&nd))
+	error = namei(&nd);
+	if (error)
 		return (error);
 	vp = nd.ni_vp;
 	if (vp->v_type != VBLK) {
@@ -301,7 +308,8 @@ swapon(p, uap, retval)
 				return (EBUSY);
 			}
 			sp->sw_vp = vp;
-			if (error == swfree(p, sp - swdevt)) {
+			error = swfree(p, sp - swdevt);
+			if (error) {
 				vrele(vp);
 				return (error);
 			}
@@ -343,7 +351,8 @@ swfree(p, index)
 
 	sp = &swdevt[index];
 	vp = sp->sw_vp;
-	if (error == VOP_OPEN(vp, FREAD|FWRITE, p->p_ucred, p))
+	error = VOP_OPEN(vp, FREAD|FWRITE, p->p_ucred, p);
+	if (error)
 		return (error);
 	sp->sw_flags |= SW_FREED;
 	nblks = sp->sw_nblks;
@@ -390,12 +399,14 @@ swfree(p, index)
 		blk = niswap;
 		for (swp = &swdevt[niswdev]; swp != sp; swp++)
 			blk += swp->sw_nblks;
-		rmfree(swapmap, nblks, blk);
+		rlist_free(&swaplist, blk, blk + nblks - 1); 
+		vm_swap_size += nblks;
 		return (0);
 	}
 #endif
-	for (dvbase = 0; dvbase < nblks; dvbase += dmmax) {
+	for (dvbase = dmmax; dvbase < nblks; dvbase += dmmax) {
 		blk = nblks - dvbase;
+			
 #ifdef SEQSWAP
 		if ((vsbase = index*dmmax + dvbase*niswdev) >= niswap)
 			panic("swfree");
@@ -405,23 +416,10 @@ swfree(p, index)
 #endif
 		if (blk > dmmax)
 			blk = dmmax;
-		if (vsbase == 0) {
-			/*
-			 * First of all chunks... initialize the swapmap.
-			 * Don't use the first cluster of the device
-			 * in case it starts with a label or boot block.
-			 */
-			rminit(swapmap, blk - ctod(CLSIZE),
-			    vsbase + ctod(CLSIZE), "swap", nswapmap);
-		} else if (dvbase == 0) {
-			/*
-			 * Don't use the first cluster of the device
-			 * in case it starts with a label or boot block.
-			 */
-			rmfree(swapmap, blk - ctod(CLSIZE),
-			    vsbase + ctod(CLSIZE));
-		} else
-			rmfree(swapmap, blk, vsbase);
+		/* XXX -- we need to exclude the first cluster as above */
+		/* but for now, this will work fine... */
+		rlist_free(&swaplist, vsbase, vsbase + blk - 1); 
+		vm_swap_size += blk;
 	}
 	return (0);
 }

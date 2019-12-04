@@ -18,7 +18,7 @@
 #include <sys/proc.h>
 #include <sys/file.h>
 #include <sys/namei.h>
-#include <sys/inode.h>
+//#include <sys/inode.h>
 #include <vm/vm.h>
 
 /*

@@ -36,6 +36,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)vnode_pager.h	8.1 (Berkeley) 6/11/93
+ * $Id$
  */
 
 #ifndef	_VNODE_PAGER_
@@ -52,8 +53,5 @@ struct vnpager {
 typedef struct vnpager	*vn_pager_t;
 
 #define VN_PAGER_NULL	((vn_pager_t)0)
-
-#define	VNP_PAGING	0x01		/* vnode used for pageout */
-#define VNP_CACHED	0x02		/* vnode is cached */
 
 #endif	/* _VNODE_PAGER_ */

@@ -1,3 +1,4 @@
+
 /* 
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -33,7 +34,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm_init.c	8.1 (Berkeley) 6/11/93
+ *	from: @(#)vm_init.c	8.1 (Berkeley) 6/11/93
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -60,6 +61,8 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
+ *
+ * $Id: vm_init.c,v 1.3 1994/08/02 07:55:21 davidg Exp $
  */
 
 /*
@@ -67,10 +70,11 @@
  */
 
 #include <sys/param.h>
+#include <sys/systm.h>
 
 #include <vm/vm.h>
-#include <vm/vm_page.h>
-#include <vm/vm_kern.h>
+#include <vm/include/vm_page.h>
+#include <vm/include/vm_kern.h>
 
 /*
  *	vm_init initializes the virtual memory system.
@@ -79,7 +83,8 @@
  *	The start and end address of physical memory is passed in.
  */
 
-void vm_mem_init()
+void
+vm_mem_init()
 {
 	extern vm_offset_t	avail_start, avail_end;
 	extern vm_offset_t	virtual_avail, virtual_end;
@@ -89,9 +94,9 @@ void vm_mem_init()
 	 *	From here on, all physical memory is accounted for,
 	 *	and we use only virtual addresses.
 	 */
-	vm_set_page_size();
-	vm_page_startup(&avail_start, &avail_end);
 
+	vm_set_page_size();
+	virtual_avail = vm_page_startup(avail_start, avail_end, virtual_avail);
 	/*
 	 * Initialize other VM packages
 	 */

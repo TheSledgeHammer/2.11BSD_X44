@@ -36,6 +36,7 @@
 #include <sys/systm.h>
 #include <sys/user.h>
 #include <sys/resourcevar.h>
+#include <sys/exec.h>
 #include <sys/exec_linker.h>
 #include <sys/exec_ecoff.h>
 #include <sys/mman.h>

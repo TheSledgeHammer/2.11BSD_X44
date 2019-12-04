@@ -33,13 +33,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm_pageout.h	8.3 (Berkeley) 1/9/95
+ *	from: @(#)vm_kern.h	8.1 (Berkeley) 6/11/93
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
  * All rights reserved.
  *
- * Author: Avadis Tevanian, Jr.
+ * Authors: Avadis Tevanian, Jr., Michael Wayne Young
  * 
  * Permission to use, copy, modify and distribute this software and
  * its documentation is hereby granted, provided that both the copyright
@@ -60,37 +60,21 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
+ *
+ * $Id: vm_kern.h,v 1.3 1994/08/02 07:55:23 davidg Exp $
  */
 
-/*
- *	Header file for pageout daemon.
- */
+#ifndef _VM_VM_KERN_H_
+#define _VM_VM_KERN_H_ 1
 
-/*
- *	Exported data structures.
- */
+/* Kernel memory management definitions. */
+extern vm_map_t	buffer_map;
+extern vm_map_t	kernel_map;
+extern vm_map_t	kmem_map;
+extern vm_map_t	mb_map;
+extern vm_map_t	io_map;
+extern vm_map_t	clean_map;
+extern vm_map_t	pager_map;
+extern vm_map_t	phys_map;
 
-extern int	vm_pages_needed;	/* should be some "event" structure */
-simple_lock_data_t	vm_pages_needed_lock;
-
-
-/*
- *	Exported routines.
- */
-
-/*
- *	Signal pageout-daemon and wait for it.
- */
-
-#define	VM_WAIT		{ \
-			simple_lock(&vm_pages_needed_lock); \
-			thread_wakeup(&vm_pages_needed); \
-			thread_sleep(&cnt.v_free_count, \
-				&vm_pages_needed_lock, FALSE); \
-			}
-#ifdef KERNEL
-void		 vm_pageout __P((void));
-void		 vm_pageout_scan __P((void));
-void		 vm_pageout_page __P((vm_page_t, vm_object_t));
-void		 vm_pageout_cluster __P((vm_page_t, vm_object_t));
-#endif
+#endif /* _VM_VM_KERN_H_ */

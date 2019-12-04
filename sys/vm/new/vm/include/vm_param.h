@@ -33,7 +33,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm_prot.h	8.1 (Berkeley) 6/11/93
+ *	from: @(#)vm_param.h	8.1 (Berkeley) 6/11/93
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -60,43 +60,132 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
- */
-
-/*
- *	Virtual memory protection definitions.
- */
-
-#ifndef	_VM_PROT_
-#define	_VM_PROT_
-
-/*
- *	Types defined:
  *
- *	vm_prot_t		VM protection values.
+ * $Id$
  */
-
-typedef int		vm_prot_t;
 
 /*
- *	Protection values, defined as bits within the vm_prot_t type
+ *	Machine independent virtual memory parameters.
  */
 
-#define	VM_PROT_NONE	((vm_prot_t) 0x00)
+#ifndef	_VM_PARAM_
+#define	_VM_PARAM_
 
-#define VM_PROT_READ	((vm_prot_t) 0x01)	/* read permission */
-#define VM_PROT_WRITE	((vm_prot_t) 0x02)	/* write permission */
-#define VM_PROT_EXECUTE	((vm_prot_t) 0x04)	/* execute permission */
+#include <machine/vmparam.h>
 
 /*
- *	The default protection for newly-created virtual memory
+ * This belongs in types.h, but breaks too many existing programs.
  */
-
-#define VM_PROT_DEFAULT	(VM_PROT_READ|VM_PROT_WRITE|VM_PROT_EXECUTE)
+typedef int	boolean_t;
+#define	TRUE	1
+#define	FALSE	0
 
 /*
- *	The maximum privileges possible, for parameter checking.
+ *	The machine independent pages are refered to as PAGES.  A page
+ *	is some number of hardware pages, depending on the target machine.
  */
+#define DEFAULT_PAGE_SIZE	4096
 
-#define VM_PROT_ALL	(VM_PROT_READ|VM_PROT_WRITE|VM_PROT_EXECUTE)
+#if 0
 
-#endif /* _VM_PROT_ */
+/*
+ *	All references to the size of a page should be done with PAGE_SIZE
+ *	or PAGE_SHIFT.  The fact they are variables is hidden here so that
+ *	we can easily make them constant if we so desire.
+ */
+#ifndef PAGE_SIZE
+#define	PAGE_SIZE	cnt.v_page_size	/* size of page */
+#endif
+#ifndef PAGE_MASK
+#define PAGE_MASK	page_mask		/* size of page - 1 */
+#endif
+#ifndef PAGE_SHIFT
+#define PAGE_SHIFT	page_shift		/* bits to shift for pages */
+#endif
+
+#endif
+
+#ifdef KERNEL
+extern vm_size_t	page_mask;
+extern int		page_shift;
+#endif
+
+/*
+ * CTL_VM identifiers
+ */
+#define	VM_METER	 1		/* struct vmmeter */
+#define	VM_LOADAVG	 2		/* struct loadavg */
+#define	VM_MAXID	 3		/* number of valid vm ids */
+
+#define CTL_VM_NAMES { \
+	{ 0, 0 }, \
+	{ "vmmeter", CTLTYPE_STRUCT }, \
+	{ "loadavg", CTLTYPE_STRUCT }, \
+}
+
+/* 
+ *	Return values from the VM routines.
+ */
+#define	KERN_SUCCESS		0
+#define	KERN_INVALID_ADDRESS	1
+#define	KERN_PROTECTION_FAILURE	2
+#define	KERN_NO_SPACE		3
+#define	KERN_INVALID_ARGUMENT	4
+#define	KERN_FAILURE		5
+#define	KERN_RESOURCE_SHORTAGE	6
+#define	KERN_NOT_RECEIVER	7
+#define	KERN_NO_ACCESS		8
+
+#ifndef ASSEMBLER
+/*
+ *	Convert addresses to pages and vice versa.
+ *	No rounding is used.
+ */
+#ifdef KERNEL
+
+#if 0
+
+#ifndef atop
+#define	atop(x)		(((unsigned)(x)) >> PAGE_SHIFT)
+#endif
+#ifndef ptoa
+#define	ptoa(x)		((vm_offset_t)((x) << PAGE_SHIFT))
+#endif
+
+/*
+ * Round off or truncate to the nearest page.  These will work
+ * for either addresses or counts (i.e., 1 byte rounds to 1 page).
+ */
+#ifndef round_page
+#define round_page(x) \
+	((vm_offset_t)((((vm_offset_t)(x)) + PAGE_MASK) & ~PAGE_MASK))
+#endif
+#ifndef trunc_page
+#define trunc_page(x) \
+	((vm_offset_t)(((vm_offset_t)(x)) & ~PAGE_MASK))
+#endif
+#ifndef num_pages
+#define num_pages(x) \
+	((vm_offset_t)((((vm_offset_t)(x)) + PAGE_MASK) >> PAGE_SHIFT))
+#endif
+
+#endif
+#define num_pages(x) \
+	((vm_offset_t)((((vm_offset_t)(x)) + PAGE_MASK) >> PAGE_SHIFT))
+
+extern vm_size_t	mem_size;	/* size of physical memory (bytes) */
+extern vm_offset_t	first_addr;	/* first physical page */
+extern vm_offset_t	last_addr;	/* last physical page */
+
+#else
+#if 0
+/* out-of-kernel versions of round_page and trunc_page */
+#define	round_page(x) \
+       ((((vm_offset_t)(x) + (vm_page_size - 1)) / vm_page_size) * vm_page_size)
+#define	trunc_page(x) \
+	((((vm_offset_t)(x)) / vm_page_size) * vm_page_size)
+#endif
+
+#endif /* KERNEL */
+#endif /* ASSEMBLER */
+#endif /* _VM_PARAM_ */

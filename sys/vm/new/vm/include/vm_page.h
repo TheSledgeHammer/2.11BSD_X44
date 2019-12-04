@@ -33,7 +33,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm_page.h	8.3 (Berkeley) 1/9/95
+ *	from: @(#)vm_page.h	8.2 (Berkeley) 12/13/93
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -60,6 +60,8 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
+ *
+ * $Id: vm_page.h,v 1.9 1994/10/21 01:19:28 wollman Exp $
  */
 
 /*
@@ -97,17 +99,20 @@
 TAILQ_HEAD(pglist, vm_page);
 
 struct vm_page {
-	TAILQ_ENTRY(vm_page)	pageq;		/* queue info for FIFO* queue or free list (P) */
+	TAILQ_ENTRY(vm_page)	pageq;		/* queue info for FIFO queue or free list (P) */
 	TAILQ_ENTRY(vm_page)	hashq;		/* hash table links (O)*/
 	TAILQ_ENTRY(vm_page)	listq;		/* pages in same object (O)*/
 
-	vm_object_t				object;		/* which object am I in (O,P)*/
-	vm_offset_t				offset;		/* offset into object (O,P) */
+	vm_object_t		object;				/* which object am I in (O,P)*/
+	vm_offset_t		offset;				/* offset into object (O,P) */
 
-	u_short					wire_count;	/* wired down maps refs (P) */
-	u_short					flags;		/* see below */
+	u_short			wire_count;			/* wired down maps refs (P) */
+	u_short			flags;				/* see below */
+	short			hold_count;			/* page hold count */
+	u_short			act_count;			/* page usage count */
+	u_short			busy;				/* page busy count */
 
-	vm_offset_t				phys_addr;	/* physical address of page */
+	vm_offset_t		phys_addr;			/* physical address of page */
 };
 
 /*
@@ -115,20 +120,22 @@ struct vm_page {
  *
  * Note: PG_FILLED and PG_DIRTY are added for the filesystems.
  */
-#define	PG_INACTIVE	0x0001		/* page is in inactive list (P) */
-#define	PG_ACTIVE	0x0002		/* page is in active list (P) */
-#define	PG_LAUNDRY	0x0004		/* page is being cleaned now (P)*/
-#define	PG_CLEAN	0x0008		/* page has not been modified */
-#define	PG_BUSY		0x0010		/* page is in transit (O) */
-#define	PG_WANTED	0x0020		/* someone is waiting for page (O) */
-#define	PG_TABLED	0x0040		/* page is in VP table (O) */
+#define	PG_INACTIVE		0x0001		/* page is in inactive list (P) */
+#define	PG_ACTIVE		0x0002		/* page is in active list (P) */
+#define	PG_LAUNDRY		0x0004		/* page is being cleaned now (P)*/
+#define	PG_CLEAN		0x0008		/* page has not been modified */
+#define	PG_BUSY			0x0010		/* page is in transit (O) */
+#define	PG_WANTED		0x0020		/* someone is waiting for page (O) */
+#define	PG_TABLED		0x0040		/* page is in VP table (O) */
 #define	PG_COPYONWRITE	0x0080		/* must copy page before changing (O) */
 #define	PG_FICTITIOUS	0x0100		/* physical page doesn't exist (O) */
-#define	PG_FAKE		0x0200		/* page is placeholder for pagein (O) */
-#define	PG_FILLED	0x0400		/* client flag to set when filled */
-#define	PG_DIRTY	0x0800		/* client flag to set when dirty */
+#define	PG_FAKE			0x0200		/* page is placeholder for pagein (O) */
+#define	PG_FILLED		0x0400		/* client flag to set when filled */
+#define	PG_DIRTY		0x0800		/* client flag to set when dirty */
+#define PG_REFERENCED	0x1000		/* page has been referenced */
+#define PG_VMIO			0x2000		/* VMIO flag */
 #define	PG_PAGEROWNED	0x4000		/* DEBUG: async paging op in progress */
-#define	PG_PTPAGE	0x8000		/* DEBUG: is a user page table page */
+#define	PG_FREE			0x8000		/* page is in free list */
 
 #if	VM_PAGE_DEBUG
 #define	VM_PAGE_CHECK(mem) { \
@@ -190,9 +197,8 @@ vm_offset_t	last_phys_addr;				/* physical address for last_page */
 		(&vm_page_array[atop(pa) - first_page ])
 
 extern
-simple_lock_data_t	vm_page_queue_lock;	/* lock on active and inactive
-						   page queues */
-extern						/* lock on free page queue */
+simple_lock_data_t	vm_page_queue_lock;	/* lock on active and inactive page queues */
+extern									/* lock on free page queue */
 simple_lock_data_t	vm_page_queue_free_lock;
 
 /*
@@ -201,14 +207,14 @@ simple_lock_data_t	vm_page_queue_free_lock;
 
 #define PAGE_ASSERT_WAIT(m, interruptible)	{ \
 				(m)->flags |= PG_WANTED; \
-				assert_wait((m), (interruptible)); \
+				assert_wait((int) (m), (interruptible)); \
 			}
 
 #define PAGE_WAKEUP(m)	{ \
 				(m)->flags &= ~PG_BUSY; \
 				if ((m)->flags & PG_WANTED) { \
 					(m)->flags &= ~PG_WANTED; \
-					thread_wakeup((m)); \
+					wakeup((caddr_t) (m)); \
 				} \
 			}
 
@@ -221,6 +227,8 @@ simple_lock_data_t	vm_page_queue_free_lock;
 	(mem)->flags = PG_BUSY | PG_CLEAN | PG_FAKE; \
 	vm_page_insert((mem), (object), (offset)); \
 	(mem)->wire_count = 0; \
+	(mem)->hold_count = 0; \
+	(mem)->act_count = 0; \
 }
 
 void		 vm_page_activate __P((vm_page_t));
@@ -232,10 +240,39 @@ void		 vm_page_insert __P((vm_page_t, vm_object_t, vm_offset_t));
 vm_page_t	 vm_page_lookup __P((vm_object_t, vm_offset_t));
 void		 vm_page_remove __P((vm_page_t));
 void		 vm_page_rename __P((vm_page_t, vm_object_t, vm_offset_t));
-void		 vm_page_startup __P((vm_offset_t *, vm_offset_t *));
+vm_offset_t	 vm_page_startup __P((vm_offset_t, vm_offset_t, vm_offset_t));
 void		 vm_page_unwire __P((vm_page_t));
 void		 vm_page_wire __P((vm_page_t));
 boolean_t	 vm_page_zero_fill __P((vm_page_t));
 
+
+/*
+ * Keep page from being freed by the page daemon
+ * much of the same effect as wiring, except much lower
+ * overhead and should be used only for *very* temporary
+ * holding ("wiring").
+ */
+static __inline void
+vm_page_hold(vm_page_t mem)
+{
+	mem->hold_count++;
+}
+
+#ifdef DIAGNOSTIC
+#include <sys/systm.h>		/* make GCC shut up */
+#endif
+
+static __inline void
+vm_page_unhold(vm_page_t mem)
+{
+#ifdef DIAGNOSTIC
+	if( --mem->hold_count < 0)
+		panic("vm_page_unhold: hold count < 0!!!");
+#else
+	--mem->hold_count;
+#endif
+}
+
 #endif /* KERNEL */
+
 #endif /* !_VM_PAGE_ */

@@ -74,8 +74,8 @@
 /*
  * Machine dependent constants
  */
-#ifndef	_VMPARAM_
-#define	_VMPARAM_
+#ifndef	_VMPARAM_H
+#define	_VMPARAM_H
 #include <machine/vmparam.h>
 
 /*
@@ -95,10 +95,10 @@
 #define	PAGE_SIZE	cnt.v_page_size		/* size of page */
 #endif
 #ifndef PAGE_MASK
-#define PAGE_MASK	page_mask		/* size of page - 1 */
+#define PAGE_MASK	page_mask			/* size of page - 1 */
 #endif
 #ifndef PAGE_SHIFT
-#define PAGE_SHIFT	page_shift		/* bits to shift for pages */
+#define PAGE_SHIFT	page_shift			/* bits to shift for pages */
 #endif
 
 #endif

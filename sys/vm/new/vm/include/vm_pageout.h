@@ -33,7 +33,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)pmap.h	8.1 (Berkeley) 6/11/93
+ *	from: @(#)vm_pageout.h	8.2 (Berkeley) 1/12/94
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -60,63 +60,59 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
+ *
+ * $Id: vm_pageout.h,v 1.5 1994/08/21 07:19:45 paul Exp $
+ */
+
+#ifndef _VM_VM_PAGEOUT_H_
+#define _VM_VM_PAGEOUT_H_
+
+/*
+ *	Header file for pageout daemon.
  */
 
 /*
- *	Machine address mapping definitions -- machine-independent
- *	section.  [For machine-dependent section, see "machine/pmap.h".]
+ *	Exported data structures.
  */
 
-#ifndef	_PMAP_VM_
-#define	_PMAP_VM_
+extern int	vm_pages_needed;	/* should be some "event" structure */
+simple_lock_data_t	vm_pages_needed_lock;
+extern int vm_pageout_pages_needed;
+
+#define VM_PAGEOUT_ASYNC 0
+#define VM_PAGEOUT_SYNC 1
+#define VM_PAGEOUT_FORCE 2
 
 /*
- * Each machine dependent implementation is expected to
- * keep certain statistics.  They may do this anyway they
- * so choose, but are expected to return the statistics
- * in the following structure.
+ *	Exported routines.
  */
-struct pmap_statistics {
-	long		resident_count;	/* # of pages mapped (total)*/
-	long		wired_count;	/* # of pages wired */
-};
-typedef struct pmap_statistics	*pmap_statistics_t;
 
-#include <machine/pmap.h>
+/*
+ *	Signal pageout-daemon and wait for it.
+ */
+
+#define VM_WAIT vm_wait()
+
+inline static void vm_wait() {
+	int s;
+	s = splhigh();
+	if (curproc == pageproc) {
+		vm_pageout_pages_needed = 1;
+		tsleep((caddr_t) &vm_pageout_pages_needed, PSWP, "vmwait", 0);
+		vm_pageout_pages_needed = 0;
+	} else {
+		wakeup((caddr_t) &vm_pages_needed);
+		tsleep((caddr_t) &cnt.v_free_count, PVM, "vmwait", 0);
+	}
+	splx(s);
+}
+
 
 #ifdef KERNEL
-__BEGIN_DECLS
-void		*pmap_bootstrap_alloc __P((int));
-void		 pmap_bootstrap( /* machine dependent */ );
-void		 pmap_change_wiring __P((pmap_t, vm_offset_t, boolean_t));
-void		 pmap_clear_modify __P((vm_offset_t pa));
-void		 pmap_clear_reference __P((vm_offset_t pa));
-void		 pmap_collect __P((pmap_t));
-void		 pmap_copy __P((pmap_t,
-		    pmap_t, vm_offset_t, vm_size_t, vm_offset_t));
-void		 pmap_copy_page __P((vm_offset_t, vm_offset_t));
-pmap_t		 pmap_create __P((vm_size_t));
-void		 pmap_destroy __P((pmap_t));
-void		 pmap_enter __P((pmap_t,
-		    vm_offset_t, vm_offset_t, vm_prot_t, boolean_t));
-vm_offset_t	 pmap_extract __P((pmap_t, vm_offset_t));
-void		 pmap_init __P((vm_offset_t, vm_offset_t));
-boolean_t	 pmap_is_modified __P((vm_offset_t pa));
-boolean_t	 pmap_is_referenced __P((vm_offset_t pa));
-vm_offset_t	 pmap_map __P((vm_offset_t, vm_offset_t, vm_offset_t, int));
-void		 pmap_page_protect __P((vm_offset_t, vm_prot_t));
-void		 pmap_pageable __P((pmap_t,
-		    vm_offset_t, vm_offset_t, boolean_t));
-vm_offset_t	 pmap_phys_address __P((int));
-void		 pmap_pinit __P((pmap_t));
-void		 pmap_protect __P((pmap_t,
-		    vm_offset_t, vm_offset_t, vm_prot_t));
-void		 pmap_reference __P((pmap_t));
-void		 pmap_release __P((pmap_t));
-void		 pmap_remove __P((pmap_t, vm_offset_t, vm_offset_t));
-void		 pmap_update __P((void));
-void		 pmap_zero_page __P((vm_offset_t));
-__END_DECLS
+int		 vm_pageout_scan __P((void));
+void	 vm_pageout_page __P((vm_page_t, vm_object_t));
+void	 vm_pageout_cluster __P((vm_page_t, vm_object_t));
+int		 vm_pageout_clean __P((vm_page_t, int));
 #endif
 
-#endif /* _PMAP_VM_ */
+#endif

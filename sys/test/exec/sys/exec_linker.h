@@ -8,7 +8,6 @@
 #ifndef _SYS_EXEC_LINKER_H_
 #define _SYS_EXEC_LINKER_H_
 
-#include <sys/exec.h>
 #include <sys/proc.h>
 #include <sys/namei.h>
 #include <sys/vnode.h>
@@ -33,7 +32,7 @@ struct exec_linker {
 	caddr_t	el_daddr;				/* process's data(+bss) address */
 	caddr_t	el_maxsaddr;			/* proc's max stack addr ("top") */
 	caddr_t	el_minsaddr;			/* proc's min stack addr ("bottom") */
-	caddr_t	el_entry;				/* process's entry point */
+	caddr_t el_entry;				/* process's entry point */
 	caddr_t	el_entryoffset;			/* offset to entry point */
 	caddr_t	el_vm_minaddr;			/* bottom of process address space */
 	caddr_t	el_vm_maxaddr;			/* top of process address space */

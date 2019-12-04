@@ -25,6 +25,7 @@
  * other.  The second argument to expand specifies which to change.  The
  * stack segment will not have to be copied again after expansion.
  */
+void
 expand(newsize, segment)
 	int newsize, segment;
 {

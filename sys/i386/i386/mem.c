@@ -58,9 +58,9 @@
 
 #include <vm/vm.h>
 #include <vm/vm_param.h>
-#include <vm/vm_prot.h>
 #include <vm/pmap.h>
 #include "../../sys/lock.h"
+#include "../../vm/new/vm/include/vm_prot.h"
 
 extern        char *ptvmmap;            /* poor name! */
 /*ARGSUSED*/

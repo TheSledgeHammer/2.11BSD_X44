@@ -9,27 +9,25 @@ Kern:
 - subr_xxx.c (networking)
 - sys_kern.c (inodes)
 - sys_process.c (ptrace)
+- tty_conf.c
+- tty_pty.c
+- uipc_syscalls.c
 
-Haven't really been looked at
-- tty (all source files)
-- uipc (all source files)
+Vm: (Fix malloc: calls FreeBSD's)
+- vmmeter.h (belongs in sys)
+- vm.h (extended from 2.11BSD's)
+2.11BSD's VM
+- vmmac.h
+- vmsystem.h
+- vmparam.h
+- vm_proc.c
+- vm_sched.c
+- vm_swap.c
+- vm_swp.c
 
-VM: (Lowest Priority ATM: Kernel & TTY First)
-- Better Memory Management Needed
-
-FreeBSD 3.0:
+FreeBSD 3.0 or Higher:
 - BTX Bootloader
 
 
-Executables:
-Combining: 
-- NetBSD's API (exec: aout, ecoff & elf)
-- FreeBSD's API (imgact: aout & elf)
-
-- FreeBSD provides better integration in kernel & vmspace (my opinion)
-- NetBSD provides better api support such as coff, ecoff, mach-o & xcoff (Depends on IBM's licencing of it's API??) 
-- Exchange the use of NetBSD's VMCMD with FreeBSD's vmspace and limits
-- Removes need for exec_script.h
-- Only Exception: NetBSD's exec_elf32.c & exec_elf64.c.  
-
+Executables:  
 __LDPGSZ = machine/exec.h

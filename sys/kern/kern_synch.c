@@ -7,14 +7,16 @@
  */
 
 #include <sys/param.h>
+#include <sys/kernel.h>
+#include <sys/systm.h>
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/buf.h>
 #include <sys/signal.h>
 #include <sys/signalvar.h>
+
 #include <vm/vm.h>
-#include <sys/kernel.h>
-#include <sys/systm.h>
+
 #include <machine/cpu.h>
 
 #define	SQSIZE	16	/* Must be power of 2 */

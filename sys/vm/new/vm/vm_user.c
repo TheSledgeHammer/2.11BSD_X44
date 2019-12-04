@@ -33,7 +33,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm_user.c	8.2 (Berkeley) 1/12/94
+ *	from: @(#)vm_user.c	8.2 (Berkeley) 1/12/94
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -60,6 +60,8 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
+ *
+ * $Id: vm_user.c,v 1.3 1994/08/02 07:55:42 davidg Exp $
  */
 
 /*
@@ -168,6 +170,7 @@ svm_protect(p, uap, retval)
 	return((int)rv);
 }
 
+#endif
 /*
  *	vm_inherit sets the inheritence of the specified range in the
  *	specified map.
@@ -203,7 +206,6 @@ vm_protect(map, start, size, set_maximum, new_protection)
 
 	return(vm_map_protect(map, trunc_page(start), round_page(start+size), new_protection, set_maximum));
 }
-#endif
 
 /*
  *	vm_allocate allocates "zero fill" memory in the specfied
@@ -255,6 +257,7 @@ vm_deallocate(map, start, size)
 	return(vm_map_remove(map, trunc_page(start), round_page(start+size)));
 }
 
+#if 1
 /*
  * Similar to vm_allocate but assigns an explicit pager.
  */
@@ -283,7 +286,6 @@ vm_allocate_with_pager(map, addr, size, anywhere, pager, poffset, internal)
 	 *	it.
 	 */
 	object = vm_object_lookup(pager);
-	cnt.v_lookups++;
 	if (object == NULL) {
 		object = vm_object_allocate(size);
 		/*
@@ -294,8 +296,7 @@ vm_allocate_with_pager(map, addr, size, anywhere, pager, poffset, internal)
 		 */
 		if (!internal)
 			vm_object_enter(object, pager);
-	} else
-		cnt.v_hits++;
+	}
 	if (internal)
 		object->flags |= OBJ_INTERNAL;
 	else {
@@ -310,3 +311,4 @@ vm_allocate_with_pager(map, addr, size, anywhere, pager, poffset, internal)
 		vm_object_setpager(object, pager, (vm_offset_t) 0, TRUE);
 	return(result);
 }
+#endif
