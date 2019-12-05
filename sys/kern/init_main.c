@@ -68,7 +68,7 @@ main()
 	register struct filedesc0 *fdp;
 	register struct user *u;
 	register int i;
-	//extern struct sysentvec aout_sysvec; /* Removed imgact */
+	//extern struct sysentvec sysvec; /* Removed imgact */
 
 	/*
 	 * Initialize the current process pointer (curproc) before
@@ -90,7 +90,7 @@ main()
 	p->p_pgrp = &pgrp0;
 	pgrphash[0] = &pgrp0;
 
-	//p->p_sysent = &aout_sysvec;
+	//p->p_sysent = &sysvec;
 
 	p->p_stat = SRUN;
 	p->p_flag |= SLOAD|SSYS;
@@ -98,13 +98,15 @@ main()
 	p->p_rtprio.type = RTP_PRIO_NORMAL;
 	p->p_rtprio.prio = 0;
 
+	u->u_procp = p;
 	bcopy("swapper", p->p_comm, sizeof ("swapper"));
 
 	/* Create credentials. */
 	cred0.p_refcnt = 1;
 	p->p_cred = &cred0;
-	p->p_ucred = crget();
-	p->p_ucred->cr_ngroups = 1;	/* group 0 */
+	u->u_cred = crget();
+	u->u_cred->cr_ngroups = 1; /* group 0 */
+	p->p_ucred = u->u_cred;
 
 	/* Create the file descriptor table. */
 	fdp = &filedesc0;
@@ -115,22 +117,23 @@ main()
 	fdp->fd_fd.fd_ofileflags = fdp->fd_dfileflags;
 	fdp->fd_fd.fd_nfiles = NDFILE;
 
+
 	/* Create the limits structures. */
 	p->p_limit = &limit0;
-	for (i = 0; i < sizeof(p->p_rlimit)/sizeof(p->p_rlimit[0]); i++)
-	{
-		limit0.pl_rlimit[i].rlim_cur = limit0.pl_rlimit[i].rlim_max = RLIM_INFINITY;
+	for (i = 0; i < sizeof(u->u_rlimit)/sizeof(u->u_rlimit[0]); i++) {
+		u->u_rlimit[i]->rlim_cur = u->u_rlimit[i].rlim_max = RLIM_INFINITY;
 	}
-	limit0.pl_rlimit[RLIMIT_NOFILE].rlim_cur = NOFILE;
-	limit0.pl_rlimit[RLIMIT_NPROC].rlim_cur = MAXUPRC;
+	u->u_rlimit[RLIMIT_NOFILE].rlim_cur = NOFILE;
+	u->u_rlimit[RLIMIT_NPROC].rlim_cur = MAXUPRC;
 	i = ptoa(cnt.v_free_count);
-	limit0.pl_rlimit[RLIMIT_RSS].rlim_max = i;
-	limit0.pl_rlimit[RLIMIT_MEMLOCK].rlim_max = i;
-	limit0.pl_rlimit[RLIMIT_MEMLOCK].rlim_cur = i / 3;
+	u->u_rlimit[RLIMIT_RSS].rlim_max = i;
+	u->u_rlimit[RLIMIT_MEMLOCK].rlim_max = i;
+	u->u_rlimit[RLIMIT_MEMLOCK].rlim_cur = i / 3;
+
+	limit0->pl_rlimit = u->u_rlimit;
 	limit0.p_refcnt = 1;
 
-	/* init user stack */
-	init_userstack(p);
+	bcopy("root", u->u_login, sizeof ("root"));
 
 	/* Allocate a prototype map so we have something to fork. */
 	p->p_vmspace = &vmspace0;
@@ -144,8 +147,11 @@ main()
 	 * We continue to place resource usage info and signal
 	 * actions in the user struct so they're pageable.
 	*/
-	p->p_stats = &p->p_addr->u_stats;
-	p->p_sig = &p->p_addr->u_sigacts;
+	//p->p_stats = &p->p_addr->u_stats;
+	//p->p_sig = &p->p_addr->u_sigacts;
+
+	p->p_stats = &u->u_stats;
+	p->p_sig = &u->u_sigacts;
 
 	/*
 	 * Initialize per uid information structure and charge
@@ -188,31 +194,6 @@ main()
 	}
 	else
 		sched();
-}
-
-/* init user stack structure.
- * 2.11BSD User structure is maintained, seperated it from main for ease of reading and editing.
- */
-static void
-init_userstack(p)
-	struct proc *p;
-{
-	register struct user *u;
-	register int i;
-	u->u_procp = p;
-	u->u_ap = u->u_arg;
-	u->u_cmask = cmask;
-	u->u_lastfile = -1;
-
-	for (i = 1; i < NGROUPS; i++)
-	{
-		u->u_groups[i] = NOGROUP;
-	}
-	for (i = 0; i < sizeof(u->u_rlimit)/sizeof(u->u_rlimit[0]); i++)
-	{
-		u->u_rlimit[i]->rlim_cur = u->u_rlimit[i].rlim_max = RLIM_INFINITY;
-	}
-	bcopy("root", u->u_login, sizeof ("root"));
 }
 
 /*

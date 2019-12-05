@@ -88,10 +88,10 @@ exit(rv)
 	if (p->p_flag & SVFORK)
 		endvfork();
 	else {
-		mfree(coremap, p->p_dsize, p->p_daddr);
-		mfree(coremap, p->p_ssize, p->p_saddr);
+		rmfree(coremap, p->p_dsize, p->p_daddr);
+		rmfree(coremap, p->p_ssize, p->p_saddr);
 	}
-	mfree(coremap, USIZE, p->p_addr);
+	rmfree(coremap, USIZE, p->p_addr);
 
 	if (p->p_pid == 1)
 		panic("init died");

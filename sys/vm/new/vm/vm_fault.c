@@ -1311,7 +1311,8 @@ vm_fault_additional_pages(first_object, first_offset, m, rbehind, raheada, marra
 		if (i < size) {
 			for (i = 0; i < size; i++) {
 				if (i != treqpage && marray[i])
-					FREE_PAGE(marray[i]);
+					//FREE_PAGE(marray[i]);
+					rmfree(marray[i], sizeof(marray[i]));
 			}
 			*reqpage = 0;
 			marray[0] = m;

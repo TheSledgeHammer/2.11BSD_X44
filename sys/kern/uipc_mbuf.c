@@ -114,7 +114,7 @@ m_expand(canwait)
 
 	for (tries = 0;; ) {
 #ifdef	pdp11
-		if (mfree)
+		if (rmfree)
 			return (1);
 #else
 		if (m_clalloc(1, MPG_MBUFS, canwait))

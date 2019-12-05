@@ -22,22 +22,18 @@
 #define	minor(x)		((int)((x)&0377)) 				/* minor part of a device */
 #define	makedev(x,y)	((dev_t)(((x)<<8) | (y)))		/* make a device number */
 
-//typedef unsigned char	u_char;
+//typedef unsigned char		u_char;
 //typedef unsigned short	u_short;
-//typedef unsigned int	u_int;
-//typedef unsigned long	u_long;		/* see this! unsigned longs at last! */
+//typedef unsigned int		u_int;
+//typedef unsigned long		u_long;		/* see this! unsigned longs at last! */
 //typedef unsigned short	ushort;		/* sys III / Sys V Compat */
 
-
-/* Obtained from FreeBSD 2.0 */
-//#ifndef _POSIX_SOURCE
 typedef	unsigned char		u_char;
 typedef	unsigned short		u_short;
 typedef	unsigned int		u_int;
 typedef	unsigned long		u_long;
 typedef	unsigned short		ushort;		/* Sys V compatibility */
 typedef	unsigned int		uint;		/* Sys V compatibility */
-//#endif
 
 typedef	unsigned long long 	u_quad_t; /* quads */
 typedef	long long			quad_t;
@@ -46,7 +42,6 @@ typedef	quad_t *			qaddr_t;
 typedef unsigned long		fixpt_t;	/* fixed point number */
 typedef	unsigned short		nlink_t;	/* link count */
 typedef	long				segsz_t;	/* segment size */
-/* End of FreeBSD 2.0 types.h Content */
 
 typedef	long				daddr_t;	/* disk address */
 typedef	char *				caddr_t;	/* core address */

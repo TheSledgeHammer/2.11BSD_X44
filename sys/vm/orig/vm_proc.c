@@ -40,7 +40,7 @@ expand(newsize, segment)
 		a1 = p->p_daddr;
 		if(n >= newsize) {
 			n -= newsize;
-			mfree(coremap, n, a1+newsize);
+			rmfree(coremap, n, a1+newsize);
 			return;
 		}
 	} else {
@@ -50,7 +50,7 @@ expand(newsize, segment)
 		if(n >= newsize) {
 			n -= newsize;
 			p->p_saddr += n;
-			mfree(coremap, n, a1);
+			rmfree(coremap, n, a1);
 			/*
 			 *  Since the base of stack is different,
 			 *  segmentation registers must be repointed.
@@ -85,7 +85,7 @@ expand(newsize, segment)
 		savfp(&u->u_fps);
 		u->u_fpsaved = 1;
 	}
-	a2 = malloc(coremap, newsize);
+	a2 = rmalloc(coremap, newsize);
 	if (a2 == NULL) {
 		if (segment == S_DATA)
 			swapout(p, X_FREECORE, n, X_OLDSIZE);
@@ -104,6 +104,6 @@ expand(newsize, segment)
 	} else
 		p->p_daddr = a2;
 	copy(a1, a2, n);
-	mfree(coremap, n, a1);
+	rmfree(coremap, n, a1);
 	sureg();
 }

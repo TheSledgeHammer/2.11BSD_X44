@@ -72,7 +72,7 @@
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/proc.h>		/* for curproc, pageproc */
-#include <sys/malloc.h>
+#include <sys/map.h>
 
 #include <vm/vm.h>
 #include <vm/include/vm_page.h>
@@ -194,9 +194,9 @@ vm_object_allocate(size)
 {
 	register vm_object_t	result;
 
-	result = (vm_object_t)
-		malloc((u_long)sizeof *result, M_VMOBJ, M_WAITOK);
+	/*result = (vm_object_t) malloc((u_long)sizeof *result, M_VMOBJ, M_WAITOK);*/
 		
+	result = (vm_object_t)rmalloc(result, (u_long)sizeof *result);
 
 	_vm_object_allocate(size, result);
 
@@ -426,7 +426,7 @@ vm_object_terminate(object)
 	 *	Free the space for the object.
 	 */
 
-	free((caddr_t)object, M_VMOBJ);
+	rmfree((caddr_t)object, sizeof(object));
 }
 
 /*
@@ -1108,8 +1108,8 @@ void vm_object_enter(object, pager)
 		return;
 
 	bucket = &vm_object_hashtable[vm_object_hash(pager)];
-	entry = (vm_object_hash_entry_t)
-		malloc((u_long)sizeof *entry, M_VMOBJHASH, M_WAITOK);
+	//entry = (vm_object_hash_entry_t)malloc((u_long)sizeof *entry, M_VMOBJHASH, M_WAITOK);
+	entry = (vm_object_hash_entry_t)rmalloc(entry, (u_long)sizeof *entry);
 	entry->object = object;
 	object->flags |= OBJ_CANPERSIST;
 
@@ -1142,7 +1142,7 @@ vm_object_remove(pager)
 		object = entry->object;
 		if (object->pager == pager) {
 			TAILQ_REMOVE(bucket, entry, hash_links);
-			free((caddr_t)entry, M_VMOBJHASH);
+			rmfree((caddr_t)entry, sizeof(entry));
 			break;
 		}
 	}
@@ -1515,7 +1515,7 @@ vm_object_collapse(object)
 			vm_object_count--;
 			simple_unlock(&vm_object_list_lock);
 
-			free((caddr_t)backing_object, M_VMOBJ);
+			rmfree((caddr_t)backing_object, sizeof(backing_object));
 
 			object_collapses++;
 		}

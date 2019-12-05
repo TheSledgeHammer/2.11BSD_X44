@@ -209,7 +209,7 @@ cache_enter(dvp, vp, cnp)
 	 */
 	if (numcache < desiredvnodes) {
 		//ncp = (struct namecache *) malloc((u_long)sizeof *ncp, M_CACHE, M_WAITOK);
-		ncp = (struct namecache *) malloc(ncp, (u_long)sizeof *ncp);
+		ncp = (struct namecache *) rmalloc(ncp, (u_long)sizeof *ncp);
 		bzero((char *)ncp, sizeof *ncp);
 		numcache++;
 	} else if (!nchhead) {

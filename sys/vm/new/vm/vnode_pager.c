@@ -69,7 +69,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
-#include <sys/malloc.h>
+#include <sys/map.h>
 #include <sys/vnode.h>
 #include <sys/uio.h>
 #include <sys/mount.h>
@@ -157,10 +157,12 @@ vnode_pager_alloc(handle, size, prot, offset)
 		/*
 		 * Allocate pager structures
 		 */
-		pager = (vm_pager_t) malloc(sizeof *pager, M_VMPAGER, M_WAITOK);
+		//pager = (vm_pager_t) malloc(sizeof *pager, M_VMPAGER, M_WAITOK);
+		pager = (vm_pager_t) rmalloc(pager, sizeof *pager);
 		if (pager == NULL)
 			return (NULL);
-		vnp = (vn_pager_t) malloc(sizeof *vnp, M_VMPGDATA, M_WAITOK);
+		//vnp = (vn_pager_t) malloc(sizeof *vnp, M_VMPGDATA, M_WAITOK);
+		vnp = (vn_pager_t) rmalloc(vnp, sizeof *vnp);
 		if (vnp == NULL) {
 			free((caddr_t) pager, M_VMPAGER);
 			return (NULL);

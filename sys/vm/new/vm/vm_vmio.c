@@ -29,7 +29,7 @@
 #define VMIO
 #include "param.h"
 #include "proc.h"
-#include "malloc.h"
+#include "map.h"
 #include "vm_param.h"
 #include "vm.h"
 #include "lock.h"

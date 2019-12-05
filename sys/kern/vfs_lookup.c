@@ -104,7 +104,7 @@ namei(ndp)
 	 */
 	if ((cnp->cn_flags & HASBUF) == 0)
 		//MALLOC(cnp->cn_pnbuf, caddr_t, MAXPATHLEN, M_NAMEI, M_WAITOK);
-		malloc(cnp->cn_pnbuf, MAXPATHLEN);
+		rmalloc(cnp->cn_pnbuf, MAXPATHLEN);
 	if (ndp->ni_segflg == UIO_SYSSPACE)
 		error = copystr(ndp->ni_dirp, cnp->cn_pnbuf,
 			    MAXPATHLEN, (u_int *)&ndp->ni_pathlen);
@@ -113,7 +113,7 @@ namei(ndp)
 			    MAXPATHLEN, (u_int *)&ndp->ni_pathlen);
 	if (error) {
 		//free(cnp->cn_pnbuf, M_NAMEI);
-		free(cnp->cn_pnbuf);
+		rmfree(cnp->cn_pnbuf, sizeof(cnp->cn_pnbuf));
 		ndp->ni_vp = NULL;
 		return (error);
 	}
@@ -149,7 +149,7 @@ namei(ndp)
 		error = lookup(ndp);
 		if (error) {
 			//FREE(cnp->cn_pnbuf, M_NAMEI);
-			free(cnp->cn_pnbuf);
+			rmfree(cnp->cn_pnbuf, sizeof(cnp->cn_pnbuf));
 			return (error);
 		}
 		/*
@@ -158,7 +158,7 @@ namei(ndp)
 		if ((cnp->cn_flags & ISSYMLINK) == 0) {
 			if ((cnp->cn_flags & (SAVENAME | SAVESTART)) == 0)
 				//FREE(cnp->cn_pnbuf, M_NAMEI);
-				free(cnp->cn_pnbuf);
+				rmfree(cnp->cn_pnbuf, sizeof(cnp->cn_pnbuf));
 			else
 				cnp->cn_flags |= HASBUF;
 			return (0);
@@ -171,7 +171,7 @@ namei(ndp)
 		}
 		if (ndp->ni_pathlen > 1)
 			//MALLOC(cp, char *, MAXPATHLEN, M_NAMEI, M_WAITOK);
-			malloc(cp, MAXPATHLEN);
+			rmalloc(cp, MAXPATHLEN);
 		else
 			cp = cnp->cn_pnbuf;
 		aiov.iov_base = cp;
@@ -187,19 +187,20 @@ namei(ndp)
 		if (error) {
 			if (ndp->ni_pathlen > 1)
 				//free(cp, M_NAMEI);
-				free(cp);
+				rmfree(cp, sizeof(cp));
 			break;
 		}
 		linklen = MAXPATHLEN - auio.uio_resid;
 		if (linklen + ndp->ni_pathlen >= MAXPATHLEN) {
 			if (ndp->ni_pathlen > 1)
-				free(cp, M_NAMEI);
+				rmfree(cp, sizeof(cp));
 			error = ENAMETOOLONG;
 			break;
 		}
 		if (ndp->ni_pathlen > 1) {
 			bcopy(ndp->ni_next, cp + linklen, ndp->ni_pathlen);
-			FREE(cnp->cn_pnbuf, M_NAMEI);
+			//FREE(cnp->cn_pnbuf, M_NAMEI);
+			rmfree(cnp->cn_pnbuf, sizeof(cnp->cn_pnbuf));
 			cnp->cn_pnbuf = cp;
 		} else
 			cnp->cn_pnbuf[linklen] = '\0';
@@ -207,7 +208,8 @@ namei(ndp)
 		vput(ndp->ni_vp);
 		dp = ndp->ni_dvp;
 	}
-	FREE(cnp->cn_pnbuf, M_NAMEI);
+	//FREE(cnp->cn_pnbuf, M_NAMEI);
+	rmfree(cnp->cn_pnbuf, sizeof(cnp->cn_pnbuf));
 	vrele(ndp->ni_dvp);
 	vput(ndp->ni_vp);
 	ndp->ni_vp = NULL;

@@ -76,7 +76,7 @@
 #include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/resourcevar.h>
-#include <sys/malloc.h>
+#include <sys/map.h>
 
 #include <vm/vm.h>
 #include <vm/include/vm_page.h>

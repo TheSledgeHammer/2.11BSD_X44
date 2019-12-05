@@ -127,7 +127,7 @@ chgproccnt(uid, diff)
 				uiq->ui_prev = uip->ui_prev;
 			}
 			*uip->ui_prev = uiq;
-			mfree(uip);
+			rmfree(uip, sizeof(uip));
 			return (0);
 		}
 		if (diff <= 0)
@@ -138,7 +138,7 @@ chgproccnt(uid, diff)
 			}
 			panic("chgproccnt: lost user");
 		}
-		malloc(uip, sizeof(*uip));
+		rmalloc(uip, sizeof(*uip));
 		if ((uiq = *uipp))
 		{
 			uiq->ui_prev = &uip->ui_next;
@@ -217,8 +217,8 @@ pgdelete(pgrp)
 		panic("pgdelete: can't find pgrp on hash chain");
 #endif
 	if (--pgrp->pg_session->s_count == 0)
-		mfree(pgrp->pg_session);
-	mfree(pgrp);
+		rmfree(pgrp->pg_session, sizeof(pgrp->pg_session));
+	rmfree(pgrp, sizeof(pgrp));
 }
 
 /*
@@ -251,7 +251,7 @@ enterpgrp(p, pgid, mksess)
 			panic("enterpgrp: new pgrp and pid != pgid");
 #endif
 		//MALLOC(pgrp, struct pgrp *, sizeof(struct pgrp), M_PGRP, M_WAITOK);
-		malloc(pgrp, sizeof(struct pgrp));
+		rmalloc(pgrp, sizeof(struct pgrp));
 		if ((np = pfind(savepid)) == NULL || np != p)
 			return (ESRCH);
 		if (mksess) {
@@ -261,7 +261,7 @@ enterpgrp(p, pgid, mksess)
 			 * new session
 			 */
 			//MALLOC(sess, struct session *, sizeof(struct session), M_SESSION, M_WAITOK);
-			malloc(sess, sizeof(struct session));
+			rmalloc(sess, sizeof(struct session));
 			sess->s_leader = p;
 			sess->s_count = 1;
 			sess->s_ttyvp = NULL;

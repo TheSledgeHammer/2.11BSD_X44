@@ -12,9 +12,9 @@
 #include <sys/buf.h>
 #include <sys/conf.h>
 #include <sys/systm.h>
-#include <vm/vm.h>
 #include <sys/trace.h>
 #include <sys/uio.h>
+#include <vm/vm.h>
 
 /*
  * swap I/O

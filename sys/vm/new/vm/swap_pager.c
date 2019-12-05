@@ -54,7 +54,7 @@
 #include <sys/proc.h>
 #include <sys/buf.h>
 #include <sys/vnode.h>
-#include <sys/malloc.h>
+#include <sys/map.h>
 
 #include <miscfs/specfs/specdev.h>
 #include <sys/map.h>
@@ -80,9 +80,9 @@ int swap_pager_full;
 extern vm_map_t pager_map;
 extern int vm_swap_size;
 int no_swap_space=1;
-struct rlist *swaplist;
+//struct rlist *swaplist;
+struct map *swapmap;
 int nswaplist;
-
 #define MAX_PAGEOUT_CLUSTER 8
 
 TAILQ_HEAD(swpclean, swpagerclean);
@@ -115,7 +115,8 @@ struct pagerlst swap_pager_un_list;	/* list of "unnamed" anon pagers */
 
 #define	SWAP_FREE_NEEDED	0x1	/* need a swap block */
 int swap_pager_needflags;
-struct rlist *swapfrag;
+//struct rlist *swapfrag;
+struct map *swapfrag;
 
 struct pagerlst *swp_qs[]={
 	&swap_pager_list, &swap_pager_un_list, (struct pagerlst *) 0
@@ -205,7 +206,8 @@ swap_pager_alloc(handle, size, prot, offset)
 			if (!spc->spc_kva) {
 				break;
 			}
-			spc->spc_bp = malloc( sizeof( *bp), M_TEMP, M_NOWAIT);
+			//spc->spc_bp = malloc( sizeof( *bp), M_TEMP, M_NOWAIT);
+			spc->spc_bp = rmalloc(spc->spc_bp, sizeof( *bp));
 			if (!spc->spc_bp) {
 				kmem_free_wakeup(pager_map, spc->spc_kva, PAGE_SIZE);
 				break;
@@ -241,23 +243,28 @@ swap_pager_alloc(handle, size, prot, offset)
 	 * and initialize.
 	 */
 	waitok = handle ? M_WAITOK : M_NOWAIT; 
-	pager = (vm_pager_t)malloc(sizeof *pager, M_VMPAGER, waitok);
+	//pager = (vm_pager_t)malloc(sizeof *pager, M_VMPAGER, waitok);
+	pager = (vm_pager_t)rmalloc(pager, sizeof *pager);
 	if (pager == NULL)
 		return(NULL);
-	swp = (sw_pager_t)malloc(sizeof *swp, M_VMPGDATA, waitok);
+	//swp = (sw_pager_t)malloc(sizeof *swp, M_VMPGDATA, waitok);
+	swp = (sw_pager_t)rmalloc(swp, sizeof *swp);
 	if (swp == NULL) {
-		free((caddr_t)pager, M_VMPAGER);
+		//free((caddr_t)pager, M_VMPAGER);
+		rmfree((caddr_t)pager, sizeof(pager));
 		return(NULL);
 	}
 	size = round_page(size);
 	swp->sw_osize = size;
 	swp->sw_nblocks = (btodb(size) + btodb(SWB_NPAGES * PAGE_SIZE) - 1) / btodb(SWB_NPAGES*PAGE_SIZE);
 	swp->sw_blocks = (sw_blk_t)
-		malloc(swp->sw_nblocks*sizeof(*swp->sw_blocks),
-		       M_VMPGDATA, waitok);
+		//malloc(swp->sw_nblocks*sizeof(*swp->sw_blocks), M_VMPGDATA, waitok);
+		rmalloc(swp, swp->sw_nblocks*sizeof(*swp->sw_blocks));
 	if (swp->sw_blocks == NULL) {
-		free((caddr_t)swp, M_VMPGDATA);
-		free((caddr_t)pager, M_VMPAGER);
+		//free((caddr_t)swp, M_VMPGDATA);
+		//free((caddr_t)pager, M_VMPAGER);
+		rmfree((caddr_t)swp, sizeof(swp));
+		rmfree((caddr_t)pager, sizeof(pager));
 		return(NULL);
 	}
 
@@ -355,7 +362,7 @@ swap_pager_setvalid(swp, offset, valid)
 int
 swap_pager_getswapspace( unsigned amount, unsigned *rtval) {
 	vm_swap_size -= amount;
-	if( !rlist_alloc(&swaplist, amount, rtval)) {
+	if( !rmalloc(&swapmap, amount, rtval)) {
 		vm_swap_size += amount;
 		return 0;
 	} else {
@@ -370,7 +377,7 @@ swap_pager_getswapspace( unsigned amount, unsigned *rtval) {
  */
 void
 swap_pager_freeswapspace( unsigned from, unsigned to) {
-	rlist_free(&swaplist, from, to);
+	rmfree(&swapmap, from, to);
 	vm_swap_size += (to-from)+1;
 	swapsizecheck();
 }
@@ -607,11 +614,14 @@ swap_pager_copy(srcpager, srcoffset, dstpager, dstoffset, offset)
 				
 	splx(s);
 
-	free((caddr_t)srcswp->sw_blocks, M_VMPGDATA);
+	//free((caddr_t)srcswp->sw_blocks, M_VMPGDATA);
+	rmfree((caddr_t)srcswp->sw_blocks, sizeof(srcswp->sw_blocks));
 	srcswp->sw_blocks = 0;
-	free((caddr_t)srcswp, M_VMPGDATA);
+	//free((caddr_t)srcswp, M_VMPGDATA);
+	rmfree((caddr_t)srcswp, sizeof(srcswp));
 	srcpager->pg_data = 0;
-	free((caddr_t)srcpager, M_VMPAGER);
+	//free((caddr_t)srcpager, M_VMPAGER);
+	rmfree((caddr_t)srcpager, sizeof(srcpager));
 
 	return;
 }
@@ -668,11 +678,14 @@ swap_pager_dealloc(pager)
 	/*
 	 * Free swap management resources
 	 */
-	free((caddr_t)swp->sw_blocks, M_VMPGDATA);
+	//free((caddr_t)swp->sw_blocks, M_VMPGDATA);
+	rmfree((caddr_t)swp->sw_blocks, sizeof(swp->sw_blocks));
 	swp->sw_blocks = 0;
-	free((caddr_t)swp, M_VMPGDATA);
+	//free((caddr_t)swp, M_VMPGDATA);
+	rmfree((caddr_t)swp, sizeof(swp));
 	pager->pg_data = 0;
-	free((caddr_t)pager, M_VMPAGER);
+	//free((caddr_t)pager, M_VMPAGER);
+	rmfree((caddr_t)pager, sizeof(pager));
 }
 
 /*

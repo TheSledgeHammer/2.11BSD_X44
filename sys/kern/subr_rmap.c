@@ -46,7 +46,7 @@
  */
 
 size_t
-malloc(mp, size)
+rmalloc(mp, size)
 	struct map *mp;
 	register size_t size;
 {
@@ -88,7 +88,7 @@ again:
  * map.  Sort addr into map and combine on one or both ends if possible.
  */
 void
-mfree(mp, size, addr)
+rmfree(mp, size, addr)
 	struct map *mp;
 	size_t size;
 	register size_t  addr;
@@ -100,7 +100,7 @@ mfree(mp, size, addr)
 		return;
 	/* the address must not be 0, or the protocol has broken down. */
 	if (!addr)
-		panic("mfree: addr = 0");
+		panic("rmfree: addr = 0");
 	if (mp == coremap) {
 		if (runin) {
 			runin = 0;
@@ -120,7 +120,7 @@ mfree(mp, size, addr)
 #ifdef DIAGNOSTIC
 		/* any overlap is an internal error */
 		if (ep->m_addr + ep->m_size > addr)
-			panic("mfree overlap #1");
+			panic("rmfree overlap #1");
 #endif
 		/* add into piece on the left by increasing its size. */
 		ep->m_size += size;
@@ -133,7 +133,7 @@ mfree(mp, size, addr)
 		if (bp->m_size && addr + size >= bp->m_addr) {
 #ifdef DIAGNOSTIC
 			if (addr + size > bp->m_addr)
-				panic("mfree overlap #2");
+				panic("rmfree overlap #2");
 #endif
 			ep->m_size += bp->m_size;
 			do {
@@ -181,7 +181,7 @@ mfree(mp, size, addr)
  * best.  Returns NULL on failure, address of u. on success.
  */
 size_t
-malloc3(mp, d_size, s_size, u_size, a)
+rmalloc3(mp, d_size, s_size, u_size, a)
 	struct map *mp;
 	size_t d_size, s_size, u_size;
 	size_t a[3];

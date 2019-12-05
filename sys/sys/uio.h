@@ -74,7 +74,7 @@ struct uio {
  * Limits
  */
 #define UIO_MAXIOV	1024		/* max 1K of iov's */
-#define UIO_SMALLIOV	8		/* 8 on stack, else malloc */
+#define UIO_SMALLIOV	8		/* 8 on stack, else rmalloc */
 #endif /* KERNEL */
 
 

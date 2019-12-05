@@ -40,16 +40,16 @@ swapin(p)
 	if (xp) {
 		xlock(xp);
 		if (!xp->x_caddr && !xp->x_ccount) {
-			x = malloc(coremap, xp->x_size);
+			x = rmalloc(coremap, xp->x_size);
 			if (!x) {
 				xunlock(xp);
 				return;
 			}
 		}
 	}
-	if (malloc3(coremap, p->p_dsize, p->p_ssize, USIZE, a) == NULL) {
+	if (rmalloc3(coremap, p->p_dsize, p->p_ssize, USIZE, a) == NULL) {
 		if (x)
-			mfree(coremap, xp->x_size, x);
+			rmfree(coremap, xp->x_size, x);
 		if (xp)
 			xunlock(xp);
 		return;
@@ -65,14 +65,14 @@ swapin(p)
 	}
 	if (p->p_dsize) {
 		swap(p->p_daddr, a[0], p->p_dsize, B_READ);
-		mfree(swapmap, ctod(p->p_dsize), p->p_daddr);
+		rmfree(swapmap, ctod(p->p_dsize), p->p_daddr);
 	}
 	if (p->p_ssize) {
 		swap(p->p_saddr, a[1], p->p_ssize, B_READ);
-		mfree(swapmap, ctod(p->p_ssize), p->p_saddr);
+		rmfree(swapmap, ctod(p->p_ssize), p->p_saddr);
 	}
 	swap(p->p_addr, a[2], USIZE, B_READ);
-	mfree(swapmap, ctod(USIZE), p->p_addr);
+	rmfree(swapmap, ctod(USIZE), p->p_addr);
 	p->p_daddr = a[0];
 	p->p_saddr = a[1];
 	p->p_addr = a[2];
@@ -108,7 +108,7 @@ swapout(p, freecore, odata, ostack)
 		odata = p->p_dsize;
 	if (ostack == (u_int)X_OLDSIZE)
 		ostack = p->p_ssize;
-	if (malloc3(swapmap, ctod(p->p_dsize), ctod(p->p_ssize),
+	if (rmalloc3(swapmap, ctod(p->p_dsize), ctod(p->p_ssize),
 	    ctod(USIZE), a) == NULL)
 		panic("out of swap space");
 	p->p_flag |= SLOCK;
@@ -117,12 +117,12 @@ swapout(p, freecore, odata, ostack)
 	if (odata) {
 		swap(a[0], p->p_daddr, odata, B_WRITE);
 		if (freecore == X_FREECORE)
-			mfree(coremap, odata, p->p_daddr);
+			rmfree(coremap, odata, p->p_daddr);
 	}
 	if (ostack) {
 		swap(a[1], p->p_saddr, ostack, B_WRITE);
 		if (freecore == X_FREECORE)
-			mfree(coremap, ostack, p->p_saddr);
+			rmfree(coremap, ostack, p->p_saddr);
 	}
 	/*
 	 * Increment u_ru.ru_nswap for process being tossed out of core.
@@ -147,7 +147,7 @@ swapout(p, freecore, odata, ostack)
 	}
 	swap(a[2], p->p_addr, USIZE, B_WRITE);
 	if (freecore == X_FREECORE)
-		mfree(coremap, USIZE, p->p_addr);
+		rmfree(coremap, USIZE, p->p_addr);
 	p->p_daddr = a[0];
 	p->p_saddr = a[1];
 	p->p_addr = a[2];

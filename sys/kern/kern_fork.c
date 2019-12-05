@@ -226,9 +226,9 @@ again:
 	rpp->p_saddr = rip->p_saddr;
 	a1 = rip->p_addr;
 	if (isvfork)
-		a[2] = malloc(coremap, USIZE);
+		a[2] = rmalloc(coremap, USIZE);
 	else
-		a[2] = malloc3(coremap, rip->p_dsize, rip->p_ssize, USIZE, a);
+		a[2] = rmalloc3(coremap, rip->p_dsize, rip->p_ssize, USIZE, a);
 
 	/*
 	 * Partially simulate the environment of the new process so that
@@ -275,8 +275,8 @@ again:
 		 *  Then wait for the child to finish with it.
 		 */
 		if (a[2] == NULL) {
-			mfree(coremap, rip->p_dsize, rip->p_daddr);
-			mfree(coremap, rip->p_ssize, rip->p_saddr);
+			rmfree(coremap, rip->p_dsize, rip->p_daddr);
+			rmfree(coremap, rip->p_ssize, rip->p_saddr);
 		}
 		rip->p_dsize = 0;
 		rip->p_ssize = 0;

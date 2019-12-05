@@ -148,17 +148,12 @@ struct user {
 	struct	rlimit u_rlimit[RLIM_NLIMITS];
 	struct	quota *u_quota;			/* user's quota structure */
 
-#define u_cmpn u_nd.ni_cnd			/* namei componentname */
-#define u_cred u_cmpn.cn_cred		/* namei componentname credentials */
+#define u_cmpn u_nd->ni_cnd			/* namei component name */
+#define u_cred u_cmpn->cn_cred		/* namei component name credentials */
 
 /* namei & co. */
 	struct 	nameidata *u_nd;
 
-	//struct	nameicache {			/* last successful directory search */
-	//	off_t nc_prevoffset;		/* offset at which last entry found */
-	//	ino_t nc_inumber;			/* inum of cached directory */
-	//	dev_t nc_dev;				/* dev of cached directory */
-	//} u_ncache;
 	short	u_xxxx[2];				/* spare */
 	char	u_login[MAXLOGNAME];	/* setlogin/getlogin */
 	short	u_stack[1];				/* kernel stack per user
@@ -166,13 +161,20 @@ struct user {
 					 	 	 	 	 * backward not to reach here
 					 	 	 	 	 */
 
+	//struct	nameicache {		/* last successful directory search */
+	//	off_t nc_prevoffset;		/* offset at which last entry found */
+	//	ino_t nc_inumber;			/* inum of cached directory */
+	//	dev_t nc_dev;				/* dev of cached directory */
+	//} u_ncache;
+
+
 /* 1.7 Remaining fields only for core dump and/or ptrace-- not valid at other times! */
 	struct	kinfo_proc 	u_kproc;	/* proc + eproc */
 	struct	md_coredump u_md;		/* machine dependent glop */
 };
 
 #ifdef KERNEL
-extern	struct user u;
+extern struct user u;
 #endif
 
 #endif

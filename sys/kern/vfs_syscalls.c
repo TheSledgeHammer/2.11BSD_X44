@@ -134,20 +134,22 @@ mount(p, uap, retval)
 	/*
 	 * Allocate and initialize the file system.
 	 */
-	mp = (struct mount *)malloc((u_long)sizeof(struct mount),
-		M_MOUNT, M_WAITOK);
+	//mp = (struct mount *)malloc((u_long)sizeof(struct mount), M_MOUNT, M_WAITOK);
+	mp = (struct mount *)rmalloc(mp, (u_long)sizeof(struct mount));
 	bzero((char *)mp, (u_long)sizeof(struct mount));
 	mp->mnt_op = vfssw[uap->type];
 	mp->mnt_vfc = vfsconf[uap->type];
 	error = vfs_lock(mp);
 	if (error) {
-		free((caddr_t)mp, M_MOUNT);
+		//free((caddr_t)mp, M_MOUNT);
+		rmfree((caddr_t)mp, sizeof(mp));
 		vput(vp);
 		return (error);
 	}
 	if (vp->v_mountedhere != NULL) {
 		vfs_unlock(mp);
-		free((caddr_t)mp, M_MOUNT);
+		//free((caddr_t)mp, M_MOUNT);
+		rmfree((caddr_t)mp, sizeof(mp));
 		vput(vp);
 		return (EBUSY);
 	}
@@ -193,7 +195,8 @@ update:
 	} else {
 		mp->mnt_vnodecovered->v_mountedhere = (struct mount *)0;
 		vfs_unlock(mp);
-		free((caddr_t)mp, M_MOUNT);
+		//free((caddr_t)mp, M_MOUNT);
+		rmfree((caddr_t)mp, sizeof(mp));
 		vput(vp);
 		vfsconf[uap->type]->vfc_refcount--;
 	}
@@ -295,7 +298,8 @@ dounmount(mp, flags, p)
 		mp->mnt_vfc->vfc_refcount--;
 		if (mp->mnt_vnodelist.lh_first != NULL)
 			panic("unmount: dangling vnode");
-		free((caddr_t)mp, M_MOUNT);
+		//free((caddr_t)mp, M_MOUNT);
+		rmfree((caddr_t)mp, sizeof(mp));
 	}
 	return (error);
 }
@@ -878,7 +882,8 @@ symlink(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	MALLOC(path, char *, MAXPATHLEN, M_NAMEI, M_WAITOK);
+	//MALLOC(path, char *, MAXPATHLEN, M_NAMEI, M_WAITOK);
+	rmalloc(path, sizeof(char *));
 	error = copyinstr(uap->path, path, MAXPATHLEN, NULL);
 	if (error)
 		goto out;
@@ -901,7 +906,8 @@ symlink(p, uap, retval)
 	LEASE_CHECK(nd.ni_dvp, p, p->p_ucred, LEASE_WRITE);
 	error = VOP_SYMLINK(nd.ni_dvp, &nd.ni_vp, &nd.ni_cnd, &vattr, path);
 out:
-	FREE(path, M_NAMEI);
+	//FREE(path, M_NAMEI);
+	rmfree(path, sizeof(path));
 	return (error);
 }
 
@@ -1867,11 +1873,13 @@ out:
 		vrele(fvp);
 	}
 	vrele(tond.ni_startdir);
-	FREE(tond.ni_cnd.cn_pnbuf, M_NAMEI);
+	//FREE(tond.ni_cnd.cn_pnbuf, M_NAMEI);
+	rmfree(tond.ni_cnd.cn_pnbuf, sizeof(tond.ni_cnd.cn_pnbuf));
 out1:
 	if (fromnd.ni_startdir)
 		vrele(fromnd.ni_startdir);
-	FREE(fromnd.ni_cnd.cn_pnbuf, M_NAMEI);
+	//FREE(fromnd.ni_cnd.cn_pnbuf, M_NAMEI);
+	rmfree(fromnd.ni_cnd.cn_pnbuf, sizeof(fromnd.ni_cnd.cn_pnbuf));
 	if (error == -1)
 		return (0);
 	return (error);
@@ -2028,7 +2036,8 @@ ogetdirentries(p, uap, retval)
 		kuio.uio_iov = &kiov;
 		kuio.uio_segflg = UIO_SYSSPACE;
 		kiov.iov_len = uap->count;
-		MALLOC(dirbuf, caddr_t, uap->count, M_TEMP, M_WAITOK);
+		//MALLOC(dirbuf, caddr_t, uap->count, M_TEMP, M_WAITOK);
+		rmalloc(dirbuf,  caddr_t);
 		kiov.iov_base = dirbuf;
 		error = VOP_READDIR(vp, &kuio, fp->f_cred, NULL, NULL, NULL);
 		fp->f_offset = kuio.uio_offset;
@@ -2064,7 +2073,8 @@ ogetdirentries(p, uap, retval)
 			if (dp >= edp)
 				error = uiomove(dirbuf, readcnt, &auio);
 		}
-		FREE(dirbuf, M_TEMP);
+		//FREE(dirbuf, M_TEMP);
+		rmfree(dirbuff, sizeof(dirbuf));
 	}
 	VOP_UNLOCK(vp);
 	if (error)

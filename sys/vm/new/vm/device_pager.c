@@ -47,7 +47,7 @@
 #include <sys/systm.h>
 #include <sys/conf.h>
 #include <sys/mman.h>
-#include <sys/malloc.h>
+#include <sys/map.h>
 #include <sys/proc.h>
 
 #include <vm/vm.h>
@@ -161,12 +161,15 @@ top:
 		/*
 		 * Allocate and initialize pager structs
 		 */
-		pager = (vm_pager_t)malloc(sizeof *pager, M_VMPAGER, M_WAITOK);
+		//pager = (vm_pager_t)malloc(sizeof *pager, M_VMPAGER, M_WAITOK);
+		pager = (vm_pager_t)rmalloc(pager, sizeof *pager);
 		if (pager == NULL)
 			return(NULL);
-		devp = (dev_pager_t)malloc(sizeof *devp, M_VMPGDATA, M_WAITOK);
+		//devp = (dev_pager_t)malloc(sizeof *devp, M_VMPGDATA, M_WAITOK);
+		devp = (dev_pager_t)rmalloc(devp, sizeof *devp);
 		if (devp == NULL) {
-			free((caddr_t)pager, M_VMPAGER);
+			//free((caddr_t)pager, M_VMPAGER);
+			rmfree((caddr_t)pager, sizeof(pager));
 			return(NULL);
 		}
 		pager->pg_handle = handle;
@@ -188,8 +191,10 @@ top:
 		 * we free everything and start over.
 		 */
 		if (vm_pager_lookup(&dev_pager_list, handle)) {
-			free((caddr_t)devp, M_VMPGDATA);
-			free((caddr_t)pager, M_VMPAGER);
+			//free((caddr_t)devp, M_VMPGDATA);
+			//free((caddr_t)pager, M_VMPAGER);
+			rmfree((caddr_t)devp, sizeof(devp));
+			rmfree((caddr_t)pager, sizeof(pager));
 			goto top;
 		}
 		TAILQ_INSERT_TAIL(&dev_pager_list, pager, pg_list);
@@ -246,8 +251,11 @@ dev_pager_dealloc(pager)
 		TAILQ_REMOVE(&devp->devp_pglist, m, pageq);
 		dev_pager_putfake(m);
 	}
-	free((caddr_t)devp, M_VMPGDATA);
-	free((caddr_t)pager, M_VMPAGER);
+	//free((caddr_t)devp, M_VMPGDATA);
+	//free((caddr_t)pager, M_VMPAGER);
+	rmfree((caddr_t)pager, sizeof(devp));
+	rmfree((caddr_t)pager, sizeof(pager));
+
 }
 
 static int
@@ -339,7 +347,8 @@ dev_pager_getfake(paddr)
 	int i;
 
 	if (dev_pager_fakelist.tqh_first == NULL) {
-		m = (vm_page_t)malloc(PAGE_SIZE, M_VMPGDATA, M_WAITOK);
+		//m = (vm_page_t)malloc(PAGE_SIZE, M_VMPGDATA, M_WAITOK);
+		m = (vm_page_t)rmalloc(m, PAGE_SIZE);
 		for (i = PAGE_SIZE / sizeof(*m); i > 0; i--) {
 			TAILQ_INSERT_TAIL(&dev_pager_fakelist, m, pageq);
 			m++;

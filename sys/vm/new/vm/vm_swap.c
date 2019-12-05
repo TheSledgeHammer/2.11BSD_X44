@@ -43,7 +43,7 @@
 #include <sys/dmap.h>		/* XXX */
 #include <sys/vnode.h>
 #include <sys/file.h>
-#include <sys/rlist.h>
+#include <sys/map.h>
 
 #include <miscfs/specfs/specdev.h>
 
@@ -399,7 +399,7 @@ swfree(p, index)
 		blk = niswap;
 		for (swp = &swdevt[niswdev]; swp != sp; swp++)
 			blk += swp->sw_nblks;
-		rlist_free(&swaplist, blk, blk + nblks - 1); 
+		rmfree(&swapmap, blk, blk + nblks - 1);
 		vm_swap_size += nblks;
 		return (0);
 	}
@@ -418,7 +418,7 @@ swfree(p, index)
 			blk = dmmax;
 		/* XXX -- we need to exclude the first cluster as above */
 		/* but for now, this will work fine... */
-		rlist_free(&swaplist, vsbase, vsbase + blk - 1); 
+		rmfree(&swapmap, vsbase, vsbase + blk - 1);
 		vm_swap_size += blk;
 	}
 	return (0);

@@ -140,9 +140,10 @@ netstart()
 	 * The networking uses a mapped region as the DMA area for
 	 * network interface drivers.  Allocate this latter region.
 	 */
-	if ((miobase = MALLOC(coremap, btoc(miosize))) == 0)
+	/*if ((miobase = MALLOC(coremap, btoc(miosize))) == 0)
+		panic("miobase");*/
+	if ((miobase = rmalloc(coremap, btoc(miosize))) == 0)
 		panic("miobase");
-
 	/*
 	 * Allocate sufficient UMRs to map the DMA region.  Save the
 	 * starting click and UNIBUS addresses for use in ubmalloc later.
@@ -152,7 +153,8 @@ netstart()
 	if (mfkd(&ubmap)) {
 		miostart = miobase;
 		s = (int)btoub(miosize);
-		first = MALLOC(ub_map, s);
+		//first = MALLOC(ub_map, s);
+		first = rmalloc(ub_map, s);
 #ifdef	DIAGNOSTIC
 		if	(!first)
 			panic("ub_map");

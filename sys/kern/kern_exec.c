@@ -191,7 +191,7 @@ execve()
 	ne = 0;
 	nc = 0;
 	cc = 0;
-	bno = malloc(swapmap, ctod((int)btoc(NCARGS + MAXBSIZE)));
+	bno = rmalloc(swapmap, ctod((int)btoc(NCARGS + MAXBSIZE)));
 	if (bno == 0) {
 		swkill(u->u_procp, "exec");
 		goto bad;
@@ -381,7 +381,7 @@ bad:
 		brelse(bp);
 	}
 	if (bno)
-		mfree(swapmap, ctod((int)btoc(NCARGS + MAXBSIZE)), bno);
+		rmfree(swapmap, ctod((int)btoc(NCARGS + MAXBSIZE)), bno);
 	if (ip)
 		iput(ip);
 }

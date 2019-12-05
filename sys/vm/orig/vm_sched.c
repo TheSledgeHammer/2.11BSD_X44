@@ -9,9 +9,10 @@
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/proc.h>
-#include <vm/vm.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
+
+#include <vm/vm.h>
 
 #define	MINFINITY	-32767		/* minus infinity */
 
@@ -101,7 +102,8 @@ sched()
 		if (rp->p_stat == SZOMB ||
 		    (rp->p_flag & (SSYS|SLOCK|SULOCK|SLOAD)) != SLOAD)
 			continue;
-		if (rp->p_textp && (rp->p_textp->x_flag & XLOCK))
+
+		if (rp->p_textvp && (rp->p_textvp->v_flag & XLOCK))
 			continue;
 		if ((rp->p_stat == SSLEEP &&
 		    (rp->p_flag & P_SINTR)) || rp->p_stat == SSTOP) {
@@ -161,7 +163,7 @@ sched()
 void
 vmmeter()
 {
-#ifdef UCB_METER
+//#ifdef UCB_METER
 	register u_short *cp, *rp;
 	register long *sp;
 
@@ -174,18 +176,18 @@ vmmeter()
 		*cp = 0;
 		rp++, cp++, sp++;
 	}
-#endif
+//#endif
 
 	if (time.tv_sec % 5 == 0) {
 		vmtotal();
-#ifdef UCB_METER
+//#ifdef UCB_METER
 		rate.v_swpin = cnt.v_swpin;
 		sum.v_swpin += cnt.v_swpin;
 		cnt.v_swpin = 0;
 		rate.v_swpout = cnt.v_swpout;
 		sum.v_swpout += cnt.v_swpout;
 		cnt.v_swpout = 0;
-#endif
+//#endif
 	}
 }
 

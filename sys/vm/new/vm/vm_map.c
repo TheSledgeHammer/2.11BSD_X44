@@ -70,7 +70,7 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/malloc.h>
+#include <sys/map.h>
 
 #include <vm/vm.h>
 #include <vm/include/vm_page.h>
@@ -199,7 +199,8 @@ vmspace_alloc(min, max, pageable)
 			mapvmpgcnt = 0;
 	}
 
-	MALLOC(vm, struct vmspace *, sizeof(struct vmspace), M_VMMAP, M_WAITOK);
+	//MALLOC(vm, struct vmspace *, sizeof(struct vmspace), M_VMMAP, M_WAITOK);
+	rmalloc(vm, sizeof(struct vmspace));
 	bzero(vm, (caddr_t) &vm->vm_startcopy - (caddr_t) vm);
 	vm_map_init(&vm->vm_map, min, max, pageable);
 	pmap_pinit(&vm->vm_pmap);
@@ -223,7 +224,8 @@ vmspace_free(vm)
 		(void) vm_map_delete(&vm->vm_map, vm->vm_map.min_offset,
 		    vm->vm_map.max_offset);
 		pmap_release(&vm->vm_pmap);
-		FREE(vm, M_VMMAP);
+		//FREE(vm, M_VMMAP);
+		rmfree(vm, sizeof(vm));
 	}
 }
 
@@ -247,8 +249,8 @@ vm_map_t vm_map_create(pmap, min, max, pageable)
 		if (result == NULL)
 			panic("vm_map_create: out of maps");
 	} else
-		MALLOC(result, vm_map_t, sizeof(struct vm_map),
-		       M_VMMAP, M_WAITOK);
+		//MALLOC(result, vm_map_t, sizeof(struct vm_map), M_VMMAP, M_WAITOK);
+		rmalloc(result, sizeof(struct vm_map));
 
 	vm_map_init(result, min, max, pageable);
 	result->pmap = pmap;
@@ -352,8 +354,8 @@ vm_map_entry_create(map)
 			return entry;
 		}
 			
-		MALLOC(entry, vm_map_entry_t, sizeof(struct vm_map_entry),
-		       M_VMMAPENT, M_WAITOK);
+		//MALLOC(entry, vm_map_entry_t, sizeof(struct vm_map_entry), M_VMMAPENT, M_WAITOK);
+		rmalloc(entry, sizeof(struct vm_map_entry));
 	}
 	if (entry == NULL)
 		panic("vm_map_entry_create: out of map entries");
@@ -384,7 +386,8 @@ vm_map_entry_dispose(map, entry)
 			return;
 		}
 			
-		FREE(entry, M_VMMAPENT);
+		//FREE(entry, M_VMMAPENT);
+		rmfree(entry, sizeof(entry));
 	}
 }
 
@@ -459,7 +462,8 @@ void vm_map_deallocate(map)
 
 	pmap_destroy(map->pmap);
 
-	FREE(map, M_VMMAP);
+	//FREE(map, M_VMMAP);
+	rmfree(map, sizeof(map));
 }
 
 /*

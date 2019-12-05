@@ -59,7 +59,7 @@ struct filedesc {
 	char	*fd_ofileflags;		/* per-process open file flags */
 	struct	vnode *fd_cdir;		/* current directory */
 	struct	vnode *fd_rdir;		/* root directory */
-	int	fd_nfiles;				/* number of open files allocated */
+	int		fd_nfiles;			/* number of open files allocated */
 	u_short	fd_lastfile;		/* high-water mark of fd_ofiles */
 	u_short	fd_freefile;		/* approx. next free file */
 	u_short	fd_cmask;			/* mask for file creation */
@@ -95,13 +95,13 @@ struct filedesc0 {
 /*
  * Kernel global variables and routines.
  */
-int	fdalloc __P((struct proc *p, int want, int *result));
-int	fdavail __P((struct proc *p, int n));
-int	falloc __P((struct proc *p, struct file **resultfp, int *resultfd));
+int		fdalloc __P((struct proc *p, int want, int *result));
+int		fdavail __P((struct proc *p, int n));
+int		falloc __P((struct proc *p, struct file **resultfp, int *resultfd));
 void	ffree __P((struct file *));
 struct	filedesc *fdcopy __P((struct proc *p));
 void	fdfree __P((struct proc *p));
-int	closef __P((struct file *fp,struct proc *p));
+int		closef __P((struct file *fp,struct proc *p));
 void	fdcloseexec __P((struct proc *p));
 #endif
 

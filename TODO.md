@@ -13,7 +13,7 @@ Kern:
 - tty_pty.c
 - uipc_syscalls.c
 
-Vm: (Fix malloc: calls FreeBSD's)
+Vm:
 - vmmeter.h (belongs in sys)
 - vm.h (extended from 2.11BSD's)
 2.11BSD's VM
