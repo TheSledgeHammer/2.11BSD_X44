@@ -6,8 +6,8 @@
  *	@(#)types.h	1.4.1 (2.11BSD) 2000/2/28
  */
 
-#ifndef _TYPES_
-#define	_TYPES_
+#ifndef SYS_TYPES_H
+#define	SYS_TYPES_H
 
 #include <sys/cdefs.h>
 
@@ -22,11 +22,6 @@
 #define	minor(x)		((int)((x)&0377)) 				/* minor part of a device */
 #define	makedev(x,y)	((dev_t)(((x)<<8) | (y)))		/* make a device number */
 
-//typedef unsigned char		u_char;
-//typedef unsigned short	u_short;
-//typedef unsigned int		u_int;
-//typedef unsigned long		u_long;		/* see this! unsigned longs at last! */
-//typedef unsigned short	ushort;		/* sys III / Sys V Compat */
 
 typedef	unsigned char		u_char;
 typedef	unsigned short		u_short;
@@ -35,7 +30,7 @@ typedef	unsigned long		u_long;
 typedef	unsigned short		ushort;		/* Sys V compatibility */
 typedef	unsigned int		uint;		/* Sys V compatibility */
 
-typedef	unsigned long long 	u_quad_t; /* quads */
+typedef	unsigned long long 	u_quad_t; 	/* quads */
 typedef	long long			quad_t;
 typedef	quad_t *			qaddr_t;
 
@@ -70,3 +65,5 @@ typedef	unsigned short		mode_t;		/* permissions */
 
 typedef char	bool_t;		/* boolean */
 typedef size_t	memaddr;	/* core or swap address */
+
+#endif

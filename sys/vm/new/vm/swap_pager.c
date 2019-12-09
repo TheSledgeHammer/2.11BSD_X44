@@ -80,7 +80,6 @@ int swap_pager_full;
 extern vm_map_t pager_map;
 extern int vm_swap_size;
 int no_swap_space=1;
-//struct rlist *swaplist;
 struct map *swapmap;
 int nswaplist;
 #define MAX_PAGEOUT_CLUSTER 8
@@ -258,11 +257,8 @@ swap_pager_alloc(handle, size, prot, offset)
 	swp->sw_osize = size;
 	swp->sw_nblocks = (btodb(size) + btodb(SWB_NPAGES * PAGE_SIZE) - 1) / btodb(SWB_NPAGES*PAGE_SIZE);
 	swp->sw_blocks = (sw_blk_t)
-		//malloc(swp->sw_nblocks*sizeof(*swp->sw_blocks), M_VMPGDATA, waitok);
 		rmalloc(swp, swp->sw_nblocks*sizeof(*swp->sw_blocks));
 	if (swp->sw_blocks == NULL) {
-		//free((caddr_t)swp, M_VMPGDATA);
-		//free((caddr_t)pager, M_VMPAGER);
 		rmfree((caddr_t)swp, sizeof(swp));
 		rmfree((caddr_t)pager, sizeof(pager));
 		return(NULL);
@@ -614,13 +610,10 @@ swap_pager_copy(srcpager, srcoffset, dstpager, dstoffset, offset)
 				
 	splx(s);
 
-	//free((caddr_t)srcswp->sw_blocks, M_VMPGDATA);
 	rmfree((caddr_t)srcswp->sw_blocks, sizeof(srcswp->sw_blocks));
 	srcswp->sw_blocks = 0;
-	//free((caddr_t)srcswp, M_VMPGDATA);
 	rmfree((caddr_t)srcswp, sizeof(srcswp));
 	srcpager->pg_data = 0;
-	//free((caddr_t)srcpager, M_VMPAGER);
 	rmfree((caddr_t)srcpager, sizeof(srcpager));
 
 	return;
@@ -678,13 +671,10 @@ swap_pager_dealloc(pager)
 	/*
 	 * Free swap management resources
 	 */
-	//free((caddr_t)swp->sw_blocks, M_VMPGDATA);
 	rmfree((caddr_t)swp->sw_blocks, sizeof(swp->sw_blocks));
 	swp->sw_blocks = 0;
-	//free((caddr_t)swp, M_VMPGDATA);
 	rmfree((caddr_t)swp, sizeof(swp));
 	pager->pg_data = 0;
-	//free((caddr_t)pager, M_VMPAGER);
 	rmfree((caddr_t)pager, sizeof(pager));
 }
 

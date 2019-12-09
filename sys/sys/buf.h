@@ -51,7 +51,7 @@ struct buf
 	long	b_resid;				/* words not transferred after error */
 	char	b_xmem;					/* high order core address */
 	dev_t	b_dev;					/* major+minor device name */
-	union {
+	struct {
 	    caddr_t b_addr;				/* low order core address */
 	} b_un;
 	void	*b_saveaddr;			/* Original b_addr for physio. */
@@ -105,7 +105,6 @@ struct cluster_save {
 };
 
 
-
 /*
  * These flags are kept in b_flags.
  */
@@ -131,6 +130,7 @@ struct cluster_save {
 #define	B_CALL			0x00000040	/* Call b_iodone from biodone. */
 #define	B_WRITEINPROG	0x01000000	/* Write in progress. */
 #define	B_NOCACHE		0x00008000	/* Do not cache block after use. */
+#define B_VMIO			0x20000000	/* VMIO flag */
 
 /*
  * number of buffer hash entries
@@ -184,25 +184,25 @@ extern TAILQ_HEAD(swqueue, buf) bswlist;
 __BEGIN_DECLS
 void	bufinit __P((void));
 void	bremfree __P((struct buf *));
-int	bread __P((struct vnode *, daddr_t, int,
+int		bread __P((struct vnode *, daddr_t, int,
 	    struct ucred *, struct buf **));
-int	breadn __P((struct vnode *, daddr_t, int, daddr_t *, int *, int,
+int		breadn __P((struct vnode *, daddr_t, int, daddr_t *, int *, int,
 	    struct ucred *, struct buf **));
-int	bwrite __P((struct buf *));
+int		bwrite __P((struct buf *));
 void	bdwrite __P((struct buf *));
 void	bawrite __P((struct buf *));
 void	brelse __P((struct buf *));
-struct buf *getnewbuf __P((int slpflag, int slptimeo));
-struct buf *     getpbuf __P((void));
-struct buf *incore __P((struct vnode *, daddr_t));
-struct buf *getblk __P((struct vnode *, daddr_t, int, int, int));
-struct buf *geteblk __P((int));
+struct 	buf *getnewbuf __P((int slpflag, int slptimeo));
+struct 	buf *     getpbuf __P((void));
+struct 	buf *incore __P((struct vnode *, daddr_t));
+struct 	buf *getblk __P((struct vnode *, daddr_t, int, int, int));
+struct 	buf *geteblk __P((int));
 void	allocbuf __P((struct buf *, int));
-int	biowait __P((struct buf *));
+int		biowait __P((struct buf *));
 void	biodone __P((struct buf *));
 
 void	cluster_callback __P((struct buf *));
-int	cluster_read __P((struct vnode *, u_quad_t, daddr_t, long,
+int		cluster_read __P((struct vnode *, u_quad_t, daddr_t, long,
 	    struct ucred *, struct buf **));
 void	cluster_write __P((struct buf *, u_quad_t));
 u_int	minphys __P((struct buf *));

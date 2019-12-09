@@ -72,15 +72,14 @@ typedef struct simplelock	*simple_lock_t;
 typedef struct lock			lock_data_t;
 typedef struct lock			*lock_t;
 
-#include "orig/include/vmparam.h"
-#include "orig/include/vmmac.h"
-#include <vm/vmmeter.h>
-#include "orig/include/vmsystm.h"
+#include <include/vmparam.h>
+#include <include/vmmac.h>
+#include <include/vmsystm.h>
 
+#include <vm/vmmeter.h>
 #include <sys/queue.h>
 #include <machine/cpufunc.h>
-
-#include <vm/include/lock.h>
+#include <vm/include/vm_param.h>
 #include <vm/include/vm_prot.h>
 #include <vm/include/vm_inherit.h>
 #include <vm/include/vm_map.h>
@@ -88,7 +87,7 @@ typedef struct lock			*lock_t;
 #include <vm/include/pmap.h>
 #include <vm/include/vm_extern.h>
 
-
+#include <vm/include/lock.h>
 /*
  * Shareable process virtual address space.
  * May eventually be merged with vm_map.

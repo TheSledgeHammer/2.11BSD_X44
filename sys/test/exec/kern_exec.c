@@ -51,7 +51,7 @@
 //#include <sys/shm.h>
 
 #include <vm/vm.h>
-#include <vm/vm_kern.h>
+#include <vm/include/vm_kern.h>
 
 #include <machine/reg.h>
 

@@ -107,7 +107,7 @@ struct vmtotal
 	long	t_armtxt;	/* active real memory used by text, clicks */
 	long	t_free;		/* free memory pages, kb */
 };
-#ifdef KERNEL)
+#ifdef KERNEL
 struct	vmtotal total;
 #endif
 

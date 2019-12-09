@@ -34,8 +34,8 @@
  * $Id: vm_extern.h,v 1.5 1994/09/02 15:06:50 davidg Exp $
  */
 
-#ifndef _VM_VM_EXTERN_H_
-#define _VM_VM_EXTERN_H_
+#ifndef _VM_EXTERN_H_
+#define _VM_EXTERN_H_
 
 struct buf;
 struct loadavg;

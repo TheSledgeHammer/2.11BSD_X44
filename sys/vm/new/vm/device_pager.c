@@ -66,16 +66,13 @@ int	dpagerdebug = 0;
 #define DDB_FAIL	0x08
 #endif
 
-static vm_pager_t	 dev_pager_alloc
-			    __P((caddr_t, vm_size_t, vm_prot_t, vm_offset_t));
+static vm_pager_t dev_pager_alloc __P((caddr_t, vm_size_t, vm_prot_t, vm_offset_t));
 static void		 dev_pager_dealloc __P((vm_pager_t));
-static int		 dev_pager_getpage
-			    __P((vm_pager_t, vm_page_t, boolean_t));
-static boolean_t	 dev_pager_haspage __P((vm_pager_t, vm_offset_t));
+static int		 dev_pager_getpage __P((vm_pager_t, vm_page_t, boolean_t));
+static boolean_t dev_pager_haspage __P((vm_pager_t, vm_offset_t));
 static void		 dev_pager_init __P((void));
-static int		 dev_pager_putpage
-			    __P((vm_pager_t, vm_page_t, boolean_t));
-static vm_page_t	 dev_pager_getfake __P((vm_offset_t));
+static int		 dev_pager_putpage __P((vm_pager_t, vm_page_t, boolean_t));
+static vm_page_t dev_pager_getfake __P((vm_offset_t));
 static void		 dev_pager_putfake __P((vm_page_t));
 
 struct pagerops devicepagerops = {
@@ -161,14 +158,11 @@ top:
 		/*
 		 * Allocate and initialize pager structs
 		 */
-		//pager = (vm_pager_t)malloc(sizeof *pager, M_VMPAGER, M_WAITOK);
 		pager = (vm_pager_t)rmalloc(pager, sizeof *pager);
 		if (pager == NULL)
 			return(NULL);
-		//devp = (dev_pager_t)malloc(sizeof *devp, M_VMPGDATA, M_WAITOK);
 		devp = (dev_pager_t)rmalloc(devp, sizeof *devp);
 		if (devp == NULL) {
-			//free((caddr_t)pager, M_VMPAGER);
 			rmfree((caddr_t)pager, sizeof(pager));
 			return(NULL);
 		}
@@ -191,8 +185,6 @@ top:
 		 * we free everything and start over.
 		 */
 		if (vm_pager_lookup(&dev_pager_list, handle)) {
-			//free((caddr_t)devp, M_VMPGDATA);
-			//free((caddr_t)pager, M_VMPAGER);
 			rmfree((caddr_t)devp, sizeof(devp));
 			rmfree((caddr_t)pager, sizeof(pager));
 			goto top;
@@ -251,8 +243,6 @@ dev_pager_dealloc(pager)
 		TAILQ_REMOVE(&devp->devp_pglist, m, pageq);
 		dev_pager_putfake(m);
 	}
-	//free((caddr_t)devp, M_VMPGDATA);
-	//free((caddr_t)pager, M_VMPAGER);
 	rmfree((caddr_t)pager, sizeof(devp));
 	rmfree((caddr_t)pager, sizeof(pager));
 
@@ -347,7 +337,6 @@ dev_pager_getfake(paddr)
 	int i;
 
 	if (dev_pager_fakelist.tqh_first == NULL) {
-		//m = (vm_page_t)malloc(PAGE_SIZE, M_VMPGDATA, M_WAITOK);
 		m = (vm_page_t)rmalloc(m, PAGE_SIZE);
 		for (i = PAGE_SIZE / sizeof(*m); i > 0; i--) {
 			TAILQ_INSERT_TAIL(&dev_pager_fakelist, m, pageq);

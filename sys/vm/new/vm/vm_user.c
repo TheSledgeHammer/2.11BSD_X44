@@ -76,7 +76,7 @@
 
 simple_lock_data_t	vm_alloc_lock;	/* XXX */
 
-#ifdef MACHVMCOMPAT
+//#ifdef MACHVMCOMPAT
 /*
  * BSD style syscall interfaces to MACH calls
  * All return MACH return values.
