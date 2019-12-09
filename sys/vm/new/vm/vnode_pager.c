@@ -157,14 +157,12 @@ vnode_pager_alloc(handle, size, prot, offset)
 		/*
 		 * Allocate pager structures
 		 */
-		//pager = (vm_pager_t) malloc(sizeof *pager, M_VMPAGER, M_WAITOK);
 		pager = (vm_pager_t) rmalloc(pager, sizeof *pager);
 		if (pager == NULL)
 			return (NULL);
-		//vnp = (vn_pager_t) malloc(sizeof *vnp, M_VMPGDATA, M_WAITOK);
 		vnp = (vn_pager_t) rmalloc(vnp, sizeof *vnp);
 		if (vnp == NULL) {
-			free((caddr_t) pager, M_VMPAGER);
+			rmfree(pager, sizeof(pager));
 			return (NULL);
 		}
 
@@ -176,8 +174,8 @@ vnode_pager_alloc(handle, size, prot, offset)
 			vm_object_enter(object, pager);
 			vm_object_setpager(object, pager, 0, TRUE);
 		} else {
-			free((caddr_t) vnp, M_VMPGDATA);
-			free((caddr_t) pager, M_VMPAGER);
+			rmfree(vnp, sizeof(vnp));
+			rmfree(pager, sizeof(pager));
 			return (NULL);
 		}
 
@@ -220,8 +218,8 @@ vnode_pager_dealloc(pager)
 		vrele(vp);
 	}
 	TAILQ_REMOVE(&vnode_pager_list, pager, pg_list);
-	free((caddr_t) vnp, M_VMPGDATA);
-	free((caddr_t) pager, M_VMPAGER);
+	rmfree(vnp, sizeof(vnp));
+	rmfree(pager, sizeof(pager));
 }
 
 int

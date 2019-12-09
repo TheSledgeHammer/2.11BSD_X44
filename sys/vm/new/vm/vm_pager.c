@@ -309,7 +309,6 @@ vm_pager_lookup(pglist, handle)
 	caddr_t handle;
 {
 	register vm_pager_t pager;
-
 	for (pager = pglist->tqh_first; pager; pager = pager->pg_list.tqe_next)
 		if (pager->pg_handle == handle)
 			return (pager);
