@@ -22,7 +22,8 @@ struct bdevsw
 	int	(*d_open)(dev_t dev, int oflags, int devtype, struct proc *p);
 	int	(*d_close)(dev_t dev, int fflag, int devtype, struct proc *p);
 	int	(*d_strategy)(dev_t dev, int fflag, int devtype, struct proc *p);
-	int	(*d_root)();		/* XXX root attach routine */
+	int	(*d_ioctl)(dev_t dev, int cmd, caddr_t data, int fflag, struct proc *p);
+	int	(*d_root)();		/* parameters vary by architecture */
 	daddr_t	(*d_psize)(dev_t dev);
 	int	d_flags;
 };
@@ -42,8 +43,10 @@ struct cdevsw
 	int	(*d_write)(dev_t dev, struct uio *uio, int ioflag);
 	int	(*d_ioctl)(dev_t dev, int cmd, caddr_t data, int fflag, struct proc *p);
 	int	(*d_stop)(struct tty *tp, int rw);
+	int	(*d_reset)(int uban);	/* XXX */
 	struct tty *d_ttys;
 	int	(*d_select)(dev_t dev, int which, struct proc *p);
+	int	(*d_mmap)();
 	int	(*d_strategy)(struct buf *bp);
 };
 #ifdef KERNEL
@@ -72,13 +75,13 @@ extern struct	linesw linesw[];
 
 struct swdevt {
 	dev_t	sw_dev;
-	int	sw_flags;
-	int	sw_nblks;
+	int		sw_flags;
+	int		sw_nblks;
 	struct	vnode *sw_vp;
 };
-#define	SW_FREED	0x01
+#define	SW_FREED		0x01
 #define	SW_SEQUENTIAL	0x02
-#define sw_freed	sw_flags	/* XXX compat */
+#define sw_freed		sw_flags	/* XXX compat */
 
 #ifdef KERNEL
 extern struct swdevt swdevt[];

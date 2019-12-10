@@ -525,7 +525,7 @@ morefree:
 	 * is swapped out -- deactivate pages 
 	 */
 
-	for (p = (struct proc *)allproc; p != NULL; p = p->p_next) {
+	for (p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
 		int overage;
 		quad_t limit;
 

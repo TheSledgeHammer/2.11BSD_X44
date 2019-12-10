@@ -72,9 +72,9 @@ typedef struct simplelock	*simple_lock_t;
 typedef struct lock			lock_data_t;
 typedef struct lock			*lock_t;
 
-#include <include/vmparam.h>
-#include <include/vmmac.h>
-#include <include/vmsystm.h>
+//#include "orig/include/vmparam.h"
+//#include "orig/include/vmmac.h"
+//#include "orig/include/vmsystm.h"
 
 #include <vm/vmmeter.h>
 #include <sys/queue.h>

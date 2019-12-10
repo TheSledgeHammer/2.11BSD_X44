@@ -58,7 +58,7 @@ struct buf
 	daddr_t	b_lblkno;				/* Logical block number. */
 	daddr_t	b_blkno;				/* Underlying physical block number. */
 
-	void	(*b_iodone) __P((struct buf *));
+	void	(*b_iodone)(struct buf *);
 	struct	vnode *b_vp;			/* Device vnode. */
 	int	b_pfcent;					/* Center page when swapping cluster. */
 	int	b_dirtyoff;					/* Offset in buffer of dirty region. */
@@ -105,32 +105,30 @@ struct cluster_save {
 };
 
 
-/*
- * These flags are kept in b_flags.
- */
-#define	B_WRITE		0x00000		/* non-read pseudo-flag */
-#define	B_READ		0x00001		/* read when I/O occurs */
-#define	B_DONE		0x00002		/* transaction finished */
-#define	B_ERROR		0x00004		/* transaction aborted */
-#define	B_BUSY		0x00008		/* not on av_forw/back list */
-#define	B_PHYS		0x00010		/* physical IO */
-#define	B_MAP		0x00020		/* alloc UNIBUS */
-#define	B_WANTED 	0x00040		/* issue wakeup when BUSY goes off */
-#define	B_AGE		0x00080		/* delayed write for correct aging */
-#define	B_ASYNC		0x00100		/* don't wait for I/O completion */
-#define	B_DELWRI 	0x00200		/* write at exit of avail list */
-#define	B_TAPE 		0x00400		/* this is a magtape (no bdwrite) */
-#define	B_INVAL		0x00800		/* does not contain valid info */
-#define	B_BAD		0x01000		/* bad block revectoring in progress */
-#define	B_LOCKED	0x02000		/* locked in core (not reusable) */
-#define	B_UBAREMAP	0x04000		/* addr UNIBUS virtual, not physical */
-#define	B_RAMREMAP	0x08000		/* remapped into ramdisk */
+/* These flags are kept in b_flags. */
+#define	B_WRITE			0x00000		/* non-read pseudo-flag */
+#define	B_READ			0x00001		/* read when I/O occurs */
+#define	B_DONE			0x00002		/* transaction finished */
+#define	B_ERROR			0x00004		/* transaction aborted */
+#define	B_BUSY			0x00008		/* not on av_forw/back list */
+#define	B_PHYS			0x00010		/* physical IO */
+#define	B_MAP			0x00020		/* alloc UNIBUS */
+#define	B_WANTED 		0x00040		/* issue wakeup when BUSY goes off */
+#define	B_AGE			0x00080		/* delayed write for correct aging */
+#define	B_ASYNC			0x00100		/* don't wait for I/O completion */
+#define	B_DELWRI 		0x00200		/* write at exit of avail list */
+#define	B_TAPE 			0x00400		/* this is a magtape (no bdwrite) */
+#define	B_INVAL			0x00800		/* does not contain valid info */
+#define	B_BAD			0x01000		/* bad block revectoring in progress */
+#define	B_LOCKED		0x02000		/* locked in core (not reusable) */
+#define	B_UBAREMAP		0x04000		/* addr UNIBUS virtual, not physical */
+#define	B_RAMREMAP		0x08000		/* remapped into ramdisk */
 
-#define	B_CACHE			0x00000020	/* Bread found us in the cache. */
-#define	B_CALL			0x00000040	/* Call b_iodone from biodone. */
-#define	B_WRITEINPROG	0x01000000	/* Write in progress. */
-#define	B_NOCACHE		0x00008000	/* Do not cache block after use. */
-#define B_VMIO			0x20000000	/* VMIO flag */
+#define	B_CACHE			0x10000		/* Bread found us in the cache. */
+#define	B_CALL			0x20000		/* Call b_iodone from biodone. */
+#define	B_WRITEINPROG	0x40000		/* Write in progress. */
+#define	B_NOCACHE		0x80000		/* Do not cache block after use. */
+#define B_VMIO			0x100000	/* VMIO flag */
 
 /*
  * number of buffer hash entries
@@ -162,9 +160,9 @@ TAILQ_HEAD(bqueues, buf) bufqueues[BQUEUES];
 /*
  * Zero out the buffer's data area.
  */
-#define	clrbuf(bp) {							\
+#define	clrbuf(bp) {										\
 	blkclr((bp)->b_data, (u_int)(bp)->b_bcount);			\
-	(bp)->b_resid = 0;						\
+	(bp)->b_resid = 0;										\
 }
 
 /* Flags to low-level allocation routines. */

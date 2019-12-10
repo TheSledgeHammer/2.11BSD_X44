@@ -11,7 +11,6 @@
 
 #include <sys/cdefs.h>
 
-
 /* Machine type dependent parameters. */
 #include <machine/endian.h>
 

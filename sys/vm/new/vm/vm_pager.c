@@ -351,7 +351,7 @@ getpbuf() {
 
 	s = splbio();
 	/* get a bp from the swap buffer header pool */
-	while ((bp = bswlist.tqh_first) == NULL) {
+	while ((bp = bswlist->.tqh_first) == NULL) {
 		bswneeded = 1;
 		tsleep((caddr_t)&bswneeded, PVM, "wswbuf", 0); 
 	}

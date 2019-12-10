@@ -152,7 +152,7 @@ vmio_rawiodone( struct buf *bp) {
 	vm_page_t m;
 
 	if( bp->b_bufsize != bp->b_bcount)
-		bzero( bp->b_data + bp->b_bcount, bp->b_bufsize - bp->b_bcount);
+		bzero(bp->b_data + bp->b_bcount, bp->b_bufsize - bp->b_bcount);
 	printf("rawdone: (blk: %d, count: %d)\n",
 		bp->b_blkno, bp->b_bcount);
 	s = splbio();

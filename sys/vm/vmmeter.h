@@ -84,7 +84,7 @@ struct vmsum
 	long	v_swpin;	/* swapins */
 	long	v_swpout;	/* swapouts */
 };
-#ifdef KERNEL
+//#ifdef KERNEL
 struct vmrate	cnt, rate;
 struct vmsum	sum;
 #endif
@@ -101,10 +101,10 @@ struct vmtotal
 	long	t_avm;		/* active virtual memory, clicks */
 	long	t_rm;		/* total real memory, clicks */
 	long	t_arm;		/* active real memory, clicks */
-	long	t_vmtxt;	/* virtual memory used by text, clicks */
-	long	t_avmtxt;	/* active virtual memory used by text, clicks */
-	long	t_rmtxt;	/* real memory used by text, clicks */
-	long	t_armtxt;	/* active real memory used by text, clicks */
+	long	t_vmshr;	/* virtual memory used by text, clicks */
+	long	t_avmshr;	/* active virtual memory used by text, clicks */
+	long	t_rmshr;	/* real memory used by text, clicks */
+	long	t_armshr;	/* active real memory used by text, clicks */
 	long	t_free;		/* free memory pages, kb */
 };
 #ifdef KERNEL

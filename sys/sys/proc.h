@@ -156,17 +156,17 @@ struct pcred {
 /* flag codes */
 #define	P_CONTROLT	0x00002	/* Has a controlling terminal. */
 
-#define	SLOAD		0x0001	/* in core */
-#define	SSYS		0x0002	/* swapper or pager process */
-#define	SLOCK		0x0004	/* process being swapped out */
-#define	SSWAP		0x0008	/* save area flag */
+#define	P_SLOAD		0x0001	/* in core */
+#define	P_SSYS		0x0002	/* swapper or pager process */
+#define	P_SLOCK		0x0004	/* process being swapped out */
+#define	P_SSWAP		0x0008	/* save area flag */
 #define	P_TRACED	0x0010	/* process is being traced */
 #define	P_WAITED	0x0020	/* another tracing flag */
-#define	SULOCK		0x0040	/* user settable lock in core */
+#define	P_SULOCK	0x0040	/* user settable lock in core */
 #define	P_SINTR		0x0080	/* sleeping interruptibly */
-#define	SVFORK		0x0100	/* process resulted from vfork() */
-#define	SVFPRNT		0x0200	/* parent in vfork, waiting for child */
-#define	SVFDONE		0x0400	/* parent has released child in vfork */
+#define	P_SVFORK	0x0100	/* process resulted from vfork() */
+#define	P_SVFPRNT	0x0200	/* parent in vfork, waiting for child */
+#define	P_SVFDONE	0x0400	/* parent has released child in vfork */
 			/*		0x0800	/* unused */
 #define	P_TIMEOUT	0x1000	/* tsleep timeout expired */
 #define	P_NOCLDSTOP	0x2000	/* no SIGCHLD signal to parent */
@@ -178,6 +178,13 @@ struct pcred {
 #define	P_SUGID		0x00100	/* Had set id privileges since last exec. */
 #define	P_TRACED	0x00800	/* Debugged process being traced. */
 #define P_EXEC		0x04000	/* Process called exec. */
+#define	P_SYSTEM	0x00200	/* System proc: no sigs, stats or swapping. */
+#define	P_INMEM		0x00004	/* Loaded into memory. */
+
+
+/* Should probably be changed into a hold count (They have. -DG). */
+#define	P_NOSWAP	0x08000	/* Another flag to prevent swap out. */
+#define	P_PHYSIO	0x10000	/* Doing physical I/O. */
 
 #define	S_DATA	0			/* specified segment */
 #define	S_STACK	1

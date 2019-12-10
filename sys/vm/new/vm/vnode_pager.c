@@ -102,8 +102,6 @@ struct pagerops vnodepagerops = {
 	vnode_pager_haspage
 };
 
-
-
 static int vnode_pager_input(vn_pager_t vnp, vm_page_t * m, int count, int reqpage);
 static int vnode_pager_output(vn_pager_t vnp, vm_page_t * m, int count, int *rtvals);
 
