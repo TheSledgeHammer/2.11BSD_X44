@@ -50,14 +50,14 @@
  * Selectors
  */
 
-#define	ISPL(s)	((s)&3)		/* what is the priority level of a selector */
-#define	SEL_KPL	0		/* kernel priority level */	
-#define	SEL_UPL	3		/* user priority level */	
-#define	ISLDT(s)	((s)&SEL_LDT)	/* is it local or global */
-#define	SEL_LDT	4		/* local descriptor table */	
-#define	IDXSEL(s)	(((s)>>3) & 0x1fff)		/* index of selector */
+#define	ISPL(s)		((s)&3)						/* what is the priority level of a selector */
+#define	SEL_KPL		0							/* kernel priority level */
+#define	SEL_UPL		3							/* user priority level */
+#define	ISLDT(s)	((s)&SEL_LDT)				/* is it local or global */
+#define	SEL_LDT		4							/* local descriptor table */
+#define	IDXSEL(s)	(((s)>>3) & 0x1fff)			/* index of selector */
 #define	LSEL(s,r)	(((s)<<3) | SEL_LDT | r)	/* a local selector */
-#define	GSEL(s,r)	(((s)<<3) | r)			/* a global selector */
+#define	GSEL(s,r)	(((s)<<3) | r)				/* a global selector */
 
 /*
  * Memory and System segment descriptors
@@ -65,12 +65,12 @@
 struct	segment_descriptor	{
 	unsigned sd_lolimit:16 ;	/* segment extent (lsb) */
 	unsigned sd_lobase:24 __attribute__ ((packed));
-					/* segment base address (lsb) */
+								/* segment base address (lsb) */
 	unsigned sd_type:5 ;		/* segment type */
-	unsigned sd_dpl:2 ;		/* segment descriptor priority level */
-	unsigned sd_p:1 ;		/* segment descriptor present */
+	unsigned sd_dpl:2 ;			/* segment descriptor priority level */
+	unsigned sd_p:1 ;			/* segment descriptor present */
 	unsigned sd_hilimit:4 ;		/* segment extent (msb) */
-	unsigned sd_xx:2 ;		/* unused */
+	unsigned sd_xx:2 ;			/* unused */
 	unsigned sd_def32:1 ;		/* default 32 vs 16 bit size */
 	unsigned sd_gran:1 ;		/* limit granularity (byte/page units)*/
 	unsigned sd_hibase:8 ;		/* segment base address  (msb) */
@@ -83,10 +83,10 @@ struct	gate_descriptor	{
 	unsigned gd_looffset:16 ;	/* gate offset (lsb) */
 	unsigned gd_selector:16 ;	/* gate segment selector */
 	unsigned gd_stkcpy:5 ;		/* number of stack wds to cpy */
-	unsigned gd_xx:3 ;		/* unused */
+	unsigned gd_xx:3 ;			/* unused */
 	unsigned gd_type:5 ;		/* segment type */
-	unsigned gd_dpl:2 ;		/* segment descriptor priority level */
-	unsigned gd_p:1 ;		/* segment descriptor present */
+	unsigned gd_dpl:2 ;			/* segment descriptor priority level */
+	unsigned gd_p:1 ;			/* segment descriptor present */
 	unsigned gd_hioffset:16 ;	/* gate offset (msb) */
 } ;
 
@@ -99,9 +99,9 @@ union	descriptor	{
 };
 
 	/* system segments and gate types */
-#define	SDT_SYSNULL	 0	/* system null */
+#define	SDT_SYSNULL	 	 0	/* system null */
 #define	SDT_SYS286TSS	 1	/* system 286 TSS available */
-#define	SDT_SYSLDT	 2	/* system local descriptor table */
+#define	SDT_SYSLDT		 2	/* system local descriptor table */
 #define	SDT_SYS286BSY	 3	/* system 286 TSS busy */
 #define	SDT_SYS286CGT	 4	/* system 286 call gate */
 #define	SDT_SYSTASKGT	 5	/* system task gate */
@@ -223,8 +223,8 @@ struct region_descriptor {
 #define	LSYS5CALLS_SEL	0	/* forced by intel BCS */
 #define	LSYS5SIGR_SEL	1
 #define	L43BSDCALLS_SEL	2	/* notyet */
-#define	LUCODE_SEL	3
-#define	LUDATA_SEL	4
+#define	LUCODE_SEL		3
+#define	LUDATA_SEL		4
 /* seperate stack, es,fs,gs sels ? */
 /* #define	LPOSIXCALLS_SEL	5*/	/* notyet */
 #define NLDT		LUDATA_SEL+1

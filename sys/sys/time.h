@@ -65,9 +65,9 @@ struct timezone {
  * Names of the interval timers, and structure
  * defining a timer setting.
  */
-#define	ITIMER_REAL	0
+#define	ITIMER_REAL		0
 #define	ITIMER_VIRTUAL	1
-#define	ITIMER_PROF	2
+#define	ITIMER_PROF		2
 
 struct	k_itimerval {
 	long	it_interval;			/* timer interval */
@@ -90,19 +90,20 @@ struct clockinfo {
 	int	profhz;		/* profiling clock frequency */
 };
 
-#ifdef KERNEL
+#ifndef KERNEL
+#include <time.h>
+#endif
 
+#ifdef KERNEL
 int		itimerdecr __P((struct itimerval *itp,int usec));
 int		itimerfix __P((struct timeval *));
 void	microtime __P((struct timeval *));
 void	timevaladd __P((struct timeval *, struct timeval *));
 void	timevalfix __P((struct timeval *));
 void	timevalsub __P((struct timeval *, struct timeval *));
+#endif /* !KERNEL */
 
-#else /* not KERNEL */
-#include <time.h>
-
-#ifndef _POSIX_SOURCE
+//#ifndef _POSIX_SOURCE
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
@@ -113,8 +114,8 @@ int	setitimer __P((int, const struct itimerval *, struct itimerval *));
 int	settimeofday __P((const struct timeval *, const struct timezone *));
 int	utimes __P((const char *, const struct timeval *));
 __END_DECLS
-#endif /* !POSIX */
+//#endif /* !POSIX */
 
-#endif /* !KERNEL */
+
 
 #endif	/* !_SYS_TIME_H_ */

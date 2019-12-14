@@ -39,10 +39,10 @@
 #ifndef _SYS_EXEC_ELF_H_
 #define _SYS_EXEC_ELF_H_
 
-#include <machine/types.h>
+//#include <machine/types.h>
+//#include <machine/elf_machdep.h>
 
-
-typedef	u_int8_t  	Elf_Byte;
+typedef	u_int  	Elf_Byte;
 
 typedef	u_int32_t	Elf32_Addr;
 #define	ELF32_FSZ_ADDR	4
@@ -595,8 +595,6 @@ typedef struct {
 #define	ELFNAMEEND(x)	CONCAT(x,CONCAT(_elf,ELFSIZE))
 #define	ELFDEFNNAME(x)	CONCAT(ELF,CONCAT(ELFSIZE,CONCAT(_,x)))
 #endif
-
-#include <machine/elf_machdep.h>
 
 #if defined(ELFSIZE) && (ELFSIZE == 32)
 #define	Elf_Ehdr	Elf32_Ehdr

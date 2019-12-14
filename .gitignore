@@ -10,8 +10,6 @@
 *.ipr
 *.iws
 *.idea
-*.project
-*.cproject
 *.dist
 *.settings
 *.vscode

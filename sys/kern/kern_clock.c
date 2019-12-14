@@ -13,9 +13,16 @@
 #include <sys/dk.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
+#include <sys/sysctl.h>
+#include <sys/resourcevar.h>
+#include <sys/signalvar.h>
+
+#include <machine/cpu.h>
+#include <machine/clock.h>
 
 int noproc;
 struct  callout *callfree, calltodo;
+volatile struct timeval time;
 
 /*
  * The hz hardware interval timer.
@@ -30,7 +37,7 @@ struct  callout *callfree, calltodo;
  */
 /*ARGSUSED*/
 void
-hardclock(dev,sp,r1,ov,nps,r0,pc,ps)
+hardclock(dev, sp, r1, ov, nps, r0, pc, ps)
 	dev_t dev;
 	caddr_t sp, pc;
 	int r1, ov, nps, r0, ps;
@@ -39,7 +46,6 @@ hardclock(dev,sp,r1,ov,nps,r0,pc,ps)
 	register struct proc *p;
 	register int needsoft = 0;
 	mapinfo map;
-
 	savemap(map);		/* ensure normal mapping of kernel data */
 
 	/*
@@ -356,7 +362,8 @@ hzto(tv)
 	 * Delta times less than 25 days can be computed ``exactly''.
 	 * Maximum value for any timeout in 10ms ticks is 250 days.
 	 */
-	sec = tv->tv_sec - time.tv_sec;
+
+	sec = tv->tv_sec - time->tv_sec;
 	if (sec <= 0x7fffffff / 1000 - 1000)
 		ticks = ((tv->tv_sec - time.tv_sec) * 1000 +
 			(tv->tv_usec - time.tv_usec) / 1000) / (1000/hz);

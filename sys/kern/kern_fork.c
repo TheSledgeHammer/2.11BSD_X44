@@ -69,8 +69,7 @@ fork1(isvfork)
 	p1 = u->u_procp;
 	if (newproc(isvfork)) {
 		u->u_r.r_val1 = p1->p_pid;
-
-		u->u_start = time.tv_sec;
+		u->u_start = p1->p_rtime->tv_sec; //time.tv_sec;
 		/* set forked but preserve suid/gid state */
 		u->u_acflag = AFORK | (u->u_acflag & ASUGID);
 		bzero(&u->u_ru, sizeof(u->u_ru));
@@ -191,20 +190,14 @@ again:
 			continue;
 		fp->f_count++;
 	}
+	if((rip->p_textvp != NULL) && !isvfork) {
+		VREF(rip->p_textvp);
+	}
 	VREF(u->u_cdir);
 	if (u->u_rdir) {
 		VREF(u->u_rdir);
 	}
 
-
-	/*if ((rip->p_textp != NULL) && !isvfork) {
-		rip->p_textp->x_count++;
-		rip->p_textp->x_ccount++;
-	}
-	u->u_cdir->i_count++;
-	if (u->u_rdir)
-		u->u_rdir->i_count++;
-	*/
 	/*
 	 * When the longjmp is executed for the new process,
 	 * here's where it will resume.

@@ -49,8 +49,8 @@
 
 /* When referenced during a trap/exception, registers are at these offsets */
 
-#define	tES	(0)
-#define	tDS	(1)
+#define	tES		(0)
+#define	tDS		(1)
 #define	tEDI	(2)
 #define	tESI	(3)
 #define	tEBP	(4)
@@ -63,10 +63,10 @@
 #define	tERR	(11)
 
 #define	tEIP	(12)
-#define	tCS	(13)
+#define	tCS		(13)
 #define	tEFLAGS	(14)
 #define	tESP	(15)
-#define	tSS	(16)
+#define	tSS		(16)
 
 /*
  * Registers accessible to ptrace(2) syscall for debugger
@@ -104,7 +104,7 @@ struct fpreg {
 };
 
 #ifdef KERNEL
-int	set_regs __P((struct proc *p, struct reg *regs));
+int		set_regs __P((struct proc *p, struct reg *regs));
 void	setregs __P((struct proc *, u_long, u_long));
 #endif
 #endif /* _MACHINE_REG_H_ */

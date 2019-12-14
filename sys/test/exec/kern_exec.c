@@ -55,6 +55,7 @@
 
 #include <machine/reg.h>
 
+static int exec_check_permissions(struct exec_linker *);
 
 /*
  * execsw_set is constructed for us by the linker.  Each of the items
@@ -341,4 +342,64 @@ execsigs(p)
 	u->u_psflags = 0;
 }
 
+/*
+ * Check permissions of file to execute.
+ *	Return 0 for success or error code on failure.
+ */
+static int
+exec_check_permissions(elp)
+	struct exec_linker *elp;
+{
+	struct proc *p = elp->el_proc;
+	struct vnode *vnodep = elp->el_vnodep;
+	struct vattr *attr = elp->el_attr;
+	int error;
+
+	/* Check number of open-for-writes on the file and deny execution if there are any. */
+	if (vnodep->v_writecount) {
+		return (ETXTBSY);
+	}
+
+	/* Get file attributes */
+	error = VOP_GETATTR(vnodep, attr, p->p_ucred, p);
+	if (error)
+		return (error);
+
+	/*
+	 * 1) Check if file execution is disabled for the filesystem that this
+	 *	file resides on.
+	 * 2) Insure that at least one execute bit is on - otherwise root
+	 *	will always succeed, and we don't want to happen unless the
+	 *	file really is executable.
+	 * 3) Insure that the file is a regular file.
+	 */
+	if ((vnodep->v_mount->mnt_flag & MNT_NOEXEC) || ((attr->va_mode & 0111) == 0) || (attr->va_type != VREG)) {
+		return (EACCES);
+	}
+
+	/* Zero length files can't be exec'd */
+	if (attr->va_size == 0)
+		return (ENOEXEC);
+	/*
+	 * Disable setuid/setgid if the filesystem prohibits it or if
+	 *	the process is being traced.
+	 */
+	if ((vnodep->v_mount->mnt_flag & MNT_NOSUID) || (p->p_flag & P_TRACED))
+		attr->va_mode &= ~(VSUID | VSGID);
+
+	/*
+	 *  Check for execute permission to file based on current credentials.
+	 *	Then call filesystem specific open routine (which does nothing
+	 *	in the general case).
+	 */
+	error = VOP_ACCESS(vnodep, VEXEC, p->p_ucred, p);
+	if (error)
+		return (error);
+
+	error = VOP_OPEN(vnodep, FREAD, p->p_ucred, p);
+	if (error)
+		return (error);
+
+	return (0);
+}
 

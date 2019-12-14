@@ -77,7 +77,7 @@
 #define CCR0_CO		0x40	/* cache org: 1=direct mapped, 0=2x set assoc */
 #define CCR0_SUSPEND	0x80	/* enables SUSP# and SUSPA# pins */
 
-#define CCR1	0xc1		/* configuration control register 1 */
+#define CCR1		0xc1		/* configuration control register 1 */
 #define CCR1_RPL	0x01	/* enables RPLSET and RPLVAL# pins */
 /* the remaining 7 bits of this register are reserved */
 

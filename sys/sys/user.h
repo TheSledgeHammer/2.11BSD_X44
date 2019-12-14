@@ -8,6 +8,7 @@
 
 #ifndef _SYS_USER_H_
 #define _SYS_USER_H_
+
 #include <machine/pcb.h>
 #include <machine/param.h>
 #ifndef KERNEL

@@ -114,16 +114,16 @@
 /* user/kernel map constants */
 #define	KERNBASE ((0x400-1-NKPDE)*(NBPG*NPTEPG))
 
-#define VM_MIN_ADDRESS		((vm_offset_t)0)
-#define VM_MAXUSER_ADDRESS	((vm_offset_t)KERNBASE - (NBPG*(NPTEPG+UPAGES)))
-#define USRSTACK VM_MAXUSER_ADDRESS
-#define UPT_MIN_ADDRESS		((vm_offset_t)KERNBASE - (NBPG*NPTEPG))
-#define UPT_MAX_ADDRESS		((vm_offset_t)KERNBASE - (NBPG*(NKPDE+2)))
-#define VM_MAX_ADDRESS		UPT_MAX_ADDRESS
+#define VM_MIN_ADDRESS			((vm_offset_t)0)
+#define VM_MAXUSER_ADDRESS		((vm_offset_t)KERNBASE - (NBPG*(NPTEPG+UPAGES)))
+#define USRSTACK 				VM_MAXUSER_ADDRESS
+#define UPT_MIN_ADDRESS			((vm_offset_t)KERNBASE - (NBPG*NPTEPG))
+#define UPT_MAX_ADDRESS			((vm_offset_t)KERNBASE - (NBPG*(NKPDE+2)))
+#define VM_MAX_ADDRESS			UPT_MAX_ADDRESS
 #define VM_MIN_KERNEL_ADDRESS	((vm_offset_t)KERNBASE - (NBPG*(NKPDE+2)))
-#define UPDT			VM_MIN_KERNEL_ADDRESS
-#define KPT_MIN_ADDRESS		((vm_offset_t)KERNBASE - NBPG*(NKPDE+1))
-#define KPT_MAX_ADDRESS		((vm_offset_t)KERNBASE - NBPG)
+#define UPDT					VM_MIN_KERNEL_ADDRESS
+#define KPT_MIN_ADDRESS			((vm_offset_t)KERNBASE - NBPG*(NKPDE+1))
+#define KPT_MAX_ADDRESS			((vm_offset_t)KERNBASE - NBPG)
 #define VM_MAX_KERNEL_ADDRESS	((vm_offset_t)KERNBASE + NKPT*NBPG*NPTEPG)
 
 /* virtual sizes (bytes) for various kernel submaps */

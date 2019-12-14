@@ -54,10 +54,10 @@ extern int physmem;			/* physical memory */
 
 extern dev_t rootdev;		/* device of the root */
 extern dev_t dumpdev;		/* device to take dumps on */
-extern long	dumplo;			/* offset into dumpdev */
+extern long	 dumplo;		/* offset into dumpdev */
 extern dev_t swapdev;		/* swapping device */
 extern dev_t pipedev;		/* pipe device */
-extern int	nodev();		/* no device function used in bdevsw/cdevsw */
+extern int	 nodev();		/* no device function used in bdevsw/cdevsw */
 
 extern int	mpid;			/* generic for unique process id's */
 extern char	runin;			/* scheduling flag */
@@ -81,6 +81,7 @@ extern struct sysent
 	char	sy_narg;		/* total number of arguments */
 	int		(*sy_call)();	/* handler */
 } sysent[];
+
 extern int nsysent;
 #define	SCARG(p,k)	((p)->k.datum)	/* get arg from args pointer */
 
@@ -97,6 +98,5 @@ extern	char	regloc[];	/* offsets of saved user registers (trap.c) */
 extern void startup();
 extern void cinit();
 extern void pqinit();
-
 
 #endif

@@ -9,7 +9,7 @@
 /*
  * System call names.
  */
-#ifndef pdp11
+//#ifndef pdp11
 char *syscallnames[] = {
 	"indir",			/*   0 = indir */
 	"exit",				/*   1 = exit */
@@ -168,4 +168,4 @@ char *syscallnames[] = {
 	"ucall",			/* 154 = ucall */
 	"fperr",			/* 155 = fperr */
 };
-#endif
+//#endif

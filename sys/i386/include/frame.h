@@ -130,8 +130,8 @@ struct clockframe {
  * Signal frame
  */
 struct sigframe {
-	int	sf_signum;
-	int	sf_code;
+	int		sf_signum;
+	int		sf_code;
 	struct	sigcontext *sf_scp;
 	char	*sf_addr;
 	sig_t	sf_handler;

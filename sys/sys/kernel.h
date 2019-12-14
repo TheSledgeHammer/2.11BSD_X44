@@ -23,11 +23,11 @@ extern volatile struct timeval time;
 extern struct timezone tz;			/* XXX */
 int	adjdelta;
 
-extern int tick;		/* usec per tick (1000000 / hz) */
+extern int 	tick;		/* usec per tick (1000000 / hz) */
 extern int	hz;			/* system clock's frequency */
 extern int	mshz;		/* # milliseconds per hz */
-extern int stathz;		/* statistics clock's frequency */
-extern int profhz;		/* profiling clock's frequency */
+extern int 	stathz;		/* statistics clock's frequency */
+extern int 	profhz;		/* profiling clock's frequency */
 extern int	lbolt;		/* awoken once a second */
 
 int	realitexpire();

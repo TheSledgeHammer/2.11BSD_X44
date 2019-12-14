@@ -31,7 +31,6 @@
 void
 getdtablesize()
 {
-
 	u->u_r.r_val1 = NOFILE;
 }
 
