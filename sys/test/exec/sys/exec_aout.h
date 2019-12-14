@@ -141,12 +141,10 @@ struct exec {
 #define QMAGIC      0314     /* "compact" demand load format */
 
 /* a_mid */
-#define	MID_ZERO		0		/* unknown - implementation dependent */
-#define MID_I386		134		/* i386 BSD binary */
+#define	MID_ZERO	0		/* unknown - implementation dependent */
+#define MID_I386	134		/* i386 BSD binary */
 
-/*
- * a_flags
- */
+/* a_flags */
 #define EX_PIC		0x10	/* contains position independant code */
 #define EX_DYNAMIC	0x20	/* contains run-time link-edit info */
 #define EX_DPMASK	0x30	/* mask for the above */
