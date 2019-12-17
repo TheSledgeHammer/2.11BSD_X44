@@ -6,8 +6,6 @@
  *	@(#)map.h	1.1 (2.10BSD Berkeley) 12/1/86
  */
 
-//#include <sys/types.h>
-
 /*
  * Resource Allocation Maps.
  *

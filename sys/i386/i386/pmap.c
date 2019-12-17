@@ -92,8 +92,8 @@
 #include <sys/user.h>
 
 #include <vm/vm.h>
-#include <vm/vm_kern.h>
-#include <vm/vm_page.h>
+#include <vm/include/vm_kern.h>
+#include <vm/include/vm_page.h>
 
 #include <i386/include/cputypes.h>
 
@@ -132,26 +132,26 @@ int	protection_codes[8];
 struct pmap	kernel_pmap_store;
 pmap_t		kernel_pmap;
 
-vm_offset_t	phys_avail[6];		/* 2 entries + 1 null */
-vm_offset_t    	avail_start;		/* PA of first available physical page */
-vm_offset_t	avail_end;		/* PA of last available physical page */
-vm_size_t	mem_size;		/* memory size in bytes */
-vm_offset_t	virtual_avail; 		/* VA of first avail page (after kernel bss)*/
-vm_offset_t	virtual_end;		/* VA of last avail page (end of kernel AS) */
-int		i386pagesperpage;	/* PAGE_SIZE / I386_PAGE_SIZE */
-boolean_t	pmap_initialized = FALSE; /* Has pmap_init completed? */
+vm_offset_t	phys_avail[6];				/* 2 entries + 1 null */
+vm_offset_t avail_start;				/* PA of first available physical page */
+vm_offset_t	avail_end;					/* PA of last available physical page */
+vm_size_t	mem_size;					/* memory size in bytes */
+vm_offset_t	virtual_avail; 				/* VA of first avail page (after kernel bss)*/
+vm_offset_t	virtual_end;				/* VA of last avail page (end of kernel AS) */
+int			i386pagesperpage;			/* PAGE_SIZE / I386_PAGE_SIZE */
+boolean_t	pmap_initialized = FALSE; 	/* Has pmap_init completed? */
 vm_offset_t	vm_first_phys, vm_last_phys;
 
 static inline boolean_t		pmap_testbit();
-static inline void		pmap_changebit();
-static inline int		pmap_is_managed();
+static inline void			pmap_changebit();
+static inline int			pmap_is_managed();
 static inline void *		vm_get_pmap();
-static inline void		vm_put_pmap();
-static void			i386_protection_init();
-static void			pmap_alloc_pv_entry();
+static inline void			vm_put_pmap();
+static void					i386_protection_init();
+static void					pmap_alloc_pv_entry();
 static inline pv_entry_t	get_pv_entry();
-static inline void		pmap_use_pt();
-static inline void		pmap_unuse_pt();
+static inline void			pmap_use_pt();
+static inline void			pmap_unuse_pt();
 
 
 extern vm_offset_t clean_sva, clean_eva;

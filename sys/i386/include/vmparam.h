@@ -67,14 +67,14 @@
 #define SGROWSIZ	(128UL*1024)		/* amount to grow stack */
 #endif
 
-#define USRTEXT		(1*NBPG)		/* base of user text XXX bogus */
+#define USRTEXT		(1*NBPG)			/* base of user text XXX bogus */
 
 /*
  * Default sizes of swap allocation chunks (see dmap.h).
  * The actual values may be changed in vminit() based on MAXDSIZ.
  * With MAXDSIZ of 16Mb and NDMAP of 38, dmmax will be 1024.
  */
-#define	DMMIN	32			/* smallest swap allocation */
+#define	DMMIN	32				/* smallest swap allocation */
 #define	DMMAX	4096			/* largest potential swap allocation */
 #define	DMTEXT	1024			/* swap allocation for text */
 

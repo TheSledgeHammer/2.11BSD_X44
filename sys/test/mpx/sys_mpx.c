@@ -11,7 +11,8 @@
 
 #include <sys/ioctl.h>
 #include <sys/stat.h>
-#include <mx.h>
+
+#include "mpx/mx.h"
 
 struct fileops mpxops =
         { mpx_read, mpx_write, mpx_ioctl, mpx_select, mpx_close };

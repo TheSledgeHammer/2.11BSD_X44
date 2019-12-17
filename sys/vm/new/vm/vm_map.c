@@ -249,7 +249,6 @@ vm_map_t vm_map_create(pmap, min, max, pageable)
 		if (result == NULL)
 			panic("vm_map_create: out of maps");
 	} else
-		//MALLOC(result, vm_map_t, sizeof(struct vm_map), M_VMMAP, M_WAITOK);
 		rmalloc(result, sizeof(struct vm_map));
 
 	vm_map_init(result, min, max, pageable);
@@ -353,8 +352,6 @@ vm_map_entry_create(map)
 			--mappoolcnt;
 			return entry;
 		}
-			
-		//MALLOC(entry, vm_map_entry_t, sizeof(struct vm_map_entry), M_VMMAPENT, M_WAITOK);
 		rmalloc(entry, sizeof(struct vm_map_entry));
 	}
 	if (entry == NULL)
@@ -385,8 +382,6 @@ vm_map_entry_dispose(map, entry)
 			++mappoolcnt;
 			return;
 		}
-			
-		//FREE(entry, M_VMMAPENT);
 		rmfree(entry, sizeof(entry));
 	}
 }

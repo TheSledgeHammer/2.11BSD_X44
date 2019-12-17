@@ -82,24 +82,24 @@ struct vnodeopv_entry_desc spec_vnodeop_entries[] = {
 	{ &vop_rename_desc, spec_rename },		/* rename */
 	{ &vop_mkdir_desc, spec_mkdir },		/* mkdir */
 	{ &vop_rmdir_desc, spec_rmdir },		/* rmdir */
-	{ &vop_symlink_desc, spec_symlink },		/* symlink */
-	{ &vop_readdir_desc, spec_readdir },		/* readdir */
-	{ &vop_readlink_desc, spec_readlink },		/* readlink */
-	{ &vop_abortop_desc, spec_abortop },		/* abortop */
-	{ &vop_inactive_desc, spec_inactive },		/* inactive */
-	{ &vop_reclaim_desc, spec_reclaim },		/* reclaim */
+	{ &vop_symlink_desc, spec_symlink },	/* symlink */
+	{ &vop_readdir_desc, spec_readdir },	/* readdir */
+	{ &vop_readlink_desc, spec_readlink },	/* readlink */
+	{ &vop_abortop_desc, spec_abortop },	/* abortop */
+	{ &vop_inactive_desc, spec_inactive },	/* inactive */
+	{ &vop_reclaim_desc, spec_reclaim },	/* reclaim */
 	{ &vop_lock_desc, spec_lock },			/* lock */
 	{ &vop_unlock_desc, spec_unlock },		/* unlock */
 	{ &vop_bmap_desc, spec_bmap },			/* bmap */
-	{ &vop_strategy_desc, spec_strategy },		/* strategy */
+	{ &vop_strategy_desc, spec_strategy },	/* strategy */
 	{ &vop_print_desc, spec_print },		/* print */
-	{ &vop_islocked_desc, spec_islocked },		/* islocked */
-	{ &vop_pathconf_desc, spec_pathconf },		/* pathconf */
-	{ &vop_advlock_desc, spec_advlock },		/* advlock */
-	{ &vop_blkatoff_desc, spec_blkatoff },		/* blkatoff */
+	{ &vop_islocked_desc, spec_islocked },	/* islocked */
+	{ &vop_pathconf_desc, spec_pathconf },	/* pathconf */
+	{ &vop_advlock_desc, spec_advlock },	/* advlock */
+	{ &vop_blkatoff_desc, spec_blkatoff },	/* blkatoff */
 	{ &vop_valloc_desc, spec_valloc },		/* valloc */
 	{ &vop_vfree_desc, spec_vfree },		/* vfree */
-	{ &vop_truncate_desc, spec_truncate },		/* truncate */
+	{ &vop_truncate_desc, spec_truncate },	/* truncate */
 	{ &vop_update_desc, spec_update },		/* update */
 	{ &vop_bwrite_desc, spec_bwrite },		/* bwrite */
 	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }

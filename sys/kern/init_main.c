@@ -68,7 +68,7 @@ main()
 	register struct filedesc0 *fdp;
 	register struct user *u;
 	register int i;
-	//extern struct sysentvec sysvec; /* Removed imgact */
+	//extern struct sysentvec aout_sysvec; /* use exec_linker */
 
 	/*
 	 * Initialize the current process pointer (curproc) before

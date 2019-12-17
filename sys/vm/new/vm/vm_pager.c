@@ -351,7 +351,7 @@ getpbuf() {
 
 	s = splbio();
 	/* get a bp from the swap buffer header pool */
-	while ((bp = bswlist->.tqh_first) == NULL) {
+	while ((bp == bswlist->tqh_first) == NULL) {
 		bswneeded = 1;
 		tsleep((caddr_t)&bswneeded, PVM, "wswbuf", 0); 
 	}
@@ -374,7 +374,7 @@ trypbuf() {
 	struct buf *bp;
 
 	s = splbio();
-	if ((bp = bswlist.tqh_first) == NULL) {
+	if ((bp = bswlist->tqh_first) == NULL) {
 		splx(s);
 		return NULL;
 	}
@@ -384,7 +384,7 @@ trypbuf() {
 	bzero(bp, sizeof *bp);
 	bp->b_rcred = NOCRED;
 	bp->b_wcred = NOCRED;
-	bp->b_data = (caddr_t) (MAXPHYS * (bp-swbuf)) + swapbkva;
+	bp->b_data = (caddr_t) (MAXPHYS * (bp - swbuf)) + swapbkva;
 	return bp;
 }
 

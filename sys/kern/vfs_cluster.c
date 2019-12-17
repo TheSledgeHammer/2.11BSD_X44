@@ -57,12 +57,9 @@ struct ctldebug debug13 = { "doreallocblks", &doreallocblks };
 /*
  * Local declarations
  */
-struct buf *cluster_newbuf __P((struct vnode *, struct buf *, long, daddr_t,
-	    daddr_t, long, int));
-struct buf *cluster_rbuild __P((struct vnode *, u_quad_t, struct buf *,
-	    daddr_t, daddr_t, long, int, long));
-void	    cluster_wbuild __P((struct vnode *, struct buf *, long,
-	    daddr_t, int, daddr_t));
+struct buf *cluster_newbuf __P((struct vnode *, struct buf *, long, daddr_t, daddr_t, long, int));
+struct buf *cluster_rbuild __P((struct vnode *, u_quad_t, struct buf *, daddr_t, daddr_t, long, int, long));
+void	    cluster_wbuild __P((struct vnode *, struct buf *, long, daddr_t, int, daddr_t));
 struct cluster_save *cluster_collectbufs __P((struct vnode *, struct buf *));
 
 #ifdef DIAGNOSTIC
@@ -145,7 +142,7 @@ cluster_read(vp, filesize, lblkno, size, cred, bpp)
 		bp->b_flags |= B_READ;
 		ioblkno = lblkno;
 		alreadyincore = 0;
-		curproc->p_stats->p_sru.ru_inblock++;		/* XXX */
+		curproc->p_stats->p_ksru.ru_inblock++;		/* XXX */
 	}
 	/*
 	 * XXX
@@ -237,7 +234,7 @@ cluster_read(vp, filesize, lblkno, size, cred, bpp)
 		else if (rbp) {			/* case 2, 5 */
 			trace(TR_BREADMISSRA,
 			    pack(vp, (num_ra + 1) * size), ioblkno);
-			curproc->p_stats->p_sru.ru_inblock++;	/* XXX */
+			curproc->p_stats->p_ksru.ru_inblock++;	/* XXX */
 		}
 	}
 

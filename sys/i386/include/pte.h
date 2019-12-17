@@ -62,8 +62,8 @@ unsigned int
 		pd_u:1,			/* hardware maintained 'used' bit */
 		pd_m:1,			/* not used */
 		pd_mbz2:2,		/* reserved, must be zero */
-		:3,			/* reserved for software */
-		pd_pfnum:20;		/* physical page frame number of pte's*/
+		:3,				/* reserved for software */
+		pd_pfnum:20;	/* physical page frame number of pte's*/
 };
 
 struct pte {
@@ -75,15 +75,15 @@ unsigned int
 		pg_u:1,			/* hardware maintained 'used' bit */
 		pg_m:1,			/* hardware maintained modified bit */
 		pg_mbz2:2,		/* reserved, must be zero */
-		:3,			/* (unused) */
-		pg_pfnum:20;		/* physical page frame number */
+		:3,				/* (unused) */
+		pg_pfnum:20;	/* physical page frame number */
 };
 #endif
 
-#define	PD_MASK		0xffc00000	/* page directory address bits */
-#define	PD_SHIFT	22		/* page directory address bits */
+#define	PD_MASK		0xffc00000		/* page directory address bits */
+#define	PD_SHIFT	22				/* page directory address bits */
 #define PT_MASK		0x003ff000UL	/* page table address bits */
-#define PG_SHIFT	12		/* page table address shift */  
+#define PG_SHIFT	12				/* page table address shift */
 
 #define	PG_V		0x00000001
 #define PG_RW		0x00000002

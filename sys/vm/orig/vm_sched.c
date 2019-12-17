@@ -13,8 +13,11 @@
 #include <sys/systm.h>
 
 #include <vm/vm.h>
+#include <vm/vmmeter.h>
 
 #define	MINFINITY	-32767		/* minus infinity */
+
+volatile struct timeval time;
 
 int	maxslp = MAXSLP;
 
@@ -100,7 +103,7 @@ sched()
 	inage = -1;
 	for (rp = allproc; rp != NULL; rp = rp->p_nxt) {
 		if (rp->p_stat == SZOMB ||
-		    (rp->p_flag & (SSYS|SLOCK|SULOCK|SLOAD)) != SLOAD)
+		    (rp->p_flag & (SSYS | SLOCK | SULOCK | SLOAD)) != SLOAD)
 			continue;
 
 		if (rp->p_textvp && (rp->p_textvp->v_flag & XLOCK))
@@ -163,7 +166,6 @@ sched()
 void
 vmmeter()
 {
-//#ifdef UCB_METER
 	register u_short *cp, *rp;
 	register long *sp;
 
@@ -176,18 +178,15 @@ vmmeter()
 		*cp = 0;
 		rp++, cp++, sp++;
 	}
-//#endif
 
 	if (time.tv_sec % 5 == 0) {
 		vmtotal();
-//#ifdef UCB_METER
 		rate.v_swpin = cnt.v_swpin;
 		sum.v_swpin += cnt.v_swpin;
 		cnt.v_swpin = 0;
 		rate.v_swpout = cnt.v_swpout;
 		sum.v_swpout += cnt.v_swpout;
 		cnt.v_swpout = 0;
-//#endif
 	}
 }
 
@@ -196,7 +195,7 @@ vmtotal()
 {
 	register struct proc *p;
 	register nrun = 0;
-#ifdef UCB_METER
+
 	char textcounted[100];
 
 	total.t_vmtxt = 0;
@@ -222,26 +221,26 @@ vmtotal()
 	total.t_sl = 0;
 	total.t_sw = 0;
 	bzero(textcounted, ntext * sizeof(char));
-#endif
+
 	for (p = allproc; p != NULL; p = p->p_nxt) {
 		if (p->p_flag & SSYS)
 			continue;
 		if (p->p_stat) {
-#ifdef UCB_METER
+
 			if (p->p_stat != SZOMB) {
 				total.t_vm += p->p_dsize + p->p_ssize + USIZE;
 				if (p->p_flag & SLOAD)
 					total.t_rm += p->p_dsize + p->p_ssize
 					    + USIZE;
 			}
-#endif
+
 			switch (p->p_stat) {
 
 			case SSLEEP:
 			case SSTOP:
 				if (!(p->p_flag & P_SINTR) && p->p_stat == SSLEEP)
 					nrun++;
-#ifdef UCB_METER
+
 				if (p->p_flag & SLOAD) {
 					if	(!(p->p_flag & P_SINTR))
 						total.t_dw++;
@@ -251,13 +250,13 @@ vmtotal()
 					total.t_sw++;
 				if (p->p_slptime < maxslp)
 					goto active;
-#endif
+
 				break;
 
 			case SRUN:
 			case SIDL:
 				nrun++;
-#ifdef UCB_METER
+
 				if (p->p_flag & SLOAD)
 					total.t_rq++;
 				else
@@ -265,8 +264,7 @@ vmtotal()
 active:
 				total.t_avm += p->p_dsize + p->p_ssize + USIZE;
 				if (p->p_flag & SLOAD)
-					total.t_arm += p->p_dsize + p->p_ssize
-					    + USIZE;
+					total.t_arm += p->p_dsize + p->p_ssize + USIZE;
 				if (p->p_textp) switch (p->p_stat) {
 
 				case SSTOP:
@@ -289,18 +287,18 @@ active:
 					}
 				}
 				}
-#endif
+
 				break;
 			}
 		}
 	}
-#ifdef UCB_METER
+
 	total.t_vm += total.t_vmtxt;
 	total.t_avm += total.t_avmtxt;
 	total.t_rm += total.t_rmtxt;
 	total.t_arm += total.t_armtxt;
 	total.t_free = avefree;
-#endif
+
 	loadav(avenrun, nrun);
 }
 

@@ -193,8 +193,6 @@ vm_object_allocate(size)
 	vm_size_t	size;
 {
 	register vm_object_t	result;
-
-	/*result = (vm_object_t) malloc((u_long)sizeof *result, M_VMOBJ, M_WAITOK);*/
 		
 	result = (vm_object_t)rmalloc(result, (u_long)sizeof *result);
 
@@ -1069,8 +1067,7 @@ vm_object_t vm_object_lookup(pager)
 		if (object->pager == pager) {
 			vm_object_lock(object);
 			if (object->ref_count == 0) {
-				TAILQ_REMOVE(&vm_object_cached_list, object,
-					cached_list);
+				TAILQ_REMOVE(&vm_object_cached_list, object, cached_list);
 				vm_object_cached--;
 			}
 			object->ref_count++;
@@ -1108,7 +1105,6 @@ void vm_object_enter(object, pager)
 		return;
 
 	bucket = &vm_object_hashtable[vm_object_hash(pager)];
-	//entry = (vm_object_hash_entry_t)malloc((u_long)sizeof *entry, M_VMOBJHASH, M_WAITOK);
 	entry = (vm_object_hash_entry_t)rmalloc(entry, (u_long)sizeof *entry);
 	entry->object = object;
 	object->flags |= OBJ_CANPERSIST;
@@ -1510,8 +1506,7 @@ vm_object_collapse(object)
 			vm_object_unlock(backing_object);
 
 			simple_lock(&vm_object_list_lock);
-			TAILQ_REMOVE(&vm_object_list, backing_object,
-				object_list);
+			TAILQ_REMOVE(&vm_object_list, backing_object, object_list);
 			vm_object_count--;
 			simple_unlock(&vm_object_list_lock);
 

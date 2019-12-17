@@ -57,10 +57,10 @@
 #include <machine/psl.h>
 
 #include <vm/vm.h>
-#include <vm/vm_param.h>
-#include <vm/pmap.h>
-#include "../../sys/lock.h"
-#include "../../vm/new/vm/include/vm_prot.h"
+#include <vm/include/vm_param.h>
+#include <vm/include/pmap.h>
+#include <vm/include/lock.h>
+#include <vm/include/vm_prot.h>
 
 extern        char *ptvmmap;            /* poor name! */
 /*ARGSUSED*/

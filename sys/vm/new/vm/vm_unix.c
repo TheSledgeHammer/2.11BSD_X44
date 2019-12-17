@@ -106,6 +106,5 @@ ovadvise(p, uap, retval)
 	struct ovadvise_args *uap;
 	int *retval;
 {
-
 	return (EINVAL);
 }

@@ -68,36 +68,36 @@ enum vtagtype	{
 LIST_HEAD(buflists, buf);
 
 struct vnode {
-	u_long	v_flag;					/* vnode flags (see below) */
-	short	v_usecount;				/* reference count of users */
-	short	v_writecount;			/* reference count of writers */
-	long	v_holdcnt;				/* page & buffer references */
-	daddr_t	v_lastr;				/* last read (read-ahead) */
-	u_long	v_id;					/* capability identifier */
-	struct	mount *v_mount;			/* ptr to vfs we are in */
-	int 	(**v_op)();				/* vnode operations vector */
+	u_long			v_flag;			/* vnode flags (see below) */
+	short			v_usecount;		/* reference count of users */
+	short			v_writecount;	/* reference count of writers */
+	long			v_holdcnt;		/* page & buffer references */
+	daddr_t			v_lastr;		/* last read (read-ahead) */
+	u_long			v_id;			/* capability identifier */
+	struct mount 	*v_mount;		/* ptr to vfs we are in */
+	int 			(**v_op)();		/* vnode operations vector */
 	TAILQ_ENTRY(vnode) v_freelist;	/* vnode freelist */
 	LIST_ENTRY(vnode) v_mntvnodes;	/* vnodes for mount point */
-	struct	buflists v_cleanblkhd;	/* clean blocklist head */
-	struct	buflists v_dirtyblkhd;	/* dirty blocklist head */
-	long	v_numoutput;			/* num of writes in progress */
-	enum	vtype v_type;			/* vnode type */
+	struct buflists v_cleanblkhd;	/* clean blocklist head */
+	struct buflists v_dirtyblkhd;	/* dirty blocklist head */
+	long			v_numoutput;	/* num of writes in progress */
+	enum vtype 		v_type;			/* vnode type */
 	union {
 		struct mount	*vu_mountedhere;/* ptr to mounted vfs (VDIR) */
 		struct socket	*vu_socket;		/* unix ipc (VSOCK) */
 		struct specinfo	*vu_specinfo;	/* device (VCHR, VBLK) */
 		struct fifoinfo	*vu_fifoinfo;	/* fifo (VFIFO) */
 	} v_un;
-	struct	nqlease *v_lease;		/* Soft reference to lease */
-	daddr_t	v_lastw;				/* last write (write cluster) */
-	daddr_t	v_cstart;				/* start block of cluster */
-	daddr_t	v_lasta;				/* last allocation */
-	int	v_clen;						/* length of current cluster */
-	int	v_ralen;					/* Read-ahead length */
-	daddr_t	v_maxra;				/* last readahead block */
-	caddr_t	v_vmdata;				/* Place to store VM pager */
-	enum	vtagtype v_tag;			/* type of underlying data */
-	void 	*v_data;				/* private data for fs */
+	struct nqlease *v_lease;		/* Soft reference to lease */
+	daddr_t			v_lastw;		/* last write (write cluster) */
+	daddr_t			v_cstart;		/* start block of cluster */
+	daddr_t			v_lasta;		/* last allocation */
+	int				v_clen;			/* length of current cluster */
+	int				v_ralen;		/* Read-ahead length */
+	daddr_t			v_maxra;		/* last readahead block */
+	caddr_t			v_vmdata;		/* Place to store VM pager */
+	enum vtagtype 	v_tag;			/* type of underlying data */
+	void 			*v_data;		/* private data for fs */
 };
 #define	v_mountedhere	v_un.vu_mountedhere
 #define	v_socket		v_un.vu_socket
@@ -178,10 +178,10 @@ struct vattr {
  * Convert between vnode types and inode formats (since POSIX.1
  * defines mode word of stat structure in terms of inode formats).
  */
-extern enum vtype		iftovt_tab[];
-extern int				vttoif_tab[];
-#define IFTOVT(mode)	(iftovt_tab[((mode) & S_IFMT) >> 12])
-#define VTTOIF(indx)	(vttoif_tab[(int)(indx)])
+extern enum vtype				iftovt_tab[];
+extern int						vttoif_tab[];
+#define IFTOVT(mode)			(iftovt_tab[((mode) & S_IFMT) >> 12])
+#define VTTOIF(indx)			(vttoif_tab[(int)(indx)])
 #define MAKEIMODE(indx, mode)	(int)(VTTOIF(indx) | (mode))
 
 /*
@@ -225,7 +225,7 @@ void	vref __P((struct vnode *));
  * Global vnode data.
  */
 extern	struct vnode *rootvnode;	/* root (i.e. "/") vnode */
-extern	int desiredvnodes;		/* number of vnodes desired */
+extern	int desiredvnodes;			/* number of vnodes desired */
 extern	struct vattr va_null;		/* predefined null vattr structure */
 
 /*
@@ -286,10 +286,10 @@ struct vnodeop_desc {
 	 * they are useful to (for example) transport layers.
 	 * Nameidata is useful because it has a cred in it.
 	 */
-	int	*vdesc_vp_offsets;	/* list ended by VDESC_NO_OFFSET */
-	int	vdesc_vpp_offset;	/* return vpp location */
-	int	vdesc_cred_offset;	/* cred location, if any */
-	int	vdesc_proc_offset;	/* proc location, if any */
+	int	*vdesc_vp_offsets;			/* list ended by VDESC_NO_OFFSET */
+	int	vdesc_vpp_offset;			/* return vpp location */
+	int	vdesc_cred_offset;			/* cred location, if any */
+	int	vdesc_proc_offset;			/* proc location, if any */
 	int	vdesc_componentname_offset; /* if any */
 	/*
 	 * Finally, we've got a list of private data (about each operation)
@@ -384,37 +384,30 @@ struct vop_bwrite_args;
 
 int 	bdevvp __P((dev_t dev, struct vnode **vpp));
 /* cache_* may belong in namei.h. */
-void	cache_enter __P((struct vnode *dvp, struct vnode *vp,
-	    struct componentname *cnp));
-int	cache_lookup __P((struct vnode *dvp, struct vnode **vpp,
-	    struct componentname *cnp));
+void	cache_enter __P((struct vnode *dvp, struct vnode *vp, struct componentname *cnp));
+int		cache_lookup __P((struct vnode *dvp, struct vnode **vpp, struct componentname *cnp));
 void	cache_purge __P((struct vnode *vp));
 void	cache_purgevfs __P((struct mount *mp));
-int 	getnewvnode __P((enum vtagtype tag,
-	    struct mount *mp, int (**vops)(), struct vnode **vpp));
-int	vinvalbuf __P((struct vnode *vp, int save, struct ucred *cred,
-	    struct proc *p, int slpflag, int slptimeo));
+int 	getnewvnode __P((enum vtagtype tag, struct mount *mp, int (**vops)(), struct vnode **vpp));
+int		vinvalbuf __P((struct vnode *vp, int save, struct ucred *cred, struct proc *p, int slpflag, int slptimeo));
 void 	vattr_null __P((struct vattr *vap));
 int 	vcount __P((struct vnode *vp));
-int	vfinddev __P((dev_t dev, enum vtype type, struct vnode **vpp));
+int		vfinddev __P((dev_t dev, enum vtype type, struct vnode **vpp));
 int 	vget __P((struct vnode *vp, int lockflag));
 void 	vgone __P((struct vnode *vp));
 void 	vgoneall __P((struct vnode *vp));
-int	vn_bwrite __P((struct vop_bwrite_args *ap));
-int 	vn_close __P((struct vnode *vp,
-	    int flags, struct ucred *cred, struct proc *p));
+int		vn_bwrite __P((struct vop_bwrite_args *ap));
+int 	vn_close __P((struct vnode *vp, int flags, struct ucred *cred, struct proc *p));
 int 	vn_closefile __P((struct file *fp, struct proc *p));
-int	vn_ioctl __P((struct file *fp, int com, caddr_t data, struct proc *p));
+int		vn_ioctl __P((struct file *fp, int com, caddr_t data, struct proc *p));
 int 	vn_open __P((struct nameidata *ndp, int fmode, int cmode));
-int 	vn_rdwr __P((enum uio_rw rw, struct vnode *vp, caddr_t base,
-	    int len, off_t offset, enum uio_seg segflg, int ioflg,
+int 	vn_rdwr __P((enum uio_rw rw, struct vnode *vp, caddr_t base, int len, off_t offset, enum uio_seg segflg, int ioflg,
 	    struct ucred *cred, int *aresid, struct proc *p));
-int	vn_read __P((struct file *fp, struct uio *uio, struct ucred *cred));
-int	vn_select __P((struct file *fp, int which, struct proc *p));
-int	vn_stat __P((struct vnode *vp, struct stat *sb, struct proc *p));
-int	vn_write __P((struct file *fp, struct uio *uio, struct ucred *cred));
-struct vnode *
-	checkalias __P((struct vnode *vp, dev_t nvp_rdev, struct mount *mp));
+int		vn_read __P((struct file *fp, struct uio *uio, struct ucred *cred));
+int		vn_select __P((struct file *fp, int which, struct proc *p));
+int		vn_stat __P((struct vnode *vp, struct stat *sb, struct proc *p));
+int		vn_write __P((struct file *fp, struct uio *uio, struct ucred *cred));
+struct 	vnode *checkalias __P((struct vnode *vp, dev_t nvp_rdev, struct mount *mp));
 void	vprint __P((char *, struct vnode *));
 void 	vput __P((struct vnode *vp));
 void 	vref __P((struct vnode *vp));

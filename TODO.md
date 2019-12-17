@@ -14,6 +14,9 @@ Kern:
 - uipc_syscalls.c
 
 Vm:
+- VM using FreeBSD 2.0 Code Base: May need to move VM code base to 4.4BSD
+- If wish to implement Memory Management Idea (w/o hassles)
+
 - vmmeter.h (belongs in sys)
 - vm.h (extended from 2.11BSD's)
 2.11BSD's VM

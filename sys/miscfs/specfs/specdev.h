@@ -84,20 +84,20 @@ struct	uio;
 int	spec_badop(),
 	spec_ebadf();
 
-int	spec_lookup __P((struct vop_lookup_args *));
+int		spec_lookup __P((struct vop_lookup_args *));
 #define spec_create ((int (*) __P((struct  vop_create_args *)))spec_badop)
 #define spec_mknod ((int (*) __P((struct  vop_mknod_args *)))spec_badop)
-int	spec_open __P((struct vop_open_args *));
-int	spec_close __P((struct vop_close_args *));
+int		spec_open __P((struct vop_open_args *));
+int		spec_close __P((struct vop_close_args *));
 #define spec_access ((int (*) __P((struct  vop_access_args *)))spec_ebadf)
 #define spec_getattr ((int (*) __P((struct  vop_getattr_args *)))spec_ebadf)
 #define spec_setattr ((int (*) __P((struct  vop_setattr_args *)))spec_ebadf)
-int	spec_read __P((struct vop_read_args *));
-int	spec_write __P((struct vop_write_args *));
-int	spec_ioctl __P((struct vop_ioctl_args *));
-int	spec_select __P((struct vop_select_args *));
+int		spec_read __P((struct vop_read_args *));
+int		spec_write __P((struct vop_write_args *));
+int		spec_ioctl __P((struct vop_ioctl_args *));
+int		spec_select __P((struct vop_select_args *));
 #define spec_mmap ((int (*) __P((struct  vop_mmap_args *)))spec_badop)
-int	spec_fsync __P((struct  vop_fsync_args *));
+int		spec_fsync __P((struct  vop_fsync_args *));
 #define spec_seek ((int (*) __P((struct  vop_seek_args *)))spec_badop)
 #define spec_remove ((int (*) __P((struct  vop_remove_args *)))spec_badop)
 #define spec_link ((int (*) __P((struct  vop_link_args *)))spec_badop)
@@ -110,14 +110,14 @@ int	spec_fsync __P((struct  vop_fsync_args *));
 #define spec_abortop ((int (*) __P((struct  vop_abortop_args *)))spec_badop)
 #define spec_inactive ((int (*) __P((struct  vop_inactive_args *)))nullop)
 #define spec_reclaim ((int (*) __P((struct  vop_reclaim_args *)))nullop)
-int	spec_lock __P((struct vop_lock_args *));
-int	spec_unlock __P((struct vop_unlock_args *));
-int	spec_bmap __P((struct vop_bmap_args *));
-int	spec_strategy __P((struct vop_strategy_args *));
-int	spec_print __P((struct vop_print_args *));
+int		spec_lock __P((struct vop_lock_args *));
+int		spec_unlock __P((struct vop_unlock_args *));
+int		spec_bmap __P((struct vop_bmap_args *));
+int		spec_strategy __P((struct vop_strategy_args *));
+int		spec_print __P((struct vop_print_args *));
 #define spec_islocked ((int (*) __P((struct  vop_islocked_args *)))nullop)
-int	spec_pathconf __P((struct vop_pathconf_args *));
-int	spec_advlock __P((struct vop_advlock_args *));
+int		spec_pathconf __P((struct vop_pathconf_args *));
+int		spec_advlock __P((struct vop_advlock_args *));
 #define spec_blkatoff ((int (*) __P((struct  vop_blkatoff_args *)))spec_badop)
 #define spec_valloc ((int (*) __P((struct  vop_valloc_args *)))spec_badop)
 #define spec_reallocblks \
