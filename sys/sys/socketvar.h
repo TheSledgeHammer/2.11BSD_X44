@@ -57,15 +57,15 @@ struct socket {
  * Variables for socket buffering.
  */
 	struct	sockbuf {
-		u_short	sb_cc;		/* actual chars in buffer */
-		u_short	sb_hiwat;	/* max actual char count */
-		u_short	sb_mbcnt;	/* chars of mbufs used */
-		u_short	sb_mbmax;	/* max chars of mbufs to use */
-		u_short	sb_lowat;	/* low water mark (not used yet) */
+		u_short	sb_cc;			/* actual chars in buffer */
+		u_short	sb_hiwat;		/* max actual char count */
+		u_short	sb_mbcnt;		/* chars of mbufs used */
+		u_short	sb_mbmax;		/* max chars of mbufs to use */
+		u_short	sb_lowat;		/* low water mark (not used yet) */
 		struct	mbuf *sb_mb;	/* the mbuf chain */
 		struct	proc *sb_sel;	/* process selecting read/write */
-		short	sb_timeo;	/* timeout (not used yet) */
-		short	sb_flags;	/* flags, see below */
+		short	sb_timeo;		/* timeout (not used yet) */
+		short	sb_flags;		/* flags, see below */
 	} so_rcv, so_snd;
 
 #define	SB_MAX		(256*1024)	/* max chars in sockbuf */
@@ -78,7 +78,7 @@ struct socket {
 #define	SB_NOTIFY	(SB_WAIT|SB_SEL|SB_ASYNC)
 #define	SB_NOINTR	0x40		/* operations not interruptible */
 
-	caddr_t	so_tpcb;			/* Wisc. protocol control block XXX */
+	caddr_t	so_tpcb;			/* Misc. protocol control block XXX */
 	void	(*so_upcall) __P((struct socket *so, caddr_t arg, int waitf));
 	caddr_t	so_upcallarg;		/* Arg for above */
 };

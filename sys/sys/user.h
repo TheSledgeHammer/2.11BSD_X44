@@ -162,13 +162,6 @@ struct user {
 					 	 	 	 	 * backward not to reach here
 					 	 	 	 	 */
 
-	//struct	nameicache {		/* last successful directory search */
-	//	off_t nc_prevoffset;		/* offset at which last entry found */
-	//	ino_t nc_inumber;			/* inum of cached directory */
-	//	dev_t nc_dev;				/* dev of cached directory */
-	//} u_ncache;
-
-
 /* 1.7 Remaining fields only for core dump and/or ptrace-- not valid at other times! */
 	struct	kinfo_proc 	u_kproc;	/* proc + eproc */
 	struct	md_coredump u_md;		/* machine dependent glop */

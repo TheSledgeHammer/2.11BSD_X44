@@ -24,10 +24,10 @@
  * place.  the socketops table has to be in kernel space, but since
  * networking might not be defined an appropriate error has to be set
 */
+
+int	sorw(), soctl(), sosel(), socls();
+struct	fileops	socketops = { sorw, soctl, sosel, socls };
 /*
-	int	sorw(), soctl(), sosel(), socls();
-	struct	fileops	socketops =
-		{ sorw, soctl, sosel, socls };
 extern	struct	fileops	inodeops, pipeops;
 	struct	fileops	*Fops[] = { NULL, &inodeops, &socketops, &pipeops };
 	*/
@@ -475,10 +475,12 @@ selscan(ibits, obits, nfd, retval)
 		switch (which) {
 
 		case 0:
-			flag = FREAD; break;
+			flag = FREAD;
+			break;
 
 		case 1:
-			flag = FWRITE; break;
+			flag = FWRITE;
+			break;
 
 		case 2:
 			flag = 0; break;

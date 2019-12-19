@@ -21,6 +21,8 @@
 #include <sys/file.h>
 #include <sys/signalvar.h>
 #include "../test/imgact/sys/imgact.h"
+
+
 extern	char	sigprop[];	/* XXX */
 
 /*

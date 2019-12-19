@@ -8,10 +8,11 @@
 #include <sys/proc.h>
 #include <sys/tty.h>
 #include <sys/inode.h>
-#include <multiplexor/mx.h>
 #include <sys/file.h>
 #include <sys/conf.h>
 #include <sys/buf.h>
+
+#include <mpx/mx.h>
 
 /*
  * multiplexor driver
@@ -45,7 +46,7 @@ dev_t dev;
 
 	d = minor(dev);
 	if (d >= NGROUPS) {
-		u.u_error = ENXIO;
+		u->u_error = ENXIO;
 		return(NULL);
 	}
 	return(groups[d]);
@@ -64,16 +65,16 @@ mxopen(dev, flag)
 		return;
 	}
 	if (!(gp->g_state&INUSE)) {
-		u.u_error = ENXIO;
+		u->u_error = ENXIO;
 		return;
 	}
-	fp = u.u_ofile[u.u_r.r_val1];
+	fp = u->u_ofile[u->u_r.r_val1];
 	if (fp->f_inode != gp->g_inode) {
-		u.u_error = ENXIO;
+		u->u_error = ENXIO;
 		return;
 	}
 	if ((cp=addch(gp->g_inode,0)) == NULL) {
-		u.u_error = ENXIO;
+		u->u_error = ENXIO;
 		return;
 	}
 
@@ -92,18 +93,18 @@ mxopen(dev, flag)
 	} else
 		msg = M_WATCH;
 
-	scontrol(cp, msg+(cp->c_index<<8), u.u_uid);
+	scontrol(cp, msg+(cp->c_index<<8), u->u_uid);
 	sleep((caddr_t)cp,TTIPRI);
 	if (cp->c_flags&NMBUF)
 		prele(mpxip);
 	if (cp->c_flags & WCLOSE) {
 		chdrain(cp);
 		chfree(cp);
-		u.u_error = ENXIO;
+		u->u_error = ENXIO;
 		return;
 	}
 	cp->c_fy = fp;
-	cp->c_pgrp = u.u_procp->p_pgrp;
+	cp->c_pgrp = u->u_procp->p_pgrp;
 }
 
 
@@ -117,7 +118,7 @@ register struct chan *cp;
 	register c;
 
 	np = mxnmbuf;
-	u.u_dirp = (caddr_t)u.u_arg[0];
+	u->u_dirp = (caddr_t)u->u_arg[0];
 	
 	while (np < &mxnmbuf[NMSIZE]) {
 		c = uchar();
@@ -155,7 +156,7 @@ int	i, fmp;
 	 */
 	if (cp!=NULL && fmp && fmp!=FMP) {
 		for(fp=file; fp< fileNFILE; fp++)
-		    if(fp->f_count && fp->f_flag&FMP && fp->f_un.f_chan==cp){
+		    if(fp->f_count && (fp->f_flag&FMP) && fp->f_un.f_chan==cp){
 				return;
 			}
 		chdrain(cp);
@@ -222,10 +223,10 @@ mxread(dev, uio)
 	caddr_t	base;
 	unsigned count;
 	int s, xfr, more, fmp;
-	uio->
 
-	if ((gp=getmpx(dev))==NULL || (FP=getf(u.u_arg[0]))==NULL) {
-		u.u_error = ENXIO;
+
+	if ((gp=getmpx(dev))==NULL || (FP=getf(u->u_arg[0]))==NULL) {
+		u->u_error = ENXIO;
 		return;
 	}
 
@@ -238,7 +239,7 @@ mxread(dev, uio)
 	}
 
 	if ((int)uio->uio_iov->iov_base & 1) {
-		u.u_error = ENXIO;
+		u->u_error = ENXIO;
 		return;
 	}
 
@@ -246,7 +247,7 @@ mxread(dev, uio)
 	if (uio->uio_resid == 0)
 	{
 		if (gp->g_datq == 0)
-			u.u_error = ENXIO;
+			u->u_error = ENXIO;
 		splx(s);
 		return;
 	}
@@ -262,7 +263,7 @@ mxread(dev, uio)
 			continue;
 		}
 		h.index = cpx(cp);
-		if (count = cp->c_ctlx.c_cc) {
+		if (count == cp->c_ctlx.c_cc) {
 			count += CNTLSIZ;
 			if (cp->c_flags&NMBUF)
 				count += nmsize;
@@ -322,7 +323,7 @@ struct group *gp;
 int	ucount, esc, fmp, burpcount;
 caddr_t	ubase, hbase;
 
-	if ((gp=getmpx(dev))==NULL || (FP=getf(u.u_arg[0]))==NULL) {
+	if ((gp=getmpx(dev))==NULL || (FP=getf(u->u_arg[0]))==NULL) {
 		return;
 	}
 	fmp = FP->f_flag & FMP;
@@ -343,7 +344,7 @@ caddr_t	ubase, hbase;
 			h.count = h.ccount;
 		}
 		cp = xcp(gp, h.index);
-		if (cp==NULL || cp->c_flags&ISGRP) {
+		if (cp==NULL || (cp->c_flags&ISGRP)) {
 			u->u_error = ENXIO;
 			return;
 		}
@@ -414,7 +415,7 @@ register char *np;
 	q = (cp->c_ctlx.c_cc) ? &cp->c_ctlx : &cp->cx.datq;
 	(void) mxmove(q, B_READ);
 
-	if (cp->c_flags&NMBUF && q == &cp->c_ctlx) {
+	if ((cp->c_flags&NMBUF) && q == &cp->c_ctlx) {
 		np = mxnmbuf;
 		while (nmsize--)
 			(void) passc(*np++);
@@ -467,7 +468,7 @@ int s;
 	s = spl6();
 	while (q->c_cc == 0) {
 		if (cp->c_flags&WCLOSE) {
-			u.u_error = ENXIO;
+			u->u_error = ENXIO;
 			goto out;
 		}
 		if (cp->c_flags & EOTMARK) {
@@ -483,7 +484,7 @@ int s;
 		sleep((caddr_t)q,TTIPRI);
 	}
 	if (cp->c_flags&WCLOSE) {
-		u.u_error = ENXIO;
+		u->u_error = ENXIO;
 		goto out;
 	}
 	splx(s);
@@ -511,7 +512,7 @@ register struct chan *cp;
 			(void) _spl0();
 			return;
 		}
-		if (q->c_cc>= HIQ || cp->c_flags&FBLOCK) {
+		if (q->c_cc>= HIQ || (cp->c_flags&FBLOCK)) {
 			if (cp->c_flags&WCLOSE) {
 				gsignal(cp->c_pgrp, SIGPIPE);
 				(void) _spl0();
@@ -571,7 +572,7 @@ register b;
 int s;
 
 	s = spl6();
-	if (cp->c_flags&b && q->c_cc<LOQ) {
+	if ((cp->c_flags&b) && q->c_cc<LOQ) {
 		cp->c_flags &= ~b;
 		if (b&ALT)
 			wakeup((caddr_t)q+1); else
@@ -609,7 +610,7 @@ struct sgttyb vec;
 int	s;
 
 	IOMOVE((caddr_t)&cmd, sizeof cmd, B_WRITE);
-	if (u.u_error)
+	if (u->u_error)
 		return;
 	switch(cmd) {
 	/*
@@ -646,7 +647,7 @@ int	s;
 		chwake(cp);
 		break;
 	default:
-		u.u_error = ENXIO;
+		u->u_error = ENXIO;
 	}
 }
 
@@ -665,7 +666,7 @@ struct {
 	struct sgttyb c_vec;
 } ctlbuf;
 
-	if ((gp=getmpx(dev))==NULL || (fp=getf(u.u_arg[0]))==NULL) {
+	if ((gp=getmpx(dev))==NULL || (fp=getf(u->u_arg[0]))==NULL) {
 		return;
 	}
 
@@ -687,7 +688,7 @@ struct {
 			break;
 
 		default:
-			u.u_error = ENXIO;
+			u->u_error = ENXIO;
 			return;
 		}
 	} else {
@@ -712,7 +713,7 @@ int wflag;
 	tp = cp->c_ttyp;
 	if (tp == NULL)		/* prob not required */
 		return;
-	if (cp->c_flags&PORT && tp->t_chan == cp) {
+	if ((cp->c_flags&PORT) && tp->t_chan == cp) {
 		cp->c_ttyp = NULL;
 		tp->t_chan = NULL;
 		return;
@@ -814,7 +815,7 @@ register struct clist *q;
 	while (q->c_cc) {
 		cp->c_flags |= BLOCK;
 		if (sdata(cp)==NULL) {
-			u.u_error = ENXIO;
+			u->u_error = ENXIO;
 			return;
 		}
 		sleep((caddr_t)q+1, TTOPRI);
@@ -824,7 +825,7 @@ register struct clist *q;
 	while (cp->c_flags&SIOCTL) {
 		if (cp->c_ctlx.c_cc)
 			if (sdata(cp)==NULL) {
-				u.u_error = ENXIO;
+				u->u_error = ENXIO;
 				return;
 			}
 		sleep((caddr_t)cp, TTOPRI);
@@ -849,7 +850,7 @@ struct chan *cp;
 		ngp->g_datq |= cmask[gp->g_index];
 		wakeup((caddr_t)&ngp->g_datq);
 		gp = ngp;
-	} while(ngp=ngp->g_group);
+	} while(ngp==ngp->g_group);
 	splx(s);
 	return((int)gp);
 }
@@ -904,12 +905,12 @@ register struct group *gp;
 		}
 		lgp = gp;
 		gp = (struct group *)gp->g_chans[gp->g_rot];
-	} while (gp!=NULL && gp->g_state&ISGRP);
+	} while (gp!=NULL && (gp->g_state&ISGRP));
 
 	lgp->g_datq &= ~cmask[lgp->g_rot];
 	lgp->g_rot  =  (lgp->g_rot+1)%NINDEX;
 
-	while (ngp=lgp->g_group) {
+	while (ngp==lgp->g_group) {
 		ngp->g_datq &= ~cmask[lgp->g_index];
 		if (ngp->g_datq)
 			break;

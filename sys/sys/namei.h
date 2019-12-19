@@ -18,10 +18,10 @@ struct nameidata {
 	caddr_t	ni_dirp;			/* pathname pointer */
 	enum	uio_seg	ni_segflg;	/* segment flag */
 	short	ni_nameiop;			/* see below */
-	//short	ni_error;			/* error return if any */
-	//off_t	ni_endoff;			/* end of useful stuff in directory */
 	struct	vnode *ni_cdir;		/* current directory */
 	struct	vnode *ni_rdir;		/* root directory, if not normal root */
+	//short	ni_error;			/* error return if any */
+	//off_t	ni_endoff;			/* end of useful stuff in directory */
 	//off_t	ni_offset;			/* offset in directory */
 	//u_short	ni_count;			/* offset of open slot (off_t?) */
 	//struct	direct ni_dent;		/* current directory entry */
@@ -131,8 +131,7 @@ struct	namecache {
 u_long	nextvnodeid;
 int	namei __P((struct nameidata *ndp));
 int	lookup __P((struct nameidata *ndp));
-int	relookup __P((struct vnode *dvp, struct vnode **vpp,
-	    struct componentname *cnp));
+int	relookup __P((struct vnode *dvp, struct vnode **vpp, struct componentname *cnp));
 #endif
 
 /*

@@ -328,7 +328,6 @@ getnewvnode(tag, mp, vops, vpp)
 	if ((vnode_free_list.tqh_first == NULL &&
 	     numvnodes < 2 * desiredvnodes) ||
 	    numvnodes < desiredvnodes) {
-		//vp = (struct vnode *)malloc((u_long)sizeof *vp, M_VNODE, M_WAITOK);
 		vp = (struct vnode *)rmalloc(vp, (u_long)sizeof *vp);
 		bzero((char *)vp, sizeof *vp);
 		numvnodes++;

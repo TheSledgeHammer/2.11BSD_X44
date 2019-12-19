@@ -19,7 +19,6 @@ struct fileops mpxops =
 
 struct chan	chans[NCHANS];
 struct schan schans[NPORTS];
-struct group *groups[NGROUPS];
 
 int	mpxline;
 struct chan *xcp();
@@ -41,8 +40,7 @@ mpx_write(fp, uio, cred)
     struct uio *uio;
     struct ucred *cred;
 {
-    mpx_read();
-    return mpxsend((struct mpx *)fp->f_data, (struct mbuf *)0, uio, (struct mbuf *)0, (struct mbuf *)0, 0));
+    return (mpxsend((struct mpx *)fp->f_data, (struct mbuf *)0, uio, (struct mbuf *)0, (struct mbuf *)0, (int *)0));
 }
 
 int
@@ -53,6 +51,32 @@ mpx_ioctl(fp, cmd, data, p)
     struct proc *p;
 {
     register struct mpx *mpx = (struct mpx *)fp->f_data;
+
+    switch (cmd) {
+    case FIONBIO:
+    	if (*(int *)data) {
+    		mpx->mpx_state |= MPX_NBIO;
+    	} else {
+    		mpx->mpx_state &= ~MPX_NBIO;
+    	}
+    	return (0);
+    case FIOASYNC:
+    	if (*(int *)data) {
+    		mpx->mpx_state |= MPX_ASYNC;
+    	} else {
+    		mpx->mpx_state &= ~MPX_ASYNC;
+		}
+    	return (0);
+    case FIONREAD:
+    	*(int *)data = mpx->mpx_buf->cnt;
+    	return (0);
+	case SIOCSPGRP:
+		mpx->mpx_pgrp = *(int *)data;
+		return (0);
+    case SIOCGPGRP:
+		*(int *)data = mpx->mpx_pgrp;
+		return (0);
+    }
     return ((*mpx->mpx_proto->pr_usrreq)(mpx, PRU_CONTROL, (struct mbuf *)cmd, (struct mbuf *)data, (struct mbuf *)0));
 }
 
@@ -63,6 +87,8 @@ mpx_select(fp, which, p)
     struct proc *p;
 {
     register struct mpx *mpx = (struct mpx *)fp->f_data;
+
+    //splx(s);
     return (0);
 }
 
@@ -72,7 +98,6 @@ mpx_stat(mpx, ub)
     register struct stat *ub;
 {
     bzero((caddr_t)ub, sizeof (*ub));
-    ub->st_mode = S_IFCHAN;
     return ((*mpx->mpx_proto->pr_usrreq)(mpx, PRU_SENSE, (struct mbuf *)ub, (struct mbuf *)0, (struct mbuf *)0));
 }
 

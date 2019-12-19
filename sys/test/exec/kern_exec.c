@@ -288,7 +288,7 @@ exec_fail_dealloc:
 			if (vm_deallocate(kernel_map, (vm_offset_t)elp->el_image_hdr, PAGE_SIZE))
 				panic("execve: header dealloc failed (3)");
 		vput(ndp->ni_vp);
-		mfree(ndp->ni_cnd.cn_pnbuf);
+		rmfree(ndp->ni_cnd.cn_pnbuf);
 
 exec_fail:
 		if (elp->el_vmspace_destroyed) {

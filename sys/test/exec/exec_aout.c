@@ -84,7 +84,7 @@ exec_aout_linker(elp)
 			error = exec_aout_prep_omagic(elp);
 			break;
 		default:
-			error = cpu_exec_aout_linker(elp); /* For CPU Arches */
+			error = cpu_exec_aout_linker(elp); /* For CPU Architecture */
 		}
 	}
 	return exec_mmap_to_vmspace(elp);

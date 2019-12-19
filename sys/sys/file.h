@@ -11,7 +11,7 @@
 #ifndef	_SYS_FILE_H_
 #define	_SYS_FILE_H_
 
-#ifdef KERNEL
+//#ifdef KERNEL
 struct proc;
 struct uio;
 /*

@@ -1,70 +1,39 @@
+/*
+ * sys_mpx2.c
+ *
+ *  Created on: 19 Dec 2019
+ *      Author: marti
+ */
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/user.h>
 #include <sys/proc.h>
-#include <sys/tty.h>
-#include <sys/inode.h>
-#include <mpx/mx.h>
 #include <sys/file.h>
-#include <sys/conf.h>
-
 #include <sys/mbuf.h>
 #include <sys/protosw.h>
+#include <sys/user.h>
+#include <sys/vnode.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
-#include <sys/socket.h>
-#include <sys/socketvar.h>
-/*
- *	SCCS id	@(#)mx1.c	2.1 (Berkeley)	8/5/83
- */
+#include "mpx/mx.h"
 
-/*
- * Multiplexor:   clist version
- *
- * installation:
- *	requires a line in cdevsw -
- *		mxopen, mxclose, mxread, mxwrite, mxioctl, 0,
- *
- *	also requires a line in linesw -
- *		mxopen, mxclose, mcread, mcwrite, mxioctl, nulldev, nulldev,
- *
- *	The linesw entry for mpx should be the last one in the table.
-						 *	'nldisp' (number of line disciplines) should not include the
- *	mpx line.  This is to prevent mpx from being enabled by an ioctl.
-
- *	mxtty.c must be loaded instead of tty.c so that certain
- *	sleeps will not be done if a typewriter is connected to
- *	a channel and so that sdata will be called from ttyinput.
- *	
- */
 struct	chan	chans[NCHANS];
 struct	schan	schans[NPORTS];
-struct	group	*groups[NGROUPS];
 int	mpxline;
 struct chan *xcp();
 dev_t	mpxdev	= -1;
 
-
-char	mcdebugs[NDEBUGS];
-
-
-/*
- * Allocate a channel, set c_index to index.
- */
-struct	chan *
-challoc(index, isport)
+struct chan
+*challoc(index, isport)
 {
-register s,i;
-register struct chan *cp;
-
-	//s = spl6();
-	for(i=0;i<((isport)?NPORTS:NCHANS);i++) {
+	register struct chan *cp;
+	register int s, i;
+	for(i = 0; i < ((isport) ? NPORTS : NCHANS); i++) {
 		cp = (isport)? (struct chan *)(schans+i): chans+i;
-		if(cp->c_group == NULL) {
+		if(cp->c_groups[NGROUPS] == NULL) {
 			cp->c_index = index;
 			cp->c_pgrp = 0;
 			cp->c_flags = 0;
-            splx(s);
+			splx(s);
 			return(cp);
 		}
 	}
@@ -72,61 +41,63 @@ register struct chan *cp;
 	return(NULL);
 }
 
-
-
-/*
- * Allocate a group table cell.
- */
+int
 gpalloc()
 {
+	register struct chan *cp;
+	register i;
+	for (i = NGROUPS - 1; i >= 0; i--) {
+		if(cp->c_groups[i] == NULL) {
+			cp->c_groups[i]++;
+			return (i);
+		}
+	}
+	u->u_error = ENXIO;
+	return (i);
+}
+
+
+struct chan
+*addch(vp, isport)
+	struct vnode *vp;
+{
+	register struct chan *cp, gp;
 	register i;
 
-	for (i=NGROUPS-1; i>=0; i--)
-		if (groups[i]==NULL) {
-			groups[i]++;
-			return(i);
+	for(i=0;i < NINDEX; i++) {
+		cp = (struct chan *)cp->cy.c_chan[i];
+		if (cp == NULL) {
+			if ((cp=challoc(i, isport)) != NULL) {
+				cp->cy.c_chan[i] = cp;
+				cp->c_groups = cp->cy.c_chan;
+			}
 		}
-	u.u_error = ENXIO;
+	}
+	vrele(vp);
+	return (cp);
+}
+
+int
+mxfalloc(fp)
+	register struct file *fp;
+{
+	register int i;
+	if(fp == NULL) {
+		u->u_error = ENXIO;
+		return(-1);
+	}
+	i = ufalloc();
+	if (i < 0)
+		return(i);
+	u->u_ofile[i] = fp;
+	fp->f_count++;
+	u->u_r->r_val1 = i;
 	return(i);
 }
 
-
-/*
- * Add a channel to the group in
- * inode ip.
- */
-struct chan *
-addch(ip, isport)
-struct inode *ip;
-{
-register struct chan *cp;
-register struct group *gp;
-register i;
-
-	plock(ip);
-	gp = &ip->i_un.i_group;
-	for(i=0;i<NINDEX;i++) {
-		cp = (struct chan *)gp->g_chans[i];
-		if (cp == NULL) {
-			if ((cp=challoc(i, isport)) != NULL) {
-				gp->g_chans[i] = cp;
-				cp->c_group = gp;
-			}
-			break;
-		}
-		cp = NULL;
-	}
-	prele(ip);
-	return(cp);
-}
-
-/*
- * Mpxchan system call.
- */
-
 mpxchan() {
     extern mxopen(), mcread(), sdata(), scontrol();
-    struct inode *ip, *gip;
+    struct vnode *vp, *gvp;
     struct tty *tp;
     struct file *fp, *chfp, *gfp;
     struct chan *cp;
@@ -143,7 +114,7 @@ mpxchan() {
      * Common setup code.
      */
 
-    uap = (struct a *) u.u_ap;
+    uap = (struct a *) u->u_ap;
     (void) copyin((caddr_t) uap->argvec, (caddr_t) & vec, sizeof vec);
     gp = NULL;
     gfp = NULL;
@@ -152,8 +123,10 @@ mpxchan() {
     switch (uap->cmd) {
 
         case NPGRP:
-            if (vec.m_arg[1] < 0)
-                break;
+            if (vec->m_arg[1] < 0) {
+
+            }
+		break;
         case CHAN:
         case JOIN:
         case EXTR:
@@ -163,10 +136,10 @@ mpxchan() {
             gfp = getf(vec.m_arg[1]);
             if (gfp == NULL)
                 return;
-            gip = gfp->f_inode;
-            gp = &gip->i_un.i_group;
+            gvp = gfp;
+            gp = &gvp->i_un.i_group;
             if (gp->g_inode != gip) {
-                u.u_error = ENXIO;
+                u->u_error = ENXIO;
                 return;
             }
     }
@@ -191,48 +164,48 @@ mpxchan() {
                     }
                 }
                 if (mpxdev < 0) {
-                    u.u_error = ENXIO;
+                    u->u_error = ENXIO;
                     return;
                 }
             }
             if (uap->cmd == MPXN) {
                 if ((ip = ialloc(pipedev)) == NULL)
                     return;
-                ip->i_mode = ((vec.m_arg[1] & 0777) + IFMPC) & ~u.u_cmask;
+                vp->
+                ip->i_mode = ((vec.m_arg[1] & 0777) + IFMPC) & ~u->u_cmask;
                 ip->i_flag = IACC | IUPD | ICHG;
             } else {
                 u.u_dirp = vec.m_name;
                 ip = namei(uchar, 1);
                 if (ip != NULL) {
                     i = ip->i_mode & IFMT;
-                    u.u_error = EEXIST;
+                    u->u_error = EEXIST;
                     if (i == IFMPC || i == IFMPB) {
                         i = minor(ip->i_un.i_rdev);
                         gp = groups[i];
                         if (gp && gp->g_inode == ip)
-                            u.u_error = EBUSY;
+                            u->u_error = EBUSY;
                     }
-                    iput(ip);
+                    vput(vp);
                     return;
                 }
-                if (u.u_error)
+                if (u->u_error)
                     return;
                 ip = maknode((vec.m_arg[1] & 0777) + IFMPC);
-                if (ip == NULL)
+                if (vp == NULL)
                     return;
             }
             if ((i = gpalloc()) < 0) {
-                iput(ip);
+                vput(vp);
                 return;
             }
             if ((fp = falloc()) == NULL) {
-                iput(ip);
+                vput(vp);
                 groups[i] = NULL;
                 return;
             }
             ip->i_un.i_rdev = (daddr_t)(mpxdev + i);
             ip->i_count++;
-            prele(ip);
+            vrele(vp);
     }
 }
-

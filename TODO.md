@@ -30,7 +30,17 @@ Vm:
 
 FreeBSD 3.0 or Higher:
 - BTX Bootloader
+- elf format
 
 
 Executables:  
 __LDPGSZ = machine/exec.h
+
+
+OpenBSD:
+- subr_tree.c: Idea for tertiary tree
+- sys_pipe.c: Pipes: Multiplexor: sys_mpx.c 
+
+NetBSD:
+- efs: extent file system
+- puffs

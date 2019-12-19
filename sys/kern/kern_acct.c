@@ -144,18 +144,16 @@ acct_process(p)
 	acct.ac_stime = encode_comp_t(st.tv_sec, st.tv_usec);
 
 	/* (3) The elapsed time the commmand ran (and its starting time) */
-	//u->u_start.tv_sec = p->p_stats->p_start.tv_sec;
 	acct.ac_btime = u->u_start.tv_sec;
 
 	s = splclock();
 	tmp = time;
 	splx(s);
 	timevalsub(&tmp, &u->u_start);
-	//timevalsub(&tmp, &p->p_stats->p_start);
 	acct.ac_etime = encode_comp_t(tmp.tv_sec, tmp.tv_usec);
 
 	/* (4) The average amount of memory used */
-	r = &p->p_stats->p_sru;
+	r = &p->p_stats->p_ksru;
 	tmp = ut;
 	timevaladd(&tmp, &st);
 	t = tmp.tv_sec * hz + tmp.tv_usec / tick;
@@ -178,7 +176,6 @@ acct_process(p)
 		acct.ac_tty = NODEV;
 
 	/* (8) The boolean flags that tell how the process terminated, etc. */
-	//u->u_acflag = p->p_acflag;
 	acct.ac_flag = u->u_acflag;
 
 	/*
