@@ -1,391 +1,305 @@
 /*
- * Copyright (c) 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1993, David Greenman
+ * All rights reserved.
  *
- *	@(#)kern_exec.c	1.8 (2.11BSD) 1999/9/6
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by David Greenman
+ * 4. The name of the developer may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	$Id: kern_exec.c,v 1.9 1994/09/25 19:33:36 phk Exp $
  */
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/map.h>
-#include <sys/user.h>
-#include <sys/proc.h>
-#include <sys/buf.h>
-#include <sys/inode.h>
-#include <sys/exec.h>
-#include <sys/acct.h>
-#include <sys/namei.h>
-#include <sys/fs.h>
-#include <sys/mount.h>
-#include <sys/file.h>
 #include <sys/signalvar.h>
-#include "../test/imgact/sys/imgact.h"
+#include <sys/resourcevar.h>
+#include <sys/kernel.h>
+#include <sys/user.h>
+#include <sys/mount.h>
+#include <sys/filedesc.h>
+#include <sys/file.h>
+#include <sys/acct.h>
+#include <sys/exec.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <sys/mman.h>
+#include <sys/map.h>
+#include <sys/syslog.h>
+#include <vm/vm.h>
+#include <vm/include/vm_kern.h>
 
+#include <machine/reg.h>
+#include "../sys/exec_linker.h"
 
-extern	char	sigprop[];	/* XXX */
+static int exec_check_permissions(struct exec_linker *);
 
 /*
- * exec system call, with and without environments.
+ * execsw_set is constructed for us by the linker.  Each of the items
+ * is a pointer to a `const struct execsw', hence the double pointer here.
  */
-struct execa {
-	char	*fname;
-	char	**argp;
-	char	**envp;
-};
+extern const struct linker_set execsw_set;
+const struct execsw **execsw = (const struct execsw **)&execsw_set.ls_items[0];
 
 void
-execv()
+execv(p, uap, retval)
+	struct proc *p;
+	struct execa *uap = (struct execa *)u->u_ap;
+	int *retval;
 {
-	((struct execa *)u->u_ap)->envp = NULL;
-	execve();
+	uap->envp = NULL;
+	execve(p, uap, retval);
 }
 
-void
-execve()
+int
+execve(p, uap, retval)
+	struct proc *p;
+	register struct execa *uap = (struct execa *)u->u_ap;
+	int *retval;
 {
-	int nc;
-	register char *cp;
-	register struct buf *bp;
-	struct execa *uap = (struct execa *)u->u_ap;
-	int na, ne, ucp, ap;
-	register int cc;
-	unsigned len;
-	int indir, uid, gid;
-	char *sharg;
-	struct inode *ip;
-	memaddr bno;
-	char cfname[MAXCOMLEN + 1];
-#define	SHSIZE	32
-	char cfarg[SHSIZE];
-	union {
-		char	ex_shell[SHSIZE];	/* #! and name of interpreter */
-		struct	exec ex_exec;
-	} exdata;
-	struct	nameidata nd;
-	register struct	nameidata *ndp = &nd;
-	int resid, error;
+		struct nameidata nd, *ndp;
+		int *stack_base;
+		int error, len, i;
+		struct exec_linker elp_image, *elp;
+		struct vnode *vnodep;
+		struct vattr attr;
+		char *image_header;
+		elp = &elp_image;
+		bzero((caddr_t)elp, sizeof(struct exec_linker));
+		image_header = (char *)0;
 
-	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->fname);
-	if ((ip = namei(ndp)) == NULL)
-		return;
-	bno = 0;
-	bp = 0;
-	indir = 0;
-	uid = u->u_uid;
-	gid = u->u_groups[0];
-	if (ip->i_fs->fs_flags & MNT_NOEXEC) {
-		u->u_error = EACCES;
-		goto bad;
-	}
-	if ((ip->i_fs->fs_flags & MNT_NOSUID) == 0) {
-		if (ip->i_mode & ISUID)
-			uid = ip->i_uid;
-		if (ip->i_mode & ISGID)
-			gid = ip->i_gid;
-	}
-  again:
-	if (access(ip, IEXEC))
-		goto bad;
-	if ((u->u_procp->p_flag & P_TRACED) && access(ip, IREAD))
-		goto bad;
-	if ((ip->i_mode & IFMT) != IFREG ||
-	    (ip->i_mode & (IEXEC|(IEXEC>>3)|(IEXEC>>6))) == 0) {
-		u->u_error = EACCES;
-		goto bad;
-	}
+		/* Initialize a few constants in the common area */
+		elp->el_proc = p;
+		elp->el_uap = uap;
+		elp->el_attr = &attr;
 
-	/*
-	 * Read in first few bytes of file for segment sizes, magic number:
-	 *	407 = plain executable
-	 *	410 = RO text
-	 *	411 = separated I/D
-	 *	405 = text overlay
-	 *	430 = auto-overlay (nonseparate)
-	 *	431 = auto-overlay (separate)
-	 * Also an ASCII line beginning with #! is
-	 * the file name of a ``shell'' and arguments may be prepended
-	 * to the argument list if given here.
-	 *
-	 * SHELL NAMES ARE LIMITED IN LENGTH.
-	 *
-	 * ONLY ONE ARGUMENT MAY BE PASSED TO THE SHELL FROM
-	 * THE ASCII LINE.
-	 */
-	exdata.ex_shell[0] = '\0';	/* for zero length files */
-	u->u_error = rdwri(UIO_READ, ip, &exdata, sizeof(exdata), (off_t)0,
-				UIO_SYSSPACE, IO_UNIT, &resid);
-	if (u->u_error)
-		goto bad;
-	if (resid > sizeof(exdata) - sizeof(exdata.ex_exec) &&
-	    exdata.ex_shell[0] != '#') {
-		u->u_error = ENOEXEC;
-		goto bad;
-	}
+		/* Allocate temporary demand zeroed space for argument and environment strings */
+		error = vm_allocate(kernel_map, (vm_offset_t *)&elp->el_stringbase, ARG_MAX, TRUE);
+		if(error) {
+			log(LOG_WARNING, "execve: failed to allocate string space\n");
+			return (u->u_error);
+		}
 
-	switch((int)exdata.ex_exec.a_magic) {
+		if (!elp->el_stringbase) {
+			error = ENOMEM;
+				goto exec_fail;
+		}
+		elp->el_stringp = elp->el_stringbase;
+		elp->el_stringspace = ARG_MAX;
 
-	case A_MAGIC1:
-	case A_MAGIC2:
-	case A_MAGIC3:
-	case A_MAGIC4:
-	case A_MAGIC5:
-	case A_MAGIC6:
-		break;
+		/* Translate the file name. namei() returns a vnode pointer in ni_vp amoung other things. */
+		ndp = &nd;
+		ndp->ni_cnd.cn_nameiop = LOOKUP;
+		ndp->ni_cnd.cn_flags = LOCKLEAF | FOLLOW | SAVENAME;
+		ndp->ni_cnd.cn_proc = curproc;
+		ndp->ni_cnd.cn_cred = curproc->p_cred->pc_ucred;
+		ndp->ni_segflg = UIO_USERSPACE;
+		ndp->ni_dirp = uap->fname;
 
-	default:
-		if (exdata.ex_shell[0] != '#' ||
-		    exdata.ex_shell[1] != '!' ||
-		    indir) {
-			u->u_error = ENOEXEC;
-			goto bad;
-		}
-/*
- * If setuid/gid scripts were to be disallowed this is where it would
- * have to be done.
- *		u.u_uid = uid;
- *		u.u_gid = u_groups[0];
-*/
-		cp = &exdata.ex_shell[2];		/* skip "#!" */
-		while (cp < &exdata.ex_shell[SHSIZE]) {
-			if (*cp == '\t')
-				*cp = ' ';
-			else if (*cp == '\n') {
-				*cp = '\0';
-				break;
-			}
-			cp++;
-		}
-		if (*cp != '\0') {
-			u->u_error = ENOEXEC;
-			goto bad;
-		}
-		cp = &exdata.ex_shell[2];
-		while (*cp == ' ')
-			cp++;
-		ndp->ni_dirp = cp;
-		while (*cp && *cp != ' ')
-			cp++;
-		cfarg[0] = '\0';
-		if (*cp) {
-			*cp++ = '\0';
-			while (*cp == ' ')
-				cp++;
-			if (*cp)
-				bcopy((caddr_t)cp, (caddr_t)cfarg, SHSIZE);
-		}
-		indir = 1;
-		iput(ip);
-		ndp->ni_nameiop = LOOKUP | FOLLOW;
-		ndp->ni_segflg = UIO_SYSSPACE;
-		ip = namei(ndp);
-		if (ip == NULL)
-			return;
-		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)cfname, MAXCOMLEN);
-		cfname[MAXCOMLEN] = '\0';
-		goto again;
-	}
+interpret:
 
-	/*
-	 * Collect arguments on "file" in swap space.
-	 */
-	na = 0;
-	ne = 0;
-	nc = 0;
-	cc = 0;
-	bno = rmalloc(swapmap, ctod((int)btoc(NCARGS + MAXBSIZE)));
-	if (bno == 0) {
-		swkill(u->u_procp, "exec");
-		goto bad;
-	}
-	/*
-	 * Copy arguments into file in argdev area.
-	 */
-	if (uap->argp) for (;;) {
-		ap = NULL;
-		sharg = NULL;
-		if (indir && na == 0) {
-			sharg = cfname;
-			ap = (int)sharg;
-			uap->argp++;		/* ignore argv[0] */
-		} else if (indir && (na == 1 && cfarg[0])) {
-			sharg = cfarg;
-			ap = (int)sharg;
-		} else if (indir && (na == 1 || (na == 2 && cfarg[0])))
-			ap = (int)uap->fname;
-		else if (uap->argp) {
-			ap = fuword((caddr_t)uap->argp);
-			uap->argp++;
-		}
-		if (ap == NULL && uap->envp) {
-			uap->argp = NULL;
-			if ((ap = fuword((caddr_t)uap->envp)) != NULL)
-				uap->envp++, ne++;
-		}
-		if (ap == NULL)
-			break;
-		na++;
-		if (ap == -1) {
-			u->u_error = EFAULT;
-			break;
-		}
-		do {
-			if (cc <= 0) {
-				/*
-				 * We depend on NCARGS being a multiple of
-				 * CLSIZE*NBPG.  This way we need only check
-				 * overflow before each buffer allocation.
-				 */
-				if (nc >= NCARGS-1) {
-					error = E2BIG;
-					break;
-				}
-				if (bp) {
-					mapout(bp);
-					bdwrite(bp);
-				}
-				cc = CLSIZE*NBPG;
-				bp = getblk(swapdev, dbtofsb(clrnd(bno)) + lblkno(nc));
-				cp = mapin(bp);
-			}
-			if (sharg) {
-				error = copystr(sharg, cp, (unsigned)cc, &len);
-				sharg += len;
-			} else {
-				error = copyinstr((caddr_t)ap, cp, (unsigned)cc,
-				    &len);
-				ap += len;
-			}
-			cp += len;
-			nc += len;
-			cc -= len;
-		} while (error == ENOENT);
+		error = namei(ndp);
 		if (error) {
-			u->u_error = error;
-			if (bp) {
-				mapout(bp);
-				bp->b_flags |= B_AGE;
-				bp->b_flags &= ~B_DELWRI;
-				brelse(bp);
-			}
-			bp = 0;
-			goto badarg;
+			vm_deallocate(kernel_map, (vm_offset_t)elp->el_stringbase, ARG_MAX);
+			goto exec_fail;
 		}
-	}
-	if (bp) {
-		mapout(bp);
-		bdwrite(bp);
-	}
-	bp = 0;
-	nc = (nc + NBPW-1) & ~(NBPW-1);
-	getxfile(ip, &exdata.ex_exec, nc + (na+4)*NBPW, uid, gid);
-	if (u->u_error) {
-badarg:
-		for (cc = 0;cc < nc; cc += CLSIZE * NBPG) {
-			daddr_t blkno;
 
-			blkno = dbtofsb(clrnd(bno)) + lblkno(cc);
-			if (incore(swapdev,blkno)) {
-				bp = bread(swapdev,blkno);
-				bp->b_flags |= B_AGE;		/* throw away */
-				bp->b_flags &= ~B_DELWRI;	/* cancel io */
-				brelse(bp);
-				bp = 0;
-			}
-		}
-		goto bad;
-	}
-	iput(ip);
-	ip = NULL;
+		elp->el_vnodep = vnodep = ndp->ni_vp;
 
-	/*
-	 * Copy back arglist.
-	 */
-	ucp = -nc - NBPW;
-	ap = ucp - na*NBPW - 3*NBPW;
-	u->u_ar0[R6] = ap;
-	(void) suword((caddr_t)ap, na-ne);
-	nc = 0;
-	cc = 0;
-	for (;;) {
-		ap += NBPW;
-		if (na == ne) {
-			(void) suword((caddr_t)ap, 0);
-			ap += NBPW;
+
+		if (vnodep == NULL) {
+			error = ENOEXEC;
+			goto exec_fail_dealloc;
 		}
-		if (--na < 0)
+
+		/* Check file permissions (also 'opens' file) */
+		error = exec_check_permissions(elp);
+		if (error)
+			goto exec_fail_dealloc;
+
+		/* Map the image header (first page) of the file into kernel address space */
+		error = vm_mmap(kernel_map,				/* map */
+				(vm_offset_t *)&image_header,	/* address */
+				PAGE_SIZE,						/* size */
+				VM_PROT_READ,					/* protection */
+				VM_PROT_READ,					/* max protection */
+				0,								/* flags */
+				(caddr_t)vnodep,				/* vnode */
+				0);								/* offset */
+		if (error) {
+			uprintf("mmap failed: %d\n", u->u_error);
+			goto exec_fail_dealloc;
+		}
+		elp->el_image_hdr = image_header;
+
+
+		/*
+		 * Loop through list of image activators, calling each one.
+		 *	If there is no match, the activator returns -1. If there
+		 *	is a match, but there was an error during the activation,
+		 *	the error is returned. Otherwise 0 means success. If the
+		 *	image is interpreted, loop back up and try activating
+		 *	the interpreter.
+		 */
+		for (i = 0; execsw[i]; ++i) {
+			if (execsw[i]->ex_exec_linker)
+				u->u_error = (*execsw[i]->ex_exec_linker)(elp);
+			else
+				continue;
+			if (error == -1)
+				continue;
+			if (error)
+				goto exec_fail_dealloc;
+			if (elp->el_interpreted) {
+				/* free old vnode and name buffer */
+				vput(ndp->ni_vp);
+				mfree(ndp->ni_cnd.cn_pnbuf);
+				if (vm_deallocate(kernel_map, (vm_offset_t)image_header, PAGE_SIZE))
+					panic("execve: header dealloc failed (1)");
+
+				/* set new name to that of the interpreter */
+				ndp->ni_segflg = UIO_SYSSPACE;
+				ndp->ni_dirp = elp->el_interpreter_name;
+				ndp->ni_cnd.cn_nameiop = LOOKUP;
+				ndp->ni_cnd.cn_flags = LOCKLEAF | FOLLOW | SAVENAME;
+				ndp->ni_cnd.cn_proc = curproc;
+				ndp->ni_cnd.cn_cred = curproc->p_cred->pc_ucred;
+				goto interpret;
+			}
 			break;
-		(void) suword((caddr_t)ap, ucp);
-		do {
-			if (cc <= 0) {
-				if (bp) {
-					mapout(bp);
-					brelse(bp);
-				}
-				cc = CLSIZE*NBPG;
-				bp = bread(swapdev, dbtofsb(clrnd(bno)) + lblkno(nc));
-				bp->b_flags |= B_AGE;		/* throw away */
-				bp->b_flags &= ~B_DELWRI;	/* cancel io */
-				cp = mapin(bp);
-			}
-			error = copyoutstr(cp, (caddr_t)ucp, (unsigned)cc,
-			    &len);
-			ucp += len;
-			cp += len;
-			nc += len;
-			cc -= len;
-		} while (error == ENOENT);
-		if (error == EFAULT)
-			panic("exec: EFAULT");
-	}
-	(void) suword((caddr_t)ap, 0);
-	(void) suword((caddr_t)(-NBPW), 0);
-	if (bp) {
-		mapout(bp);
-		bp->b_flags |= B_AGE;
-		brelse(bp);
-		bp = NULL;
-	}
-	execsigs(u->u_procp);
-	for	(cp = u->u_pofile, cc = 0; cc <= u->u_lastfile; cc++, cp++)
-		{
-		if	(*cp & UF_EXCLOSE)
-			{
-			(void)closef(u->u_ofile[cc]);
-			u->u_ofile[cc] = NULL;
-			*cp = 0;
-			}
 		}
-	while (u->u_lastfile >= 0 && u->u_ofile[u->u_lastfile] == NULL)
-		u->u_lastfile--;
+		/* If we made it through all the activators and none matched, exit. */
+		if (error == -1) {
+			error = ENOEXEC;
+			goto exec_fail_dealloc;
+		}
+		/* Copy out strings (args and env) and initialize stack base */
+		stack_base = exec_copyout_strings(elp);
+		p->p_vmspace->vm_minsaddr = (char *)stack_base;
 
-	/*
-	 * inline expansion of setregs(), found
-	 * in ../pdp/machdep.c
-	 *
-	 * setregs(exdata.ex_exec.a_entry);
-	 */
-	u->u_ar0[PC] = exdata.ex_exec.a_entry & ~01;
-	u->u_fps.u_fpsr = 0;
+		/* Stuff argument count as first item on stack */
+		*(--stack_base) = elp->el_argc;
 
-	/*
-	 * Remember file name for accounting.
-	 */
-	u->u_acflag &= ~AFORK;
-	if (indir)
-		bcopy((caddr_t)cfname, (caddr_t)u->u_comm, MAXCOMLEN);
-	else
-		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)u->u_comm, MAXCOMLEN);
-bad:
-	if (bp) {
-		mapout(bp);
-		bp->b_flags |= B_AGE;
-		brelse(bp);
-	}
-	if (bno)
-		rmfree(swapmap, ctod((int)btoc(NCARGS + MAXBSIZE)), bno);
-	if (ip)
-		iput(ip);
+		/* close files on exec */
+		fdcloseexec(p);
+
+		/* reset caught signals */
+		execsigs(p);
+
+		/* name this process - nameiexec(p, ndp) */
+		len = min(ndp->ni_cnd.cn_namelen, MAXCOMLEN);
+		bcopy(ndp->ni_cnd.cn_nameptr, p->p_comm, len);
+		p->p_comm[len] = 0;
+
+		/*
+		 * mark as executable, wakeup any process that was vforked and tell
+		 * it that it now has it's own resources back
+		 */
+		p->p_flag |= P_EXEC;
+		if (p->p_pptr && (p->p_flag & P_PPWAIT)) {
+			p->p_flag &= ~P_PPWAIT;
+			wakeup((caddr_t)p->p_pptr);
+		}
+
+		/* implement set userid/groupid */
+		p->p_flag &= ~P_SUGID;
+
+		/* Turn off kernel tracing for set-id programs, except for root. */
+		if (p->p_tracep && (attr.va_mode & (VSUID | VSGID)) && suser(p->p_ucred, &p->p_acflag)) {
+			p->p_traceflag = 0;
+			vrele(p->p_tracep);
+			p->p_tracep = 0;
+		}
+		if ((attr.va_mode & VSUID) && (p->p_flag & P_TRACED) == 0) {
+			p->p_ucred = crcopy(p->p_ucred);
+			p->p_ucred->cr_uid = attr.va_uid;
+			p->p_flag |= P_SUGID;
+		}
+		if ((attr.va_mode & VSGID) && (p->p_flag & P_TRACED) == 0) {
+			p->p_ucred = crcopy(p->p_ucred);
+			p->p_ucred->cr_groups[0] = attr.va_gid;
+			p->p_flag |= P_SUGID;
+		}
+
+		/* Implement correct POSIX saved uid behavior. */
+		p->p_cred->p_svuid = p->p_ucred->cr_uid;
+		p->p_cred->p_svgid = p->p_ucred->cr_gid;
+
+		/* mark vnode pure text */
+		ndp->ni_vp->v_flag |= VTEXT;
+
+		/* Store the vp for use in procfs */
+		if (p->p_textvp)		/* release old reference */
+			vrele(p->p_textvp);
+		VREF(ndp->ni_vp);
+		p->p_textvp = ndp->ni_vp;
+
+		/*
+		 * If tracing the process, trap to debugger so breakpoints
+		 * 	can be set before the program executes.
+		 */
+		if (p->p_flag & P_TRACED)
+			psignal(p, SIGTRAP);
+
+		/* clear "fork but no exec" flag, as we _are_ execing */
+		u->u_acflag &= ~AFORK;
+
+		/* Set entry address */
+		setregs(p, elp->el_entry, (u_long)stack_base);
+
+		/* free various allocated resources */
+		if (vm_deallocate(kernel_map, (vm_offset_t)elp->el_stringbase, ARG_MAX))
+			panic("execve: string buffer dealloc failed (1)");
+		if (vm_deallocate(kernel_map, (vm_offset_t)image_header, PAGE_SIZE))
+			panic("execve: header dealloc failed (2)");
+		vput(ndp->ni_vp);
+		mfree(ndp->ni_cnd.cn_pnbuf);
+
+		return (0);
+
+exec_fail_dealloc:
+		if (elp->el_stringbase && elp->el_stringbase != (char *)-1)
+			if (vm_deallocate(kernel_map, (vm_offset_t)elp->el_stringbase, ARG_MAX))
+				panic("execve: string buffer dealloc failed (2)");
+		if (elp->el_image_hdr && elp->el_image_hdr != (char *)-1)
+			if (vm_deallocate(kernel_map, (vm_offset_t)elp->el_image_hdr, PAGE_SIZE))
+				panic("execve: header dealloc failed (3)");
+		vput(ndp->ni_vp);
+		rmfree(ndp->ni_cnd.cn_pnbuf);
+
+exec_fail:
+		if (elp->el_vmspace_destroyed) {
+			/* sorry, no more process anymore. exit gracefully */
+#if 0	/* XXX */
+			vm_deallocate(&vs->vm_map, USRSTACK - MAXSSIZ, MAXSSIZ);
+#endif
+			exit1(p, W_EXITCODE(0, SIGABRT));
+			/* NOT REACHED */
+			return(0);
+		} else {
+			return (error);
+		}
 }
 
 /*
@@ -425,200 +339,65 @@ execsigs(p)
 	u->u_sigstk.ss_base = 0;
 	u->u_psflags = 0;
 }
+
 /*
- * Read in and set up memory for executed file.
- * u.u_error set on error
+ * Check permissions of file to execute.
+ *	Return 0 for success or error code on failure.
  */
-void
-getxfile(ip, ep, nargc, uid, gid)
-	struct inode *ip;
-	register struct exec *ep;
-	int nargc, uid, gid;
+static int
+exec_check_permissions(elp)
+	struct exec_linker *elp;
 {
-	struct u_ovd sovdata;
-	long lsize;
-	off_t	offset;
-	u_int ds, ts, ss;
-	u_int ovhead[NOVL + 1];
-	int sep, overlay, ovflag, ovmax, resid;
+	struct proc *p = elp->el_proc;
+	struct vnode *vnodep = elp->el_vnodep;
+	struct vattr *attr = elp->el_attr;
+	int error;
 
-	overlay = sep = ovflag = 0;
-	switch(ep->a_magic) {
-		case A_MAGIC1:
-			lsize = (long)ep->a_data + ep->a_text;
-			ep->a_data = (u_int)lsize;
-			if (lsize != ep->a_data) {	/* check overflow */
-				u->u_error = ENOMEM;
-				return;
-			}
-			ep->a_text = 0;
-			break;
-		case A_MAGIC3:
-			sep++;
-			break;
-		case A_MAGIC4:
-			overlay++;
-			break;
-		case A_MAGIC5:
-			ovflag++;
-			break;
-		case A_MAGIC6:
-			sep++;
-			ovflag++;
-			break;
+	/* Check number of open-for-writes on the file and deny execution if there are any. */
+	if (vnodep->v_writecount) {
+		return (ETXTBSY);
 	}
 
-	if (ip->i_text && (ip->i_text->x_flag & XTRC)) {
-		u->u_error = ETXTBSY;
-		return;
-	}
-	if (ep->a_text != 0 && (ip->i_flag&ITEXT) == 0 &&
-	    ip->i_count != 1) {
-		register struct file *fp;
-
-		for (fp = file; fp < fileNFILE; fp++) {
-			if (fp->f_type == DTYPE_INODE &&
-			    fp->f_count > 0 &&
-			    (struct inode *)fp->f_data == ip &&
-			    (fp->f_flag&FWRITE)) {
-				u->u_error = ETXTBSY;
-				return;
-			}
-		}
-	}
+	/* Get file attributes */
+	error = VOP_GETATTR(vnodep, attr, p->p_ucred, p);
+	if (error)
+		return (error);
 
 	/*
-	 * find text and data sizes try; them out for possible
-	 * overflow of max sizes
+	 * 1) Check if file execution is disabled for the filesystem that this
+	 *	file resides on.
+	 * 2) Insure that at least one execute bit is on - otherwise root
+	 *	will always succeed, and we don't want to happen unless the
+	 *	file really is executable.
+	 * 3) Insure that the file is a regular file.
 	 */
-	ts = btoc(ep->a_text);
-	lsize = (long)ep->a_data + ep->a_bss;
-	if (lsize != (u_int)lsize) {
-		u->u_error = ENOMEM;
-		return;
+	if ((vnodep->v_mount->mnt_flag & MNT_NOEXEC) || ((attr->va_mode & 0111) == 0) || (attr->va_type != VREG)) {
+		return (EACCES);
 	}
-	ds = btoc(lsize);
-	ss = SSIZE + btoc(nargc);
+
+	/* Zero length files can't be exec'd */
+	if (attr->va_size == 0)
+		return (ENOEXEC);
+	/*
+	 * Disable setuid/setgid if the filesystem prohibits it or if
+	 *	the process is being traced.
+	 */
+	if ((vnodep->v_mount->mnt_flag & MNT_NOSUID) || (p->p_flag & P_TRACED))
+		attr->va_mode &= ~(VSUID | VSGID);
 
 	/*
-	 * if auto overlay get second header
+	 *  Check for execute permission to file based on current credentials.
+	 *	Then call filesystem specific open routine (which does nothing
+	 *	in the general case).
 	 */
-	sovdata = u->u_ovdata;
-	u->u_ovdata.uo_ovbase = 0;
-	u->u_ovdata.uo_curov = 0;
-	if (ovflag) {
-		u->u_error = rdwri(UIO_READ, ip, ovhead, sizeof(ovhead),
-			(off_t)sizeof(struct exec), UIO_SYSSPACE, IO_UNIT, &resid);
-		if (resid != 0)
-			u->u_error = ENOEXEC;
-		if (u->u_error) {
-			u->u_ovdata = sovdata;
-			return;
-		}
-		/* set beginning of overlay segment */
-		u->u_ovdata.uo_ovbase = ctos(ts);
+	error = VOP_ACCESS(vnodep, VEXEC, p->p_ucred, p);
+	if (error)
+		return (error);
 
-		/* 0th entry is max size of the overlays */
-		ovmax = btoc(ovhead[0]);
+	error = VOP_OPEN(vnodep, FREAD, p->p_ucred, p);
+	if (error)
+		return (error);
 
-		/* set max number of segm. registers to be used */
-		u->u_ovdata.uo_nseg = ctos(ovmax);
-
-		/* set base of data space */
-		u->u_ovdata.uo_dbase = stoc(u->u_ovdata.uo_ovbase +
-		    u->u_ovdata.uo_nseg);
-
-		/*
-		 * Set up a table of offsets to each of the overlay
-		 * segements. The ith overlay runs from ov_offst[i-1]
-		 * to ov_offst[i].
-		 */
-		u->u_ovdata.uo_ov_offst[0] = ts;
-		{
-			register int t, i;
-
-			/* check if any overlay is larger than ovmax */
-			for (i = 1; i <= NOVL; i++) {
-				if ((t = btoc(ovhead[i])) > ovmax) {
-					u->u_error = ENOEXEC;
-					u->u_ovdata = sovdata;
-					return;
-				}
-				u->u_ovdata.uo_ov_offst[i] =
-					t + u->u_ovdata.uo_ov_offst[i - 1];
-			}
-		}
-	}
-	if (overlay) {
-		if ((u->u_sep == 0 && ctos(ts) != ctos(u->u_tsize)) || nargc) {
-			u->u_error = ENOMEM;
-			return;
-		}
-		ds = u->u_dsize;
-		ss = u->u_ssize;
-		sep = u->u_sep;
-		xfree();
-		xalloc(ip,ep);
-		u->u_ar0[PC] = ep->a_entry & ~01;
-	} else {
-		if (estabur(ts, ds, ss, sep, RO)) {
-			u->u_ovdata = sovdata;
-			return;
-		}
-
-		/*
-		 * allocate and clear core at this point, committed
-		 * to the new image
-		 */
-		u->u_prof.pr_scale = 0;
-		if (u->u_procp->p_flag & SVFORK)
-			endvfork();
-		else
-			xfree();
-		expand(ds, S_DATA);
-		{
-			register u_int numc, startc;
-
-			startc = btoc(ep->a_data);	/* clear BSS only */
-			if (startc != 0)
-				startc--;
-			numc = ds - startc;
-			clear(u->u_procp->p_daddr + startc, numc);
-		}
-		expand(ss, S_STACK);
-		clear(u->u_procp->p_saddr, ss);
-		xalloc(ip, ep);
-
-		/*
-		 * read in data segment
-		 */
-		estabur((u_int)0, ds, (u_int)0, 0, RO);
-		offset = sizeof(struct exec);
-		if (ovflag) {
-			offset += sizeof(ovhead);
-			offset += (((long)u->u_ovdata.uo_ov_offst[NOVL]) << 6);
-		}
-		else
-			offset += ep->a_text;
-		rdwri(UIO_READ, ip, (caddr_t) 0, ep->a_data, offset,
-			UIO_USERSPACE, IO_UNIT, (int *)0);
-
-		/*
-		 * set SUID/SGID protections, if no tracing
-		 */
-		if ((u->u_procp->p_flag & P_TRACED)==0) {
-			u->u_uid = uid;
-			u->u_procp->p_uid = uid;
-			u->u_groups[0] = gid;
-		} else
-			psignal(u->u_procp, SIGTRAP);
-		u->u_svuid = u->u_uid;
-		u->u_svgid = u->u_groups[0];
-		u->u_acflag &= ~ASUGID;	/* start fresh setuid/gid priv use */
-	}
-	u->u_tsize = ts;
-	u->u_dsize = ds;
-	u->u_ssize = ss;
-	u->u_sep = sep;
-	estabur(ts, ds, ss, sep, RO);
+	return (0);
 }
+

@@ -90,7 +90,6 @@ struct execa {
 };
 
 struct execsw {
-	int (*ex_imgact)(void * /* struct image_params * */);
 	int (*ex_exec_linker)(void * /* struct exec_linker* */);
 	const char *ex_name;
 };

@@ -1,9 +1,10 @@
 /*
- * exec_elf64.c
+ * exec_elf32.c
  *
  *  Created on: 14 Dec 2019
  *      Author: osiris
  */
+
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -17,3 +18,20 @@
 #include <sys/sysent.h>
 
 #include <vm/vm.h>
+
+copyargs()
+{
+
+}
+
+elf_check_header()
+{
+
+}
+
+int
+exec_elf_linker(elp)
+	struct exec_linker *elp;
+{
+	return ENOEXEC;
+}

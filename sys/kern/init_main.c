@@ -10,6 +10,7 @@
 #include <sys/filedesc.h>
 #include <sys/errno.h>
 #include <sys/exec.h>
+#include <sys/exec_linker.h>
 #include <sys/kernel.h>
 #include <sys/mount.h>
 #include <sys/map.h>
@@ -68,7 +69,7 @@ main()
 	register struct filedesc0 *fdp;
 	register struct user *u;
 	register int i;
-	//extern struct sysentvec aout_sysvec; /* use exec_linker */
+	extern struct sysentvec sysvec;
 
 	/*
 	 * Initialize the current process pointer (curproc) before
@@ -90,7 +91,7 @@ main()
 	p->p_pgrp = &pgrp0;
 	pgrphash[0] = &pgrp0;
 
-	//p->p_sysent = &sysvec;
+	p->p_sysent = &sysvec;
 
 	p->p_stat = SRUN;
 	p->p_flag |= SLOAD|SSYS;

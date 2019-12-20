@@ -16,8 +16,8 @@ int	nosys();
 
 /* 1.1 processes and protection */
 int	getpid();
-int	getppid(), fork(),rexit(),execv(),execve();
-int	wait4(), getuid(),getgid(),getgroups(),setgroups();
+int	getppid(), fork(), rexit(), execv(), execve();
+int	wait4(), getuid(), getgid(), getgroups(), setgroups();
 int	geteuid(), getegid(), getlogin();
 int	getpgrp(),setpgrp(), setlogin();
 int	setgid(), setegid(), setuid(), seteuid();
@@ -25,47 +25,47 @@ int	ucall();					/* 2BSD calls */
 
 /* 1.2 memory management */
 int	sbrk();
-int	lock(),phys(),fetchi(),nostk(),fperr();		/* 2BSD calls */
+int	lock(), phys(), fetchi(), nostk(), fperr();		/* 2BSD calls */
 
 /* 1.3 signals */
-int	sigstack(),sigreturn();
+int	sigstack(), sigreturn();
 int	sigaction(), sigprocmask(), sigpending(), sigaltstack(), sigsuspend();
 int	sigwait(), kill(), killpg();
 
 /* 1.4 timing and statistics */
-int	gettimeofday(),settimeofday();
-int	getitimer(),setitimer();
+int	gettimeofday(), settimeofday();
+int	getitimer(), setitimer();
 int	adjtime();
 
 /* 1.5 descriptors */
-int	getdtablesize(),dup(),dup2(),close();
-int	pselect(),select(),fcntl(),flock();
+int	getdtablesize(), dup(), dup2(), close();
+int	pselect(), select(), fcntl(), flock();
 
 /* 1.6 resource controls */
-int	getpriority(),setpriority(),getrusage(),getrlimit(),setrlimit();
-int	setquota(),qquota();
+int	getpriority(), setpriority(), getrusage(), getrlimit(), setrlimit();
+int	setquota(), qquota();
 
 /* 1.7 system operation support */
-int	umount(),smount();
-int	sync(),reboot(),__sysctl();
+int	umount(), smount();
+int	sync(), reboot(), __sysctl();
 
 /* 2.1 generic operations */
-int	read(),write(),readv(),writev(),ioctl();
+int	read(), write(), readv(), writev(), ioctl();
 
 /* 2.2 file system */
 int	chdir(), fchdir(), chroot();
-int	mkdir(),rmdir(), chflags(), fchflags();
-int	open(),mknod(),unlink(),stat(),fstat(),lstat();
-int	chown(),fchown(),chmod(),fchmod(),utimes();
-int	link(),symlink(),readlink(),rename();
-int	lseek(),truncate(),ftruncate(),saccess(),fsync();
+int	mkdir(), rmdir(), chflags(), fchflags();
+int	open(), mknod(), unlink(), stat(), fstat(), lstat();
+int	chown(), fchown(), chmod(), fchmod(), utimes();
+int	link(), symlink(), readlink(), rename();
+int	lseek(), truncate(), ftruncate(), saccess(), fsync();
 int	statfs(), fstatfs(), getfsstat();
 
 /* 2.3 communications */
-int	socket(),bind(),listen(),accept(),connect();
-int	socketpair(),sendto(),send(),recvfrom(),recv();
-int	sendmsg(),recvmsg(),shutdown(),setsockopt(),getsockopt();
-int	getsockname(),getpeername(),pipe();
+int	socket(), bind(), listen(), accept(), connect();
+int	socketpair(), sendto(), send(), recvfrom(), recv();
+int	sendmsg(), recvmsg(), shutdown(), setsockopt(), getsockopt();
+int	getsockname(), getpeername(), pipe();
 
 int	umask();		/* XXX */
 
