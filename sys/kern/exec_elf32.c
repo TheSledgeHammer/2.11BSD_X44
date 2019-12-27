@@ -1,9 +1,3 @@
-/*
- * exec_elf32.c
- *
- *  Created on: 14 Dec 2019
- *      Author: osiris
- */
 
 
 #include <sys/param.h>

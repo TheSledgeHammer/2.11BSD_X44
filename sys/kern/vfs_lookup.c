@@ -103,7 +103,6 @@ namei(ndp)
 	 * name into the buffer.
 	 */
 	if ((cnp->cn_flags & HASBUF) == 0)
-		//MALLOC(cnp->cn_pnbuf, caddr_t, MAXPATHLEN, M_NAMEI, M_WAITOK);
 		rmalloc(cnp->cn_pnbuf, MAXPATHLEN);
 	if (ndp->ni_segflg == UIO_SYSSPACE)
 		error = copystr(ndp->ni_dirp, cnp->cn_pnbuf,
@@ -112,7 +111,6 @@ namei(ndp)
 		error = copyinstr(ndp->ni_dirp, cnp->cn_pnbuf,
 			    MAXPATHLEN, (u_int *)&ndp->ni_pathlen);
 	if (error) {
-		//free(cnp->cn_pnbuf, M_NAMEI);
 		rmfree(cnp->cn_pnbuf, sizeof(cnp->cn_pnbuf));
 		ndp->ni_vp = NULL;
 		return (error);
@@ -148,7 +146,6 @@ namei(ndp)
 		ndp->ni_startdir = dp;
 		error = lookup(ndp);
 		if (error) {
-			//FREE(cnp->cn_pnbuf, M_NAMEI);
 			rmfree(cnp->cn_pnbuf, sizeof(cnp->cn_pnbuf));
 			return (error);
 		}
@@ -157,7 +154,6 @@ namei(ndp)
 		 */
 		if ((cnp->cn_flags & ISSYMLINK) == 0) {
 			if ((cnp->cn_flags & (SAVENAME | SAVESTART)) == 0)
-				//FREE(cnp->cn_pnbuf, M_NAMEI);
 				rmfree(cnp->cn_pnbuf, sizeof(cnp->cn_pnbuf));
 			else
 				cnp->cn_flags |= HASBUF;
@@ -170,7 +166,6 @@ namei(ndp)
 			break;
 		}
 		if (ndp->ni_pathlen > 1)
-			//MALLOC(cp, char *, MAXPATHLEN, M_NAMEI, M_WAITOK);
 			rmalloc(cp, MAXPATHLEN);
 		else
 			cp = cnp->cn_pnbuf;
@@ -186,7 +181,6 @@ namei(ndp)
 		error = VOP_READLINK(ndp->ni_vp, &auio, cnp->cn_cred);
 		if (error) {
 			if (ndp->ni_pathlen > 1)
-				//free(cp, M_NAMEI);
 				rmfree(cp, sizeof(cp));
 			break;
 		}
@@ -199,7 +193,6 @@ namei(ndp)
 		}
 		if (ndp->ni_pathlen > 1) {
 			bcopy(ndp->ni_next, cp + linklen, ndp->ni_pathlen);
-			//FREE(cnp->cn_pnbuf, M_NAMEI);
 			rmfree(cnp->cn_pnbuf, sizeof(cnp->cn_pnbuf));
 			cnp->cn_pnbuf = cp;
 		} else
@@ -208,7 +201,6 @@ namei(ndp)
 		vput(ndp->ni_vp);
 		dp = ndp->ni_dvp;
 	}
-	//FREE(cnp->cn_pnbuf, M_NAMEI);
 	rmfree(cnp->cn_pnbuf, sizeof(cnp->cn_pnbuf));
 	vrele(ndp->ni_dvp);
 	vput(ndp->ni_vp);

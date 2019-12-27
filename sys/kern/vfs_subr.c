@@ -1055,7 +1055,6 @@ vgone(vp)
 				vx->v_flag &= ~VALIASED;
 			vp->v_flag &= ~VALIASED;
 		}
-		//FREE(vp->v_specinfo, M_VNODE);
 		rmfree(vp->v_specinfo, sizeof(vp->v_specinfo));
 		vp->v_specinfo = NULL;
 	}
@@ -1310,7 +1309,6 @@ vfs_hang_addrlist(mp, nep, argp)
 		return (0);
 	}
 	i = sizeof(struct netcred) + argp->ex_addrlen + argp->ex_masklen;
-	//np = (struct netcred *)malloc(i, M_NETADDR, M_WAITOK);
 	np = (struct netcred *)rmalloc(np, i);
 	bzero((caddr_t)np, i);
 	saddr = (struct sockaddr *)(np + 1);
@@ -1354,7 +1352,6 @@ vfs_hang_addrlist(mp, nep, argp)
 	np->netc_anon.cr_ref = 1;
 	return (0);
 out:
-	//free(np, M_NETADDR);
 	rmfree(np, sizeof(np));
 	return (error);
 }
@@ -1368,7 +1365,6 @@ vfs_free_netcred(rn, w)
 	register struct radix_node_head *rnh = (struct radix_node_head *)w;
 
 	(*rnh->rnh_deladdr)(rn->rn_key, rn->rn_mask, rnh);
-	//free((caddr_t)rn, M_NETADDR);
 	rmfree((caddr_t)rn, sizeof(rn));
 	return (0);
 }
@@ -1387,7 +1383,6 @@ vfs_free_addrlist(nep)
 		if ((rnh = nep->ne_rtable[i])) {
 			(*rnh->rnh_walktree)(rnh, vfs_free_netcred,
 			    (caddr_t)rnh);
-			//free((caddr_t)rnh, M_RTABLE);
 			rmfree((caddr_t)rnh, sizeof(rnh));
 			nep->ne_rtable[i] = 0;
 		}
