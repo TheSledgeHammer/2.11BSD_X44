@@ -102,13 +102,13 @@ struct kmemtree {
     caddr_t			kt_last;           /* kmembuckets last reference */
 
     unsigned long 	kt_bucket_size;     /* bucketmap size in bytes */
-    unsigned long 	kt_bucket_idx;      /* bucketmap index */
+    long 			kt_bucket_idx;      /* bucketmap index */
 };
 
 /* Maps a Tertiary Tree for each bucket created*/
 struct kmembucketmap {
     unsigned long 	bucket_size;
-    unsigned long 	bucket_index;
+    long 			bucket_index;
 };
 
 //#ifdef KERNEL

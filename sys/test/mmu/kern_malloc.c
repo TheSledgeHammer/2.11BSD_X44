@@ -16,7 +16,8 @@ char *kmembase, *kmemlimit;
 
 static int isPowerOfTwo(long n); 	/* 0 = true, 1 = false */
 static int isPowerOfThree(long n);  /* 0 = true, 1 = false */
-static unsigned long bucket_search(unsigned long size);
+static long bucket_search(unsigned long size);
+static unsigned long bucket_align(long indx);
 
 struct asl {
 	caddr_t	*next;
@@ -27,11 +28,13 @@ struct asl {
 typedef struct asl freelist;
 
 struct kmemtree *
-insert(size, ktp)
+insert(size, type, ktp)
     register struct kmemtree *ktp;
+	int type;
     unsigned long size;
 {
     	ktp->kt_size = size;
+    	ktp->kt_type = type;
     	ktp->kt_entries++;
     	return (ktp);
 }
@@ -41,7 +44,7 @@ push_left(size, ktp)
 	unsigned long size;
 	struct kmemtree *ktp;
 {
-		ktp->kt_left = insert(size, ktp);
+		ktp->kt_left = insert(size, TYPE_11, ktp);
 		return(ktp);
 }
 
@@ -50,7 +53,7 @@ push_middle(size, ktp)
 	unsigned long size;
 	struct kmemtree *ktp;
 {
-		ktp->kt_middle = insert(size, ktp);
+		ktp->kt_middle = insert(size, TYPE_01, ktp);
 		return(ktp);
 }
 
@@ -59,7 +62,7 @@ push_right(size, ktp)
 	unsigned long size;
 	struct kmemtree *ktp;
 {
-		ktp->kt_right = insert(size, ktp);
+		ktp->kt_right = insert(size, TYPE_10, ktp);
 		return(ktp);
 }
 
@@ -79,7 +82,7 @@ kmem_tree_init(ktp, next, last)
 
 
 /* Search for the bucket which best-fits the block size to be allocated */
-static unsigned long
+static long
 bucket_search(unsigned long size)
 {
     if(size <= bucketmap[0].bucket_size) {
@@ -100,6 +103,23 @@ bucket_search(unsigned long size)
         }
     }
     return 0; /* Should never reach this... (kernel panic) */
+}
+
+static unsigned long
+bucket_align(long indx)
+{
+    if(indx <= 0) {
+        return bucketmap[0].bucket_size;
+    } else if(indx >= 11) {
+        return bucketmap[11].bucket_size;
+    } else {
+        for(int i = 1; i < 11; i++) {
+            if(indx == i) {
+                return bucketmap[i].bucket_size;
+            }
+        }
+    }
+    return 0;
 }
 
 /* Function to check if x is a power of 2 (Internal use only) */
