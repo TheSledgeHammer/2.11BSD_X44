@@ -41,7 +41,7 @@ extern struct map coremap;																		/* space for core allocation */
 extern struct map swapmap;																		/* space for swap allocation */
 
 int	nswapmap;
-
+void 	rminit(struct map *mp, size_t size, size_t addr, char *name, int mapsize)
 size_t 	rmalloc (struct map *mp, size_t nbytes); 												/* Allocate units from the given map. */
 void 	rmfree (struct map *mp, size_t nbytes, size_t addr); 									/* Free the previously allocated units at addr into the specified map.*/
 size_t 	rmalloc3 (struct map *mp, size_t d_size, size_t s_size, size_t u_size, size_t a[3]);	/* Allocate resources for the three segments of a process.*/

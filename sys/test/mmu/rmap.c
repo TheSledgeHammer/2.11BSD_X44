@@ -11,7 +11,7 @@
 void
 rminit(mp, size, addr, name, mapsize)
 	register struct map *mp;
-	long size, addr;
+	size_t size, addr;
 	char *name;
 	int mapsize;
 {
@@ -37,17 +37,14 @@ rminit(mp, size, addr, name, mapsize)
  * a failure return.  This is due mainly to laziness and could be fixed
  * to do the right thing, although it probably will never be used.
  */
+/*
 rmget(mp, size, addr)
 	register struct map *mp;
 {
 	register struct mapent *ep = (struct mapent *)(mp+1);
 	register struct mapent *bp, *bp2;
 }
-
-/*
- * mmu_init
- * tbs_init (tertiary buddy system)
- */
+*/
 
 /*
  * rmalloc

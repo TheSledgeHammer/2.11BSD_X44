@@ -78,31 +78,41 @@ struct kmemusage {
 
 /* Set of buckets for each size of memory block that is retained */
 struct kmembuckets {
-	caddr_t kb_next;		/* list of free blocks */
-	caddr_t kb_last;		/* last free block */
-	long	kb_calls;		/* total calls to allocate this size */
-	long	kb_total;		/* total number of blocks allocated */
-	long	kb_totalfree;	/* # of free elements in this bucket */
-	long	kb_elmpercl;	/* # of elements in this sized allocation */
-	long	kb_highwat;		/* high water mark */
-	long	kb_couldfree;	/* over high water mark and could free */
+    struct kmembuckets  *kb_front;
+    struct kmembuckets  *kb_back;
+	caddr_t 			kb_next;		/* list of free blocks */
+	caddr_t 			kb_last;		/* last free block */
+	long				kb_calls;		/* total calls to allocate this size */
+	long				kb_total;		/* total number of blocks allocated */
+	long				kb_totalfree;	/* # of free elements in this bucket */
+	long				kb_elmpercl;	/* # of elements in this sized allocation */
+	long				kb_highwat;		/* high water mark */
+	long				kb_couldfree;	/* over high water mark and could free */
+};
+
+struct kmemtree_entry {
+    struct kmembuckets    kte_head;
+    struct kmembuckets    kte_tail;
+
+#define kteb_next         kte_head.kb_next
+#define kteb_last         kte_head.kb_last
 };
 
 /* Tertiary Tree within each bucket, for each size of memory block that is retained */
 struct kmemtree {
-    struct kmemtree *kt_parent;         /* parent tree of free blocks */
-    struct kmemtree *kt_left;		    /* free blocks on left child */
-    struct kmemtree *kt_middle;		    /* free blocks on middle child */
-    struct kmemtree *kt_right;		    /* free blocks on right child */
-    int 			kt_type;			/* Two-bit Type field for different block sizes */
-    long 			kt_size;			/* size of memory */
-    int 			kt_entries;			/* # of child nodes in tree */
+    struct kmemtree_entry 	kt_parent;         /* parent tree of free blocks */
+    struct kmemtree 		*kt_left;		    /* free blocks on left child */
+    struct kmemtree 		*kt_middle;		    /* free blocks on middle child */
+    struct kmemtree 		*kt_right;		    /* free blocks on right child */
+    int 					kt_type;			/* Two-bit Type field for different block sizes */
+    long 					kt_size;			/* size of memory */
+    int 					kt_entries;			/* # of child nodes in tree */
 
-    caddr_t			kt_next;           /* kmembuckets next reference */
-    caddr_t			kt_last;           /* kmembuckets last reference */
+    unsigned long 			kt_bucket_size;     /* bucketmap size in bytes */
+    long 					kt_bucket_idx;      /* bucketmap index */
 
-    unsigned long 	kt_bucket_size;     /* bucketmap size in bytes */
-    long 			kt_bucket_idx;      /* bucketmap index */
+#define kt_next   kt_parent.kteb_next
+#define kt_last   kt_parent.kteb_last
 };
 
 /* Maps a Tertiary Tree for each bucket created*/
@@ -176,7 +186,7 @@ struct kmembucketmap bucketmap[] = {
 	(space) = (cast)malloc((u_long)(size), type, flags)
 #define FREE(addr, type) free((caddr_t)(addr), type)
 
-extern struct kmemtree kmemtstree[];
+extern struct kmemtree_entry tree_bucket_entry[];
 extern struct kmembuckets bucket[];
 extern struct kmemusage *kmemusage;
 extern char *kmembase;
