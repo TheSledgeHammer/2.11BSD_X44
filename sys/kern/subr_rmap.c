@@ -12,6 +12,7 @@
 #include <sys/map.h>
 #include <vm/vm.h>
 
+struct coremap coremap;
 /*
  * Resource map handling routines.
  *

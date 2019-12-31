@@ -23,7 +23,6 @@
  * as it is used internally by the resource map routines.
  */
 
-
 struct map {
 	struct mapent	*m_map;		/* start of the map */
 	struct mapent	*m_limit;	/* address of last slot in map */
@@ -39,10 +38,11 @@ struct mapent {
 #ifdef KERNEL
 extern struct map coremap;																		/* space for core allocation */
 extern struct map swapmap;																		/* space for swap allocation */
-
 int	nswapmap;
-void 	rminit(struct map *mp, size_t size, size_t addr, char *name, int mapsize)
-size_t 	rmalloc (struct map *mp, size_t nbytes); 												/* Allocate units from the given map. */
-void 	rmfree (struct map *mp, size_t nbytes, size_t addr); 									/* Free the previously allocated units at addr into the specified map.*/
-size_t 	rmalloc3 (struct map *mp, size_t d_size, size_t s_size, size_t u_size, size_t a[3]);	/* Allocate resources for the three segments of a process.*/
+
+void 	rminit__P((struct map *mp, size_t size, size_t addr, char *name, int mapsize));
+size_t 	rmalloc__P((struct map *mp, size_t nbytes)); 												/* Allocate units from the given map. */
+void 	rmfree__P((struct map *mp, size_t nbytes, size_t addr)); 									/* Free the previously allocated units at addr into the specified map.*/
+size_t 	rmalloc3__P((struct map *mp, size_t d_size, size_t s_size, size_t u_size, size_t a[3]));	/* Allocate resources for the three segments of a process.*/
+size_t	rmget__P((struct map *mp, size_t size, size_t addr));
 #endif

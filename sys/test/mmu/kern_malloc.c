@@ -69,7 +69,7 @@ push_right(size, ktp)
 void
 kmemtree_entry(ktep, next, last)
     struct kmemtree_entry *ktep;
-    char next, last;
+	caddr_t next, last;
 {
     	ktep->kte_head.kb_front = ktep->kte_head.kb_back = &ktep->kte_head;
     	ktep->kte_tail.kb_front = ktep->kte_tail.kb_back = &ktep->kte_tail;
@@ -77,6 +77,9 @@ kmemtree_entry(ktep, next, last)
     	ktep->kteb_last = last;
 }
 
+/* XXX: Only tree_entry needs to know of space(next & last) within a bucket. Marking space with
+ * a boolean should work; when/if to insert or create a tertiary tree
+ */
 void
 kmemtree_init(ktp, next, last)
     register struct kmemtree *ktp;
@@ -84,13 +87,12 @@ kmemtree_init(ktp, next, last)
 {
     	ktp->kt_entries = 0;
     	ktp->kt_size = 0;
-    	ktp->kt_next = next;
-    	ktp->kt_last = last;
+    	ktp->kt_next = next; /* XXX  */
+    	ktp->kt_last = last; /* XXX */
     	ktp->kt_left = NULL;
     	ktp->kt_middle = NULL;
     	ktp->kt_right = NULL;
 }
-
 
 /* Search for the bucket which best-fits the block size to be allocated */
 static long
@@ -113,9 +115,11 @@ bucket_search(unsigned long size)
             }
         }
     }
-    return 0; /* Should never reach this... (kernel panic) */
+    panic("no bucket size found, returning 0");
+    return (0); /* Should never reach this... */
 }
 
+/* Searches for the bucket that matches the indx value. Returning the buckets allocation size */
 static unsigned long
 bucket_align(long indx)
 {
@@ -130,7 +134,8 @@ bucket_align(long indx)
             }
         }
     }
-    return 0;
+    panic("no bucket found at indx: returning 0");
+    return (0); /* Should never reach this... */
 }
 
 /* Function to check if x is a power of 2 (Internal use only) */
@@ -145,7 +150,7 @@ isPowerOfTwo(long n)
             return 0;
         n = n/2;
     }
-    return 1;
+    return (1);
 }
 
 /* Function to check if x is a power of 3 (Internal use only) */
@@ -160,7 +165,7 @@ isPowerOfThree(long n)
             return 0;
         n = n/3;
     }
-    return 1;
+    return (1);
 }
 
 void *
