@@ -14,11 +14,6 @@ struct kmemstats kmemstats[M_LAST];
 struct kmemusage *kmemusage;
 char *kmembase, *kmemlimit;
 
-static int isPowerOfTwo(long n); 	/* 0 = true, 1 = false */
-static int isPowerOfThree(long n);  /* 0 = true, 1 = false */
-static long bucket_search(unsigned long size);
-static unsigned long bucket_align(long indx);
-
 struct asl {
 	caddr_t	*next;
     long	spare0;
@@ -27,146 +22,6 @@ struct asl {
 };
 typedef struct asl freelist;
 
-struct kmemtree *
-insert(size, type, ktp)
-    register struct kmemtree *ktp;
-	int type;
-    unsigned long size;
-{
-    	ktp->kt_size = size;
-    	ktp->kt_type = type;
-    	ktp->kt_entries++;
-    	return (ktp);
-}
-
-struct kmemtree *
-push_left(size, ktp)
-	unsigned long size;
-	struct kmemtree *ktp;
-{
-		ktp->kt_left = insert(size, TYPE_11, ktp);
-		return(ktp);
-}
-
-struct kmemtree *
-push_middle(size, ktp)
-	unsigned long size;
-	struct kmemtree *ktp;
-{
-		ktp->kt_middle = insert(size, TYPE_01, ktp);
-		return(ktp);
-}
-
-struct kmemtree *
-push_right(size, ktp)
-	unsigned long size;
-	struct kmemtree *ktp;
-{
-		ktp->kt_right = insert(size, TYPE_10, ktp);
-		return(ktp);
-}
-
-void
-kmemtree_entry(ktep, next, last)
-    struct kmemtree_entry *ktep;
-	caddr_t next, last;
-{
-    	ktep->kte_head.kb_front = ktep->kte_head.kb_back = &ktep->kte_head;
-    	ktep->kte_tail.kb_front = ktep->kte_tail.kb_back = &ktep->kte_tail;
-    	ktep->kteb_next = next;
-    	ktep->kteb_last = last;
-}
-
-/* XXX: Only tree_entry needs to know of space(next & last) within a bucket. Marking space with
- * a boolean should work; when/if to insert or create a tertiary tree
- */
-void
-kmemtree_init(ktp, next, last)
-    register struct kmemtree *ktp;
-    caddr_t next, last;
-{
-    	ktp->kt_entries = 0;
-    	ktp->kt_size = 0;
-    	ktp->kt_next = next; /* XXX  */
-    	ktp->kt_last = last; /* XXX */
-    	ktp->kt_left = NULL;
-    	ktp->kt_middle = NULL;
-    	ktp->kt_right = NULL;
-}
-
-/* Search for the bucket which best-fits the block size to be allocated */
-static long
-bucket_search(unsigned long size)
-{
-    if(size <= bucketmap[0].bucket_size) {
-        return bucketmap[0].bucket_index;
-    } else if(size >= bucketmap[11].bucket_size) {
-        return bucketmap[11].bucket_index;
-    } else {
-        for(int i = 0; i < 12; i++) {
-            int j = i + 1;
-            if(size == bucketmap[i].bucket_size) {
-                return bucketmap[i].bucket_index;
-            }
-            if(size > bucketmap[i].bucket_size && size < bucketmap[j].bucket_index) {
-                return bucketmap[j].bucket_index;
-            } else {
-                return bucketmap[i].bucket_index;
-            }
-        }
-    }
-    panic("no bucket size found, returning 0");
-    return (0); /* Should never reach this... */
-}
-
-/* Searches for the bucket that matches the indx value. Returning the buckets allocation size */
-static unsigned long
-bucket_align(long indx)
-{
-    if(indx <= 0) {
-        return bucketmap[0].bucket_size;
-    } else if(indx >= 11) {
-        return bucketmap[11].bucket_size;
-    } else {
-        for(int i = 1; i < 11; i++) {
-            if(indx == i) {
-                return bucketmap[i].bucket_size;
-            }
-        }
-    }
-    panic("no bucket found at indx: returning 0");
-    return (0); /* Should never reach this... */
-}
-
-/* Function to check if x is a power of 2 (Internal use only) */
-static int
-isPowerOfTwo(long n)
-{
-    if (n == 0)
-        return 0;
-    while (n != 1)
-    {
-        if (n%2 != 0)
-            return 0;
-        n = n/2;
-    }
-    return (1);
-}
-
-/* Function to check if x is a power of 3 (Internal use only) */
-static int
-isPowerOfThree(long n)
-{
-    if (n == 0)
-        return 0;
-    while (n != 1)
-    {
-        if (n%3 != 0)
-            return 0;
-        n = n/3;
-    }
-    return (1);
-}
 
 void *
 malloc(size, type, flags)
@@ -191,15 +46,19 @@ malloc(size, type, flags)
         if (kbp->kb_next == NULL) {
         	kbp->kb_last = NULL;
         	kmemtree_entry(ktep, kbp->kb_next, kbp->kb_last);
-        	ktp->kt_parent = ktep;
-
+        	/* start of section to move into trealloc */
             if (size > MAXALLOCSAVE) {
                 allocsize = roundup(size, CLBYTES);
             } else {
                 allocsize = 1 << indx;
             }
             npg = clrnd(btoc(allocsize));
-
+            va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg),
+            					   !(flags & M_NOWAIT));
+            if (va == NULL) {
+            	splx(s);
+            }
+            /* end of section to move to trealloc */
         	goto out;
         }
 

@@ -50,7 +50,24 @@
 #define TYPE_01     01      /* left split from a 3 2k-3 block */
 #define TYPE_10     10      /* right split from a 3 2k-3 block  */
 
+/* Types of memory to be allocated */
+#define	M_FREE		0		/* should be on free list */
+#define M_RMAP		1		/* rminit */
+#define M_RMALLOC	2		/* rmalloc */
+#define M_RMFREE	3		/* rmfree */
+#define	M_MBUF		4		/* mbuf */
+
+#define	M_TEMP		74		/* misc temporary data buffers */
 #define	M_LAST		75		/* Must be last type + 1 */
+
+#define INITKMEMNAMES { 			\
+	"free",		/* 0 M_FREE */ 		\
+	"rmap",		/* 1 M_RMAP */		\
+	"rmalloc",	/* 2 M_RMALLOC */	\
+	"rmfree",	/* 3 M_RMFREE */	\
+	"mbuf",		/* 4 M_MBUF */ 		\
+	"temp",		/* 74 M_TEMP */ 	\
+}
 
 struct kmemstats {
 	long	ks_inuse;		/* # of packets of this type currently in use */
@@ -80,8 +97,10 @@ struct kmemusage {
 struct kmembuckets {
     struct kmembuckets  *kb_front;
     struct kmembuckets  *kb_back;
+
 	caddr_t 			kb_next;		/* list of free blocks */
 	caddr_t 			kb_last;		/* last free block */
+
 	long				kb_calls;		/* total calls to allocate this size */
 	long				kb_total;		/* total number of blocks allocated */
 	long				kb_totalfree;	/* # of free elements in this bucket */
@@ -94,28 +113,28 @@ struct kmemtree_entry {
     struct kmembuckets    kte_head;
     struct kmembuckets    kte_tail;
 
-#define kteb_next         kte_head.kb_next
-#define kteb_last         kte_head.kb_last
+#define kteb_next         kte_head.kb_next		/* list of free blocks */
+#define kteb_last         kte_head.kb_last		/* last free block */
 };
 
 /* Tertiary Tree within each bucket, for each size of memory block that is retained */
 struct kmemtree {
-    struct kmemtree_entry 	kt_parent;         /* parent tree of free blocks */
+    struct kmemtree_entry 	kt_parent;         	/* parent tree_entry */
     struct kmemtree 		*kt_left;		    /* free blocks on left child */
     struct kmemtree 		*kt_middle;		    /* free blocks on middle child */
     struct kmemtree 		*kt_right;		    /* free blocks on right child */
+
     int 					kt_type;			/* Two-bit Type field for different block sizes */
+    boolean_t				kt_space;			/* Determines if tertiary tree needs to be created/used */
+
     long 					kt_size;			/* size of memory */
     int 					kt_entries;			/* # of child nodes in tree */
 
     unsigned long 			kt_bucket_size;     /* bucketmap size in bytes */
     long 					kt_bucket_idx;      /* bucketmap index */
-
-#define kt_next   kt_parent.kteb_next
-#define kt_last   kt_parent.kteb_last
 };
 
-/* Maps a Tertiary Tree for each bucket created*/
+/* Maps each bucket created (used by tertiary search tree)*/
 struct kmembucketmap {
     unsigned long 	bucket_size;
     long 			bucket_index;
@@ -180,14 +199,49 @@ struct kmembucketmap bucketmap[] = {
 #define kmemxtob(alloc)	(kmembase + (alloc) * NBPG)
 #define btokmemx(addr)	(((char)(addr) - kmembase) / NBPG)
 #define btokup(addr)	(&kmemusage[((char)(addr) - kmembase) >> CLSHIFT])
-//#endif /* KERNEL */
 
-#define	MALLOC(space, cast, size, type, flags) \
+#if defined(KMEMSTATS) || defined(DIAGNOSTIC)
+#define	MALLOC(space, cast, size, type, flags) 						\
 	(space) = (cast)malloc((u_long)(size), type, flags)
 #define FREE(addr, type) free((caddr_t)(addr), type)
+
+#else /* do not collect statistics */
+#define	MALLOC(space, cast, size, type, flags) { 					\
+	register struct kmembuckets *kbp = &bucket[BUCKETINDX(size)]; 	\
+	long s = splimp(); 												\
+	if (kbp->kb_next == NULL) { 									\
+		(space) = (cast)malloc((u_long)(size), type, flags); 		\
+	} else { 														\
+		(space) = (cast)kbp->kb_next; 								\
+		kbp->kb_next = *(caddr_t *)(space); 						\
+	} 																\
+	splx(s); 														\
+}
+
+#define FREE(addr, type) { 											\
+	register struct kmembuckets *kbp; 								\
+	register struct kmemusage *kup = btokup(addr); 					\
+	long s = splimp(); 												\
+	if (1 << kup->ku_indx > MAXALLOCSAVE) { 						\
+		free((caddr_t)(addr), type); 								\
+	} else { 														\
+		kbp = &bucket[kup->ku_indx]; 								\
+		if (kbp->kb_next == NULL) 									\
+			kbp->kb_next = (caddr_t)(addr); 						\
+		else 														\
+			*(caddr_t *)(kbp->kb_last) = (caddr_t)(addr); 			\
+		*(caddr_t *)(addr) = NULL; 									\
+		kbp->kb_last = (caddr_t)(addr); 							\
+	} 																\
+	splx(s); 														\
+}
+#endif /* do not collect statistics */
 
 extern struct kmemtree_entry tree_bucket_entry[];
 extern struct kmembuckets bucket[];
 extern struct kmemusage *kmemusage;
 extern char *kmembase;
+extern void *malloc __P((unsigned long size, int type, int flags));
+extern void free __P((void *addr, int type));
+//#endif /* KERNEL */
 #endif /* !_SYS_MALLOC_H_ */
