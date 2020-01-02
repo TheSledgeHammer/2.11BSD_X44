@@ -117,12 +117,22 @@ struct kmemtree_entry {
 #define kteb_last         kte_head.kb_last		/* last free block */
 };
 
+/* Available Space List */
+struct asl {
+    struct asl *asl_next;
+    struct asl *asl_prev;
+    unsigned long asl_size;
+};
+
 /* Tertiary Tree within each bucket, for each size of memory block that is retained */
 struct kmemtree {
     struct kmemtree_entry 	kt_parent;         	/* parent tree_entry */
     struct kmemtree 		*kt_left;		    /* free blocks on left child */
     struct kmemtree 		*kt_middle;		    /* free blocks on middle child */
     struct kmemtree 		*kt_right;		    /* free blocks on right child */
+
+    struct asl      		*kt_freelist1;      /* ptr to asl for 2k blocks */
+    struct asl      		*kt_freelist2;      /* ptr to asl for 3(2k-3) blocks */
 
     int 					kt_type;			/* Two-bit Type field for different block sizes */
     boolean_t				kt_space;			/* Determines if tertiary tree needs to be created/used */

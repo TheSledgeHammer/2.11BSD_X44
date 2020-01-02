@@ -32,8 +32,7 @@ malloc(size, type, flags)
     	register struct kmemtree *ktp;
         register struct kmembuckets *kbp;
         register struct kmemusage *kup;
-        register freelist *freep1;      /* 3.2k-3 sizes */
-        register freelist *freep2;      /* 2k sizes */
+        register freelist *freep;
         long indx, npg, allocsize;
         int s;
         char va, cp, savedlist;
@@ -46,6 +45,13 @@ malloc(size, type, flags)
         if (kbp->kb_next == NULL) {
         	kbp->kb_last = NULL;
         	kmemtree_entry(ktep, kbp->kb_next, kbp->kb_last);
+        	ktp = kmemtree_init(&ktep[indx], size);
+
+        	if(ktp->kt_parent == NULL) {
+        		kmemtree_create(ktp, TRUE);
+        	} else {
+        		/* find tree and insert if possible */
+        	}
         	/* start of section to move into trealloc */
             if (size > MAXALLOCSAVE) {
                 allocsize = roundup(size, CLBYTES);

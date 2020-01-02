@@ -26,28 +26,43 @@ insert(size, type, ktp)
 }
 
 struct kmemtree *
-push_left(size, ktp)
-	unsigned long size;
+push_left(size, dsize, ktp)
+	unsigned long size, dsize;
 	struct kmemtree *ktp;
 {
+	if(dsize > 0) {
+		ktp->kt_freelist1->asl_size += dsize;
+	} else {
+	   ktp->kt_freelist1->asl_size += size;
+	}
 	ktp->kt_left = insert(size, TYPE_11, ktp);
 	return(ktp);
 }
 
 struct kmemtree *
-push_middle(size, ktp)
-	unsigned long size;
+push_middle(size, dsize, ktp)
+	unsigned long size, dsize;
 	struct kmemtree *ktp;
 {
+	if(dsize > 0) {
+		ktp->kt_freelist2->asl_size += dsize;
+	} else {
+		ktp->kt_freelist2->asl_size += size;
+	}
 	ktp->kt_middle = insert(size, TYPE_01, ktp);
 	return(ktp);
 }
 
 struct kmemtree *
-push_right(size, ktp)
-	unsigned long size;
+push_right(size, dsize, ktp)
+	unsigned long size, dsize;
 	struct kmemtree *ktp;
 {
+	if(dsize > 0) {
+		ktp->kt_freelist2->asl_size += dsize;
+	} else {
+		ktp->kt_freelist2->asl_size += size;
+	}
 	ktp->kt_right = insert(size, TYPE_10, ktp);
 	return(ktp);
 }
@@ -85,6 +100,13 @@ kmemtree_create(ktp, space)
     ktp->kt_space = space;
     ktp->kt_entries = 0;
     ktp->kt_size = 0;
+
+    ktp->kt_freelist1 = (struct asl *)ktp;
+    ktp->kt_freelist2 = (struct asl *)ktp;
+    ktp->kt_freelist1->asl_next = NULL;
+    ktp->kt_freelist1->asl_prev = NULL;
+    ktp->kt_freelist2->asl_next = NULL;
+    ktp->kt_freelist2->asl_prev = NULL;
 }
 
 /* Search for the bucket which best-fits the block size to be allocated */
@@ -161,136 +183,123 @@ isPowerOfThree(long n)
     return (1);
 }
 
-/* likely to need freelist2 */
-void
-trealloc_left(ktp, size)
-    struct kmemtree *ktp;
-    unsigned long size;
+struct kmemtree *
+trealloc_left(ktp, size, bsize)
+        struct kmemtree *ktp;
+        unsigned long size, bsize; /* bsize is bucket size*/
 {
-    unsigned long bsize = 0; /* bucket size*/
     unsigned long left;
-    unsigned long diff;
+    unsigned long diff = 0;
 
-    if(ktp->kt_left == NULL) {
-        left = SplitLeft(bsize);
-        /* add other half to freelist2 */
-        while(left != size && left > 0) {
+    left = SplitLeft(bsize);
+    if(size < left) {
+        ktp->kt_left = push_left(left, diff, ktp);
+        while(size <= left && left > 0) {
             left = SplitLeft(left);
-            //left_free = left_free + left;
-            /* add other half to freelist2 */
-            if(left <= size) {
-                if(left < size) {
-                    diff = size - left;
-                    //add diff to freelist2
+            ktp->kt_left = push_left(left, diff, ktp);
+            if(size <= left) {
+                if(size < left) {
+                    diff = left - size;
+                    ktp->kt_left = push_left(left, diff, ktp);
+                } else {
+                    ktp->kt_left = push_left(left, diff, ktp);
                 }
-                left = size;
                 break;
             }
         }
     } else {
-        if(isPowerOfTwo(size)) {  /* Could check this in trealloc */
-            left = SplitLeft(bsize);
-            while(left != size && left > 0) {
-                left = SplitLeft(left);
-                if (left <= size) {
-                    if (left < size) {
-                        diff = size - left;
-                    }
-                    left = size;
-                    break;
-                }
-            }
+        if(size < bsize) {
+            diff = bsize - size;
+            ktp->kt_left = push_left(left, diff, ktp);
+        } else {
+            ktp->kt_left = push_left(left, diff, ktp);
         }
     }
+    return (ktp);
 }
 
-/* likely to need freelist1 */
-void
-trealloc_middle(ktp, size)
+struct kmemtree *
+trealloc_middle(ktp, size, bsize)
     struct kmemtree *ktp;
-    unsigned long size;
+    unsigned long size, bsize; /* bsize is bucket size*/
 {
-    unsigned long bsize = 0; /* bucket size*/
     unsigned long middle;
-    unsigned long diff;
+    unsigned long diff = 0;
 
-    if(ktp->kt_middle == NULL) {
-        middle = SplitMiddle(bsize);
-        /* add other half to freelist1 */
-        while(middle != size && middle > 0) {
-            middle = SplitMiddle(middle);
-            /* add other half to freelist1 */
-            if(middle <= size) {
-                if(middle < size) {
-                    diff = size - middle;
-                    //add diff to freelist1
+    middle = SplitMiddle(bsize);
+    if(size < middle) {
+        ktp->kt_middle = push_middle(middle, diff, ktp);
+        while(size <= middle && middle > 0) {
+        	middle = SplitMiddle(middle);
+            ktp->kt_middle = push_middle(middle, diff, ktp);
+            if(size <= middle) {
+                if(size < middle) {
+                    diff = middle - size;
+                    ktp->kt_middle = push_middle(middle, diff, ktp);
+                } else {
+                    ktp->kt_middle = push_middle(middle, diff, ktp);
                 }
-                middle = size;
                 break;
             }
         }
     } else {
-        if(isPowerOfThree(size)) { /* Could check this in trealloc */
-            middle = SplitMiddle(bsize);
-            while(middle != size && middle > 0) {
-                middle = SplitMiddle(middle);
-                if (middle <= size) {
-                    if (middle < size) {
-                        diff = size - middle;
-                    }
-                    middle = size;
-                    break;
-                }
-            }
+        if(size < bsize) {
+            diff = bsize - size;
+            ktp->kt_middle = push_middle(middle, diff, ktp);
+        } else {
+            ktp->kt_middle = push_middle(middle, diff, ktp);
         }
     }
+    return (ktp);
 }
 
-/* likely to need freelist1 */
-void
-trealloc_right(ktp, size)
+struct kmemtree *
+trealloc_right(ktp, size, bsize)
     struct kmemtree *ktp;
-    unsigned long size;
+    unsigned long size, bsize; /* bsize is bucket size*/
 {
-    unsigned long bsize = 0; /* bucket size*/
     unsigned long right;
-    unsigned long diff;
+    unsigned long diff = 0;
 
-    if(ktp->kt_right == NULL) {
-        right = SplitRight(bsize);
-        /* add other half to freelist1 */
-        while(right != size && right > 0) {
-            right = SplitRight(right);
-            /* add other half to freelist1 */
-            if(right <= size) {
-                if(right < size) {
-                    diff = size - right;
-                    //add diff to freelist1
+    right = SplitRight(bsize);
+    if(size < right) {
+        ktp->kt_right = push_right(right, diff, ktp);
+        while(size <= right && right > 0) {
+        	right = SplitRight(right);
+            ktp->kt_right = push_right(right, diff, ktp);
+            if(size <= right) {
+                if(size < right) {
+                    diff = right - size;
+                    ktp->kt_right = push_right(right, diff, ktp);
+                } else {
+                    ktp->kt_right = push_right(right, diff, ktp);
                 }
-                right = size;
                 break;
             }
         }
     } else {
-        if(isPowerOfThree(size)) {  /* Could check this in trealloc */
-            right = SplitRight(bsize);
-            while(right != size && right > 0) {
-                right = SplitRight(right);
-                if (right <= size) {
-                    if (right < size) {
-                        diff = size - right;
-                    }
-                    right = size;
-                    break;
-                }
-            }
+        if(size < bsize) {
+            diff = bsize - size;
+            ktp->kt_right = push_right(right, diff, ktp);
+        } else {
+            ktp->kt_right = push_right(right, diff, ktp);
         }
     }
+    return (ktp);
 }
 
 /* Likely need to reference freelist1 & 2, Will allocate to va */
 void
-trealloc()
+trealloc(ktp, size)
+	struct kmemtree *ktp;
+	unsigned long size;
 {
+	struct kmemtree *left, *middle, *right = NULL;
 
+	if(isPowerOfTwo(size)) {
+
+	}
+	if(isPowerOfThree(size)) {
+
+	}
 }
