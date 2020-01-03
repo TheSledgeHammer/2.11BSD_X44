@@ -19,13 +19,13 @@
  * The lost+found directory is given the next available
  * inode when it is created by ``mkfs''.
  */
-#define BBSIZE		DEV_BSIZE
-#define SBSIZE		DEV_BSIZE
-#define	BBLOCK		((daddr_t)(0))
-#define	SBLOCK		((daddr_t)(BBLOCK + BBSIZE / DEV_BSIZE))
+#define BBSIZE			DEV_BSIZE
+#define SBSIZE			DEV_BSIZE
+#define	BBLOCK			((daddr_t)(0))
+#define	SBLOCK			((daddr_t)(BBLOCK + BBSIZE / DEV_BSIZE))
 
-#define	SUPERB		((daddr_t)1)	/* block number of the super block */
-#define	ROOTINO		((ino_t)2)	/* i number of all roots */
+#define	SUPERB			((daddr_t)1)	/* block number of the super block */
+#define	ROOTINO			((ino_t)2)	/* i number of all roots */
 #define	LOSTFOUNDINO	(ROOTINO + 1)
 
 #define	NICINOD		100		/* number of superblock inodes */
@@ -45,25 +45,25 @@
  */
 struct	fs
 {
-	u_short	fs_isize;		/* first block after i-list */
-	daddr_t	fs_fsize;		/* size in blocks of entire volume */
-	short	fs_nfree;		/* number of addresses in fs_free */
+	u_short	fs_isize;			/* first block after i-list */
+	daddr_t	fs_fsize;			/* size in blocks of entire volume */
+	short	fs_nfree;			/* number of addresses in fs_free */
 	daddr_t	fs_free[NICFREE];	/* free block list */
-	short	fs_ninode;		/* number of inodes in fs_inode */
+	short	fs_ninode;			/* number of inodes in fs_inode */
 	ino_t	fs_inode[NICINOD];	/* free inode list */
-	char	fs_flock;		/* lock during free list manipulation */
-	char	fs_fmod;		/* super block modified flag */
-	char	fs_ilock;		/* lock during i-list manipulation */
-	char	fs_ronly;		/* mounted read-only flag */
-	time_t	fs_time;		/* last super block update */
-	daddr_t	fs_tfree;		/* total free blocks */
-	ino_t	fs_tinode;		/* total free inodes */
-	short	fs_step;		/* optimal step in free list pattern */
-	short	fs_cyl;			/* number of blocks per pattern */
-	char	fs_fsmnt[MAXMNTLEN];	/* ordinary file mounted on */
-	ino_t	fs_lasti;		/* start place for circular search */
-	ino_t	fs_nbehind;		/* est # free inodes before s_lasti */
-	u_short	fs_flags;		/* mount time flags */
+	char	fs_flock;			/* lock during free list manipulation */
+	char	fs_fmod;			/* super block modified flag */
+	char	fs_ilock;			/* lock during i-list manipulation */
+	char	fs_ronly;			/* mounted read-only flag */
+	time_t	fs_time;			/* last super block update */
+	daddr_t	fs_tfree;			/* total free blocks */
+	ino_t	fs_tinode;			/* total free inodes */
+	short	fs_step;			/* optimal step in free list pattern */
+	short	fs_cyl;				/* number of blocks per pattern */
+	char	fs_fsmnt[MAXMNTLEN];/* ordinary file mounted on */
+	ino_t	fs_lasti;			/* start place for circular search */
+	ino_t	fs_nbehind;			/* est # free inodes before s_lasti */
+	u_short	fs_flags;			/* mount time flags */
 /* actually longer */
 };
 
@@ -128,7 +128,7 @@ struct	fblk {
  */
 #define	MAXPIPSIZ	(NDADDR * MAXBSIZE)
 
-#if defined(KERNEL) && !defined(SUPERVISOR)
+#if defined(KERNEL)
 struct	fs *getfs();
 struct	fs *mountfs();
 #endif

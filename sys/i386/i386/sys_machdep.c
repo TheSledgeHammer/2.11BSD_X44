@@ -53,7 +53,7 @@
 #include <sys/user.h>
 #include <machine/cpu.h>
 #include <machine/sysarch.h>
-#include <vm/vm_kern.h>		/* for kernel_map */
+#include <vm/include/vm_kern.h>		/* for kernel_map */
 #endif
 
 #ifdef TRACE

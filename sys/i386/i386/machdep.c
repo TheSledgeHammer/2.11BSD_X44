@@ -73,8 +73,8 @@
 #endif
 
 #include <vm/vm.h>
-#include <vm/vm_kern.h>
-#include <vm/vm_page.h>
+#include <vm/include/vm_kern.h>
+#include <vm/include/vm_page.h>
 
 #include <sys/exec.h>
 #include <sys/inode.h>

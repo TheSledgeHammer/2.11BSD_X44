@@ -45,8 +45,6 @@ hardclock(dev, sp, r1, ov, nps, r0, pc, ps)
 	register struct callout *p1;
 	register struct proc *p;
 	register int needsoft = 0;
-	mapinfo map;
-	savemap(map);		/* ensure normal mapping of kernel data */
 
 	/*
 	 * Update real-time timeout queue.
@@ -124,9 +122,8 @@ hardclock(dev, sp, r1, ov, nps, r0, pc, ps)
 		}
 	}
 
-#ifdef UCB_METER
+
 	gatherstats(pc,ps);
-#endif
 
 	/*
 	 * Increment the time-of-day, process callouts at a very
@@ -150,10 +147,9 @@ hardclock(dev, sp, r1, ov, nps, r0, pc, ps)
 		(void) _splsoftclock();
 		softclock(pc,ps);
 	}
-	restormap(map);
 }
 
-#ifdef UCB_METER
+
 int	dk_ndrive = DK_NDRIVE;
 /*
  * Gather statistics on resource utilization.
@@ -178,7 +174,7 @@ gatherstats(pc, ps)
 		/*
 		 * CPU was in user state.
 		 */
-		if (u.u_procp->p_nice > NZERO)
+		if (u->u_procp->p_nice > NZERO)
 			cpstate = CP_NICE;
 		else
 			cpstate = CP_USER;
@@ -208,7 +204,7 @@ gatherstats(pc, ps)
 		if (dk_busy & (1 << s))
 			dk_time[s]++;
 }
-#endif UCB_METER
+
 
 /*
  * Software priority level clock interrupt.

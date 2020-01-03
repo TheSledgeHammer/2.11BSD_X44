@@ -40,12 +40,106 @@
 #ifndef	_SYS_CDEFS_H_
 #define	_SYS_CDEFS_H_
 
+/*
+ * Testing against Clang-specific extensions.
+ */
+#ifndef	__has_attribute
+#define	__has_attribute(x)	0
+#endif
+#ifndef	__has_extension
+#define	__has_extension		__has_feature
+#endif
+#ifndef	__has_feature
+#define	__has_feature(x)	0
+#endif
+#ifndef	__has_include
+#define	__has_include(x)	0
+#endif
+#ifndef	__has_builtin
+#define	__has_builtin(x)	0
+#endif
+
 #if defined(__cplusplus)
 #define	__BEGIN_DECLS	extern "C" {
 #define	__END_DECLS	};
 #else
 #define	__BEGIN_DECLS
 #define	__END_DECLS
+#endif
+
+/*
+ * This code has been put in place to help reduce the addition of
+ * compiler specific defines in FreeBSD code.  It helps to aid in
+ * having a compiler-agnostic source tree.
+ */
+#if defined(__GNUC__) || defined(__INTEL_COMPILER)
+
+#if __GNUC__ >= 3 || defined(__INTEL_COMPILER)
+#define	__GNUCLIKE_ASM 3
+#define	__GNUCLIKE_MATH_BUILTIN_CONSTANTS
+#else
+#define	__GNUCLIKE_ASM 2
+#endif
+#define	__GNUCLIKE___TYPEOF 1
+#define	__GNUCLIKE___OFFSETOF 1
+#define	__GNUCLIKE___SECTION 1
+
+#ifndef __INTEL_COMPILER
+#define	__GNUCLIKE_CTOR_SECTION_HANDLING 1
+#endif
+
+#define	__GNUCLIKE_BUILTIN_CONSTANT_P 1
+#if defined(__INTEL_COMPILER) && defined(__cplusplus) && \
+   __INTEL_COMPILER < 800
+#undef __GNUCLIKE_BUILTIN_CONSTANT_P
+#endif
+
+#if (__GNUC_MINOR__ > 95 || __GNUC__ >= 3)
+#define	__GNUCLIKE_BUILTIN_VARARGS 1
+#define	__GNUCLIKE_BUILTIN_STDARG 1
+#define	__GNUCLIKE_BUILTIN_VAALIST 1
+#endif
+
+#if defined(__GNUC__)
+#define	__GNUC_VA_LIST_COMPATIBILITY 1
+#endif
+
+/*
+ * Compiler memory barriers, specific to gcc and clang.
+ */
+#if defined(__GNUC__)
+#define	__compiler_membar()	__asm __volatile(" " : : : "memory")
+#endif
+
+#ifndef __INTEL_COMPILER
+#define	__GNUCLIKE_BUILTIN_NEXT_ARG 1
+#define	__GNUCLIKE_MATH_BUILTIN_RELOPS
+#endif
+
+#define	__GNUCLIKE_BUILTIN_MEMCPY 1
+
+/* XXX: if __GNUC__ >= 2: not tested everywhere originally, where replaced */
+#define	__CC_SUPPORTS_INLINE 1
+#define	__CC_SUPPORTS___INLINE 1
+#define	__CC_SUPPORTS___INLINE__ 1
+
+#define	__CC_SUPPORTS___FUNC__ 1
+#define	__CC_SUPPORTS_WARNING 1
+
+#define	__CC_SUPPORTS_VARADIC_XXX 1 /* see varargs.h */
+
+#define	__CC_SUPPORTS_DYNAMIC_ARRAY_INIT 1
+
+#endif /* __GNUC__ || __INTEL_COMPILER */
+
+/*
+ * Macro to test if we're using a specific version of gcc or later.
+ */
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
+#define	__GNUC_PREREQ__(ma, mi)	\
+	(__GNUC__ > (ma) || __GNUC__ == (ma) && __GNUC_MINOR__ >= (mi))
+#else
+#define	__GNUC_PREREQ__(ma, mi)	0
 #endif
 
 /*
@@ -82,6 +176,7 @@
 #define	__inline
 #define	__signed
 #define	__volatile
+
 /*
  * In non-ANSI C environments, new programs will want ANSI-only C keywords
  * deleted from the program and old programs will want them left alone.

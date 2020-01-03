@@ -518,9 +518,6 @@ selwakeup(p, coll)
 	register struct proc *p;
 	long coll;
 {
-	mapinfo map;
-
-	savemap(map);
 	if (coll) {
 		nselcoll++;
 		wakeup((caddr_t)&selwait);
@@ -536,7 +533,6 @@ selwakeup(p, coll)
 			p->p_flag &= ~P_SELECT;
 		splx(s);
 	}
-	restormap(map);
 }
 
 int

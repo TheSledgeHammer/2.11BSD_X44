@@ -88,7 +88,8 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
-#include <sys/malloc.h>
+//#include <sys/malloc.h>
+#include <sys/map.h>
 #include <sys/user.h>
 
 #include <vm/vm.h>

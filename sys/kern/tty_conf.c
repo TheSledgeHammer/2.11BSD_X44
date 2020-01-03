@@ -126,23 +126,17 @@ SLTIOCTL(tp, cmd, data, flag)
 SLSTART(tp)
 	struct tty *tp;
 {
-	mapinfo map;
 	void slstart();
 
-	savemap(map);
 	KScall(slstart, sizeof(struct tty *), tp);
-	restormap(map);
 }
 
 SLINPUT(c, tp)
 	int c;
 	struct tty *tp;
 {
-	mapinfo map;
 	void slinput();
 
-	savemap(map);
 	KScall(slinput, sizeof(int) + sizeof(struct tty *), c, tp);
-	restormap(map);
 }
 #endif

@@ -14,14 +14,6 @@ struct kmemstats kmemstats[M_LAST];
 struct kmemusage *kmemusage;
 char *kmembase, *kmemlimit;
 
-struct asl {
-	caddr_t	*next;
-    long	spare0;
-    short	type;
-    long	spare1;
-};
-typedef struct asl freelist;
-
 
 void *
 malloc(size, type, flags)
@@ -32,7 +24,7 @@ malloc(size, type, flags)
     	register struct kmemtree *ktp;
         register struct kmembuckets *kbp;
         register struct kmemusage *kup;
-        register freelist *freep;
+        //register freelist *freep;
         long indx, npg, allocsize;
         int s;
         char va, cp, savedlist;

@@ -37,13 +37,6 @@
 #define	_SYS_SIGNALVAR_H_
 
 /*
- * Kernel signal definitions and data structures,
- * not exported to user programs.
- *
- * For 2BSD the parts that did not apply were cut out.
- */
-
-/*
  * Process signal actions and state, needed only within the process
  * (not necessarily resident).
  */

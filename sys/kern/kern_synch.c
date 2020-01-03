@@ -294,13 +294,11 @@ wakeup(chan)
 	register struct proc *p, **q;
 	struct proc **qp;
 	int s;
-	mapinfo map;
 
 	/*
 	 * Since we are called at interrupt time, must insure normal
 	 * kernel mapping to access proc.
 	 */
-	savemap(map);
 	s = splclock();
 	qp = &slpque[HASH(chan)];
 restart:
@@ -323,7 +321,7 @@ restart:
 				 * p->p_pri is always better than curpri.
 				 */
 				runrun++;
-				if ((p->p_flag&SLOAD) == 0) {
+				if ((p->p_flag & SLOAD) == 0) {
 					if (runout != 0) {
 						runout = 0;
 						wakeup((caddr_t)&runout);
@@ -337,7 +335,6 @@ restart:
 			q = &p->p_link;
 	}
 	splx(s);
-	restormap(map);
 }
 
 /*

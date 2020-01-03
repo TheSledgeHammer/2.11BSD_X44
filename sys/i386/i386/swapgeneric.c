@@ -42,7 +42,7 @@
 #include <sys/param.h>
 #include <sys/conf.h>
 #include <sys/buf.h>
-#include <sys/vm.h>
+#include <vm/vm.h>
 #include <sys/systm.h>
 #include <sys/reboot.h>
 

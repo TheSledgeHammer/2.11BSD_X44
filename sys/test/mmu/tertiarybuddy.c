@@ -188,6 +188,8 @@ trealloc_left(ktp, size, bsize)
         struct kmemtree *ktp;
         unsigned long size, bsize; /* bsize is bucket size*/
 {
+    //long indx;
+    //unsigned long bsize = bucket_align(indx);
     unsigned long left;
     unsigned long diff = 0;
 
@@ -288,13 +290,13 @@ trealloc_right(ktp, size, bsize)
     return (ktp);
 }
 
-/* Likely need to reference freelist1 & 2, Will allocate to va */
 void
 trealloc(ktp, size)
 	struct kmemtree *ktp;
 	unsigned long size;
 {
 	struct kmemtree *left, *middle, *right = NULL;
+	char va;
 
 	if(isPowerOfTwo(size)) {
 

@@ -54,10 +54,10 @@
 #include <sys/ktrace.h>
 #endif
 
-#include <vm/vm_param.h>
-#include <vm/pmap.h>
-#include <vm/vm_map.h>
-#include <vm/vm_page.h>
+#include <vm/include/vm_param.h>
+#include <vm/include/pmap.h>
+#include <vm/include/vm_map.h>
+#include <vm/include/vm_page.h>
 
 #include <machine/cpu.h>
 #include <machine/psl.h>

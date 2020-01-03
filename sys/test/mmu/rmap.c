@@ -48,7 +48,7 @@ rmget(mp, size, addr)
 	if(size <= 0) {
 		panic("rmget");
 	}
-	if(mp == swapmap) {
+	if(mp == swapmap) { /* Fix to do the right thing with swapmap */
 		return (0);
 	}
 
