@@ -221,9 +221,9 @@ struct	prochd {
 	struct	proc *ph_rlink;
 };
 
-int		chgproccnt __P((uid_t, int));
-struct proc *pfind __P((pid_t));		/* Find process by id. */
-struct pgrp *pgfind __P((pid_t));		/* Find process group by id. */
+int 	chgproccnt __P((uid_t, int));
+struct 	proc *pfind __P((pid_t));		/* Find process by id. */
+struct 	pgrp *pgfind __P((pid_t));		/* Find process group by id. */
 
 int		setpri __P((struct proc *));
 void	setrun __P((struct proc *));

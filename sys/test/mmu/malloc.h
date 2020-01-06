@@ -52,20 +52,18 @@
 
 /* Types of memory to be allocated */
 #define	M_FREE		0		/* should be on free list */
-#define M_RMAP		1		/* rminit */
-#define M_RMALLOC	2		/* rmalloc */
-#define M_RMFREE	3		/* rmfree */
-#define	M_MBUF		4		/* mbuf */
+#define	M_MBUF		1		/* mbuf */
 
 #define	M_TEMP		74		/* misc temporary data buffers */
 #define	M_LAST		75		/* Must be last type + 1 */
 
+#define M_RMAP		1		/* rminit */
+#define M_RMALLOC	2		/* rmalloc */
+#define M_RMFREE	3		/* rmfree */
+
 #define INITKMEMNAMES { 			\
 	"free",		/* 0 M_FREE */ 		\
-	"rmap",		/* 1 M_RMAP */		\
-	"rmalloc",	/* 2 M_RMALLOC */	\
-	"rmfree",	/* 3 M_RMFREE */	\
-	"mbuf",		/* 4 M_MBUF */ 		\
+	"mbuf",		/* 1 M_MBUF */ 		\
 	"temp",		/* 74 M_TEMP */ 	\
 }
 
@@ -79,6 +77,7 @@ struct kmemstats {
 	long	ks_limit;		/* most that are allowed to exist */
 	long	ks_size;		/* sizes of this thing that are allocated */
 	long	ks_spare;
+	/* add Tertiary Tree entries */
 };
 
 /* Array of descriptors that describe the contents of each page */
@@ -109,19 +108,13 @@ struct kmembuckets {
 	long				kb_couldfree;	/* over high water mark and could free */
 };
 
+/* Tertiary Tree Entry for Each Bucket */
 struct kmemtree_entry {
     struct kmembuckets    kte_head;
     struct kmembuckets    kte_tail;
 
 #define kteb_next         kte_head.kb_next		/* list of free blocks */
 #define kteb_last         kte_head.kb_last		/* last free block */
-};
-
-/* Available Space List */
-struct asl {
-    struct asl *asl_next;
-    struct asl *asl_prev;
-    unsigned long asl_size;
 };
 
 /* Tertiary Tree within each bucket, for each size of memory block that is retained */
@@ -142,6 +135,13 @@ struct kmemtree {
 
     unsigned long 			kt_bucket_size;     /* bucketmap size in bytes */
     long 					kt_bucket_idx;      /* bucketmap index */
+};
+
+/* Tertiary Tree: Available Space List */
+struct asl {
+    struct asl *asl_next;
+    struct asl *asl_prev;
+    unsigned long asl_size;
 };
 
 /* Maps each bucket created (used by tertiary search tree)*/
@@ -251,7 +251,14 @@ extern struct kmemtree_entry tree_bucket_entry[];
 extern struct kmembuckets bucket[];
 extern struct kmemusage *kmemusage;
 extern char *kmembase;
+
 extern void *malloc __P((unsigned long size, int type, int flags));
 extern void free __P((void *addr, int type));
+
+extern void kmemtree_entry __P((struct kmemtree_entry *ktep, caddr_t next, caddr_t last));
+extern struct kmemtree *kmemtree_init __P((struct kmemtree_entry *ktep, unsigned long size));
+extern void kmemtree_create __P((struct kmemtree *ktp, boolean_t space));
+extern void trealloc __P((struct kmemtree *ktp, unsigned long size));
+
 //#endif /* KERNEL */
 #endif /* !_SYS_MALLOC_H_ */

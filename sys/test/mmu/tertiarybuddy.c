@@ -4,6 +4,7 @@
 #include <sys/map.h>
 #include <sys/kernel.h>
 #include <test/mmu/malloc.h>
+#include <test/mmu/log.h>
 
 #include <vm/vm.h>
 #include <vm/include/vm_kern.h>
@@ -13,6 +14,7 @@ static int isPowerOfThree(long n);  /* 0 = true, 1 = false */
 static long bucket_search(unsigned long size);
 static unsigned long bucket_align(long indx);
 
+/* TODO: ASL goes to next after added */
 struct kmemtree *
 insert(size, type, ktp)
     register struct kmemtree *ktp;
@@ -27,7 +29,7 @@ insert(size, type, ktp)
 
 struct kmemtree *
 push_left(size, dsize, ktp)
-	unsigned long size, dsize;
+	unsigned long size, dsize;  /*dsize = difference (if any) */
 	struct kmemtree *ktp;
 {
 	if(dsize > 0) {
@@ -41,7 +43,7 @@ push_left(size, dsize, ktp)
 
 struct kmemtree *
 push_middle(size, dsize, ktp)
-	unsigned long size, dsize;
+	unsigned long size, dsize;  /*dsize = difference (if any) */
 	struct kmemtree *ktp;
 {
 	if(dsize > 0) {
@@ -55,7 +57,7 @@ push_middle(size, dsize, ktp)
 
 struct kmemtree *
 push_right(size, dsize, ktp)
-	unsigned long size, dsize;
+	unsigned long size, dsize; /*dsize = difference (if any) */
 	struct kmemtree *ktp;
 {
 	if(dsize > 0) {
@@ -188,8 +190,6 @@ trealloc_left(ktp, size, bsize)
         struct kmemtree *ktp;
         unsigned long size, bsize; /* bsize is bucket size*/
 {
-    //long indx;
-    //unsigned long bsize = bucket_align(indx);
     unsigned long left;
     unsigned long diff = 0;
 
@@ -296,12 +296,29 @@ trealloc(ktp, size)
 	unsigned long size;
 {
 	struct kmemtree *left, *middle, *right = NULL;
-	char va;
+	caddr_t va;
 
-	if(isPowerOfTwo(size)) {
-
+	if(isPowerOfTwo(size - 1)) {
+		left = trealloc_left(ktp, size, bucket_align(BUCKETINDX(size)));
+	} else if(isPowerOfTwo(size - 2)) {
+		middle = trealloc_middle(ktp, size, bucket_align(BUCKETINDX(size)));
+	} else if (isPowerOfTwo(size - 3)) {
+		right = trealloc_right(ktp, size, bucket_align(BUCKETINDX(size)));
+	} else {
+		unsigned long tmp = LOG(size); /* does log(size) fit */
+		if(isPowerOfTwo(tmp - 1)) {
+			left = trealloc_left(ktp, size, bucket_align(BUCKETINDX(size)));
+		} else if(isPowerOfTwo(tmp - 2)) {
+			middle = trealloc_middle(ktp, size, bucket_align(BUCKETINDX(size)));
+		} else if (isPowerOfTwo(tmp - 3)) {
+			right = trealloc_right(ktp, size, bucket_align(BUCKETINDX(size)));
+		}
 	}
-	if(isPowerOfThree(size)) {
+}
 
-	}
+/* free memory update asl lists & bucket freelist */
+void
+trealloc_free()
+{
+
 }

@@ -7,9 +7,11 @@
  * Example: If the M:N ratio (1:2) and prgp limit is 4. Then a Thread group limit would be 8 (2 Threads per Proc).
  * 
  */
+
+#ifndef SYS_KTHREADS_H_
+#define SYS_KTHREADS_H_
+
 #include <sys/proc.h>
-#ifndef SYS_THREADCTLBLK_H_
-#define SYS_THREADCTLBLK_H_
 
 /* put into types.h */
 typedef long				tid_t;		/* thread id */
@@ -29,6 +31,7 @@ struct kthread {
 	char t_lock;						/* Thread lock count. */
 
 	short t_tid;						/* unique thread id */
+	short t_ptid;						/* thread id of parent */
 
 	/* Substructures: */
 	struct pcred 	 	*t_cred;		/* Thread owner's identity. */
@@ -40,6 +43,8 @@ struct kthread {
 
 	struct kthread    	*t_hash;        /* hashed based on t_tid & p_pid for kill+exit+... */
 	struct kthread    	*t_tgrpnxt;	    /* Pointer to next thread in thread group. */
+    struct kthread      *t_tptr;		/* pointer to process structure of parent */
+    struct kthread 		*t_ostptr;	 	/* Pointer to older sibling processes. */
 
 	struct tgrp 	    *t_tgrp;        /* Pointer to thread group. */
 	struct sysentvec	*t_sysent;		/* System call dispatch information. */
@@ -51,11 +56,9 @@ struct kthread {
     struct user  		*t_saddr;		/* address of stack area */
 	size_t	t_dsize;				    /* size of data area (clicks) */
 	size_t	t_ssize;				    /* size of stack segment (clicks) */
-};
 
-/* user threads */
-struct uthread {
-
+	struct proc 		*p;				/* Pointer to Proc */
+	struct uthread		*uth;			/* Pointer User Threads */
 };
 
 struct tgrp {
@@ -66,12 +69,15 @@ struct tgrp {
 	int		tg_jobc;					/* # threads qualifying tgrp for job control */
 };
 
+#define	t_session	t_tgrp->tg_session
+#define	t_tgid		t_tgrp->tg_id
+
 struct threadtable {
-	short p_pid;
-	short t_tid;
+
 };
 
 #define THREAD_RATIO 1  /* M:N Ratio. number of threads per process */
+
 /* stat codes */
 #define TSSLEEP	1
 #define TSWAIT	2
@@ -81,9 +87,13 @@ struct threadtable {
 #define TSSTART	6
 #define TSSTOP	7
 
-#define	TIDHSZ		PIDHSZ * THREAD_RATIO
+#define	TIDHSZ		16
 #define TIDHASH(tid)  ((tid) & (TIDHSZ - 1))
 
+
+extern struct kthread *tidhash[];		/* In param.c. */
+extern struct tgrp *tgrphash[];			/* In param.c. */
+extern int tidhashmask;					/* In param.c. */
 
 /*
 void thread_init(struct proc *p);
@@ -93,4 +103,4 @@ thread_stop(struct kthread *t);
 thread_start(struct kthread *t);
 thread_wait();
 */
-#endif /* SYS_THREADCTLBLK_H_ */
+#endif /* SYS_KTHREADS_H_ */
