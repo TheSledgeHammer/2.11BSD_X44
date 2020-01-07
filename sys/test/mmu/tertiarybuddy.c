@@ -10,9 +10,8 @@
 #include <vm/include/vm_kern.h>
 
 static int isPowerOfTwo(long n); 	/* 0 = true, 1 = false */
-static int isPowerOfThree(long n);  /* 0 = true, 1 = false */
-static long bucket_search(unsigned long size);
-static unsigned long bucket_align(long indx);
+static long search_buckets(unsigned long size);
+static unsigned long align_to_bucket(long indx);
 
 /* TODO: ASL goes to next after added */
 struct kmemtree *
@@ -113,7 +112,7 @@ kmemtree_create(ktp, space)
 
 /* Search for the bucket which best-fits the block size to be allocated */
 static long
-bucket_search(unsigned long size)
+search_buckets(unsigned long size)
 {
     if(size <= bucketmap[0].bucket_size) {
         return bucketmap[0].bucket_index;
@@ -138,7 +137,7 @@ bucket_search(unsigned long size)
 
 /* Searches for the bucket that matches the indx value. Returning the buckets allocation size */
 static unsigned long
-bucket_align(long indx)
+align_to_bucket(long indx)
 {
     if(indx <= 0) {
         return bucketmap[0].bucket_size;
@@ -170,21 +169,6 @@ isPowerOfTwo(long n)
     return (1);
 }
 
-/* Function to check if x is a power of 3 (Internal use only) */
-static int
-isPowerOfThree(long n)
-{
-    if (n == 0)
-        return 0;
-    while (n != 1)
-    {
-        if (n%3 != 0)
-            return 0;
-        n = n/3;
-    }
-    return (1);
-}
-
 struct kmemtree *
 trealloc_left(ktp, size, bsize)
         struct kmemtree *ktp;
@@ -210,11 +194,11 @@ trealloc_left(ktp, size, bsize)
             }
         }
     } else {
-        if(size < bsize) {
+        if(size < bsize && size >= left) {
             diff = bsize - size;
-            ktp->kt_left = push_left(left, diff, ktp);
+            ktp->kt_left = push_left(size, diff, ktp);
         } else {
-            ktp->kt_left = push_left(left, diff, ktp);
+            ktp->kt_left = push_left(size, diff, ktp);
         }
     }
     return (ktp);
@@ -245,11 +229,11 @@ trealloc_middle(ktp, size, bsize)
             }
         }
     } else {
-        if(size < bsize) {
+        if(size < bsize && size >= middle) {
             diff = bsize - size;
-            ktp->kt_middle = push_middle(middle, diff, ktp);
+            ktp->kt_middle = push_middle(size, diff, ktp);
         } else {
-            ktp->kt_middle = push_middle(middle, diff, ktp);
+            ktp->kt_middle = push_middle(size, diff, ktp);
         }
     }
     return (ktp);
@@ -280,39 +264,66 @@ trealloc_right(ktp, size, bsize)
             }
         }
     } else {
-        if(size < bsize) {
+        if(size < bsize && size >= right) {
             diff = bsize - size;
-            ktp->kt_right = push_right(right, diff, ktp);
+            ktp->kt_right = push_right(size, diff, ktp);
         } else {
-            ktp->kt_right = push_right(right, diff, ktp);
+            ktp->kt_right = push_right(size, diff, ktp);
         }
     }
     return (ktp);
 }
 
+struct kmemtree *
+kmemtree_find(ktp, size, bsize)
+    struct kmemtree *ktp;
+    unsigned long size, bsize;
+{
+    if(ktp == trealloc_left(ktp, size, bsize)) {
+        return ktp;
+    } else if(ktp == trealloc_middle(ktp, size, bsize)) {
+        return ktp;
+    } else if(ktp == trealloc_right(ktp, size, bsize)) {
+        return ktp;
+    } else {
+    	panic("Couldn't find block of memory in tree");
+        return (NULL);
+    }
+}
+
+/* Assumes that the current address of kmembucket is null */
 void
 trealloc(ktp, size)
 	struct kmemtree *ktp;
 	unsigned long size;
 {
 	struct kmemtree *left, *middle, *right = NULL;
-	caddr_t va;
+	long indx, npg, allocsize;
+	unsigned long bsize = align_to_bucket(BUCKETINDX(size));
 
-	if(isPowerOfTwo(size - 1)) {
-		left = trealloc_left(ktp, size, bucket_align(BUCKETINDX(size)));
-	} else if(isPowerOfTwo(size - 2)) {
-		middle = trealloc_middle(ktp, size, bucket_align(BUCKETINDX(size)));
-	} else if (isPowerOfTwo(size - 3)) {
-		right = trealloc_right(ktp, size, bucket_align(BUCKETINDX(size)));
+	if (size > MAXALLOCSAVE) {
+		allocsize = roundup(size, CLBYTES);
 	} else {
-		unsigned long tmp = LOG(size); /* does log(size) fit */
+		allocsize = 1 << indx;
+	}
+	npg = clrnd(btoc(allocsize));
+
+	if(isPowerOfTwo(npg - 1)) {
+		left = trealloc_left(ktp, npg, bsize);
+	} else if(isPowerOfTwo(npg - 2)) {
+		middle = trealloc_middle(ktp, npg, bsize);
+	} else if (isPowerOfTwo(npg - 3)) {
+		right = trealloc_right(ktp, npg, bsize);
+	} else {
+		unsigned long tmp = LOG(npg); /* does log(npg) fit */
 		if(isPowerOfTwo(tmp - 1)) {
-			left = trealloc_left(ktp, size, bucket_align(BUCKETINDX(size)));
+			left = trealloc_left(ktp, npg, bsize);
 		} else if(isPowerOfTwo(tmp - 2)) {
-			middle = trealloc_middle(ktp, size, bucket_align(BUCKETINDX(size)));
+			middle = trealloc_middle(ktp, npg, bsize);
 		} else if (isPowerOfTwo(tmp - 3)) {
-			right = trealloc_right(ktp, size, bucket_align(BUCKETINDX(size)));
+			right = trealloc_right(ktp, npg, bsize);
 		}
+		/* add else find best fit (rmalloc?) */
 	}
 }
 
