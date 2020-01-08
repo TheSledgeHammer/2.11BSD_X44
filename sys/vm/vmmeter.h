@@ -26,25 +26,25 @@ struct vmrate
 	unsigned 	v_pdma;			/* pseudo-dma interrupts */
 	unsigned 	v_ovly;			/* overlay emts */
 	unsigned 	v_fpsim;		/* floating point simulator faults */
-	unsigned 	v_pswpin;		/* pages swapped in (swap pager pages paged in) */
-	unsigned 	v_pswpout;		/* pages swapped out (swap pager pages paged out) */
+	unsigned 	v_pswpin;		/* pages swapped in */
+	unsigned 	v_pswpout;		/* pages swapped out */
 	unsigned 	v_pgin;			/* pageins */
 	unsigned 	v_pgout;		/* pageouts */
-	unsigned 	v_swpin;		/* swapins (swap pager pageins) */
-	unsigned 	v_swpout;		/* swapouts (swap pager pageouts) */
+	unsigned 	v_swpin;		/* swapins */
+	unsigned 	v_swpout;		/* swapouts */
 
 	unsigned 	v_lookups;		/* object cache lookups */
 	unsigned 	v_hits;			/* object cache hits */
 	unsigned 	v_vm_faults;	/* number of address memory faults */
 	unsigned 	v_cow_faults;	/* number of copy-on-writes */
-	unsigned 	v_vnodein;		/* vnode pager pageins */
-	unsigned 	v_vnodeout;		/* vnode pager pageouts */
-	unsigned	v_vnodepgsin;	/* vnode_pager pages paged in */
-	unsigned 	v_vnodepgsout;	/* vnode pager pages paged out */
+	unsigned 	v_pageins;		/* number of pageins */
+	unsigned 	v_pageouts;		/* number of pageouts */
+	unsigned	v_pgpgin;		/* pages paged in */
+	unsigned 	v_pgpgout;		/* pages paged out */
 	unsigned 	v_intrans;		/* intransit blocking page faults */
 	unsigned 	v_reactivated;	/* number of pages reactivated from free list */
-	unsigned 	v_pdwakeups;	/* number of times daemon has awaken from sleep */
-	unsigned 	v_pdpages;		/* number of pages analyzed by daemon */
+	unsigned 	v_rev;			/* revolutions of the hand */
+	unsigned 	v_scan;			/* scans in page out daemon */
 	unsigned 	v_dfree;		/* pages freed by daemon */
 	unsigned 	v_pfree;		/* pages freed by exiting processes */
 	unsigned 	v_tfree;		/* total pages freed */
@@ -52,10 +52,8 @@ struct vmrate
 	unsigned 	v_nzfod;		/* number of zfod's created */
 
 	/* Distribution of page usages. */
-
 	unsigned 	v_page_size;		/* page size in bytes */
-	unsigned 	v_page_count;		/* total number of pages in system */
-	unsigned 	v_free_reserved; 	/* number of pages reserved for deadlock */
+	unsigned 	v_kernel_pages;		/* total number of pages in system */
 	unsigned 	v_free_target;		/* number of pages desired free */
 	unsigned 	v_free_min;			/* minimum number of pages desired free */
 	unsigned 	v_free_count;		/* number of pages free */
@@ -84,7 +82,7 @@ struct vmsum
 	long	v_swpin;	/* swapins */
 	long	v_swpout;	/* swapouts */
 };
-//#ifdef KERNEL
+#ifdef KERNEL
 struct vmrate	cnt, rate;
 struct vmsum	sum;
 #endif
@@ -112,7 +110,7 @@ struct vmtotal
 	long	t_rmtxt;	/* real memory used by text, clicks */
 	long	t_armtxt;	/* active real memory used by text, clicks */
 };
-//#ifdef KERNEL
+#ifdef KERNEL
 struct	vmtotal total;
 #endif
 

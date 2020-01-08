@@ -1,6 +1,11 @@
-/*-
- * Copyright (c) 1982, 1986, 1993
+/*
+ * Copyright (c) 1990 University of Utah.
+ * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * the Systems Programming Group of the University of Utah Computer
+ * Science Department.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,31 +35,19 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)dmap.h	8.2 (Berkeley) 1/4/94
+ *	@(#)device_pager.h	8.3 (Berkeley) 12/13/93
  */
 
-#ifndef _SYS_DMAP_H_
-#define	_SYS_DMAP_H_
+#ifndef	_DEVICE_PAGER_
+#define	_DEVICE_PAGER_	1
 
 /*
- * Definitions for the mapping of virtual swap space to the physical swap
- * area - the disk map.
+ * Device pager private data.
  */
-#define	NDMAP	38		/* size of the swap area map */
-
-struct dmap {
-	swblk_t dm_size;	/* current size used by process */
-	swblk_t dm_alloc;	/* amount of physical swap space allocated */
-	swblk_t dm_map[NDMAP];	/* first disk block number in each chunk */
+struct devpager {
+	struct pglist	devp_pglist;	/* list of pages allocated */
+	vm_object_t		devp_object;	/* object representing this device */
 };
-#ifdef KERNEL
-struct dmap zdmap;
-int dmmin, dmmax, dmtext;
-#endif
+typedef struct devpager	*dev_pager_t;
 
-/* The following structure is that ``returned'' from a call to vstodb(). */
-struct dblock {
-	swblk_t db_base;	/* base of physical contig drum block */
-	swblk_t db_size;	/* size of block */
-};
-#endif	/* !_SYS_DMAP_H_ */
+#endif	/* _DEVICE_PAGER_ */

@@ -1,6 +1,11 @@
-/*-
- * Copyright (c) 1982, 1986, 1993
+/*
+ * Copyright (c) 1990 University of Utah.
+ * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * the Systems Programming Group of the University of Utah Computer
+ * Science Department.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,31 +35,25 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)dmap.h	8.2 (Berkeley) 1/4/94
+ *	@(#)vnode_pager.h	8.1 (Berkeley) 6/11/93
  */
 
-#ifndef _SYS_DMAP_H_
-#define	_SYS_DMAP_H_
+#ifndef	_VNODE_PAGER_
+#define	_VNODE_PAGER_	1
 
 /*
- * Definitions for the mapping of virtual swap space to the physical swap
- * area - the disk map.
+ * VNODE pager private data.
  */
-#define	NDMAP	38		/* size of the swap area map */
-
-struct dmap {
-	swblk_t dm_size;	/* current size used by process */
-	swblk_t dm_alloc;	/* amount of physical swap space allocated */
-	swblk_t dm_map[NDMAP];	/* first disk block number in each chunk */
+struct vnpager {
+	int				vnp_flags;	/* flags */
+	struct vnode	*vnp_vp;	/* vnode */
+	vm_size_t		vnp_size;	/* vnode current size */
 };
-#ifdef KERNEL
-struct dmap zdmap;
-int dmmin, dmmax, dmtext;
-#endif
+typedef struct vnpager	*vn_pager_t;
 
-/* The following structure is that ``returned'' from a call to vstodb(). */
-struct dblock {
-	swblk_t db_base;	/* base of physical contig drum block */
-	swblk_t db_size;	/* size of block */
-};
-#endif	/* !_SYS_DMAP_H_ */
+#define VN_PAGER_NULL	((vn_pager_t)0)
+
+#define	VNP_PAGING	0x01		/* vnode used for pageout */
+#define VNP_CACHED	0x02		/* vnode is cached */
+
+#endif	/* _VNODE_PAGER_ */

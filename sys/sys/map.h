@@ -35,14 +35,26 @@ struct mapent {
 	size_t 	m_addr;		/* resource-space addr of start of segment */
 };
 
+#define RMALLOC(space, cast, mp, size) {	\
+	(space) = (cast)rmalloc(mp, size);		\
+};
+
+#define RMALLOC3(space, cast, mp, d_size, s_size, u_size, a) {	\
+	(space) = (cast)rmalloc3(mp, d_size, s_size, u_size, a);	\
+};
+
+#define RMFREE(mp, size, addr) { 		\
+	rmfree(mp, size, (caddr_t)(addr)); 	\
+};
+
 #ifdef KERNEL
 extern struct map coremap;																		/* space for core allocation */
 extern struct map swapmap;																		/* space for swap allocation */
 int	nswapmap;
 
-void 	rminit__P((struct map *mp, size_t size, size_t addr, char *name, int mapsize));
-size_t 	rmalloc__P((struct map *mp, size_t nbytes)); 												/* Allocate units from the given map. */
-void 	rmfree__P((struct map *mp, size_t nbytes, size_t addr)); 									/* Free the previously allocated units at addr into the specified map.*/
-size_t 	rmalloc3__P((struct map *mp, size_t d_size, size_t s_size, size_t u_size, size_t a[3]));	/* Allocate resources for the three segments of a process.*/
-size_t	rmget__P((struct map *mp, size_t size, size_t addr));
+extern void 	rminit__P((struct map *mp, size_t size, size_t addr, char *name, int mapsize));
+extern size_t 	rmalloc__P((struct map *mp, size_t size)); 													/* Allocate units from the given map. */
+extern void 	rmfree__P((struct map *mp, size_t size, size_t addr)); 										/* Free the previously allocated units at addr into the specified map.*/
+extern size_t 	rmalloc3__P((struct map *mp, size_t d_size, size_t s_size, size_t u_size, size_t a[3]));	/* Allocate resources for the three segments of a process.*/
+extern size_t 	rmget__P((struct map *mp, size_t size, size_t addr));
 #endif

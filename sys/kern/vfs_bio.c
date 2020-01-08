@@ -30,12 +30,12 @@
 #include <sys/resourcevar.h>
 #include <sys/proc.h>
 #include <vm/vm.h>
-#include <vm/include/vm_pageout.h>
+#include <vm/vm_pageout.h>
 
 #include <miscfs/specfs/specdev.h>
 
 struct	buf *buf;		/* buffer header pool */
-int	nbuf;			/* number of buffer headers calculated elsewhere */
+int	nbuf;				/* number of buffer headers calculated elsewhere */
 struct swqueue bswlist;
 
 extern	vm_map_t buffer_map, io_map;
