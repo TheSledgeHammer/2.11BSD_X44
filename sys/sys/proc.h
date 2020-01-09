@@ -117,6 +117,9 @@ struct	proc {
     struct	k_itimerval p_krealtimer;   /* Alarm Timer?? in 2.11BSD */
     u_short 			p_acflag;	    /* Accounting flags. */
 
+	short				p_locks;		/* DEBUG: lockmgr count of held locks */
+	short				p_simple_locks;	/* DEBUG: count of held simple locks */
+
     short				p_xstat;		/* exit status for wait */
 	struct  rusage    	p_ru;			/* exit information */
 	struct  k_rusage    p_kru;			/* exit information kernel */

@@ -159,13 +159,13 @@ int		lockmgr __P((__volatile struct lock *, u_int flags, struct simplelock *, st
 int		lockstatus __P((struct lock *));
 
 #ifdef DEBUG
-void _simple_unlock __P((__volatile struct simplelock *alp, const char *, int));
+void 	_simple_unlock __P((__volatile struct simplelock *alp, const char *, int));
 #define simple_unlock(alp) _simple_unlock(alp, __FILE__, __LINE__)
-int _simple_lock_try __P((__volatile struct simplelock *alp, const char *, int));
+int 	_simple_lock_try __P((__volatile struct simplelock *alp, const char *, int));
 #define simple_lock_try(alp) _simple_lock_try(alp, __FILE__, __LINE__)
-void _simple_lock __P((__volatile struct simplelock *alp, const char *, int));
+void 	_simple_lock __P((__volatile struct simplelock *alp, const char *, int));
 #define simple_lock(alp) _simple_lock(alp, __FILE__, __LINE__)
-void simple_lock_init __P((struct simplelock *alp));
+void 	simple_lock_init __P((struct simplelock *alp));
 #else /* !DEBUG */
 #if NCPUS == 1 /* no multiprocessor locking is necessary */
 #define	simple_lock_init(alp)
@@ -174,5 +174,4 @@ void simple_lock_init __P((struct simplelock *alp));
 #define	simple_unlock(alp)
 #endif /* NCPUS == 1 */
 #endif /* !DEBUG */
-
 #endif /* !_LOCK_H_ */
