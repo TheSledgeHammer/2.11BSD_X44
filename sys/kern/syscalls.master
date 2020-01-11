@@ -1,0 +1,199 @@
+	@(#)syscalls.master	8.6 (Berkeley) 3/30/95
+; System call name/number "master" file.
+; (See syscalls.conf to see what it is processed into.)
+;
+; Fields: number type [type-dependent ...]
+;	number	system call number, must be in order
+;	type	one of STD, OBSOL, UNIMPL, NODEF, NOARGS, or one of
+;		the compatibility options defined in syscalls.conf.
+;
+; types:
+;	STD	    always included
+;	OBSOL	obsolete, not included in system
+;	UNIMPL	unimplemented, not included in system
+;	NODEF	included, but don't define the syscall number
+;	NOARGS	included, but don't define the syscall args structure
+;
+; The compat options are defined in the syscalls.conf file, and the
+; compat option name is prefixed to the syscall name.  Other than
+; that, they're like NODEF (for 'compat' options), or STD (for
+; 'libcompat' options).
+;
+; The type-dependent arguments are as follows:
+; For STD, NODEF, NOARGS, and compat syscalls:
+;	{ pseudo-proto } [alias]
+; For other syscalls:
+;	[comment]
+;
+; #ifdef's, etc. may be included, and are copied to the output files.
+; #include's are copied to the syscall switch definition file only.
+
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/signal.h>
+#include <sys/mount.h>
+#include <sys/syscallargs.h>
+
+; Reserved/unimplemented system calls in the range 0-150 inclusive
+; are reserved for use in future Berkeley releases.
+; Additional system calls implemented in vendor and other
+; redistributions should be placed in the reserved range at the end
+; of the current calls.
+
+0   STD     { int indir(); }
+1   STD     { int exit(); }
+2   STD     { int fork(); }
+3   STD     { int read(); }
+4   STD     { int write(); }
+5   STD     { int open(); }
+6   STD     { int close(); }
+7   STD     { int wait4(); }
+8   OBSOL   old creat
+9   STD     { int link(); }
+10  STD     { int unlink(); }
+11  STD     { int execv(); }
+12  STD     { int chdir(); }
+13  STD     { int fchdir(); }
+14  STD     { int mknod(); }
+15  STD     { int chmod(); }
+16  STD     { int chown(); }
+17  STD     { int chflags(); }
+18  STD     { int fchflags(); }
+19  STD     { int lseek(); }
+20  STD     { int getpid(); }
+21  STD     { int mount(); }
+22  STD     { int umount(); }
+23  STD     { int __sysctl(); }
+24  STD     { int getuid(); }
+25  STD     { int geteuid(); }
+26  STD     { int ptrace(); }
+27  STD     { int getppid(); }
+28  STD     { int statfs(); }
+29  STD     { int fstatfs(); }
+30  STD     { int getfsstat(); }
+31  STD     { int sigaction(); }
+32  STD     { int sigprocmask(); }
+33  STD     { int access(); }
+34  STD     { int sigpending(); }
+35  STD     { int sigaltstack(); }
+36  STD     { int sync(); }
+37  STD     { int kill(); }
+38  STD     { int stat(); }
+39  STD     { int getlogin(); }
+40  STD     { int lstat(); }
+41  STD     { int dup(); }
+42  STD     { int pipe(); }     /* not used */
+43  STD     { int setlogin(); }
+44  STD     { int profil(); }
+45  STD     { int setuid(); }
+46  STD     { int seteuid(); }
+47  STD     { int getgid(); }
+48  STD     { int getegid(); }
+49  STD     { int setgid(); }
+50  STD     { int setegid(); }
+51  UNIMPL  
+52  STD     { int phys(); }
+53  STD     { int lock(); }
+54  STD     { int ioctl(); }
+55  STD     reboot
+56  STD     sigwait
+57  STD     symlink
+58  STD     readlink
+59  STD     execve
+60  STD     umask
+61  STD     chroot
+62  STD     fstat
+63  UNIMPL
+64  OBSOL   old getpagesize
+65  STD     pselect
+66  STD     vfork
+67  UNIMPL
+68  UNIMPL
+69  STD     sbrk    /* not used */
+70  UNIMPL
+71  UNIMPL
+72  UNIMPL
+73  UNIMPL
+74  UNIMPL
+75  UNIMPL
+76  STD     vhangup /* not used */
+77  UNIMPL
+78  UNIMPL
+79  STD     getgroups
+80  STD     setgroups
+81  STD     getpgrp
+82  STD     setpgrp
+83  STD     setitimer
+84  STD     wait, wait3 COMPAT
+85  UNIMPL
+86  STD     getitimer
+87  OBSOL   old gethostname
+88  OBSOL   old sethostname
+89  STD     getdtablesize
+90  STD     dup2
+91  UNIMPL
+92  STD     fcntl
+93  STD     select
+94  UNIMPL
+95  STD     fsync
+96  STD     setpriority
+97  STD     socket
+98  STD     connect
+99  STD     accept
+100 STD     getpriority
+101 STD     send
+102 STD     recv
+103 STD     sigreturn
+104 STD     bind
+105 STD     setsockopt
+106 STD     listen
+107 STD     sigsuspend
+108 OBSOL   old sigvec
+109 OBSOL   old sigblock
+110 OBSOL   old sigsetmask
+111 OBSOL   old sigpause
+112 COMPAT-43     sigstack
+113 STD     recvmsg
+114 STD     sendmsg
+115 UNIMPL
+116 STD     gettimeofday
+117 STD     getrusage
+118 STD     getsockopt
+119 UNIMPL
+120 STD     readv
+121 STD     writev
+122 STD     settimeofday
+123 STD     fchown
+124 STD     fchmod
+125 STD     recvfrom
+126 OBSOL   old setreuid
+127 OBSOL   old setregid
+128 STD     rename
+129 STD     truncate
+130 STD     ftruncate
+131 STD     flock
+132 UNIMPL
+133 STD     sendto
+134 STD     shutdown
+135 STD     socketpair
+136 STD     mkdir
+137 STD     rmdir
+138 STD     utimes
+139 UNIMPL
+140 STD     adjtime
+141 STD     getpeername
+142 OBSOL   old gethostid
+143 OBSOL   old sethostid
+144 STD     getrlimit
+145 STD     setrlimit
+146 STD     killpg
+147 UNIMPL
+148 STD     setquota    /* not used (filesystem?) */
+149 STD     quota       /* not used (filesystem?) */
+150 STD     getsockname
+; Syscalls 151-155 are special for 2BSD
+151 UNIMPL
+152 STD     nostk
+153 STD     { int fetchi(); }
+154 STD     { int ucall(); }
+155 STD     { int fperr(); }   /* not used */

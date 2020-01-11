@@ -30,7 +30,7 @@
 #include <sys/resourcevar.h>
 #include <sys/proc.h>
 #include <vm/vm.h>
-#include <vm/vm_pageout.h>
+#include <vm/include/vm_pageout.h>
 
 #include <miscfs/specfs/specdev.h>
 

@@ -449,8 +449,7 @@ kmem_init(start, end)
 	vm_map_lock(m);
 	/* N.B.: cannot use kgdb to debug, starting with this assignment ... */
 	kernel_map = m;
-	(void) vm_map_insert(m, NULL, (vm_offset_t)0,
-	    VM_MIN_KERNEL_ADDRESS, start);
+	(void) vm_map_insert(m, NULL, (vm_offset_t)0, VM_MIN_KERNEL_ADDRESS, start);
 	/* ... and ending with the completion of the above `insert' */
 	vm_map_unlock(m);
 }
