@@ -98,6 +98,7 @@ mxfalloc(fp)
 mpxchan() {
     extern mxopen(), mcread(), sdata(), scontrol();
     struct vnode *vp, *gvp;
+    struct vattr *vattr;
     struct tty *tp;
     struct file *fp, *chfp, *gfp;
     struct chan *cp;
@@ -138,6 +139,7 @@ mpxchan() {
                 return;
             gvp = gfp;
             gp = &gvp->i_un.i_group;
+
             if (gp->g_inode != gip) {
                 u->u_error = ENXIO;
                 return;
@@ -171,9 +173,10 @@ mpxchan() {
             if (uap->cmd == MPXN) {
                 if ((ip = ialloc(pipedev)) == NULL)
                     return;
-                vp->
-                ip->i_mode = ((vec.m_arg[1] & 0777) + IFMPC) & ~u->u_cmask;
-                ip->i_flag = IACC | IUPD | ICHG;
+                vattr->va_mode = ((vec.m_arg[1] & 0777) + IFMPC) & ~u->u_cmask;
+                vattr->va_flags = IACC | IUPD | ICHG;
+                //ip->i_mode = ((vec.m_arg[1] & 0777) + IFMPC) & ~u->u_cmask;
+                //ip->i_flag = IACC | IUPD | ICHG;
             } else {
                 u.u_dirp = vec.m_name;
                 ip = namei(uchar, 1);
@@ -204,7 +207,8 @@ mpxchan() {
                 groups[i] = NULL;
                 return;
             }
-            ip->i_un.i_rdev = (daddr_t)(mpxdev + i);
+            vattr->va_rdev = (daddr_t)(mpxdev + i);
+            //ip->i_un.i_rdev = (daddr_t)(mpxdev + i);
             ip->i_count++;
             vrele(vp);
     }

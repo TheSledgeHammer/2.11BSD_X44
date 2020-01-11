@@ -50,11 +50,11 @@ struct	proc {
 #define	p_ucred			p_cred->pc_ucred
 #define	p_rlimit		p_limit->pl_rlimit
 
+    struct	proc    	*p_hash;        /* Hash chain. */
     struct	proc    	*p_pgrpnxt;	    /* Pointer to next process in process group. */
     struct	proc        *p_pptr;		/* pointer to process structure of parent */
     struct	proc 		*p_osptr;	 	/* Pointer to older sibling processes. */
 
-    struct	proc    	*p_hash;        /* Hash chain. */
     struct	proc        *p_pglist;		/* List of processes in pgrp. */
     struct	proc        *p_pptr;		/* Pointer to parent process. */
     struct  proc		*p_sibling;		/* List of sibling processes. */
@@ -244,8 +244,6 @@ struct	prochd {
 struct 	proc *pfind __P((pid_t));		/* Find process by id. */
 struct 	pgrp *pgfind __P((pid_t));		/* Find process group by id. */
 
-int 	chgproccnt __P((uid_t, int diff));
-
 int		setpri __P((struct proc *));
 void	setrun __P((struct proc *));
 void	setrq __P((struct proc *));
@@ -256,7 +254,11 @@ int		tsleep __P((void *chan, int pri, char *wmesg, int timo));
 void	unsleep __P((struct proc *));
 void	wakeup __P((void *chan));
 
-int	inferior __P((struct proc *));
+int 	chgproccnt __P((uid_t, int diff));
+int		leavepgrp __P((struct proc *));
+int		enterpgrp __P((struct proc *, pid_t, int));
+void	fixjobc __P((struct proc *, struct pgrp *, int));
+int		inferior __P((struct proc *));
 #endif 	/* KERNEL */
 
 #endif	/* !_SYS_PROC_H_ */

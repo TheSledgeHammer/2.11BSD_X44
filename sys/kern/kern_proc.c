@@ -11,6 +11,7 @@
 #include <sys/proc.h>
 #include <sys/systm.h>
 #include <sys/map.h>
+#include <test/mmu/malloc.h>
 
 struct prochd qs[NQS];		/* as good a place as any... */
 struct prochd rtqs[NQS];	/* Space for REALTIME queues too */
@@ -30,7 +31,6 @@ struct uidinfo {
 } **uihashtbl;
 u_long	uihash;		/* size of hash table - 1 */
 #define	UIHASH(uid)	(&uihashtbl[(uid) & uihash])
-
 
 void
 usrinfoinit()
@@ -251,7 +251,7 @@ enterpgrp(p, pgid, mksess)
 			panic("enterpgrp: new pgrp and pid != pgid");
 #endif
 		//MALLOC(pgrp, struct pgrp *, sizeof(struct pgrp), M_PGRP, M_WAITOK);
-		rmalloc(pgrp, sizeof(struct pgrp));
+		RMALLOC(struct session *, sess, sizeof(struct session));
 		if ((np = pfind(savepid)) == NULL || np != p)
 			return (ESRCH);
 		if (mksess) {
@@ -261,7 +261,7 @@ enterpgrp(p, pgid, mksess)
 			 * new session
 			 */
 			//MALLOC(sess, struct session *, sizeof(struct session), M_SESSION, M_WAITOK);
-			rmalloc(sess, sizeof(struct session));
+			RMALLOC(struct session *, sess, sizeof(struct session));
 			sess->s_leader = p;
 			sess->s_count = 1;
 			sess->s_ttyvp = NULL;

@@ -39,8 +39,8 @@ struct mapent {
 	(space) = (cast)rmalloc(mp, size);		\
 };
 
-#define RMALLOC3(space, cast, mp, d_size, s_size, u_size, a) {	\
-	(space) = (cast)rmalloc3(mp, d_size, s_size, u_size, a);	\
+#define RMALLOC3(space, cast, mp, d_size, s_size, u_size, a) {		\
+	(space) = (cast)rmalloc3(mp, d_size, s_size, u_size, a);		\
 };
 
 #define RMFREE(mp, size, addr) { 		\
@@ -48,8 +48,8 @@ struct mapent {
 };
 
 #ifdef KERNEL
-extern struct map coremap;																		/* space for core allocation */
-extern struct map swapmap;																		/* space for swap allocation */
+extern struct map coremap;																					/* space for core allocation */
+extern struct map swapmap;																					/* space for swap allocation */
 int	nswapmap;
 
 extern void 	rminit__P((struct map *mp, size_t size, size_t addr, char *name, int mapsize));

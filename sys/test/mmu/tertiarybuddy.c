@@ -9,11 +9,73 @@
 #include <vm/vm.h>
 #include <vm/include/vm_kern.h>
 
-static int isPowerOfTwo(long n); 	/* 0 = true, 1 = false */
-static long search_buckets(unsigned long size);
-static unsigned long align_to_bucket(long indx);
+/* Bucket List Search (kmembuckets) */
+struct kmembuckets *
+bucket_list(struct kmembuckets *kbp, char next)
+{
+    kbp->kb_last = kbp->kb_next;
+    kbp->kb_next = next;
+    return (kbp);
+}
 
-/* TODO: ASL goes to next after added */
+struct kmembuckets *
+bucket_insert(struct kmembuckets *kbp, char next)
+{
+    kbp->kb_back = kbp->kb_front;
+    kbp->kb_front = bucket_list(kbp, next);
+    return (kbp);
+}
+
+struct kmembuckets *
+bucket_search(struct kmembuckets *kbp, char next)
+{
+    if(kbp != NULL) {
+        if(next == kbp->kb_next) {
+            return kbp;
+        }
+    }
+    return (NULL);
+}
+
+/* Tertiary Tree: Available Space List (asl) */
+struct asl *
+asl_list(struct asl *free, unsigned long size)
+{
+    free->asl_size = size;
+    return (free);
+}
+
+struct asl *
+asl_insert(struct asl *free, unsigned long size)
+{
+    free->asl_prev = free->asl_next;
+    free->asl_next = asl_list(free, size);
+    return (free);
+}
+
+struct asl *
+asl_remove(struct asl *free, unsigned long size)
+{
+    if(size == free->asl_size) {
+        int empty = 0;
+        free = asl_list(free, empty);
+    }
+    return (free);
+}
+
+struct asl *
+asl_search(struct asl *free, unsigned long size)
+{
+    if(free != NULL) {
+        if(size == free->asl_size && size != 0) {
+            return free;
+        }
+    }
+    printf("empty");
+    return (NULL);
+}
+
+/* Tertiary Tree (kmemtree) */
 struct kmemtree *
 insert(size, type, ktp)
     register struct kmemtree *ktp;
@@ -31,10 +93,11 @@ push_left(size, dsize, ktp)
 	unsigned long size, dsize;  /*dsize = difference (if any) */
 	struct kmemtree *ktp;
 {
+	struct asl* free = ktp->kt_freelist1;
 	if(dsize > 0) {
-		ktp->kt_freelist1->asl_size += dsize;
+		free->asl_next = asl_insert(free, dsize);
 	} else {
-	   ktp->kt_freelist1->asl_size += size;
+		free->asl_next = asl_insert(free, size);
 	}
 	ktp->kt_left = insert(size, TYPE_11, ktp);
 	return(ktp);
@@ -45,10 +108,11 @@ push_middle(size, dsize, ktp)
 	unsigned long size, dsize;  /*dsize = difference (if any) */
 	struct kmemtree *ktp;
 {
+	struct asl* free = ktp->kt_freelist2;
 	if(dsize > 0) {
-		ktp->kt_freelist2->asl_size += dsize;
+		free->asl_next = asl_insert(free, dsize);
 	} else {
-		ktp->kt_freelist2->asl_size += size;
+		free->asl_next = asl_insert(free, size);
 	}
 	ktp->kt_middle = insert(size, TYPE_01, ktp);
 	return(ktp);
@@ -59,10 +123,11 @@ push_right(size, dsize, ktp)
 	unsigned long size, dsize; /*dsize = difference (if any) */
 	struct kmemtree *ktp;
 {
+	struct asl* free = ktp->kt_freelist2;
 	if(dsize > 0) {
-		ktp->kt_freelist2->asl_size += dsize;
+		free->asl_next = asl_insert(free, dsize);
 	} else {
-		ktp->kt_freelist2->asl_size += size;
+		free->asl_next = asl_insert(free, size);
 	}
 	ktp->kt_right = insert(size, TYPE_10, ktp);
 	return(ktp);
@@ -171,8 +236,8 @@ isPowerOfTwo(long n)
 
 struct kmemtree *
 trealloc_left(ktp, size, bsize)
-        struct kmemtree *ktp;
-        unsigned long size, bsize; /* bsize is bucket size*/
+    struct kmemtree *ktp;
+    unsigned long size, bsize; /* bsize is bucket size*/
 {
     unsigned long left;
     unsigned long diff = 0;
@@ -307,6 +372,7 @@ trealloc(ktp, size)
 		allocsize = 1 << indx;
 	}
 	npg = clrnd(btoc(allocsize));
+	unsigned long tmp = LOG(npg); /* does log(npg) fit */
 
 	if(isPowerOfTwo(npg - 1)) {
 		left = trealloc_left(ktp, npg, bsize);
@@ -315,7 +381,6 @@ trealloc(ktp, size)
 	} else if (isPowerOfTwo(npg - 3)) {
 		right = trealloc_right(ktp, npg, bsize);
 	} else {
-		unsigned long tmp = LOG(npg); /* does log(npg) fit */
 		if(isPowerOfTwo(tmp - 1)) {
 			left = trealloc_left(ktp, npg, bsize);
 		} else if(isPowerOfTwo(tmp - 2)) {

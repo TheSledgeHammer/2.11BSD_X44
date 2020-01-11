@@ -11,6 +11,7 @@
 
 #include <machine/pcb.h>
 #include <machine/param.h>
+
 #ifndef KERNEL
 #include <errno.h>
 #include <sys/dir.h>
@@ -25,7 +26,7 @@
 #include <sys/sysctl.h>
 #include <sys/resourcevar.h>
 #include <sys/signalvar.h>
-#include <vm/vm.h>		/* XXX */
+#include <vm/vm.h>				/* XXX */
 #include <sys/sysctl.h>
 
 
@@ -161,7 +162,6 @@ struct user {
 					 	 	 	 	 * extends from u + USIZE*64
 					 	 	 	 	 * backward not to reach here
 					 	 	 	 	 */
-
 /* 1.7 Remaining fields only for core dump and/or ptrace-- not valid at other times! */
 	struct	kinfo_proc 	u_kproc;	/* proc + eproc */
 	struct	md_coredump u_md;		/* machine dependent glop */
@@ -170,5 +170,4 @@ struct user {
 #ifdef KERNEL
 extern struct user u;
 #endif
-
 #endif

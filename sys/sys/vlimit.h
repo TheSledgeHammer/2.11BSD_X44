@@ -1,10 +1,6 @@
-/*
- * Copyright (c) 1993 Jan-Simon Pendry
- * Copyright (c) 1993
+/*-
+ * Copyright (c) 1982, 1986, 1993
  *	The Regents of the University of California.  All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * Jan-Simon Pendry.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,53 +30,26 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)procfs_fpregs.c	8.1 (Berkeley) 1/27/94
- *
- *	$Id: procfs_fpregs.c,v 1.1.1.1 1994/05/24 10:05:09 rgrimes Exp $
+ *	@(#)vlimit.h	8.1 (Berkeley) 6/2/93
+ * $Id: vlimit.h,v 1.2 1994/08/02 07:54:11 davidg Exp $
  */
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/time.h>
-#include <sys/kernel.h>
-#include <sys/proc.h>
-#include <sys/vnode.h>
-#include <machine/reg.h>
-#include <miscfs/procfs/procfs.h>
+#ifndef _SYS_VLIMIT_H_
+#define _SYS_VLIMIT_H_
 
-int
-procfs_dofpregs(curp, p, pfs, uio)
-	struct proc *curp;
-	struct proc *p;
-	struct pfsnode *pfs;
-	struct uio *uio;
-{
-	int error;
-	struct fpreg r;
-	char *kv;
-	int kl;
+/*
+ * Limits for u.u_limit[i], per process, inherited.
+ */
+#define	LIM_NORAISE	0	/* if <> 0, can't raise limits */
+#define	LIM_CPU		1	/* max secs cpu time */
+#define	LIM_FSIZE	2	/* max size of file created */
+#define	LIM_DATA	3	/* max growth of data space */
+#define	LIM_STACK	4	/* max growth of stack */
+#define	LIM_CORE	5	/* max size of ``core'' file */
+#define	LIM_MAXRSS	6	/* max desired data+stack core usage */
 
-	kl = sizeof(r);
-	kv = (char *) &r;
+#define	NLIMITS		6
 
-	kv += uio->uio_offset;
-	kl -= uio->uio_offset;
-	if (kl > uio->uio_resid)
-		kl = uio->uio_resid;
+#define	INFINITY	0x7fffffff
 
-	if (kl < 0)
-		error = EINVAL;
-	else
-		error = procfs_read_fpregs(p, &r);
-	if (error == 0)
-		error = uiomove(kv, kl, uio);
-	if (error == 0 && uio->uio_rw == UIO_WRITE) {
-		if (p->p_stat != SSTOP)
-			error = EBUSY;
-		else
-			error = procfs_write_fpregs(p, &r);
-	}
-
-	uio->uio_offset = 0;
-	return (error);
-}
+#endif /* SYS_VLIMIT_H_ */

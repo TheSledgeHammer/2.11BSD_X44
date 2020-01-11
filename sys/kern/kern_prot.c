@@ -137,6 +137,7 @@ setgroups()
 		u_int	gidsetsize;
 		int	*gidset;
 	} *uap = (struct a *)u->u_ap;
+
 	register gid_t *gp;
 
 	if (!suser())
@@ -173,19 +174,18 @@ groupmember(gid)
 */
 int
 getlogin()
-	{
-	register struct a
-		{
+{
+	register struct a {
 		char *namebuf;
 		u_int namelen;
-		} *uap = (struct a *)u->u_ap;
-	register int error;
+	} *uap = (struct a *)u->u_ap;
 
+	register int error;
 	if	(uap->namelen > sizeof (u->u_login))
 		uap->namelen = sizeof (u->u_login);
 	error = copyout(u->u_login, uap->namebuf, uap->namelen);
 	return(u->u_error = error);
-	}
+}
 
 /*
  * Set login name.
@@ -197,11 +197,11 @@ getlogin()
 
 int
 setlogin()
-	{
-	register struct a
-		{
+{
+	register struct a {
 		char *namebuf;
-		} *uap = (struct a *)u->u_ap;
+	} *uap = (struct a *)u->u_ap;
+
 	register int error;
 	char	newname[MAXLOGNAME + 1];
 
@@ -218,6 +218,6 @@ setlogin()
 	if	(error == 0)
 		bcopy(newname, u->u_login, sizeof (u->u_login));
 	return(u->u_error = error);
-	}
+}
 
 

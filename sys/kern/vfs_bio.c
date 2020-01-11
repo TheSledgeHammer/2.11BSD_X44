@@ -741,5 +741,6 @@ vm_hold_free_pages(vm_offset_t froma, vm_offset_t toa)
 void
 bufstats()
 {
+
 }
 

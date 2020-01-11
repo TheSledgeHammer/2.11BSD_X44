@@ -170,6 +170,14 @@ struct schan {
 /* put in stat.h*/
 #define S_IFCHAN  0200000; /* multiplexor */
 
+//#ifdef  KERNEL
+int mpx_read __P((struct file *fp, struct uio *uio, struct ucred *cred));
+int mpx_write __P((struct file *fp, struct uio *uio, struct ucred *cred));
+int mpx_ioctl __P((struct file *fp, u_long cmd, caddr_t data, struct proc *p));
+int mpx_select __P((struct file *fp, int which, struct proc *p));
+int mpx_close __P((struct file *fp, struct proc *p));
+
 int	mpxclose __P((struct mpx *mpx));
 int mpxsend __P((struct mpx *mpx, struct mbuf *addr, struct uio *uio, struct mbuf *top, struct mbuf *control, int flags));
 int mpxreceive __P((struct mpx *mpx, struct mbuf **paddr, struct uio *uio, struct mbuf **mp0, struct mbuf **controlp, int *flagsp));
+#endif /* KERNEL */

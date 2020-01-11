@@ -43,6 +43,7 @@ fork1(isvfork)
 {
 	register int a;
 	register struct proc *p1, *p2;
+	int count;
 
 	a = 0;
 	if (u->u_uid != 0) {
@@ -62,6 +63,12 @@ fork1(isvfork)
 	p2 = freeproc;
 	if (p2==NULL)
 		tablefull("proc");
+
+	count = chgproccnt(u->u_uid, 1);
+	if (u->u_uid != 0 && count > p1->p_rlimit[RLIMIT_NPROC].rlim_cur) {
+		(void)chgproccnt(uid, -1);
+		u->u_error = EAGAIN;
+	}
 	if (p2==NULL || (u->u_uid!=0 && (p2->p_nxt == NULL || a>MAXUPRC))) {
 		u->u_error = EAGAIN;
 		goto out;

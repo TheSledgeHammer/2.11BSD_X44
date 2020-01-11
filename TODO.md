@@ -13,20 +13,6 @@ Kern:
 - tty_pty.c
 - uipc_syscalls.c
 
-Vm:
-- VM using FreeBSD 2.0 Code Base: May need to move VM code base to 4.4BSD
-- If wish to implement Memory Management Idea (w/o hassles)
-
-- vmmeter.h (belongs in sys)
-- vm.h (extended from 2.11BSD's)
-2.11BSD's VM
-- vmmac.h
-- vmsystem.h
-- vmparam.h
-- vm_proc.c
-- vm_sched.c
-- vm_swap.c
-- vm_swp.c
 
 FreeBSD 3.0 or Higher:
 - BTX Bootloader
@@ -36,10 +22,6 @@ FreeBSD 3.0 or Higher:
 Executables:  
 __LDPGSZ = machine/exec.h
 
-
-OpenBSD:
-- subr_tree.c: Idea for tertiary tree
-- sys_pipe.c: Pipes: Multiplexor: sys_mpx.c 
 
 NetBSD:
 - efs: extent file system

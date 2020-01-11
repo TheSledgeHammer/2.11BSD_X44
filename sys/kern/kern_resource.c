@@ -245,11 +245,16 @@ ruadd(ru, ru2)
 {
 	register long *ip, *ip2;
 	register int i;
+	struct rusage *kru, *kru2;
 
 	/*
 	 * since the kernel timeval structures are single longs,
 	 * fold them into the loop.
 	 */
+	timevaladd(&ru->ru_utime, &ru2->ru_utime);
+	timevaladd(&ru->ru_stime, &ru2->ru_stime);
+	if (kru->ru_maxrss < kru2->ru_maxrss)
+		kru->ru_maxrss = kru2->ru_maxrss;
 	ip = &ru->k_ru_first; ip2 = &ru2->k_ru_first;
 	for (i = &ru->k_ru_last - &ru->k_ru_first; i >= 0; i--)
 		*ip++ += *ip2++;
@@ -286,10 +291,7 @@ struct rtprio_args {
 	struct rtprio	*rtprio;
 };
 
-/*
- * Set realtime priority
- */
-
+/* Set realtime priority */
 /* ARGSUSED */
 int
 rtprio(curp, uap, retval)
@@ -351,4 +353,18 @@ rtprio(curp, uap, retval)
 		default:
 			return (EINVAL);
 	}
+}
+
+
+struct plimit *
+limcopy(lim)
+	struct plimit *lim;
+{
+	register struct plimit *copy;
+
+	RMALLOC(copy, sizeof(struct plimit));
+	bcopy(lim->pl_rlimit, copy->pl_rlimit, sizeof(struct rlimit) * RLIM_NLIMITS);
+	copy->p_lflags = 0;
+	copy->p_refcnt = 1;
+	return (copy);
 }

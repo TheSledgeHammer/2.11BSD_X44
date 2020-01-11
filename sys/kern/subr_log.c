@@ -60,7 +60,7 @@ int
 logopen(dev, mode)
 	dev_t dev;
 	int mode;
-	{
+{
 	register int	unit = minor(dev);
 
 	if	(unit >= NLOG)
@@ -75,21 +75,21 @@ logopen(dev, mode)
 	logsoftc[unit].sc_pgid = u->u_procp->p_pid;  /* signal process only */
 	logsoftc[unit].sc_overrun = 0;
 	return(0);
-	}
+}
 
 /*ARGSUSED*/
 int
 logclose(dev, flag)
 	dev_t	dev;
 	int	flag;
-	{
+{
 	register int unit = minor(dev);
 
 	logsoftc[unit].sc_state = 0;
 	if	(unit == logACCT)
 		Acctopen = 0;
 	return(0);
-	}
+}
 
 /*
  * This is a helper function to keep knowledge of this driver's data
@@ -98,12 +98,11 @@ logclose(dev, flag)
 int
 logisopen(unit)
 	int	unit;
-	{
-
+{
 	if	(logsoftc[unit].sc_state & LOG_OPEN)
 		return(1);
 	return(0);
-	}
+}
 
 /*ARGSUSED*/
 int
@@ -111,7 +110,7 @@ logread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 	int flag;
-	{
+{
 	register int l;
 	register struct logsoftc *lp;
 	register struct msgbuf *mp;
@@ -126,7 +125,7 @@ logread(dev, uio, flag)
 		if	(flag & IO_NDELAY) {
 			splx(s);
 			return(EWOULDBLOCK);
-			}
+		}
 		lp->sc_state |= LOG_RDWAIT;
 		if (error == sleep((caddr_t)mp, LOG_RDPRI | PCATCH, "klog", 0)) {
 			splx(0);
@@ -151,20 +150,18 @@ logread(dev, uio, flag)
  * available for now the bytes from the read pointer thru the end of 
  * the buffer.
 */
-		if	(l < 0)
-			{
+		if	(l < 0) {
 			l = MSG_BSIZE - mp->msg_bufr;
 /*
  * If the reader is exactly at the end of the buffer it is
  * time to wrap it around to the beginning and recalculate the
  * amount of data to transfer.
 */
-			if	(l == 0)
-				{
+			if	(l == 0) {
 				mp->msg_bufr = 0;
 				continue;
-				}
 			}
+		}
 		l = MIN(l, uio->uio_resid);
 		l = MIN(l, sizeof buf);
 		bcopy(&mp->msg_bufc[mp->msg_bufr], buf, l);
@@ -172,39 +169,37 @@ logread(dev, uio, flag)
 		if	(error)
 			break;
 		mp->msg_bufr += l;
-		}
+	}
 	splx(s);
 	return(error);
-	}
+}
 
 /*ARGSUSED*/
 int
 logselect(dev, rw)
 	dev_t dev;
 	int rw;
-	{
+{
 	register int s = splhigh();
 	int	unit = minor(dev);
 
-	switch	(rw)
-		{
-		case	FREAD:
-			if	(msgbuf[unit].msg_bufr != msgbuf[unit].msg_bufx)
-				{
-				splx(s);
-				return(1);
-				}
-			logsoftc[unit].sc_selp = u->u_procp;
-			break;
+	switch	(rw) {
+	case	FREAD:
+		if	(msgbuf[unit].msg_bufr != msgbuf[unit].msg_bufx) {
+			splx(s);
+			return(1);
 		}
+		logsoftc[unit].sc_selp = u->u_procp;
+		break;
+	}
 	splx(s);
 	return(0);
-	}
+}
 
 void
 logwakeup(unit)
 	int	unit;
-	{
+{
 	register struct proc *p;
 	register struct logsoftc *lp;
 	register struct msgbuf *mp;
@@ -213,23 +208,20 @@ logwakeup(unit)
 		return;
 	lp = &logsoftc[unit];
 	mp = &msgbuf[unit];
-	if	(lp->sc_selp)
-		{
+	if	(lp->sc_selp) {
 		selwakeup(lp->sc_selp, (long) 0);
 		lp->sc_selp = 0;
-		}
-	if	((lp->sc_state & LOG_ASYNC) && (mp->msg_bufx != mp->msg_bufr))
-		{
+	}
+	if	((lp->sc_state & LOG_ASYNC) && (mp->msg_bufx != mp->msg_bufr)) {
 		if	(lp->sc_pgid < 0)
 			gsignal(-lp->sc_pgid, SIGIO); 
 		else if (p == pfind(lp->sc_pgid))
 			psignal(p, SIGIO);
 		}
-	if	(lp->sc_state & LOG_RDWAIT)
-		{
+	if	(lp->sc_state & LOG_RDWAIT) {
 		wakeup((caddr_t)mp);
 		lp->sc_state &= ~LOG_RDWAIT;
-		}
+	}
 }
 
 /*ARGSUSED*/
@@ -239,7 +231,7 @@ logioctl(dev, com, data, flag)
 	u_int	com;
 	caddr_t data;
 	int	flag;
-	{
+{
 	long l;
 	register int s;
 	int	unit;
@@ -250,35 +242,34 @@ logioctl(dev, com, data, flag)
 	lp = &logsoftc[unit];
 	mp = &msgbuf[unit];
 
-	switch	(com)
-		{
-		case	FIONREAD:
-			s = splhigh();
-			l = mp->msg_bufx - mp->msg_bufr;
-			splx(s);
-			if	(l < 0)
-				l += MSG_BSIZE;
+	switch	(com) {
+	case	FIONREAD:
+		s = splhigh();
+		l = mp->msg_bufx - mp->msg_bufr;
+		splx(s);
+		if	(l < 0)
+			l += MSG_BSIZE;
 			*(off_t *)data = l;
+		break;
+	case	FIONBIO:
 			break;
-		case	FIONBIO:
-			break;
-		case	FIOASYNC:
-			if (*(int *)data)
-				lp->sc_state |= LOG_ASYNC;
-			else
-				lp->sc_state &= ~LOG_ASYNC;
-			break;
-		case	TIOCSPGRP:
-			lp->sc_pgid = *(int *)data;
-			break;
-		case	TIOCGPGRP:
-			*(int *)data = lp->sc_pgid;
-			break;
-		default:
-			return(-1);
-		}
-	return(0);
+	case	FIOASYNC:
+		if (*(int *)data)
+			lp->sc_state |= LOG_ASYNC;
+		else
+			lp->sc_state &= ~LOG_ASYNC;
+		break;
+	case	TIOCSPGRP:
+		lp->sc_pgid = *(int *)data;
+		break;
+	case	TIOCGPGRP:
+		*(int *)data = lp->sc_pgid;
+		break;
+	default:
+		return(-1);
 	}
+	return(0);
+}
 
 /*
  * This is inefficient for single character writes.  Alas, changing this
@@ -289,7 +280,7 @@ logwrt(buf,len,log)
 	char	*buf;
 	int	len;
 	int	log;
-	{
+{
 	register struct msgbuf *mp = &msgbuf[log];
 	struct	logsoftc *lp = &logsoftc[log];
 	register int	infront;
@@ -303,44 +294,40 @@ logwrt(buf,len,log)
  * things.  This looks like a lot of code but it isn't really.
 */
 	s = splhigh();
-	while	(len)
-		{
-again:		infront = MSG_BSIZE - mp->msg_bufx;
-		if	(infront <= 0)
-			{
+	while	(len) {
+		again:		infront = MSG_BSIZE - mp->msg_bufx;
+		if	(infront <= 0) {
 			mp->msg_bufx = 0;
 			infront = MSG_BSIZE - mp->msg_bufr;
-			}
+		}
 		n = mp->msg_bufr - mp->msg_bufx;
 		if	(n < 0)		/* bufr < bufx */
 			writer = (MSG_BSIZE - mp->msg_bufx) + mp->msg_bufr;
 		else if	(n == 0)
 			writer = MSG_BSIZE;
-		else
-			{
+		else {
 			writer = n;
 			infront = n;
-			}
-		if	(len > writer)
-			{
-/*
- * won't fit.  the total number of bytes to be written is
- * greater than the number available.  the buffer is full.
- * throw away the old data and keep the current data by resetting
- * the 'writer' pointer to the current 'reader' position.  Bump the
- * overrun counter in case anyone wants to look at it for debugging.
-*/
+		}
+		if	(len > writer) {
+			/*
+			 * won't fit.  the total number of bytes to be written is
+			 * greater than the number available.  the buffer is full.
+			 * throw away the old data and keep the current data by resetting
+			 * the 'writer' pointer to the current 'reader' position.  Bump the
+			 * overrun counter in case anyone wants to look at it for debugging.
+			*/
 			lp->sc_overrun++;
 			mp->msg_bufx = mp->msg_bufr;
 			goto	again;
-			}
+		}
 		if	(infront > len)
 			infront = len;
 		bcopy(buf, &mp->msg_bufc[mp->msg_bufx], infront);
 		mp->msg_bufx += infront;
 		len -= infront;
 		buf += infront;
-		}
+	}
 out:	splx(s);
 	return(err);
-	}
+}

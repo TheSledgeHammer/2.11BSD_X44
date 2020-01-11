@@ -88,7 +88,6 @@ mpx_select(fp, which, p)
 {
     register struct mpx *mpx = (struct mpx *)fp->f_data;
 
-    //splx(s);
     return (0);
 }
 
