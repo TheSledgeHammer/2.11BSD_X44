@@ -9,8 +9,8 @@
 #ifndef _SYS_USER_H_
 #define _SYS_USER_H_
 
-#include <machine/pcb.h>
-#include <machine/param.h>
+//#include <machine/pcb.h>
+//#include <machine/param.h>
 
 #ifndef KERNEL
 #include <errno.h>
@@ -26,10 +26,8 @@
 #include <sys/sysctl.h>
 #include <sys/resourcevar.h>
 #include <sys/signalvar.h>
-#include <vm/vm.h>				/* XXX */
 #include <sys/sysctl.h>
-
-
+#include <vm/vm.h>				/* XXX */
 
 /*
  * data that doesn't need to be referenced while the process is swapped.
@@ -92,19 +90,6 @@ struct user {
 
 	label_t	u_ssave;				/* label variable for swapping */
 	label_t	u_rsave;				/* save info when exchanging stacks */
-
-	//char	u_sep;					/* flag for I and D separation */
-	//short	u_uisa;					/* segmentation address prototypes */
-	//short	u_uisd;					/* segmentation descriptor prototypes */
-	//char	dummy1;					/* room for another char */
-									/* overlay information */
-	//struct	u_ovd {					/* automatic overlay data */
-	//short	uo_curov;				/* current overlay */
-	//short	uo_ovbase;				/* base of overlay area, seg. */
-	//	u_short	uo_dbase;			/* start of data, clicks */
-	//	u_short	uo_ov_offst[NOVL+1];/* overlay offsets in text */
-	//	short	uo_nseg;			/* number of overlay seg. regs. */
-	//} u_ovdata;
 
 /* 1.3 - signal management */
 	int		(*u_signal[NSIG])();	/* disposition of signals */

@@ -35,19 +35,17 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vfs_lookup.c	8.4 (Berkeley) 2/16/94
- * $Id: vfs_lookup.c,v 1.5 1994/09/27 20:33:30 phk Exp $
+ *	@(#)vfs_lookup.c	8.10 (Berkeley) 5/27/95
  */
 
 #include <sys/param.h>
-#include <sys/systm.h>
 #include <sys/syslimits.h>
 #include <sys/time.h>
 #include <sys/namei.h>
 #include <sys/vnode.h>
 #include <sys/mount.h>
 #include <sys/errno.h>
-#include <sys/map.h>
+#include <test/mmu/malloc.h>
 #include <sys/filedesc.h>
 #include <sys/proc.h>
 
@@ -80,12 +78,13 @@ namei(ndp)
 	register struct nameidata *ndp;
 {
 	register struct filedesc *fdp;	/* pointer to file descriptor state */
-	register char *cp;				/* pointer into pathname argument */
-	register struct vnode *dp;		/* the directory we are searching */
+	register char *cp;		/* pointer into pathname argument */
+	register struct vnode *dp;	/* the directory we are searching */
 	struct iovec aiov;		/* uio for reading symbolic links */
 	struct uio auio;
 	int error, linklen;
 	struct componentname *cnp = &ndp->ni_cnd;
+	struct proc *p = cnp->cn_proc;
 
 	ndp->ni_cnd.cn_cred = ndp->ni_cnd.cn_proc->p_ucred;
 #ifdef DIAGNOSTIC
@@ -103,15 +102,15 @@ namei(ndp)
 	 * name into the buffer.
 	 */
 	if ((cnp->cn_flags & HASBUF) == 0)
-		rmalloc(cnp->cn_pnbuf, MAXPATHLEN);
+		MALLOC(cnp->cn_pnbuf, caddr_t, MAXPATHLEN, M_NAMEI, M_WAITOK);
 	if (ndp->ni_segflg == UIO_SYSSPACE)
 		error = copystr(ndp->ni_dirp, cnp->cn_pnbuf,
-			    MAXPATHLEN, (u_int *)&ndp->ni_pathlen);
+			    MAXPATHLEN, &ndp->ni_pathlen);
 	else
 		error = copyinstr(ndp->ni_dirp, cnp->cn_pnbuf,
-			    MAXPATHLEN, (u_int *)&ndp->ni_pathlen);
+			    MAXPATHLEN, &ndp->ni_pathlen);
 	if (error) {
-		rmfree(cnp->cn_pnbuf, sizeof(cnp->cn_pnbuf));
+		free(cnp->cn_pnbuf, M_NAMEI);
 		ndp->ni_vp = NULL;
 		return (error);
 	}
@@ -144,9 +143,8 @@ namei(ndp)
 			VREF(dp);
 		}
 		ndp->ni_startdir = dp;
-		error = lookup(ndp);
-		if (error) {
-			rmfree(cnp->cn_pnbuf, sizeof(cnp->cn_pnbuf));
+		if (error == lookup(ndp)) {
+			FREE(cnp->cn_pnbuf, M_NAMEI);
 			return (error);
 		}
 		/*
@@ -154,19 +152,19 @@ namei(ndp)
 		 */
 		if ((cnp->cn_flags & ISSYMLINK) == 0) {
 			if ((cnp->cn_flags & (SAVENAME | SAVESTART)) == 0)
-				rmfree(cnp->cn_pnbuf, sizeof(cnp->cn_pnbuf));
+				FREE(cnp->cn_pnbuf, M_NAMEI);
 			else
 				cnp->cn_flags |= HASBUF;
 			return (0);
 		}
 		if ((cnp->cn_flags & LOCKPARENT) && ndp->ni_pathlen == 1)
-			VOP_UNLOCK(ndp->ni_dvp);
+			VOP_UNLOCK(ndp->ni_dvp, 0, p);
 		if (ndp->ni_loopcnt++ >= MAXSYMLINKS) {
 			error = ELOOP;
 			break;
 		}
 		if (ndp->ni_pathlen > 1)
-			rmalloc(cp, MAXPATHLEN);
+			MALLOC(cp, char *, MAXPATHLEN, M_NAMEI, M_WAITOK);
 		else
 			cp = cnp->cn_pnbuf;
 		aiov.iov_base = cp;
@@ -178,22 +176,21 @@ namei(ndp)
 		auio.uio_segflg = UIO_SYSSPACE;
 		auio.uio_procp = (struct proc *)0;
 		auio.uio_resid = MAXPATHLEN;
-		error = VOP_READLINK(ndp->ni_vp, &auio, cnp->cn_cred);
-		if (error) {
+		if (error == VOP_READLINK(ndp->ni_vp, &auio, cnp->cn_cred)) {
 			if (ndp->ni_pathlen > 1)
-				rmfree(cp, sizeof(cp));
+				free(cp, M_NAMEI);
 			break;
 		}
 		linklen = MAXPATHLEN - auio.uio_resid;
 		if (linklen + ndp->ni_pathlen >= MAXPATHLEN) {
 			if (ndp->ni_pathlen > 1)
-				rmfree(cp, sizeof(cp));
+				free(cp, M_NAMEI);
 			error = ENAMETOOLONG;
 			break;
 		}
 		if (ndp->ni_pathlen > 1) {
 			bcopy(ndp->ni_next, cp + linklen, ndp->ni_pathlen);
-			rmfree(cnp->cn_pnbuf, sizeof(cnp->cn_pnbuf));
+			FREE(cnp->cn_pnbuf, M_NAMEI);
 			cnp->cn_pnbuf = cp;
 		} else
 			cnp->cn_pnbuf[linklen] = '\0';
@@ -201,7 +198,7 @@ namei(ndp)
 		vput(ndp->ni_vp);
 		dp = ndp->ni_dvp;
 	}
-	rmfree(cnp->cn_pnbuf, sizeof(cnp->cn_pnbuf));
+	FREE(cnp->cn_pnbuf, M_NAMEI);
 	vrele(ndp->ni_dvp);
 	vput(ndp->ni_vp);
 	ndp->ni_vp = NULL;
@@ -259,6 +256,7 @@ lookup(ndp)
 	int rdonly;			/* lookup read-only flag bit */
 	int error = 0;
 	struct componentname *cnp = &ndp->ni_cnd;
+	struct proc *p = cnp->cn_proc;
 
 	/*
 	 * Setup: break out flag bits into variables.
@@ -273,7 +271,7 @@ lookup(ndp)
 	cnp->cn_flags &= ~ISSYMLINK;
 	dp = ndp->ni_startdir;
 	ndp->ni_startdir = NULLVP;
-	VOP_LOCK(dp);
+	vn_lock(dp, LK_EXCLUSIVE | LK_RETRY, p);
 
 dirloop:
 	/*
@@ -322,12 +320,12 @@ dirloop:
 	 * e.g. like "/." or ".".
 	 */
 	if (cnp->cn_nameptr[0] == '\0') {
-		if (cnp->cn_nameiop != LOOKUP) {
-			error = EISDIR;
-			goto bad;
-		}
 		if (dp->v_type != VDIR) {
 			error = ENOTDIR;
+			goto bad;
+		}
+		if (cnp->cn_nameiop != LOOKUP) {
+			error = EISDIR;
 			goto bad;
 		}
 		if (wantparent) {
@@ -336,7 +334,7 @@ dirloop:
 		}
 		ndp->ni_vp = dp;
 		if (!(cnp->cn_flags & (LOCKPARENT | LOCKLEAF)))
-			VOP_UNLOCK(dp);
+			VOP_UNLOCK(dp, 0, p);
 		if (cnp->cn_flags & SAVESTART)
 			panic("lookup: SAVESTART");
 		return (0);
@@ -367,7 +365,7 @@ dirloop:
 			dp = dp->v_mount->mnt_vnodecovered;
 			vput(tdp);
 			VREF(dp);
-			VOP_LOCK(dp);
+			vn_lock(dp, LK_EXCLUSIVE | LK_RETRY, p);
 		}
 	}
 
@@ -376,8 +374,8 @@ dirloop:
 	 */
 unionlookup:
 	ndp->ni_dvp = dp;
-	error = VOP_LOOKUP(dp, &ndp->ni_vp, cnp);
-	if (error) {
+	ndp->ni_vp = NULL;
+	if (error == VOP_LOOKUP(dp, &ndp->ni_vp, cnp)) {
 #ifdef DIAGNOSTIC
 		if (ndp->ni_vp != NULL)
 			panic("leaf should be empty");
@@ -392,7 +390,7 @@ unionlookup:
 			dp = dp->v_mount->mnt_vnodecovered;
 			vput(tdp);
 			VREF(dp);
-			VOP_LOCK(dp);
+			vn_lock(dp, LK_EXCLUSIVE | LK_RETRY, p);
 			goto unionlookup;
 		}
 
@@ -402,7 +400,7 @@ unionlookup:
 		 * If creating and at end of pathname, then can consider
 		 * allowing file to be created.
 		 */
-		if (rdonly || (ndp->ni_dvp->v_mount->mnt_flag & MNT_RDONLY)) {
+		if (rdonly) {
 			error = EROFS;
 			goto bad;
 		}
@@ -434,30 +432,28 @@ unionlookup:
 
 	dp = ndp->ni_vp;
 	/*
+	 * Check to see if the vnode has been mounted on;
+	 * if so find the root of the mounted file system.
+	 */
+	while (dp->v_type == VDIR && (mp = dp->v_mountedhere) &&
+	       (cnp->cn_flags & NOCROSSMOUNT) == 0) {
+		if (vfs_busy(mp, 0, 0, p))
+			continue;
+		error = VFS_ROOT(mp, &tdp);
+		vfs_unbusy(mp, p);
+		if (error)
+			goto bad2;
+		vput(dp);
+		ndp->ni_vp = dp = tdp;
+	}
+
+	/*
 	 * Check for symbolic link
 	 */
 	if ((dp->v_type == VLNK) &&
 	    ((cnp->cn_flags & FOLLOW) || *ndp->ni_next == '/')) {
 		cnp->cn_flags |= ISSYMLINK;
 		return (0);
-	}
-
-	/*
-	 * Check to see if the vnode has been mounted on;
-	 * if so find the root of the mounted file system.
-	 */
-	while (dp->v_type == VDIR && (mp = dp->v_mountedhere) &&
-	       (cnp->cn_flags & NOCROSSMOUNT) == 0) {
-		if (mp->mnt_flag & MNT_MLOCK) {
-			mp->mnt_flag |= MNT_MWAIT;
-			(void) tsleep((caddr_t)mp, PVFS, "lookup", 0);
-			continue;
-		}
-		error = VFS_ROOT(dp->v_mountedhere, &tdp);
-		if (error)
-			goto bad2;
-		vput(dp);
-		ndp->ni_vp = dp = tdp;
 	}
 
 nextname:
@@ -475,19 +471,12 @@ nextname:
 		goto dirloop;
 	}
 	/*
-	 * Check for read-only file systems.
+	 * Disallow directory write attempts on read-only file systems.
 	 */
-	if (cnp->cn_nameiop == DELETE || cnp->cn_nameiop == RENAME) {
-		/*
-		 * Disallow directory write attempts on read-only
-		 * file systems.
-		 */
-		if (rdonly || (dp->v_mount->mnt_flag & MNT_RDONLY) ||
-		    (wantparent &&
-		     (ndp->ni_dvp->v_mount->mnt_flag & MNT_RDONLY))) {
-			error = EROFS;
-			goto bad2;
-		}
+	if (rdonly &&
+	    (cnp->cn_nameiop == DELETE || cnp->cn_nameiop == RENAME)) {
+		error = EROFS;
+		goto bad2;
 	}
 	if (cnp->cn_flags & SAVESTART) {
 		ndp->ni_startdir = ndp->ni_dvp;
@@ -496,12 +485,12 @@ nextname:
 	if (!wantparent)
 		vrele(ndp->ni_dvp);
 	if ((cnp->cn_flags & LOCKLEAF) == 0)
-		VOP_UNLOCK(dp);
+		VOP_UNLOCK(dp, 0, p);
 	return (0);
 
 bad2:
 	if ((cnp->cn_flags & LOCKPARENT) && *ndp->ni_next == '\0')
-		VOP_UNLOCK(ndp->ni_dvp);
+		VOP_UNLOCK(ndp->ni_dvp, 0, p);
 	vrele(ndp->ni_dvp);
 bad:
 	vput(dp);
@@ -518,7 +507,8 @@ relookup(dvp, vpp, cnp)
 	struct vnode *dvp, **vpp;
 	struct componentname *cnp;
 {
-	register struct vnode *dp = 0;	/* the directory we are searching */
+	struct proc *p = cnp->cn_proc;
+	struct vnode *dp = 0;		/* the directory we are searching */
 	int docache;			/* == 0 do not cache last component */
 	int wantparent;			/* 1 => wantparent or lockparent flag */
 	int rdonly;			/* lookup read-only flag bit */
@@ -539,7 +529,7 @@ relookup(dvp, vpp, cnp)
 	rdonly = cnp->cn_flags & RDONLY;
 	cnp->cn_flags &= ~ISSYMLINK;
 	dp = dvp;
-	VOP_LOCK(dp);
+	vn_lock(dp, LK_EXCLUSIVE | LK_RETRY, p);
 
 /* dirloop: */
 	/*
@@ -578,7 +568,7 @@ relookup(dvp, vpp, cnp)
 			goto bad;
 		}
 		if (!(cnp->cn_flags & LOCKLEAF))
-			VOP_UNLOCK(dp);
+			VOP_UNLOCK(dp, 0, p);
 		*vpp = dp;
 		if (cnp->cn_flags & SAVESTART)
 			panic("lookup: SAVESTART");
@@ -591,8 +581,7 @@ relookup(dvp, vpp, cnp)
 	/*
 	 * We now have a segment name to search for, and a directory to search.
 	 */
-	error = VOP_LOOKUP(dp, vpp, cnp);
-	if (error) {
+	if (error == VOP_LOOKUP(dp, vpp, cnp)) {
 #ifdef DIAGNOSTIC
 		if (*vpp != NULL)
 			panic("leaf should be empty");
@@ -603,7 +592,7 @@ relookup(dvp, vpp, cnp)
 		 * If creating and at end of pathname, then can consider
 		 * allowing file to be created.
 		 */
-		if (rdonly || (dvp->v_mount->mnt_flag & MNT_RDONLY)) {
+		if (rdonly) {
 			error = EROFS;
 			goto bad;
 		}
@@ -628,19 +617,12 @@ relookup(dvp, vpp, cnp)
 #endif
 
 	/*
-	 * Check for read-only file systems.
+	 * Disallow directory write attempts on read-only file systems.
 	 */
-	if (cnp->cn_nameiop == DELETE || cnp->cn_nameiop == RENAME) {
-		/*
-		 * Disallow directory write attempts on read-only
-		 * file systems.
-		 */
-		if (rdonly || (dp->v_mount->mnt_flag & MNT_RDONLY) ||
-		    (wantparent &&
-		     (dvp->v_mount->mnt_flag & MNT_RDONLY))) {
-			error = EROFS;
-			goto bad2;
-		}
+	if (rdonly &&
+	    (cnp->cn_nameiop == DELETE || cnp->cn_nameiop == RENAME)) {
+		error = EROFS;
+		goto bad2;
 	}
 	/* ASSERT(dvp == ndp->ni_startdir) */
 	if (cnp->cn_flags & SAVESTART)
@@ -649,12 +631,12 @@ relookup(dvp, vpp, cnp)
 	if (!wantparent)
 		vrele(dvp);
 	if ((cnp->cn_flags & LOCKLEAF) == 0)
-		VOP_UNLOCK(dp);
+		VOP_UNLOCK(dp, 0, p);
 	return (0);
 
 bad2:
 	if ((cnp->cn_flags & LOCKPARENT) && (cnp->cn_flags & ISLASTCN))
-		VOP_UNLOCK(dvp);
+		VOP_UNLOCK(dvp, 0, p);
 	vrele(dvp);
 bad:
 	vput(dp);

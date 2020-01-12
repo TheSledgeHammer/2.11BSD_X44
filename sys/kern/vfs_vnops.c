@@ -35,8 +35,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vfs_vnops.c	8.2 (Berkeley) 1/21/94
- * $Id: vfs_vnops.c,v 1.5 1994/10/02 17:35:40 phk Exp $
+ *	@(#)vfs_vnops.c	8.14 (Berkeley) 6/15/95
  */
 
 #include <sys/param.h>
@@ -61,7 +60,7 @@ struct 	fileops vnops =
  * Common code for vnode open operations.
  * Check permissions, and call the VOP_OPEN or VOP_CREATE routine.
  */
-int
+
 vn_open(ndp, fmode, cmode)
 	register struct nameidata *ndp;
 	int fmode, cmode;
@@ -78,17 +77,17 @@ vn_open(ndp, fmode, cmode)
 		ndp->ni_cnd.cn_flags = LOCKPARENT | LOCKLEAF;
 		if ((fmode & O_EXCL) == 0)
 			ndp->ni_cnd.cn_flags |= FOLLOW;
-		error = namei(ndp);
-		if (error)
+		if (error == namei(ndp))
 			return (error);
 		if (ndp->ni_vp == NULL) {
 			VATTR_NULL(vap);
 			vap->va_type = VREG;
 			vap->va_mode = cmode;
-			LEASE_CHECK(ndp->ni_dvp, p, cred, LEASE_WRITE);
-			error = VOP_CREATE(ndp->ni_dvp, &ndp->ni_vp,
-			    &ndp->ni_cnd, vap);
-			if (error) 
+			if (fmode & O_EXCL)
+				vap->va_vaflags |= VA_EXCLUSIVE;
+			VOP_LEASE(ndp->ni_dvp, p, cred, LEASE_WRITE);
+			if (error == VOP_CREATE(ndp->ni_dvp, &ndp->ni_vp,
+			    &ndp->ni_cnd, vap))
 				return (error);
 			fmode &= ~O_TRUNC;
 			vp = ndp->ni_vp;
@@ -109,8 +108,7 @@ vn_open(ndp, fmode, cmode)
 	} else {
 		ndp->ni_cnd.cn_nameiop = LOOKUP;
 		ndp->ni_cnd.cn_flags = FOLLOW | LOCKLEAF;
-		error = namei(ndp);
-		if (error)
+		if (error == namei(ndp))
 			return (error);
 		vp = ndp->ni_vp;
 	}
@@ -120,8 +118,7 @@ vn_open(ndp, fmode, cmode)
 	}
 	if ((fmode & O_CREAT) == 0) {
 		if (fmode & FREAD) {
-			error = VOP_ACCESS(vp, VREAD, cred, p);
-			if (error)
+			if (error == VOP_ACCESS(vp, VREAD, cred, p))
 				goto bad;
 		}
 		if (fmode & (FWRITE | O_TRUNC)) {
@@ -129,53 +126,24 @@ vn_open(ndp, fmode, cmode)
 				error = EISDIR;
 				goto bad;
 			}
-			error = vn_writechk(vp);
-			if(error)
-				goto bad;
-		        error = VOP_ACCESS(vp, VWRITE, cred, p);
-			if(error)
+			if ((error = vn_writechk(vp)) ||
+			    (error = VOP_ACCESS(vp, VWRITE, cred, p)))
 				goto bad;
 		}
 	}
 	if (fmode & O_TRUNC) {
-		VOP_UNLOCK(vp);				/* XXX */
-		LEASE_CHECK(vp, p, cred, LEASE_WRITE);
-		VOP_LOCK(vp);				/* XXX */
+		VOP_UNLOCK(vp, 0, p);				/* XXX */
+		VOP_LEASE(vp, p, cred, LEASE_WRITE);
+		vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);	/* XXX */
 		VATTR_NULL(vap);
 		vap->va_size = 0;
-		error = VOP_SETATTR(vp, vap, cred, p);
-		if (error)
+		if (error == VOP_SETATTR(vp, vap, cred, p))
 			goto bad;
 	}
-	error = VOP_OPEN(vp, fmode, cred, p);
-	if (error)
+	if (error == VOP_OPEN(vp, fmode, cred, p))
 		goto bad;
 	if (fmode & FWRITE)
 		vp->v_writecount++;
-	/*
-	 * this is here for VMIO support
-	 */
-	if( vp->v_type == VREG) {
-		vm_object_t object;
-		vm_pager_t pager;
-		if( (vp->v_flag & VVMIO) == 0) {
-			pager = (vm_pager_t) vnode_pager_alloc(vp, 0, 0, 0);
-			object = (vm_object_t) vp->v_vmdata;
-			if( object->pager != pager)
-				panic("ufs_open: pager/object mismatch");
-			(void) vm_object_lookup( pager);
-			pager_cache( object, TRUE);
-			vp->v_flag |= VVMIO;
-		} else {
-			object = (vm_object_t) vp->v_vmdata;
-			if( !object)
-				panic("ufs_open: VMIO object missing");
-			pager = object->pager;
-			if( !pager)
-				panic("ufs_open: VMIO pager missing");
-			(void) vm_object_lookup( pager);
-		}
-	}
 	return (0);
 bad:
 	vput(vp);
@@ -184,27 +152,12 @@ bad:
 
 /*
  * Check for write permissions on the specified vnode.
- * The read-only status of the file system is checked.
- * Also, prototype text segments cannot be written.
+ * Prototype text segments cannot be written.
  */
-int
 vn_writechk(vp)
 	register struct vnode *vp;
 {
 
-	/*
-	 * Disallow write attempts on read-only file systems;
-	 * unless the file is a socket or a block or character
-	 * device resident on the file system.
-	 */
-	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
-		switch (vp->v_type) {
-		case VREG: case VDIR: case VLNK:
-			return (EROFS);
-		default:
-			break;
-		}
-	}
 	/*
 	 * If there's shared text associated with
 	 * the vnode, try to free it up once.  If
@@ -218,7 +171,6 @@ vn_writechk(vp)
 /*
  * Vnode close call
  */
-int
 vn_close(vp, flags, cred, p)
 	register struct vnode *vp;
 	int flags;
@@ -230,15 +182,6 @@ vn_close(vp, flags, cred, p)
 	if (flags & FWRITE)
 		vp->v_writecount--;
 	error = VOP_CLOSE(vp, flags, cred, p);
-	/*
-	 * this code is here for VMIO support, will eventually
-	 * be in vfs code.
-	 */
-	if (vp->v_flag & VVMIO) {
-		if( vp->v_vmdata == NULL)
-			panic("ufs_close: VMIO object missing");
-		vm_object_deallocate( (vm_object_t) vp->v_vmdata);
-	}
 	vrele(vp);
 	return (error);
 }
@@ -246,7 +189,6 @@ vn_close(vp, flags, cred, p)
 /*
  * Package up an I/O request on a vnode into a uio and do it.
  */
-int
 vn_rdwr(rw, vp, base, len, offset, segflg, ioflg, cred, aresid, p)
 	enum uio_rw rw;
 	struct vnode *vp;
@@ -264,7 +206,7 @@ vn_rdwr(rw, vp, base, len, offset, segflg, ioflg, cred, aresid, p)
 	int error;
 
 	if ((ioflg & IO_NODELOCKED) == 0)
-		VOP_LOCK(vp);
+		vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	auio.uio_iov = &aiov;
 	auio.uio_iovcnt = 1;
 	aiov.iov_base = base;
@@ -285,51 +227,54 @@ vn_rdwr(rw, vp, base, len, offset, segflg, ioflg, cred, aresid, p)
 		if (auio.uio_resid && error == 0)
 			error = EIO;
 	if ((ioflg & IO_NODELOCKED) == 0)
-		VOP_UNLOCK(vp);
+		VOP_UNLOCK(vp, 0, p);
 	return (error);
 }
 
 /*
  * File table vnode read routine.
  */
-int
 vn_read(fp, uio, cred)
 	struct file *fp;
 	struct uio *uio;
 	struct ucred *cred;
 {
-	register struct vnode *vp = (struct vnode *)fp->f_data;
+	struct vnode *vp = (struct vnode *)fp->f_data;
+	struct proc *p = uio->uio_procp;
 	int count, error;
 
-	LEASE_CHECK(vp, uio->uio_procp, cred, LEASE_READ);
-	VOP_LOCK(vp);
+	VOP_LEASE(vp, p, cred, LEASE_READ);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	uio->uio_offset = fp->f_offset;
 	count = uio->uio_resid;
 	error = VOP_READ(vp, uio, (fp->f_flag & FNONBLOCK) ? IO_NDELAY : 0,
 		cred);
 	fp->f_offset += count - uio->uio_resid;
-	VOP_UNLOCK(vp);
+	VOP_UNLOCK(vp, 0, p);
 	return (error);
 }
 
 /*
  * File table vnode write routine.
  */
-int
 vn_write(fp, uio, cred)
 	struct file *fp;
 	struct uio *uio;
 	struct ucred *cred;
 {
-	register struct vnode *vp = (struct vnode *)fp->f_data;
-	int count, error, ioflag = 0;
+	struct vnode *vp = (struct vnode *)fp->f_data;
+	struct proc *p = uio->uio_procp;
+	int count, error, ioflag = IO_UNIT;
 
 	if (vp->v_type == VREG && (fp->f_flag & O_APPEND))
 		ioflag |= IO_APPEND;
 	if (fp->f_flag & FNONBLOCK)
 		ioflag |= IO_NDELAY;
-	LEASE_CHECK(vp, uio->uio_procp, cred, LEASE_WRITE);
-	VOP_LOCK(vp);
+	if ((fp->f_flag & O_FSYNC) ||
+	    (vp->v_mount && (vp->v_mount->mnt_flag & MNT_SYNCHRONOUS)))
+		ioflag |= IO_SYNC;
+	VOP_LEASE(vp, p, cred, LEASE_WRITE);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	uio->uio_offset = fp->f_offset;
 	count = uio->uio_resid;
 	error = VOP_WRITE(vp, uio, ioflag, cred);
@@ -337,14 +282,13 @@ vn_write(fp, uio, cred)
 		fp->f_offset = uio->uio_offset;
 	else
 		fp->f_offset += count - uio->uio_resid;
-	VOP_UNLOCK(vp);
+	VOP_UNLOCK(vp, 0, p);
 	return (error);
 }
 
 /*
  * File table vnode stat routine.
  */
-int
 vn_stat(vp, sb, p)
 	struct vnode *vp;
 	register struct stat *sb;
@@ -397,7 +341,7 @@ vn_stat(vp, sb, p)
 	sb->st_rdev = vap->va_rdev;
 	sb->st_size = vap->va_size;
 	sb->st_atime = vap->va_atime;
-	sb->st_mtime= vap->va_mtime;
+	sb->st_mtime = vap->va_mtime;
 	sb->st_ctime = vap->va_ctime;
 	sb->st_blksize = vap->va_blocksize;
 	sb->st_flags = vap->va_flags;
@@ -409,24 +353,22 @@ vn_stat(vp, sb, p)
 /*
  * File table vnode ioctl routine.
  */
-int
 vn_ioctl(fp, com, data, p)
 	struct file *fp;
-	int com;
+	u_long com;
 	caddr_t data;
 	struct proc *p;
 {
 	register struct vnode *vp = ((struct vnode *)fp->f_data);
 	struct vattr vattr;
 	int error;
-	
+
 	switch (vp->v_type) {
 
 	case VREG:
 	case VDIR:
 		if (com == FIONREAD) {
-			error = VOP_GETATTR(vp, &vattr, p->p_ucred, p);
-			if (error)
+			if (error == VOP_GETATTR(vp, &vattr, p->p_ucred, p))
 				return (error);
 			*(int *)data = vattr.va_size - fp->f_offset;
 			return (0);
@@ -434,6 +376,7 @@ vn_ioctl(fp, com, data, p)
 		if (com == FIONBIO || com == FIOASYNC)	/* XXX */
 			return (0);			/* XXX */
 		/* fall into ... */
+
 	default:
 		return (ENOTTY);
 
@@ -442,15 +385,8 @@ vn_ioctl(fp, com, data, p)
 	case VBLK:
 		error = VOP_IOCTL(vp, com, data, fp->f_flag, p->p_ucred, p);
 		if (error == 0 && com == TIOCSCTTY) {
-
-			/* Do nothing if reassigning same control tty */
-			if (p->p_session->s_ttyvp == vp)
-				return (0);
-
-			/* Get rid of reference to old control tty */
 			if (p->p_session->s_ttyvp)
 				vrele(p->p_session->s_ttyvp);
-
 			p->p_session->s_ttyvp = vp;
 			VREF(vp);
 		}
@@ -461,7 +397,6 @@ vn_ioctl(fp, com, data, p)
 /*
  * File table vnode select routine.
  */
-int
 vn_select(fp, which, p)
 	struct file *fp;
 	int which;
@@ -473,14 +408,42 @@ vn_select(fp, which, p)
 }
 
 /*
- * File table vnode close routine.
+ * Check that the vnode is still valid, and if so
+ * acquire requested lock.
  */
 int
+vn_lock(vp, flags, p)
+	struct vnode *vp;
+	int flags;
+	struct proc *p;
+{
+	int error;
+
+	do {
+		if ((flags & LK_INTERLOCK) == 0)
+			simple_lock(&vp->v_interlock);
+		if (vp->v_flag & VXLOCK) {
+			vp->v_flag |= VXWANT;
+			simple_unlock(&vp->v_interlock);
+			tsleep((caddr_t)vp, PINOD, "vn_lock", 0);
+			error = ENOENT;
+		} else {
+			error = VOP_LOCK(vp, flags | LK_INTERLOCK, p);
+			if (error == 0)
+				return (error);
+		}
+		flags &= ~LK_INTERLOCK;
+	} while (flags & LK_RETRY);
+	return (error);
+}
+
+/*
+ * File table vnode close routine.
+ */
 vn_closefile(fp, p)
 	struct file *fp;
 	struct proc *p;
 {
 
-	return (vn_close(((struct vnode *)fp->f_data), fp->f_flag,
-		fp->f_cred, p));
+	return (vn_close(((struct vnode *)fp->f_data), fp->f_flag, fp->f_cred, p));
 }

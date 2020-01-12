@@ -35,14 +35,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vfs_init.c	8.3 (Berkeley) 1/4/94
- * $Id: vfs_init.c,v 1.8 1994/10/08 22:33:42 phk Exp $
+ *	@(#)vfs_init.c	8.5 (Berkeley) 5/11/95
  */
 
 
 #include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
 #include <sys/mount.h>
 #include <sys/time.h>
 #include <sys/vnode.h>
@@ -51,10 +48,7 @@
 #include <sys/ucred.h>
 #include <sys/buf.h>
 #include <sys/errno.h>
-#include <sys/map.h>
-#include <sys/proc.h>
-#include <vm/vm.h>
-#include <sys/sysctl.h>
+#include <test/mmu/malloc.h>
 
 /*
  * Sigh, such primitive tools are these...
@@ -65,15 +59,8 @@
 #define DODEBUG(A)
 #endif
 
-struct vfsconf void_vfsconf;
-
-extern struct linker_set vfs_opv_descs_;
-#define vfs_opv_descs ((struct vnodeopv_desc **)vfs_opv_descs_.ls_items)
-
-extern struct linker_set vfs_set;
-struct vfsops *vfssw[MOUNT_MAXTYPE + 1];
-struct vfsconf *vfsconf[MOUNT_MAXTYPE + 1];
-
+extern struct vnodeopv_desc *vfs_opv_descs[];
+				/* a list of lists of vnodeops defns */
 extern struct vnodeop_desc *vfs_op_descs[];
 				/* and the operations they perform */
 /*
@@ -84,7 +71,7 @@ extern struct vnodeop_desc *vfs_op_descs[];
  */
 int vfs_opv_numops;
 
-typedef int (*PFI)(); /* the standard Pointer to a Function returning an Int */
+typedef (*PFI)();   /* the standard Pointer to a Function returning an Int */
 
 /*
  * A miscellaneous routine.
@@ -114,7 +101,7 @@ vn_default_error()
  * that is a(whole)nother story.) This is a feature.
  */
 void
-vfs_opv_init(struct vnodeopv_desc **them)
+vfs_opv_init()
 {
 	int i, j, k;
 	int (***opv_desc_vector_p)();
@@ -124,23 +111,23 @@ vfs_opv_init(struct vnodeopv_desc **them)
 	/*
 	 * Allocate the dynamic vectors and fill them in.
 	 */
-	for (i=0; them[i]; i++) {
-		opv_desc_vector_p = them[i]->opv_desc_vector_p;
+	for (i=0; vfs_opv_descs[i]; i++) {
+		opv_desc_vector_p = vfs_opv_descs[i]->opv_desc_vector_p;
 		/*
 		 * Allocate and init the vector, if it needs it.
 		 * Also handle backwards compatibility.
 		 */
 		if (*opv_desc_vector_p == NULL) {
 			/* XXX - shouldn't be M_VNODE */
-			//MALLOC(*opv_desc_vector_p, PFI*, vfs_opv_numops*sizeof(PFI), M_VNODE, M_WAITOK);
-			rmalloc(*opv_desc_vector_p, vfs_opv_numops*sizeof(PFI));
+			MALLOC(*opv_desc_vector_p, PFI*,
+			       vfs_opv_numops*sizeof(PFI), M_VNODE, M_WAITOK);
 			bzero (*opv_desc_vector_p, vfs_opv_numops*sizeof(PFI));
 			DODEBUG(printf("vector at %x allocated\n",
 			    opv_desc_vector_p));
 		}
 		opv_desc_vector = *opv_desc_vector_p;
-		for (j=0; them[i]->opv_desc_ops[j].opve_op; j++) {
-			opve_descp = &(them[i]->opv_desc_ops[j]);
+		for (j=0; vfs_opv_descs[i]->opv_desc_ops[j].opve_op; j++) {
+			opve_descp = &(vfs_opv_descs[i]->opv_desc_ops[j]);
 
 			/*
 			 * Sanity check:  is this operation listed
@@ -179,8 +166,8 @@ vfs_opv_init(struct vnodeopv_desc **them)
 	 * with their default.  (Sigh, an O(n^3) algorithm.  I
 	 * could make it better, but that'd be work, and n is small.)
 	 */
-	for (i = 0; them[i]; i++) {
-		opv_desc_vector = *(them[i]->opv_desc_vector_p);
+	for (i = 0; vfs_opv_descs[i]; i++) {
+		opv_desc_vector = *(vfs_opv_descs[i]->opv_desc_vector_p);
 		/*
 		 * Force every operations vector to have a default routine.
 		 */
@@ -224,33 +211,16 @@ vfs_op_init()
  */
 extern struct vnodeops dead_vnodeops;
 extern struct vnodeops spec_vnodeops;
-extern void vclean();
 struct vattr va_null;
 
 /*
  * Initialize the vnode structures and initialize each file system type.
  */
-void
 vfsinit()
 {
-	struct vfsops **vfsp;
-	struct vfsconf **vfc;
-	int i;
+	struct vfsconf *vfsp;
+	int i, maxtypenum;
 
-	/*
-	 * Initialize the VFS switch table
-	 */
-	for(i = 0; i < MOUNT_MAXTYPE + 1; i++) {
-		vfsconf[i] = &void_vfsconf;
-	}
-
-	vfc = (struct vfsconf **)vfs_set.ls_items;
-	while(*vfc) {
-		vfssw[(**vfc).vfc_index] = (**vfc).vfc_vfsops;
-		vfsconf[(**vfc).vfc_index] = *vfc;
-		vfc++;
-	}
-	
 	/*
 	 * Initialize the vnode table
 	 */
@@ -263,86 +233,19 @@ vfsinit()
 	 * Build vnode operation vectors.
 	 */
 	vfs_op_init();
-	vfs_opv_init(vfs_opv_descs);   /* finish the job */
+	vfs_opv_init();   /* finish the job */
 	/*
 	 * Initialize each file system type.
 	 */
 	vattr_null(&va_null);
-	for (vfsp = &vfssw[0]; vfsp <= &vfssw[MOUNT_MAXTYPE]; vfsp++) {
-		if (*vfsp == NULL)
-			continue;
-		(*(*vfsp)->vfs_init)();
+	maxtypenum = 0;
+	for (vfsp = vfsconf, i = 1; i <= maxvfsconf; i++, vfsp++) {
+		if (i < maxvfsconf)
+			vfsp->vfc_next = vfsp + 1;
+		if (maxtypenum <= vfsp->vfc_typenum)
+			maxtypenum = vfsp->vfc_typenum + 1;
+		(*vfsp->vfc_vfsops->vfs_init)(vfsp);
 	}
+	/* next vfc_typenum to be used */
+	maxvfsconf = maxtypenum;
 }
-
-/*
- * kernel related system variables.
- */
-int
-fs_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
-	int *name;
-	u_int namelen;
-	void *oldp;
-	size_t *oldlenp;
-	void *newp;
-	size_t newlen;
-	struct proc *p;
-{
-	int i;
-	int error;
-	int buflen = *oldlenp;
-	caddr_t where = oldp, start = oldp;
-
-	switch (name[0]) {
-	case FS_VFSCONF:
-		if (namelen != 1) return ENOTDIR;
-
-		if (oldp == NULL) {
-			*oldlenp = (MOUNT_MAXTYPE+1) * sizeof(struct vfsconf);
-			return 0;
-		}
-		if (newp) {
-			return EINVAL;
-		}
-
-		for(i = 0; i < MOUNT_MAXTYPE + 1; i++) {
-			if(buflen < sizeof *vfsconf[i]) {
-				*oldlenp = where - start;
-				return ENOMEM;
-			}
-
-			error = copyout(vfsconf[i], where, sizeof *vfsconf[i]);
-			if(error)
-				return error;
-			where += sizeof *vfsconf[i];
-			buflen -= sizeof *vfsconf[i];
-		}
-		*oldlenp = where - start;
-		return 0;
-		
-	default:
-		if(namelen < 1) return EINVAL;
-
-		i = name[0];
-
-		if(i <= MOUNT_MAXTYPE
-		   && vfssw[i]
-		   && vfssw[i]->vfs_sysctl) {
-			return vfssw[i]->vfs_sysctl(name + 1, namelen - 1,
-						    oldp, oldlenp,
-						    newp, newlen, p);
-		}
-
-		return (EOPNOTSUPP);
-	}
-	/* NOTREACHED */
-}
-
-/*
- * This goop is here to support a loadable NFS module... grumble...
- */
-void (*lease_check) __P((struct vnode *, struct proc *, struct ucred *, int))
-     = 0;
-void (*lease_updatetime) __P((int))
-     = 0;
-

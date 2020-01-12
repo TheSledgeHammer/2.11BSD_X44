@@ -30,36 +30,28 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vfs_cluster.c	8.7 (Berkeley) 2/13/94
- * $Id: vfs_cluster.c,v 1.5 1994/09/24 18:31:45 davidg Exp $
+ *	@(#)vfs_cluster.c	8.10 (Berkeley) 3/28/95
  */
 
 #include <sys/param.h>
-#include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/buf.h>
 #include <sys/vnode.h>
 #include <sys/mount.h>
 #include <sys/trace.h>
-#include <sys/map.h>
+#include <test/mmu/malloc.h>
 #include <sys/resourcevar.h>
-
-#ifdef DEBUG
-#include <vm/vm.h>
-#include <sys/sysctl.h>
-int doreallocblks = 0;
-struct ctldebug debug13 = { "doreallocblks", &doreallocblks };
-#else
-/* XXX for cluster_write */
-#define doreallocblks 0
-#endif
+#include <libkern/libkern.h>
 
 /*
  * Local declarations
  */
-struct buf *cluster_newbuf __P((struct vnode *, struct buf *, long, daddr_t, daddr_t, long, int));
-struct buf *cluster_rbuild __P((struct vnode *, u_quad_t, struct buf *, daddr_t, daddr_t, long, int, long));
-void cluster_wbuild __P((struct vnode *, struct buf *, long, daddr_t, int, daddr_t));
+struct buf *cluster_newbuf __P((struct vnode *, struct buf *, long, daddr_t,
+	    daddr_t, long, int));
+struct buf *cluster_rbuild __P((struct vnode *, u_quad_t, struct buf *,
+	    daddr_t, daddr_t, long, int, long));
+void	    cluster_wbuild __P((struct vnode *, struct buf *, long,
+	    daddr_t, int, daddr_t));
 struct cluster_save *cluster_collectbufs __P((struct vnode *, struct buf *));
 
 #ifdef DIAGNOSTIC
@@ -104,7 +96,6 @@ int	doclusterraz = 0;
  *	rbp is the read-ahead block.
  *	If either is NULL, then you don't have to do the I/O.
  */
-int
 cluster_read(vp, filesize, lblkno, size, cred, bpp)
 	struct vnode *vp;
 	u_quad_t filesize;
@@ -134,7 +125,7 @@ cluster_read(vp, filesize, lblkno, size, cred, bpp)
 		trace(TR_BREADHIT, pack(vp, size), lblkno);
 		flags |= B_ASYNC;
 		ioblkno = lblkno + (vp->v_ralen ? vp->v_ralen : 1);
-		alreadyincore = (int)incore(vp, ioblkno);
+		alreadyincore = incore(vp, ioblkno) != NULL;
 		bp = NULL;
 	} else {
 		/* Block wasn't in cache, case 3, 4, 5. */
@@ -142,7 +133,7 @@ cluster_read(vp, filesize, lblkno, size, cred, bpp)
 		bp->b_flags |= B_READ;
 		ioblkno = lblkno;
 		alreadyincore = 0;
-		curproc->p_stats->p_ksru.ru_inblock++;		/* XXX */
+		curproc->p_stats->p_ru.ru_inblock++;		/* XXX */
 	}
 	/*
 	 * XXX
@@ -201,10 +192,12 @@ cluster_read(vp, filesize, lblkno, size, cred, bpp)
 			     ioblkno, NULL, &blkno, &num_ra)) || blkno == -1)
 				goto skip_readahead;
 			/*
-			 * Adjust readahead as above
+			 * Adjust readahead as above.
+			 * Don't check alreadyincore, we know it is 0 from
+			 * the previous conditional.
 			 */
 			if (num_ra) {
-				if (!alreadyincore && ioblkno <= vp->v_maxra)
+				if (ioblkno <= vp->v_maxra)
 					vp->v_ralen = max(vp->v_ralen >> 1, 1);
 				else if (num_ra > vp->v_ralen &&
 					 lblkno != vp->v_lastr)
@@ -234,7 +227,7 @@ cluster_read(vp, filesize, lblkno, size, cred, bpp)
 		else if (rbp) {			/* case 2, 5 */
 			trace(TR_BREADMISSRA,
 			    pack(vp, (num_ra + 1) * size), ioblkno);
-			curproc->p_stats->p_ksru.ru_inblock++;	/* XXX */
+			curproc->p_stats->p_ru.ru_inblock++;	/* XXX */
 		}
 	}
 
@@ -307,8 +300,8 @@ cluster_rbuild(vp, filesize, bp, lbn, blkno, size, run, flags)
 	if (bp->b_flags & (B_DONE | B_DELWRI))
 		return (bp);
 
-	//b_save = malloc(sizeof(struct buf *) * run + sizeof(struct cluster_save), M_SEGMENT, M_WAITOK);
-	b_save = rmalloc(b_save, sizeof(struct buf *) * run + sizeof(struct cluster_save));
+	b_save = malloc(sizeof(struct buf *) * run + sizeof(struct cluster_save),
+	    M_SEGMENT, M_WAITOK);
 	b_save->bs_bufsize = b_save->bs_bcount = size;
 	b_save->bs_nchildren = 0;
 	b_save->bs_children = (struct buf **)(b_save + 1);
@@ -317,18 +310,12 @@ cluster_rbuild(vp, filesize, bp, lbn, blkno, size, run, flags)
 
 	inc = btodb(size);
 	for (bn = blkno + inc, i = 1; i <= run; ++i, bn += inc) {
-		if (incore(vp, lbn + i)) {
-			if (i == 1) {
-				bp->b_saveaddr = b_save->bs_saveaddr;
-				bp->b_flags &= ~B_CALL;
-				bp->b_iodone = NULL;
-				allocbuf(bp, size);
-				//free(b_save, M_SEGMENT);
-				rmfree(b_save, sizeof(b_save));
-			} else
-				allocbuf(bp, size * i);
+		/*
+		 * A component of the cluster is already in core,
+		 * terminate the cluster early.
+		 */
+		if (incore(vp, lbn + i))
 			break;
-		}
 		tbp = getblk(vp, lbn + i, 0, 0, 0);
 		/*
 		 * getblk may return some memory in the buffer if there were
@@ -341,8 +328,18 @@ cluster_rbuild(vp, filesize, bp, lbn, blkno, size, run, flags)
 		if (tbp->b_bufsize != 0) {
 			caddr_t bdata = (char *)tbp->b_data;
 
-			if (tbp->b_bufsize + size > MAXBSIZE)
-				panic("cluster_rbuild: too much memory");
+			/*
+			 * No room in the buffer to add another page,
+			 * terminate the cluster early.
+			 */
+			if (tbp->b_bufsize + size > MAXBSIZE) {
+#ifdef DIAGNOSTIC
+				if (tbp->b_bufsize != MAXBSIZE)
+					panic("cluster_rbuild: too much memory");
+#endif
+				brelse(tbp);
+				break;
+			}
 			if (tbp->b_bufsize > size) {
 				/*
 				 * XXX if the source and destination regions
@@ -363,6 +360,20 @@ cluster_rbuild(vp, filesize, bp, lbn, blkno, size, run, flags)
 		tbp->b_flags |= flags | B_READ | B_ASYNC;
 		++b_save->bs_nchildren;
 		b_save->bs_children[i - 1] = tbp;
+	}
+	/*
+	 * The cluster may have been terminated early, adjust the cluster
+	 * buffer size accordingly.  If no cluster could be formed,
+	 * deallocate the cluster save info.
+	 */
+	if (i <= run) {
+		if (i == 1) {
+			bp->b_saveaddr = b_save->bs_saveaddr;
+			bp->b_flags &= ~B_CALL;
+			bp->b_iodone = NULL;
+			free(b_save, M_SEGMENT);
+		}
+		allocbuf(bp, size * i);
 	}
 	return(bp);
 }
@@ -449,8 +460,7 @@ cluster_callback(bp)
 	}
 	bp->b_bcount = bsize;
 	bp->b_iodone = NULL;
-	//free(b_save, M_SEGMENT);
-	rmfree(b_save, sizeof(b_save));
+	free(b_save, M_SEGMENT);
 	if (bp->b_flags & B_ASYNC)
 		brelse(bp);
 	else {
@@ -499,8 +509,7 @@ cluster_write(bp, filesize)
 			 * Otherwise try reallocating to make it sequential.
 			 */
 			cursize = vp->v_lastw - vp->v_cstart + 1;
-			if (!doreallocblks ||
-			    (lbn + 1) * bp->b_bcount != filesize ||
+			if ((lbn + 1) * bp->b_bcount != filesize ||
 			    lbn != vp->v_lastw + 1 || vp->v_clen <= cursize) {
 				cluster_wbuild(vp, NULL, bp->b_bcount,
 				    vp->v_cstart, cursize, lbn);
@@ -518,8 +527,7 @@ cluster_write(bp, filesize)
 					for (bpp = buflist->bs_children;
 					     bpp < endbp; bpp++)
 						brelse(*bpp);
-					//free(buflist, M_SEGMENT);
-					rmfree(buflist, sizeof(buflist));
+					free(buflist, M_SEGMENT);
 					cluster_wbuild(vp, NULL, bp->b_bcount,
 					    vp->v_cstart, cursize, lbn);
 				} else {
@@ -529,8 +537,7 @@ cluster_write(bp, filesize)
 					for (bpp = buflist->bs_children;
 					     bpp <= endbp; bpp++)
 						bdwrite(*bpp);
-					//free(buflist, M_SEGMENT);
-					rmfree(buflist, sizeof(buflist));
+					free(buflist, M_SEGMENT);
 					vp->v_lastw = lbn;
 					vp->v_lasta = bp->b_blkno;
 					return;
@@ -644,8 +651,8 @@ redo:
 	}
 
 	--len;
-	//b_save = malloc(sizeof(struct buf *) * len + sizeof(struct cluster_save), M_SEGMENT, M_WAITOK);
-	b_save = rmalloc(b_save, sizeof(struct buf *) * len + sizeof(struct cluster_save));
+	b_save = malloc(sizeof(struct buf *) * len + sizeof(struct cluster_save),
+	    M_SEGMENT, M_WAITOK);
 	b_save->bs_bcount = bp->b_bcount;
 	b_save->bs_bufsize = bp->b_bufsize;
 	b_save->bs_nchildren = 0;
@@ -684,10 +691,10 @@ redo:
 
 		/* Move memory from children to parent */
 		if (tbp->b_blkno != (bp->b_blkno + btodb(bp->b_bufsize))) {
-			printf("Clustered Block: %lu addr %lx bufsize: %ld\n",
-			    (u_long)bp->b_lblkno, bp->b_blkno, bp->b_bufsize);
-			printf("Child Block: %lu addr: %lx\n", 
-			    (u_long)tbp->b_lblkno, tbp->b_blkno);
+			printf("Clustered Block: %d addr %x bufsize: %d\n",
+			    bp->b_lblkno, bp->b_blkno, bp->b_bufsize);
+			printf("Child Block: %d addr: %x\n", tbp->b_lblkno,
+			    tbp->b_blkno);
 			panic("Clustered write to wrong blocks");
 		}
 
@@ -697,7 +704,7 @@ redo:
 
 		tbp->b_bufsize -= size;
 		tbp->b_flags &= ~(B_READ | B_DONE | B_ERROR | B_DELWRI);
-		tbp->b_flags |= B_ASYNC;
+		tbp->b_flags |= (B_ASYNC | B_AGE);
 		s = splbio();
 		reassignbuf(tbp, tbp->b_vp);		/* put on clean list */
 		++tbp->b_vp->v_numoutput;
@@ -712,8 +719,7 @@ redo:
 		bp->b_saveaddr = b_save->bs_saveaddr;
 		bp->b_flags &= ~B_CALL;
 		bp->b_iodone = NULL;
-		//free(b_save, M_SEGMENT);
-		rmfree(b_save, sizeof(b_save));
+		free(b_save, M_SEGMENT);
 	}
 	bawrite(bp);
 	if (i < len) {
@@ -737,8 +743,8 @@ cluster_collectbufs(vp, last_bp)
 	int i, len;
 
 	len = vp->v_lastw - vp->v_cstart + 1;
-	//buflist = malloc(sizeof(struct buf *) * (len + 1) + sizeof(*buflist), M_SEGMENT, M_WAITOK);
-	buflist = rmalloc(buflist, sizeof(struct buf *) * (len + 1) + sizeof(*buflist));
+	buflist = malloc(sizeof(struct buf *) * (len + 1) + sizeof(*buflist),
+	    M_SEGMENT, M_WAITOK);
 	buflist->bs_nchildren = 0;
 	buflist->bs_children = (struct buf **)(buflist + 1);
 	for (lbn = vp->v_cstart, i = 0; i < len; lbn++, i++)
