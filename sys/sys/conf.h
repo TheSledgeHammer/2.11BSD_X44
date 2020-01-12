@@ -8,6 +8,19 @@
 #ifndef _SYS_CONF_H_
 #define _SYS_CONF_H_
 
+struct buf;
+struct proc;
+struct tty;
+struct uio;
+struct vnode;
+
+/*
+ * Types for d_type.
+ */
+#define	D_TAPE	1
+#define	D_DISK	2
+#define	D_TTY	3
+
 /*
  * Declaration of block device
  * switch. Each entry (row) is

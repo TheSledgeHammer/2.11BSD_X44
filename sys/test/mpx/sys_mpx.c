@@ -1,6 +1,11 @@
-//
-// Created by marti on 13/11/2019.
-//
+/*
+ * sys_mpx.c
+ *
+ *  Created on: 19 Dec 2019
+ *      Author: marti
+ *
+ * Equivalent to mx2.c
+ */
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
@@ -17,11 +22,12 @@
 struct fileops mpxops =
         { mpx_read, mpx_write, mpx_ioctl, mpx_select, mpx_close };
 
-struct chan	chans[NCHANS];
-struct schan schans[NPORTS];
+struct mpx_chan chans[NCHANS];
+struct mpx_group *groups[NGROUPS];
+struct mpx_schan schans[NPORTS];
 
 int	mpxline;
-struct chan *xcp();
+struct mpx_chan *xcp();
 dev_t mpxdev = -1;
 char mcdebugs[NDEBUGS];
 
@@ -111,3 +117,53 @@ mpx_close(fp, p)
     fp->f_data = 0;
     return (error);
 }
+
+/* Included in mx2.c */
+short	cmask[16]	={
+	01,	02,	04,
+	010,	020,	040,
+	0100,	0200,	0400,
+	01000,	02000,	04000,
+	010000,	020000,	040000, 0100000
+};
+
+struct mpx_group *
+getmpx(dev)
+	dev_t dev;
+{
+	register d;
+
+	d = minor(dev);
+	if (d >= NGROUPS) {
+		u->u_error = ENXIO;
+		return(NULL);
+	}
+	return(groups[d]);
+}
+
+char mxnmbuf[NMSIZE];
+int	 nmsize;
+
+void
+mpxname(cp)
+	register struct mpx_chan *cp;
+{
+	register char *np;
+	register c;
+
+	np = mxnmbuf;
+	u.u_dirp = (caddr_t)u->u_arg[0];
+
+	while (np < &mxnmbuf[NMSIZE]) {
+		c = uchar();
+		if (c <= 0)
+			break;
+		*np++ = c;
+	}
+	*np++ = '\0';
+	nmsize = np - mxnmbuf;
+
+	cp->c_flags |= NMBUF;
+}
+
+

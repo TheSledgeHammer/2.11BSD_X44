@@ -63,7 +63,7 @@ struct	direct {
  * Definitions for library routines operating on directories.
  */
 typedef struct _dirdesc {
-	int	dd_fd;
+	int		dd_fd;
 	long	dd_loc;
 	long	dd_size;
 	char	dd_buf[DIRBLKSIZ];

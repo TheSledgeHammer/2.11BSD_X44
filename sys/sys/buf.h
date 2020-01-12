@@ -182,10 +182,8 @@ extern TAILQ_HEAD(swqueue, buf) bswlist;
 __BEGIN_DECLS
 void	bufinit __P((void));
 void	bremfree __P((struct buf *));
-int		bread __P((struct vnode *, daddr_t, int,
-	    struct ucred *, struct buf **));
-int		breadn __P((struct vnode *, daddr_t, int, daddr_t *, int *, int,
-	    struct ucred *, struct buf **));
+int		bread __P((struct vnode *, daddr_t, int, struct ucred *, struct buf **));
+int		breadn __P((struct vnode *, daddr_t, int, daddr_t *, int *, int, struct ucred *, struct buf **));
 int		bwrite __P((struct buf *));
 void	bdwrite __P((struct buf *));
 void	bawrite __P((struct buf *));
@@ -200,8 +198,7 @@ int		biowait __P((struct buf *));
 void	biodone __P((struct buf *));
 
 void	cluster_callback __P((struct buf *));
-int		cluster_read __P((struct vnode *, u_quad_t, daddr_t, long,
-	    struct ucred *, struct buf **));
+int		cluster_read __P((struct vnode *, u_quad_t, daddr_t, long, struct ucred *, struct buf **));
 void	cluster_write __P((struct buf *, u_quad_t));
 u_int	minphys __P((struct buf *));
 void	vwakeup __P((struct buf *));

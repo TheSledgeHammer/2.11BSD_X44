@@ -8,6 +8,7 @@
 #include <sys/proc.h>
 #include <sys/tty.h>
 #include <sys/inode.h>
+#include <sys/vnode.h>
 #include <sys/file.h>
 #include <sys/conf.h>
 #include <sys/buf.h>
@@ -17,8 +18,8 @@
 /*
  * multiplexor driver
  */
-struct	chan	chans[NCHANS];
-struct	group	*groups[NGROUPS];
+struct	mpx_chan	chans[NCHANS];
+struct	mpx_group	*groups[NGROUPS];
 int	mpxline;
 
 short	cmask[16]	={
@@ -30,7 +31,7 @@ short	cmask[16]	={
 };
 
 #define	IOMOVE	iomove
-struct chan *xcp(),*addch(),*nextcp();
+struct mpx_chan *xcp(),*addch(),*nextcp();
 
 #define	HIQ	100
 #define	LOQ	20
@@ -38,7 +39,7 @@ struct chan *xcp(),*addch(),*nextcp();
 
 char mcdebugs[NDEBUGS];
 
-struct group *
+struct mpx_group *
 getmpx(dev)
 dev_t dev;
 {
@@ -56,9 +57,9 @@ dev_t dev;
 /*ARGSUSED*/
 mxopen(dev, flag)
 {
-	register struct group *gp;
+	register struct mpx_group *gp;
 	register struct file *fp;
-	register struct chan *cp;
+	register struct mpx_chan *cp;
 	int	msg;
 
 	if ((gp=getmpx(dev)) == NULL) {
@@ -73,7 +74,7 @@ mxopen(dev, flag)
 		u->u_error = ENXIO;
 		return;
 	}
-	if ((cp=addch(gp->g_inode,0)) == NULL) {
+	if ((cp=addch(gp->g_vnode, 0)) == NULL) {
 		u->u_error = ENXIO;
 		return;
 	}
@@ -112,7 +113,7 @@ char	mxnmbuf[NMSIZE];
 int	nmsize;
 
 mpxname(cp)
-register struct chan *cp;
+register struct mpx_chan *cp;
 {
 	register char *np;
 	register c;
@@ -137,9 +138,9 @@ mxclose(dev, flag, fp)
 dev_t	dev;
 register struct file *fp;
 {
-register struct group *gp;
+register struct mpx_group *gp;
 register struct inode *ip;
-register struct chan *cp = { fp->f_un.f_chan };
+register struct mpx_chan *cp = { fp->f_un.f_chan };
 int	i, fmp;
 
 	fmp = flag&FMP;
@@ -216,8 +217,8 @@ mxread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	register struct group *gp;
-	register struct chan *cp;
+	register struct mpx_group *gp;
+	register struct mpx_chan *cp;
 	register esc;
 	struct rh h;
 	caddr_t	base;
@@ -317,9 +318,9 @@ mxwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-register struct chan *cp;
+register struct mpx_chan *cp;
 struct	wh h;
-struct group *gp;
+struct mpx_group *gp;
 int	ucount, esc, fmp, burpcount;
 caddr_t	ubase, hbase;
 
@@ -405,7 +406,7 @@ caddr_t	ubase, hbase;
  * yet in.
  */
 mcread(cp, uio)
-register struct chan *cp;
+register struct mpx_chan *cp;
 	struct uio *uio;
 {
 register struct clist *q;
@@ -431,7 +432,7 @@ register char *np;
 
 caddr_t
 mcwrite(cp, uio)
-register struct chan *cp;
+register struct mpx_chan *cp;
 	struct	uio *uio;
 {
 register struct clist *q;
@@ -458,7 +459,7 @@ int	s;
  * between user and non-multiplexed channel.
  */
 msread(fmp, cp, uio)
-register struct chan *cp;
+register struct mpx_chan *cp;
 	struct	uio *uio;
 {
 register struct clist *q;
@@ -498,7 +499,7 @@ out:
 
 
 mswrite(fmp, cp, uio)
-register struct chan *cp;
+register struct mpx_chan *cp;
 	struct	uio *uio;
 {
 	register struct clist *q;
@@ -565,7 +566,7 @@ char cbuf[HIQ];
 
 
 mxrstrt(cp, q, b)
-register struct chan *cp;
+register struct mpx_chan *cp;
 register struct clist *q;
 register b;
 {
@@ -590,7 +591,7 @@ int s;
  * to wakeup output sleeper.
  */
 mcstart(cp, q)
-register struct chan *cp;
+register struct mpx_chan *cp;
 register caddr_t q;
 {
 
@@ -603,7 +604,7 @@ register caddr_t q;
 
 
 mxwcontrol(cp)
-register struct chan *cp;
+register struct mpx_chan *cp;
 {
 short cmd;
 struct sgttyb vec;
@@ -657,7 +658,7 @@ int	s;
 mxioctl(dev, cmd, addr, flag)
 caddr_t addr;
 {
-struct group *gp;
+struct mpx_group *gp;
 int fmp;
 struct file *fp;
 struct {
@@ -702,7 +703,7 @@ struct {
 
 
 chdrain(cp)
-register struct chan *cp;
+register struct mpx_chan *cp;
 {
 register struct tty *tp;
 int wflag;
@@ -727,7 +728,7 @@ int wflag;
 }
 
 chwake(cp)
-register struct chan *cp;
+register struct mpx_chan *cp;
 {
 register char *p;
 
@@ -741,9 +742,9 @@ register char *p;
 
 
 chfree(cp)
-register struct chan *cp;
+register struct mpx_chan *cp;
 {
-register struct group *gp;
+register struct mpx_group *gp;
 register i;
 
 	gp = cp->c_group;
@@ -767,8 +768,8 @@ register struct clist *q;
 }
 
 
-wflush(cp,q)
-register struct chan *cp;
+wflush(cp, q)
+register struct mpx_chan *cp;
 register struct clist *q;
 {
 register s;
@@ -785,8 +786,8 @@ register s;
 }
 
 
-scontrol(cp,event,value)
-register struct chan *cp;
+scontrol(cp, event, value)
+register struct mpx_chan *cp;
 short event,value;
 {
 register struct clist *q;
@@ -801,10 +802,8 @@ int s;
 	splx(s);
 }
 
-
-
 sioctl(cp, vec, cc)
-register struct chan *cp;
+register struct mpx_chan *cp;
 char *vec;
 {
 register s;
@@ -835,10 +834,10 @@ register struct clist *q;
 }
 
 sdata(cp)
-struct chan *cp;
+struct mpx_chan *cp;
 {
-	register struct group *gp = (struct group *)cp;
-	register struct group *ngp;
+	register struct mpx_group *gp = (struct group *)cp;
+	register struct mpx_group *ngp;
 	register int	s;
 
 	ngp = gp->g_group;
@@ -857,9 +856,9 @@ struct chan *cp;
 
 
 
-struct chan *
+struct mpx_chan *
 xcp(gp, x)
-register struct group *gp;
+register struct mpx_group *gp;
 register short x;
 {
 	register int i;
@@ -877,10 +876,10 @@ register short x;
 }
 
 cpx(cp)
-register struct chan *cp;
+register struct mpx_chan *cp;
 {
 	register x;
-	register struct group *gp;
+	register struct mpx_group *gp;
 
 	x = (-1<<4) + cp->c_index;
 	gp = cp->c_group;
@@ -893,11 +892,11 @@ register struct chan *cp;
 }
 
 
-struct chan *
+struct mpx_chan *
 nextcp(gp)
-register struct group *gp;
+register struct mpx_group *gp;
 {
-	register struct group *lgp, *ngp;
+	register struct mpx_group *lgp, *ngp;
 
 	do {
 		while ((gp->g_datq & cmask[gp->g_rot]) == 0) {
@@ -922,11 +921,12 @@ register struct group *gp;
 
 
 msgenab(cp)
-register struct chan *cp;
+register struct mpx_chan *cp;
 {
-	register struct group *gp;
+	register struct mpx_group *gp;
 
 	for(gp=cp->c_group;gp;gp=gp->g_group)
-		if(gp->g_state & ENAMSG)return(1);
+		if(gp->g_state & ENAMSG)
+			return(1);
 	return(0);
 }

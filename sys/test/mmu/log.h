@@ -1,10 +1,3 @@
-/*
- * log.h
- *
- *  Created on: 6 Jan 2020
- *      Author: marti
- */
-
 #ifndef SYS_LOG_H_
 #define SYS_LOG_H_
 

@@ -1,18 +1,17 @@
 /* UNIX V7 source code: see /COPYRIGHT or www.tuhs.org for details. */
 #include <sys/file.h>
 
-struct mpxbuf {
-	u_short		cnt;
-};
+#define	NINDEX		15
 
 struct mpx {
-	struct chan 	*mpx_ch;	/* pointer to mpx channel */
+	struct chan *mpx_ch;	/* pointer to mpx channel */
 
-	struct proc 	*mpx_p; 	/* pointer to proc; */
-	struct protosw 	*mpx_proto;
-	struct mpxbuf 	*mpx_buf;
-	short			mpx_pgrp;
-	short			mpx_state;
+	struct proc *mpx_p; 	/* pointer to proc; */
+	struct protosw *mpx_proto;
+	struct mpxbuf *mpx_buf;
+	short mpx_pgrp;
+	short mpx_state;
+	struct mpx_group *g_group;
 
 	struct rh { 		/* header returned on read of mpx */
 		int 	index;
@@ -28,40 +27,45 @@ struct mpx {
 	} wh;
 };
 
+struct mpxbuf {
+	u_short		cnt;
+};
+
 struct	mx_args {
 	char 	*m_name;
 	int		m_cmd;
 	int		m_arg[3];
 };
 
-//typedef struct mpx mpx;
-typedef struct chan mpx_chan;
-typedef struct schan mpx_schan;
-
+struct mpx_group {
+	short				g_state;
+	char				g_index;
+	char				g_rot;
+	struct mpx_group 	*g_group;
+	struct vnode		*g_vnode;
+	struct vattr		*g_vattr;
+	struct file			*g_file;
+	short				g_rotmask;
+	short				g_datq;
+	struct chan 		*g_chans[NINDEX];
+};
 
 //#ifdef KERNEL
 /*
  * internal structure for channel
  */
-
-struct chan {
-	//struct 	chan 		*next; 	/* Next Channel */
-	//struct 	chan 		*prev; 	/* Prev Channel */
-	
-	struct 	proc 		*p;		/* pointer to proc */
-
-	short	c_flags;
-	char	c_index;
-	char	c_line;
-	struct	group		*c_group;  /* Old Inode Reference */
-#define c_groups c_u->u_groups
-	struct	user		*c_u;
-	struct	file		*c_fy;
-	struct	tty			*c_ttyp;
-	struct	clist		c_ctlx;
-	int					c_pgrp;
-	struct	tty			*c_ottyp;
-	char	            c_oline;
+struct mpx_chan {
+	short c_flags;
+	char c_index;
+	char c_line;
+	struct	mpx_group *c_group;
+	struct	user *c_u;
+	struct	file *c_fy;
+	struct	tty	 *c_ttyp;
+	struct	clist c_ctlx;
+	int c_pgrp;
+	struct	tty *c_ottyp;
+	char c_oline;
 	union {
 		struct	clist	datq;
 	} cx;
@@ -69,22 +73,20 @@ struct chan {
 		struct	clist	datq;
 		struct	chan	*c_chan;
 	} cy;
-	struct	clist		c_ctly;
+	struct	clist c_ctly;
 };
 
 
-struct schan {
-	struct 	schan 		*next; 	/* Next schan */
-	struct 	schan 		*prev; 	/* Prev schan */
+struct mpx_schan {
 	struct 	proc 		*p;		/* pointer to proc */
-
-	short	c_flags;
-	char	c_index;
-	char	c_line;
+	struct	mpx_group 	*c_group;
+	short				c_flags;
+	char				c_index;
+	char				c_line;
 	struct	file		*c_fy;
 	struct	tty			*c_ttyp;
 	struct	clist		c_ctlx;
-	int		c_pgrp;
+	int					c_pgrp;
 };
 
 /*
@@ -165,10 +167,16 @@ struct schan {
 #define MPX_ASYNC 	0x004
 #define	MPX_NBIO	0x008	/* non-blocking ops */
 
-
-
 /* put in stat.h*/
 #define S_IFCHAN  0200000; /* multiplexor */
+
+/* 3BSD: user.h, inode.h, file.h, stat.h */
+caddr_t	u_dirp;			/* pathname pointer */
+#define	IFMPC	0030000	/* multiplexed char special */
+#define	IFMPB	0070000	/* multiplexed block special */
+#define	FMPX	010
+#define	S_IFMPC	0030000	/* multiplexed char special */
+#define	S_IFMPB	0070000	/* multiplexed block special */
 
 //#ifdef  KERNEL
 int mpx_read __P((struct file *fp, struct uio *uio, struct ucred *cred));
@@ -180,4 +188,4 @@ int mpx_close __P((struct file *fp, struct proc *p));
 int	mpxclose __P((struct mpx *mpx));
 int mpxsend __P((struct mpx *mpx, struct mbuf *addr, struct uio *uio, struct mbuf *top, struct mbuf *control, int flags));
 int mpxreceive __P((struct mpx *mpx, struct mbuf **paddr, struct uio *uio, struct mbuf **mp0, struct mbuf **controlp, int *flagsp));
-#endif /* KERNEL */
+//#endif /* KERNEL */

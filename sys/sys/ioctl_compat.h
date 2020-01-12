@@ -16,29 +16,29 @@
 #ifndef	_TTY_COMPAT_OBSOLETE
 #define	_TTY_COMPAT_OBSOLETE
 
-#define		LCASE		0x0	/* (obsolete) place holder */
-#define		NLDELAY		0x0	/* \n delay */
-#define			NL0	0x0
-#define			NL1	0x0	/* tty 37 */
-#define			NL2	0x0	/* vt05 */
-#define			NL3	0x0
-#define		TBDELAY		0x0	/* horizontal tab delay */
-#define			TAB0	0x0
-#define			TAB1	0x0	/* tty 37 */
-#define			TAB2	0x0
-#define		CRDELAY		0x0	/* \r delay */
-#define			CR0	0x0
-#define			CR1	0x0	/* tn 300 */
-#define			CR2	0x0	/* tty 37 */
-#define			CR3	0x0	/* concept 100 */
-#define		VTDELAY		0x0	/* vertical tab delay */
-#define			FF0	0x0
-#define			FF1	0x0	/* tty 37 */
-#define		BSDELAY		0x0	/* \b delay */
-#define			BS0	0x0
-#define			BS1	0x0
+#define		LCASE		0x0	 /* (obsolete) place holder */
+#define		NLDELAY		0x0	 /* \n delay */
+#define		NL0			0x0
+#define		NL1			0x0	 /* tty 37 */
+#define		NL2			0x0	 /* vt05 */
+#define		NL3			0x0
+#define		TBDELAY		0x0	 /* horizontal tab delay */
+#define		TAB0		0x0
+#define		TAB1		0x0	 /* tty 37 */
+#define		TAB2		0x0
+#define		CRDELAY		0x0	 /* \r delay */
+#define		CR0			0x0
+#define		CR1			0x0	 /* tn 300 */
+#define		CR2			0x0	 /* tty 37 */
+#define		CR3			0x0	 /* concept 100 */
+#define		VTDELAY		0x0	 /* vertical tab delay */
+#define		FF0			0x0
+#define		FF1			0x0	 /* tty 37 */
+#define		BSDELAY		0x0	 /* \b delay */
+#define		BS0			0x0
+#define		BS1			0x0
 #define		ALLDELAY	(NLDELAY|TBDELAY|CRDELAY|VTDELAY|BSDELAY)
-#define		TILDE		0x0	/* (obsolete) place holder */
+#define		TILDE		0x0	 /* (obsolete) place holder */
 #define		LTILDE		((int)TILDE>>16)) /* (obsolete) place holder */
 
 #define		L001000		0x0

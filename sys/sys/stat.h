@@ -38,19 +38,19 @@ struct	stat
 #define st_mtime st_mtime.ts_sec
 #define st_ctime st_ctime.ts_sec
 
-#define	S_IFMT	0170000		/* type of file */
-#define	S_IFDIR	0040000		/* directory */
-#define	S_IFCHR	0020000		/* character special */
-#define	S_IFBLK	0060000		/* block special */
-#define	S_IFREG	0100000		/* regular */
-#define	S_IFLNK	0120000		/* symbolic link */
-#define	S_IFSOCK 0140000	/* socket */
-#define	S_ISUID	0004000		/* set user id on execution */
-#define	S_ISGID	0002000		/* set group id on execution */
-#define	S_ISVTX	0001000		/* save swapped text even after use */
-#define	S_IREAD	0000400		/* read permission, owner */
-#define	S_IWRITE 0000200	/* write permission, owner */
-#define	S_IEXEC	0000100		/* execute/search permission, owner */
+#define	S_IFMT	 0170000		/* type of file */
+#define	S_IFDIR	 0040000		/* directory */
+#define	S_IFCHR	 0020000		/* character special */
+#define	S_IFBLK	 0060000		/* block special */
+#define	S_IFREG	 0100000		/* regular */
+#define	S_IFLNK	 0120000		/* symbolic link */
+#define	S_IFSOCK 0140000		/* socket */
+#define	S_ISUID	 0004000		/* set user id on execution */
+#define	S_ISGID	 0002000		/* set group id on execution */
+#define	S_ISVTX	 0001000		/* save swapped text even after use */
+#define	S_IREAD	 0000400		/* read permission, owner */
+#define	S_IWRITE 0000200		/* write permission, owner */
+#define	S_IEXEC	 0000100		/* execute/search permission, owner */
 
 /*
  * Definitions of flags in mode that are 4.4 compatible.
@@ -89,17 +89,17 @@ struct	stat
  *
  * Super-user and owner changeable flags.
  */
-#define	UF_SETTABLE	0x00ff		/* mask of owner changeable flags */
-#define	UF_NODUMP	0x0001		/* do not dump file */
+#define	UF_SETTABLE		0x00ff		/* mask of owner changeable flags */
+#define	UF_NODUMP		0x0001		/* do not dump file */
 #define	UF_IMMUTABLE	0x0002		/* file may not be changed */
-#define	UF_APPEND	0x0004		/* writes to file may only append */
+#define	UF_APPEND		0x0004		/* writes to file may only append */
 /*
  * Super-user changeable flags.
  */
-#define	SF_SETTABLE	0xff00		/* mask of superuser changeable flags */
-#define	SF_ARCHIVED	0x0100		/* file is archived */
+#define	SF_SETTABLE		0xff00		/* mask of superuser changeable flags */
+#define	SF_ARCHIVED		0x0100		/* file is archived */
 #define	SF_IMMUTABLE	0x0200		/* file may not be changed */
-#define	SF_APPEND	0x0400		/* writes to file may only append */
+#define	SF_APPEND		0x0400		/* writes to file may only append */
 
 #ifdef KERNEL
 /*

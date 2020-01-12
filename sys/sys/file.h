@@ -74,7 +74,6 @@ struct	file *falloc();
 	} \
 }
 
-//#define	DTYPE_INODE		1	/* file */
 #define	DTYPE_VNODE		1	/* file */
 #define	DTYPE_SOCKET	2	/* communications endpoint */
 #define	DTYPE_PIPE		3	/* I don't want to hear it, okay? */

@@ -25,7 +25,7 @@
 #define	SBLOCK			((daddr_t)(BBLOCK + BBSIZE / DEV_BSIZE))
 
 #define	SUPERB			((daddr_t)1)	/* block number of the super block */
-#define	ROOTINO			((ino_t)2)	/* i number of all roots */
+#define	ROOTINO			((ino_t)2)		/* i number of all roots */
 #define	LOSTFOUNDINO	(ROOTINO + 1)
 
 #define	NICINOD		100		/* number of superblock inodes */
@@ -68,7 +68,7 @@ struct	fs
 };
 
 struct	fblk {
-	short	df_nfree;		/* number of addresses in df_free */
+	short	df_nfree;			/* number of addresses in df_free */
 	daddr_t	df_free[NICFREE];	/* free block list */
 };
 

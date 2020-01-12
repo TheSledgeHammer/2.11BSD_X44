@@ -16,8 +16,7 @@
  */
 typedef	u_short comp_t;
 
-struct	acct
-{
+struct acct {
 	char	ac_comm[10];	/* Accounting command name */
 	comp_t	ac_utime;		/* Accounting user time */
 	comp_t	ac_stime;		/* Accounting system time */
@@ -45,11 +44,15 @@ struct	acct
 #define AHZ 64
 
 #ifndef	KERNEL
-#define	_PATH_ACCTD	"/usr/libexec/acctd"
-#define	_PATH_ACCTFILE "/usr/adm/acct"
-#define	_PATH_ACCTDPID "/var/run/acctd.pid"
-#define	_PATH_ACCTDCF "/etc/acctd.cf"
-#define	_PATH_DEVALOG "/dev/acctlog"
+struct vnode	*acctp;
+
+int	acct_process __P((struct proc *p));
+
+#define	_PATH_ACCTD		"/usr/libexec/acctd"
+#define	_PATH_ACCTFILE	"/usr/adm/acct"
+#define	_PATH_ACCTDPID 	"/var/run/acctd.pid"
+#define	_PATH_ACCTDCF 	"/etc/acctd.cf"
+#define	_PATH_DEVALOG 	"/dev/acctlog"
 
 #endif
 
