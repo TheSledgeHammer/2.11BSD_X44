@@ -234,3 +234,6 @@ exec_aout_setup_stack(elp)
 
 	return 0;
 }
+
+static const struct execsw aout_execsw = { exec_aout_linker, "a.out" };
+TEXT_SET(execsw_set, aout_execsw);

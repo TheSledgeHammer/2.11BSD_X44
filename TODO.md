@@ -2,7 +2,6 @@ TODO:
 
 Kern:
 - kern_clock.c (check a few functions/pointers exist)
-- kern_descrip.c (check a few functions/pointers exist)
 - kern_exit.c (proc[])
 - kern_fork.c (swapout(rpp, X_DONTFREE, X_OLDSIZE, X_OLDSIZE))
 - kern_sysctl.c (inode_sysctl, vm_sysctl)

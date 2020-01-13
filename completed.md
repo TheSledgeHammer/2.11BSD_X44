@@ -30,8 +30,6 @@ Kernel: List of Complete C Files: (Ready for complilation)
 - uipc_socket2.c
 - uipc_usrreq.c
 
-UIPC:
-
 VFS: (References to Memory need adjusting: Otherwise complete)
 - vfs_bio.c
 - vfs_cache.c

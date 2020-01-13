@@ -40,7 +40,7 @@ exec_mmap_setup(elp, addr, size, prot, maxprot, flags, handle, offset)
 		ex_map->em_handle = handle;
 		ex_map->em_offset = offset;
 
-		elp->el_ex_map = ex_map;
+		elp->el_ex_map = ex_map; /* copy exec_linker map to exec_mmap */
 }
 
 int
@@ -55,7 +55,7 @@ exec_mmap_to_vmspace(elp)
 	/* copy in arguments and/or environment from old process */
 	error = exec_extract_strings(elp);
 	if(error) {
-		return error;
+		return (error);
 	}
 
 	/* Destroy old process VM and create a new one (with a new stack) */
@@ -78,8 +78,8 @@ exec_mmap_to_vmspace(elp)
 	vmspace->vm_taddr = (char *) elp->el_taddr;
 	vmspace->vm_daddr = (char *) elp->el_daddr;
 	vmspace->vm_ssize = btoc(elp->el_ssize);
-	vmspace->vm_maxsaddr = (char *)elp->el_maxsaddr;
 	vmspace->vm_minsaddr = (char *)elp->el_minsaddr;
+	vmspace->vm_maxsaddr = (char *)elp->el_maxsaddr;
 
 	/* Fill in image_params */
 	elp->el_interpreted = 0;

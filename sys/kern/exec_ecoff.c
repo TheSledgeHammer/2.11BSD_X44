@@ -32,7 +32,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/user.h>
@@ -199,3 +198,6 @@ exec_ecoff_setup_stack(elp)
 
 	return (0);
 }
+
+static const struct execsw ecoff_execsw = { exec_ecoff_linker, "ECOFF" };
+TEXT_SET(execsw_set, ecoff_execsw);

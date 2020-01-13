@@ -11,14 +11,13 @@
 #include <sys/proc.h>
 #include <sys/file.h>
 #include <sys/systm.h>
-//#include <sys/inode.h>
+#include <sys/vnode.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/conf.h>
-#ifdef INET
+
 #include <sys/socket.h>
 #include <sys/socketvar.h>
-#endif
 #include <sys/syslog.h>
 
 /*
@@ -41,11 +40,16 @@ dup()
 		int	i;
 	} *uap = (struct a *) u->u_ap;
 	register struct file *fp;
-	register int j;
+	register int j, fd, error;
 
 	if (uap->i &~ 077) { uap->i &= 077; dup2(); return; }	/* XXX */
 
-	GETF(fp, uap->i);
+	if ((unsigned)uap->i >= NOFILE || (fp = u->u_ofile[uap->i]) == NULL)
+		u->u_error = EBADF;
+		return;
+	if (error == ufalloc(0, &fd))
+		u->u_error = error;
+		return;
 	j = ufalloc(0);
 	if (j < 0)
 		return;
@@ -178,12 +182,10 @@ fgetown(fp, valuep)
 {
 	register int error;
 
-#ifdef INET
 	if (fp->f_type == DTYPE_SOCKET) {
 		*valuep = mfsd(&fp->f_socket->so_pgrp);
 		return (0);
 	}
-#endif
 	error = fioctl(fp, (u_int)TIOCGPGRP, (caddr_t)valuep);
 	*valuep = -*valuep;
 	return (error);
@@ -194,13 +196,10 @@ fsetown(fp, value)
 	register struct file *fp;
 	int value;
 {
-
-#ifdef INET
 	if (fp->f_type == DTYPE_SOCKET) {
 		mtsd(&fp->f_socket->so_pgrp, value);
 		return (0);
 	}
-#endif
 	if (value > 0) {
 		register struct proc *p = pfind(value);
 		if (p == 0)
@@ -251,25 +250,20 @@ fstat()
 		return;
 	switch (fp->f_type) {
 
-	case DTYPE_PIPE:
+	//case DTYPE_PIPE:
 	case DTYPE_VNODE:
-		u->u_error = ino_stat((struct inode *)fp->f_data, &ub);
-		if (fp->f_type == DTYPE_PIPE)
-			ub.st_size -= fp->f_offset;
+		u->u_error = vn_stat((struct vnode *)fp->f_data, &ub);
 		break;
 
-#ifdef INET
 	case DTYPE_SOCKET:
-		u.u_error = SOO_STAT(fp->f_socket, &ub);
+		u->u_error = soo_stat((struct socket *)fp->f_socket, &ub);
 		break;
-#endif
 	default:
 		u->u_error = EINVAL;
 		break;
 	}
 	if (u->u_error == 0)
-		u->u_error = copyout((caddr_t)&ub, (caddr_t)uap->sb,
-		    sizeof (ub));
+		u->u_error = copyout((caddr_t)&ub, (caddr_t)uap->sb, sizeof (ub));
 }
 
 /* copied, for supervisory networking, to sys_net.c */
@@ -365,8 +359,9 @@ closef(fp)
 		return(0);
 	}
 
-	if	((fp->f_flag & (FSHLOCK|FEXLOCK)) && fp->f_type == DTYPE_INODE)
-		ino_unlock(fp, FSHLOCK|FEXLOCK);
+	if (fp->f_count < 1) {
+		panic("closef: count < 1");
+	}
 	error = (*fp->f_ops->fo_close)(fp);
 	fp->f_count = 0;
 	return(error);
@@ -382,6 +377,7 @@ flock()
 		int	fd;
 		int	how;
 	} *uap = (struct a *)u->u_ap;
+
 	register struct file *fp;
 	int error;
 
@@ -392,7 +388,7 @@ flock()
 		return;
 	}
 	if (uap->how & LOCK_UN) {
-		ino_unlock(fp, FSHLOCK | FEXLOCK);
+		vn_unlock(fp, FSHLOCK | FEXLOCK);
 		return;
 	}
 	if ((uap->how & (LOCK_SH | LOCK_EX)) == 0)
@@ -403,8 +399,7 @@ flock()
 	if (((fp->f_flag & FEXLOCK) && (uap->how & LOCK_EX)) ||
 	    ((fp->f_flag & FSHLOCK) && (uap->how & LOCK_SH)))
 		return;
-	error = ino_lock(fp, uap->how);
-	//u->u_error = error;
+	error = vn_lock(fp, uap->how);
 }
 
 /*
@@ -420,7 +415,7 @@ int
 fdopen(dev, mode, type)
 	dev_t dev;
 	int mode, type;
-	{
+{
 
 	/*
 	 * XXX Kludge: set u.u_dupfd to contain the value of the
@@ -432,7 +427,7 @@ fdopen(dev, mode, type)
 	 */
 	u->u_dupfd = minor(dev);
 	return(ENODEV);
-	}
+}
 
 /*
  * Duplicate the specified descriptor to a free descriptor.
@@ -442,7 +437,7 @@ dupfdopen(indx, dfd, mode, error)
 	register int indx, dfd;
 	int mode;
 	int error;
-	{
+{
 	register register struct file *wfp;
 	struct file *fp;
 	

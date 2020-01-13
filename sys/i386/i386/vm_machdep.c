@@ -53,7 +53,7 @@
 #include <machine/cpu.h>
 
 #include <vm/vm.h>
-#include <vm/vm_kern.h>
+#include <vm/include/vm_kern.h>
 
 #ifdef BOUNCE_BUFFERS
 vm_map_t	io_map;

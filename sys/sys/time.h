@@ -29,11 +29,11 @@ struct timespec {
 };
 
 #define	TIMEVAL_TO_TIMESPEC(tv, ts) {					\
-	(ts)->ts_sec = (tv)->tv_sec;					\
+	(ts)->ts_sec = (tv)->tv_sec;						\
 	(ts)->ts_nsec = (tv)->tv_usec * 1000;				\
 }
 #define	TIMESPEC_TO_TIMEVAL(tv, ts) {					\
-	(tv)->tv_sec = (ts)->ts_sec;					\
+	(tv)->tv_sec = (ts)->ts_sec;						\
 	(tv)->tv_usec = (ts)->ts_nsec / 1000;				\
 }
 
@@ -103,7 +103,6 @@ void	timevalfix __P((struct timeval *));
 void	timevalsub __P((struct timeval *, struct timeval *));
 #endif /* !KERNEL */
 
-//#ifndef _POSIX_SOURCE
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
@@ -114,7 +113,7 @@ int	setitimer __P((int, const struct itimerval *, struct itimerval *));
 int	settimeofday __P((const struct timeval *, const struct timezone *));
 int	utimes __P((const char *, const struct timeval *));
 __END_DECLS
-//#endif /* !POSIX */
+
 
 
 
