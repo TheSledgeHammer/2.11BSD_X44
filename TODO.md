@@ -25,3 +25,12 @@ __LDPGSZ = machine/exec.h
 NetBSD:
 - efs: extent file system
 - puffs
+
+Possible Generic Header: 
+(2.11BSD):
+/* 2.11BSD: (file),v (version) (company) (date) */
+
+(Other BSD's):
+/* (Distro): (file),v (version) (company) (date) */
+
+/* Applicable Copyright Notice Here */
