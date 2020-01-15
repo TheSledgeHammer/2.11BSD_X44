@@ -12,20 +12,20 @@
  *	@(#)in.c	7.7.1 (2.11BSD) 1995/10/10
  */
 
-#include "param.h"
-#include "ioctl.h"
-#include "mbuf.h"
-#include "domain.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "user.h"
-#include "in_systm.h"
-#include "../net/if.h"
-#include "../net/route.h"
-#include "../net/af.h"
-#include "in.h"
-#include "in_var.h"
+#include <sys/param.h>
+#include <sys/ioctl.h>
+#include <sys/mbuf.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/user.h>
+#include <netinet/in_systm.h>
+#include <net/if.h>
+#include <net/route.h>
+#include <net/af.h>
+#include <netinet/in.h>
+#include <netinet/in_var.h>
 
 #ifdef INET
 inet_hash(sin, hp)
@@ -187,7 +187,7 @@ in_canforward(in)
 	return (1);
 }
 
-extern	struct ifnet loif;
+extern struct ifnet loif;
 
 /*
  * Generic internet control operations (ioctl's).
@@ -220,7 +220,7 @@ in_control(so, cmd, data, ifp)
 	case SIOCSIFNETMASK:
 	case SIOCSIFDSTADDR:
 		if (!suser())
-			return (u.u_error);
+			return (u->u_error);
 
 		if (ifp == 0)
 			panic("in_control");
@@ -228,14 +228,14 @@ in_control(so, cmd, data, ifp)
 			m = m_getclr(M_WAIT, MT_IFADDR);
 			if (m == (struct mbuf *)NULL)
 				return (ENOBUFS);
-			if (ia = in_ifaddr) {
+			if (ia == in_ifaddr) {
 				for ( ; ia->ia_next; ia = ia->ia_next)
 					;
 				ia->ia_next = mtod(m, struct in_ifaddr *);
 			} else
 				in_ifaddr = mtod(m, struct in_ifaddr *);
 			ia = mtod(m, struct in_ifaddr *);
-			if (ifa = ifp->if_addrlist) {
+			if (ifa == ifp->if_addrlist) {
 				for ( ; ifa->ifa_next; ifa = ifa->ifa_next)
 					;
 				ifa->ifa_next = (struct ifaddr *) ia;
@@ -248,7 +248,8 @@ in_control(so, cmd, data, ifp)
 
 	case SIOCSIFBRDADDR:
 		if (!suser())
-			return (u.u_error);
+			return (u->u_error);
+		break;
 		/* FALLTHROUGH */
 
 	default:

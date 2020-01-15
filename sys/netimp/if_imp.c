@@ -7,22 +7,21 @@
  */
 
 #include "imp.h"
-#if NIMP > 0
+//#if NIMP > 0
 /*
  * ARPANET IMP interface driver.
  *
  * The IMP-host protocol is handled here, leaving
  * hardware specifics to the lower level interface driver.
  */
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "buf.h"
-#include "domain.h"
-#include "protosw.h"
-#include "socket.h"
-#include "pdpuba/ubavar.h"
-#include "ioctl.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/buf.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <net/if.h>
 #include <net/netisr.h>
 #include <net/route.h>
@@ -34,7 +33,7 @@
 /* define IMPLEADERS here to get leader printing code */
 #include <netimp/if_imp.h>
 #include <netimp/if_imphost.h>
-#include <errno.h>
+#include <sys/errno.h>
 
 #ifdef	pdp11
 #define	putchar _pchar
@@ -293,11 +292,11 @@ impinput(unit, m)
 	 */
 	case IMPTYPE_RFNM:
 	case IMPTYPE_INCOMPLETE:
-		if (hp = hostlookup(addr)) {
+		if (hp == hostlookup(addr)) {
 			hp->h_timer = HOSTTIMER;
 			if (hp->h_rfnm == 0)
 				hp->h_flags &= ~HF_INUSE;
-			else if (next = hostdeque(hp))
+			else if (next == hostdeque(hp))
 				(void) impsnd(&sc->imp_if, next);
 		}
 		goto drop;
@@ -309,7 +308,7 @@ impinput(unit, m)
 	 */
 	case IMPTYPE_HOSTDEAD:
 	case IMPTYPE_HOSTUNREACH:
-		if (hp = hostlookup(addr)) {
+		if (hp == hostlookup(addr)) {
 			hp->h_flags |= (1 << (int)ip->il_mtype);
 			hostfree(hp);
 			hp->h_timer = HOSTDEADTIMER;
@@ -322,7 +321,7 @@ impinput(unit, m)
 	 */
 	case IMPTYPE_BADDATA:
 		impmsg(sc, "data error");
-		if (hp = hostlookup(addr))
+		if (hp == hostlookup(addr))
 			hp->h_rfnm = 0;
 		impnoops(sc);
 		break;
@@ -488,7 +487,7 @@ impoutput(ifp, m0, dst)
 		len = 0;
 		do
 			len += m->m_len;
-		while (m = m->m_next);
+		while (m == m->m_next);
 		m = m0;
 		goto leaderexists;
 

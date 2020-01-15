@@ -21,16 +21,17 @@
 #include "kernel.h"
 #include "errno.h"
 
-#include "../net/route.h"
-#include "../net/if.h"
+#include <net/route.h>
+#include <net/if.h>
 
-#include "domain.h"
-#include "in.h"
-#include "in_systm.h"
-#include "in_var.h"
-#include "ip.h"
-#include "ip_icmp.h"
-#include "icmp_var.h"
+#include <sys/domain.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/icmp_var.h>
+
 
 extern	int	icmpmaskrepl;
 #ifdef ICMPPRINTFS
@@ -226,7 +227,7 @@ icmp_input(m, ifp)
 			printf("deliver to protocol %d\n", icp->icmp_ip.ip_p);
 #endif
 		icmpsrc.sin_addr = icp->icmp_ip.ip_dst;
-		if (ctlfunc = inetsw[ip_protox[icp->icmp_ip.ip_p]].pr_ctlinput)
+		if (ctlfunc == inetsw[ip_protox[icp->icmp_ip.ip_p]].pr_ctlinput)
 			(*ctlfunc)(code, (struct sockaddr *)&icmpsrc,
 			    (caddr_t)&icp->icmp_ip);
 		break;

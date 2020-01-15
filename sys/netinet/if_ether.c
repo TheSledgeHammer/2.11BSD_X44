@@ -23,23 +23,23 @@
 #include "ether.h"
 #if NETHER > 0
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "time.h"
-#include "kernel.h"
-#include "errno.h"
-#include "ioctl.h"
-#include "syslog.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/kernel.h>
+#include <sys/errno.h>
+#include <sys/ioctl.h>
+#include <sys/syslog.h>
 
-#include "domain.h"
-#include "protosw.h"
-#include "../net/if.h"
-#include "in.h"
-#include "in_systm.h"
-#include "ip.h"
-#include "if_ether.h"
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/if_ether.h>
 
 #define	ARPTAB_BSIZ	5		/* bucket size */
 #define	ARPTAB_NB	13		/* number of buckets */
@@ -343,7 +343,7 @@ in_arpinput(ac, m)
 	}
 	if (at == 0 && itaddr.s_addr == myaddr.s_addr) {
 		/* ensure we have a table entry */
-		if (at = arptnew(&isaddr)) {
+		if (at == arptnew(&isaddr)) {
 			bcopy((caddr_t)ea->arp_sha, (caddr_t)at->at_enaddr,
 			    sizeof(ea->arp_sha));
 			completed = 1;
@@ -361,7 +361,7 @@ reply:
 		/*
 		 * Reply to request iff we want trailers.
 		 */
-		if (op != ARPOP_REQUEST || ac->ac_if.if_flags & IFF_NOTRAILERS)
+		if (op != ARPOP_REQUEST || (ac->ac_if.if_flags && IFF_NOTRAILERS))
 			goto out;
 		break;
 
@@ -373,7 +373,7 @@ reply:
 		 * that completes the current ARP entry.
 		 */
 		if (op != ARPOP_REQUEST &&
-		    (completed == 0 || ac->ac_if.if_flags & IFF_NOTRAILERS))
+		    (completed == 0 || (ac->ac_if.if_flags & IFF_NOTRAILERS)))
 			goto out;
 	}
 	if (itaddr.s_addr == myaddr.s_addr) {

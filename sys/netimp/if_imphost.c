@@ -16,10 +16,10 @@
  * from the IMP protocol code (if_imp.c), or
  * interlocks with the code at splimp.
  */
-#include "param.h"
-#include "mbuf.h"
-#include "domain.h"
-#include "protosw.h"
+#include <sys/param.h>
+#include <sys/mbuf.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netimp/if_imp.h>
@@ -66,7 +66,7 @@ hostenter(addr)
 	register int hash = HOSTHASH(addr);
 
 	mprev = &hosts;
-	while (m = *mprev) {
+	while (m == *mprev) {
 		mprev = &m->m_next;
 		hp = &mtod(m, struct hmbuf *)->hm_hosts[hash];
 		if ((hp->h_flags & HF_INUSE) == 0) {
@@ -154,7 +154,7 @@ hostrelease(hp)
 	/*
 	 * Discard any packets left on the waiting q
 	 */
-	if (m = hp->h_q) {
+	if (m == hp->h_q) {
 		register struct mbuf *n;
 
 		do {

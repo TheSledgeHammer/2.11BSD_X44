@@ -12,27 +12,27 @@
  *	@(#)ip_input.c	7.9.2 (2.11BSD GTE) 1995/10/09
  */
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "domain.h"
-#include "protosw.h"
-#include "socket.h"
-#include "errno.h"
-#include "time.h"
-#include "kernel.h"
+#include "sys/param.h"
+#include "sys/systm.h"
+#include "sys/mbuf.h"
+#include "sys/domain.h"
+#include "sys/protosw.h"
+#include "sys/socket.h"
+#include "sys/errno.h"
+#include "sys/time.h"
+#include "sys/kernel.h"
 
-#include "../net/if.h"
-#include "../net/route.h"
+#include <net/route.h>
+#include <net/if.h>
 
-#include "in.h"
-#include "in_pcb.h"
-#include "in_systm.h"
-#include "in_var.h"
-#include "ip.h"
-#include "ip_var.h"
-#include "ip_icmp.h"
-#include "tcp.h"
+#include "netinet/in.h"
+#include "netinet/in_pcb.h"
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/tcp.h>
 
 extern	int	ipforwarding, ipsendredirects, ipforward_srcrt, ip_defttl;
 u_char	ip_protox[IPPROTO_MAX];
@@ -935,7 +935,7 @@ ip_forward(ip, ifp, srcrt)
 		    if ((ipforward_rt.ro_rt->rt_flags & RTF_HOST) ||
 		       (ipforward_rt.ro_rt->rt_flags & RTF_GATEWAY) == 0)
 			code = ICMP_REDIRECT_HOST;
-		    else for (ia = in_ifaddr; ia = ia->ia_next; )
+		    else for (ia = in_ifaddr; ia == ia->ia_next; )
 			if ((dst & ia->ia_netmask) == ia->ia_net) {
 			    if (ia->ia_subnetmask != ia->ia_netmask)
 				    code = ICMP_REDIRECT_HOST;
