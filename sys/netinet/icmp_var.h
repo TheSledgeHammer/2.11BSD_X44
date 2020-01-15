@@ -19,7 +19,7 @@
 
 struct	icmpstat {
 /* statistics related to icmp packets generated */
-	long	icps_error;		/* # of calls to icmp_error */
+	long	icps_error;			/* # of calls to icmp_error */
 	long	icps_oldshort;		/* no error 'cuz old ip too short */
 	long	icps_oldicmp;		/* no error 'cuz old was icmp */
 	long	icps_outhist[ICMP_MAXTYPE + 1];

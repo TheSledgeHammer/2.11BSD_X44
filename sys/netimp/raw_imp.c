@@ -9,12 +9,12 @@
 #include "imp.h"
 #if	NIMP > 0
 
-#include "param.h"
-#include "mbuf.h"
-#include "domain.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
+#include <sys/param.h>
+#include <sys/mbuf.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
 #include <net/if.h>
 #include <net/route.h>
 #include <net/raw_cb.h>

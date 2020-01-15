@@ -19,18 +19,18 @@
  * of the structure and is assumed to be first.
  */
 struct in_ifaddr {
-	struct	ifaddr ia_ifa;		/* protocol-independent info */
+	struct	ifaddr ia_ifa;				/* protocol-independent info */
 #define	ia_addr	ia_ifa.ifa_addr
 #define	ia_broadaddr	ia_ifa.ifa_broadaddr
 #define	ia_dstaddr	ia_ifa.ifa_dstaddr
 #define	ia_ifp		ia_ifa.ifa_ifp
-	u_long	ia_net;			/* network number of interface */
-	u_long	ia_netmask;		/* mask of net part */
-	u_long	ia_subnet;		/* subnet number, including net */
-	u_long	ia_subnetmask;		/* mask of net + subnet */
-	struct	in_addr ia_netbroadcast; /* broadcast addr for (logical) net */
+	u_long	ia_net;						/* network number of interface */
+	u_long	ia_netmask;					/* mask of net part */
+	u_long	ia_subnet;					/* subnet number, including net */
+	u_long	ia_subnetmask;				/* mask of net + subnet */
+	struct	in_addr ia_netbroadcast; 	/* broadcast addr for (logical) net */
 	int	ia_flags;
-	struct	in_ifaddr *ia_next;	/* next in list of internet addresses */
+	struct	in_ifaddr *ia_next;			/* next in list of internet addresses */
 };
 /*
  * Given a pointer to an in_ifaddr (ifaddr),
@@ -42,8 +42,6 @@ struct in_ifaddr {
  */
 #define	IFA_ROUTE	0x01		/* routing entry installed */
 
-#ifdef	SUPERVISOR
 struct	in_ifaddr *in_ifaddr;
 struct	in_ifaddr *in_iaonnetof();
 struct	ifqueue	ipintrq;		/* ip packet input queue */
-#endif

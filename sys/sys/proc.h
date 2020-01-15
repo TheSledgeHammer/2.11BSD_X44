@@ -45,7 +45,7 @@ struct	proc {
 	struct	pstats 	 	*p_stats;		/* Accounting/statistics (PROC ONLY). */
 	struct	plimit 	 	*p_limit;		/* Process limits. */
 	struct	vmspace  	*p_vmspace;		/* Address space. */
-	struct 	sigacts 	*p_sig;			/* Signal actions, state (PROC ONLY). */
+	struct 	sigacts 	*p_sigacts;		/* Signal actions, state (PROC ONLY). */
 
 #define	p_ucred			p_cred->pc_ucred
 #define	p_rlimit		p_limit->pl_rlimit
@@ -55,11 +55,10 @@ struct	proc {
     struct	proc        *p_pptr;		/* pointer to process structure of parent */
     struct	proc 		*p_osptr;	 	/* Pointer to older sibling processes. */
 
-    struct	proc        *p_pglist;		/* List of processes in pgrp. */
-    struct	proc        *p_pptr;		/* Pointer to parent process. */
-    struct  proc		*p_sibling;		/* List of sibling processes. */
-    struct  proc		*p_children;	/* Pointer to list of children. */
-
+   // struct	proc        *p_pglist;		/* List of processes in pgrp. */
+   // struct	proc        *p_pptr;		/* Pointer to parent process. */
+   // struct  proc		*p_sibling;		/* List of sibling processes. */
+   // struct  proc		*p_children;	/* Pointer to list of children. */
 
 /* The following fields are all zeroed upon creation in fork. */
 #define	p_startzero		p_ysptr
@@ -69,10 +68,12 @@ struct	proc {
     pid_t				p_oppid;	    /* Save parent pid during ptrace. XXX */
 
     u_int				p_estcpu;	 	/* Time averaged value of p_cpticks. */
+    int					p_cpticks;	 	/* Ticks of cpu time. */
     fixpt_t				p_pctcpu;	 	/* %cpu for this process during p_swtime */
 
     caddr_t	            p_wchan;		/* event process is awaiting */
 	caddr_t	            p_wmesg;	 	/* Reason for sleep. */
+	u_int				p_swtime;	 	/* Time swapped in or out. */
     char	            p_slptime;		/* Time since last blocked. */
 
     struct	itimerval   p_realtimer;	/* Alarm timer. */
@@ -208,7 +209,6 @@ struct pcred {
 	if (--(s)->s_count == 0)					\
 		FREE(s, M_SESSION);						\
 }
-
 
 #define	PIDHSZ			16
 #define	PIDHASH(pid)	((pid) & (PIDHSZ - 1))

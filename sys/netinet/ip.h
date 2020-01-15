@@ -110,15 +110,15 @@ struct	ip_timestamp {
 	u_char	ipt_ptr;		/* index of current entry */
 #if BYTE_ORDER == LITTLE_ENDIAN
 	u_char	ipt_flg:4,		/* flags, see below */
-		ipt_oflw:4;		/* overflow counter */
+		ipt_oflw:4;			/* overflow counter */
 #endif
 #if BYTE_ORDER == BIG_ENDIAN
 	u_char	ipt_oflw:4,		/* overflow counter */
-		ipt_flg:4;		/* flags, see below */
+		ipt_flg:4;			/* flags, see below */
 #endif
 #if BYTE_ORDER == PDP_ENDIAN
 	u_char	ipt_flg:4,		/* flags, see below */
-		ipt_oflw:4;		/* overflow counter */
+		ipt_oflw:4;			/* overflow counter */
 #endif
 	union ipt_timestamp {
 		n_long	ipt_time[1];

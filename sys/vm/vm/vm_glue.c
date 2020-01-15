@@ -73,9 +73,9 @@
 #include <vm/include/vm_page.h>
 
 
-int	avefree = 0;		/* XXX */
+int	avefree = 0;			/* XXX */
 unsigned maxdmap = MAXDSIZ;	/* XXX */
-int	readbuffers = 0;	/* XXX allow kgdb to read kernel buffer pool */
+int	readbuffers = 0;		/* XXX allow kgdb to read kernel buffer pool */
 
 int
 kernacc(addr, len, rw)

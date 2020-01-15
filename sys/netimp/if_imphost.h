@@ -16,8 +16,8 @@
  */
 struct host {
 	struct	mbuf *h_q;		/* holding queue */
-	struct	in_addr h_addr;		/* host's address */
-	u_char	h_qcnt;          	/* size of holding q */
+	struct	in_addr h_addr;	/* host's address */
+	u_char	h_qcnt;         /* size of holding q */
 	u_char	h_timer;		/* used to stay off deletion */
 	u_char	h_rfnm;			/* # outstanding rfnm's */
 	u_char	h_flags;		/* see below */
@@ -78,11 +78,11 @@ struct host {
 }
 
 struct hmbuf {
-	int	hm_count;		/* # of struct's in use */
+	int	hm_count;					/* # of struct's in use */
 	struct	host hm_hosts[HPMBUF];	/* data structures proper */
 };
 
-#if defined(KERNEL) && defined(SUPERVISOR)
+#if defined(KERNEL)
 struct host *hostlookup();
 struct host *hostenter();
 struct mbuf *hostdeque();

@@ -12,27 +12,25 @@
  *	@(#)ip_output.c	7.9 (Berkeley) 3/15/88
  */
 
-#include "param.h"
-#include "mbuf.h"
-#include "errno.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
+#include <sys/param.h>
+#include <sys/mbuf.h>
+#include <sys/errno.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
 
-#include "../net/if.h"
-#include "../net/route.h"
+#include <net/if.h>
+#include <net/route.h>
 
-#include "domain.h"
-#include "in.h"
-#include "in_pcb.h"
-#include "in_systm.h"
-#include "in_var.h"
-#include "ip.h"
-#include "ip_var.h"
+#include <sys/domain.h>
+#include <netinet/in.h>
+#include <netinet/in_pcb.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
 
-#ifdef vax
-#include "../machine/mtpr.h"
-#endif
+#include <machine/mtpr.h>
 
 #define ovbcopy(a,b,c)	bcopy(a,b,c)
 struct mbuf *ip_insertoptions();

@@ -22,8 +22,8 @@
  */
 
 #define TCP_COMPAT_42	/* _always_ set for 2.11BSD - not worth the trouble
-			 * of making it conditional
-			*/
+			 	 	 	 * of making it conditional
+			 	 	 	 */
 
 #ifndef SB_MAX
 #ifdef	SB_MAXCOUNT
@@ -69,13 +69,13 @@
 struct tcpcb {
 	struct	tcpiphdr *seg_next;	/* sequencing queue */
 	struct	tcpiphdr *seg_prev;
-	short	t_state;		/* state of this connection */
+	short	t_state;			/* state of this connection */
 	short	t_timer[TCPT_NTIMERS];	/* tcp timers */
-	short	t_rxtshift;		/* log(2) of rexmt exp. backoff */
-	short	t_rxtcur;		/* current retransmit value */
-	short	t_dupacks;		/* consecutive dup acks recd */
-	u_short	t_maxseg;		/* maximum segment size */
-	char	t_force;		/* 1 if forcing out a byte */
+	short	t_rxtshift;			/* log(2) of rexmt exp. backoff */
+	short	t_rxtcur;			/* current retransmit value */
+	short	t_dupacks;			/* consecutive dup acks recd */
+	u_short	t_maxseg;			/* maximum segment size */
+	char	t_force;			/* 1 if forcing out a byte */
 	u_char	t_flags;
 #define	TF_ACKNOW	0x01		/* ack peer immediately */
 #define	TF_DELACK	0x02		/* ack, but try to delay it */
@@ -108,13 +108,13 @@ struct tcpcb {
 	tcp_seq	rcv_adv;		/* advertised window */
 /* retransmit variables */
 	tcp_seq	snd_max;		/* highest sequence number sent
-					 * used to recognize retransmits
-					 */
+					 	 	 * used to recognize retransmits
+					 	 	 */
 /* congestion control (for slow start, source quench, retransmit after loss) */
-	u_short	snd_cwnd;		/* congestion-controlled window */
+	u_short	snd_cwnd;			/* congestion-controlled window */
 	u_short snd_ssthresh;		/* snd_cwnd size threshhold for
-					 * for slow start exponential to
-					 * linear switch */
+					 	 	 	 * for slow start exponential to
+					 	 	 	 * linear switch */
 /*
  * transmit timing stuff.
  * srtt and rttvar are stored as fixed point; for convenience in smoothing,
@@ -188,7 +188,7 @@ struct	tcpstat {
 	u_long	tcps_connattempt;	/* connections initiated */
 	u_long	tcps_accepts;		/* connections accepted */
 	u_long	tcps_connects;		/* connections established */
-	u_long	tcps_drops;		/* connections dropped */
+	u_long	tcps_drops;			/* connections dropped */
 	u_long	tcps_conndrops;		/* embryonic connections dropped */
 	u_long	tcps_closed;		/* conn. closed (includes drops) */
 	u_long	tcps_segstimed;		/* segs where we tried to get rtt */
@@ -222,8 +222,8 @@ struct	tcpstat {
 	u_long	tcps_rcvdupbyte;	/* duplicate-only bytes received */
 	u_long	tcps_rcvpartduppack;	/* packets with some duplicate data */
 	u_long	tcps_rcvpartdupbyte;	/* dup. bytes in part-dup. packets */
-	u_long	tcps_rcvoopack;		/* out-of-order packets received */
-	u_long	tcps_rcvoobyte;		/* out-of-order bytes received */
+	u_long	tcps_rcvoopack;			/* out-of-order packets received */
+	u_long	tcps_rcvoobyte;			/* out-of-order bytes received */
 	u_long	tcps_rcvpackafterwin;	/* packets with data after window */
 	u_long	tcps_rcvbyteafterwin;	/* bytes rcvd after window */
 	u_long	tcps_rcvafterclose;	/* packets rcvd after "close" */
@@ -235,10 +235,8 @@ struct	tcpstat {
 	u_long	tcps_rcvwinupd;		/* rcvd window update packets */
 };
 
-#ifdef SUPERVISOR
-struct	inpcb tcb;		/* head of queue of active tcpcb's */
+struct	inpcb tcb;			/* head of queue of active tcpcb's */
 struct	tcpstat tcpstat;	/* tcp statistics */
 struct	tcpiphdr *tcp_template();
 struct	tcpcb *tcp_close(), *tcp_drop();
 struct	tcpcb *tcp_timers(), *tcp_disconnect(), *tcp_usrclosed();
-#endif

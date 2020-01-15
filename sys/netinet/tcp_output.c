@@ -12,31 +12,30 @@
  *	@(#)tcp_output.c	7.13.1.4 (Berkeley) 1995/10/10
  */
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "errno.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/protosw.h>
+#include <sys/errno.h>
 
-#include "../net/route.h"
+#include <net/route.h>
 
-#include "domain.h"
-#include "in.h"
-#include "in_pcb.h"
-#include "in_systm.h"
-#include "ip.h"
-#include "ip_var.h"
-#include "tcp.h"
+#include <sys/domain.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
+#include <netinet/in_pcb.h>
+#include <netinet/tcp.h>
 #define	TCPOUTFLAGS
-#include "tcp_fsm.h"
-#include "tcp_seq.h"
-#include "tcp_timer.h"
-#include "tcp_var.h"
-#include "tcpip.h"
-#include "tcp_debug.h"
-
+#include <netinet/tcp_fsm.h>
+#include <netinet/tcp_seq.h>
+#include <netinet/tcp_timer.h>
+#include <netinet/tcp_var.h>
+#include <netinet/tcpip.h>
+#include <netinet/tcp_debug.h>
 /*
  * Initial options.
  */
@@ -119,7 +118,7 @@ again:
 	 * and we have not yet done so, or we're retransmitting the FIN,
 	 * then we need to send.
 	 */
-	if (flags & TH_FIN &&
+	if ((flags & TH_FIN) &&
 	    ((tp->t_flags & TF_SENTFIN) == 0 || tp->snd_nxt == tp->snd_una))
 		goto send;
 	/*
@@ -145,7 +144,7 @@ again:
 	if (len) {
 		if (len == tp->t_maxseg)
 			goto send;
-		if ((idle || tp->t_flags & TF_NODELAY) &&
+		if ((idle || (tp->t_flags & TF_NODELAY)) &&
 		    len + off >= so->so_snd.sb_cc)
 			goto send;
 		if (tp->t_force)
@@ -248,7 +247,7 @@ send:
 	 * window for use in delaying messages about window sizes.
 	 * If resending a FIN, be sure not to use a new sequence number.
 	 */
-	if (flags & TH_FIN && tp->t_flags & TF_SENTFIN && 
+	if ((flags & TH_FIN) && (tp->t_flags & TF_SENTFIN) &&
 	    tp->snd_nxt == tp->snd_max)
 		tp->snd_nxt--;
 	ti->ti_seq = htonl(tp->snd_nxt);
@@ -258,7 +257,7 @@ send:
 	 * unless TCP set to not do any options.
 	 */
 	opt = NULL;
-	if (flags & TH_SYN && (tp->t_flags & TF_NOOPT) == 0) {
+	if ((flags & TH_SYN) && (tp->t_flags & TF_NOOPT) == 0) {
 		u_short mss;
 
 		mss = MIN(so->so_rcv.sb_hiwat / 2, tcp_mss(tp));

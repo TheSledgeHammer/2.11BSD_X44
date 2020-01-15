@@ -11,23 +11,22 @@
  *
  *	@(#)raw_ip.c	7.3 (Berkeley) 12/7/87
  */
+#include <sys/param.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/protosw.h>
+#include <sys/errno.h>
 
-#include "param.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "protosw.h"
-#include "socketvar.h"
-#include "errno.h"
+#include <net/route.h>
+#include <net/if.h>
+#include <net/raw_cb.h>
 
-#include "../net/if.h"
-#include "../net/route.h"
-#include "../net/raw_cb.h"
-
-#include "domain.h"
-#include "in.h"
-#include "in_systm.h"
-#include "ip.h"
-#include "ip_var.h"
+#include <sys/domain.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
 
 /*
  * Raw interface to IP protocol.

@@ -17,8 +17,8 @@
  * according to byte significance from low address to high.
  */
 #define	LITTLE_ENDIAN	1234	/* least-significant byte first (vax) */
-#define	BIG_ENDIAN	4321	/* most-significant byte first (IBM, net) */
-#define	PDP_ENDIAN	3412	/* LSB first in word, MSW first in long (pdp) */
+#define	BIG_ENDIAN		4321	/* most-significant byte first (IBM, net) */
+#define	PDP_ENDIAN		3412	/* LSB first in word, MSW first in long (pdp) */
 
 #ifdef vax
 #define	BYTE_ORDER	LITTLE_ENDIAN
@@ -47,11 +47,11 @@ struct tcphdr {
 #endif
 #if BYTE_ORDER == BIG_ENDIAN
 	u_char	th_off:4,		/* data offset */
-		th_x2:4;		/* (unused) */
+			th_x2:4;		/* (unused) */
 #endif
 #if BYTE_ORDER == PDP_ENDIAN
 	u_int	th_x2:4,		/* (unused) */
-		th_off:4;		/* data offset */
+		th_off:4;			/* data offset */
 #endif
 	u_char	th_flags;
 #define	TH_FIN	0x01

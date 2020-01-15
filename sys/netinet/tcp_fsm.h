@@ -19,8 +19,8 @@
 
 #define	TCP_NSTATES	11
 
-#define	TCPS_CLOSED		0	/* closed */
-#define	TCPS_LISTEN		1	/* listening for connection */
+#define	TCPS_CLOSED			0	/* closed */
+#define	TCPS_LISTEN			1	/* listening for connection */
 #define	TCPS_SYN_SENT		2	/* active, have sent syn */
 #define	TCPS_SYN_RECEIVED	3	/* have send and received syn */
 /* states < TCPS_ESTABLISHED are those where connections not established */

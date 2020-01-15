@@ -20,9 +20,9 @@ struct ipovly {
 #ifdef pdp11
 	u_long	ih_pad;
 #endif
-	u_char	ih_x1;			/* (unused) */
-	u_char	ih_pr;			/* protocol */
-	short	ih_len;			/* protocol length */
+	u_char	ih_x1;				/* (unused) */
+	u_char	ih_pr;				/* protocol */
+	short	ih_len;				/* protocol length */
 	struct	in_addr ih_src;		/* source internet address */
 	struct	in_addr ih_dst;		/* destination internet address */
 };
@@ -38,11 +38,11 @@ struct ipq {
 #ifdef pdp11
 	u_long	ipq_pad;
 #endif
-	u_char	ipq_ttl;		/* time for reass q to live */
-	u_char	ipq_p;			/* protocol of this fragment */
-	u_short	ipq_id;			/* sequence id for reassembly */
+	u_char	ipq_ttl;			/* time for reass q to live */
+	u_char	ipq_p;				/* protocol of this fragment */
+	u_short	ipq_id;				/* sequence id for reassembly */
 	struct	ipasfrag *ipq_next,*ipq_prev;
-					/* to ip headers of fragments */
+								/* to ip headers of fragments */
 	struct	in_addr ipq_src,ipq_dst;
 };
 
@@ -92,12 +92,12 @@ struct ipoption {
 };
 
 struct	ipstat {
-	long	ips_total;		/* total packets received */
-	long	ips_badsum;		/* checksum bad */
+	long	ips_total;			/* total packets received */
+	long	ips_badsum;			/* checksum bad */
 	long	ips_tooshort;		/* packet too short */
 	long	ips_toosmall;		/* not enough data */
 	long	ips_badhlen;		/* ip header length < data size */
-	long	ips_badlen;		/* ip length < ip header length */
+	long	ips_badlen;			/* ip length < ip header length */
 	long	ips_fragments;		/* fragments received */
 	long	ips_fragdropped;	/* frags dropped (dups, out of space) */
 	long	ips_fragtimeout;	/* fragments timed out */
@@ -108,14 +108,14 @@ struct	ipstat {
 
 #ifdef SUPERVISOR
 /* flags passed to ip_output as last parameter */
-#define	IP_FORWARDING		0x1		/* most of ip header exists */
+#define	IP_FORWARDING		0x1				/* most of ip header exists */
 #define	IP_ROUTETOIF		SO_DONTROUTE	/* bypass routing tables */
 #define	IP_ALLOWBROADCAST	SO_BROADCAST	/* can send broadcast packets */
 
 struct	ipstat	ipstat;
 struct	ipq	ipq;			/* ip reass. queue */
 u_short	ip_id;				/* ip packet ctr, for ids */
-int	ip_defttl;			/* default IP ttl */
+int	ip_defttl;				/* default IP ttl */
 
 struct	mbuf *ip_srcroute();
 #endif

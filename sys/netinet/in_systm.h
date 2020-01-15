@@ -30,10 +30,7 @@ typedef u_long	n_long;			/* long as received from the net */
 
 typedef	u_long	n_time;			/* ms since 00:00 GMT, byte rev */
 
-#ifdef pdp11
-#define	UCHAR(a)	((u_int)((a)&0xff))
-#endif
 
-#ifdef SUPERVISOR
+#define	UCHAR(a)	((u_int)((a)&0xff))
+
 n_time	iptime();
-#endif

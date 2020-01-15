@@ -21,7 +21,7 @@
  * Protocols
  */
 #define	IPPROTO_IP		0		/* dummy for IP */
-#define	IPPROTO_ICMP		1		/* control message protocol */
+#define	IPPROTO_ICMP	1		/* control message protocol */
 #define	IPPROTO_GGP		3		/* gateway^2 (deprecated) */
 #define	IPPROTO_TCP		6		/* tcp */
 #define	IPPROTO_EGP		8		/* exterior gateway protocol */
@@ -87,10 +87,10 @@ struct in_addr {
 #define	INADDR_ANY		0x00000000L
 #define	INADDR_BROADCAST	0xffffffffL	/* must be masked */
 #ifndef KERNEL
-#define	INADDR_NONE		0xffffffffL	/* -1 return */
+#define	INADDR_NONE		0xffffffffL		/* -1 return */
 #endif
 
-#define	IN_LOOPBACKNET		127		/* official! */
+#define	IN_LOOPBACKNET		127			/* official! */
 
 /*
  * Socket address, internet style.
@@ -172,9 +172,7 @@ struct sockaddr_in {
 u_short	ntohs(), htons();
 u_long	ntohl(), htonl();
 
-#ifdef SUPERVISOR
 extern	struct domain inetdomain;
 extern	struct protosw inetsw[];
 struct	in_addr in_makeaddr();
 u_long	in_netof(), in_lnaof();
-#endif

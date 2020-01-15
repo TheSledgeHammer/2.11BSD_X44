@@ -12,26 +12,26 @@
  *	@(#)udp_usrreq.c	7.5.2 (2.11BSD GTE) 1995/10/09
  */
 
-#include "param.h"
-#include "user.h"
-#include "mbuf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "errno.h"
+#include <sys/param.h>
+#include <sys/user.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
 
-#include "../net/if.h"
-#include "../net/route.h"
+#include <net/if.h>
+#include <net/route.h>
 
-#include "domain.h"
-#include "in.h"
-#include "in_pcb.h"
-#include "in_systm.h"
-#include "ip.h"
-#include "ip_var.h"
-#include "ip_icmp.h"
-#include "udp.h"
-#include "udp_var.h"
+#include <sys/domain.h>
+#include <netinet/in.h>
+#include <netinet/in_pcb.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/udp.h>
+#include <netinet/udp_var.h>
 
 struct	inpcb *udp_last_inpcb = &udb;
 

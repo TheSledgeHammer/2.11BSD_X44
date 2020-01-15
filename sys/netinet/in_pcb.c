@@ -12,22 +12,22 @@
  *	@(#)in_pcb.c	7.6.1 (2.11BSD GTE) 2/20/94
  */
 
-#include "param.h"
-#include "systm.h"
-#include "user.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "ioctl.h"
-#include "domain.h"
-#include "protosw.h"
-#include "in.h"
-#include "in_systm.h"
-#include "../net/if.h"
-#include "../net/route.h"
-#include "in_pcb.h"
-#include "in_var.h"
-#include "kernel.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/user.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/ioctl.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <net/if.h>
+#include <net/route.h>
+#include <netinet/in_pcb.h>
+#include <netinet/in_var.h>
+#include <sys/kernel.h>
 
 struct	in_addr zeroin_addr;
 
@@ -154,7 +154,7 @@ in_pcbconnect(inp, nam)
 		if (ro->ro_rt &&
 		    (satosin(&ro->ro_dst)->sin_addr.s_addr !=
 			sin->sin_addr.s_addr ||
-		    inp->inp_socket->so_options & SO_DONTROUTE)) {
+		    (inp->inp_socket->so_options & SO_DONTROUTE))) {
 			RTFREE(ro->ro_rt);
 			ro->ro_rt = (struct rtentry *)0;
 		}

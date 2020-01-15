@@ -79,8 +79,7 @@ struct	arptab {
 	struct	mbuf *at_hold;		/* last packet until resolved/timeout */
 };
 
-#ifdef	SUPERVISOR
+
 u_char etherbroadcastaddr[6];
 struct	arptab *arptnew();
 char *ether_sprintf();
-#endif

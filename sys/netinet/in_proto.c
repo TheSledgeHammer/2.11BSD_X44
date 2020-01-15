@@ -12,15 +12,15 @@
  *	@(#)in_proto.c	7.2.1 (2.11BSD) 1995/10/09
  */
 
-#include "param.h"
-#include "socket.h"
-#include "protosw.h"
-#include "domain.h"
-#include "mbuf.h"
+#include <sys/param.h>
+#include <sys/socket.h>
+#include <sys/protosw.h>
+#include <sys/domain.h>
+#include <sys/mbuf.h>
 
-#include "in.h"
-#include "in_systm.h"
-#include "ip.h"
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
 
 /*
  * TCP/IP protocol family: IP, ICMP, UDP, TCP.
