@@ -133,6 +133,28 @@ push_right(size, dsize, ktp)
 	return(ktp);
 }
 
+struct kmemtree_entry *
+kmembucket_cqinit(kbp, indx)
+    struct kmembuckets *kbp;
+	long indx;
+{
+    kbp->kb_tstree = &tree_bucket_entry[indx];
+    register struct kmemtree_entry *ktep = kbp->kb_tstree;
+
+    /* kmembucket Circular Queue setup */
+    CIRCLEQ_INIT(&kbp->kb_list);
+    CIRCLEQ_INSERT_HEAD(&kbp->kb_list, kbp, kb_front);
+    CIRCLEQ_INSERT_TAIL(&kbp->kb_list, kbp, kb_back);
+
+    /* kmemtree_entry Circular Queue setup */
+    CIRCLEQ_INIT(&ktep->kte_list);
+    CIRCLEQ_INSERT_HEAD(&ktep->kte_list, kbp, kb_tstree->kte_head);
+    CIRCLEQ_INSERT_TAIL(&ktep->kte_list, kbp, kb_tstree->kte_tail);
+
+    return (ktep);
+}
+
+/* Replaced by above!!
 void
 kmemtree_entry(ktep, next, last)
     struct kmemtree_entry *ktep;
@@ -143,6 +165,7 @@ kmemtree_entry(ktep, next, last)
     ktep->kteb_next = next;
     ktep->kteb_last = last;
 }
+*/
 
 struct kmemtree *
 kmemtree_init(ktep, size)

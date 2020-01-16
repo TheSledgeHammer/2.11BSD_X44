@@ -32,11 +32,13 @@
  *
  *	@(#)malloc.h	8.5 (Berkeley) 5/3/95
  */
+#include <sys/queue.h>
 
 #ifndef _SYS_MALLOC_H_
 #define	_SYS_MALLOC_H_
 
 #define KMEMSTATS
+#define KERN_MALLOC
 
 #define MINBUCKET	    4		/* 4 => min allocation of 16 bytes */
 #define MAXALLOCSAVE	(2 * CLBYTES)
@@ -216,8 +218,12 @@ struct kmemusage {
 
 /* Set of buckets for each size of memory block that is retained */
 struct kmembuckets {
-    struct kmembuckets  *kb_front;
-    struct kmembuckets  *kb_back;
+    //struct kmembuckets  *kb_front;
+    //struct kmembuckets  *kb_back;
+    CIRCLEQ_ENTRY(kmembuckets) 		kb_front;
+    CIRCLEQ_ENTRY(kmembuckets) 		kb_back;
+    CIRCLEQ_HEAD( , kmembuckets) 	kb_list;
+    struct kmemtree_entry *kb_tstree;
 
 	caddr_t 			kb_next;		/* list of free blocks */
 	caddr_t 			kb_last;		/* last free block */
@@ -232,11 +238,14 @@ struct kmembuckets {
 
 /* Tertiary Tree Entry for Each Bucket */
 struct kmemtree_entry {
-    struct kmembuckets    kte_head;
-    struct kmembuckets    kte_tail;
+	//struct kmembuckets    kte_head;
+	//struct kmembuckets    kte_tail;
+	CIRCLEQ_ENTRY(kmembuckets) 		kte_head;
+	CIRCLEQ_ENTRY(kmembuckets) 		kte_tail;
+	CIRCLEQ_HEAD( , kmembuckets) 	kte_list;
 
 #define kteb_next         kte_head.kb_next		/* list of free blocks */
-#define kteb_last         kte_head.kb_last		/* last free block */
+#define kteb_last         kte_tail.kb_last		/* last free block */
 };
 
 /* Tertiary Tree within each bucket, for each size of memory block that is retained */
@@ -261,9 +270,9 @@ struct kmemtree {
 
 /* Tertiary Tree: Available Space List */
 struct asl {
-    struct asl *asl_next;
-    struct asl *asl_prev;
-    unsigned long asl_size;
+    struct asl 		*asl_next;
+    struct asl 		*asl_prev;
+    unsigned long 	asl_size;
 };
 
 /* Deprecated: Maps each bucket created (used by tertiary search tree)*/
@@ -377,7 +386,9 @@ extern char *kmembase;
 extern void *malloc __P((unsigned long size, int type, int flags));
 extern void free __P((void *addr, int type));
 
-extern void kmemtree_entry __P((struct kmemtree_entry *ktep, caddr_t next, caddr_t last));
+/* All methods below are for internal use only. Not meant to be used outside of kern_malloc */
+extern struct kmemtree_entry *kmembucket_cqinit __P((struct kmembuckets *kbp, long indx));
+//extern void kmemtree_entry __P((struct kmemtree_entry *ktep, caddr_t next, caddr_t last));
 extern struct kmemtree *kmemtree_init __P((struct kmemtree_entry *ktep, unsigned long size));
 extern void kmemtree_create __P((struct kmemtree *ktp, boolean_t space));
 extern void trealloc __P((struct kmemtree *ktp, unsigned long size));
@@ -396,6 +407,5 @@ extern struct asl *asl_search(struct asl *free, unsigned long size);
 extern static int isPowerOfTwo(long n); 	/* 0 = true, 1 = false */
 extern static long search_buckets(unsigned long size);
 extern static unsigned long align_to_bucket(long indx);
-
 //#endif /* KERNEL */
 #endif /* !_SYS_MALLOC_H_ */

@@ -69,7 +69,7 @@ malloc(size, type, flags)
 #endif
 	indx = BUCKETINDX(size);
     kbp = &bucket[indx];
-    ktep = &tree_bucket_entry[indx];
+    ktep = kmembucket_cqinit(kbp, indx);
     s = splimp();
 #ifdef KMEMSTATS
     while (ksp->ks_memuse >= ksp->ks_limit) {
@@ -94,7 +94,7 @@ malloc(size, type, flags)
     	kbp->kb_last = NULL;
 
     	/* Start of Tertiary Search Tree Buddy Allocation (trealloc) */
-    	kmemtree_entry(ktep, kbp->kb_next, kbp->kb_last); //Could become part of Malloc, needed later on
+    	/* ktep is now setup in kmembucket_cqinit() */
     	if(ktp->kt_parent == NULL) {
     		ktp = kmemtree_init(ktep, size);
     	} else {
