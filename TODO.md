@@ -1,7 +1,6 @@
 TODO:
 
 Kern:
-- kern_clock.c (check a few functions/pointers exist)
 - kern_exit.c (proc[])
 - kern_fork.c (swapout(rpp, X_DONTFREE, X_OLDSIZE, X_OLDSIZE))
 - kern_sysctl.c (inode_sysctl, vm_sysctl)
@@ -12,19 +11,18 @@ Kern:
 - tty_pty.c
 - uipc_syscalls.c
 
+VM:
+- Fix-up use of 4.4BSD-lite2 proc pointers
 
-FreeBSD 3.0 or Higher:
-- BTX Bootloader
-- elf format
+Net:
+- Fix-up netns
 
+i386:
+- Re-add
 
-Executables:  
-__LDPGSZ = machine/exec.h
-
-
-NetBSD:
-- efs: extent file system
-- puffs
+Ufs:
+- Add UFS
+- WABL (NetBSD)
 
 Possible Generic Header: 
 (2.11BSD):

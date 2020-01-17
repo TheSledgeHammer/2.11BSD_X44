@@ -121,19 +121,19 @@ struct vm_map_entry {
  *	insertion, or removal.
  */
 struct vm_map {
-	struct pmap *		pmap;		/* Physical map */
-	lock_data_t			lock;		/* Lock for map data */
-	struct vm_map_entry	header;		/* List of entries */
-	int					nentries;	/* Number of entries */
-	vm_size_t			size;		/* virtual size */
-	boolean_t			is_main_map;	/* Am I a main map? */
-	int					ref_count;	/* Reference count */
-	simple_lock_data_t	ref_lock;	/* Lock for ref_count field */
-	vm_map_entry_t		hint;		/* hint for quick lookups */
-	simple_lock_data_t	hint_lock;	/* lock for hint storage */
-	vm_map_entry_t		first_free;	/* First free space hint */
-	boolean_t			entries_pageable; /* map entries pageable?? */
-	unsigned int		timestamp;	/* Version number */
+	struct pmap *		pmap;				/* Physical map */
+	lock_data_t			lock;				/* Lock for map data */
+	struct vm_map_entry	header;				/* List of entries */
+	int					nentries;			/* Number of entries */
+	vm_size_t			size;				/* virtual size */
+	boolean_t			is_main_map;		/* Am I a main map? */
+	int					ref_count;			/* Reference count */
+	simple_lock_data_t	ref_lock;			/* Lock for ref_count field */
+	vm_map_entry_t		hint;				/* hint for quick lookups */
+	simple_lock_data_t	hint_lock;			/* lock for hint storage */
+	vm_map_entry_t		first_free;			/* First free space hint */
+	boolean_t			entries_pageable; 	/* map entries pageable?? */
+	unsigned int		timestamp;			/* Version number */
 #define	min_offset		header.start
 #define max_offset		header.end
 };
@@ -179,21 +179,21 @@ typedef struct {
 	(map)->timestamp++; \
 }
 #endif /* DIAGNOSTIC */
-#define	vm_map_unlock(map) \
+#define	vm_map_unlock(map) 						\
 		lockmgr(&(map)->lock, LK_RELEASE, (void *)0, curproc)
-#define	vm_map_lock_read(map) \
+#define	vm_map_lock_read(map) 					\
 		lockmgr(&(map)->lock, LK_SHARED, (void *)0, curproc)
-#define	vm_map_unlock_read(map) \
+#define	vm_map_unlock_read(map) 				\
 		lockmgr(&(map)->lock, LK_RELEASE, (void *)0, curproc)
-#define vm_map_set_recursive(map) { \
-	simple_lock(&(map)->lk_interlock); \
-	(map)->lk_flags |= LK_CANRECURSE; \
-	simple_unlock(&(map)->lk_interlock); \
+#define vm_map_set_recursive(map) { 			\
+	simple_lock(&(map)->lk_interlock); 			\
+	(map)->lk_flags |= LK_CANRECURSE; 			\
+	simple_unlock(&(map)->lk_interlock); 		\
 }
-#define vm_map_clear_recursive(map) { \
-	simple_lock(&(map)->lk_interlock); \
-	(map)->lk_flags &= ~LK_CANRECURSE; \
-	simple_unlock(&(map)->lk_interlock); \
+#define vm_map_clear_recursive(map) { 			\
+	simple_lock(&(map)->lk_interlock); 			\
+	(map)->lk_flags &= ~LK_CANRECURSE; 			\
+	simple_unlock(&(map)->lk_interlock); 		\
 }
 /*
  *	Functions implemented as macros

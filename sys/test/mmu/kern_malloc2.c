@@ -12,8 +12,8 @@
 struct kmembuckets *
 bucket_search_next(struct kmembuckets *kbp, caddr_t next)
 {
-    CIRCLEQ_FOREACH(kbp, &kbp->kb_list, kb_front) {
-        if(CIRCLEQ_FIRST(&kbp->kb_list)->kb_next == next) {
+    CIRCLEQ_FOREACH(kbp, &kbp->kb_cqlist, kb_tstree->kte_head) {
+        if(CIRCLEQ_FIRST(&kbp->kb_cqlist)->kb_next == next) {
             return kbp; /* return virtual address? */
         }
     }
@@ -23,8 +23,8 @@ bucket_search_next(struct kmembuckets *kbp, caddr_t next)
 struct kmembuckets *
 bucket_search_last(struct kmembuckets *kbp, caddr_t last)
 {
-    CIRCLEQ_FOREACH(kbp, &kbp->kb_list, kb_back) {
-        if(CIRCLEQ_LAST(&kbp->kb_list)->kb_last == last) {
+    CIRCLEQ_FOREACH(kbp, &kbp->kb_cqlist, kb_tstree->kte_tail) {
+        if(CIRCLEQ_LAST(&kbp->kb_cqlist)->kb_last == last) {
             return kbp; /* return virtual address? */
         }
     }
@@ -136,14 +136,13 @@ kmembucket_cqinit(kbp, indx)
     register struct kmemtree_entry *ktep = kbp->kb_tstree;
 
     /* kmembucket Circular Queue setup */
-    CIRCLEQ_INIT(&kbp->kb_list);
-    CIRCLEQ_INSERT_HEAD(&kbp->kb_list, kbp, kb_front);
-    CIRCLEQ_INSERT_TAIL(&kbp->kb_list, kbp, kb_back);
+    CIRCLEQ_INIT(&kbp->kb_cqlist);
+    CIRCLEQ_INSERT_HEAD(&kbp->kb_cqlist, kbp, kb_tstree->kte_head);
+    CIRCLEQ_INSERT_TAIL(&kbp->kb_cqlist, kbp, kb_tstree->kte_tail);
 
-    /* kmemtree_entry Circular Queue setup */
-    CIRCLEQ_INIT(&ktep->kte_list);
-    CIRCLEQ_INSERT_HEAD(&ktep->kte_list, kbp, kb_tstree->kte_head);
-    CIRCLEQ_INSERT_TAIL(&ktep->kte_list, kbp, kb_tstree->kte_tail);
+    /* kmemtree_entry setup */
+    ktep->kte_head = kbp->kb_tstree->kte_head;
+    ktep->kte_tail = kbp->kb_tstree->kte_tail;
 
     return (ktep);
 }
@@ -318,13 +317,15 @@ kmemtree_find(ktp, size, bsize)
 
 /* Assumes that the current address of kmembucket is null */
 void
-trealloc(ktp, size)
+trealloc(ktp, size, bsize, flags)
 	struct kmemtree *ktp;
-	unsigned long size;
+	unsigned long size, bsize;
+	int flags;
 {
 	struct kmemtree *left, *middle, *right = NULL;
 	long indx, npg, allocsize;
-	unsigned long bsize = align_to_bucket(BUCKETINDX(size));
+	caddr_t va;
+	//unsigned long bsize = align_to_bucket(BUCKETINDX(size));
 
 	if (size > MAXALLOCSAVE) {
 		allocsize = roundup(size, CLBYTES);
@@ -334,19 +335,30 @@ trealloc(ktp, size)
 	npg = clrnd(btoc(allocsize));
 	unsigned long tmp = LOG2((long) npg); /* does log(npg) fit */
 
-	if(isPowerOfTwo(npg - 1)) {
+	if(isPowerOfTwo(npg)) {
 		left = trealloc_left(ktp, npg, bsize);
+		trealloc_vm(va, left, flags);
+
 	} else if(isPowerOfTwo(npg - 2)) {
 		middle = trealloc_middle(ktp, npg, bsize);
+		trealloc_vm(va, middle, flags);
+
 	} else if (isPowerOfTwo(npg - 3)) {
 		right = trealloc_right(ktp, npg, bsize);
+		trealloc_vm(va, right, flags);
+
 	} else {
-		if(isPowerOfTwo(tmp - 1)) {
+		if(isPowerOfTwo(tmp)) {
 			left = trealloc_left(ktp, npg, bsize);
+			trealloc_vm(va, left, flags);
+
 		} else if(isPowerOfTwo(tmp - 2)) {
 			middle = trealloc_middle(ktp, npg, bsize);
+			trealloc_vm(va, middle, flags);
+
 		} else if (isPowerOfTwo(tmp - 3)) {
 			right = trealloc_right(ktp, npg, bsize);
+			trealloc_vm(va, right, flags);
 		}
 		/* add else find best fit (rmalloc?) */
 	}
@@ -357,4 +369,19 @@ void
 trealloc_free()
 {
 
+}
+
+void *
+trealloc_vm(va, ktp, allocsize, flags)
+	caddr_t va;
+	struct kmemtree *ktp;
+	long allocsize;
+	int flags;
+{
+	register struct kmemusage *kup;
+	int s;
+	caddr_t cp, savedlist;
+	//npg = tree(right, middle, left) kt_size
+	va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(ktp->kt_size), !(flags & M_NOWAIT));
+	return ((void *) va);
 }

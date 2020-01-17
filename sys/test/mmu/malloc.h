@@ -220,9 +220,7 @@ struct kmemusage {
 struct kmembuckets {
     //struct kmembuckets  *kb_front;
     //struct kmembuckets  *kb_back;
-    CIRCLEQ_ENTRY(kmembuckets) 		kb_front;
-    CIRCLEQ_ENTRY(kmembuckets) 		kb_back;
-    CIRCLEQ_HEAD( , kmembuckets) 	kb_list;
+    CIRCLEQ_HEAD( , kmembuckets) kb_cqlist;
     struct kmemtree_entry *kb_tstree;
 
 	caddr_t 			kb_next;		/* list of free blocks */
@@ -242,10 +240,9 @@ struct kmemtree_entry {
 	//struct kmembuckets    kte_tail;
 	CIRCLEQ_ENTRY(kmembuckets) 		kte_head;
 	CIRCLEQ_ENTRY(kmembuckets) 		kte_tail;
-	CIRCLEQ_HEAD( , kmembuckets) 	kte_list;
 
 #define kteb_next         kte_head.kb_next		/* list of free blocks */
-#define kteb_last         kte_tail.kb_last		/* last free block */
+#define kteb_last         kte_head.kb_last		/* last free block */
 };
 
 /* Tertiary Tree within each bucket, for each size of memory block that is retained */
@@ -273,6 +270,7 @@ struct asl {
     struct asl 		*asl_next;
     struct asl 		*asl_prev;
     unsigned long 	asl_size;
+    //Total space allocated & free: Can provide a secondary validation to kmemstats
 };
 
 //#ifdef KERNEL
