@@ -32,13 +32,13 @@
  *
  *	@(#)malloc.h	8.5 (Berkeley) 5/3/95
  */
+
 #include <sys/queue.h>
 
 #ifndef _SYS_MALLOC_H_
 #define	_SYS_MALLOC_H_
 
 #define KMEMSTATS
-#define KERN_MALLOC
 
 #define MINBUCKET	    4		/* 4 => min allocation of 16 bytes */
 #define MAXALLOCSAVE	(2 * CLBYTES)
@@ -275,12 +275,6 @@ struct asl {
     unsigned long 	asl_size;
 };
 
-/* Deprecated: Maps each bucket created (used by tertiary search tree)*/
-struct kmembucketmap {
-    unsigned long 	bucket_size;
-    long 			bucket_index;
-};
-
 //#ifdef KERNEL
 #define	MINALLOCSIZE	(1 << MINBUCKET)
 #define BUCKETINDX(size) \
@@ -317,25 +311,12 @@ struct kmembucketmap {
 					: (MINBUCKET + 15))
 
 
-struct kmembucketmap bucketmap[] = {
-        { 16, 	 BUCKETINDX(16) },
-        { 32, 	 BUCKETINDX(32) },
-        { 64, 	 BUCKETINDX(64) },
-        { 128, 	 BUCKETINDX(128) },
-        { 256, 	 BUCKETINDX(256) },
-        { 512, 	 BUCKETINDX(512) },
-        { 1024,  BUCKETINDX(1024) },
-        { 2048,  BUCKETINDX(2048) },
-        { 4096,  BUCKETINDX(4096) },
-        { 8192,  BUCKETINDX(8192) },
-        { 16384, BUCKETINDX(16384) },
-        { 16385, BUCKETINDX(16385) },
-};
-
 #define SplitLeft(n)    (n / 2)
 #define SplitMiddle(n)  (((SplitLeft(n)) * 2) / 3)
 #define SplitRight(n)   (((SplitMiddle(n) / 2)) + (((SplitLeft(n) + SplitMiddle(n) + n) % 2) + 1))
 #define SplitTotal(n)   (SplitLeft(n) + SplitMiddle(n) + SplitRight(n))
+
+#define LOG2(n)         (n >> 2)
 
 #define kmemxtob(alloc)	(kmembase + (alloc) * NBPG)
 #define btokmemx(addr)	(((char)(addr) - kmembase) / NBPG)
@@ -386,17 +367,12 @@ extern char *kmembase;
 extern void *malloc __P((unsigned long size, int type, int flags));
 extern void free __P((void *addr, int type));
 
-/* All methods below are for internal use only. Not meant to be used outside of kern_malloc */
-extern struct kmemtree_entry *kmembucket_cqinit __P((struct kmembuckets *kbp, long indx));
+/* All methods below are for internal use only for kern_malloc */
 //extern void kmemtree_entry __P((struct kmemtree_entry *ktep, caddr_t next, caddr_t last));
+extern struct kmemtree_entry *kmembucket_cqinit __P((struct kmembuckets *kbp, long indx));
 extern struct kmemtree *kmemtree_init __P((struct kmemtree_entry *ktep, unsigned long size));
 extern void kmemtree_create __P((struct kmemtree *ktp, boolean_t space));
 extern void trealloc __P((struct kmemtree *ktp, unsigned long size));
-
-/* Kmembuckets List: Interfaces with Tertiary Tree */
-extern struct kmembuckets *bucket_list(struct kmembuckets *kbp, char next);
-extern struct kmembuckets *bucket_insert(struct kmembuckets *kbp, char next);
-extern struct kmembuckets *bucket_search(struct kmembuckets *kbp, char next);
 
 /* Tertiary Tree: Available Space List */
 extern struct asl *asl_list(struct asl *free, unsigned long size);

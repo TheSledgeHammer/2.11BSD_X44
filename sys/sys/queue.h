@@ -171,6 +171,14 @@ struct {																\
 /*
  * Circular queue definitions.
  */
+static __inline const void * __launder_type(const void *);
+static __inline const void *
+__launder_type(const void *__x)
+{
+    __asm __volatile("" : "+r" (__x));
+    return __x;
+}
+
 #define CIRCLEQ_HEAD(name, type)										\
 struct name {															\
 	struct type *cqh_first;		/* first element */						\
@@ -243,4 +251,38 @@ struct {																\
 		(elm)->field.cqe_prev->field.cqe_next =							\
 		    (elm)->field.cqe_next;										\
 }
+
+#define	CIRCLEQ_FOREACH(var, head, field)								\
+	for ((var) = ((head)->cqh_first);									\
+		(var) != CIRCLEQ_ENDC(head);									\
+		(var) = ((var)->field.cqe_next))
+
+#define	CIRCLEQ_FOREACH_REVERSE(var, head, field)						\
+	for ((var) = ((head)->cqh_last);									\
+		(var) != CIRCLEQ_ENDC(head);									\
+		(var) = ((var)->field.cqe_prev))
+
+/*
+* Circular queue access methods.
+*/
+#define	CIRCLEQ_FIRST(head)			((head)->cqh_first)
+#define	CIRCLEQ_LAST(head)			((head)->cqh_last)
+/* For comparisons */
+#define	CIRCLEQ_ENDC(head)			(__launder_type(head))
+/* For assignments */
+#define	CIRCLEQ_END(head)			((void *)(head))
+#define	CIRCLEQ_NEXT(elm, field)	((elm)->field.cqe_next)
+#define	CIRCLEQ_PREV(elm, field)	((elm)->field.cqe_prev)
+#define	CIRCLEQ_EMPTY(head)												\
+    (CIRCLEQ_FIRST(head) == CIRCLEQ_ENDC(head))
+
+#define CIRCLEQ_LOOP_NEXT(head, elm, field)								\
+	(((elm)->field.cqe_next == CIRCLEQ_ENDC(head))						\
+	    ? ((head)->cqh_first)											\
+	    : (elm->field.cqe_next))
+#define CIRCLEQ_LOOP_PREV(head, elm, field)								\
+	(((elm)->field.cqe_prev == CIRCLEQ_ENDC(head))						\
+	    ? ((head)->cqh_last)											\
+	    : (elm->field.cqe_prev))
+
 #endif	/* !_SYS_QUEUE_H_ */

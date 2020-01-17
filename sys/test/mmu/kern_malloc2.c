@@ -4,34 +4,28 @@
 #include <sys/map.h>
 #include <sys/kernel.h>
 #include <test/mmu/malloc.h>
-#include <test/mmu/log.h>
 
 #include <vm/vm.h>
 #include <vm/include/vm_kern.h>
 
 /* Bucket List Search (kmembuckets) */
 struct kmembuckets *
-bucket_list(struct kmembuckets *kbp, char next)
+bucket_search_next(struct kmembuckets *kbp, caddr_t next)
 {
-    kbp->kb_last = kbp->kb_next;
-    kbp->kb_next = next;
-    return (kbp);
+    CIRCLEQ_FOREACH(kbp, &kbp->kb_list, kb_front) {
+        if(CIRCLEQ_FIRST(&kbp->kb_list)->kb_next == next) {
+            return kbp; /* return virtual address? */
+        }
+    }
+    return (NULL);
 }
 
 struct kmembuckets *
-bucket_insert(struct kmembuckets *kbp, char next)
+bucket_search_last(struct kmembuckets *kbp, caddr_t last)
 {
-    kbp->kb_back = kbp->kb_front;
-    kbp->kb_front = bucket_list(kbp, next);
-    return (kbp);
-}
-
-struct kmembuckets *
-bucket_search(struct kmembuckets *kbp, char next)
-{
-    if(kbp != NULL) {
-        if(next == kbp->kb_next) {
-            return kbp;
+    CIRCLEQ_FOREACH(kbp, &kbp->kb_list, kb_back) {
+        if(CIRCLEQ_LAST(&kbp->kb_list)->kb_last == last) {
+            return kbp; /* return virtual address? */
         }
     }
     return (NULL);
@@ -154,19 +148,6 @@ kmembucket_cqinit(kbp, indx)
     return (ktep);
 }
 
-/* Replaced by above!!
-void
-kmemtree_entry(ktep, next, last)
-    struct kmemtree_entry *ktep;
-    char next, last;
-{
-    ktep->kte_head.kb_front = ktep->kte_head.kb_back = &ktep->kte_head;
-    ktep->kte_tail.kb_front = ktep->kte_tail.kb_back = &ktep->kte_tail;
-    ktep->kteb_next = next;
-    ktep->kteb_last = last;
-}
-*/
-
 struct kmemtree *
 kmemtree_init(ktep, size)
     struct kmemtree_entry *ktep;
@@ -196,50 +177,6 @@ kmemtree_create(ktp, space)
     ktp->kt_freelist1->asl_prev = NULL;
     ktp->kt_freelist2->asl_next = NULL;
     ktp->kt_freelist2->asl_prev = NULL;
-}
-
-/* Search for the bucket which best-fits the block size to be allocated */
-static long
-search_buckets(unsigned long size)
-{
-    if(size <= bucketmap[0].bucket_size) {
-        return bucketmap[0].bucket_index;
-    } else if(size >= bucketmap[11].bucket_size) {
-        return bucketmap[11].bucket_index;
-    } else {
-        for(int i = 0; i < 12; i++) {
-            int j = i + 1;
-            if(size == bucketmap[i].bucket_size) {
-                return bucketmap[i].bucket_index;
-            }
-            if(size > bucketmap[i].bucket_size && size < bucketmap[j].bucket_index) {
-                return bucketmap[j].bucket_index;
-            } else {
-                return bucketmap[i].bucket_index;
-            }
-        }
-    }
-    panic("no bucket size found, returning 0");
-    return (0); /* Should never reach this... */
-}
-
-/* Searches for the bucket that matches the indx value. Returning the buckets allocation size */
-static unsigned long
-align_to_bucket(long indx)
-{
-    if(indx <= 0) {
-        return bucketmap[0].bucket_size;
-    } else if(indx >= 11) {
-        return bucketmap[11].bucket_size;
-    } else {
-        for(int i = 1; i < 11; i++) {
-            if(indx == i) {
-                return bucketmap[i].bucket_size;
-            }
-        }
-    }
-    panic("no bucket found at indx: returning 0");
-    return (0); /* Should never reach this... */
 }
 
 /* Function to check if x is a power of 2 (Internal use only) */
@@ -395,7 +332,7 @@ trealloc(ktp, size)
 		allocsize = 1 << indx;
 	}
 	npg = clrnd(btoc(allocsize));
-	unsigned long tmp = LOG(npg); /* does log(npg) fit */
+	unsigned long tmp = LOG2((long) npg); /* does log(npg) fit */
 
 	if(isPowerOfTwo(npg - 1)) {
 		left = trealloc_left(ktp, npg, bsize);
