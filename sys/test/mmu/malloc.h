@@ -44,9 +44,9 @@
 #define MAXALLOCSAVE	(2 * CLBYTES)
 
 /* Two-bit Type field to distinguish between different splits of sized blocks */
-#define TYPE_11     11  /* split from 2k sized block */
-#define TYPE_01     01  /* left split from a 3 2k-3 block */
-#define TYPE_10     10  /* right split from a 3 2k-3 block  */
+#define TYPE_11     11      /* split from 2k sized block */
+#define TYPE_01     01      /* left split from a 3 2k-3 block */
+#define TYPE_10     10      /* right split from a 3 2k-3 block  */
 
 /* flags to malloc */
 #define	M_WAITOK	0x0000
@@ -218,8 +218,6 @@ struct kmemusage {
 
 /* Set of buckets for each size of memory block that is retained */
 struct kmembuckets {
-    //struct kmembuckets  *kb_front;
-    //struct kmembuckets  *kb_back;
     CIRCLEQ_HEAD( , kmembuckets) kb_cqlist;
     struct kmemtree_entry *kb_tstree;
 
@@ -236,8 +234,6 @@ struct kmembuckets {
 
 /* Tertiary Tree Entry for Each Bucket */
 struct kmemtree_entry {
-	//struct kmembuckets    kte_head;
-	//struct kmembuckets    kte_tail;
 	CIRCLEQ_ENTRY(kmembuckets) 		kte_head;
 	CIRCLEQ_ENTRY(kmembuckets) 		kte_tail;
 
@@ -261,8 +257,9 @@ struct kmemtree {
     long 					kt_size;			/* size of memory */
     int 					kt_entries;			/* # of child nodes in tree */
 
-    unsigned long 			kt_bucket_size;     /* bucketmap size in bytes */
-    long 					kt_bucket_idx;      /* bucketmap index */
+    //kt_va :Virtual Address
+    //kt_bsize :bucket size
+    //kt_bindx :bucket index
 };
 
 /* Tertiary Tree: Available Space List */
@@ -274,7 +271,8 @@ struct asl {
 };
 
 //#ifdef KERNEL
-#define	MINALLOCSIZE	(1 << MINBUCKET)
+#define	MINALLOCSIZE		(1 << MINBUCKET)
+#define BUCKETSIZE(indx)	(powertwo(indx))
 #define BUCKETINDX(size) \
 	((size) <= (MINALLOCSIZE * 128) \
 		? (size) <= (MINALLOCSIZE * 8) \
@@ -366,7 +364,6 @@ extern void *malloc __P((unsigned long size, int type, int flags));
 extern void free __P((void *addr, int type));
 
 /* All methods below are for internal use only for kern_malloc */
-//extern void kmemtree_entry __P((struct kmemtree_entry *ktep, caddr_t next, caddr_t last));
 extern struct kmemtree_entry *kmembucket_cqinit __P((struct kmembuckets *kbp, long indx));
 extern struct kmemtree *kmemtree_init __P((struct kmemtree_entry *ktep, unsigned long size));
 extern void kmemtree_create __P((struct kmemtree *ktp, boolean_t space));
@@ -378,8 +375,5 @@ extern struct asl *asl_insert(struct asl *free, unsigned long size);
 extern struct asl *asl_remove(struct asl *free, unsigned long size);
 extern struct asl *asl_search(struct asl *free, unsigned long size);
 
-extern static int isPowerOfTwo(long n); 	/* 0 = true, 1 = false */
-extern static long search_buckets(unsigned long size);
-extern static unsigned long align_to_bucket(long indx);
 //#endif /* KERNEL */
 #endif /* !_SYS_MALLOC_H_ */

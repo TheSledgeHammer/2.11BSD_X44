@@ -92,10 +92,16 @@ malloc(size, type, flags)
 #endif
     if (kbp->kb_next == NULL) {
     	kbp->kb_last = NULL;
+		if (size > MAXALLOCSAVE)
+			allocsize = roundup(size, CLBYTES);
+		else
+			allocsize = 1 << indx;
+		npg = clrnd(btoc(allocsize));
 
     	/* Start of Tertiary Search Tree Buddy Allocation (trealloc) */
     	/* ktep is now setup in kmembucket_cqinit() */
-    	if(ktp->kt_parent == NULL) {
+    	/*
+    	 if(ktp->kt_parent == NULL) {
     		ktp = kmemtree_init(ktep, size);
     	} else {
     		ktp->kt_parent = ktep;
@@ -106,7 +112,7 @@ malloc(size, type, flags)
     			trealloc(ktp, size);
     		}
     	}
-
+    	*/
         va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & M_NOWAIT));
         if (va == NULL) {
         	splx(s);

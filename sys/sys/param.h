@@ -134,6 +134,7 @@
 #define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
 
 
+
 /*
  * MAXMEM is the maximum core per process is allowed.  First number is Kb.
 */
@@ -154,3 +155,5 @@
 #define	FSHIFT	11		/* bits to right of fixed binary point */
 #define FSCALE	(1<<FSHIFT)
 #endif
+
+#define powertwo(x) (1 << (x))

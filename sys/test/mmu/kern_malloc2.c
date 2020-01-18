@@ -8,6 +8,8 @@
 #include <vm/vm.h>
 #include <vm/include/vm_kern.h>
 
+static int isPowerOfTwo(long n); 	/* 0 = true, 1 = false */
+
 /* Bucket List Search (kmembuckets) */
 struct kmembuckets *
 bucket_search_next(struct kmembuckets *kbp, caddr_t next)
@@ -178,26 +180,14 @@ kmemtree_create(ktp, space)
     ktp->kt_freelist2->asl_prev = NULL;
 }
 
-/* Function to check if x is a power of 2 (Internal use only) */
-static int
-isPowerOfTwo(long n)
-{
-    if (n == 0)
-        return 0;
-    while (n != 1)
-    {
-        if (n%2 != 0)
-            return 0;
-        n = n/2;
-    }
-    return (1);
-}
-
 struct kmemtree *
-trealloc_left(ktp, size, bsize)
+trealloc_left(ktp, size)
     struct kmemtree *ktp;
-    unsigned long size, bsize; /* bsize is bucket size*/
+    unsigned long size;
 {
+    long indx = BUCKETINDX(size);
+    unsigned long bsize = BUCKETSIZE(indx);
+
     unsigned long left;
     unsigned long diff = 0;
 
@@ -229,10 +219,13 @@ trealloc_left(ktp, size, bsize)
 }
 
 struct kmemtree *
-trealloc_middle(ktp, size, bsize)
+trealloc_middle(ktp, size)
     struct kmemtree *ktp;
-    unsigned long size, bsize; /* bsize is bucket size*/
+    unsigned long size;
 {
+    long indx = BUCKETINDX(size);
+    unsigned long bsize = BUCKETSIZE(indx);
+
     unsigned long middle;
     unsigned long diff = 0;
 
@@ -264,10 +257,13 @@ trealloc_middle(ktp, size, bsize)
 }
 
 struct kmemtree *
-trealloc_right(ktp, size, bsize)
+trealloc_right(ktp, size)
     struct kmemtree *ktp;
-    unsigned long size, bsize; /* bsize is bucket size*/
+    unsigned long size;
 {
+    long indx = BUCKETINDX(size);
+    unsigned long bsize = BUCKETSIZE(indx);
+
     unsigned long right;
     unsigned long diff = 0;
 
@@ -299,15 +295,15 @@ trealloc_right(ktp, size, bsize)
 }
 
 struct kmemtree *
-kmemtree_find(ktp, size, bsize)
+kmemtree_find(ktp, size)
     struct kmemtree *ktp;
-    unsigned long size, bsize;
+    unsigned long size;
 {
-    if(ktp == trealloc_left(ktp, size, bsize)) {
+    if(ktp == trealloc_left(ktp, size)) {
         return ktp;
-    } else if(ktp == trealloc_middle(ktp, size, bsize)) {
+    } else if(ktp == trealloc_middle(ktp, size)) {
         return ktp;
-    } else if(ktp == trealloc_right(ktp, size, bsize)) {
+    } else if(ktp == trealloc_right(ktp, size)) {
         return ktp;
     } else {
     	panic("Couldn't find block of memory in tree");
@@ -317,15 +313,14 @@ kmemtree_find(ktp, size, bsize)
 
 /* Assumes that the current address of kmembucket is null */
 void
-trealloc(ktp, size, bsize, flags)
+trealloc(ktp, size, flags)
 	struct kmemtree *ktp;
-	unsigned long size, bsize;
+	unsigned long size;
 	int flags;
 {
 	struct kmemtree *left, *middle, *right = NULL;
 	long indx, npg, allocsize;
 	caddr_t va;
-	//unsigned long bsize = align_to_bucket(BUCKETINDX(size));
 
 	if (size > MAXALLOCSAVE) {
 		allocsize = roundup(size, CLBYTES);
@@ -336,28 +331,28 @@ trealloc(ktp, size, bsize, flags)
 	unsigned long tmp = LOG2((long) npg); /* does log(npg) fit */
 
 	if(isPowerOfTwo(npg)) {
-		left = trealloc_left(ktp, npg, bsize);
+		left = trealloc_left(ktp, npg);
 		trealloc_vm(va, left, flags);
 
 	} else if(isPowerOfTwo(npg - 2)) {
-		middle = trealloc_middle(ktp, npg, bsize);
+		middle = trealloc_middle(ktp, npg);
 		trealloc_vm(va, middle, flags);
 
 	} else if (isPowerOfTwo(npg - 3)) {
-		right = trealloc_right(ktp, npg, bsize);
+		right = trealloc_right(ktp, npg);
 		trealloc_vm(va, right, flags);
 
 	} else {
 		if(isPowerOfTwo(tmp)) {
-			left = trealloc_left(ktp, npg, bsize);
+			left = trealloc_left(ktp, npg);
 			trealloc_vm(va, left, flags);
 
 		} else if(isPowerOfTwo(tmp - 2)) {
-			middle = trealloc_middle(ktp, npg, bsize);
+			middle = trealloc_middle(ktp, npg);
 			trealloc_vm(va, middle, flags);
 
 		} else if (isPowerOfTwo(tmp - 3)) {
-			right = trealloc_right(ktp, npg, bsize);
+			right = trealloc_right(ktp, npg);
 			trealloc_vm(va, right, flags);
 		}
 		/* add else find best fit (rmalloc?) */
@@ -384,4 +379,19 @@ trealloc_vm(va, ktp, allocsize, flags)
 	//npg = tree(right, middle, left) kt_size
 	va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(ktp->kt_size), !(flags & M_NOWAIT));
 	return ((void *) va);
+}
+
+/* Function to check if x is a power of 2 (Internal use only) */
+static int
+isPowerOfTwo(long n)
+{
+    if (n == 0)
+        return 0;
+    while (n != 1)
+    {
+        if (n%2 != 0)
+            return 0;
+        n = n/2;
+    }
+    return (1);
 }
