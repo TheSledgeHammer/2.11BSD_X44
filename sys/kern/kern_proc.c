@@ -11,7 +11,7 @@
 #include <sys/proc.h>
 #include <sys/systm.h>
 #include <sys/map.h>
-#include <test/mmu/malloc.h>
+#include <sys/malloc.h>
 
 struct prochd qs[NQS];		/* as good a place as any... */
 struct prochd rtqs[NQS];	/* Space for REALTIME queues too */

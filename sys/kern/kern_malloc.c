@@ -3,12 +3,11 @@
 #include <sys/proc.h>
 #include <sys/map.h>
 #include <sys/kernel.h>
-#include <test/mmu/malloc.h>
+#include <sys/malloc.h>
 
 #include <vm/vm.h>
 #include <vm/include/vm_kern.h>
 
-struct kmemtree_entry tree_bucket_entry[MINBUCKET + 16];
 struct kmembuckets bucket[MINBUCKET + 16];
 struct kmemstats kmemstats[M_LAST];
 struct kmemusage *kmemusage;
@@ -70,6 +69,7 @@ malloc(size, type, flags)
 	indx = BUCKETINDX(size);
     kbp = &bucket[indx];
     ktep = kmembucket_cqinit(kbp, indx);
+    ktp = kmemtree_init(ktep, indx);
     s = splimp();
 #ifdef KMEMSTATS
     while (ksp->ks_memuse >= ksp->ks_limit) {
@@ -92,25 +92,22 @@ malloc(size, type, flags)
 #endif
     if (kbp->kb_next == NULL) {
     	kbp->kb_last = NULL;
+
 		if (size > MAXALLOCSAVE)
 			allocsize = roundup(size, CLBYTES);
 		else
 			allocsize = 1 << indx;
 		npg = clrnd(btoc(allocsize));
 
-    	/* Start of Tertiary Search Tree Buddy Allocation (trealloc)
-    	 * ktep is now setup in kmembucket_cqinit()
-    	 */
-		/*
-    	 if(ktep != NULL) {
-    		 ktp = kmemtree_init(ktep, size);
-    		 if(!ktp->kt_space) {
-    			 ktp = kmemtree_create(ktp, TRUE);
-    		 }
-    	 }
-		va = (caddr_t) trealloc_va(ktp, size, flags);
-		*/
-        va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & M_NOWAIT));
+		if(!ktp->kt_space) { /* Check other conditions?? */
+			ktp->kt_space = TRUE;
+		    ktp->kt_size = 0;
+		    ktp->kt_entries = 0;
+		}
+		/* Allocates to Virtual Address through trealloc_va (a Tertiary Search Tree) */
+		va = (caddr_t) trealloc_va(ktp, (vm_size_t)ctob(npg), !(flags & M_NOWAIT));
+
+//        va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & M_NOWAIT));
         if (va == NULL) {
         	splx(s);
 #ifdef DEBUG

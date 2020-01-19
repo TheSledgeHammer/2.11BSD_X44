@@ -49,7 +49,7 @@
 #include <sys/mount.h>
 #include <sys/proc.h>
 #include <sys/uio.h>
-#include <test/mmu/malloc.h>
+#include <sys/malloc.h>
 #include <sys/dirent.h>
 
 #include <sys/syscallargs.h>

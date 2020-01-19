@@ -52,10 +52,6 @@
 #define	M_WAITOK	0x0000
 #define	M_NOWAIT	0x0001
 
-#define M_RMAP		1	/* rminit */
-#define M_RMALLOC	2	/* rmalloc */
-#define M_RMFREE	3	/* rmfree */
-
 /* Types of memory to be allocated */
 #define	M_FREE		0	/* should be on free list */
 #define	M_MBUF		1	/* mbuf */
@@ -365,8 +361,7 @@ extern void free __P((void *addr, int type));
 
 /* All methods below are for internal use only for kern_malloc */
 extern struct kmemtree_entry *kmembucket_cqinit __P((struct kmembuckets *kbp, long indx));
-extern struct kmemtree *kmemtree_init __P((struct kmemtree_entry *ktep, unsigned long size));
-extern void kmemtree_create __P((struct kmemtree *ktp, boolean_t space));
+extern struct kmemtree *kmemtree_init __P((struct kmemtree_entry *ktep, long indx));
 extern void trealloc_va __P((struct kmemtree *ktp, unsigned long size, int flags));
 
 /* Tertiary Tree: Available Space List */

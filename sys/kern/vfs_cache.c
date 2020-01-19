@@ -45,7 +45,7 @@
 #include <sys/vnode.h>
 #include <sys/namei.h>
 #include <sys/errno.h>
-#include <test/mmu/malloc.h>
+#include <sys/malloc.h>
 
 /*
  * Name caching works as follows:

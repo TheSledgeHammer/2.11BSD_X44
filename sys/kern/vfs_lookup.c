@@ -45,7 +45,7 @@
 #include <sys/vnode.h>
 #include <sys/mount.h>
 #include <sys/errno.h>
-#include <test/mmu/malloc.h>
+#include <sys/malloc.h>
 #include <sys/filedesc.h>
 #include <sys/proc.h>
 

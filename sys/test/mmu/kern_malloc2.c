@@ -3,12 +3,55 @@
 #include <sys/proc.h>
 #include <sys/map.h>
 #include <sys/kernel.h>
-#include <test/mmu/malloc.h>
+#include <sys/malloc.h>
 
 #include <vm/vm.h>
 #include <vm/include/vm_kern.h>
 
+struct kmemtree_entry tree_bucket_entry[MINBUCKET + 16];
 static int isPowerOfTwo(long n); 	/* 0 = true, 1 = false */
+
+struct kmemtree_entry *
+kmembucket_cqinit(kbp, indx)
+    struct kmembuckets *kbp;
+	long indx;
+{
+    kbp->kb_tstree = &tree_bucket_entry[indx];
+    register struct kmemtree_entry *ktep = kbp->kb_tstree;
+
+    /* kmembucket Circular Queue setup */
+    CIRCLEQ_INIT(&kbp->kb_cqlist);
+    CIRCLEQ_INSERT_HEAD(&kbp->kb_cqlist, kbp, kb_tstree->kte_head);
+    CIRCLEQ_INSERT_TAIL(&kbp->kb_cqlist, kbp, kb_tstree->kte_tail);
+
+    /* kmemtree_entry setup */
+    ktep->kte_head = kbp->kb_tstree->kte_head;
+    ktep->kte_tail = kbp->kb_tstree->kte_tail;
+
+    return (ktep);
+}
+
+struct kmemtree *
+kmemtree_init(ktep, indx)
+    struct kmemtree_entry *ktep;
+    long indx;
+{
+    struct kmemtree *ktp = (struct kmemtree *) &ktep[indx];
+    ktp->kt_parent = ktep;
+    ktp->kt_left = NULL;
+    ktp->kt_middle = NULL;
+    ktp->kt_right = NULL;
+
+    ktp->kt_space = FALSE;
+
+    ktp->kt_freelist1 = (struct asl *)ktp;
+    ktp->kt_freelist2 = (struct asl *)ktp;
+    ktp->kt_freelist1->asl_next = NULL;
+    ktp->kt_freelist1->asl_prev = NULL;
+    ktp->kt_freelist2->asl_next = NULL;
+    ktp->kt_freelist2->asl_prev = NULL;
+    return (ktp);
+}
 
 /* Bucket List Search (kmembuckets) */
 struct kmembuckets *
@@ -127,60 +170,6 @@ push_right(size, dsize, ktp)
 	}
 	ktp->kt_right = insert(size, TYPE_10, ktp);
 	return(ktp);
-}
-
-struct kmemtree_entry *
-kmembucket_cqinit(kbp, indx)
-    struct kmembuckets *kbp;
-	long indx;
-{
-    kbp->kb_tstree = &tree_bucket_entry[indx];
-    register struct kmemtree_entry *ktep = kbp->kb_tstree;
-
-    /* kmembucket Circular Queue setup */
-    CIRCLEQ_INIT(&kbp->kb_cqlist);
-    CIRCLEQ_INSERT_HEAD(&kbp->kb_cqlist, kbp, kb_tstree->kte_head);
-    CIRCLEQ_INSERT_TAIL(&kbp->kb_cqlist, kbp, kb_tstree->kte_tail);
-
-    /* kmemtree_entry setup */
-    ktep->kte_head = kbp->kb_tstree->kte_head;
-    ktep->kte_tail = kbp->kb_tstree->kte_tail;
-
-    return (ktep);
-}
-
-struct kmemtree *
-kmemtree_init(ktep, size)
-    struct kmemtree_entry *ktep;
-    unsigned long size;
-{
-    long indx = BUCKETINDX(size);
-    struct kmemtree *ktp = (struct kmemtree *) &ktep[indx];
-    ktp->kt_parent = ktep;
-    ktp->kt_left = NULL;
-    ktp->kt_middle = NULL;
-    ktp->kt_right = NULL;
-
-    ktp->kt_space = FALSE;
-    return (ktp);
-}
-
-struct kmemtree *
-kmemtree_create(ktp, space)
-    register struct kmemtree *ktp;
-    boolean_t space;
-{
-    ktp->kt_space = space;
-    ktp->kt_entries = 0;
-    ktp->kt_size = 0;
-
-    ktp->kt_freelist1 = (struct asl *)ktp;
-    ktp->kt_freelist2 = (struct asl *)ktp;
-    ktp->kt_freelist1->asl_next = NULL;
-    ktp->kt_freelist1->asl_prev = NULL;
-    ktp->kt_freelist2->asl_next = NULL;
-    ktp->kt_freelist2->asl_prev = NULL;
-    return (ktp);
 }
 
 struct kmemtree *
@@ -328,43 +317,35 @@ trealloc_va(ktp, size, flags)
     int flags;
 {
     struct kmemtree *left, *middle, *right = NULL;
-	long indx, npg, allocsize;
-
-    if (size > MAXALLOCSAVE) {
-		allocsize = roundup(size, CLBYTES);
-	} else {
-		allocsize = 1 << indx;
-	}
-	npg = clrnd(btoc(allocsize));
 
 	/* determines if npg has a log base of 2 */
-	unsigned long tmp = LOG2((long) npg);
+	unsigned long tmp = LOG2((long) size);
 
-    if(isPowerOfTwo(npg)) {
-        left = trealloc_left(ktp, npg);
-        ktp->kt_va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(right->kt_size), !(flags & M_NOWAIT));
+    if(isPowerOfTwo(size)) {
+        left = trealloc_left(ktp, size);
+        ktp->kt_va = (caddr_t) kmem_malloc(kmem_map, right->kt_size, flags);
 
-	} else if(isPowerOfTwo(npg - 2)) {
-		middle = trealloc_middle(ktp, npg);
-        ktp->kt_va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(middle->kt_size), !(flags & M_NOWAIT));
+	} else if(isPowerOfTwo(size - 2)) {
+		middle = trealloc_middle(ktp, size);
+        ktp->kt_va = (caddr_t) kmem_malloc(kmem_map, middle->kt_size, flags);
 
-	} else if (isPowerOfTwo(npg - 3)) {
-		right = trealloc_right(ktp, npg);
-        ktp->kt_va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(right->kt_size), !(flags & M_NOWAIT));
+	} else if (isPowerOfTwo(size - 3)) {
+		right = trealloc_right(ktp, size);
+        ktp->kt_va = (caddr_t) kmem_malloc(kmem_map, right->kt_size, flags);
 
 	} else {
-		/* allocates npg (tmp) if it has a log base of 2 */
+		/* allocates size (tmp) if it has a log base of 2 */
 		if(isPowerOfTwo(tmp)) {
-			left = trealloc_left(ktp, npg);
-            ktp->kt_va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(left->kt_size), !(flags & M_NOWAIT));
+			left = trealloc_left(ktp, size);
+            ktp->kt_va = (caddr_t) kmem_malloc(kmem_map, left->kt_size, flags);
 
 		} else if(isPowerOfTwo(tmp - 2)) {
-			middle = trealloc_middle(ktp, npg);
-            ktp->kt_va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(middle->kt_size), !(flags & M_NOWAIT));
+			middle = trealloc_middle(ktp, size);
+            ktp->kt_va = (caddr_t) kmem_malloc(kmem_map, middle->kt_size, flags);
 
 		} else if (isPowerOfTwo(tmp - 3)) {
-			right = trealloc_right(ktp, npg);
-            ktp->kt_va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(right->kt_size), !(flags & M_NOWAIT));
+			right = trealloc_right(ktp, size);
+            ktp->kt_va = (caddr_t) kmem_malloc(kmem_map, right->kt_size, flags);
 		}
     }
     return (ktp->kt_va);

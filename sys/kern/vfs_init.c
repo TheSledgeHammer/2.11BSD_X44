@@ -48,7 +48,7 @@
 #include <sys/ucred.h>
 #include <sys/buf.h>
 #include <sys/errno.h>
-#include <test/mmu/malloc.h>
+#include <sys/malloc.h>
 
 /*
  * Sigh, such primitive tools are these...

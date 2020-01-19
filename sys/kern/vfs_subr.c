@@ -53,7 +53,7 @@
 #include <sys/ucred.h>
 #include <sys/buf.h>
 #include <sys/errno.h>
-#include <test/mmu/malloc.h>
+#include <sys/malloc.h>
 #include <sys/domain.h>
 #include <sys/mbuf.h>
 

@@ -45,7 +45,7 @@
 #include <sys/vnode.h>
 #include <sys/mount.h>
 #include <sys/trace.h>
-#include <test/mmu/malloc.h>
+#include <sys/malloc.h>
 #include <sys/resourcevar.h>
 #include <sys/conf.h>
 
