@@ -16,33 +16,29 @@
  * Software interface driver for encapsulating ns in ip.
  */
 
-#include "param.h"
-#ifdef NSIP
-#include "systm.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "errno.h"
-#include "ioctl.h"
-#include "protosw.h"
+#include <sys/param.h>
+#ifdef	NSIP
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
+#include <sys/ioctl.h>
 
-#include "../net/if.h"
-#include "../net/netisr.h"
-#include "../net/route.h"
+#include <net/if.h>
+#include <net/route.h>
+#include <net/netisr.h>
 
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/in_var.h"
-#include "../netinet/ip.h"
-#include "../netinet/ip_var.h"
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_var.h>
+#include <netinet/ip.h>
+#include <netinet/ip_var.h>
 
-#ifdef vax
-#include "../vax/mtpr.h"
-#endif
-
-#include "../netns/ns.h"
-#include "../netns/ns_if.h"
-#include "../netns/idp.h"
+#include <netns/ns.h>
+#include <netns/ns_if.h>
+#include <netns/idp.h>
 
 struct ifnet_en {
 	struct ifnet ifen_ifnet;

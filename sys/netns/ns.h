@@ -20,13 +20,13 @@
 /*
  * Protocols
  */
-#define NSPROTO_RI	1		/* Routing Information */
+#define NSPROTO_RI		1		/* Routing Information */
 #define NSPROTO_ECHO	2		/* Echo Protocol */
 #define NSPROTO_ERROR	3		/* Error Protocol */
-#define NSPROTO_PE	4		/* Packet Exchange */
-#define NSPROTO_SPP	5		/* Sequenced Packet */
-#define NSPROTO_RAW	255		/* Placemarker*/
-#define NSPROTO_MAX	256		/* Placemarker*/
+#define NSPROTO_PE		4		/* Packet Exchange */
+#define NSPROTO_SPP		5		/* Sequenced Packet */
+#define NSPROTO_RAW		255		/* Placemarker*/
+#define NSPROTO_MAX		256		/* Placemarker*/
 
 
 /*
@@ -45,21 +45,21 @@
 
 /* flags passed to ns_output as last parameter */
 
-#define	NS_FORWARDING		0x1	/* most of idp header exists */
-#define	NS_ROUTETOIF		0x10	/* same as SO_DONTROUTE */
+#define	NS_FORWARDING		0x1				/* most of idp header exists */
+#define	NS_ROUTETOIF		0x10			/* same as SO_DONTROUTE */
 #define	NS_ALLOWBROADCAST	SO_BROADCAST	/* can send broadcast packets */
 
-#define NS_MAXHOPS		15
+#define NS_MAXHOPS			15
 
 /* flags passed to get/set socket option */
-#define	SO_HEADERS_ON_INPUT	1
+#define	SO_HEADERS_ON_INPUT		1
 #define	SO_HEADERS_ON_OUTPUT	2
-#define	SO_DEFAULT_HEADERS	3
-#define	SO_LAST_HEADER		4
-#define	SO_NSIP_ROUTE		5
-#define SO_SEQNO		6
-#define	SO_ALL_PACKETS		7
-#define SO_MTU			8
+#define	SO_DEFAULT_HEADERS		3
+#define	SO_LAST_HEADER			4
+#define	SO_NSIP_ROUTE			5
+#define SO_SEQNO				6
+#define	SO_ALL_PACKETS			7
+#define SO_MTU					8
 
 
 /*
@@ -77,28 +77,25 @@ union ns_net {
 
 union ns_net_u {
 	union ns_net	net_e;
-	u_long		long_e;
+	u_long			long_e;
 };
 
 struct ns_addr {
 	union ns_net	x_net;
 	union ns_host	x_host;
-	u_short	x_port;
+	u_short			x_port;
 };
 
 /*
  * Socket address, Xerox style
  */
 struct sockaddr_ns {
-	u_short		sns_family;
+	u_short			sns_family;
 	struct ns_addr	sns_addr;
-	char		sns_zero[2];
+	char			sns_zero[2];
 };
 #define sns_port sns_addr.x_port
 
-#ifdef vax
-#define ns_netof(a) (*(long *) & ((a).x_net)) /* XXX - not needed */
-#endif
 #define ns_neteqnn(a,b) (((a).s_net[0]==(b).s_net[0]) && \
 					((a).s_net[1]==(b).s_net[1]))
 #define ns_neteq(a,b) ns_neteqnn((a).x_net, (b).x_net)
@@ -115,7 +112,6 @@ struct sockaddr_ns {
 u_short	ntohs(), htons();
 u_long	ntohl(), htonl();
 
-#ifdef SUPERVISOR
 extern struct domain nsdomain;
 union ns_host ns_thishost;
 union ns_host ns_zerohost;
@@ -123,4 +119,3 @@ union ns_host ns_broadhost;
 union ns_net ns_zeronet;
 union ns_net ns_broadnet;
 u_short ns_cksum();
-#endif

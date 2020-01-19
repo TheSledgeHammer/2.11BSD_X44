@@ -12,30 +12,31 @@
  *      @(#)spp_debug.c	7.4 (Berkeley) 3/12/88
  */
 
-#include "param.h"
+#include <sys/param.h>
 #ifdef	NS
-#include "systm.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "protosw.h"
-#include "errno.h"
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
 
-#include "../net/route.h"
-#include "../net/if.h"
-#include "../netinet/tcp_fsm.h"
+#include <net/if.h>
+#include <net/route.h>
 
-#include "ns.h"
-#include "ns_pcb.h"
-#include "idp.h"
-#include "idp_var.h"
-#include "sp.h"
-#include "spidp.h"
+#include <netinet/tcp_fsm.h>
+
+#include <netns/ns.h>
+#include <netns/ns_pcb.h>
+#include <netns/idp.h>
+#include <netns/idp_var.h>
+#include <netns/sp.h>
+#include <netns/spidp.h>
 #define SPPTIMERS
-#include "spp_timer.h"
-#include "spp_var.h"
+#include <netns/spp_timer.h>
+#include <netns/spp_var.h>
 #define	SANAMES
-#include "spp_debug.h"
+#include <netns/spp_debug.h>
 
 int	sppconsdebug = 0;
 /*
@@ -48,7 +49,7 @@ spp_trace(act, ostate, sp, si, req)
 	struct spidp *si;
 	int req;
 {
-#ifdef INET
+//#ifdef INET
 	u_short seq, ack, len, alo;
 	u_long iptime();
 	int flags;

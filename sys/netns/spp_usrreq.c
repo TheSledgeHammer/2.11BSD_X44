@@ -12,30 +12,31 @@
  *      @(#)spp_usrreq.c	7.6 (Berkeley) 3/12/88
  */
 
-#include "param.h"
+#include <sys/param.h>
 #ifdef	NS
-#include "systm.h"
-#include "user.h"
-#include "mbuf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "errno.h"
+#include <sys/systm.h>
+#include <sys/user.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
 
-#include "../net/if.h"
-#include "../net/route.h"
-#include "../netinet/tcp_fsm.h"
+#include <net/if.h>
+#include <net/route.h>
 
-#include "ns.h"
-#include "ns_pcb.h"
-#include "idp.h"
-#include "idp_var.h"
-#include "ns_error.h"
-#include "sp.h"
-#include "spidp.h"
-#include "spp_timer.h"
-#include "spp_var.h"
-#include "spp_debug.h"
+#include <netinet/tcp_fsm.h>
+
+#include <netns/ns.h>
+#include <netns/ns_pcb.h>
+#include <netns/idp.h>
+#include <netns/idp_var.h>
+#include <netns/ns_error.h>
+#include <netns/sp.h>
+#include <netns/spidp.h>
+#include <netns/spp_timer.h>
+#include <netns/spp_var.h>
+#include <netns/spp_debug.h>
 
 /*
  * SP protocol implementation.
@@ -85,7 +86,7 @@ spp_input(m, nsp, ifp)
 	si->si_alo = ntohs(si->si_alo);
 
 	so = nsp->nsp_socket;
-	if (so->so_options & SO_DEBUG || traceallspps) {
+	if ((so->so_options & SO_DEBUG) || traceallspps) {
 		ostate = cb->s_state;
 		spp_savesi = *si;
 	}
@@ -227,7 +228,7 @@ spp_input(m, nsp, ifp)
 			    cb->s_rtt = 0;
 		}
 	}
-	if (so->so_options & SO_DEBUG || traceallspps)
+	if ((so->so_options & SO_DEBUG) || traceallspps)
 		spp_trace(SA_INPUT, (u_char)ostate, cb, &spp_savesi, 0);
 
 	m->m_len -= sizeof (struct idp);
@@ -248,13 +249,13 @@ dropwithreset:
 	si->si_ack = ntohs(si->si_ack);
 	si->si_alo = ntohs(si->si_alo);
 	ns_error(dtom(si), NS_ERR_NOSOCK, 0);
-	if (cb->s_nspcb->nsp_socket->so_options & SO_DEBUG || traceallspps)
+	if ((cb->s_nspcb->nsp_socket->so_options & SO_DEBUG) || traceallspps)
 		spp_trace(SA_DROP, (u_char)ostate, cb, &spp_savesi, 0);
 	return;
 
 drop:
 bad:
-	if (cb == 0 || cb->s_nspcb->nsp_socket->so_options & SO_DEBUG ||
+	if (cb == 0 || (cb->s_nspcb->nsp_socket->so_options & SO_DEBUG) ||
             traceallspps)
 		spp_trace(SA_DROP, (u_char)ostate, cb, &spp_savesi, 0);
 	m_freem(m);
@@ -396,9 +397,9 @@ register struct spidp *si;
 update_window:
 	if (SSEQ_LT(cb->s_snxt, cb->s_rack))
 		cb->s_snxt = cb->s_rack;
-	if (SSEQ_LT(cb->s_swl1, si->si_seq) || cb->s_swl1 == si->si_seq &&
+	if (SSEQ_LT(cb->s_swl1, si->si_seq) || (cb->s_swl1 == si->si_seq &&
 	    (SSEQ_LT(cb->s_swl2, si->si_ack) ||
-	     cb->s_swl2 == si->si_ack && SSEQ_LT(cb->s_ralo, si->si_alo))) {
+	     (cb->s_swl2 == si->si_ack && SSEQ_LT(cb->s_ralo, si->si_alo))))) {
 		/* keep track of pure window updates */
 		if ((si->si_cc & SP_SP) && cb->s_swl2 == si->si_ack
 		    && SSEQ_LT(cb->s_ralo, si->si_alo)) {
@@ -913,7 +914,7 @@ send:
 			sppstat.spps_sndrexmitpack++;
 		else
 			sppstat.spps_sndpack++;
-	} else if (cb->s_force || cb->s_flags & SF_ACKNOW) {
+	} else if (cb->s_force || (cb->s_flags & SF_ACKNOW)) {
 		/*
 		 * Must send an acknowledgement or a probe
 		 */
@@ -942,7 +943,7 @@ send:
 		si->si_cc |= SP_SP;
 	} else {
 		cb->s_outx = 3;
-		if (so->so_options & SO_DEBUG || traceallspps)
+		if ((so->so_options & SO_DEBUG) || traceallspps)
 			spp_trace(SA_OUTPUT, cb->s_state, cb, si, 0);
 		return (0);
 	}
@@ -1009,7 +1010,7 @@ send:
 			si->si_sum = 0xffff;
 
 		cb->s_outx = 4;
-		if (so->so_options & SO_DEBUG || traceallspps)
+		if ((so->so_options & SO_DEBUG) || traceallspps)
 			spp_trace(SA_OUTPUT, cb->s_state, cb, si, 0);
 
 		if (so->so_options & SO_DONTROUTE)
@@ -1378,6 +1379,7 @@ spp_usrreq(so, req, m, nam, rights)
 			break;
 		}
 		cb->s_oobflags |= SF_SOOB;
+		break;
 		/* fall into */
 	case PRU_SEND:
 		error = spp_output(cb, m);
@@ -1406,7 +1408,7 @@ spp_usrreq(so, req, m, nam, rights)
 	default:
 		panic("sp_usrreq");
 	}
-	if (cb && (so->so_options & SO_DEBUG || traceallspps))
+	if (cb && ((so->so_options & SO_DEBUG) || traceallspps))
 		spp_trace(SA_USER, (u_char)ostate, cb, (struct spidp *)0, req);
 release:
 	if (m != NULL)

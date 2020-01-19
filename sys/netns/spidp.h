@@ -17,7 +17,7 @@
  * containing a Sequenced Packet Protocol packet.
  */
 struct spidp {
-	struct idp	si_i;
+	struct idp		si_i;
 	struct sphdr 	si_s;
 };
 struct spidp_q {

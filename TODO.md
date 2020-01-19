@@ -11,12 +11,6 @@ Kern:
 - tty_pty.c
 - uipc_syscalls.c
 
-VM:
-- Fix-up use of 4.4BSD-lite2 proc pointers
-
-Net:
-- Fix-up netns
-
 i386:
 - Re-add
 

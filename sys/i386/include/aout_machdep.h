@@ -27,8 +27,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _I386_EXEC_H_
-#define _I386_EXEC_H_
+#ifndef _I386_AOUT_MACHDEP_H_
+#define _I386_AOUT_MACHDEP_H_
 
 #define __LDPGSZ	4096
 
@@ -46,4 +46,4 @@ struct relocation_info_i386 {
 };
 #define relocation_info	relocation_info_i386
 
-#endif  /* _I386_EXEC_H_ */
+#endif  /* _I386_AOUT_MACHDEP_H_ */

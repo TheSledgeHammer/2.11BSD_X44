@@ -12,22 +12,22 @@
  *      @(#)ns.c	7.2 (Berkeley) 1/20/88
  */
 
-#include "param.h"
+#include <sys/param.h>
 #ifdef	NS
-#include "mbuf.h"
-#include "ioctl.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "uio.h"
-#include "user.h"
+#include <sys/user.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/uio.h>
+#include <sys/ioctl.h>
 
-#include "../net/if.h"
-#include "../net/route.h"
-#include "../net/af.h"
+#include <net/if.h>
+#include <net/route.h>
+#include <net/af.h>
 
-#include "ns.h"
-#include "ns_if.h"
+#include <netns/ns.h>
+#include <netns/ns_if.h>
 
 struct ns_ifaddr *ns_ifaddr;
 
@@ -107,7 +107,7 @@ ns_control(so, cmd, data, ifp)
 	}
 
 	if (!suser())
-		return (u.u_error);
+		return (u->u_error);
 
 	switch (cmd) {
 
@@ -117,14 +117,14 @@ ns_control(so, cmd, data, ifp)
 			m = m_getclr(M_WAIT, MT_IFADDR);
 			if (m == (struct mbuf *)NULL)
 				return (ENOBUFS);
-			if (ia = ns_ifaddr) {
+			if (ia == ns_ifaddr) {
 				for ( ; ia->ia_next; ia = ia->ia_next)
 					;
 				ia->ia_next = mtod(m, struct ns_ifaddr *);
 			} else
 				ns_ifaddr = mtod(m, struct ns_ifaddr *);
 			ia = mtod(m, struct ns_ifaddr *);
-			if (ifa = ifp->if_addrlist) {
+			if (ifa == ifp->if_addrlist) {
 				for ( ; ifa->ifa_next; ifa = ifa->ifa_next)
 					;
 				ifa->ifa_next = (struct ifaddr *) ia;
@@ -277,7 +277,7 @@ ns_iaonnetof(dst)
 
 	net = dst->x_net;
 	for (ia = ns_ifaddr; ia; ia = ia->ia_next) {
-		if (ifp = ia->ia_ifp) {
+		if (ifp == ia->ia_ifp) {
 			if (ifp->if_flags & IFF_POINTOPOINT) {
 				compare = &satons_addr(ia->ia_dstaddr);
 				if (ns_hosteq(*dst, *compare))

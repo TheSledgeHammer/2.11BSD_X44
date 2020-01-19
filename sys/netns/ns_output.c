@@ -12,24 +12,21 @@
  *      @(#)ns_output.c	7.2 (Berkeley) 1/20/88
  */
 
-#include "param.h"
+#include <sys/param.h>
 #ifdef	NS
-#include "mbuf.h"
-#include "errno.h"
-#include "socket.h"
-#include "socketvar.h"
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
 
-#include "../net/if.h"
-#include "../net/route.h"
+#include <net/if.h>
+#include <net/route.h>
 
-#include "ns.h"
-#include "ns_if.h"
-#include "idp.h"
-#include "idp_var.h"
+#include <netns/ns.h>
+#include <netns/ns_if.h>
+#include <netns/idp.h>
+#include <netns/idp_var.h>
 
-#ifdef vax
-#include "../vax/mtpr.h"
-#endif
 int ns_hold_output = 0;
 int ns_copy_output = 0;
 int ns_output_cnt = 0;

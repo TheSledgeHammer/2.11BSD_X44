@@ -12,20 +12,21 @@
  *      @(#)ns_pcb.c	7.3 (Berkeley) 1/20/88
  */
 
-#include "param.h"
+#include <sys/param.h>
 #ifdef	NS
-#include "systm.h"
-#include "user.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "../net/if.h"
-#include "../net/route.h"
-#include "protosw.h"
+#include <sys/systm.h>
+#include <sys/user.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
 
-#include "ns.h"
-#include "ns_if.h"
-#include "ns_pcb.h"
+#include <net/if.h>
+#include <net/route.h>
+
+#include <netns/ns.h>
+#include <netns/ns_pcb.h>
+#include <netns/ns_if.h>
 
 struct	ns_addr zerons_addr;
 

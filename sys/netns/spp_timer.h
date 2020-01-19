@@ -18,10 +18,10 @@
  */
 #define	SPPT_NTIMERS	4
 
-#define	SPPT_REXMT	0		/* retransmit */
+#define	SPPT_REXMT		0		/* retransmit */
 #define	SPPT_PERSIST	1		/* retransmit persistance */
-#define	SPPT_KEEP	2		/* keep alive */
-#define	SPPT_2MSL	3		/* 2*msl quiet time timer */
+#define	SPPT_KEEP		2		/* keep alive */
+#define	SPPT_2MSL		3		/* 2*msl quiet time timer */
 
 /*
  * The SPPT_REXMT timer is used to force retransmissions.
@@ -96,6 +96,4 @@ char *spptimers[] =
 		(tv) = (tvmax); \
 }
 
-#ifdef SUPERVISOR
 extern int spp_backoff[];
-#endif

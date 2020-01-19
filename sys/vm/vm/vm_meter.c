@@ -76,12 +76,13 @@ loadav(avg)
 	register int i, nrun;
 	register struct proc *p;
 
-	for (nrun = 0, p = allproc.lh_first; p != 0; p = p->p_list.le_next) {
+	for (nrun = 0, p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
 		switch (p->p_stat) {
 		case SSLEEP:
-			if (p->p_priority > PZERO || p->p_slptime != 0)
+			if (p->p_pri > PZERO || p->p_slptime != 0)
 				continue;
 			/* fall through */
+			break;
 		case SRUN:
 		case SIDL:
 			nrun++;
@@ -152,7 +153,7 @@ vmtotal(totalp)
 	/*
 	 * Calculate process statistics.
 	 */
-	for (p = allproc.lh_first; p != 0; p = p->p_list.le_next) {
+	for (p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
 		if (p->p_flag & P_SYSTEM)
 			continue;
 		switch (p->p_stat) {
@@ -162,7 +163,7 @@ vmtotal(totalp)
 		case SSLEEP:
 		case SSTOP:
 			if (p->p_flag & P_INMEM) {
-				if (p->p_priority <= PZERO)
+				if (p->p_pri <= PZERO)
 					totalp->t_dw++;
 				else if (p->p_slptime < maxslp)
 					totalp->t_sl++;

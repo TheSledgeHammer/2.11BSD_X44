@@ -156,14 +156,16 @@ kmemtree_init(ktep, size)
 {
     long indx = BUCKETINDX(size);
     struct kmemtree *ktp = (struct kmemtree *) &ktep[indx];
-    ktp->kt_parent = ktep[indx];
+    ktp->kt_parent = ktep;
     ktp->kt_left = NULL;
     ktp->kt_middle = NULL;
     ktp->kt_right = NULL;
-    return ktp;
+
+    ktp->kt_space = FALSE;
+    return (ktp);
 }
 
-void
+struct kmemtree *
 kmemtree_create(ktp, space)
     register struct kmemtree *ktp;
     boolean_t space;
@@ -178,6 +180,7 @@ kmemtree_create(ktp, space)
     ktp->kt_freelist1->asl_prev = NULL;
     ktp->kt_freelist2->asl_next = NULL;
     ktp->kt_freelist2->asl_prev = NULL;
+    return (ktp);
 }
 
 struct kmemtree *
@@ -187,6 +190,8 @@ trealloc_left(ktp, size)
 {
     long indx = BUCKETINDX(size);
     unsigned long bsize = BUCKETSIZE(indx);
+    ktp->kt_bindx = indx;
+    ktp->kt_bsize = bsize;
 
     unsigned long left;
     unsigned long diff = 0;
@@ -225,6 +230,8 @@ trealloc_middle(ktp, size)
 {
     long indx = BUCKETINDX(size);
     unsigned long bsize = BUCKETSIZE(indx);
+    ktp->kt_bindx = indx;
+    ktp->kt_bsize = bsize;
 
     unsigned long middle;
     unsigned long diff = 0;
@@ -263,6 +270,8 @@ trealloc_right(ktp, size)
 {
     long indx = BUCKETINDX(size);
     unsigned long bsize = BUCKETSIZE(indx);
+    ktp->kt_bindx = indx;
+    ktp->kt_bsize = bsize;
 
     unsigned long right;
     unsigned long diff = 0;
@@ -312,51 +321,53 @@ kmemtree_find(ktp, size)
 }
 
 /* Assumes that the current address of kmembucket is null */
-void
-trealloc(ktp, size, flags)
+caddr_t
+trealloc_va(ktp, size, flags)
 	struct kmemtree *ktp;
 	unsigned long size;
-	int flags;
+    int flags;
 {
-	struct kmemtree *left, *middle, *right = NULL;
+    struct kmemtree *left, *middle, *right = NULL;
 	long indx, npg, allocsize;
-	caddr_t va;
 
-	if (size > MAXALLOCSAVE) {
+    if (size > MAXALLOCSAVE) {
 		allocsize = roundup(size, CLBYTES);
 	} else {
 		allocsize = 1 << indx;
 	}
 	npg = clrnd(btoc(allocsize));
-	unsigned long tmp = LOG2((long) npg); /* does log(npg) fit */
 
-	if(isPowerOfTwo(npg)) {
-		left = trealloc_left(ktp, npg);
-		trealloc_vm(va, left, flags);
+	/* determines if npg has a log base of 2 */
+	unsigned long tmp = LOG2((long) npg);
+
+    if(isPowerOfTwo(npg)) {
+        left = trealloc_left(ktp, npg);
+        ktp->kt_va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(right->kt_size), !(flags & M_NOWAIT));
 
 	} else if(isPowerOfTwo(npg - 2)) {
 		middle = trealloc_middle(ktp, npg);
-		trealloc_vm(va, middle, flags);
+        ktp->kt_va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(middle->kt_size), !(flags & M_NOWAIT));
 
 	} else if (isPowerOfTwo(npg - 3)) {
 		right = trealloc_right(ktp, npg);
-		trealloc_vm(va, right, flags);
+        ktp->kt_va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(right->kt_size), !(flags & M_NOWAIT));
 
 	} else {
+		/* allocates npg (tmp) if it has a log base of 2 */
 		if(isPowerOfTwo(tmp)) {
 			left = trealloc_left(ktp, npg);
-			trealloc_vm(va, left, flags);
+            ktp->kt_va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(left->kt_size), !(flags & M_NOWAIT));
 
 		} else if(isPowerOfTwo(tmp - 2)) {
 			middle = trealloc_middle(ktp, npg);
-			trealloc_vm(va, middle, flags);
+            ktp->kt_va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(middle->kt_size), !(flags & M_NOWAIT));
 
 		} else if (isPowerOfTwo(tmp - 3)) {
 			right = trealloc_right(ktp, npg);
-			trealloc_vm(va, right, flags);
+            ktp->kt_va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(right->kt_size), !(flags & M_NOWAIT));
 		}
-		/* add else find best fit (rmalloc?) */
-	}
+    }
+    return (ktp->kt_va);
 }
 
 /* free memory update asl lists & bucket freelist */
@@ -364,21 +375,6 @@ void
 trealloc_free()
 {
 
-}
-
-void *
-trealloc_vm(va, ktp, allocsize, flags)
-	caddr_t va;
-	struct kmemtree *ktp;
-	long allocsize;
-	int flags;
-{
-	register struct kmemusage *kup;
-	int s;
-	caddr_t cp, savedlist;
-	//npg = tree(right, middle, left) kt_size
-	va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(ktp->kt_size), !(flags & M_NOWAIT));
-	return ((void *) va);
 }
 
 /* Function to check if x is a power of 2 (Internal use only) */

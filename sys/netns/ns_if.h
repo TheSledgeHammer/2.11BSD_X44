@@ -20,14 +20,14 @@
  */
 
 struct ns_ifaddr {
-	struct	ifaddr ia_ifa;		/* protocol-independent info */
-#define	ia_addr	ia_ifa.ifa_addr
+	struct	ifaddr 		ia_ifa;		/* protocol-independent info */
+#define	ia_addr			ia_ifa.ifa_addr
 #define	ia_broadaddr	ia_ifa.ifa_broadaddr
-#define	ia_dstaddr	ia_ifa.ifa_dstaddr
-#define	ia_ifp		ia_ifa.ifa_ifp
-	union	ns_net	ia_net;		/* network number of interface */
-	int	ia_flags;
-	struct	ns_ifaddr *ia_next;	/* next in list of internet addresses */
+#define	ia_dstaddr		ia_ifa.ifa_dstaddr
+#define	ia_ifp			ia_ifa.ifa_ifp
+	union	ns_net		ia_net;		/* network number of interface */
+	int					ia_flags;
+	struct	ns_ifaddr 	*ia_next;	/* next in list of internet addresses */
 };
 
 /*
@@ -39,7 +39,7 @@ struct ns_ifaddr {
 /*
  * ia_flags
  */
-#define	IFA_ROUTE	0x01		/* routing entry installed */
+#define	IFA_ROUTE		0x01		/* routing entry installed */
 
 /* This is not the right place for this but where is? */
 #define	ETHERTYPE_NS	0x0600
@@ -52,8 +52,6 @@ struct nsip_req {
 };
 #endif
 
-#ifdef	SUPERVISOR
 struct	ns_ifaddr *ns_ifaddr;
 struct	ns_ifaddr *ns_iaonnetof();
 struct	ifqueue	nsintrq;	/* XNS input packet queue */
-#endif

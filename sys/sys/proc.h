@@ -55,11 +55,6 @@ struct	proc {
     struct	proc        *p_pptr;		/* pointer to process structure of parent */
     struct	proc 		*p_osptr;	 	/* Pointer to older sibling processes. */
 
-   // struct	proc        *p_pglist;		/* List of processes in pgrp. */
-   // struct	proc        *p_pptr;		/* Pointer to parent process. */
-   // struct  proc		*p_sibling;		/* List of sibling processes. */
-   // struct  proc		*p_children;	/* Pointer to list of children. */
-
 /* The following fields are all zeroed upon creation in fork. */
 #define	p_startzero		p_ysptr
 
@@ -74,7 +69,6 @@ struct	proc {
     caddr_t	            p_wchan;		/* event process is awaiting */
 	caddr_t	            p_wmesg;	 	/* Reason for sleep. */
 	u_int				p_swtime;	 	/* Time swapped in or out. */
-    char	            p_slptime;		/* Time since last blocked. */
 
     struct	itimerval   p_realtimer;	/* Alarm timer. */
     struct	timeval     p_rtime;	    /* Real time. */
@@ -100,7 +94,7 @@ struct	proc {
     u_char				p_cpu;			/* cpu usage for scheduling */
     u_char				p_time;			/* resident time for scheduling */
     char				p_nice;			/* nice for cpu usage */
-    char				p_slptime;		/* secs sleeping */
+    char				p_slptime;		/* Time since last blocked. secs sleeping */
     char				p_comm[MAXCOMLEN+1];
 
     struct  pgrp 	    *p_pgrp;        /* Pointer to process group. */

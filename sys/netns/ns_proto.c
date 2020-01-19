@@ -12,14 +12,14 @@
  *      @(#)ns_proto.c	7.2 (Berkeley) 1/20/88
  */
 
-#include "param.h"
+#include <sys/param.h>
 #ifdef	NS
-#include "socket.h"
-#include "protosw.h"
-#include "domain.h"
-#include "mbuf.h"
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/domain.h>
 
-#include "ns.h"
+#include <netns/ns.h>
 
 /*
  * NS protocol family: IDP, ERR, PE, SPP, ROUTE.

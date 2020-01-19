@@ -98,21 +98,18 @@ malloc(size, type, flags)
 			allocsize = 1 << indx;
 		npg = clrnd(btoc(allocsize));
 
-    	/* Start of Tertiary Search Tree Buddy Allocation (trealloc) */
-    	/* ktep is now setup in kmembucket_cqinit() */
-    	/*
-    	 if(ktp->kt_parent == NULL) {
-    		ktp = kmemtree_init(ktep, size);
-    	} else {
-    		ktp->kt_parent = ktep;
-    		if(ktp->kt_space) {
-    			trealloc(ktp, size);
-    		} else {
-    			kmemtree_create(ktp, TRUE);
-    			trealloc(ktp, size);
-    		}
-    	}
-    	*/
+    	/* Start of Tertiary Search Tree Buddy Allocation (trealloc)
+    	 * ktep is now setup in kmembucket_cqinit()
+    	 */
+		/*
+    	 if(ktep != NULL) {
+    		 ktp = kmemtree_init(ktep, size);
+    		 if(!ktp->kt_space) {
+    			 ktp = kmemtree_create(ktp, TRUE);
+    		 }
+    	 }
+		va = (caddr_t) trealloc_va(ktp, size, flags);
+		*/
         va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & M_NOWAIT));
         if (va == NULL) {
         	splx(s);

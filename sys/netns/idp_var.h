@@ -23,6 +23,5 @@ struct	idpstat {
 	long	idps_badlen;		/* ip length < ip header length */
 };
 
-#ifdef SUPERVISOR
 struct	idpstat	idpstat;
-#endif
+

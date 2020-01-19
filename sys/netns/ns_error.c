@@ -12,21 +12,21 @@
  *      @(#)ns_error.c	7.5 (Berkeley) 2/4/88
  */
 
-#include "param.h"
+#include <sys/param.h>
 #ifdef	NS
-#include "systm.h"
-#include "mbuf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "time.h"
-#include "kernel.h"
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/kernel.h>
 
-#include "../net/route.h"
+#include <net/route.h>
 
-#include "ns.h"
-#include "ns_pcb.h"
-#include "idp.h"
-#include "ns_error.h"
+#include <netns/ns.h>
+#include <netns/ns_pcb.h>
+#include <netns/idp.h>
+#include <netns/ns_error.h>
 
 #ifdef lint
 #define NS_ERRPRINTFS 1
@@ -94,7 +94,6 @@ ns_error(om, type, param)
 	 */
 	if (oip->idp_dna.x_host.c_host[0] & 1)
 		goto free;
-
 	ns_errstat.ns_es_error++;
 	/*
 	 * Make sure that the old IDP packet had 30 bytes of data to return;

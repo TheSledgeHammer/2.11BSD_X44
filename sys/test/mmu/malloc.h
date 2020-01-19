@@ -237,8 +237,8 @@ struct kmemtree_entry {
 	CIRCLEQ_ENTRY(kmembuckets) 		kte_head;
 	CIRCLEQ_ENTRY(kmembuckets) 		kte_tail;
 
-#define kteb_next         kte_head.kb_next		/* list of free blocks */
-#define kteb_last         kte_head.kb_last		/* last free block */
+#define kteb_next  kte_head.cqe_next->kb_next 	/* list of free blocks */
+#define kteb_last  kte_tail.cqe_next->kb_last 	/* last free block */
 };
 
 /* Tertiary Tree within each bucket, for each size of memory block that is retained */
@@ -257,9 +257,9 @@ struct kmemtree {
     long 					kt_size;			/* size of memory */
     int 					kt_entries;			/* # of child nodes in tree */
 
-    //kt_va :Virtual Address
-    //kt_bsize :bucket size
-    //kt_bindx :bucket index
+    caddr_t 				kt_va;				/* virtual address */
+    unsigned long 			kt_bsize;			/* bucket size this tree belongs too */
+    long 					kt_bindx;			/* bucket indx this tree belongs too */
 };
 
 /* Tertiary Tree: Available Space List */
@@ -367,7 +367,7 @@ extern void free __P((void *addr, int type));
 extern struct kmemtree_entry *kmembucket_cqinit __P((struct kmembuckets *kbp, long indx));
 extern struct kmemtree *kmemtree_init __P((struct kmemtree_entry *ktep, unsigned long size));
 extern void kmemtree_create __P((struct kmemtree *ktp, boolean_t space));
-extern void trealloc __P((struct kmemtree *ktp, unsigned long size));
+extern void trealloc_va __P((struct kmemtree *ktp, unsigned long size, int flags));
 
 /* Tertiary Tree: Available Space List */
 extern struct asl *asl_list(struct asl *free, unsigned long size);

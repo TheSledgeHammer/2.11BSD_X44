@@ -12,28 +12,28 @@
  *      @(#)ns_input.c	7.2 (Berkeley) 1/20/88
  */
 
-#include "param.h"
+#include <sys/param.h>
 #ifdef	NS
-#include "systm.h"
-#include "mbuf.h"
-#include "domain.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "errno.h"
-#include "time.h"
-#include "kernel.h"
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/errno.h>
+#include <sys/time.h>
+#include <sys/kernel.h>
 
-#include "../net/if.h"
-#include "../net/route.h"
-#include "../net/raw_cb.h"
+#include <net/if.h>
+#include <net/route.h>
+#include <net/raw_cb.h>
 
-#include "ns.h"
-#include "ns_if.h"
-#include "ns_pcb.h"
-#include "idp.h"
-#include "idp_var.h"
-#include "ns_error.h"
+#include <netns/ns.h>
+#include <netns/ns_pcb.h>
+#include <netns/ns_if.h>
+#include <netns/idp.h>
+#include <netns/idp_var.h>
+#include <netns/ns_error.h>
 
 /*
  * NS initialization.
@@ -110,7 +110,7 @@ next:
 
 	idp = mtod(m, struct idp *);
 	len = ntohs(idp->idp_len);
-	if (oddpacketp = len & 1) {
+	if (oddpacketp == len & 1) {
 		len++;		/* If this packet is of odd length,
 				   preserve garbage byte for checksum */
 	}
