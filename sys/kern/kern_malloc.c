@@ -99,15 +99,15 @@ malloc(size, type, flags)
 			allocsize = 1 << indx;
 		npg = clrnd(btoc(allocsize));
 
-		if(!ktp->kt_space) { /* Check other conditions?? */
+		if(!ktp->kt_space) {
 			ktp->kt_space = TRUE;
 		    ktp->kt_size = 0;
 		    ktp->kt_entries = 0;
 		}
-		/* Allocates to Virtual Address through trealloc_va (a Tertiary Search Tree) */
-		va = (caddr_t) trealloc_va(ktp, (vm_size_t)ctob(npg), !(flags & M_NOWAIT));
 
-//        va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & M_NOWAIT));
+		va = (caddr_t) kmemtree_trealloc(ktp, (vm_size_t)ctob(npg), !(flags & M_NOWAIT));
+
+        va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & M_NOWAIT));
         if (va == NULL) {
         	splx(s);
 #ifdef DEBUG

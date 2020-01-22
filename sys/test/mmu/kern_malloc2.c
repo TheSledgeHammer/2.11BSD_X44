@@ -128,7 +128,7 @@ insert(size, type, ktp)
 }
 
 struct kmemtree *
-push_left(size, dsize, ktp)
+kmemtree_push_left(size, dsize, ktp)
 	unsigned long size, dsize;  /*dsize = difference (if any) */
 	struct kmemtree *ktp;
 {
@@ -143,7 +143,7 @@ push_left(size, dsize, ktp)
 }
 
 struct kmemtree *
-push_middle(size, dsize, ktp)
+kmemtree_push_middle(size, dsize, ktp)
 	unsigned long size, dsize;  /*dsize = difference (if any) */
 	struct kmemtree *ktp;
 {
@@ -158,7 +158,7 @@ push_middle(size, dsize, ktp)
 }
 
 struct kmemtree *
-push_right(size, dsize, ktp)
+kmemtree_push_right(size, dsize, ktp)
 	unsigned long size, dsize; /*dsize = difference (if any) */
 	struct kmemtree *ktp;
 {
@@ -187,16 +187,16 @@ trealloc_left(ktp, size)
 
     left = SplitLeft(bsize);
     if(size < left) {
-        ktp->kt_left = push_left(left, diff, ktp);
+        ktp->kt_left = kmemtree_push_left(left, diff, ktp);
         while(size <= left && left > 0) {
             left = SplitLeft(left);
-            ktp->kt_left = push_left(left, diff, ktp);
+            ktp->kt_left = kmemtree_push_left(left, diff, ktp);
             if(size <= left) {
                 if(size < left) {
                     diff = left - size;
-                    ktp->kt_left = push_left(left, diff, ktp);
+                    ktp->kt_left = kmemtree_push_left(left, diff, ktp);
                 } else {
-                    ktp->kt_left = push_left(left, diff, ktp);
+                    ktp->kt_left = kmemtree_push_left(left, diff, ktp);
                 }
                 break;
             }
@@ -204,9 +204,9 @@ trealloc_left(ktp, size)
     } else {
         if(size < bsize && size >= left) {
             diff = bsize - size;
-            ktp->kt_left = push_left(size, diff, ktp);
+            ktp->kt_left = kmemtree_push_left(size, diff, ktp);
         } else {
-            ktp->kt_left = push_left(size, diff, ktp);
+            ktp->kt_left = kmemtree_push_left(size, diff, ktp);
         }
     }
     return (ktp);
@@ -227,16 +227,16 @@ trealloc_middle(ktp, size)
 
     middle = SplitMiddle(bsize);
     if(size < middle) {
-        ktp->kt_middle = push_middle(middle, diff, ktp);
+        ktp->kt_middle = kmemtree_push_middle(middle, diff, ktp);
         while(size <= middle && middle > 0) {
         	middle = SplitMiddle(middle);
-            ktp->kt_middle = push_middle(middle, diff, ktp);
+            ktp->kt_middle = kmemtree_push_middle(middle, diff, ktp);
             if(size <= middle) {
                 if(size < middle) {
                     diff = middle - size;
-                    ktp->kt_middle = push_middle(middle, diff, ktp);
+                    ktp->kt_middle = kmemtree_push_middle(middle, diff, ktp);
                 } else {
-                    ktp->kt_middle = push_middle(middle, diff, ktp);
+                    ktp->kt_middle = kmemtree_push_middle(middle, diff, ktp);
                 }
                 break;
             }
@@ -244,9 +244,9 @@ trealloc_middle(ktp, size)
     } else {
         if(size < bsize && size >= middle) {
             diff = bsize - size;
-            ktp->kt_middle = push_middle(size, diff, ktp);
+            ktp->kt_middle = kmemtree_push_middle(size, diff, ktp);
         } else {
-            ktp->kt_middle = push_middle(size, diff, ktp);
+            ktp->kt_middle = kmemtree_push_middle(size, diff, ktp);
         }
     }
     return (ktp);
@@ -267,16 +267,16 @@ trealloc_right(ktp, size)
 
     right = SplitRight(bsize);
     if(size < right) {
-        ktp->kt_right = push_right(right, diff, ktp);
+        ktp->kt_right = kmemtree_push_right(right, diff, ktp);
         while(size <= right && right > 0) {
         	right = SplitRight(right);
-            ktp->kt_right = push_right(right, diff, ktp);
+            ktp->kt_right = kmemtree_push_right(right, diff, ktp);
             if(size <= right) {
                 if(size < right) {
                     diff = right - size;
-                    ktp->kt_right = push_right(right, diff, ktp);
+                    ktp->kt_right = kmemtree_push_right(right, diff, ktp);
                 } else {
-                    ktp->kt_right = push_right(right, diff, ktp);
+                    ktp->kt_right = kmemtree_push_right(right, diff, ktp);
                 }
                 break;
             }
@@ -284,9 +284,9 @@ trealloc_right(ktp, size)
     } else {
         if(size < bsize && size >= right) {
             diff = bsize - size;
-            ktp->kt_right = push_right(size, diff, ktp);
+            ktp->kt_right = kmemtree_push_right(size, diff, ktp);
         } else {
-            ktp->kt_right = push_right(size, diff, ktp);
+            ktp->kt_right = kmemtree_push_right(size, diff, ktp);
         }
     }
     return (ktp);
@@ -311,7 +311,7 @@ kmemtree_find(ktp, size)
 
 /* Assumes that the current address of kmembucket is null */
 caddr_t
-trealloc_va(ktp, size, flags)
+kmemtree_trealloc(ktp, size, flags)
 	struct kmemtree *ktp;
 	unsigned long size;
     int flags;
@@ -351,22 +351,45 @@ trealloc_va(ktp, size, flags)
     return (ktp->kt_va);
 }
 
-/* free memory update asl lists & bucket freelist */
+/* free block of memory from kmem_malloc: update asl, bucket freelist
+ * Todo: Must match addr: No way of knowing what block of memory is being freed otherwise!
+ * Sol 1 = Add addr ptr to asl &/ or kmemtree to log/ track addr.
+ *  - Add to asl: Add addr ptr to functions (insert, search, remove, etc), then trealloc_free can run a check on addr
+ */
 void
-trealloc_free()
+trealloc_free(ktp, size)
+	struct kmemtree *ktp;
+	unsigned long size;
 {
+	struct kmemtree *toFind = NULL;
+	struct asl *free = NULL;
 
+	if(kmemtree_find(ktp, size)->kt_size == size) {
+		toFind = kmemtree_find(ktp, size);
+	}
+	if(toFind->kt_type == TYPE_11) {
+		free = ktp->kt_freelist1;
+		if(free->asl_size == toFind->kt_size) {
+			free = asl_remove(ktp->kt_freelist1, size);
+		}
+	}
+	if(toFind->kt_type == TYPE_01 || toFind->kt_type == TYPE_10) {
+		free = ktp->kt_freelist2;
+		if(free->asl_size == toFind->kt_size) {
+			free = asl_remove(ktp->kt_freelist2, size);
+		}
+	}
+	ktp->kt_entries--;
 }
 
 /* Function to check if x is a power of 2 (Internal use only) */
 static int
 isPowerOfTwo(long n)
 {
-    if (n == 0)
+	if (n == 0)
         return 0;
-    while (n != 1)
-    {
-        if (n%2 != 0)
+    while (n != 1) {
+    	if (n%2 != 0)
             return 0;
         n = n/2;
     }

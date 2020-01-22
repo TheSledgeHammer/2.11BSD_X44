@@ -362,7 +362,8 @@ extern void free __P((void *addr, int type));
 /* All methods below are for internal use only for kern_malloc */
 extern struct kmemtree_entry *kmembucket_cqinit __P((struct kmembuckets *kbp, long indx));
 extern struct kmemtree *kmemtree_init __P((struct kmemtree_entry *ktep, long indx));
-extern void trealloc_va __P((struct kmemtree *ktp, unsigned long size, int flags));
+extern void kmemtree_trealloc __P((struct kmemtree *ktp, unsigned long size, int flags));
+extern void trealloc_free __P((struct kmemtree *ktp, unsigned long size));
 
 /* Tertiary Tree: Available Space List */
 extern struct asl *asl_list(struct asl *free, unsigned long size);

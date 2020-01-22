@@ -180,7 +180,6 @@ struct mbstat {
 	u_short	m_mtypes[NMBTYPES];	/* type specific mbuf allocations */
 };
 
-#ifdef	SUPERVISOR
 extern	struct	mbuf *mbutl;		/* virtual address of net free mem */
 struct	mbstat mbstat;
 int	nmbclusters;
@@ -190,5 +189,4 @@ int	m_want;
 struct	mbuf *m_get(),*m_getclr(),*m_free(),*m_more(),*m_copy(),*m_pullup();
 #ifndef	pdp11
 caddr_t	m_clalloc();
-#endif
 #endif
