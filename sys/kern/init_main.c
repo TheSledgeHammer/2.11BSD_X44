@@ -148,11 +148,8 @@ main()
 	 * We continue to place resource usage info and signal
 	 * actions in the user struct so they're pageable.
 	*/
-	//p->p_stats = &p->p_addr->u_stats;
-	//p->p_sig = &p->p_addr->u_sigacts;
-
 	p->p_stats = &u->u_stats;
-	p->p_sig = &u->u_sigacts;
+	p->p_sigacts = &u->u_sigacts;
 
 	/*
 	 * Initialize per uid information structure and charge

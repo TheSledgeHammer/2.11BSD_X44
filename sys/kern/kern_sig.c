@@ -241,7 +241,7 @@ psignal(p, sig)
 		p->p_nice = NZERO;
 
 	if (prop & SA_CONT)
-		p->p_sig &= ~stopsigmask;
+		p->p_sigacts &= ~stopsigmask;
 
 	if (prop & SA_STOP) {
 		/*
@@ -253,9 +253,9 @@ psignal(p, sig)
 		if ((prop & SA_TTYSTOP) && (p->p_pptr == &proc[1]) &&
 		    action == SIG_DFL)
 			return;
-		p->p_sig &= ~contsigmask;
+		p->p_sigacts &= ~contsigmask;
 	}
-	p->p_sig |= mask;
+	p->p_sigacts |= mask;
 
 	/*
 	 * Defer further processing for signals which are held.
@@ -287,7 +287,7 @@ psignal(p, sig)
 		 * be awakened.
 		 */
 		if ((prop & SA_CONT) && action == SIG_DFL) {
-			p->p_sig &= ~mask;
+			p->p_sigacts &= ~mask;
 			goto out;
 		}
 		/*
@@ -305,7 +305,7 @@ psignal(p, sig)
 			 */
 			if (p->p_flag & SVFORK)
 				goto out;
-			p->p_sig &= ~mask;
+			p->p_sigacts &= ~mask;
 			p->p_ptracesig = sig;
 			if ((p->p_pptr->p_flag & P_NOCLDSTOP) == 0)
 				psignal(p->p_pptr, SIGCHLD);
@@ -335,7 +335,7 @@ psignal(p, sig)
 			 * Otherwise, process goes back to sleep state.
 			 */
 			if (action == SIG_DFL)
-				p->p_sig &= ~mask;
+				p->p_sigacts &= ~mask;
 			if (action == SIG_CATCH || p->p_wchan == 0)
 				goto run;
 			p->p_stat = SSLEEP;
@@ -347,7 +347,7 @@ psignal(p, sig)
 			 * Already stopped, don't need to stop again.
 			 * (If we did the shell could get confused.)
 			 */
-			p->p_sig &= ~mask;		/* take it away */
+			p->p_sigacts &= ~mask;		/* take it away */
 			goto out;
 		}
 
@@ -403,7 +403,7 @@ issignal(p)
 	int prop;
 
 	for (;;) {
-		mask = p->p_sig & ~p->p_sigmask;
+		mask = p->p_sigacts & ~p->p_sigmask;
 		if (p->p_flag&SVFORK)
 			mask &= ~stopsigmask;
 		if (mask == 0)
@@ -416,7 +416,7 @@ issignal(p)
 		 * only if P_TRACED was on when they were posted.
 		*/
 		if ((mask & p->p_sigignore) && (p->p_flag& P_TRACED) == 0) {
-			p->p_sig &= ~mask;
+			p->p_sigacts &= ~mask;
 			continue;
 		}
 		if ((p->p_flag & P_TRACED) && (p->p_flag & SVFORK) == 0) {
@@ -432,7 +432,7 @@ issignal(p)
 			 * would still be blocked on the ipc struct from 
 			 * the initial request.
 			 */
-			p->p_sig &= ~mask;
+			p->p_sigacts &= ~mask;
 			p->p_ptracesig = sig;
 			psignal(p->p_pptr, SIGCHLD);
 			do {
@@ -454,7 +454,7 @@ issignal(p)
 			 * signal is being masked, look for other signals.
 			 */
 			mask = sigmask(sig);
-			p->p_sig |= mask;
+			p->p_sigacts |= mask;
 			if (p->p_sigmask & mask)
 				continue;
 
@@ -530,7 +530,7 @@ issignal(p)
 			 */
 			return;
 		}
-		p->p_sig &= ~mask;		/* take the signal away! */
+		p->p_sigacts &= ~mask;		/* take the signal away! */
 	}
 	/* NOTREACHED */
 }
@@ -567,7 +567,7 @@ postsig(sig)
 		u->u_fpsaved = 1;
 	}
 
-	p->p_sig &= ~mask;
+	p->p_sigacts &= ~mask;
 	action = u->u_signal[sig];
 
 	if (action != SIG_DFL) {

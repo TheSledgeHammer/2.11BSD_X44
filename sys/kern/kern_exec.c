@@ -327,7 +327,7 @@ execsigs(p)
 		if (sigprop[nc] & SA_IGNORE) {
 			if (nc != SIGCONT)
 				p->p_sigignore |= mask;
-			p->p_sig &= ~mask;
+			p->p_sigacts &= ~mask;
 		}
 		u->u_signal[nc] = SIG_DFL;
 	}

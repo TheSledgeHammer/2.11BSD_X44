@@ -45,8 +45,6 @@ malloc(size, type, flags)
     unsigned long size;
     int type, flags;
 {
-    register struct kmemtree_entry *ktep;
-    register struct kmemtree *ktp;
     register struct kmembuckets *kbp;
     register struct kmemusage *kup;
     register struct freelist *freep;
@@ -68,8 +66,6 @@ malloc(size, type, flags)
 #endif
 	indx = BUCKETINDX(size);
     kbp = &bucket[indx];
-    ktep = kmembucket_cqinit(kbp, indx);
-    ktp = kmemtree_init(ktep, indx);
     s = splimp();
 #ifdef KMEMSTATS
     while (ksp->ks_memuse >= ksp->ks_limit) {
@@ -98,14 +94,6 @@ malloc(size, type, flags)
 		else
 			allocsize = 1 << indx;
 		npg = clrnd(btoc(allocsize));
-
-		if(!ktp->kt_space) {
-			ktp->kt_space = TRUE;
-		    ktp->kt_size = 0;
-		    ktp->kt_entries = 0;
-		}
-
-		va = (caddr_t) kmemtree_trealloc(ktp, (vm_size_t)ctob(npg), !(flags & M_NOWAIT));
 
         va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & M_NOWAIT));
         if (va == NULL) {

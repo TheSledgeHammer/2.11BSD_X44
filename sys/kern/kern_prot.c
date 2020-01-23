@@ -14,6 +14,7 @@
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/systm.h>
+#include <sys/malloc.h>
 
 void
 getpid()
@@ -220,4 +221,87 @@ setlogin()
 	return(u->u_error = error);
 }
 
+
+
+/*
+ * Test whether the specified credentials imply "super-user"
+ * privilege; if so, and we have accounting info, set the flag
+ * indicating use of super-powers.
+ * Returns 0 or error.
+ */
+int
+suser(cred, acflag)
+	struct ucred *cred;
+	u_short *acflag;
+{
+	if (cred->cr_uid == 0) {
+		if (acflag)
+			*acflag |= ASU;
+		return (0);
+	}
+	return (EPERM);
+}
+
+/*
+ * Allocate a zeroed cred structure.
+ */
+struct ucred *
+crget()
+{
+	register struct ucred *cr;
+
+	MALLOC(cr, struct ucred *, sizeof(*cr), M_CRED, M_WAITOK);
+	bzero((caddr_t)cr, sizeof(*cr));
+	cr->cr_ref = 1;
+	return (cr);
+}
+
+/*
+ * Free a cred structure.
+ * Throws away space when ref count gets to 0.
+ */
+void
+crfree(cr)
+	struct ucred *cr;
+{
+	int s;
+
+	s = splimp();				/* ??? */
+	if (--cr->cr_ref == 0)
+		FREE((caddr_t)cr, M_CRED);
+	(void) splx(s);
+}
+
+/*
+ * Copy cred structure to a new one and free the old one.
+ */
+struct ucred *
+crcopy(cr)
+	struct ucred *cr;
+{
+	struct ucred *newcr;
+
+	if (cr->cr_ref == 1)
+		return (cr);
+	newcr = crget();
+	*newcr = *cr;
+	crfree(cr);
+	newcr->cr_ref = 1;
+	return (newcr);
+}
+
+/*
+ * Dup cred struct to a new held one.
+ */
+struct ucred *
+crdup(cr)
+	struct ucred *cr;
+{
+	struct ucred *newcr;
+
+	newcr = crget();
+	*newcr = *cr;
+	newcr->cr_ref = 1;
+	return (newcr);
+}
 

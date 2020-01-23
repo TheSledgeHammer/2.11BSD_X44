@@ -27,10 +27,6 @@
 
 int	sorw(), soctl(), sosel(), socls();
 struct	fileops	socketops = { sorw, soctl, sosel, socls };
-/*
-extern	struct	fileops	inodeops, pipeops;
-	struct	fileops	*Fops[] = { NULL, &inodeops, &socketops, &pipeops };
-	*/
 
 register struct user *u;
 

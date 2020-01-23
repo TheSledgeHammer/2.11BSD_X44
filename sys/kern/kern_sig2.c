@@ -148,7 +148,7 @@ setsigvec(signum, sa)
 	 */
 	if (sa->sa_handler == SIG_IGN ||
 	    ((sigprop[signum] & SA_IGNORE) && sa->sa_handler == SIG_DFL)) {
-		p->p_sig &= ~bit;		/* never to be seen again */
+		p->p_sigacts &= ~bit;		/* never to be seen again */
 		if (signum != SIGCONT)
 			p->p_sigignore |= bit;	/* easier in psignal */
 		p->p_sigcatch &= ~bit;
@@ -261,8 +261,8 @@ sigpending()
 	struct	proc *p = u->u_procp;
 
 	if	(uap->set)
-		error = copyout((caddr_t)&p->p_sig, (caddr_t)uap->set, 
-				sizeof (p->p_sig));
+		error = copyout((caddr_t)&p->p_sigacts, (caddr_t)uap->set,
+				sizeof (p->p_sigacts));
 	else
 		error = EINVAL;
 	return(u->u_error = error);
@@ -360,7 +360,7 @@ sigwait()
 		goto out;
 	
 	wanted |= sigcantmask;
-	while	((sigsavail = (wanted & p->p_sig)) == 0)
+	while	((sigsavail = (wanted & p->p_sigacts)) == 0)
 		tsleep(&u->u_signal[0], PPAUSE | PCATCH, 0);
 	
 	if	(sigsavail & sigcantmask)
@@ -370,7 +370,7 @@ sigwait()
 		}
 
 	signo = ffs(sigsavail);
-	p->p_sig &= ~sigmask(signo);
+	p->p_sigacts &= ~sigmask(signo);
 	error = copyout(&signo, uap->sig, sizeof (int));
 out:
 	return(u->u_error = error);

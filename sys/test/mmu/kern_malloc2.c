@@ -3,7 +3,7 @@
 #include <sys/proc.h>
 #include <sys/map.h>
 #include <sys/kernel.h>
-#include <sys/malloc.h>
+#include <malloc2.h>
 
 #include <vm/vm.h>
 #include <vm/include/vm_kern.h>

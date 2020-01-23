@@ -1330,11 +1330,11 @@ ttycheckoutq(tp, wait)
 
 	hiwat = TTHIWAT(tp);
 	s = spltty();
-	oldsig = u->u_procp->p_sig;
+	oldsig = u->u_procp->p_sigacts;
 	if (tp->t_outq.c_cc > hiwat + 200)
 	    while (tp->t_outq.c_cc > hiwat) {
 		ttstart(tp);
-		if (wait == 0 || u->u_procp->p_sig != oldsig) {
+		if (wait == 0 || u->u_procp->p_sigacts != oldsig) {
 			splx(s);
 			return(0);
 		}

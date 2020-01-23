@@ -207,22 +207,18 @@ struct pcred {
 #define	PIDHSZ			16
 #define	PIDHASH(pid)	((pid) & (PIDHSZ - 1))
 
-//#define	PGRPHASH(pgid)	(&pgrphashtbl[(pgid) & pgrphash])
-//extern u_long pgrphash;
-
 extern struct proc *pidhash[];			/* In param.c. */
 extern struct pgrp *pgrphash[];			/* In param.c. */
+extern volatile struct proc *allproc;	/* List of active procs. */
+extern struct proc proc0;				/* Process slot for swapper. */
+int	nproc, maxproc;						/* Current and max number of procs. */
 extern int pidhashmask;					/* In param.c. */
 
-extern struct proc *pfind();
 extern struct proc proc[], *procNPROC;	/* the proc table itself */
 
 extern struct proc *freeproc;			/* List of free procs */
 extern struct proc *zombproc;			/* List of zombie procs. */
-
-extern volatile struct proc *allproc;	/* List of active procs. */
-extern struct proc proc0;				/* Process slot for swapper. */
-int	nproc, maxproc;						/* Current and max number of procs. */
+struct proc *initproc, *pageproc;		/* Process slots for init, pager. */
 
 #define	NQS	32							/* 32 run queues. */
 extern struct prochd qs[];				/* queue schedule */
@@ -233,7 +229,6 @@ struct	prochd {
 	struct	proc *ph_link;				/* Linked list of running processes. */
 	struct	proc *ph_rlink;
 };
-
 
 struct 	proc *pfind __P((pid_t));		/* Find process by id. */
 struct 	pgrp *pgfind __P((pid_t));		/* Find process group by id. */
@@ -249,6 +244,7 @@ void	unsleep __P((struct proc *));
 void	wakeup __P((void *chan));
 
 int 	chgproccnt __P((uid_t, int diff));
+int		acct_process __P((struct proc *));
 int		leavepgrp __P((struct proc *));
 int		enterpgrp __P((struct proc *, pid_t, int));
 void	fixjobc __P((struct proc *, struct pgrp *, int));
