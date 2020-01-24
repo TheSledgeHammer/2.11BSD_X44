@@ -1,13 +1,10 @@
 TODO:
 
 Kern:
-- kern_fork.c (swapout(rpp, X_DONTFREE, X_OLDSIZE, X_OLDSIZE), newproc(isvfork))
-- kern_sysctl.c (inode_sysctl, vm_sysctl)
 - subr_xxx.c (networking)
 - sys_kern.c (inodes)
+- sys_net (ubadr_t)
 - sys_process.c (ptrace)
-- tty_conf.c
-- tty_pty.c
 - uipc_syscalls.c
 
 Ufs:

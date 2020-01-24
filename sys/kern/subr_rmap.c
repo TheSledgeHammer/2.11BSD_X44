@@ -8,11 +8,10 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/types.h>
 #include <sys/map.h>
+#include <sys/malloc.h>
 #include <vm/vm.h>
 
-struct coremap coremap;
 /*
  * Resource map handling routines.
  *
@@ -47,17 +46,18 @@ struct coremap coremap;
  * Algorithm is first-fit.
  */
 
-size_t
+long
 rmalloc(mp, size)
 	struct map *mp;
-	register size_t size;
+	long size;
 {
 	register struct mapent *bp, *ep;
-	size_t addr;
+	register int addr;
 	int retry;
+	swblk_t first, rest;
 
 	if (!size)
-		panic("malloc: size = 0");
+		panic("rmalloc: size = 0");
 	/*
 	 * Search for a piece of the resource map which has enough
 	 * free space to accomodate the request.
@@ -72,16 +72,35 @@ again:
 			 */
 			addr = bp->m_addr;
 			bp->m_size -= size;
-			if (bp->m_size)
+			if (bp->m_size) {
 				bp->m_addr += size;
-			else for (ep = bp;; ++ep) {
+			} else for (ep = bp;; ++ep) {
 				*ep = *++bp;
-				if (!bp->m_size)
+				if (!bp->m_size) {
 					break;
+				}
 			}
 			return(addr);
 		}
 	/* no entries big enough */
+	if (!retry++) {
+		if (mp == swapmap && nswdev > 1 && (first = dmmax - bp->m_addr%dmmax) < size) {
+			if (bp->m_size - first < size) {
+				continue;
+			}
+			addr = bp->m_addr + first;
+			rest = bp->m_size - first - size;
+			bp->m_size = first;
+			if (rest) {
+				printf("short of swap\n");
+				rmfree(swapmap, rest, addr+size);
+			}
+			goto again;
+		} else if (mp == coremap) {
+			FREE(size, M_RMALLOC);
+			goto again;
+		}
+	}
 	return (0);
 }
 
@@ -92,8 +111,7 @@ again:
 void
 rmfree(mp, size, addr)
 	struct map *mp;
-	size_t size;
-	register size_t  addr;
+	long size, addr;
 {
 	register struct mapent *bp, *ep;
 	struct mapent *start;
@@ -182,19 +200,23 @@ rmfree(mp, size, addr)
  * to be in decreasing order; generally, data, stack, then u. will be
  * best.  Returns NULL on failure, address of u. on success.
  */
-size_t
+long
 rmalloc3(mp, d_size, s_size, u_size, a)
 	struct map *mp;
 	size_t d_size, s_size, u_size;
-	size_t a[3];
+	long a[3];
 {
 	register struct mapent *bp, *remap;
 	register int next;
 	struct mapent *madd[3];
 	size_t sizes[3];
-	int found;
+	int found, retry;
+	register int addr;
+	swblk_t first, rest;
 
 	sizes[0] = d_size; sizes[1] = s_size; sizes[2] = u_size;
+	retry = 0;
+again:
 	/*
 	 * note, this has to work for d_size and s_size of zero,
 	 * since init() comes in that way.
@@ -215,7 +237,28 @@ rmalloc3(mp, d_size, s_size, u_size, a)
 	for (next = 0; next < 3; ++next)
 		if (madd[next])
 			madd[next]->m_size += sizes[next];
-	return((memaddr)NULL);
+	if (!retry++)
+		for (next = 0; next < 3; ++next) {
+			if (mp == swapmap && nswdev > 1 && (first = dmmax - bp->m_addr%dmmax) < sizes[next]) {
+				if (bp->m_size - first < madd[next] && sizes[next]) {
+					continue;
+				}
+				addr = bp->m_addr + first;
+				rest = bp->m_size - first - sizes[next];
+				bp->m_size = first;
+				if (rest) {
+					printf("short of swap\n");
+					rmfree(swapmap, rest, addr + sizes[next]);
+				}
+				goto again;
+			}
+		} else if (mp == coremap) {
+			FREE(sizes[2], M_RMALLOC3);			/* smallest to largest; */
+			FREE(sizes[1], M_RMALLOC3);			/* free up minimum space */
+			FREE(sizes[0], M_RMALLOC3);
+			goto again;
+		}
+	return (0);
 
 resolve:
 	/* got it all, update the addresses. */

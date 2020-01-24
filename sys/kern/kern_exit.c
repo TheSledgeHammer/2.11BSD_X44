@@ -53,7 +53,7 @@ exit(rv)
 	 * P_PPWAIT is set; we will wakeup the parent below.
 	 */
 	p = u->u_procp;
-	p->p_flag &= ~(P_TRACED | P_PPWAIT | SULOCK);
+	p->p_flag &= ~(P_TRACED | P_PPWAIT | P_SULOCK);
 	p->p_sigignore = ~0;
 	p->p_sigacts = 0;
 	untimeout(realitexpire, (caddr_t)p);
@@ -103,7 +103,7 @@ exit(rv)
 	 * for the current process: have to run a bit longer
 	 * using the slots which are about to be freed...
 	 */
-	if (p->p_flag & SVFORK)
+	if (p->p_flag & P_SVFORK)
 		endvfork();
 	else {
 		rmfree(coremap, p->p_dsize, p->p_daddr);
@@ -358,17 +358,17 @@ endvfork()
 
 	rpp = u->u_procp;
 	rip = rpp->p_pptr;
-	rpp->p_flag &= ~SVFORK;
-	rpp->p_flag |= SLOCK;
+	rpp->p_flag &= ~P_SVFORK;
+	rpp->p_flag |= P_SLOCK;
 	wakeup((caddr_t)rpp);
-	while(!(rpp->p_flag&SVFDONE))
+	while(!(rpp->p_flag&P_SVFDONE))
 		sleep((caddr_t)rip, PZERO-1);
 	/*
 	 * The parent has taken back our data+stack, set our sizes to 0.
 	 */
 	u->u_dsize = rpp->p_dsize = 0;
 	u->u_ssize = rpp->p_ssize = 0;
-	rpp->p_flag &= ~(SVFDONE | SLOCK);
+	rpp->p_flag &= ~(P_SVFDONE | P_SLOCK);
 }
 
 /* make process 'parent' the new parent of process 'child'. */

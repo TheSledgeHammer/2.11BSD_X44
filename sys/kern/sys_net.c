@@ -474,6 +474,7 @@ number:		printn((long)*adx, b, flags);
 /* copied from subr_prf.c */
 printn(n, b, flags)
 	long n;
+	int flags;
 	u_int b;
 {
 	char prbuf[12];

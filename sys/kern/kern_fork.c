@@ -156,7 +156,7 @@ again:
 	rip = u->u_procp;
 	rpp->p_stat = SIDL;
 	rpp->p_realtimer.it_value = 0;
-	rpp->p_flag = SLOAD;
+	rpp->p_flag = P_SLOAD;
 	rpp->p_uid = rip->p_uid;
 	rpp->p_pgrp = rip->p_pgrp;
 	rpp->p_nice = rip->p_nice;
@@ -244,7 +244,7 @@ again:
 		rip->p_stat = SIDL;
 		rpp->p_addr = a1;
 		rpp->p_stat = SRUN;
-		swapout(rpp, X_DONTFREE, X_OLDSIZE, X_OLDSIZE);
+		swapout(rpp);
 		rip->p_stat = SRUN;
 		u->u_procp = rip;
 	}
@@ -266,7 +266,7 @@ again:
 		setrq(rpp);
 		splx(s);
 	}
-	rpp->p_flag |= SSWAP;
+	rpp->p_flag |= P_SSWAP;
 	if (isvfork) {
 		/*
 		 *  Set the parent's sizes to 0, since the child now
@@ -280,11 +280,11 @@ again:
 		}
 		rip->p_dsize = 0;
 		rip->p_ssize = 0;
-		rpp->p_flag |= SVFORK;
-		rip->p_flag |= SVFPRNT;
-		while (rpp->p_flag & SVFORK)
-			sleep((caddr_t)rpp, PSWP+1);
-		if ((rpp->p_flag & SLOAD) == 0)
+		rpp->p_flag |= P_SVFORK;
+		rip->p_flag |= P_SVFPRNT;
+		while (rpp->p_flag & P_SVFORK)
+			sleep((caddr_t)rpp, PSWP + 1);
+		if ((rpp->p_flag & P_SLOAD) == 0)
 			panic("newproc vfork");
 		u->u_dsize = rip->p_dsize = rpp->p_dsize;
 		rip->p_daddr = rpp->p_daddr;
@@ -292,9 +292,9 @@ again:
 		u->u_ssize = rip->p_ssize = rpp->p_ssize;
 		rip->p_saddr = rpp->p_saddr;
 		rpp->p_ssize = 0;
-		rpp->p_flag |= SVFDONE;
+		rpp->p_flag |= P_SVFDONE;
 		wakeup((caddr_t)rip);
-		rip->p_flag &= ~SVFPRNT;
+		rip->p_flag &= ~P_SVFPRNT;
 	}
 	return(0);
 }

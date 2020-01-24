@@ -102,26 +102,30 @@ extern int			page_shift;
  */
 #define	VM_METER	1		/* struct vmmeter */
 #define	VM_LOADAVG	2		/* struct loadavg */
-#define	VM_MAXID	3		/* number of valid vm ids */
+#define	VM_SWAPMAP	3		/* struct mapent _swapmap[] */
+#define	VM_COREMAP	4		/* struct mapent _coremap[] */
+#define	VM_MAXID	5		/* number of valid vm ids */
 
 #define	CTL_VM_NAMES { \
 	{ 0, 0 }, \
 	{ "vmmeter", CTLTYPE_STRUCT }, \
 	{ "loadavg", CTLTYPE_STRUCT }, \
+	{ "swapmap", CTLTYPE_STRUCT }, \
+	{ "coremap", CTLTYPE_STRUCT }, \
 }
 
 /* 
  *	Return values from the VM routines.
  */
-#define	KERN_SUCCESS		0
+#define	KERN_SUCCESS			0
 #define	KERN_INVALID_ADDRESS	1
 #define	KERN_PROTECTION_FAILURE	2
-#define	KERN_NO_SPACE		3
+#define	KERN_NO_SPACE			3
 #define	KERN_INVALID_ARGUMENT	4
-#define	KERN_FAILURE		5
+#define	KERN_FAILURE			5
 #define	KERN_RESOURCE_SHORTAGE	6
-#define	KERN_NOT_RECEIVER	7
-#define	KERN_NO_ACCESS		8
+#define	KERN_NOT_RECEIVER		7
+#define	KERN_NO_ACCESS			8
 
 #ifndef ASSEMBLER
 /*

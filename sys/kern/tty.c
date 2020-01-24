@@ -43,7 +43,6 @@
  * clist handling.
 */
 
-int	TTYHOG = 255;
 int	TTYBLOCK = 128;
 int	TTYUNBLOCK = 64;
 

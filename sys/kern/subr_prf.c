@@ -114,6 +114,7 @@ tprintf(tp, fmt, x1)
 /*VARARGS2*/
 void
 log(level, fmt, x1)
+	int level;
 	char *fmt;
 	unsigned x1;
 {
@@ -246,6 +247,7 @@ void
 printn(n, b, flags, ttyp)
 	long n;
 	u_int b;
+	int flags;
 	struct tty *ttyp;
 {
 	char prbuf[12];

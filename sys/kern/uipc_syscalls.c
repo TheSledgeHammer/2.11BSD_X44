@@ -7,37 +7,33 @@
  */
 
 #include <sys/param.h>
-
-//#include <machine/seg.h>
-//#include <machine/psl.h>
-
 #include <sys/systm.h>
+#include <sys/filedesc.h>
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/file.h>
-//#include <sys/inode.h>
 #include <sys/buf.h>
+#include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
-#include <sys/uio.h>
-#include <sys/domain.h>
-//#include <pdpif/if_uba.h>
-//#include <netinet/in.h>
-//#include <netinet/in_systm.h>
+//#include <sys/uio.h>
+//#include <sys/domain.h>
+#include <sys/mount.h>
+//#include <sys/syscallargs.h>
 
 static void
 MBZAP(m, len, type)
 	register struct mbuf *m;
 	int len, type;
-	{
+{
 	m->m_next = 0;
 	m->m_off = MMINOFF;
 	m->m_len = len;
 	m->m_type = type;
 	m->m_act = 0;
-	}
+}
 
 /*
  * System call interface to the socket abstraction.
@@ -45,6 +41,8 @@ MBZAP(m, len, type)
 
 extern int netoff;
 struct file *gtsockf();
+
+extern	struct fileops socketops;
 
 int
 socket()
@@ -63,7 +61,7 @@ socket()
 		return (u->u_error);
 	fp->f_flag = FREAD|FWRITE;
 	fp->f_type = DTYPE_SOCKET;
-	u->u_error = SOCREATE(uap->domain, &so, uap->type, uap->protocol);
+	u->u_error = socreate(uap->domain, &so, uap->type, uap->protocol);
 	if (u->u_error)
 		goto bad;
 	fp->f_socket = so;
@@ -98,7 +96,7 @@ bind()
 	u->u_error = copyin(uap->name, mtod(nam, caddr_t), uap->namelen);
 	if (u->u_error)
 		return (u->u_error);
-	u->u_error = SOBIND(fp->f_socket, nam);
+	u->u_error = sobind((struct socket *)fp->f_socket, nam);
 	return (u->u_error);
 }
 
@@ -116,10 +114,11 @@ listen()
 	fp = gtsockf(uap->s);
 	if (fp == 0)
 		return (u->u_error);
-	u->u_error = SOLISTEN(fp->f_socket, uap->backlog);
+	u->u_error = solisten((struct socket *)fp->f_socket, uap->backlog);
 	return (u->u_error);
 }
 
+int
 accept()
 {
 	register struct a {
@@ -127,6 +126,7 @@ accept()
 		caddr_t	name;
 		int	*anamelen;
 	} *uap = (struct a *)u->u_ap;
+
 	register struct file *fp;
 	struct mbuf *nam;
 	int namelen;
@@ -141,32 +141,32 @@ accept()
 	u->u_error = copyin((caddr_t)uap->anamelen, (caddr_t)&namelen,
 		sizeof (namelen));
 	if (u->u_error)
-		return;
+		return (u->u_error);
 #ifndef pdp11
 	if (useracc((caddr_t)uap->name, (u_int)namelen, B_WRITE) == 0) {
 		u->u_error = EFAULT;
-		return;
+		return (u->u_error);
 	}
 #endif
 noname:
 	fp = gtsockf(uap->s);
 	if (fp == 0)
-		return;
+		return (u->u_error);
 	s = splnet();
 	so = fp->f_socket;
 	if (SOACC1(so)) {
 		splx(s);
-		return;
+		return (u->u_error);
 	}
 	if (ufalloc(0) < 0) {
 		splx(s);
-		return;
+		return (u->u_error);
 	}
 	fp = falloc();
 	if (fp == 0) {
 		u->u_ofile[u->u_r.r_val1] = 0;
 		splx(s);
-		return;
+		return (u->u_error);
 	}
 	if (!(so = (struct socket *)ASOQREMQUE(so, 1)))	/* deQ in super */
 		panic(>accept>);
@@ -186,8 +186,10 @@ noname:
 		    sizeof (*uap->anamelen));
 	}
 	splx(s);
+	return (u->u_error);
 }
 
+int
 connect()
 {
 	register struct a {
@@ -206,14 +208,14 @@ connect()
 		return(u->u_error = ENETDOWN);
 	fp = gtsockf(uap->s);
 	if (fp == 0)
-		return;
+		return (u->u_error);
 	if (uap->namelen > MLEN)
 		return (u->u_error = EINVAL);
 	nam = (struct mbuf *)sabuf;
 	MBZAP(nam, uap->namelen, MT_SONAME);
 	u->u_error = copyin(uap->name, mtod(nam, caddr_t), uap->namelen);
 	if (u->u_error)
-		return;
+		return (u->u_error);
 	so = fp->f_socket;
 	/*
 	 * soconnect was modified to clear the isconnecting bit on errors.
@@ -222,7 +224,7 @@ connect()
 	 */
 	u->u_error = SOCON1(so, nam);
 	if (u->u_error)
-		return;
+		return (u->u_error);
 	/*
 	 * i don't think the setjmp stuff works too hot in supervisor mode,
 	 * so what is done instead is do the setjmp here and then go back
@@ -238,8 +240,10 @@ connect()
 	u->u_error = CONNWHILE(so);
 bad2:
 	splx(s);
+	return (u->u_error);
 }
 
+int
 socketpair()
 {
 	register struct a {
@@ -256,7 +260,7 @@ socketpair()
 		return(u->u_error = ENETDOWN);
 	u->u_error = SOCREATE(uap->domain, &so1, uap->type, uap->protocol);
 	if	(u->u_error)
-		return;
+		return (u->u_error);;
 	u->u_error = SOCREATE(uap->domain, &so2, uap->type, uap->protocol);
 	if	(u->u_error)
 		goto free;
@@ -287,7 +291,7 @@ socketpair()
 	}
 	u->u_r.r_val1 = 0;
 	(void) copyout((caddr_t)sv, (caddr_t)uap->rsv, 2 * sizeof (int));
-	return;
+	return (u->u_error);;
 free4:
 	fp2->f_count = 0;
 	u->u_ofile[sv[1]] = 0;
@@ -298,8 +302,10 @@ free2:
 	(void)SOCLOSE(so2);
 free:
 	(void)SOCLOSE(so1);
+	return (u->u_error);
 }
 
+void
 sendto()
 {
 	register struct a {
@@ -324,6 +330,7 @@ sendto()
 	sendit(uap->s, &msg, uap->flags);
 }
 
+void
 send()
 {
 	register struct a {
@@ -346,6 +353,7 @@ send()
 	sendit(uap->s, &msg, uap->flags);
 }
 
+void
 sendmsg()
 {
 	register struct a {

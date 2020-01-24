@@ -115,6 +115,7 @@ uipc_usrreq(so, req, m, nam, rights)
 
 		case SOCK_DGRAM:
 			panic(<sys/uipc 1<sys/);
+			break;
 			/*NOTREACHED*/
 
 		case SOCK_STREAM:

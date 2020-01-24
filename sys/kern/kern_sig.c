@@ -170,7 +170,7 @@ killpg1(signo, pgrp, all)
 	}
 	for (f = 0, p = allproc; p != NULL; p = p->p_nxt) {
 		if ((p->p_pgrp != pgrp && !all) || p->p_ppid == 0 ||
-		    (p->p_flag&SSYS) || (all && p == u->u_procp))
+		    (p->p_flag&P_SSYS) || (all && p == u->u_procp))
 			continue;
 		if (!cansignal(p, signo)) {
 			if (!all)
@@ -303,7 +303,7 @@ psignal(p, sig)
 			 * If a child holding parent blocked,
 			 * stopping could cause deadlock.
 			 */
-			if (p->p_flag & SVFORK)
+			if (p->p_flag & P_SVFORK)
 				goto out;
 			p->p_sigacts &= ~mask;
 			p->p_ptracesig = sig;
@@ -404,7 +404,7 @@ issignal(p)
 
 	for (;;) {
 		mask = p->p_sigacts & ~p->p_sigmask;
-		if (p->p_flag&SVFORK)
+		if (p->p_flag&P_SVFORK)
 			mask &= ~stopsigmask;
 		if (mask == 0)
 			return;		/* No signals to send */
@@ -419,7 +419,7 @@ issignal(p)
 			p->p_sigacts &= ~mask;
 			continue;
 		}
-		if ((p->p_flag & P_TRACED) && (p->p_flag & SVFORK) == 0) {
+		if ((p->p_flag & P_TRACED) && (p->p_flag & P_SVFORK) == 0) {
 			/*
 			 * If traced, always stop, and stay
 			 * stopped until released by the parent.

@@ -31,30 +31,30 @@ struct map {
 };
 
 struct mapent {
-	size_t 	m_size;		/* size of this segment of the map */
-	size_t 	m_addr;		/* resource-space addr of start of segment */
+	long 	m_size;		/* size of this segment of the map */
+	long 	m_addr;		/* resource-space addr of start of segment */
 };
 
-#define RMALLOC(space, cast, mp, size) {	\
-	(space) = (cast)rmalloc(mp, size);		\
+#define RMALLOC(mp, cast, size) {			\
+	(mp) = (cast)rmalloc(mp, size);			\
 };
 
-#define RMALLOC3(space, cast, mp, d_size, s_size, u_size, a) {		\
-	(space) = (cast)rmalloc3(mp, d_size, s_size, u_size, a);		\
+#define RMALLOC3(mp, cast, d_size, s_size, u_size, a) {		\
+	(mp) = (cast)rmalloc3(mp, d_size, s_size, u_size, a);	\
 };
 
 #define RMFREE(mp, size, addr) { 		\
-	rmfree(mp, size, (caddr_t)(addr)); 	\
+	rmfree(mp, size, (caddr_t)addr); 	\
 };
 
 #ifdef KERNEL
-extern struct map coremap;																					/* space for core allocation */
-extern struct map swapmap;																					/* space for swap allocation */
+#define	ARGMAPSIZE	16
+struct map *kmemmap, *mbmap;
+struct map *coremap[1];																				/* space for core allocation */
+struct map *swapmap[1];																				/* space for swap allocation */
 int	nswapmap;
 
-extern void 	rminit__P((struct map *mp, size_t size, size_t addr, char *name, int mapsize));
-extern size_t 	rmalloc__P((struct map *mp, size_t size)); 													/* Allocate units from the given map. */
-extern void 	rmfree__P((struct map *mp, size_t size, size_t addr)); 										/* Free the previously allocated units at addr into the specified map.*/
-extern size_t 	rmalloc3__P((struct map *mp, size_t d_size, size_t s_size, size_t u_size, size_t a[3]));	/* Allocate resources for the three segments of a process.*/
-extern size_t 	rmget__P((struct map *mp, size_t size, size_t addr));
+extern size_t 	rmalloc__P((struct map *mp, long size)); 											/* Allocate units from the given map. */
+extern void 	rmfree__P((struct map *mp, long size, long addr)); 									/* Free the previously allocated units at addr into the specified map.*/
+extern size_t 	rmalloc3__P((struct map *mp, long d_size, long s_size, long u_size, long a[3]));	/* Allocate resources for the three segments of a process.*/
 #endif

@@ -104,8 +104,8 @@ struct socket {
  */
 
 /* how much space is there in a socket buffer (so->so_snd or so->so_rcv) */
-#define	sbspace(sb) \
-    (MIN((int)((sb)->sb_hiwat - (sb)->sb_cc),\
+#define	sbspace(sb) 							\
+    (MIN((int)((sb)->sb_hiwat - (sb)->sb_cc),	\
 	 (int)((sb)->sb_mbmax - (sb)->sb_mbcnt)))
 
 /* do we have to send all at once on a socket? */
@@ -113,49 +113,49 @@ struct socket {
     ((so)->so_proto->pr_flags & PR_ATOMIC)
 
 /* can we read something from so? */
-#define	soreadable(so) \
+#define	soreadable(so) 											\
     ((so)->so_rcv.sb_cc || ((so)->so_state & SS_CANTRCVMORE) || \
 	(so)->so_qlen || (so)->so_error)
 
 /* can we write something to so? */
-#define	sowriteable(so) \
-    (sbspace(&(so)->so_snd) > 0 && \
-	(((so)->so_state&SS_ISCONNECTED) || \
+#define	sowriteable(so) 								\
+    (sbspace(&(so)->so_snd) > 0 && 						\
+	(((so)->so_state&SS_ISCONNECTED) || 				\
 	  ((so)->so_proto->pr_flags&PR_CONNREQUIRED)==0) || \
-     ((so)->so_state & SS_CANTSENDMORE) || \
+     ((so)->so_state & SS_CANTSENDMORE) ||				\
      (so)->so_error)
 
 /* adjust counters in sb reflecting allocation of m */
-#define	sballoc(sb, m) { \
-	(sb)->sb_cc += (m)->m_len; \
-	(sb)->sb_mbcnt += MSIZE; \
-	if ((m)->m_off > MMAXOFF) \
-		(sb)->sb_mbcnt += CLBYTES; \
+#define	sballoc(sb, m) { 							\
+	(sb)->sb_cc += (m)->m_len; 						\
+	(sb)->sb_mbcnt += MSIZE; 						\
+	if ((m)->m_off > MMAXOFF) 						\
+		(sb)->sb_mbcnt += CLBYTES; 					\
 }
 
 /* adjust counters in sb reflecting freeing of m */
-#define	sbfree(sb, m) { \
-	(sb)->sb_cc -= (m)->m_len; \
-	(sb)->sb_mbcnt -= MSIZE; \
-	if ((m)->m_off > MMAXOFF) \
-		(sb)->sb_mbcnt -= CLBYTES; \
+#define	sbfree(sb, m) { 							\
+	(sb)->sb_cc -= (m)->m_len; 						\
+	(sb)->sb_mbcnt -= MSIZE; 						\
+	if ((m)->m_off > MMAXOFF) 						\
+		(sb)->sb_mbcnt -= CLBYTES; 					\
 }
 
 /* set lock on sockbuf sb */
-#define sblock(sb) { \
-	while ((sb)->sb_flags & SB_LOCK) { \
-		(sb)->sb_flags |= SB_WANT; \
-		SLEEP((caddr_t)&(sb)->sb_flags, PZERO+1); \
-	} \
-	(sb)->sb_flags |= SB_LOCK; \
+#define sblock(sb) { 								\
+	while ((sb)->sb_flags & SB_LOCK) { 				\
+		(sb)->sb_flags |= SB_WANT; 					\
+		SLEEP((caddr_t)&(sb)->sb_flags, PZERO+1); 	\
+	} 												\
+	(sb)->sb_flags |= SB_LOCK; 						\
 }
 
 /* release lock on sockbuf sb */
-#define	sbunlock(sb) { \
-	(sb)->sb_flags &= ~SB_LOCK; \
-	if ((sb)->sb_flags & SB_WANT) { \
-		(sb)->sb_flags &= ~SB_WANT; \
-		WAKEUP((caddr_t)&(sb)->sb_flags); \
+#define	sbunlock(sb) { 						\
+	(sb)->sb_flags &= ~SB_LOCK; 			\
+	if ((sb)->sb_flags & SB_WANT) { 		\
+		(sb)->sb_flags &= ~SB_WANT; 		\
+		WAKEUP((caddr_t)&(sb)->sb_flags); 	\
 	} \
 }
 

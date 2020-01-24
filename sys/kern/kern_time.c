@@ -176,13 +176,13 @@ getitimer()
 	aitv.it_value.tv_usec = 0;
 	s = splclock();
 	if (uap->which == ITIMER_REAL) {
-		register struct proc *p = u.u_procp;
+		register struct proc *p = u->u_procp;
 
 		aitv.it_interval.tv_sec = p->p_realtimer.it_interval;
 		aitv.it_value.tv_sec = p->p_realtimer.it_value;
 	}
 	else {
-		register struct k_itimerval *t = &u.u_timer[uap->which - 1];
+		register struct k_itimerval *t = &u->u_timer[uap->which - 1];
 
 		aitv.it_interval.tv_sec = t->it_interval / hz;
 		aitv.it_value.tv_sec = t->it_value / hz;

@@ -233,7 +233,6 @@ enterpgrp(p, pgid, mksess)
 	register struct pgrp *pgrp = pgfind(pgid);
 	register struct proc **pp;
 	int n;
-
 #ifdef DIAGNOSTIC
 	if (pgrp != NULL && mksess)	/* firewalls */
 		panic("enterpgrp: setsid into non-empty pgrp");
@@ -251,7 +250,7 @@ enterpgrp(p, pgid, mksess)
 			panic("enterpgrp: new pgrp and pid != pgid");
 #endif
 		//MALLOC(pgrp, struct pgrp *, sizeof(struct pgrp), M_PGRP, M_WAITOK);
-		RMALLOC(struct session *, sess, sizeof(struct session));
+		RMALLOC(pgrp, struct pgrp *, sizeof(struct pgrp));
 		if ((np = pfind(savepid)) == NULL || np != p)
 			return (ESRCH);
 		if (mksess) {
@@ -261,7 +260,7 @@ enterpgrp(p, pgid, mksess)
 			 * new session
 			 */
 			//MALLOC(sess, struct session *, sizeof(struct session), M_SESSION, M_WAITOK);
-			RMALLOC(struct session *, sess, sizeof(struct session));
+			RMALLOC(sess, struct session *, sizeof(struct session));
 			sess->s_leader = p;
 			sess->s_count = 1;
 			sess->s_ttyvp = NULL;

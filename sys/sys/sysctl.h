@@ -44,8 +44,12 @@
  */
 #ifndef KERNEL
 #include <sys/time.h>
+#include <sys/resource.h>
+#include <sys/file.h>
+#include <sys/vnode.h>
 #include <sys/ucred.h>
 #include <sys/proc.h>
+#include <sys/map.h>
 #include <vm/vm.h>
 #endif
 
@@ -84,7 +88,7 @@ struct ctlname {
 #define	CTL_UNSPEC	0		/* unused */
 #define	CTL_KERN	1		/* "high kernel": proc, limits */
 #define	CTL_VM		2		/* virtual memory */
-#define	CTL_FS		3		/* file system, mount type is next */
+#define	CTL_VFS		3		/* file system, mount type is next */
 #define	CTL_NET		4		/* network, see socket.h */
 #define	CTL_DEBUG	5		/* debugging parameters */
 #define	CTL_HW		6		/* generic cpu/io */
@@ -96,7 +100,7 @@ struct ctlname {
 	{ 0, 0 }, \
 	{ "kern", CTLTYPE_NODE }, \
 	{ "vm", CTLTYPE_NODE }, \
-	{ "fs", CTLTYPE_NODE }, \
+	{ "vfs", CTLTYPE_NODE }, \
 	{ "net", CTLTYPE_NODE }, \
 	{ "debug", CTLTYPE_NODE }, \
 	{ "hw", CTLTYPE_NODE }, \
@@ -141,36 +145,36 @@ struct ctlname {
 #define	KERN_MAXID			27	/* number of valid kern ids */
 
 #define CTL_KERN_NAMES { \
-	{ 0, 0 }, \
-	{ "ostype", CTLTYPE_STRING }, \
-	{ "osrelease", CTLTYPE_STRING }, \
-	{ "osrevision", CTLTYPE_LONG }, \
-	{ "version", CTLTYPE_STRING }, \
-	{ "maxvnodes", CTLTYPE_INT }, \
-	{ "maxproc", CTLTYPE_INT }, \
-	{ "maxfiles", CTLTYPE_INT }, \
-	{ "argmax", CTLTYPE_INT }, \
-	{ "securelevel", CTLTYPE_INT }, \
-	{ "hostname", CTLTYPE_STRING }, \
-	{ "hostid", CTLTYPE_LONG }, \
-	{ "clockrate", CTLTYPE_STRUCT }, \
-	{ "vnode", CTLTYPE_STRUCT }, \
-	{ "proc", CTLTYPE_STRUCT }, \
-	{ "file", CTLTYPE_STRUCT }, \
-	{ "profiling", CTLTYPE_NODE }, \
-	{ "posix1version", CTLTYPE_INT }, \
-	{ "ngroups", CTLTYPE_INT }, \
-	{ "job_control", CTLTYPE_INT }, \
-	{ "saved_ids", CTLTYPE_INT }, \
-	{ "boottime", CTLTYPE_STRUCT }, \
-	{ "maxtexts", CTLTYPE_INT }, \
-	{ "text", CTLTYPE_STRUCT }, \
-	{ "acctthresh", CTLTYPE_INT }, \
-	{ "domainname", CTLTYPE_STRING }, \
-	{ "update", CTLTYPE_INT }, \
-	{ "osreldate", CTLTYPE_INT }, \
-        { "ntp_pll", CTLTYPE_NODE }, \
-	{ "bootfile", CTLTYPE_STRING }, \
+	{ 0, 0 }, 							\
+	{ "ostype", CTLTYPE_STRING }, 		\
+	{ "osrelease", CTLTYPE_STRING }, 	\
+	{ "osrevision", CTLTYPE_LONG }, 	\
+	{ "version", CTLTYPE_STRING }, 		\
+	{ "maxvnodes", CTLTYPE_INT }, 		\
+	{ "maxproc", CTLTYPE_INT }, 		\
+	{ "maxfiles", CTLTYPE_INT }, 		\
+	{ "argmax", CTLTYPE_INT }, 			\
+	{ "securelevel", CTLTYPE_INT }, 	\
+	{ "hostname", CTLTYPE_STRING }, 	\
+	{ "hostid", CTLTYPE_LONG }, 		\
+	{ "clockrate", CTLTYPE_STRUCT }, 	\
+	{ "vnode", CTLTYPE_STRUCT }, 		\
+	{ "proc", CTLTYPE_STRUCT }, 		\
+	{ "file", CTLTYPE_STRUCT }, 		\
+	{ "profiling", CTLTYPE_NODE }, 		\
+	{ "posix1version", CTLTYPE_INT }, 	\
+	{ "ngroups", CTLTYPE_INT }, 		\
+	{ "job_control", CTLTYPE_INT }, 	\
+	{ "saved_ids", CTLTYPE_INT }, 		\
+	{ "boottime", CTLTYPE_STRUCT }, 	\
+	{ "maxtexts", CTLTYPE_INT }, 		\
+	{ "text", CTLTYPE_STRUCT }, 		\
+	{ "acctthresh", CTLTYPE_INT }, 		\
+	{ "domainname", CTLTYPE_STRING }, 	\
+	{ "update", CTLTYPE_INT }, 			\
+	{ "osreldate", CTLTYPE_INT }, 		\
+    { "ntp_pll", CTLTYPE_NODE }, 		\
+	{ "bootfile", CTLTYPE_STRING }, 	\
 }
 
 /* 
@@ -217,35 +221,11 @@ struct kinfo_proc {
 
 		short	e_xswrss;
 		long	e_flag;
-#define	EPROC_CTTY	0x01			/* controlling tty vnode active */
+#define	EPROC_CTTY		0x01		/* controlling tty vnode active */
 #define	EPROC_SLEADER	0x02		/* session leader */
 		char	e_login[MAXLOGNAME];/* setlogin() name */
 		long	e_spare[4];
 	} kp_eproc;
-};
-
-/*
- * KERN_TEXT op returns array of augmented text structures:
-*/
-struct	kinfo_text {
-	struct	text *kp_textp;			/* address of text */
-	struct	text kp_text;			/* text structure */
-};
- 
-/*
- * KERN_INODE returns an array of augmented inode structures:
-*/
-struct	kinfo_inode {
-	struct	inode	*kp_inodep;		/* address of inode */
-	struct	inode	kp_inode;		/* inode structure */
-};
-
-/*
- * KERN_FILE returns an array of augmented file structures:
-*/
-struct	kinfo_file {
-	struct	file	*kp_filep;		/* address of file */
-	struct	file	kp_file;		/* file structure */
 };
 
 /*
@@ -260,9 +240,8 @@ struct	kinfo_file {
 #define	HW_PAGESIZE	 	7		/* int: software page size */
 #define	HW_DISKNAMES	8		/* strings: disk drive names */
 #define	HW_DISKSTATS	9		/* struct: diskstats[] */
-#define	HW_MAXID		10		/* number of valid hw ids */
-#define HW_DEVCONF		11		/* node: device configuration */
-#define	HW_MAXID		12		/* number of valid hw ids */
+#define HW_DEVCONF		10		/* node: device configuration */
+#define	HW_MAXID		11		/* number of valid hw ids */
 
 #define CTL_HW_NAMES { \
 	{ 0, 0 }, \
@@ -373,13 +352,6 @@ extern struct ctldebug debug15, debug16, debug17, debug18, debug19;
  */
 typedef int (sysctlfn)
     __P((int *, u_int, void *, size_t *, void *, size_t, struct proc *));
-
-int sysctl_int();
-int sysctl_rdint();
-int sysctl_string();
-int sysctl_rdstring();
-int sysctl_rdstruct();
-void fill_eproc();
 
 int sysctl_int __P((void *, size_t *, void *, size_t, int *));
 int sysctl_rdint __P((void *, size_t *, void *, int));

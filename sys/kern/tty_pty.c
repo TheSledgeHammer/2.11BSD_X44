@@ -25,10 +25,6 @@
 #include <sys/kernel.h>
 #include <sys/vnode.h>
 
-//#include <sys/inode.h>
-
-extern	int	TTYHOG;		/* see tty.c */
-
 #if NPTY == 1
 #undef NPTY
 #define	NPTY	16		/* crude XXX */
@@ -117,7 +113,7 @@ again:
 		while (tp == u->u_ttyp && u->u_procp->p_pgrp != tp->t_pgrp) {
 			if ((u->u_procp->p_sigignore & sigmask(SIGTTIN)) ||
 			    (u->u_procp->p_sigmask & sigmask(SIGTTIN)) ||
-			    (u->u_procp->p_flag&SVFORK))
+			    (u->u_procp->p_flag&P_SVFORK))
 				return (EIO);
 			gsignal(u->u_procp->p_pgrp, SIGTTIN);
 			sleep((caddr_t)&lbolt, TTIPRI);
@@ -185,6 +181,7 @@ ptsstart(tp)
 void
 ptcwakeup(tp, flag)
 	struct tty *tp;
+	int flag;
 {
 	struct pt_ioctl *pti = &pt_ioctl[minor(tp->t_dev)];
 

@@ -21,10 +21,10 @@
 #include <sys/kernel.h>
 #include <sys/errno.h>
 
-#define	ADDDOMAIN(x)	{ \
-	extern struct domain x/**/domain; \
-	x/**/domain.dom_next = domains; \
-	domains = &x/**/domain; \
+#define	ADDDOMAIN(x)	{ 				\
+	extern struct domain x/**/domain; 	\
+	x/**/domain.dom_next = domains; 	\
+	domains = &x/**/domain; 			\
 }
 
 domaininit()

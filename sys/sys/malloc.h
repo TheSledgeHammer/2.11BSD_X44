@@ -108,6 +108,8 @@
 #define M_NFSRVDESC	59	/* NFS server socket descriptor */
 #define M_NFSDIROFF	60	/* NFS directory offset data */
 #define M_NFSBIGFH	61	/* NFS version 3 file handle */
+#define	M_RMALLOC	62	/* Resource Map Malloc */
+#define	M_RMALLOC3	63	/* Resource Map Malloc3 */
 #define	M_TEMP		74	/* misc temporary data buffers */
 #define	M_LAST		75	/* Must be last type + 1 */
 
@@ -174,7 +176,8 @@
 	"NFSV3 srvdesc",/* 59 M_NFSRVDESC */ 	\
 	"NFSV3 diroff",	/* 60 M_NFSDIROFF */	\
 	"NFSV3 bigfh",	/* 61 M_NFSBIGFH */ 	\
-	NULL, NULL, 							\
+	"rmalloc", 		/* 62 M_RMALLOC" */		\
+	"rmalloc3", 	/* 63 M_RMALLOC3" */ 	\
 	NULL, NULL, NULL, NULL, NULL, 			\
 	NULL, NULL, NULL, NULL, NULL, 			\
 	"temp",			/* 74 M_TEMP */ 		\

@@ -41,17 +41,18 @@
  */
 
 #include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
 #include <sys/user.h>
-#include <sys/map.h>
+#include <sys/systm.h>
 #include <sys/proc.h>
+#include <sys/buf.h>
+#include <sys/kernel.h>
 #include <sys/file.h>
 #include <sys/vnode.h>
-#include <sys/buf.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
 #include <vm/vm.h>
+#include <sys/map.h>
+
 #include <sys/sysctl.h>
 
 
@@ -61,7 +62,8 @@ sysctlfn hw_sysctl;
 sysctlfn debug_sysctl;
 #endif
 extern sysctlfn vm_sysctl;
-extern sysctlfn fs_sysctl;
+extern sysctlfn vfs_sysctl;
+extern sysctlfn net_sysctl;
 extern sysctlfn cpu_sysctl;
 
 /*
@@ -86,7 +88,7 @@ int
 __sysctl()
 {
 	register struct sysctl_args *uap = (struct sysctl_args *)u->u_ap;
-	struct proc
+	struct proc *p;
 	int error;
 	u_int savelen, oldlen = 0;
 	sysctlfn *fn;
@@ -118,8 +120,8 @@ __sysctl()
 		break;
 #endif
 //#ifdef notyet
-	case CTL_FS:
-		fn = fs_sysctl;
+	case CTL_VFS:
+		fn = vfs_sysctl;
 		break;
 //#endif
 	case CTL_MACHDEP:
@@ -174,9 +176,6 @@ int hostnamelen;
 long hostid;
 int securelevel;
 char kernelname[MAXPATHLEN] = "/kernel";	/* XXX bloat */
-extern int vfs_update_wakeup;
-extern int vfs_update_interval;
-extern int osreldate;
 
 /*
  * kernel related system variables.
@@ -688,50 +687,6 @@ sysctl_clockrate(where, sizep)
 	return(sysctl_rdstruct(where, sizep, NULL, &clkinfo, sizeof (clkinfo)));
 }
 
-/*
- * Dump inode list (via sysctl).
- * Copyout address of inode followed by inode.
- */
-/* ARGSUSED */
-int
-sysctl_inode(where, sizep)
-	char *where;
-	size_t *sizep;
-{
-	register struct inode *ip;
-	register char *bp = where;
-	struct inode *ipp;
-	char *ewhere;
-	int error, numi;
-
-	for (numi = 0, ip = inode; ip < inodeNINODE; ip++)
-		if (ip->i_count) numi++;
-
-#define IPTRSZ	sizeof (struct inode *)
-#define INODESZ	sizeof (struct inode)
-	if (where == NULL) {
-		*sizep = (numi + 5) * (IPTRSZ + INODESZ);
-		return (0);
-	}
-	ewhere = where + *sizep;
-		
-	for (ip = inode; ip < inodeNINODE; ip++) {
-		if (ip->i_count == 0) 
-			continue;
-		if (bp + IPTRSZ + INODESZ > ewhere) {
-			*sizep = bp - where;
-			return (ENOMEM);
-		}
-		ipp = ip;
-		if ((error = copyout((caddr_t)&ipp, bp, IPTRSZ)) ||
-			  (error = copyout((caddr_t)ip, bp + IPTRSZ, INODESZ)))
-			return (error);
-		bp += IPTRSZ + INODESZ;
-	}
-
-	*sizep = bp - where;
-	return (0);
-}
 
 /*
  * try over estimating by 5 procs

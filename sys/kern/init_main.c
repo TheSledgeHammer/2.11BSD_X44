@@ -94,7 +94,7 @@ main()
 	p->p_sysent = &sysvec;
 
 	p->p_stat = SRUN;
-	p->p_flag |= SLOAD|SSYS;
+	p->p_flag |= P_SLOAD|P_SSYS;
 	p->p_nice = NZERO;
 	p->p_rtprio.type = RTP_PRIO_NORMAL;
 	p->p_rtprio.prio = 0;

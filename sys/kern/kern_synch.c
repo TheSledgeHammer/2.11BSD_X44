@@ -368,12 +368,12 @@ setrun(p)
 	if (p->p_slptime > 1)
 		updatepri(p);
 	p->p_stat = SRUN;
-	if (p->p_flag & SLOAD)
+	if (p->p_flag & P_SLOAD)
 		setrq(p);
 	splx(s);
 	if (p->p_pri < curpri)
 		runrun++;
-	if ((p->p_flag&SLOAD) == 0) {
+	if ((p->p_flag&P_SLOAD) == 0) {
 		if (runout != 0) {
 			runout = 0;
 			wakeup((caddr_t)&runout);
@@ -462,7 +462,7 @@ loop:
 	 * search for highest-priority runnable process
 	 */
 	for (p = qs; p; p = p->p_link) {
-		if ((p->p_flag & SLOAD) && p->p_pri < n) {
+		if ((p->p_flag & P_SLOAD) && p->p_pri < n) {
 			pp = p;
 			pq = q;
 			n = p->p_pri;
@@ -487,8 +487,8 @@ loop:
 	 * the rsave (ssave) contents are interpreted
 	 * in the new address space
 	 */
-	n = p->p_flag & SSWAP;
-	p->p_flag &= ~SSWAP;
+	n = p->p_flag & P_SSWAP;
+	p->p_flag &= ~P_SSWAP;
 	longjmp(p->p_addr, n ? &u->u_ssave: &u->u_rsave);
 }
 

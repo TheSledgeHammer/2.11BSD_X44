@@ -17,7 +17,6 @@
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/file.h>
-//#include <sys/inode.h>
 #include <sys/buf.h>
 #include <sys/mbuf.h>
 #include <sys/protosw.h>
