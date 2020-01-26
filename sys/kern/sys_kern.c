@@ -10,11 +10,12 @@
 #include <sys/user.h>
 #include <sys/file.h>
 #include <sys/socketvar.h>
-//#include <sys/inode.h>
+#include <sys/vnode.h>
 #include <sys/proc.h>
 #include <sys/namei.h>
 #include <sys/mbuf.h>
 #include <sys/map.h>
+#include <sys/stat.h>
 
 int knetisr;
 
@@ -70,17 +71,17 @@ fpfetch(fp, fpp)
 }
 
 void
-unpdet(ip)
-	struct inode *ip;
+unpdet(vp)
+	struct vnode *vp;
 {
-	ip->i_socket = 0;
-	irele(ip);
+	vp->v_socket = 0;
+	vrele(vp);
 }
 
-unpbind(path, len, ipp, unpsock)
+unpbind(path, len, vpp, unpsock)
 	char *path;
 	int len;
-	struct inode **ipp;
+	struct vnode **vpp;
 	struct socket *unpsock;
 {
 	/*
@@ -88,7 +89,7 @@ unpbind(path, len, ipp, unpsock)
 	 * a fake mbuf was MBZAP'd in bind().  The inode pointer is in the
 	 * kernel stack so we can modify it.  SMS
 	 */
-	register struct inode *ip;
+	register struct vnode *vp;
 	char pth[MLEN];
 	int error;
 	struct	nameidata nd;
@@ -97,50 +98,54 @@ unpbind(path, len, ipp, unpsock)
 	bcopy(path, pth, len);
 	NDINIT(ndp, CREATE, FOLLOW, UIO_SYSSPACE, pth);
 	ndp->ni_dirp[len - 2] = 0;
-	*ipp = 0;
-	ip = namei(ndp);
-	if (ip) {
-		iput(ip);
+	*vpp = 0;
+	vp = namei(ndp);
+	if (vp) {
+		vput(vp);
 		return(EADDRINUSE);
 	}
-	if (u->u_error || !(ip = maknode(IFSOCK | 0777, ndp))) {
+	if (u->u_error || !(vp = MAKEIMODE(S_IFSOCK | 0777, ndp))) {
 		error = u->u_error;
 		u->u_error = 0;
 		return(error);
 	}
-	*ipp = ip;
-	ip->i_socket = unpsock;
-	iunlock(ip);
+	*vpp = vp;
+	vp->v_socket = unpsock;
+	vrele(vp);
 	return(0);
 }
 
-unpconn(path, len, so2, ipp)
+unpconn(path, len, so2, vpp)
 	char *path;
 	int len;
 	struct socket **so2;
-	struct inode **ipp;
+	struct vnode **vpp;
 {
-	register struct inode *ip;
+	register struct vnode *vp;
+	register struct vattr *vap;
 	char pth[MLEN];
 	int error;
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
+
+	vap = vattr_null(vap);
 
 	bcopy(path, pth, len);
 	if (!len)
 		return(EINVAL);		/* paranoia */
 	NDINIT(ndp, LOOKUP, FOLLOW, UIO_SYSSPACE, pth);
 	ndp->ni_dirp[len - 2] = 0;
-	ip = namei(ndp);
-	*ipp = ip;
-	if (!ip || access(ip, IWRITE)) {
+	vp = namei(ndp);
+	*vpp = vp;
+	if (!vp || access(vp, S_IWRITE)) {
 		error = u->u_error;
 		u->u_error = 0;
 		return(error);
 	}
-	if ((ip->i_mode & IFMT) != IFSOCK)
+
+	if ((vp->v_socket & S_IFMT) != S_IFSOCK)
 		return(ENOTSOCK);
-	*so2 = ip->i_socket;
+	*so2 = vp->v_socket;
 	if (*so2 == 0)
 		return(ECONNREFUSED);
 	return(0);

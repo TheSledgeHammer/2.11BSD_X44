@@ -85,7 +85,6 @@ int	nonet();
 
 /* BEGIN JUNK */
 int	profil();		/* 'cuz sys calls are interruptible */
-int	vhangup();		/* should just do in exit() */
 int	vfork();		/* awaiting fork w/ copy on write */
 /* END JUNK */
 
@@ -182,7 +181,7 @@ struct sysent sysent[] = {
 	0, nosys,				/*  73 = unused */
 	0, nosys,				/*  74 = unused */
 	0, nosys,				/*  75 = unused */
-	0, vhangup,				/*  76 = vhangup */
+	0, nosys,				/*  76 = (old vhangup) */
 	0, nosys,				/*  77 = unused */
 	0, nosys,				/*  78 = unused */
 	2, getgroups,			/*  79 = getgroups */
@@ -270,7 +269,7 @@ struct sysent sysent[] = {
 	0, nostk,				/* 152 = nostk */
 	1, fetchi,				/* 153 = fetchi */
 	4, ucall,				/* 154 = ucall */
-	0, fperr,				/* 155 = fperr */
+	0, nosys,				/* 155 = (old fperr) */
 };
 
 int	nsysent = sizeof (sysent) / sizeof (sysent[0]);

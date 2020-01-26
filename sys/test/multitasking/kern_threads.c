@@ -24,8 +24,8 @@ tfind(tid)
 register int tid;
 {
 	register struct kthread *t = tidhash(TIDHASH(tid));
-	for(; t; t = t->t_hash) {
-		if(t->t_tid == tid) {
+	for(; t; t = t->kt_hash) {
+		if(t->kt_tid == tid) {
 			return (t);
 		}
 	}

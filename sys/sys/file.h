@@ -31,7 +31,7 @@ struct	file {
 	} f_un;
 
 	off_t	f_offset;
-	struct	ucred *f_cred;	/* credentials associated with descriptor */
+	struct ucred *f_cred;	/* credentials associated with descriptor */
 	struct fileops *f_ops;
 };
 

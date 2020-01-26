@@ -1,8 +1,8 @@
 TODO:
 
 Kern:
-- subr_xxx.c (networking)
-- sys_kern.c (inodes)
+- subr_xxx.c (enodev, enxio, enoioctl, enosys, eopnotsupp, einval, nullop)
+- sys_kern.c (used? or unused?)
 - sys_net (ubadr_t)
 - sys_process.c (ptrace)
 - uipc_syscalls.c

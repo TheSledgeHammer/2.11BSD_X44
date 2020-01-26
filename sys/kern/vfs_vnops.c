@@ -375,6 +375,8 @@ vn_ioctl(fp, com, data, p)
 		}
 		if (com == FIONBIO || com == FIOASYNC)	/* XXX */
 			return (0);			/* XXX */
+
+		break;
 		/* fall into ... */
 
 	default:

@@ -96,7 +96,7 @@ William Hoskins
 Director, Office of Technology Licensing
 University of California, Berkeley
 
-The 2.11BSD & 4.3BSD Reno software is distributed under the following
+The 2.11BSD & 4.4BSD software is distributed under the following
 terms:
 
 Caldera International, Inc. hereby grants a fee free license that includes the rights use, modify and distribute this named
