@@ -41,7 +41,7 @@
 #include <sys/trace.h>
 #include <sys/malloc.h>
 #include <sys/resourcevar.h>
-#include "../lib/libkern.h"
+#include <sys/libkern.h>
 
 /*
  * Local declarations

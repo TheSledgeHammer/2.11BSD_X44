@@ -161,7 +161,6 @@ again:
 /*
  * General routine to allocate a hash table.
  */
-
 void *
 hashinit(elements, type, hashmask)
 	int elements, type;

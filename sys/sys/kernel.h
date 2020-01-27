@@ -32,7 +32,7 @@ extern int	lbolt;		/* awoken once a second */
 
 int	realitexpire();
 
-short	avenrun[3];
+short avenrun[3];
 
 /*
  * The following macros are used to declare global sets of objects, which

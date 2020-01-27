@@ -103,7 +103,7 @@ newproc(isvfork)
 	static int pidchecked = 0;
 	struct file *fp;
 	int a1, s;
-	memaddr a[3];
+	size_t a[3];
 
 	/*
 	 * First, just locate a slot for a process

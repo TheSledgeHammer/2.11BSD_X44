@@ -27,9 +27,9 @@
 #include <sys/reboot.h>
 #include <sys/user.h>
 
-#include <machine/cpu.h>
-
 #include <vm/vm.h>
+
+#include <machine/cpu.h>
 
 struct 	session session0;
 struct 	pgrp pgrp0;
@@ -44,10 +44,12 @@ int		securelevel;
 int 	cmask = CMASK;
 extern	struct user *proc0paddr;
 
-struct 	inode *rootvp, *swapdev_vp;
+struct 	vnode *rootvp, *swapdev_vp;
 int		boothowto;
 struct	timeval boottime;
 struct	timeval runtime;
+
+
 
 /*
  * Initialization code.
@@ -67,7 +69,6 @@ main()
 {
 	register struct proc *p;
 	register struct filedesc0 *fdp;
-	register struct user *u;
 	register int i;
 	extern struct sysentvec sysvec;
 
@@ -85,7 +86,6 @@ main()
 	/*
 	 * set up system process 0 (swapper)
 	 */
-
 	allproc = (volatile struct proc *)p;
 	p->p_prev = (struct proc **)&allproc;
 	p->p_pgrp = &pgrp0;
@@ -181,8 +181,7 @@ main()
 	 */
 	if (newproc(0)) {
 		expand((int)btoc(szicode), S_DATA);
-		expand((int)1, S_STACK);	/* one click of stack */
-		estabur((u_int)0, (u_int)btoc(szicode), (u_int)1, 0, RO);
+		expand((int)1, S_STACK);			/* one click of stack */
 		copyout((caddr_t)icode, (caddr_t)0, szicode);
 		/*
 		 * return goes to location 0 of user init code

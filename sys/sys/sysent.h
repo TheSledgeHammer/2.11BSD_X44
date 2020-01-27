@@ -36,6 +36,9 @@
 #ifndef _SYS_SYSENT_H_
 #define _SYS_SYSENT_H_
 
+/*
+ * Structure of the system-entry table
+ */
 struct sysent {			/* system call table */
 	int	sy_narg;		/* number of arguments */
 	int	(*sy_call)();	/* implementing function */
@@ -50,6 +53,8 @@ struct sysentvec {
 	int				sv_errsize;	/* size of signal translation table */
 	int 			*sv_errtbl;	/* errno translation table */
 };
+
+extern int nsysent;
 
 #ifdef KERNEL
 extern struct sysent sysent[];

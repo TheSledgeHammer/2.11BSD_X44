@@ -104,11 +104,6 @@ struct vmtotal
 	long	t_rmshr;	/* real memory used by text, clicks */
 	long	t_armshr;	/* active real memory used by text, clicks */
 	long	t_free;		/* free memory pages, kb */
-
-	long	t_vmtxt;	/* virtual memory used by text, clicks */
-	long	t_avmtxt;	/* active virtual memory used by text, clicks */
-	long	t_rmtxt;	/* real memory used by text, clicks */
-	long	t_armtxt;	/* active real memory used by text, clicks */
 };
 #ifdef KERNEL
 struct	vmtotal total;
