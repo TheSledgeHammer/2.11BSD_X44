@@ -438,7 +438,7 @@ issignal(p)
 			do {
 				stop(p);
 				swtch();
-			} while (!trace_req(p) && (p->p_flag & P_TRACED));
+			} while (!procxmt(p) && (p->p_flag & P_TRACED));
 
 			/*
 			 * If parent wants us to take the signal,

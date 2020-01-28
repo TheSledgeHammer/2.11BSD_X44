@@ -25,7 +25,7 @@ init_sysent.c syscalls.c ../sys/syscall.h: ${SYSCALLSRC}
 ARCH=	i386
 
 SYSTAGS=/var/db/sys_tags
-SYSDIR=..
+SYSDIR=/sys
 
 
 .ifmake links
@@ -41,13 +41,13 @@ DGEN!=	(cd ${SYSDIR};							\
 tags::
 	-for i in ${ARCH}; do \
 	    (cd ../$$i && ${MAKE} ${MFLAGS} tags); done
-
+	    
 links::
 	rm -f ${SYSTAGS}
 	ln -s ${SYSDIR}/${MACHINE}/tags ${SYSTAGS}
 	-for i in ${DGEN}; do \
 	    (cd ../$$i && { rm -f tags; ln -s ${SYSTAGS} tags; }) done
 	-for i in ${ARCH}; do \
-	    (cd ../$$i && ${MAKE} ${MFLAGS} SYSTAGS=${SYSTAGS} links); done
+	    (cd ../$$i && make ${MFLAGS} SYSTAGS=${SYSTAGS} links); done
 	    
 .include <bsd.files.mk>

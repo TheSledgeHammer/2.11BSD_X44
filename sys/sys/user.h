@@ -9,18 +9,17 @@
 #ifndef _SYS_USER_H_
 #define _SYS_USER_H_
 
-//#include <machine/pcb.h>
-//#include <machine/param.h>
-
+#include <machine/pcb.h>
+#include <machine/param.h>
 #ifndef KERNEL
-#include <errno.h>
+#include <sys/errno.h>
 #include <sys/dir.h>
 #include <sys/exec.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/uio.h>
 #include <sys/ucred.h>
-#endif
+#else
 #include <sys/param.h>
 #include <sys/syslimits.h>
 #include <sys/sysctl.h>
@@ -28,7 +27,7 @@
 #include <sys/signalvar.h>
 #include <sys/sysctl.h>
 #include <vm/vm.h>				/* XXX */
-
+#endif
 /*
  * data that doesn't need to be referenced while the process is swapped.
  * The user block is USIZE*64 bytes long; resides at virtual kernel loc

@@ -1,5 +1,5 @@
-/*-
- * Copyright (c) 1982, 1986, 1993
+/*
+ * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,31 +30,16 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)dmap.h	8.2 (Berkeley) 1/4/94
+ *	@(#)proc.h	8.1 (Berkeley) 6/11/93
  */
-
-#ifndef _SYS_DMAP_H_
-#define	_SYS_DMAP_H_
 
 /*
- * Definitions for the mapping of virtual swap space to the physical swap
- * area - the disk map.
+ * Machine-dependent part of the proc structure for hp300.
  */
-#define	NDMAP	38			/* size of the swap area map */
-
-struct dmap {
-	swblk_t dm_size;		/* current size used by process */
-	swblk_t dm_alloc;		/* amount of physical swap space allocated */
-	swblk_t dm_map[NDMAP];	/* first disk block number in each chunk */
+struct mdproc {
+	int	md_flags;		/* machine-dependent flags */
+	int	*md_regs;		/* registers on current frame */
 };
-#ifdef KERNEL
-struct dmap zdmap;
-int dmmin, dmmax, dmtext;
-#endif
 
-/* The following structure is that ``returned'' from a call to vstodb(). */
-struct dblock {
-	swblk_t db_base;	/* base of physical contig drum block */
-	swblk_t db_size;	/* size of block */
-};
-#endif	/* !_SYS_DMAP_H_ */
+/* md_flags */
+#define	MDP_AST		0x0001	/* async trap pending */

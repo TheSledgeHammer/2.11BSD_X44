@@ -192,39 +192,38 @@ struct ctlname {
  * KERN_PROC subtype ops return arrays of augmented proc structures:
  */
 struct kinfo_proc {
-	struct	proc kp_proc;			/* proc structure */
+	struct	proc kp_proc;						/* proc structure */
 	struct	eproc {
-		struct	proc *e_paddr;		/* address of proc */
+		struct	proc 	*e_paddr;				/* address of proc */
 
-		dev_t	e_tdev;				/* controlling tty dev */
-		pid_t	e_tpgid;			/* tty process group id */
-		uid_t	e_ruid;				/* real uid */
+		dev_t			e_tdev;					/* controlling tty dev */
+		pid_t			e_tpgid;				/* tty process group id */
+		uid_t			e_ruid;					/* real uid */
 
-		struct	session *e_sess;	/* session pointer */
-		struct	pcred e_pcred;		/* process credentials */
-		struct	ucred e_ucred;		/* current credentials */
+		struct	session *e_sess;				/* session pointer */
+		struct	pcred 	e_pcred;				/* process credentials */
+		struct	ucred 	e_ucred;				/* current credentials */
 
-		struct	vmspace e_vm;		/* address space */
-		pid_t	e_ppid;				/* parent process id */
-		pid_t	e_pgid;				/* process group id */
-		short	e_jobc;				/* job control counter */
-		dev_t	e_tdev;				/* controlling tty dev */
-		pid_t	e_tpgid;			/* tty process group id */
+		struct	vmspace e_vm;					/* address space */
+		pid_t			e_ppid;					/* parent process id */
+		pid_t			e_pgid;					/* process group id */
+		short			e_jobc;					/* job control counter */
+		dev_t			e_tdev;					/* controlling tty dev */
+		pid_t			e_tpgid;				/* tty process group id */
 
-		struct	session *e_tsess;	/* tty session pointer */
+		struct	session *e_tsess;				/* tty session pointer */
 
-#define	WMESGLEN	7
-		char	e_wmesg[WMESGLEN+1];/* wchan message */
-		segsz_t e_xsize;			/* text size */
-		short	e_xrssize;			/* text rss */
-		short	e_xccount;			/* text references */
-
-		short	e_xswrss;
-		long	e_flag;
-#define	EPROC_CTTY		0x01		/* controlling tty vnode active */
-#define	EPROC_SLEADER	0x02		/* session leader */
-		char	e_login[MAXLOGNAME];/* setlogin() name */
-		long	e_spare[4];
+#define	WMESGLEN		7
+		char			e_wmesg[WMESGLEN+1];	/* wchan message */
+		segsz_t 		e_xsize;				/* text size */
+		short			e_xrssize;				/* text rss */
+		short			e_xccount;				/* text references */
+		short			e_xswrss;
+		long			e_flag;
+#define	EPROC_CTTY		0x01					/* controlling tty vnode active */
+#define	EPROC_SLEADER	0x02					/* session leader */
+		char			e_login[MAXLOGNAME];	/* setlogin() name */
+		long			e_spare[4];
 	} kp_eproc;
 };
 

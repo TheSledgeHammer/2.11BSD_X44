@@ -115,6 +115,8 @@ struct	proc {
 	short				p_locks;		/* DEBUG: lockmgr count of held locks */
 	short				p_simple_locks;	/* DEBUG: count of held simple locks */
 
+	struct	mdproc 		p_md;			/* Any machine-dependent fields. */
+
     short				p_xstat;		/* exit status for wait */
 	struct  rusage    	p_ru;			/* exit information */
 	struct  k_rusage    p_kru;			/* exit information kernel */

@@ -99,7 +99,7 @@ volatile void panic __P((const char *, ...));
 void panic __P((const char *, ...));
 #endif
 void	tablefull __P((const char *));
-void	addlog __P((const char *, ...));
+//void	addlog __P((const char *, ...));
 void	log __P((int, const char *, ...));
 void	printf __P((const char *, ...));
 int		sprintf __P((char *buf, const char *, ...));
@@ -111,7 +111,7 @@ void 	bzero __P((void *buf, u_int len));
 
 int		copystr __P((void *kfaddr, void *kdaddr, u_int len, u_int *done));
 int		copyinstr __P((void *udaddr, void *kaddr, u_int len, u_int *done));
-int		copyoutstr __P((void *kaddr, void *udaddr, u_int len, u_int *done));
+//int		copyoutstr __P((void *kaddr, void *udaddr, u_int len, u_int *done));
 int		copyin __P((void *udaddr, void *kaddr, u_int len));
 int		copyout __P((void *kaddr, void *udaddr, u_int len));
 
@@ -132,6 +132,6 @@ void 	untimeout __P((void (*func)(void *), void *arg));
 
 void 	hardclock __P((dev_t dev, caddr_t sp, int r1, int ov, int nps, int r0, caddr_t pc, int ps));
 void 	softclock __P((caddr_t pc, int ps));
-void 	statclock __P((struct clockframe *frame));
+//void 	statclock __P((struct clockframe *frame));
 
 #include <sys/libkern.h>

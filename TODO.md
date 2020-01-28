@@ -1,12 +1,21 @@
 TODO:
 
 Kern:
-- subr_xxx.c (enodev, enxio, enoioctl, enosys, eopnotsupp, einval, nullop)
 - sys_kern.c (used? or unused?)
 - sys_net (ubadr_t)
-- sys_process.c (ptrace)
 - uipc_syscalls.c
 
+- user.h: 
+	- u_ar0: redefine to machine-dependent reg.h
+	- short	u_uisa[16];		/* segmentation address prototypes */
+	- short	u_uisd[16];		/* segmentation descriptor prototypes */
+	- char	u_sep;			/* flag for I and D separation */
+	- struct u_ovd			/* automatic overlay data */
+	- u_fps: floating point 
+	- u_pcb: machine-dependent pcb.h
+	- struct fperr u_fperr;				/* floating point error save */
+	- remove duplicate and/or un-needed references (kinfo_proc)
+	
 Ufs:
 - Add UFS
 - WABL (NetBSD)
