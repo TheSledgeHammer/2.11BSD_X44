@@ -5,10 +5,25 @@
  *
  *	@(#)subr_rmap.c	1.2 (2.11BSD GTE) 12/24/92
  */
+/*-
+ * Copyright (c) 1982, 1986, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ * (c) UNIX System Laboratories, Inc.
+ * All or some portions of this file are derived from material licensed
+ * to the University of California by American Telephone and Telegraph
+ * Co. or Unix System Laboratories, Inc. and are reproduced herein with
+ * the permission of UNIX System Laboratories, Inc.
+ *
+ *	@(#)subr_rmap.c	8.2 (Berkeley) 01/21/94
+ */
+
 
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/map.h>
+#include <sys/dmap.h>		/* XXX */
+#include <sys/proc.h>
+#include <sys/kernel.h>
 #include <sys/malloc.h>
 #include <vm/vm.h>
 
@@ -46,12 +61,30 @@
  * Algorithm is first-fit.
  */
 
+void
+rminit(mp, size, addr, name, mapsize)
+	register struct map *mp;
+	size_t size, addr;
+	char *name;
+	int mapsize;
+{
+		register struct mapent *ep = (struct mapent *)(mp+1);
+
+		mp->m_name = name;
+		mp->m_limit = (struct mapent *)&mp[mapsize];
+		ep->m_size = size;
+		ep->m_addr = addr;
+		(++ep)->m_size = 0;
+		ep->m_addr = 0;
+}
+
 long
 rmalloc(mp, size)
 	struct map *mp;
 	long size;
 {
-	register struct mapent *bp, *ep;
+	register struct mapent *ep = (struct mapent *)(mp+1);
+	register struct mapent *bp;
 	register int addr;
 	int retry;
 	swblk_t first, rest;

@@ -19,7 +19,7 @@
 int *exec_copyout_strings __P((struct exec_linker *));
 
 
-/* Does this need to store more than one? If Yes: NetBSD exec_subr.c new_vmcmd */
+/* Setup exec_mmap from exec_linker params */
 void
 exec_mmap_setup(elp, addr, size, prot, maxprot, flags, handle, offset)
 	struct exec_linker *elp;
@@ -43,6 +43,7 @@ exec_mmap_setup(elp, addr, size, prot, maxprot, flags, handle, offset)
 		elp->el_ex_map = ex_map; /* copy exec_linker map to exec_mmap */
 }
 
+/* Push exec_mmap into vmspace processing VM information and image params */
 int
 exec_mmap_to_vmspace(elp)
 	struct exec_linker *elp;
