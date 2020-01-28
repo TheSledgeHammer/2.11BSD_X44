@@ -56,7 +56,7 @@
 #include <sys/vnode.h>
 #include <sys/malloc.h>
 
-#include <miscfs/specfs/specdev.h>
+#include <vfs/specfs/specdev.h>
 
 #include <vm/vm.h>
 #include <vm/include/vm_page.h>

@@ -57,7 +57,7 @@
 #include <sys/mount.h>
 #include <sys/syscallargs.h>
 
-#include <miscfs/specfs/specdev.h>
+#include <vfs/specfs/specdev.h>
 
 #include <vm/vm.h>
 #include <vm/include/vm_pager.h>

@@ -44,7 +44,7 @@
 #include <sys/map.h>
 #include <sys/file.h>
 
-#include <miscfs/specfs/specdev.h>
+#include <vfs/specfs/specdev.h>
 
 /*
  * Indirect driver for multi-controller paging.

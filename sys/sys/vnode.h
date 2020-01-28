@@ -86,7 +86,6 @@ struct vnode {
 		struct socket	*vu_socket;		/* unix ipc (VSOCK) */
 		struct specinfo	*vu_specinfo;	/* device (VCHR, VBLK) */
 		struct fifoinfo	*vu_fifoinfo;	/* fifo (VFIFO) */
-		//struct mpx_group vu_group; 		/* multiplexor group file */
 	} v_un;
 	struct nqlease *v_lease;		/* Soft reference to lease */
 	daddr_t			v_lastw;		/* last write (write cluster) */
@@ -103,10 +102,6 @@ struct vnode {
 #define	v_socket		v_un.vu_socket
 #define	v_specinfo		v_un.vu_specinfo
 #define	v_fifoinfo		v_un.vu_fifoinfo
-
-//#define	v_group			v_un.vu_group
-
-//struct vnode *mpxvp;		/* mpx virtual vnode */
 
 /*
  * Vnode flags.
