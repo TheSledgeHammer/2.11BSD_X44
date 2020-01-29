@@ -1,5 +1,6 @@
 #	$Id: Makefile,v 1.2 1994/08/02 07:38:17 davidg Exp $
 
-SUBDIR=	${MACHINE}/boot #libkern
+# The boot loader
+SUBDIR=	boot
 
 .include <bsd.subdir.mk>

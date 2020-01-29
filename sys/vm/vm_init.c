@@ -68,9 +68,9 @@
 
 #include <sys/param.h>
 
-#include <vm/vm.h>
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
+#include <vm/include/vm.h>
 
 /*
  *	vm_init initializes the virtual memory system.

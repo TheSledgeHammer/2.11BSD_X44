@@ -15,9 +15,8 @@
 #include <sys/signal.h>
 #include <sys/signalvar.h>
 
-#include <vm/vm.h>
-
 #include <machine/cpu.h>
+#include <vm/include/vm.h>
 
 #define	SQSIZE	16	/* Must be power of 2 */
 

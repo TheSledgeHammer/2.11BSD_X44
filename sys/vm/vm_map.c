@@ -70,8 +70,8 @@
 #include <sys/systm.h>
 #include <sys/malloc.h>
 
-#include <vm/vm.h>
 #include <vm/include/vm_page.h>
+#include <vm/include/vm.h>
 
 /*
  *	Virtual memory maps provide for the mapping, protection,

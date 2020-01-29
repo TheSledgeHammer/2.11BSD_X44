@@ -49,7 +49,7 @@
 #include <sys/resourcevar.h>
 #include <sys/conf.h>
 
-#include <vm/vm.h>
+#include <vm/include/vm.h>
 /*
  * Definitions for the buffer hash lists.
  */

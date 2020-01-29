@@ -11,7 +11,7 @@
 #include <sys/proc.h>
 #include <sys/namei.h>
 #include <sys/vnode.h>
-#include <vm/vm.h>
+#include <vm/include/vm.h>
 
 struct exec_linker {
 	struct 	proc 	*el_proc;		/* our process struct */

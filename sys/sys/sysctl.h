@@ -50,7 +50,7 @@
 #include <sys/ucred.h>
 #include <sys/proc.h>
 #include <sys/map.h>
-#include <vm/vm.h>
+#include <vm/include/vm.h>
 #endif
 
 /*

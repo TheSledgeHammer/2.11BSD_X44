@@ -37,8 +37,8 @@
 #include <sys/proc.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
-#include <vm/vm.h>
 #include <sys/sysctl.h>
+#include <vm/include/vm.h>
 
 struct	loadavg averunnable;		/* load average, of runnable procs */
 

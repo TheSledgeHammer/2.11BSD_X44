@@ -53,8 +53,6 @@
 #include <sys/malloc.h>
 #include <sys/dirent.h>
 
-#include <vm/vm.h>
-
 #include <vfs/specfs/specdev.h>
 
 #include <ufs/ufs/lockf.h>
@@ -63,6 +61,7 @@
 #include <ufs/ufs/dir.h>
 #include <ufs/ufs/ufsmount.h>
 #include <ufs/ufs/ufs_extern.h>
+#include <vm/include/vm.h>
 
 static int ufs_chmod __P((struct vnode *, int, struct ucred *, struct proc *));
 static int ufs_chown

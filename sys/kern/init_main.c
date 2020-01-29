@@ -27,9 +27,8 @@
 #include <sys/reboot.h>
 #include <sys/user.h>
 
-#include <vm/vm.h>
-
 #include <machine/cpu.h>
+#include <vm/include/vm.h>
 
 struct 	session session0;
 struct 	pgrp pgrp0;

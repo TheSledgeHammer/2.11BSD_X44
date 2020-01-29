@@ -17,7 +17,7 @@
 
 #include <sys/mount.h>
 
-#include <vm/vm.h>
+#include <vm/include/vm.h>
 #include <vm/include/vm_page.h>
 
 #include <machine/reg.h>

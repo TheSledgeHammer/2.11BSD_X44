@@ -59,9 +59,9 @@
 
 #include <vfs/specfs/specdev.h>
 
-#include <vm/vm.h>
 #include <vm/include/vm_pager.h>
 #include <vm/include/vm_prot.h>
+#include <vm/include/vm.h>
 
 #ifdef DEBUG
 int mmapdebug = 0;

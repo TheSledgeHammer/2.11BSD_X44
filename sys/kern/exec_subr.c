@@ -14,7 +14,7 @@
 #include <sys/exec_linker.h>
 #include <sys/mman.h>
 
-#include <vm/vm.h>
+#include <vm/include/vm.h>
 
 int *exec_copyout_strings __P((struct exec_linker *));
 

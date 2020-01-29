@@ -13,10 +13,10 @@
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/vnode.h>
-#include <vm/vm.h>
 #include <sys/file.h>
 #include <sys/wait.h>
 #include <sys/kernel.h>
+#include <vm/include/vm.h>
 
 /*
  * exit system call: pass back caller's arg

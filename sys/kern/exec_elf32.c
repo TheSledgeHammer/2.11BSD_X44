@@ -23,7 +23,7 @@
 #include <sys/sysent.h>
 
 #include <sys/mman.h>
-#include <vm/vm.h>
+#include <vm/include/vm.h>
 #include <vm/include/vm_param.h>
 #include <vm/include/vm_map.h>
 

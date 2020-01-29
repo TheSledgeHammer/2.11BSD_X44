@@ -45,7 +45,7 @@
 #include <sys/kernel.h>
 #include <sys/sysent.h>
 
-#include <vm/vm.h>
+#include <vm/include/vm.h>
 
 int
 exec_aout_linker(elp)

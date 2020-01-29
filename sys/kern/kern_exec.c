@@ -47,11 +47,13 @@
 #include <sys/mman.h>
 #include <sys/map.h>
 #include <sys/syslog.h>
-#include <vm/vm.h>
-#include <vm/include/vm_kern.h>
 
 #include <machine/reg.h>
-#include "../sys/exec_linker.h"
+#include <sys/exec_linker.h>
+
+#include <vm/include/vm.h>
+#include <vm/include/vm_kern.h>
+
 
 static int exec_check_permissions(struct exec_linker *);
 

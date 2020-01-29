@@ -20,11 +20,6 @@ struct nameidata {
 	short	ni_nameiop;			/* see below */
 	struct	vnode *ni_cdir;		/* current directory */
 	struct	vnode *ni_rdir;		/* root directory, if not normal root */
-	//short	ni_error;			/* error return if any */
-	//off_t	ni_endoff;			/* end of useful stuff in directory */
-	//off_t	ni_offset;			/* offset in directory */
-	//u_short	ni_count;			/* offset of open slot (off_t?) */
-	//struct	direct ni_dent;		/* current directory entry */
 
 	/* Arguments to lookup */
 	struct	vnode *ni_startdir;	/* starting directory */

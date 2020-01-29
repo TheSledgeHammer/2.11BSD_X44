@@ -10,8 +10,8 @@
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/systm.h>
-#include <vm/vm.h>
 #include <sys/kernel.h>
+#include <vm/include/vm.h>
 
 /*
  * Resource controls and accounting.

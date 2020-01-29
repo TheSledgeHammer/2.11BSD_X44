@@ -14,8 +14,8 @@
 #include <sys/vnode.h>
 #include <sys/acct.h>
 #include <sys/file.h>
-#include <vm/vm.h>
 #include <sys/kernel.h>
+#include <vm/include/vm.h>
 
 
 /*

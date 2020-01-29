@@ -70,7 +70,7 @@
 #include <sys/systm.h>
 #include <sys/proc.h>
 
-#include <vm/vm.h>
+#include <vm/include/vm.h>
 
 simple_lock_data_t	vm_alloc_lock;	/* XXX */
 

@@ -25,7 +25,7 @@
 #include <sys/proc.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
-#include <vm/vm.h>
+#include <vm/include/vm.h>
 
 /*
  * Resource map handling routines.

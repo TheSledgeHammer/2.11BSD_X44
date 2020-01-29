@@ -441,7 +441,7 @@ lockmgr_printinfo(lkp)
 
 #if defined(DEBUG) && NCPUS == 1
 #include <sys/kernel.h>
-#include <vm/vm.h>
+#include <vm/include/vm.h>
 #include <sys/sysctl.h>
 int lockpausetime = 0;
 struct ctldebug debug2 = { "lockpausetime", &lockpausetime };

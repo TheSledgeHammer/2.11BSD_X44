@@ -57,10 +57,10 @@
 #include <sys/domain.h>
 #include <sys/mbuf.h>
 
-#include <vm/vm.h>
 #include <sys/sysctl.h>
 
 #include <vfs/specfs/specdev.h>
+#include <vm/include/vm.h>
 
 enum vtype iftovt_tab[16] = {
 	VNON, VFIFO, VCHR, VNON, VDIR, VNON, VBLK, VNON,

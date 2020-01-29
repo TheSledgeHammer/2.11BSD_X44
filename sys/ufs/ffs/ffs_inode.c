@@ -45,8 +45,6 @@
 #include <sys/trace.h>
 #include <sys/resourcevar.h>
 
-#include <vm/vm.h>
-
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
 #include <ufs/ufs/ufsmount.h>
@@ -54,6 +52,7 @@
 
 #include <ufs/ffs/fs.h>
 #include <ufs/ffs/ffs_extern.h>
+#include <vm/include/vm.h>
 
 static int ffs_indirtrunc __P((struct inode *, ufs_daddr_t, ufs_daddr_t,
 	    ufs_daddr_t, int, long *));

@@ -54,8 +54,8 @@
 
 #include <sys/syscallargs.h>
 
-#include <vm/vm.h>
 #include <sys/sysctl.h>
+#include <vm/include/vm.h>
 
 static int change_dir __P((struct nameidata *ndp, struct proc *p));
 static void checkdirs __P((struct vnode *olddp));

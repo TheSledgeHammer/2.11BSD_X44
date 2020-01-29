@@ -50,10 +50,10 @@
 #include <sys/vnode.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
-#include <vm/vm.h>
 #include <sys/map.h>
 
 #include <sys/sysctl.h>
+#include <vm/include/vm.h>
 
 
 sysctlfn kern_sysctl;

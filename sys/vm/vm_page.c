@@ -69,10 +69,10 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 
-#include <vm/vm.h>
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_map.h>
 #include <vm/include/vm_pageout.h>
+#include <vm/include/vm.h>
 
 /*
  *	Associated with page of user-allocatable memory is a

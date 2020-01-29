@@ -48,7 +48,7 @@
 #include <sys/proc.h>
 #include <sys/resourcevar.h>
 
-#include <vm/vm.h>
+#include <vm/include/vm.h>
 
 struct obreak_args {
 	char	*nsiz;

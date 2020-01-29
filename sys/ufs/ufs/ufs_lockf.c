@@ -57,7 +57,7 @@
 int maxlockdepth = MAXDEPTH;
 
 #ifdef LOCKF_DEBUG
-#include <vm/vm.h>
+#include <vm/include/vm.h>
 #include <sys/sysctl.h>
 int	lockf_debug = 0;
 struct ctldebug debug4 = { "lockf_debug", &lockf_debug };

@@ -67,12 +67,12 @@
 #include <sys/buf.h>
 #include <sys/user.h>
 
-#include <vm/vm.h>
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
 
 #include <machine/cpu.h>
 #include <machine/stdarg.h>
+#include <vm/include/vm.h>
 
 int	avefree = 0;			/* XXX */
 unsigned maxdmap = MAXDSIZ;	/* XXX */

@@ -25,7 +25,7 @@
 #include <sys/resourcevar.h>
 #include <sys/map.h>
 
-#include <vm/vm.h>
+#include <vm/include/vm.h>
 
 /*
  * These were moved here from tty.h so that they could be easily modified

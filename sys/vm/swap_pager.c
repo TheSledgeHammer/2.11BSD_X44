@@ -58,10 +58,10 @@
 
 #include <vfs/specfs/specdev.h>
 
-#include <vm/vm.h>
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_pageout.h>
 #include <vm/include/swap_pager.h>
+#include <vm/include/vm.h>
 
 #define NSWSIZES	16	/* size of swtab */
 #define MAXDADDRS	64	/* max # of disk addrs for fixed allocations */

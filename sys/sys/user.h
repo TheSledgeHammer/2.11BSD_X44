@@ -26,7 +26,7 @@
 #include <sys/resourcevar.h>
 #include <sys/signalvar.h>
 #include <sys/sysctl.h>
-#include <vm/vm.h>				/* XXX */
+#include <vm/include/vm.h>				/* XXX */
 #endif
 /*
  * data that doesn't need to be referenced while the process is swapped.
