@@ -10,9 +10,12 @@
 #define	SYS_TYPES_H
 
 #include <sys/cdefs.h>
+#include <sys/ansi.h>
 
 /* Machine type dependent parameters. */
 #include <machine/endian.h>
+#include <machine/ansi.h>
+#include <machine/types.h>
 
 /*
  * Basic system types and major/minor device constructing/busting macros.
@@ -49,7 +52,7 @@ typedef	unsigned long		uid_t;		/* user id */
 typedef	unsigned long		gid_t;		/* group id */
 typedef	long	    		pid_t;		/* process id */
 typedef	unsigned short		mode_t;		/* permissions */
-
+typedef	__register_t		register_t;
 /* Does this relate to quads above? */
  typedef	struct	_quad {
 	long val[2];
@@ -77,4 +80,48 @@ intrmask_t	splvm __P((void));
 void		splx __P((intrmask_t ipl));
 void		splz __P((void));
 
+#ifndef	int8_t
+typedef	int8_t		int8_t;
+#define	int8_t		int8_t
+#endif
+
+#ifndef	uint8_t
+typedef	u_int8_t	uint8_t;
+#define	uint8_t		u_int8_t
+#endif
+
+#ifndef	int16_t
+typedef	int16_t		int16_t;
+#define	int16_t		int16_t
+#endif
+
+#ifndef	uint16_t
+typedef	u_int16_t	uint16_t;
+#define	uint16_t	u_int16_t
+#endif
+
+#ifndef	int32_t
+typedef	int32_t		int32_t;
+#define	int32_t		int32_t
+#endif
+
+#ifndef	uint32_t
+typedef	u_int32_t	uint32_t;
+#define	uint32_t	u_int32_t
+#endif
+
+#ifndef	int64_t
+typedef	int64_t		int64_t;
+#define	int64_t		int64_t
+#endif
+
+#ifndef	uint64_t
+typedef	u_int64_t	uint64_t;
+#define	uint64_t	u_int64_t
+#endif
+
+typedef	uint8_t		u_int8_t;
+typedef	uint16_t	u_int16_t;
+typedef	uint32_t	u_int32_t;
+typedef	uint64_t	u_int64_t;
 #endif

@@ -110,6 +110,8 @@ struct	direct {
  * without the d_name field, plus enough space for the name with a terminating
  * null byte (dp->d_namlen+1), rounded up to a 4 byte boundary.
  */
+
+
 #if (BYTE_ORDER == LITTLE_ENDIAN)
 #define DIRSIZ(oldfmt, dp) \
     ((oldfmt) ? \
@@ -117,7 +119,7 @@ struct	direct {
     ((sizeof(struct direct) - (MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3)))
 #else
 #define DIRSIZ(oldfmt, dp) \
-    ((sizeof(struct direct) - (MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3))
+    ((sizeof(struct direct) - (MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3));
 #endif
 #define OLDDIRFMT	1
 #define NEWDIRFMT	0

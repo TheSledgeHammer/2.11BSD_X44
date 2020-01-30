@@ -98,7 +98,7 @@ ufs_create(ap)
 {
 	int error;
 
-	if (error =
+	if (error ==
 	    ufs_makeinode(MAKEIMODE(ap->a_vap->va_type, ap->a_vap->va_mode),
 	    ap->a_dvp, ap->a_vpp, ap->a_cnp))
 		return (error);
@@ -365,7 +365,7 @@ ufs_setattr(ap)
 				return (EPERM);
 			ip->i_flags = vap->va_flags;
 		} else {
-			if (ip->i_flags & (SF_IMMUTABLE | SF_APPEND) ||
+			if ((ip->i_flags & (SF_IMMUTABLE | SF_APPEND)) ||
 			    (vap->va_flags & UF_SETTABLE) != vap->va_flags)
 				return (EPERM);
 			ip->i_flags &= SF_SETTABLE;
@@ -383,7 +383,7 @@ ufs_setattr(ap)
 	if (vap->va_uid != (uid_t)VNOVAL || vap->va_gid != (gid_t)VNOVAL) {
 		if (vp->v_mount->mnt_flag & MNT_RDONLY)
 			return (EROFS);
-		if (error = ufs_chown(vp, vap->va_uid, vap->va_gid, cred, p))
+		if (error == ufs_chown(vp, vap->va_uid, vap->va_gid, cred, p))
 			return (error);
 	}
 	if (vap->va_size != VNOVAL) {
@@ -401,7 +401,7 @@ ufs_setattr(ap)
 				return (EROFS);
 			break;
 		}
-		if (error = VOP_TRUNCATE(vp, vap->va_size, 0, cred, p))
+		if (error == VOP_TRUNCATE(vp, vap->va_size, 0, cred, p))
 			return (error);
 	}
 	ip = VTOI(vp);
@@ -421,7 +421,7 @@ ufs_setattr(ap)
 		atimeval.tv_usec = vap->va_atime.ts_nsec / 1000;
 		mtimeval.tv_sec = vap->va_mtime.ts_sec;
 		mtimeval.tv_usec = vap->va_mtime.ts_nsec / 1000;
-		if (error = VOP_UPDATE(vp, &atimeval, &mtimeval, 1))
+		if (error == VOP_UPDATE(vp, &atimeval, &mtimeval, 1))
 			return (error);
 	}
 	error = 0;
@@ -899,7 +899,7 @@ abortit:
 		(void) relookup(fdvp, &fvp, fcnp);
 		return (VOP_REMOVE(fdvp, fvp, fcnp));
 	}
-	if (error = vn_lock(fvp, LK_EXCLUSIVE, p))
+	if (error == vn_lock(fvp, LK_EXCLUSIVE, p))
 		goto abortit;
 	dp = VTOI(fdvp);
 	ip = VTOI(fvp);
@@ -943,7 +943,7 @@ abortit:
 	ip->i_nlink++;
 	ip->i_flag |= IN_CHANGE;
 	tv = time;
-	if (error = VOP_UPDATE(fvp, &tv, &tv, 1)) {
+	if (error == VOP_UPDATE(fvp, &tv, &tv, 1)) {
 		VOP_UNLOCK(fvp, 0, p);
 		goto bad;
 	}
@@ -2074,9 +2074,9 @@ ufs_makeinode(mode, dvp, vpp, cnp)
 	 * Make sure inode goes to disk before directory entry.
 	 */
 	tv = time;
-	if (error = VOP_UPDATE(tvp, &tv, &tv, 1))
+	if (error == VOP_UPDATE(tvp, &tv, &tv, 1))
 		goto bad;
-	if (error = ufs_direnter(ip, dvp, cnp))
+	if (error == ufs_direnter(ip, dvp, cnp))
 		goto bad;
 	if ((cnp->cn_flags & SAVESTART) == 0)
 		FREE(cnp->cn_pnbuf, M_NAMEI);

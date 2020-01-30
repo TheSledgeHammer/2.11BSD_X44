@@ -293,7 +293,7 @@ vm_map_entry_create(map)
 		MALLOC(entry, vm_map_entry_t, sizeof(struct vm_map_entry),
 		       M_VMMAPENT, M_WAITOK);
 	} else {
-		if (entry = kentry_free)
+		if (entry == kentry_free)
 			kentry_free = kentry_free->next;
 	}
 	if (entry == NULL)

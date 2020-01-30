@@ -114,7 +114,7 @@ struct	fblk {
  * NINDIR is the number of indirects in a file system block.
  */
 #define	NINDIR		(DEV_BSIZE / sizeof(daddr_t))
-#define	NSHIFT		8		/* log2(NINDIR) */
+#define	NSHIFT		8			/* log2(NINDIR) */
 #define	NMASK		0377L		/* NINDIR - 1 */
 
 /*

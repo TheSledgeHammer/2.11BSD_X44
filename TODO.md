@@ -16,8 +16,9 @@ Kern:
 	- struct fperr u_fperr;				/* floating point error save */
 	- remove duplicate and/or un-needed references (kinfo_proc)
 	
-Ufs:
-- Add UFS
+UFS, FFS & LFS:
+- extattr, dirhash
+- dinode: ufs1 & ufs2
 - WABL (NetBSD)
 
 i386: (4.4BSD-Lite2)

@@ -54,6 +54,9 @@ struct mfs_args {
 #endif /* MFS */
 
 #ifdef KERNEL
+
+#include <ufs/ufs/extattr.h>
+
 struct buf;
 struct inode;
 struct nameidata;
@@ -86,6 +89,11 @@ struct ufsmount {
 	char	um_qflags[MAXQUOTAS];			/* quota specific flags */
 	struct	netexport um_export;			/* export information */
 	int64_t	um_savedmaxfilesize;			/* XXX - limit maxfilesize */
+
+	TAILQ_HEAD(inodelst, inode) um_snapshots; /* list of active snapshots */
+	daddr_t	*um_snapblklist;				/* snapshot block hints list */
+	int		um_maxsymlinklen;
+	int		um_dirblksiz;
 };
 
 /*
@@ -101,7 +109,7 @@ struct ufsmount {
  * Macros to access file system parameters in the ufsmount structure.
  * Used by ufs_bmap.
  */
-#define MNINDIR(ump)			((ump)->um_nindir)
-#define	blkptrtodb(ump, b)		((b) << (ump)->um_bptrtodb)
+#define MNINDIR(ump)				((ump)->um_nindir)
+#define	blkptrtodb(ump, b)			((b) << (ump)->um_bptrtodb)
 #define	is_sequential(ump, a, b)	((b) == (a) + ump->um_seqinc)
 #endif /* KERNEL */
