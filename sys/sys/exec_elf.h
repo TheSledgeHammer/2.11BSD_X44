@@ -39,8 +39,8 @@
 #ifndef _SYS_EXEC_ELF_H_
 #define _SYS_EXEC_ELF_H_
 
-//#include <machine/types.h>
-//#include <machine/elf_machdep.h>
+#include <machine/types.h>
+#include <machine/elf_machdep.h>
 
 typedef	u_int  	Elf_Byte;
 

@@ -276,7 +276,7 @@ interpret:
 		if (vm_deallocate(kernel_map, (vm_offset_t)image_header, PAGE_SIZE))
 			panic("execve: header dealloc failed (2)");
 		vput(ndp->ni_vp);
-		mfree(ndp->ni_cnd.cn_pnbuf);
+		rmfree(ndp->ni_cnd.cn_pnbuf);
 
 		return (0);
 

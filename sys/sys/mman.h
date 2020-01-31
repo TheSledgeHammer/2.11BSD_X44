@@ -55,12 +55,12 @@
 /*
  * Other flags
  */
-#define	MAP_FIXED	 0x0010	/* map addr must be exactly as requested */
-#define	MAP_RENAME	 0x0020	/* Sun: rename private pages to file */
-#define	MAP_NORESERVE	 0x0040	/* Sun: don't reserve needed swap area */
-#define	MAP_INHERIT	 0x0080	/* region is retained after exec */
-#define	MAP_NOEXTEND	 0x0100	/* for MAP_FILE, don't change file size */
-#define	MAP_HASSEMAPHORE 0x0200	/* region may contain semaphores */
+#define	MAP_FIXED	 		0x0010	/* map addr must be exactly as requested */
+#define	MAP_RENAME	 		0x0020	/* Sun: rename private pages to file */
+#define	MAP_NORESERVE		0x0040	/* Sun: don't reserve needed swap area */
+#define	MAP_INHERIT	 		0x0080	/* region is retained after exec */
+#define	MAP_NOEXTEND	 	0x0100	/* for MAP_FILE, don't change file size */
+#define	MAP_HASSEMAPHORE 	0x0200	/* region may contain semaphores */
 
 /*
  * Mapping type; default is map from file.
@@ -71,8 +71,8 @@
 /*
  * Advice to madvise
  */
-#define	MADV_NORMAL	0	/* no further special treatment */
-#define	MADV_RANDOM	1	/* expect random page references */
+#define	MADV_NORMAL		0	/* no further special treatment */
+#define	MADV_RANDOM		1	/* expect random page references */
 #define	MADV_SEQUENTIAL	2	/* expect sequential page references */
 #define	MADV_WILLNEED	3	/* will need these pages */
 #define	MADV_DONTNEED	4	/* dont need these pages */

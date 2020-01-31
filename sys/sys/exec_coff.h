@@ -29,7 +29,7 @@
 #ifndef _SYS_EXEC_COFF_H_
 #define _SYS_EXEC_COFF_H_
 
-//#include <machine/coff_machdep.h>
+#include <machine/coff_machdep.h>
 
 /* COFF file header */
 struct coff_filehdr {

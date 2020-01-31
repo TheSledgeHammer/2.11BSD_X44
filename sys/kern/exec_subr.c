@@ -30,17 +30,18 @@ exec_mmap_setup(elp, addr, size, prot, maxprot, flags, handle, offset)
 	caddr_t handle;
 	unsigned long offset;
 {
-		struct exec_mmap *ex_map = (struct exec_mmap *) &elp;
+	struct exec_mmap *ex_map = (struct exec_mmap *) &elp;
+	//setup with malloc();
 
-		ex_map->em_addr = addr;
-		ex_map->em_size = size;
-		ex_map->em_prot = prot;
-		ex_map->em_maxprot = maxprot;
-		ex_map->em_flags = flags;
-		ex_map->em_handle = handle;
-		ex_map->em_offset = offset;
+	ex_map->em_addr = addr;
+	ex_map->em_size = size;
+	ex_map->em_prot = prot;
+	ex_map->em_maxprot = maxprot;
+	ex_map->em_flags = flags;
+	ex_map->em_handle = handle;
+	ex_map->em_offset = offset;
 
-		elp->el_ex_map = ex_map; /* copy exec_linker map to exec_mmap */
+	elp->el_ex_map = ex_map; /* copy exec_linker map to exec_mmap */
 }
 
 /* Push exec_mmap into vmspace processing VM information and image params */
@@ -76,11 +77,11 @@ exec_mmap_to_vmspace(elp)
 	/* Fill in process VM information */
 	vmspace->vm_tsize = btoc(elp->el_tsize);
 	vmspace->vm_dsize = btoc(elp->el_dsize);
-	vmspace->vm_taddr = (char *) elp->el_taddr;
-	vmspace->vm_daddr = (char *) elp->el_daddr;
+	vmspace->vm_taddr = (caddr_t) elp->el_taddr;
+	vmspace->vm_daddr = (caddr_t) elp->el_daddr;
 	vmspace->vm_ssize = btoc(elp->el_ssize);
-	vmspace->vm_minsaddr = (char *)elp->el_minsaddr;
-	vmspace->vm_maxsaddr = (char *)elp->el_maxsaddr;
+	vmspace->vm_minsaddr = (caddr_t)elp->el_minsaddr;
+	vmspace->vm_maxsaddr = (caddr_t)elp->el_maxsaddr;
 
 	/* Fill in image_params */
 	elp->el_interpreted = 0;

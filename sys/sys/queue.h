@@ -71,12 +71,12 @@
  */
 #define LIST_HEAD(name, type)											\
 struct name {															\
-	struct type *lh_first;					/* first element */			\
+	struct type *lh_first;		/* first element */						\
 }
 
 #define LIST_ENTRY(type)												\
 struct {																\
-	struct type *le_next;					/* next element */			\
+	struct type *le_next;		/* next element */						\
 	struct type **le_prev;		/* address of previous next element */	\
 }
 
@@ -108,6 +108,12 @@ struct {																\
 		    (elm)->field.le_prev;										\
 	*(elm)->field.le_prev = (elm)->field.le_next;						\
 }
+
+#define	LIST_FOREACH(var, head, field)									\
+	for ((var) = ((head)->lh_first);									\
+	    (var) != LIST_END(head);										\
+	    (var) = ((var)->field.le_next))
+
 
 /*
  * Tail queue definitions.
