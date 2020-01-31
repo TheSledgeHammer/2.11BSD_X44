@@ -30,12 +30,12 @@
 #
 # Client entry point.
 #
-_start: 	movl %eax,__base		# Set base address
+_start: 	movl %eax,__base	# Set base address
 		movl %esp,%eax			# Set
 		addl $ARGADJ,%eax		#  argument
 		movl %eax,__args		#  pointer
-		call main			# Invoke client main()
-		call exit			# Invoke client exit()
+		call main				# Invoke client main()
+		call exit				# Invoke client exit()
 #
 # Data.
 #

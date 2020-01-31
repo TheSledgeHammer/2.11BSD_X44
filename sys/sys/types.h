@@ -52,9 +52,9 @@ typedef	unsigned long		uid_t;		/* user id */
 typedef	unsigned long		gid_t;		/* group id */
 typedef	long	    		pid_t;		/* process id */
 typedef	unsigned short		mode_t;		/* permissions */
-typedef	__register_t		register_t;
-/* Does this relate to quads above? */
- typedef	struct	_quad {
+typedef	register_t			register_t;
+
+ typedef struct	_quad {
 	long val[2];
 } quad;
 

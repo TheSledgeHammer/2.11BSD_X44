@@ -73,11 +73,11 @@ struct segusage {
 /* On-disk file information.  One per file with data blocks in the segment. */
 typedef struct finfo FINFO;
 struct finfo {
-	u_int32_t fi_nblocks;		/* number of blocks */
-	u_int32_t fi_version;		/* version number */
-	u_int32_t fi_ino;			/* inode number */
-	u_int32_t fi_lastlength;	/* length of last block in array */
-	ufs_daddr_t	  fi_blocks[1];	/* array of logical block numbers */
+	u_int32_t 	fi_nblocks;		/* number of blocks */
+	u_int32_t 	fi_version;		/* version number */
+	u_int32_t 	fi_ino;			/* inode number */
+	u_int32_t 	fi_lastlength;	/* length of last block in array */
+	ufs_daddr_t	fi_blocks[1];	/* array of logical block numbers */
 };
 
 /* On-disk and in-memory super block. */
@@ -327,7 +327,7 @@ typedef struct block_info {
 	ufs_daddr_t bi_lbn;			/* logical block w/in file */
 	ufs_daddr_t bi_daddr;		/* disk address of block */
 	time_t	bi_segcreate;		/* origin segment create time */
-	int	bi_version;				/* file version number */
+	int		bi_version;			/* file version number */
 	void	*bi_bp;				/* data buffer */
 	int     bi_size;            /* size of the block (if fragment) */
 } BLOCK_INFO;

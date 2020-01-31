@@ -35,24 +35,24 @@
 #include "boot2.h"
 #include "lib.h"
 
-#define IO_KEYBOARD	1
-#define IO_SERIAL	2
+#define IO_KEYBOARD		1
+#define IO_SERIAL		2
 
-#define SECOND		18	/* Circa that many ticks in a second. */
+#define SECOND			18	/* Circa that many ticks in a second. */
 
-#define RBX_ASKNAME	0x0	/* -a */
-#define RBX_SINGLE	0x1	/* -s */
+#define RBX_ASKNAME		0x0	/* -a */
+#define RBX_SINGLE		0x1	/* -s */
 #define RBX_DFLTROOT	0x5	/* -r */
-#define RBX_KDB 	0x6	/* -d */
-#define RBX_CONFIG	0xa	/* -c */
-#define RBX_VERBOSE	0xb	/* -v */
-#define RBX_SERIAL	0xc	/* -h */
-#define RBX_CDROM	0xd	/* -C */
-#define RBX_GDB 	0xf	/* -g */
-#define RBX_MUTE	0x10	/* -m */
-#define RBX_PAUSE	0x12	/* -p */
-#define RBX_NOINTR	0x1c	/* -n */
-#define RBX_DUAL	0x1d	/* -D */
+#define RBX_KDB 		0x6	/* -d */
+#define RBX_CONFIG		0xa	/* -c */
+#define RBX_VERBOSE		0xb	/* -v */
+#define RBX_SERIAL		0xc	/* -h */
+#define RBX_CDROM		0xd	/* -C */
+#define RBX_GDB 		0xf	/* -g */
+#define RBX_MUTE		0x10	/* -m */
+#define RBX_PAUSE		0x12	/* -p */
+#define RBX_NOINTR		0x1c	/* -n */
+#define RBX_DUAL		0x1d	/* -D */
 #define RBX_PROBEKBD	0x1e	/* -P */
 /* 0x1f is reserved for the historical RB_BOOTINFO option */
 
@@ -469,9 +469,9 @@ dskread(void *buf, unsigned lba, unsigned nblk)
 	if (sl < BASE_SLICE) {
 	    for (i = 0; i < NDOSPART; i++)
 		if (dp[i].dp_typ == DOSPTYP_386BSD &&
-		    (dp[i].dp_flag & 0x80 || sl < BASE_SLICE)) {
+		    ((dp[i].dp_flag & 0x80) || sl < BASE_SLICE)) {
 		    sl = BASE_SLICE + i;
-		    if (dp[i].dp_flag & 0x80 ||
+		    if ((dp[i].dp_flag & 0x80) ||
 			dsk.slice == COMPATIBILITY_SLICE)
 			break;
 		}
@@ -616,9 +616,9 @@ xgetc(int fn)
     if (opts & 1 << RBX_NOINTR)
 	return 0;
     for (;;) {
-	if (ioctrl & IO_KEYBOARD && getc(1))
+	if ((ioctrl & IO_KEYBOARD) && getc(1))
 	    return fn ? 1 : getc(0);
-	if (ioctrl & IO_SERIAL && sio_ischar())
+	if ((ioctrl & IO_SERIAL) && sio_ischar())
 	    return fn ? 1 : sio_getc();
 	if (fn)
 	    return 0;

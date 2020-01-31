@@ -1,9 +1,9 @@
-/*
- * Copyright (c) 1991, 1993
+/*-
+ * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Scooter Morris at Genentech Inc.
+ * William Jolitz.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,50 +33,47 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)lockf.h	8.2 (Berkeley) 10/26/94
+ *	@(#)npx.h	8.1 (Berkeley) 6/11/93
  */
 
 /*
- * The lockf structure is a kernel structure which contains the information
- * associated with a byte range lock.  The lockf structures are linked into
- * the inode structure. Locks are sorted by the starting byte of the lock for
- * efficiency.
+ * 287/387 NPX Coprocessor Data Structures and Constants
+ * W. Jolitz 1/90
  */
-TAILQ_HEAD(locklist, lockf);
 
-struct lockf {
-	short	lf_flags;	    	/* Semantics: F_POSIX, F_FLOCK, F_WAIT */
-	short	lf_type;	    	/* Lock type: F_RDLCK, F_WRLCK */
-	off_t	lf_start;	    	/* Byte # of the start of the lock */
-	off_t	lf_end;		    	/* Byte # of the end of the lock (-1=EOF) */
-	caddr_t	lf_id;		   		/* Id of the resource holding the lock */
-	struct	inode *lf_inode;    /* Back pointer to the inode */
-	struct	lockf *lf_next;	    /* Pointer to the next lock on this inode */
-	struct	locklist lf_blkhd;  /* List of requests blocked on this lock */
-	TAILQ_ENTRY(lockf) lf_block;/* A request waiting for a lock */
+#ifndef	___NPX87___
+#define	___NPX87___
+
+/* Environment information of floating point unit */
+struct	env87 {
+	long	en_cw;		/* control word (16bits) */
+	long	en_sw;		/* status word (16bits) */
+	long	en_tw;		/* tag word (16bits) */
+	long	en_fip;		/* floating point instruction pointer */
+	u_short	en_fcs;		/* floating code segment selector */
+	u_short	en_opcode;	/* opcode last executed (11 bits ) */
+	long	en_foo;		/* floating operand offset */
+	long	en_fos;		/* floating operand segment selector */
 };
 
-/* Maximum length of sleep chains to traverse to try and detect deadlock. */
-#define MAXDEPTH 50
+/* Contents of each floating point accumulator */
+struct	fpacc87 {
+	u_long	fp_mantlo;	/* mantissa low (31:0) */
+	u_long	fp_manthi;	/* mantissa high (63:32) */
+	int		fp_exp:15;	/* exponent */
+	int		fp_sgn:1;	/* mantissa sign */
+};
 
-__BEGIN_DECLS
-void	lf_addblock __P((struct lockf *, struct lockf *));
-int	 	lf_clearlock __P((struct lockf *));
-int	 	lf_findoverlap __P((struct lockf *,
-	    struct lockf *, int, struct lockf ***, struct lockf **));
-struct lockf *
-	 	lf_getblock __P((struct lockf *));
-int	 	lf_getlock __P((struct lockf *, struct flock *));
-int	 	lf_setlock __P((struct lockf *));
-void 	lf_split __P((struct lockf *, struct lockf *));
-void 	lf_wakelock __P((struct lockf *));
-__END_DECLS
+/* Floating point context */
+struct	save87 {
+	struct	env87 sv_env;		/* floating point control/status */
+	struct	fpacc87	sv_ac[8];	/* accumulator contents, 0-7 */
+};
 
-#ifdef LOCKF_DEBUG
-extern int lockf_debug;
-
-__BEGIN_DECLS
-void	lf_print __P((char *, struct lockf *));
-void	lf_printlist __P((char *, struct lockf *));
-__END_DECLS
-#endif
+/* Cyrix EMC memory - mapped coprocessor context switch information */
+struct	emcsts {
+	long	em_msw;		/* memory mapped status register when swtched */
+	long	em_tar;		/* memory mapped temp A register when swtched */
+	long	em_dl;		/* memory mapped D low register when swtched */
+};
+#endif	___NPX87___

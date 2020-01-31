@@ -1,9 +1,6 @@
-/*
- * Copyright (c) 1991, 1993
+/*-
+ * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * Scooter Morris at Genentech Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,50 +30,43 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)lockf.h	8.2 (Berkeley) 10/26/94
+ *	@(#)ansi.h	8.2 (Berkeley) 1/4/94
  */
+
+#ifndef	_ANSI_H_
+#define	_ANSI_H_
 
 /*
- * The lockf structure is a kernel structure which contains the information
- * associated with a byte range lock.  The lockf structures are linked into
- * the inode structure. Locks are sorted by the starting byte of the lock for
- * efficiency.
+ * Types which are fundamental to the implementation and may appear in
+ * more than one standard header are defined here.  Standard headers
+ * then use:
+ *	#ifdef	_BSD_SIZE_T_
+ *	typedef	_BSD_SIZE_T_ size_t;
+ *	#undef	_BSD_SIZE_T_
+ *	#endif
  */
-TAILQ_HEAD(locklist, lockf);
+#define	_BSD_CLOCK_T_	unsigned long	/* clock() */
+#define	_BSD_PTRDIFF_T_	int				/* ptr1 - ptr2 */
+#define	_BSD_SIZE_T_	unsigned int	/* sizeof() */
+#define	_BSD_SSIZE_T_	int				/* byte count or error */
+#define	_BSD_TIME_T_	long			/* time() */
+#define	_BSD_VA_LIST_	char *			/* va_list */
 
-struct lockf {
-	short	lf_flags;	    	/* Semantics: F_POSIX, F_FLOCK, F_WAIT */
-	short	lf_type;	    	/* Lock type: F_RDLCK, F_WRLCK */
-	off_t	lf_start;	    	/* Byte # of the start of the lock */
-	off_t	lf_end;		    	/* Byte # of the end of the lock (-1=EOF) */
-	caddr_t	lf_id;		   		/* Id of the resource holding the lock */
-	struct	inode *lf_inode;    /* Back pointer to the inode */
-	struct	lockf *lf_next;	    /* Pointer to the next lock on this inode */
-	struct	locklist lf_blkhd;  /* List of requests blocked on this lock */
-	TAILQ_ENTRY(lockf) lf_block;/* A request waiting for a lock */
-};
+/*
+ * Runes (wchar_t) is declared to be an ``int'' instead of the more natural
+ * ``unsigned long'' or ``long''.  Two things are happening here.  It is not
+ * unsigned so that EOF (-1) can be naturally assigned to it and used.  Also,
+ * it looks like 10646 will be a 31 bit standard.  This means that if your
+ * ints cannot hold 32 bits, you will be in trouble.  The reason an int was
+ * chosen over a long is that the is*() and to*() routines take ints (says
+ * ANSI C), but they use _RUNE_T_ instead of int.  By changing it here, you
+ * lose a bit of ANSI conformance, but your programs will still work.
+ *
+ * Note that _WCHAR_T_ and _RUNE_T_ must be of the same type.  When wchar_t
+ * and rune_t are typedef'd, _WCHAR_T_ will be undef'd, but _RUNE_T remains
+ * defined for ctype.h.
+ */
+#define	_BSD_WCHAR_T_	int			/* wchar_t */
+#define	_BSD_RUNE_T_	int			/* rune_t */
 
-/* Maximum length of sleep chains to traverse to try and detect deadlock. */
-#define MAXDEPTH 50
-
-__BEGIN_DECLS
-void	lf_addblock __P((struct lockf *, struct lockf *));
-int	 	lf_clearlock __P((struct lockf *));
-int	 	lf_findoverlap __P((struct lockf *,
-	    struct lockf *, int, struct lockf ***, struct lockf **));
-struct lockf *
-	 	lf_getblock __P((struct lockf *));
-int	 	lf_getlock __P((struct lockf *, struct flock *));
-int	 	lf_setlock __P((struct lockf *));
-void 	lf_split __P((struct lockf *, struct lockf *));
-void 	lf_wakelock __P((struct lockf *));
-__END_DECLS
-
-#ifdef LOCKF_DEBUG
-extern int lockf_debug;
-
-__BEGIN_DECLS
-void	lf_print __P((char *, struct lockf *));
-void	lf_printlist __P((char *, struct lockf *));
-__END_DECLS
-#endif
+#endif	/* _ANSI_H_ */

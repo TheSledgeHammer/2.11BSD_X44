@@ -1,9 +1,9 @@
-/*
- * Copyright (c) 1991, 1993
+/*-
+ * Copyright (c) 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Scooter Morris at Genentech Inc.
+ * William Jolitz.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,50 +33,52 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)lockf.h	8.2 (Berkeley) 10/26/94
+ *	@(#)pcb.h	8.2 (Berkeley) 1/21/94
  */
 
 /*
- * The lockf structure is a kernel structure which contains the information
- * associated with a byte range lock.  The lockf structures are linked into
- * the inode structure. Locks are sorted by the starting byte of the lock for
- * efficiency.
+ * Intel 386 process control block
  */
-TAILQ_HEAD(locklist, lockf);
+#include <machine/tss.h>
+#include <machine/npx.h>
 
-struct lockf {
-	short	lf_flags;	    	/* Semantics: F_POSIX, F_FLOCK, F_WAIT */
-	short	lf_type;	    	/* Lock type: F_RDLCK, F_WRLCK */
-	off_t	lf_start;	    	/* Byte # of the start of the lock */
-	off_t	lf_end;		    	/* Byte # of the end of the lock (-1=EOF) */
-	caddr_t	lf_id;		   		/* Id of the resource holding the lock */
-	struct	inode *lf_inode;    /* Back pointer to the inode */
-	struct	lockf *lf_next;	    /* Pointer to the next lock on this inode */
-	struct	locklist lf_blkhd;  /* List of requests blocked on this lock */
-	TAILQ_ENTRY(lockf) lf_block;/* A request waiting for a lock */
+struct pcb {
+	struct	i386tss 	pcb_tss;
+#define	pcb_ksp			pcb_tss.tss_esp0
+#define	pcb_ptd			pcb_tss.tss_cr3
+#define	pcb_cr3			pcb_ptd
+#define	pcb_pc			pcb_tss.tss_eip
+#define	pcb_psl			pcb_tss.tss_eflags
+#define	pcb_usp			pcb_tss.tss_esp
+#define	pcb_fp			pcb_tss.tss_ebp
+#ifdef	notyet
+	u_char	pcb_iomap[NPORT/sizeof(u_char)]; /* i/o port bitmap */
+#endif
+	struct	save87		pcb_savefpu;	/* floating point state for 287/387 */
+	struct	emcsts		pcb_saveemc;	/* Cyrix EMC state */
+/*
+ * Software pcb (extension)
+ */
+	int					pcb_flags;
+#define	FP_WASUSED		0x01			/* floating point has been used in this proc */
+#define	FP_NEEDSSAVE	0x02			/* needs save on next context switch */
+#define	FP_NEEDSRESTORE	0x04			/* need restore on next DNA fault */
+#define	FP_USESEMC		0x08			/* process uses EMC memory-mapped mode */
+#define	FM_TRAP			0x10			/* process entered kernel on a trap frame */
+	short				pcb_iml;		/* interrupt mask level */
+	caddr_t				pcb_onfault;	/* copyin/out fault recovery */
+	long				pcb_sigc[8];	/* XXX signal code trampoline */
+	int					pcb_cmap2;		/* XXX temporary PTE - will prefault instead */
 };
 
-/* Maximum length of sleep chains to traverse to try and detect deadlock. */
-#define MAXDEPTH 50
+/*
+ * The pcb is augmented with machine-dependent additional data for
+ * core dumps. For the i386: ???
+ */
+struct md_coredump {
+        int     pad;		/* XXX? -- cgd */
+};
 
-__BEGIN_DECLS
-void	lf_addblock __P((struct lockf *, struct lockf *));
-int	 	lf_clearlock __P((struct lockf *));
-int	 	lf_findoverlap __P((struct lockf *,
-	    struct lockf *, int, struct lockf ***, struct lockf **));
-struct lockf *
-	 	lf_getblock __P((struct lockf *));
-int	 	lf_getlock __P((struct lockf *, struct flock *));
-int	 	lf_setlock __P((struct lockf *));
-void 	lf_split __P((struct lockf *, struct lockf *));
-void 	lf_wakelock __P((struct lockf *));
-__END_DECLS
-
-#ifdef LOCKF_DEBUG
-extern int lockf_debug;
-
-__BEGIN_DECLS
-void	lf_print __P((char *, struct lockf *));
-void	lf_printlist __P((char *, struct lockf *));
-__END_DECLS
+#ifdef KERNEL
+struct pcb *curpcb;		/* our current running pcb */
 #endif

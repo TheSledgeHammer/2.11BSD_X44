@@ -1,14 +1,22 @@
 Machine Files:
 
-clock.h
-cons.h
-exec.h
-seg.h
-pcb.h
-mtpr.h
-endian.h
-varargs.h
-stdarg.h
-ansi.h
-ptrace.h
-limits.h
+
+Boot Folders Minimal:
+i386:
+- libi386
+- mbr
+- loader
+- boot0
+- boot2
+- btx
+
+FreeBSD's BootLoader
+- forth
+- ficl
+- common
+
+Note: (exec formats)
+- elf: elf_freebsd.c (5.0.0)
+- aout: aout_freebsd.c (4.0.0)
+
+can convert above to a netbsd vmcmd:

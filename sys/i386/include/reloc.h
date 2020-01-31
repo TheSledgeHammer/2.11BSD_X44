@@ -1,9 +1,6 @@
-/*
- * Copyright (c) 1991, 1993
+/*-
+ * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * Scooter Morris at Genentech Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,50 +30,24 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)lockf.h	8.2 (Berkeley) 10/26/94
+ *	@(#)reloc.h	8.1 (Berkeley) 6/10/93
+ * $FreeBSD$
  */
 
-/*
- * The lockf structure is a kernel structure which contains the information
- * associated with a byte range lock.  The lockf structures are linked into
- * the inode structure. Locks are sorted by the starting byte of the lock for
- * efficiency.
- */
-TAILQ_HEAD(locklist, lockf);
+#ifndef _I386_MACHINE_RELOC_H_
+#define _I386_MACHINE_RELOC_H_
 
-struct lockf {
-	short	lf_flags;	    	/* Semantics: F_POSIX, F_FLOCK, F_WAIT */
-	short	lf_type;	    	/* Lock type: F_RDLCK, F_WRLCK */
-	off_t	lf_start;	    	/* Byte # of the start of the lock */
-	off_t	lf_end;		    	/* Byte # of the end of the lock (-1=EOF) */
-	caddr_t	lf_id;		   		/* Id of the resource holding the lock */
-	struct	inode *lf_inode;    /* Back pointer to the inode */
-	struct	lockf *lf_next;	    /* Pointer to the next lock on this inode */
-	struct	locklist lf_blkhd;  /* List of requests blocked on this lock */
-	TAILQ_ENTRY(lockf) lf_block;/* A request waiting for a lock */
+/* Relocation format. */
+struct relocation_info {
+	int r_address;			  			/* offset in text or data segment */
+	unsigned int   r_symbolnum : 24,  	/* ordinal number of add symbol */
+			   	   	   r_pcrel :  1,  	/* 1 if value should be pc-relative */
+					  r_length :  2,  	/* log base 2 of value's width */
+					  r_extern :  1,  	/* 1 if need to add symbol to value */
+			  	  	 r_baserel :  1,  	/* linkage table relative */
+					r_jmptable :  1,  	/* relocate to jump table */
+					r_relative :  1,  	/* load address relative */
+			    		r_copy :  1;  	/* run time copy */
 };
 
-/* Maximum length of sleep chains to traverse to try and detect deadlock. */
-#define MAXDEPTH 50
-
-__BEGIN_DECLS
-void	lf_addblock __P((struct lockf *, struct lockf *));
-int	 	lf_clearlock __P((struct lockf *));
-int	 	lf_findoverlap __P((struct lockf *,
-	    struct lockf *, int, struct lockf ***, struct lockf **));
-struct lockf *
-	 	lf_getblock __P((struct lockf *));
-int	 	lf_getlock __P((struct lockf *, struct flock *));
-int	 	lf_setlock __P((struct lockf *));
-void 	lf_split __P((struct lockf *, struct lockf *));
-void 	lf_wakelock __P((struct lockf *));
-__END_DECLS
-
-#ifdef LOCKF_DEBUG
-extern int lockf_debug;
-
-__BEGIN_DECLS
-void	lf_print __P((char *, struct lockf *));
-void	lf_printlist __P((char *, struct lockf *));
-__END_DECLS
 #endif

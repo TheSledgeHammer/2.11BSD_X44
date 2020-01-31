@@ -1,9 +1,6 @@
 /*
- * Copyright (c) 1991, 1993
+ * Copyright (c) 1987, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * Scooter Morris at Genentech Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,50 +30,58 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)lockf.h	8.2 (Berkeley) 10/26/94
+ *	@(#)endian.h	8.1 (Berkeley) 6/10/93
  */
+
+#ifndef _ENDIAN_H_
+#define	_ENDIAN_H_
+
+#include <sys/cdefs.h>
+
 
 /*
- * The lockf structure is a kernel structure which contains the information
- * associated with a byte range lock.  The lockf structures are linked into
- * the inode structure. Locks are sorted by the starting byte of the lock for
- * efficiency.
+ * Define the order of 32-bit words in 64-bit words.
  */
-TAILQ_HEAD(locklist, lockf);
+#define _QUAD_HIGHWORD 	0
+#define _QUAD_LOWWORD 	1
 
-struct lockf {
-	short	lf_flags;	    	/* Semantics: F_POSIX, F_FLOCK, F_WAIT */
-	short	lf_type;	    	/* Lock type: F_RDLCK, F_WRLCK */
-	off_t	lf_start;	    	/* Byte # of the start of the lock */
-	off_t	lf_end;		    	/* Byte # of the end of the lock (-1=EOF) */
-	caddr_t	lf_id;		   		/* Id of the resource holding the lock */
-	struct	inode *lf_inode;    /* Back pointer to the inode */
-	struct	lockf *lf_next;	    /* Pointer to the next lock on this inode */
-	struct	locklist lf_blkhd;  /* List of requests blocked on this lock */
-	TAILQ_ENTRY(lockf) lf_block;/* A request waiting for a lock */
-};
+/*
+ * Definitions for byte order, according to byte significance from low
+ * address to high.
+ */
+#define	LITTLE_ENDIAN	1234	/* LSB first: i386, vax */
+#define	BIG_ENDIAN		4321	/* MSB first: 68000, ibm, net */
+#define	PDP_ENDIAN		3412	/* LSB first in word, MSW first in long */
 
-/* Maximum length of sleep chains to traverse to try and detect deadlock. */
-#define MAXDEPTH 50
+#define	BYTE_ORDER	LITTLE_ENDIAN
+
 
 __BEGIN_DECLS
-void	lf_addblock __P((struct lockf *, struct lockf *));
-int	 	lf_clearlock __P((struct lockf *));
-int	 	lf_findoverlap __P((struct lockf *,
-	    struct lockf *, int, struct lockf ***, struct lockf **));
-struct lockf *
-	 	lf_getblock __P((struct lockf *));
-int	 	lf_getlock __P((struct lockf *, struct flock *));
-int	 	lf_setlock __P((struct lockf *));
-void 	lf_split __P((struct lockf *, struct lockf *));
-void 	lf_wakelock __P((struct lockf *));
+unsigned long	htonl __P((unsigned long));
+unsigned short	htons __P((unsigned short));
+unsigned long	ntohl __P((unsigned long));
+unsigned short	ntohs __P((unsigned short));
 __END_DECLS
 
-#ifdef LOCKF_DEBUG
-extern int lockf_debug;
+/*
+ * Macros for network/external number representation conversion.
+ */
+#if BYTE_ORDER == LITTLE_ENDIAN && !defined(lint)
+#define	ntohl(x)	(x)
+#define	ntohs(x)	(x)
+#define	htonl(x)	(x)
+#define	htons(x)	(x)
 
-__BEGIN_DECLS
-void	lf_print __P((char *, struct lockf *));
-void	lf_printlist __P((char *, struct lockf *));
-__END_DECLS
+#define	NTOHL(x)	(x)
+#define	NTOHS(x)	(x)
+#define	HTONL(x)	(x)
+#define	HTONS(x)	(x)
+
+#else
+
+#define	NTOHL(x)	(x) = ntohl((u_long)x)
+#define	NTOHS(x)	(x) = ntohs((u_short)x)
+#define	HTONL(x)	(x) = htonl((u_long)x)
+#define	HTONS(x)	(x) = htons((u_short)x)
 #endif
+#endif /* !_ENDIAN_H_ */

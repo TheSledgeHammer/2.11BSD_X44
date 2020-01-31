@@ -50,7 +50,7 @@
 
 #define	cpu_exec(p)				/* nothing */
 #define	cpu_swapin(p)			/* nothing */
-#define cpu_setstack(p, ap)		(p)->p_md.md_regs[SP] = ap
+#define cpu_setstack(p, ap)			(p)->p_md.md_regs[SP] = ap
 #define cpu_set_init_frame(p, fp)	(p)->p_md.md_regs = fp
 #define	BACKTRACE(p)			/* not implemented */
 

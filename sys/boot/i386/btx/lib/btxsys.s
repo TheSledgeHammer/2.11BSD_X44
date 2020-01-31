@@ -31,10 +31,10 @@
 #
 # System call: exit
 #
-__exit: 	xorl %eax,%eax			# BTX system
+__exit: 	xorl %eax,%eax		# BTX system
 		int $INT_SYS			#  call 0x0
 #
 # System call: exec
 #
-__exec: 	movl $0x1,%eax			# BTX system
+__exec: 	movl $0x1,%eax		# BTX system
 		int $INT_SYS			#  call 0x1

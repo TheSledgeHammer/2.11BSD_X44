@@ -95,12 +95,13 @@ int	 lfs_vref __P((struct vnode *));
 void lfs_vunref __P((struct vnode *));
 int	 lfs_write __P((struct vop_write_args *));
 
+/*
 int	lfs_snapblkfree(struct fs *, struct vnode *, ufs_daddr_t, long, ino_t);
 void lfs_snapremove(struct vnode *vp);
 int	lfs_snapshot(struct mount *mp, char *snapfile);
 void lfs_snapshot_mount(struct mount *mp);
 void lfs_snapshot_unmount(struct mount *mp);
-
+*/
 #ifdef DEBUG
 void	lfs_dump_dinode __P((struct dinode *));
 void	lfs_dump_super __P((struct lfs *));

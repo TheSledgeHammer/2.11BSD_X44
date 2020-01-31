@@ -130,7 +130,7 @@ again:
 			}
 			goto again;
 		} else if (mp == coremap) {
-			FREE(size, M_RMALLOC);
+			free(size, M_RMALLOC);
 			goto again;
 		}
 	}
@@ -286,9 +286,9 @@ again:
 				goto again;
 			}
 		} else if (mp == coremap) {
-			FREE(sizes[2], M_RMALLOC3);			/* smallest to largest; */
-			FREE(sizes[1], M_RMALLOC3);			/* free up minimum space */
-			FREE(sizes[0], M_RMALLOC3);
+			free(sizes[2], M_RMALLOC3);			/* smallest to largest; */
+			free(sizes[1], M_RMALLOC3);			/* free up minimum space */
+			free(sizes[0], M_RMALLOC3);
 			goto again;
 		}
 	return (0);
