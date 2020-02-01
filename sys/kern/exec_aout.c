@@ -89,7 +89,7 @@ exec_aout_linker(elp)
 			error = cpu_exec_aout_linker(elp); /* For CPU Architecture */
 		}
 	}
-	return exec_mmap_to_vmspace(elp);
+	return exec_mmap_to_vmspace(elp, a_out->a_entry);
 }
 
 /*
@@ -131,7 +131,7 @@ exec_aout_prep_zmagic(elp)
 				MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, 0);
 	}
 
-	return exec_aout_setup_stack(elp);
+	return (*elp->el_esch->ex_setup_stack)(elp);
 }
 
 
@@ -169,7 +169,7 @@ exec_aout_prep_nmagic(elp)
 				MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, 0);
 	}
 
-	return exec_aout_setup_stack(elp);
+	return (*elp->el_esch->ex_setup_stack)(elp);
 }
 
 /* exec_aout_prep_omagic(): Prepare a 'native' OMAGIC binary's exec linker */
@@ -212,27 +212,7 @@ exec_aout_prep_omagic(elp)
 	dsize = elp->el_dsize + a_out->a_text - roundup(a_out->a_text, NBPG);
 	elp->el_dsize = (dsize > 0) ? dsize : 0;
 
-	return exec_aout_setup_stack(elp);
-}
-
-int
-exec_aout_setup_stack(elp)
-	struct exec_linker *elp;
-{
-	struct vmspace *vmspace = elp->el_proc->p_vmspace;
-
-	elp->el_maxsaddr = USRSTACK - MAXSSIZ;
-	elp->el_minsaddr = USRSTACK;
-	elp->el_ssize = u->u_rlimit[RLIMIT_STACK].rlim_cur;
-
-	exec_mmap_setup(&vmspace->vm_map,  elp->el_maxsaddr, ((elp->el_minsaddr - elp->el_ssize) - elp->el_maxsaddr),
-			VM_PROT_NONE, VM_PROT_NONE, MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, 0);
-
-	exec_mmap_setup(&vmspace->vm_map,  elp->el_ssize, (elp->el_minsaddr - elp->el_ssize),
-			VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE,
-			MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, 0);
-
-	return 0;
+	return (*elp->el_esch->ex_setup_stack)(elp);
 }
 
 static const struct execsw aout_execsw = { exec_aout_linker, "a.out" };

@@ -59,7 +59,7 @@ exec_ecoff_linker(elp)
 	if (ECOFF_BADMAG(ecoff))
 		return ENOEXEC;
 
-	error = cpu_exec_ecoff_hook(elp);
+	error = (*elp->el_esch->u.ecoff_probe_func)(elp);
 
 	switch (ecoff->a.magic) {
 	case ECOFF_OMAGIC:
@@ -75,10 +75,11 @@ exec_ecoff_linker(elp)
 		return ENOEXEC;
 	}
 	if (!error) {
-		error = exec_ecoff_setup_stack(elp);
+		error = (*elp->el_esch->ex_setup_stack)(elp);
 	}
 
-	return exec_mmap_to_vmspace(elp);
+
+	return exec_mmap_to_vmspace(elp, ecoff->a.entry);
 }
 
 int
@@ -177,26 +178,6 @@ exec_ecoff_prep_omagic(elp, ecoff, vp)
 		}
 
 		return (0);
-}
-
-int
-exec_ecoff_setup_stack(elp)
-	struct exec_linker *elp;
-{
-	struct vmspace *vmspace = elp->el_proc->p_vmspace;
-
-	elp->el_maxsaddr = USRSTACK - MAXSSIZ;
-	elp->el_minsaddr = USRSTACK;
-	elp->el_ssize = u->u_rlimit[RLIMIT_STACK].rlim_cur;
-
-	exec_mmap_setup(&vmspace->vm_map, elp->el_maxsaddr, ((elp->el_minsaddr - elp->el_ssize) - elp->el_maxsaddr),
-			VM_PROT_NONE, VM_PROT_NONE, MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, 0);
-
-	exec_mmap_setup(&vmspace->vm_map, elp->el_ssize, (elp->el_minsaddr - elp->el_ssize),
-			VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE,
-			MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, 0);
-
-	return (0);
 }
 
 static const struct execsw ecoff_execsw = { exec_ecoff_linker, "ECOFF" };

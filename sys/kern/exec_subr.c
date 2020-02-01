@@ -16,7 +16,7 @@
 
 #include <vm/include/vm.h>
 
-int *exec_copyout_strings __P((struct exec_linker *));
+int *exec_copyout_strings (struct exec_linker *);
 
 
 /* Setup exec_mmap from exec_linker params */
@@ -46,8 +46,9 @@ exec_mmap_setup(elp, addr, size, prot, maxprot, flags, handle, offset)
 
 /* Push exec_mmap into vmspace processing VM information and image params */
 int
-exec_mmap_to_vmspace(elp)
+exec_mmap_to_vmspace(elp, entry)
 	struct exec_linker *elp;
+	u_long entry;
 {
 	struct vmspace *vmspace = elp->el_proc->p_vmspace;
 	struct exec_mmap *ex_map = elp->el_ex_map;
@@ -85,7 +86,7 @@ exec_mmap_to_vmspace(elp)
 
 	/* Fill in image_params */
 	elp->el_interpreted = 0;
-
+	elp->el_entry = entry;
 	elp->el_proc->p_sysent = &sysvec;
 	return 0;
 }
@@ -219,4 +220,38 @@ exec_copyout_strings(elp)
 	*vectp = NULL;
 
 	return (stack_base);
+}
+
+int
+exec_setup_stack(elp)
+	struct exec_linker *elp;
+{
+	struct vmspace *vmspace = elp->el_proc->p_vmspace;
+
+	u_long max_stack_size;
+	u_long access_linear_min, access_size;
+	u_long noaccess_linear_min, noaccess_size;
+
+	max_stack_size = MAXSSIZ;
+	elp->el_minsaddr = USRSTACK;
+	elp->el_maxsaddr = elp->el_minsaddr + max_stack_size;
+
+	elp->el_ssize = u->u_rlimit[RLIMIT_STACK].rlim_cur;
+
+	access_size = elp->el_ssize;
+	access_linear_min = (u_long)(elp->el_minsaddr - access_size);
+	noaccess_size = max_stack_size - access_size;
+	noaccess_linear_min = (u_long)((elp->el_minsaddr - access_size) + noaccess_size);
+	noaccess_size = max_stack_size - access_size;
+
+	if (noaccess_size > 0) {
+		exec_mmap_setup(&vmspace->vm_map, elp->el_maxsaddr, ((elp->el_minsaddr - elp->el_ssize) - elp->el_maxsaddr),
+				VM_PROT_NONE, VM_PROT_NONE, MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, 0);
+	}
+
+	exec_mmap_setup(&vmspace->vm_map, elp->el_ssize, (elp->el_minsaddr - elp->el_ssize),
+			VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE,
+			MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, 0);
+
+	return (0);
 }

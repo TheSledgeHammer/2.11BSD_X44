@@ -95,9 +95,18 @@ execve(p, uap, retval)
 		elp->el_proc = p;
 		elp->el_uap = uap;
 		elp->el_attr = &attr;
+		elp->el_argc = elp->el_envc = 0;
+		elp->el_entry = 0;
+		elp->el_vmspace_destroyed = 0;
+		elp->el_interpreted = 0;
+		elp->el_interpreter_name[0] = '\0';
+
+		elp->el_vnodep = NULL;
+
 
 		/* Allocate temporary demand zeroed space for argument and environment strings */
 		error = vm_allocate(kernel_map, (vm_offset_t *)&elp->el_stringbase, ARG_MAX, TRUE);
+
 		if(error) {
 			log(LOG_WARNING, "execve: failed to allocate string space\n");
 			return (u->u_error);
@@ -109,6 +118,7 @@ execve(p, uap, retval)
 		}
 		elp->el_stringp = elp->el_stringbase;
 		elp->el_stringspace = ARG_MAX;
+		elp->el_image_hdr = elp->el_stringbase + ARG_MAX;
 
 		/* Translate the file name. namei() returns a vnode pointer in ni_vp amoung other things. */
 		ndp = &nd;

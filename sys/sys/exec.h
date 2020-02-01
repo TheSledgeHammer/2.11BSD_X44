@@ -92,6 +92,12 @@ struct execa {
 struct execsw {
 	int (*ex_exec_linker)(void * /* struct exec_linker* */);
 	const char *ex_name;
+
+	int	(*ex_setup_stack)(struct exec_linker *);
+	union {
+		int (*elf_probe_func)(struct proc *, struct exec_linker *, void *, char *, caddr_t *);
+		int (*ecoff_probe_func)(struct exec_linker *);
+	} u;
 };
 
 #ifdef KERNEL

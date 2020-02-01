@@ -103,10 +103,12 @@ struct ecoff_exechdr {
          ECOFF_SEGMENT_ALIGNMENT(ep))))
 
 #ifdef _KERNEL
-int	exec_ecoff_linker __P((struct exec_linker *));
-int	exec_ecoff_setup_stack __P((struct exec_linker *));
-int	exec_ecoff_prep_zmagic __P((struct exec_linker *, struct ecoff_exechdr *, struct vnode *));
-int	exec_ecoff_prep_nmagic __P((struct exec_linker *, struct ecoff_exechdr *, struct vnode *));
-int	exec_ecoff_prep_omagic __P((struct exec_linker *, struct ecoff_exechdr *, struct vnode *));
+int	 exec_ecoff_linker __P((struct exec_linker *));
+int	 cpu_exec_ecoff_probe(struct proc *, struct exec_linker *);
+void cpu_exec_ecoff_setregs(struct proc *, struct exec_linker *, u_long);
+
+int	 exec_ecoff_prep_zmagic __P((struct exec_linker *, struct ecoff_exechdr *, struct vnode *));
+int	 exec_ecoff_prep_nmagic __P((struct exec_linker *, struct ecoff_exechdr *, struct vnode *));
+int	 exec_ecoff_prep_omagic __P((struct exec_linker *, struct ecoff_exechdr *, struct vnode *));
 #endif /* _KERNEL */
 #endif /* _SYS_EXEC_ECOFF_H_ */

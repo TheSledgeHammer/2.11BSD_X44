@@ -116,7 +116,6 @@ struct coff_exechdr {
 
 #ifdef _KERNEL
 int	exec_coff_linker __P((struct exec_linker *));
-int	exec_coff_setup_stack __P((struct exec_linker *));
 int	exec_coff_prep_zmagic __P((struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *));
 int	exec_coff_prep_nmagic __P((struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *));
 int	exec_coff_prep_omagic __P((struct exec_linker *, struct coff_filehdr *, struct coff_aouthdr *));
