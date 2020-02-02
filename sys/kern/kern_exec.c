@@ -409,7 +409,6 @@ exec_check_permissions(elp)
 	error = VOP_OPEN(vnodep, FREAD, p->p_ucred, p);
 	if (error)
 		return (error);
-
 	return (0);
 }
 

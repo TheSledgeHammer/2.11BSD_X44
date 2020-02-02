@@ -60,7 +60,7 @@ struct exec_mmap {
 
 #include <sys/exec_aout.h>
 
-//#ifdef KERNEL
+#ifdef KERNEL
 int		exec_setup_stack(struct exec_linker *);
 void 	exec_mmap_setup(struct exec_linker *elp, vm_offset_t *addr, vm_size_t size, vm_prot_t prot, vm_prot_t maxprot, int flags, caddr_t handle,  unsigned long offset);
 int 	exec_mmap_to_vmspace(struct exec_linker *);

@@ -31,7 +31,6 @@ exec_mmap_setup(elp, addr, size, prot, maxprot, flags, handle, offset)
 	unsigned long offset;
 {
 	struct exec_mmap *ex_map = (struct exec_mmap *) &elp;
-	//setup with malloc();
 
 	ex_map->em_addr = addr;
 	ex_map->em_size = size;
