@@ -34,17 +34,147 @@ extern int			nexecs_builtin;
 static const struct execsw	**execsw = NULL;
 static int			nexecs;
 
+static int check_exec(struct exec_linker *);
 static void link_ex(struct execsw_entry **listp, const struct execsw *exp);
 
+void
+execv(p, uap, retval)
+	struct proc *p;
+	struct execa *uap = (struct execa *)u->u_ap;
+	int *retval;
+{
+	uap->envp = NULL;
+	execve(p, uap, retval);
+}
+
 int
-check_exec(struct proc *p, struct exec_linker *elp)
+execve(p, uap, retval)
+	struct proc *p;
+	register struct execa *uap = (struct execa *)u->u_ap;
+	int *retval;
+{
+		struct nameidata nd, *ndp;
+		int error, i, szsigcode, len;
+		struct exec_linker elp;
+		struct vmspace *vm;
+		struct vnode *vnodep;
+		struct vattr attr;
+		char *dp, *sp;
+		char * const *cpp;
+		char **tmpfap;
+		struct exec_vmcmd *base_vcp = NULL;
+		extern struct emul emul_211bsd;
+
+		if (exec_maxhdrsz == 0) {
+			for (i = 0; i < nexecs; i++)
+				if (execsw[i]->ex_check != NULL && execsw[i]->ex_hdrsz > exec_maxhdrsz)
+					exec_maxhdrsz = execsw[i]->ex_hdrsz;
+		}
+
+		/* Initialize a few constants in the common area */
+		MALLOC(elp, struct exec_linker *, sizeof(elp->el_image_hdr), M_EXEC, M_WAITOK);
+		elp->el_proc = p;
+		elp->el_uap = uap;
+		elp->el_attr = &attr;
+		elp->el_argc = elp->el_envc = 0;
+		elp->el_entry = 0;
+		elp->el_hdrlen = exec_maxhdrsz;
+		elp->el_hdrvalid = 0;
+		elp->el_ndp = &ndp;
+		elp->el_emul_arg = NULL;
+		elp->el_vmcmds->evs_cnt = 0;
+		elp->el_vmcmds->evs_used = 0;
+		elp->el_vnodep = NULL;
+		elp->el_emul = &emul_211bsd;
+		elp->el_flags = 0;
+
+
+		/* see if we can run it. */
+		if ((error = check_exec(p, &elp)) != 0)
+			goto freehdr;
+
+		error = exec_extract_strings(elp, dp, cpp);
+		if(error != 0) {
+			goto bad;
+		}
+
+		szsigcode = elp.el_emul->e_esigcode - elp.el_emul->e_sigcode;
+
+		/* Now check if args & environ fit into new stack */
+		if(elp->el_flags & EXEC_32)
+			len = ((elp.el_argc + elp->el_envc + 2 + elp.el_emul->e_arglen) * sizeof(int) +
+				       sizeof(int) + dp + STACKGAPLEN + szsigcode +
+				       sizeof(struct ps_strings)) - uap->argp;
+		else
+			len = ((elp.el_argc + elp->el_envc+ 2 + elp.el_emul->e_arglen) * sizeof(char *) +
+				       sizeof(int) + dp + STACKGAPLEN + szsigcode +
+				       sizeof(struct ps_strings)) - uap->argp;
+
+		len = ALIGN(len);	/* make the stack "safely" aligned */
+
+		if(len > elp.el_ssize)
+			error = ENOMEM;
+			goto bad;
+
+		/* adjust "active stack depth" for process VSZ */
+		elp.el_ssize = len;
+
+		/* Map address Space  & create new process's VM space */
+		error = vmcmd_create_vmspace(elp);
+		if(error != 0) {
+			goto exec_abort;
+		}
+
+
+		p->p_flag &= ~P_INEXEC;
+			return (EJUSTRETURN);
+bad:
+		p->p_flag &= ~P_INEXEC;
+		/* free the vmspace-creation commands, and release their references */
+		kill_vmcmds(&elp.el_vmcmds);
+		/* kill any opened file descriptor, if necessary */
+		if (elp.el_flags & EXEC_HASFD) {
+			elp.el_flags &= ~EXEC_HASFD;
+			(void) fdrelease(p, elp.el_fd);
+		}
+		/* close and put the exec'd file */
+		vn_lock(elp.el_vnodep, LK_EXCLUSIVE | LK_RETRY);
+		VOP_CLOSE(elp.el_vnodep, FREAD, cred, p);
+		vput(elp.el_vnodep);
+		FREE(ndp->ni_cnd.cn_pnbuf, M_NAMEI);
+
+freehdr:
+		p->p_flag &= ~P_INEXEC;
+		FREE(elp.el_image_hdr, M_EXEC);
+		return error;
+
+exec_abort:
+		p->p_flag &= ~P_INEXEC;
+		vm_deallocate(&vm, VM_MIN_ADDRESS, VM_MAXUSER_ADDRESS - VM_MIN_ADDRESS);
+		if(elp->el_emul_arg)
+			FREE(elp->el_emul_arg, M_TEMP);
+		FREE(ndp->ni_cnd.cn_pnbuf, M_NAMEI);
+		vn_lock(elp->el_vnodep, LK_EXCLUSIVE | LK_RETRY);
+		VOP_CLOSE(elp->el_vnodep, FREAD, p->p_cred, p);
+		vput(elp->el_vnodep);
+		FREE(elp->el_image_hdr, M_EXEC);
+
+		return (0);
+}
+
+int
+check_exec(elp)
+	struct exec_linker *elp;
 {
 	int					error, i;
 	struct vnode		*vp;
 	struct nameidata 	*ndp;
 	size_t				resid;
 
+
+	struct proc *p = elp->el_proc;
 	ndp = elp->el_ndp;
+
 	ndp->ni_cnd.cn_nameiop = LOOKUP;
 	ndp->ni_cnd.cn_flags = FOLLOW | LOCKLEAF | SAVENAME;
 	/* first get the vnode */
@@ -103,14 +233,14 @@ check_exec(struct proc *p, struct exec_linker *elp)
 		int newerror;
 
 		elp->el_esch = execsw[i];
-		newerror = (*execsw[i]->ex_makecmds)(p, elp);
+		newerror = (*execsw[i]->ex_check)(p, elp);
 		/* make sure the first "interesting" error code is saved. */
 		if (!newerror || error == ENOEXEC)
 			error = newerror;
 
 		/* if es_makecmds call was successful, update epp->ep_es */
 		if (!newerror && (elp->el_flags & EXEC_HASES) == 0)
-			elp->el_ex = execsw[i];
+			elp->el_esch = execsw[i];
 
 		if ((elp->el_flags & EXEC_DESTR) && error != 0)
 			return error;
@@ -154,6 +284,74 @@ bad1:
 }
 
 /*
+ * Creates new vmspace from running vmcmd
+ * Do whatever is necessary to prepare the address space
+ * for remapping.  Note that this might replace the current
+ * vmspace with another!
+ */
+int
+vmcmd_create_vmspace(elp)
+	struct exec_linker *elp;
+{
+	struct proc *p = elp->el_proc;
+	struct vmspace *vmspace = p->p_vmspace;
+	struct exec_vmcmd *base_vcp = NULL;
+
+	int error, i;
+
+	/*  Now map address space */
+	vmspace->vm_tsize = btoc(elp->el_tsize);
+	vmspace->vm_dsize = btoc(elp->el_dsize);
+	vmspace->vm_taddr = (caddr_t) elp->el_taddr;
+	vmspace->vm_daddr = (caddr_t) elp->el_daddr;
+	vmspace->vm_ssize = btoc(elp->el_ssize);
+	vmspace->vm_minsaddr = (caddr_t)elp->el_minsaddr;
+	vmspace->vm_maxsaddr = (caddr_t)elp->el_maxsaddr;
+
+	/* create the new process's VM space by running the vmcmds */
+#ifdef DIAGNOSTIC
+	if(elp->el_vmcmds->evs_used == 0)
+		panic("execve: no vmcmds");
+#endif
+	for (i = 0; i < elp->el_vmcmds->evs_used && !error; i++) {
+		struct exec_vmcmd *vcp;
+
+		vcp = elp->el_vmcmds->evs_cmds[i];
+		if(vcp->ev_flags & VMCMD_RELATIVE) {
+#ifdef DIAGNOSTIC
+			if (base_vcp == NULL)
+				panic("execve: relative vmcmd with no base");
+			if (vcp->ev_flags & VMCMD_BASE)
+				panic("execve: illegal base & relative vmcmd");
+#endif
+			vcp->ev_addr += base_vcp->ev_addr;
+		}
+		error = (*vcp->ev_proc)(elp->el_proc, vcp);
+#ifdef DEBUG
+		if (error) {
+			if (i > 0) {
+				printf("vmcmd[%d] = %#lx/%#lx @ %#lx\n", i-1,
+								       vcp[-1].ev_addr, vcp[-1].ev_size,
+								       vcp[-1].ev_offset);
+			}
+			printf("vmcmd[%d] = %#lx/%#lx @ %#lx\n", i, vcp->ev_addr, vcp->ev_size, vcp->ev_offset);
+		}
+#endif
+		if (vcp->ev_flags & VMCMD_BASE)
+			base_vcp = vcp;
+	}
+
+	/* free the vmspace-creation commands, and release their references */
+	kill_vmcmds(&elp->el_vmcmds);
+	if(error) {
+		return error;
+	} else {
+		return (0);
+	}
+}
+
+
+/*
  * Add execsw[] entry.
  */
 int
@@ -166,7 +364,7 @@ exec_add(struct proc *p, struct execsw *exp, const char *e_name)
 	//lockmgr(&exec_lock, LK_EXCLUSIVE, NULL, p);
 
 	LIST_FOREACH(it, &ex_head, ex_list) {
-		if(it->ex->ex_makecmds == exp->ex_makecmds && it->ex->u.elf_probe_func == exp->u.elf_probe_func) {
+		if(it->ex->ex_check == exp->ex_check && it->ex->u.elf_probe_func == exp->u.elf_probe_func) {
 			error = EEXIST;
 			return error;
 		}
@@ -174,7 +372,7 @@ exec_add(struct proc *p, struct execsw *exp, const char *e_name)
 
 	/* if we got here, the entry doesn't exist yet */
 
-	it = MALLOC(sizeof(struct exec_entry), M_EXEC, M_WAITOK);
+	it = MALLOC(it, struct exec_entry *, sizeof(struct exec_entry), M_EXEC, M_WAITOK);
 	it->ex = exp;
 	LIST_INSERT_HEAD(&ex_head, it, ex_list);
 
@@ -195,10 +393,10 @@ exec_remove(const struct execsw *exp)
 	int					error;
 
 	error = 0;
-	//lockmgr(&exec_lock, LK_EXCLUSIVE, NULL, p);
+	//lockmgr(&exec_lock, LK_EXCLUSIVE, NULL);
 
 	LIST_FOREACH(it, &ex_head, ex_list) {
-		if(it->ex->ex_makecmds == exp->ex_makecmds && it->ex->u.elf_probe_func == exp->u.elf_probe_func) {
+		if(it->ex->ex_check == exp->ex_check && it->ex->u.elf_probe_func == exp->u.elf_probe_func) {
 			break;
 		}
 	}

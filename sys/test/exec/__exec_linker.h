@@ -11,13 +11,19 @@
 const struct execsw *p_execsw;	/* Exec package information */
 
 struct emul {
-	const char			*e_name;	/* Symbolic name */
+	const char			*e_name[8];	/* Symbolic name */
 	const char			*e_path;	/* Extra emulation path (NULL if none)*/
+	int					e_nsysent;	/* Number of system call entries */
 	const struct sysent *e_sysent;	/* System call array */
+	int					e_arglen;	/* Extra argument size in words */
+
 	void				(*e_setregs)(struct proc *, struct exec_linker *, u_long);
+	char				*e_sigcode;	/* Start of sigcode */
+	char				*e_esigcode;/* End of sigcode */
 };
 
 struct exec_linker {
+	const char 					*el_name;				/* file's name */
 	struct 	proc 		        *el_proc;			    /* our process struct */
 	struct 	execa 		        *el_uap; 			    /* syscall arguments */
 	const struct execsw 		*el_esch;				/* execsw entry */
@@ -27,6 +33,9 @@ struct exec_linker {
 	struct 	exec_vmcmd_set    	*el_vmcmds;			    /* executable's vmcmd_set */
 
 	struct 	nameidata			el_ndp;					/* executable's nameidata */
+
+	struct  emul 				*el_emul;				/* os emulation */
+	void						*el_emul_arg;			/* emulation argument */
 
 	void				        *el_image_hdr;			/* file's exec header */
 	u_int				        el_hdrlen;				/* length of ep_hdr */
@@ -44,15 +53,14 @@ struct exec_linker {
 	caddr_t			        	el_vm_minaddr;			/* bottom of process address space */
 	caddr_t				        el_vm_maxaddr;			/* top of process address space */
 	u_int				        el_flags;				/* flags */
+	int							el_fd;					/* a file descriptor we're holding */
+	char						**el_fa;				/* a fake args vector for scripts */
 
+/* Part of FreeBSD imgact */
 	char 				        *el_stringbase;			/* base address of tmp string storage */
 	char 				        *el_stringp;			/* current 'end' pointer of tmp strings */
 	int 				        el_stringspace;			/* space left in tmp string storage area */
 	int 				        el_argc, el_envc;		/* count of argument and environment strings */
-
-	char 				        el_vmspace_destroyed;	/* flag - we've blown away original vm space */
-	char 				        el_interpreted;			/* flag - this executable is interpreted */
-	char 				        el_interpreter_name[64];/* name of the interpreter */
 };
 
 /* exec vmspace-creation command set; see below */
@@ -108,9 +116,16 @@ extern struct lock 	exec_lock;
 u_int				exec_maxhdrsz;
 
 #ifdef KERNEL
-int vmcmd_map_vmspace 	 (struct exec_linker *, u_long entry);
-int	exec_new_vmspace 	 (struct exec_linker *);
-int	exec_extract_strings (struct exec_linker *);
+int vmcmd_map_pagedvn 	__P((struct exec_linker *));
+int vmcmd_map_readvn 	__P((struct exec_linker *));
+int vmcmd_readvn 		__P((struct exec_linker *));
+int	vmcmd_map_zero 		__P((struct exec_linker *));
+
+int	check_exec			__P((struct exec_linker *));
+
+int vmcmd_create_vmspace __P((struct exec_linker *));
+int exec_extract_string __P((struct exec_linker *, char *, char * const *));
+
 int exec_setup_stack 	 (struct exec_linker *);
 
 void new_vmcmd		 	 (struct exec_vmcmd_set *evsp, struct exec_linker *elp, vm_offset_t *addr, vm_size_t size,
@@ -124,5 +139,5 @@ void kill_vmcmds	 	 (struct exec_vmcmd_set *);
 #define	NEW_VMCMD2(evsp,elp,addr,size,prot,maxprot,flags,handle,offset) \
 	new_vmcmd(evsp,elp,addr,size,prot,maxprot,flags,handle,offset)
 
-#endif /* _SYS_EXEC_LINKER_H_ */
-#endif
+#endif 	/* _KERNEL */
+#endif  /* _SYS_EXEC_LINKER_H_ */

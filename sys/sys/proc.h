@@ -185,6 +185,7 @@ struct pcred {
 #define P_EXEC		0x04000	/* Process called exec. */
 #define	P_SYSTEM	0x00200	/* System proc: no sigs, stats or swapping. */
 #define	P_INMEM		0x00004	/* Loaded into memory. */
+#define P_INEXEC	0x100000 /* Process is exec'ing and cannot be traced */
 
 
 /* Should probably be changed into a hold count (They have. -DG). */
