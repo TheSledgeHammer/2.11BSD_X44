@@ -51,7 +51,6 @@ struct kthread {
 
 	struct tgrp 	    *kt_tgrp;       /* Pointer to thread group. */
 	struct sysentvec	*kt_sysent;		/* System call dispatch information. */
-	struct rtprio 	    kt_rtprio;		/* Thread Realtime priority. */
 
 	struct kthread 		*kt_link;		/* linked list of running threads */
 	struct user 		*kt_addr;       /* address of u. area */

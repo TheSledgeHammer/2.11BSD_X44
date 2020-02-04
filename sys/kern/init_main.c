@@ -26,9 +26,9 @@
 #include <sys/protosw.h>
 #include <sys/reboot.h>
 #include <sys/user.h>
+#include <vm/include/vm.h>
 
 #include <machine/cpu.h>
-#include <vm/include/vm.h>
 
 struct 	session session0;
 struct 	pgrp pgrp0;
@@ -95,8 +95,6 @@ main()
 	p->p_stat = SRUN;
 	p->p_flag |= P_SLOAD|P_SSYS;
 	p->p_nice = NZERO;
-	p->p_rtprio.type = RTP_PRIO_NORMAL;
-	p->p_rtprio.prio = 0;
 
 	u->u_procp = p;
 	bcopy("swapper", p->p_comm, sizeof ("swapper"));
@@ -171,9 +169,11 @@ main()
 	cinit();
 	pqinit();
 
+	/* Initialize exec structures */
+	exec_init(1);
+
 	/* Kick off timeout driven events by calling first time. */
 	schedcpu(NULL);
-
 
 	/*
 	 * make init process

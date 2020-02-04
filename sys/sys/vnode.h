@@ -67,6 +67,7 @@ enum vtagtype	{
 LIST_HEAD(buflists, buf);
 
 struct vnode {
+	//struct vm_object v_uobj;		/* i: the VM object */
 	u_long			v_flag;			/* vnode flags (see below) */
 	short			v_usecount;		/* reference count of users */
 	short			v_writecount;	/* reference count of writers */
@@ -98,6 +99,7 @@ struct vnode {
 	enum vtagtype 	v_tag;			/* type of underlying data */
 	void 			*v_data;		/* private data for fs */
 };
+
 #define	v_mountedhere	v_un.vu_mountedhere
 #define	v_socket		v_un.vu_socket
 #define	v_specinfo		v_un.vu_specinfo

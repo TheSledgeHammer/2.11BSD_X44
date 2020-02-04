@@ -21,6 +21,8 @@
  */
 #include <sys/syslimits.h>
 
+#define	MAXCOMLEN		16			/* max command name remembered */
+#define	MAXINTERP		32			/* max interpreter file name length */
 #define	MAXLOGNAME		16			/* max login name length */
 #define MAXHOSTNAMELEN	256			/* max hostname size */
 #define	NMOUNT			6			/* number of mountable file systems */
@@ -29,7 +31,6 @@
 #define	CANBSIZ			256			/* max size of typewriter line */
 #define	NCARGS			ARG_MAX		/* # characters in exec arglist */
 #define	NGROUPS			NGROUPS_MAX	/* max number groups */
-
 #define	NOGROUP			65535		/* marker for empty group set member */
 
 /* More types and definitions used throughout the kernel. */
@@ -40,7 +41,6 @@
 #include <sys/resource.h>
 #include <sys/uio.h>
 #include <sys/ucred.h>
-#include <sys/rtprio.h>
 #endif
 
 /* Signals */
@@ -68,13 +68,12 @@
 #define	NZERO	0				/* default "nice" */
 
 #define	PRIMASK	0xff
-#define	PCATCH	0x100
+#define	PCATCH	0x100 			/* OR'd with pri for tsleep to check signals */
 
 #define	NBPW	sizeof(int)		/* number of bytes in an integer */
 
 #define	CMASK	026				/* default mask for file creation */
 #define	NODEV	(dev_t)(-1)		/* non-existent device */
-
 
 /*
  * Clustering of hardware pages on machines with ridiculously small
@@ -82,18 +81,27 @@
  * CLSIZE pte's describing NBPG (from machine/machparam.h) pages each.
  */
 #define	CLBYTES			(CLSIZE*NBPG)
-#define	CLOFSET			(CLBYTES-1)
+#define	CLOFSET			(CLBYTES-1) /* for clusters, like PGOFSET */
 #define	claligned(x)	((((int)(x))&CLOFSET)==0)
 #define	CLOFF			CLOFSET
 #define	CLSHIFT			(PGSHIFT + CLSIZELOG2)
 
+#if CLSIZE==1
+#define	clbase(i)	(i)
+#define	clrnd(i)	(i)
+#else
+/* Give the base virtual address (first of CLSIZE). */
+#define	clbase(i)	((i) &~ (CLSIZE-1))
 /* round a number of clicks up to a whole cluster */
 #define	clrnd(i)	(((i) + (CLSIZE-1)) &~ ((long)(CLSIZE-1)))
+#endif
 
 /* CBLOCK is the size of a clist block, must be power of 2 */
-#define	CBLOCK	32
-#define	CBSIZE	(CBLOCK - sizeof(struct cblock *))				/* data chars/clist */
-#define	CROUND	(CBLOCK - 1)									/* clist rounding */
+#define	CBLOCK	64									/* Clist block size, must be a power of 2. */
+#define CBQSIZE	(CBLOCK/NBBY)						/* Quote bytes/cblock - can do better. */
+													/* Data chars/clist. */
+#define	CBSIZE	(CBLOCK - sizeof(struct cblock *))	/* data chars/clist */
+#define	CROUND	(CBLOCK - 1)						/* clist rounding */
 
 /*
  * File system parameters and macros.
@@ -117,6 +125,22 @@
 #define MAXPATHLEN	PATH_MAX
 #define MAXSYMLINKS	8
 
+
+/* Bit map related macros. */
+#define	setbit(a,i)	((a)[(i)/NBBY] |= 1<<((i)%NBBY))
+#define	clrbit(a,i)	((a)[(i)/NBBY] &= ~(1<<((i)%NBBY)))
+#define	isset(a,i)	((a)[(i)/NBBY] & (1<<((i)%NBBY)))
+#define	isclr(a,i)	(((a)[(i)/NBBY] & (1<<((i)%NBBY))) == 0)
+
+/*
+ * Macros for counting and rounding.
+ */
+#ifndef howmany
+#define	howmany(x, y)	(((x)+((y)-1))/(y))
+#endif
+#define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
+#define powerof2(x)		((((x)-1)&(x))==0)
+
 /*
  * Macros for fast min/max.
  */
@@ -126,17 +150,27 @@
 #endif
 
 /*
- * Macros for counting and rounding.
- */
-#ifndef howmany
-#define	howmany(x, y)	(((x)+((y)-1))/(y))
-#endif
-#define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
-
-/*
  * MAXMEM is the maximum core per process is allowed.  First number is Kb.
 */
 #define	MAXMEM		(300*16)
+
+/*
+ * Constants for setting the parameters of the kernel memory allocator.
+ *
+ * 2 ** MINBUCKET is the smallest unit of memory that will be
+ * allocated. It must be at least large enough to hold a pointer.
+ *
+ * Units of memory less or equal to MAXALLOCSAVE will permanently
+ * allocate physical memory; requests for these size pieces of
+ * memory are quite fast. Allocations greater than MAXALLOCSAVE must
+ * always allocate and free physical memory; requests for these
+ * size allocations should be done infrequently as they will be slow.
+ *
+ * Constraints: CLBYTES <= MAXALLOCSAVE <= 2 ** (MINBUCKET + 14), and
+ * MAXALLOCSIZE must be a power of two.
+ */
+#define MINBUCKET		4				/* 4 => min allocation of 16 bytes */
+#define MAXALLOCSAVE	(2 * CLBYTES)
 
 /*
  * Scale factor for scaled integers used to count %cpu time and load avgs.
@@ -149,9 +183,5 @@
  * For the scheduler to maintain a 1:1 mapping of CPU `tick' to `%age',
  * FSHIFT must be at least 11; this gives us a maximum load avg of ~1024.
  */
-#ifndef KERNEL
 #define	FSHIFT	11		/* bits to right of fixed binary point */
 #define FSCALE	(1<<FSHIFT)
-#endif
-
-#define powertwo(x) (1 << (x))

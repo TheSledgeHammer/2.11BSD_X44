@@ -123,6 +123,15 @@ struct exec_vmcmd {
 #define	VMCMD_STACK		0x0008	/* entry is for a stack */
 };
 
+/* list of supported emulations */
+static
+LIST_HEAD(emlist_head, emul_entry) el_head;
+struct emul_entry {
+	LIST_ENTRY(emul_entry)	el_list;
+	const struct emul		*el_emul;
+	int						ro_entry;
+};
+
 /* list of dynamically loaded execsw entries */
 static
 LIST_HEAD(execlist_head, exec_entry) ex_head;
@@ -151,14 +160,15 @@ int 	vmcmd_map_pagedvn 	 __P((struct exec_linker *));
 int 	vmcmd_map_readvn 	 __P((struct exec_linker *));
 int 	vmcmd_readvn 		 __P((struct exec_linker *));
 int		vmcmd_map_zero 		 __P((struct exec_linker *));
+int 	vmcmd_create_vmspace __P((struct exec_linker *));
+
+int 	exec_extract_strings  __P((struct exec_linker *, char *, char * const *));
+int 	*exec_copyout_strings __P((struct exec_linker *, struct ps_strings *));
 void 	*copyargs			 __P((struct exec_linker *, struct ps_strings *, void *, void *));
 
 void 	setregs				 __P((struct proc *, struct exec_linker *, u_long));
 
 int		check_exec			 __P((struct exec_linker *));
-
-int 	vmcmd_create_vmspace __P((struct exec_linker *));
-int 	exec_extract_string  __P((struct exec_linker *, char *, char * const *));
 
 int 	exec_setup_stack 	 __P((struct exec_linker *));
 

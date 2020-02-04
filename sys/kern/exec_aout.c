@@ -31,21 +31,15 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/user.h>
-#include <sys/resourcevar.h>
+#include <sys/mman.h>
 #include <sys/exec.h>
 #include <sys/exec_linker.h>
 #include <sys/exec_aout.h>
-#include <sys/mman.h>
-#include <sys/kernel.h>
-#include <sys/sysent.h>
-
-#include <vm/include/vm.h>
+#include <sys/resourcevar.h>
 
 int
 exec_aout_linker(elp)

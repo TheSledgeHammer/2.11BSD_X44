@@ -1,12 +1,5 @@
 TODO:
 
-kern_exec:
-- Doesn't need NetBSD kern_exec lines 430 - 463. Filled out by below
-- exec_new_vmspace:
-	- could be filled in further from NetBSD's kern_exec lines 394 - 430
-- exec_extract_strings:
-	- could use kern_exec line 440
--Complete kern_exec
 
 Kern:
 - sys_kern.c (used? or unused?)

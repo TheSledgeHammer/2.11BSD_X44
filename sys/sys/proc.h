@@ -10,7 +10,6 @@
 #define	_SYS_PROC_H_
 
 #include <machine/proc.h>		/* Machine-dependent proc substruct. */
-#include <sys/rtprio.h>			/* For struct rtprio. */
 #include <sys/select.h>			/* For struct selinfo. */
 #include <sys/time.h>			/* For structs itimerval, timeval. */
 
@@ -102,7 +101,6 @@ struct	proc {
 
     struct  pgrp 	    *p_pgrp;        /* Pointer to process group. */
     struct  sysentvec   *p_sysent; 	    /* System call dispatch information. */
-    struct	rtprio 	    p_rtprio;		/* Realtime priority. */
 
     void				*p_thread;		/* Id for this "thread"; Mach glue. XXX */
 
@@ -149,6 +147,8 @@ struct pcred {
 	gid_t				p_svgid;		/* Saved effective group id. */
 	int					p_refcnt;		/* Number of references. */
 };
+
+struct exec_linker;
 
 struct emul {
 	const char			*e_name[8];		/* Symbolic name */
@@ -212,6 +212,15 @@ struct emul {
 #define	S_DATA	0			/* specified segment */
 #define	S_STACK	1
 
+LIST_HEAD(proclist, proc);		/* A list of processes */
+
+/*
+ * This structure associates a proclist with its lock.
+ */
+struct proclist_desc {
+	struct proclist	*pd_list;	/* The list */
+};
+
 #ifdef KERNEL
 #define	PID_MAX		30000
 #define	NO_PID		30001
@@ -234,11 +243,13 @@ extern struct proc proc0;				/* Process slot for swapper. */
 int	nproc, maxproc;						/* Current and max number of procs. */
 extern int pidhashmask;					/* In param.c. */
 
-extern struct proc proc[], *procNPROC;	/* the proc table itself */
+extern struct proc proc[], *procNPROC;	/* (To be replaced by proclists) the proc table itself */
 
 extern struct proc *freeproc;			/* List of free procs */
 extern struct proc *zombproc;			/* List of zombie procs. */
 struct proc *initproc, *pageproc;		/* Process slots for init, pager. */
+
+//extern const struct proclist_desc proclists[], *procNPROC;	/* the proc table itself */
 
 #define	NQS	32							/* 32 run queues. */
 extern struct prochd qs[];				/* queue schedule */
@@ -252,6 +263,8 @@ struct	prochd {
 
 struct 	proc *pfind __P((pid_t));		/* Find process by id. */
 struct 	pgrp *pgfind __P((pid_t));		/* Find process group by id. */
+
+extern struct emul emul_211bsd;
 
 int		setpri __P((struct proc *));
 void	setrun __P((struct proc *));

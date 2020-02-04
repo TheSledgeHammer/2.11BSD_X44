@@ -30,40 +30,72 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include <sys/cdefs.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/filedesc.h>
-#include <sys/kernel.h>
 #include <sys/proc.h>
-#include <sys/mount.h>
 #include <sys/malloc.h>
-#include <sys/namei.h>
 #include <sys/vnode.h>
-#include <sys/file.h>
-#include <sys/acct.h>
+#include <sys/filedesc.h>
 #include <sys/exec.h>
 #include <sys/exec_linker.h>
-#include <sys/resourcevar.h>
-#include <sys/wait.h>
 #include <sys/mman.h>
+#include <sys/resourcevar.h>
+#include <sys/user.h>
+//#include <sys/device.h>
 #include <sys/signalvar.h>
-#include <sys/stat.h>
-#include <sys/syscall.h>
+#include <sys/acct.h>
+#include <sys/mount.h>
 #include <vm/include/vm.h>
-#include <vm/include/vm_kern.h>
-#include <vm/include/vm_extern.h>
 
 #include <machine/cpu.h>
 #include <machine/reg.h>
+
 
 extern const struct execsw	execsw_builtin[];
 extern int			nexecs_builtin;
 static const struct execsw	**execsw = NULL;
 static int			nexecs;
 
-static int check_exec(struct exec_linker *);
-static void link_ex(struct execsw_entry **listp, const struct execsw *exp);
+extern const char * const syscallnames[];
+extern char	sigcode[], esigcode[];
+struct vm_object *emul_211bsd_object;
+
+void	syscall(void);
+
+static const struct sa_emul saemul_211bsd = {
+	sizeof(ucontext_t),
+	sizeof(struct sa_t),
+	sizeof(struct sa_t *),
+	NULL,
+	NULL,
+	cpu_upcall,
+	(void (*)(struct lwp *, void *))getucontext,
+	sa_ucsp
+};
+
+
+/* 211BSD emul struct */
+const struct emul emul_211bsd = {
+		"211bsd",
+		NULL,		/* emulation path */
+		NULL,
+		SYS_syscall,
+		SYS_NSYSENT,
+		sysent,
+		syscallnames,
+		sendsig,
+		trapsignal,
+		sigcode,
+		esigcode,
+		&emul_211bsd_object,
+		setregs,
+		syscall_intern,
+		&saemul_211bsd,
+};
+
+static void link_ex(struct execsw_entry **, const struct execsw *);
 
 void
 execv(p, uap, retval)
@@ -90,7 +122,6 @@ execve(p, uap, retval)
 		struct vnode *vnodep;
 		struct vattr attr;
 		char *dp, *sp;
-		char * const *cpp;
 		char **tmpfap;
 		struct exec_vmcmd *base_vcp = NULL;
 		extern struct emul emul_211bsd;
@@ -137,7 +168,7 @@ execve(p, uap, retval)
 		if ((error = check_exec(p, &elp)) != 0)
 			goto freehdr;
 
-		error = exec_extract_strings(elp, dp, cpp);
+		error = exec_extract_strings(elp, dp);
 		if(error != 0) {
 			goto bad;
 		}
@@ -207,7 +238,7 @@ execve(p, uap, retval)
 			wakeup((caddr_t)p->p_pptr);
 		}
 
-		/* FreeBSD: Turn off kernel tracing for set-id programs, except for root. */
+		/* Turn off kernel tracing for set-id programs, except for root. */
 		if (p->p_tracep && (attr.va_mode & (VSUID | VSGID)) && suser(p->p_ucred, &p->p_acflag)) {
 			p->p_traceflag = 0;
 			vrele(p->p_tracep);
@@ -440,75 +471,9 @@ bad1:
 	return error;
 }
 
-/*
- * Creates new vmspace from running vmcmd
- * Do whatever is necessary to prepare the address space
- * for remapping.  Note that this might replace the current
- * vmspace with another!
- */
-int
-vmcmd_create_vmspace(elp)
-	struct exec_linker *elp;
-{
-	struct proc *p = elp->el_proc;
-	struct vmspace *vmspace = p->p_vmspace;
-	struct exec_vmcmd *base_vcp = NULL;
-	int error, i;
-
-	/*  Now map address space */
-	vmspace->vm_tsize = btoc(elp->el_tsize);
-	vmspace->vm_dsize = btoc(elp->el_dsize);
-	vmspace->vm_taddr = (caddr_t) elp->el_taddr;
-	vmspace->vm_daddr = (caddr_t) elp->el_daddr;
-	vmspace->vm_ssize = btoc(elp->el_ssize);
-	vmspace->vm_minsaddr = (caddr_t)elp->el_minsaddr;
-	vmspace->vm_maxsaddr = (caddr_t)elp->el_maxsaddr;
-
-	/* create the new process's VM space by running the vmcmds */
-#ifdef DIAGNOSTIC
-	if(elp->el_vmcmds->evs_used == 0)
-		panic("execve: no vmcmds");
-#endif
-	for (i = 0; i < elp->el_vmcmds->evs_used && !error; i++) {
-		struct exec_vmcmd *vcp;
-
-		vcp = elp->el_vmcmds->evs_cmds[i];
-		if(vcp->ev_flags & VMCMD_RELATIVE) {
-#ifdef DIAGNOSTIC
-			if (base_vcp == NULL)
-				panic("execve: relative vmcmd with no base");
-			if (vcp->ev_flags & VMCMD_BASE)
-				panic("execve: illegal base & relative vmcmd");
-#endif
-			vcp->ev_addr += base_vcp->ev_addr;
-		}
-		error = (*vcp->ev_proc)(elp->el_proc, vcp);
-#ifdef DEBUG
-		if (error) {
-			if (i > 0) {
-				printf("vmcmd[%d] = %#lx/%#lx @ %#lx\n", i-1,
-								       vcp[-1].ev_addr, vcp[-1].ev_size,
-								       vcp[-1].ev_offset);
-			}
-			printf("vmcmd[%d] = %#lx/%#lx @ %#lx\n", i, vcp->ev_addr, vcp->ev_size, vcp->ev_offset);
-		}
-#endif
-		if (vcp->ev_flags & VMCMD_BASE)
-			base_vcp = vcp;
-	}
-
-	/* free the vmspace-creation commands, and release their references */
-	kill_vmcmds(&elp->el_vmcmds);
-	if(error) {
-		return error;
-	} else {
-		return (0);
-	}
-}
-
 void *
-copyargs(pack, arginfo, stack, argp)
-	struct exec_package *pack;
+copyargs(elp, arginfo, stack, argp)
+	struct exec_linker *elp;
 	struct ps_strings *arginfo;
 	void *stack;
 	void *argp;
@@ -520,7 +485,7 @@ copyargs(pack, arginfo, stack, argp)
 	long argc = arginfo->ps_nargvstr;
 	long envc = arginfo->ps_nenvstr;
 
-	dp = (char *) (cpp + argc + envc + 2 + pack->ep_emul->e_arglen);
+	dp = (char *) (cpp + argc + envc + 2 + elp->el_emul->e_arglen);
 	sp = argp;
 
 	/* XXX don't copy them out, remap them! */
@@ -547,6 +512,116 @@ copyargs(pack, arginfo, stack, argp)
 	return cpp;
 }
 
+/*
+ * Find an emulation of given name in list of emulations.
+ * Needs to be called with the exec_lock held.
+ */
+const struct emul *
+emul_search(name)
+	const char *name;
+{
+	struct emul_entry *it;
+	LIST_FOREACH(it, &el_head, el_list) {
+		if (strcmp(name, it->el_emul->e_name) == 0)
+			return it->el_emul;
+	}
+	return NULL;
+}
+
+/*
+ * Add an emulation to list, if it's not there already.
+ */
+int
+emul_register(const struct emul *emul, int ro_entry)
+{
+	struct emul_entry	*ee;
+	int			error;
+
+	error = 0;
+	lockmgr(&exec_lock, LK_SHARED, NULL);
+
+	if (emul_search(emul->e_name)) {
+		error = EEXIST;
+		goto out;
+	}
+	MALLOC(ee, struct emul_entry *, sizeof(struct emul_entry), M_EXEC, M_WAITOK);
+	ee->el_emul = emul;
+	ee->ro_entry = ro_entry;
+	LIST_INSERT_HEAD(&el_head, ee, el_list);
+
+ out:
+	lockmgr(&exec_lock, LK_RELEASE, NULL);
+	return error;
+}
+
+/*
+ * Remove emulation with name 'name' from list of supported emulations.
+ */
+int
+emul_unregister(const char *name)
+{
+	//const struct proclist_desc *pd;
+	struct proc *pd;
+	struct emul_entry	*it;
+	int			i, error;
+	struct proc		*ptmp;
+
+	error = 0;
+	lockmgr(&exec_lock, LK_SHARED, NULL);
+
+	LIST_FOREACH(it, &el_head, el_list) {
+		if (strcmp(it->el_emul->e_name, name) == 0)
+			break;
+	}
+
+	if (!it) {
+		error = ENOENT;
+		goto out;
+	}
+
+	if (it->ro_entry) {
+		error = EBUSY;
+		goto out;
+	}
+
+	/* test if any execw[] entry is still using this */
+	for(i=0; i < nexecs; i++) {
+		if (execsw[i]->ex_emul == it->el_emul) {
+			error = EBUSY;
+			goto out;
+		}
+	}
+
+	/*
+	 * Test if any process is running under this emulation - since
+	 * emul_unregister() is running quite sendomly, it's better
+	 * to do expensive check here than to use any locking.
+	 */
+	/*
+	proclist_lock_read();
+	for (pd = proclists; pd->pd_list != NULL && !error; pd++) {
+		PROCLIST_FOREACH(ptmp, pd->pd_list) {
+			if (ptmp->p_emul == it->el_emul) {
+				error = EBUSY;
+				break;
+			}
+		}
+	}
+	proclist_unlock_read();
+	*/
+
+	if (error)
+		goto out;
+
+
+	/* entry is not used, remove it */
+	LIST_REMOVE(it, el_list);
+	FREE(it, M_EXEC);
+
+ out:
+	lockmgr(&exec_lock, LK_RELEASE, NULL);
+	return error;
+}
 
 /*
  * Add execsw[] entry.
@@ -558,10 +633,18 @@ exec_add(struct proc *p, struct execsw *exp, const char *e_name)
 	int					error;
 
 	error = 0;
-	//lockmgr(&exec_lock, LK_EXCLUSIVE, NULL, p);
+	lockmgr(&exec_lock, LK_EXCLUSIVE, NULL, p);
+
+	if(!exp->ex_emul) {
+		exp->ex_emul = emul_search(e_name);
+		if(!exp->ex_emul) {
+			error = ENOENT;
+			goto out;
+		}
+	}
 
 	LIST_FOREACH(it, &ex_head, ex_list) {
-		if(it->ex->ex_check == exp->ex_check && it->ex->u.elf_probe_func == exp->u.elf_probe_func) {
+		if(it->ex->ex_makecmds == exp->ex_makecmds && it->ex->u.elf_probe_func == exp->u.elf_probe_func && it->ex->ex_emul == exp->ex_emul) {
 			error = EEXIST;
 			return error;
 		}
@@ -569,14 +652,14 @@ exec_add(struct proc *p, struct execsw *exp, const char *e_name)
 
 	/* if we got here, the entry doesn't exist yet */
 
-	it = MALLOC(it, struct exec_entry *, sizeof(struct exec_entry), M_EXEC, M_WAITOK);
+	MALLOC(it, struct exec_entry *, sizeof(struct exec_entry), M_EXEC, M_WAITOK);
 	it->ex = exp;
 	LIST_INSERT_HEAD(&ex_head, it, ex_list);
 
 	exec_init(0);
 
-//out:
-	//lockmgr(&exec_lock, LK_RELEASE, NULL, p);
+out:
+	lockmgr(&exec_lock, LK_RELEASE, NULL, p);
 	return error;
 }
 
@@ -590,10 +673,10 @@ exec_remove(const struct execsw *exp)
 	int					error;
 
 	error = 0;
-	//lockmgr(&exec_lock, LK_EXCLUSIVE, NULL);
+	lockmgr(&exec_lock, LK_EXCLUSIVE, NULL);
 
 	LIST_FOREACH(it, &ex_head, ex_list) {
-		if(it->ex->ex_check == exp->ex_check && it->ex->u.elf_probe_func == exp->u.elf_probe_func) {
+		if(it->ex->ex_makecmds == exp->ex_makecmds && it->ex->u.elf_probe_func == exp->u.elf_probe_func  && it->ex->ex_emul == exp->ex_emul) {
 			break;
 		}
 	}
@@ -609,8 +692,8 @@ exec_remove(const struct execsw *exp)
 	/* update execsw[] */
 	exec_init(0);
 
-//out:
-	//lockmgr(&exec_lock, LK_RELEASE, NULL);
+out:
+	lockmgr(&exec_lock, LK_RELEASE, NULL);
 	return error;
 }
 
@@ -665,6 +748,15 @@ exec_init(int init_boot)
 	int					i, ex_sz;
 
 	if (init_boot) {
+
+		lock_init();
+
+		/* register compiled-in emulations */
+		for(i=0; i < nexecs_builtin; i++) {
+			if (execsw_builtin[i].ex_emul)
+				emul_register(execsw_builtin[i].ex_emul, 1);
+		}
+
 #ifdef DIAGNOSTIC
 		if (i == 0)
 			panic("no emulations found in execsw_builtin[]");
@@ -676,12 +768,12 @@ exec_init(int init_boot)
 	 */
 	list = NULL;
 	for(i=0; i < nexecs_builtin; i++)
-		link_es(&list, &execsw_builtin[i]);
+		link_ex(&list, &execsw_builtin[i]);
 
 	/* Add dynamically loaded entries */
 	ex_sz = nexecs_builtin;
 	LIST_FOREACH(e2, &ex_head, ex_list) {
-		link_es(&list, e2->ex);
+		link_ex(&list, e2->ex);
 		ex_sz++;
 	}
 

@@ -455,9 +455,6 @@ swapout_threads()
 			
 		case SSLEEP:
 		case SSTOP:
-			if (p->p_rtprio.type == RTP_PRIO_REALTIME)
-				continue;
-
 			if (!lock_try_write( &p->p_vmspace->vm_map.lock)) {
 				continue;
 			}
