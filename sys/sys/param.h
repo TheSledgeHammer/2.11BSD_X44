@@ -133,8 +133,6 @@
 #endif
 #define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
 
-
-
 /*
  * MAXMEM is the maximum core per process is allowed.  First number is Kb.
 */

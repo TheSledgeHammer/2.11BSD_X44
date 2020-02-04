@@ -5,7 +5,6 @@
  *
  *	@(#)systm.h	1.3 (2.11BSD GTE) 1996/5/9
  */
-
 /*
  * The `securelevel' variable controls the security level of the system.
  * It can only be decreased by process 1 (/sbin/init).

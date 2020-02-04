@@ -111,6 +111,7 @@
 #define	M_RMALLOC	62	/* Resource Map Malloc */
 #define	M_RMALLOC3	63	/* Resource Map Malloc3 */
 #define M_DIRHASH	64	/* UFS dirhash */
+#define M_EXEC		65	/* argument lists & other mem used by exec */
 #define	M_TEMP		74	/* misc temporary data buffers */
 #define	M_LAST		75	/* Must be last type + 1 */
 
@@ -180,8 +181,9 @@
 	"rmalloc", 		/* 62 M_RMALLOC" */		\
 	"rmalloc3", 	/* 63 M_RMALLOC3" */ 	\
 	"UFS dirhash"	/* 64 M_DIRHASH */		\
+	"exec"			/* 65 M_EXEC */			\
 	NULL, NULL, NULL, NULL, 				\
-	NULL, NULL, NULL, NULL, NULL, 			\
+	NULL, NULL, NULL, NULL, 				\
 	"temp",			/* 74 M_TEMP */ 		\
 }
 
@@ -223,7 +225,7 @@ struct kmembuckets {
 	long				kb_couldfree;	/* over high water mark and could free */
 };
 
-//#ifdef KERNEL
+#ifdef KERNEL
 #define	MINALLOCSIZE		(1 << MINBUCKET)
 #define BUCKETINDX(size) \
 	((size) <= (MINALLOCSIZE * 128) \

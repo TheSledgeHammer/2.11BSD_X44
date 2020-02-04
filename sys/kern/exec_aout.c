@@ -89,7 +89,9 @@ exec_aout_linker(elp)
 			error = cpu_exec_aout_linker(elp); /* For CPU Architecture */
 		}
 	}
-	return exec_mmap_to_vmspace(elp, a_out->a_entry);
+	if (error)
+		kill_vmcmds(&elp->el_vmcmds);
+	return (error);
 }
 
 /*
@@ -115,18 +117,18 @@ exec_aout_prep_zmagic(elp)
 	elp->el_entry = a_out->a_entry;
 
 	/* set up for text */
-	exec_mmap_setup(&vmspace->vm_map, elp->el_taddr, round_page(a_out->a_text),
+	NEW_VMCMD(&vmspace->vm_map, elp->el_taddr, round_page(a_out->a_text),
 			VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_EXECUTE,
 			MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, 0);
 
 	/* set up for data segment */
-	exec_mmap_setup(&vmspace->vm_map, elp->el_daddr, round_page(a_out->a_data),
+	NEW_VMCMD(&vmspace->vm_map, elp->el_daddr, round_page(a_out->a_data),
 			VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE,
 			MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, a_out->a_text);
 
 	/* set up for bss segment */
 	if (a_out->a_bss > 0) {
-		exec_mmap_setup(&vmspace->vm_map, elp->el_daddr + a_out->a_data, a_out->a_bss,
+		NEW_VMCMD(&vmspace->vm_map, elp->el_daddr + a_out->a_data, a_out->a_bss,
 				VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE,
 				MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, 0);
 	}
@@ -151,12 +153,12 @@ exec_aout_prep_nmagic(elp)
 	elp->el_entry = a_out->a_entry;
 
 	/* set up for text */
-	exec_mmap_setup(&vmspace->vm_map, elp->el_taddr, a_out->a_text,
+	NEW_VMCMD(&vmspace->vm_map, elp->el_taddr, a_out->a_text,
 			VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_EXECUTE,
 			MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, sizeof(struct exec));
 
 	/* set up for data segment */
-	exec_mmap_setup(&vmspace->vm_map, elp->el_daddr, a_out->a_data,
+	NEW_VMCMD(&vmspace->vm_map, elp->el_daddr, a_out->a_data,
 			VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE,
 			MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, a_out->a_text + sizeof(struct exec));
 
@@ -164,7 +166,7 @@ exec_aout_prep_nmagic(elp)
 	baddr = roundup(elp->el_daddr + a_out->a_data, NBPG);
 	bsize = elp->el_daddr + elp->el_dsize - baddr;
 	if (bsize > 0) {
-		exec_mmap_setup(&vmspace->vm_map, baddr, bsize
+		NEW_VMCMD(&vmspace->vm_map, baddr, bsize
 				VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE,
 				MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, 0);
 	}
@@ -188,7 +190,7 @@ exec_aout_prep_omagic(elp)
 	elp->el_entry = a_out->a_entry;
 
 	/* set up for text and data segment */
-	exec_mmap_setup(&vmspace->vm_map, elp->el_taddr, a_out->a_text + a_out->a_data,
+	NEW_VMCMD(&vmspace->vm_map, elp->el_taddr, a_out->a_text + a_out->a_data,
 			VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE,
 			MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, sizeof(struct exec));
 
@@ -196,7 +198,7 @@ exec_aout_prep_omagic(elp)
 	baddr = roundup(elp->el_daddr + a_out->a_data, NBPG);
 	bsize = elp->el_daddr + elp->el_dsize - baddr;
 	if (bsize > 0) {
-		exec_mmap_setup(&vmspace->vm_map, baddr, bsize, VM_PROT_READ | VM_PROT_EXECUTE,
+		NEW_VMCMD(&vmspace->vm_map, baddr, bsize, VM_PROT_READ | VM_PROT_EXECUTE,
 				VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE, MAP_PRIVATE | MAP_FIXED,
 				(caddr_t)elp->el_vnodep, 0);
 	}
@@ -214,6 +216,3 @@ exec_aout_prep_omagic(elp)
 
 	return (*elp->el_esch->ex_setup_stack)(elp);
 }
-
-static const struct execsw aout_execsw = { exec_aout_linker, "a.out" };
-TEXT_SET(execsw_set, aout_execsw);

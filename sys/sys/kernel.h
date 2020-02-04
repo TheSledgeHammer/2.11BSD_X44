@@ -51,9 +51,4 @@ short avenrun[3];
 
 #define PSEUDO_SET(sym)	   TEXT_SET(pseudo_set, sym)
 
-struct linker_set {
-	int ls_length;
-	caddr_t ls_items[1];	/* really ls_length of them, trailing NULL */
-};
-
 #endif
