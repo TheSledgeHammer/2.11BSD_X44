@@ -31,30 +31,31 @@ struct map {
 };
 
 struct mapent {
-	long 	m_size;		/* size of this segment of the map */
-	long 	m_addr;		/* resource-space addr of start of segment */
+	long 	m_size;				/* size of this segment of the map */
+	long 	m_addr;				/* resource-space addr of start of segment */
 };
 
-#define RMALLOC(mp, cast, size) {			\
-	(mp) = (cast)rmalloc(mp, size);			\
+#define RMALLOC(mp, cast, size) {							\
+	(mp) = (cast)rmalloc(mp, size);							\
 };
 
 #define RMALLOC3(mp, cast, d_size, s_size, u_size, a) {		\
 	(mp) = (cast)rmalloc3(mp, d_size, s_size, u_size, a);	\
 };
 
-#define RMFREE(mp, size, addr) { 		\
-	rmfree(mp, size, (caddr_t)addr); 	\
+#define RMFREE(mp, size, addr) { 							\
+	rmfree(mp, size, (caddr_t)addr); 						\
 };
 
 #ifdef KERNEL
 #define	ARGMAPSIZE	16
 struct map *kmemmap, *mbmap;
-struct map *coremap[1];																				/* space for core allocation */
-struct map *swapmap[1];																				/* space for swap allocation */
+struct map *coremap[1];																		/* space for core allocation */
+struct map *swapmap[1];																		/* space for swap allocation */
 int	nswapmap;
 
-extern size_t 	rmalloc__P((struct map *mp, long size)); 											/* Allocate units from the given map. */
-extern void 	rmfree__P((struct map *mp, long size, long addr)); 									/* Free the previously allocated units at addr into the specified map.*/
-extern size_t 	rmalloc3__P((struct map *mp, long d_size, long s_size, long u_size, long a[3]));	/* Allocate resources for the three segments of a process.*/
+long 	rmalloc__P((struct map *mp, long size)); 											/* Allocate units from the given map. */
+void 	rmfree__P((struct map *mp, long size, long addr)); 									/* Free the previously allocated units at addr into the specified map.*/
+long 	rmalloc3__P((struct map *mp, long d_size, long s_size, long u_size, long a[3]));	/* Allocate resources for the three segments of a process.*/
+void	rminit __P((struct map *, long size, long addr, char *name, int mapsize));			/* Initialized resource malloc */
 #endif

@@ -225,7 +225,7 @@ struct kmembuckets {
 	long				kb_couldfree;	/* over high water mark and could free */
 };
 
-#ifdef KERNEL
+//#ifdef KERNEL
 #define	MINALLOCSIZE		(1 << MINBUCKET)
 #define BUCKETINDX(size) \
 	((size) <= (MINALLOCSIZE * 128) \

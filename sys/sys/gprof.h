@@ -64,8 +64,8 @@ struct phdr {
 #define MINARCS		50
 
 struct tostruct {
-    char		*selfpc;
-    long		count;
+    char			*selfpc;
+    long			count;
     unsigned short	link;
 };
 
@@ -77,7 +77,7 @@ struct tostruct {
 struct rawarc {
     unsigned long	raw_frompc;
     unsigned long	raw_selfpc;
-    long		raw_count;
+    long			raw_count;
 };
 
     /*

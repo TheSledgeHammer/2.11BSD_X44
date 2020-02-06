@@ -200,7 +200,7 @@ void	biodone __P((struct buf *));
 void	cluster_callback __P((struct buf *));
 int		cluster_read __P((struct vnode *, u_quad_t, daddr_t, long, struct ucred *, struct buf **));
 void	cluster_write __P((struct buf *, u_quad_t));
-u_int	minphys __P((struct buf *));
+//u_int	minphys __P((struct buf *));
 void	vwakeup __P((struct buf *));
 void	vmapbuf __P((struct buf *));
 void	vunmapbuf __P((struct buf *));

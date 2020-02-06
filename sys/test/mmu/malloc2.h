@@ -7,7 +7,7 @@
 
 #ifndef SYS_MALLOC2_H_
 #define SYS_MALLOC2_H_
-
+#include <sys/malloc.h>
 #include <sys/queue.h>
 /* Two-bit Type field to distinguish between different splits of sized blocks */
 #define TYPE_11     11      /* split from 2k sized block */

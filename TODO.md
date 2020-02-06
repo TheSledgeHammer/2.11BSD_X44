@@ -1,9 +1,19 @@
 TODO:
-
+init_main.c
+- lines 250 to 262
+- kern_clock: initclocks
+- uipc_mbuf.c: mbinit
+- tty_subr.c: clist_init
+- consinit
+- cpu_startup
+- cinit
+- start_init(curproc, framep);
 
 Kern:
+- inet: remanents of 2.11BSD's networking stack overlay
+- kern_clock.c
+- fs.h (believe it is for ufs1 not kernel)
 - sys_kern.c (used? or unused?)
-- sys_net (ubadr_t)
 - uipc_syscalls.c
 
 - user.h: 

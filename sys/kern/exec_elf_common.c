@@ -49,12 +49,13 @@
 #include <sys/resourcevar.h>
 
 #include <sys/mman.h>
+#include <vm/include/vm.h>
 #include <vm/include/vm_param.h>
 #include <vm/include/vm_map.h>
 
 #include <machine/cpu.h>
 #include <machine/reg.h>
-#include <vm/include/vm.h>
+
 
 /*
  * exec_elf_setup_stack(): Set up the stack segment for an a.out

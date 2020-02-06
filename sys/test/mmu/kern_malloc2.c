@@ -1,12 +1,11 @@
 
 #include <sys/param.h>
 #include <sys/proc.h>
-#include <sys/map.h>
 #include <sys/kernel.h>
-#include <malloc2.h>
+#include <test/mmu/malloc2.h>
 
+#include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
-#include "../../vm/include/vm.h"
 
 struct kmemtree_entry tree_bucket_entry[MINBUCKET + 16];
 static int isPowerOfTwo(long n); 	/* 0 = true, 1 = false */

@@ -28,8 +28,8 @@
 #define	ROOTINO			((ino_t)2)		/* i number of all roots */
 #define	LOSTFOUNDINO	(ROOTINO + 1)
 
-#define	NICINOD		100		/* number of superblock inodes */
-#define	NICFREE		50		/* number of superblock free blocks */
+#define	NICINOD			100				/* number of superblock inodes */
+#define	NICFREE			50				/* number of superblock free blocks */
 
 /*
  * The path name on which the file system is mounted is maintained

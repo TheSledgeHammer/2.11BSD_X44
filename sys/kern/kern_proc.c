@@ -10,31 +10,47 @@
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/systm.h>
+#include <sys/kernel.h>
 #include <sys/map.h>
 #include <sys/malloc.h>
-
-struct prochd qs[NQS];		/* as good a place as any... */
-struct prochd rtqs[NQS];	/* Space for REALTIME queues too */
-struct prochd idqs[NQS];	/* Space for IDLE queues too */
-
-volatile struct proc *allproc;	/* all processes */
-struct proc *zombproc;		/* just zombies */
+#include <sys/buf.h>
+#include <sys/acct.h>
+#include <sys/wait.h>
+#include <sys/file.h>
+#include <ufs/ufs/quota.h>
+#include <sys/uio.h>
+#include <sys/mbuf.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
 
 /*
  * Structure associated with user cacheing.
  */
 struct uidinfo {
-	struct	uidinfo *ui_next;
-	struct	uidinfo **ui_prev;
+	LIST_ENTRY(uidinfo) ui_hash;
 	uid_t	ui_uid;
 	long	ui_proccnt;
-} **uihashtbl;
-u_long	uihash;		/* size of hash table - 1 */
+};
 #define	UIHASH(uid)	(&uihashtbl[(uid) & uihash])
+LIST_HEAD(uihashhead, uidinfo) *uihashtbl;
+u_long	uihash;		/* size of hash table - 1 */
+
+
+struct pidhashhead *pidhashtbl;
+u_long pidhash;
+struct pgrphashhead *pgrphashtbl;
+u_long pgrphash;
+
+struct proclist  allproc;		/* all processes */
+struct proclist  zombproc;		/* just zombies */
 
 void
-usrinfoinit()
+procinit()
 {
+	LIST_INIT(&allproc);
+	LIST_INIT(&zombproc);
+	pidhashtbl = hashinit(maxproc / 4, M_PROC, &pidhash);
+	pgrphashtbl = hashinit(maxproc / 4, M_PROC, &pgrphash);
 	uihashtbl = hashinit(maxproc / 16, M_PROC, &uihash);
 }
 
@@ -103,49 +119,34 @@ chgproccnt(uid, diff)
 	uid_t	uid;
 	int		diff;
 {
-		register struct uidinfo **uipp, *uip, *uiq;
-		uipp = &uihashtbl[UIHASH(uid)];
-		for (uip = *uipp; uip; uip = uip->ui_next)
-		{
-			if (uip->ui_uid == uid)
-			{
+		register struct uidinfo *uip, *uiq;
+		register struct uihashhead *uipp;
+		uipp = UIHASH(uid);
+		for (uip = uipp->lh_first; uip != 0; uip = uip->ui_hash.le_next) {
+			if (uip->ui_uid == uid) {
 				break;
 			}
 		}
 		if (uip) {
 			uip->ui_proccnt += diff;
-			if (uip->ui_proccnt > 0)
-			{
+			if (uip->ui_proccnt > 0) {
 				return (uip->ui_proccnt);
 			}
-			if (uip->ui_proccnt < 0)
-			{
+			if (uip->ui_proccnt < 0) {
 				panic("chgproccnt: procs < 0");
 			}
-			if ((uiq = uip->ui_next))
-			{
-				uiq->ui_prev = uip->ui_prev;
-			}
-			*uip->ui_prev = uiq;
-			rmfree(uip, sizeof(uip));
+			LIST_REMOVE(uip, ui_hash);
+			FREE(uip, M_PROC);
 			return (0);
 		}
-		if (diff <= 0)
-		{
-			if (diff == 0)
-			{
+		if (diff <= 0) {
+			if (diff == 0) {
 				return (0);
 			}
 			panic("chgproccnt: lost user");
 		}
-		rmalloc(uip, sizeof(*uip));
-		if ((uiq = *uipp))
-		{
-			uiq->ui_prev = &uip->ui_next;
-		}
-		uip->ui_next = uiq;
-		uip->ui_prev = uipp;
-		*uipp = uip;
+		MALLOC(uip, struct uidinfo *, sizeof(*uip), M_PROC, M_WAITOK);
+		LIST_INSERT_HEAD(uipp, uip, ui_hash);
 		uip->ui_uid = uid;
 		uip->ui_proccnt = diff;
 		return (diff);
@@ -217,8 +218,8 @@ pgdelete(pgrp)
 		panic("pgdelete: can't find pgrp on hash chain");
 #endif
 	if (--pgrp->pg_session->s_count == 0)
-		rmfree(pgrp->pg_session, sizeof(pgrp->pg_session));
-	rmfree(pgrp, sizeof(pgrp));
+		FREE(pgrp, M_PGRP);
+	FREE(pgrp, M_PGRP);
 }
 
 /*
@@ -249,8 +250,7 @@ enterpgrp(p, pgid, mksess)
 		if (p->p_pid != pgid)
 			panic("enterpgrp: new pgrp and pid != pgid");
 #endif
-		//MALLOC(pgrp, struct pgrp *, sizeof(struct pgrp), M_PGRP, M_WAITOK);
-		RMALLOC(pgrp, struct pgrp *, sizeof(struct pgrp));
+		MALLOC(pgrp, struct pgrp *, sizeof(struct pgrp), M_PGRP, M_WAITOK);
 		if ((np = pfind(savepid)) == NULL || np != p)
 			return (ESRCH);
 		if (mksess) {
@@ -259,8 +259,7 @@ enterpgrp(p, pgid, mksess)
 			/*
 			 * new session
 			 */
-			//MALLOC(sess, struct session *, sizeof(struct session), M_SESSION, M_WAITOK);
-			RMALLOC(sess, struct session *, sizeof(struct session));
+			MALLOC(sess, struct session *, sizeof(struct session), M_SESSION, M_WAITOK);
 			sess->s_leader = p;
 			sess->s_count = 1;
 			sess->s_ttyvp = NULL;
@@ -389,6 +388,31 @@ orphanpg(pg)
 	}
 }
 
+#ifdef DEBUG
+pgrpdump()
+{
+	register struct pgrp *pgrp;
+	register struct proc *p;
+	register i;
+
+	for (i = 0; i <= pgrphash; i++) {
+		if (pgrp == pgrphashtbl[i]) {
+			printf("\tindx %d\n", i);
+			for (; pgrp != 0; pgrp = pgrp->pg_hforw) {
+				printf("\tpgrp %x, pgid %d, sess %x, sesscnt %d, mem %x\n",
+						pgrp, pgrp->pg_id, pgrp->pg_session,
+					    pgrp->pg_session->s_count,
+						pgrp->pg_mem);
+				for(p = pgrp->pg_mem; p != 0; p = p->p_nxt) {
+					printf("\t\tpid %d addr %x pgrp %x\n",
+										    p->p_pid, p, p->p_pgrp);
+				}
+			}
+		}
+	}
+}
+#endif /* DEBUG */
+
 /* Taken From 2.11BSD's vm_proc */
 /*
  * Change the size of the data+stack regions of the process.
@@ -402,6 +426,8 @@ orphanpg(pg)
  * the data area.  The data and stack segments are separated from each
  * other.  The second argument to expand specifies which to change.  The
  * stack segment will not have to be copied again after expansion.
+ *
+ * Not the right place for this...!
  */
 void
 expand(newsize, segment)

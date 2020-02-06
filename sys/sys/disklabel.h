@@ -40,7 +40,7 @@
  * Disk description table, see disktab(5)
  */
 #define	_PATH_DISKTAB	"/etc/disktab"
-#define	DISKTAB		"/etc/disktab"		/* deprecated */
+#define	DISKTAB			"/etc/disktab"		/* deprecated */
 
 /*
  * Each disk has a label which includes information about the hardware
@@ -50,11 +50,23 @@
  */
 
 /* XXX these should be defined per controller (or drive) elsewhere, not here! */
-#define LABELSECTOR	1			/* sector containing label */
-#define LABELOFFSET	0			/* offset of label in sector */
+#ifdef i386
+#define LABELSECTOR	1								/* sector containing label */
+#define LABELOFFSET	0								/* offset of label in sector */
+#endif
 
-#define DISKMAGIC	((u_long) 0x82564557)	/* The disk magic number */
+#ifndef	LABELSECTOR
+#define LABELSECTOR	0								/* sector containing label */
+#endif
+
+#ifndef	LABELOFFSET
+#define LABELOFFSET	64								/* offset of label in sector */
+#endif
+
+#define DISKMAGIC		((u_int32_t) 0x82564557)	/* The disk magic number */
+#ifndef MAXPARTITIONS
 #define	MAXPARTITIONS	8
+#endif
 
 /*
  * 2.11BSD's disklabels are different than 4.4BSD for a couple reasons:
@@ -79,10 +91,10 @@
 
 #ifndef LOCORE
 struct disklabel {
-	u_long	d_magic;			/* the magic number */
-	short	d_type;				/* drive type */
-	short	d_subtype;			/* controller/d_type specific */
-	char	d_typename[16];		/* type name, e.g. "eagle" */
+	u_int32_t d_magic;				/* the magic number */
+	u_int16_t  d_type;				/* drive type */
+	u_int16_t  d_subtype;			/* controller/d_type specific */
+	char	  d_typename[16];		/* type name, e.g. "eagle" */
 	/* 
 	 * d_packname contains the pack identifier and is returned when
 	 * the disklabel is read off the disk or in-core copy.
@@ -91,36 +103,38 @@ struct disklabel {
 	 * getdiskbyname(3) to retrieve the values from /etc/disktab.
 	 */
 #if defined(KERNEL) || defined(STANDALONE)
-	char	d_packname[16];			/* pack identifier */ 
+	char	d_packname[16];				/* pack identifier */
 #else
 	union {
-		char	un_d_packname[16];	/* pack identifier */ 
-		char	*un_d_boot0;		/* primary bootstrap name */
+		char		un_d_packname[16];	/* pack identifier */
+		char		*un_d_boot0;		/* primary bootstrap name */
+		char 		*un_d_boot1;		/* secondary bootstrap name */
 	} d_un; 
 #define d_packname	d_un.un_d_packname
 #define d_boot0		d_un.un_d_boot0
-#define d_boot1		d_un.un_b.un_d_boot1
+#define d_boot1		d_un.un_d_boot1
 #endif	/* ! KERNEL or STANDALONE */
 			/* disk geometry: */
-	u_short	d_secsize;		/* # of bytes per sector */
-	u_short	d_nsectors;		/* # of data sectors per track */
-	u_short	d_ntracks;		/* # of tracks per cylinder */
-	u_short	d_ncylinders;		/* # of data cylinders per unit */
-	u_short	d_secpercyl;		/* # of data sectors per cylinder */
-	u_long	d_secperunit;		/* # of data sectors per unit */
+		u_int32_t 	d_secsize;			/* # of bytes per sector */
+		u_int32_t 	d_nsectors;			/* # of data sectors per track */
+		u_int32_t 	d_ntracks;			/* # of tracks per cylinder */
+		u_int32_t 	d_ncylinders;		/* # of data cylinders per unit */
+		u_int32_t 	d_secpercyl;		/* # of data sectors per cylinder */
+		u_int32_t 	d_secperunit;		/* # of data sectors per unit */
 	/*
 	 * Spares (bad sector replacements) below
 	 * are not counted in d_nsectors or d_secpercyl.
 	 * Spare sectors are assumed to be physical sectors
 	 * which occupy space at the end of each track and/or cylinder.
 	 */
-	u_short	d_sparespertrack;	/* # of spare sectors per track */
-	u_short	d_sparespercyl;		/* # of spare sectors per cylinder */
+	u_int16_t 	d_sparespertrack;	/* # of spare sectors per track */
+	u_int16_t 	d_sparespercyl;		/* # of spare sectors per cylinder */
+
 	/*
 	 * Alternate cylinders include maintenance, replacement,
 	 * configuration description areas, etc.
 	 */
-	u_short	d_acylinders;		/* # of alt. cylinders per unit */
+	u_int32_t 	d_acylinders;		/* # of alt. cylinders per unit */
 
 			/* hardware characteristics: */
 	/*
@@ -139,40 +153,39 @@ struct disklabel {
 	 * Finally, d_cylskew is the offset of sector 0 on cylinder N
 	 * relative to sector 0 on cylinder N-1.
 	 */
-	u_short	d_rpm;			/* rotational speed */
-	u_char	d_interleave;	/* hardware sector interleave */
-	u_char	d_trackskew;	/* sector 0 skew, per track */
-	u_char	d_cylskew;		/* sector 0 skew, per cylinder */
-	u_char	d_headswitch;	/* head swith time, usec */
-	u_short	d_trkseek;		/* track-to-track seek, msec */
-	u_short	d_flags;		/* generic flags */
+	u_int16_t d_rpm;				/* rotational speed */
+	u_int16_t d_interleave;			/* hardware sector interleave */
+	u_int16_t d_trackskew;			/* sector 0 skew, per track */
+	u_int16_t d_cylskew;			/* sector 0 skew, per cylinder */
+	u_int32_t d_headswitch;			/* head swith time, usec */
+	u_int32_t d_trkseek;			/* track-to-track seek, msec */
+	u_int32_t d_flags;				/* generic flags */
 #define NDDATA 5
-	u_long	d_drivedata[NDDATA];	/* drive-type specific information */
+	u_int32_t d_drivedata[NDDATA];	/* drive-type specific information */
 #define NSPARE 5
-	u_long	d_spare[NSPARE];/* reserved for future use */
-	u_long	d_magic2;		/* the magic number (again) */
-	u_short	d_checksum;		/* xor of data incl. partitions */
+	u_int32_t d_spare[NSPARE];		/* reserved for future use */
+	u_int32_t d_magic2;				/* the magic number (again) */
+	u_int16_t d_checksum;			/* xor of data incl. partitions */
 
 			/* filesystem and partition information: */
-	u_short	d_npartitions;	/* number of partitions in following */
-	u_short	d_bbsize;		/* size of boot area at sn0, bytes */
-	u_short	d_sbsize;		/* max size of fs superblock, bytes */
-	struct	partition {		/* the partition table */
-		u_long	p_size;		/* number of sectors in partition */
-		u_long	p_offset;	/* starting sector */
-		u_short	p_fsize;	/* filesystem basic fragment size */
-		u_char	p_fstype;	/* filesystem type, see below */
-		u_char	p_frag;		/* filesystem fragments per block */
+	u_int16_t d_npartitions;		/* number of partitions in following */
+	u_int32_t d_bbsize;				/* size of boot area at sn0, bytes */
+	u_int32_t d_sbsize;				/* max size of fs superblock, bytes */
+	struct	partition {				/* the partition table */
+		u_int32_t p_size;			/* number of sectors in partition */
+		u_int32_t p_offset;			/* starting sector */
+		u_int32_t p_fsize;			/* filesystem basic fragment size */
+		u_int8_t p_fstype;			/* filesystem type, see below */
+		u_int8_t p_frag;			/* filesystem fragments per block */
 		union {
-			u_short	cpg;	/* UFS: FS cylinders per group */
-			u_short	sgs;	/* LFS: FS segment shift */
+			u_int16_t cpg;			/* UFS: FS cylinders per group */
+			u_int16_t sgs;			/* LFS: FS segment shift */
 		}__partition_u1;
 #define	p_cpg	__partition_u1.cpg
 #define	p_sgs	__partition_u1.sgs
 	} d_partitions[MAXPARTITIONS];	/* actually may be more */
 };
-struct cpu_disklabel {
-};
+
 #else /* LOCORE */
 /*
  * offsets for asm boot files.
@@ -183,7 +196,7 @@ struct cpu_disklabel {
 .set	d_ncylinders,52
 .set	d_secpercyl,56
 .set	d_secperunit,60
-.set	d_end_,276		/* size of disk label */
+.set	d_end_,276			/* size of disk label */
 #endif /* LOCORE */
 
 /* d_type values: */
@@ -231,6 +244,7 @@ static char *dktypenames[] = {
  * (rather than the packed 3 byte format) and the directory structure is
  * that of 4.3BSD (long filenames).
 */
+
 #define	FS_V71K		5		/* V7 with 1K blocks (4.1, 2.9, 2.11) */
 #define	FS_V8		6		/* Eighth Edition, 4K blocks */
 #define	FS_BSDFFS	7		/* 4.2BSD fast file system */
@@ -257,7 +271,7 @@ static char *fstypenames[] = {
 	"HPFS",
 	"ISO9660",
 	"boot",
-	0
+	NULL
 };
 #define FSMAXTYPES	(sizeof(fstypenames) / sizeof(fstypenames[0]) - 1)
 #endif
@@ -265,12 +279,31 @@ static char *fstypenames[] = {
 /*
  * flags shared by various drives:
  */
-#define		D_REMOVABLE	0x01		/* removable media */
-#define		D_ECC		0x02		/* supports ECC */
-#define		D_BADSECT	0x04		/* supports bad sector forw. */
-#define		D_RAMDISK	0x08		/* disk emulator */
-#define		D_CHAIN		0x10		/* can do back-back transfers */
+#define		D_REMOVABLE	0x01				/* removable media */
+#define		D_ECC		0x02				/* supports ECC */
+#define		D_BADSECT	0x04				/* supports bad sector forw. */
+#define		D_RAMDISK	0x08				/* disk emulator */
+#define		D_CHAIN		0x10				/* can do back-back transfers */
 
+/*
+ * Drive data for SMD.
+ */
+#define	d_smdflags		d_drivedata[0]
+#define			D_SSE		0x1				/* supports skip sectoring */
+#define	d_mindist		d_drivedata[1]
+#define	d_maxdist		d_drivedata[2]
+#define	d_sdist			d_drivedata[3]
+
+/*
+ * Drive data for ST506.
+ */
+#define d_precompcyl	d_drivedata[0]
+#define d_gap3			d_drivedata[1]		/* used only when formatting */
+
+/*
+ * Drive data for SCSI.
+ */
+#define	d_blind		d_drivedata[0]
 
 #ifndef LOCORE
 /*
@@ -282,9 +315,9 @@ static char *fstypenames[] = {
  */
 struct format_op {
 	char	*df_buf;
-	int	df_count;		/* value-result */
+	int		df_count;		/* value-result */
 	daddr_t	df_startblk;
-	int	df_reg[8];		/* result */
+	int		df_reg[8];		/* result */
 };
 
 /*
@@ -296,80 +329,39 @@ struct partinfo {
 	struct partition *part;
 };
 
-/* DOS partition table -- located in boot block */
-#define DOSBBSECTOR	0			/* DOS boot block relative sector number */
-#define DOSPARTOFF	446
-#define NDOSPART	4
-#define	DOSPTYP_386BSD	0xa5	/* 386BSD partition type */
-#define	MBR_PTYPE_FreeBSD 0xa5	/* FreeBSD partition type */
-
-struct dos_partition {
-	unsigned char	dp_flag;	/* bootstrap flags */
-	unsigned char	dp_shd;		/* starting head */
-	unsigned char	dp_ssect;	/* starting sector */
-	unsigned char	dp_scyl;	/* starting cylinder */
-	unsigned char	dp_typ;		/* partition type */
-	unsigned char	dp_ehd;		/* end head */
-	unsigned char	dp_esect;	/* end sector */
-	unsigned char	dp_ecyl;	/* end cylinder */
-	unsigned long	dp_start;	/* absolute starting sector number */
-	unsigned long	dp_size;	/* partition size in sectors */
-};
-
-extern struct dos_partition dos_partitions[NDOSPART];
-
-#define DPSECT(s) ((s) & 0x3f)		/* isolate relevant bits of sector */
-#define DPCYL(c, s) ((c) + (((s) & 0xc0)<<2)) /* and those that are cylinder */
-
 /*
  * Disk-specific ioctls.
  */
 		/* get and set disklabel; DIOCGPART used internally */
-#define DIOCGDINFO	_IOR(d, 101, struct disklabel)	/* get */
-#define DIOCSDINFO	_IOW(d, 102, struct disklabel)	/* set */
-#define DIOCWDINFO	_IOW(d, 103, struct disklabel)	/* set, update disk */
-#define DIOCGPART	_IOW(d, 104, struct partinfo)	/* get partition */
+#define DIOCGDINFO		_IOR(d, 101, struct disklabel)	/* get */
+#define DIOCSDINFO		_IOW(d, 102, struct disklabel)	/* set */
+#define DIOCWDINFO		_IOW(d, 103, struct disklabel)	/* set, update disk */
+#define DIOCGPART		_IOW(d, 104, struct partinfo)	/* get partition */
 
 /* do format operation, read or write */
-#define DIOCRFORMAT	_IOWR(d, 105, struct format_op)
-#define DIOCWFORMAT	_IOWR(d, 106, struct format_op)
+#define DIOCRFORMAT		_IOWR(d, 105, struct format_op)
+#define DIOCWFORMAT		_IOWR(d, 106, struct format_op)
 
-#define DIOCSSTEP	_IOW(d, 107, int)	/* set step rate */
-#define DIOCSRETRIES	_IOW(d, 108, int)	/* set # of retries */
-#define DIOCWLABEL	_IOW(d, 109, int)	/* write en/disable label */
+#define DIOCSSTEP		_IOW(d, 107, int)			/* set step rate */
+#define DIOCSRETRIES	_IOW(d, 108, int)			/* set # of retries */
+#define DIOCWLABEL		_IOW(d, 109, int)			/* write en/disable label */
 
-#define DIOCSBAD	_IOW(d, 110, struct dkbad)	/* set kernel dkbad */
+#define DIOCSBAD		_IOW(d, 110, struct dkbad)	/* set kernel dkbad */
 
 #endif /* LOCORE */
 
-#ifndef	KERNEL
+#if !defined(KERNEL) && !defined(LOCORE)
+
 struct disklabel *getdiskbyname();
 
 /* Here for compatability with 2.11BSD */
 memaddr	disklabelalloc();
 #define	LABELDESC	(((btoc(sizeof (struct disklabel)) - 1) << 8) | RW)
 
-
-
-#ifdef __i386
-char *	readMBRtolabel __P(( dev_t dev , void (*strat)(), register struct disklabel *lp, struct dos_partition *dp, int *cyl));
-#endif
-#endif
-
-#if !defined(KERNEL) && !defined(LOCORE)
-
 #include <sys/cdefs.h>
+
 __BEGIN_DECLS
 struct disklabel *getdiskbyname __P((const char *));
 __END_DECLS
 
-#endif
-
-#ifdef __i386
-/* encoding of disk minor numbers, should be elsewhere... */
-#define dkunit(dev)		(minor(dev) >> 3)
-#define dkpart(dev)		(minor(dev) & 07)
-#define dkminor(unit, part)	(((unit) << 3) | (part))
-#endif
-
-#endif	/* !_SYS_DISKLABEL_H_ */
+#endif	/* _SYS_DISKLABEL_H_ */

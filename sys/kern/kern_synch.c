@@ -14,22 +14,23 @@
 #include <sys/buf.h>
 #include <sys/signal.h>
 #include <sys/signalvar.h>
+#include <vm/include/vm.h>
 
 #include <machine/cpu.h>
-#include <vm/include/vm.h>
 
 #define	SQSIZE	16	/* Must be power of 2 */
 
 #define	HASH(x)	(((int)x >> 5) & (SQSIZE - 1))
 #define	SCHMAG	8/10
 
-struct	proc *slpque[SQSIZE];
+struct proc *slpque[SQSIZE];
 
 /*
  * Recompute process priorities, once a second
  */
 void
-schedcpu(caddr_t arg)
+schedcpu(arg)
+	void *arg;
 {
 	register struct proc *p;
 	register int a;

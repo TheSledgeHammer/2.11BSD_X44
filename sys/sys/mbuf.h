@@ -33,12 +33,12 @@
 #define	MCLOFSET	CLOFSET
 #endif
 
-#define	MMINOFF		8			/* mbuf header length */
+#define	MMINOFF		8						/* mbuf header length */
 #define	MTAIL		2
-#define	MMAXOFF		(MSIZE-MTAIL)		/* offset where data ends */
+#define	MMAXOFF		(MSIZE-MTAIL)			/* offset where data ends */
 #define	MLEN		(MSIZE-MMINOFF-MTAIL)	/* mbuf data length */
 #define	NMBCLUSTERS	12
-#define	NMBPCL		(CLBYTES/MSIZE)		/* # mbufs per cluster */
+#define	NMBPCL		(CLBYTES/MSIZE)			/* # mbufs per cluster */
 
 /*
  * Macros for type conversion
@@ -55,12 +55,12 @@
 #define	mtod(x,t)	((t)((int)(x) + (x)->m_off))
 
 struct mbuf {
-	struct	mbuf *m_next;		/* next buffer in chain */
-	u_short	m_off;			/* offset of data */
-	short	m_len;			/* amount of data in this mbuf */
-	short	m_type;			/* mbuf type (0 == free) */
-	u_char	m_dat[MLEN];		/* data storage */
-	struct	mbuf *m_act;		/* link in higher-level mbuf list */
+	struct	mbuf 	*m_next;		/* next buffer in chain */
+	u_short			m_off;			/* offset of data */
+	short			m_len;			/* amount of data in this mbuf */
+	short			m_type;			/* mbuf type (0 == free) */
+	u_char			m_dat[MLEN];	/* data storage */
+	struct	mbuf 	*m_act;			/* link in higher-level mbuf list */
 };
 
 /* mbuf types */
@@ -81,14 +81,14 @@ struct mbuf {
 #define	NMBTYPES	16
 
 /* flags to m_get */
-#define	M_DONTWAIT	0
-#define	M_WAIT		1
+#define	M_DONTWAIT		0
+#define	M_WAIT			1
 #define	M_DONTWAITLONG	2
 
 /* flags to m_pgalloc */
-#define	MPG_MBUFS	0		/* put new mbufs on free list */
+#define	MPG_MBUFS		0		/* put new mbufs on free list */
 #define	MPG_CLUSTERS	1		/* put new clusters on free list */
-#define	MPG_SPACE	2		/* don't free; caller wants space */
+#define	MPG_SPACE		2		/* don't free; caller wants space */
 
 /* length to m_copy to copy all */
 #define	M_COPYALL	077776
@@ -170,13 +170,13 @@ struct mbuf {
  * Mbuf statistics.
  */
 struct mbstat {
-	u_short	m_mbufs;	/* mbufs obtained from page pool */
-	u_short	m_clusters;	/* clusters obtained from page pool */
-	u_short	m_space;	/* interface pages obtained from page pool */
-	u_short	m_clfree;	/* free clusters */
-	u_short	m_drops;	/* times failed to find space */
-	u_short m_wait;		/* times waited for space */
-	u_short m_drain;	/* times drained protocols for space */
+	u_short	m_mbufs;			/* mbufs obtained from page pool */
+	u_short	m_clusters;			/* clusters obtained from page pool */
+	u_short	m_space;			/* interface pages obtained from page pool */
+	u_short	m_clfree;			/* free clusters */
+	u_short	m_drops;			/* times failed to find space */
+	u_short m_wait;				/* times waited for space */
+	u_short m_drain;			/* times drained protocols for space */
 	u_short	m_mtypes[NMBTYPES];	/* type specific mbuf allocations */
 };
 

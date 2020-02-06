@@ -43,7 +43,7 @@
 #include <sys/mman.h>
 #include <sys/resourcevar.h>
 #include <sys/user.h>
-//#include <sys/device.h>
+#include <sys/device.h>
 #include <sys/signalvar.h>
 #include <sys/acct.h>
 #include <sys/mount.h>

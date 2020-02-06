@@ -25,7 +25,6 @@
 #include <sys/proc.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
-#include <vm/include/vm.h>
 
 /*
  * Resource map handling routines.
@@ -64,7 +63,7 @@
 void
 rminit(mp, size, addr, name, mapsize)
 	register struct map *mp;
-	size_t size, addr;
+	long size, addr;
 	char *name;
 	int mapsize;
 {
@@ -85,7 +84,7 @@ rmalloc(mp, size)
 {
 	register struct mapent *ep = (struct mapent *)(mp+1);
 	register struct mapent *bp;
-	register int addr;
+	register long addr;
 	int retry;
 	swblk_t first, rest;
 
@@ -244,7 +243,7 @@ rmalloc3(mp, d_size, s_size, u_size, a)
 	struct mapent *madd[3];
 	size_t sizes[3];
 	int found, retry;
-	register int addr;
+	register long addr;
 	swblk_t first, rest;
 
 	sizes[0] = d_size; sizes[1] = s_size; sizes[2] = u_size;

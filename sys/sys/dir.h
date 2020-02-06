@@ -9,11 +9,18 @@
 #ifndef	_DIR_
 #define	_DIR_
 
+#include <dirent.h>
+
 #ifndef MAXNAMLEN
 #define MAXNAMLEN	63
 #endif
 
 #define DIRBLKSIZ	512
+
+/*
+ * Backwards compatibility.
+ */
+#define direct dirent
 
 /*
  * inode numbers are ino_t rather than u_long now.  before, when v7direct
@@ -23,9 +30,9 @@
 */
 
 struct	direct {
-	ino_t	d_ino;			/* inode number of entry */
-	u_short	d_reclen;		/* length of this record */
-	u_short	d_namlen;		/* length of string in d_name */
+	ino_t	d_ino;					/* inode number of entry */
+	u_short	d_reclen;				/* length of this record */
+	u_short	d_namlen;				/* length of string in d_name */
 	char	d_name[MAXNAMLEN+1];	/* name must be no longer than this */
 };
 

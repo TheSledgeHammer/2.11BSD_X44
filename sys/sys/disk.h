@@ -93,19 +93,18 @@ struct dkdevice {
 	struct	dkdriver *dk_driver;				/* pointer to driver */
 	daddr_t	dk_labelsector;						/* sector containing label */
 	struct 	disklabel dk_label;					/* label */
-	//struct	partition dk_parts[MAXPARTITIONS];	/* inkernel portion */
+	struct	partition dk_parts[MAXPARTITIONS];	/* inkernel portion */
 };
 
 struct dkdriver {
-	void (*d_strategy) __P((struct buf *));
+	void 	(*d_strategy) __P((struct buf *));
 #ifdef notyet
-	int	(*d_open) __P((dev_t dev, int ifmt, int, struct proc *));
-	int	(*d_close) __P((dev_t dev, int, int ifmt, struct proc *));
-	int	(*d_ioctl) __P((dev_t dev, int cmd, caddr_t data, int fflag,
-				struct proc *));
-	int	(*d_dump) __P((dev_t));
+	int		(*d_open) __P((dev_t dev, int ifmt, int, struct proc *));
+	int		(*d_close) __P((dev_t dev, int, int ifmt, struct proc *));
+	int		(*d_ioctl) __P((dev_t dev, int cmd, caddr_t data, int fflag, struct proc *));
+	int		(*d_dump) __P((dev_t));
 	void	(*d_start) __P((struct buf *, daddr_t));
-	int	(*d_mklabel) __P((struct dkdevice *));
+	int		(*d_mklabel) __P((struct dkdevice *));
 #endif
 };
 
@@ -127,8 +126,8 @@ struct dkdriver {
  * Stats from disksort().
  */
 struct disksort_stats {
-	long	ds_newhead;		/* # new queue heads created */
-	long	ds_newtail;		/* # new queue tails created */
+	long	ds_newhead;			/* # new queue heads created */
+	long	ds_newtail;			/* # new queue tails created */
 	long	ds_midfirst;		/* # insertions into sort list */
 	long	ds_endfirst;		/* # insertions at end of sort list */
 	long	ds_newsecond;		/* # inversions (2nd lists) created */
@@ -140,8 +139,8 @@ struct disksort_stats {
 #ifdef KERNEL
 void	disksort __P((struct buf *, struct buf *));
 char	*readdisklabel __P((struct dkdevice *, int));
-int	setdisklabel __P((struct dkdevice *, struct disklabel *));
-int	writedisklabel __P((struct dkdevice *, int));
-int	diskerr __P((struct dkdevice *, struct buf *, char *, int, int));
+int		setdisklabel __P((struct dkdevice *, struct disklabel *));
+int		writedisklabel __P((struct dkdevice *, int));
+int		diskerr __P((struct dkdevice *, struct buf *, char *, int, int));
 #endif
 #endif /* _SYS_DISK_H_ */

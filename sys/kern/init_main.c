@@ -38,6 +38,7 @@ struct 	fs0 filedesc0;
 struct 	plimit limit0;
 struct 	vmspace vmspace0;
 struct 	proc *curproc = &proc0;
+struct	proc *initproc, *pageproc;
 
 int		securelevel;
 int 	cmask = CMASK;
@@ -47,7 +48,6 @@ struct 	vnode *rootvp, *swapdev_vp;
 int		boothowto;
 struct	timeval boottime;
 struct	timeval runtime;
-
 
 
 /*
@@ -68,8 +68,13 @@ main()
 {
 	register struct proc *p;
 	register struct filedesc0 *fdp;
+	register struct pdevinit *pdev;
 	register int i;
+	int s;
+	register_t rval[2];
+	extern struct pdevinit pdevinit[];
 	extern struct sysentvec sysvec;
+	extern void schedcpu __P((void *));
 
 	/*
 	 * Initialize the current process pointer (curproc) before
@@ -79,13 +84,19 @@ main()
 	curproc = p;
 
 	vm_mem_init();
+	kmeminit();
 
 	startup();
 
 	/*
+	 * Initialize process and pgrp structures.
+	 */
+	procinit();
+
+	/*
 	 * set up system process 0 (swapper)
 	 */
-	allproc = (volatile struct proc *)p;
+	allproc = (struct proc *)p;
 	p->p_prev = (struct proc **)&allproc;
 	p->p_pgrp = &pgrp0;
 	pgrphash[0] = &pgrp0;
@@ -159,9 +170,24 @@ main()
 	/* Configure virtual memory system, set vm rlimits. */
 	vm_init_limits(p);
 
+	/* Initialize the file systems. */
+	vfsinit();
 
-	/* Initialize signal state for process 0 */
-	siginit(p);
+	/* Initialize mbuf's. */
+	mbinit();
+
+	/* Attach pseudo-devices. */
+	for (pdev = pdevinit; pdev->pdev_attach != NULL; pdev++)
+		(*pdev->pdev_attach)(pdev->pdev_count);
+
+	/*
+	 * Initialize protocols.  Block reception of incoming packets
+	 * until everything is ready.
+	 */
+	s = splimp();
+	ifinit();
+	domaininit();
+	splx(s);
 
 	/*
 	 * Initialize tables, protocols.
@@ -169,18 +195,64 @@ main()
 	cinit();
 	pqinit();
 
-	/* Initialize exec structures */
-	exec_init(1);
-
 	/* Kick off timeout driven events by calling first time. */
 	schedcpu(NULL);
 
+	/* Mount the root file system. */
+	if (vfs_mountroot())
+		panic("cannot mount root");
+	mountlist.cqh_first->mnt_flag |= MNT_ROOTFS;
+	/* Get the vnode for '/'.  Set fdp->fd_fd.fd_cdir to reference it. */
+	if (VFS_ROOT(mountlist.cqh_first, &rootvnode))
+		panic("cannot find root vnode");
+	fdp->fd_fd.fd_cdir = rootvnode;
+	VREF(fdp->fd_fd.fd_cdir);
+	VOP_UNLOCK(rootvnode, 0, p);
+	fdp->fd_fd.fd_rdir = NULL;
+	swapinit();
+
+	p->p_stats->p_start = runtime = mono_time = boottime = time;
+	p->p_rtime.tv_sec = p->p_rtime.tv_usec = 0;
+
+	/* Initialize signal state for process 0 */
+	siginit(p);
+
+	/* Create process 1 (init(8)). */
+	if (fork(p, NULL, rval))
+		panic("fork init");
+	if (rval[1]) {
+		//start_init(curproc, framep);
+		//return;
+	}
+
+	/* Create process 2 (the pageout daemon). */
+	if (fork(p, NULL, rval))
+		panic("fork pager");
+	if (rval[1]) {
+		/*
+		 * Now in process 2.
+		 */
+		p = curproc;
+		pageproc = p;
+		p->p_flag |= P_INMEM | P_SYSTEM;	/* XXX */
+		bcopy("pagedaemon", curproc->p_comm, sizeof ("pagedaemon"));
+		vm_pageout();
+		/* NOTREACHED */
+	}
+
+	/* Initialize exec structures */
+	exec_init(1);
+
+	scheduler();
+	/* NOTREACHED */
+
+	/* Below needs attention: Not in correct place */
 	/*
 	 * make init process
 	 */
 	if (newproc(0)) {
 		expand((int)btoc(szicode), S_DATA);
-		expand((int)1, S_STACK);			/* one click of stack */
+		expand((int)1, S_STACK);						/* one click of stack */
 		copyout((caddr_t)icode, (caddr_t)0, szicode);
 		/*
 		 * return goes to location 0 of user init code

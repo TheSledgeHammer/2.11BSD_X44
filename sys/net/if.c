@@ -25,7 +25,7 @@
 
 #include <net/if.h>
 #include <net/af.h>
-#include <ether.h>
+//#include <ether.h>
 
 int	ifqmaxlen = IFQ_MAXLEN;
 

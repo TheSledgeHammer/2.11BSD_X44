@@ -11,7 +11,7 @@
 
 #include <machine/proc.h>		/* Machine-dependent proc substruct. */
 #include <sys/select.h>			/* For struct selinfo. */
-#include <sys/time.h>			/* For structs itimerval, timeval. */
+#include <sys/queue.h>
 
 /*
  * One structure allocated per active
@@ -157,9 +157,8 @@ struct emul {
 	const struct sysent *e_sysent;		/* System call array */
 	int					e_arglen;		/* Extra argument size in words */
 
-	void				*(*e_copyargs) __P((struct exec_linker *, struct ps_strings *,
-				    void *, void *));
-	void				(*e_setregs) __P((struct proc *, struct exec_linker *, u_long));
+	//void				*(*e_copyargs) __P((struct exec_linker *, struct ps_strings *, void *, void *));
+	//void				(*e_setregs) __P((struct proc *, struct exec_linker *, u_long));
 	char				*e_sigcode;		/* Start of sigcode */
 	char				*e_esigcode;	/* End of sigcode */
 };
@@ -212,15 +211,6 @@ struct emul {
 #define	S_DATA	0			/* specified segment */
 #define	S_STACK	1
 
-LIST_HEAD(proclist, proc);		/* A list of processes */
-
-/*
- * This structure associates a proclist with its lock.
- */
-struct proclist_desc {
-	struct proclist	*pd_list;	/* The list */
-};
-
 #ifdef KERNEL
 #define	PID_MAX		30000
 #define	NO_PID		30001
@@ -233,33 +223,33 @@ struct proclist_desc {
 		FREE(s, M_SESSION);						\
 }
 
-#define	PIDHSZ			16
-#define	PIDHASH(pid)	((pid) & (PIDHSZ - 1))
 
-extern struct proc *pidhash[];			/* In param.c. */
-extern struct pgrp *pgrphash[];			/* In param.c. */
-extern volatile struct proc *allproc;	/* List of active procs. */
+#define	PIDHASH(pid)	(&pidhashtbl[(pid) & pidhash])
+extern LIST_HEAD(pidhashhead, proc) *pidhashtbl;
+extern u_long pidhash;
+
+#define	PGRPHASH(pgid)	(&pgrphashtbl[(pgid) & pgrphash])
+extern LIST_HEAD(pgrphashhead, pgrp) *pgrphashtbl;
+extern u_long pgrphash;
+
+extern struct proc *allproc;			/* List of active procs. */
 extern struct proc proc0;				/* Process slot for swapper. */
 int	nproc, maxproc;						/* Current and max number of procs. */
 extern int pidhashmask;					/* In param.c. */
 
-extern struct proc proc[], *procNPROC;	/* (To be replaced by proclists) the proc table itself */
+extern struct proc proc[], *procNPROC;	/* the proc table itself */
 
-extern struct proc *freeproc;			/* List of free procs */
-extern struct proc *zombproc;			/* List of zombie procs. */
+LIST_HEAD(proclist, proc);
+extern struct proclist  freeproc;		/* List of free procs */
+extern struct proclist  zombproc;		/* List of zombie procs. */
 struct proc *initproc, *pageproc;		/* Process slots for init, pager. */
 
-//extern const struct proclist_desc proclists[], *procNPROC;	/* the proc table itself */
-
 #define	NQS	32							/* 32 run queues. */
-extern struct prochd qs[];				/* queue schedule */
-extern struct prochd rtqs[];
-extern struct prochd idqs[];
 extern int	whichqs;					/* Bit mask summary of non-empty Q's. */
 struct	prochd {
 	struct	proc *ph_link;				/* Linked list of running processes. */
 	struct	proc *ph_rlink;
-};
+} qs[NQS];
 
 struct 	proc *pfind __P((pid_t));		/* Find process by id. */
 struct 	pgrp *pgfind __P((pid_t));		/* Find process group by id. */
@@ -276,6 +266,7 @@ int		tsleep __P((void *chan, int pri, char *wmesg, int timo));
 void	unsleep __P((struct proc *));
 void	wakeup __P((void *chan));
 
+void	procinit __P((void));
 int 	chgproccnt __P((uid_t, int diff));
 int		acct_process __P((struct proc *));
 int		leavepgrp __P((struct proc *));
