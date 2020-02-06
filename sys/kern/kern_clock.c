@@ -23,7 +23,30 @@
 int noproc;
 struct  callout *callfree, calltodo;
 volatile struct timeval time;
+volatile struct	timeval mono_time;
 
+/*
+ * Initialize clock frequencies and start both clocks running.
+ */
+void
+initclocks()
+{
+	register int i;
+	static int psdiv, pscnt;	/* prof => stat divider */
+	/*
+	 * Set divisors to 1 (normal case) and let the machine-specific
+	 * code do its bit.
+	 */
+	psdiv = pscnt = 1;
+	cpu_initclocks();
+
+
+	i = stathz ? stathz : hz;
+	if (profhz == 0)
+		profhz = i;
+	psratio = profhz / i;
+
+}
 /*
  * The hz hardware interval timer.
  * We update the events relating to real time.
@@ -369,4 +392,22 @@ hzto(tv)
 		ticks = 0x7fffffff;
 	splx(s);
 	return ((int)ticks);
+}
+
+
+/*
+ * Return information about system clocks.
+ */
+sysctl_clockrate(where, sizep)
+	register char *where;
+	size_t *sizep;
+{
+	struct clockinfo clkinfo;
+
+	/* Construct clockinfo structure. */
+	clkinfo.hz = hz;
+	clkinfo.tick = tick;
+	clkinfo.profhz = profhz;
+	clkinfo.stathz = stathz ? stathz : hz;
+	return (sysctl_rdstruct(where, sizep, NULL, &clkinfo, sizeof(clkinfo)));
 }

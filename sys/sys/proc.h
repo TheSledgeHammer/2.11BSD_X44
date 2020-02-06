@@ -215,7 +215,6 @@ struct emul {
 #define	PID_MAX		30000
 #define	NO_PID		30001
 
-
 #define SESS_LEADER(p)	((p)->p_session->s_leader == (p))
 #define	SESSHOLD(s)		((s)->s_count++)
 #define	SESSRELE(s) {							\
@@ -223,19 +222,20 @@ struct emul {
 		FREE(s, M_SESSION);						\
 }
 
-
-#define	PIDHASH(pid)	(&pidhashtbl[(pid) & pidhash])
+#define	PIDHSZ			16
+#define	PIDHASH(pid)	(&pidhashtbl[(pid) & pid_hash & (PIDHSZ - 1)])
 extern LIST_HEAD(pidhashhead, proc) *pidhashtbl;
-extern u_long pidhash;
+u_long pid_hash;
 
 #define	PGRPHASH(pgid)	(&pgrphashtbl[(pgid) & pgrphash])
 extern LIST_HEAD(pgrphashhead, pgrp) *pgrphashtbl;
 extern u_long pgrphash;
 
+extern struct proc *pidhash[PIDHSZ];
+extern int pidhashmask;					/* In param.c. */
 extern struct proc *allproc;			/* List of active procs. */
 extern struct proc proc0;				/* Process slot for swapper. */
 int	nproc, maxproc;						/* Current and max number of procs. */
-extern int pidhashmask;					/* In param.c. */
 
 extern struct proc proc[], *procNPROC;	/* the proc table itself */
 

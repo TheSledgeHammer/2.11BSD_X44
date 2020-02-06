@@ -1,12 +1,9 @@
 TODO:
 init_main.c
 - lines 250 to 262
-- kern_clock: initclocks
 - uipc_mbuf.c: mbinit
-- tty_subr.c: clist_init
 - consinit
 - cpu_startup
-- cinit
 - start_init(curproc, framep);
 
 Kern:

@@ -9,13 +9,14 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/map.h>
-#include <sys/user.h>
+#include <sys/filedesc.h>
+#include <sys/kernel.h>
+#include <sys/malloc.h>
 #include <sys/proc.h>
+#include <sys/user.h>
+#include <sys/resourcevar.h>
 #include <sys/vnode.h>
 #include <sys/acct.h>
-#include <sys/file.h>
-#include <sys/kernel.h>
-#include <vm/include/vm.h>
 
 
 /*
@@ -66,7 +67,7 @@ fork1(isvfork)
 
 	count = chgproccnt(u->u_uid, 1);
 	if (u->u_uid != 0 && count > p1->p_rlimit[RLIMIT_NPROC].rlim_cur) {
-		(void)chgproccnt(uid, -1);
+		(void)chgproccnt(u->u_uid, -1);
 		u->u_error = EAGAIN;
 	}
 	if (p2==NULL || (u->u_uid!=0 && (p2->p_nxt == NULL || a>MAXUPRC))) {
@@ -76,13 +77,31 @@ fork1(isvfork)
 	p1 = u->u_procp;
 	if (newproc(isvfork)) {
 		u->u_r.r_val1 = p1->p_pid;
-		u->u_start = p1->p_rtime->tv_sec; //time.tv_sec;
+		u->u_start = p1->p_rtime->tv_sec;
 		/* set forked but preserve suid/gid state */
 		u->u_acflag = AFORK | (u->u_acflag & ASUGID);
 		bzero(&u->u_ru, sizeof(u->u_ru));
 		bzero(&u->u_cru, sizeof(u->u_cru));
 		return;
 	}
+	if(vm_fork(p1, p2, isvfork)) {
+		/*
+		 * Child process.  Set start time and get to work.
+		 */
+		(void) splclock();
+		p2->p_stats->p_start = time;
+		(void) spl0();
+		p2->p_acflag = AFORK;
+		return;
+	}
+	/*
+	 * Make child runnable and add to run queue.
+	 */
+	(void) splhigh();
+	p2->p_stat = SRUN;
+	setrq(p2);
+	(void) spl0();
+
 	u->u_r.r_val1 = p2->p_pid;
 
 out:
@@ -171,12 +190,11 @@ again:
 	/* take along any pending signals like stops? */
 	rpp->p_wchan = 0;
 	rpp->p_slptime = 0;
-	{
-	struct proc **hash = &pidhash[PIDHASH(rpp->p_pid)];
 
+	struct proc **hash = &pidhash[PIDHASH(rpp->p_pid)];
 	rpp->p_hash = *hash;
 	*hash = rpp;
-	}
+
 	/*
 	 * some shuffling here -- in most UNIX kernels, the allproc assign
 	 * is done after grabbing the struct off of the freeproc list.  We

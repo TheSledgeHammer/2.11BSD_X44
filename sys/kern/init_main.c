@@ -173,8 +173,14 @@ main()
 	/* Initialize the file systems. */
 	vfsinit();
 
+	/* Start real time and statistics clocks. */
+	initclocks();
+
 	/* Initialize mbuf's. */
 	mbinit();
+
+	/* Initialize clists, tables, protocols. */
+	cinit();
 
 	/* Attach pseudo-devices. */
 	for (pdev = pdevinit; pdev->pdev_attach != NULL; pdev++)
@@ -188,12 +194,6 @@ main()
 	ifinit();
 	domaininit();
 	splx(s);
-
-	/*
-	 * Initialize tables, protocols.
-	 */
-	cinit();
-	pqinit();
 
 	/* Kick off timeout driven events by calling first time. */
 	schedcpu(NULL);
@@ -218,7 +218,7 @@ main()
 	siginit(p);
 
 	/* Create process 1 (init(8)). */
-	if (fork(p, NULL, rval))
+	if (fork(NULL))
 		panic("fork init");
 	if (rval[1]) {
 		//start_init(curproc, framep);
@@ -226,7 +226,7 @@ main()
 	}
 
 	/* Create process 2 (the pageout daemon). */
-	if (fork(p, NULL, rval))
+	if (fork(NULL))
 		panic("fork pager");
 	if (rval[1]) {
 		/*
@@ -268,13 +268,13 @@ main()
  * Initialize clist by freeing all character blocks, then count
  * number of character devices. (Once-only routine)
  */
-static void
+void
 cinit()
 {
 	register int ccp;
 	register struct cblock *cp;
 
-	ccp = (int)cfree;
+	ccp = (int) cfree;
 	ccp = (ccp + CROUND) & ~CROUND;
 
 	for (cp = (struct cblock *)ccp; cp <= &cfree[nclist - 1]; cp++) {

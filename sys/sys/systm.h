@@ -76,8 +76,6 @@ int	noproc;							/* no one is running just now */
 
 /* Initialize the world */
 extern void startup();
-extern void cinit();
-extern void pqinit();
 
 /* General Function Declarations */
 int 	nodev __P((void));
@@ -110,7 +108,7 @@ void 	bzero __P((void *buf, u_int len));
 
 int		copystr __P((void *kfaddr, void *kdaddr, u_int len, u_int *done));
 int		copyinstr __P((void *udaddr, void *kaddr, u_int len, u_int *done));
-//int		copyoutstr __P((void *kaddr, void *udaddr, u_int len, u_int *done));
+int		copyoutstr __P((void *kaddr, void *udaddr, u_int len, u_int *done));
 int		copyin __P((void *udaddr, void *kaddr, u_int len));
 int		copyout __P((void *kaddr, void *udaddr, u_int len));
 
@@ -128,9 +126,12 @@ int		suiword __P((void *base, int word));
 int		hzto __P((struct timeval *tv));
 void 	timeout __P((void (*func)(void *), void *arg, int ticks));
 void 	untimeout __P((void (*func)(void *), void *arg));
+void	realitexpire __P((void *));
 
 void 	hardclock __P((dev_t dev, caddr_t sp, int r1, int ov, int nps, int r0, caddr_t pc, int ps));
 void 	softclock __P((caddr_t pc, int ps));
 //void 	statclock __P((struct clockframe *frame));
+
+void	initclocks __P((void));
 
 #include <sys/libkern.h>

@@ -29,8 +29,6 @@ extern int	mshz;		/* # milliseconds per hz */
 extern int 	stathz;		/* statistics clock's frequency */
 extern int 	profhz;		/* profiling clock's frequency */
 extern int	lbolt;		/* awoken once a second */
-
-int	realitexpire();
-
+extern int	psratio;	/* ratio: prof / stat */
 short avenrun[3];
 

@@ -37,7 +37,7 @@ u_long	uihash;		/* size of hash table - 1 */
 
 
 struct pidhashhead *pidhashtbl;
-u_long pidhash;
+u_long pid_hash;
 struct pgrphashhead *pgrphashtbl;
 u_long pgrphash;
 
@@ -47,11 +47,41 @@ struct proclist  zombproc;		/* just zombies */
 void
 procinit()
 {
+
+	pqinit();
 	LIST_INIT(&allproc);
 	LIST_INIT(&zombproc);
-	pidhashtbl = hashinit(maxproc / 4, M_PROC, &pidhash);
+	pidhashtbl = hashinit(maxproc / 4, M_PROC, &pid_hash);
 	pgrphashtbl = hashinit(maxproc / 4, M_PROC, &pgrphash);
 	uihashtbl = hashinit(maxproc / 16, M_PROC, &uihash);
+}
+
+/*
+ * init the process queues
+ */
+void
+pqinit()
+{
+	register struct proc *p;
+
+	/*
+	 * most procs are initially on freequeue
+	 *	nb: we place them there in their "natural" order.
+	 */
+
+	freeproc = NULL;
+	for (p = procNPROC; --p > proc; freeproc = p)
+		p->p_nxt = freeproc;
+
+	/*
+	 * but proc[0] is special ...
+	 */
+
+	allproc = p;
+	p->p_nxt = NULL;
+	p->p_prev = &allproc;
+
+	zombproc = NULL;
 }
 
 /*
@@ -82,33 +112,6 @@ pfind(pid)
 	return ((struct proc *)0);
 }
 
-/*
- * init the process queues
- */
-void
-pqinit()
-{
-	register struct proc *p;
-
-	/*
-	 * most procs are initially on freequeue
-	 *	nb: we place them there in their "natural" order.
-	 */
-
-	freeproc = NULL;
-	for (p = procNPROC; --p > proc; freeproc = p)
-		p->p_nxt = freeproc;
-
-	/*
-	 * but proc[0] is special ...
-	 */
-
-	allproc = p;
-	p->p_nxt = NULL;
-	p->p_prev = &allproc;
-
-	zombproc = NULL;
-}
 
 /*
  * Change the count associated with number of processes
