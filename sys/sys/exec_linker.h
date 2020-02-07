@@ -50,6 +50,8 @@
 #include <sys/vnode.h>
 #include <vm/include/vm.h>
 
+#ifdef _KERNEL
+
 struct exec_linker {
 	const char 					*el_name;				/* file's name */
 	struct 	proc 		        *el_proc;			    /* our process struct */
@@ -109,13 +111,13 @@ struct exec_vmcmd_set {
 
 struct exec_vmcmd {
 	int					(*ev_proc)(struct proc *, struct exec_vmcmd *);
-    vm_offset_t         *ev_addr;
-    vm_size_t           ev_size;
-	vm_prot_t 			ev_prot;
-	vm_prot_t 			ev_maxprot;
+	u_long         		ev_addr;
+    u_long	           	ev_size;
+    u_int	 			ev_prot;
+    u_int	 			ev_maxprot;
     int                 ev_flags;
-    caddr_t             ev_handle;
-    unsigned long 		ev_offset;
+    struct vnode        *ev_vnodep;
+    u_long 				ev_offset;
 
 #define	VMCMD_RELATIVE	0x0001	/* ev_addr is relative to base entry */
 #define	VMCMD_BASE		0x0002	/* marks a base entry */
@@ -147,58 +149,37 @@ struct execsw_entry {
 };
 
 extern struct lock 	exec_lock;
-u_int				exec_maxhdrsz;
 
-#ifdef KERNEL
+void 	kill_vmcmd(struct exec_vmcmd **);
+void 	vmcmdset_extend(struct exec_vmcmd_set *);
+void 	kill_vmcmds(struct exec_vmcmd_set *);
 
-#ifdef DEBUG
-void 	kill_vmcmd		  	 __P((struct exec_vmcmd **));
-void 	vmcmdset_extend 	 __P((struct exec_vmcmd_set *));
-void 	kill_vmcmds	 	 	 __P((struct exec_vmcmd_set *));
+int 	vmcmd_map_pagedvn(struct exec_linker *);
+int 	vmcmd_map_readvn(struct exec_linker *);
+int 	vmcmd_readvn(struct exec_linker *);
+int		vmcmd_map_zero(struct exec_linker *);
+int 	vmcmd_create_vmspace(struct exec_linker *);
 
-int 	vmcmd_map_pagedvn 	 __P((struct exec_linker *));
-int 	vmcmd_map_readvn 	 __P((struct exec_linker *));
-int 	vmcmd_readvn 		 __P((struct exec_linker *));
-int		vmcmd_map_zero 		 __P((struct exec_linker *));
-int 	vmcmd_create_vmspace __P((struct exec_linker *));
+int 	exec_extract_strings(struct exec_linker *, char *, char * const *);
+int 	*exec_copyout_strings(struct exec_linker *, struct ps_strings *);
+void 	*copyargs(struct exec_linker *, struct ps_strings *, void *, void *);
 
-int 	exec_extract_strings  __P((struct exec_linker *, char *, char * const *));
-int 	*exec_copyout_strings __P((struct exec_linker *, struct ps_strings *));
-void 	*copyargs			 __P((struct exec_linker *, struct ps_strings *, void *, void *));
+void 	setregs(struct proc *, struct exec_linker *, u_long);
 
-void 	setregs				 __P((struct proc *, struct exec_linker *, u_long));
+int		check_exec(struct exec_linker *);
 
-int		check_exec			 __P((struct exec_linker *));
+int 	exec_setup_stack(struct exec_linker *);
 
-int 	exec_setup_stack 	 __P((struct exec_linker *));
+void 	new_vmcmd(struct exec_vmcmd_set *evsp, int (*proc)(struct proc * p, struct exec_vmcmd *),
+		u_long size, u_long addr, u_int prot, u_int maxprot,
+		int flags, struct vnode *vp, u_long offset);
 
-void 	new_vmcmd		 	 __P((struct exec_vmcmd_set *evsp, struct exec_linker *elp, vm_offset_t *addr, vm_size_t size, vm_prot_t prot, vm_prot_t maxprot, int flags, caddr_t handle,  unsigned long offset));
+#define	NEW_VMCMD(evsp,elp,size,addr,prot,maxprot,vp,offset) \
+	new_vmcmd(evsp,elp,size,addr,prot,maxprot,0,vp,offset)
+#define	NEW_VMCMD2(evsp,elp,size,addr,prot,maxprot,flags,vp,offset) \
+	new_vmcmd(evsp,elp,size,addr,prot,maxprot,flags,vp,offset)
 
-#define	NEW_VMCMD(evsp,elp,addr,size,prot,maxprot,handle,offset) \
-	new_vmcmd(evsp,elp,addr,size,prot,maxprot,0,handle,offset)
-#define	NEW_VMCMD2(evsp,elp,addr,size,prot,maxprot,flags,handle,offset) \
-	new_vmcmd(evsp,elp,addr,size,prot,maxprot,flags,handle,offset)
-#else	/* DEBUG */
-#define	NEW_VMCMD(evsp,elp,addr,size,prot,maxprot,handle,offset) \
-		NEW_VMCMD2(evsp,elp,addr,size,prot,maxprot,0,handle,offset)
-#define	NEW_VMCMD2(evsp,elp,addr,size,prot,maxprot,flags,handle,offset) do { \
-	struct exec_vmcmd *vcp; \
-	if ((evsp)->evs_used >= (evsp)->evs_cnt) \
-		vmcmdset_extend(evsp); \
-	vcp = &(evsp)->evs_cmds[(evsp)->evs_used++]; \
-	vcp->ev_proc = (elp->el_proc); \
-	vcp->ev_addr = (addr); \
-	vcp->ev_size = (size); \
-	vcp->ev_prot = (prot); \
-    vcp->ev_maxprot = (maxprot); \
-	vcp->ev_flags = (flags); \
-	if((vcp->ev_handle = (handle)) != NULLVP) \
-			VREF(handle); \
-    vcp->ev_offset = (offset); \
-} while (0)
-
-#endif /* EXEC_DEBUG */
-extern int	exec_maxhdrsz;
+int	exec_maxhdrsz;
 #endif 	/* _KERNEL */
 #include <sys/exec_aout.h>
 #endif  /* _SYS_EXEC_LINKER_H_ */

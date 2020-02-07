@@ -744,20 +744,20 @@ open(p, uap, retval)
 	struct flock lf;
 	struct nameidata nd;
 	extern struct fileops vnops;
-
+	int p_dupfd = (int)u->u_dupfd;
 	if (error == falloc(p, &nfp, &indx))
 		return (error);
 	fp = nfp;
 	flags = FFLAGS(SCARG(uap, flags));
 	cmode = ((SCARG(uap, mode) &~ fdp->fd_cmask) & ALLPERMS) &~ S_ISTXT;
 	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, SCARG(uap, path), p);
-	p->p_dupfd = -indx - 1;			/* XXX check for fdopen */
+	p_dupfd = -indx - 1;			/* XXX check for fdopen */
 	if (error == vn_open(&nd, flags, cmode)) {
 		ffree(fp);
 		if ((error == ENODEV || error == ENXIO) &&
-		    p->p_dupfd >= 0 &&			/* XXX from fdopen */
+				p_dupfd >= 0 &&			/* XXX from fdopen */
 		    (error =
-			dupfdopen(fdp, indx, p->p_dupfd, flags, error)) == 0) {
+			dupfdopen(fdp, indx, p_dupfd, flags, error)) == 0) {
 			*retval = indx;
 			return (0);
 		}
@@ -766,7 +766,7 @@ open(p, uap, retval)
 		fdp->fd_ofiles[indx] = NULL;
 		return (error);
 	}
-	p->p_dupfd = 0;
+	p_dupfd = 0;
 	vp = nd.ni_vp;
 	fp->f_flag = flags & FMASK;
 	fp->f_type = DTYPE_VNODE;

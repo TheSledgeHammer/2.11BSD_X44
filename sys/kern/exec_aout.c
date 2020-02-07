@@ -102,7 +102,6 @@ exec_aout_prep_zmagic(elp)
 	struct exec_linker *elp;
 {
 	struct exec *a_out = (struct exec *) elp->el_image_hdr;
-	struct vmspace *vmspace = elp->el_proc->p_vmspace;
 
 	elp->el_taddr = USRTEXT;
 	elp->el_tsize = a_out->a_text;
@@ -111,20 +110,20 @@ exec_aout_prep_zmagic(elp)
 	elp->el_entry = a_out->a_entry;
 
 	/* set up for text */
-	NEW_VMCMD(&vmspace->vm_map, elp->el_taddr, round_page(a_out->a_text),
-			VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_EXECUTE,
-			MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, 0);
+	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_pagedvn, round_page(a_out->a_text), elp->el_taddr,
+			(VM_PROT_READ | VM_PROT_EXECUTE), (VM_PROT_READ | VM_PROT_EXECUTE),
+			elp->el_vnodep, 0);
 
 	/* set up for data segment */
-	NEW_VMCMD(&vmspace->vm_map, elp->el_daddr, round_page(a_out->a_data),
-			VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE,
-			MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, a_out->a_text);
+	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_pagedvn, round_page(a_out->a_data),
+			elp->el_daddr, (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), elp->el_vnodep, a_out->a_text);
 
 	/* set up for bss segment */
 	if (a_out->a_bss > 0) {
-		NEW_VMCMD(&vmspace->vm_map, elp->el_daddr + a_out->a_data, a_out->a_bss,
-				VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE,
-				MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, 0);
+		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_zero, a_out->a_bss, elp->el_daddr + a_out->a_data,
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), NULL, 0);
 	}
 
 	return (*elp->el_esch->ex_setup_stack)(elp);
@@ -147,22 +146,23 @@ exec_aout_prep_nmagic(elp)
 	elp->el_entry = a_out->a_entry;
 
 	/* set up for text */
-	NEW_VMCMD(&vmspace->vm_map, elp->el_taddr, a_out->a_text,
-			VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_EXECUTE,
-			MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, sizeof(struct exec));
+	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, a_out->a_text, elp->el_taddr,
+			(VM_PROT_READ | VM_PROT_EXECUTE), (VM_PROT_READ | VM_PROT_EXECUTE),
+			elp->el_vnodep, sizeof(struct exec));
 
 	/* set up for data segment */
-	NEW_VMCMD(&vmspace->vm_map, elp->el_daddr, a_out->a_data,
-			VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE,
-			MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, a_out->a_text + sizeof(struct exec));
+	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, a_out->a_data, elp->el_daddr,
+			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+			elp->el_vnodep, a_out->a_text + sizeof(struct exec));
 
 	/* set up for bss segment */
 	baddr = roundup(elp->el_daddr + a_out->a_data, NBPG);
 	bsize = elp->el_daddr + elp->el_dsize - baddr;
 	if (bsize > 0) {
-		NEW_VMCMD(&vmspace->vm_map, baddr, bsize
-				VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE,
-				MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, 0);
+		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_zero, bsize, baddr,
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), NULL, 0);
 	}
 
 	return (*elp->el_esch->ex_setup_stack)(elp);
@@ -184,17 +184,18 @@ exec_aout_prep_omagic(elp)
 	elp->el_entry = a_out->a_entry;
 
 	/* set up for text and data segment */
-	NEW_VMCMD(&vmspace->vm_map, elp->el_taddr, a_out->a_text + a_out->a_data,
-			VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE,
-			MAP_PRIVATE | MAP_FIXED, (caddr_t)elp->el_vnodep, sizeof(struct exec));
+	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, a_out->a_text + a_out->a_data,
+			elp->el_taddr, (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+			elp->el_vnodep, sizeof(struct exec));
 
 	/* set up for bss segment */
 	baddr = roundup(elp->el_daddr + a_out->a_data, NBPG);
 	bsize = elp->el_daddr + elp->el_dsize - baddr;
 	if (bsize > 0) {
-		NEW_VMCMD(&vmspace->vm_map, baddr, bsize, VM_PROT_READ | VM_PROT_EXECUTE,
-				VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE, MAP_PRIVATE | MAP_FIXED,
-				(caddr_t)elp->el_vnodep, 0);
+		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_zero, bsize, baddr,
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), NULL, 0);
 	}
 
 	/*

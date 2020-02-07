@@ -35,6 +35,8 @@
 
 #include <machine/ecoff_machdep.h>
 
+//#ifdef ECOFF32_PAD
+
 struct ecoff_filehdr {
 	u_short f_magic;	/* magic number */
 	u_short f_nscns;	/* # of sections */
@@ -48,7 +50,7 @@ struct ecoff_filehdr {
 struct ecoff_aouthdr {
 	u_short magic;
 	u_short vstamp;
-	//ECOFF_PAD
+	ECOFF_PAD
 	u_long  tsize;
 	u_long  dsize;
 	u_long  bsize;
@@ -56,7 +58,7 @@ struct ecoff_aouthdr {
 	u_long  text_start;
 	u_long  data_start;
 	u_long  bss_start;
-	//ECOFF_MACHDEP;
+	ECOFF_MACHDEP;
 };
 
 struct ecoff_scnhdr {	/* needed for size info */
@@ -87,16 +89,16 @@ struct ecoff_exechdr {
         (((value) + (by) - 1) & ~((by) - 1))
 
 #define ECOFF_BLOCK_ALIGN(ep, value) \
-        ((ep)->a.magic == ECOFF_ZMAGIC ? ECOFF_ROUND((value), ECOFF_LDPGSZ) : \
-	 (value))
+	((ep)->a.magic == ECOFF_ZMAGIC ? ECOFF_ROUND((value), ECOFF_LDPGSZ) : \
+	(value))
 
 #define ECOFF_TXTOFF(ep) \
         ((ep)->a.magic == ECOFF_ZMAGIC ? 0 : \
-	 ECOFF_ROUND(ECOFF_HDR_SIZE + (ep)->f.f_nscns * \
+        ECOFF_ROUND(ECOFF_HDR_SIZE + (ep)->f.f_nscns * \
 		     sizeof(struct ecoff_scnhdr), ECOFF_SEGMENT_ALIGNMENT(ep)))
 
 #define ECOFF_DATOFF(ep) \
-        (ECOFF_BLOCK_ALIGN((ep), ECOFF_TXTOFF(ep) + (ep)->a.tsize))
+        ((ECOFF_BLOCK_ALIGN((ep), ECOFF_TXTOFF(ep) + (ep)->a.tsize)))
 
 #define ECOFF_SEGMENT_ALIGN(ep, value) \
         (ECOFF_ROUND((value), ((ep)->a.magic == ECOFF_ZMAGIC ? ECOFF_LDPGSZ : \

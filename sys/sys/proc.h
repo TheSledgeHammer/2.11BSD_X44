@@ -157,8 +157,8 @@ struct emul {
 	const struct sysent *e_sysent;		/* System call array */
 	int					e_arglen;		/* Extra argument size in words */
 
-	//void				*(*e_copyargs) __P((struct exec_linker *, struct ps_strings *, void *, void *));
-	//void				(*e_setregs) __P((struct proc *, struct exec_linker *, u_long));
+	void				*(*e_copyargs) __P((struct exec_linker *, struct ps_strings *, void *, void *));
+	void				(*e_setregs) __P((struct proc *, struct exec_linker *, u_long));
 	char				*e_sigcode;		/* Start of sigcode */
 	char				*e_esigcode;	/* End of sigcode */
 };

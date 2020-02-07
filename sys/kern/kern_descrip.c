@@ -5,9 +5,46 @@
  *
  *	@(#)kern_descrip.c	1.6 (2.11BSD) 1999/9/13
  */
+/*
+ * Copyright (c) 1982, 1986, 1989, 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ * (c) UNIX System Laboratories, Inc.
+ * All or some portions of this file are derived from material licensed
+ * to the University of California by American Telephone and Telegraph
+ * Co. or Unix System Laboratories, Inc. and are reproduced herein with
+ * the permission of UNIX System Laboratories, Inc.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ * $NetBSD: kern_descrip.c,v 1.147 2006/11/01 10:17:58 yamt Exp $
+ *	@(#)kern_descrip.c	8.8 (Berkeley) 2/14/95
+ */
 
 #include <sys/param.h>
 #include <sys/user.h>
+#include <sys/kernel.h>
 #include <sys/proc.h>
 #include <sys/file.h>
 #include <sys/systm.h>
@@ -15,6 +52,14 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/conf.h>
+#include <sys/fcntl.h>
+#include <sys/malloc.h>
+#include <sys/filedesc.h>
+
+#include <sys/unistd.h>
+#include <sys/resourcevar.h>
+
+#include <sys/mount.h>
 
 #include <sys/socket.h>
 #include <sys/socketvar.h>
@@ -163,7 +208,7 @@ fcntl()
 
 int
 fset(fp, bit, value)
-register struct file *fp;
+	register struct file *fp;
 	int bit, value;
 {
 
@@ -430,10 +475,171 @@ fdopen(dev, mode, type)
 }
 
 /*
+ * Copy a filedesc structure.
+ */
+struct filedesc *
+fdcopy(p)
+	struct proc *p;
+{
+	register struct filedesc *newfdp, *fdp = p->p_fd;
+	register struct file **fpp;
+	register int i;
+
+	MALLOC(newfdp, struct filedesc *, sizeof(struct filedesc0),
+	    M_FILEDESC, M_WAITOK);
+	bcopy(fdp, newfdp, sizeof(struct filedesc));
+	VREF(newfdp->fd_cdir);
+	if (newfdp->fd_rdir)
+		VREF(newfdp->fd_rdir);
+	newfdp->fd_refcnt = 1;
+
+	/*
+	 * If the number of open files fits in the internal arrays
+	 * of the open file structure, use them, otherwise allocate
+	 * additional memory for the number of descriptors currently
+	 * in use.
+	 */
+	if (newfdp->fd_lastfile < NDFILE) {
+		newfdp->fd_ofiles = ((struct filedesc0 *) newfdp)->fd_dfiles;
+		newfdp->fd_ofileflags =
+		    ((struct filedesc0 *) newfdp)->fd_dfileflags;
+		i = NDFILE;
+	} else {
+		/*
+		 * Compute the smallest multiple of NDEXTENT needed
+		 * for the file descriptors currently in use,
+		 * allowing the table to shrink.
+		 */
+		i = newfdp->fd_nfiles;
+		while (i > 2 * NDEXTENT && i > newfdp->fd_lastfile * 2)
+			i /= 2;
+		MALLOC(newfdp->fd_ofiles, struct file **, i * OFILESIZE,
+		    M_FILEDESC, M_WAITOK);
+		newfdp->fd_ofileflags = (char *) &newfdp->fd_ofiles[i];
+	}
+	newfdp->fd_nfiles = i;
+	bcopy(fdp->fd_ofiles, newfdp->fd_ofiles, i * sizeof(struct file **));
+	bcopy(fdp->fd_ofileflags, newfdp->fd_ofileflags, i * sizeof(char));
+	fpp = newfdp->fd_ofiles;
+	for (i = newfdp->fd_lastfile; i-- >= 0; fpp++)
+		if (*fpp != NULL)
+			(*fpp)->f_count++;
+	return (newfdp);
+}
+
+/* Release a filedesc structure. */
+void
+fdfree(p)
+	struct proc *p;
+{
+	register struct filedesc *fdp = p->p_fd;
+	struct file **fpp;
+	register int i;
+
+	if (--fdp->fd_refcnt > 0)
+		return;
+	fpp = fdp->fd_ofiles;
+	for (i = fdp->fd_lastfile; i-- >= 0; fpp++)
+		if (*fpp)
+			(void) closef(*fpp);
+	if (fdp->fd_nfiles > NDFILE)
+		FREE(fdp->fd_ofiles, M_FILEDESC);
+	vrele(fdp->fd_cdir);
+	if (fdp->fd_rdir)
+		vrele(fdp->fd_rdir);
+	FREE(fdp, M_FILEDESC);
+}
+
+void
+fdremove(fdp, fd)
+	register struct filedesc *fdp;
+	int fd;
+{
+	simple_lock(&fdp->fd_slock);
+	fdp->fd_ofiles[fd] = NULL;
+	fd_unused(fdp, fd);
+	simple_unlock(&fdp->fd_slock);
+}
+
+int
+fdrelease(p, fd)
+	struct proc *p;
+	int fd;
+{
+	struct filedesc	*fdp;
+	struct file	**fpp, *fp;
+
+	fdp = p->p_fd;
+	simple_lock(&fdp->fd_slock);
+	if (fd < 0 || fd > fdp->fd_lastfile)
+		goto badf;
+	fpp = &fdp->fd_ofiles[fd];
+	fp = *fpp;
+	if (fp == NULL)
+		goto badf;
+
+	simple_lock(&fp->f_slock);
+	if (!FILE_IS_USABLE(fp)) {
+		simple_unlock(&fp->f_slock);
+		goto badf;
+	}
+
+	FILE_USE(fp);
+
+	*fpp = NULL;
+	fdp->fd_ofileflags[fd] = 0;
+	fd_unused(fdp, fd);
+	simple_unlock(&fdp->fd_slock);
+	return (closef(fp));
+
+badf:
+	simple_unlock(&fdp->fd_slock);
+	return (EBADF);
+}
+
+/*
+ * Make this process not share its filedesc structure, maintaining
+ * all file descriptor state.
+ */
+void
+fdunshare(p)
+	struct proc *p;
+{
+	struct filedesc *newfd;
+
+	if(u->u_fd->fd_refcnt == 1)
+		return;
+
+	newfd = fdcopy(p);
+	fdfree(p);
+	p->p_fd = newfd;
+}
+
+/*
+ * Close any files on exec?
+ */
+void
+fdcloseexec(p)
+	struct proc *p;
+{
+	struct filedesc *fdp;
+	int	fd;
+
+	fdunshare(p);
+
+	fdp = p->p_fd;
+	for (fd = 0; fd <= fdp->fd_lastfile; fd++)
+		if (fdp->fd_ofileflags[fd] & UF_EXCLOSE)
+			(void) fdrelease(p, fd);
+}
+
+
+/*
  * Duplicate the specified descriptor to a free descriptor.
  */
 int
-dupfdopen(indx, dfd, mode, error)
+dupfdopen(fdp, indx, dfd, mode, error)
+	register struct filedesc *fdp;
 	register int indx, dfd;
 	int mode;
 	int error;
@@ -482,7 +688,6 @@ dupfdopen(indx, dfd, mode, error)
 		if	(indx > u->u_lastfile)
 			u->u_lastfile = indx;
 		return(0);
-#ifdef	haveportalfs
 	case ENXIO:
 		/*
 		 * Steal away the file pointer from dfd, and stuff it into indx.
@@ -504,13 +709,9 @@ dupfdopen(indx, dfd, mode, error)
 			if (dfd < fdp->fd_freefile)
 				fdp->fd_freefile = dfd;
 		return (0);
-#else
-		log(LOG_NOTICE, "dupfdopen");
-		/* FALLTHROUGH */
-#endif
-		break;
 	default:
 		return(error);
 	}
 	/* NOTREACHED */
 }
+

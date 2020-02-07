@@ -64,6 +64,7 @@ struct filedesc {
 	u_short	fd_freefile;		/* approx. next free file */
 	u_short	fd_cmask;			/* mask for file creation */
 	u_short	fd_refcnt;			/* reference count */
+	struct simplelock fd_slock;
 };
 
 /*

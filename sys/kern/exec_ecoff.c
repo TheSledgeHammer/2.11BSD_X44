@@ -97,20 +97,16 @@ exec_ecoff_prep_zmagic(elp, ecoff, vp)
 		elp->el_dsize = ecoff_aout->dsize + ecoff_aout->bsize;
 		elp->el_entry = ecoff_aout->entry;
 
-		/* set up for text */
-		NEW_VMCMD(&vmspace->vm_map, elp->el_taddr, ecoff_aout->tsize,
-				VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_EXECUTE,
-				MAP_PRIVATE | MAP_FIXED, (caddr_t)vp, ECOFF_TXTOFF(ecoff));
-
-		/* set up for data segment */
-		NEW_VMCMD(&vmspace->vm_map, elp->el_daddr, ecoff_aout->dsize,
-				VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE,
-				MAP_PRIVATE | MAP_FIXED, (caddr_t)vp, ECOFF_DATOFF(ecoff));
+		/* set up command for text and data segments */
+		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, ecoff_aout->tsize - ecoff_aout->dsize,
+				elp->el_taddr, (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), vp, ECOFF_TXTOFF(ecoff));
 
 		/* set up for bss segment */
-		NEW_VMCMD(&vmspace->vm_map, ECOFF_SEGMENT_ALIGN(ecoff, ecoff_aout->bss_start), ecoff_aout->bsize,
-				VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE,
-				MAP_PRIVATE | MAP_FIXED, (caddr_t)vp, 0);
+		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_zero, ecoff_aout->bsize,
+				ECOFF_SEGMENT_ALIGN(ecoff, ecoff_aout->bss_start),
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), vp, 0);
 
 		return (0);
 }
@@ -122,7 +118,6 @@ exec_ecoff_prep_nmagic(elp, ecoff, vp)
 	struct vnode *vp;
 {
 		struct ecoff_aouthdr *ecoff_aout = &ecoff->a;
-		struct vmspace *vmspace = elp->el_proc->p_vmspace;
 
 		elp->el_taddr = ECOFF_SEGMENT_ALIGN(ecoff, ecoff_aout->text_start);
 		elp->el_tsize = ecoff_aout->tsize;
@@ -131,20 +126,21 @@ exec_ecoff_prep_nmagic(elp, ecoff, vp)
 		elp->el_entry = ecoff_aout->entry;
 
 		/* set up for text */
-		NEW_VMCMD(&vmspace->vm_map, elp->el_taddr, elp->el_tsize,
-				VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_EXECUTE,
-				MAP_PRIVATE | MAP_FIXED, (caddr_t)vp, ECOFF_TXTOFF(ecoff));
+		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, elp->el_tsize, elp->el_taddr,
+				(VM_PROT_READ | VM_PROT_EXECUTE), (VM_PROT_READ | VM_PROT_EXECUTE),
+				vp, ECOFF_TXTOFF(ecoff));
 
 		/* set up for data segment */
-		NEW_VMCMD(&vmspace->vm_map, elp->el_daddr, elp->el_dsize,
-				VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE,
-				MAP_PRIVATE | MAP_FIXED, (caddr_t)vp, ECOFF_DATOFF(ecoff));
+		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, elp->el_dsize, elp->el_daddr,
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), vp, ECOFF_DATOFF(ecoff));
 
 		/* set up for bss segment */
 		if(ecoff_aout->bsize > 0) {
-			NEW_VMCMD(&vmspace->vm_map, ECOFF_SEGMENT_ALIGN(ecoff, ecoff_aout->bss_start), ecoff_aout->bsize,
-					VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE,
-					MAP_PRIVATE | MAP_FIXED, (caddr_t)vp, 0);
+			NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, ecoff_aout->bsize,
+					ECOFF_SEGMENT_ALIGN(ecoff, ecoff_aout->bss_start),
+					(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+					(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), vp, 0);
 		}
 
 		return (0);
@@ -156,26 +152,23 @@ exec_ecoff_prep_omagic(elp, ecoff, vp)
 	struct ecoff_exechdr *ecoff;
 	struct vnode *vp;
 {
-		struct ecoff_aouthdr *ecoff_aout = &ecoff->a;
-		struct vmspace *vmspace = elp->el_proc->p_vmspace;
+	struct ecoff_aouthdr *ecoff_aout = &ecoff->a;
 
-		elp->el_taddr = ECOFF_SEGMENT_ALIGN(ecoff, ecoff_aout->text_start);
-		elp->el_tsize = ecoff_aout->tsize;
-		elp->el_daddr = ECOFF_SEGMENT_ALIGN(ecoff, ecoff_aout->data_start);
-		elp->el_dsize = ecoff_aout->dsize + ecoff_aout->bsize;
-		elp->el_entry = ecoff_aout->entry;
+	elp->el_taddr = ECOFF_SEGMENT_ALIGN(ecoff, ecoff_aout->text_start);
+	elp->el_tsize = ecoff_aout->tsize;
+	elp->el_daddr = ECOFF_SEGMENT_ALIGN(ecoff, ecoff_aout->data_start);
+	elp->el_dsize = ecoff_aout->dsize + ecoff_aout->bsize;
+	elp->el_entry = ecoff_aout->entry;
 
-		/* set up for text and data */
-		NEW_VMCMD(&vmspace->vm_map, elp->el_taddr, ecoff_aout->tsize + ecoff_aout->dsize,
-				VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_EXECUTE,
-				MAP_PRIVATE | MAP_FIXED, (caddr_t)vp, ECOFF_TXTOFF(ecoff));
+	/* set up for text and data */
+	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, ecoff_aout->tsize + ecoff_aout->dsize, elp->el_taddr,
+			(VM_PROT_READ|VM_PROT_WRITE|VM_PROT_EXECUTE), (VM_PROT_READ|VM_PROT_WRITE|VM_PROT_EXECUTE), vp, ECOFF_TXTOFF(ecoff));
 
-		/* set up for bss segment */
-		if(ecoff_aout->bsize > 0) {
-			NEW_VMCMD(&vmspace->vm_map, ECOFF_SEGMENT_ALIGN(ecoff, ecoff_aout->bss_start), ecoff_aout->bsize,
-					VM_PROT_READ | VM_PROT_EXECUTE, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE,
-					MAP_PRIVATE | MAP_FIXED, (caddr_t)vp, 0);
-		}
+	/* set up for bss segment */
+	if(ecoff_aout->bsize > 0) {
+		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_zero, ecoff_aout->bsize, ECOFF_SEGMENT_ALIGN(ecoff, ecoff_aout->bss_start),
+				(VM_PROT_READ|VM_PROT_WRITE|VM_PROT_EXECUTE), (VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE), NULL, 0);
+	}
 
-		return (0);
+	return (0);
 }

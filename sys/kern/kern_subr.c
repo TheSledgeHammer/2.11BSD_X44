@@ -12,7 +12,6 @@
 #include <sys/buf.h>
 #include <sys/uio.h>
 
-/* copied, for supervisory networking, to sys_net.c */
 int
 uiomove(cp, n, uio)
 	caddr_t cp;

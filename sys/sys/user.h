@@ -106,6 +106,7 @@ struct user {
 	struct file 		*u_ofile[NOFILE];		/* file structures for open files */
 	char				u_pofile[NOFILE];		/* per-process flags of open files */
 	int					u_lastfile;				/* high-water mark of u_ofile */
+	struct filedesc		*u_fd;					/* Ptr to open files structure. */
 #define	UF_EXCLOSE 		0x1						/* auto-close on exec */
 #define	UF_MAPPED 		0x2						/* mapped from device */
 #define u_cdir 			u_nd->ni_cdir			/* current directory */

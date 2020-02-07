@@ -33,6 +33,7 @@ struct	file {
 	off_t	f_offset;
 	struct ucred *f_cred;	/* credentials associated with descriptor */
 	struct fileops *f_ops;
+	struct simplelock f_slock;
 };
 
 struct fileops {

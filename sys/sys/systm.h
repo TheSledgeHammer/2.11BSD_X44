@@ -68,7 +68,17 @@ extern char	curpri;					/* more scheduling */
 extern int icode[];					/* user init code */
 extern int szicode;					/* its size */
 
+/*
+ * Structure of the system-entry table
+ */
+extern struct sysent
+{
+	char	sy_narg;			/* total number of arguments */
+	int		(*sy_call)();		/* handler */
+} sysent[];
+
 int	noproc;							/* no one is running just now */
+
 
 /* casts to keep lint happy */
 #define	insque(q,p)	_insque((caddr_t)q,(caddr_t)p)

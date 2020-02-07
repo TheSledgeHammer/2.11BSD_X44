@@ -60,6 +60,7 @@
 #include <sys/dirent.h>
 #include <vfs/fdesc/fdesc.h>
 
+
 #define cttyvp(p) ((p)->p_flag & P_CONTROLT ? (p)->p_session->s_ttyvp : NULL)
 
 #define FDL_WANT	0x01
@@ -361,9 +362,9 @@ fdesc_attr(fd, vap, cred, p)
 			vap->va_fileid = stb.st_ino;
 			vap->va_size = stb.st_size;
 			vap->va_blocksize = stb.st_blksize;
-			vap->va_atime = stb.st_atimespec;
-			vap->va_mtime = stb.st_mtimespec;
-			vap->va_ctime = stb.st_ctimespec;
+			vap->va_atime = stb.st_atime;
+			vap->va_mtime = stb.st_mtime;
+			vap->va_ctime = stb.st_ctime;
 			vap->va_gen = stb.st_gen;
 			vap->va_flags = stb.st_flags;
 			vap->va_rdev = stb.st_rdev;
@@ -428,8 +429,8 @@ fdesc_getattr(ap)
 		vap->va_gid = 0;
 		vap->va_fsid = vp->v_mount->mnt_stat.f_fsid.val[0];
 		vap->va_blocksize = DEV_BSIZE;
-		vap->va_atime.ts_sec = boottime.tv_sec;
-		vap->va_atime.ts_nsec = 0;
+		vap->va_atime.tv_sec = boottime.tv_sec;
+		vap->va_atime.tv_nsec = 0;
 		vap->va_mtime = vap->va_atime;
 		vap->va_ctime = vap->va_mtime;
 		vap->va_gen = 0;

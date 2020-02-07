@@ -60,40 +60,10 @@ static int			nexecs;
 
 extern const char * const syscallnames[];
 extern char	sigcode[], esigcode[];
+
 struct vm_object *emul_211bsd_object;
 
-void	syscall(void);
-
-static const struct sa_emul saemul_211bsd = {
-	sizeof(ucontext_t),
-	sizeof(struct sa_t),
-	sizeof(struct sa_t *),
-	NULL,
-	NULL,
-	cpu_upcall,
-	(void (*)(struct lwp *, void *))getucontext,
-	sa_ucsp
-};
-
-
-/* 211BSD emul struct */
-const struct emul emul_211bsd = {
-		"211bsd",
-		NULL,		/* emulation path */
-		NULL,
-		SYS_syscall,
-		SYS_NSYSENT,
-		sysent,
-		syscallnames,
-		sendsig,
-		trapsignal,
-		sigcode,
-		esigcode,
-		&emul_211bsd_object,
-		setregs,
-		syscall_intern,
-		&saemul_211bsd,
-};
+void syscall(void);
 
 static void link_ex(struct execsw_entry **, const struct execsw *);
 
@@ -128,7 +98,7 @@ execve(p, uap, retval)
 
 		if (exec_maxhdrsz == 0) {
 			for (i = 0; i < nexecs; i++)
-				if (execsw[i]->ex_check != NULL && execsw[i]->ex_hdrsz > exec_maxhdrsz)
+				if (execsw[i]->ex_makecmds != NULL && execsw[i]->ex_hdrsz > exec_maxhdrsz)
 					exec_maxhdrsz = execsw[i]->ex_hdrsz;
 		}
 
@@ -421,7 +391,7 @@ check_exec(elp)
 		int newerror;
 
 		elp->el_esch = execsw[i];
-		newerror = (*execsw[i]->ex_check)(p, elp);
+		newerror = (*execsw[i]->ex_makecmds)(p, elp);
 		/* make sure the first "interesting" error code is saved. */
 		if (!newerror || error == ENOEXEC)
 			error = newerror;
@@ -591,24 +561,6 @@ emul_unregister(const char *name)
 			goto out;
 		}
 	}
-
-	/*
-	 * Test if any process is running under this emulation - since
-	 * emul_unregister() is running quite sendomly, it's better
-	 * to do expensive check here than to use any locking.
-	 */
-	/*
-	proclist_lock_read();
-	for (pd = proclists; pd->pd_list != NULL && !error; pd++) {
-		PROCLIST_FOREACH(ptmp, pd->pd_list) {
-			if (ptmp->p_emul == it->el_emul) {
-				error = EBUSY;
-				break;
-			}
-		}
-	}
-	proclist_unlock_read();
-	*/
 
 	if (error)
 		goto out;

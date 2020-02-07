@@ -1,4 +1,5 @@
 TODO:
+- Complete: exec_pecoff
 init_main.c
 - lines 250 to 262
 - uipc_mbuf.c: mbinit
