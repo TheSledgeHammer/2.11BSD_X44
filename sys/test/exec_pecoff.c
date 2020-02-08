@@ -171,7 +171,89 @@ pecoff_load_file(elp, path, vcset, entry, pecoff_arg)
 	/* get attributes */
 	if ((error = VOP_GETATTR(vp, &attr, p->p_cred, p)) != 0)
 		goto badunlock;
+	/*
+	 * Check mount point.  Though we're not trying to exec this binary,
+	 * we will be executing code from it, so if the mount point
+	 * disallows execution or set-id-ness, we punt or kill the set-id.
+	 */
+	if (vp->v_mount->mnt_flag & MNT_NOEXEC) {
+		error = EACCES;
+		goto badunlock;
+	}
+	if (vp->v_mount->mnt_flag & MNT_NOSUID)
+		elp->el_attr->va_mode &= ~(S_ISUID | S_ISGID);
 
+	if ((error = vn_marktext(vp)))
+		goto badunlock;
+
+	VOP_UNLOCK(vp, 0);
+	/*
+	 * Read header.
+	 */
+	error = exec_read_from(vp, 0, &pecoff_dos, sizeof(pecoff_dos));
+	if (error != 0)
+		goto bad;
+	if ((error = pecoff_signature(vp, &pecoff_dos)) != 0)
+		goto bad;
+	coff_fp = malloc(PECOFF_HDR_SIZE, M_TEMP, M_WAITOK);
+	peofs = pecoff_dos.d_peofs + sizeof(signature) - 1;
+	error = exec_read_from(vp, peofs, coff_fp, PECOFF_HDR_SIZE);
+	if (error != 0)
+		goto bad;
+	if (COFF_BADMAG(coff_fp)) {
+		error = ENOEXEC;
+		goto bad;
+	}
+	coff_aout = (void *)((char *)coff_fp + sizeof(struct coff_filehdr));
+	pecoff_opt = (void *)((char *)coff_aout + sizeof(struct coff_aouthdr));
+	/* read section header */
+	scnsiz = sizeof(struct coff_scnhdr) * coff_fp->f_nscns;
+	coff_sh = malloc(scnsiz, M_TEMP, M_WAITOK);
+	if ((error = exec_read_from(vp, peofs + PECOFF_HDR_SIZE, coff_sh, scnsiz)) != 0)
+		goto bad;
+
+	/*
+	 * Read section header, and mmap.
+	 */
+	for (i = 0; i < coff_fp->f_nscns; i++) {
+		int prot = 0;
+		long addr;
+		u_long size;
+
+		if (coff_sh[i].s_flags & COFF_STYP_DISCARD)
+			continue;
+		/* XXX ? */
+		if ((coff_sh[i].s_flags & COFF_STYP_TEXT) &&
+		    (coff_sh[i].s_flags & COFF_STYP_EXEC) == 0)
+			continue;
+		if ((coff_sh[i].s_flags & (COFF_STYP_TEXT|COFF_STYP_DATA| COFF_STYP_BSS| COFF_STYP_READ)) == 0)
+			continue;
+		coff_sh[i].s_vaddr += pecoff_opt->w_base; /* RVA --> VA */
+		pecoff_load_section(vcset, vp, &coff_sh[i], &addr, &size, &prot);
+	}
+	*entry = pecoff_opt->w_base + coff_aout->a_entry;
+	pecoff_arg->a_ldbase = pecoff_opt->w_base;
+	pecoff_arg->a_ldexport = pecoff_opt->w_imghdr[0].i_vaddr + pecoff_opt->w_base;
+
+	free(coff_fp, M_TEMP);
+	free(coff_sh, M_TEMP);
+	/*XXXUNCONST*/
+	free(__UNCONST(bp), M_TEMP);
+	vrele(vp);
+	return 0;
+
+badunlock:
+	VOP_UNLOCK(vp, 0);
+
+bad:
+	if (coff_fp != 0)
+		free(coff_fp, M_TEMP);
+	if (coff_sh != 0)
+		free(coff_sh, M_TEMP);
+	/*XXXUNCONST*/
+	free(__UNCONST(bp), M_TEMP);
+	vrele(vp);
+	return error;
 }
 
 /*

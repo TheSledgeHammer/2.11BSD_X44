@@ -25,6 +25,9 @@
 
 struct proc *slpque[SQSIZE];
 
+/*
+ * Force switch among equal priority processes every 100ms.
+ */
 void
 roundrobin(arg)
 	void *arg;
@@ -32,6 +35,8 @@ roundrobin(arg)
 	need_resched();
 	timeout(roundrobin, NULL, hz / 10);
 }
+
+#define	PPQ	(128 / NQS)				/* priorities per queue */
 
 /*
  * Recompute process priorities, once a second
@@ -43,7 +48,6 @@ schedcpu(arg)
 	register struct proc *p;
 	register int a;
 	register u_char	curproc;
-
 
 	wakeup((caddr_t)&lbolt);
 	for (p = allproc; p != NULL; p = p->p_nxt) {
@@ -72,10 +76,10 @@ schedcpu(arg)
 		if (a > 255)
 			a = 255;
 		p->p_cpu = a;
+		p->p_estcpu = min(p->p_cpu, UCHAR_MAX);
 		resetpri(p);
 		if (p->p_pri >= PUSER) {
 			curproc = setpri(p);
-#define	PPQ	(128 / NQS)				/* priorities per queue */
 			if((p != curproc) &&
 					p->p_stat == SRUN &&
 					(p->p_flag & P_INMEM) &&

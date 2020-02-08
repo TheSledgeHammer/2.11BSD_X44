@@ -50,7 +50,7 @@
 #include <sys/vnode.h>
 #include <vm/include/vm.h>
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 
 struct exec_linker {
 	const char 					*el_name;				/* file's name */
