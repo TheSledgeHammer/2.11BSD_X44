@@ -50,7 +50,7 @@
 #include <sys/vnode.h>
 #include <vm/include/vm.h>
 
-#ifdef _KERNEL
+//#ifdef _KERNEL
 
 struct exec_linker {
 	const char 					*el_name;				/* file's name */
@@ -150,27 +150,27 @@ struct execsw_entry {
 
 extern struct lock 	exec_lock;
 
-void 	kill_vmcmd(struct exec_vmcmd **);
-void 	vmcmdset_extend(struct exec_vmcmd_set *);
-void 	kill_vmcmds(struct exec_vmcmd_set *);
+void 	kill_vmcmd (struct exec_vmcmd **);
+void 	vmcmdset_extend (struct exec_vmcmd_set *);
+void 	kill_vmcmds (struct exec_vmcmd_set *);
 
-int 	vmcmd_map_pagedvn(struct exec_linker *);
-int 	vmcmd_map_readvn(struct exec_linker *);
-int 	vmcmd_readvn(struct exec_linker *);
-int		vmcmd_map_zero(struct exec_linker *);
-int 	vmcmd_create_vmspace(struct exec_linker *);
+int 	vmcmd_map_pagedvn (struct exec_linker *);
+int 	vmcmd_map_readvn (struct exec_linker *);
+int 	vmcmd_readvn (struct exec_linker *);
+int		vmcmd_map_zero (struct exec_linker *);
+int 	vmcmd_create_vmspace (struct exec_linker *);
 
-int 	exec_extract_strings(struct exec_linker *, char *, char * const *);
-int 	*exec_copyout_strings(struct exec_linker *, struct ps_strings *);
-void 	*copyargs(struct exec_linker *, struct ps_strings *, void *, void *);
+int 	exec_extract_strings (struct exec_linker *, char *, char * const *);
+int 	*exec_copyout_strings (struct exec_linker *, struct ps_strings *);
+void 	*copyargs (struct exec_linker *, struct ps_strings *, void *, void *);
 
-void 	setregs(struct proc *, struct exec_linker *, u_long);
+void 	setregs (struct proc *, struct exec_linker *, u_long);
 
-int		check_exec(struct exec_linker *);
+int		check_exec (struct exec_linker *);
 
-int 	exec_setup_stack(struct exec_linker *);
+int 	exec_setup_stack (struct exec_linker *);
 
-void 	new_vmcmd(struct exec_vmcmd_set *evsp, int (*proc)(struct proc * p, struct exec_vmcmd *),
+void 	new_vmcmd (struct exec_vmcmd_set *evsp, int (*proc)(struct proc * p, struct exec_vmcmd *),
 		u_long size, u_long addr, u_int prot, u_int maxprot,
 		int flags, struct vnode *vp, u_long offset);
 

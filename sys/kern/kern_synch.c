@@ -25,6 +25,14 @@
 
 struct proc *slpque[SQSIZE];
 
+void
+roundrobin(arg)
+	void *arg;
+{
+	need_resched();
+	timeout(roundrobin, NULL, hz / 10);
+}
+
 /*
  * Recompute process priorities, once a second
  */
@@ -34,6 +42,8 @@ schedcpu(arg)
 {
 	register struct proc *p;
 	register int a;
+	register u_char	curproc;
+
 
 	wakeup((caddr_t)&lbolt);
 	for (p = allproc; p != NULL; p = p->p_nxt) {
@@ -62,8 +72,23 @@ schedcpu(arg)
 		if (a > 255)
 			a = 255;
 		p->p_cpu = a;
-		if (p->p_pri >= PUSER)
-			setpri(p);
+		resetpri(p);
+		if (p->p_pri >= PUSER) {
+			curproc = setpri(p);
+#define	PPQ	(128 / NQS)				/* priorities per queue */
+			if((p != curproc) &&
+					p->p_stat == SRUN &&
+					(p->p_flag & P_INMEM) &&
+					(p->p_pri / PPQ) != (curproc / PPQ)) {
+				remrq(p);
+				p->p_pri = curproc;
+				setpri(p);
+				/* setrq(p); in 2.11BSD;
+				 * setrunqueue(p) in 4.4BSD-Lite2: in sparc, i386 (missing) */
+			} else {
+				setpri(p);
+			}
+		}
 	}
 	vmmeter();
 	if (runin!=0) {
@@ -91,7 +116,7 @@ updatepri(p)
 	if (a > 255)
 		a = 255;
 	p->p_cpu = a;
-	(void) setpri(p);
+	(void) resetpri(p);
 }
 
 /*
@@ -113,7 +138,7 @@ tsleep(ident, priority, timo)
 	caddr_t	ident;
 	int	priority;
 	u_short	timo;
-	{
+{
 	register struct proc *p = u->u_procp;
 	register struct proc **qp;
 	int	s;
@@ -121,8 +146,7 @@ tsleep(ident, priority, timo)
 	void	endtsleep();
 
 	s = splhigh();
-	if	(panicstr)
-		{
+	if (panicstr) {
 /*
  * After a panic just give interrupts a chance then just return.  Don't
  * run any other procs (or panic again below) in case this is the idle
@@ -194,7 +218,7 @@ resume:
 		return(ERESTART);
 		}
 	return(0);
-	}
+}
 
 /*
  * Implement timeout for tsleep above.  If process hasn't been awakened
@@ -205,7 +229,7 @@ resume:
 void
 endtsleep(p)
 	register struct proc *p;
-	{
+{
 	register int	s;
 
 	s = splhigh();
@@ -218,7 +242,7 @@ endtsleep(p)
 		p->p_flag |= P_TIMEOUT;
 		}
 	splx(s);
-	}
+}
 
 /*
  * Give up the processor till a wakeup occurs on chan, at which time the 
@@ -418,9 +442,14 @@ swtch()
 	register int n;
 	struct proc *pp, *pq;
 	int s;
-#ifdef UCB_METER
-	cnt.v_swtch++;
+
+#ifdef DEBUG
+	if (p->p_simple_locks)
+		panic("sleep: holding simple lock");
 #endif
+
+	cnt.v_swtch++;
+
 	/* If not the idle process, resume the idle process. */
 	if (u->u_procp != &proc[0]) {
 		if (setjmp(&u->u_rsave)) {
@@ -548,10 +577,24 @@ void
 rqinit()
 {
 	register int i;
-	for (i = 0; i < NQS; i++)
-	{
+	for (i = 0; i < NQS; i++) {
 		qs[i].ph_link = qs[i].ph_rlink = (struct proc *)&qs[i];
-		rtqs[i].ph_link = rtqs[i].ph_rlink = (struct proc *)&rtqs[i];
-		idqs[i].ph_link = idqs[i].ph_rlink = (struct proc *)&idqs[i];
 	}
+}
+
+/*
+ * Compute the priority of a process when running in user mode.
+ * Arrange to reschedule if the resulting priority is better
+ * than that of the current process.
+ */
+void
+resetpri(p)
+	register struct proc *p;
+{
+	register unsigned int newpri;
+	int curpri = setpri(p);
+	newpri = PUSER + p->p_estcpu / 4 + 2 * p->p_nice;
+	newpri = min(newpri, MAXPRI);
+	if (newpri < curpri)
+		need_resched();
 }

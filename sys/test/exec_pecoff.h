@@ -33,6 +33,7 @@
 
 #ifndef _PECOFF_EXEC_H_
 #define _PECOFF_EXEC_H_
+
 #include <machine/coff_machdep.h>
 
 struct pecoff_dos_filehdr {
@@ -48,11 +49,11 @@ struct pecoff_dos_filehdr {
 
 /* magic */
 #define COFF_OMAGIC	0407	/* text not write-protected; data seg
-				   is contiguous with text */
+				   	   	   	   is contiguous with text */
 #define COFF_NMAGIC	0410	/* text is write-protected; data starts
-				   at next seg following text */
+				   	   	   	   at next seg following text */
 #define COFF_ZMAGIC	0413	/* text and data segs are aligned for
-				   direct paging */
+				   	   	   	   direct paging */
 #define COFF_SMAGIC	0443	/* shared lib */
 
 #define COFF_LDPGSZ 4096 /* XXX */
@@ -115,10 +116,20 @@ struct pecoff_args {
 	struct pecoff_opthdr a_opthdr;
 };
 
-extern const struct emul emul_pecoff;
+#ifdef DEBUG_PECOFF
+#define DPRINTF(a)      uprintf a
+#else
+#define DPRINTF(a)
+#endif
 
 struct exec_linker;
-int exec_pecoff_makecmds (struct exec_linker *);
+int pecoff_signature (struct vnode *vp, struct pecoff_dos_filehdr *pecoff_dos);
+int pecoff_load_file (struct exec_linker *elp, const char *path, struct exec_vmcmd_set *vcset, u_long *entry, struct pecoff_args *pecoff_arg);
+int exec_pecoff_linker (struct exec_linker *);
+int exec_pecoff_coff_linker (struct exec_linker *elp, struct coff_filehdr *coff_fp, int peofs);
+int exec_pecoff_prep_omagic (struct exec_linker *elp, struct coff_filehdr *coff_fp, struct coff_aouthdr *coff_aout, int peofs);
+int exec_pecoff_prep_mmagic (struct exec_linker *elp, struct coff_filehdr *coff_fp, struct coff_aouthdr *coff_aout, int peofs);
+int exec_pecoff_prep_zmagic (struct exec_linker *elp, struct coff_filehdr *coff_fp, struct coff_aouthdr *coff_aout, int peofs);
 int	pecoff_copyargs (struct exec_linker *, struct ps_strings *, char **, void *);
 
 #endif

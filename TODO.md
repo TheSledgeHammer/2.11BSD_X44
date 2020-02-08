@@ -1,5 +1,6 @@
 TODO:
-- Complete: exec_pecoff
+- Complete: exec_pecoff.c: pecoff_load_file
+- Add: exec_coff.c
 init_main.c
 - lines 250 to 262
 - uipc_mbuf.c: mbinit

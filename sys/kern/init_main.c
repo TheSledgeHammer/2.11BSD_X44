@@ -74,6 +74,7 @@ main()
 	register_t rval[2];
 	extern struct pdevinit pdevinit[];
 	extern struct sysentvec sysvec;
+	extern void roundrobin __P((void *));
 	extern void schedcpu __P((void *));
 
 	/*
@@ -196,6 +197,7 @@ main()
 	splx(s);
 
 	/* Kick off timeout driven events by calling first time. */
+	roundrobin(NULL);
 	schedcpu(NULL);
 
 	/* Mount the root file system. */
@@ -246,7 +248,7 @@ main()
 	scheduler();
 	/* NOTREACHED */
 
-	/* Below needs attention: Not in correct place */
+	/* Below needs attention: Not in correct place: Old VM references */
 	/*
 	 * make init process
 	 */
