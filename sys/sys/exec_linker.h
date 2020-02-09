@@ -50,46 +50,46 @@
 #include <sys/vnode.h>
 #include <vm/include/vm.h>
 
-#ifdef _KERNEL
+//#ifdef _KERNEL
 
 struct exec_linker {
-	const char 					*el_name;				/* file's name */
-	struct 	proc 		        *el_proc;			    /* our process struct */
-	struct 	execa 		        *el_uap; 			    /* syscall arguments */
-	const struct execsw 		*el_esch;				/* execsw entry */
+	const char 				*el_name;				/* file's name */
+	struct 	proc 		    *el_proc;			    /* our process struct */
+	struct 	execa 		    *el_uap; 			    /* syscall arguments */
+	const struct execsw 	*el_esch;				/* execsw entry */
 
-	struct	vnode 		        *el_vnodep;			    /* executable's vnode */
-	struct	vattr 		        *el_attr;			    /* executable's attributes */
-	struct 	exec_vmcmd_set    	*el_vmcmds;			    /* executable's vmcmd_set */
+	struct	vnode 		    *el_vnodep;			    /* executable's vnode */
+	struct	vattr 		    *el_attr;			    /* executable's attributes */
+	struct 	exec_vmcmd_set  *el_vmcmds;			    /* executable's vmcmd_set */
 
-	struct 	nameidata			el_ndp;					/* executable's nameidata */
+	struct 	nameidata		el_ndp;					/* executable's nameidata */
 
-	struct  emul 				*el_emul;				/* os emulation */
-	void						*el_emul_arg;			/* emulation argument */
+	struct  emul 			*el_emul;				/* os emulation */
+	void					*el_emul_arg;			/* emulation argument */
 
-	void				        *el_image_hdr;			/* file's exec header */
-	u_int				        el_hdrlen;				/* length of ep_hdr */
-	u_int				        el_hdrvalid;			/* bytes of ep_hdr that are valid */
+	void				    *el_image_hdr;			/* file's exec header */
+	u_int				    el_hdrlen;				/* length of ep_hdr */
+	u_int				    el_hdrvalid;			/* bytes of ep_hdr that are valid */
 
-	segsz_t				        el_tsize;				/* size of process's text */
-	segsz_t				        el_dsize;				/* size of process's data(+bss) */
-	segsz_t				        el_ssize;				/* size of process's stack */
-	caddr_t				        el_taddr;				/* process's text address */
-	caddr_t				        el_daddr;				/* process's data(+bss) address */
-	caddr_t				        el_maxsaddr;			/* proc's max stack addr ("top") */
-	caddr_t				        el_minsaddr;			/* proc's min stack addr ("bottom") */
-	caddr_t 			        el_entry;				/* process's entry point */
-	caddr_t				        el_entryoffset;			/* offset to entry point */
-	caddr_t			        	el_vm_minaddr;			/* bottom of process address space */
-	caddr_t				        el_vm_maxaddr;			/* top of process address space */
-	u_int				        el_flags;				/* flags */
-	int							el_fd;					/* a file descriptor we're holding */
-	char						**el_fa;				/* a fake args vector for scripts */
+	segsz_t				    el_tsize;				/* size of process's text */
+	segsz_t				    el_dsize;				/* size of process's data(+bss) */
+	segsz_t				    el_ssize;				/* size of process's stack */
+	caddr_t				    el_taddr;				/* process's text address */
+	caddr_t				    el_daddr;				/* process's data(+bss) address */
+	caddr_t				    el_maxsaddr;			/* proc's max stack addr ("top") */
+	caddr_t				    el_minsaddr;			/* proc's min stack addr ("bottom") */
+	caddr_t 			    el_entry;				/* process's entry point */
+	caddr_t				    el_entryoffset;			/* offset to entry point */
+	caddr_t			        el_vm_minaddr;			/* bottom of process address space */
+	caddr_t				    el_vm_maxaddr;			/* top of process address space */
+	u_int				    el_flags;				/* flags */
+	int						el_fd;					/* a file descriptor we're holding */
+	char					**el_fa;				/* a fake args vector for scripts */
 
-	char 				        *el_stringbase;			/* base address of tmp string storage */
-	char 				        *el_stringp;			/* current 'end' pointer of tmp strings */
-	int 				        el_stringspace;			/* space left in tmp string storage area */
-	int 				        el_argc, el_envc;		/* count of argument and environment strings */
+	char 				    *el_stringbase;			/* base address of tmp string storage */
+	char 				    *el_stringp;			/* current 'end' pointer of tmp strings */
+	int 				    el_stringspace;			/* space left in tmp string storage area */
+	int 				    el_argc, el_envc;		/* count of argument and environment strings */
 };
 
 /* exec vmspace-creation command set; see below */
@@ -125,23 +125,6 @@ struct exec_vmcmd {
 #define	VMCMD_STACK		0x0008	/* entry is for a stack */
 };
 
-/* list of supported emulations */
-static
-LIST_HEAD(emlist_head, emul_entry) el_head;
-struct emul_entry {
-	LIST_ENTRY(emul_entry)	el_list;
-	const struct emul		*el_emul;
-	int						ro_entry;
-};
-
-/* list of dynamically loaded execsw entries */
-static
-LIST_HEAD(execlist_head, exec_entry) ex_head;
-struct exec_entry {
-	LIST_ENTRY(exec_entry)	ex_list;
-	const struct execsw		*ex;
-};
-
 /* structure used for building execw[] */
 struct execsw_entry {
 	struct execsw_entry	*next;
@@ -153,20 +136,22 @@ extern struct lock 	exec_lock;
 void 	kill_vmcmd (struct exec_vmcmd **);
 void 	vmcmdset_extend (struct exec_vmcmd_set *);
 void 	kill_vmcmds (struct exec_vmcmd_set *);
-
+int		exec_makecmds (struct proc *, struct exec_linker *);
+int		exec_runcmds (struct proc *, struct exec_linker *);
 int 	vmcmd_map_pagedvn (struct exec_linker *);
 int 	vmcmd_map_readvn (struct exec_linker *);
 int 	vmcmd_readvn (struct exec_linker *);
 int		vmcmd_map_zero (struct exec_linker *);
 int 	vmcmd_create_vmspace (struct exec_linker *);
-
+void 	*copyargs (struct exec_linker *, struct ps_strings *, void *, void *);
 int 	exec_extract_strings (struct exec_linker *, char *, char * const *);
 int 	*exec_copyout_strings (struct exec_linker *, struct ps_strings *);
-void 	*copyargs (struct exec_linker *, struct ps_strings *, void *, void *);
 
 void 	setregs (struct proc *, struct exec_linker *, u_long);
 
 int		check_exec (struct exec_linker *);
+int		exec_init (void);
+int		exec_read_from (struct proc *, struct vnode *, u_long off, void *, size_t);
 
 int 	exec_setup_stack (struct exec_linker *);
 

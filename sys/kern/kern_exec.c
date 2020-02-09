@@ -52,20 +52,21 @@
 #include <machine/cpu.h>
 #include <machine/reg.h>
 
-
-extern const struct execsw	execsw_builtin[];
-extern int			nexecs_builtin;
-static const struct execsw	**execsw = NULL;
-static int			nexecs;
-
-extern const char * const syscallnames[];
-extern char	sigcode[], esigcode[];
-
-struct vm_object *emul_211bsd_object;
-
-void syscall(void);
-
-static void link_ex(struct execsw_entry **, const struct execsw *);
+const struct emul emul_211bsd = {
+	"211bsd",
+	NULL,			/* emulation path */
+	sysent,
+#ifdef SYSCALL_DEBUG
+	syscallnames,
+#else
+	NULL,
+#endif
+	0,
+	copyargs,
+	setregs,
+	sigcode,
+	esigcode
+};
 
 void
 execv(p, uap, retval)
@@ -94,7 +95,6 @@ execve(p, uap, retval)
 		char *dp, *sp;
 		char **tmpfap;
 		struct exec_vmcmd *base_vcp = NULL;
-		extern struct emul emul_211bsd;
 
 		if (exec_maxhdrsz == 0) {
 			for (i = 0; i < nexecs; i++)
@@ -116,8 +116,8 @@ execve(p, uap, retval)
 		elp->el_vmcmds->evs_cnt = 0;
 		elp->el_vmcmds->evs_used = 0;
 		elp->el_vnodep = NULL;
-		elp->el_emul = &emul_211bsd;
 		elp->el_flags = 0;
+		elp->el_emul = &emul_211bsd;
 
 		/* Allocate temporary demand zeroed space for argument and environment strings */
 		error = vm_allocate(kernel_map, (vm_offset_t *)&elp->el_stringbase, ARG_MAX, TRUE);
@@ -482,282 +482,9 @@ copyargs(elp, arginfo, stack, argp)
 	return cpp;
 }
 
-/*
- * Find an emulation of given name in list of emulations.
- * Needs to be called with the exec_lock held.
- */
-const struct emul *
-emul_search(name)
-	const char *name;
-{
-	struct emul_entry *it;
-	LIST_FOREACH(it, &el_head, el_list) {
-		if (strcmp(name, it->el_emul->e_name) == 0)
-			return it->el_emul;
-	}
-	return NULL;
-}
-
-/*
- * Add an emulation to list, if it's not there already.
- */
 int
-emul_register(const struct emul *emul, int ro_entry)
+exec_sigcode_map(struct process *pr, struct emul *e)
 {
-	struct emul_entry	*ee;
-	int			error;
 
-	error = 0;
-	lockmgr(&exec_lock, LK_SHARED, NULL);
-
-	if (emul_search(emul->e_name)) {
-		error = EEXIST;
-		goto out;
-	}
-	MALLOC(ee, struct emul_entry *, sizeof(struct emul_entry), M_EXEC, M_WAITOK);
-	ee->el_emul = emul;
-	ee->ro_entry = ro_entry;
-	LIST_INSERT_HEAD(&el_head, ee, el_list);
-
- out:
-	lockmgr(&exec_lock, LK_RELEASE, NULL);
-	return error;
 }
 
-/*
- * Remove emulation with name 'name' from list of supported emulations.
- */
-int
-emul_unregister(const char *name)
-{
-	//const struct proclist_desc *pd;
-	struct proc *pd;
-	struct emul_entry	*it;
-	int			i, error;
-	struct proc		*ptmp;
-
-	error = 0;
-	lockmgr(&exec_lock, LK_SHARED, NULL);
-
-	LIST_FOREACH(it, &el_head, el_list) {
-		if (strcmp(it->el_emul->e_name, name) == 0)
-			break;
-	}
-
-	if (!it) {
-		error = ENOENT;
-		goto out;
-	}
-
-	if (it->ro_entry) {
-		error = EBUSY;
-		goto out;
-	}
-
-	/* test if any execw[] entry is still using this */
-	for(i=0; i < nexecs; i++) {
-		if (execsw[i]->ex_emul == it->el_emul) {
-			error = EBUSY;
-			goto out;
-		}
-	}
-
-	if (error)
-		goto out;
-
-
-	/* entry is not used, remove it */
-	LIST_REMOVE(it, el_list);
-	FREE(it, M_EXEC);
-
- out:
-	lockmgr(&exec_lock, LK_RELEASE, NULL);
-	return error;
-}
-
-/*
- * Add execsw[] entry.
- */
-int
-exec_add(struct proc *p, struct execsw *exp, const char *e_name)
-{
-	struct exec_entry	*it;
-	int					error;
-
-	error = 0;
-	lockmgr(&exec_lock, LK_EXCLUSIVE, NULL, p);
-
-	if(!exp->ex_emul) {
-		exp->ex_emul = emul_search(e_name);
-		if(!exp->ex_emul) {
-			error = ENOENT;
-			goto out;
-		}
-	}
-
-	LIST_FOREACH(it, &ex_head, ex_list) {
-		if(it->ex->ex_makecmds == exp->ex_makecmds && it->ex->u.elf_probe_func == exp->u.elf_probe_func && it->ex->ex_emul == exp->ex_emul) {
-			error = EEXIST;
-			return error;
-		}
-	}
-
-	/* if we got here, the entry doesn't exist yet */
-
-	MALLOC(it, struct exec_entry *, sizeof(struct exec_entry), M_EXEC, M_WAITOK);
-	it->ex = exp;
-	LIST_INSERT_HEAD(&ex_head, it, ex_list);
-
-	exec_init(0);
-
-out:
-	lockmgr(&exec_lock, LK_RELEASE, NULL, p);
-	return error;
-}
-
-/*
- * Remove execsw[] entry.
- */
-int
-exec_remove(const struct execsw *exp)
-{
-	struct exec_entry	*it;
-	int					error;
-
-	error = 0;
-	lockmgr(&exec_lock, LK_EXCLUSIVE, NULL);
-
-	LIST_FOREACH(it, &ex_head, ex_list) {
-		if(it->ex->ex_makecmds == exp->ex_makecmds && it->ex->u.elf_probe_func == exp->u.elf_probe_func  && it->ex->ex_emul == exp->ex_emul) {
-			break;
-		}
-	}
-	if (!it) {
-		error = ENOENT;
-		return error;
-	}
-
-	/* remove item from list and free resources */
-	LIST_REMOVE(it, ex_list);
-	FREE(it, M_EXEC);
-
-	/* update execsw[] */
-	exec_init(0);
-
-out:
-	lockmgr(&exec_lock, LK_RELEASE, NULL);
-	return error;
-}
-
-static void
-link_ex(struct execsw_entry **listp, const struct execsw *exp)
-{
-	struct execsw_entry *et, *e1;
-
-	et = (struct execsw_entry *) malloc(sizeof(struct execsw_entry), M_TEMP, M_WAITOK);
-	et->next = NULL;
-	et->ex = exp;
-	if (*listp == NULL) {
-		*listp = et;
-		return;
-	}
-	switch(et->ex->ex_prio) {
-	case EXECSW_PRIO_FIRST:
-		/* put new entry as the first */
-		et->next = *listp;
-		*listp = et;
-		break;
-	case EXECSW_PRIO_ANY:
-		/* put new entry after all *_FIRST and *_ANY entries */
-		for(e1 = *listp; e1->next
-			&& e1->next->ex->ex_prio != EXECSW_PRIO_LAST;
-			e1 = e1->next);
-		et->next = e1->next;
-		e1->next = et;
-		break;
-	case EXECSW_PRIO_LAST:
-		/* put new entry as the last one */
-		for(e1 = *listp; e1->next; e1 = e1->next);
-		e1->next = et;
-		break;
-	default:
-#ifdef DIAGNOSTIC
-		panic("execw[] entry with unknown priority %d found",
-			et->ex->ex_prio);
-#else
-		free(et, M_TEMP);
-#endif
-		break;
-	}
-}
-
-int
-exec_init(int init_boot)
-{
-	const struct execsw	**new_ex, * const *old_ex;
-	struct execsw_entry	*list, *e1;
-	struct exec_entry	*e2;
-	int					i, ex_sz;
-
-	if (init_boot) {
-
-		lock_init();
-
-		/* register compiled-in emulations */
-		for(i=0; i < nexecs_builtin; i++) {
-			if (execsw_builtin[i].ex_emul)
-				emul_register(execsw_builtin[i].ex_emul, 1);
-		}
-
-#ifdef DIAGNOSTIC
-		if (i == 0)
-			panic("no emulations found in execsw_builtin[]");
-#endif
-	}
-	/*
-	 * Build execsw[] array from builtin entries and entries added
-	 * at runtime.
-	 */
-	list = NULL;
-	for(i=0; i < nexecs_builtin; i++)
-		link_ex(&list, &execsw_builtin[i]);
-
-	/* Add dynamically loaded entries */
-	ex_sz = nexecs_builtin;
-	LIST_FOREACH(e2, &ex_head, ex_list) {
-		link_ex(&list, e2->ex);
-		ex_sz++;
-	}
-
-	/*
-	 * Now that we have sorted all execw entries, create new execsw[]
-	 * and free no longer needed memory in the process.
-	 */
-	new_ex = malloc(ex_sz * sizeof(struct execsw *), M_EXEC, M_WAITOK);
-	for(i=0; list; i++) {
-		new_ex[i] = list->ex;
-		e1 = list->next;
-		free(list, M_TEMP);
-		list = e1;
-	}
-
-	/*
-	 * New execsw[] array built, now replace old execsw[] and free
-	 * used memory.
-	 */
-	old_ex = execsw;
-	execsw = new_ex;
-	nexecs = ex_sz;
-	if (old_ex)
-		free(old_ex, M_EXEC);
-
-	/*
-	 * Figure out the maximum size of an exec header.
-	 */
-	exec_maxhdrsz = 0;
-	for (i = 0; i < nexecs; i++) {
-		if (execsw[i]->ex_hdrsz > exec_maxhdrsz)
-			exec_maxhdrsz = execsw[i]->ex_hdrsz;
-	}
-	return 0;
-}

@@ -52,7 +52,7 @@
 #include <sys/stat.h>
 
 #include <sys/exec_coff.h>
-#include <test/exec_pecoff.h>
+#include <sys/exec_pecoff.h>
 #include <machine/coff_machdep.h>
 
 #define PECOFF_SIGNATURE "PE\0\0"
@@ -89,7 +89,8 @@ pecoff_copyargs(elp, arginfo, stackp, argp)
  * Check PE signature.
  */
 int
-pecoff_signature(vp, pecoff_dos)
+pecoff_signature(p, vp, pecoff_dos)
+	struct proc *p;
 	struct vnode *vp;
 	struct pecoff_dos_filehdr *pecoff_dos;
 {
@@ -99,7 +100,7 @@ pecoff_signature(vp, pecoff_dos)
 	if (DOS_BADMAG(pecoff_dos)) {
 		return ENOEXEC;
 	}
-	error = exec_read_from(vp, pecoff_dos->d_peofs, tbuf, sizeof(tbuf));
+	error = exec_read_from(p, vp, pecoff_dos->d_peofs, tbuf, sizeof(tbuf));
 	if (error) {
 		return error;
 	}
@@ -190,14 +191,14 @@ pecoff_load_file(elp, path, vcset, entry, pecoff_arg)
 	/*
 	 * Read header.
 	 */
-	error = exec_read_from(vp, 0, &pecoff_dos, sizeof(pecoff_dos));
+	error = exec_read_from(p, vp, 0, &pecoff_dos, sizeof(pecoff_dos));
 	if (error != 0)
 		goto bad;
-	if ((error = pecoff_signature(vp, &pecoff_dos)) != 0)
+	if ((error = pecoff_signature(p, vp, &pecoff_dos)) != 0)
 		goto bad;
 	coff_fp = malloc(PECOFF_HDR_SIZE, M_TEMP, M_WAITOK);
 	peofs = pecoff_dos.d_peofs + sizeof(signature) - 1;
-	error = exec_read_from(vp, peofs, coff_fp, PECOFF_HDR_SIZE);
+	error = exec_read_from(p, vp, peofs, coff_fp, PECOFF_HDR_SIZE);
 	if (error != 0)
 		goto bad;
 	if (COFF_BADMAG(coff_fp)) {
@@ -209,7 +210,7 @@ pecoff_load_file(elp, path, vcset, entry, pecoff_arg)
 	/* read section header */
 	scnsiz = sizeof(struct coff_scnhdr) * coff_fp->f_nscns;
 	coff_sh = malloc(scnsiz, M_TEMP, M_WAITOK);
-	if ((error = exec_read_from(vp, peofs + PECOFF_HDR_SIZE, coff_sh, scnsiz)) != 0)
+	if ((error = exec_read_from(p, vp, peofs + PECOFF_HDR_SIZE, coff_sh, scnsiz)) != 0)
 		goto bad;
 
 	/*
@@ -312,7 +313,7 @@ exec_pecoff_linker(elp)
     if (elp->el_hdrvalid < PECOFF_DOS_HDR_SIZE) {
 		return ENOEXEC;
 	}
-	if ((error = pecoff_signature(elp->el_vnodep, pecoff_dos)) != 0)
+	if ((error = pecoff_signature(elp->el_proc, elp->el_vnodep, pecoff_dos)) != 0)
 		return error;
 
 	if ((error = vn_marktext(elp->el_vnodep)) != 0)
@@ -320,7 +321,7 @@ exec_pecoff_linker(elp)
 
 	peofs = pecoff_dos->d_peofs + sizeof(signature) - 1;
 	coff_fp = malloc(PECOFF_HDR_SIZE, M_TEMP, M_WAITOK);
-	error = exec_read_from(elp->el_vnodep, peofs, coff_fp, PECOFF_HDR_SIZE);
+	error = exec_read_from(elp->el_proc, elp->el_vnodep, peofs, coff_fp, PECOFF_HDR_SIZE);
 	if (error) {
 		free(coff_fp, M_TEMP);
 		return error;
@@ -380,7 +381,6 @@ exec_pecoff_prep_zmagic(elp, coff_aout, coff_fp, peofs)
 	struct coff_scnhdr *coff_sh;
 	struct pecoff_args *pecoff_arg;
 	int scnsiz = sizeof(struct coff_scnhdr) * coff_fp->f_nscns;
-	struct vmspace *vmspace = elp->el_proc->p_vmspace;
 
     pecoff_opt = (void *)((char *)pecoff_arg + sizeof(struct coff_aouthdr));
 
@@ -389,7 +389,7 @@ exec_pecoff_prep_zmagic(elp, coff_aout, coff_fp, peofs)
 	elp->el_dsize = 0;
 	/* read section header */
 	coff_sh = malloc(scnsiz, M_TEMP, M_WAITOK);
-	error = exec_read_from(elp->el_vnodep, peofs + PECOFF_HDR_SIZE, sh,
+	error = exec_read_from(elp->el_proc, elp->el_vnodep, peofs + PECOFF_HDR_SIZE, coff_sh,
 	    scnsiz);
 	if (error) {
 		free(coff_sh, M_TEMP);

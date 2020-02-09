@@ -431,6 +431,22 @@ setpri(pp)
 	return (p);
 }
 
+
+/* Get user priority */
+/*
+int
+getpri(pp)
+	register struct proc *pp;
+{
+	register int pri = (pp->p_cpu & 0377)/16;
+	pri += PUSER + pp->p_nice;
+	if(pp->p_pri == pri) {
+		return (pp->p_pri);
+	}
+	panic("No user priority set or found");
+	return(0);
+}
+*/
 /*
  * This routine is called to reschedule the CPU.  If the calling process is
  * not in RUN state, arrangements for it to restart must have been made
@@ -573,6 +589,21 @@ done:
 	splx(s);
 }
 
+/* Return the current run queue for proc */
+/*
+struct proc *
+getrq(p)
+	register struct proc *p;
+{
+	register int i;
+	for (i = 0; i < NQS; i++) {
+		if(p->p_link == qs[i].ph_link) {
+			return qs[i].ph_link;
+		}
+	}
+	return NULL;
+}
+*/
 /*
  * Initialize the (doubly-linked) run queues
  * to be empty.

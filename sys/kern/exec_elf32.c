@@ -397,7 +397,3 @@ exec_elf_linker(elp)
 
 	return ENOEXEC;
 }
-
-
-const struct execsw elf_execsw = { exec_elf_linker, "ELF" };
-TEXT_SET(execsw_set, elf_execsw);

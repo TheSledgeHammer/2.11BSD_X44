@@ -1,5 +1,6 @@
 TODO:
 - Add: exec_coff.c
+
 init_main.c
 - lines 250 to 262
 - uipc_mbuf.c: mbinit
@@ -10,7 +11,6 @@ init_main.c
 Kern:
 - inet: remanents of 2.11BSD's networking stack overlay
 - kern_clock.c
-- fs.h (believe it is for ufs1 not kernel)
 - sys_kern.c (used? or unused?)
 - uipc_syscalls.c
 

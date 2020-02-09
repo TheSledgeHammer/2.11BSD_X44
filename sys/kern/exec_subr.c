@@ -43,6 +43,7 @@
 #include <sys/resourcevar.h>
 
 #include <vm/include/vm.h>
+
 void new_vmcmd(struct exec_vmcmd_set *evsp, int (*proc)(struct proc * p, struct exec_vmcmd *),
 		u_long size, u_long addr, u_int  prot, u_int  maxprot, int flags, struct vnode *vnode, u_long offset)
 {
@@ -151,7 +152,7 @@ int vmcmd_map_pagedvn(elp)
 	 * do the map
 	 */
 	error = vm_mmap(&vmspace->vm_map, cmd->ev_addr, cmd->ev_size, prot, maxprot,
-			cmd->ev_flags, cmd->ev_handle, cmd->ev_offset);
+			cmd->ev_flags, cmd->ev_vnodep, cmd->ev_offset);
 	if (error) {
 		vobj->pager->pg_ops->pgo_dealloc(vobj);
 	}
@@ -188,13 +189,14 @@ int vmcmd_map_readvn(elp)
 int vmcmd_readvn(elp)
 	struct exec_linker *elp;
 {
-	struct vmspace *vmspace = elp->el_proc->p_vmspace;
+	struct proc *p = elp->el_proc;
+	struct vmspace *vmspace = p->p_vmspace;
 	struct exec_vmcmd *cmd = elp->el_vmcmds->evs_cmds;
 
 	int error;
 	vm_prot_t prot, maxprot;
 
-	error = vn_rdwr(UIO_READ, cmd->ev_handle, (caddr_t) cmd->ev_addr,
+	error = vn_rdwr(UIO_READ, cmd->ev_vnodep, (caddr_t) cmd->ev_addr,
 			cmd->ev_size, cmd->ev_offset, UIO_USERSPACE, IO_UNIT, p->p_ucred,
 			NULL, p);
 	if (error)
@@ -311,6 +313,27 @@ vmcmd_create_vmspace(elp)
 	} else {
 		return (0);
 	}
+}
+
+int
+exec_read_from(p, vp, off, bf, size)
+	struct proc *p;
+	struct vnode *vp;
+	u_long off;
+	void *bf;
+	size_t size;
+{
+	int error;
+	size_t resid;
+
+	if ((error = vn_rdwr(UIO_READ, vp, bf, size, off, UIO_SYSSPACE, 0, p->p_cred, &resid, NULL)) != 0)
+		return error;
+	/*
+	 * See if we got all of it
+	 */
+	if (resid != 0)
+		return ENOEXEC;
+	return 0;
 }
 
 /*

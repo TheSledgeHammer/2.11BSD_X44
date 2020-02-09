@@ -243,7 +243,7 @@ main()
 	}
 
 	/* Initialize exec structures */
-	exec_init(1);
+	exec_init();
 
 	scheduler();
 	/* NOTREACHED */

@@ -31,8 +31,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _PECOFF_EXEC_H_
-#define _PECOFF_EXEC_H_
+#ifndef SYS_PECOFF_EXEC_H_
+#define SYS_PECOFF_EXEC_H_
 
 #include <machine/coff_machdep.h>
 
@@ -116,13 +116,13 @@ struct pecoff_args {
 	struct pecoff_opthdr a_opthdr;
 };
 
+#ifdef _KERNEL
 #ifdef DEBUG_PECOFF
 #define DPRINTF(a)      uprintf a
 #else
 #define DPRINTF(a)
 #endif
 
-struct exec_linker;
 int pecoff_signature (struct vnode *vp, struct pecoff_dos_filehdr *pecoff_dos);
 int pecoff_load_file (struct exec_linker *elp, const char *path, struct exec_vmcmd_set *vcset, u_long *entry, struct pecoff_args *pecoff_arg);
 int exec_pecoff_linker (struct exec_linker *);
@@ -131,5 +131,5 @@ int exec_pecoff_prep_omagic (struct exec_linker *elp, struct coff_filehdr *coff_
 int exec_pecoff_prep_mmagic (struct exec_linker *elp, struct coff_filehdr *coff_fp, struct coff_aouthdr *coff_aout, int peofs);
 int exec_pecoff_prep_zmagic (struct exec_linker *elp, struct coff_filehdr *coff_fp, struct coff_aouthdr *coff_aout, int peofs);
 int	pecoff_copyargs (struct exec_linker *, struct ps_strings *, char **, void *);
-
-#endif
+#endif /* KERNEL */
+#endif /* SYS_PECOFF_EXEC_H_ */

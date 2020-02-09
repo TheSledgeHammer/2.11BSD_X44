@@ -149,18 +149,23 @@ struct pcred {
 };
 
 struct exec_linker;
+struct proc;
+struct ps_strings;
 
 struct emul {
-	const char			*e_name[8];		/* Symbolic name */
-	const char			*e_path;		/* Extra emulation path (NULL if none)*/
-	int					e_nsysent;		/* Number of system call entries */
-	const struct sysent *e_sysent;		/* System call array */
-	int					e_arglen;		/* Extra argument size in words */
+	const char			*e_name[8];			/* Symbolic name */
+	const char			*e_path;			/* Extra emulation path (NULL if none)*/
 
-	void				*(*e_copyargs) __P((struct exec_linker *, struct ps_strings *, void *, void *));
-	void				(*e_setregs) __P((struct proc *, struct exec_linker *, u_long));
-	char				*e_sigcode;		/* Start of sigcode */
-	char				*e_esigcode;	/* End of sigcode */
+//	int					e_nsysent;			/* Number of system call entries */
+	const struct sysent *e_sysent;			/* System call array */
+	const char * const 	*e_syscallnames; 	/* System call name array */
+	int					e_arglen;			/* Extra argument size in words */
+											/* Copy arguments on the stack */
+	//int					(*e_tracesig)(struct proc *, int);
+	void				*(*e_copyargs)(struct exec_linker *, struct ps_strings *, void *, void *);
+	void				(*e_setregs)(struct proc *, struct exec_linker *, u_long);
+	char				*e_sigcode;			/* Start of sigcode */
+	char				*e_esigcode;		/* End of sigcode */
 };
 
 #define	p_session	p_pgrp->pg_session
