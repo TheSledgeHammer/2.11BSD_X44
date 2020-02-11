@@ -71,6 +71,10 @@ struct	proc {
 
     struct	itimerval   p_realtimer;	/* Alarm timer. */
     struct	timeval     p_rtime;	    /* Real time. */
+    u_quad_t 			p_uticks;		/* Statclock hits in user mode. */
+    u_quad_t 			p_sticks;		/* Statclock hits in system mode. */
+    u_quad_t 			p_iticks;		/* Statclock hits processing intr. */
+
     char				p_ptracesig;	/* used between parent & traced child */
     int	    			p_traceflag;	/* Kernel trace points. */
     struct	vnode 	    *p_tracep;		/* Trace to vnode. */
@@ -115,6 +119,7 @@ struct	proc {
 
 	short				p_locks;		/* DEBUG: lockmgr count of held locks */
 	short				p_simple_locks;	/* DEBUG: count of held simple locks */
+	long				p_spare[2];		/* pad to 256, avoid shifting eproc. */
 
 	struct	mdproc 		p_md;			/* Any machine-dependent fields. */
 

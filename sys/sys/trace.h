@@ -83,10 +83,20 @@
 #define	VTR_STAMP	4		/* user specified stamp */
 
 #ifdef KERNEL
-u_long tracebuf[TR_NUM_210];
-#define	trace(a)	tracebuf[a]++;
+#ifdef TRACE
+struct	proc *traceproc;
+u_long tracewhich, tracebuf[TRCSIZ];
+u_int	tracex;
+char	traceflags[TR_NFLAGS];
+#define	pack(v,b)	(((v)->v_mount->mnt_stat.f_fsid.val[0])<<16)|(b)
+#define	trace(a,b,c) {							\
+		if (traceflags[a])						\
+				trace1(a,b,c);					\
+}
+#define	trace2(a)	tracebuf[a]++;
 #else
-#define	trace(a)	;
-#endif
-
-#endif
+#define	trace(a,b,c)
+#define	trace2(a)
+#endif /* TRACE */
+#endif /* KERNEL */
+#endif /* _SYS_TRACE_H_ */

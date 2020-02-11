@@ -64,6 +64,10 @@ struct cdevsw
 };
 #ifdef KERNEL
 extern struct	cdevsw cdevsw[];
+
+/* symbolic sleep message strings */
+extern char devopn[], devio[], devwait[], devin[], devout[];
+extern char devioc[], devcls[];
 #endif
 
 /*

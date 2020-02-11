@@ -1,15 +1,23 @@
 TODO:
-- Add: exec_coff.c
 
-init_main.c
-- lines 250 to 262
-- uipc_mbuf.c: mbinit
-- consinit
-- cpu_startup
-- start_init(curproc, framep);
+i386:
+- machdep.c
+- pmap.c
+- locore.s
+- trap.c: p->p_usrpri: doesn't exist in 2.11BSD
+- vm_machdep.c: u->u_procp->p_p0br??
 
 Kern:
-- inet: remanents of 2.11BSD's networking stack overlay
+- exec_coff.c
+- exec_macho.c
+- exec_elf32.c
+- init_main.c
+	- lines 250 to 262
+	- uipc_mbuf.c: mbinit
+	- consinit
+	- cpu_startup
+	- start_init(curproc, framep);
+- if INET: remanents of 2.11BSD's networking stack overlay
 - kern_clock.c
 - sys_kern.c (used? or unused?)
 - uipc_syscalls.c
