@@ -50,8 +50,6 @@
 #include <sys/vnode.h>
 #include <vm/include/vm.h>
 
-//#ifdef _KERNEL
-
 struct exec_linker {
 	const char 				*el_name;				/* file's name */
 	struct 	proc 		    *el_proc;			    /* our process struct */
@@ -131,6 +129,7 @@ struct execsw_entry {
 	const struct execsw	*ex;
 };
 
+#ifdef _KERNEL
 extern struct lock 	exec_lock;
 
 void 	kill_vmcmd (struct exec_vmcmd **);

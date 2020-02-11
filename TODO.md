@@ -35,16 +35,12 @@ i386: (4.4BSD-Lite2)
 - Only i386 relavent code to load the kernel 
 
 Bootloader: (FreeBSD 5.0)
+- NetBSD ia64: Uses most parts of boot/common (Compatability)
 - Easier to Understand. Includes BTX Loader
 - Provides basic bootloader for i386 & others in Future
 - Easier to integrate with 2.11/4.4BSD code
 
 - Eventually convert to sysBSD project
-- Format Support: Use exec format + bsd: 
-- e.g elf_netbsd or elf_freebsd. To support imgact & vmcmd
-- no reason not to keep support for aout & others
-- fs: ufs, ext, zfs, hammer
-support for zfs & hammer likely to be last. unless someone else provides.
 
 Possible Generic Header: 
 (2.11BSD):

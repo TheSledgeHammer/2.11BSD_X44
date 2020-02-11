@@ -482,9 +482,3 @@ copyargs(elp, arginfo, stack, argp)
 	return cpp;
 }
 
-int
-exec_sigcode_map(struct process *pr, struct emul *e)
-{
-
-}
-
