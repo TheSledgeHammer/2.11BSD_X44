@@ -53,6 +53,7 @@ typedef	unsigned long		gid_t;		/* group id */
 typedef	long	    		pid_t;		/* process id */
 typedef	unsigned short		mode_t;		/* permissions */
 typedef	register_t			register_t;
+typedef unsigned long 		sigset_t;
 
  typedef struct	_quad {
 	long val[2];

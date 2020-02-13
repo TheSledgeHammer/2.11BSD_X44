@@ -92,19 +92,14 @@ struct execa {
 typedef int (*exec_makecmds_fcn)(struct proc *, struct exec_linker *);
 
 struct execsw {
-	struct  emul 		*ex_emul;		/* os emulation */
 	u_int				ex_hdrsz;		/* size of header for this format */
+	exec_makecmds_fcn	ex_makecmds;	/* function to setup vmcmds */
+
+	struct  emul 		*ex_emul;		/* os emulation */
+	int					ex_prio;		/* entry priority */
 	int					ex_arglen;		/* Extra argument size in words */
 										/* Copy arguments on the new stack */
-	exec_makecmds_fcn	ex_makecmds;	/* function to setup vmcmds */
-	int					ex_prio;		/* entry priority */
-	void				(*ex_setregs)(struct proc *, struct exec_linker *, u_long);
 	int					(*ex_setup_stack)(struct exec_linker *);
-
-	union {
-		int (*elf_probe_func)(struct exec_linker *, void *, char *, caddr_t *);
-		int (*ecoff_probe_func)(struct exec_linker *);
-	} u;
 };
 
 #define EXECSW_PRIO_ANY		0x000	/* default, no preference */

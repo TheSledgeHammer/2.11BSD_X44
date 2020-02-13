@@ -106,7 +106,6 @@ struct ecoff_exechdr {
 
 #ifdef _KERNEL
 int	 exec_ecoff_linker __P((struct exec_linker *));
-int	 cpu_exec_ecoff_probe(struct proc *, struct exec_linker *);
 void cpu_exec_ecoff_setregs(struct proc *, struct exec_linker *, u_long);
 
 int	 exec_ecoff_prep_zmagic __P((struct exec_linker *, struct ecoff_exechdr *, struct vnode *));

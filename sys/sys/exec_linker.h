@@ -142,6 +142,7 @@ int 	vmcmd_map_readvn (struct exec_linker *);
 int 	vmcmd_readvn (struct exec_linker *);
 int		vmcmd_map_zero (struct exec_linker *);
 int 	vmcmd_create_vmspace (struct exec_linker *);
+
 void 	*copyargs (struct exec_linker *, struct ps_strings *, void *, void *);
 int 	exec_extract_strings (struct exec_linker *, char *, char * const *);
 int 	*exec_copyout_strings (struct exec_linker *, struct ps_strings *);

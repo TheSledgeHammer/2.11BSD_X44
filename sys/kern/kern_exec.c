@@ -236,6 +236,9 @@ execve(p, uap, retval)
 		vput(elp.el_vnodep);
 
 		/* setup new registers and do misc. setup. */
+		if(stack == stack_base) {
+
+		}
 		(*elp.el_emul->e_setregs)(p, &elp, (u_long) stack);
 
 		if (p->p_flag & P_TRACED)

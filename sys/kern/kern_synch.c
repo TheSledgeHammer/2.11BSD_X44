@@ -545,6 +545,7 @@ void
 setrq(p)
 	register struct proc *p;
 {
+	register struct proc *q;
 	register int s;
 
 	s = splhigh();
@@ -590,7 +591,7 @@ done:
 }
 
 /* Return the current run queue for proc */
-/*
+
 struct proc *
 getrq(p)
 	register struct proc *p;
@@ -598,12 +599,13 @@ getrq(p)
 	register int i;
 	for (i = 0; i < NQS; i++) {
 		if(p->p_link == qs[i].ph_link) {
-			return qs[i].ph_link;
+			return p->p_link;
 		}
+		panic("getrq");
 	}
 	return NULL;
 }
-*/
+
 /*
  * Initialize the (doubly-linked) run queues
  * to be empty.

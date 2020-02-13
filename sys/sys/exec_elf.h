@@ -667,23 +667,17 @@ struct elf_args {
 #endif
 
 #ifdef EXEC_ELF32
-int		exec_elf32_linker __P((struct exec_linker *));
-int		elf32_read_from __P((struct proc *, struct vnode *, u_long, caddr_t, int));
-void	elf32_copyargs __P((struct exec_linker *, struct ps_strings *, void *, void *));
-
-int		elf32_check_header(Elf32_Ehdr *, int);
+int		exec_elf32_linker (struct exec_linker *);
+int		elf32_read_from (struct proc *, struct vnode *, u_long, caddr_t, int);
+void	elf32_copyargs (struct exec_linker *, struct ps_strings *, void *, void *);
+int		elf32_check_header (Elf32_Ehdr *, int);
 #endif
 
 #ifdef EXEC_ELF64
-int		exec_elf64_linker __P((struct exec_linker *));
-int		elf64_read_from __P((struct proc *, struct vnode *, u_long, caddr_t, int));
-void	elf64_copyargs __P((struct exec_linker *, struct ps_strings *, void *, void *));
-
-int		elf64_check_header(Elf64_Ehdr *, int);
+int		exec_elf64_linker (struct exec_linker *);
+int		elf64_read_from (struct proc *, struct vnode *, u_long, caddr_t, int);
+void	elf64_copyargs (struct exec_linker *, struct ps_strings *, void *, void *);
+int		elf64_check_header (Elf64_Ehdr *, int);
 #endif
-
-/* common */
-int	exec_elf_setup_stack __P((struct exec_linker *));
-
 #endif /* _KERNEL */
 #endif /* _SYS_EXEC_ELF_H_ */

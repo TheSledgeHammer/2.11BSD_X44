@@ -52,15 +52,13 @@
 int	(*signal())();
 #endif
 
-typedef unsigned long sigset_t;
-
 /*
  * Signal vector "template" used in sigaction call.
  */
 struct	sigaction {
 	int	(*sa_handler)();	/* signal handler */
 	sigset_t sa_mask;		/* signal mask to apply */
-	int	sa_flags;		/* see signal options below */
+	int	sa_flags;			/* see signal options below */
 };
 
 #define SA_ONSTACK	0x0001	/* take signal on signal stack */
@@ -82,8 +80,8 @@ typedef	int (*sig_t)();		/* type of signal function */
  */
 struct	sigaltstack {
 	char	*ss_base;		/* signal stack base */
-	int	ss_size;		/* signal stack length */
-	int	ss_flags;		/* SA_DISABLE and/or SA_ONSTACK */
+	int		ss_size;		/* signal stack length */
+	int		ss_flags;		/* SA_DISABLE and/or SA_ONSTACK */
 };
 #define	MINSIGSTKSZ	128			/* minimum allowable stack */
 #define	SIGSTKSZ	(MINSIGSTKSZ + 384)	/* recommended stack size */
@@ -93,13 +91,13 @@ struct	sigaltstack {
  * Signal vector "template" used in sigvec call.
  */
 struct	sigvec {
-	int	(*sv_handler)();	/* signal handler */
-	long sv_mask;		/* signal mask to apply */
-	int	sv_flags;			/* see signal options below */
+	int		(*sv_handler)();	/* signal handler */
+	long 	sv_mask;			/* signal mask to apply */
+	int		sv_flags;			/* see signal options below */
 };
-#define SV_ONSTACK	SA_ONSTACK	/* take signal on signal stack */
+#define SV_ONSTACK		SA_ONSTACK	/* take signal on signal stack */
 #define SV_INTERRUPT	SA_RESTART	/* same bit, opposite sense */
-#define sv_onstack sv_flags		/* isn't compatibility wonderful! */
+#define sv_onstack 		sv_flags	/* isn't compatibility wonderful! */
 
 /*
  * 4.3 compatibility:
@@ -107,7 +105,7 @@ struct	sigvec {
  */
 struct	sigstack {
 	char	*ss_sp;			/* signal stack pointer */
-	int	ss_onstack;			/* current status */
+	int		ss_onstack;		/* current status */
 };
 
 /*
@@ -126,7 +124,7 @@ struct sigcontext {
 	int	sc_r0;			/* r0 to restore */
 	int	sc_pc;			/* pc to restore */
 	int	sc_ps;			/* psl to restore */
-	int	sc_ovno;			/* overlay to restore */
+	int	sc_ovno;		/* overlay to restore */
 };
 
 /*
