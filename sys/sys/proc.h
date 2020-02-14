@@ -170,6 +170,9 @@ struct emul {
 	char				*e_sigcode;			/* Start of sigcode */
 	char				*e_esigcode;		/* End of sigcode */
 	//struct vm_object	**e_sigobject;		/* shared sigcode object */
+
+	void				(*e_syscall)(void);
+	caddr_t				(*e_vm_default_addr)(struct proc *, caddr_t, size_t);
 };
 
 #define	p_session	p_pgrp->pg_session

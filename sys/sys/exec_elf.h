@@ -666,18 +666,12 @@ struct elf_args {
 };
 #endif
 
-#ifdef EXEC_ELF32
-int		exec_elf32_linker (struct exec_linker *);
-int		elf32_read_from (struct proc *, struct vnode *, u_long, caddr_t, int);
-void	elf32_copyargs (struct exec_linker *, struct ps_strings *, void *, void *);
-int		elf32_check_header (Elf32_Ehdr *, int);
-#endif
-
-#ifdef EXEC_ELF64
-int		exec_elf64_linker (struct exec_linker *);
-int		elf64_read_from (struct proc *, struct vnode *, u_long, caddr_t, int);
-void	elf64_copyargs (struct exec_linker *, struct ps_strings *, void *, void *);
-int		elf64_check_header (Elf64_Ehdr *, int);
-#endif
+int		exec_elf_linker (struct exec_linker *);
+void	elf_copyargs (struct exec_linker *, struct ps_strings *, void *, void *);
+int		elf_check_header (Elf_Ehdr *, int);
+int		elf_load_file(struct exec_linker *, char *, struct exec_vmcmd_set *, u_long *, struct elf_args *, Elf_Addr *);
+void	elf_load_psection(struct exec_vmcmd_set *, struct vnode *, const Elf_Phdr *, Elf_Addr *, u_long *, int *, int);
+int		twoelevenbsd_elf_signature(struct exec_linker *, Elf_Ehdr *);
+int		twoelevenbsd_elf_probe(struct exec_linker *, void *, char *, caddr_t *);
 #endif /* _KERNEL */
 #endif /* _SYS_EXEC_ELF_H_ */

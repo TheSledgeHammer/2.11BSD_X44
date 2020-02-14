@@ -45,7 +45,7 @@ int
 exec_aout_linker(elp)
 	struct exec_linker *elp;
 {
-	struct exec *a_out = (struct exec *) elp->el_image_hdr;
+	struct exec *a_out = elp->el_image_hdr;
 	int error;
 
 	if (elp->el_hdrvalid < sizeof(struct exec)) {

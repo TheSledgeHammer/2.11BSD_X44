@@ -82,6 +82,9 @@ exec_coff_linker(elp)
 	return error;
 }
 
+/*
+ * coff_find_section - load specified section header
+ */
 int
 coff_find_section(p, vp, fp, sh, s_type)
 	struct proc *p;
@@ -117,6 +120,15 @@ coff_find_section(p, vp, fp, sh, s_type)
 	return ENOEXEC;
 }
 
+/*
+ * exec_coff_prep_zmagic(): Prepare a COFF ZMAGIC binary's exec package
+ *
+ * First, set the various offsets/lengths in the exec package.
+ *
+ * Then, mark the text image busy (so it can be demand paged) or error
+ * out if this is not possible.  Finally, set up vmcmds for the
+ * text, data, bss, and stack segments.
+ */
 int
 exec_coff_prep_zmagic(elp, fp, ap)
 	struct exec_linker *elp;
@@ -150,9 +162,13 @@ exec_coff_prep_zmagic(elp, fp, ap)
 	DPRINTF(("VMCMD: addr %lx size %lx offset %lx\n", elp->el_taddr, elp->el_tsize, offset));
 	if (!(offset & PAGE_MASK) && !(elp->el_taddr & PAGE_MASK)) {
 		elp->el_tsize =	round_page(elp->el_tsize);
-		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_pagedvn);
+		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_pagedvn, elp->el_tsize, elp->el_taddr,
+				(VM_PROT_READ | VM_PROT_EXECUTE), (VM_PROT_READ | VM_PROT_EXECUTE),
+				elp->el_vnodep, offset);
 	} else {
-		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn);
+		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, elp->el_tsize, elp->el_taddr,
+					(VM_PROT_READ | VM_PROT_EXECUTE), (VM_PROT_READ | VM_PROT_EXECUTE),
+					elp->el_vnodep, offset);
 	}
 
 	/* set up command for data segment */
@@ -171,9 +187,15 @@ exec_coff_prep_zmagic(elp, fp, ap)
 	DPRINTF(("VMCMD: addr %lx size %lx offset %lx\n", elp->el_daddr, dsize, offset));
 	if (!(offset & PAGE_MASK) && !(elp->el_daddr & PAGE_MASK)) {
 		dsize = round_page(dsize);
-		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_pagedvn);
+		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_pagedvn, dsize, elp->el_daddr,
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+				elp->el_vnodep, offset);
 	} else {
-		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn);
+		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, dsize, elp->el_daddr,
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+				elp->el_vnodep, offset);
 	}
 
 	/* set up command for bss segment */
@@ -181,7 +203,10 @@ exec_coff_prep_zmagic(elp, fp, ap)
 	bsize = elp->el_daddr + elp->el_dsize - baddr;
 	if (bsize > 0) {
 		DPRINTF(("VMCMD: addr %x size %x offset %x\n", baddr, bsize, 0));
-		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_zero);
+		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, bsize, baddr,
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+				NULL, 0);
 	}
 
 	/* set up entry point */
@@ -190,6 +215,11 @@ exec_coff_prep_zmagic(elp, fp, ap)
 	return (*elp->el_esch->ex_setup_stack)(elp);
 }
 
+
+/*
+ * exec_coff_prep_nmagic(): Prepare a 'native' NMAGIC COFF binary's exec
+ *                          package.
+ */
 int
 exec_coff_prep_nmagic(elp, fp, ap)
 	struct exec_linker *elp;
@@ -203,15 +233,31 @@ exec_coff_prep_nmagic(elp, fp, ap)
 	elp->el_entry = ap->a_entry;
 
 	/* set up command for text segment */
+	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, elp->el_tsize, elp->el_taddr,
+			(VM_PROT_READ | VM_PROT_EXECUTE),
+			(VM_PROT_READ | VM_PROT_EXECUTE),
+			elp->el_vnodep, COFF_TXTOFF(fp, ap));
 
 	/* set up command for data segment */
+	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, elp->el_dsize, elp->el_daddr,
+			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+			elp->el_vnodep, COFF_DATOFF(fp, ap));
 
 	/* set up command for bss segment */
 	if (ap->a_bsize > 0)
+		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_zero, ap->a_bsize,
+				COFF_SEGMENT_ALIGN(fp, ap, ap->a_dstart + ap->a_dsize),
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+				NULL, 0);
 
 	return (*elp->el_esch->ex_setup_stack)(elp);
 }
 
+/*
+ * exec_coff_prep_omagic(): Prepare a COFF OMAGIC binary's exec package
+ */
 int
 exec_coff_prep_omagic(elp, fp, ap)
 	struct exec_linker *elp;
@@ -225,9 +271,18 @@ exec_coff_prep_omagic(elp, fp, ap)
 	elp->el_entry = ap->a_entry;
 
 	/* set up command for text and data segments */
+	NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_readvn, ap->a_tsize + ap->a_dsize, elp->el_taddr,
+			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+			(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+			elp->el_vnodep, COFF_TXTOFF(fp, ap));
 
 	/* set up command for bss segment */
 	if (ap->a_bsize > 0)
+		NEW_VMCMD(&elp->el_vmcmds, vmcmd_map_zero, ap->a_bsize,
+				COFF_SEGMENT_ALIGN(fp, ap, ap->a_dstart + ap->a_dsize),
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+				(VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE),
+				NULL, 0);
 
 	return (*elp->el_esch->ex_setup_stack)(elp);
 }
