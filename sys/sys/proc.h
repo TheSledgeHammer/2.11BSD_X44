@@ -101,7 +101,7 @@ struct	proc {
     u_char				p_time;			/* resident time for scheduling */
     char				p_nice;			/* nice for cpu usage */
     char				p_slptime;		/* Time since last blocked. secs sleeping */
-    char				p_comm[MAXCOMLEN+1];
+    char				p_comm[MAXCOMLEN+1];/* p: basename of last exec file */
 
     struct  pgrp 	    *p_pgrp;        /* Pointer to process group. */
     struct  sysentvec   *p_sysent; 	    /* System call dispatch information. */
@@ -235,7 +235,7 @@ struct emul {
 }
 
 #define	PIDHSZ			16
-#define	PIDHASH(pid)	(&pidhashtbl[(pid) & pid_hash & (PIDHSZ - 1)])
+#define	PIDHASH(pid)	(&pidhashtbl[(pid) & pid_hash & (PIDHSZ * ((pid) + pid_hash) - 1)])
 extern LIST_HEAD(pidhashhead, proc) *pidhashtbl;
 u_long pid_hash;
 

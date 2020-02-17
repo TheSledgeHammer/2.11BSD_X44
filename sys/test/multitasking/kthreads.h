@@ -86,9 +86,15 @@ struct threadtable {
 #define TSSTART	6
 #define TSSTOP	7
 
-#define	TIDHSZ		16
-#define TIDHASH(tid)  ((tid) & (TIDHSZ - 1))
 
+#define	TIDHSZ			16
+#define	TIDHASH(tid)	(&pidhashtbl[(tid) & tid_hash & (TIDHSZ * ((tid) + tid_hash) - 1)])
+extern LIST_HEAD(tidhashhead, kthread) *pidhashtbl;
+u_long tid_hash;
+
+#define	PGRPHASH(pgid)	(&pgrphashtbl[(pgid) & pgrphash])
+extern LIST_HEAD(pgrphashhead, pgrp) *pgrphashtbl;
+extern u_long pgrphash;
 
 extern struct kthread *tidhash[];		/* In param.c. */
 extern struct tgrp *tgrphash[];			/* In param.c. */
