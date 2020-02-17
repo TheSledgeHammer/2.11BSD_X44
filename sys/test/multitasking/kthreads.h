@@ -71,10 +71,6 @@ struct tgrp {
 #define	kt_session	kt_tgrp->tg_session
 #define	kt_tgid		kt_tgrp->tg_id
 
-struct threadtable {
-
-};
-
 #define KTHREAD_RATIO 1  /* M:N Ratio. number of kernel threads per process */
 
 /* stat codes */
@@ -88,8 +84,8 @@ struct threadtable {
 
 
 #define	TIDHSZ			16
-#define	TIDHASH(tid)	(&pidhashtbl[(tid) & tid_hash & (TIDHSZ * ((tid) + tid_hash) - 1)])
-extern LIST_HEAD(tidhashhead, kthread) *pidhashtbl;
+#define	TIDHASH(tid)	(&tidhashtbl[(tid) & tid_hash & (TIDHSZ * ((tid) + tid_hash) - 1)])
+extern LIST_HEAD(tidhashhead, kthread) *tidhashtbl;
 u_long tid_hash;
 
 #define	PGRPHASH(pgid)	(&pgrphashtbl[(pgid) & pgrphash])

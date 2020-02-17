@@ -90,6 +90,10 @@ struct	mount
 	struct	inode 	*m_inodp;			/* pointer to mounted on inode */
 	struct	inode 	*m_qinod; 			/* QUOTA: pointer to quota file */
 	memaddr	m_extern;					/* click address of mount table extension */
+
+	const struct wapbl_ops 	*mnt_wapbl_op;		/* logging ops */
+	struct wapbl			*mnt_wapbl;			/* log info */
+	struct wapbl_replay		*mnt_wapbl_replay;	/* replay support XXX: what? */
 };
 
 struct	xmount

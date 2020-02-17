@@ -34,8 +34,8 @@
 
 //#include <sys/mutex.h>
 
-#if defined(_KERNEL) || defined(_KMEMUSER)
-#include <miscfs/specfs/specdev.h>
+#if defined(_KERNEL)
+#include <vfs/specfs/specdev.h>
 #endif
 
 /* This header file describes the api and data structures for
@@ -261,13 +261,13 @@ struct wapbl_replay;
 
 /****************************************************************/
 
-int	wapbl_replay_start(struct wapbl_replay **, struct vnode *,
-	daddr_t, size_t, size_t);
+int		wapbl_replay_start(struct wapbl_replay **, struct vnode *,
+		daddr_t, size_t, size_t);
 void	wapbl_replay_stop(struct wapbl_replay *);
 void	wapbl_replay_free(struct wapbl_replay *);
-int	wapbl_replay_write(struct wapbl_replay *, struct vnode *);
-int	wapbl_replay_can_read(struct wapbl_replay *, daddr_t, long);
-int	wapbl_replay_read(struct wapbl_replay *, void *, daddr_t, long);
+int		wapbl_replay_write(struct wapbl_replay *, struct vnode *);
+int		wapbl_replay_can_read(struct wapbl_replay *, daddr_t, long);
+int		wapbl_replay_read(struct wapbl_replay *, void *, daddr_t, long);
 
 /****************************************************************/
 

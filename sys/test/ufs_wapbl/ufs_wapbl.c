@@ -81,8 +81,6 @@
 #include <sys/dirent.h>
 #include <ufs/lockf.h>
 //#include <sys/kauth.h>
-#include <test/wapbl.h>
-
 #include <vfs/specfs/specdev.h>
 #include <vfs/fifofs/fifo.h>
 
@@ -90,15 +88,15 @@
 #include <ufs/ufs/inode.h>
 #include <ufs/ufs/dir.h>
 #include <ufs/ufs/ufsmount.h>
-//#include <ufs/ufs/ufs_bswap.h>
+#include <test/ufs_wapbl/ufs_bswap.h>
 #include <ufs/ufs/ufs_extern.h>
-#include <test/ufs_wapbl.h>
-//#include <ufs/ext2fs/ext2fs_extern.h>
 #include <ufs/lfs/lfs_extern.h>
 
 #include <vm/include/vm.h>
+#include <ufs_wapbl/wapbl.h>
+#include <ufs_wapbl/ufs_wapbl.h>
 
-//#ifdef WAPBL_DEBUG_INODES
+#ifdef WAPBL_DEBUG_INODES
 #error WAPBL_DEBUG_INODES: not functional before ufs_wapbl.c is updated
 void
 ufs_wapbl_verify_inodes(struct mount *mp, const char *str)

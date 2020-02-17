@@ -11,41 +11,41 @@
 void
 init_kern_threadpool()
 {
-    LIST_INIT(&ktpool_head);
+	TAILQ_INIT(&ktpool_head);
 }
 
 void
 insert_kern_threads(ktpool)
     struct kern_threadpool *ktpool;
 {
-    LIST_INSERT_HEAD(&ktpool_head, ktpool, ktpool_wqueue);
+	TAILQ_INSERT_HEAD(&ktpool_head, ktpool, ktp_entry);
 }
 
 void
 remove_kern_threads(ktpool)
     struct kern_threadpool *ktpool;
 {
-    LIST_REMOVE(ktpool, ktpool_wqueue);
+	TAILQ_REMOVE(&ktpool_head, ktpool, ktp_entry);
 }
 
 void
 init_user_threadpool()
 {
-    LIST_INIT(&utpool_head);
+	TAILQ_INIT(&utpool_head);
 }
 
 void
 insert_user_threads(utpool)
     struct user_threadpool *utpool;
 {
-    LIST_INSERT_HEAD(&utpool_head, utpool, utpool_wqueue);
+	TAILQ_INSERT_HEAD(&utpool_head, utpool, utp_entry);
 }
 
 void
 remove_user_threads(utpool)
     struct user_threadpool *utpool;
 {
-    LIST_REMOVE(utpool, utpool_wqueue);
+    TAILQ_REMOVE(&utpool_head, utpool, utp_entry);
 }
 
 /* Threadpool's FIFO Queue (IPC) */
@@ -71,6 +71,7 @@ usertpool_send(utpool, tid, tgrp)
 	tid_t tid, tgrp;
 {
     /* command / action */
+
 }
 
 void

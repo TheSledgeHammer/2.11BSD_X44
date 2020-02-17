@@ -71,9 +71,9 @@
  *
  * XXX: Is 64MB too limiting?  If user explicitly asks for more, allow it?
  */
-#define	UFS_WAPBL_JOURNAL_SCALE			1024
-#define	UFS_WAPBL_MIN_JOURNAL_SIZE		(1024 * 1024)
-#define	UFS_WAPBL_MAX_JOURNAL_SIZE		(64 * 1024 * 1024)
+#define	UFS_WAPBL_JOURNAL_SCALE				1024
+#define	UFS_WAPBL_MIN_JOURNAL_SIZE			(1024 * 1024)
+#define	UFS_WAPBL_MAX_JOURNAL_SIZE			(64 * 1024 * 1024)
 
 
 #if defined(WAPBL)
@@ -118,42 +118,42 @@ ufs_wapbl_end(struct mount *mp)
 	}
 }
 
-#define	UFS_WAPBL_BEGIN(mp)						\
+#define	UFS_WAPBL_BEGIN(mp)										\
 	ufs_wapbl_begin(mp, __func__, __LINE__)
 #define	UFS_WAPBL_END(mp) ufs_wapbl_end(mp)
 
-#define	UFS_WAPBL_UPDATE(vp, access, modify, flags)			\
-	if ((vp)->v_mount->mnt_wapbl) {					\
-		UFS_UPDATE(vp, access, modify, flags);			\
+#define	UFS_WAPBL_UPDATE(vp, access, modify, flags)				\
+	if ((vp)->v_mount->mnt_wapbl) {								\
+		UFS_UPDATE(vp, access, modify, flags);					\
 	}
 
 #ifdef DIAGNOSTIC
-#define	UFS_WAPBL_JLOCK_ASSERT(mp)					\
+#define	UFS_WAPBL_JLOCK_ASSERT(mp)								\
 	if (mp->mnt_wapbl) wapbl_jlock_assert(mp->mnt_wapbl)
-#define	UFS_WAPBL_JUNLOCK_ASSERT(mp)					\
+#define	UFS_WAPBL_JUNLOCK_ASSERT(mp)							\
 	if (mp->mnt_wapbl) wapbl_junlock_assert(mp->mnt_wapbl)
 #else
 #define	UFS_WAPBL_JLOCK_ASSERT(mp)
 #define UFS_WAPBL_JUNLOCK_ASSERT(mp)
 #endif
 
-#define	UFS_WAPBL_REGISTER_INODE(mp, ino, mode)				\
+#define	UFS_WAPBL_REGISTER_INODE(mp, ino, mode)					\
 	if (mp->mnt_wapbl) wapbl_register_inode(mp->mnt_wapbl, ino, mode)
-#define	UFS_WAPBL_UNREGISTER_INODE(mp, ino, mode)			\
+#define	UFS_WAPBL_UNREGISTER_INODE(mp, ino, mode)				\
 	if (mp->mnt_wapbl) wapbl_unregister_inode(mp->mnt_wapbl, ino, mode)
 
-#define	UFS_WAPBL_REGISTER_DEALLOCATION(mp, blk, len, cookiep)		\
-	(mp->mnt_wapbl)							\
+#define	UFS_WAPBL_REGISTER_DEALLOCATION(mp, blk, len, cookiep)	\
+	(mp->mnt_wapbl)												\
 	    ? wapbl_register_deallocation(mp->mnt_wapbl, blk, len,	\
-		false, cookiep)						\
+		false, cookiep)											\
 	    : 0
 
 #define	UFS_WAPBL_REGISTER_DEALLOCATION_FORCE(mp, blk, len)		\
-	(								\
-	  (mp->mnt_wapbl)						\
+	(															\
+	  (mp->mnt_wapbl)											\
 	    ? wapbl_register_deallocation(mp->mnt_wapbl, blk, len,	\
-		true, NULL)						\
-	    : 0								\
+		true, NULL)												\
+	    : 0														\
 	)
 
 #define	UFS_WAPBL_UNREGISTER_DEALLOCATION(mp, cookie)			\

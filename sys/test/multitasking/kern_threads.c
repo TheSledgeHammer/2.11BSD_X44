@@ -6,7 +6,7 @@
  */
 
 
-#include<test/multitasking/kthreads.h>
+#include <test/multitasking/kthreads.h>
 
 struct 	tgrp tgrp0;
 struct 	kthread kthread0;
@@ -20,7 +20,7 @@ kthread_init(p)
 }
 
 struct kthread *
-tfind(tid)
+ktfind(tid)
 register int tid;
 {
 	register struct kthread *t = tidhash(TIDHASH(tid));
@@ -30,6 +30,12 @@ register int tid;
 		}
 	}
 	return ((struct kthread *) 0);
+}
+
+struct kthread *
+kthread_create(struct proc *p, int qty)
+{
+	return NULL;
 }
 
 struct tgrp *
@@ -45,30 +51,4 @@ tgfind(tgid)
 	return (NULL);
 }
 
-struct kthread *
-thread_create(struct proc *p, int qty)
-{
-	return NULL;
-}
-
-
-void
-uthread_init(p, t)
-	register struct proc *p;
-	register struct	kthread *t;
-{
-
-}
-
-struct uthread *
-utfind(tid)
-	register int tid;
-{
-	register struct uthread *ut = tidhash(TIDHASH(tid));
-	for(; ut; ut = ut->ut_hash) {
-		if(ut->ut_tid == tid) {
-			return (ut);
-		}
-	}
-	return ((struct uthread *) 0);
-}
+/* Other functions */
