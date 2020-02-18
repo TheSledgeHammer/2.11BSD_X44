@@ -8,9 +8,10 @@ i386:
 - vm_machdep.c: u->u_procp->p_p0br??
 
 Kern:
-- exec_coff.c
-- exec_macho.c
-- exec_elf32.c
+- longjmp, setjmp
+- libkern.h (NetBSD/ OpenBSD): KASSERT, assert etc..
+- rwlock.h
+- tasks.h (OpenBSD)
 - init_main.c
 	- lines 250 to 262
 	- uipc_mbuf.c: mbinit

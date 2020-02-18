@@ -22,7 +22,7 @@
  */
 #define	major(x)		((int)(((int)(x)>>8)&0377))		/* major part of a device */
 #define	minor(x)		((int)((x)&0377)) 				/* minor part of a device */
-#define	makedev(x,y)	((dev_t)(((x)<<8) | (y)))		/* make a device number */
+#define	makedev(x,y)	((dev_t)(((x)<<8)|(y)))			/* make a device number */
 
 typedef	unsigned char		u_char;
 typedef	unsigned short		u_short;
@@ -65,21 +65,9 @@ typedef unsigned long 		sigset_t;
 #define	howmany(x, y)	(((x)+((y)-1))/(y))
 #endif
 
-typedef char	bool_t;		/* boolean */
-typedef size_t	memaddr;	/* core or swap address */
-
-typedef	unsigned int intrmask_t;	/* Interrupt mask (spl, xxx_imask...) */
-intrmask_t	splsoftcam __P((void));
-intrmask_t	splsoftcambio __P((void));
-intrmask_t	splsoftcamnet __P((void));
-intrmask_t	splsoftclock __P((void));
-intrmask_t	splsofttty __P((void));
-intrmask_t	splsoftvm __P((void));
-intrmask_t	splstatclock __P((void));
-intrmask_t	spltty __P((void));
-intrmask_t	splvm __P((void));
-void		splx __P((intrmask_t ipl));
-void		splz __P((void));
+typedef char			bool_t;		/* boolean */
+typedef size_t			memaddr;	/* core or swap address */
+typedef	unsigned int 	intrmask_t;	/* Interrupt mask (spl, xxx_imask...) */
 
 #ifndef	int8_t
 typedef	int8_t		int8_t;
@@ -125,4 +113,22 @@ typedef	uint8_t		u_int8_t;
 typedef	uint16_t	u_int16_t;
 typedef	uint32_t	u_int32_t;
 typedef	uint64_t	u_int64_t;
+
+intrmask_t			splsoftcam __P((void));
+intrmask_t			splsoftcambio __P((void));
+intrmask_t			splsoftcamnet __P((void));
+intrmask_t			splsoftclock __P((void));
+intrmask_t			splsofttty __P((void));
+intrmask_t			splsoftvm __P((void));
+intrmask_t			splstatclock __P((void));
+intrmask_t			spltty __P((void));
+intrmask_t			splvm __P((void));
+void				splx __P((intrmask_t ipl));
+void				splz __P((void));
+
+#if defined(_KERNEL) || defined(_STANDALONE)
+#define SET(t, f)	((t) |= (f))
+#define	ISSET(t, f)	((t) & (f))
+#define	CLR(t, f)	((t) &= ~(f))
+#endif
 #endif
