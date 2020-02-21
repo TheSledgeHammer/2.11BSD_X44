@@ -248,4 +248,9 @@ vfsinit()
 	}
 	/* next vfc_typenum to be used */
 	maxvfsconf = maxtypenum;
+
+	/*
+	 * Initialize vnode lockf
+	 */
+	lf_init();
 }

@@ -1,11 +1,6 @@
-/*	$NetBSD: lockf.h,v 1.20 2008/11/19 13:34:11 pooka Exp $	*/
-
-/*
- * Copyright (c) 1991, 1993
+/*-
+ * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * Scooter Morris at Genentech Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -15,7 +10,11 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the University nor the names of its contributors
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -30,21 +29,26 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)lockf.h	8.2 (Berkeley) 10/26/94
  */
 
-#ifndef _SYS_LOCKF_H_
-#define _SYS_LOCKF_H_
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)ffs.c	8.1 (Berkeley) 6/4/93";
+#endif /* LIBC_SCCS and not lint */
 
-#ifdef _KERNEL
+#include <string.h>
 
-#include <sys/vnode.h>
+/*
+ * ffs -- vax ffs instruction
+ */
+int
+ffs(mask)
+	register int mask;
+{
+	register int bit;
 
-struct lockf;
-
-//int 	lf_advlock(struct vop_advlock_args *, struct lockf **, off_t);
-void 	lf_init(void);
-#endif /* _KERNEL */
-
-#endif /* !_SYS_LOCKF_H_ */
+	if (mask == 0)
+		return(0);
+	for (bit = 1; !(mask & 1); bit++)
+		mask >>= 1;
+	return(bit);
+}

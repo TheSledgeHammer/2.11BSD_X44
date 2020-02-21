@@ -252,18 +252,16 @@ main()
 	/*
 	 * make init process
 	 */
+	/*
 	if (newproc(0)) {
 		expand((int)btoc(szicode), S_DATA);
-		expand((int)1, S_STACK);						/* one click of stack */
+		expand((int)1, S_STACK);
 		copyout((caddr_t)icode, (caddr_t)0, szicode);
-		/*
-		 * return goes to location 0 of user init code
-		 * just copied out.
-		 */
 		return 0;
 	}
 	else
 		sched();
+	*/
 }
 
 /*

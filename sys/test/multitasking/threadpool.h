@@ -44,8 +44,9 @@ TAILQ_HEAD(job_head, threadpool_job);
 TAILQ_HEAD(kthread_head, threadpool_kthreads);
 TAILQ_HEAD(uthread_head, threadpool_uthreads);
 
-TAILQ_HEAD(ktpool, kern_threadpool) ktpool_head;
-TAILQ_HEAD(utpool, user_threadpool) utpool_head;
+//TAILQ_HEAD(ktpool, kern_threadpool) ktpool_head;
+//TAILQ_HEAD(utpool, user_threadpool) utpool_head;
+TAILQ_HEAD(fifo_thread, itc_threadpool) itcp_head;
 
 /* Threadpool Jobs */
 typedef void threadpool_job_fn_t(struct threadpool_job *);
@@ -68,9 +69,11 @@ struct threadpool_kthreads {
 
 /* Kernel Threadpool */
 struct kern_threadpool {
-	TAILQ_ENTRY(kern_threadpool) 		ktp_entry;  /* TAILQ or CIRCULARQ?? */
+	TAILQ_ENTRY(kern_threadpool) 		ktp_entry;
     struct job_head						ktp_jobs;
     struct kthread_head					ktp_idle_threads;
+
+    struct fifo_thread					ktp_itc;
     //flags, refcnt, priority, lock
 };
 
@@ -85,23 +88,29 @@ struct threadpool_uthreads {
 
 /* User Threadpool */
 struct user_threadpool {
-	TAILQ_ENTRY(user_threadpool) 		utp_entry; /* TAILQ or CIRCULARQ?? */
+	TAILQ_ENTRY(user_threadpool) 		utp_entry;
     struct job_head						utp_jobs;
     struct uthread_head					utp_idle_threads;
+
+    struct fifo_thread					utp_itc;
     //flags, refcnt, priority, lock
 };
 
-struct fifo_queue {
-    /* thread (kernel or user), tgrp, tid, command */
-
+/* Inter-Threadpool-Communication (ITPC) */
+struct itc_threadpool {
+	TAILQ_ENTRY(ipc_threadpool) 		itcp_entry;		/* Threadpool IPC */
+	struct kern_threadpool				itcp_ktpool;	/* Pointer to Kernel Threadpool */
+	struct user_threadpool				itcp_utpool;	/* Pointer to User Threadpool */
+	struct job_head						itcp_job;		/* Thread's Job */
+	struct tgrp 						itcp_tgrp; 		/* Thread's Thread Group */
+	tid_t								itcp_tid;		/* Thread's Thread ID */
 };
 
-/* fifo queue */
-void kerntpool_send();
-void kerntpool_receive();
-
-void usertpool_send();
-void usertpool_receive();
+/* General ITPC */
+void kerntpool_send(struct kern_threadpool *, struct itc_threadpool *);
+void kerntpool_receive(struct kern_threadpool *, struct itc_threadpool *);
+void usertpool_send(struct user_threadpool *, struct itc_threadpool *);
+void usertpool_receive(struct user_threadpool *, struct itc_threadpool *);
 void check();
 void verify();
 

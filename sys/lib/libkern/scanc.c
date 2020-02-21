@@ -30,32 +30,21 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)libkern.h	8.1 (Berkeley) 6/10/93
- * $Id: libkern.h,v 1.3 1994/08/30 18:19:47 davidg Exp $
+ *	@(#)scanc.c	8.1 (Berkeley) 6/10/93
  */
 
-#include <sys/types.h>
+#include <sys/libkern.h>
 
-static inline int imax(int a, int b) { return (a > b ? a : b); }
-static inline int imin(int a, int b) { return (a < b ? a : b); }
-static inline long lmax(long a, long b) { return (a > b ? a : b); }
-static inline long lmin(long a, long b) { return (a < b ? a : b); }
-static inline u_int max(u_int a, u_int b) { return (a > b ? a : b); }
-static inline u_int min(u_int a, u_int b) { return (a < b ? a : b); }
-static inline quad_t qmax(quad_t a, quad_t b) { return (a > b ? a : b); }
-static inline quad_t qmin(quad_t a, quad_t b) { return (a < b ? a : b); }
-static inline u_long ulmax(u_long a, u_long b) { return (a > b ? a : b); }
-static inline u_long ulmin(u_long a, u_long b) { return (a < b ? a : b); }
+int
+scanc(size, cp, table, mask0)
+	u_int size;
+	register u_char *cp, table[];
+	int mask0;
+{
+	register u_char *end;
+	register u_char mask;
 
-/* Prototypes for non-quad routines. */
-int	 	bcmp (const void *, const void *, size_t);
-int	 	ffs (int);
-int	 	locc (int, char *, u_int);
-u_long	random (void);
-char	*rindex (const char *, int);
-int	 	scanc(u_int, u_char *, u_char *, int);
-int	 	skpc (int, int, char *);
-char	*strcat (char *, const char *);
-char	*strcpy (char *, const char *);
-size_t	 strlen (const char *);
-char	*strncpy (char *, const char *, size_t);
+	mask = mask0;
+	for (end = &cp[size]; cp < end && (table[*cp] & mask) == 0; ++cp);
+	return (end - cp);
+}

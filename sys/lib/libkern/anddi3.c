@@ -2,6 +2,10 @@
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
+ * This software was developed by the Computer Systems Engineering group
+ * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
+ * contributed to Berkeley.
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -29,33 +33,26 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)libkern.h	8.1 (Berkeley) 6/10/93
- * $Id: libkern.h,v 1.3 1994/08/30 18:19:47 davidg Exp $
  */
 
-#include <sys/types.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)anddi3.c	8.1 (Berkeley) 6/4/93";
+#endif /* LIBC_SCCS and not lint */
 
-static inline int imax(int a, int b) { return (a > b ? a : b); }
-static inline int imin(int a, int b) { return (a < b ? a : b); }
-static inline long lmax(long a, long b) { return (a > b ? a : b); }
-static inline long lmin(long a, long b) { return (a < b ? a : b); }
-static inline u_int max(u_int a, u_int b) { return (a > b ? a : b); }
-static inline u_int min(u_int a, u_int b) { return (a < b ? a : b); }
-static inline quad_t qmax(quad_t a, quad_t b) { return (a > b ? a : b); }
-static inline quad_t qmin(quad_t a, quad_t b) { return (a < b ? a : b); }
-static inline u_long ulmax(u_long a, u_long b) { return (a > b ? a : b); }
-static inline u_long ulmin(u_long a, u_long b) { return (a < b ? a : b); }
+#include "quad.h"
 
-/* Prototypes for non-quad routines. */
-int	 	bcmp (const void *, const void *, size_t);
-int	 	ffs (int);
-int	 	locc (int, char *, u_int);
-u_long	random (void);
-char	*rindex (const char *, int);
-int	 	scanc(u_int, u_char *, u_char *, int);
-int	 	skpc (int, int, char *);
-char	*strcat (char *, const char *);
-char	*strcpy (char *, const char *);
-size_t	 strlen (const char *);
-char	*strncpy (char *, const char *, size_t);
+/*
+ * Return a & b, in quad.
+ */
+quad_t
+__anddi3(a, b)
+	quad_t a, b;
+{
+	union uu aa, bb;
+
+	aa.q = a;
+	bb.q = b;
+	aa.ul[0] &= bb.ul[0];
+	aa.ul[1] &= bb.ul[1];
+	return (aa.q);
+}

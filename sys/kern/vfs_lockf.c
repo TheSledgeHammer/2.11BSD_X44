@@ -45,7 +45,8 @@
 #include <sys/vnode.h>
 #include <sys/malloc.h>
 #include <sys/fcntl.h>
-#include <test/lockf.h>
+
+#include <sys/lockf.h>
 
 TAILQ_HEAD(locklist, lockf);
 
@@ -112,7 +113,7 @@ lf_free(struct lockf *lock)
 	FREE(lock, M_LOCKF);
 }
 
-/*
+/* Runs in lf_advlock()
  * TODO: uid/ uip
  * 3 options for allowfail.
  * 0 - always allocate.  1 - cutoff at limit.  2 - cutoff at double limit.
@@ -135,6 +136,170 @@ lf_alloc(int allowfail)
 	lock = (struct lock *)malloc(sizeof(struct lockf), lockf_cache, M_WAITOK);
 	lock->lf_uid = uid;
 	return (lock);
+}
+
+/*
+ * Do an advisory lock operation.
+ */
+int
+lf_advlock(struct vop_advlock_args *ap, struct lockf **head, off_t size)
+{
+	struct flock *fl = ap->a_fl;
+	struct lockf *lock = NULL;
+	struct lockf *sparelock;
+	off_t start, end;
+	int error = 0;
+
+	/*
+	 * Convert the flock structure into a start and end.
+	 */
+	switch (fl->l_whence) {
+	case SEEK_SET:
+	case SEEK_CUR:
+
+		/*
+		 * Caller is responsible for adding any necessary offset
+		 * when SEEK_CUR is used.
+		 */
+		start = fl->l_start;
+		break;
+
+	case SEEK_END:
+		start = size + fl->l_start;
+		break;
+
+	default:
+		return EINVAL;
+	}
+
+	if (fl->l_len == 0)
+		end = -1;
+	else {
+		if (fl->l_len > 0)
+			end = start + fl->l_len - 1;
+		else {
+			/* lockf() allows -ve lengths */
+			end = start - 1;
+			start += fl->l_len;
+		}
+	}
+	if (start < 0)
+		return EINVAL;
+
+	/*
+	 * Allocate locks before acquiring the interlock.  We need two
+	 * locks in the worst case.
+	 */
+	switch (ap->a_op) {
+	case F_SETLK:
+	case F_UNLCK:
+		/*
+		 * XXX For F_UNLCK case, we can re-use the lock.
+		 */
+		if ((ap->a_flags & F_FLOCK) == 0) {
+			/*
+			 * Byte-range lock might need one more lock.
+			 */
+			sparelock = lf_alloc(0);
+			if (sparelock == NULL) {
+				error = ENOMEM;
+				goto quit;
+			}
+			break;
+		}
+
+		/* FALLTHROUGH */
+
+	case F_GETLK:
+		sparelock = NULL;
+		break;
+
+	default:
+		return EINVAL;
+	}
+
+	switch (ap->a_op) {
+	case F_SETLK:
+		lock = lf_alloc(1);
+		break;
+	case F_UNLCK:
+		if (start == 0 || end == -1) {
+			/* never split */
+			lock = lf_alloc(0);
+		} else {
+			/* might split */
+			lock = lf_alloc(2);
+		}
+		break;
+	case F_GETLK:
+		lock = lf_alloc(0);
+		break;
+	}
+	if (lock == NULL) {
+		error = ENOMEM;
+		goto quit;
+	}
+
+	mutex_enter(interlock);
+
+	/*
+	 * Avoid the common case of unlocking when inode has no locks.
+	 */
+	if (*head == (struct lockf *)0) {
+		if (ap->a_op != F_SETLK) {
+			fl->l_type = F_UNLCK;
+			error = 0;
+			goto quit_unlock;
+		}
+	}
+
+	/*
+	 * Create the lockf structure.
+	 */
+	lock->lf_start = start;
+	lock->lf_end = end;
+	lock->lf_head = head;
+	lock->lf_type = fl->l_type;
+	lock->lf_next = (struct lockf *)0;
+	TAILQ_INIT(&lock->lf_blkhd);
+	lock->lf_flags = ap->a_flags;
+	if (lock->lf_flags & F_POSIX) {
+		KASSERT(curproc == (struct proc *)ap->a_id);
+	}
+	lock->lf_id = ap->a_id;
+
+	/*
+	 * Do the requested operation.
+	 */
+	switch (ap->a_op) {
+
+	case F_SETLK:
+		error = lf_setlock(lock, &sparelock, interlock);
+		lock = NULL; /* lf_setlock freed it */
+		break;
+
+	case F_UNLCK:
+		error = lf_clearlock(lock, &sparelock);
+		break;
+
+	case F_GETLK:
+		error = lf_getlock(lock, fl);
+		break;
+
+	default:
+		break;
+		/* NOTREACHED */
+	}
+
+quit_unlock:
+	mutex_exit(interlock);
+quit:
+	if (lock)
+		lf_free(lock);
+	if (sparelock)
+		lf_free(sparelock);
+
+	return error;
 }
 
 /*

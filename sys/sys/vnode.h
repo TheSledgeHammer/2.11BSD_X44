@@ -201,7 +201,6 @@ extern int						vttoif_tab[];
 #define	VHOLD(vp)		vhold(vp)
 #define	VREF(vp)		vref(vp)
 
-
 void	holdrele __P((struct vnode *));
 void	vattr_null __P((struct vattr *));
 void	vhold __P((struct vnode *));
@@ -377,7 +376,7 @@ struct vop_generic_args {
 /*
  * Finally, include the default set of vnode operations.
  */
-#include <vnode_if.h>
+#include <sys/vnode_if.h>
 
 /*
  * Public vnode manipulation functions.

@@ -30,32 +30,34 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)libkern.h	8.1 (Berkeley) 6/10/93
- * $Id: libkern.h,v 1.3 1994/08/30 18:19:47 davidg Exp $
+ *	@(#)random.c	8.1 (Berkeley) 6/10/93
  */
 
-#include <sys/types.h>
+#include <sys/libkern.h>
 
-static inline int imax(int a, int b) { return (a > b ? a : b); }
-static inline int imin(int a, int b) { return (a < b ? a : b); }
-static inline long lmax(long a, long b) { return (a > b ? a : b); }
-static inline long lmin(long a, long b) { return (a < b ? a : b); }
-static inline u_int max(u_int a, u_int b) { return (a > b ? a : b); }
-static inline u_int min(u_int a, u_int b) { return (a < b ? a : b); }
-static inline quad_t qmax(quad_t a, quad_t b) { return (a > b ? a : b); }
-static inline quad_t qmin(quad_t a, quad_t b) { return (a < b ? a : b); }
-static inline u_long ulmax(u_long a, u_long b) { return (a > b ? a : b); }
-static inline u_long ulmin(u_long a, u_long b) { return (a < b ? a : b); }
+/*
+ * Pseudo-random number generator for randomizing the profiling clock,
+ * and whatever else we might use it for.  The result is uniform on
+ * [0, 2^31 - 1].
+ */
+u_long
+random()
+{
+	static u_long randseed = 1;
+	register long x, hi, lo, t;
 
-/* Prototypes for non-quad routines. */
-int	 	bcmp (const void *, const void *, size_t);
-int	 	ffs (int);
-int	 	locc (int, char *, u_int);
-u_long	random (void);
-char	*rindex (const char *, int);
-int	 	scanc(u_int, u_char *, u_char *, int);
-int	 	skpc (int, int, char *);
-char	*strcat (char *, const char *);
-char	*strcpy (char *, const char *);
-size_t	 strlen (const char *);
-char	*strncpy (char *, const char *, size_t);
+	/*
+	 * Compute x[n + 1] = (7^5 * x[n]) mod (2^31 - 1).
+	 * From "Random number generators: good ones are hard to find",
+	 * Park and Miller, Communications of the ACM, vol. 31, no. 10,
+	 * October 1988, p. 1195.
+	 */
+	x = randseed;
+	hi = x / 127773;
+	lo = x % 127773;
+	t = 16807 * lo - 2836 * hi;
+	if (t <= 0)
+		t += 0x7fffffff;
+	randseed = t;
+	return (t);
+}
