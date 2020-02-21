@@ -49,6 +49,9 @@ struct kthread {
     struct kthread      *kt_tptr;		/* pointer to process structure of parent */
     struct kthread 		*kt_ostptr;	 	/* Pointer to older sibling processes. */
 
+	struct kthread 		*kt_ysptr;	 	/* Pointer to younger siblings. */
+	struct kthread 		*kt_cptr;	 	/* Pointer to youngest living child. */
+
 	struct tgrp 	    *kt_tgrp;       /* Pointer to thread group. */
 	struct sysentvec	*kt_sysent;		/* System call dispatch information. */
 
@@ -68,8 +71,8 @@ struct tgrp {
 	int					tg_jobc;		/* # threads qualifying tgrp for job control */
 };
 
-#define	kt_session	kt_tgrp->tg_session
-#define	kt_tgid		kt_tgrp->tg_id
+#define	kt_session		kt_tgrp->tg_session
+#define	kt_tgid			kt_tgrp->tg_id
 
 #define KTHREAD_RATIO 1  /* M:N Ratio. number of kernel threads per process */
 
@@ -82,26 +85,25 @@ struct tgrp {
 #define TSSTART	6
 #define TSSTOP	7
 
-
 #define	TIDHSZ			16
 #define	TIDHASH(tid)	(&tidhashtbl[(tid) & tid_hash & (TIDHSZ * ((tid) + tid_hash) - 1)])
 extern LIST_HEAD(tidhashhead, kthread) *tidhashtbl;
 u_long tid_hash;
 
-#define	PGRPHASH(pgid)	(&pgrphashtbl[(pgid) & pgrphash])
-extern LIST_HEAD(pgrphashhead, pgrp) *pgrphashtbl;
-extern u_long pgrphash;
+#define	TGRPHASH(tgid)	(&tgrphashtbl[(tgid) & tgrphash])
+extern LIST_HEAD(tgrphashhead, tgrp) *tgrphashtbl;
+extern u_long tgrphash;
 
-extern struct kthread *tidhash[];		/* In param.c. */
-extern struct tgrp *tgrphash[];			/* In param.c. */
+extern struct kthread *ktidhash[];		/* In param.c. */
 extern int tidhashmask;					/* In param.c. */
 
-/*
-void kthread_init(struct proc *p);
-struct kthread * thread_create(struct proc *p, int qty);
-kthread_destroy(struct kthread *t);
-kthread_stop(struct kthread *t);
-kthread_start(struct kthread *t);
-kthread_wait();
-*/
+struct 	kthread *ktfind (tid_t);		/* Find kernel thread by id. */
+struct 	tgrp 	*tgfind(tid_t);			/* Find Thread group by id. */
+
+void			threadinit(void);
+int				leavetgrp(struct kthread *);
+int				entertgrp(struct kthread *, tid_t, int);
+void			fixjobc(struct kthread *, struct tgrp *, int);
+int				inferior(struct kthread *);
+
 #endif /* SYS_KTHREADS_H_ */

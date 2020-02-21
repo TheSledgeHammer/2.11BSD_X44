@@ -45,17 +45,20 @@
  * upgrading from shared to exclusive, and sleeping until the lock
  * can be gained. The simple locks are defined in <machine/param.h>.
  */
+
 struct lock {
-	struct	simplelock 	lk_interlock; 		/* lock on remaining fields */
-	u_int				lk_flags;			/* see below */
-	int					lk_sharecount;		/* # of accepted shared locks */
-	int					lk_waitcount;		/* # of processes sleeping for lock */
-	short				lk_exclusivecount;	/* # of recursive exclusive locks */
-	short				lk_prio;			/* priority at which to sleep */
-	char				*lk_wmesg;			/* resource sleeping (for tsleep) */
-	int					lk_timo;			/* maximum sleep time (for tsleep) */
-	pid_t				lk_lockholder;		/* pid of exclusive lock holder */
+    struct	simplelock 	lk_interlock; 		/* lock on remaining fields */
+    u_int				lk_flags;			/* see below */
+    int					lk_sharecount;		/* # of accepted shared locks */
+    int					lk_waitcount;		/* # of processes sleeping for lock */
+    short				lk_exclusivecount;	/* # of recursive exclusive locks */
+    short				lk_prio;			/* priority at which to sleep */
+    char				*lk_wmesg;			/* resource sleeping (for tsleep) */
+    int					lk_timo;			/* maximum sleep time (for tsleep) */
+    pid_t				lk_lockholder;		/* pid of exclusive lock holder */
 };
+
+
 /*
  * Lock request types:
  *   LK_SHARED - get one of many possible shared locks. If a process

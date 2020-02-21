@@ -41,19 +41,26 @@ struct uthread {
     struct uthread      *ut_tptr;		/* pointer to process structure of parent */
     struct uthread 		*ut_ostptr;	 	/* Pointer to older sibling processes. */
 
+	struct uthread 		*ut_ysptr;	 	/* Pointer to younger siblings. */
+	struct uthread 		*ut_cptr;	 	/* Pointer to youngest living child. */
+
 	struct tgrp 	    *ut_tgrp;       /* Pointer to thread group. */
 };
+#define	ut_session		ut_tgrp->tg_session
+#define	ut_tgid			ut_tgrp->tg_id
 
 #define UTHREAD_RATIO 1  /* M:N Ratio. number of user threads to kernel threads */
 
-/*
-void uthread_init(struct proc *p);
-struct uthread * thread_create(struct proc *p, int qty);
-uthread_destroy(struct uthread *t);
-uthread_stop(struct uthread *t);
-uthread_start(struct uthread *t);
-uthread_wait();
-uthread_yield();
-*/
+#define	TIDHASH(tid)	(&tidhashtbl[(tid) & tid_hash & (TIDHSZ * ((tid) + tid_hash) - 1)])
+extern LIST_HEAD(tidhashhead, uthread) *tidhashtbl;
+extern struct uthread *utidhash[];		/* In param.c. */
+
+struct uthread 	*utfind (tid_t);		/* Find user thread by id. */
+
+void			threadinit(void);
+int				leavetgrp(struct uthread *);
+int				entertgrp(struct uthread *, tid_t, int);
+void			fixjobc(struct uthread *, struct tgrp *, int);
+int				inferior(struct uthread *);
 
 #endif /* SYS_UTHREADS_H_ */

@@ -38,7 +38,7 @@
 
 #define KMEMSTATS
 
-#define MINBUCKET	    4		/* 4 => min allocation of 16 bytes */
+#define MINBUCKET	    4				/* 4 => min allocation of 16 bytes */
 #define MAXALLOCSAVE	(2 * CLBYTES)
 
 /* flags to malloc */
@@ -113,6 +113,8 @@
 #define M_DIRHASH	64	/* UFS dirhash */
 #define M_EXEC		65	/* argument lists & other mem used by exec */
 #define M_WAPBL		66	/* UFS & VFS WAPBL */
+#define M_TGRP		67	/* thread group header */
+#define M_THREAD	68	/* thread structures */
 #define	M_TEMP		74	/* misc temporary data buffers */
 #define	M_LAST		75	/* Must be last type + 1 */
 
@@ -184,8 +186,10 @@
 	"UFS dirhash"	/* 64 M_DIRHASH */		\
 	"exec"			/* 65 M_EXEC */			\
 	"wapbl"			/* 66 M_WAPBL */		\
-	NULL, NULL, NULL, 						\
-	NULL, NULL, NULL, NULL, 				\
+	"tgrp"			/* 67 M_TGRP */			\
+	"thread"		/* 68 M_THREAD */		\
+	NULL, NULL,		 						\
+	NULL, NULL, NULL,						\
 	"temp",			/* 74 M_TEMP */ 		\
 }
 
