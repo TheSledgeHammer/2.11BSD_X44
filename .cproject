@@ -14,7 +14,7 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration buildProperties="" description="" id="cdt.managedbuild.toolchain.gnu.cross.base.466498237" name="Default" optionalBuildProperties="" parent="org.eclipse.cdt.build.core.emptycfg">
+				<configuration artifactName="${ProjName}" buildProperties="" description="" id="cdt.managedbuild.toolchain.gnu.cross.base.466498237" name="Default" optionalBuildProperties="org.eclipse.cdt.docker.launcher.containerbuild.property.volumes=,org.eclipse.cdt.docker.launcher.containerbuild.property.selectedvolumes=" parent="org.eclipse.cdt.build.core.emptycfg">
 					<folderInfo id="cdt.managedbuild.toolchain.gnu.cross.base.466498237.858935427" name="/" resourcePath="">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.cross.base.2021992085" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.base">
 							<option id="cdt.managedbuild.option.gnu.cross.prefix.603443355" name="Prefix" superClass="cdt.managedbuild.option.gnu.cross.prefix"/>
@@ -38,8 +38,20 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<folderInfo id="cdt.managedbuild.toolchain.gnu.cross.base.466498237.600265955" name="/" resourcePath="sys/boot/i386/mbr">
+						<toolChain id="cdt.managedbuild.toolchain.gnu.cross.base.1803021176" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.base" unusedChildren="">
+							<option id="cdt.managedbuild.option.gnu.cross.prefix.603443355.743183247" name="Prefix" superClass="cdt.managedbuild.option.gnu.cross.prefix.603443355"/>
+							<option id="cdt.managedbuild.option.gnu.cross.path.1397372017.1184541335" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path.1397372017"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.c.compiler.1395585792" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler.1558779578"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.564725948" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler.1139270868"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.2042458016" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker.168299080"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.linker.476400219" name="Cross G++ Linker" superClass="cdt.managedbuild.tool.gnu.cross.cpp.linker.1749862813"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.2093078188" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver.1705848128"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.51606036" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler.1411024910"/>
+						</toolChain>
+					</folderInfo>
 					<sourceEntries>
-						<entry excluding="sys/boot/i386/mbr|mbr" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="mbr" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -54,4 +66,9 @@
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Default">
+			<resource resourceType="PROJECT" workspacePath="/2.11BSD"/>
+		</configuration>
+	</storageModule>
 </cproject>

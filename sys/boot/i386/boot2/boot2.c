@@ -40,15 +40,15 @@
 
 #define SECOND			18	/* Circa that many ticks in a second. */
 
-#define RBX_ASKNAME		0x0	/* -a */
-#define RBX_SINGLE		0x1	/* -s */
-#define RBX_DFLTROOT	0x5	/* -r */
-#define RBX_KDB 		0x6	/* -d */
-#define RBX_CONFIG		0xa	/* -c */
-#define RBX_VERBOSE		0xb	/* -v */
-#define RBX_SERIAL		0xc	/* -h */
-#define RBX_CDROM		0xd	/* -C */
-#define RBX_GDB 		0xf	/* -g */
+#define RBX_ASKNAME		0x0		/* -a */
+#define RBX_SINGLE		0x1		/* -s */
+#define RBX_DFLTROOT	0x5		/* -r */
+#define RBX_KDB 		0x6		/* -d */
+#define RBX_CONFIG		0xa		/* -c */
+#define RBX_VERBOSE		0xb		/* -v */
+#define RBX_SERIAL		0xc		/* -h */
+#define RBX_CDROM		0xd		/* -C */
+#define RBX_GDB 		0xf		/* -g */
 #define RBX_MUTE		0x10	/* -m */
 #define RBX_PAUSE		0x12	/* -p */
 #define RBX_NOINTR		0x1c	/* -n */

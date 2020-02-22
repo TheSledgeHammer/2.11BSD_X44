@@ -1,6 +1,12 @@
 TODO:
 -lf_advlock: Used in Filesystems
 
+boot:
+- libi386
+	- bootinfo32
+	- elf32_freebsd
+	- pxe
+
 i386:
 - machdep.c
 - pmap.c
@@ -11,8 +17,6 @@ i386:
 Kern:
 - longjmp, setjmp
 - libkern.h (NetBSD/ OpenBSD): KASSERT, assert etc..
-- rwlock.h
-- tasks.h (OpenBSD)
 - init_main.c
 	- lines 250 to 262
 	- uipc_mbuf.c: mbinit
@@ -43,14 +47,6 @@ UFS, FFS & LFS:
 i386: (4.4BSD-Lite2)
 - Doesn't contain a bootloader/ bootrom
 - Only i386 relavent code to load the kernel 
-
-Bootloader: (FreeBSD 5.0)
-- NetBSD ia64: Uses most parts of boot/common (Compatability)
-- Easier to Understand. Includes BTX Loader
-- Provides basic bootloader for i386 & others in Future
-- Easier to integrate with 2.11/4.4BSD code
-
-- Eventually convert to sysBSD project
 
 Possible Generic Header: 
 (2.11BSD):

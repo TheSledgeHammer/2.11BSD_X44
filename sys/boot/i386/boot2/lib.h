@@ -20,5 +20,5 @@
 void sio_init(void);
 void sio_flush(void);
 void sio_putc(int);
-int sio_getc(void);
-int sio_ischar(void);
+int  sio_getc(void);
+int  sio_ischar(void);
