@@ -48,7 +48,7 @@
  */
 
 #ifndef	_PMAP_MACHINE_
-#define	_PMAP_MACHINE_	1
+#define	_PMAP_MACHINE_1
 
 /*
  * 386 page table entry and page table directory

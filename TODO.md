@@ -6,9 +6,10 @@ boot:
 	- bootinfo32
 	- elf32_freebsd
 	- pxe
+- NetBSD ia64: Uses parts of FreeBSD's boot 
 
 i386:
-- machdep.c
+- machdep.c: getpcb()
 - pmap.c
 - locore.s
 - trap.c: p->p_usrpri: doesn't exist in 2.11BSD

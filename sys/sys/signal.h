@@ -107,6 +107,8 @@ struct	sigstack {
 	char	*ss_sp;			/* signal stack pointer */
 	int		ss_onstack;		/* current status */
 };
+#define SS_ONSTACK	0x0001	/* take signals on alternate stack */
+#define SS_DISABLE	0x0004	/* disable taking signals on alternate stack */
 
 /*
  * Information pushed on stack when a signal is delivered.
