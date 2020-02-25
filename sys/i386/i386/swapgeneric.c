@@ -35,15 +35,14 @@
  *
  *	@(#)swapgeneric.c	8.1 (Berkeley) 6/16/93
  */
-
-#include <machine/pte.h>
-
 #include <sys/param.h>
 #include <sys/conf.h>
 #include <sys/buf.h>
 #include <vm/include/vm.h>
 #include <sys/systm.h>
 #include <sys/reboot.h>
+
+#include <machine/pte.h>
 
 /*
  * Generic configuration;  all in one
@@ -55,19 +54,16 @@ struct	swdevt swdevt[] = {
 	{ 1, 0,	0 },
 	{ NODEV, 1,	0 },
 };
-long	dumplo;
+long dumplo;
 int	dmmin, dmmax, dmtext;
 
 extern	struct driver wddriver;
 
-struct	genericconf {
-	caddr_t	gc_driver;
-	char	*gc_name;
-	dev_t	gc_root;
-} genericconf[] = {
-	{ (caddr_t)&wddriver,	"wd",	makedev(0, 0),	},
-	{ 0 },
-};
+struct genericconf {
+	caddr_t gc_driver;
+	char *gc_name;
+	dev_t gc_root;
+} genericconf[] = { { (caddr_t) &wddriver, "wd", makedev(0, 0), }, { 0 }, };
 
 setconf()
 {
@@ -136,7 +132,7 @@ gets(cp)
 
 	lp = cp;
 	for (;;) {
-		printf("%c", c = cngetc()&0177);
+		printf("%c", c = cngetc() & 0177);
 		switch (c) {
 		case '\n':
 		case '\r':
@@ -155,7 +151,7 @@ gets(cp)
 				lp = cp;
 			continue;
 		case '@':
-		case 'u'&037:
+		case 'u' & 037:
 			lp = cp;
 			printf("%c", '\n');
 			continue;

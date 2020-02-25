@@ -127,7 +127,7 @@ mmrw(dev, uio, flags)
 			error = uiomove(zbuf, (int)c, uio);
 			continue;
 
-//#ifdef notyet
+#ifdef notyet
 /* 386 I/O address space (/dev/ioport[bwl]) is a read/write access to seperate
    i/o device address bus, different than memory bus. Semantics here are
    very different than ordinary read/write, as if iov_len is a multiple
