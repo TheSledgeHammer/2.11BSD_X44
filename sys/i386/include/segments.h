@@ -42,6 +42,9 @@
  *	William F. Jolitz (william@ernie.berkeley.edu) 6/20/1989
  */
 
+
+#ifndef _I386_SEGMENTS_H_
+#define _I386_SEGMENTS_H_
 /*
  * Selectors
  */
@@ -52,6 +55,7 @@
 #define	ISLDT(s)	((s)&SEL_LDT)			/* is it local or global */
 #define	SEL_LDT		4						/* local descriptor table */
 #define	IDXSEL(s)	(((s)>>3) & 0x1fff)		/* index of selector */
+
 #define	LSEL(s,r)	(((s)<<3) | SEL_LDT | r)/* a local selector */
 #define	GSEL(s,r)	(((s)<<3) | r)			/* a global selector */
 
@@ -88,11 +92,15 @@ struct	gate_descriptor	{
 /*
  * Generic descriptor
  */
-union	descriptor	{
+union descriptor	{
 	struct	segment_descriptor sd;
 	struct	gate_descriptor gd;
 };
 #define	d_type	gd.gd_type
+
+
+
+
 
 	/* system segments and gate types */
 #define	SDT_SYSNULL	 	 0	/* system null */
@@ -129,6 +137,7 @@ union	descriptor	{
 #define	SDT_MEMEAC	29	/* memory execute only accessed conforming */
 #define	SDT_MEMERC	30	/* memory execute read conforming */
 #define	SDT_MEMERAC	31	/* memory execute read accessed conforming */
+
 
 /* is memory segment descriptor pointer ? */
 #define ISMEMSDP(s)	((s->d_type) >= SDT_MEMRO && (s->d_type) <= SDT_MEMERAC)
@@ -188,3 +197,19 @@ struct region_descriptor {
 #define	SEGEX_TI	0x04	/* local descriptor table */
 							/* other bits are affected descriptor index */
 #define SEGEX_IDX(s)	((s)>>3)&0x1fff)
+
+
+/*
+ * Entries in the Local Descriptor Table (LDT).
+ * DO NOT ADD KERNEL DATA/CODE SEGMENTS TO THIS TABLE.
+ */
+#define LSYS5CALLS_SEL	0	/* iBCS system call gate */
+#define LSYS5SIGR_SEL	1	/* iBCS sigreturn gate */
+#define LUCODE_SEL		2	/* User code descriptor */
+#define LUDATA_SEL		3	/* User data descriptor */
+#define LSOL26CALLS_SEL	4	/* Solaris 2.6 system call gate */
+#define LUCODEBIG_SEL	5	/* User code with executable stack */
+#define LBSDICALLS_SEL	16	/* BSDI system call gate */
+#define NLDT			17
+
+#endif /* _I386_SEGMENTS_H_ */

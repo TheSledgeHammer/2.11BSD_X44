@@ -47,7 +47,7 @@ struct mapent {
 	rmfree(mp, size, (caddr_t)addr); 						\
 };
 
-#ifdef KERNEL
+#ifdef _KERNEL
 #define	ARGMAPSIZE	16
 struct map *kmemmap, *mbmap;
 struct map *coremap[1];																		/* space for core allocation */
@@ -57,5 +57,5 @@ int	nswapmap;
 long 	rmalloc__P((struct map *mp, long size)); 											/* Allocate units from the given map. */
 void 	rmfree__P((struct map *mp, long size, long addr)); 									/* Free the previously allocated units at addr into the specified map.*/
 long 	rmalloc3__P((struct map *mp, long d_size, long s_size, long u_size, long a[3]));	/* Allocate resources for the three segments of a process.*/
-void	rminit __P((struct map *, long size, long addr, char *name, int mapsize));			/* Initialized resource malloc */
+void	rminit__P((struct map *mp, long size, long addr, char *name, int mapsize));			/* Initialized resource malloc */
 #endif

@@ -33,7 +33,7 @@
 #include <lib/libsa/loadfile.h>
 #include <sys/libkern.h>
 
-#include "bootstrap.h"
+#include "bootstrap2.h"
 
 /*
  * Core console support

@@ -1,33 +1,40 @@
 TODO:
--lf_advlock: Used in Filesystems
 
-boot:
+boot: 
+- Focus on 2.11BSDx86 boot.
+- interp.c: interp_builtin_cmd (command set search)
 - libi386
 	- bootinfo32
-	- elf32_freebsd
+	- load_exec: load different exec's depending on Kernel Type 
 	- pxe
-- NetBSD ia64: Uses parts of FreeBSD's boot 
+- NetBSD ia64: Uses parts of FreeBSD's boot
+	- Should update parts from FreeBSD
 
 i386:
-- machdep.c: getpcb()
-- pmap.c
-- locore.s
-- trap.c: p->p_usrpri: doesn't exist in 2.11BSD
+- machdep.c (incomplete)
+- pmap.c (incomplete)
+- locore.s (non-existent: depends on boot)
+- GDT, LDT: non-existent
+- p->p_usrpri: doesn't exist in 2.11BSD (needs a solution)
 - vm_machdep.c: u->u_procp->p_p0br??
+
+libsa:
+- byteorder
+- bootparam
 
 Kern:
 - longjmp, setjmp
 - libkern.h (NetBSD/ OpenBSD): KASSERT, assert etc..
 - init_main.c
-	- lines 250 to 262
+	- lines 250 to 262 (references to old vm startup)
 	- uipc_mbuf.c: mbinit
 	- consinit
 	- cpu_startup
 	- start_init(curproc, framep);
 - if INET: remanents of 2.11BSD's networking stack overlay
-- kern_clock.c
+- kern_clock.c: no statclock
 - sys_kern.c (used? or unused?)
-- uipc_syscalls.c
+- uipc_syscalls.c: missing syscallargs
 
 - user.h: 
 	- u_ar0: redefine to machine-dependent reg.h
@@ -37,8 +44,8 @@ Kern:
 	- struct u_ovd						/* automatic overlay data */
 	- u_fps: floating point 
 	- u_pcb: machine-dependent pcb.h
-	- struct fperr u_fperr;				/* floating point error save */
 	- remove duplicate and/or un-needed references (kinfo_proc)
+	- kinfo_proc: could be useful unless it's superaceded by (ktrace or dtrace?) 
 	
 UFS, FFS & LFS:
 - extattr, dirhash
@@ -46,8 +53,9 @@ UFS, FFS & LFS:
 - WABL (NetBSD)
 
 i386: (4.4BSD-Lite2)
-- Doesn't contain a bootloader/ bootrom
-- Only i386 relavent code to load the kernel 
+- Doesn't contain a complete bootloader
+- Only i386 relavent code to load the kernel
+- Not sure what is missing (excluding being able to bootstrap)  
 
 Possible Generic Header: 
 (2.11BSD):

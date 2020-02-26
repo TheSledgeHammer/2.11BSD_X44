@@ -13,22 +13,22 @@
 /* 1.1 */
 extern long	hostid;
 extern char	hostname[MAXHOSTNAMELEN];
-extern int hostnamelen;
+extern int 	hostnamelen;
 
 /* 1.2 */
-extern volatile struct timeval mono_time;
-extern struct timeval boottime;
-extern struct timeval runtime;
-extern volatile struct timeval time;
-extern struct timezone tz;			/* XXX */
-int	adjdelta;
+extern volatile struct timeval 	mono_time;
+extern struct timeval 			boottime;
+extern struct timeval 			runtime;
+extern volatile struct timeval 	time;
+extern struct timezone 			tz;			/* XXX */
+int								adjdelta;
 
-extern int 	tick;		/* usec per tick (1000000 / hz) */
-extern int	hz;			/* system clock's frequency */
-extern int	mshz;		/* # milliseconds per hz */
-extern int 	stathz;		/* statistics clock's frequency */
-extern int 	profhz;		/* profiling clock's frequency */
-extern int	lbolt;		/* awoken once a second */
-extern int	psratio;	/* ratio: prof / stat */
-short avenrun[3];
+extern int 						tick;		/* usec per tick (1000000 / hz) */
+extern int						hz;			/* system clock's frequency */
+extern int						mshz;		/* # milliseconds per hz */
+extern int 						stathz;		/* statistics clock's frequency */
+extern int 						profhz;		/* profiling clock's frequency */
+extern int						lbolt;		/* awoken once a second */
+extern int						psratio;	/* ratio: prof / stat */
+short 							avenrun[3];
 

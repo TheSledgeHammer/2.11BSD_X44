@@ -130,5 +130,15 @@ void				splz __P((void));
 #define SET(t, f)	((t) |= (f))
 #define	ISSET(t, f)	((t) & (f))
 #define	CLR(t, f)	((t) &= ~(f))
+
+#include <sys/stdbool.h>
+
+typedef int	boolean_t;
+#ifndef TRUE
+#define	TRUE	1
+#endif
+#ifndef FALSE
+#define	FALSE	0
+#endif
 #endif
 #endif

@@ -39,7 +39,9 @@
 #include <lib/libsa/stand.h>
 #include <lib/libsa/loadfile.h>
 
-#include "bootstrap.h"
+#include "bootstrap2.h"
+
+typedef caddr_t vaddr_t;
 
 static int	file_load(char *filename, vaddr_t dest, struct preloaded_file **result);
 static int	file_havepath(const char *name);

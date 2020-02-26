@@ -475,31 +475,6 @@ exec_copyout_strings(elp, arginfo)
 	return (stack);
 }
 
-void
-new_vmcmd(struct exec_vmcmd_set *evsp,
-    int (*proc)(struct lwp * l, struct exec_vmcmd *),
-    vm_size_t len, caddr_t addr, struct vnode *vp, u_long offset,
-    u_int prot, int flags)
-{
-	struct exec_vmcmd *vcp;
-
-	VMCMD_EVCNT_INCR(calls);
-	KASSERT(proc != vmcmd_map_pagedvn || (vp->v_iflag & VI_TEXT));
-	KASSERT(vp == NULL || vp->v_usecount > 0);
-
-	if (evsp->evs_used >= evsp->evs_cnt)
-		vmcmdset_extend(evsp);
-	vcp = &evsp->evs_cmds[evsp->evs_used++];
-	vcp->ev_proc = proc;
-	vcp->ev_size = len;
-	vcp->ev_addr = addr;
-	if ((vcp->ev_vnodep = vp) != NULL)
-		vref(vp);
-	vcp->ev_offset = offset;
-	vcp->ev_prot = prot;
-	vcp->ev_flags = flags;
-}
-
 int
 exec_setup_stack(elp)
 	struct exec_linker *elp;

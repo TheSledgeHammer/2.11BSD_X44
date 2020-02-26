@@ -55,6 +55,8 @@
 #include <sys/ioctl.h>
 #include <sys/tty.h>
 #include <sys/sysctl.h>
+#include <sys/exec.h>
+#include <sys/exec_linker.h>
 
 #include <net/netisr.h>
 
@@ -71,7 +73,6 @@ extern vm_offset_t avail_end;
 #include <machine/specialreg.h>
 #include <i386/isa/rtc.h>
 #include <i386/i386/cons.h>
-
 
 /*
  * Declare these as initialized data so we can patch them.
@@ -343,20 +344,56 @@ getframe(p, sig, onstack)
 /*
  * Clear registers on exec
  */
-setregs(p, entry, retval)
-	register struct proc *p;
-	u_long entry;
-	int retval[2];
+void
+setregs(p, elp, stack)
+	struct proc *p;
+	struct exec_linker *elp;
+	u_long stack;
 {
-	p->p_md.md_regs[sEBP] = 0;		/* bottom of the fp chain */
-	p->p_md.md_regs[sEIP] = entry;
-
-	p->p_addr->u_pcb.pcb_flags = 0;	/* no fp at all */
-	load_cr0(rcr0() | CR0_EM);		/* start emulating */
-#include "npx.h"
+	struct pmap *pmap = vm_map_pmap(&p->p_vmspace->vm_map);
+	struct pcb *pcb = &p->p_addr->u_pcb;
+	struct trapframe *tf;
 #if NNPX > 0
 	npxinit(0x262);
 #endif
+
+	p->p_md.md_flags &= ~MDL_USEDFPU;
+
+	tf = p->p_md.md_regs;
+	tf->tf_gs = LSEL(LUDATA_SEL, SEL_UPL);
+	tf->tf_fs = LSEL(LUDATA_SEL, SEL_UPL);
+	tf->tf_es = LSEL(LUDATA_SEL, SEL_UPL);
+	tf->tf_ds = LSEL(LUDATA_SEL, SEL_UPL);
+	tf->tf_edi = 0;
+	tf->tf_esi = 0;
+	tf->tf_ebp = 0;
+	tf->tf_ebx = (int)p->p_psstrp;
+	tf->tf_edx = 0;
+	tf->tf_ecx = 0;
+	tf->tf_eax = 0;
+	tf->tf_eip = elp->el_entry;
+	tf->tf_cs = 0;//pmap->pm_hiexec > I386_MAX_EXE_ADDR ? LSEL(LUCODEBIG_SEL, SEL_UPL) : LSEL(LUCODE_SEL, SEL_UPL);
+	tf->tf_eflags = PSL_USERSET;
+	tf->tf_esp = stack;
+	tf->tf_ss = LSEL(LUDATA_SEL, SEL_UPL);
+
+	//load_cr0(rcr0() | CR0_MP | CR0_TS);		/* start emulating */
+}
+
+void
+cpu_setregs(void)
+{
+	unsigned int cr0;
+	cr0 = rcr0();
+	cr0 |= CR0_MP | CR0_NE | CR0_TS | CR0_WP | CR0_AM;
+	load_cr0(cr0);
+//	load_gs(_udatasel);
+}
+
+void
+cpu_sysctl()
+{
+
 }
 
 /*
@@ -420,6 +457,9 @@ setsegment(sd, base, limit, type, dpl, def32, gran)
 	sd->sd_gran = gran;
 	sd->sd_hibase = (int)base >> 24;
 }
+
+
+
 
 extern struct pte	*CMAP1, *CMAP2;
 extern caddr_t		CADDR1, CADDR2;

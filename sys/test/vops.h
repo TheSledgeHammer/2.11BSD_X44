@@ -72,6 +72,7 @@ struct vop_lookup_args {
 	struct componentname 	*a_cnp;
 };
 extern struct vnodeop_desc vop_lookup_desc;
+extern int vop_lookup_vp_offsets[];
 
 struct vop_create_args {
 	struct vnodeop_desc 	*a_desc;
@@ -81,6 +82,7 @@ struct vop_create_args {
 	struct vattr 			*a_vap;
 };
 extern struct vnodeop_desc vop_create_desc;
+extern int vop_create_vp_offsets[];
 
 struct vop_whiteout_args {
 	struct vnodeop_desc 	*a_desc;
@@ -89,6 +91,7 @@ struct vop_whiteout_args {
 	int 					a_flags;
 };
 extern struct vnodeop_desc vop_whiteout_desc;
+extern int vop_whiteout_vp_offsets[];
 
 struct vop_mknod_args {
 	struct vnodeop_desc 	*a_desc;
@@ -98,6 +101,7 @@ struct vop_mknod_args {
 	struct vattr 			*a_vap;
 };
 extern struct vnodeop_desc vop_mknod_desc;
+extern int vop_mknod_vp_offsets[];
 
 struct vop_open_args {
 	struct vnodeop_desc 	*a_desc;
@@ -107,6 +111,7 @@ struct vop_open_args {
 	struct proc 			*a_p;
 };
 extern struct vnodeop_desc vop_open_desc;
+extern int vop_open_vp_offsets[];
 
 struct vop_close_args {
 	struct vnodeop_desc 	*a_desc;
@@ -116,6 +121,7 @@ struct vop_close_args {
 	struct proc 			*a_p;
 };
 extern struct vnodeop_desc vop_close_desc;
+extern int vop_close_vp_offsets[];
 
 struct vop_access_args {
 	struct vnodeop_desc 	*a_desc;
@@ -125,6 +131,7 @@ struct vop_access_args {
 	struct proc 			*a_p;
 };
 extern struct vnodeop_desc vop_access_desc;
+extern int vop_access_vp_offsets[];
 
 struct vop_getattr_args {
 	struct vnodeop_desc 	*a_desc;
@@ -134,6 +141,7 @@ struct vop_getattr_args {
 	struct proc 			*a_p;
 };
 extern struct vnodeop_desc vop_getattr_desc;
+extern int vop_getattr_vp_offsets[];
 
 struct vop_setattr_args {
 	struct vnodeop_desc 	*a_desc;
@@ -143,6 +151,7 @@ struct vop_setattr_args {
 	struct proc 			*a_p;
 };
 extern struct vnodeop_desc vop_setattr_desc;
+extern int vop_setattr_vp_offsets[];
 
 struct vop_read_args {
 	struct vnodeop_desc 	*a_desc;
@@ -152,6 +161,7 @@ struct vop_read_args {
 	struct ucred 			*a_cred;
 };
 extern struct vnodeop_desc vop_read_desc;
+extern int vop_read_vp_offsets[];
 
 struct vop_write_args {
 	struct vnodeop_desc 	*a_desc;
@@ -161,6 +171,7 @@ struct vop_write_args {
 	struct ucred 			*a_cred;
 };
 extern struct vnodeop_desc vop_write_desc;
+extern int vop_write_vp_offsets[];
 
 struct vop_lease_args {
 	struct vnodeop_desc 	*a_desc;
@@ -170,6 +181,7 @@ struct vop_lease_args {
 	int 					a_flag;
 };
 extern struct vnodeop_desc vop_lease_desc;
+extern int vop_lease_vp_offsets[];
 
 struct vop_ioctl_args {
 	struct vnodeop_desc 	*a_desc;
@@ -181,6 +193,7 @@ struct vop_ioctl_args {
 	struct proc 			*a_p;
 };
 extern struct vnodeop_desc vop_ioctl_desc;
+extern int vop_ioctl_vp_offsets[];
 
 struct vop_select_args {
 	struct vnodeop_desc 	*a_desc;
@@ -191,6 +204,7 @@ struct vop_select_args {
 	struct proc 			*a_p;
 };
 extern struct vnodeop_desc vop_select_desc;
+extern int vop_select_vp_offsets[];
 
 struct vop_revoke_args {
 	struct vnodeop_desc 	*a_desc;
@@ -198,6 +212,7 @@ struct vop_revoke_args {
 	int 					a_flags;
 };
 extern struct vnodeop_desc vop_revoke_desc;
+extern int vop_revoke_vp_offsets[];
 
 struct vop_mmap_args {
 	struct vnodeop_desc 	*a_desc;
@@ -207,6 +222,7 @@ struct vop_mmap_args {
 	struct proc 			*a_p;
 };
 extern struct vnodeop_desc vop_mmap_desc;
+extern int vop_mmap_vp_offsets[];
 
 struct vop_fsync_args {
 	struct vnodeop_desc 	*a_desc;
@@ -216,6 +232,7 @@ struct vop_fsync_args {
 	struct proc 			*a_p;
 };
 extern struct vnodeop_desc vop_fsync_desc;
+extern int vop_fsync_vp_offsets[];
 
 struct vop_seek_args {
 	struct vnodeop_desc 	*a_desc;
@@ -225,6 +242,7 @@ struct vop_seek_args {
 	struct ucred 			*a_cred;
 };
 extern struct vnodeop_desc vop_seek_desc;
+extern int vop_seek_vp_offsets[];
 
 struct vop_remove_args {
 	struct vnodeop_desc 	*a_desc;
@@ -233,6 +251,7 @@ struct vop_remove_args {
 	struct componentname 	*a_cnp;
 };
 extern struct vnodeop_desc vop_remove_desc;
+extern int vop_remove_vp_offsets[];
 
 struct vop_link_args {
 	struct vnodeop_desc 	*a_desc;
@@ -241,6 +260,7 @@ struct vop_link_args {
 	struct componentname 	*a_cnp;
 };
 extern struct vnodeop_desc vop_link_desc;
+extern int vop_link_vp_offsets[];
 
 struct vop_rename_args {
 	struct vnodeop_desc 	*a_desc;
@@ -252,6 +272,7 @@ struct vop_rename_args {
 	struct componentname 	*a_tcnp;
 };
 extern struct vnodeop_desc vop_rename_desc;
+extern int vop_rename_vp_offsets[];
 
 struct vop_mkdir_args {
 	struct vnodeop_desc 	*a_desc;
@@ -261,6 +282,7 @@ struct vop_mkdir_args {
 	struct vattr 			*a_vap;
 };
 extern struct vnodeop_desc vop_mkdir_desc;
+extern int vop_mkdir_vp_offsets[];
 
 struct vop_rmdir_args {
 	struct vnodeop_desc 	*a_desc;
@@ -269,6 +291,7 @@ struct vop_rmdir_args {
 	struct componentname 	*a_cnp;
 };
 extern struct vnodeop_desc vop_rmdir_desc;
+extern int vop_rmdir_vp_offsets[];
 
 struct vop_symlink_args {
 	struct vnodeop_desc 	*a_desc;
@@ -279,6 +302,7 @@ struct vop_symlink_args {
 	char 					*a_target;
 };
 extern struct vnodeop_desc vop_symlink_desc;
+extern int vop_symlink_vp_offsets[];
 
 struct vop_readdir_args {
 	struct vnodeop_desc 	*a_desc;
@@ -290,6 +314,7 @@ struct vop_readdir_args {
 	u_long 					**a_cookies;
 };
 extern struct vnodeop_desc vop_readdir_desc;
+extern int vop_readdir_vp_offsets[];
 
 struct vop_readlink_args {
 	struct vnodeop_desc 	*a_desc;
@@ -298,6 +323,7 @@ struct vop_readlink_args {
 	struct ucred 			*a_cred;
 };
 extern struct vnodeop_desc vop_readlink_desc;
+extern int vop_readlink_vp_offsets[];
 
 struct vop_abortop_args {
 	struct vnodeop_desc 	*a_desc;
@@ -305,6 +331,7 @@ struct vop_abortop_args {
 	struct componentname	*a_cnp;
 };
 extern struct vnodeop_desc vop_abortop_desc;
+extern int vop_abortop_vp_offsets[];
 
 struct vop_inactive_args {
 	struct vnodeop_desc 	*a_desc;
@@ -312,6 +339,7 @@ struct vop_inactive_args {
 	struct proc 			*a_p;
 };
 extern struct vnodeop_desc vop_inactive_desc;
+extern int vop_inactive_vp_offsets[];
 
 struct vop_reclaim_args {
 	struct vnodeop_desc 	*a_desc;
@@ -319,6 +347,7 @@ struct vop_reclaim_args {
 	struct proc 			*a_p;
 };
 extern struct vnodeop_desc vop_reclaim_desc;
+extern int vop_reclaim_vp_offsets[];
 
 struct vop_lock_args {
 	struct vnodeop_desc 	*a_desc;
@@ -327,6 +356,7 @@ struct vop_lock_args {
 	struct proc 			*a_p;
 };
 extern struct vnodeop_desc vop_lock_desc;
+extern int vop_lock_vp_offsets[];
 
 struct vop_unlock_args {
 	struct vnodeop_desc 	*a_desc;
@@ -335,6 +365,7 @@ struct vop_unlock_args {
 	struct proc 			*a_p;
 };
 extern struct vnodeop_desc vop_unlock_desc;
+extern int vop_unlock_vp_offsets[];
 
 struct vop_bmap_args {
 	struct vnodeop_desc 	*a_desc;
@@ -345,18 +376,21 @@ struct vop_bmap_args {
 	int 					*a_runp;
 };
 extern struct vnodeop_desc vop_bmap_desc;
+extern int vop_bmap_vp_offsets[];
 
 struct vop_print_args {
 	struct vnodeop_desc 	*a_desc;
 	struct vnode 			*a_vp;
 };
 extern struct vnodeop_desc vop_print_desc;
+extern int vop_print_vp_offsets[];
 
 struct vop_islocked_args {
 	struct vnodeop_desc 	*a_desc;
 	struct vnode 			*a_vp;
 };
 extern struct vnodeop_desc vop_islocked_desc;
+extern int vop_islocked_vp_offsets[];
 
 struct vop_pathconf_args {
 	struct vnodeop_desc 	*a_desc;
@@ -365,6 +399,7 @@ struct vop_pathconf_args {
 	register_t 				*a_retval;
 };
 extern struct vnodeop_desc vop_pathconf_desc;
+extern int vop_lookup_vp_offsets[];
 
 struct vop_advlock_args {
 	struct vnodeop_desc 	*a_desc;
@@ -375,6 +410,7 @@ struct vop_advlock_args {
 	int 					a_flags;
 };
 extern struct vnodeop_desc vop_advlock_desc;
+extern int vop_advblock_vp_offsets[];
 
 struct vop_blkatoff_args {
 	struct vnodeop_desc 	*a_desc;
@@ -384,6 +420,7 @@ struct vop_blkatoff_args {
 	struct buf 				**a_bpp;
 };
 extern struct vnodeop_desc vop_blkatoff_desc;
+extern int vop_blkatoff_vp_offsets[];
 
 struct vop_valloc_args {
 	struct vnodeop_desc 	*a_desc;
@@ -393,6 +430,7 @@ struct vop_valloc_args {
 	struct vnode 			**a_vpp;
 };
 extern struct vnodeop_desc vop_valloc_desc;
+extern int vop_valloc_vp_offsets[];
 
 struct vop_reallocblks_args {
 	struct vnodeop_desc 	*a_desc;
@@ -400,6 +438,7 @@ struct vop_reallocblks_args {
 	struct cluster_save 	*a_buflist;
 };
 extern struct vnodeop_desc vop_reallocblks_desc;
+extern int vop_reallocblks_vp_offsets[];
 
 struct vop_vfree_args {
 	struct vnodeop_desc 	*a_desc;
@@ -408,6 +447,7 @@ struct vop_vfree_args {
 	int 					a_mode;
 };
 extern struct vnodeop_desc vop_vfree_desc;
+extern int vop_vfree_vp_offsets[];
 
 struct vop_truncate_args {
 	struct vnodeop_desc 	*a_desc;
@@ -418,6 +458,7 @@ struct vop_truncate_args {
 	struct proc 			*a_p;
 };
 extern struct vnodeop_desc vop_truncate_desc;
+extern int vop_truncate_vp_offsets[];
 
 struct vop_update_args {
 	struct vnodeop_desc 	*a_desc;
@@ -427,6 +468,7 @@ struct vop_update_args {
 	int 					a_waitfor;
 };
 extern struct vnodeop_desc vop_update_desc;
+extern int vop_update_vp_offsets[];
 
 /* Special cases: */
 #include <sys/buf.h>
@@ -436,12 +478,14 @@ struct vop_strategy_args {
 	struct buf 				*a_bp;
 };
 extern struct vnodeop_desc vop_strategy_desc;	/* XXX: SPECIAL CASE */
+extern int vop_strategy_vp_offsets[];
 
 struct vop_bwrite_args {
 	struct vnodeop_desc 	*a_desc;
 	struct buf 				*a_bp;
 };
 extern struct vnodeop_desc vop_bwrite_desc;		/* XXX: SPECIAL CASE */
+extern int vop_bwrite_vp_offsets[];
 
 /* End of special cases. */
 

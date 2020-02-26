@@ -1,5 +1,7 @@
 /*-
- * Copyright (c) 1991, 1993
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * Copyright (c) 1987, 1988, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -30,30 +28,16 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)specialreg.h	8.1 (Berkeley) 6/11/93
+ *	@(#)disklabel.h	8.2 (Berkeley) 7/10/94
+ * $FreeBSD$
  */
 
-#ifndef _MACHINE_SPECIALREG_H_
-#define	_MACHINE_SPECIALREG_H_
-/*
- * 386 Special registers:
- */
+#ifndef _LIBSA_DISKMBR_H_
+#define	_LIBSA_DISKMBR_H_
 
-#define	CR0_PE	0x00000001	/* Protected mode Enable */
-#define	CR0_MP	0x00000002	/* "Math" Present (e.g. npx), wait for it */
-#define	CR0_EM	0x00000004	/* EMulate NPX, e.g. trap, don't execute code */
-#define	CR0_TS	0x00000008	/* Process has done Task Switch, do NPX save */
-#define	CR0_ET	0x00000010	/* 32 bit (if set) vs 16 bit (387 vs 287) */
-#define	CR0_PG	0x80000000	/* Paging Enable */
+#include <disk/mbr.h>
+#include <sys/ioccom.h>
 
-/*
- * Bits in 486 special registers:
- */
-#define	CR0_NE	0x00000020	/* Numeric Error enable (EX16 vs IRQ13) */
-#define	CR0_WP	0x00010000	/* Write Protect (honor page protect in
-							   all modes) */
-#define	CR0_AM	0x00040000	/* Alignment Mask (set to enable AC flag) */
-#define	CR0_NW  0x20000000	/* Not Write-through */
-#define	CR0_CD  0x40000000	/* Cache Disable */
+#define DIOCSMBR 	_IOW('M', 129, u_char[512])
 
-#endif /* !_MACHINE_SPECIALREG_H_ */
+#endif /* !_LIBSA_DISKMBR_H_ */

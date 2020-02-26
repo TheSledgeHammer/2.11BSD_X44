@@ -18,8 +18,8 @@
 #include <sys/protosw.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
-//#include <sys/uio.h>
-//#include <sys/domain.h>
+#include <sys/uio.h>
+#include <sys/domain.h>
 #include <sys/mount.h>
 //#include <sys/syscallargs.h>
 

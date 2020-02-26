@@ -45,6 +45,8 @@
  */
 
 struct trapframe {
+	int tf_fs;
+	int tf_gs;
 	int	tf_es;
 	int	tf_ds;
 	int	tf_edi;

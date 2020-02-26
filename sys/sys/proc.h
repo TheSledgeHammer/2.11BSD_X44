@@ -121,6 +121,7 @@ struct	proc {
 	short				p_simple_locks;	/* DEBUG: count of held simple locks */
 	long				p_spare[2];		/* pad to 256, avoid shifting eproc. */
 
+	caddr_t  			p_psstrp;		/* :: address of process's ps_strings */
 	struct	mdproc 		p_md;			/* Any machine-dependent fields. */
 
     short				p_xstat;		/* exit status for wait */

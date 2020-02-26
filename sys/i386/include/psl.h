@@ -36,6 +36,9 @@
  *	@(#)psl.h	8.1 (Berkeley) 6/11/93
  */
 
+
+#ifndef _MACHINE_PSL_H_
+#define	_MACHINE_PSL_H_
 /*
  * 386 processor status longword.
  */
@@ -53,9 +56,19 @@
 #define	PSL_NT		0x00004000	/* nested task bit */
 #define	PSL_RF		0x00010000	/* restart flag bit */
 #define	PSL_VM		0x00020000	/* virtual 8086 mode bit */
+#define	PSL_AC		0x00040000	/* alignment checking */
+#define	PSL_VIF		0x00080000	/* virtual interrupt enable */
+#define	PSL_VIP		0x00100000	/* virtual interrupt pending */
+#define	PSL_ID		0x00200000	/* identification bit */
 
 #define	PSL_MBZ		0xfffc7fb7	/* must be zero bits */
 #define	PSL_MBO		0x00000002	/* must be one bits */
 
+/*
+ * Initial flags for kernel and user mode.  The kernel later inherits
+ * PSL_I and some other flags from user mode.
+ */
 #define	PSL_USERSET	(PSL_IOPL)
 #define	PSL_USERCLR	(PSL_I|PSL_NT)
+
+#endif /* !_MACHINE_PSL_H_ */

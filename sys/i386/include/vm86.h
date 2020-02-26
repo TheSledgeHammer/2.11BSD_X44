@@ -147,9 +147,9 @@ struct vm86_intcall_args {
 #ifdef _KERNEL
 extern 	int vm86paddr;
 
-struct thread;
+struct proc;
 extern int vm86_emulate(struct vm86frame *);
-extern int vm86_sysarch(struct thread *, char *);
+extern int vm86_sysarch(struct proc *, char *);
 extern void vm86_trap(struct vm86frame *);
 extern int vm86_intcall(int, struct vm86frame *);
 extern int vm86_datacall(int, struct vm86frame *, struct vm86context *);
