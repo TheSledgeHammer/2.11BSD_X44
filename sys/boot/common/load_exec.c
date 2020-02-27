@@ -14,7 +14,7 @@
 #include <lib/libsa/stand.h>
 #include <lib/libsa/loadfile.h>
 
-#include "bootstrap.h"
+#include "bootstrap2.h"
 
 /*
  * Kernel Types:

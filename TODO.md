@@ -3,6 +3,8 @@ TODO:
 boot: 
 - Focus on 2.11BSDx86 boot.
 - interp.c: interp_builtin_cmd (command set search)
+- md.h: needs an updated stand.h 
+- bcache.c: incomplete
 - libi386
 	- bootinfo32
 	- load_exec: load different exec's depending on Kernel Type 
@@ -19,7 +21,6 @@ i386:
 - vm_machdep.c: u->u_procp->p_p0br??
 
 libsa:
-- byteorder
 - bootparam
 
 Kern:
