@@ -31,6 +31,7 @@
 #include <sys/reboot.h>
 #include <sys/exec_linker.h>
 #include <machine/bootinfo.h>
+
 #include "bootstrap.h"
 #include "libi386.h"
 #include "btxv86.h"

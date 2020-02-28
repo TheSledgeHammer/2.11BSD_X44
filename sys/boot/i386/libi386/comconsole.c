@@ -26,10 +26,11 @@
 #include <sys/cdefs.h>
 
 #include <stand.h>
-#include <bootstrap.h>
 #include <machine/cpufunc.h>
 #include <dev/ic/ns16550.h>
 #include <dev/pci/pcireg.h>
+
+#include "bootstrap.h"
 #include "libi386.h"
 
 #define COMC_FMT		0x3				/* 8N1 */

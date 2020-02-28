@@ -29,6 +29,7 @@
 #include <sys/cdefs.h>
 #include <stand.h>
 #include <string.h>
+
 #include "bootstrap.h"
 #include "disk.h"
 #include "libi386.h"

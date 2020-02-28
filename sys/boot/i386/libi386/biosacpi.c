@@ -29,8 +29,8 @@
 
 #include <stand.h>
 #include <machine/stdarg.h>
-#include <bootstrap.h>
 #include <btxv86.h>
+#include "bootstrap.h"
 #include "libi386.h"
 
 #include "platform/acfreebsd.h"

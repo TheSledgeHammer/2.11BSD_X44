@@ -31,9 +31,10 @@
 #include <sys/cdefs.h>
 
 #include <stand.h>
-#include <bootstrap.h>
 #include <btxv86.h>
 #include <machine/psl.h>
+
+#include "bootstrap.h"
 #include "libi386.h"
 
 #if KEYBOARD_PROBE

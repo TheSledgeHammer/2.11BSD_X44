@@ -32,9 +32,9 @@
 
 #include <stand.h>
 #include <machine/stdarg.h>
-#include <bootstrap.h>
 #include <isapnp.h>
 #include <btxv86.h>
+#include "bootstrap.h"
 
 
 static int	biospnp_init(void);

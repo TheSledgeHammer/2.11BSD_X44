@@ -46,10 +46,10 @@
 #include <ufs/ufs/dir.h>
 #include <sys/dirent.h>
 
-#include <lib/libsa/stand.h>
+#include <boot/libsa/stand.h>
 #include <lib/libsa/loadfile.h>
 
-#include "bootstrap2.h"
+#include "bootstrap.h"
 
 static char typestr[] = "?fc?d?b? ?l?s?w";
 

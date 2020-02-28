@@ -38,7 +38,7 @@
 #include <sys/cdefs.h>
 
 #include <stand.h>
-#include <bootstrap.h>
+#include "bootstrap.h"
 
 static void	nullc_probe(struct console *cp);
 static int	nullc_init(int arg);

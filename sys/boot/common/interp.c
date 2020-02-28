@@ -34,7 +34,7 @@
  */
 
 
-#include "bootstrap2.h"
+#include "bootstrap.h"
 
 
 #define	MAXARGS	20			/* maximum number of arguments allowed */

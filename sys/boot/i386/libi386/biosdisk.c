@@ -45,9 +45,10 @@
 #include <stdarg.h>
 #include <stdbool.h>
 
-#include <bootstrap.h>
 #include <btxv86.h>
 #include <edd.h>
+
+#include "bootstrap.h"
 #include "disk.h"
 #include "libi386.h"
 

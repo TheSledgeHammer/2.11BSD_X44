@@ -73,6 +73,7 @@ struct command_set {
     int 	(*command_lskern)(int argc, char *argv[]);
     int 	(*command_include)(int argc, char *argv[]);
     int 	(*command_ls)(int argc, char *argv[]);
+    int		(*command_bcache)(int argc, char *argv[]);
 };
 
 /*	commands.c		*/
@@ -101,6 +102,9 @@ int command_include(int argc, char *argv[]);
 /*	ls.c		*/
 int command_ls(int argc, char *argv[]);
 
+/*  bcache.c	*/
+int command_bcache(int argc, char *argv[]);
+
 /* Command Set Commands */
 struct command_set cmds[] = {
         &command_help,
@@ -119,6 +123,7 @@ struct command_set cmds[] = {
 		&command_lskern,
 		&command_include,
 		&command_ls,
+		&command_bcache,
 };
 
 #define COMMAND_HELP(argc, argv) 	\
@@ -153,5 +158,7 @@ struct command_set cmds[] = {
 	command_include(argc, argv)
 #define COMMAND_LS(argc, argv) 		\
 	command_ls(argc, argv)
+#define COMMAND_BCACHE(argc, argv) 	\
+	command_bcache(argc, argv)
 
 #endif /* _COMMANDS_H_ */

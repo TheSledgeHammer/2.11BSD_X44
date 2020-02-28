@@ -36,10 +36,10 @@
 #include <sys/queue.h>
 #include <sys/libkern.h>
 
-#include <lib/libsa/stand.h>
+#include <stand.h>
 #include <lib/libsa/loadfile.h>
 
-#include "bootstrap2.h"
+#include "bootstrap.h"
 
 typedef caddr_t vaddr_t;
 
