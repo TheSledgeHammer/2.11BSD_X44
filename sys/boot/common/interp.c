@@ -33,6 +33,9 @@
  * XXX may be obsoleted by BootFORTH or some other, better, interpreter.
  */
 
+#include <boot/libsa/stand.h>
+#include <lib/libsa/loadfile.h>
+#include <sys/libkern.h>
 
 #include "bootstrap.h"
 
@@ -160,7 +163,7 @@ interp_builtin_cmd(int argc, char *argv[])
 	result = CMD_ERROR;
 
 	/* search the command set for the command */
-	SET_FOREACH(cmdp, Xcommand_set)
+	SET_FOREACH(cmdp, command_set)
 	{
 		if (((*cmdp)->c_name != NULL) && !strcmp(argv[0], (*cmdp)->c_name))
 			cmd = (*cmdp)->c_fn;

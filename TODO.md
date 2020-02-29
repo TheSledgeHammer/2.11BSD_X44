@@ -1,9 +1,11 @@
 TODO:
 - rename: boot/libsa/stand.h, reduce conflict with lib/libsa/stand.h
+- 
 boot: 
 - Focus on 2.11BSDx86 boot.
 - FreeBSD's loading kern modules not fully implemented
-- interp.c: interp_builtin_cmd (command set search)
+- interp.c: use NetBSD's version
+- Fix up files related to commands.h (changed from struct command_set)
 - md.h: needs an updated stand.h 
 - libi386
 	- bootinfo32

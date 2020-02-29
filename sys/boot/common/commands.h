@@ -1,3 +1,5 @@
+/*	$NetBSD: bootstrap.h,v 1.10 2017/12/10 02:32:03 christos Exp $	*/
+
 /*-
  * Copyright (c) 1998 Michael Smith <msmith@freebsd.org>
  * All rights reserved.
@@ -23,6 +25,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * $FreeBSD: src/sys/boot/common/bootstrap.h,v 1.38.6.1 2004/09/03 19:25:40 iedowse Exp $
  */
 
 #ifndef _COMMANDS_H_
@@ -38,10 +41,7 @@ extern char	command_errbuf[COMMAND_ERRBUFSZ];
 #define CMD_CRIT	3
 #define CMD_FATAL	4
 
-/* Number of Commands in Command set:
-struct command_set *cmd = &cmds[0];
-int cmd_setsize = (sizeof(cmds[0])/ (sizeof(&cmd)));
-*/
+typedef int	(bootblk_cmd_t)(int argc, char *argv[]);
 
 /*
  * Support for commands
@@ -50,31 +50,10 @@ struct bootblk_command
 {
     const char			*c_name;
     const char			*c_desc;
-    struct command_set	*c_fn;
+    bootblk_cmd_t		*c_fn;
 };
-extern struct bootblk_command commands[];
 
 /* Prototypes for the command handlers within stand/common/ */
-
-struct command_set {
-    int     (*command_help)(int argc, char *argv[]);
-    int 	(*command_commandlist)(int argc, char *argv[]);
-    int 	(*command_show)(int argc, char *argv[]);
-    int 	(*command_set)(int argc, char *argv[]);
-    int 	(*command_unset)(int argc, char *argv[]);
-    int 	(*command_echo)(int argc, char *argv[]);
-    int 	(*command_read)(int argc, char *argv[]);
-    int 	(*command_more)(int argc, char *argv[]);
-    int 	(*command_lsdev)(int argc, char *argv[]);
-    int 	(*command_boot)(int argc, char *argv[]);
-    int 	(*command_autoboot)(int argc, char *argv[]);
-    int 	(*command_load)(int argc, char *argv[]);
-    int 	(*command_unload)(int argc, char *argv[]);
-    int 	(*command_lskern)(int argc, char *argv[]);
-    int 	(*command_include)(int argc, char *argv[]);
-    int 	(*command_ls)(int argc, char *argv[]);
-    int		(*command_bcache)(int argc, char *argv[]);
-};
 
 /*	commands.c		*/
 int command_help(int argc, char *argv[]) ;
@@ -105,6 +84,49 @@ int command_ls(int argc, char *argv[]);
 /*  bcache.c	*/
 int command_bcache(int argc, char *argv[]);
 
+#define COMMAND_SET(a, b, c, d) /* Nothing */
+
+#define COMMON_COMMANDS															\
+		{ "help", "detailed help", command_help },								\
+		{ "commandlist", "list commands", command_commandlist },				\
+		{ "show", "show variable(s)", command_show },							\
+		{ "set", "set a variable", command_set },								\
+		{ "unset", "unset a variable", command_unset },							\
+		{ "echo", "echo arguments", command_echo },								\
+		{ "read", "read input from the terminal", command_read },				\
+		{ "more", "show contents of a file", command_more },					\
+		{ "lsdev", "list all devices", command_lsdev },							\
+		{ "bcachestat", "get disk block cache stats", command_bcache },			\
+		{ "boot", "boot a file or loaded kernel", command_boot },				\
+		{ "autoboot", "boot automatically after a delay", command_autoboot},	\
+		{ "load", "load a kernel", command_load },								\
+		{ "unload", "unload all modules", command_unload },						\
+		{ "lskern", "list loaded kernel", command_lskern },						\
+		{ "include", "read commands from a file", command_include },			\
+		{ "ls", "list files", command_ls },
+
+extern struct bootblk_command commands[];
+
+struct command_set {
+    int     (*command_help)(int argc, char *argv[]);
+    int 	(*command_commandlist)(int argc, char *argv[]);
+    int 	(*command_show)(int argc, char *argv[]);
+    int 	(*command_set)(int argc, char *argv[]);
+    int 	(*command_unset)(int argc, char *argv[]);
+    int 	(*command_echo)(int argc, char *argv[]);
+    int 	(*command_read)(int argc, char *argv[]);
+    int 	(*command_more)(int argc, char *argv[]);
+    int 	(*command_lsdev)(int argc, char *argv[]);
+    int 	(*command_boot)(int argc, char *argv[]);
+    int 	(*command_autoboot)(int argc, char *argv[]);
+    int 	(*command_load)(int argc, char *argv[]);
+    int 	(*command_unload)(int argc, char *argv[]);
+    int 	(*command_lskern)(int argc, char *argv[]);
+    int 	(*command_include)(int argc, char *argv[]);
+    int 	(*command_ls)(int argc, char *argv[]);
+    int		(*command_bcache)(int argc, char *argv[]);
+};
+
 /* Command Set Commands */
 struct command_set cmds[] = {
         &command_help,
@@ -126,39 +148,10 @@ struct command_set cmds[] = {
 		&command_bcache,
 };
 
-#define COMMAND_HELP(argc, argv) 	\
-	command_help(argc, argv)
-#define COMMAND_COMMANDLIST(argc, argv) \
-	command_commandlist(argc, argv)
-#define COMMAND_SHOW(argc, argv) 	\
-	command_show(argc, argv)
-#define COMMAND_SET(argc, argv) 	\
-	command_set(argc, argv)
-#define COMMAND_UNSET(argc, argv) 	\
-	command_unset(argc, argv)
-#define COMMAND_ECHO(argc, argv) 	\
-	command_echo(argc, argv)
-#define COMMAND_READ(argc, argv) 	\
-	command_read(argc, argv)
-#define COMMAND_MORE(argc, argv) 	\
-	command_more(argc, argv)
-#define COMMAND_LSDEV(argc, argv) 	\
-	command_lsdev(argc, argv)
-#define COMMAND_BOOT(argc, argv) 	\
-	command_boot(argc, argv)
-#define COMMAND_AUTOBOOT(argc, argv) \
-	command_autoboot(argc, argv)
-#define COMMAND_LOAD(argc, argv) 	\
-	command_load(argc, argv)
-#define COMMAND_UNLOAD(argc, argv) 	\
-	command_unload(argc, argv)
-#define COMMAND_LSKERN(argc, argv) 	\
-	command_lskern(argc, argv)
-#define COMMAND_INCLUDE(argc, argv) \
-	command_include(argc, argv)
-#define COMMAND_LS(argc, argv) 		\
-	command_ls(argc, argv)
-#define COMMAND_BCACHE(argc, argv) 	\
-	command_bcache(argc, argv)
+
+/* Number of Commands in Command set:
+struct command_set *cmd = &cmds[0];
+int cmd_setsize = (sizeof(cmds[0])/ (sizeof(&cmd)));
+*/
 
 #endif /* _COMMANDS_H_ */
