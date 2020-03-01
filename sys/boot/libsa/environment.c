@@ -35,7 +35,7 @@
  * variables in order to allow some type strength.
  */
 
-#include "stand.h"
+#include "bootstand.h"
 #include <lib/libsa/loadfile.h>
 #include <sys/libkern.h>
 

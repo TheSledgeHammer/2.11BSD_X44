@@ -1,7 +1,5 @@
-/*	$NetBSD: devopen.c,v 1.3 2009/07/20 04:59:03 kiyohara Exp $	*/
-
 /*-
- * Copyright (c) 1998 Michael Smith <msmith@freebsd.org>
+ * Copyright (c) 2010 Pawel Jakub Dawidek <pjd@FreeBSD.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -13,10 +11,10 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHORS AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE
  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
  * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
@@ -24,41 +22,27 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * $FreeBSD$
  */
 
-#include <sys/cdefs.h>
-/* __FBSDID("$FreeBSD: src/sys/boot/common/devopen.c,v 1.4 2003/08/25 23:30:41 obrien Exp $"); */
+#ifndef _DRV_H_
+#define _DRV_H_
 
-#include <boot/libsa/bootstand.h>
-#include <lib/libsa/loadfile.h>
+struct dsk {
+	unsigned int 	drive;
+	unsigned int 	type;
+	unsigned int 	unit;
+	unsigned int 	slice;
+	int 			part;
+	daddr_t 		start;
+	uint64_t 		size;
+};
 
-#include "bootstrap.h"
+int 		drvread(struct dsk *dskp, void *buf, daddr_t lba, unsigned nblk);
+#if 		defined(GPT) || defined(ZFS)
+int 		drvwrite(struct dsk *dskp, void *buf, daddr_t lba, unsigned nblk);
+#endif		/* GPT || ZFS */
+uint64_t 	drvsize(struct dsk *dskp);
 
-int
-devopen(struct open_file *f, const char *fname, char **file)
-{
-	struct devdesc *dev;
-	int result;
-
-	if ((result = archsw.arch_getdev((void*) &dev, fname, (const char**) file))
-			== 0) { /* get the device */
-		/* point to device-specific data so that device open can use it */
-		f->f_devdata = dev;
-		if ((result = dev->d_dev->dv_open(f, dev)) == 0) { /* try to open it */
-			/* reference the devsw entry from the open_file structure */
-			f->f_dev = dev->d_dev;
-		} else {
-			free(dev); /* release the device descriptor */
-		}
-	}
-	return (result);
-}
-
-int
-devclose(struct open_file *f)
-{
-	if (f->f_devdata != NULL) {
-		free(f->f_devdata);
-	}
-	return (0);
-}
+#endif	/* !_DRV_H_ */

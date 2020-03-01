@@ -33,7 +33,7 @@
  * XXX may be obsoleted by BootFORTH or some other, better, interpreter.
  */
 
-#include <boot/libsa/stand.h>
+#include <boot/libsa/bootstand.h>
 #include <lib/libsa/loadfile.h>
 #include <sys/libkern.h>
 

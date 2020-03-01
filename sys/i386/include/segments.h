@@ -98,10 +98,6 @@ union descriptor	{
 };
 #define	d_type	gd.gd_type
 
-
-
-
-
 	/* system segments and gate types */
 #define	SDT_SYSNULL	 	 0	/* system null */
 #define	SDT_SYS286TSS	 1	/* system 286 TSS available */
@@ -188,6 +184,26 @@ struct region_descriptor {
 	char *rd_base;				/* base address  */
 };
 
+/* Descriptor Tables */
+union descriptor_table {
+    struct soft_segment_descriptor null_desc;
+    struct soft_segment_descriptor code_desc;
+    struct soft_segment_descriptor data_desc;
+    struct soft_segment_descriptor ldt_desc;
+    struct soft_segment_descriptor panic_tss_desc;
+    struct soft_segment_descriptor proc0_tss_desc;
+};
+
+extern union descriptor_table gdt_segs;
+extern union descriptor_table ldt_segs;
+
+void setup_descriptor_table(struct soft_segment_descriptor *ssd, unsigned int ssd_base, unsigned int ssd_limit,
+		unsigned int ssd_type, unsigned int ssd_dpl, unsigned int ssd_p, unsigned int ssd_xx,
+		unsigned int ssd_xx1, unsigned int ssd_def32, unsigned int ssd_gran);
+void allocate_gdt(union descriptor_table *gdt);
+void allocate_ldt(union descriptor_table *ldt);
+
+
 /*
  * Segment Protection Exception code bits
  */
@@ -197,19 +213,5 @@ struct region_descriptor {
 #define	SEGEX_TI	0x04	/* local descriptor table */
 							/* other bits are affected descriptor index */
 #define SEGEX_IDX(s)	((s)>>3)&0x1fff)
-
-
-/*
- * Entries in the Local Descriptor Table (LDT).
- * DO NOT ADD KERNEL DATA/CODE SEGMENTS TO THIS TABLE.
- */
-#define LSYS5CALLS_SEL	0	/* iBCS system call gate */
-#define LSYS5SIGR_SEL	1	/* iBCS sigreturn gate */
-#define LUCODE_SEL		2	/* User code descriptor */
-#define LUDATA_SEL		3	/* User data descriptor */
-#define LSOL26CALLS_SEL	4	/* Solaris 2.6 system call gate */
-#define LUCODEBIG_SEL	5	/* User code with executable stack */
-#define LBSDICALLS_SEL	16	/* BSDI system call gate */
-#define NLDT			17
 
 #endif /* _I386_SEGMENTS_H_ */

@@ -46,7 +46,7 @@
 #include <ufs/ufs/dir.h>
 #include <sys/dirent.h>
 
-#include <boot/libsa/stand.h>
+#include <boot/libsa/bootstand.h>
 #include <lib/libsa/loadfile.h>
 
 #include "bootstrap.h"

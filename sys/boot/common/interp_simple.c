@@ -31,7 +31,7 @@
  * Simple commandline interpreter, toplevel and misc.
  */
 
-#include <boot/libsa/stand.h>
+#include <boot/libsa/bootstand.h>
 #include <string.h>
 #include "bootstrap.h"
 

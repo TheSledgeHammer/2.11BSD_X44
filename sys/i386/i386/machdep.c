@@ -35,6 +35,7 @@
  *
  *	@(#)machdep.c	8.3 (Berkeley) 5/9/95
  */
+
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -71,6 +72,7 @@ extern vm_offset_t avail_end;
 #include <machine/reg.h>
 #include <machine/psl.h>
 #include <machine/specialreg.h>
+//#include <machine/segments.h>
 #include <i386/isa/rtc.h>
 #include <i386/i386/cons.h>
 
@@ -119,6 +121,153 @@ cpu_startup(firstaddr)
 	vm_size_t size;
 
 	/*
+	 * Initialize error message buffer (at end of core).
+	 */
+
+	/* avail_end was pre-decremented in pmap_bootstrap to compensate */
+	for (i = 0; i < btoc(sizeof(struct msgbuf)); i++)
+		pmap_enter(kernel_pmap, msgbufp, avail_end + i * NBPG,
+		VM_PROT_ALL, TRUE);
+	msgbufmapped = 1;
+
+#ifdef KDB
+	kdb_init();			/* startup kernel debugger */
+#endif
+	/*
+	 * Good {morning,afternoon,evening,night}.
+	 */
+	printf(version);
+	printf("real mem  = %d\n", ctob(physmem));
+
+	/*
+	 * Allocate space for system data structures.
+	 * The first available real memory address is in "firstaddr".
+	 * The first available kernel virtual address is in "v".
+	 * As pages of kernel virtual memory are allocated, "v" is incremented.
+	 * As pages of memory are allocated and cleared,
+	 * "firstaddr" is incremented.
+	 * An index into the kernel page table corresponding to the
+	 * virtual memory address maintained in "v" is kept in "mapaddr".
+	 */
+
+	/*
+	 * Make two passes.  The first pass calculates how much memory is
+	 * needed and allocates it.  The second pass assigns virtual
+	 * addresses to the various data structures.
+	 */
+	firstaddr = 0;
+	again: v = (caddr_t) firstaddr;
+
+#define	valloc(name, type, num) \
+	    (name) = (type *)v; v = (caddr_t)((name)+(num))
+#define	valloclim(name, type, num, lim) \
+	    (name) = (type *)v; v = (caddr_t)((lim) = ((name)+(num)))
+	valloc(cfree, struct cblock, nclist);
+	valloc(callout, struct callout, ncallout);
+	valloc(swapmap, struct map, nswapmap = maxproc * 2);
+#ifdef SYSVSHM
+	valloc(shmsegs, struct shmid_ds, shminfo.shmmni);
+#endif
+	/*
+	 * Determine how many buffers to allocate.
+	 * Use 10% of memory for the first 2 Meg, 5% of the remaining
+	 * memory. Insure a minimum of 16 buffers.
+	 * We allocate 1/2 as many swap buffer headers as file i/o buffers.
+	 */
+	if (bufpages == 0)
+		if (physmem < (2 * 1024 * 1024))
+			bufpages = physmem / 10 / CLSIZE;
+		else
+			bufpages = ((2 * 1024 * 1024 + physmem) / 20) / CLSIZE;
+	if (nbuf == 0) {
+		nbuf = bufpages / 2;
+		if (nbuf < 16)
+			nbuf = 16;
+	}
+	if (nswbuf == 0) {
+		nswbuf = (nbuf / 2) & ~1; /* force even */
+		if (nswbuf > 256)
+			nswbuf = 256; /* sanity */
+	}
+	valloc(swbuf, struct buf, nswbuf);
+	valloc(buf, struct buf, nbuf);
+
+	/*
+	 * End of first pass, size has been calculated so allocate memory
+	 */
+	if (firstaddr == 0) {
+		size = (vm_size_t) (v - firstaddr);
+		firstaddr = (int) kmem_alloc(kernel_map, round_page(size));
+		if (firstaddr == 0)
+			panic("startup: no room for tables");
+		goto again;
+	}
+	/*
+	 * End of second pass, addresses have been assigned
+	 */
+	if ((vm_size_t) (v - firstaddr) != size)
+		panic("startup: table size inconsistency");
+	/*
+	 * Now allocate buffers proper.  They are different than the above
+	 * in that they usually occupy more virtual memory than physical.
+	 */
+	size = MAXBSIZE * nbuf;
+	buffer_map = kmem_suballoc(kernel_map, (vm_offset_t) &buffers, &maxaddr,
+			size, TRUE);
+	minaddr = (vm_offset_t) buffers;
+	if (vm_map_find(buffer_map, vm_object_allocate(size), (vm_offset_t) 0,
+			&minaddr, size, FALSE) != KERN_SUCCESS)
+		panic("startup: cannot allocate buffers");
+	base = bufpages / nbuf;
+	residual = bufpages % nbuf;
+	for (i = 0; i < nbuf; i++) {
+		vm_size_t curbufsize;
+		vm_offset_t curbuf;
+
+		/*
+		 * First <residual> buffers get (base+1) physical pages
+		 * allocated for them.  The rest get (base) physical pages.
+		 *
+		 * The rest of each buffer occupies virtual space,
+		 * but has no physical memory allocated for it.
+		 */
+		curbuf = (vm_offset_t) buffers + i * MAXBSIZE;
+		curbufsize = CLBYTES * (i < residual ? base + 1 : base);
+		vm_map_pageable(buffer_map, curbuf, curbuf + curbufsize, FALSE);
+		vm_map_simplify(buffer_map, curbuf);
+	}
+	/*
+	 * Allocate a submap for exec arguments.  This map effectively
+	 * limits the number of processes exec'ing at any time.
+	 */
+	exec_map = kmem_suballoc(kernel_map, &minaddr, &maxaddr, 16 * NCARGS, TRUE);
+	/*
+	 * Allocate a submap for physio
+	 */
+	phys_map = kmem_suballoc(kernel_map, &minaddr, &maxaddr, VM_PHYS_SIZE, TRUE);
+
+	/*
+	 * Finally, allocate mbuf pool.  Since mclrefcnt is an off-size
+	 * we use the more space efficient malloc in place of kmem_alloc.
+	 */
+	mclrefcnt = (char*) malloc(NMBCLUSTERS + CLBYTES / MCLBYTES,
+	M_MBUF, M_NOWAIT);
+	bzero(mclrefcnt, NMBCLUSTERS + CLBYTES / MCLBYTES);
+	mb_map = kmem_suballoc(kernel_map, (vm_offset_t) &mbutl, &maxaddr,
+			VM_MBUF_SIZE, FALSE);
+	/*
+	 * Initialize callouts
+	 */
+	callfree = callout;
+	for (i = 1; i < ncallout; i++)
+		callout[i - 1].c_next = &callout[i];
+	callout[i - 1].c_next = NULL;
+
+	/*printf("avail mem = %d\n", ptoa(vm_page_free_count));*/
+	printf("using %d buffers containing %d bytes of memory\n", nbuf,
+			bufpages * CLBYTES);
+
+	/*
 	 * Set up CPU-specific registers, cache, etc.
 	 */
 	initcpu();
@@ -159,14 +308,14 @@ vmtime(otime, olbolt, oicr)
 #endif
 
 struct sigframe {
-	int	sf_signum;
-	int	sf_code;
-	struct	sigcontext *sf_scp;
-	sig_t	sf_handler;
-	int	sf_eax;
-	int	sf_edx;
-	int	sf_ecx;
-	struct	sigcontext sf_sc;
+	int					sf_signum;
+	int					sf_code;
+	struct	sigcontext 	*sf_scp;
+	sig_t				sf_handler;
+	int					sf_eax;
+	int					sf_edx;
+	int					sf_ecx;
+	struct	sigcontext 	sf_sc;
 };
 
 extern int kstack[];
@@ -326,21 +475,6 @@ sigreturn(p, uap, retval)
 	return (EJUSTRETURN);
 }
 
-void *
-getframe(p, sig, onstack)
-	struct proc *p;
-	int sig, *onstack;
-{
-	struct trapframe *tf = p->p_md.md_regs;
-
-	/* Do we need to jump onto the signal stack? */
-	*onstack = (u->u_sigstk.ss_flags & (SS_DISABLE | SS_ONSTACK)) == 0
-			&& (SIGACTION(p, sig).sa_flags & SA_ONSTACK) != 0;
-	if (*onstack)
-		return (char*) u->u_sigstk.ss_base + u->u_sigstk.ss_size;
-	return (void*) tf->tf_esp;
-}
-
 /*
  * Clear registers on exec
  */
@@ -387,79 +521,296 @@ cpu_setregs(void)
 	cr0 = rcr0();
 	cr0 |= CR0_MP | CR0_NE | CR0_TS | CR0_WP | CR0_AM;
 	load_cr0(cr0);
-//	load_gs(_udatasel);
-}
-
-void
-cpu_sysctl()
-{
-
 }
 
 /*
- * Initialize segments and descriptor tables
+ * machine dependent system variables.
+ */
+cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+	struct proc *p;
+{
+
+	/* all sysctl names at this level are terminal */
+	if (namelen != 1)
+		return (ENOTDIR); /* overloaded */
+
+	switch (name[0]) {
+	case CPU_CONSDEV:
+		return (sysctl_rdstruct(oldp, oldlenp, newp, &cn_tty->t_dev,
+				sizeof cn_tty->t_dev));
+	default:
+		return (EOPNOTSUPP);
+	}
+	/* NOTREACHED */
+}
+
+#define NGDT 		7
+
+union descriptor 	gdt[NGDT];
+
+/* interrupt descriptor table */
+struct gate_descriptor idt[32+16];
+
+#define NLDT 			5
+
+/* local descriptor table */
+union descriptor ldt[NLDT];
+#define	LSYS5CALLS_SEL	0	/* forced by intel BCS */
+#define	LSYS5SIGR_SEL	1
+
+#define	L43BSDCALLS_SEL	2	/* notyet */
+#define	LUCODE_SEL		3
+#define	LUDATA_SEL		4
+
+union descriptor_table gdt_segs;
+union descriptor_table ldt_segs;
+
+struct i386tss	tss, panic_tss;
+
+extern  struct user *proc0paddr;
+
+/* Defines all the parameters for the soft segment descriptors */
+void
+setup_descriptor_table(ssd, ssd_base, ssd_limit, ssd_type, ssd_dpl, ssd_p, ssd_xx, ssd_xx1, ssd_def32, ssd_gran)
+    struct soft_segment_descriptor *ssd;
+    unsigned int ssd_base, ssd_limit, ssd_type, ssd_dpl, ssd_p, ssd_xx, ssd_xx1, ssd_def32, ssd_gran;
+{
+    ssd->ssd_base = ssd_base;
+    ssd->ssd_limit = ssd_limit;
+    ssd->ssd_type = ssd_type;
+    ssd->ssd_dpl = ssd_dpl;
+    ssd->ssd_p = ssd_p;
+    ssd->ssd_xx = ssd_xx;
+    ssd->ssd_xx1 = ssd_xx1;
+    ssd->ssd_def32 = ssd_def32;
+    ssd->ssd_gran = ssd_gran;
+}
+
+/* Allocates & Predefines all the parameters for the Global Descriptor Table (GDT) segments */
+void
+allocate_gdt(gdt)
+    union descriptor_table *gdt;
+{
+	setup_descriptor_table(&gdt->null_desc, 0x0, 0x0, 0, 0, 0, 0, 0, 0, 0);
+	setup_descriptor_table(&gdt->code_desc, 0x0, 0xfffff, SDT_MEMERA, 0, 1, 0, 0, 1, 1);
+    setup_descriptor_table(&gdt->data_desc, 0x0, 0xfffff, SDT_MEMERA, 0, 1, 0, 0, 1, 1);
+    setup_descriptor_table(&gdt->ldt_desc, (int) ldt, sizeof(ldt)-1, SDT_SYSLDT, 0, 1, 0, 0, 0, 0);
+    setup_descriptor_table(&gdt->null_desc, 0x0, 0x0, 0, 0, 0, 0, 0, 0, 0);
+    setup_descriptor_table(&gdt->panic_tss_desc, (int) &panic_tss, sizeof(tss)-1, SDT_SYS386TSS, 0, 1, 0, 0, 0, 0);
+    setup_descriptor_table(&gdt->proc0_tss_desc, (int) kstack, sizeof(tss)-1, SDT_SYS386TSS, 0, 1, 0, 0, 0, 0);
+}
+
+/* Allocates & Predefines all the parameters for the Local Descriptor Table (LDT) segments */
+void
+allocate_ldt(ldt)
+    union descriptor_table *ldt;
+{
+	setup_descriptor_table(&ldt->null_desc, 0x0, 0x0, 0, 0, 0, 0, 0, 0, 0);
+    setup_descriptor_table(&ldt->null_desc, 0x0, 0x0, 0, 0, 0, 0, 0, 0, 0);
+    setup_descriptor_table(&ldt->null_desc, 0x0, 0x0, 0, 0, 0, 0, 0, 0, 0);
+    setup_descriptor_table(&ldt->code_desc, 0x0, 0xfffff, SDT_MEMERA, SEL_UPL, 1, 0, 0, 1, 1);
+    setup_descriptor_table(&ldt->data_desc, 0x0, 0xfffff, SDT_MEMERA, SEL_UPL, 1, 0, 0, 1, 1);
+}
+
+/* table descriptors - used to load tables by microp */
+struct region_descriptor r_gdt = {
+	sizeof(gdt)-1,(char *)gdt
+};
+
+struct region_descriptor r_idt = {
+	sizeof(idt)-1,(char *)idt
+};
+
+uintptr_t setidt_disp;
+
+void
+setidt(int idx, inthand_t *func, int typ, int dpl, int selec)
+{
+	uintptr_t off;
+
+	off = func != NULL ? (uintptr_t)func + setidt_disp : 0;
+	setidt_nodisp(idx, off, typ, dpl, selec);
+}
+
+void
+setidt_nodisp(int idx, uintptr_t off, int typ, int dpl, int selec)
+{
+	struct gate_descriptor *ip;
+
+	ip = idt + idx;
+	ip->gd_looffset = off;
+	ip->gd_selector = selec;
+	ip->gd_stkcpy = 0;
+	ip->gd_xx = 0;
+	ip->gd_type = typ;
+	ip->gd_dpl = dpl;
+	ip->gd_p = 1;
+	ip->gd_hioffset = ((u_int)off) >> 16 ;
+}
+
+#define	IDTVEC(name)	__CONCAT(X, name)
+extern	IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
+	IDTVEC(bnd), IDTVEC(ill), IDTVEC(dna), IDTVEC(dble), IDTVEC(fpusegm),
+	IDTVEC(tss), IDTVEC(missing), IDTVEC(stk), IDTVEC(prot),
+	IDTVEC(page), IDTVEC(rsvd), IDTVEC(fpu), IDTVEC(rsvd0),
+	IDTVEC(rsvd1), IDTVEC(rsvd2), IDTVEC(rsvd3), IDTVEC(rsvd4),
+	IDTVEC(rsvd5), IDTVEC(rsvd6), IDTVEC(rsvd7), IDTVEC(rsvd8),
+	IDTVEC(rsvd9), IDTVEC(rsvd10), IDTVEC(rsvd11), IDTVEC(rsvd12),
+	IDTVEC(rsvd13), IDTVEC(rsvd14), IDTVEC(rsvd14), IDTVEC(syscall);
+
+int lcr0(), lcr3(), rcr0(), rcr2();
+int _udatasel, _ucodesel, _gsel_tss;
+
+void
+init386(int first)
+{
+	int x, *pi;
+	unsigned biosbasemem, biosextmem;
+	struct gate_descriptor *gdp;
+	extern int sigcode, szsigcode;
+
+	proc0.p_addr = proc0paddr;
+
+	/*
+	 * Initialize the console before we print anything out.
+	 */
+
+	cninit (KERNBASE+0xa0000);
+
+	/* make gdt memory segments */
+	allocate_gdt(&gdt_segs);
+	gdt_segs.code_desc.ssd_limit = btoc((int) &etext + NBPG);
+	for (x=0; x < NGDT; x++) ssdtosd(gdt_segs+x, gdt+x);
+	/* make ldt memory segments */
+	allocate_ldt(&ldt_segs);
+	ldt_segs.code_desc.ssd_limit = btoc(UPT_MIN_ADDRESS);
+	ldt_segs.data_desc.ssd_limit = btoc(UPT_MIN_ADDRESS);
+	/* Note. eventually want private ldts per process */
+	for (x=0; x < 5; x++) ssdtosd(ldt_segs+x, ldt+x);
+
+	/* exceptions */
+	setidt(0, &IDTVEC(div), SDT_SYS386TGT, SEL_KPL);
+	setidt(1, &IDTVEC(dbg), SDT_SYS386TGT, SEL_KPL);
+	setidt(2, &IDTVEC(nmi), SDT_SYS386TGT, SEL_KPL);
+	setidt(3, &IDTVEC(bpt), SDT_SYS386TGT, SEL_UPL);
+	setidt(4, &IDTVEC(ofl), SDT_SYS386TGT, SEL_KPL);
+	setidt(5, &IDTVEC(bnd), SDT_SYS386TGT, SEL_KPL);
+	setidt(6, &IDTVEC(ill), SDT_SYS386TGT, SEL_KPL);
+	setidt(7, &IDTVEC(dna), SDT_SYS386TGT, SEL_KPL);
+	setidt(8, &IDTVEC(dble), SDT_SYS386TGT, SEL_KPL);
+	setidt(9, &IDTVEC(fpusegm), SDT_SYS386TGT, SEL_KPL);
+	setidt(10, &IDTVEC(tss), SDT_SYS386TGT, SEL_KPL);
+	setidt(11, &IDTVEC(missing), SDT_SYS386TGT, SEL_KPL);
+	setidt(12, &IDTVEC(stk), SDT_SYS386TGT, SEL_KPL);
+	setidt(13, &IDTVEC(prot), SDT_SYS386TGT, SEL_KPL);
+	setidt(14, &IDTVEC(page), SDT_SYS386TGT, SEL_KPL);
+	setidt(15, &IDTVEC(rsvd), SDT_SYS386TGT, SEL_KPL);
+	setidt(16, &IDTVEC(fpu), SDT_SYS386TGT, SEL_KPL);
+	setidt(17, &IDTVEC(rsvd0), SDT_SYS386TGT, SEL_KPL);
+	setidt(18, &IDTVEC(rsvd1), SDT_SYS386TGT, SEL_KPL);
+	setidt(19, &IDTVEC(rsvd2), SDT_SYS386TGT, SEL_KPL);
+	setidt(20, &IDTVEC(rsvd3), SDT_SYS386TGT, SEL_KPL);
+	setidt(21, &IDTVEC(rsvd4), SDT_SYS386TGT, SEL_KPL);
+	setidt(22, &IDTVEC(rsvd5), SDT_SYS386TGT, SEL_KPL);
+	setidt(23, &IDTVEC(rsvd6), SDT_SYS386TGT, SEL_KPL);
+	setidt(24, &IDTVEC(rsvd7), SDT_SYS386TGT, SEL_KPL);
+	setidt(25, &IDTVEC(rsvd8), SDT_SYS386TGT, SEL_KPL);
+	setidt(26, &IDTVEC(rsvd9), SDT_SYS386TGT, SEL_KPL);
+	setidt(27, &IDTVEC(rsvd10), SDT_SYS386TGT, SEL_KPL);
+	setidt(28, &IDTVEC(rsvd11), SDT_SYS386TGT, SEL_KPL);
+	setidt(29, &IDTVEC(rsvd12), SDT_SYS386TGT, SEL_KPL);
+	setidt(30, &IDTVEC(rsvd13), SDT_SYS386TGT, SEL_KPL);
+	setidt(31, &IDTVEC(rsvd14), SDT_SYS386TGT, SEL_KPL);
+
+
+	lgdt(gdt, sizeof(gdt)-1);
+	lidt(idt, sizeof(idt)-1);
+	lldt(GSEL(GLDT_SEL, SEL_KPL));
+
+	/*
+	 * This memory size stuff is a real mess.  Here is a simple
+	 * setup that just believes the BIOS.  After the rest of
+	 * the system is a little more stable, we'll come back to
+	 * this and deal with issues if incorrect BIOS information,
+	 * and when physical memory is > 16 megabytes.
+	 */
+	biosbasemem = rtcin(RTC_BASELO) + (rtcin(RTC_BASEHI) << 8);
+	biosextmem = rtcin(RTC_EXTLO) + (rtcin(RTC_EXTHI) << 8);
+	Maxmem = btoc((biosextmem + 1024) * 1024);
+	maxmem = Maxmem - 1;
+	physmem = btoc(biosbasemem * 1024 + (biosextmem - 1) * 1024);
+	printf("bios %dK+%dK. maxmem %x, physmem %x\n", biosbasemem, biosextmem,
+			ctob(maxmem), ctob(physmem));
+
+	vm_set_page_size();
+	/* call pmap initialization to make new kernel address space */
+	pmap_bootstrap(first, 0);
+	/* now running on new page tables, configured,and u/iom is accessible */
+
+	/* make a initial tss so microp can get interrupt stack on syscall! */
+	proc0.p_addr->u_pcb.pcb_tss.tss_esp0 = (int) kstack + UPAGES * NBPG;
+	proc0.p_addr->u_pcb.pcb_tss.tss_ss0 = GSEL(GDATA_SEL, SEL_KPL);
+	_gsel_tss = GSEL(GPROC0_SEL, SEL_KPL);
+
+	/* make a call gate to reenter kernel with */
+	gdp = &ldt[LSYS5CALLS_SEL].gd;
+
+	gdp->gd_looffset = x++;
+	gdp->gd_selector = GSEL(GCODE_SEL, SEL_KPL);
+	gdp->gd_stkcpy = 0;
+	gdp->gd_type = SDT_SYS386CGT;
+	gdp->gd_dpl = SEL_UPL;
+	gdp->gd_p = 1;
+	gdp->gd_hioffset = ((int) &IDTVEC(syscall)) >>16;
+
+	/* transfer to user mode */
+	_ucodesel = LSEL(LUCODE_SEL, SEL_UPL);
+	_udatasel = LSEL(LUDATA_SEL, SEL_UPL);
+
+	/* setup proc 0's pcb */
+	bcopy(&sigcode, proc0.p_addr->u_pcb.pcb_sigc, szsigcode);
+	proc0.p_addr->u_pcb.pcb_flags = 0;
+	proc0.p_addr->u_pcb.pcb_ptd = IdlePTD;
+}
+
+void
+sdtossd(sd, ssd)
+	struct segment_descriptor *sd;
+	struct soft_segment_descriptor *ssd;
+{
+	ssd->ssd_base  = (sd->sd_hibase << 24) | sd->sd_lobase;
+	ssd->ssd_limit = (sd->sd_hilimit << 16) | sd->sd_lolimit;
+	ssd->ssd_type  = sd->sd_type;
+	ssd->ssd_dpl   = sd->sd_dpl;
+	ssd->ssd_p     = sd->sd_p;
+	ssd->ssd_def32 = sd->sd_def32;
+	ssd->ssd_gran  = sd->sd_gran;
+}
+
+/*
+ * Construct a PCB from a trapframe. This is called from kdb_trap() where
+ * we want to start a backtrace from the function that caused us to enter
+ * the debugger. We have the context in the trapframe, but base the trace
+ * on the PCB. The PCB doesn't have to be perfect, as long as it contains
+ * enough for a backtrace.
  */
 void
-setgate(gd, func, args, type, dpl, sel)
-	struct gate_descriptor *gd;
-	void *func;
-	int args, type, dpl, sel;
+makectx(struct trapframe *tf, struct pcb *pcb)
 {
-	gd->gd_looffset = (int)func;
-	gd->gd_selector = sel;
-	gd->gd_stkcpy = args;
-	gd->gd_xx = 0;
-	gd->gd_type = type;
-	gd->gd_dpl = dpl;
-	gd->gd_p = 1;
-	gd->gd_hioffset = (int)func >> 16;
+	pcb->pcb_tss.tss_edi = tf->tf_edi;
+	pcb->pcb_tss.tss_esi = tf->tf_esi;
+	pcb->pcb_tss.tss_ebp = tf->tf_ebp;
+	pcb->pcb_tss.tss_ebx = tf->tf_ebx;
+	pcb->pcb_tss.tss_eip = tf->tf_eip;
+	pcb->pcb_tss.tss_esp = (ISPL(tf->tf_cs)) ? tf->tf_esp : (int)(tf + 1) - 8;
+	pcb->pcb_tss.tss_gs = rgs();
 }
-
-void
-unsetgate(gd)
-	struct gate_descriptor *gd;
-{
-	gd->gd_p = 0;
-	gd->gd_hioffset = 0;
-	gd->gd_looffset = 0;
-	gd->gd_selector = 0;
-	gd->gd_xx = 0;
-	gd->gd_stkcpy = 0;
-	gd->gd_type = 0;
-	gd->gd_dpl = 0;
-}
-
-void
-setregion(rd, base, limit)
-	struct region_descriptor *rd;
-	void *base;
-	size_t limit;
-{
-	rd->rd_limit = (int)limit;
-	rd->rd_base = (int)base;
-}
-
-void
-setsegment(sd, base, limit, type, dpl, def32, gran)
-	struct segment_descriptor *sd;
-	const void *base;
-	size_t limit;
-	int type, dpl, def32, gran;
-{
-	sd->sd_lolimit = (int)limit;
-	sd->sd_lobase = (int)base;
-	sd->sd_type = type;
-	sd->sd_dpl = dpl;
-	sd->sd_p = 1;
-	sd->sd_hilimit = (int)limit >> 16;
-	sd->sd_xx = 0;
-	sd->sd_def32 = def32;
-	sd->sd_gran = gran;
-	sd->sd_hibase = (int)base >> 24;
-}
-
-
-
 
 extern struct pte	*CMAP1, *CMAP2;
 extern caddr_t		CADDR1, CADDR2;

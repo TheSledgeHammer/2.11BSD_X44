@@ -30,7 +30,7 @@
 #include <sys/param.h>		/* to pick up __FreeBSD_version */
 #include <sys/libkern.h>
 #include <lib/libsa/loadfile.h>
-#include <boot/libsa/stand.h>
+#include <boot/libsa/bootstand.h>
 #include "bootstrap.h"
 #include "ficl.h"
 

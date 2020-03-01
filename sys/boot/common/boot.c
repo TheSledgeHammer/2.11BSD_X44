@@ -33,7 +33,7 @@
  * Loading modules, booting the system
  */
 
-#include <boot/libsa/stand.h>
+#include <boot/libsa/bootstand.h>
 #include <lib/libsa/loadfile.h>
 #include <sys/libkern.h>
 

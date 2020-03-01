@@ -29,7 +29,7 @@
 #include <sys/cdefs.h>
 /* __FBSDID("$FreeBSD: src/sys/boot/common/console.c,v 1.6 2003/08/25 23:30:41 obrien Exp $"); */
 
-#include <boot/libsa/stand.h>
+#include <boot/libsa/bootstand.h>
 #include <lib/libsa/loadfile.h>
 #include <sys/libkern.h>
 

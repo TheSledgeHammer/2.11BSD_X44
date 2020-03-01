@@ -39,6 +39,10 @@
 /*
  * Intel 386 process control block
  */
+
+#ifndef _KERNEL
+#include <machine/segments.h>
+#endif
 #include <machine/tss.h>
 #include <machine/npx.h>
 
@@ -81,4 +85,9 @@ struct md_coredump {
 
 #ifdef KERNEL
 struct pcb *curpcb;		/* our current running pcb */
+struct trapframe;
+
+void	makectx(struct trapframe *, struct pcb *);
+int		savectx(struct pcb *) __returns_twice;
+void	resumectx(struct pcb *) __fastcall;
 #endif

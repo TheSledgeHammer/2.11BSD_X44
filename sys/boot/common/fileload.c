@@ -36,7 +36,7 @@
 #include <sys/queue.h>
 #include <sys/libkern.h>
 
-#include <stand.h>
+#include <boot/libsa/bootstand.h>
 #include <lib/libsa/loadfile.h>
 
 #include "bootstrap.h"
