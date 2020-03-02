@@ -33,7 +33,7 @@
  *	@(#)random.c	8.1 (Berkeley) 6/10/93
  */
 
-#include <sys/libkern.h>
+#include <lib/libkern/libkern.h>
 
 /*
  * Pseudo-random number generator for randomizing the profiling clock,

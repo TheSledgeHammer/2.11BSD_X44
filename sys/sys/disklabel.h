@@ -289,7 +289,7 @@ static char *fstypenames[] = {
  * Drive data for SMD.
  */
 #define	d_smdflags		d_drivedata[0]
-#define			D_SSE		0x1				/* supports skip sectoring */
+#define	D_SSE			0x1				/* supports skip sectoring */
 #define	d_mindist		d_drivedata[1]
 #define	d_maxdist		d_drivedata[2]
 #define	d_sdist			d_drivedata[3]

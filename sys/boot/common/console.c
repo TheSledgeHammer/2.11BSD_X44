@@ -31,8 +31,7 @@
 
 #include <boot/libsa/bootstand.h>
 #include <lib/libsa/loadfile.h>
-#include <sys/libkern.h>
-
+#include <lib/libkern/libkern.h>
 #include "bootstrap.h"
 
 /*

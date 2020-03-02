@@ -1,7 +1,9 @@
-/* $NetBSD: memset.c,v 1.3 1999/11/13 21:17:57 thorpej Exp $ */
-
 /*
- * Copyright (c) 1999 Christopher G. Demetriou.  All rights reserved.
+ * $NetBSD: panic.c,v 1.3 2011/07/17 20:54:42 joerg Exp $
+ */
+/*-
+ * Copyright (c) 1996
+ *	Matthias Drochner.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -13,10 +15,10 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *      This product includes software developed by Christopher G. Demetriou
- *	for the NetBSD Project.
+ *	This product includes software developed for the NetBSD Project
+ *	by Matthias Drochner.
  * 4. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission
+ *    derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -28,20 +30,27 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
 #include <sys/cdefs.h>
+/* __FBSDID("$FreeBSD: src/sys/boot/common/panic.c,v 1.7 2003/08/25 23:30:41 obrien Exp $"); */
 
-void *
-memset(dstv, c, length)
-	void *dstv;
-	int c;
-	size_t length;
+#include <boot/libsa/bootstand.h>
+
+void
+panic(const char *fmt,...)
 {
-	u_char *dst = dstv;
+	va_list         ap;
 
-	while (length-- > 0) {
-		*dst++ = c;
-	}
-	return dstv;
+	printf("panic: ");
+	va_start(ap, fmt);
+	vprintf(fmt, ap);
+	va_end(ap);
+	printf("\n");
+
+	printf("--> Press a key on the console to reboot <--\n");
+	getchar();
+	printf("Rebooting...\n");
+	exit(1);
 }

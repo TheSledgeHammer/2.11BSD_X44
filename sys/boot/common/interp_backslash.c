@@ -21,8 +21,7 @@
 
 #include <boot/libsa/bootstand.h>
 #include <lib/libsa/loadfile.h>
-#include <sys/libkern.h>
-
+#include <lib/libkern/libkern.h>
 #include "bootstrap.h"
 
 #define DIGIT(x) (isdigit(x) ? (x) - '0' : islower(x) ? (x) + 10 - 'a' : (x) + 10 - 'A')

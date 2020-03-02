@@ -37,9 +37,8 @@
 
 #include "bootstand.h"
 #include <lib/libsa/loadfile.h>
-#include <sys/libkern.h>
-
 #include <bootstrap.h>
+#include <lib/libkern/libkern.h>
 
 static void	env_discard(struct env_var *ev);
 

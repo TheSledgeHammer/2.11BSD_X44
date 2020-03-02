@@ -38,7 +38,7 @@
 
 #include <sys/types.h>
 #ifdef _STANDALONE
-#include <sys/libkern.h>
+#include <lib/libkern/libkern.h>
 #else
 #include <string.h>
 #endif
@@ -48,7 +48,7 @@
 #undef bcmp
 
 /* define bcmp to be the same as memcmp() */
-__strong_alias(bcmp, memcmp);
+//__strong_alias(bcmp, memcmp);
 
 /*
  * Conformant memcmp()

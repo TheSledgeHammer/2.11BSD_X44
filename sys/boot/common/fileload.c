@@ -34,10 +34,9 @@
 
 #include <sys/param.h>
 #include <sys/queue.h>
-#include <sys/libkern.h>
-
 #include <boot/libsa/bootstand.h>
 #include <lib/libsa/loadfile.h>
+#include <lib/libkern/libkern.h>
 
 #include "bootstrap.h"
 

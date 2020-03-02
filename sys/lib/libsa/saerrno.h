@@ -1,5 +1,5 @@
-/*-
- * Copyright (c) 1992, 1993
+/*
+ * Copyright (c) 1988, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,32 +30,25 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)libkern.h	8.1 (Berkeley) 6/10/93
- * $Id: libkern.h,v 1.3 1994/08/30 18:19:47 davidg Exp $
+ *	@(#)saerrno.h	8.1 (Berkeley) 6/11/93
  */
 
-#include <sys/types.h>
+extern	int errno;	/* just like unix */
 
-static inline int imax(int a, int b) { return (a > b ? a : b); }
-static inline int imin(int a, int b) { return (a < b ? a : b); }
-static inline long lmax(long a, long b) { return (a > b ? a : b); }
-static inline long lmin(long a, long b) { return (a < b ? a : b); }
-static inline u_int max(u_int a, u_int b) { return (a > b ? a : b); }
-static inline u_int min(u_int a, u_int b) { return (a < b ? a : b); }
-static inline quad_t qmax(quad_t a, quad_t b) { return (a > b ? a : b); }
-static inline quad_t qmin(quad_t a, quad_t b) { return (a < b ? a : b); }
-static inline u_long ulmax(u_long a, u_long b) { return (a > b ? a : b); }
-static inline u_long ulmin(u_long a, u_long b) { return (a < b ? a : b); }
-
-/* Prototypes for non-quad routines. */
-int	 	bcmp (const void *, const void *, size_t);
-int	 	ffs (int);
-int	 	locc (int, char *, u_int);
-u_long	random (void);
-char	*rindex (const char *, int);
-int	 	scanc(u_int, u_char *, u_char *, int);
-int	 	skpc (int, int, char *);
-char	*strcat (char *, const char *);
-char	*strcpy (char *, const char *);
-size_t	 strlen (const char *);
-char	*strncpy (char *, const char *, size_t);
+/* error codes */
+#define	EADAPT	1	/* bad adaptor */
+#define	ECTLR	2	/* bad controller */
+#define	EUNIT	3	/* bad drive */
+#define	EPART	4	/* bad partition */
+#define	ERDLAB	5	/* can't read disk label */
+#define	EUNLAB	6	/* unlabeled disk */
+#define	ENXIO	7	/* bad device specification */
+#define	EBADF	8	/* bad file descriptor */
+#define	EOFFSET	9	/* relative seek not supported */
+#define	ESRCH	10	/* directory search for file failed */
+#define	EIO		11	/* generic error */
+#define	ECMD	12	/* undefined driver command */
+#define	EBSE	13	/* bad sector error */
+#define	EWCK	14	/* write check error */
+#define	EECC	15	/* uncorrectable ecc error */
+#define	EHER	16	/* hard error */

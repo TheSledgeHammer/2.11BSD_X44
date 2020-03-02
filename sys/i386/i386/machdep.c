@@ -107,7 +107,7 @@ int biosmem;
 
 extern cyloffset;
 
-cpu_startup(firstaddr)
+startup(firstaddr)
 	int firstaddr;
 {
 	register int unixsize;
@@ -283,6 +283,50 @@ cpu_startup(firstaddr)
 	configure();
 }
 
+
+void
+microtime(tvp)
+	register struct timeval *tvp;
+{
+	int s = splhigh();
+
+	*tvp = time;
+	tvp->tv_usec += tick;
+	while (tvp->tv_usec > 1000000) {
+		tvp->tv_sec++;
+		tvp->tv_usec -= 1000000;
+	}
+	splx(s);
+}
+
+physstrat(bp, strat, prio)
+	struct buf *bp;
+	int (*strat)(), prio;
+{
+	register int s;
+	caddr_t baddr;
+
+	/*
+	 * vmapbuf clobbers b_addr so we must remember it so that it
+	 * can be restored after vunmapbuf.  This is truely rude, we
+	 * should really be storing this in a field in the buf struct
+	 * but none are available and I didn't want to add one at
+	 * this time.  Note that b_addr for dirty page pushes is
+	 * restored in vunmapbuf. (ugh!)
+	 */
+	baddr = bp->b_un.b_addr;
+	vmapbuf(bp);
+	(*strat)(bp);
+	/* pageout daemon doesn't wait for pushed pages */
+	if (bp->b_flags & B_DIRTY)
+		return;
+	s = splbio();
+	while ((bp->b_flags & B_DONE) == 0)
+		sleep((caddr_t) bp, prio);
+	splx(s);
+	vunmapbuf(bp);
+	bp->b_un.b_addr = baddr;
+}
 
 initcpu()
 {
@@ -535,7 +579,6 @@ cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	size_t newlen;
 	struct proc *p;
 {
-
 	/* all sysctl names at this level are terminal */
 	if (namelen != 1)
 		return (ENOTDIR); /* overloaded */
@@ -677,6 +720,8 @@ init386(int first)
 
 	proc0.p_addr = proc0paddr;
 
+	allocate_gdt(&gdt_segs);
+	allocate_ldt(&ldt_segs);
 	/*
 	 * Initialize the console before we print anything out.
 	 */
@@ -684,11 +729,10 @@ init386(int first)
 	cninit (KERNBASE+0xa0000);
 
 	/* make gdt memory segments */
-	allocate_gdt(&gdt_segs);
+
 	gdt_segs.code_desc.ssd_limit = btoc((int) &etext + NBPG);
 	for (x=0; x < NGDT; x++) ssdtosd(gdt_segs+x, gdt+x);
 	/* make ldt memory segments */
-	allocate_ldt(&ldt_segs);
 	ldt_segs.code_desc.ssd_limit = btoc(UPT_MIN_ADDRESS);
 	ldt_segs.data_desc.ssd_limit = btoc(UPT_MIN_ADDRESS);
 	/* Note. eventually want private ldts per process */

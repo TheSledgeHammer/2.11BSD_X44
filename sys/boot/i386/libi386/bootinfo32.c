@@ -25,89 +25,21 @@
  */
 
 #include <sys/cdefs.h>
-/* __FBSDID("$FreeBSD$"); */
+/*__FBSDID("$FreeBSD$"); */
 
-#include <sys/param.h>		/* to pick up __FreeBSD_version */
-#include <sys/libkern.h>
-#include <lib/libsa/loadfile.h>
-#include <boot/libsa/bootstand.h>
+#include <bootstand.h>
+#include <sys/param.h>
+#include <sys/reboot.h>
+#include <sys/exec.h>
+#include <sys/exec_linker.h>
+#include <machine/bootinfo.h>
+#include <machine/metadata.h>
 #include "bootstrap.h"
-#include "ficl.h"
+#include "libi386.h"
+#include "btxv86.h"
 
-extern unsigned bootprog_rev;
-INTERP_DEFINE("4th");
-
-/* #define BFORTH_DEBUG */
-
-#ifdef BFORTH_DEBUG
-#define	DPRINTF(fmt, args...)	printf("%s: " fmt "\n" , __func__ , ## args)
-#else
-#define	DPRINTF(fmt, args...)	((void)0)
+#ifdef LOADER_GELI_SUPPORT
+#include "geliboot.h"
 #endif
 
-/*
- * Eventually, all builtin commands throw codes must be defined
- * elsewhere, possibly bootstrap.h. For now, just this code, used
- * just in this file, it is getting defined.
- */
-#define BF_PARSE 100
-
-/*
- * FreeBSD loader default dictionary cells
- */
-#ifndef	BF_DICTSIZE
-#define	BF_DICTSIZE	10000
-#endif
-
-/*
- * BootForth   Interface to Ficl Forth interpreter.
- */
-
-FICL_SYSTEM *bf_sys;
-FICL_VM		*bf_vm;
-
-/*
- * Shim for taking commands from BF and passing them out to 'standard'
- * argv/argc command functions.
- */
-static void
-bf_command(FICL_VM *vm)
-{
-
-}
-
-/*
- * Initialise the Forth interpreter, create all our commands as words.
- */
-void
-bf_init(void)
-{
-
-}
-
-/*
- * Feed a line of user input to the Forth interpreter
- */
-static int
-bf_run(const char *line)
-{
-
-}
-
-void
-interp_init(void)
-{
-
-}
-
-int
-interp_run(const char *input)
-{
-
-}
-
-int
-interp_include(const char *filename)
-{
-
-}
+static struct bootinfo  bi;

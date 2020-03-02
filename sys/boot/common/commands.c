@@ -31,10 +31,9 @@
 
 #include <boot/libsa/bootstand.h>
 #include <lib/libsa/loadfile.h>
-#include <sys/libkern.h>
-
 #include "bootstrap.h"
 #include "commands.h"
+#include <lib/libkern/libkern.h>
 
 static char command_errbuf[256];
 

@@ -33,7 +33,7 @@
  *	@(#)scanc.c	8.1 (Berkeley) 6/10/93
  */
 
-#include <sys/libkern.h>
+#include <lib/libkern/libkern.h>
 
 int
 scanc(size, cp, table, mask0)

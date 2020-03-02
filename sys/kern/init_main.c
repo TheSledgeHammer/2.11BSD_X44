@@ -247,21 +247,114 @@ main()
 
 	scheduler();
 	/* NOTREACHED */
+}
 
-	/* Below needs attention: Not in correct place: Old VM references */
+/*
+ * List of paths to try when searching for "init".
+ */
+static char *initpaths[] = {
+	"/sbin/init",
+	"/sbin/oinit",
+	"/sbin/init.bak",
+	NULL,
+};
+
+/*
+ * Start the initial user process; try exec'ing each pathname in "initpaths".
+ * The program is invoked with one argument containing the boot flags.
+ */
+static void
+start_init(p, framep)
+	struct proc *p;
+	void *framep;
+{
+	vm_offset_t addr;
+	struct execa args;
+	int options, i, error;
+	register_t retval[2];
+	char flags[4] = "-", *flagsp;
+	char **pathp, *path, *ucp, **uap, *arg0, *arg1;
+
+	initproc = p;
+
 	/*
-	 * make init process
+	 * We need to set the system call frame as if we were entered through
+	 * a syscall() so that when we call execve() below, it will be able
+	 * to set the entry point (see setregs) when it tries to exec.  The
+	 * startup code in "locore.s" has allocated space for the frame and
+	 * passed a pointer to that space as main's argument.
 	 */
+	cpu_set_init_frame(p, framep);
+
 	/*
-	if (newproc(0)) {
-		expand((int)btoc(szicode), S_DATA);
-		expand((int)1, S_STACK);
-		copyout((caddr_t)icode, (caddr_t)0, szicode);
-		return 0;
+	 * Need just enough stack to hold the faked-up "execve()" arguments.
+	 */
+	addr = trunc_page(VM_MAX_ADDRESS - PAGE_SIZE);
+	if (vm_allocate(&p->p_vmspace->vm_map, &addr, PAGE_SIZE, FALSE) != 0)
+		panic("init: couldn't allocate argument space");
+	p->p_vmspace->vm_maxsaddr = (caddr_t) addr;
+
+	for (pathp = &initpaths[0]; (path = *pathp) != NULL; pathp++) {
+		/*
+		 * Construct the boot flag argument.
+		 */
+		options = 0;
+		flagsp = flags + 1;
+		ucp = (char*) USRSTACK;
+		if (boothowto & RB_SINGLE) {
+			*flagsp++ = 's';
+			options = 1;
+		}
+#ifdef notyet
+		if (boothowto & RB_FASTBOOT) {
+			*flagsp++ = 'f';
+			options = 1;
+		}
+#endif
+		/*
+		 * Move out the flags (arg 1), if necessary.
+		 */
+		if (options != 0) {
+			*flagsp++ = '\0';
+			i = flagsp - flags;
+			(void) copyout((caddr_t) flags, (caddr_t) (ucp -= i), i);
+			arg1 = ucp;
+		}
+
+		/*
+		 * Move out the file name (also arg 0).
+		 */
+		i = strlen(path) + 1;
+		(void) copyout((caddr_t) path, (caddr_t) (ucp -= i), i);
+		arg0 = ucp;
+
+		/*
+		 * Move out the arg pointers.
+		 */
+		uap = (char**) ((long) ucp & ~ALIGNBYTES);
+		(void) suword((caddr_t) --uap, 0); /* terminator */
+		if (options != 0)
+			(void) suword((caddr_t) --uap, (long) arg1);
+		(void) suword((caddr_t) --uap, (long) arg0);
+
+		/*
+		 * Point at the arguments.
+		 */
+		SCARG(&args, fname) = arg0;
+		SCARG(&args, argp) = uap;
+		SCARG(&args, envp) = NULL;
+
+		/*
+		 * Now try to exec the program.  If can't for any reason
+		 * other than it doesn't exist, complain.
+		 */
+		if ((error = execve(p, &args, retval)) == 0)
+			return;
+		if (error != ENOENT)
+			printf("exec %s: error %d\n", path, error);
 	}
-	else
-		sched();
-	*/
+	printf("init: not found\n");
+	panic("no init");
 }
 
 /*

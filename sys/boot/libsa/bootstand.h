@@ -156,7 +156,4 @@ extern ev_unsethook_t	env_nounset;		/* refuse unset operation */
 /* stdlib.h routines */
 extern long	strtol(const char *, char **, int);
 
-/* calloc.c */
-void    *calloc(unsigned int, unsigned int);
-
 #endif /* BOOT_STAND_H_ */

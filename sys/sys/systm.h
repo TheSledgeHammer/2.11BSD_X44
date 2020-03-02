@@ -144,4 +144,4 @@ void 	softclock __P((caddr_t pc, int ps));
 
 void	initclocks __P((void));
 
-#include <sys/libkern.h>
+#include <lib/libkern/libkern.h>

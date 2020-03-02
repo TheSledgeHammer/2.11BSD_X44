@@ -1,5 +1,6 @@
 /*-
- * Copyright (c) 2016 M. Warner Losh <imp@FreeBSD.org>
+ * Copyright (c) 1998 Doug Rabson <dfr@freebsd.org>
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -10,10 +11,10 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHORS AND CONTRIBUTORS ``AS IS'' AND
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
  * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
@@ -25,17 +26,11 @@
  * $FreeBSD$
  */
 
-#ifndef _PATHS_H_
-#define	_PATHS_H_
+#ifndef _BOOT_DEV_NET_H_
+#define _BOOT_DEV_NET_H_
 
-#include <lib/libsa/boot.h>			/* To get kernel path */
+extern struct devsw netdev;
 
-#define PATH_DOTCONFIG				"/boot.config"
-#define PATH_CONFIG					"/boot/config"
-#define PATH_LOADER					"/boot/loader"
-#define PATH_LOADER_EFI				"/boot/loader.efi"
-#define PATH_LOADER_ZFS				"/boot/zfsloader"
-#define PATH_LOADER_CONF 			"/boot/loader.conf"
-#define PATH_DEFAULTS_LOADER_CONF 	"/boot/defaults/loader.conf"
+uint32_t net_parse_rootpath(void);
 
-#endif /* _PATHS_H_ */
+#endif

@@ -79,7 +79,7 @@ struct devsw {
 };
 
 extern struct devsw devsw[];	/* device array */
-extern int ndevs;		/* number of elements in devsw[] */
+extern int ndevs;				/* number of elements in devsw[] */
 
 struct open_file {
 	int				f_flags;	/* see F_* below */
@@ -100,5 +100,6 @@ extern struct open_file files[SOPEN_MAX];
 int		devopen __P((struct open_file *f, char *fname, char **file));
 void	*alloc __P((unsigned size));
 void	free __P((void *ptr, unsigned size));
+void    *calloc(unsigned int size1, unsigned int size2);
 struct	disklabel;
 char	*getdisklabel __P((const char *buf, struct disklabel *lp));

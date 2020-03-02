@@ -33,7 +33,7 @@
  *	@(#)locc.c	8.1 (Berkeley) 6/10/93
  */
 
-#include <sys/libkern.h>
+#include <lib/libkern/libkern.h>
 
 int
 locc(mask0, cp0, size)

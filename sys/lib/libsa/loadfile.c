@@ -73,7 +73,7 @@
 
 #ifdef _STANDALONE
 #include <lib/libsa/stand.h>
-#include <sys/libkern.h>
+#include <lib/libkern/libkern.h>
 #else
 #include <stdio.h>
 #include <string.h>
@@ -81,7 +81,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <err.h> /* in userspace */
+#include <err.h> 		/* in userspace */
 #endif
 
 #include <sys/param.h>

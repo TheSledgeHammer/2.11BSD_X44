@@ -1,12 +1,8 @@
 TODO:
 - rename: boot/libsa/stand.h, reduce conflict with lib/libsa/stand.h
 - 
-boot: 
-- Focus on 2.11BSDx86 boot.
-- FreeBSD's loading kern modules not fully implemented
-- interp.c: use NetBSD's version
-- Fix up files related to commands.h (changed from struct command_set)
-- md.h: needs an updated stand.h 
+boot: (Focus on 2.11BSDx86 boot.)
+- dev_net.c
 - libi386
 	- bootinfo32
 	- pxe
@@ -26,13 +22,11 @@ libsa:
 
 Kern:
 - longjmp, setjmp
-- libkern.h (NetBSD/ OpenBSD): KASSERT, assert etc..
 - init_main.c
 	- lines 250 to 262 (references to old vm startup)
 	- uipc_mbuf.c: mbinit
 	- consinit
 	- cpu_startup
-	- start_init(curproc, framep);
 - if INET: remanents of 2.11BSD's networking stack overlay
 - kern_clock.c: no statclock
 - sys_kern.c (used? or unused?)

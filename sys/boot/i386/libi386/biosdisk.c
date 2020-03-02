@@ -40,21 +40,20 @@
 #include <sys/disk.h>
 #include <sys/limits.h>
 #include <sys/queue.h>
-#include <stand.h>
+#include <boot/libsa/bootstand.h>
 #include <machine/bootinfo.h>
 #include <stdarg.h>
 #include <stdbool.h>
 
+#include <bootstrap.h>
 #include <btxv86.h>
 #include <edd.h>
-
-#include "bootstrap.h"
 #include "disk.h"
 #include "libi386.h"
 
 #define	BIOS_NUMDRIVES		0x475
 #define	BIOSDISK_SECSIZE	512
-#define	BUFSIZE			(1 * BIOSDISK_SECSIZE)
+#define	BUFSIZE				(1 * BIOSDISK_SECSIZE)
 
 #define	DT_ATAPI	0x10	/* disk type for ATAPI floppies */
 #define	WDMAJOR		0	/* major numbers for devices we frontend for */
@@ -67,16 +66,16 @@
 /*
  * INT13 commands
  */
-#define	CMD_RESET	0x0000
-#define	CMD_READ_CHS	0x0200
-#define	CMD_WRITE_CHS	0x0300
-#define	CMD_READ_PARAM	0x0800
-#define	CMD_DRIVE_TYPE	0x1500
-#define	CMD_CHECK_EDD	0x4100
-#define	CMD_READ_LBA	0x4200
-#define	CMD_WRITE_LBA	0x4300
-#define	CMD_EXT_PARAM	0x4800
-#define	CMD_CD_GET_STATUS 0x4b01
+#define	CMD_RESET			0x0000
+#define	CMD_READ_CHS		0x0200
+#define	CMD_WRITE_CHS		0x0300
+#define	CMD_READ_PARAM		0x0800
+#define	CMD_DRIVE_TYPE		0x1500
+#define	CMD_CHECK_EDD		0x4100
+#define	CMD_READ_LBA		0x4200
+#define	CMD_WRITE_LBA		0x4300
+#define	CMD_EXT_PARAM		0x4800
+#define	CMD_CD_GET_STATUS 	0x4b01
 
 #define	DISK_BIOS	0x13
 
