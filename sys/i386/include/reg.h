@@ -35,7 +35,7 @@
  *
  *	@(#)reg.h	8.1 (Berkeley) 6/11/93
  */
-
+#include <machine/types.h>
 /*
  * Location of the users' stored
  * registers within appropriate frame of 'trap' and 'syscall', relative to
@@ -90,4 +90,47 @@
 #define	NIPCREG 14
 int ipcreg[NIPCREG] =
   { tES,tDS,tEDI,tESI,tEBP,tEBX,tEDX,tECX,tEAX,tEIP,tCS,tEFLAGS,tESP,tSS };
+#endif
+
+#define	__reg32		reg
+
+#define	__dbreg32	dbreg
+/*
+ * Register set accessible via /proc/$pid/regs and PT_{SET,GET}REGS.
+ */
+struct reg32 {
+	u_int32_t	r_fs;
+	u_int32_t	r_es;
+	u_int32_t	r_ds;
+	u_int32_t	r_edi;
+	u_int32_t	r_esi;
+	u_int32_t	r_ebp;
+	u_int32_t	r_isp;
+	u_int32_t	r_ebx;
+	u_int32_t	r_edx;
+	u_int32_t	r_ecx;
+	u_int32_t	r_eax;
+	u_int32_t	r_trapno;
+	u_int32_t	r_err;
+	u_int32_t	r_eip;
+	u_int32_t	r_cs;
+	u_int32_t	r_eflags;
+	u_int32_t	r_esp;
+	u_int32_t	r_ss;
+	u_int32_t	r_gs;
+};
+
+#ifdef _KERNEL
+struct proc;
+
+/*
+ * XXX these interfaces are MI, so they should be declared in a MI place.
+ */
+int	fillregs(struct proc *, struct reg32 *);
+int	setregs(struct proc *, struct reg32 *);
+int	fill_frame_regs(struct trapframe *, struct reg *);
+int	fill_fpregs(struct proc *, struct fpreg *);
+int	set_fpregs(struct proc *, struct fpreg *);
+int	fill_dbregs(struct proc *, struct dbreg *);
+int	set_dbregs(struct proc *, struct dbreg *);
 #endif

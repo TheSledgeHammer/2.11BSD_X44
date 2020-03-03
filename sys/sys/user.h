@@ -47,6 +47,7 @@ struct	fps {
 };
 
 struct user {
+	struct trapframe	*u_frame;
 	struct pcb 			u_pcb;
 	struct fps 			u_fps;
 	short				u_fpsaved;				/* FP regs saved for this proc */

@@ -45,10 +45,10 @@
 
 #ifndef _I386_SEGMENTS_H_
 #define _I386_SEGMENTS_H_
+
 /*
  * Selectors
  */
-
 #define	ISPL(s)		((s)&3)					/* what is the priority level of a selector */
 #define	SEL_KPL		0						/* kernel priority level */
 #define	SEL_UPL		3						/* user priority level */
@@ -173,9 +173,6 @@ struct	soft_segment_descriptor	{
 	unsigned ssd_gran:1 ;		/* limit granularity (byte/page units)*/
 };
 
-extern ssdtosd() ;	/* to decode a ssd */
-extern sdtossd() ;	/* to encode a sd */
-
 /*
  * region descriptors, used to load gdt/idt tables before segments yet exist
  */
@@ -197,12 +194,6 @@ union descriptor_table {
 extern union descriptor_table gdt_segs;
 extern union descriptor_table ldt_segs;
 
-void setup_descriptor_table(struct soft_segment_descriptor *ssd, unsigned int ssd_base, unsigned int ssd_limit,
-		unsigned int ssd_type, unsigned int ssd_dpl, unsigned int ssd_p, unsigned int ssd_xx,
-		unsigned int ssd_xx1, unsigned int ssd_def32, unsigned int ssd_gran);
-void allocate_gdt(union descriptor_table *gdt);
-void allocate_ldt(union descriptor_table *ldt);
-
 
 /*
  * Segment Protection Exception code bits
@@ -213,5 +204,16 @@ void allocate_ldt(union descriptor_table *ldt);
 #define	SEGEX_TI	0x04	/* local descriptor table */
 							/* other bits are affected descriptor index */
 #define SEGEX_IDX(s)	((s)>>3)&0x1fff)
+
+extern ssdtosd(struct soft_segment_descriptor *ssd, struct segment_descriptor *sd) ;	/* to decode a ssd */
+extern sdtossd(struct segment_descriptor *sd, struct segment_descriptor *ssd) ;			/* to encode a sd */
+
+void setup_descriptor_table(struct soft_segment_descriptor *ssd, unsigned int ssd_base, unsigned int ssd_limit,
+		unsigned int ssd_type, unsigned int ssd_dpl, unsigned int ssd_p, unsigned int ssd_xx,
+		unsigned int ssd_xx1, unsigned int ssd_def32, unsigned int ssd_gran);
+void allocate_gdt(union descriptor_table *gdt);
+void allocate_ldt(union descriptor_table *ldt);
+
+void lgdt(struct region_descriptor *rdp);
 
 #endif /* _I386_SEGMENTS_H_ */

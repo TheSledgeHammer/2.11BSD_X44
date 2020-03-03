@@ -72,7 +72,6 @@ extern vm_offset_t avail_end;
 #include <machine/reg.h>
 #include <machine/psl.h>
 #include <machine/specialreg.h>
-//#include <machine/segments.h>
 #include <i386/isa/rtc.h>
 #include <i386/i386/cons.h>
 
@@ -281,6 +280,8 @@ startup(firstaddr)
 	 * Configure the system.
 	 */
 	configure();
+
+	cpu_setregs();
 }
 
 
@@ -593,7 +594,17 @@ cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	/* NOTREACHED */
 }
 
-#define NGDT 		7
+/*
+ * Initialize segments & interrupt table
+ */
+#define	GNULL_SEL	0	/* Null Descriptor */
+#define	GCODE_SEL	1	/* Kernel Code Descriptor */
+#define	GDATA_SEL	2	/* Kernel Data Descriptor */
+#define	GLDT_SEL	3	/* LDT - eventually one per process */
+#define	GTGATE_SEL	4	/* Process task switch gate */
+#define	GPANIC_SEL	5	/* Task state to consider panic from */
+#define	GPROC0_SEL	6	/* Task state process slot zero and up */
+#define NGDT 		GPROC0_SEL+1
 
 union descriptor 	gdt[NGDT];
 
@@ -670,6 +681,8 @@ struct region_descriptor r_idt = {
 	sizeof(idt)-1,(char *)idt
 };
 
+
+/* TODO: FIX UP: FreeBSD & 386BSD
 uintptr_t setidt_disp;
 
 void
@@ -697,18 +710,56 @@ setidt_nodisp(int idx, uintptr_t off, int typ, int dpl, int selec)
 	ip->gd_hioffset = ((u_int)off) >> 16 ;
 }
 
+/*
+void
+setirq(int idx, void *func)
+{
+	setidt(idx, func, SDT_SYS386IGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+}
+*/
+
 #define	IDTVEC(name)	__CONCAT(X, name)
-extern	IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
-	IDTVEC(bnd), IDTVEC(ill), IDTVEC(dna), IDTVEC(dble), IDTVEC(fpusegm),
-	IDTVEC(tss), IDTVEC(missing), IDTVEC(stk), IDTVEC(prot),
-	IDTVEC(page), IDTVEC(rsvd), IDTVEC(fpu), IDTVEC(rsvd0),
-	IDTVEC(rsvd1), IDTVEC(rsvd2), IDTVEC(rsvd3), IDTVEC(rsvd4),
-	IDTVEC(rsvd5), IDTVEC(rsvd6), IDTVEC(rsvd7), IDTVEC(rsvd8),
-	IDTVEC(rsvd9), IDTVEC(rsvd10), IDTVEC(rsvd11), IDTVEC(rsvd12),
-	IDTVEC(rsvd13), IDTVEC(rsvd14), IDTVEC(rsvd14), IDTVEC(syscall);
+extern 	IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
+		IDTVEC(bnd), IDTVEC(ill), IDTVEC(dna), IDTVEC(dble), IDTVEC(fpusegm),
+		IDTVEC(tss), IDTVEC(missing), IDTVEC(stk), IDTVEC(prot),
+		IDTVEC(page), IDTVEC(rsvd), IDTVEC(fpu), IDTVEC(rsvd0),
+		IDTVEC(rsvd1), IDTVEC(rsvd2), IDTVEC(rsvd3), IDTVEC(rsvd4),
+		IDTVEC(rsvd5), IDTVEC(rsvd6), IDTVEC(rsvd7), IDTVEC(rsvd8),
+		IDTVEC(rsvd9), IDTVEC(rsvd10), IDTVEC(rsvd11), IDTVEC(rsvd12),
+		IDTVEC(rsvd13), IDTVEC(rsvd14), IDTVEC(rsvd14), IDTVEC(syscall);
 
 int lcr0(), lcr3(), rcr0(), rcr2();
 int _udatasel, _ucodesel, _gsel_tss;
+
+void
+sdtossd(sd, ssd)
+	struct segment_descriptor *sd;
+	struct soft_segment_descriptor *ssd;
+{
+	ssd->ssd_base  = (sd->sd_hibase << 24) | sd->sd_lobase;
+	ssd->ssd_limit = (sd->sd_hilimit << 16) | sd->sd_lolimit;
+	ssd->ssd_type  = sd->sd_type;
+	ssd->ssd_dpl   = sd->sd_dpl;
+	ssd->ssd_p     = sd->sd_p;
+	ssd->ssd_def32 = sd->sd_def32;
+	ssd->ssd_gran  = sd->sd_gran;
+}
+
+void
+ssdtosd(ssd, sd)
+	struct soft_segment_descriptor *ssd;
+	struct segment_descriptor *sd;
+{
+	sd->sd_lobase = (ssd->ssd_base) & 0xffffff;
+	sd->sd_hibase = (ssd->ssd_base >> 24) & 0xff;
+	sd->sd_lolimit = (ssd->ssd_limit) & 0xffff;
+	sd->sd_hilimit = (ssd->ssd_limit >> 16) & 0xf;
+	sd->sd_type = ssd->ssd_type;
+	sd->sd_dpl = ssd->ssd_dpl;
+	sd->sd_p = ssd->ssd_p;
+	sd->sd_def32 = ssd->ssd_def32;
+	sd->sd_gran = ssd->ssd_gran;
+}
 
 void
 init386(int first)
@@ -772,9 +823,22 @@ init386(int first)
 	setidt(30, &IDTVEC(rsvd13), SDT_SYS386TGT, SEL_KPL);
 	setidt(31, &IDTVEC(rsvd14), SDT_SYS386TGT, SEL_KPL);
 
+#include "isa.h"
+#if	NISA > 0
+	isa_defaultirq();
+#endif
 
-	lgdt(gdt, sizeof(gdt)-1);
-	lidt(idt, sizeof(idt)-1);
+
+	r_gdt.rd_limit = NGDT * sizeof(union descriptor ) - 1;
+	r_gdt.rd_base = (int) gdt;
+	lgdt(r_gdt);
+
+	r_idt.rd_limit = sizeof(idt) - 1;
+	r_idt.rd_base = (int) idt;
+	lidt(r_idt);
+
+	//lgdt(gdt, sizeof(gdt)-1);
+	//lidt(idt, sizeof(idt)-1);
 	lldt(GSEL(GLDT_SEL, SEL_KPL));
 
 	/*
@@ -801,6 +865,7 @@ init386(int first)
 	proc0.p_addr->u_pcb.pcb_tss.tss_esp0 = (int) kstack + UPAGES * NBPG;
 	proc0.p_addr->u_pcb.pcb_tss.tss_ss0 = GSEL(GDATA_SEL, SEL_KPL);
 	_gsel_tss = GSEL(GPROC0_SEL, SEL_KPL);
+	ltr(_gsel_tss);
 
 	/* make a call gate to reenter kernel with */
 	gdp = &ldt[LSYS5CALLS_SEL].gd;
@@ -823,20 +888,6 @@ init386(int first)
 	proc0.p_addr->u_pcb.pcb_ptd = IdlePTD;
 }
 
-void
-sdtossd(sd, ssd)
-	struct segment_descriptor *sd;
-	struct soft_segment_descriptor *ssd;
-{
-	ssd->ssd_base  = (sd->sd_hibase << 24) | sd->sd_lobase;
-	ssd->ssd_limit = (sd->sd_hilimit << 16) | sd->sd_lolimit;
-	ssd->ssd_type  = sd->sd_type;
-	ssd->ssd_dpl   = sd->sd_dpl;
-	ssd->ssd_p     = sd->sd_p;
-	ssd->ssd_def32 = sd->sd_def32;
-	ssd->ssd_gran  = sd->sd_gran;
-}
-
 /*
  * Construct a PCB from a trapframe. This is called from kdb_trap() where
  * we want to start a backtrace from the function that caused us to enter
@@ -855,6 +906,77 @@ makectx(struct trapframe *tf, struct pcb *pcb)
 	pcb->pcb_tss.tss_esp = (ISPL(tf->tf_cs)) ? tf->tf_esp : (int)(tf + 1) - 8;
 	pcb->pcb_tss.tss_gs = rgs();
 }
+
+/*
+int
+fillregs(p, regs)
+	struct proc *p;
+	struct reg32 *regs;
+{
+	struct pcb *pcb;
+	struct trapframe *tp;
+
+	tp = p->p_addr->u_frame;
+	pcb = p->p_addr->u_pcb;
+	regs->r_gs = pcb->pcb_tss.tss_gs;
+	return (fill_frame_regs(tp, regs));
+}
+
+int
+fill_frame_regs(tp, regs)
+	struct trapframe *tp;
+	struct reg32 *regs;
+{
+	regs->r_fs = tp->tf_fs;
+	regs->r_es = tp->tf_es;
+	regs->r_ds = tp->tf_ds;
+	regs->r_edi = tp->tf_edi;
+	regs->r_esi = tp->tf_esi;
+	regs->r_ebp = tp->tf_ebp;
+	regs->r_ebx = tp->tf_ebx;
+	regs->r_edx = tp->tf_edx;
+	regs->r_ecx = tp->tf_ecx;
+	regs->r_eax = tp->tf_eax;
+	regs->r_eip = tp->tf_eip;
+	regs->r_cs = tp->tf_cs;
+	regs->r_eflags = tp->tf_eflags;
+	regs->r_esp = tp->tf_esp;
+	regs->r_ss = tp->tf_ss;
+	regs->r_err = 0;
+	regs->r_trapno = 0;
+	return (0);
+}
+
+int
+setregs(p, regs)
+	struct proc *p;
+	struct reg32 *regs;
+{
+	struct pcb *pcb;
+	struct trapframe *tp;
+
+	tp = p->p_addr->u_frame;
+
+	pcb = p->p_addr->u_pcb;
+	tp->tf_fs = regs->r_fs;
+	tp->tf_es = regs->r_es;
+	tp->tf_ds = regs->r_ds;
+	tp->tf_edi = regs->r_edi;
+	tp->tf_esi = regs->r_esi;
+	tp->tf_ebp = regs->r_ebp;
+	tp->tf_ebx = regs->r_ebx;
+	tp->tf_edx = regs->r_edx;
+	tp->tf_ecx = regs->r_ecx;
+	tp->tf_eax = regs->r_eax;
+	tp->tf_eip = regs->r_eip;
+	tp->tf_cs = regs->r_cs;
+	tp->tf_eflags = regs->r_eflags;
+	tp->tf_esp = regs->r_esp;
+	tp->tf_ss = regs->r_ss;
+	pcb->pcb_tss.tss_gs = regs->r_gs;
+	return (0);
+}
+*/
 
 extern struct pte	*CMAP1, *CMAP2;
 extern caddr_t		CADDR1, CADDR2;

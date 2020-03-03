@@ -1,6 +1,7 @@
 TODO:
 - rename: boot/libsa/stand.h, reduce conflict with lib/libsa/stand.h
-- 
+- longjmp, setjmp
+
 boot: (Focus on 2.11BSDx86 boot.)
 - dev_net.c
 - libi386
@@ -10,18 +11,21 @@ boot: (Focus on 2.11BSDx86 boot.)
 	- Should update parts from FreeBSD
 
 i386:
-- machdep.c (incomplete)
-- pmap.c (incomplete)
-- locore.s (non-existent: depends on boot)
-- GDT, LDT: non-existent
-- p->p_usrpri: doesn't exist in 2.11BSD (needs a solution)
-- vm_machdep.c: u->u_procp->p_p0br??
+- machdep.c (incomplete): setidt
+- locore.s 
+- cpufunc.h
+- asm.h
+- db_machdep
+- math
+- sys_machdep update: fsbase, ioperm, ldt, pcb_extend
+- proc_machdep (netbsd)
 
 libsa:
 - bootparam
 
 Kern:
-- longjmp, setjmp
+- p->p_usrpri: doesn't exist in 2.11BSD (needs a solution)
+- vm_machdep.c: u->u_procp->p_p0br??
 - init_main.c
 	- lines 250 to 262 (references to old vm startup)
 	- uipc_mbuf.c: mbinit

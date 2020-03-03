@@ -99,8 +99,8 @@ include <machine/isa.h>
 
 #ifdef DEBUG
 struct {
-	int kernel;	/* entering kernel mapping */
-	int user;	/* entering user mapping */
+	int kernel;		/* entering kernel mapping */
+	int user;		/* entering user mapping */
 	int ptpneeded;	/* needed to allocate a PT page */
 	int pwchange;	/* no mapping change, just wiring or protection */
 	int wchange;	/* no mapping change, just wiring */
@@ -108,7 +108,7 @@ struct {
 	int managed;	/* a managed page */
 	int firstpv;	/* first mapping for this PA */
 	int secondpv;	/* second mapping for this PA */
-	int ci;		/* cache inhibited */
+	int ci;			/* cache inhibited */
 	int unmanaged;	/* not a managed page */
 	int flushes;	/* cache flushes */
 } enter_stats;
