@@ -68,7 +68,9 @@
  * Initial flags for kernel and user mode.  The kernel later inherits
  * PSL_I and some other flags from user mode.
  */
-#define	PSL_USERSET	(PSL_IOPL)
-#define	PSL_USERCLR	(PSL_I|PSL_NT)
+#define	PSL_USERSET		(PSL_MBO | PSL_I)
+#define	PSL_USERCLR		(PSL_T | PSL_VM | PSL_AC | PSL_D)
+#define	PSL_USERSTATIC	(PSL_MBO | PSL_MBZ | PSL_I | PSL_IOPL | PSL_NT | PSL_VM | PSL_VIF | PSL_VIP)
+#define PSL_USER		(PSL_C | PSL_PF | PSL_AF | PSL_Z | PSL_N | PSL_T | PSL_V | PSL_D | PSL_AC)
 
 #endif /* !_MACHINE_PSL_H_ */

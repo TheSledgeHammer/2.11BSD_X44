@@ -9,9 +9,9 @@
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/buf.h>
-#include <sys/vnode.h>
-#include "vops.h"
+//#include <sys/vnode.h>
 #include <sys/lock.h>
+#include "vops.h"
 
 struct vnodeop_desc *
 create_vdesc(vdesc, vdesc_offset, vdesc_name, vdesc_flags, vdesc_vp_offsets,
@@ -35,29 +35,8 @@ create_vdesc(vdesc, vdesc_offset, vdesc_name, vdesc_flags, vdesc_vp_offsets,
 	return (vdesc);
 }
 
-struct vnodeop_desc *
-create_vdesc(vdesc, vdesc_offset, vdesc_name, vdesc_flags, vdesc_vp_offsets,
-		vdesc_vpp_offset, vdesc_cred_offset, vdesc_proc_offset, vdesc_componentname_offset,
-		vdesc_transports)
-	struct vnodeop_desc *vdesc;
-	int vdesc_offset, vdesc_flags, *vdesc_vp_offsets, vdesc_vpp_offset,
-	vdesc_cred_offset, vdesc_proc_offset, vdesc_componentname_offset;
-	char *vdesc_name;
-	caddr_t	*vdesc_transports;
-{
-	vdesc->vdesc_offset = vdesc_offset;
-	vdesc->vdesc_name = vdesc_name;
-	vdesc->vdesc_flags = vdesc_flags;
-	vdesc->vdesc_vp_offsets = vdesc_vp_offsets;
-	vdesc->vdesc_vpp_offset = vdesc_vpp_offset;
-	vdesc->vdesc_cred_offset = vdesc_cred_offset;
-	vdesc->vdesc_proc_offset = vdesc_proc_offset;
-	vdesc->vdesc_componentname_offset = vdesc_componentname_offset;
-	vdesc->vdesc_transports = vdesc_transports;
-	return (vdesc);
-}
-
-//struct vop_default_desc *vop_default_desc = create_vdesc(&vop_default_desc, 0, "default", 0, NULL, VDESC_NO_OFFSET, VDESC_NO_OFFSET, VDESC_NO_OFFSET, VDESC_NO_OFFSET, NULL);
+#define DO_OPS(ops, error, ap, vop_field)	\
+	error = ops->vop_field(ap)
 
 static int
 vop_lookup(dvp, vpp, cnp)
@@ -66,7 +45,7 @@ vop_lookup(dvp, vpp, cnp)
 	struct componentname *cnp;
 {
 	struct vop_lookup_args a;
-	a.a_desc = VDESC(vop_lookup);
+	a.a_desc = &vop_lookup_desc;
 	a.a_dvp = dvp;
 	a.a_vpp = vpp;
 	a.a_cnp = cnp;
@@ -86,6 +65,7 @@ vop_create(dvp, vpp, cnp, vap)
 	a.a_vpp = vpp;
 	a.a_cnp = cnp;
 	a.a_vap = vap;
+
 	return (VCALL(dvp, VOFFSET(vop_create), &a));
 }
 

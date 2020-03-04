@@ -35,10 +35,10 @@
  * variables in order to allow some type strength.
  */
 
-#include "bootstand.h"
+#include <lib/libkern/libkern.h>
 #include <lib/libsa/loadfile.h>
 #include <bootstrap.h>
-#include <lib/libkern/libkern.h>
+#include "bootstand.h"
 
 static void	env_discard(struct env_var *ev);
 

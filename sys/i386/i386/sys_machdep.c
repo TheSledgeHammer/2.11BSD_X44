@@ -36,6 +36,8 @@
  *	@(#)sys_machdep.c	8.1 (Berkeley) 6/11/93
  */
 
+#include <sys/cdefs.h>
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/ioctl.h>
@@ -47,7 +49,62 @@
 #include <sys/mtio.h>
 #include <sys/buf.h>
 #include <sys/trace.h>
+/*
+#include <sys/malloc.h>
 
+#include <vm/include/vm.h>
+#include <vm/include/pmap.h>
+#include <vm/include/vm_map.h>
+#include <vm/include/vm_extern.h>
+#include <vm/include/vm_kern.h>		/* /* for kernel_map */
+/*
+#include <machine/cpu.h>
+#include <machine/pcb.h>
+#include <machine/proc.h>
+#include <machine/sysarch.h>
+
+int
+sysarch(p, uap)
+	struct proc *p;
+	struct sysarch_args *uap;
+{
+	int error;
+	union descriptor *lp;
+	union {
+		struct i386_ldt_args largs;
+		struct i386_ioperm_args iargs;
+		struct i386_get_xfpustate xfpu;
+	} kargs;
+	uint32_t base;
+	struct segment_descriptor *sdp;
+
+	switch (uap->op) {
+	case I386_GET_IOPERM:
+	case I386_SET_IOPERM:
+	case I386_GET_LDT:
+	case I386_SET_LDT:
+	case I386_GET_XFPUSTATE:
+	default:
+		break;
+	}
+
+	switch (uap->op) {
+	case I386_GET_LDT:
+	case I386_SET_LDT:
+	case I386_GET_IOPERM:
+	case I386_SET_IOPERM:
+	case I386_VM86:
+	case I386_GET_FSBASE:
+	case I386_SET_FSBASE:
+	case I386_GET_GSBASE:
+	case I386_SET_GSBASE:
+	case I386_GET_XFPUSTATE:
+	default:
+		break;
+	}
+	return (error);
+}
+*/
 #ifdef TRACE
 int	nvualarm;
 

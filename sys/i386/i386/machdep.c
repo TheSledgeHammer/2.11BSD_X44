@@ -555,8 +555,6 @@ setregs(p, elp, stack)
 	tf->tf_eflags = PSL_USERSET;
 	tf->tf_esp = stack;
 	tf->tf_ss = LSEL(LUDATA_SEL, SEL_UPL);
-
-	//load_cr0(rcr0() | CR0_MP | CR0_TS);		/* start emulating */
 }
 
 void
@@ -907,76 +905,6 @@ makectx(struct trapframe *tf, struct pcb *pcb)
 	pcb->pcb_tss.tss_gs = rgs();
 }
 
-/*
-int
-fillregs(p, regs)
-	struct proc *p;
-	struct reg32 *regs;
-{
-	struct pcb *pcb;
-	struct trapframe *tp;
-
-	tp = p->p_addr->u_frame;
-	pcb = p->p_addr->u_pcb;
-	regs->r_gs = pcb->pcb_tss.tss_gs;
-	return (fill_frame_regs(tp, regs));
-}
-
-int
-fill_frame_regs(tp, regs)
-	struct trapframe *tp;
-	struct reg32 *regs;
-{
-	regs->r_fs = tp->tf_fs;
-	regs->r_es = tp->tf_es;
-	regs->r_ds = tp->tf_ds;
-	regs->r_edi = tp->tf_edi;
-	regs->r_esi = tp->tf_esi;
-	regs->r_ebp = tp->tf_ebp;
-	regs->r_ebx = tp->tf_ebx;
-	regs->r_edx = tp->tf_edx;
-	regs->r_ecx = tp->tf_ecx;
-	regs->r_eax = tp->tf_eax;
-	regs->r_eip = tp->tf_eip;
-	regs->r_cs = tp->tf_cs;
-	regs->r_eflags = tp->tf_eflags;
-	regs->r_esp = tp->tf_esp;
-	regs->r_ss = tp->tf_ss;
-	regs->r_err = 0;
-	regs->r_trapno = 0;
-	return (0);
-}
-
-int
-setregs(p, regs)
-	struct proc *p;
-	struct reg32 *regs;
-{
-	struct pcb *pcb;
-	struct trapframe *tp;
-
-	tp = p->p_addr->u_frame;
-
-	pcb = p->p_addr->u_pcb;
-	tp->tf_fs = regs->r_fs;
-	tp->tf_es = regs->r_es;
-	tp->tf_ds = regs->r_ds;
-	tp->tf_edi = regs->r_edi;
-	tp->tf_esi = regs->r_esi;
-	tp->tf_ebp = regs->r_ebp;
-	tp->tf_ebx = regs->r_ebx;
-	tp->tf_edx = regs->r_edx;
-	tp->tf_ecx = regs->r_ecx;
-	tp->tf_eax = regs->r_eax;
-	tp->tf_eip = regs->r_eip;
-	tp->tf_cs = regs->r_cs;
-	tp->tf_eflags = regs->r_eflags;
-	tp->tf_esp = regs->r_esp;
-	tp->tf_ss = regs->r_ss;
-	pcb->pcb_tss.tss_gs = regs->r_gs;
-	return (0);
-}
-*/
 
 extern struct pte	*CMAP1, *CMAP2;
 extern caddr_t		CADDR1, CADDR2;

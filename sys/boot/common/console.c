@@ -94,7 +94,8 @@ cons_probe(void)
 			(ev_sethook_t*) cons_set, env_nounset);
 }
 
-int getchar(void)
+int
+getchar(void)
 {
 	int cons;
 	int rv;

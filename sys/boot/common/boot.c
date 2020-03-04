@@ -121,6 +121,7 @@ command_autoboot(int argc, char *argv[])
 	switch (argc) {
 	case 3:
 		prompt = argv[2];
+		break;
 		/* FALLTHROUGH */
 	case 2:
 		howlong = strtol(argv[1], &cp, 0);
@@ -128,6 +129,7 @@ command_autoboot(int argc, char *argv[])
 			command_seterr("bad delay '%s'", argv[1]);
 			return (CMD_ERROR);
 		}
+		break;
 		/* FALLTHROUGH */
 	case 1:
 		return (autoboot(howlong, prompt));

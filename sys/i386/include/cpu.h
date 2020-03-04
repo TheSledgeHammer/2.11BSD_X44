@@ -39,6 +39,7 @@
 /*
  * Definitions unique to i386 cpu support.
  */
+#include <machine/psl.h>
 #include <machine/frame.h>
 #include <machine/segments.h>
 
@@ -52,6 +53,7 @@
 #define	cpu_swapin(p)			/* nothing */
 #define cpu_setstack(p, ap)			(p)->p_md.md_regs[SP] = ap
 #define cpu_set_init_frame(p, fp)	(p)->p_md.md_regs = fp
+
 #define	BACKTRACE(p)			/* not implemented */
 
 /*
@@ -88,7 +90,7 @@ struct clockframe {
  */
 #define	signotify(p)	aston()
 
-#define aston() (astpending++)
+#define aston() 		(astpending++)
 
 int	astpending;			/* need to trap before returning to user mode */
 int	want_resched;		/* resched() was called */

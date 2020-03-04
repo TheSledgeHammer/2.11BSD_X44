@@ -31,9 +31,9 @@
 
 #include <boot/libsa/bootstand.h>
 #include <lib/libsa/loadfile.h>
+#include <lib/libkern/libkern.h>
 #include "bootstrap.h"
 #include "commands.h"
-#include <lib/libkern/libkern.h>
 
 static char command_errbuf[256];
 
@@ -365,7 +365,6 @@ command_echo(int argc, char *argv[])
 /*
  * A passable emulation of the sh(1) command of the same name.
  */
-
 
 int
 command_read(int argc, char *argv[])
