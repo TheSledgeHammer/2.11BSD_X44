@@ -92,9 +92,6 @@ int ipcreg[NIPCREG] =
   { tES,tDS,tEDI,tESI,tEBP,tEBX,tEDX,tECX,tEAX,tEIP,tCS,tEFLAGS,tESP,tSS };
 #endif
 
-#define	__reg32		reg
-
-#define	__dbreg32	dbreg
 /*
  * Register set accessible via /proc/$pid/regs and PT_{SET,GET}REGS.
  */
@@ -118,6 +115,26 @@ struct reg32 {
 	u_int32_t	r_esp;
 	u_int32_t	r_ss;
 	u_int32_t	r_gs;
+};
+
+struct fpreg {
+	struct save87 fstate;
+};
+
+struct xmmregs {
+	struct fxsave fxstate;
+};
+
+/*
+ * Debug Registers
+ *
+ * DR0-DR3  Debug Address Registers
+ * DR4-DR5  Reserved
+ * DR6      Debug Status Register
+ * DR7      Debug Control Register
+ */
+struct dbreg {
+	int	dr[8];
 };
 
 #ifdef _KERNEL

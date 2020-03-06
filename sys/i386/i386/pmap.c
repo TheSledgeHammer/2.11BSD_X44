@@ -191,9 +191,9 @@ void		pmap_clear_modify();
 /*
  * All those kernel PT submaps that BSD is so fond of
  */
-struct pte	*CMAP1, *CMAP2, *mmap;
-caddr_t		CADDR1, CADDR2, vmmap;
-struct pte	*msgbufmap;
+struct pte		*CMAP1, *CMAP2, *mmap;
+caddr_t			CADDR1, CADDR2, vmmap;
+struct pte		*msgbufmap;
 struct msgbuf	*msgbufp;
 #endif
 

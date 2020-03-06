@@ -72,6 +72,8 @@ extern vm_offset_t avail_end;
 #include <machine/reg.h>
 #include <machine/psl.h>
 #include <machine/specialreg.h>
+#include <machine/bootinfo.h>
+
 #include <i386/isa/rtc.h>
 #include <i386/i386/cons.h>
 
@@ -334,6 +336,29 @@ initcpu()
 
 }
 
+static void
+tss_init(tss, stack, func)
+	struct i386tss *tss;
+	void *stack;
+	void *func;
+{
+	KASSERT(curcpu()->ci_pmap == pmap_kernel());
+
+	memset(tss, 0, sizeof *tss);
+	tss->tss_esp0 = tss->tss_esp = (int)((char *)stack + USPACE - 16);
+	tss->tss_ss0 = GSEL(GDATA_SEL, SEL_KPL);
+	tss->tss_cs = GSEL(GCODE_SEL, SEL_KPL);
+	tss->tss_fs = GSEL(GCPU_SEL, SEL_KPL);
+	tss->tss_gs = tss->__tss_es = tss->__tss_ds =
+	    tss->tss_ss = GSEL(GDATA_SEL, SEL_KPL);
+	/* %cr3 contains the value associated to pmap_kernel */
+	tss->tss_cr3 = rcr3();
+	tss->tss_esp = (int)((char *)stack + USPACE - 16);
+	tss->tss_ldt = GSEL(GLDT_SEL, SEL_KPL);
+	tss->tss_eflags = PSL_MBO | PSL_NT;	/* XXX not needed? */
+	tss->tss_eip = (int)func;
+}
+
 #ifdef PGINPROF
 /*
  * Return the difference (in microseconds)
@@ -564,6 +589,7 @@ cpu_setregs(void)
 	cr0 = rcr0();
 	cr0 |= CR0_MP | CR0_NE | CR0_TS | CR0_WP | CR0_AM;
 	load_cr0(cr0);
+	load_gs(_udatasel);
 }
 
 /*
@@ -601,10 +627,16 @@ cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 #define	GLDT_SEL	3	/* LDT - eventually one per process */
 #define	GTGATE_SEL	4	/* Process task switch gate */
 #define	GPANIC_SEL	5	/* Task state to consider panic from */
-#define	GPROC0_SEL	6	/* Task state process slot zero and up */
+#define	GINVTSS_SEL	6	/* Task state to take invalid tss on */
+#define	GDBLFLT_SEL	7	/* Task state to take double fault on */
+#define	GEXIT_SEL	8	/* Task state to process cpu_texit() on */
+#define	GPROC0_SEL	9	/* Task state process slot zero and up */
 #define NGDT 		GPROC0_SEL+1
 
 union descriptor 	gdt[NGDT];
+
+int lcr0(), lcr3(), rcr0(), rcr2();
+int _udatasel, _ucodesel, _gsel_tss, _exit_tss;
 
 /* interrupt descriptor table */
 struct gate_descriptor idt[32+16];
@@ -623,7 +655,8 @@ union descriptor ldt[NLDT];
 union descriptor_table gdt_segs;
 union descriptor_table ldt_segs;
 
-struct i386tss	tss, panic_tss;
+struct i386tss inv_tss, dbl_tss, exit_tss;//tss, panic_tss;
+char alt_stack[1024];
 
 extern  struct user *proc0paddr;
 
@@ -649,13 +682,28 @@ void
 allocate_gdt(gdt)
     union descriptor_table *gdt;
 {
-	setup_descriptor_table(&gdt->null_desc, 0x0, 0x0, 0, 0, 0, 0, 0, 0, 0);
-	setup_descriptor_table(&gdt->code_desc, 0x0, 0xfffff, SDT_MEMERA, 0, 1, 0, 0, 1, 1);
-    setup_descriptor_table(&gdt->data_desc, 0x0, 0xfffff, SDT_MEMERA, 0, 1, 0, 0, 1, 1);
-    setup_descriptor_table(&gdt->ldt_desc, (int) ldt, sizeof(ldt)-1, SDT_SYSLDT, 0, 1, 0, 0, 0, 0);
-    setup_descriptor_table(&gdt->null_desc, 0x0, 0x0, 0, 0, 0, 0, 0, 0, 0);
-    setup_descriptor_table(&gdt->panic_tss_desc, (int) &panic_tss, sizeof(tss)-1, SDT_SYS386TSS, 0, 1, 0, 0, 0, 0);
-    setup_descriptor_table(&gdt->proc0_tss_desc, (int) kstack, sizeof(tss)-1, SDT_SYS386TSS, 0, 1, 0, 0, 0, 0);
+	/* GNULL_SEL	0 Null Descriptor */
+	setup_descriptor_table(&gdt->null_desc, 0x0, 0x0, 0, SEL_KPL, 0, 0, 0, 0, 0);
+	/* GUFS_SEL		1 %fs Descriptor for user */
+	setup_descriptor_table(&gdt->fs_desc, 0x0, 0xfffff, SDT_MEMRWA, SEL_UPL, 1, 0, 0, 1, 1);
+	/* GUGS_SEL		2 %gs Descriptor for user */
+	setup_descriptor_table(&gdt->gs_desc, 0x0, 0xfffff, SDT_MEMRWA, SEL_UPL, 1, 0, 0, 1, 1);
+	/* GCODE_SEL	3 Code Descriptor for kernel */
+	setup_descriptor_table(&gdt->code_desc, 0x0, 0xfffff, SDT_MEMERA, SEL_KPL, 1, 0, 0, 1, 1);
+	/* GDATA_SEL	4 Data Descriptor for kernel */
+	setup_descriptor_table(&gdt->data_desc, 0x0, 0xfffff, SDT_MEMERA, SEL_KPL, 1, 0, 0, 1, 1);
+	/* GUCODE_SEL	5 Code Descriptor for user */
+	//setup_descriptor_table(&gdt->code_desc, 0x0, 0xfffff, SDT_MEMERA, SEL_UPL, 1, 0, 0, 1, 1);
+	/* GUDATA_SEL	6 Data Descriptor for user */
+	//setup_descriptor_table(&gdt->data_desc, 0x0, 0xfffff, SDT_MEMERA, SEL_UPL, 1, 0, 0, 1, 1);
+	/* GPROC0_SEL	7 Proc 0 Tss Descriptor */
+	setup_descriptor_table(&gdt->proc0_tss_desc, 0x0, sizeof(struct i386tss)-1, SDT_SYS386TSS, 0, 1, 0, 0, 0, 0);
+	 /* GLDT_SEL	8 LDT Descriptor */
+	setup_descriptor_table(&gdt->ldt_desc, 0x0, (sizeof(union descriptor) * NLDT - 1), SDT_SYSLDT, SEL_UPL, 1, 0, 0, 0, 0);
+	/* GUSERLDT_SEL	9 User LDT Descriptor per process */
+	setup_descriptor_table(&gdt->ldt_desc, 0x0, (512 * sizeof(union descriptor)-1), SDT_SYSLDT, 0, 1, 0, 0, 0, 0);
+	/* GPANIC_SEL	10 Panic Tss Descriptor */
+	setup_descriptor_table(&gdt->panic_tss_desc, 0x0, sizeof(struct i386tss)-1, SDT_SYS386TSS, 0, 1, 0, 0, 0, 0);
 }
 
 /* Allocates & Predefines all the parameters for the Local Descriptor Table (LDT) segments */
@@ -667,54 +715,35 @@ allocate_ldt(ldt)
     setup_descriptor_table(&ldt->null_desc, 0x0, 0x0, 0, 0, 0, 0, 0, 0, 0);
     setup_descriptor_table(&ldt->null_desc, 0x0, 0x0, 0, 0, 0, 0, 0, 0, 0);
     setup_descriptor_table(&ldt->code_desc, 0x0, 0xfffff, SDT_MEMERA, SEL_UPL, 1, 0, 0, 1, 1);
+    setup_descriptor_table(&ldt->null_desc, 0x0, 0x0, 0, 0, 0, 0, 0, 0, 0);
     setup_descriptor_table(&ldt->data_desc, 0x0, 0xfffff, SDT_MEMERA, SEL_UPL, 1, 0, 0, 1, 1);
 }
 
-/* table descriptors - used to load tables by microp */
-struct region_descriptor r_gdt = {
-	sizeof(gdt)-1,(char *)gdt
-};
-
-struct region_descriptor r_idt = {
-	sizeof(idt)-1,(char *)idt
-};
-
-
-/* TODO: FIX UP: FreeBSD & 386BSD
-uintptr_t setidt_disp;
-
 void
-setidt(int idx, inthand_t *func, int typ, int dpl, int selec)
-{
-	uintptr_t off;
-
-	off = func != NULL ? (uintptr_t)func + setidt_disp : 0;
-	setidt_nodisp(idx, off, typ, dpl, selec);
-}
-
-void
-setidt_nodisp(int idx, uintptr_t off, int typ, int dpl, int selec)
+setidt(idx, func, typ, dpl, selec)
+	int idx, typ, dpl, selec;
+	void *func;
 {
 	struct gate_descriptor *ip;
 
 	ip = idt + idx;
-	ip->gd_looffset = off;
+	ip->gd_looffset = (u_int)func;
 	ip->gd_selector = selec;
 	ip->gd_stkcpy = 0;
 	ip->gd_xx = 0;
 	ip->gd_type = typ;
 	ip->gd_dpl = dpl;
 	ip->gd_p = 1;
-	ip->gd_hioffset = ((u_int)off) >> 16 ;
+	ip->gd_hioffset = ((u_int)func) >> 16 ;
 }
 
-/*
 void
-setirq(int idx, void *func)
+setirq(idx, func)
+	int idx;
+	void *func;
 {
 	setidt(idx, func, SDT_SYS386IGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
 }
-*/
 
 #define	IDTVEC(name)	__CONCAT(X, name)
 extern 	IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
@@ -725,9 +754,6 @@ extern 	IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
 		IDTVEC(rsvd5), IDTVEC(rsvd6), IDTVEC(rsvd7), IDTVEC(rsvd8),
 		IDTVEC(rsvd9), IDTVEC(rsvd10), IDTVEC(rsvd11), IDTVEC(rsvd12),
 		IDTVEC(rsvd13), IDTVEC(rsvd14), IDTVEC(rsvd14), IDTVEC(syscall);
-
-int lcr0(), lcr3(), rcr0(), rcr2();
-int _udatasel, _ucodesel, _gsel_tss;
 
 void
 sdtossd(sd, ssd)
@@ -760,17 +786,20 @@ ssdtosd(ssd, sd)
 }
 
 void
-init386(int first)
+init386(first)
+	int first;
 {
 	int x, *pi;
 	unsigned biosbasemem, biosextmem;
 	struct gate_descriptor *gdp;
 	extern int sigcode, szsigcode;
+	struct region_descriptor r_gdt, r_idt;
 
 	proc0.p_addr = proc0paddr;
 
 	allocate_gdt(&gdt_segs);
 	allocate_ldt(&ldt_segs);
+
 	/*
 	 * Initialize the console before we print anything out.
 	 */
@@ -778,7 +807,6 @@ init386(int first)
 	cninit (KERNBASE+0xa0000);
 
 	/* make gdt memory segments */
-
 	gdt_segs.code_desc.ssd_limit = btoc((int) &etext + NBPG);
 	for (x=0; x < NGDT; x++) ssdtosd(gdt_segs+x, gdt+x);
 	/* make ldt memory segments */
@@ -788,44 +816,38 @@ init386(int first)
 	for (x=0; x < 5; x++) ssdtosd(ldt_segs+x, ldt+x);
 
 	/* exceptions */
-	setidt(0, &IDTVEC(div), SDT_SYS386TGT, SEL_KPL);
-	setidt(1, &IDTVEC(dbg), SDT_SYS386TGT, SEL_KPL);
-	setidt(2, &IDTVEC(nmi), SDT_SYS386TGT, SEL_KPL);
-	setidt(3, &IDTVEC(bpt), SDT_SYS386TGT, SEL_UPL);
-	setidt(4, &IDTVEC(ofl), SDT_SYS386TGT, SEL_KPL);
-	setidt(5, &IDTVEC(bnd), SDT_SYS386TGT, SEL_KPL);
-	setidt(6, &IDTVEC(ill), SDT_SYS386TGT, SEL_KPL);
-	setidt(7, &IDTVEC(dna), SDT_SYS386TGT, SEL_KPL);
-	setidt(8, &IDTVEC(dble), SDT_SYS386TGT, SEL_KPL);
-	setidt(9, &IDTVEC(fpusegm), SDT_SYS386TGT, SEL_KPL);
-	setidt(10, &IDTVEC(tss), SDT_SYS386TGT, SEL_KPL);
-	setidt(11, &IDTVEC(missing), SDT_SYS386TGT, SEL_KPL);
-	setidt(12, &IDTVEC(stk), SDT_SYS386TGT, SEL_KPL);
-	setidt(13, &IDTVEC(prot), SDT_SYS386TGT, SEL_KPL);
-	setidt(14, &IDTVEC(page), SDT_SYS386TGT, SEL_KPL);
-	setidt(15, &IDTVEC(rsvd), SDT_SYS386TGT, SEL_KPL);
-	setidt(16, &IDTVEC(fpu), SDT_SYS386TGT, SEL_KPL);
-	setidt(17, &IDTVEC(rsvd0), SDT_SYS386TGT, SEL_KPL);
-	setidt(18, &IDTVEC(rsvd1), SDT_SYS386TGT, SEL_KPL);
-	setidt(19, &IDTVEC(rsvd2), SDT_SYS386TGT, SEL_KPL);
-	setidt(20, &IDTVEC(rsvd3), SDT_SYS386TGT, SEL_KPL);
-	setidt(21, &IDTVEC(rsvd4), SDT_SYS386TGT, SEL_KPL);
-	setidt(22, &IDTVEC(rsvd5), SDT_SYS386TGT, SEL_KPL);
-	setidt(23, &IDTVEC(rsvd6), SDT_SYS386TGT, SEL_KPL);
-	setidt(24, &IDTVEC(rsvd7), SDT_SYS386TGT, SEL_KPL);
-	setidt(25, &IDTVEC(rsvd8), SDT_SYS386TGT, SEL_KPL);
-	setidt(26, &IDTVEC(rsvd9), SDT_SYS386TGT, SEL_KPL);
-	setidt(27, &IDTVEC(rsvd10), SDT_SYS386TGT, SEL_KPL);
-	setidt(28, &IDTVEC(rsvd11), SDT_SYS386TGT, SEL_KPL);
-	setidt(29, &IDTVEC(rsvd12), SDT_SYS386TGT, SEL_KPL);
-	setidt(30, &IDTVEC(rsvd13), SDT_SYS386TGT, SEL_KPL);
-	setidt(31, &IDTVEC(rsvd14), SDT_SYS386TGT, SEL_KPL);
-
-#include "isa.h"
-#if	NISA > 0
-	isa_defaultirq();
-#endif
-
+	setidt(0, &IDTVEC(div),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(1, &IDTVEC(dbg),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(2, &IDTVEC(nmi),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(3, &IDTVEC(bpt),  SDT_SYS386TGT, SEL_UPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(4, &IDTVEC(ofl),  SDT_SYS386TGT, SEL_UPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(5, &IDTVEC(bnd),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(6, &IDTVEC(ill),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(7, &IDTVEC(dna),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(8, &IDTVEC(dble),  SDT_SYSTASKGT, SEL_KPL, GSEL(GDBLFLT_SEL, SEL_KPL));
+	setidt(9, &IDTVEC(fpusegm),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(10, &IDTVEC(tss),  SDT_SYSTASKGT, SEL_KPL, GSEL(GINVTSS_SEL, SEL_KPL));
+	setidt(11, &IDTVEC(missing),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(12, &IDTVEC(stk),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(13, &IDTVEC(prot),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(14, &IDTVEC(page),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(15, &IDTVEC(rsvd),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(16, &IDTVEC(fpu),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(17, &IDTVEC(rsvd0),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(18, &IDTVEC(rsvd1),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(19, &IDTVEC(rsvd2),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(20, &IDTVEC(rsvd3),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(21, &IDTVEC(rsvd4),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(22, &IDTVEC(rsvd5),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(23, &IDTVEC(rsvd6),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(24, &IDTVEC(rsvd7),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(25, &IDTVEC(rsvd8),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(26, &IDTVEC(rsvd9),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(27, &IDTVEC(rsvd10),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(28, &IDTVEC(rsvd11),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(29, &IDTVEC(rsvd12),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(30, &IDTVEC(rsvd13),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	setidt(31, &IDTVEC(rsvd14),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
 
 	r_gdt.rd_limit = NGDT * sizeof(union descriptor ) - 1;
 	r_gdt.rd_base = (int) gdt;
@@ -834,9 +856,6 @@ init386(int first)
 	r_idt.rd_limit = sizeof(idt) - 1;
 	r_idt.rd_base = (int) idt;
 	lidt(r_idt);
-
-	//lgdt(gdt, sizeof(gdt)-1);
-	//lidt(idt, sizeof(idt)-1);
 	lldt(GSEL(GLDT_SEL, SEL_KPL));
 
 	/*
@@ -862,12 +881,23 @@ init386(int first)
 	/* make a initial tss so microp can get interrupt stack on syscall! */
 	proc0.p_addr->u_pcb.pcb_tss.tss_esp0 = (int) kstack + UPAGES * NBPG;
 	proc0.p_addr->u_pcb.pcb_tss.tss_ss0 = GSEL(GDATA_SEL, SEL_KPL);
+	proc0.p_addr->u_pcb.pcb_tss.tss_esp = (int) kstack + UPAGES * NBPG;
+	proc0.p_addr->u_pcb.pcb_tss.tss_ss = GSEL(GDATA_SEL, SEL_KPL) ;
 	_gsel_tss = GSEL(GPROC0_SEL, SEL_KPL);
 	ltr(_gsel_tss);
 
+	proc0.p_addr->u_pcb.pcb_tss.tss_ldt =  GSEL(GLDT_SEL, SEL_KPL);
+	proc0.p_addr->u_pcb.pcb_tss.tss_cs =  GSEL(GCODE_SEL, SEL_KPL);
+	proc0.p_addr->u_pcb.pcb_tss.tss_ds =  GSEL(GDATA_SEL, SEL_KPL);
+	proc0.p_addr->u_pcb.pcb_tss.tss_es =  GSEL(GDATA_SEL, SEL_KPL);
+	proc0.p_addr->u_pcb.pcb_tss.tss_ss =  GSEL(GDATA_SEL, SEL_KPL);
+	proc0.p_addr->u_pcb.pcb_tss.tss_fs =  GSEL(GDATA_SEL, SEL_KPL);
+	proc0.p_addr->u_pcb.pcb_tss.tss_gs =  GSEL(GDATA_SEL, SEL_KPL);
+
+
 	/* make a call gate to reenter kernel with */
 	gdp = &ldt[LSYS5CALLS_SEL].gd;
-
+	x = (int) &IDTVEC(syscall);
 	gdp->gd_looffset = x++;
 	gdp->gd_selector = GSEL(GCODE_SEL, SEL_KPL);
 	gdp->gd_stkcpy = 0;
@@ -884,6 +914,17 @@ init386(int first)
 	bcopy(&sigcode, proc0.p_addr->u_pcb.pcb_sigc, szsigcode);
 	proc0.p_addr->u_pcb.pcb_flags = 0;
 	proc0.p_addr->u_pcb.pcb_ptd = IdlePTD;
+
+	/* setup fault tss's */
+	inv_tss = proc0.p_addr->u_pcb.pcb_tss;
+	inv_tss.tss_esp0 = (int) (alt_stack + 1020);
+	inv_tss.tss_esp = (int) (alt_stack + 1020);
+	inv_tss.tss_ss =  GSEL(GDATA_SEL, SEL_KPL);
+	inv_tss.tss_cs =  GSEL(GCODE_SEL, SEL_KPL);
+	inv_tss.tss_eip =  (int) &invtss;
+	exit_tss = dbl_tss = inv_tss;
+	dbl_tss.tss_eip =  (int) &dbl;
+	_exit_tss =  GSEL(GEXIT_SEL, SEL_KPL);
 }
 
 /*
@@ -894,7 +935,9 @@ init386(int first)
  * enough for a backtrace.
  */
 void
-makectx(struct trapframe *tf, struct pcb *pcb)
+makectx(tf, pcb)
+	struct trapframe *tf;
+	struct pcb *pcb;
 {
 	pcb->pcb_tss.tss_edi = tf->tf_edi;
 	pcb->pcb_tss.tss_esi = tf->tf_esi;
@@ -904,7 +947,6 @@ makectx(struct trapframe *tf, struct pcb *pcb)
 	pcb->pcb_tss.tss_esp = (ISPL(tf->tf_cs)) ? tf->tf_esp : (int)(tf + 1) - 8;
 	pcb->pcb_tss.tss_gs = rgs();
 }
-
 
 extern struct pte	*CMAP1, *CMAP2;
 extern caddr_t		CADDR1, CADDR2;

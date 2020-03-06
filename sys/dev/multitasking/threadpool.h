@@ -8,8 +8,8 @@
 #ifndef SYS_THREADPOOL_H_
 #define SYS_THREADPOOL_H_
 
-#include <test/multitasking/kthreads.h>
-#include <test/multitasking/uthreads.h>
+#include <dev/multitasking/kernthreads/kthread.h>
+#include <dev/multitasking/userthreads/uthread.h>
 //#include <sys/queue.h>
 
 /*

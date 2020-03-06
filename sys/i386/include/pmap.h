@@ -153,15 +153,15 @@ extern int	IdlePTD;	/* physical address of "Idle" state directory */
  * Note: these work recursively, thus vtopte of a pte will give
  * the corresponding pde that in turn maps it.
  */
-#define	vtopte(va)	(PTmap + i386_btop(va))
-#define	kvtopte(va)	vtopte(va)
-#define	ptetov(pt)	(i386_ptob(pt - PTmap))
-#define	vtophys(va)  (i386_ptob(vtopte(va)->pg_pfnum) | ((int)(va) & PGOFSET))
-#define ispt(va)	((va) >= UPT_MIN_ADDRESS && (va) <= KPT_MAX_ADDRESS)
+#define	vtopte(va)		(PTmap + i386_btop(va))
+#define	kvtopte(va)		vtopte(va)
+#define	ptetov(pt)		(i386_ptob(pt - PTmap))
+#define	vtophys(va)  	(i386_ptob(vtopte(va)->pg_pfnum) | ((int)(va) & PGOFSET))
+#define ispt(va)		((va) >= UPT_MIN_ADDRESS && (va) <= KPT_MAX_ADDRESS)
 
-#define	avtopte(va)	(APTmap + i386_btop(va))
-#define	ptetoav(pt)	(i386_ptob(pt - APTmap))
-#define	avtophys(va)  (i386_ptob(avtopte(va)->pg_pfnum) | ((int)(va) & PGOFSET))
+#define	avtopte(va)		(APTmap + i386_btop(va))
+#define	ptetoav(pt)	 	(i386_ptob(pt - APTmap))
+#define	avtophys(va)  	(i386_ptob(avtopte(va)->pg_pfnum) | ((int)(va) & PGOFSET))
 
 /*
  * macros to generate page directory/table indicies

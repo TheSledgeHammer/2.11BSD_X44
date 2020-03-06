@@ -10,6 +10,9 @@
 
 #include <sys/cdefs.h>
 
-
+#define	ENTRY(name) 	\
+	.globl _/**/name; _/**/name:
+#define	ALTENTRY(name) 	\
+	.globl _/**/name; _/**/name:
 
 #endif /* _MACHINE_ASM_H_ */

@@ -5,13 +5,11 @@
  *      Author: marti
  */
 
-#include <test/multitasking/kthreads.h>
 #include <sys/malloc.h>
+#include "kernthreads/kthread.h"
 
-struct tidhashhead *tidhashtbl;
-u_long tid_hash;
+LIST_HEAD(tidhashhead, kthread) *tidhashtbl;
 struct tgrphashhead *tgrphashtbl;
-u_long tgrphash;
 
 struct 	tgrp tgrp0;
 struct 	kthread kthread0;

@@ -12,9 +12,7 @@
 #define SYS_KTHREADS_H_
 
 #include <sys/proc.h>
-
-/* put into types.h */
-typedef long				tid_t;		/* thread id */
+#include <sys/dev/multitasking/tcb.h>
 
 /* Number of Threads per Process? */
 
@@ -61,14 +59,10 @@ struct kthread {
     struct user  		*kt_saddr;		/* address of stack area */
 	size_t				kt_dsize;		/* size of data area (clicks) */
 	size_t				kt_ssize;		/* size of stack segment (clicks) */
-};
 
-struct tgrp {
-	struct	tgrp 		*tg_hforw;		/* Forward link in hash bucket. */
-	struct	tgrp 		*tg_mem;		/* Pointer to tgrp members. */
-	struct	session 	*tg_session;	/* Pointer to session. */
-	tid_t				tg_id;			/* Tgrp id. */
-	int					tg_jobc;		/* # threads qualifying tgrp for job control */
+	struct mutex        *kt_mutex;
+    short               kt_locks;
+    short               kt_simple_locks;
 };
 
 #define	kt_session		kt_tgrp->tg_session
@@ -76,34 +70,31 @@ struct tgrp {
 
 #define KTHREAD_RATIO 1  /* M:N Ratio. number of kernel threads per process */
 
-/* stat codes */
-#define TSSLEEP	1
-#define TSWAIT	2
-#define TSRUN	3
-#define TSIDL	4
-#define TSREADY	5
-#define TSSTART	6
-#define TSSTOP	7
-
-#define	TIDHSZ			16
-#define	TIDHASH(tid)	(&tidhashtbl[(tid) & tid_hash & (TIDHSZ * ((tid) + tid_hash) - 1)])
-extern LIST_HEAD(tidhashhead, kthread) *tidhashtbl;
-u_long tid_hash;
-
-#define	TGRPHASH(tgid)	(&tgrphashtbl[(tgid) & tgrphash])
-extern LIST_HEAD(tgrphashhead, tgrp) *tgrphashtbl;
-extern u_long tgrphash;
 
 extern struct kthread *ktidhash[];		/* In param.c. */
-extern int tidhashmask;					/* In param.c. */
 
-struct 	kthread *ktfind (tid_t);		/* Find kernel thread by id. */
-struct 	tgrp 	*tgfind(tid_t);			/* Find Thread group by id. */
+struct kthread 	*ktfind (tid_t);		/* Find kernel thread by id. */
+int	 			leavetgrp(struct kthread *);
+int	 			entertgrp(struct kthread *, tid_t, int);
+void 			fixjobc(struct kthread *, struct tgrp *, int);
+int	 			inferior(struct kthread *);
 
-void			threadinit(void);
-int				leavetgrp(struct kthread *);
-int				entertgrp(struct kthread *, tid_t, int);
-void			fixjobc(struct kthread *, struct tgrp *, int);
-int				inferior(struct kthread *);
+/* Kernel Thread */
+int kthread_create(kthread_t *kt);
+int kthread_join(kthread_t *kt);
+int kthread_cancel(kthread_t *kt);
+int kthread_exit(kthread_t *kt);
+int kthread_detach(kthread_t *kt);
+int kthread_equal(kthread_t *kt1, kthread_t *kt2);
+int kthread_kill(kthread_t *kt);
+
+/* Kernel Thread Mutex */
+int kthread_mutexmgr(mutex_t m, unsigned int flags, struct simplelock *interlkp, kthread_t kt);
+int kthread_mutex_init(mutex_t m, kthread_t kt);
+int kthread_mutex_lock(kthread_t *kt, mutex_t *m);
+int kthread_mutex_lock_try(kthread_t *kt, mutex_t *m);
+int kthread_mutex_timedlock(kthread_t *kt, mutex_t *m);
+int kthread_mutex_unlock(kthread_t *kt, mutex_t *m);
+int kthread_mutex_destroy(kthread_t *kt, mutex_t *m);
 
 #endif /* SYS_KTHREADS_H_ */

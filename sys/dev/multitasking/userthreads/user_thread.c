@@ -5,12 +5,14 @@
  *      Author: marti
  */
 
-#include <test/multitasking/uthreads.h>
 #include <sys/malloc.h>
+#include "userthreads/uthreads.h"
+
+LIST_HEAD(tidhashhead, uthread) *tidhashtbl;
+struct tgrphashhead *tgrphashtbl;
 
 struct 	tgrp tgrp0;
 struct 	uthread uthread0;
-
 
 /*
  * Is ut an inferior of the current user thread? Update user/proc struct

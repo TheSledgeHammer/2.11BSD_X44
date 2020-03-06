@@ -5,9 +5,7 @@
  *      Author: marti
  */
 
-#include <test/multitasking/threadpool.h>
-
-
+#include <dev/multitasking/threadpool.h>
 
 threadinit()
 {

@@ -179,6 +179,7 @@ copyfault:	frame.tf_eip = (int)curpcb->pcb_onfault;
 	case T_PAGEFLT:			/* allow page faults in kernel mode */
 		if (code & PGEX_P) goto we_re_toast;
 
+		break;
 		/* fall into */
 	case T_PAGEFLT|T_USER:		/* page fault */
 	    {

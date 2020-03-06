@@ -11,7 +11,7 @@
 #include <sys/buf.h>
 //#include <sys/vnode.h>
 #include <sys/lock.h>
-#include "vops.h"
+#include "vfs/vops.h"
 
 struct vnodeop_desc *
 create_vdesc(vdesc, vdesc_offset, vdesc_name, vdesc_flags, vdesc_vp_offsets,

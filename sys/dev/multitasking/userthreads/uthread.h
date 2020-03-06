@@ -9,8 +9,8 @@
 #ifndef SYS_UTHREADS_H_
 #define SYS_UTHREADS_H_
 
-#include <sys/test/multitasking/kthreads.h>
 #include <sys/user.h>
+#include <kernthreads/kthread.h>
 
 /* user threads */
 struct uthread {
@@ -45,22 +45,40 @@ struct uthread {
 	struct uthread 		*ut_cptr;	 	/* Pointer to youngest living child. */
 
 	struct tgrp 	    *ut_tgrp;       /* Pointer to thread group. */
+
+	struct mutex        *ut_mutex;
+    short               ut_locks;
+    short               ut_simple_locks;
 };
 #define	ut_session		ut_tgrp->tg_session
 #define	ut_tgid			ut_tgrp->tg_id
 
 #define UTHREAD_RATIO 1  /* M:N Ratio. number of user threads to kernel threads */
 
-#define	TIDHASH(tid)	(&tidhashtbl[(tid) & tid_hash & (TIDHSZ * ((tid) + tid_hash) - 1)])
-extern LIST_HEAD(tidhashhead, uthread) *tidhashtbl;
 extern struct uthread *utidhash[];		/* In param.c. */
 
 struct uthread 	*utfind (tid_t);		/* Find user thread by id. */
-
-void			threadinit(void);
 int				leavetgrp(struct uthread *);
 int				entertgrp(struct uthread *, tid_t, int);
 void			fixjobc(struct uthread *, struct tgrp *, int);
 int				inferior(struct uthread *);
+
+/* User Thread */
+int uthread_create(uthread_t *ut);
+int uthread_join(uthread_t *ut);
+int uthread_cancel(uthread_t *ut);
+int uthread_exit(uthread_t *ut);
+int uthread_detach(uthread_t *ut);
+int uthread_equal(uthread_t *ut1, uthread_t *ut2);
+int uthread_kill(uthread_t *ut);
+
+/* User Thread Mutex */
+int uthread_mutexmgr(mutex_t m, unsigned int flags, struct simplelock *interlkp, uthread_t ut);
+int uthread_mutex_init(mutex_t m, uthread_t ut);
+int uthread_mutex_lock(uthread_t ut, mutex_t m);
+int uthread_mutex_lock_try(uthread_t ut, mutex_t m);
+int uthread_mutex_timedlock(uthread_t ut, mutex_t m);
+int uthread_mutex_unlock(uthread_t ut, mutex_t m);
+int uthread_mutex_destroy(uthread_t ut, mutex_t m);
 
 #endif /* SYS_UTHREADS_H_ */

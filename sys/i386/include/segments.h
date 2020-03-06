@@ -184,9 +184,11 @@ struct region_descriptor {
 /* Descriptor Tables */
 union descriptor_table {
     struct soft_segment_descriptor null_desc;
-    struct soft_segment_descriptor code_desc;
-    struct soft_segment_descriptor data_desc;
-    struct soft_segment_descriptor ldt_desc;
+    struct soft_segment_descriptor fs_desc;
+    struct soft_segment_descriptor gs_desc;
+    struct soft_segment_descriptor code_desc[];
+    struct soft_segment_descriptor data_desc[];
+    struct soft_segment_descriptor ldt_desc[];
     struct soft_segment_descriptor panic_tss_desc;
     struct soft_segment_descriptor proc0_tss_desc;
 };
@@ -194,15 +196,14 @@ union descriptor_table {
 extern union descriptor_table gdt_segs;
 extern union descriptor_table ldt_segs;
 
-
 /*
  * Segment Protection Exception code bits
  */
 
-#define	SEGEX_EXT	0x01	/* recursive or externally induced */
-#define	SEGEX_IDT	0x02	/* interrupt descriptor table */
-#define	SEGEX_TI	0x04	/* local descriptor table */
-							/* other bits are affected descriptor index */
+#define	SEGEX_EXT		0x01	/* recursive or externally induced */
+#define	SEGEX_IDT		0x02	/* interrupt descriptor table */
+#define	SEGEX_TI		0x04	/* local descriptor table */
+								/* other bits are affected descriptor index */
 #define SEGEX_IDX(s)	((s)>>3)&0x1fff)
 
 extern ssdtosd(struct soft_segment_descriptor *ssd, struct segment_descriptor *sd) ;	/* to decode a ssd */
