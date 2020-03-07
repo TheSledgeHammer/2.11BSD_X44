@@ -48,15 +48,15 @@
  */
 
 #ifndef	_PMAP_MACHINE_
-#define	_PMAP_MACHINE_1
+#define	_PMAP_MACHINE_
 
+#include <sys/queue.h>
 /*
  * 386 page table entry and page table directory
  * W.Jolitz, 8/89
  */
 
-struct pde
-{
+struct pde {
 unsigned int
 		pd_v:1,			/* valid bit */
 		pd_prot:2,		/* access control */
@@ -73,8 +73,7 @@ unsigned int
 #define	PD_SHIFT	22			/* page directory address shift */
 #define	PG_SHIFT	12			/* page table address shift */
 
-struct pte
-{
+struct pte {
 unsigned int
 		pg_v:1,			/* valid bit */
 		pg_prot:2,		/* access control */
@@ -173,7 +172,6 @@ extern int	IdlePTD;	/* physical address of "Idle" state directory */
 /*
  * Pmap stuff
  */
-
 struct pmap {
 	pd_entry_t				*pm_pdir;		/* KVA of page directory */
 	boolean_t				pm_pdchanged;	/* pdir changed */

@@ -52,24 +52,24 @@
 /*
  * Compiled KERNBASE location and the kernel load address, now identical.
  */
-	.globl	kernbase
-	.set	kernbase,KERNBASE
-	.globl	kernload
-	.set	kernload,KERNLOAD
+			.globl	kernbase
+			.set	kernbase,KERNBASE
+			.globl	kernload
+			.set	kernload,KERNLOAD
 
 /*
  * Globals
  */
-	.data
-	ALIGN_DATA						/* just to be sure */
+			.data
+			ALIGN_DATA				/* just to be sure */
 
-	.space	0x2000					/* space for tmpstk - temporary stack */
+			.space	0x2000			/* space for tmpstk - temporary stack */
 tmpstk:
 
-	.globl	bootinfo
+			.globl	bootinfo
 bootinfo:	.space	BOOTINFO_SIZE	/* bootinfo that we can handle */
 
-	.text
+			.text
 /**********************************************************************
  *
  * This is where the bootblocks start us, set the ball rolling...
@@ -454,7 +454,7 @@ trycyrix:
 
 trycpuid:	/* Use the `cpuid' instruction. */
 	xorl	%eax,%eax
-	cpuid					# cpuid 0
+	cpuid							# cpuid 0
 	movl	%eax,cpu_high			# highest capability
 	movl	%ebx,cpu_vendor			# store vendor string
 	movl	%edx,cpu_vendor+4
@@ -462,12 +462,12 @@ trycpuid:	/* Use the `cpuid' instruction. */
 	movb	$0,cpu_vendor+12
 
 	movl	$1,%eax
-	cpuid					# cpuid 1
-	movl	%eax,cpu_id			# store cpu_id
+	cpuid							# cpuid 1
+	movl	%eax,cpu_id				# store cpu_id
 	movl	%ebx,cpu_procinfo		# store cpu_procinfo
 	movl	%edx,cpu_feature		# store cpu_feature
 	movl	%ecx,cpu_feature2		# store cpu_feature2
-	rorl	$8,%eax				# extract family type
+	rorl	$8,%eax					# extract family type
 	andl	$15,%eax
 	cmpl	$5,%eax
 	jae		1f

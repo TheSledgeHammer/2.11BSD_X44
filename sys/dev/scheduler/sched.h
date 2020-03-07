@@ -31,9 +31,9 @@ struct sched_domains {
 #define PW_RELEASE  25      /* Current Processes Release Time */
 #define PW_SLEEP    25      /* Current Processes Sleep Time */
 
-#define PW_FACTOR(w, f)  ((float)(w) /100 * (f)) /* w's weighting for a given factor(f)(above) */
+#define PW_FACTOR(w, f)  ((float)(w) / 100 * (f)) /* w's weighting for a given factor(f)(above) */
 
-
+int			setpriweight(float pwp, float pwd, float pwr, float pws);
 void 		updatepri(struct proc *);
 int 		tsleep(caddr_t , int, u_short);
 void 		endtsleep(struct proc *);

@@ -2,7 +2,9 @@
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/kernel.h>
-#include <test/mmu/malloc2.h>
+#include <sys/queue.h>
+#include <sys/malloc.h>
+#include <dev/mmu/malloc2.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
@@ -52,6 +54,7 @@ kmemtree_init(ktep, indx)
     return (ktp);
 }
 
+
 /* Bucket List Search (kmembuckets) */
 struct kmembuckets *
 bucket_search_next(struct kmembuckets *kbp, caddr_t next)
@@ -74,6 +77,7 @@ bucket_search_last(struct kmembuckets *kbp, caddr_t last)
     }
     return (NULL);
 }
+
 
 /* Tertiary Tree: Available Space List (asl) */
 struct asl *

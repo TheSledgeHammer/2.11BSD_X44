@@ -295,9 +295,14 @@ printf("ps %x pe %x ", firstaddr, maxmem <<PG_SHIFT);
 
 }
 
-pmap_isvalidphys(addr) {
-	if (addr < 0xa0000) return (1);
-	if (addr >= 0x100000) return (1);
+int
+pmap_isvalidphys(addr)
+	int addr;
+{
+	if (addr < 0xa0000)
+		return (1);
+	if (addr >= 0x100000)
+		return (1);
 	return(0);
 }
 
@@ -1553,6 +1558,7 @@ pmap_testbit(pa, bit)
 	return (FALSE);
 }
 
+void
 pmap_changebit(pa, bit, setem)
 	register vm_offset_t pa;
 	int bit;
@@ -1636,6 +1642,7 @@ pmap_changebit(pa, bit, setem)
 }
 
 #ifdef DEBUG
+void
 pmap_pvdump(pa)
 	vm_offset_t pa;
 {
@@ -1651,6 +1658,7 @@ pmap_pvdump(pa)
 }
 
 #ifdef notyet
+void
 pmap_check_wiring(str, va)
 	char *str;
 	vm_offset_t va;
@@ -1677,6 +1685,7 @@ pmap_check_wiring(str, va)
 #endif
 
 /* print address space of pmap*/
+void
 pads(pm)
 pmap_t pm;
 {
@@ -1701,3 +1710,43 @@ pmap_t pm;
 	}
 }
 #endif
+
+struct pmap_args pmap_arg = {
+    &pmap_bootstrap,
+    &pmap_isvalidphys,
+    &pmap_bootstrap_alloc,
+    &pmap_init,
+    &pmap_map,
+    &pmap_create,
+    &pmap_pinit,
+    &pmap_destroy,
+    &pmap_release,
+    &pmap_reference,
+    &pmap_remove,
+    &pmap_remove_all,
+    &pmap_copy_on_write,
+    &pmap_protect,
+    &pmap_enter,
+    &pmap_page_protect,
+    &pmap_change_wiring,
+    &pmap_pte,
+    &pmap_extract,
+    &pmap_copy,
+    &pmap_update,
+    &pmap_collect,
+    &pmap_activate,
+    &pmap_zero_page,
+    &pmap_copy_page,
+    &pmap_pageable,
+    &pmap_clear_modify,
+    &pmap_clear_reference,
+    &pmap_is_referenced,
+    &pmap_is_modified,
+    &pmap_phys_address,
+	&i386_protection_init,
+    &pmap_testbit,
+    &pmap_changebit,
+    &pmap_pvdump,
+    &pmap_check_wiring,
+    &pads,
+};

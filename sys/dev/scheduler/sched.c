@@ -49,4 +49,24 @@ dequeue()
 
 }
 
+
+//Negative means a higher weighting
+int
+setpriweight(pwp, pwd, pwr, pws)
+	float pwp, pwd, pwr, pws;
+{
+	int pw_pri = PW_FACTOR(pwp, PW_PRIORITY);
+	int pw_dead = PW_FACTOR(pwd, PW_DEADLINE);
+	int pw_rel = PW_FACTOR(pwr, PW_RELEASE);
+	int pw_slp = PW_FACTOR(pws, PW_SLEEP);
+
+	int priweight = ((pw_pri + pw_dead + pw_rel + pw_slp) / 4);
+
+	if(priweight > 0) {
+		priweight = priweight * - 1;
+	}
+
+	return (priweight);
+}
+
 */

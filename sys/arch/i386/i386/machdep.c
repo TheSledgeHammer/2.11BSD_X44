@@ -72,6 +72,7 @@ extern vm_offset_t avail_end;
 #include <machine/reg.h>
 #include <machine/psl.h>
 #include <machine/specialreg.h>
+#include <machine/sigframe.h>
 #include <machine/bootinfo.h>
 
 #include <i386/isa/rtc.h>
@@ -107,6 +108,7 @@ extern int forcemaxmem;
 int biosmem;
 
 extern cyloffset;
+extern int kstack[];
 
 startup(firstaddr)
 	int firstaddr;
@@ -330,7 +332,6 @@ physstrat(bp, strat, prio)
 	vunmapbuf(bp);
 	bp->b_un.b_addr = baddr;
 }
-
 initcpu()
 {
 
@@ -376,19 +377,6 @@ vmtime(otime, olbolt, oicr)
 	return (((time.tv_sec-otime)*60 + lbolt-olbolt)*16667);
 }
 #endif
-
-struct sigframe {
-	int					sf_signum;
-	int					sf_code;
-	struct	sigcontext 	*sf_scp;
-	sig_t				sf_handler;
-	int					sf_eax;
-	int					sf_edx;
-	int					sf_ecx;
-	struct	sigcontext 	sf_sc;
-};
-
-extern int kstack[];
 
 /*
  * Send an interrupt to process.
@@ -595,6 +583,7 @@ cpu_setregs(void)
 /*
  * machine dependent system variables.
  */
+int
 cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	int *name;
 	u_int namelen;
@@ -658,7 +647,7 @@ union descriptor_table ldt_segs;
 struct i386tss inv_tss, dbl_tss, exit_tss;//tss, panic_tss;
 char alt_stack[1024];
 
-extern  struct user *proc0paddr;
+extern struct user *proc0paddr;
 
 /* Defines all the parameters for the soft segment descriptors */
 void
@@ -1095,3 +1084,4 @@ copystr(fromaddr, toaddr, maxlength, lencopied)
 		*lencopied = tally;
 	return (ENAMETOOLONG);
 }
+
