@@ -9,41 +9,75 @@
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
 
-struct kmemtree_entry tree_bucket_entry[MINBUCKET + 16];
+struct kmemtable table_zone[MINBUCKET + 16];
 static int isPowerOfTwo(long n); 	/* 0 = true, 1 = false */
 
-struct kmemtree_entry *
-kmembucket_cqinit(kbp, indx)
-    struct kmembuckets *kbp;
-	long indx;
+void
+kmemtable_init()
 {
-    kbp->kb_tstree = &tree_bucket_entry[indx];
-    register struct kmemtree_entry *ktep = kbp->kb_tstree;
-
-    /* kmembucket Circular Queue setup */
-    CIRCLEQ_INIT(&kbp->kb_cqlist);
-    CIRCLEQ_INSERT_HEAD(&kbp->kb_cqlist, kbp, kb_tstree->kte_head);
-    CIRCLEQ_INSERT_TAIL(&kbp->kb_cqlist, kbp, kb_tstree->kte_tail);
-
-    /* kmemtree_entry setup */
-    ktep->kte_head = kbp->kb_tstree->kte_head;
-    ktep->kte_tail = kbp->kb_tstree->kte_tail;
-
-    return (ktep);
+    CIRCLEQ_INIT(&table_head);
+    &table_zone = bucket;
 }
 
-struct kmemtree *
-kmemtree_init(ktep, indx)
-    struct kmemtree_entry *ktep;
+void
+setup_kmembuckets(indx)
     long indx;
 {
-    struct kmemtree *ktp = (struct kmemtree *) &ktep[indx];
-    ktp->kt_parent = ktep;
+    register struct kmemtable *tble = (struct kmemtable *) &table_head;
+    tble->tbl_bucket[indx] = bucket[indx];
+    tble->tbl_bindx = indx;
+    tble->tbl_bspace = FALSE;
+}
+
+struct kmembuckets *
+create_kmembucket(tble, indx)
+    struct kmemtable *tble;
+    long indx;
+{
+    return (&tble->tbl_bucket[indx]);
+}
+
+/* Allocate a bucket at the head of the Table */
+void
+allocate_kmembucket_head(tble, size)
+    struct kmemtable *tble;
+    u_long size;
+{
+    long indx = BUCKETINDX(size);
+    register struct kmembuckets *kbp = create_kmembucket(tble, indx);
+    tble->tbl_ztree = (struct kmemtrees *) &tble->tbl_bucket[indx];
+    CIRCLEQ_INSERT_HEAD(&table_head, tble, tbl_entry);
+}
+
+/* Allocate a bucket at the Tail of the Table */
+void
+allocate_kmembucket_tail(tble, size)
+    struct kmemtable *tble;
+    u_long size;
+{
+    long indx = BUCKETINDX(size);
+    register struct kmembuckets *kbp = create_kmembucket(tble, indx);
+    tble->tbl_ztree = (struct kmemtrees *) &tble->tbl_bucket[indx];
+    CIRCLEQ_INSERT_TAIL(&table_head, tble, tbl_entry);
+}
+
+/* Allocate kmemtrees from Table */
+struct kmemtree *
+allocate_kmemtree(tble)
+    struct kmemtable *tble;
+{
+    register struct kmemtree *ktp;
+    ktp = tble->tbl_ztree;
     ktp->kt_left = NULL;
     ktp->kt_middle = NULL;
     ktp->kt_right = NULL;
-
-    ktp->kt_space = FALSE;
+    ktp->kt_space = tble->tbl_bspace;
+    if(ktp->kt_space == FALSE) {
+        ktp->kt_bindx = tble->tbl_bindx;
+        ktp->kt_bsize = tble->tbl_bsize;
+        ktp->kt_space = TRUE;
+        tble->tbl_bspace = ktp->kt_space;
+    }
 
     ktp->kt_freelist1 = (struct asl *)ktp;
     ktp->kt_freelist2 = (struct asl *)ktp;
@@ -57,38 +91,51 @@ kmemtree_init(ktep, indx)
 
 /* Bucket List Search (kmembuckets) */
 struct kmembuckets *
-bucket_search_next(struct kmembuckets *kbp, caddr_t next)
+kmembucket_search_next(tble, kbp, next)
+    struct kmemtable *tble;
+    struct kmembuckets *kbp;
+    caddr_t next;
 {
-    CIRCLEQ_FOREACH(kbp, &kbp->kb_cqlist, kb_tstree->kte_head) {
-        if(CIRCLEQ_FIRST(&kbp->kb_cqlist)->kb_next == next) {
-            return kbp; /* return virtual address? */
+    CIRCLEQ_FOREACH(tble, &table_head, tbl_entry) {
+        if(CIRCLEQ_FIRST(&table_head)->tbl_bucket == kbp) {
+            if(kbp->kb_next == next) {
+                return kbp;
+            }
         }
     }
     return (NULL);
 }
 
 struct kmembuckets *
-bucket_search_last(struct kmembuckets *kbp, caddr_t last)
+kmembucket_search_last(tble, kbp, last)
+	struct kmemtable *tble;
+	struct kmembuckets *kbp;
+	caddr_t last;
 {
-    CIRCLEQ_FOREACH(kbp, &kbp->kb_cqlist, kb_tstree->kte_tail) {
-        if(CIRCLEQ_LAST(&kbp->kb_cqlist)->kb_last == last) {
-            return kbp; /* return virtual address? */
+    CIRCLEQ_FOREACH(tble, &table_head, tbl_entry) {
+        if(CIRCLEQ_LAST(&table_head)->tbl_bucket == kbp) {
+        	if(kbp->kb_last == last) {
+        		return kbp;
+        	}
         }
     }
     return (NULL);
 }
 
-
 /* Tertiary Tree: Available Space List (asl) */
 struct asl *
-asl_list(struct asl *free, unsigned long size)
+asl_list(free, size)
+	struct asl *free;
+	u_long size;
 {
     free->asl_size = size;
     return (free);
 }
 
 struct asl *
-asl_insert(struct asl *free, unsigned long size)
+asl_insert(free, size)
+	struct asl *free;
+	u_long size;
 {
     free->asl_prev = free->asl_next;
     free->asl_next = asl_list(free, size);
@@ -96,7 +143,9 @@ asl_insert(struct asl *free, unsigned long size)
 }
 
 struct asl *
-asl_remove(struct asl *free, unsigned long size)
+asl_remove(free, size)
+	struct asl *free;
+	u_long size;
 {
     if(size == free->asl_size) {
         int empty = 0;
@@ -106,7 +155,9 @@ asl_remove(struct asl *free, unsigned long size)
 }
 
 struct asl *
-asl_search(struct asl *free, unsigned long size)
+asl_search(free, size)
+	struct asl *free;
+	u_long size;
 {
     if(free != NULL) {
         if(size == free->asl_size && size != 0) {
@@ -122,7 +173,7 @@ struct kmemtree *
 insert(size, type, ktp)
     register struct kmemtree *ktp;
 	int type;
-    unsigned long size;
+    u_long size;
 {
     ktp->kt_size = size;
     ktp->kt_type = type;
@@ -132,7 +183,7 @@ insert(size, type, ktp)
 
 struct kmemtree *
 kmemtree_push_left(size, dsize, ktp)
-	unsigned long size, dsize;  /*dsize = difference (if any) */
+	u_long size, dsize;  /*dsize = difference (if any) */
 	struct kmemtree *ktp;
 {
 	struct asl* free = ktp->kt_freelist1;
@@ -147,7 +198,7 @@ kmemtree_push_left(size, dsize, ktp)
 
 struct kmemtree *
 kmemtree_push_middle(size, dsize, ktp)
-	unsigned long size, dsize;  /*dsize = difference (if any) */
+	u_long size, dsize;  /*dsize = difference (if any) */
 	struct kmemtree *ktp;
 {
 	struct asl* free = ktp->kt_freelist2;
@@ -162,7 +213,7 @@ kmemtree_push_middle(size, dsize, ktp)
 
 struct kmemtree *
 kmemtree_push_right(size, dsize, ktp)
-	unsigned long size, dsize; /*dsize = difference (if any) */
+	u_long size, dsize; /*dsize = difference (if any) */
 	struct kmemtree *ktp;
 {
 	struct asl* free = ktp->kt_freelist2;
@@ -178,15 +229,15 @@ kmemtree_push_right(size, dsize, ktp)
 struct kmemtree *
 trealloc_left(ktp, size)
     struct kmemtree *ktp;
-    unsigned long size;
+    u_long size;
 {
     long indx = BUCKETINDX(size);
-    unsigned long bsize = BUCKETSIZE(indx);
+    u_long bsize = BUCKETSIZE(indx);
     ktp->kt_bindx = indx;
     ktp->kt_bsize = bsize;
 
-    unsigned long left;
-    unsigned long diff = 0;
+    u_long left;
+    u_long diff = 0;
 
     left = SplitLeft(bsize);
     if(size < left) {
@@ -218,15 +269,15 @@ trealloc_left(ktp, size)
 struct kmemtree *
 trealloc_middle(ktp, size)
     struct kmemtree *ktp;
-    unsigned long size;
+    u_long size;
 {
     long indx = BUCKETINDX(size);
-    unsigned long bsize = BUCKETSIZE(indx);
+    u_long bsize = BUCKETSIZE(indx);
     ktp->kt_bindx = indx;
     ktp->kt_bsize = bsize;
 
-    unsigned long middle;
-    unsigned long diff = 0;
+    u_long middle;
+    u_long diff = 0;
 
     middle = SplitMiddle(bsize);
     if(size < middle) {
@@ -258,15 +309,15 @@ trealloc_middle(ktp, size)
 struct kmemtree *
 trealloc_right(ktp, size)
     struct kmemtree *ktp;
-    unsigned long size;
+    u_long size;
 {
     long indx = BUCKETINDX(size);
-    unsigned long bsize = BUCKETSIZE(indx);
+    u_long bsize = BUCKETSIZE(indx);
     ktp->kt_bindx = indx;
     ktp->kt_bsize = bsize;
 
-    unsigned long right;
-    unsigned long diff = 0;
+    u_long right;
+    u_long diff = 0;
 
     right = SplitRight(bsize);
     if(size < right) {
@@ -298,7 +349,7 @@ trealloc_right(ktp, size)
 struct kmemtree *
 kmemtree_find(ktp, size)
     struct kmemtree *ktp;
-    unsigned long size;
+	u_long size;
 {
     if(ktp == trealloc_left(ktp, size)) {
         return ktp;
@@ -316,13 +367,13 @@ kmemtree_find(ktp, size)
 caddr_t
 kmemtree_trealloc(ktp, size, flags)
 	struct kmemtree *ktp;
-	unsigned long size;
+	u_long size;
     int flags;
 {
     struct kmemtree *left, *middle, *right = NULL;
 
 	/* determines if npg has a log base of 2 */
-	unsigned long tmp = LOG2((long) size);
+	u_long tmp = LOG2((long) size);
 
     if(isPowerOfTwo(size)) {
         left = trealloc_left(ktp, size);
@@ -362,7 +413,7 @@ kmemtree_trealloc(ktp, size, flags)
 void
 trealloc_free(ktp, size)
 	struct kmemtree *ktp;
-	unsigned long size;
+	u_long size;
 {
 	struct kmemtree *toFind = NULL;
 	struct asl *free = NULL;
@@ -387,7 +438,8 @@ trealloc_free(ktp, size)
 
 /* Function to check if x is a power of 2 (Internal use only) */
 static int
-isPowerOfTwo(long n)
+isPowerOfTwo(n)
+	long n;
 {
 	if (n == 0)
         return 0;
