@@ -6,7 +6,7 @@
 #define SIMPLE_LIST_OF_POOLS_SCHED_CFS_H
 
 #include <sys/proc.h>
-#include <tree.h>
+#include <sys/tree.h>
 
 /* Generic Base stats for CFS */
 #define NCFSQS 	        8 					    /* 8 CFS Queues */

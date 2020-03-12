@@ -52,6 +52,8 @@
 #include <machine/cpu.h>
 #include <machine/reg.h>
 
+extern char	sigcode[], esigcode[];
+
 const struct emul emul_211bsd = {
 	"211bsd",
 	NULL,			/* emulation path */

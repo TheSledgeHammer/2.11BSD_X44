@@ -45,7 +45,6 @@
 #include <sys/exec_pecoff.h>
 #include <sys/exec_elf.h>
 
-extern char	sigcode[], esigcode[];
 #ifdef SYSCALL_DEBUG
 extern char *syscallnames[];
 #endif

@@ -5,8 +5,8 @@
 #ifndef SIMPLE_LIST_OF_POOLS_SCHED_EDF_H
 #define SIMPLE_LIST_OF_POOLS_SCHED_EDF_H
 
-#include "proc.h"
-#include "queue.h"
+#include <sys/proc.h>
+#include <sys/queue.h>
 
 struct sched_edf {
 //    TAILQ_HEAD(edf, sched_edf) edf_parent;

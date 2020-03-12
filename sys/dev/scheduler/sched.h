@@ -5,7 +5,7 @@
 #ifndef SIMPLE_LIST_OF_POOLS_SCHED_H
 #define SIMPLE_LIST_OF_POOLS_SCHED_H
 
-#include "proc.h"
+#include <sys/proc.h>
 
 /* Schedulers + Info used by both EDF & CFS */
 struct sched {
