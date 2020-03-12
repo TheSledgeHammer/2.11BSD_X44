@@ -95,5 +95,3 @@ ENTRY(start_pagemap)
 	.globl	_kstack
 	.set	PPDROFF,0x3F6
 	.set	PPTEOFF,0x400-UPAGES	# 0x3FE
-
-ENTRY(end_pagemap)

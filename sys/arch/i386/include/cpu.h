@@ -96,14 +96,27 @@ int	astpending;			/* need to trap before returning to user mode */
 int	want_resched;		/* resched() was called */
 
 /*
+ * Classes of processor.
+ */
+#define	CPUCLASS_286		0
+#define	CPUCLASS_386		1
+#define	CPUCLASS_486		2
+#define	CPUCLASS_586		3
+#define	CPUCLASS_686		4
+
+/*
  * Kinds of processor
  */
-
-#define	CPU_386SX	0
-#define	CPU_386		1
-#define	CPU_486SX	2
-#define	CPU_486		3
-#define	CPU_586		4
+#define	CPU_286				0	/* Intel 80286 */
+#define	CPU_386SX			1	/* Intel 80386SX */
+#define	CPU_386				2	/* Intel 80386DX */
+#define	CPU_486SX			3	/* Intel 80486SX */
+#define	CPU_486				4	/* Intel 80486DX */
+#define	CPU_586				5	/* Intel Pentium */
+#define	CPU_686				6	/* Pentium Pro */
+#define	CPU_PII				7	/* Intel Pentium II */
+#define	CPU_PIII			8	/* Intel Pentium III */
+#define	CPU_P4				9	/* Intel Pentium 4 */
 
 /*
  * CTL_MACHDEP definitions.
@@ -115,3 +128,8 @@ int	want_resched;		/* resched() was called */
 	{ 0, 0 }, \
 	{ "console_device", CTLTYPE_STRUCT }, \
 }
+
+#ifndef LOCORE
+extern int	cpu;
+extern int	cpu_class;
+#endif

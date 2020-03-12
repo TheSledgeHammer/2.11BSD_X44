@@ -115,9 +115,9 @@ extern uint32_t		bios_basemem;	/* base memory in bytes */
 extern uint32_t		bios_extmem;	/* extended memory in bytes */
 extern vm_offset_t	memtop;			/* last address of physical memory + 1 */
 extern vm_offset_t	memtop_copyin;	/* memtop less heap size for the cases */
-					/*  when heap is at the top of         */
-					/*  extended memory; for other cases   */
-					/*  just the same as memtop            */
+									/*  when heap is at the top of         */
+									/*  extended memory; for other cases   */
+									/*  just the same as memtop            */
 extern uint32_t		high_heap_size;	/* extended memory region available */
 extern vm_offset_t	high_heap_base;	/* for use as the heap */
 

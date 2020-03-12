@@ -40,10 +40,9 @@
  * Intel 386 process control block
  */
 
-#ifndef _KERNEL
 #include <machine/segments.h>
-#endif
 #include <machine/tss.h>
+#include <machine/vm86.h>
 #include <machine/npx.h>
 
 struct pcb {
@@ -73,6 +72,19 @@ struct pcb {
 	caddr_t				pcb_onfault;	/* copyin/out fault recovery */
 	long				pcb_sigc[8];	/* XXX signal code trampoline */
 	int					pcb_cmap2;		/* XXX temporary PTE - will prefault instead */
+
+	struct segment_descriptor pcb_fsd;
+	struct segment_descriptor pcb_gsd;
+};
+
+/*
+ * Extension to the 386 process control block
+ */
+struct pcb_extend {
+	struct 	segment_descriptor 	ext_tssd;	/* tss descriptor */
+	struct 	i386tss				ext_tss;	/* per-process i386tss */
+	caddr_t						ext_iomap;	/* i/o permission bitmap */
+	struct	vm86_kernel 		ext_vm86;	/* vm86 area */
 };
 
 /*
@@ -83,9 +95,11 @@ struct md_coredump {
         int     pad;		/* XXX? -- cgd */
 };
 
-#ifdef KERNEL
+#ifdef _KERNEL
 struct pcb *curpcb;		/* our current running pcb */
 struct trapframe;
+
+int i386_extend_pcb(struct proc *);
 
 void	makectx(struct trapframe *, struct pcb *);
 int		savectx(struct pcb *) __returns_twice;

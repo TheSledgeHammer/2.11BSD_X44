@@ -1,8 +1,7 @@
-/*	$NetBSD: uvm_aobj.h,v 1.23 2013/10/18 17:48:44 christos Exp $	*/
+/*	$NetBSD: uvm.h,v 1.75 2020/02/23 15:46:43 ad Exp $	*/
 
 /*
- * Copyright (c) 1998 Chuck Silvers, Charles D. Cranor and
- *                    Washington University.
+ * Copyright (c) 1997 Charles D. Cranor and Washington University.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,44 +24,53 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * from: Id: uvm_aobj.h,v 1.1.2.4 1998/02/06 05:19:28 chs Exp
- */
-/*
- * uvm_aobj.h: anonymous memory uvm_object pager
- *
- * author: Chuck Silvers <chuq@chuq.com>
- * started: Jan-1998
- *
- * - design mostly from Chuck Cranor
+ * from: Id: uvm.h,v 1.1.2.14 1998/02/02 20:07:19 chuck Exp
  */
 
-#ifndef _UVM_UVM_AOBJ_H_
-#define _UVM_UVM_AOBJ_H_
+
+#ifndef _UVM_UVM_H_
+#define _UVM_UVM_H_
+
+#include <vm/include/vm.h>
+#include <dev/vm/vm_amap.h>
+#include <dev/vm/vm_aobj.h>
 
 /*
- * Flags for uao_create: UAO_FLAG_KERNOBJ and UAO_FLAG_KERNSWAP are
- * used only once, to initialise UVM.
+ * TODO:
+ * krwlock_t?
+ * uvm_amap: vsize_t
+ * uvm_aobj: voff_t
  */
-#define	UAO_FLAG_KERNOBJ	0x1	/* create kernel object */
-#define	UAO_FLAG_KERNSWAP	0x2	/* enable kernel swap */
-#define	UAO_FLAG_NOSWAP		0x8	/* aobj may not swap */
+
+struct vm_amap;
+typedef struct vm_amap *vm_amap_t;
+
+struct uvm_aobj;
+typedef struct uvm_aobj *vm_aobj_t;
 
 #ifdef _KERNEL
+/*
+ * pull in VM_NFREELIST
+ */
+#include <machine/vmparam.h>
+/*
+ * uvm structure (vm global state: collected in one structure for ease
+ * of reference...)
+ */
 
-void	uao_init(void);
-int		uao_set_swslot(struct uvm_object *, int, int);
+struct uvm {
+	/* vm_page related parameters */
+	/* vm_page queues */
+	struct pgfreelist 	page_free[VM_NFREELIST]; /* unallocated pages */
+	u_int				bucketcount;
+	boolean_t			page_init_done;			/* true if uvm_page_init() finished */
+	boolean_t			numa_alloc;				/* use NUMA page allocation strategy */
 
-#if	defined(VMSWAP)
-int		uao_find_swslot(struct uvm_object *, int);
-void	uao_dropswap(struct uvm_object *, int);
-bool	uao_swap_off(int, int);
-void	uao_dropswap_range(struct uvm_object *, voff_t, voff_t);
-#else
-#define	uao_find_swslot(obj, off)	(__USE(off), 0)
-#define	uao_dropswap(obj, off)		/* nothing */
-#define	uao_dropswap_range(obj, lo, hi)	/* nothing */
-#endif
+	/* page daemon trigger */
+	int 				pagedaemon;				/* daemon sleeps on this */
+	struct proc 		*pagedaemon_proc;		/* daemon's lid */
+};
 
 #endif /* _KERNEL */
 
-#endif /* _UVM_UVM_AOBJ_H_ */
+#endif /* _UVM_UVM_H_ */

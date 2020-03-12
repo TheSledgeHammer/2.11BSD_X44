@@ -40,10 +40,6 @@
  * 386 Trap and System call handleing
  */
 
-#include <machine/cpu.h>
-#include <machine/psl.h>
-#include <machine/reg.h>
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
@@ -60,6 +56,9 @@
 
 #include <machine/trap.h>
 #include <machine/dbg.h>
+#include <machine/cpu.h>
+#include <machine/psl.h>
+#include <machine/reg.h>
 
 
 struct sysent sysent[];

@@ -434,7 +434,13 @@ trealloc_free(ktp, size)
 		}
 	}
 	ktp->kt_entries--;
+
+	/*
+	register struct kmemusage *kup;
+	kmem_free(kmem_map, (vm_offset_t)toFind, ctob(kup->ku_pagecnt));
+	*/
 }
+
 
 /* Function to check if x is a power of 2 (Internal use only) */
 static int

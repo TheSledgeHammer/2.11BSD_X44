@@ -43,3 +43,156 @@
 #endif
 
 static struct bootinfo  bi;
+
+/*
+ * Load the information expected by an i386 kernel.
+ *
+ * - The 'boothowto' argument is constructed
+ * - The 'bootdev' argument is constructed
+ * - The 'bootinfo' struct is constructed, and copied into the kernel space.
+ * - The kernel environment is copied into kernel space.
+ * - Module metadata are formatted and placed in kernel space.
+ */
+int
+bi_load32(args, howtop, bootdevp, bip, modulep, kernendp)
+	char *args;
+	int *howtop, *bootdevp;
+	vm_offset_t *bip, *modulep, *kernendp;
+{
+	struct preloaded_file	*xp, *kfp;
+	struct i386_devdesc		*rootdev;
+	struct file_metadata	*md;
+	vm_offset_t				addr;
+	vm_offset_t				kernend;
+	vm_offset_t				envp;
+	vm_offset_t				size;
+	vm_offset_t				ssym, esym;
+	char					*rootdevname;
+	int						bootdevnr, i, howto;
+	char					*kernelname;
+	const char				*kernelpath;
+
+	howto = bi_getboothowto(args);
+
+	/*
+	 * Allow the environment variable 'rootdev' to override the supplied device
+	 * This should perhaps go to MI code and/or have $rootdev tested/set by
+	 * MI code before launching the kernel.
+	 */
+	rootdevname = getenv("rootdev");
+	i386_getdev((void**) (&rootdev), rootdevname, NULL);
+	if (rootdev == NULL) { /* bad $rootdev/$currdev */
+		printf("can't determine root device\n");
+		return (EINVAL);
+	}
+
+	/* Try reading the /etc/fstab file to select the root device */
+	getrootmount(i386_fmtdev((void*) rootdev));
+
+	/* Do legacy rootdev guessing */
+
+	/* XXX - use a default bootdev of 0.  Is this ok??? */
+	bootdevnr = 0;
+
+	switch (rootdev->dd.d_dev->dv_type) {
+	case DEVT_CD:
+	case DEVT_DISK:
+		/* pass in the BIOS device number of the current disk */
+		bi.bi_bios_dev = bd_unit2bios(rootdev);
+		bootdevnr = bd_getdev(rootdev);
+		break;
+
+	case DEVT_NET:
+	case DEVT_ZFS:
+		break;
+
+	default:
+		printf("WARNING - don't know how to boot from device type %d\n",
+				rootdev->dd.d_dev->dv_type);
+	}
+	if (bootdevnr == -1) {
+		printf("root device %s invalid\n", i386_fmtdev(rootdev));
+		return (EINVAL);
+	}
+	free(rootdev);
+
+	/* find the last module in the chain */
+	addr = 0;
+	for (xp = file_findfile(NULL, NULL); xp != NULL; xp = xp->f_next) {
+		if (addr < (xp->f_addr + xp->f_size))
+			addr = xp->f_addr + xp->f_size;
+	}
+	/* pad to a page boundary */
+	addr = roundup(addr, PAGE_SIZE);
+
+	/* copy our environment */
+	envp = addr;
+	addr = bi_copyenv(addr);
+
+	/* pad to a page boundary */
+	addr = roundup(addr, PAGE_SIZE);
+
+	kfp = file_findfile(NULL, "elf kernel");
+	if (kfp == NULL)
+		kfp = file_findfile(NULL, "elf32 kernel");
+	if (kfp == NULL)
+		panic("can't find kernel file");
+	kernend = 0; /* fill it in later */
+	file_addmetadata(kfp, MODINFOMD_HOWTO, sizeof howto, &howto);
+	file_addmetadata(kfp, MODINFOMD_ENVP, sizeof envp, &envp);
+	file_addmetadata(kfp, MODINFOMD_KERNEND, sizeof kernend, &kernend);
+	bios_addsmapdata(kfp);
+#ifdef LOADER_GELI_SUPPORT
+	    geli_export_key_metadata(kfp);
+#endif
+
+	/* Figure out the size and location of the metadata */
+	*modulep = addr;
+	size = bi_copymodules32(0);
+	kernend = roundup(addr + size, PAGE_SIZE);
+	*kernendp = kernend;
+
+	/* patch MODINFOMD_KERNEND */
+	md = file_findmetadata(kfp, MODINFOMD_KERNEND);
+	bcopy(&kernend, md->md_data, sizeof kernend);
+
+	/* copy module list and metadata */
+	(void) bi_copymodules32(addr);
+
+	ssym = esym = 0;
+	md = file_findmetadata(kfp, MODINFOMD_SSYM);
+	if (md != NULL)
+		ssym = *((vm_offset_t*) &(md->md_data));
+	md = file_findmetadata(kfp, MODINFOMD_ESYM);
+	if (md != NULL)
+		esym = *((vm_offset_t*) &(md->md_data));
+	if (ssym == 0 || esym == 0)
+		ssym = esym = 0; /* sanity */
+
+	/* legacy bootinfo structure */
+	kernelname = getenv("kernelname");
+	i386_getdev(NULL, kernelname, &kernelpath);
+	bi.bi_version = BOOTINFO_VERSION;
+	bi.bi_kernelname = 0; /* XXX char * -> kernel name */
+	bi.bi_nfs_diskless = 0; /* struct nfs_diskless * */
+	bi.bi_n_bios_used = 0; /* XXX would have to hook biosdisk driver for these */
+	for (i = 0; i < N_BIOS_GEOM; i++)
+		bi.bi_bios_geom[i] = bd_getbigeom(i);
+	bi.bi_size = sizeof(bi);
+	bi.bi_memsizes_valid = 1;
+	bi.bi_basemem = bios_basemem / 1024;
+	bi.bi_extmem = bios_extmem / 1024;
+	bi.bi_envp = envp;
+	bi.bi_modulep = *modulep;
+	bi.bi_kernend = kernend;
+	bi.bi_kernelname = VTOP(kernelpath);
+	bi.bi_symtab = ssym; /* XXX this is only the primary kernel symtab */
+	bi.bi_esymtab = esym;
+
+	/* legacy boot arguments */
+	*howtop = howto | RB_BOOTINFO;
+	*bootdevp = bootdevnr;
+	*bip = VTOP(&bi);
+
+    return (0);
+}

@@ -38,7 +38,7 @@
 /* Only change the version number if you break compatibility. */
 #define	BOOTINFO_VERSION	1
 
-//#define	N_BIOS_GEOM		8
+#define	N_BIOS_GEOM			8
 
 /*
  * A zero bootinfo field often means that there is no info available.
@@ -52,7 +52,7 @@ struct bootinfo {
 									/* End of fields that are always present. */
 #define	bi_endcommon	bi_n_bios_used
 	u_int32_t	bi_n_bios_used;
-	//u_int32_t	bi_bios_geom[N_BIOS_GEOM];
+	u_int32_t	bi_bios_geom[N_BIOS_GEOM];
 	u_int32_t	bi_size;
 	u_int8_t	bi_memsizes_valid;
 	u_int8_t	bi_bios_dev;		/* bootdev BIOS unit number */
@@ -67,7 +67,7 @@ struct bootinfo {
 	u_int32_t	bi_modulep;			/* preloaded modules */
 };
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 extern struct bootinfo	bootinfo;
 #endif
 

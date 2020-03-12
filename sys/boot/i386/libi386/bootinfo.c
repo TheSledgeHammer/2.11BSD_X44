@@ -26,9 +26,10 @@
  * $FreeBSD$
  */
 
-#include <stand.h>
+#include <bootstand.h>
 #include <sys/param.h>
 #include <sys/reboot.h>
+#include <sys/exec.h>
 #include <sys/exec_linker.h>
 #include <machine/bootinfo.h>
 

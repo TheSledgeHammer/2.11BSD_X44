@@ -1,11 +1,9 @@
-/*
- * Copyright (c) 1988 University of Utah.
- * Copyright (c) 1991, 1993
- *	The Regents of the University of California.  All rights reserved.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * the Systems Programming Group of the University of Utah Computer
- * Science Department.
+ * William Jolitz.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -15,11 +13,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -34,32 +28,48 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)cons.h	8.1 (Berkeley) 6/11/93
  */
 
+#if defined(LIBC_RCS) && !defined(lint)
+	.text
+	.asciz "$FreeBSD$"
+#endif /* LIBC_RCS and not lint */
 
-struct consdev {
-	int		(*cn_probe)();	/* probe hardware and fill in consdev info */
-	int		(*cn_init)();	/* turn on as console */
-	int		(*cn_getc)();	/* kernel getchar interface */
-	int		(*cn_putc)();	/* kernel putchar interface */
-	struct	tty *cn_tp;		/* tty structure for console device */
-	dev_t	cn_dev;			/* major/minor of device */
-	short	cn_pri;			/* pecking order; the higher the better */
-};
+/*
+ * C library -- _setjmp, _longjmp
+ *
+ *	_longjmp(a,v)
+ * will generate a "return(v)" from the last call to
+ *	_setjmp(a)
+ * by restoring registers from the environment 'a'.
+ * The previous signal state is NOT restored.
+ */
 
-/* values for cn_pri - reflect our policy for console selection */
-#define	CN_DEAD		0	/* device doesn't exist */
-#define CN_NORMAL	1	/* device exists but is nothing special */
-#define CN_INTERNAL	2	/* "internal" bit-mapped display */
-#define CN_REMOTE	3	/* serial interface with remote bit set */
+#include <machine/asm.h>
 
-/* XXX */
-#define	CONSMAJOR	0
+ENTRY(_setjmp)
+	movl	4(%esp),%eax
+	movl	0(%esp),%edx
+	movl	%edx, 0(%eax)		/* rta */
+	movl	%ebx, 4(%eax)
+	movl	%esp, 8(%eax)
+	movl	%ebp,12(%eax)
+	movl	%esi,16(%eax)
+	movl	%edi,20(%eax)
+	xorl	%eax,%eax
+	ret
 
-#ifdef KERNEL
-extern	struct consdev constab[];
-extern	struct consdev *cn_tab;
-extern	struct tty *cn_tty;
-#endif
+ENTRY(_longjmp)
+	movl	4(%esp),%edx
+	movl	8(%esp),%eax
+	movl	0(%edx),%ecx
+	movl	4(%edx),%ebx
+	movl	8(%edx),%esp
+	movl	12(%edx),%ebp
+	movl	16(%edx),%esi
+	movl	20(%edx),%edi
+	testl	%eax,%eax
+	jnz		1f
+	incl	%eax
+1:	movl	%ecx,0(%esp)
+	ret

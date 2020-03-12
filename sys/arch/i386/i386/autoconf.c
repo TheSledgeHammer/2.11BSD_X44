@@ -60,7 +60,7 @@
  * the configuration process, and are used in initializing
  * the machine.
  */
-int	dkn;		/* number of iostat dk numbers assigned so far */
+int	dkn;				/* number of iostat dk numbers assigned so far */
 extern int	cold;		/* cold start flag initialized in locore.s */
 
 /*

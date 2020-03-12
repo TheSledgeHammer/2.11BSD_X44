@@ -181,20 +181,37 @@ struct region_descriptor {
 	char *rd_base;				/* base address  */
 };
 
-/* Descriptor Tables */
-union descriptor_table {
-    struct soft_segment_descriptor null_desc;
-    struct soft_segment_descriptor fs_desc;
-    struct soft_segment_descriptor gs_desc;
-    struct soft_segment_descriptor code_desc[];
-    struct soft_segment_descriptor data_desc[];
-    struct soft_segment_descriptor ldt_desc[];
-    struct soft_segment_descriptor panic_tss_desc;
-    struct soft_segment_descriptor proc0_tss_desc;
-};
+extern struct soft_segment_descriptor gdt_segs[];
+extern struct soft_segment_descriptor ldt_segs[];
 
-extern union descriptor_table gdt_segs;
-extern union descriptor_table ldt_segs;
+/* global descriptor table */
+#define	GNULL_SEL		0	/* Null Descriptor */
+#define GUFS_SEL		1	/* %fs Descriptor */
+#define GUGS_SEL		2	/* %gs Descriptor */
+#define	GCODE_SEL		3	/* Kernel Code Descriptor */
+#define	GDATA_SEL		4	/* Kernel Data Descriptor */
+#define GUCODE_SEL		5	/* User Code Descriptor */
+#define GUDATA_SEL		6	/* User Data Descriptor */
+#define	GPROC0_SEL		7	/* Task state process slot zero and up */
+#define	GLDT_SEL		8	/* LDT - eventually one per process */
+#define GUSERLDT_SEL	9	/* User LDT Descriptor */
+#define	GPANIC_SEL		10	/* Task state to consider panic from */
+#define	GTGATE_SEL		11	/* Process task switch gate */
+#define	GINVTSS_SEL		12	/* Task state to take invalid tss on */
+#define	GDBLFLT_SEL		13	/* Task state to take double fault on */
+#define	GEXIT_SEL		14	/* Task state to process cpu_texit() on */
+
+#define NGDT 			15
+
+/* local descriptor table */
+#define	LUNULL_SEL		0	/* Null Descriptor */
+#define	LSYS5CALLS_SEL	1	/* forced by intel BCS */
+#define	LSYS5SIGR_SEL	2
+#define	LUCODE_SEL		3
+#define	LUDATA_SEL		4
+#define	L43BSDCALLS_SEL	5	/* notyet */
+
+#define NLDT			7
 
 /*
  * Segment Protection Exception code bits
@@ -208,12 +225,6 @@ extern union descriptor_table ldt_segs;
 
 extern ssdtosd(struct soft_segment_descriptor *ssd, struct segment_descriptor *sd) ;	/* to decode a ssd */
 extern sdtossd(struct segment_descriptor *sd, struct segment_descriptor *ssd) ;			/* to encode a sd */
-
-void setup_descriptor_table(struct soft_segment_descriptor *ssd, unsigned int ssd_base, unsigned int ssd_limit,
-		unsigned int ssd_type, unsigned int ssd_dpl, unsigned int ssd_p, unsigned int ssd_xx,
-		unsigned int ssd_xx1, unsigned int ssd_def32, unsigned int ssd_gran);
-void allocate_gdt(union descriptor_table *gdt);
-void allocate_ldt(union descriptor_table *ldt);
 
 void lgdt(struct region_descriptor *rdp);
 

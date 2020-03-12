@@ -30,6 +30,8 @@
 #define	RB_PANIC		0		/* reboot due to panic */
 #define	RB_BOOT			1		/* reboot due to boot() */
 
+#define	RB_BOOTINFO		0x80000000	/* have `struct bootinfo *' arg */
+
 /*
  * Constants for converting boot-style device number to type,
  * adaptor (uba, mba, etc), unit number and partition number.

@@ -74,6 +74,7 @@ extern vm_offset_t avail_end;
 #include <machine/specialreg.h>
 #include <machine/sigframe.h>
 #include <machine/bootinfo.h>
+#include <machine/gdt.h>
 
 #include <i386/isa/rtc.h>
 #include <i386/i386/cons.h>
@@ -109,6 +110,21 @@ int biosmem;
 
 extern cyloffset;
 extern int kstack[];
+
+union descriptor gdt[NGDT];
+struct gate_descriptor idt[32+16];
+union descriptor ldt[NLDT];
+
+struct soft_segment_descriptor gdt_segs[];
+struct soft_segment_descriptor ldt_segs[];
+
+int lcr0(), lcr3(), rcr0(), rcr2();
+int _udatasel, _ucodesel, _gsel_tss, _exit_tss;
+
+struct i386tss inv_tss, dbl_tss, exit_tss;//tss, panic_tss;
+char alt_stack[1024];
+
+extern struct user *proc0paddr;
 
 startup(firstaddr)
 	int firstaddr;
@@ -335,6 +351,15 @@ physstrat(bp, strat, prio)
 initcpu()
 {
 
+}
+
+/*
+ * Set up proc0's PCB and LDT.
+ */
+static void
+i386_proc0_pcb_ldt_init(void)
+{
+	register struct proc *p = curproc;
 }
 
 static void
@@ -610,103 +635,6 @@ cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 /*
  * Initialize segments & interrupt table
  */
-#define	GNULL_SEL	0	/* Null Descriptor */
-#define	GCODE_SEL	1	/* Kernel Code Descriptor */
-#define	GDATA_SEL	2	/* Kernel Data Descriptor */
-#define	GLDT_SEL	3	/* LDT - eventually one per process */
-#define	GTGATE_SEL	4	/* Process task switch gate */
-#define	GPANIC_SEL	5	/* Task state to consider panic from */
-#define	GINVTSS_SEL	6	/* Task state to take invalid tss on */
-#define	GDBLFLT_SEL	7	/* Task state to take double fault on */
-#define	GEXIT_SEL	8	/* Task state to process cpu_texit() on */
-#define	GPROC0_SEL	9	/* Task state process slot zero and up */
-#define NGDT 		GPROC0_SEL+1
-
-union descriptor 	gdt[NGDT];
-
-int lcr0(), lcr3(), rcr0(), rcr2();
-int _udatasel, _ucodesel, _gsel_tss, _exit_tss;
-
-/* interrupt descriptor table */
-struct gate_descriptor idt[32+16];
-
-#define NLDT 			5
-
-/* local descriptor table */
-union descriptor ldt[NLDT];
-#define	LSYS5CALLS_SEL	0	/* forced by intel BCS */
-#define	LSYS5SIGR_SEL	1
-
-#define	L43BSDCALLS_SEL	2	/* notyet */
-#define	LUCODE_SEL		3
-#define	LUDATA_SEL		4
-
-union descriptor_table gdt_segs;
-union descriptor_table ldt_segs;
-
-struct i386tss inv_tss, dbl_tss, exit_tss;//tss, panic_tss;
-char alt_stack[1024];
-
-extern struct user *proc0paddr;
-
-/* Defines all the parameters for the soft segment descriptors */
-void
-setup_descriptor_table(ssd, ssd_base, ssd_limit, ssd_type, ssd_dpl, ssd_p, ssd_xx, ssd_xx1, ssd_def32, ssd_gran)
-    struct soft_segment_descriptor *ssd;
-    unsigned int ssd_base, ssd_limit, ssd_type, ssd_dpl, ssd_p, ssd_xx, ssd_xx1, ssd_def32, ssd_gran;
-{
-    ssd->ssd_base = ssd_base;
-    ssd->ssd_limit = ssd_limit;
-    ssd->ssd_type = ssd_type;
-    ssd->ssd_dpl = ssd_dpl;
-    ssd->ssd_p = ssd_p;
-    ssd->ssd_xx = ssd_xx;
-    ssd->ssd_xx1 = ssd_xx1;
-    ssd->ssd_def32 = ssd_def32;
-    ssd->ssd_gran = ssd_gran;
-}
-
-/* Allocates & Predefines all the parameters for the Global Descriptor Table (GDT) segments */
-void
-allocate_gdt(gdt)
-    union descriptor_table *gdt;
-{
-	/* GNULL_SEL	0 Null Descriptor */
-	setup_descriptor_table(&gdt->null_desc, 0x0, 0x0, 0, SEL_KPL, 0, 0, 0, 0, 0);
-	/* GUFS_SEL		1 %fs Descriptor for user */
-	setup_descriptor_table(&gdt->fs_desc, 0x0, 0xfffff, SDT_MEMRWA, SEL_UPL, 1, 0, 0, 1, 1);
-	/* GUGS_SEL		2 %gs Descriptor for user */
-	setup_descriptor_table(&gdt->gs_desc, 0x0, 0xfffff, SDT_MEMRWA, SEL_UPL, 1, 0, 0, 1, 1);
-	/* GCODE_SEL	3 Code Descriptor for kernel */
-	setup_descriptor_table(&gdt->code_desc, 0x0, 0xfffff, SDT_MEMERA, SEL_KPL, 1, 0, 0, 1, 1);
-	/* GDATA_SEL	4 Data Descriptor for kernel */
-	setup_descriptor_table(&gdt->data_desc, 0x0, 0xfffff, SDT_MEMERA, SEL_KPL, 1, 0, 0, 1, 1);
-	/* GUCODE_SEL	5 Code Descriptor for user */
-	//setup_descriptor_table(&gdt->code_desc, 0x0, 0xfffff, SDT_MEMERA, SEL_UPL, 1, 0, 0, 1, 1);
-	/* GUDATA_SEL	6 Data Descriptor for user */
-	//setup_descriptor_table(&gdt->data_desc, 0x0, 0xfffff, SDT_MEMERA, SEL_UPL, 1, 0, 0, 1, 1);
-	/* GPROC0_SEL	7 Proc 0 Tss Descriptor */
-	setup_descriptor_table(&gdt->proc0_tss_desc, 0x0, sizeof(struct i386tss)-1, SDT_SYS386TSS, 0, 1, 0, 0, 0, 0);
-	 /* GLDT_SEL	8 LDT Descriptor */
-	setup_descriptor_table(&gdt->ldt_desc, 0x0, (sizeof(union descriptor) * NLDT - 1), SDT_SYSLDT, SEL_UPL, 1, 0, 0, 0, 0);
-	/* GUSERLDT_SEL	9 User LDT Descriptor per process */
-	setup_descriptor_table(&gdt->ldt_desc, 0x0, (512 * sizeof(union descriptor)-1), SDT_SYSLDT, 0, 1, 0, 0, 0, 0);
-	/* GPANIC_SEL	10 Panic Tss Descriptor */
-	setup_descriptor_table(&gdt->panic_tss_desc, 0x0, sizeof(struct i386tss)-1, SDT_SYS386TSS, 0, 1, 0, 0, 0, 0);
-}
-
-/* Allocates & Predefines all the parameters for the Local Descriptor Table (LDT) segments */
-void
-allocate_ldt(ldt)
-    union descriptor_table *ldt;
-{
-	setup_descriptor_table(&ldt->null_desc, 0x0, 0x0, 0, 0, 0, 0, 0, 0, 0);
-    setup_descriptor_table(&ldt->null_desc, 0x0, 0x0, 0, 0, 0, 0, 0, 0, 0);
-    setup_descriptor_table(&ldt->null_desc, 0x0, 0x0, 0, 0, 0, 0, 0, 0, 0);
-    setup_descriptor_table(&ldt->code_desc, 0x0, 0xfffff, SDT_MEMERA, SEL_UPL, 1, 0, 0, 1, 1);
-    setup_descriptor_table(&ldt->null_desc, 0x0, 0x0, 0, 0, 0, 0, 0, 0, 0);
-    setup_descriptor_table(&ldt->data_desc, 0x0, 0xfffff, SDT_MEMERA, SEL_UPL, 1, 0, 0, 1, 1);
-}
 
 void
 setidt(idx, func, typ, dpl, selec)
@@ -796,11 +724,11 @@ init386(first)
 	cninit (KERNBASE+0xa0000);
 
 	/* make gdt memory segments */
-	gdt_segs.code_desc.ssd_limit = btoc((int) &etext + NBPG);
+	gdt_segs[GCODE_SEL].ssd_limit = btoc((int) &etext + NBPG);
 	for (x=0; x < NGDT; x++) ssdtosd(gdt_segs+x, gdt+x);
 	/* make ldt memory segments */
-	ldt_segs.code_desc.ssd_limit = btoc(UPT_MIN_ADDRESS);
-	ldt_segs.data_desc.ssd_limit = btoc(UPT_MIN_ADDRESS);
+	ldt_segs[LUCODE_SEL].ssd_limit = btoc(UPT_MIN_ADDRESS);
+	ldt_segs[LUDATA_SEL].ssd_limit = btoc(UPT_MIN_ADDRESS);
 	/* Note. eventually want private ldts per process */
 	for (x=0; x < 5; x++) ssdtosd(ldt_segs+x, ldt+x);
 
@@ -935,6 +863,13 @@ makectx(tf, pcb)
 	pcb->pcb_tss.tss_eip = tf->tf_eip;
 	pcb->pcb_tss.tss_esp = (ISPL(tf->tf_cs)) ? tf->tf_esp : (int)(tf + 1) - 8;
 	pcb->pcb_tss.tss_gs = rgs();
+}
+
+
+void
+need_resched(struct cpu_info *ci)
+{
+
 }
 
 extern struct pte	*CMAP1, *CMAP2;
@@ -1084,4 +1019,3 @@ copystr(fromaddr, toaddr, maxlength, lencopied)
 		*lencopied = tally;
 	return (ENAMETOOLONG);
 }
-

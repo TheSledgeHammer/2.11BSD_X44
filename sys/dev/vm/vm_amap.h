@@ -28,6 +28,8 @@
 #ifndef _UVM_UVM_AMAP_H_
 #define _UVM_UVM_AMAP_H_
 
+#include <uvm.h>
+
 /*
  * uvm_amap.h: general amap interface and amap implementation-specific info
  */
@@ -64,70 +66,68 @@ struct vm_amap;
  * prototypes for the amap interface
  */
 
-void		amap_add 	/* add an anon to an amap */
-			(struct vm_aref *, vaddr_t,
-			 struct vm_anon *, bool);
+void		amap_add 		/* add an anon to an amap */
+			(struct vm_aref *, caddr_t, struct vm_anon *, boolean_t);
 struct vm_amap	*amap_alloc	/* allocate a new amap */
-			(vaddr_t, vaddr_t, int);
-void		amap_copy	/* clear amap needs-copy flag */
-			(struct vm_map *, struct vm_map_entry *, int,
-			 vaddr_t, vaddr_t);
+			(caddr_t, caddr_t, int);
+void		amap_copy		/* clear amap needs-copy flag */
+			(struct vm_map *, struct vm_map_entry *, int, caddr_t, caddr_t);
 void		amap_cow_now	/* resolve all COW faults now */
 			(struct vm_map *, struct vm_map_entry *);
-int		amap_extend	/* make amap larger */
+int		amap_extend			/* make amap larger */
 			(struct vm_map_entry *, vsize_t, int);
-int		amap_flags	/* get amap's flags */
+int		amap_flags			/* get amap's flags */
 			(struct vm_amap *);
-void		amap_free	/* free amap */
+void		amap_free		/* free amap */
 			(struct vm_amap *);
-void		amap_lock	/* lock amap */
+void		amap_lock		/* lock amap */
 			(struct vm_amap *);
 struct vm_anon	*amap_lookup	/* lookup an anon @ offset in amap */
-			(struct vm_aref *, vaddr_t);
-void		amap_lookups	/* lookup multiple anons */
-			(struct vm_aref *, vaddr_t,
+			(struct vm_aref *, caddr_t);
+void		amap_lookups		/* lookup multiple anons */
+			(struct vm_aref *, caddr_t,
 			 struct vm_anon **, int);
-void		amap_ref	/* add a reference to an amap */
+void		amap_ref			/* add a reference to an amap */
 			(struct vm_amap *, vaddr_t, vsize_t, int);
 int		amap_refs	/* get number of references of amap */
 			(struct vm_amap *);
 void		amap_share_protect /* protect pages in a shared amap */
 			(struct vm_map_entry *, vm_prot_t);
 void		amap_splitref	/* split reference to amap into two */
-			(struct vm_aref *, struct vm_aref *, vaddr_t);
+			(struct vm_aref *, struct vm_aref *, caddr_t);
 void		amap_unadd	/* remove an anon from an amap */
-			(struct vm_aref *, vaddr_t);
+			(struct vm_aref *, caddr_t);
 void		amap_unlock	/* unlock amap */
 			(struct vm_amap *);
 void		amap_unref	/* drop reference to an amap */
-			(struct vm_amap *, vaddr_t, vsize_t, bool);
+			(struct vm_amap *, caddr_t, vsize_t, bool);
 void		amap_wipeout	/* remove all anons from amap */
 			(struct vm_amap *);
-bool		amap_swap_off
+boolean_t	amap_swap_off
 			(int, int);
 
 /*
  * amap flag values
  */
 
-#define AMAP_SHARED	0x1	/* amap is shared */
-#define AMAP_REFALL	0x2	/* amap_ref: reference entire amap */
-#define AMAP_SWAPOFF	0x4	/* amap_swap_off() is in progress */
+#define AMAP_SHARED				0x1	/* amap is shared */
+#define AMAP_REFALL				0x2	/* amap_ref: reference entire amap */
+#define AMAP_SWAPOFF			0x4	/* amap_swap_off() is in progress */
 
 /*
  * amap_copy flags
  */
 
-#define	AMAP_COPY_NOWAIT	0x02	/* not allowed to sleep */
-#define	AMAP_COPY_NOCHUNK	0x04	/* not allowed to chunk */
-#define	AMAP_COPY_NOMERGE	0x08	/* not allowed to merge */
+#define	AMAP_COPY_NOWAIT		0x02	/* not allowed to sleep */
+#define	AMAP_COPY_NOCHUNK		0x04	/* not allowed to chunk */
+#define	AMAP_COPY_NOMERGE		0x08	/* not allowed to merge */
 
 /*
  * amap_extend flags
  */
 #define AMAP_EXTEND_BACKWARDS	0x00	/* add "size" to start of map */
 #define AMAP_EXTEND_FORWARDS	0x01	/* add "size" to end of map */
-#define AMAP_EXTEND_NOWAIT	0x02	/* not allowed to sleep */
+#define AMAP_EXTEND_NOWAIT		0x02	/* not allowed to sleep */
 
 #endif /* _KERNEL */
 
@@ -151,17 +151,18 @@ bool		amap_swap_off
  */
 
 struct vm_amap {
-	kmutex_t *am_lock;	/* lock [locks all vm_amap fields] */
-	int am_ref;			/* reference count */
-	int am_flags;		/* flags */
-	int am_maxslot;		/* max # of slots allocated */
-	int am_nslot;		/* # of slots currently in map ( <= maxslot) */
-	int am_nused;		/* # of slots currently in use */
-	int *am_slots;		/* contig array of active slots */
-	int *am_bckptr;		/* back pointer array to am_slots */
-	struct vm_anon **am_anon; /* array of anonymous pages */
+	lock_data_t 		*am_lock;		/* lock [locks all vm_amap fields] */
+	simple_lock_data_t	am_ref_lock;	/* Lock for ref_count field */
+	int 				am_ref;			/* reference count */
+	int 				am_flags;		/* flags */
+	int 				am_maxslot;		/* max # of slots allocated */
+	int 				am_nslot;		/* # of slots currently in map ( <= maxslot) */
+	int 				am_nused;		/* # of slots currently in use */
+	int 				*am_slots;		/* contig array of active slots */
+	int 				*am_bckptr;		/* back pointer array to am_slots */
+	struct vm_anon 		**am_anon; 		/* array of anonymous pages */
 #ifdef UVM_AMAP_PPREF
-	int *am_ppref;		/* per page reference count (if !NULL) */
+	int 				*am_ppref;		/* per page reference count (if !NULL) */
 #endif
 	LIST_ENTRY(vm_amap) am_list;
 };
@@ -251,10 +252,24 @@ struct vm_amap {
  */
 
 #define amap_flags(AMAP)	((AMAP)->am_flags)
-#define amap_lock(AMAP)		mutex_enter((AMAP)->am_lock)
-#define amap_lock_try(AMAP)	mutex_tryenter((AMAP)->am_lock)
 #define amap_refs(AMAP)		((AMAP)->am_ref)
-#define amap_unlock(AMAP)	mutex_exit((AMAP)->am_lock)
+
+#ifdef DIAGNOSTIC
+#define	amap_lock(AMAP) { \
+	if (lockmgr(&(AMAP)->am_lock, LK_EXCLUSIVE, (void *)0, curproc) != 0) { \
+		panic("amap_lock: failed to get lock"); \
+	} \
+	(AMAP)->timestamp++; \
+}
+#else
+#define	amap_lock(AMAP) { \
+	lockmgr(&(AMAP)->am_lock, LK_EXCLUSIVE, (void *)0, curproc); \
+	(AMAP)->timestamp++; \
+}
+#endif /* DIAGNOSTIC */
+#define	amap_unlock(AMAP) \
+	lockmgr(&(AMAP)->lock, LK_RELEASE, (void *)0, curproc)
+
 
 /*
  * if we enable PPREF, then we have a couple of extra functions that
@@ -269,7 +284,7 @@ void		amap_pp_adjref		/* adjust references */
 			(struct vm_amap *, int, vsize_t, int,
 			struct vm_anon **);
 void		amap_pp_establish	/* establish ppref */
-			(struct vm_amap *, vaddr_t);
+			(struct vm_amap *, caddr_t);
 void		amap_wiperange		/* wipe part of an amap */
 			(struct vm_amap *, int, int, struct vm_anon **);
 #endif	/* UVM_AMAP_PPREF */

@@ -1711,6 +1711,7 @@ pmap_t pm;
 }
 #endif
 
+/* PMap Arguments */
 struct pmap_args pmap_arg = {
     &pmap_bootstrap,
     &pmap_isvalidphys,

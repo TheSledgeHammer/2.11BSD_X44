@@ -46,9 +46,9 @@
 
 struct region_descriptor;
 
-#define readb(va)	(*(volatile uint8_t *) (va))
-#define readw(va)	(*(volatile uint16_t *) (va))
-#define readl(va)	(*(volatile uint32_t *) (va))
+#define readb(va)		(*(volatile uint8_t *) (va))
+#define readw(va)		(*(volatile uint16_t *) (va))
+#define readl(va)		(*(volatile uint32_t *) (va))
 
 #define writeb(va, d)	(*(volatile uint8_t *) (va) = (d))
 #define writew(va, d)	(*(volatile uint16_t *) (va) = (d))

@@ -46,7 +46,6 @@
 #include <machine/trap.h>
 
 
-
 ENTRY(start_exceptions)
 
 /*
@@ -155,8 +154,8 @@ IDTVEC(rsvd14)
 alltraps:
 		pushal
 		nop
-		push %ds
-		push %es
+		push 	%ds
+		push 	%es
 		# movw	$KDSEL,%ax
 		movw	$0x10,%ax
 		movw	%ax,%ds
@@ -235,5 +234,3 @@ IDTVEC(syscall)
 		pushl	_cpl
 		pushl	$0
 		jmp		doreti
-
-ENTRY(end_exceptions)

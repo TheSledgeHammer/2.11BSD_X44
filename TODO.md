@@ -2,6 +2,7 @@ TODO:
 - rename: boot/libsa/stand.h, reduce conflict with lib/libsa/stand.h
 - longjmp, setjmp
 
+
 boot: (Focus on 2.11BSDx86 boot.)
 - dev_net.c
 - libi386
@@ -19,6 +20,7 @@ i386:
 - math
 - sys_machdep update: fsbase, ioperm, ldt, pcb_extend
 - proc_machdep (netbsd)
+- Follow FreeBSD 5 for optimal compat with current architechture state & the bootloader
 
 libsa:
 - bootparam

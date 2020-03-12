@@ -86,6 +86,13 @@
 #define	EOFFSET	(ELAST+8)	/* relative seek not supported */
 #define	ESALAST	(ELAST+8)	/* */
 
+#define DEVT_NONE	0
+#define DEVT_DISK	1
+#define DEVT_NET	2
+#define DEVT_CD		3
+#define DEVT_ZFS	4
+#define DEVT_FD		5
+
 /*
  * Generic device specifier; architecture-dependent
  * versions may be larger, but should be allowed to

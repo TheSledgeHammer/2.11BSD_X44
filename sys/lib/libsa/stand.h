@@ -72,6 +72,7 @@ extern struct fs_ops file_system[];
 /* Device switch */
 struct devsw {
 	char	*dv_name;
+	int		dv_type;		/* opaque type constant, arch-dependant */
 	int		(*dv_strategy) __P((void *devdata, int rw, daddr_t blk, u_int size, char *buf, u_int *rsize));
 	int		(*dv_open)();	/* (struct open_file *f, ...) */
 	int		(*dv_close) __P((struct open_file *f));

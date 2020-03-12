@@ -56,7 +56,6 @@ ENTRY(udivsi3)
 		xorl %edx,%edx
 		divl 8(%esp)
 		ret
-END(udivsi3)
 
 ENTRY(divsi3)
 		movl 4(%esp),%eax
@@ -64,7 +63,6 @@ ENTRY(divsi3)
 		cltd
 		idivl 8(%esp)
 		ret
-END(divsi3)
 
 /*
 * I/O bus instructions via C
@@ -76,7 +74,6 @@ ENTRY(inb)
 		NOP
 		inb		%dx,%al
 		ret
-END(inb)
 
 ENTRY(inw)
 		movl	4(%esp),%edx
@@ -84,7 +81,6 @@ ENTRY(inw)
 		NOP
 		inw		%dx,%ax
 		ret
-END(inw)
 
 ENTRY(rtcin)
 		movl	4(%esp),%eax
@@ -92,7 +88,6 @@ ENTRY(rtcin)
 		subl	%eax,%eax		# clr eax
 		inb		$0x71,%al		# Compaq SystemPro
 		ret
-END(rtcin)
 
 ENTRY(outb)
 		movl	4(%esp),%edx
@@ -101,7 +96,6 @@ ENTRY(outb)
 		outb	%al,%dx
 		NOP
 		ret
-END(outb)
 
 ENTRY(outw)
 		movl	4(%esp),%edx
@@ -110,7 +104,6 @@ ENTRY(outw)
 		outw	%ax,%dx
 		NOP
 		ret
-END(outw)
 
 /*
  * void bzero(void *base, u_int cnt)
@@ -131,7 +124,6 @@ ENTRY(bzero)
 		stosb
 		popl	%edi
 		ret
-END(bzero)
 
 /*
  * fillw (pat,base,cnt)
@@ -155,7 +147,6 @@ ENTRY(fillw)
 		stosw
 		popl	%edi
 		ret
-END(fillw)
 
 ENTRY(bcopyb)
 		pushl	%esi
@@ -170,7 +161,6 @@ ENTRY(bcopyb)
 		popl	%esi
 		xorl	%eax,%eax
 		ret
-END(bcopyb)
 
 /*
  * (ov)bcopy (src,dst,cnt)
@@ -219,8 +209,6 @@ ENTRY(bcopy)
 		xorl	%eax,%eax
 		cld
 		ret
-END(bcopy)
-END(ovbcopy)
 
 # insb(port,addr,cnt)
 
@@ -237,7 +225,6 @@ ENTRY(insb)
 		movl	%edi,%eax
 		popl	%edi
 		ret
-END(insb)
 
 # insw(port,addr,cnt)
 
@@ -253,7 +240,6 @@ ENTRY(insw)
 		movl	%edi,%eax
 		popl	%edi
 		ret
-END(insw)
 
 # outsw(port,addr,cnt)
 
@@ -269,7 +255,6 @@ ENTRY(outsw)
 		movl	%esi,%eax
 		popl	%esi
 		ret
-END(outsw)
 
 # outsb(port,addr,cnt)
 
@@ -286,7 +271,6 @@ ENTRY(outsb)
 		movl	%esi,%eax
 		popl	%esi
 		ret
-END(outsb)
 
 /*
 * void lgdt(struct region_descriptor *rdp);
@@ -313,7 +297,6 @@ ENTRY(lgdt)
 		# movl	$KCSEL,4(%esp)
 		movl	$8,4(%esp)
 		lret
-END(lgdt)
 
 /*
  * void lidt(struct region_descriptor *rdp);
@@ -323,7 +306,6 @@ ENTRY(lidt)
 		movl	4(%esp),%eax
 		lidt	(%eax)
 		ret
-END(lidt)
 
 /*
  * void lldt(u_short sel)
@@ -332,7 +314,6 @@ END(lidt)
 ENTRY(lldt)
 		lldt	4(%esp)
 		ret
-END(lldt)
 
 /*
  * void ltr(u_short sel)
@@ -341,7 +322,6 @@ END(lldt)
 ENTRY(ltr)
 		ltr	4(%esp)
 		ret
-END(ltr)
 
 
 /*****************************************************************************/
@@ -359,7 +339,6 @@ ENTRY(setjmp)
 		movl	%edx,20(%eax)		# save eip
 		xorl	%eax,%eax			# return (0);
 		ret
-END(setjmp)
 
 ENTRY(longjmp)
 		movl	4(%esp),%eax
@@ -373,4 +352,3 @@ ENTRY(longjmp)
 		xorl	%eax,%eax			# return (1);
 		incl	%eax
 		ret
-END(longjmp)
