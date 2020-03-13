@@ -47,6 +47,14 @@ static __inline quad_t qmin(quad_t a, quad_t b) { return (a < b ? a : b); }
 static __inline u_long ulmax(u_long a, u_long b) { return (a > b ? a : b); }
 static __inline u_long ulmin(u_long a, u_long b) { return (a < b ? a : b); }
 
+/* hash_prospector.c Functions */
+extern uint32_t prospector32(uint32_t x);
+extern uint32_t lowbias32(uint32_t x);
+extern uint32_t lowbias32_r(uint32_t x);
+extern uint32_t triple32(uint32_t x);
+extern uint32_t triple32_r(uint32_t x);
+extern uint32_t hash32(uint32_t x);
+extern uint32_t murmurhash32_mix32(uint32_t x);
 
 /* Prototypes for non-quad routines. */
 int	 	bcmp(const void *, const void *, size_t);

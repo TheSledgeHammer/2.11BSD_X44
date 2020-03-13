@@ -96,7 +96,9 @@ unsigned int
 #define PG_N		0x00000800 /* Non-cacheable */
 #define	PG_M		0x00000040
 #define PG_U		0x00000020
+#define PG_A		0x00000060
 #define	PG_FRAME	0xfffff000
+
 
 #define	PG_NOACC	0
 #define	PG_KR		0x00000000

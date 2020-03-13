@@ -10,8 +10,8 @@
 #ifndef MACHINE_CPT_H_
 #define MACHINE_CPT_H_
 
-#include <vm/include/vm.h>
 #include <sys/tree.h>
+//#include <vm/include/vm.h>
 
 /*
  * Add Resize
@@ -29,19 +29,20 @@
  */
 
 struct cpt {
-    RB_ENTRY(cpt)                 cpt_entry;
-    unsigned int                  cpt_hindex;	/* VPBN Hash Result */
-    vm_offset_t                   cpt_addr; 	/* Address */
-    unsigned long                 cpt_pad;      /* Partial-Subblock & Superpage Mapping */
-    unsigned long                 cpt_sz;       /* Superpage size: power of 2 */
-    struct cpte                   *cpt_cpte;    /* pointer to cpte */
+    RB_ENTRY(cpt)                 	cpt_entry;
+    unsigned int                  	cpt_hindex;		/* VPBN Hash Result */
+    u_long                   		cpt_pa_addr; 	/* Physical Address */
+    u_long                   		cpt_va_addr; 	/* Virtual Address */
+    u_long                 			cpt_pad;      	/* Partial-Subblock & Superpage Mapping */
+    u_long 							cpt_sz;       	/* Superpage size: power of 2 */
+    struct cpte                   	*cpt_cpte;    	/* pointer to cpte */
 };
 RB_HEAD(cpt_rbtree, cpt) cpt_root;
 
 struct cpte {
-    RB_ENTRY(cpte)    cpte_entry;
-    int               cpte_boff;        /* Block Offset */
-    struct pte        *cpte_pte;        /* pointer to pte */
+    RB_ENTRY(cpte)    				cpte_entry;
+    int               				cpte_boff;        /* Block Offset */
+    struct pte        				*cpte_pte;        /* pointer to pte */
 };
 RB_HEAD(cpte_rbtree, cpte) cpte_root;
 
@@ -52,15 +53,16 @@ extern struct cpte cpte_base[];
 #define CPTSBLKF    16              /* CPT's sub-block factor */
 #define NBPG        4096            /* bytes/page (temp in i386) */
 
+typedef struct cpt 	cpt_entry_t;		/* clustered page table */
+typedef struct cpte cpte_entry_t;		/* clustered page table entry */
+
 /* Clustered Page Table */
-extern void         cpt_add(struct cpt *cpt, struct cpte *cpte, vm_offset_t vpbn);
-extern struct cpt   *cpt_lookup(struct cpt *cpt, vm_offset_t vpbn);
-extern void         cpt_remove(struct cpt *cpt, vm_offset_t vpbn);
-struct cpte         *cpt_lookup_cpte(struct cpt *cpt, vm_offset_t vpbn);
-extern void         cpt_add_superpage(struct cpt *cpt, struct cpte *cpte, vm_offset_t vpbn,
-						unsigned long sz, unsigned long pad);
-extern void         cpt_add_partial_subblock(struct cpt *cpt, struct cpte *cpte, vm_offset_t vpbn,
-						unsigned long pad);
+extern void         cpt_add(struct cpt *cpt, struct cpte *cpte, u_long vpbn);
+extern struct cpt   *cpt_lookup(struct cpt *cpt, u_long vpbn);
+extern void         cpt_remove(struct cpt *cpt, u_long vpbn);
+struct cpte         *cpt_lookup_cpte(struct cpt *cpt, u_long vpbn);
+extern void         cpt_add_superpage(struct cpt *cpt, struct cpte *cpte, u_long vpbn, u_long sz, u_long pad);
+extern void         cpt_add_partial_subblock(struct cpt *cpt, struct cpte *cpte, u_long vpbn, u_long pad);
 
 /* Clustered Page Table Entries */
 extern void         cpte_add(struct cpte *cpte, struct pte *pte, int boff);

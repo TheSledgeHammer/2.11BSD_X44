@@ -6,12 +6,11 @@
  */
 
 #include <sys/param.h>
-#include <sys/systm.h>
 #include <sys/proc.h>
-#include <sys/fnv_hash.h>
-#include <sys/tree.h>
-
-#include "cpt.h"
+#include <sys/malloc.h>
+#include <sys/user.h>
+#include <dev/i386/cpt.h>
+#include <lib/libkern/libkern.h>
 
 struct cpt cpt_base[NBPG];
 struct cpte cpte_base[NCPTE];
@@ -48,11 +47,10 @@ cpte_cmp(cpte1, cpte2)
 /* Virtual Page Block Number */
 unsigned int
 VPBN(entry)
-    vm_offset_t entry;
+	u_long entry;
 {
-	char val[] = { (char) entry };
-    unsigned int hash1 = (fnv_32_str(val, NBPG) % NBPG);
-    unsigned int hash2 = (jenkins(val, NBPG) % NBPG);
+	u_long hash1 = (prospector32(entry) % NBPG);
+	u_long hash2 = (lowbias32(entry) % NBPG);
 
     if(hash1 != hash2) {
         return (hash1);
@@ -71,25 +69,25 @@ RB_GENERATE(cpte_rbtree, cpte, cpte_entry, cpte_cmp);
 /*
  * Clustered Page Table (Red-Black Tree) Functions
  */
-/* Add a Clustered Page Table Entry */
+/* Add a Clustered Page Table */
 void
 cpt_add(cpt, cpte, vpbn)
     struct cpt *cpt;
     struct cpte *cpte;
-    vm_offset_t vpbn;
+    u_long vpbn;
 {
     cpt = &cpt_base[VPBN(vpbn)];
-    cpt->cpt_addr = vpbn;
+    cpt->cpt_pa_addr = vpbn;
     cpt->cpt_hindex = VPBN(vpbn);
     cpt->cpt_cpte = cpte;
     RB_INSERT(cpt_rbtree, &cpt_root, cpt);
 }
 
-/* Search Clustered Page Table for an Entry */
+/* Search Clustered Page Table */
 struct cpt *
 cpt_lookup(cpt, vpbn)
     struct cpt *cpt;
-    vm_offset_t vpbn;
+	u_long vpbn;
 {
     struct cpt *result;
     if(&cpt[VPBN(vpbn)] != NULL) {
@@ -100,11 +98,11 @@ cpt_lookup(cpt, vpbn)
     }
 }
 
-/* Remove an Entry from the Clustered Page Table */
+/* Remove from the Clustered Page Table */
 void
 cpt_remove(cpt, vpbn)
     struct cpt *cpt;
-	vm_offset_t vpbn;
+	u_long vpbn;
 {
     struct cpt *result = cpt_lookup(cpt, vpbn);
     RB_REMOVE(cpt_rbtree, &cpt_root, result);
@@ -113,7 +111,7 @@ cpt_remove(cpt, vpbn)
 struct cpte *
 cpt_lookup_cpte(cpt, vpbn)
     struct cpt *cpt;
-	vm_offset_t vpbn;
+	u_long vpbn;
 {
     return (cpt_lookup(cpt, vpbn)->cpt_cpte);
 }
@@ -123,8 +121,8 @@ void
 cpt_add_superpage(cpt, cpte, vpbn, sz, pad)
     struct cpt *cpt;
     struct cpte *cpte;
-    vm_offset_t vpbn;
-    unsigned long sz, pad;
+    u_long vpbn;
+    u_long sz, pad;
 {
     cpt = &cpt_base[VPBN(vpbn)];
     cpt->cpt_sz = sz;
@@ -138,8 +136,8 @@ void
 cpt_add_partial_subblock(cpt, cpte, vpbn, pad)
     struct cpt *cpt;
     struct cpte *cpte;
-    vm_offset_t vpbn;
-    unsigned long pad;
+    u_long vpbn;
+    u_long pad;
 {
     cpt = &cpt_base[VPBN(vpbn)];
     cpt->cpt_pad = pad;
