@@ -712,6 +712,8 @@ init386(first)
 	extern int sigcode, szsigcode;
 	struct region_descriptor r_gdt, r_idt;
 
+	proc0paddr->u_kstack = proc0paddr_kstack;
+	proc0paddr->u_kstack_pages = P0_KSTACK_PAGES;
 	proc0.p_addr = proc0paddr;
 
 	allocate_gdt(&gdt_segs);

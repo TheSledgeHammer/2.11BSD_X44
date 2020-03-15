@@ -9,6 +9,9 @@
 #ifndef _MACHINE_MD_VAR_H_
 #define	_MACHINE_MD_VAR_H_
 
+
+extern  vm_offset_t proc0paddr_kstack;
+
 void	set_fsbase(struct proc *p, uint32_t base);
 void	set_gsbase(struct proc *p, uint32_t base);
 

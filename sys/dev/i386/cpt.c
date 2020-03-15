@@ -12,11 +12,11 @@
 #include <dev/i386/cpt.h>
 #include <lib/libkern/libkern.h>
 
-struct cpt cpt_base[NBPG];
+struct cpt cpt_base[NCPT];
 struct cpte cpte_base[NCPTE];
 
 /*
- * Clustered Page Table & Entries (Red-Black Tree) Computation & Hash Function
+ * Clustered Page Table & Entries (Red-Black Tree) Comparisons & Hash Function
  */
 int
 cpt_cmp(cpt1, cpt2)
@@ -49,13 +49,13 @@ unsigned int
 VPBN(entry)
 	u_long entry;
 {
-	u_long hash1 = (prospector32(entry) % NBPG);
-	u_long hash2 = (lowbias32(entry) % NBPG);
+	u_long hash1 = (prospector32(entry) % NCPT);
+	u_long hash2 = (lowbias32(entry) % NCPT);
 
     if(hash1 != hash2) {
         return (hash1);
     } else if(hash1 == hash2) {
-        return ((hash1 + hash2) % NBPG);
+        return ((hash1 + hash2) % NCPT);
     } else {
         return (hash2);
     }
@@ -69,7 +69,7 @@ RB_GENERATE(cpte_rbtree, cpte, cpte_entry, cpte_cmp);
 /*
  * Clustered Page Table (Red-Black Tree) Functions
  */
-/* Add a Clustered Page Table */
+/* Add to the Clustered Page Table */
 void
 cpt_add(cpt, cpte, vpbn)
     struct cpt *cpt;
@@ -78,6 +78,7 @@ cpt_add(cpt, cpte, vpbn)
 {
     cpt = &cpt_base[VPBN(vpbn)];
     cpt->cpt_pa_addr = vpbn;
+    cpt->cpt_va_addr = vpbn;
     cpt->cpt_hindex = VPBN(vpbn);
     cpt->cpt_cpte = cpte;
     RB_INSERT(cpt_rbtree, &cpt_root, cpt);
@@ -108,6 +109,7 @@ cpt_remove(cpt, vpbn)
     RB_REMOVE(cpt_rbtree, &cpt_root, result);
 }
 
+/* Search Clustered Page Table Entry from The Clustered Page Table */
 struct cpte *
 cpt_lookup_cpte(cpt, vpbn)
     struct cpt *cpt;
@@ -116,7 +118,20 @@ cpt_lookup_cpte(cpt, vpbn)
     return (cpt_lookup(cpt, vpbn)->cpt_cpte);
 }
 
-/* (WIP) Clustered Page Table Superpage Support */
+/* Map CPT's into PDE's or vice-versa (Compatibility) */
+void
+cpt_to_pde(cpt, pde)
+	struct pde *pde;
+	struct cpt *cpt;
+{
+	if(pde == NULL && cpt->cpt_pde != NULL) {
+		pde = cpt->cpt_pde;
+	} else {
+		cpt->cpt_pde = pde;
+	}
+}
+
+/* (WIP) Clustered Page Table: Superpage Support */
 void
 cpt_add_superpage(cpt, cpte, vpbn, sz, pad)
     struct cpt *cpt;
@@ -131,7 +146,7 @@ cpt_add_superpage(cpt, cpte, vpbn, sz, pad)
     cpt_add(cpt, cpte, vpbn);
 }
 
-/* (WIP) Clustered Page Table Partial-Subblock Support */
+/* (WIP) Clustered Page Table: Partial-Subblock Support */
 void
 cpt_add_partial_subblock(cpt, cpte, vpbn, pad)
     struct cpt *cpt;
@@ -148,6 +163,7 @@ cpt_add_partial_subblock(cpt, cpte, vpbn, pad)
 /*
  * Clustered Page Table (Red-Black Tree) Entry Functions
  */
+/* Add Clustered Page Table Entries */
 void
 cpte_add(cpte, pte, boff)
     struct cpte *cpte;
@@ -164,6 +180,7 @@ cpte_add(cpte, pte, boff)
     }
 }
 
+/* Search Clustered Page Table Entries */
 struct cpte *
 cpte_lookup(cpte, boff)
     struct cpte *cpte;
@@ -178,6 +195,7 @@ cpte_lookup(cpte, boff)
     }
 }
 
+/* Remove entries from Clustered Page Table Entry */
 void
 cpte_remove(cpte, boff)
     struct cpte *cpte;
@@ -187,6 +205,7 @@ cpte_remove(cpte, boff)
     RB_REMOVE(cpte_rbtree, &cpte_root, result);
 }
 
+/* Search a Page Table Entry from a Clustered Page Table Entry */
 struct pte *
 cpte_lookup_pte(cpte, boff)
     struct cpte *cpte;

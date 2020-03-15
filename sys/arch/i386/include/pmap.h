@@ -176,6 +176,7 @@ extern int	IdlePTD;	/* physical address of "Idle" state directory */
  */
 struct pmap {
 	pd_entry_t				*pm_pdir;		/* KVA of page directory */
+	pd_entry_t				*pm_ptab;		/* ?? */
 	boolean_t				pm_pdchanged;	/* pdir changed */
 	short					pm_dref;		/* page directory ref count */
 	short					pm_count;		/* pmap reference count */
