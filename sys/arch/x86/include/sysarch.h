@@ -82,7 +82,7 @@ struct i386_ldt_args {
 };
 
 struct i386_vm86_args {
-	int	sub_op;			/* sub-operation to perform */
+	int		sub_op;			/* sub-operation to perform */
 	char	*sub_args;		/* args */
 };
 
@@ -93,7 +93,7 @@ struct i386_get_xfpustate {
 #else
 struct i386_ldt_args {
 	unsigned int start;
-	struct user_segment_descriptor *descs __packed;
+	struct user_segment_descriptor *descs;
 	unsigned int num;
 };
 

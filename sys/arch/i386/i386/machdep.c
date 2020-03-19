@@ -348,41 +348,40 @@ physstrat(bp, strat, prio)
 	vunmapbuf(bp);
 	bp->b_un.b_addr = baddr;
 }
+
+void
 initcpu()
 {
 
 }
 
 /*
- * Set up proc0's PCB and LDT.
+ * Set up proc0's TSS and LDT.
  */
-static void
-i386_proc0_pcb_ldt_init(void)
+void
+i386_proc0_tss_ldt_init()
 {
-	register struct proc *p = curproc;
-}
+	struct pcb *pcb;
+	int x;
 
-static void
-tss_init(tss, stack, func)
-	struct i386tss *tss;
-	void *stack;
-	void *func;
-{
-	KASSERT(curcpu()->ci_pmap == pmap_kernel());
+	gdt_init();
+	curpcb = pcb = &proc0.p_addr->u_pcb;
+	pcb->pcb_flags = 0;
+	pcb->pcb_tss.tss_ioopt =
+	    ((caddr_t)pcb->pcb_iomap - (caddr_t)&pcb->pcb_tss) << 16;
+	for (x = 0; x < sizeof(pcb->pcb_iomap) / 4; x++)
+		pcb->pcb_iomap[x] = 0xffffffff;
 
-	memset(tss, 0, sizeof *tss);
-	tss->tss_esp0 = tss->tss_esp = (int)((char *)stack + USPACE - 16);
-	tss->tss_ss0 = GSEL(GDATA_SEL, SEL_KPL);
-	tss->tss_cs = GSEL(GCODE_SEL, SEL_KPL);
-	tss->tss_fs = GSEL(GCPU_SEL, SEL_KPL);
-	tss->tss_gs = tss->__tss_es = tss->__tss_ds =
-	    tss->tss_ss = GSEL(GDATA_SEL, SEL_KPL);
-	/* %cr3 contains the value associated to pmap_kernel */
-	tss->tss_cr3 = rcr3();
-	tss->tss_esp = (int)((char *)stack + USPACE - 16);
-	tss->tss_ldt = GSEL(GLDT_SEL, SEL_KPL);
-	tss->tss_eflags = PSL_MBO | PSL_NT;	/* XXX not needed? */
-	tss->tss_eip = (int)func;
+	pcb->pcb_ldt_sel = pmap_kernel()->pm_ldt_sel = GSEL(GLDT_SEL, SEL_KPL);
+	pcb->pcb_cr0 = rcr0();
+	pcb->pcb_tss.tss_ss0 = GSEL(GDATA_SEL, SEL_KPL);
+	pcb->pcb_tss.tss_esp0 = (int)proc0.p_addr + USPACE - 16;
+	tss_alloc(&proc0);
+
+	ltr(proc0.p_md.md_tss_sel);
+	lldt(pcb->pcb_ldt_sel);
+
+	proc0.p_md.md_regs = (struct trapframe *)pcb->pcb_tss.tss_esp0 - 1;
 }
 
 #ifdef PGINPROF
@@ -618,14 +617,19 @@ cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	size_t newlen;
 	struct proc *p;
 {
+	dev_t consdev;
+
 	/* all sysctl names at this level are terminal */
 	if (namelen != 1)
 		return (ENOTDIR); /* overloaded */
 
 	switch (name[0]) {
 	case CPU_CONSDEV:
-		return (sysctl_rdstruct(oldp, oldlenp, newp, &cn_tty->t_dev,
-				sizeof cn_tty->t_dev));
+		if (cn_tab != NULL)
+			consdev = cn_tab->cn_dev;
+		else
+			consdev = NODEV;
+		return (sysctl_rdstruct(oldp, oldlenp, newp, &consdev, sizeof consdev));
 	default:
 		return (EOPNOTSUPP);
 	}

@@ -183,6 +183,11 @@ struct pmap {
 	simple_lock_data_t		pm_lock;		/* lock on pmap */
 	struct pmap_statistics	pm_stats;		/* pmap statistics */
 	long					pm_ptpages;		/* more stats: PT pages */
+
+	int 					pm_flags;		/* see below */
+	union descriptor 		*pm_ldt;		/* user-set LDT */
+	int 					pm_ldt_len;		/* number of LDT entries */
+	int 					pm_ldt_sel;		/* LDT selector */
 };
 
 typedef struct pmap	*pmap_t;

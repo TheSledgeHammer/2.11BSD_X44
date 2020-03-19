@@ -40,10 +40,11 @@
 #ifndef _MACHINE_CPUFUNC_H_
 #define	_MACHINE_CPUFUNC_H_
 
+
 #ifndef _SYS_CDEFS_H_
 #error this file needs sys/cdefs.h as a prerequisite
 #endif
-
+#include <sys/cdefs.h>
 struct region_descriptor;
 
 #define readb(va)		(*(volatile uint8_t *) (va))

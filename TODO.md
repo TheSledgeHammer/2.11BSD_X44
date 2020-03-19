@@ -1,12 +1,4 @@
 TODO:
-- rename: boot/libsa/stand.h, reduce conflict with lib/libsa/stand.h
-
-- pmap:  rewrite to work with cpt
-	- pmap_pte
-	- pmap_enter
-	- pmap_remove
-
-
 boot: (Focus on 2.11BSDx86 boot.)
 - dev_net.c
 - libi386
@@ -18,13 +10,8 @@ boot: (Focus on 2.11BSDx86 boot.)
 i386:
 - machdep.c (incomplete): 
 - locore.s 
-- cpufunc.h
-- asm.h
-- db_machdep
 - math
 - sys_machdep update: fsbase, ioperm, ldt, pcb_extend
-- proc_machdep (netbsd)
-- Follow FreeBSD 5 for optimal compat with current architechture state & the bootloader
 
 libsa:
 - bootparam
@@ -57,11 +44,6 @@ UFS, FFS & LFS:
 - extattr, dirhash
 - dinode: ufs1 & ufs2
 - WABL (NetBSD)
-
-i386: (4.4BSD-Lite2)
-- Doesn't contain a complete bootloader
-- Only i386 relavent code to load the kernel
-- Not sure what is missing (excluding being able to bootstrap)  
 
 Possible Generic Header: 
 (2.11BSD):

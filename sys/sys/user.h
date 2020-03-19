@@ -148,11 +148,12 @@ struct user {
 					 	 	 	 	 	 	 	 * backward not to reach here
 					 	 	 	 	 	 	 	 */
 
-	vm_offset_t			u_kstack;				/* (a) Kernel VA of kstack. */
-	int					u_kstack_pages;			/* (a) Size of the kstack. */
 /* 1.7 Remaining fields only for core dump and/or ptrace-- not valid at other times! */
 	struct kinfo_proc 	u_kproc;				/* proc + eproc */
 	struct md_coredump 	u_md;					/* machine dependent glop */
+
+	vm_offset_t			u_kstack;				/* (a) Kernel VA of kstack. */
+	int					u_kstack_pages;			/* (a) Size of the kstack. */
 };
 
 #ifdef KERNEL

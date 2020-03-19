@@ -39,15 +39,12 @@
  */
 
 #include "assym.s"
-#include "machine/psl.h"
-#include "machine/pte.h"
-
 #include "errno.h"
 
+#include "machine/psl.h"
+#include "machine/pte.h"
 #include "machine/trap.h"
-
 #include "machine/specialreg.h"
-
 #include "machine/pmap.h"
 
 /*
@@ -55,7 +52,6 @@
  * that may be fixed in newer versions of gas. Perhaps newer versions
  * will have more pleasant appearance.
  */
-ENTRY(start_pagemap)
 
 	.set	IDXSHIFT,10
 	.set	SYSTEM,0xFE000000	# virtual address of system start
@@ -76,6 +72,7 @@ ENTRY(start_pagemap)
 	.set	_Sysmap,0xFDFF8000
 	.set	_PTDpde,0xFDFF7000+4*PDRPDROFF
 
+
 /*
  * APTmap, APTD is the alternate recursive pagemap.
  * It's used when modifying another process's page tables.
@@ -95,3 +92,10 @@ ENTRY(start_pagemap)
 	.globl	_kstack
 	.set	PPDROFF,0x3F6
 	.set	PPTEOFF,0x400-UPAGES	# 0x3FE
+
+
+#define	fillkpt					\
+1:	movl	%eax,0(%ebx)	; 	\
+	addl	$ NBPG,%eax		; /* increment physical address */ \
+	addl	$4,%ebx			; /* next pte */ \
+	loop	1b				;

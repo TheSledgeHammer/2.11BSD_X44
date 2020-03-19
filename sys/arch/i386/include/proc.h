@@ -34,11 +34,12 @@
  */
 
 /*
- * Machine-dependent part of the proc structure for hp300.
+ * Machine-dependent part of the proc structure for i386.
  */
 struct mdproc {
-	int	md_flags;		/* machine-dependent flags */
-	int	*md_regs;		/* registers on current frame */
+	struct	trapframe 	*md_regs;		/* registers on current frame */
+	int					md_flags;		/* machine-dependent flags */
+	int					md_tss_sel;		/* TSS selector */
 };
 
 /* md_flags */

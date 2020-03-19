@@ -45,6 +45,8 @@
 #include <machine/vm86.h>
 #include <machine/npx.h>
 
+#define	NPORT			1024						/* # of ports we allow to be mapped */
+
 struct pcb {
 	struct	i386tss 	pcb_tss;
 #define	pcb_ksp			pcb_tss.tss_esp0
@@ -54,11 +56,11 @@ struct pcb {
 #define	pcb_psl			pcb_tss.tss_eflags
 #define	pcb_usp			pcb_tss.tss_esp
 #define	pcb_fp			pcb_tss.tss_ebp
-#ifdef	notyet
-	u_char	pcb_iomap[NPORT/sizeof(u_char)]; /* i/o port bitmap */
-#endif
-	struct	save87		pcb_savefpu;	/* floating point state for 287/387 */
-	struct	emcsts		pcb_saveemc;	/* Cyrix EMC state */
+#define	pcb_ldt_sel		pcb_tss.tss_ldt
+	struct	save87		pcb_savefpu;		/* floating point state for 287/387 */
+	struct	emcsts		pcb_saveemc;		/* Cyrix EMC state */
+	u_long	pcb_iomap[NPORT/32]; 			/* i/o port bitmap */
+
 /*
  * Software pcb (extension)
  */
@@ -78,7 +80,7 @@ struct pcb {
 };
 
 /*
- * Extension to the 386 process control block
+ * Software pcb (extension)
  */
 struct pcb_extend {
 	struct 	segment_descriptor 	ext_tssd;	/* tss descriptor */
@@ -98,10 +100,4 @@ struct md_coredump {
 #ifdef _KERNEL
 struct pcb *curpcb;		/* our current running pcb */
 struct trapframe;
-
-int i386_extend_pcb(struct proc *);
-
-void	makectx(struct trapframe *, struct pcb *);
-int		savectx(struct pcb *) __returns_twice;
-void	resumectx(struct pcb *) __fastcall;
 #endif
