@@ -293,8 +293,8 @@ vattr_null(vap)
  * Routines having to do with the management of the vnode table.
  */
 extern int (**dead_vnodeop_p)();
-static void vclean __P((struct vnode *vp, int flag, struct proc *p));
-extern void vgonel __P((struct vnode *vp, struct proc *p));
+static void vclean (struct vnode *vp, int flag, struct proc *p);
+extern void vgonel (struct vnode *vp, struct proc *p);
 long numvnodes;
 extern struct vattr va_null;
 

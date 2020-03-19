@@ -74,8 +74,8 @@ main()
 	register_t rval[2];
 	extern struct pdevinit pdevinit[];
 	extern struct sysentvec sysvec;
-	extern void roundrobin __P((void *));
-	extern void schedcpu __P((void *));
+	extern void roundrobin (void *);
+	extern void schedcpu (void *);
 
 	/*
 	 * Initialize the current process pointer (curproc) before

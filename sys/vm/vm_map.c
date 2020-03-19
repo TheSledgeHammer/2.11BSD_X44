@@ -136,8 +136,8 @@ vm_size_t	kentry_data_size;
 vm_map_entry_t	kentry_free;
 vm_map_t	kmap_free;
 
-static void	_vm_map_clip_end __P((vm_map_t, vm_map_entry_t, vm_offset_t));
-static void	_vm_map_clip_start __P((vm_map_t, vm_map_entry_t, vm_offset_t));
+static void	_vm_map_clip_end (vm_map_t, vm_map_entry_t, vm_offset_t);
+static void	_vm_map_clip_start (vm_map_t, vm_map_entry_t, vm_offset_t);
 
 void
 vm_map_startup()

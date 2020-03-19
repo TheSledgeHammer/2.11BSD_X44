@@ -110,7 +110,7 @@ struct	vm_object_hash_head vm_object_hashtable[VM_OBJECT_HASH_COUNT];
 long	object_collapses = 0;
 long	object_bypasses  = 0;
 
-static void _vm_object_allocate __P((vm_size_t, vm_object_t));
+static void _vm_object_allocate (vm_size_t, vm_object_t);
 
 /*
  *	vm_object_init:

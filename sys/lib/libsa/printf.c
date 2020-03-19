@@ -67,7 +67,7 @@
 #include <machine/stdarg.h>
 #undef KERNEL
 
-static void kprintn __P((u_long, int));
+static void kprintn (u_long, int);
 
 void
 #if __STDC__

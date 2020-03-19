@@ -97,14 +97,14 @@ struct dkdevice {
 };
 
 struct dkdriver {
-	void 	(*d_strategy) __P((struct buf *));
+	void 	(*d_strategy) (struct buf *);
 #ifdef notyet
-	int		(*d_open) __P((dev_t dev, int ifmt, int, struct proc *));
-	int		(*d_close) __P((dev_t dev, int, int ifmt, struct proc *));
-	int		(*d_ioctl) __P((dev_t dev, int cmd, caddr_t data, int fflag, struct proc *));
-	int		(*d_dump) __P((dev_t));
-	void	(*d_start) __P((struct buf *, daddr_t));
-	int		(*d_mklabel) __P((struct dkdevice *));
+	int		(*d_open) (dev_t dev, int ifmt, int, struct proc *);
+	int		(*d_close) (dev_t dev, int, int ifmt, struct proc *);
+	int		(*d_ioctl) (dev_t dev, int cmd, caddr_t data, int fflag, struct proc *);
+	int		(*d_dump) (dev_t);
+	void	(*d_start) (struct buf *, daddr_t);
+	int		(*d_mklabel) (struct dkdevice *);
 #endif
 };
 
@@ -137,10 +137,10 @@ struct disksort_stats {
 #endif
 
 #ifdef KERNEL
-void	disksort __P((struct buf *, struct buf *));
-char	*readdisklabel __P((struct dkdevice *, int));
-int		setdisklabel __P((struct dkdevice *, struct disklabel *));
-int		writedisklabel __P((struct dkdevice *, int));
-int		diskerr __P((struct dkdevice *, struct buf *, char *, int, int));
+void	disksort (struct buf *, struct buf *);
+char	*readdisklabel (struct dkdevice *, int);
+int		setdisklabel (struct dkdevice *, struct disklabel *);
+int		writedisklabel (struct dkdevice *, int);
+int		diskerr (struct dkdevice *, struct buf *, char *, int, int);
 #endif
 #endif /* _SYS_DISK_H_ */

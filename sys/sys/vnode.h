@@ -202,10 +202,10 @@ extern int						vttoif_tab[];
 #define	VHOLD(vp)		vhold(vp)
 #define	VREF(vp)		vref(vp)
 
-void	holdrele __P((struct vnode *));
-void	vattr_null __P((struct vattr *));
-void	vhold __P((struct vnode *));
-void	vref __P((struct vnode *));
+void	holdrele (struct vnode *);
+void	vattr_null (struct vattr *);
+void	vhold (struct vnode *);
+void	vref (struct vnode *);
 #else
 #define	VATTR_NULL(vap)	(*(vap) = va_null)	/* initialize a vattr */
 #define	HOLDRELE(vp)	holdrele(vp)		/* decrease buf or page ref */
@@ -349,7 +349,7 @@ struct vnodeopv_desc {
 /*
  * A default routine which just returns an error.
  */
-int vn_default_error __P((void));
+int vn_default_error (void);
 
 /*
  * A generic structure.
@@ -393,36 +393,36 @@ struct vattr;
 struct vnode;
 struct vop_bwrite_args;
 
-int 	bdevvp __P((dev_t dev, struct vnode **vpp));
-void	cvtstat __P((struct stat *st, struct ostat *ost));
-int 	getnewvnode __P((enum vtagtype tag, struct mount *mp, int (**vops)(), struct vnode **vpp));
-void	insmntque __P((struct vnode *vp, struct mount *mp));
-void 	vattr_null __P((struct vattr *vap));
-int 	vcount __P((struct vnode *vp));
-int		vflush __P((struct mount *mp, struct vnode *skipvp, int flags));
-int 	vget __P((struct vnode *vp, int lockflag, struct proc *p));
-void 	vgone __P((struct vnode *vp));
-int		vinvalbuf __P((struct vnode *vp, int save, struct ucred *cred, struct proc *p, int slpflag, int slptimeo));
-void	vprint __P((char *label, struct vnode *vp));
-int		vrecycle __P((struct vnode *vp, struct simplelock *inter_lkp, struct proc *p));
-int		vn_bwrite __P((struct vop_bwrite_args *ap));
-int 	vn_close __P((struct vnode *vp, int flags, struct ucred *cred, struct proc *p));
-int 	vn_closefile __P((struct file *fp, struct proc *p));
-int		vn_ioctl __P((struct file *fp, u_long com, caddr_t data, struct proc *p));
-int		vn_lock __P((struct vnode *vp, int flags, struct proc *p));
-int 	vn_open __P((struct nameidata *ndp, int fmode, int cmode));
-int 	vn_rdwr __P((enum uio_rw rw, struct vnode *vp, caddr_t base, int len, off_t offset, enum uio_seg segflg, int ioflg, struct ucred *cred, int *aresid, struct proc *p));
-int		vn_read __P((struct file *fp, struct uio *uio, struct ucred *cred));
-int		vn_select __P((struct file *fp, int which, struct proc *p));
-int		vn_stat __P((struct vnode *vp, struct stat *sb, struct proc *p));
-int		vn_write __P((struct file *fp, struct uio *uio, struct ucred *cred));
-int		vop_noislocked __P((struct vop_islocked_args *));
-int		vop_nolock __P((struct vop_lock_args *));
-int		vop_nounlock __P((struct vop_unlock_args *));
-int		vop_revoke __P((struct vop_revoke_args *));
-struct 	vnode *checkalias __P((struct vnode *vp, dev_t nvp_rdev, struct mount *mp));
-void 	vput __P((struct vnode *vp));
-void 	vref __P((struct vnode *vp));
-void 	vrele __P((struct vnode *vp));
+int 	bdevvp (dev_t dev, struct vnode **vpp);
+void	cvtstat (struct stat *st, struct ostat *ost);
+int 	getnewvnode (enum vtagtype tag, struct mount *mp, int (**vops)(), struct vnode **vpp);
+void	insmntque (struct vnode *vp, struct mount *mp);
+void 	vattr_null (struct vattr *vap);
+int 	vcount (struct vnode *vp);
+int		vflush (struct mount *mp, struct vnode *skipvp, int flags);
+int 	vget (struct vnode *vp, int lockflag, struct proc *p);
+void 	vgone (struct vnode *vp);
+int		vinvalbuf (struct vnode *vp, int save, struct ucred *cred, struct proc *p, int slpflag, int slptimeo);
+void	vprint (char *label, struct vnode *vp);
+int		vrecycle (struct vnode *vp, struct simplelock *inter_lkp, struct proc *p);
+int		vn_bwrite (struct vop_bwrite_args *ap);
+int 	vn_close (struct vnode *vp, int flags, struct ucred *cred, struct proc *p);
+int 	vn_closefile (struct file *fp, struct proc *p);
+int		vn_ioctl (struct file *fp, u_long com, caddr_t data, struct proc *p);
+int		vn_lock (struct vnode *vp, int flags, struct proc *p);
+int 	vn_open (struct nameidata *ndp, int fmode, int cmode);
+int 	vn_rdwr (enum uio_rw rw, struct vnode *vp, caddr_t base, int len, off_t offset, enum uio_seg segflg, int ioflg, struct ucred *cred, int *aresid, struct proc *p);
+int		vn_read (struct file *fp, struct uio *uio, struct ucred *cred);
+int		vn_select (struct file *fp, int which, struct proc *p);
+int		vn_stat (struct vnode *vp, struct stat *sb, struct proc *p);
+int		vn_write (struct file *fp, struct uio *uio, struct ucred *cred);
+int		vop_noislocked (struct vop_islocked_args *);
+int		vop_nolock (struct vop_lock_args *);
+int		vop_nounlock (struct vop_unlock_args *);
+int		vop_revoke (struct vop_revoke_args *);
+struct 	vnode *checkalias (struct vnode *vp, dev_t nvp_rdev, struct mount *mp);
+void 	vput (struct vnode *vp);
+void 	vref (struct vnode *vp);
+void 	vrele (struct vnode *vp);
 #endif /* KERNEL */
 #endif /* !_SYS_VNODE_H_ */

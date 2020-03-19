@@ -64,14 +64,14 @@ int	dpagerdebug = 0;
 #define DDB_FAIL	0x08
 #endif
 
-static vm_pager_t	dev_pager_alloc __P((caddr_t, vm_size_t, vm_prot_t, vm_offset_t));
-static void		 	dev_pager_dealloc __P((vm_pager_t));
-static int		 	dev_pager_getpage __P((vm_pager_t, vm_page_t *, int, boolean_t));
-static boolean_t	dev_pager_haspage __P((vm_pager_t, vm_offset_t));
-static void		 	dev_pager_init __P((void));
-static int		 	dev_pager_putpage __P((vm_pager_t, vm_page_t *, int, boolean_t));
-static vm_page_t	dev_pager_getfake __P((vm_offset_t));
-static void		 	dev_pager_putfake __P((vm_page_t));
+static vm_pager_t	dev_pager_alloc (caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
+static void		 	dev_pager_dealloc (vm_pager_t);
+static int		 	dev_pager_getpage (vm_pager_t, vm_page_t *, int, boolean_t);
+static boolean_t	dev_pager_haspage (vm_pager_t, vm_offset_t);
+static void		 	dev_pager_init (void);
+static int		 	dev_pager_putpage (vm_pager_t, vm_page_t *, int, boolean_t);
+static vm_page_t	dev_pager_getfake (vm_offset_t);
+static void		 	dev_pager_putfake (vm_page_t);
 
 struct pagerops devicepagerops = {
 	dev_pager_init,

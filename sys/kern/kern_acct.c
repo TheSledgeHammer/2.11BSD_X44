@@ -33,8 +33,8 @@
  * The former's operation is described in Leffler, et al., and the latter
  * was provided by UCB with the 4.4BSD-Lite release
  */
-comp_t	encode_comp_t __P((u_long, u_long));
-void	acctwatch __P((void *));
+comp_t	encode_comp_t (u_long, u_long);
+void	acctwatch (void *);
 
 /* Accounting vnode pointer, and saved vnode pointer. */
 struct vnode *acctp;

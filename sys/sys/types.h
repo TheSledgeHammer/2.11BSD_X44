@@ -114,17 +114,17 @@ typedef	uint16_t	u_int16_t;
 typedef	uint32_t	u_int32_t;
 typedef	uint64_t	u_int64_t;
 
-intrmask_t			splsoftcam __P((void));
-intrmask_t			splsoftcambio __P((void));
-intrmask_t			splsoftcamnet __P((void));
-intrmask_t			splsoftclock __P((void));
-intrmask_t			splsofttty __P((void));
-intrmask_t			splsoftvm __P((void));
-intrmask_t			splstatclock __P((void));
-intrmask_t			spltty __P((void));
-intrmask_t			splvm __P((void));
-void				splx __P((intrmask_t ipl));
-void				splz __P((void));
+intrmask_t			splsoftcam (void);
+intrmask_t			splsoftcambio (void);
+intrmask_t			splsoftcamnet (void);
+intrmask_t			splsoftclock (void);
+intrmask_t			splsofttty (void);
+intrmask_t			splsoftvm (void);
+intrmask_t			splstatclock (void);
+intrmask_t			spltty (void);
+intrmask_t			splvm (void);
+void				splx (intrmask_t ipl);
+void				splz (void);
 
 #if defined(_KERNEL) || defined(_STANDALONE)
 #define SET(t, f)	((t) |= (f))

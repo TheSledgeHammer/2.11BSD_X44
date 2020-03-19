@@ -28,19 +28,19 @@ struct	sockaddr_un {
 };
 
 #ifdef KERNEL
-int		unp_connect2 __P((struct socket*,struct socket*));
-void    unp_detach __P((struct unpcb *));
-void    unp_disconnect __P((struct unpcb *));
-void    unp_shutdown __P((struct unpcb *));
-void    unp_drop __P((struct unpcb *, int));
-void    unp_gc __P((void));
-void    unp_scan __P((struct mbuf *, void (*)(struct file *)));
-void    unp_mark __P((struct file *));
-void    unp_discard __P((struct file *));
-int     unp_attach __P((struct socket *));
-int     unp_bind __P((struct unpcb *,struct mbuf *, struct proc *));
-int     unp_connect __P((struct socket *,struct mbuf *, struct proc *));
-int     unp_internalize __P((struct mbuf *, struct proc *));
+int		unp_connect2 (struct socket*,struct socket*);
+void    unp_detach (struct unpcb *);
+void    unp_disconnect (struct unpcb *);
+void    unp_shutdown (struct unpcb *);
+void    unp_drop (struct unpcb *, int);
+void    unp_gc (void);
+void    unp_scan (struct mbuf *, void (*)(struct file *));
+void    unp_mark (struct file *);
+void    unp_discard (struct file *);
+int     unp_attach (struct socket *);
+int     unp_bind (struct unpcb *,struct mbuf *, struct proc *);
+int     unp_connect (struct socket *,struct mbuf *, struct proc *);
+int     unp_internalize (struct mbuf *, struct proc *);
 #else /* KERNEL */
 /* actual length of an initialized sockaddr_un */
 #define SUN_LEN(su) \

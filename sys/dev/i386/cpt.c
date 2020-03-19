@@ -99,6 +99,22 @@ cpt_lookup(cpt, vpbn)
     }
 }
 
+/* Walk CPT RB-Tree by physical address */
+struct cpt *
+cpt_traversal(cpt, addr)
+    struct cpt *cpt;
+    unsigned long addr;
+{
+    struct cpt *result;
+    for(int i = 0; i < NCPT; i++) {
+        result = cpt_lookup(cpt, addr);
+        if(result->cpt_pa_addr == i) {
+            return (result);
+        }
+    }
+    return (NULL);
+}
+
 /* Remove from the Clustered Page Table */
 void
 cpt_remove(cpt, vpbn)

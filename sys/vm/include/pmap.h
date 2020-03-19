@@ -86,36 +86,32 @@ typedef struct pmap_statistics	*pmap_statistics_t;
 
 #ifdef KERNEL
 __BEGIN_DECLS
-void		*pmap_bootstrap_alloc __P((int));
+void		*pmap_bootstrap_alloc (int);
 void		 pmap_bootstrap( /* machine dependent */ );
-void		 pmap_change_wiring __P((pmap_t, vm_offset_t, boolean_t));
-void		 pmap_clear_modify __P((vm_offset_t pa));
-void		 pmap_clear_reference __P((vm_offset_t pa));
-void		 pmap_collect __P((pmap_t));
-void		 pmap_copy __P((pmap_t,
-		    pmap_t, vm_offset_t, vm_size_t, vm_offset_t));
-void		 pmap_copy_page __P((vm_offset_t, vm_offset_t));
-pmap_t		 pmap_create __P((vm_size_t));
-void		 pmap_destroy __P((pmap_t));
-void		 pmap_enter __P((pmap_t,
-		    vm_offset_t, vm_offset_t, vm_prot_t, boolean_t));
-vm_offset_t	 pmap_extract __P((pmap_t, vm_offset_t));
-void		 pmap_init __P((vm_offset_t, vm_offset_t));
-boolean_t	 pmap_is_modified __P((vm_offset_t pa));
-boolean_t	 pmap_is_referenced __P((vm_offset_t pa));
-vm_offset_t	 pmap_map __P((vm_offset_t, vm_offset_t, vm_offset_t, int));
-void		 pmap_page_protect __P((vm_offset_t, vm_prot_t));
-void		 pmap_pageable __P((pmap_t,
-		    vm_offset_t, vm_offset_t, boolean_t));
-vm_offset_t	 pmap_phys_address __P((int));
-void		 pmap_pinit __P((pmap_t));
-void		 pmap_protect __P((pmap_t,
-		    vm_offset_t, vm_offset_t, vm_prot_t));
-void		 pmap_reference __P((pmap_t));
-void		 pmap_release __P((pmap_t));
-void		 pmap_remove __P((pmap_t, vm_offset_t, vm_offset_t));
-void		 pmap_update __P((void));
-void		 pmap_zero_page __P((vm_offset_t));
+void		 pmap_change_wiring (pmap_t, vm_offset_t, boolean_t);
+void		 pmap_clear_modify (vm_offset_t pa);
+void		 pmap_clear_reference (vm_offset_t pa);
+void		 pmap_collect (pmap_t);
+void		 pmap_copy (pmap_t, pmap_t, vm_offset_t, vm_size_t, vm_offset_t);
+void		 pmap_copy_page (vm_offset_t, vm_offset_t);
+pmap_t		 pmap_create (vm_size_t);
+void		 pmap_destroy (pmap_t);
+void		 pmap_enter (pmap_t, vm_offset_t, vm_offset_t, vm_prot_t, boolean_t);
+vm_offset_t	 pmap_extract (pmap_t, vm_offset_t);
+void		 pmap_init (vm_offset_t, vm_offset_t);
+boolean_t	 pmap_is_modified (vm_offset_t pa);
+boolean_t	 pmap_is_referenced (vm_offset_t pa);
+vm_offset_t	 pmap_map (vm_offset_t, vm_offset_t, vm_offset_t, int);
+void		 pmap_page_protect (vm_offset_t, vm_prot_t);
+void		 pmap_pageable (pmap_t, vm_offset_t, vm_offset_t, boolean_t);
+vm_offset_t	 pmap_phys_address (int);
+void		 pmap_pinit (pmap_t);
+void		 pmap_protect (pmap_t, vm_offset_t, vm_offset_t, vm_prot_t);
+void		 pmap_reference (pmap_t);
+void		 pmap_release (pmap_t);
+void		 pmap_remove (pmap_t, vm_offset_t, vm_offset_t);
+void		 pmap_update (void);
+void		 pmap_zero_page (vm_offset_t);
 __END_DECLS
 #endif
 

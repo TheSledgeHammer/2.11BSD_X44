@@ -96,14 +96,14 @@ struct filedesc0 {
 /*
  * Kernel global variables and routines.
  */
-int		fdalloc __P((struct proc *p, int want, int *result));
-int		fdavail __P((struct proc *p, int n));
-int		falloc __P((struct proc *p, struct file **resultfp, int *resultfd));
-void	ffree __P((struct file *));
-struct	filedesc *fdcopy __P((struct proc *p));
-void	fdfree __P((struct proc *p));
-int		closef __P((struct file *fp,struct proc *p));
-void	fdcloseexec __P((struct proc *p));
+int		fdalloc (struct proc *p, int want, int *result);
+int		fdavail (struct proc *p, int n);
+int		falloc (struct proc *p, struct file **resultfp, int *resultfd);
+void	ffree (struct file *);
+struct	filedesc *fdcopy (struct proc *p);
+void	fdfree (struct proc *p);
+int		closef (struct file *fp,struct proc *p);
+void	fdcloseexec (struct proc *p);
 #endif
 
 #endif

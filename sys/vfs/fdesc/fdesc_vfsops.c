@@ -224,15 +224,15 @@ fdesc_sync(mp, waitfor)
 	return (0);
 }
 
-#define fdesc_fhtovp ((int (*) __P((struct mount *, struct fid *, \
-	    struct mbuf *, struct vnode **, int *, struct ucred **)))eopnotsupp)
-#define fdesc_quotactl ((int (*) __P((struct mount *, int, uid_t, caddr_t, \
-	    struct proc *)))eopnotsupp)
-#define fdesc_sysctl ((int (*) __P((int *, u_int, void *, size_t *, void *, \
-	    size_t, struct proc *)))eopnotsupp)
-#define fdesc_vget ((int (*) __P((struct mount *, ino_t, struct vnode **))) \
+#define fdesc_fhtovp ((int (*) (struct mount *, struct fid *, \
+	    struct mbuf *, struct vnode **, int *, struct ucred **))eopnotsupp)
+#define fdesc_quotactl ((int (*) (struct mount *, int, uid_t, caddr_t, \
+	    struct proc *))eopnotsupp)
+#define fdesc_sysctl ((int (*) (int *, u_int, void *, size_t *, void *, \
+	    size_t, struct proc *))eopnotsupp)
+#define fdesc_vget ((int (*) (struct mount *, ino_t, struct vnode **)) \
 	    eopnotsupp)
-#define fdesc_vptofh ((int (*) __P((struct vnode *, struct fid *)))eopnotsupp)
+#define fdesc_vptofh ((int (*) (struct vnode *, struct fid *))eopnotsupp)
 
 struct vfsops fdesc_vfsops = {
 	fdesc_mount,

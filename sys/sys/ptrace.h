@@ -29,13 +29,13 @@
 #include <machine/ptrace.h>	/* machine-specific requests, if any */
 
 #ifdef KERNEL
-void	proc_reparent __P((struct proc *child, struct proc *newparent));
+void	proc_reparent (struct proc *child, struct proc *newparent);
 #else /* !KERNEL */
 
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int	ptrace __P((int _request, pid_t _pid, caddr_t _addr, int _data));
+int	ptrace (int _request, pid_t _pid, caddr_t _addr, int _data);
 __END_DECLS
 
 #endif /* !KERNEL */

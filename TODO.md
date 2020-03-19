@@ -1,6 +1,10 @@
 TODO:
 - rename: boot/libsa/stand.h, reduce conflict with lib/libsa/stand.h
-- longjmp, setjmp
+
+- pmap:  rewrite to work with cpt
+	- pmap_pte
+	- pmap_enter
+	- pmap_remove
 
 
 boot: (Focus on 2.11BSDx86 boot.)
@@ -12,7 +16,7 @@ boot: (Focus on 2.11BSDx86 boot.)
 	- Should update parts from FreeBSD
 
 i386:
-- machdep.c (incomplete): setidt
+- machdep.c (incomplete): 
 - locore.s 
 - cpufunc.h
 - asm.h

@@ -166,18 +166,18 @@ typedef struct fhandle	fhandle_t;
 /*
  * exported vnode operations
  */
-int		dounmount __P((struct mount *, int, struct proc *));
-struct	mount *getvfs __P((fsid_t *));      	/* return vfs given fsid */
-int		vflush __P((struct mount *mp, struct vnode *skipvp, int flags));
+int		dounmount (struct mount *, int, struct proc *);
+struct	mount *getvfs (fsid_t *);      	/* return vfs given fsid */
+int		vflush (struct mount *mp, struct vnode *skipvp, int flags);
 int		vfs_export			    				/* process mount export info */
-	  	__P((struct mount *, struct netexport *, struct export_args *));
+	  	(struct mount *, struct netexport *, struct export_args *);
 struct	netcred *vfs_export_lookup	    		/* lookup host in fs export list */
-	  	__P((struct mount *, struct netexport *, struct mbuf *));
-int		vfs_lock __P((struct mount *));         /* lock a vfs */
-int		vfs_mountedon __P((struct vnode *));    /* is a vfs mounted on vp */
-void	vfs_unlock __P((struct mount *));       /* unlock a vfs */
-int		vfs_busy __P((struct mount *));         /* mark a vfs  busy */
-void	vfs_unbusy __P((struct mount *));       /* mark a vfs not busy */
+	  	(struct mount *, struct netexport *, struct mbuf *);
+int		vfs_lock (struct mount *);         /* lock a vfs */
+int		vfs_mountedon (struct vnode *);    /* is a vfs mounted on vp */
+void	vfs_unlock (struct mount *);       /* unlock a vfs */
+int		vfs_busy (struct mount *);         /* mark a vfs  busy */
+void	vfs_unbusy (struct mount *);       /* mark a vfs not busy */
 extern	TAILQ_HEAD(mntlist, mount) mountlist;	/* mounted filesystem list */
 extern	struct vfsops *vfssw[];					/* filesystem type table */
 
@@ -186,13 +186,13 @@ extern	struct vfsops *vfssw[];					/* filesystem type table */
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int	fstatfs __P((int, struct statfs *));
-int	getfh __P((const char *, fhandle_t *));
-int	getfsstat __P((struct statfs *, long, int));
-int	getmntinfo __P((struct statfs **, int));
-int	mount __P((int, const char *, int, void *));
-int	statfs __P((const char *, struct statfs *));
-int	unmount __P((const char *, int));
+int	fstatfs (int, struct statfs *);
+int	getfh (const char *, fhandle_t *);
+int	getfsstat (struct statfs *, long, int);
+int	getmntinfo (struct statfs **, int);
+int	mount (int, const char *, int, void *);
+int	statfs (const char *, struct statfs *);
+int	unmount (const char *, int);
 __END_DECLS
 
 #endif /* KERNEL */

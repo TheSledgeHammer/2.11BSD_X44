@@ -15,7 +15,7 @@
 #include <vm/include/vm_page.h>
 
 #include <arch/i386/include/param.h>
-#include <arch/i386/include/pmap.h>
+#include <dev/i386/pmap2.h>
 
 #include <dev/i386/cpt.h>
 
@@ -40,6 +40,10 @@ struct pte			*CMAP1, *CMAP2, *mmap;
 caddr_t				CADDR1, CADDR2, vmmap;
 struct pte			*msgbufmap;
 struct msgbuf		*msgbufp;
+
+#define	pmap_cpt(m, v)			(&((m)->pm_cpt[VPBN((v))]))
+#define pmap_pde_v(pte)			((pte)->pd_v)
+
 
 #define	LOWPTDI		1 					/* No PAE */
 
@@ -100,7 +104,6 @@ allocate_kern_cpte(pte, entry, boff)
     if(KCPTmap != NULL) {
     	KCPTEmap = cpt_lookup_cpte(KCPTmap, VPBN(entry));
         cpte_add(KCPTEmap, pte, boff);
-        pte = cpte_lookup_pte(KCPTEmap, boff);
     }
 }
 
@@ -130,8 +133,8 @@ pmap_cold()
 {
 	cpt_entry_t *cpt;
 	cpte_entry_t *cpte;
-	pd_entry_t *pd;
-	pt_entry_t *pt;
+	//pd_entry_t *pd;
+	//pt_entry_t *pt;
 	u_int cr3, ncr4;
 
 	RB_INIT(&cpt_root);
@@ -141,7 +144,7 @@ pmap_cold()
 	cpte = &cpte_base[0];
 
 	/* Kernel Page Table */
-	cpt_to_pde(cpt, pd);
+	cpt_to_pde(cpt, pd);			/* fix */
 	allocate_kern_cpt(cpt, cpte);
 
 	pmap_cold_mapident(cpte, 0, atop(NBPDR) * LOWPTDI);
@@ -155,9 +158,6 @@ pmap_cold()
 
 	/* Map proc0addr */
 	pmap_cold_mapident(cpte, proc0paddr_kstack, P0_KSTACK_PAGES);
-
-	cr3 = (u_int)IdleCPT;
-	load_cr3(cr3);
 }
 
 /*
@@ -166,6 +166,7 @@ pmap_cold()
  * - Will it need a cpt lookup function to find that address?
  * - What does pm_ptab do? (Little to no references in 4.4BSD Kernel)
  */
+extern vm_offset_t	atdevbase;
 void
 pmap_bootstrap(firstaddr, loadaddr)
 	vm_offset_t firstaddr;
@@ -173,23 +174,25 @@ pmap_bootstrap(firstaddr, loadaddr)
 {
 	vm_offset_t va;
 	struct pte *pte;
+	extern vm_offset_t maxmem, physmem;
 
-#ifdef notdef
-	bzero(firstaddr, 4*NBPG);
-	kernel_pmap->pm_pdir = firstaddr + VM_MIN_KERNEL_ADDRESS;
-	kernel_pmap->pm_ptab = firstaddr + VM_MIN_KERNEL_ADDRESS + NBPG;
+	avail_start = firstaddr;
+	avail_end = maxmem << PG_SHIFT;
 
-	firstaddr += NBPG;
-	int x;
-	for (x = i386_btod(VM_MIN_KERNEL_ADDRESS);
-			x < i386_btod(VM_MIN_KERNEL_ADDRESS)+3; x++) {
-		struct pde *pde;
-		pde = kernel_pmap->pm_pdir + x;
-		*(int *)pde = firstaddr + x*NBPG | PG_V | PG_KW;
-	}
-#else
-	kernel_pmap->pm_pdir = (pd_entry_t *)(0xfe000000 + IdleCPT);
-#endif
+	/* XXX: allow for msgbuf */
+	avail_end -= i386_round_page(sizeof(struct msgbuf));
+
+	mem_size = physmem << PG_SHIFT;
+	virtual_avail = atdevbase + 0x100000 - 0xa0000 + 10 * NBPG;
+	virtual_end = VM_MAX_KERNEL_ADDRESS;
+	i386pagesperpage = PAGE_SIZE / I386_PAGE_SIZE;
+
+	/*
+	 * Initialize protection array.
+	 */
+	i386_protection_init();
+
+	kernel_pmap.pm_cpt = cpt_lookup(cpt_base, (0xfe000000 + IdleCPT));
 
 	simple_lock_init(&kernel_pmap->pm_lock);
 	kernel_pmap->pm_count = 1;
@@ -208,4 +211,35 @@ pmap_bootstrap(firstaddr, loadaddr)
 	SYSMAP(struct msgbuf *, msgbufmap, msgbufp, 1);
 
 	virtual_avail = va;
+}
+
+
+void
+pmap_pinit(pmap)
+	register struct pmap *pmap;
+{
+
+#ifdef DEBUG
+	if (pmapdebug & (PDB_FOLLOW|PDB_CREATE))
+		pg("pmap_pinit(%x)\n", pmap);
+#endif
+	pmap->pm_cpt = (cpt_entry_t *)kmem_alloc(kernel_map, NBPG);
+
+	pmap->pm_count = 1;
+	simple_lock_init(&pmap->pm_lock);
+}
+
+/*
+ * cpt & cpte have to map into pmap and va
+ * cpt_traversal & cpte_lookup get us the va and pte
+ * need pmap from cpt
+ */
+struct pte *
+pmap_pte(pmap, va)
+	register pmap_t pmap;
+	unsigned long va;
+{
+	if(pmap && pmap_pde_v(pmap_cpt(pmap, va))) {
+
+	}
 }

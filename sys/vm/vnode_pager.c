@@ -71,14 +71,14 @@ int	vpagerdebug = 0x00;
 #define VDB_SIZE	0x20
 #endif
 
-static vm_pager_t	vnode_pager_alloc __P((caddr_t, vm_size_t, vm_prot_t, vm_offset_t));
-static void		 	vnode_pager_cluster __P((vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *));
-static void		 	vnode_pager_dealloc __P((vm_pager_t));
-static int		 	vnode_pager_getpage __P((vm_pager_t, vm_page_t *, int, boolean_t));
-static boolean_t	vnode_pager_haspage __P((vm_pager_t, vm_offset_t));
-static void		 	vnode_pager_init __P((void));
-static int		 	vnode_pager_io __P((vn_pager_t, vm_page_t *, int, boolean_t, enum uio_rw));
-static boolean_t	vnode_pager_putpage __P((vm_pager_t, vm_page_t *, int, boolean_t));
+static vm_pager_t	vnode_pager_alloc (caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
+static void		 	vnode_pager_cluster (vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
+static void		 	vnode_pager_dealloc (vm_pager_t);
+static int		 	vnode_pager_getpage (vm_pager_t, vm_page_t *, int, boolean_t);
+static boolean_t	vnode_pager_haspage (vm_pager_t, vm_offset_t);
+static void		 	vnode_pager_init (void);
+static int		 	vnode_pager_io (vn_pager_t, vm_page_t *, int, boolean_t, enum uio_rw);
+static boolean_t	vnode_pager_putpage (vm_pager_t, vm_page_t *, int, boolean_t);
 
 struct pagerops vnodepagerops = {
 	vnode_pager_init,

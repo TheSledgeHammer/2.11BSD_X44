@@ -177,30 +177,29 @@ struct ucred;
 struct ufsmount;
 struct vnode;
 __BEGIN_DECLS
-int	chkdq __P((struct inode *, long, struct ucred *, int));
-int	chkdqchg __P((struct inode *, long, struct ucred *, int));
-int	chkiq __P((struct inode *, long, struct ucred *, int));
-int	chkiqchg __P((struct inode *, long, struct ucred *, int));
-void dqflush __P((struct vnode *));
-int	dqget __P((struct vnode *,
-	    u_long, struct ufsmount *, int, struct dquot **));
-void dqinit __P((void));
-void dqref __P((struct dquot *));
-void dqrele __P((struct vnode *, struct dquot *));
-int	dqsync __P((struct vnode *, struct dquot *));
-int	getinoquota __P((struct inode *));
-int	getquota __P((struct mount *, u_long, int, caddr_t));
-int	qsync __P((struct mount *mp));
-int	quotaoff __P((struct proc *, struct mount *, int));
-int	quotaon __P((struct proc *, struct mount *, int, caddr_t));
-int	setquota __P((struct mount *, u_long, int, caddr_t));
-int	setuse __P((struct mount *, u_long, int, caddr_t));
-int	ufs_quotactl __P((struct mount *, int, uid_t, caddr_t, struct proc *));
+int	chkdq (struct inode *, long, struct ucred *, int);
+int	chkdqchg (struct inode *, long, struct ucred *, int);
+int	chkiq (struct inode *, long, struct ucred *, int);
+int	chkiqchg (struct inode *, long, struct ucred *, int);
+void dqflush (struct vnode *);
+int	dqget (struct vnode *, u_long, struct ufsmount *, int, struct dquot **);
+void dqinit (void);
+void dqref (struct dquot *);
+void dqrele (struct vnode *, struct dquot *);
+int	dqsync (struct vnode *, struct dquot *);
+int	getinoquota (struct inode *);
+int	getquota (struct mount *, u_long, int, caddr_t);
+int	qsync (struct mount *mp);
+int	quotaoff (struct proc *, struct mount *, int);
+int	quotaon (struct proc *, struct mount *, int, caddr_t);
+int	setquota (struct mount *, u_long, int, caddr_t);
+int	setuse (struct mount *, u_long, int, caddr_t);
+int	ufs_quotactl (struct mount *, int, uid_t, caddr_t, struct proc *);
 __END_DECLS
 
 #ifdef DIAGNOSTIC
 __BEGIN_DECLS
-void	chkdquot __P((struct inode *));
+void chkdquot (struct inode *);
 __END_DECLS
 #endif
 

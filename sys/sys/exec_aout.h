@@ -151,9 +151,9 @@ struct exec {
 
 #ifdef KERNEL
 /* the "a.out" format's entry in the exec switch */
-int	exec_aout_linker __P((struct exec_linker *));
-int	exec_aout_prep_zmagic __P((struct exec_linker *));
-int	exec_aout_prep_nmagic __P((struct exec_linker *));
-int	exec_aout_prep_omagic __P((struct exec_linker *));
+int	exec_aout_linker (struct exec_linker *);
+int	exec_aout_prep_zmagic (struct exec_linker *);
+int	exec_aout_prep_nmagic (struct exec_linker *);
+int	exec_aout_prep_omagic (struct exec_linker *);
 #endif /* KERNEL */
 #endif /*_SYS_EXEC_AOUT_H_ */

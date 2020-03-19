@@ -59,7 +59,7 @@
 #include <ufs/lfs/lfs.h>
 #include <ufs/lfs/lfs_extern.h>
 
-int lfs_mountfs __P((struct vnode *, struct mount *, struct proc *));
+int lfs_mountfs (struct vnode *, struct mount *, struct proc *);
 
 struct vfsops lfs_vfsops = {
 	lfs_mount,

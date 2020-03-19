@@ -350,21 +350,21 @@ extern struct ctldebug debug15, debug16, debug17, debug18, debug19;
  * the name.
  */
 typedef int (sysctlfn)
-    __P((int *, u_int, void *, size_t *, void *, size_t, struct proc *));
+    (int *, u_int, void *, size_t *, void *, size_t, struct proc *);
 
-int sysctl_int __P((void *, size_t *, void *, size_t, int *));
-int sysctl_rdint __P((void *, size_t *, void *, int));
-int sysctl_string __P((void *, size_t *, void *, size_t, char *, int));
-int sysctl_rdstring __P((void *, size_t *, void *, char *));
-int sysctl_rdstruct __P((void *, size_t *, void *, void *, int));
-void fill_eproc __P((struct proc *, struct eproc *));
+int sysctl_int (void *, size_t *, void *, size_t, int *);
+int sysctl_rdint (void *, size_t *, void *, int);
+int sysctl_string (void *, size_t *, void *, size_t, char *, int);
+int sysctl_rdstring (void *, size_t *, void *, char *);
+int sysctl_rdstruct (void *, size_t *, void *, void *, int);
+void fill_eproc (struct proc *, struct eproc *);
 
 #else	/* !KERNEL */
 #include <sys/cdefs.h>
 
 //int	sysctl();
 __BEGIN_DECLS
-int	sysctl __P((int *, u_int, void *, size_t *, void *, size_t));
+int	sysctl (int *, u_int, void *, size_t *, void *, size_t);
 __END_DECLS
 #endif	/* KERNEL */
 

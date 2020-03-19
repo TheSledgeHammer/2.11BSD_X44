@@ -180,34 +180,34 @@ extern TAILQ_HEAD(swqueue, buf) bswlist;
 
 
 __BEGIN_DECLS
-void	bufinit __P((void));
-void	bremfree __P((struct buf *));
-int		bread __P((struct vnode *, daddr_t, int, struct ucred *, struct buf **));
-int		breadn __P((struct vnode *, daddr_t, int, daddr_t *, int *, int, struct ucred *, struct buf **));
-int		bwrite __P((struct buf *));
-void	bdwrite __P((struct buf *));
-void	bawrite __P((struct buf *));
-void	brelse __P((struct buf *));
-struct 	buf *getnewbuf __P((int slpflag, int slptimeo));
-struct 	buf *     getpbuf __P((void));
-struct 	buf *incore __P((struct vnode *, daddr_t));
-struct 	buf *getblk __P((struct vnode *, daddr_t, int, int, int));
-struct 	buf *geteblk __P((int));
-void	allocbuf __P((struct buf *, int));
-int		biowait __P((struct buf *));
-void	biodone __P((struct buf *));
+void	bufinit (void);
+void	bremfree (struct buf *);
+int		bread (struct vnode *, daddr_t, int, struct ucred *, struct buf **);
+int		breadn (struct vnode *, daddr_t, int, daddr_t *, int *, int, struct ucred *, struct buf **);
+int		bwrite (struct buf *);
+void	bdwrite (struct buf *);
+void	bawrite (struct buf *);
+void	brelse (struct buf *);
+struct 	buf *getnewbuf (int slpflag, int slptimeo);
+struct 	buf *getpbuf (void);
+struct 	buf *incore (struct vnode *, daddr_t);
+struct 	buf *getblk (struct vnode *, daddr_t, int, int, int);
+struct 	buf *geteblk (int);
+void	allocbuf (struct buf *, int);
+int		biowait (struct buf *);
+void	biodone (struct buf *);
 
-void	cluster_callback __P((struct buf *));
-int		cluster_read __P((struct vnode *, u_quad_t, daddr_t, long, struct ucred *, struct buf **));
-void	cluster_write __P((struct buf *, u_quad_t));
-//u_int	minphys __P((struct buf *));
-void	vwakeup __P((struct buf *));
-void	vmapbuf __P((struct buf *));
-void	vunmapbuf __P((struct buf *));
-void	relpbuf __P((struct buf *));
-void	brelvp __P((struct buf *));
-void	bgetvp __P((struct vnode *, struct buf *));
-void	reassignbuf __P((struct buf *, struct vnode *));
+void	cluster_callback (struct buf *);
+int		cluster_read (struct vnode *, u_quad_t, daddr_t, long, struct ucred *, struct buf **);
+void	cluster_write (struct buf *, u_quad_t);
+//u_int	minphys (struct buf *);
+void	vwakeup (struct buf *);
+void	vmapbuf (struct buf *);
+void	vunmapbuf (struct buf *);
+void	relpbuf (struct buf *);
+void	brelvp (struct buf *);
+void	bgetvp (struct vnode *, struct buf *);
+void	reassignbuf (struct buf *, struct vnode *);
 __END_DECLS
 #endif
 

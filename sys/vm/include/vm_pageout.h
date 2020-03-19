@@ -89,8 +89,8 @@ simple_lock_data_t	vm_pages_needed_lock;
 				&vm_pages_needed_lock, FALSE); 	\
 			}
 #ifdef KERNEL
-void		 vm_pageout __P((void));
-void		 vm_pageout_scan __P((void));
-void		 vm_pageout_page __P((vm_page_t, vm_object_t));
-void		 vm_pageout_cluster __P((vm_page_t, vm_object_t));
+void		 vm_pageout (void);
+void		 vm_pageout_scan (void);
+void		 vm_pageout_page (vm_page_t, vm_object_t);
+void		 vm_pageout_cluster (vm_page_t, vm_object_t);
 #endif

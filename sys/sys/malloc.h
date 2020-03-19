@@ -231,7 +231,7 @@ struct kmembuckets {
 	long				kb_couldfree;	/* over high water mark and could free */
 };
 
-//#ifdef KERNEL
+#ifdef KERNEL
 #define	MINALLOCSIZE		(1 << MINBUCKET)
 #define BUCKETINDX(size) \
 	((size) <= (MINALLOCSIZE * 128) \
@@ -312,8 +312,8 @@ extern struct kmembuckets bucket[];
 extern struct kmemusage *kmemusage;
 extern char *kmembase;
 
-extern void *malloc__P((unsigned long size, int type, int flags));
-extern void free__P((void *addr, int type));
+extern void *malloc (unsigned long size, int type, int flags);
+extern void free (void *addr, int type);
 
 #endif /* KERNEL */
 #endif /* !_SYS_MALLOC_H_ */

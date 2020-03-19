@@ -207,34 +207,34 @@ typedef struct {
 #define	MAX_KMAPENT	500
 
 #ifdef KERNEL
-boolean_t	vm_map_check_protection __P((vm_map_t, vm_offset_t, vm_offset_t, vm_prot_t));
-int		 	vm_map_copy __P((vm_map_t, vm_map_t, vm_offset_t, vm_size_t, vm_offset_t, boolean_t, boolean_t));
-void		vm_map_copy_entry __P((vm_map_t, vm_map_t, vm_map_entry_t, vm_map_entry_t));
+boolean_t	vm_map_check_protection (vm_map_t, vm_offset_t, vm_offset_t, vm_prot_t);
+int		 	vm_map_copy (vm_map_t, vm_map_t, vm_offset_t, vm_size_t, vm_offset_t, boolean_t, boolean_t);
+void		vm_map_copy_entry (vm_map_t, vm_map_t, vm_map_entry_t, vm_map_entry_t);
 struct pmap;
-vm_map_t	vm_map_create __P((struct pmap *, vm_offset_t, vm_offset_t, boolean_t));
-void		vm_map_deallocate __P((vm_map_t));
-int		 	vm_map_delete __P((vm_map_t, vm_offset_t, vm_offset_t));
-vm_map_entry_t	 vm_map_entry_create __P((vm_map_t));
-void		vm_map_entry_delete __P((vm_map_t, vm_map_entry_t));
-void		vm_map_entry_dispose __P((vm_map_t, vm_map_entry_t));
-void		vm_map_entry_unwire __P((vm_map_t, vm_map_entry_t));
-int		 	vm_map_find __P((vm_map_t, vm_object_t, vm_offset_t, vm_offset_t *, vm_size_t, boolean_t));
-int		 	vm_map_findspace __P((vm_map_t, vm_offset_t, vm_size_t, vm_offset_t *));
-int		 	vm_map_inherit __P((vm_map_t, vm_offset_t, vm_offset_t, vm_inherit_t));
-void		vm_map_init __P((struct vm_map *, vm_offset_t, vm_offset_t, boolean_t));
-int			vm_map_insert __P((vm_map_t, vm_object_t, vm_offset_t, vm_offset_t, vm_offset_t));
-int		 	vm_map_lookup __P((vm_map_t *, vm_offset_t, vm_prot_t, vm_map_entry_t *, vm_object_t *, vm_offset_t *, vm_prot_t *, boolean_t *, boolean_t *));
-void		vm_map_lookup_done __P((vm_map_t, vm_map_entry_t));
-boolean_t	vm_map_lookup_entry __P((vm_map_t, vm_offset_t, vm_map_entry_t *));
-int		 	vm_map_pageable __P((vm_map_t, vm_offset_t, vm_offset_t, boolean_t));
-int		 	vm_map_clean __P((vm_map_t, vm_offset_t, vm_offset_t, boolean_t, boolean_t));
-void		vm_map_print __P((vm_map_t, boolean_t));
-int		 	vm_map_protect __P((vm_map_t, vm_offset_t, vm_offset_t, vm_prot_t, boolean_t));
-void		vm_map_reference __P((vm_map_t));
-int		 	vm_map_remove __P((vm_map_t, vm_offset_t, vm_offset_t));
-void		vm_map_simplify __P((vm_map_t, vm_offset_t));
-void		vm_map_simplify_entry __P((vm_map_t, vm_map_entry_t));
-void		vm_map_startup __P((void));
-int		 	vm_map_submap __P((vm_map_t, vm_offset_t, vm_offset_t, vm_map_t));
+vm_map_t	vm_map_create (struct pmap *, vm_offset_t, vm_offset_t, boolean_t);
+void		vm_map_deallocate (vm_map_t);
+int		 	vm_map_delete (vm_map_t, vm_offset_t, vm_offset_t);
+vm_map_entry_t	 vm_map_entry_create (vm_map_t);
+void		vm_map_entry_delete (vm_map_t, vm_map_entry_t);
+void		vm_map_entry_dispose (vm_map_t, vm_map_entry_t);
+void		vm_map_entry_unwire (vm_map_t, vm_map_entry_t);
+int		 	vm_map_find (vm_map_t, vm_object_t, vm_offset_t, vm_offset_t *, vm_size_t, boolean_t);
+int		 	vm_map_findspace (vm_map_t, vm_offset_t, vm_size_t, vm_offset_t *);
+int		 	vm_map_inherit (vm_map_t, vm_offset_t, vm_offset_t, vm_inherit_t);
+void		vm_map_init (struct vm_map *, vm_offset_t, vm_offset_t, boolean_t);
+int			vm_map_insert (vm_map_t, vm_object_t, vm_offset_t, vm_offset_t, vm_offset_t);
+int		 	vm_map_lookup (vm_map_t *, vm_offset_t, vm_prot_t, vm_map_entry_t *, vm_object_t *, vm_offset_t *, vm_prot_t *, boolean_t *, boolean_t *);
+void		vm_map_lookup_done (vm_map_t, vm_map_entry_t);
+boolean_t	vm_map_lookup_entry (vm_map_t, vm_offset_t, vm_map_entry_t *);
+int		 	vm_map_pageable (vm_map_t, vm_offset_t, vm_offset_t, boolean_t);
+int		 	vm_map_clean (vm_map_t, vm_offset_t, vm_offset_t, boolean_t, boolean_t);
+void		vm_map_print (vm_map_t, boolean_t);
+int		 	vm_map_protect (vm_map_t, vm_offset_t, vm_offset_t, vm_prot_t, boolean_t);
+void		vm_map_reference (vm_map_t);
+int		 	vm_map_remove (vm_map_t, vm_offset_t, vm_offset_t);
+void		vm_map_simplify (vm_map_t, vm_offset_t);
+void		vm_map_simplify_entry (vm_map_t, vm_map_entry_t);
+void		vm_map_startup (void);
+int		 	vm_map_submap (vm_map_t, vm_offset_t, vm_offset_t, vm_map_t);
 #endif
 #endif /* _VM_MAP_ */

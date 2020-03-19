@@ -180,11 +180,11 @@ CODE facilitynames[] = {
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-void	closelog __P((void));
-void	openlog __P((const char *, int, int));
-int		setlogmask __P((int));
-void	syslog __P((int, const char *, ...));
-void	vsyslog __P((int, const char *, _BSD_VA_LIST_));
+void	closelog (void);
+void	openlog (const char *, int, int);
+int		setlogmask (int);
+void	syslog (int, const char *, ...);
+void	vsyslog (int, const char *, _BSD_VA_LIST_);
 __END_DECLS
 
 #endif /* !KERNEL */

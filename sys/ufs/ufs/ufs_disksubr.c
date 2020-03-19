@@ -329,7 +329,7 @@ diskerr(bp, dname, what, pri, blkdone, lp)
 	register struct disklabel *lp;
 {
 	int unit = dkunit(bp->b_dev), part = dkpart(bp->b_dev);
-	register void (*pr) __P((const char *, ...));
+	register void (*pr) (const char *, ...);
 	char partname = 'a' + part;
 	int sn;
 

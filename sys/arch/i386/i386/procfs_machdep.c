@@ -101,6 +101,13 @@ process_frame(p)
 	return (p->p_md.md_regs);
 }
 
+static inline struct save87  *
+process_fpframe(p)
+	struct proc *p;
+{
+	return (p->p_addr->u_pcb.pcb_savefpu);
+}
+
 int
 process_read_regs(p, regs)
 	struct proc *p;
@@ -135,15 +142,21 @@ process_read_fpregs(p, regs, sz)
 	struct fpreg *regs;
 	size_t *sz;
 {
-	return (0);
-}
+	struct save87 *frame = process_fpframe(p);
+	if (p->p_md.md_flags & MDP_USEDFPU) {
+#if NNPX > 0
+		extern struct proc *npxproc;
 
-int
-process_read_dbregs(p, regs, sz)
-	struct proc *p;
-	struct dbreg *regs;
-	size_t *sz;
-{
+		if (npxproc == p)
+			npxsave();
+#endif
+	} else {
+		u_short cw;
+		memset(frame, 0, sizeof(*regs));
+
+		p->p_md.md_flags |= MDP_USEDFPU;
+	}
+	memcpy(regs, frame, sizeof(*regs));
 	return (0);
 }
 
@@ -188,15 +201,18 @@ process_write_fpregs(p, regs, sz)
 	const struct fpreg *regs;
 	size_t *sz;
 {
-	return (0);
-}
+	struct save87 *frame = process_fpframe(p);
+	if (p->p_md.md_flags & MDP_USEDFPU) {
+#if NNPX > 0
+		extern struct proc *npxproc;
+		if (npxproc == p)
+			npxdrop();
 
-int
-process_write_dbregs(p, regs, sz)
-	struct proc *p;
-	const struct dbreg *regs;
-	size_t *sz;
-{
+#endif
+	} else {
+		p->p_md.md_flags |= MDP_USEDFPU;
+	}
+	memcpy(frame, regs, sizeof(*regs));
 	return (0);
 }
 

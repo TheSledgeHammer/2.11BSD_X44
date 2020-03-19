@@ -54,12 +54,12 @@ struct open_file;
  * independent way.
  */
 struct fs_ops {
-	int		(*open) __P((char *path, struct open_file *f));
-	int		(*close) __P((struct open_file *f));
-	int		(*read) __P((struct open_file *f, char *buf, u_int size, u_int *resid));
-	int		(*write) __P((struct open_file *f, char *buf, u_int size, u_int *resid));
-	off_t	(*seek) __P((struct open_file *f, off_t offset, int where));
-	int		(*stat) __P((struct open_file *f, struct stat *sb));
+	int		(*open) (char *path, struct open_file *f);
+	int		(*close) (struct open_file *f);
+	int		(*read) (struct open_file *f, char *buf, u_int size, u_int *resid);
+	int		(*write) (struct open_file *f, char *buf, u_int size, u_int *resid);
+	off_t	(*seek) (struct open_file *f, off_t offset, int where);
+	int		(*stat) (struct open_file *f, struct stat *sb);
 };
 
 extern struct fs_ops file_system[];
@@ -73,10 +73,10 @@ extern struct fs_ops file_system[];
 struct devsw {
 	char	*dv_name;
 	int		dv_type;		/* opaque type constant, arch-dependant */
-	int		(*dv_strategy) __P((void *devdata, int rw, daddr_t blk, u_int size, char *buf, u_int *rsize));
+	int		(*dv_strategy) (void *devdata, int rw, daddr_t blk, u_int size, char *buf, u_int *rsize);
 	int		(*dv_open)();	/* (struct open_file *f, ...) */
-	int		(*dv_close) __P((struct open_file *f));
-	int		(*dv_ioctl) __P((struct open_file *f, int cmd, void *data));
+	int		(*dv_close) (struct open_file *f);
+	int		(*dv_ioctl) (struct open_file *f, int cmd, void *data);
 };
 
 extern struct devsw devsw[];	/* device array */
@@ -98,9 +98,9 @@ extern struct open_file files[SOPEN_MAX];
 #define	F_WRITE		0x0002	/* file opened for writing */
 #define	F_RAW		0x0004	/* raw device open - no file system */
 
-int		devopen __P((struct open_file *f, char *fname, char **file));
-void	*alloc __P((unsigned size));
-void	free __P((void *ptr, unsigned size));
+int		devopen (struct open_file *f, char *fname, char **file);
+void	*alloc (unsigned size);
+void	free (void *ptr, unsigned size);
 void    *calloc(unsigned int size1, unsigned int size2);
 struct	disklabel;
-char	*getdisklabel __P((const char *buf, struct disklabel *lp));
+char	*getdisklabel (const char *buf, struct disklabel *lp);

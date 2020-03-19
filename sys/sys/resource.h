@@ -105,12 +105,12 @@ extern struct loadavg averunnable;
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int	getpriority __P((int, int));
-int	getrlimit __P((int, struct rlimit *));
-int	getkrusage __P((int, struct k_rusage *));
-int	getrusage __P((int, struct rusage *));
-int	setpriority __P((int, int, int));
-int	setrlimit __P((int, const struct rlimit *));
+int	getpriority (int, int);
+int	getrlimit (int, struct rlimit *);
+int	getkrusage (int, struct k_rusage *);
+int	getrusage (int, struct rusage *);
+int	setpriority (int, int, int);
+int	setrlimit (int, const struct rlimit *);
 __END_DECLS
 
 #endif	/* KERNEL */

@@ -60,23 +60,22 @@ struct lockf {
 #define MAXDEPTH 50
 
 __BEGIN_DECLS
-void	lf_addblock __P((struct lockf *, struct lockf *));
-int	 	lf_clearlock __P((struct lockf *));
-int	 	lf_findoverlap __P((struct lockf *,
-	    struct lockf *, int, struct lockf ***, struct lockf **));
+void	lf_addblock (struct lockf *, struct lockf *);
+int	 	lf_clearlock (struct lockf *);
+int	 	lf_findoverlap (struct lockf *, struct lockf *, int, struct lockf ***, struct lockf **);
 struct lockf *
-	 	lf_getblock __P((struct lockf *));
-int	 	lf_getlock __P((struct lockf *, struct flock *));
-int	 	lf_setlock __P((struct lockf *));
-void 	lf_split __P((struct lockf *, struct lockf *));
-void 	lf_wakelock __P((struct lockf *));
+	 	lf_getblock (struct lockf *);
+int	 	lf_getlock (struct lockf *, struct flock *);
+int	 	lf_setlock (struct lockf *);
+void 	lf_split (struct lockf *, struct lockf *);
+void 	lf_wakelock (struct lockf *);
 __END_DECLS
 
 #ifdef LOCKF_DEBUG
 extern int lockf_debug;
 
 __BEGIN_DECLS
-void	lf_print __P((char *, struct lockf *));
-void	lf_printlist __P((char *, struct lockf *));
+void	lf_print (char *, struct lockf *);
+void	lf_printlist (char *, struct lockf *);
 __END_DECLS
 #endif

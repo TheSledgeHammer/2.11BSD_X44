@@ -539,7 +539,7 @@ spec_close(ap)
 {
 	register struct vnode *vp = ap->a_vp;
 	dev_t dev = vp->v_rdev;
-	int (*devclose) __P((dev_t, int, int, struct proc *));
+	int (*devclose) (dev_t, int, int, struct proc *);
 	int mode, error;
 
 	switch (vp->v_type) {
@@ -576,7 +576,7 @@ spec_close(ap)
 		 * we must invalidate any in core blocks, so that
 		 * we can, for instance, change floppy disks.
 		 */
-		if (error = vinvalbuf(vp, V_SAVE, ap->a_cred, ap->a_p, 0, 0))
+		if (error == vinvalbuf(vp, V_SAVE, ap->a_cred, ap->a_p, 0, 0))
 			return (error);
 		/*
 		 * We do not want to really close the device if it

@@ -73,9 +73,9 @@ struct fdescnode {
 #define	VTOFDESC(vp) ((struct fdescnode *)(vp)->v_data)
 
 extern dev_t devctty;
-extern int fdesc_init __P((struct vfsconf *));
-extern int fdesc_root __P((struct mount *, struct vnode **));
-extern int fdesc_allocvp __P((fdntype, int, struct mount *, struct vnode **));
+extern int fdesc_init (struct vfsconf *);
+extern int fdesc_root (struct mount *, struct vnode **);
+extern int fdesc_allocvp (fdntype, int, struct mount *, struct vnode **);
 extern int (**fdesc_vnodeop_p)();
 extern struct vfsops fdesc_vfsops;
 #endif /* KERNEL */

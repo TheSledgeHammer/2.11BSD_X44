@@ -57,8 +57,8 @@
 #include <sys/sysctl.h>
 #include <vm/include/vm.h>
 
-static int change_dir __P((struct nameidata *ndp, struct proc *p));
-static void checkdirs __P((struct vnode *olddp));
+static int change_dir (struct nameidata *ndp, struct proc *p);
+static void checkdirs (struct vnode *olddp);
 
 /*
  * Virtual File System System Calls
@@ -2179,7 +2179,7 @@ unionread:
 #ifdef UNION
 {
 	extern int (**union_vnodeop_p)();
-	extern struct vnode *union_dircache __P((struct vnode*, struct proc*));
+	extern struct vnode *union_dircache (struct vnode*, struct proc*);
 
 	if ((SCARG(uap, count) == auio.uio_resid) &&
 	    (vp->v_op == union_vnodeop_p)) {
@@ -2286,7 +2286,7 @@ unionread:
 #ifdef UNION
 {
 	extern int (**union_vnodeop_p)();
-	extern struct vnode *union_dircache __P((struct vnode*, struct proc*));
+	extern struct vnode *union_dircache (struct vnode*, struct proc*);
 
 	if ((SCARG(uap, count) == auio.uio_resid) &&
 	    (vp->v_op == union_vnodeop_p)) {

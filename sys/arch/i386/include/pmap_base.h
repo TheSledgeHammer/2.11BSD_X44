@@ -80,7 +80,5 @@ struct pmap_args {
 };
 
 void	pmap_cold(void);
-void	pmap_pae_cold(void);
-void	pmap_nopae_cold(void);
 
 #endif /* _MACHINE_PMAP_BASE_H_ */

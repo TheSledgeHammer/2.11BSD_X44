@@ -91,7 +91,7 @@ struct cfdata {
 #define	FSTATE_FOUND	1	/* has been found */
 #define	FSTATE_STAR		2	/* duplicable */
 
-typedef int (*cfmatch_t) __P((struct device *, struct cfdata *, void *));
+typedef int (*cfmatch_t) (struct device *, struct cfdata *, void *);
 
 /*
  * `configuration' driver (what the machine-independent autoconf uses).
@@ -105,7 +105,7 @@ struct cfdriver {
 	void	**cd_devs;			/* devices found */
 	char	*cd_name;			/* device name */
 	cfmatch_t cd_match;			/* returns a match level */
-	void	(*cd_attach) __P((struct device *, struct device *, void *));
+	void	(*cd_attach) (struct device *, struct device *, void *);
 	enum	devclass cd_class;	/* device classification */
 	size_t	cd_devsize;			/* size of dev data (for malloc) */
 	void	*cd_aux;			/* additional driver, if any */
@@ -118,7 +118,7 @@ struct cfdriver {
  * of the parent device.  The return value is ignored if the device was
  * configured, so most functions can return UNCONF unconditionally.
  */
-typedef int (*cfprint_t) __P((void *, char *));
+typedef int (*cfprint_t) (void *, char *);
 #define	QUIET	0		/* print nothing */
 #define	UNCONF	1		/* print " not configured\n" */
 #define	UNSUPP	2		/* print " not supported\n" */
@@ -127,17 +127,17 @@ typedef int (*cfprint_t) __P((void *, char *));
  * Pseudo-device attach information (function + number of pseudo-devs).
  */
 struct pdevinit {
-	void	(*pdev_attach) __P((int));
+	void	(*pdev_attach) (int);
 	int		pdev_count;
 };
 
 struct	device *alldevs;	/* head of list of all devices */
 struct	evcnt *allevents;	/* head of list of all events */
 
-struct cfdata *config_search __P((cfmatch_t, struct device *, void *));
-struct cfdata *config_rootsearch __P((cfmatch_t, char *, void *));
-int config_found __P((struct device *, void *, cfprint_t));
-int config_rootfound __P((char *, void *));
-void config_attach __P((struct device *, struct cfdata *, void *, cfprint_t));
-void evcnt_attach __P((struct device *, const char *, struct evcnt *));
+struct cfdata *config_search (cfmatch_t, struct device *, void *);
+struct cfdata *config_rootsearch (cfmatch_t, char *, void *);
+int config_found (struct device *, void *, cfprint_t);
+int config_rootfound (char *, void *);
+void config_attach (struct device *, struct cfdata *, void *, cfprint_t);
+void evcnt_attach (struct device *, const char *, struct evcnt *);
 #endif /* !_SYS_DEVICE_H_ */

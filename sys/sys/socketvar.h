@@ -79,7 +79,7 @@ struct socket {
 #define	SB_NOINTR	0x40		/* operations not interruptible */
 
 	caddr_t	so_tpcb;			/* Misc. protocol control block XXX */
-	void	(*so_upcall) __P((struct socket *so, caddr_t arg, int waitf));
+	void	(*so_upcall) (struct socket *so, caddr_t arg, int waitf);
 	caddr_t	so_upcallarg;		/* Arg for above */
 };
 
@@ -168,18 +168,18 @@ struct	socket *sonewconn();
 /* to catch callers missing new second argument to sonewconn: */
 u_long	sb_max;
 #define	sonewconn(head, connstatus)	sonewconn1((head), (connstatus))
-struct	socket *sonewconn1 __P((struct socket *head, int connstatus));
+struct	socket *sonewconn1 (struct socket *head, int connstatus);
 
 /* strings for sleep message: */
 extern	char netio[], netcon[], netcls[];
 
 /* File Operations on sockets */
-int	soo_ioctl __P((struct file *fp, int com, caddr_t data, struct proc *p));
-int	soo_select __P((struct file *fp, int which, struct proc *p));
-int	soo_stat __P((struct socket *, struct stat *));
-int	soo_read __P((struct file *fp, struct uio *uio, struct ucred *cred));
-int	soo_write __P((struct file *fp, struct uio *uio, struct ucred *cred));
-int soo_close __P((struct file *fp, struct proc *p));
+int	soo_ioctl (struct file *fp, int com, caddr_t data, struct proc *p);
+int	soo_select (struct file *fp, int which, struct proc *p);
+int	soo_stat (struct socket *, struct stat *);
+int	soo_read (struct file *fp, struct uio *uio, struct ucred *cred);
+int	soo_write (struct file *fp, struct uio *uio, struct ucred *cred);
+int soo_close (struct file *fp, struct proc *p);
 
 /* From uipc_socket and friends */
 

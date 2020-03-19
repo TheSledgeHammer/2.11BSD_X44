@@ -59,7 +59,7 @@
 #include <ufs/lfs/lfs.h>
 #include <ufs/lfs/lfs_extern.h>
 
-extern int count_lock_queue __P((void));
+extern int count_lock_queue (void);
 
 #define MAX_ACTIVE	10
 /*
@@ -70,27 +70,25 @@ extern int count_lock_queue __P((void));
 	((fs)->lfs_dbpseg - ((fs)->lfs_offset - (fs)->lfs_curseg) > \
 	1 << (fs)->lfs_fsbtodb)
 
-void	 lfs_callback __P((struct buf *));
-void	 lfs_gather __P((struct lfs *, struct segment *,
-	     struct vnode *, int (*) __P((struct lfs *, struct buf *))));
-int	 lfs_gatherblock __P((struct segment *, struct buf *, int *));
-void	 lfs_iset __P((struct inode *, ufs_daddr_t, time_t));
-int	 lfs_match_data __P((struct lfs *, struct buf *));
-int	 lfs_match_dindir __P((struct lfs *, struct buf *));
-int	 lfs_match_indir __P((struct lfs *, struct buf *));
-int	 lfs_match_tindir __P((struct lfs *, struct buf *));
-void	 lfs_newseg __P((struct lfs *));
-void	 lfs_shellsort __P((struct buf **, ufs_daddr_t *, register int));
-void	 lfs_supercallback __P((struct buf *));
-void	 lfs_updatemeta __P((struct segment *));
-int	 lfs_vref __P((struct vnode *));
-void	 lfs_vunref __P((struct vnode *));
-void	 lfs_writefile __P((struct lfs *, struct segment *, struct vnode *));
-int	 lfs_writeinode __P((struct lfs *, struct segment *, struct inode *));
-int	 lfs_writeseg __P((struct lfs *, struct segment *));
-void	 lfs_writesuper __P((struct lfs *));
-void	 lfs_writevnodes __P((struct lfs *fs, struct mount *mp,
-	    struct segment *sp, int dirops));
+void	lfs_callback (struct buf *);
+void	lfs_gather (struct lfs *, struct segment *, struct vnode *, int (*) (struct lfs *, struct buf *));
+int	 	lfs_gatherblock (struct segment *, struct buf *, int *);
+void	lfs_iset (struct inode *, ufs_daddr_t, time_t);
+int	 	lfs_match_data (struct lfs *, struct buf *);
+int	 	lfs_match_dindir (struct lfs *, struct buf *);
+int	 	lfs_match_indir (struct lfs *, struct buf *);
+int	 	lfs_match_tindir (struct lfs *, struct buf *);
+void	lfs_newseg (struct lfs *);
+void	lfs_shellsort (struct buf **, ufs_daddr_t *, register int);
+void	lfs_supercallback (struct buf *);
+void	lfs_updatemeta (struct segment *);
+int	 	lfs_vref (struct vnode *);
+void	lfs_vunref (struct vnode *);
+void	lfs_writefile (struct lfs *, struct segment *, struct vnode *);
+int	 	lfs_writeinode (struct lfs *, struct segment *, struct inode *);
+int	 	lfs_writeseg (struct lfs *, struct segment *);
+void	lfs_writesuper (struct lfs *);
+void	lfs_writevnodes (struct lfs *fs, struct mount *mp, struct segment *sp, int dirops);
 
 int	lfs_allclean_wakeup;		/* Cleaner wakeup address. */
 
@@ -530,7 +528,7 @@ lfs_gather(fs, sp, vp, match)
 	struct lfs *fs;
 	struct segment *sp;
 	struct vnode *vp;
-	int (*match) __P((struct lfs *, struct buf *));
+	int (*match) (struct lfs *, struct buf *);
 {
 	struct buf *bp;
 	int s;
@@ -794,7 +792,7 @@ lfs_writeseg(fs, sp)
 	dev_t i_dev;
 	u_long *datap, *dp;
 	int do_again, i, nblocks, s;
-	int (*strategy)__P((struct vop_strategy_args *));
+	int (*strategy)(struct vop_strategy_args *);
 	struct vop_strategy_args vop_strategy_a;
 	u_short ninos;
 	char *p;
@@ -958,7 +956,7 @@ lfs_writesuper(fs)
 {
 	struct buf *bp;
 	dev_t i_dev;
-	int (*strategy) __P((struct vop_strategy_args *));
+	int (*strategy) (struct vop_strategy_args *);
 	int s;
 	struct vop_strategy_args vop_strategy_a;
 

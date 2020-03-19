@@ -197,7 +197,7 @@ struct pte		*msgbufmap;
 struct msgbuf	*msgbufp;
 #endif
 
-void pmap_activate __P((pmap_t, struct pcb *));
+void pmap_activate (pmap_t, struct pcb *);
 
 /*
  *	Bootstrap the system enough to run with virtual memory.
@@ -354,7 +354,7 @@ pmap_init(phys_start, phys_end)
 {
 	vm_offset_t	addr, addr2;
 	vm_size_t	npg, s;
-	int		rv;
+	int			rv;
 	extern int KPTphys;
 
 #ifdef DEBUG

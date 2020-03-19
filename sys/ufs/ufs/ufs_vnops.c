@@ -63,9 +63,8 @@
 #include <ufs/ufs/ufs_extern.h>
 #include <vm/include/vm.h>
 
-static int ufs_chmod __P((struct vnode *, int, struct ucred *, struct proc *));
-static int ufs_chown
-	__P((struct vnode *, uid_t, gid_t, struct ucred *, struct proc *));
+static int ufs_chmod (struct vnode *, int, struct ucred *, struct proc *);
+static int ufs_chown (struct vnode *, uid_t, gid_t, struct ucred *, struct proc *);
 
 union _qcvt {
 	int64_t qcvt;

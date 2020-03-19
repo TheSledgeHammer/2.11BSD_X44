@@ -46,7 +46,7 @@ struct acct {
 #ifndef	KERNEL
 struct vnode	*acctp;
 
-int	acct_process __P((struct proc *p));
+int	acct_process (struct proc *p);
 
 #define	_PATH_ACCTD		"/usr/libexec/acctd"
 #define	_PATH_ACCTFILE	"/usr/adm/acct"

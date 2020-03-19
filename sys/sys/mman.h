@@ -83,12 +83,12 @@
 
 __BEGIN_DECLS
 /* Some of these int's should probably be size_t's */
-caddr_t	mmap __P((caddr_t, size_t, int, int, int, off_t));
-int	mprotect __P((caddr_t, size_t, int));
-int	munmap __P((caddr_t, size_t));
-int	msync __P((caddr_t, size_t));
-int	mlock __P((caddr_t, size_t));
-int	munlock __P((caddr_t, size_t));
+caddr_t	mmap (caddr_t, size_t, int, int, int, off_t);
+int	mprotect (caddr_t, size_t, int);
+int	munmap (caddr_t, size_t);
+int	msync (caddr_t, size_t);
+int	mlock (caddr_t, size_t);
+int	munlock (caddr_t, size_t);
 __END_DECLS
 
 #endif /* !KERNEL */

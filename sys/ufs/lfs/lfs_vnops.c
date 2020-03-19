@@ -474,7 +474,7 @@ lfs_close(ap)
 	if (vp->v_usecount > 1) {
 		mod = ip->i_flag & IN_MODIFIED;
 		ITIMES(ip, &time, &time);
-		if (!mod && ip->i_flag & IN_MODIFIED)
+		if (!mod && (ip->i_flag & IN_MODIFIED))
 			ip->i_lfs->lfs_uinodes++;
 	}
 	simple_unlock(&vp->v_interlock);

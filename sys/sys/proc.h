@@ -264,28 +264,28 @@ struct	prochd {
 	struct	proc *ph_rlink;
 } qs[NQS];
 
-struct 	proc *pfind __P((pid_t));		/* Find process by id. */
-struct 	pgrp *pgfind __P((pid_t));		/* Find process group by id. */
-
 extern struct emul emul_211bsd;
 
-int		setpri __P((struct proc *));
-void	setrun __P((struct proc *));
-void	setrq __P((struct proc *));
-void	remrq __P((struct proc *));
-void	swtch __P();
-void	sleep __P((void *chan, int pri));
-int		tsleep __P((void *chan, int pri, char *wmesg, int timo));
-void	unsleep __P((struct proc *));
-void	wakeup __P((void *chan));
+struct 	proc *pfind (pid_t);		/* Find process by id. */
+struct 	pgrp *pgfind (pid_t);		/* Find process group by id. */
 
-void	procinit __P((void));
-int 	chgproccnt __P((uid_t, int diff));
-int		acct_process __P((struct proc *));
-int		leavepgrp __P((struct proc *));
-int		enterpgrp __P((struct proc *, pid_t, int));
-void	fixjobc __P((struct proc *, struct pgrp *, int));
-int		inferior __P((struct proc *));
+int		setpri (struct proc *);
+void	setrun (struct proc *);
+void	setrq (struct proc *);
+void	remrq (struct proc *);
+void	swtch ();
+void	sleep (void *chan, int pri);
+int		tsleep (void *chan, int pri, char *wmesg, int timo);
+void	unsleep (struct proc *);
+void	wakeup (void *chan);
+
+void	procinit (void));
+int 	chgproccnt (uid_t, int diff);
+int		acct_process (struct proc *);
+int		leavepgrp (struct proc *);
+int		enterpgrp (struct proc *, pid_t, int);
+void	fixjobc (struct proc *, struct pgrp *, int);
+int		inferior (struct proc *);
 #endif 	/* KERNEL */
 
 #endif	/* !_SYS_PROC_H_ */

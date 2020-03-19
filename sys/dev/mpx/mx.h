@@ -179,13 +179,13 @@ caddr_t	u_dirp;			/* pathname pointer */
 #define	S_IFMPB	0070000	/* multiplexed block special */
 
 //#ifdef  KERNEL
-int mpx_read __P((struct file *fp, struct uio *uio, struct ucred *cred));
-int mpx_write __P((struct file *fp, struct uio *uio, struct ucred *cred));
-int mpx_ioctl __P((struct file *fp, u_long cmd, caddr_t data, struct proc *p));
-int mpx_select __P((struct file *fp, int which, struct proc *p));
-int mpx_close __P((struct file *fp, struct proc *p));
+int mpx_read (struct file *fp, struct uio *uio, struct ucred *cred);
+int mpx_write (struct file *fp, struct uio *uio, struct ucred *cred);
+int mpx_ioctl (struct file *fp, u_long cmd, caddr_t data, struct proc *p);
+int mpx_select (struct file *fp, int which, struct proc *p);
+int mpx_close (struct file *fp, struct proc *p);
 
-int	mpxclose __P((struct mpx *mpx));
-int mpxsend __P((struct mpx *mpx, struct mbuf *addr, struct uio *uio, struct mbuf *top, struct mbuf *control, int flags));
-int mpxreceive __P((struct mpx *mpx, struct mbuf **paddr, struct uio *uio, struct mbuf **mp0, struct mbuf **controlp, int *flagsp));
+int	mpxclose (struct mpx *mpx);
+int mpxsend (struct mpx *mpx, struct mbuf *addr, struct uio *uio, struct mbuf *top, struct mbuf *control, int flags);
+int mpxreceive (struct mpx *mpx, struct mbuf **paddr, struct uio *uio, struct mbuf **mp0, struct mbuf **controlp, int *flagsp);
 //#endif /* KERNEL */

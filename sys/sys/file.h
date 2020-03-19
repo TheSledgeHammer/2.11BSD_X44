@@ -37,10 +37,10 @@ struct	file {
 };
 
 struct fileops {
-	int	(*fo_rw)		__P((struct file *fp, struct uio *uio, struct ucred *cred));
-	int	(*fo_ioctl)		__P((struct file *fp, int com, caddr_t data, struct proc *p));
-	int	(*fo_select) 	__P((struct file *fp, int which, struct proc *p));
-	int	(*fo_close)		__P((struct file *fp, struct proc *p));
+	int	(*fo_rw)		(struct file *fp, struct uio *uio, struct ucred *cred);
+	int	(*fo_ioctl)		(struct file *fp, int com, caddr_t data, struct proc *p);
+	int	(*fo_select) 	(struct file *fp, int which, struct proc *p);
+	int	(*fo_close)		(struct file *fp, struct proc *p);
 } *f_ops;
 
 #define f_data		f_un->f_Data

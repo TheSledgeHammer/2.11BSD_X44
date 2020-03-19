@@ -95,23 +95,23 @@ struct clockinfo {
 #endif
 
 #ifdef KERNEL
-int		itimerdecr __P((struct itimerval *itp,int usec));
-int		itimerfix __P((struct timeval *));
-void	microtime __P((struct timeval *));
-void	timevaladd __P((struct timeval *, struct timeval *));
-void	timevalfix __P((struct timeval *));
-void	timevalsub __P((struct timeval *, struct timeval *));
+int		itimerdecr (struct itimerval *itp,int usec);
+int		itimerfix (struct timeval *);
+void	microtime (struct timeval *);
+void	timevaladd (struct timeval *, struct timeval *);
+void	timevalfix (struct timeval *);
+void	timevalsub (struct timeval *, struct timeval *);
 #endif /* !KERNEL */
 
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int	adjtime __P((const struct timeval *, struct timeval *));
-int	getitimer __P((int, struct itimerval *));
-int	gettimeofday __P((struct timeval *, struct timezone *));
-int	setitimer __P((int, const struct itimerval *, struct itimerval *));
-int	settimeofday __P((const struct timeval *, const struct timezone *));
-int	utimes __P((const char *, const struct timeval *));
+int	adjtime (const struct timeval *, struct timeval *);
+int	getitimer (int, struct itimerval *);
+int	gettimeofday (struct timeval *, struct timezone *);
+int	setitimer (int, const struct itimerval *, struct itimerval *);
+int	settimeofday (const struct timeval *, const struct timezone *);
+int	utimes (const char *, const struct timeval *);
 __END_DECLS
 
 

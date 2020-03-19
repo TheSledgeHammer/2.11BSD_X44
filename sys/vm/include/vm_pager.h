@@ -69,20 +69,20 @@ struct	pager_struct {
 
 struct	pagerops {
 	void		(*pgo_init)		/* Initialize pager. */
-			    	__P((void));
+			    	(void);
 	vm_pager_t	(*pgo_alloc)		/* Allocate pager. */
-			    	__P((caddr_t, vm_size_t, vm_prot_t, vm_offset_t));
+			    	(caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
 	void		(*pgo_dealloc)		/* Disassociate. */
-			    	__P((vm_pager_t));
+			    	(vm_pager_t);
 	int			(*pgo_getpages)		/* Get (read) page. */
-			    	__P((vm_pager_t, vm_page_t *, int, boolean_t));
+			    	(vm_pager_t, vm_page_t *, int, boolean_t);
 	int			(*pgo_putpages)		/* Put (write) page. */
-			    	__P((vm_pager_t, vm_page_t *, int, boolean_t));
+			    	(vm_pager_t, vm_page_t *, int, boolean_t);
 	boolean_t  	(*pgo_haspage)		/* Does pager have page? */
-			    	__P((vm_pager_t, vm_offset_t));
+			    	(vm_pager_t, vm_offset_t);
 	void		(*pgo_cluster)		/* Return range of cluster. */
-			    	__P((vm_pager_t, vm_offset_t,
-				 vm_offset_t *, vm_offset_t *));
+			    	(vm_pager_t, vm_offset_t,
+				 vm_offset_t *, vm_offset_t *);
 };
 
 /*
@@ -104,34 +104,27 @@ struct	pagerops {
 #ifdef KERNEL
 extern struct pagerops *dfltpagerops;
 
-vm_pager_t	 vm_pager_allocate
-		    	__P((int, caddr_t, vm_size_t, vm_prot_t, vm_offset_t));
-vm_page_t	 vm_pager_atop __P((vm_offset_t));
-void		 vm_pager_cluster
-		    	__P((vm_pager_t, vm_offset_t,
-			 vm_offset_t *, vm_offset_t *));
-void		 vm_pager_clusternull
-		    	__P((vm_pager_t, vm_offset_t,
-			 vm_offset_t *, vm_offset_t *));
-void		 vm_pager_deallocate __P((vm_pager_t));
-int		 	 vm_pager_get_pages
-		    	__P((vm_pager_t, vm_page_t *, int, boolean_t));
-boolean_t	 vm_pager_has_page __P((vm_pager_t, vm_offset_t));
-void		 vm_pager_init __P((void));
-vm_pager_t	 vm_pager_lookup __P((struct pagerlst *, caddr_t));
-vm_offset_t	 vm_pager_map_pages __P((vm_page_t *, int, boolean_t));
-int		 	 vm_pager_put_pages
-		    	__P((vm_pager_t, vm_page_t *, int, boolean_t));
-void		 vm_pager_sync __P((void));
-void		 vm_pager_unmap_pages __P((vm_offset_t, int));
+vm_pager_t	 vm_pager_allocate (int, caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
+vm_page_t	 vm_pager_atop (vm_offset_t);
+void		 vm_pager_cluster (vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
+void		 vm_pager_clusternull (vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
+void		 vm_pager_deallocate (vm_pager_t);
+int		 	 vm_pager_get_pages (vm_pager_t, vm_page_t *, int, boolean_t);
+boolean_t	 vm_pager_has_page (vm_pager_t, vm_offset_t);
+void		 vm_pager_init (void);
+vm_pager_t	 vm_pager_lookup (struct pagerlst *, caddr_t);
+vm_offset_t	 vm_pager_map_pages (vm_page_t *, int, boolean_t);
+int		 	 vm_pager_put_pages	(vm_pager_t, vm_page_t *, int, boolean_t);
+void		 vm_pager_sync (void);
+void		 vm_pager_unmap_pages (vm_offset_t, int);
 
 #define vm_pager_cancluster(p, b)	((p)->pg_flags & (b))
 
 /*
  * XXX compat with old interface
  */
-int		 vm_pager_get __P((vm_pager_t, vm_page_t, boolean_t));
-int		 vm_pager_put __P((vm_pager_t, vm_page_t, boolean_t));
+int		 vm_pager_get (vm_pager_t, vm_page_t, boolean_t);
+int		 vm_pager_put (vm_pager_t, vm_page_t, boolean_t);
 #endif
 
 #endif	/* _VM_PAGER_ */

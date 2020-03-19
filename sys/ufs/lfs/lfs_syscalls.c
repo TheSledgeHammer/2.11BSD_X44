@@ -63,7 +63,7 @@
 if (sp->sum_bytes_left < (s)) {		\
 	(void) lfs_writeseg(fs, sp);	\
 }
-struct buf *lfs_fakebuf __P((struct vnode *, int, size_t, caddr_t));
+struct buf *lfs_fakebuf (struct vnode *, int, size_t, caddr_t);
 
 int debug_cleaner = 0;
 int clean_vnlocked = 0;

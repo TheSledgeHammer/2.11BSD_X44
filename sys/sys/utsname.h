@@ -55,7 +55,7 @@ struct utsname {
 #ifndef KERNEL
 #ifdef __STDC__
 __BEGIN_DECLS
-int	uname __P((struct utsname *));
+int	uname (struct utsname *);
 __END_DECLS
 #else
 extern int uname();

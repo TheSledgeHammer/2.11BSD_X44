@@ -61,76 +61,56 @@
 #include "machine/cputypes.h"
 #endif
 
-#define	KDSEL		0x10
-
 /*
- * Note: This version greatly munged to avoid various assembler errors
- * that may be fixed in newer versions of gas. Perhaps newer versions
- * will have more pleasant appearance.
+ * Compiled KERNBASE location and the kernel load address, now identical.
  */
-
-	.set	IDXSHIFT,10
-	.set	SYSTEM,0xFE000000	# virtual address of system start
-	/*note: gas copys sign bit (e.g. arithmetic >>), can't do SYSTEM>>22! */
-	.set	SYSPDROFF,0x3F8		# Page dir index of System Base
-
-#define	NOP	inb $0x84, %al ; inb $0x84, %al
-#define	ALIGN32	.align 2	/* 2^2  = 4 */
-
-/*
- * PTmap is recursive pagemap at top of virtual address space.
- * Within PTmap, the page directory can be found (third indirection).
- */
-	.set	PDRPDROFF,0x3F7		# Page dir index of Page dir
-	.globl	_PTmap, _PTD, _PTDpde, _Sysmap
-	.set	_PTmap,0xFDC00000
-	.set	_PTD,0xFDFF7000
-	.set	_Sysmap,0xFDFF8000
-	.set	_PTDpde,0xFDFF7000+4*PDRPDROFF
-
-/*
- * APTmap, APTD is the alternate recursive pagemap.
- * It's used when modifying another process's page tables.
- */
-	.set	APDRPDROFF,0x3FE		# Page dir index of Page dir
-	.globl	_APTmap, _APTD, _APTDpde
-	.set	_APTmap,0xFF800000
-	.set	_APTD,0xFFBFE000
-	.set	_APTDpde,0xFDFF7000+4*APDRPDROFF
-
-/*
- * Access to each processes kernel stack is via a region of
- * per-process address space (at the beginning), immediatly above
- * the user process stack.
- */
-	.set	_kstack, USRSTACK
-	.globl	_kstack
-	.set	PPDROFF,0x3F6
-	.set	PPTEOFF,0x400-UPAGES	# 0x3FE
+		.globl	kernbase
+		.set	kernbase,KERNBASE
+		.global kernload
+		.set	kernload,KERNLOAD
 
 /*
  * Globals
  */
- 		.data
-		ALIGN_DATA						/* just to be sure */
-		.global bootinfo
-bootinfo:		.space	BOOTINFO_SIZE	/* bootinfo that we can handle */
-
 		.data
-		.globl	_cpu,_cold,_boothowto,_bootdev,_cyloffset,_atdevbase,_atdevphys
-_cpu:	.long	0			# are we 386, 386sx, or 486
-_cold:	.long	1			# cold till we are not
-_atdevbase:		.long	0	# location of start of iomem in virtual
-_atdevphys:		.long	0	# location of device mapping ptes (phys)
+		ALIGN_DATA						/* just to be sure */
+
+		.space	0x2000					/* space for tmpstk - temporary stack */
+tmpstk:
+
+		.globl	bootinfo
+bootinfo:	.space	BOOTINFO_SIZE		/* bootinfo that we can handle */
+
+		.text
+/**********************************************************************
+ *
+ * This is where the bootblocks start us, set the ball rolling...
+ *
+ */
 
 
-		.globl	_IdlePTD, _KPTphys
-_IdlePTD:	.long	0
-_KPTphys:	.long	0
+/* Get onto a stack that we can trust. */
+/*
+ * XXX this step is delayed in case recover_bootinfo needs to return via
+ * the old stack, but it need not be, since recover_bootinfo actually
+ * returns via the old frame.
+ */
 
+		movl	$tmpstk,%esp
 
-#define	fillkpt		\
-1:	movl	%eax,0(%ebx)	; \
-	addl	$ NBPG,%eax	; /* increment physical address */ \
-	addl	$4,%ebx		; /* next pte */ \
-	loop	1b		;
+		//call	identify_cpu
+		call	pmap_cold
+
+		/* set up bootstrap stack */
+		movl	proc0paddr_kstack,%eax	/* location of in-kernel stack */
+
+		/*
+	 	* Only use bottom page for init386().  init386() calculates the
+	 	* PCB + FPU save area size and returns the true top of stack.
+	 	*/
+		leal	PAGE_SIZE(%eax),%esp
+
+		xorl	%ebp,%ebp				/* mark end of frames */
+
+		pushl	physfree				/* value of first for init386(first) */
+		call	init386					/* wire 386 chip for unix operation */
