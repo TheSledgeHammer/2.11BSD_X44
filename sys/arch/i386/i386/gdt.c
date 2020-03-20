@@ -56,6 +56,14 @@ allocate_gdt(gdt)
 	setup_descriptor_table(&gdt[GUSERLDT_SEL], 0x0, (512 * sizeof(union descriptor)-1), SDT_SYSLDT, 0, 1, 0, 0, 0, 0);
 	/* GPANIC_SEL	10 Panic Tss Descriptor */
 	setup_descriptor_table(&gdt[GPANIC_SEL], 0x0, sizeof(struct i386tss)-1, SDT_SYS386TSS, 0, 1, 0, 0, 0, 0);
+	/* GTGATE_SEL	11 Process task switch gate */
+	setup_descriptor_table(&gdt[GTGATE_SEL], 0x0, sizeof(struct i386tss)-1, SDT_SYS386TSS, 0, 1, 0, 0, 0, 0);
+	/* GINVTSS_SEL	12 Invalid Tss fault Tss Descriptor */
+	setup_descriptor_table(&gdt[GINVTSS_SEL], 0x0, sizeof(struct i386tss)-1, SDT_SYS386TSS, 0, 1, 0, 0, 0, 0);
+	/* GDBLFLT_SEL	13 Double fault Tss Descriptor */
+	setup_descriptor_table(&gdt[GDBLFLT_SEL], 0x0, sizeof(struct i386tss)-1, SDT_SYS386TSS, 0, 1, 0, 0, 0, 0);
+	/* GEXIT_SEL	14 Exit Tss Descriptor */
+	setup_descriptor_table(&gdt[GEXIT_SEL], 0x0, sizeof(struct i386tss)-1, SDT_SYS386TSS, 0, 1, 0, 0, 0, 0);
 }
 
 

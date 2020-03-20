@@ -37,7 +37,6 @@
  *
  */
 
-#include <machine/asmacros.h>
 #include <machine/cputypes.h>
 #include <machine/pmap.h>
 #include <machine/specialreg.h>
@@ -168,7 +167,7 @@ ENTRY(bcopyb)
  */
 
 ENTRY(ovbcopy)
-ENTRY(bcopy)
+ALTENTRY(bcopy)
 		pushl	%esi
 		pushl	%edi
 		movl	12(%esp),%esi
@@ -323,6 +322,139 @@ ENTRY(ltr)
 		ltr	4(%esp)
 		ret
 
+/*
+ * {fu,su},{byte,word}
+ */
+
+ALTENTRY(fuiword)
+ENTRY(fuword)
+		movl	_curpcb,%ecx
+		movl	$fusufault,PCB_ONFAULT(%ecx)
+		movl	4(%esp),%edx
+		.byte	0x65					# use gs
+		movl	0(%edx),%eax
+		movl	$0,PCB_ONFAULT(%ecx)
+		ret
+
+
+ENTRY(fusword)
+		movl	_curpcb,%ecx
+		movl	$fusufault,PCB_ONFAULT(%ecx) #in case we page/protection violate
+		movl	4(%esp),%edx
+		.byte	0x65					# use gs
+		movzwl	0(%edx),%eax
+		movl	$0,PCB_ONFAULT(%ecx)
+		ret
+
+
+ALTENTRY(fuibyte)
+ENTRY(fubyte)
+		movl	_curpcb,%ecx
+		movl	$fusufault,PCB_ONFAULT(%ecx) #in case we page/protection violate
+		movl	4(%esp),%edx
+		.byte	0x65					# use gs
+		movzbl	0(%edx),%eax
+		movl	$0,PCB_ONFAULT(%ecx)
+		ret
+
+
+ENTRY(fusufault)
+		movl	_curpcb,%ecx
+		xorl	%eax,%eax
+		movl	%eax,PCB_ONFAULT(%ecx) #in case we page/protection violate
+		decl	%eax
+		ret
+
+
+ALTENTRY(suiword)
+ENTRY(suword)
+		movl	_curpcb,%ecx
+		movl	$fusufault,PCB_ONFAULT(%ecx) #in case we page/protection violate
+		movl	4(%esp),%edx
+		movl	8(%esp),%eax
+
+#ifdef notdef
+		shrl	$IDXSHIFT, %edx			/* fetch pte associated with address */
+		andb	$0xfc, %dl
+		movl	_PTmap(%edx), %edx
+
+		andb	$7, %dl					/* if we are the one case that won't trap... */
+		cmpb	$5 , %edx
+		jne		1f
+/* ... then simulate the trap! */
+		pushl	%edi
+		call	_trapwrite				/* trapwrite(addr) */
+		popl	%edx
+		cmpl	$0, %eax				/* if not ok, return */
+		jne		fusufault
+		movl	8(%esp),%eax			/* otherwise, continue with reference */
+1:
+		movl	4(%esp),%edx
+#endif
+		.byte	0x65					# use gs
+		movl	%eax,0(%edx)
+		xorl	%eax,%eax
+		movl	%eax,PCB_ONFAULT(%ecx) #in case we page/protection violate
+		ret
+
+
+ENTRY(susword)
+		movl	_curpcb,%ecx
+		movl	$fusufault,PCB_ONFAULT(%ecx) #in case we page/protection violate
+		movl	4(%esp),%edx
+		movl	8(%esp),%eax
+#ifdef notdef
+		shrl	$IDXSHIFT, %edx			/* calculate pte address */
+		andb	$0xfc, %dl
+		movl	_PTmap(%edx), %edx
+		andb	$7, %edx				/* if we are the one case that won't trap... */
+		cmpb	$5 , %edx
+		jne		1f
+/* ..., then simulate the trap! */
+		pushl	%edi
+		call	_trapwrite				/* trapwrite(addr) */
+		popl	%edx
+		movl	_curpcb, %ecx			# restore trashed registers
+		cmpl	$0, %eax				/* if not ok, return */
+		jne		fusufault
+		movl	8(%esp),%eax
+1: 		movl	4(%esp),%edx
+#endif
+		.byte	0x65					# use gs
+		movw	%ax,0(%edx)
+		xorl	%eax,%eax
+		movl	%eax,PCB_ONFAULT(%ecx) #in case we page/protection violate
+		ret
+
+
+ALTENTRY(suibyte)
+ENTRY(subyte)
+		movl	_curpcb,%ecx
+		movl	$fusufault,PCB_ONFAULT(%ecx) #in case we page/protection violate
+		movl	4(%esp),%edx
+		movl	8(%esp),%eax
+#ifdef notdef
+		shrl	$IDXSHIFT, %edx	/* calculate pte address */
+		andb	$0xfc, %dl
+		movl	_PTmap(%edx), %edx
+		andb	$7, %edx		/* if we are the one case that won't trap... */
+		cmpb	$5 , %edx
+		jne		1f
+/* ..., then simulate the trap! */
+		pushl	%edi
+		call	_trapwrite		/* trapwrite(addr) */
+		popl	%edx
+		movl	_curpcb, %ecx	# restore trashed registers
+		cmpl	$0, %eax		/* if not ok, return */
+		jne		fusufault
+		movl	8(%esp),%eax
+1: 		movl	4(%esp),%edx
+#endif
+		.byte	0x65			# use gs
+		movb	%eax,0(%edx)
+		xorl	%eax,%eax
+		movl	%eax,PCB_ONFAULT(%ecx) #in case we page/protection violate
+		ret
 
 /*****************************************************************************/
 /* setjump, longjump                                                         */

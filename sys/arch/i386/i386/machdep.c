@@ -121,7 +121,7 @@ struct soft_segment_descriptor ldt_segs[];
 int lcr0(), lcr3(), rcr0(), rcr2();
 int _udatasel, _ucodesel, _gsel_tss, _exit_tss;
 
-struct i386tss inv_tss, dbl_tss, exit_tss;//tss, panic_tss;
+struct i386tss inv_tss, dbl_tss, exit_tss;
 char alt_stack[1024];
 
 extern struct user *proc0paddr;
@@ -304,86 +304,6 @@ startup(firstaddr)
 	cpu_setregs();
 }
 
-
-void
-microtime(tvp)
-	register struct timeval *tvp;
-{
-	int s = splhigh();
-
-	*tvp = time;
-	tvp->tv_usec += tick;
-	while (tvp->tv_usec > 1000000) {
-		tvp->tv_sec++;
-		tvp->tv_usec -= 1000000;
-	}
-	splx(s);
-}
-
-physstrat(bp, strat, prio)
-	struct buf *bp;
-	int (*strat)(), prio;
-{
-	register int s;
-	caddr_t baddr;
-
-	/*
-	 * vmapbuf clobbers b_addr so we must remember it so that it
-	 * can be restored after vunmapbuf.  This is truely rude, we
-	 * should really be storing this in a field in the buf struct
-	 * but none are available and I didn't want to add one at
-	 * this time.  Note that b_addr for dirty page pushes is
-	 * restored in vunmapbuf. (ugh!)
-	 */
-	baddr = bp->b_un.b_addr;
-	vmapbuf(bp);
-	(*strat)(bp);
-	/* pageout daemon doesn't wait for pushed pages */
-	if (bp->b_flags & B_DIRTY)
-		return;
-	s = splbio();
-	while ((bp->b_flags & B_DONE) == 0)
-		sleep((caddr_t) bp, prio);
-	splx(s);
-	vunmapbuf(bp);
-	bp->b_un.b_addr = baddr;
-}
-
-void
-initcpu()
-{
-
-}
-
-/*
- * Set up proc0's TSS and LDT.
- */
-void
-i386_proc0_tss_ldt_init()
-{
-	struct pcb *pcb;
-	int x;
-
-	gdt_init();
-	curpcb = pcb = &proc0.p_addr->u_pcb;
-	pcb->pcb_flags = 0;
-	pcb->pcb_tss.tss_ioopt =
-	    ((caddr_t)pcb->pcb_iomap - (caddr_t)&pcb->pcb_tss) << 16;
-	for (x = 0; x < sizeof(pcb->pcb_iomap) / 4; x++)
-		pcb->pcb_iomap[x] = 0xffffffff;
-
-	pcb->pcb_ldt_sel = pmap_kernel()->pm_ldt_sel = GSEL(GLDT_SEL, SEL_KPL);
-	pcb->pcb_cr0 = rcr0();
-	pcb->pcb_tss.tss_ss0 = GSEL(GDATA_SEL, SEL_KPL);
-	pcb->pcb_tss.tss_esp0 = (int)proc0.p_addr + USPACE - 16;
-	tss_alloc(&proc0);
-
-	ltr(proc0.p_md.md_tss_sel);
-	lldt(pcb->pcb_ldt_sel);
-
-	proc0.p_md.md_regs = (struct trapframe *)pcb->pcb_tss.tss_esp0 - 1;
-}
-
 #ifdef PGINPROF
 /*
  * Return the difference (in microseconds)
@@ -557,6 +477,177 @@ sigreturn(p, uap, retval)
 	return (EJUSTRETURN);
 }
 
+int	waittime = -1;
+
+void
+boot(arghowto)
+	int arghowto;
+{
+	register long dummy; /* r12 is reserved */
+	register int howto; /* r11 == how to boot */
+	register int devtype; /* r10 == major of root dev */
+	extern char *panicstr;
+	extern int cold;
+
+	howto = arghowto;
+	if ((howto & RB_NOSYNC) == 0 && waittime < 0) {
+		register struct buf *bp;
+		int iter, nbusy;
+
+		waittime = 0;
+		(void) splnet();
+		printf("syncing disks... ");
+		/*
+		 * Release inodes held by texts before update.
+		 */
+		if (panicstr == 0)
+			vnode_pager_umount(NULL);
+		sync((struct sigcontext*) 0);
+		/*
+		 * Unmount filesystems
+		 */
+		if (panicstr == 0)
+			vfs_unmountall();
+
+		for (iter = 0; iter < 20; iter++) {
+			nbusy = 0;
+			for (bp = &buf[nbuf]; --bp >= buf;)
+				if ((bp->b_flags & (B_BUSY | B_INVAL)) == B_BUSY)
+					nbusy++;
+			if (nbusy == 0)
+				break;
+			printf("%d ", nbusy);
+			DELAY(40000 * iter);
+		}
+		if (nbusy)
+			printf("giving up\n");
+		else
+			printf("done\n");
+		DELAY(10000); /* wait for printf to finish */
+	}
+	splhigh();
+	devtype = major(rootdev);
+	if (howto & RB_HALT) {
+		printf("halting (in tight loop); hit reset\n\n");
+		splx(0xfffd); /* all but keyboard XXX */
+		for (;;)
+			;
+	} else {
+		if (howto & RB_DUMP) {
+			dumpsys();
+			/*NOTREACHED*/
+		}
+	}
+#ifdef lint
+	dummy = 0; dummy = dummy;
+	printf("howto %d, devtype %d\n", arghowto, devtype);
+#endif
+#ifdef	notdef
+	pg("pausing (hit any key to reset)");
+#endif
+	reset_cpu();
+	for (;;)
+		;
+	/*NOTREACHED*/
+}
+
+int	dumpmag = 0x8fca0101;	/* magic number for savecore */
+int	dumpsize = 0;		/* also for savecore */
+
+/*
+ * Doadump comes here after turning off memory management and
+ * getting on the dump stack, either when called above, or by
+ * the auto-restart code.
+ */
+void
+dumpsys()
+{
+
+	if (dumpdev == NODEV)
+		return;
+	if ((minor(dumpdev) & 07) != 1)
+		return;
+	dumpsize = physmem;
+	printf("\ndumping to dev %x, offset %d\n", dumpdev, dumplo);
+	printf("dump ");
+	switch ((*bdevsw[major(dumpdev)].d_dump)(dumpdev)) {
+
+	case ENXIO:
+		printf("device bad\n");
+		break;
+
+	case EFAULT:
+		printf("device not ready\n");
+		break;
+
+	case EINVAL:
+		printf("area improper\n");
+		break;
+
+	case EIO:
+		printf("i/o error\n");
+		break;
+
+	default:
+		printf("succeeded\n");
+		break;
+	}
+	printf("\n\n");
+	DELAY(1000);
+}
+
+void
+microtime(tvp)
+	register struct timeval *tvp;
+{
+	int s = splhigh();
+
+	*tvp = time;
+	tvp->tv_usec += tick;
+	while (tvp->tv_usec > 1000000) {
+		tvp->tv_sec++;
+		tvp->tv_usec -= 1000000;
+	}
+	splx(s);
+}
+
+void
+physstrat(bp, strat, prio)
+	struct buf *bp;
+	int (*strat)(), prio;
+{
+	register int s;
+	caddr_t baddr;
+
+	/*
+	 * vmapbuf clobbers b_addr so we must remember it so that it
+	 * can be restored after vunmapbuf.  This is truely rude, we
+	 * should really be storing this in a field in the buf struct
+	 * but none are available and I didn't want to add one at
+	 * this time.  Note that b_addr for dirty page pushes is
+	 * restored in vunmapbuf. (ugh!)
+	 */
+	baddr = bp->b_un.b_addr;
+	vmapbuf(bp);
+	(*strat)(bp);
+	/* pageout daemon doesn't wait for pushed pages */
+	if (bp->b_flags & B_DIRTY)
+		return;
+	s = splbio();
+	while ((bp->b_flags & B_DONE) == 0)
+		sleep((caddr_t) bp, prio);
+	splx(s);
+	vunmapbuf(bp);
+	bp->b_un.b_addr = baddr;
+}
+
+void
+initcpu()
+{
+
+}
+
+
 /*
  * Clear registers on exec
  */
@@ -588,7 +679,7 @@ setregs(p, elp, stack)
 	tf->tf_ecx = 0;
 	tf->tf_eax = 0;
 	tf->tf_eip = elp->el_entry;
-	tf->tf_cs = 0;//pmap->pm_hiexec > I386_MAX_EXE_ADDR ? LSEL(LUCODEBIG_SEL, SEL_UPL) : LSEL(LUCODE_SEL, SEL_UPL);
+	tf->tf_cs = 0;
 	tf->tf_eflags = PSL_USERSET;
 	tf->tf_esp = stack;
 	tf->tf_ss = LSEL(LUDATA_SEL, SEL_UPL);
@@ -603,6 +694,7 @@ cpu_setregs(void)
 	load_cr0(cr0);
 	load_gs(_udatasel);
 }
+
 
 /*
  * machine dependent system variables.
@@ -637,9 +729,41 @@ cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 }
 
 /*
- * Initialize segments & interrupt table
+ * Set up proc0's TSS and LDT.
+ */
+void
+i386_proc0_tss_ldt_init()
+{
+	struct pcb *pcb;
+	int x;
+
+	gdt_init();
+	curpcb = pcb = &proc0.p_addr->u_pcb;
+	pcb->pcb_flags = 0;
+	pcb->pcb_tss.tss_ioopt =
+	    ((caddr_t)pcb->pcb_iomap - (caddr_t)&pcb->pcb_tss) << 16;
+	for (x = 0; x < sizeof(pcb->pcb_iomap) / 4; x++)
+		pcb->pcb_iomap[x] = 0xffffffff;
+
+	pcb->pcb_ldt_sel = pmap_kernel()->pm_ldt_sel = GSEL(GLDT_SEL, SEL_KPL);
+	pcb->pcb_cr0 = rcr0();
+	pcb->pcb_tss.tss_ss0 = GSEL(GDATA_SEL, SEL_KPL);
+	pcb->pcb_tss.tss_esp0 = (int)proc0.p_addr + USPACE - 16;
+	tss_alloc(&proc0);
+
+	ltr(proc0.p_md.md_tss_sel);
+	lldt(pcb->pcb_ldt_sel);
+
+	proc0.p_md.md_regs = (struct trapframe *)pcb->pcb_tss.tss_esp0 - 1;
+}
+
+/*
+ * Initialize 386 and configure to run kernel
  */
 
+/*
+ * Initialize segments & interrupt table
+ */
 void
 setidt(idx, func, typ, dpl, selec)
 	int idx, typ, dpl, selec;
@@ -666,6 +790,74 @@ setirq(idx, func)
 	setidt(idx, func, SDT_SYS386IGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
 }
 
+/* called from debugger*/
+struct i386tss *
+panictss(){
+	int sel;
+	struct segment_descriptor *sdp;
+	struct i386tss *tsp;
+
+	asm(" cli ; str %w0" : "=q"(sel));
+	printf("\nTask Exception\n current context: ");
+
+	again: printf("selector %x ", sel);
+	sdp = &gdt[IDXSEL(sel)].sd;
+	tsp = (struct i386tss*) (sdp->sd_lobase + (sdp->sd_hibase << 24));
+
+	printf(" type %d ", sdp->sd_type);
+	printf("cs %x eip %x esp %x ebp %x", tsp->tss_cs, tsp->tss_eip,
+			tsp->tss_esp, tsp->tss_ebp);
+
+	sel = tsp->tss_link;
+	if (sel) {
+		printf("\nprevious context: ");
+		goto again;
+	}
+	printf("\n");
+	DELAY(100000);
+	return (tsp);
+}
+
+void
+invtss() {
+	struct i386tss *tsp = panictss();
+	struct trapframe tf;
+
+	tf.tf_err = *(int *) (alt_stack + 1020);
+	tf.tf_trapno = T_TSSFLT;
+	tf.tf_cs = tsp->tss_cs;
+	tf.tf_eax = tsp->tss_eax;
+	tf.tf_ebx = tsp->tss_ebx;
+	tf.tf_ecx = tsp->tss_ecx;
+	tf.tf_edx = tsp->tss_edx;
+	tf.tf_esp = tsp->tss_esp;
+	tf.tf_ebp = tsp->tss_ebp;
+	tf.tf_eip = tsp->tss_eip;
+	tf.tf_eflags = tsp->tss_eflags;
+	trap(tf);
+	panic("inval tss");
+}
+
+void
+dbl() {
+	struct i386tss *tsp = panictss();
+	struct trapframe tf;
+
+	tf.tf_err = 0;
+	tf.tf_trapno = T_DOUBLEFLT;
+	tf.tf_cs = tsp->tss_cs;
+	tf.tf_eax = tsp->tss_eax;
+	tf.tf_ebx = tsp->tss_ebx;
+	tf.tf_ecx = tsp->tss_ecx;
+	tf.tf_edx = tsp->tss_edx;
+	tf.tf_esp = tsp->tss_esp;
+	tf.tf_ebp = tsp->tss_ebp;
+	tf.tf_eip = tsp->tss_eip;
+	tf.tf_eflags = tsp->tss_eflags;
+	trap(tf);
+	panic("double fault");
+}
+
 #define	IDTVEC(name)	__CONCAT(X, name)
 extern 	IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
 		IDTVEC(bnd), IDTVEC(ill), IDTVEC(dna), IDTVEC(dble), IDTVEC(fpusegm),
@@ -675,36 +867,6 @@ extern 	IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
 		IDTVEC(rsvd5), IDTVEC(rsvd6), IDTVEC(rsvd7), IDTVEC(rsvd8),
 		IDTVEC(rsvd9), IDTVEC(rsvd10), IDTVEC(rsvd11), IDTVEC(rsvd12),
 		IDTVEC(rsvd13), IDTVEC(rsvd14), IDTVEC(rsvd14), IDTVEC(syscall);
-
-void
-sdtossd(sd, ssd)
-	struct segment_descriptor *sd;
-	struct soft_segment_descriptor *ssd;
-{
-	ssd->ssd_base  = (sd->sd_hibase << 24) | sd->sd_lobase;
-	ssd->ssd_limit = (sd->sd_hilimit << 16) | sd->sd_lolimit;
-	ssd->ssd_type  = sd->sd_type;
-	ssd->ssd_dpl   = sd->sd_dpl;
-	ssd->ssd_p     = sd->sd_p;
-	ssd->ssd_def32 = sd->sd_def32;
-	ssd->ssd_gran  = sd->sd_gran;
-}
-
-void
-ssdtosd(ssd, sd)
-	struct soft_segment_descriptor *ssd;
-	struct segment_descriptor *sd;
-{
-	sd->sd_lobase = (ssd->ssd_base) & 0xffffff;
-	sd->sd_hibase = (ssd->ssd_base >> 24) & 0xff;
-	sd->sd_lolimit = (ssd->ssd_limit) & 0xffff;
-	sd->sd_hilimit = (ssd->ssd_limit >> 16) & 0xf;
-	sd->sd_type = ssd->ssd_type;
-	sd->sd_dpl = ssd->ssd_dpl;
-	sd->sd_p = ssd->ssd_p;
-	sd->sd_def32 = ssd->ssd_def32;
-	sd->sd_gran = ssd->ssd_gran;
-}
 
 void
 init386(first)
@@ -732,6 +894,7 @@ init386(first)
 	/* make gdt memory segments */
 	gdt_segs[GCODE_SEL].ssd_limit = btoc((int) &etext + NBPG);
 	for (x=0; x < NGDT; x++) ssdtosd(gdt_segs+x, gdt+x);
+
 	/* make ldt memory segments */
 	ldt_segs[LUCODE_SEL].ssd_limit = btoc(UPT_MIN_ADDRESS);
 	ldt_segs[LUDATA_SEL].ssd_limit = btoc(UPT_MIN_ADDRESS);
@@ -850,6 +1013,36 @@ init386(first)
 	_exit_tss =  GSEL(GEXIT_SEL, SEL_KPL);
 }
 
+void
+sdtossd(sd, ssd)
+	struct segment_descriptor *sd;
+	struct soft_segment_descriptor *ssd;
+{
+	ssd->ssd_base  = (sd->sd_hibase << 24) | sd->sd_lobase;
+	ssd->ssd_limit = (sd->sd_hilimit << 16) | sd->sd_lolimit;
+	ssd->ssd_type  = sd->sd_type;
+	ssd->ssd_dpl   = sd->sd_dpl;
+	ssd->ssd_p     = sd->sd_p;
+	ssd->ssd_def32 = sd->sd_def32;
+	ssd->ssd_gran  = sd->sd_gran;
+}
+
+void
+ssdtosd(ssd, sd)
+	struct soft_segment_descriptor *ssd;
+	struct segment_descriptor *sd;
+{
+	sd->sd_lobase = (ssd->ssd_base) & 0xffffff;
+	sd->sd_hibase = (ssd->ssd_base >> 24) & 0xff;
+	sd->sd_lolimit = (ssd->ssd_limit) & 0xffff;
+	sd->sd_hilimit = (ssd->ssd_limit >> 16) & 0xf;
+	sd->sd_type = ssd->ssd_type;
+	sd->sd_dpl = ssd->ssd_dpl;
+	sd->sd_p = ssd->ssd_p;
+	sd->sd_def32 = ssd->ssd_def32;
+	sd->sd_gran = ssd->ssd_gran;
+}
+
 /*
  * Construct a PCB from a trapframe. This is called from kdb_trap() where
  * we want to start a backtrace from the function that caused us to enter
@@ -871,8 +1064,24 @@ makectx(tf, pcb)
 	pcb->pcb_tss.tss_gs = rgs();
 }
 
-void
-need_resched(struct cpu_info *ci)
-{
 
+/*
+ * Provide inb() and outb() as functions.  They are normally only available as
+ * inline functions, thus cannot be called from the debugger.
+ */
+
+/* silence compiler warnings */
+u_char inb_(u_short);
+void outb_(u_short, u_char);
+
+u_char
+inb_(u_short port)
+{
+	return inb(port);
+}
+
+void
+outb_(u_short port, u_char data)
+{
+	outb(port, data);
 }
