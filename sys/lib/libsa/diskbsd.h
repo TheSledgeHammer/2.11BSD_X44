@@ -30,8 +30,8 @@
  * $FreeBSD$
  */
 
-#ifndef _LIBSA_DISK_BSD_H_
-#define	_LIBSA_DISK_BSD_H_
+#ifndef _LIBSA_DISKBSD_H_
+#define	_LIBSA_DISKBSD_H_
 
 /* The disk magic number */
 #define BSD_MAGIC			0x82564557U
@@ -188,4 +188,4 @@ CTASSERT(sizeof(struct disklabel) == 148 + BSD_NPARTS_MIN * 16);
 #define	D_RAMDISK	0x08		/* disk emulator */
 #define	D_CHAIN		0x10		/* can do back-back transfers */
 
-#endif /* !_LIBSA_DISK_BSD_H_ */
+#endif /* !_LIBSA_DISKBSD_H_ */

@@ -57,7 +57,7 @@ extern	int	errno;			/* global error number */
 
 /* ipc/network software */
 
-	/* argument errors */
+/* argument errors */
 #define	ENOTSOCK		38		/* Socket operation on non-socket */
 #define	EDESTADDRREQ	39		/* Destination address required */
 #define	EMSGSIZE		40		/* Message too long */
@@ -71,7 +71,7 @@ extern	int	errno;			/* global error number */
 #define	EADDRINUSE		48		/* Address already in use */
 #define	EADDRNOTAVAIL	49		/* Can't assign requested address */
 
-	/* operational errors */
+/* operational errors */
 #define	ENETDOWN		50		/* Network is down */
 #define	ENETUNREACH		51		/* Network is unreachable */
 #define	ENETRESET		52		/* Network dropped connection on reset */
@@ -85,7 +85,7 @@ extern	int	errno;			/* global error number */
 #define	ETIMEDOUT		60		/* Connection timed out */
 #define	ECONNREFUSED	61		/* Connection refused */
 
-	/* */
+/* */
 #define	ELOOP			62		/* Too many levels of symbolic links */
 #define	ENAMETOOLONG	63		/* File name too long */
 
@@ -108,16 +108,16 @@ extern	int	errno;			/* global error number */
 #define	EPROGMISMATCH	75		/* Program version wrong */
 #define	EPROCUNAVAIL	76		/* Bad procedure for program */
 
-#define	ENOLCK		77		/* No locks available */
-#define	ENOSYS		78		/* Function not implemented */
+#define	ENOLCK		77			/* No locks available */
+#define	ENOSYS		78			/* Function not implemented */
 
-#define	EFTYPE		79		/* Inappropriate file type or format */
-#define	EAUTH		80		/* Authentication error */
-#define	ENEEDAUTH	81		/* Need authenticator */
-#define	ELAST		81		/* Must be equal largest errno */
+#define	EFTYPE		79			/* Inappropriate file type or format */
+#define	EAUTH		80			/* Authentication error */
+#define	ENEEDAUTH	81			/* Need authenticator */
+#define	ELAST		81			/* Must be equal largest errno */
 
 #ifdef	KERNEL
 /* pseudo-errors returned inside kernel to modify return back to user mode */
-#define	ERESTART	-1		/* restart syscall */
-#define	EJUSTRETURN	-2		/* don't modify regs, just return */
+#define	ERESTART	-1			/* restart syscall */
+#define	EJUSTRETURN	-2			/* don't modify regs, just return */
 #endif

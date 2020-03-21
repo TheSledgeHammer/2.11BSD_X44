@@ -26,8 +26,8 @@
  * $FreeBSD$
  */
 
-#ifndef _LIBSA_DISK_GPT_H_
-#define	_LIBSA_DISK_GPT_H_
+#ifndef _LIBSA_DISKGPT_H_
+#define	_LIBSA_DISKGPT_H_
 
 /*
  * Applications can define GPT_UUID_TYPE if they want the GPT structures
@@ -236,4 +236,4 @@ CTASSERT(sizeof(struct gpt_ent) == 128);
 #define	GPT_ENT_TYPE_BIOS_BOOT		\
 	{0x21686148,0x6449,0x6e6f,0x74,0x4e,{0x65,0x65,0x64,0x45,0x46,0x49}}
 
-#endif /* _LIBSA_DISK_GPT_H_ */
+#endif /* _LIBSA_DISKGPT_H_ */

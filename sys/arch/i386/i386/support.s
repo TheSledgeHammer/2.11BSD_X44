@@ -37,30 +37,29 @@
  *
  */
 
+#include "assym.s"
+#include <machine/asm.h>
 #include <machine/cputypes.h>
 #include <machine/pmap.h>
 #include <machine/specialreg.h>
 
-#include "assym.s"
-
 #define	NOP	inb $0x84, %al ; inb $0x84, %al
-#define	ALIGN32	.align 2	/* 2^2  = 4 */
 
 /*
  * Support routines for GCC
  */
 
 ENTRY(udivsi3)
-		movl 4(%esp),%eax
-		xorl %edx,%edx
-		divl 8(%esp)
+		movl 	4(%esp),%eax
+		xorl 	%edx,%edx
+		divl 	8(%esp)
 		ret
 
 ENTRY(divsi3)
-		movl 4(%esp),%eax
-		#xorl %edx,%edx		/* not needed - cltd sign extends into %edx */
+		movl 	4(%esp),%eax
+		#xorl 	%edx,%edx		/* not needed - cltd sign extends into %edx */
 		cltd
-		idivl 8(%esp)
+		idivl 	8(%esp)
 		ret
 
 /*
@@ -173,14 +172,14 @@ ALTENTRY(bcopy)
 		movl	12(%esp),%esi
 		movl	16(%esp),%edi
 		movl	20(%esp),%ecx
-		cmpl	%esi,%edi	/* potentially overlapping? */
+		cmpl	%esi,%edi		/* potentially overlapping? */
 		jnb		1f
-		cld					/* nope, copy forwards. */
-		shrl	$2,%ecx		/* copy by words */
+		cld						/* nope, copy forwards. */
+		shrl	$2,%ecx			/* copy by words */
 		rep
 		movsl
 		movl	20(%esp),%ecx
-		andl	$3,%ecx		/* any bytes left? */
+		andl	$3,%ecx			/* any bytes left? */
 		rep
 		movsb
 		popl	%edi
@@ -189,10 +188,10 @@ ALTENTRY(bcopy)
 		ret
 		ALIGN32
 1:
-		addl	%ecx,%edi	/* copy backwards. */
+		addl	%ecx,%edi		/* copy backwards. */
 		addl	%ecx,%esi
 		std
-		andl	$3,%ecx		/* any fractional bytes? */
+		andl	$3,%ecx			/* any fractional bytes? */
 		decl	%edi
 		decl	%esi
 		rep
@@ -208,6 +207,164 @@ ALTENTRY(bcopy)
 		xorl	%eax,%eax
 		cld
 		ret
+
+#ifdef notdef
+ENTRY(copyout)
+		movl	_curpcb, %eax
+		movl	$cpyflt, PCB_ONFAULT(%eax) # in case we page/protection violate
+		pushl	%esi
+		pushl	%edi
+		pushl	%ebx
+		movl	16(%esp), %esi
+		movl	20(%esp), %edi
+		movl	24(%esp), %ebx
+
+ /* first, check to see if "write fault" */
+1:		movl	%edi, %eax
+#ifdef notyet
+		shrl	$IDXSHIFT, %eax		/* fetch pte associated with address */
+		andb	$0xfc, %al
+		movl	_PTmap(%eax), %eax
+
+		andb	$7, %al				/* if we are the one case that won't trap... */
+		cmpb	$5, %al
+		jne		2f
+/* ... then simulate the trap! */
+		pushl	%edi
+		call	_trapwrite			/* trapwrite(addr) */
+		popl	%edx
+
+		cmpl	$0, %eax			/* if not ok, return */
+		jne		cpyflt
+/* otherwise, continue with reference */
+2:
+		movl	%edi, %eax			/* calculate remainder this pass */
+		andl	$0xfffff000, %eax
+		movl	$NBPG, %ecx
+		subl	%eax, %ecx
+		cmpl	%ecx, %ebx
+		jle		3f
+		movl	%ebx, %ecx
+3:		subl	%ecx, %ebx
+		movl	%ecx, %edx
+#else
+		movl	%ebx, %ecx
+		movl	%ebx, %edx
+#endif
+
+		shrl	$2,%ecx				/* movem */
+		cld
+		rep
+		movsl
+		movl	%edx, %ecx			/* don't depend on ecx here! */
+		andl	$3, %ecx
+		rep
+		movsb
+
+#ifdef notyet
+		cmpl	$0, %ebx
+		jl		1b
+#endif
+
+		popl	%ebx
+		popl	%edi
+		popl	%esi
+		xorl	%eax,%eax
+		movl	_curpcb,%edx
+		movl	%eax,PCB_ONFAULT(%edx)
+		ret
+
+ENTRY(copyin)
+		movl	_curpcb,%eax
+		movl	$cpyflt,PCB_ONFAULT(%eax) # in case we page/protection violate
+		pushl	%esi
+		pushl	%edi
+		pushl	%ebx
+		movl	12(%esp),%esi
+		movl	16(%esp),%edi
+		movl	20(%esp),%ecx
+		shrl	$2,%ecx
+		cld
+		rep
+		movsl
+		movl	20(%esp),%ecx
+		andl	$3,%ecx
+		rep
+		movsb
+		popl	%ebx
+		popl	%edi
+		popl	%esi
+		xorl	%eax,%eax
+		movl	_curpcb,%edx
+		movl	%eax,PCB_ONFAULT(%edx)
+		ret
+
+
+ENTRY(cpyflt)
+		popl	%ebx
+		popl	%edi
+		popl	%esi
+		movl	_curpcb,%edx
+		movl	$0,PCB_ONFAULT(%edx)
+		movl	$ EFAULT,%eax
+		ret
+#else
+
+ENTRY(copyout)
+		movl	_curpcb,%eax
+		movl	$cpyflt,PCB_ONFAULT(%eax) # in case we page/protection violate
+		pushl	%esi
+		pushl	%edi
+		movl	12(%esp),%esi
+		movl	16(%esp),%edi
+		movl	20(%esp),%ecx
+		shrl	$2,%ecx
+		cld
+		rep
+		movsl
+		movl	20(%esp),%ecx
+		andl	$3,%ecx
+		rep
+		movsb
+		popl	%edi
+		popl	%esi
+		xorl	%eax,%eax
+		movl	_curpcb,%edx
+		movl	%eax,PCB_ONFAULT(%edx)
+		ret
+
+ENTRY(copyin)
+		movl	_curpcb,%eax
+		movl	$cpyflt,PCB_ONFAULT(%eax) # in case we page/protection violate
+		pushl	%esi
+		pushl	%edi
+		movl	12(%esp),%esi
+		movl	16(%esp),%edi
+		movl	20(%esp),%ecx
+		shrl	$2,%ecx
+		cld
+		rep
+		movsl
+		movl	20(%esp),%ecx
+		andl	$3,%ecx
+		rep
+		movsb
+		popl	%edi
+		popl	%esi
+		xorl	%eax,%eax
+		movl	_curpcb,%edx
+		movl	%eax,PCB_ONFAULT(%edx)
+		ret
+
+ENTRY(cpyflt)
+		popl	%edi
+		popl	%esi
+		movl	_curpcb,%edx
+		movl	$0,PCB_ONFAULT(%edx)
+		movl	$ EFAULT,%eax
+		ret
+
+#endif
 
 # insb(port,addr,cnt)
 
@@ -234,7 +391,7 @@ ENTRY(insw)
 		movl	16(%esp),%ecx
 		cld
 		NOP
-		.byte 0x66,0xf2,0x6d	# rep insw
+		.byte 	0x66,0xf2,0x6d	# rep insw
 		NOP
 		movl	%edi,%eax
 		popl	%edi
@@ -249,7 +406,7 @@ ENTRY(outsw)
 		movl	16(%esp),%ecx
 		cld
 		NOP
-		.byte 0x66,0xf2,0x6f	# rep outsw
+		.byte 	0x66,0xf2,0x6f	# rep outsw
 		NOP
 		movl	%esi,%eax
 		popl	%esi
@@ -276,21 +433,21 @@ ENTRY(outsb)
 */
 
 ENTRY(lgdt)
-		/* reload the descriptor table */
+/* reload the descriptor table */
 		movl	4(%esp),%eax
 		lgdt	(%eax)
-		/* flush the prefetch q */
-		jmp	1f
+/* flush the prefetch q */
+		jmp		1f
 		nop
 1:
-		/* reload "stale" selectors */
+/* reload "stale" selectors */
 		# movw	$KDSEL,%ax
 		movw	$0x10,%ax
 		movw	%ax,%ds
 		movw	%ax,%es
 		movw	%ax,%ss
 
-		/* reload code selector by turning return into intersegmental return */
+/* reload code selector by turning return into intersegmental return */
 		movl	0(%esp),%eax
 		pushl	%eax
 		# movl	$KCSEL,4(%esp)
@@ -319,7 +476,7 @@ ENTRY(lldt)
  */
 
 ENTRY(ltr)
-		ltr	4(%esp)
+		ltr		4(%esp)
 		ret
 
 /*
@@ -434,28 +591,41 @@ ENTRY(subyte)
 		movl	4(%esp),%edx
 		movl	8(%esp),%eax
 #ifdef notdef
-		shrl	$IDXSHIFT, %edx	/* calculate pte address */
+		shrl	$IDXSHIFT, %edx			/* calculate pte address */
 		andb	$0xfc, %dl
 		movl	_PTmap(%edx), %edx
-		andb	$7, %edx		/* if we are the one case that won't trap... */
+		andb	$7, %edx				/* if we are the one case that won't trap... */
 		cmpb	$5 , %edx
 		jne		1f
 /* ..., then simulate the trap! */
 		pushl	%edi
-		call	_trapwrite		/* trapwrite(addr) */
+		call	_trapwrite				/* trapwrite(addr) */
 		popl	%edx
-		movl	_curpcb, %ecx	# restore trashed registers
-		cmpl	$0, %eax		/* if not ok, return */
+		movl	_curpcb, %ecx			# restore trashed registers
+		cmpl	$0, %eax				/* if not ok, return */
 		jne		fusufault
 		movl	8(%esp),%eax
 1: 		movl	4(%esp),%edx
 #endif
-		.byte	0x65			# use gs
+		.byte	0x65					# use gs
 		movb	%eax,0(%edx)
 		xorl	%eax,%eax
 		movl	%eax,PCB_ONFAULT(%ecx) #in case we page/protection violate
 		ret
 
+ENTRY(htonl)
+ENTRY(ntohl)
+		movl	4(%esp),%eax
+		xchgb	%al,%ah
+		roll	$16,%eax
+		xchgb	%al,%ah
+		ret
+
+ENTRY(htons)
+ENTRY(ntohs)
+		movzwl	4(%esp),%eax
+		xchgb	%al,%ah
+		ret
 /*****************************************************************************/
 /* setjump, longjump                                                         */
 /*****************************************************************************/

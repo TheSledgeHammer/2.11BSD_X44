@@ -223,16 +223,8 @@ pmap_bootstrap(firstaddr, loadaddr)
 	struct pte *pte;
 #endif
 	extern vm_offset_t maxmem, physmem;
-extern int IdlePTD;
+	extern int IdlePTD;
 
-
-/* disable pageing in basemem for all machines until this cryptic comment
- * can be explained
- */
-#if 1 ||	defined(ODYSSEUS) || defined(ARGO) || defined(CIRCE)
-firstaddr=0x100000;	/* for some reason, basemem screws up on this machine */
-#endif
-printf("ps %x pe %x ", firstaddr, maxmem <<PG_SHIFT);
 	avail_start = firstaddr;
 	avail_end = maxmem << PG_SHIFT;
 
@@ -269,7 +261,6 @@ printf("ps %x pe %x ", firstaddr, maxmem <<PG_SHIFT);
 	kernel_pmap->pm_pdir = (pd_entry_t *)(0xfe000000 + IdlePTD);
 #endif
 
-
 	simple_lock_init(&kernel_pmap->pm_lock);
 	kernel_pmap->pm_count = 1;
 
@@ -283,16 +274,15 @@ printf("ps %x pe %x ", firstaddr, maxmem <<PG_SHIFT);
 	va = virtual_avail;
 	pte = pmap_pte(kernel_pmap, va);
 
-	SYSMAP(caddr_t		,CMAP1		,CADDR1	   ,1		)
-	SYSMAP(caddr_t		,CMAP2		,CADDR2	   ,1		)
-	SYSMAP(caddr_t		,mmap		,vmmap	   ,1		)
-	SYSMAP(struct msgbuf *	,msgbufmap	,msgbufp   ,1		)
+	SYSMAP(caddr_t, CMAP1, CADDR1, 1)
+	SYSMAP(caddr_t, CMAP2, CADDR2, 1)
+	SYSMAP(caddr_t, mmap, vmmap, 1)
+	SYSMAP(struct msgbuf *, msgbufmap, msgbufp, 1)
 	virtual_avail = va;
 #endif
 
 	/**(int *)PTD = 0;
 	load_cr3(rcr3());*/
-
 }
 
 int

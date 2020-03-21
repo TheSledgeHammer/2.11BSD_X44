@@ -839,7 +839,7 @@ invtss() {
 }
 
 void
-dbl() {
+dblftss() {
 	struct i386tss *tsp = panictss();
 	struct trapframe tf;
 

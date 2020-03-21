@@ -2,16 +2,12 @@ TODO:
 boot: (Focus on 2.11BSDx86 boot.)
 - dev_net.c
 - libi386
-	- bootinfo32
 	- pxe
 - NetBSD ia64: Uses parts of FreeBSD's boot
 	- Should update parts from FreeBSD
 
 i386:
-- machdep.c (incomplete): 
-- locore.s 
-- math
-- sys_machdep update: fsbase, ioperm, ldt, pcb_extend
+- locore.s: icode 
 
 libsa:
 - bootparam
@@ -38,7 +34,7 @@ Kern:
 	- u_fps: floating point 
 	- u_pcb: machine-dependent pcb.h
 	- remove duplicate and/or un-needed references (kinfo_proc)
-	- kinfo_proc: could be useful unless it's superaceded by (ktrace or dtrace?) 
+	- kinfo_proc: could be useful unless it's superceded by (ktrace or dtrace?) 
 	
 UFS, FFS & LFS:
 - extattr, dirhash
