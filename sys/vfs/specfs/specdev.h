@@ -39,10 +39,11 @@
  * in vgone.
  */
 struct specinfo {
-	struct	vnode **si_hashchain;
-	struct	vnode *si_specnext;
-	long	si_flags;
-	dev_t	si_rdev;
+	struct	vnode 	**si_hashchain;
+	struct	vnode 	*si_specnext;
+	long			si_flags;
+	dev_t			si_rdev;
+	struct lockf	*si_lockf;
 };
 /*
  * Exported shorthand
@@ -51,6 +52,7 @@ struct specinfo {
 #define v_hashchain v_specinfo->si_hashchain
 #define v_specnext v_specinfo->si_specnext
 #define v_specflags v_specinfo->si_flags
+#define v_speclockf	v_specinfo->si_lockf
 
 /*
  * Flags for specinfo

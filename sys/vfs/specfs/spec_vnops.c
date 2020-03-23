@@ -662,8 +662,9 @@ spec_advlock(ap)
 		int  a_flags;
 	} */ *ap;
 {
+	struct vnode *vp = ap->a_vp;
 
-	return (EOPNOTSUPP);
+	return lf_advlock(ap, &vp->v_speclockf, (off_t)0);
 }
 
 /*

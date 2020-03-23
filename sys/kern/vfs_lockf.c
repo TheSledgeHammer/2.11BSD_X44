@@ -207,7 +207,7 @@ lf_advlock(struct vop_advlock_args *ap, struct lockf **head, off_t size)
 			}
 			break;
 		}
-
+	break;
 		/* FALLTHROUGH */
 
 	case F_GETLK:
@@ -240,7 +240,7 @@ lf_advlock(struct vop_advlock_args *ap, struct lockf **head, off_t size)
 		goto quit;
 	}
 
-	mutex_enter(interlock);
+	//mutex_enter(interlock);
 
 	/*
 	 * Avoid the common case of unlocking when inode has no locks.

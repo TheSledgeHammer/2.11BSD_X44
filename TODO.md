@@ -1,22 +1,30 @@
 TODO:
-boot: (Focus on 2.11BSDx86 boot.)
-- dev_net.c
-- libi386
-	- pxe
-- NetBSD ia64: Uses parts of FreeBSD's boot
-	- Should update parts from FreeBSD
+- Makefiles
+(Focus on 2.11BSDx86 boot.)
+- boot: 
+	- efi
+	- usb
+	- dloader
+	- i386:
+		- cdboot
+		- gptboot
+		- isoboot
+		- loader
+		- pmbr
+		- pxeldr
 
-i386:
-- locore.s: icode 
-
-libsa:
-- bootparam
-
+- arch
+	- i386:
+		- locore
+		- bios
+		- vm86
+	- x86: (Eventually...!)
+	
+	
 Kern:
 - p->p_usrpri: doesn't exist in 2.11BSD (needs a solution)
 - vm_machdep.c: u->u_procp->p_p0br??
 - init_main.c
-	- lines 250 to 262 (references to old vm startup)
 	- uipc_mbuf.c: mbinit
 	- consinit
 	- cpu_startup

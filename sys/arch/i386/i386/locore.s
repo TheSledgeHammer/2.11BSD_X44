@@ -66,13 +66,13 @@
 
 #define	NOP	inb $0x84, %al ; inb $0x84, %al
 
-#define	fillkpt									\
-	1:	movl	%eax,0(%ebx)	; 				\
-		addl	$ NBPG,%eax		; /* increment physical address */ \
-		addl	$4,%ebx			; /* next pte */ \
+#define	fillkpt														\
+	1:	movl	%eax,0(%ebx)	; 									\
+		addl	$ NBPG,%eax		; /* increment physical address */ 	\
+		addl	$4,%ebx			; /* next pte */ 					\
 		loop	1b				;
 
-#define	LCALL(x,y)	.byte 0x9a ; .long y; .word x
+#define	LCALL(x,y)		.byte 0x9a ; .long y; .word x
 
 #define	IDTVEC(name)	.align 4; .globl _X/**/name; _X/**/name:
 
@@ -353,7 +353,7 @@ start:	movw	$0x1234,%ax
 
 begin: /* now running relocated at SYSTEM where the system is linked to run */
 
-		.globl _Crtat
+		.globl 	_Crtat
 		movl	_Crtat,%eax
 		subl	$0xfe0a0000,%eax
 		movl	_atdevphys,%edx						# get pte PA
@@ -371,7 +371,7 @@ begin: /* now running relocated at SYSTEM where the system is linked to run */
 		movl	_proc0paddr, %eax
 		movl	%esi, PCB_CR3(%eax)
 
-		lea	7*NBPG(%esi),%esi						# skip past stack.
+		lea		7*NBPG(%esi),%esi					# skip past stack.
 		pushl	%esi
 
 		call	_init386							# wire 386 chip for unix operation
@@ -399,25 +399,26 @@ begin: /* now running relocated at SYSTEM where the system is linked to run */
 lretmsg1:
 	.asciz	"lret: toinit\n"
 
+/**********************************************************************/
 /*
  * Signal trampoline, copied to top of user stack
  */
-		.set	exec,59
-		.set	exit,1
-		.globl	_icode
-		.globl	_szicode
 
-		.globl	_sigcode,_szsigcode
-_sigcode:
+ENTRY(sigcode)
 		movl	12(%esp),%eax						# unsure if call will dec stack 1st
 		call	%eax
 		xorl	%eax,%eax							# smaller movl $103,%eax
-		movb	$103,%al							# sigreturn()
+		movb	$SYS_sigreturn,%al					# sigreturn()
 		LCALL(0x7,0)								# enter kernel with args on stack
 		hlt											# never gets here
 
-_szsigcode:
-		.long	_szsigcode - _sigcode
+		ALIGN_TEXT
+esigcode:
+
+		.data
+		.globl	szsigcode
+szsigcode:
+		.long	szsigcode-sigcode
 
 /**********************************************************************/
 /* Scheduling */

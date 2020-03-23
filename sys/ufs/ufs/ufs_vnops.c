@@ -1712,7 +1712,8 @@ ufsspec_read(ap)
 	/*
 	 * Set access flag.
 	 */
-	VTOI(ap->a_vp)->i_flag |= IN_ACCESS;
+	//if ((ap->a_vp->v_mount->mnt_flag & MNT_NODEVMTIME) == 0)
+		VTOI(ap->a_vp)->i_flag |= IN_ACCESS;
 	return (VOCALL (spec_vnodeop_p, VOFFSET(vop_read), ap));
 }
 
@@ -1732,7 +1733,8 @@ ufsspec_write(ap)
 	/*
 	 * Set update and change flags.
 	 */
-	VTOI(ap->a_vp)->i_flag |= IN_CHANGE | IN_UPDATE;
+	//if ((ap->a_vp->v_mount->mnt_flag & MNT_NODEVMTIME) == 0)
+		VTOI(ap->a_vp)->i_flag |= IN_MODIFY;
 	return (VOCALL (spec_vnodeop_p, VOFFSET(vop_write), ap));
 }
 
@@ -1877,82 +1879,9 @@ ufs_advlock(ap)
 		int  a_flags;
 	} */ *ap;
 {
-	register struct inode *ip = VTOI(ap->a_vp);
-	register struct flock *fl = ap->a_fl;
-	register struct lockf *lock;
-	off_t start, end;
-	int error;
+	struct inode *ip = VTOI(ap->a_vp);
 
-	/*
-	 * Avoid the common case of unlocking when inode has no locks.
-	 */
-	if (ip->i_lockf == (struct lockf *)0) {
-		if (ap->a_op != F_SETLK) {
-			fl->l_type = F_UNLCK;
-			return (0);
-		}
-	}
-	/*
-	 * Convert the flock structure into a start and end.
-	 */
-	switch (fl->l_whence) {
-
-	case SEEK_SET:
-	case SEEK_CUR:
-		/*
-		 * Caller is responsible for adding any necessary offset
-		 * when SEEK_CUR is used.
-		 */
-		start = fl->l_start;
-		break;
-
-	case SEEK_END:
-		start = ip->i_size + fl->l_start;
-		break;
-
-	default:
-		return (EINVAL);
-	}
-	if (start < 0)
-		return (EINVAL);
-	if (fl->l_len == 0)
-		end = -1;
-	else
-		end = start + fl->l_len - 1;
-	/*
-	 * Create the lockf structure
-	 */
-	MALLOC(lock, struct lockf *, sizeof *lock, M_LOCKF, M_WAITOK);
-	lock->lf_start = start;
-	lock->lf_end = end;
-	lock->lf_id = ap->a_id;
-	lock->lf_inode = ip;
-	lock->lf_type = fl->l_type;
-	lock->lf_next = (struct lockf *)0;
-	TAILQ_INIT(&lock->lf_blkhd);
-	lock->lf_flags = ap->a_flags;
-	/*
-	 * Do the requested operation.
-	 */
-	switch(ap->a_op) {
-	case F_SETLK:
-		return (lf_setlock(lock));
-
-	case F_UNLCK:
-		error = lf_clearlock(lock);
-		FREE(lock, M_LOCKF);
-		return (error);
-
-	case F_GETLK:
-		error = lf_getlock(lock, fl);
-		FREE(lock, M_LOCKF);
-		return (error);
-	
-	default:
-		free(lock, M_LOCKF);
-		return (EINVAL);
-	}
-	/* NOTREACHED */
+	return lf_advlock(ap, &ip->i_lockf, ip->i_size);
 }
 
 /*
