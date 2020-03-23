@@ -65,6 +65,7 @@ int command_echo(int argc, char *argv[]);
 int command_read(int argc, char *argv[]);
 int command_more(int argc, char *argv[]);
 int command_lsdev(int argc, char *argv[]);
+int command_quit(int argc, char *argv[]);
 
 /*	boot.c		*/
 int command_boot(int argc, char *argv[]);
@@ -86,27 +87,28 @@ int command_bcache(int argc, char *argv[]);
 
 #define COMMAND_SET(a, b, c, d) /* Nothing */
 
-#define COMMON_COMMANDS															\
-		{ "help", "detailed help", command_help },								\
-		{ "commandlist", "list commands", command_commandlist },				\
-		{ "show", "show variable(s)", command_show },							\
-		{ "set", "set a variable", command_set },								\
-		{ "unset", "unset a variable", command_unset },							\
-		{ "echo", "echo arguments", command_echo },								\
-		{ "read", "read input from the terminal", command_read },				\
-		{ "more", "show contents of a file", command_more },					\
-		{ "lsdev", "list all devices", command_lsdev },							\
-		{ "bcachestat", "get disk block cache stats", command_bcache },			\
-		{ "boot", "boot a file or loaded kernel", command_boot },				\
-		{ "autoboot", "boot automatically after a delay", command_autoboot},	\
-		{ "load", "load a kernel", command_load },								\
-		{ "unload", "unload all modules", command_unload },						\
-		{ "lskern", "list loaded kernel", command_lskern },						\
-		{ "include", "read commands from a file", command_include },			\
+#define COMMON_COMMANDS																			\
+		{ "help", "detailed help", command_help },												\
+		{ "commandlist", "list commands", command_commandlist },								\
+		{ "show", "show variable(s)", command_show },											\
+		{ "set", "set a variable", command_set },												\
+		{ "unset", "unset a variable", command_unset },											\
+		{ "echo", "echo arguments", command_echo },												\
+		{ "read", "read input from the terminal", command_read },								\
+		{ "more", "show contents of a file", command_more },									\
+		{ "lsdev", "list all devices", command_lsdev },											\
+		{ "quit", "exit the loader", command_quit },											\
+		{ "bcachestat", "get disk block cache stats", command_bcache },							\
+		{ "boot", "boot a file or loaded kernel", command_boot },								\
+		{ "autoboot", "boot automatically after a delay", command_autoboot},					\
+		{ "load", "load a kernel", command_load },												\
+		{ "unload", "unload all modules", command_unload },										\
+		{ "lskern", "list loaded kernel", command_lskern },										\
+		{ "include", "read commands from a file", command_include },							\
 		{ "ls", "list files", command_ls },
 
 extern struct bootblk_command commands[];
-
+/*
 struct command_set {
     int     (*command_help)(int argc, char *argv[]);
     int 	(*command_commandlist)(int argc, char *argv[]);
@@ -126,8 +128,9 @@ struct command_set {
     int 	(*command_ls)(int argc, char *argv[]);
     int		(*command_bcache)(int argc, char *argv[]);
 };
-
+*/
 /* Command Set Commands */
+/*
 struct command_set cmds[] = {
         &command_help,
 		&command_commandlist,
@@ -147,7 +150,7 @@ struct command_set cmds[] = {
 		&command_ls,
 		&command_bcache,
 };
-
+/*
 
 /* Number of Commands in Command set:
 struct command_set *cmd = &cmds[0];

@@ -106,14 +106,14 @@ void					cons_probe(void);
  */
 struct pnphandler
 {
-    const char	*pp_name;				/* handler/bus name */
-    void		(* pp_enumerate)(void);	/* enumerate PnP devices, add to chain */
+    const char	*pp_name;					/* handler/bus name */
+    void		(* pp_enumerate)(void);		/* enumerate PnP devices, add to chain */
 };
 
 struct pnpident
 {
-    char					*id_ident;	/* ASCII identifier, actual format varies with bus/handler */
-    STAILQ_ENTRY(pnpident)	id_link;
+    char					*id_ident;		/* ASCII identifier, actual format varies with bus/handler */
+    TAILQ_ENTRY(pnpident)	id_link;
 };
 
 struct pnpinfo
@@ -124,13 +124,13 @@ struct pnpinfo
     int						pi_argc;		/* module arguments */
     char					**pi_argv;
     struct pnphandler		*pi_handler;	/* handler which detected this device */
-    STAILQ_HEAD(,pnpident)	pi_ident;		/* list of identifiers */
-    STAILQ_ENTRY(pnpinfo)	pi_link;
+    TAILQ_HEAD(,pnpident)	pi_ident;		/* list of identifiers */
+    TAILQ_ENTRY(pnpinfo)	pi_link;
 };
 
-STAILQ_HEAD(pnpinfo_stql, pnpinfo);
+TAILQ_HEAD(pnpinfo_stql, pnpinfo);
 
-extern struct pnphandler	*pnphandlers[];		/* provided by MD code */
+extern struct pnphandler	*pnphandlers[];	/* provided by MD code */
 
 void			pnp_addident(struct pnpinfo *pi, char *ident);
 struct pnpinfo	*pnp_allocinfo(void);
@@ -178,7 +178,7 @@ struct kernel_module
 {
     char					*m_name;	/* module name */
     int						m_version;	/* module version */
-/*    char					*m_args;*/	/* arguments for the module */
+    char					*m_args;	/* arguments for the module */
     struct preloaded_file	*m_fp;
     struct kernel_module	*m_next;
 };
@@ -266,7 +266,7 @@ struct arch_switch
      * Interface to adjust the load address according to the "object"
      * being loaded.
      */
-    uint64_t	(*arch_loadaddr)(u_int type, void *data, uint64_t addr);
+    uint64_t (*arch_loadaddr)(u_int type, void *data, uint64_t addr);
 #define	LOAD_AOUT	1	/* data points to the AOUT header. */
 #define	LOAD_ECOFF	2	/* data points to the ECOFF header. */
 #define	LOAD_ELF	3	/* data points to the ELF header. */

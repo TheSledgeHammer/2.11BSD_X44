@@ -71,12 +71,15 @@ extern struct fs_ops file_system[];
 
 /* Device switch */
 struct devsw {
-	char	*dv_name;
-	int		dv_type;		/* opaque type constant, arch-dependant */
-	int		(*dv_strategy) (void *devdata, int rw, daddr_t blk, u_int size, char *buf, u_int *rsize);
-	int		(*dv_open)();	/* (struct open_file *f, ...) */
-	int		(*dv_close) (struct open_file *f);
-	int		(*dv_ioctl) (struct open_file *f, int cmd, void *data);
+	const char	dv_name[8];
+	int			dv_type;			/* opaque type constant, arch-dependant */
+    int			(*dv_init)(void);	/* early probe call */
+	int			(*dv_strategy)(void *devdata, int rw, daddr_t blk, u_int size, char *buf, u_int *rsize);
+	int			(*dv_open)(struct open_file *f, ...);
+	int			(*dv_close)(struct open_file *f);
+	int			(*dv_ioctl)(struct open_file *f, int cmd, void *data);
+    int			(*dv_print)(int verbose);	/* print device information */
+	void		(*dv_cleanup)(void);
 };
 
 extern struct devsw devsw[];	/* device array */
@@ -88,9 +91,10 @@ struct open_file {
 	void			*f_devdata;	/* device specific data */
 	struct fs_ops	*f_ops;		/* pointer to file system operations */
 	void			*f_fsdata;	/* file system specific data */
+#define SOPEN_RASIZE	512
 };
 
-#define	SOPEN_MAX	4
+#define	SOPEN_MAX	64
 extern struct open_file files[SOPEN_MAX];
 
 /* f_flags values */

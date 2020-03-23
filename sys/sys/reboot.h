@@ -14,6 +14,8 @@
  * and on to init.
  */
 #define	RB_AUTOBOOT		0		/* flags for system auto-booting itself */
+#define	RB_PANIC		0		/* reboot due to panic */
+#define	RB_BOOT			1		/* reboot due to boot() */
 
 #define	RB_ASKNAME		0x001	/* ask for file name to reboot from */
 #define	RB_SINGLE		0x002	/* reboot to single user only */
@@ -26,9 +28,10 @@
 #define	RB_POWRFAIL		0x100	/* reboot caused by power failure */
 #define	RB_RDONLY		0x200	/* mount root fs read-only */
 #define	RB_AUTODEBUG	0x400	/* init runs autoconfig with "-d" (debug) */
+#define	RB_SERIAL		0x1000	/* use serial port as console */
+#define	RB_MUTE			0x10000	/* start up with the console muted */
 
-#define	RB_PANIC		0		/* reboot due to panic */
-#define	RB_BOOT			1		/* reboot due to boot() */
+#define	RB_MULTIPLE		0x20000000	/* use multiple consoles */
 
 #define	RB_BOOTINFO		0x80000000	/* have `struct bootinfo *' arg */
 

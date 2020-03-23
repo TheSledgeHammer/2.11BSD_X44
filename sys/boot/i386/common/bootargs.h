@@ -24,10 +24,10 @@
 #define	KARGS_FLAGS_EXTARG	0x0008	/* variably sized extended argument */
 #define	KARGS_FLAGS_GELI	0x0010	/* EXTARG is geli_boot_args */
 
-#define	BOOTARGS_SIZE		24	/* sizeof(struct bootargs) */
-#define	BA_BOOTFLAGS		8	/* offsetof(struct bootargs, bootflags) */
-#define	BA_BOOTINFO			20	/* offsetof(struct bootargs, bootinfo) */
-#define	BI_SIZE				48	/* offsetof(struct bootinfo, bi_size) */
+#define	BOOTARGS_SIZE		24		/* sizeof(struct bootargs) */
+#define	BA_BOOTFLAGS		8		/* offsetof(struct bootargs, bootflags) */
+#define	BA_BOOTINFO			20		/* offsetof(struct bootargs, bootinfo) */
+#define	BI_SIZE				48		/* offsetof(struct bootinfo, bi_size) */
 
 /*
  * We reserve some space above BTX allocated stack for the arguments

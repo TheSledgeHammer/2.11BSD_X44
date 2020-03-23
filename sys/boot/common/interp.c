@@ -35,6 +35,7 @@
  * XXX may be obsoleted by BootFORTH or some other, better, interpreter.
  */
 #include <boot/libsa/bootstand.h>
+#include <dloader/dloader.h>
 #include <lib/libsa/loadfile.h>
 #include <lib/libkern/libkern.h>
 #include "bootstrap.h"
@@ -77,7 +78,7 @@ perform(int argc, char *argv[])
 	} else {
 		command_seterr("unknown command");
 	}
-	RETURN(result);
+	return (result);
 }
 
 /*
@@ -86,20 +87,31 @@ perform(int argc, char *argv[])
 void
 interact(void)
 {
-	static char input[256]; /* big enough? */
-    int		argc;
-    char	**argv;
+	char input[256]; /* big enough? */
+    int	 argc;
+    char **argv;
+
+    /*
+     * We may be booting from the boot partition, or we may be booting
+     * from the root partition with a /boot sub-directory.  If the latter
+     * chdir into /boot.  Ignore any error.  Only rel_open() uses the chdir
+     * info.
+     */
+    chdir("/boot");
+    setenv("base", DirBase, 1);
 
     /*
 	 * Read our default configuration
 	 */
-	if (include("/boot/loader.rc") != CMD_OK)
-		include("/boot/boot.conf");
+	if (include("dloader.rc.rc") != CMD_OK)
+		include("boot.conf");
 	printf("\n");
 
     /*
      * XXX: Before interacting, we might want to autoboot.
      */
+
+    dloader_init_cmds();
 
 	/*
 	 * Not autobooting, go manual

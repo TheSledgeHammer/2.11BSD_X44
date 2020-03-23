@@ -33,7 +33,7 @@
 
 #include <vm/include/vm.h>
 #include <dev/vm/vm_amap.h>
-#include <dev/vm/vm_aobj.h>
+#include <dev/vm/vm_aobject.h>
 
 /*
  * TODO:

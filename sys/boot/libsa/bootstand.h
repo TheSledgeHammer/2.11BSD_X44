@@ -94,6 +94,23 @@
 #define DEVT_FD		5
 
 /*
+ * libstand-supplied filesystems
+ */
+extern struct fs_ops ufs_fsops;
+/*
+extern struct fs_ops tftp_fsops;
+extern struct fs_ops nfs_fsops;
+extern struct fs_ops cd9660_fsops;
+extern struct fs_ops gzipfs_fsops;
+extern struct fs_ops bzipfs_fsops;
+extern struct fs_ops dosfs_fsops;
+extern struct fs_ops ext2fs_fsops;
+extern struct fs_ops splitfs_fsops;
+extern struct fs_ops pkgfs_fsops;
+extern struct fs_ops efihttp_fsops;
+/*
+
+/*
  * Generic device specifier; architecture-dependent
  * versions may be larger, but should be allowed to
  * overlap.
@@ -139,8 +156,7 @@ typedef char	*(ev_format_t)(struct env_var *ev);
 typedef int		(ev_sethook_t)(struct env_var *ev, int flags, const void *value);
 typedef int		(ev_unsethook_t)(struct env_var *ev);
 
-struct env_var
-{
+struct env_var {
     char			*ev_name;
     int				ev_flags;
     void			*ev_value;

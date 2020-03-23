@@ -504,3 +504,10 @@ command_lsdev(int argc, char *argv[])
 	pager_close();
 	return (CMD_OK);
 }
+
+int
+command_quit(int argc, char *argv[])
+{
+	exit(0);
+	return (CMD_OK);
+}

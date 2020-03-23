@@ -86,8 +86,8 @@ int		i386_setcurrdev(struct env_var *ev, int flags, const void *value);
 
 extern struct devdesc	currdev;	/* our current device */
 
-#define MAXDEV		31		/* maximum number of distinct devices */
-#define MAXBDDEV	MAXDEV
+#define MAXDEV			31			/* maximum number of distinct devices */
+#define MAXBDDEV		MAXDEV
 
 /* exported devices XXX rename? */
 extern struct devsw bioscd;
@@ -96,11 +96,11 @@ extern struct devsw bioshd;
 extern struct devsw pxedisk;
 extern struct fs_ops pxe_fsops;
 
-int	bc_add(int biosdev);		/* Register CD booted from. */
-uint32_t bd_getbigeom(int bunit);	/* return geometry in bootinfo format */
-int	bd_bios2unit(int biosdev);	/* xlate BIOS device -> biosdisk unit */
-int	bd_unit2bios(struct i386_devdesc *); /* xlate biosdisk -> BIOS device */
-int	bd_getdev(struct i386_devdesc *dev);	/* return dev_t for (dev) */
+int			bc_add(int biosdev);					/* Register CD booted from. */
+uint32_t 	bd_getbigeom(int bunit);				/* return geometry in bootinfo format */
+int			bd_bios2unit(int biosdev);				/* xlate BIOS device -> biosdisk unit */
+int			bd_unit2bios(struct i386_devdesc *); 	/* xlate biosdisk -> BIOS device */
+int			bd_getdev(struct i386_devdesc *dev);	/* return dev_t for (dev) */
 
 ssize_t	i386_copyin(const void *src, vm_offset_t dest, const size_t len);
 ssize_t	i386_copyout(const vm_offset_t src, void *dest, const size_t len);
@@ -115,9 +115,9 @@ extern uint32_t		bios_basemem;	/* base memory in bytes */
 extern uint32_t		bios_extmem;	/* extended memory in bytes */
 extern vm_offset_t	memtop;			/* last address of physical memory + 1 */
 extern vm_offset_t	memtop_copyin;	/* memtop less heap size for the cases */
-									/*  when heap is at the top of         */
-									/*  extended memory; for other cases   */
-									/*  just the same as memtop            */
+									/* when heap is at the top of         */
+									/* extended memory; for other cases   */
+									/* just the same as memtop            */
 extern uint32_t		high_heap_size;	/* extended memory region available */
 extern vm_offset_t	high_heap_base;	/* for use as the heap */
 

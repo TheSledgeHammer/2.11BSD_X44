@@ -57,13 +57,14 @@
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 
+#include <lib/libsa/bootp.h>
+#include <lib/libsa/bootparam.h>
+
 #include <boot/libsa/bootstand.h>
 #include <stddef.h>
 #include <string.h>
-#include <net.h>
-#include <netif.h>
-#include <bootp.h>
-#include <bootparam.h>
+//#include <net.h>
+//#include <netif.h>
 
 #include "dev_net.h"
 #include "bootstrap.h"

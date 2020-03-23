@@ -308,7 +308,7 @@ relocator_eax:	.long	0
 relocator_ebp:	.long	0
 
 				sti
-				.byte 0xea			 /* ljmp */
+				.byte 0xea			 		/* ljmp */
 				.globl relocator_ip
 relocator_ip:
 				.word 0
