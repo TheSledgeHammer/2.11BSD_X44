@@ -1,0 +1,39 @@
+file	arch/i386/i386/aout_machdep.c	exec_aout
+file    arch/i386/i386/autoconf.c	    standard device-driver
+file    arch/i386/i386/cons.c		    standard
+file    arch/i386/i386/copyout.c        standard
+file    arch/i386/i386/dkbad.c		    standard
+file    arch/i386/i386/gdt.c		    standard
+file    arch/i386/i386/kdb_machdep.c	optional kadb
+file    arch/i386/i386/kdb_opset.c	    optional kadb
+file    arch/i386/i386/kgdb_stub.c	    optional kgdb
+file    arch/i386/i386/kgdb_glue.c	    optional kgdb
+file    arch/i386/i386/in_cksum.c	    optional inet
+file    arch/i386/i386/locore.s		    standard no-obj
+file    arch/i386/i386/machdep.c		standard config-dependent
+file    arch/i386/i386/mem.c		    standard
+file    arch/i386/i386/pmap.c	        standard
+file    arch/i386/i386/pmap_base.c      standard
+file    arch/i386/i386/procfs_machdep.c standard
+file    arch/i386/i386/support.s		standard
+file    arch/i386/i386/swapgeneric.c    standard
+file    arch/i386/i386/sys_machdep.c	standard
+file    arch/i386/i386/trap.c		    standard
+file    arch/i386/i386/vm_machdep.c	    standard
+
+file    arch/i386/isa/clock.c	        standard
+file    arch/i386/isa/pccons.c	        optional pc device-driver
+file    arch/i386/isa/if_ne.c	        optional ne device-driver
+file    arch/i386/isa/if_we.c	        optional we device-driver
+file    arch/i386/isa/if_apx.c	        optional apx device-driver
+file    arch/i386/isa/if_ec.c	        optional ec device-driver
+file    arch/i386/isa/wd.c		        optional wd device-driver
+file    arch/i386/isa/fd.c		        optional fd device-driver
+file    arch/i386/isa/xd.c		        optional xd device-driver
+file    arch/i386/isa/wt.c		        optional wt device-driver
+file    arch/i386/isa/isa.c		        optional isa device-driver
+file    arch/i386/isa/com.c		        optional com device-driver
+file    arch/i386/isa/npx.c		        optional npx device-driver
+file    arch/i386/isa/if_hy.notreally.c	optional hy device-driver
+
+file    netns/ns_cksum.c	            optional ns

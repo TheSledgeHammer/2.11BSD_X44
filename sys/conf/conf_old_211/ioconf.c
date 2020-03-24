@@ -6,12 +6,12 @@
  *	@(#)ioconf.c	2.0 (2.11BSD GTE) 12/24/92
  */
 
-#include "param.h"
-#include "systm.h"
+#include <sys/param.h>
+#include <sys/systm.h>
 
 dev_t	rootdev = %ROOTDEV%,
-	swapdev = %SWAPDEV%,
-	pipedev = %PIPEDEV%;
+		swapdev = %SWAPDEV%,
+		pipedev = %PIPEDEV%;
 
 dev_t	dumpdev = %DUMPDEV%;
 daddr_t	dumplo = (daddr_t)%DUMPLO%;

@@ -155,6 +155,13 @@
 /*note: gas copys sign bit (e.g. arithmetic >>), can't do SYSTEM>>22! */
 		.set	SYSPDROFF,0x3F8							# Page dir index of System Base
 
+
+/*
+ * Compiled KERNBASE location
+ */
+		.globl	kernbase
+		.set	kernbase,KERNBASE
+
 /*
  * Globals
  */
@@ -164,7 +171,10 @@
 		.globl	tmpstk
 		.space	0x2000									/* space for tmpstk - temporary stack */
 tmpstk:
-		.globl	_cpu,_cold,_boothowto,_bootdev,_cyloffset,_atdevbase,_atdevphys
+		.globl	_bootinfo
+_bootinfo:		.space	BOOTINFO_SIZE					/* bootinfo that we can handle */
+
+		.globl	_cpu,_cold,_atdevbase,_atdevphys
 _cpu:			.long	0								# are we 386, 386sx, or 486
 _cold:			.long	1								# cold till we are not
 _atdevbase:		.long	0								# location of start of iomem in virtual
@@ -174,56 +184,34 @@ _atdevphys:		.long	0								# location of device mapping ptes (phys)
 _IdlePTD:		.long	0
 _KPTphys:		.long	0
 
-		.globl	_cyloffset, _curpcb
-_cyloffset:		.long	0
+		.globl	_curpcb
+_curpcb:		.long	0
 		.globl	_proc0paddr
 _proc0paddr: 	.long	0								/* address of proc 0 address space */
 
-/*
- * Initialization
- */
-		.globl	start
-start:	movw	$0x1234,%ax
-		movw	%ax,0x472								# warm boot
-		jmp		1f
-		.space	0x500									# skip over warm boot shit
+/**********************************************************************/
+/* Initialization */
+
+ /* Tell the bios to warmboot next time */
+ ENTRY(start)
+ 		movw	$0x1234,0x472
+
+/* Set up a real frame in case the double return in newboot is executed. */
+		xorl	%ebp,%ebp
+		pushl	%ebp
+		movl	%esp, %ebp
+
+/* Don't trust what the BIOS gives for eflags. */
+		pushl	$PSL_MBO
+		popfl
 
 /*
- * pass parameters on stack (howto, bootdev, unit, cyloffset)
- * note: 0(%esp) is return address of boot
- * ( if we want to hold onto /boot, it's physical %esp up to _end)
+ * Don't trust what the BIOS gives for %fs and %gs.  Trust the bootstrap
+ * to set %cs, %ds, %es and %ss.
  */
-
- 1:		movl	4(%esp),%eax
-		movl	%eax,_boothowto-SYSTEM
-		movl	8(%esp),%eax
-		movl	%eax,_bootdev-SYSTEM
-		movl	12(%esp),%eax
-		movl	%eax, _cyloffset-SYSTEM
-
-#ifdef cgd_notdef
-	/* find out our CPU type. */
-        pushfl
-        popl    %eax
-        movl    %eax, %ecx
-        xorl    $0x40000, %eax
-        pushl   %eax
-        popfl
-        pushfl
-        popl    %eax
-        xorl    %ecx, %eax
-        shrl    $18, %eax
-        andl    $1, %eax
-        push    %ecx
-        popfl
-
-        cmpl    $0, %eax
-        jne     1f
-        movl    $CPU_386, _cpu-SYSTEM
-		jmp		2f
-1:      movl    $CPU_486, _cpu-SYSTEM
-2:
-#endif
+		mov		%ds, %ax
+		mov		%ax, %fs
+		mov		%ax, %gs
 
 #ifdef garbage
 /* count up memory */
@@ -256,6 +244,42 @@ start:	movw	$0x1234,%ax
 		movl	%eax,_Maxmem-SYSTEM
 #endif
 
+/**********************************************************************/
+/* Recover Bootinfo passed to us from boot program */
+//recover_bootinfo:
+
+/**********************************************************************/
+/* Identify CPU's */
+//identify_cpu:
+
+#ifdef cgd_notdef
+	/* find out our CPU type. */
+        pushfl
+        popl    %eax
+        movl    %eax, %ecx
+        xorl    $0x40000, %eax
+        pushl   %eax
+        popfl
+        pushfl
+        popl    %eax
+        xorl    %ecx, %eax
+        shrl    $18, %eax
+        andl    $1, %eax
+        push    %ecx
+        popfl
+
+        cmpl    $0, %eax
+        jne     1f
+        movl    $CPU_386, _cpu-SYSTEM
+		jmp		2f
+1:      movl    $CPU_486, _cpu-SYSTEM
+2:
+#endif
+
+/**********************************************************************/
+/* Create Page Tables */
+//create_pagetables:
+
 /* find end of kernel image */
 		movl	$_end-SYSTEM,%ecx
 		addl	$ NBPG-1,%ecx
@@ -279,8 +303,6 @@ start:	movw	$0x1234,%ax
 
 		movl	%esi,_IdlePTD-SYSTEM 				/*physical address of Idle Address space */
 		movl	$ tmpstk-SYSTEM,%esp				# bootstrap stack end location
-/**********************************************************************/
-/* Build Page Tables */
 
 /*
  * Map Kernel
@@ -364,41 +386,44 @@ begin: /* now running relocated at SYSTEM where the system is linked to run */
 		addl	%eax,%edx
 		movl	%edx,_Crtat
 
-/* set up bootstrap stack */
+		/* set up bootstrap stack */
+		movl	_proc0paddr, %eax
 		movl	$ _kstack+UPAGES*NBPG-4*12,%esp		# bootstrap stack end location
 		xorl	%eax,%eax							# mark end of frames
 		movl	%eax,%ebp
-		movl	_proc0paddr, %eax
+		movl	IdlePTD,%esi
 		movl	%esi, PCB_CR3(%eax)
 
 		lea		7*NBPG(%esi),%esi					# skip past stack.
 		pushl	%esi
-
-		call	_init386							# wire 386 chip for unix operation
+		call	init386								# wire 386 chip for unix operation
 
 		movl	$0,_PTD
-		call 	_main
+		call 	mi_startup							/* autoconfiguration, mountroot etc */
 		popl	%esi
 
+/*
 		.globl	__ucodesel,__udatasel
 		movzwl	__ucodesel,%eax
 		movzwl	__udatasel,%ecx
+*/
 # build outer stack frame
-		pushl	%ecx		# user ss
-		pushl	$ USRSTACK	# user esp
-		pushl	%eax		# user cs
-		pushl	$0		# user ip
+/*
+		pushl	%ecx								# user ss
+		pushl	$ USRSTACK							# user esp
+		pushl	%eax								# user cs
+		pushl	$0									# user ip
 		movw	%cx,%ds
 		movw	%cx,%es
-		movw	%ax,%fs		# double map cs to fs
-		movw	%cx,%gs		# and ds to gs
-		lret	# goto user!
-
-		pushl	$lretmsg1	/* "should never get here!" */
-		call	_panic
+		movw	%ax,%fs								# double map cs to fs
+		movw	%cx,%gs								# and ds to gs
+		lret										# goto user!
+*
+//		pushl	$lretmsg1							/* "should never get here!" */
+/*		call	_panic
 lretmsg1:
 	.asciz	"lret: toinit\n"
-
+*/
 /**********************************************************************/
 /*
  * Signal trampoline, copied to top of user stack
@@ -408,7 +433,7 @@ ENTRY(sigcode)
 		movl	12(%esp),%eax						# unsure if call will dec stack 1st
 		call	%eax
 		xorl	%eax,%eax							# smaller movl $103,%eax
-		movb	$SYS_sigreturn,%al					# sigreturn()
+		movb	$103,%al							# sigreturn()
 		LCALL(0x7,0)								# enter kernel with args on stack
 		hlt											# never gets here
 
@@ -419,6 +444,8 @@ esigcode:
 		.globl	szsigcode
 szsigcode:
 		.long	szsigcode-sigcode
+
+		.text
 
 /**********************************************************************/
 /* Scheduling */

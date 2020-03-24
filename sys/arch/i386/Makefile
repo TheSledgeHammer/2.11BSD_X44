@@ -7,7 +7,7 @@
 all:
 	@echo "make links or tags only"
 
-DIRS=	conf eisa i386 include isa mca scripts
+DIRS=	conf i386 include isa scripts
 
 links::
 	-for i in ${DIRS}; do \

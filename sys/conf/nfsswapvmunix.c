@@ -1,11 +1,9 @@
 /*
- * Copyright (c) 1980, 1986, 1989, 1993
+ * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
- * (c) UNIX System Laboratories, Inc.
- * All or some portions of this file are derived from material licensed
- * to the University of California by American Telephone and Telegraph
- * Co. or Unix System Laboratories, Inc. and are reproduced herein with
- * the permission of UNIX System Laboratories, Inc.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Rick Macklem at The University of Guelph.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,62 +33,120 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)param.c	8.3 (Berkeley) 8/20/94
+ *	@(#)nfsswapvmunix.c	8.1 (Berkeley) 6/10/93
+ */
+
+/*
+ * Sample NFS swapvmunix configuration file.
+ * This should be filled in by the bootstrap program.
+ * See /sys/nfs/nfsdiskless.h for details of the fields.
  */
 
 #include <sys/param.h>
-#include <sys/systm.h>
+#include <sys/conf.h>
 #include <sys/socket.h>
-#include <sys/proc.h>
-#include <sys/vnode.h>
-#include <sys/file.h>
-#include <sys/callout.h>
-#include <sys/clist.h>
-#include <sys/mbuf.h>
-#include <sys/kernel.h>
+#include <sys/mount.h>
 
-#include <ufs/ufs/quota.h>
+#include <net/if.h>
+#include <nfs/nfsv2.h>
+#include <nfs/nfsdiskless.h>
 
-*
- * System parameter formulae.
- *
- * This file is copied into each directory where we compile
- * the kernel; it should be modified there to suit local taste
- * if necessary.
- *
- * Compiled with -DHZ=xx -DTIMEZONE=x -DDST=x -DMAXUSERS=xx
- */
+extern int nfs_mountroot();
+int (*mountroot)() = nfs_mountroot;
 
-#ifndef HZ
-#define	HZ 100
-#endif
-int	hz = HZ;
-int	tick = 1000000 / HZ;
-int	tickadj = 30000 / (60 * HZ);		/* can adjust 30ms in 60s */
-struct	timezone tz = { TIMEZONE, DST };
-#define	NPROC (20 + 16 * MAXUSERS)
-int	maxproc = NPROC;
-#define	NTEXT (80 + NPROC / 8)			/* actually the object cache */
-#define	NVNODE (NPROC + NTEXT + 100)
-int	desiredvnodes = NVNODE;
-int	maxfiles = 3 * (NPROC + MAXUSERS) + 80;
-int	ncallout = 16 + NPROC;
-int	nclist = 60 + 12 * MAXUSERS;
-int	nmbclusters = NMBCLUSTERS;
-int	fscale = FSCALE;	/* kernel uses `FSCALE', user uses `fscale' */
+dev_t	rootdev = NODEV;
+dev_t	argdev  = NODEV;
+dev_t	dumpdev = NODEV;
 
-/*
- * These are initialized at bootstrap time
- * to values dependent on memory size
- */
-int	nbuf, nswbuf;
-
-/*
- * These have to be allocated somewhere; allocating
- * them here forces loader errors if this file is omitted
- * (if they've been externed everywhere else; hah!).
- */
-struct 	callout *callout;
-struct	cblock *cfree;
-struct	buf *buf, *swbuf;
-char	*buffers;
+struct	swdevt swdevt[] = {
+	{ NODEV,	0,	5000 },	/* happy:/u/swap.dopey  */
+	{ 0, 0, 0 }
+};
+struct nfs_diskless nfs_diskless = {
+	{ { 'q', 'e', '0', '\0' },
+	  { 0x10, 0x2, { 0x0, 0x0, 0x83, 0x68, 0x30, 0x2, } },
+	  { 0x10, 0x2, { 0x0, 0x0, 0x83, 0x68, 0x30, 0xff, } },
+	  { 0x10, 0x0, { 0x0, 0x0, 0xff, 0xff, 0xff, 0x0, } },
+ 	},
+	{ 0x10, 0x2, { 0x0, 0x0, 0x83, 0x68, 0x30, 0x12, } },
+	{
+	  (struct sockaddr *)0, SOCK_DGRAM, 0, (nfsv2fh_t *)0,
+	  0, 8192, 8192, 10, 100, (char *)0,
+	},
+	{
+		0xf,
+		0x9,
+		0x0,
+		0x0,
+		0x1,
+		0x0,
+		0x0,
+		0x0,
+		0xc,
+		0x0,
+		0x0,
+		0x0,
+		0x6,
+		0x0,
+		0x0,
+		0x0,
+		0x27,
+		0x18,
+		0x79,
+		0x27,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+	},
+	{ 0x10, 0x2, { 0x8, 0x1, 0x83, 0x68, 0x30, 0x5, } },
+	"happy",
+	{
+	  (struct sockaddr *)0, SOCK_DGRAM, 0, (nfsv2fh_t *)0,
+	  0, 8192, 8192, 10, 100, (char *)0,
+	},
+	{
+		0x0,
+		0x9,
+		0x0,
+		0x0,
+		0x1,
+		0x0,
+		0x0,
+		0x0,
+		0xc,
+		0x0,
+		0x0,
+		0x0,
+		0x2,
+		0x0,
+		0x0,
+		0x0,
+		0xd0,
+		0x48,
+		0x42,
+		0x25,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+		0x0,
+	},
+	{ 0x10, 0x2, { 0x8, 0x1, 0x83, 0x68, 0x30, 0x5, } },
+	"happy",
+};

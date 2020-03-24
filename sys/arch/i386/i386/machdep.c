@@ -664,8 +664,6 @@ setregs(p, elp, stack)
 	npxinit(0x262);
 #endif
 
-	p->p_md.md_flags &= ~MDL_USEDFPU;
-
 	tf = p->p_md.md_regs;
 	tf->tf_gs = LSEL(LUDATA_SEL, SEL_UPL);
 	tf->tf_fs = LSEL(LUDATA_SEL, SEL_UPL);

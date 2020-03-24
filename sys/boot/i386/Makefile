@@ -1,9 +1,9 @@
 # $FreeBSD$
 
-SUBDIR=		mbr boot0 btx boot2 cdboot libi386 loader
+NO_OBJ=t
 
-# special boot programs, 'self-extracting boot2+loader'
-SUBDIR+=	pxeldr
-SUBDIR+=	liloldr
+.include <bsd.init.mk>
+
+SUBDIR.yes=		mbr boot0 btx boot2 libi386 loader
 
 .include <bsd.subdir.mk>
