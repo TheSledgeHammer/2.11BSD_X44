@@ -223,8 +223,8 @@ main()
 	if (fork(NULL))
 		panic("fork init");
 	if (rval[1]) {
-		//start_init(curproc, framep);
-		//return;
+		start_init(curproc, framep);
+		return;
 	}
 
 	/* Create process 2 (the pageout daemon). */

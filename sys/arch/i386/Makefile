@@ -2,26 +2,35 @@
 
 # Makefile for i386 links, tags file
 
-.include "../kern/Make.tags.inc"
+TI386=	${SYSDIR}/arch/i386/tags
+SI386=	${SYSDIR}/arch/i386/eisa/*.[ch] \
+		${SYSDIR}/arch/i386/i386/*.[ch] \
+		${SYSDIR}/arch/i386/include/*.h \
+		${SYSDIR}/arch/i386/isa/*.[ch] 	\
+AI386=	${SYSDIR}/arch/i386/i386/*.s 	\
 
-all:
-	@echo "make links or tags only"
+# Directories in which to place tags links
+DI386=	i386 eisa isa include scripts
 
-DIRS=	conf i386 include isa scripts
+#.include "../../kern/Make.tags.inc"
 
-links::
-	-for i in ${DIRS}; do \
-	    (cd $$i && { rm -f tags; ln -s ${SYSTAGS} tags; }) done
-
-I386=	/sys/i386/eisa/*.[ch] /sys/i386/i386/*.[ch] \
-		/sys/i386/include/*.[ch] /sys/i386/isa/*.[ch]
-AI386=	/sys/i386/i386/*.s
-
-tags::
-	-ctags -wdt ${COMM} ${I386}
+tags:
+	-rm -f ${TI386}
+	-echo ${SI386} | xargs $(TOOL_CTAGS) -wadtf ${TI386}
+	-find -H ${SYSDIR}/external/bsd/acpica/dist/ -name '*.[ch]' | \
+	    sort -t / -u | xargs $(TOOL_CTAGS) -wadtf ${TI386}
+	-${FINDCOMM} | xargs $(TOOL_CTAGS) -wadtf ${TI386}
+	#-ctags -wdt ${COMM} ${I386}
 	egrep "^ENTRY(.*)|^ALTENTRY(.*)" ${AI386} | \
-	    sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
-		>> tags
-	sort -o tags tags
-	chown bin.wsrc tags
-	chmod 444 tags
+		${TOOL_SED} -e \
+	"s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3	\1	/^\2(\3\4$$/;" \
+		>> ${TI386}
+	sort -o ${TI386} ${TI386}
+
+links:
+	-for i in ${DI386}; do \
+	    (cd $$i && rm -f tags; ln -s ../tags tags); done
+
+SUBDIR= include
+
+#.include <bsd.subdir.mk>
