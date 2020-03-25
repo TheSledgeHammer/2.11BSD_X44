@@ -2,21 +2,16 @@
 
 # Makefile for kernel tags files, init_sysent, etc.
 
-.include <bsd.own.mk>		# for HOST_SH
+#.include <bsd.own.mk>		# for HOST_SH
 
 
 all:
-	@echo "make tags, links, init_sysent.c , or vnode_if.c only"
+	@echo "make tags, links, init_sysent.c, or vnode_if.c only"
 	@false
-	
+
 SYSCALLSRC = makesyscalls.sh syscalls.conf syscalls.master
-init_sysent.c syscalls.c ../sys/syscall.h: ${SYSCALLSRC}
-		${HOST_SH} makesyscalls.sh syscalls.conf syscalls.master
-
-VNODEIFSRC = vnode_if.sh vnode_if.src
-vnode_if.c ../sys/vnode_if.h: ${VNODEIFSRC}
-	${HOST_SH} vnode_if.sh vnode_if.src
-
+init_sysent.c syscalls.c ../sys/syscall.h ../sys/syscallargs.h: ${SYSCALLSRC}
+	${HOST_SH} makesyscalls.sh syscalls.conf syscalls.master
 
 # Kernel tags:
 # Tags files are built in the top-level directory for each architecture,
@@ -33,7 +28,7 @@ SYSTAGS=/var/db/sys_tags
 SYSDIR=..
 
 
-.ifmake links
+#.ifmake links
 # Directories in which to place tags links (other than machine-dependent):
 # The invocation below returns every directory that contains sources, the idea
 # being, in the face of a constantly varying source tree, that this will be
@@ -41,18 +36,19 @@ SYSDIR=..
 DGEN!=	(cd ${SYSDIR};							\
 	    	find -H . -name arch -prune -o -name "*.[chs]" -print |	\
 	    	${TOOL_SED} -e 's@^\./@@' -e 's@/[^/]*\..*@@' | sort -t / -u )
-.endif
+#.endif
+
 
 tags::
 	-for i in ${ARCH}; do \
-	    (cd ../$$i && ${MAKE} ${MFLAGS} tags); done
+	    (cd ../arch/$$i && ${MAKE} ${MFLAGS} tags); done
 	    
 links::
 	rm -f ${SYSTAGS}
-	ln -s ${SYSDIR}/${MACHINE}/tags ${SYSTAGS}
+	ln -s ${SYSDIR}/arch/${MACHINE}/tags ${SYSTAGS}
 	-for i in ${DGEN}; do \
-	    (cd ../$$i && { rm -f tags; ln -s ${SYSTAGS} tags; }) done
+	    (cd ../$$i && { rm -f tags; ln -s ${SYSTAGS} tags; }); done
 	-for i in ${ARCH}; do \
-	    (cd ../$$i && make ${MFLAGS} SYSTAGS=${SYSTAGS} links); done
+	    (cd ../arch/$$i && ${MAKE} ${MFLAGS} SYSTAGS=${SYSTAGS} links); done
 	    
-.include <bsd.files.mk>
+#.include <bsd.files.mk>

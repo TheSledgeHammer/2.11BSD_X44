@@ -43,12 +43,12 @@
  * (Would like to call this struct ``if'', but C isn't PL/1.)
  */
 struct ifnet {
-	char	*if_name;		/* name, e.g. ``en'' or ``lo'' */
-	short	if_unit;		/* sub-unit for lower level driver */
-	short	if_mtu;			/* maximum transmission unit */
-	short	if_flags;		/* up/down, broadcast, etc. */
-	short	if_timer;		/* time 'til if_watchdog called */
-	int	if_metric;			/* routing metric (external only) */
+	char	*if_name;				/* name, e.g. ``en'' or ``lo'' */
+	short	if_unit;				/* sub-unit for lower level driver */
+	short	if_mtu;					/* maximum transmission unit */
+	short	if_flags;				/* up/down, broadcast, etc. */
+	short	if_timer;				/* time 'til if_watchdog called */
+	int		if_metric;				/* routing metric (external only) */
 	struct	ifaddr *if_addrlist;	/* linked list of addresses per if */
 	struct	ifqueue {
 		struct	mbuf *ifq_head;
@@ -168,8 +168,8 @@ struct ifaddr {
 	} ifa_ifu;
 #define	ifa_broadaddr	ifa_ifu.ifu_broadaddr	/* broadcast address */
 #define	ifa_dstaddr	ifa_ifu.ifu_dstaddr			/* other end of p-to-p link */
-	struct	ifnet *ifa_ifp;						/* back-pointer to interface */
-	struct	ifaddr *ifa_next;					/* next address for interface */
+	struct	ifnet 	*ifa_ifp;					/* back-pointer to interface */
+	struct	ifaddr 	*ifa_next;					/* next address for interface */
 };
 
 /*
@@ -206,19 +206,18 @@ struct	ifreq {
 struct	ifconf {
 	int	ifc_len;		/* size of associated buffer */
 	union {
-		caddr_t	ifcu_buf;
-		struct	ifreq *ifcu_req;
+		caddr_t			ifcu_buf;
+		struct	ifreq 	*ifcu_req;
 	} ifc_ifcu;
 #define	ifc_buf	ifc_ifcu.ifcu_buf	/* buffer address */
 #define	ifc_req	ifc_ifcu.ifcu_req	/* array of structures returned */
 };
 
-#ifdef SUPERVISOR
-#include "../net/if_arp.h"
-struct	ifqueue rawintrq;		/* raw packet input queue */
-struct	ifnet *ifnet;
-struct	ifaddr *ifa_ifwithaddr(), *ifa_ifwithnet();
-struct	ifaddr *ifa_ifwithdstaddr();
-#else KERNEL
 #include <net/if_arp.h>
+
+#ifdef KERNEL
+struct	ifqueue rawintrq;		/* raw packet input queue */
+struct	ifnet 	*ifnet;
+struct	ifaddr 	*ifa_ifwithaddr(), *ifa_ifwithnet();
+struct	ifaddr 	*ifa_ifwithdstaddr();
 #endif KERNEL

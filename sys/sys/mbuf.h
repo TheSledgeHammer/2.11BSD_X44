@@ -33,13 +33,14 @@
 #define	MCLOFSET	CLOFSET
 #endif
 
-#define	MMINOFF		8						/* mbuf header length */
+#define	MMINOFF		8								/* mbuf header length */
 #define	MTAIL		2
-#define	MMAXOFF		(MSIZE-MTAIL)			/* offset where data ends */
-#define	MLEN		(MSIZE-MMINOFF-MTAIL)	/* mbuf data length */
+#define	MMAXOFF		(MSIZE-MTAIL)					/* offset where data ends */
+#define	MLEN		(MSIZE-MMINOFF-MTAIL)			/* mbuf data length */
+#define	MHLEN		(MLEN - sizeof(struct pkthdr))	/* data len w/pkthdr */
 #define	NMBCLUSTERS	12
-#define	NMBPCL		(CLBYTES/MSIZE)			/* # mbufs per cluster */
-
+#define	NMBPCL		(CLBYTES/MSIZE)					/* # mbufs per cluster */
+#define	MINCLSIZE	(MHLEN + MLEN)					/* smallest amount to put in cluster */
 /*
  * Macros for type conversion
  */
@@ -55,13 +56,69 @@
 #define	mtod(x,t)	((t)((int)(x) + (x)->m_off))
 
 struct mbuf {
-	struct	mbuf 	*m_next;		/* next buffer in chain */
-	u_short			m_off;			/* offset of data */
-	short			m_len;			/* amount of data in this mbuf */
-	short			m_type;			/* mbuf type (0 == free) */
-	u_char			m_dat[MLEN];	/* data storage */
-	struct	mbuf 	*m_act;			/* link in higher-level mbuf list */
+	struct	mbuf 		*m_next;		/* next buffer in chain */
+	struct	mbuf 		*m_nextpkt;		/* next chain in queue/record */
+	struct	mbuf_cont 	*m_cont;		/* next chain in queue/record */
+	u_short				m_off;			/* offset of data */
+	int					m_len;			/* amount of data in this mbuf */
+	short				m_type;			/* mbuf type (0 == free) */
+	caddr_t				m_dat;			/* data storage */
+	short				m_flags;		/* flags; see below */
+	struct	mbuf 		*m_act;			/* link in higher-level mbuf list */
 };
+
+/* record/packet header in first mbuf of chain; valid if M_PKTHDR set */
+struct	pkthdr {
+	struct	ifnet *rcvif;		/* rcv interface */
+	int	len;					/* total packet length */
+};
+
+/* description of external storage mapped into mbuf, valid if M_EXT set */
+struct m_ext {
+	caddr_t	ext_buf;			/* start of buffer */
+	void	(*ext_free)();		/* free routine if not the usual */
+	u_int	ext_size;			/* size of buffer, for ext_free */
+};
+
+/* Contents of mbuf: */
+struct mbuf_cont {
+	struct	mbuf mbuf;
+	union {
+		struct {
+			struct pkthdr MH_pkthdr;	/* M_PKTHDR set */
+			union {
+				struct	m_ext MH_ext;	/* M_EXT set */
+				char	MH_databuf[MHLEN];
+			} MH_dat;
+		} MH;
+		char	M_databuf[MLEN];		/* !M_PKTHDR, !M_EXT */
+	} M_dat;
+};
+
+#define	mc_next		mbuf.m_next
+#define	mc_len		mbuf.m_len
+#define	mc_data		mbuf.m_dat
+#define	mc_off		mbuf.m_off
+#define	mc_type		mbuf.m_type
+#define	mc_flags	mbuf.m_flags
+#define	mc_nextpkt	mbuf.m_nextpkt
+#define	mc_act		mbuf.m_act
+#define	mc_pkthdr	M_dat.MH.MH_pkthdr
+#define	mc_ext		M_dat.MH.MH_dat.MH_ext
+#define	mc_pktdat	M_dat.MH.MH_dat.MH_databuf
+#define	mc_dat		M_dat.M_databuf
+
+/* mbuf flags */
+#define	M_EXT		0x0001	/* has associated external storage */
+#define	M_PKTHDR	0x0002	/* start of record */
+#define	M_EOR		0x0004	/* end of record */
+
+/* mbuf pkthdr flags, also in m_flags */
+#define	M_BCAST		0x0100	/* send/received as link-level broadcast */
+#define	M_MCAST		0x0200	/* send/received as link-level multicast */
+
+/* flags copied when copying m_pkthdr */
+#define	M_COPYFLAGS	(M_PKTHDR|M_EOR|M_BCAST|M_MCAST)
 
 /* mbuf types */
 #define	MT_FREE		0	/* should be on free list */
@@ -78,11 +135,13 @@ struct mbuf {
 #define	MT_FTABLE	11	/* fragment reassembly header */
 #define	MT_RIGHTS	12	/* access rights */
 #define	MT_IFADDR	13	/* interface address */
+#define MT_CONTROL	14	/* extra-data protocol message */
+#define MT_OOBDATA	15	/* expedited data  */
 #define	NMBTYPES	16
 
 /* flags to m_get */
-#define	M_DONTWAIT		0
-#define	M_WAIT			1
+#define	M_DONTWAIT		M_NOWAIT
+#define	M_WAIT			M_WAITOK
 #define	M_DONTWAITLONG	2
 
 /* flags to m_pgalloc */
@@ -92,6 +151,19 @@ struct mbuf {
 
 /* length to m_copy to copy all */
 #define	M_COPYALL	077776
+
+/*
+ * mbuf utility macros:
+ *
+ *	MBUFLOCK(code)
+ * prevents a section of code from from being interrupted by network
+ * drivers.
+ */
+#define	MBUFLOCK(code) \
+	{ int ms = splimp(); \
+	  { code } \
+	  splx(ms); \
+	}
 
 /*
  * m_pullup will pull up additional length if convenient;

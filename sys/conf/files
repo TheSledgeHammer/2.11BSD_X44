@@ -103,6 +103,7 @@ file	net/bpf_filter.c	    bpfilter needs-count
 file	net/if.c
 file	net/if_loop.c		    loop needs-count
 file	net/if_sl.c		        sl needs-count
+file	net/radix.c
 file	net/raw_cb.c
 file	net/raw_usrreq.c
 file	net/route.c
@@ -118,6 +119,7 @@ file	netinet/in_pcb.c	    inet
 file	netinet/in_proto.c	    inet
 file	netinet/ip_icmp.c	    inet
 file	netinet/ip_input.c	    inet
+file	netinet/ip_mroute.c		inet
 file	netinet/ip_output.c	    inet
 file	netinet/raw_ip.c	    inet
 file	netinet/tcp_debug.c	    inet

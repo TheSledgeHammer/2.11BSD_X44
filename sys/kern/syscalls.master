@@ -82,7 +82,7 @@
 39  STD     { int getlogin(); }
 40  STD     { int lstat(); }
 41  STD     { int dup(); }
-42  STD     { int pipe(); }     	/* not used */
+42  STD     { int pipe(); }     	[ not used ]
 43  STD     { int setlogin(); }
 44  STD     { int profil(); }
 45  STD     { int setuid(); }
@@ -109,14 +109,14 @@
 66  STD     { int vfork(); }
 67  UNIMPL
 68  UNIMPL
-69  STD     { int sbrk(); }    		/* not used */
+69  STD     { int sbrk(); }    		[ not used ]
 70  UNIMPL
 71  UNIMPL
 72  UNIMPL
 73  UNIMPL
 74  UNIMPL
 75  UNIMPL
-76  STD     { int vhangup(); } 		/* not used */
+76  STD     { int vhangup(); } 		[ not used ]
 77  UNIMPL
 78  UNIMPL
 79  STD     { int getgroups(); }
@@ -188,12 +188,12 @@
 145 STD     { int setrlimit(); }
 146 STD     { int killpg(); }
 147 UNIMPL
-148 STD     { int setquota(); }    /* not used (filesystem?) */
-149 STD     { int quota(); }       /* not used (filesystem?) */
+148 STD     { int setquota(); }    [ not used filesystem? ]
+149 STD     { int quota(); }       [ not used filesystem? ]
 150 STD     { int getsockname(); }
 ; Syscalls 151-155 are special for 2BSD
 151 UNIMPL
 152 STD     nostk
 153 STD     { int fetchi(); }
 154 STD     { int ucall(); }
-155 STD     { int fperr(); }   /* not used */
+155 STD     { int fperr(); }   [ not used ]
