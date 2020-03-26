@@ -42,7 +42,6 @@
 
 #include <machine/segments.h>
 #include <machine/tss.h>
-#include <machine/vm86.h>
 #include <machine/npx.h>
 
 #define	NPORT			1024						/* # of ports we allow to be mapped */
@@ -57,9 +56,9 @@ struct pcb {
 #define	pcb_usp			pcb_tss.tss_esp
 #define	pcb_fp			pcb_tss.tss_ebp
 #define	pcb_ldt_sel		pcb_tss.tss_ldt
-	struct	save87		pcb_savefpu;		/* floating point state for 287/387 */
+	struct	save87		pcb_savefpu;		/* floating point state (context) for 287/387 */
 	struct	emcsts		pcb_saveemc;		/* Cyrix EMC state */
-	u_long	pcb_iomap[NPORT/32]; 			/* i/o port bitmap */
+	u_long				pcb_iomap[NPORT/32];/* i/o port bitmap */
 
 /*
  * Software pcb (extension)
@@ -86,7 +85,6 @@ struct pcb_extend {
 	struct 	segment_descriptor 	ext_tssd;	/* tss descriptor */
 	struct 	i386tss				ext_tss;	/* per-process i386tss */
 	caddr_t						ext_iomap;	/* i/o permission bitmap */
-	struct	vm86_kernel 		ext_vm86;	/* vm86 area */
 };
 
 /*

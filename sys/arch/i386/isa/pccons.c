@@ -53,7 +53,7 @@
 
 #include <i386/isa/isa_device.h>
 #include <i386/isa/icu.h>
-#include <i386/i386/cons.h>
+#include "../../../dev/cons.h"
 
 struct	tty pccons;
 

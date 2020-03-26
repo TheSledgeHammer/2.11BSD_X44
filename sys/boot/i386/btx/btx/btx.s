@@ -19,9 +19,9 @@
 # Memory layout.
 #
 			.set MEM_BTX,0x1000		# Start of BTX memory
-			.set MEM_ESP0,0x1800		# Supervisor stack
+			.set MEM_ESP0,0x1800	# Supervisor stack
 			.set MEM_BUF,0x1800		# Scratch buffer
-			.set MEM_ESP1,0x1e00		# Link stack
+			.set MEM_ESP1,0x1e00	# Link stack
 			.set MEM_IDT,0x1e00		# IDT
 			.set MEM_TSS,0x1f98		# TSS
 			.set MEM_MAP,0x2000		# I/O bit map
@@ -41,8 +41,8 @@
 			.set SEL_SDATA,0x10		# Supervisor data
 			.set SEL_RCODE,0x18		# Real mode code
 			.set SEL_RDATA,0x20		# Real mode data
-			.set SEL_UCODE,0x28|3		# User code
-			.set SEL_UDATA,0x30|3		# User data
+			.set SEL_UCODE,0x28|3	# User code
+			.set SEL_UDATA,0x30|3	# User data
 			.set SEL_TSS,0x38		# TSS
 #
 # Task state segment fields.
@@ -59,7 +59,7 @@
 #
 # V86 constants.
 #
-			.set V86_FLG,0x208eff		# V86 flag mask
+			.set V86_FLG,0x208eff	# V86 flag mask
 			.set V86_STK,0x400		# V86 stack allowance
 #
 # Dump format control bytes.
@@ -78,16 +78,16 @@
 # BIOS Data Area locations.
 #
 			.set BDA_MEM,0x413		# Free memory
-			.set BDA_KEYFLAGS,0x417		# Keyboard shift-state flags
+			.set BDA_KEYFLAGS,0x417	# Keyboard shift-state flags
 			.set BDA_SCR,0x449		# Video mode
 			.set BDA_POS,0x450		# Cursor position
 			.set BDA_BOOT,0x472		# Boot howto flag
 #
 # Derivations, for brevity.
 #
-			.set _ESP0H,MEM_ESP0>>0x8	# Byte 1 of ESP0
-			.set _ESP1H,MEM_ESP1>>0x8	# Byte 1 of ESP1
-			.set _TSSIO,MEM_MAP-MEM_TSS	# TSS I/O base
+			.set _ESP0H,MEM_ESP0>>0x8		# Byte 1 of ESP0
+			.set _ESP1H,MEM_ESP1>>0x8		# Byte 1 of ESP1
+			.set _TSSIO,MEM_MAP-MEM_TSS		# TSS I/O base
 			.set _TSSLM,MEM_DIR-MEM_TSS-1	# TSS limit
 			.set _IDTLM,MEM_TSS-MEM_IDT-1	# IDT limit
 #
@@ -99,15 +99,15 @@ start:						# Start of code
 #
 # BTX header.
 #
-btx_hdr:	.byte 0xeb			# Machine ID
-			.byte 0xe			# Header size
-			.ascii "BTX"			# Magic
-			.byte 0x1			# Major version
-			.byte 0x1			# Minor version
-			.byte BTX_FLAGS			# Flags
+btx_hdr:	.byte 0xeb					# Machine ID
+			.byte 0xe					# Header size
+			.ascii "BTX"				# Magic
+			.byte 0x1					# Major version
+			.byte 0x1					# Minor version
+			.byte BTX_FLAGS				# Flags
 			.word PAG_CNT-MEM_ORG>>0xc	# Paging control
-			.word break-start		# Text size
-			.long 0x0			# Entry address
+			.word break-start			# Text size
+			.long 0x0					# Entry address
 #
 # Initialization routine.
 #
@@ -122,28 +122,28 @@ init:		cli				# Disable interrupts
 #
 # Initialize memory.
 #
-			mov $MEM_IDT,%di		# Memory to initialize
+			mov $MEM_IDT,%di				# Memory to initialize
 			mov $(MEM_ORG-MEM_IDT)/2,%cx	# Words to zero
-			push %di			# Save
-			rep				# Zero-fill
-			stosw				#  memory
-			pop %di				# Restore
+			push %di						# Save
+			rep								# Zero-fill
+			stosw							#  memory
+			pop %di							# Restore
 #
 # Create IDT.
 #
 			mov $idtctl,%si			# Control string
-init.1: 	lodsb				# Get entry
-			cbw				#  count
+init.1: 	lodsb					# Get entry
+			cbw						#  count
 			xchg %ax,%cx			#  as word
-			jcxz init.4			# If done
-			lodsb				# Get segment
+			jcxz init.4				# If done
+			lodsb					# Get segment
 			xchg %ax,%dx	 		#  P:DPL:type
-			lodsw				# Get control
+			lodsw					# Get control
 			xchg %ax,%bx			#  set
-			lodsw				# Get handler offset
+			lodsw					# Get handler offset
 			mov $SEL_SCODE,%dh		# Segment selector
-init.2: 	shr %bx				# Handle this int?
-			jnc init.3			# No
+init.2: 	shr %bx					# Handle this int?
+			jnc init.3				# No
 			mov %ax,(%di)			# Set handler offset
 			mov %dh,0x2(%di)		#  and selector
 			mov %dl,0x5(%di)		# Set P:DPL:type
@@ -157,7 +157,7 @@ init.3: 	lea 0x8(%di),%di		# Next entry
 init.4: 	movb $_ESP0H,TSS_ESP0+1(%di)	# Set ESP0
 			movb $SEL_SDATA,TSS_SS0(%di)	# Set SS0
 			movb $_ESP1H,TSS_ESP1+1(%di)	# Set ESP1
-			movb $_TSSIO,TSS_MAP(%di)	# Set I/O bit map base
+			movb $_TSSIO,TSS_MAP(%di)		# Set I/O bit map base
 ifdef(`PAGING',`
 #
 # Create page directory.
@@ -592,7 +592,7 @@ v86iret:	movzwl (%ebx),%esi		# Load V86 IP
 v86popf:	cmpb $0x4,%cl			# 32-bit?
 			je v86popf.1			# Yes
 			movl %edx,%eax			# Initialize
-			data16				# 16-bit
+			data16					# 16-bit
 v86popf.1:	movl (%ebx),%eax		# Load flags
 			addl %ecx,%ebx			# Adjust SP
 			andl $V86_FLG,%eax		# Merge

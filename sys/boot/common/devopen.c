@@ -29,8 +29,8 @@
 #include <sys/cdefs.h>
 /* __FBSDID("$FreeBSD: src/sys/boot/common/devopen.c,v 1.4 2003/08/25 23:30:41 obrien Exp $"); */
 
-#include <boot/libsa/bootstand.h>
 #include <lib/libsa/loadfile.h>
+#include <boot/bootstand.h>
 
 #include "bootstrap.h"
 

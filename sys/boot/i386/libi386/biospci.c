@@ -32,10 +32,9 @@
  * PnP enumerator using the PCI BIOS.
  */
 
-#include <stand.h>
 #include <machine/stdarg.h>
-#include <isapnp.h>
 #include <btxv86.h>
+#include <boot/bootstand.h>
 #include "bootstrap.h"
 #include "libi386.h"
 
@@ -49,7 +48,7 @@
 
 struct pci_progif 
 {
-    int		pi_code;
+    int			pi_code;
     const char	*pi_name;
 };
 
@@ -345,7 +344,7 @@ biospci_find_device(uint32_t devid, int index, uint32_t *locator)
 	v86.ctl = V86_FLAGS;
 	v86.addr = PCI_INT;
 	v86.eax = FIND_PCI_DEVICE;
-	v86.edx = devid & 0xffff;		/* EDX - Vendor ID */
+	v86.edx = devid & 0xffff;			/* EDX - Vendor ID */
 	v86.ecx = (devid >> 16) & 0xffff;	/* ECX - Device ID */
 	v86.esi = index;
 	v86int();

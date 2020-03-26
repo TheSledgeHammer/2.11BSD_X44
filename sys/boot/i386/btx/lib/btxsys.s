@@ -22,19 +22,19 @@
 #
 # Globals.
 #
-		.global __exit
-		.global __exec
+			.global __exit
+			.global __exec
 #
 # Constants.
 #
-		.set INT_SYS,0x30		# Interrupt number
+			.set INT_SYS,0x30		# Interrupt number
 #
 # System call: exit
 #
-__exit: 	xorl %eax,%eax		# BTX system
-		int $INT_SYS			#  call 0x0
+__exit: 	xorl %eax,%eax			# BTX system
+			int $INT_SYS			#  call 0x0
 #
 # System call: exec
 #
-__exec: 	movl $0x1,%eax		# BTX system
-		int $INT_SYS			#  call 0x1
+__exec: 	movl $0x1,%eax			# BTX system
+			int  $INT_SYS			#  call 0x1

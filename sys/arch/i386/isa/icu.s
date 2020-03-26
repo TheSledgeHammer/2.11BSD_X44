@@ -83,7 +83,7 @@ doreti:
 	/* compensate for drivers that return with non-zero cpl */
 	movl	0x34(%esp), %esi /* cs */
 	andl	$3, %esi
-	jz	1f
+	jz		1f
 
 return_to_user_mode: /* entry point from trap and syscall return */
 
@@ -95,27 +95,27 @@ return_to_user_mode: /* entry point from trap and syscall return */
 	cli
 	movl	%ebx, %eax
 	movw	%ax,_cpl
-	orw	_imen,%ax
+	orw		_imen,%ax
 	outb	%al, $ IO_ICU1+1
 	movb	%ah, %al
 	outb	%al, $ IO_ICU2+1
 
 	/* return immediately if previous cpl was non-zero */
 	cmpw	$0, %bx
-	jnz	just_return
+	jnz		just_return
 
 	/* do network stuff, if requested, even if returning to kernel mode */
 	cmpl	$0,_netisr
-	jne	donet
+	jne		donet
 
 	/* if (returning to user mode && astpending), go back to trap
 	 * (check astpending first since it is more likely to be false)
 	 */
 	cmpl	$0,_astpending
-	je	just_return
+	je		just_return
 
 	testl	%esi, %esi
-	jz	just_return
+	jz		just_return
 
 	/* we need to go back to trap */
 	popl	%es
@@ -132,12 +132,12 @@ return_to_user_mode: /* entry point from trap and syscall return */
 donet:
 	/* like splnet(), except we know the current pri is 0 */
 	cli
-	movw _netmask, %ax
-	movw %ax,_cpl
-	orw _imen,%ax
-	outb %al, $ IO_ICU1+1
-	movb %ah, %al
-	outb %al, $ IO_ICU2+1
+	movw 	_netmask, %ax
+	movw 	%ax,_cpl
+	orw 	_imen,%ax
+	outb	%al, $ IO_ICU1+1
+	movb 	%ah, %al
+	outb 	%al, $ IO_ICU2+1
 	sti
 
 	DONET(NETISR_RAW,_rawintr)
@@ -159,16 +159,16 @@ donet:
 #endif
 
 	btrl	$ NETISR_SCLK,_netisr
-	jnb	return_to_user_mode
+	jnb		return_to_user_mode
 
 	/* like splsoftclock */
 	cli
-	movw $0x8000, %ax
-	movw %ax,_cpl
-	orw _imen,%ax
-	outb %al, $ IO_ICU1+1
-	movb %ah, %al
-	outb %al, $ IO_ICU2+1
+	movw 	$0x8000, %ax
+	movw 	%ax,_cpl
+	orw 	_imen,%ax
+	outb 	%al, $ IO_ICU1+1
+	movb 	%ah, %al
+	outb 	%al, $ IO_ICU2+1
 	sti
 
 	# back to an interrupt frame for a moment
@@ -176,11 +176,11 @@ donet:
 	pushl	$0xff	# dummy intr
 	call	_softclock
 	leal	8(%esp), %esp
-	jmp	return_to_user_mode
+	jmp		return_to_user_mode
 
 just_return:
-	pop	%es
-	pop	%ds
+	pop		%es
+	pop		%ds
 	popa
 	leal	8(%esp),%esp
 	iret
@@ -206,16 +206,16 @@ _splclock:
 	outb	%al,$ IO_ICU2+1
 	movzwl	_cpl,%eax		# return old priority
 	movw	%dx,_cpl		# set new priority level
-	sti				# enable interrupts
+	sti						# enable interrupts
 	ret
 
 	.globl	_spltty			# block clists
 _spltty:
-	cli				# disable interrupts
+	cli						# disable interrupts
 	movw	_cpl,%ax
-	orw	_ttymask,%ax
+	orw		_ttymask,%ax
 	movw	%ax,%dx
-	orw	_imen,%ax		# mask off those not enabled yet
+	orw		_imen,%ax		# mask off those not enabled yet
 	movw	%ax,%cx
 	outb	%al,$ IO_ICU1+1		/* update icu's */
 	movb	%ah,%al
@@ -231,9 +231,9 @@ _splimp:
 _splnet:
 	cli				# disable interrupts
 	movw	_cpl,%ax
-	orw	_netmask,%ax
+	orw		_netmask,%ax
 	movw	%ax,%dx
-	orw	_imen,%ax		# mask off those not enabled yet
+	orw		_imen,%ax		# mask off those not enabled yet
 	movw	%ax,%cx
 	outb	%al,$ IO_ICU1+1		/* update icu's */
 	movb	%ah,%al
@@ -247,9 +247,9 @@ _splnet:
 _splbio:
 	cli				# disable interrupts
 	movw	_cpl,%ax
-	orw	_biomask,%ax
+	orw		_biomask,%ax
 	movw	%ax,%dx
-	orw	_imen,%ax		# mask off those not enabled yet
+	orw		_imen,%ax		# mask off those not enabled yet
 	movw	%ax,%cx
 	outb	%al,$ IO_ICU1+1		/* update icu's */
 	movb	%ah,%al
@@ -261,11 +261,11 @@ _splbio:
 
 	.globl	_splsoftclock
 _splsoftclock:
-	cli				# disable interrupts
+	cli						# disable interrupts
 	movw	_cpl,%ax
-	orw	$0x8000,%ax		# set new priority level
+	orw		$0x8000,%ax		# set new priority level
 	movw	%ax,%dx
-	orw	_imen,%ax		# mask off those not enabled yet
+	orw		_imen,%ax		# mask off those not enabled yet
 	movw	%ax,%cx
 	outb	%al,$ IO_ICU1+1		/* update icu's */
 	movb	%ah,%al
@@ -282,9 +282,9 @@ _spl0:
 	cli				# disable interrupts
 	pushl	_cpl			# save old priority
 	movw	_cpl,%ax
-	orw	_netmask,%ax		# mask off those network devices
+	orw		_netmask,%ax		# mask off those network devices
 	movw	%ax,_cpl		# set new priority level
-	orw	_imen,%ax		# mask off those not enabled yet
+	orw		_imen,%ax		# mask off those not enabled yet
 	outb	%al,$ IO_ICU1+1		/* update icu's */
 	movb	%ah,%al
 	outb	%al,$ IO_ICU2+1
@@ -314,7 +314,7 @@ _spl0:
 
 	movw	$0,%ax			# set new priority level
 	movw	%ax,%dx
-	orw	_imen,%ax		# mask off those not enabled yet
+	orw		_imen,%ax		# mask off those not enabled yet
 	movw	%ax,%cx
 	outb	%al,$ IO_ICU1+1		/* update icu's */
 	movb	%ah,%al
@@ -330,9 +330,9 @@ _splx:
 	movw	4(%esp),%ax		# new priority level
 	movw	%ax,%dx
 	cmpw	$0,%dx
-	je	_spl0			# going to "zero level" is special
+	je		_spl0			# going to "zero level" is special
 
-	orw	_imen,%ax		# mask off those not enabled yet
+	orw		_imen,%ax		# mask off those not enabled yet
 	movw	%ax,%cx
 	outb	%al,$ IO_ICU1+1		/* update icu's */
 	movb	%ah,%al

@@ -416,11 +416,11 @@ done:
 
 int
 user_page_fault (p, map, addr, ftype, type)
-struct proc *p;
-vm_map_t map;
-caddr_t addr;
-vm_prot_t ftype;
-int type;
+	struct proc *p;
+	vm_map_t map;
+	caddr_t addr;
+	vm_prot_t ftype;
+	int type;
 {
 	struct vmspace *vm;
 	vm_offset_t va;
@@ -485,9 +485,9 @@ void *addr;
 
 int
 copyout (from, to, len)
-void *from;
-void *to;
-u_int len;
+	void *from;
+	void *to;
+	u_int len;
 {
 	u_int *pte, *pde;
 	int rest_of_page;

@@ -30,10 +30,9 @@
  * PnP BIOS enumerator.
  */
 
-#include <stand.h>
 #include <machine/stdarg.h>
-#include <isapnp.h>
 #include <btxv86.h>
+#include <boot/bootstand.h>
 #include "bootstrap.h"
 
 

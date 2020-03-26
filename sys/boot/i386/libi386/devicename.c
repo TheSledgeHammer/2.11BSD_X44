@@ -27,11 +27,11 @@
  */
 
 #include <sys/cdefs.h>
-#include <stand.h>
+#include <sys/disk.h>
 #include <string.h>
 
+#include <boot/bootstand.h>
 #include "bootstrap.h"
-#include "disk.h"
 #include "libi386.h"
 
 static int	i386_parsedev(struct i386_devdesc **dev, const char *devspec, const char **path);

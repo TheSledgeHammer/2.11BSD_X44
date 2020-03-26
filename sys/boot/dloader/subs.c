@@ -32,10 +32,10 @@
  * SUCH DAMAGE.
  */
 
-#include <boot/libsa/bootstand.h>
 #include <lib/libsa/loadfile.h>
 #include <lib/libkern/libkern.h>
 #include <bootstrap.h>
+#include <boot/bootstand.h>
 #include "dloader.h"
 
 dvar_t dvbase;

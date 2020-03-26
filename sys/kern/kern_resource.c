@@ -290,7 +290,7 @@ limcopy(lim)
 {
 	register struct plimit *copy;
 
-	RMALLOC(copy, sizeof(struct plimit));
+	rmalloc(copy, sizeof(struct plimit));
 	bcopy(lim->pl_rlimit, copy->pl_rlimit, sizeof(struct rlimit) * RLIM_NLIMITS);
 	copy->p_lflags = 0;
 	copy->p_refcnt = 1;

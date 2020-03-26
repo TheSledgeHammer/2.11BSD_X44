@@ -60,13 +60,14 @@
 #include <lib/libsa/bootp.h>
 #include <lib/libsa/bootparam.h>
 
-#include <boot/libsa/bootstand.h>
 #include <stddef.h>
 #include <string.h>
 //#include <net.h>
 //#include <netif.h>
 
 #include "dev_net.h"
+
+#include <boot/bootstand.h>
 #include "bootstrap.h"
 
 #ifdef	NETIF_DEBUG

@@ -30,10 +30,10 @@
  */
 #include <sys/cdefs.h>
 
-#include <stand.h>
 #include <btxv86.h>
 #include <machine/psl.h>
 
+#include <boot/bootstand.h>
 #include "bootstrap.h"
 #include "libi386.h"
 

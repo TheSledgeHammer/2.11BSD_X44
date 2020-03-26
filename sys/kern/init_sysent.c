@@ -267,9 +267,9 @@ struct sysent sysent[] = {
 	 */
 	0, nosys,				/* 151 = unused */
 	0, nostk,				/* 152 = nostk */
-	1, fetchi,				/* 153 = fetchi */
-	4, ucall,				/* 154 = ucall */
-	0, fperr,				/* 155 = (old fperr) */
+	0, nosys,				/* 153 = fetchi */
+	0, nosys,				/* 154 = ucall */
+	0, nosys,				/* 155 = (old fperr) */
 };
 
 int	nsysent = sizeof (sysent) / sizeof (sysent[0]);

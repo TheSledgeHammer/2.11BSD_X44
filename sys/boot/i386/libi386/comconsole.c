@@ -25,11 +25,11 @@
 
 #include <sys/cdefs.h>
 
-#include <stand.h>
 #include <machine/cpufunc.h>
-#include <dev/ic/ns16550.h>
+#include <i386/isa/ic/ns16550.h>
 #include <dev/pci/pcireg.h>
 
+#include <boot/bootstand.h>
 #include "bootstrap.h"
 #include "libi386.h"
 
@@ -45,22 +45,19 @@
 #define COMSPEED	9600
 #endif
 
-static void	comc_probe(struct console *cp);
-static int	comc_init(int arg);
-static void	comc_putchar(int c);
-static int	comc_getchar(void);
-static int	comc_getspeed(void);
-static int	comc_ischar(void);
-static int	comc_parseint(const char *string);
+static void		comc_probe(struct console *cp);
+static int		comc_init(int arg);
+static void		comc_putchar(int c);
+static int		comc_getchar(void);
+static int		comc_getspeed(void);
+static int		comc_ischar(void);
+static int		comc_parseint(const char *string);
 static uint32_t comc_parse_pcidev(const char *string);
-static int	comc_pcidev_set(struct env_var *ev, int flags,
-		    const void *value);
-static int	comc_pcidev_handle(uint32_t locator);
-static int	comc_port_set(struct env_var *ev, int flags,
-		    const void *value);
-static void	comc_setup(int speed, int port);
-static int	comc_speed_set(struct env_var *ev, int flags,
-		    const void *value);
+static int		comc_pcidev_set(struct env_var *ev, int flags, const void *value);
+static int		comc_pcidev_handle(uint32_t locator);
+static int		comc_port_set(struct env_var *ev, int flags, const void *value);
+static void		comc_setup(int speed, int port);
+static int		comc_speed_set(struct env_var *ev, int flags, const void *value);
 
 static int	comc_curspeed;
 static int	comc_port = COMPORT;
@@ -339,7 +336,7 @@ comc_setup(int speed, int port)
 	tries = 0;
 	do
 		inb(comc_port + com_data);
-	while (inb(comc_port + com_lsr) & LSR_RXRDY && ++tries < TRY_COUNT);
+	while ((inb(comc_port + com_lsr) & LSR_RXRDY) && ++tries < TRY_COUNT);
 
 	if (tries < TRY_COUNT) {
 		comconsole.c_flags |= (C_PRESENTIN | C_PRESENTOUT);

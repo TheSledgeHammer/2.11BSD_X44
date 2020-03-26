@@ -34,10 +34,10 @@
  *
  * XXX may be obsoleted by BootFORTH or some other, better, interpreter.
  */
-#include <boot/libsa/bootstand.h>
 #include <dloader/dloader.h>
 #include <lib/libsa/loadfile.h>
 #include <lib/libkern/libkern.h>
+#include <boot/bootstand.h>
 #include "bootstrap.h"
 
 
@@ -103,7 +103,7 @@ interact(void)
     /*
 	 * Read our default configuration
 	 */
-	if (include("dloader.rc.rc") != CMD_OK)
+	if (include("dloader.rc") != CMD_OK)
 		include("boot.conf");
 	printf("\n");
 
@@ -141,7 +141,7 @@ interact(void)
  * Commands may be prefixed with '@' (so they aren't displayed) or '-' (so
  * that the script won't stop if they fail).
  */
-static int
+int
 command_include(int argc, char *argv[])
 {
 	int i;

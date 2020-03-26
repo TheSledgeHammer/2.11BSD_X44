@@ -18,11 +18,11 @@
 /*__FBSDID("$FreeBSD$");*/
 
 #include <sys/param.h>
+#include <boot/bootstand.h>
+#include <boot/common/rbx.h>
 
 #include <btxv86.h>
 
-#include "bootstand.h"
-#include "rbx.h"
 #include "drv.h"
 #include "edd.h"
 

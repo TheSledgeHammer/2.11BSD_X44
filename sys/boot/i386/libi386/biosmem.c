@@ -29,13 +29,15 @@
 /*
  * Obtain memory configuration information from the BIOS
  */
-#include <stand.h>
-#include <machine/pc/bios.h>
-
+#include <boot/bootstand.h>
+#include <boot/common/commands.h>
+#include <boot/common/smbios.h>
 #include "bootstrap.h"
 #include "libi386.h"
 #include "btxv86.h"
-#include "smbios.h"
+#include <machine/pc/bios.h>
+
+
 
 vm_offset_t	memtop, memtop_copyin, high_heap_base;
 uint32_t	bios_basemem, bios_extmem, high_heap_size;
@@ -226,7 +228,7 @@ bios_getmem(void)
 	}
 }
 
-static int
+int
 command_biosmem(int argc, char *argv[])
 {
 	int bq = bios_getquirks();
@@ -255,5 +257,3 @@ command_biosmem(int argc, char *argv[])
 
 	return (CMD_OK);
 }
-
-COMMAND_SET(biosmem, "biosmem", "show BIOS memory setup", command_biosmem);

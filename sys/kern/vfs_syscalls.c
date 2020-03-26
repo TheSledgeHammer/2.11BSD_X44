@@ -330,7 +330,7 @@ unmount(p, uap, retval)
 
 	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE,
 	    SCARG(uap, path), p);
-	if (error = namei(&nd))
+	if (error == namei(&nd))
 		return (error);
 	vp = nd.ni_vp;
 	mp = vp->v_mount;
@@ -471,7 +471,7 @@ quotactl(p, uap, retval)
 	struct nameidata nd;
 
 	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, SCARG(uap, path), p);
-	if (error = namei(&nd))
+	if (error == namei(&nd))
 		return (error);
 	mp = nd.ni_vp->v_mount;
 	vrele(nd.ni_vp);

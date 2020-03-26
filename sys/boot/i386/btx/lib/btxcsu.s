@@ -22,22 +22,22 @@
 #
 # Globals.
 #
-		.global _start
+			.global _start
 #
 # Constants.
 #
-		.set ARGADJ,0xfa0		# Argument adjustment
+			.set ARGADJ,0xfa0		# Argument adjustment
 #
 # Client entry point.
 #
-_start: 	movl %eax,__base	# Set base address
-		movl %esp,%eax			# Set
-		addl $ARGADJ,%eax		#  argument
-		movl %eax,__args		#  pointer
-		call main				# Invoke client main()
-		call exit				# Invoke client exit()
+_start: 	movl %eax,__base		# Set base address
+			movl %esp,%eax			# Set
+			addl $ARGADJ,%eax		#  argument
+			movl %eax,__args		#  pointer
+			call main				# Invoke client main()
+			call exit				# Invoke client exit()
 #
 # Data.
 #
-		.comm __base,4			# Client base address
-		.comm __args,4			# Client arguments
+			.comm __base,4			# Client base address
+			.comm __args,4			# Client arguments

@@ -26,19 +26,27 @@
 
 #include <sys/cdefs.h>
 
+/* __FBSDID("$FreeBSD$"); */
+
+/*
+ * MD bootstrap main() and assorted miscellaneous
+ * commands.
+ */
+
+#include <sys/stddef.h>
 #include <sys/reboot.h>
 
-#include <boot/libsa/bootstand.h>
+#include <boot/bootstand.h>
 #include <boot/common/bootstrap.h>
-#include <common/bootargs.h>
-
-#include <lib/libsa/loadfile.h>
-#include "libi386/libi386.h"
-#include "btxv86.h"
-
+#include <boot/common/smbios.h>
+#include <i386/common/bootargs.h>
+#include <lib/libkern/libkern.h>
 #include <machine/bootinfo.h>
 #include <machine/cpufunc.h>
 #include <machine/psl.h>
+
+#include "libi386/libi386.h"
+#include "btxv86.h"
 
 /* Arguments passed in from the boot1/boot2 loader */
 static struct bootargs *kargs;
@@ -121,7 +129,7 @@ main(void)
 	}
 
 
-	archsw.arch_autoload = i386_autoload;
+	//archsw.arch_autoload = i386_autoload;
 	archsw.arch_getdev = i386_getdev;
 	archsw.arch_copyin = i386_copyin;
 	archsw.arch_copyout = i386_copyout;
@@ -144,9 +152,6 @@ main(void)
     	initial_bootinfo->bi_basemem = bios_basemem / 1024;
     	initial_bootinfo->bi_extmem = bios_extmem / 1024;
     }
-
-    /* detect ACPI for future reference */
-    biosacpi_detect();
 
     /* detect SMBIOS for future reference */
     smbios_detect(NULL);

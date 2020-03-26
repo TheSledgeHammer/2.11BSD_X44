@@ -77,7 +77,7 @@ extern vm_offset_t avail_end;
 #include <machine/gdt.h>
 
 #include <i386/isa/rtc.h>
-#include <i386/i386/cons.h>
+#include <machine/cons.h>
 
 /*
  * Declare these as initialized data so we can patch them.
@@ -693,7 +693,6 @@ cpu_setregs(void)
 	load_gs(_udatasel);
 }
 
-
 /*
  * machine dependent system variables.
  */
@@ -724,35 +723,6 @@ cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 		return (EOPNOTSUPP);
 	}
 	/* NOTREACHED */
-}
-
-/*
- * Set up proc0's TSS and LDT.
- */
-void
-i386_proc0_tss_ldt_init()
-{
-	struct pcb *pcb;
-	int x;
-
-	gdt_init();
-	curpcb = pcb = &proc0.p_addr->u_pcb;
-	pcb->pcb_flags = 0;
-	pcb->pcb_tss.tss_ioopt =
-	    ((caddr_t)pcb->pcb_iomap - (caddr_t)&pcb->pcb_tss) << 16;
-	for (x = 0; x < sizeof(pcb->pcb_iomap) / 4; x++)
-		pcb->pcb_iomap[x] = 0xffffffff;
-
-	pcb->pcb_ldt_sel = pmap_kernel()->pm_ldt_sel = GSEL(GLDT_SEL, SEL_KPL);
-	pcb->pcb_cr0 = rcr0();
-	pcb->pcb_tss.tss_ss0 = GSEL(GDATA_SEL, SEL_KPL);
-	pcb->pcb_tss.tss_esp0 = (int)proc0.p_addr + USPACE - 16;
-	tss_alloc(&proc0);
-
-	ltr(proc0.p_md.md_tss_sel);
-	lldt(pcb->pcb_ldt_sel);
-
-	proc0.p_md.md_regs = (struct trapframe *)pcb->pcb_tss.tss_esp0 - 1;
 }
 
 /*

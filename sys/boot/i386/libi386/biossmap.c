@@ -29,14 +29,15 @@
 /*
  * Obtain memory configuration information from the BIOS
  */
-#include <stand.h>
 #include <sys/param.h>
 #include <sys/exec_linker.h>
 #include <sys/queue.h>
 #include <sys/stddef.h>
-#include <machine/metadata.h>
+#include <boot/common/commands.h>
+
 #include <machine/pc/bios.h>
 
+#include <boot/bootstand.h>
 #include "bootstrap.h"
 #include "libi386.h"
 #include "btxv86.h"
@@ -44,7 +45,7 @@
 struct smap_buf {
 	struct bios_smap		smap;
 	uint32_t				xattr;	/* Extended attribute from ACPI 3.0 */
-	STAILQ_ENTRY(smap_buf)	bufs;
+	TAILQ_ENTRY(smap_buf)	bufs;
 };
 
 #define	SMAP_BUFSIZE		offsetof(struct smap_buf, bufs)
@@ -57,12 +58,12 @@ void
 bios_getsmap(void)
 {
 	struct smap_buf		buf;
-	STAILQ_HEAD(smap_head, smap_buf) head =
-	    STAILQ_HEAD_INITIALIZER(head);
+	TAILQ_HEAD(smap_head, smap_buf) head =
+	    TAILQ_HEAD_INITIALIZER(head);
 	struct smap_buf		*cur, *next;
 	u_int			n, x;
 
-	STAILQ_INIT(&head);
+	TAILQ_INIT(&head);
 	n = 0;
 	x = 0;
 	v86.ebx = 0;
@@ -87,7 +88,7 @@ bios_getsmap(void)
 			next->xattr = buf.xattr;
 			x++;
 		}
-		STAILQ_INSERT_TAIL(&head, next, bufs);
+		TAILQ_INSERT_TAIL(&head, next, bufs);
 		n++;
 	} while (v86.ebx != 0);
 	smaplen = n;
@@ -96,22 +97,22 @@ bios_getsmap(void)
 		smapbase = malloc(smaplen * sizeof(*smapbase));
 		if (smapbase != NULL) {
 			n = 0;
-			STAILQ_FOREACH(cur, &head, bufs)
+			TAILQ_FOREACH(cur, &head, bufs)
 				smapbase[n++] = cur->smap;
 		}
 		if (smaplen == x) {
 			smapattr = malloc(smaplen * sizeof(*smapattr));
 			if (smapattr != NULL) {
 				n = 0;
-				STAILQ_FOREACH(cur, &head, bufs)
+				TAILQ_FOREACH(cur, &head, bufs)
 					smapattr[n++] = cur->xattr &
 					    SMAP_XATTR_MASK;
 			}
 		} else
 			smapattr = NULL;
-		cur = STAILQ_FIRST(&head);
+		cur = TAILQ_FIRST(&head);
 		while (cur != NULL) {
-			next = STAILQ_NEXT(cur, bufs);
+			next = TAILQ_NEXT(cur, bufs);
 			free(cur);
 			cur = next;
 		}
@@ -133,9 +134,7 @@ bios_addsmapdata(struct preloaded_file *kfp)
 	}
 }
 
-COMMAND_SET(smap, "smap", "show BIOS SMAP", command_smap);
-
-static int
+int
 command_smap(int argc, char *argv[])
 {
 	u_int			i;

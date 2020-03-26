@@ -252,21 +252,20 @@ out:
 
 int
 sigpending()
-	{
-	register struct a
-		{
+{
+	register struct a {
 		struct sigset_t *set;
-		} *uap = (struct a *)u->u_ap;
+	} *uap = (struct a*) u->u_ap;
 	register int error = 0;
-	struct	proc *p = u->u_procp;
+	struct proc *p = u->u_procp;
 
-	if	(uap->set)
-		error = copyout((caddr_t)&p->p_sigacts, (caddr_t)uap->set,
-				sizeof (p->p_sigacts));
+	if (uap->set)
+		error = copyout((caddr_t) &p->p_sigacts, (caddr_t) uap->set,
+				sizeof(p->p_sigacts));
 	else
 		error = EINVAL;
-	return(u->u_error = error);
-	}
+	return (u->u_error = error);
+}
 
 /*
  * sigsuspend is supposed to always return EINTR so we ignore errors on the
@@ -275,30 +274,29 @@ sigpending()
 
 int
 sigsuspend()
-	{
-	register struct a
-		{
+{
+	register struct a {
 		struct sigset_t *set;
-		} *uap = (struct a *)u->u_ap;
+	} *uap = (struct a *)u->u_ap;
 	sigset_t nmask;
 	struct proc *p = u->u_procp;
 	int error;
 
-	if	(uap->set && (error = copyin(uap->set, &nmask, sizeof (nmask))))
+	if (uap->set && (error = copyin(uap->set, &nmask, sizeof(nmask))))
 		nmask = 0;
-/*
- * When returning from sigsuspend, we want the old mask to be restored
- * after the signal handler has finished.  Thus, we save it here and set
- * a flag to indicate this.
-*/
+	/*
+	 * When returning from sigsuspend, we want the old mask to be restored
+	 * after the signal handler has finished.  Thus, we save it here and set
+	 * a flag to indicate this.
+	 */
 	u->u_oldmask = p->p_sigmask;
 	u->u_psflags |= SAS_OLDMASK;
-	p->p_sigmask = nmask &~ sigcantmask;
-	while	(tsleep((caddr_t)&u, PPAUSE|PCATCH, 0) == 0)
+	p->p_sigmask = nmask & ~ sigcantmask;
+	while (tsleep((caddr_t) &u, PPAUSE | PCATCH, 0) == 0)
 		;
 	/* always return EINTR rather than ERESTART */
 	return(u->u_error = EINTR);
-	}
+}
 
 int
 sigaltstack()
@@ -342,36 +340,34 @@ out:
 
 int
 sigwait()
-	{
+{
 	register struct a {
 		sigset_t *set;
 		int *sig;
-		} *uap = (struct a *)u->u_ap;
+	} *uap = (struct a *)u->u_ap;
 	sigset_t wanted, sigsavail;
 	register struct proc *p = u->u_procp;
-	int	signo, error;
+	int signo, error;
 
-	if	(uap->set == 0 || uap->sig == 0)
-		{
+	if (uap->set == 0 || uap->sig == 0) {
 		error = EINVAL;
 		goto out;
-		}
-	if	(error == copyin(uap->set, &wanted, sizeof (sigset_t)))
+	}
+	if (error == copyin(uap->set, &wanted, sizeof(sigset_t)))
 		goto out;
-	
+
 	wanted |= sigcantmask;
-	while	((sigsavail = (wanted & p->p_sigacts)) == 0)
+	while ((sigsavail = (wanted & p->p_sigacts)) == 0)
 		tsleep(&u->u_signal[0], PPAUSE | PCATCH, 0);
-	
-	if	(sigsavail & sigcantmask)
-		{
+
+	if (sigsavail & sigcantmask) {
 		error = EINTR;
 		goto out;
-		}
+	}
 
 	signo = ffs(sigsavail);
 	p->p_sigacts &= ~sigmask(signo);
-	error = copyout(&signo, uap->sig, sizeof (int));
+	error = copyout(&signo, uap->sig, sizeof(int));
 out:
 	return(u->u_error = error);
-	}
+}

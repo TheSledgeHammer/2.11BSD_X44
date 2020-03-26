@@ -21,7 +21,6 @@
 #include <sys/uio.h>
 #include <sys/domain.h>
 #include <sys/mount.h>
-//#include <sys/syscallargs.h>
 
 static void
 MBZAP(m, len, type)
@@ -682,6 +681,7 @@ bad:
 /*
  * Get socket name.
  */
+void
 getsockname()
 {
 	register struct a {

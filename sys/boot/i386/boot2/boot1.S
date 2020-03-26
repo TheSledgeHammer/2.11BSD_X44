@@ -57,10 +57,10 @@ start:		jmp main				// Start recognizably
 // Note: If additional space is needed in boot1, one solution would be to
 // move the "prompt" message data (below) to replace the OEM ID.
 
-			.org 0x03, 0x00
-oemid:		.space 0x08, 0x00	// OEM ID
+			.org 	0x03, 0x00
+oemid:		.space 	0x08, 0x00	// OEM ID
 
-			.org 0x0b, 0x00
+			.org 	0x0b, 0x00
 bpb:		.word   512			// sector size (T)
 			.byte	0			// sectors/clustor
 			.word	0			// reserved sectors
@@ -74,10 +74,10 @@ bpb:		.word   512			// sector size (T)
 			.long	0			// hidden sectors (W)
 			.long	0			// large sectors
 
-			.org 0x24, 0x00
+			.org 	0x24, 0x00
 ebpb:		.byte	0			// BIOS physical drive number (W)
 
-			.org 0x25,0x90
+			.org 	0x25,0x90
 // 
 // Trampoline used by boot2 to call read to read data from the disk via
 // the BIOS.  Call with:
@@ -88,8 +88,8 @@ ebpb:		.byte	0			// BIOS physical drive number (W)
 // %dh			- byte    - num sectors to read
 // 
 
-xread:		push %ss					// Address
-			pop %ds						//  data
+xread:		push 	%ss					// Address
+			pop 	%ds					//  data
 //
 // Setup an EDD disk packet and pass it to read
 // 
@@ -340,7 +340,7 @@ read.4: 	movzbw %bl,%ax	 		// Sectors read
 read.5: 	shlb %bl				//  buffer
 			add %bl,0x5(%bp)		//  pointer,
 			sub %al,0x2(%bp)		//  block count
-			ja read.1				// If not done
+			ja 	read.1				// If not done
 read.6: 	retw					// To caller
 
 // Messages

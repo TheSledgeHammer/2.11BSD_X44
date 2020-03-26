@@ -6,6 +6,8 @@ TODO:
 	- usb
 	- dloader
 	- i386:
+		- libi386:
+			- bootinfo32.c: Serves no purpose
 		- cdboot
 		- gptboot
 		- isoboot

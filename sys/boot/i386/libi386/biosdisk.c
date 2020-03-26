@@ -38,9 +38,7 @@
  */
 
 #include <sys/disk.h>
-#include <sys/limits.h>
 #include <sys/queue.h>
-#include <boot/libsa/bootstand.h>
 #include <machine/bootinfo.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -48,6 +46,7 @@
 #include <bootstrap.h>
 #include <btxv86.h>
 #include <edd.h>
+#include <boot/bootstand.h>
 #include "disk.h"
 #include "libi386.h"
 
@@ -56,7 +55,7 @@
 #define	BUFSIZE				(1 * BIOSDISK_SECSIZE)
 
 #define	DT_ATAPI	0x10	/* disk type for ATAPI floppies */
-#define	WDMAJOR		0	/* major numbers for devices we frontend for */
+#define	WDMAJOR		0		/* major numbers for devices we frontend for */
 #define	WFDMAJOR	1
 #define	FDMAJOR		2
 #define	DAMAJOR		4
@@ -106,12 +105,12 @@ struct specification_packet {
  */
 typedef struct bdinfo
 {
-	STAILQ_ENTRY(bdinfo)	bd_link;	/* link in device list */
-	int		bd_unit;					/* BIOS unit number */
-	int		bd_cyl;						/* BIOS geometry */
-	int		bd_hds;
-	int		bd_sec;
-	int		bd_flags;
+	TAILQ_ENTRY(bdinfo)	bd_link;		/* link in device list */
+	int			bd_unit;				/* BIOS unit number */
+	int			bd_cyl;					/* BIOS geometry */
+	int			bd_hds;
+	int			bd_sec;
+	int			bd_flags;
 #define	BD_MODEINT13	0x0000
 #define	BD_MODEEDD1	0x0001
 #define	BD_MODEEDD3	0x0002
@@ -120,40 +119,38 @@ typedef struct bdinfo
 #define	BD_FLOPPY	0x0004
 #define	BD_CDROM	0x0008
 #define	BD_NO_MEDIA	0x0010
-	int			bd_type;	/* BIOS 'drive type' (floppy only) */
+	int			bd_type;		/* BIOS 'drive type' (floppy only) */
 	uint16_t	bd_sectorsize;	/* Sector size */
-	uint64_t	bd_sectors;	/* Disk size */
-	int			bd_open;	/* reference counter */
-	void		*bd_bcache;	/* buffer cache data */
+	uint64_t	bd_sectors;		/* Disk size */
+	int			bd_open;		/* reference counter */
+	void		*bd_bcache;		/* buffer cache data */
 } bdinfo_t;
 
 #define	BD_RD		0
 #define	BD_WR		1
 
-typedef STAILQ_HEAD(bdinfo_list, bdinfo) bdinfo_list_t;
-static bdinfo_list_t fdinfo = STAILQ_HEAD_INITIALIZER(fdinfo);
-static bdinfo_list_t cdinfo = STAILQ_HEAD_INITIALIZER(cdinfo);
-static bdinfo_list_t hdinfo = STAILQ_HEAD_INITIALIZER(hdinfo);
+typedef TAILQ_HEAD(bdinfo_list, bdinfo) bdinfo_list_t;
+static bdinfo_list_t fdinfo = TAILQ_HEAD_INITIALIZER(fdinfo);
+static bdinfo_list_t cdinfo = TAILQ_HEAD_INITIALIZER(cdinfo);
+static bdinfo_list_t hdinfo = TAILQ_HEAD_INITIALIZER(hdinfo);
 
 static void bd_io_workaround(bdinfo_t *);
-static int bd_io(struct disk_devdesc *, bdinfo_t *, daddr_t, int, caddr_t, int);
+static int 	bd_io(struct disk_devdesc *, bdinfo_t *, daddr_t, int, caddr_t, int);
 static bool bd_int13probe(bdinfo_t *);
 
-static int bd_init(void);
-static int cd_init(void);
-static int fd_init(void);
-static int bd_strategy(void *devdata, int flag, daddr_t dblk, size_t size,
-    char *buf, size_t *rsize);
-static int bd_realstrategy(void *devdata, int flag, daddr_t dblk, size_t size,
-    char *buf, size_t *rsize);
-static int bd_open(struct open_file *f, ...);
-static int bd_close(struct open_file *f);
-static int bd_ioctl(struct open_file *f, u_long cmd, void *data);
-static int bd_print(int verbose);
-static int cd_print(int verbose);
-static int fd_print(int verbose);
+static int 	bd_init(void);
+static int 	cd_init(void);
+static int 	fd_init(void);
+static int 	bd_strategy(void *devdata, int flag, daddr_t dblk, size_t size, char *buf, size_t *rsize);
+static int 	bd_realstrategy(void *devdata, int flag, daddr_t dblk, size_t size, char *buf, size_t *rsize);
+static int 	bd_open(struct open_file *f, ...);
+static int 	bd_close(struct open_file *f);
+static int 	bd_ioctl(struct open_file *f, u_long cmd, void *data);
+static int 	bd_print(int verbose);
+static int 	cd_print(int verbose);
+static int 	fd_print(int verbose);
 static void bd_reset_disk(int);
-static int bd_get_diskinfo_std(struct bdinfo *);
+static int 	bd_get_diskinfo_std(struct bdinfo *);
 
 struct devsw biosfd = {
 	.dv_name = "fd",
@@ -216,7 +213,7 @@ bd_get_bdinfo(struct devdesc *dev)
 		return (bd);
 
 	unit = 0;
-	STAILQ_FOREACH(bd, bdi, bd_link) {
+	TAILQ_FOREACH(bd, bdi, bd_link) {
 		if (unit == dev->d_unit)
 			return (bd);
 		unit++;
@@ -237,7 +234,7 @@ bd_bios2unit(int biosdev)
 	DPRINTF("looking for bios device 0x%x", biosdev);
 	for (i = 0; bdi[i] != NULL; i++) {
 		unit = 0;
-		STAILQ_FOREACH(bd, bdi[i], bd_link) {
+		TAILQ_FOREACH(bd, bdi[i], bd_link) {
 			if (bd->bd_unit == biosdev) {
 				DPRINTF("bd unit %d is BIOS device 0x%x", unit,
 				    bd->bd_unit);
@@ -261,7 +258,7 @@ bd_unit2bios(struct i386_devdesc *dev)
 		return (-1);
 
 	unit = 0;
-	STAILQ_FOREACH(bd, bdi, bd_link) {
+	TAILQ_FOREACH(bd, bdi, bd_link) {
 		if (unit == dev->dd.d_unit)
 			return (bd->bd_unit);
 		unit++;
@@ -325,7 +322,7 @@ fd_init(void)
 		printf("BIOS drive %c: is %s%d\n", ('A' + unit),
 		    biosfd.dv_name, unit);
 
-		STAILQ_INSERT_TAIL(&fdinfo, bd, bd_link);
+		TAILQ_INSERT_TAIL(&fdinfo, bd, bd_link);
 	}
 
 	bcache_add_dev(unit);
@@ -354,7 +351,7 @@ bd_init(void)
 		printf("BIOS drive %c: is %s%d\n", ('C' + unit),
 		    bioshd.dv_name, unit);
 
-		STAILQ_INSERT_TAIL(&hdinfo, bd, bd_link);
+		TAILQ_INSERT_TAIL(&hdinfo, bd, bd_link);
 	}
 	bcache_add_dev(unit);
 	return (0);
@@ -458,7 +455,7 @@ bc_add(int biosdev)
 		return (-1);
 	}
 
-	STAILQ_INSERT_TAIL(&cdinfo, bd, bd_link);
+	TAILQ_INSERT_TAIL(&cdinfo, bd, bd_link);
         printf("BIOS CD is cd%d\n", nbcinfo);
         nbcinfo++;
         bcache_add_dev(nbcinfo);        /* register cd device in bcache */
@@ -697,7 +694,7 @@ bd_count(bdinfo_list_t *bdi)
 	int i;
 
 	i = 0;
-	STAILQ_FOREACH(bd, bdi, bd_link)
+	TAILQ_FOREACH(bd, bdi, bd_link)
 		i++;
 	return (i);
 }
@@ -722,7 +719,7 @@ bd_print_common(struct devsw *dev, bdinfo_list_t *bdi, int verbose)
 		return (ret);
 
 	i = -1;
-	STAILQ_FOREACH(bd, bdi, bd_link) {
+	TAILQ_FOREACH(bd, bdi, bd_link) {
 		i++;
 
 		switch (dev->dv_type) {

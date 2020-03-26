@@ -29,11 +29,11 @@
 #include <sys/cdefs.h>
 /* __FBSDID("$FreeBSD: src/sys/boot/common/commands.c,v 1.19 2003/08/25 23:30:41 obrien Exp $"); */
 
-#include <boot/libsa/bootstand.h>
 #include <lib/libsa/loadfile.h>
 #include <lib/libkern/libkern.h>
 #include "bootstrap.h"
 #include "commands.h"
+#include <boot/bootstand.h>
 
 static char command_errbuf[256];
 

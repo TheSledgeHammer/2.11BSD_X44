@@ -33,9 +33,9 @@
  * Loading modules, booting the system
  */
 
-#include <boot/libsa/bootstand.h>
 #include <lib/libsa/loadfile.h>
 #include <lib/libkern/libkern.h>
+#include <boot/bootstand.h>
 #include "bootstrap.h"
 
 static char	*getbootfile(int try);

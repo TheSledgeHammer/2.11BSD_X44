@@ -39,6 +39,8 @@
  */
 
 
+
+
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/user.h>
@@ -48,12 +50,11 @@
 #include <sys/tty.h>
 #include <sys/file.h>
 #include <sys/conf.h>
-
-#include <i386/i386/cons.h>
+#include <dev/cons.h>
 
 /* XXX - all this could be autoconfig()ed */
 int pccnprobe(), pccninit(), pccngetc(), pccnputc();
-#include "com.h"
+//#include "com.h"
 #if NCOM > 0
 int comcnprobe(), comcninit(), comcngetc(), comcnputc();
 #endif
@@ -67,9 +68,9 @@ struct	consdev constab[] = {
 };
 /* end XXX */
 
-struct	tty *constty = 0;	/* virtual console output device */
+struct	tty 	*constty = 0;	/* virtual console output device */
 struct	consdev *cn_tab;	/* physical console device info */
-struct	tty *cn_tty;		/* XXX: console tty struct for tprintf */
+struct	tty 	*cn_tty;		/* XXX: console tty struct for tprintf */
 
 cninit()
 {

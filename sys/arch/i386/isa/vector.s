@@ -39,7 +39,7 @@
 #include "opt_ddb.h"
 
 #include <i386/isa/icu.h>
-#include <dev/isa/isareg.h>
+#include <dev/isa/isa.h>
 
 #define ICU_HARDWARE_MASK
 
@@ -229,7 +229,7 @@ IDTVEC(hold/**/irq_num)													;\
 	orl		%eax,%esi
 #define	STRAY_TEST \
 	testl	%esi,%esi													;\
-	jz	XSTRAY(irq_num)
+	jz		XSTRAY(irq_num)
 #else /* !DEBUG */
 #define	STRAY_INITIALIZE
 #define	STRAY_INTEGRATE

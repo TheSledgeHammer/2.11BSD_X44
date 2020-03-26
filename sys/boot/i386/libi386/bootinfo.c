@@ -26,13 +26,15 @@
  * $FreeBSD$
  */
 
-#include <bootstand.h>
+
 #include <sys/param.h>
 #include <sys/reboot.h>
 #include <sys/exec.h>
 #include <sys/exec_linker.h>
+#include <lib/libsa/loadfile.h>
 #include <machine/bootinfo.h>
 
+#include <boot/bootstand.h>
 #include "bootstrap.h"
 #include "libi386.h"
 #include "btxv86.h"
@@ -80,7 +82,6 @@ bi_getboothowto(char *kargs)
 void
 bi_setboothowto(int howto)
 {
-
     boot_howto_to_env(howto);
 }
 

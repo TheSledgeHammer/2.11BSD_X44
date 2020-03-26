@@ -26,13 +26,12 @@
 
 #include <sys/cdefs.h>
 
+#include <boot/bootstand.h>
 /*
  * MD primitives supporting placement of module data
  *
  * XXX should check load address/size against memory top.
  */
-#include <stand.h>
-
 #include "libi386.h"
 #include "btxv86.h"
 

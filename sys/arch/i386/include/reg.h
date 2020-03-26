@@ -139,15 +139,4 @@ struct dbreg {
 
 #ifdef _KERNEL
 struct proc;
-
-/*
- * XXX these interfaces are MI, so they should be declared in a MI place.
- */
-int	fillregs(struct proc *, struct reg32 *);
-int	setregs(struct proc *, struct reg32 *);
-int	fill_frame_regs(struct trapframe *, struct reg *);
-int	fill_fpregs(struct proc *, struct fpreg *);
-int	set_fpregs(struct proc *, struct fpreg *);
-int	fill_dbregs(struct proc *, struct dbreg *);
-int	set_dbregs(struct proc *, struct dbreg *);
 #endif

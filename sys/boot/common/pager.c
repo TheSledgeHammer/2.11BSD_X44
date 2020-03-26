@@ -31,9 +31,8 @@
 
 #include <sys/cdefs.h>
 
-#include "boot/libsa/bootstand.h"
-#include "lib/libsa/loadfile.h"
-
+#include <lib/libsa/loadfile.h>
+#include <boot/bootstand.h>
 #include <bootstrap.h>
 
 static int	p_maxlines = -1;
@@ -125,6 +124,7 @@ pager_output(const char *cp)
 			}
 		}
 	}
+	return (0);
 }
 
 /*

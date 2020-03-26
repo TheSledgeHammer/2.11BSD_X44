@@ -25,8 +25,9 @@
  */
 
 #include <sys/cdefs.h>
-#include <stand.h>
+
 #include <btxv86.h>
+#include <boot/bootstand.h>
 #include "bootstrap.h"
 #include "libi386.h"
 

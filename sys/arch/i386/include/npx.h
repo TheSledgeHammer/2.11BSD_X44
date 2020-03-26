@@ -66,8 +66,34 @@ struct	fpacc87 {
 
 /* Floating point context */
 struct	save87 {
-	struct	env87 sv_env;		/* floating point control/status */
+	struct	env87 	sv_env;		/* floating point control/status */
 	struct	fpacc87	sv_ac[8];	/* accumulator contents, 0-7 */
+};
+
+/* Environment information of FPU/MMX/SSE/SSE2 */
+struct 	envfx87 {
+	long	fx_cw;		/* control word (16bits) */
+	long	fx_sw;		/* status word (16bits) */
+	long	fx_tw;		/* tag word (16bits) */
+	long	fx_zero;	/* zero  */
+	long	fx_fip;		/* floating point instruction pointer */
+	u_short	fx_fcs;		/* floating code segment selector */
+	u_short	fx_opcode;	/* opcode last executed (11 bits ) */
+	long	fx_foo;		/* floating operand offset */
+	long	fx_fos;		/* floating operand segment selector */
+};
+
+/* The x87 registers padded out to 16 bytes for fxsave */
+struct 	fpaccfx87 {
+	u_long	fp_manthi;	/* mantissa high (63:32) */
+	int		fp_exp:15;	/* exponent */
+	int		fp_sgn:1;	/* mantissa sign */
+};
+
+/* FPU/MMX/SSE/SSE2 context */
+struct 	fxsave {
+	struct envfx87 		fxv_env;	/* fxsave control/status */
+	struct fpaccfx87 	fxv_ac[8]; 	/* accumulator contents, 0-7 */
 };
 
 /* Cyrix EMC memory - mapped coprocessor context switch information */

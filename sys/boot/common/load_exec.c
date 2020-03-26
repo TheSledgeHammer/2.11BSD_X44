@@ -33,8 +33,8 @@
 #include <sys/param.h>
 #include <sys/exec.h>
 
-#include <boot/libsa/bootstand.h>
 #include <lib/libsa/loadfile.h>
+#include <boot/bootstand.h>
 
 #include "bootstrap.h"
 

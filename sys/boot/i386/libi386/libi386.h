@@ -109,8 +109,8 @@ ssize_t	i386_readin(const int fd, vm_offset_t dest, const size_t len);
 struct preloaded_file;
 void	bios_addsmapdata(struct preloaded_file *);
 void	bios_getsmap(void);
-
 void	bios_getmem(void);
+
 extern uint32_t		bios_basemem;	/* base memory in bytes */
 extern uint32_t		bios_extmem;	/* extended memory in bytes */
 extern vm_offset_t	memtop;			/* last address of physical memory + 1 */
@@ -138,16 +138,8 @@ int			biospci_find_devclass(uint32_t class, int index, uint32_t *locator);
 int			biospci_read_config(uint32_t locator, int offset, int width, uint32_t *val);
 uint32_t 	biospci_locator(int8_t bus, uint8_t device, uint8_t function);
 int			biospci_write_config(uint32_t locator, int offset, int width, uint32_t val);
-
 void		biosacpi_detect(void);
-
-int			i386_autoload(void);
 
 int			bi_getboothowto(char *kargs);
 void		bi_setboothowto(int howto);
 vm_offset_t	bi_copyenv(vm_offset_t addr);
-int			bi_load32(char *args, int *howtop, int *bootdevp, vm_offset_t *bip,
-		vm_offset_t *modulep, vm_offset_t *kernend);
-int			bi_load64(char *args, vm_offset_t addr, vm_offset_t *modulep,
-		vm_offset_t *kernend, int add_smap);
-void		pxe_enable(void *pxeinfo);

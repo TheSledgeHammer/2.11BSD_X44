@@ -29,8 +29,8 @@
  * $FreeBSD$
  */
 
-#ifndef _LIBSA_BOOT_H_
-#define _LIBSA_BOOT_H_
+#ifndef _SYS_BOOT_H_
+#define _SYS_BOOT_H_
 
 #define PATH_KERNEL	"/boot/kernel/kernel"
 
@@ -41,4 +41,4 @@ int  boot_parse_cmdline_delim(char *cmdline, const char *delim);
 int  boot_parse_cmdline(char *cmdline);
 int  boot_parse_args(int argc, char *argv[]);
 
-#endif /* !_LIBSA_BOOT_H_ */
+#endif /* !_SYS_BOOT_H_ */

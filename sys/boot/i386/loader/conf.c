@@ -26,10 +26,10 @@
  * $FreeBSD: src/sys/boot/i386/loader/conf.c,v 1.24 2003/08/25 23:28:32 obrien Exp $
  * $DragonFly: src/sys/boot/pc32/loader/conf.c,v 1.4 2005/09/03 23:52:49 dillon Exp $
  */
-
-#include <boot/libsa/bootstand.h>
+#include <boot/bootstand.h>
 #include <common/bootstrap.h>
 #include <libi386/libi386.h>
+
 
 /*
  * We could use linker sets for some or all of these, but
@@ -41,7 +41,6 @@
  *
  * XXX as libi386 and biosboot merge, some of these can become linker sets.
  */
-
 
 /* Exported for libstand */
 struct devsw *devsw[] = {
@@ -62,15 +61,11 @@ struct fs_ops *file_system[] = {
  * rather than reading the file go first.
  */
 extern struct file_format	i386_aout;
-extern struct file_format	i386_aout_obj;
 extern struct file_format	i386_elf;
-extern struct file_format	i386_elf_obj;
 
 struct file_format *file_formats[] = {
 	&i386_aout,
-	&i386_aout_obj,
     &i386_elf,
-    &i386_elf_obj,
     NULL
 };
 

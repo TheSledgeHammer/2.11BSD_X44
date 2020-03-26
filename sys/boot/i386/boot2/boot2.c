@@ -19,9 +19,9 @@
 
 #include <sys/param.h>
 #include <sys/reboot.h>
-#include <sys/diskslice.h>
+
 #include <sys/disklabel.h>
-#include <sys/diskmbr.h>
+#include <lib/libsa/diskmbr.h>
 #include <sys/dirent.h>
 #include <machine/bootinfo.h>
 #include <machine/elf.h>
@@ -115,19 +115,19 @@ static uint32_t opts = 0;
 static struct bootinfo bootinfo;
 static uint8_t ioctrl = IO_KEYBOARD;
 
-void exit(int);
-static void load(void);
-static int parse(void);
-static int xfsread(ino_t, void *, size_t);
-static int dskread(void *, unsigned, unsigned);
-static void printf(const char *,...);
-static void putchar(int);
+void 			exit(int);
+static void 	load(void);
+static int 		parse(void);
+static int 		xfsread(ino_t, void *, size_t);
+static int 		dskread(void *, unsigned, unsigned);
+static void 	printf(const char *,...);
+static void 	putchar(int);
 static uint32_t memsize(void);
-static int drvread(void *, unsigned, unsigned);
-static int keyhit(unsigned);
-static int xputc(int);
-static int xgetc(int);
-static int getc(int);
+static int 		drvread(void *, unsigned, unsigned);
+static int 		keyhit(unsigned);
+static int 		xputc(int);
+static int 		xgetc(int);
+static int 		getc(int);
 
 #define memcpy __builtin_memcpy
 
@@ -138,7 +138,7 @@ strcmp(const char *s1, const char *s2)
     return (unsigned char)*s1 - (unsigned char)*s2;
 }
 
-#include "ufsread.c"
+#include "lib/libsa/ufs.c"
 
 static int
 xfsread(ino_t inode, void *buf, size_t nbyte)

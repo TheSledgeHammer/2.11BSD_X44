@@ -85,6 +85,12 @@ int command_ls(int argc, char *argv[]);
 /*  bcache.c	*/
 int command_bcache(int argc, char *argv[]);
 
+/*  biosmem.c	*/
+int command_biosmem(int argc, char *argv[]);
+
+/*  biossmap.c	*/
+int command_smap(int argc, char *argv[]);
+
 #define COMMAND_SET(a, b, c, d) /* Nothing */
 
 #define COMMON_COMMANDS																			\
@@ -105,7 +111,10 @@ int command_bcache(int argc, char *argv[]);
 		{ "unload", "unload all modules", command_unload },										\
 		{ "lskern", "list loaded kernel", command_lskern },										\
 		{ "include", "read commands from a file", command_include },							\
-		{ "ls", "list files", command_ls },
+		{ "ls", "list files", command_ls },														\
+		{ "biosmem", "show BIOS memory setup", command_biosmem },								\
+		{ "smap", "show BIOS SMAP", command_smap }
+
 
 extern struct bootblk_command commands[];
 /*

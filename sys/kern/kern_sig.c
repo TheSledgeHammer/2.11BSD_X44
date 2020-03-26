@@ -38,7 +38,7 @@ static int
 cansignal(q, signum)
 	register struct proc *q;
 	int	signum;
-	{
+{
 	register struct proc *curp = u->u_procp;
 	uid_t	ruid;
 
@@ -51,38 +51,37 @@ cansignal(q, signum)
 		 (signum == SIGCONT && inferior(q)))
 		return(1);
 	return(0);
-	}
+}
 
 /*
  * 4.3 Compatibility
 */
 void
 sigstack()
-	{
-	register struct a
-		{
-		struct	sigstack *nss;
-		struct	sigstack *oss;
-		} *uap = (struct a *)u->u_ap;
+{
+	register struct a {
+		struct sigstack *nss;
+		struct sigstack *oss;
+	} *uap = (struct a*) u->u_ap;
 	struct sigstack ss;
 	register int error = 0;
 
 	ss.ss_sp = u->u_sigstk.ss_base;
 	ss.ss_onstack = u->u_sigstk.ss_flags & SA_ONSTACK;
-	if	(uap->oss && (error = copyout((caddr_t)&ss,
-					(caddr_t)uap->oss, sizeof (ss))))
+	if (uap->oss
+			&& (error = copyout((caddr_t) &ss, (caddr_t) uap->oss, sizeof(ss))))
 		goto out;
-	if	(uap->nss && (error = copyin((caddr_t)uap->nss, (caddr_t)&ss, 
-					sizeof (ss))) == 0)
-		{
+	if (uap->nss
+			&& (error = copyin((caddr_t) uap->nss, (caddr_t) &ss, sizeof(ss)))
+					== 0) {
 		u->u_sigstk.ss_base = ss.ss_sp;
 		u->u_sigstk.ss_size = 0;
 		u->u_sigstk.ss_flags |= (ss.ss_onstack & SA_ONSTACK);
 		u->u_psflags |= SAS_ALTSTACK;
-		}
+	}
 out:
 	return;
-	}
+}
 
 void
 kill()
@@ -687,4 +686,17 @@ out:
 			error = error1;
 	}
 	return (error);
+}
+
+/*
+ * nonexistent system call-- signal process (may want to handle it)
+ * flag error if process won't see signal immediately
+ */
+int
+nosys()
+{
+	if (u->u_signal[SIGSYS] == SIG_IGN || u->u_signal[SIGSYS] == SIG_HOLD)
+		u->u_error = EINVAL;
+	psignal(u->u_procp, SIGSYS);
+	return (ENOSYS);
 }
