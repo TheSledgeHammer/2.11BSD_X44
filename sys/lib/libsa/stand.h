@@ -108,3 +108,5 @@ void	free (void *ptr, unsigned size);
 void    *calloc(unsigned int size1, unsigned int size2);
 struct	disklabel;
 char	*getdisklabel (const char *buf, struct disklabel *lp);
+
+void	twiddle(void);

@@ -70,6 +70,7 @@ int command_quit(int argc, char *argv[]);
 /*	boot.c		*/
 int command_boot(int argc, char *argv[]);
 int command_autoboot(int argc, char *argv[]);
+//int command_reboot(int argc, char *argv[]); Could be useful??
 
 /*	fileload.c	*/
 int command_load(int argc, char *argv[]);
@@ -128,6 +129,7 @@ struct command_set {
     int 	(*command_read)(int argc, char *argv[]);
     int 	(*command_more)(int argc, char *argv[]);
     int 	(*command_lsdev)(int argc, char *argv[]);
+    int 	(*command_quit)(int argc, char *argv[]);
     int 	(*command_boot)(int argc, char *argv[]);
     int 	(*command_autoboot)(int argc, char *argv[]);
     int 	(*command_load)(int argc, char *argv[]);
@@ -136,6 +138,8 @@ struct command_set {
     int 	(*command_include)(int argc, char *argv[]);
     int 	(*command_ls)(int argc, char *argv[]);
     int		(*command_bcache)(int argc, char *argv[]);
+    int 	(*command_biosmem)(int argc, char *argv[]);
+    int 	(*command_smap)(int argc, char *argv[]);
 };
 */
 /* Command Set Commands */
@@ -150,6 +154,7 @@ struct command_set cmds[] = {
 		&command_read,
 		&command_more,
 		&command_lsdev,
+		&command_quit,
 		&command_boot,
 		&command_autoboot,
 		&command_load,
@@ -158,6 +163,8 @@ struct command_set cmds[] = {
 		&command_include,
 		&command_ls,
 		&command_bcache,
+		&command_biosmem,
+		&command_smap
 };
 /*
 

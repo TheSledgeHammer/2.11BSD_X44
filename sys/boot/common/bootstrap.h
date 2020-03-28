@@ -157,31 +157,7 @@ extern const char bootprog_interp[];
 #define	INTERP_DEFINE(interpstr) \
 const char bootprog_interp[] = "$Interpreter:" interpstr
 
-/*
- * Preloaded file metadata header.
- *
- * Metadata are allocated on our heap, and copied into kernel space
- * before executing the kernel.
- */
-struct file_metadata
-{
-    size_t					md_size;
-    uint16_t				md_type;
-    struct file_metadata	*md_next;
-    char					md_data[1];	/* data are immediately appended */
-};
-
 struct preloaded_file;
-struct mod_depend;
-
-struct kernel_module
-{
-    char					*m_name;	/* module name */
-    int						m_version;	/* module version */
-    char					*m_args;	/* arguments for the module */
-    struct preloaded_file	*m_fp;
-    struct kernel_module	*m_next;
-};
 
 /*
  * Preloaded file information. Depending on type, file can contain
@@ -197,11 +173,9 @@ struct preloaded_file
     char					*f_name;		/* file name */
     char					*f_type;		/* verbose file type, eg 'ELF kernel', 'pnptable', etc. */
     char					*f_args;		/* arguments for the file */
-    struct file_metadata	*f_metadata;	/* metadata that will be placed in the module directory */
     int						f_loader;		/* index of the loader that read the file */
     vm_offset_t				f_addr;			/* load address */
     size_t					f_size;			/* file size */
-    struct kernel_module	*f_modules;		/* list of modules if any */
     struct preloaded_file	*f_next;		/* next file */
     u_long                  marks[MARK_MAX];/* filled by loadfile() */
 };
@@ -223,12 +197,8 @@ void					unload(void);
 
 struct preloaded_file 	*file_alloc(void);
 struct preloaded_file 	*file_findfile(char *name, char *type);
-struct file_metadata 	*file_findmetadata(struct preloaded_file *fp, int type);
 struct preloaded_file 	*file_loadraw(const char *name, char *type, int insert);
-void file_discard(struct preloaded_file *fp);
-void file_addmetadata(struct preloaded_file *fp, int type, size_t size, void *p);
-int  file_addmodule(struct preloaded_file *fp, char *modname, int version, struct kernel_module **newmp);
-void file_removemetadata(struct preloaded_file *fp);
+void 					file_discard(struct preloaded_file *fp);
 
 int	aout_loadfile(char *filename, u_int32_t dest, struct preloaded_file **result);
 int	ecoff_loadfile(char *filename, u_int32_t dest, struct preloaded_file **result);

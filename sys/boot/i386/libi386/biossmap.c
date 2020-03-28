@@ -35,7 +35,7 @@
 #include <sys/stddef.h>
 #include <boot/common/commands.h>
 
-#include <machine/pc/bios.h>
+#include <machine/bios.h>
 
 #include <boot/bootstand.h>
 #include "bootstrap.h"

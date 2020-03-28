@@ -40,8 +40,8 @@
 #include <sys/disk.h>
 #include <sys/queue.h>
 #include <machine/bootinfo.h>
-#include <stdarg.h>
-#include <stdbool.h>
+//#include <stdarg.h>
+//#include <stdbool.h>
 
 #include <bootstrap.h>
 #include <btxv86.h>
@@ -134,9 +134,9 @@ static bdinfo_list_t fdinfo = TAILQ_HEAD_INITIALIZER(fdinfo);
 static bdinfo_list_t cdinfo = TAILQ_HEAD_INITIALIZER(cdinfo);
 static bdinfo_list_t hdinfo = TAILQ_HEAD_INITIALIZER(hdinfo);
 
-static void bd_io_workaround(bdinfo_t *);
-static int 	bd_io(struct disk_devdesc *, bdinfo_t *, daddr_t, int, caddr_t, int);
-static bool bd_int13probe(bdinfo_t *);
+static void 		bd_io_workaround(bdinfo_t *);
+static int 			bd_io(struct i386_devdesc *, bdinfo_t *, daddr_t, int, caddr_t, int);
+static boolean_t 	bd_int13probe(bdinfo_t *);
 
 static int 	bd_init(void);
 static int 	cd_init(void);
@@ -545,7 +545,7 @@ bd_get_diskinfo_ext(struct bdinfo *bd)
 		struct edd_params head;
 		struct edd_device_path_v3 device_path;
 		uint8_t dummy[16];
-	} __packed dparams;
+	} dparams;
 	struct edd_params *params;
 	uint64_t total;
 
@@ -594,7 +594,7 @@ bd_get_diskinfo_ext(struct bdinfo *bd)
 /*
  * Try to detect a device supported by the legacy int13 BIOS
  */
-static bool
+static boolean_t
 bd_int13probe(bdinfo_t *bd)
 {
 	int edd, ret;
@@ -706,7 +706,7 @@ static int
 bd_print_common(struct devsw *dev, bdinfo_list_t *bdi, int verbose)
 {
 	char line[80];
-	struct disk_devdesc devd;
+	struct i386_devdesc devd;
 	bdinfo_t *bd;
 	int i, ret = 0;
 	char drive;
@@ -794,10 +794,10 @@ cd_print(int verbose)
  * would overflow so it should be safe to perform here.
  */
 static uint64_t
-bd_disk_get_sectors(struct disk_devdesc *dev)
+bd_disk_get_sectors(struct i386_devdesc *dev)
 {
 	bdinfo_t *bd;
-	struct disk_devdesc disk;
+	struct i386_devdesc disk;
 	uint64_t size;
 
 	bd = bd_get_bdinfo(&dev->dd);
@@ -832,12 +832,12 @@ static int
 bd_open(struct open_file *f, ...)
 {
 	bdinfo_t *bd;
-	struct disk_devdesc *dev;
+	struct i386_devdesc *dev;
 	va_list ap;
 	int rc;
 
 	va_start(ap, f);
-	dev = va_arg(ap, struct disk_devdesc *);
+	dev = va_arg(ap, struct i386_devdesc *);
 	va_end(ap);
 
 	bd = bd_get_bdinfo(&dev->dd);
@@ -875,7 +875,7 @@ bd_open(struct open_file *f, ...)
 static int
 bd_close(struct open_file *f)
 {
-	struct disk_devdesc *dev;
+	struct i386_devdesc *dev;
 	bdinfo_t *bd;
 	int rc = 0;
 
@@ -898,7 +898,7 @@ static int
 bd_ioctl(struct open_file *f, u_long cmd, void *data)
 {
 	bdinfo_t *bd;
-	struct disk_devdesc *dev;
+	struct i386_devdesc *dev;
 	int rc;
 
 	dev = (struct disk_devdesc *)f->f_devdata;
@@ -931,7 +931,7 @@ bd_strategy(void *devdata, int rw, daddr_t dblk, size_t size,
 {
 	bdinfo_t *bd;
 	struct bcache_devdata bcd;
-	struct disk_devdesc *dev;
+	struct i386_devdesc *dev;
 	daddr_t offset;
 
 	dev = (struct disk_devdesc *)devdata;
@@ -957,9 +957,9 @@ static int
 bd_realstrategy(void *devdata, int rw, daddr_t dblk, size_t size,
     char *buf, size_t *rsize)
 {
-	struct disk_devdesc *dev = (struct disk_devdesc *)devdata;
+	struct i386_devdesc *dev = (struct i386_devdesc *)devdata;
 	bdinfo_t *bd;
-	uint64_t disk_blocks, offset, d_offset;
+	uint64_t disk_blocks, offset, dd_offset;
 	size_t blks, blkoff, bsize, bio_size, rest;
 	caddr_t bbuf = NULL;
 	int rc;
@@ -1011,27 +1011,27 @@ bd_realstrategy(void *devdata, int rw, daddr_t dblk, size_t size,
 	 * Get disk blocks, this value is either for whole disk or for
 	 * partition.
 	 */
-	d_offset = 0;
+	dd_offset = 0;
 	disk_blocks = 0;
 	if (dev->dd.d_dev->dv_type == DEVT_DISK) {
 		if (disk_ioctl(dev, DIOCGMEDIASIZE, &disk_blocks) == 0) {
 			/* DIOCGMEDIASIZE does return bytes. */
 			disk_blocks /= bd->bd_sectorsize;
 		}
-		d_offset = dev->d_offset;
+		dd_offset = dev->d_offset;
 	}
 	if (disk_blocks == 0)
-		disk_blocks = bd->bd_sectors - d_offset;
+		disk_blocks = bd->bd_sectors - dd_offset;
 
 	/* Validate source block address. */
-	if (dblk < d_offset || dblk >= d_offset + disk_blocks)
+	if (dblk < dd_offset || dblk >= dd_offset + disk_blocks)
 		return (EIO);
 
 	/*
 	 * Truncate if we are crossing disk or partition end.
 	 */
-	if (dblk + blks >= d_offset + disk_blocks) {
-		blks = d_offset + disk_blocks - dblk;
+	if (dblk + blks >= dd_offset + disk_blocks) {
+		blks = dd_offset + disk_blocks - dblk;
 		size = blks * bd->bd_sectorsize;
 		DPRINTF("short I/O %d", blks);
 	}
@@ -1197,7 +1197,7 @@ bd_io_workaround(bdinfo_t *bd)
 }
 
 static int
-bd_io(struct disk_devdesc *dev, bdinfo_t *bd, daddr_t dblk, int blks,
+bd_io(struct i386_devdesc *dev, bdinfo_t *bd, daddr_t dblk, int blks,
     caddr_t dest, int dowrite)
 {
 	int result, retry;
@@ -1301,7 +1301,7 @@ bd_getbigeom(int bunit)
 int
 bd_getdev(struct i386_devdesc *d)
 {
-	struct disk_devdesc *dev;
+	struct i386_devdesc *dev;
 	bdinfo_t *bd;
 	int	biosdev;
 	int	major;
@@ -1313,7 +1313,7 @@ bd_getdev(struct i386_devdesc *d)
 	slice = 0;
 	partition = 0;
 
-	dev = (struct disk_devdesc *)d;
+	dev = (struct i386_devdesc *)d;
 	bd = bd_get_bdinfo(&dev->dd);
 	if (bd == NULL)
 		return (-1);

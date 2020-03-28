@@ -60,7 +60,7 @@ struct pnp_ICstructure
     uint8_t		pnp_OEMdev[4];
     uint16_t	pnp_rmds;
     uint32_t	pnp_pmds;
-} __packed;
+};
 
 struct pnp_devNode 
 {
@@ -70,7 +70,7 @@ struct pnp_devNode
     uint8_t		dn_type[3];
     uint16_t	dn_attrib;
     uint8_t		dn_data[1];
-} __packed;
+};
 
 struct pnp_isaConfiguration
 {
@@ -78,7 +78,7 @@ struct pnp_isaConfiguration
     uint8_t		ic_nCSN;
     uint16_t	ic_rdport;
     uint16_t	ic_reserved;
-} __packed;
+};
 
 static struct pnp_ICstructure	*pnp_Icheck = NULL;
 static uint16_t					pnp_NumNodes;

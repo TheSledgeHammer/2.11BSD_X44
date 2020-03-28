@@ -44,31 +44,31 @@ struct buf
 	struct	buf *b_actf, **b_actb;	/* Device driver queue when active. */
 	struct  proc *b_proc;			/* Associated proc; NULL if kernel. */
 	volatile long	b_flags;		/* B_* flags. */
-	int		b_qindex;				/* buffer queue index */
-	int		b_error;				/* returned after I/O */
-	long	b_bufsize;				/* Allocated buffer size. */
-	long	b_bcount;				/* transfer count */
-	long	b_resid;				/* words not transferred after error */
-	char	b_xmem;					/* high order core address */
-	dev_t	b_dev;					/* major+minor device name */
+	int				b_qindex;		/* buffer queue index */
+	int				b_error;		/* returned after I/O */
+	long			b_bufsize;		/* Allocated buffer size. */
+	long			b_bcount;		/* transfer count */
+	long			b_resid;		/* words not transferred after error */
+	char			b_xmem;			/* high order core address */
+	dev_t			b_dev;			/* major+minor device name */
 	struct {
 	    caddr_t b_addr;				/* low order core address */
 	} b_un;
-	void	*b_saveaddr;			/* Original b_addr for physio. */
-	daddr_t	b_lblkno;				/* Logical block number. */
-	daddr_t	b_blkno;				/* Underlying physical block number. */
+	void			*b_saveaddr;	/* Original b_addr for physio. */
+	daddr_t			b_lblkno;		/* Logical block number. */
+	daddr_t			b_blkno;		/* Underlying physical block number. */
 
 	void	(*b_iodone)(struct buf *);
-	struct	vnode *b_vp;			/* Device vnode. */
-	int	b_pfcent;					/* Center page when swapping cluster. */
-	int	b_dirtyoff;					/* Offset in buffer of dirty region. */
-	int	b_dirtyend;					/* Offset of end of dirty region. */
-	struct	ucred *b_rcred;			/* Read credentials reference. */
-	struct	ucred *b_wcred;			/* Write credentials reference. */
-	int	b_validoff;					/* Offset in buffer of valid region. */
-	int	b_validend;					/* Offset of end of valid region. */
-	daddr_t	b_pblkno;               /* physical block number */
-	caddr_t	b_savekva;              /* saved kva for transfer while bouncing */
+	struct	vnode 	*b_vp;			/* Device vnode. */
+	int				b_pfcent;		/* Center page when swapping cluster. */
+	int				b_dirtyoff;		/* Offset in buffer of dirty region. */
+	int				b_dirtyend;		/* Offset of end of dirty region. */
+	struct	ucred 	*b_rcred;		/* Read credentials reference. */
+	struct	ucred 	*b_wcred;		/* Write credentials reference. */
+	int				b_validoff;		/* Offset in buffer of valid region. */
+	int				b_validend;		/* Offset of end of valid region. */
+	daddr_t			b_pblkno;       /* physical block number */
+	caddr_t			b_savekva;      /* saved kva for transfer while bouncing */
 
 #ifndef VMIO
 	void	*b_pages[(MAXBSIZE + PAGE_SIZE - 1)/PAGE_SIZE];

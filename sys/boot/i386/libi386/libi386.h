@@ -48,6 +48,10 @@ struct i386_devdesc {
     } d_kind;
 };
 
+#define d_slice		d_kind.biosdisk.slice
+#define d_partition d_kind.biosdisk.partition
+#define d_offset	d_kind.biosdisk.offset
+
 /*
  * relocater trampoline support.
  */

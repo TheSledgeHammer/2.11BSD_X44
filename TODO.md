@@ -7,7 +7,6 @@ TODO:
 	- dloader
 	- i386:
 		- libi386:
-			- bootinfo32.c: Serves no purpose
 		- cdboot
 		- gptboot
 		- isoboot
@@ -15,14 +14,28 @@ TODO:
 		- pmbr
 		- pxeldr
 
-- arch
+- arch:
 	- i386:
 		- locore
 		- bios
 		- vm86
 	- x86: (Eventually...!)
-	
-	
+
+- ufs:
+	- ext2fs (NetBSD)
+	- ufs:
+		- ufs1 & ufs2?
+		- dirhash
+		- extattr
+		- wapbl
+			
+- vfs:
+	- deadfs
+	- ufs211:
+		- extern
+		- vnops
+		- vfsops
+		
 Kern:
 - p->p_usrpri: doesn't exist in 2.11BSD (needs a solution)
 - vm_machdep.c: u->u_procp->p_p0br??
@@ -45,11 +58,7 @@ Kern:
 	- u_pcb: machine-dependent pcb.h
 	- remove duplicate and/or un-needed references (kinfo_proc)
 	- kinfo_proc: could be useful unless it's superceded by (ktrace or dtrace?) 
-	
-UFS, FFS & LFS:
-- extattr, dirhash
-- dinode: ufs1 & ufs2
-- WABL (NetBSD)
+
 
 Possible Generic Header: 
 (2.11BSD):

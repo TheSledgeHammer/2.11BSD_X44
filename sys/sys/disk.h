@@ -81,19 +81,19 @@
 struct buf;
 
 struct dkdevice {
-	struct	device 	 dk_dev;					/* base device */
-	struct	dkdevice *dk_next;					/* list of disks; not yet used */
-	int	dk_bps;									/* xfer rate: bytes per second */
-	int	dk_bopenmask;							/* block devices open */
-	int	dk_copenmask;							/* character devices open */
-	int	dk_openmask;							/* composite (bopen|copen) */
-	int	dk_flags;								/* label state aka dk_state */
-	int	dk_blkshift;							/* shift to convert DEV_BSIZE to blks */
-	int	dk_byteshift;							/* shift to convert bytes to blks */
-	struct	dkdriver *dk_driver;				/* pointer to driver */
-	daddr_t	dk_labelsector;						/* sector containing label */
-	struct 	disklabel dk_label;					/* label */
-	struct	partition dk_parts[MAXPARTITIONS];	/* inkernel portion */
+	struct	device 	 	dk_dev;					/* base device */
+	struct	dkdevice 	*dk_next;				/* list of disks; not yet used */
+	int					dk_bps;					/* xfer rate: bytes per second */
+	int					dk_bopenmask;			/* block devices open */
+	int					dk_copenmask;			/* character devices open */
+	int					dk_openmask;			/* composite (bopen|copen) */
+	int					dk_flags;				/* label state aka dk_state */
+	int					dk_blkshift;			/* shift to convert DEV_BSIZE to blks */
+	int					dk_byteshift;			/* shift to convert bytes to blks */
+	struct	dkdriver 	*dk_driver;				/* pointer to driver */
+	daddr_t				dk_labelsector;			/* sector containing label */
+	struct 	disklabel 	dk_label;				/* label */
+	struct	partition 	dk_parts[MAXPARTITIONS];/* inkernel portion */
 };
 
 struct dkdriver {

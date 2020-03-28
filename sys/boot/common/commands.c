@@ -159,6 +159,7 @@ command_help(int argc, char *argv[])
 	switch (argc) {
 	case 3:
 		subtopic = strdup(argv[2]);
+		break;
 	case 2:
 		topic = strdup(argv[1]);
 		break;
