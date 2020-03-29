@@ -51,7 +51,7 @@
 
 #include <ufs/ufs/quota.h>
 
-*
+/*
  * System parameter formulae.
  *
  * This file is copied into each directory where we compile

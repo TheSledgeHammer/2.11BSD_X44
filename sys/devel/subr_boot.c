@@ -42,9 +42,9 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/boot.h>
 #include <sys/reboot.h>
 #include <boot/bootstand.h>
+#include "boot.h"
 
 
 /* Boot loader */

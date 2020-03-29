@@ -18,13 +18,12 @@
 
 #include <sys/param.h>
 
-#include <machine/psl.h>
-
-#include <btxv86.h>
+#include <boot/bootstand.h>
 #include <boot/common/rbx.h>
 #include <i386/boot2/lib.h>
+#include <i386/btx/lib/btxv86.h>
 #include <i386/common/cons.h>
-#include <boot/bootstand.h>
+#include <machine/psl.h>
 
 #define SECOND		18	/* Circa that many ticks in a second. */
 
@@ -97,7 +96,6 @@ xgetc(int fn)
 int
 getchar(void)
 {
-
 	return (xgetc(0));
 }
 

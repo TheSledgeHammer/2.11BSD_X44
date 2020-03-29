@@ -32,8 +32,8 @@
 #define _UVM_UVM_H_
 
 #include <vm/include/vm.h>
-#include <dev/vm/vm_amap.h>
-#include <dev/vm/vm_aobject.h>
+#include <devel/vm/vm_amap.h>
+#include <devel/vm/vm_aobject.h>
 
 /*
  * TODO:

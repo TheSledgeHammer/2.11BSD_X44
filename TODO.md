@@ -1,7 +1,9 @@
 TODO:
 - Makefiles
-(Focus on 2.11BSDx86 boot.)
-- boot: 
+- boot:
+	- common:
+		- isapnp.c/.h
+		- pnp.c 
 	- efi
 	- usb
 	- dloader
@@ -10,7 +12,9 @@ TODO:
 		- cdboot
 		- gptboot
 		- isoboot
-		- loader
+		- loader:
+			- Makefile
+			- Makefile.depend
 		- pmbr
 		- pxeldr
 
@@ -19,7 +23,6 @@ TODO:
 		- locore
 		- bios
 		- vm86
-	- x86: (Eventually...!)
 
 - ufs:
 	- ext2fs (NetBSD)
@@ -35,6 +38,10 @@ TODO:
 		- extern
 		- vnops
 		- vfsops
+
+
+md_init & sysinit are not possible atm, they are intertwined with FreeBSD's linker_set & linker (executables), with many in kernel modules.
+Hence a massive amount of code injection/ rewrite would be needed in order to set this up correctly.
 		
 Kern:
 - p->p_usrpri: doesn't exist in 2.11BSD (needs a solution)

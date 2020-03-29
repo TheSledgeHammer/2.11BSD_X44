@@ -89,9 +89,6 @@ int command_bcache(int argc, char *argv[]);
 /*  biosmem.c	*/
 int command_biosmem(int argc, char *argv[]);
 
-/*  biossmap.c	*/
-int command_smap(int argc, char *argv[]);
-
 #define COMMAND_SET(a, b, c, d) /* Nothing */
 
 #define COMMON_COMMANDS																			\
@@ -113,8 +110,7 @@ int command_smap(int argc, char *argv[]);
 		{ "lskern", "list loaded kernel", command_lskern },										\
 		{ "include", "read commands from a file", command_include },							\
 		{ "ls", "list files", command_ls },														\
-		{ "biosmem", "show BIOS memory setup", command_biosmem },								\
-		{ "smap", "show BIOS SMAP", command_smap }
+		{ "biosmem", "show BIOS memory setup", command_biosmem },
 
 
 extern struct bootblk_command commands[];
@@ -139,7 +135,6 @@ struct command_set {
     int 	(*command_ls)(int argc, char *argv[]);
     int		(*command_bcache)(int argc, char *argv[]);
     int 	(*command_biosmem)(int argc, char *argv[]);
-    int 	(*command_smap)(int argc, char *argv[]);
 };
 */
 /* Command Set Commands */
@@ -164,7 +159,6 @@ struct command_set cmds[] = {
 		&command_ls,
 		&command_bcache,
 		&command_biosmem,
-		&command_smap
 };
 /*
 

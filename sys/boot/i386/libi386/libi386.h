@@ -111,8 +111,6 @@ ssize_t	i386_copyout(const vm_offset_t src, void *dest, const size_t len);
 ssize_t	i386_readin(const int fd, vm_offset_t dest, const size_t len);
 
 struct preloaded_file;
-void	bios_addsmapdata(struct preloaded_file *);
-void	bios_getsmap(void);
 void	bios_getmem(void);
 
 extern uint32_t		bios_basemem;	/* base memory in bytes */
