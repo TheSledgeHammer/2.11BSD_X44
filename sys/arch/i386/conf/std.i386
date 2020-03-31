@@ -2,8 +2,7 @@
 #
 # standard, required NetBSD/i386 'options'
 
-machine i386 x86
-include		"conf/std"	# MI standard options
+machine i386
 
 options 	EXEC_AOUT	# exec a.out binaries
 options 	EXEC_ELF32	# exec ELF binaries

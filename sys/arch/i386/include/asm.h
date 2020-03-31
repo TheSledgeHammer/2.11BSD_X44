@@ -44,6 +44,33 @@
 #define	ALTENTRY(name) 	\
 	.globl _/**/name; _/**/name:
 
+/* XXX Can't use __CONCAT() here, as it would be evaluated incorrectly. */
+#ifdef __ELF__
+#ifdef __STDC__
+#define	IDTVEC(name) \
+	ALIGN_TEXT; .globl X ## name; .type X ## name,@function; X ## name:
+#define	IDTVEC_END(name) \
+	.size X ## name, . - X ## name
+#else
+#define	IDTVEC(name) \
+	ALIGN_TEXT; .globl X/**/name; .type X/**/name,@function; X/**/name:
+#define	IDTVEC_END(name) \
+	.size X/**/name, . - X/**/name
+#endif /* __STDC__ */
+#else
+#ifdef __STDC__
+#define	IDTVEC(name) \
+	ALIGN_TEXT; .globl _X ## name; .type _X ## name,@function; _X ## name:
+#define	IDTVEC_END(name) \
+	.size _X ## name, . - _X ## name
+#else
+#define	IDTVEC(name) \
+	ALIGN_TEXT; .globl _X/**/name; .type _X/**/name,@function; _X/**/name:
+#define	IDTVEC_END(name) \
+	.size _X/**/name, . - _X/**/name
+#endif /* __STDC__ */
+#endif /* __ELF__ */
+
 
 #ifdef __ELF__
 #define	WEAK_ALIAS(alias,sym)						\

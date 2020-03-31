@@ -95,6 +95,7 @@ file	kern/vfs_lookup.c
 file	kern/vfs_subr.c
 file	kern/vfs_syscalls.c
 file	kern/vfs_vnops.c
+file	vfs/deadfs/dead_vnops.c
 file	vfs/fdesc/fdesc_vfsops.c	fdesc
 file	vfs/fdesc/fdesc_vnops.c	    fdesc
 file	vfs/fifofs/fifo_vnops.c	    fifo

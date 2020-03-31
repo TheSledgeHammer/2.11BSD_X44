@@ -66,36 +66,36 @@ void outb();
 #define IO_NPX		0x0F0		/* Numeric Coprocessor */
 
 		/* Cards */
-					/* 0x100 - 0x16F Open */
+								/* 0x100 - 0x16F Open */
 
 #define IO_WD2		0x170		/* Secondary Fixed Disk Controller */
 
-					/* 0x178 - 0x1EF Open */
+								/* 0x178 - 0x1EF Open */
 
 #define IO_WD1		0x1f0		/* Primary Fixed Disk Controller */
 #define IO_GAME		0x200		/* Game Controller */
 
-					/* 0x208 - 0x277 Open */
+								/* 0x208 - 0x277 Open */
 
 #define IO_LPT2		0x278		/* Parallel Port #2 */
 
-					/* 0x280 - 0x2F7 Open */
+								/* 0x280 - 0x2F7 Open */
 
 #define IO_COM2		0x2f8		/* COM2 i/o address */
 
-					/* 0x300 - 0x36F Open */
+								/* 0x300 - 0x36F Open */
 
 #define IO_FD2		0x370		/* secondary base i/o address */
 #define IO_LPT1		0x378		/* Parallel Port #1 */
 
-					/* 0x380 - 0x3AF Open */
+								/* 0x380 - 0x3AF Open */
 
 #define IO_MDA		0x3B0		/* Monochome Adapter */
 #define IO_LPT3		0x3BC		/* Monochome Adapter Printer Port */
 #define IO_VGA		0x3C0		/* E/VGA Ports */
 #define IO_CGA		0x3D0		/* CGA Ports */
 
-					/* 0x3E0 - 0x3EF Open */
+								/* 0x3E0 - 0x3EF Open */
 
 #define IO_FD1		0x3f0		/* primary base i/o address */
 #define IO_COM1		0x3f8		/* COM1 i/o address */

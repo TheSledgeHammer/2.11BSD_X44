@@ -992,4 +992,5 @@ IDTVEC(syscall)
 		jmp		doreti
 /**********************************************************************/
 
-#include <i386/isa/vector.s>
+#include <vector.s>
+#include <i386/isa/icu.s>

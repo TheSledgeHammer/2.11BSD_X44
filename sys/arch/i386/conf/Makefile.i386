@@ -14,7 +14,6 @@
 # after which config should be rerun for all machines of that type.
 
 
-NOSANITIZER=	# defined
 MACHINE_ARCH=	i386
 USETOOLS?=		no
 NEED_OWN_INSTALL_TARGET?=no
@@ -30,23 +29,20 @@ GENASSYM_CONF=	${I386}/i386/genassym.cf
 ##
 ## (2) compile settings
 ##
-DEFCOPTS=	-O2 -fno-omit-frame-pointer
 CPPFLAGS+=	-Di386
-CFLAGS+=	-msoft-float
-## no-sse implies no-sse2 but not no-avx
-CFLAGS+=	-mno-mmx -mno-sse -mno-avx
+AFLAGS+=	-x assembler-with-cpp -traditional-cpp
 
 ##
 ## (3) libkern and compat
 ##
+KERN_AS=	obj
 
 ##
 ## (4) local objects, compile rules, and dependencies
 ##
-MD_OBJS=	locore.o support.o icu.o vector.o
+MD_OBJS=	locore.o support.o vector.o
 MD_CFILES=
-MD_SFILES=	${I386}/i386/locore.s ${I386}/i386/support.s ${I386}/isa/icu.s \
-			${I386}/isa/vector.s
+MD_SFILES=	${I386}/i386/locore.s ${I386}/i386/support.s ${I386}/i386/vector.s
 
 locore.o: ${I386}/i386/locore.s assym.h
 	${NORMAL_S}
@@ -54,19 +50,20 @@ locore.o: ${I386}/i386/locore.s assym.h
 support.o: ${I386}/i386/support.s assym.h
 	${NORMAL_S}
 
-icu.o: ${I386}/isa/icu.s assym.h
+vector.o: ${I386}/i386/vector.s assym.h
 	${NORMAL_S}
-
-vector.o: ${I386}/isa/vector.s assym.h
-	${NORMAL_S}
-
 
 ##
 ## (5) link settings
 ##
 TEXTADDR?=		c0100000
 LINKFLAGS_NORMAL=	-X
-KERNLDSCRIPT?=	${I386}/conf/kern.ldscript
+.if (${OBJECT_FMT} == "ELF")
+KERN_LDSCRIPT?=	kern.ldscript
+LINKFORMAT=	-T ${I386}/conf/${KERN_LDSCRIPT}
+.else
+LINKFORMAT=	-z
+.endif
 
 ##
 ## (6) port specific target dependencies
@@ -76,11 +73,7 @@ KERNLDSCRIPT?=	${I386}/conf/kern.ldscript
 ## (7) misc settings
 ##
 
-.if !make(obj) && !make(clean) && !make(cleandir)
-.BEGIN::
-	-@rm -f i386 && \
-		ln -s $S/arch/i386/include i386
-.endif
+KERNLINTFLAGS=	-bceghnxzF
 
 ##
 ## (8) config(8) generated machinery

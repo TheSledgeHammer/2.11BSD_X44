@@ -2,7 +2,7 @@
 
 LIB=	kern
 CFLAGS+= -I${.CURDIR} -I${.CURDIR}/..
-SRCS=	adddi3.c anddi3.c ashldi3.c ashrdi3.c bcmp.c cmpdi2.c divdi3.c \
+SRCS=	adddi3.c anddi3.c ashldi3.c ashrdi3.c assert.c bcmp.c cmpdi2.c divdi3.c \
 		ffs.c iordi3.c locc.c lshldi3.c lshrdi3.c mcount.c moddi3.c \
 		muldi3.c negdi2.c notdi2.c qdivrem.c random.c rindex.c prospectorhash.c \ 
 		scanc.c skpc.c strcat.c strcmp.c strcpy.c strlen.c strncpy.c \ 
