@@ -1,4 +1,4 @@
-	@(#)syscalls.master	8.6 (Berkeley) 3/30/95
+;	$@(#)syscalls.master	8.6 (Berkeley) 3/30/95
 ; System call name/number "master" file.
 ; (See syscalls.conf to see what it is processed into.)
 ;

@@ -111,10 +111,11 @@
 #define	M_RMALLOC	62	/* Resource Map Malloc */
 #define	M_RMALLOC3	63	/* Resource Map Malloc3 */
 #define M_DIRHASH	64	/* UFS dirhash */
-#define M_EXEC		65	/* argument lists & other mem used by exec */
-#define M_WAPBL		66	/* UFS & VFS WAPBL */
-#define M_TGRP		67	/* thread group header */
-#define M_THREAD	68	/* thread structures */
+#define M_ZERO		65	/* Zero */
+#define M_EXEC		66	/* argument lists & other mem used by exec */
+#define M_WAPBL		67	/* UFS & VFS WAPBL */
+#define M_TGRP		68	/* thread group header */
+#define M_THREAD	69	/* thread structures */
 #define	M_TEMP		74	/* misc temporary data buffers */
 #define	M_LAST		75	/* Must be last type + 1 */
 
@@ -184,12 +185,13 @@
 	"rmalloc", 		/* 62 M_RMALLOC" */		\
 	"rmalloc3", 	/* 63 M_RMALLOC3" */ 	\
 	"UFS dirhash"	/* 64 M_DIRHASH */		\
-	"exec"			/* 65 M_EXEC */			\
-	"wapbl"			/* 66 M_WAPBL */		\
-	"tgrp"			/* 67 M_TGRP */			\
-	"thread"		/* 68 M_THREAD */		\
+	"zero"			/* 65 M_ZERO */			\
+	"exec"			/* 66 M_EXEC */			\
+	"wapbl"			/* 67 M_WAPBL */		\
+	"tgrp"			/* 68 M_TGRP */			\
+	"thread"		/* 69 M_THREAD */		\
 	NULL, NULL,		 						\
-	NULL, NULL, NULL,						\
+	NULL, NULL								\
 	"temp",			/* 74 M_TEMP */ 		\
 }
 

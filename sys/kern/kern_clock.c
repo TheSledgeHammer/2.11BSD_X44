@@ -398,6 +398,7 @@ hzto(tv)
 /*
  * Return information about system clocks.
  */
+int
 sysctl_clockrate(where, sizep)
 	register char *where;
 	size_t *sizep;

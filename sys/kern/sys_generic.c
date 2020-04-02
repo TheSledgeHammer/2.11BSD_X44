@@ -84,7 +84,7 @@ void
 write()
 {
 	register struct a {
-		int	fdes;
+		int		fdes;
 		char	*cbuf;
 		unsigned count;
 	} *uap = (struct a *)u->u_ap;

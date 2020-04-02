@@ -43,11 +43,11 @@
  * to speed up creations.
  */
 #define DIRHASH_EMPTY	(-1)	/* entry unused */
-#define DIRHASH_DEL	(-2)	/* deleted entry; may be part of chain */
+#define DIRHASH_DEL		(-2)	/* deleted entry; may be part of chain */
 
-#define DIRALIGN	4
-#define DH_NFSTATS	(DIRECTSIZ(MAXNAMLEN + 1) / DIRALIGN)
-				 /* max DIRALIGN words in a directory entry */
+#define DIRALIGN		4
+#define DH_NFSTATS		(DIRECTSIZ(MAXNAMLEN + 1) / DIRALIGN)
+				 	 	 	 	 /* max DIRALIGN words in a directory entry */
 
 /*
  * Dirhash uses a score mechanism to achieve a hybrid between a
@@ -67,14 +67,14 @@
  * number of accesses.
  */
 #define DH_SCOREINIT	8	/* initial dh_score when dirhash built */
-#define DH_SCOREMAX	64	/* max dh_score value */
+#define DH_SCOREMAX		64	/* max dh_score value */
 
 /*
  * The main hash table has 2 levels. It is an array of pointers to
  * blocks of DH_NBLKOFF offsets.
  */
 #define DH_BLKOFFSHIFT	8
-#define DH_NBLKOFF	(1 << DH_BLKOFFSHIFT)
+#define DH_NBLKOFF		(1 << DH_BLKOFFSHIFT)
 #define DH_BLKOFFMASK	(DH_NBLKOFF - 1)
 
 #define DH_ENTRY(dh, slot) \

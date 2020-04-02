@@ -80,7 +80,6 @@
 #include <sys/vnode.h>
 #include <sys/dirent.h>
 #include <ufs/lockf.h>
-//#include <sys/kauth.h>
 #include <vfs/specfs/specdev.h>
 #include <vfs/fifofs/fifo.h>
 
@@ -134,8 +133,8 @@ ufs_wapbl_verify_inodes(struct mount *mp, const char *str)
 			if ((bp->b_cflags & BC_BUSY)) {
 				continue;
 			}
-			//KASSERT((bp->b_oflags & BO_DELWRI) != 0);
-			//KASSERT((bp->b_flags & B_LOCKED) != 0);
+			KASSERT((bp->b_oflags & BO_DELWRI) != 0);
+			KASSERT((bp->b_flags & B_LOCKED) != 0);
 		}
 		//mutex_exit(&bufcache_lock);
 		//mutex_exit(vp->v_interlock);
@@ -152,8 +151,8 @@ ufs_wapbl_verify_inodes(struct mount *mp, const char *str)
 		if ((bp->b_cflags & BC_BUSY)) {
 			continue;
 		}
-	//	KASSERT((bp->b_oflags & BO_DELWRI) != 0);
-	//	KASSERT((bp->b_flags & B_LOCKED) != 0);
+		KASSERT((bp->b_oflags & BO_DELWRI) != 0);
+		KASSERT((bp->b_flags & B_LOCKED) != 0);
 	}
 	//mutex_exit(&bufcache_lock);
 	//mutex_exit(vp->v_interlock);

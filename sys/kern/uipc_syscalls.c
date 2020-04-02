@@ -379,6 +379,7 @@ sendmsg()
 	sendit(uap->s, &msg, uap->flags);
 }
 
+void
 sendit(s, mp, flags)
 	int s;
 	register struct msghdr *mp;
@@ -393,7 +394,7 @@ sendit(s, mp, flags)
 	char sabuf[MSIZE], ribuf[MSIZE];
 
 	if (netoff)
-		return(u->u_error = ENETDOWN);
+		return (u->u_error = ENETDOWN);
 	fp = gtsockf(s);
 	if (fp == 0)
 		return;
@@ -433,7 +434,7 @@ sendit(s, mp, flags)
 	len = auio.uio_resid;
 	if	(setjmp(&u->u_qsave))
 		{
-		if	(auio.uio_resid == len)
+		if (auio.uio_resid == len)
 			return;
 		else
 			u->u_error = 0;
@@ -443,6 +444,7 @@ sendit(s, mp, flags)
 	u->u_r.r_val1 = len - auio.uio_resid;
 }
 
+void
 recvfrom()
 {
 	register struct a {
@@ -472,6 +474,7 @@ recvfrom()
 	recvit(uap->s, &msg, uap->flags, (caddr_t)uap->fromlenaddr, (caddr_t)0);
 }
 
+void
 recv()
 {
 	register struct a {
@@ -494,6 +497,7 @@ recv()
 	recvit(uap->s, &msg, uap->flags, (caddr_t)0, (caddr_t)0);
 }
 
+void
 recvmsg()
 {
 	register struct a {
@@ -521,6 +525,7 @@ recvmsg()
 	    (caddr_t)&uap->msg->msg_accrightslen);
 }
 
+void
 recvit(s, mp, flags, namelenp, rightslenp)
 	int s;
 	register struct msghdr *mp;
@@ -588,6 +593,7 @@ recvit(s, mp, flags, namelenp, rightslenp)
 		M_FREEM(from);
 }
 
+
 shutdown()
 {
 	register struct a {
@@ -597,7 +603,7 @@ shutdown()
 	register struct file *fp;
 
 	if (netoff)
-		return(u->u_error = ENETDOWN);
+		return (u->u_error = ENETDOWN);
 	fp = gtsockf(uap->s);
 	if (fp == 0)
 		return;
@@ -618,7 +624,7 @@ setsockopt()
 	char optbuf[MSIZE];
 
 	if (netoff)
-		return(u->u_error = ENETDOWN);
+		return (u->u_error = ENETDOWN);
 	fp = gtsockf(uap->s);
 	if (fp == 0)
 		return;
@@ -651,7 +657,7 @@ getsockopt()
 	int valsize;
 
 	if (netoff)
-		return(u->u_error = ENETDOWN);
+		return (u->u_error = ENETDOWN);
 	fp = gtsockf(uap->s);
 	if (fp == 0)
 		return;
@@ -695,7 +701,8 @@ getsockname()
 	char sabuf[MSIZE];
 
 	if (netoff)
-		return(u->u_error = ENETDOWN);
+		u->u_error = ENETDOWN;
+		return;
 	fp = gtsockf(uap->fdes);
 	if (fp == 0)
 		return;
