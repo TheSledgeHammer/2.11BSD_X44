@@ -159,7 +159,7 @@
 
 #ifndef KERNEL
 /* DELAY is in locore.s for the kernel */
-#define	DELAY(n)	{ register int N = (n); while (--N > 0); }
+#define	DELAY(n)			{ register int N = (n); while (--N > 0); }
 #endif
 
 #ifndef _SIMPLELOCK_H_

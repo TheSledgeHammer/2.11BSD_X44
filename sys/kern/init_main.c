@@ -30,6 +30,8 @@
 
 #include <machine/cpu.h>
 
+char	copyright[] = "Copyright (c) 1982, 1986, 1989, 1991, 1993\n\tThe Regents of the University of California.  All rights reserved.\n\n";
+
 struct 	session session0;
 struct 	pgrp pgrp0;
 struct 	proc proc0;
@@ -49,7 +51,9 @@ int		boothowto;
 struct	timeval boottime;
 struct	timeval runtime;
 
+extern const struct emul emul_211bsd; 	/* defined in kern_exec.c */
 
+static void start_init (struct proc *p, void *framep);
 /*
  * Initialization code.
  * Called from cold start routine as
@@ -63,8 +67,9 @@ struct	timeval runtime;
  *	fork - process 0 to schedule
  *	     - process 1 execute bootstrap
  */
-int
-main()
+void
+main(framep)
+	void *framep;
 {
 	register struct proc *p;
 	register struct filedesc0 *fdp;
@@ -83,6 +88,12 @@ main()
 	 */
 	p = &proc0;
 	curproc = p;
+	/*
+	 * Attempt to find console and initialize
+	 * in case of early panic or other messages.
+	 */
+	consinit();
+	printf(copyright);
 
 	vm_mem_init();
 	kmeminit();
@@ -107,6 +118,7 @@ main()
 	p->p_stat = SRUN;
 	p->p_flag |= P_SLOAD|P_SSYS;
 	p->p_nice = NZERO;
+	p->p_emul = &emul_211bsd;
 
 	u->u_procp = p;
 	bcopy("swapper", p->p_comm, sizeof ("swapper"));
@@ -203,9 +215,11 @@ main()
 	/* Mount the root file system. */
 	if (vfs_mountroot())
 		panic("cannot mount root");
-	mountlist.cqh_first->mnt_flag |= MNT_ROOTFS;
+	CIRCLEQ_FIRST(&mountlist)->mnt_flag |= MNT_ROOTFS;
+
 	/* Get the vnode for '/'.  Set fdp->fd_fd.fd_cdir to reference it. */
-	if (VFS_ROOT(mountlist.cqh_first, &rootvnode))
+
+	if (VFS_ROOT(CIRCLEQ_FIRST(&mountlist), &rootvnode))
 		panic("cannot find root vnode");
 	fdp->fd_fd.fd_cdir = rootvnode;
 	VREF(fdp->fd_fd.fd_cdir);
@@ -224,6 +238,7 @@ main()
 		panic("fork init");
 	if (rval[1]) {
 		start_init(curproc, framep);
+		return;
 	}
 
 	/* Create process 2 (the pageout daemon). */
@@ -251,7 +266,7 @@ main()
 /*
  * List of paths to try when searching for "init".
  */
-static char *initpaths[] = {
+static const  char * const initpaths[] = {
 	"/sbin/init",
 	"/sbin/oinit",
 	"/sbin/init.bak",

@@ -1,5 +1,8 @@
 TODO:
 - Makefiles
+
+- Merge KASSERT CTASSERT into ASSERT
+
 - boot:
 	- common:
 		- isapnp.c/.h
@@ -33,27 +36,21 @@ TODO:
 		- wapbl
 			
 - vfs:
-	- deadfs
 	- ufs211:
 		- extern
 		- vnops
 		- vfsops
-
-
-md_init & sysinit are not possible atm, they are intertwined with FreeBSD's linker_set & linker (executables), with many in kernel modules.
-Hence a massive amount of code injection/ rewrite would be needed in order to set this up correctly.
 		
 Kern:
 - p->p_usrpri: doesn't exist in 2.11BSD (needs a solution)
 - vm_machdep.c: u->u_procp->p_p0br??
 - init_main.c
 	- uipc_mbuf.c: mbinit
-	- consinit
-	- cpu_startup
-- if INET: remanents of 2.11BSD's networking stack overlay
+- if INET: remanents of 2.11BSD's networking stack overlay (keep in place for now)
 - kern_clock.c: no statclock
 - sys_kern.c (used? or unused?)
 - uipc_syscalls.c: missing syscallargs
+- syscallargs: To be fixed: temporary compat with 4.4BSD-Lite2
 
 - user.h: 
 	- u_ar0: redefine to machine-dependent reg.h
@@ -61,11 +58,11 @@ Kern:
 	- short	u_uisd[16];					/* segmentation descriptor prototypes */
 	- char	u_sep;						/* flag for I and D separation */
 	- struct u_ovd						/* automatic overlay data */
-	- u_fps: floating point 
-	- u_pcb: machine-dependent pcb.h
 	- remove duplicate and/or un-needed references (kinfo_proc)
 	- kinfo_proc: could be useful unless it's superceded by (ktrace or dtrace?) 
 
+md_init & sysinit are not possible atm, they are intertwined with FreeBSD's linker_set & linker (executables), with many in kernel modules. Hence a massive amount of code injection/ rewrite would be needed in order to set this up correctly.
+NetBSD: has an equivalent linker (executables) in userspace. May cause more problems than it solves if moved to kernelspace.
 
 Possible Generic Header: 
 (2.11BSD):

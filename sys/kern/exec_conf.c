@@ -31,8 +31,8 @@
  */
 
 #include <sys/cdefs.h>
-#include <sys/param.h>
 
+#include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/malloc.h>
 #include <sys/exec.h>
@@ -52,7 +52,7 @@ extern char *syscallnames[];
 static void link_exec(struct execsw_entry **, const struct execsw *);
 void exec_init(void);
 
-/* hdr size, exec_linker, emul_211bsd, exec_prio, arglen, copyargs, exec_setup_stack */
+/* execsw Format: hdr size, exec_linker, emul_211bsd, exec_prio, arglen, copyargs, exec_setup_stack */
 struct execsw execsw[] = {
 		/* shell scripts */
 		{ SCRIPT_HDR_SIZE, exec_script_linker, NULL, EXECSW_PRIO_ANY, 0, NULL, exec_setup_stack },

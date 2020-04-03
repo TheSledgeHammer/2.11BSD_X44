@@ -483,9 +483,9 @@ void
 boot(arghowto)
 	int arghowto;
 {
-	register long dummy; /* r12 is reserved */
-	register int howto; /* r11 == how to boot */
-	register int devtype; /* r10 == major of root dev */
+	register long dummy; 	/* r12 is reserved */
+	register int howto; 	/* r11 == how to boot */
+	register int devtype; 	/* r10 == major of root dev */
 	extern char *panicstr;
 	extern int cold;
 
@@ -551,8 +551,8 @@ boot(arghowto)
 	/*NOTREACHED*/
 }
 
-int	dumpmag = 0x8fca0101;	/* magic number for savecore */
-int	dumpsize = 0;		/* also for savecore */
+int	dumpmag = 	0x8fca0101;	/* magic number for savecore */
+int	dumpsize = 	0;			/* also for savecore */
 
 /*
  * Doadump comes here after turning off memory management and
@@ -902,6 +902,11 @@ init386(first)
 	setidt(29, &IDTVEC(rsvd12),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
 	setidt(30, &IDTVEC(rsvd13),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
 	setidt(31, &IDTVEC(rsvd14),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+
+#include "isa.h"
+#if	NISA >0
+	isa_defaultirq();
+#endif
 
 	r_gdt.rd_limit = NGDT * sizeof(union descriptor ) - 1;
 	r_gdt.rd_base = (int) gdt;

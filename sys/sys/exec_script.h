@@ -33,7 +33,7 @@
 #ifndef _SYS_EXEC_SCRIPT_H_
 #define _SYS_EXEC_SCRIPT_H_
 
-#define	EXEC_SCRIPT_MAGIC	"#!"
+#define	EXEC_SCRIPT_MAGIC		"#!"
 #define	EXEC_SCRIPT_MAGICLEN	2
 
 /* Extra 2 are for possible space between #! and shell name, and newline.  */
