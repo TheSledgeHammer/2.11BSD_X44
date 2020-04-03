@@ -381,6 +381,7 @@ struct type *name##_RB_REMOVE(struct name *, struct type *);			\
 struct type *name##_RB_INSERT(struct name *, struct type *);			\
 struct type *name##_RB_FIND(struct name *, struct type *);				\
 struct type *name##_RB_NEXT(struct type *);								\
+struct type *name##_RB_PREV(struct type *);								\
 struct type *name##_RB_MINMAX(struct name *, int);						\
 
 
