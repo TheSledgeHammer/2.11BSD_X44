@@ -25,6 +25,7 @@ ubadr_t	mioumr;				/* base UNIBUS virtual address */
 					/* non-UNIBUS machines */
 u_short miosize = 16384;		/* two umr's worth */
 
+void
 mbinit()
 {
 	register int s;
@@ -46,6 +47,7 @@ mbinit()
 	return;
 }
 
+void
 mbinit2(mem, how, num)
 	char *mem;
 	int how;

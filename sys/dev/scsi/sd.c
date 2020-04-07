@@ -59,7 +59,7 @@
 #include <sys/errno.h>
 #include <sys/device.h>
 #include <sys/disklabel.h>
-#include <sys/dkstat.h>
+#include <sys/dk.h>
 #include <sys/disk.h>
 #include <sys/ioctl.h>
 #include <sys/malloc.h>
@@ -89,42 +89,42 @@
  * scsi disks.  Note that our blocks are in terms of DEV_BSIZE blocks.
  */
 struct sd_softc {
-	struct	dkdevice sc_dk;	/* base disk device, must be first */
-	struct	unit sc_unit;	/* scsi unit */
-	pid_t	sc_format_pid;	/* process using "format" mode */
-	u_char	sc_type;	/* drive type */
-	u_char	sc_bshift;	/* convert device blocks to DEV_BSIZE blks */
-	short	sc_flags;	/* see below */
-	u_int	sc_blks;	/* number of blocks on device */
-	int	sc_blksize;	/* device block size in bytes */
+	struct	dkdevice 	sc_dk;			/* base disk device, must be first */
+	struct	unit 		sc_unit;		/* scsi unit */
+	pid_t				sc_format_pid;	/* process using "format" mode */
+	u_char				sc_type;		/* drive type */
+	u_char				sc_bshift;		/* convert device blocks to DEV_BSIZE blks */
+	short				sc_flags;		/* see below */
+	u_int				sc_blks;		/* number of blocks on device */
+	int					sc_blksize;		/* device block size in bytes */
 
 	/* should be in dkdevice?? */
-	struct	buf sc_tab;	/* transfer queue */
+	struct	buf 		sc_tab;			/* transfer queue */
 
 	/* statistics */
-	long	sc_resets;	/* number of times reset */
-	long	sc_transfers;	/* count of total transfers */
-	long	sc_partials;	/* count of `partial' transfers */
+	long				sc_resets;		/* number of times reset */
+	long				sc_transfers;	/* count of total transfers */
+	long				sc_partials;	/* count of `partial' transfers */
 
 	/* for user formatting */
-	struct	scsi_cdb sc_cmd;
+	struct	scsi_cdb 	sc_cmd;
 	struct	scsi_fmt_sense sc_sense;
 };
 
 #define	SDF_ALIVE	1	/* drive OK for regular kernel use */
 
 /* definition of the autoconfig driver */
-int	sdmatch __P((struct device *, struct cfdata *, void *));
-void	sdattach __P((struct device *, struct device *, void *));
+int		sdmatch (struct device *, struct cfdata *, void *);
+void	sdattach (struct device *, struct device *, void *);
 
 struct cfdriver sdcd =
     { NULL, "sd", sdmatch, sdattach, DV_DISK, sizeof(struct sd_softc) };
 
 /* definition of the unit driver, for hba */
-void	sdigo __P((struct device *, struct scsi_cdb *));
-void	sdgo __P((struct device *, struct scsi_cdb *));
-void	sdintr __P((struct device *, int, int));
-void	sdreset __P((struct unit *));
+void	sdigo (struct device *, struct scsi_cdb *);
+void	sdgo (struct device *, struct scsi_cdb *);
+void	sdintr (struct device *, int, int);
+void	sdreset (struct unit *);
 
 static struct unitdriver sdunitdriver = { /*sdgo, sdintr*/ sdreset };
 

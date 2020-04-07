@@ -104,18 +104,16 @@ const signed char scsimsglen[0x24] = {
 };
 
 /* definition of `tg' target driver for autoconfig */
-static int scsi_targmatch __P((struct device *, struct cfdata *, void *));
-static void scsi_targattach __P((struct device *, struct device *, void *));
+static int scsi_targmatch (struct device *, struct cfdata *, void *);
+static void scsi_targattach (struct device *, struct device *, void *);
 struct cfdriver tgcd =
     { NULL, "tg", scsi_targmatch, scsi_targattach,
       DV_DULL, sizeof(struct targ) };
 
-void	scsi_targstart __P((struct device *, struct sq *, struct buf *,
-			scdgo_fn, struct device *));
-int	scsi_targgo __P((struct device *, int targ,
-			scintr_fn, struct device *, struct buf *, int));
-void	scsi_targintr __P((struct device *, int, int));
-void	scsi_targrel __P((struct device *));
+void	scsi_targstart (struct device *, struct sq *, struct buf *, scdgo_fn, struct device *);
+int		scsi_targgo (struct device *, int targ, scintr_fn, struct device *, struct buf *, int);
+void	scsi_targintr (struct device *, int, int);
+void	scsi_targrel (struct device *);
 
 #define	NOBUF	((caddr_t)0)
 

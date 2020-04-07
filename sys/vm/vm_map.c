@@ -131,10 +131,10 @@
  *	maps and requires map entries.
  */
 
-vm_offset_t	kentry_data;
-vm_size_t	kentry_data_size;
+vm_offset_t		kentry_data;
+vm_size_t		kentry_data_size;
 vm_map_entry_t	kentry_free;
-vm_map_t	kmap_free;
+vm_map_t		kmap_free;
 
 static void	_vm_map_clip_end (vm_map_t, vm_map_entry_t, vm_offset_t);
 static void	_vm_map_clip_start (vm_map_t, vm_map_entry_t, vm_offset_t);
@@ -2283,11 +2283,11 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry,
 	register vm_offset_t	vaddr;
 	register vm_prot_t	fault_type;
 
-	vm_map_entry_t		*out_entry;	/* OUT */
-	vm_object_t		*object;	/* OUT */
-	vm_offset_t		*offset;	/* OUT */
-	vm_prot_t		*out_prot;	/* OUT */
-	boolean_t		*wired;		/* OUT */
+	vm_map_entry_t	*out_entry;		/* OUT */
+	vm_object_t		*object;		/* OUT */
+	vm_offset_t		*offset;		/* OUT */
+	vm_prot_t		*out_prot;		/* OUT */
+	boolean_t		*wired;			/* OUT */
 	boolean_t		*single_use;	/* OUT */
 {
 	vm_map_t			share_map;

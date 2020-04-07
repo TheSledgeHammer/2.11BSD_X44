@@ -256,7 +256,7 @@ copyfault:	frame.tf_eip = (int)curpcb->pcb_onfault;
 out:
 	while (i == CURSIG(p))
 		postsig(i);
-	p->p_pri = p->p_usrpri;
+	p->p_pri = setpri(p);
 	if (want_resched) {
 		int pl;
 
@@ -374,7 +374,7 @@ done:
 	p = curproc;
 	while (i == CURSIG(p))
 		postsig(i);
-	p->p_pri = p->p_usrpri;
+	p->p_pri = setpri(p);
 	if (want_resched) {
 		int pl;
 

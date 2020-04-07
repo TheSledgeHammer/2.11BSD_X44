@@ -55,9 +55,9 @@
  */
 struct scsi_cdb_rs {
 	u_char	cdb_cmd,		/* 0x8 or 0xa */
-		cdb_lun_xxx,		/* logical unit number + reserved */
-		cdb_lenh,		/* buffer or data length (MSB) */
-		cdb_lenm,		/* buffer or data length */
-		cdb_lenl,		/* buffer or data length (LSB) */
-		cdb_ctrl;		/* control byte */
+			cdb_lun_xxx,	/* logical unit number + reserved */
+			cdb_lenh,		/* buffer or data length (MSB) */
+			cdb_lenm,		/* buffer or data length */
+			cdb_lenl,		/* buffer or data length (LSB) */
+			cdb_ctrl;		/* control byte */
 };

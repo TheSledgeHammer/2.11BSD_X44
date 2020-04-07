@@ -4,7 +4,7 @@
 #include <sys/kernel.h>
 #include <sys/queue.h>
 #include <sys/malloc.h>
-#include <dev/mmu/malloc2.h>
+#include <devel/memory/malloc2.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
@@ -20,17 +20,17 @@ kmemtable_init()
 }
 
 void
-setup_kmembuckets(indx)
+kmemtable_setup(indx)
     long indx;
 {
     register struct kmemtable *tble = (struct kmemtable *) &table_head;
-    tble->tbl_bucket[indx] = bucket[indx];
+    tble->tbl_bucket[indx] = table_zone[indx];
     tble->tbl_bindx = indx;
     tble->tbl_bspace = FALSE;
 }
 
 struct kmembuckets *
-create_kmembucket(tble, indx)
+kmembucket_create(tble, indx)
     struct kmemtable *tble;
     long indx;
 {
@@ -39,31 +39,31 @@ create_kmembucket(tble, indx)
 
 /* Allocate a bucket at the head of the Table */
 void
-allocate_kmembucket_head(tble, size)
+kmembucket_allocate_head(tble, size)
     struct kmemtable *tble;
     u_long size;
 {
     long indx = BUCKETINDX(size);
-    register struct kmembuckets *kbp = create_kmembucket(tble, indx);
+    register struct kmembuckets *kbp = kmembucket_create(tble, indx);
     tble->tbl_ztree = (struct kmemtrees *) &tble->tbl_bucket[indx];
     CIRCLEQ_INSERT_HEAD(&table_head, tble, tbl_entry);
 }
 
 /* Allocate a bucket at the Tail of the Table */
 void
-allocate_kmembucket_tail(tble, size)
+kmembucket_allocate_tail(tble, size)
     struct kmemtable *tble;
     u_long size;
 {
     long indx = BUCKETINDX(size);
-    register struct kmembuckets *kbp = create_kmembucket(tble, indx);
+    register struct kmembuckets *kbp = kmembucket_create(tble, indx);
     tble->tbl_ztree = (struct kmemtrees *) &tble->tbl_bucket[indx];
     CIRCLEQ_INSERT_TAIL(&table_head, tble, tbl_entry);
 }
 
 /* Allocate kmemtrees from Table */
 struct kmemtree *
-allocate_kmemtree(tble)
+kmemtree_allocate(tble)
     struct kmemtable *tble;
 {
     register struct kmemtree *ktp;
@@ -170,7 +170,7 @@ asl_search(free, size)
 
 /* Tertiary Tree (kmemtree) */
 struct kmemtree *
-insert(size, type, ktp)
+kmemtree_insert(size, type, ktp)
     register struct kmemtree *ktp;
 	int type;
     u_long size;
@@ -192,7 +192,7 @@ kmemtree_push_left(size, dsize, ktp)
 	} else {
 		free->asl_next = asl_insert(free, size);
 	}
-	ktp->kt_left = insert(size, TYPE_11, ktp);
+	ktp->kt_left = kmemtree_insert(size, TYPE_11, ktp);
 	return(ktp);
 }
 
@@ -207,7 +207,7 @@ kmemtree_push_middle(size, dsize, ktp)
 	} else {
 		free->asl_next = asl_insert(free, size);
 	}
-	ktp->kt_middle = insert(size, TYPE_01, ktp);
+	ktp->kt_middle = kmemtree_insert(size, TYPE_01, ktp);
 	return(ktp);
 }
 
@@ -222,7 +222,7 @@ kmemtree_push_right(size, dsize, ktp)
 	} else {
 		free->asl_next = asl_insert(free, size);
 	}
-	ktp->kt_right = insert(size, TYPE_10, ktp);
+	ktp->kt_right = kmemtree_insert(size, TYPE_10, ktp);
 	return(ktp);
 }
 
@@ -411,7 +411,7 @@ kmemtree_trealloc(ktp, size, flags)
  *  - Add to asl: Add addr ptr to functions (insert, search, remove, etc), then trealloc_free can run a check on addr
  */
 void
-trealloc_free(ktp, size)
+kmemtree_trealloc_free(ktp, size)
 	struct kmemtree *ktp;
 	u_long size;
 {
@@ -440,7 +440,6 @@ trealloc_free(ktp, size)
 	kmem_free(kmem_map, (vm_offset_t)toFind, ctob(kup->ku_pagecnt));
 	*/
 }
-
 
 /* Function to check if x is a power of 2 (Internal use only) */
 static int

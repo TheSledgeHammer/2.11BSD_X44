@@ -22,9 +22,9 @@ struct kmembuckets {
 
 CIRCLEQ_HEAD(table_zones, kmemtable) table_head;
 struct kmemtable {
-	CIRCLEQ_ENTRY(kmemtable) tbl_entry;
-	struct kmembucket        *tbl_bucket;
-	struct kmemtree          *tbl_ztree;
+	CIRCLEQ_ENTRY(kmemtable) tbl_entry;			/* Table Entries */
+	struct kmembucket        *tbl_bucket;		/* Pointer kmembuckets */
+	struct kmemtree          *tbl_ztree;		/* Pointer kmemtree */
 	boolean_t                tbl_bspace;		/* Bucket contains a tree: Default = False or 0 */
 	unsigned long            tbl_bsize;			/* bucket size */
 	long                     tbl_bindx;			/* bucket indx */
@@ -47,8 +47,9 @@ struct kmemtree {
     int 					kt_entries;			/* # of child nodes in tree */
 
     caddr_t 				kt_va;				/* virtual address */
-    unsigned long 			kt_bsize;			/* bucket size this tree belongs too */
-    long 					kt_bindx;			/* bucket indx this tree belongs too */
+
+   unsigned long 			kt_bsize;			/* bucket size this tree belongs too */
+   long 					kt_bindx;			/* bucket indx this tree belongs too */
 };
 
 /* Tertiary Tree: Available Space List */
@@ -62,27 +63,27 @@ struct asl {
 
 #define BUCKETSIZE(indx)	(powertwo(indx))
 
-#define SplitLeft(n)    (n / 2)
-#define SplitMiddle(n)  (((SplitLeft(n)) * 2) / 3)
-#define SplitRight(n)   (((SplitMiddle(n) / 2)) + (((SplitLeft(n) + SplitMiddle(n) + n) % 2) + 1))
-#define SplitTotal(n)   (SplitLeft(n) + SplitMiddle(n) + SplitRight(n))
+#define SplitLeft(n)    	(n / 2)
+#define SplitMiddle(n)  	(((SplitLeft(n)) * 2) / 3)
+#define SplitRight(n)   	(((SplitMiddle(n) / 2)) + (((SplitLeft(n) + SplitMiddle(n) + n) % 2) + 1))
+#define SplitTotal(n)   	(SplitLeft(n) + SplitMiddle(n) + SplitRight(n))
 
-#define LOG2(n)         (n >> 2)
+#define LOG2(n)         	(n >> 2)
 
-extern struct kmemtable table_zone[];
+extern struct kmemtable 	table_zone[];
 
 /* All methods below are for internal use only for kern_malloc */
 extern void 				kmemtable_init();
-extern void 				setup_kmembuckets(long indx);
-extern struct kmembuckets 	*create_kmembucket(struct kmemtable *tble, long indx);
-extern void 				allocate_kmembucket_head(struct kmemtable *tble, u_long size);
-extern void 				allocate_kmembucket_tail(struct kmemtable *tble, u_long size);
-extern struct kmemtree 		*allocate_kmemtree(struct kmemtable *tble);
+extern void 				kmemtable_setup(long indx);
+extern struct kmembuckets 	*kmembucket_create(struct kmemtable *tble, long indx);
+extern void 				kmembucket_allocate_head(struct kmemtable *tble, u_long size);
+extern void 				kmembucket_allocate_tail(struct kmemtable *tble, u_long size);
+extern struct kmemtree 		*kmemtree_allocate(struct kmemtable *tble);
 extern struct kmembuckets 	*kmembucket_search_next(struct kmemtable *tble, struct kmembucket *kbp, caddr_t next);
 extern struct kmembuckets 	*kmembucket_search_last(struct kmemtable *tble, struct kmembucket *kbp, caddr_t last);
 
 extern void 				kmemtree_trealloc(struct kmemtree *ktp, u_long size, int flags);
-extern void 				trealloc_free(struct kmemtree *ktp, u_long size);
+extern void 				kmemtree_trealloc_free(struct kmemtree *ktp, u_long size);
 
 /* Tertiary Tree: Available Space List */
 extern struct asl 			*asl_list(struct asl *free, u_long size);

@@ -42,13 +42,8 @@ TODO:
 		- vfsops
 		
 Kern:
-- p->p_usrpri: doesn't exist in 2.11BSD (needs a solution)
 - vm_machdep.c: u->u_procp->p_p0br??
-- init_main.c
-	- uipc_mbuf.c: mbinit
 - if INET: remanents of 2.11BSD's networking stack overlay (keep in place for now)
-- kern_clock.c: no statclock
-- sys_kern.c (used? or unused?)
 - uipc_syscalls.c: missing syscallargs
 - syscallargs: To be fixed: temporary compat with 4.4BSD-Lite2
 

@@ -32,7 +32,6 @@
 #include <sys/systm.h>
 #include <sys/signal.h>
 #include <sys/mount.h>
-#include <sys/syscallargs.h>
 
 ; Reserved/unimplemented system calls in the range 0-150 inclusive
 ; are reserved for use in future Berkeley releases.
@@ -48,7 +47,7 @@
 5   STD     	{ int open(); }
 6   STD     	{ int close(); }
 7   STD     	{ int wait4(); }
-8	OBSOL		old creat
+8	COMPAT_43	{ int creat(); }
 9   STD     	{ int link(); }
 10  STD     	{ int unlink(); }
 11  STD     	{ int execv(); }
@@ -103,38 +102,38 @@
 60  STD     	{ int umask(); }
 61  STD     	{ int chroot(); }
 62  STD     	{ int fstat(); }
-63  UNIMPL
-64	OBSOL		old getpagesize
+63	STD		    { int undelete(); }
+64	COMPAT_43	{ int getpagesize(); }
 65  STD     	{ int pselect(); }
 66  STD     	{ int vfork(); }
-67	UNIMPL
-68	UNIMPL
+67	COMPAT_43	{ long lseek(); }
+68	COMPAT_43	{ int mmap(); }
 69  STD   		{ int sbrk(); }
-70	UNIMPL
-71	UNIMPL
-72	UNIMPL
-73	UNIMPL
-74	UNIMPL
-75	UNIMPL
-76  OBSOL   	 old vhangup
-77  UNIMPL
-78	UNIMPL
+70	STD			{ int sstk(); }
+71	STD			{ caddr_t mmap(); }
+72	STD			{ int msync(); }
+73	STD			{ int munmap(); }
+74	STD			{ int mprotect(); }
+75	STD			{ int madvise(); }
+76	STD			{ int mincore(); }
+77	STD			{ int mlock(); }
+78	STD			{ int munlock(); }
 79  STD     	{ int getgroups(); }
 80  STD     	{ int setgroups(); }
 81  STD     	{ int getpgrp(); }
 82  STD     	{ int setpgrp(); }
 83  STD     	{ int setitimer(); }
-84  OBSOL   	wait, int wait3 		/* COMPAT */
-85  UNIMPL
+84	COMPAT_43	{ int lstat(); }
+85	STD		    { int pathconf(); }
 86  STD     	{ int getitimer(); }
 87  OBSOL   	old gethostname
 88  OBSOL   	old sethostname
 89  STD     	{ int getdtablesize(); }
 90  STD     	{ int dup2(); }
-91  UNIMPL
+91	COMPAT_43	{ int stat(); }
 92  STD     	{ int fcntl(); }
 93  STD     	{ int select(); }
-94  UNIMPL
+94	STD		    { int mkfifo(); }
 95  STD     	{ int fsync(); }
 96  STD     	{ int setpriority(); }
 97  STD     	{ int socket(); }
@@ -152,14 +151,14 @@
 109 OBSOL   	old sigblock
 110 OBSOL   	old sigsetmask
 111 OBSOL   	old sigpause
-112 COMPAT-43 	{ int sigstack(); }
+112 COMPAT_43 	{ int sigstack(); }
 113 STD     	{ int recvmsg(); }
 114 STD     	{ int sendmsg(); }
-115 UNIMPL
+115	STD		    { int revoke(); }
 116 STD     	{ int gettimeofday(); }
 117 STD     	{ int getrusage(); }
 118 STD     	{ int getsockopt(); }
-119 UNIMPL
+119	STD		    { int getdirentries(); }
 120 STD     	{ int readv(); }
 121 STD     	{ int writev(); }
 122 STD     	{ int settimeofday(); }
@@ -172,14 +171,14 @@
 129	STD			{ int truncate(); }
 130	STD			{ int ftruncate(); }
 131 STD     	{ int flock(); }
-132 UNIMPL
+132	COMPAT_43	{ int truncate(); }
 133 STD     	{ int sendto(); }
 134 STD     	{ int shutdown(); }
 135 STD     	{ int socketpair(); }
 136 STD     	{ int mkdir(); }
 137 STD     	{ int rmdir(); }
 138 STD     	{ int utimes(); }
-139 UNIMPL
+139	COMPAT_43	{ int ftruncate(); }
 140 STD     	{ int adjtime(); }
 141 STD     	{ int getpeername(); }
 142 OBSOL   	old gethostid
@@ -187,94 +186,18 @@
 144 STD     	{ int getrlimit(); }
 145 STD     	{ int setrlimit(); }
 146 STD     	{ int killpg(); }
-147 UNIMPL
+147	STD		    { int quotactl(); }
 148 OBSOL     	old setquota
 149 STD     	{ int quota(); }
 150 STD     	{ int getsockname(); }
 ; Syscalls 151-160 are special for 2BSD
-151 UNIMPL
+151	COMPAT_43	{ int getdirentries(); }
 152 OBSOL     	old nostk
 153 OBSOL     	old fetchi
 154 OBSOL     	old ucall
 155 OBSOL     	old fperr
-
 ; LFS Syscalls
-156	STD			{ int lfs_bmapv(fsid_t *fsidp, \
-			    	struct block_info *blkiov, int blkcnt); }
-157	STD			{ int lfs_markv(fsid_t *fsidp, \
-			    	struct block_info *blkiov, int blkcnt); }
-158	STD			{ int lfs_segclean(fsid_t *fsidp, u_long segment); }
-159	STD			{ int lfs_segwait(fsid_t *fsidp, struct timeval *tv); }
-
-
-; VFS Related syscalls
-21	STD			{ int mount(char *type, char *path, int flags, \
-			    caddr_t data); }
-22	STD			{ int unmount(char *path, int flags); }
-36	STD		    { int sync(void); }
-148	STD		    { int quotactl(char *path, int cmd, int uid, \
-			        caddr_t arg); }
-157	STD		    { int statfs(char *path, struct statfs *buf); }
-158	STD		    { int fstatfs(int fd, struct statfs *buf); }
-18	STD		    { int getfsstat(struct statfs *buf, long bufsize, \
-			        int flags); }
-13	STD		    { int fchdir(int fd); }
-12	STD		    { int chdir(char *path); }
-61	STD		    { int chroot(char *path); }
-5	STD		    { int open(char *path, int flags, int mode); }
-14	STD		    { int mknod(char *path, int mode, int dev); }
-132	STD		    { int mkfifo(char *path, int mode); }
-9	STD		    { int link(char *path, char *link); }
-57	STD		    { int symlink(char *path, char *link); }
-205	STD		    { int undelete(char *path); }
-10	STD		    { int unlink(char *path); }
-199	STD		    { off_t lseek(int fd, int pad, off_t offset, \
-			        int whence); }
-33	STD		    { int access(char *path, int flags); }
-188	STD		    { int stat(char *path, struct stat *ub); }
-190	STD		    { int lstat(char *path, struct stat *ub); }
-191	STD		    { int pathconf(char *path, int name); }
-58	STD		    { int readlink(char *path, char *buf, int count); }
-34	STD		    { int chflags(char *path, int flags); }
-35	STD		    { int fchflags(int fd, int flags); }
-15	STD		    { int chmod(char *path, int mode); }
-124	STD		    { int fchmod(int fd, int mode); }
-16	STD		    { int chown(char *path, int uid, int gid); }
-123	STD		    { int fchown(int fd, int uid, int gid); }
-138	STD		    { int utimes(char *path, struct timeval *tptr); }
-200	STD		    { int truncate(char *path, int pad, off_t length); }
-201	STD		    { int ftruncate(int fd, int pad, off_t length); }
-95	STD		    { int fsync(int fd); }
-128	STD		    { int rename(char *from, char *to); }
-136	STD		    { int mkdir(char *path, int mode); }
-137	STD		    { int rmdir(char *path); }
-196	STD		    { int getdirentries(int fd, char *buf, u_int count, \
-			        long *basep); }
-60	STD		    { int umask(int newmask); }
-56	STD		    { int revoke(char *path); }
-
-8	COMPAT_43	{ int creat(char *path, int mode); }
-19	COMPAT_43	{ long lseek(int fd, long offset, int whence); }
-38	COMPAT_43	{ int stat(char *path, struct ostat *ub); }
-40	COMPAT_43	{ int lstat(char *path, struct ostat *ub); }
-129	COMPAT_43	{ int truncate(char *path, long length); }
-130	COMPAT_43	{ int ftruncate(int fd, long length); }
-156	COMPAT_43	{ int getdirentries(int fd, char *buf, u_int count, \
-			        long *basep); }
-
-; VM Related syscalls
-69	STD			{ int sbrk(int incr); }
-70	STD			{ int sstk(int incr); }
-197	STD			{ caddr_t mmap(caddr_t addr, size_t len, int prot, \
-			    	int flags, int fd, long pad, off_t pos); }
-65	STD			{ int msync(caddr_t addr, int len); }
-73	STD			{ int munmap(caddr_t addr, int len); }
-
-74	STD			{ int mprotect(caddr_t addr, int len, int prot); }
-75	STD			{ int madvise(caddr_t addr, int len, int behav); }
-78	STD			{ int mincore(caddr_t addr, int len, char *vec); }
-203	STD			{ int mlock(caddr_t addr, size_t len); }
-204	STD			{ int munlock(caddr_t addr, size_t len); }
-64	COMPAT_43	{ int getpagesize(void); }
-71	COMPAT_43	{ int mmap(caddr_t addr, int len, int prot, \
-			    	int flags, int fd, long pos); }
+156	STD			{ int lfs_bmapv(); }
+157	STD			{ int lfs_markv(); }
+158	STD			{ int lfs_segclean(); }
+159	STD			{ int lfs_segwait(); }

@@ -6,11 +6,11 @@
 # This makefile is constructed from a machine description:
 #	config machineid
 # Most changes should be made in the machine description
-#	/sys/conf/``machineid''
+#	/sys/arch/i386/conf/``machineid''
 # after which you should do
-#	 config machineid
+#	config machineid
 # Machine generic makefile changes should be made in
-#	/sys/conf/Makefile.``machinetype''
+#	/sys/arch/i386/conf/Makefile.i386
 # after which config should be rerun for all machines of that type.
 
 

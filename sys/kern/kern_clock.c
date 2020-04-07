@@ -22,6 +22,9 @@
 
 int noproc;
 struct  callout *callfree, calltodo;
+
+static int psdiv, pscnt;	/* prof => stat divider */
+
 volatile struct timeval time;
 volatile struct	timeval mono_time;
 
@@ -32,7 +35,7 @@ void
 initclocks()
 {
 	register int i;
-	static int psdiv, pscnt;	/* prof => stat divider */
+
 	/*
 	 * Set divisors to 1 (normal case) and let the machine-specific
 	 * code do its bit.
@@ -392,6 +395,115 @@ hzto(tv)
 		ticks = 0x7fffffff;
 	splx(s);
 	return ((int)ticks);
+}
+
+int	dk_ndrive = DK_NDRIVE;
+
+/*
+ * Statistics clock.  Grab profile sample, and if divider reaches 0,
+ * do process and kernel statistics.
+ */
+void
+statclock(frame)
+	register struct clockframe *frame;
+{
+#ifdef GPROF
+	register struct gmonparam *g;
+#endif
+	register struct proc *p;
+	register int i;
+
+	if (CLKF_USERMODE(frame)) {
+		p = curproc;
+		if (p->p_flag & P_PROFIL)
+			addupc_intr(p, CLKF_PC(frame), 1);
+		if (--pscnt > 0)
+			return;
+		/*
+		 * Came from user mode; CPU was in user state.
+		 * If this process is being profiled record the tick.
+		 */
+		p->p_uticks++;
+		if (p->p_nice > NZERO)
+			cp_time[CP_NICE]++;
+		else
+			cp_time[CP_USER]++;
+	} else {
+#ifdef GPROF
+		/*
+		 * Kernel statistics are just like addupc_intr, only easier.
+		 */
+		g = &_gmonparam;
+		if (g->state == GMON_PROF_ON) {
+			i = CLKF_PC(frame) - g->lowpc;
+			if (i < g->textsize) {
+				i /= HISTFRACTION * sizeof(*g->kcount);
+				g->kcount[i]++;
+			}
+		}
+#endif
+		if (--pscnt > 0)
+			return;
+		/*
+		 * Came from kernel mode, so we were:
+		 * - handling an interrupt,
+		 * - doing syscall or trap work on behalf of the current
+		 *   user process, or
+		 * - spinning in the idle loop.
+		 * Whichever it is, charge the time as appropriate.
+		 * Note that we charge interrupts to the current process,
+		 * regardless of whether they are ``for'' that process,
+		 * so that we know how much of its real time was spent
+		 * in ``non-process'' (i.e., interrupt) work.
+		 */
+		p = curproc;
+		if (CLKF_INTR(frame)) {
+			if (p != NULL)
+				p->p_iticks++;
+			cp_time[CP_INTR]++;
+		} else if (p != NULL) {
+			p->p_sticks++;
+			cp_time[CP_SYS]++;
+		} else
+			cp_time[CP_IDLE]++;
+	}
+	pscnt = psdiv;
+
+	/*
+	 * We maintain statistics shown by user-level statistics
+	 * programs:  the amount of time in each cpu state, and
+	 * the amount of time each of DK_NDRIVE ``drives'' is busy.
+	 *
+	 * XXX	should either run linked list of drives, or (better)
+	 *	grab timestamps in the start & done code.
+	 */
+	for (i = 0; i < DK_NDRIVE; i++)
+		if (dk_busy & (1 << i))
+			dk_time[i]++;
+
+	/*
+	 * We adjust the priority of the current process.  The priority of
+	 * a process gets worse as it accumulates CPU time.  The cpu usage
+	 * estimator (p_estcpu) is increased here.  The formula for computing
+	 * priorities (in kern_synch.c) will compute a different value each
+	 * time p_estcpu increases by 4.  The cpu usage estimator ramps up
+	 * quite quickly when the process is running (linearly), and decays
+	 * away exponentially, at a rate which is proportionally slower when
+	 * the system is busy.  The basic principal is that the system will
+	 * 90% forget that the process used a lot of CPU time in 5 * loadav
+	 * seconds.  This causes the system to favor processes which haven't
+	 * run much recently, and to round-robin among other processes.
+	 */
+	if (p != NULL) {
+		p->p_cpticks++;
+		if (++p->p_estcpu == 0)
+			p->p_estcpu--;
+		if ((p->p_estcpu & 3) == 0) {
+			resetpriority(p);
+			if (p->p_pri >= PUSER)
+				p->p_pri = setpri(p);
+		}
+	}
 }
 
 

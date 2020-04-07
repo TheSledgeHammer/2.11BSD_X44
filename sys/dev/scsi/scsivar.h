@@ -67,10 +67,10 @@
  * hba->target->unit (when there are multiple units on a target).
  */
 /* device go function (`you got bus') */
-typedef void (*scdgo_fn) __P((struct device *, struct scsi_cdb *));
+typedef void (*scdgo_fn) (struct device *, struct scsi_cdb *);
 
 /* intr function (`you no got bus no more') */
-typedef void (*scintr_fn) __P((struct device *, int stat, int resid));
+typedef void (*scintr_fn) (struct device *, int stat, int resid);
 
 /*
  * Upcalls.  These are usually made from unit to hba, but can be
@@ -78,16 +78,13 @@ typedef void (*scintr_fn) __P((struct device *, int stat, int resid));
  */
 /* bus alloc function (`please get me bus') */
 struct sq; struct buf;
-typedef void (*scstart_fn) __P((struct device *, struct sq *, struct buf *,
-				scdgo_fn, struct device *));
+typedef void (*scstart_fn) (struct device *, struct sq *, struct buf *, scdgo_fn, struct device *);
 
 /* bus go function (`I have bus and I set up cmd, so start it up') */
-typedef int (*scbusgo_fn) __P((struct device *, int targ,
-				scintr_fn, struct device *,
-				struct buf *, int pad));
+typedef int (*scbusgo_fn) (struct device *, int targ, scintr_fn, struct device *, struct buf *, int pad);
 
 /* bus release function (`I have bus but do not need it after all') */
-typedef void (*scbusrel_fn) __P((struct device *));
+typedef void (*scbusrel_fn) (struct device *);
 
 /*
  * SCSI Queue.  This is an element in a queue of devices (targets
@@ -95,32 +92,32 @@ typedef void (*scbusrel_fn) __P((struct device *));
  */
 struct sq {
 	struct	sq *sq_forw;		/* forward link */
-	struct	buf *sq_bp;		/* buffer for transfer */
-	scdgo_fn sq_dgo;		/* device-go to call when got bus */
+	struct	buf *sq_bp;			/* buffer for transfer */
+	scdgo_fn sq_dgo;			/* device-go to call when got bus */
 	struct	device *sq_dev;		/* device argument to sq_dgo */
 };
 
 struct hba_softc {
-	struct	device hba_dev;		/* generic part */
+	struct	device hba_dev;			/* generic part */
 	struct	sq *hba_head, *hba_tail;/* io queue (u's/t's wanting bus) */
-	char	hba_busy;		/* true => will inspect qhead later */
+	char	hba_busy;				/* true => will inspect qhead later */
 	struct	targ *hba_targets[8];	/* the 8 possible targets */
 	struct	hbadriver *hba_driver;	/* hba driver */
-	scintr_fn hba_intr;		/* current interrupt function */
+	scintr_fn hba_intr;				/* current interrupt function */
 	struct	device *hba_intrdev;	/* arg 0 for hba_intr */
 };
 
 struct targ {
-	struct	device t_dev;		/* generic part */
-	struct	sq t_forw;		/* forward link, etc, on hba queue */
+	struct	device t_dev;			/* generic part */
+	struct	sq t_forw;				/* forward link, etc, on hba queue */
 	struct	sq *t_head, *t_tail;	/* io queue */
-	char	t_busy;			/* true => will inspect qhead later */
-	char	t_targ;			/* target number */
-	char	t_nunits;		/* count of live units */
-	char	t_firstunit;		/* the first live unit */
-	struct	unit *t_units[8];	/* the 8 possible units */
-	scintr_fn t_intr;		/* current interrupt function */
-	struct	device *t_intrdev;	/* arg 0 for t_intr */
+	char	t_busy;					/* true => will inspect qhead later */
+	char	t_targ;					/* target number */
+	char	t_nunits;				/* count of live units */
+	char	t_firstunit;			/* the first live unit */
+	struct	unit *t_units[8];		/* the 8 possible units */
+	scintr_fn t_intr;				/* current interrupt function */
+	struct	device *t_intrdev;		/* arg 0 for t_intr */
 };
 
 /* since a unit may be a disk, tape, etc., it has only pointer to dev */
@@ -144,23 +141,20 @@ struct unit {
  */
 struct hbadriver {
 	/* immediate command; should not depend on receiving interrupts */
-	int	(*hd_icmd) __P((struct hba_softc *, int targ,
-				struct scsi_cdb *cmd,
-				caddr_t addr, int len, int rw));
+	int		(*hd_icmd) (struct hba_softc *, int targ, struct scsi_cdb *cmd,	caddr_t addr, int len, int rw);
 	/* crash dump: like icmd(B_WRITE), but possibly from physmem */
-	int	(*hd_dump) __P((struct hba_softc *, int targ,
-				struct scsi_cdb *cmd, caddr_t addr, int len));
+	int		(*hd_dump) (struct hba_softc *, int targ, struct scsi_cdb *cmd, caddr_t addr, int len);
 	scstart_fn hd_start;	/* allocate DMA & bus */
 	scbusgo_fn hd_go;	/* start DMA xfer on bus */
 	scbusrel_fn hd_rel;	/* release bus early */
-	void	(*hd_reset) __P((struct hba_softc *, int));
+	void	(*hd_reset) (struct hba_softc *, int);
 };
 
 /*
  * SCSI unit driver (`downcalls' from hba to unit).
  */
 struct unitdriver {
-	void	(*ud_reset) __P((struct unit *));	/* SCSI bus reset */
+	void	(*ud_reset) (struct unit *);	/* SCSI bus reset */
 };
 
 /*
@@ -168,11 +162,11 @@ struct unitdriver {
  * unit configuration `match' routines.
  */
 struct scsi_attach_args {
-	int	sa_targ;		/* target number */
-	int	sa_unit;		/* unit number */
-	int	sa_req_status;		/* status from REQUEST SENSE */
+	int	sa_targ;				/* target number */
+	int	sa_unit;				/* unit number */
+	int	sa_req_status;			/* status from REQUEST SENSE */
 	struct	scsi_sense sa_sn;	/* contents from same */
-	int	sa_inq_status;		/* status from INQUIRY command */
+	int	sa_inq_status;			/* status from INQUIRY command */
 	struct	scsi_inquiry sa_si;	/* contents from same */
 };
 
@@ -201,13 +195,13 @@ extern const signed char scsimsglen[0x24];
 /*
  * Declarations for exported functions in scsi_subr.c
  */
-int	scsi_test_unit_ready __P((struct hba_softc *, int targ, int unit));
-int	scsi_request_sense __P((struct hba_softc *, int, int, caddr_t, int));
-void	scsi_hbaattach __P((struct hba_softc *));
-void	scsi_establish __P((struct unit *, struct device *, int));
-void	scsi_printinq __P((struct scsi_inquiry *));
-void	scsi_inq_ansi __P((struct scsi_inq_ansi *, char *, char *, char *));
-void	scsi_reset_units __P((struct hba_softc *));
+int		scsi_test_unit_ready (struct hba_softc *, int targ, int unit);
+int		scsi_request_sense (struct hba_softc *, int, int, caddr_t, int);
+void	scsi_hbaattach (struct hba_softc *);
+void	scsi_establish (struct unit *, struct device *, int);
+void	scsi_printinq (struct scsi_inquiry *);
+void	scsi_inq_ansi (struct scsi_inq_ansi *, char *, char *, char *);
+void	scsi_reset_units (struct hba_softc *);
 
 #define	SCSI_FOUNDTARGET(hba, targ) { \
 	extern int scsi_targprint(void *, char *); \

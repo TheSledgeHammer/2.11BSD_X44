@@ -2,8 +2,8 @@
 // Created by marti on 8/02/2020.
 //
 
-#ifndef SIMPLE_LIST_OF_POOLS_SCHED_CFS_H
-#define SIMPLE_LIST_OF_POOLS_SCHED_CFS_H
+#ifndef _SYS_SCHED_CFS_H
+#define _SYS_SCHED_CFS_H
 
 #include <sys/proc.h>
 #include <sys/tree.h>
@@ -99,4 +99,4 @@ check preempt
 pick next tsk
 put prev task
 */
-#endif //SIMPLE_LIST_OF_POOLS_SCHED_CFS_H
+#endif //_SYS_SCHED_CFS_H

@@ -140,7 +140,7 @@ void	realitexpire (void *);
 
 void 	hardclock (dev_t dev, caddr_t sp, int r1, int ov, int nps, int r0, caddr_t pc, int ps);
 void 	softclock (caddr_t pc, int ps);
-//void 	statclock (struct clockframe *frame);
+void 	statclock (struct clockframe *frame);
 
 void	initclocks (void);
 

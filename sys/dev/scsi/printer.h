@@ -47,11 +47,11 @@
 /*
  * SCSI definitions for Printer Devices.
  */
-#define	CMD_FORMAT		0x04	/* (set) format */
-#define	CMD_PRINT		0x0a	/* print */
+#define	CMD_FORMAT			0x04	/* (set) format */
+#define	CMD_PRINT			0x0a	/* print */
 #define	CMD_SLEW_PRINT		0x0b	/* slew and print */
 #define	CMD_FLUSH_BUFFER	0x10	/* flush buffer */
-#define	CMD_RBD			0x14	/* recover buffered data */
+#define	CMD_RBD				0x14	/* recover buffered data */
 #define	CMD_MODE_SELECT		0x15	/* mode select */
 #define	CMD_RESERVE_UNIT	0x16	/* reserve unit */
 #define	CMD_RELEASE_UNIT	0x17	/* release unit */

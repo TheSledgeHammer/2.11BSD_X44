@@ -362,7 +362,8 @@ start_init(p, framep)
 		 * Now try to exec the program.  If can't for any reason
 		 * other than it doesn't exist, complain.
 		 */
-		if ((error = execve(p, &args, retval)) == 0)
+		error = execve(p, &args, retval);
+		if (error == 0 || error == EJUSTRETURN)
 			return;
 		if (error != ENOENT)
 			printf("exec %s: error %d\n", path, error);

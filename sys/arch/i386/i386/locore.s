@@ -46,7 +46,7 @@
  *		Written by William F. Jolitz, 386BSD Project
  */
 
-#include "assym.s"
+#include "assym.h"
 
 #include <sys/errno.h>
 #include <machine/asm.h>
@@ -166,15 +166,7 @@
  * Globals
  */
  		.data
-		ALIGN_DATA										/* just to be sure */
-
-		.globl	tmpstk
-		.space	0x2000									/* space for tmpstk - temporary stack */
-tmpstk:
-		.globl	_bootinfo
-_bootinfo:		.space	BOOTINFO_SIZE					/* bootinfo that we can handle */
-
-		.globl	_cpu,_cold,_atdevbase,_atdevphys
+		.globl	_cpu,_cold,_boothowto,_bootdev,_cyloffset,_atdevbase,_atdevphys
 _cpu:			.long	0								# are we 386, 386sx, or 486
 _cold:			.long	1								# cold till we are not
 _atdevbase:		.long	0								# location of start of iomem in virtual
@@ -192,30 +184,77 @@ _proc0paddr: 	.long	0								/* address of proc 0 address space */
 /**********************************************************************/
 /* Initialization */
 
- /* Tell the bios to warmboot next time */
- ENTRY(start)
- 		movw	$0x1234,0x472
+		.globl	tmpstk
+		.space	0x2000									/* space for tmpstk - temporary stack */
+tmpstk:
+		.text
+		.globl	start
+start:	movw	$0x1234,0x472							# warm boot
+		jmp		1f
+		.space	0x500									# skip over warm boot shit
+
+		/*
+		 * pass parameters on stack (howto, bootdev, unit, cyloffset)
+		 * note: 0(%esp) is return address of boot
+		 * ( if we want to hold onto /boot, it's physical %esp up to _end)
+		 */
+
+ 1:		movl	4(%esp),%eax
+		movl	%eax,_boothowto-SYSTEM
+		movl	8(%esp),%eax
+		movl	%eax,_bootdev-SYSTEM
+		movl	12(%esp),%eax
+		movl	%eax, _cyloffset-SYSTEM
 
 /* Set up a real frame in case the double return in newboot is executed. */
-		xorl	%ebp,%ebp
-		pushl	%ebp
-		movl	%esp, %ebp
+		//xorl	%ebp,%ebp
+		//pushl	%ebp
+		//movl	%esp, %ebp
 
 /* Don't trust what the BIOS gives for eflags. */
-		pushl	$PSL_MBO
-		popfl
+		//pushl	$PSL_MBO
+		//popfl
 
 /*
  * Don't trust what the BIOS gives for %fs and %gs.  Trust the bootstrap
  * to set %cs, %ds, %es and %ss.
  */
-		mov		%ds, %ax
-		mov		%ax, %fs
-		mov		%ax, %gs
+		//mov		%ds, %ax
+		//mov		%ax, %fs
+		//mov		%ax, %gs
+
+/**********************************************************************/
+/* Identify CPU's */
+
+#ifdef cgd_notdef
+		/* find out our CPU type. */
+        pushfl
+        popl    %eax
+        movl    %eax, %ecx
+        xorl    $0x40000, %eax
+        pushl   %eax
+        popfl
+        pushfl
+        popl    %eax
+        xorl    %ecx, %eax
+        shrl    $18, %eax
+        andl    $1, %eax
+        push    %ecx
+        popfl
+
+        cmpl    $0, %eax
+        jne     1f
+        movl    $CPU_386, _cpu-SYSTEM
+		jmp		2f
+1:      movl    $CPU_486, _cpu-SYSTEM
+2:
+#endif
+
+/**********************************************************************/
+/* Garbage: Clean Up */
 
 #ifdef garbage
-/* count up memory */
-
+		/* count up memory */
 		xorl	%eax,%eax							# start with base memory at 0x0
 		#movl	$ 0xA0000/NBPG,%ecx	# look every 4K up to 640K
 		movl	$ 0xA0,%ecx							# look every 4K up to 640K
@@ -245,40 +284,7 @@ _proc0paddr: 	.long	0								/* address of proc 0 address space */
 #endif
 
 /**********************************************************************/
-/* Recover Bootinfo passed to us from boot program */
-//recover_bootinfo:
-
-/**********************************************************************/
-/* Identify CPU's */
-//identify_cpu:
-
-#ifdef cgd_notdef
-	/* find out our CPU type. */
-        pushfl
-        popl    %eax
-        movl    %eax, %ecx
-        xorl    $0x40000, %eax
-        pushl   %eax
-        popfl
-        pushfl
-        popl    %eax
-        xorl    %ecx, %eax
-        shrl    $18, %eax
-        andl    $1, %eax
-        push    %ecx
-        popfl
-
-        cmpl    $0, %eax
-        jne     1f
-        movl    $CPU_386, _cpu-SYSTEM
-		jmp		2f
-1:      movl    $CPU_486, _cpu-SYSTEM
-2:
-#endif
-
-/**********************************************************************/
 /* Create Page Tables */
-//create_pagetables:
 
 /* find end of kernel image */
 		movl	$_end-SYSTEM,%ecx
@@ -399,16 +405,15 @@ begin: /* now running relocated at SYSTEM where the system is linked to run */
 		call	init386								# wire 386 chip for unix operation
 
 		movl	$0,_PTD
-		call 	mi_startup							/* autoconfiguration, mountroot etc */
+		call 	main								/* autoconfiguration, mountroot etc */
 		popl	%esi
 
-/*
 		.globl	__ucodesel,__udatasel
 		movzwl	__ucodesel,%eax
 		movzwl	__udatasel,%ecx
-*/
-# build outer stack frame
-/*
+
+		# build outer stack frame
+
 		pushl	%ecx								# user ss
 		pushl	$ USRSTACK							# user esp
 		pushl	%eax								# user cs
@@ -418,18 +423,58 @@ begin: /* now running relocated at SYSTEM where the system is linked to run */
 		movw	%ax,%fs								# double map cs to fs
 		movw	%cx,%gs								# and ds to gs
 		lret										# goto user!
-*
-//		pushl	$lretmsg1							/* "should never get here!" */
-/*		call	_panic
+
+		pushl	$lretmsg1							/* "should never get here!" */
+		call	_panic
 lretmsg1:
-	.asciz	"lret: toinit\n"
-*/
+		.asciz	"lret: toinit\n"
+
 /**********************************************************************/
 /*
  * Signal trampoline, copied to top of user stack
  */
+ 		.set	exec,59
+ 		.set	exit,1
+	 	.globl	icode
+		.globl	szicode
+/*
+ * Icode is copied out to process 1 to exec /etc/init.
+ * If the exec fails, process 1 exits.
+ */
+icode:
+		# pushl	$argv-_icode	# gas fucks up again
+		movl	$argv,%eax
+		subl	$icode,%eax
+		pushl	%eax
 
-ENTRY(sigcode)
+		# pushl	$init-_icode
+		movl	$init,%eax
+		subl	$icode,%eax
+		pushl	%eax
+		pushl	%eax								# dummy out rta
+
+		movl	%esp,%ebp
+		movl	$exec,%eax
+		LCALL(0x7,0x0)
+		pushl	%eax
+		movl	$exit,%eax
+		pushl	%eax								# dummy out rta
+		LCALL(0x7,0x0)
+
+init:
+		.asciz	"/sbin/init"
+		.align	2
+argv:
+		.long	init+6-icode						# argv[0] = "init" ("/sbin/init" + 6)
+		.long	esigcode-icode						# argv[1] follows icode after copyout
+		.long	0
+esigcode:
+
+szicode:
+		.long	szicode-icode
+
+		.globl	sigcode,szsigcode
+sigcode:
 		movl	12(%esp),%eax						# unsure if call will dec stack 1st
 		call	%eax
 		xorl	%eax,%eax							# smaller movl $103,%eax
@@ -437,15 +482,9 @@ ENTRY(sigcode)
 		LCALL(0x7,0)								# enter kernel with args on stack
 		hlt											# never gets here
 
-		ALIGN_TEXT
-esigcode:
-
-		.data
 		.globl	szsigcode
 szsigcode:
 		.long	szsigcode-sigcode
-
-		.text
 
 /**********************************************************************/
 /* Scheduling */

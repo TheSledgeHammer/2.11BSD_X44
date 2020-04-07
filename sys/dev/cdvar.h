@@ -46,11 +46,11 @@
  * A concatenated disk is described at config time by this structure.
  */
 struct cddevice {
-	int	cd_unit;		/* logical unit of this cd */
-	int	cd_interleave;		/* interleave (DEV_BSIZE blocks) */
-	int	cd_flags;		/* misc. information */
-	int	cd_dk;			/* disk number */
-	dev_t	cd_dev[NCDISKS];	/* component devices */
+	int		cd_unit;		/* logical unit of this cd */
+	int		cd_interleave;	/* interleave (DEV_BSIZE blocks) */
+	int		cd_flags;		/* misc. information */
+	int		cd_dk;			/* disk number */
+	dev_t	cd_dev[NCDISKS];/* component devices */
 };
 
 /* cd_flags */
@@ -93,10 +93,10 @@ struct cdcinfo {
  * 2 starting at offset 5.
  */
 struct cdiinfo {
-	int	ii_ndisk;	/* # of disks range is interleaved over */
-	daddr_t	ii_startblk;	/* starting scaled block # for range */
-	daddr_t	ii_startoff;	/* starting component offset (block #) */
-	char	ii_index[NCDISKS];/* ordered list of components in range */
+	int		ii_ndisk;			/* # of disks range is interleaved over */
+	daddr_t	ii_startblk;		/* starting scaled block # for range */
+	daddr_t	ii_startoff;		/* starting component offset (block #) */
+	char	ii_index[NCDISKS];	/* ordered list of components in range */
 };
 
 #ifdef KERNEL

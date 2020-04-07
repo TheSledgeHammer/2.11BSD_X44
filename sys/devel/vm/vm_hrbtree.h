@@ -3,27 +3,40 @@
 
 #include <sys/queue.h>
 #include <sys/tree.h>
+#include <devel/hashedrbtree.h>
 
 struct vm_hrbtree;
-RB_HEAD(vm_hrbtree, vm_hashed_rbtree);
-RB_PROTOTYPE(vm_hrbtree, vm_hashed_rbtree, hrbt_entry, vm_hrbtree_cmp);
-
+HRB_HEAD(vm_hrbtree, vm_hashed_rbtree);
 struct vm_hashed_rbtree
 {
 	struct vm_hrbtree				hrbt_root;
-	RB_ENTRY(vm_hashed_rbtree) 		hrbt_entry;			/* tree node */
-	unsigned int        			hrbt_hindex;		/* Hash Index */
-
-	vm_offset_t						hrbt_start;			/* start address */
+	HRB_ENTRY(vm_hashed_rbtree)		hrbt_entry;
+	struct vm_map_hrb				hrbt_vm_map;
+	struct vm_amap_hrb				hrbt_vm_amap;
 };
 
-struct vm_map_rbtree;
-RB_HEAD(vm_map_rbtree, vmmap_entry);
-RB_PROTOTYPE(vm_map_rbtree, vmmap_entry, vmrb_entry, vm_map_entry_cmp);
+struct vm_map_hrb;
+HRB_HEAD(vm_map_hrb, vm_map_entry);
+struct vm_map_entry {
+	struct vm_map_hrb				hrb_root;
+	HRB_ENTRY(vm_map_entry)			hrb_node;
+};
 
-struct vmmap_entry {
-	RB_ENTRY(vm_hashed_rbtree) 	vmrb_entry;
-	vm_offset_t					start;						/* start address */
+struct vm_map {
+
+};
+
+struct vm_amap_hrb;
+HRB_HEAD(vm_amap_hrb, vm_amap_entry);
+struct vm_amap_entry {
+	struct vm_amap_hrb				hrb_root;
+	HRB_ENTRY(vm_amap_entry)		hrb_node;
+	struct vm_amap					vm_amap;
+};
+
+struct vm_amap {
+	struct vm_anon 	*vm_anon;
+
 };
 
 void vm_hrbtree_init(struct vm_hashed_rbtree *hrbtree);

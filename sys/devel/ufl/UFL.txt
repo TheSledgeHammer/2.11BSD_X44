@@ -1,0 +1,43 @@
+UFS FFS LFS Archive File System (UFL FS):
+- Interacts with LFS
+- LFS sub-structure: 
+- Archives UFS/FFS Snapshots
+- Hashed (dirhash? fnv_hash, camilla, twofish)
+- aligns to lfs segments/ blocks
+
+UFL:
+- ufl_hash
+- read
+- write
+- read/write meta
+- align
+- verify
+- delete
+- timestamps
+
+lfs: ufl_hash pointer/ etc: hashed entries
+ffs_snapshot: ufl_hash pointer/ etc
+
+UFS/FFS Snapshots:
+- read_ufl (read from ufl)
+- write_ufl (write to ufl)
+- create_score
+- pack_ufl (package ufl contents)
+
+Add to LFS (some of these would cross-over into UFS/FFS)
+- read_ufl (read ufl)
+- write_ufl (write to ufl)
+- create_ufl (create new ufl)
+- delete_ufl (delete existing ufl)
+- unpack_ufl (un_package ufl contents)
+- mount_ufl (treats ufl as a mounted lfs partition)
+- unmount_ufl
+- create_score
+- check_score (verify hash)
+- open_score (create hash)
+
+LFS Improvements:
+- Use Dirhash?
+- Fragmentation
+- Read/Write Speed?
+- How much would it improve just from Updating UFS & FFS 

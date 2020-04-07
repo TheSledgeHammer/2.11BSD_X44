@@ -54,25 +54,25 @@
  * is not defined here.
  */
 struct scsi_cdb6 {
-	u_char	cdb_cmd,	/* command code */
-		cdb_lun_lbah,	/* logical unit number, & lba (MSB) */
-		cdb_lbam,	/* logical block address */
-		cdb_lbal,	/* logical block address (LSB) */
-		cdb_len,	/* transfer length */
-		cdb_ctrl;	/* control byte */
+	u_char	cdb_cmd,		/* command code */
+			cdb_lun_lbah,	/* logical unit number, & lba (MSB) */
+			cdb_lbam,		/* logical block address */
+			cdb_lbal,		/* logical block address (LSB) */
+			cdb_len,		/* transfer length */
+			cdb_ctrl;		/* control byte */
 };
 
 struct scsi_cdb10 {
-	u_char	cdb_cmd,	/* command code */
-		cdb_lun_rel,	/* logical unit number, rsvd, & reladr flag */
-		cdb_lbah,	/* logical block address (MSB) */
-		cdb_lbahm,	/* logical block address (high middle byte) */
-		cdb_lbalm,	/* logical block address (low middle byte) */
-		cdb_lbal,	/* logical block address (LSB) */
-		cdb_xxx,	/* reserved */
-		cdb_lenh,	/* transfer length (MSB) */
-		cdb_lenl,	/* transfer length (LSB) */
-		cdb_ctrl;	/* control byte */
+	u_char	cdb_cmd,		/* command code */
+			cdb_lun_rel,	/* logical unit number, rsvd, & reladr flag */
+			cdb_lbah,		/* logical block address (MSB) */
+			cdb_lbahm,		/* logical block address (high middle byte) */
+			cdb_lbalm,		/* logical block address (low middle byte) */
+			cdb_lbal,		/* logical block address (LSB) */
+			cdb_xxx,		/* reserved */
+			cdb_lenh,		/* transfer length (MSB) */
+			cdb_lenl,		/* transfer length (LSB) */
+			cdb_ctrl;		/* control byte */
 };
 
 /*
@@ -123,9 +123,9 @@ struct scsi_cdb {
 /*				0x0a..0x0b (*) */
 /*				0x0c..0x0e (V) */
 /*				0x0f..0x11 (*) */
-#define	CMD_INQUIRY		0x12	/* (E) inquiry */
+#define	CMD_INQUIRY			0x12	/* (E) inquiry */
 /*				0x13..0x17 (*) */
-#define	CMD_COPY		0x18	/* (O) copy */
+#define	CMD_COPY			0x18	/* (O) copy */
 /*				0x19..0x1b (*) */
 #define	CMD_RECEIVE_DIAG	0x1c	/* (O) receive diagnostic results */
 #define	CMD_SEND_DIAG		0x1d	/* (O) send diagnostic */
@@ -141,7 +141,7 @@ struct scsi_cdb {
 /*				0x2c..0x2d (V) */
 /*				0x2e..0x33 (*) */
 /*				0x34..0x37 (R) */
-#define	CMD_COMPARE		0x38	/* (O) compare */
+#define	CMD_COMPARE			0x38	/* (O) compare */
 #define	CMD_COMPARE_VERIFY	0x39	/* (O) compare and verify */
 /*				0x3a..0x3f (R) */
 	/* group 2 (40-5f) reserved */
@@ -160,9 +160,9 @@ struct scsi_cdb {
  * message.
  */
 #define	CTRL_VU_MASK		0xc0	/* vendor unique */
-#define	CTRL_RSVD		0x3c	/* reserved, must be zero */
-#define	CTRL_LCCF		0x02	/* send LCCF if sending LCC */
-#define	CTRL_LINK		0x01	/* linked command */
+#define	CTRL_RSVD			0x3c	/* reserved, must be zero */
+#define	CTRL_LCCF			0x02	/* send LCCF if sending LCC */
+#define	CTRL_LINK			0x01	/* linked command */
 
 /*
  * Generic sense: regular and extended.
@@ -243,21 +243,21 @@ struct scsi_inq_ansi {
 #define TYPE_QUAL_VT6		0xc0	/* vendor specific type 6 */
 #define TYPE_QUAL_VT7		0xe0	/* vendor specific type 7 */
 
-#define	TYPE_DAD		0x00	/* direct access device (disk) */
-#define	TYPE_SAD		0x01	/* sequential access device (tape) */
+#define	TYPE_DAD			0x00	/* direct access device (disk) */
+#define	TYPE_SAD			0x01	/* sequential access device (tape) */
 #define	TYPE_PRINTER		0x02	/* printer */
 #define	TYPE_PROCESSOR		0x03	/* processor */
-#define	TYPE_WORM		0x04	/* WORM disk */
-#define	TYPE_ROM		0x05	/* CD-ROM disk */
+#define	TYPE_WORM			0x04	/* WORM disk */
+#define	TYPE_ROM			0x05	/* CD-ROM disk */
 #define	TYPE_SCANNER		0x06	/* scanner */
-#define	TYPE_MO			0x07	/* magneto-optical */
+#define	TYPE_MO				0x07	/* magneto-optical */
 #define	TYPE_JUKEBOX		0x08	/* medium changer */
-#define	TYPE_LAN		0x09	/* communications device */
-#define	TYPE_NP			0x1f	/* unknown or no device */
+#define	TYPE_LAN			0x09	/* communications device */
+#define	TYPE_NP				0x1f	/* unknown or no device */
 
 /* qualifiers */
-#define	QUAL_RMB		0x80	/* removable medium bit */
-#define	QUAL_MASK		0x7f	/* mask for `user' bits */
+#define	QUAL_RMB			0x80	/* removable medium bit */
+#define	QUAL_MASK			0x7f	/* mask for `user' bits */
 
 /* version (shifts and masks for subfields) */
 #define	VER_ISO_SHIFT		6	/* ISO version: top 2 bits */
@@ -268,9 +268,9 @@ struct scsi_inq_ansi {
 #define	VER_ANSI_MASK		7
 
 /* v2 info */
-#define V2INFO_AENC		0x80	/* device can accept AEN data */
+#define V2INFO_AENC			0x80	/* device can accept AEN data */
 #define V2INFO_TRMIOP		0x40	/* supports TERMINATE I/O PROC msg */
-#define V2INFO_XXX		0x30	/* reserved */
+#define V2INFO_XXX			0x30	/* reserved */
 #define V2INFO_RDF_MASK		0x0f	/* response data format mask */
 #define V2INFO_RDF_SCSI1	0x00	/* SCSI-1 standard INQUIRY data */
 #define V2INFO_RDF_CCS		0x01	/* common command set INQUIRY data */
@@ -280,9 +280,9 @@ struct scsi_inq_ansi {
 #define V2FLAG_RELADR		0x80	/* supports relative addressing */
 #define V2FLAG_WBUS32		0x40	/* supports 32 bit data xfer */
 #define V2FLAG_WBUS16		0x20	/* supports 32 bit data xfer */
-#define V2FLAG_SYNC		0x10	/* supports synchronous data xfer */
+#define V2FLAG_SYNC			0x10	/* supports synchronous data xfer */
 #define V2FLAG_LINKED		0x08	/* supports linked commands */
-#define V2FLAG_XXX		0x04	/* reserved */
+#define V2FLAG_XXX			0x04	/* reserved */
 #define V2FLAG_CMDQUE		0x02	/* supports tagged command queueing */
 #define V2FLAG_SOFTRESET	0x01	/* RST causes soft reset */
 
@@ -291,42 +291,42 @@ struct scsi_inq_ansi {
  * all others are optional.  `Identify' is a flag bit, not a code (thus
  * codes are actually at most 7 bits).
  */
-#define	MSG_IDENTIFY		0x80	/* flag => this is an identify msg */
-#define	MSG_IDENTIFY_DR		0x40	/* IDENTIFY: flag => discon/resel ok */
-#define	MSG_IDENTIFY_RSVD	0x38	/* IDENTIFY: these bits are reserved */
-#define	MSG_IDENTIFY_LUN	0x07	/* IDENTIFY: these bits give LUN */
+#define	MSG_IDENTIFY			0x80	/* flag => this is an identify msg */
+#define	MSG_IDENTIFY_DR			0x40	/* IDENTIFY: flag => discon/resel ok */
+#define	MSG_IDENTIFY_RSVD		0x38	/* IDENTIFY: these bits are reserved */
+#define	MSG_IDENTIFY_LUN		0x07	/* IDENTIFY: these bits give LUN */
 
-#define	MSG_CMD_COMPLETE	0x00	/* command complete */
-#define	MSG_EXT_MESSAGE		0x01	/* extended message */
-#define	MSG_SAVE_DATA_PTR	0x02	/* save data pointer */
-#define	MSG_RESTORE_PTR		0x03	/* restore pointers */
-#define	MSG_DISCONNECT		0x04	/* disconnect */
+#define	MSG_CMD_COMPLETE		0x00	/* command complete */
+#define	MSG_EXT_MESSAGE			0x01	/* extended message */
+#define	MSG_SAVE_DATA_PTR		0x02	/* save data pointer */
+#define	MSG_RESTORE_PTR			0x03	/* restore pointers */
+#define	MSG_DISCONNECT			0x04	/* disconnect */
 #define	MSG_INIT_DETECT_ERROR	0x05	/* initiator detected error */
-#define	MSG_ABORT		0x06	/* abort */
-#define	MSG_REJECT		0x07	/* message reject */
-#define	MSG_NOOP		0x08	/* no operation */
-#define	MSG_PARITY_ERROR	0x09	/* message parity error */
-#define	MSG_LCC			0x0a	/* linked command complete */
-#define	MSG_LCCF		0x0b	/* linked command complete (w/ flag) */
+#define	MSG_ABORT				0x06	/* abort */
+#define	MSG_REJECT				0x07	/* message reject */
+#define	MSG_NOOP				0x08	/* no operation */
+#define	MSG_PARITY_ERROR		0x09	/* message parity error */
+#define	MSG_LCC					0x0a	/* linked command complete */
+#define	MSG_LCCF				0x0b	/* linked command complete (w/ flag) */
 #define	MSG_BUS_DEVICE_RESET	0x0c	/* bus device reset */
-#define	MSG_ABORT_TAG		0x0d	/* abort tagged msg */
-#define	MSG_CLEAR_QUEUE		0x0e	/* clear queue */
+#define	MSG_ABORT_TAG			0x0d	/* abort tagged msg */
+#define	MSG_CLEAR_QUEUE			0x0e	/* clear queue */
 #define	MSG_INITIATE_RECOVERY	0x0f	/* initiate recovery */
 #define	MSG_RELEASE_RECOVERY	0x10	/* release recovery */
 #define	MSG_TERMINATE_PROCESS	0x11	/* ? */
-#define	MSG_SIMPLE_Q_TAG	0x20	/* ? */
-#define	MSG_HEAD_Q_TAG		0x21	/* ? */
-#define	MSG_ORDERED_Q_TAG	0x22	/* ? */
+#define	MSG_SIMPLE_Q_TAG		0x20	/* ? */
+#define	MSG_HEAD_Q_TAG			0x21	/* ? */
+#define	MSG_ORDERED_Q_TAG		0x22	/* ? */
 #define	MSG_IGNORE_WIDE_RESID	0x23	/* ? */
 
 /*
  * SCSI extended message format.
  */
 struct scsi_xmsg {
-	u_char	xm_xmsg,	/* value 1, i.e., SMSG_EXT_MESSAGE */
-		xm_len,		/* length of this extended message */
-		xm_code,	/* actual code */
-		xm_args[253];	/* actualy xm_len-1 bytes */
+	u_char	xm_xmsg,		/* value 1, i.e., SMSG_EXT_MESSAGE */
+			xm_len,			/* length of this extended message */
+			xm_code,		/* actual code */
+			xm_args[253];	/* actualy xm_len-1 bytes */
 };
 
 /*
@@ -339,23 +339,23 @@ struct scsi_xmsg {
 /*
  * SCSI status byte values.  Bits 6, 5, and 0 are Vendor Unique.
  */
-#define	STS_EXT			0x80	/* flag => extended status valid */
-#define	STS_MASK		0x1e	/* mask for non-VU bits */
-#define	STS_VU			0x61	/* mask for Vendor Unique bits */
+#define	STS_EXT				0x80	/* flag => extended status valid */
+#define	STS_MASK			0x1e	/* mask for non-VU bits */
+#define	STS_VU				0x61	/* mask for Vendor Unique bits */
 
-#define	STS_GOOD		0x00	/* success, command done */
+#define	STS_GOOD			0x00	/* success, command done */
 #define	STS_CHECKCOND		0x02	/* check condition (do a REQ SENSE) */
-#define	STS_CONDMET		0x04	/* condition met (search succeeded) */
+#define	STS_CONDMET			0x04	/* condition met (search succeeded) */
 			/*	0x06	   reserved */
-#define	STS_BUSY		0x08	/* busy */
+#define	STS_BUSY			0x08	/* busy */
 			/*	0x0a	   reserved */
 			/*	0x0c	   reserved */
 			/*	0x0e	   reserved */
-#define	STS_INTERMED		0x10	/* succeeded, doing linked cmd */
+#define	STS_INTERMED			0x10	/* succeeded, doing linked cmd */
 			/*	0x12	   reserved */
 #define	STS_INTERMED_CONDMET	0x14	/* condition met, doing linked cmd */
 			/*	0x16	   reserved */
-#define	STS_RESERV_CONFLICT	0x18	/* reservation conflict */
+#define	STS_RESERV_CONFLICT		0x18	/* reservation conflict */
 			/*	0x1a	   reserved */
 			/*	0x1c	   reserved */
 			/*	0x1e	   reserved */

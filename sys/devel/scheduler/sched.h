@@ -2,8 +2,8 @@
 // Created by marti on 12/02/2020.
 //
 
-#ifndef SIMPLE_LIST_OF_POOLS_SCHED_H
-#define SIMPLE_LIST_OF_POOLS_SCHED_H
+#ifndef _SYS_SCHED_H
+#define _SYS_SCHED_H
 
 #include <sys/proc.h>
 
@@ -50,4 +50,4 @@ void 		resetpri(struct proc *);
 void 		getpriority();
 void 		setpriority();
 
-#endif //SIMPLE_LIST_OF_POOLS_SCHED_H
+#endif /* _SYS_SCHED_H */

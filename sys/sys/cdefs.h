@@ -47,6 +47,21 @@
 #define	__END_DECLS
 #endif
 
+#include <machine/cdefs.h>
+#ifdef __ELF__
+#include <sys/cdefs_elf.h>
+#else
+#include <sys/cdefs_aout.h>
+#endif
+
+#ifdef __GNUC__
+#define	__strict_weak_alias(alias,sym)					\
+	__unused static __typeof__(alias) *__weak_alias_##alias = &sym;	\
+	__weak_alias(alias,sym)
+#else
+#define	__strict_weak_alias(alias,sym) __weak_alias(alias,sym)
+#endif
+
 /*
  * The __CONCAT macro is used to concatenate parts of symbol names, e.g.
  * with "#define OLD(foo) __CONCAT(old,foo)", OLD(foo) produces oldfoo.
@@ -55,31 +70,32 @@
  * strings produced by the __STRING macro, but this only works with ANSI C.
  */
 #if defined(__STDC__) || defined(__cplusplus)
-#define	__P(protos)	protos		/* full-blown ANSI C */
+#define	__P(protos)		protos		/* full-blown ANSI C */
 #define	__CONCAT(x,y)	x ## y
-#define	__STRING(x)	#x
+#define	__STRING(x)		#x
 
-#define	__const		const		/* define reserved names to standard */
-#define	__signed	signed
-#define	__volatile	volatile
-#if defined(__cplusplus)
-#define	__inline	inline		/* convert to C++ keyword */
+#define	__const			const		/* define reserved names to standard */
+#define	__signed		signed
+#define	__volatile		volatile
+#if defined(__cplusplus) || defined(__PCC__)
+#define	__inline		inline		/* convert to C++ keyword */
 #else
-#ifndef __GNUC__
+#if !defined(__GNUC__) && !defined(__lint__)
 #define	__inline			/* delete GCC keyword */
 #endif /* !__GNUC__ */
 #endif /* !__cplusplus */
 
 #else	/* !(__STDC__ || __cplusplus) */
-#define	__P(protos)	()		/* traditional C preprocessor */
+#define	__P(protos)		()		/* traditional C preprocessor */
 #define	__CONCAT(x,y)	x/**/y
-#define	__STRING(x)	"x"
+#define	__STRING(x)		"x"
 
 #ifndef __GNUC__
 #define	__const				/* delete pseudo-ANSI C keywords */
 #define	__inline
 #define	__signed
 #define	__volatile
+#endif	/* !__GNUC__ */
 /*
  * In non-ANSI C environments, new programs will want ANSI-only C keywords
  * deleted from the program and old programs will want them left alone.
@@ -94,8 +110,24 @@
 #define	signed
 #define	volatile
 #endif
-#endif	/* !__GNUC__ */
 #endif	/* !(__STDC__ || __cplusplus) */
+
+
+/*
+ * Compile Time Assertion.
+ */
+#ifdef __COUNTER__
+#define	__CTASSERT(x)			__CTASSERT0(x, __ctassert, __COUNTER__)
+#else
+#define	__CTASSERT(x)			__CTASSERT99(x, __INCLUDE_LEVEL__, __LINE__)
+#define	__CTASSERT99(x, a, b)	__CTASSERT0(x, __CONCAT(__ctassert,a), \
+					       	   	   	   	   	   __CONCAT(_,b))
+#endif
+#define	__CTASSERT0(x, y, z)	__CTASSERT1(x, y, z)
+#define	__CTASSERT1(x, y, z)	\
+	typedef struct { \
+		unsigned int y ## z : /*CONSTCOND*/(x) ? 1 : -1; \
+	} y ## z ## _struct __unused
 
 /*
  * GCC1 and some versions of GCC2 declare dead (non-returning) and
@@ -119,5 +151,22 @@
 #define	__dead
 #define	__pure
 #endif
+
+#if defined(__lint__)
+#define	__packed		__packed
+#define	__aligned(x)	/* delete */
+#define	__section(x)	/* delete */
+#elif defined(__PCC__) || defined(__lint__)
+#define	__packed		__attribute__((__packed__))
+#define	__aligned(x)	__attribute__((__aligned__(x)))
+#define	__section(x)	__attribute__((__section__(x)))
+#endif
+
+#if defined(_KERNEL)
+#if defined(NO_KERNEL_RCSIDS)
+#undef __KERNEL_RCSID
+#define	__KERNEL_RCSID(_n, _s)		/* nothing */
+#endif /* NO_KERNEL_RCSIDS */
+#endif /* _KERNEL */
 
 #endif /* !_CDEFS_H_ */

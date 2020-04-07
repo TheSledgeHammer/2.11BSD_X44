@@ -68,4 +68,4 @@ struct scsi_fmt_sense {
 #define	SDIOCSFORMAT		_IOW('S', 1, int)
 #define	SDIOCGFORMAT		_IOR('S', 2, int)
 #define	SDIOCSCSICOMMAND	_IOW('S', 3, struct scsi_cdb)
-#define	SDIOCSENSE		_IOR('S', 4, struct scsi_fmt_sense)
+#define	SDIOCSENSE			_IOR('S', 4, struct scsi_fmt_sense)

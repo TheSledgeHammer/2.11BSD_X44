@@ -50,13 +50,13 @@
 
 #if defined(SDTRACE) || !defined(KERNEL)
 struct sdtrace {
-	struct	timeval time;	/* timestamp */
-	u_int	block;		/* disk block */
-	u_int	bcount;		/* # bytes transferred */
-	u_char	tcode;		/* trace code */
-	u_char	target;		/* target number */
-	u_char	unit;		/* unit number on target */
-	u_char	read;		/* read operation */
+	struct	timeval time;		/* timestamp */
+	u_int			block;		/* disk block */
+	u_int			bcount;		/* # bytes transferred */
+	u_char			tcode;		/* trace code */
+	u_char			target;		/* target number */
+	u_char			unit;		/* unit number on target */
+	u_char			read;		/* read operation */
 };
 
 #define	T_START		0x01

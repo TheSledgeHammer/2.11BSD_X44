@@ -54,38 +54,38 @@
  */
 
 	/* group 0 */
-/*	CMD_TEST_UNIT_READY	0x00	   test unit ready */
-#define	CMD_REZERO		0x01	/* rezero unit */
-/*	CMD_REQUEST_SENSE	0x03	   request sense */
-#define	CMD_FORMAT_UNIT		0x04	/* format unit (disk) */
-#define	CMD_REASSIGN_BLOCKS	0x07	/* reassign blocks (disk, WORM) */
-#define	CMD_READ6		0x08	/* read (6 byte cdb) */
-#define	CMD_WRITE6		0x0a	/* write (6 byte cdb) */
-#define	CMD_SEEK6		0x0b	/* seek (6 byte cdb) */
-/*	CMD_INQUIRY		0x12	   inquiry */
-/*	CMD_MODE_SELECT		0x15	   mode select */
-#define	CMD_RESERVE		0x16	/* reserve */
-#define	CMD_RELEASE		0x17	/* release */
-/*	CMD_COPY		0x18	   copy */
-/*	CMD_MODE_SENSE		0x1a	   mode sense */
-#define	CMD_SSU			0x1b	/* start/stop unit */
-/*	CMD_RECEIVE_DIAG	0x1c	   receive diagnostic results */
-/*	CMD_SEND_DIAG		0x1d	   send diagnostic */
-#define	CMD_PAMR		0x1e	/* prevent/allow medium removal */
+/*	CMD_TEST_UNIT_READY			0x00	   test unit ready */
+#define	CMD_REZERO				0x01	/* rezero unit */
+/*	CMD_REQUEST_SENSE			0x03	   request sense */
+#define	CMD_FORMAT_UNIT			0x04	/* format unit (disk) */
+#define	CMD_REASSIGN_BLOCKS		0x07	/* reassign blocks (disk, WORM) */
+#define	CMD_READ6				0x08	/* read (6 byte cdb) */
+#define	CMD_WRITE6				0x0a	/* write (6 byte cdb) */
+#define	CMD_SEEK6				0x0b	/* seek (6 byte cdb) */
+/*	CMD_INQUIRY					0x12	   inquiry */
+/*	CMD_MODE_SELECT				0x15	   mode select */
+#define	CMD_RESERVE				0x16	/* reserve */
+#define	CMD_RELEASE				0x17	/* release */
+/*	CMD_COPY					0x18	   copy */
+/*	CMD_MODE_SENSE				0x1a	   mode sense */
+#define	CMD_SSU					0x1b	/* start/stop unit */
+/*	CMD_RECEIVE_DIAG			0x1c	   receive diagnostic results */
+/*	CMD_SEND_DIAG				0x1d	   send diagnostic */
+#define	CMD_PAMR				0x1e	/* prevent/allow medium removal */
 
 	/* group 1 */
-#define	CMD_READ_CAPACITY	0x25	/* read capacity */
-#define	CMD_READ10		0x28	/* read (10 byte cdb) */
-#define	CMD_WRITE10		0x2a	/* write (10 byte cdb) */
-#define	CMD_SEEK10		0x2b	/* write (10 byte cdb) */
-#define	CMD_WRITE_VERIFY	0x2e	/* write and verify */
-#define	CMD_VERIFY		0x2f	/* verify */
-#define	CMD_SEARCH_H		0x30	/* search data high */
-#define	CMD_SEARCH_E		0x31	/* search data equal */
-#define	CMD_SEARCH_L		0x32	/* search data low */
-#define	CMD_SET_LIMITS		0x33	/* set limits */
+#define	CMD_READ_CAPACITY		0x25	/* read capacity */
+#define	CMD_READ10				0x28	/* read (10 byte cdb) */
+#define	CMD_WRITE10				0x2a	/* write (10 byte cdb) */
+#define	CMD_SEEK10				0x2b	/* write (10 byte cdb) */
+#define	CMD_WRITE_VERIFY		0x2e	/* write and verify */
+#define	CMD_VERIFY				0x2f	/* verify */
+#define	CMD_SEARCH_H			0x30	/* search data high */
+#define	CMD_SEARCH_E			0x31	/* search data equal */
+#define	CMD_SEARCH_L			0x32	/* search data low */
+#define	CMD_SET_LIMITS			0x33	/* set limits */
 /*	CMD_COMPARE		0x39	   compare */
-#define	CMD_COPY_VERIFY		0x3a	/* copy and verify */
+#define	CMD_COPY_VERIFY			0x3a	/* copy and verify */
 
 /* this one is in van's but not in my 17B documents */
 #define	CMD_READ_DEFECT_DATA	0x37	/* read defect data */ /* ??? */
@@ -101,7 +101,7 @@
  */
 struct scsi_cdb_fu {
 	u_char	cdb_cmd;		/* SCSI_CMD_FU */
-	u_char	cdb_lun_etc;		/* lun+FD+CL+DLF */
+	u_char	cdb_lun_etc;	/* lun+FD+CL+DLF */
 	u_char	cdb_vu;			/* vendor unique */
 	u_char	cdb_ilvh;		/* interleave (MSB) */
 	u_char	cdb_ilvl;		/* interleave (LSB) */
@@ -117,7 +117,7 @@ struct scsi_cdb_fu {
  */
 #define	SCSI_DLF_BLOCK	0		/* dlf = blocks */
 #define	SCSI_DLF_BFI	4		/* dlf = bytes from index */
-#define	SCSI_DLF_PS	5		/* dlf = physical sectors */
+#define	SCSI_DLF_PS		5		/* dlf = physical sectors */
 
 /*
  * Defect list header, block format (`defect block address').
@@ -128,12 +128,12 @@ struct scsi_cdb_fu {
 struct scsi_dlf_dba {
 	u_short	dlf_xxx;		/* reserved */
 	u_char	dlf_lenh,		/* defect list length (MSB) */
-		dlf_lenl;		/* defect list length (LSB) */
+		dlf_lenl;			/* defect list length (LSB) */
 	struct scsi_dlf_dba_desc {
 		u_char	dbah,		/* defect block address (MSB) */
-			dbahm,		/* defect block address */
-			dbalm,		/* defect block address */
-			dbal;		/* defect block address (LSB) */
+			dbahm,			/* defect block address */
+			dbalm,			/* defect block address */
+			dbal;			/* defect block address (LSB) */
 	} dlf_dba[1];			/* actually longer */
 };
 
@@ -143,16 +143,16 @@ struct scsi_dlf_dba {
 struct scsi_dlf_bfi {
 	u_short	dlf_xxx;		/* reserved */
 	u_char	dlf_lenh,		/* defect list length (MSB) */
-		dlf_lenl;		/* defect list length (LSB) */
+			dlf_lenl;		/* defect list length (LSB) */
 	struct scsi_dlf_bfi_desc {
 		u_char	cylh,		/* cylinder number of defect (MSB) */
-			cylm,		/* cylinder number of defect */
-			cyll,		/* cylinder number of defect (LSB) */
-			head,		/* head number of defect */
-			bfih,		/* defect bytes from index (MSB) */
-			bfihm,		/* defect bytes from index */
-			bfilm,		/* defect bytes from index */
-			bfil;		/* defect bytes from index (LSB) */
+			cylm,			/* cylinder number of defect */
+			cyll,			/* cylinder number of defect (LSB) */
+			head,			/* head number of defect */
+			bfih,			/* defect bytes from index (MSB) */
+			bfihm,			/* defect bytes from index */
+			bfilm,			/* defect bytes from index */
+			bfil;			/* defect bytes from index (LSB) */
 	} dlf_bfi[1];			/* actually longer */
 };
 
@@ -162,35 +162,35 @@ struct scsi_dlf_bfi {
 struct scsi_dlf_ps {
 	u_short	dlf_xxx;		/* reserved */
 	u_char	dlf_lenh,		/* defect list length (MSB) */
-		dlf_lenl;		/* defect list length (LSB) */
+		dlf_lenl;			/* defect list length (LSB) */
 	struct scsi_dlf_ps_desc {
 		u_char	cylh,		/* cylinder number of defect (MSB) */
-			cylm,		/* cylinder number of defect */
-			cyll,		/* cylinder number of defect (LSB) */
-			head,		/* head number of defect */
-			dsnh,		/* defect sector number (MSB) */
-			dsnhm,		/* defect sector number */
-			dsnlm,		/* defect sector number */
-			dsnl;		/* defect sector number (LSB) */
+			cylm,			/* cylinder number of defect */
+			cyll,			/* cylinder number of defect (LSB) */
+			head,			/* head number of defect */
+			dsnh,			/* defect sector number (MSB) */
+			dsnhm,			/* defect sector number */
+			dsnlm,			/* defect sector number */
+			dsnl;			/* defect sector number (LSB) */
 	} dlf_ps[1];			/* actually longer */
 };
 
 /*
  * For MODE SENSE and MODE SELECT: Mode page codes for disks.
  */
-/*				0x00	   vendor specific */
-#define	SCSI_MS_PC_RWERRREC	0x01	/* r/w error recovery parameters */
-/*	SCSI_MS_PC_DR		0x02	   disconnect/reconnect control */
-#define	SCSI_MS_PC_FMT		0x03	/* format parameters */
-#define	SCSI_MS_PC_RDGEOM	0x04	/* Rigid Disk geometry */
-#define	SCSI_MS_PC_FD		0x05	/* flexible disk page */
+/*								0x00	   vendor specific */
+#define	SCSI_MS_PC_RWERRREC		0x01	/* r/w error recovery parameters */
+/*	SCSI_MS_PC_DR				0x02	   disconnect/reconnect control */
+#define	SCSI_MS_PC_FMT			0x03	/* format parameters */
+#define	SCSI_MS_PC_RDGEOM		0x04	/* Rigid Disk geometry */
+#define	SCSI_MS_PC_FD			0x05	/* flexible disk page */
 /*				0x06	   reserved */
-#define	SCSI_MS_PC_VERRREC	0x07	/* verify error recovery page */
-#define	SCSI_MS_PC_CACHE	0x08	/* cache page */
-/*	SCSI_MS_PC_PDEV		0x09	   peripheral device page */
-/*	SCSI_MS_PC_CTLMODE	0x0a	   control mode page */
-#define	SCSI_MS_PC_MTSUPP	0x0b	/* medium types supported */
-#define	SCSI_MS_PC_NOTCH	0x0c	/* notch page */
+#define	SCSI_MS_PC_VERRREC		0x07	/* verify error recovery page */
+#define	SCSI_MS_PC_CACHE		0x08	/* cache page */
+/*	SCSI_MS_PC_PDEV				0x09	   peripheral device page */
+/*	SCSI_MS_PC_CTLMODE			0x0a	   control mode page */
+#define	SCSI_MS_PC_MTSUPP		0x0b	/* medium types supported */
+#define	SCSI_MS_PC_NOTCH		0x0c	/* notch page */
 /*				0x0d..0x1f reserved */
 /*				0x20..0x3e vendor specific */
 #define	SCSI_MS_PC_CDCCACHECTL	0x38	/* CDC (Wren) cache control page */
@@ -200,22 +200,22 @@ struct scsi_dlf_ps {
  * N.B.: CDC Wren V, at least, does not include write retry & time limit.
  */
 struct scsi_page_rwerrrec {
-	u_char	rw_flags,	/* flags, see below */
-		rw_read_retry,	/* read retry count */
-		rw_corr_span,	/* correction span */
-		rw_hd_off,	/* head offset count */
-		rw_ds_off,	/* data strobe offset count */
-		rw_xxx0,	/* reserved */
-		rw_write_retry,	/* write retry count */
-		rw_xxx1,	/* reserved */
-		rw_rtlh,	/* recovery time limit (MSB) */
-		rw_rtll;	/* recovery time limit (LSB) */
+	u_char	rw_flags,		/* flags, see below */
+			rw_read_retry,	/* read retry count */
+			rw_corr_span,	/* correction span */
+			rw_hd_off,		/* head offset count */
+			rw_ds_off,		/* data strobe offset count */
+			rw_xxx0,		/* reserved */
+			rw_write_retry,	/* write retry count */
+			rw_xxx1,		/* reserved */
+			rw_rtlh,		/* recovery time limit (MSB) */
+			rw_rtll;		/* recovery time limit (LSB) */
 };
 /* rw_flags */
 #define	SCSI_RWE_AWRE	0x80	/* reallocate defective blocks on write */
 #define	SCSI_RWE_ARRE	0x40	/* reallocate defective blocks on read */
-#define	SCSI_RWE_TB	0x20	/* transfer unrecoverable block */
-#define	SCSI_RWE_RC	0x10	/* recovery may not cause delay: may lie */
+#define	SCSI_RWE_TB		0x20	/* transfer unrecoverable block */
+#define	SCSI_RWE_RC		0x10	/* recovery may not cause delay: may lie */
 #define	SCSI_RWE_EER	0x08	/* use most expedient recovery, not best */
 #define	SCSI_RWE_PER	0x04	/* report recovered errors */
 #define	SCSI_RWE_DTE	0x02	/* stop after recovered error */
@@ -281,10 +281,10 @@ struct scsi_page_rdgeom {
 		rd_xxx2[2];	/* reserved */
 };
 /* values for rd_rpl. */
-#define	SCSI_RD_RPL_MASK	0x03	/* mask for RPL field */
-#define	SCSI_RD_RPL_NONE	0x00	/* sync disabled or not supported */
-#define	SCSI_RD_RPL_SLAVE	0x01	/* disk is a Slave */
-#define	SCSI_RD_RPL_MASTER	0x02	/* disk is a Master */
+#define	SCSI_RD_RPL_MASK		0x03	/* mask for RPL field */
+#define	SCSI_RD_RPL_NONE		0x00	/* sync disabled or not supported */
+#define	SCSI_RD_RPL_SLAVE		0x01	/* disk is a Slave */
+#define	SCSI_RD_RPL_MASTER		0x02	/* disk is a Master */
 #define	SCSI_RD_RPL_MCONTROL	0x03	/* disk is a Master Control */
 
 /*
@@ -308,15 +308,15 @@ struct scsi_page_verrrec {
  */
 struct scsi_page_cache {
 	u_char	cache_flags,	/* flags, see below */
-		cache_reten,	/* cache retention priorities (rd + wr) */
-		cache_dptlh,	/* disable prefetch transfer length (MSB) */
-		cache_dptll,	/* disable prefetch transfer length (LSB) */
-		cache_minpfh,	/* minimum prefetch (MSB) */
-		cache_minpfl,	/* minimum prefetch (LSB) */
-		cache_maxpfh,	/* maximum prefetch (MSB) */
-		cache_maxpfl,	/* maximum prefetch (LSB) */
-		cache_mpch,	/* maximum prefetch ceiling (MSB) */
-		cache_mpcl;	/* maximum prefetch ceiling (LSB) */
+			cache_reten,	/* cache retention priorities (rd + wr) */
+			cache_dptlh,	/* disable prefetch transfer length (MSB) */
+			cache_dptll,	/* disable prefetch transfer length (LSB) */
+			cache_minpfh,	/* minimum prefetch (MSB) */
+			cache_minpfl,	/* minimum prefetch (LSB) */
+			cache_maxpfh,	/* maximum prefetch (MSB) */
+			cache_maxpfl,	/* maximum prefetch (LSB) */
+			cache_mpch,	/* maximum prefetch ceiling (MSB) */
+			cache_mpcl;	/* maximum prefetch ceiling (LSB) */
 };
 #define	SCSI_CACHE_WCE	0x04	/* write cache enable */
 #define	SCSI_CACHE_MF	0x02	/* if set, prefetch depends on xfer length */
@@ -324,26 +324,26 @@ struct scsi_page_cache {
 
 #define	SCSI_CACHE_RDPOLICY(x) ((x) >> 4)
 #define	SCSI_CACHE_WRPOLICY(x) ((x) & 0xf)
-#define	SCSI_CACHE_DEFAULT	0	/* use target default */
-#define	SCSI_CACHE_KEEPPF	1	/* keep prefetch data over cmd data */
-#define	SCSI_CACHE_KEEPCMD	15	/* keep cmd data over prefetch data */
+#define	SCSI_CACHE_DEFAULT		0	/* use target default */
+#define	SCSI_CACHE_KEEPPF		1	/* keep prefetch data over cmd data */
+#define	SCSI_CACHE_KEEPCMD		15	/* keep cmd data over prefetch data */
 
 /*
  * Structure of a Control Mode mode page.
  */
 struct scsi_page_ctlmode {
-	u_char	cm_rlec,	/* report log-activity exception condition */
-		cm_qctl,	/* queue control (below) */
-		cm_ecaaen,	/* ECA and AEN flags (below) */
-		cm_xxx,		/* reserved */
-		cm_aenholdh,	/* AEN holdoff period (ms) (MSB) */
-		cm_aenholdl;	/* AEN holdoff period (ms) (LSB) */
+	u_char	cm_rlec,		/* report log-activity exception condition */
+			cm_qctl,		/* queue control (below) */
+			cm_ecaaen,		/* ECA and AEN flags (below) */
+			cm_xxx,			/* reserved */
+			cm_aenholdh,	/* AEN holdoff period (ms) (MSB) */
+			cm_aenholdl;	/* AEN holdoff period (ms) (LSB) */
 };
 #define	SCSI_CM_RLEC	0x01	/* RLEC flag occupies only low bit */
 #define	SCSI_CM_QMOD(x) ((x) >> 4)	/* queue algorithm modifier */
 #define	SCSI_CM_QERR	0x02		/* abort cmd queue after error */
 #define	SCSI_CM_DQUE	0x01		/* disable tagged queueing */
-#define	SCSI_CM_ECA	0x80	/* enable Extended Contingent Alliance */
+#define	SCSI_CM_ECA		0x80	/* enable Extended Contingent Alliance */
 #define	SCSI_CM_RAENP	0x04	/* target may do Async Err Notif after init */
 #define	SCSI_CM_UAAENP	0x02	/* target may do AEN for Unit Attention */
 #define	SCSI_CM_EAENP	0x01	/* target may do AEN for deferred errors */
@@ -352,13 +352,13 @@ struct scsi_page_ctlmode {
  * Structure of a CDC-specific Cache Control mode page.
  */
 struct scsi_page_CDCcachectlmode {
-	u_char	ccm_flags,	/* flags (below) */
-		ccm_pfthresh,	/* prefetch threshold */
-		ccm_maxthresh,	/* maximum threshold (?) */
-		ccm_maxpfmult,	/* maximum prefetch multiplier */
-		ccm_minthresh,	/* minimum thresold (?) */
-		ccm_minpfmult,	/* minimum prefetch multiplier */
-		ccm_xxx[8];	/* reserved */
+	u_char	ccm_flags,		/* flags (below) */
+			ccm_pfthresh,	/* prefetch threshold */
+			ccm_maxthresh,	/* maximum threshold (?) */
+			ccm_maxpfmult,	/* maximum prefetch multiplier */
+			ccm_minthresh,	/* minimum thresold (?) */
+			ccm_minpfmult,	/* minimum prefetch multiplier */
+			ccm_xxx[8];		/* reserved */
 };
 #define	SCSI_CDC_CCM_WIE 0x40	/* write index enable */
 #define	SCSI_CDC_CCM_CE	 0x10	/* cache enable */
