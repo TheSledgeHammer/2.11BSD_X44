@@ -38,7 +38,7 @@
  *	originally from: locore.s, by William F. Jolitz
  */
 
-#include "assym.s"
+#include "assym.h"
 #include "errno.h"
 
 #include "machine/psl.h"

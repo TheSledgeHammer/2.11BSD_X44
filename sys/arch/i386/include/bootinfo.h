@@ -61,7 +61,8 @@ struct bootinfo {
 	u_int32_t	bi_extmem;
 	u_int32_t	bi_symtab;			/* struct symtab * */
 	u_int32_t	bi_esymtab;			/* struct symtab * */
-/* Items below only from advanced bootloader */
+
+	/* Items below only from advanced bootloader */
 	u_int32_t	bi_kernend;			/* end of kernel space */
 	u_int32_t	bi_envp;			/* environment */
 	u_int32_t	bi_modulep;			/* preloaded modules */

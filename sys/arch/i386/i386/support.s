@@ -37,7 +37,7 @@
  *
  */
 
-#include "assym.s"
+#include "assym.h"
 #include <machine/asm.h>
 #include <machine/cputypes.h>
 #include <machine/pmap.h>
@@ -477,6 +477,50 @@ ENTRY(lldt)
 
 ENTRY(ltr)
 		ltr		4(%esp)
+		ret
+
+/*
+ * void lcr3(caddr_t cr3)
+ */
+ENTRY(load_cr3)
+ENTRY(lcr3)
+		inb		$0x84,%al	# check wristwatch
+		movl	4(%esp),%eax
+ 		orl		$ I386_CR3PAT,%eax
+		movl	%eax,%cr3
+		inb		$0x84,%al	# check wristwatch
+		ret
+
+# tlbflush()
+ENTRY(tlbflush)
+		inb		$0x84,%al	# check wristwatch
+		movl	%cr3,%eax
+ 		orl		$ I386_CR3PAT,%eax
+		movl	%eax,%cr3
+		inb		$0x84,%al	# check wristwatch
+		ret
+
+# lcr0(cr0)
+ENTRY(lcr0)
+ENTRY(load_cr0)
+		movl	4(%esp),%eax
+		movl	%eax,%cr0
+		ret
+
+# rcr0()
+ENTRY(rcr0)
+		movl	%cr0,%eax
+		ret
+
+# rcr2()
+ENTRY(rcr2)
+		movl	%cr2,%eax
+		ret
+
+# rcr3()
+ENTRY(cr3)
+ENTRY(rcr3)
+		movl	%cr3,%eax
 		ret
 
 /*

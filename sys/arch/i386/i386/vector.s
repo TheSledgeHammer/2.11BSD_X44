@@ -37,6 +37,8 @@
  *	@(#)vector.s	1.0 (Berkeley) 03/31/20
  */
 
+#include "assym.h"
+
 #include <i386/isa/icu.h>
 #include <i386/isa/isa.h>
 

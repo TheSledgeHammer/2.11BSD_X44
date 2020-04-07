@@ -20,7 +20,6 @@
 #include <machine/bootinfo.h>
 #include <machine/cpu.h>
 #include <machine/cputypes.h>
-#include <machine/md_var.h>
 #include <machine/vmparam.h>
 #include <machine/pmap_base.h>
 

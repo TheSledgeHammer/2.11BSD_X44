@@ -121,7 +121,7 @@ struct soft_segment_descriptor ldt_segs[];
 int lcr0(), lcr3(), rcr0(), rcr2();
 int _udatasel, _ucodesel, _gsel_tss, _exit_tss;
 
-struct i386tss inv_tss, dbl_tss, exit_tss;
+struct i386tss inv_tss, exit_tss;
 char alt_stack[1024];
 
 extern struct user *proc0paddr;
@@ -846,8 +846,6 @@ init386(first)
 	extern int sigcode, szsigcode;
 	struct region_descriptor r_gdt, r_idt;
 
-	proc0paddr->u_kstack = proc0paddr_kstack;
-	proc0paddr->u_kstack_pages = P0_KSTACK_PAGES;
 	proc0.p_addr = proc0paddr;
 
 	allocate_gdt(&gdt_segs);
@@ -956,6 +954,7 @@ init386(first)
 
 	/* make a call gate to reenter kernel with */
 	gdp = &ldt[LSYS5CALLS_SEL].gd;
+
 	x = (int) &IDTVEC(syscall);
 	gdp->gd_looffset = x++;
 	gdp->gd_selector = GSEL(GCODE_SEL, SEL_KPL);
@@ -966,6 +965,7 @@ init386(first)
 	gdp->gd_hioffset = ((int) &IDTVEC(syscall)) >>16;
 
 	/* transfer to user mode */
+
 	_ucodesel = LSEL(LUCODE_SEL, SEL_UPL);
 	_udatasel = LSEL(LUDATA_SEL, SEL_UPL);
 
@@ -981,8 +981,7 @@ init386(first)
 	inv_tss.tss_ss =  GSEL(GDATA_SEL, SEL_KPL);
 	inv_tss.tss_cs =  GSEL(GCODE_SEL, SEL_KPL);
 	inv_tss.tss_eip =  (int) &invtss;
-	exit_tss = dbl_tss = inv_tss;
-	dbl_tss.tss_eip =  (int) &dbl;
+	exit_tss = inv_tss;
 	_exit_tss =  GSEL(GEXIT_SEL, SEL_KPL);
 }
 
