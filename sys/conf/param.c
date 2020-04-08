@@ -70,6 +70,7 @@ int	tickadj = 30000 / (60 * HZ);		/* can adjust 30ms in 60s */
 struct	timezone tz = { TIMEZONE, DST };
 #define	NPROC (20 + 16 * MAXUSERS)
 int	maxproc = NPROC;
+int nproc = maxproc;
 #define	NTEXT (80 + NPROC / 8)			/* actually the object cache */
 #define	NVNODE (NPROC + NTEXT + 100)
 int	desiredvnodes = NVNODE;
@@ -90,6 +91,8 @@ int	nbuf, nswbuf;
  * them here forces loader errors if this file is omitted
  * (if they've been externed everywhere else; hah!).
  */
+struct	proc *procNPROC;
+struct	file *fileNFILE;
 struct 	callout *callout;
 struct	cblock *cfree;
 struct	buf *buf, *swbuf;

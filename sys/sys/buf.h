@@ -41,8 +41,8 @@ struct buf
 	LIST_ENTRY(buf) b_hash;			/* Hash chain. */
 	LIST_ENTRY(buf) b_vnbufs;		/* Buffer's associated vnode. */
 	TAILQ_ENTRY(buf) b_freelist;	/* Free list position if not active. */
-	struct	buf *b_actf, **b_actb;	/* Device driver queue when active. */
-	struct  proc *b_proc;			/* Associated proc; NULL if kernel. */
+	struct	buf 	*b_actf, **b_actb;	/* Device driver queue when active. */
+	struct  proc 	*b_proc;		/* Associated proc; NULL if kernel. */
 	volatile long	b_flags;		/* B_* flags. */
 	int				b_qindex;		/* buffer queue index */
 	int				b_error;		/* returned after I/O */
@@ -97,11 +97,11 @@ struct buf
  * then free's this structure.
  */
 struct cluster_save {
-	long	bs_bcount;			/* Saved b_bcount. */
-	long	bs_bufsize;			/* Saved b_bufsize. */
-	void	*bs_saveaddr;		/* Saved b_addr. */
-	int		bs_nchildren;		/* Number of associated buffers. */
-	struct buf **bs_children;	/* List of associated buffers. */
+	long		bs_bcount;			/* Saved b_bcount. */
+	long		bs_bufsize;			/* Saved b_bufsize. */
+	void		*bs_saveaddr;		/* Saved b_addr. */
+	int			bs_nchildren;		/* Number of associated buffers. */
+	struct buf 	**bs_children;		/* List of associated buffers. */
 };
 
 

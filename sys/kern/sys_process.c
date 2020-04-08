@@ -16,6 +16,7 @@
 #include <sys/ptrace.h>
 
 #include <sys/mount.h>
+#include <sys/syscallargs.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_page.h>
@@ -45,15 +46,6 @@ struct
 	int	ip_data;
 } ipc;
 
-/*
- * Process debugging system call.
- */
-register struct ptrace_args {
-	int	req;
-	int	pid;
-	int	*addr;
-	int	data;
-};
 
 /*
  * sys-trace system call.
@@ -207,6 +199,24 @@ procxmt(p)
 		wakeup((caddr_t)&ipc);
 		exit(u->u_procp->p_ptracesig);
 		/*NOTREACHED*/
+
+	case PT_DETACH:									/* stop tracing the child */
+		u->u_ar0 = (int *)((short *)u->u_ar0 + 1);
+		if ((unsigned)ipc.ip_data >= NSIG)
+			goto error;
+		if ((int)ipc.ip_addr != 1)
+			u->u_ar0[PC] = (int)ipc.ip_addr;
+		u->u_procp->p_ptracesig = ipc.ip_data;		/* see issignal */
+		p->p_flag &= ~P_TRACED;
+		if (p->p_oppid != p->p_pptr->p_pid) {
+			register struct proc *pp = pfind(p->p_oppid);
+			 if (pp)
+				 proc_reparent(p, pp);
+		}
+		p->p_oppid = 0;
+		wakeup((caddr_t)&ipc);
+		return (1);
+
 	default:
 	error:
 			ipc.ip_req = -1;

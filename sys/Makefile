@@ -2,11 +2,9 @@
 
 .include <bsd.own.mk>
 
-# The boot loader
-.if	exists(${.CURDIR}/boot)
-SUBDIR=	boot
-.endif
+SUBDIR= arch dev \
+		net netimp netinet netns \ 
+		ufs vfs vm
 
-SUBDIR= arch net netimp netinet netns ufs vfs vm
-
-.include <bsd.subdir.mk>
+#.include <bsd.subdir.mk>
+.include <bsd.kinc.mk>

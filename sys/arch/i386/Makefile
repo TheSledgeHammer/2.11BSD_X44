@@ -15,7 +15,7 @@ AI386=	${SYSDIR}/arch/i386/i386/*.s 	\
 # Directories in which to place tags links
 DI386=	i386 eisa isa include scripts
 
-#.include "../../kern/Make.tags.inc"
+.include "../../kern/Make.tags.inc"
 
 tags:
 	-rm -f ${TI386}
@@ -36,4 +36,4 @@ links:
 
 SUBDIR= include
 
-#.include <bsd.subdir.mk>
+.include <bsd.subdir.mk>

@@ -68,7 +68,7 @@ pqinit()
 	 * most procs are initially on freequeue
 	 *	nb: we place them there in their "natural" order.
 	 */
-
+	procNPROC = proc + nproc;
 	freeproc = NULL;
 	for (p = procNPROC; --p > proc; freeproc = p)
 		p->p_nxt = freeproc;

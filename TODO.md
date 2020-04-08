@@ -1,6 +1,7 @@
 TODO:
-- Makefiles
-
+- Build Toolchain (Cross-Compile): NetBSD's
+	- Attempt build on NetBSD (Can't build on Linux without a Toolchain)
+	- Makefiles
 - Merge KASSERT CTASSERT into ASSERT
 
 - boot:
@@ -42,13 +43,12 @@ TODO:
 		- vfsops
 		
 Kern:
-- vm_machdep.c: u->u_procp->p_p0br??
+- vm_machdep.c: u->u_procp->p_p0br: (no reference in 4.4BSD-Lite2)
+	- 4.3BSD Reno/ 4.4BSD Remanent: once in struct proc. Obsolete?? 
 - if INET: remanents of 2.11BSD's networking stack overlay (keep in place for now)
-- uipc_syscalls.c: missing syscallargs
 - syscallargs: To be fixed: temporary compat with 4.4BSD-Lite2
 
 - user.h: 
-	- u_ar0: redefine to machine-dependent reg.h
 	- short	u_uisa[16];					/* segmentation address prototypes */
 	- short	u_uisd[16];					/* segmentation descriptor prototypes */
 	- char	u_sep;						/* flag for I and D separation */

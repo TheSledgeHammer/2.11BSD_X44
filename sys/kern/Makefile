@@ -2,7 +2,7 @@
 
 # Makefile for kernel tags files, init_sysent, etc.
 
-#.include <bsd.own.mk>		# for HOST_SH
+.include <bsd.own.mk>		# for HOST_SH
 
 
 all:
@@ -10,7 +10,7 @@ all:
 	@false
 
 SYSCALLSRC = makesyscalls.sh syscalls.conf syscalls.master
-init_sysent.c syscalls.c ../sys/syscall.h ../sys/syscallargs.h: ${SYSCALLSRC}
+init_sysent.c syscalls.c ../sys/syscall.h: ${SYSCALLSRC}
 	${HOST_SH} makesyscalls.sh syscalls.conf syscalls.master
 
 # Kernel tags:
@@ -51,4 +51,4 @@ links::
 	-for i in ${ARCH}; do \
 	    (cd ../arch/$$i && ${MAKE} ${MFLAGS} SYSTAGS=${SYSTAGS} links); done
 	    
-#.include <bsd.files.mk>
+.include <bsd.files.mk>
