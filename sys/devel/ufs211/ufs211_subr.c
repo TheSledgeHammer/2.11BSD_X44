@@ -13,10 +13,10 @@
 #include <sys/mount.h>
 #include <sys/kernel.h>
 #include <sys/buf.h>
-#include "ufs211_fs.h"
-
 #include "ufs211_inode.h"
-#include "ufs211_quota.h"
+#include "../../devel/ufs211/ufs211_fs.h"
+#include "../../devel/ufs211/ufs211_inode.h"
+#include "../../devel/ufs211/ufs211_quota.h"
 
 /*
  * Go through the mount table looking for filesystems which have been modified.

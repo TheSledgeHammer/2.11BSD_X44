@@ -14,8 +14,8 @@
 #include <sys/stat.h>
 #include <sys/systm.h>
 #include <sys/namei.h>
-#include "ufs211_fs.h"
-#include "ufs211_inode.h"
+#include "../../devel/ufs211/ufs211_fs.h"
+#include "../../devel/ufs211/ufs211_inode.h"
 
 /*
  * Check mode permission on inode pointer.

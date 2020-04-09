@@ -19,11 +19,7 @@ DI386=	i386 eisa isa include scripts
 
 tags:
 	-rm -f ${TI386}
-	-echo ${SI386} | xargs $(TOOL_CTAGS) -wadtf ${TI386}
-	-find -H ${SYSDIR}/external/bsd/acpica/dist/ -name '*.[ch]' | \
-	    sort -t / -u | xargs $(TOOL_CTAGS) -wadtf ${TI386}
-	-${FINDCOMM} | xargs $(TOOL_CTAGS) -wadtf ${TI386}
-	#-ctags -wdt ${COMM} ${I386}
+	-ctags -wdt ${COMM} ${I386}
 	egrep "^ENTRY(.*)|^ALTENTRY(.*)" ${AI386} | \
 		${TOOL_SED} -e \
 	"s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3	\1	/^\2(\3\4$$/;" \

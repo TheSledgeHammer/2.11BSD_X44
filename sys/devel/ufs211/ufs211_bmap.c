@@ -14,9 +14,9 @@
 #include <sys/systm.h>
 #include <sys/conf.h>
 #include <sys/uio.h>
-#include "ufs211_dir.h"
-#include "ufs211_fs.h"
-#include "ufs211_inode.h"
+#include "../../devel/ufs211/ufs211_dir.h"
+#include "../../devel/ufs211/ufs211_fs.h"
+#include "../../devel/ufs211/ufs211_inode.h"
 
 /*
  * Bmap defines the structure of file system storage

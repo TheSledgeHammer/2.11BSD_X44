@@ -6,7 +6,7 @@
  *	@(#)ufs_inode.c	1.7 (2.11BSD GTE) 1997/2/7
  */
 
-#include "ufs211_inode.h"
+#include "../../devel/ufs211/ufs211_inode.h"
 
 #include <sys/param.h>
 
@@ -17,8 +17,8 @@
 #include <sys/buf.h>
 #include <sys/systm.h>
 #include <sys/syslog.h>
-#include "ufs211_fs.h"
-#include "ufs211_quota.h"
+#include "../../devel/ufs211/ufs211_fs.h"
+#include "../../devel/ufs211/ufs211_quota.h"
 
 #define	INOHSZ	16		/* must be power of two */
 #define	INOHASH(dev,ino)	(((dev)+(ino))&(INOHSZ-1))

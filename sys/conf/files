@@ -20,7 +20,7 @@ file	dev/scsi/scsi_subr.c	scsi
 device	sd at tg: disk
 file	dev/scsi/sd.c		sd needs-flag
 
-# device st at tg: tape	-- not yet
+device st at tg: tape	-- not yet
 
 # legitimate pseudo-devices
 pseudo-device bpfilter

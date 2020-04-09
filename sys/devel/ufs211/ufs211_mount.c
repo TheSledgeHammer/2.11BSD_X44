@@ -17,10 +17,10 @@
 #include <sys/stat.h>
 #include <sys/disklabel.h>
 #include <sys/ioctl.h>
-#include "ufs211_dir.h"
-#include "ufs211_fs.h"
-#include "ufs211_inode.h"
-#include "ufs211_quota.h"
+#include "../../devel/ufs211/ufs211_dir.h"
+#include "../../devel/ufs211/ufs211_fs.h"
+#include "../../devel/ufs211/ufs211_inode.h"
+#include "../../devel/ufs211/ufs211_quota.h"
 
 smount()
 {

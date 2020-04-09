@@ -12,9 +12,9 @@
 #include <sys/mount.h>
 #include <sys/buf.h>
 #include <sys/namei.h>
-#include "ufs211_dir.h"
-#include "ufs211_fs.h"
-#include "ufs211_inode.h"
+#include "../../devel/ufs211/ufs211_dir.h"
+#include "../../devel/ufs211/ufs211_fs.h"
+#include "../../devel/ufs211/ufs211_inode.h"
 
 struct	buf *blkatoff();
 int	dirchk = 0;

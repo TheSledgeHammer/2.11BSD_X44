@@ -91,49 +91,49 @@ typedef void (*scbusrel_fn) (struct device *);
  * and/or units) waiting for the bus.
  */
 struct sq {
-	struct	sq *sq_forw;		/* forward link */
-	struct	buf *sq_bp;			/* buffer for transfer */
-	scdgo_fn sq_dgo;			/* device-go to call when got bus */
-	struct	device *sq_dev;		/* device argument to sq_dgo */
+	struct	sq 		*sq_forw;		/* forward link */
+	struct	buf 	*sq_bp;			/* buffer for transfer */
+	scdgo_fn 		sq_dgo;			/* device-go to call when got bus */
+	struct	device *sq_dev;			/* device argument to sq_dgo */
 };
 
 struct hba_softc {
-	struct	device hba_dev;			/* generic part */
-	struct	sq *hba_head, *hba_tail;/* io queue (u's/t's wanting bus) */
-	char	hba_busy;				/* true => will inspect qhead later */
-	struct	targ *hba_targets[8];	/* the 8 possible targets */
-	struct	hbadriver *hba_driver;	/* hba driver */
-	scintr_fn hba_intr;				/* current interrupt function */
-	struct	device *hba_intrdev;	/* arg 0 for hba_intr */
+	struct	device 		hba_dev;				/* generic part */
+	struct	sq 			*hba_head, *hba_tail;	/* io queue (u's/t's wanting bus) */
+	char				hba_busy;				/* true => will inspect qhead later */
+	struct	targ 		*hba_targets[8];		/* the 8 possible targets */
+	struct	hbadriver 	*hba_driver;			/* hba driver */
+	scintr_fn 			hba_intr;				/* current interrupt function */
+	struct	device 		*hba_intrdev;			/* arg 0 for hba_intr */
 };
 
 struct targ {
-	struct	device t_dev;			/* generic part */
-	struct	sq t_forw;				/* forward link, etc, on hba queue */
-	struct	sq *t_head, *t_tail;	/* io queue */
-	char	t_busy;					/* true => will inspect qhead later */
-	char	t_targ;					/* target number */
-	char	t_nunits;				/* count of live units */
-	char	t_firstunit;			/* the first live unit */
-	struct	unit *t_units[8];		/* the 8 possible units */
-	scintr_fn t_intr;				/* current interrupt function */
-	struct	device *t_intrdev;		/* arg 0 for t_intr */
+	struct	device 	t_dev;				/* generic part */
+	struct	sq 		t_forw;				/* forward link, etc, on hba queue */
+	struct	sq 		*t_head, *t_tail;	/* io queue */
+	char			t_busy;				/* true => will inspect qhead later */
+	char			t_targ;				/* target number */
+	char			t_nunits;			/* count of live units */
+	char			t_firstunit;		/* the first live unit */
+	struct	unit 	*t_units[8];		/* the 8 possible units */
+	scintr_fn 		t_intr;				/* current interrupt function */
+	struct	device 	*t_intrdev;			/* arg 0 for t_intr */
 };
 
 /* since a unit may be a disk, tape, etc., it has only pointer to dev */
 struct unit {
-	struct	device *u_dev;		/* backpointer to generic */
-	int	u_unit;			/* unit number on target */
-	scstart_fn u_start;		/* upcall to get bus */
-	scbusgo_fn u_go;		/* upcall to use bus */
-	scbusrel_fn u_rel;		/* upcall to release bus early */
-	struct	device *u_updev;	/* device for upcalls */
-	struct	sq u_forw;		/* forward link on target or hba q */
-	struct	unitdriver *u_driver;	/* unit driver */
+	struct	device 		*u_dev;		/* backpointer to generic */
+	int					u_unit;		/* unit number on target */
+	scstart_fn 			u_start;	/* upcall to get bus */
+	scbusgo_fn 			u_go;		/* upcall to use bus */
+	scbusrel_fn 		u_rel;		/* upcall to release bus early */
+	struct	device 		*u_updev;	/* device for upcalls */
+	struct	sq 			u_forw;		/* forward link on target or hba q */
+	struct	unitdriver 	*u_driver;	/* unit driver */
 /* the following three fields are copied from target & hba, for quick lookup */
-	int	u_targ;			/* target number */
-	struct	hba_softc *u_hba;	/* hba, from parent */
-	struct	hbadriver *u_hbd;	/* hba driver, from parent */
+	int					u_targ;		/* target number */
+	struct	hba_softc 	*u_hba;		/* hba, from parent */
+	struct	hbadriver 	*u_hbd;		/* hba driver, from parent */
 };
 
 /*
@@ -162,12 +162,12 @@ struct unitdriver {
  * unit configuration `match' routines.
  */
 struct scsi_attach_args {
-	int	sa_targ;				/* target number */
-	int	sa_unit;				/* unit number */
-	int	sa_req_status;			/* status from REQUEST SENSE */
-	struct	scsi_sense sa_sn;	/* contents from same */
-	int	sa_inq_status;			/* status from INQUIRY command */
-	struct	scsi_inquiry sa_si;	/* contents from same */
+	int						sa_targ;			/* target number */
+	int						sa_unit;			/* unit number */
+	int						sa_req_status;		/* status from REQUEST SENSE */
+	struct	scsi_sense 		sa_sn;				/* contents from same */
+	int						sa_inq_status;		/* status from INQUIRY command */
+	struct	scsi_inquiry	sa_si;				/* contents from same */
 };
 
 /*
