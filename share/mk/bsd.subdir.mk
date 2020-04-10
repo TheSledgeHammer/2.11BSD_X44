@@ -1,6 +1,11 @@
 #	@(#)bsd.subdir.mk	8.1 (Berkeley) 6/8/93
 
+.if !target(.MAIN)
 .MAIN: all
+.endif
+
+# Make sure this is defined
+SKIPDIR?=
 
 STRIP?=	-s
 

@@ -6,14 +6,14 @@ unix		?=	We run UNIX.
 
 .LIBS:		.a
 
-AR		?=	ar
+AR			?=	ar
 ARFLAGS		?=	rl
 RANLIB		?=	ranlib
 
-AS		?=	as
+AS			?=	as
 AFLAGS		?=
 
-CC		?=	gcc
+CC			?=	gcc
 
 .if ${MACHINE} == "sparc"
 CFLAGS		?=	-O4
@@ -21,16 +21,16 @@ CFLAGS		?=	-O4
 CFLAGS		?=	-O2
 .endif
 
-CPP		?=	cpp
+CPP			?=	cpp
 
-FC		?=	f77
+FC			?=	f77
 FFLAGS		?=	-O
 EFLAGS		?=
 
-LEX		?=	lex
+LEX			?=	lex
 LFLAGS		?=
 
-LD		?=	ld
+LD			?=	ld
 LDFLAGS		?=
 
 LINT		?=	lint
@@ -38,10 +38,10 @@ LINTFLAGS	?=	-chapbx
 
 MAKE		?=	make
 
-PC		?=	pc
+PC			?=	pc
 PFLAGS		?=
 
-RC		?=	f77
+RC			?=	f77
 RFLAGS		?=
 
 SHELL		?=	sh
