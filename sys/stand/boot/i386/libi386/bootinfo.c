@@ -46,8 +46,10 @@ bi_getboothowto(char *kargs)
     int		howto;
     int		vidconsole;
 
-    howto = boot_parse_cmdline(kargs);
-    howto |= boot_env_to_howto();
+    //howto = boot_parse_cmdline(kargs);
+    //howto |= boot_env_to_howto();
+
+    howto = 0;
 
     /* Enable selected consoles */
     string = next = strdup(getenv("console"));
@@ -82,7 +84,7 @@ bi_getboothowto(char *kargs)
 void
 bi_setboothowto(int howto)
 {
-    boot_howto_to_env(howto);
+
 }
 
 /*

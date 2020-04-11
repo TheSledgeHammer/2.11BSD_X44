@@ -15,22 +15,10 @@
 #include <vm/include/vm_page.h>
 
 #include <arch/i386/include/param.h>
-#include <dev/i386/pmap2.h>
+#include <i386/pmap2.h>
 
-#include <dev/i386/cpt.h>
+#include <i386/cpt.h>
 
-/*
- * FreeBSD
- * kernel_vm_end:
- * /sys/vm/include/pmap.h
- * extern vm_offset_t kernel_vm_end;
- *
- * tramp_idleptd:
- * exception.s
- *
- * i386/pmap.c
- * extern u_long tramp_idleptd;
- */
 #include <sys/msgbuf.h>
 
 /*
@@ -84,7 +72,7 @@ allocate_kern_cpt(cpt, cpte)
 	IdleCPT = allocpages(NPGPTD, &physfree);
 
 	allocpages(1, &physfree);
-	proc0paddr_kstack = allocpages(P0_KSTACK_PAGES, &physfree);
+	proc0paddr = allocpages(P0_KSTACK_PAGES, &physfree);
 
 	/* Install page tables into PTD. */
 	for (a = 0; a < NKPT; a++) {
@@ -157,7 +145,7 @@ pmap_cold()
 	pmap_cold_map(cpte, KCPTphys, KCPTmap->cpt_pa_addr, KCPTmap->cpt_va_addr, NKPT);
 
 	/* Map proc0addr */
-	pmap_cold_mapident(cpte, proc0paddr_kstack, P0_KSTACK_PAGES);
+	pmap_cold_mapident(cpte, proc0paddr, P0_KSTACK_PAGES);
 }
 
 /*

@@ -64,6 +64,7 @@
 
 #ifndef	BOOT_STAND_H
 #define	BOOT_STAND_H
+
 #include <lib/libsa/stand.h>
 #include <sys/types.h>
 #include <sys/cdefs.h>
