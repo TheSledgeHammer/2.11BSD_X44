@@ -39,7 +39,7 @@
 ; redistributions should be placed in the reserved range at the end
 ; of the current calls.
 
-0   STD     	{int indir(); }
+0   STD     	{ int indir(); }
 1   STD     	{ int exit(); }
 2   STD     	{ int fork(); }
 3   STD     	{ int read(); }
@@ -201,3 +201,4 @@
 157	STD			{ int lfs_markv(); }
 158	STD			{ int lfs_segclean(); }
 159	STD			{ int lfs_segwait(); }
+160 STD         { int sysarch(); }

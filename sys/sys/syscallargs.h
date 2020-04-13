@@ -35,6 +35,11 @@ struct close_args {
 	syscallarg(int) fd;
 };
 
+struct sysarch_args {
+	int  op;
+	void *parms;
+};
+
 struct wait4_args {
 	syscallarg(int) pid;
 	syscallarg(int *) status;

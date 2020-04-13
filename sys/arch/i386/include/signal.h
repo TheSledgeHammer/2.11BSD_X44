@@ -57,5 +57,7 @@ struct sigcontext {
 	int	sc_ap;		/* ap to restore */
 	int	sc_pc;		/* pc to restore */
 	int	sc_ps;		/* psl to restore */
+
+	int	sc_eflags;
 };
 #endif

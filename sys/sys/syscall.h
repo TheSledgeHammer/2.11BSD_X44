@@ -165,3 +165,4 @@
 #define	SYS_lfs_markv	157
 #define	SYS_lfs_segclean	158
 #define	SYS_lfs_segwait	159
+#define	SYS_sysarch	160

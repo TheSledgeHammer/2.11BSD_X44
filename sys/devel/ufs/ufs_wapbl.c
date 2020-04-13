@@ -65,6 +65,8 @@
  *	@(#)ufs_vnops.c	8.28 (Berkeley) 7/31/95
  */
 
+#include "../ufs/ufs_wapbl.h"
+
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
@@ -92,8 +94,7 @@
 #include <ufs/lfs/lfs_extern.h>
 
 #include <vm/include/vm.h>
-#include <ufs_wapbl/wapbl.h>
-#include <ufs_wapbl/ufs_wapbl.h>
+#include "../ufs/wapbl.h"
 
 #ifdef WAPBL_DEBUG_INODES
 #error WAPBL_DEBUG_INODES: not functional before ufs_wapbl.c is updated

@@ -5,6 +5,8 @@
  *      Author: marti
  */
 
+#include "../pmap/pmap2.h"
+
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/malloc.h>
@@ -15,11 +17,10 @@
 #include <vm/include/vm_page.h>
 
 #include <arch/i386/include/param.h>
-#include <i386/pmap2.h>
-
 #include <i386/cpt.h>
 
 #include <sys/msgbuf.h>
+#include "../pmap/cpt.h"
 
 /*
  * All those kernel PT submaps that BSD is so fond of

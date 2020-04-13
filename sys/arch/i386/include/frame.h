@@ -66,6 +66,11 @@ struct trapframe {
 	/* below only when transitting rings (e.g. user to kernel) */
 	int	tf_esp;
 	int	tf_ss;
+	/* below used when switching out of VM86 mode */
+	int	tf_vm86_es;
+	int	tf_vm86_ds;
+	int	tf_vm86_fs;
+	int	tf_vm86_gs;
 };
 
 /* Interrupt stack frame */

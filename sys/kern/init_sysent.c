@@ -144,6 +144,7 @@ int	lfs_bmapv();
 int	lfs_markv();
 int	lfs_segclean();
 int	lfs_segwait();
+int	sysarch();
 
 #ifdef COMPAT_43
 #define COMPAT_43(func) __CONCAT(COMPAT_43_,func)
@@ -481,6 +482,8 @@ struct sysent sysent[] = {
 	    lfs_segclean },			/* 158 = lfs_segclean */
 	{ 0, 0,
 	    lfs_segwait },			/* 159 = lfs_segwait */
+	{ 0, 0,
+	    sysarch },				/* 160 = sysarch */
 };
 
 int	nsysent= sizeof(sysent) / sizeof(sysent[0]);

@@ -61,9 +61,9 @@ struct	sigaction {
 	int	sa_flags;			/* see signal options below */
 };
 
-#define SA_ONSTACK	0x0001	/* take signal on signal stack */
-#define SA_RESTART	0x0002	/* restart system on signal return */
-#define	SA_DISABLE	0x0004	/* disable taking signals on alternate stack */
+#define SA_ONSTACK		0x0001	/* take signal on signal stack */
+#define SA_RESTART		0x0002	/* restart system on signal return */
+#define	SA_DISABLE		0x0004	/* disable taking signals on alternate stack */
 #define SA_NOCLDSTOP	0x0008	/* do not generate SIGCHLD on child stop */
 
 /*
@@ -83,7 +83,7 @@ struct	sigaltstack {
 	int		ss_size;		/* signal stack length */
 	int		ss_flags;		/* SA_DISABLE and/or SA_ONSTACK */
 };
-#define	MINSIGSTKSZ	128			/* minimum allowable stack */
+#define	MINSIGSTKSZ	128					/* minimum allowable stack */
 #define	SIGSTKSZ	(MINSIGSTKSZ + 384)	/* recommended stack size */
 
 /*
@@ -118,15 +118,15 @@ struct	sigstack {
  * a non-standard exit is performed.
  */
 struct sigcontext {
-	int	sc_onstack;		/* sigstack state to restore */
-	long sc_mask;		/* signal mask to restore */
-	int	sc_sp;			/* sp to restore */
-	int	sc_fp;			/* fp to restore */
-	int	sc_r1;			/* r1 to restore */
-	int	sc_r0;			/* r0 to restore */
-	int	sc_pc;			/* pc to restore */
-	int	sc_ps;			/* psl to restore */
-	int	sc_ovno;		/* overlay to restore */
+	int		sc_onstack;		/* sigstack state to restore */
+	long 	sc_mask;		/* signal mask to restore */
+	int		sc_sp;			/* sp to restore */
+	int		sc_fp;			/* fp to restore */
+	int		sc_r1;			/* r1 to restore */
+	int		sc_r0;			/* r0 to restore */
+	int		sc_pc;			/* pc to restore */
+	int		sc_ps;			/* psl to restore */
+	int		sc_ovno;		/* overlay to restore */
 };
 
 /*

@@ -416,19 +416,23 @@ sysarch(p, uap, retval)
 	switch (uap->op) {
 #ifdef	USER_LDT
 	case I386_GET_LDT:
-		error = i386_get_ldt(p, uap->parms, retval);
+		error = i386_get_ldt(p, SCARG(uap, parms), retval);
 		break;
 	case I386_SET_LDT:
-		error = i386_set_ldt(p, uap->parms, retval);
+		error = i386_set_ldt(p, SCARG(uap, parms), retval);
 		break;
 #endif
 	case I386_GET_IOPERM:
-		error = i386_get_ioperm(p, uap->parms, retval);
+		error = i386_get_ioperm(p, SCARG(uap, parms), retval);
 		break;
 	case I386_SET_IOPERM:
-		error = i386_set_ioperm(p, uap->parms, retval);
+		error = i386_set_ioperm(p, SCARG(uap, parms), retval);
 		break;
+#ifdef VM86
 	case I386_VM86:
+		error = i386_vm86(p, SCARG(uap, parms), retval);
+		break;
+#endif
 	default:
 		error = EINVAL;
 		break;

@@ -9,8 +9,8 @@
 //#include <sys/bitops.h>
 #include <sys/time.h>
 #include <sys/malloc.h>
-#include <devel/ufs_wapbl/wapbl.h>
-#include <devel/ufs_wapbl/wapbl_replay.h>
+#include "../ufs/wapbl.h"
+#include "../ufs/wapbl_replay.h"
 
 #ifdef _KERNEL
 

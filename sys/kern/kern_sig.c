@@ -199,6 +199,50 @@ gsignal(pgid, signum)
 }
 
 /*
+ * Send a signal to a process group.  If checktty is 1,
+ * limit to members which have a controlling terminal.
+ */
+void
+pgsignal(pgrp, signum, checkctty)
+	struct pgrp *pgrp;
+	int signum, checkctty;
+{
+	register struct proc *p;
+
+	if (pgrp)
+		for (p = pgrp->pg_mem; p != NULL; p = p->p_pgrpnxt)
+			if (checkctty == 0 || (p->p_flag & P_CONTROLT))
+				psignal(p, signum);
+}
+
+/*
+ * Send a signal caused by a trap to the current process.
+ * If it will be caught immediately, deliver it with correct code.
+ * Otherwise, post it normally.
+ */
+void
+trapsignal(p, signum, code)
+	struct proc *p;
+	register int signum;
+	u_long code;
+{
+	register struct sigacts *ps = p->p_sigacts;
+	int mask;
+
+	mask = sigmask(signum);
+	if ((p->p_flag & P_TRACED) == 0 && (p->p_sigcatch & mask) != 0
+			&& (p->p_sigmask & mask) == 0) {
+		p->p_stats->p_ru.ru_nsignals++;
+		sendsig(ps->ps_sigact[signum], signum, p->p_sigmask, code);
+		p->p_sigmask |= ps->ps_catchmask[signum] | mask;
+	} else {
+		ps->ps_code = code; 	/* XXX for core dump/debugger */
+		ps->ps_sig = signum; 	/* XXX to verify code */
+		psignal(p, signum);
+	}
+}
+
+/*
  * Send the specified signal to
  * the specified process.
  */

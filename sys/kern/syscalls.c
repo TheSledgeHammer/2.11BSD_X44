@@ -166,4 +166,5 @@ char *syscallnames[] = {
 	"lfs_markv",			/* 157 = lfs_markv */
 	"lfs_segclean",			/* 158 = lfs_segclean */
 	"lfs_segwait",			/* 159 = lfs_segwait */
+	"sysarch",			/* 160 = sysarch */
 };

@@ -42,15 +42,15 @@
  */
 struct isa_device {
 	struct	isa_driver *id_driver;
-	short	id_iobase;		/* base i/o address */
-	short	id_irq;			/* interrupt request */
-	short	id_drq;			/* DMA request */
-	caddr_t id_maddr;		/* physical i/o memory address on bus (if any)*/
-	int		id_msize;		/* size of i/o memory */
-	int		(*id_intr)();	/* interrupt interface routine */
-	int		id_unit;		/* unit number */
-	int		id_scsiid;		/* scsi id if needed */
-	int		id_alive;		/* device is present */
+	short				id_iobase;		/* base i/o address */
+	short				id_irq;			/* interrupt request */
+	short				id_drq;			/* DMA request */
+	caddr_t 			id_maddr;		/* physical i/o memory address on bus (if any)*/
+	int					id_msize;		/* size of i/o memory */
+	int					(*id_intr)();	/* interrupt interface routine */
+	int					id_unit;		/* unit number */
+	int					id_scsiid;		/* scsi id if needed */
+	int					id_alive;		/* device is present */
 };
 
 /*

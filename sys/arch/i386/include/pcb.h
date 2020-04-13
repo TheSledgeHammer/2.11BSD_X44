@@ -71,6 +71,9 @@ struct pcb {
 #define	FM_TRAP			0x10			/* process entered kernel on a trap frame */
 	short				pcb_iml;		/* interrupt mask level */
 	caddr_t				pcb_onfault;	/* copyin/out fault recovery */
+	int					vm86_eflags;	/* virtual eflags for vm86 mode */
+	int					vm86_flagmask;	/* flag mask for vm86 mode */
+	void				*vm86_userp;	/* XXX performance hack */
 	long				pcb_sigc[8];	/* XXX signal code trampoline */
 	int					pcb_cmap2;		/* XXX temporary PTE - will prefault instead */
 
