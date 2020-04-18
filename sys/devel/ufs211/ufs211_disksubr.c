@@ -58,7 +58,7 @@
  */
 char *
 readdisklabel(dev, strat, lp)
-	dev_t dev;
+	ufs211_dev_t dev;
 	int (*strat)();
 	register struct disklabel *lp;
 {
@@ -147,7 +147,7 @@ setdisklabel(olp, nlp, openmask)
  */
 int
 writedisklabel(dev, strat, lp)
-	dev_t dev;
+	ufs211_dev_t dev;
 	int (*strat)();
 	register struct disklabel *lp;
 {
@@ -218,8 +218,8 @@ dkcksum(lp)
 
 dkoverlapchk(openmask, dev, label, name)
 	int	openmask;
-	dev_t	dev;
-	memaddr	label;
+	ufs211_dev_t	dev;
+	ufs211_size_t	label;
 	char	*name;
 {
 	int unit = dkunit(dev);
@@ -256,7 +256,7 @@ dkoverlapchk(openmask, dev, label, name)
 */
 
 ioctldisklabel(dev, cmd, data, flag, disk, strat)
-	dev_t	dev;
+	ufs211_dev_t	dev;
 	int	cmd;
 	register caddr_t	data;
 	int	flag;
@@ -357,7 +357,7 @@ partition_check(bp, dk)
 	struct	dkdevice *dk;
 {
 	struct partition *pi;
-	daddr_t sz;
+	ufs211_daddr_t sz;
 
 	pi = &dk->dk_parts[dkpart(bp->b_dev)];
 

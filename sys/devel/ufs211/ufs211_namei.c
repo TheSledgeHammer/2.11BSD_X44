@@ -12,9 +12,13 @@
 #include <sys/mount.h>
 #include <sys/buf.h>
 #include <sys/namei.h>
-#include "../../devel/ufs211/ufs211_dir.h"
-#include "../../devel/ufs211/ufs211_fs.h"
-#include "../../devel/ufs211/ufs211_inode.h"
+
+#include "ufs211/ufs211_extern.h"
+#include "ufs211/ufs211_dir.h"
+#include "ufs211/ufs211_fs.h"
+#include "ufs211/ufs211_inode.h"
+#include "ufs211/ufs211_mount.h"
+#include "ufs211/ufs211_quota.h"
 
 struct	buf *blkatoff();
 int	dirchk = 0;
@@ -111,38 +115,38 @@ struct inode *
 namei(ndp)
 	register struct nameidata *ndp;
 {
-	register char *cp;		/* pointer into pathname argument */
+	register char *cp;				/* pointer into pathname argument */
 /* these variables refer to things which must be freed or unlocked */
-	struct inode *dp = 0;		/* the directory we are searching */
-	struct namecache *ncp;		/* cache slot for entry */
-	struct fs *fs;			/* file system that directory is in */
-	struct buf *bp = 0;		/* a buffer of directory entries */
-	struct direct *ep;		/* the current directory entry */
-	int  entryoffsetinblock;	/* offset of ep in bp's buffer */
+	struct ufs211_inode *dp = 0;	/* the directory we are searching */
+	struct namecache *ncp;			/* cache slot for entry */
+	struct ufs211_fs *fs;			/* file system that directory is in */
+	struct buf *bp = 0;				/* a buffer of directory entries */
+	struct ufs211_direct *ep;		/* the current directory entry */
+	int  entryoffsetinblock;		/* offset of ep in bp's buffer */
 /* these variables hold information about the search for a slot */
 	enum {NONE, COMPACT, FOUND} slotstatus;
-	off_t slotoffset = -1;		/* offset of area with free space */
-	int slotsize;			/* size of area at slotoffset */
-	int slotfreespace;		/* amount of space free in slot */
-	int slotneeded;			/* size of the entry we're seeking */
+	ufs211_off_t slotoffset = -1;		/* offset of area with free space */
+	int slotsize;					/* size of area at slotoffset */
+	int slotfreespace;				/* amount of space free in slot */
+	int slotneeded;					/* size of the entry we're seeking */
 /* */
-	int numdirpasses;		/* strategy for directory search */
-	off_t endsearch;		/* offset to end directory search */
-	off_t prevoff;			/* ndp->ni_offset of previous entry */
-	int nlink = 0;			/* number of symbolic links taken */
-	struct inode *pdp;		/* saved dp during symlink work */
+	int numdirpasses;				/* strategy for directory search */
+	ufs211_off_t endsearch;			/* offset to end directory search */
+	ufs211_off_t prevoff;			/* ndp->ni_offset of previous entry */
+	int nlink = 0;					/* number of symbolic links taken */
+	struct ufs211_inode *pdp;		/* saved dp during symlink work */
 register int i;
 	int error;
 	int lockparent;
-	int docache;			/* == 0 do not cache last component */
-	int makeentry;			/* != 0 if name to be added to cache */
-	unsigned hash;			/* value of name hash for entry */
-	union nchash *nhp;		/* cache chain head for entry */
-	int isdotdot;			/* != 0 if current name is ".." */
-	int flag;			/* op ie, LOOKUP, CREATE, or DELETE */
-	off_t enduseful;		/* pointer past last used dir slot */
+	int docache;				/* == 0 do not cache last component */
+	int makeentry;				/* != 0 if name to be added to cache */
+	unsigned hash;				/* value of name hash for entry */
+	union nchash *nhp;			/* cache chain head for entry */
+	int isdotdot;				/* != 0 if current name is ".." */
+	int flag;					/* op ie, LOOKUP, CREATE, or DELETE */
+	ufs211_off_t enduseful;		/* pointer past last used dir slot */
 	char	path[MAXPATHLEN];	/* current path */
-	segm	seg5;			/* save area for kernel seg5 */
+//	segm	seg5;				/* save area for kernel seg5 */
 
 	lockparent = ndp->ni_nameiop & LOCKPARENT;
 	docache = (ndp->ni_nameiop & NOCACHE) ^ NOCACHE;
@@ -159,7 +163,7 @@ register int i;
 		error = copyinstr(ndp->ni_dirp, path, MAXPATHLEN,
 		    (u_int *)0);
 	if (error) {
-		u.u_error = error;
+		u->u_error = error;
 		goto retNULL;
 	}
 
@@ -188,11 +192,11 @@ dirloop:
 	/*
 	 * Check accessibility of directory.
 	 */
-	if ((dp->i_mode&IFMT) != IFDIR) {
+	if ((dp->i_mode&UFS211_FMT) != UFS211_FDIR) {
 		u->u_error = ENOTDIR;
 		goto bad;
 	}
-	if (access(dp, IEXEC))
+	if (access(dp, UFS211_EXEC))
 		goto bad;
 
 dirloop2:
@@ -244,8 +248,8 @@ dirloop2:
 	 * holding long names (which would either waste space, or
 	 * add greatly to the complexity).
 	 */
-	saveseg5(seg5);
-	mapseg5(nmidesc.se_addr, nmidesc.se_desc);
+	//saveseg5(seg5);
+	//mapseg5(nmidesc.se_addr, nmidesc.se_desc);
 	if (ndp->ni_dent.d_namlen > NCHNAMLEN) {
 		nchstats.ncs_long++;
 		makeentry = 0;
@@ -298,15 +302,15 @@ dirloop2:
 				if (pdp == dp)
 					dp->i_count++;
 				else if (isdotdot) {
-					restorseg5(seg5);
+					//restorseg5(seg5);
 					IUNLOCK(pdp);
 					igrab(dp);
-					mapseg5(nmidesc.se_addr,nmidesc.se_desc);
+					//mapseg5(nmidesc.se_addr,nmidesc.se_desc);
 				} else {
-					restorseg5(seg5);
+					//restorseg5(seg5);
 					igrab(dp);
 					IUNLOCK(pdp);
-					mapseg5(nmidesc.se_addr,nmidesc.se_desc);
+					//mapseg5(nmidesc.se_addr,nmidesc.se_desc);
 				}
 
 				/*
@@ -315,17 +319,17 @@ dirloop2:
 				 * for it to be locked.
 				 */
 				if (ncp->nc_id != ncp->nc_ip->i_id) {
-					restorseg5(seg5);
+					//restorseg5(seg5);
 					iput(dp);
 					ILOCK(pdp);
-					mapseg5(nmidesc.se_addr,nmidesc.se_desc);
+					//mapseg5(nmidesc.se_addr,nmidesc.se_desc);
 					dp = pdp;
 					nchstats.ncs_falsehits++;
 				} else {
 					ndp->ni_dent.d_ino = dp->i_number;
 					/* ni_dent.d_reclen is garbage ... */
 					nchstats.ncs_goodhits++;
-					restorseg5(seg5);
+					//restorseg5(seg5);
 					goto haveino;
 				}
 			}
@@ -353,7 +357,7 @@ dirloop2:
 			ncp = NULL;
 		}
 	}
-	restorseg5(seg5);
+	//restorseg5(seg5);
 
 	/*
 	 * Suppress search for slots unless creating
@@ -431,7 +435,7 @@ searchloop:
 		 * "dirchk" to be true.
 		 */
 		mapout(bp);	/* XXX - avoid double mapin */
-		ep = (struct direct *)((caddr_t)mapin(bp)+ entryoffsetinblock);
+		ep = (struct ufs211_direct *)((caddr_t)mapin(bp)+ entryoffsetinblock);
 		if (ep->d_reclen == 0 ||
 		    (dirchk && dirbadentry(ep, entryoffsetinblock))) {
 			dirbad(dp, ndp->ni_offset, "mangled entry");
@@ -506,7 +510,7 @@ searchloop:
 		 * Access for write is interpreted as allowing
 		 * creation of files in the directory.
 		 */
-		if (access(dp, IWRITE))
+		if (access(dp, UFS211_WRITE))
 			goto bad;
 		/*
 		 * Return an indication of where the new directory
@@ -589,7 +593,7 @@ found:
 		/*
 		 * Write access to directory required to delete files.
 		 */
-		if (access(dp, IWRITE))
+		if (access(dp, UFS211_WRITE))
 			goto bad;
 		ndp->ni_pdir = dp;		/* for dirremove() */
 		/*
@@ -620,7 +624,7 @@ found:
 				if ((ndp->ni_pdir->i_mode & ISVTX) &&
 				    u->u_uid != 0 &&
 				    u->u_uid != ndp->ni_pdir->i_uid &&
-				    dp->i_uid != u.u_uid) {
+				    dp->i_uid != u->u_uid) {
 					iput(ndp->ni_pdir);
 					u->u_error = EPERM;
 					goto bad;
@@ -639,10 +643,10 @@ found:
 		if (dp == u->u_rdir) {
 			ndp->ni_dent.d_ino = dp->i_number;
 			makeentry = 0;
-		} else if (ndp->ni_dent.d_ino == ROOTINO &&
-		    dp->i_number == ROOTINO) {
-			register struct mount *mp;
-			register dev_t d;
+		} else if (ndp->ni_dent.d_ino == UFS211_ROOTINO &&
+		    dp->i_number == UFS211_ROOTINO) {
+			register struct ufs211_mount *mp;
+			register ufs211_dev_t d;
 
 			d = dp->i_dev;
 			for (mp = &mount[1]; mp < &mount[NMOUNT]; mp++)
@@ -665,7 +669,7 @@ found:
 	 * regular file, or empty directory.  
 	 */
 	if ((flag == CREATE && lockparent) && *cp == 0) {
-		if (access(dp, IWRITE))
+		if (access(dp, UFS211_WRITE))
 			goto bad;
 		ndp->ni_pdir = dp;		/* for dirrewrite() */
 		/*
@@ -729,8 +733,8 @@ found:
 		 * Free the cache slot at head of lru chain.
 		 */
 		if (ncp == nchhead) {
-			saveseg5(seg5);
-			mapseg5(nmidesc.se_addr, nmidesc.se_desc);
+			//saveseg5(seg5);
+			//mapseg5(nmidesc.se_addr, nmidesc.se_desc);
 			/* remove from lru chain */
 			*ncp->nc_prev = ncp->nc_nxt;
 			if (ncp->nc_nxt)
@@ -755,7 +759,7 @@ found:
 			nchtail = &ncp->nc_nxt;
 			/* and insert on hash chain */
 			insque(ncp, nhp);
-			restorseg5(seg5);
+			//restorseg5(seg5);
 		}
 	}
 
@@ -765,7 +769,7 @@ haveino:
 	/*
 	 * Check for symbolic link
 	 */
-	if ((dp->i_mode & IFMT) == IFLNK &&
+	if ((dp->i_mode & UFS211_FMT) == UFS211_FLNK &&
 	    ((ndp->ni_nameiop & FOLLOW) || *cp == '/')) {
 		u_int pathlen = strlen(cp) + 1;
 
@@ -778,7 +782,7 @@ haveino:
 			goto bad2;
 		}
 
-		bp = bread(dp->i_dev, bmap(dp, (daddr_t)0, B_READ, 0));
+		bp = bread(dp->i_dev, bmap(dp, (ufs211_daddr_t)0, B_READ, 0));
 		if (bp->b_flags & B_ERROR) {
 			brelse(bp);
 			bp = NULL;
@@ -886,11 +890,11 @@ dirbadentry(ep, entryoffsetinblock)
  * how the space for the new entry is to be gotten.
  */
 direnter(ip, ndp)
-	struct inode *ip;
+	struct ufs211_inode *ip;
 	register struct nameidata *ndp;
 {
-	register struct direct *ep, *nep;
-	register struct inode *dp = ndp->ni_pdir;
+	register struct ufs211_direct *ep, *nep;
+	register struct ufs211_inode *dp = ndp->ni_pdir;
 	struct buf *bp;
 	int loc, spacefree, error = 0;
 	u_int dsize;
@@ -1008,9 +1012,9 @@ direnter(ip, ndp)
 dirremove(ndp)
 	register struct nameidata *ndp;
 {
-	register struct inode *dp = ndp->ni_pdir;
+	register struct ufs211_inode *dp = ndp->ni_pdir;
 	register struct buf *bp;
-	struct direct *ep;
+	struct ufs211_direct *ep;
 
 	if (ndp->ni_count == 0) {
 		/*
@@ -1041,8 +1045,8 @@ dirremove(ndp)
  * set up by a call to namei.
  */
 dirrewrite(dp, ip, ndp)
-	register struct inode *dp;
-	struct inode *ip;
+	register struct ufs211_inode *dp;
+	struct ufs211_inode *ip;
 	register struct nameidata *ndp;
 {
 
@@ -1064,20 +1068,20 @@ dirrewrite(dp, ip, ndp)
  */
 struct buf *
 blkatoff(ip, offset, res)
-	struct inode *ip;
-	off_t offset;
+	struct ufs211_inode *ip;
+	ufs211_off_t offset;
 	char **res;
 {
-	register struct fs *fs = ip->i_fs;
-	daddr_t lbn = lblkno(offset);
+	register struct ufs211_fs *fs = ip->i_fs;
+	ufs211_daddr_t lbn = lblkno(offset);
 	register struct buf *bp;
-	daddr_t bn;
+	ufs211_daddr_t bn;
 	char *junk;
 
 	bn = bmap(ip, lbn, B_READ, 0);
 	if (u->u_error)
 		return (0);
-	if (bn == (daddr_t)-1) {
+	if (bn == (ufs211_daddr_t)-1) {
 		dirbad(ip, offset, "hole in dir");
 		return (0);
 	}
@@ -1102,12 +1106,12 @@ blkatoff(ip, offset, res)
  * NB: does not handle corrupted directories.
  */
 dirempty(ip, parentino)
-	register struct inode *ip;
-	ino_t parentino;
+	register struct ufs211_inode *ip;
+	ufs211_ino_t parentino;
 {
-	register off_t off;
+	register ufs211_off_t off;
 	struct dirtemplate dbuf;
-	register struct direct *dp = (struct direct *)&dbuf;
+	register struct ufs211_direct *dp = (struct ufs211_direct *)&dbuf;
 	int error, count;
 #define	MINDIRSIZ (sizeof (struct dirtemplate) / 2)
 
@@ -1151,10 +1155,10 @@ dirempty(ip, parentino)
  * The target is always iput() before returning.
  */
 checkpath(source, target)
-	struct inode *source, *target;
+	struct ufs211_inode *source, *target;
 {
 	struct dirtemplate dirbuf;
-	register struct inode *ip;
+	register struct ufs211_inode *ip;
 	register int error = 0;
 
 	ip = target;
@@ -1162,16 +1166,16 @@ checkpath(source, target)
 		error = EEXIST;
 		goto out;
 	}
-	if (ip->i_number == ROOTINO)
+	if (ip->i_number == UFS211_ROOTINO)
 		goto out;
 
 	for (;;) {
-		if ((ip->i_mode&IFMT) != IFDIR) {
+		if ((ip->i_mode&UFS211_FMT) != UFS211_FDIR) {
 			error = ENOTDIR;
 			break;
 		}
 		error = rdwri(UIO_READ, ip, (caddr_t)&dirbuf, 
-				sizeof(struct dirtemplate), (off_t)0,
+				sizeof(struct dirtemplate), (ufs211_off_t)0,
 				UIO_SYSSPACE, IO_UNIT, (int *)0);
 		if (error != 0)
 			break;
@@ -1185,12 +1189,12 @@ checkpath(source, target)
 			error = EINVAL;
 			break;
 		}
-		if (dirbuf.dotdot_ino == ROOTINO)
+		if (dirbuf.dotdot_ino == UFS211_ROOTINO)
 			break;
 		iput(ip);
 		ip = iget(ip->i_dev, ip->i_fs, dirbuf.dotdot_ino);
 		if (ip == NULL) {
-			error = u.u_error;
+			error = u->u_error;
 			break;
 		}
 	}
@@ -1210,10 +1214,10 @@ nchinit()
 {
 	register union nchash *nchp;
 	register struct namecache *ncp;
-	segm	seg5;
+	//segm	seg5;
 
-	saveseg5(seg5);
-	mapseg5(nmidesc.se_addr,nmidesc.se_desc);
+	//saveseg5(seg5);
+	//mapseg5(nmidesc.se_addr,nmidesc.se_desc);
 	nchhead = 0;
 	nchtail = &nchhead;
 	for (ncp = namecache; ncp < &namecache[nchsize]; ncp++) {
@@ -1229,7 +1233,7 @@ nchinit()
 		nchp->nch_head[0] = nchp;
 		nchp->nch_head[1] = nchp;
 	}
-	restorseg5(seg5);
+	//restorseg5(seg5);
 }
 
 /*
@@ -1241,13 +1245,13 @@ nchinit()
  * inode.  This makes the algorithm O(n^2), but do you think I care?
  */
 nchinval(dev)
-	register dev_t dev;
+	register ufs211_dev_t dev;
 {
 	register struct namecache *ncp, *nxtcp;
-	segm	seg5;
+	//segm	seg5;
 
-	saveseg5(seg5);
-	mapseg5(nmidesc.se_addr,nmidesc.se_desc);
+	//saveseg5(seg5);
+	//mapseg5(nmidesc.se_addr,nmidesc.se_desc);
 	for (ncp = nchhead; ncp; ncp = nxtcp) {
 		nxtcp = ncp->nc_nxt;
 		if (ncp->nc_ip == NULL ||
@@ -1276,7 +1280,7 @@ nchinval(dev)
 		nxtcp->nc_prev = &ncp->nc_nxt;
 		nchhead = ncp;
 	}
-	restorseg5(seg5);
+	//restorseg5(seg5);
 }
 
 /*
@@ -1287,9 +1291,9 @@ cacheinvalall()
 	register struct namecache *ncp, *encp = &namecache[nchsize];
 	segm	seg5;
 
-	saveseg5(seg5);
-	mapseg5(nmidesc.se_addr, nmidesc.se_desc);
+	//saveseg5(seg5);
+	//mapseg5(nmidesc.se_addr, nmidesc.se_desc);
 	for (ncp = namecache; ncp < encp; ncp++)
 		ncp->nc_id = 0;
-	restorseg5(seg5);
+	//restorseg5(seg5);
 }

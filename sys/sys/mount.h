@@ -37,21 +37,21 @@ struct fid {
 #define MNAMELEN 	90	/* length of buffer for returned name */
 
 struct statfs {
-	short	f_type;					/* type of filesystem (see below) */
-	short	f_flags;				/* copy of mount flags */
-	long	f_bsize;				/* fundamental file system block size */
-	long	f_iosize;				/* optimal transfer block size */
-	long	f_blocks;				/* total data blocks in file system */
-	long	f_bfree;				/* free blocks in fs */
-	long	f_bavail;				/* free blocks avail to non-superuser */
-	long	f_files;				/* total file nodes in file system */
-	long	f_ffree;				/* free file nodes in fs */
-	fsid_t	f_fsid;					/* file system id */
-	uid_t	f_owner;				/* user that mounted the filesystem */
-	long	f_spare[9];				/* spare for later */
-	char	f_fstypename[MFSNAMELEN]; /* fs type name */
-	char	f_mntonname[MNAMELEN];	/* directory on which mounted */
-	char	f_mntfromname[MNAMELEN];/* mounted filesystem */
+	short	f_type;						/* type of filesystem (see below) */
+	short	f_flags;					/* copy of mount flags */
+	long	f_bsize;					/* fundamental file system block size */
+	long	f_iosize;					/* optimal transfer block size */
+	long	f_blocks;					/* total data blocks in file system */
+	long	f_bfree;					/* free blocks in fs */
+	long	f_bavail;					/* free blocks avail to non-superuser */
+	long	f_files;					/* total file nodes in file system */
+	long	f_ffree;					/* free file nodes in fs */
+	fsid_t	f_fsid;						/* file system id */
+	uid_t	f_owner;					/* user that mounted the filesystem */
+	long	f_spare[9];					/* spare for later */
+	char	f_fstypename[MFSNAMELEN]; 	/* fs type name */
+	char	f_mntonname[MNAMELEN];		/* directory on which mounted */
+	char	f_mntfromname[MNAMELEN];	/* mounted filesystem */
 };
 
 /*
@@ -75,7 +75,6 @@ struct	mount
 	qaddr_t				mnt_data;			/* private data */
 
 	dev_t				m_dev;				/* device mounted */
-#define	m_flags	m_filsys.fs_flags
 	memaddr				m_extern;			/* click address of mount table extension */
 };
 

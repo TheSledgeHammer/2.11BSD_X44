@@ -119,9 +119,6 @@ ufs_quotactl(mp, cmds, uid, arg, p)
 			return (error);
 	}
 
-	type = cmds & SUBCMDMASK;
-	if ((u_int)type >= MAXQUOTAS)
-		return (EINVAL);
 	if (vfs_busy(mp, LK_NOWAIT, 0, p))
 		return (0);
 

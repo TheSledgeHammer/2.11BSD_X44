@@ -15,17 +15,17 @@
 #include <sys/systm.h>
 #include <sys/map.h>
 #include <sys/trace.h>
-#include "../../devel/ufs211/ufs211_fs.h"
-#include "uba.h"
-#include "ram.h"
+
+#include "ufs211/ufs211_extern.h"
+#include "ufs211/ufs211_fs.h"
 
 /*
  * Read in (if necessary) the block and return a buffer pointer.
  */
 struct buf *
 bread(dev, blkno)
-	dev_t dev;
-	daddr_t blkno;
+	ufs211_dev_t dev;
+	ufs211_daddr_t blkno;
 {
 	register struct buf *bp;
 
@@ -49,9 +49,9 @@ bread(dev, blkno)
  */
 struct buf *
 breada(dev, blkno, rablkno)
-	register dev_t dev;
-	daddr_t blkno;
-	daddr_t rablkno;
+	register ufs211_dev_t dev;
+	ufs211_daddr_t blkno;
+	ufs211_daddr_t rablkno;
 {
 	register struct buf *bp, *rabp;
 
@@ -210,8 +210,8 @@ brelse(bp)
  * (mainly to avoid getting hung up on a wait in breada)
  */
 incore(dev, blkno)
-	register dev_t dev;
-	daddr_t blkno;
+	register ufs211_dev_t dev;
+	ufs211_daddr_t blkno;
 {
 	register struct buf *bp;
 	register struct buf *dp;
@@ -236,11 +236,11 @@ incore(dev, blkno)
  */
 struct buf *
 getblk(dev, blkno)
-	register dev_t dev;
-	daddr_t blkno;
+	register ufs211_dev_t dev;
+	ufs211_daddr_t blkno;
 {
 	register struct buf *bp, *dp;
-	daddr_t dblkno;
+	ufs211_daddr_t dblkno;
 	int s;
 
 #ifdef DIAGNOSTIC
@@ -389,8 +389,8 @@ biodone(bp)
  * Insure that no part of a specified block is in an incore buffer.
  */
 blkflush(dev, blkno)
-	register dev_t dev;
-	daddr_t blkno;
+	register ufs211_dev_t dev;
+	ufs211_daddr_t blkno;
 {
 	register struct buf *ep;
 	struct buf *dp;
@@ -425,7 +425,7 @@ loop:
  * (from umount and sync)
  */
 bflush(dev)
-	register dev_t dev;
+	register ufs211_dev_t dev;
 {
 	register struct buf *bp;
 	register struct buf *flist;
@@ -475,7 +475,7 @@ geterror(bp)
  * correctness.						... kre
  */
 binval(dev)
-	register dev_t dev;
+	register ufs211_dev_t dev;
 {
 	register struct buf *bp;
 	register struct bufhd *hp;

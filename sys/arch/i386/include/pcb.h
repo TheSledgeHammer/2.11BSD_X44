@@ -56,38 +56,27 @@ struct pcb {
 #define	pcb_usp			pcb_tss.tss_esp
 #define	pcb_fp			pcb_tss.tss_ebp
 #define	pcb_ldt_sel		pcb_tss.tss_ldt
-	struct	save87		pcb_savefpu;		/* floating point state (context) for 287/387 */
-	struct	emcsts		pcb_saveemc;		/* Cyrix EMC state */
-	u_long				pcb_iomap[NPORT/32];/* i/o port bitmap */
+	struct	savefpu		pcb_savefpu;			/* floating point state (context) for 287/387 */
+	struct	emcsts		pcb_saveemc;			/* Cyrix EMC state */
+	u_long				pcb_iomap[NPORT/32];	/* i/o port bitmap */
+	int					pcb_cr0;				/* saved image of CR0 */
 
 /*
  * Software pcb (extension)
  */
 	int					pcb_flags;
-#define	FP_WASUSED		0x01			/* floating point has been used in this proc */
-#define	FP_NEEDSSAVE	0x02			/* needs save on next context switch */
-#define	FP_NEEDSRESTORE	0x04			/* need restore on next DNA fault */
-#define	FP_USESEMC		0x08			/* process uses EMC memory-mapped mode */
-#define	FM_TRAP			0x10			/* process entered kernel on a trap frame */
-	short				pcb_iml;		/* interrupt mask level */
-	caddr_t				pcb_onfault;	/* copyin/out fault recovery */
-	int					vm86_eflags;	/* virtual eflags for vm86 mode */
-	int					vm86_flagmask;	/* flag mask for vm86 mode */
-	void				*vm86_userp;	/* XXX performance hack */
-	long				pcb_sigc[8];	/* XXX signal code trampoline */
-	int					pcb_cmap2;		/* XXX temporary PTE - will prefault instead */
-
-	struct segment_descriptor pcb_fsd;
-	struct segment_descriptor pcb_gsd;
-};
-
-/*
- * Software pcb (extension)
- */
-struct pcb_extend {
-	struct 	segment_descriptor 	ext_tssd;	/* tss descriptor */
-	struct 	i386tss				ext_tss;	/* per-process i386tss */
-	caddr_t						ext_iomap;	/* i/o permission bitmap */
+#define	FP_WASUSED		0x01					/* floating point has been used in this proc */
+#define	FP_NEEDSSAVE	0x02					/* needs save on next context switch */
+#define	FP_NEEDSRESTORE	0x04					/* need restore on next DNA fault */
+#define	FP_USESEMC		0x08					/* process uses EMC memory-mapped mode */
+#define	FM_TRAP			0x10					/* process entered kernel on a trap frame */
+	short				pcb_iml;				/* interrupt mask level */
+	caddr_t				pcb_onfault;			/* copyin/out fault recovery */
+	int					vm86_eflags;			/* virtual eflags for vm86 mode */
+	int					vm86_flagmask;			/* flag mask for vm86 mode */
+	void				*vm86_userp;			/* XXX performance hack */
+	long				pcb_sigc[8];			/* XXX signal code trampoline */
+	int					pcb_cmap2;				/* XXX temporary PTE - will prefault instead */
 };
 
 /*

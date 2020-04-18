@@ -46,8 +46,8 @@ struct vm_anon {
 		uintptr_t		au_ref;		/* Reference count [an_lock] */
 		struct vm_anon	*au_link;	/* Link for deferred free */
 	} an_u;
-#define	an_ref	an_u.au_ref
-#define	an_link	an_u.au_link
+#define	an_ref			an_u.au_ref
+#define	an_link			an_u.au_link
 	struct vm_page		*an_page;	/* If in RAM [an_lock] */
 #if defined(VMSWAP) || 1 			/* XXX libkvm */
 	/*
@@ -95,14 +95,14 @@ struct vm_aref {
  * prototypes
  */
 
-struct vm_anon *uvm_analloc(void);
-void uvm_anon_free(struct vm_anon *);
-void uvm_anon_freelst(struct vm_amap *, struct vm_anon *);
-void uvm_anon_init(void);
-struct vm_page *uvm_anon_lockloanpg(struct vm_anon *);
-void uvm_anon_dropswap(struct vm_anon *);
-void uvm_anon_release(struct vm_anon *);
-boolean_t uvm_anon_pagein(struct vm_amap *, struct vm_anon *);
+struct vm_anon 	*uvm_analloc(void);
+void 			uvm_anon_free(struct vm_anon *);
+void 			uvm_anon_freelst(struct vm_amap *, struct vm_anon *);
+void 			uvm_anon_init(void);
+struct vm_page 	*uvm_anon_lockloanpg(struct vm_anon *);
+void 			uvm_anon_dropswap(struct vm_anon *);
+void 			uvm_anon_release(struct vm_anon *);
+boolean_t 		uvm_anon_pagein(struct vm_amap *, struct vm_anon *);
 #endif /* _KERNEL */
 
 #endif /* _UVM_UVM_ANON_H_ */

@@ -45,6 +45,7 @@ fork1(isvfork)
 	register int a;
 	register struct proc *p1, *p2;
 	int count;
+	register_t *retval;
 
 	a = 0;
 	if (u->u_uid != 0) {
@@ -70,14 +71,16 @@ fork1(isvfork)
 		(void)chgproccnt(u->u_uid, -1);
 		u->u_error = EAGAIN;
 	}
-	if (p2==NULL || (u->u_uid!=0 && (p2->p_nxt == NULL || a>MAXUPRC))) {
+	if (p2==NULL || (u->u_uid!=0 && (p2->p_nxt == NULL || a > MAXUPRC))) {
 		u->u_error = EAGAIN;
 		goto out;
 	}
 	p1 = u->u_procp;
-	if (newproc(isvfork)) {
+	if (newproc(p1, p2, isvfork)) {
 		u->u_r.r_val1 = p1->p_pid;
+		u->u_r.r_val2 = 1;  			/* child */
 		u->u_start = p1->p_rtime->tv_sec;
+
 		/* set forked but preserve suid/gid state */
 		u->u_acflag = AFORK | (u->u_acflag & ASUGID);
 		bzero(&u->u_ru, sizeof(u->u_ru));
@@ -104,9 +107,24 @@ fork1(isvfork)
 
 	u->u_r.r_val1 = p2->p_pid;
 
+	/*
+	 * Now can be swapped.
+	 */
+	p1->p_flag &= ~P_NOSWAP;
+
+	/*
+	 * Preserve synchronization semantics of vfork.  If waiting for
+	 * child to exec or exit, set P_PPWAIT on child, and sleep on our
+	 * proc (in case of exit).
+	 */
+	if (isvfork)
+		while (p2->p_flag & P_PPWAIT)
+			tsleep(p1, PWAIT, "ppwait", 0);
 out:
 	u->u_r.r_val2 = 0;
 }
+
+int	nproc = 1;		/* process 0 */
 
 /*
  * newproc --
@@ -114,72 +132,65 @@ out:
  *	It returns 1 in the new process, 0 in the old.
  */
 int
-newproc(isvfork)
+newproc(rip, rpp, isvfork)
+	register struct proc *rpp, *rip;
 	int isvfork;
 {
-	register struct proc *rpp, *rip;
-	register int n;
-	static int pidchecked = 0;
-	struct file *fp;
-	int a1, s;
-	size_t a[3];
+	struct proc *newproc;
+	static int mpid, pidchecked = 0;
+	register_t *retval;
 
-	/*
-	 * First, just locate a slot for a process
-	 * and copy the useful info from this process into it.
-	 * The panic "cannot happen" because fork has already
-	 * checked for the existence of a slot.
-	 */
+	/* Allocate new proc. */
+	MALLOC(newproc, struct proc *, sizeof(struct proc), M_PROC, M_WAITOK);
+
 	mpid++;
 retry:
-	if (mpid >= 30000) {
+	if(mpid >= PID_MAX) {
 		mpid = 100;
 		pidchecked = 0;
 	}
 	if (mpid >= pidchecked) {
 		int doingzomb = 0;
 
-		pidchecked = 30000;
-		/*
-		 * Scan the proc table to check whether this pid
-		 * is in use.  Remember the lowest pid that's greater
-		 * than mpid, so we can avoid checking for a while.
-		 */
-		rpp = allproc;
+		pidchecked = PID_MAX;
+
+		rpp = allproc.lh_first;
 again:
 		for (; rpp != NULL; rpp = rpp->p_nxt) {
-			if (rpp->p_pid == mpid || rpp->p_pgrp == mpid) {
+			while (rpp->p_pid == mpid || rpp->p_pgrp->pg_id == mpid) {
 				mpid++;
 				if (mpid >= pidchecked)
 					goto retry;
 			}
 			if (rpp->p_pid > mpid && pidchecked > rpp->p_pid)
 				pidchecked = rpp->p_pid;
-			if (rpp->p_pgrp > mpid && pidchecked > rpp->p_pgrp)
-				pidchecked = rpp->p_pgrp;
+			if (rpp->p_pgrp->pg_id > mpid && pidchecked > rpp->p_pgrp->pg_id)
+				pidchecked = rpp->p_pgrp->pg_id;
 		}
 		if (!doingzomb) {
 			doingzomb = 1;
-			rpp = zombproc;
+			rpp = zombproc.lh_first;
 			goto again;
 		}
 	}
 	if ((rpp = freeproc) == NULL)
-		panic("no procs");
+			panic("no procs");
 
-	freeproc = rpp->p_nxt;			/* off freeproc */
+	freeproc = rpp->p_nxt;				/* off freeproc */
 
 	/*
 	 * Make a proc table entry for the new process.
 	 */
+	nproc++;
 	rip = u->u_procp;
+	rpp = newproc;
 	rpp->p_stat = SIDL;
+	rpp->p_pid = mpid;
 	rpp->p_realtimer.it_value = 0;
 	rpp->p_flag = P_SLOAD;
 	rpp->p_uid = rip->p_uid;
 	rpp->p_pgrp = rip->p_pgrp;
 	rpp->p_nice = rip->p_nice;
-	rpp->p_pid = mpid;
 	rpp->p_ppid = rip->p_pid;
 	rpp->p_pptr = rip;
 	rpp->p_rtime = 0;
@@ -195,16 +206,85 @@ again:
 	rpp->p_hash = *hash;
 	*hash = rpp;
 
-	/*
-	 * some shuffling here -- in most UNIX kernels, the allproc assign
-	 * is done after grabbing the struct off of the freeproc list.  We
-	 * wait so that if the clock interrupts us and vmtotal walks allproc
-	 * the text pointer isn't garbage.
-	 */
 	rpp->p_nxt = allproc;				/* onto allproc */
-	rpp->p_nxt->p_prev = &rpp->p_nxt;	/*   (allproc is never NULL) */
+	rpp->p_nxt->p_prev = &rpp->p_nxt;	/* (allproc is never NULL) */
 	rpp->p_prev = &allproc;
 	allproc = rpp;
+
+	/*
+	 * Make a proc table entry for the new process.
+	 * Start by zeroing the section of proc that is zero-initialized,
+	 * then copy the section that is copied directly from the parent.
+	 */
+	bzero(&rpp->p_startzero, (unsigned) ((caddr_t)&rpp->p_endzero - (caddr_t)&rpp->p_startzero));
+	bzero(&rip->p_startzero, (unsigned) ((caddr_t)&rpp->p_endzero - (caddr_t)&rpp->p_startzero));
+
+	rpp->p_flag = P_INMEM;
+	MALLOC(rpp->p_cred, struct pcred *, sizeof(struct pcred), M_SUBPROC, M_WAITOK);
+	bcopy(rip->p_cred, rpp->p_cred, sizeof(*rpp->p_cred));
+	rpp->p_cred->p_refcnt = 1;
+	crhold(rip->p_ucred);
+
+	/* bump references to the text vnode (for procfs) */
+	rpp->p_textvp = rip->p_textvp;
+	if(rpp->p_textvp)
+		VREF(rpp->p_textvp);
+
+	rpp->p_fd = fdcopy(rip);
+
+	if(copyproc(rip, rpp, isvfork)) {
+		continue;
+	}
+
+	/*
+	 * If p_limit is still copy-on-write, bump refcnt,
+	 * otherwise get a copy that won't be modified.
+	 * (If PL_SHAREMOD is clear, the structure is shared
+	 * copy-on-write.)
+	 */
+	if (rip->p_limit->p_lflags & PL_SHAREMOD)
+		rpp->p_limit = limcopy(rip->p_limit);
+	else {
+		rpp->p_limit = rip->p_limit;
+		rpp->p_limit->p_refcnt++;
+	}
+
+	if (rip->p_session->s_ttyvp != NULL && (rip->p_flag & P_CONTROLT))
+		rpp->p_flag |= P_CONTROLT;
+	if (isvfork)
+		rpp->p_flag |= P_PPWAIT;
+
+	rpp->p_pgrpnxt = rip->p_pgrpnxt;
+	rip->p_pgrpnxt = rpp;
+	rpp->p_pptr = rip;
+	rpp->p_osptr = rip->p_cptr;
+	if (rip->p_cptr)
+		rip->p_cptr->p_ysptr = rpp;
+	rip->p_cptr = rpp;
+
+	/*
+	 * set priority of child to be that of parent
+	 */
+	rpp->p_estcpu = rip->p_estcpu;
+
+	/*
+	 * This begins the section where we must prevent the parent
+	 * from being swapped.
+	 */
+	rip->p_flag |= P_NOSWAP;
+
+	return (0);
+}
+
+int
+copyproc(rip, rpp, isvfork)
+	register struct proc *rpp, *rip;
+	int isvfork;
+{
+	register int n;
+	struct file *fp;
+	int a1, s;
+	size_t a[3];
 
 	/*
 	 * Increase reference counts on shared objects.
@@ -215,38 +295,21 @@ again:
 			continue;
 		fp->f_count++;
 	}
-	if((rip->p_textvp != NULL) && !isvfork) {
-		VREF(rip->p_textvp);
-	}
-	VREF(u->u_cdir);
-	if (u->u_rdir) {
-		VREF(u->u_rdir);
-	}
-
-	/*
-	 * When the longjmp is executed for the new process,
-	 * here's where it will resume.
-	 */
-	if (setjmp(&u->u_ssave)) {
-		sureg();
-		return(1);
-	}
-
-	/* bump references to the text vnode (for procfs) */
-	rpp->p_textvp = rip->p_textvp;
-	if(rpp->p_textvp)
-		VREF(rpp->p_textvp);
-	rpp->p_fd = fdcopy(rip);
 
 	rpp->p_dsize = rip->p_dsize;
 	rpp->p_ssize = rip->p_ssize;
 	rpp->p_daddr = rip->p_daddr;
 	rpp->p_saddr = rip->p_saddr;
 	a1 = rip->p_addr;
-	if (isvfork)
-		a[2] = rmalloc(coremap, USIZE);
-	else
+	if (isvfork) {
+		//a[2] = MALLOC(coremap, struct map *, USIZE, M_COREMAP, M_WAITOK);
+
+		a[2] = malloc(coremap, USIZE);
+	} else {
+		//a[2] = MALLOC(coremap, struct map *, a, M_COREMAP, M_WAITOK);
+
 		a[2] = rmalloc3(coremap, rip->p_dsize, rip->p_ssize, USIZE, a);
+	}
 
 	/*
 	 * Partially simulate the environment of the new process so that
@@ -265,8 +328,7 @@ again:
 		swapout(rpp);
 		rip->p_stat = SRUN;
 		u->u_procp = rip;
-	}
-	else {
+	} else {
 		/*
 		 * There is core, so just copy.
 		 */
@@ -283,8 +345,10 @@ again:
 		rpp->p_stat = SRUN;
 		setrq(rpp);
 		splx(s);
+		splhigh();
 	}
 	rpp->p_flag |= P_SSWAP;
+
 	if (isvfork) {
 		/*
 		 *  Set the parent's sizes to 0, since the child now
@@ -292,14 +356,16 @@ again:
 		 *  (If we had to swap, just free parent resources.)
 		 *  Then wait for the child to finish with it.
 		 */
-		if (a[2] == NULL) {
-			rmfree(coremap, rip->p_dsize, rip->p_daddr);
-			rmfree(coremap, rip->p_ssize, rip->p_saddr);
-		}
 		rip->p_dsize = 0;
 		rip->p_ssize = 0;
+		rip->p_textvp = NULL;
 		rpp->p_flag |= P_SVFORK;
 		rip->p_flag |= P_SVFPRNT;
+		if (a[2] == NULL) {
+			//FREE(coremap, M_COREMAP);
+			mfree(coremap,rip->p_dsize,rip->p_daddr);
+			mfree(coremap,rip->p_ssize,rip->p_saddr);
+		}
 		while (rpp->p_flag & P_SVFORK)
 			sleep((caddr_t)rpp, PSWP + 1);
 		if ((rpp->p_flag & P_SLOAD) == 0)
@@ -312,7 +378,8 @@ again:
 		rpp->p_ssize = 0;
 		rpp->p_flag |= P_SVFDONE;
 		wakeup((caddr_t)rip);
+
 		rip->p_flag &= ~P_SVFPRNT;
 	}
-	return(0);
+	return (0);
 }

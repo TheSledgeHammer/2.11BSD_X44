@@ -6,14 +6,11 @@
  *	@(#)dir.h	1.2 (2.11BSD GTE) 11/4/94
  */
 
-#ifndef	_DIR_
-#define	_DIR_
+#ifndef	_UFS211_DIR_
+#define	_UFS211_DIR_
 
-#ifndef MAXNAMLEN
-#define MAXNAMLEN	63
-#endif
-
-#define DIRBLKSIZ	512
+#define UFS211_MAXNAMLEN	63
+#define UFS211_DIRBLKSIZ	512
 
 /*
  * inode numbers are ino_t rather than u_long now.  before, when v7direct
@@ -22,11 +19,11 @@
  * like a good idea to change the "real direct structure".  SMS
 */
 
-struct	direct {
-	ino_t	d_ino;			/* inode number of entry */
-	u_short	d_reclen;		/* length of this record */
-	u_short	d_namlen;		/* length of string in d_name */
-	char	d_name[MAXNAMLEN+1];	/* name must be no longer than this */
+struct	ufs211_direct {
+	ufs211_ino_t	d_ino;					/* inode number of entry */
+	u_short			d_reclen;				/* length of this record */
+	u_short			d_namlen;				/* length of string in d_name */
+	char			d_name[UFS211_MAXNAMLEN+1];	/* name must be no longer than this */
 };
 
 /*
@@ -57,51 +54,36 @@ struct	direct {
 
 #undef DIRSIZ
 #define DIRSIZ(dp) \
-    ((((sizeof (struct direct) - (MAXNAMLEN+1)) + (dp)->d_namlen+1) + 3) &~ 3)
+    ((((sizeof (struct direct) - (UFS211_MAXNAMLEN+1)) + (dp)->d_namlen+1) + 3) &~ 3)
 
 /*
  * Definitions for library routines operating on directories.
  */
-typedef struct _dirdesc {
-	int	dd_fd;
-	long	dd_loc;
-	long	dd_size;
-	char	dd_buf[DIRBLKSIZ];
-	struct direct	dd_cur;
-} DIR;
-
-#ifndef NULL
-#define NULL 0
-#endif
-
-#ifndef	KERNEL
-
-extern	DIR *opendir();
-extern	struct direct *readdir();
-extern	long telldir();
-extern	void seekdir();
-#define rewinddir(dirp)	seekdir((dirp), (long)0)
-#define dirfd(dirp) ((dirp)->dd_fd)
-extern	void closedir();
-
-#endif	KERNEL
+struct ufs211_dirdesc {
+	int						dd_fd;
+	long					dd_loc;
+	long					dd_size;
+	char					dd_buf[UFS211_DIRBLKSIZ];
+	struct 	ufs211_direct	dd_cur;
+};// DIR;
 
 /*
  * Template for manipulating directories.
  * Should use struct direct's, but the name field
  * is MAXNAMLEN - 1, and this just won't do.
  */
-#define dotdot_ino	dtdt_ino
+#define dotdot_ino		dtdt_ino
 #define dotdot_reclen	dtdt_rec
-#define dotdot_name	dtdt_name
-struct dirtemplate {
-	ino_t	dot_ino;
-	u_short	dot_reclen;
-	u_short	dot_namlen;
-	char	dot_name[2];		/* must be multiple of 4 */
-	ino_t	dotdot_ino;
-	u_short	dotdot_reclen;
-	u_short	dotdot_namlen;
-	char	dotdot_name[6];		/* ditto */
+#define dotdot_name		dtdt_name
+
+struct ufs211_dirtemplate {
+	ufs211_ino_t	dot_ino;
+	u_short			dot_reclen;
+	u_short			dot_namlen;
+	char			dot_name[2];		/* must be multiple of 4 */
+	ufs211_ino_t	dotdot_ino;
+	u_short			dotdot_reclen;
+	u_short			dotdot_namlen;
+	char			dotdot_name[6];		/* ditto */
 };
-#endif	_DIR_
+#endif	_UFS211_DIR_

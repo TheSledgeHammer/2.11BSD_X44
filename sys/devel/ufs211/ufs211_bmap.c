@@ -14,9 +14,10 @@
 #include <sys/systm.h>
 #include <sys/conf.h>
 #include <sys/uio.h>
-#include "../../devel/ufs211/ufs211_dir.h"
-#include "../../devel/ufs211/ufs211_fs.h"
-#include "../../devel/ufs211/ufs211_inode.h"
+
+#include "ufs211/ufs211_dir.h"
+#include "ufs211/ufs211_fs.h"
+#include "ufs211/ufs211_inode.h"
 
 /*
  * Bmap defines the structure of file system storage
@@ -28,15 +29,15 @@
  */
 daddr_t
 bmap(ip, bn, rwflg, flags)
-	register struct inode *ip;
-	daddr_t bn;
+	register struct ufs211_inode *ip;
+	ufs211_daddr_t bn;
 	int rwflg, flags;
 {
 	register int i;
 	register struct buf *bp;
 	struct buf *nbp;
 	int j, sh;
-	daddr_t nb, *bap, ra;
+	ufs211_daddr_t nb, *bap, ra;
 	int async = ip->i_fs->fs_flags & MNT_ASYNC;
 
 	if (bn < 0) {

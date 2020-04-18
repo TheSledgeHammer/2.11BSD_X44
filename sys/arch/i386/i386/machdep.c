@@ -79,6 +79,10 @@ extern vm_offset_t avail_end;
 #include <i386/isa/rtc.h>
 #include <machine/cons.h>
 
+#ifdef VM86
+#include <machine/vm86.h>
+#endif
+
 /*
  * Declare these as initialized data so we can patch them.
  */
@@ -110,6 +114,10 @@ int biosmem;
 
 extern cyloffset;
 extern int kstack[];
+
+struct pcb *curpcb;			/* our current running pcb */
+
+int	i386_use_fxsave;
 
 union descriptor gdt[NGDT];
 struct gate_descriptor idt[32+16];
@@ -303,6 +311,35 @@ startup(firstaddr)
 
 	cpu_setregs();
 }
+
+/*
+ * Set up proc0's TSS and LDT.
+ */
+void
+i386_proc0_tss_ldt_init()
+{
+	struct pcb *pcb;
+	int x;
+
+	curpcb = pcb = &proc0.p_addr->u_pcb;
+	pcb->pcb_flags = 0;
+	pcb->pcb_tss.tss_ioopt =
+	    ((caddr_t)pcb->pcb_iomap - (caddr_t)&pcb->pcb_tss) << 16;
+	for (x = 0; x < sizeof(pcb->pcb_iomap) / 4; x++)
+		pcb->pcb_iomap[x] = 0xffffffff;
+
+	pcb->pcb_ldt_sel = pmap_kernel()->pm_ldt_sel = GSEL(GLDT_SEL, SEL_KPL);
+	pcb->pcb_cr0 = rcr0();
+	pcb->pcb_tss.tss_ss0 = GSEL(GDATA_SEL, SEL_KPL);
+	pcb->pcb_tss.tss_esp0 = (int)proc0.p_addr + USPACE - 16;
+
+	ltr(proc0.p_md.md_tss_sel);
+	lldt(pcb->pcb_ldt_sel);
+
+	proc0.p_md.md_regs = (struct trapframe *)pcb->pcb_tss.tss_esp0 - 1;
+}
+
+
 
 #ifdef PGINPROF
 /*
@@ -663,7 +700,13 @@ setregs(p, elp, stack)
 #if NNPX > 0
 	npxinit(0x262);
 #endif
-
+	p->p_md.md_flags &= ~MDL_USEDFPU;
+	if (i386_use_fxsave) {
+		pcb->pcb_savefpu.sv_fx.fxv_env.fx_cw = ___NPX87___;
+		pcb->pcb_savefpu.sv_fx.fxv_env.fx_mxcsr = __MXCSR__;
+	} else {
+		pcb->pcb_savefpu.sv_87.sv_env.en_cw = ___NPX87___;
+	}
 	tf = p->p_md.md_regs;
 	tf->tf_gs = LSEL(LUDATA_SEL, SEL_UPL);
 	tf->tf_fs = LSEL(LUDATA_SEL, SEL_UPL);

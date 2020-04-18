@@ -108,22 +108,20 @@
 #define M_NFSRVDESC	59	/* NFS server socket descriptor */				/* UN-USED */
 #define M_NFSDIROFF	60	/* NFS directory offset data */					/* UN-USED */
 #define M_NFSBIGFH	61	/* NFS version 3 file handle */					/* UN-USED */
-#define	M_RMALLOC	62	/* Resource Map Malloc */
-#define	M_RMALLOC3	63	/* Resource Map Malloc3 */
 
 /**********************************************/
 /* Planned (New): Yet to be Implemented: */
-
-#define M_DIRHASH	64	/* UFS dirhash */								/* UN-USED */
-#define M_ZERO		65	/* Zero */
-#define M_EXEC		66	/* argument lists & other mem used by exec */
-#define M_WAPBL		67	/* UFS & VFS WAPBL */							/* UN-USED */
-#define M_TGRP		68	/* thread group header */						/* UN-USED */
-#define M_THREAD	69	/* thread structures */							/* UN-USED */
+#define M_DIRHASH	62	/* UFS dirhash */								/* UN-USED */
+#define M_ZERO		63	/* Zero */
+#define M_EXEC		64	/* argument lists & other mem used by exec */
+#define M_WAPBL		65	/* UFS & VFS WAPBL */							/* UN-USED */
+#define M_TGRP		66	/* thread group header */						/* UN-USED */
+#define M_THREAD	67	/* thread structures */							/* UN-USED */
 /**********************************************/
-
-#define	M_TEMP		74	/* misc temporary data buffers */
-#define	M_LAST		75	/* Must be last type + 1 */
+#define M_COREMAP	68	/* 2.11BSD's Coremap */
+#define M_SWAPMAP	69	/* 2.11BSD's Swapmap */
+#define	M_TEMP		70	/* misc temporary data buffers */
+#define	M_LAST		71	/* Must be last type + 1 */
 
 #define INITKMEMNAMES { \
 	"free",			/* 0 M_FREE */ 			\
@@ -188,17 +186,15 @@
 	"NFSV3 srvdesc",/* 59 M_NFSRVDESC */ 	\
 	"NFSV3 diroff",	/* 60 M_NFSDIROFF */	\
 	"NFSV3 bigfh",	/* 61 M_NFSBIGFH */ 	\
-	"rmalloc", 		/* 62 M_RMALLOC" */		\
-	"rmalloc3", 	/* 63 M_RMALLOC3" */ 	\
-	"UFS dirhash"	/* 64 M_DIRHASH */		\
-	"zero"			/* 65 M_ZERO */			\
-	"exec"			/* 66 M_EXEC */			\
-	"wapbl"			/* 67 M_WAPBL */		\
-	"tgrp"			/* 68 M_TGRP */			\
-	"thread"		/* 69 M_THREAD */		\
-	NULL, NULL,		 						\
-	NULL, NULL								\
-	"temp",			/* 74 M_TEMP */ 		\
+	"UFS dirhash"	/* 62 M_DIRHASH */		\
+	"zero"			/* 63 M_ZERO */			\
+	"exec"			/* 64 M_EXEC */			\
+	"wapbl"			/* 65 M_WAPBL */		\
+	"tgrp"			/* 66 M_TGRP */			\
+	"thread"		/* 67 M_THREAD */		\
+	"coremap"		/* 68 M_COREMAP */		\
+	"swapmap"		/* 69 M_SWAPMAP */		\
+	"temp",			/* 70 M_TEMP */ 		\
 }
 
 struct kmemstats {

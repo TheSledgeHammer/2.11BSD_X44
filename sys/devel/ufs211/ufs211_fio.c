@@ -14,8 +14,9 @@
 #include <sys/stat.h>
 #include <sys/systm.h>
 #include <sys/namei.h>
-#include "../../devel/ufs211/ufs211_fs.h"
-#include "../../devel/ufs211/ufs211_inode.h"
+#include "ufs211/ufs211_extern.h"
+#include "ufs211/ufs211_fs.h"
+#include "ufs211/ufs211_inode.h"
 
 /*
  * Check mode permission on inode pointer.
@@ -31,7 +32,7 @@
  * permissions.
  */
 access(ip, mode)
-	register struct inode *ip;
+	register struct ufs211_inode *ip;
 	int mode;
 {
 	register m;
@@ -50,8 +51,8 @@ access(ip, mode)
 		 * file system.
 		 */
 		if (ip->i_fs->fs_ronly != 0) {
-			if ((ip->i_mode & IFMT) != IFCHR &&
-			    (ip->i_mode & IFMT) != IFBLK) {
+			if ((ip->i_mode & UFS211_FMT) != UFS211_FCHR &&
+			    (ip->i_mode & UFS211_FMT) != UFS211_FBLK) {
 				u->u_error = EROFS;
 				return (1);
 			}
@@ -61,7 +62,7 @@ access(ip, mode)
 		 * the inode, try to free it up once.  If
 		 * we fail, we can't allow writing.
 		 */
-		if (ip->i_flag&ITEXT)
+		if (ip->i_flag& ITEXT)
 			xuntext(ip->i_text);
 		if (ip->i_flag & ITEXT) {
 			u->u_error = ETXTBSY;
@@ -109,7 +110,7 @@ suser()
 		u->u_acflag |= ASU;
 		return (1);
 	}
-	u.u_error = EPERM;
+	u->u_error = EPERM;
 	return (0);
 }
 
@@ -119,7 +120,7 @@ suser()
 */
 
 ufs_setattr(ip, vap)
-	register struct inode *ip;
+	register struct ufs211_inode *ip;
 	register struct vattr *vap;
 {
 	int error;
@@ -153,7 +154,7 @@ ufs_setattr(ip, vap)
 		if (error == chown1(ip, vap->va_uid, vap->va_gid))
 			return (error);
 	if (vap->va_size != (off_t) VNOVAL) {
-		if ((ip->i_mode & IFMT) == IFDIR)
+		if ((ip->i_mode & UFS211_FMT) == IFDIR)
 			return (EISDIR);
 		itrunc(ip, vap->va_size, 0);
 		if (u->u_error)
@@ -162,7 +163,7 @@ ufs_setattr(ip, vap)
 	if (vap->va_atime != (time_t) VNOVAL || vap->va_mtime != (time_t) VNOVAL) {
 		if (u->u_uid != ip->i_uid && !suser()
 				&& ((vap->va_vaflags & VA_UTIMES_NULL) == 0
-						|| access(ip, IWRITE)))
+						|| access(ip, UFS211_WRITE)))
 			return (u->u_error);
 		if (vap->va_atime != (time_t) VNOVAL
 				&& !(ip->i_fs->fs_flags & MNT_NOATIME))
@@ -179,9 +180,9 @@ ufs_setattr(ip, vap)
 }
 
 ufs_mountedon(dev)
-	dev_t dev;
+	ufs211_dev_t dev;
 {
-	register struct mount *mp;
+	register struct ufs211_mount *mp;
 
 	for (mp = mount; mp < &mount[NMOUNT]; mp++) {
 		if (mp->m_inodp == NULL)

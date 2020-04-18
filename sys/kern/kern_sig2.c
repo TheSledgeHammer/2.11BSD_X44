@@ -67,7 +67,7 @@ sigaction()
 		int	signum;
 		struct	sigaction *nsa;
 		struct	sigaction *osa;
-		} *uap = (struct a *)u->u_ap;
+	} *uap = (struct a *)u->u_ap;
 	struct sigaction vec;
 	register struct sigaction *sa;
 	register int signum;

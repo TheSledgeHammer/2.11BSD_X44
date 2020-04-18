@@ -11,10 +11,10 @@
 #include <sys/mount.h>
 #include <sys/kernel.h>
 #include <sys/buf.h>
-#include "../../devel/ufs211/ufs211_dir.h"
-#include "../../devel/ufs211/ufs211_fs.h"
-#include "../../devel/ufs211/ufs211_inode.h"
-#include "../../devel/ufs211/ufs211_quota.h"
+#include "ufs211/ufs211_dir.h"
+#include "ufs211/ufs211_fs.h"
+#include "ufs211/ufs211_inode.h"
+#include "ufs211/ufs211_quota.h"
 
 typedef	struct fblk *FBLKP;
 
@@ -28,13 +28,13 @@ typedef	struct fblk *FBLKP;
  */
 struct buf *
 balloc(ip, flags)
-	struct inode *ip;
+	struct ufs211_inode *ip;
 	int flags;
 {
-	register struct fs *fs;
+	register struct ufs211_fs *fs;
 	register struct buf *bp;
 	int	async;
-	daddr_t bno;
+	ufs211_daddr_t bno;
 
 	fs = ip->i_fs;
 	async = fs->fs_flags & MNT_ASYNC;
@@ -44,7 +44,7 @@ balloc(ip, flags)
 	do {
 		if (fs->fs_nfree <= 0)
 			goto nospace;
-		if (fs->fs_nfree > NICFREE) {
+		if (fs->fs_nfree > UFS211_NICFREE) {
 			fserr(fs, "bad free count");
 			goto nospace;
 		}
@@ -70,7 +70,7 @@ balloc(ip, flags)
 		 * use some of the blocks in this freeblock, then crash
 		 * without a sync.
 		 */
-		bp = getblk(ip->i_dev, SUPERB);
+		bp = getblk(ip->i_dev, UFS211_SUPERB);
 		fs->fs_fmod = 0;
 		fs->fs_time = time.tv_sec;
 		{
@@ -127,18 +127,18 @@ nospace:
  */
 struct inode *
 ialloc(pip)
-	struct inode *pip;
+	struct ufs211_inode *pip;
 {
-	register struct fs *fs;
+	register struct ufs211_fs *fs;
 	register struct buf *bp;
-	register struct inode *ip;
+	register struct ufs211_inode *ip;
 	int i;
-	struct dinode *dp;
-	ino_t ino;
-	daddr_t adr;
-	ino_t inobas;
+	struct ufs211_dinode *dp;
+	ufs211_ino_t ino;
+	ufs211_daddr_t adr;
+	ufs211_ino_t inobas;
 	int first;
-	struct inode *ifind();
+	struct ufs211_inode *ifind();
 	char	*emsg = "no inodes free";
 
 	fs = pip->i_fs;
@@ -154,7 +154,7 @@ ialloc(pip)
 loop:
 	if (fs->fs_ninode > 0) {
 		ino = fs->fs_inode[--fs->fs_ninode];
-		if (ino <= ROOTINO)
+		if (ino <= UFS211_ROOTINO)
 			goto loop;
 		ip = iget(pip->i_dev, fs, ino);
 		if (ip == NULL)
@@ -174,7 +174,7 @@ loop:
 		goto loop;
 	}
 	fs->fs_ilock++;
-	if (fs->fs_nbehind < 4 * NICINOD) {
+	if (fs->fs_nbehind < 4 * UFS211_NICINOD) {
 		first = 1;
 		ino = fs->fs_lasti;
 #ifdef DIAGNOSTIC
@@ -186,7 +186,7 @@ loop:
 fromtop:
 		first = 0;
 		ino = 1;
-		adr = SUPERB+1;
+		adr = UFS211_SUPERB+1;
 		fs->fs_nbehind = 0;
 	}
 	for (;adr < fs->fs_isize;adr++) {
@@ -197,14 +197,14 @@ fromtop:
 			ino += INOPB;
 			continue;
 		}
-		dp = (struct dinode *)mapin(bp);
+		dp = (struct ufs211_dinode *)mapin(bp);
 		for (i = 0;i < INOPB;i++) {
 			if (dp->di_mode != 0)
 				goto cont;
 			if (ifind(pip->i_dev, ino))
 				goto cont;
 			fs->fs_inode[fs->fs_ninode++] = ino;
-			if (fs->fs_ninode >= NICINOD)
+			if (fs->fs_ninode >= UFS211_NICINOD)
 				break;
 		cont:
 			ino++;
@@ -212,10 +212,10 @@ fromtop:
 		}
 		mapout(bp);
 		brelse(bp);
-		if (fs->fs_ninode >= NICINOD)
+		if (fs->fs_ninode >= UFS211_NICINOD)
 			break;
 	}
-	if (fs->fs_ninode < NICINOD && first)
+	if (fs->fs_ninode < UFS211_NICINOD && first)
 		goto fromtop;
 	fs->fs_lasti = inobas;
 	fs->fs_ilock = 0;
@@ -235,12 +235,12 @@ fromtop:
  * specified device.
  */
 free(ip, bno)
-	struct inode *ip;
-	daddr_t bno;
+	struct ufs211_inode *ip;
+	ufs211_daddr_t bno;
 {
-	register struct fs *fs;
+	register struct ufs211_fs *fs;
 	register struct buf *bp;
-	struct fblk *fbp;
+	struct ufs211_fblk *fbp;
 
 	fs = ip->i_fs;
 	if (badblock(fs, bno)) {
@@ -279,8 +279,8 @@ free(ip, bno)
  * stores up to NICINOD I nodes in the super block and throws away any more.
  */
 ifree(ip, ino)
-	struct inode *ip;
-	ino_t ino;
+	struct ufs211_inode *ip;
+	ufs211_ino_t ino;
 {
 	register struct fs *fs;
 
@@ -304,7 +304,7 @@ ifree(ip, ino)
  *	fs: error message
  */
 fserr(fp, cp)
-	struct fs *fp;
+	struct ufs211_fs *fp;
 	char *cp;
 {
 	printf("%s: %s\n", fp->fs_fsmnt, cp);

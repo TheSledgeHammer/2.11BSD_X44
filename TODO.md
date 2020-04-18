@@ -36,6 +36,7 @@ TODO:
 		- wapbl
 			
 Kern:
+- kern_fork: newproc
 - vm_machdep.c: u->u_procp->p_p0br: (no reference in 4.4BSD-Lite2)
 	- 4.3BSD Reno/ 4.4BSD Remanent: once in struct proc. Obsolete?? 
 - if INET: remanents of 2.11BSD's networking stack overlay (keep in place for now)
@@ -48,6 +49,11 @@ Kern:
 	- struct u_ovd						/* automatic overlay data */
 	- remove duplicate and/or un-needed references (kinfo_proc)
 	- kinfo_proc: could be useful unless it's superceded by (ktrace or dtrace?) 
+
+Memory Segmentation (Hardware): CPU Registers
+Memory Segmentation (Software):
+Seperate Process Segments: text, data, stack
+Seperate Instruction & Data Spaces
 
 md_init & sysinit are not possible atm, they are intertwined with FreeBSD's linker_set & linker (executables), with many in kernel modules. Hence a massive amount of code injection/ rewrite would be needed in order to set this up correctly.
 NetBSD: has an equivalent linker (executables) in userspace. May cause more problems than it solves if moved to kernelspace.

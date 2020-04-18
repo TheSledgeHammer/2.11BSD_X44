@@ -110,9 +110,9 @@ struct	proc {
     void				*p_thread;		/* Id for this "thread"; Mach glue. XXX */
 
     struct	proc 	    *p_link;		/* linked list of running processes */
-    struct	user 		*p_addr;        /* address of u. area */
-    struct	user  		*p_daddr;		/* address of data area */
-    struct	user  		*p_saddr;		/* address of stack area */
+    struct	user 		*p_addr;        /* virtual address of u. area */
+    struct	user  		*p_daddr;		/* virtual address of data area */
+    struct	user  		*p_saddr;		/* virtual address of stack area */
 	size_t				p_dsize;		/* size of data area (clicks) */
 	size_t				p_ssize;		/* size of stack segment (clicks) */
     struct	k_itimerval p_krealtimer;   /* Alarm Timer?? in 2.11BSD */
@@ -177,8 +177,8 @@ struct emul {
 	caddr_t				(*e_vm_default_addr)(struct proc *, caddr_t, size_t);
 };
 
-#define	p_session	p_pgrp->pg_session
-#define	p_pgid		p_pgrp->pg_id
+#define	p_session		p_pgrp->pg_session
+#define	p_pgid			p_pgrp->pg_id
 
 /* stat codes */
 #define	SSLEEP	1		/* awaiting an event */
@@ -215,15 +215,15 @@ struct emul {
 #define P_EXEC		0x04000	/* Process called exec. */
 #define	P_SYSTEM	0x00200	/* System proc: no sigs, stats or swapping. */
 #define	P_INMEM		0x00004	/* Loaded into memory. */
-#define P_INEXEC	0x100000 /* Process is exec'ing and cannot be traced */
+#define P_INEXEC	0x100000/* Process is exec'ing and cannot be traced */
 
 
 /* Should probably be changed into a hold count (They have. -DG). */
 #define	P_NOSWAP	0x08000	/* Another flag to prevent swap out. */
 #define	P_PHYSIO	0x10000	/* Doing physical I/O. */
 
-#define	S_DATA	0			/* specified segment */
-#define	S_STACK	1
+#define	S_DATA		0		/* specified segment */
+#define	S_STACK		1
 
 #ifdef KERNEL
 #define	PID_MAX		30000
@@ -280,7 +280,7 @@ int		tsleep (void *chan, int pri, char *wmesg, int timo);
 void	unsleep (struct proc *);
 void	wakeup (void *chan);
 
-void	procinit (void));
+void	procinit (void);
 int 	chgproccnt (uid_t, int diff);
 int		acct_process (struct proc *);
 int		leavepgrp (struct proc *);

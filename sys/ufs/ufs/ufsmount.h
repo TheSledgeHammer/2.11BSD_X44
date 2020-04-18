@@ -37,7 +37,7 @@
  * Arguments to mount UFS-based filesystems
  */
 struct ufs_args {
-	char	*fspec;				/* block special device to mount */
+	char				*fspec;	/* block special device to mount */
 	struct	export_args export;	/* network export information */
 };
 
@@ -72,23 +72,23 @@ struct ufsmount {
 	dev_t	um_dev;					/* device mounted */
 	struct	vnode *um_devvp;		/* block device mounted vnode */
 
-	union {					/* pointer to superblock */
+	union {							/* pointer to superblock */
 		struct	lfs *lfs;		/* LFS */
 		struct	fs *fs;			/* FFS */
 	} ufsmount_u;
 #define	um_fs	ufsmount_u.fs
 #define	um_lfs	ufsmount_u.lfs
 
-	struct	vnode *um_quotas[MAXQUOTAS];	/* pointer to quota files */
-	struct	ucred *um_cred[MAXQUOTAS];		/* quota file access cred */
-	u_long	um_nindir;						/* indirect ptrs per block */
-	u_long	um_bptrtodb;					/* indir ptr to disk block */
-	u_long	um_seqinc;						/* inc between seq blocks */
-	time_t	um_btime[MAXQUOTAS];			/* block quota time limit */
-	time_t	um_itime[MAXQUOTAS];			/* inode quota time limit */
-	char	um_qflags[MAXQUOTAS];			/* quota specific flags */
-	struct	netexport um_export;			/* export information */
-	int64_t	um_savedmaxfilesize;			/* XXX - limit maxfilesize */
+	struct	vnode *um_quotas[MAXQUOTAS];		/* pointer to quota files */
+	struct	ucred *um_cred[MAXQUOTAS];			/* quota file access cred */
+	u_long	um_nindir;							/* indirect ptrs per block */
+	u_long	um_bptrtodb;						/* indir ptr to disk block */
+	u_long	um_seqinc;							/* inc between seq blocks */
+	time_t	um_btime[MAXQUOTAS];				/* block quota time limit */
+	time_t	um_itime[MAXQUOTAS];				/* inode quota time limit */
+	char	um_qflags[MAXQUOTAS];				/* quota specific flags */
+	struct	netexport um_export;				/* export information */
+	int64_t	um_savedmaxfilesize;				/* XXX - limit maxfilesize */
 
 	TAILQ_HEAD(inodelst, inode) um_snapshots; 	/* list of active snapshots */
 	daddr_t	*um_snapblklist;					/* snapshot block hints list */

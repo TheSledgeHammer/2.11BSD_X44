@@ -92,7 +92,7 @@ int
 procxmt(p)
 	register struct proc *p;
 {
-	register int i, *poff;
+	register int i, *poff, *paln;
 	extern char kstack[];
 
 	if (ipc.ip_lock != u->u_procp->p_pid)
@@ -158,13 +158,17 @@ procxmt(p)
 	case PT_WRITE_U:
 		i = (int)ipc.ip_addr;
 		poff = (int *)PHYSOFF(kstack, i);
+		paln = (int *)PHYSALIGNED(i);
+		if(paln >= (int *)&u->u_fps && paln < (int *)&u->u_fps.u_fpregs[6])
+			goto ok;
 		for (i=0; i < NIPCREG; i++)
 			if (poff == &u->u_ar0[ipcreg[i]])
 				goto ok;
 
 		if (poff == &u->u_ar0[PS]) {
-			ipc.ip_data |= PSL_USERSET;
-			ipc.ip_data &= ~PSL_USERCLR;
+			ipc.ip_data |= PSL_USERSET;		/* user space */
+			ipc.ip_data &= ~PSL_USERCLR;	/* priority 0 */
+/* overlay was here */
 
 #ifdef PSL_CM_CLR
 			if (ipc.ip_data & PSL_CM)

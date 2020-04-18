@@ -39,7 +39,7 @@
 #ifndef _UVM_UVM_AOBJ_H_
 #define _UVM_UVM_AOBJ_H_
 
-#include <uvm.h>
+#include <vm.h>
 
 /*
  * An anonymous UVM object (aobj) manages anonymous-memory.  In addition to
@@ -112,7 +112,7 @@ struct uao_swhash_elt {
  * => only one of u_swslots and u_swhash is used in any given aobj
  */
 
-struct uvm_aobj {
+struct uvm_aobject {
 	struct vm_object 		u_obj; 			/* has: lock, pgops, #pages, #refs */
 	//pgoff_t 				u_pages;	 	/* number of pages in entire object */
 	int 					u_flags;		/* the flags (see uvm_aobj.h) */
@@ -123,11 +123,11 @@ struct uvm_aobj {
 				 	 	 	 	 	 	 	 */
 	struct uao_swhash 		*u_swhash;
 	u_long 					u_swhashmask;	/* mask for hashtable */
-	LIST_ENTRY(uvm_aobj) 	u_list;			/* global list of aobjs */
+	LIST_ENTRY(uvm_aobject) u_list;			/* global list of aobjs */
 	int 					u_freelist;		/* freelist to allocate pages from */
 };
 
-static void	uao_free(struct uvm_aobj *);
+static void	uao_free(struct uvm_aobject *);
 static int	uao_get(struct vm_object *, voff_t, struct vm_page **, int *, int, vm_prot_t, int, int);
 static int	uao_put(struct vm_object *, voff_t, voff_t, int);
 
@@ -135,8 +135,8 @@ static int	uao_put(struct vm_object *, voff_t, voff_t, int);
 static struct uao_swhash_elt *uao_find_swhash_elt
     (struct uvm_aobj *, int, bool);
 
-static boolean_t uao_pagein(struct uvm_aobj *, int, int);
-static boolean_t uao_pagein_page(struct uvm_aobj *, int);
+static boolean_t uao_pagein(struct uvm_aobject *, int, int);
+static boolean_t uao_pagein_page(struct uvm_aobject *, int);
 #endif /* defined(VMSWAP) */
 
 static struct vm_page	*uao_pagealloc(struct vm_object *, voff_t, int);
@@ -151,13 +151,13 @@ static struct vm_page	*uao_pagealloc(struct vm_object *, voff_t, int);
 
 #ifdef _KERNEL
 void		uao_init(void);
-int			uao_set_swslot(struct uvm_object *, int, int);
+int			uao_set_swslot(struct vm_object *, int, int);
 
 #if	defined(VMSWAP)
-int			uao_find_swslot(struct uvm_object *, int);
-void		uao_dropswap(struct uvm_object *, int);
+int			uao_find_swslot(struct vm_object *, int);
+void		uao_dropswap(struct vm_object *, int);
 boolean_t	uao_swap_off(int, int);
-void		uao_dropswap_range(struct uvm_object *, voff_t, voff_t);
+void		uao_dropswap_range(struct vm_object *, voff_t, voff_t);
 #else
 #define		uao_find_swslot(obj, off)	(__USE(off), 0)
 #define		uao_dropswap(obj, off)			/* nothing */

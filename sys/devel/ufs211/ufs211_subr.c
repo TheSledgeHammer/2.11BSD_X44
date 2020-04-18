@@ -13,10 +13,10 @@
 #include <sys/mount.h>
 #include <sys/kernel.h>
 #include <sys/buf.h>
-#include "ufs211_inode.h"
-#include "../../devel/ufs211/ufs211_fs.h"
-#include "../../devel/ufs211/ufs211_inode.h"
-#include "../../devel/ufs211/ufs211_quota.h"
+#include "ufs211/ufs211_fs.h"
+#include "ufs211/ufs211_inode.h"
+#include "ufs211/ufs211_quota.h"
+#include "ufs211/ufs211_mount.h"
 
 /*
  * Go through the mount table looking for filesystems which have been modified.
@@ -25,25 +25,24 @@
  */
 sync()
 {
-	register struct mount *mp;
-	register struct fs *fs;
+	register struct ufs211_mount *mp;
+	register struct ufs211_fs *fs;
 	int async;
 
-	if	(updlock)
+	if (updlock)
 		return;
 	updlock++;
-	for	(mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
-		{
-		if	(mp->m_inodp == NULL || mp->m_dev == NODEV)
+	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++) {
+		if (mp->m_inodp == NULL || mp->m_dev == NODEV)
 			continue;
 		fs = &mp->m_filsys;
-		if	(fs->fs_fmod == 0 || fs->fs_ilock || fs->fs_flock)
+		if (fs->fs_fmod == 0 || fs->fs_ilock || fs->fs_flock)
 			continue;
 		async = mp->m_flags & MNT_ASYNC;
 		mp->m_flags &= ~MNT_ASYNC;
 		ufs_sync(mp);
 		mp->m_flags |= async;
-		}
+	}
 	updlock = 0;
 }
 
@@ -69,7 +68,7 @@ syncip(ip)
 	register struct buf *lastbufp;
 	long lbn, lastlbn;
 	register int s;
-	daddr_t blkno;
+	ufs211_daddr_t blkno;
 
 	lastlbn = howmany(ip->i_size, DEV_BSIZE);
 	if (lastlbn < nbuf / 2) {
@@ -127,16 +126,16 @@ badblock(fp, bn)
  */
 struct fs *
 getfs(dev)
-	dev_t dev;
+	ufs211_dev_t dev;
 {
-	register struct mount *mp;
-	register struct fs *fs;
+	register struct ufs211_mount *mp;
+	register struct ufs211_fs *fs;
 
 	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++) {
 		if (mp->m_inodp == NULL || mp->m_dev != dev)
 			continue;
 		fs = &mp->m_filsys;
-		if (fs->fs_nfree > NICFREE || fs->fs_ninode > NICINOD) {
+		if (fs->fs_nfree > UFS211_NICFREE || fs->fs_ninode > UFS211_NICINOD) {
 			fserr(fs, "bad count");
 			fs->fs_nfree = fs->fs_ninode = 0;
 		}
@@ -160,9 +159,9 @@ getfs(dev)
  * as long as the file system is mounted.
  */
 getfsx(dev)
-	dev_t dev;
+ufs211_dev_t dev;
 {
-	register struct mount *mp;
+	register struct ufs211_mount *mp;
 
 	if (dev == swapdev)
 		return (0377);

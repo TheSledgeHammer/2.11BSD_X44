@@ -51,35 +51,35 @@
 #define	ALIGNBYTES		3
 #define	ALIGN(p)		(((u_int)(p) + ALIGNBYTES) &~ ALIGNBYTES)
 
-#define	NBPG			4096		/* bytes/page */
-#define	PGOFSET			(NBPG-1)	/* byte offset into page */
-#define	PGSHIFT			12			/* LOG2(NBPG) */
+#define	NBPG			4096			/* bytes/page */
+#define	PGOFSET			(NBPG-1)		/* byte offset into page */
+#define	PGSHIFT			12				/* LOG2(NBPG) */
 #define	NPTEPG			(NBPG/(sizeof (struct pte)))
 
-#define NBPDR			(1024*NBPG)	/* bytes/page dir */
-#define	PDROFSET		(NBPDR-1)	/* byte offset into page dir */
-#define	PDRSHIFT		22			/* LOG2(NBPDR) */
+#define NBPDR			(1024*NBPG)		/* bytes/page dir */
+#define	PDROFSET		(NBPDR-1)		/* byte offset into page dir */
+#define	PDRSHIFT		22				/* LOG2(NBPDR) */
 
-#define	KERNBASE		0xFE000000	/* start of kernel virtual */
+#define	KERNBASE		0xFE000000		/* start of kernel virtual */
 #define	BTOPKERNBASE	((u_long)KERNBASE >> PGSHIFT)
 
 #define	DEV_BSIZE		512
-#define	DEV_BSHIFT		9			/* log2(DEV_BSIZE) */
+#define	DEV_BSHIFT		9				/* log2(DEV_BSIZE) */
 #define BLKDEV_IOSIZE	2048
-#define	MAXPHYS			(64 * 1024)	/* max raw I/O transfer size */
+#define	MAXPHYS			(64 * 1024)		/* max raw I/O transfer size */
 
 #define	CLSIZE			1
 #define	CLSIZELOG2		0
 
 /* NOTE: SSIZE, SINCR and UPAGES must be multiples of CLSIZE */
-#define	SSIZE			1		/* initial stack size/NBPG */
-#define	SINCR			1		/* increment of stack/NBPG */
+#define	SSIZE			1				/* initial stack size/NBPG */
+#define	SINCR			1				/* increment of stack/NBPG */
 
-#define	UPAGES			2		/* pages of u-area */
-
+#define	UPAGES			2				/* pages of u-area */
+#define	USPACE			(UPAGES * NBPG)	/* total size of u-area */
 
 #ifndef KSTACK_PAGES
-#define KSTACK_PAGES 4			/* Includes pcb! */
+#define KSTACK_PAGES 4					/* Includes pcb! */
 #endif
 
 #if KSTACK_PAGES < 4
@@ -164,6 +164,7 @@
 
 #ifndef _SIMPLELOCK_H_
 #define _SIMPLELOCK_H_
+
 /*
  * A simple spin lock.
  *
@@ -178,6 +179,7 @@ struct simplelock {
 };
 
 #if !defined(DEBUG) && NCPUS > 1
+
 /*
  * The simple-lock routines are the primitives out of which the lock
  * package is built. The machine-dependent code must implement an

@@ -17,10 +17,12 @@
 #include <sys/stat.h>
 #include <sys/disklabel.h>
 #include <sys/ioctl.h>
-#include "../../devel/ufs211/ufs211_dir.h"
-#include "../../devel/ufs211/ufs211_fs.h"
-#include "../../devel/ufs211/ufs211_inode.h"
-#include "../../devel/ufs211/ufs211_quota.h"
+#include "ufs211/ufs211_extern.h"
+#include "ufs211/ufs211_mount.h"
+#include "ufs211/ufs211_dir.h"
+#include "ufs211/ufs211_fs.h"
+#include "ufs211/ufs211_inode.h"
+#include "ufs211/ufs211_quota.h"
 
 smount()
 {
@@ -29,12 +31,12 @@ smount()
 		char	*freg;
 		int	flags;
 	} *uap = (struct a *)u->u_ap;
-	dev_t dev;
-	register struct inode *ip;
-	register struct fs *fs;
+	ufs211_dev_t dev;
+	register struct ufs211_inode *ip;
+	register struct ufs211_fs *fs;
 	struct nameidata nd;
 	struct nameidata *ndp = &nd;
-	struct mount *mp;
+	struct ufs211_mount *mp;
 	u_int lenon, lenfrom;
 	int error = 0;
 	char mnton[MNAMELEN], mntfrom[MNAMELEN];
@@ -44,7 +46,7 @@ smount()
 	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->freg);
 	if ((ip = namei(ndp)) == NULL)
 		return;
-	if ((ip->i_mode & IFMT) != IFDIR) {
+	if ((ip->i_mode & UFS211_FMT) != UFS211_FDIR) {
 		error = ENOTDIR;
 		goto cmnout;
 	}
@@ -57,9 +59,8 @@ smount()
 
 	if (uap->flags & MNT_UPDATE) {
 		fs = ip->i_fs;
-		mp = (struct mount *)
-		((int)fs - offsetof(struct mount, m_filsys));
-		if (ip->i_number != ROOTINO) {
+		mp = ((int)fs - offsetof(mp, mp->m_filsys));
+		if (ip->i_number != UFS211_ROOTINO) {
 			error = EINVAL; /* Not a mount point */
 			goto cmnout;
 		}
@@ -104,7 +105,7 @@ smount()
 		 * currently be a mount point.  Mount points have an inode number of (you
 		 * guessed it) ROOTINO which is 2.
 		 */
-		if (ip->i_count != 1 || (ip->i_number == ROOTINO)) {
+		if (ip->i_count != 1 || (ip->i_number == UFS211_ROOTINO)) {
 			error = EBUSY;
 			goto cmnout;
 		}
@@ -125,34 +126,34 @@ cmnout:
 }
 
 mount_updname(fs, on, from, lenon, lenfrom)
-	struct	fs	*fs;
+	struct	ufs211_fs	*fs;
 	char	*on, *from;
 	int	lenon, lenfrom;
 {
-	struct	mount	*mp;
-	register struct	xmount	*xmp;
+	struct	ufs211_mount	*mp;
+	register struct	ufs211_xmount	*xmp;
 
 	bzero(fs->fs_fsmnt, sizeof (fs->fs_fsmnt));
 	bcopy(on, fs->fs_fsmnt, sizeof (fs->fs_fsmnt) - 1);
-	mp = (struct mount *)((int)fs - offsetof(struct mount, m_filsys));
-	xmp = (struct xmount *)SEG5;
-	mapseg5(mp->m_extern, XMOUNTDESC);
+	mp = ((int)fs - offsetof(mp, mp->m_filsys));
+	xmp = (struct ufs211_xmount *)SEG5;
+	//mapseg5(mp->m_extern, XMOUNTDESC);
 	bzero(xmp, sizeof (struct xmount));
 	bcopy(on, xmp->xm_mnton, lenon);
 	bcopy(from, xmp->xm_mntfrom, lenfrom);
-	normalseg5();
+	//normalseg5();
 }
 
 /* this routine has races if running twice */
-struct fs *
+struct ufs211_fs *
 mountfs(dev, flags, ip)
-	dev_t dev;
+	ufs211_dev_t dev;
 	int flags;
-	struct inode *ip;
+	struct ufs211_inode *ip;
 {
-	register struct mount *mp = 0;
+	register struct ufs211_mount *mp = 0;
 	struct buf *tp = 0;
-	register struct fs *fs;
+	register struct ufs211_fs *fs;
 	register int error;
 	int ronly = flags & MNT_RDONLY;
 	int needclose = 0;
@@ -186,7 +187,7 @@ mountfs(dev, flags, ip)
 			}
 		}
 	needclose = 1;
-	tp = bread(dev, SBLOCK);
+	tp = bread(dev, UFS211_SBLOCK);
 	if (tp->b_flags & B_ERROR)
 		goto out;
 	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
@@ -206,7 +207,7 @@ found:
 	mp->m_inodp = ip;	/* reserve slot */
 	mp->m_dev = dev;
 	fs = &mp->m_filsys;
-	bcopy(mapin(tp), (caddr_t)fs, sizeof(struct fs));
+	bcopy(mapin(tp), (caddr_t)fs, sizeof(struct ufs211_fs));
 	mapout(tp);
 	brelse(tp);
 	tp = 0;
@@ -254,9 +255,9 @@ umount()
 unmount1(fname)
 	caddr_t fname;
 {
-	dev_t dev;
-	register struct mount *mp;
-	register struct inode *ip;
+	ufs211_dev_t dev;
+	register struct ufs211_mount *mp;
+	register struct ufs211_inode *ip;
 	register int error;
 	int aflag;
 
@@ -268,7 +269,7 @@ unmount1(fname)
 			goto found;
 	return (EINVAL);
 found:
-	xumount(dev);	/* remove unused sticky files from text table */
+	//xumount(dev);	/* remove unused sticky files from text table */
 	nchinval(dev);	/* flush the name cache */
 	aflag = mp->m_flags & MNT_ASYNC;
 	mp->m_flags &= ~MNT_ASYNC;	/* Don't want async when unmounting */
@@ -310,10 +311,10 @@ found:
  */
 getmdev(pdev, fname)
 	caddr_t fname;
-	dev_t *pdev;
+	ufs211_dev_t *pdev;
 {
-	register dev_t dev;
-	register struct inode *ip;
+	register ufs211_dev_t dev;
+	register struct ufs211_inode *ip;
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
 
@@ -326,7 +327,7 @@ getmdev(pdev, fname)
 			return (ENODEV); /* needs translation */
 		return (u->u_error);
 	}
-	if ((ip->i_mode&IFMT) != IFBLK) {
+	if ((ip->i_mode&UFS211_FMT) != UFS211_FBLK) {
 		iput(ip);
 		return (ENOTBLK);
 	}

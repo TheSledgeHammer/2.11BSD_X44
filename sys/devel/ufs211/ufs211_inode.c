@@ -6,7 +6,7 @@
  *	@(#)ufs_inode.c	1.7 (2.11BSD GTE) 1997/2/7
  */
 
-#include "../../devel/ufs211/ufs211_inode.h"
+
 
 #include <sys/param.h>
 
@@ -17,8 +17,9 @@
 #include <sys/buf.h>
 #include <sys/systm.h>
 #include <sys/syslog.h>
-#include "../../devel/ufs211/ufs211_fs.h"
-#include "../../devel/ufs211/ufs211_quota.h"
+#include "ufs211/ufs211_inode.h"
+#include "ufs211/ufs211_fs.h"
+#include "ufs211/ufs211_quota.h"
 
 #define	INOHSZ	16		/* must be power of two */
 #define	INOHASH(dev,ino)	(((dev)+(ino))&(INOHSZ-1))
@@ -37,7 +38,7 @@ struct inode *ifreeh, **ifreet;
 ihinit()
 {
 	register int i;
-	register struct inode *ip = inode;
+	register struct ufs211_inode *ip = inode;
 	register union  ihead *ih = ihead;
 
 	for (i = INOHSZ; --i >= 0; ih++) {
@@ -63,19 +64,19 @@ ihinit()
 /*
  * Find an inode if it is incore.
  */
-struct inode *
+struct ufs211_inode *
 ifind(dev, ino)
-	register dev_t dev;
-	register ino_t ino;
+	register ufs211_dev_t dev;
+	register ufs211_ino_t ino;
 {
-	register struct inode *ip;
+	register struct ufs211_inode *ip;
 	union ihead *ih;
 
 	ih = &ihead[INOHASH(dev, ino)];
-	for (ip = ih->ih_chain[0]; ip != (struct inode *)ih; ip = ip->i_forw)
+	for (ip = ih->ih_chain[0]; ip != (struct ufs211_inode *)ih; ip = ip->i_forw)
 		if (ino == ip->i_number && dev == ip->i_dev)
 			return(ip);
-	return((struct inode *)NULL);
+	return((struct ufs211_inode *)NULL);
 }
 
 /*
@@ -93,19 +94,17 @@ ifind(dev, ino)
  *	system is not in the mount table.
  *	"cannot happen"
  */
-struct inode *
+struct ufs211_inode *
 iget(dev, fs, ino)
-	dev_t dev;
-	register struct fs *fs;
-	ino_t ino;
+	ufs211_dev_t dev;
+	register struct ufs211_fs *fs;
+	ufs211_ino_t ino;
 {
-	register struct inode *ip;
+	register struct ufs211_inode *ip;
 	union ihead *ih;
 	struct buf *bp;
-	struct dinode *dp;
-#ifdef EXTERNALITIMES
-	struct icommon2 xic2;
-#endif
+	struct ufs211_dinode *dp;
+	struct ufs211_icommon2 xic2;
 #ifdef	QUOTA
 	struct dquot **xdq;
 #endif
@@ -127,7 +126,7 @@ loop:
 				goto loop;
 			}
 			if ((ip->i_flag&IMOUNT) != 0) {
-				register struct mount *mp;
+				register struct ufs211_mount *mp;
 
 				for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
 					if(mp->m_inodp == ip) {
@@ -139,7 +138,7 @@ loop:
 				panic("no imt");
 			}
 			if (ip->i_count == 0) {		/* ino on free list */
-				register struct inode *iq;
+				register struct ufs211_inode *iq;
 
 				if (iq == ip->i_freef)
 					iq->i_freeb = ip->i_freeb;
@@ -156,13 +155,13 @@ loop:
 
 	if ((ip = ifreeh) == NULL) {
 		tablefull("inode");
-		u.u_error = ENFILE;
+		u->u_error = ENFILE;
 		return(NULL);
 	}
 	if (ip->i_count)
 		panic("free inode isn't");
 {
-	register struct inode *iq;
+	register struct ufs211_inode *iq;
 
 	if (iq == ip->i_freef)
 		iq->i_freeb = &ifreeh;
@@ -221,7 +220,7 @@ loop:
 		iput(ip);
 		return(NULL);
 	}
-	dp = (struct dinode *)mapin(bp);
+	dp = (struct ufs211_dinode *)mapin(bp);
 	dp += itoo(ino);
 	ip->i_ic1 = dp->di_ic1;
 	ip->i_flags = dp->di_flags;
@@ -230,7 +229,7 @@ loop:
 #else
 	ip->i_ic2 = dp->di_ic2;
 #endif
-	bcopy(dp->di_addr, ip->i_addr, NADDR * sizeof (daddr_t));
+	bcopy(dp->di_addr, ip->i_addr, NADDR * sizeof (ufs211_daddr_t));
 	mapout(bp);
 	brelse(bp);
 #ifdef EXTERNALITIMES
@@ -258,14 +257,14 @@ loop:
  * the inode pointer is valid.
  */
 igrab(ip)
-	register struct inode *ip;
+	register struct ufs211_inode *ip;
 {
 	while ((ip->i_flag&ILOCKED) != 0) {
 		ip->i_flag |= IWANT;
 		sleep((caddr_t)ip, PINOD);
 	}
 	if (ip->i_count == 0) {		/* ino on free list */
-		register struct inode *iq;
+		register struct ufs211_inode *iq;
 
 		if (iq == ip->i_freef)
 			iq->i_freeb = ip->i_freeb;
@@ -287,7 +286,7 @@ igrab(ip)
  * truncate and deallocate the file.
  */
 iput(ip)
-	register struct inode *ip;
+	register struct ufs211_inode *ip;
 {
 
 #ifdef notnow
@@ -304,7 +303,7 @@ iput(ip)
 }
 
 irele(ip)
-	register struct inode *ip;
+	register struct ufs211_inode *ip;
 {
 	if (ip->i_count == 1) {
 		ip->i_flag |= ILOCKED;
@@ -358,16 +357,16 @@ irele(ip)
  * i/o order so wait for the write to complete.
  */
 iupdat(ip, ta, tm, waitfor)
-	struct inode *ip;
+	struct ufs211_inode *ip;
 	struct timeval *ta, *tm;
 	int waitfor;
 {
 	register struct buf *bp;
-	register struct dinode *dp;
+	register struct ufs211_dinode *dp;
 #ifdef EXTERNALITIMES
-	struct icommon2 xic2, *xicp2;
+	struct ufs211_icommon2 xic2, *xicp2;
 #endif
-	register struct inode *tip = ip;
+	register struct ufs211_inode *tip = ip;
 
 	if ((tip->i_flag & (IUPD|IACC|ICHG|IMOD)) == 0)
 		return;
@@ -406,7 +405,7 @@ iupdat(ip, ta, tm, waitfor)
 #else
 	dp->di_ic2 = tip->i_ic2;
 #endif
-	bcopy(ip->i_addr, dp->di_addr, NADDR * sizeof (daddr_t));
+	bcopy(ip->i_addr, dp->di_addr, NADDR * sizeof (ufs211_daddr_t));
 	mapout(bp);
 	if (waitfor && ((ip->i_fs->fs_flags & MNT_ASYNC) == 0))
 		bwrite(bp);
@@ -426,17 +425,17 @@ iupdat(ip, ta, tm, waitfor)
  * NB: triple indirect blocks are untested.
  */
 itrunc(oip,length, ioflags)
-	register struct inode *oip;
+	register struct ufs211_inode *oip;
 	u_long length;
 	int	ioflags;
 {
-	daddr_t lastblock;
+		ufs211_daddr_t lastblock;
 	register int i;
-	register struct inode *ip;
-	daddr_t bn, lastiblock[NIADDR];
+	register struct ufs211_inode *ip;
+	ufs211_daddr_t bn, lastiblock[NIADDR];
 	struct buf *bp;
 	int offset, level;
-	struct inode tip;
+	struct ufs211_inode tip;
 	int aflags;
 #ifdef QUOTA
 	long bytesreleased;
@@ -465,7 +464,7 @@ itrunc(oip,length, ioflags)
 	 */
 	if (oip->i_size < length) {
 		bn = bmap(oip, lblkno(length - 1), B_WRITE, aflags);
-		if (u.u_error || bn < 0)
+		if (u->u_error || bn < 0)
 			return;
 #ifdef	QUOTA
 		bytesreleased = oip->i_size - length;
@@ -494,11 +493,11 @@ itrunc(oip,length, ioflags)
 	offset = blkoff(length);
 	if (offset) {
 		bn = bmap(oip, lblkno(length), B_WRITE, aflags);
-		if (u.u_error || bn < 0)
+		if (u->u_error || bn < 0)
 			return;
 		bp = bread(oip->i_dev, bn);
 		if (bp->b_flags & B_ERROR) {
-			u.u_error = EIO;
+			u->u_error = EIO;
 			brelse(bp);
 			return;
 		}
@@ -591,13 +590,13 @@ updret:
  * NB: triple indirect blocks are untested.
  */
 indirtrunc(ip, bn, lastbn, level, aflags)
-	struct inode *ip;
-	daddr_t bn, lastbn;
+	struct ufs211_inode *ip;
+	ufs211_daddr_t bn, lastbn;
 	int level;
 	int aflags;
 {
 	register struct buf *bp;
-	daddr_t nb, last;
+	ufs211_daddr_t nb, last;
 	long factor;
 
 	/*
@@ -625,7 +624,7 @@ indirtrunc(ip, bn, lastbn, level, aflags)
 	 * and update on disk copy first.
 	 */
 	{
-		register daddr_t *bap;
+		register ufs211_daddr_t *bap;
 		register struct buf *cpy;
 
 		bp = bread(ip->i_dev, bn);
@@ -635,9 +634,9 @@ indirtrunc(ip, bn, lastbn, level, aflags)
 		}
 		cpy = geteblk();
 		copy(bftopaddr(bp), bftopaddr(cpy), btoc(DEV_BSIZE));
-		bap = (daddr_t *)mapin(bp);
+		bap = (ufs211_daddr_t *)mapin(bp);
 		bzero((caddr_t)&bap[last + 1],
-		    (u_int)(NINDIR - (last + 1)) * sizeof(daddr_t));
+		    (u_int)(NINDIR - (last + 1)) * sizeof(ufs211_daddr_t));
 		mapout(bp);
 		if (aflags & B_SYNC)
 			bwrite(bp);
@@ -657,9 +656,9 @@ indirtrunc(ip, bn, lastbn, level, aflags)
 	if (level == SINGLE)
 		trsingle(ip, bp, last, aflags);
 	else {
-		register daddr_t *bstart, *bstop;
+		register ufs211_daddr_t *bstart, *bstop;
 
-		bstart = (daddr_t *)mapin(bp);
+		bstart = (ufs211_daddr_t *)mapin(bp);
 		bstop = &bstart[last];
 		bstart += NINDIR - 1;
 		/*
@@ -669,7 +668,7 @@ indirtrunc(ip, bn, lastbn, level, aflags)
 			nb = *bstart;
 			if (nb) {
 				mapout(bp);
-				indirtrunc(ip,nb,(daddr_t)-1, level-1, aflags);
+				indirtrunc(ip,nb,(ufs211_daddr_t)-1, level-1, aflags);
 				free(ip, nb);
 				mapin(bp);
 			}
@@ -694,15 +693,15 @@ indirtrunc(ip, bn, lastbn, level, aflags)
 
 static
 trsingle(ip, bp,last, aflags)
-	register struct inode *ip;
+	register struct ufs211_inode *ip;
 	caddr_t bp;
-	daddr_t last;
+	ufs211_daddr_t last;
 	int aflags;
 {
-	register daddr_t *bstart, *bstop;
-	daddr_t blarray[NINDIR];
+	register ufs211_daddr_t *bstart, *bstop;
+	ufs211_daddr_t blarray[NINDIR];
 
-	bcopy(mapin(bp),blarray,NINDIR * sizeof(daddr_t));
+	bcopy(mapin(bp),blarray,NINDIR * sizeof(ufs211_daddr_t));
 	mapout(bp);
 	bstart = &blarray[NINDIR - 1];
 	bstop = &blarray[last];
@@ -726,13 +725,13 @@ trsingle(ip, bp,last, aflags)
  */
 #ifdef QUOTA
 iflush(dev, iq)
-	struct inode *iq;
+	struct ufs211_inode *iq;
 #else
 iflush(dev)
 #endif
-	dev_t dev;
+	ufs211_dev_t dev;
 {
-	register struct inode *ip;
+	register struct ufs211_inode *ip;
 	register int open = 0;
 
 	for (ip = inode; ip < inodeNINODE; ip++) {
@@ -774,7 +773,7 @@ iflush(dev)
  * Lock an inode. If its already locked, set the WANT bit and sleep.
  */
 ilock(ip)
-	register struct inode *ip;
+	register struct ufs211_inode *ip;
 {
 
 	ILOCK(ip);
@@ -784,7 +783,7 @@ ilock(ip)
  * Unlock an inode.  If WANT bit is on, wakeup.
  */
 iunlock(ip)
-	register struct inode *ip;
+	register struct ufs211_inode *ip;
 {
 
 	IUNLOCK(ip);

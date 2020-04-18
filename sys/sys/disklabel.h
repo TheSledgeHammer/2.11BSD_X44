@@ -91,10 +91,10 @@
 
 #ifndef LOCORE
 struct disklabel {
-	u_int32_t d_magic;				/* the magic number */
-	u_int16_t  d_type;				/* drive type */
-	u_int16_t  d_subtype;			/* controller/d_type specific */
-	char	  d_typename[16];		/* type name, e.g. "eagle" */
+	u_int32_t 	d_magic;			/* the magic number */
+	u_int16_t  	d_type;				/* drive type */
+	u_int16_t  	d_subtype;			/* controller/d_type specific */
+	char	  	d_typename[16];		/* type name, e.g. "eagle" */
 	/* 
 	 * d_packname contains the pack identifier and is returned when
 	 * the disklabel is read off the disk or in-core copy.
@@ -103,7 +103,7 @@ struct disklabel {
 	 * getdiskbyname(3) to retrieve the values from /etc/disktab.
 	 */
 #if defined(KERNEL) || defined(STANDALONE)
-	char	d_packname[16];				/* pack identifier */
+	char		d_packname[16];			/* pack identifier */
 #else
 	union {
 		char		un_d_packname[16];	/* pack identifier */
@@ -115,12 +115,12 @@ struct disklabel {
 #define d_boot1		d_un.un_d_boot1
 #endif	/* ! KERNEL or STANDALONE */
 			/* disk geometry: */
-		u_int32_t 	d_secsize;			/* # of bytes per sector */
-		u_int32_t 	d_nsectors;			/* # of data sectors per track */
-		u_int32_t 	d_ntracks;			/* # of tracks per cylinder */
-		u_int32_t 	d_ncylinders;		/* # of data cylinders per unit */
-		u_int32_t 	d_secpercyl;		/* # of data sectors per cylinder */
-		u_int32_t 	d_secperunit;		/* # of data sectors per unit */
+	u_int32_t 	d_secsize;			/* # of bytes per sector */
+	u_int32_t 	d_nsectors;			/* # of data sectors per track */
+	u_int32_t 	d_ntracks;			/* # of tracks per cylinder */
+	u_int32_t 	d_ncylinders;		/* # of data cylinders per unit */
+	u_int32_t 	d_secpercyl;		/* # of data sectors per cylinder */
+	u_int32_t 	d_secperunit;		/* # of data sectors per unit */
 	/*
 	 * Spares (bad sector replacements) below
 	 * are not counted in d_nsectors or d_secpercyl.
@@ -153,30 +153,30 @@ struct disklabel {
 	 * Finally, d_cylskew is the offset of sector 0 on cylinder N
 	 * relative to sector 0 on cylinder N-1.
 	 */
-	u_int16_t d_rpm;				/* rotational speed */
-	u_int16_t d_interleave;			/* hardware sector interleave */
-	u_int16_t d_trackskew;			/* sector 0 skew, per track */
-	u_int16_t d_cylskew;			/* sector 0 skew, per cylinder */
-	u_int32_t d_headswitch;			/* head swith time, usec */
-	u_int32_t d_trkseek;			/* track-to-track seek, msec */
-	u_int32_t d_flags;				/* generic flags */
+	u_int16_t 	d_rpm;				/* rotational speed */
+	u_int16_t 	d_interleave;		/* hardware sector interleave */
+	u_int16_t 	d_trackskew;		/* sector 0 skew, per track */
+	u_int16_t 	d_cylskew;			/* sector 0 skew, per cylinder */
+	u_int32_t 	d_headswitch;		/* head swith time, usec */
+	u_int32_t 	d_trkseek;			/* track-to-track seek, msec */
+	u_int32_t 	d_flags;			/* generic flags */
 #define NDDATA 5
-	u_int32_t d_drivedata[NDDATA];	/* drive-type specific information */
+	u_int32_t 	d_drivedata[NDDATA];/* drive-type specific information */
 #define NSPARE 5
-	u_int32_t d_spare[NSPARE];		/* reserved for future use */
-	u_int32_t d_magic2;				/* the magic number (again) */
-	u_int16_t d_checksum;			/* xor of data incl. partitions */
+	u_int32_t 	d_spare[NSPARE];	/* reserved for future use */
+	u_int32_t 	d_magic2;			/* the magic number (again) */
+	u_int16_t 	d_checksum;			/* xor of data incl. partitions */
 
 			/* filesystem and partition information: */
-	u_int16_t d_npartitions;		/* number of partitions in following */
-	u_int32_t d_bbsize;				/* size of boot area at sn0, bytes */
-	u_int32_t d_sbsize;				/* max size of fs superblock, bytes */
+	u_int16_t 	d_npartitions;		/* number of partitions in following */
+	u_int32_t 	d_bbsize;			/* size of boot area at sn0, bytes */
+	u_int32_t 	d_sbsize;			/* max size of fs superblock, bytes */
 	struct	partition {				/* the partition table */
-		u_int32_t p_size;			/* number of sectors in partition */
-		u_int32_t p_offset;			/* starting sector */
-		u_int32_t p_fsize;			/* filesystem basic fragment size */
-		u_int8_t p_fstype;			/* filesystem type, see below */
-		u_int8_t p_frag;			/* filesystem fragments per block */
+		u_int32_t 	p_size;			/* number of sectors in partition */
+		u_int32_t 	p_offset;		/* starting sector */
+		u_int32_t 	p_fsize;		/* filesystem basic fragment size */
+		u_int8_t 	p_fstype;		/* filesystem type, see below */
+		u_int8_t 	p_frag;			/* filesystem fragments per block */
 		union {
 			u_int16_t cpg;			/* UFS: FS cylinders per group */
 			u_int16_t sgs;			/* LFS: FS segment shift */

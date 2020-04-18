@@ -41,8 +41,15 @@
  * W. Jolitz 1/90
  */
 
-#ifndef	___NPX87___
-#define	___NPX87___
+uint32_t mxcsr;			/* Control and status register */
+
+#ifndef	_NPX_H_
+
+/* Default x87 control word. */
+#define	___NPX87___		0x037f
+
+/* Default values for the mxcsr. All traps masked. */
+#define ___MXCSR___		0x1f80
 
 /* Environment information of floating point unit */
 struct	env87 {
@@ -81,6 +88,7 @@ struct 	envfx87 {
 	u_short	fx_opcode;	/* opcode last executed (11 bits ) */
 	long	fx_foo;		/* floating operand offset */
 	long	fx_fos;		/* floating operand segment selector */
+	long 	fx_mxcsr;	/* MXCSR Register State */
 };
 
 /* The x87 registers padded out to 16 bytes for fxsave */
@@ -96,10 +104,15 @@ struct 	fxsave {
 	struct fpaccfx87 	fxv_ac[8]; 	/* accumulator contents, 0-7 */
 };
 
+struct savefpu {
+	struct save87 	sv_87;		/* save87 sub structs: env87, fpacc87 */
+	struct fxsave 	sv_fx;		/* fxsave sub structs: envfx87, fpaccfx87 */
+};
+
 /* Cyrix EMC memory - mapped coprocessor context switch information */
 struct	emcsts {
 	long	em_msw;		/* memory mapped status register when swtched */
 	long	em_tar;		/* memory mapped temp A register when swtched */
 	long	em_dl;		/* memory mapped D low register when swtched */
 };
-#endif	___NPX87___
+#endif _NPX_H_

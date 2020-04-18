@@ -48,7 +48,6 @@ int	saferss = SAFERSS;
 void
 vmmeter()
 {
-
 	if (time.tv_sec % 5 == 0)
 		loadav(&averunnable);
 	if (proc0.p_slptime > maxslp/2)
@@ -145,9 +144,7 @@ vmtotal(totalp)
 	 * Mark all objects as inactive.
 	 */
 	simple_lock(&vm_object_list_lock);
-	for (object = vm_object_list.tqh_first;
-	     object != NULL;
-	     object = object->object_list.tqe_next)
+	for (object = vm_object_list.tqh_first; object != NULL; object = object->object_list.tqe_next)
 		object->flags &= ~OBJ_ACTIVE;
 	simple_unlock(&vm_object_list_lock);
 	/*

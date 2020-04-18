@@ -145,10 +145,10 @@ compat_43_mmap(p, uap, retval)
 		PROT_WRITE|PROT_READ,
 		PROT_EXEC|PROT_WRITE|PROT_READ,
 	};
-#define	OMAP_ANON	0x0002
-#define	OMAP_COPY	0x0020
-#define	OMAP_SHARED	0x0010
-#define	OMAP_FIXED	0x0100
+#define	OMAP_ANON		0x0002
+#define	OMAP_COPY		0x0020
+#define	OMAP_SHARED		0x0010
+#define	OMAP_FIXED		0x0100
 #define	OMAP_INHERIT	0x0800
 
 	SCARG(&nargs, addr) = SCARG(uap, addr);
