@@ -65,6 +65,7 @@
 #define	KDSEL		0x10
 
 #define	NOP	inb $0x84, %al ; inb $0x84, %al
+#define	FASTER_NOP	pushl %eax ; inb $0x84,%al ; popl %eax
 
 #define	fillkpt														\
 	1:	movl	%eax,0(%ebx)	; 									\

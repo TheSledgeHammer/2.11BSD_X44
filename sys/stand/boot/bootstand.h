@@ -178,8 +178,8 @@ extern ev_sethook_t		env_noset;			/* refuse set operation */
 extern ev_unsethook_t	env_nounset;		/* refuse unset operation */
 
 /* stdlib.h routines */
-extern char 	*strdup(const char *str);
-extern size_t 	strspn(const char *s1, const char *s2);
+extern char 	*strdup(const char *);
+extern size_t 	strspn(const char *, const char *);
 extern long		strtol(const char *, char **, int);
 
 #endif /* BOOT_STAND_H_ */

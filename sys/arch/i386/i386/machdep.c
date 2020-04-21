@@ -944,7 +944,7 @@ init386(first)
 	setidt(30, &IDTVEC(rsvd13),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
 	setidt(31, &IDTVEC(rsvd14),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
 
-#include "isa.h"
+#include "../../../dev/isa/isa.h"
 #if	NISA >0
 	isa_defaultirq();
 #endif

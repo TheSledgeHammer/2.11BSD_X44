@@ -9,34 +9,10 @@
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/buf.h>
-//#include <sys/vnode.h>
+#include <sys/vnode.h>
 #include <sys/lock.h>
 #include "vfs/vops.h"
 
-struct vnodeop_desc *
-create_vdesc(vdesc, vdesc_offset, vdesc_name, vdesc_flags, vdesc_vp_offsets,
-		vdesc_vpp_offset, vdesc_cred_offset, vdesc_proc_offset, vdesc_componentname_offset,
-		vdesc_transports)
-	struct vnodeop_desc *vdesc;
-	int vdesc_offset, vdesc_flags, *vdesc_vp_offsets, vdesc_vpp_offset,
-	vdesc_cred_offset, vdesc_proc_offset, vdesc_componentname_offset;
-	char *vdesc_name;
-	caddr_t	*vdesc_transports;
-{
-	vdesc->vdesc_offset = vdesc_offset;
-	vdesc->vdesc_name = vdesc_name;
-	vdesc->vdesc_flags = vdesc_flags;
-	vdesc->vdesc_vp_offsets = vdesc_vp_offsets;
-	vdesc->vdesc_vpp_offset = vdesc_vpp_offset;
-	vdesc->vdesc_cred_offset = vdesc_cred_offset;
-	vdesc->vdesc_proc_offset = vdesc_proc_offset;
-	vdesc->vdesc_componentname_offset = vdesc_componentname_offset;
-	vdesc->vdesc_transports = vdesc_transports;
-	return (vdesc);
-}
-
-#define DO_OPS(ops, error, ap, vop_field)	\
-	error = ops->vop_field(ap)
 
 static int
 vop_lookup(dvp, vpp, cnp)
@@ -49,6 +25,7 @@ vop_lookup(dvp, vpp, cnp)
 	a.a_dvp = dvp;
 	a.a_vpp = vpp;
 	a.a_cnp = cnp;
+
 	return (VCALL(dvp, VOFFSET(vop_lookup), &a));
 }
 
@@ -707,6 +684,28 @@ vop_bwrite(bp)
 
 /* End of special cases. */
 
+struct vnodeop_desc *
+create_vdesc(vdesc, vdesc_offset, vdesc_name, vdesc_flags, vdesc_vp_offsets,
+		vdesc_vpp_offset, vdesc_cred_offset, vdesc_proc_offset, vdesc_componentname_offset,
+		vdesc_transports)
+	struct vnodeop_desc *vdesc;
+	int vdesc_offset, vdesc_flags, *vdesc_vp_offsets, vdesc_vpp_offset,
+	vdesc_cred_offset, vdesc_proc_offset, vdesc_componentname_offset;
+	char *vdesc_name;
+	caddr_t	*vdesc_transports;
+{
+	vdesc->vdesc_offset = vdesc_offset;
+	vdesc->vdesc_name = vdesc_name;
+	vdesc->vdesc_flags = vdesc_flags;
+	vdesc->vdesc_vp_offsets = vdesc_vp_offsets;
+	vdesc->vdesc_vpp_offset = vdesc_vpp_offset;
+	vdesc->vdesc_cred_offset = vdesc_cred_offset;
+	vdesc->vdesc_proc_offset = vdesc_proc_offset;
+	vdesc->vdesc_componentname_offset = vdesc_componentname_offset;
+	vdesc->vdesc_transports = vdesc_transports;
+	return (vdesc);
+}
+
 void
 vops_desc_init()
 {
@@ -715,12 +714,12 @@ vops_desc_init()
 			create_vdesc(&vop_strategy_desc, 0, "vop_strategy", 0, vop_strategy_vp_offsets, VDESC_NO_OFFSET, VDESC_NO_OFFSET, VDESC_NO_OFFSET, VDESC_NO_OFFSET, NULL),
 			create_vdesc(&vop_bwrite_desc, 0, "vop_bwrite", 0, vop_bwrite_vp_offsets, VDESC_NO_OFFSET, VDESC_NO_OFFSET, VDESC_NO_OFFSET, VDESC_NO_OFFSET, NULL),
 			create_vdesc(&vop_lookup_desc, 0, "vop_lookup", 0, vop_lookup_vp_offsets, VOPARG_OFFSETOF(struct vop_lookup_args, a_vpp), VDESC_NO_OFFSET, VDESC_NO_OFFSET, VOPARG_OFFSETOF(struct vop_lookup_args, a_cnp), NULL),
-			create_vdesc(&vop_bwrite_desc, 0, "vop_create", 0 | VDESC_VP0_WILLRELE, vop_create_vp_offsets, VOPARG_OFFSETOF(struct vop_create_args, a_vpp), VDESC_NO_OFFSET, VDESC_NO_OFFSET, VOPARG_OFFSETOF(struct vop_create_args, a_vnp), NULL),
+			create_vdesc(&vop_bwrite_desc, 0, "vop_create", 0 | VDESC_VP0_WILLRELE, vop_create_vp_offsets, VOPARG_OFFSETOF(struct vop_create_args, a_vpp), VDESC_NO_OFFSET, VDESC_NO_OFFSET, VOPARG_OFFSETOF(struct vop_create_args, a_cnp), NULL),
 			create_vdesc(&vop_whiteout_desc, 0, "vop_whiteout", 0 | VDESC_VP0_WILLRELE, vop_whiteout_vp_offsets, VDESC_NO_OFFSET, VDESC_NO_OFFSET, VDESC_NO_OFFSET, VOPARG_OFFSETOF(struct vop_whiteout_args, a_cnp), NULL),
-			create_vdesc(&vop_mknod_desc, 0, "vop_mknod", 0 | VDESC_VP0_WILLRELE | VDESC_VPP_WILLRELE, vop_mknod_vp_offsets, VOPARG_OFFSETOF(struct vop_mknod_args, a_vpp), VDESC_NO_OFFSET, VDESC_NO_OFFSET, VOPARG_OFFSETOF(struct vop_mknod_args, a_vnp), NULL),
-			create_vdesc(&vop_open_desc, 0, "vop_open", 0 | VDESC_VP0_WILLRELE, vop_open_vp_offsets, VOPARG_OFFSETOF(struct vop_create_args, a_vpp), VDESC_NO_OFFSET, VDESC_NO_OFFSET, VOPARG_OFFSETOF(struct vop_create_args, a_vnp), NULL),
-			create_vdesc(&vop_close_desc, 0, "vop_close", 0 | VDESC_VP0_WILLRELE, vop_close_vp_offsets, VOPARG_OFFSETOF(struct vop_create_args, a_vpp), VDESC_NO_OFFSET, VDESC_NO_OFFSET, VOPARG_OFFSETOF(struct vop_create_args, a_vnp), NULL),
-			create_vdesc(&vop_access_desc, 0, "vop_access", 0 | VDESC_VP0_WILLRELE, vop_access_vp_offsets, VOPARG_OFFSETOF(struct vop_create_args, a_vpp), VDESC_NO_OFFSET, VDESC_NO_OFFSET, VOPARG_OFFSETOF(struct vop_create_args, a_vnp), NULL),
+			create_vdesc(&vop_mknod_desc, 0, "vop_mknod", 0 | VDESC_VP0_WILLRELE | VDESC_VPP_WILLRELE, vop_mknod_vp_offsets, VOPARG_OFFSETOF(struct vop_mknod_args, a_vpp), VDESC_NO_OFFSET, VDESC_NO_OFFSET, VOPARG_OFFSETOF(struct vop_mknod_args, a_cnp), NULL),
+			create_vdesc(&vop_open_desc, 0, "vop_open", 0 | VDESC_VP0_WILLRELE, vop_open_vp_offsets, VOPARG_OFFSETOF(struct vop_create_args, a_vpp), VDESC_NO_OFFSET, VDESC_NO_OFFSET, VOPARG_OFFSETOF(struct vop_create_args, a_cnp), NULL),
+			create_vdesc(&vop_close_desc, 0, "vop_close", 0 | VDESC_VP0_WILLRELE, vop_close_vp_offsets, VOPARG_OFFSETOF(struct vop_create_args, a_vpp), VDESC_NO_OFFSET, VDESC_NO_OFFSET, VOPARG_OFFSETOF(struct vop_create_args, a_cnp), NULL),
+			create_vdesc(&vop_access_desc, 0, "vop_access", 0 | VDESC_VP0_WILLRELE, vop_access_vp_offsets, VOPARG_OFFSETOF(struct vop_create_args, a_vpp), VDESC_NO_OFFSET, VDESC_NO_OFFSET, VOPARG_OFFSETOF(struct vop_create_args, a_cnp), NULL),
 			create_vdesc(&vop_getattr_desc, 0, "vop_getattr", 0 | VDESC_VP0_WILLRELE, vop_getattr_vp_offsets, VOPARG_OFFSETOF(struct vop_create_args, a_vpp), VDESC_NO_OFFSET, VDESC_NO_OFFSET, VOPARG_OFFSETOF(struct vop_create_args, a_vnp), NULL),
 			create_vdesc(&vop_setattr_desc, 0, "vop_setattr", 0 | VDESC_VP0_WILLRELE, vop_setattr_vp_offsets, VOPARG_OFFSETOF(struct vop_create_args, a_vpp), VDESC_NO_OFFSET, VDESC_NO_OFFSET, VOPARG_OFFSETOF(struct vop_create_args, a_vnp), NULL),
 			create_vdesc(&vop_read_desc, 0, "vop_read", 0 | VDESC_VP0_WILLRELE, vop_read_vp_offsets, VOPARG_OFFSETOF(struct vop_create_args, a_vpp), VDESC_NO_OFFSET, VDESC_NO_OFFSET, VOPARG_OFFSETOF(struct vop_create_args, a_vnp), NULL),

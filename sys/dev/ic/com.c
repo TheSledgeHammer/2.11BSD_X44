@@ -51,9 +51,9 @@
 #include <sys/kernel.h>
 #include <sys/syslog.h>
 
-#include <i386/isa/isa_device.h>
-#include <i386/isa/comreg.h>
-#include <i386/isa/ic/ns16550.h>
+#include <isa/isa_device.h>
+#include <ic/comreg.h>
+#include <ic/ns16550.h>
 
 void	comstart();
 int 	comprobe(), comattach(), comintr(), comparam();

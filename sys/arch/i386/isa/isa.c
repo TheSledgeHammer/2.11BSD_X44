@@ -49,8 +49,10 @@
 #include <sys/syslog.h>
 
 #include <machine/segments.h>
-#include <i386/isa/isa_device.h>
+
+#include <isa/isa_device.h>
 #include <i386/isa/icu.h>
+
 #include <vm/include/vm.h>
 
 /*

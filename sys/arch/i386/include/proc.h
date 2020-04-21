@@ -43,4 +43,5 @@ struct mdproc {
 };
 
 /* md_flags */
-#define	MDP_AST		0x0001	/* async trap pending */
+//#define	MDP_AST		0x0001	/* async trap pending */
+#define	MDP_USEDFPU	0x0001	/* has used the FPU */

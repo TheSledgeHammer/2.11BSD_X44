@@ -2374,6 +2374,63 @@ vm_map_copy(dst_map, src_map,
 }
 
 /*
+ * vmspace_exec: the process wants to exec a new program
+ */
+void
+vmspace_exec(p, start, end)
+	struct proc *p;
+	caddr_t start, end;
+{
+	struct vmspace *nvm, *ovm = p->p_vmspace;
+	struct vm_map *map = &ovm->vm_map;
+
+	/*
+	 * see if more than one process is using this vmspace...
+	 */
+
+	if (ovm->vm_refcnt == 1) {
+
+		/*
+		 * POSIX 1003.1b -- "lock future mappings" is revoked
+		 * when a process execs another program image.
+		 */
+		vm_map_modflags(map, 0, VM_MAP_WIREFUTURE);
+
+		/*
+		 * now unmap the old program
+		 */
+
+		pmap_remove_all(map->pmap);
+		vm_unmap(map, vm_map_min(map), vm_map_max(map));
+
+		/*
+		 * resize the map
+		 */
+
+		vm_map_setmin(map, start);
+		vm_map_setmax(map, end);
+	} else {
+		/*
+		 * p's vmspace is being shared, so we can't reuse it for p since
+		 * it is still being used for others.   allocate a new vmspace
+		 * for p
+		 */
+
+		nvm = vmspace_alloc(start, end, map->entries_pageable);
+
+		/*
+		 * install new vmspace and drop our ref to the old one.
+		 */
+
+		pmap_deactivate(p);
+		p->p_vmspace = nvm;
+		pmap_activate(p);
+
+		vmspace_free(ovm);
+	}
+}
+
+/*
  * vmspace_fork:
  * Create a new process vmspace structure and vm_map
  * based on those of an existing process.  The new map
@@ -2391,7 +2448,7 @@ vmspace_fork(vm1)
 	vm_map_t	new_map;
 	vm_map_entry_t	old_entry;
 	vm_map_entry_t	new_entry;
-	pmap_t		new_pmap;
+	pmap_t			new_pmap;
 
 	vm_map_lock(old_map);
 
@@ -2410,6 +2467,10 @@ vmspace_fork(vm1)
 
 		switch (old_entry->inheritance) {
 		case VM_INHERIT_NONE:
+			/*
+			 * drop the mapping, modify size
+			 */
+			new_map->size -= old_entry->end - old_entry->start;
 			break;
 
 		case VM_INHERIT_SHARE:
@@ -2421,14 +2482,14 @@ vmspace_fork(vm1)
 			 	vm_map_t	new_share_map;
 				vm_map_entry_t	new_share_entry;
 
+				/* get our own amap, clears needs_copy */
+				amap_copy(old_map, old_entry, M_WAITOK, FALSE, 0, 0);
+
 				/*
 				 *	Create a new sharing map
 				 */
 
-				new_share_map = vm_map_create(NULL,
-							old_entry->start,
-							old_entry->end,
-							TRUE);
+				new_share_map = vm_map_create(NULL, old_entry->start, old_entry->end, TRUE);
 				new_share_map->is_main_map = FALSE;
 
 				/*
@@ -2436,8 +2497,7 @@ vmspace_fork(vm1)
 				 *	old task map entry.
 				 */
 
-				new_share_entry =
-					vm_map_entry_create(new_share_map);
+				new_share_entry = vm_map_entry_create(new_share_map);
 				*new_share_entry = *old_entry;
 				new_share_entry->wired_count = 0;
 
@@ -2459,6 +2519,17 @@ vmspace_fork(vm1)
 				old_entry->object.share_map = new_share_map;
 				old_entry->offset = old_entry->start;
 			}
+
+			/* new pmap has nothing wired in it */
+			new_entry->wired_count = 0;
+
+			/*
+			 * gain reference to object backing the map (can't
+			 * be a submap, already checked this case).
+			 */
+
+			if (new_entry->aref.ar_amap)
+				vm_map_reference_amap(new_entry, AMAP_SHARED);
 
 			/*
 			 *	Clone the entry, referencing the sharing map.
@@ -2489,19 +2560,36 @@ vmspace_fork(vm1)
 			break;
 
 		case VM_INHERIT_COPY:
+
 			/*
 			 *	Clone the entry and link into the map.
 			 */
+
+			if (new_entry->aref.ar_amap)
+				vm_map_reference_amap(new_entry, 0);
 
 			new_entry = vm_map_entry_create(new_map);
 			*new_entry = *old_entry;
 			new_entry->wired_count = 0;
 			new_entry->object.vm_object = NULL;
 			new_entry->is_a_map = FALSE;
-			vm_map_entry_link(new_map, new_map->header.prev,
-							new_entry);
+			vm_map_entry_link(new_map, new_map->header.prev, new_entry);
+
+			if (old_entry->aref.ar_amap != NULL) {
+				if ((amap_flags(old_entry->aref.ar_amap) & AMAP_SHARED) != 0 || VM_MAPENT_ISWIRED(old_entry)) {
+					amap_copy(new_map, new_entry, M_WAITOK, FALSE, 0, 0);
+				}
+			}
+
 			if (old_entry->is_a_map) {
 				int	check;
+				/*
+				 * resolve all copy-on-write faults now
+				 * (note that there is nothing to do if
+				 * the old mapping does not have an amap).
+				 */
+				if (old_entry->aref.ar_amap)
+					amap_cow_now(new_map, new_entry);
 
 				check = vm_map_copy(new_map,
 						old_entry->object.share_map,
@@ -2512,10 +2600,17 @@ vmspace_fork(vm1)
 						FALSE, FALSE);
 				if (check != KERN_SUCCESS)
 					printf("vm_map_fork: copy in share_map region failed\n");
-			}
-			else {
-				vm_map_copy_entry(old_map, new_map, old_entry,
-						new_entry);
+			} else {
+				 if (old_entry->aref.ar_amap && !UVM_ET_ISNEEDSCOPY(old_entry)) {
+					 if (old_entry->max_protection & VM_PROT_WRITE) {
+						pmap_protect(old_map->pmap, old_entry->start,
+								old_entry->end,
+								old_entry->protection & ~VM_PROT_WRITE);
+						pmap_update(old_map->pmap);
+					 }
+					// old_entry->etype |= UVM_ET_NEEDSCOPY;
+				 }
+				vm_map_copy_entry(old_map, new_map, old_entry, new_entry);
 			}
 			break;
 		}
@@ -2551,8 +2646,7 @@ vmspace_fork(vm1)
  *	remain the same.
  */
 int
-vm_map_lookup(var_map, vaddr, fault_type, out_entry,
-				object, offset, out_prot, wired, single_use)
+vm_map_lookup(var_map, vaddr, fault_type, out_entry, object, offset, out_prot, wired, single_use)
 	vm_map_t		*var_map;	/* IN/OUT */
 	register vm_offset_t	vaddr;
 	register vm_prot_t	fault_type;
@@ -2564,9 +2658,9 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry,
 	boolean_t		*wired;			/* OUT */
 	boolean_t		*single_use;	/* OUT */
 {
-	vm_map_t			share_map;
-	vm_offset_t			share_offset;
-	register vm_map_entry_t		entry;
+	vm_map_t				share_map;
+	vm_offset_t				share_offset;
+	register vm_map_entry_t	entry;
 	register vm_map_t		map = *var_map;
 	register vm_prot_t		prot;
 	register boolean_t		su;
@@ -2579,11 +2673,10 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry,
 
 	vm_map_lock_read(map);
 
-#define	RETURN(why) \
-		{ \
-		vm_map_unlock_read(map); \
-		return(why); \
-		}
+#define	RETURN(why) { 			\
+	vm_map_unlock_read(map); 	\
+	return(why); 				\
+}
 
 	/*
 	 *	If the map has an interesting hint, try it before calling

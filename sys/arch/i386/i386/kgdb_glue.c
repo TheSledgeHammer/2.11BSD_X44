@@ -57,7 +57,7 @@ static char rcsid[] =
     "@(#) $Header: /u/donn/c/gdb/kernel/RCS/kgdb_glue.c,v 1.2 91/03/31 16:04:52 donn Exp Locker: donn $ (LBL)";
 #endif
 
-#define KGDB_STACKSIZE 0x800
+#define KGDB_STACKSIZE 	0x800
 #define KGDB_STACKWORDS (KGDB_STACKSIZE / sizeof(u_long))
 
 u_long kgdb_stack[KGDB_STACKWORDS];

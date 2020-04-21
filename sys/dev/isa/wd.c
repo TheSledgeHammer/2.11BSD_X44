@@ -41,7 +41,7 @@
 
 
 #include "wd.h"
-#if	NWD > 0
+//#if	NWD > 0
 
 #include <sys/param.h>
 #include <sys/dkbad.h>
@@ -55,9 +55,10 @@
 #include <sys/uio.h>
 #include <sys/syslog.h>
 
-#include <i386/isa/isa_device.h>
+#include <isa/isa_device.h>
 #include <i386/isa/icu.h>
-#include <i386/isa/wdreg.h>
+#include <isa/wdreg.h>
+
 #include <vm/vm.h>
 
 #define	RETRIES		5	/* number of retries before giving up */

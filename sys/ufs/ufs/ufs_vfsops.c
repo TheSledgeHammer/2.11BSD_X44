@@ -118,6 +118,10 @@ ufs_quotactl(mp, cmds, uid, arg, p)
 		if (error == suser(p->p_ucred, &p->p_acflag))
 			return (error);
 	}
+	type = cmds & SUBCMDMASK;
+
+	if ((u_int)type >= MAXQUOTAS)
+		return (EINVAL);
 
 	if (vfs_busy(mp, LK_NOWAIT, 0, p))
 		return (0);

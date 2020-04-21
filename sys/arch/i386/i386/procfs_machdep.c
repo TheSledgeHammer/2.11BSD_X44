@@ -91,9 +91,6 @@
 #include <machine/reg.h>
 #include <machine/segments.h>
 
-#include <x86/dbregs.h>
-#include <x86/fpu.h>
-
 static inline struct trapframe *
 process_frame(p)
 	struct proc *p;

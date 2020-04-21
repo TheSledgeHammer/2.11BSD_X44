@@ -91,8 +91,9 @@ readdisklabel(dev, strat, lp)
 		} else if (dlp->d_npartitions > MAXPARTITIONS || dkcksum(dlp))
 			msg = "disk label corrupted";
 		else
-			bcopy(dlp, lp, sizeof(struct disklabel));
-		mapout(bp);
+			*lp = *dlp;
+			msg = NULL;
+			break;
 	}
 	bp->b_flags = B_INVAL | B_AGE;
 	brelse(bp);

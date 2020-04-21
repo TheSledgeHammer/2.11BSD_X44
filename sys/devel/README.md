@@ -8,9 +8,12 @@ New Content:
 	- Top(Interface) to Bottom(Block Allocation) Layers: Slabs, Pools, Buckets, Tertiary Buddy 
 - MPX: Multiplexors (Unix V7)
 	- A reimplementation of 2.11BSD's multiplexors
-	- Could merge it with UFS211
+	- Could merge it with UFS211 (FS Multiplexor rebase/extension...! )
+		- UFS211 contains most key references needed.
 - Multitasking:
-	- Kernel & User Threads, Mutexes, Readers-Writer Lock & Threadpools 
+	- Kernel & User Threads
+	- Threadpools (kernel & userspace)
+	- DeadLocks: Mutexes, Readers-Writer Lock
 - Pmap:
 	- Machine-independent api for Clustered Page Tables variation.
 	- i386 arch partial pmap implementation
@@ -22,9 +25,10 @@ New Content:
 	- UFML is an abbrievation of (UFS + FFS + MFS + LFS);  
 	- A content based filesystem designed for UFS, FFS, MFS & LFS (Plan 9's Fossil & Venti Inspired)
 - UFS211:
-	- 2.11BSD's UFS.
-	- Could merge it with MPX.
-	- TODO: vnode integration
+	- 2.11BSD's UFS. (Seperate from current UFS)
+	- TODO: 
+		- vnode integration
+		- remove pdp memory refrences 
 - VFS:
 	- replacement for vnode_if
 	

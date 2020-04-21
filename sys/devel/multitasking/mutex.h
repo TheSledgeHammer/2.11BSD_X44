@@ -93,8 +93,8 @@ struct lock_args {
     int		    			la_flags;
 };
 
-#define MTX_THREAD  	((tid_t) -2)
-#define MTX_NOTHREAD    ((tid_t) -1)
+#define MTX_THREAD  		((tid_t) -2)
+#define MTX_NOTHREAD    	((tid_t) -1)
 
 #define MTX_TYPE_MASK	    0x0FFFFFFF
 #define MTX_SHARED	        0x00000001	/* shared lock */
@@ -134,7 +134,7 @@ int mutexmgr(__volatile mutex_t m, unsigned int flags, tid_t tid, struct simplel
 void pause(mutex_t mtx, int wanted);
 void acquire(mutex_t mtx, int error, int extflags, int wanted);
 
-#define PAUSE(mtx, wanted)	\
+#define PAUSE(mtx, wanted)						\
 		pause(mtx, wanted);
 
 #define ACQUIRE(mtx, error, extflags, wanted)	\

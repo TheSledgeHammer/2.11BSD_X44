@@ -69,7 +69,7 @@ extern int	cold;		/* cold start flag initialized in locore.s */
 configure()
 {
 
-#include "isa.h"
+#include <dev/isa/isa.h>
 #if NISA > 0
 	isa_configure();
 #endif

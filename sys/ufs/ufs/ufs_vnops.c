@@ -61,6 +61,7 @@
 #include <ufs/ufs/dir.h>
 #include <ufs/ufs/ufsmount.h>
 #include <ufs/ufs/ufs_extern.h>
+
 #include <vm/include/vm.h>
 
 static int ufs_chmod (struct vnode *, int, struct ucred *, struct proc *);

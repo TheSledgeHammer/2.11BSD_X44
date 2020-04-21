@@ -46,10 +46,12 @@
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/kernel.h>
+
 #include <machine/segments.h>
+
 #include <i386/isa/icu.h>
-#include <i386/isa/isa.h>
 #include <i386/isa/rtc.h>
+#include <dev/isa/isa.h>
 
 /* these should go elsewere (timerreg.h) but to avoid admin overhead... */
 /*

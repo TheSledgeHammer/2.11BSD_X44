@@ -42,9 +42,9 @@
 #include <sys/dkbad.h>
 #include <sys/disklabel.h>
 
-#include <i386/isa/isa.h>
 #include <i386/isa/wdreg.h>
 #include <stand/saio.h>
+#include "../../../dev/isa/isa.h"
 
 #define	NWD		2	/* number of hard disk units supported, max 2 */
 #define	RETRIES		5	/* number of retries before giving up */

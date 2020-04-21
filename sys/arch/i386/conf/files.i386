@@ -37,3 +37,4 @@ file    arch/i386/isa/npx.c		        optional npx device-driver
 file    arch/i386/isa/if_hy.notreally.c	optional hy device-driver
 
 file    netns/ns_cksum.c	            optional ns
+

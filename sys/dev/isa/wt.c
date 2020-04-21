@@ -97,7 +97,7 @@
 #include <sys/proc.h>
 #include <sys/user.h>
 
-#include <i386/isa/wtreg.h>
+#include <isa/wtreg.h>
 
 #ifdef	ORC
 unsigned wtport = 0x288;	/* base I/O port of controller	*/

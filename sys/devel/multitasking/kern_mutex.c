@@ -34,7 +34,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * 	Reworked from: @(#)kern_lock.c 8.18 (Berkeley)  5/21/95
+ * 	@(#)kern_lock.c 8.18 (Berkeley)  5/21/95
  */
 
 #include <sys/param.h>
@@ -124,7 +124,7 @@ mutexmgr(mtx, flags, tid, interlkp)
                 break;
             }
             mtx->mtx_sharecount++;
-            //break;
+            break;
         case MTX_DOWNGRADE:
     		if (mtx->mtx_lockholder != tid || mtx->mtx_exclusivecount == 0)
     			panic("mutexmgr: not holding exclusive lock");

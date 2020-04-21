@@ -8,62 +8,72 @@
 #ifndef SYS_TEST_VOPS_H_
 #define SYS_TEST_VOPS_H_
 
-#include <sys/vnode.h>
-#ifndef _KERNEL
-#include <stdbool.h>
-#endif
+
+
+#include "devel/vfs/vops.h"
 
 struct buf;
 
 extern struct vnodeop_desc *vfs_op_descs[];
 
 struct vops {
-	int (vop_lookup)(void *);
-	int (vop_create)(void *);
-	int (vop_whiteout)(void *);
-	int (vop_mknod)(void *);
-	int (vop_open)(void *);
-	int (vop_close)(void *);
-	int (vop_acess)(void *);
-	int (vop_getattr)(void *);
-	int (vop_setattr)(void *);
-	int (vop_read)(void *);
-	int (vop_write)(void *);
-	int (vop_lease)(void *);
-	int (vop_ioctl)(void *);
-	int (vop_select)(void *);
-	int (vop_revoke)(void *);
-	int (vop_mmap)(void *);
-	int (vop_fsync)(void *);
-	int (vop_seek)(void *);
-	int (vop_remove)(void *);
-	int (vop_link)(void *);
-	int (vop_rename)(void *);
-	int (vop_mkdir)(void *);
-	int (vop_rmdir)(void *);
-	int (vop_symlink)(void *);
-	int (vop_readdir)(void *);
-	int (vop_readlink)(void *);
-	int (vop_abortop)(void *);
-	int (vop_inactive)(void *);
-	int (vop_reclaim)(void *);
-	int (vop_lock)(void *);
-	int (vop_unlock)(void *);
-	int (vop_bmap)(void *);
-	int (vop_print)(void *);
-	int (vop_islocked)(void *);
-	int (vop_pathconf)(void *);
-	int (vop_advlock)(void *);
-	int (vop_blkatoff)(void *);
-	int (vop_valloc)(void *);
-	int (vop_reallocblks)(void *);
-	int (vop_vfree)(void *);
-	int (vop_truncate)(void *);
-	int (vop_update)(void *);
+	int (*vop_lookup)(void *);
+	int (*vop_create)(void *);
+	int (*vop_whiteout)(void *);
+	int (*vop_mknod)(void *);
+	int (*vop_open)(void *);
+	int (*vop_close)(void *);
+	int (*vop_acess)(void *);
+	int (*vop_getattr)(void *);
+	int (*vop_setattr)(void *);
+	int (*vop_read)(void *);
+	int (*vop_write)(void *);
+	int (*vop_lease)(void *);
+	int (*vop_ioctl)(void *);
+	int (*vop_select)(void *);
+	int (*vop_revoke)(void *);
+	int (*vop_mmap)(void *);
+	int (*vop_fsync)(void *);
+	int (*vop_seek)(void *);
+	int (*vop_remove)(void *);
+	int (*vop_link)(void *);
+	int (*vop_rename)(void *);
+	int (*vop_mkdir)(void *);
+	int (*vop_rmdir)(void *);
+	int (*vop_symlink)(void *);
+	int (*vop_readdir)(void *);
+	int (*vop_readlink)(void *);
+	int (*vop_abortop)(void *);
+	int (*vop_inactive)(void *);
+	int (*vop_reclaim)(void *);
+	int (*vop_lock)(void *);
+	int (*vop_unlock)(void *);
+	int (*vop_bmap)(void *);
+	int (*vop_print)(void *);
+	int (*vop_islocked)(void *);
+	int (*vop_pathconf)(void *);
+	int (*vop_advlock)(void *);
+	int (*vop_blkatoff)(void *);
+	int (*vop_valloc)(void *);
+	int (*vop_reallocblks)(void *);
+	int (*vop_vfree)(void *);
+	int (*vop_truncate)(void *);
+	int (*vop_update)(void *);
+};
+
+struct vnodeargs {
+	struct vop_lookup_args 		*varg_lookup;
+	struct vop_create_args 		*varg_create;
+	struct vop_whiteout_args 	*varg_whiteout;
+	struct vop_mknod_args 		*varg_mknod;
 };
 
 /* vnodeop_desc */
 extern struct vnodeop_desc vop_default_desc;	/* MUST BE FIRST */
+
+struct vop_generic_args {
+	struct vnodeops 		*a_ops;
+};
 
 struct vop_lookup_args {
 	struct vnodeop_desc 	*a_desc;
@@ -496,7 +506,7 @@ static int vop_whiteout(struct vnode *dvp, struct componentname *cnp, int flags)
 static int vop_mknod(struct vnode *dvp, struct vnode **vpp, struct componentname *cnp, struct vattr *vap);
 static int vop_open(struct vnode *vp, int mode, struct ucred *cred, struct proc *p);
 static int vop_close(struct vnode *vp, int fflag, struct ucred *cred, struct proc *p);
-static int vop_acess(struct vnode *vp, int mode, struct ucred *cred, struct proc *p);
+static int vop_access(struct vnode *vp, int mode, struct ucred *cred, struct proc *p);
 static int vop_getattr(struct vnode *vp, struct vattr *vap, struct ucred *cred, struct proc *p);
 static int vop_setattr(struct vnode *vp, struct vattr *vap, struct ucred *cred, struct proc *p);
 static int vop_read(struct vnode *vp, struct uio *uio, int ioflag, struct ucred *cred);
@@ -527,7 +537,7 @@ static int vop_islocked(struct vnode *vp);
 static int vop_pathconf(struct vnode *vp, int name, register_t *retval);
 static int vop_advlock(struct vnode *vp, caddr_t id, int op, struct flock *fl, int flags);
 static int vop_blkatoff(struct vnode *vp, off_t offset, char **res, struct buf **bpp);
-static int vop_valloc(pvp, int mode, struct ucred *cred, struct vnode **vpp);
+static int vop_valloc(struct vnode *pvp, int mode, struct ucred *cred, struct vnode **vpp);
 static int vop_reallocblks(struct vnode *vp, struct cluster_save *buflist);
 static int vop_vfree(struct vnode *pvp, ino_t ino, int mode);
 static int vop_truncate(struct vnode *vp, off_t length, int flags, struct ucred *cred, struct proc *p);

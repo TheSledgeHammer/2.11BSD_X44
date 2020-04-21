@@ -51,7 +51,7 @@
 #include <sys/buf.h>
 #include <sys/uio.h>
 
-#include <i386/isa/isa_device.h>
+#include <dev/isa/isa_device.h>
 #include <i386/isa/fdreg.h>
 #include <i386/isa/icu.h>
 

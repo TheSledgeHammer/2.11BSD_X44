@@ -47,7 +47,8 @@
 #include <machine/cpu.h>
 #include <machine/trap.h>
 #include <machine/specialreg.h>
-#include <i386/isa/isa_device.h>
+
+#include <dev/isa/isa_device.h>
 #include <i386/isa/icu.h>
 /*
  * 387 and 287 Numeric Coprocessor Extension (NPX) Driver.

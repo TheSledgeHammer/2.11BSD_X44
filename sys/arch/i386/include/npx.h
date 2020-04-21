@@ -41,8 +41,6 @@
  * W. Jolitz 1/90
  */
 
-uint32_t mxcsr;			/* Control and status register */
-
 #ifndef	_NPX_H_
 
 /* Default x87 control word. */

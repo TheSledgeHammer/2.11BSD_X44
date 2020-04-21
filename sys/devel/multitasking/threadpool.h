@@ -8,8 +8,8 @@
 #ifndef SYS_THREADPOOL_H_
 #define SYS_THREADPOOL_H_
 
-#include <dev/multitasking/kernthreads/kthread.h>
-#include <dev/multitasking/userthreads/uthread.h>
+#include <multitasking/kernthreads/kthread.h>
+#include <multitasking/userthreads/uthread.h>
 //#include <sys/queue.h>
 
 /*
@@ -21,12 +21,15 @@
  * - dispatch and hold x number of threads
  * - send & receive jobs between user & kernel threads when applicable
  *
+ *
  * IPC:
  * - Use thread pool/s as the ipc. (bi-directional fifo queue)
  * 	- i.e. all requests go through the associated thread pool.
  * 	- requests sent in order received. (no priorities)
  * 	- confirmation: to prevent thread pools requesting the same task
  * 	- Tasks added to work queue
+ * 	- Only jobs flagged for sending
+ * 	-
  *
  * 	NetBSD:
  * 	- Threadpool_Thread: threads as they relate to lwp
@@ -74,7 +77,10 @@ struct kern_threadpool {
     struct kthread_head					ktp_idle_threads;
 
     struct fifo_thread					ktp_itc;
-    //flags, refcnt, priority, lock
+    boolean_t							is_sender;
+    boolean_t							is_reciever;
+    //flags, refcnt, priority, lock, verify
+    //flags: send, (verify: success, fail), retry_attempts
 };
 
 /* User Threads in User Threadpool */
@@ -93,7 +99,10 @@ struct user_threadpool {
     struct uthread_head					utp_idle_threads;
 
     struct fifo_thread					utp_itc;
+    boolean_t							is_sender;
+    boolean_t							is_reciever;
     //flags, refcnt, priority, lock
+    //flags: send, (verify: success, fail), retry_attempts
 };
 
 /* Inter-Threadpool-Communication (ITPC) */
@@ -104,6 +113,7 @@ struct itc_threadpool {
 	struct job_head						itcp_job;		/* Thread's Job */
 	struct tgrp 						itcp_tgrp; 		/* Thread's Thread Group */
 	tid_t								itcp_tid;		/* Thread's Thread ID */
+
 };
 
 /* General ITPC */
@@ -111,7 +121,7 @@ void kerntpool_send(struct kern_threadpool *, struct itc_threadpool *);
 void kerntpool_receive(struct kern_threadpool *, struct itc_threadpool *);
 void usertpool_send(struct user_threadpool *, struct itc_threadpool *);
 void usertpool_receive(struct user_threadpool *, struct itc_threadpool *);
-void check();
-void verify();
+void check(struct itc_threadpool *, tid_t);
+void verify(struct itc_threadpool *, tid_t);
 
 #endif /* SYS_THREADPOOL_H_ */

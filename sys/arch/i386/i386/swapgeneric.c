@@ -38,9 +38,10 @@
 #include <sys/param.h>
 #include <sys/conf.h>
 #include <sys/buf.h>
-#include <vm/include/vm.h>
 #include <sys/systm.h>
 #include <sys/reboot.h>
+
+#include <vm/include/vm.h>
 
 #include <machine/pte.h>
 

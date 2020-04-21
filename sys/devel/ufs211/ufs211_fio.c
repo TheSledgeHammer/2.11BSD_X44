@@ -62,12 +62,14 @@ access(ip, mode)
 		 * the inode, try to free it up once.  If
 		 * we fail, we can't allow writing.
 		 */
+		/*
 		if (ip->i_flag& ITEXT)
 			xuntext(ip->i_text);
 		if (ip->i_flag & ITEXT) {
 			u->u_error = ETXTBSY;
 			return (1);
 		}
+		*/
 	}
 	/*
 	 * If you're the super-user,

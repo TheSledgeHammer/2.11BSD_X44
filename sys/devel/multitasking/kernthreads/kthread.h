@@ -12,7 +12,7 @@
 #define SYS_KTHREADS_H_
 
 #include <sys/proc.h>
-#include <sys/dev/multitasking/tcb.h>
+#include <devel/multitasking/tcb.h>
 
 /* Number of Threads per Process? */
 
@@ -54,11 +54,6 @@ struct kthread {
 	struct sysentvec	*kt_sysent;		/* System call dispatch information. */
 
 	struct kthread 		*kt_link;		/* linked list of running threads */
-	struct user 		*kt_addr;       /* address of u. area */
-    struct user  		*kt_daddr;		/* address of data area */
-    struct user  		*kt_saddr;		/* address of stack area */
-	size_t				kt_dsize;		/* size of data area (clicks) */
-	size_t				kt_ssize;		/* size of stack segment (clicks) */
 
 	struct mutex        *kt_mutex;
     short               kt_locks;

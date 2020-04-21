@@ -51,16 +51,18 @@ static char rcsid[] = "$Header: /u/donn/c/gdb/kernel/RCS/kgdb_stub.c,v 1.2 91/03
 
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/buf.h>
+#include <sys/errno.h>
+
 #include <machine/trap.h>
 #include <machine/cpu.h>
 #include <machine/psl.h>
 #include <machine/reg.h>
-#include <sys/buf.h>
-#include <i386/i386/cons.h>
-#include <sys/errno.h>
+
+#include <dev/cons.h>
+#include <dev/remote-sl.h>
 
 #include <i386/i386/kgdb_proto.h>
-#include <machine/remote-sl.h>
 
 extern int kernacc();
 #if 0
@@ -239,6 +241,7 @@ computeSignal(type)
  * Trap into kgdb to wait for debugger to connect,
  * noting on the console why nothing else is going on.
  */
+void
 kgdb_connect(verbose)
 	int verbose;
 {
@@ -535,8 +538,10 @@ kgdb_trap(int type, struct trapframe *frame)
  * XXX do kernacc call if safe, otherwise attempt
  * to simulate by simple bounds-checking.
  */
+int
 kgdb_acc(addr, len, rw)
 	caddr_t addr;
+	int len, rw;
 {
 	extern char proc0paddr[], kstack[];		/* XXX! */
 	extern char *kernel_map;		/* XXX! */

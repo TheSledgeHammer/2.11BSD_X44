@@ -34,9 +34,23 @@ TODO:
 		- dirhash
 		- extattr
 		- wapbl
-			
+
+- devel/multitasking
+	- kernthreads: (NetBSD 1.4/1.5)
+		- kern_kthread.c: kthread_create, exit, create_deferred, run_deferred_queue
+		- init_main: starting of threads
+- devel/vm:
+	- vm_map: (uvm) (NetBSD 1.4/1.5: ) 
+		- UVM_ET_ISNEEDSCOPY, UVM_ET_ISCOPYONWRITE, UVM_ET_ISSUBMAP, VM_MAPENT_ISWIRED
+		- vm_unmap
+		- vm_unmap_remove
+		- vm_map_modflags
+		- vm_map_setmin
+		- vm_map_setmax
+		- vmspace_share
+		- vmspace_unshare			
+
 Kern:
-- kern_fork: newproc
 - vm_machdep.c: u->u_procp->p_p0br: (no reference in 4.4BSD-Lite2)
 	- 4.3BSD Reno/ 4.4BSD Remanent: once in struct proc. Obsolete?? 
 - if INET: remanents of 2.11BSD's networking stack overlay (keep in place for now)
@@ -47,8 +61,6 @@ Kern:
 	- short	u_uisd[16];					/* segmentation descriptor prototypes */
 	- char	u_sep;						/* flag for I and D separation */
 	- struct u_ovd						/* automatic overlay data */
-	- remove duplicate and/or un-needed references (kinfo_proc)
-	- kinfo_proc: could be useful unless it's superceded by (ktrace or dtrace?) 
 
 Memory Segmentation (Hardware): CPU Registers
 Memory Segmentation (Software):

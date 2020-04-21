@@ -87,8 +87,8 @@
 #include <vm/include/vm_page.h>
 
 #ifdef NOTDEF
-include <vm/include/vm_pageout.h>
-include <machine/isa.h>
+#include <vm/include/vm_pageout.h>
+#include <dev/isa/isa.h>
 #endif
 
 /*

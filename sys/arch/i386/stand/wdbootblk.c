@@ -50,8 +50,8 @@
  *	No attempt is made to handle disk errors.
  */
 
-#include <i386/isa/isa.h>
 #include <i386/isa/wdreg.h>
+#include "../../../dev/isa/isa.h"
 
 #define	NOP	jmp 1f ; nop ; 1:
 #define BIOSRELOC	0x7c00

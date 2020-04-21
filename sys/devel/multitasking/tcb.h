@@ -8,6 +8,8 @@
 #ifndef SYS_TCB_H_
 #define SYS_TCB_H_
 
+#include <sys/proc.h>
+
 /* put into types.h */
 typedef long			tid_t;			/* thread id */
 
@@ -36,7 +38,8 @@ u_long 					tid_hash;
 extern 	LIST_HEAD(tgrphashhead, tgrp) 	*tgrphashtbl;
 u_long 									tgrphash;
 
-extern int tidhashmask;					/* In param.c. */
+extern int tidhashmask;						/* In param.c. */
+
 
 void 		threadinit(void);
 struct tgrp *tgfind(tid_t);				/* Find Thread group by id. */

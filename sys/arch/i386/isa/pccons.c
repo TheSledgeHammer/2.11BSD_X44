@@ -51,7 +51,7 @@
 #include <sys/kernel.h>
 #include <sys/syslog.h>
 
-#include <i386/isa/isa_device.h>
+#include <dev/isa/isa_device.h>
 #include <i386/isa/icu.h>
 #include <dev/cons.h>
 
@@ -62,7 +62,7 @@ struct	pcconsoftc {
 #define	CSF_ACTIVE	0x1	/* timeout active */
 #define	CSF_POLLING	0x2	/* polling for input */
 	char	cs_lastc;	/* last char sent */
-	int	cs_timo;	/* timeouts since interrupt */
+	int		cs_timo;	/* timeouts since interrupt */
 	u_long	cs_wedgecnt;	/* times restarted */
 } pcconsoftc;
 
@@ -72,9 +72,9 @@ struct	isa_driver pcdriver = {
 	pcprobe, pcattach, "pc",
 };
 
-#define	COL		80
-#define	ROW		25
-#define	CHR		2
+#define	COL			80
+#define	ROW			25
+#define	CHR			2
 #define MONO_BASE	0x3B4
 #define MONO_BUF	0xfe0B0000
 #define CGA_BASE	0x3D4

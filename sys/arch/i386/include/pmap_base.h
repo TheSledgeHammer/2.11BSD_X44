@@ -79,6 +79,6 @@ struct pmap_args {
 	void (*pads)(pmap_t pm);
 };
 
-void	pmap_cold(void);
+//void	pmap_cold(void);
 
 #endif /* _MACHINE_PMAP_BASE_H_ */

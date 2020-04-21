@@ -44,8 +44,8 @@
 
 #include <i386/isa/disk.h>
 #include <i386/isa/fdreg.h>
-#include <i386/isa/isa.h>
 #include <stand/saio.h>
+#include "../../../dev/isa/isa.h"
 
 #define NUMRETRY 10
 /*#define FDDEBUG*/

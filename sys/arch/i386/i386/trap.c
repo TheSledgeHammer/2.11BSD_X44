@@ -240,7 +240,7 @@ copyfault:	frame.tf_eip = (int)curpcb->pcb_onfault;
 		i = SIGTRAP;
 		break;
 
-#include "isa.h"
+#include "../../../dev/isa/isa.h"
 #if	NISA > 0
 	case T_NMI:
 	case T_NMI|T_USER:
