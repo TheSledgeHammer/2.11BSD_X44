@@ -1,6 +1,6 @@
-/*
- * Copyright (c) 1986, 1989, 1991, 1993
- *	The Regents of the University of California.  All rights reserved.
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,59 +30,43 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)signal.h	8.2 (Berkeley) 5/3/95
+ *	@(#)a.out.h	5.6.1 (2.11BSD GTE) 1/6/94
  */
+
+#ifndef	_AOUT_H_
+#define	_AOUT_H_
+
+#include <sys/exec.h>
+
+#define	N_BADMAG(x) \
+	(((x).a_magic)!=A_MAGIC1 && ((x).a_magic)!=A_MAGIC2 && \
+	((x).a_magic)!=A_MAGIC3 && ((x).a_magic)!=A_MAGIC4 && \
+	((x).a_magic)!=A_MAGIC5 && ((x).a_magic)!=A_MAGIC6)
+
+#define	N_TXTOFF(x) \
+	((x).a_magic==A_MAGIC5 || (x).a_magic==A_MAGIC6 ? \
+	sizeof(struct ovlhdr) + sizeof(struct exec) : sizeof(struct exec))
 
 /*
- * Machine-dependent signal definitions
- */
+ * The following were added as part of the new object file format.  They
+ * call functions because calculating the sums of overlay sizes was too
+ * messy (and verbose) to do 'inline'.
+ *
+ * NOTE: if the magic number is that of an overlaid object the program
+ * must pass an extended header ('xexec') as the argument.
+*/
 
-typedef int sig_atomic_t;
+#include <sys/types.h>
 
-#if !defined(_POSIX_SOURCE) && !defined(_ANSI_SOURCE)
+off_t	n_stroff(), n_symoff(), n_datoff(), n_dreloc(), n_treloc();
 
-#include <machine/trap.h>	/* codes for SIGILL, SIGFPE */
+#define	N_STROFF(e) (n_stroff(&e))
+#define	N_SYMOFF(e) (n_symoff(&e))
+#define	N_DATOFF(e) (n_datoff(&e))
+#define	N_DRELOC(e) (n_dreloc(&e))
+#define	N_TRELOC(e) (n_treloc(&e))
 
-/*
- * Information pushed on stack when a signal is delivered.
- * This is used by the kernel to restore state following
- * execution of the signal handler.  It is also made available
- * to the handler to allow it to restore state properly if
- * a non-standard exit is performed.
- */
-struct sigcontext {
-	int	sc_gs;
-	int	sc_fs;
-	int	sc_es;
-	int	sc_ds;
-	int	sc_edi;
-	int	sc_esi;
-	int	sc_ebp;
-	int	sc_ebx;
-	int	sc_edx;
-	int	sc_ecx;
-	int	sc_eax;
+#define	_AOUT_INCLUDE_
+#include <nlist.h>
 
-	int	sc_eip;
-	int	sc_cs;
-	int	sc_eflags;
-
-	int	sc_onstack;	/* sigstack state to restore */
-	int	sc_mask;	/* signal mask to restore */
-	int	sc_esp;
-	int	sc_ss;
-	int	sc_ap;		/* ap to restore */
-
-
-	int	sc_trapno;	/* XXX should be above */
-	int	sc_err;
-};
-
-#define sc_sp sc_esp	/* sp to restore */
-#define sc_fp sc_ebp	/* fp to restore */
-#define sc_pc sc_eip	/* pc to restore */
-#define sc_ps sc_eflags	/* psl to restore */
-#endif
-
-
-#endif	/* !_ANSI_SOURCE && !_POSIX_SOURCE */
+#endif	/* !_AOUT_H_ */

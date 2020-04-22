@@ -79,9 +79,9 @@ typedef	int (*sig_t)();		/* type of signal function */
  * Structure used in sigaltstack call.
  */
 struct	sigaltstack {
-	char	*ss_base;		/* signal stack base */
-	int		ss_size;		/* signal stack length */
-	int		ss_flags;		/* SA_DISABLE and/or SA_ONSTACK */
+	char			*ss_base;		/* signal stack base */
+	int				ss_size;		/* signal stack length */
+	int				ss_flags;		/* SA_DISABLE and/or SA_ONSTACK */
 };
 #define	MINSIGSTKSZ	128					/* minimum allowable stack */
 #define	SIGSTKSZ	(MINSIGSTKSZ + 384)	/* recommended stack size */

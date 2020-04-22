@@ -76,7 +76,7 @@ struct vm86_struct {
 #define VCPU_486		4
 #define VCPU_586		5
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 int i386_vm86 (struct proc *, char *, register_t *);
 void vm86_gpfault (struct proc *, int);
 void vm86_return (struct proc *, int);

@@ -121,3 +121,15 @@ struct syscframe {
 	int	sf_esp;
 	int	sf_ss;
 };
+
+
+struct sigframe {
+	int					sf_signum;
+	int					sf_code;
+	struct	sigcontext 	*sf_scp;
+	sig_t				sf_handler;
+	int					sf_eax;
+	int					sf_edx;
+	int					sf_ecx;
+	struct	sigcontext 	sf_sc;
+};

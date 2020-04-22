@@ -106,8 +106,8 @@ void					cons_probe(void);
  */
 struct pnphandler
 {
-    const char	*pp_name;					/* handler/bus name */
-    void		(* pp_enumerate)(void);		/* enumerate PnP devices, add to chain */
+    const char				*pp_name;					/* handler/bus name */
+    void					(* pp_enumerate)(void);		/* enumerate PnP devices, add to chain */
 };
 
 struct pnpident

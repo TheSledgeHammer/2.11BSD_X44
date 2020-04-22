@@ -451,47 +451,20 @@ command_menu(ac, av)
 	return (res);
 }
 
-#define LOGO_LINES 20
-#define FRED_LEFT 0
-#define FRED_RIGHT 1
-static char *logo_blank_line = "                                 ";
-
-static char *logo_color[LOGO_LINES] = {
-    "               \027[31m,        ,",
-"              /(        )`",
-"              \\ \\___   / |",
-"              /- \027[37m_\027[31m  `-/  '",
-"             (\027[37m/\\/ \\\027[31m \\   /\\",
-"             \027[37m/ /   |\027[31m `    \\",
-"             \027[34mO O   \027[37m) \027[31m/    |",
-"             \027[37m`-^--'\027[31m`<     '",
-"            (_.)  _  )   /",
-"             `.___/`    /",
-"               `-----' /",
-"  \027[33m<----.\027[31m     __ / __   \\",
-"  \027[33m<----|====\027[31mO)))\027[33m==\027[31m) \\) /\027[33m====|",
-"  \027[33m<----'\027[31m    `--' `.__,' \\",
-"               |        |",
-"                \\       /       /\\",
-"           \027[36m______\027[31m( (_  / \\______/",
-"         \027[36m,'  ,-----'   |",
-"         `--(__________)\027[m"
-"								"};
-
-static void
-logo_display(logo, line, orientation, barrier)
+void
+logo_display(logo, line, lineNum, orientation, barrier)
 	char **logo;
-	int line, orientation, barrier;
+	int line, lineNum, orientation, barrier;
 {
 	const char *fmt;
 
-	if (orientation == FRED_LEFT)
+	if (orientation == LOGO_LEFT)
 		fmt = barrier ? "%s  | " : "  %s  ";
 	else
 		fmt = barrier ? " |  %s" : "  %s  ";
 
 	if (logo != NULL) {
-		if (line < LOGO_LINES)
+		if (line < lineNum)
 			printf(fmt, logo[line]);
 		else
 			printf(fmt, logo_blank_line);
@@ -501,64 +474,15 @@ logo_display(logo, line, orientation, barrier)
 static void
 menu_display(void)
 {
-	dvar_t dvar;
-	int i;
-	int logo_left = 0; /* default to fred on right */
-	int separated = 0; /* default blue fred without line */
-	char **logo = logo_indigo;
-	char *console_val = getenv("console");
+	int logo_left = 0; /* default on right */
+	int separated = 0; /* default blue without line */
 
-	if (dvar_istrue(dvar_get("fred_is_red")))
-		logo = logo_color;
-
-	if (dvar_istrue(dvar_get("loader_plain")))
-		logo = logo_mono;
-
-	if (strcmp(console_val, "comconsole") == 0)
-		logo = logo_mono;
-
-	if (dvar_istrue(dvar_get("fred_disable")))
-		logo = NULL;
-
-	if (dvar_istrue(dvar_get("fred_on_left")))
-		logo_left = 1;
-
-	if (dvar_istrue(dvar_get("fred_separated")))
-		separated = 1;
-
-	dvar = dvar_first();
-	i = 0;
-
-	if (logo != NULL) {
-		if (logo_left)
-			printf(separated ? "%35s|%43s\n" : "%35s %43s\n", " ", " ");
-		else
-			printf(separated ? "%43s|%35s\n" : "%43s %35s\n", " ", " ");
+	if(dvar_istrue(dvar_get("logo_fred"))) {
+		display_fred(logo_left, separated);
 	}
 
-	while (dvar || i < LOGO_LINES) {
-		if (logo_left)
-			logo_display(logo, i, FRED_LEFT, separated);
-
-		while (dvar) {
-			if (strncmp(dvar->name, "menu_", 5) == 0) {
-				printf(" %c. %-38.38s", dvar->name[5], dvar->data[0]);
-				dvar = dvar_next(dvar);
-				break;
-			}
-			dvar = dvar_next(dvar);
-		}
-		/*
-		 * Pad when the number of menu entries is less than
-		 * LOGO_LINES.
-		 */
-		if (dvar == NULL)
-			printf("    %38.38s", " ");
-
-		if (!logo_left)
-			logo_display(logo, i, FRED_RIGHT, separated);
-		printf("\n");
-		i++;
+	if(dvar_istrue(dvar_get("logo_beastie"))) {
+		display_beastie(logo_left, separated);
 	}
 }
 

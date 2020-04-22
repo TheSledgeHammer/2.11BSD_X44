@@ -59,17 +59,11 @@
 #define DEALLOC(a, b)	dealloc(a, b)
 #define OKMAGIC(a)		((a) == ZMAGIC)
 
-void x86_progress(const char *, ...) __printflike(1, 2);
-void vpbcopy(const void *, void *, size_t);
-void pbzero(void *, size_t);
+//void 	x86_progress(const char *, ...) __printflike(1, 2);
+void 	vpbcopy(const void *, void *, size_t);
+void 	pbzero(void *, size_t);
 ssize_t pread(int, void *, size_t);
 
-/* XXX: defines below glues NetBSD conventions with bootstrap.h. */
-/*
-#define	vpbcopy archsw.arch_copyin
-#define	pbzero  kern_bzero
-#define pread 	archsw.arch_readin
-*/
 
 #else
 #ifdef TEST
@@ -92,7 +86,7 @@ ssize_t pread(int, void *, size_t);
 #define OKMAGIC(a)		((a) == OMAGIC)
 
 ssize_t vread(int, u_long, u_long *, size_t);
-void vcopy(u_long, u_long, u_long *, size_t);
-void vzero(u_long, u_long *, size_t);
+void 	vcopy(u_long, u_long, u_long *, size_t);
+void 	vzero(u_long, u_long *, size_t);
 
 #endif

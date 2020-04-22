@@ -11,7 +11,6 @@
 *.iws
 *.idea
 *.dist
-*.settings
 *.vscode
 cmake-build-debug
 cmake-build-debug-mingw

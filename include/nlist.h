@@ -1,6 +1,6 @@
-/*
- * Copyright (c) 1986, 1989, 1991, 1993
- *	The Regents of the University of California.  All rights reserved.
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,59 +30,52 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)signal.h	8.2 (Berkeley) 5/3/95
+ *	@(#)nlist.h	5.6.1 (2.11BSD GTE) 1/15/94
  */
+
+#ifndef	_NLIST_H_
+#define	_NLIST_H_
+#include <sys/types.h>
 
 /*
- * Machine-dependent signal definitions
+ * Symbol table entry format.  The #ifdef's are so that programs including
+ * nlist.h can initialize nlist structures statically.
  */
 
-typedef int sig_atomic_t;
-
-#if !defined(_POSIX_SOURCE) && !defined(_ANSI_SOURCE)
-
-#include <machine/trap.h>	/* codes for SIGILL, SIGFPE */
-
-/*
- * Information pushed on stack when a signal is delivered.
- * This is used by the kernel to restore state following
- * execution of the signal handler.  It is also made available
- * to the handler to allow it to restore state properly if
- * a non-standard exit is performed.
- */
-struct sigcontext {
-	int	sc_gs;
-	int	sc_fs;
-	int	sc_es;
-	int	sc_ds;
-	int	sc_edi;
-	int	sc_esi;
-	int	sc_ebp;
-	int	sc_ebx;
-	int	sc_edx;
-	int	sc_ecx;
-	int	sc_eax;
-
-	int	sc_eip;
-	int	sc_cs;
-	int	sc_eflags;
-
-	int	sc_onstack;	/* sigstack state to restore */
-	int	sc_mask;	/* signal mask to restore */
-	int	sc_esp;
-	int	sc_ss;
-	int	sc_ap;		/* ap to restore */
-
-
-	int	sc_trapno;	/* XXX should be above */
-	int	sc_err;
+struct	oldnlist {		/* XXX - compatibility/conversion aid */
+	char	n_name[8];	/* symbol name */
+	int	n_type;		/* type flag */
+unsigned int	n_value;	/* value */
 };
 
-#define sc_sp sc_esp	/* sp to restore */
-#define sc_fp sc_ebp	/* fp to restore */
-#define sc_pc sc_eip	/* pc to restore */
-#define sc_ps sc_eflags	/* psl to restore */
+struct	nlist {
+#ifdef	_AOUT_INCLUDE_
+	union {
+		char *n_name;	/* In memory address of symbol name */
+		off_t n_strx;	/* String table offset (file) */
+	} n_un;
+#else
+	char	*n_name;	/* symbol name (in memory) */
+	char	*n_filler;	/* need to pad out to the union's size */
 #endif
+	u_char	n_type;		/* Type of symbol - see below */
+	char	n_ovly;		/* Overlay number */
+	u_int	n_value;	/* Symbol value */
+};
 
+/*
+ * Simple values for n_type.
+ */
+#define	N_UNDF	0x00		/* undefined */
+#define	N_ABS	0x01		/* absolute */
+#define	N_TEXT	0x02		/* text segment */
+#define	N_DATA	0x03		/* data segment */
+#define	N_BSS	0x04		/* bss segment */
+#define	N_REG	0x14		/* register symbol */
+#define	N_FN	0x1f		/* file name */
 
-#endif	/* !_ANSI_SOURCE && !_POSIX_SOURCE */
+#define	N_EXT	0x20		/* external (global) bit, OR'ed in */
+#define	N_TYPE	0x1f		/* mask for all the type bits */
+
+#define	N_FORMAT	"%06o"	/* namelist value format; XXX */
+#endif	/* !_NLIST_H_ */

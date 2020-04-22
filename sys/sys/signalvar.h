@@ -48,6 +48,7 @@ struct	sigacts {
 	sigset_t 				ps_oldmask;			/* saved mask from before sigpause */
 	int		 				ps_flags;			/* signal flags, below */
 	struct	 sigaltstack 	ps_sigstk;			/* sp & on stack state variable */
+	struct	 sigstack		ps_sigstk2;			/* 4.3BSD sigstack compat pointer */
 	int		 				ps_sig;				/* for core dump/debugger XXX */
 	int		 				ps_code;			/* for core dump/debugger XXX */
 	int		 				ps_addr;			/* for core dump/debugger XXX */

@@ -32,47 +32,82 @@
  * SUCH DAMAGE.
  */
 
-void dloader_init_cmds(void);
-int dloader_run(int ac, char **av);
+#include <boot/bootstand.h>
+#include "dloader.h"
 
-extern char *DirBase;
+#define BEASTIE_LINES 	20
 
-typedef struct dvar {
-	struct dvar *next;
-	char 		*name;
-	char 		**data;
-	int 		count;
-} *dvar_t;
+static char *beastie_color[BEASTIE_LINES] =  {
 
-dvar_t 	dvar_get(const char *name);
-void 	dvar_set(const char *name, char **data, int count);
-void 	dvar_unset(const char *name);
-int 	dvar_istrue(dvar_t var);
-dvar_t 	dvar_first(void);
-dvar_t 	dvar_next(dvar_t var);
-dvar_t 	dvar_copy(dvar_t var);
-void 	dvar_free(dvar_t *lastp);
+};
 
-int 	perform(int ac, char **av);
+static char *beastie_indigo[BEASTIE_LINES] =  {
 
-#define COMMON_DCOMMANDS																		\
-		{	"local", "List local variables", command_local },									\
-		{	"lunset", "Unset local variable", command_lunset },									\
-		{	"lunsetif", "Unset local variable if kenv variable is true", command_lunsetif }, 	\
-		{	"loadall", "Load kernel + modules", command_loadall },								\
-		{	"menuclear", "Clear all menus", command_menuclear },								\
-		{	"menuitem", "Add menu bullet", command_menuitem },									\
-		{	"menuadd", "Add script line for bullet", command_menuadd },							\
-		{	"menu", "Run menu system", command_menu },
+};
 
+static char *beastie_mono[BEASTIE_LINES] =  {
 
-/* Logo Global Functions */
-#define LOGO_LEFT 	0
-#define LOGO_RIGHT 	1
-static char *logo_blank_line = "                                 ";
+};
 
-extern void logo_display(char **logo, int line, int lineNum, int orientation, int barrier);
+void
+display_beastie(logo_left, separated)
+	int logo_left, separated;
+{
+	dvar_t dvar;
+	int i;
+	char **logo = beastie_indigo;
+	char *console_val = getenv("console");
 
-/* Logo Options */
-extern void display_fred(int logo_left, int separated);
-extern void display_beastie(int logo_left, int separated);
+	if (dvar_istrue(dvar_get("logo_is_red")))
+		logo = beastie_color;
+
+	if (dvar_istrue(dvar_get("loader_plain")))
+		logo = beastie_mono;
+
+	if (strcmp(console_val, "comconsole") == 0)
+		logo = beastie_mono;
+
+	if (dvar_istrue(dvar_get("logo_disable")))
+		logo = NULL;
+
+	if (dvar_istrue(dvar_get("logo_on_left")))
+		logo_left = 1;
+
+	if (dvar_istrue(dvar_get("logo_separated")))
+		separated = 1;
+
+	dvar = dvar_first();
+	i = 0;
+
+	if (logo != NULL) {
+		if (logo_left)
+			printf(separated ? "%35s|%43s\n" : "%35s %43s\n", " ", " ");
+		else
+			printf(separated ? "%43s|%35s\n" : "%43s %35s\n", " ", " ");
+	}
+
+	while (dvar || i < BEASTIE_LINES) {
+		if (logo_left)
+			logo_display(logo, i, BEASTIE_LINES, LOGO_LEFT, separated);
+
+		while (dvar) {
+			if (strncmp(dvar->name, "menu_", 5) == 0) {
+				printf(" %c. %-38.38s", dvar->name[5], dvar->data[0]);
+				dvar = dvar_next(dvar);
+				break;
+			}
+			dvar = dvar_next(dvar);
+		}
+		/*
+		 * Pad when the number of menu entries is less than
+		 * LOGO_LINES.
+		 */
+		if (dvar == NULL)
+			printf("    %38.38s", " ");
+
+		if (!logo_left)
+			logo_display(logo, i, BEASTIE_LINES, LOGO_RIGHT, separated);
+		printf("\n");
+		i++;
+	}
+}

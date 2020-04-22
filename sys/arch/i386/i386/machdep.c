@@ -65,14 +65,12 @@
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
 
-vm_map_t buffer_map;
-extern vm_offset_t avail_end;
 
 #include <machine/cpu.h>
 #include <machine/reg.h>
 #include <machine/psl.h>
 #include <machine/specialreg.h>
-#include <machine/sigframe.h>
+#include <machine/frame.h>
 #include <machine/bootinfo.h>
 #include <machine/gdt.h>
 
@@ -82,6 +80,9 @@ extern vm_offset_t avail_end;
 #ifdef VM86
 #include <machine/vm86.h>
 #endif
+
+vm_map_t buffer_map;
+extern vm_offset_t avail_end;
 
 /*
  * Declare these as initialized data so we can patch them.
@@ -107,9 +108,6 @@ int boothowto = 0, Maxmem = 0;
 long dumplo;
 int physmem, maxmem;
 extern int bootdev;
-#ifdef SMALL
-extern int forcemaxmem;
-#endif
 int biosmem;
 
 extern cyloffset;
@@ -119,9 +117,9 @@ struct pcb *curpcb;			/* our current running pcb */
 
 int	i386_use_fxsave;
 
-union descriptor gdt[NGDT];
+//union descriptor gdt[NGDT];
 struct gate_descriptor idt[32+16];
-union descriptor ldt[NLDT];
+//union descriptor ldt[NLDT];
 
 struct soft_segment_descriptor gdt_segs[];
 struct soft_segment_descriptor ldt_segs[];
@@ -153,8 +151,7 @@ startup(firstaddr)
 
 	/* avail_end was pre-decremented in pmap_bootstrap to compensate */
 	for (i = 0; i < btoc(sizeof(struct msgbuf)); i++)
-		pmap_enter(kernel_pmap, msgbufp, avail_end + i * NBPG,
-		VM_PROT_ALL, TRUE);
+		pmap_enter(kernel_pmap, msgbufp, avail_end + i * NBPG, VM_PROT_ALL, TRUE);
 	msgbufmapped = 1;
 
 #ifdef KDB
@@ -373,92 +370,102 @@ void
 sendsig(catcher, sig, mask, code)
 	sig_t catcher;
 	int sig, mask;
-	unsigned code;
+	u_long  code;
 {
 	register struct proc *p = curproc;
-	register int *regs;
-	register struct sigframe *fp;
+	struct trapframe *tf;
+	register struct sigframe *fp, frame;
 	struct sigacts *psp = p->p_sigacts;
-	int oonstack, frmtrap;
-
-	regs = p->p_md.md_regs;
-	oonstack = psp->ps_sigstk.ss_flags & SA_ONSTACK;
-	frmtrap = curpcb->pcb_flags & FM_TRAP;
-
-	/*
-	 * Allocate and validate space for the signal handler
-	 * context. Note that if the stack is in P0 space, the
-	 * call to grow() is a nop, and the useracc() check
-	 * will fail if the process has not already allocated
-	 * the space with a `brk'.
-	 */
-	if ((psp->ps_flags & SAS_ALTSTACK)
-			&& (psp->ps_sigstk.ss_flags & SA_ONSTACK) == 0
-			&& (psp->ps_sigonstack & sigmask(sig))) {
-		fp = (struct sigframe*) (psp->ps_sigstk.ss_base + psp->ps_sigstk.ss_size
-				- sizeof(struct sigframe));
-		psp->ps_sigstk.ss_flags |= SA_ONSTACK;
-	} else {
-		if (frmtrap)
-			fp = (struct sigframe*) (regs[tESP] - sizeof(struct sigframe));
-		else
-			fp = (struct sigframe*) (regs[sESP] - sizeof(struct sigframe));
-	}
-
-	if ((unsigned) fp <= USRSTACK - ctob(p->p_vmspace->vm_ssize))
-		(void) grow(p, (unsigned) fp);
-
-	if (useracc((caddr_t) fp, sizeof(struct sigframe), B_WRITE) == 0) {
-		/*
-		 * Process has trashed its stack; give it an illegal
-		 * instruction to halt it in its tracks.
-		 */
-		SIGACTION(p, SIGILL) = SIG_DFL;
-		sig = sigmask(SIGILL);
-		p->p_sigignore &= ~sig;
-		p->p_sigcatch &= ~sig;
-		p->p_sigmask &= ~sig;
-		psignal(p, SIGILL);
-		return;
-	}
+	int oonstack;
+	extern char sigcode[], esigcode[];
 
 	/*
 	 * Build the argument list for the signal handler.
 	 */
+	frame.sf_signum = sig;
+
+	tf = p->p_md.md_regs;
+	oonstack = psp->ps_sigstk.ss_flags & SA_ONSTACK;
+
+	/*
+	 * Allocate space for the signal handler context.
+	 */
+	if ((psp->ps_flags & SAS_ALTSTACK) && !oonstack &&
+	    (psp->ps_sigonstack & sigmask(sig))) {
+		fp = (struct sigframe *)(psp->ps_sigstk2.ss_sp +
+		    psp->ps_sigstk.ss_size - sizeof(struct sigframe));
+		psp->ps_sigstk.ss_flags |= SS_ONSTACK;
+	} else {
+		fp = (struct sigframe *)tf->tf_esp - 1;
+	}
+
 	fp->sf_signum = sig;
 	fp->sf_code = code;
 	fp->sf_scp = &fp->sf_sc;
 	fp->sf_handler = catcher;
-	/* save scratch registers */
-	if (frmtrap) {
-		fp->sf_eax = regs[tEAX];
-		fp->sf_edx = regs[tEDX];
-		fp->sf_ecx = regs[tECX];
-	} else {
-		fp->sf_eax = regs[sEAX];
-		fp->sf_edx = regs[sEDX];
-		fp->sf_ecx = regs[sECX];
-	}
+
 	/*
 	 * Build the signal context to be used by sigreturn.
 	 */
+#ifdef VM86
+	if (tf->tf_eflags & PSL_VM) {
+		frame.sf_sc.sc_gs = tf->tf_vm86_gs;
+		frame.sf_sc.sc_fs = tf->tf_vm86_fs;
+		frame.sf_sc.sc_es = tf->tf_vm86_es;
+		frame.sf_sc.sc_ds = tf->tf_vm86_ds;
+		frame.sf_sc.sc_eflags = get_vflags(p);
+	} else
+#endif
+	{
+		frame.sf_sc.sc_gs = tf->tf_gs;
+		frame.sf_sc.sc_fs = tf->tf_fs;
+		frame.sf_sc.sc_es = tf->tf_es;
+		frame.sf_sc.sc_ds = tf->tf_ds;
+		frame.sf_sc.sc_eflags = tf->tf_eflags;
+	}
+
+	frame.sf_sc.sc_edi = tf->tf_edi;
+	frame.sf_sc.sc_esi = tf->tf_esi;
+	frame.sf_sc.sc_ebp = tf->tf_ebp;
+	frame.sf_sc.sc_ebx = tf->tf_ebx;
+	frame.sf_sc.sc_edx = tf->tf_edx;
+	frame.sf_sc.sc_ecx = tf->tf_ecx;
+	frame.sf_sc.sc_eax = tf->tf_eax;
+	frame.sf_sc.sc_eip = tf->tf_eip;
+	frame.sf_sc.sc_cs = tf->tf_cs;
+	frame.sf_sc.sc_esp = tf->tf_esp;
+	frame.sf_sc.sc_ss = tf->tf_ss;
+	frame.sf_sc.sc_trapno = tf->tf_trapno;
+	frame.sf_sc.sc_err = tf->tf_err;
+
 	fp->sf_sc.sc_onstack = oonstack;
 	fp->sf_sc.sc_mask = mask;
-	if (frmtrap) {
-		fp->sf_sc.sc_sp = regs[tESP];
-		fp->sf_sc.sc_fp = regs[tEBP];
-		fp->sf_sc.sc_pc = regs[tEIP];
-		fp->sf_sc.sc_ps = regs[tEFLAGS];
-		regs[tESP] = (int) fp;
-		regs[tEIP] = (int) ((struct pcb*) kstack)->pcb_sigc;
-	} else {
-		fp->sf_sc.sc_sp = regs[sESP];
-		fp->sf_sc.sc_fp = regs[sEBP];
-		fp->sf_sc.sc_pc = regs[sEIP];
-		fp->sf_sc.sc_ps = regs[sEFLAGS];
-		regs[sESP] = (int) fp;
-		regs[sEIP] = (int) ((struct pcb*) kstack)->pcb_sigc;
+
+	if (copyout(&frame, fp, sizeof(frame)) != 0) {
+		/*
+		 * Process has trashed its stack; give it an illegal
+		 * instruction to halt it in its tracks.
+		 */
+		sigexit(p, SIGILL);
+		/* NOTREACHED */
 	}
+
+	/*
+	 * Build context to run handler in.
+	 */
+	tf->tf_gs = GSEL(GUDATA_SEL, SEL_UPL);
+	tf->tf_fs = GSEL(GUDATA_SEL, SEL_UPL);
+	tf->tf_es = GSEL(GUDATA_SEL, SEL_UPL);
+	tf->tf_ds = GSEL(GUDATA_SEL, SEL_UPL);
+	tf->tf_eip = (int)(((char *)PS_STRINGS) - (esigcode - sigcode));
+	tf->tf_cs = GSEL(GUCODE_SEL, SEL_UPL);
+	tf->tf_eflags &= ~(PSL_T|PSL_VM|PSL_AC);
+	tf->tf_esp = (int)fp;
+	tf->tf_ss = GSEL(GUDATA_SEL, SEL_UPL);
+
+	/* Remember that we're now on the signal stack. */
+	if (oonstack)
+		psp->ps_sigstk.ss_flags |= SS_ONSTACK;
 }
 
 /*
@@ -474,43 +481,70 @@ sendsig(catcher, sig, mask, code)
 struct sigreturn_args {
 	struct sigcontext *sigcntxp;
 };
+
 sigreturn(p, uap, retval)
 	struct proc *p;
 	struct sigreturn_args *uap;
 	int *retval;
 {
-	register struct sigcontext *scp;
-	register struct sigframe *fp;
-	register int *regs = p->p_md.md_regs;
+	register struct sigcontext *scp, context;
+	register struct trapframe *tf;
 
-	fp = (struct sigframe*) regs[sESP];
+	tf = p->p_md.md_regs;
 
-	if (useracc((caddr_t) fp, sizeof(*fp), 0) == 0)
-		return (EINVAL);
+	/*
+	 * The trampoline code hands us the context.
+	 * It is unsafe to keep track of it ourselves, in the event that a
+	 * program jumps out of a signal handler.
+	 */
+	scp = SCARG(uap, sigcntxp);
+	if (copyin((caddr_t)scp, &context, sizeof(*scp)) != 0)
+		return (EFAULT);
 
-	/* restore scratch registers */
-	regs[sEAX] = fp->sf_eax;
-	regs[sEDX] = fp->sf_edx;
-	regs[sECX] = fp->sf_ecx;
 
-	scp = fp->sf_scp;
-	if (useracc((caddr_t) scp, sizeof(*scp), 0) == 0)
-		return (EINVAL);
-#ifdef notyet
-		if ((scp->sc_ps & PSL_MBZ) != 0 || (scp->sc_ps & PSL_MBO) != PSL_MBO) {
-			return(EINVAL);
-		}
+#ifdef VM86
+	if (context.sc_eflags & PSL_VM) {
+		tf->tf_vm86_gs = context.sc_gs;
+		tf->tf_vm86_fs = context.sc_fs;
+		tf->tf_vm86_es = context.sc_es;
+		tf->tf_vm86_ds = context.sc_ds;
+		set_vflags(p, context.sc_eflags);
+	} else
 #endif
-	if (scp->sc_onstack & 01)
-		p->p_sigacts->ps_sigstk.ss_flags |= SA_ONSTACK;
+	{
+		/*
+		 * Check for security violations.  If we're returning to
+		 * protected mode, the CPU will validate the segment registers
+		 * automatically and generate a trap on violations.  We handle
+		 * the trap, rather than doing all of the checking here.
+		 */
+		if (((context.sc_eflags ^ tf->tf_eflags) & PSL_USERSTATIC) != 0
+				|| !USERMODE(context.sc_cs, context.sc_eflags))
+			return (EINVAL);
+
+		/* %fs and %gs were restored by the trampoline. */
+		tf->tf_es = context.sc_es;
+		tf->tf_ds = context.sc_ds;
+		tf->tf_eflags = context.sc_eflags;
+	}
+	tf->tf_edi = context.sc_edi;
+	tf->tf_esi = context.sc_esi;
+	tf->tf_ebp = context.sc_ebp;
+	tf->tf_ebx = context.sc_ebx;
+	tf->tf_edx = context.sc_edx;
+	tf->tf_ecx = context.sc_ecx;
+	tf->tf_eax = context.sc_eax;
+	tf->tf_eip = context.sc_eip;
+	tf->tf_cs = context.sc_cs;
+	tf->tf_esp = context.sc_esp;
+	tf->tf_ss = context.sc_ss;
+
+	if (context.sc_onstack & 01)
+		p->p_sigacts->ps_sigstk.ss_flags |= SS_ONSTACK;
 	else
-		p->p_sigacts->ps_sigstk.ss_flags &= ~SA_ONSTACK;
-	p->p_sigmask = scp->sc_mask
-			& ~(sigmask(SIGKILL) | sigmask(SIGCONT) | sigmask(SIGSTOP));
-	regs[sEBP] = scp->sc_fp;
-	regs[sESP] = scp->sc_sp;
-	regs[sEIP] = scp->sc_pc;
-	regs[sEFLAGS] = scp->sc_ps;
+		p->p_sigacts->ps_sigstk.ss_flags &= ~SS_ONSTACK;
+	p->p_sigmask = context.sc_mask & ~sigcantmask;
+
 	return (EJUSTRETURN);
 }
 
@@ -588,8 +622,9 @@ boot(arghowto)
 	/*NOTREACHED*/
 }
 
-int	dumpmag = 	0x8fca0101;	/* magic number for savecore */
-int	dumpsize = 	0;			/* also for savecore */
+u_long	dumpmag = 	0x8fca0101;	/* magic number for savecore */
+int		dumpsize = 	0;			/* also for savecore */
+long	dumplo = 0; 			/* blocks */
 
 /*
  * Doadump comes here after turning off memory management and
@@ -684,7 +719,6 @@ initcpu()
 
 }
 
-
 /*
  * Clear registers on exec
  */
@@ -715,7 +749,7 @@ setregs(p, elp, stack)
 	tf->tf_edi = 0;
 	tf->tf_esi = 0;
 	tf->tf_ebp = 0;
-	tf->tf_ebx = (int)p->p_psstrp;
+	tf->tf_ebx = (int)PS_STRINGS;
 	tf->tf_edx = 0;
 	tf->tf_ecx = 0;
 	tf->tf_eax = 0;
@@ -791,14 +825,6 @@ setidt(idx, func, typ, dpl, selec)
 	ip->gd_dpl = dpl;
 	ip->gd_p = 1;
 	ip->gd_hioffset = ((u_int)func) >> 16 ;
-}
-
-void
-setirq(idx, func)
-	int idx;
-	void *func;
-{
-	setidt(idx, func, SDT_SYS386IGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
 }
 
 /* called from debugger*/
@@ -878,7 +904,12 @@ extern 	IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
 		IDTVEC(rsvd5), IDTVEC(rsvd6), IDTVEC(rsvd7), IDTVEC(rsvd8),
 		IDTVEC(rsvd9), IDTVEC(rsvd10), IDTVEC(rsvd11), IDTVEC(rsvd12),
 		IDTVEC(rsvd13), IDTVEC(rsvd14), IDTVEC(rsvd14), IDTVEC(syscall);
-
+/*
+typedef void (vector) (void);
+extern vector IDTVEC(syscall);
+extern vector IDTVEC(osyscall);
+extern vector *IDTVEC(exceptions)[];
+*/
 void
 init386(first)
 	int first;
@@ -890,6 +921,7 @@ init386(first)
 	struct region_descriptor r_gdt, r_idt;
 
 	proc0.p_addr = proc0paddr;
+	curpcb = &proc0.p_addr->u_pcb;
 
 	allocate_gdt(&gdt_segs);
 	allocate_ldt(&ldt_segs);
@@ -944,8 +976,7 @@ init386(first)
 	setidt(30, &IDTVEC(rsvd13),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
 	setidt(31, &IDTVEC(rsvd14),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
 
-#include "../../../dev/isa/isa.h"
-#if	NISA >0
+#if	NISA > 0
 	isa_defaultirq();
 #endif
 

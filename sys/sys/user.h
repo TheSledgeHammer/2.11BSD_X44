@@ -100,6 +100,7 @@ struct user {
 	char				dummy2;					/* Room for another flags byte */
 	char				u_psflags;				/* Process Signal flags */
 	struct sigaltstack 	u_sigstk;				/* signal stack info */
+	struct sigstack 	u_sigstk2;				/* signal stack info */
 	struct sigacts 		u_sigacts;				/* p_sigacts points here (use it!) */
 	struct pstats 		u_stats;				/* p_stats points here (use it!) */
 
