@@ -3,82 +3,74 @@
 #include <sys/proc.h>
 #include <sys/kernel.h>
 #include <sys/queue.h>
-#include <sys/malloc.h>
+//#include <sys/malloc.h>
 #include <devel/memory/malloc2.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
 
-struct kmemtable table_zone[MINBUCKET + 16];
+struct kmembuckets p[MINBUCKET + 16];
 static int isPowerOfTwo(long n); 	/* 0 = true, 1 = false */
 
 void
-kmemtable_init()
+kmembucket_init(kbp)
+	struct kmembuckets *kbp;
 {
-    CIRCLEQ_INIT(&table_head);
-    &table_zone = bucket;
+    CIRCLEQ_INIT(&kbp->kb_header);
 }
 
 void
-kmemtable_setup(indx)
+kmembucket_setup(indx)
     long indx;
 {
-    register struct kmemtable *tble = (struct kmemtable *) &table_head;
-    tble->tbl_bucket[indx] = table_zone[indx];
-    tble->tbl_bindx = indx;
-    tble->tbl_bspace = FALSE;
-}
-
-struct kmembuckets *
-kmembucket_create(tble, indx)
-    struct kmemtable *tble;
-    long indx;
-{
-    return (&tble->tbl_bucket[indx]);
+    register struct kmembuckets *kbp = &p[indx];
 }
 
 /* Allocate a bucket at the head of the Table */
-void
-kmembucket_allocate_head(tble, size)
-    struct kmemtable *tble;
+struct kmembucket_entry *
+kmembucket_allocate_head(kbp, size)
+    struct kmembuckets *kbp;
     u_long size;
 {
     long indx = BUCKETINDX(size);
-    register struct kmembuckets *kbp = kmembucket_create(tble, indx);
-    tble->tbl_ztree = (struct kmemtrees *) &tble->tbl_bucket[indx];
-    CIRCLEQ_INSERT_HEAD(&table_head, tble, tbl_entry);
+    register struct kmembucket_entry *kbe = CIRCLEQ_FIRST(&kbp->kb_header);
+    kbe->kbe_bsize = size;
+    kbe->kbe_bindx = indx;
+    CIRCLEQ_INSERT_HEAD(&kbp->kb_header, kbe, kbe_entry);
+    return (kbe);
 }
 
 /* Allocate a bucket at the Tail of the Table */
-void
-kmembucket_allocate_tail(tble, size)
-    struct kmemtable *tble;
+struct kmembucket_entry *
+kmembucket_allocate_tail(kbp, size)
+    struct kmembuckets *kbp;
     u_long size;
 {
     long indx = BUCKETINDX(size);
-    register struct kmembuckets *kbp = kmembucket_create(tble, indx);
-    tble->tbl_ztree = (struct kmemtrees *) &tble->tbl_bucket[indx];
-    CIRCLEQ_INSERT_TAIL(&table_head, tble, tbl_entry);
+    register struct kmembucket_entry *kbe = CIRCLEQ_LAST(&kbp->kb_header);
+    kbe->kbe_bsize = size;
+    kbe->kbe_bindx = indx;
+    CIRCLEQ_INSERT_TAIL(&kbp->kb_header, kbe, kbe_entry);
+    return (kbe);
 }
 
 /* Allocate kmemtrees from Table */
 struct kmemtree *
-kmemtree_allocate(tble)
-    struct kmemtable *tble;
+kmemtree_allocate(kbe)
+	struct kmembucket_entry *kbe;
 {
     register struct kmemtree *ktp;
-    ktp = tble->tbl_ztree;
+    ktp = kbe->kbe_ztree;
     ktp->kt_left = NULL;
     ktp->kt_middle = NULL;
     ktp->kt_right = NULL;
-    ktp->kt_space = tble->tbl_bspace;
+    ktp->kt_space = kbe->kbe_bspace;
     if(ktp->kt_space == FALSE) {
-        ktp->kt_bindx = tble->tbl_bindx;
-        ktp->kt_bsize = tble->tbl_bsize;
+        ktp->kt_bindx = kbe->kbe_bindx;
+        ktp->kt_bsize = kbe->kbe_bsize;
         ktp->kt_space = TRUE;
-        tble->tbl_bspace = ktp->kt_space;
+        kbe->kbe_bspace = ktp->kt_space;
     }
-
     ktp->kt_freelist1 = (struct asl *)ktp;
     ktp->kt_freelist2 = (struct asl *)ktp;
     ktp->kt_freelist1->asl_next = NULL;
@@ -90,32 +82,32 @@ kmemtree_allocate(tble)
 
 
 /* Bucket List Search (kmembuckets) */
-struct kmembuckets *
-kmembucket_search_next(tble, kbp, next)
-    struct kmemtable *tble;
+struct kmembucket_entry *
+kmembucket_search_next(kbp, kbe, next)
     struct kmembuckets *kbp;
+	struct kmembucket_entry *kbe;
     caddr_t next;
 {
-    CIRCLEQ_FOREACH(tble, &table_head, tbl_entry) {
-        if(CIRCLEQ_FIRST(&table_head)->tbl_bucket == kbp) {
-            if(kbp->kb_next == next) {
-                return kbp;
+    CIRCLEQ_FOREACH(kbe, &kbp->kb_header, kbe_entry) {
+        if(CIRCLEQ_FIRST(&kbp->kb_header)->kbe_entry == kbe) {
+            if(kbe->kbe_next == next) {
+                return kbe;
             }
         }
     }
     return (NULL);
 }
 
-struct kmembuckets *
-kmembucket_search_last(tble, kbp, last)
-	struct kmemtable *tble;
+struct kmembucket_entry *
+kmembucket_search_last(kbp, kbe, last)
 	struct kmembuckets *kbp;
+	struct kmembucket_entry *kbe;
 	caddr_t last;
 {
-    CIRCLEQ_FOREACH(tble, &table_head, tbl_entry) {
-        if(CIRCLEQ_LAST(&table_head)->tbl_bucket == kbp) {
-        	if(kbp->kb_last == last) {
-        		return kbp;
+    CIRCLEQ_FOREACH(kbe, &kbp->kb_header, kbe_entry) {
+        if(CIRCLEQ_LAST(&kbp->kb_header)->kbe_entry == kbe) {
+        	if(kbe->kbe_last == last) {
+        		return kbe;
         	}
         }
     }
