@@ -233,8 +233,7 @@ vm_map_create(pmap, min, max, pageable)
 			panic("vm_map_create: out of maps");
 		kmap_free = (vm_map_t) result->header.next;
 	} else
-		MALLOC(result, vm_map_t, sizeof(struct vm_map),
-		       M_VMMAP, M_WAITOK);
+		MALLOC(result, vm_map_t, sizeof(struct vm_map), M_VMMAP, M_WAITOK);
 
 	vm_map_init(result, min, max, pageable);
 	result->pmap = pmap;

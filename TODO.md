@@ -24,8 +24,8 @@ TODO:
 
 - arch:
 	- i386:
-		- bios
-		- vm86
+		- vm_machdep.c: u->u_procp->p_p0br: (no reference in 4.4BSD-Lite2)
+			- 4.3BSD Reno/ 4.4BSD Remanent: once in struct proc. Obsolete?? 
 
 - ufs:
 	- ext2fs (NetBSD)
@@ -35,6 +35,18 @@ TODO:
 		- extattr
 		- wapbl
 
+Kern:
+- kern_physio.c: Incomplete: getphysbuf, putphysbuf (NetBSD 1.3)
+- if INET: remanents of 2.11BSD's networking stack overlay (keep in place for now)
+- syscallargs: To be fixed: temporary compat with 4.4BSD-Lite2
+
+- user.h: 
+	- short	u_uisa[16];					/* segmentation address prototypes */
+	- short	u_uisd[16];					/* segmentation descriptor prototypes */
+	- char	u_sep;						/* flag for I and D separation */
+	- struct u_ovd						/* automatic overlay data */
+	
+	
 - devel/multitasking
 	- kernthreads: (NetBSD 1.4/1.5)
 		- kern_kthread.c: kthread_create, exit, create_deferred, run_deferred_queue
@@ -50,18 +62,6 @@ TODO:
 		- vmspace_share
 		- vmspace_unshare			
 
-Kern:
-- vm_machdep.c: u->u_procp->p_p0br: (no reference in 4.4BSD-Lite2)
-	- 4.3BSD Reno/ 4.4BSD Remanent: once in struct proc. Obsolete?? 
-- if INET: remanents of 2.11BSD's networking stack overlay (keep in place for now)
-- syscallargs: To be fixed: temporary compat with 4.4BSD-Lite2
-
-- user.h: 
-	- short	u_uisa[16];					/* segmentation address prototypes */
-	- short	u_uisd[16];					/* segmentation descriptor prototypes */
-	- char	u_sep;						/* flag for I and D separation */
-	- struct u_ovd						/* automatic overlay data */
-
 Memory Segmentation (Hardware): CPU Registers
 Memory Segmentation (Software):
 Seperate Process Segments: text, data, stack
@@ -70,7 +70,8 @@ Seperate Instruction & Data Spaces
 md_init & sysinit are not possible atm, they are intertwined with FreeBSD's linker_set & linker (executables), with many in kernel modules. Hence a massive amount of code injection/ rewrite would be needed in order to set this up correctly.
 NetBSD: has an equivalent linker (executables) in userspace. May cause more problems than it solves if moved to kernelspace.
 
-Possible Generic Header: 
+Possible Generic Header:
+- Defacto: 3-Clause BSD License 
 (2.11BSD):
 /* 2.11BSD: (file),v (version) (company) (date) */
 

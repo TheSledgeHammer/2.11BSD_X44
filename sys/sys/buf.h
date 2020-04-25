@@ -123,12 +123,12 @@ struct cluster_save {
 #define	B_LOCKED		0x02000		/* locked in core (not reusable) */
 #define	B_UBAREMAP		0x04000		/* addr UNIBUS virtual, not physical */
 #define	B_RAMREMAP		0x08000		/* remapped into ramdisk */
-
 #define	B_CACHE			0x10000		/* Bread found us in the cache. */
 #define	B_CALL			0x20000		/* Call b_iodone from biodone. */
 #define	B_WRITEINPROG	0x40000		/* Write in progress. */
 #define	B_NOCACHE		0x80000		/* Do not cache block after use. */
 #define B_VMIO			0x100000	/* VMIO flag */
+#define	B_RAW			0x200000	/* I/O to user memory. */
 
 /*
  * number of buffer hash entries
@@ -156,6 +156,21 @@ struct cluster_save {
 
 LIST_HEAD(bufhashhdr, buf) bufhashtbl[BUFHSZ], invalhash;
 TAILQ_HEAD(bqueues, buf) bufqueues[BQUEUES];
+
+
+/*
+ * This structure describes a clustered I/O.  It is stored in the b_saveaddr
+ * field of the buffer on which I/O is done.  At I/O completion, cluster
+ * callback uses the structure to parcel I/O's to individual buffers, and
+ * then free's this structure.
+ */
+struct cluster_save {
+	long		bs_bcount;		/* Saved b_bcount. */
+	long		bs_bufsize;		/* Saved b_bufsize. */
+	void		*bs_saveaddr;	/* Saved b_addr. */
+	int			bs_nchildren;	/* Number of associated buffers. */
+	struct buf 	**bs_children;	/* List of associated buffers. */
+};
 
 /*
  * Zero out the buffer's data area.
@@ -200,7 +215,7 @@ void	biodone (struct buf *);
 void	cluster_callback (struct buf *);
 int		cluster_read (struct vnode *, u_quad_t, daddr_t, long, struct ucred *, struct buf **);
 void	cluster_write (struct buf *, u_quad_t);
-//u_int	minphys (struct buf *);
+u_int	minphys (struct buf *);
 void	vwakeup (struct buf *);
 void	vmapbuf (struct buf *);
 void	vunmapbuf (struct buf *);

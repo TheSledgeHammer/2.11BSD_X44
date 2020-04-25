@@ -140,14 +140,14 @@ typedef struct {
 #define	ELFCLASSNUM		3
 
 /* e_ident[EI_DATA] */
-#define	ELFDATANONE	0	/* Invalid data encoding */
-#define	ELFDATA2LSB	1	/* 2's complement values, LSB first */
-#define	ELFDATA2MSB	2	/* 2's complement values, MSB first */
+#define	ELFDATANONE		0	/* Invalid data encoding */
+#define	ELFDATA2LSB		1	/* 2's complement values, LSB first */
+#define	ELFDATA2MSB		2	/* 2's complement values, MSB first */
 
 /* e_ident[EI_VERSION] */
-#define	EV_NONE		0	/* Invalid version */
-#define	EV_CURRENT	1	/* Current version */
-#define	EV_NUM		2
+#define	EV_NONE			0	/* Invalid version */
+#define	EV_CURRENT		1	/* Current version */
+#define	EV_NUM			2
 
 /* e_ident[EI_OSABI] */
 #define	ELFOSABI_SYSV		0	/* UNIX System V ABI */
@@ -167,17 +167,17 @@ typedef struct {
 #define	ELFOSABI_STANDALONE	255	/* Standalone (embedded) application */
 
 /* e_type */
-#define	ET_NONE		0	/* No file type */
-#define	ET_REL		1	/* Relocatable file */
-#define	ET_EXEC		2	/* Executable file */
-#define	ET_DYN		3	/* Shared object file */
-#define	ET_CORE		4	/* Core file */
-#define	ET_NUM		5
+#define	ET_NONE			0		/* No file type */
+#define	ET_REL			1		/* Relocatable file */
+#define	ET_EXEC			2		/* Executable file */
+#define	ET_DYN			3		/* Shared object file */
+#define	ET_CORE			4		/* Core file */
+#define	ET_NUM			5
 
-#define	ET_LOOS		0xfe00	/* Operating system specific range */
-#define	ET_HIOS		0xfeff
-#define	ET_LOPROC	0xff00	/* Processor-specific range */
-#define	ET_HIPROC	0xffff
+#define	ET_LOOS			0xfe00	/* Operating system specific range */
+#define	ET_HIOS			0xfeff
+#define	ET_LOPROC		0xff00	/* Processor-specific range */
+#define	ET_HIPROC		0xffff
 
 /* e_machine */
 #define	EM_NONE			0		/* No machine */
@@ -244,25 +244,25 @@ typedef struct {
 } Elf64_Phdr;
 
 /* p_type */
-#define	PT_NULL		0		/* Program header table entry unused */
-#define	PT_LOAD		1		/* Loadable program segment */
-#define	PT_DYNAMIC	2		/* Dynamic linking information */
-#define	PT_INTERP	3		/* Program interpreter */
-#define	PT_NOTE		4		/* Auxiliary information */
-#define	PT_SHLIB	5		/* Reserved, unspecified semantics */
-#define	PT_PHDR		6		/* Entry for header table itself */
-#define	PT_NUM		7
+#define	PT_NULL			0			/* Program header table entry unused */
+#define	PT_LOAD			1			/* Loadable program segment */
+#define	PT_DYNAMIC		2			/* Dynamic linking information */
+#define	PT_INTERP		3			/* Program interpreter */
+#define	PT_NOTE			4			/* Auxiliary information */
+#define	PT_SHLIB		5			/* Reserved, unspecified semantics */
+#define	PT_PHDR			6			/* Entry for header table itself */
+#define	PT_NUM			7
 
 /* p_flags */
-#define	PF_R		0x4	/* Segment is readable */
-#define	PF_W		0x2	/* Segment is writable */
-#define	PF_X		0x1	/* Segment is executable */
+#define	PF_R			0x4			/* Segment is readable */
+#define	PF_W			0x2			/* Segment is writable */
+#define	PF_X			0x1			/* Segment is executable */
 
-#define	PF_MASKOS	0x0ff00000	/* Opersting system specific values */
-#define	PF_MASKPROC	0xf0000000	/* Processor-specific values */
+#define	PF_MASKOS		0x0ff00000	/* Opersting system specific values */
+#define	PF_MASKPROC		0xf0000000	/* Processor-specific values */
 
-#define	PT_LOPROC	0x70000000	/* Processor-specific range */
-#define	PT_HIPROC	0x7fffffff
+#define	PT_LOPROC		0x70000000	/* Processor-specific range */
+#define	PT_HIPROC		0x7fffffff
 
 #define	PT_MIPS_REGINFO	0x70000000
 
@@ -385,22 +385,22 @@ typedef struct {
 /*
  * Special section indexes
  */
-#define	SHN_UNDEF	0		/* Undefined section */
+#define	SHN_UNDEF			0			/* Undefined section */
 
-#define	SHN_LORESERVE	0xff00	/* Reserved range */
-#define	SHN_ABS		0xfff1		/*  Absolute symbols */
-#define	SHN_COMMON	0xfff2		/*  Common symbols */
-#define	SHN_HIRESERVE	0xffff
+#define	SHN_LORESERVE		0xff00		/* Reserved range */
+#define	SHN_ABS				0xfff1		/*  Absolute symbols */
+#define	SHN_COMMON			0xfff2		/*  Common symbols */
+#define	SHN_HIRESERVE		0xffff
 
-#define	SHN_LOPROC	0xff00		/* Processor-specific range */
-#define	SHN_HIPROC	0xff1f
-#define	SHN_LOOS	0xff20		/* Operating system specific range */
-#define	SHN_HIOS	0xff3f
+#define	SHN_LOPROC			0xff00		/* Processor-specific range */
+#define	SHN_HIPROC			0xff1f
+#define	SHN_LOOS			0xff20		/* Operating system specific range */
+#define	SHN_HIOS			0xff3f
 
-#define	SHN_MIPS_ACOMMON 0xff00
-#define	SHN_MIPS_TEXT	0xff01
-#define	SHN_MIPS_DATA	0xff02
-#define	SHN_MIPS_SCOMMON 0xff03
+#define	SHN_MIPS_ACOMMON 	0xff00
+#define	SHN_MIPS_TEXT		0xff01
+#define	SHN_MIPS_DATA		0xff02
+#define	SHN_MIPS_SCOMMON 	0xff03
 
 /*
  * Relocation Entries
@@ -417,8 +417,8 @@ typedef struct {
 } Elf32_Rela;
 
 /* r_info utility macros */
-#define	ELF32_R_SYM(info)	((info) >> 8)
-#define	ELF32_R_TYPE(info)	((info) & 0xff)
+#define	ELF32_R_SYM(info)		((info) >> 8)
+#define	ELF32_R_TYPE(info)		((info) & 0xff)
 #define	ELF32_R_INFO(sym, type)	(((sym) << 8) + (unsigned char)(type))
 
 typedef struct {
@@ -488,22 +488,22 @@ typedef struct {
 #define	DT_FINI_ARRAYSZ	28	/* Size, in bytes, of DT_FINI_ARRAY array*/
 #define	DT_NUM			29
 
-#define	DT_LOOS		0x60000000	/* Operating system specific range */
-#define	DT_HIOS		0x6fffffff
-#define	DT_LOPROC	0x70000000	/* Processor-specific range */
-#define	DT_HIPROC	0x7fffffff
+#define	DT_LOOS			0x60000000	/* Operating system specific range */
+#define	DT_HIOS			0x6fffffff
+#define	DT_LOPROC		0x70000000	/* Processor-specific range */
+#define	DT_HIPROC		0x7fffffff
 
 /*
  * Auxiliary Vectors
  */
 typedef struct {
-	Elf32_Word	a_type;				/* 32-bit id */
-	Elf32_Word	a_v;				/* 32-bit id */
+	Elf32_Word	a_type;		/* 32-bit id */
+	Elf32_Word	a_v;		/* 32-bit id */
 } Aux32Info;
 
 typedef struct {
-	Elf64_Half	a_type;				/* 32-bit id */
-	Elf64_Xword	a_v;				/* 64-bit id */
+	Elf64_Half	a_type;		/* 32-bit id */
+	Elf64_Xword	a_v;		/* 64-bit id */
 } Aux64Info;
 
 /* a_type */
@@ -524,10 +524,10 @@ typedef struct {
 /* Vendor specific */
 #define	AT_MIPS_NOTELF	10	/* XXX a_val != 0 -> MIPS XCOFF executable */
 
-#define	AT_SUN_UID	2000	/* euid */
-#define	AT_SUN_RUID	2001	/* ruid */
-#define	AT_SUN_GID	2002	/* egid */
-#define	AT_SUN_RGID	2003	/* rgid */
+#define	AT_SUN_UID		2000	/* euid */
+#define	AT_SUN_RUID		2001	/* ruid */
+#define	AT_SUN_GID		2002	/* egid */
+#define	AT_SUN_RGID		2003	/* rgid */
 
 /* Solaris kernel specific */
 #define	AT_SUN_LDELF	2004	/* dynamic linker's ELF header */

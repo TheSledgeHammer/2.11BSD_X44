@@ -119,7 +119,7 @@ struct type *name##_SPLAY_INSERT(struct name *, struct type *);			\
 struct type *name##_SPLAY_REMOVE(struct name *, struct type *);			\
 																		\
 /* Finds the node with the same key as elm */							\
-static __inline struct type *											\
+static __unused __inline struct type *											\
 name##_SPLAY_FIND(struct name *head, struct type *elm)					\
 {																		\
 	if (SPLAY_EMPTY(head))												\
@@ -130,7 +130,7 @@ name##_SPLAY_FIND(struct name *head, struct type *elm)					\
 	return (NULL);														\
 }																		\
 																		\
-static __inline struct type *											\
+static __unused __inline struct type *											\
 name##_SPLAY_NEXT(struct name *head, struct type *elm)					\
 {																		\
 	name##_SPLAY(head, elm);											\
@@ -277,16 +277,17 @@ void name##_SPLAY_MINMAX(struct name *head, int __comp) 				\
 #define SPLAY_INSERT(name, x, y)	name##_SPLAY_INSERT(x, y)
 #define SPLAY_REMOVE(name, x, y)	name##_SPLAY_REMOVE(x, y)
 #define SPLAY_FIND(name, x, y)		name##_SPLAY_FIND(x, y)
-#define SPLAY_NEXT(name, x, y)		name##_SPLAY_NEXT(x, y)
-#define SPLAY_MIN(name, x)		(SPLAY_EMPTY(x) ? NULL	\
-		: name##_SPLAY_MIN_MAX(x, SPLAY_NEGINF))
-#define SPLAY_MAX(name, x)		(SPLAY_EMPTY(x) ? NULL	\
-		: name##_SPLAY_MIN_MAX(x, SPLAY_INF))
+#define SPLAY_NEXT(name, x, y)		name##_SPLAY_NEXT(x, y) __unused
+#define SPLAY_MIN(name, x)			(SPLAY_EMPTY(x) ? NULL	\
+									: name##_SPLAY_MIN_MAX(x, SPLAY_NEGINF))
+#define SPLAY_MAX(name, x)			(SPLAY_EMPTY(x) ? NULL	\
+									: name##_SPLAY_MIN_MAX(x, SPLAY_INF))
 
 #define SPLAY_FOREACH(x, name, head)									\
 	for ((x) = SPLAY_MIN(name, head);									\
 	     (x) != NULL;													\
 	     (x) = SPLAY_NEXT(name, head, x))
+
 
 /* Macros that define a red-black tree */
 #define RB_HEAD(name, type)												\

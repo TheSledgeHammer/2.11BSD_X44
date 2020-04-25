@@ -117,6 +117,9 @@
 #define M_WAPBL		65	/* UFS & VFS WAPBL */							/* UN-USED */
 #define M_TGRP		66	/* thread group header */						/* UN-USED */
 #define M_THREAD	67	/* thread structures */							/* UN-USED */
+
+//#define M_KOVL		70	/* Kernel Overlay */
+//#define M_VOVL		71	/* Virtual Overlay */
 /**********************************************/
 #define M_COREMAP	68	/* 2.11BSD's Coremap */
 #define M_SWAPMAP	69	/* 2.11BSD's Swapmap */
@@ -194,6 +197,8 @@
 	"thread"		/* 67 M_THREAD */		\
 	"coremap"		/* 68 M_COREMAP */		\
 	"swapmap"		/* 69 M_SWAPMAP */		\
+	//"koverlay"		/* 71 M_KOVL */		\
+	//"voverlay"		/* 72 M_VOVL */		\
 	"temp",			/* 70 M_TEMP */ 		\
 }
 

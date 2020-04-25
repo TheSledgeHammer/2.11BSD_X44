@@ -35,6 +35,7 @@
 
 #ifndef	_NLIST_H_
 #define	_NLIST_H_
+#include <sys/cdefs.h>
 #include <sys/types.h>
 
 /*
@@ -42,40 +43,60 @@
  * nlist.h can initialize nlist structures statically.
  */
 
-struct	oldnlist {		/* XXX - compatibility/conversion aid */
-	char	n_name[8];	/* symbol name */
-	int	n_type;		/* type flag */
+struct	oldnlist {			/* XXX - compatibility/conversion aid */
+	char	n_name[8];		/* symbol name */
+	int	n_type;				/* type flag */
 unsigned int	n_value;	/* value */
 };
 
 struct	nlist {
 #ifdef	_AOUT_INCLUDE_
 	union {
-		char *n_name;	/* In memory address of symbol name */
-		off_t n_strx;	/* String table offset (file) */
+		char *n_name;		/* In memory address of symbol name */
+		off_t n_strx;		/* String table offset (file) */
 	} n_un;
+# define N_NAME(nlp)	((nlp)->n_un.n_name)
 #else
-	char	*n_name;	/* symbol name (in memory) */
-	char	*n_filler;	/* need to pad out to the union's size */
+	const char	*n_name;	/* symbol name (in memory) */
+	char	*n_filler;		/* need to pad out to the union's size */
+# define N_NAME(nlp)	((nlp)->n_name)
 #endif
-	u_char	n_type;		/* Type of symbol - see below */
-	char	n_ovly;		/* Overlay number */
-	u_int	n_value;	/* Symbol value */
+	u_char	n_type;			/* Type of symbol - see below */
+	char	n_ovly;			/* Overlay number */
+#define	n_hash	n_desc		/* used internally by ld(1); XXX */
+	short 	n_desc;			/* used by stab entries */
+	u_long	n_value;		/* Symbol value */
 };
 
 /*
  * Simple values for n_type.
  */
-#define	N_UNDF	0x00		/* undefined */
-#define	N_ABS	0x01		/* absolute */
-#define	N_TEXT	0x02		/* text segment */
-#define	N_DATA	0x03		/* data segment */
-#define	N_BSS	0x04		/* bss segment */
-#define	N_REG	0x14		/* register symbol */
-#define	N_FN	0x1f		/* file name */
+#define	N_UNDF		0x00		/* undefined */
+#define	N_ABS		0x02		/* absolute address */
+#define	N_TEXT		0x04		/* text segment */
+#define	N_DATA		0x06		/* data segment */
+#define	N_BSS		0x08		/* bss segment */
+#define	N_REG		0x10		/* register symbol */
+#define	N_INDR		0x0a		/* alias definition */
+#define	N_SIZE		0x0c		/* pseudo type, defines a symbol's size */
+#define	N_COMM		0x12		/* common reference */
+#define N_SETA		0x14		/* absolute set element symbol */
+#define N_SETT		0x16		/* text set element symbol */
+#define N_SETD		0x18		/* data set element symbol */
+#define N_SETB		0x1a		/* bss set element symbol */
+#define N_SETV		0x1c		/* set vector symbol */
+#define	N_FN		0x1e		/* file name (N_EXT on) */
+#define	N_WARN		0x1e		/* warning message (N_EXT off) */
 
-#define	N_EXT	0x20		/* external (global) bit, OR'ed in */
-#define	N_TYPE	0x1f		/* mask for all the type bits */
+#define	N_EXT		0x01		/* external (global) bit, OR'ed in */
+#define	N_TYPE		0x1e		/* mask for all the type bits */
 
-#define	N_FORMAT	"%06o"	/* namelist value format; XXX */
+#define	N_FORMAT	"%06o"		/* namelist value format; XXX */
+#define	N_STAB		0x0e0		/* mask for debugger symbols -- stab(5) */
+
+
+__BEGIN_DECLS
+int nlist(const char *, struct nlist *);
+int __fdnlist(int, struct nlist *);		/* XXX for libkvm */
+__END_DECLS
 #endif	/* !_NLIST_H_ */

@@ -36,35 +36,7 @@
 #ifndef	_AOUT_H_
 #define	_AOUT_H_
 
-#include <sys/exec.h>
-
-#define	N_BADMAG(x) \
-	(((x).a_magic)!=A_MAGIC1 && ((x).a_magic)!=A_MAGIC2 && \
-	((x).a_magic)!=A_MAGIC3 && ((x).a_magic)!=A_MAGIC4 && \
-	((x).a_magic)!=A_MAGIC5 && ((x).a_magic)!=A_MAGIC6)
-
-#define	N_TXTOFF(x) \
-	((x).a_magic==A_MAGIC5 || (x).a_magic==A_MAGIC6 ? \
-	sizeof(struct ovlhdr) + sizeof(struct exec) : sizeof(struct exec))
-
-/*
- * The following were added as part of the new object file format.  They
- * call functions because calculating the sums of overlay sizes was too
- * messy (and verbose) to do 'inline'.
- *
- * NOTE: if the magic number is that of an overlaid object the program
- * must pass an extended header ('xexec') as the argument.
-*/
-
-#include <sys/types.h>
-
-off_t	n_stroff(), n_symoff(), n_datoff(), n_dreloc(), n_treloc();
-
-#define	N_STROFF(e) (n_stroff(&e))
-#define	N_SYMOFF(e) (n_symoff(&e))
-#define	N_DATOFF(e) (n_datoff(&e))
-#define	N_DRELOC(e) (n_dreloc(&e))
-#define	N_TRELOC(e) (n_treloc(&e))
+#include <sys/exec_aout.h>
 
 #define	_AOUT_INCLUDE_
 #include <nlist.h>

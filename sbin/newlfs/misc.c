@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1982, 1988, 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,35 +29,55 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	$Id: sysent.h,v 1.1 1994/08/24 11:47:23 sos Exp $
  */
 
-#ifndef _SYS_SYSENT_H_
-#define _SYS_SYSENT_H_
+#ifndef lint
+static char sccsid[] = "@(#)misc.c	8.1 (Berkeley) 6/5/93";
+#endif /* not lint */
 
-/*
- * Structure of the system-entry table
- */
-struct sysent {					/* system call table */
-	int	sy_narg;				/* number of arguments */
-	int	(*sy_call)();			/* implementing function */
-};
+#include <sys/types.h>
+#include <sys/types.h>
+#include <sys/disklabel.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include "extern.h"
 
-struct sysentvec {
-	int				sv_size;	/* number of entries */
-	struct sysent	*sv_table;	/* pointer to sysent */
-	unsigned int	sv_mask;	/* optional mask to index */
-	int				sv_sigsize;	/* size of signal translation table */
-	int				*sv_sigtbl;	/* signal translation table */
-	int				sv_errsize;	/* size of signal translation table */
-	int 			*sv_errtbl;	/* errno translation table */
-};
+u_int
+log2(num)
+        u_int num;
+{
+        register u_int i, limit;
 
-extern int nsysent;
+        limit = 1;
+        for (i = 0; limit < num; limit = limit << 1, i++);
+        return (i);
+}
 
-#ifdef KERNEL
-extern struct sysent sysent[];
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
 #endif
 
-#endif /* _SYS_SYSENT_H_ */
+void
+#if __STDC__
+fatal(const char *fmt, ...)
+#else
+fatal(fmt, va_alist)
+	char *fmt;
+	va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "%s: ", progname);
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(1);
+	/* NOTREACHED */
+}

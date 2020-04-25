@@ -65,7 +65,7 @@ struct extent_fixed {
 	struct extent	fex_extent;	/* MUST BE FIRST */
 								/* freelist of region descriptors */
 	LIST_HEAD(, extent_region) fex_freelist;
-	caddr_t			fex_storage;/* storage space for descriptors */
+	caddr_t			fex_storage;	/* storage space for descriptors */
 	size_t			fex_storagesize;/* size of storage space */
 };
 
@@ -96,8 +96,8 @@ struct extent_fixed {
 
 #if defined(_KERNEL) || defined(_EXTENT_TESTING)
 #define EXTENT_FIXED_STORAGE_SIZE(_nregions)		\
-	(ALIGN(sizeof(struct extent_fixed)) +		\
-	((ALIGN(sizeof(struct extent_region))) *	\
+	(ALIGN(sizeof(struct extent_fixed)) +			\
+	((ALIGN(sizeof(struct extent_region))) *		\
 	 (_nregions)))
 
 struct	extent *extent_create (char *, u_long, u_long, int, caddr_t, size_t, int);
@@ -108,8 +108,8 @@ int		extent_free (struct extent *, u_long, u_long, int);
 void	extent_print (struct extent *);
 
 /* Simple case of extent_alloc_subregion() */
-#define extent_alloc(_ex, _size, _alignment, _boundary, _flags, _result) \
-	extent_alloc_subregion((_ex), (_ex)->ex_start, (_ex)->ex_end,	\
+#define extent_alloc(_ex, _size, _alignment, _boundary, _flags, _result) 	\
+	extent_alloc_subregion((_ex), (_ex)->ex_start, (_ex)->ex_end,			\
 	(_size), (_alignment), (_boundary), (_flags), (_result))
 #endif /* _KERNEL || _EXTENT_TESTING */
 

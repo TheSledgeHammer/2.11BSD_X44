@@ -112,6 +112,14 @@
 #endif
 #endif	/* !(__STDC__ || __cplusplus) */
 
+/*
+ * Used for internal auditing of the NetBSD source tree.
+ */
+#ifdef __AUDIT__
+#define	__aconst	__const
+#else
+#define	__aconst
+#endif
 
 /*
  * Compile Time Assertion.
@@ -168,5 +176,24 @@
 #define	__KERNEL_RCSID(_n, _s)		/* nothing */
 #endif /* NO_KERNEL_RCSIDS */
 #endif /* _KERNEL */
+
+
+/*
+ * __unused: Note that item or function might be unused.
+ */
+#if __GNUC_PREREQ__(2, 7) || defined(__lint__)
+#define	__unused	__attribute__((__unused__))
+#else
+#define	__unused	/* delete */
+#endif
+
+/*
+ * __used: Note that item is needed, even if it appears to be unused.
+ */
+#if __GNUC_PREREQ__(3, 1)
+#define	__used		__attribute__((__used__))
+#else
+#define	__used		__unused
+#endif
 
 #endif /* !_CDEFS_H_ */

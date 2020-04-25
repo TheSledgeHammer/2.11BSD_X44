@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1982, 1988, 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,34 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: sysent.h,v 1.1 1994/08/24 11:47:23 sos Exp $
+ *	@(#)pathnames.h	8.1 (Berkeley) 6/8/93
  */
 
-#ifndef _SYS_SYSENT_H_
-#define _SYS_SYSENT_H_
-
-/*
- * Structure of the system-entry table
- */
-struct sysent {					/* system call table */
-	int	sy_narg;				/* number of arguments */
-	int	(*sy_call)();			/* implementing function */
-};
-
-struct sysentvec {
-	int				sv_size;	/* number of entries */
-	struct sysent	*sv_table;	/* pointer to sysent */
-	unsigned int	sv_mask;	/* optional mask to index */
-	int				sv_sigsize;	/* size of signal translation table */
-	int				*sv_sigtbl;	/* signal translation table */
-	int				sv_errsize;	/* size of signal translation table */
-	int 			*sv_errtbl;	/* errno translation table */
-};
-
-extern int nsysent;
-
-#ifdef KERNEL
-extern struct sysent sysent[];
-#endif
-
-#endif /* _SYS_SYSENT_H_ */
+#define _PATH_LFS_CLEANERD	"/usr/libexec/lfs_cleanerd"
