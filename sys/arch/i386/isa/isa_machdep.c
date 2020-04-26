@@ -92,8 +92,8 @@
 #include <machine/pio.h>
 #include <machine/cpufunc.h>
 
-#include <dev/isa/isareg.h>
-#include <dev/isa/isavar.h>
+#include <dev/isa/isa.h>
+#include <dev/isa/isa_device.h>
 #include <i386/isa/isa_machdep.h>
 #include <i386/isa/icu.h>
 
@@ -167,35 +167,35 @@ isa_defaultirq()
 	/* icu vectors */
 	for (i = 0; i < ICU_LEN; i++)
 		setgate(&idt[ICU_OFFSET + i], IDTVEC(intr)[i], 0, SDT_SYS386IGT,
-		    SEL_KPL);
-  
+				SEL_KPL);
+
 	/* initialize 8259's */
-	outb(IO_ICU1, 0x11);		/* reset; program device, four bytes */
-	outb(IO_ICU1+1, ICU_OFFSET);	/* starting at this vector index */
-	outb(IO_ICU1+1, 1 << IRQ_SLAVE); /* slave on line 2 */
+	outb(IO_ICU1, 0x11);				/* reset; program device, four bytes */
+	outb(IO_ICU1 + 1, ICU_OFFSET); 		/* starting at this vector index */
+	outb(IO_ICU1 + 1, 1 << IRQ_SLAVE); 	/* slave on line 2 */
 #ifdef AUTO_EOI_1
-	outb(IO_ICU1+1, 2 | 1);		/* auto EOI, 8086 mode */
+	outb(IO_ICU1+1, 2 | 1);				/* auto EOI, 8086 mode */
 #else
-	outb(IO_ICU1+1, 1);		/* 8086 mode */
+	outb(IO_ICU1 + 1, 1); 				/* 8086 mode */
 #endif
-	outb(IO_ICU1+1, 0xff);		/* leave interrupts masked */
-	outb(IO_ICU1, 0x68);		/* special mask mode (if available) */
-	outb(IO_ICU1, 0x0a);		/* Read IRR by default. */
+	outb(IO_ICU1 + 1, 0xff); 			/* leave interrupts masked */
+	outb(IO_ICU1, 0x68); 				/* special mask mode (if available) */
+	outb(IO_ICU1, 0x0a); 				/* Read IRR by default. */
 #ifdef REORDER_IRQ
-	outb(IO_ICU1, 0xc0 | (3 - 1));	/* pri order 3-7, 0-2 (com2 first) */
+	outb(IO_ICU1, 0xc0 | (3 - 1));		/* pri order 3-7, 0-2 (com2 first) */
 #endif
 
-	outb(IO_ICU2, 0x11);		/* reset; program device, four bytes */
-	outb(IO_ICU2+1, ICU_OFFSET+8);	/* staring at this vector index */
-	outb(IO_ICU2+1, IRQ_SLAVE);
+	outb(IO_ICU2, 0x11); 				/* reset; program device, four bytes */
+	outb(IO_ICU2 + 1, ICU_OFFSET + 8); 	/* staring at this vector index */
+	outb(IO_ICU2 + 1, IRQ_SLAVE);
 #ifdef AUTO_EOI_2
-	outb(IO_ICU2+1, 2 | 1);		/* auto EOI, 8086 mode */
+	outb(IO_ICU2+1, 2 | 1);				/* auto EOI, 8086 mode */
 #else
-	outb(IO_ICU2+1, 1);		/* 8086 mode */
+	outb(IO_ICU2 + 1, 1); 				/* 8086 mode */
 #endif
-	outb(IO_ICU2+1, 0xff);		/* leave interrupts masked */
-	outb(IO_ICU2, 0x68);		/* special mask mode (if available) */
-	outb(IO_ICU2, 0x0a);		/* Read IRR by default. */
+	outb(IO_ICU2 + 1, 0xff);			/* leave interrupts masked */
+	outb(IO_ICU2, 0x68); 				/* special mask mode (if available) */
+	outb(IO_ICU2, 0x0a); 				/* Read IRR by default. */
 }
 
 /*

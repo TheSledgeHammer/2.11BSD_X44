@@ -1,6 +1,10 @@
+/*	$NetBSD: locore.s,v 1.172.2.7 1998/05/08 10:07:01 mycroft Exp $	*/
+
 /*-
- * Copyright (c) 1990, 1993
- *	The Regents of the University of California.  All rights reserved.
+ * Copyright (c) 1993, 1994, 1995, 1997
+ *	Charles M. Hannum.  All rights reserved.
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
@@ -33,16 +37,70 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)dkio.h	8.1 (Berkeley) 6/11/93
+ *	@(#)locore.s	7.3 (Berkeley) 5/13/91
  */
+
 
 /*
- * Structures and definitions for disk io control commands
- *
- * THIS WHOLE AREA NEEDS MORE THOUGHT.  FOR NOW JUST IMPLEMENT
- * ENOUGH TO READ AND WRITE HEADERS ON MASSBUS DISKS.  EVENTUALLY
- * SHOULD BE ABLE TO DETERMINE DRIVE TYPE AND DO OTHER GOOD STUFF.
+ * Trap and fault vector routines
  */
 
-/* disk io control commands */
-#define DKIOCHDR	_IO(d, 1)	/* next I/O will read/write header */
+ // New syscalls??
+
+#define	INTRENTRY \
+	pushl	%eax		; \
+	pushl	%ecx		; \
+	pushl	%edx		; \
+	pushl	%ebx		; \
+	pushl	%ebp		; \
+	pushl	%esi		; \
+	pushl	%edi		; \
+	pushl	%ds			; \
+	pushl	%es			; \
+	movl	$GSEL(GDATA_SEL, SEL_KPL),%eax	; \
+	movl	%ax,%ds		; \
+	movl	%ax,%es
+#define	INTRFASTEXIT \
+	popl	%es			; \
+	popl	%ds			; \
+	popl	%edi		; \
+	popl	%esi		; \
+	popl	%ebp		; \
+	popl	%ebx		; \
+	popl	%edx		; \
+	popl	%ecx		; \
+	popl	%eax		; \
+	addl	$8,%esp		; \
+	iret
+
+
+IDTVEC(exceptions)
+		.long	_Xtrap00, _Xtrap01, _Xtrap02, _Xtrap03
+		.long	_Xtrap04, _Xtrap05, _Xtrap06, _Xtrap07
+		.long	_Xtrap08, _Xtrap09, _Xtrap0a, _Xtrap0b
+		.long	_Xtrap0c, _Xtrap0d, _Xtrap0e, _Xtrap0f
+		.long	_Xtrap10, _Xtrap11, _Xtrap12, _Xtrap13
+		.long	_Xtrap14, _Xtrap15, _Xtrap16, _Xtrap17
+		.long	_Xtrap18, _Xtrap19, _Xtrap1a, _Xtrap1b
+		.long	_Xtrap1c, _Xtrap1d, _Xtrap1e, _Xtrap1f
+
+calltrap:
+
+#ifdef VM86
+		jnz		5f
+		testl	$PSL_VM,TF_EFLAGS(%esp)
+#endif
+
+/*
+ * Old call gate entry for syscall
+ */
+IDTVEC(osyscall)
+		/* Set eflags in trap frame. */
+		pushfl
+		popl	8(%esp)
+		/* Turn off trace flag and nested task. */
+		pushfl
+		andb	$~((PSL_T|PSL_NT)>>8),1(%esp)
+		popfl
+		pushl	$7						# size of instruction for restart
+		jmp		syscall1

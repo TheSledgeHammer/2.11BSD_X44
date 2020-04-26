@@ -216,7 +216,7 @@
 #define VM_KERNEL_PT_PAGES	((vm_size_t)2)		/* XXX: SYSPTSIZE */
 
 /* pcb base */
-#define	pcbb(p)		((u_int)(p)->p_addr)
+#define	pcbb(p)				((u_int)(p)->p_addr)
 
 /*
  * Flush MMU TLB

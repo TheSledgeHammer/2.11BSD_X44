@@ -34,7 +34,7 @@
  *	@(#)npx.c	8.1 (Berkeley) 6/11/93
  */
 #include "npx.h"
-//#if NNPX > 0
+#if NNPX > 0
 
 #include <sys/param.h>
 #include <sys/systm.h>

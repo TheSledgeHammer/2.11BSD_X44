@@ -24,8 +24,8 @@ TODO:
 
 - arch:
 	- i386:
-		- isa:
-		- dev: missing files from later port
+		- missing_devs.txt
+		- clean up: cpufunc.h & pio.h (contain duplicate functions)
 		- vm_machdep.c: u->u_procp->p_p0br: (no reference in 4.4BSD-Lite2)
 			- 4.3BSD Reno/ 4.4BSD Remanent: once in struct proc. Obsolete?? 
 
@@ -68,16 +68,3 @@ Memory Segmentation (Hardware): CPU Registers
 Memory Segmentation (Software):
 Seperate Process Segments: text, data, stack
 Seperate Instruction & Data Spaces
-
-md_init & sysinit are not possible atm, they are intertwined with FreeBSD's linker_set & linker (executables), with many in kernel modules. Hence a massive amount of code injection/ rewrite would be needed in order to set this up correctly.
-NetBSD: has an equivalent linker (executables) in userspace. May cause more problems than it solves if moved to kernelspace.
-
-Possible Generic Header:
-- Defacto: 3-Clause BSD License 
-(2.11BSD):
-/* 2.11BSD: (file),v (version) (company) (date) */
-
-(Other BSD's):
-/* (Distro): (file),v (version) (company) (date) */
-
-/* Applicable Copyright Notice Here */

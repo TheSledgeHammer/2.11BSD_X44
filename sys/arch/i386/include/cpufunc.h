@@ -42,9 +42,10 @@
 
 
 #ifndef _SYS_CDEFS_H_
-#error this file needs sys/cdefs.h as a prerequisite
+/* #error this file needs sys/cdefs.h as a prerequisite */
 #endif
 #include <sys/cdefs.h>
+#include <sys/types.h>
 struct region_descriptor;
 
 #define readb(va)		(*(volatile uint8_t *) (va))
@@ -815,7 +816,7 @@ void	 wrmsr(u_int msr, uint64_t newval);
 
 #endif	/* __GNUCLIKE_ASM && __CC_SUPPORTS___INLINE */
 
-void    reset_dbregs(void);
+//void    reset_dbregs(void);
 
 #ifdef _KERNEL
 int	rdmsr_safe(u_int msr, uint64_t *val);

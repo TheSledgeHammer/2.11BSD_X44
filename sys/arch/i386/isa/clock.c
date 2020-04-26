@@ -50,8 +50,8 @@
 #include <machine/segments.h>
 
 #include <i386/isa/icu.h>
-#include <i386/isa/rtc.h>
 #include <dev/isa/isa.h>
+#include "../../../dev/isa/rtc.h"
 
 /* these should go elsewere (timerreg.h) but to avoid admin overhead... */
 /*

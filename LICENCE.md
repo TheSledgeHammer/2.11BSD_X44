@@ -1,7 +1,13 @@
-/*
- * Copyright (c) 2020 Martin Kelly
+ Possible New Generic Licence Header Below:
+ - Defacto: 3-Clause BSD License
+
+/* 2.11BSD: (file),v (version) (company) (date) */
+/* Alt. 2.11BSD: (file),v (version) (date) */
+/*	
+ * The 3-Clause BSD License:
+ * Copyright (c) Year Author
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -24,18 +30,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+ 
+(Other BSD's includes Ancient Unix's):
+/* (Distro): (file),v (version) (company) (date) */
 
-#ifndef _MACHINE_GDT_H_
-#define _MACHINE_GDT_H_
-
-void allocate_gdt(struct soft_segment_descriptor *gdt[]);
-void allocate_ldt(struct soft_segment_descriptor *ldt[]);
-
-#endif /* _MACHINE_GDT_H_ */
-/*
-void gdt_init (void);
-void tss_alloc (struct pcb *);
-void tss_free (struct pcb *);
-void ldt_alloc (struct pcb *, union descriptor *, size_t);
-void ldt_free (struct pcb *);
-*/
+/* Applicable Copyright Notice Here */

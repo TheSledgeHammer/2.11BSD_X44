@@ -128,13 +128,13 @@ typedef struct pte	pt_entry_t;	/* Mach page table entry */
 #define I386_PAGE_SIZE	NBPG
 #define I386_PDR_SIZE	NBPDR
 
-#define I386_KPDES	8 							/* KPT page directory size */
-#define I386_UPDES	NBPDR/sizeof(struct pde)-8 	/* UPT page directory size */
+#define I386_KPDES		8 							/* KPT page directory size */
+#define I386_UPDES		NBPDR/sizeof(struct pde)-8 	/* UPT page directory size */
 
-#define	UPTDI		0x3f6						/* ptd entry for u./kernel&user stack */
-#define	PTDPTDI		0x3f7						/* ptd entry that points to ptd! */
-#define	KPTDI_FIRST	0x3f8						/* start of kernel virtual pde's */
-#define	KPTDI_LAST	0x3fA						/* last of kernel virtual pde's */
+#define	UPTDI			0x3f6						/* ptd entry for u./kernel&user stack */
+#define	PTDPTDI			0x3f7						/* ptd entry that points to ptd! */
+#define	KPTDI_FIRST		0x3f8						/* start of kernel virtual pde's */
+#define	KPTDI_LAST		0x3fA						/* last of kernel virtual pde's */
 
 /*
  * Address of current and alternate address space page table maps
@@ -224,8 +224,8 @@ typedef struct pv_entry {
 
 #define	PV_ENTRY_NULL	((pv_entry_t) 0)
 
-#define	PV_CI		0x01	/* all entries must be cache inhibited */
-#define PV_PTPAGE	0x02	/* entry maps a page table page */
+#define	PV_CI		0x01		/* all entries must be cache inhibited */
+#define PV_PTPAGE	0x02		/* entry maps a page table page */
 
 #ifdef	KERNEL
 

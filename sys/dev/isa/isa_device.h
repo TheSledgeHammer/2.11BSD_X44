@@ -33,6 +33,8 @@
  *	@(#)isa_device.h	8.1 (Berkeley) 6/11/93
  */
 
+/* isavar.h (in Other BSD's ) */
+
 /*
  * ISA Bus Autoconfiguration
  */

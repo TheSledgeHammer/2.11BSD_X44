@@ -1,6 +1,7 @@
+/*	$NetBSD: conf.h,v 1.3 1996/09/07 12:40:32 mycroft Exp $	*/
+
 /*
- * Copyright (c) 2020 Martin Kelly
- * All rights reserved.
+ * Copyright (c) 1996 Christos Zoulas.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -10,8 +11,11 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by Christos Zoulas.
+ * 4. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -25,17 +29,36 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MACHINE_GDT_H_
-#define _MACHINE_GDT_H_
+#include <sys/conf.h>
 
-void allocate_gdt(struct soft_segment_descriptor *gdt[]);
-void allocate_ldt(struct soft_segment_descriptor *ldt[]);
+#define	mmread	mmrw
+#define	mmwrite	mmrw
+cdev_decl(mm);
+cdev_decl(pms);
 
-#endif /* _MACHINE_GDT_H_ */
-/*
-void gdt_init (void);
-void tss_alloc (struct pcb *);
-void tss_free (struct pcb *);
-void ldt_alloc (struct pcb *, union descriptor *, size_t);
-void ldt_free (struct pcb *);
-*/
+bdev_decl(fd);
+cdev_decl(fd);
+
+/* open, close, read, write, ioctl, tty, mmap */
+#define cdev_pc_init(c,n) { \
+	dev_init(c,n,open), dev_init(c,n,close), dev_init(c,n,read), \
+	dev_init(c,n,write), dev_init(c,n,ioctl), dev_init(c,n,stop), \
+	dev_init(c,n,tty), ttpoll, dev_init(c,n,mmap), D_TTY }
+
+cdev_decl(pc);
+
+/* open, close, write, ioctl */
+#define	cdev_spkr_init(c,n) { \
+	dev_init(c,n,open), dev_init(c,n,close), (dev_type_read((*))) enodev, \
+	dev_init(c,n,write), dev_init(c,n,ioctl), (dev_type_stop((*))) enodev, \
+	0, seltrue, (dev_type_mmap((*))) enodev }
+
+cdev_decl(spkr);
+
+cdev_decl(mms);
+
+cdev_decl(lms);
+
+cdev_decl(pms);
+
+cdev_decl(joy);

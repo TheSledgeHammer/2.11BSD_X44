@@ -37,6 +37,7 @@
  */
 
 #include <sys/cdefs.h>
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/signalvar.h>
@@ -65,7 +66,6 @@
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
 
-
 #include <machine/cpu.h>
 #include <machine/reg.h>
 #include <machine/psl.h>
@@ -74,8 +74,8 @@
 #include <machine/bootinfo.h>
 #include <machine/gdt.h>
 
-#include <i386/isa/rtc.h>
 #include <machine/cons.h>
+#include <dev/isa/rtc.h>
 
 #ifdef VM86
 #include <machine/vm86.h>
@@ -117,18 +117,15 @@ struct pcb *curpcb;			/* our current running pcb */
 
 int	i386_use_fxsave;
 
-//union descriptor gdt[NGDT];
+union descriptor gdt[NGDT];
 struct gate_descriptor idt[32+16];
-//union descriptor ldt[NLDT];
+union descriptor ldt[NLDT];
 
 struct soft_segment_descriptor gdt_segs[];
 struct soft_segment_descriptor ldt_segs[];
 
 int lcr0(), lcr3(), rcr0(), rcr2();
-int _udatasel, _ucodesel, _gsel_tss, _exit_tss;
-
-struct i386tss inv_tss, exit_tss;
-char alt_stack[1024];
+int _udatasel, _ucodesel, _gsel_tss;
 
 extern struct user *proc0paddr;
 
@@ -335,8 +332,6 @@ i386_proc0_tss_ldt_init()
 
 	proc0.p_md.md_regs = (struct trapframe *)pcb->pcb_tss.tss_esp0 - 1;
 }
-
-
 
 #ifdef PGINPROF
 /*
@@ -827,89 +822,18 @@ setidt(idx, func, typ, dpl, selec)
 	ip->gd_hioffset = ((u_int)func) >> 16 ;
 }
 
-/* called from debugger*/
-struct i386tss *
-panictss(){
-	int sel;
-	struct segment_descriptor *sdp;
-	struct i386tss *tsp;
-
-	asm(" cli ; str %w0" : "=q"(sel));
-	printf("\nTask Exception\n current context: ");
-
-	again: printf("selector %x ", sel);
-	sdp = &gdt[IDXSEL(sel)].sd;
-	tsp = (struct i386tss*) (sdp->sd_lobase + (sdp->sd_hibase << 24));
-
-	printf(" type %d ", sdp->sd_type);
-	printf("cs %x eip %x esp %x ebp %x", tsp->tss_cs, tsp->tss_eip,
-			tsp->tss_esp, tsp->tss_ebp);
-
-	sel = tsp->tss_link;
-	if (sel) {
-		printf("\nprevious context: ");
-		goto again;
-	}
-	printf("\n");
-	DELAY(100000);
-	return (tsp);
-}
-
-void
-invtss() {
-	struct i386tss *tsp = panictss();
-	struct trapframe tf;
-
-	tf.tf_err = *(int *) (alt_stack + 1020);
-	tf.tf_trapno = T_TSSFLT;
-	tf.tf_cs = tsp->tss_cs;
-	tf.tf_eax = tsp->tss_eax;
-	tf.tf_ebx = tsp->tss_ebx;
-	tf.tf_ecx = tsp->tss_ecx;
-	tf.tf_edx = tsp->tss_edx;
-	tf.tf_esp = tsp->tss_esp;
-	tf.tf_ebp = tsp->tss_ebp;
-	tf.tf_eip = tsp->tss_eip;
-	tf.tf_eflags = tsp->tss_eflags;
-	trap(tf);
-	panic("inval tss");
-}
-
-void
-dblftss() {
-	struct i386tss *tsp = panictss();
-	struct trapframe tf;
-
-	tf.tf_err = 0;
-	tf.tf_trapno = T_DOUBLEFLT;
-	tf.tf_cs = tsp->tss_cs;
-	tf.tf_eax = tsp->tss_eax;
-	tf.tf_ebx = tsp->tss_ebx;
-	tf.tf_ecx = tsp->tss_ecx;
-	tf.tf_edx = tsp->tss_edx;
-	tf.tf_esp = tsp->tss_esp;
-	tf.tf_ebp = tsp->tss_ebp;
-	tf.tf_eip = tsp->tss_eip;
-	tf.tf_eflags = tsp->tss_eflags;
-	trap(tf);
-	panic("double fault");
-}
-
 #define	IDTVEC(name)	__CONCAT(X, name)
 extern 	IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
 		IDTVEC(bnd), IDTVEC(ill), IDTVEC(dna), IDTVEC(dble), IDTVEC(fpusegm),
 		IDTVEC(tss), IDTVEC(missing), IDTVEC(stk), IDTVEC(prot),
-		IDTVEC(page), IDTVEC(rsvd), IDTVEC(fpu), IDTVEC(rsvd0),
-		IDTVEC(rsvd1), IDTVEC(rsvd2), IDTVEC(rsvd3), IDTVEC(rsvd4),
-		IDTVEC(rsvd5), IDTVEC(rsvd6), IDTVEC(rsvd7), IDTVEC(rsvd8),
-		IDTVEC(rsvd9), IDTVEC(rsvd10), IDTVEC(rsvd11), IDTVEC(rsvd12),
-		IDTVEC(rsvd13), IDTVEC(rsvd14), IDTVEC(rsvd14), IDTVEC(syscall);
+		IDTVEC(page), IDTVEC(rsvd), IDTVEC(fpu), IDTVEC(align), IDTVEC(syscall);
 /*
 typedef void (vector) (void);
 extern vector IDTVEC(syscall);
 extern vector IDTVEC(osyscall);
 extern vector *IDTVEC(exceptions)[];
 */
+
 void
 init386(first)
 	int first;
@@ -934,59 +858,47 @@ init386(first)
 
 	/* make gdt memory segments */
 	gdt_segs[GCODE_SEL].ssd_limit = btoc((int) &etext + NBPG);
-	for (x=0; x < NGDT; x++) ssdtosd(gdt_segs+x, gdt+x);
+	for (x=0; x < NGDT; x++)
+		ssdtosd(gdt_segs+x, gdt+x);
 
 	/* make ldt memory segments */
 	ldt_segs[LUCODE_SEL].ssd_limit = btoc(UPT_MIN_ADDRESS);
 	ldt_segs[LUDATA_SEL].ssd_limit = btoc(UPT_MIN_ADDRESS);
 	/* Note. eventually want private ldts per process */
-	for (x=0; x < 5; x++) ssdtosd(ldt_segs+x, ldt+x);
+	for (x=0; x < 5; x++)
+		ssdtosd(ldt_segs+x, ldt+x);
+
 
 	/* exceptions */
-	setidt(0, &IDTVEC(div),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(1, &IDTVEC(dbg),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(2, &IDTVEC(nmi),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(3, &IDTVEC(bpt),  SDT_SYS386TGT, SEL_UPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(4, &IDTVEC(ofl),  SDT_SYS386TGT, SEL_UPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(5, &IDTVEC(bnd),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(6, &IDTVEC(ill),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(7, &IDTVEC(dna),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(8, &IDTVEC(dble),  SDT_SYSTASKGT, SEL_KPL, GSEL(GDBLFLT_SEL, SEL_KPL));
-	setidt(9, &IDTVEC(fpusegm),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(10, &IDTVEC(tss),  SDT_SYSTASKGT, SEL_KPL, GSEL(GINVTSS_SEL, SEL_KPL));
-	setidt(11, &IDTVEC(missing),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(12, &IDTVEC(stk),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(13, &IDTVEC(prot),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(14, &IDTVEC(page),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(15, &IDTVEC(rsvd),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(16, &IDTVEC(fpu),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(17, &IDTVEC(rsvd0),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(18, &IDTVEC(rsvd1),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(19, &IDTVEC(rsvd2),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(20, &IDTVEC(rsvd3),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(21, &IDTVEC(rsvd4),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(22, &IDTVEC(rsvd5),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(23, &IDTVEC(rsvd6),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(24, &IDTVEC(rsvd7),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(25, &IDTVEC(rsvd8),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(26, &IDTVEC(rsvd9),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(27, &IDTVEC(rsvd10),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(28, &IDTVEC(rsvd11),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(29, &IDTVEC(rsvd12),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(30, &IDTVEC(rsvd13),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
-	setidt(31, &IDTVEC(rsvd14),  SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+	for(int i = 0; i < 32; i++) {
+		setidt(i, &IDTVEC(rsvd), SDT_SYS386TGT, SEL_KPL);
+	}
+	setidt(0, &IDTVEC(div),  SDT_SYS386TGT, SEL_KPL);
+	setidt(1, &IDTVEC(dbg),  SDT_SYS386TGT, SEL_KPL);
+	setidt(2, &IDTVEC(nmi),  SDT_SYS386TGT, SEL_KPL);
+ 	setidt(3, &IDTVEC(bpt),  SDT_SYS386TGT, SEL_UPL);
+	setidt(4, &IDTVEC(ofl),  SDT_SYS386TGT, SEL_KPL);
+	setidt(5, &IDTVEC(bnd),  SDT_SYS386TGT, SEL_KPL);
+	setidt(6, &IDTVEC(ill),  SDT_SYS386TGT, SEL_KPL);
+	setidt(7, &IDTVEC(dna),  SDT_SYS386TGT, SEL_KPL);
+	setidt(8, &IDTVEC(dble),  SDT_SYS386TGT, SEL_KPL);
+	setidt(9, &IDTVEC(fpusegm),  SDT_SYS386TGT, SEL_KPL);
+	setidt(10, &IDTVEC(tss),  SDT_SYS386TGT, SEL_KPL);
+	setidt(11, &IDTVEC(missing),  SDT_SYS386TGT, SEL_KPL);
+	setidt(12, &IDTVEC(stk),  SDT_SYS386TGT, SEL_KPL);
+	setidt(13, &IDTVEC(prot),  SDT_SYS386TGT, SEL_KPL);
+	setidt(14, &IDTVEC(page),  SDT_SYS386TGT, SEL_KPL);
+	setidt(15, &IDTVEC(rsvd),  SDT_SYS386TGT, SEL_KPL);
+	setidt(16, &IDTVEC(fpu),  SDT_SYS386TGT, SEL_KPL);
+	setidt(17, &IDTVEC(align),  SDT_SYS386TGT, SEL_KPL);
+
 
 #if	NISA > 0
 	isa_defaultirq();
 #endif
 
-	r_gdt.rd_limit = NGDT * sizeof(union descriptor ) - 1;
-	r_gdt.rd_base = (int) gdt;
-	lgdt(r_gdt);
-
-	r_idt.rd_limit = sizeof(idt) - 1;
-	r_idt.rd_base = (int) idt;
-	lidt(r_idt);
+	lgdt(gdt, sizeof(gdt)-1);
+	lidt(idt, sizeof(idt)-1);
 	lldt(GSEL(GLDT_SEL, SEL_KPL));
 
 	/*
@@ -1017,15 +929,6 @@ init386(first)
 	_gsel_tss = GSEL(GPROC0_SEL, SEL_KPL);
 	ltr(_gsel_tss);
 
-	proc0.p_addr->u_pcb.pcb_tss.tss_ldt =  GSEL(GLDT_SEL, SEL_KPL);
-	proc0.p_addr->u_pcb.pcb_tss.tss_cs =  GSEL(GCODE_SEL, SEL_KPL);
-	proc0.p_addr->u_pcb.pcb_tss.tss_ds =  GSEL(GDATA_SEL, SEL_KPL);
-	proc0.p_addr->u_pcb.pcb_tss.tss_es =  GSEL(GDATA_SEL, SEL_KPL);
-	proc0.p_addr->u_pcb.pcb_tss.tss_ss =  GSEL(GDATA_SEL, SEL_KPL);
-	proc0.p_addr->u_pcb.pcb_tss.tss_fs =  GSEL(GDATA_SEL, SEL_KPL);
-	proc0.p_addr->u_pcb.pcb_tss.tss_gs =  GSEL(GDATA_SEL, SEL_KPL);
-
-
 	/* make a call gate to reenter kernel with */
 	gdp = &ldt[LSYS5CALLS_SEL].gd;
 
@@ -1047,16 +950,6 @@ init386(first)
 	bcopy(&sigcode, proc0.p_addr->u_pcb.pcb_sigc, szsigcode);
 	proc0.p_addr->u_pcb.pcb_flags = 0;
 	proc0.p_addr->u_pcb.pcb_ptd = IdlePTD;
-
-	/* setup fault tss's */
-	inv_tss = proc0.p_addr->u_pcb.pcb_tss;
-	inv_tss.tss_esp0 = (int) (alt_stack + 1020);
-	inv_tss.tss_esp = (int) (alt_stack + 1020);
-	inv_tss.tss_ss =  GSEL(GDATA_SEL, SEL_KPL);
-	inv_tss.tss_cs =  GSEL(GCODE_SEL, SEL_KPL);
-	inv_tss.tss_eip =  (int) &invtss;
-	exit_tss = inv_tss;
-	_exit_tss =  GSEL(GEXIT_SEL, SEL_KPL);
 }
 
 void

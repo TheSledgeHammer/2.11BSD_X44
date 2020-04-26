@@ -34,16 +34,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)isa.h	8.1 (Berkeley) 6/11/93
+ *
  */
+
+/* isareg.h (in Other BSD's ) */
 
 /*
  * ISA Bus conventions
  */
-
-#ifndef LOCORE
-unsigned char inb(), rtcin();
-void outb();
-#endif
 
 /*
  * Input / Output Port Assignments
@@ -104,12 +102,40 @@ void outb();
 #endif	IO_ISABEGIN
 
 /*
+ * Input / Output Port Sizes - these are from several sources, and tend
+ * to be the larger of what was found, ie COM ports can be 4, but some
+ * boards do not fully decode the address, thus 8 ports are used.
+ */
+
+#ifndef	IO_ISASIZES
+#define	IO_ISASIZES
+
+#define	IO_COMSIZE	8	/* 8250, 16X50 com controllers */
+#define	IO_CGASIZE	16	/* CGA controllers */
+#define	IO_DMASIZE	16	/* 8237 DMA controllers */
+#define	IO_DPGSIZE	32	/* 74LS612 DMA page reisters */
+#define	IO_FDCSIZE	8	/* Nec765 floppy controllers */
+#define	IO_WDCSIZE	8	/* WD compatible disk controller */
+#define	IO_GAMSIZE	16	/* AT compatible game controller */
+#define	IO_ICUSIZE	16	/* 8259A interrupt controllers */
+#define	IO_KBDSIZE	16	/* 8042 Keyboard controllers */
+#define	IO_LPTSIZE	8	/* LPT controllers, some use onl */
+#define	IO_MDASIZE	16	/* Monochrome display controller */
+#define	IO_RTCSIZE	16	/* CMOS real time clock, NMI con */
+#define	IO_TMRSIZE	16	/* 8253 programmable timers */
+#define	IO_NPXSIZE	16	/* 80387/80487 NPX registers */
+#define	IO_VGASIZE	16	/* VGA controllers */
+#define	IO_PMPSIZE	2	/* 82347 Power Management Peripheral */
+#endif /* !IO_ISASIZES */
+
+/*
  * Input / Output Memory Physical Addresses
  */
 
 #ifndef	IOM_BEGIN
 #define	IOM_BEGIN	0xa0000		/* Start of I/O Memory "hole" */
 #define	IOM_END		0xFFFFF		/* End of I/O Memory "hole" */
+#define	IOM_SIZE	(IOM_END - IOM_BEGIN)
 #endif	IOM_BEGIN
 
 /*
@@ -117,8 +143,8 @@ void outb();
  */
 
 #ifndef	RAM_BEGIN
-#define	RAM_BEGIN	0x000000	/* Start of RAM Memory */
-#define	RAM_END		0xFFFFFF	/* End of RAM Memory */
+#define	RAM_BEGIN		0x000000	/* Start of RAM Memory */
+#define	RAM_END			0xFFFFFF	/* End of RAM Memory */
 #endif	IOM_BEGIN
 
 /*

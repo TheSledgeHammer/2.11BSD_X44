@@ -117,22 +117,22 @@ union descriptor	{
 #define	SDT_SYS386TGT	15	/* system 386 trap gate */
 
 	/* memory segment types */
-#define	SDT_MEMRO	16	/* memory read only */
-#define	SDT_MEMROA	17	/* memory read only accessed */
-#define	SDT_MEMRW	18	/* memory read write */
-#define	SDT_MEMRWA	19	/* memory read write accessed */
-#define	SDT_MEMROD	20	/* memory read only expand dwn limit */
-#define	SDT_MEMRODA	21	/* memory read only expand dwn limit accessed */
-#define	SDT_MEMRWD	22	/* memory read write expand dwn limit */
-#define	SDT_MEMRWDA	23	/* memory read write expand dwn limit acessed */
-#define	SDT_MEME	24	/* memory execute only */
-#define	SDT_MEMEA	25	/* memory execute only accessed */
-#define	SDT_MEMER	26	/* memory execute read */
-#define	SDT_MEMERA	27	/* memory execute read accessed */
-#define	SDT_MEMEC	28	/* memory execute only conforming */
-#define	SDT_MEMEAC	29	/* memory execute only accessed conforming */
-#define	SDT_MEMERC	30	/* memory execute read conforming */
-#define	SDT_MEMERAC	31	/* memory execute read accessed conforming */
+#define	SDT_MEMRO		16	/* memory read only */
+#define	SDT_MEMROA		17	/* memory read only accessed */
+#define	SDT_MEMRW		18	/* memory read write */
+#define	SDT_MEMRWA		19	/* memory read write accessed */
+#define	SDT_MEMROD		20	/* memory read only expand dwn limit */
+#define	SDT_MEMRODA		21	/* memory read only expand dwn limit accessed */
+#define	SDT_MEMRWD		22	/* memory read write expand dwn limit */
+#define	SDT_MEMRWDA		23	/* memory read write expand dwn limit acessed */
+#define	SDT_MEME		24	/* memory execute only */
+#define	SDT_MEMEA		25	/* memory execute only accessed */
+#define	SDT_MEMER		26	/* memory execute read */
+#define	SDT_MEMERA		27	/* memory execute read accessed */
+#define	SDT_MEMEC		28	/* memory execute only conforming */
+#define	SDT_MEMEAC		29	/* memory execute only accessed conforming */
+#define	SDT_MEMERC		30	/* memory execute read conforming */
+#define	SDT_MEMERAC		31	/* memory execute read accessed conforming */
 
 
 /* is memory segment descriptor pointer ? */
@@ -178,7 +178,7 @@ struct	soft_segment_descriptor	{
  */
 struct region_descriptor {
 	unsigned rd_limit:16 ;		/* segment extent */
-	char *rd_base;				/* base address  */
+	char 	*rd_base;			/* base address  */
 };
 
 extern struct soft_segment_descriptor gdt_segs[];
@@ -222,6 +222,12 @@ extern struct soft_segment_descriptor ldt_segs[];
 #define	SEGEX_TI		0x04	/* local descriptor table */
 								/* other bits are affected descriptor index */
 #define SEGEX_IDX(s)	((s)>>3)&0x1fff)
+
+/*
+ * Entries in the Interrupt Descriptor Table (IDT)
+ */
+#define	NIDT	256
+#define	NRSVIDT	32		/* reserved entries for cpu exceptions */
 
 extern ssdtosd(struct soft_segment_descriptor *ssd, struct segment_descriptor *sd) ;	/* to decode a ssd */
 extern sdtossd(struct segment_descriptor *sd, struct segment_descriptor *ssd) ;			/* to encode a sd */

@@ -75,8 +75,6 @@
 
 #define	LCALL(x,y)		.byte 0x9a ; .long y; .word x
 
-#define	IDTVEC(name)	.align 4; .globl _X/**/name; _X/**/name:
-
 #define	PANIC(msg)				  \
 		xorl 	%eax,%eax		; \
 		movl 	%eax,_waittime	; \
@@ -94,7 +92,10 @@
 
 #define	MSG(msg)		.data; 1: .asciz msg; .text
 
+#define	IDTVEC(name)	.align 4; .globl _X/**/name; _X/**/name:
 #define	TRAP(a)			pushl $(a) ; jmp alltraps
+#define	ZTRAP(a)		pushl $0 ; TRAP(a)
+
 #ifdef KGDB
 #define	BPTTRAP(a)		pushl $(a) ; jmp bpttraps
 #else
@@ -857,30 +858,30 @@ _astoff:
  * Trap and fault vector routines
  */
 
+		.text
+
 IDTVEC(div)
-		pushl 	$0; TRAP(T_DIVIDE)
+		ZTRAP(T_DIVIDE)
 IDTVEC(dbg)
-		pushl 	$0; BPTTRAP(T_TRCTRAP)
+		ZTRAP(T_TRCTRAP)
 IDTVEC(nmi)
-		pushl 	$0; TRAP(T_NMI)
+		ZTRAP(T_NMI)
 IDTVEC(bpt)
-		pushl 	$0; BPTTRAP(T_BPTFLT)
+		ZTRAP(T_BPTFLT)
 IDTVEC(ofl)
-		pushl 	$0; TRAP(T_OFLOW)
+		ZTRAP(T_OFLOW)
 IDTVEC(bnd)
-		pushl 	$0; TRAP(T_BOUND)
+		ZTRAP(T_BOUND)
 IDTVEC(ill)
-		pushl 	$0; TRAP(T_PRIVINFLT)
+		ZTRAP(T_PRIVINFLT)
 IDTVEC(dna)
-		pushl 	$0; TRAP(T_DNA)
+		ZTRAP(T_DNA)
 IDTVEC(dble)
 		TRAP(T_DOUBLEFLT)
-		/*PANIC("Double Fault");*/
 IDTVEC(fpusegm)
-		pushl 	$0; TRAP(T_FPOPFLT)
+		ZTRAP(T_FPOPFLT)
 IDTVEC(tss)
 		TRAP(T_TSSFLT)
-		/*PANIC("TSS not valid");*/
 IDTVEC(missing)
 		TRAP(T_SEGNPFLT)
 IDTVEC(stk)
@@ -890,7 +891,7 @@ IDTVEC(prot)
 IDTVEC(page)
 		TRAP(T_PAGEFLT)
 IDTVEC(rsvd)
-		pushl 	$0; TRAP(T_RESERVED)
+		ZTRAP(T_RESERVED)
 IDTVEC(fpu)
 #ifdef NPX
 /*
@@ -915,41 +916,14 @@ IDTVEC(fpu)
 		call	_npxintr
 		jmp		doreti
 #else
-		pushl 	$0; TRAP(T_ARITHTRAP)
+		ZTRAP(T_ARITHTRAP)
 #endif
-/* 17 - 31 reserved for future exp */
-IDTVEC(rsvd0)
-		pushl $0; TRAP(17)
-IDTVEC(rsvd1)
-		pushl $0; TRAP(18)
-IDTVEC(rsvd2)
-		pushl $0; TRAP(19)
-IDTVEC(rsvd3)
-		pushl $0; TRAP(20)
-IDTVEC(rsvd4)
-		pushl $0; TRAP(21)
-IDTVEC(rsvd5)
-		pushl $0; TRAP(22)
-IDTVEC(rsvd6)
-		pushl $0; TRAP(23)
-IDTVEC(rsvd7)
-		pushl $0; TRAP(24)
-IDTVEC(rsvd8)
-		pushl $0; TRAP(25)
-IDTVEC(rsvd9)
-		pushl $0; TRAP(26)
-IDTVEC(rsvd10)
-		pushl $0; TRAP(27)
-IDTVEC(rsvd11)
-		pushl $0; TRAP(28)
-IDTVEC(rsvd12)
-		pushl $0; TRAP(29)
-IDTVEC(rsvd13)
-		pushl $0; TRAP(30)
-IDTVEC(rsvd14)
-		pushl $0; TRAP(31)
+IDTVEC(align)
+		ZTRAP(T_ALIGNFLT)
+/* 18 - 31 reserved for future exp */
 
-alltraps:
+
+ENTRY(alltraps)
 		pushal
 		nop
 		push 	%ds
