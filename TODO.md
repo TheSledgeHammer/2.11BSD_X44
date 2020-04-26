@@ -24,6 +24,8 @@ TODO:
 
 - arch:
 	- i386:
+		- isa:
+		- dev: missing files from later port
 		- vm_machdep.c: u->u_procp->p_p0br: (no reference in 4.4BSD-Lite2)
 			- 4.3BSD Reno/ 4.4BSD Remanent: once in struct proc. Obsolete?? 
 

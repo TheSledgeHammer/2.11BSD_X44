@@ -22,6 +22,7 @@
 
 #define	HASH(x)	(((int)x >> 5) & (SQSIZE - 1))
 #define	SCHMAG	8/10
+#define	PPQ	(128 / NQS)				/* priorities per queue */
 
 struct proc *slpque[SQSIZE];
 
@@ -36,8 +37,6 @@ roundrobin(arg)
 	timeout(roundrobin, NULL, hz / 10);
 }
 
-#define	PPQ	(128 / NQS)				/* priorities per queue */
-
 /*
  * Recompute process priorities, once a second
  */
@@ -47,7 +46,7 @@ schedcpu(arg)
 {
 	register struct proc *p;
 	register int a;
-	register u_char	curproc;
+	register u_char	currproc;
 
 	wakeup((caddr_t)&lbolt);
 	for (p = allproc; p != NULL; p = p->p_nxt) {
@@ -79,13 +78,13 @@ schedcpu(arg)
 		p->p_estcpu = min(p->p_cpu, UCHAR_MAX);
 		resetpri(p);
 		if (p->p_pri >= PUSER) {
-			curproc = setpri(p);
-			if((p != curproc) &&
+			currproc = setpri(p);
+			if((p != currproc) &&
 					p->p_stat == SRUN &&
 					(p->p_flag & P_INMEM) &&
-					(p->p_pri / PPQ) != (curproc / PPQ)) {
+					(p->p_pri / PPQ) != (currproc / PPQ)) {
 				remrq(p);
-				p->p_pri = curproc;
+				p->p_pri = currproc;
 				setpri(p);
 				/* setrq(p); in 2.11BSD;
 				 * setrunqueue(p) in 4.4BSD-Lite2: in sparc, i386 (missing) */
@@ -431,22 +430,27 @@ setpri(pp)
 	return (p);
 }
 
-
-/* Get user priority */
 /*
-int
-getpri(pp)
-	register struct proc *pp;
+ * General yield call.  Puts the current process back on its run queue and
+ * performs a voluntary context switch.
+ */
+/*
+void
+yield(p)
+	struct proc *p;
 {
-	register int pri = (pp->p_cpu & 0377)/16;
-	pri += PUSER + pp->p_nice;
-	if(pp->p_pri == pri) {
-		return (pp->p_pri);
-	}
-	panic("No user priority set or found");
-	return(0);
+	struct proc *np = curproc;
+	int s;
+	int usrpri = setpri(np);
+	p->p_pri = usrpri;
+	s = splstatclock();
+	setrq(p);
+	p->p_stats->p_ru.ru_nvcsw++;
+	swtch();
+	splx(s);
 }
 */
+
 /*
  * This routine is called to reschedule the CPU.  If the calling process is
  * not in RUN state, arrangements for it to restart must have been made

@@ -54,16 +54,18 @@
  * Priorities
  */
 #define	PSWP	0
+#define	PVM		5
 #define	PINOD	10
 #define	PRIBIO	20
 #define	PRIUBA	24
 #define	PZERO	25
-#define	PPIPE	26
+#define	PVFS	26
 #define	PSOCK	26
 #define	PWAIT	30
 #define	PLOCK	35
 #define	PPAUSE	40
 #define	PUSER	50
+#define	MAXPRI	127				/* Priorities range from 0 through MAXPRI. */
 
 #define	NZERO	0				/* default "nice" */
 

@@ -83,9 +83,9 @@ struct fd_type fd_types[NUMTYPES] = {
 };
 
 struct fd_u {
-	int type;		/* Drive type (HD, DD     */
-	int active;		/* Drive activity boolean */
-	int motor;		/* Motor on flag          */
+	int type;			/* Drive type (HD, DD     */
+	int active;			/* Drive activity boolean */
+	int motor;			/* Motor on flag          */
 	struct buf head;	/* Head of buf chain      */
 	struct buf rhead;	/* Raw head of buf chain  */
 	int reset;

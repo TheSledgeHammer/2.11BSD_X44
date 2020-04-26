@@ -670,7 +670,7 @@ u_char shift[] = {	/* shift shift */
 '"'  , '~'  , SHF  , '|'  , 'Z'  , 'X'  , 'C'  , 'V'  ,		/* scan 40-47 */
 'B'  , 'N'  , 'M'  , '<'  , '>'  , '?'  , SHF  ,   '*',		/* scan 48-55 */
 ALT  , ' '  , CPS,     0,     0, ' '  ,     0,     0,		/* scan 56-63 */
-    0,     0,     0,     0,     0, NUM, STP,   '7',		/* scan 64-71 */
+    0,     0,     0,     0,     0, NUM, STP,   '7',			/* scan 64-71 */
   '8',   '9',   '-',   '4',   '5',   '6',   '+',   '1',		/* scan 72-79 */
   '2',   '3',   '0',   '.',     0,     0,     0,     0,		/* scan 80-87 */
 0,0,0,0,0,0,0,0,
@@ -702,15 +702,15 @@ struct key {
 #endif
 
 
-#define	KBSTAT		0x64	/* kbd status port */
+#define	KBSTAT			0x64	/* kbd status port */
 #define	KBS_INP_BUF_FUL	0x02	/* kbd char ready */
-#define	KBDATA		0x60	/* kbd data port */
+#define	KBDATA			0x60	/* kbd data port */
 #define	KBSTATUSPORT	0x61	/* kbd status */
 
 update_led()
 {
 	while (inb(0x64)&2);	/* wait input ready */
-	outb(0x60,0xED);	/* LED Command */
+	outb(0x60,0xED);		/* LED Command */
 	while (inb(0x64)&2);	/* wait input ready */
 	outb(0x60,scroll | 2*num | 4*caps);
 }
@@ -718,10 +718,10 @@ update_led()
 reset_cpu() {
 	while(1) {
 		while (inb(0x64)&2);	/* wait input ready */
-		outb(0x64,0xFE);	/* Reset Command */
+		outb(0x64,0xFE);		/* Reset Command */
 		DELAY(4000000);
 		while (inb(0x64)&2);	/* wait input ready */
-		outb(0x64,0xFF);	/* Keyboard Reset Command */
+		outb(0x64,0xFF);		/* Keyboard Reset Command */
 	}
 	/* NOTREACHED */
 }
