@@ -46,10 +46,18 @@
 #include <sys/vnode.h>
 #include <sys/user.h>
 
-#include <machine/cpu.h>
-
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
+
+#include <machine/cpu.h>
+#include <machine/gdt.h>
+#include <machine/reg.h>
+#include <machine/specialreg.h>
+
+#include "npx.h"
+#if NNPX > 0
+extern struct proc *npxproc;
+#endif
 
 /*
  * Finish a fork operation, with process p2 nearly set up.
@@ -110,11 +118,6 @@ cpu_fork(p1, p2)
 	}
 	return (0);
 }
-
-#include "npx.h"
-#if NNPX > 0
-extern struct proc *npxproc;
-#endif
 
 #ifdef notyet
 /*

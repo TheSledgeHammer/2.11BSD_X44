@@ -60,12 +60,13 @@
  * the configuration process, and are used in initializing
  * the machine.
  */
-int	dkn;				/* number of iostat dk numbers assigned so far */
+int			dkn;				/* number of iostat dk numbers assigned so far */
 extern int	cold;		/* cold start flag initialized in locore.s */
 
 /*
  * Determine i/o configuration for a machine.
  */
+void
 configure()
 {
 
@@ -117,7 +118,7 @@ extern int Maxmem;
 		dumplo = 0;
 }
 
-#define	DOSWAP			/* change swdevt and dumpdev */
+#define	DOSWAP				/* change swdevt and dumpdev */
 u_long	bootdev = 0;		/* should be dev_t, but not until 32 bits */
 
 static	char devname[][2] = {
@@ -136,6 +137,7 @@ static	char devname[][2] = {
  * If we can do so, and not instructed not to do so,
  * change rootdev to correspond to the load device.
  */
+void
 setroot()
 {
 	int  majdev, mindev, unit, part, adaptor;

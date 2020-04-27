@@ -47,7 +47,7 @@
 #include <sys/ioctl.h>
 #include <sys/file.h>
 #include <sys/disklabel.h>
-#include <vfs/specfs/specdev.h>
+#include <miscfs/specfs/specdev.h>
 
 /* symbolic sleep message strings for devices */
 char	devopn[] = "devopn";

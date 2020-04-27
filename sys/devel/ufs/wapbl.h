@@ -35,7 +35,7 @@
 //#include <sys/mutex.h>
 
 #if defined(_KERNEL)
-#include <vfs/specfs/specdev.h>
+#include <miscfs/specfs/specdev.h>
 #endif
 
 /* This header file describes the api and data structures for
@@ -91,9 +91,9 @@ struct wapbl_replay;
 struct wapbl;
 
 struct wapbl_dealloc {
-	TAILQ_ENTRY(wapbl_dealloc) wd_entries;
-	daddr_t wd_blkno;	/* address of block */
-	int wd_len;		/* size of block */
+	TAILQ_ENTRY(wapbl_dealloc) 	wd_entries;
+	daddr_t 					wd_blkno;	/* address of block */
+	int 						wd_len;		/* size of block */
 };
 
 typedef void (*wapbl_flush_fn_t)(struct mount *, struct wapbl_dealloc *);
@@ -102,24 +102,22 @@ typedef void (*wapbl_flush_fn_t)(struct mount *, struct wapbl_dealloc *);
  * This structure holds per transaction log information
  */
 struct wapbl_entry {
-	struct wapbl *we_wapbl;
-	SIMPLEQ_ENTRY(wapbl_entry) we_entries;
-	size_t we_bufcount;		/* Count of unsynced buffers */
-	size_t we_reclaimable_bytes;	/* Number on disk bytes for this
-					   transaction */
-	int	we_error;
+	struct wapbl 				*we_wapbl;
+	SIMPLEQ_ENTRY(wapbl_entry) 	we_entries;
+	size_t 						we_bufcount;			/* Count of unsynced buffers */
+	size_t 						we_reclaimable_bytes;	/* Number on disk bytes for this transaction */
+	int							we_error;
 #ifdef WAPBL_DEBUG_BUFBYTES
-	size_t we_unsynced_bufbytes;	/* Byte count of unsynced buffers */
+	size_t 						we_unsynced_bufbytes;	/* Byte count of unsynced buffers */
 #endif
 };
 
 /* Start using a log */
-int	wapbl_start(struct wapbl **, struct mount *, struct vnode *, daddr_t,
-		    size_t, size_t, struct wapbl_replay *,
+int	wapbl_start(struct wapbl **, struct mount *, struct vnode *, daddr_t, size_t, size_t, struct wapbl_replay *,
 		    wapbl_flush_fn_t, wapbl_flush_fn_t);
 
 /* Discard the current transaction, potentially dangerous */
-void	wapbl_discard(struct wapbl *);
+void wapbl_discard(struct wapbl *);
 
 /* stop using a log */
 int	wapbl_stop(struct wapbl *, int);
@@ -133,7 +131,7 @@ int	wapbl_begin(struct wapbl *, const char *, int);
 
 
 /* End a transaction or decrement the transaction recursion level */
-void	wapbl_end(struct wapbl *);
+void wapbl_end(struct wapbl *);
 
 /*
  * Add a new buffer to the current transaction.  The buffers
@@ -141,12 +139,12 @@ void	wapbl_end(struct wapbl *);
  * buffer will be marked B_LOCKED so that it will not be
  * flushed to disk by the syncer or reallocated.
  */
-void	wapbl_add_buf(struct wapbl *, struct buf *);
+void wapbl_add_buf(struct wapbl *, struct buf *);
 
 /* Remove a buffer from the current transaction. */
-void	wapbl_remove_buf(struct wapbl *, struct buf *);
+void wapbl_remove_buf(struct wapbl *, struct buf *);
 
-void	wapbl_resize_buf(struct wapbl *, struct buf *, long, long);
+void wapbl_resize_buf(struct wapbl *, struct buf *, long, long);
 
 /*
  * This will flush all completed transactions to disk and
@@ -160,8 +158,8 @@ int	wapbl_flush(struct wapbl *, int);
  * so they may be recorded in the log and cleaned up later.
  * registration/unregistration of ino numbers already registered is ok.
  */
-void	wapbl_register_inode(struct wapbl *, ino_t, mode_t);
-void	wapbl_unregister_inode(struct wapbl *, ino_t, mode_t);
+void wapbl_register_inode(struct wapbl *, ino_t, mode_t);
+void wapbl_unregister_inode(struct wapbl *, ino_t, mode_t);
 
 /*
  * Metadata block deallocations must be registered so
@@ -171,19 +169,19 @@ void	wapbl_unregister_inode(struct wapbl *, ino_t, mode_t);
  */
 int	wapbl_register_deallocation(struct wapbl *, daddr_t, int, bool,
 		void **);
-void	wapbl_unregister_deallocation(struct wapbl *, void *);
+void wapbl_unregister_deallocation(struct wapbl *, void *);
 
-void	wapbl_jlock_assert(struct wapbl *wl);
-void	wapbl_junlock_assert(struct wapbl *wl);
+void wapbl_jlock_assert(struct wapbl *wl);
+void wapbl_junlock_assert(struct wapbl *wl);
 
-void	wapbl_print(struct wapbl *wl, int full, void (*pr)(const char *, ...)
+void wapbl_print(struct wapbl *wl, int full, void (*pr)(const char *, ...)
     __printflike(1, 2));
 
 #if defined(WAPBL_DEBUG) || defined(DDB)
-void	wapbl_dump(struct wapbl *);
+void wapbl_dump(struct wapbl *);
 #endif
 
-void	wapbl_biodone(struct buf *);
+void wapbl_biodone(struct buf *);
 
 extern const struct wapbl_ops wapbl_ops;
 
@@ -223,25 +221,25 @@ wapbl_vphaswapbl(struct vnode *vp)
 #ifdef WAPBL_INTERNAL
 LIST_HEAD(wapbl_blk_head, wapbl_blk);
 struct wapbl_replay {
-	struct vnode *wr_logvp;
-	struct vnode *wr_devvp;
-	daddr_t wr_logpbn;
+	struct vnode 			*wr_logvp;
+	struct vnode 			*wr_devvp;
+	daddr_t 				wr_logpbn;
 
-	int wr_log_dev_bshift;
-	int wr_fs_dev_bshift;
-	int64_t wr_circ_off;
-	int64_t wr_circ_size;
-	uint32_t wr_generation;
+	int 					wr_log_dev_bshift;
+	int 					wr_fs_dev_bshift;
+	int64_t 				wr_circ_off;
+	int64_t 				wr_circ_size;
+	uint32_t				wr_generation;
 
-	void *wr_scratch;
+	void 					*wr_scratch;
 
-	struct wapbl_blk_head *wr_blkhash;
-	u_long wr_blkhashmask;
-	int wr_blkhashcnt;
+	struct wapbl_blk_head 	*wr_blkhash;
+	u_long 					wr_blkhashmask;
+	int 					wr_blkhashcnt;
 
-	off_t wr_inodeshead;
-	off_t wr_inodestail;
-	int wr_inodescnt;
+	off_t 					wr_inodeshead;
+	off_t 					wr_inodestail;
+	int 					wr_inodescnt;
 	struct {
 		uint32_t wr_inumber;
 		uint32_t wr_imode;

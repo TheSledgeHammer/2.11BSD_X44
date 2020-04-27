@@ -47,9 +47,6 @@
 #include <sys/malloc.h>
 #include <sys/mount.h>
 
-#include <vfs/specfs/specdev.h>
-#include <vfs/fifofs/fifo.h>
-
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
 #include <ufs/ufs/dir.h>
@@ -58,6 +55,8 @@
 
 #include <ufs/lfs/lfs.h>
 #include <ufs/lfs/lfs_extern.h>
+#include <miscfs/fifofs/fifo.h>
+#include <miscfs/specfs/specdev.h>
 
 extern int count_lock_queue (void);
 

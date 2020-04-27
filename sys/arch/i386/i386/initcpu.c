@@ -78,31 +78,29 @@
  *	@(#)machdep.c	7.4 (Berkeley) 6/3/91
  */
 
+#include <machine/cpu.h>
+#include <machine/cpufunc.h>
+#include <machine/cputypes.h>
+
 /*
  * Info for CTL_HW
  */
 char	cpu_model[120];
-extern	char version[];
+char 	version[];
+int		cpu_class;
 
 /*
  * Note: these are just the ones that may not have a cpuid instruction.
  * We deal with the rest in a different way.
  */
 struct cpu_nocpuid_nameclass i386_nocpuid_cpus[] = {
-	{ CPUVENDOR_INTEL, "Intel", "386SX",	CPUCLASS_386,
-		NULL},				/* CPU_386SX */
-	{ CPUVENDOR_INTEL, "Intel", "386DX",	CPUCLASS_386,
-		NULL},				/* CPU_386   */
-	{ CPUVENDOR_INTEL, "Intel", "486SX",	CPUCLASS_486,
-		NULL},				/* CPU_486SX */
-	{ CPUVENDOR_INTEL, "Intel", "486DX",	CPUCLASS_486,
-		NULL},				/* CPU_486   */
-	{ CPUVENDOR_CYRIX, "Cyrix", "486DLC",	CPUCLASS_486,
-		NULL},				/* CPU_486DLC */
-	{ CPUVENDOR_CYRIX, "Cyrix", "6x86",		CPUCLASS_486,
-		cyrix6x86_cpu_setup},	/* CPU_6x86 */
-	{ CPUVENDOR_NEXGEN,"NexGen","586",      CPUCLASS_386,
-		NULL},				/* CPU_NX586 */
+	{ CPUVENDOR_INTEL, "Intel", "386SX",	CPUCLASS_386, NULL},				/* CPU_386SX */
+	{ CPUVENDOR_INTEL, "Intel", "386DX",	CPUCLASS_386, NULL},				/* CPU_386   */
+	{ CPUVENDOR_INTEL, "Intel", "486SX",	CPUCLASS_486, NULL},				/* CPU_486SX */
+	{ CPUVENDOR_INTEL, "Intel", "486DX",	CPUCLASS_486, NULL},				/* CPU_486   */
+	{ CPUVENDOR_CYRIX, "Cyrix", "486DLC",	CPUCLASS_486, NULL},				/* CPU_486DLC */
+	{ CPUVENDOR_CYRIX, "Cyrix", "6x86",		CPUCLASS_486, cyrix6x86_cpu_setup},	/* CPU_6x86 */
+	{ CPUVENDOR_NEXGEN,"NexGen","586",      CPUCLASS_386, NULL},				/* CPU_NX586 */
 };
 
 const char *classnames[] = {
@@ -268,6 +266,22 @@ struct cpu_cpuid_nameclass i386_cpuid_cpus[] = {
 };
 
 #define CPUDEBUG
+
+void cyrix6x86_cpu_setup (void);
+
+static __inline u_char
+cyrix_read_reg(u_char reg)
+{
+	outb(0x22, reg);
+	return inb(0x23);
+}
+
+static __inline void
+cyrix_write_reg(u_char reg, u_char data)
+{
+	outb(0x22, reg);
+	outb(0x23, data);
+}
 
 void
 cyrix6x86_cpu_setup()

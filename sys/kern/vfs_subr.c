@@ -59,8 +59,8 @@
 
 #include <sys/sysctl.h>
 
-#include <vfs/specfs/specdev.h>
 #include <vm/include/vm.h>
+#include <miscfs/specfs/specdev.h>
 
 enum vtype iftovt_tab[16] = {
 	VNON, VFIFO, VCHR, VNON, VDIR, VNON, VBLK, VNON,

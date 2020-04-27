@@ -38,7 +38,7 @@
  *
  */
 
-extern struct pte	*CMAP1, *CMAP2;
+struct pte			*CMAP1, *CMAP2;
 extern caddr_t		CADDR1, CADDR2;
 
 /*

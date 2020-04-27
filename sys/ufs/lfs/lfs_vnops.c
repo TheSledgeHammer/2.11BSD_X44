@@ -49,9 +49,6 @@
 
 #include <vm/include/vm.h>
 
-#include <vfs/specfs/specdev.h>
-#include <vfs/fifofs/fifo.h>
-
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
 #include <ufs/ufs/dir.h>
@@ -60,6 +57,8 @@
 
 #include <ufs/lfs/lfs.h>
 #include <ufs/lfs/lfs_extern.h>
+#include <miscfs/fifofs/fifo.h>
+#include <miscfs/specfs/specdev.h>
 
 /* Global vfs data structures for lfs. */
 int (**lfs_vnodeop_p)();

@@ -67,19 +67,41 @@
 #include <vm/include/vm_page.h>
 
 #include <machine/cpu.h>
-#include <machine/reg.h>
-#include <machine/psl.h>
-#include <machine/specialreg.h>
-#include <machine/frame.h>
-#include <machine/bootinfo.h>
+#include <machine/cpufunc.h>
 #include <machine/gdt.h>
+#include <machine/psl.h>
+#include <machine/reg.h>
+#include <machine/specialreg.h>
+#include <machine/bootinfo.h>
 
-#include <machine/cons.h>
+#include <dev/cons.h>
+#include <dev/isa/isa.h>
+#include <dev/isa/isa_device.h>
 #include <dev/isa/rtc.h>
+
+#include <dev/ic/i8042reg.h>
+//#include <dev/ic/mc146818reg.h>
+#include <i386/isa/isa_machdep.h>
 
 #ifdef VM86
 #include <machine/vm86.h>
 #endif
+
+//#include "apm.h"
+#include "bioscall.h"
+
+#include "com.h"
+#if (NCOM > 0)
+#include <sys/termios.h>
+#include <dev/ic/comreg.h>
+//#include <dev/ic/comvar.h>
+#endif
+
+/* the following is used externally (sysctl_hw) */
+char machine[] = "i386";			/* cpu "architecture" */
+char machine_arch[] = "i386";		/* machine == machine_arch */
+
+char bootinfo[BOOTINFO_MAXSIZE];
 
 vm_map_t buffer_map;
 extern vm_offset_t avail_end;
@@ -100,17 +122,14 @@ int	bufpages = 0;
 #endif
 int	msgbufmapped;		/* set when safe to use msgbuf */
 
-
 /*
  * Machine-dependent startup code
  */
 int boothowto = 0, Maxmem = 0;
 long dumplo;
 int physmem, maxmem;
-extern int bootdev;
 int biosmem;
 
-extern cyloffset;
 extern int kstack[];
 
 struct pcb *curpcb;			/* our current running pcb */
@@ -124,11 +143,11 @@ union descriptor ldt[NLDT];
 struct soft_segment_descriptor gdt_segs[];
 struct soft_segment_descriptor ldt_segs[];
 
-int lcr0(), lcr3(), rcr0(), rcr2();
 int _udatasel, _ucodesel, _gsel_tss;
 
 extern struct user *proc0paddr;
 
+void
 startup(firstaddr)
 	int firstaddr;
 {
@@ -302,8 +321,6 @@ startup(firstaddr)
 	 * Configure the system.
 	 */
 	configure();
-
-	cpu_setregs();
 }
 
 /*
@@ -755,16 +772,6 @@ setregs(p, elp, stack)
 	tf->tf_ss = LSEL(LUDATA_SEL, SEL_UPL);
 }
 
-void
-cpu_setregs(void)
-{
-	unsigned int cr0;
-	cr0 = rcr0();
-	cr0 |= CR0_MP | CR0_NE | CR0_TS | CR0_WP | CR0_AM;
-	load_cr0(cr0);
-	load_gs(_udatasel);
-}
-
 /*
  * machine dependent system variables.
  */
@@ -805,16 +812,16 @@ cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
  * Initialize segments & interrupt table
  */
 void
-setidt(idx, func, typ, dpl, selec)
-	int idx, typ, dpl, selec;
+setidt(idx, func, args, typ, dpl)
+	int idx, args, typ, dpl;
 	void *func;
 {
 	struct gate_descriptor *ip;
 
-	ip = idt + idx;
+	ip = &idt[idx];
 	ip->gd_looffset = (u_int)func;
-	ip->gd_selector = selec;
-	ip->gd_stkcpy = 0;
+	ip->gd_selector = GSEL(GCODE_SEL, SEL_KPL);
+	ip->gd_stkcpy = args;
 	ip->gd_xx = 0;
 	ip->gd_type = typ;
 	ip->gd_dpl = dpl;
@@ -825,27 +832,19 @@ setidt(idx, func, typ, dpl, selec)
 #define	IDTVEC(name)	__CONCAT(X, name)
 extern 	IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
 		IDTVEC(bnd), IDTVEC(ill), IDTVEC(dna), IDTVEC(dble), IDTVEC(fpusegm),
-		IDTVEC(tss), IDTVEC(missing), IDTVEC(stk), IDTVEC(prot),
-		IDTVEC(page), IDTVEC(rsvd), IDTVEC(fpu), IDTVEC(align), IDTVEC(syscall);
-/*
-typedef void (vector) (void);
-extern vector IDTVEC(syscall);
-extern vector IDTVEC(osyscall);
-extern vector *IDTVEC(exceptions)[];
-*/
+		IDTVEC(tss), IDTVEC(missing), IDTVEC(stk), IDTVEC(prot), IDTVEC(page),
+		IDTVEC(rsvd), IDTVEC(fpu), IDTVEC(align), IDTVEC(syscall), IDTVEC(osyscall);
 
 void
 init386(first)
 	int first;
 {
-	int x, *pi;
+	int x;
 	unsigned biosbasemem, biosextmem;
 	struct gate_descriptor *gdp;
 	extern int sigcode, szsigcode;
-	struct region_descriptor r_gdt, r_idt;
 
 	proc0.p_addr = proc0paddr;
-	curpcb = &proc0.p_addr->u_pcb;
 
 	allocate_gdt(&gdt_segs);
 	allocate_ldt(&ldt_segs);
@@ -868,38 +867,38 @@ init386(first)
 	for (x=0; x < 5; x++)
 		ssdtosd(ldt_segs+x, ldt+x);
 
-
 	/* exceptions */
-	for(int i = 0; i < 32; i++) {
-		setidt(i, &IDTVEC(rsvd), SDT_SYS386TGT, SEL_KPL);
+	for(x = 0; x < NIDT; x++) {
+		setidt(x, &IDTVEC(rsvd), SDT_SYS386TGT, SEL_KPL);
 	}
-	setidt(0, &IDTVEC(div),  SDT_SYS386TGT, SEL_KPL);
-	setidt(1, &IDTVEC(dbg),  SDT_SYS386TGT, SEL_KPL);
-	setidt(2, &IDTVEC(nmi),  SDT_SYS386TGT, SEL_KPL);
- 	setidt(3, &IDTVEC(bpt),  SDT_SYS386TGT, SEL_UPL);
-	setidt(4, &IDTVEC(ofl),  SDT_SYS386TGT, SEL_KPL);
-	setidt(5, &IDTVEC(bnd),  SDT_SYS386TGT, SEL_KPL);
-	setidt(6, &IDTVEC(ill),  SDT_SYS386TGT, SEL_KPL);
-	setidt(7, &IDTVEC(dna),  SDT_SYS386TGT, SEL_KPL);
-	setidt(8, &IDTVEC(dble),  SDT_SYS386TGT, SEL_KPL);
-	setidt(9, &IDTVEC(fpusegm),  SDT_SYS386TGT, SEL_KPL);
-	setidt(10, &IDTVEC(tss),  SDT_SYS386TGT, SEL_KPL);
-	setidt(11, &IDTVEC(missing),  SDT_SYS386TGT, SEL_KPL);
-	setidt(12, &IDTVEC(stk),  SDT_SYS386TGT, SEL_KPL);
-	setidt(13, &IDTVEC(prot),  SDT_SYS386TGT, SEL_KPL);
-	setidt(14, &IDTVEC(page),  SDT_SYS386TGT, SEL_KPL);
-	setidt(15, &IDTVEC(rsvd),  SDT_SYS386TGT, SEL_KPL);
-	setidt(16, &IDTVEC(fpu),  SDT_SYS386TGT, SEL_KPL);
-	setidt(17, &IDTVEC(align),  SDT_SYS386TGT, SEL_KPL);
+	setidt(0, &IDTVEC(div), 0, SDT_SYS386TGT, SEL_KPL);
+	setidt(1, &IDTVEC(dbg), 0, SDT_SYS386TGT, SEL_KPL);
+	setidt(2, &IDTVEC(nmi), 0, SDT_SYS386TGT, SEL_KPL);
+ 	setidt(3, &IDTVEC(bpt), 0, SDT_SYS386TGT, SEL_UPL);
+	setidt(4, &IDTVEC(ofl), 0, SDT_SYS386TGT, SEL_KPL);
+	setidt(5, &IDTVEC(bnd), 0, SDT_SYS386TGT, SEL_KPL);
+	setidt(6, &IDTVEC(ill), 0, SDT_SYS386TGT, SEL_KPL);
+	setidt(7, &IDTVEC(dna), 0, SDT_SYS386TGT, SEL_KPL);
+	setidt(8, &IDTVEC(dble), 0, SDT_SYS386TGT, SEL_KPL);
+	setidt(9, &IDTVEC(fpusegm), 0, SDT_SYS386TGT, SEL_KPL);
+	setidt(10, &IDTVEC(tss), 0, SDT_SYS386TGT, SEL_KPL);
+	setidt(11, &IDTVEC(missing), 0, SDT_SYS386TGT, SEL_KPL);
+	setidt(12, &IDTVEC(stk), 0, SDT_SYS386TGT, SEL_KPL);
+	setidt(13, &IDTVEC(prot), 0, SDT_SYS386TGT, SEL_KPL);
+	setidt(14, &IDTVEC(page), 0, SDT_SYS386TGT, SEL_KPL);
+	setidt(16, &IDTVEC(fpu), 0, SDT_SYS386TGT, SEL_KPL);
+	setidt(17, &IDTVEC(align), 0, SDT_SYS386TGT, SEL_KPL);
+	setidt(128, &IDTVEC(syscall), 0, SDT_SYS386TGT, SEL_UPL);
 
+	lgdt(gdt, sizeof(gdt)-1);
+	lidt(idt, sizeof(idt)-1);
 
 #if	NISA > 0
 	isa_defaultirq();
 #endif
 
-	lgdt(gdt, sizeof(gdt)-1);
-	lidt(idt, sizeof(idt)-1);
-	lldt(GSEL(GLDT_SEL, SEL_KPL));
+	splhigh();
+	enable_intr();
 
 	/*
 	 * This memory size stuff is a real mess.  Here is a simple
@@ -915,8 +914,8 @@ init386(first)
 	physmem = btoc(biosbasemem * 1024 + (biosextmem - 1) * 1024);
 	printf("bios %dK+%dK. maxmem %x, physmem %x\n", biosbasemem, biosextmem,
 			ctob(maxmem), ctob(physmem));
-
 	vm_set_page_size();
+
 	/* call pmap initialization to make new kernel address space */
 	pmap_bootstrap(first, 0);
 	/* now running on new page tables, configured,and u/iom is accessible */
@@ -924,25 +923,13 @@ init386(first)
 	/* make a initial tss so microp can get interrupt stack on syscall! */
 	proc0.p_addr->u_pcb.pcb_tss.tss_esp0 = (int) kstack + UPAGES * NBPG;
 	proc0.p_addr->u_pcb.pcb_tss.tss_ss0 = GSEL(GDATA_SEL, SEL_KPL);
-	proc0.p_addr->u_pcb.pcb_tss.tss_esp = (int) kstack + UPAGES * NBPG;
-	proc0.p_addr->u_pcb.pcb_tss.tss_ss = GSEL(GDATA_SEL, SEL_KPL) ;
 	_gsel_tss = GSEL(GPROC0_SEL, SEL_KPL);
 	ltr(_gsel_tss);
 
 	/* make a call gate to reenter kernel with */
-	gdp = &ldt[LSYS5CALLS_SEL].gd;
-
-	x = (int) &IDTVEC(syscall);
-	gdp->gd_looffset = x++;
-	gdp->gd_selector = GSEL(GCODE_SEL, SEL_KPL);
-	gdp->gd_stkcpy = 0;
-	gdp->gd_type = SDT_SYS386CGT;
-	gdp->gd_dpl = SEL_UPL;
-	gdp->gd_p = 1;
-	gdp->gd_hioffset = ((int) &IDTVEC(syscall)) >>16;
+	setidt(LSYS5CALLS_SEL, &IDTVEC(osyscall), 1, SDT_SYS386CGT, SEL_UPL);
 
 	/* transfer to user mode */
-
 	_ucodesel = LSEL(LUCODE_SEL, SEL_UPL);
 	_udatasel = LSEL(LUDATA_SEL, SEL_UPL);
 

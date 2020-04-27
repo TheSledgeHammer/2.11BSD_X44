@@ -21,10 +21,9 @@
 #include <sys/malloc.h>
 #include <sys/dirent.h>
 
-#include <vfs/specfs/specdev.h>
-
 #include <ufs211/ufs211_quota.h>
 #include <ufs211/ufs211_inode.h>
 #include <ufs211/ufs211_dir.h>
 
 #include <vm/include/vm.h>
+#include <miscfs/specfs/specdev.h>

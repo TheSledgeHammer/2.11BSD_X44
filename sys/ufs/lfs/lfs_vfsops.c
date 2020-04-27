@@ -49,8 +49,6 @@
 #include <sys/malloc.h>
 #include <sys/socket.h>
 
-#include <vfs/specfs/specdev.h>
-
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
 #include <ufs/ufs/ufsmount.h>
@@ -58,6 +56,7 @@
 
 #include <ufs/lfs/lfs.h>
 #include <ufs/lfs/lfs_extern.h>
+#include <miscfs/specfs/specdev.h>
 
 int lfs_mountfs (struct vnode *, struct mount *, struct proc *);
 

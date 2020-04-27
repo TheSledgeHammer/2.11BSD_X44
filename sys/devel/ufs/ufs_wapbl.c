@@ -65,8 +65,6 @@
  *	@(#)ufs_vnops.c	8.28 (Berkeley) 7/31/95
  */
 
-#include "../ufs/ufs_wapbl.h"
-
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
@@ -82,19 +80,16 @@
 #include <sys/vnode.h>
 #include <sys/dirent.h>
 #include <ufs/lockf.h>
-#include <vfs/specfs/specdev.h>
-#include <vfs/fifofs/fifo.h>
-
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
 #include <ufs/ufs/dir.h>
 #include <ufs/ufs/ufsmount.h>
-#include <test/ufs_wapbl/ufs_bswap.h>
 #include <ufs/ufs/ufs_extern.h>
 #include <ufs/lfs/lfs_extern.h>
-
 #include <vm/include/vm.h>
-#include "../ufs/wapbl.h"
+#include <miscfs/fifofs/fifo.h>
+#include <miscfs/specfs/specdev.h>
+#include "../../sys/wapbl.h"
 
 #ifdef WAPBL_DEBUG_INODES
 #error WAPBL_DEBUG_INODES: not functional before ufs_wapbl.c is updated
@@ -106,7 +101,7 @@ ufs_wapbl_verify_inodes(struct mount *mp, const char *str)
 	struct buf *bp, *nbp;
 
 	//mutex_enter(mp->mnt_vnodelock);
- loop:
+loop:
 	TAILQ_FOREACH_REVERSE(vp, &mp->mnt_vnodelist, vnodelst, v_mntvnodes) {
 		/*
 		 * If the vnode that we are about to sync is no longer

@@ -2,6 +2,6 @@
 
 SUBDIR=	fdesc fifofs specfs
 
-INCSDIR= /usr/include/vfs
+INCSDIR= /usr/include/miscfs
 
 .include <bsd.kinc.mk>

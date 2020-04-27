@@ -64,8 +64,9 @@
 
 #define	KDSEL		0x10
 
-#define	NOP	inb $0x84, %al ; inb $0x84, %al
+#define	NOP			inb $0x84, %al ; inb $0x84, %al
 #define	FASTER_NOP	pushl %eax ; inb $0x84,%al ; popl %eax
+#define	RELOC(x)	((x) - KERNBASE)
 
 #define	fillkpt														\
 	1:	movl	%eax,0(%ebx)	; 									\
@@ -73,7 +74,7 @@
 		addl	$4,%ebx			; /* next pte */ 					\
 		loop	1b				;
 
-#define	LCALL(x,y)		.byte 0x9a ; .long y; .word x
+#define	LCALL(x,y)	.byte 0x9a ; .long y; .word x
 
 #define	PANIC(msg)				  \
 		xorl 	%eax,%eax		; \
@@ -101,6 +102,33 @@
 #else
 #define	BPTTRAP(a)		TRAP(a)
 #endif
+
+#define	INTRENTRY \
+		pushl	%eax		; \
+		pushl	%ecx		; \
+		pushl	%edx		; \
+		pushl	%ebx		; \
+		pushl	%ebp		; \
+		pushl	%esi		; \
+		pushl	%edi		; \
+		pushl	%ds			; \
+		pushl	%es			; \
+		movl	$GSEL(GDATA_SEL, SEL_KPL),%eax	; \
+		movl	%ax,%ds		; \
+		movl	%ax,%es
+
+#define	INTRFASTEXIT \
+		popl	%es			; \
+		popl	%ds			; \
+		popl	%edi		; \
+		popl	%esi		; \
+		popl	%ebp		; \
+		popl	%ebx		; \
+		popl	%edx		; \
+		popl	%ecx		; \
+		popl	%eax		; \
+		addl	$8,%esp		; \
+		iret
 
 /**********************************************************************/
 
@@ -157,13 +185,6 @@
 /*note: gas copys sign bit (e.g. arithmetic >>), can't do SYSTEM>>22! */
 		.set	SYSPDROFF,0x3F8							# Page dir index of System Base
 
-
-/*
- * Compiled KERNBASE location
- */
-		.globl	kernbase
-		.set	kernbase,KERNBASE
-
 /*
  * Globals
  */
@@ -202,55 +223,177 @@ start:	movw	$0x1234,0x472							# warm boot
 		 */
 
  1:		movl	4(%esp),%eax
-		movl	%eax,_boothowto-SYSTEM
+		movl	%eax,RELOC(_boothowto)
 		movl	8(%esp),%eax
-		movl	%eax,_bootdev-SYSTEM
+		movl	%eax,RELOC(_bootdev)
 		movl	12(%esp),%eax
-		movl	%eax, _cyloffset-SYSTEM
+		movl	%eax,RELOC(_cyloffset)
+		movl	16(%esp),%eax
+		testl	%eax,%eax
+		jz		2f
+		addl	$KERNBASE,%eax
+2:		movl	%eax,RELOC(_esym)
+		movl	20(%esp),%eax
+		movl	%eax,RELOC(_biosextmem)
+		movl	24(%esp),%eax
+		movl	%eax,RELOC(_biosbasemem)
 
-/* Set up a real frame in case the double return in newboot is executed. */
-		//xorl	%ebp,%ebp
-		//pushl	%ebp
-		//movl	%esp, %ebp
 
-/* Don't trust what the BIOS gives for eflags. */
-		//pushl	$PSL_MBO
-		//popfl
-
-/*
- * Don't trust what the BIOS gives for %fs and %gs.  Trust the bootstrap
- * to set %cs, %ds, %es and %ss.
- */
-		//mov		%ds, %ax
-		//mov		%ax, %fs
-		//mov		%ax, %gs
+		/* First, reset the PSL. */
+		pushl	$PSL_MBO
+		popfl
 
 /**********************************************************************/
 /* Identify CPU's */
 
-#ifdef cgd_notdef
 		/* find out our CPU type. */
-        pushfl
-        popl    %eax
-        movl    %eax, %ecx
-        xorl    $0x40000, %eax
-        pushl   %eax
-        popfl
-        pushfl
-        popl    %eax
-        xorl    %ecx, %eax
-        shrl    $18, %eax
-        andl    $1, %eax
-        push    %ecx
-        popfl
 
-        cmpl    $0, %eax
-        jne     1f
-        movl    $CPU_386, _cpu-SYSTEM
+try386:	/* Try to toggle alignment check flag; does not exist on 386. */
+		pushfl
+		popl	%eax
+		movl	%eax,%ecx
+		orl		$PSL_AC,%eax
+		pushl	%eax
+		popfl
+		pushfl
+		popl	%eax
+		xorl	%ecx,%eax
+		andl	$PSL_AC,%eax
+		pushl	%ecx
+		popfl
+
+		testl	%eax,%eax
+		jnz		try486
+		movl	$CPU_386,RELOC(_cpu)
 		jmp		2f
-1:      movl    $CPU_486, _cpu-SYSTEM
-2:
+
+try486:	/* Try to toggle identification flag; does not exist on early 486s. */
+		pushfl
+		popl	%eax
+		movl	%eax,%ecx
+		xorl	$PSL_ID,%eax
+		pushl	%eax
+		popfl
+		pushfl
+		popl	%eax
+		xorl	%ecx,%eax
+		andl	$PSL_ID,%eax
+		pushl	%ecx
+		popfl
+
+		testl	%eax,%eax
+		jnz		try586
+is486:	movl	$CPU_486,RELOC(_cpu)
+
+	/*
+	 * Check for Cyrix CPU by seeing if the flags change during a divide.
+	 * This is documented in the Cx486SLC/e SMM Programmer's Guide.
+	 */
+		xorl	%edx,%edx
+		cmpl	%edx,%edx							# set flags to known state
+		pushfl
+		popl	%ecx								# store flags in ecx
+		movl	$-1,%eax
+		movl	$4,%ebx
+		divl	%ebx								# do a long division
+		pushfl
+		popl	%eax
+		xorl	%ecx,%eax							# are the flags different?
+		testl	$0x8d5,%eax							# only check C|PF|AF|Z|N|V
+		jne		2f									# yes; must not be Cyrix CPU
+
+		movl	$CPU_486DLC,RELOC(_cpu) 			# set CPU type
+		movl	$0x69727943,RELOC(_cpu_vendor)		# store vendor string
+		movb	$0x78,RELOC(_cpu_vendor)+4
+
+#ifndef CYRIX_CACHE_WORKS
+		/* Disable caching of the ISA hole only. */
+		invd
+		movb	$CCR0,%al							# Configuration Register index (CCR0)
+		outb	%al,$0x22
+		inb		$0x23,%al
+		orb		$(CCR0_NC1|CCR0_BARB),%al
+		movb	%al,%ah
+		movb	$CCR0,%al
+		outb	%al,$0x22
+		movb	%ah,%al
+		outb	%al,$0x23
+		invd
+#else /* CYRIX_CACHE_WORKS */
+		/* Set cache parameters */
+		invd										# Start with guaranteed clean cache
+		movb	$CCR0,%al							# Configuration Register index (CCR0)
+		outb	%al,$0x22
+		inb		$0x23,%al
+		andb	$~CCR0_NC0,%al
+#ifndef CYRIX_CACHE_REALLY_WORKS
+		orb		$(CCR0_NC1|CCR0_BARB),%al
+#else
+		orb		$CCR0_NC1,%al
 #endif
+		movb	%al,%ah
+		movb	$CCR0,%al
+		outb	%al,$0x22
+		movb	%ah,%al
+		outb	%al,$0x23
+		/* clear non-cacheable region 1	*/
+		movb	$(NCR1+2),%al
+		outb	%al,$0x22
+		movb	$NCR_SIZE_0K,%al
+		outb	%al,$0x23
+		/* clear non-cacheable region 2	*/
+		movb	$(NCR2+2),%al
+		outb	%al,$0x22
+		movb	$NCR_SIZE_0K,%al
+		outb	%al,$0x23
+		/* clear non-cacheable region 3	*/
+		movb	$(NCR3+2),%al
+		outb	%al,$0x22
+		movb	$NCR_SIZE_0K,%al
+		outb	%al,$0x23
+		/* clear non-cacheable region 4	*/
+		movb	$(NCR4+2),%al
+		outb	%al,$0x22
+		movb	$NCR_SIZE_0K,%al
+		outb	%al,$0x23
+		/* enable caching in CR0 */
+		movl	%cr0,%eax
+		andl	$~(CR0_CD|CR0_NW),%eax
+		movl	%eax,%cr0
+		invd
+#endif /* CYRIX_CACHE_WORKS */
+
+		jmp		2f
+
+try586:	/* Use the `cpuid' instruction. */
+		xorl	%eax,%eax
+		cpuid
+		movl	%ebx,RELOC(_cpu_vendor)				# store vendor string
+		movl	%edx,RELOC(_cpu_vendor)+4
+		movl	%ecx,RELOC(_cpu_vendor)+8
+
+		movl	$1,%eax
+		cpuid
+		rorl	$8,%eax								# extract family type
+		andl	$15,%eax
+		cmpl	$5,%eax
+		jb		is486								# less than a Pentium
+		movl	$CPU_586,RELOC(_cpu)
+
+2:
+		/*
+		 * Finished with old stack; load new %esp now instead of later so we
+		 * can trace this code without having to worry about the trace trap
+		 * clobbering the memory test or the zeroing of the bss+bootstrap page
+		 * tables.
+		 *
+		 * The boot program should check:
+		 *	text+data <= &stack_variable - more_space_for_stack
+		 *	text+data+bss+pad+space_for_page_tables <= end_of_memory
+		 * Oops, the gdt is in the carcass of the boot program so clearing
+		 * the rest of memory is still not possible.
+		 */
+		movl	$RELOC(tmpstk),%esp					# bootstrap stack end location
 
 /**********************************************************************/
 /* Garbage: Clean Up */
@@ -404,7 +547,7 @@ begin: /* now running relocated at SYSTEM where the system is linked to run */
 
 		lea		7*NBPG(%esi),%esi					# skip past stack.
 		pushl	%esi
-		call	init386								# wire 386 chip for unix operation
+		call	_init386							# wire 386 chip for unix operation
 
 		movl	$0,_PTD
 		call 	main								/* autoconfiguration, mountroot etc */
@@ -435,48 +578,8 @@ lretmsg1:
 /*
  * Signal trampoline, copied to top of user stack
  */
- 		.set	exec,59
- 		.set	exit,1
-	 	.globl	icode
-		.globl	szicode
-/*
- * Icode is copied out to process 1 to exec /etc/init.
- * If the exec fails, process 1 exits.
- */
-icode:
-		# pushl	$argv-_icode	# gas fucks up again
-		movl	$argv,%eax
-		subl	$icode,%eax
-		pushl	%eax
 
-		# pushl	$init-_icode
-		movl	$init,%eax
-		subl	$icode,%eax
-		pushl	%eax
-		pushl	%eax								# dummy out rta
-
-		movl	%esp,%ebp
-		movl	$exec,%eax
-		LCALL(0x7,0x0)
-		pushl	%eax
-		movl	$exit,%eax
-		pushl	%eax								# dummy out rta
-		LCALL(0x7,0x0)
-
-init:
-		.asciz	"/sbin/init"
-		.align	2
-argv:
-		.long	init+6-icode						# argv[0] = "init" ("/sbin/init" + 6)
-		.long	esigcode-icode						# argv[1] follows icode after copyout
-		.long	0
-esigcode:
-
-szicode:
-		.long	szicode-icode
-
-		.globl	sigcode,szsigcode
-sigcode:
+ENTRY(sigcode)
 		movl	12(%esp),%eax						# unsure if call will dec stack 1st
 		call	%eax
 		xorl	%eax,%eax							# smaller movl $103,%eax
@@ -484,7 +587,10 @@ sigcode:
 		LCALL(0x7,0)								# enter kernel with args on stack
 		hlt											# never gets here
 
+esigcode:
+		.data
 		.globl	szsigcode
+
 szsigcode:
 		.long	szsigcode-sigcode
 
@@ -507,7 +613,7 @@ szsigcode:
  *
  * Call should be made at spl6(), and p->p_stat should be SRUN
  */
-ENTRY(setrunqueue)
+ENTRY(setrq)
 		movl	4(%esp),%eax
 		cmpl	$0,P_BACK(%eax)						# should not be on q already
 		je		set1
@@ -526,7 +632,7 @@ set1:
 		movl	%eax,P_FORW(%ecx)
 		ret
 
-set2:	.asciz	"setrunqueue"
+set2:	.asciz	"setrq"
 
 /*
  * Remrq(p)
@@ -754,9 +860,9 @@ ENTRY(savectx)
  * have to handle h/w bugs for reloading.  We used to lose the
  * parent's npx state for forks by forgetting to reload.
  */
-		mov	_npxproc,%eax
+		mov		_npxproc,%eax
 		testl	%eax,%eax
-  		je	1f
+  		je		1f
 
 		pushl	%ecx
 		movl	P_ADDR(%eax),%eax
@@ -783,7 +889,7 @@ ENTRY(savectx)
 		movl	%edx, PCB_CMAP2(%ecx)			# in our context
 
 		cmpl	$0, 8(%esp)
-		je	1f
+		je		1f
 		movl	%esp, %edx						# relocate current sp relative to pcb
 		subl	$_kstack, %edx					# (sp is relative to kstack):
 		addl	%edx, %ecx						# pcb += sp - kstack;
@@ -857,7 +963,6 @@ _astoff:
 /*
  * Trap and fault vector routines
  */
-
 		.text
 
 IDTVEC(div)
@@ -949,7 +1054,7 @@ calltrap:
  * This code checks for a kgdb trap, then falls through
  * to the regular trap code.
  */
-bpttraps:
+ENTRY(bpttraps)
 		pushal
 		nop
 		push	%es
@@ -966,10 +1071,26 @@ bpttraps:
 #endif
 
 /*
+ * Old call gate entry for syscall
+ */
+IDTVEC(osyscall)
+		/* Set eflags in trap frame. */
+		pushfl
+		popl	8(%esp)
+		/* Turn off trace flag and nested task. */
+		pushfl
+		andb	$~((PSL_T|PSL_NT)>>8),1(%esp)
+		popfl
+		pushl	$7					# size of instruction for restart
+		jmp		syscall1
+
+/*
  * Call gate entry for syscall
  */
 
 IDTVEC(syscall)
+		pushl	$2					# size of instruction for restart
+syscall1:
 		pushfl						# only for stupid carry bit and more stupid wait3 cc kludge
 		pushal						# only need eax,ecx,edx - trap resaves others
 		nop

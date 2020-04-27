@@ -49,8 +49,6 @@
 #include <sys/errno.h>
 #include <sys/malloc.h>
 
-#include <vfs/specfs/specdev.h>
-
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/ufsmount.h>
 #include <ufs/ufs/inode.h>
@@ -58,6 +56,7 @@
 
 #include <ufs/ffs/fs.h>
 #include <ufs/ffs/ffs_extern.h>
+#include <miscfs/specfs/specdev.h>
 
 int ffs_sbupdate (struct ufsmount *, int);
 

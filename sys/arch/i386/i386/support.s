@@ -299,7 +299,6 @@ ENTRY(copyin)
 		movl	%eax,PCB_ONFAULT(%edx)
 		ret
 
-
 ENTRY(cpyflt)
 		popl	%ebx
 		popl	%edi

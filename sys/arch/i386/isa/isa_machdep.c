@@ -110,6 +110,7 @@ extern	vm_offset_t avail_end;
 /* default interrupt vector table entries */
 typedef (*vector) (void);
 extern vector IDTVEC(intr)[];
+
 void 	isa_strayintr (int);
 void	intr_calculatemasks (void);
 int 	fakeintr (void *);

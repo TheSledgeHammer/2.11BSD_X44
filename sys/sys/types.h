@@ -17,12 +17,13 @@
 #include <machine/ansi.h>
 #include <machine/types.h>
 
+
 /*
  * Basic system types and major/minor device constructing/busting macros.
  */
-#define	major(x)		((int)(((int)(x)>>8)&0377))		/* major part of a device */
-#define	minor(x)		((int)((x)&0377)) 				/* minor part of a device */
-#define	makedev(x,y)	((dev_t)(((x)<<8)|(y)))			/* make a device number */
+#define	major(x)			((int)(((int)(x)>>8)&0377))		/* major part of a device */
+#define	minor(x)			((int)((x)&0377)) 				/* minor part of a device */
+#define	makedev(x,y)		((dev_t)(((x)<<8)|(y)))			/* make a device number */
 
 typedef	unsigned char		u_char;
 typedef	unsigned short		u_short;
@@ -62,69 +63,56 @@ typedef unsigned long 		sigset_t;
 #define	NBBY	8			/* number of bits in a byte */
 
 #ifndef howmany
-#define	howmany(x, y)	(((x)+((y)-1))/(y))
+#define	howmany(x, y)		(((x)+((y)-1))/(y))
 #endif
 
-typedef char			bool_t;		/* boolean */
-typedef size_t			memaddr;	/* core or swap address */
-typedef	unsigned int 	intrmask_t;	/* Interrupt mask (spl, xxx_imask...) */
+typedef char				bool_t;		/* boolean */
+typedef size_t				memaddr;	/* core or swap address */
 
 #ifndef	int8_t
-typedef	int8_t		int8_t;
-#define	int8_t		int8_t
+typedef	int8_t				int8_t;
+#define	int8_t				int8_t
 #endif
 
 #ifndef	uint8_t
-typedef	u_int8_t	uint8_t;
-#define	uint8_t		u_int8_t
+typedef	u_int8_t			uint8_t;
+#define	uint8_t				u_int8_t
 #endif
 
 #ifndef	int16_t
-typedef	int16_t		int16_t;
-#define	int16_t		int16_t
+typedef	int16_t				int16_t;
+#define	int16_t				int16_t
 #endif
 
 #ifndef	uint16_t
-typedef	u_int16_t	uint16_t;
-#define	uint16_t	u_int16_t
+typedef	u_int16_t			uint16_t;
+#define	uint16_t			u_int16_t
 #endif
 
 #ifndef	int32_t
-typedef	int32_t		int32_t;
-#define	int32_t		int32_t
+typedef	int32_t				int32_t;
+#define	int32_t				int32_t
 #endif
 
 #ifndef	uint32_t
-typedef	u_int32_t	uint32_t;
-#define	uint32_t	u_int32_t
+typedef	u_int32_t			uint32_t;
+#define	uint32_t			u_int32_t
 #endif
 
 #ifndef	int64_t
-typedef	int64_t		int64_t;
-#define	int64_t		int64_t
+typedef	int64_t				int64_t;
+#define	int64_t				int64_t
 #endif
 
 #ifndef	uint64_t
-typedef	u_int64_t	uint64_t;
-#define	uint64_t	u_int64_t
+typedef	u_int64_t			uint64_t;
+#define	uint64_t			u_int64_t
 #endif
 
-typedef	uint8_t		u_int8_t;
-typedef	uint16_t	u_int16_t;
-typedef	uint32_t	u_int32_t;
-typedef	uint64_t	u_int64_t;
-
-intrmask_t			splsoftcam (void);
-intrmask_t			splsoftcambio (void);
-intrmask_t			splsoftcamnet (void);
-intrmask_t			splsoftclock (void);
-intrmask_t			splsofttty (void);
-intrmask_t			splsoftvm (void);
-intrmask_t			splstatclock (void);
-intrmask_t			spltty (void);
-intrmask_t			splvm (void);
-void				splx (intrmask_t ipl);
-void				splz (void);
+typedef	uint8_t				u_int8_t;
+typedef	uint16_t			u_int16_t;
+typedef	uint32_t			u_int32_t;
+typedef	uint64_t			u_int64_t;
 
 #if defined(_KERNEL) || defined(_STANDALONE)
 #define SET(t, f)	((t) |= (f))

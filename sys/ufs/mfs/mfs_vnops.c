@@ -43,13 +43,12 @@
 #include <sys/vnode.h>
 #include <sys/malloc.h>
 
-#include <vfs/specfs/specdev.h>
-
 #include <machine/vmparam.h>
 
 #include <ufs/mfs/mfsnode.h>
 #include <ufs/mfs/mfsiom.h>
 #include <ufs/mfs/mfs_extern.h>
+#include <miscfs/specfs/specdev.h>
 
 /*
  * mfs vnode operations.

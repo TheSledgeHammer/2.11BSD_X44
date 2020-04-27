@@ -46,9 +46,6 @@
 #include <sys/vnode.h>
 #include <sys/malloc.h>
 
-#include <vfs/specfs/specdev.h>
-#include <vfs/fifofs/fifo.h>
-
 #include <ufs/ufs/lockf.h>
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
@@ -59,6 +56,8 @@
 #include <ufs/ffs/fs.h>
 #include <ufs/ffs/ffs_extern.h>
 #include <vm/include/vm.h>
+#include <miscfs/fifofs/fifo.h>
+#include <miscfs/specfs/specdev.h>
 
 /* Global vfs data structures for ufs. */
 int (**ffs_vnodeop_p)();

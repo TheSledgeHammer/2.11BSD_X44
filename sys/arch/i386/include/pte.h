@@ -128,6 +128,8 @@ unsigned int
  */
 #define	dirty(pte)	((pte)->pg_m)
 
+extern struct pte	*CMAP1, *CMAP2;
+
 #ifndef LOCORE
 #ifdef KERNEL
 /* utilities defined in pmap.c */

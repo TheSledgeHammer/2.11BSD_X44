@@ -75,6 +75,7 @@
  * This belongs in types.h, but breaks too many existing programs.
  */
 typedef int	boolean_t;
+typedef boolean_t bool;
 #define	TRUE	1
 #define	FALSE	0
 

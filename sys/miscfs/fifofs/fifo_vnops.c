@@ -46,7 +46,7 @@
 #include <sys/file.h>
 #include <sys/errno.h>
 #include <sys/malloc.h>
-#include <vfs/fifofs/fifo.h>
+#include <miscfs/fifofs/fifo.h>
 
 /*
  * This structure is associated with the FIFO vnode and stores

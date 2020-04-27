@@ -170,10 +170,6 @@ setregion(rd, base, limit)
 	rd->rd_base = (int)base;
 }
 
-#define	IDTVEC(name)	__CONCAT(X, name)
-extern	IDTVEC(syscall), IDTVEC(osyscall), IDTVEC(trap0e_pentium);
-extern	*IDTVEC(exceptions)[];
-
 void
 init386(first_avail)
 	vm_offset_t first_avail;

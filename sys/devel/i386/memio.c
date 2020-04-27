@@ -108,7 +108,6 @@ void
 init_memioports(biosbasemem, biosextmem)
 	int biosbasemem, biosextmem;
 {
-	ioport_malloc_safe = 1;
 
 	/*
 	 * Use BIOS values passed in from the boot program.
@@ -153,6 +152,13 @@ init_memioports(biosbasemem, biosextmem)
 		/* XXX What should we do? */
 		printf("WARNING: CAN'T ALLOCATE EXTENDED MEMORY FROM IOMEM EXTENT MAP!\n");
 	}
+}
+
+void
+x86_bus_space_mallocok(void)
+{
+
+	ioport_malloc_safe = 1;
 }
 
 int

@@ -58,7 +58,7 @@
 #include <sys/namei.h>
 #include <sys/buf.h>
 #include <sys/dirent.h>
-#include <vfs/fdesc/fdesc.h>
+#include <miscfs/fdesc/fdesc.h>
 
 
 #define cttyvp(p) ((p)->p_flag & P_CONTROLT ? (p)->p_session->s_ttyvp : NULL)

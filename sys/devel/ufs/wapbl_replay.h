@@ -116,7 +116,7 @@ struct wapbl_wc_header {
  * revocation records do not contain a copy of any actual block data.
  */
 struct wapbl_wc_blocklist {
-	uint32_t	wc_type; /* WAPBL_WC_{REVOCATIONS,BLOCKS} */
+	uint32_t	wc_type; 	/* WAPBL_WC_{REVOCATIONS,BLOCKS} */
 	int32_t		wc_len;
 	int32_t		wc_blkcount;
 	int32_t		wc_unused;

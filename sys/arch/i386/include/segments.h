@@ -88,6 +88,7 @@ struct	gate_descriptor	{
 	unsigned gd_p:1 ;			/* segment descriptor present */
 	unsigned gd_hioffset:16 ;	/* gate offset (msb) */
 } ;
+#define	d_type	gd.gd_type
 
 /*
  * Generic descriptor
@@ -96,9 +97,8 @@ union descriptor	{
 	struct	segment_descriptor sd;
 	struct	gate_descriptor gd;
 };
-#define	d_type	gd.gd_type
 
-	/* system segments and gate types */
+/* system segments and gate types */
 #define	SDT_SYSNULL	 	 0	/* system null */
 #define	SDT_SYS286TSS	 1	/* system 286 TSS available */
 #define	SDT_SYSLDT	 	 2	/* system local descriptor table */
@@ -173,6 +173,9 @@ struct	soft_segment_descriptor	{
 	unsigned ssd_gran:1 ;		/* limit granularity (byte/page units)*/
 };
 
+extern struct soft_segment_descriptor gdt_segs[];
+extern struct soft_segment_descriptor ldt_segs[];
+
 /*
  * region descriptors, used to load gdt/idt tables before segments yet exist
  */
@@ -180,9 +183,6 @@ struct region_descriptor {
 	unsigned rd_limit:16 ;		/* segment extent */
 	char 	*rd_base;			/* base address  */
 };
-
-extern struct soft_segment_descriptor gdt_segs[];
-extern struct soft_segment_descriptor ldt_segs[];
 
 /* global descriptor table */
 #define	GNULL_SEL		0	/* Null Descriptor */

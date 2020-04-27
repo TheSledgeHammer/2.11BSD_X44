@@ -37,6 +37,7 @@
  *
  *	@(#)ufs_inode.c	8.9 (Berkeley) 5/14/95
  */
+#include <sys/cdefs.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -50,9 +51,13 @@
 #include <ufs/ufs/inode.h>
 #include <ufs/ufs/ufsmount.h>
 #include <ufs/ufs/ufs_extern.h>
+#include <devel/ufs/ufs_wapbl.h>
+#ifdef UFS_DIRHASH
+#include <ufs/ufs/dirhash.h>
+#endif
 
 u_long	nextgennumber;		/* Next generation number to assign. */
-int	prtactive = 0;		/* 1 => print out reclaim of active vnodes */
+int	prtactive = 0;			/* 1 => print out reclaim of active vnodes */
 
 /*
  * Last reference to an inode.  If necessary, write or delete it.
@@ -71,6 +76,10 @@ ufs_inactive(ap)
 	int mode, error = 0;
 	extern int prtactive;
 
+	bool wapbl_locked = false;
+
+	UFS_WAPBL_JUNLOCK_ASSERT(vp->v_mount);
+
 	if (prtactive && vp->v_usecount != 0)
 		vprint("ffs_inactive: pushing active", vp);
 
@@ -81,7 +90,9 @@ ufs_inactive(ap)
 		goto out;
 	if (ip->i_nlink <= 0 && (vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
 #ifdef QUOTA
+		error = UFS_WAPBL_BEGIN(vp->v_mount);
 		if (!getinoquota(ip))
+			wapbl_locked = true;
 			(void)chkiq(ip, -1, NOCRED, 0);
 #endif
 		error = VOP_TRUNCATE(vp, (off_t)0, 0, NOCRED, p);
@@ -92,10 +103,19 @@ ufs_inactive(ap)
 		VOP_VFREE(vp, ip->i_number, mode);
 	}
 	if (ip->i_flag & (IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE)) {
+		if (! wapbl_locked) {
+			error = UFS_WAPBL_BEGIN(vp->v_mount);
+			if (error) {
+				goto out;
+			}
+			wapbl_locked = true;
+		}
 		tv = time;
 		VOP_UPDATE(vp, &tv, &tv, 0);
 	}
 out:
+	if (wapbl_locked)
+		UFS_WAPBL_END(vp->v_mount);
 	VOP_UNLOCK(vp, 0, p);
 	/*
 	 * If we are done with the inode, reclaim it
@@ -125,6 +145,11 @@ ufs_reclaim(vp, p)
 	 */
 	ip = VTOI(vp);
 	ufs_ihashrem(ip);
+
+	if (!UFS_WAPBL_BEGIN(vp->v_mount)) {
+		UFS_WAPBL_END(vp->v_mount);
+	}
+
 	/*
 	 * Purge old data structures associated with the inode.
 	 */
@@ -140,6 +165,10 @@ ufs_reclaim(vp, p)
 			ip->i_dquot[i] = NODQUOT;
 		}
 	}
+#endif
+#ifdef UFS_DIRHASH
+	if (ip->i_dirhash != NULL)
+		ufsdirhash_free(ip);
 #endif
 	return (0);
 }

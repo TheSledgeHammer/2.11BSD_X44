@@ -14,13 +14,12 @@
 #include <sys/vnode.h>
 #include <sys/malloc.h>
 
-#include <vfs/specfs/specdev.h>
-
 #include <ufs211/ufs211_quota.h>
 #include <ufs211/ufs211_inode.h>
 #include <ufs211/ufs211_dir.h>
 #include <ufs211/ufs211_extern.h>
 #include <ufs211/ufs211_fs.h>
+#include <miscfs/specfs/specdev.h>
 
 
 /*

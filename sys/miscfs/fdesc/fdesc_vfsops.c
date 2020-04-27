@@ -53,7 +53,7 @@
 #include <sys/mount.h>
 #include <sys/namei.h>
 #include <sys/malloc.h>
-#include <vfs/fdesc/fdesc.h>
+#include <miscfs/fdesc/fdesc.h>
 
 /*
  * Mount the per-process file descriptors (/dev/fd)

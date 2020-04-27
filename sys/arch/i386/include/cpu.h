@@ -36,6 +36,9 @@
  *	@(#)cpu.h	8.5 (Berkeley) 5/17/95
  */
 
+#ifndef _I386_CPU_H_
+#define _I386_CPU_H_
+
 /*
  * Definitions unique to i386 cpu support.
  */
@@ -54,7 +57,7 @@
 #define cpu_setstack(p, ap)			(p)->p_md.md_regs[SP] = ap
 #define cpu_set_init_frame(p, fp)	(p)->p_md.md_regs = fp
 
-#define	BACKTRACE(p)			/* not implemented */
+#define	BACKTRACE(p)				/* not implemented */
 
 /*
  * Arguments to hardclock, softclock and gatherstats
@@ -96,27 +99,53 @@ int	astpending;			/* need to trap before returning to user mode */
 int	want_resched;		/* resched() was called */
 
 /*
- * Classes of processor.
+ * pull in #defines for kinds of processors
  */
-#define	CPUCLASS_286		0
-#define	CPUCLASS_386		1
-#define	CPUCLASS_486		2
-#define	CPUCLASS_586		3
-#define	CPUCLASS_686		4
+#include <machine/cputypes.h>
 
-/*
- * Kinds of processor
- */
-#define	CPU_286				0	/* Intel 80286 */
-#define	CPU_386SX			1	/* Intel 80386SX */
-#define	CPU_386				2	/* Intel 80386DX */
-#define	CPU_486SX			3	/* Intel 80486SX */
-#define	CPU_486				4	/* Intel 80486DX */
-#define	CPU_586				5	/* Intel Pentium */
-#define	CPU_686				6	/* Pentium Pro */
-#define	CPU_PII				7	/* Intel Pentium II */
-#define	CPU_PIII			8	/* Intel Pentium III */
-#define	CPU_P4				9	/* Intel Pentium 4 */
+struct cpu_nocpuid_nameclass {
+	int 		cpu_vendor;
+	const char 	*cpu_vendorname;
+	const char 	*cpu_name;
+	int 		cpu_class;
+	void 		(*cpu_setup) (void);
+};
+
+
+struct cpu_cpuid_nameclass {
+	const char 	*cpu_id;
+	int 		cpu_vendor;
+	const char 	*cpu_vendorname;
+	struct cpu_cpuid_family {
+		int 		cpu_class;
+		const char 	*cpu_models[CPU_MAXMODEL+2];
+		void 		(*cpu_setup) (void);
+	} cpu_family[CPU_MAXFAMILY - CPU_MINFAMILY + 1];
+};
+
+#ifdef _KERNEL
+extern int cpu;
+extern int cpu_class;
+extern int cpu_feature;
+extern int cpuid_level;
+extern struct cpu_nocpuid_nameclass i386_nocpuid_cpus[];
+extern struct cpu_cpuid_nameclass i386_cpuid_cpus[];
+
+/* autoconf.c */
+void	configure (void);
+
+#ifdef USER_LDT
+/* sys_machdep.h */
+int		i386_get_ldt (struct proc *, char *, register_t *);
+int		i386_set_ldt (struct proc *, char *, register_t *);
+#endif
+
+#ifdef VM86
+/* vm86.c */
+void	vm86_gpfault (struct proc *, int);
+#endif /* VM86 */
+
+#endif /* _KERNEL */
 
 /*
  * CTL_MACHDEP definitions.
@@ -133,3 +162,5 @@ int	want_resched;		/* resched() was called */
 extern int	cpu;
 extern int	cpu_class;
 #endif
+
+#endif /* !_I386_CPU_H_ */
