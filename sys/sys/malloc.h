@@ -120,6 +120,7 @@
 
 //#define M_KOVL		70	/* Kernel Overlay */
 //#define M_VOVL		71	/* Virtual Overlay */
+#define M_VMSEG			72	/* VM Segmentation */
 /**********************************************/
 #define M_COREMAP	68	/* 2.11BSD's Coremap */
 #define M_SWAPMAP	69	/* 2.11BSD's Swapmap */
@@ -323,6 +324,7 @@ extern char *kmembase;
 
 extern void *malloc (unsigned long size, int type, int flags);
 extern void free (void *addr, int type);
+extern void *realloc (void *curaddr, unsigned long newsize, int type, int flags);
 
 #endif /* KERNEL */
 #endif /* !_SYS_MALLOC_H_ */
