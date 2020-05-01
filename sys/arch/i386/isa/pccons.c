@@ -862,5 +862,3 @@ dprintf(flgs, fmt /*, va_alist */)
 	}
 	__color = 0;
 }
-
-consinit() {}

@@ -8,8 +8,6 @@
 #ifndef SYS_TEST_VOPS_H_
 #define SYS_TEST_VOPS_H_
 
-
-
 #include "devel/vfs/vops.h"
 
 struct buf;

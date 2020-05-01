@@ -1,35 +1,52 @@
 /*
- * cpt.h
+ * The 3-Clause BSD License:
+ * Copyright (c) 2020 Martin Kelly
+ * All rights reserved.
  *
- *  Created on: 13 Mar 2020
- *      Author: marti
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *	@(#)cpt.h 1.0 	1/05/20
  */
-
-/* Clustered Page Tables */
-
-#ifndef MACHINE_CPT_H_
-#define MACHINE_CPT_H_
-
-#include <sys/tree.h>
-
-/*
- * Add Resize
- * Make it so, CPT aligns to each page directory. (Can do by borrowing from FreeBSD)
- * superpages & subblocks
-*/
 
 /*
  * TODO:
+ * 	- Add Resize
+ * 	- Make it so, CPT aligns to each page directory. (Can do by borrowing from FreeBSD) superpages & subblocks
  *  - change cpt_vpn from a char* to unsigned long (vm_offset)
- *  - Add pointer to struct pte into struct cpte
- *  - add struct pte to cpte_add
  *  - create lookup function that returns pte by boff/tag
  *  - cpte_tag creation: vpbn?
  */
 
+/* Clustered Page Tables (Trees) */
+
+#ifndef CPT_H_
+#define CPT_H_
+
+#include <sys/tree.h>
+
 struct cpt {
     RB_ENTRY(cpt)                 	cpt_entry;
-    unsigned int                  	cpt_hindex;		/* VPBN Hash Result */
+    u_int                  			cpt_hindex;		/* VPBN Hash Result */
     u_long                   		cpt_pa_addr; 	/* Physical Address */
     u_long                   		cpt_va_addr; 	/* Virtual Address */
     u_long                 			cpt_pad;      	/* Partial-Subblock & Superpage Mapping */
@@ -68,12 +85,15 @@ extern void         cpt_add_superpage(struct cpt *cpt, struct cpte *cpte, u_long
 extern void         cpt_add_partial_subblock(struct cpt *cpt, struct cpte *cpte, u_long vpbn, u_long pad);
 struct cpte         *cpt_lookup_cpte(struct cpt *cpt, u_long vpbn);
 
-void 				cpt_to_pde(struct cpt *cpt, struct pde *pde);
-
 /* Clustered Page Table Entries */
 extern void         cpte_add(struct cpte *cpte, struct pte *pte, int boff);
 extern struct cpte  *cpte_lookup(struct cpte *cpte, int boff);
 extern void         cpte_remove(struct cpte *cpte, int boff);
-extern struct pte   *cpte_lookup_pte(struct cpte *cpte, int boff);
 
-#endif /* MACHINE_CPT_H_ */
+/* PDE & PTE Compatability */
+extern struct pde	*cpt_to_pde(struct cpt *cpt, u_long vpbn);
+extern struct cpt	*pde_to_cpt(struct pde *pde, u_long vpbn);
+extern struct pte   *cpte_to_pte(struct cpte *cpte, int boff);
+extern struct cpte	*pte_to_cpte(struct pte *pte, int boff);
+
+#endif /* _CPT_H_ */

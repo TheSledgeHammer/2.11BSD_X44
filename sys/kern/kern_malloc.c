@@ -1,3 +1,38 @@
+/*
+ * Copyright (c) 1987, 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)kern_malloc.c	8.4 (Berkeley) 5/20/95
+ */
+/* Contains modifications from NetBSD 1.3 */
 
 #include <sys/param.h>
 #include <sys/proc.h>
@@ -283,6 +318,89 @@ free(addr, type)
 	freep->next = NULL;
 	kbp->kb_last = addr;
 	splx(s);
+}
+
+/*
+ * Change the size of a block of memory.
+ */
+void *
+realloc(curaddr, newsize, type, flags)
+	void *curaddr;
+	unsigned long newsize;
+	int type, flags;
+{
+	register struct kmemusage *kup;
+	long cursize;
+	void *newaddr;
+#ifdef DIAGNOSTIC
+	long alloc;
+#endif
+
+	/*
+	 * Realloc() with a NULL pointer is the same as malloc().
+	 */
+	if (curaddr == NULL)
+		return (malloc(newsize, type, flags));
+
+	/*
+	 * Realloc() with zero size is the same as free().
+	 */
+	if (newsize == 0) {
+		free(curaddr, type);
+		return (NULL);
+	}
+
+	/*
+	 * Find out how large the old allocation was (and do some
+	 * sanity checking).
+	 */
+	kup = btokup(curaddr);
+	cursize = 1 << kup->ku_indx;
+
+#ifdef DIAGNOSTIC
+	/*
+	 * Check for returns of data that do not point to the
+	 * beginning of the allocation.
+	 */
+	if (cursize > NBPG * CLSIZE)
+		alloc = addrmask[BUCKETINDX(NBPG * CLSIZE)];
+	else
+		alloc = addrmask[kup->ku_indx];
+	if (((u_long)curaddr & alloc) != 0)
+		panic("realloc: unaligned addr %p, size %ld, type %s, mask %ld\n",
+			curaddr, cursize, memname[type], alloc);
+#endif /* DIAGNOSTIC */
+
+	if (cursize > MAXALLOCSAVE)
+		cursize = ctob(kup->ku_pagecnt);
+
+	/*
+	 * If we already actually have as much as they want, we're done.
+	 */
+	if (newsize <= cursize)
+		return (curaddr);
+
+	/*
+	 * Can't satisfy the allocation with the existing block.
+	 * Allocate a new one and copy the data.
+	 */
+	newaddr = malloc(newsize, type, flags);
+	if (newaddr == NULL) {
+		/*
+		 * Malloc() failed, because flags included M_NOWAIT.
+		 * Return NULL to indicate that failure.  The old
+		 * pointer is still valid.
+		 */
+		return NULL;
+	}
+	bcopy(curaddr, newaddr, cursize);
+
+	/*
+	 * We were successful: free the old allocation and return
+	 * the new one.
+	 */
+	free(curaddr, type);
+	return (newaddr);
 }
 
 /* Initialize the kernel memory allocator */

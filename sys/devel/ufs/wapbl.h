@@ -33,6 +33,9 @@
 #define	_SYS_WAPBL_H
 
 //#include <sys/mutex.h>
+#include <sys/queue.h>
+#include <sys/vnode.h>
+#include <sys/buf.h>
 
 #if defined(_KERNEL)
 #include <miscfs/specfs/specdev.h>
@@ -80,10 +83,6 @@ extern int wapbl_debug_print;
 
 /****************************************************************/
 
-#include <sys/queue.h>
-#include <sys/vnode.h>
-#include <sys/buf.h>
-
 #ifdef _KERNEL
 
 struct wapbl_entry;
@@ -103,7 +102,7 @@ typedef void (*wapbl_flush_fn_t)(struct mount *, struct wapbl_dealloc *);
  */
 struct wapbl_entry {
 	struct wapbl 				*we_wapbl;
-	SIMPLEQ_ENTRY(wapbl_entry) 	we_entries;
+	TAILQ_ENTRY(wapbl_entry) 	we_entries;
 	size_t 						we_bufcount;			/* Count of unsynced buffers */
 	size_t 						we_reclaimable_bytes;	/* Number on disk bytes for this transaction */
 	int							we_error;

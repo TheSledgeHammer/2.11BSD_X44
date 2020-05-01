@@ -100,26 +100,14 @@ static	long ioport_ex_storage[EXTENT_FIXED_STORAGE_SIZE(8) / sizeof(long)];
 static	long iomem_ex_storage[EXTENT_FIXED_STORAGE_SIZE(8) / sizeof(long)];
 struct	extent *ioport_ex;
 struct	extent *iomem_ex;
-static	ioport_malloc_safe;
+static	int ioport_malloc_safe;
+typedef unsigned long paddr_t;
 
-extern vm_offset_t avail_end;
+int	i386_mem_add_mapping (bus_addr_t, bus_size_t, int, bus_space_handle_t *);
 
 void
-init_memioports(biosbasemem, biosextmem)
-	int biosbasemem, biosextmem;
+i386_bus_space_init()
 {
-
-	/*
-	 * Use BIOS values passed in from the boot program.
-	 *
-	 * XXX Not only does probing break certain 386 AT relics, but
-	 * not all BIOSes (Dell, Compaq, others) report the correct
-	 * amount of extended memory.
-	 */
-
-	avail_end = biosextmem ? IOM_END + biosextmem * 1024
-		    : biosbasemem * 1024;	/* just temporary use */
-
 	/*
 	 * Initialize the I/O port and I/O mem extent maps.
 	 * Note: we don't have to check the return value since
@@ -138,6 +126,21 @@ init_memioports(biosbasemem, biosextmem)
 	iomem_ex = extent_create("iomem", 0x0, 0xffffffff, M_DEVBUF,
 		    (caddr_t)iomem_ex_storage, sizeof(iomem_ex_storage),
 		    EX_NOCOALESCE|EX_NOWAIT);
+}
+
+void
+i386_bus_space_check(avail_end, biosbasemem, biosextmem)
+	vm_offset_t avail_end;
+	int biosbasemem, biosextmem;
+{
+	/*
+	 * Use BIOS values passed in from the boot program.
+	 *
+	 * XXX Not only does probing break certain 386 AT relics, but
+	 * not all BIOSes (Dell, Compaq, others) report the correct
+	 * amount of extended memory.
+	 */
+	avail_end = biosextmem ? IOM_END + biosextmem * 1024 : biosbasemem * 1024; /* just temporary use */
 
 	/*
 	 * Allocate the physical addresses used by RAM from the iomem
@@ -148,14 +151,15 @@ init_memioports(biosbasemem, biosextmem)
 		/* XXX What should we do? */
 		printf("WARNING: CAN'T ALLOCATE BASE MEMORY FROM IOMEM EXTENT MAP!\n");
 	}
-	if (avail_end > IOM_END && extent_alloc_region(iomem_ex, IOM_END, (avail_end - IOM_END), EX_NOWAIT)) {
+	if (avail_end > IOM_END && extent_alloc_region(iomem_ex, IOM_END,
+	    (avail_end - IOM_END), EX_NOWAIT)) {
 		/* XXX What should we do? */
 		printf("WARNING: CAN'T ALLOCATE EXTENDED MEMORY FROM IOMEM EXTENT MAP!\n");
 	}
 }
 
 void
-x86_bus_space_mallocok(void)
+i386_bus_space_mallocok(void)
 {
 
 	ioport_malloc_safe = 1;

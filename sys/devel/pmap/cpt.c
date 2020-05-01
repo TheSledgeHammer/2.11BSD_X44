@@ -1,15 +1,38 @@
 /*
- * cpt.c
+ * The 3-Clause BSD License:
+ * Copyright (c) 2020 Martin Kelly
+ * All rights reserved.
  *
- *  Created on: 13 Mar 2020
- *      Author: marti
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *	@(#)cpt.c 1.0 	1/05/20
  */
 
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/malloc.h>
 #include <sys/user.h>
-#include <dev/i386/cpt.h>
+#include <pmap/cpt.h>
 #include <lib/libkern/libkern.h>
 
 struct cpt cpt_base[NCPT];
@@ -103,7 +126,7 @@ cpt_lookup(cpt, vpbn)
 struct cpt *
 cpt_traversal(cpt, addr)
     struct cpt *cpt;
-    unsigned long addr;
+	u_long addr;
 {
     struct cpt *result;
     for(int i = 0; i < NCPT; i++) {
@@ -134,17 +157,34 @@ cpt_lookup_cpte(cpt, vpbn)
     return (cpt_lookup(cpt, vpbn)->cpt_cpte);
 }
 
-/* Map CPT's into PDE's or vice-versa (Compatibility) */
-void
-cpt_to_pde(cpt, pde)
-	struct pde *pde;
+/* Retrieve a PDE from a CPT */
+struct pde *
+cpt_to_pde(cpt, vpbn)
 	struct cpt *cpt;
+	u_long vpbn;
 {
-	if(pde == NULL && cpt->cpt_pde != NULL) {
-		pde = cpt->cpt_pde;
-	} else {
-		cpt->cpt_pde = pde;
+	struct pde *result;
+	if (cpt_lookup(cpt, vpbn) != NULL) {
+		result = cpt_lookup(cpt, vpbn)->cpt_pde;
+		return (result);
 	}
+	return (NULL);
+}
+
+/* Retrieve a CPT from PDE */
+struct cpt *
+pde_to_cpt(pde, vpbn)
+	struct pde *pde;
+	u_long vpbn;
+{
+	struct cpt *result;
+	if (pde != NULL) {
+		if (&cpt_base[VPBN(vpbn)].cpt_pde == pde) {
+			result =  &cpt_base[VPBN(vpbn)];
+			return (result);
+		}
+	}
+	return (NULL);
 }
 
 /* (WIP) Clustered Page Table: Superpage Support */
@@ -203,8 +243,8 @@ cpte_lookup(cpte, boff)
     int boff;
 {
     struct cpte *result;
-    if(&cpte[boff] != NULL) {
-        result = &cpte[boff];
+    if(&cpte_base[boff] != NULL) {
+        result = &cpte_base[boff];
         return (RB_FIND(cpte_rbtree, &cpte_root, result));
     } else {
         return (NULL);
@@ -221,11 +261,32 @@ cpte_remove(cpte, boff)
     RB_REMOVE(cpte_rbtree, &cpte_root, result);
 }
 
-/* Search a Page Table Entry from a Clustered Page Table Entry */
+/* Retrieve a PTE from a CPTE */
 struct pte *
-cpte_lookup_pte(cpte, boff)
+cpte_to_pte(cpte, boff)
     struct cpte *cpte;
     int boff;
 {
-    return (cpte_lookup(cpte, boff)->cpte_pte);
+    struct pte *result;
+    if(cpte_lookup(cpte, boff) != NULL) {
+    	result = cpte_lookup(cpte, boff)->cpte_pte;
+    	return (result);
+    }
+    return (NULL);
+}
+
+/* Retrieve a CPTE from a PTE */
+struct cpte *
+pte_to_cpte(pte, boff)
+    struct pte *pte;
+    int boff;
+{
+    struct cpte *result;
+    if (pte != NULL) {
+    	if (&cpte_base[boff].cpte_pte == pte) {
+    		result = &cpte_base[boff];
+    		return (result);
+    	}
+    }
+    return (NULL);
 }

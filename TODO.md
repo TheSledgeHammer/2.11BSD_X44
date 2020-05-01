@@ -24,6 +24,8 @@ TODO:
 
 - arch:
 	- i386:
+		- bioscalls
+		- machdep.c: cpu_reboot, cpu_reset
 		- missing_devs.txt
 		- clean up: cpufunc.h & pio.h (contain duplicate functions)
 		- vm_machdep.c: u->u_procp->p_p0br: (no reference in 4.4BSD-Lite2)

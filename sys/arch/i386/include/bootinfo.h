@@ -29,7 +29,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD$
  */
 
 #ifndef	_MACHINE_BOOTINFO_H_
@@ -40,74 +39,94 @@
 
 #define	N_BIOS_GEOM			8
 
+#define	BOOTINFO_MAGIC		0xdeadbeeffeedface
+
 /*
  * A zero bootinfo field often means that there is no info available.
  * Flags are used to indicate the validity of fields where zero is a
  * normal value.
  */
-struct bootinfo {
-	u_int32_t	bi_version;
-	u_int32_t	bi_kernelname;		/* represents a char * */
-	u_int32_t	bi_nfs_diskless;	/* struct nfs_diskless * */
-									/* End of fields that are always present. */
-#define	bi_endcommon	bi_n_bios_used
-	u_int32_t	bi_n_bios_used;
-	u_int32_t	bi_bios_geom[N_BIOS_GEOM];
-	u_int32_t	bi_size;
-	u_int8_t	bi_memsizes_valid;
-	u_int8_t	bi_bios_dev;		/* bootdev BIOS unit number */
-	u_int8_t	bi_pad[2];
-	u_int32_t	bi_basemem;
-	u_int32_t	bi_extmem;
-	u_int32_t	bi_symtab;			/* struct symtab * */
-	u_int32_t	bi_esymtab;			/* struct symtab * */
-
-	/* Items below only from advanced bootloader */
-	u_int32_t	bi_kernend;			/* end of kernel space */
-	u_int32_t	bi_envp;			/* environment */
-	u_int32_t	bi_modulep;			/* preloaded modules */
+union bootinfo {
+	u_int32_t					bi_version;
+	u_int32_t					bi_kernelname;		/* represents a char * */
+	u_int32_t					bi_magic;			/* BOOTINFO_MAGIC */
+	u_int32_t					bi_boothowto;		/* value for boothowto */
+	char 						bi_bootpath[80];
+	/* Bootinfo Sections */
+	struct bootinfo_bios 		bi_bios;			/* Bios */
+	struct bootinfo_efi			bi_efi;				/* EFI */
+	struct bootinfo_enivronment bi_envp;			/* Environment */
+	struct bootinfo_bootdisk	bi_disk;			/* Disk */
+	struct bootinfo_netif		bi_net;				/* Network */
+	struct bootinfo_console		bi_cons;			/* Console */
+	struct bootinfo_biogeom		bi_geom;			/* Geometry */
 };
 
-#ifdef _KERNEL
-extern struct bootinfo	bootinfo;
-#endif
+struct bootinfo_bios {
+	int				 			bi_len;
+	int 						bi_type;
+#define	bi_endcommon			bi_n_bios_used
+	u_int32_t					bi_n_bios_used;
+	u_int32_t					bi_size;
+	u_int8_t					bi_memsizes_valid;
+	u_int8_t					bi_bios_dev;		/* bootdev BIOS unit number */
+	u_int8_t					bi_pad[2];
+	u_int32_t					bi_basemem;
+	u_int32_t					bi_extmem;
+};
 
-/*
- * Constants for converting boot-style device number to type,
- * adaptor (uba, mba, etc), unit number and partition number.
- * Type (== major device number) is in the low byte
- * for backward compatibility.  Except for that of the "magic
- * number", each mask applies to the shifted value.
- * Format:
- *	 (4)   (8)   (4)  (8)     (8)
- *	--------------------------------
- *	|MA | SLICE | UN| PART  | TYPE |
- *	--------------------------------
- */
-#define B_SLICESHIFT		20
-#define B_SLICEMASK			0xff
-#define B_SLICE(val)		(((val)>>B_SLICESHIFT) & B_SLICEMASK)
-#define B_UNITSHIFT			16
-#define B_UNITMASK			0xf
-#define	B_UNIT(val)			(((val) >> B_UNITSHIFT) & B_UNITMASK)
-#define B_PARTITIONSHIFT	8
-#define B_PARTITIONMASK		0xff
-#define	B_PARTITION(val)	(((val) >> B_PARTITIONSHIFT) & B_PARTITIONMASK)
-#define	B_TYPESHIFT			0
-#define	B_TYPEMASK			0xff
-#define	B_TYPE(val)			(((val) >> B_TYPESHIFT) & B_TYPEMASK)
+struct bootinfo_efi {
+	u_int32_t					bi_systab;			/* pa of EFI system table */
+	u_int32_t					bi_memmap;			/* pa of EFI memory map */
+	u_int32_t					bi_memmap_size;		/* size of EFI memory map */
+	u_int32_t					bi_memdesc_size;	/* sizeof EFI memory desc */
+	u_int32_t					bi_memdesc_version;	/* EFI memory desc version */
+};
 
-#define	B_MAGICMASK	0xf0000000
-#define	B_DEVMAGIC	0xa0000000
+struct bootinfo_enivronment {
+	u_int32_t					bi_kernend;			/* end of kernel space */
+	u_int32_t					bi_modulep;			/* pre-loaded modules */
+	u_int32_t					bi_symtab;			/* start of kernel sym table */
+	u_int32_t					bi_esymtab;			/* end of kernel sym table */
+	u_int32_t					bi_envp;			/* environment */
+};
 
-#define	MAKEBOOTDEV(type, slice, unit, partition) \
-	(((type) << B_TYPESHIFT) | ((slice) << B_SLICESHIFT) | \
-	((unit) << B_UNITSHIFT) | ((partition) << B_PARTITIONSHIFT) | \
-	B_DEVMAGIC)
+struct bootinfo_bootdisk {
+	int 						bi_labelsector;
+	struct {
+		u_int16_t 	type;
+		u_int16_t 	checksum;
+		char 		packname[16];
+	} bi_label;
+	int 						bi_biosdev;
+	int 						bi_partition;
+	u_int32_t					bi_nfs_diskless;	/* struct nfs_diskless * */
+};
 
-#define	BASE_SLICE			2
-#define	COMPATIBILITY_SLICE	0
-#define	MAX_SLICES			32
-#define	WHOLE_DISK_SLICE	1
+struct bootinfo_netif {
+	char 						bi_ifname[16];
+	int 						bi_bus;
+#define BI_BUS_ISA 0
+#define BI_BUS_PCI 1
+	union {
+		unsigned int iobase; 						/* ISA */
+		unsigned int tag; 							/* PCI, BIOS format */
+	} bi_addr;
+};
+
+struct bootinfo_console {
+	char 						bi_devname[16];
+	int 						bi_addr;
+	int 						bi_speed;
+};
+
+struct bootinfo_biogeom {
+	u_int32_t					bi_bios_geom[N_BIOS_GEOM];
+	int 						bi_spc;
+	int							bi_spt;
+	//struct dos_partition 		bi_dosparts[NDOSPART];
+};
+
+extern union bootinfo	bootinfo;
 
 #endif	/* !_MACHINE_BOOTINFO_H_ */

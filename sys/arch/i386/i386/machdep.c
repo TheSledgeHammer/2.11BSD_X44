@@ -161,6 +161,8 @@ startup(firstaddr)
 	vm_offset_t minaddr, maxaddr;
 	vm_size_t size;
 
+
+
 	/*
 	 * Initialize error message buffer (at end of core).
 	 */
@@ -177,6 +179,7 @@ startup(firstaddr)
 	 * Good {morning,afternoon,evening,night}.
 	 */
 	printf(version);
+	identifycpu();
 	printf("real mem  = %d\n", ctob(physmem));
 
 	/*
@@ -321,6 +324,8 @@ startup(firstaddr)
 	 * Configure the system.
 	 */
 	configure();
+
+	i386_bus_space_mallocok();
 }
 
 /*
@@ -845,6 +850,10 @@ init386(first)
 	extern int sigcode, szsigcode;
 
 	proc0.p_addr = proc0paddr;
+	curpcb = &proc0.p_addr->u_pcb;
+
+	i386_bus_space_init();
+
 
 	allocate_gdt(&gdt_segs);
 	allocate_ldt(&ldt_segs);
@@ -899,6 +908,8 @@ init386(first)
 
 	splhigh();
 	enable_intr();
+
+	i386_bus_space_check(avail_end, biosbasemem, biosextmem);
 
 	/*
 	 * This memory size stuff is a real mess.  Here is a simple
@@ -990,6 +1001,20 @@ makectx(tf, pcb)
 	pcb->pcb_tss.tss_gs = rgs();
 }
 
+void *
+lookup_bootinfo(type)
+	int type;
+{
+	struct btinfo_common *help;
+	int n = *(int*)bootinfo;
+	help = (struct btinfo_common *)(bootinfo + sizeof(int));
+	while(n--) {
+		if(help->type == type)
+			return(help);
+		help = (struct btinfo_common *)((char*)help + help->len);
+	}
+	return(0);
+}
 
 /*
  * Provide inb() and outb() as functions.  They are normally only available as

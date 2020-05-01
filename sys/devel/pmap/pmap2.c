@@ -5,8 +5,6 @@
  *      Author: marti
  */
 
-#include "../pmap/pmap2.h"
-
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/malloc.h>
@@ -17,10 +15,9 @@
 #include <vm/include/vm_page.h>
 
 #include <arch/i386/include/param.h>
-#include <i386/cpt.h>
-
+#include <arch/i386/include/pmap.h>
 #include <sys/msgbuf.h>
-#include "../pmap/cpt.h"
+#include <pmap/cpt.h>
 
 /*
  * All those kernel PT submaps that BSD is so fond of
@@ -30,9 +27,7 @@ caddr_t				CADDR1, CADDR2, vmmap;
 struct pte			*msgbufmap;
 struct msgbuf		*msgbufp;
 
-#define	pmap_cpt(m, v)			(&((m)->pm_cpt[VPBN((v))]))
-#define pmap_pde_v(pte)			((pte)->pd_v)
-
+#define	pmap_pde(m, v)					(&((m)->pm_pdir[((vm_offset_t)(v) >> PD_SHIFT)&1023]))
 
 #define	LOWPTDI		1 					/* No PAE */
 
@@ -122,8 +117,8 @@ pmap_cold()
 {
 	cpt_entry_t *cpt;
 	cpte_entry_t *cpte;
-	//pd_entry_t *pd;
-	//pt_entry_t *pt;
+	pd_entry_t *pd;
+	pt_entry_t *pt;
 	u_int cr3, ncr4;
 
 	RB_INIT(&cpt_root);
@@ -133,7 +128,9 @@ pmap_cold()
 	cpte = &cpte_base[0];
 
 	/* Kernel Page Table */
-	cpt_to_pde(cpt, pd);			/* fix */
+	pd = cpt_to_pde(cpt, 0);
+	pt = cpte_to_pte(cpte, 0);
+
 	allocate_kern_cpt(cpt, cpte);
 
 	pmap_cold_mapident(cpte, 0, atop(NBPDR) * LOWPTDI);
@@ -216,19 +213,4 @@ pmap_pinit(pmap)
 
 	pmap->pm_count = 1;
 	simple_lock_init(&pmap->pm_lock);
-}
-
-/*
- * cpt & cpte have to map into pmap and va
- * cpt_traversal & cpte_lookup get us the va and pte
- * need pmap from cpt
- */
-struct pte *
-pmap_pte(pmap, va)
-	register pmap_t pmap;
-	unsigned long va;
-{
-	if(pmap && pmap_pde_v(pmap_cpt(pmap, va))) {
-
-	}
 }

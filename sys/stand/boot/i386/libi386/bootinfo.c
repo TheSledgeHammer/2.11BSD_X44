@@ -84,7 +84,7 @@ bi_getboothowto(char *kargs)
 void
 bi_setboothowto(int howto)
 {
-
+	struct bootinfo_common *common;
 }
 
 /*
@@ -122,7 +122,7 @@ bi_copyenv(vm_offset_t addr)
  * - Module metadata are formatted and placed in kernel space.
  */
 int
-bi_load(struct bootinfo *bi, struct preloaded_file *fp, char *args)
+bi_load(union bootinfo *bi, struct preloaded_file *fp, char *args)
 {
 	char					*rootdevname;
 	struct i386_devdesc		*rootdev;
