@@ -51,7 +51,7 @@ int		boothowto;
 struct	timeval boottime;
 struct	timeval runtime;
 
-extern const struct emul emul_211bsd; 	/* defined in kern_exec.c */
+extern const struct emul emul_211bsd; 					/* defined in kern_exec.c */
 
 static void start_init (struct proc *p, void *framep);
 /*
@@ -92,7 +92,7 @@ main(framep)
 	 * Attempt to find console and initialize
 	 * in case of early panic or other messages.
 	 */
-	consinit();
+	//consinit(); /* Needs Work */
 	printf(copyright);
 
 	vm_mem_init();
@@ -245,15 +245,11 @@ main(framep)
 	if (fork(NULL))
 		panic("fork pager");
 	if (rval[1]) {
-		/*
-		 * Now in process 2.
-		 */
 		p = curproc;
 		pageproc = p;
 		p->p_flag |= P_INMEM | P_SYSTEM;	/* XXX */
 		bcopy("pagedaemon", curproc->p_comm, sizeof ("pagedaemon"));
 		vm_pageout();
-		/* NOTREACHED */
 	}
 
 	/* Initialize exec structures */

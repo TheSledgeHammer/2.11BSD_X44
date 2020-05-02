@@ -30,23 +30,23 @@ consinit()
 		consinfo = &default_consinfo;
 
 #if (NPC > 0) || (NVT > 0)
-	if(!strcmp(consinfo->devname, "pc")) {
+	if(!strcmp(consinfo->bi_devname, "pc")) {
 		pccnattach();
 		return;
 	}
 #endif
 #if (NCOM > 0)
-	if(!strcmp(consinfo->devname, "com")) {
+	if(!strcmp(consinfo->bi_devname, "com")) {
 		bus_space_tag_t tag = I386_BUS_SPACE_IO;
 
-		if(comcnattach(tag, consinfo->addr, consinfo->speed,
+		if(comcnattach(tag, consinfo->bi_addr, consinfo->bi_speed,
 			       COM_FREQ, comcnmode))
-			panic("can't init serial console @%x", consinfo->addr);
+			panic("can't init serial console @%x", consinfo->bi_addr);
 
 		return;
 	}
 #endif
-	panic("invalid console device %s", consinfo->devname);
+	panic("invalid console device %s", consinfo->bi_devname);
 }
 
 #ifdef KGDB

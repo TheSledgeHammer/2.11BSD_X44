@@ -33,7 +33,7 @@ struct uidinfo {
 };
 #define	UIHASH(uid)	(&uihashtbl[(uid) & uihash])
 LIST_HEAD(uihashhead, uidinfo) *uihashtbl;
-u_long	uihash;		/* size of hash table - 1 */
+u_long	uihash;					/* size of hash table - 1 */
 
 
 struct pidhashhead *pidhashtbl;
@@ -41,16 +41,10 @@ u_long pid_hash;
 struct pgrphashhead *pgrphashtbl;
 u_long pgrphash;
 
-struct proclist  allproc;		/* all processes */
-struct proclist  zombproc;		/* just zombies */
-
 void
 procinit()
 {
-
 	pqinit();
-	LIST_INIT(&allproc);
-	LIST_INIT(&zombproc);
 	pidhashtbl = hashinit(maxproc / 4, M_PROC, &pid_hash);
 	pgrphashtbl = hashinit(maxproc / 4, M_PROC, &pgrphash);
 	uihashtbl = hashinit(maxproc / 16, M_PROC, &uihash);

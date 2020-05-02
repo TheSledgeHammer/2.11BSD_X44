@@ -286,7 +286,7 @@ checkdirs(olddp)
 		return;
 	if (VFS_ROOT(olddp->v_mountedhere, &newdp))
 		panic("mount: lost mount");
-	for (p = allproc.lh_first; p != 0; p = p->p_list.le_next) {
+	for (p = allproc->p_forw; p != 0; p = p->p_nxt) {
 		fdp = p->p_fd;
 		if (fdp->fd_cdir == olddp) {
 			vrele(fdp->fd_cdir);

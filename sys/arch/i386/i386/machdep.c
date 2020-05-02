@@ -59,6 +59,7 @@
 #include <sys/sysctl.h>
 #include <sys/exec.h>
 #include <sys/exec_linker.h>
+#include <sys/bootinfo.h>
 
 #include <net/netisr.h>
 
@@ -72,7 +73,7 @@
 #include <machine/psl.h>
 #include <machine/reg.h>
 #include <machine/specialreg.h>
-#include <machine/bootinfo.h>
+
 
 #include <dev/cons.h>
 #include <dev/isa/isa.h>
@@ -80,28 +81,26 @@
 #include <dev/isa/rtc.h>
 
 #include <dev/ic/i8042reg.h>
-//#include <dev/ic/mc146818reg.h>
 #include <i386/isa/isa_machdep.h>
 
 #ifdef VM86
 #include <machine/vm86.h>
 #endif
 
-//#include "apm.h"
 #include "bioscall.h"
 
 #include "com.h"
 #if (NCOM > 0)
 #include <sys/termios.h>
 #include <dev/ic/comreg.h>
-//#include <dev/ic/comvar.h>
+#include <dev/ic/comvar.h>
 #endif
 
 /* the following is used externally (sysctl_hw) */
 char machine[] = "i386";			/* cpu "architecture" */
 char machine_arch[] = "i386";		/* machine == machine_arch */
 
-char bootinfo[BOOTINFO_MAXSIZE];
+//char bootinfo[BOOTINFO_MAXSIZE];
 
 vm_map_t buffer_map;
 extern vm_offset_t avail_end;
@@ -160,8 +159,6 @@ startup(firstaddr)
 	extern long Usrptsize;
 	vm_offset_t minaddr, maxaddr;
 	vm_size_t size;
-
-
 
 	/*
 	 * Initialize error message buffer (at end of core).
@@ -854,7 +851,6 @@ init386(first)
 
 	i386_bus_space_init();
 
-
 	allocate_gdt(&gdt_segs);
 	allocate_ldt(&ldt_segs);
 
@@ -1005,13 +1001,13 @@ void *
 lookup_bootinfo(type)
 	int type;
 {
-	struct btinfo_common *help;
+	union bootinfo *help;
 	int n = *(int*)bootinfo;
-	help = (struct btinfo_common *)(bootinfo + sizeof(int));
+	help = (union bootinfo *)(bootinfo + sizeof(int));
 	while(n--) {
-		if(help->type == type)
+		if(help->bi_type == type)
 			return(help);
-		help = (struct btinfo_common *)((char*)help + help->len);
+		help = (union bootinfo *)((char*)help + help->bi_len);
 	}
 	return(0);
 }

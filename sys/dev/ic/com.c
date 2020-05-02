@@ -100,7 +100,7 @@ struct speedtab comspeedtab[] = {
 
 extern	struct tty *constty;
 #ifdef KGDB
-#include <machine/remote-sl.h>
+#include <dev/remote-sl.h>
 
 extern int kgdb_dev;
 extern int kgdb_rate;
@@ -110,7 +110,7 @@ extern int kgdb_debug_init;
 #define	UNIT(x)		minor(x)
 
 comprobe(dev)
-struct isa_device *dev;
+	struct isa_device *dev;
 {
 	/* force access to id reg */
 	outb(dev->id_iobase+com_cfcr, inb (dev->id_iobase+com_cfcr) & ~0x80);
@@ -118,13 +118,12 @@ struct isa_device *dev;
 	if ((inb(dev->id_iobase+com_iir) & 0x38) == 0)
 		return(1);
 	return(1);
-
 }
 
 
 int
 comattach(isdp)
-struct isa_device *isdp;
+	struct isa_device *isdp;
 {
 	struct	tty	*tp;
 	u_char		unit;
@@ -256,6 +255,7 @@ comclose(dev, flag, mode, p)
 comread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
+	int flag;
 {
 	register struct tty *tp = &com_tty[UNIT(dev)];
  
@@ -264,7 +264,8 @@ comread(dev, uio, flag)
  
 comwrite(dev, uio, flag)
 	dev_t dev;
-	struct uio *uio;
+	struct uio *uio;	/* Set hardware state. */
+	int flag;
 {
 	int unit = UNIT(dev);
 	register struct tty *tp = &com_tty[unit];
@@ -339,8 +340,7 @@ comintr(unit)
 		default:
 			if (code & IIR_NOPEND)
 				return (1);
-			log(LOG_WARNING, "com%d: weird interrupt: 0x%x\n",
-			    unit, code);
+			log(LOG_WARNING, "com%d: weird interrupt: 0x%x\n", unit, code);
 			/* fall through */
 		case IIR_MLSC:
 			commint(unit, com);
@@ -552,6 +552,7 @@ out:
 /*ARGSUSED*/
 comstop(tp, flag)
 	register struct tty *tp;
+	int flag;
 {
 	register int s;
 
@@ -599,7 +600,7 @@ commctl(dev, bits, how)
 /*
  * Following are all routines needed for COM to act as console
  */
-#include <i386/i386/cons.h>
+#include <dev/cons.h>
 
 comcnprobe(cp)
 	struct consdev *cp;

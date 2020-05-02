@@ -1,64 +1,57 @@
 /*
- * kern_threads.c
+ * user_threads.c
  *
- *  Created on: 3 Jan 2020
+ *  Created on: 17 Feb 2020
  *      Author: marti
  */
 
 #include <sys/malloc.h>
-#include "kernthreads/kthread.h"
+#include "uthread.h"
 
-LIST_HEAD(tidhashhead, kthread) *tidhashtbl;
+LIST_HEAD(tidhashhead, uthread) *tidhashtbl;
 struct tgrphashhead *tgrphashtbl;
 
 struct 	tgrp tgrp0;
-struct 	kthread kthread0;
-
-void
-threadinit()
-{
-	tidhashtbl = hashinit(maxthread / 4, M_THREAD, &tid_hash);
-	tgrphashtbl = hashinit(maxthread / 4, M_THREAD, &tgrphash);
-}
+struct 	uthread uthread0;
 
 /*
- * Is kt an inferior of the current kernel thread? Update user/proc struct
+ * Is ut an inferior of the current user thread? Update user/proc struct
  */
 int
-inferior(kt)
-	register struct kthread *kt;
+inferior(ut)
+	register struct uthread *ut;
 {
-	for (; kt != u->u_procp || kt != curproc; kt = kt->kt_tptr)
-		if (kt->kt_ptid == 0)
+	for (; ut != u->u_procp || ut != curproc; ut = ut->ut_tptr)
+		if (ut->ut_ptid == 0)
 			return (0);
 	return (1);
 }
 
-struct kthread *
-ktfind(tid)
-register int tid;
+struct uthread *
+utfind(tid)
+	register int tid;
 {
-	register struct kthread *t = ktidhash(TIDHASH(tid));
-	for(; t; t = t->kt_hash) {
-		if(t->kt_tid == tid) {
-			return (t);
+	register struct uthread *ut = utidhash(TIDHASH(tid));
+	for(; ut; ut = ut->ut_hash) {
+		if(ut->ut_tid == tid) {
+			return (ut);
 		}
 	}
-	return ((struct kthread *) 0);
+	return ((struct uthread *) 0);
 }
 
 /*
  * remove kernel thread from thread group
  */
 int
-leavetgrp(kt)
-	register struct kthread *kt;
+leavetgrp(ut)
+	register struct uthread *ut;
 {
-	register struct kthread *ktt = &kt->kt_tgrp->tg_mem;
+	register struct uthread *utt = &ut->ut_tgrp->tg_mem;
 
-	for (; *ktt; ktt = &(*ktt)->kt_tgrpnxt) {
-		if (*ktt == kt) {
-			*ktt = kt->kt_tgrpnxt;
+	for (; *utt; utt = &(*utt)->ut_tgrpnxt) {
+		if (*utt == ut) {
+			*utt = ut->ut_tgrpnxt;
 			break;
 		}
 	}
@@ -66,9 +59,9 @@ leavetgrp(kt)
 	if (ktt == NULL)
 		panic("leavetgrp: can't find kt in tgrp");
 #endif
-	if (!kt->kt_tgrp->tg_mem)
-		tgdelete(kt->kt_tgrp);
-	kt->kt_tgrp = 0;
+	if (!ut->ut_tgrp->tg_mem)
+		tgdelete(ut->ut_tgrp);
+	ut->ut_tgrp = 0;
 	return (0);
 }
 
@@ -84,6 +77,7 @@ tgfind(tgid)
 	}
 	return (NULL);
 }
+
 
 /*
  * delete a thread group
@@ -117,13 +111,13 @@ tgdelete(tgrp)
  * Move p to a new or existing process group (and session)
  */
 int
-entertgrp(kt, tgid, mksess)
-	register struct kthread *kt;
+entertgrp(ut, tgid, mksess)
+	register struct uthread *ut;
 	tid_t tgid;
 	int mksess;
 {
 	register struct tgrp *tgrp = tgfind(tgid);
-	register struct kthread **ktt;
+	register struct uthread **utt;
 	int n;
 #ifdef DIAGNOSTIC
 	if (tgrp != NULL && mksess)	/* firewalls */
@@ -132,17 +126,17 @@ entertgrp(kt, tgid, mksess)
 		panic("entertgrp: session leader attempted set tgrp");
 #endif
 	if (tgrp == NULL) {
-		tid_t savetid = kt->kt_tid;
-		struct kthread *nkt;
+		tid_t savetid = ut->ut_tid;
+		struct uthread *nut;
 		/*
 		 * new process group
 		 */
 #ifdef DIAGNOSTIC
-		if (kt->kt_pid != tgid)
+		if (ut->ut_pid != tgid)
 			panic("entertgrp: new tgrp and tid != tgid");
 #endif
 		MALLOC(tgrp, struct tgrp *, sizeof(struct tgrp), M_TGRP, M_WAITOK);
-		if ((nkt = tgfind(savetid)) == NULL || nkt != kt)
+		if ((nut = tgfind(savetid)) == NULL || nut != ut)
 			return (ESRCH);
 		if (mksess) {
 			register struct session *sess;
@@ -151,20 +145,20 @@ entertgrp(kt, tgid, mksess)
 			 * new session
 			 */
 			MALLOC(sess, struct session *, sizeof(struct session), M_SESSION, M_WAITOK);
-			sess->s_leader = kt;
+			sess->s_leader = ut;
 			sess->s_count = 1;
 			sess->s_ttyvp = NULL;
 			sess->s_ttyp = NULL;
-			bcopy(kt->kt_session->s_login, sess->s_login,
+			bcopy(ut->ut_session->s_login, sess->s_login,
 			    sizeof(sess->s_login));
-			kt->kt_flag &= ~P_CONTROLT;
+			ut->ut_flag &= ~P_CONTROLT;
 			tgrp->tg_session = sess;
 #ifdef DIAGNOSTIC
 			if (p != curproc)
 				panic("enterpgrp: mksession and p != curproc");
 #endif
 		} else {
-			tgrp->tg_session = kt->kt_session;
+			tgrp->tg_session = ut->ut_session;
 			tgrp->tg_session->s_count++;
 		}
 		tgrp->tg_id = tgid;
@@ -172,7 +166,7 @@ entertgrp(kt, tgid, mksess)
 		pgrphash[n] = tgrp;
 		tgrp->tg_jobc = 0;
 		tgrp->tg_mem = NULL;
-	} else if (tgrp == kt->kt_tgrp)
+	} else if (tgrp == ut->ut_tgrp)
 		return (0);
 
 	/*
@@ -180,33 +174,33 @@ entertgrp(kt, tgid, mksess)
 	 * Increment eligibility counts before decrementing, otherwise we
 	 * could reach 0 spuriously during the first call.
 	 */
-	fixjobc(kt, tgrp, 1);
-	fixjobc(kt, kt->kt_tgrp, 0);
+	fixjobc(ut, tgrp, 1);
+	fixjobc(ut, ut->ut_tgrp, 0);
 
 	/*
 	 * unlink p from old process group
 	 */
-	for (ktt = &kt->kt_tgrp->tg_mem; *ktt; ktt = &(*ktt)->kt_tgrpnxt) {
-		if (*ktt == kt) {
-			*ktt = kt->kt_tgrpnxt;
+	for (utt = &ut->ut_tgrp->tg_mem; *utt; utt = &(*utt)->ut_tgrpnxt) {
+		if (*utt == ut) {
+			*utt = ut->ut_tgrpnxt;
 			break;
 		}
 	}
 #ifdef DIAGNOSTIC
-	if (ktt == NULL)
-		panic("entertgrp: can't find kt on old tgrp");
+	if (utt == NULL)
+		panic("entertgrp: can't find ut on old tgrp");
 #endif
 	/*
 	 * delete old if empty
 	 */
-	if (kt->kt_tgrp->tg_mem == 0)
-		pgdelete(kt->kt_tgrp);
+	if (ut->ut_tgrp->tg_mem == 0)
+		pgdelete(ut->ut_tgrp);
 	/*
 	 * link into new one
 	 */
-	kt->kt_tgrp = tgrp;
-	kt->kt_tgrpnxt = tgrp->tg_mem;
-	tgrp->tg_mem = kt;
+	ut->ut_tgrp = tgrp;
+	ut->ut_tgrpnxt = tgrp->tg_mem;
+	tgrp->tg_mem = ut;
 	return (0);
 }
 
@@ -223,8 +217,8 @@ static void orphanpg();
  * entering == 1 => p is entering specified group.
  */
 void
-fixjobc(kt, tgrp, entering)
-	register struct kthread *kt;
+fixjobc(ut, tgrp, entering)
+	register struct uthread *ut;
 	register struct tgrp *tgrp;
 	int entering;
 {
@@ -235,7 +229,7 @@ fixjobc(kt, tgrp, entering)
 	 * Check p's parent to see whether p qualifies its own process
 	 * group; if so, adjust count for p's process group.
 	 */
-	if ((histgrp = kt->kt_tptr->kt_tgrp) != tgrp &&
+	if ((histgrp = ut->ut_tptr->ut_tgrp) != tgrp &&
 	    histgrp->tg_session == mysession)
 		if (entering)
 			tgrp->tg_jobc++;
@@ -247,10 +241,10 @@ fixjobc(kt, tgrp, entering)
 	 * their process groups; if so, adjust counts for children's
 	 * process groups.
 	 */
-	for (kt = kt->kt_cptr; kt; kt = kt->kt_ostptr)
-		if ((histgrp = kt->kt_tgrp) != tgrp &&
+	for (ut = ut->ut_cptr; ut; ut = ut->ut_ostptr)
+		if ((histgrp = ut->ut_tgrp) != tgrp &&
 		    histgrp->tg_session == mysession &&
-		    kt->kt_stat != SZOMB)
+		    ut->ut_stat != SZOMB)
 			if (entering)
 				histgrp->tg_jobc++;
 			else if (--histgrp->tg_jobc == 0)
@@ -258,7 +252,7 @@ fixjobc(kt, tgrp, entering)
 }
 
 /*
- * A process group has become orphaned;
+ * A thread group has become orphaned;
  * if there are any stopped processes in the group,
  * hang-up all process in that group.
  */
@@ -266,13 +260,13 @@ static void
 orphanpg(tg)
 	struct tgrp *tg;
 {
-	register struct kthread *kt;
+	register struct uthread *ut;
 
-	for (kt = tg->tg_mem; kt; kt = kt->kt_tgrpnxt) {
-		if (kt->kt_stat == SSTOP) {
-			for (kt = tg->tg_mem; kt; kt = kt->kt_tgrpnxt) {
-				psignal(kt->kt_procp, SIGHUP);
-				psignal(kt->kt_procp, SIGCONT);
+	for (ut = tg->tg_mem; ut; ut = ut->ut_tgrpnxt) {
+		if (ut->ut_stat == SSTOP) {
+			for (ut = tg->tg_mem; ut; ut = ut->ut_tgrpnxt) {
+				psignal(ut->ut_userp->u_procp, SIGHUP);
+				psignal(ut->ut_userp->u_procp, SIGCONT);
 			}
 			return;
 		}
@@ -283,7 +277,7 @@ orphanpg(tg)
 tgrpdump()
 {
 	register struct tgrp *tgrp;
-	register struct kthread *kt;
+	register struct uthread *ut;
 	register i;
 
 	for (i = 0; i <= tgrphash; i++) {
@@ -294,9 +288,9 @@ tgrpdump()
 						tgrp, tgrp->tg_id, tgrp->tg_session,
 					    tgrp->tg_session->s_count,
 						tgrp->tg_mem);
-				for(kt = tgrp->tg_mem; kt != 0; kt = kt->kt_nxt) {
+				for(ut = tgrp->tg_mem; ut != 0; ut = ut->ut_nxt) {
 					printf("\t\ttid %d addr %x tgrp %x\n",
-										    kt->kt_tid, kt, kt->kt_tgrp);
+										    ut->ut_tid, ut, ut->ut_tgrp);
 				}
 			}
 		}

@@ -41,6 +41,7 @@ vfork()
 
 static void
 fork1(isvfork)
+	int isvfork;
 {
 	register int a;
 	register struct proc *p1, *p2;
@@ -63,7 +64,7 @@ fork1(isvfork)
 	 *  not su and would take last slot.
 	 */
 	p2 = freeproc;
-	if (p2==NULL)
+	if (p2 == NULL)
 		tablefull("proc");
 
 	count = chgproccnt(u->u_uid, 1);
@@ -154,7 +155,7 @@ retry:
 
 		pidchecked = PID_MAX;
 
-		rpp = allproc.lh_first;
+		rpp = allproc;
 again:
 		for (; rpp != NULL; rpp = rpp->p_nxt) {
 			while (rpp->p_pid == mpid || rpp->p_pgrp->pg_id == mpid) {
@@ -169,7 +170,7 @@ again:
 		}
 		if (!doingzomb) {
 			doingzomb = 1;
-			rpp = zombproc.lh_first;
+			rpp = zombproc;
 			goto again;
 		}
 	}
@@ -276,6 +277,7 @@ again:
 	return (0);
 }
 
+/* 2.11BSD Original newproc */
 int
 copyproc(rip, rpp, isvfork)
 	register struct proc *rpp, *rip;
@@ -363,8 +365,8 @@ copyproc(rip, rpp, isvfork)
 		rip->p_flag |= P_SVFPRNT;
 		if (a[2] == NULL) {
 			//FREE(coremap, M_COREMAP);
-			mfree(coremap,rip->p_dsize,rip->p_daddr);
-			mfree(coremap,rip->p_ssize,rip->p_saddr);
+			mfree(coremap, rip->p_dsize, rip->p_daddr);
+			mfree(coremap, rip->p_ssize, rip->p_saddr);
 		}
 		while (rpp->p_flag & P_SVFORK)
 			sleep((caddr_t)rpp, PSWP + 1);

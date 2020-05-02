@@ -1,5 +1,0 @@
-#include <dev/scsipi/scsi_all.h>
-#include <dev/scsipi/scsipi_all.h>
-#include <dev/scsipi/scsiconf.h>
-
-#include <i386/isa/timerreg.h>	

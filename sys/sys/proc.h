@@ -217,7 +217,6 @@ struct emul {
 #define	P_INMEM		0x00004	/* Loaded into memory. */
 #define P_INEXEC	0x100000/* Process is exec'ing and cannot be traced */
 
-
 /* Should probably be changed into a hold count (They have. -DG). */
 #define	P_NOSWAP	0x08000	/* Another flag to prevent swap out. */
 #define	P_PHYSIO	0x10000	/* Doing physical I/O. */
@@ -236,26 +235,25 @@ struct emul {
 		FREE(s, M_SESSION);						\
 }
 
-#define	PIDHSZ			16
-#define	PIDHASH(pid)	(&pidhashtbl[(pid) & pid_hash & (PIDHSZ * ((pid) + pid_hash) - 1)])
+#define	PIDHSZ						16
+#define	PIDHASH(pid)				(&pidhashtbl[(pid) & pid_hash & (PIDHSZ * ((pid) + pid_hash) - 1)])
 extern LIST_HEAD(pidhashhead, proc) *pidhashtbl;
 u_long pid_hash;
 
-#define	PGRPHASH(pgid)	(&pgrphashtbl[(pgid) & pgrphash])
+#define	PGRPHASH(pgid)				(&pgrphashtbl[(pgid) & pgrphash])
 extern LIST_HEAD(pgrphashhead, pgrp) *pgrphashtbl;
 extern u_long pgrphash;
 
 extern struct proc *pidhash[PIDHSZ];
 extern int pidhashmask;					/* In param.c. */
-extern struct proc *allproc;			/* List of active procs. */
 extern struct proc proc0;				/* Process slot for swapper. */
 int	nproc, maxproc;						/* Current and max number of procs. */
 
-extern struct proc proc[], *procNPROC;	/* the proc table itself */
+struct proc proc[], *procNPROC;			/* the proc table itself */
 
-LIST_HEAD(proclist, proc);
-extern struct proclist  freeproc;		/* List of free procs */
-extern struct proclist  zombproc;		/* List of zombie procs. */
+struct proc *allproc;					/* List of active procs. */
+struct proc *freeproc;					/* List of free procs. */
+struct proc *zombproc;					/* List of zombie procs. */
 struct proc *initproc, *pageproc;		/* Process slots for init, pager. */
 
 #define	NQS	32							/* 32 run queues. */

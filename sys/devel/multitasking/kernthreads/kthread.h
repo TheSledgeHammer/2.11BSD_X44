@@ -1,12 +1,3 @@
-/*
- * Thread Control Block:
- * Threads work nearly identically the same as proc in structure and operation.
- * Threads however cannot create child threads, this is done through proc. Threads have the same creds as the process
- * which created it.
- * Thread groups are linked to there proc group and cannot exceed the limit of a proc group and M:N ratio.
- * Example: If the M:N ratio (1:2) and prgp limit is 4. Then a Thread group limit would be 8 (2 Threads per Proc).
- * 
- */
 
 #ifndef SYS_KTHREADS_H_
 #define SYS_KTHREADS_H_
@@ -34,8 +25,8 @@ struct kthread {
 	/* Substructures: */
 	struct pcred 	 	*kt_cred;		/* Thread owner's identity. */
 	struct filedesc 	*kt_fd;			/* Ptr to open files structure. */
-	struct pstats 	 	*kt_stats;		/* Accounting/statistics (PROC ONLY). */
-	struct sigacts 		*kt_sig;		/* Signal actions, state (PROC ONLY). */
+	struct pstats 	 	*kt_stats;		/* Accounting/statistics (THREAD ONLY). */
+	struct sigacts 		*kt_sig;		/* Signal actions, state (THREAD ONLY). */
 
 #define	t_ucred			t_cred->pc_ucred
 
@@ -60,12 +51,27 @@ struct kthread {
     short               kt_simple_locks;
 };
 
+LIST_HEAD(kthread_rq, kthread_queue);
+struct kthread_queue {
+	struct kthread_rq 			ktq_head;
+	LIST_ENTRY(kthread_queue) 	ktq_entry;
+};
+
 #define	kt_session		kt_tgrp->tg_session
 #define	kt_tgid			kt_tgrp->tg_id
 
 #define KTHREAD_RATIO 1  /* M:N Ratio. number of kernel threads per process */
 
+/* Kernel Thread */
+int kthread_create(kthread_t kt);
+int kthread_join(kthread_t kt);
+int kthread_cancel(kthread_t kt);
+int kthread_exit(kthread_t kt);
+int kthread_detach(kthread_t kt);
+int kthread_equal(kthread_t kt1, kthread_t kt2);
+int kthread_kill(kthread_t kt);
 
+/* Kernel Thread Groups */
 extern struct kthread *ktidhash[];		/* In param.c. */
 
 struct kthread 	*ktfind (tid_t);		/* Find kernel thread by id. */
@@ -73,15 +79,6 @@ int	 			leavetgrp(struct kthread *);
 int	 			entertgrp(struct kthread *, tid_t, int);
 void 			fixjobc(struct kthread *, struct tgrp *, int);
 int	 			inferior(struct kthread *);
-
-/* Kernel Thread */
-int kthread_create(kthread_t *kt);
-int kthread_join(kthread_t *kt);
-int kthread_cancel(kthread_t *kt);
-int kthread_exit(kthread_t *kt);
-int kthread_detach(kthread_t *kt);
-int kthread_equal(kthread_t *kt1, kthread_t *kt2);
-int kthread_kill(kthread_t *kt);
 
 /* Kernel Thread Mutex */
 int kthread_mutexmgr(mutex_t m, unsigned int flags, struct simplelock *interlkp, kthread_t kt);

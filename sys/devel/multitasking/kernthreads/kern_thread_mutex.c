@@ -40,3 +40,4 @@ kthread_mutexmgr(mtx, flags, interlkp, kt)
     }
     return mutexmgr(mtx, flags, tid, interlkp);
 }
+

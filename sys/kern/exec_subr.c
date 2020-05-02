@@ -177,9 +177,10 @@ int vmcmd_map_readvn(elp)
 	cmd->ev_offset -= diff;
 	cmd->ev_size += diff;
 
-	error = vm_mmap(&vmspace->vm_map, cmd->ev_addr, cmd->ev_size,
-	VM_PROT_ALL, VM_PROT_ALL, cmd->ev_flags,
-	NULL, cmd->ev_offset);
+	error = vm_allocate(&vmspace->vm_map, &cmd->ev_addr, cmd->ev_size, 0);
+
+	//error = vm_mmap(&vmspace->vm_map, cmd->ev_addr, cmd->ev_size, VM_PROT_ALL, VM_PROT_ALL, cmd->ev_flags, NULL, cmd->ev_offset);
+
 	if (error)
 		return error;
 
@@ -244,8 +245,10 @@ vmcmd_map_zero(elp)
 	prot = cmd->ev_prot;
 	maxprot = VM_PROT_ALL;
 
-	error = vm_mmap(&vmspace->vm_map, &cmd->ev_addr, round_page(cmd->ev_size),
-			prot, maxprot, cmd->ev_flags, NULL, cmd->ev_offset);
+	error = vm_allocate(&vmspace->vm_map, &cmd->ev_addr, cmd->ev_size, 0);
+
+	//error = vm_mmap(&vmspace->vm_map, &cmd->ev_addr, round_page(cmd->ev_size), prot, maxprot, cmd->ev_flags, NULL, cmd->ev_offset);
+
 	return error;
 }
 

@@ -46,7 +46,7 @@
 
 /* Kern_mutex provides an abstraction of common mutex functions to both kernel & user threads */
 
-/* Initiate a mutex & simple_lock */
+/* Initialize a mutex & simple_lock */
 void
 mutex_init(mtx, prio, wmesg, timo, flags)
     mutex_t mtx;

@@ -1,9 +1,13 @@
 /*
- * thread.h
+ * Thread Control Block:
+ * Threads work nearly identically the same as proc in structure and operation.
+ * Threads however cannot create child threads, this is done through proc. Threads have the same creds as the process
+ * which created it.
+ * Thread groups are linked to there proc group and cannot exceed the limit of a proc group and M:N ratio.
+ * Example: If the M:N ratio (1:2) and prgp limit is 4. Then a Thread group limit would be 8 (2 Threads per Proc).
  *
- *  Created on: 6 Mar 2020
- *      Author: marti
  */
+
  /* Thread Control Block */
 #ifndef SYS_TCB_H_
 #define SYS_TCB_H_
@@ -22,13 +26,14 @@ struct tgrp {
 };
 
 /* stat codes */
-#define TSSLEEP	1
-#define TSWAIT	2
-#define TSRUN	3
-#define TSIDL	4
-#define TSREADY	5
-#define TSSTART	6
-#define TSSTOP	7
+#define TSSLEEP	1		/* sleeping/ awaiting an event */
+#define TSWAIT	2		/* waiting */
+#define TSRUN	3		/* running */
+#define TSIDL	4		/* intermediate state in process creation */
+#define	TSZOMB	5		/* intermediate state in process termination */
+#define TSSTOP	6		/* process being traced */
+#define TSREADY	7		/* ready */
+#define TSSTART	8		/* start */
 
 #define	TIDHSZ			16
 #define	TIDHASH(tid)	(&tidhashtbl[(tid) & tid_hash & (TIDHSZ * ((tid) + tid_hash) - 1)])

@@ -34,37 +34,16 @@
 #ifndef	_MACHINE_BOOTINFO_H_
 #define	_MACHINE_BOOTINFO_H_
 
+#ifndef _LOCORE
+
 /* Only change the version number if you break compatibility. */
-#define	BOOTINFO_VERSION	1
+#define	BOOTINFO_VERSION		1
 
-#define	N_BIOS_GEOM			8
+#define	N_BIOS_GEOM				8
 
-#define	BOOTINFO_MAGIC		0xdeadbeeffeedface
-
-/*
- * A zero bootinfo field often means that there is no info available.
- * Flags are used to indicate the validity of fields where zero is a
- * normal value.
- */
-union bootinfo {
-	u_int32_t					bi_version;
-	u_int32_t					bi_kernelname;		/* represents a char * */
-	u_int32_t					bi_magic;			/* BOOTINFO_MAGIC */
-	u_int32_t					bi_boothowto;		/* value for boothowto */
-	char 						bi_bootpath[80];
-	/* Bootinfo Sections */
-	struct bootinfo_bios 		bi_bios;			/* Bios */
-	struct bootinfo_efi			bi_efi;				/* EFI */
-	struct bootinfo_enivronment bi_envp;			/* Environment */
-	struct bootinfo_bootdisk	bi_disk;			/* Disk */
-	struct bootinfo_netif		bi_net;				/* Network */
-	struct bootinfo_console		bi_cons;			/* Console */
-	struct bootinfo_biogeom		bi_geom;			/* Geometry */
-};
+#define	BOOTINFO_MAGIC			0xdeadbeeffeedface
 
 struct bootinfo_bios {
-	int				 			bi_len;
-	int 						bi_type;
 #define	bi_endcommon			bi_n_bios_used
 	u_int32_t					bi_n_bios_used;
 	u_int32_t					bi_size;
@@ -124,9 +103,15 @@ struct bootinfo_biogeom {
 	u_int32_t					bi_bios_geom[N_BIOS_GEOM];
 	int 						bi_spc;
 	int							bi_spt;
-	//struct dos_partition 		bi_dosparts[NDOSPART];
+	struct dos_partition 		bi_dosparts[NDOSPART];
 };
 
-extern union bootinfo	bootinfo;
+#ifdef _KERNEL
+void *lookup_bootinfo (int);
+#endif
+#endif 	/* _LOCORE */
 
+#ifdef _KERNEL
+#define BOOTINFO_MAXSIZE 1000
+#endif
 #endif	/* !_MACHINE_BOOTINFO_H_ */

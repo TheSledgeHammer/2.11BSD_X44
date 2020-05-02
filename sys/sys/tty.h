@@ -54,7 +54,8 @@ struct tty {
 	} t_nu;
 
 	struct	clist t_outq;			/* Device output queue. */
-	int	(*t_oproc)();				/* device */
+	//int	(*t_oproc)();			/* device */
+	//short	t_pgrp;					/* tty */
 	struct	proc *t_rsel;			/* Tty read/oob select. */
 	struct	proc *t_wsel;			/* Tty write select. */
 	caddr_t	T_LINEP;				/* ### */
@@ -62,7 +63,6 @@ struct tty {
 	dev_t	t_dev;					/* device */
 	long	t_flags;				/* Tty flags. */
 	long	t_state;				/* Device and driver (TS*) state. */
-	//short	t_pgrp;					/* tty */
 	char	t_delct;				/* tty */
 	char	t_line;					/* Interface to device drivers. */
 	char	t_col;					/* Tty output column. */
@@ -71,12 +71,17 @@ struct tty {
 	struct	ttychars t_chars;		/* tty */
 	struct	winsize t_winsize;		/* window size */
 
+	void	(*t_oproc) (struct tty *);						/* Start output. */
+	void	(*t_stop) (struct tty *, int);					/* Stop output. */
+	int		(*t_param) (struct tty *, struct termios *);	/* Set hardware state. */
+
 	struct	pgrp 	*t_pgrp;		/* Foreground process group. */
 	struct	session *t_session;		/* Enclosing session. */
 	struct	termios t_termios;		/* Termios state. */
-	int		t_hiwat;				/* High water mark. */
-	int		t_lowat;				/* Low water mark. */
-	int		t_gen;					/* Generation number. */
+	int				t_hiwat;		/* High water mark. */
+	int				t_lowat;		/* Low water mark. */
+	int				t_gen;			/* Generation number. */
+
 
 /* be careful of tchars & co. */
 #define	t_erase		t_chars.tc_erase
@@ -170,10 +175,10 @@ struct speedtab {
 
 /* Flags on a character passed to ttyinput. */
 #define	TTY_CHARMASK	0x000000ff	/* Character mask */
-#define	TTY_QUOTE	0x00000100	/* Character quoted */
+#define	TTY_QUOTE		0x00000100	/* Character quoted */
 #define	TTY_ERRORMASK	0xff000000	/* Error mask */
-#define	TTY_FE		0x01000000	/* Framing error or BREAK condition */
-#define	TTY_PE		0x02000000	/* Parity error */
+#define	TTY_FE			0x01000000	/* Framing error or BREAK condition */
+#define	TTY_PE			0x02000000	/* Parity error */
 
 
 /* Is tp controlling terminal for p? */
