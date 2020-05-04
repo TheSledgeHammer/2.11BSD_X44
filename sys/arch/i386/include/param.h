@@ -51,12 +51,15 @@
 #define	ALIGNBYTES		3
 #define	ALIGN(p)		(((u_int)(p) + ALIGNBYTES) &~ ALIGNBYTES)
 
+
+
 #define	NBPG			4096			/* bytes/page */
 #define	PGOFSET			(NBPG-1)		/* byte offset into page */
 #define	PGSHIFT			12				/* LOG2(NBPG) */
 #define	NPTEPG			(NBPG/(sizeof (struct pte)))
+#define NBPDE			1024			/* page directory size in bytes */
 
-#define NBPDR			(1024*NBPG)		/* bytes/page dir */
+#define NBPDR			(NBPDE*NBPG)	/* bytes/page dir */
 #define	PDROFSET		(NBPDR-1)		/* byte offset into page dir */
 #define	PDRSHIFT		22				/* LOG2(NBPDR) */
 

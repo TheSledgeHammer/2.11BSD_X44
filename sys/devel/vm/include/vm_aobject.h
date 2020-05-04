@@ -39,7 +39,6 @@
 #ifndef _UVM_UVM_AOBJ_H_
 #define _UVM_UVM_AOBJ_H_
 
-#include <vm.h>
 
 /*
  * An anonymous UVM object (aobj) manages anonymous-memory.  In addition to
@@ -99,7 +98,7 @@
 
 struct uao_swhash_elt {
 	LIST_ENTRY(uao_swhash_elt) 	list;							/* the hash list */
-	voff_t 						tag;							/* our 'tag' */
+	vm_offset_t					tag;							/* our 'tag' */
 	int 						count;							/* our number of active slots */
 	int 						slots[UAO_SWHASH_CLUSTER_SIZE];	/* the slots */
 };

@@ -69,6 +69,7 @@
 #ifndef	_VM_MAP_
 #define	_VM_MAP_
 
+struct vm_map_clist;
 struct vm_map_rb_tree;
 RB_PROTOTYPE(vm_map_rb_tree, vm_map_entry, rb_entry, vm_rb_compare);
 
@@ -99,26 +100,27 @@ union vm_map_object {
  *	Also included is control information for virtual copy operations.
  */
 struct vm_map_entry {
-	RB_ENTRY(vm_map_entry) 	rb_entry;
-	struct vm_map_entry		*prev;			/* previous entry */
-	struct vm_map_entry		*next;			/* next entry */
-	vm_offset_t				start;			/* start address */
-	vm_offset_t				end;			/* end address */
-	caddr_t					ownspace;		/* free space after */
-	caddr_t					space;			/* space in subtree */
-	union vm_map_object		object;			/* object I point to */
-	vm_offset_t				offset;			/* offset into object */
-	boolean_t				is_a_map;		/* Is "object" a map? */
-	boolean_t				is_sub_map;		/* Is "object" a submap? */
-											/* Only in sharing maps: */
-	boolean_t				copy_on_write;	/* is data copy-on-write */
-	boolean_t				needs_copy;		/* does object need to be copied */
-											/* Only in task maps: */
-	vm_prot_t				protection;		/* protection code */
-	vm_prot_t				max_protection;	/* maximum protection */
-	vm_inherit_t			inheritance;	/* inheritance */
-	int						wired_count;	/* can be paged if = 0 */
-	struct vm_aref			aref;			/* anonymous overlay */
+	CIRCLEQ_ENTRY(vm_map_entry) cl_entry;		/* entries in a circular list */
+	RB_ENTRY(vm_map_entry) 		rb_entry;		/* tree information */
+	vm_offset_t					start;			/* start address */
+	vm_offset_t					end;			/* end address */
+	caddr_t						ownspace;		/* free space after */
+	caddr_t						space;			/* space in subtree */
+	union vm_map_object			object;			/* object I point to */
+	vm_offset_t					offset;			/* offset into object */
+	int							etype;			/* entry type */
+	boolean_t					is_a_map;		/* Is "object" a map? */
+	boolean_t					is_sub_map;		/* Is "object" a submap? */
+												/* Only in sharing maps: */
+	boolean_t					copy_on_write;	/* is data copy-on-write */
+	boolean_t					needs_copy;		/* does object need to be copied */
+												/* Only in task maps: */
+	vm_prot_t					protection;		/* protection code */
+	vm_prot_t					max_protection;	/* maximum protection */
+	vm_inherit_t				inheritance;	/* inheritance */
+	int							wired_count;	/* can be paged if = 0 */
+	struct vm_aref				aref;			/* anonymous overlay */
+	int							advice;			/* madvise advice */
 };
 
 /*
@@ -127,24 +129,25 @@ struct vm_map_entry {
  *	searches again from the last successful search,
  *	insertion, or removal.
  */
+CIRCLEQ_HEAD(vm_map_clist, vm_map_entry);
 RB_HEAD(vm_map_rb_tree, vm_map_entry);
 struct vm_map {
-	struct pmap *			pmap;				/* Physical map */
-	lock_data_t				lock;				/* Lock for map data */
-	struct vm_map_rb_tree 	rb_root;			/* Tree of entries */
-	struct vm_map_entry		header;				/* List of entries */
-	int						nentries;			/* Number of entries */
-	vm_size_t				size;				/* virtual size */
-	boolean_t				is_main_map;		/* Am I a main map? */
-	int						ref_count;			/* Reference count */
-	simple_lock_data_t		ref_lock;			/* Lock for ref_count field */
-	vm_map_entry_t			hint;				/* hint for quick lookups */
-	simple_lock_data_t		hint_lock;			/* lock for hint storage */
-	vm_map_entry_t			first_free;			/* First free space hint */
-	boolean_t				entries_pageable; 	/* map entries pageable?? */
-	unsigned int			timestamp;			/* Version number */
-#define	min_offset			header.start
-#define max_offset			header.end
+	struct vm_map_clist         cl_header;          /* Circular List of entries */
+	struct vm_map_rb_tree 		rb_root;			/* Tree of entries */
+	struct pmap *				pmap;				/* Physical map */
+	lock_data_t					lock;				/* Lock for map data */
+	int							nentries;			/* Number of entries */
+	vm_size_t					size;				/* virtual size */
+	boolean_t					is_main_map;		/* Am I a main map? */
+	int							ref_count;			/* Reference count */
+	simple_lock_data_t			ref_lock;			/* Lock for ref_count field */
+	vm_map_entry_t				hint;				/* hint for quick lookups */
+	simple_lock_data_t			hint_lock;			/* lock for hint storage */
+	vm_map_entry_t				first_free;			/* First free space hint */
+	boolean_t					entries_pageable; 	/* map entries pageable?? */
+	unsigned int				timestamp;			/* Version number */
+#define	min_offset			    cl_header.cqh_first->start
+#define max_offset			    cl_header.cqh_first->end
 };
 
 /*

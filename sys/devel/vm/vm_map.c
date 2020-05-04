@@ -70,8 +70,10 @@
 #include <sys/systm.h>
 #include <sys/malloc.h>
 
-#include <vm/include/vm_page.h>
-#include <vm/vm.h>
+#include <devel/vm/include/vm.h>
+
+#undef RB_AUGMENT
+#define	RB_AUGMENT(x)	vm_rb_augment(x)
 
 /*
  *	Virtual memory maps provide for the mapping, protection,
@@ -142,33 +144,26 @@ static void	_vm_map_clip_start (vm_map_t, vm_map_entry_t, vm_offset_t);
 void
 vm_map_startup()
 {
-	register int i;
-	register vm_map_entry_t mep;
-	vm_map_t mp;
+    register int i;
+    register vm_map_entry_t mep;
+    vm_map_t mp;
 
-	/*
-	 * Static map structures for allocation before initialization of
-	 * kernel map or kmem map.  vm_map_create knows how to deal with them.
-	 */
-	kmap_free = mp = (vm_map_t) kentry_data;
-	i = MAX_KMAP;
-	while (--i > 0) {
-		mp->header.next = (vm_map_entry_t) (mp + 1);
-		mp++;
-	}
-	mp++->header.next = NULL;
+    kmap_free = mp = (vm_map_t) kentry_data;
+    i = MAX_KMAP;
 
-	/*
-	 * Form a free list of statically allocated kernel map entries
-	 * with the rest.
-	 */
-	kentry_free = mep = (vm_map_entry_t) mp;
-	i = (kentry_data_size - MAX_KMAP * sizeof *mp) / sizeof *mep;
-	while (--i > 0) {
-		mep->next = mep + 1;
-		mep++;
-	}
-	mep->next = NULL;
+    while (--i > 0) {
+        CIRCLEQ_NEXT(mep, cl_entry) = (vm_map_entry_t) (mp + 1);
+        mp++;
+    }
+    CIRCLEQ_FIRST(&mp->cl_header)++->cl_entry.cqe_next = NULL;
+
+    kentry_free = mep = (vm_map_entry_t) mp;
+    i = (kentry_data_size - MAX_KMAP * sizeof * mp) / sizeof *mep;
+    while (--i > 0) {
+        CIRCLEQ_NEXT(mep, cl_entry) = mep + 1;
+        mep++;
+    }
+    CIRCLEQ_NEXT(mep, cl_entry) = NULL;
 }
 
 /*
@@ -238,11 +233,11 @@ vm_rb_augment(entry)
 
 static size_t
 vm_rb_space(map, entry)
-	const struct vm_map *map;
-	const struct vm_map_entry *entry;
+    const struct vm_map *map;
+    const struct vm_map_entry *entry;
 {
-	KASSERT(entry->next != NULL);
-	return (entry->next->start - entry->end);
+    KASSERT(CIRCLEQ_NEXT(entry, cl_entry) != NULL);
+    return (CIRCLEQ_NEXT(entry, cl_entry)->start - CIRCLEQ_FIRST(&map->cl_header)->end);
 }
 
 static size_t
@@ -281,39 +276,37 @@ vm_rb_fixup(map, entry)
 
 static void
 vm_rb_insert(map, entry)
-	struct vm_map *map;
-	struct vm_map_entry *entry;
+    struct vm_map *map;
+    struct vm_map_entry *entry;
 {
-	caddr_t space = vm_rb_space(map, entry);
-	struct vm_map_entry *tmp;
+    caddr_t space = vm_rb_space(map, entry);
+    struct vm_map_entry *tmp;
 
-	entry->ownspace = entry->space = space;
-	tmp = RB_INSERT(vm_map_rb_tree, &(map)->rb_root, entry);
+    entry->ownspace = entry->space = space;
+    tmp = RB_INSERT(vm_map_rb_tree, &(map)->rb_root, entry);
 #ifdef DIAGNOSTIC
-	if (tmp != NULL)
+    if (tmp != NULL)
 		panic("vm_rb_insert: duplicate entry?");
 #endif
-	vm_rb_fixup(map, entry);
-	if (entry->prev != &map->rb_root)
-		vm_rb_fixup(map, entry->prev);
+    vm_rb_fixup(map, entry);
+    if (CIRCLEQ_PREV(entry, cl_entry) != RB_ROOT(&map->rb_root))
+        vm_rb_fixup(map, CIRCLEQ_PREV(entry, cl_entry));
 }
 
 static void
 vm_rb_remove(map, entry)
-	struct vm_map *map;
-	struct vm_map_entry *entry;
+    struct vm_map *map;
+    struct vm_map_entry *entry;
 {
-	struct vm_map_entry *parent;
+    struct vm_map_entry *parent;
 
-	parent = RB_PARENT(entry, rb_entry);
-	RB_REMOVE(vm_map_rb_tree, &(map)->rb_root, entry);
-	if (entry->prev != &map->header)
-		vm_rb_fixup(map, entry->prev);
-	if (parent)
-		vm_rb_fixup(map, parent);
+    parent = RB_PARENT(entry, rb_entry);
+    RB_REMOVE(vm_map_rb_tree, &(map)->rb_root, entry);
+    if (CIRCLEQ_PREV(entry, cl_entry) != CIRCLEQ_FIRST(&map->cl_header))
+        vm_rb_fixup(map, CIRCLEQ_PREV(entry, cl_entry));
+    if (parent)
+        vm_rb_fixup(map, parent);
 }
-
-
 
 #ifdef DEBUG
 int vm_debug_check_rbtree = 0;
@@ -337,7 +330,7 @@ _vm_tree_sanity(map, name)
 			printf("%s: %d/%d ownspace %lx != %lx %s\n",
 			    name, n + 1, map->nentries,
 				(u_long)tmp->ownspace, (u_long)vm_rb_space(map, tmp),
-			    tmp->next == &map->header ? "(last)" : "");
+				CIRCLEQ_NEXT(tmp, cl_entry) == CIRCLEQ_FIRST(&map->cl_header) ? "(last)" : "");
 			goto error;
 		}
 	}
@@ -365,8 +358,8 @@ _vm_tree_sanity(map, name)
 		goto error;
 	}
 
-	for (tmp = map->header.next; tmp && tmp != &map->header;
-	    tmp = tmp->next, i++) {
+	for (tmp = CIRCLEQ_FIRST(&map->cl_header)->cl_entry.cqe_next; tmp && tmp != CIRCLEQ_FIRST(&map->cl_header);
+	    tmp = CIRCLEQ_NEXT(tmp, cl_entry), i++) {
 		trtmp = RB_FIND(vm_map_rb_tree, &map->rb_root, tmp);
 		if (trtmp != tmp) {
 			printf("%s: lookup: %d: %p - %p: %p\n",
@@ -379,6 +372,68 @@ _vm_tree_sanity(map, name)
 	return (0);
 error:
 	return (-1);
+}
+
+/* Circular List Functions */
+static size_t
+vm_cl_space(map, entry)
+    const struct vm_map *map;
+    const struct vm_map_entry *entry;
+{
+    size_t space, tmp;
+    space = entry->ownspace;
+
+    if(CIRCLEQ_FIRST(&map->cl_header)) {
+        tmp = CIRCLEQ_FIRST(&map->cl_header)->space;
+        if(tmp > space) {
+            space = tmp;
+        }
+    }
+
+    if(CIRCLEQ_LAST(&map->cl_header)) {
+        tmp = CIRCLEQ_LAST(&map->cl_header)->space;
+        if(tmp > space) {
+            space = tmp;
+        }
+    }
+
+    return (space);
+}
+
+static void
+vm_cl_insert(map, entry)
+    struct vm_map *map;
+    struct vm_map_entry *entry;
+{
+    struct vm_map_entry *head, *tail;
+    head = CIRCLEQ_FIRST(&map->cl_header);
+    tail = CIRCLEQ_LAST(&map->cl_header);
+
+    size_t space = vm_rb_space(map, entry);
+    entry->ownspace = entry->space = space;
+    if(head->space == vm_cl_space(map, entry)) {
+        CIRCLEQ_INSERT_HEAD(&map->cl_header, head, cl_entry)
+    }
+    if(tail->space == vm_cl_space(map, entry)) {
+        CIRCLEQ_INSERT_TAIL(&map->cl_header, tail, cl_entry)
+    }
+}
+
+static void
+vm_cl_remove(map, entry)
+    struct vm_map *map;
+    struct vm_map_entry *entry;
+{
+    struct vm_map_entry *head, *tail;
+    head = CIRCLEQ_FIRST(&map->cl_header);
+    tail = CIRCLEQ_LAST(&map->cl_header);
+
+    if(head && vm_cl_space(map, entry)) {
+        CIRCLEQ_REMOVE(&map->cl_header, head, cl_entry)
+    }
+    if(tail && vm_cl_space(map, entry)) {
+        CIRCLEQ_REMOVE(&map->cl_header, tail, cl_entry)
+    }
 }
 
 /*
@@ -401,7 +456,7 @@ vm_map_create(pmap, min, max, pageable)
 		result = kmap_free;
 		if (result == NULL)
 			panic("vm_map_create: out of maps");
-		kmap_free = (vm_map_t) result->header.next;
+		kmap_free = (vm_map_t) CIRCLEQ_FIRST(&result->cl_header)->cl_entry.cqe_next;
 	} else
 		MALLOC(result, vm_map_t, sizeof(struct vm_map), M_VMMAP, M_WAITOK);
 
@@ -421,8 +476,9 @@ vm_map_init(map, min, max, pageable)
 	vm_offset_t	min, max;
 	boolean_t	pageable;
 {
+	CIRCLEQ_INIT(&map->cl_header);
 	RB_INIT(&map->rb_root);
-	map->header.next = map->header.prev = &map->header;
+	//map->header.next = map->header.prev = &map->header;
 	map->nentries = 0;
 	map->size = 0;
 	map->ref_count = 1;
@@ -461,7 +517,7 @@ vm_map_entry_create(map)
 		MALLOC(entry, vm_map_entry_t, sizeof(struct vm_map_entry), M_VMMAPENT, M_WAITOK);
 	} else {
 		if (entry == kentry_free)
-			kentry_free = kentry_free->next;
+			kentry_free = CIRCLEQ_NEXT(kentry_free, cl_entry);
 	}
 	if (entry == NULL)
 		panic("vm_map_entry_create: out of map entries");
@@ -490,7 +546,7 @@ vm_map_entry_dispose(map, entry)
 	if (map->entries_pageable) {
 		FREE(entry, M_VMMAPENT);
 	} else {
-		entry->next = kentry_free;
+		CIRCLEQ_NEXT(entry, cl_entry) = kentry_free;
 		kentry_free = entry;
 	}
 }
@@ -500,19 +556,19 @@ vm_map_entry_dispose(map, entry)
  *
  *	Insert/remove entries from maps.
  */
-#define	vm_map_entry_link(map, after_where, entry) { 	\
-		(map)->nentries++; 								\
-		(entry)->prev = (after_where); 					\
-		(entry)->next = (after_where)->next; 			\
-		(entry)->prev->next = (entry); 					\
-		(entry)->next->prev = (entry); 					\
-		vm_rb_insert((map), (entry));  					\
+#define	vm_map_entry_link(map, after_where, entry) { 					\
+		(map)->nentries++; 												\
+	    (entry)->cl_entry.cqe_prev = (after_where);                   	\
+	    (entry)->cl_entry.cqe_next = (after_where)->cl_entry.cqe_next; 	\
+	    (entry)->cl_entry.cqe_prev->cl_entry.cqe_next = (entry);       	\
+	    (entry)->cl_entry.cqe_next->cl_entry.cqe_prev = (entry);       	\
+		vm_cl_insert((map), (entry));                   				\
+		vm_rb_insert((map), (entry));  									\
 }
-#define	vm_map_entry_unlink(map, entry) { 				\
-		(map)->nentries--; 								\
-		(entry)->next->prev = (entry)->prev; 			\
-		(entry)->prev->next = (entry)->next; 			\
-		vm_rb_remove((map), (entry));  					\
+#define	vm_map_entry_unlink(map, entry) { 								\
+		(map)->nentries--; 												\
+		vm_cl_remove((map), (entry)); 			        				\
+		vm_rb_remove((map), (entry));  									\
 }
 
 /*
@@ -644,9 +700,10 @@ vm_map_insert(map, object, offset, start, end)
 	 *	end point.
 	 */
 
-	if ((prev_entry->next != &map->header) &&
-			(prev_entry->next->start < end))
-		return(KERN_NO_SPACE);
+    if((CIRCLEQ_NEXT(prev_entry, cl_entry) != CIRCLEQ_FIRST(&map->cl_header)) &&
+    		(CIRCLEQ_NEXT(prev_entry, cl_entry)->start < end)) {
+        return (KERN_NO_SPACE);
+    }
 
 	/*
 	 *	See if we can avoid creating a new entry by
@@ -751,111 +808,125 @@ vm_map_insert(map, object, offset, start, end)
  *	result indicates whether the address is
  *	actually contained in the map.
  */
+
 boolean_t
 vm_map_lookup_entry(map, address, entry)
-	register vm_map_t		map;
-	register vm_offset_t	address;
-	vm_map_entry_t			*entry;		/* OUT */
+    register vm_map_t	    map;
+    register vm_offset_t	address;
+    vm_map_entry_t		    *entry;		/* OUT */
 {
-	register vm_map_entry_t		cur;
-	register vm_map_entry_t		last;
-	boolean_t use_tree = FALSE;
-
-	/*
-	 *	Start looking either from the head of the
-	 *	list, or from the hint.
-	 */
+    register vm_map_entry_t	cur;
+    boolean_t use_tree = FALSE;
 
 	simple_lock(&map->hint_lock);
 	cur = map->hint;
 	simple_unlock(&map->hint_lock);
 
-	if (cur == &map->header)
-		cur = cur->next;
+    if(address < cur->start) {
+        if(vm_map_search_prev_entry(map, address, cur)) {
+            SAVE_HINT(map, cur);
+            //SAVE_HINT(map, map->hint, *entry);
+            KDASSERT((*entry)->start <= address);
+            KDASSERT(address < (*entry)->end);
+            return (TRUE);
+        } else {
+            use_tree = TRUE;
+            goto search_tree;
+        }
+    }
+    if (address > cur->start){
+        if(vm_map_search_next_entry(map, address, cur)) {
+            SAVE_HINT(map, cur);
+            //SAVE_HINT(map, map->hint, *entry);
+            KDASSERT((*entry)->start <= address);
+            KDASSERT(address < (*entry)->end);
+            return (TRUE);
+        } else {
+            use_tree = TRUE;
+            goto search_tree;
+        }
+    }
 
-	if (address >= cur->start) {
-	    	/*
-		 *	Go from hint to end of list.
-		 *
-		 *	But first, make a quick check to see if
-		 *	we are already looking at the entry we
-		 *	want (which is usually the case).
-		 *	Note also that we don't need to save the hint
-		 *	here... it is the same hint (unless we are
-		 *	at the header, in which case the hint didn't
-		 *	buy us anything anyway).
-		 */
-		last = &map->header;
-		if ((cur != last) && (cur->end > address)) {
-			*entry = cur;
-			return(TRUE);
-		}
-		if (map->nentries > 30)
-			use_tree = TRUE;
-	}
-	else {
-		/*
-		 *	Go from start to hint, *inclusively*
-		 */
-		last = cur->next;
-		cur = map->header.next;
+search_tree:
 
-		/*
-		 * invalid hint.  use tree.
-		 */
-		use_tree = TRUE;
-	}
+    vm_tree_sanity(map, __func__);
 
-	vm_tree_sanity(map, __func__);
+    if (use_tree) {
+        struct vm_map_entry *prev = CIRCLEQ_FIRST(&map->cl_header);
+        cur = RB_ROOT(&map->rb_root);
 
-	if (use_tree) {
-		struct vm_map_entry *prev = &map->header;
-		cur = RB_ROOT(&map->rb_root);
+        while (cur) {
+            if(address >= cur->start) {
+                if (address < cur->end) {
+                    *entry = cur;
+                    SAVE_HINT(map, cur);
+                    //SAVE_HINT(map, map->hint, *entry);
+                    KDASSERT((*entry)->start <= address);
+                    KDASSERT(address < (*entry)->end);
+                    return (TRUE);
+                }
+                prev = cur;
+                cur = RB_RIGHT(cur, rb_entry);
+            } else {
+                cur = RB_LEFT(cur, rb_entry);
+            }
+        }
+        *entry = prev;
+        goto failed;
+    }
 
-		/*
-		 * Simple lookup in the tree.  Happens when the hint is
-		 * invalid, or nentries reach a threshold.
-		 */
-		while (cur) {
-			if (address >= cur->start) {
-				if (address < cur->end) {
-					*entry = cur;
-					goto got;
-				}
-				prev = cur;
-				cur = RB_RIGHT(cur, rb_entry);
-			} else
-				cur = RB_LEFT(cur, rb_entry);
-		}
-		*entry = prev;
-		goto failed;
-	}
-
-	/*
-	 *	Search linearly
-	 */
-
-	while (cur != last) {
-		if (cur->end > address) {
-			if (address >= cur->start) {
-			    	/*
-				 *	Save this lookup for future
-				 *	hints, and return
-				 */
-
-				*entry = cur;
-got:
-				SAVE_HINT2(map, map->hint, cur);
-				return(TRUE);
-			}
-			break;
-		}
-		cur = cur->next;
-	}
-	*entry = cur->prev;
 failed:
-	SAVE_HINT2(map, map->hint, *entry);
-	return(FALSE);
+    SAVE_HINT(map, entry);
+    //SAVE_HINT(map, map->hint, *entry);
+    KDASSERT((*entry) == CIRCLEQ_FIRST(&map->cl_header) || (*entry)->end <= address);
+    KDASSERT(CIRCLEQ_NEXT(*entry, cl_entry) == CIRCLEQ_FIRST(&map->cl_header) || address < CIRCLEQ_NEXT(*entry, cl_entry)->start);
+    return (FALSE);
+}
+
+static boolean_t
+vm_map_search_next_entry(map, address, entry)
+    register vm_map_t	    map;
+    register vm_offset_t	address;
+    vm_map_entry_t		    entry;		/* OUT */
+{
+    register vm_map_entry_t	cur;
+    register vm_map_entry_t	first = CIRCLEQ_FIRST(&map->cl_header);
+    register vm_map_entry_t	last = CIRCLEQ_LAST(&map->cl_header);
+
+    CIRCLEQ_FOREACH(entry, &map->cl_header, cl_entry) {
+        if(address >= first->start) {
+            cur = CIRCLEQ_NEXT(first, cl_entry);
+            if((cur != last) && (cur->end > address)) {
+                cur = entry;
+                SAVE_HINT(map, cur);
+                return (TRUE);
+            }
+        }
+    }
+    return (FALSE);
+}
+
+static boolean_t
+vm_map_search_prev_entry(map, address, entry)
+    register vm_map_t	    map;
+    register vm_offset_t	address;
+    vm_map_entry_t		    entry;		/* OUT */
+{
+    register vm_map_entry_t	cur;
+    register vm_map_entry_t	first = CIRCLEQ_FIRST(&map->cl_header);
+    register vm_map_entry_t	last = CIRCLEQ_LAST(&map->cl_header);
+
+    CIRCLEQ_FOREACH(entry, &map->cl_header, cl_entry) {
+        if(address >= last->start) {
+            cur = CIRCLEQ_PREV(last, cl_entry);
+            if((cur != first) && (cur->end > address)) {
+                cur = entry;
+                SAVE_HINT(map, cur);
+                return (TRUE);
+            }
+        }
+    }
+    return (FALSE);
 }
 
 /*
@@ -884,7 +955,7 @@ vm_map_findspace(map, start, length, addr)
 	 * something at this address, we have to start after it.
 	 */
 	if (start == map->min_offset) {
-		if ((entry = map->first_free) != &map->header)
+		if ((entry = map->first_free) != CIRCLEQ_FIRST(&map->cl_header))
 			start = entry->end;
 	} else {
 		if (vm_map_lookup_entry(map, start, &tmp))
@@ -914,8 +985,9 @@ vm_map_findspace(map, start, length, addr)
 		if (end > map->max_offset || end < start)
 			return (1);
 		next = entry->next;
-		if (next == &map->header || next->start >= end)
-			break;
+        next = CIRCLEQ_NEXT(entry, cl_entry);
+        if (next == CIRCLEQ_FIRST(&map->cl_header) || next->start >= end)
+            break;
 	}
 	SAVE_HINT(map, entry);
 	*addr = start;
@@ -939,7 +1011,7 @@ vm_map_find(map, object, offset, addr, length, find_space)
 	boolean_t	find_space;
 {
 	register vm_offset_t	start;
-	int			result;
+	int						result;
 
 	start = *addr;
 	vm_map_lock(map);
@@ -1079,7 +1151,7 @@ _vm_map_clip_start(map, entry, start)
 			amap_splitref(&new_entry->aref, &entry->aref, new_adj);
 	}
 
-	vm_map_entry_link(map, entry->prev, new_entry);
+	vm_map_entry_link(map, CIRCLEQ_PREV(entry, cl_entry), new_entry);
 
 	if (entry->is_a_map || entry->is_sub_map)
 	 	vm_map_reference(new_entry->object.share_map);
@@ -1198,7 +1270,7 @@ vm_map_submap(map, start, end, submap)
 		vm_map_clip_start(map, entry, start);
 	}
 	 else
-		entry = entry->next;
+		entry = CIRCLEQ_NEXT(entry, cl_entry);
 
 	vm_map_clip_end(map, entry, end);
 
@@ -1243,7 +1315,7 @@ vm_map_protect(map, start, end, new_prot, set_max)
 		vm_map_clip_start(map, entry, start);
 	}
 	 else
-		entry = entry->next;
+		entry = CIRCLEQ_NEXT(entry, cl_entry);
 
 	/*
 	 *	Make a first pass to check for protection
@@ -1251,7 +1323,7 @@ vm_map_protect(map, start, end, new_prot, set_max)
 	 */
 
 	current = entry;
-	while ((current != &map->header) && (current->start < end)) {
+	while ((current != CIRCLEQ_FIRST(&map->cl_header)) && (current->start < end)) {
 		if (current->is_sub_map)
 			return(KERN_INVALID_ARGUMENT);
 		if ((new_prot & current->max_protection) != new_prot) {
@@ -1269,7 +1341,7 @@ vm_map_protect(map, start, end, new_prot, set_max)
 
 	current = entry;
 
-	while ((current != &map->header) && (current->start < end)) {
+	while ((current != CIRCLEQ_FIRST(&map->cl_header)) && (current->start < end)) {
 		vm_prot_t	old_prot;
 
 		vm_map_clip_end(map, current, end);
@@ -1320,7 +1392,7 @@ vm_map_protect(map, start, end, new_prot, set_max)
 						current->protection &
 							MASK(share_entry));
 
-					share_entry = share_entry->next;
+					share_entry = CIRCLEQ_NEXT(share_entry, cl_entry);
 				}
 				vm_map_unlock(current->object.share_map);
 			}
@@ -1331,7 +1403,7 @@ vm_map_protect(map, start, end, new_prot, set_max)
 #undef	max
 #undef	MASK
 		}
-		current = current->next;
+		current = CIRCLEQ_NEXT(current, cl_entry);
 	}
 
 	vm_map_unlock(map);
@@ -1376,12 +1448,12 @@ vm_map_inherit(map, start, end, new_inheritance)
 	else
 		entry = temp_entry->next;
 
-	while ((entry != &map->header) && (entry->start < end)) {
+	while ((entry != CIRCLEQ_FIRST(&map->cl_header)) && (entry->start < end)) {
 		vm_map_clip_end(map, entry, end);
 
 		entry->inheritance = new_inheritance;
 
-		entry = entry->next;
+		entry = CIRCLEQ_NEXT(entry, cl_entry);
 	}
 
 	vm_map_unlock(map);
@@ -1443,12 +1515,12 @@ vm_map_pageable(map, start, end, new_pageable)
 		 *	unwired is really wired down and that there
 		 *	are no holes.
 		 */
-		while ((entry != &map->header) && (entry->start < end)) {
+		while ((entry != CIRCLEQ_FIRST(&map->cl_header)) && (entry->start < end)) {
 
 		    if (entry->wired_count == 0 ||
 			(entry->end < end &&
-			 (entry->next == &map->header ||
-			  entry->next->start > entry->end))) {
+			 (CIRCLEQ_NEXT(entry, cl_entry) == CIRCLEQ_FIRST(&map->cl_header) ||
+					 CIRCLEQ_NEXT(entry, cl_entry)->start > entry->end))) {
 			vm_map_unlock(map);
 			return(KERN_INVALID_ARGUMENT);
 		    }
@@ -1463,14 +1535,14 @@ vm_map_pageable(map, start, end, new_pageable)
 		vm_map_set_recursive(&map->lock);
 
 		entry = start_entry;
-		while ((entry != &map->header) && (entry->start < end)) {
+		while ((entry != CIRCLEQ_FIRST(&map->cl_header)) && (entry->start < end)) {
 		    vm_map_clip_end(map, entry, end);
 
 		    entry->wired_count--;
 		    if (entry->wired_count == 0)
 			vm_fault_unwire(map, entry->start, entry->end);
 
-		    entry = entry->next;
+		    entry = CIRCLEQ_NEXT(entry, cl_entry);
 		}
 		vm_map_clear_recursive(&map->lock);
 	}
@@ -1505,7 +1577,7 @@ vm_map_pageable(map, start, end, new_pageable)
 		/*
 		 *	Pass 1.
 		 */
-		while ((entry != &map->header) && (entry->start < end)) {
+		while ((entry != CIRCLEQ_FIRST(&map->cl_header)) && (entry->start < end)) {
 		    if (entry->wired_count == 0) {
 
 			/*
@@ -1544,14 +1616,14 @@ vm_map_pageable(map, start, end, new_pageable)
 		     * Check for holes
 		     */
 		    if (entry->end < end &&
-			(entry->next == &map->header ||
+			(entry->next == CIRCLEQ_FIRST(&map->cl_header) ||
 			 entry->next->start > entry->end)) {
 			/*
 			 *	Found one.  Object creation actions
 			 *	do not need to be undone, but the
 			 *	wired counts need to be restored.
 			 */
-			while (entry != &map->header && entry->end > start) {
+			while (entry != CIRCLEQ_FIRST(&map->cl_header) && entry->end > start) {
 			    entry->wired_count--;
 			    entry = entry->prev;
 			}
@@ -1587,7 +1659,7 @@ vm_map_pageable(map, start, end, new_pageable)
 
 		rv = 0;
 		entry = start_entry;
-		while (entry != &map->header && entry->start < end) {
+		while (entry != CIRCLEQ_FIRST(&map->cl_header) && entry->start < end) {
 		    /*
 		     * If vm_fault_wire fails for any page we need to
 		     * undo what has been done.  We decrement the wiring
@@ -1663,14 +1735,14 @@ vm_map_clean(map, start, end, syncio, invalidate)
 	/*
 	 * Make a first pass to check for holes.
 	 */
-	for (current = entry; current->start < end; current = current->next) {
+	for (current = entry; current->start < end; current = CIRCLEQ_NEXT(current, cl_entry)) {
 		if (current->is_sub_map) {
 			vm_map_unlock_read(map);
 			return (KERN_INVALID_ARGUMENT);
 		}
 		if (end > current->end &&
-		    (current->next == &map->header ||
-		     current->end != current->next->start)) {
+		    (CIRCLEQ_NEXT(current, cl_entry) == CIRCLEQ_FIRST(&map->cl_header) ||
+		     current->end != CIRCLEQ_NEXT(current, cl_entry)->start)) {
 			vm_map_unlock_read(map);
 			return (KERN_INVALID_ADDRESS);
 		}
@@ -1680,7 +1752,7 @@ vm_map_clean(map, start, end, syncio, invalidate)
 	 * Make a second pass, cleaning/uncaching pages from the indicated
 	 * objects as we go.
 	 */
-	for (current = entry; current->start < end; current = current->next) {
+	for (current = entry; current->start < end; current = CIRCLEQ_NEXT(current, cl_entry)) {
 		amap = current->aref.ar_amap;		/* top layer */
 		object = current->object.vm_object;	/* bottom layer */
 
@@ -1816,7 +1888,7 @@ vm_map_delete(map, start, end)
 	 *	Step through all entries in this region
 	 */
 
-	while ((entry != &map->header) && (entry->start < end)) {
+	while ((entry != CIRCLEQ_FIRST(&map->cl_header)) && (entry->start < end)) {
 		vm_map_entry_t		next;
 		register vm_offset_t	s, e;
 		register vm_object_t	object;
@@ -1914,7 +1986,7 @@ vm_map_check_protection(map, start, end, protection)
 	entry = tmp_entry;
 
 	while (start < end) {
-		if (entry == &map->header) {
+		if (entry == CIRCLEQ_FIRST(&map->cl_header)) {
 			return(FALSE);
 		}
 
@@ -2087,9 +2159,7 @@ vm_map_copy_entry(src_map, dst_map, src_entry, dst_entry)
  *	fragmentation.]
  */
 int
-vm_map_copy(dst_map, src_map,
-			  dst_addr, len, src_addr,
-			  dst_alloc, src_destroy)
+vm_map_copy(dst_map, src_map, dst_addr, len, src_addr, dst_alloc, src_destroy)
 	vm_map_t	dst_map;
 	vm_map_t	src_map;
 	vm_offset_t	dst_addr;
@@ -2103,14 +2173,14 @@ vm_map_copy(dst_map, src_map,
 	register
 	vm_map_entry_t	dst_entry;
 	vm_map_entry_t	tmp_entry;
-	vm_offset_t	src_start;
-	vm_offset_t	src_end;
-	vm_offset_t	dst_start;
-	vm_offset_t	dst_end;
-	vm_offset_t	src_clip;
-	vm_offset_t	dst_clip;
-	int		result;
-	boolean_t	old_src_destroy;
+	vm_offset_t		src_start;
+	vm_offset_t		src_end;
+	vm_offset_t		dst_start;
+	vm_offset_t		dst_end;
+	vm_offset_t		src_clip;
+	vm_offset_t		dst_clip;
+	int				result;
+	boolean_t		old_src_destroy;
 
 	/*
 	 *	XXX While we figure out why src_destroy screws up,
@@ -2334,9 +2404,9 @@ vm_map_copy(dst_map, src_map,
 		 */
 
 		src_start = src_entry->end;
-		src_entry = src_entry->next;
+		src_entry = CIRCLEQ_NEXT(src_entry, cl_entry);
 		dst_start = dst_entry->end;
-		dst_entry = dst_entry->next;
+		dst_entry = CIRCLEQ_NEXT(dst_entry, cl_entry);
 
 		/*
 		 *	If the source is to be destroyed, here is the
@@ -2345,7 +2415,7 @@ vm_map_copy(dst_map, src_map,
 
 		if (src_destroy && src_map->is_main_map &&
 						dst_map->is_main_map)
-			vm_map_entry_delete(src_map, src_entry->prev);
+			vm_map_entry_delete(src_map, CIRCLEQ_PREV(src_entry, cl_entry));
 	}
 
 	/*
@@ -2444,8 +2514,8 @@ vmspace_fork(vm1)
 	register struct vmspace *vm1;
 {
 	register struct vmspace *vm2;
-	vm_map_t	old_map = &vm1->vm_map;
-	vm_map_t	new_map;
+	vm_map_t		old_map = &vm1->vm_map;
+	vm_map_t		new_map;
 	vm_map_entry_t	old_entry;
 	vm_map_entry_t	new_entry;
 	pmap_t			new_pmap;
@@ -2461,7 +2531,7 @@ vmspace_fork(vm1)
 
 	old_entry = old_map->header.next;
 
-	while (old_entry != &old_map->header) {
+	while (old_entry != CIRCLEQ_FIRST(&old_map->cl_header)) {
 		if (old_entry->is_sub_map)
 			panic("vm_map_fork: encountered a submap");
 
@@ -2614,7 +2684,7 @@ vmspace_fork(vm1)
 			}
 			break;
 		}
-		old_entry = old_entry->next;
+		old_entry = CIRCLEQ_NEXT(old_entry, cl_entry);
 	}
 
 	new_map->size = old_map->size;
@@ -2689,7 +2759,7 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry, object, offset, out_prot, w
 
 	*out_entry = entry;
 
-	if ((entry == &map->header) ||
+	if ((entry == CIRCLEQ_FIRST(&map->cl_header)) ||
 	    (vaddr < entry->start) || (vaddr >= entry->end)) {
 		vm_map_entry_t	tmp_entry;
 
@@ -2963,8 +3033,8 @@ vm_map_print(map, full)
 		return;
 
 	indent += 2;
-	for (entry = map->header.next; entry != &map->header;
-				entry = entry->next) {
+	for (entry = CIRCLEQ_FIRST(&map->cl_header)->cl_entry.cqe_next; entry != CIRCLEQ_FIRST(&map->cl_header);
+				entry = CIRCLEQ_NEXT(entry, cl_entry)) {
 		iprintf("map entry 0x%x: start=0x%x, end=0x%x, ",
 			(int) entry, (int) entry->start, (int) entry->end);
 		if (map->is_main_map) {
@@ -2982,9 +3052,9 @@ vm_map_print(map, full)
 		 	printf("share=0x%x, offset=0x%x\n",
 				(int) entry->object.share_map,
 				(int) entry->offset);
-			if ((entry->prev == &map->header) ||
-			    (!entry->prev->is_a_map) ||
-			    (entry->prev->object.share_map !=
+			if ((CIRCLEQ_PREV(entry, cl_entry) == CIRCLEQ_FIRST(&map->cl_header)) ||
+			    (!CIRCLEQ_PREV(entry, cl_entry)->is_a_map) ||
+			    (CIRCLEQ_PREV(entry, cl_entry)->object.share_map !=
 			     entry->object.share_map)) {
 				indent += 2;
 				vm_map_print(entry->object.share_map, full);
@@ -3001,9 +3071,9 @@ vm_map_print(map, full)
 				       entry->needs_copy ? "needed" : "done");
 			printf("\n");
 
-			if ((entry->prev == &map->header) ||
-			    (entry->prev->is_a_map) ||
-			    (entry->prev->object.vm_object !=
+			if ((CIRCLEQ_PREV(entry, cl_entry) == CIRCLEQ_FIRST(&map->cl_header)) ||
+			    (CIRCLEQ_PREV(entry, cl_entry)->is_a_map) ||
+			    (CIRCLEQ_PREV(entry, cl_entry)->object.vm_object !=
 			     entry->object.vm_object)) {
 				indent += 2;
 				vm_object_print(entry->object.vm_object, full);

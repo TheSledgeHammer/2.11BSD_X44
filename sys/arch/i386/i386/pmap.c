@@ -361,8 +361,7 @@ pmap_init(phys_start, phys_end)
 
 	addr = (vm_offset_t) 0xfe000000+KPTphys/* *NBPG */;
 	vm_object_reference(kernel_object);
-	(void) vm_map_find(kernel_map, kernel_object, addr,
-			   &addr, 2*NBPG, FALSE);
+	(void) vm_map_find(kernel_map, kernel_object, addr, &addr, 2*NBPG, FALSE);
 
 	/*
 	 * Allocate memory for random pmap data structures.  Includes the
@@ -401,7 +400,7 @@ pmap_map(virt, start, end, prot)
 	vm_offset_t	virt;
 	vm_offset_t	start;
 	vm_offset_t	end;
-	int		prot;
+	int			prot;
 {
 #ifdef DEBUG
 	if (pmapdebug & PDB_FOLLOW)

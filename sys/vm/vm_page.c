@@ -215,8 +215,7 @@ vm_page_startup(start, end)
 	 *	map (they should use their own maps).
 	 */
 
-	kentry_data_size = round_page(MAX_KMAP*sizeof(struct vm_map) +
-				      MAX_KMAPENT*sizeof(struct vm_map_entry));
+	kentry_data_size = round_page(MAX_KMAP*sizeof(struct vm_map) +  MAX_KMAPENT*sizeof(struct vm_map_entry));
 	kentry_data = (vm_offset_t) pmap_bootstrap_alloc(kentry_data_size);
 
 	/*
@@ -246,8 +245,7 @@ vm_page_startup(start, end)
 	 *	Allocate and clear the mem entry structures.
 	 */
 
-	m = vm_page_array = (vm_page_t)
-		pmap_bootstrap_alloc(npages * sizeof(struct vm_page));
+	m = vm_page_array = (vm_page_t) pmap_bootstrap_alloc(npages * sizeof(struct vm_page));
 
 	/*
 	 *	Initialize the mem entry structures now, and
@@ -305,7 +303,7 @@ vm_page_startup(start, end)
 
 void
 vm_page_insert(mem, object, offset)
-	register vm_page_t	mem;
+	register vm_page_t		mem;
 	register vm_object_t	object;
 	register vm_offset_t	offset;
 {

@@ -59,7 +59,7 @@
 #include <i386/isa/icu.h>
 #include <isa/wdreg.h>
 
-#include <vm/vm.h>
+#include "../../devel/vm/include/vm.h"
 
 #define	RETRIES		5	/* number of retries before giving up */
 #define	MAXTRANSFER	32	/* max size of transfer in page clusters */

@@ -28,8 +28,6 @@
 #ifndef _UVM_UVM_AMAP_H_
 #define _UVM_UVM_AMAP_H_
 
-#include <vm.h>
-
 /*
  * uvm_amap.h: general amap interface and amap implementation-specific info
  */
@@ -109,7 +107,7 @@ boolean_t		amap_swap_off (int, int);
 #define AMAP_EXTEND_FORWARDS	0x01	/* add "size" to end of map */
 #define AMAP_EXTEND_NOWAIT		0x02	/* not allowed to sleep */
 
-#endif /* _KERNEL */
+//#endif /* _KERNEL */
 
 /**********************************************************************/
 
@@ -234,7 +232,7 @@ struct vm_amap {
 
 /* AMAP_B2SLOT: convert byte offset to slot */
 #define AMAP_B2SLOT(S,B) {						\
-	KASSERT(((B) & (PAGE_SIZE - 1)) == 0);				\
+	KASSERT(((B) & (PAGE_SIZE - 1)) == 0);		\
 	(S) = (B) >> PAGE_SHIFT;					\
 }
 

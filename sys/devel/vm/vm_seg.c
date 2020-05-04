@@ -1,195 +1,98 @@
 /*
- * vm_seg.c
+ * The 3-Clause BSD License:
+ * Copyright (c) 2020 Martin Kelly
+ * All rights reserved.
  *
- *  Created on: 28 Apr 2020
- *      Author: marti
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <sys/param.h>
 #include <sys/proc.h>
-#include <sys/extent.h>
-#include <sys/malloc.h>
 
-#include <vm_seg.h>
-
-struct extent *vm_extents;
-static int vm_extent_malloc_safe;
+#include <devel/vm/include/vm.h>
+#include <devel/vm/include/vm_seg.h>
+#include <devel/vm/include/vm_extent.h>
+#include <devel/vm/include/vm_extops.h>
 
 void
-vm_extent_init(start, end)
-{
-	vm_extents = extent_create("vm extents", start, end, M_VMSEG, NULL, 0, EX_NOWAIT | EX_MALLOCOK);
-}
-
-void
-vm_extent_alloc(start)
-	vm_offset_t start;
-{
-	int error;
-	extent_alloc_region(&vm_extents, start, EX_NOWAIT | EX_MALLOCOK);
-}
-
-void
-vm_extent_mallocok(void)
-{
-	vm_extent_malloc_safe = 1;
-}
-
-struct extent
-vm_seg_extent(seg)
-	struct vm_seg *seg;
-{
-	return (seg->seg_extent);
-}
-
-struct vm_seg *
-vm_seg_extent_create(seg, start, end, mflags)
-	struct vm_seg *seg;
+vm_segment_init(ext, ext_name, start, end)
+	struct vm_extent *ext;
+	char *ext_name;
 	vm_offset_t start, end;
-	int mflags;
 {
-	char *name = "vm segments allocator";
-	vm_seg_init(&seg, name, start, end, NULL, 0);
-	vm_seg_extent(&seg) = extent_create(name, start, end, M_VMSEG, NULL, 0, EX_NOWAIT | EX_MALLOCOK);
-	return (seg);
+	vm_extent_mallocok();
+
+	vm_extent_init(ext, ext_name, start, end);
 }
 
-void
-vm_seg_init(seg, name, start, end, addr, size)
-	struct vm_seg *seg;
-	char *name;
-	vm_offset_t start, end;
-	caddr_t addr;
+/* Allocate a new segment extent */
+struct vm_segment *
+vm_segment_malloc(vmseg, size)
+	struct vm_segment *vmseg;
 	vm_size_t size;
 {
-	RB_INIT(&seg->seg_rbtree);
-	seg->seg_name = name;
-	seg->seg_start = start;
-	seg->seg_end = end;
-	seg->seg_mtype = 0;
-	seg->seg_mflags = 0;
-	seg->seg_addr = addr;
-	seg->seg_size = size;
-}
-
-int
-vm_seg_alloc(seg, size, mflags)
-	struct vm_seg *seg;
-	size_t size;
-	int mflags;
-{
-	struct extent *ex = seg->seg_extent;
+	register struct vm_extent *ext = vmseg->seg_extent;
 	int error;
 
-	if (ex == NULL) {
-		return (0);
-	}
-
-	seg->seg_addr += ex->ex_start;
-	error = extent_alloc_region(ex, seg->seg_addr, size, EX_NOWAIT | EX_MALLOCOK);
-
-	if (error) {
-		return (error);
-	}
-
-	return (0);
-}
-
-int
-vm_segspace_alloc(seg, name, start, end, size, mtype, mflags, alignment, boundary, result)
-	struct vm_seg *seg;
-	char *name;
-	vm_offset_t start, end;
-	int mtype, mflags;
-	u_long size, alignment, boundary;
-	u_long *result;
-{
-	struct extent *ex = seg->seg_extent;
-	register struct vm_segspace *segs;
-	int error;
-
-	if(start > seg->seg_start && start < seg->seg_end) {
-		if(end > start) {
-			error = extent_alloc_subregion(ex, start, end, size, alignment, boundary, EX_FAST | EX_NOWAIT | EX_MALLOCOK, result);
-		} else {
-			printf("the segment space end address must be greater than the segment space start address");
-		}
-	} else {
-		printf("segment space must be with segment extent region allocated");
-	}
+	error = vm_extent_alloc(ext, size);
 
 	if(error) {
-		return (error);
+		printf("%#lx-%#lx of %s couldn't be allocated\n", ext->addr, ext->addr + size, ext->name);
 	}
 
-	segs = vm_segspace_insert(seg, segs, name, start, end, mtype, mflags, size);
-	seg->seg_mtype = mtype;
-	seg->seg_mflags = mflags;
+	return (vmseg);
+}
+
+/* Should return the new extent / segment_space */
+/* Allocate a new segment extent region */
+void *
+vm_segmentspace_malloc(vmseg, start, end, size, flag, type, result)
+	struct vm_segment *vmseg;
+	//struct vm_segmentspace *vmsegs;
+	vm_offset_t start, end;
+	vm_size_t size;
+	int flag, type;
+	u_long *result;
+{
+	register struct vm_extent *ext = vmseg->seg_extent;
+	int error;
+
+	error = vm_extent_suballoc(ext, start, end, size, flag, type, result);
+
+	if(error) {
+		return error;
+		//printf("%#lx-%#lx of %s couldn't be allocated\n", ext->addr, ext->addr + size, ext->name);
+	}
+
 	return (0);
 }
 
-struct vm_segspace *
-vm_segspace_insert(seg, segs, name, start, end, mtype, mflags, size)
-	struct vm_seg *seg;
-	struct vm_segspace *segs;
-	char *name;
-	vm_offset_t start, end;
-	int mtype, mflags;
-{
-	segs->segs_name = name;
-	segs->segs_start = start;
-	segs->segs_end = end;
-	segs->segs_mtype = mtype;
-	segs->segs_mflags = mflags;
-	//segs->segs_addr;
-	segs->segs_size;
-	segs = RB_INSERT(vm_seg_rbtree, seg->seg_rbtree, segs);
-	return (segs);
-}
-
+/* Free an Allocated Segment extent region */
 void
-vm_seg_destroy(seg)
-	struct vm_seg *seg;
+vm_segment_free(ext, size, type)
+	struct vm_extent *ext;
+	vm_size_t size;
+	int type;
 {
-	struct extent *ex = vm_seg_extent(&seg);
-
-	if(ex != NULL) {
-		extent_destroy(ex);
-	}
-
-	if(VMSEG_ALLOCATED) {
-		free(seg, M_VMSEG);
-	}
+	vm_extent_free(ext, size, type);
 }
-
-void
-vm_seg_free(seg, start, size)
-	struct vm_seg *seg;
-	u_long start, size;
-{
-	struct extent *ex = seg->seg_extent;
-	if (ex != NULL) {
-		vm_seg_unmap(seg, start, size);
-	}
-}
-
-static void
-vm_seg_unmap(seg, start, size)
-	struct vm_seg *seg;
-	u_long start, size;
-{
-	struct extent *ex = seg->seg_extent;
-	int error;
-
-	if(ex == NULL) {
-		return;
-	}
-
-	error = extent_free(ex, start, size, EX_NOWAIT);
-
-	if (error) {
-		printf("%#lx-%#lx of %s space lost\n", start, start + size, ex->ex_name);
-	}
-}
-
-

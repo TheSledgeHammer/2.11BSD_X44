@@ -43,7 +43,7 @@
 #ifndef _VM_H
 #define _VM_H
 
-typedef char vm_inherit_t;		/* XXX: inheritance codes */
+typedef char 					vm_inherit_t;		/* XXX: inheritance codes */
 
 union vm_map_object;
 typedef union vm_map_object 	vm_map_object_t;
@@ -77,41 +77,21 @@ typedef struct uvm_aobject		*vm_aobject_t;
 #include <sys/tree.h>
 #include <sys/vmmeter.h>
 
+#include <vm/include/pmap.h>
+#include <vm/include/vm_inherit.h>
+#include <vm/include/vm_extern.h>
+#include <vm/include/vm_object.h>
 #include <vm/include/vm_param.h>
 #include <vm/include/vm_prot.h>
-#include <vm/include/vm_inherit.h>
-#include <vm/vm_map.h>
-#include <vm/include/vm_object.h>
-#include <vm/include/pmap.h>
-#include <vm/include/vm_extern.h>
 
-#include <vm/vm_amap.h>
-#include <vm/vm_anon.h>
-#include <vm/vm_aobject.h>
+#include <devel/vm/include/vm_amap.h>
+#include <devel/vm/include/vm_anon.h>
+#include <devel/vm/include/vm_aobject.h>
+#include <devel/vm/include/vm_map.h>
+#include <devel/vm/include/vm_vmspace.h>
 
-#ifdef _KERNEL
-/*
- * pull in VM_NFREELIST
- */
-#include <machine/vmparam.h>
-/*
- * uvm structure (vm global state: collected in one structure for ease
- * of reference...)
- */
-
-struct uvm {
-	/* vm_page related parameters */
-	/* vm_page queues */
-	struct pgfreelist 	page_free[VM_NFREELIST]; /* unallocated pages */
-	u_int				bucketcount;
-	boolean_t			page_init_done;			/* true if uvm_page_init() finished */
-	boolean_t			numa_alloc;				/* use NUMA page allocation strategy */
-
-	/* page daemon trigger */
-	int 				pagedaemon;				/* daemon sleeps on this */
-	struct proc 		*pagedaemon_proc;		/* daemon's lid */
-};
-#endif /* _KERNEL */
+#include <devel/vm/include/vm_extent.h>	/* Work in Progress */
+#include <devel/vm/include/vm_seg.h>	/* Work in Progress */
 
 /*
  *	MACH VM locking type mappings to kernel types
@@ -121,27 +101,42 @@ typedef struct simplelock	*simple_lock_t;
 typedef struct lock			lock_data_t;
 typedef struct lock			*lock_t;
 
-/*
- * Shareable process virtual address space.
- * May eventually be merged with vm_map.
- * Several fields are temporary (text, data stuff).
- */
-struct vmspace {
-	struct	vm_map 	 vm_map;		/* VM address map */
-	struct	pmap 	 vm_pmap;		/* private physical map */
-	int				 vm_refcnt;		/* number of references */
-	caddr_t			 vm_shm;		/* SYS5 shared memory private data XXX */
-/* we copy from vm_startcopy to the end of the structure on fork */
-#define vm_startcopy vm_rssize
-	segsz_t 		 vm_rssize; 	/* current resident set size in pages */
-	segsz_t 		 vm_swrss;		/* resident set size before last swap */
-	segsz_t 		 vm_tsize;		/* text size (pages) XXX */
-	segsz_t 		 vm_dsize;		/* data size (pages) XXX */
-	segsz_t 		 vm_ssize;		/* stack size (pages) */
-	caddr_t			 vm_taddr;		/* user virtual address of text XXX */
-	caddr_t			 vm_daddr;		/* user virtual address of data XXX */
-	caddr_t 		 vm_minsaddr;	/* user VA at min stack growth */
-	caddr_t 		 vm_maxsaddr;	/* user VA at max stack growth */
+struct vm {
+	/* vm_page queues */
+	struct pglist 		page_active; 	/* allocated pages, in use */
+	struct pglist 		page_inactive; 	/* pages between the clock hands */
+	struct simplelock 	pageqlock; 		/* lock for active/inactive page q */
+	struct simplelock 	fpageqlock; 	/* lock for free page q */
+
+	/* page hash */
+	struct pglist 		*page_hash; 	/* page hash table (vp/off->page) */
+	int 				page_nhash; 	/* number of buckets */
+	int 				page_hashmask; 	/* hash mask */
+	struct simplelock 	hashlock; 		/* lock on page_hash array */
+
+	/* anon stuff */
+	struct vm_anon 		*afree; 		/* anon free list */
+	struct simplelock 	afreelock; 		/* lock on anon free list */
+
+	/* static kernel map entry pool */
+	struct vm_map_entry *kentry_free; 	/* free page pool */
+	struct simplelock 	kentry_lock;
+
+	/* kernel object: to support anonymous pageable kernel memory */
+	struct vm_object 	*kernel_object;
 };
+
+/*
+ * vm_map_entry etype bits:
+ */
+#define UVM_ET_OBJ				0x01	/* it is a uvm_object */
+#define UVM_ET_SUBMAP			0x02	/* it is a vm_map submap */
+#define UVM_ET_COPYONWRITE 		0x04	/* copy_on_write */
+#define UVM_ET_NEEDSCOPY		0x08	/* needs_copy */
+
+#define UVM_ET_ISOBJ(E)			(((E)->etype & UVM_ET_OBJ) != 0)
+#define UVM_ET_ISSUBMAP(E)		(((E)->etype & UVM_ET_SUBMAP) != 0)
+#define UVM_ET_ISCOPYONWRITE(E)	(((E)->etype & UVM_ET_COPYONWRITE) != 0)
+#define UVM_ET_ISNEEDSCOPY(E)	(((E)->etype & UVM_ET_NEEDSCOPY) != 0)
 
 #endif /* _VM_H */

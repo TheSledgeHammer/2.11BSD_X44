@@ -86,8 +86,8 @@
 #include <sys/errno.h>
 #include <sys/device.h>
 
-#include <vm/vm.h>
 #include <vm/include/vm_kern.h>
+#include "../../../devel/vm/include/vm.h"
 
 #define _I386_BUS_DMA_PRIVATE
 #include <machine/bus.h>
