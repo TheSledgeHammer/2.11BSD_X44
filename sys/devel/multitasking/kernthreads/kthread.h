@@ -1,3 +1,30 @@
+/*
+ * The 3-Clause BSD License:
+ * Copyright (c) 2020 Martin Kelly
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #ifndef SYS_KTHREADS_H_
 #define SYS_KTHREADS_H_
@@ -60,6 +87,10 @@ struct kthread_queue {
 #define	kt_session		kt_tgrp->tg_session
 #define	kt_tgid			kt_tgrp->tg_id
 
+/* Locks */
+mutex_t 			kthread_mtx; 		/* mutex lock */
+struct simplelock 	kthread_intrlkp; 	/* simplelock */
+
 #define KTHREAD_RATIO 1  /* M:N Ratio. number of kernel threads per process */
 
 /* Kernel Thread */
@@ -81,7 +112,7 @@ void 			fixjobc(struct kthread *, struct tgrp *, int);
 int	 			inferior(struct kthread *);
 
 /* Kernel Thread Mutex */
-int kthread_mutexmgr(mutex_t m, unsigned int flags, struct simplelock *interlkp, kthread_t kt);
+int kthread_mutexmgr(mutex_t m, unsigned int flags, kthread_t kt);
 int kthread_mutex_init(mutex_t m, kthread_t kt);
 int kthread_mutex_lock(kthread_t *kt, mutex_t *m);
 int kthread_mutex_lock_try(kthread_t *kt, mutex_t *m);

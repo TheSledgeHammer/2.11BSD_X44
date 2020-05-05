@@ -10,10 +10,7 @@ TODO:
 		- pnp.c 
 	- efi
 	- usb
-	- dloader
 	- i386:
-		- libi386:
-		- cdboot
 		- gptboot
 		- isoboot
 		- loader:
@@ -50,7 +47,16 @@ Kern:
 	- char	u_sep;						/* flag for I and D separation */
 	- struct u_ovd						/* automatic overlay data */
 	
-	
+
+NetBSD 5.0.2: Threads & Multitasking
+- kobj: Loading objects in filesystem
+- wapbl
+- kern_proc.c
+- kern_lwp.c
+- kern_rwlock.c
+- kern_runq.c 
+- subr_workqueue.c
+
 - devel/multitasking
 	- kernthreads: (NetBSD 1.4/1.5)
 		- kern_kthread.c: kthread_create, exit, create_deferred, run_deferred_queue

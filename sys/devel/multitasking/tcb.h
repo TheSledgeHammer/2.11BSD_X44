@@ -1,11 +1,35 @@
 /*
- * Thread Control Block:
- * Threads work nearly identically the same as proc in structure and operation.
- * Threads however cannot create child threads, this is done through proc. Threads have the same creds as the process
- * which created it.
- * Thread groups are linked to there proc group and cannot exceed the limit of a proc group and M:N ratio.
- * Example: If the M:N ratio (1:2) and prgp limit is 4. Then a Thread group limit would be 8 (2 Threads per Proc).
+ * The 3-Clause BSD License:
+ * Copyright (c) 2020 Martin Kelly
+ * All rights reserved.
  *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * Thread Control Block:
+ * Thread tid's are a sub id of proc pid's		(Intended Goal)
+ * Thread groups are a subgroup of proc groups. (Intended Goal)
  */
 
  /* Thread Control Block */
@@ -45,8 +69,7 @@ u_long 									tgrphash;
 
 extern int tidhashmask;						/* In param.c. */
 
-
 void 		threadinit(void);
-struct tgrp *tgfind(tid_t);				/* Find Thread group by id. */
+struct tgrp *tgfind(tid_t);					/* Find Thread group by id. */
 
 #endif /* SYS_TCB_H_ */

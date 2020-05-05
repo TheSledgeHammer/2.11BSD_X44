@@ -1,10 +1,31 @@
 /*
- * uthreads.h
+ * The 3-Clause BSD License:
+ * Copyright (c) 2020 Martin Kelly
+ * All rights reserved.
  *
- *  Created on: 3 Jan 2020
- *      Author: marti
- *  User Threads: Runs from user struct in Userspace (usr_pcb)
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+ /*  User Threads: Runs from user struct in Userspace (usr_pcb) */
 
 #ifndef SYS_UTHREADS_H_
 #define SYS_UTHREADS_H_
@@ -76,7 +97,7 @@ void			fixjobc(struct uthread *, struct tgrp *, int);
 int				inferior(struct uthread *);
 
 /* User Thread Mutex */
-int uthread_mutexmgr(mutex_t m, unsigned int flags, struct simplelock *interlkp, uthread_t ut);
+int uthread_mutexmgr(mutex_t m, unsigned int flags, uthread_t ut);
 int uthread_mutex_init(mutex_t m, uthread_t ut);
 int uthread_mutex_lock(uthread_t ut, mutex_t m);
 int uthread_mutex_lock_try(uthread_t ut, mutex_t m);

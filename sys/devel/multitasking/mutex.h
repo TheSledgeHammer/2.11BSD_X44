@@ -37,7 +37,6 @@
  *	Reworked from: @(#)lock.h	8.12 (Berkeley) 5/19/95
  */
 
-
 #ifndef SYS_MUTEX_H_
 #define SYS_MUTEX_H_
 
@@ -129,7 +128,7 @@ int mutex_unlock(__volatile mutex_t m);
 int mutex_destroy(__volatile mutex_t m);
 
 int mutexstatus(mutex_t m);
-int mutexmgr(__volatile mutex_t m, unsigned int flags, tid_t tid, struct simplelock *interlkp);
+int mutexmgr(__volatile mutex_t m, unsigned int flags, tid_t tid);
 
 void pause(mutex_t mtx, int wanted);
 void acquire(mutex_t mtx, int error, int extflags, int wanted);

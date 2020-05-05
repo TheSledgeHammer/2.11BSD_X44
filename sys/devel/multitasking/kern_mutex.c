@@ -36,6 +36,7 @@
  *
  * 	@(#)kern_lock.c 8.18 (Berkeley)  5/21/95
  */
+/* Kernel Mutex is an extension/ abstraction of a simple lock (kern_lock) for compatibility with kernel & user threads. */
 
 #include <sys/param.h>
 #include <sys/proc.h>
@@ -43,8 +44,6 @@
 #include <mutex.h>
 #include <kthread.h>
 #include <uthread.h>
-
-/* Kern_mutex provides an abstraction of common mutex functions to both kernel & user threads */
 
 /* Initialize a mutex & simple_lock */
 void
@@ -82,11 +81,10 @@ mutexstatus(mtx)
 
 /* should apply a mutex lock but check for simple lock */
 int
-mutexmgr(mtx, flags, tid, interlkp)
+mutexmgr(mtx, flags, tid)
     __volatile mutex_t mtx;
     unsigned int flags;
     tid_t tid;
-    struct simplelock *interlkp;
 {
     int error;
     int extflags;
@@ -94,7 +92,7 @@ mutexmgr(mtx, flags, tid, interlkp)
 
     mutex_lock(&mtx);
     if (flags & MTX_INTERLOCK) {
-        simple_unlock(interlkp);
+    	mutex_unlock(&mtx);
     }
     extflags = (flags | mtx->mtx_flags) & MTX_EXTFLG_MASK;
 #ifdef DIAGNOSTIC
@@ -320,6 +318,7 @@ mutex_unlock(mtx)
     }
 }
 
+/* Not yet implemented */
 int
 mutex_timedlock(mtx)
 	__volatile mutex_t mtx;
@@ -327,6 +326,7 @@ mutex_timedlock(mtx)
 	return 0;
 }
 
+/* Not yet implemented */
 int
 mutex_destroy(mtx)
     __volatile mutex_t mtx;

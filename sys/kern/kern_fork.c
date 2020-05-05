@@ -39,12 +39,15 @@ vfork()
 	fork1(1);
 }
 
+int	nproc = 1;		/* process 0 */
+
 static void
 fork1(isvfork)
 	int isvfork;
 {
 	register int a;
 	register struct proc *p1, *p2;
+	register uid_t uid;
 	int count;
 	register_t *retval;
 
@@ -64,13 +67,17 @@ fork1(isvfork)
 	 *  not su and would take last slot.
 	 */
 	p2 = freeproc;
-	if (p2 == NULL)
+	uid = p1->p_cred->p_ruid;
+	if (p2 == NULL || (nproc >= maxproc - 1 && uid != 0) || nproc >= maxproc) {
 		tablefull("proc");
-
+		u->u_error = EAGAIN;
+		goto out;
+	}
 	count = chgproccnt(u->u_uid, 1);
 	if (u->u_uid != 0 && count > p1->p_rlimit[RLIMIT_NPROC].rlim_cur) {
 		(void)chgproccnt(u->u_uid, -1);
 		u->u_error = EAGAIN;
+		goto out;
 	}
 	if (p2==NULL || (u->u_uid!=0 && (p2->p_nxt == NULL || a > MAXUPRC))) {
 		u->u_error = EAGAIN;
@@ -79,7 +86,7 @@ fork1(isvfork)
 	p1 = u->u_procp;
 	if (newproc(p1, p2, isvfork)) {
 		u->u_r.r_val1 = p1->p_pid;
-		u->u_r.r_val2 = 1;  			/* child */
+		u->u_r.r_val2 = 1;  				/* child */
 		u->u_start = p1->p_rtime->tv_sec;
 
 		/* set forked but preserve suid/gid state */
@@ -88,44 +95,11 @@ fork1(isvfork)
 		bzero(&u->u_cru, sizeof(u->u_cru));
 		return;
 	}
-	if(vm_fork(p1, p2, isvfork)) {
-		/*
-		 * Child process.  Set start time and get to work.
-		 */
-		(void) splclock();
-		p2->p_stats->p_start = time;
-		(void) spl0();
-		p2->p_acflag = AFORK;
-		return;
-	}
-	/*
-	 * Make child runnable and add to run queue.
-	 */
-	(void) splhigh();
-	p2->p_stat = SRUN;
-	setrq(p2);
-	(void) spl0();
 
 	u->u_r.r_val1 = p2->p_pid;
-
-	/*
-	 * Now can be swapped.
-	 */
-	p1->p_flag &= ~P_NOSWAP;
-
-	/*
-	 * Preserve synchronization semantics of vfork.  If waiting for
-	 * child to exec or exit, set P_PPWAIT on child, and sleep on our
-	 * proc (in case of exit).
-	 */
-	if (isvfork)
-		while (p2->p_flag & P_PPWAIT)
-			tsleep(p1, PWAIT, "ppwait", 0);
 out:
 	u->u_r.r_val2 = 0;
 }
-
-int	nproc = 1;		/* process 0 */
 
 /*
  * newproc --
@@ -134,7 +108,7 @@ int	nproc = 1;		/* process 0 */
  */
 int
 newproc(rip, rpp, isvfork)
-	register struct proc *rpp, *rip;
+	register struct proc *rip, *rpp;
 	int isvfork;
 {
 	struct proc *newproc;
@@ -184,7 +158,9 @@ again:
 	 */
 	nproc++;
 	rip = u->u_procp;
-	rpp = newproc;
+	if(rpp == NULL) {
+		rpp = newproc;
+	}
 	rpp->p_stat = SIDL;
 	rpp->p_pid = mpid;
 	rpp->p_realtimer.it_value = 0;
@@ -233,10 +209,6 @@ again:
 
 	rpp->p_fd = fdcopy(rip);
 
-	if(copyproc(rip, rpp, isvfork)) {
-		continue;
-	}
-
 	/*
 	 * If p_limit is still copy-on-write, bump refcnt,
 	 * otherwise get a copy that won't be modified.
@@ -252,6 +224,7 @@ again:
 
 	if (rip->p_session->s_ttyvp != NULL && (rip->p_flag & P_CONTROLT))
 		rpp->p_flag |= P_CONTROLT;
+
 	if (isvfork)
 		rpp->p_flag |= P_PPWAIT;
 
@@ -268,16 +241,76 @@ again:
 	 */
 	rpp->p_estcpu = rip->p_estcpu;
 
+#ifdef KTRACE
+	if (rip->p_traceflag & KTRFAC_INHERIT) {
+		rpp->p_traceflag = rip->p_traceflag;
+		if ((rpp->p_tracep = rip->p_tracep) != NULL) {
+			VREF(rpp->p_tracep);
+		}
+	}
+#endif
+
 	/*
 	 * This begins the section where we must prevent the parent
 	 * from being swapped.
 	 */
 	rip->p_flag |= P_NOSWAP;
 
+	/*
+	 * Set return values for child before vm_fork,
+	 * so they can be copied to child stack.
+	 * We return parent pid, and mark as child in retval[1].
+	 * NOTE: the kernel stack may be at a different location in the child
+	 * process, and thus addresses of automatic variables (including retval)
+	 * may be invalid after vm_fork returns in the child process.
+	 */
+
+	retval[0] = rip->p_pid;
+	retval[1] = 1;
+	if(vm_fork(rip, rpp, isvfork)) {
+		/*
+		 * Child process.  Set start time and get to work.
+		 */
+		(void) splclock();
+		rpp->p_stats->p_start = time;
+		(void) spl0();
+		rpp->p_acflag = AFORK;
+		return (0);
+	}
+
+	/*
+	 * Make child runnable and add to run queue.
+	 */
+	(void) splhigh();
+	rpp->p_stat = SRUN;
+	setrq(rpp);
+	(void) spl0();
+
+	/*
+	 * Now can be swapped.
+	 */
+	rip->p_flag |= P_NOSWAP;
+
+	/*
+	 * Preserve synchronization semantics of vfork.  If waiting for
+	 * child to exec or exit, set P_PPWAIT on child, and sleep on our
+	 * proc (in case of exit).
+	 */
+	if (isvfork)
+		while (rpp->p_flag & P_PPWAIT)
+			tsleep(rip, PWAIT, "ppwait", 0);
+
+	/*
+	 * Return child pid to parent process,
+	 * marking us as parent via retval[1].
+	 */
+	retval[0] = rpp->p_pid;
+	retval[1] = 0;
 	return (0);
 }
 
-/* 2.11BSD Original newproc */
+
+/* 2.11BSD Modified Original newproc */
 int
 copyproc(rip, rpp, isvfork)
 	register struct proc *rpp, *rip;

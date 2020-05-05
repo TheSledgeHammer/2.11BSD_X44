@@ -30,7 +30,7 @@
 
 #include <machine/cpu.h>
 
-char	copyright[] = "Copyright (c) 1982, 1986, 1989, 1991, 1993\n\tThe Regents of the University of California.  All rights reserved.\n\n";
+char 	copyright[] = "Copyright (c) 1982, 1986, 1989, 1991, 1993\n\tThe Regents of the University of California.  All rights reserved.\n\n";
 
 struct 	session session0;
 struct 	pgrp pgrp0;
@@ -234,7 +234,7 @@ main(framep)
 	siginit(p);
 
 	/* Create process 1 (init(8)). */
-	if (fork(NULL))
+	if (fork1(NULL))
 		panic("fork init");
 	if (rval[1]) {
 		start_init(curproc, framep);
@@ -242,7 +242,7 @@ main(framep)
 	}
 
 	/* Create process 2 (the pageout daemon). */
-	if (fork(NULL))
+	if (fork1(NULL))
 		panic("fork pager");
 	if (rval[1]) {
 		p = curproc;

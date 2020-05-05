@@ -59,10 +59,6 @@
 #include <ufs/ufs/dir.h>
 #include <ufs/ufs/ufsmount.h>
 #include <ufs/ufs/ufs_extern.h>
-#include <ufs/ufs/ufs_wapbl.h>
-#ifdef UFS_DIRHASH
-#include <ufs/ufs/dirhash.h>
-#endif
 
 #include <vm/include/vm.h>
 #include <miscfs/specfs/specdev.h>
@@ -103,7 +99,6 @@ ufs_create(ap)
 
 	if (error == ufs_makeinode(MAKEIMODE(ap->a_vap->va_type, ap->a_vap->va_mode), ap->a_dvp, ap->a_vpp, ap->a_cnp))
 		return (error);
-	UFS_WAPBL_END(ap->a_dvp->v_mount);
 	return (0);
 }
 
@@ -131,9 +126,6 @@ ufs_mknod(ap)
 		return (error);
 	ip = VTOI(*vpp);
 	ip->i_flag |= IN_ACCESS | IN_CHANGE | IN_UPDATE;
-	UFS_WAPBL_UPDATE(*vpp, NULL, NULL, 0);
-	UFS_WAPBL_END(ap->a_dvp->v_mount);
-
 	if (vap->va_rdev != VNOVAL) {
 		/*
 		 * Want to be able to use this to make badblock
@@ -358,9 +350,6 @@ ufs_setattr(ap)
 	    ((int)vap->va_bytes != VNOVAL) || (vap->va_gen != VNOVAL)) {
 		return (EINVAL);
 	}
-
-	UFS_WAPBL_JUNLOCK_ASSERT(vp->v_mount);
-
 	if (vap->va_flags != VNOVAL) {
 		if (vp->v_mount->mnt_flag & MNT_RDONLY)
 			return (EROFS);
@@ -421,7 +410,6 @@ ufs_setattr(ap)
 		    ((vap->va_vaflags & VA_UTIMES_NULL) == 0 || 
 		    (error = VOP_ACCESS(vp, VWRITE, cred, p))))
 			return (error);
-		error = UFS_WAPBL_BEGIN(vp->v_mount);
 		if (vap->va_atime.ts_sec != VNOVAL)
 			ip->i_flag |= IN_ACCESS;
 		if (vap->va_mtime.ts_sec != VNOVAL)
@@ -430,7 +418,6 @@ ufs_setattr(ap)
 		atimeval.tv_usec = vap->va_atime.ts_nsec / 1000;
 		mtimeval.tv_sec = vap->va_mtime.ts_sec;
 		mtimeval.tv_usec = vap->va_mtime.ts_nsec / 1000;
-		UFS_WAPBL_END(vp->v_mount);
 		if (error == VOP_UPDATE(vp, &atimeval, &mtimeval, 1))
 			return (error);
 	}
@@ -438,15 +425,11 @@ ufs_setattr(ap)
 	if (vap->va_mode != (mode_t)VNOVAL) {
 		if (vp->v_mount->mnt_flag & MNT_RDONLY)
 			return (EROFS);
-		error = UFS_WAPBL_BEGIN(vp->v_mount);
-		if(error) {
-			return (error);
-		}
 		error = ufs_chmod(vp, (int)vap->va_mode, cred, p);
-		UFS_WAPBL_END(vp->v_mount);
 	}
 	return (error);
 }
+
 
 /*
  * Change the mode on a file.
@@ -491,8 +474,6 @@ ufs_chown(vp, uid, gid, cred, p)
 	struct ucred *cred;
 	struct proc *p;
 {
-	UFS_WAPBL_JLOCK_ASSERT(vp->v_mount);
-
 	register struct inode *ip = VTOI(vp);
 	uid_t ouid;
 	gid_t ogid;
@@ -518,7 +499,7 @@ ufs_chown(vp, uid, gid, cred, p)
 	ogid = ip->i_gid;
 	ouid = ip->i_uid;
 #ifdef QUOTA
-	if (error = getinoquota(ip))
+	if (error == getinoquota(ip))
 		return (error);
 	if (ouid == uid) {
 		dqrele(vp, ip->i_dquot[USRQUOTA]);
@@ -585,7 +566,6 @@ good:
 		ip->i_mode &= ~ISUID;
 	if (ogid != gid && cred->cr_uid != 0)
 		ip->i_mode &= ~ISGID;
-	UFS_WAPBL_UPDATE(vp, NULL, NULL, 0);
 	return (0);
 }
 
