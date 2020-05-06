@@ -64,6 +64,7 @@ union wait	{
 
 #define WIFSTOPPED(x)	((x).w_stopval == WSTOPPED)
 #define WIFSIGNALED(x)	((x).w_stopval != WSTOPPED && (x).w_termsig != 0)
+#define WTERMSIG(x)		((x).w_stopval)
 #define WIFEXITED(x)	((x).w_stopval != WSTOPPED && (x).w_termsig == 0)
 #define	WEXITSTATUS(x)	((x).w_retcode)
 

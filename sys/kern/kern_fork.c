@@ -84,7 +84,7 @@ fork1(isvfork)
 		goto out;
 	}
 	p1 = u->u_procp;
-	if (newproc(p1, p2, isvfork)) {
+	if (newproc(isvfork)) {
 		u->u_r.r_val1 = p1->p_pid;
 		u->u_r.r_val2 = 1;  				/* child */
 		u->u_start = p1->p_rtime->tv_sec;
@@ -107,16 +107,12 @@ out:
  *	It returns 1 in the new process, 0 in the old.
  */
 int
-newproc(rip, rpp, isvfork)
-	register struct proc *rip, *rpp;
+newproc(isvfork)
 	int isvfork;
 {
-	struct proc *newproc;
+	register struct proc *rip, *rpp;
 	static int mpid, pidchecked = 0;
 	register_t *retval;
-
-	/* Allocate new proc. */
-	MALLOC(newproc, struct proc *, sizeof(struct proc), M_PROC, M_WAITOK);
 
 	mpid++;
 retry:
@@ -158,9 +154,6 @@ again:
 	 */
 	nproc++;
 	rip = u->u_procp;
-	if(rpp == NULL) {
-		rpp = newproc;
-	}
 	rpp->p_stat = SIDL;
 	rpp->p_pid = mpid;
 	rpp->p_realtimer.it_value = 0;
@@ -179,9 +172,7 @@ again:
 	rpp->p_wchan = 0;
 	rpp->p_slptime = 0;
 
-	struct proc **hash = &pidhash[PIDHASH(rpp->p_pid)];
-	rpp->p_hash = *hash;
-	*hash = rpp;
+	LIST_INSERT_HEAD(PIDHASH(rpp->p_pid), rpp, p_hash);
 
 	rpp->p_nxt = allproc;				/* onto allproc */
 	rpp->p_nxt->p_prev = &rpp->p_nxt;	/* (allproc is never NULL) */

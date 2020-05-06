@@ -234,7 +234,7 @@ main(framep)
 	siginit(p);
 
 	/* Create process 1 (init(8)). */
-	if (fork1(NULL))
+	if (newproc(0))
 		panic("fork init");
 	if (rval[1]) {
 		start_init(curproc, framep);
@@ -242,7 +242,7 @@ main(framep)
 	}
 
 	/* Create process 2 (the pageout daemon). */
-	if (fork1(NULL))
+	if (newproc(0))
 		panic("fork pager");
 	if (rval[1]) {
 		p = curproc;

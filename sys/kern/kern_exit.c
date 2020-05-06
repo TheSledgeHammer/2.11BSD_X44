@@ -48,6 +48,12 @@ exit(rv)
 	register struct	proc **pp;
 	register struct vmspace *vm;
 
+
+	if (p->p_pid == 1)
+		panic("init died (signal %d, exit %d)", WTERMSIG(rv), WEXITSTATUS(rv));
+
+	MALLOC(p->p_ru, struct rusage *, sizeof(struct rusage), M_ZOMBIE, M_WAITOK);
+
 	/*
 	 * If parent is waiting for us to exit or exec,
 	 * P_PPWAIT is set; we will wakeup the parent below.
@@ -58,6 +64,7 @@ exit(rv)
 	p->p_sigacts = 0;
 	untimeout(realitexpire, (caddr_t)p);
 
+	fdfree(p);
 	/*
 	 * 2.11 doesn't need to do this and it gets overwritten anyway.
 	 * p->p_realtimer.it_value = 0;
@@ -121,15 +128,7 @@ exit(rv)
 	zombproc = p;
 	p->p_stat = SZOMB;
 
-	noproc = 1;
-	for (pp = &pidhash[PIDHASH(p->p_pid)]; *pp; pp = &(*pp)->p_hash)
-		if (*pp == p) {
-			*pp = p->p_hash;
-			goto done;
-		}
-	panic("exit");
-done:
-
+	LIST_REMOVE(p, p_hash);
 
 	if (p->p_cptr)		/* only need this if any child is S_ZOMB */
 		wakeup((caddr_t) initproc);
@@ -161,7 +160,7 @@ done:
 	 */
 	p->p_xstat = rv;
 	p->p_ru = u->u_ru;
-
+	calcru(p, &p->p_ru->ru_utime, &p->p_ru->ru_stime, NULL);
 	ruadd(&p->p_ru, &u->u_cru);
 	{
 		register struct proc *q;
@@ -188,6 +187,7 @@ again:
 			goto again;
 		}
 	}
+
 	psignal(p->p_pptr, SIGCHLD);
 	wakeup((caddr_t)p->p_pptr);
 

@@ -49,7 +49,7 @@ struct	proc {
 #define	p_ucred			p_cred->pc_ucred
 #define	p_rlimit		p_limit->pl_rlimit
 
-    struct	proc    	*p_hash;        /* Hash chain. */
+	LIST_ENTRY(proc)    p_hash;	        /* Hash chain. */
     struct	proc    	*p_pgrpnxt;	    /* Pointer to next process in process group. */
     struct	proc        *p_pptr;		/* pointer to process structure of parent */
     struct	proc 		*p_osptr;	 	/* Pointer to older sibling processes. */
@@ -171,7 +171,6 @@ struct emul {
 	void				(*e_setregs)(struct proc *, struct exec_linker *, u_long);
 	char				*e_sigcode;			/* Start of sigcode */
 	char				*e_esigcode;		/* End of sigcode */
-	//struct vm_object	*e_sigobject;		/* shared sigcode object */
 
 	void				(*e_syscall)(void);
 	caddr_t				(*e_vm_default_addr)(struct proc *, caddr_t, size_t);
@@ -244,7 +243,6 @@ u_long pid_hash;
 extern LIST_HEAD(pgrphashhead, pgrp) *pgrphashtbl;
 extern u_long pgrphash;
 
-extern struct proc *pidhash[PIDHSZ];
 extern int pidhashmask;					/* In param.c. */
 extern struct proc proc0;				/* Process slot for swapper. */
 int	nproc, maxproc;						/* Current and max number of procs. */
@@ -265,8 +263,8 @@ struct	prochd {
 
 extern struct emul emul_211bsd;
 
-struct 	proc *pfind (pid_t);		/* Find process by id. */
-struct 	pgrp *pgfind (pid_t);		/* Find process group by id. */
+struct 	proc *pfind (pid_t);			/* Find process by id. */
+struct 	pgrp *pgfind (pid_t);			/* Find process group by id. */
 
 int		setpri (struct proc *);
 void	setrun (struct proc *);
