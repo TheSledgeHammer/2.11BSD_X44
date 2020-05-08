@@ -2,16 +2,21 @@
 
 # Makefile for kernel tags files, init_sysent, etc.
 
-.include <bsd.own.mk>		# for HOST_SH
-
+ARCH=	i386
 
 all:
 	@echo "make tags, links, init_sysent.c, or vnode_if.c only"
 	@false
 
+
 SYSCALLSRC = makesyscalls.sh syscalls.conf syscalls.master
-init_sysent.c syscalls.c ../sys/syscall.h: ${SYSCALLSRC}
-	${HOST_SH} makesyscalls.sh syscalls.conf syscalls.master
+init_sysent.c syscalls.c ../sys/syscall.h: 
+${SYSCALLSRC}
+	-mv -f init_sysent.c init_sysent.c.bak
+	-mv -f syscalls.c syscalls.c.bak
+	-mv -f ../sys/syscall.h ../sys/syscall.h.bak	
+	sh makesyscalls.sh syscalls.conf syscalls.master
+
 
 # Kernel tags:
 # Tags files are built in the top-level directory for each architecture,
@@ -22,33 +27,27 @@ init_sysent.c syscalls.c ../sys/syscall.h: ${SYSCALLSRC}
 # via remote mounts; therefore we use symlinks to $SYSTAGS, which points at
 # ${SYSDIR}/${MACHINE}/tags.
 
-ARCH=	i386
-
 SYSTAGS=/var/db/sys_tags
-SYSDIR=..
+SYSDIR=/sys
 
-
-#.ifmake links
-# Directories in which to place tags links (other than machine-dependent):
-# The invocation below returns every directory that contains sources, the idea
-# being, in the face of a constantly varying source tree, that this will be
-# easier to maintain than a fixed list.
-DGEN!=	(cd ${SYSDIR};							\
-	    	find -H . -name arch -prune -o -name "*.[chs]" -print |	\
-	    	${TOOL_SED} -e 's@^\./@@' -e 's@/[^/]*\..*@@' | sort -t / -u )
-#.endif
-
+# Directories in which to place tags links (other than machine-dependent)
+DGEN=	conf \
+		dev scsi \
+		kern lib \
+		miscfs miscfs/deadfs miscfs/fdesc miscfs/fifofs miscfs/specfs \
+		net netimp netinet netns sys \
+		ufs ufs/ffs ufs/lfs ufs/mfs ufs/ufs \
+		vm vm/include
 
 tags::
 	-for i in ${ARCH}; do \
-	    (cd ../arch/$$i && ${MAKE} ${MFLAGS} tags); done
-	    
+	    (cd ../$$i && make ${MFLAGS} tags); done
+
 links::
 	rm -f ${SYSTAGS}
-	ln -s ${SYSDIR}/arch/${MACHINE}/tags ${SYSTAGS}
+	ln -s ${SYSDIR}/${MACHINE}/tags ${SYSTAGS}
 	-for i in ${DGEN}; do \
-	    (cd ../$$i && { rm -f tags; ln -s ${SYSTAGS} tags; }); done
+	    (cd ../$$i && { rm -f tags; ln -s ${SYSTAGS} tags; }) done
 	-for i in ${ARCH}; do \
-	    (cd ../arch/$$i && ${MAKE} ${MFLAGS} SYSTAGS=${SYSTAGS} links); done
-	    
-.include <bsd.files.mk>
+	    (cd ../$$i && make ${MFLAGS} SYSTAGS=${SYSTAGS} links); done
+

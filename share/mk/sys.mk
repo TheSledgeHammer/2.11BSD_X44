@@ -1,101 +1,200 @@
+#	$NetBSD: sys.mk,v 1.33.2.2 1997/11/05 05:37:41 thorpej Exp $
 #	@(#)sys.mk	8.2 (Berkeley) 3/21/94
 
-unix		?=	We run UNIX.
+unix?=		We run 2.11BSD.
 
-.SUFFIXES: .out .a .ln .o .c .F .f .e .r .y .l .s .cl .p .h 
+.SUFFIXES: .out .a .ln .o .s .S .c .cc .C .F .f .r .y .l .cl .p .h .sh .m4
 
 .LIBS:		.a
 
-AR		?=	ar
-ARFLAGS		?=	rl
-RANLIB		?=	ranlib
+AR?=		ar
+ARFLAGS?=	rl
+RANLIB?=	ranlib
 
-AS		?=	as
-AFLAGS		?=
+AS?=		as
+AFLAGS?=
+COMPILE.s?=	${CC} ${AFLAGS} -c
+LINK.s?=	${CC} ${AFLAGS} ${LDFLAGS}
+COMPILE.S?=	${CC} ${AFLAGS} ${CPPFLAGS} -c -traditional-cpp
+LINK.S?=	${CC} ${AFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
-CC		?=	gcc
+CC?=		cc
+CFLAGS?=	-O
+COMPILE.c?=	${CC} ${CFLAGS} ${CPPFLAGS} -c
+LINK.c?=	${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
-.if ${MACHINE} == "sparc"
-CFLAGS		?=	-O4
-.else
-CFLAGS		?=	-O2
-.endif
+CXX?=		g++
+CXXFLAGS?=	${CFLAGS}
+COMPILE.cc?=	${CXX} ${CXXFLAGS} ${CPPFLAGS} -c
+LINK.cc?=	${CXX} ${CXXFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
-CPP		?=	cpp
+OBJC?=		${CC}
+OBJCFLAGS?=	${CFLAGS}
+COMPILE.m?=	${OBJC} ${OBJCFLAGS} ${CPPFLAGS} -c
+LINK.m?=	${OBJC} ${OBJCFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
-FC		?=	f77
-FFLAGS		?=	-O
-EFLAGS		?=
+CPP?=		cpp
+CPPFLAGS?=	
 
-LEX		?=	lex
-LFLAGS		?=
+FC?=		f77
+FFLAGS?=	-O
+RFLAGS?=
+COMPILE.f?=	${FC} ${FFLAGS} -c
+LINK.f?=	${FC} ${FFLAGS} ${LDFLAGS}
+COMPILE.F?=	${FC} ${FFLAGS} ${CPPFLAGS} -c
+LINK.F?=	${FC} ${FFLAGS} ${CPPFLAGS} ${LDFLAGS}
+COMPILE.r?=	${FC} ${FFLAGS} ${RFLAGS} -c
+LINK.r?=	${FC} ${FFLAGS} ${RFLAGS} ${LDFLAGS}
 
-LD		?=	ld
-LDFLAGS		?=
+INSTALL?=	install
 
-LINT		?=	lint
-LINTFLAGS	?=	-chapbx
+LEX?=		lex
+LFLAGS?=
+LEX.l?=		${LEX} ${LFLAGS}
 
-MAKE		?=	make
+LD?=		ld
+LDFLAGS?=
 
-PC		?=	pc
-PFLAGS		?=
+LINT?=		lint
+LINTFLAGS?=	-chapbxz
 
-RC		?=	f77
-RFLAGS		?=
+LORDER?=	lorder
 
-SHELL		?=	sh
+MAKE?=		make
 
-YACC		?=	yacc
-YFLAGS		?=	-d
+NM?=		nm
 
+PC?=		pc
+PFLAGS?=
+COMPILE.p?=	${PC} ${PFLAGS} ${CPPFLAGS} -c
+LINK.p?=	${PC} ${PFLAGS} ${CPPFLAGS} ${LDFLAGS}
+
+SHELL?=		sh
+
+SIZE?=		size
+
+TSORT?= 	tsort -q
+
+YACC?=		yacc
+YFLAGS?=	-d
+YACC.y?=	${YACC} ${YFLAGS}
+
+# C
 .c:
-	${CC} ${CFLAGS} ${.IMPSRC} -o ${.TARGET}
-
+	${LINK.c} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
 .c.o:
-	${CC} ${CFLAGS} -c ${.IMPSRC}
+	${COMPILE.c} ${.IMPSRC}
+.if (${MACHINE_ARCH} != "alpha")
+.c.a:
+	${COMPILE.c} ${.IMPSRC}
+	${AR} ${ARFLAGS} $@ $*.o
+	rm -f $*.o
+.endif
+.c.ln:
+	${LINT} ${LINTFLAGS} ${CPPFLAGS:M-[IDU]*} -i ${.IMPSRC}
 
+# C++
+.cc:
+	${LINK.cc} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
+.cc.o:
+	${COMPILE.cc} ${.IMPSRC}
+.cc.a:
+	${COMPILE.cc} ${.IMPSRC}
+	${AR} ${ARFLAGS} $@ $*.o
+	rm -f $*.o
+
+.C:
+	${LINK.cc} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
+.C.o:
+	${COMPILE.cc} ${.IMPSRC}
+.C.a:
+	${COMPILE.cc} ${.IMPSRC}
+	${AR} ${ARFLAGS} $@ $*.o
+	rm -f $*.o
+
+# Fortran/Ratfor
+.f:
+	${LINK.f} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
+.f.o:
+	${COMPILE.f} ${.IMPSRC}
+.f.a:
+	${COMPILE.f} ${.IMPSRC}
+	${AR} ${ARFLAGS} $@ $*.o
+	rm -f $*.o
+
+.F:
+	${LINK.F} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
+.F.o:
+	${COMPILE.F} ${.IMPSRC}
+.F.a:
+	${COMPILE.F} ${.IMPSRC}
+	${AR} ${ARFLAGS} $@ $*.o
+	rm -f $*.o
+
+.r:
+	${LINK.r} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
+.r.o:
+	${COMPILE.r} ${.IMPSRC}
+.r.a:
+	${COMPILE.r} ${.IMPSRC}
+	${AR} ${ARFLAGS} $@ $*.o
+	rm -f $*.o
+
+# Pascal
+.p:
+	${LINK.p} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
 .p.o:
-	${PC} ${PFLAGS} -c ${.IMPSRC}
+	${COMPILE.p} ${.IMPSRC}
+.p.a:
+	${COMPILE.p} ${.IMPSRC}
+	${AR} ${ARFLAGS} $@ $*.o
+	rm -f $*.o
 
-.e.o .r.o .F.o .f.o:
-	${FC} ${RFLAGS} ${EFLAGS} ${FFLAGS} -c ${.IMPSRC}
-
+# Assembly
+.s:
+	${LINK.s} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
 .s.o:
-	${AS} ${AFLAGS} -o ${.TARGET} ${.IMPSRC}
+	${COMPILE.s} ${.IMPSRC}
+.s.a:
+	${COMPILE.s} ${.IMPSRC}
+	${AR} ${ARFLAGS} $@ $*.o
+	rm -f $*.o
+.S:
+	${LINK.S} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
+.S.o:
+	${COMPILE.S} ${.IMPSRC}
+.S.a:
+	${COMPILE.S} ${.IMPSRC}
+	${AR} ${ARFLAGS} $@ $*.o
+	rm -f $*.o
 
-.y.o:
-	${YACC} ${YFLAGS} ${.IMPSRC}
-	${CC} ${CFLAGS} -c y.tab.c -o ${.TARGET}
-	rm -f y.tab.c
-
-.l.o:
-	${LEX} ${LFLAGS} ${.IMPSRC}
-	${CC} ${CFLAGS} -c lex.yy.c -o ${.TARGET}
+# Lex
+.l:
+	${LEX.l} ${.IMPSRC}
+	${LINK.c} -o ${.TARGET} lex.yy.c ${LDLIBS} -ll
 	rm -f lex.yy.c
-
-.y.c:
-	${YACC} ${YFLAGS} ${.IMPSRC}
-	mv y.tab.c ${.TARGET}
-
 .l.c:
-	${LEX} ${LFLAGS} ${.IMPSRC}
+	${LEX.l} ${.IMPSRC}
 	mv lex.yy.c ${.TARGET}
+.l.o:
+	${LEX.l} ${.IMPSRC}
+	${COMPILE.c} -o ${.TARGET} lex.yy.c 
+	rm -f lex.yy.c
 
-.s.out .c.out .o.out:
-	${CC} ${CFLAGS} ${.IMPSRC} ${LDLIBS} -o ${.TARGET}
-
-.f.out .F.out .r.out .e.out:
-	${FC} ${EFLAGS} ${RFLAGS} ${FFLAGS} ${.IMPSRC} \
-	    ${LDLIBS} -o ${.TARGET}
-	rm -f ${.PREFIX}.o
-
-.y.out:
-	${YACC} ${YFLAGS} ${.IMPSRC}
-	${CC} ${CFLAGS} y.tab.c ${LDLIBS} -ly -o ${.TARGET}
+# Yacc
+.y:
+	${YACC.y} ${.IMPSRC}
+	${LINK.c} -o ${.TARGET} y.tab.c ${LDLIBS}
+	rm -f y.tab.c
+.y.c:
+	${YACC.y} ${.IMPSRC}
+	mv y.tab.c ${.TARGET}
+.y.o:
+	${YACC.y} ${.IMPSRC}
+	${COMPILE.c} -o ${.TARGET} y.tab.c
 	rm -f y.tab.c
 
-.l.out:
-	${LEX} ${LFLAGS} ${.IMPSRC}
-	${CC} ${CFLAGS} lex.yy.c ${LDLIBS} -ll -o ${.TARGET}
-	rm -f lex.yy.c
+# Shell
+.sh:
+	rm -f ${.TARGET}
+	cp ${.IMPSRC} ${.TARGET}

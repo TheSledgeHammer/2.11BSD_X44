@@ -169,8 +169,7 @@ lf_setlock(lock)
 			 * lf_next field set to NOLOCKF).
 			 */
 			if (lock->lf_next)
-				TAILQ_REMOVE(&lock->lf_next->lf_blkhd, lock,
-				    lf_block);
+				TAILQ_REMOVE(&lock->lf_next->lf_blkhd, lock, lf_block);
 			free(lock, M_LOCKF);
 			return (error);
 		}
@@ -247,10 +246,8 @@ lf_setlock(lock)
 				lf_wakelock(overlap);
 			} else {
 				while (ltmp == overlap->lf_blkhd.tqh_first) {
-					TAILQ_REMOVE(&overlap->lf_blkhd, ltmp,
-					    lf_block);
-					TAILQ_INSERT_TAIL(&lock->lf_blkhd,
-					    ltmp, lf_block);
+					TAILQ_REMOVE(&overlap->lf_blkhd, ltmp, lf_block);
+					TAILQ_INSERT_TAIL(&lock->lf_blkhd, ltmp, lf_block);
 				}
 			}
 			/*

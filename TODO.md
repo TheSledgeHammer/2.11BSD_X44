@@ -21,10 +21,11 @@ TODO:
 
 - arch:
 	- i386:
+		- Makefile
+		- add other devices
+		- update fd (floppy device)
 		- bioscalls
 		- machdep.c: cpu_reboot, cpu_reset
-		- missing_devs.txt
-		- clean up: cpufunc.h & pio.h (contain duplicate functions)
 		- vm_machdep.c: u->u_procp->p_p0br: (no reference in 4.4BSD-Lite2)
 			- 4.3BSD Reno/ 4.4BSD Remanent: once in struct proc. Obsolete?? 
 

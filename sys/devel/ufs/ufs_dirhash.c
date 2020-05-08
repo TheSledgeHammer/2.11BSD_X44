@@ -32,7 +32,7 @@
  */
 
 
-//#ifdef UFS_DIRHASH
+#ifdef UFS_DIRHASH
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -51,8 +51,8 @@
 #include <ufs/ufs/dir.h>
 #include <ufs/ufs/ufsmount.h>
 #include <ufs/ufs/ufs_extern.h>
-#include "../ufs/dirhash.h"
-#include "../ufs/fnv_hash.h"
+#include <devel/ufs/dirhash.h>
+#include <devel/ufs/fnv_hash.h>
 
 #define WRAPINCR(val, limit)	(((val) + 1 == (limit)) ? 0 : ((val) + 1))
 #define WRAPDECR(val, limit)	(((val) == 0) ? ((limit) - 1) : ((val) - 1))

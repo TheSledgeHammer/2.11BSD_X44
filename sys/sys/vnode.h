@@ -65,39 +65,37 @@ enum vtagtype	{
  * it from v_data.  If non-null, this area is freed in getnewvnode().
  */
 LIST_HEAD(buflists, buf);
-
 struct vnode {
-	//struct vm_object v_uobj;		/* VM object */
-	u_long			v_flag;			/* vnode flags (see below) */
-	short			v_usecount;		/* reference count of users */
-	short			v_writecount;	/* reference count of writers */
-	long			v_holdcnt;		/* page & buffer references */
-	daddr_t			v_lastr;		/* last read (read-ahead) */
-	u_long			v_id;			/* capability identifier */
-	struct mount 	*v_mount;		/* ptr to vfs we are in */
-	int 			(**v_op)();		/* vnode operations vector */
-	TAILQ_ENTRY(vnode) v_freelist;	/* vnode freelist */
-	LIST_ENTRY(vnode) v_mntvnodes;	/* vnodes for mount point */
-	struct buflists v_cleanblkhd;	/* clean blocklist head */
-	struct buflists v_dirtyblkhd;	/* dirty blocklist head */
-	long			v_numoutput;	/* num of writes in progress */
-	enum vtype 		v_type;			/* vnode type */
+	u_long				v_flag;			/* vnode flags (see below) */
+	short				v_usecount;		/* reference count of users */
+	short				v_writecount;	/* reference count of writers */
+	long				v_holdcnt;		/* page & buffer references */
+	daddr_t				v_lastr;		/* last read (read-ahead) */
+	u_long				v_id;			/* capability identifier */
+	struct mount 		*v_mount;		/* ptr to vfs we are in */
+	int 				(**v_op)();		/* vnode operations vector */
+	TAILQ_ENTRY(vnode) 	v_freelist;		/* vnode freelist */
+	LIST_ENTRY(vnode) 	v_mntvnodes;	/* vnodes for mount point */
+	struct buflists 	v_cleanblkhd;	/* clean blocklist head */
+	struct buflists 	v_dirtyblkhd;	/* dirty blocklist head */
+	long				v_numoutput;	/* num of writes in progress */
+	enum vtype 			v_type;			/* vnode type */
 	union {
 		struct mount	*vu_mountedhere;/* ptr to mounted vfs (VDIR) */
 		struct socket	*vu_socket;		/* unix ipc (VSOCK) */
 		struct specinfo	*vu_specinfo;	/* device (VCHR, VBLK) */
 		struct fifoinfo	*vu_fifoinfo;	/* fifo (VFIFO) */
 	} v_un;
-	struct nqlease *v_lease;		/* Soft reference to lease */
-	daddr_t			v_lastw;		/* last write (write cluster) */
-	daddr_t			v_cstart;		/* start block of cluster */
-	daddr_t			v_lasta;		/* last allocation */
-	int				v_clen;			/* length of current cluster */
-	int				v_ralen;		/* Read-ahead length */
-	daddr_t			v_maxra;		/* last readahead block */
-	caddr_t			v_vmdata;		/* Place to store VM pager */
-	enum vtagtype 	v_tag;			/* type of underlying data */
-	void 			*v_data;		/* private data for fs */
+	struct nqlease 		*v_lease;		/* Soft reference to lease */
+	daddr_t				v_lastw;		/* last write (write cluster) */
+	daddr_t				v_cstart;		/* start block of cluster */
+	daddr_t				v_lasta;		/* last allocation */
+	int					v_clen;			/* length of current cluster */
+	int					v_ralen;		/* Read-ahead length */
+	daddr_t				v_maxra;		/* last readahead block */
+	caddr_t				v_vmdata;		/* Place to store VM pager */
+	enum vtagtype 		v_tag;			/* type of underlying data */
+	void 				*v_data;		/* private data for fs */
 };
 
 #define	v_mountedhere	v_un.vu_mountedhere
@@ -161,12 +159,12 @@ struct vattr {
 /*
  *  Modes.  Some values same as Ixxx entries from inode.h for now.
  */
-#define	VSUID	04000		/* set user id on execution */
-#define	VSGID	02000		/* set group id on execution */
-#define	VSVTX	01000		/* save swapped text even after use */
-#define	VREAD	00400		/* read, write, execute permissions */
-#define	VWRITE	00200
-#define	VEXEC	00100
+#define	VSUID			04000		/* set user id on execution */
+#define	VSGID			02000		/* set group id on execution */
+#define	VSVTX			01000		/* save swapped text even after use */
+#define	VREAD			00400		/* read, write, execute permissions */
+#define	VWRITE			00200
+#define	VEXEC			00100
 
 /*
  * Token indicating no attribute value yet assigned.

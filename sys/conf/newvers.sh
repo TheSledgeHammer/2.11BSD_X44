@@ -40,39 +40,19 @@ fi
 
 touch version
 v=`cat version` u=${USER-root} d=`pwd` h=`hostname` t=`date`
-id=`basename "${d}"`
+id=`basename ${d}`
+osrelcmd=`dirname $0`/osrelease.sh
 
-# additional things which need version number upgrades:
-#	sys/sys/param.h:
-#		2.11BSD symbol
-#		2.11BSD_X_X symbol
-#	share/mk/sys.mk
-#		OSMAJOR
-#		OSMINOR
-#	etc/root/root.mail
-#		VERSION and other bits
-#	sys/arch/macppc/stand/tbxidata/bsd.tbxi
-#		change	/X.X/macppc/bsd.rd
-#	usr.bin/signify/signify.1
-#		change the version in the EXAMPLES section
+ost="2.11BSD_RenoX44"
+osr=`sh $osrelcmd`
 
-ost="2.11BSDx86"
-osr="1.0"
+echo "char ostype[] = \"${ost}\";" > vers.c
+echo "char osrelease[] = \"${osr}\";" >> vers.c
+# note: pad `sccs' with spaces, so its size becomes 8
+echo "char sccs[8] = { ' ', ' ', ' ', ' ', '@', '(', '#', ')' };" >> vers.c
+echo \
+  "char version[] = \
+    \"${ost} ${osr} (${id}) #${v}: ${t}\\n    ${u}@${h}:${d}\\n\";" \
+  >> vers.c
 
-cat >vers.c <<eof
-#define STATUS "-current"		/* just after a release */
-#if 0
-#define STATUS ""				/* release */
-#define STATUS "-beta"			/* just before a release */
-#endif
-
-const char ostype[] = "${ost}";
-const char osrelease[] = "${osr}";
-const char osversion[] = "${id}#${v}";
-const char sccs[] =
-    "    @(#)${ost} ${osr}" STATUS " (${id}) #${v}: ${t}\n";
-const char version[512] =
-    "${ost} ${osr}" STATUS " (${id}) #${v}: ${t}\n    ${u}@${h}:${d}\n";
-eof
-
-`expr ${v} + 1` > version
+echo `expr ${v} + 1` > version

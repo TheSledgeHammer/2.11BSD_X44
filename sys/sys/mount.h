@@ -25,7 +25,7 @@ typedef struct { long val[2]; } fsid_t;	/* file system id type */
 #define	MAXFIDSZ	16
 
 struct fid {
-	u_short		fid_len;		/* length of data in bytes */
+	u_short		fid_len;			/* length of data in bytes */
 	u_short		fid_reserved;		/* force longword alignment */
 	char		fid_data[MAXFIDSZ];	/* data (variable length) */
 };
@@ -61,8 +61,7 @@ struct statfs {
  */
 LIST_HEAD(vnodelst, vnode);
 
-struct	mount
-{
+struct	mount {
 	CIRCLEQ_ENTRY(mount) mnt_list;			/* mount list */
 	struct vfsops		*mnt_op;			/* operations on fs */
 	struct vfsconf		*mnt_vfc;			/* configuration info */
@@ -78,12 +77,9 @@ struct	mount
 	memaddr				m_extern;			/* click address of mount table extension */
 };
 
-struct	xmount
-{
-	char	xm_mntfrom[MNAMELEN];		/* /dev/xxxx mounted from */
-	char	xm_mnton[MNAMELEN];			/* directory mounted on - this is the
-					 	 	 	 	 	 * full(er) version of fs_fsmnt.
-					 	 	 	 	 	 */
+struct	xmount {
+	char				xm_mntfrom[MNAMELEN];	/* /dev/xxxx mounted from */
+	char				xm_mnton[MNAMELEN];		/* directory mounted on - this is the full(er) version of fs_fsmnt. */
 };
 
 #define	XMOUNTDESC	(((btoc(sizeof (struct xmount)) - 1) << 8) | RW)
@@ -154,15 +150,15 @@ struct	xmount
  * These aren't used for anything in the system and are present only
  * for source code compatibility reasons.
 */
-#define	MNT_WAIT	1
-#define	MNT_NOWAIT	2
+#define	MNT_WAIT		1
+#define	MNT_NOWAIT		2
 
 /*
  * Generic file handle
  */
 struct fhandle {
-	fsid_t		fh_fsid;	/* File system id of mount point */
-	struct	fid fh_fid;		/* File sys specific id */
+	fsid_t				fh_fsid;	/* File system id of mount point */
+	struct	fid 		fh_fid;		/* File sys specific id */
 };
 typedef struct fhandle	fhandle_t;
 
@@ -185,20 +181,20 @@ struct export_args {
  * mount time to identify the requested filesystem.
  */
 struct vfsconf {
-	void 	*vfc_vfsops;				/* filesystem operations vector */
-	char 	vfc_name[VFS_MAXNAMELEN];	/* filesystem type name */
-	int 	vfc_index;
-	int		vfc_typenum;				/* historic filesystem type number */
-	int 	vfc_refcount;				/* number mounted of this type */
-	int 	vfc_flags;					/* permanent flags */
-	int		(*vfc_mountroot)(void);		/* if != NULL, routine to mount root */
-	struct	vfsconf *vfc_next;			/* next in list */
+	void 			*vfc_vfsops;				/* filesystem operations vector */
+	char 			vfc_name[VFS_MAXNAMELEN];	/* filesystem type name */
+	int 			vfc_index;
+	int				vfc_typenum;				/* historic filesystem type number */
+	int 			vfc_refcount;				/* number mounted of this type */
+	int 			vfc_flags;					/* permanent flags */
+	int				(*vfc_mountroot)(void);		/* if != NULL, routine to mount root */
+	struct	vfsconf *vfc_next;					/* next in list */
 };
 
 #ifdef KERNEL
 
-extern int maxvfsconf;		/* highest defined filesystem type */
-extern struct vfsconf *vfsconf;	/* head of list of filesystem types */
+extern int 				maxvfsconf;		/* highest defined filesystem type */
+extern struct vfsconf 	*vfsconf;		/* head of list of filesystem types */
 
 /*
  * Operations supported on mounted file system.
@@ -240,9 +236,9 @@ struct vfsops {
  * Network address lookup element
  */
 struct netcred {
-	struct	radix_node netc_rnodes[2];
-	int	netc_exflags;
-	struct	ucred netc_anon;
+	struct	radix_node 	netc_rnodes[2];
+	int					netc_exflags;
+	struct	ucred 		netc_anon;
 };
 
 /*

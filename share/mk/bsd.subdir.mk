@@ -1,80 +1,38 @@
+#	$NetBSD: bsd.subdir.mk,v 1.28.2.2 1997/11/13 09:20:52 thorpej Exp $
 #	@(#)bsd.subdir.mk	8.1 (Berkeley) 6/8/93
 
-.MAIN: all
-
-STRIP?=	-s
-
-BINGRP?=	bin
-BINOWN?=	bin
-BINMODE?=	555
-
-_SUBDIRUSE: .USE
-	@for entry in ${SUBDIR}; do \
-		(if test -d ${.CURDIR}/$${entry}.${MACHINE}; then \
-			echo "===> $${entry}.${MACHINE}"; \
-			cd ${.CURDIR}/$${entry}.${MACHINE}; \
-		else \
-			echo "===> $$entry"; \
-			cd ${.CURDIR}/$${entry}; \
-		fi; \
-		${MAKE} ${.TARGET:realinstall=install}); \
-	done
-
-${SUBDIR}::
-	@if test -d ${.TARGET}.${MACHINE}; then \
-		cd ${.CURDIR}/${.TARGET}.${MACHINE}; \
-	else \
-		cd ${.CURDIR}/${.TARGET}; \
-	fi; \
-	${MAKE} all
-
-.if !target(all)
-all: _SUBDIRUSE
+.if !target(__initialized__)
+__initialized__:
+.if exists(${.CURDIR}/../Makefile.inc)
+.include "${.CURDIR}/../Makefile.inc"
+.endif
+.include <bsd.own.mk>
+.MAIN:		all
 .endif
 
-.if !target(clean)
-clean: _SUBDIRUSE
+.for dir in ${SUBDIR}
+.if exists(${dir}.${MACHINE})
+__REALSUBDIR+=${dir}.${MACHINE}
+.else
+__REALSUBDIR+=${dir}
 .endif
+.endfor
 
-.if !target(cleandir)
-cleandir: _SUBDIRUSE
-.endif
+.for dir in ${__REALSUBDIR}
+.for targ in ${TARGETS}
+.PHONY: ${targ}-${dir}
+${targ}-${dir}: .MAKE
+	@echo "${targ} ===> ${_THISDIR_}${dir}"
+	@cd ${.CURDIR}/${dir}; \
+	${MAKE} "_THISDIR_=${_THISDIR_}${dir}/" ${targ}
+subdir-${targ}: ${targ}-${dir}
+${targ}: subdir-${targ}
+.endfor
 
-.if !target(depend)
-depend: _SUBDIRUSE
-.endif
+# Backward-compatibility with the old rules.  If this went away,
+# 'xlint' could become 'lint', 'xinstall' could become 'install', etc.
+${dir}: all-${dir}
+.endfor
 
-.if !target(manpages)
-manpages: _SUBDIRUSE
-.endif
-
-.if !target(install)
-.if !target(beforeinstall)
-beforeinstall:
-.endif
-.if !target(afterinstall)
-afterinstall:
-.endif
-install: afterinstall
-afterinstall: realinstall
-realinstall: beforeinstall _SUBDIRUSE
-.endif
-.if !target(maninstall)
-maninstall: _SUBDIRUSE
-.endif
-
-.if !target(lint)
-lint: _SUBDIRUSE
-.endif
-
-.if !target(obj)
-obj: _SUBDIRUSE
-.endif
-
-.if !target(objdir)
-objdir: _SUBDIRUSE
-.endif
-
-.if !target(tags)
-tags: _SUBDIRUSE
-.endif
+# Make sure all of the standard targets are defined, even if they do nothing.
+${TARGETS}:

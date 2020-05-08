@@ -1,58 +1,153 @@
+#	$NetBSD: bsd.man.mk,v 1.34.2.2 1997/12/09 20:34:27 thorpej Exp $
 #	@(#)bsd.man.mk	8.1 (Berkeley) 6/8/93
 
+.if !target(__initialized__)
+__initialized__:
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
 .endif
+.include <bsd.own.mk>
+.include <bsd.obj.mk>
+.MAIN:		all
+.endif
 
-MANGRP?=	bin
-MANOWN?=	bin
-MANMODE?=	444
+.PHONY:		catinstall maninstall catpages manpages catlinks manlinks cleanman
+.if !defined(NOMAN)
+realinstall:	${MANINSTALL}
+.endif
+cleandir:	cleanman
 
-MANDIR?=	/usr/share/man/cat
+MANTARGET?=	cat
+NROFF?=		nroff
+TBL?=		tbl
 
-MINSTALL=	install -c -o ${MANOWN} -g ${MANGRP} -m ${MANMODE}
+.SUFFIXES: .1 .2 .3 .4 .5 .6 .7 .8 .9 \
+	   .cat1 .cat2 .cat3 .cat4 .cat5 .cat6 .cat7 .cat8 .cat9
 
-maninstall:
-.if defined(MAN1) && !empty(MAN1)
-	${MINSTALL} ${MAN1} ${DESTDIR}${MANDIR}1${MANSUBDIR}
+.9.cat9 .8.cat8 .7.cat7 .6.cat6 .5.cat5 .4.cat4 .3.cat3 .2.cat2 .1.cat1:
+.if !defined(USETBL)
+	@echo "${NROFF} -mandoc ${.IMPSRC} > ${.TARGET}"
+	@${NROFF} -mandoc ${.IMPSRC} > ${.TARGET} || \
+	 (rm -f ${.TARGET}; false)
+.else
+	@echo "${TBL} ${.IMPSRC} | ${NROFF} -mandoc > ${.TARGET}"
+	@${TBL} ${.IMPSRC} | ${NROFF} -mandoc > ${.TARGET} || \
+	 (rm -f ${.TARGET}; false)
 .endif
-.if defined(MAN2) && !empty(MAN2)
-	${MINSTALL} ${MAN2} ${DESTDIR}${MANDIR}2${MANSUBDIR}
+
+.if defined(MAN) && !empty(MAN)
+MANPAGES=	${MAN}
+CATPAGES=	${MANPAGES:C/(.*).([1-9])/\1.cat\2/}
 .endif
-.if defined(MAN3) && !empty(MAN3)
-	${MINSTALL} ${MAN3} ${DESTDIR}${MANDIR}3${MANSUBDIR}
+
+MINSTALL=	${INSTALL} ${COPY} -o ${MANOWN} -g ${MANGRP} -m ${MANMODE}
+
+.if defined(MANZ)
+# chown and chmod are done afterward automatically
+MCOMPRESS=	gzip -cf
+MCOMPRESSSUFFIX= .gz
 .endif
-.if defined(MAN3F) && !empty(MAN3F)
-	${MINSTALL} ${MAN3F} ${DESTDIR}${MANDIR}3f${MANSUBDIR}
+
+catinstall: catlinks
+maninstall: manlinks
+
+__installpage: .USE
+.if defined(MCOMPRESS) && !empty(MCOMPRESS)
+	@rm -f ${.TARGET}
+	${MCOMPRESS} ${.ALLSRC} > ${.TARGET}
+	@chown ${MANOWN}:${MANGRP} ${.TARGET}
+	@chmod ${MANMODE} ${.TARGET}
+.else
+	${MINSTALL} ${.ALLSRC} ${.TARGET}
 .endif
-.if defined(MAN4) && !empty(MAN4)
-	${MINSTALL} ${MAN4} ${DESTDIR}${MANDIR}4${MANSUBDIR}
+
+
+# Rules for cat'ed man page installation
+.if defined(CATPAGES) && !empty(CATPAGES)
+.   for P in ${CATPAGES}
+catpages:: ${DESTDIR}${MANDIR}/${P:T:E}${MANSUBDIR}/${P:T:R}.0${MCOMPRESSSUFFIX}
+
+.	if !defined(UPDATE)
+.PHONY: ${DESTDIR}${MANDIR}/${P:T:E}${MANSUBDIR}/${P:T:R}.0${MCOMPRESSSUFFIX}
+.	endif
+.	if !defined(BUILD)
+${DESTDIR}${MANDIR}/${P:T:E}${MANSUBDIR}/${P:T:R}.0${MCOMPRESSSUFFIX}: .MADE
+.	endif
+
+.PRECIOUS: ${DESTDIR}${MANDIR}/${P:T:E}${MANSUBDIR}/${P:T:R}.0${MCOMPRESSSUFFIX}
+${DESTDIR}${MANDIR}/${P:T:E}${MANSUBDIR}/${P:T:R}.0${MCOMPRESSSUFFIX}: ${P} __installpage
+.   endfor
+.else
+catpages::
 .endif
-.if defined(MAN5) && !empty(MAN5)
-	${MINSTALL} ${MAN5} ${DESTDIR}${MANDIR}5${MANSUBDIR}
+
+# Rules for source page installation
+.if defined(MANPAGES) && !empty(MANPAGES)
+.   for P in ${MANPAGES}
+manpages:: ${DESTDIR}${MANDIR}/man${P:T:E}${MANSUBDIR}/${P}${MCOMPRESSSUFFIX}
+.	if !defined(UPDATE)
+.PHONY: ${DESTDIR}${MANDIR}/man${P:T:E}${MANSUBDIR}/${P}${MCOMPRESSSUFFIX}
+.	endif
+
+.PRECIOUS: ${DESTDIR}${MANDIR}/man${P:T:E}${MANSUBDIR}/${P}${MCOMPRESSSUFFIX}
+${DESTDIR}${MANDIR}/man${P:T:E}${MANSUBDIR}/${P}${MCOMPRESSSUFFIX}: ${P} __installpage
+.   endfor
+.else
+manpages::
 .endif
-.if defined(MAN6) && !empty(MAN6)
-	${MINSTALL} ${MAN6} ${DESTDIR}${MANDIR}6${MANSUBDIR}
-.endif
-.if defined(MAN7) && !empty(MAN7)
-	${MINSTALL} ${MAN7} ${DESTDIR}${MANDIR}7${MANSUBDIR}
-.endif
-.if defined(MAN8) && !empty(MAN8)
-	${MINSTALL} ${MAN8} ${DESTDIR}${MANDIR}8${MANSUBDIR}
-.endif
+
+catlinks: catpages
 .if defined(MLINKS) && !empty(MLINKS)
 	@set ${MLINKS}; \
 	while test $$# -ge 2; do \
 		name=$$1; \
 		shift; \
-		dir=${DESTDIR}${MANDIR}`expr $$name : '[^\.]*\.\(.*\)'`; \
-		l=$${dir}${MANSUBDIR}/`expr $$name : '\([^\.]*\)'`.0; \
+		dir=${DESTDIR}${MANDIR}/cat$${name##*.}; \
+		l=$${dir}${MANSUBDIR}/$${name%.*}.0${MCOMPRESSSUFFIX}; \
 		name=$$1; \
 		shift; \
-		dir=${DESTDIR}${MANDIR}`expr $$name : '[^\.]*\.\(.*\)'`; \
-		t=$${dir}${MANSUBDIR}/`expr $$name : '\([^\.]*\)'`.0; \
-		echo $$t -\> $$l; \
-		rm -f $$t; \
-		ln $$l $$t; \
-	done; true
+		dir=${DESTDIR}${MANDIR}/cat$${name##*.}; \
+		t=$${dir}${MANSUBDIR}/$${name%.*}.0${MCOMPRESSSUFFIX}; \
+		if [ ! -f $$t -o -z "${UPDATE}" ]; then \
+		    echo $$t -\> $$l; \
+		    rm -f $$t; \
+		    ln $$l $$t; \
+		fi; \
+	done
 .endif
+
+manlinks: manpages
+.if defined(MLINKS) && !empty(MLINKS)
+	@set ${MLINKS}; \
+	while test $$# -ge 2; do \
+		name=$$1; \
+		shift; \
+		dir=${DESTDIR}${MANDIR}/man$${name##*.}; \
+		l=$${dir}${MANSUBDIR}/$${name}${MCOMPRESSSUFFIX}; \
+		name=$$1; \
+		shift; \
+		dir=${DESTDIR}${MANDIR}/man$${name##*.}; \
+		t=$${dir}${MANSUBDIR}/$${name}${MCOMPRESSSUFFIX}; \
+		if [ ! -f $$t -o -z "${UPDATE}" ]; then \
+		    echo $$t -\> $$l; \
+		    rm -f $$t; \
+		    ln $$l $$t; \
+		fi; \
+	done
+.endif
+
+.if defined(CATPAGES)
+.if !defined(NOMAN)
+all: ${CATPAGES}
+.else
+all:
+.endif
+
+cleanman:
+	rm -f ${CATPAGES}
+.else
+cleanman:
+.endif
+
+# Make sure all of the standard targets are defined, even if they do nothing.
+clean depend includes lint regress tags:
