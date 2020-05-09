@@ -66,6 +66,7 @@ struct device {
 	char	dv_xname[16];		/* external name (name + unit) */
 	struct	device *dv_parent;	/* pointer to parent device */
 };
+TAILQ_HEAD(devicelist, device);
 
 /* `event' counters (use zero or more per device instance, as needed) */
 struct evcnt {
@@ -134,10 +135,10 @@ struct pdevinit {
 struct	device *alldevs;	/* head of list of all devices */
 struct	evcnt *allevents;	/* head of list of all events */
 
-struct cfdata *config_search (cfmatch_t, struct device *, void *);
-struct cfdata *config_rootsearch (cfmatch_t, char *, void *);
-int config_found (struct device *, void *, cfprint_t);
-int config_rootfound (char *, void *);
-void config_attach (struct device *, struct cfdata *, void *, cfprint_t);
-void evcnt_attach (struct device *, const char *, struct evcnt *);
+struct cfdata 	*config_search (cfmatch_t, struct device *, void *);
+struct cfdata 	*config_rootsearch (cfmatch_t, char *, void *);
+int 			config_found (struct device *, void *, cfprint_t);
+int 			config_rootfound (char *, void *);
+void 			config_attach (struct device *, struct cfdata *, void *, cfprint_t);
+void 			evcnt_attach (struct device *, const char *, struct evcnt *);
 #endif /* !_SYS_DEVICE_H_ */

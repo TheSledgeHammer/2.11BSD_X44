@@ -42,7 +42,7 @@
 #define	NUM		0x08	/* numeric shift  cursors vs. numeric */
 #define	CTL		0x10	/* control shift  -- allows ctl function */
 #define	CPS		0x20	/* caps shift -- swaps case of letter */
-#define	ASCII		0x40	/* ascii code for this key */
+#define	ASCII	0x40	/* ascii code for this key */
 #define	STP		0x80	/* stop output */
 
 typedef unsigned char u_char;

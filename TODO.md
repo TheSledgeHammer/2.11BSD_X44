@@ -22,9 +22,9 @@ TODO:
 - arch:
 	- i386:
 		- Makefile
-		- add other devices
-		- update fd (floppy device)
-		- bioscalls
+		- dev/isa/isadmavar.h
+		- bus_machdep.c
+		- consinit.c
 		- machdep.c: cpu_reboot, cpu_reset
 		- vm_machdep.c: u->u_procp->p_p0br: (no reference in 4.4BSD-Lite2)
 			- 4.3BSD Reno/ 4.4BSD Remanent: once in struct proc. Obsolete?? 
