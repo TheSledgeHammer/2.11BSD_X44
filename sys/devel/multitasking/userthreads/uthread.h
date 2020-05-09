@@ -25,13 +25,12 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- /*  User Threads: Runs from user struct in Userspace (usr_pcb) */
+ /*  User Threads: Runs from user struct in Userspace */
 
 #ifndef SYS_UTHREADS_H_
 #define SYS_UTHREADS_H_
 
 #include <sys/user.h>
-#include <kernthreads/kthread.h>
 
 /* user threads */
 struct uthread {
@@ -74,9 +73,34 @@ struct uthread {
 #define	ut_session		ut_tgrp->tg_session
 #define	ut_tgid			ut_tgrp->tg_id
 
-#define UTHREAD_RATIO 1  /* M:N Ratio. number of user threads to kernel threads */
+/* Locks */
+mutex_t 			uthread_mtx; 		/* mutex lock */
 
+/* User Threadpool */
+TAILQ_HEAD(uthreadpool, user_threadpool) utpool;
+struct user_threadpool {
+	struct uthreads						*utp_uthread;		/* user threads */
+	TAILQ_ENTRY(user_threadpool) 		utp_entry;			/* list uthread entries */
 
+    int 								utp_refcnt;			/* total thread count in pool */
+    int 								utp_active;			/* active thread count */
+    int									utp_inactive;		/* inactive thread count */
+    /* Inter Threadpool Communication */
+    struct itc_thread					utp_itc;			/* threadpool ipc ptr */
+    boolean_t							utp_issender;		/* is itc sender */
+    boolean_t							utp_isreciever;		/* is itc reciever */
+    int									utp_retcnt;			/* retry count in itc pool */
+
+    boolean_t							utp_initcq;			/* check if in itc queue */
+    struct job_head						utp_jobs;
+    //flags, refcnt, priority, lock
+    //flags: send, (verify: success, fail), retry_attempts
+};
+
+extern struct uthread uthread0;
+
+extern void uthreadpool_itc_send(struct user_threadpool *, struct itc_threadpool *);
+extern void uthreadpool_itc_receive(struct user_threadpool *, struct itc_threadpool *);
 
 /* User Thread */
 int uthread_create(uthread_t ut);

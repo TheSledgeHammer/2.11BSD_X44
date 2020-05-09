@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)pty.h	1.3 (2.11BSD GTE) 1997/5/2
+ */
+
 #ifndef _PTY_H
 #define _PTY_H
 

@@ -29,8 +29,8 @@
 #ifndef SYS_THREADPOOL_H_
 #define SYS_THREADPOOL_H_
 
-#include <multitasking/kernthreads/kthreadpool.h>
-#include <multitasking/userthreads/uthreadpool.h>
+#include <multitasking/kernthreads/kthread.h>
+#include <multitasking/userthreads/uthread.h>
 //#include <sys/queue.h>
 
 /*
@@ -85,7 +85,9 @@ struct itc_threadpool {
 };
 
 /* General ITPC */
-void threadpool_init();
+void itc_threadpool_init();
+void itc_threadpool_enqueue(struct itc_threadpool *);
+void itc_threadpool_dequeue(struct itc_threadpool *);
 void check(struct itc_threadpool *, tid_t);
 void verify(struct itc_threadpool *, tid_t);
 
