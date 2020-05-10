@@ -28,15 +28,15 @@
 #define	UFS211_ROOTINO		    ((ufs211_ino_t)2)	    /* i number of all roots */
 #define	UFS211_LOSTFOUNDINO	    (UFS211_ROOTINO + 1)
 
-#define	UFS211_NICINOD		    100		/* number of superblock inodes */
-#define	UFS211_NICFREE		    50		/* number of superblock free blocks */
+#define	UFS211_NICINOD		    100						/* number of superblock inodes */
+#define	UFS211_NICFREE		    50						/* number of superblock free blocks */
 
 /*
  * The path name on which the file system is mounted is maintained
  * in fs_fsmnt. MAXMNTLEN defines the amount of space allocated in 
  * the super block for this name.
  */
-#define MAXMNTLEN 12
+#define UFS211_MAXMNTLEN 12
 
 struct ufs211_fs {
 	u_short			fs_isize;				/* first block after i-list */
@@ -54,7 +54,7 @@ struct ufs211_fs {
 	ufs211_ino_t	fs_tinode;				/* total free inodes */
 	short			fs_step;				/* optimal step in free list pattern */
 	short			fs_cyl;					/* number of blocks per pattern */
-	char			fs_fsmnt[MAXMNTLEN];	/* ordinary file mounted on */
+	char			fs_fsmnt[UFS211_MAXMNTLEN];	/* ordinary file mounted on */
 	ufs211_ino_t	fs_lasti;				/* start place for circular search */
 	ufs211_ino_t	fs_nbehind;				/* est # free inodes before s_lasti */
 	u_short			fs_flags;				/* mount time flags */
@@ -75,8 +75,8 @@ struct ufs211_fblk {
 
 /*
  * Macros for handling inode numbers:
- *     inode number to file system block offset.
- *     inode number to file system block address.
+ * inode number to file system block offset.
+ * inode number to file system block address.
  */
 #define	itoo(x)		((int)(((x) + 2 * INOPB - 1) % INOPB))
 #define	itod(x)		((ufs211_daddr_t)((((u_int)(x) + 2 * INOPB - 1) / INOPB)))

@@ -42,7 +42,7 @@ union nchash {
 #define	nch_back	nch_chain[1]
 
 struct	namecache *nchhead, **nchtail;	/* LRU chain pointers */
-struct	nchstats nchstats;		/* cache effectiveness statistics */
+struct	nchstats nchstats;				/* cache effectiveness statistics */
 
 /*
  * Convert a pathname into a pointer to a locked inode.

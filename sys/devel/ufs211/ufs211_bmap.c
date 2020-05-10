@@ -15,9 +15,10 @@
 #include <sys/conf.h>
 #include <sys/uio.h>
 
-#include "ufs211/ufs211_dir.h"
-#include "ufs211/ufs211_fs.h"
-#include "ufs211/ufs211_inode.h"
+#include <ufs211/ufs211_dir.h>
+#include <ufs211/ufs211_fs.h>
+#include <ufs211/ufs211_extern.h>
+#include <ufs211/ufs211_inode.h>
 
 /*
  * Bmap defines the structure of file system storage
@@ -27,7 +28,7 @@
  * block number of the next block of the file in rablock
  * for use in read-ahead.
  */
-daddr_t
+ufs211_daddr_t
 bmap(ip, bn, rwflg, flags)
 	register struct ufs211_inode *ip;
 	ufs211_daddr_t bn;

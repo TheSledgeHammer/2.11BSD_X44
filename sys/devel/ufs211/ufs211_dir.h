@@ -72,18 +72,18 @@ struct ufs211_dirdesc {
  * Should use struct direct's, but the name field
  * is MAXNAMLEN - 1, and this just won't do.
  */
-#define dotdot_ino		dtdt_ino
-#define dotdot_reclen	dtdt_rec
-#define dotdot_name		dtdt_name
+#define dotdot_ino			dtdt_ino
+#define dotdot_reclen		dtdt_rec
+#define dotdot_name			dtdt_name
 
 struct ufs211_dirtemplate {
-	ufs211_ino_t	dot_ino;
-	u_short			dot_reclen;
-	u_short			dot_namlen;
-	char			dot_name[2];		/* must be multiple of 4 */
-	ufs211_ino_t	dotdot_ino;
-	u_short			dotdot_reclen;
-	u_short			dotdot_namlen;
-	char			dotdot_name[6];		/* ditto */
+	ufs211_ino_t			dot_ino;
+	u_short					dot_reclen;
+	u_short					dot_namlen;
+	char					dot_name[2];		/* must be multiple of 4 */
+	ufs211_ino_t			dotdot_ino;
+	u_short					dotdot_reclen;
+	u_short					dotdot_namlen;
+	char					dotdot_name[6];		/* ditto */
 };
 #endif	_UFS211_DIR_

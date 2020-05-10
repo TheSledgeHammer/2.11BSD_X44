@@ -11,8 +11,27 @@
 
 #include <sys/time.h>
 
-struct	stat
-{
+#ifndef _POSIX_SOURCE
+struct ostat {
+	u_int16_t st_dev;				/* inode's device */
+	ino_t	  st_ino;				/* inode's number */
+	mode_t	  st_mode;				/* inode protection mode */
+	nlink_t	  st_nlink;				/* number of hard links */
+	u_int16_t st_uid;				/* user ID of the file's owner */
+	u_int16_t st_gid;				/* group ID of the file's group */
+	u_int16_t st_rdev;				/* device type */
+	int32_t	  st_size;				/* file size, in bytes */
+	struct	timespec st_atimespec;	/* time of last access */
+	struct	timespec st_mtimespec;	/* time of last data modification */
+	struct	timespec st_ctimespec;	/* time of last file status change */
+	int32_t	  st_blksize;			/* optimal blocksize for I/O */
+	int32_t	  st_blocks;			/* blocks allocated for file */
+	u_int32_t st_flags;				/* user defined flags for file */
+	u_int32_t st_gen;				/* file generation number */
+};
+#endif /* !_POSIX_SOURCE */
+
+struct	stat {
 	dev_t				st_dev;		/* inode's device */
 	ino_t				st_ino;		/* inode's number */
 	mode_t	 			st_mode;	/* inode protection mode */
@@ -109,4 +128,23 @@ struct	stat
 #define	IMMUTABLE	(UF_IMMUTABLE | SF_IMMUTABLE)
 #endif
 
+
+#ifndef KERNEL
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int		chmod (const char *, mode_t);
+int		fstat (int, struct stat *);
+int		mkdir (const char *, mode_t);
+int		mkfifo (const char *, mode_t);
+int		stat (const char *, struct stat *);
+mode_t	umask (mode_t);
+#ifndef _POSIX_SOURCE
+int		chflags (const char *, u_long);
+int		fchflags (int, u_long);
+int		fchmod (int, mode_t);
+int		lstat (const char *, struct stat *);
+#endif
+__END_DECLS
+#endif
 #endif /* !_STAT_H_ */

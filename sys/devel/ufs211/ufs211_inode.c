@@ -6,8 +6,6 @@
  *	@(#)ufs_inode.c	1.7 (2.11BSD GTE) 1997/2/7
  */
 
-
-
 #include <sys/param.h>
 
 #include <sys/user.h>
@@ -17,11 +15,11 @@
 #include <sys/buf.h>
 #include <sys/systm.h>
 #include <sys/syslog.h>
-#include "ufs211/ufs211_inode.h"
-#include "ufs211/ufs211_fs.h"
-#include "ufs211/ufs211_quota.h"
+#include <ufs211/ufs211_inode.h>
+#include <ufs211/ufs211_fs.h>
+#include <ufs211/ufs211_quota.h>
 
-#define	INOHSZ	16		/* must be power of two */
+#define	INOHSZ	16			/* must be power of two */
 #define	INOHASH(dev,ino)	(((dev)+(ino))&(INOHSZ-1))
 
 union ihead {				/* inode LRU cache, stolen */
@@ -35,6 +33,7 @@ struct inode *ifreeh, **ifreet;
  * Initialize hash links for inodes
  * and build inode free list.
  */
+void
 ihinit()
 {
 	register int i;
@@ -299,7 +298,7 @@ iput(ip)
 		panic("iput");
 #endif
 	IUNLOCK(ip);
-	irele(ip);
+	rele(ip);
 }
 
 irele(ip)
@@ -767,24 +766,4 @@ iflush(dev)
 			open++;
 	}
 	return (open);
-}
-
-/*
- * Lock an inode. If its already locked, set the WANT bit and sleep.
- */
-ilock(ip)
-	register struct ufs211_inode *ip;
-{
-
-	ILOCK(ip);
-}
-
-/*
- * Unlock an inode.  If WANT bit is on, wakeup.
- */
-iunlock(ip)
-	register struct ufs211_inode *ip;
-{
-
-	IUNLOCK(ip);
 }

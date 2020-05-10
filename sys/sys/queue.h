@@ -81,6 +81,34 @@ struct {																\
 }
 
 /*
+ * List access methods.
+ */
+#define	LIST_FIRST(head)		((head)->lh_first)
+#define	LIST_END(head)			NULL
+#define	LIST_EMPTY(head)		((head)->lh_first == LIST_END(head))
+#define	LIST_NEXT(elm, field)	((elm)->field.le_next)
+
+#define	LIST_FOREACH(var, head, field)									\
+	for ((var) = ((head)->lh_first);									\
+	    (var) != LIST_END(head);										\
+	    (var) = ((var)->field.le_next))
+
+#define	LIST_FOREACH_SAFE(var, head, field, tvar)						\
+	for ((var) = LIST_FIRST((head));									\
+	    (var) != LIST_END(head) &&										\
+	    ((tvar) = LIST_NEXT((var), field), 1);							\
+	    (var) = (tvar))
+
+#define	LIST_MOVE(head1, head2, field) do {								\
+	LIST_INIT((head2));													\
+	if (!LIST_EMPTY((head1))) {											\
+		(head2)->lh_first = (head1)->lh_first;							\
+		(head2)->lh_first->field.le_prev = &(head2)->lh_first;			\
+		LIST_INIT((head1));												\
+	}																	\
+} while (0)
+
+/*
  * List functions.
  */
 #define	LIST_INIT(head) {												\
@@ -109,12 +137,6 @@ struct {																\
 	*(elm)->field.le_prev = (elm)->field.le_next;						\
 }
 
-#define	LIST_FOREACH(var, head, field)									\
-	for ((var) = ((head)->lh_first);									\
-	    (var) != LIST_END(head);										\
-	    (var) = ((var)->field.le_next))
-
-
 /*
  * Tail queue definitions.
  */
@@ -129,6 +151,38 @@ struct {																\
 	struct type *tqe_next;	/* next element */							\
 	struct type **tqe_prev;	/* address of previous next element */		\
 }
+
+ /*
+  * Tail queue access methods.
+  */
+#define	TAILQ_FIRST(head)			((head)->tqh_first)
+#define	TAILQ_END(head)				(NULL)
+#define	TAILQ_NEXT(elm, field)		((elm)->field.tqe_next)
+#define	TAILQ_LAST(head, headname) \
+		(*(((struct headname *)(void *)((head)->tqh_last))->tqh_last))
+#define	TAILQ_PREV(elm, headname, field) \
+		(*(((struct headname *)(void *)((elm)->field.tqe_prev))->tqh_last))
+#define	TAILQ_EMPTY(head)			(TAILQ_FIRST(head) == TAILQ_END(head))
+
+#define	TAILQ_FOREACH(var, head, field)									\
+	for ((var) = ((head)->tqh_first);									\
+	    (var) != TAILQ_END(head);										\
+	    (var) = ((var)->field.tqe_next))
+
+#define	TAILQ_FOREACH_SAFE(var, head, field, next)						\
+	for ((var) = ((head)->tqh_first);									\
+	    (var) != TAILQ_END(head) &&										\
+	    ((next) = TAILQ_NEXT(var, field), 1); (var) = (next))
+
+#define	TAILQ_FOREACH_REVERSE(var, head, headname, field)				\
+	for ((var) = TAILQ_LAST((head), headname);							\
+	    (var) != TAILQ_END(head);										\
+	    (var) = TAILQ_PREV((var), headname, field))
+
+#define	TAILQ_FOREACH_REVERSE_SAFE(var, head, headname, field, prev)	\
+	for ((var) = TAILQ_LAST((head), headname);							\
+	    (var) != TAILQ_END(head) && 									\
+	    ((prev) = TAILQ_PREV((var), headname, field), 1); (var) = (prev))
 
 /*
  * Tail queue functions.
@@ -173,6 +227,15 @@ struct {																\
 		(head)->tqh_last = (elm)->field.tqe_prev;						\
 	*(elm)->field.tqe_prev = (elm)->field.tqe_next;						\
 }
+
+#define	TAILQ_CONCAT(head1, head2, field) do {							\
+	if (!TAILQ_EMPTY(head2)) {											\
+		*(head1)->tqh_last = (head2)->tqh_first;						\
+		(head2)->tqh_first->field.tqe_prev = (head1)->tqh_last;			\
+		(head1)->tqh_last = (head2)->tqh_last;							\
+		TAILQ_INIT((head2));											\
+	}																	\
+} while (0)
 
 /*
  * Circular queue definitions.

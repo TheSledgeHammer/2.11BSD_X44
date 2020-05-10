@@ -31,6 +31,7 @@ smount()
 		char	*freg;
 		int	flags;
 	} *uap = (struct a *)u->u_ap;
+
 	ufs211_dev_t dev;
 	register struct ufs211_inode *ip;
 	register struct ufs211_fs *fs;

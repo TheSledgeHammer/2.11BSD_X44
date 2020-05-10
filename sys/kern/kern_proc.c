@@ -138,7 +138,7 @@ pfind(pid)
 	register int pid;
 {
 	register struct proc *p;
-    for (p = PIDHASH(pid)->lh_first; p != 0; p = p->p_hash.le_next)
+    for (p = PIDHASH(pid); p != 0; p = p->p_hash.le_next)
         if (p->p_pid == pid)
             return (p);
     return (NULL);

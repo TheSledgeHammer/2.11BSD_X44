@@ -13,38 +13,10 @@
 #include <sys/mount.h>
 #include <sys/kernel.h>
 #include <sys/buf.h>
-#include "ufs211/ufs211_fs.h"
-#include "ufs211/ufs211_inode.h"
-#include "ufs211/ufs211_quota.h"
-#include "ufs211/ufs211_mount.h"
-
-/*
- * Go through the mount table looking for filesystems which have been modified.
- * For each "dirty" filesystem call 'ufs_sync' to flush changed inodes, data
- * blocks and the superblock to disc.
- */
-sync()
-{
-	register struct ufs211_mount *mp;
-	register struct ufs211_fs *fs;
-	int async;
-
-	if (updlock)
-		return;
-	updlock++;
-	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++) {
-		if (mp->m_inodp == NULL || mp->m_dev == NODEV)
-			continue;
-		fs = &mp->m_filsys;
-		if (fs->fs_fmod == 0 || fs->fs_ilock || fs->fs_flock)
-			continue;
-		async = mp->m_flags & MNT_ASYNC;
-		mp->m_flags &= ~MNT_ASYNC;
-		ufs_sync(mp);
-		mp->m_flags |= async;
-	}
-	updlock = 0;
-}
+#include <ufs211/ufs211_fs.h>
+#include <ufs211/ufs211_inode.h>
+#include <ufs211/ufs211_quota.h>
+#include <ufs211/ufs211_mount.h>
 
 /*
  * Flush all the blocks associated with an inode.
@@ -61,8 +33,9 @@ sync()
  *	overlap the inode. This brings the inode up to
  *	date with recent mods to the cooked device.
  */
+void
 syncip(ip)
-	struct inode *ip;
+	struct ufs211_inode *ip;
 {
 	register struct buf *bp;
 	register struct buf *lastbufp;
@@ -102,9 +75,10 @@ syncip(ip)
 /*
  * Check that a specified block number is in range.
  */
+int
 badblock(fp, bn)
-	register struct fs *fp;
-	daddr_t bn;
+	register struct ufs211_fs *fp;
+	ufs211_daddr_t bn;
 {
 
 	if (bn < fp->fs_isize || bn >= fp->fs_fsize) {
@@ -124,7 +98,7 @@ badblock(fp, bn)
  * panic: no fs -- the device is not mounted.
  *	this "cannot happen"
  */
-struct fs *
+struct ufs211_fs *
 getfs(dev)
 	ufs211_dev_t dev;
 {
@@ -158,8 +132,9 @@ getfs(dev)
  * provided the information need remain valid only
  * as long as the file system is mounted.
  */
+int
 getfsx(dev)
-ufs211_dev_t dev;
+	ufs211_dev_t dev;
 {
 	register struct ufs211_mount *mp;
 

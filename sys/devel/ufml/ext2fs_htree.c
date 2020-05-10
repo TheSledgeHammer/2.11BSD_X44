@@ -198,7 +198,6 @@ htree_insert_entry(struct htree_lookup_info *info, uint32_t hash, uint32_t blk)
 	htree_insert_entry_to_level(level, hash, blk);
 }
 
-
 /*
  * Compare two entry sort descriptors by name hash value.
  * This is used together with qsort.
@@ -409,7 +408,7 @@ htree_create_index(struct vnode *vp, struct componentname *cnp, struct htree_fak
 	info.h_levels[0].h_entry = root->h_entries;
 
 	hash_version = root->h_info.h_hash_version;
-	if (hash_version <= EXT2_HTREE_TEA)
+	if (hash_version <= HTREE_TEA)
 		hash_version += m_fs->h_uhash;
 	htree_split_dirblock(buf1, buf2, blksize, fs->h_hash_seed,
 	    hash_version, &split_hash, new_entry);
@@ -699,13 +698,13 @@ htree_find_leaf(struct htree_fake_inode *ip, const char *name, int namelen, uint
 	info->h_levels_num = 1;
 	info->h_levels[0].h_bp = bp;
 	rootp = (struct htree_root *)bp->b_data;
-	if (rootp->h_info.h_hash_version != EXT2_HTREE_LEGACY &&
-	    rootp->h_info.h_hash_version != EXT2_HTREE_HALF_MD4 &&
-	    rootp->h_info.h_hash_version != EXT2_HTREE_TEA)
+	if (rootp->h_info.h_hash_version != HTREE_LEGACY &&
+	    rootp->h_info.h_hash_version != HTREE_HALF_MD4 &&
+	    rootp->h_info.h_hash_version != HTREE_TEA)
 		goto error;
 
 	hash_version = rootp->h_info.h_hash_version;
-	if (hash_version <= EXT2_HTREE_TEA)
+	if (hash_version <= HTREE_TEA)
 		hash_version += m_fs->h_uhash;
 	*hash_ver = hash_version;
 

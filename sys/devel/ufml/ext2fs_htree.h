@@ -28,19 +28,17 @@
  *
  * $FreeBSD: head/sys/fs/ext2fs/htree.h 262623 2014-02-28 21:25:32Z pfg $
  */
-#ifndef _FS_EXT2FS_HTREE_H_
-#define	_FS_EXT2FS_HTREE_H_
+#ifndef _FS_HTREE_H_
+#define	_FS_HTREE_H_
 
-/* EXT3 HTree directory indexing */
+#define	HTREE_LEGACY				0
+#define	HTREE_HALF_MD4				1
+#define	HTREE_TEA					2
+#define	HTREE_LEGACY_UNSIGNED		3
+#define	HTREE_HALF_MD4_UNSIGNED		4
+#define	HTREE_TEA_UNSIGNED			5
 
-#define	EXT2_HTREE_LEGACY				0
-#define	EXT2_HTREE_HALF_MD4				1
-#define	EXT2_HTREE_TEA					2
-#define	EXT2_HTREE_LEGACY_UNSIGNED		3
-#define	EXT2_HTREE_HALF_MD4_UNSIGNED	4
-#define	EXT2_HTREE_TEA_UNSIGNED			5
-
-#define	EXT2_HTREE_EOF 0x7FFFFFFF
+#define	HTREE_EOF 					0x7FFFFFFF
 
 /* To Fix:
  * ext2fs_add_entry (line 483)
@@ -50,7 +48,7 @@
 struct htree_fake_inode {
     	u_int64_t   h_size;					/* File byte count. */
     	u_int32_t   h_flag;	    			/* flags, see below */
-        u_int32_t   h_sflags;				/*  32: Status flags (chflags) */
+        u_int32_t   h_sflags;				/* 32: Status flags (chflags) */
         struct	    htree_mfs *h_mfs;	    /* h_tree_mfs */
         int32_t	  	h_count;				/* Size of free slot in directory. */
 };

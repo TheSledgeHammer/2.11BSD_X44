@@ -83,6 +83,7 @@ struct vnode {
 	union {
 		struct mount	*vu_mountedhere;/* ptr to mounted vfs (VDIR) */
 		struct socket	*vu_socket;		/* unix ipc (VSOCK) */
+		caddr_t			vu_vmdata;		/* private data for vm (VREG) */
 		struct specinfo	*vu_specinfo;	/* device (VCHR, VBLK) */
 		struct fifoinfo	*vu_fifoinfo;	/* fifo (VFIFO) */
 	} v_un;
@@ -93,13 +94,16 @@ struct vnode {
 	int					v_clen;			/* length of current cluster */
 	int					v_ralen;		/* Read-ahead length */
 	daddr_t				v_maxra;		/* last readahead block */
-	caddr_t				v_vmdata;		/* Place to store VM pager */
+	struct	simplelock 	v_interlock;	/* lock on usecount and flag */
+	struct	lock 		*v_vnlock;		/* used for non-locking fs's */
+	long				v_spare[5];		/* round to 128 bytes */
 	enum vtagtype 		v_tag;			/* type of underlying data */
 	void 				*v_data;		/* private data for fs */
 };
 
 #define	v_mountedhere	v_un.vu_mountedhere
 #define	v_socket		v_un.vu_socket
+#define	v_vmdata		v_un.vu_vmdata
 #define	v_specinfo		v_un.vu_specinfo
 #define	v_fifoinfo		v_un.vu_fifoinfo
 
@@ -232,12 +236,6 @@ static __inline vref(vp)
 #endif /* DIAGNOSTIC */
 
 #define	NULLVP	((struct vnode *)NULL)
-
-#ifdef VFS_LKM
-#define VNODEOP_SET(f) DATA_SET(MODVNOPS,f)
-#else
-#define VNODEOP_SET(f) DATA_SET(vfs_opv_descs_,f)
-#endif
 
 /*
  * Global vnode data.
@@ -382,6 +380,7 @@ struct vop_generic_args {
 struct file;
 struct mount;
 struct nameidata;
+struct ostat;
 struct proc;
 struct stat;
 struct ucred;

@@ -402,7 +402,7 @@ ufs_setattr(ap)
 			return (error);
 	}
 	ip = VTOI(vp);
-	if (vap->va_atime.ts_sec != VNOVAL || vap->va_mtime.ts_sec != VNOVAL) {
+	if (vap->va_atime.tv_sec != VNOVAL || vap->va_mtime.tv_sec != VNOVAL) {
 		if (vp->v_mount->mnt_flag & MNT_RDONLY)
 			return (EROFS);
 		if (cred->cr_uid != ip->i_uid &&
@@ -410,14 +410,14 @@ ufs_setattr(ap)
 		    ((vap->va_vaflags & VA_UTIMES_NULL) == 0 || 
 		    (error = VOP_ACCESS(vp, VWRITE, cred, p))))
 			return (error);
-		if (vap->va_atime.ts_sec != VNOVAL)
+		if (vap->va_atime.tv_sec != VNOVAL)
 			ip->i_flag |= IN_ACCESS;
-		if (vap->va_mtime.ts_sec != VNOVAL)
+		if (vap->va_mtime.tv_sec != VNOVAL)
 			ip->i_flag |= IN_CHANGE | IN_UPDATE;
-		atimeval.tv_sec = vap->va_atime.ts_sec;
-		atimeval.tv_usec = vap->va_atime.ts_nsec / 1000;
-		mtimeval.tv_sec = vap->va_mtime.ts_sec;
-		mtimeval.tv_usec = vap->va_mtime.ts_nsec / 1000;
+		atimeval.tv_sec = vap->va_atime.tv_sec;
+		atimeval.tv_usec = vap->va_atime.tv_nsec / 1000;
+		mtimeval.tv_sec = vap->va_mtime.tv_sec;
+		mtimeval.tv_usec = vap->va_mtime.tv_nsec / 1000;
 		if (error == VOP_UPDATE(vp, &atimeval, &mtimeval, 1))
 			return (error);
 	}
@@ -1531,8 +1531,7 @@ ufs_readdir(ap)
 		}
 		lost += uio->uio_offset - off;
 		uio->uio_offset = off;
-		MALLOC(cookies, u_long *, ncookies * sizeof(u_long), M_TEMP,
-		    M_WAITOK);
+		MALLOC(cookies, u_long *, ncookies * sizeof(u_long), M_TEMP,M_WAITOK);
 		*ap->a_ncookies = ncookies;
 		*ap->a_cookies = cookies;
 		for (off = offstart, dp = dpstart; off < uio->uio_offset; ) {

@@ -11,10 +11,10 @@
 #include <sys/mount.h>
 #include <sys/kernel.h>
 #include <sys/buf.h>
-#include "ufs211/ufs211_dir.h"
-#include "ufs211/ufs211_fs.h"
-#include "ufs211/ufs211_inode.h"
-#include "ufs211/ufs211_quota.h"
+#include <ufs211/ufs211_dir.h>
+#include <ufs211/ufs211_fs.h>
+#include <ufs211/ufs211_inode.h>
+#include <ufs211/ufs211_quota.h>
 
 typedef	struct fblk *FBLKP;
 
@@ -253,7 +253,7 @@ free(ip, bno)
 		fs->fs_nfree = 1;
 		fs->fs_free[0] = 0;
 	}
-	if (fs->fs_nfree >= NICFREE) {
+	if (fs->fs_nfree >= UFS211_NICFREE) {
 		fs->fs_flock++;
 		bp = getblk(ip->i_dev, bno);
 		fbp = (FBLKP)mapin(bp);
@@ -278,17 +278,18 @@ free(ip, bno)
  * Free the specified I node on the specified device.  The algorithm
  * stores up to NICINOD I nodes in the super block and throws away any more.
  */
+void
 ifree(ip, ino)
 	struct ufs211_inode *ip;
 	ufs211_ino_t ino;
 {
-	register struct fs *fs;
+	register struct ufs211_fs *fs;
 
 	fs = ip->i_fs;
 	fs->fs_tinode++;
 	if (fs->fs_ilock)
 		return;
-	if (fs->fs_ninode >= NICINOD) {
+	if (fs->fs_ninode >= UFS211_NICINOD) {
 		if (fs->fs_lasti > ino)
 			fs->fs_nbehind++;
 		return;
@@ -303,6 +304,7 @@ ifree(ip, ino)
  * The form of the error message is:
  *	fs: error message
  */
+void
 fserr(fp, cp)
 	struct ufs211_fs *fp;
 	char *cp;

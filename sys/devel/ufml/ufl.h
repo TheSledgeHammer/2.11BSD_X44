@@ -9,7 +9,6 @@
 #define SYS_UFS_UFLFS_UFL_H_
 
 struct ufl_dir {
-
 	char 				*ufl_elem; 		/* path element */
 	u_long 				ufl_entry;
 	u_long 				ufl_gen;
@@ -38,7 +37,7 @@ struct ufl_fs {
 	struct dirhash 		*hash;
 	struct ufl_file 	*root;
 	int 				mode;
-	u_int32_t 			bsize;		/* file system block size */
+	u_int32_t 			bsize;			/* file system block size */
 	u_int64_t 			qid;
 };
 

@@ -64,113 +64,112 @@
 #define APM_DEV_APM_BIOS	0x0000
 #define APM_DEV_ALLDEVS		0x0001
 /* device classes are high byte; device IDs go in low byte */
-#define		APM_DEV_DISPLAY(x)	(0x0100|((x)&0xff))
-#define		APM_DEV_DISK(x)		(0x0200|((x)&0xff))
-#define		APM_DEV_PARALLEL(x)	(0x0300|((x)&0xff))
-#define		APM_DEV_SERIAL(x)	(0x0400|((x)&0xff))
-#define		APM_DEV_NETWORK(x)	(0x0500|((x)&0xff))
-#define		APM_DEV_PCMCIA(x)	(0x0600|((x)&0xff))
-#define		APM_DEV_ALLUNITS	0xff
+#define	APM_DEV_DISPLAY(x)	(0x0100|((x)&0xff))
+#define	APM_DEV_DISK(x)		(0x0200|((x)&0xff))
+#define	APM_DEV_PARALLEL(x)	(0x0300|((x)&0xff))
+#define	APM_DEV_SERIAL(x)	(0x0400|((x)&0xff))
+#define	APM_DEV_NETWORK(x)	(0x0500|((x)&0xff))
+#define	APM_DEV_PCMCIA(x)	(0x0600|((x)&0xff))
+#define	APM_DEV_ALLUNITS	0xff
 
 #define	APM_INSTALLATION_CHECK	0x00		/* int15 only */
-#define		APM_INSTALL_SIGNATURE	0x504d	/* %bh = 'P', %bl = 'M' */
+#define	APM_INSTALL_SIGNATURE	0x504d		/* %bh = 'P', %bl = 'M' */
 #define	APM_REALMODE_CONNECT	0x01		/* int15 only */
-#define	APM_16BIT_CONNECT	0x02			/* int15 only */
-#define	APM_32BIT_CONNECT	0x03			/* int15 only */
-#define APM_DISCONNECT		0x04			/* %bx = APM_DEV_APM_BIOS */
-#define APM_CPU_IDLE		0x05
-#define APM_CPU_BUSY		0x06
-#define APM_SET_PWR_STATE	0x07
-#define		APM_SYS_READY	0x0000			/* %cx */
-#define		APM_SYS_STANDBY	0x0001
-#define		APM_SYS_SUSPEND	0x0002
-#define		APM_SYS_OFF	0x0003
-#define		APM_LASTREQ_INPROG	0x0004
-#define		APM_LASTREQ_REJECTED	0x0005
+#define	APM_16BIT_CONNECT		0x02		/* int15 only */
+#define	APM_32BIT_CONNECT		0x03		/* int15 only */
+#define APM_DISCONNECT			0x04		/* %bx = APM_DEV_APM_BIOS */
+#define APM_CPU_IDLE			0x05
+#define APM_CPU_BUSY			0x06
+#define APM_SET_PWR_STATE		0x07
+#define	APM_SYS_READY			0x0000		/* %cx */
+#define	APM_SYS_STANDBY			0x0001
+#define	APM_SYS_SUSPEND			0x0002
+#define	APM_SYS_OFF				0x0003
+#define	APM_LASTREQ_INPROG		0x0004
+#define	APM_LASTREQ_REJECTED	0x0005
 
 /* system standby is device ID (%bx) 0x0001, APM_SYS_STANDBY */
 /* system suspend is device ID (%bx) 0x0001, APM_SYS_SUSPEND */
 
-#define APM_PWR_MGT_ENABLE	0x08
-#define		APM_MGT_ALL	0xffff	/* %bx */
-#define		APM_MGT_DISABLE	0x0	/* %cx */
-#define		APM_MGT_ENABLE	0x1
+#define APM_PWR_MGT_ENABLE		0x08
+#define	APM_MGT_ALL				0xffff		/* %bx */
+#define	APM_MGT_DISABLE			0x0			/* %cx */
+#define	APM_MGT_ENABLE			0x1
 
-#define APM_SYSTEM_DEFAULTS	0x09
-#define		APM_DEFAULTS_ALL	0xffff	/* %bx */
+#define APM_SYSTEM_DEFAULTS		0x09
+#define	APM_DEFAULTS_ALL		0xffff		/* %bx */
 
-#define APM_POWER_STATUS	0x0a
-#define		APM_AC_OFF		0x00
-#define		APM_AC_ON		0x01
-#define		APM_AC_BACKUP		0x02
-#define		APM_AC_UNKNOWN		0xff
+#define APM_POWER_STATUS		0x0a
+#define	APM_AC_OFF				0x00
+#define	APM_AC_ON				0x01
+#define	APM_AC_BACKUP			0x02
+#define	APM_AC_UNKNOWN			0xff
 /* the first set of battery constants is 1.0 style values;
    the second set is 1.1 style bit definitions */
-#define		APM_BATT_HIGH		0x00
-#define		APM_BATT_LOW		0x01
-#define		APM_BATT_CRITICAL	0x02
-#define		APM_BATT_CHARGING	0x03
-#define		APM_BATT_ABSENT		0x04 /* Software only--not in spec! */
-#define		APM_BATT_UNKNOWN	0xff
+#define	APM_BATT_HIGH			0x00
+#define	APM_BATT_LOW			0x01
+#define	APM_BATT_CRITICAL		0x02
+#define	APM_BATT_CHARGING		0x03
+#define	APM_BATT_ABSENT			0x04 		/* Software only--not in spec! */
+#define	APM_BATT_UNKNOWN		0xff
 
-#define		APM_BATT_FLAG_HIGH	0x01
-#define		APM_BATT_FLAG_LOW	0x02
-#define		APM_BATT_FLAG_CRITICAL	0x04
-#define		APM_BATT_FLAG_CHARGING	0x08
-#define		APM_BATT_FLAG_NOBATTERY	0x80
+#define	APM_BATT_FLAG_HIGH		0x01
+#define	APM_BATT_FLAG_LOW		0x02
+#define	APM_BATT_FLAG_CRITICAL	0x04
+#define	APM_BATT_FLAG_CHARGING	0x08
+#define	APM_BATT_FLAG_NOBATTERY	0x80
 
-#define		APM_BATT_LIFE_UNKNOWN	0xff
-#define		APM_BATT_STATE(regp) ((regp)->bx & 0xff)
-#define		APM_BATT_FLAGS(regp) (((regp)->cx & 0xff00) >> 8)
-#define		APM_AC_STATE(regp) (((regp)->bx & 0xff00) >> 8)
-#define		APM_BATT_LIFE(regp) ((regp)->cx & 0xff) /* in % */
+#define	APM_BATT_LIFE_UNKNOWN	0xff
+#define	APM_BATT_STATE(regp) 	((regp)->bx & 0xff)
+#define	APM_BATT_FLAGS(regp) 	(((regp)->cx & 0xff00) >> 8)
+#define	APM_AC_STATE(regp) 		(((regp)->bx & 0xff00) >> 8)
+#define	APM_BATT_LIFE(regp) 	((regp)->cx & 0xff) /* in % */
 /* BATT_REMAINING returns minutes remaining */
-#define		APM_BATT_REMAINING(regp) (((regp)->dx & 0x8000) ? \
+#define	APM_BATT_REMAINING(regp) (((regp)->dx & 0x8000) ? \
 					  ((regp)->dx & 0x7fff) : \
 					  ((regp)->dx & 0x7fff)/60)
-#define		APM_BATT_REM_VALID(regp) (((regp)->dx & 0xffff) != 0xffff)
-#define	APM_GET_PM_EVENT	0x0b
-#define		APM_STANDBY_REQ		0x0001 /* %bx on return */
-#define		APM_SUSPEND_REQ		0x0002
-#define		APM_NORMAL_RESUME	0x0003
-#define		APM_CRIT_RESUME		0x0004 /* suspend/resume happened
-						  without us */
-#define		APM_BATTERY_LOW		0x0005
-#define		APM_POWER_CHANGE	0x0006
-#define		APM_UPDATE_TIME		0x0007
-#define		APM_CRIT_SUSPEND_REQ	0x0008
-#define		APM_USER_STANDBY_REQ	0x0009
-#define		APM_USER_SUSPEND_REQ	0x000A
-#define		APM_SYS_STANDBY_RESUME	0x000B
+#define	APM_BATT_REM_VALID(regp) (((regp)->dx & 0xffff) != 0xffff)
+#define	APM_GET_PM_EVENT		0x0b
+#define	APM_STANDBY_REQ			0x0001 		/* %bx on return */
+#define	APM_SUSPEND_REQ			0x0002
+#define	APM_NORMAL_RESUME		0x0003
+#define	APM_CRIT_RESUME			0x0004 		/* suspend/resume happened without us */
+#define	APM_BATTERY_LOW			0x0005
+#define	APM_POWER_CHANGE		0x0006
+#define	APM_UPDATE_TIME			0x0007
+#define	APM_CRIT_SUSPEND_REQ	0x0008
+#define	APM_USER_STANDBY_REQ	0x0009
+#define	APM_USER_SUSPEND_REQ	0x000A
+#define	APM_SYS_STANDBY_RESUME	0x000B
 
-#define	APM_GET_POWER_STATE	0x0c
+#define	APM_GET_POWER_STATE		0x0c
 #define	APM_DEVICE_MGMT_ENABLE	0x0d
 
-#define	APM_DRIVER_VERSION	0x0e
+#define	APM_DRIVER_VERSION		0x0e
 /* %bx should be DEV value (APM_DEV_APM_BIOS)
    %ch = driver major vno
    %cl = driver minor vno
    return: %ah = conn major; %al = conn minor
    */
-#define		APM_CONN_MINOR(regp) ((regp)->ax & 0xff)
-#define		APM_CONN_MAJOR(regp) (((regp)->ax & 0xff00) >> 8)
+#define	APM_CONN_MINOR(regp) 	((regp)->ax & 0xff)
+#define	APM_CONN_MAJOR(regp) 	(((regp)->ax & 0xff00) >> 8)
 
-#define APM_PWR_MGT_ENGAGE	0x0F
-#define		APM_MGT_DISENGAGE	0x0	/* %cx */
-#define		APM_MGT_ENGAGE		0x1
+#define APM_PWR_MGT_ENGAGE		0x0F
+#define	APM_MGT_DISENGAGE		0x0			/* %cx */
+#define	APM_MGT_ENGAGE			0x1
 
-#define APM_OEM			0x80
+#define APM_OEM					0x80
 
 /*
  * APM info word from the real-mode handler is adjusted to put
  * major/minor version in low half and support bits in upper half.
  */
-#define	APM_MAJOR_VERS(info) (((info)&0xff00)>>8)
-#define	APM_MINOR_VERS(info) ((info)&0xff)
+#define	APM_MAJOR_VERS(info) 	(((info)&0xff00)>>8)
+#define	APM_MINOR_VERS(info) 	((info)&0xff)
 
-#define APM_16BIT_SUPPORTED	(APM_16BIT_SUPPORT << 16)
-#define APM_32BIT_SUPPORTED	(APM_32BIT_SUPPORT << 16)
-#define APM_IDLE_SLOWS		(APM_CPUIDLE_SLOW << 16)
+#define APM_16BIT_SUPPORTED		(APM_16BIT_SUPPORT << 16)
+#define APM_32BIT_SUPPORTED		(APM_32BIT_SUPPORT << 16)
+#define APM_IDLE_SLOWS			(APM_CPUIDLE_SLOW << 16)
 #define APM_BIOS_PM_DISABLED	(APM_DISABLED << 16)
 #define APM_BIOS_PM_DISENGAGED	(APM_DISENGAGED << 16)
 
@@ -178,7 +177,7 @@
  * virtual & physical address of the trampoline
  * that we use: page 1.
  */
-#define APM_BIOSTRAMP	NBPG
+#define APM_BIOSTRAMP			NBPG
 
 
 #ifndef _LOCORE
@@ -186,35 +185,35 @@
 /* filled in by apmcall */ 
 
 struct apm_connect_info {
-	u_int apm_code32_seg_base;	/* real-mode style segment selector */
-	u_int apm_code16_seg_base;
-	u_int apm_data_seg_base;
-	u_int apm_entrypt;
-	u_short	apm_segsel;		/* segment selector for APM */
+	u_int 	apm_code32_seg_base;	/* real-mode style segment selector */
+	u_int 	apm_code16_seg_base;
+	u_int 	apm_data_seg_base;
+	u_int 	apm_entrypt;
+	u_short	apm_segsel;				/* segment selector for APM */
 	u_short _pad1;
-	u_int apm_code32_seg_len;
-	u_int apm_data_seg_len;
-	u_int apm_detail;
+	u_int 	apm_code32_seg_len;
+	u_int 	apm_data_seg_len;
+	u_int 	apm_detail;
 };
 
 struct apm_event_info {
-	u_int type;
-	u_int index;
-	u_int spare[8];
+	u_int 	type;
+	u_int 	index;
+	u_int 	spare[8];
 };
 
 struct apm_power_info {
-	u_char battery_state;
-	u_char ac_state;
-	u_char battery_life;
-	u_char spare1;
-	u_int minutes_left;		/* estimate */
-	u_int spare2[6];
+	u_char 	battery_state;
+	u_char 	ac_state;
+	u_char	battery_life;
+	u_char	spare1;
+	u_int 	minutes_left;			/* estimate */
+	u_int 	spare2[6];
 };
 
 struct apm_ctl {
-	u_int dev;
-	u_int mode;
+	u_int 	dev;
+	u_int 	mode;
 };
 
 #define	APM_IOC_REJECT		_IOW('A', 0, struct apm_event_info) /* reject request # */

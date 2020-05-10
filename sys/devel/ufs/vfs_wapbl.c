@@ -298,8 +298,7 @@ wapbl_dkcache_init(wl)
 	int error;
 
 	/* Get disk cache flags */
-	error = VOP_IOCTL(wl->wl_devvp, DIOCGCACHE, &wl->wl_dkcache,
-	    FWRITE, FSCRED);
+	error = VOP_IOCTL(wl->wl_devvp, DIOCGCACHE, &wl->wl_dkcache, FWRITE, FSCRED);
 	if (error) {
 		/* behave as if there was a write cache */
 		wl->wl_dkcache = DKCACHE_WRITE;
