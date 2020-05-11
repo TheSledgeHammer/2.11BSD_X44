@@ -1,3 +1,5 @@
+/*	$NetBSD: ansi.h,v 1.7 1996/11/15 22:38:50 jtc Exp $	*/
+
 /*-
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -51,6 +53,8 @@
 #define	_BSD_SSIZE_T_	int				/* byte count or error */
 #define	_BSD_TIME_T_	long			/* time() */
 #define	_BSD_VA_LIST_	char *			/* va_list */
+#define _BSD_CLOCKID_T_	int
+#define _BSD_TIMER_T_	int
 
 /*
  * Runes (wchar_t) is declared to be an ``int'' instead of the more natural
@@ -66,7 +70,8 @@
  * and rune_t are typedef'd, _WCHAR_T_ will be undef'd, but _RUNE_T remains
  * defined for ctype.h.
  */
-#define	_BSD_WCHAR_T_	int			/* wchar_t */
-#define	_BSD_RUNE_T_	int			/* rune_t */
+#define	_BSD_WCHAR_T_	int				/* wchar_t */
+#define _BSD_WINT_T_	int				/* wint_t */
+#define	_BSD_RUNE_T_	int				/* rune_t */
 
 #endif	/* _ANSI_H_ */

@@ -17,6 +17,12 @@
  *	@(#)pathnames.h	5.3.7 (2.11BSD) 1996/11/27
  */
 
+/* Default search path. */
+#define	_PATH_DEFPATH	"/usr/bin:/bin"
+/* All standard utilities path. */
+#define	_PATH_STDPATH \
+	"/usr/bin:/bin:/usr/sbin:/sbin:/usr/contrib/bin:/usr/old/bin"
+
 #define	_PATH_BSHELL	"/bin/sh"
 #define	_PATH_CSHELL	"/bin/csh"
 #define	_PATH_CP		"/bin/cp"
@@ -34,3 +40,4 @@
 #define	_PATH_DEVDB		"/var/run/dev"
 #define	_PATH_VARRUN	"/var/run/"
 #define	_PATH_CTIMED	"/usr/libexec/ctimed"
+#define	_PATH_SHELLS	"/etc/shells"

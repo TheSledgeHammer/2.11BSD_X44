@@ -3,6 +3,6 @@
 
 # Missing:  ms
 
-SUBDIR=	dict doc examples lkm man me misc mk skel tabset termcap tmac zoneinfo
-
+#SUBDIR=	dict doc man me misc mk skel tabset termcap tmac zoneinfo
+SUBDIR= adb font font fontinfo learn lint me misc mk ms pascal tabset term termcap tmac zoneinfo
 .include <bsd.subdir.mk>

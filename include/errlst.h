@@ -25,19 +25,17 @@
  *        are present to make it easy to 'cat' or 'vi' the file.
 */
 
-	struct	ERRLSTHDR
-		{
+struct	ERRLSTHDR {
 		short	magic;
 		short	maxmsgnum;
 		short	maxmsglen;
 		short	pad[5];		/* Reserved */
-		};
+};
 
-	struct	ERRLST
-		{
+struct	ERRLST {
 		off_t	offmsg;
 		short	lenmsg;
-		};
+};
 
 #define	ERRMAGIC	012345
 #define	_PATH_SYSERRLST	"/etc/syserrlst"

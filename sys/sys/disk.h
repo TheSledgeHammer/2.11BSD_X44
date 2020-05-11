@@ -79,10 +79,13 @@
  * mounting a drive, assigning a label, running newfs, etc.
  */
 struct buf;
+struct disklabel;
+//struct cpu_disklabel;
 
 struct dkdevice {
 	struct	device 	 	dk_dev;					/* base device */
 	struct	dkdevice 	*dk_next;				/* list of disks; not yet used */
+	char				*dk_name;				/* disk name */
 	int					dk_bps;					/* xfer rate: bytes per second */
 	int					dk_bopenmask;			/* block devices open */
 	int					dk_copenmask;			/* character devices open */
@@ -137,6 +140,19 @@ struct disksort_stats {
 #endif
 
 #ifdef KERNEL
+extern	int disk_count;			/* number of disks in global disklist */
+
+void	disk_init (void);
+void	disk_attach (struct dkdevice *);
+void	disk_detach (struct dkdevice *);
+void	disk_busy (struct dkdevice *);
+void	disk_unbusy (struct dkdevice *, long);
+void	disk_resetstat (struct dkdevice *);
+struct	disk *disk_find (char *);
+
+struct device;
+void	dk_establish (struct dkdevice *, struct device *);
+
 void	disksort (struct buf *, struct buf *);
 char	*readdisklabel (struct dkdevice *, int);
 int		setdisklabel (struct dkdevice *, struct disklabel *);

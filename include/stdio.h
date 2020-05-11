@@ -9,10 +9,10 @@
 # ifndef FILE
 #define	BUFSIZ	1024
 extern	struct	_iobuf {
-	int	_cnt;
+	int		_cnt;
 	char	*_ptr;		/* should be unsigned char */
 	char	*_base;		/* ditto */
-	int	_bufsiz;
+	int		_bufsiz;
 	short	_flag;
 	char	_file;		/* should be short */
 } _iob[];

@@ -7,7 +7,6 @@ SI386=	${SYSDIR}/arch/i386/eisa/*.[ch] \
 		${SYSDIR}/arch/i386/i386/*.[ch] \
 		${SYSDIR}/arch/i386/include/*.h \
 		${SYSDIR}/arch/i386/isa/*.[ch] 	\
-		${SYSDIR}/arch/i386/mca/*.[ch] \
 		${SYSDIR}/arch/i386/pci/*.[ch] \
 
 AI386=	${SYSDIR}/arch/i386/i386/*.s 	\
@@ -31,6 +30,6 @@ links:
 	-for i in ${DI386}; do \
 	    (cd $$i && rm -f tags; ln -s ../tags tags); done
 
-SUBDIR= stand isa
+SUBDIR= stand isa/pcvt
 
 .include <bsd.subdir.mk>

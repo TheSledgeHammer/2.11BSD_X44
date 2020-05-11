@@ -146,8 +146,8 @@ int	__void__;
 #define noraw()	 	(_tty.sg_flags&=~RAW,_rawmode=FALSE,_pfast=!(_tty.sg_flags&CRMOD),stty(_tty_ch,&_tty))
 #define cbreak() 	(_tty.sg_flags |= CBREAK, _rawmode = TRUE, stty(_tty_ch,&_tty))
 #define nocbreak() 	(_tty.sg_flags &= ~CBREAK,_rawmode=FALSE,stty(_tty_ch,&_tty))
-#define crmode() cbreak()	/* backwards compatability */
-#define nocrmode() nocbreak()	/* backwards compatability */
+#define crmode() 	cbreak()	/* backwards compatability */
+#define nocrmode() 	nocbreak()	/* backwards compatability */
 #define echo()	 	(_tty.sg_flags |= ECHO, _echoit = TRUE, stty(_tty_ch, &_tty))
 #define noecho() 	(_tty.sg_flags &= ~ECHO, _echoit = FALSE, stty(_tty_ch, &_tty))
 #define nl()	 	(_tty.sg_flags |= CRMOD,_pfast = _rawmode,stty(_tty_ch, &_tty))
