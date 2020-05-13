@@ -42,6 +42,8 @@
 #include <sys/uio.h>
 #include <sys/vnode.h>
 
+#include <sys/buf.h>
+
 #include <miscfs/specfs/specdev.h>
 
 #include <devel/ufml/ext2fs_htree.h>
@@ -124,3 +126,31 @@ htree_write()
 
 }
 
+
+/*
+ * Return buffer with the contents of block "offset" from the beginning of
+ * directory "ip".  If "res" is non-zero, fill it in with a pointer to the
+ * remaining space in the directory.
+ */
+int
+ext2fs_blkatoff(struct vnode *vp, off_t offset, char **res, struct buf **bpp)
+{
+	struct htree_fake_inode *ip;
+	struct htree_mfs *fs;
+	struct buf *bp;
+	daddr_t lbn;
+	int error;
+
+	ip = VTOI(vp);
+	fs = ip->h_mfs;
+	lbn = ext2_lblkno(fs, offset);
+
+	*bpp = NULL;
+	if ((error = bread(vp, lbn, fs->h_bsize, 0, &bp)) != 0) {
+		return error;
+	}
+	if (res)
+		*res = (char *)bp->b_data + ext2_blkoff(fs, offset);
+	*bpp = bp;
+	return 0;
+}

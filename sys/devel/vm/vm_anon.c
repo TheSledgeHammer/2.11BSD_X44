@@ -47,7 +47,7 @@
 #include <sys/kernel.h>
 
 #include <devel/vm/include/vm.h>
-//#include <devel/vm/include/vm_swap.h>
+#include <devel/vm/include/vm_swap.h>
 
 /*
  * anonblock_list: global list of anon blocks,
@@ -73,7 +73,7 @@ uvm_anon_init()
 {
 	int nanon = uvmexp.free - (uvmexp.free / 16); /* XXXCDC ??? */
 
-	simple_lock_init(&uvm.afreelock);
+	simple_lock_init(&vm.afreelock);
 	LIST_INIT(&anonblock_list);
 
 	/*
@@ -96,19 +96,19 @@ uvm_anon_add(count)
 	struct vm_anon *anon;
 	int lcv, needed;
 
-	simple_lock(&uvm.afreelock);
+	simple_lock(&vm.afreelock);
 	uvmexp.nanonneeded += count;
 	needed = uvmexp.nanonneeded - uvmexp.nanon;
-	simple_unlock(&uvm.afreelock);
+	simple_unlock(&vm.afreelock);
 
 	if (needed <= 0) {
 		return 0;
 	}
 	anon = (void *)uvm_km_alloc(kernel_map, sizeof(*anon) * needed);
 	if (anon == NULL) {
-		simple_lock(&uvm.afreelock);
+		simple_lock(&vm.afreelock);
 		uvmexp.nanonneeded -= count;
-		simple_unlock(&uvm.afreelock);
+		simple_unlock(&vm.afreelock);
 		return ENOMEM;
 	}
 	MALLOC(anonblock, void *, sizeof(*anonblock), M_VMAMAP, M_WAITOK);
@@ -118,15 +118,15 @@ uvm_anon_add(count)
 	LIST_INSERT_HEAD(&anonblock_list, anonblock, list);
 	memset(anon, 0, sizeof(*anon) * needed);
 
-	simple_lock(&uvm.afreelock);
+	simple_lock(&vm.afreelock);
 	uvmexp.nanon += needed;
 	uvmexp.nfreeanon += needed;
 	for (lcv = 0; lcv < needed; lcv++) {
 		simple_lock_init(&anon[lcv].an_lock);
-		anon[lcv].u.an_nxt = uvm.afree;
-		uvm.afree = &anon[lcv];
+		anon[lcv].an_u.an_nxt = vm.afree;
+		vm.afree = &anon[lcv];
 	}
-	simple_unlock(&uvm.afreelock);
+	simple_unlock(&vm.afreelock);
 	return 0;
 }
 
@@ -142,9 +142,9 @@ uvm_anon_remove(count)
 	 * XXX someday we might want to try to free anons.
 	 */
 
-	simple_lock(&uvm.afreelock);
+	simple_lock(&vm.afreelock);
 	uvmexp.nanonneeded -= count;
-	simple_unlock(&uvm.afreelock);
+	simple_unlock(&vm.afreelock);
 }
 
 /*
@@ -157,18 +157,18 @@ uvm_analloc()
 {
 	struct vm_anon *a;
 
-	simple_lock(&uvm.afreelock);
-	a = uvm.afree;
+	simple_lock(&vm.afreelock);
+	a = vm.afree;
 	if (a) {
-		uvm.afree = a->u.an_nxt;
+		vm.afree = a->an_u.an_nxt;
 		uvmexp.nfreeanon--;
 		a->an_ref = 1;
 		a->an_swslot = 0;
 		a->an_page = NULL;		/* so we can free quickly */
-		LOCK_ASSERT(simple_lock_held(&a->an_lock) == 0);
+		//LOCK_ASSERT(simple_lock_held(&a->an_lock) == 0);
 		simple_lock(&a->an_lock);
 	}
-	simple_unlock(&uvm.afreelock);
+	simple_unlock(&vm.afreelock);
 	return(a);
 }
 
@@ -190,7 +190,7 @@ uvm_anfree(anon)
 	//UVMHIST_LOG(maphist,"(anon=0x%x)", anon, 0,0,0);
 
 	KASSERT(anon->an_ref == 0);
-	LOCK_ASSERT(!simple_lock_held(&anon->an_lock));
+	//LOCK_ASSERT(!simple_lock_held(&anon->an_lock));
 
 	/*
 	 * get page
@@ -222,13 +222,13 @@ uvm_anfree(anon)
 		 * kill the loan on the page rather than free it.
 		 */
 
-		if (pg->uobject) {
+		if (pg->object) {
 			uvm_lock_pageq();
 			KASSERT(pg->loan_count > 0);
 			pg->loan_count--;
 			pg->uanon = NULL;
 			uvm_unlock_pageq();
-			simple_unlock(&pg->uobject->vmobjlock);
+			simple_unlock(&pg->object->vmobjlock);
 		} else {
 
 			/*
@@ -253,16 +253,15 @@ uvm_anfree(anon)
 			uvm_pagefree(pg);
 			uvm_unlock_pageq();
 			simple_unlock(&anon->an_lock);
-			UVMHIST_LOG(maphist, "anon 0x%x, page 0x%x: "
-				    "freed now!", anon, pg, 0, 0);
+			//UVMHIST_LOG(maphist, "anon 0x%x, page 0x%x: freed now!", anon, pg, 0, 0);
 		}
 	}
 	if (pg == NULL && anon->an_swslot > 0) {
 		/* this page is no longer only in swap. */
-		simple_lock(&uvm.swap_data_lock);
+		simple_lock(&vm.swap_data_lock);
 		KASSERT(uvmexp.swpgonly > 0);
 		uvmexp.swpgonly--;
-		simple_unlock(&uvm.swap_data_lock);
+		simple_unlock(&vm.swap_data_lock);
 	}
 
 	/*
@@ -279,12 +278,12 @@ uvm_anfree(anon)
 	KASSERT(anon->u.an_page == NULL);
 	KASSERT(anon->an_swslot == 0);
 
-	simple_lock(&uvm.afreelock);
-	anon->u.an_nxt = uvm.afree;
-	uvm.afree = anon;
+	simple_lock(&vm.afreelock);
+	anon->an_u.an_nxt = vm.afree;
+	vm.afree = anon;
 	uvmexp.nfreeanon++;
-	simple_unlock(&uvm.afreelock);
-	UVMHIST_LOG(maphist,"<- done!",0,0,0,0);
+	simple_unlock(&vm.afreelock);
+	//UVMHIST_LOG(maphist,"<- done!",0,0,0,0);
 }
 
 /*
@@ -330,7 +329,7 @@ uvm_anon_lockloanpg(anon)
 	struct vm_page *pg;
 	boolean_t locked = FALSE;
 
-	LOCK_ASSERT(simple_lock_held(&anon->an_lock));
+	//LOCK_ASSERT(simple_lock_held(&anon->an_lock));
 
 	/*
 	 * loop while we have a resident page that has a non-zero loan count.
@@ -554,7 +553,7 @@ uvm_anon_release(anon)
 {
 	struct vm_page *pg = anon->an_page;
 
-	LOCK_ASSERT(simple_lock_held(&anon->an_lock));
+//	LOCK_ASSERT(simple_lock_held(&anon->an_lock));
 
 	KASSERT(pg != NULL);
 	KASSERT((pg->flags & PG_RELEASED) != 0);

@@ -89,6 +89,8 @@ typedef struct uvm_aobject		*vm_aobject_t;
 #include <devel/vm/include/vm_aobject.h>
 #include <devel/vm/include/vm_map.h>
 #include <devel/vm/include/vm_vmspace.h>
+#include <devel/vm/include/vm_swap.h>
+#include <devel/vm/include/vm_swap_pager.h>
 
 #include <devel/vm/include/vm_extent.h>	/* Work in Progress */
 #include <devel/vm/include/vm_seg.h>	/* Work in Progress */
@@ -122,9 +124,47 @@ struct vm {
 	struct vm_map_entry *kentry_free; 	/* free page pool */
 	struct simplelock 	kentry_lock;
 
+	/* swap-related items */
+	struct simplelock 	swap_data_lock;
+
 	/* kernel object: to support anonymous pageable kernel memory */
 	struct vm_object 	*kernel_object;
+
+
 };
+
+extern struct vm vm;
+
+/*
+ * uvmexp: global data structures that are exported to parts of the kernel
+ * other than the vm system.
+ */
+struct uvmexp {
+	/* vm_page constants */
+	int pagesize; 		/* size of a page (PAGE_SIZE): must be power of 2 */
+	int pagemask; 		/* page mask */
+	int pageshift; 		/* page shift */
+
+	/* vm_page counters */
+	int npages; 		/* number of pages we manage */
+	int free; 			/* number of free pages */
+	int active; 		/* number of active pages */
+	int inactive; 		/* number of pages that we free'd but may want back */
+	int paging; 		/* number of pages in the process of being paged out */
+	int wired; 			/* number of wired pages */
+
+	/* swap */
+	int nswapdev; 		/* number of configured swap devices in system */
+	int swpages; 		/* number of PAGE_SIZE'ed swap pages */
+	int swpginuse; 		/* number of swap pages in use */
+	int swpgonly; 		/* number of swap pages in use, not also in RAM */
+	int nswget; 		/* number of times fault calls uvm_swap_get() */
+	int nanon; 			/* number total of anon's in system */
+	int nanonneeded;	/* number of anons currently needed */
+	int nfreeanon; 		/* number of free anon's */
+};
+
+extern struct uvmexp uvmexp;
 
 /*
  * vm_map_entry etype bits:

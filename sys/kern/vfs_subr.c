@@ -647,8 +647,7 @@ loop:
 		break;
 	}
 	if (vp == NULL || vp->v_tag != VT_NON) {
-		MALLOC(nvp->v_specinfo, struct specinfo *,
-			sizeof(struct specinfo), M_VNODE, M_WAITOK);
+		MALLOC(nvp->v_specinfo, struct specinfo *, sizeof(struct specinfo), M_VNODE, M_WAITOK);
 		nvp->v_rdev = nvp_rdev;
 		nvp->v_hashchain = vpp;
 		nvp->v_specnext = *vpp;

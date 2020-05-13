@@ -65,7 +65,7 @@
  */
 typedef	int	sw_bm_t;	/* pager bitmask */
 
-struct	swblock {
+struct swblock {
 	sw_bm_t	 	swb_mask;	/* bitmask of valid pages in this block */
 	daddr_t	 	swb_block;	/* starting disk block for this block */
 };

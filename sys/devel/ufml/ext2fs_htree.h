@@ -45,7 +45,14 @@
  * ext2fs_blkatoff
  */
 
+struct htree_fake_inode_ext {
+	daddr_t h_last_lblk;	/* last logical block allocated */
+	daddr_t h_last_blk;		/* last block allocated on disk */
+	struct ext4_extent_cache i_ext_cache; /* cache for ext4 extent */
+};
+
 struct htree_fake_inode {
+		u_int32_t	h_blocks;
     	u_int64_t   h_size;					/* File byte count. */
     	u_int32_t   h_flag;	    			/* flags, see below */
         u_int32_t   h_sflags;				/* 32: Status flags (chflags) */
@@ -54,9 +61,10 @@ struct htree_fake_inode {
 };
 
 struct htree_mfs {
-	struct htree_fake_fs   	h_fs;
-    int8_t	        		h_uhash;		/* 3 if hash should be signed, 0 if not */
-	int32_t	        		h_bsize;		/* block size */
+	struct htree_fake_fs   		h_fs;
+    int8_t	        			h_uhash;	/* 3 if hash should be signed, 0 if not */
+	int32_t	        			h_bsize;	/* block size */
+    struct htree_fake_inode_ext h_ext;
 };
 
 struct htree_fake_fs {
@@ -135,7 +143,6 @@ struct htree_sort_entry {
 	uint16_t h_size;
 	uint32_t h_hash;
 };
-
 
 static off_t	htree_get_block(struct htree_entry *ep);
 static void 	htree_release(struct htree_lookup_info *info);

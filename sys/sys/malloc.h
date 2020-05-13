@@ -304,7 +304,6 @@ struct kmembuckets {
 }
 #endif /* do not collect statistics */
 
-
 extern struct kmembuckets bucket[];
 extern struct kmemusage *kmemusage;
 extern char *kmembase;

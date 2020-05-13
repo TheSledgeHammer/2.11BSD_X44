@@ -258,7 +258,7 @@ amap_free(amap)
 	//UVMHIST_FUNC("amap_free"); UVMHIST_CALLED(maphist);
 
 	KASSERT(amap->am_ref == 0 && amap->am_nused == 0);
-	LOCK_ASSERT(!simple_lock_held(&amap->am_lock));
+//	LOCK_ASSERT(!simple_lock_held(&amap->am_lock));
 	free(amap->am_slots, M_VMAMAP);
 	free(amap->am_bckptr, M_VMAMAP);
 	free(amap->am_anon, M_VMAMAP);

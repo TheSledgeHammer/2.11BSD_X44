@@ -44,10 +44,13 @@ struct vm_anon {
 	lock_data_t			*an_lock;	/* Lock for an_ref */
 	union {
 		uintptr_t		au_ref;		/* Reference count [an_lock] */
+		struct vm_anon 	*an_nxt;	/* if on free list [afreelock] */
 		struct vm_anon	*au_link;	/* Link for deferred free */
 	} an_u;
+
 #define	an_ref			an_u.au_ref
 #define	an_link			an_u.au_link
+
 	struct vm_page		*an_page;	/* If in RAM [an_lock] */
 #if defined(VMSWAP) || 1 			/* XXX libkvm */
 	/*
