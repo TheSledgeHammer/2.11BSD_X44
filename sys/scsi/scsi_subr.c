@@ -53,8 +53,8 @@
 #include <sys/buf.h>
 #include <sys/device.h>
 
-#include "../../scsi/scsi.h"
-#include "../../scsi/scsivar.h"
+#include <scsi/scsi.h>
+#include <scsi/scsivar.h>
 
 /*
  * General subroutines, and scsi data.
@@ -65,24 +65,24 @@ const char scsicmdlen[8] = { 6, 10, 0, 0, 0, 12, 0, 0 };
 
 /* table of lengths of scsi messages */
 const signed char scsimsglen[0x24] = {
-	SMLEN_DONE,		/* MSG_CMD_COMPLETE */
+	SMLEN_DONE,			/* MSG_CMD_COMPLETE */
 	SMLEN_EXTENDED,		/* MSG_EXT_MESSAGE */
-	1,			/* MSG_SAVE_DATA_PTR */
-	1,			/* MSG_RESTORE_PTR */
-	1,			/* MSG_DISCONNECT */
-	1,			/* MSG_INIT_DETECT_ERROR */
-	1,			/* MSG_ABORT */
-	1,			/* MSG_REJECT */
-	1,			/* MSG_NOOP */
-	1,			/* MSG_PARITY_ERROR */
-	1,			/* MSG_LCC */
-	1,			/* MSG_LCCF */
-	1,			/* MSG_BUS_DEVICE_RESET */
-	1,			/* MSG_ABORT_TAG */
-	1,			/* MSG_CLEAR_QUEUE */
-	1,			/* MSG_INITIATE_RECOVERY */
-	1,			/* MSG_RELEASE_RECOVERY */
-	1,			/* MSG_TERMINATE_PROCESS */
+	1,					/* MSG_SAVE_DATA_PTR */
+	1,					/* MSG_RESTORE_PTR */
+	1,					/* MSG_DISCONNECT */
+	1,					/* MSG_INIT_DETECT_ERROR */
+	1,					/* MSG_ABORT */
+	1,					/* MSG_REJECT */
+	1,					/* MSG_NOOP */
+	1,					/* MSG_PARITY_ERROR */
+	1,					/* MSG_LCC */
+	1,					/* MSG_LCCF */
+	1,					/* MSG_BUS_DEVICE_RESET */
+	1,					/* MSG_ABORT_TAG */
+	1,					/* MSG_CLEAR_QUEUE */
+	1,					/* MSG_INITIATE_RECOVERY */
+	1,					/* MSG_RELEASE_RECOVERY */
+	1,					/* MSG_TERMINATE_PROCESS */
 	SMLEN_UNDEF,		/* 0x12 */
 	SMLEN_UNDEF,		/* 0x13 */
 	SMLEN_UNDEF,		/* 0x14 */
@@ -97,10 +97,10 @@ const signed char scsimsglen[0x24] = {
 	SMLEN_UNDEF,		/* 0x1d */
 	SMLEN_UNDEF,		/* 0x1e */
 	SMLEN_UNDEF,		/* 0x1f */
-	2,			/* MSG_SIMPLE_QTAG */
-	2,			/* MSG_HEAD_QTAG */
-	2,			/* MSG_ORDERED_QTAG */
-	2,			/* MSG_IGNORE_WIDE_RESID */
+	2,					/* MSG_SIMPLE_QTAG */
+	2,					/* MSG_HEAD_QTAG */
+	2,					/* MSG_ORDERED_QTAG */
+	2,					/* MSG_IGNORE_WIDE_RESID */
 };
 
 /* definition of `tg' target driver for autoconfig */

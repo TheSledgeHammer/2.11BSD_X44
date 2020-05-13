@@ -31,6 +31,18 @@
 #include <sys/malloc.h>
 #include <sys/queue.h>
 
+/**********************************************/
+/* Planned (New): Yet to be Implemented: */
+//#define M_DIRHASH	62	/* UFS dirhash */								/* UN-USED */
+//#define M_WAPBL		65	/* UFS & VFS WAPBL */							/* UN-USED */
+//#define M_TGRP		66	/* thread group header */						/* UN-USED */
+//#define M_THREAD	67	/* thread structures */							/* UN-USED */
+
+//#define M_KOVL		70	/* Kernel Overlay */
+//#define M_VOVL		71	/* Virtual Overlay */
+//#define M_VMSEG			72	/* VM Segmentation */
+/**********************************************/
+
 /* Two-bit Type field to distinguish between different splits of sized blocks */
 #define TYPE_11     11      /* split from 2k sized block */
 #define TYPE_01     01      /* left split from a 3 2k-3 block */
