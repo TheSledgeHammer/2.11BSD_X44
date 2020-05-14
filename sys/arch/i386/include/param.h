@@ -51,8 +51,6 @@
 #define	ALIGNBYTES		3
 #define	ALIGN(p)		(((u_int)(p) + ALIGNBYTES) &~ ALIGNBYTES)
 
-
-
 #define	NBPG			4096			/* bytes/page */
 #define	PGOFSET			(NBPG-1)		/* byte offset into page */
 #define	PGSHIFT			12				/* LOG2(NBPG) */
@@ -83,12 +81,6 @@
 
 #ifndef KSTACK_PAGES
 #define KSTACK_PAGES 4					/* Includes pcb! */
-#endif
-
-#if KSTACK_PAGES < 4
-#define	P0_KSTACK_PAGES 4
-#else
-#define	P0_KSTACK_PAGES KSTACK_PAGES
 #endif
 
 

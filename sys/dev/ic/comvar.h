@@ -30,11 +30,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "rnd.h"
-#if NRND > 0 && defined(RND_COM)
-#include <sys/rnd.h>
-#endif
-
 int comcnattach (bus_space_tag_t, int, int, int, tcflag_t);
 
 #ifdef KGDB

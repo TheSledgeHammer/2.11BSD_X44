@@ -39,6 +39,11 @@
 /* Only change the version number if you break compatibility. */
 #define	BOOTINFO_VERSION		1
 
+#define BOOTINFO_BOOTPATH 		0
+#define BOOTINFO_BOOTDISK 		3
+#define BOOTINFO_NETIF 			4
+#define BOOTINFO_CONSOLE 		6
+
 #define	N_BIOS_GEOM				8
 
 #define	BOOTINFO_MAGIC			0xdeadbeeffeedface
@@ -98,6 +103,8 @@ struct bootinfo_console {
 	int 						bi_addr;
 	int 						bi_speed;
 };
+
+#include <machine/disklabel.h>
 
 struct bootinfo_biogeom {
 	u_int32_t					bi_bios_geom[N_BIOS_GEOM];

@@ -114,9 +114,9 @@ unsigned int
  * Page Protection Exception bits
  */
 
-#define PGEX_P		0x01	/* Protection violation vs. not present */
-#define PGEX_W		0x02	/* during a Write cycle */
-#define PGEX_U		0x04	/* access from User mode (UPL) */
+#define PGEX_P		0x01		/* Protection violation vs. not present */
+#define PGEX_W		0x02		/* during a Write cycle */
+#define PGEX_U		0x04		/* access from User mode (UPL) */
 
 typedef struct pde	pd_entry_t;	/* page directory entry */
 typedef struct pte	pt_entry_t;	/* Mach page table entry */
@@ -229,7 +229,7 @@ typedef struct pv_entry {
 
 #ifdef	KERNEL
 
-pv_entry_t	pv_table;		/* array of entries, one per page */
+pv_entry_t	pv_table;			/* array of entries, one per page */
 
 #define pa_index(pa)				atop(pa - vm_first_phys)
 #define pa_to_pvh(pa)				(&pv_table[pa_index(pa)])
@@ -238,5 +238,4 @@ pv_entry_t	pv_table;		/* array of entries, one per page */
 #define	pmap_wired_count(pmap)		((pmap)->pm_stats.wired_count)
 
 #endif	KERNEL
-
 #endif	_PMAP_MACHINE_

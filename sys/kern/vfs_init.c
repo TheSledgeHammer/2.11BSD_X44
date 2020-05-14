@@ -119,8 +119,7 @@ vfs_opv_init()
 		 */
 		if (*opv_desc_vector_p == NULL) {
 			/* XXX - shouldn't be M_VNODE */
-			MALLOC(*opv_desc_vector_p, PFI*,
-			       vfs_opv_numops*sizeof(PFI), M_VNODE, M_WAITOK);
+			MALLOC(*opv_desc_vector_p, PFI*, vfs_opv_numops*sizeof(PFI), M_VNODE, M_WAITOK);
 			bzero (*opv_desc_vector_p, vfs_opv_numops*sizeof(PFI));
 			DODEBUG(printf("vector at %x allocated\n",
 			    opv_desc_vector_p));

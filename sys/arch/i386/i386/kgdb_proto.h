@@ -67,16 +67,15 @@
 #define KGDB_MORE	0x20
 #define KGDB_SEQ	0x10
 
-/*
- * Functions and variables exported from kgdb_stub.c
- */
-/*
-void 	kgdb_send(u_char, u_char, int);
-int 	kgdb_recv(u_char *, int *);
-int 	computeSignal(int);
-void 	kgdb_connect(int);
-void 	kgdb_panic(void);
-int 	kgdb_trap(int, struct trapframe *);
-int 	kgdb_acc(caddr_t, int, int);
-*/
+/* kgdb_stub.c */
+static void kgdb_send(u_char, u_char, int);
+static int kgdb_recv(u_char, int);
+static int computeSignal(int);
+void kgdb_connect(int);
+void kgdb_panic(void);
+int kgdb_trap(int, struct trapframe *);
+int kgdb_acc(caddr_t, int, int);
 
+/* kgdb_glue.c */
+int kgdb_trap_glue(struct trapframe);
+int kgdb_test(int);

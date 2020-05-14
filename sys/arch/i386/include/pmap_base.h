@@ -36,8 +36,8 @@
  *
  */
 
-#ifndef _MACHINE_PMAP_BASE_H_
-#define	_MACHINE_PMAP_BASE_H_
+#ifndef _PMAP_BASE_MACHINE_
+#define	_PMAP_BASE_MACHINE_
 
 struct pmap_args {
 	void (*pmap_bootstrap)(vm_offset_t firstaddr, vm_offset_t loadaddr);
@@ -78,7 +78,5 @@ struct pmap_args {
 	void (*pmap_check_wiring)(char *str, vm_offset_t va);
 	void (*pads)(pmap_t pm);
 };
-
-//void	pmap_cold(void);
 
 #endif /* _MACHINE_PMAP_BASE_H_ */

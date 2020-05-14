@@ -44,11 +44,11 @@
 /*
  * "Stub" to allow remote cpu to debug over a serial line using gdb.
  */
-#ifdef KGDB
+/*
 #ifndef lint
 static char rcsid[] = "$Header: /u/donn/c/gdb/kernel/RCS/kgdb_stub.c,v 1.2 91/03/31 19:22:46 donn Exp Locker: donn $";
 #endif
-
+*/
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/buf.h>
@@ -78,22 +78,23 @@ extern void chgkprot();
 
 int kgdb_dev = KGDBDEV;		/* remote debugging device (-1 if none) */
 int kgdb_rate = KGDBRATE;	/* remote debugging baud rate */
-int kgdb_active = 0;            /* remote debugging active if != 0 */
+int kgdb_active = 0;        /* remote debugging active if != 0 */
 int kgdb_debug_init = 0;	/* != 0 waits for remote at system init */
 int kgdb_debug_panic = 1;	/* != 0 waits for remote on panic */
 int kgdb_debug = 3;
 
 #define GETC	((*kgdb_getc)(kgdb_dev))
 #define PUTC(c)	((*kgdb_putc)(kgdb_dev, c))
-#define PUTESC(c) { \
-	if (c == FRAME_END) { \
-		PUTC(FRAME_ESCAPE); \
-		c = TRANS_FRAME_END; \
+
+#define PUTESC(c) { 				\
+	if (c == FRAME_END) { 			\
+		PUTC(FRAME_ESCAPE); 		\
+		c = TRANS_FRAME_END; 		\
 	} else if (c == FRAME_ESCAPE) { \
-		PUTC(FRAME_ESCAPE); \
-		c = TRANS_FRAME_ESCAPE; \
-	} \
-	PUTC(c); \
+		PUTC(FRAME_ESCAPE); 		\
+		c = TRANS_FRAME_ESCAPE; 	\
+	} 								\
+	PUTC(c); 						\
 }
 
 static int (*kgdb_getc)();
@@ -225,7 +226,7 @@ computeSignal(type)
 	case T_SYSCALL:		/* ??? */
 	case T_ASTFLT:		/* ??? */
 	case T_KSPNOTVAL:	/* ??? */
-	case T_NMI:		/* ??? */
+	case T_NMI:			/* ??? */
 	case T_DOUBLEFLT:	/* ??? */
 	case T_TSSFLT:		/* ??? */
 	case T_STKFLT:		/* ??? */
@@ -261,6 +262,7 @@ kgdb_connect(verbose)
 /*
  * Decide what to do on panic.
  */
+void
 kgdb_panic()
 {
 
@@ -561,4 +563,3 @@ kgdb_acc(addr, len, rw)
 #endif
 	return (0);
 }
-#endif

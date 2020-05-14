@@ -46,16 +46,14 @@
  * This file must be compiled with gcc -fno-defer-pop.
  */
 
-#ifdef KGDB
-
 #include <sys/param.h>
 #include <machine/frame.h>
 #include <machine/reg.h>
-
+/*
 #ifndef lint
 static char rcsid[] =
     "@(#) $Header: /u/donn/c/gdb/kernel/RCS/kgdb_glue.c,v 1.2 91/03/31 16:04:52 donn Exp Locker: donn $ (LBL)";
-#endif
+#endif */
 
 #define KGDB_STACKSIZE 	0x800
 #define KGDB_STACKWORDS (KGDB_STACKSIZE / sizeof(u_long))
@@ -79,6 +77,7 @@ copywords(src, dst, nbytes)
 		*(u_short *)dst = *(u_short *)src;
 }
 
+int
 kgdb_trap_glue(frame)
 	struct trapframe frame;
 {
@@ -126,7 +125,7 @@ kgdb_trap_glue(frame)
 		 */
 		setsp(osp);
 		splx(s);
-		return 0;
+		return (0);
 	}
 
 	/*
@@ -141,14 +140,15 @@ kgdb_trap_glue(frame)
 	 * Restore the possible new context from frame.
 	 */
 	asm volatile ("pop %es; pop %ds; popal; nop; addl $8,%esp; iret");
+	return (0);
 }
 
 int kgdb_testval;
 
+int
 kgdb_test(i)
+	int i;
 {
-        ++kgdb_testval;
-        return i + 1;
+	++kgdb_testval;
+    return i + 1;
 }
-
-#endif

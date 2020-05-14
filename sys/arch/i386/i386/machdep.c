@@ -73,7 +73,11 @@
 #include <machine/psl.h>
 #include <machine/reg.h>
 #include <machine/specialreg.h>
+#include <machine/bootinfo.h>
 
+#ifdef KGDB
+#include <sys/kgdb.h>
+#endif
 
 #include <dev/cons.h>
 #include <dev/isa/isa.h>
@@ -87,23 +91,34 @@
 #include <machine/vm86.h>
 #endif
 
+#include "apm.h"
 #include "bioscall.h"
 
-#include "com.h"
-#if (NCOM > 0)
-#include <sys/termios.h>
-#include <dev/ic/comreg.h>
-#include <dev/ic/comvar.h>
+#if NBIOSCALL > 0
+#include <machine/bioscall.h>
+#endif
+
+#if NAPM > 0
+#include <machine/apmvar.h>
+#endif
+
+#include "isa.h"
+#include "isadma.h"
+#include "npx.h"
+#if NNPX > 0
+extern struct proc *npxproc;
+#endif
+
+#include "vt.h"
+#if (NVT > 0)
+#include <i386/isa/pcvt/pcvt_cons.h>
 #endif
 
 /* the following is used externally (sysctl_hw) */
 char machine[] = "i386";			/* cpu "architecture" */
 char machine_arch[] = "i386";		/* machine == machine_arch */
 
-//char bootinfo[BOOTINFO_MAXSIZE];
-
-vm_map_t buffer_map;
-extern vm_offset_t avail_end;
+char bootinfo[BOOTINFO_MAXSIZE];
 
 /*
  * Declare these as initialized data so we can patch them.
@@ -120,6 +135,9 @@ int	bufpages = BUFPAGES;
 int	bufpages = 0;
 #endif
 int	msgbufmapped;		/* set when safe to use msgbuf */
+
+vm_map_t buffer_map;
+extern vm_offset_t avail_end;
 
 /*
  * Machine-dependent startup code
@@ -857,7 +875,7 @@ init386(first)
 	/*
 	 * Initialize the console before we print anything out.
 	 */
-
+	extern void consinit (void);
 	cninit (KERNBASE+0xa0000);
 
 	/* make gdt memory segments */
