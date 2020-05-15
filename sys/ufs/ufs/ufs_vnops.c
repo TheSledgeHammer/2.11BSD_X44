@@ -1667,7 +1667,7 @@ ufs_strategy(ap)
 	}
 	vp = ip->i_devvp;
 	bp->b_dev = vp->v_rdev;
-	vp->v_op->vop_strategy(bp);
+	VOPARGS(ap, vop_strategy);
 	//VOCALL (vp->v_op, VOFFSET(vop_strategy), ap);
 	return (0);
 }
