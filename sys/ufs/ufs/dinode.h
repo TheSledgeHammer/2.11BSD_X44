@@ -71,8 +71,8 @@ typedef int64_t ufs_time_t;
 #define	NIADDR	3			/* Indirect addresses in inode. */
 
 struct dinode {
-	u_int16_t	di_mode;			/*   0: IFMT, permissions; see below. */
-	int16_t		di_nlink;			/*   2: File link count. */
+	u_int16_t		di_mode;		/*   0: IFMT, permissions; see below. */
+	int16_t			di_nlink;		/*   2: File link count. */
 	union {
 		u_int16_t oldids[2];		/*   4: Ffs: old user and group ids. */
 		int32_t	  inumber;			/*   4: Lfs: inode number. */

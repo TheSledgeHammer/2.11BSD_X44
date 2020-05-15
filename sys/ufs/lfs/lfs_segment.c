@@ -747,12 +747,12 @@ lfs_newseg(fs)
 	struct buf *bp;
 	int curseg, isdirty, sn;
 
-        LFS_SEGENTRY(sup, fs, datosn(fs, fs->lfs_nextseg), bp);
-        sup->su_flags |= SEGUSE_DIRTY | SEGUSE_ACTIVE;
+	LFS_SEGENTRY(sup, fs, datosn(fs, fs->lfs_nextseg), bp);
+	sup->su_flags |= SEGUSE_DIRTY | SEGUSE_ACTIVE;
 	sup->su_nbytes = 0;
 	sup->su_nsums = 0;
 	sup->su_ninos = 0;
-        (void) VOP_BWRITE(bp);
+	(void) VOP_BWRITE(bp);
 
 	LFS_CLEANERINFO(cip, fs, bp);
 	--cip->clean;
@@ -849,7 +849,7 @@ lfs_writeseg(fs, sp)
 	fs->lfs_bfree -= (fsbtodb(fs, ninos) + LFS_SUMMARY_SIZE / DEV_BSIZE);
 
 	i_dev = VTOI(fs->lfs_ivnode)->i_dev;
-	strategy = VTOI(fs->lfs_ivnode)->i_devvp->v_op[VOFFSET(vop_strategy)];
+	strategy = VTOI(fs->lfs_ivnode)->i_devvp->v_op->vop_strategy(bp);//[VOFFSET(vop_strategy)];
 
 	/*
 	 * When we simply write the blocks we lose a rotation for every block
@@ -923,7 +923,7 @@ lfs_writeseg(fs, sp)
 		 * the buffer (yuk).
 		 */
 		cbp->b_saveaddr = (caddr_t)fs;
-		vop_strategy_a.a_desc = VDESC(vop_strategy);
+		//vop_strategy_a.a_desc = VDESC(vop_strategy);
 		vop_strategy_a.a_bp = cbp;
 		(strategy)(&vop_strategy_a);
 	}
@@ -960,7 +960,7 @@ lfs_writesuper(fs)
 	struct vop_strategy_args vop_strategy_a;
 
 	i_dev = VTOI(fs->lfs_ivnode)->i_dev;
-	strategy = VTOI(fs->lfs_ivnode)->i_devvp->v_op[VOFFSET(vop_strategy)];
+	strategy = VTOI(fs->lfs_ivnode)->i_devvp->v_op->vop_strategy(bp);//[VOFFSET(vop_strategy)];
 
 	/* Checksum the superblock and copy it into a buffer. */
 	fs->lfs_cksum = cksum(fs, sizeof(struct lfs) - sizeof(fs->lfs_cksum));
@@ -973,7 +973,7 @@ lfs_writesuper(fs)
 	bp->b_flags |= B_BUSY | B_CALL | B_ASYNC;
 	bp->b_flags &= ~(B_DONE | B_ERROR | B_READ | B_DELWRI);
 	bp->b_iodone = lfs_supercallback;
-	vop_strategy_a.a_desc = VDESC(vop_strategy);
+	//vop_strategy_a.a_desc = VDESC(vop_strategy);
 	vop_strategy_a.a_bp = bp;
 	s = splbio();
 	++bp->b_vp->v_numoutput;

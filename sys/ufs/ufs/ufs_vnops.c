@@ -1667,7 +1667,8 @@ ufs_strategy(ap)
 	}
 	vp = ip->i_devvp;
 	bp->b_dev = vp->v_rdev;
-	VOCALL (vp->v_op, VOFFSET(vop_strategy), ap);
+	vp->v_op->vop_strategy(bp);
+	//VOCALL (vp->v_op, VOFFSET(vop_strategy), ap);
 	return (0);
 }
 
@@ -1706,13 +1707,13 @@ ufsspec_read(ap)
 		struct ucred *a_cred;
 	} */ *ap;
 {
-
 	/*
 	 * Set access flag.
 	 */
 	//if ((ap->a_vp->v_mount->mnt_flag & MNT_NODEVMTIME) == 0)
 		VTOI(ap->a_vp)->i_flag |= IN_ACCESS;
-	return (VOCALL (spec_vnodeop_p, VOFFSET(vop_read), ap));
+	return (VOPARGS(ap, vop_read));
+//	return (VOCALL (spec_vnodeop_p, VOFFSET(vop_read), ap));
 }
 
 /*
@@ -1727,13 +1728,13 @@ ufsspec_write(ap)
 		struct ucred *a_cred;
 	} */ *ap;
 {
-
 	/*
 	 * Set update and change flags.
 	 */
 	//if ((ap->a_vp->v_mount->mnt_flag & MNT_NODEVMTIME) == 0)
 		VTOI(ap->a_vp)->i_flag |= IN_MODIFY;
-	return (VOCALL (spec_vnodeop_p, VOFFSET(vop_write), ap));
+	return (VOPARGS(ap, vop_write));
+	//return (VOCALL (spec_vnodeop_p, VOFFSET(vop_write), ap));
 }
 
 /*
@@ -1757,7 +1758,8 @@ ufsspec_close(ap)
 	if (ap->a_vp->v_usecount > 1)
 		ITIMES(ip, &time, &time);
 	simple_unlock(&vp->v_interlock);
-	return (VOCALL (spec_vnodeop_p, VOFFSET(vop_close), ap));
+	return (VOPARGS(ap, vop_close));
+	//return (VOCALL (spec_vnodeop_p, VOFFSET(vop_close), ap));
 }
 
 #ifdef FIFO
@@ -1779,7 +1781,8 @@ ufsfifo_read(ap)
 	 * Set access flag.
 	 */
 	VTOI(ap->a_vp)->i_flag |= IN_ACCESS;
-	return (VOCALL (fifo_vnodeop_p, VOFFSET(vop_read), ap));
+	return (VOPARGS(ap, vop_read));
+	//return (VOCALL (fifo_vnodeop_p, VOFFSET(vop_read), ap));
 }
 
 /*
@@ -1800,7 +1803,8 @@ ufsfifo_write(ap)
 	 * Set update and change flags.
 	 */
 	VTOI(ap->a_vp)->i_flag |= IN_CHANGE | IN_UPDATE;
-	return (VOCALL (fifo_vnodeop_p, VOFFSET(vop_write), ap));
+	return (VOPARGS(ap, vop_write));
+	//return (VOCALL (fifo_vnodeop_p, VOFFSET(vop_write), ap));
 }
 
 /*
@@ -1824,7 +1828,8 @@ ufsfifo_close(ap)
 	if (ap->a_vp->v_usecount > 1)
 		ITIMES(ip, &time, &time);
 	simple_unlock(&vp->v_interlock);
-	return (VOCALL (fifo_vnodeop_p, VOFFSET(vop_close), ap));
+	return (VOPARGS(ap, vop_close));
+	//return (VOCALL (fifo_vnodeop_p, VOFFSET(vop_close), ap));
 }
 #endif /* FIFO */
 

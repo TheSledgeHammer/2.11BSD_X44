@@ -346,7 +346,353 @@ struct vnodeops {
 #define	VOP_STRATEGY(bp)										(*((bp)->b_vp->v_op->vop_strategy))(bp)
 #define VOP_BWRITE(bp)											(*((bp)->b_vp->v_op->vop_bwrite))(bp)
 
+/*
+ * A generic structure.
+ * This can be used by bypass routines to identify generic arguments.
+ */
+struct vop_generic_args {
+	struct vnodeops 		*a_ops;
+};
+
+struct vop_lookup_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_dvp;
+	struct vnode 			**a_vpp;
+	struct componentname 	*a_cnp;
+};
+
+struct vop_create_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_dvp;
+	struct vnode 			**a_vpp;
+	struct componentname 	*a_cnp;
+	struct vattr 			*a_vap;
+};
+
+struct vop_whiteout_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_dvp;
+	struct componentname 	*a_cnp;
+	int 					a_flags;
+};
+
+struct vop_mknod_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_dvp;
+	struct vnode 			**a_vpp;
+	struct componentname 	*a_cnp;
+	struct vattr 			*a_vap;
+};
+
+struct vop_open_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	int 					a_mode;
+	struct ucred 			*a_cred;
+	struct proc 			*a_p;
+};
+
+struct vop_close_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	int 					a_fflag;
+	struct ucred 			*a_cred;
+	struct proc 			*a_p;
+};
+
+struct vop_access_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	int 					a_mode;
+	struct ucred 			*a_cred;
+	struct proc 			*a_p;
+};
+
+struct vop_getattr_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	struct vattr 			*a_vap;
+	struct ucred 			*a_cred;
+	struct proc 			*a_p;
+};
+
+struct vop_setattr_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	struct vattr 			*a_vap;
+	struct ucred 			*a_cred;
+	struct proc 			*a_p;
+};
+
+struct vop_read_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	struct uio 				*a_uio;
+	int 					a_ioflag;
+	struct ucred 			*a_cred;
+};
+
+struct vop_write_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	struct uio 				*a_uio;
+	int 					a_ioflag;
+	struct ucred 			*a_cred;
+};
+
+struct vop_lease_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	struct proc 			*a_p;
+	struct ucred 			*a_cred;
+	int 					a_flag;
+};
+
+struct vop_ioctl_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	u_long 					a_command;
+	caddr_t 				a_data;
+	int 					a_fflag;
+	struct ucred 			*a_cred;
+	struct proc 			*a_p;
+};
+
+struct vop_select_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	int 					a_which;
+	int 					a_fflags;
+	struct ucred 			*a_cred;
+	struct proc 			*a_p;
+};
+
+struct vop_revoke_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	int 					a_flags;
+};
+
+struct vop_mmap_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	int 					a_fflags;
+	struct ucred 			*a_cred;
+	struct proc 			*a_p;
+};
+
+struct vop_fsync_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	struct ucred 			*a_cred;
+	int 					a_waitfor;
+	struct proc 			*a_p;
+};
+
+struct vop_seek_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	off_t 					a_oldoff;
+	off_t 					a_newoff;
+	struct ucred 			*a_cred;
+};
+
+struct vop_remove_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_dvp;
+	struct vnode 			*a_vp;
+	struct componentname 	*a_cnp;
+};
+
+struct vop_link_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	struct vnode 			*a_tdvp;
+	struct componentname 	*a_cnp;
+};
+
+struct vop_rename_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_fdvp;
+	struct vnode 			*a_fvp;
+	struct componentname 	*a_fcnp;
+	struct vnode 			*a_tdvp;
+	struct vnode 			*a_tvp;
+	struct componentname 	*a_tcnp;
+};
+
+struct vop_mkdir_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_dvp;
+	struct vnode 			**a_vpp;
+	struct componentname 	*a_cnp;
+	struct vattr 			*a_vap;
+};
+
+struct vop_rmdir_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_dvp;
+	struct vnode 			*a_vp;
+	struct componentname 	*a_cnp;
+};
+
+struct vop_symlink_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_dvp;
+	struct vnode 			**a_vpp;
+	struct componentname 	*a_cnp;
+	struct vattr 			*a_vap;
+	char 					*a_target;
+};
+
+struct vop_readdir_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	struct uio 				*a_uio;
+	struct ucred 			*a_cred;
+	int 					*a_eofflag;
+	int 					*a_ncookies;
+	u_long 					**a_cookies;
+};
+
+struct vop_readlink_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	struct uio 				*a_uio;
+	struct ucred 			*a_cred;
+};
+
+struct vop_abortop_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_dvp;
+	struct componentname	*a_cnp;
+};
+
+struct vop_inactive_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	struct proc 			*a_p;
+};
+
+struct vop_reclaim_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	struct proc 			*a_p;
+};
+
+struct vop_lock_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	int 					a_flags;
+	struct proc 			*a_p;
+};
+
+struct vop_unlock_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	int 					a_flags;
+	struct proc 			*a_p;
+};
+
+struct vop_bmap_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	daddr_t 				a_bn;
+	struct vnode 			**a_vpp;
+	daddr_t 				*a_bnp;
+	int 					*a_runp;
+};
+
+struct vop_print_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+};
+
+struct vop_islocked_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+};
+
+struct vop_pathconf_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	int 					a_name;
+	register_t 				*a_retval;
+};
+
+struct vop_advlock_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	caddr_t 				a_id;
+	int 					a_op;
+	struct flock 			*a_fl;
+	int 					a_flags;
+};
+
+struct vop_blkatoff_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	off_t 					a_offset;
+	char 					**a_res;
+	struct buf 				**a_bpp;
+};
+
+struct vop_valloc_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_pvp;
+	int 					a_mode;
+	struct ucred 			*a_cred;
+	struct vnode 			**a_vpp;
+};
+
+struct vop_reallocblks_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	struct cluster_save 	*a_buflist;
+};
+
+struct vop_vfree_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_pvp;
+	ino_t 					a_ino;
+	int 					a_mode;
+};
+
+struct vop_truncate_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	off_t 					a_length;
+	int 					a_flags;
+	struct ucred 			*a_cred;
+	struct proc 			*a_p;
+};
+
+struct vop_update_args {
+	struct vop_generic_args	a_head;
+	struct vnode 			*a_vp;
+	struct timeval 			*a_access;
+	struct timeval 			*a_modify;
+	int 					a_waitfor;
+};
+
+/* Special cases: */
+struct vop_strategy_args {
+	struct vop_generic_args	a_head;
+	struct buf 				*a_bp;
+};
+
+struct vop_bwrite_args {
+	struct vop_generic_args	a_head;
+	struct buf 				*a_bp;
+};
+/* End of special cases. */
+
 #ifdef _KERNEL
+
+#define VARGTOVOPS(ap) ((ap)->a_head.a_ops)
+#define VOPARGS(ap, vop_field) \
+		VARGTOVOPS(ap)->vop_field
+
 /*
  * Interlock for scanning list of vnodes attached to a mountpoint
  */
@@ -355,7 +701,6 @@ struct simplelock mntvnode_slock;
 /*
  * Finally, include the default set of vnode operations.
  */
-#include <sys/vnode_ops.h>
 
 extern struct vnodeops vops;
 
@@ -405,5 +750,9 @@ struct 	vnode *checkalias (struct vnode *vp, dev_t nvp_rdev, struct mount *mp);
 void 	vput (struct vnode *vp);
 void 	vref (struct vnode *vp);
 void 	vrele (struct vnode *vp);
+
+/* vfs_vops.c */
+void 	vop_init(); 					/* init vnode operations */
+void 	vop_alloc(struct vnodeops *); 	/* allocate vnode operations */
 #endif /* KERNEL */
 #endif /* !_SYS_VNODE_H_ */

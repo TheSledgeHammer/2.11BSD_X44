@@ -35,16 +35,16 @@
 #include <sys/mount.h>
 #include <sys/buf.h>
 #include <sys/vnode.h>
-#include <sys/vnode_ops.h>
 #include <sys/lock.h>
 #include <sys/malloc.h>
 
 struct vnodeops vops;
 
+/* initilize vnodeops */
 void
 vop_init()
 {
-	vops_alloc(&vops);
+	vop_alloc(&vops);
 }
 
 /* allocate vnodeops */
@@ -1076,7 +1076,6 @@ vop_update(vp, access, modify, waitfor)
 }
 
 /* Special cases: */
-#include <sys/buf.h>
 
 int
 vop_strategy(bp)

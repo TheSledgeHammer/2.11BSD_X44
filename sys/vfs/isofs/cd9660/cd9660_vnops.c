@@ -939,7 +939,8 @@ cd9660_strategy(ap)
 	}
 	vp = ip->i_devvp;
 	bp->b_dev = vp->v_rdev;
-	VOCALL (vp->v_op, VOFFSET(vop_strategy), ap);
+	//VOCALL (vp->v_op, VOFFSET(vop_strategy), ap);
+	VOPARGS(ap, vop_strategy);
 	return (0);
 }
 
@@ -1095,7 +1096,7 @@ struct vnodeops cd9660_vnodeops[] = {
 		.vop_truncate = cd9660_truncate,		/* truncate */
 		.vop_update = cd9660_update,			/* update */
 		.vop_bwrite = vn_bwrite,				/* bwrite */
-		(struct vnodeops *)NULL = (int(*)())NULL
+		(struct vnodeops *)NULL = (int(*)())NULL,
 };
 
 /*
@@ -1146,7 +1147,6 @@ struct vnodeops cd9660_specops[] = {
 		.vop_update = cd9660_update,			/* update */
 		.vop_bwrite = vn_bwrite,				/* bwrite */
 		(struct vnodeops *)NULL = (int(*)())NULL
-
 };
 
 #ifdef FIFO

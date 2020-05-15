@@ -222,10 +222,10 @@ dead_ioctl(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
-
 	if (!chkvnlock(ap->a_vp))
 		return (EBADF);
-	return (VCALL(ap->a_vp, VOFFSET(vop_ioctl), ap));
+	return (VOPARGS(ap, vop_ioctl));
+	//return (VCALL(ap->a_vp, VOFFSET(vop_ioctl), ap));
 }
 
 /* ARGSUSED */
@@ -253,7 +253,6 @@ dead_strategy(ap)
 		struct buf *a_bp;
 	} */ *ap;
 {
-
 	if (ap->a_bp->b_vp == NULL || !chkvnlock(ap->a_bp->b_vp)) {
 		ap->a_bp->b_flags |= B_ERROR;
 		biodone(ap->a_bp);
@@ -284,7 +283,8 @@ dead_lock(ap)
 	}
 	if (!chkvnlock(vp))
 		return (0);
-	return (VCALL(vp, VOFFSET(vop_lock), ap));
+	return (VOPARGS(ap, vop_lock));
+	//return (VCALL(vp, VOFFSET(vop_lock), ap));
 }
 
 /*
@@ -299,7 +299,6 @@ dead_bmap(ap)
 		int *a_runp;
 	} */ *ap;
 {
-
 	if (!chkvnlock(ap->a_vp))
 		return (EIO);
 	return (VOP_BMAP(ap->a_vp, ap->a_bn, ap->a_vpp, ap->a_bnp, ap->a_runp));
