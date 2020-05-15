@@ -36,6 +36,7 @@
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/vnode.h>
+//#include <sys/vnode_ops.h>
 
 /*
  * These define the root filesystem, device, and root filesystem type.
@@ -159,11 +160,94 @@ struct vfsconf *vfsconf = vfsconflist;
 
 /*
  *
- * vfs_opv_descs enumerates the list of vnode classes, each with it's own
+ * vfs_ops enumerates the list of vnode classes, each with it's own
  * vnode operation vector.  It is consulted at system boot to build operation
  * vectors.  It is NULL terminated.
  *
  */
+extern struct vnodeops ffs_vnodeops;
+extern struct vnodeops ffs_specops;
+extern struct vnodeops ffs_fifoops;
+extern struct vnodeops lfs_vnodeops;
+extern struct vnodeops lfs_specops;
+extern struct vnodeops lfs_fifoops;
+extern struct vnodeops mfs_vnodeops;
+extern struct vnodeops dead_vnodeops;
+extern struct vnodeops fifo_vnodeops;
+extern struct vnodeops spec_vnodeops;
+extern struct vnodeops nfsv2_vnodeops;
+extern struct vnodeops spec_nfsv2nodeops;
+extern struct vnodeops fifo_nfsv2nodeops;
+extern struct vnodeops fdesc_vnodeops;
+extern struct vnodeops portal_vnodeops;
+extern struct vnodeops null_vnodeops;
+extern struct vnodeops umap_vnodeops;
+extern struct vnodeops kernfs_vnodeops;
+extern struct vnodeops procfs_vnodeops;
+extern struct vnodeops cd9660_vnodeops;
+extern struct vnodeops cd9660_specops;
+extern struct vnodeops cd9660_fifoops;
+extern struct vnodeops union_vnodeops;
+
+struct vnodeops *vfs_vops[] = {
+	&ffs_vnodeops,
+	&ffs_specops,
+#ifdef FIFO
+	&ffs_fifoops,
+#endif
+	&dead_vnodeops,
+#ifdef FIFO
+	&fifo_vnodeops,
+#endif
+	&spec_vnodeops,
+#ifdef LFS
+	&lfs_vnodeops,
+	&lfs_specops,
+#ifdef FIFO
+	&lfs_fifoops,
+#endif
+#endif
+#ifdef MFS
+	&mfs_vnodeops,
+#endif
+#ifdef NFS
+	&nfsv2_vnodeops,
+	&spec_nfsv2nodeops,
+#ifdef FIFO
+	&fifo_nfsv2nodeops,
+#endif
+#endif
+#ifdef FDESC
+	&fdesc_vnodeops,
+#endif
+#ifdef PORTAL
+	&portal_vnodeops,
+#endif
+#ifdef NULLFS
+	&null_vnodeops,
+#endif
+#ifdef UMAPFS
+	&umap_vnodeops,
+#endif
+#ifdef KERNFS
+	&kernfs_vnodeops,
+#endif
+#ifdef PROCFS
+	&procfs_vnodeops,
+#endif
+#ifdef CD9660
+	&cd9660_vnodeops,
+	&cd9660_specops,
+#ifdef FIFO
+	&cd9660_fifoops,
+#endif
+#endif
+#ifdef UNION
+	&union_vnodeops,
+#endif
+};
+
+/*
 extern struct vnodeopv_desc ffs_vnodeop_opv_desc;
 extern struct vnodeopv_desc ffs_specop_opv_desc;
 extern struct vnodeopv_desc ffs_fifoop_opv_desc;
@@ -246,3 +330,4 @@ struct vnodeopv_desc *vfs_opv_descs[] = {
 #endif
 	NULL
 };
+*/

@@ -547,8 +547,8 @@ loop:   for (bp = vp->v_dirtyblkhd.lh_first; bp && bp->b_vnbufs.le_next != NULL;
 	    bp = bp->b_vnbufs.le_next);
 	for (; bp && bp != BEG_OF_LIST; bp = BACK_BUF(bp)) {
 /* END HACK */
-		if (bp->b_flags & B_BUSY || !match(fs, bp) ||
-		    bp->b_flags & B_GATHERED)
+		if ((bp->b_flags & B_BUSY) || !match(fs, bp) ||
+		    (bp->b_flags & B_GATHERED))
 			continue;
 #ifdef DIAGNOSTIC
 		if (!(bp->b_flags & B_DELWRI))

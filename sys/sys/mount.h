@@ -181,7 +181,8 @@ struct export_args {
  * mount time to identify the requested filesystem.
  */
 struct vfsconf {
-	void 			*vfc_vfsops;				/* filesystem operations vector */
+	const struct vfsops *vfc_vfsops; /* filesystem operations vector */
+	//void 			*vfc_vfsops;				/* filesystem operations vector */
 	char 			vfc_name[VFS_MAXNAMELEN];	/* filesystem type name */
 	int 			vfc_index;
 	int				vfc_typenum;				/* historic filesystem type number */
@@ -191,7 +192,7 @@ struct vfsconf {
 	struct	vfsconf *vfc_next;					/* next in list */
 };
 
-#ifdef KERNEL
+//#ifdef KERNEL
 
 extern int 				maxvfsconf;		/* highest defined filesystem type */
 extern struct vfsconf 	*vfsconf;		/* head of list of filesystem types */

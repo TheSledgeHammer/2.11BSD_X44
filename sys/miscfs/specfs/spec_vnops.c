@@ -59,54 +59,51 @@ char	devioc[] = "devioc";
 char	devcls[] = "devcls";
 
 int (**spec_vnodeop_p)();
-struct vnodeopv_entry_desc spec_vnodeop_entries[] = {
-	{ &vop_default_desc, vn_default_error },
-	{ &vop_lookup_desc, spec_lookup },			/* lookup */
-	{ &vop_create_desc, spec_create },			/* create */
-	{ &vop_mknod_desc, spec_mknod },			/* mknod */
-	{ &vop_open_desc, spec_open },				/* open */
-	{ &vop_close_desc, spec_close },			/* close */
-	{ &vop_access_desc, spec_access },			/* access */
-	{ &vop_getattr_desc, spec_getattr },		/* getattr */
-	{ &vop_setattr_desc, spec_setattr },		/* setattr */
-	{ &vop_read_desc, spec_read },				/* read */
-	{ &vop_write_desc, spec_write },			/* write */
-	{ &vop_lease_desc, spec_lease_check },		/* lease */
-	{ &vop_ioctl_desc, spec_ioctl },			/* ioctl */
-	{ &vop_select_desc, spec_select },			/* select */
-	{ &vop_revoke_desc, spec_revoke },			/* revoke */
-	{ &vop_mmap_desc, spec_mmap },				/* mmap */
-	{ &vop_fsync_desc, spec_fsync },			/* fsync */
-	{ &vop_seek_desc, spec_seek },				/* seek */
-	{ &vop_remove_desc, spec_remove },			/* remove */
-	{ &vop_link_desc, spec_link },				/* link */
-	{ &vop_rename_desc, spec_rename },			/* rename */
-	{ &vop_mkdir_desc, spec_mkdir },			/* mkdir */
-	{ &vop_rmdir_desc, spec_rmdir },			/* rmdir */
-	{ &vop_symlink_desc, spec_symlink },		/* symlink */
-	{ &vop_readdir_desc, spec_readdir },		/* readdir */
-	{ &vop_readlink_desc, spec_readlink },		/* readlink */
-	{ &vop_abortop_desc, spec_abortop },		/* abortop */
-	{ &vop_inactive_desc, spec_inactive },		/* inactive */
-	{ &vop_reclaim_desc, spec_reclaim },		/* reclaim */
-	{ &vop_lock_desc, spec_lock },				/* lock */
-	{ &vop_unlock_desc, spec_unlock },			/* unlock */
-	{ &vop_bmap_desc, spec_bmap },				/* bmap */
-	{ &vop_strategy_desc, spec_strategy },		/* strategy */
-	{ &vop_print_desc, spec_print },			/* print */
-	{ &vop_islocked_desc, spec_islocked },		/* islocked */
-	{ &vop_pathconf_desc, spec_pathconf },		/* pathconf */
-	{ &vop_advlock_desc, spec_advlock },		/* advlock */
-	{ &vop_blkatoff_desc, spec_blkatoff },		/* blkatoff */
-	{ &vop_valloc_desc, spec_valloc },			/* valloc */
-	{ &vop_vfree_desc, spec_vfree },			/* vfree */
-	{ &vop_truncate_desc, spec_truncate },		/* truncate */
-	{ &vop_update_desc, spec_update },			/* update */
-	{ &vop_bwrite_desc, spec_bwrite },			/* bwrite */
-	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
+struct vnodeops spec_vnodeops[] = {
+		.vop_lookup = spec_lookup,		/* lookup */
+		.vop_create = spec_create,		/* create */
+		.vop_mknod = spec_mknod,		/* mknod */
+		.vop_open = spec_open,			/* open */
+		.vop_close = spec_close,		/* close */
+		.vop_access = spec_access,		/* access */
+		.vop_getattr = spec_getattr,	/* getattr */
+		.vop_setattr = spec_setattr,	/* setattr */
+		.vop_read = spec_read,			/* read */
+		.vop_write = spec_write,		/* write */
+		.vop_lease = spec_lease_check,	/* lease */
+		.vop_ioctl = spec_ioctl,		/* ioctl */
+		.vop_select = spec_select,		/* select */
+		.vop_revoke = spec_revoke,		/* revoke */
+		.vop_mmap = spec_mmap,			/* mmap */
+		.vop_fsync = spec_fsync,		/* fsync */
+		.vop_seek = spec_seek,			/* seek */
+		.vop_remove = spec_remove,		/* remove */
+		.vop_link = spec_link,			/* link */
+		.vop_rename = spec_rename,		/* rename */
+		.vop_mkdir = spec_mkdir,		/* mkdir */
+		.vop_rmdir = spec_rmdir,		/* rmdir */
+		.vop_symlink = spec_symlink,	/* symlink */
+		.vop_readdir = spec_readdir,	/* readdir */
+		.vop_readlink = spec_readlink,	/* readlink */
+		.vop_abortop = spec_abortop,	/* abortop */
+		.vop_inactive = spec_inactive,	/* inactive */
+		.vop_reclaim = spec_reclaim,	/* reclaim */
+		.vop_lock = spec_lock,			/* lock */
+		.vop_unlock = spec_unlock,		/* unlock */
+		.vop_bmap = spec_bmap,			/* bmap */
+		.vop_strategy = spec_strategy,	/* strategy */
+		.vop_print = spec_print,		/* print */
+		.vop_islocked = spec_islocked,	/* islocked */
+		.vop_pathconf = spec_pathconf,	/* pathconf */
+		.vop_advlock = spec_advlock,	/* advlock */
+		.vop_blkatoff = spec_blkatoff,	/* blkatoff */
+		.vop_valloc = spec_valloc,		/* valloc */
+		.vop_vfree = spec_vfree,		/* vfree */
+		.vop_truncate = spec_truncate,	/* truncate */
+		.vop_update = spec_update,		/* update */
+		.vop_bwrite = spec_bwrite,		/* bwrite */
+		(struct vnodeops *)NULL = (int(*)())NULL
 };
-struct vnodeopv_desc spec_vnodeop_opv_desc =
-	{ &spec_vnodeop_p, spec_vnodeop_entries };
 
 /*
  * Trivial lookup routine that always fails.

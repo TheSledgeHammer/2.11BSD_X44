@@ -1,31 +1,57 @@
 /*
- * vfs_vops1.c
+ * The 3-Clause BSD License:
+ * Copyright (c) 2020 Martin Kelly
+ * All rights reserved.
  *
- *  Created on: 15 May 2020
- *      Author: marti
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @(#)vfs_vops.c	1.00
  */
-
 
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
+#include <sys/user.h>
 #include <sys/mount.h>
 #include <sys/buf.h>
 #include <sys/vnode.h>
+#include <sys/vnode_ops.h>
 #include <sys/lock.h>
-#include <vfs/vops1.h>
-
-#include <sys/user.h>
 #include <sys/malloc.h>
 
 struct vnodeops vops;
-/* add M_VNODEOPS to malloc */
 
-/* initilize vnodeops */
 void
 vop_init()
 {
-	struct vnodeops *vops = &vops; //(struct vnodeops *) malloc(sizeof(struct vnodeops *), M_VNODE, M_WAITOK);
+	vops_alloc(&vops);
+}
+
+/* allocate vnodeops */
+void
+vop_alloc(vops)
+	struct vnodeops *vops;
+{
 	MALLOC(vops, struct vnodeops *, sizeof(struct vnodeops *), M_VNODEOPS, M_WAITOK);
 }
 
@@ -43,11 +69,11 @@ vop_lookup(dvp, vpp, cnp)
 	a.a_vpp = vpp;
 	a.a_cnp = cnp;
 
-	if(vops->vop_lookup(dvp, vpp, cnp) == NULL) {
+	if(vops.vop_lookup == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_lookup(dvp, vpp, cnp);
+	error = vops.vop_lookup(dvp, vpp, cnp);
 
 	return (error);
 }
@@ -68,11 +94,11 @@ vop_create(dvp, vpp, cnp, vap)
 	a.a_cnp = cnp;
 	a.a_vap = vap;
 
-	if(vops->vop_create(dvp, vpp, cnp, vap) == NULL) {
+	if(vops.vop_create == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_create(dvp, vpp, cnp, vap);
+	error = vops.vop_create(dvp, vpp, cnp, vap);
 
 	return (error);
 }
@@ -91,11 +117,11 @@ vop_whiteout(dvp, cnp, flags)
 	a.a_cnp = cnp;
 	a.a_flags = flags;
 
-	if(vops->vop_whiteout(dvp, cnp, flags) == NULL) {
+	if(vops.vop_whiteout == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_whiteout(dvp, cnp, flags);
+	error = vops.vop_whiteout(dvp, cnp, flags);
 
 	return (error);
 }
@@ -116,11 +142,11 @@ vop_mknod(dvp, vpp, cnp, vap)
 	a.a_cnp = cnp;
 	a.a_vap = vap;
 
-	if(vops->vop_mknod(dvp, vpp, cnp, vap) == NULL) {
+	if(vops.vop_mknod == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_mknod(dvp, vpp, cnp, vap);
+	error = vops.vop_mknod(dvp, vpp, cnp, vap);
 
 	return (error);
 }
@@ -141,11 +167,11 @@ vop_open(vp, mode, cred, p)
 	a.a_cred = cred;
 	a.a_p = p;
 
-	if(vops->vop_open(vp, mode, cred, p) == NULL) {
+	if(vops.vop_open == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_open(vp, mode, cred, p);
+	error = vops.vop_open(vp, mode, cred, p);
 
 	return (error);
 }
@@ -166,11 +192,11 @@ vop_close(vp, fflag, cred, p)
 	a.a_cred = cred;
 	a.a_p = p;
 
-	if(vops->vop_close(vp, fflag, cred, p) == NULL) {
+	if(vops.vop_close == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_close(vp, fflag, cred, p);
+	error = vops.vop_close(vp, fflag, cred, p);
 
 	return (error);
 }
@@ -191,11 +217,11 @@ vop_access(vp, mode, cred, p)
 	a.a_cred = cred;
 	a.a_p = p;
 
-	if(vops->vop_access(vp, mode, cred, p) == NULL) {
+	if(vops.vop_access == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_access(vp, mode, cred, p);
+	error = vops.vop_access(vp, mode, cred, p);
 
 	return (error);
 }
@@ -216,11 +242,11 @@ vop_getattr(vp, vap, cred, p)
 	a.a_cred = cred;
 	a.a_p = p;
 
-	if(vops->vop_getattr(vp, vap, cred, p) == NULL) {
+	if(vops.vop_getattr == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_getattr(vp, vap, cred, p);
+	error = vops.vop_getattr(vp, vap, cred, p);
 
 	return (error);
 }
@@ -241,11 +267,11 @@ vop_setattr(vp, vap, cred, p)
 	a.a_cred = cred;
 	a.a_p = p;
 
-	if(vops->vop_setattr(vp, vap, cred, p) == NULL) {
+	if(vops.vop_setattr == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_setattr(vp, vap, cred, p);
+	error = vops.vop_setattr(vp, vap, cred, p);
 
 	return (error);
 }
@@ -266,11 +292,11 @@ vop_read(vp, uio, ioflag, cred)
 	a.a_ioflag = ioflag;
 	a.a_cred = cred;
 
-	if(vops->vop_read(vp, uio, ioflag, cred) == NULL) {
+	if(vops.vop_read == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_read(vp, uio, ioflag, cred);
+	error = vops.vop_read(vp, uio, ioflag, cred);
 
 	return (error);
 }
@@ -291,11 +317,11 @@ vop_write(vp, uio, ioflag, cred)
 	a.a_ioflag = ioflag;
 	a.a_cred = cred;
 
-	if(vops->vop_write(vp, uio, ioflag, cred) == NULL) {
+	if(vops.vop_write == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_write(vp, uio, ioflag, cred);
+	error = vops.vop_write(vp, uio, ioflag, cred);
 
 	return (error);
 }
@@ -316,11 +342,11 @@ vop_lease(vp, p, cred, flag)
 	a.a_cred = cred;
 	a.a_flag = flag;
 
-	if(vops->vop_lease(vp, p, cred, flag) == NULL) {
+	if(vops.vop_lease == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_lease(vp, p, cred, flag);
+	error = vops.vop_lease(vp, p, cred, flag);
 
 	return (error);
 }
@@ -345,11 +371,11 @@ vop_ioctl(vp, command, data, fflag, cred, p)
 	a.a_cred = cred;
 	a.a_p = p;
 
-	if(vops->vop_ioctl(vp, command, data, fflag, cred, p) == NULL) {
+	if(vops.vop_ioctl == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_ioctl(vp, command, data, fflag, cred, p);
+	error = vops.vop_ioctl(vp, command, data, fflag, cred, p);
 
 	return (error);
 }
@@ -372,11 +398,11 @@ vop_select(vp, which, fflags, cred, p)
 	a.a_cred = cred;
 	a.a_p = p;
 
-	if(vops->vop_select(vp, which, fflags, cred, p) == NULL) {
+	if(vops.vop_select == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_select(vp, which, fflags, cred, p);
+	error = vops.vop_select(vp, which, fflags, cred, p);
 
 	return (error);
 }
@@ -393,11 +419,11 @@ vop_revoke(vp, flags)
 	a.a_vp = vp;
 	a.a_flags = flags;
 
-	if(vops->vop_revoke(vp, flags) == NULL) {
+	if(vops.vop_revoke == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_revoke(vp, flags);
+	error = vops.vop_revoke(vp, flags);
 
 	return (error);
 }
@@ -418,11 +444,11 @@ vop_mmap(vp, fflags, cred, p)
 	a.a_cred = cred;
 	a.a_p = p;
 
-	if(vops->vop_mmap(vp, fflags, cred, p) == NULL) {
+	if(vops.vop_mmap == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_mmap(vp, fflags, cred, p);
+	error = vops.vop_mmap(vp, fflags, cred, p);
 
 	return (error);
 }
@@ -443,11 +469,11 @@ vop_fsync(vp, cred, waitfor, p)
 	a.a_waitfor = waitfor;
 	a.a_p = p;
 
-	if(vops->vop_fsync(vp, cred, waitfor, p) == NULL) {
+	if(vops.vop_fsync == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_fsync(vp, cred, waitfor, p);
+	error = vops.vop_fsync(vp, cred, waitfor, p);
 
 	return (error);
 }
@@ -468,11 +494,11 @@ vop_seek(vp, oldoff, newoff, cred)
 	a.a_newoff = newoff;
 	a.a_cred = cred;
 
-	if(vops->vop_seek(vp, oldoff, newoff, cred) == NULL) {
+	if(vops.vop_seek == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_seek(vp, oldoff, newoff, cred);
+	error = vops.vop_seek(vp, oldoff, newoff, cred);
 
 	return (error);
 }
@@ -491,11 +517,11 @@ vop_remove(dvp, vp, cnp)
 	a.a_vp = vp;
 	a.a_cnp = cnp;
 
-	if(vops->vop_remove(dvp, vp, cnp) == NULL) {
+	if(vops.vop_remove == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_remove(dvp, vp, cnp);
+	error = vops.vop_remove(dvp, vp, cnp);
 
 	return (error);
 }
@@ -514,11 +540,11 @@ vop_link(vp, tdvp, cnp)
 	a.a_tdvp = tdvp;
 	a.a_cnp = cnp;
 
-	if(vops->vop_link(vp, tdvp, cnp) == NULL) {
+	if(vops.vop_link == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_link(vp, tdvp, cnp);
+	error = vops.vop_link(vp, tdvp, cnp);
 
 	return (error);
 }
@@ -543,11 +569,11 @@ vop_rename(fdvp, fvp, fcnp, tdvp, tvp, tcnp)
 	a.a_tvp = tvp;
 	a.a_tcnp = tcnp;
 
-	if(vops->vop_rename(fdvp, fvp, fcnp, tdvp, tvp, tcnp) == NULL) {
+	if(vops.vop_rename == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_rename(fdvp, fvp, fcnp, tdvp, tvp, tcnp);
+	error = vops.vop_rename(fdvp, fvp, fcnp, tdvp, tvp, tcnp);
 
 	return (error);
 }
@@ -568,11 +594,11 @@ vop_mkdir(dvp, vpp, cnp, vap)
 	a.a_cnp = cnp;
 	a.a_vap = vap;
 
-	if(vops->vop_mkdir(dvp, vpp, cnp, vap) == NULL) {
+	if(vops.vop_mkdir == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_mkdir(dvp, vpp, cnp, vap);
+	error = vops.vop_mkdir(dvp, vpp, cnp, vap);
 
 	return (error);
 }
@@ -591,11 +617,11 @@ vop_rmdir(dvp, vp, cnp)
 	a.a_vp = vp;
 	a.a_cnp = cnp;
 
-	if(vops->vop_rmdir(dvp, vp, cnp) == NULL) {
+	if(vops.vop_rmdir == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_rmdir(dvp, vp, cnp);
+	error = vops.vop_rmdir(dvp, vp, cnp);
 
 	return (error);
 }
@@ -618,11 +644,11 @@ vop_symlink(dvp, vpp, cnp, vap, target)
 	a.a_vap = vap;
 	a.a_target = target;
 
-	if(vops->vop_symlink(dvp, vpp, cnp, vap, target) == NULL) {
+	if(vops.vop_symlink == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_symlink(dvp, vpp, cnp, vap, target);
+	error = vops.vop_symlink(dvp, vpp, cnp, vap, target);
 
 	return (error);
 }
@@ -647,11 +673,11 @@ vop_readdir(vp, uio, cred, eofflag, ncookies, cookies)
 	a.a_ncookies = ncookies;
 	a.a_cookies = cookies;
 
-	if(vops->vop_readdir(vp, uio, cred, eofflag, ncookies, cookies) == NULL) {
+	if(vops.vop_readdir == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_readdir(vp, uio, cred, eofflag, ncookies, cookies);
+	error = vops.vop_readdir(vp, uio, cred, eofflag, ncookies, cookies);
 
 	return (error);
 }
@@ -670,15 +696,14 @@ vop_readlink(vp, uio, cred)
 	a.a_uio = uio;
 	a.a_cred = cred;
 
-	if(vops->vop_readlink(vp, uio, cred) == NULL) {
+	if(vops.vop_readlink == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_readlink(vp, uio, cred);
+	error = vops.vop_readlink(vp, uio, cred);
 
 	return (error);
 }
-
 
 int
 vop_abortop(dvp, cnp)
@@ -692,11 +717,11 @@ vop_abortop(dvp, cnp)
 	a.a_dvp = dvp;
 	a.a_cnp = cnp;
 
-	if(vops->vop_abortop(dvp, cnp) == NULL) {
+	if(vops.vop_abortop == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_abortop(dvp, cnp);
+	error = vops.vop_abortop(dvp, cnp);
 
 	return (error);
 }
@@ -713,11 +738,11 @@ vop_inactive(vp, p)
 	a.a_vp = vp;
 	a.a_p = p;
 
-	if(vops->vop_inactive(vp, p) == NULL) {
+	if(vops.vop_inactive == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_inactive(vp, p);
+	error = vops.vop_inactive(vp, p);
 
 	return (error);
 }
@@ -734,7 +759,7 @@ vop_reclaim(vp, p)
 	a.a_vp = vp;
 	a.a_p = p;
 
-	if(vops->vop_reclaim(vp, p) == NULL) {
+	if(vops.vop_reclaim == NULL) {
 		return (EOPNOTSUPP);
 	}
 
@@ -757,11 +782,11 @@ vop_lock(vp, flags, p)
 	a.a_flags = flags;
 	a.a_p = p;
 
-	if(vops->vop_lock(vp, flags, p) == NULL) {
+	if(vops.vop_lock == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_lock(vp, flags, p);
+	error = vops.vop_lock(vp, flags, p);
 
 	return (error);
 }
@@ -780,11 +805,11 @@ vop_unlock(vp, flags, p)
 	a.a_flags = flags;
 	a.a_p = p;
 
-	if(vops->vop_unlock(vp, flags, p) == NULL) {
+	if(vops.vop_unlock == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_unlock(vp, flags, p);
+	error = vops.vop_unlock(vp, flags, p);
 
 	return (error);
 }
@@ -807,11 +832,11 @@ vop_bmap(vp, bn, vpp, bnp, runp)
 	a.a_bnp = bnp;
 	a.a_runp = runp;
 
-	if(vops->vop_bmap(vp, bn, vpp, bnp, runp) == NULL) {
+	if(vops.vop_bmap == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_bmap(vp, bn, vpp, bnp, runp);
+	error = vops.vop_bmap(vp, bn, vpp, bnp, runp);
 
 	return (error);
 }
@@ -826,11 +851,11 @@ vop_print(vp)
 	a.a_head.a_ops = &vops;
 	a.a_vp = vp;
 
-	if(vops->vop_print(vp) == NULL) {
+	if(vops.vop_print == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_print(vp);
+	error = vops.vop_print(vp);
 
 	return (error);
 }
@@ -845,11 +870,11 @@ vop_islocked(vp)
 	a.a_head.a_ops = &vops;
 	a.a_vp = vp;
 
-	if(vops->vop_islocked(vp) == NULL) {
+	if(vops.vop_islocked == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_islocked(vp);
+	error = vops.vop_islocked(vp);
 
 	return (error);
 }
@@ -868,11 +893,11 @@ vop_pathconf(vp, name, retval)
 	a.a_name = name;
 	a.a_retval = retval;
 
-	if(vops->vop_pathconf(vp, name, retval) == NULL) {
+	if(vops.vop_pathconf == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_pathconf(vp, name, retval);
+	error = vops.vop_pathconf(vp, name, retval);
 
 	return (error);
 }
@@ -895,11 +920,11 @@ vop_advlock(vp, id, op, fl, flags)
 	a.a_fl = fl;
 	a.a_flags = flags;
 
-	if(vops->vop_advlock(vp, id, op, fl, flags) == NULL) {
+	if(vops.vop_advlock == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_advlock(vp, id, op, fl, flags);
+	error = vops.vop_advlock(vp, id, op, fl, flags);
 
 	return (error);
 }
@@ -920,11 +945,11 @@ vop_blkatoff(vp, offset, res, bpp)
 	a.a_res = res;
 	a.a_bpp = bpp;
 
-	if(vops->vop_blkatoff(vp, offset, res, bpp) == NULL) {
+	if(vops.vop_blkatoff == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_blkatoff(vp, offset, res, bpp);
+	error = vops.vop_blkatoff(vp, offset, res, bpp);
 
 	return (error);
 }
@@ -945,11 +970,11 @@ vop_valloc(pvp, mode, cred, vpp)
 	a.a_cred = cred;
 	a.a_vpp = vpp;
 
-	if(vops->vop_valloc(pvp, mode, cred, vpp) == NULL) {
+	if(vops.vop_valloc == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_valloc(pvp, mode, cred, vpp);
+	error = vops.vop_valloc(pvp, mode, cred, vpp);
 
 	return (error);
 }
@@ -966,11 +991,11 @@ vop_reallocblks(vp, buflist)
 	a.a_vp = vp;
 	a.a_buflist = buflist;
 
-	if(vops->vop_reallocblks(vp, buflist) == NULL) {
+	if(vops.vop_reallocblks == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_reallocblks(vp, buflist);
+	error = vops.vop_reallocblks(vp, buflist);
 
 	return (error);
 }
@@ -989,11 +1014,11 @@ vop_vfree(pvp, ino, mode)
 	a.a_ino = ino;
 	a.a_mode = mode;
 
-	if(vops->vop_vfree(pvp, ino, mode) == NULL) {
+	if(vops.vop_vfree == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_vfree(pvp, ino, mode);
+	error = vops.vop_vfree(pvp, ino, mode);
 
 	return (error);
 }
@@ -1016,11 +1041,11 @@ vop_truncate(vp, length, flags, cred, p)
 	a.a_cred = cred;
 	a.a_p = p;
 
-	if(vops->vop_truncate(vp, length, flags, cred, p) == NULL) {
+	if(vops.vop_truncate == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_truncate(vp, length, flags, cred, p);
+	error = vops.vop_truncate(vp, length, flags, cred, p);
 
 	return (error);
 }
@@ -1041,11 +1066,11 @@ vop_update(vp, access, modify, waitfor)
 	a.a_modify = modify;
 	a.a_waitfor = waitfor;
 
-	if(vops->vop_update(vp, access, modify, waitfor) == NULL) {
+	if(vops.vop_update == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_update(vp, access, modify, waitfor);
+	error = vops.vop_update(vp, access, modify, waitfor);
 
 	return (error);
 }
@@ -1063,11 +1088,11 @@ vop_strategy(bp)
 	a.a_head.a_ops = &vops;
 	a.a_bp = bp;
 
-	if(vops->vop_strategy(bp) == NULL) {
+	if(vops.vop_strategy == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_strategy(bp);
+	error = vops.vop_strategy(bp);
 
 	return (error);
 }
@@ -1082,11 +1107,11 @@ vop_bwrite(bp)
 	a.a_head.a_ops = &vops;
 	a.a_bp = bp;
 
-	if(vops->vop_bwrite(bp) == NULL) {
+	if(vops.vop_bwrite == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops->vop_bwrite(bp);
+	error = vops.vop_bwrite(bp);
 
 	return (error);
 }

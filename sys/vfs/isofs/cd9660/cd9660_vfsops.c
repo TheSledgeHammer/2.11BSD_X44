@@ -701,10 +701,8 @@ cd9660_vget_internal(mp, ino, vpp, relocated, isodir)
 	    {
 		struct buf *bp2;
 		int off;
-		if ((imp->im_flags & ISOFSMNT_EXTATT)
-		    && (off = isonum_711(isodir->ext_attr_length)))
-			VOP_BLKATOFF(vp, (off_t)-(off << imp->im_bshift), NULL,
-				     &bp2);
+		if ((imp->im_flags & ISOFSMNT_EXTATT) && (off = isonum_711(isodir->ext_attr_length)))
+			VOP_BLKATOFF(vp, (off_t)-(off << imp->im_bshift), NULL, &bp2);
 		else
 			bp2 = NULL;
 		cd9660_defattr(isodir, ip, bp2);

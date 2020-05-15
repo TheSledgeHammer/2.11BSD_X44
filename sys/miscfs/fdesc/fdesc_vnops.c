@@ -863,7 +863,6 @@ fdesc_vfree(ap)
 int
 fdesc_badop()
 {
-
 	panic("fdesc: bad op");
 	/* NOTREACHED */
 }
@@ -903,50 +902,48 @@ fdesc_badop()
 #define fdesc_bwrite ((int (*) (struct  vop_bwrite_args *))eopnotsupp)
 
 int (**fdesc_vnodeop_p)();
-struct vnodeopv_entry_desc fdesc_vnodeop_entries[] = {
-	{ &vop_default_desc, vn_default_error },
-	{ &vop_lookup_desc, fdesc_lookup },	/* lookup */
-	{ &vop_create_desc, fdesc_create },	/* create */
-	{ &vop_mknod_desc, fdesc_mknod },	/* mknod */
-	{ &vop_open_desc, fdesc_open },		/* open */
-	{ &vop_close_desc, fdesc_close },	/* close */
-	{ &vop_access_desc, fdesc_access },	/* access */
-	{ &vop_getattr_desc, fdesc_getattr },	/* getattr */
-	{ &vop_setattr_desc, fdesc_setattr },	/* setattr */
-	{ &vop_read_desc, fdesc_read },		/* read */
-	{ &vop_write_desc, fdesc_write },	/* write */
-	{ &vop_ioctl_desc, fdesc_ioctl },	/* ioctl */
-	{ &vop_select_desc, fdesc_select },	/* select */
-	{ &vop_revoke_desc, fdesc_revoke },	/* revoke */
-	{ &vop_mmap_desc, fdesc_mmap },		/* mmap */
-	{ &vop_fsync_desc, fdesc_fsync },	/* fsync */
-	{ &vop_seek_desc, fdesc_seek },		/* seek */
-	{ &vop_remove_desc, fdesc_remove },	/* remove */
-	{ &vop_link_desc, fdesc_link },		/* link */
-	{ &vop_rename_desc, fdesc_rename },	/* rename */
-	{ &vop_mkdir_desc, fdesc_mkdir },	/* mkdir */
-	{ &vop_rmdir_desc, fdesc_rmdir },	/* rmdir */
-	{ &vop_symlink_desc, fdesc_symlink },	/* symlink */
-	{ &vop_readdir_desc, fdesc_readdir },	/* readdir */
-	{ &vop_readlink_desc, fdesc_readlink },	/* readlink */
-	{ &vop_abortop_desc, fdesc_abortop },	/* abortop */
-	{ &vop_inactive_desc, fdesc_inactive },	/* inactive */
-	{ &vop_reclaim_desc, fdesc_reclaim },	/* reclaim */
-	{ &vop_lock_desc, fdesc_lock },		/* lock */
-	{ &vop_unlock_desc, fdesc_unlock },	/* unlock */
-	{ &vop_bmap_desc, fdesc_bmap },		/* bmap */
-	{ &vop_strategy_desc, fdesc_strategy },	/* strategy */
-	{ &vop_print_desc, fdesc_print },	/* print */
-	{ &vop_islocked_desc, fdesc_islocked },	/* islocked */
-	{ &vop_pathconf_desc, fdesc_pathconf },	/* pathconf */
-	{ &vop_advlock_desc, fdesc_advlock },	/* advlock */
-	{ &vop_blkatoff_desc, fdesc_blkatoff },	/* blkatoff */
-	{ &vop_valloc_desc, fdesc_valloc },	/* valloc */
-	{ &vop_vfree_desc, fdesc_vfree },	/* vfree */
-	{ &vop_truncate_desc, fdesc_truncate },	/* truncate */
-	{ &vop_update_desc, fdesc_update },	/* update */
-	{ &vop_bwrite_desc, fdesc_bwrite },	/* bwrite */
-	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
+struct vnodeops fdesc_vnodeops[] = {
+		.vop_lookup = fdesc_lookup,		/* lookup */
+		.vop_create = fdesc_create,		/* create */
+		.vop_mknod = fdesc_mknod,		/* mknod */
+		.vop_open = fdesc_open,			/* open */
+		.vop_close = fdesc_close,		/* close */
+		.vop_access = fdesc_access,		/* access */
+		.vop_getattr = fdesc_getattr,	/* getattr */
+		.vop_setattr = fdesc_setattr,	/* setattr */
+		.vop_read = fdesc_read,			/* read */
+		.vop_write = fdesc_write,		/* write */
+		.vop_lease = fdesc_lease_check,	/* lease */
+		.vop_ioctl = fdesc_ioctl,		/* ioctl */
+		.vop_select = fdesc_select,		/* select */
+		.vop_revoke = fdesc_revoke,		/* revoke */
+		.vop_mmap = fdesc_mmap,			/* mmap */
+		.vop_fsync = fdesc_fsync,		/* fsync */
+		.vop_seek = fdesc_seek,			/* seek */
+		.vop_remove = fdesc_remove,		/* remove */
+		.vop_link = fdesc_link,			/* link */
+		.vop_rename = fdesc_rename,		/* rename */
+		.vop_mkdir = fdesc_mkdir,		/* mkdir */
+		.vop_rmdir = fdesc_rmdir,		/* rmdir */
+		.vop_symlink = fdesc_symlink,	/* symlink */
+		.vop_readdir = fdesc_readdir,	/* readdir */
+		.vop_readlink = fdesc_readlink,	/* readlink */
+		.vop_abortop = fdesc_abortop,	/* abortop */
+		.vop_inactive = fdesc_inactive,	/* inactive */
+		.vop_reclaim = fdesc_reclaim,	/* reclaim */
+		.vop_lock = fdesc_lock,			/* lock */
+		.vop_unlock = fdesc_unlock,		/* unlock */
+		.vop_bmap = fdesc_bmap,			/* bmap */
+		.vop_strategy = fdesc_strategy,	/* strategy */
+		.vop_print = fdesc_print,		/* print */
+		.vop_islocked = fdesc_islocked,	/* islocked */
+		.vop_pathconf = fdesc_pathconf,	/* pathconf */
+		.vop_advlock = fdesc_advlock,	/* advlock */
+		.vop_blkatoff = fdesc_blkatoff,	/* blkatoff */
+		.vop_valloc = fdesc_valloc,		/* valloc */
+		.vop_vfree = fdesc_vfree,		/* vfree */
+		.vop_truncate = fdesc_truncate,	/* truncate */
+		.vop_update = fdesc_update,		/* update */
+		.vop_bwrite = fdesc_bwrite,		/* bwrite */
+		(struct vnodeops *)NULL = (int(*)())NULL
 };
-struct vnodeopv_desc fdesc_vnodeop_opv_desc =
-	{ &fdesc_vnodeop_p, fdesc_vnodeop_entries };

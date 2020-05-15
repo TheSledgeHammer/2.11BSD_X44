@@ -60,54 +60,51 @@ struct fifoinfo {
 };
 
 int (**fifo_vnodeop_p)();
-struct vnodeopv_entry_desc fifo_vnodeop_entries[] = {
-	{ &vop_default_desc, vn_default_error },
-	{ &vop_lookup_desc, fifo_lookup },		/* lookup */
-	{ &vop_create_desc, fifo_create },		/* create */
-	{ &vop_mknod_desc, fifo_mknod },		/* mknod */
-	{ &vop_open_desc, fifo_open },			/* open */
-	{ &vop_close_desc, fifo_close },		/* close */
-	{ &vop_access_desc, fifo_access },		/* access */
-	{ &vop_getattr_desc, fifo_getattr },	/* getattr */
-	{ &vop_setattr_desc, fifo_setattr },	/* setattr */
-	{ &vop_read_desc, fifo_read },			/* read */
-	{ &vop_write_desc, fifo_write },		/* write */
-	{ &vop_lease_desc, fifo_lease_check },	/* lease */
-	{ &vop_ioctl_desc, fifo_ioctl },		/* ioctl */
-	{ &vop_select_desc, fifo_select },		/* select */
-	{ &vop_revoke_desc, fifo_revoke },		/* revoke */
-	{ &vop_mmap_desc, fifo_mmap },			/* mmap */
-	{ &vop_fsync_desc, fifo_fsync },		/* fsync */
-	{ &vop_seek_desc, fifo_seek },			/* seek */
-	{ &vop_remove_desc, fifo_remove },		/* remove */
-	{ &vop_link_desc, fifo_link },			/* link */
-	{ &vop_rename_desc, fifo_rename },		/* rename */
-	{ &vop_mkdir_desc, fifo_mkdir },		/* mkdir */
-	{ &vop_rmdir_desc, fifo_rmdir },		/* rmdir */
-	{ &vop_symlink_desc, fifo_symlink },	/* symlink */
-	{ &vop_readdir_desc, fifo_readdir },	/* readdir */
-	{ &vop_readlink_desc, fifo_readlink },	/* readlink */
-	{ &vop_abortop_desc, fifo_abortop },	/* abortop */
-	{ &vop_inactive_desc, fifo_inactive },	/* inactive */
-	{ &vop_reclaim_desc, fifo_reclaim },	/* reclaim */
-	{ &vop_lock_desc, fifo_lock },			/* lock */
-	{ &vop_unlock_desc, fifo_unlock },		/* unlock */
-	{ &vop_bmap_desc, fifo_bmap },			/* bmap */
-	{ &vop_strategy_desc, fifo_strategy },	/* strategy */
-	{ &vop_print_desc, fifo_print },		/* print */
-	{ &vop_islocked_desc, fifo_islocked },	/* islocked */
-	{ &vop_pathconf_desc, fifo_pathconf },	/* pathconf */
-	{ &vop_advlock_desc, fifo_advlock },	/* advlock */
-	{ &vop_blkatoff_desc, fifo_blkatoff },	/* blkatoff */
-	{ &vop_valloc_desc, fifo_valloc },		/* valloc */
-	{ &vop_vfree_desc, fifo_vfree },		/* vfree */
-	{ &vop_truncate_desc, fifo_truncate },	/* truncate */
-	{ &vop_update_desc, fifo_update },		/* update */
-	{ &vop_bwrite_desc, fifo_bwrite },		/* bwrite */
-	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
+struct vnodeops fifo_vnodeops[] = {
+		.vop_lookup = fifo_lookup,		/* lookup */
+		.vop_create = fifo_create,		/* create */
+		.vop_mknod = fifo_mknod,		/* mknod */
+		.vop_open = fifo_open,			/* open */
+		.vop_close = fifo_close,		/* close */
+		.vop_access = fifo_access,		/* access */
+		.vop_getattr = fifo_getattr,	/* getattr */
+		.vop_setattr = fifo_setattr,	/* setattr */
+		.vop_read = fifo_read,			/* read */
+		.vop_write = fifo_write,		/* write */
+		.vop_lease = fifo_lease_check,	/* lease */
+		.vop_ioctl = fifo_ioctl,		/* ioctl */
+		.vop_select = fifo_select,		/* select */
+		.vop_revoke = fifo_revoke,		/* revoke */
+		.vop_mmap = fifo_mmap,			/* mmap */
+		.vop_fsync = fifo_fsync,		/* fsync */
+		.vop_seek = fifo_seek,			/* seek */
+		.vop_remove = fifo_remove,		/* remove */
+		.vop_link = fifo_link,			/* link */
+		.vop_rename = fifo_rename,		/* rename */
+		.vop_mkdir = fifo_mkdir,		/* mkdir */
+		.vop_rmdir = fifo_rmdir,		/* rmdir */
+		.vop_symlink = fifo_symlink,	/* symlink */
+		.vop_readdir = fifo_readdir,	/* readdir */
+		.vop_readlink = fifo_readlink,	/* readlink */
+		.vop_abortop = fifo_abortop,	/* abortop */
+		.vop_inactive = fifo_inactive,	/* inactive */
+		.vop_reclaim = fifo_reclaim,	/* reclaim */
+		.vop_lock = fifo_lock,			/* lock */
+		.vop_unlock = fifo_unlock,		/* unlock */
+		.vop_bmap = fifo_bmap,			/* bmap */
+		.vop_strategy = fifo_strategy,	/* strategy */
+		.vop_print = fifo_print,		/* print */
+		.vop_islocked = fifo_islocked,	/* islocked */
+		.vop_pathconf = fifo_pathconf,	/* pathconf */
+		.vop_advlock = fifo_advlock,	/* advlock */
+		.vop_blkatoff = fifo_blkatoff,	/* blkatoff */
+		.vop_valloc = fifo_valloc,		/* valloc */
+		.vop_vfree = fifo_vfree,		/* vfree */
+		.vop_truncate = fifo_truncate,	/* truncate */
+		.vop_update = fifo_update,		/* update */
+		.vop_bwrite = fifo_bwrite,		/* bwrite */
+		(struct vnodeops *)NULL = (int(*)())NULL
 };
-struct vnodeopv_desc fifo_vnodeop_opv_desc =
-	{ &fifo_vnodeop_p, fifo_vnodeop_entries };
 
 /*
  * Trivial lookup routine that always fails.
