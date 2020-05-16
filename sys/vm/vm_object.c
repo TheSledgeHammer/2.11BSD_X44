@@ -71,7 +71,7 @@
 #include <sys/malloc.h>
 
 #include <vm/include/vm_page.h>
-#include <vm/include/vm.h>
+#include <devel/vm/include/vm.h>
 
 /*
  *	Virtual memory objects maintain the actual data
@@ -256,8 +256,7 @@ vm_object_deallocate(object)
 
 		if (object->flags & OBJ_CANPERSIST) {
 
-			TAILQ_INSERT_TAIL(&vm_object_cached_list, object,
-				cached_list);
+			TAILQ_INSERT_TAIL(&vm_object_cached_list, object, cached_list);
 			vm_object_cached++;
 			vm_object_cache_unlock();
 
@@ -1182,8 +1181,7 @@ vm_object_collapse(object)
 			vm_object_unlock(backing_object);
 
 			simple_lock(&vm_object_list_lock);
-			TAILQ_REMOVE(&vm_object_list, backing_object,
-			    object_list);
+			TAILQ_REMOVE(&vm_object_list, backing_object, object_list);
 			vm_object_count--;
 			simple_unlock(&vm_object_list_lock);
 

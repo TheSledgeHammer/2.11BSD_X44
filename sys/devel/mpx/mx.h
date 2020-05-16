@@ -4,13 +4,13 @@
 #define	NINDEX		15
 
 struct mpx {
-	struct chan *mpx_ch;	/* pointer to mpx channel */
+	struct chan 	*mpx_ch;	/* pointer to mpx channel */
 
-	struct proc *mpx_p; 	/* pointer to proc; */
-	struct protosw *mpx_proto;
-	struct mpxbuf *mpx_buf;
-	short mpx_pgrp;
-	short mpx_state;
+	struct proc 	*mpx_p; 	/* pointer to proc; */
+	struct protosw 	*mpx_proto;
+	struct mpxbuf 	*mpx_buf;
+	short 			mpx_pgrp;
+	short 			mpx_state;
 	struct mpx_group *g_group;
 
 	struct rh { 		/* header returned on read of mpx */
@@ -55,17 +55,17 @@ struct mpx_group {
  * internal structure for channel
  */
 struct mpx_chan {
-	short c_flags;
-	char c_index;
-	char c_line;
-	struct	mpx_group *c_group;
-	struct	user *c_u;
-	struct	file *c_fy;
-	struct	tty	 *c_ttyp;
-	struct	clist c_ctlx;
-	int c_pgrp;
-	struct	tty *c_ottyp;
-	char c_oline;
+	short 				c_flags;
+	char 				c_index;
+	char 				c_line;
+	struct	mpx_group 	*c_group;
+	struct	user 		*c_u;
+	struct	file 		*c_fy;
+	struct	tty	 		*c_ttyp;
+	struct	clist 		c_ctlx;
+	int 				c_pgrp;
+	struct	tty 		*c_ottyp;
+	char 				c_oline;
 	union {
 		struct	clist	datq;
 	} cx;
@@ -73,7 +73,7 @@ struct mpx_chan {
 		struct	clist	datq;
 		struct	chan	*c_chan;
 	} cy;
-	struct	clist c_ctly;
+	struct	clist 		c_ctly;
 };
 
 

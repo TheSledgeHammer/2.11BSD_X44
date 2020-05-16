@@ -69,12 +69,13 @@ typedef struct vm_amap 			*vm_amap_t;
 struct vm_amap_entry;
 typedef struct vm_amap_entry 	*vm_amap_entry_t;
 
-struct uvm_aobject;
-typedef struct uvm_aobject		*vm_aobject_t;
+struct vm_aobject;
+typedef struct vm_aobject		*vm_aobject_t;
 
 #include <sys/lock.h>
 #include <sys/queue.h>
 #include <sys/tree.h>
+#include <sys/user.h>
 #include <sys/vmmeter.h>
 
 #include <vm/include/pmap.h>
@@ -129,17 +130,14 @@ struct vm {
 
 	/* kernel object: to support anonymous pageable kernel memory */
 	struct vm_object 	*kernel_object;
-
-
 };
-
 extern struct vm vm;
 
 /*
- * uvmexp: global data structures that are exported to parts of the kernel
+ * vmexp: global data structures that are exported to parts of the kernel
  * other than the vm system.
  */
-struct uvmexp {
+struct vmexp {
 	/* vm_page constants */
 	int pagesize; 		/* size of a page (PAGE_SIZE): must be power of 2 */
 	int pagemask; 		/* page mask */
@@ -164,19 +162,19 @@ struct uvmexp {
 	int nfreeanon; 		/* number of free anon's */
 };
 
-extern struct uvmexp uvmexp;
+extern struct vmexp vmexp;
 
 /*
  * vm_map_entry etype bits:
  */
-#define UVM_ET_OBJ				0x01	/* it is a uvm_object */
-#define UVM_ET_SUBMAP			0x02	/* it is a vm_map submap */
-#define UVM_ET_COPYONWRITE 		0x04	/* copy_on_write */
-#define UVM_ET_NEEDSCOPY		0x08	/* needs_copy */
+#define VM_ET_OBJ				0x01	/* it is a uvm_object */
+#define VM_ET_SUBMAP			0x02	/* it is a vm_map submap */
+#define VM_ET_COPYONWRITE 		0x04	/* copy_on_write */
+#define VM_ET_NEEDSCOPY			0x08	/* needs_copy */
 
-#define UVM_ET_ISOBJ(E)			(((E)->etype & UVM_ET_OBJ) != 0)
-#define UVM_ET_ISSUBMAP(E)		(((E)->etype & UVM_ET_SUBMAP) != 0)
-#define UVM_ET_ISCOPYONWRITE(E)	(((E)->etype & UVM_ET_COPYONWRITE) != 0)
-#define UVM_ET_ISNEEDSCOPY(E)	(((E)->etype & UVM_ET_NEEDSCOPY) != 0)
+#define VM_ET_ISOBJ(E)			(((E)->etype & UVM_ET_OBJ) != 0)
+#define VM_ET_ISSUBMAP(E)		(((E)->etype & UVM_ET_SUBMAP) != 0)
+#define VM_ET_ISCOPYONWRITE(E)	(((E)->etype & UVM_ET_COPYONWRITE) != 0)
+#define VM_ET_ISNEEDSCOPY(E)	(((E)->etype & UVM_ET_NEEDSCOPY) != 0)
 
 #endif /* _VM_H */

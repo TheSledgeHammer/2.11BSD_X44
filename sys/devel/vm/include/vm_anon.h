@@ -98,14 +98,14 @@ struct vm_aref {
  * prototypes
  */
 
-struct vm_anon 	*uvm_analloc(void);
-void 			uvm_anon_free(struct vm_anon *);
-void 			uvm_anon_freelst(struct vm_amap *, struct vm_anon *);
-void 			uvm_anon_init(void);
-struct vm_page 	*uvm_anon_lockloanpg(struct vm_anon *);
-void 			uvm_anon_dropswap(struct vm_anon *);
-void 			uvm_anon_release(struct vm_anon *);
-boolean_t 		uvm_anon_pagein(struct vm_amap *, struct vm_anon *);
+struct vm_anon 	*vm_analloc(void);
+void 			vm_anon_free(struct vm_anon *);
+void 			vm_anon_freelst(struct vm_amap *, struct vm_anon *);
+void 			vm_anon_init(void);
+struct vm_page 	*vm_anon_lockloanpg(struct vm_anon *);
+void 			vm_anon_dropswap(struct vm_anon *);
+void 			vm_anon_release(struct vm_anon *);
+boolean_t 		vm_anon_pagein(struct vm_amap *, struct vm_anon *);
 #endif /* _KERNEL */
 
 #endif /* _UVM_UVM_ANON_H_ */

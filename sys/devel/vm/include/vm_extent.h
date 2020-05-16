@@ -49,8 +49,7 @@ struct vm_extent {
 #define VMEXTENT_ALIGNMENT	(NBPG/NBPDE)
 #define VMEXTENT_BOUNDARY	0x0					/* Temporary:  */
 
-void vm_extent_init(struct vm_extent *, char*, vm_offset_t, vm_offset_t); 								/* Allocates an extent without storage */
-void vm_extent_storage_init(struct vm_extent *, char*, vm_offset_t, vm_offset_t, caddr_t, vm_size_t); 	/* Allocates an extent with storage */
+void vm_extent_init(struct vm_extent *, char*, vm_offset_t, vm_offset_t, caddr_t, vm_size_t); 	/* Allocates an extent with storage */
 void vm_extent_mallocok(void);
 int vm_extent_alloc(struct vm_extent *, vm_size_t);
 int vm_extent_suballoc(struct vm_extent *, vm_offset_t, vm_offset_t, vm_size_t, int, int, u_long *);

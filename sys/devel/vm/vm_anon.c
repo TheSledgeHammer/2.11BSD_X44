@@ -64,14 +64,13 @@ static LIST_HEAD(anonlist, uvm_anonblock) anonblock_list;
 
 static boolean_t anon_pagein(struct vm_anon *);
 
-
 /*
  * allocate anons
  */
 void
-uvm_anon_init()
+vm_anon_init()
 {
-	int nanon = uvmexp.free - (uvmexp.free / 16); /* XXXCDC ??? */
+	int nanon = vmexp.free - (vmexp.free / 16); /* XXXCDC ??? */
 
 	simple_lock_init(&vm.afreelock);
 	LIST_INIT(&anonblock_list);
@@ -79,7 +78,7 @@ uvm_anon_init()
 	/*
 	 * Allocate the initial anons.
 	 */
-	uvm_anon_add(nanon);
+	vm_anon_add(nanon);
 }
 
 /*
@@ -89,7 +88,7 @@ uvm_anon_init()
  * => swap_syscall_lock should be held (protects anonblock_list).
  */
 int
-uvm_anon_add(count)
+vm_anon_add(count)
 	int	count;
 {
 	struct uvm_anonblock *anonblock;
@@ -97,8 +96,8 @@ uvm_anon_add(count)
 	int lcv, needed;
 
 	simple_lock(&vm.afreelock);
-	uvmexp.nanonneeded += count;
-	needed = uvmexp.nanonneeded - uvmexp.nanon;
+	vmexp.nanonneeded += count;
+	needed = vmexp.nanonneeded - vmexp.nanon;
 	simple_unlock(&vm.afreelock);
 
 	if (needed <= 0) {
@@ -107,7 +106,7 @@ uvm_anon_add(count)
 	anon = (void *)uvm_km_alloc(kernel_map, sizeof(*anon) * needed);
 	if (anon == NULL) {
 		simple_lock(&vm.afreelock);
-		uvmexp.nanonneeded -= count;
+		vmexp.nanonneeded -= count;
 		simple_unlock(&vm.afreelock);
 		return ENOMEM;
 	}
@@ -119,8 +118,8 @@ uvm_anon_add(count)
 	memset(anon, 0, sizeof(*anon) * needed);
 
 	simple_lock(&vm.afreelock);
-	uvmexp.nanon += needed;
-	uvmexp.nfreeanon += needed;
+	vmexp.nanon += needed;
+	vmexp.nfreeanon += needed;
 	for (lcv = 0; lcv < needed; lcv++) {
 		simple_lock_init(&anon[lcv].an_lock);
 		anon[lcv].an_u.an_nxt = vm.afree;
@@ -134,7 +133,7 @@ uvm_anon_add(count)
  * remove anons from the free pool.
  */
 void
-uvm_anon_remove(count)
+vm_anon_remove(count)
 	int count;
 {
 	/*
@@ -143,7 +142,7 @@ uvm_anon_remove(count)
 	 */
 
 	simple_lock(&vm.afreelock);
-	uvmexp.nanonneeded -= count;
+	vmexp.nanonneeded -= count;
 	simple_unlock(&vm.afreelock);
 }
 
@@ -153,7 +152,7 @@ uvm_anon_remove(count)
  * => new anon is returned locked!
  */
 struct vm_anon *
-uvm_analloc()
+vm_analloc()
 {
 	struct vm_anon *a;
 
@@ -161,7 +160,7 @@ uvm_analloc()
 	a = vm.afree;
 	if (a) {
 		vm.afree = a->an_u.an_nxt;
-		uvmexp.nfreeanon--;
+		vmexp.nfreeanon--;
 		a->an_ref = 1;
 		a->an_swslot = 0;
 		a->an_page = NULL;		/* so we can free quickly */
@@ -182,7 +181,7 @@ uvm_analloc()
  */
 
 void
-uvm_anfree(anon)
+vm_anfree(anon)
 	struct vm_anon *anon;
 {
 	struct vm_page *pg;
@@ -206,7 +205,7 @@ uvm_anfree(anon)
 
 	if (pg && pg->loan_count) {
 		simple_lock(&anon->an_lock);
-		pg = uvm_anon_lockloanpg(anon);
+		pg = vm_anon_lockloanpg(anon);
 		simple_unlock(&anon->an_lock);
 	}
 
@@ -259,8 +258,8 @@ uvm_anfree(anon)
 	if (pg == NULL && anon->an_swslot > 0) {
 		/* this page is no longer only in swap. */
 		simple_lock(&vm.swap_data_lock);
-		KASSERT(uvmexp.swpgonly > 0);
-		uvmexp.swpgonly--;
+		KASSERT(vmexp.swpgonly > 0);
+		vmexp.swpgonly--;
 		simple_unlock(&vm.swap_data_lock);
 	}
 
@@ -268,7 +267,7 @@ uvm_anfree(anon)
 	 * free any swap resources.
 	 */
 
-	uvm_anon_dropswap(anon);
+	vm_anon_dropswap(anon);
 
 	/*
 	 * now that we've stripped the data areas from the anon,
@@ -281,7 +280,7 @@ uvm_anfree(anon)
 	simple_lock(&vm.afreelock);
 	anon->an_u.an_nxt = vm.afree;
 	vm.afree = anon;
-	uvmexp.nfreeanon++;
+	vmexp.nfreeanon++;
 	simple_unlock(&vm.afreelock);
 	//UVMHIST_LOG(maphist,"<- done!",0,0,0,0);
 }
@@ -292,7 +291,7 @@ uvm_anfree(anon)
  * => anon must be locked or have a reference count of 0.
  */
 void
-uvm_anon_dropswap(anon)
+vm_anon_dropswap(anon)
 	struct vm_anon *anon;
 {
 	//UVMHIST_FUNC("uvm_anon_dropswap"); UVMHIST_CALLED(maphist);
@@ -323,7 +322,7 @@ uvm_anon_dropswap(anon)
  *	count.
  */
 struct vm_page *
-uvm_anon_lockloanpg(anon)
+vm_anon_lockloanpg(anon)
 	struct vm_anon *anon;
 {
 	struct vm_page *pg;
@@ -393,8 +392,6 @@ uvm_anon_lockloanpg(anon)
 	}
 	return(pg);
 }
-
-
 
 /*
  * page in every anon that is paged out to a range of swslots.
@@ -570,5 +567,5 @@ uvm_anon_release(anon)
 
 	KASSERT(anon->u.an_page == NULL);
 
-	uvm_anfree(anon);
+	vm_anfree(anon);
 }

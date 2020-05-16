@@ -67,28 +67,6 @@ struct vmspace {
 };
 
 #ifdef _KERNEL
-/*
- * pull in VM_NFREELIST
- */
 #include <machine/vmparam.h>
-/*
- * uvm structure (vm global state: collected in one structure for ease
- * of reference...)
- */
-
-struct uvm {
-	/* vm_page related parameters */
-	/* vm_page queues */
-	struct pgfreelist 	page_free[VM_NFREELIST]; /* unallocated pages */
-	u_int				bucketcount;
-	boolean_t			page_init_done;			/* true if uvm_page_init() finished */
-	boolean_t			numa_alloc;				/* use NUMA page allocation strategy */
-
-	/* page daemon trigger */
-	int 				pagedaemon;				/* daemon sleeps on this */
-	struct proc 		*pagedaemon_proc;		/* daemon's lid */
-};
 #endif /* _KERNEL */
-
-
 #endif /* _VM_VMSPACE_H_ */

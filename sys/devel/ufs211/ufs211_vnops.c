@@ -55,54 +55,51 @@
 #include <miscfs/specfs/specdev.h>
 
 int (**ufs211_vnodeop_p)();
-struct vnodeopv_entry_desc ufs211_vnodeop_entries[] = {
-	{ &vop_default_desc, ufs211_default_error },
-	{ &vop_lookup_desc, ufs211_lookup },		/* lookup */
-	{ &vop_create_desc, ufs211_create },		/* create */
-	{ &vop_mknod_desc, ufs211_mknod },			/* mknod */
-	{ &vop_open_desc, ufs211_open },			/* open */
-	{ &vop_close_desc, ufs211_close },			/* close */
-	{ &vop_access_desc, ufs211_access },		/* access */
-	{ &vop_getattr_desc, ufs211_getattr },		/* getattr */
-	{ &vop_setattr_desc, ufs211_setattr },		/* setattr */
-	{ &vop_read_desc, ufs211_read },			/* read */
-	{ &vop_write_desc, ufs211_write },			/* write */
-	{ &vop_lease_desc, ufs211_lease_check },	/* lease */
-	{ &vop_ioctl_desc, ufs211_ioctl },			/* ioctl */
-	{ &vop_select_desc, ufs211_select },		/* select */
-	{ &vop_revoke_desc, ufs211_revoke },		/* revoke */
-	{ &vop_mmap_desc, ufs211_mmap },			/* mmap */
-	{ &vop_fsync_desc, ufs211_fsync },			/* fsync */
-	{ &vop_seek_desc, ufs211_seek },			/* seek */
-	{ &vop_remove_desc, ufs211_remove },		/* remove */
-	{ &vop_link_desc, ufs211_link },			/* link */
-	{ &vop_rename_desc, ufs211_rename },		/* rename */
-	{ &vop_mkdir_desc, ufs211_mkdir },			/* mkdir */
-	{ &vop_rmdir_desc, ufs211_rmdir },			/* rmdir */
-	{ &vop_symlink_desc, ufs211_symlink },		/* symlink */
-	{ &vop_readdir_desc, ufs211_readdir },		/* readdir */
-	{ &vop_readlink_desc, ufs211_readlink },	/* readlink */
-	{ &vop_abortop_desc, ufs211_abortop },		/* abortop */
-	{ &vop_inactive_desc, ufs211_inactive },	/* inactive */
-	{ &vop_reclaim_desc, ufs211_reclaim },		/* reclaim */
-	{ &vop_lock_desc, ufs211_lock },			/* lock */
-	{ &vop_unlock_desc, ufs211_unlock },		/* unlock */
-	{ &vop_bmap_desc, ufs211_bmap },			/* bmap */
-	{ &vop_strategy_desc, ufs211_strategy },	/* strategy */
-	{ &vop_print_desc, ufs211_print },			/* print */
-	{ &vop_islocked_desc, ufs211_islocked },	/* islocked */
-	{ &vop_pathconf_desc, ufs211_pathconf },	/* pathconf */
-	{ &vop_advlock_desc, ufs211_advlock },		/* advlock */
-	{ &vop_blkatoff_desc, ufs211_blkatoff },	/* blkatoff */
-	{ &vop_valloc_desc, ufs211_valloc },		/* valloc */
-	{ &vop_vfree_desc, ufs211_vfree },			/* vfree */
-	{ &vop_truncate_desc, ufs211_truncate },	/* truncate */
-	{ &vop_update_desc, ufs211_update },		/* update */
-	{ &vop_bwrite_desc, ufs211_bwrite },		/* bwrite */
-	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
+struct vnodeops ufs211_vnodeops[] = {
+		.vop_lookup = ufs211_lookup,		/* lookup */
+		.vop_create = ufs211_create,		/* create */
+		.vop_mknod = ufs211_mknod,			/* mknod */
+		.vop_open = ufs211_open,			/* open */
+		.vop_close = ufs211_close,			/* close */
+		.vop_access = ufs211_access,		/* access */
+		.vop_getattr = ufs211_getattr,		/* getattr */
+		.vop_setattr = ufs211_setattr,		/* setattr */
+		.vop_read = ufs211_read,			/* read */
+		.vop_write = ufs211_write,			/* write */
+		.vop_lease = ufs211_lease_check,	/* lease */
+		.vop_ioctl = ufs211_ioctl,			/* ioctl */
+		.vop_select = ufs211_select,		/* select */
+		.vop_revoke = ufs211_revoke,		/* revoke */
+		.vop_mmap = ufs211_mmap,			/* mmap */
+		.vop_fsync = ufs211_fsync,			/* fsync */
+		.vop_seek = ufs211_seek,			/* seek */
+		.vop_remove = ufs211_remove,		/* remove */
+		.vop_link = ufs211_link,			/* link */
+		.vop_rename = ufs211_rename,		/* rename */
+		.vop_mkdir = ufs211_mkdir,			/* mkdir */
+		.vop_rmdir = ufs211_rmdir,			/* rmdir */
+		.vop_symlink = ufs211_symlink,		/* symlink */
+		.vop_readdir = ufs211_readdir,		/* readdir */
+		.vop_readlink = ufs211_readlink,	/* readlink */
+		.vop_abortop = ufs211_abortop,		/* abortop */
+		.vop_inactive = ufs211_inactive,	/* inactive */
+		.vop_reclaim = ufs211_reclaim,		/* reclaim */
+		.vop_lock = ufs211_lock,			/* lock */
+		.vop_unlock = ufs211_unlock,		/* unlock */
+		.vop_bmap = ufs211_bmap,			/* bmap */
+		.vop_strategy = ufs211_strategy,	/* strategy */
+		.vop_print = ufs211_print,			/* print */
+		.vop_islocked = ufs211_islocked,	/* islocked */
+		.vop_pathconf = ufs211_pathconf,	/* pathconf */
+		.vop_advlock = ufs211_advlock,		/* advlock */
+		.vop_blkatoff = ufs211_blkatoff,	/* blkatoff */
+		.vop_valloc = ufs211_valloc,		/* valloc */
+		.vop_vfree = ufs211_vfree,			/* vfree */
+		.vop_truncate = ufs211_truncate,	/* truncate */
+		.vop_update = ufs211_update,		/* update */
+		.vop_bwrite = ufs211_bwrite,		/* bwrite */
+		(struct vnodeops *)NULL = (int(*)())NULL
 };
-struct vnodeopv_desc ufs211_vnodeop_opv_desc =
-	{ &ufs211_vnodeop_p, ufs211_vnodeop_entries };
 
 int
 ufs211_lookup(ap)

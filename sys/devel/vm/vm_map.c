@@ -650,7 +650,6 @@ vm_map_unreference_amap(entry, flags)
 	struct vm_map_entry *entry;
 	int flags;
 {
-
 	amap_unref(entry->aref.ar_amap, entry->aref.ar_pageoff,
 	    (entry->end - entry->start) >> PAGE_SHIFT, flags);
 }

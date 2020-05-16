@@ -26,182 +26,188 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/user.h>
 #include <sys/extent.h>
 #include <sys/malloc.h>
 #include <devel/vm/include/vm_extops.h>
 
-#define EXTENT_OPS(extops, error, ap, extop_field)	\
-	error = extops->extop_field(ap)
+struct vm_extentops vextops;
 
-struct extent *
-extent_load(vmel, name, start, end, mtype, storage, storagesize, flags)
-	union vm_extentloader *vmel;
-	char *name;
-	vm_offset_t start, end;
-	int mtype, flags;
-	caddr_t	storage;
-	vm_size_t storagesize;
+/* initilize vm_extentops */
+void
+vm_extentops_init()
 {
-	register struct vm_extent_create args = vmel->vmel_create;
-	register struct extent *ext = vmel->vmel_ext;
-	args.vmel_name = name;
-	ext = extent_create(ext, name, start, end, mtype, storage, storagesize, flags);
-	args.vmel_start = start;
-	args.vmel_end = end;
-	args.vmel_mtype = mtype;
-	args.vmel_storage = storage;
-	args.vmel_storagesize = storagesize;
-	args.vmel_flags = flags;
-
-	return (ext);
+	vop_malloc(&vextops);
 }
 
-struct extent *
-extops_create(ops, ext, name, start, end, mtype, storage, storagesize, flags)
-	struct vm_extops *ops;
-	struct extent 	*ext;
-	char *name;
-	vm_offset_t start, end;
-	int mtype, flags;
-	caddr_t	storage;
-	vm_size_t storagesize;
+/* allocate vm_extentops */
+void
+vm_extentops_malloc(vextops)
+	struct vm_extentops *vextops;
 {
-	struct vm_extops_create_args args;
-	int error;
+	MALLOC(vextops, struct vm_extentops *, sizeof(struct vm_extentops *), M_VMEXTENTOPS, M_WAITOK);
+}
 
-	//ext = extent_create(ext, name, start, end, mtype, storage, storagesize, flags);
-
-	args.a_head.a_ops = ops;
-	args.a_ext = extent_create(ext, name, start, end, mtype, storage, storagesize, flags);
-	args.a_name = name;
-	args.a_start = start;
-	args.a_end = end;
-	args.a_mtype = mtype;
-	args.a_storage = storage;
-	args.a_storagesize = storagesize;
-	args.a_flags = flags;
-
-	union vm_extargs *vargs;
-	if(error || ops->extops_create == NULL) {
-		return (error);
-	}
-
-	return ((ops->extops_create)(&args));
+void
+vm_extent_malloc(vext)
+	struct vm_extent *vext;
+{
+	MALLOC(vext, struct vm_extent *, sizeof(struct vm_extent *), M_VMEXTENT, M_WAITOK);
 }
 
 int
-extops_mallocok(ops, mallocok)
-	struct vm_extops *ops;
+vm_extent_create(vext, ext, name, start, end, mtype, storage, storagesize, flags)
+	struct vm_extent *vext;
+	struct extent *ext;
+	char *name;
+	vm_offset_t start, end;
+	int mtype, flags;
+	caddr_t	storage;
+	vm_size_t storagesize;
+{
+    struct vm_extentops_create_args vap;
+    int error;
+
+    vap.a_head.a_ops = &vextops;
+    vap.a_vext = vext;
+    vap.a_name = name;
+    vap.a_start = start;
+    vap.a_end = end;
+    vap.a_mtype = mtype;
+    vap.a_storage = storage;
+    vap.a_storagesize = storagesize;
+    vap.a_flags = flags;
+
+	if (vext == NULL) {
+		vm_extent_malloc(vext);
+	} else if (ext == NULL) {
+		ext = extent_create(ext, name, start, end, mtype, storage, storagesize, flags);
+	}
+
+	vext->vext_ext = ext;
+    error = vextops.vm_extent_create(ext, name, start, end, mtype, storage, storagesize, flags);
+
+    return (error);
+}
+
+int
+vm_extent_mallocok(mallocok)
 	int mallocok;
 {
-	struct vm_extops_mallocok_args args;
+	struct vm_extentops_mallocok_args vap;
 	int error;
-	args.a_head.a_ops = ops;
-	args.a_mallocok = mallocok;
 
-	error = (ops->extops_mallocok)(&args);
-	if(error) {
-		return (error);
-	}
-	return (0);
+	vap.a_head.a_ops = &vextops;
+	vap.a_mallocok = mallocok;
+
+    if (vextops.vm_extent_mallocok == NULL) {
+    	return (EOPNOTSUPP);
+    }
+
+	error = vextops.vm_extent_mallocok(mallocok);
+
+	return (error);
 }
 
 int
-extops_alloc(ops, ext, start, size, flags)
-	struct vm_extops *ops;
-	struct extent *ext;
+vm_extent_alloc(vext, start, size, flags)
+	struct vm_extent *vext;
 	vm_offset_t start;
 	vm_size_t	size;
 	int flags;
 {
-	struct vm_extops_alloc_args args;
-	int error = extent_alloc_region(ext, start, size, flags);
+	struct vm_extentops_alloc_args vap;
+	int error;
 
-	args.a_head.a_ops = ops;
-	args.a_ext = ext;
-	args.a_start = start;
-	args.a_addr += args.a_start;
-	args.a_size = size;
-	args.a_flags = flags;
+	vap.a_head.a_ops = &vextops;
+	vap.a_vext = vext;
+	vap.a_start = start;
+	vap.a_addr += vap.a_start;
+	vap.a_size = size;
+	vap.a_flags = flags;
 
-	error = (ops->extops_alloc)(&args);
-	if(error) {
-		return (error);
-	}
-	return (0);
+    if (vextops.vm_extent_alloc == NULL) {
+    	return (EOPNOTSUPP);
+    }
+
+	error = vextops.vm_extent_alloc(vext, start, size, flags);
+
+	return (error);
 }
 
+
 int
-extops_suballoc(ops, ext, start, end, size, malloctypes, mallocflags, alignment, boundary, flags, result)
-	struct vm_extops *ops;
-	struct extent *ext;
+vm_extent_suballoc(vext, start, end, size, malloctypes, mallocflags, alignment, boundary, flags, result)
+	struct vm_extent *vext;
 	vm_offset_t start, end;
 	vm_size_t	size;
 	int flags, malloctypes, mallocflags;
 	u_long *result, alignment, boundary;
 {
-	struct vm_extops_suballoc_args args;
-	int error;// = extent_alloc_subregion(ext, start, end, size, malloctypes, mallocflags, alignment, boundary, flags, result);
+	struct vm_extentops_suballoc_args vap;
+	int error;
 
-	args.a_head.a_ops = ops;
-	args.a_ext = ext;
-	args.a_start = start;
-	args.a_end += args.a_start;
-	args.a_size = size;
-	args.a_malloctypes = malloctypes;
-	args.a_mallocflags = mallocflags;
-	args.a_alignment = alignment;
-	args.a_boundary = boundary;
-	args.a_flags = flags;
-	args.a_result = result;
+	vap.a_head.a_ops = &vextops;
+	vap.a_vext = vext;
+	vap.a_start = start;
+	vap.a_end += vap.a_start;
+	vap.a_size = size;
+	vap.a_malloctypes = malloctypes;
+	vap.a_mallocflags = mallocflags;
+	vap.a_alignment = alignment;
+	vap.a_boundary = boundary;
+	vap.a_flags = flags;
+	vap.a_result = result;
 
-	error = (ops->extops_suballoc)(&args);
-	if(error) {
-		return (error);
-	}
-	return (0);
+    if (vextops.vm_extent_suballoc == NULL) {
+    	return (EOPNOTSUPP);
+    }
+
+	error = vextops.vm_extent_suballoc(vext, start, end, size, malloctypes, mallocflags, alignment, boundary, flags, result);
+
+	return (error);
 }
 
 int
-extops_free(ops, ext, start, size, malloctypes, flags)
-	struct vm_extops *ops;
-	struct extent *ext;
+vm_extent_free(vext, start, size, malloctypes, flags)
+	struct vm_extent *vext;
 	vm_offset_t start;
 	vm_size_t	size;
 	int malloctypes, flags;
 {
-	struct vm_extops_free_args args;
-	int error;// = extent_free(ext, start, size, flags);
+	struct vm_extentops_free_args vap;
+	int error;
 
-	args.a_head.a_ops = ops;
-	args.a_ext = ext;
-	args.a_start = start;
-	args.a_malloctypes = malloctypes;
-	args.a_flags = flags;
+	vap.a_head.a_ops = &vextops;
+	vap.a_vext = vext;
+	vap.a_start = start;
+	vap.a_malloctypes = malloctypes;
+	vap.a_flags = flags;
 
-	error = (ops->extops_free)(&args);
-	if(error) {
-		return (error);
-	}
-	return (0);
+    if (vextops.vm_extent_free == NULL) {
+    	return (EOPNOTSUPP);
+    }
+
+	error = vextops.vm_extent_free(vext, start, size, malloctypes, flags);
+
+	return (error);
 }
 
 int
-extops_destroy(ops, ext)
-	struct vm_extops *ops;
-	struct extent *ext;
+vm_extent_destroy(vext)
+	struct vm_extent *vext;
 {
-	struct vm_extops_destroy_args args;
+	struct vm_extentops_destroy_args vap;
 	int error;
 
-	ext = extent_destroy(ext);
+	vap.a_head.a_ops = &vextops;
+	vap.a_vext = vext;
 
-	args.a_head.a_ops = ops;
-	args.a_ext = ext;
+    if (vextops.vm_extent_destroy == NULL) {
+    	return (EOPNOTSUPP);
+    }
 
-	error = (ops->extops_destroy)(&args);
-	if(error) {
-		return (error);
-	}
-	return (0);
+	error = vextops.vm_extent_destroy(vext);
+
+	return (error);
 }

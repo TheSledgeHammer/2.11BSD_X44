@@ -111,7 +111,7 @@ struct uao_swhash_elt {
  * => only one of u_swslots and u_swhash is used in any given aobj
  */
 
-struct uvm_aobject {
+struct vm_aobject {
 	struct vm_object 		u_obj; 			/* has: lock, pgops, #pages, #refs */
 	//pgoff_t 				u_pages;	 	/* number of pages in entire object */
 	int 					u_flags;		/* the flags (see uvm_aobj.h) */
@@ -122,11 +122,11 @@ struct uvm_aobject {
 				 	 	 	 	 	 	 	 */
 	struct uao_swhash 		*u_swhash;
 	u_long 					u_swhashmask;	/* mask for hashtable */
-	LIST_ENTRY(uvm_aobject) u_list;			/* global list of aobjs */
+	LIST_ENTRY(vm_aobject) 	u_list;			/* global list of aobjs */
 	int 					u_freelist;		/* freelist to allocate pages from */
 };
 
-static void	uao_free(struct uvm_aobject *);
+static void	uao_free(struct vm_aobject *);
 static int	uao_get(struct vm_object *, voff_t, struct vm_page **, int *, int, vm_prot_t, int, int);
 static int	uao_put(struct vm_object *, voff_t, voff_t, int);
 
@@ -141,12 +141,31 @@ static boolean_t uao_pagein_page(struct uvm_aobject *, int);
 static struct vm_page	*uao_pagealloc(struct vm_object *, voff_t, int);
 
 /*
+ * aobj_pager
+ *
+ * note that some functions (e.g. put) are handled elsewhere
+ */
+/*
+ * uao_list: global list of active aobjs, locked by uao_list_lock
+ */
+
+const struct pagerops aobj_pager = {
+	.pgo_reference = uao_reference,
+	.pgo_detach = uao_detach,
+	.pgo_get = uao_get,
+	.pgo_put = uao_put,
+};
+
+/*
  * Flags for uao_create: UAO_FLAG_KERNOBJ and UAO_FLAG_KERNSWAP are
  * used only once, to initialise UVM.
  */
 #define	UAO_FLAG_KERNOBJ	0x1	/* create kernel object */
 #define	UAO_FLAG_KERNSWAP	0x2	/* enable kernel swap */
 #define	UAO_FLAG_NOSWAP		0x8	/* aobj may not swap */
+
+static LIST_HEAD(aobjlist, vm_aobject) uao_list;
+static struct simplelock uao_list_lock;
 
 #ifdef _KERNEL
 void		uao_init(void);

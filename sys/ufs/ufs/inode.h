@@ -52,17 +52,15 @@
  */
 struct inode {
 	LIST_ENTRY(inode)  	i_hash;		/* Hash chain. */
-	TAILQ_ENTRY(inode) 	i_nextsnap; /* snapshot file list. */
 	struct	vnode  		*i_vnode;	/* Vnode associated with this inode. */
-	struct  ufsmount 	*i_ump; 	/* Mount point associated with this inode. */
 	struct	vnode  		*i_devvp;	/* Vnode for block I/O. */
 	u_int32_t 			i_flag;		/* flags, see below */
 	dev_t	  			i_dev;		/* Device associated with the inode. */
 	ino_t	  			i_number;	/* The identity of the inode. */
 
-	union {			/* Associated filesystem. */
-		struct	fs 	*fs;		/* FFS */
-		struct	lfs *lfs;		/* LFS */
+	union {							/* Associated filesystem. */
+		struct	fs 	*fs;			/* FFS */
+		struct	lfs *lfs;			/* LFS */
 	} inode_u;
 #define	i_fs	inode_u.fs
 #define	i_lfs	inode_u.lfs
@@ -82,19 +80,11 @@ struct inode {
 	u_int32_t i_reclen;			/* Size of found directory entry. */
 	int       i_effnlink;  		/* i_nlink when I/O completes */
 
-	union {
-		struct dirhash 	*dirhash; 		/* Hashing for large directories. */
-		daddr_t 		*snapblklist;   /* Collect expunged snapshot blocks. */
-	} i_un;
-
 	/*
 	 * The on-disk dinode itself.
 	 */
-	struct dinode i_din;	/* 128 bytes of the on-disk dinode. */
+	struct dinode i_din;		/* 128 bytes of the on-disk dinode. */
 };
-
-#define i_dirhash 	  i_un.dirhash
-#define i_snapblklist i_un.snapblklist
 
 #define	i_atime		i_din.di_atime
 #define	i_atimensec	i_din.di_atimensec

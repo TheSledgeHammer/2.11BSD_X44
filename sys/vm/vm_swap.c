@@ -41,6 +41,7 @@
 #include <sys/namei.h>
 #include <sys/dmap.h>		/* XXX */
 #include <sys/vnode.h>
+#include <sys/malloc.h>
 #include <sys/map.h>
 #include <sys/file.h>
 

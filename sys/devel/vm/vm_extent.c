@@ -31,25 +31,16 @@
 #include <devel/vm/include/vm_extent.h>
 
 void
-vm_extent_init(vm_ext, name, start, end)
+vm_extent_init(vm_ext, name, start, end, mtype, storage, storagesize)
 	struct vm_extent *vm_ext;
 	char *name;
     vm_offset_t start, end;
-{
-    vm_ext->name = name;
-    vm_ext = extent_create(name, start, end, M_VMEXTENT, NULL, 0, EX_NOWAIT | EX_MALLOCOK);
-}
-
-void
-vm_extent_storage_init(vm_ext, name, start, end, storage, storagesize)
-	struct vm_extent *vm_ext;
-	char *name;
-    vm_offset_t start, end;
+    int mtype;
     caddr_t	storage;
     vm_size_t storagesize;
 {
     vm_ext->name = name;
-    vm_ext = extent_create(name, start, end, M_VMEXTENT, storage, storagesize, EX_NOWAIT | EX_MALLOCOK);
+    vm_ext = extent_create(name, start, end, mtype, storage, storagesize, EX_NOWAIT | EX_MALLOCOK);
 }
 
 void
@@ -81,27 +72,28 @@ vm_extent_alloc(vm_ext, size)
 }
 
 int
-vm_extent_suballoc(vm_ext, start, end, size, mtype, mflags, result)
+vm_extent_suballoc(vm_ext, start, end, size, malloctypes, mallocflags, alignment, boundary, result)
 	struct vm_extent *vm_ext;
     vm_offset_t start, end;
-    int mtype, mflags;
     vm_size_t size;
     u_long *result;
+	int malloctypes, mallocflags;
+	u_long *result, alignment, boundary;
 {
     struct extent *ex = vm_ext->vm_extent;
     int error;
 
     if (start > ex->ex_start && start < ex->ex_end) {
         if (end > start) {
-            error = extent_alloc_subregion(ex, start, end, size, VMEXTENT_ALIGNMENT, VMEXTENT_BOUNDARY, EX_FAST | EX_NOWAIT | EX_MALLOCOK, result);
+            error = extent_alloc_subregion(ex, start, end, size, alignment, boundary, EX_FAST | EX_NOWAIT | EX_MALLOCOK, result);
         }
     }
 
     if(error) {
         return (error);
     }
-    vm_ext->malloctypes = mtype;
-    vm_ext->mallocflags = mflags;
+    vm_ext->malloctypes = malloctypes;
+    vm_ext->mallocflags = mallocflags;
     return (0);
 }
 

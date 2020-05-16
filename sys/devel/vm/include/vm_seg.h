@@ -54,8 +54,6 @@ struct vm_segment {
 	vm_offset_t 				seg_end;			/* end address */
 	caddr_t						seg_addr;			/* virtual address */
 	vm_size_t					seg_size;			/* virtual size */
-
-	int (* seg_segspace)(void *);
 };
 
 /* Segmented Space */

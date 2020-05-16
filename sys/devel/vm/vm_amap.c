@@ -168,7 +168,7 @@ amap_alloc1(slots, padslots, waitf)
 	struct vm_amap *amap;
 	int totalslots;
 
-	amap = pool_get(&uvm_amap_pool, (waitf == M_WAITOK) ? PR_WAITOK : 0);
+	//amap = pool_get(&uvm_amap_pool, (waitf == M_WAITOK) ? PR_WAITOK : 0);
 	if (amap == NULL)
 		return(NULL);
 
