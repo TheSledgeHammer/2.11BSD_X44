@@ -16,7 +16,6 @@ file    arch/i386/i386/consinit.c
 file    arch/i386/i386/copyout.c        
 file    arch/i386/i386/dkbad.c		    
 file    arch/i386/i386/gdt.c		    
-file    arch/i386/i386/kdb_machdep.c	kadb
 file    arch/i386/i386/kdb_opset.c	    kadb
 file    arch/i386/i386/kgdb_stub.c	    kgdb
 file    arch/i386/i386/kgdb_glue.c	    kgdb
@@ -26,8 +25,8 @@ file    arch/i386/i386/machdep.c
 file	arch/i386/i386/math_emulate.c	math_emulate
 file    arch/i386/i386/mem.c		    
 file    netns/ns_cksum.c	            ns
-file    arch/i386/i386/pmap.c	        
-file    arch/i386/i386/pmap_base.c      
+file    arch/i386/i386/pmap_base.c   
+file    arch/i386/i386/pmap.c	           
 file    arch/i386/i386/procfs_machdep.c 
 file    arch/i386/i386/support.s		
 file    arch/i386/i386/swapgeneric.c    
@@ -42,7 +41,7 @@ major	{vnd = 14}
 # Machine-independent SCSI drivers
 #
 
-include "../../../scsi/files.scsi"
+include "../../../dev/scsi/files.scsi"
 major	{sd = 4}
 major	{st = 5}
 major	{cd = 6}
@@ -59,122 +58,18 @@ major	{md = 17}
 define mainbus { }
 device	mainbus: isabus, eisabus, pcibus, mainbus
 attach	mainbus at root
-file	arch/i386/i386/mainbus.c	    mainbus
+file	arch/i386/i386/mainbus.c	        mainbus
 
 # attribute used to bring in BIOS trampoline code for real-mode probing
 # of certain devices/BIOS features
 define bioscall
-file	arch/i386/i386/bioscall.s	    bioscall needs-flag
+file	arch/i386/i386/bioscall.s	        bioscall needs-flag
 
 #device	mca at root {...}
-
-#
-# PCI-only drivers
-# XXX MUST BE INCLUDED BEFORE files.isa, as long as files.isa attaches
-# XXX devices to 'pci'.
-#
-
-include "../../../dev/pci/files.pci"
-file	arch/i386/pci/pci_machdep.c	    pci
-
-# PCI-Host bridge chipsets
-device	pchb:	pcibus
-attach	pchb at pci
-file	arch/i386/pci/pchb.c		    pchb
-
-# PCI-ISA bridges
-device	pcib: isabus
-attach	pcib at pci
-file	arch/i386/pci/pcib.c		    pcib
-
-#
-# ISA and mixed ISA+EISA or ISA+PCI drivers
-#
-
-include "../../../dev/isa/files.isa"
-major	{mcd = 7}
-#major	{scd = 15}
-major	{wd = 0}
-major	{wt = 3}
-
-file	arch/i386/isa/isa_machdep.c	    isa
-
-# PC clock
-file	arch/i386/isa/clock.c		    isa
-
-# Numeric Processing Extension; Math Co-processor
-device	npx
-attach	npx at isa
-file	arch/i386/isa/npx.c		        npx needs-flag
-
-# attribute used to represent the "keyboard controller"
-# XXX should be a real device
-define pckbd { [irq = -1], [port = -1] }
-
-# PC console support a la "pccons"
-device	pc: tty, pckbd
-attach	pc at isa
-file	arch/i386/isa/pccons.c		    pc needs-flag
-
-# PC Mice; Logitech-style, Microsoft-style, and PS/2-style
-device	lms
-attach	lms at isa
-file	arch/i386/isa/lms.c		        lms needs-flag
-device	mms
-attach	mms at isa
-file	arch/i386/isa/mms.c		        mms needs-flag
-device	pms
-attach	pms at pckbd
-file	arch/i386/isa/pms.c		        pms needs-flag
-
-# Floppy disk controller
-device	fdc {drive = -1}
-attach	fdc at isa
-device	fd: disk, isadma
-attach	fd at fdc
-file	arch/i386/isa/fd.c		        fdc needs-flag
-major	{fd = 2}
-
-# PC speaker
-device	spkr: tty
-attach	spkr at pckbd
-file	arch/i386/isa/spkr.c		    spkr needs-flag
-
-# Game adapter (joystick)
-device	joy
-file	arch/i386/isa/joy.c		        joy needs-flag
-
-attach	joy at isa with joy_isa
-file	arch/i386/isa/joy_isa.c		    joy_isa
-
-# Adaptec AHA-284x VL SCSI controllers
-# device declaration in sys/conf/files
-attach	ahc at isa with ahc_isa
-file	arch/i386/isa/ahc_isa.c		    ahc_isa
-
-#
-# EISA-only drivers
-#
-
-include "../../../dev/eisa/files.eisa"
-file	arch/i386/eisa/eisa_machdep.c	eisa
-
-# ISA Plug 'n Play devices
-# IT IS IMPORTANT THAT THIS IS INCLUDED AFTER ALL ISA DEVICES!
-# DO NOT MOVE IT!  (Thanks, The Mgmt.)
-include "dev/isapnp/files.isapnp"
-file	arch/i386/isa/isapnp_machdep.c	isapnp
-
-attach	joy at isapnp with joy_isapnp
-file	arch/i386/isa/joy_isapnp.c	    joy_isapnp
-
-#
-# Other mainbus-attached devices
-#
 
 #
 # Compatibility modules
 #
 
 # VM86 mode
-file	arch/i386/i386/vm86.c			vm86
+file	arch/i386/i386/vm86.c			    vm86

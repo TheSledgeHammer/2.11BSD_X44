@@ -53,8 +53,8 @@
 #include <sys/buf.h>
 #include <sys/device.h>
 
-#include <scsi/scsi.h>
-#include <scsi/scsivar.h>
+#include <dev/scsi/scsi.h>
+#include <dev/scsi/scsivar.h>
 
 /*
  * General subroutines, and scsi data.

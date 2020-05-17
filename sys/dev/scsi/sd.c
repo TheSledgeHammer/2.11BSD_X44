@@ -66,11 +66,11 @@
 
 #include <machine/cpu.h>
 
-#include <scsi/disk.h>
-#include <scsi/scsi.h>
-#include <scsi/scsi_ioctl.h>
-#include <scsi/scsivar.h>
-#include <scsi/sdtrace.h>
+#include <dev/scsi/disk.h>
+#include <dev/scsi/scsi.h>
+#include <dev/scsi/scsi_ioctl.h>
+#include <dev/scsi/scsivar.h>
+#include <dev/scsi/sdtrace.h>
 
 #ifdef sparc					/* XXX */
 #define SUN_LABEL_HACK				/* XXX */

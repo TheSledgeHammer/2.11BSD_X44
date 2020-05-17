@@ -1,37 +1,76 @@
+#	$NetBSD: GENERIC,v 1.114.2.11 1998/07/27 15:33:32 mellon Exp $
 #
-# GENERIC System -- distribution
-# @(#)GENERIC.i386	8.1 6/11/93
+#	GENERIC -- everything that's currently supported
 #
 
-machine		"i386"
-cpu		    "i386"
-ident		GENERIC
-timezone	8 dst
-maxusers	2
-options		INET
-options		"TCP_COMPAT_42"
-options		"COMPAT_43"
-options 	EXEC_AOUT		# exec a.out binaries
-options 	EXEC_ELF32		# exec ELF binaries
-options 	EXEC_SCRIPT		# exec #! scripts
+include "arch/i386/conf/std.i386"
 
-config			vmunix	root on dk0 swap on dk0
+maxusers		32		# estimated number of users
 
-controller		isa0
-controller		wd0		at isa? port "IO_WD1" bio irq 14 vector wdintr
-disk			dk0		at wd0 drive 0
-controller		fd0		at isa? port "IO_FD1" bio irq 6 drq 2 vector fdintr
-disk			dk4		at fd0 drive 0
-disk			dk5		at fd0 drive 1
+# CPU support.  At least one is REQUIRED.
+options 		I386_CPU
+options 		I486_CPU
+options 		I586_CPU
+options 		I686_CPU	
 
-device			cn0		at isa? port "IO_KBD" tty irq 1 vector cnrint
-device			npx0	at isa? port "IO_NPX" irq 13 vector npxintr
-device			com0	at isa? port "IO_COM1" tty irq 4 vector comintr
-device			ne0		at isa? port 0x320 net irq 9 vector neintr
-device      	we0 	at isa? port 0x280 net irq 3 iomem 0xd0000 iosiz 8192 vector weintr
-device			wt0		at isa? port 0x300 net irq 5 drq 1 vector wtintr
+# CPU-related options.
+options 		MATH_EMULATE	# floating point emulation
+#options 		VM86			# virtual 8086 emulation
+options 		USER_LDT		# user-settable LDT; used by WINE
+# eliminate delay no-ops in I/O; recommended on all but very old machines
+#options 		DUMMY_NOPS
 
-pseudo-device	loop
-pseudo-device	ether
-pseudo-device	sl	1
+# This option allows you to force a serial console at the specified
+# I/O address.   see console(4) for details.
+#options 		"CONSDEVNAME=\"com\""
 
+# Standard system options
+
+options 		KTRACE		# system call tracing via ktrace(1)
+
+# Diagnostic/debugging support options
+options 		DIAGNOSTIC	# cheap kernel consistency checks
+#options 		DEBUG		# expensive debugging checks/support
+options 		KMEMSTATS	# kernel memory statistics (vmstat -m)
+
+# Compatibility options
+options 		COMPAT_43	# and 4.3BSD
+
+# Executable format options
+options 		EXEC_ELF32	# 32-bit ELF executables (SVR4, Linux)
+
+# File system options
+options 		QUOTA		# UFS quotas
+options 		FIFO		# FIFOs; RECOMMENDED
+
+# Kernel root file system and dump configuration.
+config			211bsd	root on ? type ?
+#config			211bsd	root on sd0a type ffs
+#config			211bsd	root on ? type nfs
+
+#
+# Device configuration
+#
+
+mainbus0 at root
+
+#apm0	at mainbus0			# Advanced power management
+
+# Pseudo-Devices
+
+# disk/mass storage pseudo-devices
+pseudo-device	ccd			4	# concatenated/striped disk devices
+pseudo-device	md			1	# memory disk device (ramdisk)
+pseudo-device	vnd			4	# disk-like interface to files
+
+# network pseudo-devices
+pseudo-device	bpfilter	8	# Berkeley packet filter
+pseudo-device	loop			# network loopback
+pseudo-device	ppp			2	# Point-to-Point Protocol
+pseudo-device	sl			2	# Serial Line IP
+pseudo-device	strip		2	# Starmode Radio IP (Metricom)
+pseudo-device	tun			2	# network tunneling over tty
+
+# miscellaneous pseudo-devices
+pseudo-device	pty			64	# pseudo-terminals
+pseudo-device	tb			1	# tablet line discipline
