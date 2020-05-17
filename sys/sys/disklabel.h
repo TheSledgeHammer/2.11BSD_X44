@@ -206,7 +206,11 @@ struct disklabel {
 #define	DTYPE_SCSI		4		/* SCSI */
 #define	DTYPE_ESDI		5		/* ESDI interface */
 #define	DTYPE_ST506		6		/* ST506 etc. */
-#define	DTYPE_FLOPPY	7		/* floppy */
+#define	DTYPE_HPIB		7		/* CS/80 on HP-IB */
+#define	DTYPE_HPFL		8		/* HP Fiber-link */
+#define	DTYPE_FLOPPY	10		/* floppy */
+#define	DTYPE_CCD		11		/* concatenated disk device */
+#define	DTYPE_VND		12		/* vnode pseudo-disk */
 
 /* d_subtype values: */
 #define DSTYPE_INDOSPART	0x8			/* is inside dos partition */
@@ -223,7 +227,9 @@ static char *dktypenames[] = {
 	"ESDI",
 	"ST506",
 	"floppy",
-	0
+	"ccd",
+	"vnd",
+	NULL
 };
 #define DKMAXTYPES	(sizeof(dktypenames) / sizeof(dktypenames[0]) - 1)
 #endif
@@ -233,18 +239,16 @@ static char *dktypenames[] = {
  * Used to interpret other filesystem-specific
  * per-partition information.
  */
-#define	FS_UNUSED	0		/* unused */
-#define	FS_SWAP		1		/* swap */
-#define	FS_V6		2		/* Sixth Edition */
-#define	FS_V7		3		/* Seventh Edition */
-#define	FS_SYSV		4		/* System V */
-
 /*
  * 2.11BSD uses type 5 filesystems even though block numbers are 4 bytes
  * (rather than the packed 3 byte format) and the directory structure is
  * that of 4.3BSD (long filenames).
 */
-
+#define	FS_UNUSED	0		/* unused */
+#define	FS_SWAP		1		/* swap */
+#define	FS_V6		2		/* Sixth Edition */
+#define	FS_V7		3		/* Seventh Edition */
+#define	FS_SYSV		4		/* System V */
 #define	FS_V71K		5		/* V7 with 1K blocks (4.1, 2.9, 2.11) */
 #define	FS_V8		6		/* Eighth Edition, 4K blocks */
 #define	FS_BSDFFS	7		/* 4.2BSD fast file system */
