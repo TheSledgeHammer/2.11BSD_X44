@@ -1,4 +1,4 @@
-# 2.11BSD-Reno
+# 2.11BSD-RenoX44
 2.11BSD is unique in BSD's history, still recieving patches to it's codebase up until the last 10 years. As well as being the only BSD to receive patches that were backported from numerous versions of 4.3BSD.
 
 2.11BSD-RenoX44 is 2.11BSD that continues with that tradition. Replacing the 4.3BSD styled VM space and inodes with 4.4BSD-Lite2 VM space and vnodes. While retaining 2.11BSD's kernel and userspace. 2.11BSDx86 adopts the 4.4BSD & later BSD's (i.e. FreeBSD, NetBSD, OpenBSD & DragonflyBSD) approach of having a clearly defined architechture dependent code and architechture independent code, allowing for easier portability.
