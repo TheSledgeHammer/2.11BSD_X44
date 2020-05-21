@@ -19,7 +19,6 @@ USETOOLS?=		no
 NEED_OWN_INSTALL_TARGET?=no
 .include <bsd.own.mk>
 
-
 ##
 ## (1) port identification
 ##

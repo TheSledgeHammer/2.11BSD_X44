@@ -1,0 +1,45 @@
+#	$NetBSD: files.isa,v 1.41.2.4 1997/11/22 03:50:19 mellon Exp $
+#
+# Config file and device description for machine-independent ISA code.
+# Included by ports that need it.  Requires that the SCSI files be
+# defined first.
+
+# ports should specify appropriate major numbers for the following
+# devices:
+#	mcd, scd, wd, wt
+
+device	isa {[port = -1], [size = 0],
+	     [iomem = -1], [iosiz = 0],
+	     [irq = -1], [drq = -1], [drq2 = -1]}
+attach	isa at isabus
+file	dev/isa/isa.c			isa needs-flag
+
+# ISA "wd" (ESDI/IDE/etc.) controllers
+define ata {drive=-1}
+#device  wdc: atapi, isadma, ata
+#attach  wdc at isa
+device  wd: disk
+attach  wd at ata
+#file    dev/isa/wdc.c           wdc needs-flag
+file    dev/isa/wd.c            wd needs-flag
+
+# Wangtek- and Archive-compatible tape controller boards
+device	wt: tape, isadma
+attach	wt at isa
+file	dev/isa/wt.c			wt needs-flag
+
+#
+# ISA networking drivers
+#
+
+# WD/SMC 80x3 family, SMC Elite Ultra [8216], SMC EtherEZ
+# MUST be first: probe is non invasive, and registers are clobbered
+# by other drivers's probe
+device	we: ether, ifnet, arp, dp8390nic
+attach	we at isa
+file	dev/isa/if_we.c			we
+
+# 3Com 3C503
+device	ec: ether, ifnet, arp, dp8390nic
+attach	ec at isa
+file	dev/isa/if_ec.c			ec

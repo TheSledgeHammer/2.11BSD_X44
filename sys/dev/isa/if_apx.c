@@ -69,34 +69,34 @@ void	apx_ifattach(), apxtest(), apxinput(), apxintr(), apxtint(), apxrint();
 
 struct apx_softc {
 	struct	ifnet apx_if;
-	caddr_t	apx_device;		/* e.g. isa_device, vme_device, etc. */
+	caddr_t	apx_device;			/* e.g. isa_device, vme_device, etc. */
 	struct	apc_reg *apx_reg;	/* control regs for both subunits */
 	struct	apc_mem *apx_hmem;	/* Host addr for shared memory */
 	struct	apc_mem *apx_dmem;	/* Device (chip) addr for shared mem */
 	struct	sgcp *apx_sgcp;		/* IO control port for this subunit */
-	int	apx_flags;		/* Flags specific to this driver */
-#define APXF_CHIPHERE	0x01		/* mk5025 present */
-	int	apx_rxnum;		/* Last receiver dx we looked at */
-	int	apx_txnum;		/* Last tranmistter dx we stomped on */
-	int	apx_txcnt;		/* Number of packets queued for tx*/
+	int		apx_flags;			/* Flags specific to this driver */
+#define APXF_CHIPHERE	0x01	/* mk5025 present */
+	int		apx_rxnum;			/* Last receiver dx we looked at */
+	int		apx_txnum;			/* Last tranmistter dx we stomped on */
+	int		apx_txcnt;			/* Number of packets queued for tx*/
 	u_int	apx_msize;
 	struct	sgae apx_csr23;		/* 24 bit init addr, as seen by chip */
-	u_short	apx_csr4;		/* byte gender, set in mach dep code */
-	struct	apc_modes apx_modes;	/* Parameters, as amended by ioctls */
+	u_short	apx_csr4;			/* byte gender, set in mach dep code */
+	struct	apc_modes apx_modes;/* Parameters, as amended by ioctls */
 } apx_softc[2 * NAPX];
 
 struct apxstat {
-	int	rxnull;			/* no rx bufs ready this interrupt */
-	int	rxnrdy;			/* expected rx buf not ready */
-	int	rx2big;			/* expected rx buf not ready */
+	int	rxnull;					/* no rx bufs ready this interrupt */
+	int	rxnrdy;					/* expected rx buf not ready */
+	int	rx2big;					/* expected rx buf not ready */
 	int	txnull;
-	int	pint;			/* new primitive available interrupt */
-	int	rint;			/* receive interrupts */
-	int	tint;			/* transmit interrupts */
-	int	anyint;			/* note all interrupts */
-	int	queued;			/* got through apxinput */
-	int	nxpctd;			/* received while if was down */
-	int	rstfld;			/* reset didn't work */
+	int	pint;					/* new primitive available interrupt */
+	int	rint;					/* receive interrupts */
+	int	tint;					/* transmit interrupts */
+	int	anyint;					/* note all interrupts */
+	int	queued;					/* got through apxinput */
+	int	nxpctd;					/* received while if was down */
+	int	rstfld;					/* reset didn't work */
 } apxstat;
 
 /* default operating paramters for devices */

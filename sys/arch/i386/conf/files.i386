@@ -44,12 +44,12 @@ major	{vnd = 14}
 
 include "../../../dev/scsi/files.scsi"
 major	{sd = 4}
-major	{st = 5}
-major	{cd = 6}
+#major	{st = 5}
+#major	{cd = 6}
 
 
 # Memory Disk for install floppy
-file arch/i386/i386/md_root.c	memory_disk_hooks
+file arch/i386/i386/md_root.c	            memory_disk_hooks
 major	{md = 17}
 
 #
@@ -69,8 +69,150 @@ file	arch/i386/i386/bioscall.s	        bioscall needs-flag
 #device	mca at root {...}
 
 #
+# PCI-only drivers
+# XXX MUST BE INCLUDED BEFORE files.isa, as long as files.isa attaches
+# XXX devices to 'pci'.
+#
+
+include "../../../dev/pci/files.pci"
+file	arch/i386/pci/pci_machdep.c	pci
+
+# PCI-Host bridge chipsets
+device	pchb:	pcibus
+attach	pchb at pci
+file	arch/i386/pci/pchb.c		pchb
+
+# PCI-ISA bridges
+device	pcib: isabus
+attach	pcib at pci
+file	arch/i386/pci/pcib.c		pcib
+
+#
+# ISA and mixed ISA+EISA or ISA+PCI drivers
+#
+
+include "../../../dev/isa/files.isa"
+major	{mcd = 7}
+#major	{scd = 15}
+major	{wd = 0}
+major	{wt = 3}
+
+file	arch/i386/isa/isa_machdep.c	isa
+
+# PC clock
+file	arch/i386/isa/clock.c		isa
+
+# Numeric Processing Extension; Math Co-processor
+device	npx
+attach	npx at isa
+file	arch/i386/isa/npx.c		        npx needs-flag
+
+# attribute used to represent the "keyboard controller"
+# XXX should be a real device
+define pckbd { [irq = -1], [port = -1] }
+
+# PC console support a la "pccons"
+device	pc: tty, pckbd
+attach	pc at isa
+file	arch/i386/isa/pccons.c		    pc needs-flag
+
+
+# PC Mice; Logitech-style, Microsoft-style, and PS/2-style
+device	lms
+attach	lms at isa
+file	arch/i386/isa/lms.c		        lms needs-flag
+device	mms
+attach	mms at isa
+file	arch/i386/isa/mms.c		        mms needs-flag
+device	pms
+attach	pms at pckbd
+file	arch/i386/isa/pms.c		        pms needs-flag
+
+# Floppy disk controller
+device	fdc {drive = -1}
+attach	fdc at isa
+device	fd: disk, isadma
+attach	fd at fdc
+file	arch/i386/isa/fd.c		        fdc needs-flag
+major	{fd = 2}
+
+# PC speaker
+device	spkr: tty
+attach	spkr at pckbd
+file	arch/i386/isa/spkr.c		    spkr needs-flag
+
+# Game adapter (joystick)
+device	joy
+file	arch/i386/isa/joy.c		        joy needs-flag
+
+attach	joy at isa with joy_isa
+file	arch/i386/isa/joy_isa.c		    joy_isa
+
+# Adaptec AHA-284x VL SCSI controllers
+# device declaration in sys/conf/files
+attach	ahc at isa with ahc_isa
+file	arch/i386/isa/ahc_isa.c		    ahc_isa
+
+#
+# EISA-only drivers
+#
+
+include "../../../dev/eisa/files.eisa"
+file	arch/i386/eisa/eisa_machdep.c	eisa
+
+# ISA Plug 'n Play devices
+# IT IS IMPORTANT THAT THIS IS INCLUDED AFTER ALL ISA DEVICES!
+# DO NOT MOVE IT!  (Thanks, The Mgmt.)
+include "dev/isapnp/files.isapnp"
+file	arch/i386/isa/isapnp_machdep.c	isapnp
+
+attach	joy at isapnp with joy_isapnp
+file	arch/i386/isa/joy_isapnp.c	    joy_isapnp
+
+#
+# Other mainbus-attached devices
+#
+
+# Advanced Power Management support (APM)
+device apm: bioscall
+attach apm at mainbus
+file	arch/i386/i386/apm.c		        apm needs-count
+file	arch/i386/i386/apmcall.s	        apm
+
+#
 # Compatibility modules
 #
 
 # VM86 mode
 file	arch/i386/i386/vm86.c			    vm86
+
+# XXXX pcic here because it needs to be late.  The catch: pcic needs
+# to be late, so devices which attach to it are attached late.  But it
+# needs to be before its isa and pci attachments.  This answer is
+# non-optimal, but I don't have a better answer right now.
+
+# PCIC pcmcia contoller
+# XXX this needs to be done very late, so it's done here.  This feels
+# like a kludge, but it might be for the best.
+
+defopt	PCIC_ISA_ALLOC_IOBASE
+defopt	PCIC_ISA_ALLOC_IOSIZE
+defopt	PCIC_ISA_INTR_ALLOC_MASK
+
+device	pcic {[controller = -1], [socket = -1]}
+file	dev/ic/i82365.c			    pcic
+
+# PCIC pcmcia contoller
+attach	pcic at isa with pcic_isa
+file	dev/isa/i82365_isa.c		pcic_isa
+
+# PCIC pcmcia contoller
+attach	pcic at pci with pcic_pci
+file	dev/pci/i82365_pci.c		pcic_pci
+
+
+# this wants to be probed as late as possible.
+#
+# Machine-independent PCMCIA drivers
+#
+#include "dev/pcmcia/files.pcmcia"
