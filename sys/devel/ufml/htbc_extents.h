@@ -36,7 +36,7 @@
 #include <stdbool.h>
 #endif
 
-#include <ext2fs_htree.h>
+#include "htbc_htree.h"
 #define	EXT4_EXT_MAGIC  0xf30a
 
 #define	EXT4_EXT_CACHE_NO	0

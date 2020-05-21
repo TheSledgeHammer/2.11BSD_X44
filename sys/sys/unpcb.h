@@ -38,15 +38,15 @@
  * back pressure on the sender accordingly.
  */
 struct	unpcb {
-	struct	socket *unp_socket;	/* pointer back to socket */
-	struct	inode *unp_inode;	/* if associated with file */
-	ino_t	unp_ino;			/* fake inode number */
-	struct	unpcb *unp_conn;	/* control block of connected socket */
-	struct	unpcb *unp_refs;	/* referencing socket linked list */
-	struct 	unpcb *unp_nextref;	/* link in unp_refs list */
-	struct	mbuf *unp_addr;		/* bound address of socket */
-	int	unp_cc;			/* copy of rcv.sb_cc */
-	int	unp_mbcnt;		/* copy of rcv.sb_mbcnt */
+	struct	socket 	*unp_socket;	/* pointer back to socket */
+	struct	vnode 	*unp_vnode;		/* if associated with file */
+	ino_t			unp_ino;		/* fake inode number */
+	struct	unpcb 	*unp_conn;		/* control block of connected socket */
+	struct	unpcb 	*unp_refs;		/* referencing socket linked list */
+	struct 	unpcb 	*unp_nextref;	/* link in unp_refs list */
+	struct	mbuf 	*unp_addr;		/* bound address of socket */
+	int				unp_cc;			/* copy of rcv.sb_cc */
+	int				unp_mbcnt;		/* copy of rcv.sb_mbcnt */
 };
 
 #define	sotounpcb(so)	((struct unpcb *)((so)->so_pcb))

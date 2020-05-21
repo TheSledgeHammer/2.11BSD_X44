@@ -62,9 +62,9 @@
 #include <sys/vnode.h>
 #include <sys/stat.h>
 #include <sys/mount.h>
+#include "htbc_hash.h"
 
-#include <devel/ufml/ext2fs_htree.h>
-#include <devel/ufml/ext2fs_hash.h>
+#include "htbc_htree.h"
 
 /*
  * FF, GG, and HH are transformations for rounds 1, 2, and 3.

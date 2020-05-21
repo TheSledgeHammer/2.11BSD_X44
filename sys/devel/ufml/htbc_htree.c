@@ -46,8 +46,8 @@
 #include <sys/signalvar.h>
 #include <sys/malloc.h>
 
-#include <devel/ufml/ext2fs_htree.h>
-#include <devel/ufml/ext2fs_hash.h>
+#include "htbc_htree.h"
+#include "htbc_hash.h"
 
 static int htree_find_leaf(struct htree_fake_inode *, const char *, int , uint32_t *, uint8_t *, struct htree_lookup_info *);
 

@@ -16,7 +16,6 @@
 #include <sys/unpcb.h>
 #include <sys/un.h>
 #include <sys/vnode.h>
-//#include <sys/inode.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 
@@ -29,7 +28,7 @@
  *	need a proper out-of-band
  */
 struct sockaddr sun_noname = { AF_UNIX };
-ino_t unp_ino;			/* prototype for fake inode numbers */
+ino_t 			unp_ino;			/* prototype for fake inode numbers */
 
 extern void unpdisc(), unpgc1();
 extern int fadjust();
@@ -73,7 +72,7 @@ uipc_usrreq(so, req, m, nam, rights)
 		break;
 
 	case PRU_LISTEN:
-		if (unp->unp_inode == 0)
+		if (unp->unp_vnode == 0)
 			error = EINVAL;
 		break;
 
@@ -114,7 +113,7 @@ uipc_usrreq(so, req, m, nam, rights)
 		switch (so->so_type) {
 
 		case SOCK_DGRAM:
-			panic(<sys/uipc 1<sys/);
+			panic("uipc 1");
 			break;
 			/*NOTREACHED*/
 
@@ -138,7 +137,7 @@ uipc_usrreq(so, req, m, nam, rights)
 			break;
 
 		default:
-			panic(<sys/uipc 2<sys/);
+			panic("uipc 2");
 		}
 		break;
 
@@ -191,7 +190,7 @@ uipc_usrreq(so, req, m, nam, rights)
 				break;
 			}
 			if (unp->unp_conn == 0)
-				panic(<sys/uipc 3<sys/);
+				panic("uipc 3");
 			so2 = unp->unp_conn->unp_socket;
 			/*
 			 * Send to paired receive port, and then reduce
@@ -214,7 +213,7 @@ uipc_usrreq(so, req, m, nam, rights)
 			break;
 
 		default:
-			panic(<sys/uipc 4<sys/);
+			panic("uipc 4");
 		}
 		break;
 
@@ -256,7 +255,7 @@ uipc_usrreq(so, req, m, nam, rights)
 		break;
 
 	default:
-		panic(<sys/piusrreq<sys/);
+		panic("piusrreq");
 	}
 release:
 	if (m)
@@ -312,9 +311,9 @@ unp_detach(unp)
 	register struct unpcb *unp;
 {
 	
-	if (unp->unp_inode) {
-		UNPDET(unp->unp_inode);
-		unp->unp_inode = 0;
+	if (unp->unp_vnode) {
+		UNPDET(unp->unp_vnode);
+		unp->unp_vnode = 0;
 	}
 	if (unp->unp_conn)
 		unp_disconnect(unp);
@@ -333,18 +332,18 @@ unp_bind(unp, nam)
 	struct mbuf *nam;
 {
 	struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
-	struct inode *ip;
+	struct vnode *vp;
 	int error;
 
-	if (unp->unp_inode != NULL || nam->m_len >= MLEN)
+	if (unp->unp_vnode != NULL || nam->m_len >= MLEN)
 		return (EINVAL);
 	*(mtod(nam, caddr_t) + nam->m_len) = 0;
-	error = UNPBIND(soun->sun_path, nam->m_len, &ip, unp->unp_socket);
+	error = UNPBIND(soun->sun_path, nam->m_len, &vp, unp->unp_socket);
 	if (error)
 		return(error);
-	if (!ip)
-		panic(<sys/unp_bind<sys/);
-	unp->unp_inode = ip;
+	if (!vp)
+		panic("unp_bind");
+	unp->unp_vnode = vp;
 	unp->unp_addr = m_copy(nam, 0, M_COPYALL);
 	return (0);
 }
@@ -354,7 +353,7 @@ unp_connect(so, nam)
 	struct mbuf *nam;
 {
 	register struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
-	struct inode *ip;
+	struct vnode *vp;
 	int error;
 	struct socket *so2;
 
@@ -362,8 +361,8 @@ unp_connect(so, nam)
 		return (EMSGSIZE);
 	*(mtod(nam, caddr_t) + nam->m_len) = 0;
 
-	error = UNPCONN(soun->sun_path, nam->m_len, &so2, &ip);
-	if (error || !so2 || !ip)
+	error = unpconn(soun->sun_path, nam->m_len, &so2, &vp);
+	if (error || !so2 || !vp)
 		goto bad;
 	if (so->so_type != so2->so_type) {
 		error = EPROTOTYPE;
@@ -377,8 +376,8 @@ unp_connect(so, nam)
 	}
 	error = unp_connect2(so, so2);
 bad:
-	if (ip)
-		IPUT(ip);
+	if (vp)
+		vput(vp);
 	return (error);
 }
 
@@ -408,7 +407,7 @@ unp_connect2(so, so2)
 		break;
 
 	default:
-		panic(<sys/unp_connect2<sys/);
+		panic("unp_connect2");
 	}
 	return (0);
 }
@@ -430,7 +429,7 @@ unp_disconnect(unp)
 			unp2 = unp2->unp_refs;
 			for (;;) {
 				if (unp2 == 0)
-					panic(<sys/unp_disconnect<sys/);
+					panic("unp_disconnect");
 				if (unp2->unp_nextref == unp)
 					break;
 				unp2 = unp2->unp_nextref;
@@ -497,7 +496,7 @@ unp_externalize(rights)
 	register struct file *fp;
 	int f;
 
-	printf(<sys/unp_externalize(0%o)\n<sys/,rights);
+	printf("externalize rights");
 	if (newfds > ufavail()) {
 		for (i = 0; i <sys/ newfds; i++) {
 			fp = *rp;
@@ -506,12 +505,12 @@ unp_externalize(rights)
 		}
 		return (EMSGSIZE);
 	}
-	for (i = 0; i <sys/ newfds; i++) {
+	for (i = 0; i < newfds; i++) {
 		f = ufalloc(0);
-		if (f <sys/ 0)
-			panic(<sys/unp_externalize<sys/);
+		if (f < 0)
+			panic("unp_externalize");
 		fp = *rp;
-		u.u_ofile[f] = fp;
+		u->u_ofile[f] = fp;
 		/* -1 added to msgcount, 0 to count */
 		SKcall(fadjust, sizeof(fp) + sizeof(int) + sizeof(int),
 		    fp, -1, 0);
@@ -529,12 +528,12 @@ unp_internalize(rights)
 	register int i;
 	register struct file *fp;
 
-	printf(<sys/unp_internalize(0%o)\n<sys/,rights);
+	printf("unp_internalize");
 	rp = mtod(rights, struct file **);
-	for (i = 0; i <sys/ oldfds; i++, rp++)
+	for (i = 0; i < oldfds; i++, rp++)
 		GETF(fp, *(int *)rp);
 	rp = mtod(rights, struct file **);
-	for (i = 0; i <sys/ oldfds; i++) {
+	for (i = 0; i < oldfds; i++) {
 		GETF(fp, *(int *)rp);
 		*rp++ = fp;
 		/* bump both the message count and reference count of fp */
@@ -567,7 +566,7 @@ restart:
 	/* get limits AND clear FMARK|FDEFER in all file table entries */
 	SKcall(unpgc1, sizeof(file) + sizeof(fileNFILE), &file, &fileNFILE);
 	do {
-		for (fp = file; fp <sys/ fileNFILE; fp++) {
+		for (fp = file; fp < fileNFILE; fp++) {
 			/* get file table entry, the return value is f_count */
 			if (FPFETCH(fp, &xf) == 0)
 				continue;
@@ -594,7 +593,7 @@ restart:
 			unp_scan(so->so_rcv.sb_mb, unp_mark);
 		}
 	} while (unp_defer);
-	for (fp = file; fp <sys/ fileNFILE; fp++) {
+	for (fp = file; fp < fileNFILE; fp++) {
 		if (FPFETCH(fp, &xf) == 0)
 			continue;
 		if (xf->f_count == xf->f_msgcount && (xf->f_flag & FMARK) == 0)
@@ -627,7 +626,7 @@ unp_scan(m0, op)
 			if (m->m_type == MT_RIGHTS && m->m_len) {
 				qfds = m->m_len / sizeof (struct file *);
 				rp = mtod(m, struct file **);
-				for (i = 0; i <sys/ qfds; i++)
+				for (i = 0; i < qfds; i++)
 					(*op)(*rp++);
 				break;		/* XXX, but saves time */
 			}

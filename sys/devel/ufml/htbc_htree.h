@@ -72,27 +72,27 @@ struct htree_fake_fs {
     char      	h_def_hash_version;			/* Default hash version to use */
 };
 
-struct htree_fake_direct {
-	uint32_t 	h_ino;						/* inode number of entry */
-	uint16_t 	h_reclen;					/* length of this record */
-	uint8_t  	h_namlen;					/* length of string in d_name */
-	uint8_t  	h_type;						/* file type */
-	char        h_name[EXT2FS_MAXNAMLEN];	/* name with length<=EXT2FS_MAXNAMLEN */
-};
-
 struct htree_searchslot {
-	enum htree_slotstatus h_slotstatus;
-	int32_t 	h_slotoffset;				/* offset of area with free space */
-	int 		h_slotsize;					/* size of area at slotoffset */
-	int 		h_slotfreespace;			/* amount of space free in slot */
-	int 		h_slotneeded;				/* sizeof the entry we are seeking */
-	int32_t		h_slotcount;				/* Size of free slot in directory. */
+	enum htree_slotstatus 	h_slotstatus;
+	int32_t 				h_slotoffset;				/* offset of area with free space */
+	int 					h_slotsize;					/* size of area at slotoffset */
+	int 					h_slotfreespace;			/* amount of space free in slot */
+	int 					h_slotneeded;				/* sizeof the entry we are seeking */
+	int32_t					h_slotcount;				/* Size of free slot in directory. */
 };
 
 enum htree_slotstatus {
 	NONE,
 	COMPACT,
 	FOUND
+};
+
+struct htree_fake_direct {
+	uint32_t 	h_ino;						/* inode number of entry */
+	uint16_t 	h_reclen;					/* length of this record */
+	uint8_t  	h_namlen;					/* length of string in d_name */
+	uint8_t  	h_type;						/* file type */
+	char        h_name[EXT2FS_MAXNAMLEN];	/* name with length<=EXT2FS_MAXNAMLEN */
 };
 
 struct htree_count {

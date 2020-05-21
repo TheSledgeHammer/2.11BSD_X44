@@ -19,6 +19,7 @@
 
 int knetisr;
 
+void
 netcrash()
 {
 	panic("Network crashed");
@@ -28,6 +29,7 @@ netcrash()
  * These next entry points exist to allow the network kernel to
  * access components of structures that exist in kernel data space.
  */
+void
 netpsignal(p, sig)		/* XXX? sosend, sohasoutofband, sowakeup */
 	struct proc *p;		/* if necessary, wrap psignal in save/restor */
 	int sig;
@@ -63,6 +65,7 @@ fadjust(fp, msg, cnt)
 	fp->f_count += cnt;
 }
 
+int
 fpfetch(fp, fpp)
 	struct file *fp, *fpp;
 {
@@ -78,6 +81,7 @@ unpdet(vp)
 	vrele(vp);
 }
 
+int
 unpbind(path, len, vpp, unpsock)
 	char *path;
 	int len;
@@ -115,6 +119,7 @@ unpbind(path, len, vpp, unpsock)
 	return(0);
 }
 
+int
 unpconn(path, len, so2, vpp)
 	char *path;
 	int len;
@@ -151,6 +156,7 @@ unpconn(path, len, so2, vpp)
 	return(0);
 }
 
+void
 unpgc1(beginf, endf)
 	struct file **beginf, **endf;
 {
@@ -161,6 +167,7 @@ unpgc1(beginf, endf)
 	*endf = fileNFILE;
 }
 
+int
 unpdisc(fp)
 	struct file *fp;
 {

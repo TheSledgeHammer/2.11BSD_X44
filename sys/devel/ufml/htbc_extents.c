@@ -28,6 +28,8 @@
  * $FreeBSD: head/sys/fs/ext2fs/ext2_extents.c 295523 2016-02-11 15:27:14Z pfg $
  */
 
+#include "htbc_extents.h"
+
 #include <sys/cdefs.h>
 /* __KERNEL_RCSID(0, "$NetBSD: ext2fs_extents.c,v 1.3 2016/08/13 07:40:10 christos Exp $"); */
 
@@ -43,8 +45,7 @@
 #include <sys/vnode.h>
 #include <sys/signalvar.h>
 
-#include <devel/ufml/ext2fs_htree.h>
-#include <devel/ufml/ext2fs_extents.h>
+#include "htbc_htree.h"
 
 static bool
 ext4_ext_binsearch_index(struct htree_fake_inode *ip, struct ext4_extent_path *path, daddr_t lbn, daddr_t *first_lbn, daddr_t *last_lbn)

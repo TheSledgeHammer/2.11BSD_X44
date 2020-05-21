@@ -32,7 +32,7 @@
  *
  *	@(#)kern_malloc.c	8.4 (Berkeley) 5/20/95
  */
-/* Contains modifications from NetBSD 1.3 */
+/* Contains modifications from NetBSD 1.3: realloc */
 
 #include <sys/param.h>
 #include <sys/proc.h>
