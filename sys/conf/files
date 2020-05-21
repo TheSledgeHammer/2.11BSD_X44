@@ -32,7 +32,7 @@ define	ether
 # 8250/16[45]50-based "com" ports
 # XXX In a perfect world, this would be done with attributes
 device	com: tty
-file	dev/ic/com.c					com needs-flag
+file	dev/ic/com.c						com needs-flag
 
 # legitimate pseudo-devices
 defpseudodev vnd: disk
