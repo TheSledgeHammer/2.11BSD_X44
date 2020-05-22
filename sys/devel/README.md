@@ -2,14 +2,21 @@ Development Folder: Can be split into two.
 	- New Content: code in development. 
 	- Existing Content: code to be added into kernel
 
-New Content: 
+New Content:
+- HTBC: HTree Blockchain
+	- A Versioning, Snapshot, Cache augmentation for LFS and other Log-Structured Filesystems. 
+	- Using a blockchain styled structure 
+	- Implemented in both LFS and the VFS Layer 
 - Memory:
-	- An general memory allocator with several layers. 
-	- Top(Interface) to Bottom(Block Allocation) Layers: Slabs, Pools, Buckets, Tertiary Buddy 
-- MPX: Multiplexors (Unix V7)
-	- A reimplementation of 2.11BSD's multiplexors
-	- Could merge it with UFS211 (FS Multiplexor rebase/extension...! )
-		- UFS211 contains most key references needed.
+	- An general memory allocator with several layers/ stack. 
+	- Idea: Top(Interface) to Bottom(Block Allocation) Layers: Slabs, Pools, Buckets, Tertiary Buddy 
+- MPX: Multiplexors
+	- A reimplementation of multiplexors from the V7 and early BSD's
+	- Two concurrent versions:
+		- MPX: Based on bsd sockets
+		- MPX-FS: A filesystem, with multiple possible variations
+			- Implement in the VFS layer. To provide a multiplexors across filesystems 
+			- Independent FS like fdesc, fifo, etc 
 - Multitasking:
 	- Kernel & User Threads
 	- Threadpools (kernel & userspace)
@@ -17,26 +24,24 @@ New Content:
 - Pmap:
 	- Machine-independent api for Clustered Page Tables variation.
 	- i386 arch partial pmap implementation
-- Scheduler:
+- Scheduler: Stacked Scheduler
 	- Kernel feeds EDF which feeds the CFS. Circuler Queue
 	- Earliest Deadline First Priorities (Plan 9's EDFI Inspired)
 	- Completely Fair Scheduler
 - UFML:
-	- UFML is an abbrievation of (UFS + FFS + MFS + LFS);  
-	- A content based filesystem designed for UFS, FFS, MFS & LFS (Plan 9's Fossil & Venti Inspired)
+	- UFML is an abbrievation of the filesystems it's designed for (UFS + FFS + MFS + LFS)  
+	- A content based filesystem/layer inspired by Plan 9's Fossil & Venti Filesystem
+	- Provides a modular unified layer for archiving, snapshots and compression across UFS, FFS, MFS & LFS
 - UFS211:
-	- 2.11BSD's UFS. (Seperate from current UFS)
+	- 2.11BSD's UFS. (Seperate from UFS)
 	- TODO: 
 		- vnode integration
 		- remove pdp memory refrences 
-- VFS:
-	- replacement for vnode_if
 	
 Existing Content:
 - Misc:
 	- Crypto: Camellia, Murmur3 & Twofish
-	- Hashed Red-Black Tree
-- UFS:
+- UFS: Yet to be implemented
 	- UFS WAPBL
 	- VFS WAPBL
 	- dirhash

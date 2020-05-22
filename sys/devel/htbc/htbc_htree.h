@@ -42,50 +42,7 @@
 
 /* To Fix:
  * ext2fs_add_entry (line 483)
- * ext2fs_blkatoff
  */
-
-struct htree_fake_inode_ext {
-	daddr_t h_last_lblk;	/* last logical block allocated */
-	daddr_t h_last_blk;		/* last block allocated on disk */
-	struct ext4_extent_cache i_ext_cache; /* cache for ext4 extent */
-};
-
-struct htree_fake_inode {
-		u_int32_t	h_blocks;
-    	u_int64_t   h_size;					/* File byte count. */
-    	u_int32_t   h_flag;	    			/* flags, see below */
-        u_int32_t   h_sflags;				/* 32: Status flags (chflags) */
-        struct	    htree_mfs *h_mfs;	    /* h_tree_mfs */
-        int32_t	  	h_count;				/* Size of free slot in directory. */
-};
-
-struct htree_mfs {
-	struct htree_fake_fs   		h_fs;
-    int8_t	        			h_uhash;	/* 3 if hash should be signed, 0 if not */
-	int32_t	        			h_bsize;	/* block size */
-    struct htree_fake_inode_ext h_ext;
-};
-
-struct htree_fake_fs {
-	uint32_t  	h_hash_seed[4];				/* HTREE hash seed */
-    char      	h_def_hash_version;			/* Default hash version to use */
-};
-
-struct htree_searchslot {
-	enum htree_slotstatus 	h_slotstatus;
-	int32_t 				h_slotoffset;				/* offset of area with free space */
-	int 					h_slotsize;					/* size of area at slotoffset */
-	int 					h_slotfreespace;			/* amount of space free in slot */
-	int 					h_slotneeded;				/* sizeof the entry we are seeking */
-	int32_t					h_slotcount;				/* Size of free slot in directory. */
-};
-
-enum htree_slotstatus {
-	NONE,
-	COMPACT,
-	FOUND
-};
 
 struct htree_fake_direct {
 	uint32_t 	h_ino;						/* inode number of entry */
@@ -147,14 +104,14 @@ struct htree_sort_entry {
 static off_t	htree_get_block(struct htree_entry *ep);
 static void 	htree_release(struct htree_lookup_info *info);
 static uint16_t htree_get_limit(struct htree_entry *ep);
-static uint32_t htree_root_limit(struct htree_fake_inode *ip, int len);
+static uint32_t htree_root_limit(struct htbc_inode *ip, int len);
 static uint16_t htree_get_count(struct htree_entry *ep);
 static uint32_t htree_get_hash(struct htree_entry *ep);
 static void 	htree_set_block(struct htree_entry *ep, uint32_t blk);
 static void 	htree_set_count(struct htree_entry *ep, uint16_t cnt);
 static void 	htree_set_hash(struct htree_entry *ep, uint32_t hash);
 static void 	htree_set_limit(struct htree_entry *ep, uint16_t limit);
-static uint32_t htree_node_limit(struct htree_fake_inode *ip);
+static uint32_t htree_node_limit(struct htbc_inode *ip);
 static int 		htree_append_block(struct vnode *vp, char *data, struct componentname *cnp, uint32_t blksize);
 static int 		htree_writebuf(struct htree_lookup_info *info);
 static void 	htree_insert_entry_to_level(struct htree_lookup_level *level, uint32_t hash, uint32_t blk);
@@ -164,7 +121,8 @@ static void 	htree_append_entry(char *block, uint32_t blksize, struct htree_fake
 static int 		htree_split_dirblock(char *block1, char *block2, uint32_t blksize, uint32_t *hash_seed, uint8_t hash_version, uint32_t *split_hash, struct htree_fake_direct *entry);
 int 			htree_create_index(struct vnode *vp, struct componentname *cnp, struct htree_fake_direct *new_entry);
 int 			htree_add_entry(struct vnode *dvp, struct htree_fake_direct *entry, struct componentname *cnp, size_t newentrysize);
-static int 		htree_check_next(struct htree_fake_inode *ip, uint32_t hash, const char *name, struct htree_lookup_info *info);
-static int 		htree_find_leaf(struct htree_fake_inode *ip, const char *name, int namelen, uint32_t *hash, uint8_t *hash_ver, struct htree_lookup_info *info);
-int 			htree_lookup(struct htree_fake_inode *ip, const char *name, int namelen, struct buf **bpp, int *entryoffp, int32_t *offp, int32_t *prevoffp, int32_t *endusefulp, struct htree_searchslot *ss);
+static int 		htree_check_next(struct htbc_inode *ip, uint32_t hash, const char *name, struct htree_lookup_info *info);
+static int 		htree_find_leaf(struct htbc_inode *ip, const char *name, int namelen, uint32_t *hash, uint8_t *hash_ver, struct htree_lookup_info *info);
+int 			htree_lookup(struct htbc_inode *ip, const char *name, int namelen, struct buf **bpp, int *entryoffp, int32_t *offp, int32_t *prevoffp, int32_t *endusefulp, struct htbc_hi_searchslot *ss);
+
 #endif /* !_FS_EXT2FS_HTREE_H_ */

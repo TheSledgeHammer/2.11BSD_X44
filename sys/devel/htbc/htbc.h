@@ -1,21 +1,42 @@
-/*
- * htree.h
+/*	$NetBSD: ext2fs_htree.h,v 1.1 2016/06/24 17:21:30 christos Exp $	*/
+
+/*-
+ * Copyright (c) 2010, 2012 Zheng Liu <lz@freebsd.org>
+ * Copyright (c) 2012, Vyacheslav Matyushin
+ * All rights reserved.
  *
- *  Created on: 20 May 2020
- *      Author: marti
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ * $FreeBSD: head/sys/fs/ext2fs/htree.h 262623 2014-02-28 21:25:32Z pfg $
  */
 
 #ifndef SYS_HTBC_H_
 #define SYS_HTBC_H_
-
 
 #include <miscfs/specfs/specdev.h>
 
 #include <sys/queue.h>
 #include <sys/vnode.h>
 #include <sys/buf.h>
-
-//TODO: ext2_blkoff, ext2_lblkno
 
 /****************************************************************/
 /* HTBC layout */
@@ -190,6 +211,17 @@ struct htbc_extent_path {
 int						htbc_ext_in_cache(struct htbc_inode *, daddr_t, struct htbc_extent *);
 void					htbc_ext_put_cache(struct htbc_inode *, struct htbc_extent *, int);
 struct htbc_extent_path *htbc_ext_find_extent(struct htbc_hi_mfs *fs, struct htbc_inode *, daddr_t, struct htbc_extent_path *);
+
+/****************************************************************/
+/* HTBC htree Hash */
+
+/* F, G, and H are MD4 functions */
+#define F(x, y, z) (((x) & (y)) | ((~x) & (z)))
+#define G(x, y, z) (((x) & (y)) | ((x) & (z)) | ((y) & (z)))
+#define H(x, y, z) ((x) ^ (y) ^ (z))
+
+/* ROTATE_LEFT rotates x left n bits */
+#define ROTATE_LEFT(x, n) (((x) << (n)) | ((x) >> (32 - (n))))
 
 /****************************************************************/
 
