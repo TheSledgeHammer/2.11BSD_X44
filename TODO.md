@@ -48,7 +48,6 @@ Kern:
 	- char	u_sep;						/* flag for I and D separation */
 	- struct u_ovd						/* automatic overlay data */
 	
-
 NetBSD 5.0.2: Threads & Multitasking
 - kobj: Loading objects in filesystem
 - wapbl
@@ -83,3 +82,4 @@ Memory Segmentation (Hardware): CPU Registers
 Memory Segmentation (Software):
 Seperate Process Segments: text, data, stack
 Seperate Instruction & Data Spaces
+

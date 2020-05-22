@@ -225,17 +225,17 @@ struct htbc_extent_path *htbc_ext_find_extent(struct htbc_hi_mfs *fs, struct htb
 
 /****************************************************************/
 
-void htbc_init(void);
-int htbc_start(struct htbc **);
-int htbc_stop(struct htbc *, int);
-int	htbc_begin(struct htbc *, const char *, int);
-int htbc_end(struct htbc *);
-void htbc_register_inode(struct htbc *, ino_t, mode_t);
-void htbc_unregister_inode(struct htbc *, ino_t, mode_t);
+void 	htbc_init(void);
+int 	htbc_start(struct htbc **);
+int 	htbc_stop(struct htbc *, int);
+int		htbc_begin(struct htbc *, const char *, int);
+int 	htbc_end(struct htbc *);
+void 	htbc_register_inode(struct htbc *, ino_t, mode_t);
+void 	htbc_unregister_inode(struct htbc *, ino_t, mode_t);
 
 /* Supply this to provide i/o support */
-int htbc_write(void *, size_t, struct vnode *, daddr_t);
-int htbc_read(void *, size_t, struct vnode *, daddr_t);
+int 	htbc_write(void *, size_t, struct vnode *, daddr_t);
+int 	htbc_read(void *, size_t, struct vnode *, daddr_t);
 
 /* calculates (loc % fs->hi_bsize) */
 #define htbc_blkoff(fs, loc)	 ((loc) & (fs)->hi_qbmask)

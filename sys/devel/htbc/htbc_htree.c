@@ -48,7 +48,6 @@
 #include <sys/signalvar.h>
 #include <sys/malloc.h>
 
-#include <devel/htbc/htbc_hash.h>
 #include <devel/htbc/htbc_htree.h>
 #include <devel/htbc/htbc.h>
 

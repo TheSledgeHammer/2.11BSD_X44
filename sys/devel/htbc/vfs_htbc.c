@@ -25,8 +25,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @(#)vfs_htree.c	1.00
+ * @(#)vfs_htbc.c	1.00
  */
+
+/* Augment Caching, Defragmentation, Read-Write and Lookup of Log-Structured Filesystems  */
 
 #include <sys/cdefs.h>
 
@@ -63,25 +65,49 @@ struct htbc_dealloc {
 	int 						hd_len;		/* size of block */
 };
 
-TAILQ_HEAD(htchain, htbc);
+LIST_HEAD(htbc_ino_head, htbc_ino);
 struct htbc {
-	struct htchain				hc_head;
-	TAILQ_ENTRY(htbc) 			hc_entry;
-	struct vnode 				*hc_devvp;
-	struct mount 				*hc_mount;
+	CIRCLEQ_ENTRY(hbchain) 		*ht_bc_entry;
+	struct vnode 				*ht_devvp;
+	struct mount 				*ht_mount;
+
+	struct htbc_hc_header 		*ht_hc_header;
+	struct simplelock 			ht_interlock;
+
+	TAILQ_HEAD(, htbc_dealloc) 	ht_dealloclist;
+	int 						ht_dealloccnt;
+	int 						ht_dealloclim;
+
+	struct htbc_ino_head 		*ht_inohash;
+	u_long 						ht_inohashmask;
+	int 						ht_inohashcnt;
+
+	TAILQ_HEAD(, htbc_entry) 	ht_entries;
 };
 
 static struct htbc_dealloc 		*htbc_dealloc;
+static struct htbc_entry 		*htbc_entry;
+static struct hbchain 			*htbc_blockchain;
+
+struct htbc_ino {
+	LIST_ENTRY(htbc_ino) 		hti_hash;
+	ino_t 						hti_ino;
+	mode_t 						hti_mode;
+};
 
 void
 htbc_init()
 {
+	&htbc_entry = (struct htbc_entry *) malloc(sizeof(struct htbc_entry), M_HTBC, NULL);
 	&htbc_dealloc = (struct htbc_dealloc *) malloc(sizeof(struct htbc_dealloc), M_HTBC, NULL);
+
+	&htbc_blockchain = (struct hbchain *) malloc(sizeof(struct hbchain), M_HTBC, NULL);
 }
 
 void
 htbc_fini()
 {
+	FREE(&htbc_entry, M_HTBC);
 	FREE(&htbc_dealloc, M_HTBC);
 }
 
@@ -116,6 +142,7 @@ htbc_register_inode(struct htbc *ht, ino_t ino, mode_t mode)
 {
 	struct htbc_ino_head *hih;
 	struct htbc_ino *hi;
+
 
 }
 
@@ -237,7 +264,7 @@ htbc_ext_binsearch(struct htbc_inode *ip, struct htbc_extent_path *path, daddr_t
 }
 
 /*
- * Find a block in ext4 extent cache.
+ * Find a block in htbc extent cache.
  */
 int
 htbc_ext_in_cache(struct htbc_inode *ip, daddr_t lbn, struct htbc_extent *ep)
@@ -337,6 +364,7 @@ htbc_ext_find_extent(struct htbc_hi_mfs *fs, struct htbc_inode *ip, daddr_t lbn,
  * FF, GG, and HH are transformations for rounds 1, 2, and 3.
  * Rotation is separated from addition to prevent recomputation.
  */
+
 #define FF(a, b, c, d, x, s) { \
 	(a) += F ((b), (c), (d)) + (x); \
 	(a) = ROTATE_LEFT ((a), (s)); \
