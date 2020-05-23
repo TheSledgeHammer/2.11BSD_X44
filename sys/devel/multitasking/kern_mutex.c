@@ -45,7 +45,7 @@
 #include <kthread.h>
 #include <uthread.h>
 
-/* Initialize a mutex & simple_lock */
+/* Initialize a mutex_lock */
 void
 mutex_init(mtx, prio, wmesg, timo, flags)
     mutex_t mtx;
@@ -79,7 +79,7 @@ mutexstatus(mtx)
     return (lock_type);
 }
 
-/* should apply a mutex lock but check for simple lock */
+/* should apply a mutex lock */
 int
 mutexmgr(mtx, flags, tid)
     __volatile mutex_t mtx;

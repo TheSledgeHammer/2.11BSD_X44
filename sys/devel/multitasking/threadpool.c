@@ -25,53 +25,74 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
+#include <sys/cdefs.h>
+#include <sys/user.h>
 #include <multitasking/threadpool.h>
 
 void
 itc_threadpool_init()
 {
-	TAILQ_INIT(&itcp_head);
+	TAILQ_INIT(&itc_head);
 	TAILQ_INIT(&ktpool);
 	TAILQ_INIT(&utpool);
 }
 
 /* Add a thread to the itc queue */
 void
-itc_threadpool_enqueue(itc)
+itc_threadpool_enqueue(itc, tid)
 	struct itc_threadpool *itc;
+	tid_t tid;
 {
 	struct kern_threadpool *ktpool;
 	struct user_threadpool *utpool;
 
-	if(/* kernel thread something here */) {
-		itc->itcp_ktpool = ktpool;
+	/* check kernel threadpool is not null & has a job/task entry to send */
+	if(ktpool != NULL && itc->itc_tid == tid) {
+		itc->itc_ktpool = ktpool;
 		ktpool->ktp_initcq = TRUE;
-		TAILQ_INSERT_HEAD(itcp_head, itc, itcp_entry);
+		TAILQ_INSERT_HEAD(itc_head, itc, itc_entry);
 	}
-	if(/* user thread something here */) {
-		itc->itcp_utpool = utpool;
+
+	/* check user threadpool is not null & has a job/task entry to send */
+	if(utpool != NULL && itc->itc_tid == tid) {
+		itc->itc_utpool = utpool;
 		utpool->utp_initcq = TRUE;
-		TAILQ_INSERT_HEAD(itcp_head, itc, itcp_entry);
+		TAILQ_INSERT_HEAD(itc_head, itc, itc_entry);
 	}
 }
 
-/* Remove a thread from the itc queue */
+/*
+ * Remove a thread from the itc queue:
+ * If threadpool entry is not null, search queue for entry & remove
+ */
 void
-itc_threadpool_dequeue(itc)
+itc_threadpool_dequeue(itc, tid)
 	struct itc_threadpool *itc;
+	tid_t tid;
 {
 	struct kern_threadpool *ktpool;
 	struct user_threadpool *utpool;
-	if(/* kernel thread something here */) {
-		itc->itcp_ktpool = ktpool;
-		ktpool->ktp_initcq = FALSE;
-		TAILQ_REMOVE(itcp_head, itc, itcp_entry);
+
+	if(ktpool != NULL) {
+		TAILQ_FOREACH(itc, itc_head, itc_entry) {
+			if(TAILQ_NEXT(itc, itc_entry)->itc_ktpool == ktpool) {
+				if(itc->itc_tid == tid) {
+					ktpool->ktp_initcq = FALSE;
+					TAILQ_REMOVE(itc_head, itc, itc_entry);
+				}
+			}
+		}
 	}
-	if(/* user thread something here */) {
-		itc->itcp_utpool = utpool;
-		utpool->utp_initcq = FALSE;
-		TAILQ_REMOVE(itcp_head, itc, itcp_entry);
+
+	if(utpool != NULL) {
+		TAILQ_FOREACH(itc, itc_head, itc_entry) {
+			if(TAILQ_NEXT(itc, itc_entry)->itc_utpool == utpool) {
+				if(itc->itc_tid == tid) {
+					utpool->utp_initcq = FALSE;
+					TAILQ_REMOVE(itc_head, itc, itc_entry);
+				}
+			}
+		}
 	}
 }
 
@@ -81,49 +102,50 @@ check(itc, tid)
 	struct itc_threadpool *itc;
 	tid_t tid;
 {
-	struct kern_threadpool *ktpool = itc->itcp_ktpool;
-	struct user_threadpool *utpool = itc->itcp_utpool;
+	struct kern_threadpool *ktpool = itc->itc_ktpool;
+	struct user_threadpool *utpool = itc->itc_utpool;
 
 	if(ktpool->ktp_issender) {
 		printf("kernel threadpool to send");
-		if(itc->itcp_tid == tid) {
+		if(itc->itc_tid == tid) {
 			printf("kernel tid be found");
 			/* check */
 		} else {
-			if(itc->itcp_tid != tid) {
+			if(itc->itc_tid != tid) {
 				if(ktpool->ktp_retcnt <= 5) { /* retry up to 5 times */
 					if(ktpool->ktp_initcq) {
 						/* exit and re-enter queue increasing retry count */
-						itc_threadpool_dequeue(itc);
+						itpc_threadpool_dequeue(itc);
 						ktpool->ktp_retcnt++;
-						itc_threadpool_enqueue(itc);
+						itpc_threadpool_enqueue(itc);
 					}
 				} else {
 					/* exit queue, reset count to 0 and panic */
-					itc_threadpool_dequeue(itc);
+					itpc_threadpool_dequeue(itc);
 					ktpool->ktp_retcnt = 0;
 					panic("kthreadpool x exited itc queue after 5 failed attempts");
 				}
 			}
 		}
 	}
+
 	if(utpool->utp_issender) {
 		printf("user threadpool to send");
-		if(itc->itcp_tid == tid) {
+		if(itc->itc_tid == tid) {
 			printf("user tid be found");
 			/* check */
 		} else {
-			if(itc->itcp_tid != tid) {
+			if(itc->itc_tid != tid) {
 				if(utpool->utp_retcnt <= 5) { /* retry up to 5 times */
 					if(utpool->utp_initcq) {
 						/* exit and re-enter queue, increasing retry count */
-						itc_threadpool_dequeue(itc);
+						itpc_threadpool_dequeue(itc);
 						utpool->utp_retcnt++;
-						itc_pool_enqueue(itc);
+						itpc_threadpool_enqueue(itc);
 					}
 				} else {
 					/* exit queue, reset count to 0 and panic */
-					itc_threadpool_dequeue(itc);
+					itpc_threadpool_dequeue(itc);
 					utpool->utp_retcnt = 0;
 					panic("kthreadpool x exited itc queue after 5 failed attempts");
 				}
@@ -138,20 +160,22 @@ verify(itc, tid)
 	struct itc_threadpool *itc;
 	tid_t tid;
 {
-	struct kern_threadpool *ktpool = itc->itcp_ktpool;
-	struct user_threadpool *utpool = itc->itcp_utpool;
+	struct kern_threadpool *ktpool = itc->itc_ktpool;
+	struct user_threadpool *utpool = itc->itc_utpool;
+
 	if(ktpool->ktp_isreciever) {
 		printf("kernel threadpool to recieve");
-		if(itc->itcp_tid == tid) {
+		if(itc->itc_tid == tid) {
 			printf("kernel tid found");
 
 		} else {
 			printf("kernel tid couldn't be found");
 		}
 	}
+
 	if(utpool->utp_isreciever) {
 		printf("user threadpool to recieve");
-		if(itc->itcp_tid == tid) {
+		if(itc->itc_tid == tid) {
 			printf("user tid found");
 		} else {
 			printf("user tid couldn't be found");

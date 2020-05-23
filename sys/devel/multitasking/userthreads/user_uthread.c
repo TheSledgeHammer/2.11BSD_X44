@@ -111,8 +111,8 @@ uthreadpool_itc_send(utpool, itc)
 	struct itc_threadpool *itc;
 {
     /* command / action */
-	itc->itcp_utpool = utpool;
-	itc->itcp_job = utpool->utp_jobs;
+	itc->itc_utpool = utpool;
+	itc->itc_job = utpool->utp_jobs;
 	/* send flagged jobs */
 	utpool->utp_issender = TRUE;
 	utpool->utp_isreciever = FALSE;
@@ -126,8 +126,8 @@ uthreadpool_itc_recieve(utpool, itc)
 	struct itc_threadpool *itc;
 {
     /* command / action */
-	itc->itcp_utpool = utpool;
-	itc->itcp_job = utpool->utp_jobs;
+	itc->itc_utpool = utpool;
+	itc->itc_job = utpool->utp_jobs;
 	utpool->utp_issender = FALSE;
 	utpool->utp_isreciever = TRUE;
 
@@ -160,4 +160,18 @@ uthread_mutexmgr(mtx, flags, ut)
         tid = MTX_THREAD;
     }
     return mutexmgr(mtx, flags, tid);
+}
+
+/* Initialize a rwlock on a uthread
+ * Setup up Error flags */
+int
+kthread_rwlock_init(rwl, ut)
+	rwlock_t rwl;
+	uthread_t ut;
+{
+	int error = 0;
+	rwlock_init(rwl, rwl->rwl_prio, rwl->rwl_wmesg, rwl->rwl_timo, rwl->rwl_flags);
+	ut->ut_rwlock = rwl;
+	rwl->rwl_utlockholder = ut;
+	return (error);
 }

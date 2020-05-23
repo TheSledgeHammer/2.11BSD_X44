@@ -21,9 +21,6 @@ TODO:
 
 - arch:
 	- i386:
-		- Makefile
-		- dev/isa/isadmavar.h
-		- bus_machdep.c
 		- consinit.c
 		- machdep.c: cpu_reboot, cpu_reset
 		- vm_machdep.c: u->u_procp->p_p0br: (no reference in 4.4BSD-Lite2)
@@ -56,6 +53,9 @@ NetBSD 5.0.2: Threads & Multitasking
 - kern_rwlock.c
 - kern_runq.c 
 - subr_workqueue.c
+
+FreeBSD 3.0.0:
+- sys_pipe.c & pipe.h
 
 - devel/multitasking
 	- kernthreads: (NetBSD 1.4/1.5)

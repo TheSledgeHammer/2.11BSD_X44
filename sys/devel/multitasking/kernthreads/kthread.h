@@ -74,6 +74,7 @@ struct kthread {
 	struct kthread 		*kt_link;		/* linked list of running threads */
 
 	struct mutex        *kt_mutex;
+	struct rwlock		*kt_rwlock;
     short               kt_locks;
     short               kt_simple_locks;
 };
@@ -141,12 +142,15 @@ void 			fixjobc(struct kthread *, struct tgrp *, int);
 int	 			inferior(struct kthread *);
 
 /* Kernel Thread Mutex */
-int kthread_mutexmgr(mutex_t m, unsigned int flags, kthread_t kt);
+int kthread_mutexmgr(mutex_t, u_int, kthread_t);
 int kthread_mutex_init(mutex_t m, kthread_t kt);
-int kthread_mutex_lock(kthread_t *kt, mutex_t *m);
-int kthread_mutex_lock_try(kthread_t *kt, mutex_t *m);
-int kthread_mutex_timedlock(kthread_t *kt, mutex_t *m);
-int kthread_mutex_unlock(kthread_t *kt, mutex_t *m);
-int kthread_mutex_destroy(kthread_t *kt, mutex_t *m);
+int kthread_mutex_lock(kthread_t, mutex_t);
+int kthread_mutex_lock_try(kthread_t, mutex_t);
+int kthread_mutex_timedlock(kthread_t, mutex_t);
+int kthread_mutex_unlock(kthread_t, mutex_t);
+int kthread_mutex_destroy(kthread_t, mutex_t);
+
+/* Kernel Thread rwlock */
+int kthread_rwlock_init(rwlock_t, kthread_t);
 
 #endif /* SYS_KTHREADS_H_ */

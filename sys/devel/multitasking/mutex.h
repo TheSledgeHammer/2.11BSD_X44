@@ -43,14 +43,6 @@
 #include <tcb.h>
 
 /* put into types.h */
-typedef struct mutex        *mutex_t;
-typedef struct mutex_link   *mutex_link_t;
-typedef struct lock         *lock_t;
-typedef struct rwlock       *rwlock_t;
-typedef struct simplelock   *spinlock_t;
-
-typedef struct kthread      *kthread_t;
-typedef struct uthread      *uthread_t;
 
 /* Mutex_link, Mutex & lock_args based from DragonflyBSD */
 struct mutex_link {
@@ -65,11 +57,14 @@ struct mutex_link {
     void		            *arg;
 };
 
+struct lock_args {
+    struct lock				*la_lock;
+    const char 				*la_desc;
+    int		    			la_flags;
+};
+
 struct mutex {
     volatile unsigned int   mtx_lock;
-    const char              *mtx_ident;
-    struct mutex_link       *mtx_exlink;
-    struct mutex_link       *mtx_shlink;
 
     struct kthread          *mtx_ktlockholder; 	/* Kernel Thread lock holder */
     struct uthread          *mtx_utlockholder;	/* User Thread lock holder */
@@ -84,12 +79,10 @@ struct mutex {
     char				    *mtx_wmesg;			/* resource sleeping (for tsleep) */
     int					    mtx_timo;			/* maximum sleep time (for tsleep) */
     tid_t                   mtx_lockholder;
-};
 
-struct lock_args {
-    struct lock				*la_lock;
-    const char 				*la_desc;
-    int		    			la_flags;
+    const char              *mtx_ident;
+    struct mutex_link       *mtx_exlink;
+    struct mutex_link       *mtx_shlink;
 };
 
 #define MTX_THREAD  		((tid_t) -2)
@@ -118,6 +111,7 @@ struct lock_args {
 #define MTX_DRAINED	        0x00008000	/* lock has been decommissioned */
 
 #define MTX_INTERLOCK	    0x00010000	/* unlock passed simple lock after getting lk_interlock */
+#define MTX_RETRY			0x00020000	/* vn_lock: retry until locked */
 
 /* Generic Mutex Functions */
 void mutex_init(mutex_t m, int, char *, int, unsigned int);

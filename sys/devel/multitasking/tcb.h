@@ -39,7 +39,16 @@
 #include <sys/proc.h>
 
 /* put into types.h */
-typedef long			tid_t;			/* thread id */
+typedef struct mutex        *mutex_t;
+typedef struct mutex_link   *mutex_link_t;
+typedef struct lock         *lock_t;
+typedef struct rwlock       *rwlock_t;
+typedef struct simplelock   *spinlock_t;
+
+typedef struct kthread      *kthread_t;
+typedef struct uthread      *uthread_t;
+
+typedef long				tid_t;			/* thread id */
 
 struct tgrp {
 	struct	tgrp 		*tg_hforw;		/* Forward link in hash bucket. */

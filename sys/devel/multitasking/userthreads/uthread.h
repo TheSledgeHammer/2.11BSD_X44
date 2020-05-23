@@ -67,6 +67,7 @@ struct uthread {
 	struct tgrp 	    *ut_tgrp;       /* Pointer to thread group. */
 
 	struct mutex        *ut_mutex;
+	struct rwlock		*ut_rwlock;
     short               ut_locks;
     short               ut_simple_locks;
 };
@@ -121,12 +122,15 @@ void			fixjobc(struct uthread *, struct tgrp *, int);
 int				inferior(struct uthread *);
 
 /* User Thread Mutex */
-int uthread_mutexmgr(mutex_t m, unsigned int flags, uthread_t ut);
-int uthread_mutex_init(mutex_t m, uthread_t ut);
-int uthread_mutex_lock(uthread_t ut, mutex_t m);
-int uthread_mutex_lock_try(uthread_t ut, mutex_t m);
-int uthread_mutex_timedlock(uthread_t ut, mutex_t m);
-int uthread_mutex_unlock(uthread_t ut, mutex_t m);
-int uthread_mutex_destroy(uthread_t ut, mutex_t m);
+int uthread_mutexmgr(mutex_t, u_int, uthread_t);
+int uthread_mutex_init(mutex_t, uthread_t);
+int uthread_mutex_lock(uthread_t, mutex_t);
+int uthread_mutex_lock_try(uthread_t, mutex_t);
+int uthread_mutex_timedlock(uthread_t, mutex_t);
+int uthread_mutex_unlock(uthread_t, mutex_t);
+int uthread_mutex_destroy(uthread_t, mutex_t);
+
+/* User Thread rwlock */
+int uthread_rwlock_init(rwlock_t, uthread_t);
 
 #endif /* SYS_UTHREADS_H_ */

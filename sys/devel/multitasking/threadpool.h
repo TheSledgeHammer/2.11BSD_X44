@@ -74,20 +74,20 @@ struct threadpool_job {
 
 /* Inter-Threadpool-Communication (ITPC) */
 
-TAILQ_HEAD(itc_thread, itc_threadpool) 	itcp_head;
+TAILQ_HEAD(itc_thread, itc_threadpool) 	itc_head;
 struct itc_threadpool {
-	TAILQ_ENTRY(itc_threadpool) 		itcp_entry;		/* Threadpool IPC */
-	struct kern_threadpool				itcp_ktpool;	/* Pointer to Kernel Threadpool */
-	struct user_threadpool				itcp_utpool;	/* Pointer to User Threadpool */
-	struct job_head						itcp_job;		/* Thread's Job */
-	struct tgrp 						itcp_tgrp; 		/* Thread's Thread Group */
-	tid_t								itcp_tid;		/* Thread's Thread ID */
+	TAILQ_ENTRY(itc_threadpool) 		itc_entry;		/* Threadpool IPC */
+	struct kern_threadpool				itc_ktpool;	/* Pointer to Kernel Threadpool */
+	struct user_threadpool				itc_utpool;	/* Pointer to User Threadpool */
+	struct job_head						itc_job;		/* Thread's Job */
+	struct tgrp 						itc_tgrp; 		/* Thread's Thread Group */
+	tid_t								itc_tid;		/* Thread's Thread ID */
 };
 
 /* General ITPC */
-void itc_threadpool_init();
-void itc_threadpool_enqueue(struct itc_threadpool *);
-void itc_threadpool_dequeue(struct itc_threadpool *);
+void itpc_threadpool_init();
+void itpc_threadpool_enqueue(struct itc_threadpool *, tid_t);
+void itpc_threadpool_dequeue(struct itc_threadpool *, tid_t);
 void check(struct itc_threadpool *, tid_t);
 void verify(struct itc_threadpool *, tid_t);
 
