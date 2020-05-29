@@ -40,8 +40,9 @@
 
 #include <sys/param.h>
 #include <sys/proc.h>
-#include <sys/lock.h>
+
 #include <mutex.h>
+#include <lockmgr.h>
 #include <kthread.h>
 #include <uthread.h>
 
@@ -119,10 +120,12 @@ mutexmgr(mtx, flags, tid)
                 if (error)
                     break;
                 mtx->mtx_sharecount++;
+               // COUNT(p, 1);
                 break;
             }
             mtx->mtx_sharecount++;
-            break;
+            //COUNT(p, 1);
+            //break;
         case MTX_DOWNGRADE:
     		if (mtx->mtx_lockholder != tid || mtx->mtx_exclusivecount == 0)
     			panic("mutexmgr: not holding exclusive lock");
@@ -133,6 +136,7 @@ mutexmgr(mtx, flags, tid)
     		if (mtx->mtx_waitcount)
     			wakeup((void *)mtx);
     		break;
+
         case MTX_EXCLUPGRADE:
     		/*
     		 * If another process is ahead of us to get an upgrade,
@@ -141,11 +145,12 @@ mutexmgr(mtx, flags, tid)
     		 */
     		if (mtx->mtx_flags & MTX_WANT_UPGRADE) {
     			mtx->mtx_sharecount--;
+    			//COUNT(p, -1);
     			error = EBUSY;
     			break;
     		}
     		/* fall into normal upgrade */
-    		break;
+
         case MTX_UPGRADE:
     		/*
     		 * Upgrade a shared lock to an exclusive one. If another
@@ -158,7 +163,7 @@ mutexmgr(mtx, flags, tid)
     		if (mtx->mtx_lockholder == tid || mtx->mtx_sharecount <= 0)
     			panic("mutexmgr: upgrade exclusive lock");
     		mtx->mtx_sharecount--;
-    	//	COUNT(p, -1);
+    		//COUNT(p, -1);
     		/*
     		 * If we are just polling, check to see if we will block.
     		 */
@@ -184,7 +189,7 @@ mutexmgr(mtx, flags, tid)
     			if (mtx->mtx_exclusivecount != 0)
     				panic("mutexmgr: non-zero exclusive count");
     			mtx->mtx_exclusivecount = 1;
-   // 			COUNT(p, 1);
+    			//COUNT(p, 1);
     			break;
     		}
     		/*
@@ -195,7 +200,7 @@ mutexmgr(mtx, flags, tid)
     		if (mtx->mtx_sharecount == 0 && mtx->mtx_waitcount)
     			wakeup((void *)mtx);
     		/* fall into exclusive request */
-    		break;
+    		//break;
         case MTX_EXCLUSIVE:
             if(mtx->mtx_lockholder == tid && tid != MTX_THREAD) {
                 if ((extflags & MTX_CANRECURSE) == 0)
@@ -229,14 +234,14 @@ mutexmgr(mtx, flags, tid)
     				    tid, "exclusive lock holder",
 						mtx->mtx_lockholder);
     			mtx->mtx_exclusivecount--;
-    		//	COUNT(p, -1);
+    			COUNT(p, -1);
     			if (mtx->mtx_exclusivecount == 0) {
     				mtx->mtx_flags &= ~MTX_HAVE_EXCL;
     				mtx->mtx_lockholder = MTX_NOTHREAD;
     			}
     		} else if (mtx->mtx_sharecount != 0) {
     			mtx->mtx_sharecount--;
-    //			COUNT(p, -1);
+    			//COUNT(p, -1);
     		}
     		if (mtx->mtx_waitcount)
     			wakeup((void *)mtx);
@@ -332,47 +337,4 @@ mutex_destroy(mtx)
     __volatile mutex_t mtx;
 {
     return 0;
-}
-
-int lock_wait_time = 100;
-void
-pause(mtx, wanted)
-	mutex_t mtx;
-	int wanted;
-{
-	if (lock_wait_time > 0) {
-		int i;
-		mutex_unlock(&mtx);
-		for(i = lock_wait_time; i > 0; i--) {
-			if (!(wanted)) {
-				break;
-			}
-		}
-		mutex_lock(&mtx);
-	}
-	if (!(wanted)) {
-		break;
-	}
-}
-
-void
-acquire(mtx, error, extflags, wanted)
-	mutex_t mtx;
-	int error, extflags, wanted;
-{
-	pause(mtx, wanted);
-	for (error = 0; wanted; ) {
-		mtx->mtx_waitcount++;
-		mutex_unlock(&mtx);
-		error = tsleep((void *)mtx, mtx->mtx_prio, mtx->mtx_wmesg, mtx->mtx_timo);
-		mutex_lock(&mtx);
-		mtx->mtx_waitcount--;
-		if (error) {
-			break;
-		}
-		if ((extflags) & MTX_SLEEPFAIL) {
-			error = ENOLCK;
-			break;
-		}
-	}
 }

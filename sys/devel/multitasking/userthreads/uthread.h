@@ -132,5 +132,6 @@ int uthread_mutex_destroy(uthread_t, mutex_t);
 
 /* User Thread rwlock */
 int uthread_rwlock_init(rwlock_t, uthread_t);
+int uthread_rwlockmgr(rwlock_t, u_int, uthread_t);
 
 #endif /* SYS_UTHREADS_H_ */

@@ -143,7 +143,7 @@ int	 			inferior(struct kthread *);
 
 /* Kernel Thread Mutex */
 int kthread_mutexmgr(mutex_t, u_int, kthread_t);
-int kthread_mutex_init(mutex_t m, kthread_t kt);
+int kthread_mutex_init(mutex_t, kthread_t);
 int kthread_mutex_lock(kthread_t, mutex_t);
 int kthread_mutex_lock_try(kthread_t, mutex_t);
 int kthread_mutex_timedlock(kthread_t, mutex_t);
@@ -152,5 +152,6 @@ int kthread_mutex_destroy(kthread_t, mutex_t);
 
 /* Kernel Thread rwlock */
 int kthread_rwlock_init(rwlock_t, kthread_t);
+int kthread_rwlockmgr(rwlock_t, u_int, kthread_t);
 
 #endif /* SYS_KTHREADS_H_ */

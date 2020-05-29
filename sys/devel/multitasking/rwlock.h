@@ -33,24 +33,18 @@
 #include <mutex.h>
 #include <tcb.h>
 
-typedef enum rwl_t {
-	RW_READER = 0,
-	RW_WRITER = 1
-} rwl_t;
-
 /* Reader Writers Lock */
 struct rwlock {
-    const char              *rwl_ident;
-    unsigned int   			rwl_lock;
+    volatile u_int   		rwl_lock;
 
     struct kthread          *rwl_ktlockholder; 	/* Kernel Thread lock holder */
     struct uthread          *rwl_utlockholder;	/* User Thread lock holder */
 
     struct mutex			*rwl_mutex;			/* mutex lock */
     struct simplelock       *rwl_interlock;     /* lock on remaining fields */
-    int					    rwl_sharecount;		/* # of accepted shared locks */
+    int 					rwl_readercount;	/* lock reader count */
+    int						rwl_writercount;	/* lock writer count */
     int					    rwl_waitcount;		/* # of processes sleeping for lock */
-    short				    rw_exclusivecount;	/* # of recursive exclusive locks */
 
     unsigned int		    rwl_flags;			/* see below */
     short				    rwl_prio;			/* priority at which to sleep */
@@ -58,34 +52,46 @@ struct rwlock {
     int					    rwl_timo;			/* maximum sleep time (for tsleep) */
 
     tid_t                   rwl_lockholder;
+    struct lock				*rwl_lnterlock;
 };
 
 #define RW_THREAD  			((tid_t) -2)
 #define RW_NOTHREAD    		((tid_t) -1)
 
-#define RW_EXTFLG_MASK	    0x00000070	/* mask of external flags */
+/* These are flags that are passed to the lockmgr routine. */
+#define RW_TYPE_MASK	    0x0FFFFFFF
+#define RW_READER			0x00000001
+#define RW_WRITER			0x00000002
+#define RW_UPGRADE	        0x00000003			/* read-to-write upgrade */
+#define RW_DOWNGRADE	    0x00000004			/* write-to-read downgrade */
 
-#define	RW_HAS_WAITERS		0x01UL		/* lock has waiters */
-#define	RW_WRITE_WANTED		0x02UL		/* >= 1 waiter is a writer */
-#define	RW_WRITE_LOCKED		0x04UL		/* lock is currently write locked */
-#define	RW_NODEBUG			0x10UL		/* LOCKDEBUG disabled */
+/* External lock flags. */
+#define RW_EXTFLG_MASK	    0x00000070			/* mask of external flags */
+#define RW_NOWAIT	        0x00000010			/* do not sleep to await lock */
+#define RW_WAIT	        	0x00000020			/* seep to await lock */
 
-#define RW_INTERLOCK		0x00010000	/* unlock passed simple lock after getting lk_interlock */
-#define RW_RETRY			0x00020000	/* vn_lock: retry until locked */
+/* Internal lock flags. */
+#define RW_WANT_UPGRADE		0x00000100			/* waiting for reader-to-writer upgrade */
+#define RW_WANT_WRITE	    0x00000200			/* writer lock sought >= 1 waiter is a writer */
+#define RW_HAVE_WRITE	    0x00000400			/* writer lock obtained and currently write locked */
+#define RW_WANT_DOWNGRADE	0x00000800			/* waiting for writer-to-reader downgrade */
+#define RW_WANT_READ	    0x00004000			/* reader lock sought */
+#define RW_HAVE_READ	    0x00008000			/* reader lock obtained */
+
+#define	RW_HAS_WAITERS		0x01UL				/* lock has waiters */
+#define	RW_NODEBUG			0x10UL				/* LOCKDEBUG disabled */
+
+/* Control flags. */
+#define RW_INTERLOCK		0x00010000			/* unlock passed simple lock after getting lk_interlock */
+#define RW_RETRY			0x00020000			/* vn_lock: retry until locked */
 
 void 	rwlock_init(rwlock_t, int, char *, int, u_int);
-void 	rwlock_mutex_init(rwlock_t, mutex_t);
-int 	rwlock_destroy(rwlock_t);
 
-int		rwlock_tryenter(rwlock_t, const rwl_t);
-int		rwlock_tryupgrade(rwlock_t);
-void	rwlock_downgrade(rwlock_t);
+int 	rwlockstatus(rwlock_t);
+int 	rwlockmgr(__volatile rwlock_t, u_int, tid_t);
 
-int		rwlock_read_held(rwlock_t);
-int		rwlock_write_held(rwlock_t);
-int		rwlock_lock_held(rwlock_t);
-
-void	rwlock_enter(rwlock_t, const rwl_t);
-void	rwlock_exit(rwlock_t);
+int		rwlock_read_held(rwlock_t, tid_t);
+int		rwlock_write_held(rwlock_t, tid_t);
+int		rwlock_lock_held(rwlock_t, tid_t);
 
 #endif /* SYS_RWLOCK_H_ */

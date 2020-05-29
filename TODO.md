@@ -76,10 +76,9 @@ FreeBSD 3.0.0:
 		- vm_unmap_remove
 		- vm_map_modflags
 		- vmspace_share
-		- vmspace_unshare			
+		- vmspace_unshare
 
 Memory Segmentation (Hardware): CPU Registers
 Memory Segmentation (Software):
 Seperate Process Segments: text, data, stack
 Seperate Instruction & Data Spaces
-

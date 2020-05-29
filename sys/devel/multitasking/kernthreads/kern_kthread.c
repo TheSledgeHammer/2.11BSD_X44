@@ -29,6 +29,7 @@
 #include <sys/param.h>
 #include <sys/malloc.h>
 #include <mutex.h>
+#include <rwlock.h>
 #include <kthread.h>
 
 extern struct kthread kthread0;
@@ -156,10 +157,9 @@ kthread_mutex_init(mtx, kt)
 int
 kthread_mutexmgr(mtx, flags, kt)
     mutex_t mtx;
-    unsigned int flags;
+	u_int flags;
     kthread_t kt;
 {
-    int error = 0;
     tid_t tid;
     if (kt) {
         tid = kt->kt_tid;
@@ -181,4 +181,19 @@ kthread_rwlock_init(rwl, kt)
 	kt->kt_rwlock = rwl;
 	rwl->rwl_ktlockholder = kt;
 	return (error);
+}
+
+int
+kthread_rwlockmgr(rwl, flags, kt)
+	rwlock_t rwl;
+	u_int flags;
+	kthread_t kt;
+{
+	tid_t tid;
+	if (kt) {
+		tid = kt->kt_tid;
+	} else {
+		tid = RW_THREAD;
+	}
+	return rwlockmgr(rwl, flags, tid);
 }

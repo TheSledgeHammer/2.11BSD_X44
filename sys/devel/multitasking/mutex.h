@@ -41,27 +41,7 @@
 #define SYS_MUTEX_H_
 
 #include <tcb.h>
-
-/* put into types.h */
-
-/* Mutex_link, Mutex & lock_args based from DragonflyBSD */
-struct mutex_link {
-    struct mutex_link	    *next;
-    struct mutex_link	    *prev;
-
-    struct kthread          *ktlockholder;
-    struct uthread          *utlockholder;
-
-    int		                state;
-    void		            (*callback)(struct mutex_link *, void *arg, int error);
-    void		            *arg;
-};
-
-struct lock_args {
-    struct lock				*la_lock;
-    const char 				*la_desc;
-    int		    			la_flags;
-};
+#include <lockmgr.h>
 
 struct mutex {
     volatile unsigned int   mtx_lock;
@@ -80,14 +60,13 @@ struct mutex {
     int					    mtx_timo;			/* maximum sleep time (for tsleep) */
     tid_t                   mtx_lockholder;
 
-    const char              *mtx_ident;
-    struct mutex_link       *mtx_exlink;
-    struct mutex_link       *mtx_shlink;
+    struct lockmgr			*mtx_lockp;			/* pointer to struct lockmgr */
 };
 
 #define MTX_THREAD  		((tid_t) -2)
 #define MTX_NOTHREAD    	((tid_t) -1)
 
+/* These are flags that are passed to the lockmgr routine. */
 #define MTX_TYPE_MASK	    0x0FFFFFFF
 #define MTX_SHARED	        0x00000001	/* shared lock */
 #define MTX_EXCLUSIVE	    0x00000002
@@ -97,12 +76,14 @@ struct mutex {
 #define MTX_RELEASE  	    0x00000006	/* release any type of lock */
 #define MTX_DRAIN	        0x00000007	/* wait for all lock activity to end */
 
+/* External lock flags. */
 #define MTX_EXTFLG_MASK	    0x00000070	/* mask of external flags */
 #define MTX_NOWAIT	        0x00000010	/* do not sleep to await lock */
 #define MTX_SLEEPFAIL	    0x00000020	/* sleep, then return failure */
 #define MTX_CANRECURSE	    0x00000040	/* allow recursive exclusive lock */
 #define MTX_REENABLE	    0x00000080	/* lock is be reenabled after drain */
 
+/* Internal lock flags. */
 #define MTX_WANT_UPGRADE	0x00000100	/* waiting for share-to-excl upgrade */
 #define MTX_WANT_EXCL	    0x00000200	/* exclusive lock sought */
 #define MTX_HAVE_EXCL	    0x00000400	/* exclusive lock obtained */
@@ -110,27 +91,36 @@ struct mutex {
 #define MTX_DRAINING	    0x00004000	/* lock is being drained */
 #define MTX_DRAINED	        0x00008000	/* lock has been decommissioned */
 
+/* Control flags. */
 #define MTX_INTERLOCK	    0x00010000	/* unlock passed simple lock after getting lk_interlock */
 #define MTX_RETRY			0x00020000	/* vn_lock: retry until locked */
 
 /* Generic Mutex Functions */
-void mutex_init(mutex_t m, int, char *, int, unsigned int);
-int mutex_lock(__volatile mutex_t m);
-int mutex_lock_try(__volatile mutex_t m);
-int mutex_timedlock(__volatile mutex_t m);
-int mutex_unlock(__volatile mutex_t m);
-int mutex_destroy(__volatile mutex_t m);
+void mutex_init(mutex_t, int, char *, int, unsigned int);
+int mutex_lock(__volatile mutex_t);
+int mutex_lock_try(__volatile mutex_t);
+int mutex_timedlock(__volatile mutex_t);
+int mutex_unlock(__volatile mutex_t);
+int mutex_destroy(__volatile mutex_t);
 
-int mutexstatus(mutex_t m);
-int mutexmgr(__volatile mutex_t m, unsigned int flags, tid_t tid);
+int mutexstatus(mutex_t);
+int mutexmgr(__volatile mutex_t, unsigned int, tid_t);
 
-void pause(mutex_t mtx, int wanted);
-void acquire(mutex_t mtx, int error, int extflags, int wanted);
-
+#if NCPUS > 1
 #define PAUSE(mtx, wanted)						\
-		pause(mtx, wanted);
+		pause((mtx)->mtx_lockp, wanted);
+#else /* NCPUS == 1 */
+#define PAUSE(mtx, wanted)
+#endif /* NCPUS == 1 */
 
 #define ACQUIRE(mtx, error, extflags, wanted)	\
-		acquire(mtx, error, extflags, wanted);
+		acquire((mtx)->mtx_lockp, error, extflags, wanted);
+
+#ifdef DEBUG
+#define COUNT(p, x) 							\
+		count(p, x);
+#else
+#define COUNT(p, x)
+#endif
 
 #endif /* SYS_MUTEX_H_ */

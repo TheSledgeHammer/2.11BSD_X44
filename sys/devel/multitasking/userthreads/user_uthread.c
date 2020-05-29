@@ -26,8 +26,10 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/param.h>
 #include <sys/malloc.h>
 #include <mutex.h>
+#include <rwlock.h>
 #include <uthread.h>
 
 extern struct uthread uthread0;
@@ -152,7 +154,6 @@ uthread_mutexmgr(mtx, flags, ut)
     unsigned int flags;
     uthread_t ut;
 {
-    int error = 0;
     tid_t tid;
     if (ut) {
         tid = ut->ut_tid;
@@ -165,7 +166,7 @@ uthread_mutexmgr(mtx, flags, ut)
 /* Initialize a rwlock on a uthread
  * Setup up Error flags */
 int
-kthread_rwlock_init(rwl, ut)
+uthread_rwlock_init(rwl, ut)
 	rwlock_t rwl;
 	uthread_t ut;
 {
@@ -174,4 +175,19 @@ kthread_rwlock_init(rwl, ut)
 	ut->ut_rwlock = rwl;
 	rwl->rwl_utlockholder = ut;
 	return (error);
+}
+
+int
+uthread_rwlockmgr(rwl, flags, ut)
+	rwlock_t rwl;
+	u_int flags;
+	uthread_t ut;
+{
+	tid_t tid;
+	if (ut) {
+		tid = ut->ut_tid;
+	} else {
+		tid = RW_THREAD;
+	}
+	return rwlockmgr(rwl, flags, tid);
 }

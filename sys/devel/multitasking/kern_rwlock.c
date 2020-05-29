@@ -52,85 +52,166 @@ rwlock_init(rwl, prio, wmesg, timo, flags)
     simple_lock_init(&rwl->rwl_interlock);
 }
 
-/* Initialize a reader-writers lock via mutex */
-void
-rwlock_mutex_init2(rwl, mtx)
+int
+rwlockstatus(rwl)
 	rwlock_t rwl;
-	mutex_t mtx;
 {
-	if(mtx == NULL) {
-		mutex_init(mtx, mtx->mtx_prio, mtx->mtx_wmesg, mtx->mtx_timo, mtx->mtx_flags);
+    int lock_type = 0;
+    rwlock_lock(rwl);
+    if(rwl->rwl_writercount >= 1) {
+        lock_type = RW_WRITER;
+    } else if(rwl->rwl_readercount >= 0) {
+        lock_type = RW_READER;
+    }
+    rwlock_unlock(rwl);
+    return (lock_type);
+}
+
+/* should apply a reader writer lock */
+int
+rwlockmgr(rwl, flags, tid)
+	__volatile rwlock_t rwl;
+	unsigned int flags;
+	tid_t tid;
+{
+	int error;
+	int extflags;
+	error = 0;
+
+	rwlock_lock(&rwl);
+	if (flags & RW_INTERLOCK) {
+		rwlock_unlock(&rwl);
 	}
-	rwl->rwl_mutex = mtx;
-	rwl->rwl_lock = mtx->mtx_lock;
-	rwl->rwl_flags = mtx->mtx_flags;
-	rwl->rwl_prio = mtx->mtx_prio;
-	rwl->rwl_timo = mtx->mtx_timo;
-	rwl->rwl_wmesg = mtx->mtx_wmesg;
-	rwl->rwl_lockholder = mtx->mtx_lockholder;
-    rwl->rwl_ktlockholder = mtx->mtx_ktlockholder;
-    rwl->rwl_utlockholder = mtx->mtx_utlockholder;
+	extflags = (flags | rwl->rwl_flags) & RW_EXTFLG_MASK;
+
+	switch (flags & RW_TYPE_MASK) {
+	case RW_WRITER:
+		if (rwl->rwl_lockholder != tid) {
+			if ((extflags & RW_NOWAIT)
+					&& (rwl->rwl_flags & (RW_HAVE_READ | RW_WANT_READ | RW_WANT_DOWNGRADE))) {
+				error = EBUSY;
+				break;
+			}
+			ACQUIRE(rwl, error, extflags, rwl->rwl_flags & (RW_HAVE_READ | RW_WANT_READ | RW_WANT_DOWNGRADE));
+			if (error)
+				break;
+			rwl->rwl_writercount++;
+			break;
+		}
+		rwl->rwl_writercount++;
+
+	case RW_DOWNGRADE:
+		if (rwl->rwl_lockholder != tid || rwl->rwl_readercount == 0)
+			panic("rwlockmgr: not holding reader lock");
+		rwl->rwl_writercount += rwl->rwl_readercount;
+		rwl->rwl_readercount = 0;
+		rwl->rwl_flags &= ~RW_HAVE_READ;
+		rwl->rwl_lockholder = RW_NOTHREAD;
+		if (rwl->rwl_waitcount)
+			wakeup((void *)rwl);
+		break;
+
+	case RW_READER:
+		if (rwl->rwl_lockholder != tid) {
+			if ((extflags & RW_WAIT) && (rwl->rwl_flags & (RW_HAVE_WRITE | RW_WANT_WRITE | RW_WANT_UPGRADE))) {
+				error = EBUSY;
+				break;
+			}
+			ACQUIRE(rwl, error, extflags, rwl->rwl_flags & (RW_HAVE_WRITE | RW_WANT_WRITE | RW_WANT_UPGRADE));
+			if (error)
+				break;
+			rwl->rwl_readercount++;
+			break;
+		}
+		rwl->rwl_readercount++;
+
+	case RW_UPGRADE:
+		if (rwl->rwl_lockholder != tid || rwl->rwl_writercount < 1)
+			panic("rwlockmgr: not holding writer lock");
+		rwl->rwl_readercount += rwl->rwl_writercount;
+		rwl->rwl_writercount = 1;
+		rwl->rwl_flags &= ~RW_HAVE_WRITE;
+		rwl->rwl_lockholder = RW_NOTHREAD;
+		if (rwl->rwl_waitcount)
+			wakeup((void *)rwl);
+		break;
+
+	default:
+		rwlock_unlock(&rwl);
+		printf("rwlockmgr: unknown locktype request %d", flags & RW_TYPE_MASK); /* panic */
+		break;
+	}
+
+	rwlock_unlock(&rwl);
+	return (error);
 }
 
-/* Not yet implemented */
-int
-rwlock_destroy(rwlock_t)
-{
-	return (0);
-}
-
-/* Not yet implemented */
-int
-rwlock_tryenter(rwlock_t, const rwl_t)
-{
-	return (0);
-}
-
-/* Not yet implemented */
-int
-rwlock_tryupgrade(rwlock_t)
-{
-	return (0);
-}
-
-/* Not yet implemented */
 void
-rwlock_downgrade(rwlock_t)
+rwlock_lock(rwl)
+    __volatile rwlock_t rwl;
 {
-
+    if (rwl->rwl_lock == 1) {
+    	simple_lock(&rwl->rwl_interlock);
+    }
 }
 
-/* Not yet implemented */
-int
-rwlock_read_held(rwlock_t)
-{
-	return (0);
-}
-
-/* Not yet implemented */
-int
-rwlock_write_held(rwlock_t)
-{
-	return (0);
-}
-
-/* Not yet implemented */
-int
-rwlock_lock_held(rwlock_t)
-{
-	return (0);
-}
-
-/* Not yet implemented */
 void
-rwlock_enter(rwlock_t, const rwl_t)
+rwlock_unlock(rwl)
+    __volatile rwlock_t rwl;
 {
-
+    if (rwl->rwl_lock == 0) {
+    	simple_unlock(&rwl->rwl_interlock);
+    }
 }
 
-/* Not yet implemented */
-void
-rwlock_exit(rwlock_t)
-{
 
+/* Below is Not the right place for these: Should be in kernel threads and user threads  */
+/*
+ * rw_read_held:
+ *
+ *	Returns true if the rwlock is held for reading.  Must only be
+ *	used for diagnostic assertions, and never be used to make
+ * 	decisions about how to use a rwlock.
+ */
+int
+rwlock_read_held(rwl)
+	rwlock_t rwl;
+{
+	__volatile u_int owner;
+	if (rwl == NULL)
+		return 0;
+	owner = rwl->rwl_lock;
+	return (owner & RW_HAVE_WRITE) == 0 && (owner & RW_THREAD) != 0;
+}
+
+/*
+ * rw_write_held:
+ *
+ *	Returns true if the rwlock is held for writing.  Must only be
+ *	used for diagnostic assertions, and never be used to make
+ *	decisions about how to use a rwlock.
+ */
+int
+rwlock_write_held(rwl)
+	rwlock_t rwl;
+{
+	if (rwl == NULL)
+		return (0);
+	return (rwl->rwl_lock & (RW_HAVE_WRITE | RW_THREAD)) == (RW_HAVE_WRITE | curproc);
+}
+
+/*
+ * rw_lock_held:
+ *
+ *	Returns true if the rwlock is held for reading or writing.  Must
+ *	only be used for diagnostic assertions, and never be used to make
+ *	decisions about how to use a rwlock.
+ */
+int
+rwlock_lock_held(rwl)
+	rwlock_t rwl;
+{
+	if (rwl == NULL)
+		return 0;
+	return (rwl->rwl_lock & RW_THREAD) != 0;
 }
