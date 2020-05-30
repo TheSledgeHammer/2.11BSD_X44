@@ -30,14 +30,15 @@
 #define _SYS_SCHED_EDF_H
 
 #include <sys/proc.h>
-#include <sys/queue.h>
+#include <sched.h>
 
 struct sched_edf {
 //    TAILQ_HEAD(edf, sched_edf) edf_parent;
-//    TAILQ_ENTRY(sched_edf) edf_queue;
+	TAILQ_ENTRY(sched) 	edf_sc_entry;
 
-    struct sched 		*edf_sched;	/* pointer to proc sched */
-    struct sched_cfs 	*edf_cfs; 		/* pointer to CFS */
+	struct proc			*edf_proc;
+ //   struct sched 		*edf_gsched;		/* pointer to proc sched */
+ //   struct sched_cfs 	*edf_cfs; 		/* pointer to CFS */
 
     int	    			edf_flag;		/* P_* flags. */
     char    			edf_stat;		/* S* process status. */

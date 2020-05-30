@@ -45,40 +45,41 @@
 #define EMG(t)          (BMG > BTIMESLICE(t))   /* new minimum granularity if BMG is greater than base timeslice */
 
 struct sched_cfs {
-
-    struct sched 	 *cfs_sched;	/* pointer to proc sched */
-    struct sched_edf *cfs_edf; 		/* pointer to EDF */
+	TAILQ_ENTRY(sched) 			cfs_sc_entry;
+	struct proc 				*cfs_proc;
+    //struct sched 	 			*cfs_gsched;	/* pointer to proc sched */
+    //struct sched_edf 			*cfs_edf; 		/* pointer to EDF */
 
     RB_HEAD(rb_cfs, sched_cfs) 	cfs_parent;
     RB_ENTRY(sched_cfs) 		cfs_queue;
 
-    int	    cfs_flag;
-    char    cfs_stat;
+    int	    					cfs_flag;
+    char    					cfs_stat;
 
-    u_int   cfs_estcpu;
-    int		cfs_cpticks;
-    fixpt_t cfs_pctcpu;
+    u_int  	 					cfs_estcpu;
+    int							cfs_cpticks;
+    fixpt_t 					cfs_pctcpu;
 
-    u_char  cfs_pri;
-    u_char  cfs_cpu;
-    u_char  cfs_time;
-    char    cfs_nice;
-    char    cfs_slptime;
+    u_char  					cfs_pri;
+    u_char  					cfs_cpu;
+    u_char  					cfs_time;
+    char    					cfs_nice;
+    char    					cfs_slptime;
 
-    u_char 	cfs_priweight;				/* priority weighting */
+    u_char 						cfs_priweight;	/* priority weighting */
 
     /* CFS Relavent Stats */
-    u_char 	cfs_tl;
-    u_char 	cfs_mg;
-    u_char 	cfs_timeslice;
+    u_char 						cfs_tl;
+    u_char 						cfs_mg;
+    u_char 						cfs_timeslice;
 
     /* EDF Relavent Stats */
-    char 	cfs_release;				/* Time till release from current block */
-    char 	cfs_deadline;				/* Deadline */
-    char 	cfs_remtime; 				/* time remaining */
+    char 						cfs_release;	/* Time till release from current block */
+    char 						cfs_deadline;	/* Deadline */
+    char 						cfs_remtime; 	/* time remaining */
 };
 
-extern struct sched_cfs cfs_runq[CFQS];  /* cfs run-queues */
+extern struct sched_cfs cfs_runq[CFQS];  		/* cfs run-queues */
 
 /*
 left side = tasks with the gravest need for the processor (lowest virtual runtime) are stored toward the left side of the tree

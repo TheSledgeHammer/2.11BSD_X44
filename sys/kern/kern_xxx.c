@@ -12,7 +12,6 @@
 #include <sys/reboot.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
-#include <sys/fs.h>
 
 reboot()
 {

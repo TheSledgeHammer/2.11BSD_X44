@@ -270,6 +270,7 @@ int		setpri (struct proc *);
 void	setrun (struct proc *);
 void	setrq (struct proc *);
 void	remrq (struct proc *);
+struct proc getrq(struct proc *);
 void	swtch ();
 void	sleep (void *chan, int pri);
 int		tsleep (void *chan, int pri, char *wmesg, int timo);

@@ -26,54 +26,58 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include "sched.h"
-//#include "sched_cfs.h"
-/*
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/user.h>
+#include <sched.h>
+
 void
 sched_init()
 {
-    struct sched_rq *rq = (struct sched_rq *)malloc(sizeof(struct sched_rq *));
-    TAILQ_INIT(&rq->rq_head);
+    struct sched *sd;
+   // MALLOC(sd, struct sched *, sizeof(struct sched *), M_SCHED, M_WAITOK);
+    TAILQ_INIT(&sd->sc_header);
 }
 
+/* insert the proc run-queue into sched list if not null */
 void
-add_next(rq)
-    struct sched_rq *rq;
+sched_enqueue(sd, p)
+	struct sched *sd;
+	struct proc *p;
 {
+	struct proc *pq = getrq(p);
 
-    TAILQ_INSERT_HEAD(&rq->rq_head, rq->cfs, rq_list);
+	if(pq == p) {
+		TAILQ_INSERT_HEAD(&sd->sc_header, pq, p_sc_entry);
+	}
 }
 
-add_prev()
+/* remove the proc run-queue from sched list if null */
+void
+sched_dequeue(sd, p)
+	struct sched *sd;
+	struct proc *p;
 {
-
+	struct proc *pq = getrq(p);
+	if(pq == p) {
+		TAILQ_REMOVE(&sd->sc_header, pq, p_sc_entry);
+	}
 }
 
-get_next()
+/* get proc from global sched list */
+struct proc *
+sched_getproc(sd, p)
+	struct sched *sd;
+	struct proc *p;
 {
-
+	struct proc *pq = getrq(p);
+	TAILQ_FOREACH(pq, &sd->sc_header, p_sc_entry) {
+		if (TAILQ_NEXT(pq, p_sc_entry) == p) {
+			return (p);
+		}
+	}
+	return (NULL);
 }
-
-get_prev()
-{
-
-}
-
-enqueue(cfs, p)
-    struct sched_cfs *cfs;
-{
-
-}
-
-dequeue()
-{
-
-}
-
 
 //Negative means a higher weighting
 int
@@ -93,5 +97,3 @@ setpriweight(pwp, pwd, pwr, pws)
 
 	return (priweight);
 }
-
-*/

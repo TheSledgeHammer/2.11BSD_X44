@@ -29,19 +29,23 @@
 #ifndef _SYS_SCHED_H
 #define _SYS_SCHED_H
 
-#include <sys/proc.h>
+#include <sys/queue.h>
 
 /* Schedulers + Info used by both EDF & CFS */
+TAILQ_HEAD(schedhead, sched); /* global scheduler */
 struct sched {
+	struct schedhead	*sc_header; 	/* head to move to proc */
+	TAILQ_ENTRY(sched)   *sc_gsched;
+
     struct proc 		*sc_proc;
     struct sched_edf	*sc_edf;
     struct sched_cfs 	*sc_cfs;
 
     u_char  			sc_priweight;	/* priority weighting */
-
     char 				sc_release;		/* Time till release from current block */
     char 				sc_deadline;	/* Deadline */
     char 				sc_remtime; 	/* time remaining */
+    char 				sc_slptime; 	/* sleep */
 };
 
 /* Scheduler Domains: Hyperthreading, multi-cpu, etc... */
@@ -50,28 +54,24 @@ struct sched_domains {
 };
 
 /* Priority Weighting Factors */
-#define PW_PRIORITY 25      /* Current Processes Priority */
-#define PW_DEADLINE 25      /* Current Processes Deadline Time */
-#define PW_RELEASE  25      /* Current Processes Release Time */
-#define PW_SLEEP    25      /* Current Processes Sleep Time */
+enum priw {
+	 PW_PRIORITY = 25, 	 	/* Current Processes Priority */
+	 PW_DEADLINE = 25,		/* Current Processes Deadline Time */
+	 PW_RELEASE = 25,		/* Current Processes Release Time */
+	 PW_SLEEP = 25			/* Current Processes Sleep Time */
+};
+
+//#define PW_PRIORITY 25      /* Current Processes Priority */
+//#define PW_DEADLINE 25      /* Current Processes Deadline Time */
+//#define PW_RELEASE  25      /* Current Processes Release Time */
+//#define PW_SLEEP    25      /* Current Processes Sleep Time */
 
 #define PW_FACTOR(w, f)  ((float)(w) / 100 * (f)) /* w's weighting for a given factor(f)(above) */
 
+void 		sched_init();
+void 		sched_enqueue(struct sched *, struct proc *);
+void 		sched_dequeue(struct sched *, struct proc *);
+struct proc *sched_getproc(struct sched *, struct proc *);
 int			setpriweight(float pwp, float pwd, float pwr, float pws);
-void 		updatepri(struct proc *);
-int 		tsleep(caddr_t , int, u_short);
-void 		endtsleep(struct proc *);
-void 		sleep(caddr_t , int);
-void 		unsleep(struct proc *);
-void 		wakeup(register caddr_t);
-void 		setrun(struct proc *);
-int 		setpri(struct proc *);
-void 		setrq(struct proc *);
-void 		remrq(struct proc *);
-struct proc *getrq(struct proc *);
-void 		resetpri(struct proc *);
-
-void 		getpriority();
-void 		setpriority();
 
 #endif /* _SYS_SCHED_H */
