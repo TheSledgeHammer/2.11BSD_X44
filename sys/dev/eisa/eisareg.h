@@ -36,6 +36,7 @@
 
 /*
  * Register (etc.) descriptions for the EISA bus.
+
  * Mostly culled from EISA chipset descriptions in:
  *	Intel Peripheral Components Databook (1992)
  */
@@ -70,15 +71,15 @@
  *	but that device hasn't been configured by system firmware.
  * EISA_VENDID_n returns the "n"th character of the vendor ID.
  */
-#define	EISA_VENDID_NODEV(vid)										\
+#define	EISA_VENDID_NODEV(vid)						\
 	    (((vid)[0] & 0x80) != 0)
-#define	EISA_VENDID_IDDELAY(vid)									\
+#define	EISA_VENDID_IDDELAY(vid)					\
 	    (((vid)[0] & 0xf0) == 0x70)
-#define	EISA_VENDID_0(vid)											\
+#define	EISA_VENDID_0(vid)						\
 	    ((((vid)[0] & 0x7c) >> 2) + '@')
-#define	EISA_VENDID_1(vid)											\
+#define	EISA_VENDID_1(vid)						\
 	    (((((vid)[0] & 0x03) << 3) | (((vid)[1] & 0xe0) >> 5)) + '@')
-#define	EISA_VENDID_2(vid)											\
+#define	EISA_VENDID_2(vid)						\
 	    (((vid)[1] & 0x1f) + '@')
 
 /*
@@ -87,13 +88,13 @@
  * EISA_PRIDID_n returns the "n"th hex digit of the product ID.
  */
 #define	__EISA_HEX_MAP	"0123456789ABCDEF"
-#define	EISA_PRODID_0(pid)											\
+#define	EISA_PRODID_0(pid)						\
 	    (__EISA_HEX_MAP[(((pid)[0] >> 4) & 0xf)])
-#define	EISA_PRODID_1(pid)											\
+#define	EISA_PRODID_1(pid)						\
 	    (__EISA_HEX_MAP[(((pid)[0] >> 0) & 0xf)])
-#define	EISA_PRODID_2(pid)											\
+#define	EISA_PRODID_2(pid)						\
 	    (__EISA_HEX_MAP[(((pid)[1] >> 4) & 0xf)])
-#define	EISA_PRODID_3(pid)											\
+#define	EISA_PRODID_3(pid)						\
 	    (__EISA_HEX_MAP[(((pid)[1] >> 0) & 0xf)])
 
 #endif /* !__DEV_EISA_EISAREG_H__ */

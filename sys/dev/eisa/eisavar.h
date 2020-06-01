@@ -54,7 +54,7 @@ struct eisabus_attach_args;
  * Machine-dependent definitions.
  */
 #if (alpha + i386 != 1)
-/* ERROR: COMPILING FOR UNSUPPORTED MACHINE, OR MORE THAN ONE. */
+ERROR: COMPILING FOR UNSUPPORTED MACHINE, OR MORE THAN ONE.
 #endif
 #if alpha
 #include <alpha/eisa/eisa_machdep.h>
@@ -96,7 +96,7 @@ struct eisa_attach_args {
 /*
  * Locators for EISA devices, as specified to config.
  */
-#define	eisacf_slot		cf_loc[EISACF_SLOT]
+#define	eisacf_slot			cf_loc[EISACF_SLOT]
 #define	EISA_UNKNOWN_SLOT	EISACF_SLOT_DEFAULT	/* wildcarded 'slot' */
 
 #endif /* _DEV_EISA_EISAVAR_H_ */

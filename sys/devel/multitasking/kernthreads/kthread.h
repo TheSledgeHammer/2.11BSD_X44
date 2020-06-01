@@ -78,15 +78,14 @@ struct kthread {
     short               kt_locks;
     short               kt_simple_locks;
 };
+#define	kt_session		kt_tgrp->tg_session
+#define	kt_tgid			kt_tgrp->tg_id
 
 LIST_HEAD(kthread_rq, kthread_queue);
 struct kthread_queue {
 	struct kthread_rq 			ktq_head;
 	LIST_ENTRY(kthread_queue) 	ktq_entry;
 };
-
-#define	kt_session		kt_tgrp->tg_session
-#define	kt_tgid			kt_tgrp->tg_id
 
 /* Locks */
 mutex_t 			kthread_mtx; 		/* mutex lock */
@@ -115,9 +114,6 @@ struct kern_threadpool {
 };
 
 extern struct kthread kthread0;
-
-enqueue(); 		/* add to kthread threadpool */
-dequeue();		/* remove from kthread threadpool */
 
 /* ITC Functions */
 extern void kthreadpool_itc_send(struct kern_threadpool *, struct itc_threadpool *);

@@ -84,6 +84,7 @@ struct lockmgr {
 #define LK_NOPROC 		((pid_t) -1)
 #define LK_THREAD  		((tid_t) -2)
 #define LK_NOTHREAD    	((tid_t) -1)
+
 struct proc;
 
 extern void pause(struct lock *, int);

@@ -99,7 +99,7 @@ struct pcmcia_config_entry {
 		u_long	cardaddr;
 		u_long	hostaddr;
 	} memspace[2];		/* XXX this could be as high as 8 */
-	int			maxtwins;
+	int		maxtwins;
 	SIMPLEQ_ENTRY(pcmcia_config_entry) cfe_list;
 };
 
@@ -116,16 +116,16 @@ struct pcmcia_function {
 	struct pcmcia_softc *sc;
 	struct pcmcia_config_entry *cfe;
 	struct pcmcia_mem_handle pf_pcmh;
-#define	pf_ccrt			pf_pcmh.memt
-#define	pf_ccrh			pf_pcmh.memh
+#define	pf_ccrt		pf_pcmh.memt
+#define	pf_ccrh		pf_pcmh.memh
 #define	pf_ccr_mhandle	pf_pcmh.mhandle
 #define	pf_ccr_realsize	pf_pcmh.realsize
 	bus_addr_t	pf_ccr_offset;
-	int			pf_ccr_window;
-	int			(*ih_fct) (void *);
-	void		*ih_arg;
-	int			ih_ipl;
-	int			pf_flags;
+	int		pf_ccr_window;
+	int		(*ih_fct) (void *);
+	void	*ih_arg;
+	int		ih_ipl;
+	int		pf_flags;
 };
 
 /* pf_flags */
@@ -151,45 +151,45 @@ struct pcmcia_card {
 };
 
 struct pcmcia_softc {
-	struct device			dev;
+	struct device		dev;
 
 	/* this stuff is for the socket */
-	pcmcia_chipset_tag_t 	pct;
+	pcmcia_chipset_tag_t pct;
 	pcmcia_chipset_handle_t pch;
 
 	/* this stuff is for the card */
-	struct pcmcia_card 		card;
-	void					*ih;
-	int						sc_enabled_count;	/* how many functions are enabled */
+	struct pcmcia_card card;
+	void				*ih;
+	int					sc_enabled_count;	/* how many functions are enabled */
 
 	/*
 	 * These are passed down from the PCMCIA chip, and exist only
 	 * so that cards with Very Special address allocation needs
 	 * know what range they should be dealing with.
 	 */
-	bus_addr_t 				iobase;		/* start i/o space allocation here */
-	bus_size_t 				iosize;		/* size of the i/o space range */
+	bus_addr_t iobase;		/* start i/o space allocation here */
+	bus_size_t iosize;		/* size of the i/o space range */
 };
 
 struct pcmcia_attach_args {
-	int32_t 				manufacturer;
-	int32_t 				product;
-	struct pcmcia_card 		*card;
-	struct pcmcia_function 	*pf;
+	int32_t manufacturer;
+	int32_t product;
+	struct pcmcia_card *card;
+	struct pcmcia_function *pf;
 };
 
 struct pcmcia_tuple {
-	unsigned int			code;
-	unsigned int			length;
-	u_long					mult;
-	bus_addr_t				ptr;
-	bus_space_tag_t			memt;
-	bus_space_handle_t 		memh;
+	unsigned int	code;
+	unsigned int	length;
+	u_long			mult;
+	bus_addr_t		ptr;
+	bus_space_tag_t	memt;
+	bus_space_handle_t memh;
 };
 
 void	pcmcia_read_cis (struct pcmcia_softc *);
 void	pcmcia_print_cis (struct pcmcia_softc *);
-int		cmcia_scan_cis (struct device * dev, int (*) (struct pcmcia_tuple *, void *), void *);
+int		pcmcia_scan_cis (struct device * dev, int (*) (struct pcmcia_tuple *, void *), void *);
 
 #define	pcmcia_cis_read_1(tuple, idx0)						\
 	(bus_space_read_1((tuple)->memt, (tuple)->memh, (tuple)->mult*(idx0)))
@@ -235,7 +235,7 @@ void	pcmcia_function_disable (struct pcmcia_function *);
 	(pcmcia_chip_io_alloc((pf)->sc->pct, pf->sc->pch, (start),	\
 	 (size), (align), (pciop)))
 
-int	pcmcia_io_map (struct pcmcia_function *, int, bus_addr_t, bus_size_t, struct pcmcia_io_handle *, int *);
+int		pcmcia_io_map (struct pcmcia_function *, int, bus_addr_t, bus_size_t, struct pcmcia_io_handle *, int *);
 
 #define pcmcia_mem_alloc(pf, size, pcmhp)						\
 	(pcmcia_chip_mem_alloc((pf)->sc->pct, (pf)->sc->pch, (size), (pcmhp)))

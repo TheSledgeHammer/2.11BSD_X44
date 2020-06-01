@@ -43,7 +43,7 @@
 struct isapnp_softc;
 
 #if (i386 != 1)
-/* ERROR: COMPILING FOR UNSUPPORTED MACHINE, OR MORE THAN ONE. */
+/*ERROR: COMPILING FOR UNSUPPORTED MACHINE, OR MORE THAN ONE.*/
 #endif
 #if i386
 #include <i386/isa/isapnp_machdep.h>
@@ -55,9 +55,9 @@ struct isapnp_softc;
 # include <string.h>
 # include <unistd.h>
 
-# define ISAPNP_WRITE_ADDR(sc, v) 	outb(ISAPNP_ADDR, v)
-# define ISAPNP_WRITE_DATA(sc, v) 	outb(ISAPNP_WRDATA, v)
-# define ISAPNP_READ_DATA(sc) 		inb(sc->sc_read_port)
+# define ISAPNP_WRITE_ADDR(sc, v) outb(ISAPNP_ADDR, v)
+# define ISAPNP_WRITE_DATA(sc, v) outb(ISAPNP_WRDATA, v)
+# define ISAPNP_READ_DATA(sc) inb(sc->sc_read_port)
 
 # define DELAY(us) usleep(us)
 # define ISAPNP_MALLOC(a) malloc(a)
@@ -77,8 +77,8 @@ struct isapnp_softc;
 # define ISAPNP_READ_DATA(sc) \
     bus_space_read_1(sc->sc_iot, sc->sc_read_ioh, 0)
 
-# define ISAPNP_MALLOC(a)	malloc(a, M_DEVBUF, M_WAITOK)
-# define ISAPNP_FREE(a) 	free(a, M_DEVBUF)
+# define ISAPNP_MALLOC(a) malloc(a, M_DEVBUF, M_WAITOK)
+# define ISAPNP_FREE(a) free(a, M_DEVBUF)
 
 #endif
 
@@ -147,8 +147,8 @@ struct isapnp_attach_args {
 	struct isapnp_region	ipa_io[ISAPNP_NUM_IO];
 	struct isapnp_region	ipa_mem[ISAPNP_NUM_MEM];
 	struct isapnp_region	ipa_mem32[ISAPNP_NUM_MEM32];
-	struct isapnp_pin	ipa_irq[ISAPNP_NUM_IRQ];
-	struct isapnp_pin	ipa_drq[ISAPNP_NUM_DRQ];
+	struct isapnp_pin		ipa_irq[ISAPNP_NUM_IRQ];
+	struct isapnp_pin		ipa_drq[ISAPNP_NUM_DRQ];
 };
 
 static __inline void isapnp_write_reg (struct isapnp_softc *, int, u_char);

@@ -35,6 +35,7 @@ TODO:
 		- wapbl
 
 Kern:
+- sys/audioio.h: NetBSD
 - kern_physio.c: Incomplete: getphysbuf, putphysbuf (NetBSD 1.3)
 - if INET: remanents of 2.11BSD's networking stack overlay (keep in place for now)
 - syscallargs: To be fixed: temporary compat with 4.4BSD-Lite2

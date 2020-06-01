@@ -56,3 +56,14 @@ set_hash(struct hbchain *hch, uint32_t hash)
 	hch->hc_hash = hash;
 }
 
+static void
+set_timestamp(struct hbchain *hch, uint32_t timestamp)
+{
+	hch->hc_timestamp = timestamp;
+}
+
+static void
+set_version(struct hbchain *hch, uint32_t version)
+{
+	hch->hc_version = version;
+}
