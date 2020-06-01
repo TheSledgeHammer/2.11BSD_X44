@@ -32,11 +32,43 @@
 #include <sched.h>
 
 void
-sched_init()
+sched_setup(sd, p)
+	struct sched *sd;
+	struct proc *p;
 {
-    struct sched *sd;
-   // MALLOC(sd, struct sched *, sizeof(struct sched *), M_SCHED, M_WAITOK);
-    TAILQ_INIT(&sd->sc_header);
+	MALLOC(sd, struct sched *, sizeof(struct sched *), M_GSCHED, M_WAITOK);
+	TAILQ_INIT(&sd->sc_header);
+	sd->sc_proc = p;
+	sd->sc_pri = p->p_pri;
+	sd->sc_cpu = p->p_cpu;
+	sd->sc_time = p->p_time;
+	sd->sc_nice = p->p_nice;
+	sd->sc_slptime = p->p_slptime;
+
+	sd->sc_release = 0;
+	sd->sc_deadline = 0;
+	sd->sc_remtime = 0;
+
+	/* EDF Calc priweight */
+	//sd->sc_priweight = setpriweight(p->p_pri, x (deadline), y (release), p->p_slptime);
+}
+
+void
+sched_edf_setup(sd, edf)
+	struct sched *sd;
+	struct sched_edf *edf;
+{
+	MALLOC(edf, struct sched_edf *, sizeof(struct sched_edf *), M_SCHEDEDF, M_WAITOK);
+	sd->sc_edf = edf;
+}
+
+void
+sched_cfs_setup(sd, cfs)
+	struct sched *sd;
+	struct sched_cfs *cfs;
+{
+	MALLOC(cfs, struct sched_cfs *, sizeof(struct sched_cfs *), M_SCHEDCFS, M_WAITOK);
+	sd->sc_cfs = cfs;
 }
 
 /* insert the proc run-queue into sched list if not null */
@@ -64,7 +96,7 @@ sched_dequeue(sd, p)
 	}
 }
 
-/* get proc from global sched list */
+/* search proc run-queue for global sched list entry */
 struct proc *
 sched_getproc(sd, p)
 	struct sched *sd;
@@ -79,7 +111,7 @@ sched_getproc(sd, p)
 	return (NULL);
 }
 
-//Negative means a higher weighting
+/* Negative means a higher weighting */
 int
 setpriweight(pwp, pwd, pwr, pws)
 	float pwp, pwd, pwr, pws;

@@ -7,19 +7,22 @@
 
 
 int
-mpx_lookup()
+mpx_lookup(ap)
+	struct vop_lookup_args *ap;
 {
 
 }
 
 int
-mpx_create()
+mpx_create(ap)
+	struct vop_create_args *ap;
 {
 
 }
 
 int
-mpx_mknod()
+mpx_mknod(ap)
+	struct vop_mknod_args *ap;
 {
 
 }
@@ -39,25 +42,29 @@ mpx_close(ap)
 }
 
 int
-mpx_access()
+mpx_access(ap)
+	struct vop_access_args *ap;
 {
 
 }
 
 int
-mpx_getattr()
+mpx_getattr(ap)
+	struct vop_getattr_args *ap;
 {
 
 }
 
 int
-mpx_setattr()
+mpx_setattr(ap)
+	struct vop_setattr_args *ap;
 {
 
 }
 
 int
-mpx_select()
+mpx_select(ap)
+	struct vop_select_args *ap;
 {
 
 }

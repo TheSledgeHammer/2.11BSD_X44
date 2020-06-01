@@ -35,17 +35,24 @@
 TAILQ_HEAD(schedhead, sched); /* global scheduler */
 struct sched {
 	struct schedhead	*sc_header; 	/* head to move to proc */
-	TAILQ_ENTRY(sched)   *sc_gsched;
+	TAILQ_ENTRY(sched)  *sc_gsched;
 
     struct proc 		*sc_proc;
     struct sched_edf	*sc_edf;
     struct sched_cfs 	*sc_cfs;
 
-    u_char  			sc_priweight;	/* priority weighting */
+    /* Proc Specific */
+    u_char				sc_pri;			/* Process  priority, negative is high */
+    u_char				sc_cpu;			/* cpu usage for scheduling */
+    u_char				sc_time;		/* resident time for scheduling */
+    char				sc_nice;		/* nice for cpu usage */
+
+    /* Global Scheduler Specific */
+    u_char  			sc_priweight;	/* priority weighting (calculated from various factors) */
     char 				sc_release;		/* Time till release from current block */
     char 				sc_deadline;	/* Deadline */
     char 				sc_remtime; 	/* time remaining */
-    char 				sc_slptime; 	/* sleep */
+    char 				sc_slptime; 	/* sleep time in secs */
 };
 
 /* Scheduler Domains: Hyperthreading, multi-cpu, etc... */

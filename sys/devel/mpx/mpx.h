@@ -5,8 +5,8 @@
  *      Author: marti
  */
 
-#ifndef SYS_DEVEL_MPX_MPX_H_
-#define SYS_DEVEL_MPX_MPX_H_
+#ifndef _MPX_MPX_H_
+#define _MPX_MPX_H_
 
 struct mpx {
 
@@ -17,9 +17,9 @@ struct mpx_chan {
 };
 
 struct mpx_node {
-	LIST_ENTRY(mpx_node)  	mpx_hash;		/* Hash chain. */
-	struct vnode			*mpx_vnode;
 
+	struct vnode			*mpx_vnode;
+	struct mount			*mpx_mount;
 };
 
 #define	VTOMPX(vp) 	((struct mpx_node *)(vp)->v_data)

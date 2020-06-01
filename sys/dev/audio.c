@@ -61,7 +61,7 @@
  */
 
 #include "audio.h"
-//#if NAUDIO > 0
+#if NAUDIO > 0
 
 #include <sys/param.h>
 #include <sys/ioctl.h>
@@ -76,7 +76,7 @@
 #include <sys/kernel.h>
 #include <sys/signalvar.h>
 #include <sys/conf.h>
-//#include <sys/audioio.h>
+#include <sys/audioio.h>
 #include <sys/device.h>
 
 #include <dev/audio_if.h>
@@ -98,49 +98,49 @@ int	audiodebug = 0;
 
 int	audio_blk_ms = AUDIO_BLK_MS;
 
-int	audiosetinfo (struct audio_softc *, struct audio_info *));
-int	audiogetinfo (struct audio_softc *, struct audio_info *));
+int	audiosetinfo (struct audio_softc *, struct audio_info *);
+int	audiogetinfo (struct audio_softc *, struct audio_info *);
 
-int	audio_open (dev_t, int, int, struct proc *));
-int	audio_close (dev_t, int, int, struct proc *));
-int	audio_read (dev_t, struct uio *, int));
-int	audio_write (dev_t, struct uio *, int));
-int	audio_ioctl (dev_t, int, caddr_t, int, struct proc *));
-int	audio_poll (dev_t, int, struct proc *));
-int	audio_mmap (dev_t, int, int));
+int	audio_open (dev_t, int, int, struct proc *);
+int	audio_close (dev_t, int, int, struct proc *);
+int	audio_read (dev_t, struct uio *, int);
+int	audio_write (dev_t, struct uio *, int);
+int	audio_ioctl (dev_t, int, caddr_t, int, struct proc *);
+int	audio_poll (dev_t, int, struct proc *);
+int	audio_mmap (dev_t, int, int);
 
-int	mixer_open (dev_t, int, int, struct proc *));
-int	mixer_close (dev_t, int, int, struct proc *));
-int	mixer_ioctl (dev_t, int, caddr_t, int, struct proc *));
-static	void mixer_remove (struct audio_softc *, struct proc *p));
-static	void mixer_signal (struct audio_softc *));
+int	mixer_open (dev_t, int, int, struct proc *);
+int	mixer_close (dev_t, int, int, struct proc *);
+int	mixer_ioctl (dev_t, int, caddr_t, int, struct proc *);
+static	void mixer_remove (struct audio_softc *, struct proc *p);
+static	void mixer_signal (struct audio_softc *);
     
-void audio_init_record (struct audio_softc *));
-void audio_init_play (struct audio_softc *));
-int	 audiostartr (struct audio_softc *));
-int	 audiostartp (struct audio_softc *));
-void audio_rint (void *));
-void audio_pint (void *));
-int	audio_check_params (struct audio_params *));
+void audio_init_record (struct audio_softc *);
+void audio_init_play (struct audio_softc *);
+int	 audiostartr (struct audio_softc *);
+int	 audiostartp (struct audio_softc *);
+void audio_rint (void *);
+void audio_pint (void *);
+int	audio_check_params (struct audio_params *);
 
-void audio_calc_blksize (struct audio_softc *, int));
-void audio_fill_silence (struct audio_params *, u_char *, int));
-int	audio_silence_copyout (struct audio_softc *, int, struct uio *));
+void audio_calc_blksize (struct audio_softc *, int);
+void audio_fill_silence (struct audio_params *, u_char *, int);
+int	audio_silence_copyout (struct audio_softc *, int, struct uio *);
 
-void audio_init_ringbuffer (struct audio_ringbuffer *));
-int	audio_initbufs (struct audio_softc *));
-void	audio_calcwater (struct audio_softc *));
-static __inline int audio_sleep_timo (int *, char *, int));
-static __inline int audio_sleep (int *, char *));
-static __inline void audio_wakeup (int *));
-int	audio_drain (struct audio_softc *));
-void audio_clear (struct audio_softc *));
-static __inline void audio_pint_silence (struct audio_softc *, struct audio_ringbuffer *, u_char *, int));
+void audio_init_ringbuffer (struct audio_ringbuffer *);
+int	audio_initbufs (struct audio_softc *);
+void	audio_calcwater (struct audio_softc *);
+static __inline int audio_sleep_timo (int *, char *, int);
+static __inline int audio_sleep (int *, char *);
+static __inline void audio_wakeup (int *);
+int	audio_drain (struct audio_softc *);
+void audio_clear (struct audio_softc *);
+static __inline void audio_pint_silence (struct audio_softc *, struct audio_ringbuffer *, u_char *, int);
 
-int	audio_alloc_ring (struct audio_softc *, struct audio_ringbuffer *, int));
-void	audio_free_ring (struct audio_softc *, struct audio_ringbuffer *));
+int	audio_alloc_ring (struct audio_softc *, struct audio_ringbuffer *, int);
+void	audio_free_ring (struct audio_softc *, struct audio_ringbuffer *);
 
-int	audioprint (void *, const char *));
+int	audioprint (void *, const char *);
 
 #ifdef __BROKEN_INDIRECT_CONFIG
 int	audioprobe (struct device *, void *, void *));
@@ -172,7 +172,7 @@ int	au_set_port (struct audio_softc *, struct au_mixer_ports *, u_int);
 int	au_get_port (struct audio_softc *, struct au_mixer_ports *);
 int	au_get_lr_value (struct audio_softc *, mixer_ctrl_t *, int *, int *r);
 int	au_set_lr_value (struct audio_softc *, mixer_ctrl_t *, int, int);
-int	au_portof (struct audio_softc *, char *));
+int	au_portof (struct audio_softc *, char *);
 
 
 /* The default audio mode: 8 kHz mono ulaw */
