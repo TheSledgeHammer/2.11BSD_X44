@@ -363,5 +363,5 @@ ufs211_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	size_t newlen;
 	struct proc *p;
 {
-
+	return (0);
 }

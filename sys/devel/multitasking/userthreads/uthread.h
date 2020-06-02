@@ -75,17 +75,30 @@ struct uthread {
 #define	ut_tgid			ut_tgrp->tg_id
 
 /* Locks */
-mutex_t 			uthread_mtx; 		/* mutex lock */
+mutex_t 				uthread_mtx; 		/* mutex lock */
+
+/* User Threadpool Thread */
+TAILQ_HEAD(uthread_head, uthreadpool_thread);
+struct uthreadpool_thread {
+	struct uthreads						*utpt_uthread;		/* user threads */
+    char				                *utpt_uthread_savedname;
+	struct user_threadpool				*utpt_pool;
+	struct threadpool_job				*utpt_job;
+
+    TAILQ_ENTRY(uthreadpool_thread) 	utpt_entry;			/* list uthread entries */
+};
 
 /* User Threadpool */
-TAILQ_HEAD(uthreadpool, user_threadpool) utpool;
-struct user_threadpool {
-	struct uthreads						*utp_uthread;		/* user threads */
-	TAILQ_ENTRY(user_threadpool) 		utp_entry;			/* list uthread entries */
+struct uthreadpool {
+	mutex_t								utp_lock;
+	struct uthreadpool_thread			utp_overseer;
+    struct job_head					    utp_jobs;
+    struct uthread_head		            utp_idle_threads;
 
     int 								utp_refcnt;			/* total thread count in pool */
     int 								utp_active;			/* active thread count */
     int									utp_inactive;		/* inactive thread count */
+
     /* Inter Threadpool Communication */
     struct itc_thread					utp_itc;			/* threadpool ipc ptr */
     boolean_t							utp_issender;		/* is itc sender */
@@ -93,15 +106,14 @@ struct user_threadpool {
     int									utp_retcnt;			/* retry count in itc pool */
 
     boolean_t							utp_initcq;			/* check if in itc queue */
-    struct job_head						utp_jobs;
     //flags, refcnt, priority, lock
     //flags: send, (verify: success, fail), retry_attempts
 };
 
 extern struct uthread uthread0;
 
-extern void uthreadpool_itc_send(struct user_threadpool *, struct itc_threadpool *);
-extern void uthreadpool_itc_receive(struct user_threadpool *, struct itc_threadpool *);
+extern void uthreadpool_itc_send(struct uthreadpool *, struct itc_threadpool *);
+extern void uthreadpool_itc_receive(struct uthreadpool *, struct itc_threadpool *);
 
 /* User Thread */
 int uthread_create(uthread_t ut);

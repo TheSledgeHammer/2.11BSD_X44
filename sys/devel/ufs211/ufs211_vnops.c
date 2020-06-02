@@ -105,14 +105,14 @@ int
 ufs211_lookup(ap)
 	struct vop_lookup_args ap;
 {
-
+	return (0);
 }
 
 int
 ufs211_create(ap)
 	struct vop_create_args ap;
 {
-
+	return (0);
 }
 
 int
@@ -351,56 +351,56 @@ int
 ufs211_read(ap)
 	struct vop_read_args *ap;
 {
-
+	return (0);
 }
 
 int
 ufs211_write(ap)
 	struct vop_write_args *ap;
 {
-
+	return (0);
 }
 
 int
 ufs211_fsync(ap)
 	struct vop_fsync_args *ap;
 {
-
+	return (0);
 }
 
 int
 ufs211_remove(ap)
 	struct vop_remove_args *ap;
 {
-
+	return (0);
 }
 
 int
 ufs211_rename(ap)
 	struct vop_rename_args *ap;
 {
-
+	return (0);
 }
 
 int
 ufs211_readdir(ap)
 	struct vop_readdir_args *ap;
 {
-
+	return (0);
 }
 
 int
 ufs211_inactive(ap)
 	struct vop_inactive_args *ap;
 {
-
+	return (0);
 }
 
 int
 ufs211_reclaim(ap)
 	struct vop_reclaim_args *ap;
 {
-
+	return (0);
 }
 
 /*
@@ -431,19 +431,26 @@ int
 ufs211_bmap(ap)
 	struct vop_bmap_args *ap;
 {
-
+	return (0);
 }
 
 int
 ufs211_strategy(ap)
 	struct vop_strategy_args *ap;
 {
-
+	return (0);
 }
 
 int
 ufs211_print(ap)
 	struct vop_print_args *ap;
+{
+	return (0);
+}
+
+int
+ufs211_islocked(ap)
+	struct vop_islocked_args *ap;
 {
 	return (0);
 }
@@ -460,28 +467,28 @@ int
 ufs211_pathconf(ap)
 	struct vop_pathconf_args *ap;
 {
-
+	return (0);
 }
 
 int
 ufs211_link(ap)
 	struct vop_link_args *ap;
 {
-
+	return (0);
 }
 
 int
 ufs211_symlink(ap)
 	struct vop_symlink_args *ap;
 {
-
+	return (0);
 }
 
 int
 ufs211_readlink(ap)
 	struct vop_readlink_args *ap;
 {
-
+	return (0);
 }
 
 
@@ -489,14 +496,14 @@ int
 ufs211_mkdir(ap)
 	struct vop_mkdir_args *ap;
 {
-
+	return (0);
 }
 
 int
 ufs211_rmdir(ap)
 	struct vop_rmdir_args *ap;
 {
-
+	return (0);
 }
 
 int
@@ -505,6 +512,28 @@ ufs211_mknod(ap)
 {
 	register struct ufs211_inode *ip;
 
+	return (0);
+}
+
+int
+ufs211_blkatoff(ap)
+	struct vop_blkatoff_args *ap;
+{
+	return (0);
+}
+
+int
+ufs211_valloc(ap)
+	struct vop_valloc_args *ap;
+{
+	return (0);
+}
+
+int
+ufs211_vfree(ap)
+	struct vop_vfree_args *ap;
+{
+	return (0);
 }
 
 /*
@@ -517,6 +546,21 @@ ufs211_truncate(ap)
 	register struct vnode *vp = ap->a_vp;
 	register struct ufs211_inode *ip =  VTOI(vp);
 
+	return (0);
+}
+
+int
+ufs211_update(ap)
+	struct vop_update_args *ap;
+{
+	return (0);
+}
+
+int
+ufs211_bwrite(ap)
+	struct vop_bwrite_args *ap;
+{
+	return (0);
 }
 
 int

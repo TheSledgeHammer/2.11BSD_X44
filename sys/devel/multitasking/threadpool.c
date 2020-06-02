@@ -33,8 +33,6 @@ void
 itc_threadpool_init()
 {
 	TAILQ_INIT(&itc_head);
-	TAILQ_INIT(&ktpool);
-	TAILQ_INIT(&utpool);
 }
 
 /* Add a thread to the itc queue */
@@ -43,9 +41,8 @@ itc_threadpool_enqueue(itc, tid)
 	struct itc_threadpool *itc;
 	tid_t tid;
 {
-	struct kern_threadpool *ktpool;
-	struct user_threadpool *utpool;
-
+	struct kthreadpool *ktpool;
+	struct uthreadpool *utpool;
 	/* check kernel threadpool is not null & has a job/task entry to send */
 	if(ktpool != NULL && itc->itc_tid == tid) {
 		itc->itc_ktpool = ktpool;
@@ -70,8 +67,8 @@ itc_threadpool_dequeue(itc, tid)
 	struct itc_threadpool *itc;
 	tid_t tid;
 {
-	struct kern_threadpool *ktpool;
-	struct user_threadpool *utpool;
+	struct kthreadpool *ktpool;
+	struct uthreadpool 	   *utpool;
 
 	if(ktpool != NULL) {
 		TAILQ_FOREACH(itc, itc_head, itc_entry) {
@@ -102,8 +99,8 @@ check(itc, tid)
 	struct itc_threadpool *itc;
 	tid_t tid;
 {
-	struct kern_threadpool *ktpool = itc->itc_ktpool;
-	struct user_threadpool *utpool = itc->itc_utpool;
+	struct kthreadpool *ktpool = itc->itc_ktpool;
+	struct uthreadpool *utpool = itc->itc_utpool;
 
 	if(ktpool->ktp_issender) {
 		printf("kernel threadpool to send");
@@ -160,8 +157,8 @@ verify(itc, tid)
 	struct itc_threadpool *itc;
 	tid_t tid;
 {
-	struct kern_threadpool *ktpool = itc->itc_ktpool;
-	struct user_threadpool *utpool = itc->itc_utpool;
+	struct kthreadpool *ktpool = itc->itc_ktpool;
+	struct uthreadpool *utpool = itc->itc_utpool;
 
 	if(ktpool->ktp_isreciever) {
 		printf("kernel threadpool to recieve");

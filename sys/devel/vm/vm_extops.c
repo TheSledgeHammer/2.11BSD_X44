@@ -26,9 +26,9 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/user.h>
 #include <sys/extent.h>
 #include <sys/malloc.h>
+#include <sys/user.h>
 #include <devel/vm/include/vm_extops.h>
 
 struct vm_extentops vextops;
@@ -46,13 +46,6 @@ vm_extentops_malloc(vextops)
 	struct vm_extentops *vextops;
 {
 	MALLOC(vextops, struct vm_extentops *, sizeof(struct vm_extentops *), M_VMEXTENTOPS, M_WAITOK);
-}
-
-void
-vm_extent_malloc(vext)
-	struct vm_extent *vext;
-{
-	MALLOC(vext, struct vm_extent *, sizeof(struct vm_extent *), M_VMEXTENT, M_WAITOK);
 }
 
 int
@@ -78,11 +71,9 @@ vm_extent_create(vext, ext, name, start, end, mtype, storage, storagesize, flags
     vap.a_storagesize = storagesize;
     vap.a_flags = flags;
 
-	if (vext == NULL) {
-		vm_extent_malloc(vext);
-	} else if (ext == NULL) {
-		ext = extent_create(ext, name, start, end, mtype, storage, storagesize, flags);
-	}
+    if (vextops.vm_extent_create == NULL) {
+    	return (EOPNOTSUPP);
+    }
 
 	vext->vext_ext = ext;
     error = vextops.vm_extent_create(ext, name, start, end, mtype, storage, storagesize, flags);
@@ -91,13 +82,15 @@ vm_extent_create(vext, ext, name, start, end, mtype, storage, storagesize, flags
 }
 
 int
-vm_extent_mallocok(mallocok)
+vm_extent_mallocok(vext, mallocok)
+	struct vm_extent *vext;
 	int mallocok;
 {
 	struct vm_extentops_mallocok_args vap;
 	int error;
 
 	vap.a_head.a_ops = &vextops;
+	vap.a_vext = vext;
 	vap.a_mallocok = mallocok;
 
     if (vextops.vm_extent_mallocok == NULL) {

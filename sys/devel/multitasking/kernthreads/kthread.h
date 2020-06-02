@@ -90,12 +90,23 @@ struct kthread_queue {
 /* Locks */
 mutex_t 			kthread_mtx; 		/* mutex lock */
 
-/* Kernel Threadpool */
+/* Kernel Threadpool Threads */
+TAILQ_HEAD(kthread_head, kthreadpool_thread);
+struct kthreadpool_thread {
+	struct kthreads						*ktpt_kthread;				/* kernel threads */
+    char				                *ktpt_kthread_savedname;
+	struct kthreadpool					*ktpt_pool;
+	struct threadpool_job				*ktpt_job;
 
-TAILQ_HEAD(kthreadpool, kern_threadpool) ktpool;
-struct kern_threadpool {
-	struct kthreads						*ktp_kthread;		/* kernel threads */
-	TAILQ_ENTRY(kern_threadpool) 		ktp_entry;			/* list kthread entries */
+	TAILQ_ENTRY(kthreadpool_thread) 	ktpt_entry;					/* list kthread entries */
+};
+
+/* Kernel Threadpool */
+struct kthreadpool {
+	mutex_t								ktp_lock;
+	struct kthreadpool_thread			ktp_overseer;
+    struct job_head					    ktp_jobs;
+    struct kthread_head		            ktp_idle_threads;
 
     int 								ktp_refcnt;			/* total thread count in pool */
     int 								ktp_active;			/* active thread count */
@@ -107,7 +118,6 @@ struct kern_threadpool {
     boolean_t							ktp_isreciever;		/* is itc reciever */
     int									ktp_retcnt;			/* retry count in itc pool */
     boolean_t							ktp_initcq;			/* check if in itc queue */
-    struct job_head						ktp_jobs;
 
     //flags, refcnt, priority, lock, verify
     //flags: send, (verify: success, fail), retry_attempts
@@ -116,8 +126,8 @@ struct kern_threadpool {
 extern struct kthread kthread0;
 
 /* ITC Functions */
-extern void kthreadpool_itc_send(struct kern_threadpool *, struct itc_threadpool *);
-extern void kthreadpool_itc_receive(struct kern_threadpool *, struct itc_threadpool *);
+extern void kthreadpool_itc_send(struct kthreadpool *, struct itc_threadpool *);
+extern void kthreadpool_itc_receive(struct kthreadpool *, struct itc_threadpool *);
 
 /* Kernel Thread */
 int kthread_create(kthread_t kt);

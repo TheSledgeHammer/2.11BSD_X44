@@ -64,21 +64,26 @@
 TAILQ_HEAD(job_head, threadpool_job);
 typedef void threadpool_job_fn_t(struct threadpool_job *);
 struct threadpool_job {
-	//job_lock
+	mutex_t								*job_lock;
 	TAILQ_ENTRY(threadpool_job)			job_entry;
 	volatile unsigned int				job_refcnt;
 	threadpool_job_fn_t					*job_fn;
 	char								job_name[MAXCOMLEN];
+
+	struct itc_threadpool				*job_itc;
+#define job_ktpool						job_itc->itc_ktpool
+#define job_utpool						job_itc->itc_utpool
 };
 
 
 /* Inter-Threadpool-Communication (ITPC) */
 
-TAILQ_HEAD(itc_thread, itc_threadpool) 	itc_head;
+TAILQ_HEAD(itc_head, itc_threadpool) 	itc_head;
 struct itc_threadpool {
 	TAILQ_ENTRY(itc_threadpool) 		itc_entry;		/* Threadpool IPC */
-	struct kern_threadpool				itc_ktpool;	/* Pointer to Kernel Threadpool */
-	struct user_threadpool				itc_utpool;	/* Pointer to User Threadpool */
+	struct kthreadpool					itc_ktpool;		/* Pointer to Kernel Threadpool */
+	struct uthreadpool					itc_utpool;		/* Pointer to User Threadpool */
+
 	struct job_head						itc_job;		/* Thread's Job */
 	struct tgrp 						itc_tgrp; 		/* Thread's Thread Group */
 	tid_t								itc_tid;		/* Thread's Thread ID */

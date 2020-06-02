@@ -52,6 +52,6 @@
  * each byte might be escaped), plus the two framing bytes.  We add two
  * to the message length to account for the type byte and checksum.
  */
-#define SL_MAXDATA 	62					/* max data that can be read */
-#define SL_RPCSIZE 	(1 + SL_MAXDATA)	/* errno byte + data */
-#define SL_MTU 		((2 * (SL_RPCSIZE + 2) + 2))
+#define SL_MAXDATA 			62					/* max data that can be read */
+#define SL_RPCSIZE 			(1 + SL_MAXDATA)	/* errno byte + data */
+#define SL_MTU 				((2 * (SL_RPCSIZE + 2) + 2))

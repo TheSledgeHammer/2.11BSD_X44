@@ -27,12 +27,14 @@
  */
 
 #include <sys/param.h>
+#include <sys/user.h>
 #include <sys/malloc.h>
 #include <mutex.h>
 #include <rwlock.h>
 #include <kthread.h>
 
 extern struct kthread kthread0;
+extern struct kthreadpool kthreadpool;
 struct kthread *curkthread = &kthread0;
 
 void
@@ -51,7 +53,19 @@ startkthread(kt)
 
     /* Initialize Thread Table  */
     threadinit();
+    start_kthreadpool(&kthreadpool);
 }
+
+void
+start_kthreadpool(ktpool)
+	struct kthreadpool *ktpool;
+{
+	TAILQ_INIT(ktpool->ktp_idle_threads);
+	if(ktpool == NULL) {
+		MALLOC(ktpool, struct kthreadpool *, sizeof(struct kthreadpool *), M_KTHREADPOOL, M_WAITOK);
+	}
+}
+
 
 int
 kthread_create(p)

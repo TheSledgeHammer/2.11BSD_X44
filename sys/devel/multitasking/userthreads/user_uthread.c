@@ -33,6 +33,7 @@
 #include <uthread.h>
 
 extern struct uthread uthread0;
+extern struct uthreadpool uthreadpool;
 struct uthread *curuthread = &uthread0;
 
 void
@@ -48,6 +49,19 @@ startuthread(ut)
 
     /* setup uthread mutex manager */
     uthread_mutex_init(uthread_mtx, ut);
+
+    /* setup uthreadpool */
+    start_uthreadpool(&uthreadpool);
+}
+
+void
+start_uthreadpool(utpool)
+	struct uthreadpool *utpool;
+{
+	TAILQ_INIT(utpool->utp_idle_threads);
+	if(utpool == NULL) {
+		MALLOC(utpool, struct uthreadpool *, sizeof(struct uthreadpool *), M_UTHREADPOOL, M_WAITOK);
+	}
 }
 
 int
@@ -114,7 +128,7 @@ uthreadpool_itc_send(utpool, itc)
 {
     /* command / action */
 	itc->itc_utpool = utpool;
-	itc->itc_job = utpool->utp_jobs;
+	itc->itc_job = utpool->utp_job;
 	/* send flagged jobs */
 	utpool->utp_issender = TRUE;
 	utpool->utp_isreciever = FALSE;
@@ -129,7 +143,7 @@ uthreadpool_itc_recieve(utpool, itc)
 {
     /* command / action */
 	itc->itc_utpool = utpool;
-	itc->itc_job = utpool->utp_jobs;
+	itc->itc_job = utpool->utp_job;
 	utpool->utp_issender = FALSE;
 	utpool->utp_isreciever = TRUE;
 

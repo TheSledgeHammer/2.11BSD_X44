@@ -35,27 +35,21 @@ struct vm_extent {
 };
 
 struct vm_extentops {
-    int (* vm_extent_create)(struct extent *ext, char *name, vm_offset_t start, vm_offset_t end, int mtype, caddr_t storage, vm_size_t storagesize, int flags);
-    int (* vm_extent_mallocok)(int mallocok);
-	int (* vm_extent_alloc)(struct extent *ext, vm_offset_t start, vm_offset_t end, int flags);
-	int (* vm_extent_suballoc)(struct extent *ext, vm_offset_t start, vm_offset_t end, vm_size_t size, int malloctypes, int mallocflags, u_long alignment, u_long boundary, int flags, u_long *result);
-	int (* vm_extent_free)(struct extent *ext, vm_offset_t start, vm_size_t size, int malloctypes, int flags);
-	int (* vm_extent_destroy)(struct extent *ext);
+    int (* vm_extent_create)(struct vm_extent *vext, struct extent *ext, char *name, vm_offset_t start, vm_offset_t end, int mtype, caddr_t storage, vm_size_t storagesize, int flags);
+    int (* vm_extent_mallocok)(struct vm_extent *vext, int mallocok);
+	int (* vm_extent_alloc)(struct vm_extent *vext, vm_offset_t start, vm_offset_t end, int flags);
+	int (* vm_extent_suballoc)(struct vm_extent *vext, vm_offset_t start, vm_offset_t end, vm_size_t size, int malloctypes, int mallocflags, u_long alignment, u_long boundary, int flags, u_long *result);
+	int (* vm_extent_free)(struct vm_extent *vext, vm_offset_t start, vm_size_t size, int malloctypes, int flags);
+	int (* vm_extent_destroy)(struct vm_extent *vext);
 };
 extern struct vm_extentops vextops;
 
-//#define VM_EXTENT_CREATE(vext, name, start, end, mtype, storage, storagesize, flags) (*((vext)->vext_op->vm_extent_create))(vext, name, start, end, mtype, storage, storagesize, flags)
-//#define VM_EXTENT_MALLOCOK(
-
-void vm_extentops_init();
-void vm_extentops_malloc(struct vm_extentops *vextops);
-void vm_extent_malloc(struct vm_extent *vext);
-int vm_extent_create(struct vm_extent *, char *, vm_offset_t, vm_offset_t, int, caddr_t, vm_size_t, int);
-int vm_extent_mallocok(int);
-int vm_extent_alloc(struct vm_extent *, vm_offset_t, vm_size_t, int);
-int vm_extent_suballoc(struct vm_extent *, vm_offset_t, vm_offset_t, vm_size_t, int, int, int, u_long, u_long, u_long);
-int vm_extent_free(struct vm_extent *, vm_offset_t, vm_size_t, int , int);
-int vm_extent_destroy(struct vm_extent *);
+#define VM_EXTENT_CREATE(vext, name, start, end, mtype, storage, storagesize, flags) 								(*((vext)->vext_op->vm_extent_create))(vext, name, start, end, mtype, storage, storagesize, flags)
+#define VM_EXTENT_MALLOCOK(vext, mallocok)																			(*((vext)->vext_op->vm_extent_mallocok))(vext, mallocok)
+#define VM_EXTENT_ALLOC(vext, start, size, flags) 																	(*((vext)->vext_op->vm_extent_alloc))(vext, start, size, flags)
+#define VM_EXTENT_SUBALLOC(vext, start, end, size, malloctypes, mallocflags, alignment, boundary, flags, result)	(*((vext)->vext_op->vm_extent_suballoc))(vext, start, end, size, malloctypes, mallocflags, alignment, boundary, flags, result)
+#define VM_EXTENT_FREE(vext, start, size, malloctypes, flags)														(*((vext)->vext_op->vm_extent_free))(vext, start, size, malloctypes, flags)
+#define VM_EXTENT_DESTROY(vext)																						(*((vext)->vext_op->vm_extent_destroy))(vext)
 
 struct vm_extentops_generic_args {
 	struct vm_extentops					*a_ops;
@@ -75,6 +69,7 @@ struct vm_extentops_create_args {
 
 struct vm_extentops_mallocok_args {
 	struct vm_extentops_generic_args	a_head;
+	struct vm_extent					*a_vext;
 	int									a_mallocok;
 };
 
@@ -116,7 +111,10 @@ struct vm_extentops_destroy_args	{
 };
 
 #define VEXTTOARGS(ap) ((ap)->a_head.a_ops)
-#define EXTENTOPS(ap, extentops_field)		\
-			VEXTTOARGS(ap)->extentops_field
+#define EXTENTOPS(ap, ops_field)				\
+			VEXTTOARGS(ap)->ops_field
+
+void vm_extentops_init();
+void vm_extentops_malloc(struct vm_extentops *vextops);
 
 #endif /* _VM_EXTOPS_H_ */
