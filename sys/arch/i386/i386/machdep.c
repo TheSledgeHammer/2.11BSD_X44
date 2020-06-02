@@ -80,8 +80,8 @@
 #endif
 
 #include <dev/cons.h>
-#include <dev/isa/isa.h>
-#include <dev/isa/isa_device.h>
+#include <dev/isa/isareg.h>
+#include <dev/isa/isavar.h>
 #include <dev/isa/rtc.h>
 
 #include <dev/ic/i8042reg.h>

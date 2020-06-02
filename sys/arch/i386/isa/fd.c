@@ -86,7 +86,8 @@
 #include <machine/conf.h>
 #include <machine/intr.h>
 
-#include <dev/isa/isa.h>
+#include <dev/isa/isareg.h>
+#include <dev/isa/isavar.h>
 #include <dev/isa/isadmavar.h>
 #include <i386/isa/fdreg.h>
 

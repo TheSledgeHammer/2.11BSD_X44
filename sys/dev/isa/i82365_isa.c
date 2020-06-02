@@ -43,8 +43,8 @@
 #include <machine/bus.h>
 #include <machine/intr.h>
 
-#include <dev/isa/isa.h>
-#include <dev/isa/isa_device.h>
+#include <dev/isa/isareg.h>
+#include <dev/isa/isavar.h>
 
 #include <dev/pcmcia/pcmciareg.h>
 #include <dev/pcmcia/pcmciavar.h>

@@ -40,7 +40,8 @@
 #include "assym.h"
 
 #include <i386/isa/icu.h>
-#include <dev/isa/isa.h>
+#include <dev/isa/isareg.h>
+#include <dev/isa/isavar.h>
 
 /*
  * These macros are fairly self explanatory.  If SPECIAL_MASK_MODE is defined,

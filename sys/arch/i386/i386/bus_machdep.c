@@ -83,8 +83,8 @@
 #include <sys/malloc.h>
 #include <sys/queue.h>
 
-#include <dev/isa/isa.h>
-#include <dev/isa/isa_device.h>
+#include <dev/isa/isareg.h>
+#include <dev/isa/isavar.h>
 
 #include <machine/bus.h>
 #include <machine/vmparam.h>

@@ -71,7 +71,8 @@
 #include <sys/device.h>
 #include <sys/malloc.h>
 
-#include <dev/isa/isa.h>
+#include <dev/isa/isareg.h>
+#include <dev/isa/isavar.h>
 #include <machine/isa_machdep.h>
 
 #include <machine/segments.h>

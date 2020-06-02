@@ -92,8 +92,8 @@
 #include <machine/pio.h>
 #include <machine/cpufunc.h>
 
-#include <dev/isa/isa.h>
-#include <dev/isa/isa_device.h>
+#include <dev/isa/isareg.h>
+#include <dev/isa/isavar.h>
 #include <i386/isa/isa_machdep.h>
 #include <i386/isa/icu.h>
 

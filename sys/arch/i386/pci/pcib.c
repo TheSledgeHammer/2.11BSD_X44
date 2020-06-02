@@ -43,14 +43,13 @@
 
 #include <machine/bus.h>
 
+#include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>
 
 #include <dev/pci/pcivar.h>
 #include <dev/pci/pcireg.h>
 
 #include <dev/pci/pcidevs.h>
-
-#include "isa.h"
 
 int		pcibmatch (struct device *, void *, void *);
 void	pcibattach (struct device *, struct device *, void *);

@@ -198,8 +198,8 @@ pcic_pci_attach(parent, self, aux)
  * XXX which themselves map to somthing else.
  */
 
-#include <dev/isa/isa.h>
-#include <dev/isa/isa_device.h>
+#include <dev/isa/isareg.h>
+#include <dev/isa/isavar.h>
 
 void *
 pcic_pci_chip_intr_establish(pch, pf, ipl, fct, arg)

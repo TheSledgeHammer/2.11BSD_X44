@@ -42,7 +42,8 @@
 #include <machine/mouse.h>
 #include <machine/conf.h>
 
-#include <dev/isa/isa_device.h>
+#include <dev/isa/isareg.h>
+#include <dev/isa/isavar.h>
 
 #define	LMS_DATA	0       /* offset for data port, read-only */
 #define	LMS_SIGN	1       /* offset for signature port, read-write */

@@ -1,6 +1,11 @@
+/*	$NetBSD: lptreg.h,v 1.5 1996/11/23 23:22:50 cgd Exp $	*/
+
 /*-
- * Copyright (c) 1991, 1993
- *	The Regents of the University of California.  All rights reserved.
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * William Jolitz.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -12,8 +17,8 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
+ *      This product includes software developed by the University of
+ *      California, Berkeley and its contributors.
  * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
@@ -30,43 +35,30 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)isa_device.h	8.1 (Berkeley) 6/11/93
- */
-
-/* isavar.h (in Other BSD's ) */
-
-/*
- * ISA Bus Autoconfiguration
+ *      @(#)lptreg.h	1.1 (Berkeley) 12/19/90
  */
 
 /*
- * Per device structure.
+ * AT Parallel Port (for lineprinter)
+ * Interface port and bit definitions
+ * Written by William Jolitz 12/18/90
+ * Copyright (C) William Jolitz 1990
  */
-struct isa_device {
-	struct	isa_driver *id_driver;
-	short				id_iobase;		/* base i/o address */
-	short				id_irq;			/* interrupt request */
-	short				id_drq;			/* DMA request */
-	caddr_t 			id_maddr;		/* physical i/o memory address on bus (if any)*/
-	int					id_msize;		/* size of i/o memory */
-	int					(*id_intr)();	/* interrupt interface routine */
-	int					id_unit;		/* unit number */
-	int					id_scsiid;		/* scsi id if needed */
-	int					id_alive;		/* device is present */
-};
 
-/*
- * Per-driver structure.
- *
- * Each device driver defines entries for a set of routines
- * as well as an array of types which are acceptable to it.
- * These are used at boot time by the configuration program.
- */
-struct isa_driver {
-	int		(*probe)();		/* test whether device is present */
-	int		(*attach)();	/* setup driver for a device */
-	char	*name;			/* device name */
-};
+#define	lpt_data	0	/* Data to/from printer (R/W) */
 
-extern struct isa_device isa_devtab_bio[], isa_devtab_tty[], isa_devtab_net[],
-		isa_devtab_null[];
+#define	lpt_status	1	/* Status of printer (R) */
+#define	LPS_NERR		0x08	/* printer no error */
+#define	LPS_SELECT		0x10	/* printer selected */
+#define	LPS_NOPAPER		0x20	/* printer out of paper */
+#define	LPS_NACK		0x40	/* printer no ack of data */
+#define	LPS_NBSY		0x80	/* printer no ack of data */
+
+#define	lpt_control	2	/* Control printer (R/W) */
+#define	LPC_STROBE		0x01	/* strobe data to printer */
+#define	LPC_AUTOLF		0x02	/* automatic linefeed */
+#define	LPC_NINIT		0x04	/* initialize printer */
+#define	LPC_SELECT		0x08	/* printer selected */
+#define	LPC_IENABLE		0x10	/* printer out of paper */
+
+#define	LPT_NPORTS	4

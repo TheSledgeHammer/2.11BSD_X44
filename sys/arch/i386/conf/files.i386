@@ -133,41 +133,41 @@ device	fdc {drive = -1}
 attach	fdc at isa
 device	fd: disk, isadma
 attach	fd at fdc
-file	arch/i386/isa/fd.c		        fdc needs-flag
+file	arch/i386/isa/fd.c		            fdc needs-flag
 major	{fd = 2}
 
 # PC speaker
 device	spkr: tty
 attach	spkr at pckbd
-file	arch/i386/isa/spkr.c		    spkr needs-flag
+file	arch/i386/isa/spkr.c		        spkr needs-flag
 
 # Game adapter (joystick)
 device	joy
-file	arch/i386/isa/joy.c		        joy needs-flag
+file	arch/i386/isa/joy.c		            joy needs-flag
 
 attach	joy at isa with joy_isa
-file	arch/i386/isa/joy_isa.c		    joy_isa
+file	arch/i386/isa/joy_isa.c		        joy_isa
 
 # Adaptec AHA-284x VL SCSI controllers
 # device declaration in sys/conf/files
 attach	ahc at isa with ahc_isa
-file	arch/i386/isa/ahc_isa.c		    ahc_isa
+file	arch/i386/isa/ahc_isa.c		        ahc_isa
 
 #
 # EISA-only drivers
 #
 
 include "../../../dev/eisa/files.eisa"
-file	arch/i386/eisa/eisa_machdep.c	eisa
+file	arch/i386/eisa/eisa_machdep.c	    eisa
 
 # ISA Plug 'n Play devices
 # IT IS IMPORTANT THAT THIS IS INCLUDED AFTER ALL ISA DEVICES!
 # DO NOT MOVE IT!  (Thanks, The Mgmt.)
 include "dev/isapnp/files.isapnp"
-file	arch/i386/isa/isapnp_machdep.c	isapnp
+file	arch/i386/isa/isapnp_machdep.c	    isapnp
 
 attach	joy at isapnp with joy_isapnp
-file	arch/i386/isa/joy_isapnp.c	    joy_isapnp
+file	arch/i386/isa/joy_isapnp.c	        joy_isapnp
 
 #
 # Other mainbus-attached devices
@@ -200,15 +200,15 @@ defopt	PCIC_ISA_ALLOC_IOSIZE
 defopt	PCIC_ISA_INTR_ALLOC_MASK
 
 device	pcic {[controller = -1], [socket = -1]}
-file	dev/ic/i82365.c			    pcic
+file	dev/ic/i82365.c			            pcic
 
 # PCIC pcmcia contoller
 attach	pcic at isa with pcic_isa
-file	dev/isa/i82365_isa.c		pcic_isa
+file	dev/isa/i82365_isa.c		        pcic_isa
 
 # PCIC pcmcia contoller
 attach	pcic at pci with pcic_pci
-file	dev/pci/i82365_pci.c		pcic_pci
+file	dev/pci/i82365_pci.c		        pcic_pci
 
 
 # this wants to be probed as late as possible.

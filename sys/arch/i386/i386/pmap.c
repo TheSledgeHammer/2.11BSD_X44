@@ -88,7 +88,7 @@
 
 #ifdef NOTDEF
 #include <vm/include/vm_pageout.h>
-#include <dev/isa/isa.h>
+#include <dev/isa/isareg.h>
 #endif
 
 /*

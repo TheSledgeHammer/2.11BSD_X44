@@ -70,7 +70,8 @@ void
 configure()
 {
 
-#include <dev/isa/isa.h>
+#include <dev/isa/isareg.h>
+#include <dev/isa/isavar.h>
 #if NISA > 0
 	isa_configure();
 #endif

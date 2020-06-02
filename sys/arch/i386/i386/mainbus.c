@@ -36,11 +36,11 @@
 
 #include <machine/bus.h>
 
-#include <dev/isa/isa.h>
 #include <dev/eisa/eisavar.h>
 #include <dev/pci/pcivar.h>
 
-#include <dev/isa/isa_device.h>		/* for ISA_HOLE_VADDR */
+#include <dev/isa/isareg.h>
+#include <dev/isa/isavar.h>
 #include <i386/isa/isa_machdep.h>
 
 #include "pci.h"

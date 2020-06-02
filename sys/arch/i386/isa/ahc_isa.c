@@ -130,11 +130,12 @@
 #include <machine/bus.h>
 #include <machine/intr.h>
 
-#include <dev/scsi/scsi_all.h>
-#include <dev/scsi/scsipi_all.h>
-#include <dev/scsi/scsiconf.h>
+#include <dev/scsipi/scsi_all.h>
+#include <dev/scsipi/scsipi_all.h>
+#include <dev/scsipi/scsiconf.h>
 
-#include <dev/isa/isa_device.h>
+#include <dev/isa/isareg.h>
+#include <dev/isa/isavar.h>
 
 #include <dev/eisa/eisareg.h>
 #include <dev/eisa/eisavar.h>

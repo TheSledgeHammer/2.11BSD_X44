@@ -55,7 +55,8 @@
 #include <machine/mouse.h>
 #include <machine/conf.h>
 
-#include <dev/isa/isa_device.h>
+#include <dev/isa/isareg.h>
+#include <dev/isa/isavar.h>
 
 #define	PMS_DATA		0x60	/* offset for data port, read-write */
 #define	PMS_CNTRL		0x64	/* offset for control port, write-only */

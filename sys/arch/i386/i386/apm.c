@@ -71,10 +71,10 @@
 #include <machine/gdt.h>
 #include <machine/psl.h>
 
-#include <dev/isa/isa.h>
+#include <dev/isa/isareg.h>
+#include <dev/isa/isavar.h>
 #include <i386/isa/isa_machdep.h>
 #include <dev/isa/rtc.h>
-#include <dev/isa/isa_device.h>
 
 #include <machine/bioscall.h>
 #include <machine/apmvar.h>

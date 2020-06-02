@@ -42,7 +42,8 @@
 #include <machine/mouse.h>
 #include <machine/conf.h>
 
-#include <dev/isa/isa_device.h>
+#include <dev/isa/isareg.h>
+#include <dev/isa/isavar.h>
 
 #define	MMS_ADDR	0	/* offset for register select */
 #define	MMS_DATA	1	/* offset for InPort data */
