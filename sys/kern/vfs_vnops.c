@@ -53,7 +53,7 @@
 
 #include <vm/include/vm.h>
 
-struct 	fileops vnops =
+struct fileops vnops =
 	{ vn_read, vn_write, vn_ioctl, vn_select, vn_closefile };
 
 /*

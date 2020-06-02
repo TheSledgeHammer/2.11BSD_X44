@@ -3,7 +3,7 @@
 # Config.new file and device description for machine-independent PCMCIA code.
 # Included by ports that need it.
 
-defopt	PCMCIAVERBOSE
+defflags	PCMCIAVERBOSE
 
 device	pcmcia {[function = -1], [irq = -1]}
 file	dev/pcmcia/pcmcia.c			pcmcia

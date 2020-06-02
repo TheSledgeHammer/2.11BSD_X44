@@ -30,8 +30,7 @@ struct vnode;
  * device switches is in the
  * file conf.c.
  */
-struct bdevsw
-{
+struct bdevsw {
 	int	(*d_open)(dev_t dev, int oflags, int devtype, struct proc *p);
 	int	(*d_close)(dev_t dev, int fflag, int devtype, struct proc *p);
 	int	(*d_strategy)(dev_t dev, int fflag, int devtype, struct proc *p);
@@ -48,8 +47,7 @@ extern struct	bdevsw bdevsw[];
 /*
  * Character device switch.
  */
-struct cdevsw
-{
+struct cdevsw {
 	int	(*d_open)(dev_t dev, int oflags, int devtype, struct proc *p);
 	int	(*d_close)(dev_t dev, int fflag, int devtype, struct proc *);
 	int	(*d_read)(dev_t dev, struct uio *uio, int ioflag);
@@ -57,8 +55,9 @@ struct cdevsw
 	int	(*d_ioctl)(dev_t dev, int cmd, caddr_t data, int fflag, struct proc *p);
 	int	(*d_stop)(struct tty *tp, int rw);
 	int	(*d_reset)(int uban);	/* XXX */
-	struct tty *d_ttys;
+	struct tty (*d_tty)(dev_t dev);
 	int	(*d_select)(dev_t dev, int which, struct proc *p);
+	int	(*d_poll)(dev_t dev, int events, struct proc *p);
 	int	(*d_mmap)();
 	int	(*d_strategy)(struct buf *bp);
 };
@@ -73,8 +72,7 @@ extern char devioc[], devcls[];
 /*
  * tty line control switch.
  */
-struct linesw
-{
+struct linesw {
 	int	(*l_open)(dev_t dev, struct tty *tp);
 	int	(*l_close)(struct tty *tp, int flag);
 	int	(*l_read)(struct tty *tp, struct uio *uio, int flag);
@@ -91,10 +89,10 @@ extern struct	linesw linesw[];
 #endif
 
 struct swdevt {
-	dev_t	sw_dev;
-	int		sw_flags;
-	int		sw_nblks;
-	struct	vnode *sw_vp;
+	dev_t			sw_dev;
+	int				sw_flags;
+	int				sw_nblks;
+	struct	vnode 	*sw_vp;
 };
 #define	SW_FREED		0x01
 #define	SW_SEQUENTIAL	0x02
@@ -110,5 +108,3 @@ int	chrtoblk (dev_t);
 #endif
 
 #endif
-
-

@@ -40,13 +40,14 @@
 
 
 struct consdev {
-	int		(*cn_probe)();	/* probe hardware and fill in consdev info */
-	int		(*cn_init)();	/* turn on as console */
-	int		(*cn_getc)();	/* kernel getchar interface */
-	int		(*cn_putc)();	/* kernel putchar interface */
-	struct	tty *cn_tp;		/* tty structure for console device */
-	dev_t	cn_dev;			/* major/minor of device */
-	short	cn_pri;			/* pecking order; the higher the better */
+	void	(*cn_probe)(struct consdev *);	/* probe hardware and fill in consdev info */
+	void	(*cn_init)(struct consdev *);	/* turn on as console */
+	int		(*cn_getc)(dev_t);				/* kernel getchar interface */
+	void	(*cn_putc)(dev_t, int);			/* kernel putchar interface */
+	void	(*cn_pollc)(dev_t, int); 		/* turn on and off polling */
+	struct	tty *cn_tp;						/* tty structure for console device */
+	dev_t	cn_dev;							/* major/minor of device */
+	int		cn_pri;							/* pecking order; the higher the better */
 };
 
 /* values for cn_pri - reflect our policy for console selection */
@@ -62,4 +63,32 @@ struct consdev {
 extern	struct consdev constab[];
 extern	struct consdev *cn_tab;
 extern	struct tty *cn_tty;
+
+void	cninit (void);
+int		cnopen (dev_t, int, int, struct proc *);
+int		cnclose (dev_t, int, int, struct proc *);
+int		cnread (dev_t, struct uio *, int);
+int		cnwrite (dev_t, struct uio *, int);
+int		cnioctl (dev_t, u_long, caddr_t, int, struct proc *);
+int		cnpoll (dev_t, int, struct proc *);
+int		cngetc (void);
+void	cnputc (int);
+void	cnpollc (int);
+void	cnrint (void);
+void	nullcnpollc (dev_t, int);
+
+/* console-specific types */
+#define	dev_type_cnprobe(n)	void n (struct consdev *)
+#define	dev_type_cninit(n)	void n (struct consdev *)
+#define	dev_type_cngetc(n)	int n (dev_t)
+#define	dev_type_cnputc(n)	void n (dev_t, int)
+#define	dev_type_cnpollc(n)	void n (dev_t, int)
+
+#define	cons_decl(n) \
+	dev_decl(n,cnprobe); dev_decl(n,cninit); dev_decl(n,cngetc); \
+	dev_decl(n,cnputc); dev_decl(n,cnpollc)
+
+#define	cons_init(n) { \
+	dev_init(1,n,cnprobe), dev_init(1,n,cninit), dev_init(1,n,cngetc), \
+	dev_init(1,n,cnputc), dev_init(1,n,cnpollc) }
 #endif

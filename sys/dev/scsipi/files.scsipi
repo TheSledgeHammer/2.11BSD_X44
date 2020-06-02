@@ -4,7 +4,7 @@
 # Included by ports that need it.  Ports that use it must provide
 # their own "major" declarations for the appropriate devices.
 
-defopt	SCSIVERBOSE
+defflags	SCSIVERBOSE
 
 file	dev/scsipi/scsipiconf.c		scsi | atapi
 file	dev/scsipi/scsipi_base.c	scsi | atapi
