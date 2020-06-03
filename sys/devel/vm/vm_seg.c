@@ -31,8 +31,9 @@
 
 #include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_seg.h>
-#include <devel/vm/include/vm_extent.h>
-#include <devel/vm/include/vm_extops.h>
+
+#include "include/vm_extent.h"
+#include "include/vm_extent2.h"
 
 void
 vm_segment_init(ext, ext_name, start, end)

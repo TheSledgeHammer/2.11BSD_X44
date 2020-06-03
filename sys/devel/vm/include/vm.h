@@ -93,7 +93,7 @@ typedef struct vm_aobject		*vm_aobject_t;
 #include <devel/vm/include/vm_swap.h>
 #include <devel/vm/include/vm_swap_pager.h>
 
-#include <devel/vm/include/vm_extent.h>	/* Work in Progress */
+#include "vm_extent2.h"	/* Work in Progress */
 #include <devel/vm/include/vm_seg.h>	/* Work in Progress */
 
 /*

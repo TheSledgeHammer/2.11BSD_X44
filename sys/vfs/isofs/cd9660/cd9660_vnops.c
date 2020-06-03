@@ -939,7 +939,6 @@ cd9660_strategy(ap)
 	}
 	vp = ip->i_devvp;
 	bp->b_dev = vp->v_rdev;
-	//VOCALL (vp->v_op, VOFFSET(vop_strategy), ap);
 	VOPARGS(ap, vop_strategy);
 	return (0);
 }

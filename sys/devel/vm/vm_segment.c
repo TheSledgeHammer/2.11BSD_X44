@@ -27,14 +27,13 @@
  */
 
 #include <sys/user.h>
-#include <devel/vm/include/vm_extent.h>
-#include <devel/vm/include/vm_extops.h>
+#include <include/vm_extent.h>
 
 struct vm_extentops vm_segment_extentops[] = {
 	.vm_extent_create =	vm_segment_create,
 	.vm_extent_mallocok = vm_segment_mallocok,
 	.vm_extent_alloc = vm_segment_malloc,
-	.vm_extent_suballoc = vm_segmentspace_malloc,
+	.vm_extent_suballoc = vm_segment_suballoc,
 	.vm_extent_free = vm_segment_free,
 	.vm_extent_destroy = vm_segment_destroy
 };
@@ -45,7 +44,6 @@ vm_segment_create(ap)
 {
 	struct vm_extent *vext = ap->a_vext;
 	struct extent *ext = vext->vext_ext;
-	int error;
 
 	if(vext == NULL) {
 		MALLOC(vext, struct vm_extent *, sizeof(struct vm_extent *), M_VMEXTENT, M_WAITOK);
@@ -53,7 +51,6 @@ vm_segment_create(ap)
 
 	ext = extent_create(ext, ap->a_name, ap->a_start, ap->a_end, ap->a_mtype, ap->a_storage, ap->a_storagesize, ap->a_flags);
 
-	EXTENTOPS(ap, vm_extent_create);
 	return (0);
 }
 
@@ -62,9 +59,11 @@ vm_segment_mallocok(ap)
 	struct vm_extentops_mallocok_args *ap;
 {
 	struct vm_extent *vext = ap->a_vext;
-	int error;
+	int mallocok = ap->a_mallocok;
 
-	EXTENTOPS(ap, vm_extent_mallocok);
+	if(vext != NULL && mallocok != 0) {
+		return (1);
+	}
 	return (0);
 }
 
@@ -73,21 +72,29 @@ vm_segment_malloc(ap)
 	struct vm_extentops_alloc_args *ap;
 {
 	struct vm_extent *vext = ap->a_vext;
+	struct extent *ext = vext->vext_ext;
 	int error;
 
-	EXTENTOPS(ap, vm_extent_alloc);
-	return (0);
+	if(ext != NULL) {
+		error = extent_alloc_region(ext, ap->a_start, ap->a_size, ap->a_flags);
+	}
+	return (error);
 }
 
 int
-vm_segmentspace_malloc(ap)
+vm_segment_suballoc(ap)
 	struct vm_extentops_suballoc_args *ap;
 {
 	struct vm_extent *vext = ap->a_vext;
+	struct extent *ext = vext->vext_ext;
+	int mallocflags = ap->a_mallocflags;
+	int malloctypes = ap->a_malloctypes;
 	int error;
 
-	EXTENTOPS(ap, vm_extent_suballoc);
-	return (0);
+	if(ext != NULL && (mallocflags & malloctypes)) {
+		error = extent_alloc_subregion(ext, ap->a_start, ap->a_end, ap->a_size, ap->a_malloctypes, ap->a_mallocflags, ap->a_alignment, ap->a_boundary, ap->a_flags, ap->a_result);
+	}
+	return (error);
 }
 
 int
@@ -95,10 +102,15 @@ vm_segment_free(ap)
 	struct vm_extentops_free_args *ap;
 {
 	struct vm_extent *vext = ap->a_vext;
+	struct extent *ext = vext->vext_ext;
+	int flags = ap->a_flags;
+	int malloctypes = ap->a_malloctypes;
 	int error;
 
-	EXTENTOPS(ap, vm_extent_free);
-	return (0);
+	if(ext != NULL && (flags & malloctypes)) {
+		error = extent_free(ext, ap->a_start, ap->a_size, flags);
+	}
+	return (error);
 }
 
 int
@@ -106,8 +118,11 @@ vm_segment_destroy(ap)
 	struct vm_extentops_destroy_args *ap;
 {
 	struct vm_extent *vext = ap->a_vext;
+	struct extent *ext = vext->vext_ext;
 	int error;
 
-	EXTENTOPS(ap, vm_extent_destroy);
-	return (0);
+	if(ext != NULL) {
+		error = extent_destroy(ext);
+	}
+	return (error);
 }

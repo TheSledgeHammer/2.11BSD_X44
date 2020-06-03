@@ -436,8 +436,7 @@ extent_alloc_region(ex, start, size, flags)
  * a power of 2.
  */
 int
-extent_alloc_subregion(ex, substart, subend, size, alignment, boundary,
-    flags, result)
+extent_alloc_subregion(ex, substart, subend, size, alignment, boundary, flags, result)
 	struct extent *ex;
 	u_long substart, subend, size, alignment, boundary;
 	int flags;

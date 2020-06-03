@@ -28,122 +28,179 @@
 
 #include <sys/extent.h>
 #include <sys/malloc.h>
-#include <devel/vm/include/vm_extent.h>
+#include <sys/user.h>
+#include <include/vm_extent.h>
 
+struct vm_extentops vextops;
+
+/* initilize vm_extentops */
 void
-vm_extent_init(vm_ext, name, start, end, mtype, storage, storagesize)
-	struct vm_extent *vm_ext;
-	char *name;
-    vm_offset_t start, end;
-    int mtype;
-    caddr_t	storage;
-    vm_size_t storagesize;
+vm_extentops_init()
 {
-    vm_ext->name = name;
-    vm_ext = extent_create(name, start, end, mtype, storage, storagesize, EX_NOWAIT | EX_MALLOCOK);
+	vop_malloc(&vextops);
 }
 
+/* allocate vm_extentops */
 void
-vm_extent_mallocok(void)
+vm_extentops_malloc(vextops)
+	struct vm_extentops *vextops;
 {
-    vm_extent_malloc_safe = 1;
+	MALLOC(vextops, struct vm_extentops *, sizeof(struct vm_extentops *), M_VMEXTENTOPS, M_WAITOK);
 }
 
 int
-vm_extent_alloc(vm_ext, size)
-    struct vm_extent *vm_ext;
-    vm_size_t size;
+vm_extent_create(vext, ext, name, start, end, mtype, storage, storagesize, flags)
+	struct vm_extent *vext;
+	struct extent *ext;
+	char *name;
+	vm_offset_t start, end;
+	int mtype, flags;
+	caddr_t	storage;
+	vm_size_t storagesize;
 {
-    struct extent *ex = vm_ext->vm_extent;
+    struct vm_extentops_create_args vap;
     int error;
 
-    if (ex == NULL) {
-        return (0);
+    vap.a_head.a_ops = &vextops;
+    vap.a_vext = vext;
+    vap.a_name = name;
+    vap.a_start = start;
+    vap.a_end = end;
+    vap.a_mtype = mtype;
+    vap.a_storage = storage;
+    vap.a_storagesize = storagesize;
+    vap.a_flags = flags;
+
+    if (vextops.vm_extent_create == NULL) {
+    	return (EOPNOTSUPP);
     }
-    vm_ext->addr += ex->ex_start;
 
-    error = extent_alloc_region(ex, vm_ext->addr, size, EX_NOWAIT | EX_MALLOCOK);
+	vext->vext_ext = ext;
+    error = vextops.vm_extent_create(ext, name, start, end, mtype, storage, storagesize, flags);
 
-    if(error) {
-        return (error);
-    }
-
-    return (0);
+    return (error);
 }
 
 int
-vm_extent_suballoc(vm_ext, start, end, size, malloctypes, mallocflags, alignment, boundary, result)
-	struct vm_extent *vm_ext;
-    vm_offset_t start, end;
-    vm_size_t size;
-    u_long *result;
-	int malloctypes, mallocflags;
+vm_extent_mallocok(vext, mallocok)
+	struct vm_extent *vext;
+	int mallocok;
+{
+	struct vm_extentops_mallocok_args vap;
+	int error;
+
+	vap.a_head.a_ops = &vextops;
+	vap.a_vext = vext;
+	vap.a_mallocok = mallocok;
+
+    if (vextops.vm_extent_mallocok == NULL) {
+    	return (EOPNOTSUPP);
+    }
+
+	error = vextops.vm_extent_mallocok(vext, mallocok);
+
+	return (error);
+}
+
+int
+vm_extent_alloc(vext, start, size, flags)
+	struct vm_extent *vext;
+	vm_offset_t start;
+	vm_size_t	size;
+	int flags;
+{
+	struct vm_extentops_alloc_args vap;
+	int error;
+
+	vap.a_head.a_ops = &vextops;
+	vap.a_vext = vext;
+	vap.a_start = start;
+	vap.a_addr += vap.a_start;
+	vap.a_size = size;
+	vap.a_flags = flags;
+
+    if (vextops.vm_extent_alloc == NULL) {
+    	return (EOPNOTSUPP);
+    }
+
+	error = vextops.vm_extent_alloc(vext, start, size, flags);
+
+	return (error);
+}
+
+
+int
+vm_extent_suballoc(vext, start, end, size, malloctypes, mallocflags, alignment, boundary, flags, result)
+	struct vm_extent *vext;
+	vm_offset_t start, end;
+	vm_size_t	size;
+	int flags, malloctypes, mallocflags;
 	u_long *result, alignment, boundary;
 {
-    struct extent *ex = vm_ext->vm_extent;
-    int error;
+	struct vm_extentops_suballoc_args vap;
+	int error;
 
-    if (start > ex->ex_start && start < ex->ex_end) {
-        if (end > start) {
-            error = extent_alloc_subregion(ex, start, end, size, alignment, boundary, EX_FAST | EX_NOWAIT | EX_MALLOCOK, result);
-        }
+	vap.a_head.a_ops = &vextops;
+	vap.a_vext = vext;
+	vap.a_start = start;
+	vap.a_end += vap.a_start;
+	vap.a_size = size;
+	vap.a_malloctypes = malloctypes;
+	vap.a_mallocflags = mallocflags;
+	vap.a_alignment = alignment;
+	vap.a_boundary = boundary;
+	vap.a_flags = flags;
+	vap.a_result = result;
+
+    if (vextops.vm_extent_suballoc == NULL) {
+    	return (EOPNOTSUPP);
     }
 
-    if(error) {
-        return (error);
-    }
-    vm_ext->malloctypes = malloctypes;
-    vm_ext->mallocflags = mallocflags;
-    return (0);
+	error = vextops.vm_extent_suballoc(vext, start, end, size, malloctypes, mallocflags, alignment, boundary, flags, result);
+
+	return (error);
 }
 
-void
-vm_extent_destroy(vm_ext)
-    struct vm_extent *vm_ext;
+int
+vm_extent_free(vext, start, size, malloctypes, flags)
+	struct vm_extent *vext;
+	vm_offset_t start;
+	vm_size_t	size;
+	int malloctypes, flags;
 {
-    struct extent *ex = vm_ext->vm_extent;
+	struct vm_extentops_free_args vap;
+	int error;
 
-    if(ex != NULL) {
-        extent_destroy(ex);
+	vap.a_head.a_ops = &vextops;
+	vap.a_vext = vext;
+	vap.a_start = start;
+	vap.a_malloctypes = malloctypes;
+	vap.a_flags = flags;
+
+    if (vextops.vm_extent_free == NULL) {
+    	return (EOPNOTSUPP);
     }
 
-    if(VMEXTENT_ALLOCATED) {
-        free(vm_ext, M_VMEXTENT);
-    }
+	error = vextops.vm_extent_free(vext, start, size, malloctypes, flags);
+
+	return (error);
 }
 
-static void
-vm_extent_unmap(vm_ext, start, size, type)
-    struct vm_extent *vm_ext;
-    vm_offset_t start;
-    vm_size_t size;
-    int type;
+int
+vm_extent_destroy(vext)
+	struct vm_extent *vext;
 {
-    struct extent *ex = vm_ext->vm_extent;
-    int error;
+	struct vm_extentops_destroy_args vap;
+	int error;
 
-    if(ex == NULL) {
-        return;
+	vap.a_head.a_ops = &vextops;
+	vap.a_vext = vext;
+
+    if (vextops.vm_extent_destroy == NULL) {
+    	return (EOPNOTSUPP);
     }
 
-    if(vm_ext->malloctypes != type) {
-    	 error = extent_free(ex, start, size, EX_NOWAIT);
-    }
+	error = vextops.vm_extent_destroy(vext);
 
-    if (error) {
-        printf("%#lx-%#lx of %s space lost\n", start, start + size, ex->ex_name);
-    }
-}
-
-void
-vm_extent_free(vm_ext, size, type)
-    struct vm_extent *vm_ext;
-	vm_size_t size;
-	int type;
-{
-    struct extent *ex = vm_ext->vm_extent;
-
-    if (ex != NULL) {
-        vm_extent_unmap(vm_ext, ex->ex_start, size, type);
-    }
+	return (error);
 }

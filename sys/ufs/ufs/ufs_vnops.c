@@ -1668,7 +1668,6 @@ ufs_strategy(ap)
 	vp = ip->i_devvp;
 	bp->b_dev = vp->v_rdev;
 	VOPARGS(ap, vop_strategy);
-	//VOCALL (vp->v_op, VOFFSET(vop_strategy), ap);
 	return (0);
 }
 
@@ -1713,7 +1712,6 @@ ufsspec_read(ap)
 	//if ((ap->a_vp->v_mount->mnt_flag & MNT_NODEVMTIME) == 0)
 		VTOI(ap->a_vp)->i_flag |= IN_ACCESS;
 	return (VOPARGS(ap, vop_read));
-//	return (VOCALL (spec_vnodeop_p, VOFFSET(vop_read), ap));
 }
 
 /*
@@ -1734,7 +1732,6 @@ ufsspec_write(ap)
 	//if ((ap->a_vp->v_mount->mnt_flag & MNT_NODEVMTIME) == 0)
 		VTOI(ap->a_vp)->i_flag |= IN_MODIFY;
 	return (VOPARGS(ap, vop_write));
-	//return (VOCALL (spec_vnodeop_p, VOFFSET(vop_write), ap));
 }
 
 /*
@@ -1759,7 +1756,6 @@ ufsspec_close(ap)
 		ITIMES(ip, &time, &time);
 	simple_unlock(&vp->v_interlock);
 	return (VOPARGS(ap, vop_close));
-	//return (VOCALL (spec_vnodeop_p, VOFFSET(vop_close), ap));
 }
 
 #ifdef FIFO
@@ -1782,7 +1778,6 @@ ufsfifo_read(ap)
 	 */
 	VTOI(ap->a_vp)->i_flag |= IN_ACCESS;
 	return (VOPARGS(ap, vop_read));
-	//return (VOCALL (fifo_vnodeop_p, VOFFSET(vop_read), ap));
 }
 
 /*
@@ -1804,7 +1799,6 @@ ufsfifo_write(ap)
 	 */
 	VTOI(ap->a_vp)->i_flag |= IN_CHANGE | IN_UPDATE;
 	return (VOPARGS(ap, vop_write));
-	//return (VOCALL (fifo_vnodeop_p, VOFFSET(vop_write), ap));
 }
 
 /*
@@ -1829,7 +1823,6 @@ ufsfifo_close(ap)
 		ITIMES(ip, &time, &time);
 	simple_unlock(&vp->v_interlock);
 	return (VOPARGS(ap, vop_close));
-	//return (VOCALL (fifo_vnodeop_p, VOFFSET(vop_close), ap));
 }
 #endif /* FIFO */
 
