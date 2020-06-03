@@ -29,7 +29,7 @@
 #include <sys/user.h>
 #include <include/vm_extent.h>
 
-struct vm_extentops vm_segment_extentops[] = {
+struct vm_extentops vm_segmentops[] = {
 	.vm_extent_create =	vm_segment_create,
 	.vm_extent_mallocok = vm_segment_mallocok,
 	.vm_extent_alloc = vm_segment_malloc,

@@ -75,17 +75,16 @@
 #include <machine/specialreg.h>
 #include <machine/bootinfo.h>
 
-#ifdef KGDB
-#include <sys/kgdb.h>
-#endif
-
 #include <dev/cons.h>
 #include <dev/isa/isareg.h>
-#include <dev/isa/isavar.h>
 #include <dev/isa/rtc.h>
 
 #include <dev/ic/i8042reg.h>
 #include <i386/isa/isa_machdep.h>
+
+#ifdef KGDB
+#include <sys/kgdb.h>
+#endif
 
 #ifdef VM86
 #include <machine/vm86.h>
@@ -109,14 +108,11 @@
 extern struct proc *npxproc;
 #endif
 
-#include "vt.h"
-#if (NVT > 0)
-#include <i386/isa/pcvt/pcvt_cons.h>
-#endif
-
 /* the following is used externally (sysctl_hw) */
 char machine[] = "i386";			/* cpu "architecture" */
 char machine_arch[] = "i386";		/* machine == machine_arch */
+
+int want_resched;			/* resched() was called */
 
 char bootinfo[BOOTINFO_MAXSIZE];
 

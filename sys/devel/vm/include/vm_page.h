@@ -68,6 +68,7 @@
 
 #ifndef	_VM_PAGE_
 #define	_VM_PAGE_
+
 #include <devel/vm/include/vm.h>
 /*
  *	Management of resident (logical) pages.
@@ -148,7 +149,7 @@ struct vm_page {
 #define	VM_PAGE_CHECK(mem)
 #endif /* VM_PAGE_DEBUG */
 
-//#ifdef KERNEL
+#ifdef KERNEL
 /*
  *	Each pageable resident page falls into one of three lists:
  *
@@ -195,26 +196,25 @@ vm_offset_t		last_phys_addr;			/* physical address for last_page */
 		(&vm_page_array[atop(pa) - first_page ])
 
 extern
-simple_lock_data_t	vm_page_queue_lock;	/* lock on active and inactive
-						   	   	   	   page queues */
-extern									/* lock on free page queue */
-simple_lock_data_t	vm_page_queue_free_lock;
+simple_lock_data_t	vm_page_queue_lock;			/* lock on active and inactive page queues */
+extern
+simple_lock_data_t	vm_page_queue_free_lock; 	/* lock on free page queue */
 
 /*
  *	Functions implemented as macros
  */
 
-#define PAGE_ASSERT_WAIT(m, interruptible)	{ \
-				(m)->flags |= PG_WANTED; \
-				assert_wait((m), (interruptible)); \
+#define PAGE_ASSERT_WAIT(m, interruptible)	{ 		\
+				(m)->flags |= PG_WANTED; 			\
+				assert_wait((m), (interruptible)); 	\
 			}
 
-#define PAGE_WAKEUP(m)	{ \
-				(m)->flags &= ~PG_BUSY; \
-				if ((m)->flags & PG_WANTED) { \
-					(m)->flags &= ~PG_WANTED; \
-					thread_wakeup((m)); \
-				} \
+#define PAGE_WAKEUP(m)	{ 							\
+				(m)->flags &= ~PG_BUSY; 			\
+				if ((m)->flags & PG_WANTED) { 		\
+					(m)->flags &= ~PG_WANTED; 		\
+					thread_wakeup((m)); 			\
+				} 									\
 			}
 
 #define	vm_page_lock_queues()	simple_lock(&vm_page_queue_lock)

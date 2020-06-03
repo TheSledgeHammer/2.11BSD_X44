@@ -18,9 +18,9 @@ New Content:
 			- Implement in the VFS layer. To provide a multiplexors across filesystems 
 			- Independent FS like fdesc, fifo, etc 
 - Multitasking:
-	- Kernel & User Threads
-	- Threadpools (kernel & userspace)
-	- DeadLocks: Mutexes, Readers-Writer Lock
+	- Threads
+	- Threadpools
+	- Deadlocking: Mutexes, Reader-Writer Lock
 - Pmap:
 	- Machine-independent api for Clustered Page Tables variation.
 	- i386 arch partial pmap implementation

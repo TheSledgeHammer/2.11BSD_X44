@@ -76,7 +76,6 @@ struct swappri {
 	LIST_ENTRY(swappri)					spi_swappri;      /* global list of pri's */
 };
 
-
 /*
  * The following two structures are used to keep track of data transfers
  * on swap devices associated with regular files.

@@ -76,10 +76,4 @@ struct vm_segmentspace {
 	caddr_t 					segs_maxsaddr;		/* user VA at max stack growth */
 };
 
-/* Segment Extent Memory Management */
-void 				vm_segment_init(struct vm_extent *, char *, vm_offset_t, vm_offset_t);
-struct vm_segment 	*vm_segment_malloc(struct vm_extent *, vm_size_t);
-int 				vm_segmentspace_malloc(struct vm_extent *, vm_offset_t, vm_offset_t, vm_size_t, int, int, u_long *);
-void 				vm_segment_free(struct vm_extent *, vm_size_t, int);
-
 #endif /* _VM_SEG_H_ */

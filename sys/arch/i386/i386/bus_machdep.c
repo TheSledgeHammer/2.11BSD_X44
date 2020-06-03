@@ -78,16 +78,23 @@
  *	@(#)machdep.c	7.4 (Berkeley) 6/3/91
  */
 
-#include <sys/user.h>
-#include <sys/extent.h>
-#include <sys/malloc.h>
-#include <sys/queue.h>
+#include <sys/cdefs.h>
 
-#include <dev/isa/isareg.h>
-#include <dev/isa/isavar.h>
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/user.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/extent.h>
+#include <sys/proc.h>
+
+#include <vm/include/vm_extern.h>
 
 #include <machine/bus.h>
-#include <machine/vmparam.h>
+
+#include <dev/isa/isareg.h>
+#include <machine/isa_machdep.h>
+
 /*
  * Extent maps to manage I/O and ISA memory hole space.  Allocate
  * storage for 8 regions in each, initially.  Later, ioport_malloc_safe
