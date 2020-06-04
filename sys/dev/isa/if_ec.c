@@ -1,6 +1,12 @@
-/*
- * Copyright (c) 1992, 1993
- *	The Regents of the University of California.  All rights reserved.
+/*	$NetBSD: if_ec.c,v 1.2.2.3 1998/10/29 02:40:39 cgd Exp $	*/
+
+/*-
+ * Copyright (c) 1997 The NetBSD Foundation, Inc.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to The NetBSD Foundation
+ * by Jason R. Thorpe of the Numerical Aerospace Simulation Facility,
+ * NASA Ames Research Center.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -12,752 +18,733 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *	This product includes software developed by the NetBSD
+ *	Foundation, Inc. and its contributors.
+ * 4. Neither the name of The NetBSD Foundation nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- *
- *	@(#)if_ec.c	8.1 (Berkeley) 6/11/93
+ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
-
-
-/* WARNING -- THIS DRIVER DOES NOT WORK YET -- It is merely a sketch */
-
-#include "ec.h"
-#if NEC > 0
 
 /*
- * Intel 82586/3com Etherlink II controller.
+ * Device driver for National Semiconductor DS8390/WD83C690 based ethernet
+ * adapters.
+ *
+ * Copyright (c) 1994, 1995 Charles M. Hannum.  All rights reserved.
+ *
+ * Copyright (C) 1993, David Greenman.  This software may be used, modified,
+ * copied, distributed, and sold, in both source and binary form provided that
+ * the above copyright and these terms are retained.  Under no circumstances is
+ * the author responsible for the proper functioning of this software, nor does
+ * the author assume any responsibility for damages incurred with its use.
  */
+
+/*
+ * Device driver for the 3Com Etherlink II (3c503).
+ */
+
+#include "bpfilter.h"
+#include "rnd.h" 
+
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/mbuf.h>
-#include <sys/buf.h>
-#include <sys/protosw.h>
+#include <sys/device.h>
 #include <sys/socket.h>
+#include <sys/mbuf.h>
 #include <sys/syslog.h>
-#include <sys/ioctl.h>
-#include <sys/errno.h>
 
 #include <net/if.h>
-#include <net/netisr.h>
-#include <net/route.h>
+#include <net/if_dl.h>
+#include <net/if_types.h>
+#include <net/if_media.h>
+
+#include <net/if_ether.h>
 
 #ifdef INET
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
-#include <netinet/in_var.h>
+#include <netinet/in_var.h> 
 #include <netinet/ip.h>
-#include <netinet/if_ether.h>
-#endif
+#include <netinet/if_inarp.h> 
+#endif 
 
 #ifdef NS
 #include <netns/ns.h>
 #include <netns/ns_if.h>
 #endif
 
-#ifdef ISO
-extern	char all_es_snpa[], all_is_snpa[], all_l1is_snpa[], all_l2is_snpa[];
-#endif
-
-#include <i386/isa/if_ecreg.h>
-
 #if NBPFILTER > 0
 #include <net/bpf.h>
 #include <net/bpfdesc.h>
 #endif
 
-int	ecdebug = 1;		/* console error messages */
+#include <machine/bus.h>
+#include <machine/intr.h>
 
-int	ecintr(), ecinit(), ecioctl(), ecstart(), ether_output();
-int	ecattach(), ecprobe(), ecreset(), ecwatchdog();
-void	ec_idpattern(), ec_reset_all(), ec_getnmdata(), ecread();
+#include <dev/isa/isareg.h>
+#include <dev/isa/isavar.h>
 
-struct	mbuf *m_devget();
-extern	struct ifnet loif;
-struct	ec_82586params ec_82586defaults =
-    { 11, 0xc8, ECMINSIZE, 0x2e, 0, 0x60, 0, 2, 0, 0, 0x40};
-    /* 2e == no source insert */
+#include <dev/ic/dp8390reg.h>
+#include <dev/ic/dp8390var.h>
 
-/*
- * Ethernet software status per interface.
- *
- * Each interface is referenced by a network interface structure,
- * sc_if, which the routing code uses to locate the interface.
- * This structure contains the output queue for the interface, its address, ...
- */
-struct	ec_softc {
-	struct	arpcom sc_ac;	/* common Ethernet structures */
-#define	sc_if	sc_ac.ac_if	/* network-visible interface */
-#define	sc_addr	sc_ac.ac_enaddr	/* hardware Ethernet address */
-	caddr_t	sc_device;		/* e.g. isa_device */
-	caddr_t	sc_bpf;			/* for packet filter */
-	struct	ec_ports *sc_ports;	/* control ports for this unit */
-	struct	ec_mem *sc_hmem;	/* Host addr for shared memory */
-	struct	ec_mem *sc_dmem;	/* Device (chip) addr for shared mem */
-	int	sc_msize;		/* How much memory is mapped? */
-	int	sc_iflags;		/* copy of sc_if.if_flags for state */
-	int	sc_rxnum;		/* Last receiver dx we looked at */
-	int	sc_txnum;		/* Last tranmistter dx we stomped on */
-	int	sc_txcnt;		/* Number of packets queued for tx*/
-	int	sc_xint;
-	/* errors */
-	int	sc_txbusy;		/* we're confused */
-	int	sc_uflo;		/* DMA Late */
-	int	sc_runt;		/* too short */
-	int	sc_txbad;
-	int	sc_rxlen;
-} ec_softc[NEC];
+#include <dev/isa/if_ecreg.h>
 
-#include <i386/isa/isa_device.h>
+struct ec_softc {
+	struct dp8390_softc sc_dp8390;
 
-struct	isa_driver ecdriver = {
-	ecprobe, ecattach, "ec",
+	bus_space_tag_t sc_asict;	/* space tag for ASIC */
+	bus_space_handle_t sc_asich;	/* space handle for ASIC */
+
+	int sc_16bitp;			/* are we 16 bit? */
+
+	void *sc_ih;			/* interrupt handle */
 };
 
-
-#define TIMO 10000 /* used in ec_uprim */
-
-ecprobe(id)
-	register struct	isa_device *id;
-{
-	int	unit = id->id_unit, msize = id->id_msize;
-	struct	ec_ports *reg = (struct ec_ports *)id->id_iobase;
-	register struct	ec_softc *ec = ec_softc + unit;
-	u_char	data[6];
-
-	ec_reset_all();
-	bzero((caddr_t)data, sizeof(data));
-	ec_getnmdata(reg, R_ECID, data);
-	if (bcmp((caddr_t)data, "*3COM*", sizeof(data)) != 0) {
-		if (ecdebug) {
-			printf("ecprobe: ec%d not matched: %s\n",
-				unit, ether_sprintf(data));
-		}
-		return 0;
-	}
-	ec_getnmdata(reg, R_ETHER, ec->sc_addr);
-	ec_getnmdata(reg, R_REV, data);
-	ec->sc_hmem	= (struct ec_mem *) (id->id_maddr);
-	ec->sc_dmem	= (struct ec_mem *) (0x10000 - msize);
-	ec->sc_msize	= msize;
-	ec->sc_device	= (caddr_t) id;
-	ec->sc_ports	= reg;
-	printf("ec%d: hardware address %s, rev info %s\n",
-		unit, ether_sprintf(ec->sc_addr), ether_sprintf(data));
-	return 1;
-}
-
-void
-ec_idpattern()
-{
-	int i = 255, n;
-	register caddr_t p = (caddr_t)0x100;
-	for (n = 255;  n > 0; n--) {
-		outb(p, i);
-		if ((i <<= 1) & 0x100)
-			i ^= 0xe7;
-	}
-}
-
-void
-ec_reset_all()
-{
-	register caddr_t p = (caddr_t)0x100;
-	outb(p, 0);
-	ec_idpattern();
-	outb(p, 0);
-}
-extern int cpuspeed;
-#define ECWR(p, e, d)	outb(&(p->e), d)
-#define ECRD(p, e)	inb(&(p->e))
-#define SET_CA		ECWR(ec->sc_ports, port_ca, 0)
-#define UNLATCH_INT	ECWR(ec->sc_ports, port_ic, 0);
-
-void
-ec_getnmdata(p, which, data)
-register struct ec_ports *p;
-int which;
-register u_char *data;
-{
-	register int i;
-
-	ECWR(p, creg, which);
-	DELAY(2);
-	for (i = 0; i < 6; i++) {
-		DELAY(2);
-		data[i] = ECRD(p, data[i]);
-	}
-}
-
-ecreset(unit)
-	register int unit;
-{
-	register struct ec_softc *ec = &ec_softc[unit];
-	struct ec_ports *p	 = ec->sc_ports;
-	struct ec_mem	*hmem	 = ec->sc_hmem;
-	int timo;
-
-	ECWR(p, creg, R_LPB);	DELAY(10);
-	if ((ec->sc_if.if_flags & IFF_RUNNING) == 0)
-		return 0;
-	if (ecdebug)
-		printf("ec%dreset\n", unit);
-	ec_meminit(ec);
-	ECWR(p, creg, R_NORST);	DELAY(10);
-	hmem->iscp.busy = 1;
-	ECWR(p, port_ca, 0);	DELAY(10);
-	for (timo = TIMO; hmem->iscp.busy; )
-		timo--;
-	if (timo == 0) {
-		printf("ec(%d)reset: iscp failed\n", unit);
-		return 0;
-	}
-	hmem->scb.command = CU_START;
-	ECWR(p, port_ca, 0);	DELAY(10);
-	for (timo = TIMO; (hmem->scb.status & CU_STATE) == CUS_ACTIVE;)
-		timo--;
-	if (timo == 0 || (hmem->scb.status & CU_STATE) != CUS_IDLE) {
-		printf("ec(%d)reset: setup failed\n", unit);
-		return 0;
-	}
-	ECWR(p, port_ic, 0);	DELAY(10);
-	ECWR(p, creg, R_NORST|R_IEN);
-	hmem->scb.command = RU_START | (hmem->scb.status & 0xf000);
-	ECWR(p, port_ca, 0);	DELAY(10);
-	ec->sc_if.if_timer = 5;
-	return 0;			/* Keep GCC Happy! */
-}
-
-/*
- * Interface exists: make available by filling in network interface
- * record.  System will initialize the interface when it is ready
- * to accept packets.
- */
-
-ecattach(id)
-	register struct isa_device *id;
-{
-	int	unit = id->id_unit;
-	struct ec_softc *ec = &ec_softc[unit];
-	struct ifnet *ifp = &ec->sc_if;
-
-	ifp->if_unit = unit;
-	ifp->if_name = "ec";
-	ifp->if_mtu = ETHERMTU;
-	ifp->if_init = ecinit;
-	ifp->if_init = ecreset;
-	ifp->if_ioctl = ecioctl;
-	ifp->if_watchdog = ecwatchdog;
-	ifp->if_output = ether_output;
-	ifp->if_start = ecstart;
-	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX;
-#if NBPFILTER > 0
-	bpfattach(&ec->sc_bpf, ifp, DLT_EN10MB, sizeof(struct ether_header));
-#endif
-	if_attach(ifp);
-	return (1);
-}
-#define OFF(e) ((u_short)&(((struct ec_mem *)0)->e))
-
-ec_meminit(ec)
-	register struct ec_softc *ec;
-{
-	register struct ec_mem *hmem = ec->sc_hmem;
-	register int i;
-	struct ec_rfd *rc = hmem->rcom;
-	struct ec_transmit *tc = hmem->tcom;
-	caddr_t cp;
-
-	bzero((caddr_t)hmem, ec->sc_msize);
-	*(struct ec_mem **)
-		(ec->sc_msize - 4 + (caddr_t)ec->sc_hmem) = ec->sc_dmem;
-
-	hmem->iscp.scb_off	= OFF(scb);
-	hmem->iscp.scb_base	= (caddr_t)ec->sc_dmem;
-
-	hmem->scb.rfa_off	= OFF(rcom[0]);
-	hmem->scb.cbl_off	= OFF(config);
-
-	hmem->config.com1	= COM1_CONFIGURE;
-	bcopy((caddr_t)&ec_82586defaults, (caddr_t)&hmem->config.modes,
-		sizeof(hmem->config.modes));
-#if NBPFILTER > 0
-	if (ec->sc_if.if_flags & IFF_PROMISC)
-		hmem->config.modes.promisc |= M_PROMISC;
-#endif
-	hmem->config.next_off	= OFF(iasetup);
-
-	bcopy((caddr_t)ec->sc_addr, (caddr_t)hmem->iasetup.srcaddr, 6);
-#ifndef ISO
-	hmem->iasetup.com1	= COM1_IASETUP | COM1_S | COM1_EL;
+#ifdef __BROKEN_INDIRECT_CONFIG
+int	ec_probe __P((struct device *, void *, void *));
 #else
-	hmem->iasetup.com1	= COM1_IASETUP;
-	hmem->iasetup.next_off	= OFF(mcsetup);
-
-	hmem->mcsetup.com1	= COM1_MCSETUP | COM1_S | COM1_EL;
-	hmem->mcsetup.count	= 24;
-	cp = (caddr_t)hmem->txbuf[0];
-	bcopy((caddr_t)all_es_snpa, cp, 6);	cp += 6;
-	bcopy((caddr_t)all_is_snpa, cp, 6);	cp += 6;
-	bcopy((caddr_t)all_l1is_snpa, cp, 6);	cp += 6;
-	bcopy((caddr_t)all_l2is_snpa, cp, 6);	cp += 6;
+int	ec_probe __P((struct device *, struct cfdata *, void *));
 #endif
-	for (i = 0; i < NTXBUF; i++) {
-		tc->tbd_off	= OFF(tcom[i].count);
-		tc->buffer	= ec->sc_dmem->txbuf[i];
-		(tc++)->com1	= COM1_TRANSMIT | COM1_S | COM1_EL | COM1_I;
-	}
-	for (i = 0; i < NRXBUF; i++) {
-		rc->next_off	= OFF(rcom[i + 1]);
-		rc->rbd_off	= OFF(rcom[i].count);
-		rc->buffer	= ec->sc_dmem->rxbuf[i];
-		(rc++)->size	= ECMTU | COM1_EL;
-	}
-	(--rc)->next_off = OFF(rcom[0]);
-}
-/*
- * Initialization of interface
- */
-ecinit(unit)
-	int unit;
-{
-	register struct ifnet *ifp = &ec_softc[unit].sc_if;
-	register struct ifaddr *ifa;
-	int s;
+void	ec_attach __P((struct device *, struct device *, void *));
 
-	/* not yet, if address still unknown */
-	for (ifa = ifp->if_addrlist;; ifa = ifa->ifa_next)
-		if (ifa == 0)
-			return 0;
-		else if (ifa->ifa_addr && ifa->ifa_addr->sa_family != AF_LINK)
+struct cfattach ec_ca = {
+	sizeof(struct ec_softc), ec_probe, ec_attach
+};
+
+struct cfdriver ec_cd = {
+	NULL, "ec", DV_IFNET
+};
+
+int	ec_set_media __P((struct ec_softc *, int));
+
+int	ec_mediachange __P((struct dp8390_softc *));
+void	ec_mediastatus __P((struct dp8390_softc *, struct ifmediareq *));
+
+void	ec_init_card __P((struct dp8390_softc *));
+int	ec_write_mbuf __P((struct dp8390_softc *, struct mbuf *, int));
+int	ec_ring_copy __P((struct dp8390_softc *, int, caddr_t, u_short));
+void	ec_read_hdr __P((struct dp8390_softc *, int, struct dp8390_ring *));
+int	ec_fake_test_mem __P((struct dp8390_softc *));
+int	ec_test_mem __P((struct dp8390_softc *));
+
+__inline void ec_writemem __P((struct ec_softc *, u_int8_t *, int, int));
+__inline void ec_readmem __P((struct ec_softc *, int, u_int8_t *, int));
+
+static const int ec_iobase[] = {
+	0x2e0, 0x2a0, 0x280, 0x250, 0x350, 0x330, 0x310, 0x300,
+};
+#define	NEC_IOBASE	(sizeof(ec_iobase) / sizeof(ec_iobase[0]))
+
+static const int ec_membase[] = {
+	MADDRUNK, MADDRUNK, MADDRUNK, MADDRUNK, 0xc8000, 0xcc000,
+	0xd8000, 0xdc000,
+};
+#define	NEC_MEMBASE	(sizeof(ec_membase) / sizeof(ec_membase[0]))
+
+int ec_media[] = {
+	IFM_ETHER|IFM_10_2,
+	IFM_ETHER|IFM_10_5,
+};
+#define	NEC_MEDIA	(sizeof(ec_media) / sizeof(ec_media[0]))
+#define	EC_DEFMEDIA	(IFM_ETHER|IFM_10_2)
+
+int
+ec_probe(parent, match, aux)
+	struct device *parent;
+#ifdef __BROKEN_INDIRECT_CONFIG
+	void *match;
+#else
+	struct cfdata *match;
+#endif
+	void *aux;
+{
+	struct isa_attach_args *ia = aux;
+	bus_space_tag_t nict, asict, memt;
+	bus_space_handle_t nich, asich, memh;
+	bus_size_t memsize;
+	int nich_valid, asich_valid, memh_valid;
+	int i, rv = 0;
+	u_int8_t x;
+
+	nict = asict = ia->ia_iot;
+	memt = ia->ia_memt;
+
+	nich_valid = asich_valid = memh_valid = 0;
+
+	/*
+	 * Hmm, a 16-bit card has 16k of memory, but only an 8k window
+	 * to it.
+	 */
+	memsize = 8192;
+
+	/* Disallow wildcarded i/o addresses. */
+	if (ia->ia_iobase == ISACF_PORT_DEFAULT)
+		return (0);
+
+	/* Disallow wildcarded mem address. */
+	if (ia->ia_maddr == ISACF_IOMEM_DEFAULT)
+		return (0);
+
+	/* Validate the i/o base. */
+	for (i = 0; i < NEC_IOBASE; i++)
+		if (ia->ia_iobase == ec_iobase[i])
 			break;
-	if ((ifp->if_flags & IFF_RUNNING) == 0) {
-		s = splimp();
-		ifp->if_flags |= IFF_RUNNING;
-		ecreset(unit);
-	        (void) ecstart(ifp);
-		splx(s);
-	}
-	return 0;
-}
-
-/*
- * Timeout: for now check for a transmit command taking more than 10 seconds.
- */
-ecwatchdog(unit)
-	int unit;
-{
-	register struct ec_softc *ec = ec_softc + unit;
-	if (ec->sc_iflags & IFF_OACTIVE) {
-		ec->sc_if.if_flags &= ~IFF_RUNNING;
-		ecinit(unit);
-	} else if (ec->sc_txcnt > 0)
-		ec->sc_iflags |= IFF_OACTIVE;
-	ec->sc_if.if_timer = 5;
-}
-
-
-
-ec_txstart(ec)
-register struct ec_softc *ec;
-{
-	struct	ec_mem *hmem = ec->sc_hmem;
-	int i;
-
-	if ((i = ec->sc_txnum - ec->sc_txcnt) < 0) i += NTXBUF;
-	hmem->scb.cbl_off = OFF(tcom[i]);
-	hmem->scb.command = CU_START;
-	hmem->scb.status = 0;
-	SET_CA;
-}
-/*
- * Start output on interface.  Get another datagram to send
- * off of the interface queue, and copy it to the interface
- * before starting the output.
- */
-ecstart(ifp)
-	struct ifnet *ifp;
-{
-	register struct ec_softc *ec = &ec_softc[ifp->if_unit];
-	register struct ec_transmit *tmd;
-	register struct mbuf *m;
-	int len;
-
-again:
-	if ((ec->sc_if.if_flags & IFF_RUNNING) == 0 || ec->sc_txcnt >= NTXBUF)
+	if (i == NEC_IOBASE)
 		return (0);
-	tmd = ec->sc_hmem->tcom + ec->sc_txnum;
-	if (tmd->com0 & (COM0_B | COM0_C))
-		return (ec->sc_txbusy++, 0);
-	IF_DEQUEUE(&ec->sc_if.if_snd, m);
-	if (m == 0)
+
+	/* Validate the mem base. */
+	for (i = 0; i < NEC_MEMBASE; i++) {
+		if (ec_membase[i] == MADDRUNK)
+			continue;
+		if (ia->ia_maddr == ec_membase[i])
+			break;
+	}
+	if (i == NEC_MEMBASE)
 		return (0);
-	len = ecput(ec->sc_hmem->txbuf[ec->sc_txnum], m);
-#if NBPFILTER > 0
-	/*
-	 * If bpf is listening on this interface, let it
-	 * see the packet before we commit it to the wire.
-	 */
-	if (ec->sc_bpf)
-                bpf_tap(ec->sc_bpf, ec->sc_hmem->txbuf[ec->sc_txnum], len);
-#endif
-	tmd->com0 = 0;
-	tmd->count = len | COM1_EL;
-	if (ec->sc_txcnt == 0)
-		ec_txstart(ec);
-	if (++ec->sc_txnum >= NTXBUF)
-		ec->sc_txnum = 0;
-	if (++ec->sc_txcnt >= NTXBUF) {
-		ec->sc_txcnt = NTXBUF;
-		ec->sc_if.if_flags |= IFF_OACTIVE;
-	}
-	goto again;
-}
-int ECC_intr, ECC_rint, ECC_xint, ECC_unready;
 
-ecintr(unit)
-	register int unit;
-{
-	struct ec_softc *ec = &ec_softc[unit];
-	struct ec_mem *hmem = ec->sc_hmem;
-	register int stat = hmem->scb.status;
+	/* Attempt to map the NIC space. */
+	if (bus_space_map(nict, ia->ia_iobase + ELINK2_NIC_OFFSET,
+	    ELINK2_NIC_PORTS, 0, &nich))
+		goto out;
+	nich_valid = 1;
 
-	hmem->scb.command = stat & 0xf000; /* Ack interrupt cause */
-	SET_CA;
-	if (stat & FR)
-		ecrint(unit);
-	if (stat & CX)
-		ecxint(unit);
-	ECC_intr++;
-	if ((stat & RU_STATE) != RUS_READY)
-		ECC_unready++;
-	UNLATCH_INT;
-}
+	/* Attempt to map the ASIC space. */
+	if (bus_space_map(asict, ia->ia_iobase + ELINK2_ASIC_OFFSET,
+	    ELINK2_ASIC_PORTS, 0, &asich))
+		goto out;
+	asich_valid = 1;
 
-/*
- * Ethernet interface transmitter interrupt.
- * Start another output if more data to send.
- */
-ecxint(unit)
-	register int unit;
-{
-	register struct ec_softc *ec = &ec_softc[unit];
-	register struct ec_transmit *tmd;
-	int i;
-
-	ECC_rint++;
-	if (ec->sc_txcnt == 0) {
-		ec->sc_xint++;	/* unexpected transmit interrupt */
-		return;
-	}
-	ec->sc_iflags &= ~IFF_OACTIVE; /* clear deadman indication */
-	if ((i = ec->sc_txnum - ec->sc_txcnt) < 0) i += NTXBUF;
-	tmd = ec->sc_hmem->tcom + i;
-	if (tmd->com0 & COM0_B)
-		return;
-	ec->sc_if.if_collisions += tmd->com0 & 0xf;
-	if ((tmd->com0 & EXCOL) && (tmd->com0 & 0xf) == 0)
-		ec->sc_if.if_collisions += 16;
-	if ((tmd->com0 & COM0_OK) == 0) {
-		ecxerror(unit);
-		ec->sc_if.if_oerrors++;
-		if (tmd->com0 & DMALATE) {
-			ec->sc_uflo++;
-			(void) ecreset(unit);
-			return;
-		}
-	} else
-		ec->sc_if.if_opackets++;
-	tmd->com0 = 0;
-	if (--ec->sc_txcnt > 0)
-		ec_txstart(ec);
-	if (ec->sc_txcnt < 0) {
-		ec->sc_txbad++;
-		ec->sc_txcnt = 0;
-	}
-	ec->sc_if.if_flags &= ~IFF_OACTIVE;
-	(void) ecstart(&ec->sc_if);
-}
-
-#define	ECNEXTRCOM \
-	if (++bix == NRXBUF) bix = 0, rmd = ec->sc_hmem->rcom; else ++rmd
-
-/*
- * Ethernet interface receiver interrupt.
- * If input error just drop packet.
- * Decapsulate packet based on type and pass to type specific
- * higher-level input routine.
- */
-ecrint(unit)
-	int unit;
-{
-	register struct ec_softc *ec = &ec_softc[unit];
-	register int bix = ec->sc_rxnum;
-	register struct ec_rfd *rmd = ec->sc_hmem->rcom + bix;
+	/* Attempt to map the memory space. */
+	if (bus_space_map(memt, ia->ia_maddr, memsize, 0, &memh))
+		goto out;
+	memh_valid = 1;
 
 	/*
-	 * Out of sync with hardware, should never happen?
+	 * Verify that the kernel configured I/O address matches the
+	 * board configured I/O address.
+	 *
+	 * This is really only useful to see if something that looks like
+	 * the board is there; after all, we're already talking to it at
+	 * this point.
 	 */
-	ECC_xint++;
-	if ((rmd->rfd0 & COM0_C) == 0 || (rmd->count & RBD_F) == 0) {
-		ecrerror(unit, "out of sync, resetting");
-		return ecreset(unit);
-	}
+	x = bus_space_read_1(asict, asich, ELINK2_BCFR);
+	if (x == 0 || (x & (x - 1)) != 0)
+		goto out;
+	i = ffs(x) - 1;
+	if (ia->ia_iobase != ec_iobase[i])
+		goto out;
+
 	/*
-	 * Process all buffers with valid data
+	 * ...and for the memory address.  Note we do not support
+	 * cards configured with shared memory disabled.
 	 */
-	while ((rmd->rfd0 & COM0_C) && (rmd->count & RBD_F)) {
-		if (rmd->rfd0 & (COM0_C|COM0_B|COM0_OK) != (COM0_C|COM0_OK)) {
-			ec->sc_rxnum = bix;
-			ecrerror(unit, "bad packet");
-			ec->sc_if.if_ierrors++;
-		}
-		if ((rmd->count & (RBD_F|RBD_EOF)) != (RBD_F|RBD_EOF)) {
-			ecrerror(unit, "chained buffer");
-			ec->sc_rxlen++;
-			ec->sc_if.if_ierrors++;
-		} else
-			ecread(ec, ec->sc_hmem->txbuf[bix], rmd->count & 0x2f);
-		rmd->count = 0;
-		rmd->rfd0 = 0;
-		ECNEXTRCOM;
-		ec->sc_rxnum = bix;
-	}
+	x = bus_space_read_1(asict, asich, ELINK2_PCFR);
+	if (x == 0 || (x & (x - 1)) != 0)
+		goto out;
+	i = ffs(x) - 1;
+	if (ia->ia_maddr != ec_membase[i])
+		goto out;
+
+	/* So, we say we've found it! */
+	ia->ia_iosize = ELINK2_NIC_PORTS;
+	ia->ia_msize = memsize;
+	rv = 1;
+
+ out:
+	if (nich_valid)
+		bus_space_unmap(nict, nich, ELINK2_NIC_PORTS);
+	if (asich_valid)
+		bus_space_unmap(asict, asich, ELINK2_ASIC_PORTS);
+	if (memh_valid)
+		bus_space_unmap(memt, memh, memsize);
+	return (rv);
 }
 
 void
-ecread(ec, buf, len)
-	register struct ec_softc *ec;
-	char *buf;
-	int len;
+ec_attach(parent, self, aux)
+	struct device *parent, *self;
+	void *aux;
 {
-	struct ether_header *et, eh;
-    	struct mbuf *m;
-	int off, resid, unit = ec->sc_if.if_unit;
+	struct ec_softc *esc = (struct ec_softc *)self;
+	struct dp8390_softc *sc = &esc->sc_dp8390;
+	struct isa_attach_args *ia = aux;
+	bus_space_tag_t nict, asict, memt;
+	bus_space_handle_t nich, asich, memh;
+	bus_size_t memsize;
+	u_int8_t tmp;
+	int i;
 
-	ec->sc_if.if_ipackets++;
-	et = (struct ether_header *)buf;
-	et->ether_type = ntohs((u_short)et->ether_type);
-	bcopy((caddr_t)et, &eh, sizeof(eh));
-	/* adjust input length to account for header */
-	len = len - sizeof(struct ether_header);
+	printf("\n");
 
-#define	ecdataaddr(et, off, type)	((type)(((caddr_t)((et)+1)+(off))))
-	if (et->ether_type >= ETHERTYPE_TRAIL &&
-	    et->ether_type < ETHERTYPE_TRAIL+ETHERTYPE_NTRAILER) {
-		off = (et->ether_type - ETHERTYPE_TRAIL) * 512;
-		if (off >= ETHERMTU)
-			return;		/* sanity */
-		et->ether_type = ntohs(*ecdataaddr(et, off, u_short *));
-		resid = ntohs(*(ecdataaddr(et, off+2, u_short *)));
-		if (off + resid > len)
-			return;		/* sanity */
-		len = off + resid;
-	} else
-		off = 0;
+	nict = asict = ia->ia_iot;
+	memt = ia->ia_memt;
 
-	if (len <= 0) {
-		if (ecdebug)
-			log(LOG_WARNING,
-			    "ec%d: ierror(runt packet): from %s: len=%d\n",
-			    unit, ether_sprintf(et->ether_shost), len);
-		ec->sc_runt++;
-		ec->sc_if.if_ierrors++;
+	/*
+	 * Hmm, a 16-bit card has 16k of memory, but only an 8k window
+	 * to it.
+	 */
+	memsize = 8192;
+
+	/* Map the NIC space. */
+	if (bus_space_map(nict, ia->ia_iobase + ELINK2_NIC_OFFSET,
+	    ELINK2_NIC_PORTS, 0, &nich)) {
+		printf("%s: can't map nic i/o space\n",
+		    sc->sc_dev.dv_xname);
 		return;
 	}
-#if NBPFILTER > 0
-	/*
-	 * Check if there's a bpf filter listening on this interface.
-	 * If so, hand off the raw packet to bpf, which must deal with
-	 * trailers in its own way.
-	 */
-	if (ec->sc_bpf)
-		bpf_tap(ec->sc_bpf, buf, len + sizeof(struct ether_header));
-#endif
-#if defined(ISO) || NBPFILTER > 0
-	/*
-	 * Note that the interface cannot be in promiscuous mode if
-	 * there are no bpf listeners.  If we are in promiscuous
-	 * mode, we have to check if this packet is really ours.
-	 * However, there may be appropriate multicate addresses involved
-	 */
-#define NOT_TO(p) (bcmp(et->ether_dhost, p, sizeof(et->ether_dhost)) != 0)
-	if (et->ether_dhost[0] & 1) {
-		if (NOT_TO(etherbroadcastaddr)
-#ifdef ISO
-		    && NOT_TO(all_es_snpa) && NOT_TO(all_is_snpa)
-		    && NOT_TO(all_l1is_snpa) && NOT_TO(all_l2is_snpa)
-#endif
-		     ) return;
-	} else if ((ec->sc_if.if_flags & IFF_PROMISC) && NOT_TO(ec->sc_addr))
+
+	/* Map the ASIC space. */
+	if (bus_space_map(asict, ia->ia_iobase + ELINK2_ASIC_OFFSET,
+	    ELINK2_ASIC_PORTS, 0, &asich)) {
+		printf("%s: can't map asic i/o space\n",
+		    sc->sc_dev.dv_xname);
 		return;
-#endif
-	/*
-	 * Pull packet off interface.  Off is nonzero if packet
-	 * has trailing header; m_devget will then force this header
-	 * information to be at the front, but we still have to drop
-	 * the type and length which are at the front of any trailer data.
-	 */
-	m = m_devget((char *)(et + 1), len, off, &ec->sc_if, 0);
-	if (m == 0)
+	}
+
+	/* Map the memory space. */
+	if (bus_space_map(memt, ia->ia_maddr, memsize, 0, &memh)) {
+		printf("%s: can't map shared memory\n",
+		    sc->sc_dev.dv_xname);
 		return;
-	ether_input(&ec->sc_if, &eh, m);
-}
-
-/*
- * Routine to copy from mbuf chain to transmit
- * buffer in board local memory.
- */
-ecput(ecbuf, m)
-	register char *ecbuf;
-	register struct mbuf *m;
-{
-	register struct mbuf *mp;
-	register int len, tlen = 0;
-
-	for (mp = m; mp; mp = mp->m_next) {
-		len = mp->m_len;
-		if (len == 0)
-			continue;
-		tlen += len;
-		bcopy(mtod(mp, char *), ecbuf, len);
-		ecbuf += len;
 	}
-	m_freem(m);
-	if (tlen < ECMINSIZE) {
-		bzero(ecbuf, ECMINSIZE - tlen);
-		tlen = ECMINSIZE;
+
+	esc->sc_asict = asict;
+	esc->sc_asich = asich;
+
+	sc->sc_regt = nict;
+	sc->sc_regh = nich;
+
+	sc->sc_buft = memt;
+	sc->sc_bufh = memh;
+
+	/* Interface is always enabled. */
+	sc->sc_enabled = 1;
+
+	/* Registers are linear. */
+	for (i = 0; i < 16; i++)
+		sc->sc_reg_map[i] = i;
+
+	/* Now we can use the NIC_{GET,PUT}() macros. */
+
+	/*
+	 * Reset NIC and ASIC.  Enable on-board transeiver throughout
+	 * reset sequence since it will lock up if the cable isn't
+	 * connected if we don't.
+	 */
+	bus_space_write_1(asict, asich, ELINK2_CR,
+	    ELINK2_CR_RST | ELINK2_CR_XSEL);
+
+	/* Wait for a while, then un-reset it. */
+	delay(50);
+
+	/*
+	 * The 3Com ASIC defaults to rather strange settings for the CR
+	 * after a reset.  It's important to set it again after the
+	 * following write (this is done when we map the PROM below).
+	 */
+	bus_space_write_1(asict, asich, ELINK2_CR, ELINK2_CR_XSEL);
+
+	/* Wait a bit for the NIC to recover from the reset. */
+	delay(5000);
+
+	/*
+	 * Get the station address from on-board ROM.
+	 *
+	 * First, map Ethernet address PROM over the top of where the NIC
+	 * registers normally appear.
+	 */
+	bus_space_write_1(asict, asich, ELINK2_CR,
+	    ELINK2_CR_XSEL | ELINK2_CR_EALO);
+
+	for (i = 0; i < ETHER_ADDR_LEN; i++)
+		sc->sc_enaddr[i] = NIC_GET(nict, nich, i);
+
+	/*
+	 * Unmap PROM - select NIC registers.  The proper setting of the
+	 * transciever is set in later in ec_init_card() via dp8390_init().
+	 */
+	bus_space_write_1(asict, asich, ELINK2_CR, ELINK2_CR_XSEL);
+
+	/* Determine if this is an 8-bit or 16-bit board. */
+
+	/* Select page 0 registers. */
+	NIC_PUT(nict, nich, ED_P0_CR, ED_CR_RD2 | ED_CR_PAGE_0 | ED_CR_STP);
+
+	/*
+	 * Attempt to clear WTS.  If it doesn't clear, then this is a
+	 * 16-bit board.
+	 */
+	NIC_PUT(nict, nich, ED_P0_DCR, 0);
+
+	/* Select page 2 registers. */
+	NIC_PUT(nict, nich, ED_P0_CR, ED_CR_RD2 | ED_CR_PAGE_2 | ED_CR_STP);
+
+	/* The 3c503 forces the WTS bit to a one if this is a 16-bit board. */
+	if (NIC_GET(nict, nich, ED_P2_DCR) & ED_DCR_WTS)
+		esc->sc_16bitp = 1;
+	else
+		esc->sc_16bitp = 0;
+
+	printf("%s: 3Com 3c503 Ethernet (%s-bit)\n",
+	    sc->sc_dev.dv_xname, esc->sc_16bitp ? "16" : "8");
+
+	/* Select page 0 registers. */
+	NIC_PUT(nict, nich, ED_P2_CR, ED_CR_RD2 | ED_CR_PAGE_0 | ED_CR_STP);
+
+	sc->cr_proto = ED_CR_RD2;
+
+	/*
+	 * DCR gets:
+	 *
+	 *	FIFO threshold to 8, No auto-init Remote DMA,
+	 *	byte order=80x86.
+	 *
+	 * 16-bit cards also get word-wide DMA transfers.
+	 */
+	sc->dcr_reg = ED_DCR_FT1 | ED_DCR_LS |
+	    (esc->sc_16bitp ? ED_DCR_WTS : 0);
+
+	sc->test_mem = ec_fake_test_mem;
+	sc->ring_copy = ec_ring_copy;
+	sc->write_mbuf = ec_write_mbuf;
+	sc->read_hdr = ec_read_hdr;
+	sc->init_card = ec_init_card;
+
+	sc->sc_mediachange = ec_mediachange;
+	sc->sc_mediastatus = ec_mediastatus;
+
+	sc->mem_start = 0;
+	sc->mem_size = memsize;
+
+	/* Do generic parts of attach. */
+	if (dp8390_config(sc, ec_media, NEC_MEDIA, EC_DEFMEDIA)) {
+		printf("%s: configuration failed\n", sc->sc_dev.dv_xname);
+		return;
 	}
-	return(tlen);
-}
 
-/*
- * Process an ioctl request.
- */
-ecioctl(ifp, cmd, data)
-	register struct ifnet *ifp;
-	int cmd;
-	caddr_t data;
-{
-	register struct ifaddr *ifa = (struct ifaddr *)data;
-	struct ec_softc *ec = &ec_softc[ifp->if_unit];
-	int s = splimp(), error = 0;
+	/*
+	 * We need to override the way dp8390_config() set up our
+	 * shared memory.
+	 *
+	 * We have an entire 8k window to put the transmit buffers on the
+	 * 16-bit boards.  But since the 16bit 3c503's shared memory is only
+	 * fast enough to overlap the loading of one full-size packet, trying
+	 * to load more than 2 buffers can actually leave the transmitter idle
+	 * during the load.  So 2 seems the best value.  (Although a mix of
+	 * variable-sized packets might change this assumption.  Nonetheless,
+	 * we optimize for linear transfers of same-size packets.)
+	 */
+	if (esc->sc_16bitp) {
+		if (sc->sc_dev.dv_cfdata->cf_flags & DP8390_NO_MULTI_BUFFERING)
+			sc->txb_cnt = 1;
+		else
+			sc->txb_cnt = 2;
 
-	switch (cmd) {
+		sc->tx_page_start = ELINK2_TX_PAGE_OFFSET_16BIT;
+		sc->rec_page_start = ELINK2_RX_PAGE_OFFSET_16BIT;
+		sc->rec_page_stop = (memsize >> ED_PAGE_SHIFT) + 
+		    sc->rec_page_start;
+		sc->mem_ring = sc->mem_start;
+	} else {
+		sc->txb_cnt = 1;
+		sc->tx_page_start = ELINK2_TX_PAGE_OFFSET_8BIT;
+		sc->rec_page_start = sc->tx_page_start + ED_TXBUF_SIZE;
+		sc->rec_page_stop = (memsize >> ED_PAGE_SHIFT) +
+		    sc->tx_page_start;
+		sc->mem_ring = sc->mem_start +
+		    (ED_TXBUF_SIZE << ED_PAGE_SHIFT);
+	}
 
-	case SIOCSIFADDR:
-		ifp->if_flags |= IFF_UP;
-		switch (ifa->ifa_addr->sa_family) {
-#ifdef INET
-		case AF_INET:
-			ecinit(ifp->if_unit);	/* before arpwhohas */
-			((struct arpcom *)ifp)->ac_ipaddr =
-				IA_SIN(ifa)->sin_addr;
-			arpwhohas((struct arpcom *)ifp, &IA_SIN(ifa)->sin_addr);
-			break;
-#endif
-#ifdef NS
-		case AF_NS:
-		    {
-			register struct ns_addr *ina = &(IA_SNS(ifa)->sns_addr);
+	/*
+	 * Initialize CA page start/stop registers.  Probably only needed
+	 * if doing DMA, but what the Hell.
+	 */
+	bus_space_write_1(asict, asich, ELINK2_PSTR, sc->rec_page_start);
+	bus_space_write_1(asict, asich, ELINK2_PSPR, sc->rec_page_stop);
 
-			if (ns_nullhost(*ina))
-				ina->x_host = *(union ns_host *)(ec->sc_addr);
-			else {
-				ifp->if_flags &= ~IFF_RUNNING; 
-				bcopy((caddr_t)ina->x_host.c_host,
-				    (caddr_t)ec->sc_addr, sizeof(ec->sc_addr));
-			}
-			ecinit(ifp->if_unit);
-			break;
-		    }
-#endif
-		default:
-			ecinit(ifp->if_unit);
-			break;
-		}
+	/*
+	 * Program the IRQ.
+	 */
+	switch (ia->ia_irq) {
+	case 9:	tmp = ELINK2_IDCFR_IRQ2; break;
+	case 3:	tmp = ELINK2_IDCFR_IRQ3; break;
+	case 4:	tmp = ELINK2_IDCFR_IRQ4; break;
+	case 5:	tmp = ELINK2_IDCFR_IRQ5; break;
 		break;
 
-	case SIOCSIFFLAGS:
-		if ((ifp->if_flags & IFF_UP) == 0 &&
-		    ifp->if_flags & IFF_RUNNING) {
-			ifp->if_flags &= ~IFF_RUNNING;
-			ecreset(ifp->if_unit);
-		} else if (ifp->if_flags & IFF_UP &&
-		    (ifp->if_flags & IFF_RUNNING) == 0)
-			ecinit(ifp->if_unit);
-		/*
-		 * If the state of the promiscuous bit changes, the interface
-		 * must be reset to effect the change.
-		 */
-		if (((ifp->if_flags ^ ec->sc_iflags) & IFF_PROMISC) &&
-		    (ifp->if_flags & IFF_RUNNING)) {
-			ec->sc_iflags = ifp->if_flags & ~IFF_OACTIVE;
-			ecreset(ifp->if_unit);
-			ecstart(ifp);
+	case IRQUNK:
+		printf("%s: wildcarded IRQ is not allowed\n",
+		    sc->sc_dev.dv_xname);
+		return;
+
+	default:
+		printf("%s: invalid IRQ %d, must be 3, 4, 5, or 9\n",
+		    sc->sc_dev.dv_xname, ia->ia_irq);
+		return;
+	}
+
+	bus_space_write_1(asict, asich, ELINK2_IDCFR, tmp);
+
+	/*
+	 * Initialize the GA configuration register.  Set bank and enable
+	 * shared memory.
+	 */
+	bus_space_write_1(asict, asich, ELINK2_GACFR,
+	    ELINK2_GACFR_RSEL | ELINK2_GACFR_MBS0);
+
+	/*
+	 * Intialize "Vector Pointer" registers.  These gawd-awful things
+	 * are compared to 20 bits of the address on the ISA, and if they
+	 * match, the shared memory is disabled.  We se them to 0xffff0...
+	 * allegedly the reset vector.
+	 */
+	bus_space_write_1(asict, asich, ELINK2_VPTR2, 0xff);
+	bus_space_write_1(asict, asich, ELINK2_VPTR1, 0xff);
+	bus_space_write_1(asict, asich, ELINK2_VPTR0, 0x00);
+
+	/*
+	 * Now run the real memory test.
+	 */
+	if (ec_test_mem(sc)) {
+		printf("%s: memory test failed\n", sc->sc_dev.dv_xname);
+		return;
+	}
+
+	/* Establish interrupt handler. */
+	esc->sc_ih = isa_intr_establish(ia->ia_ic, ia->ia_irq, IST_EDGE,
+	    IPL_NET, dp8390_intr, sc);
+	if (esc->sc_ih == NULL)
+		printf("%s: can't establish interrupt\n", sc->sc_dev.dv_xname);
+}
+
+int
+ec_fake_test_mem(sc)
+	struct dp8390_softc *sc;
+{
+
+	/*
+	 * We have to do this after we initialize the GA, but we
+	 * have to do that after calling dp8390_config(), which
+	 * wants to test memory.  Put this noop here, and then
+	 * actually test memory later.
+	 */
+	return (0);
+}
+
+int
+ec_test_mem(sc)
+	struct dp8390_softc *sc;
+{
+	struct ec_softc *esc = (struct ec_softc *)sc;
+	bus_space_tag_t memt = sc->sc_buft;
+	bus_space_handle_t memh = sc->sc_bufh;
+	bus_size_t memsize = sc->mem_size;
+	int i;
+
+	if (esc->sc_16bitp)
+		bus_space_set_region_2(memt, memh, 0, 0, memsize >> 1);
+	else
+		bus_space_set_region_1(memt, memh, 0, 0, memsize);
+
+	if (esc->sc_16bitp) {
+		for (i = 0; i < memsize; i += 2) {
+			if (bus_space_read_2(memt, memh, i) != 0)
+				goto fail;
 		}
+	} else {
+		for (i = 0; i < memsize; i++) {
+			if (bus_space_read_1(memt, memh, i) != 0)
+				goto fail;
+		}
+	}
+
+	return (0);
+
+ fail:
+	printf("%s: failed to clear shared memory at offset 0x%x\n",
+	    sc->sc_dev.dv_xname, i);
+	return (1);
+}
+
+__inline void
+ec_writemem(esc, from, to, len)
+	struct ec_softc *esc;
+	u_int8_t *from;
+	int to, len;
+{
+	bus_space_tag_t memt = esc->sc_dp8390.sc_buft;
+	bus_space_handle_t memh = esc->sc_dp8390.sc_bufh;
+
+	if (esc->sc_16bitp) {
+		bus_space_write_region_2(memt, memh, to, (u_int16_t *)from,
+		    len >> 1);
+		if (len & 1)
+			bus_space_write_2(memt, memh, to + (len & ~1),
+			    (u_int16_t)(*(from + (len & ~1))));
+	} else
+		bus_space_write_region_1(memt, memh, to, from, len);
+}
+
+__inline void
+ec_readmem(esc, from, to, len)
+	struct ec_softc *esc;
+	int from;
+	u_int8_t *to;
+	int len;
+{
+	bus_space_tag_t memt = esc->sc_dp8390.sc_buft;
+	bus_space_handle_t memh = esc->sc_dp8390.sc_bufh;
+
+	if (esc->sc_16bitp) {
+		bus_space_read_region_2(memt, memh, from, (u_int16_t *)to,
+		    len >> 1);
+		if (len & 1)
+			*(to + (len & ~1)) = bus_space_read_2(memt,
+			    memh, from + (len & ~1)) & 0xff;
+	} else
+		bus_space_read_region_1(memt, memh, from, to, len);
+}
+
+int
+ec_write_mbuf(sc, m, buf)
+	struct dp8390_softc *sc;
+	struct mbuf *m;
+	int buf;
+{
+	struct ec_softc *esc = (struct ec_softc *)sc;
+	bus_space_tag_t asict = esc->sc_asict;
+	bus_space_handle_t asich = esc->sc_asich;
+	int savelen;
+
+	savelen = m->m_pkthdr.len;
+
+	/*
+	 * If it's a 16-bit board, we have transmit buffers
+	 * in a different page; switch to it.
+	 */
+	if (esc->sc_16bitp)
+		bus_space_write_1(asict, asich, ELINK2_GACFR,
+		    ELINK2_GACFR_RSEL);
+
+	for (; m != NULL; buf += m->m_len, m = m->m_next)
+		ec_writemem(esc, mtod(m, u_int8_t *), buf, m->m_len);
+
+	/*
+	 * Switch back to receive page.
+	 */
+	if (esc->sc_16bitp)
+		bus_space_write_1(asict, asich, ELINK2_GACFR,
+		    ELINK2_GACFR_RSEL | ELINK2_GACFR_MBS0);
+	
+	return (savelen);
+}
+
+int
+ec_ring_copy(sc, src, dst, amount)
+	struct dp8390_softc *sc;
+	int src;
+	caddr_t dst;
+	u_short amount;
+{
+	struct ec_softc *esc = (struct ec_softc *)sc;
+	u_short tmp_amount;
+
+	/* Does copy wrap to lower addr in ring buffer? */
+	if (src + amount > sc->mem_end) {
+		tmp_amount = sc->mem_end - src;
+
+		/* Copy amount up to end of NIC memory. */
+		ec_readmem(esc, src, dst, tmp_amount);
+
+		amount -= tmp_amount;
+		src = sc->mem_ring;
+		dst += tmp_amount;
+	}
+
+	ec_readmem(esc, src, dst, amount);
+
+	return (src + amount);
+}
+
+void
+ec_read_hdr(sc, packet_ptr, packet_hdrp)
+	struct dp8390_softc *sc;
+	int packet_ptr;
+	struct dp8390_ring *packet_hdrp;
+{
+	struct ec_softc *esc = (struct ec_softc *)sc;
+
+	ec_readmem(esc, packet_ptr, (u_int8_t *)packet_hdrp,
+	    sizeof(struct dp8390_ring));
+}
+
+int
+ec_mediachange(sc)
+	struct dp8390_softc *sc;
+{
+	struct ec_softc *esc = (struct ec_softc *)sc;
+	struct ifmedia *ifm = &sc->sc_media;
+
+	return (ec_set_media(esc, ifm->ifm_media));
+}
+
+void
+ec_mediastatus(sc, ifmr)
+	struct dp8390_softc *sc;
+	struct ifmediareq *ifmr;
+{
+	struct ifmedia *ifm = &sc->sc_media;
+
+	/*
+	 * The currently selected media is always the active media.
+	 */
+	ifmr->ifm_active = ifm->ifm_cur->ifm_media;
+}
+
+void
+ec_init_card(sc)
+	struct dp8390_softc *sc;
+{
+	struct ec_softc *esc = (struct ec_softc *)sc;
+	struct ifmedia *ifm = &sc->sc_media;
+
+	(void) ec_set_media(esc, ifm->ifm_cur->ifm_media);
+}
+
+int
+ec_set_media(esc, media)
+	struct ec_softc *esc;
+	int media;
+{
+	u_int8_t new;
+
+	if (IFM_TYPE(media) != IFM_ETHER)
+		return (EINVAL);
+
+	switch (IFM_SUBTYPE(media)) {
+	case IFM_10_2:
+		new = ELINK2_CR_XSEL;
+		break;
+
+	case IFM_10_5:
+		new = 0;
 		break;
 
 	default:
-		error = EINVAL;
+		return (EINVAL);
 	}
-	splx(s);
-	return (error);
+
+	bus_space_write_1(esc->sc_asict, esc->sc_asich, ELINK2_CR, new);
+	return (0);
 }
-
-ecrerror(unit, msg)
-	int unit;
-	char *msg;
-{
-	register struct ec_softc *ec = &ec_softc[unit];
-	register struct ec_rfd *rmd;
-	int len;
-
-	if (!ecdebug)
-		return;
-
-	rmd = &ec->sc_hmem->rcom[ec->sc_rxnum];
-	len = rmd->count;
-	log(LOG_WARNING,
-	    "ec%d: ierror(%s): from %s: buf=%d, len=%d, rmd1=%b\n",
-	    unit, msg,
-	    len > 11 ? ether_sprintf(&ec->sc_hmem->rxbuf[ec->sc_rxnum][6]) : "unknown",
-	    ec->sc_rxnum, len,
-	    rmd->rfd0, "\14\14LEN\13CRC\12ALGN\11NBUF\10DMAL\07SHRT");
-}
-
-ecxerror(unit)
-	int unit;
-{
-	register struct ec_softc *ec = &ec_softc[unit];
-	register struct ec_transmit *tmd;
-	int len;
-
-	if (!ecdebug)
-		return;
-
-	tmd = &ec->sc_hmem->tcom[ec->sc_txnum];
-	len = tmd->count;
-	log(LOG_WARNING,
-	    "ec%d: oerror: to %s: buf=%d, len=%d, com0=%b\n",
-	    unit,
-	    len > 5 ? ether_sprintf(ec->sc_hmem->txbuf[ec->sc_txnum]) : "unknown",
-	    ec->sc_txnum, len,
-	    tmd->com0,
-	    "\14\14ABRT\13LCOLL\12NCAR\11NCTS\10DMAL\07TDEF\06HRBT\05XCOL");
-}
-#endif

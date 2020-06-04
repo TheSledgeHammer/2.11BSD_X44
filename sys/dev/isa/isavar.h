@@ -89,7 +89,7 @@
 struct isabus_attach_args;
 
 #if (alpha + atari + bebox + i386 != 1)
-/*ERROR: COMPILING FOR UNSUPPORTED MACHINE, OR MORE THAN ONE.*/
+ERROR: COMPILING FOR UNSUPPORTED MACHINE, OR MORE THAN ONE.
 #endif
 #if alpha
 #include <alpha/isa/isa_machdep.h>

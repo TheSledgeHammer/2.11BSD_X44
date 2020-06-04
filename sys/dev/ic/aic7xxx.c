@@ -139,9 +139,9 @@
 #include <machine/clock.h>
 #endif
 
-#include <vm/vm.h>
-#include <vm/vm_param.h>
-#include <vm/pmap.h>
+#include <vm/include/vm.h>
+#include <vm/include/vm_param.h>
+#include <vm/include/pmap.h>
 
 #if defined(__FreeBSD__)
 #include <i386/scsi/aic7xxx.h>

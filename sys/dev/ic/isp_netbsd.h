@@ -57,9 +57,9 @@
 #include <dev/scsipi/scsi_message.h>
 #include <dev/scsipi/scsipi_debug.h>
 
-#include <vm/vm.h>
-#include <vm/vm_param.h>
-#include <vm/pmap.h>
+#include <vm/include/vm.h>
+#include <vm/include/vm_param.h>
+#include <vm/include/pmap.h>
 
 #define	ISP_PLATFORM_VERSION_MAJOR	0
 #define	ISP_PLATFORM_VERSION_MINOR	98

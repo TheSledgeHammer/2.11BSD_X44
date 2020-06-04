@@ -38,7 +38,7 @@
 #include <sys/extent.h>
 #include <sys/malloc.h>
 
-#include <vm/include/vm.h>
+#include <vm/vm.h>
 
 #include <machine/bus.h>
 #include <machine/intr.h>
@@ -56,11 +56,11 @@
 /*****************************************************************************
  * Configurable parameters.
  *****************************************************************************/
-/*
+
 #include "opt_pcic_isa_alloc_iobase.h"
 #include "opt_pcic_isa_alloc_iosize.h"
 #include "opt_pcic_isa_intr_alloc_mask.h"
-*/
+
 /*
  * Default I/O allocation range.  If both are set to non-zero, these
  * values will be used instead.  Otherwise, the code attempts to probe
@@ -106,11 +106,12 @@ int	pcicisa_debug = 0 /* XXX */ ;
 #define	DPRINTF(arg)
 #endif
 
-int		pcic_isa_probe (struct device *, void *, void *);
-void	pcic_isa_attach (struct device *, struct device *, void *);
+int	pcic_isa_probe __P((struct device *, void *, void *));
+void	pcic_isa_attach __P((struct device *, struct device *, void *));
 
-void	*pcic_isa_chip_intr_establish (pcmcia_chipset_handle_t, struct pcmcia_function *, int, int (*) (void *), void *);
-void	pcic_isa_chip_intr_disestablish (pcmcia_chipset_handle_t, void *);
+void	*pcic_isa_chip_intr_establish __P((pcmcia_chipset_handle_t,
+	    struct pcmcia_function *, int, int (*) (void *), void *));
+void	pcic_isa_chip_intr_disestablish __P((pcmcia_chipset_handle_t, void *));
 
 struct cfattach pcic_isa_ca = {
 	sizeof(struct pcic_softc), pcic_isa_probe, pcic_isa_attach
@@ -365,7 +366,7 @@ pcic_isa_chip_intr_establish(pch, pf, ipl, fct, arg)
 	pcmcia_chipset_handle_t pch;
 	struct pcmcia_function *pf;
 	int ipl;
-	int (*fct) (void *);
+	int (*fct) __P((void *));
 	void *arg;
 {
 	struct pcic_handle *h = (struct pcic_handle *) pch;

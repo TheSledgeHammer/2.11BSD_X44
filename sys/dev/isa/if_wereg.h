@@ -1,245 +1,231 @@
-/*-
- * Copyright (c) 1991, 1993
- *	The Regents of the University of California.  All rights reserved.
+/*	$NetBSD: if_wereg.h,v 1.1.2.2 1997/11/05 19:10:19 thorpej Exp $	*/
+
+/*
+ * National Semiconductor DS8390 NIC register definitions.
  *
- * This code is derived from software contributed to Berkeley by
- * Tim L. Tucker.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- *
- *	@(#)if_wereg.h	8.1 (Berkeley) 6/11/93
+ * Copyright (C) 1993, David Greenman.  This software may be used, modified,
+ * copied, distributed, and sold, in both source and binary form provided that
+ * the above copyright and these terms are retained.  Under no circumstances is
+ * the author responsible for the proper functioning of this software, nor does
+ * the author assume any responsibility for damages incurred with its use.
  */
 
 /*
- * Western Digital 8003 ethernet/starlan adapter 
+ * Compile-time config flags
  */
- 
+/*
+ * This sets the default for enabling/disablng the tranceiver.
+ */
+#define WE_FLAGS_DISABLE_TRANCEIVER	0x0001
+
+/*
+ * This forces the board to be used in 8/16-bit mode even if it autoconfigs
+ * differently.
+ */
+#define WE_FLAGS_FORCE_8BIT_MODE	0x0002
+#define WE_FLAGS_FORCE_16BIT_MODE	0x0004
+
+/*
+ * This disables the use of double transmit buffers.
+ */
+#define WE_FLAGS_NO_MULTI_BUFFERING	0x0008
+
+/*
+ *		Definitions for Western digital/SMC WD80x3 series ASIC
+ */
+
 /*
  * Memory Select Register (MSR)
  */
-union we_mem_sel {
-    struct memory_decode {
-        u_char msd_addr:6,		/* Memory decode bits		*/
-	       msd_enable:1,		/* Memory (RAM) enable		*/
-	       msd_reset:1;		/* Software reset 		*/
-    } msd_decode;
-#define ms_addr		msd_decode.msd_addr
-#define ms_enable	msd_decode.msd_enable
-#define ms_reset	msd_decode.msd_reset
-    u_char ms_byte;			/* entire byte			*/
-};
+#define WE_MSR	0
+
+/* next three definitions for Toshiba */
+#define	WE_MSR_POW	0x02	/* 0 = power save, 1 = normal (R/W) */
+#define	WE_MSR_BSY	0x04	/* gate array busy (R) */
+#define	WE_MSR_LEN	0x20	/* 0 = 16-bit, 1 = 8-bit (R/W) */
+
+#define WE_MSR_ADDR	0x3f	/* Memory decode bits 18-13 */
+#define WE_MSR_MENB	0x40	/* Memory enable */
+#define WE_MSR_RST	0x80	/* Reset board */
 
 /*
- * receive ring discriptor
+ * Interface Configuration Register (ICR)
+ */
+#define WE_ICR	1
+
+#define WE_ICR_16BIT	0x01	/* 16-bit interface */
+#define WE_ICR_OAR	0x02	/* select register (0=BIO 1=EAR) */
+#define WE_ICR_IR2	0x04	/* high order bit of encoded IRQ */
+#define WE_ICR_MSZ	0x08	/* memory size (0=8k 1=32k) */
+#define WE_ICR_RLA	0x10	/* recall LAN address */
+#define WE_ICR_RX7	0x20	/* recall all but i/o and LAN address */
+#define	WE_ICR_RIO	0x40	/* recall i/o address */
+#define WE_ICR_STO	0x80	/* store to non-volatile memory */
+#ifdef TOSH_ETHER
+#define	WE_ICR_MEM	0xe0	/* shared mem address A15-A13 (R/W) */
+#define	WE_ICR_MSZ1	0x0f	/* memory size, 0x08 = 64K, 0x04 = 32K,
+				   0x02 = 16K, 0x01 = 8K */
+				/* 64K can only be used if mem address
+				   above 1MB */
+				/* IAR holds address A23-A16 (R/W) */
+#endif
+
+/*
+ * IO Address Register (IAR)
+ */
+#define WE_IAR	2
+
+/*
+ * EEROM Address Register
+ */
+#define WE_EAR	3
+
+/*
+ * Interrupt Request Register (IRR)
+ */
+#define WE_IRR	4
+
+#define	WE_IRR_0WS	0x01	/* use 0 wait-states on 8 bit bus */
+#define WE_IRR_OUT1	0x02	/* WD83C584 pin 1 output */
+#define WE_IRR_OUT2	0x04	/* WD83C584 pin 2 output */
+#define WE_IRR_OUT3	0x08	/* WD83C584 pin 3 output */
+#define WE_IRR_FLASH	0x10	/* Flash RAM is in the ROM socket */
+
+/*
+ * The three bits of the encoded IRQ are decoded as follows:
  *
- * The National Semiconductor DS8390 Network interface controller uses
- * the following receive ring headers.  The way this works is that the
- * memory on the interface card is chopped up into 256 bytes blocks.
- * A contiguous portion of those blocks are marked for receive packets
- * by setting start and end block #'s in the NIC.  For each packet that
- * is put into the receive ring, one of these headers (4 bytes each) is
- * tacked onto the front.
+ * IR2 IR1 IR0  IRQ
+ *  0   0   0   2/9
+ *  0   0   1   3
+ *  0   1   0   5
+ *  0   1   1   7
+ *  1   0   0   10
+ *  1   0   1   11
+ *  1   1   0   15
+ *  1   1   1   4
  */
-struct we_ring	{
-	struct wer_status {		/* received packet status	*/
-	    u_char rs_prx:1,		    /* packet received intack	*/
-		   rs_crc:1,		    /* crc error		*/
-	           rs_fae:1,		    /* frame alignment error	*/
-	           rs_fo:1,		    /* fifo overrun		*/
-	           rs_mpa:1,		    /* packet received intack	*/
-	           rs_phy:1,		    /* packet received intack	*/
-	           rs_dis:1,		    /* packet received intack	*/
-	           rs_dfr:1;		    /* packet received intack	*/
-	} we_rcv_status;		/* received packet status	*/
-	u_char	we_next_packet;		/* pointer to next packet	*/
-	u_short	we_count;		/* bytes in packet (length + 4)	*/
-};
+#define WE_IRR_IR0	0x20	/* bit 0 of encoded IRQ */
+#define WE_IRR_IR1	0x40	/* bit 1 of encoded IRQ */
+#define WE_IRR_IEN	0x80	/* Interrupt enable */
 
 /*
- * Command word definition
+ * LA Address Register (LAAR)
  */
-union we_command {
-    struct command_decode {
-	u_char csd_stp:1,		/* STOP!			*/
-	       csd_sta:1,		/* START!			*/
-               csd_txp:1,		/* Transmit packet		*/
-               csd_rd:3,		/* Remote DMA command		*/
-               csd_ps:2;		/* Page select			*/
-    } csd_decode;
-#define cs_stp		csd_decode.csd_stp
-#define cs_sta		csd_decode.csd_sta
-#define cs_txp		csd_decode.csd_txp
-#define cs_rd		csd_decode.csd_rd
-#define cs_ps		csd_decode.csd_ps
-    u_char cs_byte;			/* entire command byte		*/
-};
+#define WE_LAAR	5
+
+#define WE_LAAR_ADDRHI	0x1f	/* bits 23-19 of RAM address */
+#define WE_LAAR_0WS16	0x20	/* enable 0 wait-states on 16 bit bus */
+#define WE_LAAR_L16EN	0x40	/* enable 16-bit operation */
+#define WE_LAAR_M16EN	0x80	/* enable 16-bit memory access */
+
+/* i/o base offset to station address/card-ID PROM */
+#define WE_PROM	8
 
 /*
- * Interrupt status definition
+ *	83C790 specific registers
  */
-union we_interrupt {
-    struct interrupt_decode {
-	u_char isd_prx:1,		/* Packet received		*/
-	       isd_ptx:1,		/* Packet transmitted		*/
-               isd_rxe:1,		/* Receive error		*/
-               isd_txe:1,		/* Transmit error		*/
-               isd_ovw:1,		/* Overwrite warning		*/
-               isd_cnt:1,		/* Counter overflow		*/
-               isd_rdc:1,		/* Remote DMA complete		*/
-               isd_rst:1;		/* Reset status			*/
-    } isd_decode;
-#define is_prx		isd_decode.isd_prx
-#define is_ptx		isd_decode.isd_ptx
-#define is_rxe		isd_decode.isd_rxe
-#define is_txe		isd_decode.isd_txe
-#define is_ovw		isd_decode.isd_ovw
-#define is_cnt		isd_decode.isd_cnt
-#define is_rdc		isd_decode.isd_rdc
-#define is_rst		isd_decode.isd_rst
-    u_char is_byte;			/* entire interrupt byte	*/
-};
- 
 /*
- * Status word definition (transmit)
+ * Hardware Support Register (HWR) ('790)
  */
-union wet_status {
-    struct tstat {
-	u_char tsd_ptx:1,		/* Packet transmitted intack	*/
-	       tsd_dfr:1,		/* Non deferred transmition	*/
-               tsd_col:1,		/* Transmit Collided		*/
-               tsd_abt:1,		/* Transmit Aborted (coll > 16)	*/
-               tsd_crs:1,		/* Carrier Sense Lost		*/
-               tsd_fu:1,		/* Fifo Underrun		*/
-               tsd_chd:1,		/* CD Heartbeat			*/
-               tsd_owc:1;		/* Out of Window Collision	*/
-    } tsd_decode;
-#define ts_ptx		tsd_decode.tsd_ptx
-#define ts_dfr		tsd_decode.tsd_dfr
-#define ts_col		tsd_decode.tsd_col
-#define ts_abt		tsd_decode.tsd_abt
-#define ts_crs		tsd_decode.tsd_crs
-#define ts_fu		tsd_decode.tsd_fu
-#define ts_chd		tsd_decode.tsd_chd
-#define ts_owc		tsd_decode.tsd_owc
-    u_char ts_byte;			/* entire transmit byte		*/
-};
+#define	WE790_HWR	4
+
+#define	WE790_HWR_RST	0x10	/* hardware reset */
+#define	WE790_HWR_LPRM	0x40	/* LAN PROM select */
+#define	WE790_HWR_SWH	0x80	/* switch register set */
 
 /*
- * General constant definitions
+ * ICR790 Interrupt Control Register for the 83C790
  */
-#define	WD_STARLAN	0x02		/* WD8003S Identification	*/
-#define	WD_ETHER	0x03		/* WD8003E Identification	*/
-#define	WD_ETHER2	0x05		/* WD8003EBT Identification	*/
-#define WD_CHECKSUM	0xFF		/* Checksum byte		*/
-#define WD_PAGE_SIZE	256		/* Size of RAM pages in bytes	*/
-#define WD_TXBUF_SIZE	6		/* Size of TX buffer in pages	*/
-#define WD_ROM_OFFSET	8		/* i/o base offset to ROM	*/
-#define WD_IO_PORTS	32		/* # of i/o addresses used	*/
-#define WD_NIC_OFFSET	16		/* i/o base offset to NIC	*/
+#define	WE790_ICR	6
+
+#define	WE790_ICR_EIL	0x01	/* enable interrupts */
 
 /*
- * Page register offset values
+ * REV/IOPA Revision / I/O Pipe register for the 83C79X
  */
-#define WD_P0_COMMAND	0x00		/* Command register 		*/
-#define WD_P0_PSTART	0x01		/* Page Start register		*/
-#define WD_P0_PSTOP	0x02		/* Page Stop register		*/
-#define WD_P0_BNRY	0x03		/* Boundary Pointer		*/
-#define WD_P0_TSR	0x04		/* Transmit Status (read-only)	*/
-#define WD_P0_TPSR	WD_P0_TSR	/* Transmit Page (write-only)	*/
-#define WD_P0_TBCR0	0x05		/* Transmit Byte count, low  WO	*/
-#define WD_P0_TBCR1	0x06		/* Transmit Byte count, high WO	*/
-#define WD_P0_ISR	0x07		/* Interrupt status register	*/
-#define WD_P0_RBCR0	0x0A		/* Remote byte count low     WO	*/
-#define WD_P0_RBCR1	0x0B		/* Remote byte count high    WO	*/
-#define WD_P0_RSR	0x0C		/* Receive status            RO	*/
-#define WD_P0_RCR	WD_P0_RSR	/* Receive configuration     WO */
-#define WD_P0_TCR	0x0D		/* Transmit configuration    WO */
-#define WD_P0_DCR	0x0E		/* Data configuration	     WO */
-#define WD_P0_IMR	0x0F		/* Interrupt masks	     WO	*/
-#define WD_P1_COMMAND	0x00		/* Command register 		*/
-#define WD_P1_PAR0	0x01		/* Physical address register 0	*/
-#define WD_P1_PAR1	0x02		/* Physical address register 1	*/
-#define WD_P1_PAR2	0x03		/* Physical address register 2	*/
-#define WD_P1_PAR3	0x04		/* Physical address register 3	*/
-#define WD_P1_PAR4	0x05		/* Physical address register 4	*/
-#define WD_P1_PAR5	0x06		/* Physical address register 5	*/
-#define WD_P1_CURR	0x07		/* Current page (receive unit)  */
-#define WD_P1_MAR0	0x08		/* Multicast address register 0	*/
+#define WE790_REV	7
+
+#define WE790_REV_790	0x20
+#define WE790_REV_795	0x40
 
 /*
- * Configuration constants (receive unit)
+ * 79X RAM Address Register (RAR)
+ *      Enabled with SWH bit=1 in HWR register
  */
-#define WD_R_SEP	0x01		/* Save error packets		*/
-#define WD_R_AR		0x02		/* Accept Runt packets		*/
-#define WD_R_AB		0x04		/* Accept Broadcast packets	*/
-#define WD_R_AM		0x08		/* Accept Multicast packets	*/
-#define WD_R_PRO	0x10		/* Promiscuous physical		*/
-#define WD_R_MON	0x20		/* Monitor mode			*/
-#define WD_R_RES1	0x40		/* reserved...			*/
-#define WD_R_RES2	0x80		/* reserved...			*/
-#define	WD_R_CONFIG	(WD_R_AB)
+
+#define WE790_RAR	0x0b
+
+#define WE790_RAR_SZ8	0x00	/* 8k memory buffer */
+#define WE790_RAR_SZ16	0x10	/* 16k memory buffer */
+#define WE790_RAR_SZ32	0x20	/* 32k memory buffer */
+#define WE790_RAR_SZ64	0x30	/* 64k memory buffer */
 
 /*
- * Configuration constants (transmit unit)
+ * General Control Register (GCR)
+ * Eanbled with SWH bit == 1 in HWR register
  */
-#define WD_T_CRC	0x01		/* Inhibit CRC			*/
-#define WD_T_LB0	0x02		/* Encoded Loopback Control	*/
-#define WD_T_LB1	0x04		/* Encoded Loopback Control	*/
-#define WD_T_ATD	0x08		/* Auto Transmit Disable	*/
-#define WD_T_OFST	0x10		/* Collision Offset Enable	*/
-#define WD_T_RES1	0x20		/* reserved...			*/
-#define WD_T_RES2	0x40		/* reserved...			*/
-#define WD_T_RES3	0x80		/* reserved...			*/
-#define	WD_T_CONFIG	(0)
+#define	WE790_GCR	0x0d
+
+#define	WE790_GCR_LIT	0x01	/* on for UTP */
+#define	WE790_GCR_GPOUT	0x02	/* if BNC is enabled */
+#define	WE790_GCR_IR0	0x04	/* bit 0 of encoded IRQ */
+#define	WE790_GCR_IR1	0x08	/* bit 1 of encoded IRQ */
+#define	WE790_GCR_ZWSEN	0x20	/* zero wait state enable */
+#define	WE790_GCR_IR2	0x40	/* bit 2 of encoded IRQ */
+/*
+ * The three bits of the encoded IRQ are decoded as follows:
+ *
+ * IR2 IR1 IR0  IRQ
+ *  0   0   0   none
+ *  0   0   1   9
+ *  0   1   0   3
+ *  0   1   1   5
+ *  1   0   0   7
+ *  1   0   1   10
+ *  1   1   0   11
+ *  1   1   1   15
+ */
+
+/* i/o base offset to CARD ID */
+#define WE_CARD_ID	WE_PROM+6
+
+/* Board type codes in card ID */
+#define WE_TYPE_WD8003S		0x02
+#define WE_TYPE_WD8003E		0x03
+#define WE_TYPE_WD8013EBT	0x05
+#define	WE_TYPE_TOSHIBA1	0x11	/* named PCETA1 */
+#define	WE_TYPE_TOSHIBA2	0x12	/* named PCETA2 */
+#define	WE_TYPE_TOSHIBA3	0x13	/* named PCETB */
+#define	WE_TYPE_TOSHIBA4	0x14	/* named PCETC */
+#define	WE_TYPE_WD8003W		0x24
+#define	WE_TYPE_WD8003EB	0x25
+#define	WE_TYPE_WD8013W		0x26
+#define WE_TYPE_WD8013EP	0x27
+#define WE_TYPE_WD8013WC	0x28
+#define WE_TYPE_WD8013EPC	0x29
+#define	WE_TYPE_SMC8216T	0x2a
+#define	WE_TYPE_SMC8216C	0x2b
+#define WE_TYPE_WD8013EBP	0x2c
+
+/* Bit definitions in card ID */
+#define	WE_REV_MASK		0x1f	/* Revision mask */
+#define	WE_SOFTCONFIG		0x20	/* Soft config */
+#define	WE_LARGERAM		0x40	/* Large RAM */
+#define	WE_MICROCHANEL		0x80	/* Microchannel bus (vs. isa) */
 
 /*
- * Configuration constants (data unit)
+ * Checksum total.  All 8 bytes in station address PROM will add up to this.
  */
-#define WD_D_WTS	0x01		/* Word Transfer Select		*/
-#define WD_D_BOS	0x02		/* Byte Order Select		*/
-#define WD_D_LAS	0x04		/* Long Address Select		*/
-#define WD_D_BMS	0x08		/* Burst Mode Select		*/
-#define WD_D_AR		0x10		/* Autoinitialize Remote	*/
-#define WD_D_FT0	0x20		/* Fifo Threshold Select	*/
-#define WD_D_FT1	0x40		/* Fifo Threshold Select	*/
-#define WD_D_RES	0x80		/* reserved...			*/
-#define	WD_D_CONFIG	(WD_D_FT1|WD_D_BMS)
+#ifdef TOSH_ETHER
+#define WE_ROM_CHECKSUM_TOTAL	0xA5
+#else
+#define WE_ROM_CHECKSUM_TOTAL	0xFF
+#endif
 
-/*
- * Configuration constants (interrupt mask register)
- */
-#define WD_I_PRXE	0x01		/* Packet received enable	*/
-#define WD_I_PTXE	0x02		/* Packet transmitted enable	*/
-#define WD_I_RXEE	0x04		/* Receive error enable		*/
-#define WD_I_TXEE	0x08		/* Transmit error enable	*/
-#define WD_I_OVWE	0x10		/* Overwrite warning enable	*/
-#define WD_I_CNTE	0x20		/* Counter overflow enable	*/
-#define WD_I_RDCE	0x40		/* Dma complete enable		*/
-#define WD_I_RES	0x80		/* reserved...			*/
-#define WD_I_CONFIG     (WD_I_PRXE|WD_I_PTXE|WD_I_RXEE|WD_I_TXEE)
+#define WE_NIC_OFFSET		0x10	/* I/O base offset to NIC */
+#define WE_ASIC_OFFSET		0	/* I/O base offset to ASIC */
+#define	WE_NIC_NPORTS		16
+#define	WE_ASIC_NPORTS		16
+#define WE_NPORTS		(WE_NIC_NPORTS + WE_ASIC_NPORTS)
+
+#define WE_PAGE_OFFSET	0	/* page offset for NIC access to mem */

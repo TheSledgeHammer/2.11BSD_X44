@@ -76,7 +76,7 @@
 #include <i386/isa/decether.h>
 #endif
 
-#include <vm/vm.h>
+#include <vm/include/vm.h>
 
 #include "bpfilter.h"
 #if NBPFILTER > 0

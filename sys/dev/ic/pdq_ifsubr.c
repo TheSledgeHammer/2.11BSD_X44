@@ -88,9 +88,9 @@
 #include <netns/ns_if.h>
 #endif
 
-#include <vm/vm.h>
-#include <vm/vm_kern.h>
-#include <vm/vm_param.h>
+#include <vm/include/vm.h>
+#include <vm/include/vm_kern.h>
+#include <vm/include/vm_param.h>
 
 #if defined(__FreeBSD__)
 /*

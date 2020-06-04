@@ -132,7 +132,7 @@
 #include <net/if.h>
 #include <net/if_atm.h>
 
-#include <vm/vm.h>
+#include <vm/include/vm.h>
 
 #ifdef INET
 #include <netinet/if_atm.h>

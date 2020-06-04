@@ -64,10 +64,10 @@
 					parameters byte */
 #define NE7CMD_SENSED	4	/*  sense drive - requires unit select byte */
 #define NE7CMD_WRITE	0xc5	/*  write - requires eight additional bytes */
-#define NE7CMD_READ	0xe6	/*  read - requires eight additional bytes */
+#define NE7CMD_READ		0xe6	/*  read - requires eight additional bytes */
 #define NE7CMD_FORMAT	0x4d	/*  format - requires five additional bytes */
 #define NE7CMD_RECAL	7	/*  recalibrate drive - requires
 					unit select byte */
 #define NE7CMD_SENSEI	8	/*  sense controller interrupt status */
-#define NE7CMD_SEEK	15	/*  seek drive - requires unit select byte
+#define NE7CMD_SEEK		15	/*  seek drive - requires unit select byte
 					and new cyl byte */

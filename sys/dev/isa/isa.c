@@ -1,9 +1,7 @@
+/*	$NetBSD: isa.c,v 1.97 1997/08/26 19:27:22 augustss Exp $	*/
+
 /*-
- * Copyright (c) 1991, 1993
- *	The Regents of the University of California.  All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * William Jolitz.
+ * Copyright (c) 1993, 1994 Charles Hannum.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -15,242 +13,239 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ *	This product includes software developed by Charles Hannum.
+ * 4. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- *
- *	@(#)isa.c	8.1 (Berkeley) 6/11/93
- */
-
-/*
- * code to manage AT bus
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/kernel.h>
 #include <sys/conf.h>
-#include <sys/file.h>
-#include <sys/buf.h>
-#include <sys/uio.h>
-#include <sys/syslog.h>
+#include <sys/malloc.h>
+#include <sys/device.h>
 
-#include <machine/segments.h>
+#include <machine/intr.h>
 
-#include <isa/isa_device.h>
-#include <i386/isa/icu.h>
+#include <dev/isa/isareg.h>
+#include <dev/isa/isavar.h>
+#include <dev/isa/isadmareg.h>
 
-#include <vm/include/vm.h>
+#ifdef __BROKEN_INDIRECT_CONFIG
+int isamatch __P((struct device *, void *, void *));
+#else
+int isamatch __P((struct device *, struct cfdata *, void *));
+#endif
+void isaattach __P((struct device *, struct device *, void *));
+int isaprint __P((void *, const char *));
 
-/*
- * Configure all ISA devices
- */
-isa_configure() {
-	struct isa_device *dvp;
-	struct isa_driver *dp;
+struct cfattach isa_ca = {
+	sizeof(struct isa_softc), isamatch, isaattach
+};
 
-	splhigh();
-	INTREN(IRQ_SLAVE);
-	for (dvp = isa_devtab_bio; config_isadev(dvp,&biomask); dvp++);
-	for (dvp = isa_devtab_tty; config_isadev(dvp,&ttymask); dvp++);
-	for (dvp = isa_devtab_net; config_isadev(dvp,&netmask); dvp++);
-	for (dvp = isa_devtab_null; config_isadev(dvp,0); dvp++);
-#include "sl.h"
-#if NSL > 0
-	netmask |= ttymask;
-	ttymask |= netmask;
+struct cfdriver isa_cd = {
+#ifdef __BROKEN_INDIRECT_CONFIG
+	NULL, "isa", DV_DULL, 1
+#else
+	NULL, "isa", DV_DULL
+#endif
+};
+
+#ifdef __BROKEN_INDIRECT_CONFIG
+void	isascan __P((struct device *, void *));
+#else
+int	isasearch __P((struct device *, struct cfdata *, void *));
 #endif
 
+int
+#ifdef __BROKEN_INDIRECT_CONFIG
+isamatch(parent, match, aux)
+#else
+isamatch(parent, cf, aux)
+#endif
+	struct device *parent;
+#ifdef __BROKEN_INDIRECT_CONFIG
+	void *match;
+#else
+	struct cfdata *cf;
+#endif
+	void *aux;
+{
+#ifdef __BROKEN_INDIRECT_CONFIG
+	struct cfdata *cf = match;
+#endif
+	struct isabus_attach_args *iba = aux;
+
+	if (strcmp(iba->iba_busname, cf->cf_driver->cd_name))
+		return (0);
+
+	/* XXX check other indicators */
+
+        return (1);
+}
+
+void
+isaattach(parent, self, aux)
+	struct device *parent, *self;
+	void *aux;
+{
+	struct isa_softc *sc = (struct isa_softc *)self;
+	struct isabus_attach_args *iba = aux;
+
+	isa_attach_hook(parent, self, iba);
+	printf("\n");
+
+	sc->sc_iot = iba->iba_iot;
+	sc->sc_memt = iba->iba_memt;
+	sc->sc_dmat = iba->iba_dmat;
+	sc->sc_ic = iba->iba_ic;
+
 	/*
-	 * The problem is... if netmask == 0, then the loopback
-	 * code can do some really ugly things.
-	 * workaround for this: if netmask == 0, set it to 0x8000, which
-	 * is the value used by splsoftclock.  this is nasty, but it
-	 * should work until this interrupt system goes away. -- cgd
+	 * Map the registers used by the ISA DMA controller.
 	 */
-	if (netmask == 0)
-		netmask = 0x8000;       /* same as for softclock.  XXX */
+	if (bus_space_map(sc->sc_iot, IO_DMA1, DMA1_IOSIZE, 0, &sc->sc_dma1h))
+		panic("isaattach: can't map DMA controller #1");
+	if (bus_space_map(sc->sc_iot, IO_DMA2, DMA2_IOSIZE, 0, &sc->sc_dma2h))
+		panic("isaattach: can't map DMA controller #2");
+	if (bus_space_map(sc->sc_iot, IO_DMAPG, 0xf, 0, &sc->sc_dmapgh))
+		panic("isaattach: can't map DMA page registers");
 
-	/* biomask |= ttymask ;  can some tty devices use buffers? */
-	printf("biomask %x ttymask %x netmask %x\n", biomask, ttymask, netmask);
-	splnone();
+	/*
+	 * Map port 0x84, which causes a 1.25us delay when read.
+	 * We do this now, since several drivers need it.
+	 */
+	if (bus_space_subregion(sc->sc_iot, sc->sc_dmapgh, 0x04, 1,
+	    &sc->sc_delaybah))
+		panic("isaattach: can't map `delay port'");	/* XXX */
+
+	TAILQ_INIT(&sc->sc_subdevs);
+#ifdef __BROKEN_INDIRECT_CONFIG
+	config_scan(isascan, self);
+#else
+	config_search(isasearch, self, NULL);
+#endif
 }
 
-/*
- * Configure an ISA device.
- */
-config_isadev(isdp, mp)
-	struct isa_device *isdp;
-	int *mp;
+int
+isaprint(aux, isa)
+	void *aux;
+	const char *isa;
 {
-	struct isa_driver *dp;
- 
-	if (dp == isdp->id_driver) {
-		if (isdp->id_maddr) {
-			extern int atdevbase;
+	struct isa_attach_args *ia = aux;
 
-			isdp->id_maddr -= 0xa0000;
-			isdp->id_maddr += atdevbase;
+	if (ia->ia_iosize)
+		printf(" port 0x%x", ia->ia_iobase);
+	if (ia->ia_iosize > 1)
+		printf("-0x%x", ia->ia_iobase + ia->ia_iosize - 1);
+	if (ia->ia_msize)
+		printf(" iomem 0x%x", ia->ia_maddr);
+	if (ia->ia_msize > 1)
+		printf("-0x%x", ia->ia_maddr + ia->ia_msize - 1);
+	if (ia->ia_irq != IRQUNK)
+		printf(" irq %d", ia->ia_irq);
+	if (ia->ia_drq != DRQUNK)
+		printf(" drq %d", ia->ia_drq);
+	if (ia->ia_drq2 != DRQUNK)
+		printf(" drq2 %d", ia->ia_drq2);
+	return (UNCONF);
+}
+
+#ifdef __BROKEN_INDIRECT_CONFIG
+void
+isascan(parent, match)
+	struct device *parent;
+	void *match;
+{
+	struct isa_softc *sc = (struct isa_softc *)parent;
+	struct device *dev = match;
+	struct cfdata *cf = dev->dv_cfdata;
+	struct isa_attach_args ia;
+
+#if defined(__i386__)
+	if (cf->cf_fstate == FSTATE_STAR)
+		panic("clone devices not supported on ISA bus");
+#endif
+
+	ia.ia_iot = sc->sc_iot;
+	ia.ia_memt = sc->sc_memt;
+	ia.ia_dmat = sc->sc_dmat;
+	ia.ia_ic = sc->sc_ic;
+	ia.ia_iobase = cf->cf_iobase;
+	ia.ia_iosize = 0x666;/* cf->cf_iosize; */
+	ia.ia_maddr = cf->cf_maddr;
+	ia.ia_msize = cf->cf_msize;
+	ia.ia_irq = cf->cf_irq == 2 ? 9 : cf->cf_irq;
+	ia.ia_drq = cf->cf_drq;
+	ia.ia_drq2 = cf->cf_drq2;
+	ia.ia_delaybah = sc->sc_delaybah;
+
+	if ((*cf->cf_attach->ca_match)(parent, match, &ia) > 0)
+		config_attach(parent, match, &ia, isaprint);
+	else
+		free(dev, M_DEVBUF);
+}
+#else /* !__BROKEN_INDIRECT_CONFIG */
+int
+isasearch(parent, cf, aux)
+	struct device *parent;
+	struct cfdata *cf;
+	void *aux;
+{
+	struct isa_softc *sc = (struct isa_softc *)parent;
+	struct isa_attach_args ia;
+	int tryagain;
+
+	do {
+		ia.ia_iot = sc->sc_iot;
+		ia.ia_memt = sc->sc_memt;
+		ia.ia_dmat = sc->sc_dmat;
+		ia.ia_ic = sc->sc_ic;
+		ia.ia_iobase = cf->cf_iobase;
+		ia.ia_iosize = 0x666; /* cf->cf_iosize; */
+		ia.ia_maddr = cf->cf_maddr;
+		ia.ia_msize = cf->cf_msize;
+		ia.ia_irq = cf->cf_irq == 2 ? 9 : cf->cf_irq;
+		ia.ia_drq = cf->cf_drq;
+		ia.ia_drq2 = cf->cf_drq2;
+		ia.ia_delaybah = sc->sc_delaybah;
+
+		tryagain = 0;
+		if ((*cf->cf_attach->ca_match)(parent, cf, &ia) > 0) {
+			config_attach(parent, cf, &ia, isaprint);
+			tryagain = (cf->cf_fstate == FSTATE_STAR);
 		}
-		isdp->id_alive = (*dp->probe)(isdp);
-		if (isdp->id_alive) {
-			printf("%s%d", dp->name, isdp->id_unit);
-			(*dp->attach)(isdp);
-			printf(" at 0x%x ", isdp->id_iobase);
-			if(isdp->id_irq) {
-				int intrno;
+	} while (tryagain);
 
-				intrno = ffs(isdp->id_irq)-1;
-				printf("irq %d ", intrno);
-				INTREN(isdp->id_irq);
-				if(mp)INTRMASK(*mp,isdp->id_irq);
-				setidt(ICU_OFFSET+intrno, isdp->id_intr,
-					 SDT_SYS386IGT, SEL_KPL);
-			}
-			if (isdp->id_drq != -1) printf("drq %d ", isdp->id_drq);
-			printf("on isa\n");
-		}
-		return (1);
-	} else	return(0);
+	return (0);
 }
+#endif /* __BROKEN_INDIRECT_CONFIG */
 
-#define	IDTVEC(name)	__CONCAT(X,name)
-/* default interrupt vector table */
-extern	IDTVEC(intr0), IDTVEC(intr1), IDTVEC(intr2), IDTVEC(intr3),
-	IDTVEC(intr4), IDTVEC(intr5), IDTVEC(intr6), IDTVEC(intr7),
-	IDTVEC(intr8), IDTVEC(intr9), IDTVEC(intr10), IDTVEC(intr11),
-	IDTVEC(intr12), IDTVEC(intr13), IDTVEC(intr14), IDTVEC(intr15);
-	
-/*
- * Fill in default interrupt table (in case of spuruious interrupt
- * during configuration of kernel, setup interrupt control unit
- */
-isa_defaultirq() {
-
-/* first icu */
-	setidt(32, &IDTVEC(intr0),  SDT_SYS386IGT, SEL_KPL);
-	setidt(33, &IDTVEC(intr1),  SDT_SYS386IGT, SEL_KPL);
-	setidt(34, &IDTVEC(intr2),  SDT_SYS386IGT, SEL_KPL);
-	setidt(35, &IDTVEC(intr3),  SDT_SYS386IGT, SEL_KPL);
-	setidt(36, &IDTVEC(intr4),  SDT_SYS386IGT, SEL_KPL);
-	setidt(37, &IDTVEC(intr5),  SDT_SYS386IGT, SEL_KPL);
-	setidt(38, &IDTVEC(intr6),  SDT_SYS386IGT, SEL_KPL);
-	setidt(39, &IDTVEC(intr7),  SDT_SYS386IGT, SEL_KPL);
-
-/* second icu */
-	setidt(40, &IDTVEC(intr8),  SDT_SYS386IGT, SEL_KPL);
-	setidt(41, &IDTVEC(intr9),  SDT_SYS386IGT, SEL_KPL);
-	setidt(42, &IDTVEC(intr10),  SDT_SYS386IGT, SEL_KPL);
-	setidt(43, &IDTVEC(intr11),  SDT_SYS386IGT, SEL_KPL);
-	setidt(44, &IDTVEC(intr12),  SDT_SYS386IGT, SEL_KPL);
-	setidt(45, &IDTVEC(intr13),  SDT_SYS386IGT, SEL_KPL);
-	setidt(46, &IDTVEC(intr14),  SDT_SYS386IGT, SEL_KPL);
-	setidt(47, &IDTVEC(intr15),  SDT_SYS386IGT, SEL_KPL);
-
-	/* initialize 8259's */
-	outb(0xf1,0);
-	outb(0x20,0x11);
-	outb(0x21,32);
-	outb(0x21,4);
-	outb(0x21,1);
-	outb(0x21,0xff);
-
-	outb(0xa0,0x11);
-	outb(0xa1,40);
-	outb(0xa1,2);
-	outb(0xa1,1);
-	outb(0xa1,0xff);
-}
-
-/* stuff needed for virtual to physical calculations */
-
-struct buf *dma_bounce[8];
-#define MAXDMASZ 512
-
-/* XXX temporary crud */
-kernel_space(x)
-unsigned long x;
+char *
+isa_intr_typename(type)
+	int type;
 {
-	if (x >= KERNBASE) return 1;
-	else return 0;
-}
 
-
-/****************************************************************************/
-/*                                 at_dma                                   */
-/* set up DMA read/write operation and virtual address addr for nbytes      */
-/****************************************************************************/
-at_dma(read,addr,nbytes, chan)
-int read;
-unsigned long addr;
-int nbytes;
-{
-	unsigned long phys;
-	int s,raw;
-	caddr_t bounce;
-
-	if (kernel_space(addr)) raw = 0;
-	else raw = 1;
-
-	if(raw) {
-		if (dma_bounce[chan] == 0)
-			dma_bounce[chan] = geteblk(MAXDMASZ);
-		bounce = dma_bounce[chan]->b_un.b_addr;
+	switch (type) {
+        case IST_NONE :
+		return ("none");
+        case IST_PULSE:
+		return ("pulsed");
+        case IST_EDGE:
+		return ("edge-triggered");
+        case IST_LEVEL:
+		return ("level-triggered");
+	default:
+		panic("isa_intr_typename: invalid type %d", type);
 	}
-
-	/* copy bounce buffer on write */
-	if (raw && !read) bcopy(addr,bounce,nbytes);
-
-	/* Set read/write bytes */
-	if (read) {
-		outb(0xC,0x46); outb(0xB,0x46);
-	} else {
-		outb(0xC,0x4A); outb(0xB,0x4A);
-	}
-	/* Send start address */
-	if (raw) phys = (unsigned long) bounce;
-	else phys = addr;
-	/* translate to physical */
-	phys = pmap_extract(kernel_pmap, (vm_offset_t)phys);
-	outb(0x4,phys & 0xFF);
-	outb(0x4,(phys>>8) & 0xFF);
-	outb(0x81,(phys>>16) & 0xFF);
-	/* Send count */
-	nbytes--;
-	outb(0x5,nbytes & 0xFF);
-	outb(0x5,(nbytes>>8) & 0xFF);
-	/* set channel 2 */
-	outb(0x0A,chan);
-}
-
-/*
- * Handle a NMI, possibly a machine check.
- * return true to panic system, false to ignore.
- */
-isa_nmi(cd) {
-
-	log(LOG_CRIT, "\nNMI port 61 %x, port 70 %x\n", inb(0x61), inb(0x70));
-	return(0);
-}
-
-/*
- * Caught a stray interrupt, notify
- */
-isa_strayintr(d) {
-
-	/* for some reason, we get bursts of intr #7, even if not enabled! */
-	log(LOG_ERR,"ISA strayintr %d", ffs(d)-1);
 }

@@ -34,8 +34,22 @@ TODO:
 		- extattr
 		- wapbl
 
+To Add:
+include <net/if_atm.h>
+include <net/if_dl.h>
+include <net/if_fddi.h>
+include <net/if_media.h>
+include <net/if_types.h>
+include <netinet/if_atm.h>
+include <netinet/if_inarp.h>
+include <netatalk/at.h>
+include <netccitt/x25.h>
+include <netccitt/pk.h>
+include <netccitt/pk_var.h>
+include <netccitt/pk_extern.h>
+include <netnatm/natm.h>
+
 Kern:
-- sys/audioio.h: NetBSD
 - kern_physio.c: Incomplete: getphysbuf, putphysbuf (NetBSD 1.3)
 - if INET: remanents of 2.11BSD's networking stack overlay (keep in place for now)
 - syscallargs: To be fixed: temporary compat with 4.4BSD-Lite2

@@ -1,235 +1,165 @@
+/*	$NetBSD: if_ecreg.h,v 1.1.2.2 1997/11/05 19:10:16 thorpej Exp $	*/
+
 /*
- * Copyright (c) 1991, 1993
- *	The Regents of the University of California.  All rights reserved.
+ * 3Com Etherlink II (3c503) register definitions.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ * Copyright (C) 1993, David Greenman.  This software may be used, modified,
+ * copied, distributed, and sold, in both source and binary form provided that
+ * the above copyright and these terms are retained.  Under no circumstances is
+ * the author responsible for the proper functioning of this software, nor does
+ * the author assume any responsibility for damages incurred with its use.
+ */
+
+#ifndef _DEV_ISA_IF_ECREG_H_
+#define	_DEV_ISA_IF_ECREG_H_
+
+#define ELINK2_NIC_OFFSET	0
+#define ELINK2_ASIC_OFFSET	0x400	/* offset to nic i/o regs */
+
+/*
+ * XXX - The I/O address range is fragmented in the 3c503; this is the
+ *	number of regs at iobase.
+ */
+#define ELINK2_NIC_PORTS	16
+#define	ELINK2_ASIC_PORTS	16
+
+/* tx memory starts in second bank on 8bit cards */
+#define ELINK2_TX_PAGE_OFFSET_8BIT	0x20
+
+/* tx memory starts in first bank on 16bit cards */
+#define ELINK2_TX_PAGE_OFFSET_16BIT	0x0
+
+/* ...and rx memory starts in second bank */
+#define ELINK2_RX_PAGE_OFFSET_16BIT	0x20
+
+
+/*
+ * Page Start Register.  Must match PSTART in NIC.
+ */
+#define ELINK2_PSTR		0
+
+/*
+ * Page Stop Register.  Must match PSTOP in NIC.
+ */
+#define ELINK2_PSPR		1
+
+/*
+ * DrQ Timer Register.  Determines number of bytes to be transfered during a
+ * DMA burst.
+ */
+#define ELINK2_DQTR		2
+
+/*
+ * Base Configuration Register.  Read-only register which contains the
+ * board-configured I/O base address of the adapter.  Bit encoded.
+ */
+#define ELINK2_BCFR		3
+
+/*
+ * EPROM Configuration Register.  Read-only register which contains the
+ * board-configured memory base address.  Bit encoded.
+ */
+#define ELINK2_PCFR		4
+
+/*
+ * GA Configuration Register.  Gate-Array Configuration Register.
  *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
+ * mbs2  mbs1  mbs0	start address
+ *  0     0     0	0x0000
+ *  0     0     1	0x2000
+ *  0     1     0	0x4000
+ *  0     1     1	0x6000
  *
- *	@(#)if_ecreg.h	8.1 (Berkeley) 6/11/93
+ * Note that with adapters with only 8K, the setting for 0x2000 must always be
+ * used.
  */
-/*
- * Device definitions for the i82586 generally and the 3com ec507
- * ISA bus ethernet controller.
- */
-/*
- * Intermediate System Control Block pointer
- */
-struct	ec_iscp {
-	u_short	busy;
-	u_short	scb_off;
-	caddr_t	scb_base;
-};
-/*
- * System Control Block
- */
-struct	ec_scb {
-	u_short status;
-#define CX		0x8000
-#define FR		0x4000
-#define CNA		0x2000
-#define RNR		0x1000
-#define CU_STATE	0x700
-#define	CUS_IDLE	0x000
-#define	CUS_SUSPENDED	0x100
-#define	CUS_ACTIVE	0x200
-#define RU_STATE	0x70
-#define	RUS_IDLE	0x00
-#define	RUS_SUSPENDED	0x10
-#define	RUS_OVERRUN	0x20
-#define	RUS_READY	0x40
-	u_short command;
-#define	CU_NOP		0
-#define CU_START	0x100
-#define RU_NOP		0
-#define	RU_START	0x100
-#define	RU_ABORT	0x400
-#define	ACK_CX		0x8000
-#define	ACK_RX		0x4000
-#define ACK_CNA		0x2000
-#define ACK_RNR		0x1000
-	u_short	cbl_off;
-	u_short	rfa_off;
-	struct	errors {
-		u_short crc;
-		u_short alignment;
-		u_short resource;
-		u_short overrun;
-	} scb_errs;
-};
+#define ELINK2_GACFR		5
+
+#define ELINK2_GACFR_MBS0	0x01
+#define ELINK2_GACFR_MBS1	0x02
+#define ELINK2_GACFR_MBS2	0x04
+
+#define ELINK2_GACFR_RSEL	0x08	/* enable shared memory */
+#define ELINK2_GACFR_TEST	0x10	/* for GA testing */
+#define ELINK2_GACFR_OWS	0x20	/* select 0WS access to GA */
+#define ELINK2_GACFR_TCM	0x40	/* Mask DMA interrupts */
+#define ELINK2_GACFR_NIM	0x80	/* Mask NIC interrupts */
 
 /*
- * Individual Address Setup
+ * Control Register.  Miscellaneous control functions.
  */
-struct ec_iasetup {
-	u_short	com0;
-#define	COM0_A	0x1000
-#define	COM0_OK	0x2000
-#define	COM0_B	0x4000
-#define	COM0_C	0x8000
-	u_short	com1;
-#define	COM1_IASETUP	0x1
-#define	COM1_I	0x2000
-#define	COM1_S	0x4000
-#define	COM1_EL	0x8000
-	u_short	next_off;
-	u_char	srcaddr[6];
-};
-	
-/*
- * Load Multicast Addresses
- */
+#define ELINK2_CR		6
 
-struct ec_mcsetup {
-	u_short	com0;
-	u_short	com1;
-#define COM1_MCSETUP	0x3
-	u_short	next_off;
-	u_short	count;		/* number of bytes, 14 bits only */
-	/* char	mcaddrs[6];	/* white lie, data goes here */
-};
+#define ELINK2_CR_RST		0x01	/* Reset GA and NIC */
+#define ELINK2_CR_XSEL		0x02	/* Transceiver select.  BNC=1(def) AUI=0 */
+#define ELINK2_CR_EALO		0x04	/* window EA PROM 0-15 to I/O base */
+#define ELINK2_CR_EAHI		0x08	/* window EA PROM 16-31 to I/O base */
+#define ELINK2_CR_SHARE		0x10	/* select interrupt sharing option */
+#define ELINK2_CR_DBSEL		0x20	/* Double buffer select */
+#define ELINK2_CR_DDIR		0x40	/* DMA direction select */
+#define ELINK2_CR_START		0x80	/* Start DMA controller */
 
 /*
- * Transmit Command
+ * Status Register.  Miscellaneous status information.
  */
-struct	ec_transmit {
-	u_short com0;
-#define COLLISIONS(p) (p->com0 & 0xf)
-#define EXCOL		0x10	/* Excessive Collisions, Aborted */
-#define HEARTBEAT	0x20	/* CDT signal monitored and OK (good) */
-#define TXDEFFERED	0x40	/* ``due to Previous Link Activity'' */
-#define	DMALATE		0x80	/* DMA underrun */
-#define	NOCTS		0x100	/* Transmission stopped due to ... */
-#define	NOCARSENSE	0x200	/* Loss of Carrier sense during TX */
-#define	LATECOLL	0x400	/* Late Collision detected */
-#define TXERRS		0x7d0	/* Various Bad Things */
-	u_short	com1;
-#define COM1_TRANSMIT	0x4
-	u_short	next_off;
-	u_short tbd_off;
-	u_char	dstaddr[6];
-	u_short	proto;		/* Length for 802.3 */
-/*
- * };	 struct	ec_tba {
- *
- * Transmit Buffer Descriptor
- * This really should be a separate structure,
- * but it will be convenient to lump them together.
- */
-	u_short	count;
-	u_short next_tbd_off;
-	caddr_t	buffer;
-};
+#define ELINK2_STREG		7
+
+#define ELINK2_STREG_REV	0x07	/* GA revision */
+#define ELINK2_STREG_DIP	0x08	/* DMA in progress */
+#define ELINK2_STREG_DTC	0x10	/* DMA terminal count */
+#define ELINK2_STREG_OFLW	0x20	/* Overflow */
+#define ELINK2_STREG_UFLW	0x40	/* Underflow */
+#define ELINK2_STREG_DPRDY	0x80	/* Data port ready */
 
 /*
- * Receive Frame Descriptor
+ * Interrupt/DMA Configuration Register
  */
-struct	ec_rfd {
-	u_short	rfd0;
-	u_short rfd1;
-	u_short	next_off;
-	u_short rbd_off;
-	struct	ether_header eh;
-	u_short	mbz;
-/*
- * };	struct	ec_rbd {
- *
- * Receive Buffer Descriptor
- */
-	u_short	count;
-#define RBD_EOF	0x8000
-#define RBD_F	0x4000
-	u_short	next_rbd_off;
-	caddr_t	buffer;
-	u_short	size;
-	u_short	mbz2;
-};
+#define ELINK2_IDCFR		8
+
+#define ELINK2_IDCFR_DRQ	0x07	/* DMA request */
+#define ELINK2_IDCFR_UNUSED	0x08	/* not used */
+#if 0
+#define ELINK2_IDCFR_IRQ	0xF0	/* Interrupt request */
+#else
+#define ELINK2_IDCFR_IRQ2	0x10	/* Interrupt request 2 select */
+#define ELINK2_IDCFR_IRQ3	0x20	/* Interrupt request 3 select */
+#define ELINK2_IDCFR_IRQ4	0x40	/* Interrupt request 4 select */
+#define ELINK2_IDCFR_IRQ5	0x80	/* Interrupt request 5 select */
+#endif
 
 /*
- * Set Operating Parameters
+ * DMA Address Register MSB
  */
-struct	ec_82586params {
-	u_char	count;
-	u_char	fifolimit;
-	u_char	save_bad_frames;
-	u_char	data1;		/* addr len, no src ins, lpbk, prmble */
-	u_char	priority;
-	u_char	ifspacing;
-	u_char	mbz1;
-	u_char	data2;		/* max restries, slot time high */
-	u_char	promisc;	/* brddis, mnch/nrz, tnocr, crc16, bstf, pad */
-#define M_PROMISC 1
-#define M_TNOCR 8
-	u_char	cdf_cds;	/* carrier detect/sense filter(length) & src */
-	u_char	min_frame_len;
-	u_char	mbz2[3];
-};
+#define ELINK2_DAMSB		9
 
-struct	ec_configure {
-	u_short	com0;
-	u_short com1;
-#define COM1_CONFIGURE	0x2
-	u_short next_off;
-	struct ec_82586params modes;
-};
-#define ECMTU	1518
-#define ECMINSIZE 64
-#define NTXBUF	2
-#define	NRXBUF	8
+/*
+ * DMA Address Register LSB
+ */
+#define ELINK2_DALSB		0x0a
 
-struct	ec_mem {
-	struct	ec_iscp iscp;
-	struct	ec_scb scb;
-	struct	ec_transmit tcom[NTXBUF];
-	struct	ec_rfd rcom[NRXBUF];
-	struct	ec_configure config;
-	struct	ec_iasetup iasetup;
-	struct	ec_mcsetup mcsetup;
-	char	txbuf[NTXBUF][ECMTU];
-	char	rxbuf[NRXBUF][ECMTU];
-};
+/*
+ * Vector Pointer Register 2
+ */
+#define ELINK2_VPTR2		0x0b
 
-struct ec_ports {
-	u_char	data[6];
-	u_char	creg;
-#define R_ECID	0x00
-#define R_ETHER	0x01
-#define R_REV	0x02
-#define R_IEN	0x04
-#define R_INT	0x08
-#define R_LAD	0x10
-#define R_LPB	0x20
-#define R_CA	0x40
-#define R_NORST	0x80
-	u_char	mbz0[3];
-	u_char	port_ic;
-	u_char	port_ca;
-	u_char	mbz1;
-	u_char	rom_conf;
-	u_char	ram_conf;
-	u_char	int_conf;
-};
+/*
+ * Vector Pointer Register 1
+ */
+#define ELINK2_VPTR1		0x0c
+
+/*
+ * Vector Pointer Register 0
+ */
+#define ELINK2_VPTR0		0x0d
+
+/*
+ * Register File Access MSB
+ */
+#define ELINK2_RFMSB		0x0e
+
+/*
+ * Register File Access LSB
+ */
+#define ELINK2_RFLSB		0x0f
+
+#endif /* _DEV_ISA_IF_ECREG_H_ */
