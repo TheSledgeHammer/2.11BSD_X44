@@ -80,7 +80,7 @@ acct(p, uap, retval)
 			if (error) {
 				return (error);
 			}
-			VOP_UNLOCK(nd.ni_vp);
+			VOP_UNLOCK(nd.ni_vp, 0, p);
 			if (nd.ni_vp->v_type != VREG) {
 				vn_close(nd.ni_vp, FWRITE, p->p_ucred, p);
 				return (EACCES);

@@ -160,14 +160,14 @@ msdosfs_lookup(v)
 			VREF(vdp);
 			error = 0;
 		} else if (flags & ISDOTDOT) {
-			VOP_UNLOCK(pdp);
+			VOP_UNLOCK(pdp, 0, cnp->cn_proc);
 			error = vget(vdp, 1);
 			if (!error && lockparent && (flags & ISLASTCN))
-				error = VOP_LOCK(pdp);
+				error = VOP_LOCK(pdp, 0, cnp->cn_proc);
 		} else {
 			error = vget(vdp, 1);
 			if (!lockparent || error || !(flags & ISLASTCN))
-				VOP_UNLOCK(pdp);
+				VOP_UNLOCK(pdp, 0, cnp->cn_proc);
 		}
 		/*
 		 * Check that the capability number did not change
@@ -183,9 +183,9 @@ msdosfs_lookup(v)
 			}
 			vput(vdp);
 			if (lockparent && pdp != vdp && (flags & ISLASTCN))
-				VOP_UNLOCK(pdp);
+				VOP_UNLOCK(pdp, 0, cnp->cn_proc);
 		}
-		if ((error = VOP_LOCK(pdp)) != 0)
+		if ((error = VOP_LOCK(pdp, 0, cnp->cn_proc)) != 0)
 			return (error);
 		vdp = pdp;
 		dp = VTODE(vdp);
@@ -413,7 +413,7 @@ notfound:;
 		 */
 		cnp->cn_flags |= SAVENAME;
 		if (!lockparent)
-			VOP_UNLOCK(vdp);
+			VOP_UNLOCK(vdp, 0, cnp->cn_proc);
 		return (EJUSTRETURN);
 	}
 	/*
@@ -538,11 +538,11 @@ foundroot:;
 	if (flags & ISDOTDOT) {
 		VOP_UNLOCK(pdp);	/* race to get the inode */
 		if ((error = deget(pmp, cluster, blkoff, &tdp)) != 0) {
-			VOP_LOCK(pdp);
+			VOP_LOCK(pdp, 0, cnp->cn_proc);
 			return (error);
 		}
 		if (lockparent && (flags & ISLASTCN) &&
-		    (error = VOP_LOCK(pdp))) {
+		    (error = VOP_LOCK(pdp, 0, cnp->cn_proc))) {
 			vput(DETOV(tdp));
 			return (error);
 		}

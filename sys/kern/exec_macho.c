@@ -330,7 +330,7 @@ exec_macho_load_file(elp, path, entry, type, recursive, depth)
 #ifdef notyet /* XXX cgd 960926 */
 	XXX cgd 960926: (maybe) VOP_OPEN it (and VOP_CLOSE in copyargs?)
 #endif
-	VOP_UNLOCK(vp, 0);
+	VOP_UNLOCK(vp, 0, p);
 
 	if ((error = exec_read_from(p, vp, 0, &fat, sizeof(fat))) != 0)
 		goto bad;
@@ -342,7 +342,7 @@ exec_macho_load_file(elp, path, entry, type, recursive, depth)
 	return 0;
 
 badunlock:
-	VOP_UNLOCK(vp, 0);
+	VOP_UNLOCK(vp, 0, p);
 
 bad:
 #ifdef notyet /* XXX cgd 960926 */

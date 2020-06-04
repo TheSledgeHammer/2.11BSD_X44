@@ -63,7 +63,8 @@
 void
 rminit(mp, size, addr, name, mapsize)
 	register struct map *mp;
-	long size, addr;
+	memaddr addr;
+	size_t size;
 	char *name;
 	int mapsize;
 {
@@ -77,14 +78,14 @@ rminit(mp, size, addr, name, mapsize)
 		ep->m_addr = 0;
 }
 
-long
+memaddr
 rmalloc(mp, size)
 	struct map *mp;
-	long size;
+	size_t  size;
 {
 	register struct mapent *ep = (struct mapent *)(mp+1);
 	register struct mapent *bp;
-	register long addr;
+	register memaddr addr;
 	int retry;
 	swblk_t first, rest;
 
@@ -143,7 +144,8 @@ again:
 void
 rmfree(mp, size, addr)
 	struct map *mp;
-	long size, addr;
+	size_t size;
+	register memaddr addr;
 {
 	register struct mapent *bp, *ep;
 	struct mapent *start;
@@ -232,18 +234,18 @@ rmfree(mp, size, addr)
  * to be in decreasing order; generally, data, stack, then u. will be
  * best.  Returns NULL on failure, address of u. on success.
  */
-long
+memaddr
 rmalloc3(mp, d_size, s_size, u_size, a)
 	struct map *mp;
 	size_t d_size, s_size, u_size;
-	long a[3];
+	memaddr a[3];
 {
 	register struct mapent *bp, *remap;
 	register int next;
 	struct mapent *madd[3];
 	size_t sizes[3];
 	int found, retry;
-	register long addr;
+	register memaddr addr;
 	swblk_t first, rest;
 
 	sizes[0] = d_size; sizes[1] = s_size; sizes[2] = u_size;

@@ -151,7 +151,7 @@ check_shell:
 	 */
 	vn_lock(elp->el_vnodep, LK_EXCLUSIVE | LK_RETRY);
 	error = VOP_ACCESS(elp->el_vnodep, VREAD, p->p_cred, p);
-	VOP_UNLOCK(elp->el_vnodep, 0);
+	VOP_UNLOCK(elp->el_vnodep, 0, p);
 	if (error == EACCES
 #ifdef SETUIDSCRIPTS
 	    || script_sbits

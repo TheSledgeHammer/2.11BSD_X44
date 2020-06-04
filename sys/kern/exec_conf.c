@@ -76,7 +76,7 @@ struct execsw execsw[] = {
 		{ sizeof(Elf32_Ehdr), exec_elf_linker, &emul_211bsd, EXECSW_PRIO_ANY, howmany(ELF_AUX_ENTRIES * sizeof(Aux32Info), sizeof (Elf32_Addr)), elf_copyargs, exec_setup_stack },
 
 		/* 64-Bit ELF binaries */
-		//{ sizeof(Elf64_Ehdr), exec_elf_linker, &emul_211bsd, EXECSW_PRIO_ANY, howmany(ELF_AUX_ENTRIES * sizeof(Aux64Info), sizeof (Elf64_Addr)), elf_copyargs, exec_setup_stack },
+		{ sizeof(Elf64_Ehdr), exec_elf_linker, &emul_211bsd, EXECSW_PRIO_ANY, howmany(ELF_AUX_ENTRIES * sizeof(Aux64Info), sizeof (Elf64_Addr)), elf_copyargs, exec_setup_stack },
 };
 
 int nexecs = (sizeof execsw / sizeof(struct execsw));

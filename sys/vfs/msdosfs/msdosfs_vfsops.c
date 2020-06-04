@@ -134,14 +134,14 @@ msdosfs_mount(mp, path, data, ndp, p)
 			 */
 			if (p->p_ucred->cr_uid != 0) {
 				devvp = pmp->pm_devvp;
-				VOP_LOCK(devvp);
+				VOP_LOCK(devvp, 0, p);
 				error = VOP_ACCESS(devvp, VREAD | VWRITE,
 						   p->p_ucred, p);
 				if (error) {
-					VOP_UNLOCK(devvp);
+					VOP_UNLOCK(devvp, 0, p);
 					return (error);
 				}
-				VOP_UNLOCK(devvp);
+				VOP_UNLOCK(devvp, 0, p);
 			}
 			pmp->pm_flags &= ~MSDOSFSMNT_RONLY;
 		}

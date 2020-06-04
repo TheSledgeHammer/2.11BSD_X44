@@ -68,7 +68,7 @@ union wait	{
 #define WIFEXITED(x)	((x).w_stopval != WSTOPPED && (x).w_termsig == 0)
 #define	WEXITSTATUS(x)	((x).w_retcode)
 
-#define	W_STOPCODE(sig)	((sig << 8) | WSTOPPED)
+#define	W_STOPCODE(sig)		((sig << 8) | WSTOPPED)
 #define	W_EXITCODE(ret,sig)	((ret << 8) | (sig))
 
 #define	WAIT_ANY	(-1)

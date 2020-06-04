@@ -370,7 +370,7 @@ check_exec(elp)
 		goto bad1;
 
 	/* unlock vp, since we need it unlocked from here on out. */
-	VOP_UNLOCK(vp, 0);
+	VOP_UNLOCK(vp, 0, p);
 
 	error = vn_rdwr(UIO_READ, vp, elp->el_image_hdr, elp->el_hdrlen, 0,
 				UIO_SYSSPACE, 0, p->p_cred, &resid, NULL);

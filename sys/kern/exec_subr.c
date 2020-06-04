@@ -142,7 +142,7 @@ int vmcmd_map_pagedvn(elp)
 		vm_object_lock(vobj);
 		//vp->v_flag |= VMAPPED;
 		vm_object_unlock(vobj);
-		VOP_UNLOCK(vp, 0);
+		VOP_UNLOCK(vp, 0, elp->el_proc);
 	}
 
 	prot = cmd->ev_prot;

@@ -724,7 +724,7 @@ register struct proc *p;
 				IO_NODELOCKED|IO_UNIT, cred, (int *) NULL, p);
 	}
 out:
-	VOP_UNLOCK(vp);
+	VOP_UNLOCK(vp, 0, p);
 	error1 = vn_close(vp, FWRITE, cred, p);
 	if (error == 0) {
 			error = error1;

@@ -1,11 +1,11 @@
-/*	$NetBSD: ansi.h,v 1.11 2005/12/11 12:25:20 christos Exp $	*/
+/*	$NetBSD: stdbool.h,v 1.1 2015/07/29 00:10:25 christos Exp $	*/
 
 /*-
- * Copyright (c) 2000, 2001, 2002 The NetBSD Foundation, Inc.
+ * Copyright (c) 2002 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by Jun-ichiro itojun Hagino and by Klaus Klein.
+ * by Jason R. Thorpe of Wasabi Systems, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -15,13 +15,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the NetBSD
- *	Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -36,22 +29,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef	_SYS_ANSI_H_
-#define	_SYS_ANSI_H_
+#ifndef _SYS_STDBOOL_H_
+#define	_SYS_STDBOOL_H_
 
-#include <machine/ansi.h>
+#ifndef __bool_true_false_are_defined
+#ifndef __cplusplus
+#define	bool	_Bool
 
-typedef char *			__caddr_t;		/* core address */
-typedef u_int32_t		__gid_t;		/* group id */
-typedef u_int32_t		__in_addr_t;	/* IP(v4) address */
-typedef uint16_t		__in_port_t;	/* "Internet" port number */
-typedef uint32_t		__mode_t;		/* file permissions */
-typedef int64_t			__off_t;		/* file offset */
-typedef int32_t			__pid_t;		/* process id */
-typedef uint8_t			__sa_family_t;	/* socket address family */
-typedef unsigned int	__socklen_t;	/* socket-related datum length */
-typedef u_int32_t		__uid_t;		/* user id */
-typedef	u_int64_t		__fsblkcnt_t;	/* fs block count (statvfs) */
-typedef	u_int64_t		__fsfilcnt_t;	/* fs file count */
+#define	true	1
+#define	false	0
 
-#endif	/* !_SYS_ANSI_H_ */
+#endif /* __cplusplus */
+
+#define	__bool_true_false_are_defined	1
+#endif
+
+#endif /* _SYS_STDBOOL_H_ */

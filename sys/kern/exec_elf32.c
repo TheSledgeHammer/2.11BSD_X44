@@ -362,7 +362,7 @@ elf_load_file(elp, path, vcset, entryoff, ap, last)
 	if (error)
 		goto badunlock;
 
-	VOP_UNLOCK(vp, 0);
+	VOP_UNLOCK(vp, 0, p);
 
 	if ((error = exec_read_from(p, vp, 0, &eh, sizeof(eh))) != 0)
 		goto bad;
@@ -506,7 +506,7 @@ elf_load_file(elp, path, vcset, entryoff, ap, last)
 	return 0;
 
 badunlock:
-	VOP_UNLOCK(vp, 0);
+	VOP_UNLOCK(vp, 0, p);
 
 bad:
 	if (ph != NULL)

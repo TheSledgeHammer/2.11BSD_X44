@@ -187,7 +187,7 @@ pecoff_load_file(elp, path, vcset, entry, pecoff_arg)
 	if ((error = vn_marktext(vp)))
 		goto badunlock;
 
-	VOP_UNLOCK(vp, 0);
+	VOP_UNLOCK(vp, 0, p);
 	/*
 	 * Read header.
 	 */
@@ -244,7 +244,7 @@ pecoff_load_file(elp, path, vcset, entry, pecoff_arg)
 	return 0;
 
 badunlock:
-	VOP_UNLOCK(vp, 0);
+	VOP_UNLOCK(vp, 0, p);
 
 bad:
 	if (coff_fp != 0)

@@ -926,7 +926,7 @@ abortit:
 	}
 
 	/* */
-	if ((error = VOP_LOCK(fvp)) != 0)
+	if ((error = VOP_LOCK(fvp, 0, fcnp->cn_proc)) != 0)
 		goto abortit;
 	dp = VTODE(fdvp);
 	ip = VTODE(fvp);
