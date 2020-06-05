@@ -4,7 +4,7 @@
 #
 
 # maxpartitions must be first item in files.${ARCH}.newconf
-maxpartitions 8
+maxpartitions 16
 
 maxusers 2 16 64
 
@@ -42,14 +42,14 @@ major	{vnd = 14}
 # Machine-independent SCSI drivers
 #
 
-include "../../../dev/scsi/files.scsi"
+include "dev/scsipi/files.scsipi"
 major	{sd = 4}
 #major	{st = 5}
 #major	{cd = 6}
 
 
 # Memory Disk for install floppy
-file arch/i386/i386/md_root.c	        memory_disk_hooks
+file 	arch/i386/i386/md_root.c	     memory_disk_hooks
 major	{md = 17}
 
 #
@@ -74,7 +74,7 @@ file	arch/i386/i386/bioscall.s	    bioscall needs-flag
 # XXX devices to 'pci'.
 #
 
-include "../../../dev/pci/files.pci"
+include "dev/pci/files.pci"
 file	arch/i386/pci/pci_machdep.c	    pci
 
 # PCI-Host bridge chipsets
@@ -91,7 +91,7 @@ file	arch/i386/pci/pcib.c		    pcib
 # ISA and mixed ISA+EISA or ISA+PCI drivers
 #
 
-include "../../../dev/isa/files.isa"
+include "dev/isa/files.isa"
 major	{mcd = 7}
 #major	{scd = 15}
 major	{wd = 0}
@@ -115,7 +115,6 @@ define pckbd { [irq = -1], [port = -1] }
 device	pc: tty, pckbd
 attach	pc at isa
 file	arch/i386/isa/pccons.c		    pc needs-flag
-
 
 # PC Mice; Logitech-style, Microsoft-style, and PS/2-style
 device	lms
@@ -157,7 +156,7 @@ file	arch/i386/isa/ahc_isa.c		        ahc_isa
 # EISA-only drivers
 #
 
-include "../../../dev/eisa/files.eisa"
+include "dev/eisa/files.eisa"
 file	arch/i386/eisa/eisa_machdep.c	    eisa
 
 # ISA Plug 'n Play devices

@@ -3,9 +3,13 @@
 #	GENERIC -- everything that's currently supported
 #
 
-include "arch/i386/conf/std.i386"
+machine 		i386
+include			"../../../conf/GENERIC"
+maxusers		32				# estimated number of users
 
-maxusers	32		# estimated number of users
+options			EXEC_AOUT		# exec a.out binaries
+options 		EXEC_ELF32		# exec ELF binaries
+options			EXEC_SCRIPT		# exec #! scripts
 
 # CPU support.  At least one is REQUIRED.
 options 		I386_CPU
@@ -17,6 +21,7 @@ options 		I686_CPU
 options 		MATH_EMULATE	# floating point emulation
 #options 		VM86			# virtual 8086 emulation
 options 		USER_LDT		# user-settable LDT; used by WINE
+
 # eliminate delay no-ops in I/O; recommended on all but very old machines
 #options 		DUMMY_NOPS
 
@@ -28,48 +33,12 @@ options 		USER_LDT		# user-settable LDT; used by WINE
 options 		UCONSOLE		# users can use TIOCCONS (for xconsole)
 options 		INSECURE		# disable kernel security levels
 
-options 		RTC_OFFSET=0	# hardware clock is this many mins. west of GMT
-options 		KTRACE			# system call tracing via ktrace(1)
-
-# Diagnostic/debugging support options
-options 		DIAGNOSTIC		# cheap kernel consistency checks
-#options 		DEBUG			# expensive debugging checks/support
-options 		KMEMSTATS		# kernel memory statistics (vmstat -m)
-
-# Compatibility options
-options 		COMPAT_43		# and 4.3BSD
-
-# Executable format options
-options 		EXEC_ELF32		# 32-bit ELF executables (SVR4, Linux)
-
-# File systems
-#file-system 	FFS				# UFS
-#file-system 	LFS				# log-structured file system
-#file-system 	MFS				# memory file system
-#file-system 	CD9660			# ISO 9660 + Rock Ridge file system
-#file-system 	MSDOSFS			# MS-DOS file system
-#file-system 	FDESC			# /dev/fd
-
-# File system options
-options 		QUOTA			# UFS quotas
-options 		FIFO			# FIFOs; RECOMMENDED
-
 # These options enable verbose messages for several subsystems.
 # Warning, these may compile large string tables into the kernel!
-options 	EISAVERBOSE			# verbose EISA device autoconfig messages
-options 	PCIVERBOSE			# verbose PCI device autoconfig messages
-#options 	PCMCIAVERBOSE		# verbose PCMCIA configuration messages
-options 	SCSIVERBOSE			# human readable SCSI error messages
-
-# Keyboard layout configuration for pccons
-#options 	FRENCH_KBD
-#options 	GERMAN_KBD
-#options 	NORVEGIAN_KBD
-  
-# Kernel root file system and dump configuration.
-config		netbsd	root on ? type ?
-#config		netbsd	root on sd0a type ffs
-#config		netbsd	root on ? type nfs
+options 	    EISAVERBOSE		# verbose EISA device autoconfig messages
+options 		PCIVERBOSE		# verbose PCI device autoconfig messages
+#options 		PCMCIAVERBOSE	# verbose PCMCIA configuration messages
+options 		SCSIVERBOSE		# human readable SCSI error messages
 
 #
 # Device configuration
@@ -78,7 +47,6 @@ config		netbsd	root on ? type ?
 mainbus0 at root
 
 #apm0	at mainbus0			# Advanced power management
-
 
 # Basic Bus Support
 
@@ -108,7 +76,6 @@ pcic1	at isa? port 0x3e2 iomem 0xd4000 iosiz 0x4000
 
 # ISA Plug-and-Play bus support
 isapnp0	at isa?
-
 
 # Coprocessor Support
 
@@ -286,12 +253,11 @@ we0		at isa? port 0x280 iomem 0xd0000 irq 9	# WD/SMC Ethernet
 we1		at isa? port 0x300 iomem 0xcc000 irq 10
 
 # MII bus support
-mii*	at tl?
+#mii*	at tl?
 
 # MII PHY network interfaces
-tlphy*	at mii? dev ?							# ThunderLAN PHYs
-nsphy*	at mii? dev ?							# NS and compatible PHYs
-
+#tlphy*	at mii? dev ?							# ThunderLAN PHYs
+#nsphy*	at mii? dev ?							# NS and compatible PHYs
 
 # Audio Devices
 
@@ -342,32 +308,3 @@ joy*	at isapnp?					# Game ports (usually on audio cards)
 
 # Planetconnect Satellite receiver driver.
 #satlink0 at isa? port 0x300 drq 1
-
-
-# Pull in optional local configuration
-include	"arch/i386/conf/GENERIC.local"
-
-
-# Pseudo-Devices
-
-# disk/mass storage pseudo-devices
-pseudo-device	ccd			4	# concatenated/striped disk devices
-pseudo-device	md			1	# memory disk device (ramdisk)
-pseudo-device	vnd			4	# disk-like interface to files
-
-# network pseudo-devices
-pseudo-device	bpfilter	8	# Berkeley packet filter
-pseudo-device	ipfilter		# IP filter (firewall) and NAT
-pseudo-device	loop			# network loopback
-pseudo-device	ppp			2	# Point-to-Point Protocol
-pseudo-device	sl			2	# Serial Line IP
-pseudo-device	strip		2	# Starmode Radio IP (Metricom)
-pseudo-device	tun			2	# network tunneling over tty
-
-# miscellaneous pseudo-devices
-pseudo-device	pty			64	# pseudo-terminals
-pseudo-device	tb			1	# tablet line discipline
-
-# rnd is EXPERIMENTAL at this point.
-#pseudo-device	rnd			# /dev/random and in-kernel generator
-#options 		RND_COM		# use "com" randomness as well (BROKEN)

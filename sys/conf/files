@@ -1,25 +1,13 @@
 #	@(#)files.newconf	8.10 (Berkeley) 5/1/94
 
-# options understood by the machine-independent part of the kernel
-# (note, these are case-sensitive)
-defflag	KMEMSTATS
-defflag	RTC_OFFSET
-defflag	TCP_RECVSPACE
-defflag	TCP_SENDSPACE
-defflag	UCONSOLE
-
-defflag	DEVPAGER
-defflag	SWAPPAGER
-defflag	VNODEPAGER
-
 # generic attributes
 define	 disk
 define	 tape
 define	 ifnet
 define	 tty
 define	 audio { }
-define	 scsi {[channel = -1]}
-define	 atapi { }
+define	 scsi {}
+#define	 atapi { }
 #define  miibus { }
 
 # audio device attributes
@@ -136,34 +124,36 @@ device	com: tty
 file	dev/ic/com.c				com 			needs-flag
 
 # Device description for i2c bus and i2c eeprom
-define  i2c
-define  i2c_eeprom
+
 
 # Attributes which machine-independent bus support can be attached to.
 # These should be defined here, because some of these busses can have
 # devices which provide these attributes, and we'd like to avoid hairy
 # ordering constraints on inclusion of the busses' "files" files.
-define	isabus { }				# ISA attachment
-define	eisabus { }				# EISA attachment
+define	isabus {}				# ISA attachment
+define	eisabus {}				# EISA attachment
 define	pcibus {[bus = -1]}		# PCI attachment
 define	tcbus { }				# TurboChannel attachment
 
 # legitimate pseudo-devices
-defpseudodev vnd: disk
-defpseudo ccd: disk
-defpseudodev md: disk
+pseudo-device vnd: disk
+pseudo-device ccd: disk
+pseudo-device md: disk
 
-defpseudo pty: tty
-defpseudo tb: tty
+pseudo-device pty: tty
+pseudo-device tb: tty
 
-defpseudo imp: ifnet
-defpseudo loop: ifnet
-defpseudo sl: ifnet
-defpseudo ppp: ifnet
-#defpseudo tun: ifnet
-defpseudo bpfilter: ifnet
-defpseudo strip: ifnet
-defpseudo ipfilter: ifnet
+pseudo-device imp: ifnet
+pseudo-device loop: ifnet
+pseudo-device sl: ifnet
+pseudo-device ppp: ifnet
+#pseudo-device tun: ifnet
+pseudo-device bpfilter: ifnet
+pseudo-device strip: ifnet
+pseudo-device ipfilter: ifnet
+
+# dev sources
+file 	dev/mulaw.c							audio			needs-flag
 
 # kernel sources
 file	kern/exec_aout.c					exec_aout
@@ -171,6 +161,7 @@ file	kern/exec_coff.c					exec_coff
 file	kern/exec_conf.c		
 file	kern/exec_ecoff.c					exec_ecoff
 file	kern/exec_elf32.c					exec_elf32
+file	kern/exec_elf64.c					exec_elf64
 file	kern/exec_macho.c					exec_macho
 file	kern/exec_pecoff.c					exec_pecoff
 file	kern/exec_script.c					exec_script
@@ -253,22 +244,22 @@ file	netimp/if_imp.c		    			imp needs-count
 file	netimp/if_imphost.c	    			imp needs-count
 file	netimp/raw_imp.c	    			imp
 file	netinet/if_ether.c	    			ether
-file	netinet/igmp.c		    			inet
-file	netinet/in.c		    			inet
-file	netinet/in_pcb.c	    			inet
-file	netinet/in_proto.c	    			inet
-file	netinet/ip_icmp.c	    			inet
-file	netinet/ip_input.c	    			inet
-file	netinet/ip_mroute.c					inet
-file	netinet/ip_output.c	    			inet
-file	netinet/raw_ip.c	    			inet
-file	netinet/tcp_debug.c	    			inet
-file	netinet/tcp_input.c	    			inet
-file	netinet/tcp_output.c				inet
-file	netinet/tcp_subr.c	    			inet
-file	netinet/tcp_timer.c	    			inet
-file	netinet/tcp_usrreq.c				inet
-file	netinet/udp_usrreq.c				inet
+file	netinet/igmp.c		    			
+file	netinet/in.c		    			
+file	netinet/in_pcb.c	    			
+file	netinet/in_proto.c	    			
+file	netinet/ip_icmp.c	    			
+file	netinet/ip_input.c	    			
+file	netinet/ip_mroute.c					mrouting	
+file	netinet/ip_output.c	    			
+file	netinet/raw_ip.c	    			
+file	netinet/tcp_debug.c	    			
+file	netinet/tcp_input.c	    			
+file	netinet/tcp_output.c				
+file	netinet/tcp_subr.c	    			
+file	netinet/tcp_timer.c	    			
+file	netinet/tcp_usrreq.c				
+file	netinet/udp_usrreq.c				
 file	netns/idp_usrreq.c	    			ns
 file	netns/ns.c		        			ns
 file	netns/ns_error.c	    			ns

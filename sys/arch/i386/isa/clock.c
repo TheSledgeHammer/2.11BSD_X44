@@ -102,26 +102,26 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>
 #include <dev/ic/mc146818reg.h>
-#include <i386/isa/nvram.h>
+#include <dev/isa/rtc.h>
 #include <i386/isa/timerreg.h>
 #include <i386/isa/spkrreg.h>
 
-void	spinwait __P((int));
-void	findcpuspeed __P((void));
-int	clockintr __P((void *));
-int	gettick __P((void));
-void	sysbeepstop __P((void *));
-void	sysbeep __P((int, int));
-void	rtcinit __P((void));
-int	rtcget __P((mc_todregs *));
-void	rtcput __P((mc_todregs *));
-static int yeartoday __P((int));
-int 	bcdtobin __P((int));
-int	bintobcd __P((int));
+void	spinwait (int);
+void	findcpuspeed (void);
+int		clockintr (void *);
+int		gettick (void);
+void	sysbeepstop (void *);
+void	sysbeep (int, int);
+void	rtcinit (void);
+int		rtcget (mc_todregs *);
+void	rtcput (mc_todregs *);
+static int yeartoday (int);
+int 	bcdtobin (int);
+int		bintobcd (int);
 
 
-__inline u_int mc146818_read __P((void *, u_int));
-__inline void mc146818_write __P((void *, u_int, u_int));
+__inline u_int mc146818_read (void *, u_int);
+__inline void mc146818_write (void *, u_int, u_int);
 
 #define	SECMIN	((unsigned)60)			/* seconds per minute */
 #define	SECHOUR	((unsigned)(60*SECMIN))		/* seconds per hour */
@@ -251,10 +251,10 @@ startrtclock()
 	outb(IO_TIMER1, isa_timer_count / 256);
 
 	/* Check diagnostic status */
-	if ((s = mc146818_read(NULL, NVRAM_DIAG)) != 0) { /* XXX softc */
+	if ((s = mc146818_read(NULL, RTC_DIAG)) != 0) { /* XXX softc */
 		char bits[128];
 		printf("RTC BIOS diagnostic error %s\n",
-		    bitmask_snprintf(s, NVRAM_DIAG_BITS, bits, sizeof(bits)));
+		    bitmask_snprintf(s, RTCDG_BITS, bits, sizeof(bits)));
 	}
 }
 
@@ -520,7 +520,7 @@ inittodr(base)
 		printf("WARNING: invalid time in clock chip\n");
 		goto fstime;
 	}
-	century = mc146818_read(NULL, NVRAM_CENTURY); /* XXX softc */
+	century = mc146818_read(NULL, RTC_CENTURY); /* XXX softc */
 	splx(s);
 
 	sec = bcdtobin(rtclk[MC_SEC]);
@@ -541,7 +541,7 @@ inittodr(base)
 			printf("WARNING: Setting NVRAM century to 20\n");
 			s = splclock();
 			/* note: 0x20 = 20 in BCD. */
-			mc146818_write(NULL, NVRAM_CENTURY, 0x20); /*XXXsoftc*/
+			mc146818_write(NULL, RTC_CENTURY, 0x20); /*XXXsoftc*/
 			splx(s);
 		} else {
 			printf("WARNING: CHECK AND RESET THE DATE!\n");
@@ -652,7 +652,7 @@ resettodr()
 
 	s = splclock();
 	rtcput(&rtclk);
-	mc146818_write(NULL, NVRAM_CENTURY, century); /* XXX softc */
+	mc146818_write(NULL, RTC_CENTURY, century); /* XXX softc */
 	splx(s);
 }
 
