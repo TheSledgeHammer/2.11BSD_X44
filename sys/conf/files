@@ -201,7 +201,7 @@ file	kern/sys_process.c
 file	kern/sys_socket.c
 file	kern/tty.c
 file	kern/tty_conf.c
-file	kern/tty_pty.c		    			pty needs-count
+file	kern/tty_pty.c		    			pty
 file	kern/tty_subr.c
 file	kern/tty_tb.c		    			tb needs-flag
 file	kern/tty_tty.c
@@ -229,19 +229,19 @@ file	miscfs/fdesc/fdesc_vnops.c	    	fdesc
 file	miscfs/fifofs/fifo_vnops.c	    	fifo
 file	miscfs/specfs/spec_vnops.c
 file    net/af.c
-file	net/bpf.c		        			bpfilter needs-count
+file	net/bpf.c		        			bpfilter
 file	net/bpf_filter.c	    			bpfilter | ppp
 file	net/if.c
-file	net/if_loop.c		    			loop needs-count
-file	net/if_sl.c		        			sl needs-count
+file	net/if_loop.c		    			loop
+file	net/if_sl.c		        			sl
 file	net/radix.c
 file	net/raw_cb.c
 file	net/raw_usrreq.c
 file	net/route.c
 file	net/rtsock.c
 file	net/slcompress.c	    			sl | ppp | strip
-file	netimp/if_imp.c		    			imp needs-count
-file	netimp/if_imphost.c	    			imp needs-count
+file	netimp/if_imp.c		    			imp
+file	netimp/if_imphost.c	    			imp
 file	netimp/raw_imp.c	    			imp
 file	netinet/if_ether.c	    			ether
 file	netinet/igmp.c		    			
