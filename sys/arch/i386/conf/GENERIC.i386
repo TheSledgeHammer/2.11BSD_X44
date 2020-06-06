@@ -4,7 +4,7 @@
 #
 
 machine 		i386
-include			"../../../conf/GENERIC"
+include			"conf/GENERIC"
 maxusers		32				# estimated number of users
 
 options			EXEC_AOUT		# exec a.out binaries
@@ -67,7 +67,7 @@ isa*	at mainbus?
 isa*	at pcib?
 
 # PCMCIA bus support
-pcmcia*	at pcic? controller ? socket ?
+#pcmcia*	at pcic? controller ? socket ?
 
 # ISA PCMCIA controllers
 pcic0	at isa? port 0x3e0 iomem 0xd0000 iosiz 0x4000
@@ -98,7 +98,7 @@ cy*	at pci? dev ? function ?			# Cyclades Cyclom-Y serial boards
 com*	at isapnp?						# Modems and serial boards
 
 # PCMCIA serial interfaces
-com*	at pcmcia? function ?			# Modems and serial cards
+#com*	at pcmcia? function ?			# Modems and serial cards
 
 # ISA serial interfaces
 #options 	COM_HAYESP					# adds Hayes ESP serial board support
@@ -138,7 +138,7 @@ bha*	at eisa? slot ?					# BusLogic 7xx SCSI
 uha*	at eisa? slot ?					# UltraStor 24f SCSI
 
 # PCMCIA SCSI controllers
-aic*	at pcmcia? function ?			# Adaptec APA-1460 SCSI
+#aic*	at pcmcia? function ?			# Adaptec APA-1460 SCSI
 
 # ISA SCSI controllers
 aha0	at isa? port 0x330 irq ? drq ?	# Adaptec 154[02] SCSI
@@ -184,10 +184,10 @@ wdc1	at isa? port 0x170 irq 15
 wd*	at wdc? drive ?								# the drives themselves
 
 # ATAPI bus support
-atapibus* at wdc?
+#atapibus* at wdc?
 
 # ATAPI devices
-cd*	at atapibus? drive ?						# ATAPI CD-ROM drives
+#cd*	at atapibus? drive ?						# ATAPI CD-ROM drives
 
 
 # Miscellaneous mass storage devices
@@ -230,9 +230,9 @@ ep*	at isapnp?									# 3Com 3c509 Ethernet
 ne*	at isapnp?									# NE2000-compatible Ethernet
 
 # PCMCIA network interfaces
-ep*	at pcmcia? function ?						# 3Com 3c589 and 3c562 Ethernet
-ne*	at pcmcia? function ?						# NE2000-compatible Ethernet
-sm*	at pcmcia? function ?						# Megahertz Ethernet
+#ep*	at pcmcia? function ?						# 3Com 3c589 and 3c562 Ethernet
+#ne*	at pcmcia? function ?						# NE2000-compatible Ethernet
+#sm*	at pcmcia? function ?						# Megahertz Ethernet
 
 # ISA network interfaces
 ec0		at isa? port 0x250 iomem 0xd8000 irq 9	# 3Com 3c503 Ethernet
