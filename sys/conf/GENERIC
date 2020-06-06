@@ -27,7 +27,7 @@ options 		COMPAT_43		# and 4.3BSD
 #pseudo-device	vnd			4	# disk-like interface to files
 
 # network pseudo-devices
-3pseudo-device	bpfilter		# Berkeley packet filter
+#pseudo-device	bpfilter		# Berkeley packet filter
 #pseudo-device	ipfilter		# IP filter (firewall) and NAT
 #pseudo-device	loop			# network loopback
 #pseudo-device	ppp				# Point-to-Point Protocol
