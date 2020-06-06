@@ -20,7 +20,6 @@ options 		I686_CPU
 # CPU-related options.
 options 		MATH_EMULATE	# floating point emulation
 #options 		VM86			# virtual 8086 emulation
-options 		USER_LDT		# user-settable LDT; used by WINE
 
 # eliminate delay no-ops in I/O; recommended on all but very old machines
 #options 		DUMMY_NOPS
@@ -46,7 +45,7 @@ options 		SCSIVERBOSE		# human readable SCSI error messages
 
 mainbus0 at root
 
-#apm0	at mainbus0			# Advanced power management
+#apm0	at mainbus0					# Advanced power management
 
 # Basic Bus Support
 
@@ -80,14 +79,14 @@ isapnp0	at isa?
 # Coprocessor Support
 
 # Math Coprocessor support
-npx0	at isa? port 0xf0 irq 13	# x86 math coprocessor
+npx0	at isa? port 0xf0 irq 13		# x86 math coprocessor
 
 
 # Console Devices
 
 # ISA console.  You can only configure one of these!
-pc0		at isa? port 0x60 irq 1		# pccons generic PC console driver
-#vt0	at isa? port 0x60 irq 1		# PCVT console driver
+pc0		at isa? port 0x60 irq 1			# pccons generic PC console driver
+#vt0	at isa? port 0x60 irq 1			# PCVT console driver
 
 
 # Serial Devices
@@ -119,7 +118,7 @@ com2	at isa? port 0x3e8 irq 5
 # Parallel Printer Interfaces
 
 # ISA parallel printer interfaces
-lpt0	at isa? port 0x378 irq 7	# standard PC parallel ports
+lpt0	at isa? port 0x378 irq 7		# standard PC parallel ports
 lpt1	at isa? port 0x278
 lpt2	at isa? port 0x3bc
 
@@ -127,16 +126,16 @@ lpt2	at isa? port 0x3bc
 # SCSI Controllers and Devices
 
 # PCI SCSI controllers
-ahc*	at pci? dev ? function ?	# Adaptec [23]94x, aic78x0 SCSI
-bha*	at pci? dev ? function ?	# BusLogic 9xx SCSI
-isp*	at pci? dev ? function ?	# Qlogic ISP [12]0x0 SCSI/FibreChannel
-ncr*	at pci? dev ? function ?	# NCR 53c8xx SCSI
+ahc*	at pci? dev ? function ?		# Adaptec [23]94x, aic78x0 SCSI
+bha*	at pci? dev ? function ?		# BusLogic 9xx SCSI
+isp*	at pci? dev ? function ?		# Qlogic ISP [12]0x0 SCSI/FibreChannel
+ncr*	at pci? dev ? function ?		# NCR 53c8xx SCSI
 
 # EISA SCSI controllers
-ahb*	at eisa? slot ?			# Adaptec 174[02] SCSI
-ahc*	at eisa? slot ?			# Adaptec 274x, aic7770 SCSI
-bha*	at eisa? slot ?			# BusLogic 7xx SCSI
-uha*	at eisa? slot ?			# UltraStor 24f SCSI
+ahb*	at eisa? slot ?					# Adaptec 174[02] SCSI
+ahc*	at eisa? slot ?					# Adaptec 274x, aic7770 SCSI
+bha*	at eisa? slot ?					# BusLogic 7xx SCSI
+uha*	at eisa? slot ?					# UltraStor 24f SCSI
 
 # PCMCIA SCSI controllers
 aic*	at pcmcia? function ?			# Adaptec APA-1460 SCSI
@@ -167,73 +166,73 @@ scsibus* at uha?
 scsibus* at wds?
 
 # SCSI devices
-sd*	at scsibus? target ? lun ?	# SCSI disk drives
-st*	at scsibus? target ? lun ?	# SCSI tape drives
-cd*	at scsibus? target ? lun ?	# SCSI CD-ROM drives
-ch*	at scsibus? target ? lun ?	# SCSI autochangers
-ss*	at scsibus? target ? lun ?	# SCSI scanners
-uk*	at scsibus? target ? lun ?	# SCSI unknown
+sd*	at scsibus? target ? lun ?			# SCSI disk drives
+st*	at scsibus? target ? lun ?			# SCSI tape drives
+cd*	at scsibus? target ? lun ?			# SCSI CD-ROM drives
+ch*	at scsibus? target ? lun ?			# SCSI autochangers
+ss*	at scsibus? target ? lun ?			# SCSI scanners
+uk*	at scsibus? target ? lun ?			# SCSI unknown
 
 
 # IDE and Related Devices
 
 # ISA IDE controllers
-wdc0	at isa? port 0x1f0 irq 14	# ST506, ESDI, and IDE controllers
+wdc0	at isa? port 0x1f0 irq 14				# ST506, ESDI, and IDE controllers
 wdc1	at isa? port 0x170 irq 15
 
 # IDE drives
-wd*	at wdc? drive ?				# the drives themselves
+wd*	at wdc? drive ?								# the drives themselves
 
 # ATAPI bus support
 atapibus* at wdc?
 
 # ATAPI devices
-cd*	at atapibus? drive ?		# ATAPI CD-ROM drives
+cd*	at atapibus? drive ?						# ATAPI CD-ROM drives
 
 
 # Miscellaneous mass storage devices
 
 # ISA floppy
-fdc0	at isa? port 0x3f0 irq 6 drq 2	# standard PC floppy controllers
+fdc0	at isa? port 0x3f0 irq 6 drq 2			# standard PC floppy controllers
 #fdc1	at isa? port 0x370 irq ? drq ?
-fd*		at fdc? drive ?					# the drives themselves
+fd*		at fdc? drive ?							# the drives themselves
 # some machines need you to do this instead of fd*
 #fd0	at fdc0 drive 0
 
 # ISA CD-ROM devices
-#mcd0	at isa? port 0x300 irq 10	# Mitsumi CD-ROM drives
+#mcd0	at isa? port 0x300 irq 10				# Mitsumi CD-ROM drives
 
 # ISA tape devices
 # note: the wt driver conflicts unpleasantly with ed devices at the
 # same I/O address. The probe reprograms their EEPROMs. Don't
 # uncomment it unless you are actually using it.
-#wt0	at isa? port 0x308 irq 5 drq 1	# Archive and Wangtek QIC tape drives
+#wt0	at isa? port 0x308 irq 5 drq 1			# Archive and Wangtek QIC tape drives
 
 
 # Network Interfaces
 
 # PCI network interfaces
-de*		at pci? dev ? function ?	# DEC 21x4x-based Ethernet
-en*		at pci? dev ? function ?	# ENI/Adaptec ATM
-ep*		at pci? dev ? function ?	# 3Com 3c59x/3c90x Ethernet
-fpa*	at pci? dev ? function ?	# DEC DEFPA FDDI
-fxp*	at pci? dev ? function ?	# Intel EtherExpress PRO 10+/100B
-le*		at pci? dev ? function ?	# PCnet-PCI Ethernet
-ne*		at pci? dev ? function ?	# NE2000-compatible Ethernet
-tl*		at pci? dev ? function ?	# ThunderLAN-based Ethernet
+de*		at pci? dev ? function ?				# DEC 21x4x-based Ethernet
+en*		at pci? dev ? function ?				# ENI/Adaptec ATM
+ep*		at pci? dev ? function ?				# 3Com 3c59x/3c90x Ethernet
+fpa*	at pci? dev ? function ?				# DEC DEFPA FDDI
+fxp*	at pci? dev ? function ?				# Intel EtherExpress PRO 10+/100B
+le*		at pci? dev ? function ?				# PCnet-PCI Ethernet
+ne*		at pci? dev ? function ?				# NE2000-compatible Ethernet
+tl*		at pci? dev ? function ?				# ThunderLAN-based Ethernet
 
 # EISA network interfaces
-ep*		at eisa? slot ?			# 3Com 3c579 Ethernet
-fea*	at eisa? slot ?			# DEC DEFEA FDDI
+ep*		at eisa? slot ?							# 3Com 3c579 Ethernet
+fea*	at eisa? slot ?							# DEC DEFEA FDDI
 
 # ISA Plug-and-Play network interfaces
-ep*	at isapnp?					# 3Com 3c509 Ethernet
-ne*	at isapnp?					# NE2000-compatible Ethernet
+ep*	at isapnp?									# 3Com 3c509 Ethernet
+ne*	at isapnp?									# NE2000-compatible Ethernet
 
 # PCMCIA network interfaces
-ep*	at pcmcia? function ?		# 3Com 3c589 and 3c562 Ethernet
-ne*	at pcmcia? function ?		# NE2000-compatible Ethernet
-sm*	at pcmcia? function ?		# Megahertz Ethernet
+ep*	at pcmcia? function ?						# 3Com 3c589 and 3c562 Ethernet
+ne*	at pcmcia? function ?						# NE2000-compatible Ethernet
+sm*	at pcmcia? function ?						# Megahertz Ethernet
 
 # ISA network interfaces
 ec0		at isa? port 0x250 iomem 0xd8000 irq 9	# 3Com 3c503 Ethernet
@@ -282,23 +281,23 @@ audio*	at sp?
 audio*	at wss?
 
 # The spkr driver provides a simple tone interface to the built in speaker.
-#spkr0	at pckbd? port 0x61			# PC speaker
+#spkr0	at pckbd? port 0x61						# PC speaker
 
 
 # Mice
 
 # ISA busmice
-lms0	at isa? port 0x23c irq 5	# Logitech bus mouse
+lms0	at isa? port 0x23c irq 5				# Logitech bus mouse
 lms1	at isa? port 0x238 irq 5
-mms0	at isa? port 0x23c irq 5	# Microsoft InPort mouse
+mms0	at isa? port 0x23c irq 5				# Microsoft InPort mouse
 mms1	at isa? port 0x238 irq 5
-#pms0	at pckbd? irq 12			# PS/2 auxiliary port mouse
+#pms0	at pckbd? irq 12						# PS/2 auxiliary port mouse
 
 
 # Joysticks
 
 # ISA Plug-and-Play joysticks
-joy*	at isapnp?					# Game ports (usually on audio cards)
+joy*	at isapnp?								# Game ports (usually on audio cards)
 
 # ISA joysticks. Probe is a little strange; add only if you have one.
 #joy0	at isa? port 0x201

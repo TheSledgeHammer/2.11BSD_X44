@@ -6,14 +6,15 @@ option			KTRACE			# system call tracing, a la ktrace(1)
 option			ACCOUNTING		# acct(2) process accounting
 option			KMEMSTATS		# collect malloc(9) statistics
 option			PTRACE			# ptrace(2) system call
+options			INET
 
 option			FFS				# UFS
-option			FFS2			# UFS2
 option			QUOTA			# UFS quotas
-options     LFS				# log-structured file system
+options     	LFS				# log-structured file system
 option			MFS				# memory file system
-option			CD9660		# ISO 9660 + Rock Ridge file system
-option			MSDOSFS		# MS-DOS file system
+option			CD9660			# ISO 9660 + Rock Ridge file system
+option			MSDOSFS			# MS-DOS file system
+options			FDESC			# /dev/fd
 option			FIFO			# FIFOs; RECOMMENDED
 
 # Compatibility options
@@ -23,15 +24,15 @@ options 		COMPAT_43		# and 4.3BSD
 # disk/mass storage pseudo-devices
 pseudo-device	ccd			4	# concatenated/striped disk devices
 pseudo-device	md			1	# memory disk device (ramdisk)
-#pseudo-device	vnd			4	# disk-like interface to files
+pseudo-device	vnd			4	# disk-like interface to files
 
 # network pseudo-devices
-pseudo-device	bpfilter	8	# Berkeley packet filter
+pseudo-device	bpfilter		# Berkeley packet filter
 #pseudo-device	ipfilter		# IP filter (firewall) and NAT
 pseudo-device	loop			# network loopback
-pseudo-device	ppp			2	# Point-to-Point Protocol
+pseudo-device	ppp				# Point-to-Point Protocol
 pseudo-device	sl			2	# Serial Line IP
-pseudo-device	strip		2	# Starmode Radio IP (Metricom)
+pseudo-device	strip			# Starmode Radio IP (Metricom)
 #pseudo-device	tun			2	# network tunneling over tty
 
 # miscellaneous pseudo-devices

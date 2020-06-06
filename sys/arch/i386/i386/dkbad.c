@@ -47,9 +47,10 @@
  * the specified sector.  Return index if found.
  * Return -1 if not found.
  */
-
+int
 isbad(bt, cyl, trk, sec)
 	register struct dkbad *bt;
+	register long cyl, trk, sec;
 {
 	register int i;
 	register long blk, bblk;
