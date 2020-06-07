@@ -87,7 +87,7 @@ struct htbc {
 
 static struct htbc_dealloc 		*htbc_dealloc;
 static struct htbc_entry 		*htbc_entry;
-static struct hbchain 			*htbc_blockchain;
+static struct htbc_hbchain 		*htbc_hbchain;
 
 struct htbc_ino {
 	LIST_ENTRY(htbc_ino) 		hti_hash;
@@ -100,8 +100,7 @@ htbc_init()
 {
 	&htbc_entry = (struct htbc_entry *) malloc(sizeof(struct htbc_entry), M_HTBC, NULL);
 	&htbc_dealloc = (struct htbc_dealloc *) malloc(sizeof(struct htbc_dealloc), M_HTBC, NULL);
-
-	&htbc_blockchain = (struct hbchain *) malloc(sizeof(struct hbchain), M_HTBC, NULL);
+	&htbc_hbchain = (struct hbchain *) malloc(sizeof(struct hbchain), M_HTBC, NULL);
 }
 
 void
@@ -109,6 +108,7 @@ htbc_fini()
 {
 	FREE(&htbc_entry, M_HTBC);
 	FREE(&htbc_dealloc, M_HTBC);
+	FREE(&htbc_hbchain, M_HTBC);
 }
 
 int

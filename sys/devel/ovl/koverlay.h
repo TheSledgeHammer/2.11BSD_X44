@@ -34,19 +34,6 @@ struct koverlay {
 	int									kovl_sregcnt;		/* number of sub-regions allocated */
 };
 
-//	RB_HEAD(kovlrb, koverlay_region)	kovl_rbtree;
-/*
-struct koverlay_region {
-	char								*kovlr_name;
-	u_long 								kovlr_start;
-	u_long								kovlr_end;
-	RB_ENTRY(koverlay_region)			kovl_region;
-	caddr_t								kovlr_addr;
-	size_t								kovlr_size;
-	int									kovlr_flags;
-};
-*/
-
 /* Overlay Flags */
 #define KOVL_ALLOCATED  (1 < 0) 							/* kernel overlay region allocated */
 

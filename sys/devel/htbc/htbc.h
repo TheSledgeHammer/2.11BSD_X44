@@ -95,9 +95,9 @@ struct htbc_entry {
 };
 
 /****************************************************************/
-/* HTBC HTree Inode Layout (Copied from ext2) */
-/* Work in Progress: Needs changes to operate on other Filesystems, primarily become vnode based */
+/* HTBC HTree Inode Layout (From NetBSD ext2fs) */
 
+/* Work in Progress: Needs changes to operate on other Filesystems, primarily become vnode based */
 struct htbc_inode_ext {
 	daddr_t 					hi_last_lblk;			/* last logical block allocated */
 	daddr_t 					hi_last_blk;			/* last block allocated on disk */
@@ -224,7 +224,7 @@ struct htbc_extent_path *htbc_ext_find_extent(struct htbc_hi_mfs *fs, struct htb
 #define ROTATE_LEFT(x, n) (((x) << (n)) | ((x) >> (32 - (n))))
 
 /****************************************************************/
-
+/* Generic HTBC functions */
 void 	htbc_init(void);
 int 	htbc_start(struct htbc **);
 int 	htbc_stop(struct htbc *, int);

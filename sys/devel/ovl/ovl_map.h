@@ -8,22 +8,24 @@
 #ifndef	OVL_MAP_
 #define	OVL_MAP_
 
-
-struct vovl_map_object {
-	struct koverlay						*kovl_obj;
-	struct voverlay						*vovl_obj;
+union ovl_map_object {
+	struct ovl_object					*ovl_object;	/* object object */
 };
 
-struct vovl_map_entry {
-    CIRCLEQ_ENTRY(ovl_map_entry)        vovl_entry;
-    vm_offset_t		                    vovle_start;		    /* start address */
-	vm_offset_t		                    vovle_end;		        /* end address */
+struct ovl_map_entry {
+  CIRCLEQ_ENTRY(ovl_map_entry)  		ovl_entry;		/* entries in a circular list */
+  vm_offset_t		                	ovle_start;		/* start address */
+  vm_offset_t		                	ovle_end;		/* end address */
+  caddr_t								ovle_ownspace;	/* free space after */
+  caddr_t								ovle_space;		/* space in subtree */
+  union ovl_map_object			   		ovle_object;	/* object I point to */
+  vm_offset_t				          	ovle_offset;	/* offset into object */
 };
 
-CIRCLEQ_HEAD(vovllist, ovl_map_entry);
-struct vovl_map {
-    struct ovllist                      vovl_header;        /* Head of overlay List */
-    struct pmap *		                pmap;		        /* Physical map */
+CIRCLEQ_HEAD(ovl_map_clist, ovl_map_entry);
+struct ovl_map {
+	struct ovl_map_clist         		ovl_header;        	/* Circular List of entries */
+	struct pmap *		           		pmap;		        /* Physical map */
     lock_data_t		                    lock;		        /* Lock for overlay data */
     int			                        nentries;	        /* Number of entries */
     vm_size_t		                    size;		        /* virtual size */
@@ -36,10 +38,10 @@ struct vovl_map {
 #define max_offset		                header.cqh_first->end
 };
 
-#define	vovl_lock_drain_interlock(vovl) { 			\
-	lockmgr(&(vovl)->lock, LK_DRAIN|LK_INTERLOCK, 	\
-		&(vovl)->ref_lock, curproc); 				\
-	(vovl)->timestamp++; 							\
+#define	ovl_lock_drain_interlock(ovl) { 			\
+	lockmgr(&(ovl)->lock, LK_DRAIN|LK_INTERLOCK, 	\
+		&(ovl)->ref_lock, curproc); 				\
+	(ovl)->timestamp++; 							\
 }
 
 #ifdef DIAGNOSTIC
@@ -56,11 +58,11 @@ struct vovl_map {
 }
 #endif /* DIAGNOSTIC */
 
-#define	vovl_unlock(vovl) \
-		lockmgr(&(vovl)->lock, LK_RELEASE, (void *)0, curproc)
-#define	vovl_lock_read(vovl) \
-		lockmgr(&(vovl)->lock, LK_SHARED, (void *)0, curproc)
-#define	vovl_unlock_read(ovl) \
-		lockmgr(&(vovl)->lock, LK_RELEASE, (void *)0, curproc)
+#define	ovl_unlock(ovl) \
+		lockmgr(&(ovl)->lock, LK_RELEASE, (void *)0, curproc)
+#define	ovl_lock_read(ovl) \
+		lockmgr(&(ovl)->lock, LK_SHARED, (void *)0, curproc)
+#define	ovl_unlock_read(ovl) \
+		lockmgr(&(ovl)->lock, LK_RELEASE, (void *)0, curproc)
 
 #endif /* OVL_MAP_ */

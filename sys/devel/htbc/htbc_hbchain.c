@@ -39,6 +39,7 @@
 CIRCLEQ_HEAD(hbchain_head, hbchain);
 struct hbchain {
 	struct hbchain_head			hc_header;
+	CIRCLEQ_ENTRY(hbchain)		hc_entries;
 	uint32_t					hc_version;
 	uint32_t					hc_timestamp;
 	uint32_t					hc_hash;
@@ -48,6 +49,18 @@ static uint32_t
 get_hash(struct hbchain *hch)
 {
 	return hch->hc_hash;
+}
+
+static uint32_t
+get_timestamp(struct hbchain *hch)
+{
+	return hch->hc_timestamp;
+}
+
+static uint32_t
+get_version(struct hbchain *hch)
+{
+	return hch->hc_version;
 }
 
 static void
@@ -67,3 +80,4 @@ set_version(struct hbchain *hch, uint32_t version)
 {
 	hch->hc_version = version;
 }
+

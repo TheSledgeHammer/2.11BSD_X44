@@ -79,5 +79,4 @@ struct wapbl_ops {
 #define WAPBL_JLOCK_ASSERT(MP)					\
     (*(MP)->mnt_wapbl_op->wo_wapbl_jlock_assert)((MP)->mnt_wapbl)
 
-
 #endif /* _SYS_WAPBL_OPS_H */

@@ -108,7 +108,7 @@ TAILQ_HEAD(vm_object_hash_head, vm_object_hash_entry);
 
 struct vm_object_hash_entry {
 	TAILQ_ENTRY(vm_object_hash_entry)  hash_links;	/* hash chain links */
-	vm_object_t			   object;					/* object represented */
+	vm_object_t			   			   object;		/* object represented */
 };
 
 typedef struct vm_object_hash_entry	*vm_object_hash_entry_t;
