@@ -26,8 +26,10 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SYS_DEVEL_VM_INCLUDE_VM_EXTENT_H_
-#define SYS_DEVEL_VM_INCLUDE_VM_EXTENT_H_
+#ifndef SYS_DEVEL_VM_EXTENTS_VM_EXTENT_H_
+#define SYS_DEVEL_VM_EXTENTS_VM_EXTENT_H_
+
+#include <sys/extent.h>
 
 struct vm_extent {
 	struct extent		*vext_ext;

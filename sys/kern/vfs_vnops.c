@@ -154,6 +154,7 @@ bad:
  * Check for write permissions on the specified vnode.
  * Prototype text segments cannot be written.
  */
+int
 vn_writechk(vp)
 	register struct vnode *vp;
 {
@@ -171,6 +172,7 @@ vn_writechk(vp)
 /*
  * Vnode close call
  */
+int
 vn_close(vp, flags, cred, p)
 	register struct vnode *vp;
 	int flags;
@@ -189,6 +191,7 @@ vn_close(vp, flags, cred, p)
 /*
  * Package up an I/O request on a vnode into a uio and do it.
  */
+int
 vn_rdwr(rw, vp, base, len, offset, segflg, ioflg, cred, aresid, p)
 	enum uio_rw rw;
 	struct vnode *vp;
@@ -234,6 +237,7 @@ vn_rdwr(rw, vp, base, len, offset, segflg, ioflg, cred, aresid, p)
 /*
  * File table vnode read routine.
  */
+int
 vn_read(fp, uio, cred)
 	struct file *fp;
 	struct uio *uio;
@@ -257,6 +261,7 @@ vn_read(fp, uio, cred)
 /*
  * File table vnode write routine.
  */
+int
 vn_write(fp, uio, cred)
 	struct file *fp;
 	struct uio *uio;
@@ -289,6 +294,7 @@ vn_write(fp, uio, cred)
 /*
  * File table vnode stat routine.
  */
+int
 vn_stat(vp, sb, p)
 	struct vnode *vp;
 	register struct stat *sb;
@@ -353,6 +359,7 @@ vn_stat(vp, sb, p)
 /*
  * File table vnode ioctl routine.
  */
+int
 vn_ioctl(fp, com, data, p)
 	struct file *fp;
 	u_long com;
@@ -399,14 +406,14 @@ vn_ioctl(fp, com, data, p)
 /*
  * File table vnode select routine.
  */
+int
 vn_select(fp, which, p)
 	struct file *fp;
 	int which;
 	struct proc *p;
 {
 
-	return (VOP_SELECT(((struct vnode *)fp->f_data), which, fp->f_flag,
-		fp->f_cred, p));
+	return (VOP_SELECT(((struct vnode *)fp->f_data), which, fp->f_flag, fp->f_cred, p));
 }
 
 /*
@@ -442,10 +449,10 @@ vn_lock(vp, flags, p)
 /*
  * File table vnode close routine.
  */
+int
 vn_closefile(fp, p)
 	struct file *fp;
 	struct proc *p;
 {
-
 	return (vn_close(((struct vnode *)fp->f_data), fp->f_flag, fp->f_cred, p));
 }

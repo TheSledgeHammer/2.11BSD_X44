@@ -71,15 +71,28 @@ struct vmspace {
  */
 struct avmspace {
 	struct	vm_amap  avm_amap;		/* AVM anon address map */
-	struct	pmap 	 avm_pmap;		/* private physical map */
+
 	int				 avm_refcnt;	/* number of references */
+
+	segsz_t 		 avm_rssize; 	/* current resident set size in pages */
+	segsz_t 		 avm_swrss;		/* resident set size before last swap */
+	segsz_t 		 avm_tsize;		/* text size (pages) XXX */
+	segsz_t 		 avm_dsize;		/* data size (pages) XXX */
+	segsz_t 		 avm_ssize;		/* stack size (pages) */
+	caddr_t			 avm_taddr;		/* user virtual address of text XXX */
+	caddr_t			 avm_daddr;		/* user virtual address of data XXX */
+	caddr_t 		 avm_minsaddr;	/* user VA at min stack growth */
+	caddr_t 		 avm_maxsaddr;	/* user VA at max stack growth */
 };
 
 /*
- * Shareable virtual overlay address space.
+ * Shareable overlay address space.
  */
-struct vovlspace {
-
+struct ovlspace {
+	struct ovl_map 	ovl_map;	/* overlay address map */
+	struct pmap 	ovl_pmap;	/* private physical map */
+	struct koverlay ovl_kovl;	/* kernel overlay space */
+	struct voverlay ovl_vovl;	/* virtual overlay space */
 };
 
 #ifdef _KERNEL

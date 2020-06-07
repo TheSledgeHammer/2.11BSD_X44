@@ -27,15 +27,15 @@
  */
 
 #include <sys/user.h>
-#include <devel/vm/include/vm_extent.h>
+#include "vm_extent.h"
 
-struct vm_extentops vm_segmentops[] = {
-	.vm_extent_create =	vm_segment_create,
+struct vm_extentops vm_segment[] = {
+	.vm_extent_create =	extent_create,
 	.vm_extent_mallocok = vm_segment_mallocok,
-	.vm_extent_alloc = vm_segment_malloc,
-	.vm_extent_suballoc = vm_segment_suballoc,
-	.vm_extent_free = vm_segment_free,
-	.vm_extent_destroy = vm_segment_destroy
+	.vm_extent_alloc = extent_alloc_region,
+	.vm_extent_suballoc = extent_alloc_subregion,
+	.vm_extent_free = extent_free,
+	.vm_extent_destroy = extent_destroy
 };
 
 int
@@ -68,7 +68,7 @@ vm_segment_mallocok(ap)
 }
 
 int
-vm_segment_malloc(ap)
+vm_segment_alloc(ap)
 	struct vm_extentops_alloc_args *ap;
 {
 	struct vm_extent *vext = ap->a_vext;

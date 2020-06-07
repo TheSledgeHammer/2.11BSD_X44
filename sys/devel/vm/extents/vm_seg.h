@@ -76,4 +76,12 @@ struct vm_segmentspace {
 	caddr_t 					segs_maxsaddr;		/* user VA at max stack growth */
 };
 
+/* Segmented Space Address Layout */
+#define VMSPACE_START
+#define VMSPACE_END
+#define AVMSPACE_START
+#define AVMSPACE_END
+#define OVLSPACE_START
+#define OVLSPACE_END
+
 #endif /* _VM_SEG_H_ */

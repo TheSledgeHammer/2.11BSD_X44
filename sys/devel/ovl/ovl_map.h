@@ -10,7 +10,8 @@
 
 
 struct vovl_map_object {
-	struct koverlay	*kovl_ob;
+	struct koverlay						*kovl_obj;
+	struct voverlay						*vovl_obj;
 };
 
 struct vovl_map_entry {

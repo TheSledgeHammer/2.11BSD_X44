@@ -42,6 +42,7 @@
 
 #ifdef _KERNEL
 #include <sys/param.h>
+#include <sys/user.h>
 #include <sys/extent.h>
 #include <sys/malloc.h>
 #include <sys/time.h>
@@ -52,6 +53,7 @@
  * user-land definitions, so it can fit into a testing harness.
  */
 #include <sys/param.h>
+#include <sys/user.h>
 #include <sys/extent.h>
 #include <errno.h>
 #include <stdlib.h>

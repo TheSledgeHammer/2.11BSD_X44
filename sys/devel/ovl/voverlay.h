@@ -12,8 +12,8 @@
 
 struct voverlay_entry {
 	RB_ENTRY(voverlay_entry)					vovl_entry;
-    vm_offset_t		                    		vovle_start;		    /* start address */
-	vm_offset_t		                    		vovle_end;		        /* end address */
+    vm_offset_t		                    		vovl_start;		    /* start address */
+	vm_offset_t		                    		vovl_end;		    /* end address */
 
 };
 
@@ -27,8 +27,8 @@ struct voverlay {
 
 
 struct ovlspace {
-	struct voverlay		*ovls_vovl;
-	struct koverlay		*ovls_kovl;
+	struct koverlay		*ovls_kovl;			/* kernel overlays */
+	struct voverlay		*ovls_vovl;			/* virtual overlays */
 };
 
 /* number of overlay maps and entries to statically allocate */

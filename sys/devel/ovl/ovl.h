@@ -45,6 +45,7 @@ typedef struct vovl_map_entry	*vovl_map_entry_t;
 struct vovlspace {
 	struct ovl_map 	    vovl_map;	    	/* Overlay address */
 	struct pmap    		vovl_pmap;	    	/* private physical map */
+
 	int		        	vovl_refcnt;	   	/* number of references */
 	segsz_t 			vovl_tsize;			/* text size */
 	segsz_t 			vovl_dsize;			/* data size */

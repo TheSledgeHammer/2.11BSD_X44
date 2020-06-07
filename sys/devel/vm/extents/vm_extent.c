@@ -26,10 +26,11 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "vm_extent.h"
+
 #include <sys/extent.h>
 #include <sys/malloc.h>
 #include <sys/user.h>
-#include <devel/vm/include/vm_extent.h>
 
 struct vm_extentops vextops;
 

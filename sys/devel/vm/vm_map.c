@@ -478,7 +478,6 @@ vm_map_init(map, min, max, pageable)
 {
 	CIRCLEQ_INIT(&map->cl_header);
 	RB_INIT(&map->rb_root);
-	//map->header.next = map->header.prev = &map->header;
 	map->nentries = 0;
 	map->size = 0;
 	map->ref_count = 1;
