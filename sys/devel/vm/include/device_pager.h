@@ -1,13 +1,11 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
- *
- *	@(#)vm.h	7.1 (Berkeley) 6/4/86
- */
-/*
+ * Copyright (c) 1990 University of Utah.
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * the Systems Programming Group of the University of Utah Computer
+ * Science Department.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,52 +35,19 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm.h	8.5 (Berkeley) 5/11/95
+ *	@(#)device_pager.h	8.3 (Berkeley) 12/13/93
  */
 
-#ifndef _VM_VMSPACE_H_
-#define _VM_VMSPACE_H_
+#ifndef	_DEVICE_PAGER_
+#define	_DEVICE_PAGER_	1
 
 /*
- * Shareable process virtual address space.
- * May eventually be merged with vm_map.
- * Several fields are temporary (text, data stuff).
+ * Device pager private data.
  */
-struct vmspace {
-	struct	vm_map 	 vm_map;		/* VM address map */
-	struct	pmap 	 vm_pmap;		/* private physical map */
-	int				 vm_refcnt;		/* number of references */
-	caddr_t			 vm_shm;		/* SYS5 shared memory private data XXX */
-/* we copy from vm_startcopy to the end of the structure on fork */
-#define vm_startcopy vm_rssize
-	segsz_t 		 vm_rssize; 	/* current resident set size in pages */
-	segsz_t 		 vm_swrss;		/* resident set size before last swap */
-	segsz_t 		 vm_tsize;		/* text size (pages) XXX */
-	segsz_t 		 vm_dsize;		/* data size (pages) XXX */
-	segsz_t 		 vm_ssize;		/* stack size (pages) */
-	caddr_t			 vm_taddr;		/* user virtual address of text XXX */
-	caddr_t			 vm_daddr;		/* user virtual address of data XXX */
-	caddr_t 		 vm_minsaddr;	/* user VA at min stack growth */
-	caddr_t 		 vm_maxsaddr;	/* user VA at max stack growth */
+struct devpager {
+	struct pglist	devp_pglist;	/* list of pages allocated */
+	vm_object_t		devp_object;	/* object representing this device */
 };
+typedef struct devpager	*dev_pager_t;
 
-/*
- * Shareable process anonymous virtual address space.
- */
-struct avmspace {
-	struct	vm_amap  avm_amap;		/* AVM anon address map */
-	struct	pmap 	 avm_pmap;		/* private physical map */
-	int				 avm_refcnt;	/* number of references */
-};
-
-/*
- * Shareable virtual overlay address space.
- */
-struct vovlspace {
-
-};
-
-#ifdef _KERNEL
-#include <machine/vmparam.h>
-#endif /* _KERNEL */
-#endif /* _VM_VMSPACE_H_ */
+#endif	/* _DEVICE_PAGER_ */

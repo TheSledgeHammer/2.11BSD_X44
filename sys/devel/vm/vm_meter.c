@@ -38,7 +38,8 @@
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/sysctl.h>
-#include <vm/include/vm.h>
+#include <sys/map.h>
+#include <devel/vm/include/vm.h>
 
 struct	loadavg averunnable;		/* load average, of runnable procs */
 
@@ -94,7 +95,7 @@ loadav(avg)
 
 /*
  * Bit of a hack.  2.11 currently uses 'short avenrun[3]' and a fixed scale
- * of 256.  In order not to break all the applications which nlist() for
+ * of FSCALE.  In order not to break all the applications which nlist() for
  * 'avenrun' we build a local 'averunnable' structure here to return to the
  * user.  Eventually (after all applications which look up the load average
  * the old way) have been converted we can change things.
@@ -107,6 +108,7 @@ loadav(avg)
 /*
  * Attributes associated with virtual memory.
  */
+int
 vm_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	int *name;
 	u_int namelen;
@@ -132,6 +134,8 @@ vm_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	case VM_METER:
 		vmtotal(&vmtotals);
 		return (sysctl_rdstruct(oldp, oldlenp, newp, &vmtotals, sizeof(vmtotals)));
+	case VM_NKMEMPAGES:
+		return (sysctl_rdint(oldp, oldlenp, newp, nkmempages));
 	case VM_SWAPMAP:
 		if (oldp == NULL) {
 			*oldlenp = (char *)swapmap[0]->m_limit - (char *)swapmap[0]->m_map;
@@ -144,6 +148,18 @@ vm_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 			return (0);
 		}
 		return (sysctl_rdstruct(oldp, oldlenp, newp, coremap, (int) coremap[0]->m_limit - (int) coremap[0]->m_map));
+	case VM_VMEXP:
+		return (sysctl_rdstruct(oldp, oldlenp, newp, &vmexp, sizeof(vmexp)));
+	case VM_ANONMIN:
+	case VM_EXECMIN:
+	case VM_FILEMIN:
+	case VM_ANONMAX:
+	case VM_EXECMAX:
+	case VM_FILEMAX:
+	case VM_MAXSLP:
+		return (sysctl_rdint(oldp, oldlenp, newp, maxslp));
+	case VM_USPACE:
+		return (sysctl_rdint(oldp, oldlenp, newp, USPACE));
 	default:
 		return (EOPNOTSUPP);
 	}

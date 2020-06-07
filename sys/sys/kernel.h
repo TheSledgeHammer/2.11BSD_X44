@@ -30,5 +30,5 @@ extern int 						stathz;		/* statistics clock's frequency */
 extern int 						profhz;		/* profiling clock's frequency */
 extern int						lbolt;		/* awoken once a second */
 extern int						psratio;	/* ratio: prof / stat */
-short 							avenrun[3];
+int 							avenrun[3];
 

@@ -71,7 +71,7 @@
 #include <sys/malloc.h>
 
 #include <vm/include/vm_page.h>
-#include <devel/vm/include/vm.h>
+#include <vm/include/vm.h>
 
 /*
  *	Virtual memory objects maintain the actual data

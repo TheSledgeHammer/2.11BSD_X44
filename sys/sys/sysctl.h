@@ -115,7 +115,6 @@ struct ctlname {
 #define	KERN_OSRELEASE		 2	/* string: system release */
 #define	KERN_OSREV	 		 3	/* int: system revision */
 #define	KERN_VERSION		 4	/* string: compile time info */
-//#define	KERN_MAXINODES		 5	/* int: max inodes */
 #define	KERN_MAXVNODES		 5	/* int: max vnode */
 #define	KERN_MAXPROC		 6	/* int: max processes */
 #define	KERN_MAXFILES		 7	/* int: max open files */
@@ -124,7 +123,6 @@ struct ctlname {
 #define	KERN_HOSTNAME		10	/* string: hostname */
 #define	KERN_HOSTID			11	/* int: host identifier */
 #define	KERN_CLOCKRATE		12	/* struct: struct clockrate */
-//#define	KERN_INODE			13	/* struct: inode structures */
 #define	KERN_VNODE			13	/* struct: vnode structures */
 #define	KERN_PROC			14	/* struct: process entries */
 #define	KERN_FILE			15	/* struct: file entries */

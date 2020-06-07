@@ -33,7 +33,7 @@
 #ifndef _UVM_UVM_SWAP_H_
 #define _UVM_UVM_SWAP_H_
 
-#include <devel/vm/include/vm_swap_pager.h>
+#include <devel/vm/include/swap_pager.h>
 
 /*
  * swapdev: describes a single swap partition/file

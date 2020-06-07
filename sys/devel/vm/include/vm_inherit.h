@@ -1,13 +1,9 @@
-/*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
- *
- *	@(#)vm.h	7.1 (Berkeley) 6/4/86
- */
-/*
+/* 
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * The Mach Operating System project at Carnegie-Mellon University.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,52 +33,51 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm.h	8.5 (Berkeley) 5/11/95
+ *	@(#)vm_inherit.h	8.1 (Berkeley) 6/11/93
+ *
+ *
+ * Copyright (c) 1987, 1990 Carnegie-Mellon University.
+ * All rights reserved.
+ *
+ * Authors: Avadis Tevanian, Jr., Michael Wayne Young
+ * 
+ * Permission to use, copy, modify and distribute this software and
+ * its documentation is hereby granted, provided that both the copyright
+ * notice and this permission notice appear in all copies of the
+ * software, derivative works or modified versions, and any portions
+ * thereof, and that both notices appear in supporting documentation.
+ * 
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS" 
+ * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND 
+ * FOR ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
+ * 
+ * Carnegie Mellon requests users of this software to return to
+ *
+ *  Software Distribution Coordinator  or  Software.Distribution@CS.CMU.EDU
+ *  School of Computer Science
+ *  Carnegie Mellon University
+ *  Pittsburgh PA 15213-3890
+ *
+ * any improvements or extensions that they make and grant Carnegie the
+ * rights to redistribute these changes.
  */
-
-#ifndef _VM_VMSPACE_H_
-#define _VM_VMSPACE_H_
 
 /*
- * Shareable process virtual address space.
- * May eventually be merged with vm_map.
- * Several fields are temporary (text, data stuff).
+ *	Virtual memory map inheritance definitions.
  */
-struct vmspace {
-	struct	vm_map 	 vm_map;		/* VM address map */
-	struct	pmap 	 vm_pmap;		/* private physical map */
-	int				 vm_refcnt;		/* number of references */
-	caddr_t			 vm_shm;		/* SYS5 shared memory private data XXX */
-/* we copy from vm_startcopy to the end of the structure on fork */
-#define vm_startcopy vm_rssize
-	segsz_t 		 vm_rssize; 	/* current resident set size in pages */
-	segsz_t 		 vm_swrss;		/* resident set size before last swap */
-	segsz_t 		 vm_tsize;		/* text size (pages) XXX */
-	segsz_t 		 vm_dsize;		/* data size (pages) XXX */
-	segsz_t 		 vm_ssize;		/* stack size (pages) */
-	caddr_t			 vm_taddr;		/* user virtual address of text XXX */
-	caddr_t			 vm_daddr;		/* user virtual address of data XXX */
-	caddr_t 		 vm_minsaddr;	/* user VA at min stack growth */
-	caddr_t 		 vm_maxsaddr;	/* user VA at max stack growth */
-};
+
+#ifndef	_VM_INHERIT_
+#define	_VM_INHERIT_
 
 /*
- * Shareable process anonymous virtual address space.
+ *	Enumeration of valid values for vm_inherit_t.
  */
-struct avmspace {
-	struct	vm_amap  avm_amap;		/* AVM anon address map */
-	struct	pmap 	 avm_pmap;		/* private physical map */
-	int				 avm_refcnt;	/* number of references */
-};
 
-/*
- * Shareable virtual overlay address space.
- */
-struct vovlspace {
+#define	VM_INHERIT_SHARE		((vm_inherit_t) 0)	/* share with child */
+#define	VM_INHERIT_COPY			((vm_inherit_t) 1)	/* copy into child */
+#define VM_INHERIT_NONE			((vm_inherit_t) 2)	/* absent from child */
+#define	VM_INHERIT_DONATE_COPY	((vm_inherit_t) 3)	/* copy and delete */
 
-};
+#define VM_INHERIT_DEFAULT	VM_INHERIT_COPY
 
-#ifdef _KERNEL
-#include <machine/vmparam.h>
-#endif /* _KERNEL */
-#endif /* _VM_VMSPACE_H_ */
+#endif /* _VM_INHERIT_ */

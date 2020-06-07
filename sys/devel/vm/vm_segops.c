@@ -27,7 +27,7 @@
  */
 
 #include <sys/user.h>
-#include <include/vm_extent.h>
+#include <devel/vm/include/vm_extent.h>
 
 struct vm_extentops vm_segmentops[] = {
 	.vm_extent_create =	vm_segment_create,

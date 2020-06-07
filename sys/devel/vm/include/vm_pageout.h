@@ -1,13 +1,9 @@
-/*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
- *
- *	@(#)vm.h	7.1 (Berkeley) 6/4/86
- */
-/*
+/* 
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * The Mach Operating System project at Carnegie-Mellon University.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,52 +33,64 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm.h	8.5 (Berkeley) 5/11/95
+ *	@(#)vm_pageout.h	8.3 (Berkeley) 1/9/95
+ *
+ *
+ * Copyright (c) 1987, 1990 Carnegie-Mellon University.
+ * All rights reserved.
+ *
+ * Author: Avadis Tevanian, Jr.
+ * 
+ * Permission to use, copy, modify and distribute this software and
+ * its documentation is hereby granted, provided that both the copyright
+ * notice and this permission notice appear in all copies of the
+ * software, derivative works or modified versions, and any portions
+ * thereof, and that both notices appear in supporting documentation.
+ * 
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS" 
+ * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND 
+ * FOR ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
+ * 
+ * Carnegie Mellon requests users of this software to return to
+ *
+ *  Software Distribution Coordinator  or  Software.Distribution@CS.CMU.EDU
+ *  School of Computer Science
+ *  Carnegie Mellon University
+ *  Pittsburgh PA 15213-3890
+ *
+ * any improvements or extensions that they make and grant Carnegie the
+ * rights to redistribute these changes.
  */
-
-#ifndef _VM_VMSPACE_H_
-#define _VM_VMSPACE_H_
 
 /*
- * Shareable process virtual address space.
- * May eventually be merged with vm_map.
- * Several fields are temporary (text, data stuff).
+ *	Header file for pageout daemon.
  */
-struct vmspace {
-	struct	vm_map 	 vm_map;		/* VM address map */
-	struct	pmap 	 vm_pmap;		/* private physical map */
-	int				 vm_refcnt;		/* number of references */
-	caddr_t			 vm_shm;		/* SYS5 shared memory private data XXX */
-/* we copy from vm_startcopy to the end of the structure on fork */
-#define vm_startcopy vm_rssize
-	segsz_t 		 vm_rssize; 	/* current resident set size in pages */
-	segsz_t 		 vm_swrss;		/* resident set size before last swap */
-	segsz_t 		 vm_tsize;		/* text size (pages) XXX */
-	segsz_t 		 vm_dsize;		/* data size (pages) XXX */
-	segsz_t 		 vm_ssize;		/* stack size (pages) */
-	caddr_t			 vm_taddr;		/* user virtual address of text XXX */
-	caddr_t			 vm_daddr;		/* user virtual address of data XXX */
-	caddr_t 		 vm_minsaddr;	/* user VA at min stack growth */
-	caddr_t 		 vm_maxsaddr;	/* user VA at max stack growth */
-};
 
 /*
- * Shareable process anonymous virtual address space.
+ *	Exported data structures.
  */
-struct avmspace {
-	struct	vm_amap  avm_amap;		/* AVM anon address map */
-	struct	pmap 	 avm_pmap;		/* private physical map */
-	int				 avm_refcnt;	/* number of references */
-};
+
+extern int			vm_pages_needed;	/* should be some "event" structure */
+simple_lock_data_t	vm_pages_needed_lock;
+
 
 /*
- * Shareable virtual overlay address space.
+ *	Exported routines.
  */
-struct vovlspace {
 
-};
+/*
+ *	Signal pageout-daemon and wait for it.
+ */
 
-#ifdef _KERNEL
-#include <machine/vmparam.h>
-#endif /* _KERNEL */
-#endif /* _VM_VMSPACE_H_ */
+#define	VM_WAIT		{ 							\
+			simple_lock(&vm_pages_needed_lock); \
+			thread_wakeup(&vm_pages_needed); 	\
+			thread_sleep(&cnt.v_free_count, 	\
+				&vm_pages_needed_lock, FALSE); 	\
+			}
+#ifdef KERNEL
+void		 vm_pageout (void);
+void		 vm_pageout_scan (void);
+void		 vm_pageout_page (vm_page_t, vm_object_t);
+void		 vm_pageout_cluster (vm_page_t, vm_object_t);
+#endif

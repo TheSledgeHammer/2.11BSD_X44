@@ -78,22 +78,21 @@ typedef struct vm_aobject		*vm_aobject_t;
 #include <sys/user.h>
 #include <sys/vmmeter.h>
 
-#include <vm/include/pmap.h>
-#include <vm/include/vm_inherit.h>
-#include <vm/include/vm_extern.h>
-#include <vm/include/vm_object.h>
-#include <vm/include/vm_param.h>
-#include <vm/include/vm_prot.h>
-
+#include <devel/vm/include/pmap.h>
+#include <devel/vm/include/swap_pager.h>
 #include <devel/vm/include/vm_amap.h>
 #include <devel/vm/include/vm_anon.h>
 #include <devel/vm/include/vm_aobject.h>
+#include <devel/vm/include/vm_extern.h>
+#include <devel/vm/include/vm_inherit.h>
 #include <devel/vm/include/vm_map.h>
-#include <devel/vm/include/vm_vmspace.h>
+#include <devel/vm/include/vm_object.h>
+#include <devel/vm/include/vm_param.h>
+#include <devel/vm/include/vm_prot.h>
 #include <devel/vm/include/vm_swap.h>
-#include <devel/vm/include/vm_swap_pager.h>
+#include <devel/vm/include/vm_vmspace.h>
 
-#include "vm_extent2.h"	/* Work in Progress */
+#include <devel/vm/include/vm_extent.h>	/* Work in Progress */
 #include <devel/vm/include/vm_seg.h>	/* Work in Progress */
 
 /*
@@ -172,9 +171,9 @@ extern struct vmexp vmexp;
 #define VM_ET_COPYONWRITE 		0x04	/* copy_on_write */
 #define VM_ET_NEEDSCOPY			0x08	/* needs_copy */
 
-#define VM_ET_ISOBJ(E)			(((E)->etype & UVM_ET_OBJ) != 0)
-#define VM_ET_ISSUBMAP(E)		(((E)->etype & UVM_ET_SUBMAP) != 0)
-#define VM_ET_ISCOPYONWRITE(E)	(((E)->etype & UVM_ET_COPYONWRITE) != 0)
-#define VM_ET_ISNEEDSCOPY(E)	(((E)->etype & UVM_ET_NEEDSCOPY) != 0)
+#define VM_ET_ISOBJ(E)			(((E)->etype & VM_ET_OBJ) != 0)
+#define VM_ET_ISSUBMAP(E)		(((E)->etype & VM_ET_SUBMAP) != 0)
+#define VM_ET_ISCOPYONWRITE(E)	(((E)->etype & VM_ET_COPYONWRITE) != 0)
+#define VM_ET_ISNEEDSCOPY(E)	(((E)->etype & VM_ET_NEEDSCOPY) != 0)
 
 #endif /* _VM_H */

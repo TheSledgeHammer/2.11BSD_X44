@@ -37,7 +37,7 @@ file    arch/i386/i386/vector.s
 file    arch/i386/i386/vm_machdep.c         
 file    dev/cons.c		           
 file    netns/ns_cksum.c	            ns	     
-#major	{vnd = 14}
+#major	{vn = 14}
 
 #
 # Machine-independent SCSI drivers
