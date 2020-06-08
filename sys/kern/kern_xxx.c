@@ -13,12 +13,13 @@
 #include <sys/kernel.h>
 #include <sys/systm.h>
 
+void
 reboot()
 {
 	register struct a {
 		int	opt;
 	};
 
-	if (suser())
+	if (suser()) /* Not filled in correctly */
 		boot(rootdev, ((struct a *)u->u_ap)->opt);
 }

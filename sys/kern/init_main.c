@@ -132,7 +132,7 @@ main(framep)
 	 * Attempt to find console and initialize
 	 * in case of early panic or other messages.
 	 */
-	//consinit(); /* Needs Work */
+	//consinit();
 	printf(copyright);
 
 	vm_mem_init();
@@ -258,7 +258,6 @@ main(framep)
 	CIRCLEQ_FIRST(&mountlist)->mnt_flag |= MNT_ROOTFS;
 
 	/* Get the vnode for '/'.  Set fdp->fd_fd.fd_cdir to reference it. */
-
 	if (VFS_ROOT(CIRCLEQ_FIRST(&mountlist), &rootvnode))
 		panic("cannot find root vnode");
 	fdp->fd_fd.fd_cdir = rootvnode;
@@ -412,7 +411,7 @@ start_init(p, framep)
  * Initialize clist by freeing all character blocks, then count
  * number of character devices. (Once-only routine)
  */
-void
+static void
 cinit()
 {
 	register int ccp;

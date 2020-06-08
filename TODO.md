@@ -1,7 +1,6 @@
 TODO:
 - Build Toolchain (Cross-Compile): NetBSD's
 	- Attempt build on NetBSD (Can't build on Linux without a Toolchain)
-	- Makefiles
 - Merge KASSERT CTASSERT into ASSERT
 
 - boot:
@@ -21,18 +20,22 @@ TODO:
 
 - arch:
 	- i386:
-		- consinit.c
+		- consinit.c (Needs working bootloader & kgdb)
+		- kgdb_machdep.c (NetBSD 1.6)
 		- machdep.c: cpu_reboot, cpu_reset
 		- vm_machdep.c: u->u_procp->p_p0br: (no reference in 4.4BSD-Lite2)
 			- 4.3BSD Reno/ 4.4BSD Remanent: once in struct proc. Obsolete?? 
 
-- ufs:
-	- ext2fs (NetBSD)
-	- ufs:
-		- ufs1 & ufs2?
-		- dirhash
-		- extattr
-		- wapbl
+Kern:
+- kern_xxx.c: reboot: needs fixing
+- kern_ksyms.c: Simplify & Improve
+- kern_physio.c: Incomplete: getphysbuf, putphysbuf (NetBSD 1.3)
+
+Of Interest Todo:
+- ifdef INET: remanents of 2.11BSD's networking stack overlay (keep in place for now)
+	- Used in later BSD's
+	- Update use cases
+- syscallargs.h: Clean up: Large number of args unused.
 
 To Add:
 include <net/if_atm.h>
@@ -49,51 +52,11 @@ include <netccitt/pk_var.h>
 include <netccitt/pk_extern.h>
 include <netnatm/natm.h>
 
-Kern:
-- kern_physio.c: Incomplete: getphysbuf, putphysbuf (NetBSD 1.3)
-- if INET: remanents of 2.11BSD's networking stack overlay (keep in place for now)
-- syscallargs: To be fixed: temporary compat with 4.4BSD-Lite2
+Revise: Makefiles & mk (folder: /share/mk)
+- Use of NetBSD's 1.3 "new" build-chain. (incompatible? GCC)
+- Move to OpenBSD's build-chain (Higher Success)
 
-- user.h: 
-	- short	u_uisa[16];					/* segmentation address prototypes */
-	- short	u_uisd[16];					/* segmentation descriptor prototypes */
-	- char	u_sep;						/* flag for I and D separation */
-	- struct u_ovd						/* automatic overlay data */
-	
-NetBSD 5.0.2: Threads & Multitasking
-- kobj: Loading objects in filesystem
-- wapbl
-- kern_proc.c
-- kern_lwp.c
-- kern_rwlock.c
-- kern_runq.c 
-- subr_workqueue.c
-
-FreeBSD 3.0.0:
-- sys_pipe.c & pipe.h
-
-- devel/multitasking
-	- kernthreads: (NetBSD 1.4/1.5)
-		- kern_kthread.c: kthread_create, exit, create_deferred, run_deferred_queue
-		- init_main: starting of threads
-- devel/vm:
-	- vm_seg/vm_extent (must be compat with pmap, pde & pte)
-		- NOTE: Overlays: need to be allocated physical for max benefit in vmspace
-		- map into pmap: pmap_init or vm_mem_init
-		- segmented space can be initiated in one of the above 
-		OR
-		- pmap_segment: a method to allocate segments in either physical or virtual
-			- called from pmap_init 
-			OR 
-			- integrated into pmap_init and called in vm_mem_init 		
-	- vm_map: (uvm) (NetBSD 1.4/1.5) 
-		- vm_unmap
-		- vm_unmap_remove
-		- vm_map_modflags
-		- vmspace_share
-		- vmspace_unshare
-
-Memory Segmentation (Hardware): CPU Registers
-Memory Segmentation (Software):
-Seperate Process Segments: text, data, stack
-Seperate Instruction & Data Spaces
+- Makefiles
+	- Dev (Devices)
+	- Conf: Includes "To Add"
+	- GENERIC, files
