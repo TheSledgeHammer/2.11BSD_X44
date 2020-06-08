@@ -123,12 +123,12 @@ uthread_kill(uthread_t ut)
 
 void
 uthreadpool_itc_send(utpool, itc)
-    struct user_threadpool *utpool;
-	struct itc_threadpool *itc;
+    struct uthreadpool *utpool;
+	struct threadpool_itpc *itc;
 {
     /* command / action */
 	itc->itc_utpool = utpool;
-	itc->itc_job = utpool->utp_job;
+	itc->itc_job = utpool->utp_jobs;
 	/* send flagged jobs */
 	utpool->utp_issender = TRUE;
 	utpool->utp_isreciever = FALSE;
@@ -138,12 +138,12 @@ uthreadpool_itc_send(utpool, itc)
 
 void
 uthreadpool_itc_recieve(utpool, itc)
-    struct user_threadpool *utpool;
-	struct itc_threadpool *itc;
+    struct uthreadpool *utpool;
+	struct threadpool_itpc *itc;
 {
     /* command / action */
 	itc->itc_utpool = utpool;
-	itc->itc_job = utpool->utp_job;
+	itc->itc_job = utpool->utp_jobs;
 	utpool->utp_issender = FALSE;
 	utpool->utp_isreciever = TRUE;
 

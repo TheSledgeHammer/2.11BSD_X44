@@ -81,12 +81,6 @@ struct kthread {
 #define	kt_session		kt_tgrp->tg_session
 #define	kt_tgid			kt_tgrp->tg_id
 
-LIST_HEAD(kthread_rq, kthread_queue);
-struct kthread_queue {
-	struct kthread_rq 			ktq_head;
-	LIST_ENTRY(kthread_queue) 	ktq_entry;
-};
-
 /* Locks */
 mutex_t 			kthread_mtx; 		/* mutex lock */
 
@@ -113,7 +107,7 @@ struct kthreadpool {
     int									ktp_inactive;		/* inactive thread count */
 
     /* Inter Threadpool Communication */
-    struct itc_thread					ktp_itc;			/* threadpool ipc ptr */
+    struct threadpool_itpc				ktp_itc;			/* threadpool ipc ptr */
     boolean_t							ktp_issender;		/* is itc sender */
     boolean_t							ktp_isreciever;		/* is itc reciever */
     int									ktp_retcnt;			/* retry count in itc pool */
@@ -126,8 +120,8 @@ struct kthreadpool {
 extern struct kthread kthread0;
 
 /* ITC Functions */
-extern void kthreadpool_itc_send(struct kthreadpool *, struct itc_threadpool *);
-extern void kthreadpool_itc_receive(struct kthreadpool *, struct itc_threadpool *);
+extern void kthreadpool_itc_send(struct kthreadpool *, struct threadpool_itpc *);
+extern void kthreadpool_itc_receive(struct kthreadpool *, struct threadpool_itpc *);
 
 /* Kernel Thread */
 int kthread_create(kthread_t kt);

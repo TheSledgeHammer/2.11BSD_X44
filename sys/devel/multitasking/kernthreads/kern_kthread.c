@@ -127,8 +127,8 @@ kthread_kill(kthread_t kt)
 /* Threadpool's FIFO Queue (IPC) */
 void
 kthreadpool_itc_send(ktpool, itc)
-    struct kern_threadpool *ktpool;
-	struct itc_threadpool *itc;
+    struct kthreadpool *ktpool;
+	struct threadpool_itpc *itc;
 {
     /* command / action */
 	itc->itc_ktpool = ktpool;
@@ -142,8 +142,8 @@ kthreadpool_itc_send(ktpool, itc)
 
 void
 kthreadpool_itc_recieve(ktpool, itc)
-    struct kern_threadpool *ktpool;
-	struct itc_threadpool *itc;
+    struct kthreadpool *ktpool;
+	struct threadpool_itpc *itc;
 {
     /* command / action */
 	itc->itc_ktpool = ktpool;

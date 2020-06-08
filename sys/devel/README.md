@@ -21,6 +21,8 @@ New Content:
 	- Threads
 	- Threadpools
 	- Deadlocking: Mutexes, Reader-Writer Lock
+- OVL:
+	- A Seperate overlay address space for kernel & VM (devel)
 - Pmap:
 	- Machine-independent api for Clustered Page Tables variation.
 	- i386 arch partial pmap implementation
@@ -37,6 +39,8 @@ New Content:
 	- TODO: 
 		- vnode integration
 		- remove pdp memory refrences 
+- VM: 
+	- A 4.4BSD-Lite2 VM with features from NetBSD's UVM
 	
 Existing Content:
 - Misc:

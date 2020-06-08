@@ -29,16 +29,29 @@
 #include <sys/user.h>
 #include <multitasking/threadpool.h>
 
+struct threadpool_itpc itpc;
+
 void
-itc_threadpool_init()
+itpc_threadpool_init()
 {
-	TAILQ_INIT(&itc_head);
+	itpc_threadpool_setup(&itpc);
+}
+
+static void
+itpc_threadpool_setup(itpc)
+	struct threadpool_itpc *itpc;
+{
+	if(itpc == NULL) {
+		MALLOC(itpc, struct threadpool_itpc *, sizeof(struct threadpool_itpc *), M_ITPC, M_WAITOK);
+	}
+	TAILQ_INIT(itpc->itc_header);
+	itpc->itc_refcnt = 0;
 }
 
 /* Add a thread to the itc queue */
 void
-itc_threadpool_enqueue(itc, tid)
-	struct itc_threadpool *itc;
+itpc_threadpool_enqueue(itc, tid)
+	struct threadpool_itpc *itc;
 	tid_t tid;
 {
 	struct kthreadpool *ktpool;
@@ -47,14 +60,16 @@ itc_threadpool_enqueue(itc, tid)
 	if(ktpool != NULL && itc->itc_tid == tid) {
 		itc->itc_ktpool = ktpool;
 		ktpool->ktp_initcq = TRUE;
-		TAILQ_INSERT_HEAD(itc_head, itc, itc_entry);
+		itc->itc_refcnt++;
+		TAILQ_INSERT_HEAD(itc->itc_header, itc, itc_entry);
 	}
 
 	/* check user threadpool is not null & has a job/task entry to send */
 	if(utpool != NULL && itc->itc_tid == tid) {
 		itc->itc_utpool = utpool;
 		utpool->utp_initcq = TRUE;
-		TAILQ_INSERT_HEAD(itc_head, itc, itc_entry);
+		itc->itc_refcnt++;
+		TAILQ_INSERT_HEAD(itc->itc_header, itc, itc_entry);
 	}
 }
 
@@ -63,30 +78,32 @@ itc_threadpool_enqueue(itc, tid)
  * If threadpool entry is not null, search queue for entry & remove
  */
 void
-itc_threadpool_dequeue(itc, tid)
-	struct itc_threadpool *itc;
+itpc_threadpool_dequeue(itc, tid)
+	struct threadpool_itpc *itc;
 	tid_t tid;
 {
 	struct kthreadpool *ktpool;
-	struct uthreadpool 	   *utpool;
+	struct uthreadpool *utpool;
 
 	if(ktpool != NULL) {
-		TAILQ_FOREACH(itc, itc_head, itc_entry) {
+		TAILQ_FOREACH(itc, itc->itc_header, itc_entry) {
 			if(TAILQ_NEXT(itc, itc_entry)->itc_ktpool == ktpool) {
 				if(itc->itc_tid == tid) {
 					ktpool->ktp_initcq = FALSE;
-					TAILQ_REMOVE(itc_head, itc, itc_entry);
+					itc->itc_refcnt--;
+					TAILQ_REMOVE(itc->itc_header, itc, itc_entry);
 				}
 			}
 		}
 	}
 
 	if(utpool != NULL) {
-		TAILQ_FOREACH(itc, itc_head, itc_entry) {
+		TAILQ_FOREACH(itc, itc->itc_header, itc_entry) {
 			if(TAILQ_NEXT(itc, itc_entry)->itc_utpool == utpool) {
 				if(itc->itc_tid == tid) {
 					utpool->utp_initcq = FALSE;
-					TAILQ_REMOVE(itc_head, itc, itc_entry);
+					itc->itc_refcnt--;
+					TAILQ_REMOVE(itc->itc_header, itc, itc_entry);
 				}
 			}
 		}
@@ -95,8 +112,8 @@ itc_threadpool_dequeue(itc, tid)
 
 /* Sender checks request from receiver: providing info */
 void
-check(itc, tid)
-	struct itc_threadpool *itc;
+itpc_check(itc, tid)
+	struct threadpool_itpc *itc;
 	tid_t tid;
 {
 	struct kthreadpool *ktpool = itc->itc_ktpool;
@@ -153,8 +170,8 @@ check(itc, tid)
 
 /* Receiver verifies request to sender: providing info */
 void
-verify(itc, tid)
-	struct itc_threadpool *itc;
+itpc_verify(itc, tid)
+	struct threadpool_itpc *itc;
 	tid_t tid;
 {
 	struct kthreadpool *ktpool = itc->itc_ktpool;

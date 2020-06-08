@@ -100,7 +100,7 @@ struct uthreadpool {
     int									utp_inactive;		/* inactive thread count */
 
     /* Inter Threadpool Communication */
-    struct itc_thread					utp_itc;			/* threadpool ipc ptr */
+    struct threadpool_itpc				utp_itc;			/* threadpool ipc ptr */
     boolean_t							utp_issender;		/* is itc sender */
     boolean_t							utp_isreciever;		/* is itc reciever */
     int									utp_retcnt;			/* retry count in itc pool */
@@ -112,8 +112,8 @@ struct uthreadpool {
 
 extern struct uthread uthread0;
 
-extern void uthreadpool_itc_send(struct uthreadpool *, struct itc_threadpool *);
-extern void uthreadpool_itc_receive(struct uthreadpool *, struct itc_threadpool *);
+extern void uthreadpool_itc_send(struct uthreadpool *, struct threadpool_itpc *);
+extern void uthreadpool_itc_receive(struct uthreadpool *, struct threadpool_itpc *);
 
 /* User Thread */
 int uthread_create(uthread_t ut);
