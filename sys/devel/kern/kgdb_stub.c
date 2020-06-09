@@ -63,7 +63,7 @@ static char rcsid[] = "$Header: /u/donn/c/gdb/kernel/RCS/kgdb_stub.c,v 1.2 91/03
 
 #include <dev/cons.h>
 #include <devel/kern/kgdb.h>
-#include "../../dev/kgdb/remote-sl.h"
+#include <dev/kgdb/remote-sl.h>
 
 #undef	DEBUG_KGDB
 
