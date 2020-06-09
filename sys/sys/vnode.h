@@ -82,6 +82,7 @@ struct vnode {
 	enum vtype 			v_type;			/* vnode type */
 	union {
 		struct mount	*vu_mountedhere;/* ptr to mounted vfs (VDIR) */
+		struct proc		*vu_proc;		/* ptr to proc */
 		struct socket	*vu_socket;		/* unix ipc (VSOCK) */
 		caddr_t			vu_vmdata;		/* private data for vm (VREG) */
 		struct specinfo	*vu_specinfo;	/* device (VCHR, VBLK) */
@@ -102,6 +103,7 @@ struct vnode {
 };
 
 #define	v_mountedhere	v_un.vu_mountedhere
+#define v_proc			v_un.vu_proc
 #define	v_socket		v_un.vu_socket
 #define	v_vmdata		v_un.vu_vmdata
 #define	v_specinfo		v_un.vu_specinfo

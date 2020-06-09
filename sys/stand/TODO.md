@@ -1,0 +1,14 @@
+- boot:
+	- common:
+		- isapnp.c/.h
+		- pnp.c 
+	- efi
+	- usb
+	- i386:
+		- gptboot
+		- isoboot
+		- loader:
+			- Makefile
+			- Makefile.depend
+		- pmbr
+		- pxeldr

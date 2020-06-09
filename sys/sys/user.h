@@ -91,7 +91,7 @@ struct user {
 	label_t				u_rsave;				/* save info when exchanging stacks */
 
 /* 1.3 - signal management */
-	int					(*u_signal[NSIG])();	/* disposition of signals */
+	int					u_signal[NSIG];			/* disposition of signals */
 	long				u_sigmask[NSIG];		/* signals to be blocked */
 	long				u_sigonstack;			/* signals to take on sigstack */
 	long				u_sigintr;				/* signals that interrupt syscalls */
@@ -159,5 +159,6 @@ struct user {
 
 #ifdef KERNEL
 extern struct user u;
-#endif
+#else
+extern struct user u;
 #endif

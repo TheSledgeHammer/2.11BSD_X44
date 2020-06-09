@@ -695,7 +695,7 @@ register struct proc *p;
 	NDINIT(&nd, LOOKUP, FOLLOW, UIO_SYSSPACE, name, p);
 
 	if (error == vn_open(&nd, O_CREAT | FWRITE, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) {
-			return (error);
+		return (error);
 	}
 	vp = nd.ni_vp;
 

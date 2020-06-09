@@ -615,6 +615,7 @@ msdosfs_inactive(v)
 	} */ *ap = v;
 	struct vnode *vp = ap->a_vp;
 	struct denode *dep = VTODE(vp);
+	struct proc *p = vp->v_proc;
 	int error;
 	extern int prtactive;
 
@@ -658,7 +659,7 @@ msdosfs_inactive(v)
 		dep->de_Name[0] = SLOT_DELETED;
 	}
 	deupdat(dep, 0);
-	VOP_UNLOCK(vp);
+	VOP_UNLOCK(vp, 0, p);
 	/*
 	 * If we are done with the denode, reclaim it
 	 * so that it can be reused immediately.
