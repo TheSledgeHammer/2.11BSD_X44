@@ -51,7 +51,7 @@
 #include <sys/kernel.h>
 #include <sys/syslog.h>
 
-#include <isa/isa_device.h>
+#include <ic/comvar.h>
 #include <ic/comreg.h>
 #include <ic/ns16550.h>
 
@@ -186,7 +186,7 @@ comopen(dev, flag, mode, p)
 	register struct tty *tp;
 	register int unit;
 	int error = 0;
- 
+
 	unit = UNIT(dev);
 	if (unit >= NCOM || (com_active & (1 << unit)) == 0)
 		return (ENXIO);
@@ -224,7 +224,7 @@ comopen(dev, flag, mode, p)
 		error = (*linesw[tp->t_line].l_open)(dev, tp);
 	return (error);
 }
- 
+
 /*ARGSUSED*/
 comclose(dev, flag, mode, p)
 	dev_t dev;
@@ -234,7 +234,7 @@ comclose(dev, flag, mode, p)
 	register struct tty *tp;
 	register com;
 	register int unit;
- 
+
 	unit = UNIT(dev);
 	com = com_addr[unit];
 	tp = &com_tty[unit];
@@ -251,17 +251,17 @@ comclose(dev, flag, mode, p)
 	ttyclose(tp);
 	return(0);
 }
- 
+
 comread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 	int flag;
 {
 	register struct tty *tp = &com_tty[UNIT(dev)];
- 
+
 	return ((*linesw[tp->t_line].l_read)(tp, uio, flag));
 }
- 
+
 comwrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;	/* Set hardware state. */
@@ -269,7 +269,7 @@ comwrite(dev, uio, flag)
 {
 	int unit = UNIT(dev);
 	register struct tty *tp = &com_tty[unit];
- 
+
 	/*
 	 * (XXX) We disallow virtual consoles if the physical console is
 	 * a serial port.  This is in case there is a display attached that
@@ -280,7 +280,7 @@ comwrite(dev, uio, flag)
 		constty = NULL;
 	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
 }
- 
+
 comintr(unit)
 	register int unit;
 {
@@ -412,7 +412,7 @@ comioctl(dev, cmd, data, flag, p)
 	register int unit = UNIT(dev);
 	register com;
 	register int error;
- 
+
 	tp = &com_tty[unit];
 	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag, p);
 	if (error >= 0)
@@ -470,7 +470,7 @@ comparam(tp, t)
 	register int cfcr, cflag = t->c_cflag;
 	int unit = UNIT(tp->t_dev);
 	int ospeed = ttspeedtab(t->c_ospeed, comspeedtab);
- 
+
 	/* check requested parameters */
         if (ospeed < 0 || (t->c_ispeed && t->c_ispeed != t->c_ospeed))
                 return(EINVAL);
@@ -512,14 +512,14 @@ comparam(tp, t)
 
 	return(0);
 }
- 
+
 void
 comstart(tp)
 	register struct tty *tp;
 {
 	register com;
 	int s, unit, c;
- 
+
 	unit = UNIT(tp->t_dev);
 	com = com_addr[unit];
 	s = spltty();
@@ -545,7 +545,7 @@ comstart(tp)
 out:
 	splx(s);
 }
- 
+
 /*
  * Stop output on a line.
  */
@@ -563,7 +563,7 @@ comstop(tp, flag)
 	}
 	splx(s);
 }
- 
+
 commctl(dev, bits, how)
 	dev_t dev;
 	int bits, how;

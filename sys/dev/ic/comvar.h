@@ -31,11 +31,9 @@
  */
 
 int comcnattach (bus_space_tag_t, int, int, int, tcflag_t);
-
 #ifdef KGDB
 int com_kgdb_attach (bus_space_tag_t, int, int, int, tcflag_t);
 #endif
-
 int com_is_console (bus_space_tag_t, int, bus_space_handle_t *);
 
 /* Hardware flag masks */
@@ -108,10 +106,10 @@ struct com_softc {
 #define CLR(t, f)	(t) &= ~(f)
 #define ISSET(t, f)	((t) & (f))
 
-int comprobe1 (bus_space_tag_t, bus_space_handle_t, int);
-int comintr (void *);
-void com_attach_subr (struct com_softc *);
-int cominit (bus_space_tag_t, int, int, int, tcflag_t, bus_space_handle_t *);
+int 	comprobe1 (bus_space_tag_t, bus_space_handle_t, int);
+int 	comintr (void *);
+void 	com_attach_subr (struct com_softc *);
+int 	cominit (bus_space_tag_t, int, int, int, tcflag_t, bus_space_handle_t *);
 
 #ifndef __GENERIC_SOFT_INTERRUPTS
 #ifdef alpha

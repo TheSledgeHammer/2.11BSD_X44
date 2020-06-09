@@ -112,7 +112,7 @@ extern struct proc *npxproc;
 char machine[] = "i386";			/* cpu "architecture" */
 char machine_arch[] = "i386";		/* machine == machine_arch */
 
-int want_resched;			/* resched() was called */
+int want_resched;					/* resched() was called */
 
 char bootinfo[BOOTINFO_MAXSIZE];
 
@@ -845,6 +845,13 @@ setidt(idx, func, args, typ, dpl)
 	ip->gd_hioffset = ((u_int)func) >> 16 ;
 }
 
+void
+init_descriptors()
+{
+	allocate_gdt(&gdt_segs);
+	allocate_ldt(&ldt_segs);
+}
+
 #define	IDTVEC(name)	__CONCAT(X, name)
 extern 	IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
 		IDTVEC(bnd), IDTVEC(ill), IDTVEC(dna), IDTVEC(dble), IDTVEC(fpusegm),
@@ -864,15 +871,12 @@ init386(first)
 	curpcb = &proc0.p_addr->u_pcb;
 
 	i386_bus_space_init();
-
-	allocate_gdt(&gdt_segs);
-	allocate_ldt(&ldt_segs);
+	init_descriptors();
 
 	/*
 	 * Initialize the console before we print anything out.
 	 */
-	extern void consinit (void);
-	cninit (KERNBASE+0xa0000);
+	cninit();
 
 	/* make gdt memory segments */
 	gdt_segs[GCODE_SEL].ssd_limit = btoc((int) &etext + NBPG);

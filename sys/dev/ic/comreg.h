@@ -33,6 +33,7 @@
  *	@(#)comreg.h	8.1 (Berkeley) 6/11/93
  */
 
+#include <dev/ic/ns16550reg.h>
 
 /* 16 bit baud rate divisor (lower byte in dca_data, upper in dca_ier) */
 #define	COMBRD(x)		(1843200 / (16*(x)))
@@ -105,9 +106,14 @@
 #define	MSR_DDSR		0x02
 #define	MSR_DCTS		0x01
 
+#define	COM_NPORTS		8
 /*
  * WARNING: Serial console is assumed to be at COM1 address
  * and CONUNIT must be 0.
  */
+#ifndef CONADDR
 #define	CONADDR			(0x3f8)
+#else
+#define CONADDR_OVERRIDE
+#endif
 #define	CONUNIT			(0)

@@ -51,6 +51,7 @@ static char rcsid[] = "$Header: /u/donn/c/gdb/kernel/RCS/kgdb_stub.c,v 1.2 91/03
 */
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/user.h>
 #include <sys/buf.h>
 #include <sys/errno.h>
 
@@ -60,9 +61,8 @@ static char rcsid[] = "$Header: /u/donn/c/gdb/kernel/RCS/kgdb_stub.c,v 1.2 91/03
 #include <machine/reg.h>
 
 #include <dev/cons.h>
-#include <dev/remote-sl.h>
-
-#include <i386/i386/kgdb_proto.h>
+#include <dev/kgdb/remote-sl.h>
+#include <dev/kgdb/kgdb_proto.h>
 
 extern int kernacc();
 #if 0

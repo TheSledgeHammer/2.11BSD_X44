@@ -4,8 +4,6 @@
 # Included by ports that need it.  Requires that the SCSI files be
 # defined first.
 
-defflags	PCIVERBOSE
-
 device	pci {[dev = -1], [function = -1]}
 attach	pci at pcibus
 file	dev/pci/pci.c			pci needs-flag

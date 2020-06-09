@@ -122,8 +122,7 @@ consinit()
 	if(!strcmp(consinfo->bi_devname, "com")) {
 		bus_space_tag_t tag = I386_BUS_SPACE_IO;
 
-		if(comcnattach(tag, consinfo->bi_addr, consinfo->bi_speed,
-			       COM_FREQ, comcnmode))
+		if(comcnattach(tag, consinfo->bi_addr, consinfo->bi_speed, COM_FREQ, comcnmode))
 			panic("can't init serial console @%x", consinfo->bi_addr);
 
 		return;
