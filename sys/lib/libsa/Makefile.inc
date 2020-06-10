@@ -1,74 +1,36 @@
-#	$NetBSD: Makefile.inc,v 1.9 1997/02/16 21:25:21 cgd Exp $
+#	$NetBSD: Makefile.inc,v 1.4 1995/10/01 06:00:38 phil Exp $
 #
-#	Configuration variables (default values are below):
-#
-#	S	must be set to the top of the 'sys' tree.
-#	SADST	may be set to the location of the directory where library
-#		objects are to be built.  Defaults to ${.OBJDIR}/lib/sa.
-#	SA_AS	may be set to 'obj' to build a object from the library's
-#		object files.  (Otherwise, a library will be built.)
-#		Defaults to 'library'.
-#	SAMISCCPPFLAGS
-#		Miscellaneous cpp flags to be passed to the library's Makefile
-#		when building.
-#	SAMISCMAKEFLAGS
-#		Miscellaneous flags to be passed to the library's Makefile when
-#		building.  See library's Makefile for more details about
-#		supported flags and their default values.
+#	NOTE: $S must correspond to the top of the 'sys' tree
+SADIR=	$S/lib/libsa
 
-# Default values:
-SADST?=		${.OBJDIR}/lib/sa
-SA_AS?=		library
-
-SADIR=		$S/lib/libsa
-.if (${SA_AS} == "obj")
-SALIB=		${SADST}/libsa.o
-SALIB_PROF=	${SADST}/libsa.po
-.else
-SALIB=		${SADST}/libsa.a
-SALIB_PROF=	${SADST}/libsa_p.a
-.endif
-
-SAMAKE= \
-	cd ${SADIR} && MAKEOBJDIR=${SADST} ${MAKE} \
-	    CC=${CC:Q} CFLAGS=${CFLAGS:Q} \
-	    AS=${AS:Q} AFLAGS=${AFLAGS:Q} \
-	    LD=${LD:Q} STRIP=${STRIP:Q} \
-	    MACHINE=${MACHINE} MACHINE_ARCH=${MACHINE_ARCH:Q} \
-	    SACPPFLAGS=${CPPFLAGS:S@^-I.@-I../../.@g:Q} \
-	    SAMISCCPPFLAGS=${SAMISCCPPFLAGS:Q} \
-	    ${SAMISCMAKEFLAGS}
+SADST=	lib/sa
+SAREL?=	../../
+SALIB?=	${SADST}/libsa.a
 
 ${SALIB}:		.NOTMAIN __always_make_salib
-	@echo making sure the sa library is up to date...
-.if (${SA_AS} == "library")
-	@${SAMAKE} libsa.a
+	@echo making sure the stand-alone library is up to date...
+.if !defined(NO_NET)
+	@(cd ${SADST} && ${MAKE} -f ${SAREL}${SADIR}/Makefile \
+	  KERNCC="${CC}" \
+	  KERNCFLAGS="${CFLAGS}" \
+	  SAREL="${SAREL}" \
+	  SADIR="${SADIR}" libsa.a)
 .else
-	@${SAMAKE} libsa.o
+	@(cd ${SADST} && ${MAKE} -f ${SAREL}${SADIR}/Makefile \
+	  KERNCC="${CC}" \
+	  KERNCFLAGS="${CFLAGS}" \
+	  SAREL="${SAREL}" \
+	  SADIR="${SADIR}" \
+	  NO_NET="" libsa.a)
 .endif
 
-${SALIB_PROF}:		.NOTMAIN __always_make_salib
-	@echo making sure the profiled sa library is up to date...
-.if (${SA_AS} == "library")
-	@${SAMAKE} libsa_p.a
-.else
-	@${SAMAKE} libsa.po
-.endif
-
-clean:			.NOTMAIN cleansalib
-cleansalib:		.NOTMAIN __always_make_salib
-	@echo cleaning the sa library objects
-	@${SAMAKE} clean
-
-cleandir:		.NOTMAIN cleandirsalib
-cleandirsalib:		.NOTMAIN __always_make_salib
-	@echo cleandiring the sa library objects
-	@${SAMAKE} cleandir
-
-depend:			.NOTMAIN dependsalib
-dependsalib:		.NOTMAIN __always_make_salib
-	@echo depending the sa library objects
-	@${SAMAKE} depend
+clean:: 		.NOTMAIN __always_make_salib
+	@echo cleaning the stand-alone library objects
+	@(cd ${SADST} && ${MAKE} -f ${SAREL}${SADIR}/Makefile \
+	  KERNCC="${CC}" \
+	  KERNCFLAGS="${CFLAGS}" \
+	  SAREL="${SAREL}" \
+	  SADIR="${SADIR}" clean)
 
 __always_make_salib:	.NOTMAIN
-	@mkdir -p ${SADST}
+	@([ -d ${SADST} ] || mkdir -p ${SADST})

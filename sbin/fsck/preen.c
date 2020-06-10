@@ -55,10 +55,10 @@ struct part {
 } *badlist, **badnext = &badlist;
 
 struct disk {
-	char	*name;			/* disk base name */
+	char		 *name;		/* disk base name */
 	struct	disk *next;		/* forward link for list of disks */
 	struct	part *part;		/* head of list of partitions on disk */
-	int	pid;			/* If != 0, pid of proc working on */
+	int	pid;				/* If != 0, pid of proc working on */
 } *disks;
 
 int	nrun, ndisks;

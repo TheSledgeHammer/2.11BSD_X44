@@ -99,7 +99,7 @@ bdev_decl(Fd);
 bdev_decl(wt);
 bdev_decl(xd);
 
-struct bdevsw	bdevsw[] =
+struct bdevsw bdevsw[] =
 {
 	bdev_disk_init(NWD,wd),	/* 0: st506/rll/esdi/ide disk */
 	bdev_swap_init(),		/* 1: swap pseudo-device */

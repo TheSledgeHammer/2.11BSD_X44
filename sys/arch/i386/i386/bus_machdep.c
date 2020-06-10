@@ -172,7 +172,6 @@ i386_bus_space_check(avail_end, biosbasemem, biosextmem)
 void
 i386_bus_space_mallocok(void)
 {
-
 	ioport_malloc_safe = 1;
 }
 

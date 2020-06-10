@@ -1,54 +1,49 @@
-#	$NetBSD: bsd.dep.mk,v 1.20 1997/05/09 13:25:46 mycroft Exp $
-
-.PHONY:		cleandepend
-cleandir:	cleandepend
-
-MKDEP?=		mkdep
+#	$NetBSD: bsd.dep.mk,v 1.12 1995/09/27 01:15:09 christos Exp $
 
 # some of the rules involve .h sources, so remove them from mkdep line
-depend: beforedepend
+.if !target(depend)
+depend: beforedepend .depend _SUBDIRUSE afterdepend
 .if defined(SRCS)
-depend: .depend
-.NOPATH: .depend
-.depend: ${SRCS} ${DPSRCS}
+.depend: ${SRCS}
 	@rm -f .depend
 	@files="${.ALLSRC:M*.s} ${.ALLSRC:M*.S}"; \
 	if [ "$$files" != " " ]; then \
-	  echo ${MKDEP} -a ${MKDEPFLAGS} \
-	    ${CFLAGS:M-[ID]*} ${CPPFLAGS} ${AINC} $$files; \
-	  ${MKDEP} -a ${MKDEPFLAGS} \
-	    ${CFLAGS:M-[ID]*} ${CPPFLAGS} ${AINC} $$files; \
+	  echo mkdep -a ${MKDEP} ${CFLAGS:M-[ID]*} ${CPPFLAGS} ${AINC} $$files;\
+	  mkdep -a ${MKDEP} ${CFLAGS:M-[ID]*} ${CPPFLAGS} ${AINC} $$files; \
 	fi
 	@files="${.ALLSRC:M*.c}"; \
 	if [ "$$files" != "" ]; then \
-	  echo ${MKDEP} -a ${MKDEPFLAGS} \
-	    ${CFLAGS:M-[ID]*} ${CPPFLAGS} $$files; \
-	  ${MKDEP} -a ${MKDEPFLAGS} \
-	    ${CFLAGS:M-[ID]*} ${CPPFLAGS} $$files; \
+	  echo mkdep -a ${MKDEP} ${CFLAGS:M-[ID]*} ${CPPFLAGS} $$files; \
+	  mkdep -a ${MKDEP} ${CFLAGS:M-[ID]*} ${CPPFLAGS} $$files; \
 	fi
 	@files="${.ALLSRC:M*.cc} ${.ALLSRC:M*.C} ${.ALLSRC:M*.cxx}"; \
 	if [ "$$files" != "  " ]; then \
-	  echo ${MKDEP} -a ${MKDEPFLAGS} \
-	    ${CXXFLAGS:M-[ID]*} ${CPPFLAGS} $$files; \
-	  ${MKDEP} -a ${MKDEPFLAGS} \
-	    ${CXXFLAGS:M-[ID]*} ${CPPFLAGS} $$files; \
+	  echo mkdep -a ${MKDEP} ${CXXFLAGS:M-[ID]*} ${CPPFLAGS} $$files; \
+	  mkdep -a ${MKDEP} ${CXXFLAGS:M-[ID]*} ${CPPFLAGS} $$files; \
 	fi
-cleandepend:
-	rm -f .depend ${.CURDIR}/tags
 .else
-cleandepend:
+.depend:
 .endif
-depend: afterdepend
-
+.if !target(beforedepend)
 beforedepend:
+.endif
+.if !target(afterdepend)
 afterdepend:
+.endif
+.endif
 
 .if !target(tags)
 .if defined(SRCS)
-tags: ${SRCS}
+tags: ${SRCS} _SUBDIRUSE
 	-cd ${.CURDIR}; ctags -f /dev/stdout ${.ALLSRC:N*.h} | \
 	    sed "s;\${.CURDIR}/;;" > tags
 .else
 tags:
 .endif
+.endif
+
+.if defined(SRCS)
+cleandir: cleandepend
+cleandepend:
+	rm -f .depend ${.CURDIR}/tags
 .endif

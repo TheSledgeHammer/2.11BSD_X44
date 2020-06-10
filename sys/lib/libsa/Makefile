@@ -39,3 +39,4 @@ SRCS+=		byteorder.c
 .endif
 
 .include <bsd.lib.mk>
+

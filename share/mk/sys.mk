@@ -1,9 +1,9 @@
-#	$NetBSD: sys.mk,v 1.33.2.2 1997/11/05 05:37:41 thorpej Exp $
-#	@(#)sys.mk	8.2 (Berkeley) 3/21/94
+#	$NetBSD: sys.mk,v 1.27 1996/04/10 05:47:19 mycroft Exp $
+#	@(#)sys.mk	5.11 (Berkeley) 3/13/91
 
-unix?=		We run 2.11BSD.
+unix=		We run 2.11BSD.
 
-.SUFFIXES: .out .a .ln .o .s .S .c .cc .C .F .f .r .y .l .cl .p .h .sh .m4
+.SUFFIXES: .out .a .ln .o .c .cc .C .F .f .r .y .l .s .S .cl .p .h .sh .m4
 
 .LIBS:		.a
 
@@ -15,7 +15,7 @@ AS?=		as
 AFLAGS?=
 COMPILE.s?=	${CC} ${AFLAGS} -c
 LINK.s?=	${CC} ${AFLAGS} ${LDFLAGS}
-COMPILE.S?=	${CC} ${AFLAGS} ${CPPFLAGS} -c -traditional-cpp
+COMPILE.S?=	${CC} ${AFLAGS} ${CPPFLAGS} -c
 LINK.S?=	${CC} ${AFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
 CC?=		cc
@@ -28,16 +28,11 @@ CXXFLAGS?=	${CFLAGS}
 COMPILE.cc?=	${CXX} ${CXXFLAGS} ${CPPFLAGS} -c
 LINK.cc?=	${CXX} ${CXXFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
-OBJC?=		${CC}
-OBJCFLAGS?=	${CFLAGS}
-COMPILE.m?=	${OBJC} ${OBJCFLAGS} ${CPPFLAGS} -c
-LINK.m?=	${OBJC} ${OBJCFLAGS} ${CPPFLAGS} ${LDFLAGS}
-
 CPP?=		cpp
 CPPFLAGS?=	
 
 FC?=		f77
-FFLAGS?=	-O
+FFLAGS?=		-O
 RFLAGS?=
 COMPILE.f?=	${FC} ${FFLAGS} -c
 LINK.f?=	${FC} ${FFLAGS} ${LDFLAGS}
@@ -45,8 +40,6 @@ COMPILE.F?=	${FC} ${FFLAGS} ${CPPFLAGS} -c
 LINK.F?=	${FC} ${FFLAGS} ${CPPFLAGS} ${LDFLAGS}
 COMPILE.r?=	${FC} ${FFLAGS} ${RFLAGS} -c
 LINK.r?=	${FC} ${FFLAGS} ${RFLAGS} ${LDFLAGS}
-
-INSTALL?=	install
 
 LEX?=		lex
 LFLAGS?=
@@ -56,13 +49,9 @@ LD?=		ld
 LDFLAGS?=
 
 LINT?=		lint
-LINTFLAGS?=	-chapbxz
-
-LORDER?=	lorder
+LINTFLAGS?=	-chapbx
 
 MAKE?=		make
-
-NM?=		nm
 
 PC?=		pc
 PFLAGS?=
@@ -70,10 +59,6 @@ COMPILE.p?=	${PC} ${PFLAGS} ${CPPFLAGS} -c
 LINK.p?=	${PC} ${PFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
 SHELL?=		sh
-
-SIZE?=		size
-
-TSORT?= 	tsort -q
 
 YACC?=		yacc
 YFLAGS?=	-d
@@ -91,7 +76,7 @@ YACC.y?=	${YACC} ${YFLAGS}
 	rm -f $*.o
 .endif
 .c.ln:
-	${LINT} ${LINTFLAGS} ${CPPFLAGS:M-[IDU]*} -i ${.IMPSRC}
+	${LINT} ${LINTFLAGS} ${CFLAGS:M-[IDU]*} -i ${.IMPSRC}
 
 # C++
 .cc:

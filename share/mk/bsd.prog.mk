@@ -1,26 +1,18 @@
-#	$NetBSD: bsd.prog.mk,v 1.88.2.2 1998/11/09 08:01:10 cgd Exp $
-#	@(#)bsd.prog.mk	8.2 (Berkeley) 4/2/94
+#	$NetBSD: bsd.prog.mk,v 1.55 1996/04/08 21:19:26 jtc Exp $
+#	@(#)bsd.prog.mk	5.26 (Berkeley) 6/25/91
 
-.if !target(__initialized__)
-__initialized__:
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
 .endif
-.include <bsd.own.mk>
-.include <bsd.obj.mk>
-.MAIN:		all
-.endif
 
-.PHONY:		cleanprog proginstall scriptsinstall
-realinstall:	proginstall scriptsinstall
-clean cleandir:	cleanprog
+.include <bsd.own.mk>
+
+.SUFFIXES: .out .o .c .cc .C .y .l .s .8 .7 .6 .5 .4 .3 .2 .1 .0
 
 CFLAGS+=	${COPTS}
 
 LIBCRT0?=	${DESTDIR}/usr/lib/crt0.o
-LIBBFD?=	${DESTDIR}/usr/lib/libbfd.a
 LIBC?=		${DESTDIR}/usr/lib/libc.a
-LIBC_PIC?=	${DESTDIR}/usr/lib/libc_pic.a
 LIBCOMPAT?=	${DESTDIR}/usr/lib/libcompat.a
 LIBCRYPT?=	${DESTDIR}/usr/lib/libcrypt.a
 LIBCURSES?=	${DESTDIR}/usr/lib/libcurses.a
@@ -28,28 +20,20 @@ LIBDBM?=	${DESTDIR}/usr/lib/libdbm.a
 LIBDES?=	${DESTDIR}/usr/lib/libdes.a
 LIBEDIT?=	${DESTDIR}/usr/lib/libedit.a
 LIBGCC?=	${DESTDIR}/usr/lib/libgcc.a
-LIBGNUMALLOC?=	${DESTDIR}/usr/lib/libgnumalloc.a
 LIBKDB?=	${DESTDIR}/usr/lib/libkdb.a
 LIBKRB?=	${DESTDIR}/usr/lib/libkrb.a
 LIBKVM?=	${DESTDIR}/usr/lib/libkvm.a
 LIBL?=		${DESTDIR}/usr/lib/libl.a
 LIBM?=		${DESTDIR}/usr/lib/libm.a
 LIBMP?=		${DESTDIR}/usr/lib/libmp.a
-LIBNTP?=	${DESTDIR}/usr/lib/libntp.a
-LIBOBJC?=	${DESTDIR}/usr/lib/libobjc.a
 LIBPC?=		${DESTDIR}/usr/lib/libpc.a
-LIBPCAP?=	${DESTDIR}/usr/lib/libpcap.a
 LIBPLOT?=	${DESTDIR}/usr/lib/libplot.a
-LIBPOSIX?=	${DESTDIR}/usr/lib/libposix.a
 LIBRESOLV?=	${DESTDIR}/usr/lib/libresolv.a
 LIBRPCSVC?=	${DESTDIR}/usr/lib/librpcsvc.a
 LIBSKEY?=	${DESTDIR}/usr/lib/libskey.a
 LIBTERMCAP?=	${DESTDIR}/usr/lib/libtermcap.a
-LIBTELNET?=	${DESTDIR}/usr/lib/libtelnet.a
 LIBUTIL?=	${DESTDIR}/usr/lib/libutil.a
-LIBWRAP?=	${DESTDIR}/usr/lib/libwrap.a
 LIBY?=		${DESTDIR}/usr/lib/liby.a
-LIBZ?=		${DESTDIR}/usr/lib/libz.a
 
 .if defined(SHAREDSTRINGS)
 CLEANFILES+=strings
@@ -73,26 +57,21 @@ CLEANFILES+=strings
 
 
 .if defined(PROG)
-SRCS?=		${PROG}.c
-
-DPSRCS+=	${SRCS:M*.l:.l=.c} ${SRCS:M*.y:.y=.c}
-CLEANFILES+=	${DPSRCS}
-
+SRCS?=	${PROG}.c
 .if !empty(SRCS:N*.h:N*.sh)
-OBJS+=		${SRCS:N*.h:N*.sh:R:S/$/.o/g}
-LOBJS+=		${LSRCS:.c=.ln} ${SRCS:M*.c:.c=.ln}
+OBJS+=	${SRCS:N*.h:N*.sh:R:S/$/.o/g}
+LOBJS+=	${LSRCS:.c=.ln} ${SRCS:M*.c:.c=.ln}
 .endif
 
 .if defined(OBJS) && !empty(OBJS)
-.NOPATH: ${OBJS}
 .if defined(DESTDIR)
 
-${PROG}: ${LIBCRT0} ${DPSRCS} ${OBJS} ${LIBC} ${LIBCRTBEGIN} ${LIBCRTEND} ${DPADD}
-	${CC} ${LDFLAGS} ${LDSTATIC} -o ${.TARGET} -nostdlib -L${DESTDIR}/usr/lib ${LIBCRT0} ${LIBCRTBEGIN} ${OBJS} ${LDADD} -lgcc -lc -lgcc ${LIBCRTEND}
+${PROG}: ${LIBCRT0} ${OBJS} ${LIBC} ${DPADD}
+	${CC} ${LDFLAGS} ${LDSTATIC} -o ${.TARGET} -nostdlib -L${DESTDIR}/usr/lib ${LIBCRT0} ${OBJS} ${LDADD} -lgcc -lc -lgcc
 
 .else
 
-${PROG}: ${LIBCRT0} ${DPSRCS} ${OBJS} ${LIBC} ${LIBCRTBEGIN} ${LIBCRTEND} ${DPADD}
+${PROG}: ${LIBCRT0} ${OBJS} ${LIBC} ${DPADD}
 	${CC} ${LDFLAGS} ${LDSTATIC} -o ${.TARGET} ${OBJS} ${LDADD}
 
 .endif	# defined(DESTDIR)
@@ -103,87 +82,71 @@ MAN=	${PROG}.1
 .endif	# !defined(MAN)
 .endif	# defined(PROG)
 
-all: ${PROG}
+.MAIN: all
+all: ${PROG} _SUBDIRUSE
 
-cleanprog:
+.if !target(clean)
+clean: _SUBDIRUSE
 	rm -f a.out [Ee]rrs mklog core *.core \
 	    ${PROG} ${OBJS} ${LOBJS} ${CLEANFILES}
-
-.if defined(SRCS)
-afterdepend: .depend
-	@(TMP=/tmp/_depend$$$$; \
-	    sed -e 's/^\([^\.]*\).o[ ]*:/\1.o \1.ln:/' \
-	      < .depend > $$TMP; \
-	    mv $$TMP .depend)
 .endif
 
-.if defined(PROG) && !target(proginstall)
-PROGNAME?= ${PROG}
-proginstall:: ${DESTDIR}${BINDIR}/${PROGNAME}
-.if !defined(UPDATE)
-.PHONY: ${DESTDIR}${BINDIR}/${PROGNAME}
+cleandir: _SUBDIRUSE clean
+
+.if !target(install)
+.if !target(beforeinstall)
+beforeinstall:
 .endif
-.if !defined(BUILD)
-${DESTDIR}${BINDIR}/${PROGNAME}: .MADE
+.if !target(afterinstall)
+afterinstall:
 .endif
 
-.PRECIOUS: ${DESTDIR}${BINDIR}/${PROGNAME}
-${DESTDIR}${BINDIR}/${PROGNAME}: ${PROG}
-	${INSTALL} ${COPY} ${STRIPFLAG} -o ${BINOWN} -g ${BINGRP} \
-	    -m ${BINMODE} ${.ALLSRC} ${.TARGET}
+.if !target(realinstall)
+realinstall:
+.if defined(PROG)
+	install ${COPY} ${STRIP} -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
+	    ${PROG} ${DESTDIR}${BINDIR}
+.endif
+.if defined(HIDEGAME)
+	(cd ${DESTDIR}/usr/games; rm -f ${PROG}; ln -s dm ${PROG})
+.endif
 .endif
 
-.if !target(proginstall)
-proginstall::
+install: maninstall _SUBDIRUSE
+.if defined(LINKS) && !empty(LINKS)
+	@set ${LINKS}; \
+	while test $$# -ge 2; do \
+		l=${DESTDIR}$$1; \
+		shift; \
+		t=${DESTDIR}$$1; \
+		shift; \
+		echo $$t -\> $$l; \
+		rm -f $$t; \
+		ln $$l $$t; \
+	done; true
 .endif
 
-.if defined(SCRIPTS) && !target(scriptsinstall)
-SCRIPTSDIR?=${BINDIR}
-SCRIPTSOWN?=${BINOWN}
-SCRIPTSGRP?=${BINGRP}
-SCRIPTSMODE?=${BINMODE}
-.for S in ${SCRIPTS}
-SCRIPTSDIR_${S}?=${SCRIPTSDIR}
-SCRIPTSOWN_${S}?=${SCRIPTSOWN}
-SCRIPTSGRP_${S}?=${SCRIPTSGRP}
-SCRIPTSMODE_${S}?=${SCRIPTSMODE}
-.if defined(SCRIPTSNAME)
-SCRIPTSNAME_${S} ?= ${SCRIPTSNAME}
-.else
-SCRIPTSNAME_${S} ?= ${S:T:R}
-.endif
-SCRIPTSDIR_${S} ?= ${SCRIPTSDIR}
-scriptsinstall:: ${DESTDIR}${SCRIPTSDIR_${S}}/${SCRIPTSNAME_${S}}
-.if !defined(UPDATE)
-.PHONY: ${DESTDIR}${SCRIPTSDIR_${S}}/${SCRIPTSNAME_${S}}
-.endif
-.if !defined(BUILD)
-${DESTDIR}${SCRIPTSDIR_${S}}/${SCRIPTSNAME_${S}}: .MADE
+maninstall: afterinstall
+afterinstall: realinstall
+realinstall: beforeinstall
 .endif
 
-.PRECIOUS: ${DESTDIR}${SCRIPTSDIR_${S}}/${SCRIPTSNAME_${S}}
-${DESTDIR}${SCRIPTSDIR_${S}}/${SCRIPTSNAME_${S}}: ${S}
-	${INSTALL} ${COPY} -o ${SCRIPTSOWN_${S}} -g ${SCRIPTSGRP_${S}} \
-		-m ${SCRIPTSMODE_${S}} ${.ALLSRC} ${.TARGET}
-.endfor
-.endif
-
-.if !target(scriptsinstall)
-scriptsinstall::
-.endif
-
+.if !target(lint)
 lint: ${LOBJS}
 .if defined(LOBJS) && !empty(LOBJS)
-	${LINT} ${LINTFLAGS} ${LDFLAGS:M-L*} ${LOBJS} ${LDADD}
+	@${LINT} ${LINTFLAGS} ${LDFLAGS:M-L*} ${LOBJS} ${LDADD}
+.endif
 .endif
 
+.if !defined(NOMAN)
 .include <bsd.man.mk>
+.endif
+
+.if !defined(NONLS)
 .include <bsd.nls.mk>
-.include <bsd.files.mk>
-.include <bsd.inc.mk>
+.endif
+
+.include <bsd.obj.mk>
 .include <bsd.dep.mk>
+.include <bsd.subdir.mk>
 .include <bsd.sys.mk>
-
-# Make sure all of the standard targets are defined, even if they do nothing.
-regress:
-

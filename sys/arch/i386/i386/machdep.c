@@ -61,7 +61,7 @@
 #include <sys/exec_linker.h>
 #include <sys/bootinfo.h>
 
-#include <net/netisr.h>
+#include <dev/cons.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
@@ -75,15 +75,18 @@
 #include <machine/specialreg.h>
 #include <machine/bootinfo.h>
 
-#include <dev/cons.h>
 #include <dev/isa/isareg.h>
+#include <dev/isa/isavar.h>
+#include <dev/ic/i8042reg.h>
+#include <dev/ic/mc146818reg.h>
+#include <i386/isa/isa_machdep.h>
 #include <dev/isa/rtc.h>
 
-#include <dev/ic/i8042reg.h>
-#include <i386/isa/isa_machdep.h>
-
-#ifdef KGDB
-#include <sys/kgdb.h>
+#ifdef DDB
+#include <machine/db_machdep.h>
+#include <ddb/db_access.h>
+#include <ddb/db_sym.h>
+#include <ddb/db_extern.h>
 #endif
 
 #ifdef VM86
@@ -102,7 +105,6 @@
 #endif
 
 #include "isa.h"
-#include "isadma.h"
 #include "npx.h"
 #if NNPX > 0
 extern struct proc *npxproc;
@@ -183,9 +185,6 @@ startup(firstaddr)
 		pmap_enter(kernel_pmap, msgbufp, avail_end + i * NBPG, VM_PROT_ALL, TRUE);
 	msgbufmapped = 1;
 
-#ifdef KDB
-	kdb_init();			/* startup kernel debugger */
-#endif
 	/*
 	 * Good {morning,afternoon,evening,night}.
 	 */
@@ -322,11 +321,6 @@ startup(firstaddr)
 			bufpages * CLBYTES);
 
 	/*
-	 * Set up CPU-specific registers, cache, etc.
-	 */
-	initcpu();
-
-	/*
 	 * Set up buffers, so they can be used to read disk labels.
 	 */
 	bufinit();
@@ -337,6 +331,8 @@ startup(firstaddr)
 	configure();
 
 	i386_bus_space_mallocok();
+
+	i386_proc0_tss_ldt_init();
 }
 
 /*
@@ -741,12 +737,6 @@ physstrat(bp, strat, prio)
 	bp->b_un.b_addr = baddr;
 }
 
-void
-initcpu()
-{
-
-}
-
 /*
  * Clear registers on exec
  */
@@ -820,9 +810,6 @@ cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	/* NOTREACHED */
 }
 
-/*
- * Initialize 386 and configure to run kernel
- */
 
 /*
  * Initialize segments & interrupt table
@@ -858,6 +845,9 @@ extern 	IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
 		IDTVEC(tss), IDTVEC(missing), IDTVEC(stk), IDTVEC(prot), IDTVEC(page),
 		IDTVEC(rsvd), IDTVEC(fpu), IDTVEC(align), IDTVEC(syscall), IDTVEC(osyscall);
 
+/*
+ * Initialize 386 and configure to run kernel
+ */
 void
 init386(first)
 	int first;
@@ -866,10 +856,12 @@ init386(first)
 	unsigned biosbasemem, biosextmem;
 	struct gate_descriptor *gdp;
 	extern int sigcode, szsigcode;
+	extern void consinit (void);
 
 	proc0.p_addr = proc0paddr;
 	curpcb = &proc0.p_addr->u_pcb;
 
+	consinit();	/* XXX SHOULD NOT BE DONE HERE */
 	i386_bus_space_init();
 	init_descriptors();
 
@@ -962,6 +954,16 @@ init386(first)
 	bcopy(&sigcode, proc0.p_addr->u_pcb.pcb_sigc, szsigcode);
 	proc0.p_addr->u_pcb.pcb_flags = 0;
 	proc0.p_addr->u_pcb.pcb_ptd = IdlePTD;
+
+#ifdef DDB
+	ddb_init();
+	if (boothowto & RB_KDB)
+		Debugger();
+#endif
+#ifdef KGDB
+	if (boothowto & RB_KDB)
+		kgdb_connect(0);
+#endif
 }
 
 void
@@ -1028,6 +1030,23 @@ lookup_bootinfo(type)
 		help = (union bootinfo *)((char*)help + help->bi_len);
 	}
 	return(0);
+}
+
+/*
+ * consinit:
+ * initialize the system console.
+ * XXX - shouldn't deal with this initted thing, but then,
+ * it shouldn't be called from init386 either.
+ */
+void
+consinit()
+{
+	static int initted;
+
+	if (initted)
+		return;
+	initted = 1;
+	cninit();
 }
 
 /*

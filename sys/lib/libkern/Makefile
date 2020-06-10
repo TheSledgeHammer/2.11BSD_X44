@@ -1,16 +1,19 @@
-#	$NetBSD: Makefile,v 1.36.8.1 1997/11/12 23:51:52 thorpej Exp $
+#	$NetBSD: Makefile,v 1.27 1996/05/10 21:27:32 scottr Exp $
 
 LIB=	kern
 NOPIC=
 
-M=	${.CURDIR}/arch/${MACHINE_ARCH}
+DIR=	${KERNREL}${KERNDIR}
 
-CPPFLAGS=	-I$M ${KERNCPPFLAGS} ${KERNMISCCPPFLAGS}
+CPPFLAGS=	-I${DIR}/arch/${MACHINE_ARCH} \
+		${KERNCPPFLAGS:S@-I.@-I${KERNREL}.@g}
 
-.if exists ($M/Makefile.inc)
-.PATH:	$M
-.include "$M/Makefile.inc"
+.if exists (${DIR}/arch/${MACHINE_ARCH}/Makefile.inc)
+.PATH:	${DIR}/arch/${MACHINE_ARCH}
+.include "${DIR}/arch/${MACHINE_ARCH}/Makefile.inc"
 .endif
+
+.PATH: ${DIR}
 
 .if (${MACHINE_ARCH} != "alpha")
 # Quad support
@@ -20,7 +23,7 @@ SRCS+=	adddi3.c anddi3.c ashldi3.c ashrdi3.c cmpdi2.c divdi3.c iordi3.c \
 .endif
 
 # Other stuff
-SRCS+=	md5c.c
+SRCS+=	
 
 # Files to clean up
 CLEANFILES+= lib${LIB}.o lib${LIB}.po
@@ -29,18 +32,17 @@ CLEANFILES+= lib${LIB}.o lib${LIB}.po
 mcount.po: mcount.o
 	cp mcount.o mcount.po
 
-# only needed during build
-libinstall::
+install:
 
 .include <bsd.lib.mk>
 
 lib${LIB}.o:: ${OBJS}
 	@echo building standard ${LIB} library
 	@rm -f lib${LIB}.o
-	@${LD} -r -o lib${LIB}.o `NM=${NM} ${LORDER} ${OBJS} | ${TSORT}`
+	@${LD} -r -o lib${LIB}.o `lorder ${OBJS} | tsort`
 
 POBJS+=	${OBJS:.o=.po} mcount.po
 lib${LIB}.po:: ${POBJS}
 	@echo building profiled ${LIB} library
 	@rm -f lib${LIB}.po
-	@${LD} -r -o lib${LIB}.po `NM=${NM} ${LORDER} ${POBJS} | ${TSORT}`
+	@${LD} -r -o lib${LIB}.po `lorder ${POBJS} | tsort`

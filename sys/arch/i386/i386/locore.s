@@ -1127,5 +1127,5 @@ syscall1:
 		jmp		doreti
 /**********************************************************************/
 
-#include <vector.s>
+#include <i386/isa/vector.s>
 #include <i386/isa/icu.s>
