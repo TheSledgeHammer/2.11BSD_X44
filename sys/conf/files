@@ -136,23 +136,22 @@ define	pcibus {[bus = -1]}		# PCI attachment
 define	tcbus { }				# TurboChannel attachment
 
 # legitimate pseudo-devices
-pseudo-device vn: disk
-pseudo-device ccd: disk
-pseudo-device md: disk
+device vn: disk
+device ccd: disk
+device md: disk
 
-#pseudo-device pty: tty
-#pseudo-device tb: tty
+device pty: tty
+device tb: tty
 
-#pseudo-device imp: ifnet
-#pseudo-device loop: ifnet
-#pseudo-device sl: ifnet
-#pseudo-device ppp: ifnet
-#pseudo-device tun: ifnet
-#pseudo-device bpfilter: ifnet
-#pseudo-device strip: ifnet
-#pseudo-device ipfilter: ifnet
+device imp: ifnet
+device loop: ifnet
+device sl: ifnet
+device ppp: ifnet
+device tun: ifnet
+device bpfilter: ifnet
+device strip: ifnet
+device ipfilter: ifnet
 
-# dev sources
 # dev sources
 file 	dev/auconv.c						auconv
 file 	dev/audio.c							audio			needs-flag
