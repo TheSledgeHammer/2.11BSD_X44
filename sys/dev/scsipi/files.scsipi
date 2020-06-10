@@ -4,21 +4,19 @@
 # Included by ports that need it.  Ports that use it must provide
 # their own "major" declarations for the appropriate devices.
 
-defflags	SCSIVERBOSE
-
-file	dev/scsipi/scsipiconf.c		scsi | atapi
-file	dev/scsipi/scsipi_base.c	scsi | atapi
-file	dev/scsipi/scsipi_ioctl.c	scsi | atapi
+file	dev/scsipi/scsipiconf.c		scsi #| atapi
+file	dev/scsipi/scsipi_base.c	scsi #| atapi
+file	dev/scsipi/scsipi_ioctl.c	scsi #| atapi
 file	dev/scsipi/scsi_base.c		scsi 
-file	dev/scsipi/atapi_base.c		atapi
+#file	dev/scsipi/atapi_base.c		atapi
 
 device	scsibus {target = -1, lun = -1}
 attach	scsibus at scsi
 file	dev/scsipi/scsiconf.c		scsibus			needs-flag
 
-device	atapibus {drive = -1}
-attach	atapibus at atapi
-file	dev/scsipi/atapiconf.c          atapibus		needs-flag
+#device	atapibus {drive = -1}
+#attach	atapibus at atapi
+#file	dev/scsipi/atapiconf.c          atapibus		needs-flag
 
 device	cd: disk
 attach	cd at scsibus with cd_scsibus
