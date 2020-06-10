@@ -7,6 +7,10 @@ machine 		i386
 include			"conf/GENERIC"
 maxusers		32				# estimated number of users
 
+options			SWAPPAGER		# paging
+options 		VNODEPAGER		# mmap() of files
+options 		DEVPAGER		# mmap() of devices
+
 options			EXEC_AOUT		# exec a.out binaries
 options 		EXEC_ELF32		# exec ELF binaries
 options			EXEC_SCRIPT		# exec #! scripts
@@ -283,7 +287,6 @@ audio*	at wss?
 # The spkr driver provides a simple tone interface to the built in speaker.
 #spkr0	at pckbd? port 0x61						# PC speaker
 
-
 # Mice
 
 # ISA busmice
@@ -307,3 +310,23 @@ joy*	at isapnp?								# Game ports (usually on audio cards)
 
 # Planetconnect Satellite receiver driver.
 #satlink0 at isa? port 0x300 drq 1
+
+# Pseudo-Devices
+
+# disk/mass storage pseudo-devices
+pseudo-device	ccd			4	# concatenated/striped disk devices
+pseudo-device	md			1	# memory disk device (ramdisk)
+pseudo-device	vn			4	# disk-like interface to files
+
+# network pseudo-devices
+pseudo-device	bpfilter	8	# Berkeley packet filter
+pseudo-device	ipfilter		# IP filter (firewall) and NAT
+pseudo-device	loop			# network loopback
+pseudo-device	ppp			2	# Point-to-Point Protocol
+pseudo-device	sl			2	# Serial Line IP
+pseudo-device	strip		2	# Starmode Radio IP (Metricom)
+pseudo-device	tun			2	# network tunneling over tty
+
+# miscellaneous pseudo-devices
+pseudo-device	pty			64	# pseudo-terminals
+pseudo-device	tb			1	# tablet line discipline
