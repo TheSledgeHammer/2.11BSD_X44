@@ -153,7 +153,13 @@ pseudo-device md: disk
 #pseudo-device ipfilter: ifnet
 
 # dev sources
+# dev sources
+file 	dev/auconv.c						auconv
+file 	dev/audio.c							audio			needs-flag
+file 	dev/ccd.c							ccd				needs-flag
+file 	dev/md.c							md				needs-count
 file 	dev/mulaw.c							audio			needs-flag
+file 	dev/vn.c							vn				needs-flag
 
 # kernel sources
 file	kern/exec_aout.c					exec_aout
@@ -227,9 +233,9 @@ file	miscfs/deadfs/dead_vnops.c
 file	miscfs/fdesc/fdesc_vfsops.c			fdesc
 file	miscfs/fdesc/fdesc_vnops.c	    	fdesc
 file	miscfs/fifofs/fifo_vnops.c	    	fifo
-file	miscfs/nullfs/null_subr.c       null
-file	miscfs/nullfs/null_vfsops.c     null
-file	miscfs/nullfs/null_vnops.c      null
+file	miscfs/nullfs/null_subr.c       nullfs
+file	miscfs/nullfs/null_vfsops.c     nullfs
+file	miscfs/nullfs/null_vnops.c      nullfs
 file	miscfs/specfs/spec_vnops.c
 file    net/af.c
 file	net/bpf.c		        			bpfilter
