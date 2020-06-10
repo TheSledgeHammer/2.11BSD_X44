@@ -19,7 +19,6 @@
 void
 getpid()
 {
-
 	u->u_r.r_val1 = u->u_procp->p_pid;
 	u->u_r.r_val2 = u->u_procp->p_ppid;	/* XXX - compatibility */
 }
@@ -27,7 +26,6 @@ getpid()
 void
 getppid()
 {
-
 	u->u_r.r_val1 = u->u_procp->p_ppid;
 }
 
@@ -304,4 +302,3 @@ crdup(cr)
 	newcr->cr_ref = 1;
 	return (newcr);
 }
-

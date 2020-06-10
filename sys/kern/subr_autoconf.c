@@ -46,6 +46,7 @@
 
 #include <sys/param.h>
 #include <sys/device.h>
+#include <sys/user.h>
 #include <sys/malloc.h>
 #include <lib/libkern/libkern.h>
 

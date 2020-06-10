@@ -81,6 +81,7 @@
 #include <sys/signalvar.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
+#include <sys/user.h>
 
 #include <machine/cpu.h>
 #include <machine/reg.h>

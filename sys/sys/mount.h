@@ -98,6 +98,22 @@ struct	xmount {
 #define	MNT_UNION		0x0100		/* union with underlying filesystem */
 
 /*
+ * exported mount flags.
+ */
+#define	MNT_EXRDONLY	0x00000080	/* exported read only */
+#define	MNT_EXPORTED	0x00000100	/* file system is exported */
+#define	MNT_DEFEXPORTED	0x00000200	/* exported to the world */
+#define	MNT_EXPORTANON	0x00000400	/* use anon uid mapping for everyone */
+#define	MNT_EXKERB	0x00000800	/* exported with Kerberos uid mapping */
+
+/*
+ * Flags set by internal operations.
+ */
+#define	MNT_LOCAL	0x00001000	/* filesystem is stored locally */
+#define	MNT_QUOTA	0x00002000	/* quotas are enabled on filesystem */
+#define	MNT_ROOTFS	0x00004000	/* identifies the root filesystem */
+
+/*
  * Mask of flags that are visible to statfs().
 */
 #define	MNT_VISFLAGMASK	0x0fff
@@ -182,7 +198,6 @@ struct export_args {
  */
 struct vfsconf {
 	const struct vfsops *vfc_vfsops; /* filesystem operations vector */
-	//void 			*vfc_vfsops;				/* filesystem operations vector */
 	char 			vfc_name[VFS_MAXNAMELEN];	/* filesystem type name */
 	int 			vfc_index;
 	int				vfc_typenum;				/* historic filesystem type number */
@@ -192,7 +207,7 @@ struct vfsconf {
 	struct	vfsconf *vfc_next;					/* next in list */
 };
 
-//#ifdef KERNEL
+#ifdef KERNEL
 
 extern int 				maxvfsconf;		/* highest defined filesystem type */
 extern struct vfsconf 	*vfsconf;		/* head of list of filesystem types */
@@ -246,7 +261,7 @@ struct netcred {
  * Network export information
  */
 struct netexport {
-	//struct	netcred ne_defexported;		      		/* Default export */
+	struct	netcred 		ne_defexported;		      		/* Default export */
 	struct	radix_node_head *ne_rtable[AF_MAX+1]; 	/* Individual exports */
 };
 

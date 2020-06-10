@@ -1,4 +1,18 @@
+#	$NetBSD: bsd.doc.mk,v 1.35 1997/10/11 08:43:34 mycroft Exp $
 #	@(#)bsd.doc.mk	8.1 (Berkeley) 8/14/93
+
+.if !target(__initialized__)
+__initialized__:
+.if exists(${.CURDIR}/../Makefile.inc)
+.include "${.CURDIR}/../Makefile.inc"
+.endif
+.include <bsd.own.mk>
+.MAIN:		all
+.endif
+
+.PHONY:		cleandoc docinstall print spell
+realinstall:	docinstall
+clean cleandir:	cleandoc
 
 BIB?=		bib
 EQN?=		eqn
@@ -7,14 +21,11 @@ GRIND?=		vgrind -f
 INDXBIB?=	indxbib
 PIC?=		pic
 REFER?=		refer
-ROFF?=		groff -M/usr/share/tmac -M/usr/old/lib/tmac ${MACROS} ${PAGES}
+ROFF?=		groff -M/usr/share/tmac ${MACROS} ${PAGES}
 SOELIM?=	soelim
 TBL?=		tbl
 
-.PATH: ${.CURDIR}
-
 .if !target(all)
-.MAIN: all
 all: paper.ps
 .endif
 
@@ -28,26 +39,32 @@ print: paper.ps
 	lpr -P${PRINTER} paper.ps
 .endif
 
-.if !target(manpages)
-manpages:
-.endif
-
-.if !target(obj)
-obj:
-.endif
-
-clean cleandir:
+cleandoc:
 	rm -f paper.* [eE]rrs mklog ${CLEANFILES}
 
+.if !defined(NODOC)
 FILES?=	${SRCS}
-install:
-	install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
-	    Makefile ${FILES} ${EXTRA} ${DESTDIR}${BINDIR}/${DIR}
+.for F in ${FILES} ${EXTRA} Makefile
+docinstall:: ${DESTDIR}${DOCDIR}/${DIR}/${F}
+.if !defined(UPDATE)
+.PHONY: ${DESTDIR}${DOCDIR}/${DIR}/${F}
+.endif
+.if !defined(BUILD)
+${DESTDIR}${DOCDIR}/${DIR}/${F}: .MADE
+.endif
+
+.PRECIOUS: ${DESTDIR}${DOCDIR}/${DIR}/${F}
+${DESTDIR}${DOCDIR}/${DIR}/${F}: ${F}
+	${INSTALL} -c -o ${DOCOWN} -g ${DOCGRP} -m ${DOCMODE} ${.ALLSRC} \
+		${.TARGET}
+.endfor
+.endif
+
+.if !target(docinstall)
+docinstall::
+.endif
 
 spell: ${SRCS}
 	spell ${SRCS} | sort | comm -23 - spell.ok > paper.spell
 
-BINDIR?=	/usr/share/doc
-BINGRP?=	bin
-BINOWN?=	bin
-BINMODE?=	444
+depend includes lint obj tags:

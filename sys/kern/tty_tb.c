@@ -7,7 +7,7 @@
  */
 
 #include "tb.h"
-#if NTB > 0
+//#if NTB > 0
 
 /*
  * Line discipline for RS232 tablets;
@@ -20,7 +20,6 @@
 #include <sys/tty.h>
 #include <sys/proc.h>
 #include <sys/vnode.h>
-//#include <sys/inode.h>
 #include <sys/file.h>
 #include <sys/buf.h>
 #include <sys/uio.h>

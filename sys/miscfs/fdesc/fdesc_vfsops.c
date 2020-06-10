@@ -47,6 +47,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/proc.h>
+#include <sys/user.h>
 #include <sys/resourcevar.h>
 #include <sys/filedesc.h>
 #include <sys/vnode.h>

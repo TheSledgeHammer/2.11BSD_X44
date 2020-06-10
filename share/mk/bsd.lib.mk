@@ -44,6 +44,39 @@ SHLIB_MINOR != . ${.CURDIR}/shlib_version ; echo $$minor
 #		 	(usually just ${CPPPICFLAGS} ${CPICFLAGS})
 # APICFLAGS:	flags for ${AS} to assemble .[sS]  to .so objects.
 
+.if (${MACHINE_ARCH} == "alpha")
+
+SHLIB_TYPE=ELF
+SHLIB_LDSTARTFILE= ${DESTDIR}/usr/lib/crtbeginS.o
+SHLIB_LDENDFILE= ${DESTDIR}/usr/lib/crtendS.o
+SHLIB_SOVERSION=${SHLIB_MAJOR}
+CPICFLAGS ?= -fpic -DPIC
+CPPPICFLAGS?= -DPIC 
+CAPICFLAGS?= ${CPPPICFLAGS} ${CPICFLAGS}
+APICFLAGS ?=
+
+.elif (${MACHINE_ARCH} == "mips")
+
+SHLIB_TYPE=ELF
+# still use gnu-derived ld.so on pmax; don't have or need lib<>.so support.
+SHLIB_LDSTARTFILE= ${DESTDIR}/usr/lib/crtbeginS.o
+SHLIB_LDENDFILE= ${DESTDIR}/usr/lib/crtendS.o
+SHLIB_SOVERSION=${SHLIB_MAJOR}
+
+# On mips, all libs need to be compiled with ABIcalls, not just sharedlibs.
+CPICFLAGS?=
+APICFLAGS?=
+#CPICFLAGS?= -fpic -DPIC
+#APICFLAGS?= -DPIC
+
+# so turn shlib PIC flags on for ${CPP}, ${CC}, and ${AS} as follows:
+AINC+=-DPIC -DABICALLS
+COPTS+=	-fPIC ${AINC}
+AFLAGS+= -fPIC
+AS+=	-KPIC
+
+.else
+
 SHLIB_TYPE=a.out
 SHLIB_LDSTARTFILE=
 SHLIB_LDENDFILE=
@@ -52,6 +85,9 @@ CPICFLAGS?= -fpic -DPIC
 CPPPICFLAGS?= -DPIC 
 CAPICFLAGS?= ${CPPPICFLAGS} ${CPICFLAGS}
 APICFLAGS?= -k
+
+.endif
+
 
 CFLAGS+=	${COPTS}
 
@@ -129,7 +165,8 @@ CFLAGS+=	${COPTS}
 	@${COMPILE.S} ${CAPICFLAGS} ${CFLAGS:M-[ID]*} ${AINC} ${.IMPSRC} -o ${.TARGET}.o
 	@${LD} -x -r ${.TARGET}.o -o ${.TARGET}
 	@rm -f ${.TARGET}.o
-	
+
+
 .if !defined(NOPROFILE)
 _LIBS=lib${LIB}.a lib${LIB}_p.a
 .else
@@ -292,9 +329,9 @@ ${DESTDIR}${LINTLIBDIR}/llib-l${LIB}.ln: llib-l${LIB}.ln
 .include <bsd.nls.mk>
 .include <bsd.files.mk>
 .include <bsd.inc.mk>
+.include <bsd.links.mk>
 .include <bsd.dep.mk>
 .include <bsd.sys.mk>
 
 # Make sure all of the standard targets are defined, even if they do nothing.
 lint regress:
-	

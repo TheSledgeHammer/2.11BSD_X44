@@ -17,6 +17,15 @@ clean cleandir:	cleanprog
 
 CFLAGS+=	${COPTS}
 
+# ELF platforms depend on crtbegin.o and crtend.o
+.if (${OBJECT_FMT} == "ELF")
+LIBCRTBEGIN?=	${DESTDIR}/usr/lib/crtbegin.o
+LIBCRTEND?=	${DESTDIR}/usr/lib/crtend.o
+.else
+LIBCRTBEGIN?=
+LIBCRTEND?=
+.endif
+
 LIBCRT0?=	${DESTDIR}/usr/lib/crt0.o
 LIBBFD?=	${DESTDIR}/usr/lib/libbfd.a
 LIBC?=		${DESTDIR}/usr/lib/libc.a
@@ -181,9 +190,9 @@ lint: ${LOBJS}
 .include <bsd.nls.mk>
 .include <bsd.files.mk>
 .include <bsd.inc.mk>
+.include <bsd.links.mk>
 .include <bsd.dep.mk>
 .include <bsd.sys.mk>
 
 # Make sure all of the standard targets are defined, even if they do nothing.
 regress:
-

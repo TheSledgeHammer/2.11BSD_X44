@@ -44,7 +44,7 @@
 #include <sys/ktrace.h>
 #include <sys/malloc.h>
 #include <sys/syslog.h>
-
+#include <sys/user.h>
 #include <sys/mount.h>
 
 struct ktr_header *

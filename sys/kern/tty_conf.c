@@ -71,6 +71,7 @@ int	nldisp = sizeof (linesw) / sizeof (linesw[0]);
  * discipline specific ioctl command.
  */
 /*ARGSUSED*/
+int
 nullioctl(tp, cmd, data, flags)
 	struct tty *tp;
 	u_int cmd;

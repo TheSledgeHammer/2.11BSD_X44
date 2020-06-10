@@ -7,7 +7,6 @@
  */
 
 #include <sys/param.h>
-//#include <machine/seg.h>
 
 #include <sys/user.h>
 #include <sys/proc.h>

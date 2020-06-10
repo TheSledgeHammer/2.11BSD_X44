@@ -94,7 +94,8 @@ struct	linger {
  * addresses.
  */
 struct sockaddr {
-	u_short	sa_family;		/* address family */
+	u_short	sa_len;				/* total length */
+	u_short	sa_family;			/* address family */
 	char	sa_data[14];		/* up to 14 bytes of direct address */
 };
 
@@ -103,7 +104,7 @@ struct sockaddr {
  * information in raw sockets.
  */
 struct sockproto {
-	u_short	sp_family;		/* address family */
+	u_short	sp_family;			/* address family */
 	u_short	sp_protocol;		/* protocol */
 };
 

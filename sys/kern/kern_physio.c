@@ -43,6 +43,7 @@
 #include <sys/buf.h>
 #include <sys/conf.h>
 #include <sys/proc.h>
+#include <sys/user.h>
 
 /*
  * Do "physical I/O" on behalf of a user.  "Physical I/O" is I/O directly

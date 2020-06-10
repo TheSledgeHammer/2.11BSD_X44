@@ -79,6 +79,11 @@ struct ps_strings {
 #define	PS_STRINGS ((struct ps_strings *) \
 		(USRSTACK - sizeof(struct ps_strings) - SPARE_USRSPACE))
 
+/*
+ * Below the PS_STRINGS and sigtramp, we may require a gap on the stack
+ * (used to copyin/copyout various emulation data structures).
+ */
+#define	STACKGAPLEN	(2*1024)	/* plenty enough for now */
 
 /*
  * exec system call, with and without environments.

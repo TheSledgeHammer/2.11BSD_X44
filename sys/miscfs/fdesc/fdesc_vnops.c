@@ -47,6 +47,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/proc.h>
+#include <sys/user.h>
 #include <sys/kernel.h>	/* boottime */
 #include <sys/resourcevar.h>
 #include <sys/filedesc.h>
@@ -901,7 +902,6 @@ fdesc_badop()
 #define fdesc_update ((int (*) (struct  vop_update_args *))eopnotsupp)
 #define fdesc_bwrite ((int (*) (struct  vop_bwrite_args *))eopnotsupp)
 
-int (**fdesc_vnodeop_p)();
 struct vnodeops fdesc_vnodeops[] = {
 		.vop_lookup = fdesc_lookup,		/* lookup */
 		.vop_create = fdesc_create,		/* create */

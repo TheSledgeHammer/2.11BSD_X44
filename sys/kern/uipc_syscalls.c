@@ -41,7 +41,7 @@ MBZAP(m, len, type)
 extern int netoff;
 struct file *gtsockf();
 
-extern	struct fileops socketops;
+extern struct fileops socketops;
 
 int
 socket()

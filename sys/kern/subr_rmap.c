@@ -20,6 +20,7 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/user.h>
 #include <sys/map.h>
 #include <sys/dmap.h>		/* XXX */
 #include <sys/proc.h>
