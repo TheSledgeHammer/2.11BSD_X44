@@ -1,6 +1,6 @@
 #	$NetBSD: Makefile,v 1.10 2015/05/06 15:57:08 hannken Exp $
 
-SUBDIR=	fdesc fifofs specfs
+SUBDIR=	fdesc fifofs nullfs specfs
 
 INCSDIR= /usr/include/miscfs
 
