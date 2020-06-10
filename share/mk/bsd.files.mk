@@ -1,6 +1,6 @@
 #	$NetBSD: bsd.files.mk,v 1.5 1997/05/09 13:25:49 mycroft Exp $
 
-.PHONY:		filesinstall
+.PHONY:			filesinstall
 realinstall:	filesinstall
 
 .if defined(FILES)

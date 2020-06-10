@@ -24,7 +24,7 @@ __usrobjdirpf=
 
 obj:
 	@cd ${.CURDIR}; rm -f ${__objdir} > /dev/null 2>&1 || true; \
-	here=`/bin/pwd`; subdir=$${here#${BSDSRCDIR}/}; \
+	here=`/bin/pwd`; subdir=$${here${BSDSRCDIR}/}; \
 	if test $$here != $$subdir ; then \
 		dest=${__usrobjdir}/$$subdir${__usrobjdirpf} ; \
 		echo "$$here/${__objdir} -> $$dest"; \
