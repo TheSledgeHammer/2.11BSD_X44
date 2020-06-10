@@ -227,6 +227,9 @@ file	miscfs/deadfs/dead_vnops.c
 file	miscfs/fdesc/fdesc_vfsops.c			fdesc
 file	miscfs/fdesc/fdesc_vnops.c	    	fdesc
 file	miscfs/fifofs/fifo_vnops.c	    	fifo
+file	miscfs/nullfs/null_subr.c       null
+file	miscfs/nullfs/null_vfsops.c     null
+file	miscfs/nullfs/null_vnops.c      null
 file	miscfs/specfs/spec_vnops.c
 file    net/af.c
 file	net/bpf.c		        			bpfilter
