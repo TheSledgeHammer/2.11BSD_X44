@@ -1,20 +1,46 @@
-#	@(#)Makefile	7.9 (Berkeley) 6/1/93
+#	$NetBSD: Makefile,v 1.36.8.1 1997/11/12 23:51:52 thorpej Exp $
 
 LIB=	kern
-CFLAGS+= -I${.CURDIR} -I${.CURDIR}/..
-SRCS=	adddi3.c anddi3.c ashldi3.c ashrdi3.c assert.c bcmp.c cmpdi2.c divdi3.c \
-		ffs.c iordi3.c locc.c lshldi3.c lshrdi3.c mcount.c moddi3.c \
-		muldi3.c negdi2.c notdi2.c qdivrem.c random.c rindex.c prospectorhash.c \ 
-		scanc.c skpc.c strcat.c strcmp.c strcpy.c strlen.c strncpy.c \ 
-		subdi3.c ucmpdi2.c udivdi3.c umoddi3.c xordi3.c \
+NOPIC=
 
-.if exists(${.CURDIR}/${MACHINE}/Makefile.inc)
-.PATH: ${.CURDIR}/${MACHINE}
-.include "${.CURDIR}/${MACHINE}/Makefile.inc"
+M=	${.CURDIR}/arch/${MACHINE_ARCH}
+
+CPPFLAGS=	-I$M ${KERNCPPFLAGS} ${KERNMISCCPPFLAGS}
+
+.if exists ($M/Makefile.inc)
+.PATH:	$M
+.include "$M/Makefile.inc"
 .endif
+
+.if (${MACHINE_ARCH} != "alpha")
+# Quad support
+SRCS+=	adddi3.c anddi3.c ashldi3.c ashrdi3.c cmpdi2.c divdi3.c iordi3.c \
+	lshldi3.c lshrdi3.c moddi3.c muldi3.c negdi2.c notdi2.c qdivrem.c \
+	subdi3.c  ucmpdi2.c udivdi3.c umoddi3.c xordi3.c
+.endif
+
+# Other stuff
+SRCS+=	md5c.c
+
+# Files to clean up
+CLEANFILES+= lib${LIB}.o lib${LIB}.po
 
 # mcount cannot be compiled with profiling
 mcount.po: mcount.o
 	cp mcount.o mcount.po
 
+# only needed during build
+libinstall::
+
 .include <bsd.lib.mk>
+
+lib${LIB}.o:: ${OBJS}
+	@echo building standard ${LIB} library
+	@rm -f lib${LIB}.o
+	@${LD} -r -o lib${LIB}.o `NM=${NM} ${LORDER} ${OBJS} | ${TSORT}`
+
+POBJS+=	${OBJS:.o=.po} mcount.po
+lib${LIB}.po:: ${POBJS}
+	@echo building profiled ${LIB} library
+	@rm -f lib${LIB}.po
+	@${LD} -r -o lib${LIB}.po `NM=${NM} ${LORDER} ${POBJS} | ${TSORT}`

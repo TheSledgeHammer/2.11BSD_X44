@@ -37,6 +37,8 @@
 
 #include <machine/bootinfo.h>
 
+/* Only change the version number if you break compatibility. */
+
 /*
  * A zero bootinfo field often means that there is no info available.
  * Flags are used to indicate the validity of fields where zero is a

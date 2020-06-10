@@ -5,13 +5,12 @@
 ARCH=	i386
 
 all:
-	@echo "make tags, links, init_sysent.c, or vnode_if.c only"
+	@echo "make tags, links, init_sysent.c"
 	@false
 
 
 SYSCALLSRC = makesyscalls.sh syscalls.conf syscalls.master
-init_sysent.c syscalls.c ../sys/syscall.h: 
-${SYSCALLSRC}
+init_sysent.c syscalls.c ../sys/syscall.h: ${SYSCALLSRC}
 	-mv -f init_sysent.c init_sysent.c.bak
 	-mv -f syscalls.c syscalls.c.bak
 	-mv -f ../sys/syscall.h ../sys/syscall.h.bak	
@@ -32,12 +31,13 @@ SYSDIR=/sys
 
 # Directories in which to place tags links (other than machine-dependent)
 DGEN=	conf \
-		dev scsi \
-		kern lib \
-		miscfs miscfs/deadfs miscfs/fdesc miscfs/fifofs miscfs/specfs \
+		dev dev/scsi \
+		kern libkern \
+		miscfs miscfs/deadfs miscfs/fdesc \
+		miscfs/fifofs miscfs/specfs miscfs/nullfs \
 		net netimp netinet netns sys \
 		ufs ufs/ffs ufs/lfs ufs/mfs ufs/ufs \
-		vm vm/include
+		vm
 
 tags::
 	-for i in ${ARCH}; do \

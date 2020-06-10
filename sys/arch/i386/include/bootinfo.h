@@ -34,9 +34,8 @@
 #ifndef	_MACHINE_BOOTINFO_H_
 #define	_MACHINE_BOOTINFO_H_
 
-#ifndef _LOCORE
+#include <sys/bootinfo.h>
 
-/* Only change the version number if you break compatibility. */
 #define	BOOTINFO_VERSION		1
 
 #define BOOTINFO_BOOTPATH 		0
@@ -47,6 +46,10 @@
 #define	N_BIOS_GEOM				8
 
 #define	BOOTINFO_MAGIC			0xdeadbeeffeedface
+
+union bootinfo 	bootinfo;
+
+#ifndef _LOCORE
 
 struct bootinfo_bios {
 #define	bi_endcommon			bi_n_bios_used

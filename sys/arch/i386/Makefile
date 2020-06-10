@@ -8,12 +8,11 @@ SI386=	${SYSDIR}/arch/i386/eisa/*.[ch] \
 		${SYSDIR}/arch/i386/include/*.h \
 		${SYSDIR}/arch/i386/isa/*.[ch] 	\
 		${SYSDIR}/arch/i386/pci/*.[ch] \
-
 AI386=	${SYSDIR}/arch/i386/i386/*.s 	\
 		
 
 # Directories in which to place tags links
-DI386=	eisa isa include scripts
+DI386=	eisa isa include pci
 
 .include "../../kern/Make.tags.inc"
 
