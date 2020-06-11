@@ -65,10 +65,10 @@
 #include <sys/conf.h>
 #include <sys/user.h>
 
-#include <scsi/scsi_all.h>
-#include <scsi/scsi_cd.h>
-#include <scsi/scsi_disk.h>	/* rw_big and start_stop come from there */
-#include <scsi/scsiconf.h>
+#include <dev/scsi/scsi_all.h>
+#include <dev/scsi/scsi_cd.h>
+#include <dev/scsi/scsi_disk.h>	/* rw_big and start_stop come from there */
+#include <dev/scsi/scsiconf.h>
 
 #define	CDOUTSTANDING	4
 #define	CDRETRIES	1

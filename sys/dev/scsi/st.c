@@ -67,9 +67,9 @@
 #include <sys/device.h>
 #include <sys/conf.h>
 
-#include <scsi/scsi_all.h>
-#include <scsi/scsi_tape.h>
-#include <scsi/scsiconf.h>
+#include <dev/scsi/scsi_all.h>
+#include <dev/scsi/scsi_tape.h>
+#include <dev/scsi/scsiconf.h>
 
 /* Defines for device specific stuff */
 #define DEF_FIXED_BSIZE  512

@@ -33,14 +33,15 @@
 #include <sys/systm.h>
 #include <sys/select.h>
 #include <sys/device.h>
+#include <sys/user.h>
 
 #include <machine/cpu.h>
 #include <machine/bus.h>
 #include <machine/intr.h>
 
-#include <dev/scsipi/scsipi_all.h>
-#include <dev/scsipi/scsipiconf.h>
-#include <dev/scsipi/scsi_all.h>
+#include <dev/scsi/scsi_all.h>
+#include <dev/scsi/scsiconf.h>
+#include <dev/scsi/scsi_all.h>
 
 #include <dev/ic/aic6360var.h>
 

@@ -53,7 +53,7 @@ typedef	int			boolean;
 
 #include <sys/queue.h>
 #include <machine/cpu.h>
-#include <scsi/scsi_debug.h>
+#include <dev/scsi/scsi_debug.h>
 
 /*
  * The following documentation tries to describe the relationship between the

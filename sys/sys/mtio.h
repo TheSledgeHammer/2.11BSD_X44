@@ -28,6 +28,11 @@ struct	mtop	{
 #define MTCACHE		8	/* enable controller cache */
 #define MTNOCACHE 	9	/* disable controller cache */
 #define	MTFLUSH		10	/* flush cache */
+#define MTERASE		11	/* erase entire tape */
+#define MTRETEN		12	/* retension */
+#define MTEOM		13	/* forward to end of media */
+#define MTSETBSIZ	14	/* set block size; 0 for variable */
+#define MTSETDNSTY	15	/* set density code for current mode */
 
 /* structure for MTIOCGET - mag tape get status command */
 

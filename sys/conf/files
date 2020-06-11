@@ -28,100 +28,25 @@ define	fddi
 # devices ARPing IPv4 pull this in:
 define	arp
 
+# "Chipset" attributes.  These are the machine-independent portions
+# of device drivers.
+define	ncr5380sbc	# NCR 5380 SCSI Bus Controller
+define	pdq			# DEC FDDI chipset
+
 # "Chipset" drivers.  These are the bus-independent routines which
 # contain the cfdrivers.  Attachments are provided by files.<bus>
 
-# Adaptec AIC-6[32]60 ICs
-device	aic: scsi
-file	dev/ic/aic6360.c			aic
-
 # Adaptec 2[789]4X, 394X, aic7770 and aic78[5678]0 SCSI controllers
 device	ahc: scsi
-file	dev/ic/aic7xxx.c			ahc
-
-# BusLogic MultiMaster and MultiMaster Ultra SCSI controllers
-# (Must be declared before AHA to ensure bha probes before aha.
-#  Probing AHA first configures bhas as aha, via their AHA
-#  hardware-compatibility mode.)
-device	bha: scsi
-file	dev/ic/bha.c				bha
-
-# Adaptec AHA-154x and AHA-164x controllers
-# (must be after bha, see above)
-device	aha: scsi
-file	dev/ic/aha.c				aha
-
-# Qlogic ISP 10x0 SCSI Controllers
-device	isp: scsi
-file	dev/ic/isp.c				isp
-file	dev/ic/isp_netbsd.c			isp
-
-# UltraStor SCSI controllers
-device	uha: scsi
-file	dev/ic/uha.c				uha
+file	dev/ic/aic7xxx.c	ahc
 
 # 3Com Etherlink-III Ethernet controller
-device	ep: arp, ether, ifnet
-file	dev/ic/elink3.c				ep
-
-# DEC EtherWORKS III (LEMAC) Ethernet controllers
-device	lc: arp, ether, ifnet
-file	dev/ic/lemac.c				lc
+device	ep: ether, ifnet
+file	dev/ic/elink3.c		ep
 
 # LANCE and PCnet Ethernet controllers
-device	le: arp, ether, ifnet
-file	dev/ic/am7990.c				le
-
-# 8390-family Ethernet controllers
-define	dp8390nic
-file	dev/ic/dp8390.c				dp8390nic
-
-# NCR 5380 SCSI Bus Controller
-define	ncr5380sbc
-file	dev/ic/ncr5380sbc.c			ncr5380sbc
-
-# DEC FDDI Chipset
-define	pdq
-file	dev/ic/pdq.c				pdq
-file	dev/ic/pdq_ifsubr.c			pdq
-
-# Cyclades Cyclom-8/16/32 
-device	cy: tty
-file	dev/ic/cy.c					cy				needs-flag
-
-# Efficient Networks, Inc. ATM interface
-device	en: atm, ifnet
-file	dev/ic/midway.c				en
-
-# NCR 53x9x or Emulex ESP SCSI Controller
-define	ncr53c9x
-file	dev/ic/ncr53c9x.c			ncr53c9x
-
-# Intel 82586 Ethernet Controller
-define	i82586
-file	dev/ic/i82586.c				i82586
-
-# SMC 91Cxx Ethernet Controller
-device	sm: arp, ether, ifnet
-file	dev/ic/smc91cxx.c			sm
-
-# Interwave Am78C201 audio driver
-define	interwave
-file	dev/ic/interwave.c			interwave
-
-# TMS 320av110 MPEG2/audio driver
-define	tms320av110
-file	dev/ic/tms320av110.c		tms320av110
-
-# Novell NE2000-compatible Ethernet cards, based on the
-# National Semiconductor DS8390.
-device	ne: ether, ifnet, arp, dp8390nic
-file	dev/ic/ne2000.c				ne
-
-# 8250/16[45]50-based "com" ports
-# XXX In a perfect world, this would be done with attributes
-device	com: tty
-file	dev/ic/com.c				com 			needs-flag
+device	le: ether, ifnet
+file	dev/ic/am7990.c		le
 
 # Device description for i2c bus and i2c eeprom
 
@@ -159,6 +84,26 @@ file 	dev/ccd.c							ccd				needs-flag
 file 	dev/md.c							md				needs-flag
 file 	dev/mulaw.c							mulaw			needs-flag
 file 	dev/vnd.c							vnd				needs-flag
+
+# ddb sources
+file 	ddb/db_access.c						ddb
+file 	ddb/db_aout.c						ddb
+file 	ddb/db_break.c						ddb
+file 	ddb/db_command.c					ddb
+file 	ddb/db_elf.c						ddb
+file 	ddb/db_examine.c					ddb
+file 	ddb/db_expr.c						ddb
+file 	ddb/db_input.c						ddb
+file 	ddb/db_lex.c						ddb
+file 	ddb/db_output.c						ddb
+file 	ddb/db_print.c						ddb
+file 	ddb/db_run.c						ddb
+file 	ddb/db_sym.c						ddb
+file 	ddb/db_trap.c						ddb
+file 	ddb/db_variables.c					ddb
+file 	ddb/db_watch.c						ddb
+file 	ddb/db_write_cmd.c					ddb
+file 	ddb/db_xxx.c						ddb
 
 # kernel sources
 file	kern/exec_aout.c					exec_aout

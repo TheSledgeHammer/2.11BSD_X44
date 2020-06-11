@@ -53,8 +53,8 @@
 #include <sys/device.h>
 #include <sys/user.h>
 
-#include <scsi/scsi_all.h>
-#include <scsi/scsiconf.h>
+#include <dev/scsi/scsi_all.h>
+#include <dev/scsi/scsiconf.h>
 
 #if 0
 #if NCALS > 0

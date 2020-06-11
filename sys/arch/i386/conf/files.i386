@@ -8,7 +8,6 @@ maxpartitions 16
 
 maxusers 2 16 64
 
-
 file	arch/i386/i386/aout_machdep.c	exec_aout
 file    arch/i386/i386/autoconf.c
 file    arch/i386/i386/bios32.c
@@ -43,7 +42,7 @@ file    dev/cons.c
 # Machine-independent SCSI drivers
 #
 
-include "dev/scsipi/files.scsipi"
+include "dev/scsi/files.scsi"
 major	{sd = 4}
 major	{st = 5}
 major	{cd = 6}
@@ -64,8 +63,8 @@ file	arch/i386/i386/mainbus.c	    	mainbus
 
 # attribute used to bring in BIOS trampoline code for real-mode probing
 # of certain devices/BIOS features
-define bioscall
-file	arch/i386/i386/bioscall.s	    	bioscall needs-flag
+#define bioscall
+#file	arch/i386/i386/bioscall.s	    	bioscall needs-flag
 
 #device	mca at root {...}
 
@@ -174,10 +173,10 @@ file	arch/i386/isa/joy_isapnp.c	        joy_isapnp
 #
 
 # Advanced Power Management support (APM)
-device apm: bioscall
-attach apm at mainbus
-file	arch/i386/i386/apm.c		        apm needs-count
-file	arch/i386/i386/apmcall.s	        apm
+#device apm: bioscall
+#attach apm at mainbus
+#file	arch/i386/i386/apm.c		          apm needs-count
+f#ile	arch/i386/i386/apmcall.s	        apm
 
 #
 # Compatibility modules

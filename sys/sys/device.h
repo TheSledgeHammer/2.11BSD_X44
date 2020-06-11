@@ -79,6 +79,7 @@ struct evcnt {
  * Configuration data (i.e., data placed in ioconf.c).
  */
 struct cfdata {
+	struct	cfattach *cf_attach;	/* config attachment */
 	struct	cfdriver *cf_driver;	/* config driver */
 	short	cf_unit;				/* unit number */
 	short	cf_fstate;				/* finding state (below) */
@@ -92,6 +93,29 @@ struct cfdata {
 #define	FSTATE_STAR		2	/* duplicable */
 
 typedef int (*cfmatch_t) (struct device *, struct cfdata *, void *);
+typedef void (*cfscan_t) (struct device *, void *);
+
+/*
+ * `configuration' attachment and driver (what the machine-independent
+ * autoconf uses).  As devices are found, they are applied against all
+ * the potential matches.  The one with the best match is taken, and a
+ * device structure (plus any other data desired) is allocated.  Pointers
+ * to these are placed into an array of pointers.  The array itself must
+ * be dynamic since devices can be found long after the machine is up
+ * and running.
+ *
+ * Devices can have multiple configuration attachments if they attach
+ * to different attributes (busses, or whatever), to allow specification
+ * of multiple match and attach functions.  There is only one configuration
+ * driver per driver, so that things like unit numbers and the device
+ * structure array will be shared.
+ */
+struct cfattach {
+	size_t	  ca_devsize;		/* size of dev data (for malloc) */
+	cfmatch_t ca_match;			/* returns a match level */
+	void	(*ca_attach) (struct device *, struct device *, void *);
+	/* XXX should have detach */
+};
 
 /*
  * `configuration' driver (what the machine-independent autoconf uses).

@@ -60,11 +60,11 @@
 #include <sys/conf.h>		/* for cdevsw */
 #include <sys/scanio.h>
 
-#include <scsi/scsi_all.h>
-#include <scsi/scsi_scanner.h>
-#include <scsi/scsiconf.h>
-#include <scsi/ssvar.h>
-#include <scsi/ss_mustek.h>
+#include <dev/scsi/scsi_all.h>
+#include <dev/scsi/scsi_scanner.h>
+#include <dev/scsi/scsiconf.h>
+#include <dev/scsi/ssvar.h>
+#include <dev/scsi/ss_mustek.h>
 
 #define MUSTEK_RETRIES 4
 

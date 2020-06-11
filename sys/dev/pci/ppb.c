@@ -43,6 +43,7 @@
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/device.h>
+#include <sys/user.h>
 
 #include <dev/pci/pcireg.h>
 #include <dev/pci/pcivar.h>
@@ -52,7 +53,7 @@
 #ifdef __BROKEN_INDIRECT_CONFIG
 int	ppbmatch (struct device *, void *, void *);
 #else
-int	ppbmatch (struct device *, struct cfdata *, void *);
+int		ppbmatch (struct device *, struct cfdata *, void *);
 #endif
 void	ppbattach (struct device *, struct device *, void *);
 

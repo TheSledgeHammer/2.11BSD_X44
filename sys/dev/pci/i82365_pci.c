@@ -33,6 +33,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>
+#include <sys/user.h>
 
 #include <dev/ic/i82365reg.h>
 #include <dev/ic/i82365var.h>

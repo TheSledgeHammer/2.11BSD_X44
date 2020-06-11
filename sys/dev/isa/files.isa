@@ -1,6 +1,6 @@
-#	$NetBSD: files.isa,v 1.41.2.4 1997/11/22 03:50:19 mellon Exp $
+#	$NetBSD: files.isa,v 1.21 1996/05/16 03:45:55 mycroft Exp $
 #
-# Config file and device description for machine-independent ISA code.
+# Config.new file and device description for machine-independent ISA code.
 # Included by ports that need it.  Requires that the SCSI files be
 # defined first.
 
@@ -10,7 +10,7 @@
 
 device	isa {[port = -1], [size = 0],
 	     [iomem = -1], [iosiz = 0],
-	     [irq = -1], [drq = -1], [drq2 = -1]}
+	     [irq = -1], [drq = -1]}
 attach	isa at isabus
 file	dev/isa/isa.c			isa needs-flag
 
@@ -43,49 +43,41 @@ file	dev/isa/rtfps.c			rtfps
 # Serial and parallel drivers
 #
 
+# 8250/16[45]50-based "com" ports
+device	com: tty
 attach	com at isa with com_isa
-file	dev/isa/com_isa.c		com_isa
+attach	com at commulti with com_commulti
+file	dev/isa/com.c			com & (com_isa | com_commulti) needs-flag
 
-attach	com at commulti with com_multi
-file	dev/isa/com_multi.c		com_multi
+# Cyclades Cyclom multiport serial cards
+# XXX currently broken
+device	cy: tty
+attach	cy at isa
+file	dev/isa/cy.c			cy needs-count
 
-# Cyclades Cyclom-8/16/32 
-attach	cy at isa with cy_isa
-file	dev/isa/cy_isa.c		cy_isa
-
-# PC-style parallel ports (XXX what chip?)
-# XXX chip driver should be defined elsewhere
+# PC parallel ports (XXX what chip?)
 device	lpt
-file	dev/ic/lpt.c			lpt needs-flag
-
-# PC-style parallel ports: ISA bus attachment
-attach	lpt at isa with lpt_isa
-file	dev/isa/lpt_isa.c		lpt_isa
+attach	lpt at isa
+file	dev/isa/lpt.c			lpt needs-flag
 
 #
 # SCSI host adapters
 #
 
 # Adaptec AHA-154x family
-# device declaration in sys/conf/files
-attach	aha at isa with aha_isa: isadma
-file	dev/isa/aha_isa.c		aha_isa
+device	aha: scsi, isadma
+attach	aha at isa
+file	dev/isa/aha.c			aha
 
 # Adaptec AIC-6[32]60 ICs
-# device declaration in sys/conf/files
-attach	aic at isa with aic_isa: isadma
-file	dev/isa/aic_isa.c		aic_isa
+device	aic: scsi, isadma
+attach	aic at isa
+file	dev/isa/aic6360.c		aic
 
-# Qlogic ESP406/FAS408 boards
-# ncr53c9x device declaration in sys/conf/files
-device	esp: scsi, ncr53c9x, isadma
-attach	esp at isa with esp_isa
-file	dev/isa/esp_isa.c		esp_isa
-
-# BusLogic BT-[45]4x ISA family
-# device declaration in sys/conf/files
-attach	bha at isa with bha_isa: isadma
-file	dev/isa/bha_isa.c		bha_isa
+# BusLogic BT-74x EISA family (XXX; should be EISA.  it's special)
+device	bt: scsi, isadma
+attach	bt at isa
+file	dev/isa/bt.c			bt
 
 # Seagate ST0[12] ICs
 device	sea: scsi, isadma
@@ -93,9 +85,9 @@ attach	sea at isa
 file	dev/isa/seagate.c		sea
 
 # UltraStor UHA-[13]4f boards
-# device declaration in sys/conf/files
-attach	uha at isa with uha_isa: isadma
-file	dev/isa/uha_isa.c		uha_isa
+device	uha: scsi, isadma
+attach	uha at isa
+file	dev/isa/ultra14f.c		uha
 
 # Western Digital WD7000 and Future Domain TMC-7000 boards
 device	wds: scsi, isadma
@@ -117,13 +109,11 @@ attach	scd at isa
 file	dev/isa/scd.c			scd needs-flag
 
 # ISA "wd" (ESDI/IDE/etc.) controllers
-define ata {drive=-1}
-device  wdc: atapi, isadma, ata
+device	wdc {drive = -1}
 attach	wdc at isa
-device  wd: disk
-attach  wd at ata
-file    dev/isa/wdc.c           wdc needs-flag
-file    dev/isa/wd.c            wd needs-flag
+device	wd: disk, isadma
+attach	wd at wdc
+file	dev/isa/wd.c			wdc needs-flag
 
 # Wangtek- and Archive-compatible tape controller boards
 device	wt: tape, isadma
@@ -134,58 +124,57 @@ file	dev/isa/wt.c			wt needs-flag
 # ISA networking drivers
 #
 
-# WD/SMC 80x3 family, SMC Elite Ultra [8216], SMC EtherEZ
-# MUST be first: probe is non invasive, and registers are clobbered
-# by other drivers's probe
-device	we: ether, ifnet, arp, dp8390nic
-attach	we at isa
-file	dev/isa/if_we.c			we
-
 # 3Com common probe code
 define	elink
 file	dev/isa/elink.c			elink
 
-# 3Com 3C503
-device	ec: ether, ifnet, arp, dp8390nic
-attach	ec at isa
-file	dev/isa/if_ec.c			ec
+# National Semiconductor DS8390/WD83C690-based boards
+# (WD/SMC 80x3 family, SMC Ultra [8216], 3Com 3C503, NE[12]000, and clones)
+device	ed: ether, ifnet
+attach	ed at isa
+file	dev/isa/if_ed.c			ed
 
 # 3Com 3C505
-device	eg: ether, ifnet, arp
+device	eg: ether, ifnet
 attach	eg at isa
 file	dev/isa/if_eg.c			eg
 
 # 3Com 3C501
-device	el: ether, ifnet, arp
+device	el: ether, ifnet
 attach	el at isa
 file	dev/isa/if_el.c			el
 
 # 3Com 3C509 Ethernet controller
-# device declaration in sys/conf/files
 attach	ep at isa with ep_isa: elink
 file	dev/isa/if_ep_isa.c		ep_isa
 
 # Fujitsu MB8696[05]-based boards
 # (Allied Telesis AT1700)
-device	fe: ether, ifnet, arp
+device	fe: ether, ifnet
 attach	fe at isa
 file	dev/isa/if_fe.c			fe
 
 # HP Lan Ethernet controllers
 # XXX currently broken
-#device hp: ether, ifnet, arp
+#device hp: ether, ifnet
 #attach	hp at isa
 #file	dev/isa/if_hp.c			hp
 
+# Intel i82586-based boards
+# (AT&T StarLAN 10, AT&T EN100, AT&T StarLAN Fiber, 3Com 3C507)
+device	ie: ether, ifnet, elink
+attach	ie at isa
+file	dev/isa/if_ie.c			ie
+
 # Intel i82595-based boards.
 # (Intel EtherExpress PRO)
-device  iy: ether, ifnet, arp
+device  iy: ether, ifnet         
 attach	iy at isa
 file    dev/isa/if_iy.c			iy
 
 # XXX ???
 # XXX NOT IN TREE?
-#device	ix: ether, ifnet, arp
+#device	ix: ether, ifnet
 #attach	ix at isa
 #file	dev/isa/if_ix.c			ix
 
@@ -194,25 +183,6 @@ file    dev/isa/if_iy.c			iy
 # device declaration in sys/conf/files
 attach	le at isa with le_isa: isadma
 file	dev/isa/if_le_isa.c		le_isa
-
-# DEC EtherWORKS III (LEMAC-based: DE203, DE204, DE205) cards
-attach  lc at isa with lc_isa
-file    dev/isa/if_lc_isa.c		lc
-
-# Novell NE1000, NE2000, and clones
-attach	ne at isa with ne_isa
-file	dev/isa/if_ne_isa.c		ne_isa
-
-# SMC91Cxx Ethernet Controllers 
-attach	sm at isa with sm_isa
-file	dev/isa/if_sm_isa.c		sm_isa
-
-# Intel i82586-based boards
-# (AT&T StarLAN 10, AT&T EN100, AT&T StarLAN Fiber, 3Com 3C507)
-# MUST BE LAST ! the probe clobbers some boards (like SMC boards).
-device	ie: ether, ifnet, elink, arp
-attach	ie at isa
-file	dev/isa/if_ie.c			ie
 
 #
 # ISA Sound hardware
@@ -223,14 +193,12 @@ define	sbdsp
 file	dev/isa/sbdsp.c			sbdsp
 
 # SoundBlaster family
-device	sb: audio, isadma, sbdsp, mulaw, auconv
+device	sb: audio, isadma, sbdsp, mulaw
+attach	sb at isa
 file	dev/isa/sb.c			sb needs-flag
 
-attach	sb at isa with sb_isa
-file	dev/isa/sb_isa.c		sb_isa needs-flag
-
 # ProAudio Spectrum
-device	pas: audio, isadma, sbdsp, mulaw, auconv
+device	pas: audio, isadma, sbdsp, mulaw
 attach	pas at isa
 file	dev/isa/pas.c			pas needs-flag
 
@@ -248,25 +216,18 @@ device	pss {[port = -1], [size = 0],
 	     [iomem = -1], [iosiz = 0],
 	     [irq = -1], [drq = -1]}
 attach	pss at isa
-device	sp: audio, isadma, ad1848, auconv
+device	sp: audio, isadma, ad1848
 attach	sp at pss
 file	dev/isa/pss.c			pss needs-flag
 
 # Microsoft Windows Sound System
-device	wss: audio, isadma, ad1848, auconv
+device	wss: audio, isadma, ad1848
 attach	wss at isa
 file	dev/isa/wss.c			wss needs-flag
 
 # Gravis UltraSound & UltraSound MAX.
 # Use the "flags" keyword in a config file to specify an extra DMA
 # channel for full-duplex operation. 
-device	gus: audio, isadma, ics2101, ad1848, mulaw, auconv
+device	gus: audio, isadma, ics2101, ad1848, mulaw
 attach	gus at isa
 file	dev/isa/gus.c			gus needs-flag
-
-#
-# PlanetConnect satellite receiver driver.
-#
-device satlink: isadma
-attach satlink at isa
-file dev/isa/satlink.c			satlink	needs-flag

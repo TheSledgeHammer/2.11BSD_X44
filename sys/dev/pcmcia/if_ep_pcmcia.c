@@ -40,6 +40,7 @@
 #include <sys/syslog.h>
 #include <sys/select.h>
 #include <sys/device.h>
+#include <sys/user.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>

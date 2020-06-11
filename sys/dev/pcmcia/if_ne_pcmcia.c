@@ -34,6 +34,7 @@
 #include <sys/select.h>
 #include <sys/device.h>
 #include <sys/socket.h>
+#include <sys/user.h>
 
 #include <net/if_types.h>
 #include <net/if.h>
