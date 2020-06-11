@@ -1079,7 +1079,7 @@ wdcwait(wdc, mask)
 		 * If a single slave ATAPI device is attached, it may
 		 * have released the bus. Select it and try again.
 		 */
-		if (status == 0xff && wdc->sc_flags & WDCF_ONESLAVE) {
+		if (status == 0xff && (wdc->sc_flags & WDCF_ONESLAVE)) {
 			outb(iobase+wd_sdh, WDSD_IBM | 0x10);
 			wdc->sc_status = status = inb(iobase+wd_status);
 		}

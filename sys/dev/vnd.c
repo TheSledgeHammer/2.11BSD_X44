@@ -113,7 +113,7 @@ struct vnd_softc {
 	int		 sc_maxactive;	/* max # of active requests */
 	struct buf	 sc_tab;	/* transfer queue */
 	char		 sc_xname[8];	/* XXX external name */
-	struct disk	 sc_dkdev;	/* generic disk device info */
+	struct dkdevice	 sc_dkdev;	/* generic disk device info */
 };
 
 /* sc_flags */
@@ -130,7 +130,7 @@ void	vndattach __P((int));
 
 void	vndclear __P((struct vnd_softc *));
 void	vndstart __P((struct vnd_softc *));
-int	vndsetcred __P((struct vnd_softc *, struct ucred *));
+int		vndsetcred __P((struct vnd_softc *, struct ucred *));
 void	vndthrottle __P((struct vnd_softc *, struct vnode *));
 void	vndiodone __P((struct buf *));
 void	vndshutdown __P((void));
@@ -291,9 +291,9 @@ vndstrategy(bp)
 		int off, s, nra;
 
 		nra = 0;
-		VOP_LOCK(vnd->sc_vp);
+		VOP_LOCK(vnd->sc_vp, 0, bp->b_proc);
 		error = VOP_BMAP(vnd->sc_vp, bn / bsize, &vp, &nbn, &nra);
-		VOP_UNLOCK(vnd->sc_vp);
+		VOP_UNLOCK(vnd->sc_vp, 0, bp->b_proc);
 		if (error == 0 && (long)nbn == -1)
 			error = EIO;
 #ifdef DEBUG
@@ -546,12 +546,12 @@ vndioctl(dev, cmd, data, flag, p)
 		}
 		error = VOP_GETATTR(nd.ni_vp, &vattr, p->p_ucred, p);
 		if (error) {
-			VOP_UNLOCK(nd.ni_vp);
+			VOP_UNLOCK(nd.ni_vp, 0, p);
 			(void) vn_close(nd.ni_vp, FREAD|FWRITE, p->p_ucred, p);
 			vndunlock(vnd);
 			return(error);
 		}
-		VOP_UNLOCK(nd.ni_vp);
+		VOP_UNLOCK(nd.ni_vp, 0, p);
 		vnd->sc_vp = nd.ni_vp;
 		vnd->sc_size = btodb(vattr.va_size);	/* note truncation */
 		if ((error = vndsetcred(vnd, p->p_ucred)) != 0) {
@@ -655,9 +655,9 @@ vndsetcred(vnd, cred)
 	auio.uio_rw = UIO_READ;
 	auio.uio_segflg = UIO_SYSSPACE;
 	auio.uio_resid = aiov.iov_len;
-	VOP_LOCK(vnd->sc_vp);
+	VOP_LOCK(vnd->sc_vp, 0, vnd->sc_vp->v_proc);
 	error = VOP_READ(vnd->sc_vp, &auio, 0, vnd->sc_cred);
-	VOP_UNLOCK(vnd->sc_vp);
+	VOP_UNLOCK(vnd->sc_vp, 0, vnd->sc_vp->v_proc);
 
 	free(tmpbuf, M_TEMP);
 	return (error);

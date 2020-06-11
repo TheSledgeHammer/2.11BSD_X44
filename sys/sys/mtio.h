@@ -17,17 +17,17 @@ struct	mtop	{
 };
 
 /* operations */
-#define MTWEOF	0	/* write an end-of-file record */
-#define MTFSF	1	/* forward space file */
-#define MTBSF	2	/* backward space file */
-#define MTFSR	3	/* forward space record */
-#define MTBSR	4	/* backward space record */
-#define MTREW	5	/* rewind */
-#define MTOFFL	6	/* rewind and put the drive offline */
-#define MTNOP	7	/* no operation, sets status only */
-#define MTCACHE	8	/* enable controller cache */
-#define MTNOCACHE 9	/* disable controller cache */
-#define	MTFLUSH	10	/* flush cache */
+#define MTWEOF		0	/* write an end-of-file record */
+#define MTFSF		1	/* forward space file */
+#define MTBSF		2	/* backward space file */
+#define MTFSR		3	/* forward space record */
+#define MTBSR		4	/* backward space record */
+#define MTREW		5	/* rewind */
+#define MTOFFL		6	/* rewind and put the drive offline */
+#define MTNOP		7	/* no operation, sets status only */
+#define MTCACHE		8	/* enable controller cache */
+#define MTNOCACHE 	9	/* disable controller cache */
+#define	MTFLUSH		10	/* flush cache */
 
 /* structure for MTIOCGET - mag tape get status command */
 
@@ -42,6 +42,10 @@ struct	mtget	{
 	daddr_t	mt_fileno;	/* file number of current position */
 	daddr_t	mt_blkno;	/* block number of current position */
 /* end not yet implemented */
+	daddr_t	mt_blksiz;		/* current block size */
+	daddr_t	mt_density;		/* current density code */
+	daddr_t	mt_mblksiz[4];	/* block size for different modes */
+	daddr_t mt_mdensity[4];	/* density codes for different modes */
 };
 
 /*
@@ -77,4 +81,18 @@ struct	mtget	{
 #ifndef KERNEL
 #define	DEFTAPE	"/dev/rmt8"
 #define	MT_DEF	"/dev/nrmt8"
+#endif
+
+#ifdef KERNEL
+/*
+ * minor device number
+ */
+
+#define	T_UNIT		003		/* unit selection */
+#define	T_NOREWIND	004		/* no rewind on close */
+#define	T_DENSEL	030		/* density select */
+#define	T_800BPI	000		/* select  800 bpi */
+#define	T_1600BPI	010		/* select 1600 bpi */
+#define	T_6250BPI	020		/* select 6250 bpi */
+#define	T_BADBPI	030		/* undefined selection */
 #endif

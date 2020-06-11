@@ -108,7 +108,7 @@ struct mcd_mbx {
 
 struct mcd_softc {
 	struct	device sc_dev;
-	struct	disk sc_dk;
+	struct	dkdevice sc_dk;
 	void *sc_ih;
 
 	bus_space_tag_t		sc_iot;

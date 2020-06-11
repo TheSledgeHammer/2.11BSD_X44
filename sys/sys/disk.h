@@ -78,25 +78,39 @@
  * cause much overhead since labels are read and written infrequently - when
  * mounting a drive, assigning a label, running newfs, etc.
  */
+
+#include <sys/time.h>
+//#include <sys/queue.h>
+
 struct buf;
 struct disklabel;
-//struct cpu_disklabel;
+struct cpu_disklabel;
 
 struct dkdevice {
-	struct	device 	 	dk_dev;					/* base device */
-	struct	dkdevice 	*dk_next;				/* list of disks; not yet used */
-	char				*dk_name;				/* disk name */
-	int					dk_bps;					/* xfer rate: bytes per second */
-	int					dk_bopenmask;			/* block devices open */
-	int					dk_copenmask;			/* character devices open */
-	int					dk_openmask;			/* composite (bopen|copen) */
-	int					dk_flags;				/* label state aka dk_state */
-	int					dk_blkshift;			/* shift to convert DEV_BSIZE to blks */
-	int					dk_byteshift;			/* shift to convert bytes to blks */
-	struct	dkdriver 	*dk_driver;				/* pointer to driver */
-	daddr_t				dk_labelsector;			/* sector containing label */
-	struct 	disklabel 	dk_label;				/* label */
-	struct	partition 	dk_parts[MAXPARTITIONS];/* inkernel portion */
+	struct	device 	 		dk_dev;					/* base device */
+	struct	dkdevice 		*dk_next;				/* list of disks; not yet used */
+	char					*dk_name;				/* disk name */
+	int						dk_bps;					/* xfer rate: bytes per second */
+	int						dk_bopenmask;			/* block devices open */
+	int						dk_copenmask;			/* character devices open */
+	int						dk_openmask;			/* composite (bopen|copen) */
+	int						dk_flags;				/* label state aka dk_state */
+	int						dk_blkshift;			/* shift to convert DEV_BSIZE to blks */
+	int						dk_byteshift;			/* shift to convert bytes to blks */
+
+	int						dk_busy;				/* busy counter */
+	u_int64_t				dk_xfer;				/* total number of transfers */
+	u_int64_t				dk_seek;				/* total independent seek operations */
+	u_int64_t				dk_bytes;				/* total bytes transfered */
+	struct timeval			dk_attachtime;			/* time disk was attached */
+	struct timeval			dk_timestamp;			/* timestamp of last unbusy */
+	struct timeval			dk_time;				/* total time spent busy */
+
+	struct	dkdriver 		*dk_driver;				/* pointer to driver */
+	daddr_t					dk_labelsector;			/* sector containing label */
+	struct 	disklabel 		dk_label;				/* label */
+	struct	partition 		dk_parts[MAXPARTITIONS];/* inkernel portion */
+	struct 	cpu_disklabel 	*dk_cpulabel;
 };
 
 struct dkdriver {

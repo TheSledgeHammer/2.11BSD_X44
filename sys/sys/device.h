@@ -66,7 +66,6 @@ struct device {
 	char	dv_xname[16];		/* external name (name + unit) */
 	struct	device *dv_parent;	/* pointer to parent device */
 };
-TAILQ_HEAD(devicelist, device);
 
 /* `event' counters (use zero or more per device instance, as needed) */
 struct evcnt {

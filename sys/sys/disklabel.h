@@ -351,6 +351,8 @@ struct partinfo {
 #define DIOCWLABEL		_IOW(d, 109, int)			/* write en/disable label */
 
 #define DIOCSBAD		_IOW(d, 110, struct dkbad)	/* set kernel dkbad */
+#define DIOCEJECT		_IO(d, 112)					/* eject removable disk */
+#define DIOCLOCK		_IOW(d, 113, int)			/* lock/unlock pack */
 
 #endif /* LOCORE */
 
