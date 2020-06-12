@@ -34,6 +34,8 @@ struct	fstab{
 	int		fs_passno;		/* pass number on parallel dump */
 };
 
+#include <sys/cdefs.h>
+
 struct	fstab *getfsent();
 struct	fstab *getfsspec();
 struct	fstab *getfsfile();

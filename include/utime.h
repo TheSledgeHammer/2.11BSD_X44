@@ -1,6 +1,8 @@
-/*
- * Copyright (c) 1988, 1993
- *	The Regents of the University of California.  All rights reserved.
+/*	$NetBSD: utime.h,v 1.3 1994/10/26 00:56:39 cgd Exp $	*/
+
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,42 +32,21 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)limits.h	8.2.1 (2.11BSD) 1996/1/11
+ *	@(#)utime.h	5.4 (Berkeley) 4/3/91
  */
 
-#ifndef _LIMITS_H_
-#define	_LIMITS_H_
+#ifndef	_UTIME_H_
+#define	_UTIME_H_
 
-/*
- * We don't need this crud at the moment so save on abuse of the C
- * preprocessor by not doing the defines.
+struct utimbuf {
+	time_t actime;		/* Access time */
+	time_t modtime;		/* Modification time */
+};
 
-#define	_POSIX_ARG_MAX			4096
-#define	_POSIX_CHILD_MAX		6
-#define	_POSIX_LINK_MAX			8
-#define	_POSIX_MAX_CANON		255
-#define	_POSIX_MAX_INPUT		255
-#define	_POSIX_NAME_MAX			14
-#define	_POSIX_NGROUPS_MAX		0
-#define	_POSIX_OPEN_MAX			16
-#define	_POSIX_PATH_MAX			255
-#define	_POSIX_PIPE_BUF			512
-#define	_POSIX_SSIZE_MAX		32767
-#define	_POSIX_STREAM_MAX		8
-#define	_POSIX_TZNAME_MAX		3
+#include <sys/cdefs.h>
 
-#define	_POSIX2_BC_BASE_MAX		99
-#define	_POSIX2_BC_DIM_MAX		2048
-#define	_POSIX2_BC_SCALE_MAX	99
-#define	_POSIX2_BC_STRING_MAX	1000
-#define	_POSIX2_EQUIV_CLASS_MAX	2
-#define	_POSIX2_EXPR_NEST_MAX	32
-#define	_POSIX2_LINE_MAX		2048
-#define	_POSIX2_RE_DUP_MAX		255
+__BEGIN_DECLS
+int utime __P((const char *, const struct utimbuf *));
+__END_DECLS
 
-*/
-
-#include <machine/limits.h>
-#include <sys/syslimits.h>
-
-#endif /* !_LIMITS_H_ */
+#endif /* !_UTIME_H_ */

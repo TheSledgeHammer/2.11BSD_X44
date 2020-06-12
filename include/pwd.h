@@ -17,6 +17,8 @@
  *	@(#)pwd.h	4.3 (Berkeley) 2/22/89
  */
 
+#include <sys/types.h>
+
 #define	_PATH_PASSWD		"/etc/passwd"
 #define	_PATH_MASTERPASSWD	"/etc/master.passwd"
 #define	_PATH_MKPASSWD		"/etc/mkpasswd"
@@ -37,6 +39,8 @@ struct passwd {
 	char	*pw_shell;			/* default shell */
 	long	pw_expire;			/* account expiration */
 };
+
+#include <sys/cdefs.h>
 
 struct passwd *getpwent(), *getpwuid(), *getpwnam();
 void endpwent(), setpwfile();

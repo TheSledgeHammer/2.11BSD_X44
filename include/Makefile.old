@@ -25,9 +25,9 @@ STD=	a.out.h ar.h assert.h ctype.h curses.h disktab.h fcntl.h \
 	struct.h syscall.h sysexits.h time.h ttyent.h tzfile.h utmp.h \
 	varargs.h vfont.h vmf.h
 LINKS=	errno.h signal.h syslog.h
-MACHINE=pdp
-MACHDEP=${MACHINE} pdpif pdpuba pdpmba vaxuba
-NETDIRS=net netimp netinet netns netpup
+MACHINE=i386
+MACHDEP=${MACHINE}
+NETDIRS=net netimp netinet netns
 SYSDIRS=${NETDIRS} ${MACHDEP}
 SHARED=	symlinks
 TAGSFILE=tags
