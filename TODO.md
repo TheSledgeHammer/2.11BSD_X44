@@ -5,15 +5,13 @@ TODO:
 
 - arch:
 	- i386:
-		- consinit.c (Needs working bootloader & kgdb)
-		- kgdb_machdep.c (NetBSD 1.6)
+		- consinit.c (Needs working bootloader)
 		- machdep.c: cpu_reboot, cpu_reset
 		- vm_machdep.c: u->u_procp->p_p0br: (no reference in 4.4BSD-Lite2)
 			- 4.3BSD Reno/ 4.4BSD Remanent: once in struct proc. Obsolete?? 
 
 Kern:
 - kern_xxx.c: reboot: needs fixing
-- kern_ksyms.c: Simplify & Improve
 - kern_physio.c: Incomplete: getphysbuf, putphysbuf (NetBSD 1.3)
 
 Of Interest Todo:

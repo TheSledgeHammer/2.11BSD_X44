@@ -87,6 +87,7 @@
 
 #include <vm/include/vm_extern.h>
 
+#include <machine/proc.h>
 #include <machine/psl.h>
 #include <machine/reg.h>
 #include <machine/segments.h>

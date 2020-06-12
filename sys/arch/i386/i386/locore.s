@@ -97,12 +97,6 @@
 #define	TRAP(a)			pushl $(a) ; jmp alltraps
 #define	ZTRAP(a)		pushl $0 ; TRAP(a)
 
-#ifdef KGDB
-#define	BPTTRAP(a)		pushl $(a) ; jmp bpttraps
-#else
-#define	BPTTRAP(a)		TRAP(a)
-#endif
-
 #define	INTRENTRY \
 		pushl	%eax		; \
 		pushl	%ecx		; \
@@ -1049,27 +1043,6 @@ calltrap:
 		pushl	$0						/* dummy unit */
 		jmp		doreti
 
-#ifdef KGDB
-/*
- * This code checks for a kgdb trap, then falls through
- * to the regular trap code.
- */
-ENTRY(bpttraps)
-		pushal
-		nop
-		push	%es
-		push	%ds
-		# movw	$KDSEL,%ax
-		movw	$0x10,%ax
-		movw	%ax,%ds
-		movw	%ax,%es
-		movzwl	52(%esp),%eax
-		test	$3,%eax
-		jne		calltrap
-		call	_kgdb_trap_glue
-		jmp		calltrap
-#endif
-
 /*
  * Old call gate entry for syscall
  */
@@ -1127,5 +1100,6 @@ syscall1:
 		jmp		doreti
 /**********************************************************************/
 
-#include <vector.s>
+#include <i386/isa/vector.s>
+#include <i386/i386/support.s>
 #include <i386/isa/icu.s>

@@ -27,7 +27,7 @@
  */
 
 #include <sys/cdefs.h>
-
+#include <sys/bootinfo.h>
 #include <machine/bootinfo.h>
 
 #include "pc.h"
@@ -67,28 +67,6 @@ struct btinfo_console default_consinfo = {
 	0, 0
 #endif
 };
-
-#ifdef KGDB
-#ifndef KGDB_DEVNAME
-#define KGDB_DEVNAME "com"
-#endif
-char kgdb_devname[] = KGDB_DEVNAME;
-#if (NCOM > 0)
-#ifndef KGDBADDR
-#define KGDBADDR 0x3f8
-#endif
-int comkgdbaddr = KGDBADDR;
-#ifndef KGDBRATE
-#define KGDBRATE TTYDEF_SPEED
-#endif
-int comkgdbrate = KGDBRATE;
-#ifndef KGDBMODE
-#define KGDBMODE ((TTYDEF_CFLAG & ~(CSIZE | CSTOPB | PARENB)) | CS8) /* 8N1 */
-#endif
-int comkgdbmode = KGDBMODE;
-#endif /* NCOM */
-void kgdb_port_init (void);
-#endif /* KGDB */
 
 /*
  * consinit:
@@ -130,17 +108,3 @@ consinit()
 #endif
 	panic("invalid console device %s", consinfo->bi_devname);
 }
-
-#ifdef KGDB
-void
-kgdb_port_init()
-{
-#if (NCOM > 0)
-	if(!strcmp(kgdb_devname, "com")) {
-		bus_space_tag_t tag = I386_BUS_SPACE_IO;
-
-		com_kgdb_attach(tag, comkgdbaddr, comkgdbrate, COM_FREQ, comkgdbmode);
-	}
-#endif
-}
-#endif

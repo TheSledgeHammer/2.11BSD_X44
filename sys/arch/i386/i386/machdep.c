@@ -63,6 +63,8 @@
 
 #include <net/netisr.h>
 
+#include <dev/cons.h>
+
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
@@ -75,16 +77,9 @@
 #include <machine/specialreg.h>
 #include <machine/bootinfo.h>
 
-#include <dev/cons.h>
 #include <dev/isa/isareg.h>
-#include <dev/isa/rtc.h>
-
+#include <machine/isa_machdep.h>
 #include <dev/ic/i8042reg.h>
-#include <i386/isa/isa_machdep.h>
-
-#ifdef KGDB
-#include <sys/kgdb.h>
-#endif
 
 #ifdef VM86
 #include <machine/vm86.h>
@@ -322,11 +317,6 @@ startup(firstaddr)
 			bufpages * CLBYTES);
 
 	/*
-	 * Set up CPU-specific registers, cache, etc.
-	 */
-	initcpu();
-
-	/*
 	 * Set up buffers, so they can be used to read disk labels.
 	 */
 	bufinit();
@@ -336,7 +326,10 @@ startup(firstaddr)
 	 */
 	configure();
 
+	/* Safe for i/o port / memory space allocation to use malloc now. */
 	i386_bus_space_mallocok();
+
+	i386_proc0_tss_ldt_init();
 }
 
 /*
@@ -741,12 +734,6 @@ physstrat(bp, strat, prio)
 	bp->b_un.b_addr = baddr;
 }
 
-void
-initcpu()
-{
-
-}
-
 /*
  * Clear registers on exec
  */
@@ -867,6 +854,8 @@ init386(first)
 	struct gate_descriptor *gdp;
 	extern int sigcode, szsigcode;
 
+	extern void consinit (void);
+
 	proc0.p_addr = proc0paddr;
 	curpcb = &proc0.p_addr->u_pcb;
 
@@ -876,7 +865,7 @@ init386(first)
 	/*
 	 * Initialize the console before we print anything out.
 	 */
-	cninit();
+	consinit();	/* XXX SHOULD NOT BE DONE HERE */
 
 	/* make gdt memory segments */
 	gdt_segs[GCODE_SEL].ssd_limit = btoc((int) &etext + NBPG);

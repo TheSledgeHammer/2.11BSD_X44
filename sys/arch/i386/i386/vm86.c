@@ -214,8 +214,8 @@ vm86_return(p, retval)
 	trapsignal(p, SIGURG, retval);
 }
 
-#define	CLI	0xFA
-#define	STI	0xFB
+#define	CLI		0xFA
+#define	STI		0xFB
 #define	INTxx	0xCD
 #define	INTO	0xCE
 #define	IRET	0xCF

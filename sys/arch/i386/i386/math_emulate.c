@@ -44,6 +44,7 @@
 #include <sys/kernel.h>
 #include <sys/signal.h>
 
+#include <machine/proc.h>
 #include <machine/cpu.h>
 #include <machine/reg.h>
 #include <machine/npx.h>

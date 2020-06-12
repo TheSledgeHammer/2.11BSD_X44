@@ -63,20 +63,18 @@
 #include <sys/device.h>
 #include <sys/malloc.h>
 #include <sys/proc.h>
+#include <sys/ksyms.h>
 
 #include <machine/elf_machdep.h> /* XXX */
 #define ELFSIZE ARCH_ELFSIZE
 
 #include <sys/exec_elf.h>
-#include <ksyms.h>
 
 #include <lib/libkern/libkern.h>
 
 #ifdef DDB
 #include <ddb/db_output.h>
 #endif
-
-#include "ksyms.h"
 
 static int ksymsinited = 0;
 

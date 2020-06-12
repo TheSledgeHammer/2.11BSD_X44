@@ -29,6 +29,4 @@ links:
 	-for i in ${DI386}; do \
 	    (cd $$i && rm -f tags; ln -s ../tags tags); done
 
-SUBDIR= stand isa/pcvt
-
 .include <bsd.subdir.mk>
