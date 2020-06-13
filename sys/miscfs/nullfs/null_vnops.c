@@ -185,7 +185,6 @@
 #include <sys/buf.h>
 #include <miscfs/nullfs/null.h>
 
-
 int null_bug_bypass = 0;   /* for debugging: enables bypass printf'ing */
 
 /*
@@ -212,7 +211,56 @@ int null_bug_bypass = 0;   /* for debugging: enables bypass printf'ing */
  *   to determine what implementation of the op should be invoked
  * - all mapped vnodes are of our vnode-type (NEEDSWORK:
  *   problems on rmdir'ing mount points and renaming?)
- */ 
+ */
+
+ struct vop_layer_args {
+   struct vop_generic_args 	a_head;
+
+   struct vnode				*a_upvp; 	/* upper vnode */
+   struct vnode				*a_lwvp; 	/* lower vnode */
+   struct vnode				*a_tvp; 	/* this vnode */
+   struct vnode				*a_ovp; 	/* old vnode */
+   int						a_field;
+   int						a_flags;
+ };
+
+ int
+ vop_layer(tvp, ovp, upvp, lwvp, field, flags)
+ 	struct vnode *tvp, *ovp, *upvp, *lwvp;
+ 	int field, flags;
+ {
+ 	struct vop_layer_args a;
+ 	int error;
+
+ 	a.a_head.a_ops = &vops;
+ 	a.a_tvp = tvp;
+ 	a.a_ovp = ovp;
+ 	a.a_upvp = upvp;
+ 	a.a_lwvp = lwvp;
+ 	a.a_field = field;
+ 	a.a_flags = flags;
+
+ 	if(vops.vop_layer == NULL) {
+ 		return (EOPNOTSUPP);
+ 	}
+
+ 	error = vops.vop_layer(tvp, ovp, upvp, lwvp, field, flags);
+
+ 	return (error);
+ }
+
+/* vnode desc is an array of vector ops */
+/* vnodeops is a struct */
+/* vnode going in:
+ * 1. checking the vnodeops is not null (done by default)
+ * 2. search vnodeops for desired op (break if no ops found)
+ * 3. check this vnode going in is NULL or equal to vop_field & old vnode is NULL,
+ * else old vnode = this vnode & vps_p = nullvp to lowervp & vref
+ * 4.vopargs on lower layer
+ *
+ * vnode lower layer:
+ *
+ */
 int
 null_bypass(ap)
 	struct vop_generic_args /* {
@@ -223,21 +271,21 @@ null_bypass(ap)
 	extern int (**null_vnodeop_p)();  /* not extern, really "forward" */
 	register struct vnode **this_vp_p;
 	int error;
-	struct vnode *old_vps[VDESC_MAX_VPS];
-	struct vnode **vps_p[VDESC_MAX_VPS];
+	struct vnode *old_vps[VOP_MAX_VPS];
+	struct vnode **vps_p[VOP_MAX_VPS];
 	struct vnode ***vppp;
-	struct vnodeop_desc *descp = ap->a_desc;
+	struct vnodeops *descp = ap->a_ops;
 	int reles, i;
 
 	if (null_bug_bypass)
-		printf ("null_bypass: %s\n", descp->vdesc_name);
+		printf ("null_bypass: %s\n", descp);
+
 
 #ifdef SAFETY
 	/*
 	 * We require at least one vp.
 	 */
-	if (descp->vdesc_vp_offsets == NULL ||
-	    descp->vdesc_vp_offsets[0] == VDESC_NO_OFFSET)
+	if (descp == NULL || descp[0] == NULL)
 		panic ("null_bypass: no vp's in map.\n");
 #endif
 
@@ -277,7 +325,7 @@ null_bypass(ap)
 	 * Call the operation on the lower layer
 	 * with the modified argument structure.
 	 */
-	error = VCALL(*(vps_p[0]), descp->vdesc_offset, ap);
+	error = VCALL(*(vps_p[0]), descp, ap);
 
 	/*
 	 * Maintain the illusion of call-by-value
@@ -285,7 +333,7 @@ null_bypass(ap)
 	 * to their original value.
 	 */
 	reles = descp->vdesc_flags;
-	for (i = 0; i < VDESC_MAX_VPS; reles >>= 1, i++) {
+	for (i = 0; i < VOP_MAX_VPS; reles >>= 1, i++) {
 		if (descp->vdesc_vp_offsets[i] == VDESC_NO_OFFSET)
 			break;   /* bail out at end of list */
 		if (old_vps[i]) {
@@ -311,8 +359,7 @@ null_bypass(ap)
 		 */
 		if (descp->vdesc_flags & VDESC_VPP_WILLRELE)
 			goto out;
-		vppp = VOPARG_OFFSETTO(struct vnode***,
-				 descp->vdesc_vpp_offset,ap);
+		vppp = VOPARG_OFFSETTO(struct vnode***, descp->vdesc_vpp_offset, ap);
 		error = null_node_create(old_vps[0]->v_mount, **vppp, *vppp);
 	}
 
@@ -392,8 +439,8 @@ null_setattr(ap)
 	struct vattr *vap = ap->a_vap;
 
   	if ((vap->va_flags != VNOVAL || vap->va_uid != (uid_t)VNOVAL ||
-	    vap->va_gid != (gid_t)VNOVAL || vap->va_atime.ts_sec != VNOVAL ||
-	    vap->va_mtime.ts_sec != VNOVAL || vap->va_mode != (mode_t)VNOVAL) &&
+	    vap->va_gid != (gid_t)VNOVAL || vap->va_atime.tv_sec != VNOVAL ||
+	    vap->va_mtime.tv_sec != VNOVAL || vap->va_mode != (mode_t)VNOVAL) &&
 	    (vp->v_mount->mnt_flag & MNT_RDONLY))
 		return (EROFS);
 	if (vap->va_size != VNOVAL) {
@@ -623,17 +670,16 @@ null_bwrite(ap)
  * Global vfs data structures
  */
 struct vnodeops null_vnodeop_entries[] = {
-	.vop_default_desc = null_bypass,
-	.vop_lookup_desc = null_lookup,
-	.vop_setattr_desc = null_setattr,
-	.vop_getattr_desc = null_getattr,
-	.vop_access_desc = null_access,
-	.vop_lock_desc = null_lock,
-	.vop_unlock_desc = null_unlock,
-	.vop_inactive_desc = null_inactive,
-	.vop_reclaim_desc = null_reclaim,
-	.vop_print_desc = null_print,
-	.vop_strategy_desc = null_strategy,
-	.vop_bwrite_desc = null_bwrite,
+	.vop_lookup = null_lookup,
+	.vop_setattr = null_setattr,
+	.vop_getattr = null_getattr,
+	.vop_access = null_access,
+	.vop_lock = null_lock,
+	.vop_unlock = null_unlock,
+	.vop_inactive = null_inactive,
+	.vop_reclaim = null_reclaim,
+	.vop_print = null_print,
+	.vop_strategy = null_strategy,
+	.vop_bwrite = null_bwrite,
 	(struct vnodeops*)NULL, (int(*)())NULL
 };

@@ -10,6 +10,10 @@ TODO:
 		- vm_machdep.c: u->u_procp->p_p0br: (no reference in 4.4BSD-Lite2)
 			- 4.3BSD Reno/ 4.4BSD Remanent: once in struct proc. Obsolete?? 
 
+miscfs:
+- LOFS: 4.4BSD: Provides a functioning stack filesystem
+	- Port and merge best parts with NULLFS
+
 Kern:
 - kern_xxx.c: reboot: needs fixing
 - kern_physio.c: Incomplete: getphysbuf, putphysbuf (NetBSD 1.3)

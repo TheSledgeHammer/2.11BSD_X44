@@ -302,7 +302,7 @@ struct vnodeops {
 	int (*vop_bwrite)		(struct buf *bp);
 };
 
-/* Macros to call the vnodeops */
+/* Macros to call vnodeops */
 #define	VOP_LOOKUP(dvp, vpp, cnp)	    						(*((dvp)->v_op->vop_lookup))(dvp, vpp, cnp)
 #define	VOP_CREATE(dvp, vpp, cnp, vap)	    					(*((dvp)->v_op->vop_create))(dvp, vpp, cnp, vap)
 #define VOP_WHITEOUT(dvp, cnp, flags)							(*((dvp)->v_op->vop_whiteout))(dvp, cnp, flags)
@@ -336,7 +336,7 @@ struct vnodeops {
 #define	VOP_UNLOCK(vp, flags, p)		    					(*((vp)->v_op->vop_unlock))(vp, flags, p)
 #define	VOP_BMAP(vp, bn, vpp, bnp, runp)	    				(*((vp)->v_op->vop_bmap))(vp, bn, vpp, bnp, runp)
 #define	VOP_PRINT(vp)		    								(*((vp)->v_op->vop_print))(vp)
-#define	VOP_ISLOCKED(vp)		    							(*((v)->v_op->vop_islocked))(vp))
+#define	VOP_ISLOCKED(vp)		    							(*((vp)->v_op->vop_islocked))(vp)
 #define VOP_PATHCONF(vp, name, retval)							(*((vp)->v_op->vop_pathconf))(vp, name, retval)
 #define	VOP_ADVLOCK(vp, id, op, fl, flags)						(*((vp)->v_op->vop_advlock))(vp, id, op, fl, flags)
 #define VOP_BLKATOFF(vp, offset, res, bpp)						(*((vp)->v_op->vop_blkatoff))(vp, offset, res, bpp)
@@ -688,6 +688,18 @@ struct vop_bwrite_args {
 	struct buf 				*a_bp;
 };
 /* End of special cases. */
+
+/*
+ * Flags for vdesc_flags:
+ */
+#define VOP_MAX_VPS		16
+/* Low order 16 flag bits are reserved for willrele flags for vp arguments. */
+#define VOP_VP0_WILLRELE	0x0001
+#define VOP_VP1_WILLRELE	0x0002
+#define VOP_VP2_WILLRELE	0x0004
+#define VOP_VP3_WILLRELE	0x0008
+#define VOP_NOMAP_VPP		0x0100
+#define VOP_VPP_WILLRELE	0x0200
 
 #ifdef _KERNEL
 
