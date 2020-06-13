@@ -1,4 +1,8 @@
-
+NULLFS:
+	- Fix to match current vfs
+UFML:
+	- Fix to match current vfs
+	- Fix-up ufml_subr.c
 - user.h: 
 	- short	u_uisa[16];					/* segmentation address prototypes */
 	- short	u_uisd[16];					/* segmentation descriptor prototypes */

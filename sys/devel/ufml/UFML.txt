@@ -1,43 +1,16 @@
-UFS FFS LFS Archive File System (UFL FS):
-- Interacts with LFS
-- LFS sub-structure: 
-- Archives UFS/FFS Snapshots
-- Hashed (dirhash? fnv_hash, camilla, twofish)
-- aligns to lfs segments/ blocks
+UFS / FFS / MFS / LFS (UFML FS): A Modular Super Filesystem 
+- Archive, Content Address Based
+- Checksums (on Archive)
+- Encryption
+- Compression
+- Snapshots
 
-UFL:
-- ufl_hash
-- read
-- write
-- read/write meta
-- align
-- verify
-- delete
-- timestamps
-
-lfs: ufl_hash pointer/ etc: hashed entries
-ffs_snapshot: ufl_hash pointer/ etc
-
-UFS/FFS Snapshots:
-- read_ufl (read from ufl)
-- write_ufl (write to ufl)
-- create_score
-- pack_ufl (package ufl contents)
-
-Add to LFS (some of these would cross-over into UFS/FFS)
-- read_ufl (read ufl)
-- write_ufl (write to ufl)
-- create_ufl (create new ufl)
-- delete_ufl (delete existing ufl)
-- unpack_ufl (un_package ufl contents)
-- mount_ufl (treats ufl as a mounted lfs partition)
-- unmount_ufl
-- create_score
-- check_score (verify hash)
-- open_score (create hash)
-
-LFS Improvements:
-- Use Dirhash?
-- Fragmentation
-- Read/Write Speed?
-- How much would it improve just from Updating UFS & FFS 
+LOFS/NULLFS: (Stack Filesystem)
+UFML: (Base on LOFS/NULLFS)
+- UFML Optional
+- Implement lower & upper layers in UFML
+	- Allow for stacked mounts
+	- Lower Layer = UFS/FFS/MFS/LFS (Only)
+	- Upper Layer = UFML
+- Mounts designated file location (predefined or set)
+	- Must be an existing UFS/FFS/MFS/LFS filesystem
