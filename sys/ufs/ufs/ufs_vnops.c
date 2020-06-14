@@ -1771,7 +1771,7 @@ ufsfifo_read(ap)
 		struct ucred *a_cred;
 	} */ *ap;
 {
-	extern int (**fifo_vnodeop_p)();
+	extern struct fifo_vnodeops;
 
 	/*
 	 * Set access flag.
@@ -1792,7 +1792,7 @@ ufsfifo_write(ap)
 		struct ucred *a_cred;
 	} */ *ap;
 {
-	extern int (**fifo_vnodeop_p)();
+	extern struct fifo_vnodeops;
 
 	/*
 	 * Set update and change flags.
@@ -1814,7 +1814,7 @@ ufsfifo_close(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
-	extern int (**fifo_vnodeop_p)();
+	extern struct fifo_vnodeops;
 	struct vnode *vp = ap->a_vp;
 	struct inode *ip = VTOI(vp);
 
@@ -1909,7 +1909,7 @@ ufs_vinit(mntp, specops, fifoops, vpp)
 			 */
 			nvp->v_data = vp->v_data;
 			vp->v_data = NULL;
-			vp->v_op = spec_vnodeop_p;
+			vp->v_op = spec_vnodeops;
 			vrele(vp);
 			vgone(vp);
 			/*

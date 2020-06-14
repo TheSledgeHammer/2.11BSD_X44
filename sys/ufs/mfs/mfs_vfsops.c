@@ -60,7 +60,7 @@ u_long	mfs_rootsize;	/* size of mini-root in bytes */
 
 static	int mfs_minor;	/* used for building internal dev_t */
 
-extern int (**mfs_vnodeop_p)();
+extern struct mfs_vnodeops;
 
 /*
  * mfs vfs operations.
@@ -105,7 +105,7 @@ mfs_mountroot()
 		return (error);
 	mfsp = malloc(sizeof *mfsp, M_MFSNODE, M_WAITOK);
 	rootvp->v_data = mfsp;
-	rootvp->v_op = mfs_vnodeop_p;
+	rootvp->v_op = mfs_vnodeops;
 	rootvp->v_tag = VT_MFS;
 	mfsp->mfs_baseoff = mfs_rootbase;
 	mfsp->mfs_size = mfs_rootsize;
@@ -199,7 +199,7 @@ mfs_mount(mp, path, data, ndp, p)
 #endif
 		return (0);
 	}
-	error = getnewvnode(VT_MFS, (struct mount *)0, mfs_vnodeop_p, &devvp);
+	error = getnewvnode(VT_MFS, (struct mount *)0, mfs_vnodeops, &devvp);
 	if (error)
 		return (error);
 	devvp->v_type = VBLK;

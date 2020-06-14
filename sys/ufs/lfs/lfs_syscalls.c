@@ -40,6 +40,7 @@
 #include <sys/vnode.h>
 #include <sys/malloc.h>
 #include <sys/kernel.h>
+#include <sys/user.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>

@@ -87,8 +87,7 @@ int	dead_print (struct vop_print_args *);
 #define dead_update ((int (*) (struct  vop_update_args *))nullop)
 #define dead_bwrite ((int (*) (struct  vop_bwrite_args *))nullop)
 
-int (**dead_vnodeop_p)();
-struct vnodeops dead_vnodeops[] = {
+struct vnodeops dead_vnodeops = {
 		.vop_lookup = dead_lookup,		/* lookup */
 		.vop_create = dead_create,		/* create */
 		.vop_mknod = dead_mknod,		/* mknod */

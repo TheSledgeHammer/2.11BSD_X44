@@ -74,7 +74,7 @@ struct vnode *speclisth[SPECHSZ];
 /*
  * Prototypes for special file operations on vnodes.
  */
-extern	int (**spec_vnodeop_p)();
+extern	struct spec_vnodeops;
 struct	nameidata;
 struct	componentname;
 struct	ucred;

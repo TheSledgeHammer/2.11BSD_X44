@@ -44,7 +44,6 @@
 #include <sys/proc.h>
 #include <sys/kernel.h>
 #include <sys/vnode.h>
-#include <miscfs/specfs/specdev.h>
 #include <sys/mount.h>
 #include <sys/buf.h>
 #include <sys/file.h>
@@ -54,7 +53,9 @@
 #include <sys/errno.h>
 #include <sys/malloc.h>
 #include <sys/stat.h>
+#include <sys/user.h>
 
+#include <miscfs/specfs/specdev.h>
 #include <isofs/cd9660/iso.h>
 #include <isofs/cd9660/cd9660_node.h>
 #include <isofs/cd9660/cd9660_mount.h>
@@ -594,7 +595,7 @@ cd9660_vget_internal(mp, ino, vpp, relocated, isodir)
 		return (0);
 
 	/* Allocate a new vnode/iso_node. */
-	if (error == getnewvnode(VT_ISOFS, mp, cd9660_vnodeop_p, &vp)) {
+	if (error == getnewvnode(VT_ISOFS, mp, cd9660_vnodeops, &vp)) {
 		*vpp = NULLVP;
 		return (error);
 	}
@@ -749,7 +750,7 @@ cd9660_vget_internal(mp, ino, vpp, relocated, isodir)
 			 */
 			nvp->v_data = vp->v_data;
 			vp->v_data = NULL;
-			vp->v_op = spec_vnodeop_p;
+			vp->v_op = spec_vnodeops;
 			vrele(vp);
 			vgone(vp);
 			/*

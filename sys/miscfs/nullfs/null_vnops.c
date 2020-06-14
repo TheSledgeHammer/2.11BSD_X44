@@ -669,7 +669,7 @@ null_bwrite(ap)
 /*
  * Global vfs data structures
  */
-struct vnodeops null_vnodeop_entries[] = {
+struct vnodeops null_vnodeops[] = {
 	.vop_lookup = null_lookup,
 	.vop_setattr = null_setattr,
 	.vop_getattr = null_getattr,

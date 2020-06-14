@@ -45,6 +45,7 @@
 #include <sys/mount.h>
 #include <sys/resourcevar.h>
 #include <sys/trace.h>
+#include <sys/user.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>

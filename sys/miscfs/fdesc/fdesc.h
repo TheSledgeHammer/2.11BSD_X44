@@ -76,6 +76,6 @@ extern dev_t devctty;
 extern int fdesc_init (struct vfsconf *);
 extern int fdesc_root (struct mount *, struct vnode **);
 extern int fdesc_allocvp (fdntype, int, struct mount *, struct vnode **);
-extern int (**fdesc_vnodeop_p)();
+extern struct fdesc_vnodeops;
 extern struct vfsops fdesc_vfsops;
 #endif /* KERNEL */

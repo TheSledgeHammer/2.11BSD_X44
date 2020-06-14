@@ -44,6 +44,7 @@
 #include <sys/proc.h>
 #include <sys/vnode.h>
 #include <sys/mount.h>
+#include <sys/user.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>

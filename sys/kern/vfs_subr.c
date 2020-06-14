@@ -293,7 +293,7 @@ vattr_null(vap)
 /*
  * Routines having to do with the management of the vnode table.
  */
-extern int (**dead_vnodeop_p)();
+extern struct dead_vnodeops;
 static void vclean (struct vnode *vp, int flag, struct proc *p);
 extern void vgonel (struct vnode *vp, struct proc *p);
 long numvnodes;
@@ -306,7 +306,7 @@ int
 getnewvnode(tag, mp, vops, vpp)
 	enum vtagtype tag;
 	struct mount *mp;
-	int (**vops)();
+	const struct vnodeops *vops;
 	struct vnode **vpp;
 {
 	struct proc *p = curproc;	/* XXX */
@@ -320,8 +320,7 @@ top:
 	     numvnodes < 2 * desiredvnodes) ||
 	    numvnodes < desiredvnodes) {
 		simple_unlock(&vnode_free_list_slock);
-		vp = (struct vnode *)malloc((u_long)sizeof *vp,
-		    M_VNODE, M_WAITOK);
+		vp = (struct vnode *)malloc((u_long)sizeof *vp, M_VNODE, M_WAITOK);
 		bzero((char *)vp, sizeof *vp);
 		numvnodes++;
 	} else {
@@ -590,7 +589,7 @@ bdevvp(dev, vpp)
 		*vpp = NULLVP;
 		return (ENODEV);
 	}
-	error = getnewvnode(VT_NON, (struct mount *)0, spec_vnodeop_p, &nvp);
+	error = getnewvnode(VT_NON, (struct mount *)0, spec_vnodeops, &nvp);
 	if (error) {
 		*vpp = NULLVP;
 		return (error);
@@ -1011,7 +1010,7 @@ loop:
 				vgonel(vp, p);
 			} else {
 				vclean(vp, 0, p);
-				vp->v_op = spec_vnodeop_p;
+				vp->v_op = spec_vnodeops;
 				insmntque(vp, (struct mount *)0);
 			}
 			simple_lock(&mntvnode_slock);
@@ -1104,7 +1103,7 @@ vclean(vp, flags, p)
 	/*
 	 * Done with purge, notify sleepers of the grim news.
 	 */
-	vp->v_op = dead_vnodeop_p;
+	vp->v_op = dead_vnodeops;
 	vp->v_tag = VT_NON;
 	vp->v_flag &= ~VXLOCK;
 	if (vp->v_flag & VXWANT) {

@@ -35,6 +35,7 @@
 
 #include <sys/param.h>
 #include <sys/proc.h>
+#include <sys/user.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/conf.h>
@@ -58,7 +59,6 @@ char	devout[] = "devout";
 char	devioc[] = "devioc";
 char	devcls[] = "devcls";
 
-int (**spec_vnodeop_p)();
 struct vnodeops spec_vnodeops[] = {
 		.vop_lookup = spec_lookup,		/* lookup */
 		.vop_create = spec_create,		/* create */
@@ -205,6 +205,7 @@ spec_open(ap)
  * Vnode op for read
  */
 /* ARGSUSED */
+int
 spec_read(ap)
 	struct vop_read_args /* {
 		struct vnode *a_vp;
@@ -281,12 +282,14 @@ spec_read(ap)
 		panic("spec_read type");
 	}
 	/* NOTREACHED */
+	return (0);
 }
 
 /*
  * Vnode op for write
  */
 /* ARGSUSED */
+int
 spec_write(ap)
 	struct vop_write_args /* {
 		struct vnode *a_vp;
@@ -361,12 +364,14 @@ spec_write(ap)
 		panic("spec_write type");
 	}
 	/* NOTREACHED */
+	return (0);
 }
 
 /*
  * Device ioctl operation.
  */
 /* ARGSUSED */
+int
 spec_ioctl(ap)
 	struct vop_ioctl_args /* {
 		struct vnode *a_vp;
@@ -398,9 +403,11 @@ spec_ioctl(ap)
 		panic("spec_ioctl");
 		/* NOTREACHED */
 	}
+	return (0);
 }
 
 /* ARGSUSED */
+int
 spec_select(ap)
 	struct vop_select_args /* {
 		struct vnode *a_vp;

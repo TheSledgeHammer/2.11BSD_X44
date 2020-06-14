@@ -60,8 +60,7 @@
 #include <miscfs/specfs/specdev.h>
 
 /* Global vfs data structures for ufs. */
-int (**ffs_vnodeop_p)();
-struct vnodeops ffs_vnodeops[] = {
+struct vnodeops ffs_vnodeops = {
 		.vop_lookup = ufs_lookup,		/* lookup */
 		.vop_create = ufs_create,		/* create */
 		.vop_mknod = ufs_mknod,			/* mknod */
@@ -108,8 +107,7 @@ struct vnodeops ffs_vnodeops[] = {
 		(struct vnodeops *)NULL = (int(*)())NULL
 };
 
-int (**ffs_specop_p)();
-struct vnodeops ffs_specops[] = {
+struct vnodeops ffs_specops = {
 		.vop_lookup = spec_lookup,		/* lookup */
 		.vop_create = spec_create,		/* create */
 		.vop_mknod = spec_mknod,		/* mknod */
@@ -157,8 +155,7 @@ struct vnodeops ffs_specops[] = {
 };
 
 #ifdef FIFO
-int (**ffs_fifoop_p)();
-struct vnodeops ffs_fifoops[] = {
+struct vnodeops ffs_fifoops = {
 		.vop_lookup = fifo_lookup,		/* lookup */
 		.vop_create = fifo_create,		/* create */
 		.vop_mknod = fifo_mknod,		/* mknod */

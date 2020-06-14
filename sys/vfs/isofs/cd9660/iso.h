@@ -179,10 +179,10 @@ int cd9660_init (struct vfsconf *);
 
 int cd9660_mountroot __P((void)); 
 
-extern int (**cd9660_vnodeop_p)();
-extern int (**cd9660_specop_p)();
+extern struct cd9660_vnodeops;
+extern struct cd9660_specops;
 #ifdef FIFO
-extern int (**cd9660_fifoop_p)();
+extern struct cd9660_fifoops;
 #endif
 
 static __inline int

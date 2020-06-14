@@ -59,7 +59,7 @@ struct fifoinfo {
 	long			fi_writers;
 };
 
-struct vnodeops fifo_vnodeops[] = {
+struct vnodeops fifo_vnodeops = {
 		.vop_lookup = fifo_lookup,		/* lookup */
 		.vop_create = fifo_create,		/* create */
 		.vop_mknod = fifo_mknod,		/* mknod */

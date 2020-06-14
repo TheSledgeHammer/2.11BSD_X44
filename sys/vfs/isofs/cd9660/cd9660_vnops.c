@@ -50,11 +50,11 @@
 #include <sys/conf.h>
 #include <sys/mount.h>
 #include <sys/vnode.h>
-#include <miscfs/specfs/specdev.h>
-#include <miscfs/fifofs/fifo.h>
 #include <sys/malloc.h>
 #include <sys/dir.h>
 
+#include <miscfs/specfs/specdev.h>
+#include <miscfs/fifofs/fifo.h>
 #include <isofs/cd9660/iso.h>
 #include <isofs/cd9660/cd9660_node.h>
 #include <isofs/cd9660/iso_rrip.h>
@@ -1051,8 +1051,7 @@ int	 lease_check (struct vop_lease_args *);
 /*
  * Global vfs data structures for cd9660
  */
-int (**cd9660_vnodeop_p)();
-struct vnodeops cd9660_vnodeops[] = {
+struct vnodeops cd9660_vnodeops = {
 		.vop_lookup = cd9660_lookup,			/* lookup */
 		.vop_create = cd9660_create,			/* create */
 		.vop_mknod = cd9660_mknod,				/* mknod */
@@ -1095,14 +1094,13 @@ struct vnodeops cd9660_vnodeops[] = {
 		.vop_truncate = cd9660_truncate,		/* truncate */
 		.vop_update = cd9660_update,			/* update */
 		.vop_bwrite = vn_bwrite,				/* bwrite */
-		(struct vnodeops *)NULL = (int(*)())NULL,
+		(struct vnodeops *)NULL = (int(*)())NULL
 };
 
 /*
  * Special device vnode ops
  */
-int (**cd9660_specop_p)();
-struct vnodeops cd9660_specops[] = {
+struct vnodeops cd9660_specops = {
 		.vop_lookup = spec_lookup,				/* lookup */
 		.vop_create = spec_create,				/* create */
 		.vop_mknod = spec_mknod,				/* mknod */
@@ -1149,8 +1147,7 @@ struct vnodeops cd9660_specops[] = {
 };
 
 #ifdef FIFO
-int (**cd9660_fifoop_p)();
-struct vnodeops cd9660_fifoops[] = {
+struct vnodeops cd9660_fifoops = {
 		.vop_lookup = fifo_lookup, 				/* lookup */
 		.vop_create = fifo_create, 				/* create */
 		.vop_mknod = fifo_mknod, 				/* mknod */

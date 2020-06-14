@@ -43,6 +43,7 @@
 #include <sys/buf.h>
 #include <sys/disklabel.h>
 #include <sys/syslog.h>
+#include <sys/user.h>
 
 /*
  * Seek sort for disks.  We depend on the driver which calls us using b_resid

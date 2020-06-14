@@ -37,8 +37,8 @@
 #ifndef KERNEL
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
+#include <sys/user.h>
 #else
-
 #include <sys/systm.h>
 #include <sys/vnode.h>
 #include <sys/buf.h>
@@ -73,7 +73,7 @@ ffs_blkatoff(ap)
 	bsize = blksize(fs, ip, lbn);
 
 	*ap->a_bpp = NULL;
-	if (error = bread(ap->a_vp, lbn, bsize, NOCRED, &bp)) {
+	if (error == bread(ap->a_vp, lbn, bsize, NOCRED, &bp)) {
 		brelse(bp);
 		return (error);
 	}

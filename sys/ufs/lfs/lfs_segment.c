@@ -46,6 +46,7 @@
 #include <sys/vnode.h>
 #include <sys/malloc.h>
 #include <sys/mount.h>
+#include <sys/user.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>

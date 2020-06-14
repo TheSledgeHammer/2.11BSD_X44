@@ -460,9 +460,9 @@ vnode_pager_uncache(vp)
 		return (TRUE);
 #ifdef DEBUG
 	if (!VOP_ISLOCKED(vp)) {
-		extern int (**nfsv2_vnodeop_p)();
+		extern struct nfsv2_vnodeops;
 
-		if (vp->v_op != nfsv2_vnodeop_p)
+		if (vp->v_op != nfsv2_vnodeops)
 			panic("vnode_pager_uncache: vnode not locked!");
 	}
 #endif

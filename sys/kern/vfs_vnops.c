@@ -376,18 +376,11 @@ vn_ioctl(fp, com, data, p)
 	case VDIR:
 		if (com == FIONREAD) {
 			if (error == VOP_GETATTR(vp, &vattr, p->p_ucred, p))
-				return (error);
+				break;
 			*(int *)data = vattr.va_size - fp->f_offset;
-			return (0);
-		}
-		if (com == FIONBIO || com == FIOASYNC)	/* XXX */
-			return (0);			/* XXX */
-
+		} else if (com == FIONBIO || com == FIOASYNC)	/* XXX */
+			error = 0;									/* XXX */
 		break;
-		/* fall into ... */
-
-	default:
-		return (ENOTTY);
 
 	case VFIFO:
 	case VCHR:
@@ -399,8 +392,12 @@ vn_ioctl(fp, com, data, p)
 			p->p_session->s_ttyvp = vp;
 			VREF(vp);
 		}
-		return (error);
+		break;
+
+	default:
+		break;
 	}
+	return (error);
 }
 
 /*

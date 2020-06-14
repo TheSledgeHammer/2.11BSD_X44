@@ -157,13 +157,13 @@ lfs_vcreate(mp, ino, vpp)
 	ino_t ino;
 	struct vnode **vpp;
 {
-	extern int (**lfs_vnodeop_p)();
+	extern struct lfs_vnodeops;
 	struct inode *ip;
 	struct ufsmount *ump;
 	int error, i;
 
 	/* Create the vnode. */
-	if (error == getnewvnode(VT_LFS, mp, lfs_vnodeop_p, vpp)) {
+	if (error == getnewvnode(VT_LFS, mp, lfs_vnodeops, vpp)) {
 		*vpp = NULL;
 		return (error);
 	}

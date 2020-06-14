@@ -48,6 +48,7 @@
 #include <sys/errno.h>
 #include <sys/malloc.h>
 #include <sys/socket.h>
+#include <sys/user.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
@@ -61,18 +62,18 @@
 int lfs_mountfs (struct vnode *, struct mount *, struct proc *);
 
 struct vfsops lfs_vfsops = {
-	lfs_mount,
-	ufs_start,
-	lfs_unmount,
-	ufs_root,
-	ufs_quotactl,
-	lfs_statfs,
-	lfs_sync,
-	lfs_vget,
-	lfs_fhtovp,
-	lfs_vptofh,
-	lfs_init,
-	lfs_sysctl,
+		lfs_mount,
+		ufs_start,
+		lfs_unmount,
+		ufs_root,
+		ufs_quotactl,
+		lfs_statfs,
+		lfs_sync,
+		lfs_vget,
+		lfs_fhtovp,
+		lfs_vptofh,
+		lfs_init,
+		lfs_sysctl,
 };
 
 /*
@@ -151,8 +152,7 @@ lfs_mount(mp, path, data, ndp, p)
 			if (p->p_ucred->cr_uid != 0) {
 				vn_lock(ump->um_devvp, LK_EXCLUSIVE | LK_RETRY,
 				    p);
-				if (error == VOP_ACCESS(ump->um_devvp,
-				    VREAD | VWRITE, p->p_ucred, p)) {
+				if (error == VOP_ACCESS(ump->um_devvp, VREAD | VWRITE, p->p_ucred, p)) {
 					VOP_UNLOCK(ump->um_devvp, 0, p);
 					return (error);
 				}

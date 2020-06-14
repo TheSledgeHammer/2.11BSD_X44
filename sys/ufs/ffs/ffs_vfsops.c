@@ -48,6 +48,7 @@
 #include <sys/ioctl.h>
 #include <sys/errno.h>
 #include <sys/malloc.h>
+#include <sys/user.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/ufsmount.h>
@@ -751,7 +752,7 @@ ffs_vget(mp, ino, vpp)
 		return (0);
 
 	/* Allocate a new vnode/inode. */
-	if (error == getnewvnode(VT_UFS, mp, ffs_vnodeop_p, &vp)) {
+	if (error == getnewvnode(VT_UFS, mp, ffs_vnodeops, &vp)) {
 		*vpp = NULL;
 		return (error);
 	}

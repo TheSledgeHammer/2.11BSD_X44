@@ -48,7 +48,6 @@
 #include <sys/kernel.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
 #include <sys/time.h>
 
 #include <isofs/cd9660/iso.h>

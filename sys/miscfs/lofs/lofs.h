@@ -1,11 +1,10 @@
-/*-
- * Copyright (c) 1994
- *	The Regents of the University of California.  All rights reserved.
+/*
+ * Copyright (c) 1992 The Regents of the University of California
+ * Copyright (c) 1990, 1992 Jan-Simon Pendry
+ * All rights reserved.
  *
- * This code is derived from software contributed to Berkeley
- * by Pace Willisson (pace@blitz.com).  The Rock Ridge Extension
- * Support code is derived from software contributed to Berkeley
- * by Atsushi Murai (amurai@spec.co.jp).
+ * This code is derived from software donated to Berkeley by
+ * Jan-Simon Pendry.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,69 +34,42 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)cd9660_bmap.c	8.4 (Berkeley) 12/5/94
+ *	@(#)lofs.h	7.1 (Berkeley) 7/12/92
+ *
+ * $Id: lofs.h,v 1.8 1992/05/30 10:05:43 jsp Exp jsp $
  */
 
-#include <sys/param.h>
-#include <sys/namei.h>
-#include <sys/buf.h>
-#include <sys/file.h>
-#include <sys/vnode.h>
-#include <sys/mount.h>
-#include <sys/user.h>
+struct lofs_args {
+	char			*target;	/* Target of loopback  */
+};
 
-#include <isofs/cd9660/iso.h>
-#include <isofs/cd9660/cd9660_node.h>
+struct lofsmount {
+	struct mount	*looped_vfs;
+	struct vnode	*rootvp;	/* Reference to root lofsnode */
+};
 
+#ifdef KERNEL
 /*
- * Bmap converts a the logical block number of a file to its physical block
- * number on the disk. The conversion is done by using the logical block
- * number to index into the data block (extent) for the file.
+ * A cache of vnode references
  */
-int
-cd9660_bmap(ap)
-	struct vop_bmap_args /* {
-		struct vnode *a_vp;
-		daddr_t  a_bn;
-		struct vnode **a_vpp;
-		daddr_t *a_bnp;
-		int *a_runp;
-	} */ *ap;
-{
-	struct iso_node *ip = VTOI(ap->a_vp);
-	daddr_t lblkno = ap->a_bn;
-	int bshift;
+struct lofsnode {
+	struct lofsnode	*a_forw;	/* Hash chain */
+	struct lofsnode	*a_back;
+	struct vnode	*a_lofsvp;	/* Aliased vnode - VREFed once */
+	struct vnode	*a_vnode;	/* Back pointer to vnode/lofsnode */
+};
 
-	/*
-	 * Check for underlying vnode requests and ensure that logical
-	 * to physical mapping is requested.
-	 */
-	if (ap->a_vpp != NULL)
-		*ap->a_vpp = ip->i_devvp;
-	if (ap->a_bnp == NULL)
-		return (0);
+extern int make_lofs 	(struct mount *mp, struct vnode **vpp);
 
-	/*
-	 * Compute the requested block number
-	 */
-	bshift = ip->i_mnt->im_bshift;
-	*ap->a_bnp = (ip->iso_start + lblkno) << (bshift - DEV_BSHIFT);
+#define	VFSTOLOFS(mp) 	((struct lofsmount *)((mp)->mnt_data))
+#define	LOFSP(vp) 		((struct lofsnode *)(vp)->v_data)
+#ifdef LOFS_DIAGNOSTIC
+extern struct vnode *lofs_checkvp (struct vnode *vp, char *fil, int lno);
+#define	LOFSVP(vp) lofs_checkvp(vp, __FILE__, __LINE__)
+#else
+#define	LOFSVP(vp) 		(LOFSP(vp)->a_lofsvp)
+#endif
 
-	/*
-	 * Determine maximum number of readahead blocks following the
-	 * requested block.
-	 */
-	if (ap->a_runp) {
-		int nblk;
-
-		nblk = (ip->i_size >> bshift) - (lblkno + 1);
-		if (nblk <= 0)
-			*ap->a_runp = 0;
-		else if (nblk >= (MAXBSIZE >> bshift))
-			*ap->a_runp = (MAXBSIZE >> bshift) - 1;
-		else
-			*ap->a_runp = nblk;
-	}
-
-	return (0);
-}
+extern struct lofs_vnodeops;
+extern struct vfsops lofs_vfsops;
+#endif /* KERNEL */

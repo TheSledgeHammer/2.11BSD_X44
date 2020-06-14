@@ -46,6 +46,7 @@
 #include <sys/file.h>
 #include <sys/vnode.h>
 #include <sys/mount.h>
+#include <sys/user.h>
 
 #include <isofs/cd9660/iso.h>
 #include <isofs/cd9660/cd9660_node.h>

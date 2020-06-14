@@ -42,6 +42,7 @@
 #include <sys/map.h>
 #include <sys/vnode.h>
 #include <sys/malloc.h>
+#include <sys/user.h>
 
 #include <machine/vmparam.h>
 
@@ -53,8 +54,7 @@
 /*
  * mfs vnode operations.
  */
-int (**mfs_vnodeop_p)();
-struct vnodeops mfs_vnodeops[] = {
+struct vnodeops mfs_vnodeops = {
 		.vop_lookup = mfs_lookup,		/* lookup */
 		.vop_create = mfs_create,		/* create */
 		.vop_mknod = mfs_mknod,			/* mknod */

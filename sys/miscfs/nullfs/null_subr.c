@@ -135,7 +135,7 @@ null_node_alloc(mp, lowervp, vpp)
 	struct vnode *othervp, *vp;
 	int error;
 
-	if (error == getnewvnode(VT_NULL, mp, null_vnodeop_p, vpp))
+	if (error == getnewvnode(VT_NULL, mp, null_vnodeops, vpp))
 		return (error);
 	vp = *vpp;
 

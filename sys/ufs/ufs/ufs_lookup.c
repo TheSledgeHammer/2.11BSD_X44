@@ -44,6 +44,7 @@
 #include <sys/file.h>
 #include <sys/mount.h>
 #include <sys/vnode.h>
+#include <sys/user.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
@@ -93,7 +94,8 @@ int dirchk = 0;
  *	if not at end, add name to cache; if at end and neither creating
  *	  nor deleting, add name to cache
  */
-int ufs_lookup(ap)
+int
+ufs_lookup(ap)
 	struct vop_lookup_args /* {
 	 struct vnode *a_dvp;
 	 struct vnode **a_vpp;

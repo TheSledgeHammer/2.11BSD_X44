@@ -1916,8 +1916,7 @@ msdosfs_pathconf(v)
 }
 
 /* Global vfs data structures for msdosfs */
-int (**msdosfs_vnodeop_p) (void *);
-struct vnodeops msdosfs_vnodeops[] = {
+struct vnodeops msdosfs_vnodeops = {
 		.vop_lookup = msdosfs_lookup,		/* lookup */
 		.vop_create = msdosfs_create,		/* create */
 		.vop_mknod = msdosfs_mknod,			/* mknod */

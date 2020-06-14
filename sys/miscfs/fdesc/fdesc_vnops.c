@@ -126,7 +126,7 @@ loop:
 	}
 	fdcache_lock |= FDL_LOCKED;
 
-	error = getnewvnode(VT_FDESC, mp, fdesc_vnodeop_p, vpp);
+	error = getnewvnode(VT_FDESC, mp, fdesc_vnodeops, vpp);
 	if (error)
 		goto out;
 	MALLOC(fd, void *, sizeof(struct fdescnode), M_TEMP, M_WAITOK);
@@ -902,7 +902,7 @@ fdesc_badop()
 #define fdesc_update ((int (*) (struct  vop_update_args *))eopnotsupp)
 #define fdesc_bwrite ((int (*) (struct  vop_bwrite_args *))eopnotsupp)
 
-struct vnodeops fdesc_vnodeops[] = {
+struct vnodeops fdesc_vnodeops = {
 		.vop_lookup = fdesc_lookup,		/* lookup */
 		.vop_create = fdesc_create,		/* create */
 		.vop_mknod = fdesc_mknod,		/* mknod */

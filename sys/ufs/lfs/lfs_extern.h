@@ -108,10 +108,10 @@ void	lfs_dump_super (struct lfs *);
 #endif
 __END_DECLS
 extern int lfs_mount_type;
-extern int (**lfs_vnodeop_p)();
-extern int (**lfs_specop_p)();
+extern struct lfs_vnodeops;
+extern struct lfs_specops;
 #ifdef FIFO
-extern int (**lfs_fifoop_p)();
+extern struct lfs_fifoops;
 #define LFS_FIFOOPS lfs_fifoop_p
 #else
 #define LFS_FIFOOPS NULL
