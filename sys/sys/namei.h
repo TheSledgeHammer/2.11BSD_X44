@@ -9,6 +9,8 @@
 #ifndef _NAMEI_
 #define	_NAMEI_
 
+#include <sys/queue.h>
+
 /*
  * Encapsulation of namei parameters.
  * One of these is located in the u. area to
@@ -30,9 +32,9 @@ struct nameidata {
 	struct	vnode *ni_dvp;		/* vnode of intermediate directory */
 
 	/* Shared between namei and lookup/commit routines. */
-	long	ni_pathlen;		/* remaining chars in path */
-	char	*ni_next;		/* next location in pathname */
-	u_long	ni_loopcnt;		/* count of symlinks encountered */
+	long	ni_pathlen;			/* remaining chars in path */
+	char	*ni_next;			/* next location in pathname */
+	u_long	ni_loopcnt;			/* count of symlinks encountered */
 
 	struct componentname {
 		/* Arguments to lookup */
@@ -84,15 +86,17 @@ struct nameidata {
  * buffer and for vrele'ing ni_startdir.
  */
 #define	NOCROSSMOUNT	0x00100	/* do not cross mount points */
-#define	RDONLY		0x00200	/* lookup with read-only semantics */
-#define	HASBUF		0x00400	/* has allocated pathname buffer */
-#define	SAVENAME	0x00800	/* save pathanme buffer */
-#define	SAVESTART	0x01000	/* save starting directory */
-#define ISDOTDOT	0x02000	/* current component name is .. */
-#define MAKEENTRY	0x04000	/* entry is to be added to name cache */
-#define ISLASTCN	0x08000	/* this is last component of pathname */
-#define ISSYMLINK	0x10000	/* symlink needs interpretation */
-#define PARAMASK	0xfff00	/* mask of parameter descriptors */
+#define	RDONLY			0x00200	/* lookup with read-only semantics */
+#define	HASBUF			0x00400	/* has allocated pathname buffer */
+#define	SAVENAME		0x00800	/* save pathanme buffer */
+#define	SAVESTART		0x01000	/* save starting directory */
+#define ISDOTDOT		0x02000	/* current component name is .. */
+#define MAKEENTRY		0x04000	/* entry is to be added to name cache */
+#define ISLASTCN		0x08000	/* this is last component of pathname */
+#define ISSYMLINK		0x10000	/* symlink needs interpretation */
+#define	ISWHITEOUT		0x20000	/* found whiteout */
+#define	DOWHITEOUT		0x40000	/* do whiteouts */
+#define PARAMASK		0xfff00	/* mask of parameter descriptors */
 
 #define NDINIT(ndp, op, flags, segflg, namep, p) { \
 	(ndp)->ni_cnd.cn_nameiop = op; \
@@ -111,16 +115,20 @@ struct nameidata {
 #define	NCHNAMLEN	31	/* maximum name segment length we bother with */
 
 struct	namecache {
-	struct	namecache *nc_forw;	/* hash chain, MUST BE FIRST */
-	struct	namecache *nc_back;	/* hash chain, MUST BE FIRST */
-	struct	namecache *nc_nxt;	/* LRU chain */
-	struct	namecache **nc_prev;/* LRU chain */
-	struct	vnode 	  *nc_dvp;	/* vnode of parent of name */
-	u_long	nc_dvpid;			/* capability number of nc_dvp */
-	struct	vnode 	  *nc_vp;	/* vnode the name refers to */
-	u_long	nc_vpid;			/* capability number of nc_vp */
-	char	nc_nlen;			/* length of name */
-	char	nc_name[NCHNAMLEN];	/* segment name */
+	LIST_ENTRY(namecache) 	nc_hash;		/* hash chain */
+	TAILQ_ENTRY(namecache) 	nc_lru;			/* LRU chain */
+	struct	vnode 	  	*nc_dvp;			/* vnode of parent of name */
+	u_long				nc_dvpid;			/* capability number of nc_dvp */
+	struct	vnode 	  	*nc_vp;				/* vnode the name refers to */
+	u_long				nc_vpid;			/* capability number of nc_vp */
+	char				nc_nlen;			/* length of name */
+	char				nc_name[NCHNAMLEN];	/* segment name */
+
+	/* 2.11BSD hash chain */
+	struct	namecache 	*nc_forw;			/* hash chain, MUST BE FIRST */
+	struct	namecache 	*nc_back;			/* hash chain, MUST BE FIRST */
+	struct	namecache 	*nc_nxt;			/* LRU chain */
+	struct	namecache 	**nc_prev;			/* LRU chain */
 };
 
 #ifdef KERNEL

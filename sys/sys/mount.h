@@ -198,13 +198,13 @@ struct export_args {
  */
 struct vfsconf {
 	const struct vfsops *vfc_vfsops; /* filesystem operations vector */
-	char 			vfc_name[VFS_MAXNAMELEN];	/* filesystem type name */
-	int 			vfc_index;
-	int				vfc_typenum;				/* historic filesystem type number */
-	int 			vfc_refcount;				/* number mounted of this type */
-	int 			vfc_flags;					/* permanent flags */
-	int				(*vfc_mountroot)(void);		/* if != NULL, routine to mount root */
-	struct	vfsconf *vfc_next;					/* next in list */
+	char 				vfc_name[VFS_MAXNAMELEN];	/* filesystem type name */
+	int 				vfc_index;
+	int					vfc_typenum;				/* historic filesystem type number */
+	int 				vfc_refcount;				/* number mounted of this type */
+	int 				vfc_flags;					/* permanent flags */
+	int					(*vfc_mountroot)(void);		/* if != NULL, routine to mount root */
+	struct	vfsconf 	*vfc_next;					/* next in list */
 };
 
 #ifdef KERNEL

@@ -57,20 +57,10 @@ extern	int mfs_mountroot();
 extern	struct vfsops cd9660_vfsops;
 extern	int cd9660_mountroot();
 extern	struct vfsops msdos_vfsops;
-extern	struct vfsops nfs_vfsops;
-extern	int nfs_mountroot();
 extern	struct vfsops null_vfsops;
-/*
-extern	struct vfsops adosfs_vfsops;
-extern	struct vfsops afs_vfsops;
-extern	struct vfsops procfs_vfsops;
-
-extern	struct vfsops union_vfsops;
-extern	struct vfsops umap_vfsops;
-extern	struct vfsops portal_vfsops;
-extern	struct vfsops fdesc_vfsops;
-extern	struct vfsops kernfs_vfsops;
-*/
+extern	struct vfsops lofs_vfsops;
+extern	struct vfsops nfs_vfsops;
+//extern	int nfs_mountroot();
 /*
  * Set up the filesystem operations for vnodes.
  */
@@ -101,34 +91,14 @@ static struct vfsconf vfsconflist[] = {
 	{ &msdos_vfsops, "msdos", 4, 0, MNT_LOCAL, NULL, NULL },
 #endif
 
-	/* Sun-compatible Network Filesystem */
-#ifdef NFS
-	{ &nfs_vfsops, "nfs", 2, 0, 0, nfs_mountroot, NULL },
-#endif
-
-	/* /proc Filesystem */
-#ifdef PROCFS
-	{ &procfs_vfsops, "procfs", 12, 0, 0, NULL, NULL },
-#endif
-
 	/* Loopback (Minimal) Filesystem Layer */
 #ifdef NULLFS
-	{ &null_vfsops, "loopback", 9, 0, 0, NULL, NULL },
+	{ &null_vfsops, "null", 9, 0, 0, NULL, NULL },
 #endif
 
-	/* Union (translucent) Filesystem */
-#ifdef UNION
-	{ &union_vfsops, "union", 15, 0, 0, NULL, NULL },
-#endif
-
-	/* User/Group Identifer Remapping Filesystem */
-#ifdef UMAPFS
-	{ &umap_vfsops, "umap", 10, 0, 0, NULL, NULL },
-#endif
-
-	/* Portal Filesystem */
-#ifdef PORTAL
-	{ &portal_vfsops, "portal", 8, 0, 0, NULL, NULL },
+	/* Loopback Filesystem */
+#ifdef LOFS
+	{ &lofs_vfsops, "loopback", 6, 0, 0, NULL, NULL },
 #endif
 
 	/* File Descriptor Filesystem */
@@ -136,11 +106,10 @@ static struct vfsconf vfsconflist[] = {
 	{ &fdesc_vfsops, "fdesc", 7, 0, 0, NULL, NULL },
 #endif
 
-	/* Kernel Information Filesystem */
-#ifdef KERNFS
-	{ &kernfs_vfsops, "kernfs", 11, 0, 0, NULL, NULL },
+	/* Sun-compatible Network Filesystem */
+#ifdef NFS
+	{ &nfs_vfsops, "nfs", 2, 0, 0, nfs_mountroot, NULL },
 #endif
-
 };
 
 /*

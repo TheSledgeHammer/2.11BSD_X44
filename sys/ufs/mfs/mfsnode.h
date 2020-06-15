@@ -49,7 +49,7 @@ struct mfsnode {
 /*
  * Convert between mfsnode pointers and vnode pointers
  */
-#define VTOMFS(vp)	((struct mfsnode *)(vp)->v_data)
+#define VTOMFS(vp)		((struct mfsnode *)(vp)->v_data)
 #define MFSTOV(mfsp)	((mfsp)->mfs_vnode)
 
 /* Prototypes for MFS operations on vnodes. */
