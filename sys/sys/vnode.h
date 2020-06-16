@@ -692,7 +692,7 @@ struct vop_bwrite_args {
 /*
  * Flags for vdesc_flags:
  */
-#define VOP_MAX_VPS		16
+#define VOP_MAX_VPS			16
 /* Low order 16 flag bits are reserved for willrele flags for vp arguments. */
 #define VOP_VP0_WILLRELE	0x0001
 #define VOP_VP1_WILLRELE	0x0002
@@ -700,6 +700,12 @@ struct vop_bwrite_args {
 #define VOP_VP3_WILLRELE	0x0008
 #define VOP_NOMAP_VPP		0x0100
 #define VOP_VPP_WILLRELE	0x0200
+
+/*
+ * VDESC_NO_OFFSET is used to identify the end of the offset list
+ * and in places where no such field exists.
+ */
+#define VOP_NO_OFFSET -1
 
 #ifdef _KERNEL
 

@@ -213,41 +213,6 @@ int null_bug_bypass = 0;   /* for debugging: enables bypass printf'ing */
  *   problems on rmdir'ing mount points and renaming?)
  */
 
- struct vop_layer_args {
-   struct vop_generic_args 	a_head;
-
-   struct vnode				*a_upvp; 	/* upper vnode */
-   struct vnode				*a_lwvp; 	/* lower vnode */
-   struct vnode				*a_tvp; 	/* this vnode */
-   struct vnode				*a_ovp; 	/* old vnode */
-   int						a_field;
-   int						a_flags;
- };
-
- int
- vop_layer(tvp, ovp, upvp, lwvp, field, flags)
- 	struct vnode *tvp, *ovp, *upvp, *lwvp;
- 	int field, flags;
- {
- 	struct vop_layer_args a;
- 	int error;
-
- 	a.a_head.a_ops = &vops;
- 	a.a_tvp = tvp;
- 	a.a_ovp = ovp;
- 	a.a_upvp = upvp;
- 	a.a_lwvp = lwvp;
- 	a.a_field = field;
- 	a.a_flags = flags;
-
- 	if(vops.vop_layer == NULL) {
- 		return (EOPNOTSUPP);
- 	}
-
- 	error = vops.vop_layer(tvp, ovp, upvp, lwvp, field, flags);
-
- 	return (error);
- }
 
 /* vnode desc is an array of vector ops */
 /* vnodeops is a struct */
@@ -669,7 +634,7 @@ null_bwrite(ap)
 /*
  * Global vfs data structures
  */
-struct vnodeops null_vnodeops[] = {
+struct vnodeops null_vnodeops = {
 	.vop_lookup = null_lookup,
 	.vop_setattr = null_setattr,
 	.vop_getattr = null_getattr,
