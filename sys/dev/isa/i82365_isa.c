@@ -38,7 +38,7 @@
 #include <sys/extent.h>
 #include <sys/malloc.h>
 
-#include <vm/vm.h>
+#include <vm/include/vm.h>
 
 #include <machine/bus.h>
 #include <machine/intr.h>

@@ -39,6 +39,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>
+#include <sys/user.h>
 
 #include <dev/pci/pcireg.h>
 #include <dev/pci/pcivar.h>

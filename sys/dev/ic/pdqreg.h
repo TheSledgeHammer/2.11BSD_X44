@@ -127,7 +127,7 @@ struct _pdq_pci_csrs_t {
 #define PDQ_PFI_STATUS_DMA_ABORT	0x08	/* PDQ DMA Abort asserted */
 
 #define	PDQ_EISA_BURST_HOLDOFF			0x0040
-#define	PDQ_EISA_SLOT_ID			0x0C80
+#define	PDQ_EISA_SLOT_ID				0x0C80
 #define	PDQ_EISA_SLOT_CTRL			0x0C84
 #define	PDQ_EISA_MEM_ADD_CMP_0			0x0C85
 #define	PDQ_EISA_MEM_ADD_CMP_1			0x0C86
@@ -141,14 +141,14 @@ struct _pdq_pci_csrs_t {
 #define	PDQ_EISA_MEM_ADD_LO_CMP_0		0x0C8E
 #define	PDQ_EISA_MEM_ADD_LO_CMP_1		0x0C8F
 #define	PDQ_EISA_MEM_ADD_LO_CMP_2		0x0C90
-#define	PDQ_EISA_IO_CMP_0_0			0x0C91
-#define	PDQ_EISA_IO_CMP_0_1			0x0C92
-#define	PDQ_EISA_IO_CMP_1_0			0x0C93
-#define	PDQ_EISA_IO_CMP_1_1			0x0C94
-#define	PDQ_EISA_IO_CMP_2_0			0x0C95
-#define	PDQ_EISA_IO_CMP_2_1			0x0C96
-#define	PDQ_EISA_IO_CMP_3_0			0x0C97
-#define	PDQ_EISA_IO_CMP_3_1			0x0C98
+#define	PDQ_EISA_IO_CMP_0_0				0x0C91
+#define	PDQ_EISA_IO_CMP_0_1				0x0C92
+#define	PDQ_EISA_IO_CMP_1_0				0x0C93
+#define	PDQ_EISA_IO_CMP_1_1				0x0C94
+#define	PDQ_EISA_IO_CMP_2_0				0x0C95
+#define	PDQ_EISA_IO_CMP_2_1				0x0C96
+#define	PDQ_EISA_IO_CMP_3_0				0x0C97
+#define	PDQ_EISA_IO_CMP_3_1				0x0C98
 #define	PDQ_EISA_IO_ADD_MASK_0_0		0x0C99
 #define	PDQ_EISA_IO_ADD_MASK_0_1		0x0C9A
 #define	PDQ_EISA_IO_ADD_MASK_1_0		0x0C9B

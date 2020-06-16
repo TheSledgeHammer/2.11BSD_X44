@@ -53,7 +53,7 @@
 #include <sys/rnd.h>
 #endif
 
-#include <vm/vm.h>
+#include <vm/include/vm.h>
 
 #include <machine/cpu.h>
 #include <machine/intr.h>
@@ -82,7 +82,7 @@
 
 struct wd_softc {
 	struct device sc_dev;
-	struct disk sc_dk;
+	struct dkdevice sc_dk;
 	struct wd_link *d_link;
 	struct buf sc_q;
 #if NRND > 0

@@ -60,7 +60,6 @@ struct statfs {
  * Used to find the super block.
  */
 LIST_HEAD(vnodelst, vnode);
-
 struct	mount {
 	CIRCLEQ_ENTRY(mount) mnt_list;			/* mount list */
 	struct vfsops		*mnt_op;			/* operations on fs */

@@ -36,6 +36,7 @@
 
 #include <dev/ic/isp_netbsd.h>
 #include <dev/microcode/isp/asm_pci.h>
+#include <sys/user.h>
 
 #include <dev/pci/pcireg.h>
 #include <dev/pci/pcivar.h>
@@ -457,7 +458,7 @@ isp_pci_mbxdma(isp)
 static int
 isp_pci_dmasetup(isp, xs, rq, iptrp, optr)
 	struct ispsoftc *isp;
-	struct scsipi_xfer *xs;
+	struct scsi_xfer *xs;
 	ispreq_t *rq;
 	u_int8_t *iptrp;
 	u_int8_t optr;

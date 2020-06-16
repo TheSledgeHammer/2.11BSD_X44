@@ -217,7 +217,7 @@ wapbl_vphaswapbl(struct vnode *vp)
 /****************************************************************/
 /* Replay support */
 
-#ifdef WAPBL_INTERNAL
+//#ifdef WAPBL_INTERNAL
 LIST_HEAD(wapbl_blk_head, wapbl_blk);
 struct wapbl_replay {
 	struct vnode 			*wr_logvp;

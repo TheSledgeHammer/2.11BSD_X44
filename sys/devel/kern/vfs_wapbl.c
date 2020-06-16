@@ -327,6 +327,7 @@ wapbl_start_flush_inodes(wl, wr)
 	 * Its only valid to reuse the replay log if its
 	 * the same as the new log we just opened.
 	 */
+
 	KDASSERT(!wapbl_replay_isopen(wr));
 	KASSERT(wl->wl_devvp->v_type == VBLK);
 	KASSERT(wr->wr_devvp->v_type == VBLK);
