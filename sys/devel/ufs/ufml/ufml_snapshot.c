@@ -29,41 +29,23 @@
 #include "devel/ufs/ufml/ufml.h"
 #include "devel/ufs/ufml/ufml_meta.h"
 #include "devel/ufs/ufml/ufml_extern.h"
-#include "devel/ufs/ufml/ufml_ops.h"
 
-/* Check filesystem types to see if the filesystem is supported */
-int
-ufml_check_fs(vp, type)
-	struct vnode *vp;
-	enum ufml_fstype type;
+ufml_snapshot_write()
 {
-	int error;
-	struct ufml_metadata *meta = VTOUFML(vp)->ufml_meta;
 
-	switch(type) {
-	case UFML_FFS:
-		meta->ufml_filesystem = UFML_FFS;
-		error = 0;
-		break;
-	case UFML_MFS:
-		meta->ufml_filesystem = UFML_MFS;
-		error = 0;
-		break;
-	case UFML_LFS:
-		meta->ufml_filesystem = UFML_LFS;
-		error = 0;
-		break;
-	default:
-		meta->ufml_filesystem = UFML_UFS;
-		error = 0;
-		break;
-	}
-
-	if(error != 0) {
-		return (1);
-	}
-
-	return (error);
 }
 
+ufml_read_snapshot_read()
+{
 
+}
+
+ufml_snapshot_commit()
+{
+
+}
+
+ufml_snapshot_delete()
+{
+
+}

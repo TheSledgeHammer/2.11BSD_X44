@@ -57,7 +57,9 @@ struct ufml_node {
 	LIST_ENTRY(ufml_node)	ufml_hash;		/* Hash list */
 	struct vnode	        *ufml_lowervp;	/* VREFed once */
 	struct vnode			*ufml_vnode;	/* Back pointer */
+
 	struct ufml_metadata	*ufml_meta;		/* Node metadata */
+	struct ufmlops			*ufml_op		/* UFML operations vector */
 };
 
 extern int ufml_node_create (struct mount *mp, struct vnode *target, struct vnode **vpp);

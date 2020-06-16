@@ -29,9 +29,6 @@
 #ifndef UFS_UFML_EXTERN_H_
 #define UFS_UFML_EXTERN_H_
 
-#include "devel/ufs/ufml/ufml.h"
-#include "devel/ufs/ufml/ufml_meta.h"
-
 int ufml_check_fs(struct vnode *vp, enum ufml_fstype type);
 
 /* ufml_archive.c */
@@ -41,12 +38,17 @@ ufml_extract();
 
 /* ufml_compress.c */
 int ufml_check_compression(struct vnode *vp, enum ufml_comptype type);
-ufml_compress();
-ufml_decompress();
+int ufml_compress();
+int ufml_decompress();
 
 /* ufml_encrypt.c */
 int ufml_check_encyrpt(struct vnode *vp, enum ufml_enctype type);
-ufml_encrypt();
-ufml_decrypt();
+int ufml_encrypt();
+int ufml_decrypt();
+
+int ufml_snapshot_write();
+int ufml_snapshot_read();
+int ufml_snapshot_delete();
+int ufml_snapshot_commit();
 
 #endif /* UFS_UFML_EXTERN_H_ */
