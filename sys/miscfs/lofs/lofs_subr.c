@@ -49,8 +49,8 @@
 #include <sys/malloc.h>
 #include <miscfs/lofs/lofs.h>
 
-#define LOG2_SIZEVNODE 7		/* log2(sizeof struct vnode) */
-#define	NLOFSCACHE 16
+#define LOG2_SIZEVNODE 	7		/* log2(sizeof struct vnode) */
+#define	NLOFSCACHE 		16
 #define	LOFS_NHASH(vp) ((((u_long)vp)>>LOG2_SIZEVNODE) & (NLOFSCACHE-1))
 
 /*

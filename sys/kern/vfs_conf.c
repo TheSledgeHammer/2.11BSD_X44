@@ -57,7 +57,6 @@ extern	int mfs_mountroot();
 extern	struct vfsops cd9660_vfsops;
 extern	int cd9660_mountroot();
 extern	struct vfsops msdos_vfsops;
-extern	struct vfsops null_vfsops;
 extern	struct vfsops lofs_vfsops;
 extern	struct vfsops nfs_vfsops;
 //extern	int nfs_mountroot();
@@ -89,11 +88,6 @@ static struct vfsconf vfsconflist[] = {
 	/* MSDOS Filesystem */
 #ifdef MSDOS
 	{ &msdos_vfsops, "msdos", 4, 0, MNT_LOCAL, NULL, NULL },
-#endif
-
-	/* Loopback (Minimal) Filesystem Layer */
-#ifdef NULLFS
-	{ &null_vfsops, "null", 9, 0, 0, NULL, NULL },
 #endif
 
 	/* Loopback Filesystem */

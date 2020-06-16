@@ -180,11 +180,11 @@ struct wapbl {
 
 	TAILQ_HEAD(, buf) wl_bufs; /* m: Buffers in current transaction */
 
-	kcondvar_t wl_reclaimable_cv;	/* m (obviously) */
-	size_t wl_reclaimable_bytes; /* m:	Amount of space available for reclamation by truncate */
+	kcondvar_t wl_reclaimable_cv;				/* m (obviously) */
+	size_t wl_reclaimable_bytes; 				/* m:	Amount of space available for reclamation by truncate */
 
-	int wl_error_count;	/* m:	# of wl_entries with errors */
-	size_t wl_reserved_bytes; /* never truncate log smaller than this */
+	int wl_error_count;							/* m:	# of wl_entries with errors */
+	size_t wl_reserved_bytes; 					/* never truncate log smaller than this */
 
 #ifdef WAPBL_DEBUG_BUFBYTES
 	size_t wl_unsynced_bufbytes; /* Byte count of unsynced buffers */

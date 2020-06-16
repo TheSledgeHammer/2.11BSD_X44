@@ -12,12 +12,11 @@ TODO:
 
 miscfs:
 - LOFS: 4.4BSD: Provides a functioning stack filesystem
-	- Port and merge best parts with NULLFS
+	- Merge best parts with NULLFS for reimplementation LOFS2
 
 Kern:
 - kern_xxx.c: reboot: needs fixing
 - kern_physio.c: Incomplete: getphysbuf, putphysbuf (NetBSD 1.3)
-- vfs_cache.c: missing list
 
 Of Interest Todo:
 - ifdef INET: remanents of 2.11BSD's networking stack overlay (keep in place for now)

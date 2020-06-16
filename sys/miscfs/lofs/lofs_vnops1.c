@@ -65,18 +65,17 @@
  * Save a vnode and replace with
  * the lofs'ed one
  */
-#define PUSHREF(v, nd) \
-{ \
-	struct { struct vnode *vnp; } v; \
-	v.vnp = (nd); \
-	(nd) = LOFSVP(v.vnp)
+#define PUSHREF(v, nd) {				\
+	struct { struct vnode *vnp; } v; 	\
+	v.vnp = (nd); 						\
+	(nd) = LOFSVP(v.vnp)				\
+}
 
 /*
  * Undo the PUSHREF
  */
-#define POP(v, nd) \
-	\
-	(nd) = v.vnp; \
+#define POP(v, nd) {	\
+	(nd) = v.vnp; 		\
 }
 
 int

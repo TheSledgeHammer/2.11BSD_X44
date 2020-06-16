@@ -39,6 +39,8 @@
  * $Id: lofs.h,v 1.8 1992/05/30 10:05:43 jsp Exp jsp $
  */
 
+#include <sys/queue.h>
+
 struct lofs_args {
 	char			*target;	/* Target of loopback  */
 };
@@ -59,13 +61,15 @@ struct lofsnode {
 	struct vnode	*a_vnode;	/* Back pointer to vnode/lofsnode */
 };
 
-extern int make_lofs 	(struct mount *mp, struct vnode **vpp);
+extern int make_lofs (struct mount *mp, struct vnode **vpp);
+extern int lofs_node_create (struct mount *mp, struct vnode *target, struct vnode **vpp);
 
 #define	VFSTOLOFS(mp) 	((struct lofsmount *)((mp)->mnt_data))
 #define	LOFSP(vp) 		((struct lofsnode *)(vp)->v_data)
 #ifdef LOFS_DIAGNOSTIC
 extern struct vnode *lofs_checkvp (struct vnode *vp, char *fil, int lno);
 #define	LOFSVP(vp) lofs_checkvp(vp, __FILE__, __LINE__)
+
 #else
 #define	LOFSVP(vp) 		(LOFSP(vp)->a_lofsvp)
 #endif
@@ -73,3 +77,26 @@ extern struct vnode *lofs_checkvp (struct vnode *vp, char *fil, int lno);
 extern struct lofs_vnodeops;
 extern struct vfsops lofs_vfsops;
 #endif /* KERNEL */
+
+/* lofs reimplemented */
+struct lofsmount {
+	struct mount	*lofs_vfs;
+	struct vnode	*lofs_rootvp;	/* Reference to root lofsnode */
+};
+
+/*
+ * A cache of vnode references
+ */
+struct lofs_node {
+	LIST_ENTRY(lofs_node)	lofs_hash;		/* Hash list */
+	struct vnode			*lofs_lofsvp;	/* Aliased vnode - VREFed once */
+	struct vnode			*lofs_vnode;	/* Back pointer to vnode/lofsnode */
+	int						lofs_flags;
+};
+
+/* Place in lofs_subr.c
+#define	LOFS_NHASH(vp) \
+	(&lofs_node_hashtbl[(((u_long)vp)>>LOG2_SIZEVNODE) & lofs_node_hash])
+LIST_HEAD(lofs_node_hashhead, lofs_node) *lofs_node_hashtbl;
+u_long lofs_node_hash;
+*/
