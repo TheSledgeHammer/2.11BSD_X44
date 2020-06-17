@@ -113,7 +113,7 @@ tlbflush(void)
 }
 
 #ifdef notyet
-void	setidt	__P((int idx, /*XXX*/caddr_t func, int typ, int dpl));
+void	setidt	(int idx, /*XXX*/caddr_t func, int typ, int dpl);
 #endif
 
 

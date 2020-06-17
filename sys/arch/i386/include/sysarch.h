@@ -3,16 +3,18 @@
 #ifndef _I386_SYSARCH_H_
 #define _I386_SYSARCH_H_
 
+#include <sys/cdefs.h>
+
+#define I386_GET_LDT	0
+#define I386_SET_LDT	1
+#define	I386_IOPL		2
+#define	I386_GET_IOPERM	3
+#define	I386_SET_IOPERM	4
+#define	I386_VM86		5
+
 /*
  * Architecture specific syscalls (i386)
  */
-#define I386_GET_LDT	0
-#define I386_SET_LDT	1
-#define	I386_IOPL	2
-#define	I386_GET_IOPERM	3
-#define	I386_SET_IOPERM	4
-#define	I386_VM86	5
-
 struct i386_get_ldt_args {
 	int start;
 	union descriptor *desc;

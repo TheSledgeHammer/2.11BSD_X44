@@ -58,20 +58,27 @@
 #define	CPU_NX586			15	/* NexGen (now AMD) 586 */
 #define	CPU_CY486DX			16	/* Cyrix 486S/DX/DX2/DX4 */
 
+#define CPU_AM586			17	/* AMD Am486 and Am5x86 */
+#define CPU_K5				18	/* AMD K5 */
+#define CPU_K6				19	/* NexGen 686 aka AMD K6 */
+#define CPU_C6				20	/* IDT WinChip C6 */
+#define CPU_TMX86			21	/* Transmeta TMx86 */
+
 /*
  * CPU vendors
  */
-#define CPUVENDOR_UNKNOWN	-1
-#define CPUVENDOR_INTEL		0
-#define CPUVENDOR_CYRIX		1
-#define CPUVENDOR_NEXGEN	2
-#define CPUVENDOR_AMD		3
-#define CPUVENDOR_IDT		4
+#define CPUVENDOR_UNKNOWN	0
+#define CPUVENDOR_INTEL		1
+#define CPUVENDOR_CYRIX		2
+#define CPUVENDOR_NEXGEN	3
+#define CPUVENDOR_AMD		4
+#define CPUVENDOR_IDT		5
+#define CPUVENDOR_TRANSMETA	6
 
 /*
  * Some other defines, dealing with values returned by cpuid.
  */
-#define CPU_MAXMODEL	15	/* Models within family range 0-15 */
-#define CPU_DEFMODEL	16	/* Value for unknown model -> default  */
-#define CPU_MINFAMILY	 4	/* Lowest that cpuid can return (486) */
-#define CPU_MAXFAMILY	 6	/* Highest we know (686) */
+#define CPU_MAXMODEL		15	/* Models within family range 0-15 */
+#define CPU_DEFMODEL		16	/* Value for unknown model -> default  */
+#define CPU_MINFAMILY		 4	/* Lowest that cpuid can return (486) */
+#define CPU_MAXFAMILY		 6	/* Highest we know (686) */
