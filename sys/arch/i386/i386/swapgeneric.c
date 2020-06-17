@@ -66,6 +66,7 @@ struct genericconf {
 	dev_t gc_root;
 } genericconf[] = { { (caddr_t) &wddriver, "wd", makedev(0, 0), }, { 0 }, };
 
+void
 setconf()
 {
 #ifdef notdef
@@ -125,6 +126,7 @@ doswap:
 #endif
 }
 
+void
 gets(cp)
 	char *cp;
 {

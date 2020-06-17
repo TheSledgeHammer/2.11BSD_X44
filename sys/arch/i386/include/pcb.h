@@ -60,6 +60,8 @@ struct pcb {
 	struct	emcsts		pcb_saveemc;			/* Cyrix EMC state */
 	u_long				pcb_iomap[NPORT/32];	/* i/o port bitmap */
 	int					pcb_cr0;				/* saved image of CR0 */
+	int					pcb_fsd[2];				/* %fs descriptor */
+	int					pcb_gsd[2];				/* %gs descriptor */
 
 /*
  * Software pcb (extension)

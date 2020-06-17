@@ -15,7 +15,6 @@ miscfs:
 	- Merge best parts with NULLFS for reimplementation LOFS2
 
 Kern:
-- kern_xxx.c: reboot: needs fixing
 - kern_physio.c: Incomplete: getphysbuf, putphysbuf (NetBSD 1.3)
 
 Of Interest Todo:

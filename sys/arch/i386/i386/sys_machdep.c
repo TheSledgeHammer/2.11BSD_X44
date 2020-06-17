@@ -67,11 +67,13 @@
 extern vm_map_t kernel_map;
 
 #ifdef USER_LDT
-static int i386_get_ldt	(struct proc *, char *);
-static int i386_set_ldt	(struct proc *, char *);
+static int i386_get_ldt	(struct proc *, char *, register_t *);
+static int i386_set_ldt	(struct proc *, char *, register_t *);
 #endif
-static int i386_get_ioperm	(struct proc *, char *);
-static int i386_set_ioperm	(struct proc *, char *);
+static int i386_get_ioperm	(struct proc *, char *, register_t *);
+static int i386_set_ioperm	(struct proc *, char *, register_t *);
+static int i386_set_sdbase	(struct proc *, void *, char);
+static int i386_get_sdbase	(struct proc *, void *, char);
 
 #ifdef TRACE
 int	nvualarm;
@@ -146,8 +148,7 @@ i386_get_ldt(p, args, retval)
 		return (error);
 
 #ifdef	LDT_DEBUG
-	printf("i386_get_ldt: start=%d num=%d descs=%p\n", ua.start,
-	    ua.num, ua.desc);
+	printf("i386_get_ldt: start=%d num=%d descs=%p\n", ua.start, ua.num, ua.desc);
 #endif
 
 	if (ua.start < 0 || ua.num < 0)
@@ -406,6 +407,66 @@ i386_set_ioperm(p, args, retval)
 }
 
 int
+i386_set_sdbase(p, arg, which)
+	struct proc *p;
+	void *arg;
+	char which;
+{
+	struct segment_descriptor sd;
+	caddr_t base;
+	int error;
+
+	error = copyin(arg, &base, sizeof(base));
+	if (error != 0)
+		return error;
+
+	sd.sd_lobase = base & 0xffffff;
+	sd.sd_hibase = (base >> 24) & 0xff;
+	sd.sd_lolimit = 0xffff;
+	sd.sd_hilimit = 0xf;
+	sd.sd_type = SDT_MEMRWA;
+	sd.sd_dpl = SEL_UPL;
+	sd.sd_p = 1;
+	sd.sd_xx = 0;
+	sd.sd_def32 = 1;
+	sd.sd_gran = 1;
+
+	if (which == 'f') {
+		memcpy(&curpcb->pcb_fsd, &sd, sizeof(sd));
+		memcpy(p->ci_gdt[GUFS_SEL], &sd, sizeof(sd));
+	} else /* which == 'g' */ {
+		memcpy(&curpcb->pcb_gsd, &sd, sizeof(sd));
+		memcpy(p->ci_gdt[GUGS_SEL], &sd, sizeof(sd));
+	}
+
+	return 0;
+}
+
+int
+i386_get_sdbase(p, arg, which)
+	struct proc *p;
+	void *arg;
+	char which;
+{
+	struct segment_descriptor *sd;
+	caddr_t base;
+
+	switch (which) {
+	case 'f':
+		sd = (struct segment_descriptor *)&curpcb->pcb_fsd;
+		break;
+	case 'g':
+		sd = (struct segment_descriptor *)&curpcb->pcb_gsd;
+		break;
+	default:
+		panic("i386_get_sdbase");
+	}
+
+	base = sd->sd_hibase << 24 | sd->sd_lobase;
+	return copyout(&base, &arg, sizeof(base));
+}
+
+int
 sysarch(p, uap, retval)
 	struct proc *p;
 	struct sysarch_args *uap;
@@ -433,6 +494,18 @@ sysarch(p, uap, retval)
 		error = i386_vm86(p, SCARG(uap, parms), retval);
 		break;
 #endif
+	case I386_GET_GSBASE:
+		error = i386_get_sdbase(p, SCARG(uap, parms), 'g');
+		break;
+	case I386_GET_FSBASE:
+		error = i386_get_sdbase(p, SCARG(uap, parms), 'f');
+		break;
+	case I386_SET_GSBASE:
+		error = i386_set_sdbase(p, SCARG(uap, parms), 'g');
+		break;
+	case I386_SET_FSBASE:
+		error = i386_set_sdbase(p, SCARG(uap, parms), 'f');
+		break;
 	default:
 		error = EINVAL;
 		break;
