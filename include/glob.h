@@ -62,13 +62,8 @@ typedef struct {
 	void (*gl_closedir) (void *);
 	struct dirent *(*gl_readdir) (void *);
 	void *(*gl_opendir) (const char *);
-#ifdef __LIBC12_SOURCE__
-	int (*gl_lstat) (const char *, struct stat12 *);
-	int (*gl_stat) (const char *, struct stat12 *);
-#else
 	int (*gl_lstat) (const char *, struct stat *);
 	int (*gl_stat) (const char *, struct stat *);
-#endif
 } glob_t;
 
 #define	GLOB_APPEND		0x0001	/* Append to output from previous call. */
@@ -91,13 +86,8 @@ typedef struct {
 #define	GLOB_ABEND		(-2)	/* Unignored error. */
 
 __BEGIN_DECLS
-#ifdef __LIBC12_SOURCE__
-int	glob (const char *, int, int (*)(const char *, int), glob_t *);
-void	globfree (glob_t *);
-#else
-int	glob (const char *, int, int (*)(const char *, int), glob_t *) __RENAME(__glob13);
-void	globfree (glob_t *) __RENAME(__globfree13);
-#endif
+int		glob (const char *, int, int (*)(const char *, int), glob_t *);
+void 	globfree (glob_t *);
 __END_DECLS
 
 #endif /* !_GLOB_H_ */

@@ -63,7 +63,7 @@
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-void __assert __P((const char *, int, const char *));
+void __assert (const char *, int, const char *);
 __END_DECLS
 # ifndef NDEBUG
 # define _assert(ex)	{if (!(ex)){fprintf(stderr,"Assertion failed: file \"%s\", line %d\n", __FILE__, __LINE__);exit(1);}}

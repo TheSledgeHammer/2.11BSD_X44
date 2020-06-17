@@ -1,5 +1,7 @@
-/*
- * Copyright (c) 1988, 1993
+/*	$NetBSD: err.h,v 1.11 1994/10/26 00:55:52 cgd Exp $	*/
+
+/*-
+ * Copyright (c) 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,42 +32,39 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)limits.h	8.2.1 (2.11BSD) 1996/1/11
+ *	@(#)err.h	8.1 (Berkeley) 6/2/93
  */
 
-#ifndef _LIMITS_H_
-#define	_LIMITS_H_
+#ifndef _ERR_H_
+#define	_ERR_H_
 
 /*
- * We don't need this crud at the moment so save on abuse of the C
- * preprocessor by not doing the defines.
+ * Don't use va_list in the err/warn prototypes.   Va_list is typedef'd in two
+ * places (<machine/varargs.h> and <machine/stdarg.h>), so if we include one
+ * of them here we may collide with the utility's includes.  It's unreasonable
+ * for utilities to have to include one of them to include err.h, so we get
+ * _BSD_VA_LIST_ from <machine/ansi.h> and use it.
+ */
+#include <machine/ansi.h>
+#include <sys/cdefs.h>
 
-#define	_POSIX_ARG_MAX			4096
-#define	_POSIX_CHILD_MAX		6
-#define	_POSIX_LINK_MAX			8
-#define	_POSIX_MAX_CANON		255
-#define	_POSIX_MAX_INPUT		255
-#define	_POSIX_NAME_MAX			14
-#define	_POSIX_NGROUPS_MAX		0
-#define	_POSIX_OPEN_MAX			16
-#define	_POSIX_PATH_MAX			255
-#define	_POSIX_PIPE_BUF			512
-#define	_POSIX_SSIZE_MAX		32767
-#define	_POSIX_STREAM_MAX		8
-#define	_POSIX_TZNAME_MAX		3
+__BEGIN_DECLS
+__dead void	err (int, const char *, ...)
+			__attribute__((noreturn, format (printf, 2, 3)));
+__dead void	verr (int, const char *, _BSD_VA_LIST_)
+			__attribute__((noreturn, format (printf, 2, 0)));
+__dead void	errx (int, const char *, ...)
+			__attribute__((noreturn, format (printf, 2, 3)));
+__dead void	verrx (int, const char *, _BSD_VA_LIST_)
+			__attribute__((noreturn, format (printf, 2, 0)));
+void		warn (const char *, ...)
+			__attribute__((format (printf, 1, 2)));
+void		vwarn (const char *, _BSD_VA_LIST_)
+			__attribute__((format (printf, 1, 0)));
+void		warnx (const char *, ...)
+			__attribute__((format (printf, 1, 2)));
+void		vwarnx (const char *, _BSD_VA_LIST_)
+			__attribute__((format (printf, 1, 0)));
+__END_DECLS
 
-#define	_POSIX2_BC_BASE_MAX		99
-#define	_POSIX2_BC_DIM_MAX		2048
-#define	_POSIX2_BC_SCALE_MAX	99
-#define	_POSIX2_BC_STRING_MAX	1000
-#define	_POSIX2_EQUIV_CLASS_MAX	2
-#define	_POSIX2_EXPR_NEST_MAX	32
-#define	_POSIX2_LINE_MAX		2048
-#define	_POSIX2_RE_DUP_MAX		255
-
-*/
-
-#include <machine/limits.h>
-#include <sys/syslimits.h>
-
-#endif /* !_LIMITS_H_ */
+#endif /* !_ERR_H_ */

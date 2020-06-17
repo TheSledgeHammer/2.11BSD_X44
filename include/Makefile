@@ -1,99 +1,116 @@
-#
-# Copyright (c) 1980 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
-#
-#	@(#)Makefile	5.16.1 (2.11BSD GTE) 1997/9/22
-#
+#	$NetBSD: Makefile,v 1.59 1996/05/15 21:36:43 jtc Exp $
+
+#	@(#)Makefile	5.45.1.1 (Berkeley) 5/6/91
+
 # Doing a make install builds /usr/include
 #
-# Define SHARED to indicate whether you want
-# symbolic links to the system source (``symlinks''),
-# or a separate copy (``copies'').
-# (latter useful in environments where it's
-# not possible to keep /sys publicly readable)
-#
-# The ``rm -rf''s used below are safe because rm doesn't
-# follow symbolic links.
-#
-DESTDIR=
-SUBDIRS=arpa pascal protocols OLD
-STD=	a.out.h ar.h assert.h ctype.h curses.h disktab.h fcntl.h \
-	fstab.h grp.h lastlog.h math.h memory.h mp.h mtab.h ndbm.h \
-	netdb.h nlist.h pcc.h pwd.h ranlib.h resolv.h setjmp.h \
-	sgtty.h short_names.h stab.h stdio.h string.h strings.h \
-	struct.h syscall.h sysexits.h time.h ttyent.h tzfile.h utmp.h \
-	varargs.h vfont.h vmf.h
-LINKS=	errno.h signal.h syslog.h
-MACHINE=pdp
-MACHDEP=${MACHINE} pdpif pdpuba pdpmba vaxuba
-NETDIRS=net netimp netinet netns netpup
-SYSDIRS=${NETDIRS} ${MACHDEP}
-SHARED=	symlinks
-TAGSFILE=tags
+# The ``rm -rf''s used below are safe because rm doesn't follow symbolic
+# links.
 
-all:
+# Missing: mp.h
 
-install: ${SHARED}
-	-for i in ${STD}; do \
+FILES=	a.out.h ar.h assert.h bitstring.h ctype.h dbm.h dirent.h \
+		disktab.h err.h errlst.h errno.h fstab.h fts.h glob.h grp.h \
+		ident.h kvm.h lastlog.h limits.h link_aout.h link_elf.h link.h math.h \
+		memory.h mp.h ndbm.h netdb.h netgroup.h nlist.h nl_types.h  \
+		paths.h pcc.h pwd.h ranlib.h regexp.h resolv.h setjmp.h \
+		sgtty.h signal.h stab.h stddef.h stdio.h stdlib.h string.h strings.h \
+		struct.h sysexits.h tar.h time.h ttyent.h tzfile.h unistd.h util.h \
+		utime.h utmp.h vfont.h vmf.h 
+
+.if (${MACHINE_ARCH} != "alpha")
+FILES+=	dlfcn.h link.h
+.endif
+
+MFILES=	float.h frame.h stdarg.h varargs.h
+LFILES=	errno.h fcntl.h syslog.h termios.h
+
+DIRS=	arpa protocols rpc
+LDIRS=	dev net netinet netiso netns sys ufs vm 
+
+NOOBJ=	noobj
+
+# Change SYS_INCLUDE in bsd.own.mk to "symlinks" if you don't want copies
+.include <bsd.own.mk>
+SYS_INCLUDE?=	copies
+
+includes:
+	@echo installing ${FILES}
+	@-for i in ${FILES}; do \
 		cmp -s $$i ${DESTDIR}/usr/include/$$i || \
 		    install -c -m 444 $$i ${DESTDIR}/usr/include/$$i; \
 	done
-	-for i in ${SUBDIRS}; do \
-		if [ ! -d ${DESTDIR}/usr/include/$$i ]; \
-		then \
-			mkdir ${DESTDIR}/usr/include/$$i; \
-		fi; \
+	@echo installing ${DIRS}
+	@-for i in ${DIRS}; do \
+		install -d -o ${BINOWN} -g ${BINGRP} -m 755 \
+			${DESTDIR}/usr/include/$$i; \
 		(cd $$i; for j in *.[ih]; do \
 			cmp -s $$j ${DESTDIR}/usr/include/$$i/$$j || \
 			install -c -m 444 $$j ${DESTDIR}/usr/include/$$i/$$j; \
 		done); \
 	done
-	-cmp -s Makefile.install ${DESTDIR}/usr/include/Makefile || \
-	    install -c -m 444 Makefile.install ${DESTDIR}/usr/include/Makefile
-	-for i in ${LINKS}; do \
+	@echo installing ${LFILES}
+	@-for i in ${LFILES}; do \
 		rm -f ${DESTDIR}/usr/include/$$i; \
 		ln -s sys/$$i ${DESTDIR}/usr/include/$$i; \
 	done
-	rm -f ${DESTDIR}/usr/include/machine
-	ln -s ${MACHINE} ${DESTDIR}/usr/include/machine
-	rm -f ${DESTDIR}/usr/include/frame.h
-	ln -s machine/frame.h ${DESTDIR}/usr/include/frame.h
-
-symlinks:
-	-for i in ${SYSDIRS}; do \
-		rm -rf ${DESTDIR}/usr/include/$$i; \
-		if [ ! -s ${DESTDIR}/usr/include/$$i ]; \
-		then \
-			ln -s ../../sys/$$i ${DESTDIR}/usr/include/$$i; \
-		else \
-			echo ${DESTDIR}/usr/include/$$i not removed; \
-		fi; \
+	@echo installing ${MFILES}
+	@-for i in ${MFILES}; do \
+		rm -f ${DESTDIR}/usr/include/$$i; \
+		ln -s machine/$$i ${DESTDIR}/usr/include/$$i; \
 	done
-	rm -rf ${DESTDIR}/usr/include/sys
-	-if [ ! -s ${DESTDIR}/usr/include/sys ]; \
-	then \
-		ln -s ../../sys/h ${DESTDIR}/usr/include/sys; \
-	else \
-		echo ${DESTDIR}/usr/include/sys not removed; \
-	fi
+	chown -R ${BINOWN}:${BINGRP} ${DESTDIR}/usr/include
+	find ${DESTDIR}/usr/include -type f | \
+		xargs chmod a=r
+	find ${DESTDIR}/usr/include -type d | \
+		xargs chmod u=rwx,go=rx
 
 copies:
-	-for i in ${SYSDIRS}; do \
+	@echo copies: ${LDIRS}
+	@-for i in ${LDIRS}; do \
 		rm -rf ${DESTDIR}/usr/include/$$i; \
-		cd /sys; \
-		tar cf - $$i/*.h | (cd ${DESTDIR}/usr/include; tar xpfB -); \
+		install -d -o ${BINOWN} -g ${BINGRP} -m 755 \
+			${DESTDIR}/usr/include/$$i ; \
 	done
-	rm -rf ${DESTDIR}/usr/include/sys;
-	mkdir ${DESTDIR}/usr/include/sys; 
-	chmod 775 ${DESTDIR}/usr/include/sys;
-	-(cd /sys/h; tar cf - *.h | (cd ${DESTDIR}/usr/include/sys; tar xpfB -))
+	cd ../sys; \
+	pax -rw -pa -L \
+	    `find ${LDIRS} -follow -type f -name '*.h' '!' -path \
+	    'netiso/xebec/*' -print` ${DESTDIR}/usr/include
+	rm -rf ${DESTDIR}/usr/include/machine
+	install -d -o ${BINOWN} -g ${BINGRP} -m 755 \
+		${DESTDIR}/usr/include/machine
+	pax -rw -pa -s "|../sys/arch/${MACHINE}/include||" \
+	    ../sys/arch/${MACHINE}/include/*.h \
+	    ${DESTDIR}/usr/include/machine   
+	rm -rf ${DESTDIR}/usr/include/${MACHINE_ARCH}
+	if test ${MACHINE} != ${MACHINE_ARCH} -a \
+	    -d ../sys/arch/${MACHINE_ARCH}/include; then \
+		install -d -o ${BINOWN} -g ${BINGRP} -m 755 \
+    	    	    ${DESTDIR}/usr/include/${MACHINE_ARCH}; \
+		pax -rw -pa -s "|../sys/arch/${MACHINE_ARCH}/include||" \
+		    ../sys/arch/${MACHINE_ARCH}/include/*.h \
+		    ${DESTDIR}/usr/include/${MACHINE_ARCH}; \
+	else \
+		ln -s machine ${DESTDIR}/usr/include/${MACHINE_ARCH}; \
+	fi
 
-tags:
-	cwd=/usr/include; \
-	for i in ${STD} ${LINKS}; do \
-		ctags -a -f ${TAGSFILE} $$cwd/$$i; \
+symlinks:
+	@echo symlinks: ${LDIRS}
+	@for i in ${LDIRS}; do \
+		rm -rf ${DESTDIR}/usr/include/$$i; \
+		ln -s /sys/$$i ${DESTDIR}/usr/include/$$i; \
 	done
+	rm -rf ${DESTDIR}/usr/include/machine
+	ln -s /sys/arch/${MACHINE}/include ${DESTDIR}/usr/include/machine
+	rm -rf ${DESTDIR}/usr/include/${MACHINE_ARCH}
+	if test ${MACHINE} != ${MACHINE_ARCH} -a \
+	    -d ../sys/arch/${MACHINE_ARCH}/include ; then \
+		ln -s /sys/arch/${MACHINE_ARCH}/include \
+		    ${DESTDIR}/usr/include/${MACHINE_ARCH} ; \
+	else \
+		ln -s machine ${DESTDIR}/usr/include/${MACHINE_ARCH} ; \
+	fi
 
-clean:
-	rm -f tags
+includes: ${SYS_INCLUDE}
+
+.include <bsd.prog.mk>

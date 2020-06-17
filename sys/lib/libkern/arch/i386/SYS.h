@@ -1,6 +1,9 @@
-/*
- * Copyright (c) 1988, 1993
- *	The Regents of the University of California.  All rights reserved.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * William Jolitz.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,42 +33,16 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)limits.h	8.2.1 (2.11BSD) 1996/1/11
+ *	from: @(#)SYS.h	5.5 (Berkeley) 5/7/91
+ *	$Id: SYS.h,v 1.5 1995/10/07 09:27:00 mycroft Exp $
  */
 
-#ifndef _LIMITS_H_
-#define	_LIMITS_H_
+#include <machine/asm.h>
+#include <sys/syscall.h>
 
-/*
- * We don't need this crud at the moment so save on abuse of the C
- * preprocessor by not doing the defines.
+#define	SYSCALL(x)	.text; .align 2; 2: jmp PIC_PLT(cerror); ENTRY(x); movl $(SYS_/**/x),%eax; int $0x80; jc 2b
+#define	RSYSCALL(x)	SYSCALL(x); ret
+#define	PSEUDO(x,y)	ENTRY(x); movl $(SYS_/**/y),%eax; int $0x80; ret
+#define	CALL(x,y)	call PIC_PLT(_/**/y); addl $4*x,%esp
 
-#define	_POSIX_ARG_MAX			4096
-#define	_POSIX_CHILD_MAX		6
-#define	_POSIX_LINK_MAX			8
-#define	_POSIX_MAX_CANON		255
-#define	_POSIX_MAX_INPUT		255
-#define	_POSIX_NAME_MAX			14
-#define	_POSIX_NGROUPS_MAX		0
-#define	_POSIX_OPEN_MAX			16
-#define	_POSIX_PATH_MAX			255
-#define	_POSIX_PIPE_BUF			512
-#define	_POSIX_SSIZE_MAX		32767
-#define	_POSIX_STREAM_MAX		8
-#define	_POSIX_TZNAME_MAX		3
-
-#define	_POSIX2_BC_BASE_MAX		99
-#define	_POSIX2_BC_DIM_MAX		2048
-#define	_POSIX2_BC_SCALE_MAX	99
-#define	_POSIX2_BC_STRING_MAX	1000
-#define	_POSIX2_EQUIV_CLASS_MAX	2
-#define	_POSIX2_EXPR_NEST_MAX	32
-#define	_POSIX2_LINE_MAX		2048
-#define	_POSIX2_RE_DUP_MAX		255
-
-*/
-
-#include <machine/limits.h>
-#include <sys/syslimits.h>
-
-#endif /* !_LIMITS_H_ */
+	.globl	cerror
