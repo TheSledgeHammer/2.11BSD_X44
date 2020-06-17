@@ -12,6 +12,9 @@
 #include <sys/reboot.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
+#include <vm/include/vm.h>
+#include <sys/sysctl.h>
+#include <sys/proc.h>
 
 void
 reboot()
@@ -19,7 +22,8 @@ reboot()
 	register struct a {
 		int	opt;
 	};
+	register struct proc *p = u->u_procp;
 
-	if (suser()) /* Not filled in correctly */
+	if (suser(p->p_cred, p->p_acflag))
 		boot(rootdev, ((struct a *)u->u_ap)->opt);
 }
