@@ -15,7 +15,7 @@
 #include <vm/include/vm_page.h>
 
 #include <arch/i386/include/param.h>
-#include <arch/i386/include/pmap.h>
+
 #include <sys/msgbuf.h>
 #include "../vm/pmap/cpt.h"
 
@@ -43,6 +43,26 @@ extern cpte_entry_t *KCPTEmap;			/* Kernel Clustered Page Table Entry Mapping */
 
 #define NPGPTD		4					/* Num of pages for page directory */
 
+
+/*
+ * Get PDEs and PTEs for user/kernel address space
+ */
+#define	pmap_cpt(m, v)				(&((m)->pm_cpt[VPBN(((vm_offset_t)(v))])
+#define	pmap_cpte_pa(cpte)			(*(int *)(cpte)->cpte_pte & PG_FRAME)
+
+#define	pmap_cpt_v(cpte)			((cpte)->cpte_pte->pd_v)
+
+#define pmap_pte_pa(pte)			(*(int *)(pte) & PG_FRAME)
+
+#define pmap_pde_v(pte)				((pte)->pd_v)
+#define pmap_pte_w(pte)				((pte)->pg_w)
+/* #define pmap_pte_ci(pte)			((pte)->pg_ci) */
+#define pmap_pte_m(pte)				((pte)->pg_m)
+#define pmap_pte_u(pte)				((pte)->pg_u)
+#define pmap_pte_v(pte)				((pte)->pg_v)
+#define pmap_pte_set_w(pte, v)		((pte)->pg_w = (v))
+#define pmap_pte_set_prot(pte, v)	((pte)->pg_prot = (v))
+
 static u_long
 allocpages(u_int cnt, u_long *physfree)
 {
@@ -69,7 +89,7 @@ allocate_kern_cpt(cpt, cpte)
 
 	allocpages(1, &physfree);
 	proc0paddr = allocpages(P0_KSTACK_PAGES, &physfree);
-
+	cpte->cpte_pte
 	/* Install page tables into PTD. */
 	for (a = 0; a < NKPT; a++) {
 		IdleCPT = (KCPTphys + ptoa(a)) | PG_V | PG_RW | PG_A | PG_M;
@@ -213,4 +233,24 @@ pmap_pinit(pmap)
 
 	pmap->pm_count = 1;
 	simple_lock_init(&pmap->pm_lock);
+	struct cpt *cpt;
+}
+
+struct cpte *
+pmap_cpte(pmap, va)
+	register pmap_t	pmap;
+	vm_offset_t va;
+{
+	for(int i = 0; i < NCPTE; i++) {
+		if (cpte_to_pte(cpt_lookup_cpte(pmap->pm_cpt, va), i)->pg_pfnum == PTDpde.pd_pfnum || pmap == kernel_pmap) {
+			return (pte_to_cpte((struct pte *) vtopte(va), i));
+		} else {
+			if (cpte_to_pte(cpt_lookup_cpte(pmap->pm_cpt, va), i)->pg_pfnum != APTDpde.pd_pfnum) {
+				APTDpde = cpte_to_pte(cpt_lookup_cpte(pmap->pm_cpt, va), i);
+				tlbflush();
+			}
+			return (pte_to_cpte((struct pte *) vtopte(va), i));
+		}
+	}
+	return (0);
 }

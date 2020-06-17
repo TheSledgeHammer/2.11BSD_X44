@@ -40,7 +40,13 @@
  * Machine dependent constants for Intel 386.
  */
 
-#define MACHINE "i386"
+#ifndef MACHINE
+#define MACHINE			"i386"
+#endif
+#ifndef MACHINE_ARCH
+#define	MACHINE_ARCH	"i386"
+#endif
+#define MID_MACHINE	MID_I386
 #define NCPUS 1
 
 /*
@@ -51,15 +57,24 @@
 #define	ALIGNBYTES		3
 #define	ALIGN(p)		(((u_int)(p) + ALIGNBYTES) &~ ALIGNBYTES)
 
-#define	NBPG			4096			/* bytes/page */
-#define	PGOFSET			(NBPG-1)		/* byte offset into page */
-#define	PGSHIFT			12				/* LOG2(NBPG) */
-#define	NPTEPG			(NBPG/(sizeof (struct pte)))
-#define NBPDE			1024			/* page directory size in bytes */
 
-#define NBPDR			(NBPDE*NBPG)	/* bytes/page dir */
+#define	NBPG			4096			/* bytes/page (PAGE SIZE) */
+#define NBPDE			1024			/* page directory size in bytes (PDE SIZE) */
+#define	PGOFSET			(NBPG-1)		/* byte offset into page */
+
+#define	PGSHIFT			12				/* LOG2(NBPG) */
+#define PGSIZE			(1 << PGSHIFT)	/* bytes/page (PAGE SIZE) */
+#define PGMASK			(PGSIZE - 1)
+#define	NPTEPG			(NBPG/ sizeof (pt_entry_t))
+
+#ifndef PDRSHIFT
+#define	PDRSHIFT		i386_pmap_PDRSHIFT
+#endif
+
+#ifndef NBPDR
+#define NBPDR			(1 << PDRSHIFT)	/* bytes/page dir */
+#endif
 #define	PDROFSET		(NBPDR-1)		/* byte offset into page dir */
-#define	PDRSHIFT		22				/* LOG2(NBPDR) */
 
 #define	KERNBASE		0xFE000000		/* start of kernel virtual */
 #define	BTOPKERNBASE	((u_long)KERNBASE >> PGSHIFT)
@@ -77,10 +92,10 @@
 #define	SINCR			1				/* increment of stack/NBPG */
 
 #define	UPAGES			2				/* pages of u-area */
-#define	USPACE			(UPAGES * NBPG)	/* total size of u-area */
+#define	USPACE			(UPAGES * PGSIZE)/* total size of u-area */
 
 #ifndef KSTACK_PAGES
-#define KSTACK_PAGES 4					/* Includes pcb! */
+#define KSTACK_PAGES 	4				/* Includes pcb! */
 #endif
 
 

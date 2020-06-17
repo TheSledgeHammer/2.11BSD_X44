@@ -47,9 +47,7 @@
  * structure used in page clustering.
  */
 
-#ifndef LOCORE
-struct pde
-{
+struct pde {
 unsigned int
 		pd_v:1,			/* valid bit */
 		pd_prot:2,		/* access control */
@@ -60,8 +58,8 @@ unsigned int
 		:3,				/* reserved for software */
 		pd_pfnum:20;	/* physical page frame number of pte's*/
 };
-struct pte
-{
+
+struct pte {
 unsigned int
 		pg_v:1,			/* valid bit */
 		pg_prot:2,		/* access control */
@@ -69,44 +67,26 @@ unsigned int
 		pg_u:1,			/* hardware maintained 'used' bit */
 		pg_m:1,			/* hardware maintained modified bit */
 		pg_mbz2:2,		/* reserved, must be zero */
+		pg_w:1,			/* software, wired down page */
 		pg_fod:1,		/* is fill on demand (=0) */
 		:1,				/* must write back to swap (unused) */
 		pg_nc:1,		/* 'uncacheable page' bit */
 		pg_pfnum:20;	/* physical page frame number */
 };
-struct hpte
-{
-unsigned int
-		pg_high:12,		/* special for clustering */
-		pg_pfnum:20;
-};
-struct fpte
-{
-unsigned int
-		pg_v:1,			/* valid bit */
-		pg_prot:2,		/* access control */
-		:5,
-		pg_fileno:1,	/* file mapped from or TEXT or ZERO */
-		pg_fod:1,		/* is fill on demand (=1) */
-		pg_blkno:22;	/* file system block number */
-};
-#endif
-
-#define	PD_MASK		0xffc00000	/* page directory address bits */
-#define	PD_SHIFT	22			/* page directory address bits */
 
 #define	PG_V		0x00000001
+#define	PG_RO		0x00000000
+#define	PG_RW		0x00000002
+#define	PG_u		0x00000004
 #define	PG_PROT		0x00000006 /* all protection bits . */
-#define	PG_FOD		0x00000200
+#define	PG_W		0x00000200
 #define	PG_SWAPM	0x00000400
+#define	PG_FOD		0x00000600
 #define PG_N		0x00000800 /* Non-cacheable */
 #define	PG_M		0x00000040
-#define PG_U		0x00000020 /* not currently used */
+#define PG_U		0x00000020
+#define PG_A		0x00000060
 #define	PG_FRAME	0xfffff000
-
-#define	PG_FZERO	0
-#define	PG_FTEXT	1
-#define	PG_FMAX		(PG_FTEXT)
 
 #define	PG_NOACC	0
 #define	PG_KR		0x00000000
@@ -115,13 +95,18 @@ unsigned int
 #define	PG_URKW		0x00000004
 #define	PG_UW		0x00000006
 
+#define	PG_FZERO	0
+#define	PG_FTEXT	1
+#define	PG_FMAX		(PG_FTEXT)
+
 /*
  * Page Protection Exception bits
  */
-
 #define PGEX_P		0x01	/* Protection violation vs. not present */
 #define PGEX_W		0x02	/* during a Write cycle */
 #define PGEX_U		0x04	/* access from User mode (UPL) */
+#define PGEX_RSV	0x08	/* reserved PTE field is non-zero */
+#define PGEX_I		0x10	/* during an instruction fetch */
 
 /*
  * Pte related macros
@@ -129,6 +114,18 @@ unsigned int
 #define	dirty(pte)	((pte)->pg_m)
 
 extern struct pte	*CMAP1, *CMAP2;
+
+/*
+ * Address of current and alternate address space page table maps
+ * and directories.
+ */
+#ifdef KERNEL
+extern struct pte	PTmap[], APTmap[], Upte;
+extern struct pde	PTD[], APTD[], PTDpde, APTDpde, Upde;
+extern struct pte	*Sysmap;
+
+extern int	IdlePTD;	/* physical address of "Idle" state directory */
+#endif
 
 #ifndef LOCORE
 #ifdef KERNEL

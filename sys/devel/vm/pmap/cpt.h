@@ -97,3 +97,24 @@ extern struct pte   *cpte_to_pte(struct cpte *cpte, int boff);
 extern struct cpte	*pte_to_cpte(struct pte *pte, int boff);
 
 #endif /* _CPT_H_ */
+
+/*
+ * Pmap stuff
+ */
+struct pmap {
+	cpt_entry_t				*pm_cpt;
+	pd_entry_t				*pm_pdir;		/* KVA of page directory */
+	pd_entry_t				*pm_ptab;		/* ?? */
+	boolean_t				pm_pdchanged;	/* pdir changed */
+	short					pm_dref;		/* page directory ref count */
+	short					pm_count;		/* pmap reference count */
+	simple_lock_data_t		pm_lock;		/* lock on pmap */
+	struct pmap_statistics	pm_stats;		/* pmap statistics */
+	long					pm_ptpages;		/* more stats: PT pages */
+
+	int 					pm_flags;		/* see below */
+	union descriptor 		*pm_ldt;		/* user-set LDT */
+	int 					pm_ldt_len;		/* number of LDT entries */
+	int 					pm_ldt_sel;		/* LDT selector */
+};
+typedef struct pmap	*pmap_t;
