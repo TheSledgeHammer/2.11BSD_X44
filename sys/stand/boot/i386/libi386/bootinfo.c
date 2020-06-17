@@ -31,6 +31,8 @@
 #include <sys/reboot.h>
 #include <sys/exec.h>
 #include <sys/exec_linker.h>
+#include <sys/bootinfo.h>
+
 #include <lib/libsa/loadfile.h>
 #include <machine/bootinfo.h>
 
@@ -132,6 +134,11 @@ bi_load(union bootinfo *bi, struct preloaded_file *fp, char *args)
     caddr_t					ssym, esym;
 	struct file_metadata	*md;
 
+	/*
+	 * boot environment
+	 */
+	struct bootinfo_environment bienvp = bi->bi_envp;
+
     /*
      * Version 1 bootinfo.
      */
@@ -142,6 +149,7 @@ bi_load(union bootinfo *bi, struct preloaded_file *fp, char *args)
      * Calculate boothowto.
      */
     bi->bi_boothowto = bi_getboothowto(fp->f_args);
+
 
     /*
      * Allow the environment variable 'rootdev' to override the supplied device
@@ -168,8 +176,8 @@ bi_load(union bootinfo *bi, struct preloaded_file *fp, char *args)
     if (ssym == 0 || esym == 0)
     	ssym = esym = 0;		/* sanity */
 
-    bi->bi_symtab = ssym;
-    bi->bi_esymtab = esym;
+    bienvp->bi_symtab = ssym;
+    bienvp->bi_esymtab = esym;
 
     /* find the last module in the chain */
     addr = 0;
@@ -182,14 +190,14 @@ bi_load(union bootinfo *bi, struct preloaded_file *fp, char *args)
 	addr = (addr + PAGE_MASK) & ~PAGE_MASK;
 
 	/* copy our environment */
-	bi->bi_envp = addr;
+	bienvp = addr;
 	addr = bi_copyenv(addr);
 
 	/* pad to a page boundary */
 	addr = (addr + PAGE_MASK) & ~PAGE_MASK;
 
 	/* all done copying stuff in, save end of loaded object space */
-	bi->bi_kernend = addr;
+	bienvp->bi_kernend = addr;
     
     return ((bi));
 }

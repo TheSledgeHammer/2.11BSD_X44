@@ -1,14 +1,12 @@
-- boot:
+- boot: Check & create Makefiles if needed
 	- common:
 		- isapnp.c/.h
 		- pnp.c 
-	- efi
-	- usb
-	- i386:
+	- efi:
+		- libefi & loader: Update From FreeBSD to be NetBSD/2.11BSD compatable
+	- i386: 			
 		- gptboot
 		- isoboot
 		- loader:
-			- Makefile
-			- Makefile.depend
 		- pmbr
 		- pxeldr
