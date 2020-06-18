@@ -5,11 +5,19 @@ TODO:
 
 - arch:
 	- i386:
-		- consinit.c (Needs working bootloader)
+		- ddb
+		- powernow, powernow-k7, powernow-k8
+		- consinit.c 
 		- machdep.c: cpu_reboot, cpu_reset
 		- vm_machdep.c: u->u_procp->p_p0br: (no reference in 4.4BSD-Lite2)
 			- 4.3BSD Reno/ 4.4BSD Remanent: once in struct proc. Obsolete?? 
-
+- ddb
+- dev:
+	- ata
+	- atapiscsi
+	- wscons
+	- wsfont
+	
 miscfs:
 - LOFS: 4.4BSD: Provides a functioning stack filesystem
 	- Merge best parts with NULLFS for reimplementation LOFS2
