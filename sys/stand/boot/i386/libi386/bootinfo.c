@@ -137,7 +137,7 @@ bi_load(union bootinfo *bi, struct preloaded_file *fp, char *args)
 	/*
 	 * boot environment
 	 */
-	struct bootinfo_environment bienvp = bi->bi_envp;
+	struct bootinfo_environment bienvp = get_bootinfo_environment(bi);
 
     /*
      * Version 1 bootinfo.

@@ -64,6 +64,15 @@ union bootinfo {
 	struct bootinfo_biogeom		bi_geom;			/* Geometry */
 };
 
-extern union bootinfo bootinfo;
+extern union bootinfo 			bootinfo;
+
+/* Methods to Call Various bootinfo */
+struct bootinfo_bios *get_bootinfo_bios(union bootinfo *);
+struct bootinfo_efi *get_bootinfo_efi(union bootinfo *);
+struct bootinfo_enivronment *get_bootinfo_environment(union bootinfo *);
+struct bootinfo_bootdisk *get_bootinfo_bootdisk(union bootinfo *);
+struct bootinfo_netif 	*get_bootinfo_netif(union bootinfo *);
+struct bootinfo_console *get_bootinfo_console(union bootinfo *);
+struct bootinfo_biogeom *get_bootinfo_biogeom(union bootinfo *);
 
 #endif /* _BOOTINFO_H_ */

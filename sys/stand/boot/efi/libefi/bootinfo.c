@@ -30,7 +30,7 @@
 #include <string.h>
 #include <sys/param.h>
 #include <sys/reboot.h>
-#include <sys/linker.h>
+#include <sys/exec_linker.h>
 #include <machine/elf.h>
 #include <machine/bootinfo.h>
 
@@ -51,14 +51,14 @@ static struct
     int		mask;
 } howto_names[] = {
     {"boot_askname",	RB_ASKNAME},
-    {"boot_cdrom",	RB_CDROM},
+    {"boot_cdrom",		RB_CDROM},
     {"boot_userconfig",	RB_CONFIG},
-    {"boot_ddb",	RB_KDB},
-    {"boot_gdb",	RB_GDB},
-    {"boot_single",	RB_SINGLE},
+    {"boot_ddb",		RB_KDB},
+    {"boot_gdb",		RB_GDB},
+    {"boot_single",		RB_SINGLE},
     {"boot_verbose",	RB_VERBOSE},
     {"boot_multicons",	RB_MULTIPLE},
-    {"boot_serial",	RB_SERIAL},
+    {"boot_serial",		RB_SERIAL},
     {NULL,	0}
 };
 
@@ -249,107 +249,107 @@ int
 bi_load(struct bootinfo *bi, struct preloaded_file *fp, UINTN *mapkey,
     UINTN pages)
 {
-    char			*rootdevname;
-    struct efi_devdesc		*rootdev;
-    struct preloaded_file	*xp;
-    vm_offset_t			addr, bootinfo_addr;
-    u_int			pad;
-    vm_offset_t			ssym, esym;
-    struct file_metadata	*md;
-    EFI_STATUS			status;
-    UINTN			bisz, key;
+	char *rootdevname;
+	struct efi_devdesc *rootdev;
+	struct preloaded_file *xp;
+	vm_offset_t addr, bootinfo_addr;
+	u_int pad;
+	vm_offset_t ssym, esym;
+	struct file_metadata *md;
+	EFI_STATUS status;
+	UINTN bisz, key;
 
-    /*
-     * Version 1 bootinfo.
-     */
-    bi->bi_magic = BOOTINFO_MAGIC;
-    bi->bi_version = 1;
+	/*
+	 * Version 1 bootinfo.
+	 */
+	bi->bi_magic = BOOTINFO_MAGIC;
+	bi->bi_version = 1;
 
-    /*
-     * Calculate boothowto.
-     */
-    bi->bi_boothowto = bi_getboothowto(fp->f_args);
+	/*
+	 * Calculate boothowto.
+	 */
+	bi->bi_boothowto = bi_getboothowto(fp->f_args);
 
-    /*
-     * Stash EFI System Table.
-     */
-    bi->bi_systab = (u_int64_t) ST;
+	/*
+	 * Stash EFI System Table.
+	 */
+	bi->bi_systab = (u_int64_t) ST;
 
-    /* 
-     * Allow the environment variable 'rootdev' to override the supplied
-     * device. This should perhaps go to MI code and/or have $rootdev
-     * tested/set by MI code before launching the kernel.
-     */
-    rootdevname = getenv("rootdev");
-    efi_getdev((void **)(&rootdev), rootdevname, NULL);
-    if (rootdev == NULL) {		/* bad $rootdev/$currdev */
-	printf("can't determine root device\n");
-	return(EINVAL);
-    }
+	/*
+	 * Allow the environment variable 'rootdev' to override the supplied
+	 * device. This should perhaps go to MI code and/or have $rootdev
+	 * tested/set by MI code before launching the kernel.
+	 */
+	rootdevname = getenv("rootdev");
+	efi_getdev((void**) (&rootdev), rootdevname, NULL);
+	if (rootdev == NULL) { /* bad $rootdev/$currdev */
+		printf("can't determine root device\n");
+		return (EINVAL);
+	}
 
-    /* Try reading the /etc/fstab file to select the root device */
-    getrootmount(efi_fmtdev((void *)rootdev));
-    free(rootdev);
+	/* Try reading the /etc/fstab file to select the root device */
+	getrootmount(efi_fmtdev((void*) rootdev));
+	free(rootdev);
 
-    ssym = esym = 0;
-    if ((md = file_findmetadata(fp, MODINFOMD_SSYM)) != NULL)
-	ssym = *((vm_offset_t *)&(md->md_data));
-    if ((md = file_findmetadata(fp, MODINFOMD_ESYM)) != NULL)
-	esym = *((vm_offset_t *)&(md->md_data));
-    if (ssym == 0 || esym == 0)
-	ssym = esym = 0;		/* sanity */
+	ssym = esym = 0;
+	if ((md = file_findmetadata(fp, MODINFOMD_SSYM)) != NULL)
+		ssym = *((vm_offset_t*) &(md->md_data));
+	if ((md = file_findmetadata(fp, MODINFOMD_ESYM)) != NULL)
+		esym = *((vm_offset_t*) &(md->md_data));
+	if (ssym == 0 || esym == 0)
+		ssym = esym = 0; /* sanity */
 
-    bi->bi_symtab = ssym;
-    bi->bi_esymtab = esym;
+	bi->bi_symtab = ssym;
+	bi->bi_esymtab = esym;
 
-    bi->bi_hcdp = (uint64_t)efi_get_table(&hcdp); /* DIG64 HCDP table addr. */
-    fpswa_init(&bi->bi_fpswa);		/* find FPSWA interface */
+	bi->bi_hcdp = (uint64_t) efi_get_table(&hcdp); /* DIG64 HCDP table addr. */
+	fpswa_init(&bi->bi_fpswa); /* find FPSWA interface */
 
-    /* find the last module in the chain */
-    addr = 0;
-    for (xp = file_findfile(NULL, NULL); xp != NULL; xp = xp->f_next) {
-	if (addr < (xp->f_addr + xp->f_size))
-	    addr = xp->f_addr + xp->f_size;
-    }
-    /* pad to a page boundary */
-    pad = (u_int)addr & PAGE_MASK;
-    if (pad != 0) {
-	pad = PAGE_SIZE - pad;
-	addr += pad;
-    }
+	/* find the last module in the chain */
+	addr = 0;
+	for (xp = file_findfile(NULL, NULL); xp != NULL; xp = xp->f_next) {
+		if (addr < (xp->f_addr + xp->f_size))
+			addr = xp->f_addr + xp->f_size;
+	}
+	/* pad to a page boundary */
+	pad = (u_int) addr & PAGE_MASK;
+	if (pad != 0) {
+		pad = PAGE_SIZE - pad;
+		addr += pad;
+	}
 
-    /* copy our environment */
-    bi->bi_envp = addr;
-    addr = bi_copyenv(addr);
+	/* copy our environment */
+	bi->bi_envp = addr;
+	addr = bi_copyenv(addr);
 
-    /* pad to a page boundary */
-    pad = (u_int)addr & PAGE_MASK;
-    if (pad != 0) {
-	pad = PAGE_SIZE - pad;
-	addr += pad;
-    }
-    /* copy module list and metadata */
-    bi->bi_modulep = addr;
-    addr = bi_copymodules(addr);
+	/* pad to a page boundary */
+	pad = (u_int) addr & PAGE_MASK;
+	if (pad != 0) {
+		pad = PAGE_SIZE - pad;
+		addr += pad;
+	}
+	/* copy module list and metadata */
+	bi->bi_modulep = addr;
+	addr = bi_copymodules(addr);
 
-    /* all done copying stuff in, save end of loaded object space */
-    bi->bi_kernend = addr;
+	/* all done copying stuff in, save end of loaded object space */
+	bi->bi_kernend = addr;
 
-    /*
-     * Read the memory map and stash it after bootinfo. Align the memory map
-     * on a 16-byte boundary (the bootinfo block is page aligned).
-     */
-    bisz = (sizeof(struct bootinfo) + 0x0f) & ~0x0f;
-    bi->bi_memmap = ((u_int64_t)bi) + bisz;
-    bi->bi_memmap_size = EFI_PAGE_SIZE * pages - bisz;
-    status = BS->GetMemoryMap(&bi->bi_memmap_size,
-		(EFI_MEMORY_DESCRIPTOR *)bi->bi_memmap, &key,
-		&bi->bi_memdesc_size, &bi->bi_memdesc_version);
-    if (EFI_ERROR(status)) {
-	printf("bi_load: Can't read memory map\n");
-	return EINVAL;
-    }
-    *mapkey = key;
+	/*
+	 * Read the memory map and stash it after bootinfo. Align the memory map
+	 * on a 16-byte boundary (the bootinfo block is page aligned).
+	 */
+	bisz = (sizeof(struct bootinfo) + 0x0f) & ~0x0f;
+	bi->bi_memmap = ((u_int64_t) bi) + bisz;
+	bi->bi_memmap_size = EFI_PAGE_SIZE * pages - bisz;
+	status = BS->GetMemoryMap(&bi->bi_memmap_size,
+			(EFI_MEMORY_DESCRIPTOR*) bi->bi_memmap, &key, &bi->bi_memdesc_size,
+			&bi->bi_memdesc_version);
+	if (EFI_ERROR(status)) {
+		printf("bi_load: Can't read memory map\n");
+		return EINVAL;
+	}
+	*mapkey = key;
 
-    return(0);
+	return (0);
 }

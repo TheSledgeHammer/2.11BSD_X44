@@ -35,6 +35,7 @@
 
 #include <sys/stddef.h>
 #include <sys/reboot.h>
+#include <sys/bootinfo.h>
 
 #include <boot/bootstand.h>
 #include <boot/common/bootstrap.h>
@@ -51,9 +52,10 @@
 /* Arguments passed in from the boot1/boot2 loader */
 static struct bootargs *kargs;
 
-static uint32_t			initial_howto;
-static uint32_t			initial_bootdev;
-static struct bootinfo	*initial_bootinfo;
+static uint32_t				initial_howto;
+static uint32_t				initial_bootdev;
+static union bootinfo		*bootinfo;
+static struct bootinfo_bios initial_bootinfo = bootinfo->bi_bios;
 
 struct arch_switch		archsw;		/* MI/MD interface boundary */
 

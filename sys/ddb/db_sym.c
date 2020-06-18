@@ -51,7 +51,7 @@ db_symtab_t	db_symtabs[MAXNOSYMTABS] = {{0,},};
 
 db_symtab_t	*db_last_symtab;
 
-static char *db_qualify __P((db_sym_t, char *));
+static char *db_qualify (db_sym_t, char *);
 
 /*
  * Add symbol table, with given name, to list of symbol tables.
