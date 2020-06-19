@@ -48,7 +48,11 @@
 #include <sys/mount.h>
 #include <sys/namei.h>
 #include <sys/malloc.h>
+
 #include "devel/ufs/ufml/ufml.h"
+#include "devel/ufs/ufml/ufml_meta.h"
+#include "devel/ufs/ufml/ufml_ops.h"
+#include "devel/ufs/ufml/ufml_extern.h"
 
 #define LOG2_SIZEVNODE 7		/* log2(sizeof struct vnode) */
 #define	NUFMLNODECACHE 16
@@ -76,6 +80,42 @@ ufmlfs_init()
 	printf("ufmlfs_init\n");		/* printed during system boot */
 #endif
 	ufml_node_hashtbl = hashinit(NUFMLNODECACHE, M_CACHE, &ufml_node_hash);
+	uops_init();
+}
+
+/* Check for valid filesystem types to see if the filesystem is supported */
+int
+ufml_check_fs(vp, type)
+	struct vnode *vp;
+	enum ufml_fstype type;
+{
+	int error;
+	struct ufml_metadata *meta = VTOUFML(vp)->ufml_meta;
+
+	switch(type) {
+	case UFML_FFS:
+		meta->ufml_filesystem = UFML_FFS;
+		error = 0;
+		break;
+	case UFML_MFS:
+		meta->ufml_filesystem = UFML_MFS;
+		error = 0;
+		break;
+	case UFML_LFS:
+		meta->ufml_filesystem = UFML_LFS;
+		error = 0;
+		break;
+	default:
+		meta->ufml_filesystem = UFML_UFS;
+		error = 0;
+		break;
+	}
+
+	if(error != 0) {
+		return (1);
+	}
+
+	return (error);
 }
 
 /*

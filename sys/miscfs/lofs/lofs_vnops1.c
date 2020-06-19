@@ -53,6 +53,7 @@
 #include <sys/namei.h>
 #include <sys/malloc.h>
 #include <sys/buf.h>
+#include <sys/user.h>
 #include <miscfs/lofs/lofs.h>
 
 /*

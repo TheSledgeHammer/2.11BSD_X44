@@ -128,34 +128,26 @@ loadfile_header(char *kerneltype, char *filename)
 	 return (err);
 }
 
-#ifdef BOOT_AOUT
 int
 aout_loadfile(char *filename, u_int32_t dest, struct preloaded_file **result)
 {
 	return (exec_loadfile(AOUT_KERNELTYPE, filename, dest, result));
 }
-#endif /*BOOT_AOUT*/
 
-#ifdef BOOT_ECOFF
 int
 ecoff_loadfile(char *filename, u_int32_t dest, struct preloaded_file **result)
 {
 	return (exec_loadfile(ECOFF_KERNELTYPE, filename, dest, result));
 }
-#endif /*BOOT_ECOFF*/
 
-#ifdef BOOT_ELF32
 int
 elf32_loadfile(char *filename, u_int32_t dest, struct preloaded_file **result)
 {
 	return (exec_loadfile(ELF32_KERNELTYPE, filename, dest, result));
 }
-#endif /*BOOT_ELF32*/
 
-#ifdef BOOT_ELF64
 int
 elf64_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result)
 {
 	return (exec_loadfile(ELF64_KERNELTYPE, filename, dest, result));
 }
-#endif /*BOOT_ELF64*/

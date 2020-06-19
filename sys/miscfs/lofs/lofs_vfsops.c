@@ -48,6 +48,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/vnode.h>
+#include <sys/user.h>
 #include <sys/mount.h>
 #include <sys/namei.h>
 #include <sys/malloc.h>

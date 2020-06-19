@@ -32,16 +32,17 @@
 #include <sys/reboot.h>
 
 #include <machine/bootinfo.h>
+#include <machine/cpufunc.h>
+#include <machine/metadata.h>
+#include <machine/psl.h>
+#include <machine/specialreg.h>
 
 #include "bootstrap.h"
 #include "libi386.h"
 #include "btxv86.h"
-#include <bootstand.h>
 
 #include <FBSD/linker.h>
 #include <FBSD/metadata.h>
-
-static struct bootinfo  bi;
 
 /*
  * Copy module-related data into the load area, where it can be
@@ -52,9 +53,9 @@ static struct bootinfo  bi;
  *
  * Currently, the following data are saved:
  *
- * MOD_NAME	(variable)			module name (string)
- * MOD_TYPE	(variable)			module type (string)
- * MOD_ARGS	(variable)			module parameters (string)
+ * MOD_NAME	(variable)		module name (string)
+ * MOD_TYPE	(variable)		module type (string)
+ * MOD_ARGS	(variable)		module parameters (string)
  * MOD_ADDR	sizeof(vm_offset_t)	module load address
  * MOD_SIZE	sizeof(size_t)		module size
  * MOD_METADATA	(variable)		type-specific metadata
@@ -71,7 +72,7 @@ static struct bootinfo  bi;
     COPY32(strlen(s) + 1, a, c);		\
     if (c)								\
 	i386_copyin(s, a, strlen(s) + 1);	\
-    a += roundup(strlen(s) + 1, sizeof(u_long));\
+    a += roundup(strlen(s) + 1, sizeof(uint64_t));\
 }
 
 #define MOD_NAME(a, s, c)	MOD_STR(MODINFO_NAME, a, s, c)
@@ -83,7 +84,7 @@ static struct bootinfo  bi;
     COPY32(sizeof(s), a, c);			\
     if (c)								\
 	i386_copyin(&s, a, sizeof(s));		\
-    a += roundup(sizeof(s), sizeof(u_long));	\
+    a += roundup(sizeof(s), sizeof(uint64_t));	\
 }
 
 #define MOD_ADDR(a, s, c)	MOD_VAR(MODINFO_ADDR, a, s, c)
@@ -94,7 +95,7 @@ static struct bootinfo  bi;
     COPY32(mm->md_size, a, c);			\
     if (c)								\
 	i386_copyin(mm->md_data, a, mm->md_size); \
-    a += roundup(mm->md_size, sizeof(u_long));\
+    a += roundup(mm->md_size, sizeof(uint64_t));\
 }
 
 #define MOD_END(a, c) {					\
@@ -103,32 +104,76 @@ static struct bootinfo  bi;
 }
 
 static vm_offset_t
-bi_copymodules32(vm_offset_t addr)
+bi_copymodules64(vm_offset_t addr)
 {
     struct preloaded_file	*fp;
     struct file_metadata	*md;
-    int						c;
+    int				c;
+    uint64_t			v;
 
-    c = addr != 0;
-    /* start with the first module on the list, should be the kernel */
-    for (fp = file_findfile(NULL, NULL); fp != NULL; fp = fp->f_next) {
+	c = addr != 0;
+	/* start with the first module on the list, should be the kernel */
+	for (fp = file_findfile(NULL, NULL); fp != NULL; fp = fp->f_next) {
 
-	MOD_NAME(addr, fp->f_name, c);	/* this field must come first */
-	MOD_TYPE(addr, fp->f_type, c);
-	if (fp->f_args)
-	    MOD_ARGS(addr, fp->f_args, c);
-	MOD_ADDR(addr, fp->f_addr, c);
-	MOD_SIZE(addr, fp->f_size, c);
-	for (md = fp->f_metadata; md != NULL; md = md->md_next)
-	    if (!(md->md_type & MODINFOMD_NOCOPY))
-		MOD_METADATA(addr, md, c);
-    }
-    MOD_END(addr, c);
-    return(addr);
+		MOD_NAME(addr, fp->f_name, c); /* this field must come first */
+		MOD_TYPE(addr, fp->f_type, c);
+		if (fp->f_args)
+			MOD_ARGS(addr, fp->f_args, c);
+		v = fp->f_addr;
+		MOD_ADDR(addr, v, c);
+		v = fp->f_size;
+		MOD_SIZE(addr, v, c);
+		for (md = fp->f_metadata; md != NULL; md = md->md_next)
+			if (!(md->md_type & MODINFOMD_NOCOPY))
+				MOD_METADATA(addr, md, c);
+	}
+	MOD_END(addr, c);
+	return (addr);
 }
 
 /*
- * Load the information expected by an i386 kernel.
+ * Check to see if this CPU supports long mode.
+ */
+static int
+bi_checkcpu(void)
+{
+	char *cpu_vendor;
+	int vendor[3];
+	int eflags;
+	unsigned int regs[4];
+
+	/* Check for presence of "cpuid". */
+	eflags = read_eflags();
+	write_eflags(eflags ^ PSL_ID);
+	if (!((eflags ^ read_eflags()) & PSL_ID))
+		return (0);
+
+	/* Fetch the vendor string. */
+	do_cpuid(0, regs);
+	vendor[0] = regs[1];
+	vendor[1] = regs[3];
+	vendor[2] = regs[2];
+	cpu_vendor = (char*) vendor;
+
+	/* Check for vendors that support AMD features. */
+	if (strncmp(cpu_vendor, INTEL_VENDOR_ID, 12) != 0
+			&& strncmp(cpu_vendor, AMD_VENDOR_ID, 12) != 0
+			&& strncmp(cpu_vendor, HYGON_VENDOR_ID, 12) != 0
+			&& strncmp(cpu_vendor, CENTAUR_VENDOR_ID, 12) != 0)
+		return (0);
+
+	/* Has to support AMD features. */
+	do_cpuid(0x80000000, regs);
+	if (!(regs[0] >= 0x80000001))
+		return (0);
+
+	/* Check for long mode. */
+	do_cpuid(0x80000001, regs);
+	return (regs[3] & AMDID_LM);
+}
+
+/*
+ * Load the information expected by an amd64 kernel.
  *
  * - The 'boothowto' argument is constructed
  * - The 'bootdev' argument is constructed
@@ -137,22 +182,25 @@ bi_copymodules32(vm_offset_t addr)
  * - Module metadata are formatted and placed in kernel space.
  */
 int
-bi_load32(char *args, int *howtop, int *bootdevp, vm_offset_t *bip, vm_offset_t *modulep, vm_offset_t *kernendp)
+bi_load64(char *args, vm_offset_t addr, vm_offset_t *modulep,
+    vm_offset_t *kernendp, int add_smap)
 {
     struct preloaded_file	*xp, *kfp;
     struct i386_devdesc		*rootdev;
     struct file_metadata	*md;
-    vm_offset_t				addr;
-    vm_offset_t				kernend;
-    vm_offset_t				envp;
+    uint64_t				kernend;
+    uint64_t				envp;
+    uint64_t				module;
     vm_offset_t				size;
-    vm_offset_t				ssym, esym;
     char					*rootdevname;
-    int						bootdevnr, i, howto;
-    char					*kernelname;
-    const char				*kernelpath;
+    int						howto;
 
-    howto = bi_getboothowto(args);
+	if (!bi_checkcpu()) {
+		printf("CPU doesn't support long mode\n");
+		return (EINVAL);
+	}
+
+	howto = bi_getboothowto(args);
 
 	/*
 	 * Allow the environment variable 'rootdev' to override the supplied device
@@ -169,107 +217,52 @@ bi_load32(char *args, int *howtop, int *bootdevp, vm_offset_t *bip, vm_offset_t 
 	/* Try reading the /etc/fstab file to select the root device */
 	getrootmount(i386_fmtdev((void*) rootdev));
 
-	/* Do legacy rootdev guessing */
-
-	/* XXX - use a default bootdev of 0.  Is this ok??? */
-	bootdevnr = 0;
-
-	switch (rootdev->dd.d_dev->dv_type) {
-	case DEVT_CD:
-	case DEVT_DISK:
-		/* pass in the BIOS device number of the current disk */
-		bi->bi_bios.bi_bios_dev = bd_unit2bios(rootdev);
-		bootdevnr = bd_getdev(rootdev);
-		break;
-
-	case DEVT_NET:
-	case DEVT_ZFS:
-		break;
-
-	default:
-		printf("WARNING - don't know how to boot from device type %d\n",
-				rootdev->dd.d_dev->dv_type);
-	}
-	if (bootdevnr == -1) {
-		printf("root device %s invalid\n", i386_fmtdev(rootdev));
-		return (EINVAL);
-	}
-	free(rootdev);
-
-	/* find the last module in the chain */
-	addr = 0;
-	for (xp = file_findfile(NULL, NULL); xp != NULL; xp = xp->f_next) {
-		if (addr < (xp->f_addr + xp->f_size))
-			addr = xp->f_addr + xp->f_size;
+	if (addr == 0) {
+		/* find the last module in the chain */
+		for (xp = file_findfile(NULL, NULL); xp != NULL; xp = xp->f_next) {
+			if (addr < (xp->f_addr + xp->f_size))
+				addr = xp->f_addr + xp->f_size;
+		}
 	}
 	/* pad to a page boundary */
 	addr = roundup(addr, PAGE_SIZE);
 
-	/* copy our environment */
-	envp = addr;
-	addr = bi_copyenv(addr);
-
-	/* pad to a page boundary */
-	addr = roundup(addr, PAGE_SIZE);
+	/* place the metadata before anything */
+	module = *modulep = addr;
 
 	kfp = file_findfile(NULL, "elf kernel");
 	if (kfp == NULL)
-		kfp = file_findfile(NULL, "elf32 kernel");
+		kfp = file_findfile(NULL, "elf64 kernel");
 	if (kfp == NULL)
 		panic("can't find kernel file");
 	kernend = 0; /* fill it in later */
 	file_addmetadata(kfp, MODINFOMD_HOWTO, sizeof howto, &howto);
 	file_addmetadata(kfp, MODINFOMD_ENVP, sizeof envp, &envp);
 	file_addmetadata(kfp, MODINFOMD_KERNEND, sizeof kernend, &kernend);
-	bios_addsmapdata(kfp);
+	file_addmetadata(kfp, MODINFOMD_MODULEP, sizeof module, &module);
+	if (add_smap != 0)
+		bios_addsmapdata(kfp);
 
-	/* Figure out the size and location of the metadata */
-	*modulep = addr;
-	size = bi_copymodules32(0);
-	kernend = roundup(addr + size, PAGE_SIZE);
+	size = bi_copymodules64(0);
+
+	/* copy our environment */
+	envp = roundup(addr + size, PAGE_SIZE);
+	addr = bi_copyenv(envp);
+
+	/* set kernend */
+	kernend = roundup(addr, PAGE_SIZE);
 	*kernendp = kernend;
 
 	/* patch MODINFOMD_KERNEND */
 	md = file_findmetadata(kfp, MODINFOMD_KERNEND);
 	bcopy(&kernend, md->md_data, sizeof kernend);
 
+	/* patch MODINFOMD_ENVP */
+	md = file_findmetadata(kfp, MODINFOMD_ENVP);
+	bcopy(&envp, md->md_data, sizeof envp);
+
 	/* copy module list and metadata */
-	(void) bi_copymodules32(addr);
-
-	ssym = esym = 0;
-	md = file_findmetadata(kfp, MODINFOMD_SSYM);
-	if (md != NULL)
-		ssym = *((vm_offset_t*) &(md->md_data));
-	md = file_findmetadata(kfp, MODINFOMD_ESYM);
-	if (md != NULL)
-		esym = *((vm_offset_t*) &(md->md_data));
-	if (ssym == 0 || esym == 0)
-		ssym = esym = 0; 			/* sanity */
-
-	/* legacy bootinfo structure */
-	kernelname = getenv("kernelname");
-	i386_getdev(NULL, kernelname, &kernelpath);
-	bi.bi_version = BOOTINFO_VERSION;
-	bi.bi_kernelname = 0; /* XXX char * -> kernel name */
-	bi.bi_disk.bi_nfs_diskless = 0; /* struct nfs_diskless * */
-	bi.bi_bios.bi_n_bios_used = 0; /* XXX would have to hook biosdisk driver for these */
-	for (i = 0; i < N_BIOS_GEOM; i++)
-		bi->bi_geom.bi_bios_geom[i] = bd_getbigeom(i);
-	bi.bi_bios.bi_size = sizeof(bi);
-	bi.bi_bios.bi_memsizes_valid = 1;
-	bi.bi_bios.bi_basemem = bios_basemem / 1024;
-	bi.bi_bios.bi_extmem = bios_extmem / 1024;
-	bi.bi_envp.bi_environment = envp;
-	bi.bi_envp.bi_modulep = *modulep;
-	bi.bi_envp.bi_kernend = kernend;
-	bi.bi_kernelname = VTOP(kernelpath);
-	bi.bi_envp.bi_symtab = ssym; /* XXX this is only the primary kernel symtab */
-	bi.bi_envp.bi_esymtab = esym;
-
-	/* legacy boot arguments */
-	*howtop = howto | RB_BOOTINFO;
-	*bootdevp = bootdevnr;
-	*bip = VTOP(&bi);
+	(void) bi_copymodules64(*modulep);
 
 	return (0);
 }

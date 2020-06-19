@@ -117,6 +117,10 @@ struct uop_snapshot_commit_args {
 	struct vnode 				*a_vp;
 };
 
+#ifdef KERNEL
 extern struct ufmlops uops;
 
+void uops_init();
+
+#endif
 #endif /* _UFS_UFML_OPS_H_ */

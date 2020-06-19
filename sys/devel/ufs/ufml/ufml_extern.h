@@ -33,8 +33,8 @@ int ufml_check_fs(struct vnode *vp, enum ufml_fstype type);
 
 /* ufml_archive.c */
 int ufml_check_archive(struct vnode *vp, enum ufml_archtype type);
-ufml_archive();
-ufml_extract();
+int ufml_archive();
+int ufml_extract();
 
 /* ufml_compress.c */
 int ufml_check_compression(struct vnode *vp, enum ufml_comptype type);

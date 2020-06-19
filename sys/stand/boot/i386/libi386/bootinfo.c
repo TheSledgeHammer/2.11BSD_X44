@@ -27,6 +27,8 @@
  */
 
 
+
+
 #include <sys/param.h>
 #include <sys/reboot.h>
 #include <sys/exec.h>
@@ -34,12 +36,12 @@
 #include <sys/boot.h>
 
 #include <lib/libsa/loadfile.h>
-#include <bootinfo.h>
-
 #include <boot/bootstand.h>
 #include "bootstrap.h"
 #include "libi386.h"
 #include "btxv86.h"
+
+#include <machine/bootinfo.h>
 
 int
 bi_getboothowto(char *kargs)
@@ -133,7 +135,6 @@ bi_load(struct bootinfo *bi, struct preloaded_file *fp, char *args)
     caddr_t					ssym, esym;
 	struct file_metadata	*md;
 	int 					bootdevnr;
-
 
     /*
      * Version 1 bootinfo.

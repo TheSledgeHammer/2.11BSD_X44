@@ -157,7 +157,32 @@ extern const char bootprog_interp[];
 #define	INTERP_DEFINE(interpstr) \
 const char bootprog_interp[] = "$Interpreter:" interpstr
 
+/*
+ * Preloaded file metadata header.
+ *
+ * Metadata are allocated on our heap, and copied into kernel space
+ * before executing the kernel.
+ */
+struct file_metadata
+{
+    size_t					md_size;
+    uint16_t				md_type;
+    struct file_metadata	*md_next;
+    char					md_data[1];	/* data are immediately appended */
+};
+
 struct preloaded_file;
+struct mod_depend;
+
+struct kernel_module
+{
+    char					*m_name;	/* module name */
+    int						m_version;	/* module version */
+/*    char					*m_args;*/	/* arguments for the module */
+    struct preloaded_file	*m_fp;
+    struct kernel_module	*m_next;
+};
+
 
 /*
  * Preloaded file information. Depending on type, file can contain
@@ -178,6 +203,9 @@ struct preloaded_file
     size_t					f_size;			/* file size */
     struct preloaded_file	*f_next;		/* next file */
     u_long                  marks[MARK_MAX];/* filled by loadfile() */
+    /* May Not Stay */
+    struct kernel_module	*f_modules;	/* list of modules if any */
+    struct file_metadata	*f_metadata;	/* metadata that will be placed in the module directory */
 };
 
 struct file_format

@@ -45,3 +45,11 @@ Requirements:
 	- ddb
 	- kern_ksyms
 initiates in machine machdep
+
+NBSD:
+- Contains a mix of FreeBSD's Multiboot & NetBSD's Multiboot with FreeBSD's Multiboot structure (Doesn't adhere to the rest of Boot)
+- Issues: FreeBSD relies on file_metadata for its bootloader, especially in multiboot_exec. 
+- Current implementation for 2.11BSD is closer to NetBSD
+- Use a NetBSD Multiboot structure, but maintain FreeBSD's multiboot_exec function. (Should adhere to the NetBSD infrastructure & provide the FreeBSD bootloader)
+- Keeping only what is needed of FreeBSD's multiboot_exec and adding what is needed from NetBSD's exec_multiboot1
+

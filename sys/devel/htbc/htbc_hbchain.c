@@ -33,6 +33,7 @@
  * - Create a Version/ Snapshot (with Timestamp & Hash) of the current HTBC tree location before committing the write to LFS.
  */
 
+#include <sys/user.h>
 #include <devel/htbc/htbc.h>
 #include <devel/htbc/htbc_htree.h>
 
@@ -45,39 +46,94 @@ struct hbchain {
 	uint32_t					hc_hash;
 };
 
+void
+hbchain_init(hch)
+	struct hbchain *hch;
+{
+	CIRCLEQ_INIT(hch->hc_header);
+}
+
+void
+hbchain_insert_head(hch)
+	struct hbchain *hch;
+{
+	CIRCLEQ_INSERT_HEAD(hch->hc_header, hch, hc_entries);
+}
+
+void
+hbchain_insert_tail(hch)
+	struct hbchain *hch;
+{
+	CIRCLEQ_INSERT_TAIL(hch->hc_header, hch, hc_entries);
+}
+
+void
+hbchain_remove(hch)
+	struct hbchain *hch;
+{
+	CIRCLEQ_REMOVE(hch->hc_header, hch, hc_entries);
+}
+
+/* Searches the next entry in the blockchain for matching hash value */
+struct hbchain *
+hbchain_search_next(hch, hash)
+	struct hbchain *hch;
+	uint32_t hash;
+{
+	CIRCLEQ_FOREACH(hch, hch->hc_header, hc_entries) {
+		if(CIRCLEQ_NEXT(hch, hc_entries)->hc_hash == hash) {
+			return (CIRCLEQ_NEXT(hch, hc_entries));
+		}
+	}
+	return (NULL);
+}
+
+/* Searches the previous entry in the blockchain for matching hash value */
+struct hbchain *
+hbchain_search_prev(hch, hash)
+	struct hbchain *hch;
+	uint32_t hash;
+{
+	CIRCLEQ_FOREACH(hch, hch->hc_header, hc_entries) {
+		if(CIRCLEQ_PREV(hch, hc_entries)->hc_hash == hash) {
+			return (CIRCLEQ_PREV(hch, hc_entries));
+		}
+	}
+	return (NULL);
+}
+
 static uint32_t
-get_hash(struct hbchain *hch)
+hbchain_get_hash(struct hbchain *hch)
 {
 	return hch->hc_hash;
 }
 
 static uint32_t
-get_timestamp(struct hbchain *hch)
+hbchain_get_timestamp(struct hbchain *hch)
 {
 	return hch->hc_timestamp;
 }
 
 static uint32_t
-get_version(struct hbchain *hch)
+hbchain_get_version(struct hbchain *hch)
 {
 	return hch->hc_version;
 }
 
 static void
-set_hash(struct hbchain *hch, uint32_t hash)
+hbchain_set_hash(struct hbchain *hch, uint32_t hash)
 {
 	hch->hc_hash = hash;
 }
 
 static void
-set_timestamp(struct hbchain *hch, uint32_t timestamp)
+hbchain_set_timestamp(struct hbchain *hch, uint32_t timestamp)
 {
 	hch->hc_timestamp = timestamp;
 }
 
 static void
-set_version(struct hbchain *hch, uint32_t version)
+hbchain_set_version(struct hbchain *hch, uint32_t version)
 {
 	hch->hc_version = version;
 }
-
