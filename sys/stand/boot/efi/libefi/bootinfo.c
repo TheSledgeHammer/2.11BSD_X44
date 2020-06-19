@@ -30,7 +30,9 @@
 #include <string.h>
 #include <sys/param.h>
 #include <sys/reboot.h>
+#include <sys/exec.h>
 #include <sys/exec_linker.h>
+#include <sys/exec_elf.h>
 #include <machine/elf.h>
 #include <machine/bootinfo.h>
 

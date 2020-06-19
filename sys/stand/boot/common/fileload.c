@@ -31,7 +31,7 @@
 /*
  * file/module function dispatcher, support, etc.
  */
-
+#include <sys/user.h>
 #include <sys/param.h>
 #include <sys/queue.h>
 #include <lib/libsa/loadfile.h>

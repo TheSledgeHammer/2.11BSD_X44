@@ -31,10 +31,10 @@
 #include <sys/reboot.h>
 #include <sys/exec.h>
 #include <sys/exec_linker.h>
-#include <sys/bootinfo.h>
+#include <sys/boot.h>
 
 #include <lib/libsa/loadfile.h>
-#include <machine/bootinfo.h>
+#include <bootinfo.h>
 
 #include <boot/bootstand.h>
 #include "bootstrap.h"
@@ -48,8 +48,8 @@ bi_getboothowto(char *kargs)
     int		howto;
     int		vidconsole;
 
-    //howto = boot_parse_cmdline(kargs);
-    //howto |= boot_env_to_howto();
+    howto = boot_parse_cmdline(kargs);
+    howto |= boot_env_to_howto();
 
     howto = 0;
 
@@ -86,7 +86,7 @@ bi_getboothowto(char *kargs)
 void
 bi_setboothowto(int howto)
 {
-	struct bootinfo_common *common;
+	boot_howto_to_env(howto);
 }
 
 /*
@@ -117,14 +117,13 @@ bi_copyenv(vm_offset_t addr)
     return(addr);
 }
 
-/* Copied from NetBSD arch/ia64
- * Load the information expected by an ia64 kernel.
+/*
+ * Load basic information expected by "arch" kernel.
  *
- * - The kernel environment is copied into kernel space.
- * - Module metadata are formatted and placed in kernel space.
+ *  - The 'boothowto' argument is constructed
  */
 int
-bi_load(union bootinfo *bi, struct preloaded_file *fp, char *args)
+bi_load(struct bootinfo *bi, struct preloaded_file *fp, char *args)
 {
 	char					*rootdevname;
 	struct i386_devdesc		*rootdev;
@@ -133,23 +132,21 @@ bi_load(union bootinfo *bi, struct preloaded_file *fp, char *args)
     char					*kernelname;
     caddr_t					ssym, esym;
 	struct file_metadata	*md;
+	int 					bootdevnr;
 
-	/*
-	 * boot environment
-	 */
-	struct bootinfo_environment bienvp = get_bootinfo_environment(bi);
 
     /*
      * Version 1 bootinfo.
      */
-    bi->bi_magic = BOOTINFO_MAGIC;
+	if(BOOTINFO_MAGIC) {
+		bi->bi_magic = 	BOOTINFO_MAGIC;
+	}
     bi->bi_version = 1;
 
     /*
      * Calculate boothowto.
      */
     bi->bi_boothowto = bi_getboothowto(fp->f_args);
-
 
     /*
      * Allow the environment variable 'rootdev' to override the supplied device
@@ -163,9 +160,29 @@ bi_load(union bootinfo *bi, struct preloaded_file *fp, char *args)
     	return(EINVAL);
     }
 
-
     /* Try reading the /etc/fstab file to select the root device */
     getrootmount(i386_fmtdev((void *)rootdev));
+	/* Do legacy rootdev guessing */
+
+	/* XXX - use a default bootdev of 0.  Is this ok??? */
+	bootdevnr = 0;
+
+	switch (rootdev->dd.d_dev->dv_type) {
+	case DEVT_CD:  	/* to be implemented */
+	case DEVT_DISK:
+		/* pass in the BIOS device number of the current disk */
+		bi->bi_bios.bi_bios_dev = bd_unit2bios(rootdev);
+		bootdevnr = bd_getdev(rootdev);
+		break;
+	case DEVT_NET: /* to be implemented */
+	default:
+		printf("WARNING - don't know how to boot from device type %d\n",
+				rootdev->dd.d_dev->dv_type);
+	}
+	if (bootdevnr == -1) {
+		printf("root device %s invalid\n", i386_fmtdev(rootdev));
+		return (EINVAL);
+	}
     free(rootdev);
 
     ssym = esym = 0;
@@ -174,10 +191,10 @@ bi_load(union bootinfo *bi, struct preloaded_file *fp, char *args)
     esym = fp->marks[MARK_END];
 
     if (ssym == 0 || esym == 0)
-    	ssym = esym = 0;		/* sanity */
+    	ssym = esym = 0;					/* sanity */
 
-    bienvp->bi_symtab = ssym;
-    bienvp->bi_esymtab = esym;
+    bi->bi_envp->bi_symtab = ssym;
+    bi->bi_envp->bi_esymtab = esym;
 
     /* find the last module in the chain */
     addr = 0;
@@ -190,14 +207,11 @@ bi_load(union bootinfo *bi, struct preloaded_file *fp, char *args)
 	addr = (addr + PAGE_MASK) & ~PAGE_MASK;
 
 	/* copy our environment */
-	bienvp = addr;
+	bi->bi_envp->bi_environment = addr;
 	addr = bi_copyenv(addr);
 
 	/* pad to a page boundary */
 	addr = (addr + PAGE_MASK) & ~PAGE_MASK;
 
-	/* all done copying stuff in, save end of loaded object space */
-	bienvp->bi_kernend = addr;
-    
-    return ((bi));
+	return (0);
 }

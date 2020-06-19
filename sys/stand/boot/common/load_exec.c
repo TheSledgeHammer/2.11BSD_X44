@@ -32,11 +32,13 @@
 
 #include <sys/param.h>
 #include <sys/exec.h>
+#include <sys/user.h>
 
 #include <lib/libsa/loadfile.h>
 #include <boot/bootstand.h>
-
 #include "bootstrap.h"
+
+#include <machine/loadfile_machdep.h>
 
 /*
  * Attempts to load the file (file) as an module defined by the parameter 'kerneltype'.

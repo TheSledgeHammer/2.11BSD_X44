@@ -59,7 +59,6 @@
 #include <sys/sysctl.h>
 #include <sys/exec.h>
 #include <sys/exec_linker.h>
-#include <sys/bootinfo.h>
 
 #include <net/netisr.h>
 

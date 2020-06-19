@@ -71,7 +71,6 @@ int	fdloadfile(int fd, u_long *, int);
 #ifndef MACHINE_LOADFILE_MACHDEP
 #define MACHINE_LOADFILE_MACHDEP "machine/loadfile_machdep.h"
 #endif
-#include MACHINE_LOADFILE_MACHDEP
 
 #ifdef BOOT_ECOFF
 #include <sys/exec_ecoff.h>

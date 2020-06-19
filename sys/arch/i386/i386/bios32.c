@@ -73,10 +73,10 @@
 
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>
-#include <machine/isa_machdep.h>
 
-#include <machine/segments.h>
 #include <machine/bios32.h>
+#include <machine/isa_machdep.h>
+#include <machine/segments.h>
 
 #define	BIOS32_START	0xe0000
 #define	BIOS32_SIZE		0x20000

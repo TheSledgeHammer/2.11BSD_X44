@@ -88,8 +88,8 @@ static int	biospnp_call(int func, const char *fmt, ...);
 
 #define vsegofs(vptr)	(((uint32_t)VTOPSEG(vptr) << 16) + VTOPOFF(vptr))
 
-typedef void    v86bios_t(uint32_t, uint32_t, uint32_t, uint32_t);
-v86bios_t	*v86bios = (v86bios_t *)v86int;
+typedef void    		v86bios_t(uint32_t, uint32_t, uint32_t, uint32_t);
+v86bios_t *v86bios = 	(v86bios_t *)v86int;
 
 #define	biospnp_f00(NumNodes, NodeSize)				biospnp_call(0x00, "ll", NumNodes, NodeSize)
 #define biospnp_f01(Node, devNodeBuffer, Control)	biospnp_call(0x01, "llw", Node, devNodeBuffer, Control)

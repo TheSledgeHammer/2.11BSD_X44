@@ -27,7 +27,6 @@
  */
 
 #include <sys/cdefs.h>
-#include <sys/bootinfo.h>
 #include <machine/bootinfo.h>
 
 #include "pc.h"

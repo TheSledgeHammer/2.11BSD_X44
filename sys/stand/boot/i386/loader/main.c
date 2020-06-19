@@ -32,10 +32,9 @@
  * MD bootstrap main() and assorted miscellaneous
  * commands.
  */
-
+#include <sys/user.h>
 #include <sys/stddef.h>
 #include <sys/reboot.h>
-#include <sys/bootinfo.h>
 
 #include <boot/bootstand.h>
 #include <boot/common/bootstrap.h>
