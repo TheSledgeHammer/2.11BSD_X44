@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 1992, 1993, 1994
- *	The Regents of the University of California.  All rights reserved.
+ * Copyright (c) 1992 The Regents of the University of California
+ * Copyright (c) 1990, 1992 Jan-Simon Pendry
+ * All rights reserved.
  *
  * This code is derived from software donated to Berkeley by
  * Jan-Simon Pendry.
@@ -32,52 +33,35 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ *	@(#)mount_lofs.c	5.3 (Berkeley) 7/12/92
  */
-
-#ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1992, 1993, 1994\n\
-	The Regents of the University of California.  All rights reserved.\n";
-#endif /* not lint */
-
-#ifndef lint
-static char sccsid[] = "@(#)mount_null.c	8.6 (Berkeley) 4/26/95";
-#endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/mount.h>
-#include <miscfs/nullfs/null.h>
+#include <miscfs/lofs/lofs.h>
 
-#include <err.h>
+#include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "mntopts.h"
-
-struct mntopt mopts[] = {
-	MOPT_STDOPTS,
-	{ NULL }
-};
-
-int	subdir __P((const char *, const char *));
-void	usage __P((void));
+void usage __P((void));
 
 int
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	struct null_args args;
+	struct lofs_args args;
 	int ch, mntflags;
-	char target[MAXPATHLEN];
 
 	mntflags = 0;
-	while ((ch = getopt(argc, argv, "o:")) != EOF)
+	while ((ch = getopt(argc, argv, "F:")) != EOF)
 		switch(ch) {
-		case 'o':
-			getmntopts(optarg, mopts, &mntflags, 0);
+		case 'F':
+			mntflags = atoi(optarg);
 			break;
 		case '?':
 		default:
@@ -89,41 +73,19 @@ main(argc, argv)
 	if (argc != 2)
 		usage();
 
-	if (realpath(argv[0], target) == 0)
-		err(1, "%s", target);
+	args.target = argv[0];
 
-	if (subdir(target, argv[1]) || subdir(argv[1], target))
-		errx(1, "%s (%s) and %s are not distinct paths",
-		    argv[0], target, argv[1]);
-
-	args.target = target;
-
-	if (mount("loopback", argv[1], mntflags, &args))
-		err(1, NULL);
+	if (mount(MOUNT_LOFS, argv[1], mntflags, &args)) {
+		(void)fprintf(stderr, "mount_lofs: %s\n", strerror(errno));
+		exit(1);
+	}
 	exit(0);
-}
-
-int
-subdir(p, dir)
-	const char *p;
-	const char *dir;
-{
-	int l;
-
-	l = strlen(dir);
-	if (l <= 1)
-		return (1);
-
-	if ((strncmp(p, dir, l) == 0) && (p[l] == '/' || p[l] == '\0'))
-		return (1);
-
-	return (0);
 }
 
 void
 usage()
 {
 	(void)fprintf(stderr,
-		"usage: mount_null [-o options] target_fs mount_point\n");
+	    "usage: mount_lofs [ -F fsoptions ] target_fs mount_point\n");
 	exit(1);
 }
