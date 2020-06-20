@@ -25,79 +25,6 @@
 
 static const char mbl_name[] = "FreeBSD Loader";
 
-void
-ksyms_addr_set(void *ehdr, void *shdr, void *symbase)
-{
-	int class;
-	Elf32_Ehdr *ehdr32 = NULL;
-	Elf64_Ehdr *ehdr64 = NULL;
-	uint64_t shnum;
-	int i;
-
-	class = ((Elf_Ehdr*) ehdr)->e_ident[EI_CLASS];
-
-	switch (class) {
-	case ELFCLASS32:
-		ehdr32 = (Elf32_Ehdr*) ehdr;
-		shnum = ehdr32->e_shnum;
-		break;
-	case ELFCLASS64:
-		ehdr64 = (Elf64_Ehdr*) ehdr;
-		shnum = ehdr64->e_shnum;
-		break;
-	default:
-		panic("Unexpected ELF class");
-		break;
-	}
-
-	for (i = 0; i < shnum; i++) {
-		Elf64_Shdr *shdrp64 = NULL;
-		Elf32_Shdr *shdrp32 = NULL;
-		uint64_t shtype, shaddr, shsize, shoffset;
-
-		switch (class) {
-		case ELFCLASS64:
-			shdrp64 = &((Elf64_Shdr*) shdr)[i];
-			shtype = shdrp64->sh_type;
-			shaddr = shdrp64->sh_addr;
-			shsize = shdrp64->sh_size;
-			shoffset = shdrp64->sh_offset;
-			break;
-		case ELFCLASS32:
-			shdrp32 = &((Elf32_Shdr*) shdr)[i];
-			shtype = shdrp32->sh_type;
-			shaddr = shdrp32->sh_addr;
-			shsize = shdrp32->sh_size;
-			shoffset = shdrp32->sh_offset;
-			break;
-		default:
-			panic("Unexpected ELF class");
-			break;
-		}
-
-		if (shtype != SHT_SYMTAB && shtype != SHT_STRTAB)
-			continue;
-
-		if (shaddr != 0 || shsize == 0)
-			continue;
-
-		shaddr = (uint64_t) (uintptr_t) (symbase + shoffset);
-
-		switch (class) {
-		case ELFCLASS64:
-			shdrp64->sh_addr = shaddr;
-			break;
-		case ELFCLASS32:
-			shdrp32->sh_addr = shaddr;
-			break;
-		default:
-			panic("Unexpected ELF class");
-			break;
-		}
-	}
-	return;
-}
-
 static int
 multiboot_loadfile(char *filename, uint64_t dest, struct preloaded_file **result)
 {
@@ -258,4 +185,216 @@ error:
 	if (cmdline)
 		free(cmdline);
 	return (error);
+}
+
+void
+ksyms_addr_set(void *ehdr, void *shdr, void *symbase)
+{
+	int class;
+	Elf32_Ehdr *ehdr32 = NULL;
+	Elf64_Ehdr *ehdr64 = NULL;
+	uint64_t shnum;
+	int i;
+
+	class = ((Elf_Ehdr*) ehdr)->e_ident[EI_CLASS];
+
+	switch (class) {
+	case ELFCLASS32:
+		ehdr32 = (Elf32_Ehdr*) ehdr;
+		shnum = ehdr32->e_shnum;
+		break;
+	case ELFCLASS64:
+		ehdr64 = (Elf64_Ehdr*) ehdr;
+		shnum = ehdr64->e_shnum;
+		break;
+	default:
+		panic("Unexpected ELF class");
+		break;
+	}
+
+	for (i = 0; i < shnum; i++) {
+		Elf64_Shdr *shdrp64 = NULL;
+		Elf32_Shdr *shdrp32 = NULL;
+		uint64_t shtype, shaddr, shsize, shoffset;
+
+		switch (class) {
+		case ELFCLASS64:
+			shdrp64 = &((Elf64_Shdr*) shdr)[i];
+			shtype = shdrp64->sh_type;
+			shaddr = shdrp64->sh_addr;
+			shsize = shdrp64->sh_size;
+			shoffset = shdrp64->sh_offset;
+			break;
+		case ELFCLASS32:
+			shdrp32 = &((Elf32_Shdr*) shdr)[i];
+			shtype = shdrp32->sh_type;
+			shaddr = shdrp32->sh_addr;
+			shsize = shdrp32->sh_size;
+			shoffset = shdrp32->sh_offset;
+			break;
+		default:
+			panic("Unexpected ELF class");
+			break;
+		}
+
+		if (shtype != SHT_SYMTAB && shtype != SHT_STRTAB)
+			continue;
+
+		if (shaddr != 0 || shsize == 0)
+			continue;
+
+		shaddr = (uint64_t) (uintptr_t) (symbase + shoffset);
+
+		switch (class) {
+		case ELFCLASS64:
+			shdrp64->sh_addr = shaddr;
+			break;
+		case ELFCLASS32:
+			shdrp32->sh_addr = shaddr;
+			break;
+		default:
+			panic("Unexpected ELF class");
+			break;
+		}
+	}
+	return;
+}
+
+static int
+exec_multiboot1(struct multiboot_package *mbp)
+{
+	struct multiboot_info *mbi;
+	int i, len;
+	char *cmdline;
+
+	mbi = alloc(sizeof(struct multiboot_info));
+	mbi->mi_flags = MULTIBOOT_INFO_MEMORY | MULTIBOOT_INFO_BOOT_LOADER_NAME;
+
+	mbi->mi_mem_upper = mbp->mbp_extmem;
+	mbi->mi_mem_lower = mbp->mbp_basemem;
+
+	if (mbp->mbp_args) {
+		mbi->mi_flags |= MULTIBOOT_INFO_HAS_CMDLINE;
+		len = strlen(mbp->mbp_file) + 1 + strlen(mbp->mbp_args) + 1;
+		cmdline = alloc(len);
+		snprintf(cmdline, len, "%s %s", mbp->mbp_file, mbp->mbp_args);
+		mbi->mi_cmdline = (char *) vtophys(cmdline);
+	}
+
+	/* Loads Modules code can be added Here */
+
+	if (mbp->mbp_marks[MARK_SYM] != 0) {
+		Elf32_Ehdr ehdr;
+		void *shbuf;
+		size_t shlen;
+		u_long shaddr;
+
+		/* copies from absolute virtual address */
+		pvbcopy((void *)mbp->mbp_marks[MARK_SYM], &ehdr, sizeof(ehdr));
+
+		if (memcmp(&ehdr.e_ident, ELFMAG, SELFMAG) != 0)
+			goto skip_ksyms;
+
+		shaddr = mbp->mbp_marks[MARK_SYM] + ehdr.e_shoff;
+
+		shlen = ehdr.e_shnum * ehdr.e_shentsize;
+		shbuf = alloc(shlen);
+
+		pvbcopy((void*) shaddr, shbuf, shlen);
+		ksyms_addr_set(&ehdr, shbuf, (void*) (KERNBASE + mbp->mbp_marks[MARK_SYM]));
+		vpbcopy(shbuf, (void*) shaddr, shlen);
+
+		dealloc(shbuf, shlen);
+
+		mbi->mi_elfshdr_num = ehdr.e_shnum;
+		mbi->mi_elfshdr_size = ehdr.e_shentsize;
+		mbi->mi_elfshdr_addr = shaddr;
+		mbi->mi_elfshdr_shndx = ehdr.e_shstrndx;
+
+		mbi->mi_flags |= MULTIBOOT_INFO_HAS_ELF_SYMS;
+	}
+skip_ksyms:
+#ifdef DEBUG
+	printf("Start @ 0x%lx [%ld=0x%lx-0x%lx]...\n",
+	mbp->mbp_marks[MARK_ENTRY],
+	mbp->mbp_marks[MARK_NSYM],
+	mbp->mbp_marks[MARK_SYM],
+	mbp->mbp_marks[MARK_END]);
+#endif
+
+	/* Does not return */
+	multiboot(mbp->mbp_marks[MARK_ENTRY], vtophys(mbi), x86_trunc_page(mbi->mi_mem_lower * 1024), MULTIBOOT_INFO_MAGIC);
+	return 0;
+}
+
+
+static size_t
+mbi_elf_sections(struct multiboot_package *mbp, void *buf)
+{
+	size_t len = 0;
+	struct multiboot_tag_elf_sections *mbt = buf;
+	Elf_Ehdr ehdr;
+	int class;
+	Elf32_Ehdr *ehdr32 = NULL;
+	Elf64_Ehdr *ehdr64 = NULL;
+	uint64_t shnum, shentsize, shstrndx, shoff;
+	size_t shdr_len;
+
+	if (mbp->mbp_marks[MARK_SYM] == 0)
+		goto out;
+
+	pvbcopy((void *)mbp->mbp_marks[MARK_SYM], &ehdr, sizeof(ehdr));
+
+	/*
+	 * Check this is a ELF header
+	 */
+	if (memcmp(&ehdr.e_ident, ELFMAG, SELFMAG) != 0)
+		goto out;
+
+	class = ehdr.e_ident[EI_CLASS];
+
+	switch (class) {
+	case ELFCLASS32:
+		ehdr32 = (Elf32_Ehdr *)&ehdr;
+		shnum = ehdr32->e_shnum;
+		shentsize = ehdr32->e_shentsize;
+		shstrndx = ehdr32->e_shstrndx;
+		shoff = ehdr32->e_shoff;
+		break;
+	case ELFCLASS64:
+		ehdr64 = (Elf64_Ehdr *)&ehdr;
+		shnum = ehdr64->e_shnum;
+		shentsize = ehdr64->e_shentsize;
+		shstrndx = ehdr64->e_shstrndx;
+		shoff = ehdr64->e_shoff;
+		break;
+	default:
+		goto out;
+	}
+
+	shdr_len = shnum * shentsize;
+	if (shdr_len == 0)
+		goto out;
+
+	len = sizeof(*mbt) + shdr_len;
+	if (mbt) {
+		char *shdr = (char *)mbp->mbp_marks[MARK_SYM] + shoff;
+
+		mbt->type = MULTIBOOT_TAG_TYPE_ELF_SECTIONS;
+		mbt->size = len;
+		mbt->num = shnum;
+		mbt->entsize = shentsize;
+		mbt->shndx = shstrndx;
+
+		pvbcopy((void *)shdr, mbt + 1, shdr_len);
+
+		/*
+		 * Adjust sh_addr for symtab and strtab
+		 * section that have been loaded.
+		 */
+		ksyms_addr_set(&ehdr, mbt + 1, (void *)mbp->mbp_marks[MARK_SYM]);
+	}
+
+out:
+	return roundup(len, MULTIBOOT_TAG_ALIGN);
 }
