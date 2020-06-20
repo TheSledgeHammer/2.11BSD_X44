@@ -28,7 +28,8 @@
  * @(#)vfs_htbc.c	1.00
  */
 
-/* Augment Caching, Defragmentation, Read-Write and Lookup of Log-Structured Filesystems  */
+/* Htree Blockchain*/
+/* Augment Caching, Defragmentation, Read-Write and Lookup for Log-Structured Filesystems  */
 
 #include <sys/cdefs.h>
 
@@ -169,7 +170,7 @@ htbc_blkatoff(struct vnode *vp, off_t offset, char **res, struct buf **bpp)
 	daddr_t lbn;
 	int error;
 
-	ip = VTOI(vp);
+	ip = VTOHTI(vp);
 	fs = ip->hi_mfs;
 	lbn = htbc_lblkno(fs, offset);
 
@@ -322,7 +323,7 @@ htbc_ext_find_extent(struct htbc_hi_mfs *fs, struct htbc_inode *ip, daddr_t lbn,
 	path->ep_header = ehp;
 
 	daddr_t first_lbn = 0;
-	daddr_t last_lbn = lblkno(ip->hi_mfs, ip->hi_size);
+	daddr_t last_lbn = htbc_lblkno(ip->hi_mfs, ip->hi_size);
 
 	for (i = ehp->eh_depth; i != 0; --i) {
 		path->ep_depth = i;
@@ -333,12 +334,12 @@ htbc_ext_find_extent(struct htbc_hi_mfs *fs, struct htbc_inode *ip, daddr_t lbn,
 
 		nblk = (daddr_t)path->ep_index->ei_leaf_hi << 32 |
 		    path->ep_index->ei_leaf_lo;
-		size = blksize(fs, ip, nblk);
+		size = htbc_blksize(fs, ip, nblk);
 		if (path->ep_bp != NULL) {
 			brelse(path->ep_bp, 0);
 			path->ep_bp = NULL;
 		}
-		error = bread(ip->hi_devvp, fsbtodb(fs, nblk), size, 0, &path->ep_bp);
+		error = bread(ip->hi_vnode, fsbtodb(fs, nblk), size, 0, &path->ep_bp);
 		if (error) {
 			brelse(path->ep_bp, 0);
 			path->ep_bp = NULL;
@@ -553,7 +554,7 @@ htbc_htree_hash(const char *name, int len,
 
 	switch (hash_version) {
 	case HTREE_TEA_UNSIGNED:
-		unsigned_char = 1;
+		unsigned char = 1;
 		/* FALLTHROUGH */
 	case HTREE_TEA:
 		while (len > 0) {
@@ -566,13 +567,13 @@ htbc_htree_hash(const char *name, int len,
 		minor = hash[1];
 		break;
 	case HTREE_LEGACY_UNSIGNED:
-		unsigned_char = 1;
+		unsigned char = 1;
 		/* FALLTHROUGH */
 	case HTREE_LEGACY:
 		major = htbc_legacy_hash(name, len, unsigned_char);
 		break;
 	case HTREE_HALF_MD4_UNSIGNED:
-		unsigned_char = 1;
+		unsigned char = 1;
 		/* FALLTHROUGH */
 	case HTREE_HALF_MD4:
 		while (len > 0) {

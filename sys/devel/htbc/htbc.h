@@ -111,7 +111,7 @@ struct htbc_inode {
     u_int32_t   				hi_sflags;				/* Status flags (chflags) */
     struct htbc_hi_mfs 			*hi_mfs;	    		/* htbc_hi_mfs */
     int32_t	  					hi_count;				/* Size of free slot in directory. */
-    struct vnode 				*hi_devvp;
+    struct vnode 				*hi_vnode;
 };
 
 struct htbc_hi_mfs {
@@ -142,6 +142,10 @@ enum htbc_hi_slotstatus {
 	COMPACT,
 	FOUND
 };
+
+/* Convert between inode pointers and vnode pointers. */
+#define VTOHTI(vp)	((struct htbc_inode *)(vp)->v_data)
+#define HTITOV(ip)	((ip)->hi_vnode)
 
 /****************************************************************/
 /* HTBC Extents */
@@ -238,11 +242,9 @@ int 	htbc_write(void *, size_t, struct vnode *, daddr_t);
 int 	htbc_read(void *, size_t, struct vnode *, daddr_t);
 
 /* calculates (loc % fs->hi_bsize) */
-#define htbc_blkoff(fs, loc)	 ((loc) & (fs)->hi_qbmask)
+#define htbc_blkoff(fs, loc)	 	((loc) & (fs)->hi_qbmask)
 /* calculates (loc / fs->hi_bsize) */
-#define htbc_lblkno(fs, loc)	((loc) >> (fs)->hi_bshift)
-/* calculates (loc / fs->fs_bsize) */
-#define	lblkno(fs, loc) 		((loc) >> (fs->hi_bshift))
-#define	blksize(fs, ip, lbn) 	((fs)->hi_bsize)
+#define htbc_lblkno(fs, loc)		((loc) >> (fs)->hi_bshift)
+#define	htbc_blksize(fs, ip, lbn) 	((fs)->hi_bsize)
 
 #endif /* SYS_HTBC_H_ */

@@ -29,6 +29,7 @@
  * $FreeBSD: head/sys/fs/ext2fs/ext2fs_htree.c 294653 2016-01-24 02:41:49Z pfg $
  */
 
+/* to become subr_htree.c or vfs_htree.c */
 #include <sys/cdefs.h>
 /* __KERNEL_RCSID(0, "$NetBSD: ext2fs_htree.c,v 1.9 2016/08/23 06:23:26 christos Exp $"); */
 
@@ -78,7 +79,7 @@ htree_get_limit(struct htree_entry *ep)
 static uint32_t
 htree_root_limit(struct htbc_inode *ip, int len)
 {
-	uint32_t space = ip->hi_mfs->hi_bsize - EXT2_DIR_REC_LEN(1) - EXT2_DIR_REC_LEN(2) - len;
+	uint32_t space = ip->hi_mfs->hi_bsize - HTREE_DIR_REC_LEN(1) - HTREE_DIR_REC_LEN(2) - len;
 	return space / sizeof(struct htree_entry);
 }
 
@@ -125,7 +126,7 @@ htree_node_limit(struct htbc_inode *ip)
 	uint32_t space;
 
 	fs = ip->hi_mfs;
-	space = fs->hi_bsize - EXT2_DIR_REC_LEN(0);
+	space = fs->hi_bsize - HTREE_DIR_REC_LEN(0);
 
 	return space / sizeof(struct htree_entry);
 }
@@ -135,7 +136,7 @@ htree_append_block(struct vnode *vp, char *data, struct componentname *cnp, uint
 {
 	struct iovec aiov;
 	struct uio auio;
-	struct htbc_inode *dp = VTOI(vp);
+	struct htbc_inode *dp = VTOHTI(vp);
 	uint64_t cursize, newsize;
 	int error;
 
@@ -227,11 +228,11 @@ htree_append_entry(char *block, uint32_t blksize, struct htree_fake_direct *last
 {
 	uint16_t entry_len;
 
-	entry_len = EXT2_DIR_REC_LEN(last_entry->h_namlen);
+	entry_len = HTREE_DIR_REC_LEN(last_entry->h_namlen);
 	last_entry->h_reclen = entry_len;
 	last_entry = (struct htree_fake_direct *)((char *)last_entry + entry_len);
 	new_entry->h_reclen = block + blksize - (char *)last_entry;
-	memcpy(last_entry, new_entry, EXT2_DIR_REC_LEN(new_entry->h_namlen));
+	memcpy(last_entry, new_entry, HTREE_DIR_REC_LEN(new_entry->h_namlen));
 }
 
 /*
@@ -307,7 +308,7 @@ htree_split_dirblock(char *block1, char *block2, uint32_t blksize, uint32_t *has
 	for (k = i + 1; k < entry_cnt; k++) {
 		ep = (struct htree_fake_direct *)((char *)block1 +
 		    sort_info[k].h_offset);
-		entry_len = EXT2_DIR_REC_LEN(ep->h_namlen);
+		entry_len = HTREE_DIR_REC_LEN(ep->h_namlen);
 		memcpy(dest, ep, entry_len);
 		((struct htree_fake_direct *)dest)->h_reclen = entry_len;
 		/* Mark directory entry as unused. */
@@ -325,7 +326,7 @@ htree_split_dirblock(char *block1, char *block2, uint32_t blksize, uint32_t *has
 		if (ep->h_ino) {
 			last = (struct htree_fake_direct *)
 			   ((char *)last + entry_len);
-			entry_len = EXT2_DIR_REC_LEN(ep->h_namlen);
+			entry_len = HTREE_DIR_REC_LEN(ep->h_namlen);
 			memcpy((void *)last, (void *)ep, entry_len);
 			last->h_reclen = entry_len;
 		}
@@ -370,7 +371,7 @@ htree_create_index(struct vnode *vp, struct componentname *cnp, struct htree_fak
 	char *buf2 = NULL;
 	int error = 0;
 
-	dp = VTOI(vp);
+	dp = VTOHTI(vp);
 	fs = &(dp->hi_mfs->hi_fs);
 	m_fs = dp->hi_mfs;
 	blksize = m_fs->hi_bsize;
@@ -391,12 +392,12 @@ htree_create_index(struct vnode *vp, struct componentname *cnp, struct htree_fak
 		ep = (struct htree_fake_direct *)((char *)ep + ep->h_reclen);
 	ep->h_reclen = buf1 + blksize - (char *)ep;
 	/* XXX It should be made dp->i_flag |= IN_E3INDEX; */
-	dp->hi_sflags |= EXT2_INDEX;
+	dp->hi_sflags |= HTREE_INDEX;
 
 	/*
 	 * Initialize index root.
 	 */
-	dotdot->h_reclen = blksize - EXT2_DIR_REC_LEN(1);
+	dotdot->h_reclen = blksize - HTREE_DIR_REC_LEN(1);
 	memset(&root->h_info, 0, sizeof(root->h_info));
 	root->h_info.h_hash_version = fs->hi_def_hash_version;
 	root->h_info.h_info_len = sizeof(root->h_info);
@@ -472,7 +473,7 @@ htree_add_entry(struct vnode *dvp, struct htree_fake_direct *entry, struct compo
 	struct buf *dst_bp = NULL;
 	int error, write_bp = 0, write_dst_bp = 0, write_info = 0;
 
-	ip = VTOI(dvp);
+	ip = VTOHTI(dvp);
 	m_fs = ip->hi_mfs;
 	fs = &(m_fs->hi_fs);
 	blksize = m_fs->hi_bsize;
@@ -633,7 +634,7 @@ finish:
 static int
 htree_check_next(struct htbc_inode *ip, uint32_t hash, const char *name, struct htree_lookup_info *info)
 {
-	struct vnode *vp = ITOV(ip);
+	struct vnode *vp = HTITOV(ip);
 	struct htree_lookup_level *level;
 	struct buf *bp;
 	uint32_t next_hash;
@@ -690,7 +691,7 @@ htree_find_leaf(struct htbc_inode *ip, const char *name, int namelen, uint32_t *
 	if (name == NULL || info == NULL)
 		return -1;
 
-	vp = ITOV(ip);
+	vp = HTITOV(ip);
 	fs = &(ip->hi_mfs->hi_fs);
 	m_fs = ip->hi_mfs;
 
@@ -780,7 +781,7 @@ htree_lookup(struct htbc_inode *ip, const char *name, int namelen, struct buf **
 
 	m_fs = ip->hi_mfs;
 	bsize = m_fs->hi_bsize;
-	vp = ITOV(ip);
+	vp = HTITOV(ip);
 
 	/* TODO: print error msg because we don't lookup '.' and '..' */
 
@@ -809,7 +810,7 @@ htree_lookup(struct htbc_inode *ip, const char *name, int namelen, struct buf **
 		}
 
 		int found;
-		if (ext2fs_search_dirblock(ip, bp->b_data, &found,
+		if (htbc_search_dirblock(ip, bp->b_data, &found,
 		    name, namelen, entryoffp, offp, prevoffp,
 		    endusefulp, ss) != 0) {
 			brelse(bp, 0);

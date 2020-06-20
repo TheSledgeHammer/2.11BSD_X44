@@ -31,6 +31,8 @@
 #ifndef _FS_HTREE_H_
 #define	_FS_HTREE_H_
 
+#define	HTREE_MAXNAMLEN			255
+
 #define	HTREE_LEGACY				0
 #define	HTREE_HALF_MD4				1
 #define	HTREE_TEA					2
@@ -49,7 +51,7 @@ struct htree_fake_direct {
 	uint16_t 	h_reclen;					/* length of this record */
 	uint8_t  	h_namlen;					/* length of string in d_name */
 	uint8_t  	h_type;						/* file type */
-	char        h_name[EXT2FS_MAXNAMLEN];	/* name with length<=EXT2FS_MAXNAMLEN */
+	char        h_name[HTREE_MAXNAMLEN];	/* name with length<=HTREE_MAXNAMLEN */
 };
 
 struct htree_count {
@@ -100,6 +102,19 @@ struct htree_sort_entry {
 	uint16_t h_size;
 	uint32_t h_hash;
 };
+
+/* file flags */
+#define HTREE_INDEX		0x00001000 /* hash-indexed directory */
+
+/*
+ * EXT2_DIR_PAD defines the directory entries boundaries
+ *
+ * NOTE: It must be a multiple of 4
+ */
+#define	HTREE_DIR_PAD	4
+#define	HTREE_DIR_ROUND	(HTREE_DIR_PAD - 1)
+#define	HTREE_DIR_REC_LEN(namelen) \
+    (((namelen) + 8 + HTREE_DIR_ROUND) & ~HTREE_DIR_ROUND)
 
 static off_t	htree_get_block(struct htree_entry *ep);
 static void 	htree_release(struct htree_lookup_info *info);

@@ -28,7 +28,7 @@
  * @(#)htbc_hbchain.c	1.00
  */
 
-/*
+/* Merge into vfs_htbc when complete
  * Hashed Blockchain:
  * - Create a Version/ Snapshot (with Timestamp & Hash) of the current HTBC tree location before committing the write to LFS.
  */
