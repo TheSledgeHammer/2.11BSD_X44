@@ -182,8 +182,7 @@ bi_checkcpu(void)
  * - Module metadata are formatted and placed in kernel space.
  */
 int
-bi_load64(char *args, vm_offset_t addr, vm_offset_t *modulep,
-    vm_offset_t *kernendp, int add_smap)
+bi_load64(char *args, vm_offset_t addr, vm_offset_t *modulep, vm_offset_t *kernendp, int add_smap)
 {
     struct preloaded_file	*xp, *kfp;
     struct i386_devdesc		*rootdev;

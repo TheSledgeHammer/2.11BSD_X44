@@ -73,7 +73,6 @@ getgid()
 void
 getegid()
 {
-
 	u->u_r.r_val1 = u->u_groups[0];
 }
 

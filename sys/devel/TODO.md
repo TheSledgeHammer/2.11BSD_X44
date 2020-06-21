@@ -8,6 +8,14 @@ UFML:
 	- short	u_uisd[16];					/* segmentation descriptor prototypes */
 	- char	u_sep;						/* flag for I and D separation */
 	- struct u_ovd						/* automatic overlay data */
+
+boot:
+	- bootinfo
+	- multiboot
+	Relies on kenv/kobj 
+kenv/kobj:
+	- kern_environment
+	- subr_kobj
 	
 NetBSD 5.0.2: Threads & Multitasking
 - kobj: Loading objects in filesystem

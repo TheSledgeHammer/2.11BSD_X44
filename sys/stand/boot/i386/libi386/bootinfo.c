@@ -26,9 +26,6 @@
  * $FreeBSD$
  */
 
-
-
-
 #include <sys/param.h>
 #include <sys/reboot.h>
 #include <sys/exec.h>

@@ -314,7 +314,7 @@ pselect()
 {
 	register struct	pselect_args *uap = (struct pselect_args *)u->u_ap;
 
-	return(u->u_error = select1(uap, 1));
+	return (u->u_error = select1(uap, 1));
 }
 
 /*

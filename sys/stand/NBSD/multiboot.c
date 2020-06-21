@@ -17,7 +17,7 @@
 
 #include <string.h>
 #include <bootstand.h>
-
+#include <libsa/loadfile.h>
 #include "bootstrap.h"
 #include "multiboot.h"
 #include "libi386.h"
@@ -311,7 +311,7 @@ exec_multiboot1(struct multiboot_package *mbp)
 		mbi->mi_elfshdr_addr = shaddr;
 		mbi->mi_elfshdr_shndx = ehdr.e_shstrndx;
 
-		mbi->mi_flags |= MULTIBOOT_INFO_HAS_ELF_SYMS;
+		mbi->mi_flags |= MULTIBOOT_INFO_ELF_SYMS;
 	}
 skip_ksyms:
 #ifdef DEBUG

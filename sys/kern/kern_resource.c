@@ -150,6 +150,7 @@ setrlimit()
 		u_int	which;
 		struct	rlimit *lim;
 	} *uap = (struct a *)u->u_ap;
+
 	struct rlimit alim;
 	register struct rlimit *alimp;
 	extern unsigned maxdmap;
