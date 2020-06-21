@@ -203,8 +203,9 @@ struct preloaded_file
     size_t					f_size;			/* file size */
     struct preloaded_file	*f_next;		/* next file */
     u_long                  marks[MARK_MAX];/* filled by loadfile() */
+
     /* May Not Stay */
-    struct kernel_module	*f_modules;	/* list of modules if any */
+    struct kernel_module	*f_modules;		/* list of modules if any */
     struct file_metadata	*f_metadata;	/* metadata that will be placed in the module directory */
 };
 

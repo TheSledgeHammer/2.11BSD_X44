@@ -49,4 +49,10 @@ struct kenv_args {
 #define KENV_MNAMELEN	128	/* Maximum name length (for the syscall) */
 #define KENV_MVALLEN	128	/* Maximum value length (for the syscall) */
 
+/* Ideally should be placed in systm.h */
+extern char *kern_envp;
+extern char *md_envp;
+extern char static_env[];
+extern char static_hints[];	/* by config for now */
+
 #endif /* !_SYS_KENV_H_ */

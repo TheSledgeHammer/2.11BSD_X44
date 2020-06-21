@@ -57,7 +57,7 @@
 int comcnmode = CONMODE;
 #endif /* NCOM */
 
-struct btinfo_console default_consinfo = {
+struct bootinfo_console default_consinfo = {
 	{0, 0},
 	CONSDEVNAME,
 #if (NCOM > 0)

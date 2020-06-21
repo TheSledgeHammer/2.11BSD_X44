@@ -81,6 +81,11 @@ main(void)
 	initial_bootdev = kargs->bootdev;
 	initial_bootinfo = kargs->bootinfo ? (struct bootinfo *)PTOV(kargs->bootinfo) : NULL;
 
+
+    /* Initialize the v86 register set to a known-good state. */
+    bzero(&v86, sizeof(v86));
+    v86.efl = PSL_RESERVED_DEFAULT | PSL_I;
+
     /*
      * Initialise the heap as early as possible.  Once this is done, malloc() is usable.
      */

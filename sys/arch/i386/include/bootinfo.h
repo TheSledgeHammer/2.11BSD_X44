@@ -41,6 +41,7 @@
 #define	N_BIOS_GEOM				8
 
 #define	BOOTINFO_MAGIC			0xdeadbeeffeedface
+#define BOOTINFO_MAXSIZE 		16384
 
 struct bootinfo {
 	u_int32_t					bi_version;
@@ -50,6 +51,8 @@ struct bootinfo {
 	char 						bi_bootpath[80];
 	int				 			bi_len;
 	int 						bi_type;
+	uint32_t					bi_nentries;		/* Number of bootinfo_* entries in bi_data. */
+	uint8_t						bi_data[BOOTINFO_MAXSIZE - sizeof(uint32_t)];
 
 	struct bootinfo_bios {		/* BIOS */
 #define	bi_endcommon			bi_n_bios_used

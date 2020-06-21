@@ -116,8 +116,9 @@
 #define M_COREMAP		67	/* 2.11BSD's Coremap */
 #define M_SWAPMAP		68	/* 2.11BSD's Swapmap */
 #define M_VNODEOPS		69  /* vnode operations vector */
-#define	M_TEMP			70	/* misc temporary data buffers */
-#define	M_LAST			71	/* Must be last type + 1 */
+#define M_KENV			70	/* kern environment */
+#define	M_TEMP			71	/* misc temporary data buffers */
+#define	M_LAST			72	/* Must be last type + 1 */
 
 #define INITKMEMNAMES { \
 	"free",			/* 0 M_FREE */ 			\
@@ -190,7 +191,8 @@
 	"coremap",		/* 67 M_COREMAP */		\
 	"swapmap",		/* 68 M_SWAPMAP */		\
 	"vnodeops"		/* 69 M_VNODEOPS */		\
-	"temp",			/* 70 M_TEMP */ 		\
+	"kern envir" 	/* 70 M_KENV */			\
+	"temp",			/* 71 M_TEMP */ 		\
 }
 
 struct kmemstats {

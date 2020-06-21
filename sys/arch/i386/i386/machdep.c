@@ -1007,13 +1007,13 @@ void *
 lookup_bootinfo(type)
 	int type;
 {
-	union bootinfo *help;
+	struct bootinfo *help;
 	int n = *(int*)bootinfo;
-	help = (union bootinfo *)(bootinfo + sizeof(int));
+	help = (struct bootinfo *)(bootinfo + sizeof(int));
 	while(n--) {
 		if(help->bi_type == type)
 			return(help);
-		help = (union bootinfo *)((char*)help + help->bi_len);
+		help = (struct bootinfo *)((char*)help + help->bi_len);
 	}
 	return(0);
 }

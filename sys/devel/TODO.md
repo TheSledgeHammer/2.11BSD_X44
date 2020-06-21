@@ -9,13 +9,19 @@ UFML:
 	- char	u_sep;						/* flag for I and D separation */
 	- struct u_ovd						/* automatic overlay data */
 
+kern:
+	- ksyms: update
+
 boot:
 	- bootinfo
 	- multiboot
-	Relies on kenv/kobj 
 kenv/kobj:
-	- kern_environment
-	- subr_kobj
+	- subr_kobj: kobj_load
+	
+/* XXX: cherry: This whole thing is glue between the NetBSD pread/vpbcopy etc. etc
+ *      and the FreeBSD kern_pread/bzero etc. etc. Needs to be cleaned up 
+ *      after discussion.
+ */
 	
 NetBSD 5.0.2: Threads & Multitasking
 - kobj: Loading objects in filesystem

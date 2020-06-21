@@ -211,5 +211,8 @@ bi_load(struct bootinfo *bi, struct preloaded_file *fp, char *args)
 	/* pad to a page boundary */
 	addr = (addr + PAGE_MASK) & ~PAGE_MASK;
 
+    /* all done copying stuff in, save end of loaded object space */
+    bi->bi_envp->bi_kernend = addr;
+
 	return (0);
 }
