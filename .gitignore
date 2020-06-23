@@ -6,6 +6,7 @@
 *.cfg
 *.gz
 *.settings
+*.metadata
 *.iml
 *.ipr
 *.iws
