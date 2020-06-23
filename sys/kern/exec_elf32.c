@@ -65,6 +65,10 @@
 
 #include <sys/cdefs.h>
 
+#ifndef ELFSIZE
+#define	ELFSIZE		32
+#endif
+
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/malloc.h>
@@ -81,8 +85,6 @@
 
 #include <machine/cpu.h>
 #include <machine/reg.h>
-
-#define	ELFSIZE	32
 
 /* round up and down to page boundaries. */
 #define	ELF_ROUND(a, b)		(((a) + (b) - 1) & ~((b) - 1))
