@@ -15,10 +15,10 @@
 #include <sys/conf.h>
 #include <sys/uio.h>
 
-#include "../vfs/ufs211/ufs211_dir.h"
-#include "../vfs/ufs211/ufs211_extern.h"
-#include "../vfs/ufs211/ufs211_fs.h"
-#include "../vfs/ufs211/ufs211_inode.h"
+#include "vfs/ufs211/ufs211_dir.h"
+#include "vfs/ufs211/ufs211_extern.h"
+#include "vfs/ufs211/ufs211_fs.h"
+#include "vfs/ufs211/ufs211_inode.h"
 
 /*
  * Bmap defines the structure of file system storage
@@ -67,7 +67,7 @@ bmap(ip, bn, rwflg, flags)
 			else
 				bdwrite(bp);
 			ip->i_addr[i] = nb;
-			ip->i_flag |= IUPD|ICHG;
+			ip->i_flag |= UFS211_IUPD|UFS211_ICHG;
 		}
 		if (i < NADDR-4)
 			rablock = ip->i_addr[i+1];
@@ -112,7 +112,7 @@ bmap(ip, bn, rwflg, flags)
 		else
 			bwrite(bp);
 		ip->i_addr[NADDR-j] = nb;
-		ip->i_flag |= IUPD|ICHG;
+		ip->i_flag |= UFS211_IUPD|UFS211_ICHG;
 	}
 
 	/*

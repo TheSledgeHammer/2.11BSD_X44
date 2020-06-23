@@ -334,7 +334,6 @@ check_exec(elp)
 	struct nameidata 	*ndp;
 	size_t				resid;
 
-
 	struct proc *p = elp->el_proc;
 	ndp = elp->el_ndp;
 

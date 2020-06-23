@@ -5,7 +5,7 @@
  *
  *	@(#)inode.h	1.4 (2.11BSD GTE) 1995/12/24
  */
-#include "../vfs/ufs211/ufs211_dir.h"
+#include "vfs/ufs211/ufs211_dir.h"
 
 /*
  * The I node is the focus of all file activity in UNIX.
@@ -47,6 +47,7 @@ struct ufs211_inode {
 	struct	 ufs211_fs 		*i_fs;					/* file sys associated with this inode */
 	struct	 lockf 			*i_lockf;				/* Head of byte-level lock list. */
 	struct	 lock 			i_lock;					/* Inode lock. */
+	 struct  ufs211_dquot	*i_dquot;				/* Dquot structures. */
 	union {
 		struct {
 			u_char			I_shlockc;				/* count of shared locks */
@@ -141,7 +142,7 @@ struct ufs211_dinode {
 #define	i_forw		i_chain[0]
 #define	i_back		i_chain[1]
 
-#define	di_flags	i_din.di_flags
+//#define	di_flags	i_din.di_flags
 #define	di_blocks	i_din.di_blocks
 #define	di_gen		i_din.di_gen
 #define di_ic1		di_icom1
@@ -159,6 +160,9 @@ struct ufs211_dinode {
 #define VTOI(vp)	((struct ufs211_inode *)(vp)->v_data)
 #define ITOV(ip)	((ip)->i_vnode)
 
+struct inode inode[];		/* the inode table itself */
+struct inode *inodeNINODE;	/* the end of the inode table */
+int	ninode;					/* the number of slots in the table */
 
 /* This overlays the fid structure (see fstypes.h). */
 struct ufid {

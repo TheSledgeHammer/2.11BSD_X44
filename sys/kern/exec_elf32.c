@@ -65,10 +65,6 @@
 
 #include <sys/cdefs.h>
 
-#ifndef ELFSIZE
-#define	ELFSIZE		32
-#endif
-
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/malloc.h>
@@ -85,6 +81,8 @@
 
 #include <machine/cpu.h>
 #include <machine/reg.h>
+
+#define	ELFSIZE	32
 
 /* round up and down to page boundaries. */
 #define	ELF_ROUND(a, b)		(((a) + (b) - 1) & ~((b) - 1))
@@ -180,7 +178,7 @@ elf_check_header(eh, type)
 
 	switch (eh->e_machine) {
 
-	//ELFDEFNNAME(MACHDEP_ID_CASES)
+	ELFDEFNNAME(MACHDEP_ID_CASES);
 
 	default:
 		return ENOEXEC;
@@ -453,8 +451,7 @@ elf_load_file(elp, path, vcset, entryoff, ap, last)
 				else
 					addr = ELF_ROUND(addr, ph0->p_align);
 			} else {
-				u_long limit = round_page(last_ph->p_vaddr
-				    + last_ph->p_memsz);
+				u_long limit = round_page(last_ph->p_vaddr + last_ph->p_memsz);
 				u_long base = trunc_page(ph0->p_vaddr);
 
 				/*

@@ -106,7 +106,7 @@ const struct cdevsw ksyms_cdevsw = {
 #endif
 
 #ifdef SYMTAB_SPACE
-#define		SYMTAB_FILLER	"|This is the symbol table!"
+#define	SYMTAB_FILLER	"|This is the symbol table!"
 
 char	db_symtab[SYMTAB_SPACE] = SYMTAB_FILLER;
 int		db_symtabsize = SYMTAB_SPACE;
@@ -116,18 +116,17 @@ int		db_symtabsize = SYMTAB_SPACE;
  * Store the different symbol tables in a double-linked list.
  */
 struct symtab {
-	CIRCLEQ_ENTRY(symtab) sd_queue;
-	const char *sd_name;	/* Name of this table */
-	Elf_Sym *sd_symstart;	/* Address of symbol table */
-	caddr_t sd_strstart;	/* Adderss of corresponding string table */
-	int sd_usroffset;		/* Real address for userspace */
-	int sd_symsize;			/* Size in bytes of symbol table */
-	int sd_strsize;			/* Size of string table */
-	int *sd_symnmoff;		/* Used when calculating the name offset */
+	CIRCLEQ_ENTRY(symtab) 	sd_queue;
+	const char 				*sd_name;			/* Name of this table */
+	Elf_Sym 				*sd_symstart;		/* Address of symbol table */
+	caddr_t 				sd_strstart;		/* Adderss of corresponding string table */
+	int 					sd_usroffset;		/* Real address for userspace */
+	int 					sd_symsize;			/* Size in bytes of symbol table */
+	int 					sd_strsize;			/* Size of string table */
+	int 					*sd_symnmoff;		/* Used when calculating the name offset */
 };
 
-static CIRCLEQ_HEAD(, symtab) symtab_queue =
-    CIRCLEQ_HEAD_INITIALIZER(symtab_queue);
+static CIRCLEQ_HEAD(, symtab) symtab_queue;// = CIRCLEQ_HEAD_INITIALIZER(symtab_queue);
 
 static struct symtab kernel_symtab;
 
@@ -608,13 +607,13 @@ ksyms_sizes_calc(void)
  */
 
 struct syminfo {
-	size_t cursyms;
-	size_t curnamep;
-	size_t maxsyms;
-	size_t maxnamep;
+	size_t 	cursyms;
+	size_t 	curnamep;
+	size_t 	maxsyms;
+	size_t 	maxnamep;
 	Elf_Sym *syms;
-	int *symnmoff;
-	char *symnames;
+	int 	*symnmoff;
+	char 	*symnames;
 };
 
 
@@ -998,18 +997,14 @@ ksyms_hdr_init(caddr_t hdraddr)
 	/* Fourth section, ".shstrtab" */
 	ksyms_hdr.kh_shdr[SHSTRTAB].sh_name = 17; /* This section name offset */
 	ksyms_hdr.kh_shdr[SHSTRTAB].sh_type = SHT_STRTAB;
-	ksyms_hdr.kh_shdr[SHSTRTAB].sh_offset =
-	    offsetof(struct ksyms_hdr, kh_strtab);
+	ksyms_hdr.kh_shdr[SHSTRTAB].sh_offset = offsetof(struct ksyms_hdr, kh_strtab);
 	ksyms_hdr.kh_shdr[SHSTRTAB].sh_size = SHSTRSIZ;
 	ksyms_hdr.kh_shdr[SHSTRTAB].sh_addralign = sizeof(char);
 
 	/* Set section names */
-	strlcpy(&ksyms_hdr.kh_strtab[1], ".symtab",
-	    sizeof(ksyms_hdr.kh_strtab) - 1);
-	strlcpy(&ksyms_hdr.kh_strtab[9], ".strtab",
-	    sizeof(ksyms_hdr.kh_strtab) - 9);
-	strlcpy(&ksyms_hdr.kh_strtab[17], ".shstrtab",
-	    sizeof(ksyms_hdr.kh_strtab) - 17);
+	strlcpy(&ksyms_hdr.kh_strtab[1], ".symtab", sizeof(ksyms_hdr.kh_strtab) - 1);
+	strlcpy(&ksyms_hdr.kh_strtab[9], ".strtab", sizeof(ksyms_hdr.kh_strtab) - 9);
+	strlcpy(&ksyms_hdr.kh_strtab[17], ".shstrtab", sizeof(ksyms_hdr.kh_strtab) - 17);
 };
 
 int

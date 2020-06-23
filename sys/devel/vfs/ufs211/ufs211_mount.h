@@ -36,6 +36,7 @@ struct ufs211_mount {
 	struct	ufs211_inode 	*m_inodp;	        			/* pointer to mounted on inode */
 	struct	ufs211_inode 	*m_qinod; 	    				/* QUOTA: pointer to quota file */
 	ufs211_size_t	    	m_extern;	        			/* click address of mount table extension */
+	struct buf				*m_bufp;
 };
 
 struct ufs211_xmount {

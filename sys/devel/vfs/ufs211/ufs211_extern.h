@@ -43,25 +43,43 @@ struct ufs211_args {
 	struct vnode 	    *ufs211_rootvp;	    /* block device mounted vnode */
 };
 
-#define	DEV_BSIZE		1024
-#define	DEV_BSHIFT		10			/* log2(DEV_BSIZE) */
-#define	DEV_BMASK		0x3ffL		/* DEV_BSIZE - 1 */
-#define	MAXBSIZE		1024
+#define	UFS211_DEV_BSIZE	1024
+#define	UFS211_DEV_BSHIFT	10			/* log2(DEV_BSIZE) */
+#define	UFS211_DEV_BMASK	0x3ffL		/* DEV_BSIZE - 1 */
+#define	UFS211_MAXBSIZE		1024
+
+/* i_flag */
+#define	UFS211_ILOCKED	0x1			/* inode is locked */
+#define	UFS211_IUPD		0x2			/* file has been modified */
+#define	UFS211_IACC		0x4			/* inode access time to be updated */
+#define	UFS211_IMOUNT	0x8			/* inode is mounted on */
+#define	UFS211_IWANT	0x10		/* some process waiting on lock */
+#define	UFS211_ITEXT	0x20		/* inode is pure text prototype */
+#define	UFS211_ICHG		0x40		/* inode has been changed */
+#define	UFS211_ISHLOCK	0x80		/* file has shared lock */
+#define	UFS211_IEXLOCK	0x100		/* file has exclusive lock */
+#define	UFS211_ILWAIT	0x200		/* someone waiting on file lock */
+#define	UFS211_IMOD		0x400		/* inode has been modified */
+#define	UFS211_IRENAME	0x800		/* inode is being renamed */
+#define	UFS211_IPIPE	0x1000		/* inode is a pipe */
+#define	UFS211_IRCOLL	0x2000		/* read select collision on pipe */
+#define	UFS211_IWCOLL	0x4000		/* write select collision on pipe */
+#define	UFS211_IXMOD	0x8000		/* inode is text, but impure (XXX) */
 
 /* i_mode */
-#define	UFS211_FMT		0170000		/* type of file */
-#define	UFS211_FCHR		0020000		/* character special */
-#define	UFS211_FDIR		0040000		/* directory */
-#define	UFS211_FBLK		0060000		/* block special */
-#define	UFS211_FREG		0100000		/* regular */
-#define	UFS211_FLNK		0120000		/* symbolic link */
-#define	UFS211_FSOCK	0140000		/* socket */
-#define	UFS211_SUID		04000		/* set user id on execution */
-#define	UFS211_SGID		02000		/* set group id on execution */
-#define	UFS211_SVTX		01000		/* save swapped text even after use */
-#define	UFS211_READ		0400		/* read, write, execute permissions */
-#define	UFS211_WRITE	0200
-#define	UFS211_EXEC		0100
+#define	UFS211_IFMT		0170000		/* type of file */
+#define	UFS211_IFCHR	0020000		/* character special */
+#define	UFS211_IFDIR	0040000		/* directory */
+#define	UFS211_IFBLK	0060000		/* block special */
+#define	UFS211_IFREG	0100000		/* regular */
+#define	UFS211_IFLNK	0120000		/* symbolic link */
+#define	UFS211_IFSOCK	0140000		/* socket */
+#define	UFS211_ISUID	04000		/* set user id on execution */
+#define	UFS211_ISGID	02000		/* set group id on execution */
+#define	UFS211_ISVTX	01000		/* save swapped text even after use */
+#define	UFS211_IREAD	0400		/* read, write, execute permissions */
+#define	UFS211_IWRITE	0200
+#define	UFS211_IEXEC	0100
 
 __BEGIN_DECLS
 int ufs211_lookup (struct vop_lookup_args *);

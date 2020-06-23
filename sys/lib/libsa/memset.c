@@ -31,6 +31,7 @@
  */
 
 #include <sys/cdefs.h>
+#include <lib/libkern/libkern.h>
 
 void *
 memset(dstv, c, length)

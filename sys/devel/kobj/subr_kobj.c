@@ -63,6 +63,7 @@
 #include <sys/cdefs.h>
 
 #include <kobj.h>
+#include <kobj_impl.h>
 
 #ifdef MODULAR
 

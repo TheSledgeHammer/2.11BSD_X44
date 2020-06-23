@@ -36,6 +36,7 @@
 #include <libsa/stand.h>
 
 /* ARGSUSED */
+int
 nodev(io)
 	struct iob *io;
 {
@@ -43,6 +44,7 @@ nodev(io)
 }
 
 /* ARGSUSED */
+int
 noioctl(io, cmd, arg)
 	struct iob *io;
 	int cmd;

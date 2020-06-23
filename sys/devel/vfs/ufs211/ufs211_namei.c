@@ -192,11 +192,11 @@ dirloop:
 	/*
 	 * Check accessibility of directory.
 	 */
-	if ((dp->i_mode&UFS211_FMT) != UFS211_FDIR) {
+	if ((dp->i_mode&UFS211_IFMT) != UFS211_IFDIR) {
 		u->u_error = ENOTDIR;
 		goto bad;
 	}
-	if (access(dp, UFS211_EXEC))
+	if (access(dp, UFS211_IEXEC))
 		goto bad;
 
 dirloop2:
@@ -559,7 +559,7 @@ found:
 	if (entryoffsetinblock + DIRSIZ(ep) > dp->i_size) {
 		dirbad(dp, ndp->ni_offset, "i_size too small");
 		dp->i_size = entryoffsetinblock + DIRSIZ(ep);
-		dp->i_flag |= IUPD|ICHG;
+		dp->i_flag |= UFS211_IUPD|UFS211_ICHG;
 	}
 
 	/*
@@ -593,7 +593,7 @@ found:
 		/*
 		 * Write access to directory required to delete files.
 		 */
-		if (access(dp, UFS211_WRITE))
+		if (access(dp, UFS211_IWRITE))
 			goto bad;
 		ndp->ni_pdir = dp;		/* for dirremove() */
 		/*
@@ -621,7 +621,7 @@ found:
 				 * may not delete it (unless he's root). This
 				 * implements append-only directories.
 				 */
-				if ((ndp->ni_pdir->i_mode & ISVTX) &&
+				if ((ndp->ni_pdir->i_mode & UFS211_ISVTX) &&
 				    u->u_uid != 0 &&
 				    u->u_uid != ndp->ni_pdir->i_uid &&
 				    dp->i_uid != u->u_uid) {
@@ -669,7 +669,7 @@ found:
 	 * regular file, or empty directory.  
 	 */
 	if ((flag == CREATE && lockparent) && *cp == 0) {
-		if (access(dp, UFS211_WRITE))
+		if (access(dp, UFS211_IWRITE))
 			goto bad;
 		ndp->ni_pdir = dp;		/* for dirrewrite() */
 		/*
@@ -769,7 +769,7 @@ haveino:
 	/*
 	 * Check for symbolic link
 	 */
-	if ((dp->i_mode & UFS211_FMT) == UFS211_FLNK &&
+	if ((dp->i_mode & UFS211_IFMT) == UFS211_IFLNK &&
 	    ((ndp->ni_nameiop & FOLLOW) || *cp == '/')) {
 		u_int pathlen = strlen(cp) + 1;
 
@@ -1170,7 +1170,7 @@ checkpath(source, target)
 		goto out;
 
 	for (;;) {
-		if ((ip->i_mode&UFS211_FMT) != UFS211_FDIR) {
+		if ((ip->i_mode&UFS211_IFMT) != UFS211_IFDIR) {
 			error = ENOTDIR;
 			break;
 		}

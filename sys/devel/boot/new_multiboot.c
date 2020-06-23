@@ -24,7 +24,7 @@
 #include "libi386.h"
 #include <btxv86.h>
 
-static const char mbl_name[] = "FreeBSD Loader";
+static const char mbl_name[] = "211BSD Loader";
 
 static int
 multiboot_exec(struct multiboot_package *mbp)
@@ -78,7 +78,7 @@ multiboot_exec(struct multiboot_package *mbp)
 
 		bcopy((void*) shaddr, shbuf, shlen);
 		ksyms_addr_set(&ehdr, shbuf, (void*) (KERNBASE + mbp->mbp_marks[MARK_SYM]));
-		vpbcopy(shbuf, (void*) shaddr, shlen);
+		bcopy(shbuf, (void*) shaddr, shlen);
 
 		dealloc(shbuf, shlen);
 

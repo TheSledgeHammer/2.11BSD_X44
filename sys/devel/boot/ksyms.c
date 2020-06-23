@@ -67,8 +67,7 @@ static struct multiboot_symbols	Multiboot_Symbols;
 void
 multiboot1_pre_reloc(struct multiboot_info *mi)
 {
-	struct multiboot_info *midest = RELOC(struct multiboot_info*,
-			&Multiboot_Info);
+	struct multiboot_info *midest = RELOC(struct multiboot_info*, &Multiboot_Info);
 
 	*RELOC(bool*, &Multiboot_Loader) = true;
 	memcpy(midest, mi, sizeof(Multiboot_Info));
@@ -268,9 +267,7 @@ multiboot1_ksyms_addsyms_elf(void)
 		ehdr.e_version = 1;
 		ehdr.e_ehsize = sizeof(ehdr);
 
-		ksyms_addsyms_explicit((void *)&ehdr,
-		    ms->s_symstart, ms->s_symsize,
-		    ms->s_strstart, ms->s_strsize);
+		ksyms_addsyms_explicit((void *)&ehdr, ms->s_symstart, ms->s_symsize, ms->s_strstart, ms->s_strsize);
 	}
 
 	return mi->mi_flags & MULTIBOOT_INFO_ELF_SYMS;

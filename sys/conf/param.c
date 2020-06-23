@@ -98,4 +98,30 @@ struct	cblock *cfree;
 struct	buf *buf, *swbuf;
 char	*buffers;
 
+/*
+ * Remove the ifdef/endif to run the kernel in unsecure mode even when in
+ * a multiuser state.  Normally 'init' raises the security level to 1
+ * upon transitioning to multiuser.  Setting the securelevel to -1 prevents
+ * the secure level from being raised by init.
+*/
+#ifdef	PERMANENTLY_INSECURE
+int	securelevel = -1;
+#endif
+
+#define CMAPSIZ	NPROC				/* size of core allocation map */
+#define SMAPSIZ	((9 * NPROC) / 10)	/* size of swap allocation map */
+
+struct mapent _coremap[CMAPSIZ];
+struct map	coremap[1] = {
+		_coremap,
+		&_coremap[CMAPSIZ],
+		"coremap",
+};
+
+struct mapent _swapmap[SMAPSIZ];
+struct map	swapmap[1] = {
+		_swapmap,
+		&_swapmap[SMAPSIZ],
+		"swapmap",
+};
 

@@ -23,6 +23,7 @@ miscfs:
 	- Merge best parts with NULLFS for reimplementation LOFS2
 
 Kern:
+- move: kern_ksyms out of kernel temporarily 
 - kern_physio.c: Incomplete: getphysbuf, putphysbuf (NetBSD 1.3)
 
 Of Interest Todo:

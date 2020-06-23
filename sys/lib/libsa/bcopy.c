@@ -1,3 +1,5 @@
+/*	$NetBSD: bcopy.c,v 1.10 2005/12/11 12:24:46 christos Exp $	*/
+
 /*-
  * Copyright (c) 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -33,6 +31,11 @@
  *	@(#)bcopy.c	8.1 (Berkeley) 6/11/93
  */
 
+#include <sys/types.h>
+#include "stand.h"
+
+#undef bcopy			/* in case of LIBSA_USE_MEMCPY */
+
 /*
  * This is designed to be small, not fast.
  */
@@ -40,13 +43,17 @@ void
 bcopy(s1, s2, n)
 	const void *s1;
 	void *s2;
-	unsigned n;
+	size_t n;
 {
-	register const char *f = s1;
-	register char *t = s2;
+	const char *f = s1;
+	char *t = s2;
 
-	while (n != 0) {
-		*t++ = *f++;
-		n--;
-	}
+	if (f < t) {
+		f += n;
+		t += n;
+		while (n-- > 0)
+			*--t = *--f;
+	} else
+		while (n-- > 0)
+			*t++ = *f++;
 }

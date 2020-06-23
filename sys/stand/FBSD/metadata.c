@@ -138,7 +138,7 @@ md_load_dual(char *args, vm_offset_t *modulep, vm_offset_t *dtb, int kern64)
 	addr = roundup(addr, PAGE_SIZE);
 
 	kernend = 0;
-	kfp = file_findfile(NULL, kern64 ? "elf64 kernel" : "elf32 kernel");
+	kfp = file_findfile(NULL, kern64 ? ELF64_KERNELTYPE : ELF32_KERNELTYPE);
 	if (kfp == NULL)
 		kfp = file_findfile(NULL, "elf kernel");
 	if (kfp == NULL)

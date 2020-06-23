@@ -222,7 +222,7 @@ found:
 	fs->fs_lasti = 1;
 	fs->fs_flags = flags;
 	if (ip) {
-		ip->i_flag |= IMOUNT;
+		ip->i_flag |= UFS211_IMOUNT;
 		cacheinval(ip);
 		IUNLOCK(ip);
 	}
@@ -297,7 +297,7 @@ found:
 	(void)iflush(dev, (struct inode *)NULL);
 #endif
 	ip = mp->m_inodp;
-	ip->i_flag &= ~IMOUNT;
+	ip->i_flag &= ~UFS211_IMOUNT;
 	irele(ip);
 	mp->m_inodp = 0;
 	mp->m_dev = 0;
@@ -329,7 +329,7 @@ getmdev(pdev, fname)
 			return (ENODEV); /* needs translation */
 		return (u->u_error);
 	}
-	if ((ip->i_mode&UFS211_FMT) != UFS211_FBLK) {
+	if ((ip->i_mode&UFS211_IFMT) != UFS211_IFBLK) {
 		iput(ip);
 		return (ENOTBLK);
 	}

@@ -6,8 +6,6 @@
  *	@(#)ufs_inode.c	1.7 (2.11BSD GTE) 1997/2/7
  */
 
-#include "../vfs/ufs211/ufs211_inode.h"
-
 #include <sys/param.h>
 
 #include <sys/user.h>
@@ -17,8 +15,10 @@
 #include <sys/buf.h>
 #include <sys/systm.h>
 #include <sys/syslog.h>
-#include "../vfs/ufs211/ufs211_fs.h"
-#include "../vfs/ufs211/ufs211_quota.h"
+#include "vfs/ufs211/ufs211_inode.h"
+#include "vfs/ufs211/ufs211_extern.h"
+#include "vfs/ufs211/ufs211_fs.h"
+#include "vfs/ufs211/ufs211_quota.h"
 
 #define	INOHSZ	16			/* must be power of two */
 #define	INOHASH(dev,ino)	(((dev)+(ino))&(INOHSZ-1))
@@ -120,12 +120,12 @@ loop:
 			 * can be deferred until after we are sure that
 			 * the inode isn't busy.
 			 */
-			if ((ip->i_flag&ILOCKED) != 0) {
-				ip->i_flag |= IWANT;
+			if ((ip->i_flag&UFS211_ILOCKED) != 0) {
+				ip->i_flag |= UFS211_IWANT;
 				sleep((caddr_t)ip, PINOD);
 				goto loop;
 			}
-			if ((ip->i_flag&IMOUNT) != 0) {
+			if ((ip->i_flag&UFS211_IMOUNT) != 0) {
 				register struct ufs211_mount *mp;
 
 				for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
@@ -149,7 +149,7 @@ loop:
 				ip->i_freeb = NULL;
 			}
 			ip->i_count++;
-			ip->i_flag |= ILOCKED;
+			ip->i_flag |= UFS211_ILOCKED;
 			return(ip);
 		}
 
@@ -182,7 +182,7 @@ loop:
 	ip->i_fs = fs;
 	ip->i_number = ino;
 	cacheinval(ip);
-	ip->i_flag = ILOCKED;
+	ip->i_flag = UFS211_ILOCKED;
 	ip->i_count++;
 	ip->i_lastr = 0;
 #ifdef QUOTA
@@ -259,8 +259,8 @@ loop:
 igrab(ip)
 	register struct ufs211_inode *ip;
 {
-	while ((ip->i_flag&ILOCKED) != 0) {
-		ip->i_flag |= IWANT;
+	while ((ip->i_flag&UFS211_ILOCKED) != 0) {
+		ip->i_flag |= UFS211_IWANT;
 		sleep((caddr_t)ip, PINOD);
 	}
 	if (ip->i_count == 0) {		/* ino on free list */
@@ -275,7 +275,7 @@ igrab(ip)
 		ip->i_freeb = NULL;
 	}
 	ip->i_count++;
-	ip->i_flag |= ILOCKED;
+	ip->i_flag |= UFS211_ILOCKED;
 }
 
 /*
@@ -295,7 +295,7 @@ iput(ip)
 	 * lots of places to gratuitously lock just so we can unlock it.
 	 * Not worth it.  -- KB
 	 */
-	if ((ip->i_flag & ILOCKED) == 0)
+	if ((ip->i_flag & UFS211_ILOCKED) == 0)
 		panic("iput");
 #endif
 	IUNLOCK(ip);
@@ -306,7 +306,7 @@ irele(ip)
 	register struct ufs211_inode *ip;
 {
 	if (ip->i_count == 1) {
-		ip->i_flag |= ILOCKED;
+		ip->i_flag |= UFS211_ILOCKED;
 		if (ip->i_nlink <= 0 && ip->i_fs->fs_ronly == 0) {
 #ifdef QUOTA
 			QUOTAMAP();
@@ -318,7 +318,7 @@ irele(ip)
 			itrunc(ip, (u_long)0, 0);
 			ip->i_mode = 0;
 			ip->i_rdev = 0;
-			ip->i_flag |= IUPD|ICHG;
+			ip->i_flag |= UFS211_IUPD|UFS211_ICHG;
 			ifree(ip, ip->i_number);
 		}
 		IUPDAT(ip, &time, &time, 0);
@@ -343,7 +343,7 @@ irele(ip)
 		}
 		ip->i_freef = NULL;
 		ifreet = &ip->i_freef;
-	} else if (!(ip->i_flag & ILOCKED))
+	} else if (!(ip->i_flag & UFS211_ILOCKED))
 		ITIMES(ip, &time, &time);
 	ip->i_count--;
 }
@@ -368,7 +368,7 @@ iupdat(ip, ta, tm, waitfor)
 #endif
 	register struct ufs211_inode *tip = ip;
 
-	if ((tip->i_flag & (IUPD|IACC|ICHG|IMOD)) == 0)
+	if ((tip->i_flag & (UFS211_IUPD|UFS211_IACC|UFS211_ICHG|UFS211_IMOD)) == 0)
 		return;
 	if (tip->i_fs->fs_ronly)
 		return;
@@ -389,14 +389,14 @@ iupdat(ip, ta, tm, waitfor)
 	xic2 = *xicp2;
 	normalseg5();
 #else
-	if (tip->i_flag&IACC)
+	if (tip->i_flag&UFS211_IACC)
 		tip->i_atime = ta->tv_sec;
-	if (tip->i_flag&IUPD)
+	if (tip->i_flag&UFS211_IUPD)
 		tip->i_mtime = tm->tv_sec;
-	if (tip->i_flag&ICHG)
+	if (tip->i_flag&UFS211_ICHG)
 		tip->i_ctime = time.tv_sec;
 #endif
-	tip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
+	tip->i_flag &= ~(UFS211_IUPD|UFS211_IACC|UFS211_ICHG|UFS211_MOD);
 	dp = (struct dinode *)mapin(bp) + itoo(tip->i_number);
 	dp->di_ic1 = tip->i_ic1;
 	dp->di_flags = tip->i_flags;
@@ -452,7 +452,7 @@ itrunc(oip,length, ioflags)
 	 * rarely do) get bigger than MAXPIPSIZ.  Don't think it worked
 	 * in V7 either, I don't really understand what's going on.
 	 */
-	if (oip->i_flag & IPIPE)
+	if (oip->i_flag & UFS211_IPIPE)
 		oip->i_size = MAXPIPSIZ;
 	else if (oip->i_size == length)
 		goto updret;
@@ -575,7 +575,7 @@ doquotaupd:
 	QUOTAUNMAP();
 #endif
 updret:
-	oip->i_flag |= ICHG|IUPD;
+	oip->i_flag |= UFS211_ICHG|UFS211_IUPD;
 	iupdat(oip, &time, &time, 1);
 }
 
@@ -762,7 +762,7 @@ iflush(dev)
 				QUOTAUNMAP();
 #endif
 			}
-		else if (ip->i_count && (ip->i_mode&IFMT)==IFBLK &&
+		else if (ip->i_count && (ip->i_mode&UFS211_IFMT)==UFS211_IFBLK &&
 		    ip->i_rdev == dev)
 			open++;
 	}

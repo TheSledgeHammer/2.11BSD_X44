@@ -12,6 +12,7 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/user.h>
 #include <sys/buf.h>
 #include <sys/dk.h>
 

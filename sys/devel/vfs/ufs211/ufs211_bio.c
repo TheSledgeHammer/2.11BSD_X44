@@ -166,7 +166,6 @@ brelse(bp)
 {
 	register struct buf *flist;
 	register s;
-
 	trace(TR_BRELSE);
 	/*
 	 * If someone's waiting for the buffer, or

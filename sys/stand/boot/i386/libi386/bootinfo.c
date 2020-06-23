@@ -130,7 +130,6 @@ bi_load(struct bootinfo *bi, struct preloaded_file *fp, char *args)
 	caddr_t					addr, bootinfo_addr;
     char					*kernelname;
     caddr_t					ssym, esym;
-	struct file_metadata	*md;
 	int 					bootdevnr;
 
     /*

@@ -115,7 +115,7 @@ struct	ufs211_dquot {
 #define	NODQUOT		((struct dquot *) 0)
 #define	LOSTDQUOT	((struct dquot *) 1)
 
-#if defined(KERNEL) && defined(QUOTA) && !defined(SUPERVISOR)
+#if defined(KERNEL) && defined(QUOTA)
 struct	dquot *dquot, *dquotNDQUOT;
 int	ndquot;
 struct	dquot *discquota(), *inoquota(), *dqalloc(), *dqp();

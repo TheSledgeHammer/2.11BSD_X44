@@ -48,7 +48,7 @@
 #undef bcmp
 
 /* define bcmp to be the same as memcmp() */
-//__strong_alias(bcmp, memcmp);
+__strong_alias(bcmp, memcmp);
 
 /*
  * Conformant memcmp()
