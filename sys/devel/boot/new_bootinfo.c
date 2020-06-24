@@ -42,6 +42,22 @@
 
 #include <i386/include/bootinfo.h>
 
+struct bootinfo bootinfo;
+
+void
+bi_init(void)
+{
+	bi_alloc(&bootinfo);
+}
+
+void
+bi_alloc(bi)
+	struct bootinfo *bi;
+{
+	memset(bi, 0, sizeof(struct bootinfo *));
+	bi->bi_magic = BOOTINFO_MAGIC;
+}
+
 /*
  * Check to see if this CPU supports long mode.
  */
@@ -80,11 +96,12 @@ bi_checkcpu(void)
 
 	/* Check for long mode. */
 	do_cpuid(0x80000001, regs);
+
 	return (regs[3] & AMDID_LM);
 }
 
 int
-bi_load(struct bootinfo *bi, struct preloaded_file *fp, char *args)
+bi_load0(struct bootinfo *bi, struct preloaded_file *fp, char *args)
 {
 	char 					*rootdevname;
 	struct i386_devdesc 	*rootdev;
@@ -103,9 +120,6 @@ bi_load(struct bootinfo *bi, struct preloaded_file *fp, char *args)
 	/*
 	 * Version 1 bootinfo.
 	 */
-	if (BOOTINFO_MAGIC) {
-		bi->bi_magic = BOOTINFO_MAGIC;
-	}
 	bi->bi_version = 1;
 
 	/*
@@ -151,8 +165,8 @@ bi_load(struct bootinfo *bi, struct preloaded_file *fp, char *args)
 	free(rootdev);
 
 	ssym = esym = 0;
-	ssym = fp->marks[MARK_SYM];
-	esym = fp->marks[MARK_END];
+	ssym = fp->f_marks[MARK_SYM];
+	esym = fp->f_marks[MARK_END];
 
 	if (ssym == 0 || esym == 0) {
 		ssym = esym = 0; /* sanity */
@@ -177,63 +191,53 @@ bi_load(struct bootinfo *bi, struct preloaded_file *fp, char *args)
 	/* pad to a page boundary */
 	addr = roundup(addr, PAGE_SIZE);
 
+	bi_legacy(bi, fp, args);
+
 	return (0);
 }
 
-static int
-bi_load32(struct bootinfo bi, struct preloaded_file	*fp, char *args, int *howtop, int *bootdevp, vm_offset_t *bip)
+int
+bi_load1(struct preloaded_file *fp, char *args, vm_offset_t addr, int add_smap)
 {
-    vm_offset_t				addr;
-    vm_offset_t				envp;
-    vm_offset_t				size;
-    vm_offset_t				ssym, esym;
-    char					*rootdevname;
-    int						bootdevnr, i, howto;
+	int error = bi_load0(&bootinfo, fp, args);
+	if(error) {
+		return (error);
+	}
+	bi_smap(fp, add_smap);
+	return (0);
+}
+
+void
+bi_legacy(struct bootinfo bi, struct preloaded_file *fp, char *args)
+{
+	int						bootdevnr, i, howto;
     char					*kernelname;
     const char				*kernelpath;
 
-    howto = bi_getboothowto(args);
+	/* legacy bootinfo structure */
+	kernelname = getenv("kernelname");
+	i386_getdev(NULL, kernelname, &kernelpath);
+	bi.bi_version = BOOTINFO_VERSION;
+	bi.bi_kernelname = 0; 						/* XXX char * -> kernel name */
+	bi.bi_disk.bi_nfs_diskless = 0; 			/* struct nfs_diskless * */
+	bi.bi_bios.bi_n_bios_used = 0; 				/* XXX would have to hook biosdisk driver for these */
+	for (i = 0; i < N_BIOS_GEOM; i++)
+		bi->bi_geom.bi_bios_geom[i] = bd_getbigeom(i);
+	bi.bi_bios.bi_size = sizeof(bi);
+	bi.bi_bios.bi_memsizes_valid = 1;
+	bi.bi_bios.bi_basemem = bios_basemem / 1024;
+	bi.bi_bios.bi_extmem = bios_extmem / 1024;
+	bi.bi_kernelname = VTOP(kernelpath);
 
-	if(!bi_load(bi, fp, args)) {
-		return (EINVAL);
-	} else {
-		/* legacy bootinfo structure */
-		kernelname = getenv("kernelname");
-		i386_getdev(NULL, kernelname, &kernelpath);
-		bi.bi_version = BOOTINFO_VERSION;
-		bi.bi_kernelname = 0; 						/* XXX char * -> kernel name */
-		bi.bi_disk.bi_nfs_diskless = 0; 			/* struct nfs_diskless * */
-		bi.bi_bios.bi_n_bios_used = 0; 				/* XXX would have to hook biosdisk driver for these */
-		for (i = 0; i < N_BIOS_GEOM; i++)
-			bi->bi_geom.bi_bios_geom[i] = bd_getbigeom(i);
-		bi.bi_bios.bi_size = sizeof(bi);
-		bi.bi_bios.bi_memsizes_valid = 1;
-		bi.bi_bios.bi_basemem = bios_basemem / 1024;
-		bi.bi_bios.bi_extmem = bios_extmem / 1024;
-		bi.bi_kernelname = VTOP(kernelpath);
-
-		/* legacy boot arguments */
-		*howtop = howto | RB_BOOTINFO;
-		*bootdevp = bootdevnr;
-		*bip = VTOP(&bi);
-	}
-	return (0);
+	/* legacy boot arguments */
+	bi.bi_leg.bi_howtop = howto | RB_BOOTINFO;
+	bi.bi_leg.bi_bootdevp = bootdevnr;
+	bi.bi_leg.bi_bip = VTOP(&bi);
 }
 
-static int
-bi_load64(struct bootinfo bi, struct preloaded_file	*fp, char *args, int add_smap)
+void
+bi_smap(struct preloaded_file *fp, int add_smap)
 {
-    int	bootdevnr, i, howto;
-
-	howto = bi_getboothowto(args);
-
-	if(!bi_load32(bi, fp, args)) {
-		return (EINVAL);
-	}
-
-	/* modules and file_metadata normally goes here */
 	if (add_smap != 0)
 		bios_addsmapdata(fp);
-
-	return (0);
 }

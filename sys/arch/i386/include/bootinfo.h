@@ -42,6 +42,7 @@
 
 #define	BOOTINFO_MAGIC			0xdeadbeeffeedface
 #define BOOTINFO_MAXSIZE 		16384
+//#define BOOTINFO_MAX			64
 
 struct bootinfo {
 	u_int32_t					bi_version;
@@ -52,6 +53,7 @@ struct bootinfo {
 	int				 			bi_len;
 	int 						bi_type;
 	uint32_t					bi_nentries;		/* Number of bootinfo_* entries in bi_data. */
+	//uint32_t 					bi_entry[1];
 	uint8_t						bi_data[BOOTINFO_MAXSIZE - sizeof(uint32_t)];
 
 	struct bootinfo_bios {		/* BIOS */
@@ -84,9 +86,9 @@ struct bootinfo {
 	struct bootinfo_bootdisk {	/* BOOTDISK */
 		int 					bi_labelsector;
 		struct {
-			u_int16_t 	type;
-			u_int16_t 	checksum;
-			char 		packname[16];
+			u_int16_t 			type;
+			u_int16_t 			checksum;
+			char 				packname[16];
 		} bi_label;
 		int 					bi_biosdev;
 		int 					bi_partition;
@@ -99,8 +101,8 @@ struct bootinfo {
 #define BI_BUS_ISA 0
 #define BI_BUS_PCI 1
 		union {
-			unsigned int iobase; 					/* ISA */
-			unsigned int tag; 						/* PCI, BIOS format */
+			unsigned int 		iobase; 			/* ISA */
+			unsigned int 		tag; 				/* PCI, BIOS format */
 		} bi_addr;
 	} bi_net;
 
@@ -116,6 +118,14 @@ struct bootinfo {
 		int						bi_spt;
 		struct dos_partition 	bi_dosparts[NDOSPART];
 	} bi_geom;
+
+	struct bootinfo_legacy {	/* LEGACY */
+		int 					*bi_howtop;
+		int 					*bi_bootdevp;
+		vm_offset_t 			*bi_bip;
+	} bi_leg;
 };
+
+extern struct bootinfo *bootinfo;
 
 #endif /* _MACHINE_BOOTINFO_H_ */

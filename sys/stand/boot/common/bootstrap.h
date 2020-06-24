@@ -202,7 +202,7 @@ struct preloaded_file
     vm_offset_t				f_addr;			/* load address */
     size_t					f_size;			/* file size */
     struct preloaded_file	*f_next;		/* next file */
-    u_long                  marks[MARK_MAX];/* filled by loadfile() */
+    u_long                  f_marks[MARK_MAX];/* filled by loadfile() */
 
     /* May Not Stay */
     struct kernel_module	*f_modules;		/* list of modules if any */
@@ -219,20 +219,16 @@ struct file_format
 
 extern struct file_format		*file_formats[];	/* supplied by consumer */
 extern struct preloaded_file	*preloaded_files;
-
+/*
 int						mod_load(char *name, struct mod_depend *verinfo, int argc, char *argv[]);
 int						mod_loadkld(const char *name, int argc, char *argv[]);
 void					unload(void);
+*/
 
 struct preloaded_file 	*file_alloc(void);
 struct preloaded_file 	*file_findfile(char *name, char *type);
 struct preloaded_file 	*file_loadraw(const char *name, char *type, int insert);
 void 					file_discard(struct preloaded_file *fp);
-
-int	aout_loadfile(char *filename, u_int32_t dest, struct preloaded_file **result);
-int	ecoff_loadfile(char *filename, u_int32_t dest, struct preloaded_file **result);
-int	elf32_loadfile(char *filename, u_int32_t dest, struct preloaded_file **result);
-int	elf64_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result);
 
 /*
  * The intention of the architecture switch is to provide a convenient
@@ -285,4 +281,8 @@ time_t	time(time_t *tloc);
 #define ELF32_KERNELTYPE 	"elf32 kernel"
 #define ELF64_KERNELTYPE 	"elf64 kernel"
 
+int	aout_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result);
+int	ecoff_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result);
+int	elf32_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result);
+int	elf64_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result);
 #endif /* !_BOOTSTRAP_H_ */

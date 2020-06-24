@@ -110,12 +110,12 @@ static uint32_t ksyms_nmap[KSYMS_MAX_ID];	/* sorted symbol table map */
 static uint32_t *ksyms_nmap = NULL;
 #endif
 
-static int ksyms_maxlen;
-static bool ksyms_isopen;
-static bool ksyms_initted;
-static bool ksyms_loaded;
-static struct simple_lock ksyms_lock;
-static struct ksyms_symtab kernel_symtab;
+static int 					ksyms_maxlen;
+static bool 				ksyms_isopen;
+static bool 				ksyms_initted;
+static bool 				ksyms_loaded;
+static struct simple_lock 	ksyms_lock;
+static struct ksyms_symtab 	kernel_symtab;
 
 static void ksyms_hdr_init(const void *);
 static void ksyms_sizes_calc(void);
@@ -127,7 +127,7 @@ static void ksyms_sizes_calc(void);
 static int ksyms_debug;
 #endif
 
-#define		SYMTAB_FILLER	"|This is the symbol table!"
+#define	SYMTAB_FILLER	"|This is the symbol table!"
 
 #ifdef makeoptions_COPY_SYMTAB
 extern char db_symtab[];
@@ -141,7 +141,7 @@ struct ksyms_hdr ksyms_hdr;
 int ksyms_symsz;
 int ksyms_strsz;
 int ksyms_ctfsz;	/* this is not currently used by savecore(8) */
-TAILQ_HEAD(, ksyms_symtab) ksyms_symtabs;// = TAILQ_HEAD_INITIALIZER(ksyms_symtabs);
+TAILQ_HEAD(, ksyms_symtab) ksyms_symtabs;
 
 static int
 ksyms_verify(const void *symstart, const void *strstart)
@@ -230,7 +230,7 @@ ksymsattach(int arg)
 void
 ksyms_init(void)
 {
-
+	TAILQ_INIT(&ksyms_symtabs);
 #ifdef makeoptions_COPY_SYMTAB
 	if (!ksyms_loaded &&
 	    strncmp(db_symtab, SYMTAB_FILLER, sizeof(SYMTAB_FILLER))) {
@@ -426,7 +426,6 @@ addsymtab(const char *name, void *symstart, size_t symsize,
 #endif
 
 	/* ksymsread() is unlocked, so membar. */
-	membar_producer();
 	TAILQ_INSERT_TAIL(&ksyms_symtabs, tab, sd_queue);
 	ksyms_sizes_calc();
 	ksyms_loaded = true;
@@ -549,65 +548,6 @@ ksyms_addsyms_explicit(void *ehdr, void *symstart, size_t symsize,
 	ksyms_hdr_init(ehdr);
 	addsymtab("netbsd", symstart, symsize, strstart, strsize, &kernel_symtab, symstart, NULL, 0, ksyms_nmap);
 }
-
-#ifdef DDB
-/*
- * Keep sifting stuff here, to avoid export of ksyms internals.
- *
- * Systems is expected to be quiescent, so no locking done.
- */
-int
-ksyms_sift(char *mod, char *sym, int mode)
-{
-	struct ksyms_symtab *st;
-	char *sb;
-	int i, sz;
-
-	if (!ksyms_loaded)
-		return ENOENT;
-
-	TAILQ_FOREACH(st, &ksyms_symtabs, sd_queue) {
-		if (st->sd_gone)
-			continue;
-		if (mod && strcmp(mod, st->sd_name))
-			continue;
-		sb = st->sd_strstart - st->sd_usroffset;
-
-		sz = st->sd_symsize/sizeof(Elf_Sym);
-		for (i = 0; i < sz; i++) {
-			Elf_Sym *les = st->sd_symstart + i;
-			char c;
-
-			if (strstr(sb + les->st_name, sym) == NULL)
-				continue;
-
-			if (mode == 'F') {
-				switch (ELF_ST_TYPE(les->st_info)) {
-				case STT_OBJECT:
-					c = '+';
-					break;
-				case STT_FUNC:
-					c = '*';
-					break;
-				case STT_SECTION:
-					c = '&';
-					break;
-				case STT_FILE:
-					c = '/';
-					break;
-				default:
-					c = ' ';
-					break;
-				}
-				db_printf("%s%c ", sb + les->st_name, c);
-			} else
-				db_printf("%s ", sb + les->st_name);
-		}
-	}
-	return ENOENT;
-}
-#endif /* DDB */
-
 
 /*
  * In case we exposing the symbol table to the userland using the pseudo-
@@ -732,7 +672,7 @@ ksyms_hdr_init(const void *hdraddr)
 }
 
 static int
-ksymsopen(dev_t dev, int oflags, int devtype, struct lwp *l)
+ksymsopen(dev_t dev, int oflags, int devtype, struct proc *p)
 {
 	if (minor(dev) != 0 || !ksyms_loaded)
 		return ENXIO;
@@ -757,7 +697,7 @@ ksymsopen(dev_t dev, int oflags, int devtype, struct lwp *l)
 }
 
 static int
-ksymsclose(dev_t dev, int oflags, int devtype, struct lwp *l)
+ksymsclose(dev_t dev, int oflags, int devtype, struct proc *p)
 {
 	struct ksyms_symtab *st, *next;
 	bool resize;

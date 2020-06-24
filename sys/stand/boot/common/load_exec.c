@@ -39,6 +39,12 @@
 #include "bootstrap.h"
 
 #include <machine/loadfile_machdep.h>
+/*
+struct file_format i386_aout = { aout_loadfile };
+struct file_format i386_ecoff = { ecoff_loadfile };
+struct file_format i386_elf = { elf32_loadfile };
+struct file_format amd64_elf = { elf64_loadfile };
+*/
 
 /*
  * Attempts to load the file (file) as an module defined by the parameter 'kerneltype'.
@@ -61,7 +67,7 @@ exec_loadfile(char *kerneltype, char *filename, u_long dest, struct preloaded_fi
 	if (err != 0)
 		goto out;
 
-	marks = fp->marks;
+	marks = fp->f_marks;
 	fp->f_name = strdup(filename);
 	fp->f_type = strdup(kerneltype);
 
@@ -128,34 +134,27 @@ loadfile_header(char *kerneltype, char *filename)
 	 return (err);
 }
 
-#ifdef BOOT_AOUT
+
 int
-aout_loadfile(char *filename, u_int32_t dest, struct preloaded_file **result)
+aout_loadfile(char *filename, uint64_t dest, struct preloaded_file **result)
 {
 	return (exec_loadfile(AOUT_KERNELTYPE, filename, dest, result));
 }
-#endif
 
-#ifdef BOOT_ECOFF
 int
-ecoff_loadfile(char *filename, u_int32_t dest, struct preloaded_file **result)
+ecoff_loadfile(char *filename, uint64_t dest, struct preloaded_file **result)
 {
 	return (exec_loadfile(ECOFF_KERNELTYPE, filename, dest, result));
 }
-#endif
 
-#ifdef BOOT_ELF32
 int
-elf32_loadfile(char *filename, u_int32_t dest, struct preloaded_file **result)
+elf32_loadfile(char *filename, uint64_t dest, struct preloaded_file **result)
 {
 	return (exec_loadfile(ELF32_KERNELTYPE, filename, dest, result));
 }
-#endif
 
-#ifdef BOOT_ELF64
 int
 elf64_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result)
 {
 	return (exec_loadfile(ELF64_KERNELTYPE, filename, dest, result));
 }
-#endif
