@@ -30,12 +30,17 @@
 #define SYS_KTHREADS_H_
 
 #include <sys/proc.h>
-#include "../../../sys/tcb.h"
+#include "sys/tcb.h"
 
 /* Number of Threads per Process? */
 
 /* kernel threads */
 struct kthread {
+	struct proc 		*kt_procp;		/* Original is the orignal kthread in kthread */
+	struct kthreadpool	*kt_ktpoolp;	/* kernel threadpool overseer */
+
+	struct uthread		*kt_uthreadp;	/* Pointer User Threads */
+
 	struct kthread		*kt_nxt;		/* linked list of allocated thread slots */
 	struct kthread		**kt_prev;
 
@@ -55,10 +60,7 @@ struct kthread {
 	struct pstats 	 	*kt_stats;		/* Accounting/statistics (THREAD ONLY). */
 	struct sigacts 		*kt_sig;		/* Signal actions, state (THREAD ONLY). */
 
-#define	t_ucred			t_cred->pc_ucred
-
-	struct proc 		*kt_procp;		/* Pointer to Proc */
-	struct uthread		*kt_uthreadp;	/* Pointer User Threads */
+#define	kt_ucred		kt_cred->pc_ucred
 
 	struct kthread    	*kt_hash;       /* hashed based on t_tid & p_pid for kill+exit+... */
 	struct kthread    	*kt_tgrpnxt;	/* Pointer to next thread in thread group. */
@@ -71,8 +73,6 @@ struct kthread {
 	struct tgrp 	    *kt_tgrp;       /* Pointer to thread group. */
 	struct sysentvec	*kt_sysent;		/* System call dispatch information. */
 
-	struct kthread 		*kt_link;		/* linked list of running threads */
-
 	struct mutex        *kt_mutex;
 	struct rwlock		*kt_rwlock;
     short               kt_locks;
@@ -82,7 +82,8 @@ struct kthread {
 #define	kt_tgid			kt_tgrp->tg_id
 
 /* Locks */
-mutex_t 			kthread_mtx; 		/* mutex lock */
+mutex_t 				kthread_mtx; 		/* mutex lock */
+rwlock_t				kthread_rwl;		/* reader-writers lock */
 
 /* Kernel Threadpool Threads */
 TAILQ_HEAD(kthread_head, kthreadpool_thread);

@@ -40,8 +40,8 @@
 #ifndef SYS_MUTEX_H_
 #define SYS_MUTEX_H_
 
-#include "../../sys/lockmgr.h"
-#include "../../sys/tcb.h"
+#include "sys/lockmgr.h"
+#include "sys/tcb.h"
 
 struct mutex {
     volatile unsigned int   mtx_lock;

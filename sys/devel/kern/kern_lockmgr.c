@@ -47,20 +47,6 @@
 
 #include "devel/sys/lockmgr.h"
 
-/*
- * Problem:
- * - Lockmgr: relies on proc
- * - Mutexmgr: relies on threads
- * - Both do the same thing
- * - threads & proc need to be able to know which has the current lock or acquire the lock aka lockmgr -> mtxmgr
- *
- * Sol 1;
- * - lockmgr: check if proc is holding the lock. else run mutexmgr.
- *
- * Sol 2:
- * - init lockmgr for proc at start like threads.
- */
-
 /* Initialize a lock; required before use. */
 void
 lock_init(lkp, prio, wmesg, timo, flags)
@@ -77,7 +63,6 @@ lock_init(lkp, prio, wmesg, timo, flags)
 	lkp->lk_timo = timo;
 	lkp->lk_wmesg = wmesg;
 	lkp->lk_lockholder = LK_NOPROC;
-	lkp->lk_plockholder = NULL;
 }
 
 int lock_wait_time = 100;

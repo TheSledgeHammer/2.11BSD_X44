@@ -33,16 +33,22 @@
 
 #define	BOOTINFO_VERSION		1
 
-#define BOOTINFO_BOOTPATH 		0
-#define BOOTINFO_BOOTDISK 		3
+#define BOOTINFO_BIOS 			0
+#define BOOTINFO_EFI 			1
+#define BOOTINFO_ENVIRONMENT 	2
+#define BOOTINFO_BOOTDISK		3
 #define BOOTINFO_NETIF 			4
-#define BOOTINFO_CONSOLE 		6
+#define BOOTINFO_CONSOLE 		5
+#define BOOTINFO_BIOSGEOM 		6
+#define BOOTINFO_LEGACY			7
 
 #define	N_BIOS_GEOM				8
 
 #define	BOOTINFO_MAGIC			0xdeadbeeffeedface
 #define BOOTINFO_MAXSIZE 		16384
 //#define BOOTINFO_MAX			64
+
+#ifndef _LOCORE
 
 struct bootinfo {
 	u_int32_t					bi_version;
@@ -78,6 +84,7 @@ struct bootinfo {
 	struct bootinfo_enivronment {/* ENVIRONMENT */
 		u_int32_t				bi_kernend;			/* end of kernel space */
 		u_int32_t				bi_modulep;			/* pre-loaded modules */
+		u_int32_t				bi_nsymtab;
 		u_int32_t				bi_symtab;			/* start of kernel sym table */
 		u_int32_t				bi_esymtab;			/* end of kernel sym table */
 		u_int32_t				bi_environment;		/* environment */
@@ -126,6 +133,13 @@ struct bootinfo {
 	} bi_leg;
 };
 
+#endif /* _LOCORE */
 extern struct bootinfo *bootinfo;
+
+#ifndef _LOCORE
+
+void *lookup_bootinfo(int);
+
+#endif /* _LOCORE */
 
 #endif /* _MACHINE_BOOTINFO_H_ */

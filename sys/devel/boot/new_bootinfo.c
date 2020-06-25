@@ -101,14 +101,14 @@ bi_checkcpu(void)
 }
 
 int
-bi_load0(struct bootinfo *bi, struct preloaded_file *fp, char *args)
+bi_load_stage0(struct bootinfo *bi, struct preloaded_file *fp, char *args)
 {
 	char 					*rootdevname;
 	struct i386_devdesc 	*rootdev;
 	struct preloaded_file 	*xp;
 	caddr_t 				addr, bootinfo_addr;
 	char 					*kernelname;
-	caddr_t 				ssym, esym;
+	caddr_t 				ssym, esym, nsym;
 	int 					bootdevnr;
 
 	/* Check long mode support */
@@ -147,7 +147,7 @@ bi_load0(struct bootinfo *bi, struct preloaded_file *fp, char *args)
 	bootdevnr = 0;
 
 	switch (rootdev->dd.d_dev->dv_type) {
-	case DEVT_CD: /* to be implemented */
+	case DEVT_CD:
 	case DEVT_DISK:
 		/* pass in the BIOS device number of the current disk */
 		bi->bi_bios.bi_bios_dev = bd_unit2bios(rootdev);
@@ -164,14 +164,16 @@ bi_load0(struct bootinfo *bi, struct preloaded_file *fp, char *args)
 	}
 	free(rootdev);
 
-	ssym = esym = 0;
+	nsym = ssym = esym = 0;
+	nsym = fp->f_marks[MARK_NSYM];
 	ssym = fp->f_marks[MARK_SYM];
 	esym = fp->f_marks[MARK_END];
 
-	if (ssym == 0 || esym == 0) {
-		ssym = esym = 0; /* sanity */
+	if (nsym == 0 || ssym == 0 || esym == 0) {
+		nsym = ssym = esym = 0; 				/* sanity */
 	}
 
+	bi->bi_envp->bi_nsymtab = nsym;
     bi->bi_envp->bi_symtab = ssym;
     bi->bi_envp->bi_esymtab = esym;
 
@@ -191,24 +193,23 @@ bi_load0(struct bootinfo *bi, struct preloaded_file *fp, char *args)
 	/* pad to a page boundary */
 	addr = roundup(addr, PAGE_SIZE);
 
-	bi_legacy(bi, fp, args);
-
 	return (0);
 }
 
 int
-bi_load1(struct preloaded_file *fp, char *args, vm_offset_t addr, int add_smap)
+bi_load_stage1(struct preloaded_file *fp, char *args, vm_offset_t addr, int add_smap)
 {
-	int error = bi_load0(&bootinfo, fp, args);
+	int error = bi_load_stage0(&bootinfo, fp, args);
 	if(error) {
 		return (error);
 	}
-	bi_smap(fp, add_smap);
+	bi_load_legacy(&bootinfo, fp, args);
+	bi_load_smap(fp, add_smap);
 	return (0);
 }
 
 void
-bi_legacy(struct bootinfo bi, struct preloaded_file *fp, char *args)
+bi_load_legacy(struct bootinfo bi, struct preloaded_file *fp, char *args)
 {
 	int						bootdevnr, i, howto;
     char					*kernelname;
@@ -236,7 +237,7 @@ bi_legacy(struct bootinfo bi, struct preloaded_file *fp, char *args)
 }
 
 void
-bi_smap(struct preloaded_file *fp, int add_smap)
+bi_load_smap(struct preloaded_file *fp, int add_smap)
 {
 	if (add_smap != 0)
 		bios_addsmapdata(fp);

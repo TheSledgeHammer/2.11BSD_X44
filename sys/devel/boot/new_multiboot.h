@@ -132,11 +132,14 @@ struct multiboot_aout_symbol_table {
 };
 
 /* The section header table for ELF. */
-struct multiboot_elf_section_header_table {
+struct multiboot_elf_symbol_table {
+	multiboot_uint32_t 		type;
 	multiboot_uint32_t 		num;
 	multiboot_uint32_t 		size;
 	multiboot_uint32_t 		addr;
+	multiboot_uint32_t 		entsize;
 	multiboot_uint32_t 		shndx;
+	char 					sections[0];
 };
 
 struct multiboot_info {
@@ -159,7 +162,7 @@ struct multiboot_info {
 
 	union {
 		struct multiboot_aout_symbol_table 			mi_aout_sym;
-		struct multiboot_elf_section_header_table 	mi_elf_sec;
+		struct multiboot_elf_symbol_table			mi_elf_sym;
 	} u;
 
 	/* Memory Mapping buffer */

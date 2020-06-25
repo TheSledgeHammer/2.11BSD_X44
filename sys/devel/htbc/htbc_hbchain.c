@@ -37,10 +37,10 @@
 #include <devel/htbc/htbc.h>
 #include <devel/htbc/htbc_htree.h>
 
-CIRCLEQ_HEAD(hbchain_head, hbchain);
-struct hbchain {
-	struct hbchain_head			hc_header;
-	CIRCLEQ_ENTRY(hbchain)		hc_entries;
+CIRCLEQ_HEAD(chain_head, bchain);
+struct bchain {
+	struct chain_head			hc_header;
+	CIRCLEQ_ENTRY(bchain)		hc_entries;
 	uint32_t					hc_version;
 	uint32_t					hc_timestamp;
 	uint32_t					hc_hash;
@@ -48,28 +48,28 @@ struct hbchain {
 
 void
 hbchain_init(hch)
-	struct hbchain *hch;
+	struct bchain *hch;
 {
 	CIRCLEQ_INIT(hch->hc_header);
 }
 
 void
 hbchain_insert_head(hch)
-	struct hbchain *hch;
+	struct bchain *hch;
 {
 	CIRCLEQ_INSERT_HEAD(hch->hc_header, hch, hc_entries);
 }
 
 void
 hbchain_insert_tail(hch)
-	struct hbchain *hch;
+	struct bchain *hch;
 {
 	CIRCLEQ_INSERT_TAIL(hch->hc_header, hch, hc_entries);
 }
 
 void
 hbchain_remove(hch)
-	struct hbchain *hch;
+	struct bchain *hch;
 {
 	CIRCLEQ_REMOVE(hch->hc_header, hch, hc_entries);
 }
@@ -77,7 +77,7 @@ hbchain_remove(hch)
 /* Searches the next entry in the blockchain for matching hash value */
 struct hbchain *
 hbchain_search_next(hch, hash)
-	struct hbchain *hch;
+	struct bchain *hch;
 	uint32_t hash;
 {
 	CIRCLEQ_FOREACH(hch, hch->hc_header, hc_entries) {
@@ -91,7 +91,7 @@ hbchain_search_next(hch, hash)
 /* Searches the previous entry in the blockchain for matching hash value */
 struct hbchain *
 hbchain_search_prev(hch, hash)
-	struct hbchain *hch;
+	struct bchain *hch;
 	uint32_t hash;
 {
 	CIRCLEQ_FOREACH(hch, hch->hc_header, hc_entries) {
@@ -103,13 +103,13 @@ hbchain_search_prev(hch, hash)
 }
 
 static uint32_t
-hbchain_get_hash(struct hbchain *hch)
+hbchain_get_hash(struct bchain *hch)
 {
 	return hch->hc_hash;
 }
 
 static uint32_t
-hbchain_get_timestamp(struct hbchain *hch)
+hbchain_get_timestamp(struct bchain *hch)
 {
 	return hch->hc_timestamp;
 }
@@ -121,19 +121,19 @@ hbchain_get_version(struct hbchain *hch)
 }
 
 static void
-hbchain_set_hash(struct hbchain *hch, uint32_t hash)
+hbchain_set_hash(struct bchain *hch, uint32_t hash)
 {
 	hch->hc_hash = hash;
 }
 
 static void
-hbchain_set_timestamp(struct hbchain *hch, uint32_t timestamp)
+hbchain_set_timestamp(struct bchain *hch, uint32_t timestamp)
 {
 	hch->hc_timestamp = timestamp;
 }
 
 static void
-hbchain_set_version(struct hbchain *hch, uint32_t version)
+hbchain_set_version(struct bchain *hch, uint32_t version)
 {
 	hch->hc_version = version;
 }

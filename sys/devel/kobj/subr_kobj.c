@@ -62,11 +62,6 @@
 
 #include <sys/cdefs.h>
 
-#include <kobj.h>
-#include <kobj_impl.h>
-
-#ifdef MODULAR
-
 #include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
@@ -74,6 +69,8 @@
 #include <sys/ksyms.h>
 
 #include <vm/include/vm_extern.h>
+#include <sys/kobj.h>
+#include <sys/kobj_impl.h>
 
 #define kobj_error(_kobj, ...) \
 	kobj_out(__func__, __LINE__, _kobj, __VA_ARGS__)
@@ -186,8 +183,7 @@ kobj_load(kobj_t ko)
 
 	if (hdr->e_ident[EI_VERSION] != EV_CURRENT ||
 	    hdr->e_version != EV_CURRENT) {
-		kobj_error(ko, "unsupported file version %d",
-		    hdr->e_ident[EI_VERSION]);
+		kobj_error(ko, "unsupported file version %d", hdr->e_ident[EI_VERSION]);
 		error = ENOEXEC;
 		goto out;
 	}
@@ -225,8 +221,7 @@ kobj_load(kobj_t ko)
 		goto out;
 	}
 	ko->ko_shdrsz = hdr->e_shnum * sizeof(Elf_Shdr);
-	error = ko->ko_read(ko, (void **)&shdr, ko->ko_shdrsz, hdr->e_shoff,
-	    true);
+	error = ko->ko_read(ko, (void **)&shdr, ko->ko_shdrsz, hdr->e_shoff, TRUE);
 	if (error != 0) {
 		kobj_error(ko, "read failed %d", error);
 		goto out;
@@ -288,7 +283,7 @@ kobj_load(kobj_t ko)
 	 * Allocate space for tracking the load chunks.
 	 */
 	if (ko->ko_nprogtab != 0) {
-		ko->ko_progtab = kmem_zalloc(ko->ko_nprogtab * sizeof(*ko->ko_progtab), KM_SLEEP);
+		ko->ko_progtab = rmalloc(ko, ko->ko_nprogtab * sizeof(*ko->ko_progtab));
 		if (ko->ko_progtab == NULL) {
 			error = ENOMEM;
 			kobj_error(ko, "out of memory");
@@ -296,7 +291,7 @@ kobj_load(kobj_t ko)
 		}
 	}
 	if (ko->ko_nrel != 0) {
-		ko->ko_reltab = kmem_zalloc(ko->ko_nrel * sizeof(*ko->ko_reltab), KM_SLEEP);
+		ko->ko_reltab = rmalloc(ko, ko->ko_nrel * sizeof(*ko->ko_reltab));
 		if (ko->ko_reltab == NULL) {
 			error = ENOMEM;
 			kobj_error(ko, "out of memory");
@@ -304,7 +299,7 @@ kobj_load(kobj_t ko)
 		}
 	}
 	if (ko->ko_nrela != 0) {
-		ko->ko_relatab = kmem_zalloc(ko->ko_nrela * sizeof(*ko->ko_relatab), KM_SLEEP);
+		ko->ko_relatab = rmalloc(ko, ko->ko_nrela * sizeof(*ko->ko_relatab));
 		if (ko->ko_relatab == NULL) {
 			error = ENOMEM;
 			kobj_error(ko, "out of memory");
@@ -411,7 +406,7 @@ kobj_load(kobj_t ko)
  	}
 
 	if (map_data_size != 0) {
-		map_data_base = kmem_alloc(module_map, round_page(map_data_size));
+		map_data_base = rmalloc(module_map, round_page(map_data_size));
 		if (map_data_base == 0) {
 			kobj_error(ko, "out of memory");
 			error = ENOMEM;
@@ -426,7 +421,7 @@ kobj_load(kobj_t ko)
 	}
 
 	if (map_rodata_size != 0) {
-		map_rodata_base = kmem_alloc(module_map, round_page(map_rodata_size));
+		map_rodata_base = rmalloc(module_map, round_page(map_rodata_size));
 		if (map_rodata_base == 0) {
 			kobj_error(ko, "out of memory");
 			error = ENOMEM;
@@ -440,7 +435,7 @@ kobj_load(kobj_t ko)
 		ko->ko_rodata_size = 0;
 	}
 
-	map_text_base = kmem_alloc(module_map, round_page(map_text_size));
+	map_text_base = rmalloc(module_map, round_page(map_text_size));
 	if (map_text_base == 0) {
 		kobj_error(ko, "out of memory");
 		error = ENOMEM;
@@ -595,9 +590,9 @@ kobj_load(kobj_t ko)
 	 * Perform local relocations only.  Relocations relating to global
 	 * symbols will be done by kobj_affix().
 	 */
-	error = kobj_checksyms(ko, false);
+	error = kobj_checksyms(ko, FALSE);
 	if (error == 0) {
-		error = kobj_relocate(ko, true);
+		error = kobj_relocate(ko, TRUE);
 	}
  out:
 	if (hdr != NULL) {
@@ -617,19 +612,17 @@ kobj_unload_notify(kobj_t ko, caddr_t addr, size_t size, const char *note)
 	if (addr == 0)
 		return;
 
-	int error = kobj_machdep(ko, (void *)addr, size, false);
+	int error = kobj_machdep(ko, (void *)addr, size, FALSE);
 	if (error)
-		kobj_error(ko, "machine dependent deinit failed (%s) %d",
-		    note, error);
+		kobj_error(ko, "machine dependent deinit failed (%s) %d", note, error);
 }
 
-#define KOBJ_SEGMENT_NOTIFY(ko, what) 								\
+#define KOBJ_SEGMENT_NOTIFY(ko, what) 																\
     kobj_unload_notify(ko, (ko)->ko_ ## what ## _address, (ko)->ko_ ## what ## _size, # what);
 
-#define KOBJ_SEGMENT_FREE(ko, what) {							\
-	if ((ko)->ko_ ## what ## _address != 0) 						\
-		kmem_free(module_map, (ko)->ko_ ## what ## _address, round_page((ko)->ko_ ## what ## _size)); \
-}
+#define KOBJ_SEGMENT_FREE(ko, what) 																\
+	if ((ko)->ko_ ## what ## _address != 0) 														\
+		rmfree(module_map, round_page((ko)->ko_ ## what ## _size), (ko)->ko_ ## what ## _address); 	\
 
 
 /*
@@ -652,14 +645,10 @@ kobj_unload(kobj_t ko)
 		KOBJ_SEGMENT_NOTIFY(ko, data);
 		KOBJ_SEGMENT_NOTIFY(ko, rodata);
 	}
+	KOBJ_SEGMENT_FREE(ko, text);
+	KOBJ_SEGMENT_FREE(ko, data);
+	KOBJ_SEGMENT_FREE(ko, rodata);
 
-	kmem_free(module_map, (ko)->ko_text_address, round_page((ko)->ko_text_address));
-	kmem_free(module_map, (ko)->ko_data_address, round_page((ko)->ko_data_address));
-	kmem_free(module_map, (ko)->ko_rodata_address, round_page((ko)->ko_rodata_address));
-
-	if (ko->ko_ksyms == true) {
-		ksyms_modunload(ko->ko_name);
-	}
 	if (ko->ko_symtab != NULL) {
 		kobj_free(ko, ko->ko_symtab, ko->ko_symcnt * sizeof(Elf_Sym));
 	}
@@ -676,7 +665,7 @@ kobj_unload(kobj_t ko)
 		ko->ko_shstrtab = NULL;
 	}
 
-	kmem_free(ko, sizeof(*ko));
+	rmfree(ko, sizeof(*ko), ko);
 }
 
 /*
@@ -714,22 +703,11 @@ kobj_affix(kobj_t ko, const char *name)
 	kobj_setname(ko, name);
 
 	/* Cache addresses of undefined symbols. */
-	error = kobj_checksyms(ko, true);
+	error = kobj_checksyms(ko, TRUE);
 
 	/* Now do global relocations. */
 	if (error == 0)
-		error = kobj_relocate(ko, false);
-
-	/*
-	 * Now that we know the name, register the symbol table.
-	 * Do after global relocations because ksyms will pack
-	 * the table.
-	 */
-	if (error == 0) {
-		ksyms_modload(ko->ko_name, ko->ko_symtab, ko->ko_symcnt *
-		    sizeof(Elf_Sym), ko->ko_strtab, ko->ko_strtabsz);
-		ko->ko_ksyms = true;
-	}
+		error = kobj_relocate(ko, FALSE);
 
 	/* Jettison unneeded memory post-link. */
 	kobj_jettison(ko);
@@ -740,31 +718,28 @@ kobj_affix(kobj_t ko, const char *name)
 	 * Most architectures use this opportunity to flush their caches.
 	 */
 	if (error == 0 && ko->ko_text_address != 0) {
-		error = kobj_machdep(ko, (void *)ko->ko_text_address,
-		    ko->ko_text_size, true);
+		error = kobj_machdep(ko, (void *)ko->ko_text_address, ko->ko_text_size, TRUE);
 		if (error != 0)
 			kobj_error(ko, "machine dependent init failed (text)"
 			    " %d", error);
 	}
 
 	if (error == 0 && ko->ko_data_address != 0) {
-		error = kobj_machdep(ko, (void *)ko->ko_data_address,
-		    ko->ko_data_size, true);
+		error = kobj_machdep(ko, (void *)ko->ko_data_address, ko->ko_data_size, TRUE);
 		if (error != 0)
 			kobj_error(ko, "machine dependent init failed (data)"
 			    " %d", error);
 	}
 
 	if (error == 0 && ko->ko_rodata_address != 0) {
-		error = kobj_machdep(ko, (void *)ko->ko_rodata_address,
-		    ko->ko_rodata_size, true);
+		error = kobj_machdep(ko, (void *)ko->ko_rodata_address, ko->ko_rodata_size, TRUE);
 		if (error != 0)
 			kobj_error(ko, "machine dependent init failed (rodata)"
 			    " %d", error);
 	}
 
 	if (error == 0) {
-		ko->ko_loaded = true;
+		ko->ko_loaded = TRUE;
 
 		/* Change the memory protections, when needed. */
 		if (ko->ko_text_address != 0) {
@@ -822,24 +797,20 @@ kobj_jettison(kobj_t ko)
 	if (ko->ko_reltab != NULL) {
 		for (i = 0; i < ko->ko_nrel; i++) {
 			if (ko->ko_reltab[i].rel) {
-				kobj_free(ko, ko->ko_reltab[i].rel,
-				    ko->ko_reltab[i].size);
+				kobj_free(ko, ko->ko_reltab[i].rel, ko->ko_reltab[i].size);
 			}
 		}
-		kobj_free(ko, ko->ko_reltab, ko->ko_nrel *
-		    sizeof(*ko->ko_reltab));
+		kobj_free(ko, ko->ko_reltab, ko->ko_nrel * sizeof(*ko->ko_reltab));
 		ko->ko_reltab = NULL;
 		ko->ko_nrel = 0;
 	}
 	if (ko->ko_relatab != NULL) {
 		for (i = 0; i < ko->ko_nrela; i++) {
 			if (ko->ko_relatab[i].rela) {
-				kobj_free(ko, ko->ko_relatab[i].rela,
-				    ko->ko_relatab[i].size);
+				kobj_free(ko, ko->ko_relatab[i].rela, ko->ko_relatab[i].size);
 			}
 		}
-		kobj_free(ko, ko->ko_relatab, ko->ko_nrela *
-		    sizeof(*ko->ko_relatab));
+		kobj_free(ko, ko->ko_relatab, ko->ko_nrela * sizeof(*ko->ko_relatab));
 		ko->ko_relatab = NULL;
 		ko->ko_nrela = 0;
 	}
@@ -1033,9 +1004,7 @@ kobj_relocate(kobj_t ko, bool local)
 		rellim = rel + ko->ko_reltab[i].nrel;
 		base = kobj_findbase(ko, ko->ko_reltab[i].sec);
 		if (base == 0) {
-			panic("%s:%d: %s: lost base for e_reltab[%d] sec %d",
-			   __func__, __LINE__, ko->ko_name, i,
-			   ko->ko_reltab[i].sec);
+			panic("%s:%d: %s: lost base for e_reltab[%d] sec %d", __func__, __LINE__, ko->ko_name, i, ko->ko_reltab[i].sec);
 		}
 		for (; rel < rellim; rel++) {
 			symidx = ELF_R_SYM(rel->r_info);
@@ -1064,9 +1033,7 @@ kobj_relocate(kobj_t ko, bool local)
 		relalim = rela + ko->ko_relatab[i].nrela;
 		base = kobj_findbase(ko, ko->ko_relatab[i].sec);
 		if (base == 0) {
-			panic("%s:%d: %s: lost base for e_relatab[%d] sec %d",
-			   __func__, __LINE__, ko->ko_name, i,
-			   ko->ko_relatab[i].sec);
+			panic("%s:%d: %s: lost base for e_relatab[%d] sec %d", __func__, __LINE__, ko->ko_name, i, ko->ko_relatab[i].sec);
 		}
 		for (; rela < relalim; rela++) {
 			symidx = ELF_R_SYM(rela->r_info);
@@ -1077,7 +1044,7 @@ kobj_relocate(kobj_t ko, bool local)
 			if (local != (ELF_ST_BIND(sym->st_info) == STB_LOCAL)) {
 				continue;
 			}
-			error = kobj_reloc(ko, base, rela, true, local);
+			error = kobj_reloc(ko, base, rela, TRUE, local);
 			if (error != 0) {
 				return ENOENT;
 			}
@@ -1117,7 +1084,7 @@ kobj_read_mem(kobj_t ko, void **basep, size_t size, off_t off, bool allocate)
 		error = EINVAL;
 		base = NULL;
 	} else if (allocate) {
-		base = kmem_alloc(size, KM_SLEEP);
+		base = rmalloc(ko, base, size);
 		error = 0;
 	} else {
 		error = 0;
@@ -1129,7 +1096,7 @@ kobj_read_mem(kobj_t ko, void **basep, size_t size, off_t off, bool allocate)
 	}
 
 	if (allocate && error != 0) {
-		kmem_free(base, size);
+		rmfree(ko, size, base);
 		base = NULL;
 	}
 
@@ -1147,7 +1114,7 @@ kobj_read_mem(kobj_t ko, void **basep, size_t size, off_t off, bool allocate)
 static void
 kobj_free(kobj_t ko, void *base, size_t size)
 {
-	kmem_free(base, size);
+	rmfree(ko, size, base);
 }
 
 extern char module_base[];
@@ -1176,43 +1143,3 @@ kobj_setname(kobj_t ko, const char *name)
 	}
 	snprintf(ko->ko_name, sizeof(ko->ko_name), "%s%s%s", name, dots, d);
 }
-
-#else	/* MODULAR */
-
-int
-kobj_load_mem(kobj_t *kop, const char *name, void *base, ssize_t size)
-{
-	return ENOSYS;
-}
-
-void
-kobj_unload(kobj_t ko)
-{
-	panic("not modular");
-}
-
-int
-kobj_stat(kobj_t ko, caddr_t *base, size_t *size)
-{
-	return ENOSYS;
-}
-
-int
-kobj_affix(kobj_t ko, const char *name)
-{
-	panic("not modular");
-}
-
-int
-kobj_find_section(kobj_t ko, const char *name, void **addr, size_t *size)
-{
-	panic("not modular");
-}
-
-void
-kobj_setname(kobj_t ko, const char *name)
-{
-	panic("not modular");
-}
-
-#endif	/* MODULAR */

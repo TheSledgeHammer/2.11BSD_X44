@@ -705,6 +705,7 @@ typedef struct {
 #define	ELF_NOTE_NETBSD_TYPE_EMULNAME	2
 
 /* NetBSD-specific note name and description sizes */
+#define ELF_NOTE_TYPE_NETBSD_TAG		1
 #define	ELF_NOTE_NETBSD_NAMESZ			7
 #define	ELF_NOTE_NETBSD_DESCSZ			4
 /* NetBSD-specific note name */
@@ -823,7 +824,8 @@ typedef struct {
 #define SYMINFO_NONE			0		/* Syminfo version */
 #define SYMINFO_CURRENT			1
 #define SYMINFO_NUM				2
-//#ifdef _KERNEL
+
+#ifdef _KERNEL
 /*
  * These constants are used for Elf32_Verdef struct's version number.
  */

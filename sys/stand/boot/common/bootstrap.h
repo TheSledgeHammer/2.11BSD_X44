@@ -172,17 +172,6 @@ struct file_metadata
 };
 
 struct preloaded_file;
-struct mod_depend;
-
-struct kernel_module
-{
-    char					*m_name;	/* module name */
-    int						m_version;	/* module version */
-/*    char					*m_args;*/	/* arguments for the module */
-    struct preloaded_file	*m_fp;
-    struct kernel_module	*m_next;
-};
-
 
 /*
  * Preloaded file information. Depending on type, file can contain
@@ -195,18 +184,14 @@ struct kernel_module
  */
 struct preloaded_file
 {
-    char					*f_name;		/* file name */
-    char					*f_type;		/* verbose file type, eg 'ELF kernel', 'pnptable', etc. */
-    char					*f_args;		/* arguments for the file */
-    int						f_loader;		/* index of the loader that read the file */
-    vm_offset_t				f_addr;			/* load address */
-    size_t					f_size;			/* file size */
-    struct preloaded_file	*f_next;		/* next file */
-    u_long                  f_marks[MARK_MAX];/* filled by loadfile() */
-
-    /* May Not Stay */
-    struct kernel_module	*f_modules;		/* list of modules if any */
-    struct file_metadata	*f_metadata;	/* metadata that will be placed in the module directory */
+	struct preloaded_file	*f_next;			/* next file */
+    char					*f_name;			/* file name */
+    char					*f_type;			/* verbose file type, eg 'ELF kernel', 'pnptable', etc. */
+    char					*f_args;			/* arguments for the file */
+    int						f_loader;			/* index of the loader that read the file */
+    vm_offset_t				f_addr;				/* load address */
+    size_t					f_size;				/* file size */
+    u_long                  f_marks[MARK_MAX];	/* filled by loadfile() */
 };
 
 struct file_format
@@ -219,11 +204,6 @@ struct file_format
 
 extern struct file_format		*file_formats[];	/* supplied by consumer */
 extern struct preloaded_file	*preloaded_files;
-/*
-int						mod_load(char *name, struct mod_depend *verinfo, int argc, char *argv[]);
-int						mod_loadkld(const char *name, int argc, char *argv[]);
-void					unload(void);
-*/
 
 struct preloaded_file 	*file_alloc(void);
 struct preloaded_file 	*file_findfile(char *name, char *type);

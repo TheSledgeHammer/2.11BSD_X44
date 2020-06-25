@@ -4,6 +4,16 @@
  *  Created on: 22 Jun 2020
  *      Author: marti
  */
+#include <i386/include/bootinfo.h>
+#include "sys/ksyms.h"
+
+main(framep)
+{
+	/* add after startup */
+#if ((NKSYMS > 0) || (NDDB > 0)
+	ksyms_init();
+#endif
+}
 
 /* part of start_init with kern_environment added */
 
@@ -65,9 +75,9 @@ init386()
 static void
 init386_ksyms(void)
 {
-#if NKSYMS || defined(DDB) || defined(MODULAR)
+#if NKSYMS || defined(DDB)
 	extern int end;
-	struct bootinfo_symtab *symtab;
+	struct bootinfo *symtab;
 
 #ifdef DDB
 	db_machine_init();
@@ -81,11 +91,13 @@ init386_ksyms(void)
 		return;
 #endif
 
-	if ((symtab = lookup_bootinfo(BTINFO_SYMTAB)) == NULL) {
+	if ((symtab = lookup_bootinfo(BOOTINFO_ENVIRONMENT)) == NULL) {
 		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);
 		return;
 	}
 
-	ksyms_addsyms_elf(symtab->nsym, (int*) symtab->ssym, (int*) symtab->esym);
+	symtab->bi_envp->bi_symtab += KERNBASE;
+	symtab->bi_envp->bi_esymtab += KERNBASE;
+	ksyms_addsyms_elf(symtab->bi_envp->bi_nsymtab, (int*) symtab->bi_envp->bi_symtab, (int*) symtab->bi_envp->bi_esymtab);
 #endif
 }

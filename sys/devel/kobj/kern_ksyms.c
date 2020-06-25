@@ -75,12 +75,6 @@
 #include <sys/cdefs.h>
 /* __KERNEL_RCSID(0, "$NetBSD: kern_ksyms.c,v 1.88 2020/01/05 21:12:34 pgoyette Exp $"); */
 
-#if defined(_KERNEL) && defined(_KERNEL_OPT)
-#include "opt_copy_symtab.h"
-#include "opt_ddb.h"
-#include "opt_dtrace.h"
-#endif
-
 #define _KSYMS_PRIVATE
 
 #include <sys/param.h>
@@ -92,13 +86,16 @@
 #include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/lock.h>
-#include <ksyms.h>
+#include <sys/ksyms.h>
+#include <sys/device.h>
+#include <sys/exec_elf.h>
+
+#include <lib/libkern/libkern.h>
 
 #ifdef DDB
 #include <ddb/db_output.h>
 #endif
 
-#include "ksyms.h"
 #if NKSYMS > 0
 #include "ioconf.h"
 #endif
@@ -137,11 +134,11 @@ extern int db_symtabsize;
 /*
  * used by savecore(8) so non-static
  */
-struct ksyms_hdr ksyms_hdr;
-int ksyms_symsz;
-int ksyms_strsz;
-int ksyms_ctfsz;	/* this is not currently used by savecore(8) */
-TAILQ_HEAD(, ksyms_symtab) ksyms_symtabs;
+struct ksyms_hdr 			ksyms_hdr;
+int 						ksyms_symsz;
+int 						ksyms_strsz;
+int 						ksyms_ctfsz;	/* this is not currently used by savecore(8) */
+TAILQ_HEAD(, ksyms_symtab) 	ksyms_symtabs;
 
 static int
 ksyms_verify(const void *symstart, const void *strstart)
@@ -188,8 +185,7 @@ findsym(const char *name, struct ksyms_symtab *table, int type) {
 		}
 	}
 	KASSERT(low == high);
-	if (__predict_true(
-			low < nglob && strcmp(sym[low].st_name + str, name) == 0)) {
+	if (__predict_true(low < nglob && strcmp(sym[low].st_name + str, name) == 0)) {
 		KASSERT(ELF_ST_BIND(sym[low].st_info) == STB_GLOBAL);
 		return &sym[low];
 	}
@@ -240,7 +236,7 @@ ksyms_init(void)
 
 	if (!ksyms_initted) {
 		simple_lock_init(&ksyms_lock);
-		ksyms_initted = true;
+		ksyms_initted = TRUE;
 	}
 }
 
@@ -312,11 +308,12 @@ addsymtab(const char *name, void *symstart, size_t symsize,
 	tab->sd_minsym = UINTPTR_MAX;
 	tab->sd_maxsym = 0;
 	tab->sd_usroffset = 0;
-	tab->sd_gone = false;
+	tab->sd_gone = FALSE;
 	tab->sd_ctfstart = ctfstart;
 	tab->sd_ctfsize = ctfsize;
 	tab->sd_nmap = nmap;
 	tab->sd_nmapsize = nsyms;
+
 #ifdef KSYMS_DEBUG
 	printf("newstart %p sym %p ksyms_symsz %zu str %p strsz %zu send %p\n",
 	    newstart, symstart, symsize, strstart, strsize,
@@ -334,42 +331,8 @@ addsymtab(const char *name, void *symstart, size_t symsize,
 	nglob = 0;
 	for (i = n = 0; i < nsyms; i++) {
 
-		/*
-		 * This breaks CTF mapping, so don't do it when
-		 * DTrace is enabled.
-		 */
-#ifndef KDTRACE_HOOKS
-		/*
-		 * Remove useless symbols.
-		 * Should actually remove all typeless symbols.
-		 */
-		if (sym[i].st_name == 0)
-			continue; /* Skip nameless entries */
-		if (sym[i].st_shndx == SHN_UNDEF)
-			continue; /* Skip external references */
-		if (ELF_ST_TYPE(sym[i].st_info) == STT_FILE)
-			continue; /* Skip filenames */
-		if (ELF_ST_TYPE(sym[i].st_info) == STT_NOTYPE && sym[i].st_value == 0
-				&& strcmp(str + sym[i].st_name, "*ABS*") == 0)
-			continue; /* XXX */
-		if (ELF_ST_TYPE(sym[i].st_info) == STT_NOTYPE
-				&& strcmp(str + sym[i].st_name, "gcc2_compiled.") == 0)
-			continue; /* XXX */
-#endif
-
 		/* Save symbol. Set it as an absolute offset */
 		nsym[n] = sym[i];
-
-#ifdef KDTRACE_HOOKS
-		if (nmap != NULL) {
-			/*
-			 * Save the size, replace it with the symbol id so
-			 * the mapping can be done after the cleanup and sort.
-			 */
-			nmap[i] = nsym[n].st_size;
-			nsym[n].st_size = i + 1;	/* zero is reserved */
-		}
-#endif
 
 		if (sym[i].st_shndx != SHN_ABS) {
 			nsym[n].st_shndx = SHBSS;
@@ -404,31 +367,10 @@ addsymtab(const char *name, void *symstart, size_t symsize,
 	if (kheapsort(nsym, n, sizeof(Elf_Sym), addsymtab_compar, &ts) != 0)
 		panic("addsymtab");
 
-#ifdef KDTRACE_HOOKS
-	/*
-	 * Build the mapping from original symbol id to new symbol table.
-	 * Deleted symbols will have a zero map, indices will be one based
-	 * instead of zero based.
-	 * Resulting map is sd_nmap[original_index] = new_index + 1
-	 */
-	if (nmap != NULL) {
-		int new;
-		for (new = 0; new < n; new++) {
-			uint32_t orig = nsym[new].st_size - 1;
-			uint32_t size = nmap[orig];
-
-			nmap[orig] = new + 1;
-
-			/* restore the size */
-			nsym[new].st_size = size;
-		}
-	}
-#endif
-
 	/* ksymsread() is unlocked, so membar. */
 	TAILQ_INSERT_TAIL(&ksyms_symtabs, tab, sd_queue);
 	ksyms_sizes_calc();
-	ksyms_loaded = true;
+	ksyms_loaded = TRUE;
 }
 
 /*
@@ -460,8 +402,7 @@ ksyms_addsyms_elf(int symsize, void *start, void *end)
 
 	/* check if this is a valid ELF header */
 	/* No reason to verify arch type, the kernel is actually running! */
-	if (memcmp(ehdr->e_ident, ELFMAG, SELFMAG)
-			|| ehdr->e_ident[EI_CLASS] != ELFCLASS || ehdr->e_version > 1) {
+	if (memcmp(ehdr->e_ident, ELFMAG, SELFMAG) || ehdr->e_ident[EI_CLASS] != ELFCLASS || ehdr->e_version > 1) {
 		printf("[ Kernel symbol table invalid! ]\n");
 		return; /* nothing to do */
 	}
@@ -486,42 +427,10 @@ ksyms_addsyms_elf(int symsize, void *start, void *end)
 		break;
 	}
 
-#ifdef KDTRACE_HOOKS
-	/* Find the CTF section */
-	shdr = (Elf_Shdr *)((uint8_t *)start + ehdr->e_shoff);
-	if (ehdr->e_shstrndx != 0) {
-		char *shstr = (uint8_t *)start +
-		    shdr[ehdr->e_shstrndx].sh_offset;
-		for (i = 1; i < ehdr->e_shnum; i++) {
-#ifdef DEBUG
-			printf("ksyms: checking %s\n", &shstr[shdr[i].sh_name]);
-#endif
-			if (shdr[i].sh_type != SHT_PROGBITS)
-				continue;
-			if (strncmp(".SUNW_ctf", &shstr[shdr[i].sh_name], 10)
-			    != 0)
-				continue;
-			ctfstart = (uint8_t *)start + shdr[i].sh_offset;
-			ctfsize = shdr[i].sh_size;
-			ksyms_ctfsz = ctfsize;
-#ifdef DEBUG
-			aprint_normal("Found CTF at %p, size 0x%zx\n",
-			    ctfstart, ctfsize);
-#endif
-			break;
-		}
-#ifdef DEBUG
-	} else {
-		printf("ksyms: e_shstrndx == 0\n");
-#endif
-	}
-#endif
-
 	if (!ksyms_verify(symstart, strstart))
 		return;
 
-	addsymtab("netbsd", symstart, symsize, strstart, strsize, &kernel_symtab,
-			symstart, ctfstart, ctfsize, ksyms_nmap);
+	addsymtab("netbsd", symstart, symsize, strstart, strsize, &kernel_symtab, symstart, ctfstart, ctfsize, ksyms_nmap);
 
 #ifdef DEBUG
 	aprint_normal("Loaded initial symtab at %p, strtab at %p, # entries %ld\n",
@@ -590,7 +499,7 @@ ksyms_fill_note(void)
 	note[1] = ELF_NOTE_NETBSD_DESCSZ;
 	note[2] = ELF_NOTE_TYPE_NETBSD_TAG;
 	memcpy(&note[3],  "NetBSD\0", 8);
-	note[5] = __NetBSD_Version__;
+	note[5] = __211BSD_Version__;
 }
 
 static void
@@ -684,13 +593,11 @@ ksymsopen(dev_t dev, int oflags, int devtype, struct proc *p)
 	simple_lock(&ksyms_lock);
 	ksyms_hdr.kh_shdr[SYMTAB].sh_size = ksyms_symsz;
 	ksyms_hdr.kh_shdr[SYMTAB].sh_info = ksyms_symsz / sizeof(Elf_Sym);
-	ksyms_hdr.kh_shdr[STRTAB].sh_offset = ksyms_symsz +
-	    ksyms_hdr.kh_shdr[SYMTAB].sh_offset;
+	ksyms_hdr.kh_shdr[STRTAB].sh_offset = ksyms_symsz + ksyms_hdr.kh_shdr[SYMTAB].sh_offset;
 	ksyms_hdr.kh_shdr[STRTAB].sh_size = ksyms_strsz;
-	ksyms_hdr.kh_shdr[SHCTF].sh_offset = ksyms_strsz +
-	    ksyms_hdr.kh_shdr[STRTAB].sh_offset;
+	ksyms_hdr.kh_shdr[SHCTF].sh_offset = ksyms_strsz + ksyms_hdr.kh_shdr[STRTAB].sh_offset;
 	ksyms_hdr.kh_shdr[SHCTF].sh_size = ksyms_ctfsz;
-	ksyms_isopen = true;
+	ksyms_isopen = TRUE;
 	simple_unlock(&ksyms_lock);
 
 	return 0;
@@ -704,16 +611,15 @@ ksymsclose(dev_t dev, int oflags, int devtype, struct proc *p)
 
 	/* Discard references to symbol tables. */
 	simple_lock(&ksyms_lock);
-	ksyms_isopen = false;
-	resize = false;
+	ksyms_isopen = FALSE;
+	resize = FALSE;
 	for (st = TAILQ_FIRST(&ksyms_symtabs); st != NULL; st = next) {
 		next = TAILQ_NEXT(st, sd_queue);
 		if (st->sd_gone) {
 			TAILQ_REMOVE(&ksyms_symtabs, st, sd_queue);
-			kmem_free(st->sd_nmap,
-				  st->sd_nmapsize * sizeof(uint32_t));
+			kmem_free(st->sd_nmap, st->sd_nmapsize * sizeof(uint32_t));
 			kmem_free(st, sizeof(*st));
-			resize = true;
+			resize = TRUE;
 		}
 	}
 	if (resize)

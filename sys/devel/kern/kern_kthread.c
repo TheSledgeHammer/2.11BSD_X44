@@ -38,6 +38,23 @@ extern struct kthreadpool kthreadpool;
 struct kthread *curkthread = &kthread0;
 
 void
+kthreadinit(kt, p)
+	struct kthread *kt;
+	struct proc *p;
+{
+	kt->kt_procp = p;
+	p->p_kthread = kt;
+
+	/* give the kthread the same creds as the initial thread */
+	kt->kt_ucred = p->p_ucred;
+	crhold(kt->kt_ucred);
+
+	 /* setup kthread lock managers */
+    kthread_mutex_init(kthread_mtx, kt);
+    kthread_rwlock_init(kthread_rwl, kt); /* not fully implemented */
+}
+
+void
 startkthread(kt)
 	register struct kthread *kt;
 {
@@ -48,38 +65,33 @@ startkthread(kt)
     /* Set thread to idle & waiting */
     kt->kt_stat |= TSIDL | TSWAIT | TSREADY;
 
-    /* setup kthread mutex manager */
-    kthread_mutex_init(kthread_mtx, kt);
-
     /* Initialize Thread Table  */
-    threadinit();
-    start_kthreadpool(&kthreadpool);
+    kthreadpool_init(&kthreadpool);
 }
 
 void
-start_kthreadpool(ktpool)
+kthreadpool_init(ktpool)
 	struct kthreadpool *ktpool;
 {
 	TAILQ_INIT(ktpool->ktp_idle_threads);
-	if(ktpool == NULL) {
-		MALLOC(ktpool, struct kthreadpool *, sizeof(struct kthreadpool *), M_KTHREADPOOL, M_WAITOK);
-	}
+	MALLOC(ktpool, struct kthreadpool *, sizeof(struct kthreadpool *), M_KTHREADPOOL, M_WAITOK);
 }
 
-
 int
-kthread_create(p)
-	struct proc *p;
+kthread_create(newpp, name)
+	struct proc *newpp;
+	const char *name;
 {
 	register struct kthread *kt;
+	register_t rval[2];
 	int error;
 
 	if(!proc0.p_stat) {
 		panic("kthread_create called too soon");
 	}
+
 	if(kt == NULL) {
 		startkthread(kt);
-
 	}
 }
 

@@ -28,12 +28,10 @@
 #define MULTIBOOT_SUPPORTED_FLAGS \
 				(MULTIBOOT_PAGE_ALIGN|MULTIBOOT_MEMORY_INFO)
 
-static int multiboot_loadfile(char *args, uint64_t dest, struct preloaded_file *fp);
+static int multiboot_loadfile(char *, uint64_t, struct preloaded_file *);
 static int multiboot_exec(struct preloaded_file *);
 
-struct file_format multiboot = 		{ multiboot_loadfile, multiboot_exec };
-
-extern void multiboot_tramp();
+struct file_format multiboot_ops = { multiboot_loadfile, multiboot_exec };
 
 static const char mbl_name[] = "211BSD Loader";
 
@@ -150,7 +148,6 @@ out:
 static int
 multiboot_exec(struct preloaded_file *fp)
 {
-	struct multiboot_package 	*mbp;
 	struct multiboot_info 		*mbi;
 	int 						i, len;
 	char 						*cmdline;
@@ -197,15 +194,6 @@ multiboot_exec(struct preloaded_file *fp)
 		mbi->mi_flags |= MULTIBOOT_INFO_CMDLINE;
 	}
 
-	mbp = malloc(sizeof(struct multiboot_package));
-	if(mbp == NULL) {
-		error = ENOMEM;
-		goto error;
-	}
-	mbp->mbp_file = fp->f_name;
-	mbp->mbp_args = fp->f_args;
-	mbp->mbp_marks = fp->f_marks;
-
 #ifdef BOOT_AOUT
 	fp = file_findfile(NULL, AOUT_KERNELTYPE);
 #endif
@@ -226,9 +214,9 @@ multiboot_exec(struct preloaded_file *fp)
 
 	last_addr = roundup(max_addr(), PAGE_SIZE);
 
-	error = bi_load1(fp, fp->f_args, last_addr, 0);
+	error = bi_load_stage1(fp, fp->f_args, last_addr, 0);
 	if (error != 0) {
-		printf("bi_load1 failed: %d\n", error);
+		printf("bi_load_stage1 failed: %d\n", error);
 		goto error;
 	}
 
@@ -244,57 +232,5 @@ error:
 	if (cmdline) {
 		free(cmdline);
 	}
-	if (mbp) {
-		free(mbp);
-	}
 	return (error);
-}
-
-static int
-multiboot_ksyms(struct preloaded_file *fp)
-{
-	struct multiboot_package 	*mbp;
-	struct multiboot_info		*mbi;
-	int				 			error;
-
-	if (mbp->mbp_marks[MARK_SYM] != 0) {
-		Elf32_Ehdr ehdr;
-		void *shbuf;
-		size_t shlen;
-		u_long shaddr;
-
-		bcopy((void *)mbp->mbp_marks[MARK_SYM], &ehdr, sizeof(ehdr));
-
-		if (memcmp(&ehdr.e_ident, ELFMAG, SELFMAG) != 0)
-			goto skip_ksyms;
-
-		shaddr = mbp->mbp_marks[MARK_SYM] + ehdr.e_shoff;
-
-		shlen = ehdr.e_shnum * ehdr.e_shentsize;
-		shbuf = alloc(shlen);
-
-		bcopy((void*) shaddr, shbuf, shlen);
-		ksyms_addr_set(&ehdr, shbuf, (void*) (KERNBASE + mbp->mbp_marks[MARK_SYM]));
-		bcopy(shbuf, (void*) shaddr, shlen);
-
-		dealloc(shbuf, shlen);
-
-		mbi->mi_elfshdr_num = ehdr.e_shnum;
-		mbi->mi_elfshdr_size = ehdr.e_shentsize;
-		mbi->mi_elfshdr_addr = shaddr;
-		mbi->mi_elfshdr_shndx = ehdr.e_shstrndx;
-
-		mbi->mi_flags |= MULTIBOOT_INFO_ELF_SYMS;
-	}
-
-skip_ksyms:
-#ifdef DEBUG
-	printf("Start @ 0x%lx [%ld=0x%lx-0x%lx]...\n",
-	mbp->mbp_marks[MARK_ENTRY],
-	mbp->mbp_marks[MARK_NSYM],
-	mbp->mbp_marks[MARK_SYM],
-	mbp->mbp_marks[MARK_END]);
-#endif
-
-	return (0);
 }

@@ -59,6 +59,15 @@
 #define htbc_lock()				simplelock()
 #define htbc_unlock() 			simpleunlock()
 
+CIRCLEQ_HEAD(chain_head, htbc_bchain);
+struct htbc_bchain {
+	struct chain_head			hb_header;
+	CIRCLEQ_ENTRY(htbc_bchain)	hb_entries;
+	uint32_t					hb_version;
+	uint32_t					hb_timestamp;
+	uint32_t					hb_hash;
+};
+
 struct htbc_dealloc {
 	TAILQ_ENTRY(htbc_dealloc) 	hd_entries;
 	daddr_t 					hd_blkno;	/* address of block */
@@ -67,7 +76,7 @@ struct htbc_dealloc {
 
 LIST_HEAD(htbc_ino_head, htbc_ino);
 struct htbc {
-	CIRCLEQ_ENTRY(hbchain) 		*ht_bc_entry;
+	CIRCLEQ_ENTRY(htbc_bchain)	*hc_entry;
 	struct vnode 				*ht_devvp;
 	struct mount 				*ht_mount;
 
@@ -87,7 +96,7 @@ struct htbc {
 
 static struct htbc_dealloc 		*htbc_dealloc;
 static struct htbc_entry 		*htbc_entry;
-static struct htbc_hbchain 		*htbc_hbchain;
+static struct htbc_bchain 		*htbc_bchain;
 
 struct htbc_ino {
 	LIST_ENTRY(htbc_ino) 		hti_hash;
@@ -96,11 +105,92 @@ struct htbc_ino {
 };
 
 void
+hbchain_insert_head(hbc)
+	struct htbc_bchain *hbc;
+{
+	CIRCLEQ_INSERT_HEAD(hbc->hb_header, hbc, hb_entries);
+}
+
+void
+hbchain_insert_tail(hbc)
+	struct htbc_bchain *hbc;
+{
+	CIRCLEQ_INSERT_TAIL(hbc->hb_header, hbc, hb_entries);
+}
+
+void
+hbchain_remove(hbc)
+	struct htbc_bchain *hbc;
+{
+	CIRCLEQ_REMOVE(hbc->hb_header, hbc, hb_entries);
+}
+
+/* Searches the next entry in the blockchain for matching hash value */
+struct hbchain *
+hbchain_search_next(hbc, hash)
+	struct htbc_bchain *hbc;
+	uint32_t hash;
+{
+	CIRCLEQ_FOREACH(hbc, hbc->hb_header, hb_entries) {
+		if(CIRCLEQ_NEXT(hbc, hb_entries)->hb_hash == hash) {
+			return (CIRCLEQ_NEXT(hbc, hb_entries));
+		}
+	}
+	return (NULL);
+}
+
+/* Searches the previous entry in the blockchain for matching hash value */
+struct hbchain *
+hbchain_search_prev(hbc, hash)
+	struct htbc_bchain *hbc;
+	uint32_t hash;
+{
+	CIRCLEQ_FOREACH(hbc, hbc->hb_header, hb_entries) {
+		if(CIRCLEQ_PREV(hbc, hb_entries)->hb_hash == hash) {
+			return (CIRCLEQ_PREV(hbc, hb_entries));
+		}
+	}
+	return (NULL);
+}
+
+static uint32_t
+hbchain_get_hash(struct htbc_bchain *hbc)
+{
+	return hbc->hb_hash;
+}
+
+static uint32_t
+hbchain_get_timestamp(struct htbc_bchain *hbc)
+{
+	return hbc->hb_timestamp;
+}
+
+static uint32_t
+hbchain_get_version(struct htbc_bchain *hbc)
+{
+	return hbc->hb_version;
+}
+
+static void
+hbchain_set_hash(struct htbc_bchain *hbc, uint32_t hash)
+{
+	hbc->hb_hash = hash;
+}
+
+static void
+hbchain_set_timestamp(struct htbc_bchain *hbc, uint32_t timestamp)
+{
+	hbc->hb_timestamp = timestamp;
+}
+
+void
 htbc_init()
 {
 	&htbc_entry = (struct htbc_entry *) malloc(sizeof(struct htbc_entry), M_HTBC, NULL);
 	&htbc_dealloc = (struct htbc_dealloc *) malloc(sizeof(struct htbc_dealloc), M_HTBC, NULL);
-	&htbc_hbchain = (struct hbchain *) malloc(sizeof(struct hbchain), M_HTBC, NULL);
+	&htbc_bchain = (struct htbc_bchain *) malloc(sizeof(struct htbc_bchain), M_HTBC, NULL);
+
+	CIRCLEQ_INIT(htbc_bchain->hb_header);
 }
 
 void
@@ -108,7 +198,7 @@ htbc_fini()
 {
 	FREE(&htbc_entry, M_HTBC);
 	FREE(&htbc_dealloc, M_HTBC);
-	FREE(&htbc_hbchain, M_HTBC);
+	FREE(&htbc_bchain, M_HTBC);
 }
 
 int

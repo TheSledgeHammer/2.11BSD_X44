@@ -33,6 +33,7 @@
 #if !defined(ELFSIZE)
 #define ELFSIZE KERN_ELFSIZE
 #endif
+
 #include <sys/exec_elf.h>
 
 #ifdef _KSYMS_PRIVATE
@@ -115,8 +116,7 @@ struct ksyms_gvalue {
 #define	KIOCGVALUE		_IOWR('l', 4, struct ksyms_gvalue)
 #define	KIOCGSYMBOL		_IOWR('l', 5, struct ksyms_gsymbol)
 
-
-#if defined(_KERNEL) || defined(_KMEMUSER)
+#if defined(_KERNEL)
 /*
  * Definitions used in ksyms_getname() and ksyms_getval().
  */
@@ -131,21 +131,11 @@ typedef int (*ksyms_callback_t)(const char *, int, void *, uint32_t, int, void *
 /*
  * Prototypes
  */
-
-int 	ksyms_getname(const char **, const char **, caddr_t, int);
-int 	ksyms_getval(const char *, const char *, unsigned long *, int);
 int 	ksyms_addsymtab(const char *, void *, size_t, char *, size_t);
 int 	ksyms_delsymtab(const char *);
 void 	ksyms_init(void);
 void 	ksyms_addsyms_elf(int, void *, void *);
 void 	ksyms_addsyms_explicit(void *, void *, size_t, void *, size_t);
-int 	ksyms_sift(char *, char *, int);
-
-//int 	ksyms_getval_unlocked(const char *, const char *, Elf_Sym **, unsigned long *, int);
-//struct ksyms_symtab *ksyms_get_mod(const char *);
-//int 	ksyms_mod_foreach(const char *mod, ksyms_callback_t, void *);
-//void	ksyms_modload(const char *, void *, size_t, char *, size_t);
-//void 	ksyms_modunload(const char *);
 
 #endif /* _KERNEL */
 #endif /* _SYS_KSYMS_H_ */

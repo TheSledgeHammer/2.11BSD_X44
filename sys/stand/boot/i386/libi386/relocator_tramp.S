@@ -342,15 +342,15 @@ idt:			.word 0x3ff
 
 				.globl relocater_data
 relocater_data:
-				.long 0			/* src */
-				.long 0			/* dest */
-				.long 0			/* size */
-				.long 0			/* src */
-				.long 0			/* dest */
-				.long 0			/* size */
-				.long 0			/* src */
-				.long 0			/* dest */
-				.long 0			/* size */
+				.long 0						/* src */
+				.long 0						/* dest */
+				.long 0						/* size */
+				.long 0						/* src */
+				.long 0						/* dest */
+				.long 0						/* size */
+				.long 0						/* src */
+				.long 0						/* dest */
+				.long 0						/* size */
 				.long 0
 
 				.globl relocater_size

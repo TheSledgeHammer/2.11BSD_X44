@@ -303,7 +303,7 @@ again:
 
 /* 2.11BSD Modified Original newproc */
 int
-compat_newproc(rip, rpp, isvfork)
+compat211_newproc(rip, rpp, isvfork)
 	register struct proc *rpp, *rip;
 	int isvfork;
 {

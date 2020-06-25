@@ -77,7 +77,6 @@
 #else
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -85,6 +84,7 @@
 #endif
 
 #include <sys/param.h>
+#include <sys/errno.h>
 #include <sys/exec.h>
 
 #include "loadfile.h"

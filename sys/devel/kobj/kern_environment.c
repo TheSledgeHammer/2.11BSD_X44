@@ -48,14 +48,11 @@
 #include <sys/lock.h>
 #include <sys/types.h>
 #include <sys/stdbool.h>
-//#include <sys/priv.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
 #include <sys/sysent.h>
-#include <kenv.h>
-//#include <sys/limits.h>
-
 #include <lib/libkern/libkern.h>
+#include <sys/kenv.h>
 
 #define KENV_SIZE	512	/* Maximum number of environment strings */
 static int	kenv_mvallen = KENV_MVALLEN;

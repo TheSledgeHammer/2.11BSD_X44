@@ -39,12 +39,6 @@
 #include "bootstrap.h"
 
 #include <machine/loadfile_machdep.h>
-/*
-struct file_format i386_aout = { aout_loadfile };
-struct file_format i386_ecoff = { ecoff_loadfile };
-struct file_format i386_elf = { elf32_loadfile };
-struct file_format amd64_elf = { elf64_loadfile };
-*/
 
 /*
  * Attempts to load the file (file) as an module defined by the parameter 'kerneltype'.
@@ -133,7 +127,6 @@ loadfile_header(char *kerneltype, char *filename)
 	 }
 	 return (err);
 }
-
 
 int
 aout_loadfile(char *filename, uint64_t dest, struct preloaded_file **result)
