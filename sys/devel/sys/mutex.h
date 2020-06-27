@@ -40,7 +40,7 @@
 #ifndef SYS_MUTEX_H_
 #define SYS_MUTEX_H_
 
-#include "sys/lockmgr.h"
+#include "lock.h"
 #include "sys/tcb.h"
 
 struct mutex {
@@ -105,6 +105,8 @@ int mutex_destroy(__volatile mutex_t);
 
 int mutexstatus(mutex_t);
 int mutexmgr(__volatile mutex_t, unsigned int, tid_t);
+
+#include <lock.h>
 
 #if NCPUS > 1
 #define PAUSE(mtx, wanted)						\

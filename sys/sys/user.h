@@ -155,6 +155,9 @@ struct user {
 
 	vm_offset_t			u_kstack;				/* (a) Kernel VA of kstack. */
 	int					u_kstack_pages;			/* (a) Size of the kstack. */
+
+/* 1.8 User Threads */
+	struct uthread		*u_uthread;				/* ptr to uthread */
 };
 
 #ifdef KERNEL

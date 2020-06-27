@@ -25,7 +25,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- /*  User Threads: Runs from user struct in Userspace */
+
+/*
+ * User threads work slightly different than other threads in 2.11BSD.
+ * User threads have two points of access into kernel space. 1) kernel threads and 2) User.
+ * Both these serve different purposes. Kernel Threads is purely for ipc & runtime control/instructions of jobs & tasks.
+ * While the user is for when a user thread/fibre needs direct access to kernelspace (i.e. drivers, io etc).
+ */
 
 #ifndef SYS_UTHREADS_H_
 #define SYS_UTHREADS_H_
@@ -34,6 +40,11 @@
 
 /* user threads */
 struct uthread {
+	struct kthread		*ut_kthreadpo;	/* ptr to uthread's kthread overseer */
+	struct uthreadpool	*ut_utpoolo;	/* uthread threadpool overseer*/
+
+	struct user 		*ut_userp;		/* ptr to user (access to kernelspace) */
+
 	struct uthread		*ut_nxt;		/* linked list of allocated thread slots */
 	struct uthread		**ut_prev;
 
@@ -53,8 +64,7 @@ struct uthread {
 	struct pstats 	 	*ut_stats;		/* Accounting/statistics (PROC ONLY). */
 	struct sigacts 		*ut_sigacts;	/* Signal actions, state (PROC ONLY). */
 
-	struct user 		*ut_userp;		/* Pointer to User Structure */
-	struct kthread		*ut_kthreadp;	/* Pointer to Kernel Thread Structure */
+#define	ut_ucred		ut_cred->pc_ucred
 
 	struct uthread    	*ut_hash;       /* hashed based on t_tid & p_pid for kill+exit+... */
 	struct uthread    	*ut_tgrpnxt;	/* Pointer to next thread in thread group. */
@@ -66,6 +76,7 @@ struct uthread {
 
 	struct tgrp 	    *ut_tgrp;       /* Pointer to thread group. */
 
+	struct lockmgr      *ut_lockmgr;
 	struct mutex        *ut_mutex;
 	struct rwlock		*ut_rwlock;
     short               ut_locks;
@@ -76,6 +87,7 @@ struct uthread {
 
 /* Locks */
 mutex_t 				uthread_mtx; 		/* mutex lock */
+rwlock_t				uthread_rwl;		/* reader-writers lock */
 
 /* User Threadpool Thread */
 TAILQ_HEAD(uthread_head, uthreadpool_thread);

@@ -40,16 +40,18 @@
 /* To become lock.h: after rwlock & mutex are fully implemented */
 #ifndef SYS_LOCKMGR_H_
 #define SYS_LOCKMGR_H_
+
 /*
  * The general lock structure.  Provides for multiple shared locks,
  * upgrading from shared to exclusive, and sleeping until the lock
  * can be gained. The simple locks are defined in <machine/param.h>.
  */
-
 struct lockmgr {
 	volatile unsigned int   lk_lock;
 
-    struct  proc			*lk_plockholder;	/* Proc lock holder */
+    struct  proc			*lk_prlockholder;	/* Proc lock holder */
+    struct 	kthread         *lk_ktlockholder; 	/* Kernel Thread lock holder */
+    struct 	uthread         *lk_utlockholder;	/* User Thread lock holder */
 
 	struct	simplelock 		*lk_interlock; 		/* lock on remaining fields */
     int					    lk_sharecount;		/* # of accepted shared locks */
@@ -112,10 +114,31 @@ struct lockmgr {
  */
 #define LK_KERNPROC 	((pid_t) -2)
 #define LK_NOPROC 		((pid_t) -1)
-#define LK_THREAD  		((tid_t) -2)
-#define LK_NOTHREAD    	((tid_t) -1)
+#define LK_THREAD  		((pid_t) -2)
+#define LK_NOTHREAD    	((pid_t) -1)
 
-//struct proc;
+/*
+ * A simple spin lock.
+ *
+ * This structure only sets one bit of data, but is sized based on the
+ * minimum word size that can be operated on by the hardware test-and-set
+ * instruction. It is only needed for multiprocessors, as uniprocessors
+ * will always run to completion or a sleep. It is an error to hold one
+ * of these locks while a process is sleeping.
+ */
+struct simplelock {
+	int						lock_data;
+};
+
+/* Generic Lock Functions */
+void 	lock_init(struct lockmgr *, int, char *, int, u_int);
+int 	lockstatus(struct lock *);
+int  	lockmgr(__volatile struct lock *, u_int, struct simplelock *, pid_t);
+void 	lockmgr_printinfo(struct lock *);
+
+void 	pause(struct lock *, int);
+void	acquire(struct lock *, int, int, int);
+void	count(struct proc *, short);
 
 #if NCPUS > 1
 #define PAUSE(lkp, wanted)						\

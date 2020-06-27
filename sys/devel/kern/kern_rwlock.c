@@ -28,10 +28,9 @@
 
 #include <sys/param.h>
 #include <sys/proc.h>
-#include <sys/lock.h>
 #include "devel/sys/kthread.h"
-#include "devel/sys/rwlock.h"
 #include "devel/sys/uthread.h"
+#include "devel/sys/rwlock.h"
 
 /* Initialize a rwlock */
 void
@@ -46,7 +45,7 @@ rwlock_init(rwl, prio, wmesg, timo, flags)
 	rwl->rwl_prio = prio;
 	rwl->rwl_timo = timo;
 	rwl->rwl_wmesg = wmesg;
-	rwl->rwl_lockholder = RW_NOTHREAD;
+	rwl->rwl_lockholder = LK_NOTHREAD;
     rwl->rwl_ktlockholder = NULL;
     rwl->rwl_utlockholder = NULL;
     simple_lock_init(&rwl->rwl_interlock);
@@ -106,7 +105,7 @@ rwlockmgr(rwl, flags, tid)
 		rwl->rwl_writercount += rwl->rwl_readercount;
 		rwl->rwl_readercount = 0;
 		rwl->rwl_flags &= ~RW_HAVE_READ;
-		rwl->rwl_lockholder = RW_NOTHREAD;
+		rwl->rwl_lockholder = LK_NOTHREAD;
 		if (rwl->rwl_waitcount)
 			wakeup((void *)rwl);
 		break;
@@ -131,7 +130,7 @@ rwlockmgr(rwl, flags, tid)
 		rwl->rwl_readercount += rwl->rwl_writercount;
 		rwl->rwl_writercount = 1;
 		rwl->rwl_flags &= ~RW_HAVE_WRITE;
-		rwl->rwl_lockholder = RW_NOTHREAD;
+		rwl->rwl_lockholder = LK_NOTHREAD;
 		if (rwl->rwl_waitcount)
 			wakeup((void *)rwl);
 		break;
@@ -181,7 +180,7 @@ rwlock_read_held(rwl)
 	if (rwl == NULL)
 		return 0;
 	owner = rwl->rwl_lock;
-	return (owner & RW_HAVE_WRITE) == 0 && (owner & RW_THREAD) != 0;
+	return (owner & RW_HAVE_WRITE) == 0 && (owner & LK_THREAD) != 0;
 }
 
 /*
@@ -197,7 +196,7 @@ rwlock_write_held(rwl)
 {
 	if (rwl == NULL)
 		return (0);
-	return (rwl->rwl_lock & (RW_HAVE_WRITE | RW_THREAD)) == (RW_HAVE_WRITE | curproc);
+	return (rwl->rwl_lock & (RW_HAVE_WRITE | LK_THREAD)) == (RW_HAVE_WRITE | curproc);
 }
 
 /*
@@ -213,5 +212,5 @@ rwlock_lock_held(rwl)
 {
 	if (rwl == NULL)
 		return 0;
-	return (rwl->rwl_lock & RW_THREAD) != 0;
+	return (rwl->rwl_lock & LK_THREAD) != 0;
 }

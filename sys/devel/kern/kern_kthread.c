@@ -30,11 +30,11 @@
 #include <sys/user.h>
 #include <sys/malloc.h>
 #include "devel/sys/kthread.h"
+#include "devel/sys/lock.h"
 #include "devel/sys/mutex.h"
 #include "devel/sys/rwlock.h"
 
 extern struct kthread kthread0;
-extern struct kthreadpool kthreadpool;
 struct kthread *curkthread = &kthread0;
 
 void
@@ -42,8 +42,8 @@ kthreadinit(kt, p)
 	struct kthread *kt;
 	struct proc *p;
 {
-	kt->kt_procp = p;
-	p->p_kthread = kt;
+	kt->kt_procpo = p;
+	p->p_kthreado = kt;
 
 	/* give the kthread the same creds as the initial thread */
 	kt->kt_ucred = p->p_ucred;
@@ -64,17 +64,6 @@ startkthread(kt)
 
     /* Set thread to idle & waiting */
     kt->kt_stat |= TSIDL | TSWAIT | TSREADY;
-
-    /* Initialize Thread Table  */
-    kthreadpool_init(&kthreadpool);
-}
-
-void
-kthreadpool_init(ktpool)
-	struct kthreadpool *ktpool;
-{
-	TAILQ_INIT(ktpool->ktp_idle_threads);
-	MALLOC(ktpool, struct kthreadpool *, sizeof(struct kthreadpool *), M_KTHREADPOOL, M_WAITOK);
 }
 
 int
@@ -169,30 +158,30 @@ kthreadpool_itc_recieve(ktpool, itc)
 /* Initialize a Mutex on a kthread
  * Setup up Error flags */
 int
-kthread_mutex_init(mtx, kt)
-    mutex_t mtx;
+kthread_mutex_init(lkp, kt)
+    struct lockmgr *lkp;
     kthread_t kt;
 {
     int error = 0;
-    mutex_init(mtx, mtx->mtx_prio, mtx->mtx_wmesg, mtx->mtx_timo, mtx->mtx_flags);
-    kt->kt_mutex = mtx;
-    mtx->mtx_ktlockholder = kt;
+    lock_init(lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo, lkp->lk_flags);
+    kt->kt_lockmgr = kt;
+    lkp->lk_ktlockholder = kt;
     return (error);
 }
 
 int
-kthread_mutexmgr(mtx, flags, kt)
-    mutex_t mtx;
+kthread_mutexmgr(lkp, flags, kt)
+	struct lockmgr *lkp;
 	u_int flags;
     kthread_t kt;
 {
-    tid_t tid;
+    pid_t pid;
     if (kt) {
-        tid = kt->kt_tid;
+        pid = kt->kt_tid;
     } else {
-        tid = MTX_THREAD;
+        pid = LK_THREAD;
     }
-    return mutexmgr(mtx, flags, tid);
+    return lockmgr(lkp, flags, pid);
 }
 
 /* Initialize a rwlock on a kthread
@@ -215,11 +204,11 @@ kthread_rwlockmgr(rwl, flags, kt)
 	u_int flags;
 	kthread_t kt;
 {
-	tid_t tid;
+	pid_t pid;
 	if (kt) {
-		tid = kt->kt_tid;
+		pid = kt->kt_tid;
 	} else {
-		tid = RW_THREAD;
+		pid = LK_THREAD;
 	}
-	return rwlockmgr(rwl, flags, tid);
+	return rwlockmgr(rwl, flags, pid);
 }

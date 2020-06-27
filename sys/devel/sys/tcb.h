@@ -26,13 +26,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * Thread Control Block:
- * Thread tid's are a sub id of proc pid's		(Intended Goal)
- * Thread groups are a subgroup of proc groups. (Intended Goal)
- */
-
- /* Thread Control Block */
 #ifndef SYS_TCB_H_
 #define SYS_TCB_H_
 
@@ -66,9 +59,6 @@ struct tgrp {
 #define TSSTOP	6		/* process being traced */
 #define TSREADY	7		/* ready */
 #define TSSTART	8		/* start */
-
-
-
 
 #define	TIDHSZ							16
 #define	TIDHASH(tid)					(&tidhashtbl[(tid) & tid_hash & (TIDHSZ * ((tid) + tid_hash) - 1)])

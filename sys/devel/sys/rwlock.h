@@ -29,9 +29,9 @@
 #ifndef SYS_RWLOCK_H_
 #define SYS_RWLOCK_H_
 
-#include <sys/lock.h>
-#include "../../sys/mutex.h"
-#include "../../sys/tcb.h"
+#include <lock.h>
+#include "sys/mutex.h"
+#include "sys/tcb.h"
 
 /* Reader Writers Lock */
 struct rwlock {
@@ -52,7 +52,7 @@ struct rwlock {
     int					    rwl_timo;			/* maximum sleep time (for tsleep) */
 
     tid_t                   rwl_lockholder;
-    struct lock				*rwl_lnterlock;
+    struct lockmgr			*rwl_lnterlock;
 };
 
 #define RW_THREAD  			((tid_t) -2)

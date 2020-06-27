@@ -92,9 +92,14 @@ struct threadpool_itpc {
 };
 
 extern struct itc_threadpool itpc;
+extern struct kthreadpool ktpool;
+extern struct uthreadpool utpool;
 
 /* General ITPC */
-void itpc_threadpool_init();
+void kthreadpool_setup(struct kthreadpool *);
+void uthreadpool_setup(struct uthreadpool *);
+void itpc_threadpool_setup(struct itc_threadpool *);
+
 void itpc_threadpool_enqueue(struct threadpool_itpc *, tid_t);
 void itpc_threadpool_dequeue(struct threadpool_itpc *, tid_t);
 void itpc_check(struct threadpool_itpc *, tid_t);

@@ -40,8 +40,8 @@
 
 #include <sys/param.h>
 #include <sys/proc.h>
+#include "../sys/lock.h"
 #include "devel/sys/kthread.h"
-#include "devel/sys/lockmgr.h"
 #include "devel/sys/mutex.h"
 #include "devel/sys/uthread.h"
 
@@ -54,7 +54,7 @@ mutex_init(mtx, prio, wmesg, timo, flags)
     int prio, timo;
     unsigned int flags;
 {
-    bzero(mtx, sizeof(struct mutex));
+/*    bzero(mtx, sizeof(struct mutex));
     simple_lock_init(&mtx->mtx_interlock);
     mtx->mtx_lock = 0;
     mtx->mtx_flags = flags & MTX_EXTFLG_MASK;
@@ -64,6 +64,8 @@ mutex_init(mtx, prio, wmesg, timo, flags)
     mtx->mtx_lockholder = MTX_NOTHREAD;
     mtx->mtx_ktlockholder = NULL;
     mtx->mtx_utlockholder = NULL;
+    */
+    lock_init(&mtx->mtx_interlock, prio, wmesg, timo, flags);
 }
 
 int

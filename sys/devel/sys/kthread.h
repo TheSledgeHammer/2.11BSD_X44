@@ -32,14 +32,12 @@
 #include <sys/proc.h>
 #include "sys/tcb.h"
 
-/* Number of Threads per Process? */
-
 /* kernel threads */
 struct kthread {
-	struct proc 		*kt_procp;		/* Original is the orignal kthread in kthread */
-	struct kthreadpool	*kt_ktpoolp;	/* kernel threadpool overseer */
+	struct proc 		*kt_procpo;		/* ptr to proc's kthread overseer */
+	struct kthreadpool	*kt_ktpoolo;	/* kernel threadpool overseer */
 
-	struct uthread		*kt_uthreadp;	/* Pointer User Threads */
+	struct uthread		*kt_uthreado;	/* User Thread Overseer (original uthread)  */
 
 	struct kthread		*kt_nxt;		/* linked list of allocated thread slots */
 	struct kthread		**kt_prev;
@@ -73,6 +71,7 @@ struct kthread {
 	struct tgrp 	    *kt_tgrp;       /* Pointer to thread group. */
 	struct sysentvec	*kt_sysent;		/* System call dispatch information. */
 
+	struct lockmgr      *kt_lockmgr;
 	struct mutex        *kt_mutex;
 	struct rwlock		*kt_rwlock;
     short               kt_locks;

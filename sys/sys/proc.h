@@ -132,7 +132,7 @@ struct	proc {
 	struct  rusage    	p_ru;			/* exit information */
 	struct  k_rusage    p_kru;			/* exit information kernel */
 
-	struct kthread		*p_kthread;
+	struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
 };
 
 struct	session {

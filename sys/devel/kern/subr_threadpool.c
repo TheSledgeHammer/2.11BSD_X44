@@ -26,18 +26,34 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include <sys/cdefs.h>
+
 #include <sys/user.h>
+#include <sys/map.h>
+#include <sys/malloc.h>
+
 #include "devel/sys/threadpool.h"
 
-struct threadpool_itpc itpc;
-
 void
-itpc_threadpool_init()
+kthreadpool_setup(ktpool)
+	struct kthreadpool *ktpool;
 {
-	itpc_threadpool_setup(&itpc);
+	if(ktpool == NULL) {
+		MALLOC(ktpool, struct kthreadpool *, sizeof(struct kthreadpool *), M_KTHREADPOOL, M_WAITOK);
+	}
+	TAILQ_INIT(ktpool->ktp_idle_threads);
 }
 
-static void
+void
+uthreadpool_setup(utpool)
+	struct uthreadpool *utpool;
+{
+	if(utpool == NULL) {
+		MALLOC(utpool, struct uthreadpool *, sizeof(struct uthreadpool *), M_UTHREADPOOL, M_WAITOK);
+	}
+	TAILQ_INIT(utpool->utp_idle_threads);
+}
+
+void
 itpc_threadpool_setup(itpc)
 	struct threadpool_itpc *itpc;
 {
@@ -56,6 +72,7 @@ itpc_threadpool_enqueue(itc, tid)
 {
 	struct kthreadpool *ktpool;
 	struct uthreadpool *utpool;
+
 	/* check kernel threadpool is not null & has a job/task entry to send */
 	if(ktpool != NULL && itc->itc_tid == tid) {
 		itc->itc_ktpool = ktpool;
