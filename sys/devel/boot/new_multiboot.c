@@ -35,20 +35,6 @@ struct file_format multiboot_ops = { multiboot_loadfile, multiboot_exec };
 
 static const char mbl_name[] = "211BSD Loader";
 
-static vm_offset_t
-max_addr(void)
-{
-	struct preloaded_file	*fp;
-	vm_offset_t		 addr = 0;
-
-	for (fp = file_findfile(NULL, NULL); fp != NULL; fp = fp->f_next) {
-		if (addr < (fp->f_addr + fp->f_size))
-			addr = fp->f_addr + fp->f_size;
-	}
-
-	return (addr);
-}
-
 static int
 multiboot_loadfile(char *args, uint64_t dest, struct preloaded_file *fp)
 {
@@ -233,4 +219,18 @@ error:
 		free(cmdline);
 	}
 	return (error);
+}
+
+static vm_offset_t
+max_addr(void)
+{
+	struct preloaded_file	*fp;
+	vm_offset_t		 addr = 0;
+
+	for (fp = file_findfile(NULL, NULL); fp != NULL; fp = fp->f_next) {
+		if (addr < (fp->f_addr + fp->f_size))
+			addr = fp->f_addr + fp->f_size;
+	}
+
+	return (addr);
 }

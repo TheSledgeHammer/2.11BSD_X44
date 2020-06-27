@@ -184,8 +184,8 @@ bi_load(struct bootinfo *bi, struct preloaded_file *fp, char *args)
 
     ssym = esym = 0;
 
-    ssym = fp->marks[MARK_SYM];
-    esym = fp->marks[MARK_END];
+    ssym = fp->f_marks[MARK_SYM];
+    esym = fp->f_marks[MARK_END];
 
     if (ssym == 0 || esym == 0)
     	ssym = esym = 0;					/* sanity */

@@ -10,7 +10,7 @@
 main(framep)
 {
 	/* add after startup */
-#if ((NKSYMS > 0) || (NDDB > 0)
+#if ((NKSYMS > 0) || (NDDB > 0))
 	ksyms_init();
 #endif
 }
@@ -83,13 +83,8 @@ init386_ksyms(void)
 	db_machine_init();
 #endif
 
-#if defined(MULTIBOOT)
-	if (multiboot1_ksyms_addsyms_elf())
+	if (boot_ksyms_addsyms_elf())
 		return;
-
-	if (multiboot2_ksyms_addsyms_elf())
-		return;
-#endif
 
 	if ((symtab = lookup_bootinfo(BOOTINFO_ENVIRONMENT)) == NULL) {
 		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);

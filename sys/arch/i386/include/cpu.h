@@ -133,7 +133,6 @@ struct cpu_nocpuid_nameclass {
 	void 		(*cpu_setup) (void);
 };
 
-
 struct cpu_cpuid_nameclass {
 	const char 	*cpu_id;
 	int 		cpu_vendor;

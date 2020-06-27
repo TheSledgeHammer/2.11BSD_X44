@@ -62,7 +62,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
-#include "../../../devel/sys/kobj.h"
+#include "devel/sys/kobj.h"
 #include <sys/exec.h>
 #include <sys/exec_linker.h>
 #include <sys/exec_elf.h>

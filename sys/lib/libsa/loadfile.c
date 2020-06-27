@@ -193,8 +193,7 @@ fdloadfile(fd, marks, flags)
 
 	if (rval == 0) {
 		if ((flags & LOAD_ALL) != 0)
-			PROGRESS(("=0x%lx\n",
-				  marks[MARK_END] - marks[MARK_START]));
+			PROGRESS(("=0x%lx\n", marks[MARK_END] - marks[MARK_START]));
 		return (0);
 	}
 err:

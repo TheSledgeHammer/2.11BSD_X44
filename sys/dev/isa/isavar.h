@@ -89,7 +89,7 @@
 struct isabus_attach_args;
 
 #if (alpha + atari + bebox + i386 != 1)
-ERROR: COMPILING FOR UNSUPPORTED MACHINE, OR MORE THAN ONE.
+//ERROR: COMPILING FOR UNSUPPORTED MACHINE, OR MORE THAN ONE.
 #endif
 #if alpha
 #include <alpha/isa/isa_machdep.h>
@@ -108,11 +108,11 @@ ERROR: COMPILING FOR UNSUPPORTED MACHINE, OR MORE THAN ONE.
  * ISA bus attach arguments
  */
 struct isabus_attach_args {
-	char	*iba_busname;		/* XXX should be common */
-	bus_space_tag_t iba_iot;	/* isa i/o space tag */
-	bus_space_tag_t iba_memt;	/* isa mem space tag */
-	bus_dma_tag_t iba_dmat;		/* isa DMA tag */
-	isa_chipset_tag_t iba_ic;
+	char				*iba_busname;	/* XXX should be common */
+	bus_space_tag_t 	iba_iot;		/* isa i/o space tag */
+	bus_space_tag_t 	iba_memt;		/* isa mem space tag */
+	bus_dma_tag_t 		iba_dmat;		/* isa DMA tag */
+	isa_chipset_tag_t 	iba_ic;
 };
 
 /*
@@ -125,14 +125,14 @@ struct isa_attach_args {
 
 	isa_chipset_tag_t ia_ic;
 
-	int	ia_iobase;		/* base i/o address */
-	int	ia_iosize;		/* span of ports used */
-	int	ia_irq;			/* interrupt request */
-	int	ia_drq;			/* DMA request */
-	int	ia_drq2;		/* second DMA request */
-	int	ia_maddr;		/* physical i/o mem addr */
-	u_int	ia_msize;		/* size of i/o memory */
-	void	*ia_aux;		/* driver specific */
+	int	ia_iobase;				/* base i/o address */
+	int	ia_iosize;				/* span of ports used */
+	int	ia_irq;					/* interrupt request */
+	int	ia_drq;					/* DMA request */
+	int	ia_drq2;				/* second DMA request */
+	int	ia_maddr;				/* physical i/o mem addr */
+	u_int	ia_msize;			/* size of i/o memory */
+	void	*ia_aux;			/* driver specific */
 
 	bus_space_handle_t ia_delaybah; /* i/o handle for `delay port' */
 };

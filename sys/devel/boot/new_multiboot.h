@@ -163,7 +163,7 @@ struct multiboot_info {
 	union {
 		struct multiboot_aout_symbol_table 			mi_aout_sym;
 		struct multiboot_elf_symbol_table			mi_elf_sym;
-	} u;
+	} mi_u;
 
 	/* Memory Mapping buffer */
 	multiboot_uint32_t 		mi_mmap_length;
@@ -189,26 +189,6 @@ struct multiboot_info {
 	multiboot_uint16_t 		mi_vbe_interface_seg;
 	multiboot_uint16_t 		mi_vbe_interface_off;
 	multiboot_uint16_t 		mi_vbe_interface_len;
-};
-
-struct multiboot_mmap_entry {
-	multiboot_uint32_t 		mme_size;
-	multiboot_uint64_t 		mme_addr;
-	multiboot_uint64_t 		mme_len;
-#define MULTIBOOT_MEMORY_AVAILABLE              1
-#define MULTIBOOT_MEMORY_RESERVED               2
-	multiboot_uint32_t 		mme_type;
-} __attribute__((packed));
-
-struct multiboot_package {
-	int						mbp_version;
-	struct multiboot_header	*mbp_header;
-	const char				*mbp_file;
-	char					*mbp_args;
-	u_long			 		mbp_basemem;
-	u_long			 		mbp_extmem;
-	u_long			 		mbp_loadaddr;
-	u_long					*mbp_marks;
 };
 
 #endif /* ! ASM_FILE */
