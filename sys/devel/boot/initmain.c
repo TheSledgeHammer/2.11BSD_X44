@@ -83,7 +83,7 @@ init386_ksyms(void)
 	db_machine_init();
 #endif
 
-	if (boot_ksyms_addsyms_elf())
+	if (i386_ksyms_addsyms_elf(symtab))
 		return;
 
 	if ((symtab = lookup_bootinfo(BOOTINFO_ENVIRONMENT)) == NULL) {

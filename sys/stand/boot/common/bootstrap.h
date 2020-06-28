@@ -192,6 +192,15 @@ struct preloaded_file
     vm_offset_t				f_addr;				/* load address */
     size_t					f_size;				/* file size */
     u_long                  f_marks[MARK_MAX];	/* filled by loadfile() */
+
+    /* ELF Symbols */
+	uint32_t				f_flags;
+	uint32_t 				f_mem_lower;
+	uint32_t 				f_mem_upper;
+	uint32_t				f_elfshdr_num;
+	uint32_t				f_elfshdr_size;
+	caddr_t					f_elfshdr_addr;
+	uint32_t				f_elfshdr_shndx;
 };
 
 struct file_format

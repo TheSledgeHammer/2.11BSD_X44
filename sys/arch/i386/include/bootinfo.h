@@ -131,6 +131,14 @@ struct bootinfo {
 		int 					*bi_bootdevp;
 		vm_offset_t 			*bi_bip;
 	} bi_leg;
+
+	struct bootinfo_symbols {	/* SYMBOLS */
+		u_long					bi_marks;
+		void *					bi_symstart;
+		size_t					bi_symsize;
+		void *					bi_strstart;
+		size_t					bi_strsize;
+	} bi_sym;
 };
 
 #endif /* _LOCORE */
