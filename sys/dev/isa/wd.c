@@ -102,11 +102,11 @@ struct cfdriver wd_cd = {
 	NULL, "wd", DV_DISK
 };
 
-void	wdgetdefaultlabel __P((struct wd_softc *, struct disklabel *));
-void	wdgetdisklabel	__P((struct wd_softc *));
-int	wd_get_parms	__P((struct wd_softc *));
-void	wdstrategy	__P((struct buf *));
-void	wdstart		__P((void *));
+void	wdgetdefaultlabel (struct wd_softc *, struct disklabel *);
+void	wdgetdisklabel	(struct wd_softc *);
+int		wd_get_parms	(struct wd_softc *);
+void	wdstrategy	(struct buf *);
+void	wdstart		(void *);
 
 struct dkdriver wddkdriver = { wdstrategy };
 
@@ -114,11 +114,11 @@ struct dkdriver wddkdriver = { wdstrategy };
 cdev_decl(wd);
 bdev_decl(wd);
 
-void	wdfinish	__P((struct wd_softc *, struct buf *));
-int	wdsetctlr	__P((struct wd_link *));
-static void bad144intern __P((struct wd_softc *));
-int	wdlock		__P((struct wd_link *));
-void	wdunlock	__P((struct wd_link *));
+void		wdfinish	(struct wd_softc *, struct buf *);
+int			wdsetctlr	(struct wd_link *);
+static void bad144intern (struct wd_softc *);
+int			wdlock		(struct wd_link *);
+void		wdunlock	(struct wd_link *);
 
 int
 wdprobe(parent, match, aux)

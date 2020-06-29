@@ -49,13 +49,13 @@
 			      (base) == 0x0f40)
 
 /* WSS registers */
-#define WSS_CONFIG	0x00	/* write only */
-#define WSS_STATUS	0x03	/* read only */
-#define WSS_CODEC	0x04	/* ad1848 codec registers (0x04-0x07) */
-#define WSS_NPORT	8
+#define WSS_CONFIG		0x00	/* write only */
+#define WSS_STATUS		0x03	/* read only */
+#define WSS_CODEC		0x04	/* ad1848 codec registers (0x04-0x07) */
+#define WSS_NPORT		8
 
 /* WSS status register bits */
-#define WSS_16SLOT	0x80
+#define WSS_16SLOT		0x80
 #define WSS_IRQACTIVE	0x40
-#define WSS_VERS	0x04
+#define WSS_VERS		0x04
 #define WSS_VERSMASK	0x3f

@@ -44,6 +44,7 @@ __KERNEL_RCSID(0, "$NetBSD: wskbdutil.c,v 1.10 2001/11/15 09:48:19 lukem Exp $")
 #include <sys/errno.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
+
 #include <dev/wscons/wsksymdef.h>
 #include <dev/wscons/wsksymvar.h>
 

@@ -167,6 +167,7 @@ namei(ndp)
 			MALLOC(cp, char *, MAXPATHLEN, M_NAMEI, M_WAITOK);
 		else
 			cp = cnp->cn_pnbuf;
+
 		aiov.iov_base = cp;
 		aiov.iov_len = MAXPATHLEN;
 		auio.uio_iov = &aiov;

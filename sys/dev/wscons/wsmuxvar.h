@@ -40,16 +40,16 @@
  * A ws event source, i.e., wskbd, wsmouse, or wsmux.
  */
 struct wsevsrc {
-	struct device me_dv;
-	const struct wssrcops *me_ops;	/* method pointers */
-	struct wseventvar me_evar;	/* wseventvar opened directly */
-	struct wseventvar *me_evp;	/* our wseventvar when open */
+	struct device 			me_dv;
+	const struct wssrcops 	*me_ops;	/* method pointers */
+	struct wseventvar 		me_evar;	/* wseventvar opened directly */
+	struct wseventvar 		*me_evp;	/* our wseventvar when open */
 #if NWSDISPLAY > 0
-	struct device *me_dispdv;       /* our display if part of one */
+	struct device 			*me_dispdv; /* our display if part of one */
 #endif
 #if NWSMUX > 0
-	struct wsmux_softc *me_parent;	/* parent mux device */
-	CIRCLEQ_ENTRY(wsevsrc) me_next;	/* sibling pointers */
+	struct wsmux_softc 		*me_parent;	/* parent mux device */
+	CIRCLEQ_ENTRY(wsevsrc) 	me_next;	/* sibling pointers */
 #endif
 };
 
@@ -79,21 +79,21 @@ struct wssrcops {
 
 #if NWSMUX > 0
 struct wsmux_softc {
-	struct wsevsrc sc_base;
-	struct proc *sc_p;		/* open proc */
-	CIRCLEQ_HEAD(, wsevsrc) sc_cld; /* list of children */
+	struct wsevsrc 			sc_base;
+	struct proc 			*sc_p;		/* open proc */
+	CIRCLEQ_HEAD(, wsevsrc) sc_cld; 	/* list of children */
 #ifdef WSDISPLAY_COMPAT_RAWKBD
-	int sc_rawkbd;		        /* A hack to remember the kbd mode */
+	int 					sc_rawkbd;	/* A hack to remember the kbd mode */
 #endif
 };
 
 struct	wsmux_softc *wsmux_getmux(int);
 struct	wsmux_softc *wsmux_create(const char *, int);
-int	wsmux_attach_sc(struct wsmux_softc *, struct wsevsrc *);
+int		wsmux_attach_sc(struct wsmux_softc *, struct wsevsrc *);
 void	wsmux_detach_sc(struct wsevsrc *);
-int	wsmux_set_display(struct wsmux_softc *, struct device *);
+int		wsmux_set_display(struct wsmux_softc *, struct device *);
 
-int	wskbd_add_mux(int, struct wsmux_softc *);
-int	wsmouse_add_mux(int, struct wsmux_softc *);
+int		wskbd_add_mux(int, struct wsmux_softc *);
+int		wsmouse_add_mux(int, struct wsmux_softc *);
 
 #endif /* NWSMUX > 0 */

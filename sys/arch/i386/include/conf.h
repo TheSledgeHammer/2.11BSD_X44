@@ -33,6 +33,7 @@
 
 #define	mmread	mmrw
 #define	mmwrite	mmrw
+
 cdev_decl(mm);
 cdev_decl(pms);
 

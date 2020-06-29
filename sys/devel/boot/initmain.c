@@ -7,6 +7,11 @@
 #include <i386/include/bootinfo.h>
 #include "sys/ksyms.h"
 
+#ifndef BOOTVERBOSE
+#define	BOOTVERBOSE	0
+#endif
+int	bootverbose = BOOTVERBOSE;
+
 main(framep)
 {
 	/* add after startup */

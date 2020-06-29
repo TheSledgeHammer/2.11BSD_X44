@@ -32,7 +32,7 @@
 /*
  * Loading modules, booting the system
  */
-
+#include <sys/user.h>
 #include <lib/libsa/loadfile.h>
 #include <lib/libkern/libkern.h>
 #include <boot/bootstand.h>
@@ -45,7 +45,6 @@ static int	loadakernel(int try, int argc, char* argv[]);
 static const char *default_bootfiles = "kernel";
 
 static int autoboot_tried;
-
 
 int
 command_boot(int argc, char *argv[])

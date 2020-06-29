@@ -50,13 +50,13 @@ struct device;
  */
 struct wsdisplay_emulops {
 	void	(*cursor)(void *c, int on, int row, int col);
-	int	(*mapchar)(void *, int, unsigned int *);
+	int		(*mapchar)(void *, int, unsigned int *);
 	void	(*putchar)(void *c, int row, int col, u_int uc, long attr);
 	void	(*copycols)(void *c, int row, int srccol, int dstcol,int ncols);
 	void	(*erasecols)(void *c, int row, int startcol, int ncols, long);
 	void	(*copyrows)(void *c, int srcrow, int dstrow, int nrows);
 	void	(*eraserows)(void *c, int row, int nrows, long);
-	int	(*allocattr)(void *c, int fg, int bg, int flags, long *);
+	int		(*allocattr)(void *c, int fg, int bg, int flags, long *);
 /* fg / bg values. Made identical to ANSI terminal color codes. */
 #define WSCOL_BLACK	0
 #define WSCOL_RED	1
@@ -99,18 +99,18 @@ struct wsdisplay_char;
  * with these functions, which is passed to them when they are invoked.
  */
 struct wsdisplay_accessops {
-	int	(*ioctl)(void *v, u_long cmd, caddr_t data, int flag,
+	int		(*ioctl)(void *v, u_long cmd, caddr_t data, int flag,
 		    struct proc *p);
-	paddr_t	(*mmap)(void *v, off_t off, int prot);
-	int	(*alloc_screen)(void *, const struct wsscreen_descr *,
+	caddr_t	(*mmap)(void *v, off_t off, int prot);
+	int		(*alloc_screen)(void *, const struct wsscreen_descr *,
 				     void **, int *, int *, long *);
 	void	(*free_screen)(void *, void *);
-	int	(*show_screen)(void *, void *, int,
+	int		(*show_screen)(void *, void *, int,
 				    void (*) (void *, int, int), void *);
-	int	(*load_font)(void *, void *, struct wsdisplay_font *);
+	int		(*load_font)(void *, void *, struct wsdisplay_font *);
 	void	(*pollc)(void *, int);
-	int	(*getwschar)(void *, struct wsdisplay_char *);
-	int	(*putwschar)(void *, struct wsdisplay_char *);
+	int		(*getwschar)(void *, struct wsdisplay_char *);
+	int		(*putwschar)(void *, struct wsdisplay_char *);
 	void	(*scroll) __P((void *, void *, int));
 };
 

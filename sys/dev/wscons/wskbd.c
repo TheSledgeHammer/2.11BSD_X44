@@ -104,6 +104,7 @@ __KERNEL_RCSID(0, "$NetBSD: wskbd.c,v 1.73.2.3 2004/06/07 09:57:29 tron Exp $");
 #include <sys/errno.h>
 #include <sys/fcntl.h>
 #include <sys/vnode.h>
+#include <sys/user.h>
 
 #include <dev/wscons/wsconsio.h>
 #include <dev/wscons/wskbdvar.h>

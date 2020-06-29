@@ -448,8 +448,7 @@ ksyms_addsyms_elf(int symsize, void *start, void *end)
  * a void *rather than a pointer to avoid exposing the Elf_Ehdr type.
  */
 void
-ksyms_addsyms_explicit(void *ehdr, void *symstart, size_t symsize,
-    void *strstart, size_t strsize)
+ksyms_addsyms_explicit(void *ehdr, void *symstart, size_t symsize, void *strstart, size_t strsize)
 {
 	if (!ksyms_verify(symstart, strstart))
 		return;

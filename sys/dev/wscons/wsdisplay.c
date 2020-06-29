@@ -53,6 +53,7 @@ __KERNEL_RCSID(0, "$NetBSD: wsdisplay.c,v 1.76.2.2 2004/06/07 09:57:37 tron Exp 
 #include <sys/errno.h>
 #include <sys/fcntl.h>
 #include <sys/vnode.h>
+#include <sys/user.h>
 
 #include <dev/wscons/wseventvar.h>
 #include <dev/wscons/wsmuxvar.h>

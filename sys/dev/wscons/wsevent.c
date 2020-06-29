@@ -85,6 +85,7 @@ __KERNEL_RCSID(0, "$NetBSD: wsevent.c,v 1.16 2003/08/07 16:31:29 agc Exp $");
 #include <sys/vnode.h>
 #include <sys/select.h>
 #include <sys/poll.h>
+#include <sys/user.h>
 
 #include <dev/wscons/wsconsio.h>
 #include <dev/wscons/wseventvar.h>

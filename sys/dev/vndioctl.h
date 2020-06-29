@@ -47,7 +47,7 @@
  */
 struct vnd_ioctl {
 	char	*vnd_file;	/* pathname of file to mount */
-	int	vnd_size;	/* (returned) size of disk */
+	int		vnd_size;	/* (returned) size of disk */
 };
 
 /*

@@ -44,7 +44,7 @@
  */
 
 #include <sys/cdefs.h>
-__KERNEL_RCSID(0, "$NetBSD: wsmux.c,v 1.35 2003/09/23 09:16:07 simonb Exp $");
+/* __KERNEL_RCSID(0, "$NetBSD: wsmux.c,v 1.35 2003/09/23 09:16:07 simonb Exp $"); */
 
 #include "wsdisplay.h"
 #include "wsmux.h"
@@ -64,6 +64,7 @@ __KERNEL_RCSID(0, "$NetBSD: wsmux.c,v 1.35 2003/09/23 09:16:07 simonb Exp $");
 #include <sys/tty.h>
 #include <sys/signalvar.h>
 #include <sys/device.h>
+#include <sys/user.h>
 
 #include "opt_wsdisplay_compat.h"
 

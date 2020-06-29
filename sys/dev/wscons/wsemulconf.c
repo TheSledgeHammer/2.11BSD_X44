@@ -31,10 +31,11 @@
  */
 
 #include <sys/cdefs.h>
-__KERNEL_RCSID(0, "$NetBSD: wsemulconf.c,v 1.5 2001/10/13 15:56:16 augustss Exp $");
+/* __KERNEL_RCSID(0, "$NetBSD: wsemulconf.c,v 1.5 2001/10/13 15:56:16 augustss Exp $"); */
 
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/user.h>
 
 #include <dev/wscons/wsdisplayvar.h>
 #include <dev/wscons/wsksymvar.h>

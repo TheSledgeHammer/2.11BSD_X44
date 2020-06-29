@@ -33,7 +33,7 @@
 /* XXX DESCRIPTION/SOURCE OF INFORMATION */
 
 #include <sys/cdefs.h>
-__KERNEL_RCSID(0, "$NetBSD: wsemul_sun.c,v 1.17 2002/09/27 15:37:40 provos Exp $");
+/* __KERNEL_RCSID(0, "$NetBSD: wsemul_sun.c,v 1.17 2002/09/27 15:37:40 provos Exp $"); */
 
 #include <sys/param.h>
 #include <sys/systm.h>

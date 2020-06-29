@@ -55,9 +55,9 @@
 
 #include <dev/cons.h>
 
-struct	tty *constty = NULL;	/* virtual console output device */
-struct	consdev *cn_tab;		/* physical console device info */
-struct	vnode *cn_devvp;		/* vnode for underlying device. */
+struct	tty 	*constty = NULL;	/* virtual console output device */
+struct	consdev *cn_tab;			/* physical console device info */
+struct	vnode 	*cn_devvp;			/* vnode for underlying device. */
 
 int
 cnopen(dev, flag, mode, p)

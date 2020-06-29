@@ -27,7 +27,7 @@
  */
 
 #include <sys/cdefs.h>
-__KERNEL_RCSID(0, "$NetBSD: wsemul_vt100_subr.c,v 1.15 2004/03/24 17:26:53 drochner Exp $");
+/* __KERNEL_RCSID(0, "$NetBSD: wsemul_vt100_subr.c,v 1.15 2004/03/24 17:26:53 drochner Exp $"); */
 
 #include <sys/param.h>
 #include <sys/systm.h>

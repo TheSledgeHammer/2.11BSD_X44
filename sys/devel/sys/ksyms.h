@@ -83,39 +83,6 @@ struct ksyms_hdr {
 };
 #endif	/* _KSYMS_PRIVATE */
 
-/*
- * Do a lookup of a symbol using the in-kernel lookup algorithm.
- */
-struct ksyms_ogsymbol {
-	const char *kg_name;
-	union {
-		void 			*ku_sym;		 /* Normally Elf_Sym */
-		unsigned long 	*ku_value;
-	} _un;
-#define	kg_sym 		_un.ku_sym
-#define	kg_value 	_un.ku_value
-};
-
-#ifdef ELFSIZE
-struct ksyms_gsymbol {
-	const char *kg_name;
-	union {
-		Elf_Sym ku_sym;
-	} _un;
-};
-#endif
-
-struct ksyms_gvalue {
-	const char 	*kv_name;
-	uint64_t 	kv_value;
-};
-
-#define	OKIOCGSYMBOL	_IOW('l', 1, struct ksyms_ogsymbol)
-#define	OKIOCGVALUE		_IOW('l', 2, struct ksyms_ogsymbol)
-#define	KIOCGSIZE		_IOR('l', 3, int)
-#define	KIOCGVALUE		_IOWR('l', 4, struct ksyms_gvalue)
-#define	KIOCGSYMBOL		_IOWR('l', 5, struct ksyms_gsymbol)
-
 #if defined(_KERNEL)
 /*
  * Definitions used in ksyms_getname() and ksyms_getval().
@@ -125,8 +92,6 @@ struct ksyms_gvalue {
 #define KSYMS_EXTERN	0000	/* Only external symbols (pseudo) */
 #define KSYMS_PROC		0100	/* Procedures only */
 #define KSYMS_ANY		0200	/* Also local symbols (DDB use only) */
-
-typedef int (*ksyms_callback_t)(const char *, int, void *, uint32_t, int, void *);
 
 /*
  * Prototypes

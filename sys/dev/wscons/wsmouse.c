@@ -93,6 +93,7 @@ __KERNEL_RCSID(0, "$NetBSD: wsmouse.c,v 1.34 2003/11/28 13:19:46 drochner Exp $"
 #include <sys/signalvar.h>
 #include <sys/device.h>
 #include <sys/vnode.h>
+#include <sys/user.h>
 
 #include <dev/wscons/wsconsio.h>
 #include <dev/wscons/wsmousevar.h>
