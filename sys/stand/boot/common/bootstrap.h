@@ -274,4 +274,8 @@ int	aout_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result
 int	ecoff_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result);
 int	elf32_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result);
 int	elf64_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result);
+
+/* ksyms.c: elf objects */
+void 	ksyms_addr_set(void *ehdr, void *shdr, void *symbase);
+int		preload_ksyms(struct bootinfo *bi, struct preloaded_file *fp);
 #endif /* !_BOOTSTRAP_H_ */

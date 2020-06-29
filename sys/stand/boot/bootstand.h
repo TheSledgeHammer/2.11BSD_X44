@@ -123,9 +123,6 @@ struct devdesc {
     void			*d_opendata;
 };
 
-/* Mode modifier for strategy() */
-#define	F_NORA		(0x01 << 16)	/* Disable Read-Ahead */
-
 /* sbrk emulation */
 extern int	fgetstr(char *buf, int size, int fd);
 extern void	ngets(char *, int);

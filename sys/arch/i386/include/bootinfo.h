@@ -33,20 +33,14 @@
 
 #define	BOOTINFO_VERSION		1
 
-#define BOOTINFO_BIOS 			0
-#define BOOTINFO_EFI 			1
-#define BOOTINFO_ENVIRONMENT 	2
-#define BOOTINFO_BOOTDISK		3
-#define BOOTINFO_NETIF 			4
-#define BOOTINFO_CONSOLE 		5
-#define BOOTINFO_BIOSGEOM 		6
-#define BOOTINFO_LEGACY			7
-
 #define	N_BIOS_GEOM				8
 
 #define	BOOTINFO_MAGIC			0xdeadbeeffeedface
 #define BOOTINFO_MAXSIZE 		16384
-//#define BOOTINFO_MAX			64
+
+#define BOOTINFO_MEMORY        	0x00000001
+#define BOOTINFO_AOUT_SYMS      0x00000010
+#define BOOTINFO_ELF_SYMS		0x00000020
 
 #ifndef _LOCORE
 
@@ -59,8 +53,8 @@ struct bootinfo {
 	int				 			bi_len;
 	int 						bi_type;
 	uint32_t					bi_nentries;		/* Number of bootinfo_* entries in bi_data. */
-	//uint32_t 					bi_entry[1];
-	uint8_t						bi_data[BOOTINFO_MAXSIZE - sizeof(uint32_t)];
+	uint32_t 					bi_entry[1];
+	//uint8_t						bi_data[BOOTINFO_MAXSIZE - sizeof(uint32_t)];
 
 	struct bootinfo_bios {		/* BIOS */
 #define	bi_endcommon			bi_n_bios_used
@@ -132,7 +126,8 @@ struct bootinfo {
 		vm_offset_t 			*bi_bip;
 	} bi_leg;
 
-	struct bootinfo_symbols {	/* SYMBOLS */
+	struct bootinfo_symbols {	/* ELF SYMBOLS */
+		uint32_t				bi_flags;
 		u_long					bi_marks;
 		void *					bi_symstart;
 		size_t					bi_symsize;
@@ -142,12 +137,9 @@ struct bootinfo {
 };
 
 #endif /* _LOCORE */
-extern struct bootinfo *bootinfo;
 
-#ifndef _LOCORE
-
-void *lookup_bootinfo(int);
-
-#endif /* _LOCORE */
+extern struct bootinfo 	boot;
+extern int				end;
+extern int 				*esym;
 
 #endif /* _MACHINE_BOOTINFO_H_ */

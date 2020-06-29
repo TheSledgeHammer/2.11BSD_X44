@@ -61,38 +61,35 @@ int
 init386()
 {
 	vm_offset_t addend;
-
-	if (bootinfo.bi_envp.bi_environment != 0) {
-		addend = (caddr_t)bootinfo.bi_envp.bi_environment < KERNBASE ? PMAP_MAP_LOW : 0;
-		init_static_kenv((char *)bootinfo.bi_envp.bi_environment + addend, 0);
+	if (i386_ksyms_addsyms_elf(bootinfo)) {
+		init386_ksyms(bootinfo);
 	} else {
-		init_static_kenv(NULL, 0);
+		if (bootinfo.bi_envp.bi_environment != 0) {
+			addend = (caddr_t)bootinfo.bi_envp.bi_environment < KERNBASE ? PMAP_MAP_LOW : 0;
+			init_static_kenv((char *)bootinfo.bi_envp.bi_environment + addend, 0);
+		} else {
+			init_static_kenv(NULL, 0);
+		}
 	}
-
-	init386_ksyms();
 }
 
 static void
-init386_ksyms(void)
+init386_ksyms(bootinfo)
+	struct bootinfo *bootinfo;
 {
-#if NKSYMS || defined(DDB)
-	extern int end;
-	struct bootinfo *symtab;
+	extern int 		end;
+	vm_offset_t 	addend;
 
-#ifdef DDB
-	db_machine_init();
-#endif
-
-	if (i386_ksyms_addsyms_elf(symtab))
-		return;
-
-	if ((symtab = lookup_bootinfo(BOOTINFO_ENVIRONMENT)) == NULL) {
+	if (bootinfo->bi_envp.bi_environment != 0) {
 		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);
-		return;
+		addend = (caddr_t) bootinfo->bi_envp.bi_environment < KERNBASE ?	PMAP_MAP_LOW : 0;
+		init_static_kenv((char*) bootinfo->bi_envp.bi_environment + addend, 0);
+	} else {
+		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);
+		init_static_kenv(NULL, 0);
 	}
 
-	symtab->bi_envp->bi_symtab += KERNBASE;
-	symtab->bi_envp->bi_esymtab += KERNBASE;
-	ksyms_addsyms_elf(symtab->bi_envp->bi_nsymtab, (int*) symtab->bi_envp->bi_symtab, (int*) symtab->bi_envp->bi_esymtab);
-#endif
+	bootinfo->bi_envp->bi_symtab += KERNBASE;
+	bootinfo->bi_envp->bi_esymtab += KERNBASE;
+	ksyms_addsyms_elf(bootinfo->bi_envp->bi_nsymtab, (int*) bootinfo->bi_envp->bi_symtab, (int*) bootinfo->bi_envp->bi_esymtab);
 }

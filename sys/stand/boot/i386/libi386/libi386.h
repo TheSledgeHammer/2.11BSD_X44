@@ -26,7 +26,6 @@
  * $FreeBSD$
  */
 
-
 /*
  * i386 fully-qualified device descriptor.
  */
@@ -40,11 +39,6 @@ struct i386_devdesc {
 			int		partition;
 			off_t	offset;
 		} biosdisk;
-		/*struct
-		{
-			uint64_t	pool_guid;
-			uint64_t	root_guid;
-		} zfs;*/
     } d_kind;
 };
 
@@ -84,9 +78,9 @@ extern uint32_t relocator_edx;
 extern uint32_t relocator_ebp;
 extern uint16_t relocator_a20_enabled;
 
-int		i386_getdev(void **vdev, const char *devspec, const char **path);
-char	*i386_fmtdev(void *vdev);
-int		i386_setcurrdev(struct env_var *ev, int flags, const void *value);
+int			i386_getdev(void **vdev, const char *devspec, const char **path);
+char		*i386_fmtdev(void *vdev);
+int			i386_setcurrdev(struct env_var *ev, int flags, const void *value);
 
 extern struct devdesc	currdev;	/* our current device */
 
@@ -106,12 +100,12 @@ int			bd_bios2unit(int biosdev);				/* xlate BIOS device -> biosdisk unit */
 int			bd_unit2bios(struct i386_devdesc *); 	/* xlate biosdisk -> BIOS device */
 int			bd_getdev(struct i386_devdesc *dev);	/* return dev_t for (dev) */
 
-ssize_t	i386_copyin(const void *src, vm_offset_t dest, const size_t len);
-ssize_t	i386_copyout(const vm_offset_t src, void *dest, const size_t len);
-ssize_t	i386_readin(const int fd, vm_offset_t dest, const size_t len);
+ssize_t		i386_copyin(const void *src, vm_offset_t dest, const size_t len);
+ssize_t		i386_copyout(const vm_offset_t src, void *dest, const size_t len);
+ssize_t		i386_readin(const int fd, vm_offset_t dest, const size_t len);
 
 struct preloaded_file;
-void	bios_getmem(void);
+void		bios_getmem(void);
 
 extern uint32_t		bios_basemem;	/* base memory in bytes */
 extern uint32_t		bios_extmem;	/* extended memory in bytes */
@@ -125,8 +119,8 @@ extern vm_offset_t	high_heap_base;	/* for use as the heap */
 
 /* 16KB buffer space for real mode data transfers. */
 #define	BIO_BUFFER_SIZE 0x4000
-void 	*bio_alloc(size_t size);
-void 	bio_free(void *ptr, size_t size);
+void 		*bio_alloc(size_t size);
+void 		bio_free(void *ptr, size_t size);
 
 /*
  * Values for width parameter to biospci_{read,write}_config
@@ -142,6 +136,13 @@ uint32_t 	biospci_locator(int8_t bus, uint8_t device, uint8_t function);
 int			biospci_write_config(uint32_t locator, int offset, int width, uint32_t val);
 void		biosacpi_detect(void);
 
+/* bootinfo.c */
 int			bi_getboothowto(char *kargs);
 void		bi_setboothowto(int howto);
 vm_offset_t	bi_copyenv(vm_offset_t addr);
+
+/* bootload.c */
+void 		bi_init(void);
+void 		bi_alloc(struct bootinfo *);
+int 		bi_load_stage0(struct bootinfo *, struct preloaded_file *, char *);
+int 		bi_load_stage1(struct preloaded_file *, char *, vm_offset_t, int);

@@ -38,13 +38,13 @@
 
 #include <boot/bootstand.h>
 #include <boot/common/bootstrap.h>
-#include <boot/common/smbios.h>
 #include <i386/common/bootargs.h>
 #include <lib/libkern/libkern.h>
 #include <machine/bootinfo.h>
 #include <machine/cpufunc.h>
 #include <machine/psl.h>
 
+#include "../smbios.h"
 #include "libi386/libi386.h"
 #include "btxv86.h"
 

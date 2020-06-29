@@ -42,12 +42,12 @@
 
 #include <i386/include/bootinfo.h>
 
-struct bootinfo bootinfo;
+struct bootinfo boot;
 
 void
 bi_init(void)
 {
-	bi_alloc(&bootinfo);
+	bi_alloc(&boot);
 }
 
 void
@@ -193,18 +193,22 @@ bi_load_stage0(struct bootinfo *bi, struct preloaded_file *fp, char *args)
 	/* pad to a page boundary */
 	addr = roundup(addr, PAGE_SIZE);
 
-	return (0);
+    /* all done copying stuff in, save end of loaded object space */
+    bi->bi_envp->bi_kernend = addr;
+
+    return (0);
 }
 
 int
-bi_load_stage1(struct preloaded_file *fp, char *args, vm_offset_t addr, int add_smap)
+bi_load_stage1(struct bootinfo bi, struct preloaded_file *fp, char *args, vm_offset_t addr, int add_smap)
 {
-	int error = bi_load_stage0(&bootinfo, fp, args);
+	int error = bi_load_stage0(bi, fp, args);
 	if(error) {
 		return (error);
+	} else {
+		bi_load_legacy(bi, fp, args);
+		bi_load_smap(fp, add_smap);
 	}
-	bi_load_legacy(&bootinfo, fp, args);
-	bi_load_smap(fp, add_smap);
 	return (0);
 }
 
