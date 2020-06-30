@@ -36,7 +36,6 @@
 
 #include <sys/exec_elf.h>
 
-#ifdef _KSYMS_PRIVATE
 #include <sys/ioccom.h>
 #include <sys/queue.h>
 
@@ -81,7 +80,15 @@ struct ksyms_hdr {
 	/* 0=NameSize, 1=DescSize, 2=Tag, 3="NetB", 4="SD\0\0", 5=Version */
 	int32_t		kh_note[6];
 };
-#endif	/* _KSYMS_PRIVATE */
+
+static int 					ksyms_maxlen;
+static bool 				ksyms_isopen;
+static bool 				ksyms_initted;
+static bool 				ksyms_loaded;
+static struct simple_lock 	ksyms_lock;
+static struct ksyms_symtab 	kernel_symtab;
+
+static void ksyms_sizes_calc(void);
 
 #if defined(_KERNEL)
 /*

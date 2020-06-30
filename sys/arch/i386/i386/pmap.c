@@ -1700,6 +1700,45 @@ pmap_t pm;
 }
 #endif
 
+struct bios16_pmap_handle {
+	pt_entry_t	*pte;
+	pd_entry_t	*ptd;
+	pt_entry_t	orig_ptd;
+};
+
+static void *
+pmap_bios16_enter(void)
+{
+	struct bios16_pmap_handle *h;
+	extern int IdlePTD;
+
+	/*
+	 * no page table, so create one and install it.
+	 */
+	h = malloc(sizeof(struct bios16_pmap_handle), M_TEMP, M_WAITOK);
+	h->pte = (pt_entry_t*) malloc(PAGE_SIZE, M_TEMP, M_WAITOK);
+	h->ptd = IdlePTD;
+	*h->pte = vm86phystk | PG_RW | PG_V;
+	h->orig_ptd = *h->ptd;
+	*h->ptd = vtophys(h->pte) | PG_RW | PG_V;
+	//pmap_invalidate_all_int(kernel_pmap); /* XXX insurance for now */
+	return (h);
+}
+
+static void
+pmap_bios16_leave(void *arg)
+{
+	struct bios16_pmap_handle *h;
+
+	h = arg;
+	*h->ptd = h->orig_ptd; /* remove page table */
+	/*
+	 * XXX only needs to be invlpg(0) but that doesn't work on the 386
+	 */
+	//pmap_invalidate_all_int(kernel_pmap);
+	free(h->pte, M_TEMP); /* ... and free it */
+}
+
 /* PMap Arguments */
 struct pmap_args pmap_arg = {
     &pmap_bootstrap,
@@ -1739,4 +1778,6 @@ struct pmap_args pmap_arg = {
     &pmap_pvdump,
     &pmap_check_wiring,
     &pads,
+	&pmap_bios16_enter,
+	&pmap_bios16_leave,
 };

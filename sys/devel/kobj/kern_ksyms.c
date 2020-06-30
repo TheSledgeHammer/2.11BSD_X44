@@ -107,16 +107,6 @@ static uint32_t ksyms_nmap[KSYMS_MAX_ID];	/* sorted symbol table map */
 static uint32_t *ksyms_nmap = NULL;
 #endif
 
-static int 					ksyms_maxlen;
-static bool 				ksyms_isopen;
-static bool 				ksyms_initted;
-static bool 				ksyms_loaded;
-static struct simple_lock 	ksyms_lock;
-static struct ksyms_symtab 	kernel_symtab;
-
-static void ksyms_hdr_init(const void *);
-static void ksyms_sizes_calc(void);
-
 #ifdef KSYMS_DEBUG
 #define	FOLLOW_CALLS		1
 #define	FOLLOW_MORE_CALLS	2
@@ -206,30 +196,12 @@ findsym(const char *name, struct ksyms_symtab *table, int type) {
 	return NULL;
 }
 
-/*
- * The "attach" is in reality done in ksyms_init().
- */
-#if NKSYMS > 0
-/*
- * ksyms can be loaded even if the kernel has a missing "pseudo-device ksyms"
- * statement because ddb and modules require it. Fixing it properly requires
- * fixing config to warn about required, but missing preudo-devices. For now,
- * if we don't have the pseudo-device we don't need the attach function; this
- * is fine, as it does nothing.
- */
-void
-ksymsattach(int arg)
-{
-}
-#endif
-
 void
 ksyms_init(void)
 {
 	TAILQ_INIT(&ksyms_symtabs);
 #ifdef makeoptions_COPY_SYMTAB
-	if (!ksyms_loaded &&
-	    strncmp(db_symtab, SYMTAB_FILLER, sizeof(SYMTAB_FILLER))) {
+	if (!ksyms_loaded && strncmp(db_symtab, SYMTAB_FILLER, sizeof(SYMTAB_FILLER))) {
 		ksyms_addsyms_elf(db_symtabsize, db_symtab, db_symtab + db_symtabsize);
 	}
 #endif
@@ -239,7 +211,6 @@ ksyms_init(void)
 		ksyms_initted = TRUE;
 	}
 }
-
 
 /*
  * Add a symbol table.
@@ -577,131 +548,4 @@ ksyms_hdr_init(const void *hdraddr)
 	ksyms_hdr.kh_shdr[SHCTF].sh_link = SYMTAB; /* Corresponding symtab */
 	ksyms_hdr.kh_shdr[SHCTF].sh_addralign = sizeof(char);
 	SHTCOPY(".SUNW_ctf");
-}
-
-static int
-ksymsopen(dev_t dev, int oflags, int devtype, struct proc *p)
-{
-	if (minor(dev) != 0 || !ksyms_loaded)
-		return ENXIO;
-
-	/*
-	 * Create a "snapshot" of the kernel symbol table.  Setting
-	 * ksyms_isopen will prevent symbol tables from being freed.
-	 */
-	simple_lock(&ksyms_lock);
-	ksyms_hdr.kh_shdr[SYMTAB].sh_size = ksyms_symsz;
-	ksyms_hdr.kh_shdr[SYMTAB].sh_info = ksyms_symsz / sizeof(Elf_Sym);
-	ksyms_hdr.kh_shdr[STRTAB].sh_offset = ksyms_symsz + ksyms_hdr.kh_shdr[SYMTAB].sh_offset;
-	ksyms_hdr.kh_shdr[STRTAB].sh_size = ksyms_strsz;
-	ksyms_hdr.kh_shdr[SHCTF].sh_offset = ksyms_strsz + ksyms_hdr.kh_shdr[STRTAB].sh_offset;
-	ksyms_hdr.kh_shdr[SHCTF].sh_size = ksyms_ctfsz;
-	ksyms_isopen = TRUE;
-	simple_unlock(&ksyms_lock);
-
-	return 0;
-}
-
-static int
-ksymsclose(dev_t dev, int oflags, int devtype, struct proc *p)
-{
-	struct ksyms_symtab *st, *next;
-	bool resize;
-
-	/* Discard references to symbol tables. */
-	simple_lock(&ksyms_lock);
-	ksyms_isopen = FALSE;
-	resize = FALSE;
-	for (st = TAILQ_FIRST(&ksyms_symtabs); st != NULL; st = next) {
-		next = TAILQ_NEXT(st, sd_queue);
-		if (st->sd_gone) {
-			TAILQ_REMOVE(&ksyms_symtabs, st, sd_queue);
-			kmem_free(st->sd_nmap, st->sd_nmapsize * sizeof(uint32_t));
-			kmem_free(st, sizeof(*st));
-			resize = TRUE;
-		}
-	}
-	if (resize)
-		ksyms_sizes_calc();
-	simple_unlock(&ksyms_lock);
-
-	return 0;
-}
-
-static int
-ksymsread(dev_t dev, struct uio *uio, int ioflag)
-{
-	struct ksyms_symtab *st;
-	size_t filepos, inpos, off;
-	int error;
-
-	/*
-	 * First: Copy out the ELF header.   XXX Lose if ksymsopen()
-	 * occurs during read of the header.
-	 */
-	off = uio->uio_offset;
-	if (off < sizeof(struct ksyms_hdr)) {
-		error = uiomove((char *)&ksyms_hdr + off,
-		    sizeof(struct ksyms_hdr) - off, uio);
-		if (error != 0)
-			return error;
-	}
-
-	/*
-	 * Copy out the symbol table.
-	 */
-	filepos = sizeof(struct ksyms_hdr);
-	TAILQ_FOREACH(st, &ksyms_symtabs, sd_queue) {
-		if (__predict_false(st->sd_gone))
-			continue;
-		if (uio->uio_resid == 0)
-			return 0;
-		if (uio->uio_offset <= st->sd_symsize + filepos) {
-			inpos = uio->uio_offset - filepos;
-			error = uiomove((char *)st->sd_symstart + inpos,
-			   st->sd_symsize - inpos, uio);
-			if (error != 0)
-				return error;
-		}
-		filepos += st->sd_symsize;
-	}
-
-	/*
-	 * Copy out the string table
-	 */
-	KASSERT(filepos == sizeof(struct ksyms_hdr) +
-	    ksyms_hdr.kh_shdr[SYMTAB].sh_size);
-	TAILQ_FOREACH(st, &ksyms_symtabs, sd_queue) {
-		if (__predict_false(st->sd_gone))
-			continue;
-		if (uio->uio_resid == 0)
-			return 0;
-		if (uio->uio_offset <= st->sd_strsize + filepos) {
-			inpos = uio->uio_offset - filepos;
-			error = uiomove((char *)st->sd_strstart + inpos,
-			   st->sd_strsize - inpos, uio);
-			if (error != 0)
-				return error;
-		}
-		filepos += st->sd_strsize;
-	}
-
-	/*
-	 * Copy out the CTF table.
-	 */
-	st = TAILQ_FIRST(&ksyms_symtabs);
-	if (st->sd_ctfstart != NULL) {
-		if (uio->uio_resid == 0)
-			return 0;
-		if (uio->uio_offset <= st->sd_ctfsize + filepos) {
-			inpos = uio->uio_offset - filepos;
-			error = uiomove((char *)st->sd_ctfstart + inpos,
-			    st->sd_ctfsize - inpos, uio);
-			if (error != 0)
-				return error;
-		}
-		filepos += st->sd_ctfsize;
-	}
-
-	return 0;
 }

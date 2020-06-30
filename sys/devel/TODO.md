@@ -1,4 +1,4 @@
-NULLFS:
+LOFS:
 	- Fix to match current vfs
 UFML:
 	- Fix to match current vfs
@@ -9,13 +9,16 @@ UFML:
 	- char	u_sep;						/* flag for I and D separation */
 	- struct u_ovd						/* automatic overlay data */
 
-kern:
-	- ksyms: dev: OpenBSD/ FreeBSD: char control device 
 
-/* XXX: cherry: This whole thing is glue between the NetBSD pread/vpbcopy etc. etc
- *      and the FreeBSD kern_pread/bzero etc. etc. Needs to be cleaned up
- *      after discussion.
- */
+i386:
+	- FreeBSD's: vm86 does not execute in bios (like originally thought)
+		- can keep NetBSD's vm86 without issue's
+	- NetBSD's/OpenBSD: bios32_init is executed in autoconf.c
+	- FreeBSD's: bios32 uses sysinit in combo with pmap_bios16
+	
+kern:
+	- ksyms: dev: partly complete (open, read, attach, & close)
+		- move rest to dev
 
 NetBSD 5.0.2: Threads & Multitasking
 - kobj: Loading objects in filesystem

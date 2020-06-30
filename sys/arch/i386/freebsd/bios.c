@@ -238,39 +238,37 @@ set_bios_selectors(struct bios_segments *seg, int flags)
     p_gdt = gdt;
 #endif
 
-    ssd.ssd_base = seg->code32.base;
-    ssd.ssd_limit = seg->code32.limit;
-    ssdtosd(&ssd, &p_gdt[GBIOSCODE32_SEL].sd);
+	ssd.ssd_base = seg->code32.base;
+	ssd.ssd_limit = seg->code32.limit;
+	ssdtosd(&ssd, &p_gdt[GBIOSCODE32_SEL].sd);
 
-    ssd.ssd_def32 = 0;
-    if (flags & BIOSCODE_FLAG) {
-	ssd.ssd_base = seg->code16.base;
-	ssd.ssd_limit = seg->code16.limit;
-	ssdtosd(&ssd, &p_gdt[GBIOSCODE16_SEL].sd);
-    }
+	ssd.ssd_def32 = 0;
+	if (flags & BIOSCODE_FLAG) {
+		ssd.ssd_base = seg->code16.base;
+		ssd.ssd_limit = seg->code16.limit;
+		ssdtosd(&ssd, &p_gdt[GBIOSCODE16_SEL].sd);
+	}
 
-    ssd.ssd_type = SDT_MEMRWA;
-    if (flags & BIOSDATA_FLAG) {
-	ssd.ssd_base = seg->data.base;
-	ssd.ssd_limit = seg->data.limit;
-	ssdtosd(&ssd, &p_gdt[GBIOSDATA_SEL].sd);
-    }
+	ssd.ssd_type = SDT_MEMRWA;
+	if (flags & BIOSDATA_FLAG) {
+		ssd.ssd_base = seg->data.base;
+		ssd.ssd_limit = seg->data.limit;
+		ssdtosd(&ssd, &p_gdt[GBIOSDATA_SEL].sd);
+	}
 
-    if (flags & BIOSUTIL_FLAG) {
-	ssd.ssd_base = seg->util.base;
-	ssd.ssd_limit = seg->util.limit;
-	ssdtosd(&ssd, &p_gdt[GBIOSUTIL_SEL].sd);
-    }
+	if (flags & BIOSUTIL_FLAG) {
+		ssd.ssd_base = seg->util.base;
+		ssd.ssd_limit = seg->util.limit;
+		ssdtosd(&ssd, &p_gdt[GBIOSUTIL_SEL].sd);
+	}
 
-    if (flags & BIOSARGS_FLAG) {
-	ssd.ssd_base = seg->args.base;
-	ssd.ssd_limit = seg->args.limit;
-	ssdtosd(&ssd, &p_gdt[GBIOSARGS_SEL].sd);
-    }
+	if (flags & BIOSARGS_FLAG) {
+		ssd.ssd_base = seg->args.base;
+		ssd.ssd_limit = seg->args.limit;
+		ssdtosd(&ssd, &p_gdt[GBIOSARGS_SEL].sd);
+	}
 }
 
-extern int 		vm86pa;
-extern u_long 	vm86phystk;
 extern void bios16_jmp(void);
 
 /*

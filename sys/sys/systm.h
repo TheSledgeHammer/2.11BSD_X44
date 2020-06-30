@@ -71,8 +71,7 @@ extern int szicode;					/* its size */
 /*
  * Structure of the system-entry table
  */
-extern struct sysent
-{
+extern struct sysent {
 	char	sy_narg;			/* total number of arguments */
 	int		(*sy_call)();		/* handler */
 } sysent[];

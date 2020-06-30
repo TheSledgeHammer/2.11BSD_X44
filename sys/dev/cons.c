@@ -152,12 +152,12 @@ cnwrite(dev, uio, flag)
 	return ((*cdevsw[major(dev)].d_write)(dev, uio, flag));
 }
 
-void
+int
 cnstop(tp, flag)
 	struct tty *tp;
 	int flag;
 {
-
+	return (0);
 }
 
 int

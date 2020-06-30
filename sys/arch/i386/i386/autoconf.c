@@ -45,6 +45,7 @@
  * and the drivers are initialized.
  */
 #include <sys/param.h>
+
 #include <sys/systm.h>
 #include <sys/map.h>
 #include <sys/buf.h>
@@ -60,7 +61,7 @@
  * the configuration process, and are used in initializing
  * the machine.
  */
-int			dkn;				/* number of iostat dk numbers assigned so far */
+int			dkn;		/* number of iostat dk numbers assigned so far */
 extern int	cold;		/* cold start flag initialized in locore.s */
 
 /*
@@ -75,6 +76,7 @@ configure()
 #if NISA > 0
 	isa_configure();
 #endif
+	bios32_init();
 
 #if GENERICxxx
 	if ((boothowto & RB_ASKNAME) == 0)
@@ -98,7 +100,7 @@ swapconf()
 {
 	register struct swdevt *swp;
 	register int nblks;
-extern int Maxmem;
+	extern int Maxmem;
 
 	for (swp = swdevt; swp->sw_dev != NODEV; swp++)
 	{
@@ -113,8 +115,7 @@ extern int Maxmem;
 	}
 	if (dumplo == 0 && bdevsw[major(dumpdev)].d_psize)
 	/*dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - physmem;*/
-		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) -
-			Maxmem*NBPG/512;
+		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - Maxmem*NBPG/512;
 	if (dumplo < 0)
 		dumplo = 0;
 }

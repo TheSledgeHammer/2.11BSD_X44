@@ -287,12 +287,11 @@ struct	pselect_args
 int
 select()
 {
-	struct uap
-		{
-		int	nd;
-		fd_set	*in, *ou, *ex;
-		struct	timeval *tv;
-		} *uap = (struct uap *)u->u_ap;
+	struct uap {
+		int nd;
+		fd_set *in, *ou, *ex;
+		struct timeval *tv;
+	} *uap = (struct uap*) u->u_ap;
 	register struct pselect_args *pselargs = (struct pselect_args *)uap;
 
 	/*

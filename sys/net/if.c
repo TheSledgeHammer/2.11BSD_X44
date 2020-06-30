@@ -290,7 +290,7 @@ ifioctl(so, cmd, data)
 
 	case SIOCSIFFLAGS:
 		if (!suser())
-			return (u.u_error);
+			return (u->u_error);
 		if ((ifp->if_flags & IFF_UP) && (ifr->ifr_flags & IFF_UP) == 0) {
 			int s = splimp();
 			if_down(ifp);
@@ -304,7 +304,7 @@ ifioctl(so, cmd, data)
 
 	case SIOCSIFMETRIC:
 		if (!suser())
-			return (u.u_error);
+			return (u->u_error);
 		ifp->if_metric = ifr->ifr_metric;
 		break;
 

@@ -282,3 +282,15 @@ pads(pmap_t pm)
 {
 	pmap_args_ptr->pads(pm);
 }
+
+void *
+pmap_bios16_enter(void)
+{
+	return (pmap_args_ptr->pmap_bios16_enter());
+}
+
+void
+pmap_bios16_leave(void *handle)
+{
+	pmap_args_ptr->pmap_bios16_leave(handle);
+}

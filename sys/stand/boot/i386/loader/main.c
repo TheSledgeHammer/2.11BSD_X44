@@ -38,13 +38,13 @@
 
 #include <boot/bootstand.h>
 #include <boot/common/bootstrap.h>
+#include <boot/common/smbios.h>
 #include <i386/common/bootargs.h>
 #include <lib/libkern/libkern.h>
 #include <machine/bootinfo.h>
 #include <machine/cpufunc.h>
 #include <machine/psl.h>
 
-#include "../smbios.h"
 #include "libi386/libi386.h"
 #include "btxv86.h"
 
@@ -53,8 +53,7 @@ static struct bootargs *kargs;
 
 static uint32_t				initial_howto;
 static uint32_t				initial_bootdev;
-static union bootinfo		*bootinfo;
-static struct bootinfo_bios initial_bootinfo = bootinfo->bi_bios;
+static struct bootinfo		*initial_bootinfo;
 
 struct arch_switch		archsw;		/* MI/MD interface boundary */
 
@@ -128,9 +127,9 @@ main(void)
 		 * We only want the PXE disk to try to init itself in the below
 		 * walk through devsw if we actually booted off of PXE.
 		 */
-		if (kargs->bootflags & KARGS_FLAGS_PXE)
-			pxe_enable(kargs->pxeinfo ? PTOV(kargs->pxeinfo) : NULL);
-		else if (kargs->bootflags & KARGS_FLAGS_CD)
+		//if (kargs->bootflags & KARGS_FLAGS_PXE)
+			//pxe_enable(kargs->pxeinfo ? PTOV(kargs->pxeinfo) : NULL);
+		if (kargs->bootflags & KARGS_FLAGS_CD)
 			bc_add(initial_bootdev);
 	}
 
@@ -155,9 +154,12 @@ main(void)
     }
     printf("BIOS %dkB/%dkB available memory\n", bios_basemem / 1024, bios_extmem / 1024);
     if (initial_bootinfo != NULL) {
-    	initial_bootinfo->bi_basemem = bios_basemem / 1024;
-    	initial_bootinfo->bi_extmem = bios_extmem / 1024;
+    	initial_bootinfo->bi_bios.bi_basemem = bios_basemem / 1024;
+    	initial_bootinfo->bi_bios.bi_extmem = bios_extmem / 1024;
     }
+
+    /* detect ACPI for future reference */
+    //biosacpi_detect();
 
     /* detect SMBIOS for future reference */
     smbios_detect(NULL);
@@ -169,7 +171,7 @@ main(void)
 
     extract_currdev();				/* set $currdev and $loaddev */
 
-    bios_getsmap();
+    //bios_getsmap();
 
     interact();
 
@@ -210,7 +212,7 @@ extract_currdev(void)
 	} else {
 	    currdev.d_kind.biosdisk.slice = B_SLICE(initial_bootdev) - 1;
 	    currdev.d_kind.biosdisk.partition = B_PARTITION(initial_bootdev);
-		biosdev = initial_bootinfo->bi_bios_dev;
+		biosdev = initial_bootinfo->bi_bios.bi_bios_dev;
 
 
 		/*

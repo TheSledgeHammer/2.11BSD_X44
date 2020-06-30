@@ -77,6 +77,8 @@ struct pmap_args {
 	void (*pmap_pvdump)(vm_offset_t pa);
 	void (*pmap_check_wiring)(char *str, vm_offset_t va);
 	void (*pads)(pmap_t pm);
+	void *(*pmap_bios16_enter)(void);
+	void (*pmap_bios16_leave)(void *handle);
 };
 
 #endif /* _MACHINE_PMAP_BASE_H_ */

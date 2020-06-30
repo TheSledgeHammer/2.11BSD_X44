@@ -38,6 +38,10 @@
  *
  */
 
+#include <sys/errno.h>
+#include <machine/param.h>
+#include <machine/pte.h>
+
 struct pte			*CMAP1, *CMAP2;
 extern caddr_t		CADDR1, CADDR2;
 
