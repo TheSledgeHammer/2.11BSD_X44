@@ -41,12 +41,13 @@
 #include <sys/malloc.h>
 #include <vm/include/vm.h>
 #include <vm/include/pmap.h>
-//#include <machine/md_var.h>
+
 #include <machine/bus.h>
 #include <machine/segments.h>
 #include <machine/stdarg.h>
 #include <machine/vmparam.h>
-#include <i386/include/pc/bios.h>
+#include <machine/pc/bios.h>
+
 #ifdef DEV_ISA
 #include <dev/isa/isavar.h>
 #include <dev/isapnp/isapnpreg.h>
@@ -62,7 +63,7 @@ struct bios32_SDentry		PCIbios;
 static u_int				bios32_SDCI;
 
 /* start fairly early */
-static void					bios32_init(void *junk);
+static void					bios32_init(); /* init'ed in autoconf.c */
 
 /*
  * bios32_init
@@ -70,7 +71,7 @@ static void					bios32_init(void *junk);
  * Locate various bios32 entities.
  */
 static void
-bios32_init(void *junk)
+bios32_init()
 {
     u_long					sigaddr;
     struct bios32_SDheader	*sdh;

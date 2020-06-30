@@ -37,7 +37,7 @@
  *	@(#)pmap.c	8.1 (Berkeley) 6/11/93
  *
  */
-/* PMAP Base extension for PAE and NON-PAE (Not Yet Implemented) */
+/* PMAP Base extension for PAE and NON-PAE (Not Fully Implemented) */
 
 #include <sys/cdefs.h>
 

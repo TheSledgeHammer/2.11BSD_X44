@@ -32,6 +32,7 @@
 #ifndef _MACHINE_PC_BIOS_H_
 #define _MACHINE_PC_BIOS_H_
 
+#include <machine/vmparam.h>
 /*
  * Signature structure for the BIOS32 Service Directory header
  */
@@ -139,10 +140,10 @@ struct bios_smap_xattr {
  * System Management BIOS
  */
 #define	SMBIOS_START	0xf0000
-#define	SMBIOS_STEP	0x10
-#define	SMBIOS_OFF	0
-#define	SMBIOS_LEN	4
-#define	SMBIOS_SIG	"_SM_"
+#define	SMBIOS_STEP		0x10
+#define	SMBIOS_OFF		0
+#define	SMBIOS_LEN		4
+#define	SMBIOS_SIG		"_SM_"
 
 struct smbios_eps {
 	uint8_t		anchor_string[4];				/* '_SM_' */
@@ -167,7 +168,7 @@ struct smbios_structure_header {
 	uint16_t	handle;
 };
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 #define BIOS_PADDRTOVADDR(x)	((x) + PMAP_MAP_LOW)
 #define BIOS_VADDRTOPADDR(x)	((x) - PMAP_MAP_LOW)
 
@@ -240,6 +241,7 @@ struct bios32_SDentry {
  */
 extern struct bios32_SDentry	PCIbios;
 
+void 		bios32_init (void);
 int			bios_oem_strings(struct bios_oem *oem, u_char *buffer, size_t maxlen);
 uint32_t	bios_sigsearch(uint32_t start, u_char *sig, int siglen, int paralen, int sigofs);
 int			bios16(struct bios_args *, char *, ...);

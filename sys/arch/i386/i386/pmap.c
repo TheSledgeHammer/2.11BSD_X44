@@ -171,16 +171,16 @@ int	protection_codes[8];
 
 struct pmap	kernel_pmap_store;
 
-vm_offset_t avail_start;		/* PA of first available physical page */
-vm_offset_t	avail_end;			/* PA of last available physical page */
-vm_size_t	mem_size;			/* memory size in bytes */
-vm_offset_t	virtual_avail;  	/* VA of first avail page (after kernel bss)*/
-vm_offset_t	virtual_end;		/* VA of last avail page (end of kernel AS) */
-vm_offset_t	vm_first_phys;		/* PA of first managed page */
-vm_offset_t	vm_last_phys;		/* PA just past last managed page */
-int			i386pagesperpage;	/* PAGE_SIZE / I386_PAGE_SIZE */
+vm_offset_t avail_start;				/* PA of first available physical page */
+vm_offset_t	avail_end;					/* PA of last available physical page */
+vm_size_t	mem_size;					/* memory size in bytes */
+vm_offset_t	virtual_avail;  			/* VA of first avail page (after kernel bss)*/
+vm_offset_t	virtual_end;				/* VA of last avail page (end of kernel AS) */
+vm_offset_t	vm_first_phys;				/* PA of first managed page */
+vm_offset_t	vm_last_phys;				/* PA just past last managed page */
+int			i386pagesperpage;			/* PAGE_SIZE / I386_PAGE_SIZE */
 boolean_t	pmap_initialized = FALSE;	/* Has pmap_init completed? */
-char		*pmap_attributes;	/* reference and modify bits */
+char		*pmap_attributes;			/* reference and modify bits */
 
 boolean_t	pmap_testbit();
 void		pmap_clear_modify();

@@ -28,10 +28,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+/* PMAP PAE (Not Fully Implemented) */
 
 #include <sys/cdefs.h>
-/*__FBSDID("$FreeBSD$");
-
+/*__FBSDID("$FreeBSD$"); */
+/*
 #include "opt_apic.h"
 #include "opt_cpu.h"
 #include "opt_pmap.h"

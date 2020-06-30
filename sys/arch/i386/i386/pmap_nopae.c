@@ -29,9 +29,11 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
-/*__FBSDID("$FreeBSD$");
+/* PMAP NON-PAE (Not Fully Implemented) */
 
+#include <sys/cdefs.h>
+/*__FBSDID("$FreeBSD$"); */
+/*
 #include "opt_apic.h"
 #include "opt_cpu.h"
 #include "opt_pmap.h"

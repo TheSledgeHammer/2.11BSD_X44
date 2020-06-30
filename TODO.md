@@ -7,14 +7,12 @@ TODO:
 	- i386:
 		- ddb
 		- powernow, powernow-k7, powernow-k8
-		- consinit.c 
+		- consinit.c (Deprecated: make emtpy..) 
 		- machdep.c: cpu_reboot, cpu_reset
 		- vm_machdep.c: u->u_procp->p_p0br: (no reference in 4.4BSD-Lite2)
 			- 4.3BSD Reno/ 4.4BSD Remanent: once in struct proc. Obsolete?? 
-- ddb
 - dev:
-	- ata
-	- atapiscsi
+	- ksyms (currently in devel)
 	- wscons
 	- wsfont
 	
@@ -23,7 +21,7 @@ miscfs:
 	- Merge best parts with NULLFS for reimplementation LOFS2
 
 Kern:
-- move: kern_ksyms out of kernel temporarily 
+- kern_environment.c (currently in devel)
 - kern_physio.c: Incomplete: getphysbuf, putphysbuf (NetBSD 1.3)
 
 Of Interest Todo:

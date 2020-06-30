@@ -87,7 +87,7 @@ init386_ksyms(bootinfo)
 
 	if (bootinfo->bi_envp.bi_environment != 0) {
 		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);
-		addend = (caddr_t) bootinfo->bi_envp.bi_environment < KERNBASE ?	PMAP_MAP_LOW : 0;
+		addend = (caddr_t) bootinfo->bi_envp.bi_environment < KERNBASE ? PMAP_MAP_LOW : 0;
 		init_static_kenv((char*) bootinfo->bi_envp.bi_environment + addend, 0);
 	} else {
 		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);
