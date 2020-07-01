@@ -30,7 +30,6 @@
 #include <common/bootstrap.h>
 #include <libi386/libi386.h>
 
-
 /*
  * We could use linker sets for some or all of these, but
  * then we would have to control what ended up linked into

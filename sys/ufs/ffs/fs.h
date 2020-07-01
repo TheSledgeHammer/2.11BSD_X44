@@ -65,6 +65,11 @@
 #define	SBLOCK		((ufs_daddr_t)(BBLOCK + BBSIZE / DEV_BSIZE))
 
 /*
+ * Max number of fragments per block. This value is NOT tweakable.
+ */
+#define MAXFRAG 	8
+
+/*
  * Addresses stored in inodes are capable of addressing fragments
  * of `blocks'. File system blocks of at most size MAXBSIZE can 
  * be optionally broken into 2, 4, or 8 pieces, each of which is
@@ -246,15 +251,15 @@ struct fs {
 /*
  * Filesystem identification
  */
-#define	FS_MAGIC	0x011954	/* the fast filesystem magic number */
-#define	FS_OKAY		0x7c269d38	/* superblock checksum */
-#define FS_42INODEFMT	-1		/* 4.2BSD inode format */
-#define FS_44INODEFMT	2		/* 4.4BSD inode format */
+#define	FS_MAGIC		0x011954		/* the fast filesystem magic number */
+#define	FS_OKAY			0x7c269d38		/* superblock checksum */
+#define FS_42INODEFMT	-1				/* 4.2BSD inode format */
+#define FS_44INODEFMT	2				/* 4.4BSD inode format */
 /*
  * Preference for optimization.
  */
-#define FS_OPTTIME	0	/* minimize allocation time */
-#define FS_OPTSPACE	1	/* minimize disk fragmentation */
+#define FS_OPTTIME		0	/* minimize allocation time */
+#define FS_OPTSPACE		1	/* minimize disk fragmentation */
 
 /*
  * Rotational layout table format types

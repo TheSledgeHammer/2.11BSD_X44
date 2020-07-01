@@ -61,10 +61,11 @@
  * are defined by types with precise widths.
  */
 
-typedef	int32_t	ufs_daddr_t;
+typedef	int32_t		ufs_daddr_t;
 //typedef	int64_t	ufs2_daddr_t;
-typedef int64_t ufs_lbn_t;
-typedef int64_t ufs_time_t;
+typedef int64_t 	ufs_lbn_t;
+typedef int64_t 	ufs_time_t;
+typedef uint32_t 	ufs_ino_t;
 
 #define	NXADDR	2			/* External addresses in inode. */
 #define	NDADDR	12			/* Direct addresses in inode. */

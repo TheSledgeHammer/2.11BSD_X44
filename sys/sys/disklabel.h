@@ -36,6 +36,13 @@
 #ifndef	_SYS_DISKLABEL_H_
 #define	_SYS_DISKLABEL_H_
 
+#ifndef _KERNEL
+#include <sys/types.h>
+#endif
+
+#include <lib/libsa/diskbsd.h>
+#include <lib/libsa/diskmbr.h>
+
 /*
  * Disk description table, see disktab(5)
  */
@@ -50,23 +57,33 @@
  */
 
 /* XXX these should be defined per controller (or drive) elsewhere, not here! */
-#ifdef i386
-#define LABELSECTOR	1								/* sector containing label */
-#define LABELOFFSET	0								/* offset of label in sector */
-#endif
+
+#define LABELSECTOR	1						/* sector containing label */
+#define LABELOFFSET	0						/* offset of label in sector */
 
 #ifndef	LABELSECTOR
-#define LABELSECTOR	0								/* sector containing label */
+#define LABELSECTOR	0						/* sector containing label */
 #endif
 
 #ifndef	LABELOFFSET
-#define LABELOFFSET	64								/* offset of label in sector */
+#define LABELOFFSET	64						/* offset of label in sector */
 #endif
 
-#define DISKMAGIC		((u_int32_t) 0x82564557)	/* The disk magic number */
+#define DISKMAGIC		BSD_MAGIC			/* The disk magic number */
+
 #ifndef MAXPARTITIONS
 #define	MAXPARTITIONS	8
 #endif
+
+/* Size of bootblock area in sector-size neutral bytes */
+#define BBSIZE			BSD_BOOTBLOCK_SIZE
+
+#define	LABEL_PART		BSD_PART_RAW
+#define	RAW_PART		BSD_PART_RAW
+#define	SWAP_PART		BSD_PART_SWAP
+
+#define NDDATA			BSD_NDRIVEDATA
+#define NSPARE			BSD_NSPARE
 
 /*
  * 2.11BSD's disklabels are different than 4.4BSD for a couple reasons:

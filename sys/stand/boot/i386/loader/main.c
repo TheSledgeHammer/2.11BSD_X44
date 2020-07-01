@@ -39,8 +39,9 @@
 #include <boot/bootstand.h>
 #include <boot/common/bootstrap.h>
 #include <boot/common/smbios.h>
-#include <i386/common/bootargs.h>
+#include <boot/i386/common/bootargs.h>
 #include <lib/libkern/libkern.h>
+
 #include <machine/bootinfo.h>
 #include <machine/cpufunc.h>
 #include <machine/psl.h>
@@ -55,12 +56,12 @@ static uint32_t				initial_howto;
 static uint32_t				initial_bootdev;
 static struct bootinfo		*initial_bootinfo;
 
-struct arch_switch		archsw;		/* MI/MD interface boundary */
+struct arch_switch			archsw;		/* MI/MD interface boundary */
 
-static void				extract_currdev(void);
-static int				isa_inb(int port);
-static void				isa_outb(int port, int value);
-void					exit(int code);
+static void					extract_currdev(void);
+static int					isa_inb(int port);
+static void					isa_outb(int port, int value);
+void						exit(int code);
 
 caddr_t
 ptov(uintptr_t x)
@@ -90,7 +91,7 @@ main(void)
      */
 	bios_getmem();
 
-	calloc((void *)malloc, (void *)(malloc + 512*1024));
+	setheap((void *)malloc, (void *)(malloc + 512*1024));
 
 	/*
 	 * XXX Chicken-and-egg problem; we want to have console output early, but some
@@ -133,15 +134,6 @@ main(void)
 			bc_add(initial_bootdev);
 	}
 
-
-	//archsw.arch_autoload = i386_autoload;
-	archsw.arch_getdev = i386_getdev;
-	archsw.arch_copyin = i386_copyin;
-	archsw.arch_copyout = i386_copyout;
-	archsw.arch_readin = i386_readin;
-    archsw.arch_isainb = isa_inb;
-    archsw.arch_isaoutb = isa_outb;
-
     /* ZFS & GELI SUPPORT Belongs Here */
 
     /*
@@ -152,6 +144,7 @@ main(void)
     		(devsw[i]->dv_init)();
     	}
     }
+
     printf("BIOS %dkB/%dkB available memory\n", bios_basemem / 1024, bios_extmem / 1024);
     if (initial_bootinfo != NULL) {
     	initial_bootinfo->bi_bios.bi_basemem = bios_basemem / 1024;
@@ -170,8 +163,17 @@ main(void)
     printf("\n%s", bootprog_info);
 
     extract_currdev();				/* set $currdev and $loaddev */
+    setenv("LINES", "24", 1);		/* optional */
 
     //bios_getsmap();
+
+	//archsw.arch_autoload = i386_autoload;
+	archsw.arch_getdev = i386_getdev;
+	archsw.arch_copyin = i386_copyin;
+	archsw.arch_copyout = i386_copyout;
+	archsw.arch_readin = i386_readin;
+    archsw.arch_isainb = isa_inb;
+    archsw.arch_isaoutb = isa_outb;
 
     interact();
 
@@ -257,5 +259,6 @@ isa_inb(int port)
 static void
 isa_outb(int port, int value)
 {
+
 	outb(port, value);
 }

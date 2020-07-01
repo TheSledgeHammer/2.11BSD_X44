@@ -29,11 +29,11 @@
 /*
  * PnP BIOS enumerator.
  */
-#include <boot/bootstand.h>
+#include <stand/boot/bootstand.h>
 #include <machine/stdarg.h>
 #include <btxv86.h>
 #include "bootstrap.h"
-
+#include "isapnp.h"
 
 static int	biospnp_init(void);
 static void	biospnp_enumerate(void);

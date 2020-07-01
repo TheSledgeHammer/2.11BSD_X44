@@ -38,9 +38,9 @@
  * for bootinfo and the arguments to not run into each other.
  * Arguments area below ARGOFF is reserved for future use.
  */
-#define	ARGSPACE	0x1000	/* total size of the BTX args area */
-#define	ARGOFF		0x800	/* actual args offset within the args area */
-#define	ARGADJ		(ARGSPACE - ARGOFF)
+#define	ARGSPACE			0x1000	/* total size of the BTX args area */
+#define	ARGOFF				0x800	/* actual args offset within the args area */
+#define	ARGADJ				(ARGSPACE - ARGOFF)
 
 #ifndef __ASSEMBLER__
 

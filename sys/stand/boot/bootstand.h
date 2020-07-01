@@ -61,20 +61,19 @@
  * Please refer to lib/libsa/stand.h for all other missing content.
  */
 
+#ifndef	BOOTSTAND_H
+#define	BOOTSTAND_H
 
-#ifndef	BOOT_STAND_H
-#define	BOOT_STAND_H
-
-#include <lib/libsa/stand.h>
+#include <sys/user.h>
 #include <sys/types.h>
 #include <sys/cdefs.h>
 #include <sys/stat.h>
 #include <sys/dirent.h>
+#include <sys/errno.h>
+#include <lib/libsa/stand.h>
 
 /* this header intentionally exports NULL from <string.h> */
 #include <string.h>
-
-#include <sys/errno.h>
 
 /* special stand error codes */
 #define	EADAPT	(ELAST+1)	/* bad adaptor */
@@ -102,7 +101,6 @@ extern struct fs_ops cd9660_fsops;
 /*
 extern struct fs_ops tftp_fsops;
 extern struct fs_ops nfs_fsops;
-extern struct fs_ops cd9660_fsops;
 extern struct fs_ops gzipfs_fsops;
 extern struct fs_ops bzipfs_fsops;
 extern struct fs_ops dosfs_fsops;
@@ -134,10 +132,14 @@ extern void	ngets(char *, int);
 
 extern struct dirent *readdirfd(int);
 
+/* stdlib.h routines */
 /* imports from stdlib, locally modified */
-extern char	*optarg;			/* getopt(3) external variables */
-extern int	optind, opterr, optopt, optreset;
-extern int	getopt(int, char * const [], const char *);
+extern char		*optarg;			/* getopt(3) external variables */
+extern int		optind, opterr, optopt, optreset;
+extern int		getopt(int, char * const [], const char *);
+extern char 	*strdup(const char *);
+extern size_t 	strspn(const char *, const char *);
+extern long		strtol(const char *, char **, int);
 
 /* pager.c */
 extern void	pager_open(void);
@@ -175,9 +177,4 @@ extern int				unsetenv(const char *name);
 extern ev_sethook_t		env_noset;			/* refuse set operation */
 extern ev_unsethook_t	env_nounset;		/* refuse unset operation */
 
-/* stdlib.h routines */
-extern char 	*strdup(const char *);
-extern size_t 	strspn(const char *, const char *);
-extern long		strtol(const char *, char **, int);
-
-#endif /* BOOT_STAND_H_ */
+#endif /* BOOTSTAND_H_ */

@@ -35,7 +35,10 @@
 #ifndef _LIBSA_DISKMBR_H_
 #define	_LIBSA_DISKMBR_H_
 
+#include <sys/disklabel.h>
+#include <sys/ioctl.h>
 #include <sys/ioccom.h>
+
 #define	DOSBBSECTOR			0		/* DOS boot block relative sector number */
 #define	DOSDSNOFF			440		/* WinNT/2K/XP Drive Serial Number offset */
 #define	DOSPARTOFF			446
