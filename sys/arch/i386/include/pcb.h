@@ -43,43 +43,43 @@
 #include <machine/segments.h>
 #include <machine/tss.h>
 #include <machine/npx.h>
+#include <machine/vm86.h>
 
-#define	NPORT			1024						/* # of ports we allow to be mapped */
+#define	NPORT					1024					/* # of ports we allow to be mapped */
 
 struct pcb {
-	struct	i386tss 	pcb_tss;
-#define	pcb_ksp			pcb_tss.tss_esp0
-#define	pcb_ptd			pcb_tss.tss_cr3
-#define	pcb_cr3			pcb_ptd
-#define	pcb_pc			pcb_tss.tss_eip
-#define	pcb_psl			pcb_tss.tss_eflags
-#define	pcb_usp			pcb_tss.tss_esp
-#define	pcb_fp			pcb_tss.tss_ebp
-#define	pcb_ldt_sel		pcb_tss.tss_ldt
-	struct	savefpu		pcb_savefpu;			/* floating point state (context) for 287/387 */
-	struct	emcsts		pcb_saveemc;			/* Cyrix EMC state */
-	u_long				pcb_iomap[NPORT/32];	/* i/o port bitmap */
-	int					pcb_cr0;				/* saved image of CR0 */
-	int					pcb_fsd[2];				/* %fs descriptor */
-	int					pcb_gsd[2];				/* %gs descriptor */
+	struct	i386tss 			pcb_tss;
+#define	pcb_ksp					pcb_tss.tss_esp0
+#define	pcb_ptd					pcb_tss.tss_cr3
+#define	pcb_cr3					pcb_ptd
+#define	pcb_pc					pcb_tss.tss_eip
+#define	pcb_psl					pcb_tss.tss_eflags
+#define	pcb_usp					pcb_tss.tss_esp
+#define	pcb_fp					pcb_tss.tss_ebp
+#define	pcb_ldt_sel				pcb_tss.tss_ldt
+	struct	savefpu				pcb_savefpu;			/* floating point state (context) for 287/387 */
+	struct	emcsts				pcb_saveemc;			/* Cyrix EMC state */
+	u_long						pcb_iomap[NPORT/32];	/* i/o port bitmap */
+	int							pcb_cr0;				/* saved image of CR0 */
+	int							pcb_fsd[2];				/* %fs descriptor */
+	int							pcb_gsd[2];				/* %gs descriptor */
 
 /*
  * Software pcb (extension)
  */
-	int					pcb_flags;
-#define	FP_WASUSED		0x01					/* floating point has been used in this proc */
-#define	FP_NEEDSSAVE	0x02					/* needs save on next context switch */
-#define	FP_NEEDSRESTORE	0x04					/* need restore on next DNA fault */
-#define	FP_USESEMC		0x08					/* process uses EMC memory-mapped mode */
-#define	FM_TRAP			0x10					/* process entered kernel on a trap frame */
-	short				pcb_iml;				/* interrupt mask level */
-	caddr_t				pcb_onfault;			/* copyin/out fault recovery */
-	long				pcb_sigc[8];			/* XXX signal code trampoline */
-	int					pcb_cmap2;				/* XXX temporary PTE - will prefault instead */
-	int					vm86_eflags;			/* virtual eflags for vm86 mode */
-	int					vm86_flagmask;			/* flag mask for vm86 mode */
-	void				*vm86_userp;			/* XXX performance hack */
-	struct	vm86_kernel pcb_vm86;				/* vm86 area */
+	int							pcb_flags;
+#define	FP_WASUSED				0x01					/* floating point has been used in this proc */
+#define	FP_NEEDSSAVE			0x02					/* needs save on next context switch */
+#define	FP_NEEDSRESTORE			0x04					/* need restore on next DNA fault */
+#define	FP_USESEMC				0x08					/* process uses EMC memory-mapped mode */
+#define	FM_TRAP					0x10					/* process entered kernel on a trap frame */
+	short						pcb_iml;				/* interrupt mask level */
+	caddr_t						pcb_onfault;			/* copyin/out fault recovery */
+	long						pcb_sigc[8];			/* XXX signal code trampoline */
+	int							pcb_cmap2;				/* XXX temporary PTE - will prefault instead */
+	int							vm86_eflags;			/* virtual eflags for vm86 mode */
+	struct 	segment_descriptor 	pcb_tssd;				/* tss descriptor */
+	struct	vm86_kernel 		pcb_vm86;				/* vm86 area */
 };
 
 /*

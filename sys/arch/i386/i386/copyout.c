@@ -35,10 +35,10 @@
  *
  *	@(#)Original from machdep.c	8.3 (Berkeley) 5/9/95
  *
- *
  */
 
 #include <sys/errno.h>
+
 #include <machine/param.h>
 #include <machine/pte.h>
 
@@ -49,6 +49,7 @@ extern caddr_t		CADDR1, CADDR2;
  * zero out physical memory
  * specified in relocation units (NBPG bytes)
  */
+void
 clearseg(n)
 {
 	*(int*) CMAP2 = PG_V | PG_KW | ctob(n);
@@ -61,6 +62,7 @@ clearseg(n)
  * copy a page of physical memory
  * specified in relocation units (NBPG bytes)
  */
+void
 copyseg(frm, n)
 {
 	*(int*) CMAP2 = PG_V | PG_KW | ctob(n);
@@ -72,6 +74,7 @@ copyseg(frm, n)
  * copy a page of physical memory
  * specified in relocation units (NBPG bytes)
  */
+void
 physcopyseg(frm, to)
 {
 	*(int*) CMAP1 = PG_V | PG_KW | ctob(frm);
@@ -118,6 +121,7 @@ vmunaccess() {}
 /*
  * Below written in C to allow access to debugging code
  */
+int
 copyinstr(fromaddr, toaddr, maxlength, lencopied)
 	u_int *lencopied, maxlength;
 	void *toaddr, *fromaddr;
@@ -145,6 +149,7 @@ copyinstr(fromaddr, toaddr, maxlength, lencopied)
 	return (ENAMETOOLONG);
 }
 
+int
 copyoutstr(fromaddr, toaddr, maxlength, lencopied)
 	u_int *lencopied, maxlength;
 	void *fromaddr, *toaddr;
@@ -169,6 +174,7 @@ copyoutstr(fromaddr, toaddr, maxlength, lencopied)
 	return (ENAMETOOLONG);
 }
 
+int
 copystr(fromaddr, toaddr, maxlength, lencopied)
 	u_int *lencopied, maxlength;
 	void *fromaddr, *toaddr;

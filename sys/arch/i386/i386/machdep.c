@@ -108,9 +108,6 @@ char machine_arch[] = "i386";		/* machine == machine_arch */
 
 int want_resched;					/* resched() was called */
 
-struct bootinfo bootinfo;
-int 			*esym;
-
 /*
  * Declare these as initialized data so we can patch them.
  */
@@ -137,6 +134,8 @@ int boothowto = 0, Maxmem = 0;
 long dumplo;
 int physmem, maxmem;
 int biosmem;
+struct bootinfo bootinfo;
+int 			*esym;
 
 extern int kstack[];
 
@@ -910,7 +909,7 @@ init386(first)
 	/*
 	 * Initialize the console before we print anything out.
 	 */
-	consinit();	/* XXX SHOULD NOT BE DONE HERE */
+	cninit(KERNBASE+0xa0000);
 
 	/* make gdt memory segments */
 	gdt_segs[GCODE_SEL].ssd_limit = btoc((int) &etext + NBPG);

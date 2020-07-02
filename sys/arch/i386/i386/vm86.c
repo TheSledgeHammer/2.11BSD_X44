@@ -46,6 +46,7 @@
 #include <machine/specialreg.h>
 #include <machine/sysarch.h>
 #include <machine/segments.h>
+#include <machine/support.s>
 
 extern int 			vm86pa;
 extern struct pcb 	*vm86pcb;
@@ -77,51 +78,32 @@ struct system_map {
 #define POP_MASK			~(PSL_VIP | PSL_VIF | PSL_VM | PSL_RF | PSL_IOPL)
 
 static int
-vm86_suword16(volatile void *base, int word)
+vm86_suword16(void *base, int word)
 {
-
-	if (curthread->td_critnest != 0) {
-		*(volatile uint16_t *)base = word;
-		return (0);
-	}
-	return (suword16(base, word));
+	return (susword(base, word));
 }
 
 static int
-vm86_suword(volatile void *base, long word)
+vm86_suword(void *base, long word)
 {
-
-	if (curthread->td_critnest != 0) {
-		*(volatile long *)base = word;
-		return (0);
-	}
 	return (suword(base, word));
 }
 
 static int
-vm86_fubyte(volatile const void *base)
+vm86_fubyte(const void *base)
 {
-
-	if (curthread->td_critnest != 0)
-		return (*(volatile const u_char *)base);
 	return (fubyte(base));
 }
 
 static int
-vm86_fuword16(volatile const void *base)
+vm86_fuword16(const void *base)
 {
-
-	if (curthread->td_critnest != 0)
-		return (*(volatile const uint16_t *)base);
-	return (fuword16(base));
+	return (fusword(base));
 }
 
 static long
-vm86_fuword(volatile const void *base)
+vm86_fuword(const void *base)
 {
-
-	if (curthread->td_critnest != 0)
-		return (*(volatile const long *)base);
 	return (fuword(base));
 }
 
@@ -472,7 +454,7 @@ vm86_initialize(void)
 
 	pcb = &vml->vml_pcb;
 
-	//mtx_init(&vm86_lock, "vm86 lock", NULL, MTX_DEF);
+	//simple_lock_init(&vm86_lock);
 
 	bzero(pcb, sizeof(struct pcb));
 	pcb->new_ptd = vm86pa | PG_V | PG_RW | PG_U;
@@ -605,7 +587,7 @@ vm86_trap(struct vm86frame *vmf)
 	else
 		vmf->vmf_trapno = vmf->vmf_trapno << 16;
 
-	p = (void (*)(struct vm86frame *))((uintptr_t)vm86_biosret + setidt_disp);
+	p = (void (*)(struct vm86frame *))((uintptr_t)vm86_biosret);
 	p(vmf);
 }
 
@@ -619,12 +601,12 @@ vm86_intcall(int intnum, struct vm86frame *vmf)
 		return (EINVAL);
 
 	vmf->vmf_trapno = intnum;
-	p = (int (*)(struct vm86frame *))((uintptr_t)vm86_bioscall + setidt_disp);
-	mtx_lock(&vm86_lock);
+	p = (int (*)(struct vm86frame *))((uintptr_t)vm86_bioscall);
+	simple_lock(&vm86_lock);
 	critical_enter();
 	retval = p(vmf);
 	critical_exit();
-	mtx_unlock(&vm86_lock);
+	simple_unlock(&vm86_lock);
 	return (retval);
 }
 
@@ -643,7 +625,7 @@ vm86_datacall(int intnum, struct vm86frame *vmf, struct vm86context *vmc)
 	int i, entry, retval;
 
 	pte = (pt_entry_t *)vm86paddr;
-	mtx_lock(&vm86_lock);
+	simple_lock(&vm86_lock);
 	for (i = 0; i < vmc->npages; i++) {
 		page = vtophys(vmc->pmap[i].kva & PG_FRAME);
 		entry = vmc->pmap[i].pte_num;
@@ -653,7 +635,7 @@ vm86_datacall(int intnum, struct vm86frame *vmf, struct vm86context *vmc)
 	}
 
 	vmf->vmf_trapno = intnum;
-	p = (int (*)(struct vm86frame *))((uintptr_t)vm86_bioscall + setidt_disp);
+	p = (int (*)(struct vm86frame *))((uintptr_t)vm86_bioscall);
 	critical_enter();
 	retval = p(vmf);
 	critical_exit();
@@ -663,7 +645,7 @@ vm86_datacall(int intnum, struct vm86frame *vmf, struct vm86context *vmc)
 		pte[entry] = vmc->pmap[i].old_pte;
 		pmap_invalidate_page(kernel_pmap, vmc->pmap[i].kva);
 	}
-	mtx_unlock(&vm86_lock);
+	simple_unlock(&vm86_lock);
 
 	return (retval);
 }

@@ -83,11 +83,7 @@ consinit()
 		return;
 	initted = 1;
 
-#ifndef CONS_OVERRIDE
-	consinfo = lookup_bootinfo(BOOTINFO_CONSOLE);
-	if (!consinfo)
-#endif
-		consinfo = &default_consinfo;
+	consinfo = &default_consinfo;
 
 #if (NPC > 0) || (NVT > 0)
 	if(!strcmp(consinfo->bi_devname, "pc")) {

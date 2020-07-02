@@ -68,6 +68,7 @@ extern struct proc *npxproc;
  * address in each process; in the future we will probably relocate
  * the frame pointers on the stack after copying.
  */
+int
 cpu_fork(p1, p2)
 	register struct proc *p1, *p2;
 {
@@ -135,6 +136,7 @@ cpu_fork(p1, p2)
  * a special case].
  */
 struct proc *switch_to_inactive();
+void
 cpu_exit(p)
 	register struct proc *p;
 {
@@ -157,6 +159,8 @@ cpu_exit(p)
 	/* NOTREACHED */
 }
 #else
+
+void
 cpu_exit(p)
 	register struct proc *p;
 {
@@ -170,7 +174,10 @@ cpu_exit(p)
 	mi_switch();
 }
 
-cpu_wait(p) struct proc *p; {
+void
+cpu_wait(p)
+struct proc *p;
+{
 
 	/* drop per-process resources */
 	vmspace_free(p->p_vmspace);
@@ -181,20 +188,19 @@ cpu_wait(p) struct proc *p; {
 /*
  * Dump the machine specific header information at the start of a core dump.
  */
+int
 cpu_coredump(p, vp, cred)
 	struct proc *p;
 	struct vnode *vp;
 	struct ucred *cred;
 {
-
-	return (vn_rdwr(UIO_WRITE, vp, (caddr_t) p->p_addr, ctob(UPAGES),
-	    (off_t)0, UIO_SYSSPACE, IO_NODELOCKED|IO_UNIT, cred, (int *)NULL,
-	    p));
+	return (vn_rdwr(UIO_WRITE, vp, (caddr_t) p->p_addr, ctob(UPAGES), (off_t)0, UIO_SYSSPACE, IO_NODELOCKED|IO_UNIT, cred, (int *)NULL, p));
 }
 
 /*
  * Set a red zone in the kernel stack after the u. area.
  */
+void
 setredzone(pte, vaddr)
 	u_short *pte;
 	caddr_t vaddr;
@@ -214,6 +220,7 @@ setredzone(pte, vaddr)
  * Both addresses are assumed to reside in the Sysmap,
  * and size must be a multiple of CLSIZE.
  */
+void
 pagemove(from, to, size)
 	register caddr_t from, to;
 	int size;
@@ -237,6 +244,7 @@ pagemove(from, to, size)
 /*
  * Convert kernel VA to physical address
  */
+u_long
 kvtop(addr)
 	register caddr_t addr;
 {
@@ -253,6 +261,7 @@ kvtop(addr)
  * The probe[rw] routines should probably be redone in assembler
  * for efficiency.
  */
+int
 prober(addr)
 	register u_int addr;
 {
@@ -268,6 +277,7 @@ prober(addr)
 	return(0);
 }
 
+int
 probew(addr)
 	register u_int addr;
 {
@@ -282,61 +292,8 @@ probew(addr)
 		return((*(int *)vtopte(p, page) & PG_PROT) == PG_UW);
 	return(0);
 }
-
-/*
- * NB: assumes a physically contiguous kernel page table
- *     (makes life a LOT simpler).
- */
-kernacc(addr, count, rw)
-	register u_int addr;
-	int count, rw;
-{
-	register struct pde *pde;
-	register struct pte *pte;
-	register int ix, cnt;
-	extern long Syssize;
-
-	if (count <= 0)
-		return(0);
-	pde = (struct pde *)((u_int)u->u_procp->p_p0br + u->u_procp->p_szpt * NBPG);
-	ix = (addr & PD_MASK) >> PD_SHIFT;
-	cnt = ((addr + count + (1 << PD_SHIFT) - 1) & PD_MASK) >> PD_SHIFT;
-	cnt -= ix;
-	for (pde += ix; cnt; cnt--, pde++)
-		if (pde->pd_v == 0)
-			return(0);
-	ix = btop(addr-0xfe000000);
-	cnt = btop(addr-0xfe000000+count+NBPG-1);
-	if (cnt > (int)&Syssize)
-		return(0);
-	cnt -= ix;
-	for (pte = &Sysmap[ix]; cnt; cnt--, pte++)
-		if (pte->pg_v == 0 /*|| (rw == B_WRITE && pte->pg_prot == 1)*/)
-			return(0);
-	return(1);
-}
-
-useracc(addr, count, rw)
-	register u_int addr;
-	int count, rw;
-{
-	register int (*func)();
-	register u_int addr2;
-	extern int prober(), probew();
-
-	if (count <= 0)
-		return(0);
-	addr2 = addr;
-	addr += count;
-	func = (rw == B_READ) ? prober : probew;
-	do {
-		if ((*func)(addr2) == 0)
-			return(0);
-		addr2 = (addr2 + NBPG) & ~PGOFSET;
-	} while (addr2 < addr);
-	return(1);
-}
 #endif
+
 
 extern vm_map_t phys_map;
 
@@ -358,6 +315,7 @@ extern vm_map_t phys_map;
  * All requests are (re)mapped into kernel VA space via the useriomap
  * (a name with only slightly more meaning than "kernelmap")
  */
+void
 vmapbuf(bp)
 	register struct buf *bp;
 {
@@ -381,8 +339,7 @@ vmapbuf(bp)
 		pa = pmap_extract(&p->p_vmspace->vm_pmap, (vm_offset_t)addr);
 		if (pa == 0)
 			panic("vmapbuf: null page frame");
-		pmap_enter(vm_map_pmap(phys_map), kva, trunc_page(pa),
-			   VM_PROT_READ|VM_PROT_WRITE, TRUE);
+		pmap_enter(vm_map_pmap(phys_map), kva, trunc_page(pa), VM_PROT_READ|VM_PROT_WRITE, TRUE);
 		addr += PAGE_SIZE;
 		kva += PAGE_SIZE;
 	}
@@ -392,6 +349,7 @@ vmapbuf(bp)
  * Free the io map PTEs associated with this IO operation.
  * We also invalidate the TLB entries and restore the original b_addr.
  */
+void
 vunmapbuf(bp)
 	register struct buf *bp;
 {

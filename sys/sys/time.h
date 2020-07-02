@@ -59,7 +59,7 @@ struct timezone {
 #define	timercmp(tvp, uvp, cmp)	\
 	((tvp)->tv_sec cmp (uvp)->tv_sec || \
 	 (tvp)->tv_sec == (uvp)->tv_sec && (tvp)->tv_usec cmp (uvp)->tv_usec)
-#define	timerclear(tvp)		(tvp)->tv_sec = (tvp)->tv_usec = 0
+#define	timerclear(tvp)		((tvp)->tv_sec = (tvp)->tv_usec = 0)
 
 /*
  * Names of the interval timers, and structure
@@ -113,8 +113,5 @@ int	setitimer (int, const struct itimerval *, struct itimerval *);
 int	settimeofday (const struct timeval *, const struct timezone *);
 int	utimes (const char *, const struct timeval *);
 __END_DECLS
-
-
-
 
 #endif	/* !_SYS_TIME_H_ */

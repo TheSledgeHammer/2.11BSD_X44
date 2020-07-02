@@ -50,6 +50,7 @@
 #include <sys/systm.h>
 #include <sys/uio.h>
 #include <sys/malloc.h>
+#include <sys/user.h>
 
 #include <machine/cpu.h>
 
@@ -59,7 +60,9 @@
 #include <vm/include/pmap.h>
 
 extern        char *vmmap;            /* poor name! */
+
 /*ARGSUSED*/
+static int
 mmrw(dev, uio, flags)
 	dev_t dev;
 	struct uio *uio;
@@ -98,9 +101,10 @@ mmrw(dev, uio, flags)
 
 /* minor device 1 is kernel memory */
 		case 1:
+			vm_offset_t addr, eaddr;
 			c = iov->iov_len;
-			if (!kernacc((caddr_t)uio->uio_offset, c,
-			    uio->uio_rw == UIO_READ ? B_READ : B_WRITE))
+
+			if (!kernacc((caddr_t)uio->uio_offset, c, uio->uio_rw == UIO_READ ? B_READ : B_WRITE))
 				return(EFAULT);
 			error = uiomove((caddr_t)uio->uio_offset, (int)c, uio);
 			continue;
