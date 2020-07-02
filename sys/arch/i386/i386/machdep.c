@@ -897,8 +897,6 @@ init386(first)
 	struct gate_descriptor *gdp;
 	extern int sigcode, szsigcode;
 
-	extern void consinit (void);
-
 	proc0.p_addr = proc0paddr;
 	curpcb = &proc0.p_addr->u_pcb;
 

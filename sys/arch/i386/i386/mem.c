@@ -101,9 +101,7 @@ mmrw(dev, uio, flags)
 
 /* minor device 1 is kernel memory */
 		case 1:
-			vm_offset_t addr, eaddr;
 			c = iov->iov_len;
-
 			if (!kernacc((caddr_t)uio->uio_offset, c, uio->uio_rw == UIO_READ ? B_READ : B_WRITE))
 				return(EFAULT);
 			error = uiomove((caddr_t)uio->uio_offset, (int)c, uio);
