@@ -491,7 +491,7 @@ sysarch(p, uap, retval)
 		break;
 #ifdef VM86
 	case I386_VM86:
-		error = i386_vm86(p, SCARG(uap, parms), retval);
+		error = vm86_sysarch(p, SCARG(uap, parms), retval);
 		break;
 #endif
 	case I386_GET_GSBASE:

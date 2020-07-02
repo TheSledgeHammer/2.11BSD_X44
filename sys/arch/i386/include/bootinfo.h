@@ -42,8 +42,6 @@
 #define BOOTINFO_AOUT_SYMS      0x00000010
 #define BOOTINFO_ELF_SYMS		0x00000020
 
-#ifndef _LOCORE
-
 struct bootinfo {
 	u_int32_t					bi_version;
 	u_int32_t					bi_kernelname;		/* represents a char * */
@@ -136,10 +134,10 @@ struct bootinfo {
 	} bi_sym;
 };
 
-#endif /* _LOCORE */
-
-extern struct bootinfo 	boot;
+#ifdef _KERNEL
+extern struct bootinfo 	bootinfo;
 extern int				end;
 extern int 				*esym;
+#endif
 
 #endif /* _MACHINE_BOOTINFO_H_ */

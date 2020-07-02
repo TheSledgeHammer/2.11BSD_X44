@@ -118,7 +118,6 @@ main(framep)
 	int s;
 	register_t rval[2];
 	extern struct pdevinit pdevinit[];
-	extern struct sysentvec sysvec;
 	extern void roundrobin (void *);
 	extern void schedcpu (void *);
 
@@ -152,8 +151,6 @@ main(framep)
 	p->p_prev = (struct proc **)&allproc;
 	p->p_pgrp = &pgrp0;
 	pgrphash[0] = &pgrp0;
-
-	p->p_sysent = &sysvec;
 
 	p->p_stat = SRUN;
 	p->p_flag |= P_SLOAD|P_SSYS;

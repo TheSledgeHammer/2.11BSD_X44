@@ -75,9 +75,9 @@
 #include <machine/reg.h>
 #include <machine/specialreg.h>
 #include <machine/bootinfo.h>
+#include <machine/isa_machdep.h>
 
 #include <dev/isa/isareg.h>
-#include <machine/isa_machdep.h>
 #include <dev/ic/i8042reg.h>
 
 #ifdef VM86
@@ -108,7 +108,8 @@ char machine_arch[] = "i386";		/* machine == machine_arch */
 
 int want_resched;					/* resched() was called */
 
-char bootinfo[BOOTINFO_MAXSIZE];
+struct bootinfo bootinfo;
+int 			*esym;
 
 /*
  * Declare these as initialized data so we can patch them.
@@ -153,6 +154,24 @@ struct soft_segment_descriptor ldt_segs[];
 int _udatasel, _ucodesel, _gsel_tss;
 
 extern struct user *proc0paddr;
+
+void
+init386_bootinfo(void)
+{
+	struct bootinfo bootinfo = &bootinfo;
+	vm_offset_t addend;
+
+	if (i386_ksyms_addsyms_elf(&bootinfo)) {
+		init386_ksyms(bootinfo);
+	} else {
+		if (bootinfo.bi_envp.bi_environment != 0) {
+			addend = (caddr_t)bootinfo.bi_envp.bi_environment < KERNBASE ? PMAP_MAP_LOW : 0;
+			init_static_kenv((char *)bootinfo.bi_envp.bi_environment + addend, 0);
+		} else {
+			init_static_kenv(NULL, 0);
+		}
+	}
+}
 
 void
 startup(firstaddr)
@@ -371,7 +390,6 @@ i386_proc0_tss_ldt_init()
 vmtime(otime, olbolt, oicr)
 	register int otime, olbolt, oicr;
 {
-
 	return (((time.tv_sec-otime)*60 + lbolt-olbolt)*16667);
 }
 #endif
@@ -429,13 +447,23 @@ sendsig(catcher, sig, mask, code)
 	 */
 #ifdef VM86
 	if (tf->tf_eflags & PSL_VM) {
+		struct trapframe_vm86 *tf = (struct trapframe_vm86 *) tf;
+		struct vm86_kernel *vm86 =  &p->p_addr->u_pcb.pcb_vm86;
+
 		frame.sf_sc.sc_gs = tf->tf_vm86_gs;
 		frame.sf_sc.sc_fs = tf->tf_vm86_fs;
 		frame.sf_sc.sc_es = tf->tf_vm86_es;
 		frame.sf_sc.sc_ds = tf->tf_vm86_ds;
-		frame.sf_sc.sc_eflags = get_vflags(p);
+		if (vm86->vm86_has_vme == 0)
+			frame.sf_sc.sc_ps = (tf->tf_eflags & ~(PSL_VIF | PSL_VIP)) | (vm86->vm86_eflags & (PSL_VIF | PSL_VIP));
+		/*
+		 * We should never have PSL_T set when returning from vm86
+		 * mode.  It may be set here if we deliver a signal before
+		 * getting to vm86 mode, so turn it off.
+		 */
+		tf->tf_eflags &= ~(PSL_VM | PSL_T | PSL_VIF | PSL_VIP);
 	} else
-#endif
+#endif /* VM86 */
 	{
 		frame.sf_sc.sc_gs = tf->tf_gs;
 		frame.sf_sc.sc_fs = tf->tf_fs;
@@ -467,7 +495,6 @@ sendsig(catcher, sig, mask, code)
 		 * instruction to halt it in its tracks.
 		 */
 		sigexit(p, SIGILL);
-		/* NOTREACHED */
 	}
 
 	/*
@@ -521,16 +548,34 @@ sigreturn(p, uap, retval)
 	if (copyin((caddr_t)scp, &context, sizeof(*scp)) != 0)
 		return (EFAULT);
 
-
 #ifdef VM86
 	if (context.sc_eflags & PSL_VM) {
+		struct trapframe_vm86 *tf = (struct trapframe_vm86 *)tf;
+		struct vm86_kernel *vm86;
+		/*
+		 * if pcb_ext == 0 or vm86_inited == 0, the user hasn't
+		 * set up the vm86 area, and we can't enter vm86 mode.
+		 */
+		if (p->p_addr->u_pcb == 0)
+			return (EINVAL);
+		vm86 = &p->p_addr->u_pcb.pcb_vm86;
+		if (vm86->vm86_inited == 0)
+			return (EINVAL);
+		/* go back to user mode if both flags are set */
+		if ((context.sc_eflags & PSL_VIP) && (context.sc_eflags & PSL_VIF))
+			trapsignal(p, SIGBUS, 0);
+		if (vm86->vm86_has_vme) {
+			context.sc_eflags = (tf->tf_eflags & ~VME_USERCHANGE) | (context.sc_eflags & VME_USERCHANGE) | PSL_VM;
+		} else {
+			vm86->vm86_eflags = context.sc_eflags; /* save VIF, VIP */
+			context.sc_eflags = (tf->tf_eflags & ~VM_USERCHANGE) | (eflags & VM_USERCHANGE)	| PSL_VM;
+		}
 		tf->tf_vm86_gs = context.sc_gs;
 		tf->tf_vm86_fs = context.sc_fs;
 		tf->tf_vm86_es = context.sc_es;
 		tf->tf_vm86_ds = context.sc_ds;
-		set_vflags(p, context.sc_eflags);
 	} else
-#endif
+#endif /* VM86 */
 	{
 		/*
 		 * Check for security violations.  If we're returning to
@@ -538,8 +583,7 @@ sigreturn(p, uap, retval)
 		 * automatically and generate a trap on violations.  We handle
 		 * the trap, rather than doing all of the checking here.
 		 */
-		if (((context.sc_eflags ^ tf->tf_eflags) & PSL_USERSTATIC) != 0
-				|| !USERMODE(context.sc_cs, context.sc_eflags))
+		if (((context.sc_eflags ^ tf->tf_eflags) & PSL_USERSTATIC) != 0	|| !USERMODE(context.sc_cs, context.sc_eflags))
 			return (EINVAL);
 
 		/* %fs and %gs were restored by the trampoline. */
@@ -547,6 +591,7 @@ sigreturn(p, uap, retval)
 		tf->tf_ds = context.sc_ds;
 		tf->tf_eflags = context.sc_eflags;
 	}
+
 	tf->tf_edi = context.sc_edi;
 	tf->tf_esi = context.sc_esi;
 	tf->tf_ebp = context.sc_ebp;
@@ -860,6 +905,7 @@ init386(first)
 
 	i386_bus_space_init();
 	init_descriptors();
+	init386_bootinfo();
 
 	/*
 	 * Initialize the console before we print anything out.
@@ -953,6 +999,27 @@ init386(first)
 }
 
 void
+init386_ksyms(bootinfo)
+	struct bootinfo *bootinfo;
+{
+	extern int 		end;
+	vm_offset_t 	addend;
+
+	if (bootinfo->bi_envp.bi_environment != 0) {
+		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);
+		addend = (caddr_t) bootinfo->bi_envp.bi_environment < KERNBASE ? PMAP_MAP_LOW : 0;
+		init_static_kenv((char*) bootinfo->bi_envp.bi_environment + addend, 0);
+	} else {
+		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);
+		init_static_kenv(NULL, 0);
+	}
+
+	bootinfo->bi_envp->bi_symtab += KERNBASE;
+	bootinfo->bi_envp->bi_esymtab += KERNBASE;
+	ksyms_addsyms_elf(bootinfo->bi_envp->bi_nsymtab, (int*) bootinfo->bi_envp->bi_symtab, (int*) bootinfo->bi_envp->bi_esymtab);
+}
+
+void
 sdtossd(sd, ssd)
 	struct segment_descriptor *sd;
 	struct soft_segment_descriptor *ssd;
@@ -1001,21 +1068,6 @@ makectx(tf, pcb)
 	pcb->pcb_tss.tss_eip = tf->tf_eip;
 	pcb->pcb_tss.tss_esp = (ISPL(tf->tf_cs)) ? tf->tf_esp : (int)(tf + 1) - 8;
 	pcb->pcb_tss.tss_gs = rgs();
-}
-
-void *
-lookup_bootinfo(type)
-	int type;
-{
-	struct bootinfo *help;
-	int n = *(int*)bootinfo;
-	help = (struct bootinfo *)(bootinfo + sizeof(int));
-	while(n--) {
-		if(help->bi_type == type)
-			return(help);
-		help = (struct bootinfo *)((char*)help + help->bi_len);
-	}
-	return(0);
 }
 
 /*

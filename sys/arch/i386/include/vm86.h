@@ -1,10 +1,11 @@
-/*	$NetBSD: vm86.h,v 1.9 1997/10/09 08:50:43 jtc Exp $	*/
 /*-
- * Copyright (c) 1996 The NetBSD Foundation, Inc.
+ * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ *
+ * Copyright (c) 1997 Jonathan Lemon
  * All rights reserved.
  *
- * This code is derived from software contributed to The NetBSD Foundation
- * by John T. Kohl and Charles M. Hannum.
+ * Derived from register.h, which is
+ *     Copyright (c) 1996 Michael Smith.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -14,169 +15,153 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
- * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
- * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ * $FreeBSD$
  */
 
-#define SETFLAGS(targ, new, newmask) (targ) = ((targ) & ~(newmask)) | ((new) & (newmask))
+#ifndef _MACHINE_VM86_H_
+#define _MACHINE_VM86_H_ 1
 
-#define VM86_TYPE(x)			((x) & 0xff)
-#define VM86_ARG(x)				(((x) & 0xff00) >> 8)
-#define	VM86_MAKEVAL(type,arg) 	((type) | (((arg) & 0xff) << 8))
-#define	VM86_STI				0
-#define	VM86_INTx				1
-#define	VM86_SIGNAL				2
-#define	VM86_UNKNOWN			3
+/* standard register representation */
+typedef union {
+	u_int	r_ex;
+	struct {
+		u_short	r_x;
+		u_int	:16;
+	} r_w;
+	struct {
+		u_char	r_l;
+		u_char	r_h;
+		u_int	:16;
+	} r_b;
+} reg86_t;
 
-#define	VM86_REALFLAGS			(~PSL_USERSTATIC)
-#define	VM86_VIRTFLAGS			(PSL_USERSTATIC & ~(PSL_MBO | PSL_MBZ))
+/* layout must match definition of struct trapframe_vm86 in <machine/frame.h> */
 
-struct vm86_regs {
-	struct sigcontext 	vmsc;
+struct vm86frame {
+	int		kernel_fs;
+	int		kernel_es;
+	int		kernel_ds;
+	reg86_t	edi;
+	reg86_t	esi;
+	reg86_t	ebp;
+	reg86_t	isp;
+	reg86_t	ebx;
+	reg86_t	edx;
+	reg86_t	ecx;
+	reg86_t	eax;
+	int		vmf_trapno;
+	int		vmf_err;
+	reg86_t	eip;
+	reg86_t	cs;
+	reg86_t	eflags;
+	reg86_t	esp;
+	reg86_t	ss;
+	reg86_t	es;
+	reg86_t	ds;
+	reg86_t	fs;
+	reg86_t	gs;
+#define vmf_ah		eax.r_b.r_h
+#define vmf_al		eax.r_b.r_l
+#define vmf_ax		eax.r_w.r_x
+#define vmf_eax		eax.r_ex
+#define vmf_bh		ebx.r_b.r_h
+#define vmf_bl		ebx.r_b.r_l
+#define vmf_bx		ebx.r_w.r_x
+#define vmf_ebx		ebx.r_ex
+#define vmf_ch		ecx.r_b.r_h
+#define vmf_cl		ecx.r_b.r_l
+#define vmf_cx		ecx.r_w.r_x
+#define vmf_ecx		ecx.r_ex
+#define vmf_dh		edx.r_b.r_h
+#define vmf_dl		edx.r_b.r_l
+#define vmf_dx		edx.r_w.r_x
+#define vmf_edx		edx.r_ex
+#define vmf_si		esi.r_w.r_x
+#define vmf_di		edi.r_w.r_x
+#define vmf_cs		cs.r_w.r_x
+#define vmf_ds		ds.r_w.r_x
+#define vmf_es		es.r_w.r_x
+#define vmf_ss		ss.r_w.r_x
+#define vmf_bp		ebp.r_w.r_x
+#define vmf_sp		esp.r_w.r_x
+#define vmf_ip		eip.r_w.r_x
+#define vmf_flags	eflags.r_w.r_x
+#define vmf_eflags	eflags.r_ex
 };
 
-struct vm86_kern {			/* kernel uses this stuff */
-	struct vm86_regs 	regs;
-	unsigned long 		ss_cpu_type;
-};
-#define cpu_type substr.ss_cpu_type
+#define VM86_PMAPSIZE	24
+#define VMAP_MALLOC		1	/* page was malloced by us */
 
-/*
- * Kernel keeps copy of user-mode address of this, but doesn't copy it in.
- */
-struct vm86_struct {
-	struct vm86_kern 	substr;
-	unsigned long 		screen_bitmap;	/* not used/supported (yet) */
-	unsigned long 		flags;		/* not used/supported (yet) */
-	unsigned char 		int_byuser[32];	/* 256 bits each: pass control to user */
-	unsigned char 		int21_byuser[32];	/* otherwise, handle directly */
+struct vm86context {
+	int				npages;
+	struct	vm86pmap {
+		int			flags;
+		int			pte_num;
+		vm_offset_t	kva;
+		u_int		old_pte;
+	} pmap[VM86_PMAPSIZE];
 };
 
-#define VCPU_086		0
-#define VCPU_186		1
-#define VCPU_286		2
-#define VCPU_386		3
-#define VCPU_486		4
-#define VCPU_586		5
+#define VM_USERCHANGE   (PSL_USERCHANGE)
+#define VME_USERCHANGE  (VM_USERCHANGE | PSL_VIP | PSL_VIF)
+
+struct vm86_kernel {
+	caddr_t	vm86_intmap;			/* interrupt map */
+	u_int	vm86_eflags;			/* emulated flags */
+	int		vm86_has_vme;			/* VME support */
+	int		vm86_inited;			/* we were initialized */
+	int		vm86_debug;
+	caddr_t	vm86_sproc;				/* address of sproc */
+};
+
+#define VM86_INIT	1
+#define VM86_SET_VME	2
+#define VM86_GET_VME	3
+#define VM86_INTCALL	4
+
+struct vm86_init_args {
+        int     debug;                  /* debug flag */
+        int     cpu_type;               /* cpu type to emulate */
+        u_char  int_map[32];            /* interrupt map */
+};
+
+struct vm86_vme_args {
+	int	state;			/* status */
+};
+
+struct vm86_intcall_args {
+	int					intnum;
+	struct 	vm86frame 	vmf;
+};
 
 #ifdef _KERNEL
-int i386_vm86 (struct proc *, char *, register_t *);
-void vm86_gpfault (struct proc *, int);
-void vm86_return (struct proc *, int);
-static __inline void clr_vif (struct proc *);
-static __inline void set_vif (struct proc *);
-static __inline void set_vflags (struct proc *, int);
-static __inline int get_vflags (struct proc *);
-static __inline void set_vflags_short (struct proc *, int);
-static __inline int get_vflags_short (struct proc *);
+extern 	int vm86paddr;
 
-static __inline void
-clr_vif(p)
-	struct proc *p;
-{
-	struct pcb *pcb = &p->p_addr->u_pcb;
+struct proc;
+extern	int vm86_emulate(struct vm86frame *);
+extern	int vm86_sysarch(struct proc *, char *);
+extern void vm86_trap(struct vm86frame *);
+extern 	int vm86_intcall(int, struct vm86frame *);
+extern 	int vm86_datacall(int, struct vm86frame *, struct vm86context *);
+extern void vm86_initialize(void);
+extern vm_offset_t vm86_getpage(struct vm86context *, int);
+extern vm_offset_t vm86_addpage(struct vm86context *, int, vm_offset_t);
+extern int vm86_getptr(struct vm86context *, vm_offset_t, u_short *, u_short *);
 
-#ifndef VM86_USE_VIF
-	pcb->vm86_eflags &= ~PSL_I;
-#else
-	pcb->vm86_eflags &= ~PSL_VIF;
-#endif
-}
+extern vm_offset_t vm86_getaddr(struct vm86context *, u_short, u_short);
+#endif /* _KERNEL */
 
-static __inline void
-set_vif(p)
-	struct proc *p;
-{
-	struct pcb *pcb = &p->p_addr->u_pcb;
-
-#ifndef VM86_USE_VIF
-	pcb->vm86_eflags |= PSL_I;
-	if ((pcb->vm86_eflags & (PSL_I|PSL_VIP)) == (PSL_I|PSL_VIP))
-#else
-	pcb->vm86_eflags |= PSL_VIF;
-	if ((pcb->vm86_eflags & (PSL_VIF|PSL_VIP)) == (PSL_VIF|PSL_VIP))
-#endif
-		vm86_return(p, VM86_STI);
-}
-
-static __inline void
-set_vflags(p, flags)
-	struct proc *p;
-	int flags;
-{
-	struct trapframe *tf = p->p_md.md_regs;
-	struct pcb *pcb = &p->p_addr->u_pcb;
-
-	flags &= ~pcb->vm86_flagmask;
-	SETFLAGS(pcb->vm86_eflags, flags, VM86_VIRTFLAGS);
-	SETFLAGS(tf->tf_eflags, flags, VM86_REALFLAGS);
-#ifndef VM86_USE_VIF
-	if ((pcb->vm86_eflags & (PSL_I|PSL_VIP)) == (PSL_I|PSL_VIP))
-#else
-	if ((pcb->vm86_eflags & (PSL_VIF|PSL_VIP)) == (PSL_VIF|PSL_VIP))
-#endif
-		vm86_return(p, VM86_STI);
-}
-
-static __inline int
-get_vflags(p)
-	struct proc *p;
-{
-	struct trapframe *tf = p->p_md.md_regs;
-	struct pcb *pcb = &p->p_addr->u_pcb;
-	int flags = PSL_MBO;
-
-	SETFLAGS(flags, pcb->vm86_eflags, VM86_VIRTFLAGS);
-	SETFLAGS(flags, tf->tf_eflags, VM86_REALFLAGS);
-	return (flags);
-}
-
-static __inline void
-set_vflags_short(p, flags)
-	struct proc *p;
-	int flags;
-{
-	struct trapframe *tf = p->p_md.md_regs;
-	struct pcb *pcb = &p->p_addr->u_pcb;
-
-	flags &= ~pcb->vm86_flagmask;
-	SETFLAGS(pcb->vm86_eflags, flags, VM86_VIRTFLAGS & 0xffff);
-	SETFLAGS(tf->tf_eflags, flags, VM86_REALFLAGS & 0xffff);
-#ifndef VM86_USE_VIF
-	if ((pcb->vm86_eflags & (PSL_I|PSL_VIP)) == (PSL_I|PSL_VIP))
-		vm86_return(p, VM86_STI);
-#endif
-}
-
-static __inline int
-get_vflags_short(p)
-	struct proc *p;
-{
-	struct trapframe *tf = p->p_md.md_regs;
-	struct pcb *pcb = &p->p_addr->u_pcb;
-	int flags = PSL_MBO;
-
-	SETFLAGS(flags, pcb->vm86_eflags, VM86_VIRTFLAGS & 0xffff);
-	SETFLAGS(flags, tf->tf_eflags, VM86_REALFLAGS & 0xffff);
-	return (flags);
-}
-#else
-int i386_vm86 (struct vm86_struct *vmcp);
-#endif
+#endif /* _MACHINE_VM86_H_ */

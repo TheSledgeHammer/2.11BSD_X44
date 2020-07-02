@@ -39,8 +39,17 @@
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
+#include <machine/pcb.h>
 
-static __inline int bdb(void)
+/*
+ * Flush MMU TLB
+ */
+#ifndef I386_CR3PAT
+#define	I386_CR3PAT	0x0
+#endif
+
+static __inline int
+bdb(void)
 {
 	extern int bdb_exists;
 
@@ -113,6 +122,27 @@ tlbflush(void)
 }
 
 #ifdef notyet
+static __inline void
+_cr3(void)
+{
+	u_long rtn;
+	__asm __volatile(" movl %%cr3,%%eax; movl %%eax,%0 " : "=g" (rtn) :	: "ax");
+}
+
+static __inline void
+load_cr3(u_long s)
+{
+	u_long val = (s) | I386_CR3PAT;
+	__asm __volatile("movl %0,%%eax; movl %%eax,%%cr3" : : "g" (val) : "ax");
+}
+
+static __inline void
+tlbflush(void)
+{
+	u_long val = u->u_pcb.pcb_ptd | I386_CR3PAT;
+	__asm __volatile("movl %0,%%eax; movl %%eax,%%cr3" : : "g" (val) : "ax");
+}
+
 void	setidt	(int idx, /*XXX*/caddr_t func, int typ, int dpl);
 #endif
 

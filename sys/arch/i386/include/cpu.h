@@ -174,9 +174,9 @@ void	vm86_gpfault (struct proc *, int);
 #define	CPU_CONSDEV		1	/* dev_t: console terminal device */
 #define	CPU_MAXID		2	/* number of valid machdep ids */
 
-#define CTL_MACHDEP_NAMES { \
-	{ 0, 0 }, \
-	{ "console_device", CTLTYPE_STRUCT }, \
+#define CTL_MACHDEP_NAMES { 				\
+	{ 0, 0 }, 								\
+	{ "console_device", CTLTYPE_STRUCT }, 	\
 }
 
 #ifndef LOCORE

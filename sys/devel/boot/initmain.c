@@ -62,21 +62,10 @@ start_init(p, framep)
 
 /* belongs in machdep init386 */
 
-int
-init386()
-{
-	vm_offset_t addend;
-	if (i386_ksyms_addsyms_elf(bootinfo)) {
-		init386_ksyms(bootinfo);
-	} else {
-		if (bootinfo.bi_envp.bi_environment != 0) {
-			addend = (caddr_t)bootinfo.bi_envp.bi_environment < KERNBASE ? PMAP_MAP_LOW : 0;
-			init_static_kenv((char *)bootinfo.bi_envp.bi_environment + addend, 0);
-		} else {
-			init_static_kenv(NULL, 0);
-		}
-	}
-}
+struct bootinfo bootinfo;
+int 			*esym;
+void			*ksym_start, *ksym_end;
+//ksyms_addsyms_elf((int)((uint32_t)ksym_end - (uint32_t)ksym_start), ksym_start, ksym_end);
 
 static void
 init386_ksyms(bootinfo)
@@ -86,7 +75,7 @@ init386_ksyms(bootinfo)
 	vm_offset_t 	addend;
 
 	if (bootinfo->bi_envp.bi_environment != 0) {
-		ksyms_addsyms_elf(*(int*) &end, ((int*) &end) + 1, esym);
+		ksyms_addsyms_elf(*(int*) &end, ksym_start, ksym_end);
 		addend = (caddr_t) bootinfo->bi_envp.bi_environment < KERNBASE ? PMAP_MAP_LOW : 0;
 		init_static_kenv((char*) bootinfo->bi_envp.bi_environment + addend, 0);
 	} else {

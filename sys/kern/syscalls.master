@@ -202,3 +202,4 @@
 158	STD			{ int lfs_segclean(); }
 159	STD			{ int lfs_segwait(); }
 160 STD         { int sysarch(); }
+161 STD			{ int kenv(); }
