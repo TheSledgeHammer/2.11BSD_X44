@@ -17,7 +17,7 @@
 #include <arch/i386/include/param.h>
 
 #include <sys/msgbuf.h>
-#include "../vm/pmap/cpt.h"
+#include "pmap/cpt.h"
 
 /*
  * All those kernel PT submaps that BSD is so fond of
@@ -166,12 +166,7 @@ pmap_cold()
 	pmap_cold_mapident(cpte, proc0paddr, P0_KSTACK_PAGES);
 }
 
-/*
- * TODO:
- * - Line 176: Does this address equal IdleCPT?
- * - Will it need a cpt lookup function to find that address?
- * - What does pm_ptab do? (Little to no references in 4.4BSD Kernel)
- */
+
 extern vm_offset_t	atdevbase;
 void
 pmap_bootstrap(firstaddr, loadaddr)
@@ -233,7 +228,6 @@ pmap_pinit(pmap)
 
 	pmap->pm_count = 1;
 	simple_lock_init(&pmap->pm_lock);
-	struct cpt *cpt;
 }
 
 struct cpte *

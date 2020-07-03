@@ -8,6 +8,8 @@
 #ifndef	OVL_MAP_
 #define	OVL_MAP_
 
+#include <sys/queue.h>
+
 union ovl_map_object {
 	struct ovl_object					*ovl_object;	/* object object */
 };

@@ -36,14 +36,15 @@ struct vm_extentops vextops;
 
 /* initilize vm_extentops */
 void
-vm_extentops_init()
+vm_extops_init()
 {
 	vop_malloc(&vextops);
+
 }
 
 /* allocate vm_extentops */
 void
-vm_extentops_malloc(vextops)
+vm_extops_malloc(vextops)
 	struct vm_extentops *vextops;
 {
 	MALLOC(vextops, struct vm_extentops *, sizeof(struct vm_extentops *), M_VMEXTENTOPS, M_WAITOK);

@@ -58,9 +58,24 @@ typedef	struct fd_set {
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1L << ((n) % NFDBITS)))
 #define FD_ZERO(p)		bzero((char *)(p), sizeof(*(p)))
 
+/*
+ * Used to maintain information about processes that wish to be
+ * notified when I/O becomes possible.
+ */
+struct selinfo {
+	pid_t		si_pid;		/* process to be notified */
+	short		si_flags;	/* see below */
+};
+#define	SI_COLL	0x0001		/* collision occurred */
+
 #ifndef KERNEL
-int	select();
-int	pselect();
+struct proc;
+
+void	selrecord (struct proc *selector, struct selinfo *);
+void	selwakeup (struct selinfo *);
+
+int		select();
+int		pselect();
 #endif /* !KERNEL */
 
 #endif /* !_SYS_SELECT_H_ */

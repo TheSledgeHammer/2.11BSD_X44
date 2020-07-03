@@ -76,6 +76,19 @@ struct vm_segmentspace {
 	caddr_t 					segs_maxsaddr;		/* user VA at max stack growth */
 };
 
+struct vm_seg_spltree;
+SPLAY_HEAD(vm_seg_spltree, vm_zone);
+struct vm_segment {
+	struct vm_seg_spltree 		seg_spltree;		/* tree of segments space entries */
+	struct pmap					seg_pmap;			/* private physical map */
+
+
+};
+
+struct vm_zone {
+	SPLAY_ENTRY(vm_zone)		z_splentry;
+};
+
 /* Segmented Space Address Layout */
 #define VMSPACE_START
 #define VMSPACE_END

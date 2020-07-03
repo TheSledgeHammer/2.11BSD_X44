@@ -17,6 +17,8 @@
 #include <sys/uio.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
+#include <sys/select.h>
+#include <sys/types.h>
 
 /* 
  * this is consolidated here rather than being scattered all over the
@@ -26,8 +28,6 @@
 
 int	sorw(), soctl(), sosel(), socls();
 struct	fileops	socketops = { sorw, soctl, sosel, socls };
-
-register struct user *u;
 
 /*
  * Read system call.
@@ -505,6 +505,27 @@ seltrue(dev, flag)
 {
 
 	return (1);
+}
+
+/*
+ * Record a select request.
+ */
+void
+selrecord(selector, sip)
+	struct proc *selector;
+	struct selinfo *sip;
+{
+	struct proc *p;
+	pid_t mypid;
+
+	mypid = selector->p_pid;
+	if (sip->si_pid == mypid)
+		return;
+	if (sip->si_pid && (p = pfind(sip->si_pid)) &&
+	    p->p_wchan == (caddr_t)&selwait)
+		sip->si_flags |= SI_COLL;
+	else
+		sip->si_pid = mypid;
 }
 
 void

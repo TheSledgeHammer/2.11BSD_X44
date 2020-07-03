@@ -102,7 +102,8 @@ extern struct cpte	*pte_to_cpte(struct pte *pte, int boff);
  * Pmap stuff
  */
 struct pmap {
-	cpt_entry_t				*pm_cpt;
+	cpt_entry_t				*pm_cpt;		/* KVA of cluster page table */
+
 	pd_entry_t				*pm_pdir;		/* KVA of page directory */
 	pd_entry_t				*pm_ptab;		/* ?? */
 	boolean_t				pm_pdchanged;	/* pdir changed */

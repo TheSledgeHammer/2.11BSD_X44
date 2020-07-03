@@ -8,13 +8,6 @@ UFML:
 	- short	u_uisd[16];					/* segmentation descriptor prototypes */
 	- char	u_sep;						/* flag for I and D separation */
 	- struct u_ovd						/* automatic overlay data */
-
-
-i386:
-	- FreeBSD's: vm86 does not execute in bios (like originally thought)
-		- can keep NetBSD's vm86 without issue's
-	- NetBSD's/OpenBSD: bios32_init is executed in autoconf.c
-	- FreeBSD's: bios32 uses sysinit in combo with pmap_bios16
 	
 kern:
 	- ksyms: dev: partly complete (open, read, attach, & close)

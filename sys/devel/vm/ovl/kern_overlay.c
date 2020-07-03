@@ -33,6 +33,7 @@
 #include <sys/extent.h>
 #include <sys/malloc.h>
 #include <sys/map.h>
+#include <sys/user.h>
 #include "../vm/ovl/koverlay.h"
 
 //static size_t koverlay_ex_storage[EXTENT_FIXED_STORAGE_SIZE(NOVLSR)];

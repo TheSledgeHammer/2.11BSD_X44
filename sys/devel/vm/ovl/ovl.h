@@ -48,6 +48,9 @@
  * - While useful (in some situations), for extending memory management
  * - This version would not provide any benefit to vm paging, if the overlay is a page in itself.
  * - would likely be slower than using just paging.
+ *
+ * - Should have it's own pmap entries:
+ * 	- pmap_ova??
  */
 
 #ifndef _OVL_H_
@@ -66,8 +69,8 @@
 #include <sys/extent.h>
 #include <sys/queue.h>
 
-#include "../vm/ovl/ovl_map.h"
-#include "../vm/ovl/ovl_object.h"
+#include "vm/ovl/ovl_map.h"
+#include "vm/ovl/ovl_object.h"
 
 union ovl_map_object;
 typedef union ovl_map_object 	ovl_map_object_t;

@@ -491,7 +491,7 @@ extent_alloc_subregion(ex, substart, subend, size, alignment, boundary, flags, r
 		return (ENOMEM);
 	}
 
- alloc_start:
+alloc_start:
 	/*
 	 * Keep a pointer to the last region we looked at so
 	 * that we don't have to traverse the list again when
@@ -711,7 +711,7 @@ extent_alloc_subregion(ex, substart, subend, size, alignment, boundary, flags, r
 	extent_free_region_descriptor(ex, myrp);
 	return (EAGAIN);
 
- found:
+found:
 	/*
 	 * Insert ourselves into the region list.
 	 */

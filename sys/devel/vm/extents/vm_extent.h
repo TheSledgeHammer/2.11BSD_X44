@@ -116,7 +116,7 @@ struct vm_extentops_destroy_args	{
 #define EXTENTOPS(ap, ops_field)				\
 			VEXTTOARGS(ap)->ops_field
 
-void vm_extentops_init();
-void vm_extentops_malloc(struct vm_extentops *vextops);
+void vm_extops_init();
+void vm_extops_malloc(struct vm_extentops *vextops);
 
 #endif /* _VM_EXTOPS_H_ */
