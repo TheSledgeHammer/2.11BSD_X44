@@ -14,6 +14,7 @@
 #include <sys/systm.h>
 #include <sys/buf.h>
 #include <sys/dk.h>
+#include <sys/user.h>
 
 void
 disksort(dp, bp)
@@ -25,7 +26,7 @@ disksort(dp, bp)
 	ap = dp->b_actf;
 	if (ap == NULL) {
 		dp->b_actf = bp;
-		dp->b_actl = bp;
+		dp->b_actb = bp;
 		bp->av_forw = NULL;
 		return;
 	}
@@ -43,11 +44,11 @@ disksort(dp, bp)
 				tp = ap;
 	}
 	if (tp == NULL)
-		tp = dp->b_actl;
+		tp = dp->b_actb;
 	bp->av_forw = tp->av_forw;
 	tp->av_forw = bp;
-	if (tp == dp->b_actl)
-		dp->b_actl = bp;
+	if (tp == dp->b_actb)
+		dp->b_actb = bp;
 }
 
 #ifdef UCB_METER

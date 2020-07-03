@@ -46,12 +46,12 @@
 
 #include <vm/include/vm.h>
 #include <miscfs/specfs/specdev.h>
-#include "../vfs/ufs211/ufs211_dir.h"
-#include "../vfs/ufs211/ufs211_extern.h"
-#include "../vfs/ufs211/ufs211_fs.h"
-#include "../vfs/ufs211/ufs211_inode.h"
-#include "../vfs/ufs211/ufs211_mount.h"
-#include "../vfs/ufs211/ufs211_quota.h"
+#include "vfs/ufs211/ufs211_dir.h"
+#include "vfs/ufs211/ufs211_extern.h"
+#include "vfs/ufs211/ufs211_fs.h"
+#include "vfs/ufs211/ufs211_inode.h"
+#include "vfs/ufs211/ufs211_mount.h"
+#include "vfs/ufs211/ufs211_quota.h"
 
 int (**ufs211_vnodeop_p)();
 struct vnodeops ufs211_vnodeops[] = {
@@ -173,8 +173,8 @@ ufs211_access(ap)
 		 * file system.
 		 */
 		if (ip->i_fs->fs_ronly != 0) {
-			if ((ip->i_mode & UFS211_FMT) != UFS211_FCHR &&
-			    (ip->i_mode & UFS211_FMT) != UFS211_FBLK) {
+			if ((ip->i_mode & UFS211_IFMT) != UFS211_IFCHR &&
+			    (ip->i_mode & UFS211_IFMT) != UFS211_IFBLK) {
 				u->u_error = EROFS;
 				return (1);
 			}
@@ -236,7 +236,7 @@ ufs211_getattr(ap)
 	 */
 	vap->va_fsid = ip->i_dev;
 	vap->va_fileid = ip->i_number;
-	vap->va_mode = ip->i_mode & ~IFMT;
+	vap->va_mode = ip->i_mode & ~UFS211_IFMT;
 	vap->va_nlink = ip->i_nlink;
 	vap->va_uid = ip->i_uid;
 	vap->va_gid = ip->i_gid;
@@ -259,7 +259,7 @@ ufs211_getattr(ap)
 		vap->va_blocksize = vp->v_mount->mnt_stat.f_iosize;
 	vap->va_bytes = dbtob((u_quad_t)ip->di_blocks);
 	vap->va_type = vp->v_type;
-	//vap->va_filerev = ip->i_modrev; /* nfs */
+	vap->va_filerev = ip->i_modrev; /* nfs */
 	return (0);
 }
 
@@ -292,7 +292,7 @@ ufs211_setattr(ap)
 			ip->i_flags &= SF_SETTABLE;
 			ip->i_flags |= (vap->va_flags & UF_SETTABLE);
 		}
-		ip->i_flag |= ICHG;
+		ip->i_flag |= UFS211_ICHG;
 		if (vap->va_flags & (IMMUTABLE | APPEND))
 			return (0);
 	}
@@ -305,7 +305,7 @@ ufs211_setattr(ap)
 		if (error == chown1(ip, vap->va_uid, vap->va_gid))
 			return (error);
 	if (vap->va_size != (off_t) VNOVAL) {
-		if ((ip->i_mode & UFS211_FMT) == IFDIR)
+		if ((ip->i_mode & UFS211_IFMT) == UFS211_IFDIR)
 			return (EISDIR);
 		itrunc(ip, vap->va_size, 0);
 		if (u->u_error)
@@ -314,13 +314,13 @@ ufs211_setattr(ap)
 	if (vap->va_atime != (time_t) VNOVAL || vap->va_mtime != (time_t) VNOVAL) {
 		if (u->u_uid != ip->i_uid && !ufs211_suser()
 				&& ((vap->va_vaflags & VA_UTIMES_NULL) == 0
-						|| access(ip, UFS211_WRITE)))
+						|| access(ip, UFS211_IWRITE)))
 			return (u->u_error);
 		if (vap->va_atime != (time_t) VNOVAL
 				&& !(ip->i_fs->fs_flags & MNT_NOATIME))
-			ip->i_flag |= IACC;
+			ip->i_flag |= UFS211_IACC;
 		if (vap->va_mtime != (time_t) VNOVAL)
-			ip->i_flag |= (IUPD | ICHG);
+			ip->i_flag |= (UFS211_IUPD | UFS211_ICHG);
 		atimeval.tv_sec = vap->va_atime;
 		mtimeval.tv_sec = vap->va_mtime;
 		iupdat(ip, &atimeval, &mtimeval, 1);
@@ -466,7 +466,29 @@ int
 ufs211_pathconf(ap)
 	struct vop_pathconf_args *ap;
 {
-	return (0);
+	switch (ap->a_name) {
+	case _PC_LINK_MAX:
+		*ap->a_retval = LINK_MAX;
+		return (0);
+	case _PC_NAME_MAX:
+		*ap->a_retval = NAME_MAX;
+		return (0);
+	case _PC_PATH_MAX:
+		*ap->a_retval = PATH_MAX;
+		return (0);
+	case _PC_PIPE_BUF:
+		*ap->a_retval = PIPE_BUF;
+		return (0);
+	case _PC_CHOWN_RESTRICTED:
+		*ap->a_retval = 1;
+		return (0);
+	case _PC_NO_TRUNC:
+		*ap->a_retval = 1;
+		return (0);
+	default:
+		return (EINVAL);
+	}
+	/* NOTREACHED */
 }
 
 int
@@ -567,8 +589,8 @@ ufs211spec_read(ap)
 	struct vop_read_args *ap;
 {
 	//if ((ap->a_vp->v_mount->mnt_flag & MNT_NODEVMTIME) == 0)
-		VTOI(ap->a_vp)->i_flag |= IN_ACCESS;
-	return (VOCALL (spec_vnodeop_p, VOFFSET(vop_read), ap));
+	VTOI(ap->a_vp)->i_flag |= IN_ACCESS;
+	return (VOPARGS(ap, vop_read));
 }
 
 /*
@@ -579,8 +601,8 @@ ufs211spec_write(ap)
 	struct vop_write_args *ap;
 {
 	//if ((ap->a_vp->v_mount->mnt_flag & MNT_NODEVMTIME) == 0)
-		VTOI(ap->a_vp)->i_flag |= IN_MODIFY;
-	return (VOCALL (spec_vnodeop_p, VOFFSET(vop_write), ap));
+	VTOI(ap->a_vp)->i_flag |= IN_MODIFY;
+	return (VOPARGS(ap, vop_write));
 }
 
 int
@@ -594,7 +616,7 @@ ufs211spec_close(ap)
 	if (ap->a_vp->v_usecount > 1)
 		ITIMES(ip, &time, &time);
 	simple_unlock(&vp->v_interlock);
-	return (VOCALL (spec_vnodeop_p, VOFFSET(vop_close), ap));
+	return (VOPARGS(ap, vop_close));
 }
 
 #ifdef FIFO
@@ -602,27 +624,33 @@ int
 ufs211fifo_read(ap)
 	struct vop_read_args *ap;
 {
-	extern int (**fifo_vnodeop_p)();
+	extern struct fifo_vnodeops;
 
+	/*
+	 * Set access flag.
+	 */
 	VTOI(ap->a_vp)->i_flag |= IN_ACCESS;
-	return (VOCALL (fifo_vnodeop_p, VOFFSET(vop_read), ap));
+	return (VOPARGS(ap, vop_read));
 }
 
 int
 ufs211fifo_write(ap)
 	struct vop_write_args *ap;
 {
-	extern int (**fifo_vnodeop_p)();
+	extern struct fifo_vnodeops;
 
+	/*
+	 * Set update and change flags.
+	 */
 	VTOI(ap->a_vp)->i_flag |= IN_CHANGE | IN_UPDATE;
-	return (VOCALL (fifo_vnodeop_p, VOFFSET(vop_write), ap));
+	return (VOPARGS(ap, vop_write));
 }
 
 int
 ufs211fifo_close(ap)
 	struct vop_close_args *ap;
 {
-	extern int (**fifo_vnodeop_p)();
+	extern struct fifo_vnodeops;
 	struct vnode *vp = ap->a_vp;
 	struct ufs211_inode *ip = VTOI(vp);
 
@@ -630,6 +658,148 @@ ufs211fifo_close(ap)
 	if (ap->a_vp->v_usecount > 1)
 		ITIMES(ip, &time, &time);
 	simple_unlock(&vp->v_interlock);
-	return (VOCALL (fifo_vnodeop_p, VOFFSET(vop_close), ap));
+	return (VOPARGS(ap, vop_close));
 }
 #endif /* FIFO */
+
+/*
+ * Initialize the vnode associated with a new inode, handle aliased
+ * vnodes.
+ */
+int
+ufs_vinit(mntp, specops, fifoops, vpp)
+	struct mount *mntp;
+	int (**specops)();
+	int (**fifoops)();
+	struct vnode **vpp;
+{
+	struct proc *p = curproc;	/* XXX */
+	struct ufs211_inode *ip;
+	struct vnode *vp, *nvp;
+
+	vp = *vpp;
+	ip = VTOI(vp);
+	switch (vp->v_type = IFTOVT(ip->i_mode)) {
+	case VCHR:
+	case VBLK:
+		vp->v_op = specops;
+		if (nvp == checkalias(vp, ip->i_rdev, mntp)) {
+			/*
+			 * Discard unneeded vnode, but save its inode.
+			 * Note that the lock is carried over in the inode
+			 * to the replacement vnode.
+			 */
+			nvp->v_data = vp->v_data;
+			vp->v_data = NULL;
+			vp->v_op = spec_vnodeops;
+			vrele(vp);
+			vgone(vp);
+			/*
+			 * Reinitialize aliased inode.
+			 */
+			vp = nvp;
+			ip->i_vnode = vp;
+		}
+		break;
+	case VFIFO:
+#ifdef FIFO
+		vp->v_op = fifoops;
+		break;
+#else
+		return (EOPNOTSUPP);
+#endif
+	}
+	if (ip->i_number == UFS211_ROOTINO)
+		vp->v_flag |= VROOT;
+	/*
+	 * Initialize modrev times
+	 */
+	SETHIGH(ip->i_modrev, mono_time.tv_sec);
+	SETLOW(ip->i_modrev, mono_time.tv_usec * 4294);
+	*vpp = vp;
+	return (0);
+}
+
+/*
+ * Allocate a new inode.
+ */
+int
+ufs211_makeinode(mode, dvp, vpp, cnp)
+	int mode;
+	struct vnode *dvp;
+	struct vnode **vpp;
+	struct componentname *cnp;
+{
+	register struct ufs211_inode *ip, *pdir;
+	struct timeval tv;
+	struct vnode *tvp;
+	int error;
+
+	pdir = VTOI(dvp);
+
+#ifdef DIAGNOSTIC
+	if ((cnp->cn_flags & HASBUF) == 0)
+		panic("ufs211_makeinode: no name");
+#endif
+	*vpp = NULL;
+	if ((mode & UFS211_IFMT) == 0)
+		mode |= UFS211_IFREG;
+
+	if (error == VOP_VALLOC(dvp, mode, cnp->cn_cred, &tvp)) {
+		free(cnp->cn_pnbuf, M_NAMEI);
+		vput(dvp);
+		return (error);
+	}
+	ip = VTOI(tvp);
+	ip->i_gid = pdir->i_gid;
+	if ((mode & UFS211_IFMT) == UFS211_IFLNK)
+		ip->i_uid = pdir->i_uid;
+	else
+		ip->i_uid = cnp->cn_cred->cr_uid;
+#ifdef QUOTA
+	if ((error = getinoquota(ip)) ||
+	    (error = chkiq(ip, 1, cnp->cn_cred, 0))) {
+		free(cnp->cn_pnbuf, M_NAMEI);
+		VOP_VFREE(tvp, ip->i_number, mode);
+		vput(tvp);
+		vput(dvp);
+		return (error);
+	}
+#endif
+	ip->i_flag |= IN_ACCESS | IN_CHANGE | IN_UPDATE;
+	ip->i_mode = mode;
+	tvp->v_type = IFTOVT(mode);	/* Rest init'd in getnewvnode(). */
+	ip->i_nlink = 1;
+	if ((ip->i_mode & UFS211_ISGID) && !groupmember(ip->i_gid, cnp->cn_cred) &&
+	    suser(cnp->cn_cred, NULL))
+		ip->i_mode &= ~UFS211_ISGID;
+
+	if (cnp->cn_flags & ISWHITEOUT)
+		ip->i_flags |= UF_OPAQUE;
+
+	/*
+	 * Make sure inode goes to disk before directory entry.
+	 */
+	tv = time;
+	if (error == VOP_UPDATE(tvp, &tv, &tv, 1))
+		goto bad;
+	if (error == ufs_direnter(ip, dvp, cnp))
+		goto bad;
+	if ((cnp->cn_flags & SAVESTART) == 0)
+		FREE(cnp->cn_pnbuf, M_NAMEI);
+	vput(dvp);
+	*vpp = tvp;
+	return (0);
+
+bad:
+	/*
+	 * Write error occurred trying to update the inode
+	 * or the directory so must deallocate the inode.
+	 */
+	free(cnp->cn_pnbuf, M_NAMEI);
+	vput(dvp);
+	ip->i_nlink = 0;
+	ip->i_flag |= IN_CHANGE;
+	vput(tvp);
+	return (error);
+}

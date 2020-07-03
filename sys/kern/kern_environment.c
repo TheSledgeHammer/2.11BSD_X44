@@ -50,7 +50,6 @@
 #include <sys/stdbool.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
-#include <sys/sysent.h>
 #include <lib/libkern/libkern.h>
 #include <sys/kenv.h>
 
@@ -74,7 +73,7 @@ bool				dynamic_kenv;
 
 
 #define KENV_CHECK	if (!dynamic_kenv) \
-			    panic("%s: called before SI_SUB_KMEM", __func__)
+			    panic("%s: called before KMEM", __func__)
 
 int
 kenv(uap)

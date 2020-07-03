@@ -36,6 +36,7 @@ struct ufs211_mount {
 	struct	ufs211_inode 	*m_inodp;	        			/* pointer to mounted on inode */
 	struct	ufs211_inode 	*m_qinod; 	    				/* QUOTA: pointer to quota file */
 	ufs211_size_t	    	m_extern;	        			/* click address of mount table extension */
+	struct buf				*m_bufp;
 };
 
 struct ufs211_xmount {
@@ -45,6 +46,6 @@ struct ufs211_xmount {
 
 #define	XMOUNTDESC		(((btoc(sizeof (struct ufs211_xmount)) - 1) << 8) | RW)
 
-/* Convert mount ptr to ufsmount ptr. */
+/* Convert mount ptr to ufs211 mount ptr. */
 #define VFSTOUFS211(mp)	((struct ufs211_mount *)((mp)->mnt_data))
 #endif

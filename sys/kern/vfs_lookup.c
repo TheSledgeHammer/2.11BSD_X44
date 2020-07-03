@@ -78,9 +78,9 @@ namei(ndp)
 	register struct nameidata *ndp;
 {
 	register struct filedesc *fdp;	/* pointer to file descriptor state */
-	register char *cp;		/* pointer into pathname argument */
-	register struct vnode *dp;	/* the directory we are searching */
-	struct iovec aiov;		/* uio for reading symbolic links */
+	register char *cp;				/* pointer into pathname argument */
+	register struct vnode *dp;		/* the directory we are searching */
+	struct iovec aiov;				/* uio for reading symbolic links */
 	struct uio auio;
 	int error, linklen;
 	struct componentname *cnp = &ndp->ni_cnd;

@@ -68,32 +68,32 @@ struct netexport;
 
 /* This structure describes the UFS specific mount structure data. */
 struct ufsmount {
-	struct	mount *um_mountp;		/* filesystem vfs structure */
-	dev_t	um_dev;					/* device mounted */
-	struct	vnode *um_devvp;		/* block device mounted vnode */
+	struct	mount 				*um_mountp;				/* filesystem vfs structure */
+	dev_t						um_dev;					/* device mounted */
+	struct	vnode 				*um_devvp;				/* block device mounted vnode */
 
-	union {							/* pointer to superblock */
-		struct	lfs *lfs;		/* LFS */
-		struct	fs *fs;			/* FFS */
+	union {												/* pointer to superblock */
+		struct	lfs 			*lfs;					/* LFS */
+		struct	fs 				*fs;					/* FFS */
 	} ufsmount_u;
-#define	um_fs	ufsmount_u.fs
-#define	um_lfs	ufsmount_u.lfs
+#define	um_fs					ufsmount_u.fs
+#define	um_lfs					ufsmount_u.lfs
 
-	struct	vnode *um_quotas[MAXQUOTAS];		/* pointer to quota files */
-	struct	ucred *um_cred[MAXQUOTAS];			/* quota file access cred */
-	u_long	um_nindir;							/* indirect ptrs per block */
-	u_long	um_bptrtodb;						/* indir ptr to disk block */
-	u_long	um_seqinc;							/* inc between seq blocks */
-	time_t	um_btime[MAXQUOTAS];				/* block quota time limit */
-	time_t	um_itime[MAXQUOTAS];				/* inode quota time limit */
-	char	um_qflags[MAXQUOTAS];				/* quota specific flags */
-	struct	netexport um_export;				/* export information */
-	int64_t	um_savedmaxfilesize;				/* XXX - limit maxfilesize */
+	struct	vnode 				*um_quotas[MAXQUOTAS];	/* pointer to quota files */
+	struct	ucred 				*um_cred[MAXQUOTAS];	/* quota file access cred */
+	u_long						um_nindir;				/* indirect ptrs per block */
+	u_long						um_bptrtodb;			/* indir ptr to disk block */
+	u_long						um_seqinc;				/* inc between seq blocks */
+	time_t						um_btime[MAXQUOTAS];	/* block quota time limit */
+	time_t						um_itime[MAXQUOTAS];	/* inode quota time limit */
+	char						um_qflags[MAXQUOTAS];	/* quota specific flags */
+	struct netexport			um_export;				/* export information */
+	int64_t						um_savedmaxfilesize;	/* XXX - limit maxfilesize */
 
-	TAILQ_HEAD(inodelst, inode) um_snapshots; 	/* list of active snapshots */
-	daddr_t	*um_snapblklist;					/* snapshot block hints list */
-	int		um_maxsymlinklen;
-	int		um_dirblksiz;
+	TAILQ_HEAD(inodelst, inode) um_snapshots; 			/* list of active snapshots */
+	daddr_t						*um_snapblklist;		/* snapshot block hints list */
+	int							um_maxsymlinklen;
+	int							um_dirblksiz;
 };
 
 /*

@@ -1,7 +1,4 @@
 - boot: Check & create Makefiles if needed
-	- common:
-		- isapnp.c/.h
-		- pnp.c 
 	- efi:
 		- libefi & loader: Update From FreeBSD to be NetBSD/2.11BSD compatable
 	- i386: 			

@@ -1006,7 +1006,7 @@ IDTVEC(fpu)
 				 		 				 * complicated address mode */
 		pushl	%ds
 		pushl	%es						/* now the stack frame is a trap frame */
-		movl	$KDSEL,%eax
+		movl	$GSEL(GDATA_SEL, SEL_KPL),%eax
 		movl	%ax,%ds
 		movl	%ax,%es
 		pushl	_cpl
@@ -1067,7 +1067,7 @@ syscall1:
 		pushfl						# only for stupid carry bit and more stupid wait3 cc kludge
 		pushal						# only need eax,ecx,edx - trap resaves others
 		nop
-		movl	$KDSEL,%eax			# switch to kernel segments
+		movl	$GSEL(GDATA_SEL, SEL_KPL),%eax			# switch to kernel segments
 		movl	%ax,%ds
 		movl	%ax,%es
 		incl	_cnt+V_SYSCALL  	# kml 3/25/93

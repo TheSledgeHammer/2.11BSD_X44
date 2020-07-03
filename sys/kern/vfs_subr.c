@@ -41,19 +41,24 @@
 /*
  * External virtual filesystem routines
  */
+#include <sys/cdefs.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/proc.h>
-#include <sys/user.h>
+#include <sys/conf.h>
+#include <sys/dirent.h>
+#include <sys/filedesc.h>
+#include <sys/kernel.h>
 #include <sys/mount.h>
-#include <sys/time.h>
-#include <sys/vnode.h>
 #include <sys/stat.h>
 #include <sys/namei.h>
-#include <sys/ucred.h>
 #include <sys/buf.h>
 #include <sys/errno.h>
+#include <sys/proc.h>
+#include <sys/user.h>
+#include <sys/time.h>
+#include <sys/vnode.h>
+#include <sys/ucred.h>
 #include <sys/malloc.h>
 #include <sys/domain.h>
 #include <sys/mbuf.h>
@@ -76,10 +81,11 @@ int	vttoif_tab[9] = {
  * Insq/Remq for the vnode usage lists.
  */
 #define	bufinsvn(bp, dp)	LIST_INSERT_HEAD(dp, bp, b_vnbufs)
-#define	bufremvn(bp) {							\
-	LIST_REMOVE(bp, b_vnbufs);					\
-	(bp)->b_vnbufs.le_next = NOLIST;				\
+#define	bufremvn(bp) {											\
+	LIST_REMOVE(bp, b_vnbufs);									\
+	(bp)->b_vnbufs.le_next = NOLIST;							\
 }
+
 TAILQ_HEAD(freelst, vnode) vnode_free_list;	/* vnode free list */
 struct mntlist mountlist;			/* mounted filesystem list */
 struct simplelock mountlist_slock;

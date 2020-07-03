@@ -5,7 +5,6 @@
  *
  *	@(#)ufs_mount.c	2.1 (2.11BSD GTE) 1997/6/29
  */
-#include "../vfs/ufs211/ufs211_mount.h"
 
 #include <sys/param.h>
 
@@ -19,18 +18,21 @@
 #include <sys/stat.h>
 #include <sys/disklabel.h>
 #include <sys/ioctl.h>
-#include "../vfs/ufs211/ufs211_dir.h"
-#include "../vfs/ufs211/ufs211_extern.h"
-#include "../vfs/ufs211/ufs211_fs.h"
-#include "../vfs/ufs211/ufs211_inode.h"
-#include "../vfs/ufs211/ufs211_quota.h"
 
+#include "vfs/ufs211/ufs211_dir.h"
+#include "vfs/ufs211/ufs211_extern.h"
+#include "vfs/ufs211/ufs211_fs.h"
+#include "vfs/ufs211/ufs211_inode.h"
+#include "vfs/ufs211/ufs211_mount.h"
+#include "vfs/ufs211/ufs211_quota.h"
+
+void
 smount()
 {
 	register struct a {
 		char	*fspec;
 		char	*freg;
-		int	flags;
+		int		flags;
 	} *uap = (struct a *)u->u_ap;
 
 	ufs211_dev_t dev;
@@ -48,7 +50,7 @@ smount()
 	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->freg);
 	if ((ip = namei(ndp)) == NULL)
 		return;
-	if ((ip->i_mode & UFS211_FMT) != UFS211_FDIR) {
+	if ((ip->i_mode & UFS211_IFMT) != UFS211_IFDIR) {
 		error = ENOTDIR;
 		goto cmnout;
 	}
@@ -127,6 +129,7 @@ cmnout:
 	return(u->u_error = error);
 }
 
+void
 mount_updname(fs, on, from, lenon, lenfrom)
 	struct	ufs211_fs	*fs;
 	char	*on, *from;
@@ -138,7 +141,7 @@ mount_updname(fs, on, from, lenon, lenfrom)
 	bzero(fs->fs_fsmnt, sizeof (fs->fs_fsmnt));
 	bcopy(on, fs->fs_fsmnt, sizeof (fs->fs_fsmnt) - 1);
 	mp = ((int)fs - offsetof(mp, mp->m_filsys));
-	xmp = (struct ufs211_xmount *)SEG5;
+	xmp = (struct ufs211_xmount *) rmalloc(xmp, sizeof(struct ufs211_xmount *));
 	//mapseg5(mp->m_extern, XMOUNTDESC);
 	bzero(xmp, sizeof (struct xmount));
 	bcopy(on, xmp->xm_mnton, lenon);
@@ -222,7 +225,7 @@ found:
 	fs->fs_lasti = 1;
 	fs->fs_flags = flags;
 	if (ip) {
-		ip->i_flag |= IMOUNT;
+		ip->i_flag |= UFS211_IMOUNT;
 		cacheinval(ip);
 		IUNLOCK(ip);
 	}
@@ -297,7 +300,7 @@ found:
 	(void)iflush(dev, (struct inode *)NULL);
 #endif
 	ip = mp->m_inodp;
-	ip->i_flag &= ~IMOUNT;
+	ip->i_flag &= ~UFS211_IMOUNT;
 	irele(ip);
 	mp->m_inodp = 0;
 	mp->m_dev = 0;
@@ -329,7 +332,7 @@ getmdev(pdev, fname)
 			return (ENODEV); /* needs translation */
 		return (u->u_error);
 	}
-	if ((ip->i_mode&UFS211_FMT) != UFS211_FBLK) {
+	if ((ip->i_mode&UFS211_IFMT) != UFS211_IFBLK) {
 		iput(ip);
 		return (ENOTBLK);
 	}

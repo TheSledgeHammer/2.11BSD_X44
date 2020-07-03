@@ -41,6 +41,7 @@ struct buf
 	LIST_ENTRY(buf) b_hash;			/* Hash chain. */
 	LIST_ENTRY(buf) b_vnbufs;		/* Buffer's associated vnode. */
 	TAILQ_ENTRY(buf) b_freelist;	/* Free list position if not active. */
+
 	struct	buf 	*b_actf, **b_actb;	/* Device driver queue when active. */
 	struct  proc 	*b_proc;		/* Associated proc; NULL if kernel. */
 	volatile long	b_flags;		/* B_* flags. */
@@ -52,13 +53,13 @@ struct buf
 	char			b_xmem;			/* high order core address */
 	dev_t			b_dev;			/* major+minor device name */
 	struct {
-	    caddr_t b_addr;				/* low order core address */
+	    caddr_t 	b_addr;			/* low order core address */
 	} b_un;
 	void			*b_saveaddr;	/* Original b_addr for physio. */
 	daddr_t			b_lblkno;		/* Logical block number. */
 	daddr_t			b_blkno;		/* Underlying physical block number. */
 
-	void	(*b_iodone)(struct buf *);
+	void			(*b_iodone)(struct buf *);
 	struct	vnode 	*b_vp;			/* Device vnode. */
 	int				b_pfcent;		/* Center page when swapping cluster. */
 	int				b_dirtyoff;		/* Offset in buffer of dirty region. */
@@ -71,11 +72,11 @@ struct buf
 	caddr_t			b_savekva;      /* saved kva for transfer while bouncing */
 
 #ifndef VMIO
-	void	*b_pages[(MAXBSIZE + PAGE_SIZE - 1)/PAGE_SIZE];
+	void			*b_pages[(MAXBSIZE + PAGE_SIZE - 1)/PAGE_SIZE];
 #else
-	vm_page_t	b_pages[(MAXBSIZE + PAGE_SIZE - 1)/PAGE_SIZE];
+	vm_page_t		b_pages[(MAXBSIZE + PAGE_SIZE - 1)/PAGE_SIZE];
 #endif
-	int		b_npages;
+	int				b_npages;
 };
 
 /* Device driver compatibility definitions. */
@@ -103,7 +104,6 @@ struct cluster_save {
 	int			bs_nchildren;		/* Number of associated buffers. */
 	struct buf 	**bs_children;		/* List of associated buffers. */
 };
-
 
 /* These flags are kept in b_flags. */
 #define	B_WRITE			0x00000		/* non-read pseudo-flag */
@@ -134,7 +134,6 @@ struct cluster_save {
  * number of buffer hash entries
  */
 #define	BUFHSZ	512	/* must be power of 2 */
-//#define	BUFHASH(dev, blkno)	((struct buf *)&bufhash[((long)(dev) + blkno) & ((long)(BUFHSZ - 1))])
 /*
  * buffer hash table calculation, originally by David Greenman
  */
@@ -216,6 +215,7 @@ void	cluster_callback (struct buf *);
 int		cluster_read (struct vnode *, u_quad_t, daddr_t, long, struct ucred *, struct buf **);
 void	cluster_write (struct buf *, u_quad_t);
 u_int	minphys (struct buf *);
+
 void	vwakeup (struct buf *);
 void	vmapbuf (struct buf *);
 void	vunmapbuf (struct buf *);

@@ -1,5 +1,21 @@
-NULLFS:
-	- Fix to match current vfs
+UFS211:
+- Remove bio (after taking needed components) 
+Completed:
+- alloc
+- bmap
+- quota
+- dsort 	(except: dk_alloc)
+- disksubr 	(fix-up use of pdp memory segmentation)
+- mount		(fix-up use of pdp memory segmentation)
+- subr
+To Complete:
+- vnops
+- vfsops
+- namei (lookup)
+- inode
+
+LOFS:
+	- Update with components from NULLFS
 UFML:
 	- Fix to match current vfs
 	- Fix-up ufml_subr.c

@@ -33,6 +33,7 @@
 #define _MACHINE_PC_BIOS_H_
 
 #include <machine/vmparam.h>
+
 /*
  * Signature structure for the BIOS32 Service Directory header
  */

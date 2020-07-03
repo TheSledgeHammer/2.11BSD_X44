@@ -61,7 +61,7 @@ struct ufs211_quota {
 #define	MAX_IQ_WARN	3
 #define	MAX_DQ_WARN	3
 
-struct	ufs211_dqblk {
+struct ufs211_dqblk {
 	u_long	dqb_bhardlimit;	/* absolute limit on disc blks alloc */
 	u_long	dqb_bsoftlimit;	/* preferred limit on disc blks */
 	u_long	dqb_curblocks;	/* current block count */
@@ -77,7 +77,7 @@ struct	ufs211_dqblk {
  * There is one allocated for each quota that exists on any filesystem
  * for the current user. A cache is kept of other recently used entries.
  */
-struct	ufs211_dquot {
+struct ufs211_dquot {
 	struct	ufs211_dquot *dq_forw;
     struct	ufs211_dquot *dq_back;      /* MUST be first entry */
 	union	{
@@ -115,7 +115,7 @@ struct	ufs211_dquot {
 #define	NODQUOT		((struct dquot *) 0)
 #define	LOSTDQUOT	((struct dquot *) 1)
 
-#if defined(KERNEL) && defined(QUOTA) && !defined(SUPERVISOR)
+#if defined(KERNEL) && defined(QUOTA)
 struct	dquot *dquot, *dquotNDQUOT;
 int	ndquot;
 struct	dquot *discquota(), *inoquota(), *dqalloc(), *dqp();
@@ -161,11 +161,11 @@ struct	ufs211_dqhead {
 	struct	ufs211_dqhead *dqh_back;
 };
 
-#define	QUOTAMAP()	    mapseg5(quotreg, quotdesc)
-#define	QUOTAUNMAP()	normalseg5()
+#define	QUOTAMAP()	    rmalloc(quotreg, quotdesc)
+#define	QUOTAUNMAP()	rmfree()
 
-ufs211_size_t	quotreg;
-u_short	quotdesc;
+ufs211_size_t		quotreg;
+u_short				quotdesc;
 struct	ufs211_dquot **ix_dquot;
 
 #define	UFS211_NQHASH		16	/* small power of 2 */

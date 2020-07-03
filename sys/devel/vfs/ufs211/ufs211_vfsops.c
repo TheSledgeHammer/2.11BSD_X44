@@ -35,15 +35,17 @@
 #include <sys/buf.h>
 #include <sys/vnode.h>
 #include <sys/malloc.h>
+#include <sys/errno.h>
+#include <sys/user.h>
 
 #include <miscfs/specfs/specdev.h>
 
-#include "../vfs/ufs211/ufs211_dir.h"
-#include "../vfs/ufs211/ufs211_extern.h"
-#include "../vfs/ufs211/ufs211_fs.h"
-#include "../vfs/ufs211/ufs211_inode.h"
-#include "../vfs/ufs211/ufs211_mount.h"
-#include "../vfs/ufs211/ufs211_quota.h"
+#include "vfs/ufs211/ufs211_dir.h"
+#include "vfs/ufs211/ufs211_extern.h"
+#include "vfs/ufs211/ufs211_fs.h"
+#include "vfs/ufs211/ufs211_inode.h"
+#include "vfs/ufs211/ufs211_mount.h"
+#include "vfs/ufs211/ufs211_quota.h"
 
 struct vfsops ufs211_vfsops = {
 		ufs211_mount,
@@ -81,6 +83,7 @@ ufs211_mount(mp, path, data, ndp, p)
 	int error, flags;
 	mode_t accessmode;
 
+	ump = VFSTOUFS211(mp);
 }
 
 /*
@@ -94,6 +97,8 @@ ufs211_start(mp, flags, p)
 	int flags;
 	struct proc *p;
 {
+	struct ufs211_mount *ump;
+	ump = VFSTOUFS211(mp);
 	return (0);
 }
 
@@ -108,6 +113,8 @@ ufs211_unmount(mp, mntflags, p)
 	register struct ufs211_fs *fs;
 	int error, flags;
 
+	ump = VFSTOUFS211(mp);
+
 }
 
 /*
@@ -118,10 +125,17 @@ ufs211_root(mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
 {
+	struct ufs211_mount *ump;
 	struct vnode *nvp;
 	int error;
 
-	if (error == VFS_VGET(mp, UFS211_ROOTINO, &nvp))
+	if(error == VFSTOUFS211(mp)) {
+		return (error);
+	} else {
+		ump = VFSTOUFS211(mp);
+	}
+
+	if (error == VFS_VGET(ump, UFS211_ROOTINO, &nvp))
 		return (error);
 	*vpp = nvp;
 	return (0);
@@ -138,8 +152,10 @@ ufs211_quotactl(mp, cmds, uid, arg, p)
 	caddr_t arg;
 	struct proc *p;
 {
+	struct ufs211_mount *ump;
 	int cmd, type, error;
 
+	ump = VFSTOUFS211(mp);
 #ifndef QUOTA
 	return (EOPNOTSUPP);
 #else
@@ -213,6 +229,8 @@ ufs211_statfs(mp, sbp, p)
 	register struct ufs211_fs *fs;
 	struct nameidata nd;
 	register struct nameidata *ndp = &nd;
+
+	ump = VFSTOUFS211(mp);
 	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path);
 
 	ump = (struct ufs211_mount *)((int)ip->i_fs - offsetof(struct ufs211_mount, m_filsys));
@@ -280,12 +298,12 @@ ufs211_vget(mp, ino, vpp)
 	dev = ump->m_dev;
 
 	/* Allocate a new vnode/inode. */
-	if (error == getnewvnode(VT_UFS211, mp, ffs_vnodeop_p, &vp)) {
+	if (error == getnewvnode(VT_UFS211, mp, ufs211_vnodeops, &vp)) {
 		*vpp = NULL;
 		return (error);
 	}
 	type = ump->m_devvp->v_tag == VT_UFS211; /* XXX */
-	MALLOC(ip, struct ufs211_inode *, sizeof(struct ufs211_inode), type, M_WAITOK);
+	MALLOC(ip, struct ufs211_inode *, sizeof(struct ufs211_inode), UFS211, M_WAITOK);
 	bzero((caddr_t)ip, sizeof(struct ufs211_inode));
 	lockinit(&ip->i_lock, PINOD, "inode", 0, 0);
 	vp->v_data = ip;

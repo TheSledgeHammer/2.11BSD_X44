@@ -11,7 +11,8 @@
  */
 #define	BSD	211		/* 2.11 * 10, as cpp doesn't do floats */
 
-#define	__211BSD_Version__	0000000100	/* 211BSD 0.00.01 */
+/* Derived from NetBSD */
+#define	__211BSD_Version__	0000000100			/* 211BSD 0.00.01 */
 
 #define __211BSD_Prereq__(M,m,p) (((((M) * 100000000) + \
     (m) * 1000000) + (p) * 100) <= __211BSD_Version__)

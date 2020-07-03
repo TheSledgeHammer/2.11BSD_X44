@@ -17,38 +17,38 @@
  * minimize space allocated on the kernel stack.
  */
 struct nameidata {
-	caddr_t	ni_dirp;			/* pathname pointer */
-	enum	uio_seg	ni_segflg;	/* segment flag */
-	short	ni_nameiop;			/* see below */
-	struct	vnode *ni_cdir;		/* current directory */
-	struct	vnode *ni_rdir;		/* root directory, if not normal root */
+	caddr_t			ni_dirp;			/* pathname pointer */
+	enum	uio_seg	ni_segflg;			/* segment flag */
+	short			ni_nameiop;			/* see below */
+	struct	vnode 	*ni_cdir;			/* current directory */
+	struct	vnode 	*ni_rdir;			/* root directory, if not normal root */
 
 	/* Arguments to lookup */
-	struct	vnode *ni_startdir;	/* starting directory */
-	struct	vnode *ni_rootdir;	/* logical root directory */
+	struct	vnode 	*ni_startdir;		/* starting directory */
+	struct	vnode 	*ni_rootdir;		/* logical root directory */
 
 	/* Results: returned from/manipulated by lookup  */
-	struct	vnode *ni_vp;		/* vnode of result */
-	struct	vnode *ni_dvp;		/* vnode of intermediate directory */
+	struct	vnode 	*ni_vp;				/* vnode of result */
+	struct	vnode 	*ni_dvp;			/* vnode of intermediate directory */
 
 	/* Shared between namei and lookup/commit routines. */
-	long	ni_pathlen;			/* remaining chars in path */
-	char	*ni_next;			/* next location in pathname */
-	u_long	ni_loopcnt;			/* count of symlinks encountered */
+	long			ni_pathlen;			/* remaining chars in path */
+	char			*ni_next;			/* next location in pathname */
+	u_long			ni_loopcnt;			/* count of symlinks encountered */
 
 	struct componentname {
 		/* Arguments to lookup */
-		u_long	cn_nameiop;		/* namei operation */
-		u_long	cn_flags;		/* flags to namei */
-		struct	proc *cn_proc;	/* process requesting lookup */
-		struct	ucred *cn_cred;	/* credentials */
+		u_long			cn_nameiop;		/* namei operation */
+		u_long			cn_flags;		/* flags to namei */
+		struct	proc 	*cn_proc;		/* process requesting lookup */
+		struct	ucred 	*cn_cred;		/* credentials */
 
 		/* Shared between lookup and commit routines */
-		char	*cn_pnbuf;		/* pathname buffer */
-		char	*cn_nameptr;	/* pointer to looked up name */
-		long	cn_namelen;		/* length of looked up component */
-		u_long	cn_hash;		/* hash value of looked up name */
-		long	cn_consume;		/* chars to consume in lookup() */
+		char			*cn_pnbuf;		/* pathname buffer */
+		char			*cn_nameptr;	/* pointer to looked up name */
+		long			cn_namelen;		/* length of looked up component */
+		u_long			cn_hash;		/* hash value of looked up name */
+		long			cn_consume;		/* chars to consume in lookup() */
 	} ni_cnd;
 };
 
@@ -115,20 +115,21 @@ struct nameidata {
 #define	NCHNAMLEN	31	/* maximum name segment length we bother with */
 
 struct	namecache {
-	LIST_ENTRY(namecache) 	nc_hash;		/* hash chain */
-	TAILQ_ENTRY(namecache) 	nc_lru;			/* LRU chain */
-	struct	vnode 	  	*nc_dvp;			/* vnode of parent of name */
-	u_long				nc_dvpid;			/* capability number of nc_dvp */
-	struct	vnode 	  	*nc_vp;				/* vnode the name refers to */
-	u_long				nc_vpid;			/* capability number of nc_vp */
-	char				nc_nlen;			/* length of name */
-	char				nc_name[NCHNAMLEN];	/* segment name */
-
 	/* 2.11BSD hash chain */
-	struct	namecache 	*nc_forw;			/* hash chain, MUST BE FIRST */
-	struct	namecache 	*nc_back;			/* hash chain, MUST BE FIRST */
-	struct	namecache 	*nc_nxt;			/* LRU chain */
-	struct	namecache 	**nc_prev;			/* LRU chain */
+	struct	namecache 		*nc_forw;			/* hash chain, MUST BE FIRST */
+	struct	namecache 		*nc_back;			/* hash chain, MUST BE FIRST */
+	struct	namecache 		*nc_nxt;			/* LRU chain */
+	struct	namecache 		**nc_prev;			/* LRU chain */
+
+	/* 4.4BSD hash chain */
+	LIST_ENTRY(namecache) 	nc_hash;			/* hash chain */
+	TAILQ_ENTRY(namecache) 	nc_lru;				/* LRU chain */
+	struct	vnode 	  		*nc_dvp;			/* vnode of parent of name */
+	u_long					nc_dvpid;			/* capability number of nc_dvp */
+	struct	vnode 	  		*nc_vp;				/* vnode the name refers to */
+	u_long					nc_vpid;			/* capability number of nc_vp */
+	char					nc_nlen;			/* length of name */
+	char					nc_name[NCHNAMLEN];	/* segment name */
 };
 
 #ifdef KERNEL

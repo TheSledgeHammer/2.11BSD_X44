@@ -48,22 +48,26 @@ struct ufs211_args {
 #define	DEV_BMASK		0x3ffL		/* DEV_BSIZE - 1 */
 #define	MAXBSIZE		1024
 
-/* i_mode */
-#define	UFS211_FMT		0170000		/* type of file */
-#define	UFS211_FCHR		0020000		/* character special */
-#define	UFS211_FDIR		0040000		/* directory */
-#define	UFS211_FBLK		0060000		/* block special */
-#define	UFS211_FREG		0100000		/* regular */
-#define	UFS211_FLNK		0120000		/* symbolic link */
-#define	UFS211_FSOCK	0140000		/* socket */
-#define	UFS211_SUID		04000		/* set user id on execution */
-#define	UFS211_SGID		02000		/* set group id on execution */
-#define	UFS211_SVTX		01000		/* save swapped text even after use */
-#define	UFS211_READ		0400		/* read, write, execute permissions */
-#define	UFS211_WRITE	0200
-#define	UFS211_EXEC		0100
+struct buf;
+struct ufs211_direct;
+struct disklabel;
+struct ufid;
+struct flock;
+struct ufs211_inode;
+struct mbuf;
+struct ufs211_mount;
+struct ufs211_xmount;
+struct nameidata;
+struct proc;
+struct ucred;
+struct ufs211_args;
+struct uio;
+struct vattr;
+struct vfsconf;
+struct vnode;
 
 __BEGIN_DECLS
+int	ufs211_makeinode (int mode, struct vnode *, struct vnode **, struct componentname *);
 int ufs211_lookup (struct vop_lookup_args *);
 int ufs211_create (struct vop_create_args *);
 int ufs211_open (struct vop_open_args *);
@@ -99,3 +103,9 @@ int	ufs211fifo_write (struct vop_write_args *);
 int	ufs211fifo_close (struct vop_close_args *);
 #endif
 __END_DECLS
+
+extern struct vnodeops ufs211_vnodeops;
+extern struct vnodeops ufs211_specops;
+#ifdef FIFO
+extern struct vnodeops ufs211_fifoops;
+#endif

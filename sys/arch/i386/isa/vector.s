@@ -164,7 +164,7 @@ IDTVEC(fast/**/irq_num)														;\
 		pushl	%edx														;\
 		pushl	%ds															;\
 		pushl	%es															;\
-		movl	$KDSEL,%eax													;\
+		movl	$GSEL(GDATA_SEL, SEL_KPL), %eax								;\
 		movl	%ax,%ds														;\
 		movl	%ax,%es														;\
 		/* have to do this here because %eax is lost on call */				;\

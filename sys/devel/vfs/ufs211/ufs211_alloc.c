@@ -5,16 +5,16 @@
  *
  *	@(#)ufs_alloc.c	1.3 (2.11BSD GTE) 1996/9/19
  */
-#include <sys/param.h>
 
+#include <sys/param.h>
 #include <sys/user.h>
 #include <sys/mount.h>
 #include <sys/kernel.h>
 #include <sys/buf.h>
-#include "../vfs/ufs211/ufs211_dir.h"
-#include "../vfs/ufs211/ufs211_fs.h"
-#include "../vfs/ufs211/ufs211_inode.h"
-#include "../vfs/ufs211/ufs211_quota.h"
+#include "vfs/ufs211/ufs211_dir.h"
+#include "vfs/ufs211/ufs211_fs.h"
+#include "vfs/ufs211/ufs211_inode.h"
+#include "vfs/ufs211/ufs211_quota.h"
 
 typedef	struct fblk *FBLKP;
 

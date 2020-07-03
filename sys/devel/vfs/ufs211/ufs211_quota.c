@@ -11,14 +11,16 @@
  *
  * Routines used in checking limits on file system usage.
  */
+#include <sys/errno.h>
+#include <sys/user.h>
+#include <sys/param.h>
 
-#include "../vfs/ufs211/ufs211_quota.h"
-
-#include "../vfs/ufs211/ufs211_extern.h"
-#include "../vfs/ufs211/ufs211_fs.h"
-#include "../vfs/ufs211/ufs211_inode.h"
-#include "../vfs/ufs211/ufs211_mount.h"
-//#ifdef QUOTA
+#include "vfs/ufs211/ufs211_quota.h"
+#include "vfs/ufs211/ufs211_extern.h"
+#include "vfs/ufs211/ufs211_fs.h"
+#include "vfs/ufs211/ufs211_inode.h"
+#include "vfs/ufs211/ufs211_mount.h"
+#ifdef QUOTA
 
 /*
  * Find the dquot structure that should
@@ -107,7 +109,7 @@ chkdq(ip, change, force)
         if (dq->dq_bwarn == 0 && dq->dq_bsoftlimit &&
 	    (dq->dq_curblocks + change) < dq->dq_bsoftlimit) {
 		dq->dq_bwarn = MAX_DQ_WARN;
-		if (dq->dq_own == u.u_quota) {
+		if (dq->dq_own == u->u_quota) {
 			uprintf("\nUNDER DISC QUOTA: (%s) by %d Kbytes\n",
 				ip->i_fs->fs_fsmnt,
 #ifdef pdp11
@@ -132,10 +134,10 @@ chkdq(ip, change, force)
 	 * If user is over quota, or has run out of warnings, then
 	 * disallow space allocation (except su's are never stopped).
 	 */
-	if (u.u_uid == 0)
+	if (u->u_uid == 0)
 		force = 1;
 	if (!force && dq->dq_bwarn == 0) {
-		if ((dq->dq_flags & DQ_BLKS) == 0 && dq->dq_own == u.u_quota) {
+		if ((dq->dq_flags & DQ_BLKS) == 0 && dq->dq_own == u->u_quota) {
 		     uprintf("\nOVER DISC QUOTA: (%s) NO MORE DISC SPACE\n",
 			ip->i_fs->fs_fsmnt);
 		     dq->dq_flags |= DQ_BLKS;
@@ -146,14 +148,14 @@ chkdq(ip, change, force)
 		dq->dq_curblocks += change;
 		if (dq->dq_curblocks < dq->dq_bsoftlimit)
 			return (0);
-		if (dq->dq_own == u.u_quota)
+		if (dq->dq_own == u->u_quota)
 			uprintf("\nWARNING: disc quota (%s) exceeded\n",
 			   ip->i_fs->fs_fsmnt);
 		return (0);
 	}
 	if (!force && dq->dq_bhardlimit &&
 	    dq->dq_curblocks + change >= dq->dq_bhardlimit) {
-		if ((dq->dq_flags & DQ_BLKS) == 0 && dq->dq_own == u.u_quota) {
+		if ((dq->dq_flags & DQ_BLKS) == 0 && dq->dq_own == u->u_quota) {
 			uprintf("\nDISC LIMIT REACHED (%s) - WRITE FAILED\n",
 			   ip->i_fs->fs_fsmnt);
 			dq->dq_flags |= DQ_BLKS;
@@ -216,10 +218,10 @@ chkiq(dev, ip, uid, force)
 	 * then dq == NODQUOT & we wouldn't get here at all, but
 	 * then again, its not going to harm anything ...
 	 */
-	if (u.u_uid == 0)		/* su's musn't be stopped */
+	if (u->u_uid == 0)		/* su's musn't be stopped */
 		force = 1;
 	if (!force && dq->dq_iwarn == 0) {
-		if ((dq->dq_flags & DQ_INODS) == 0 && dq->dq_own == u.u_quota) {
+		if ((dq->dq_flags & DQ_INODS) == 0 && dq->dq_own == u->u_quota) {
 			uprintf("\nOVER FILE QUOTA - NO MORE FILES (%s)\n",
 			    getfs(dq->dq_dev)->fs_fsmnt);
 			dq->dq_flags |= DQ_INODS;
@@ -229,7 +231,7 @@ chkiq(dev, ip, uid, force)
 	}
 	if (dq->dq_curinodes < dq->dq_isoftlimit) {
 		if (++dq->dq_curinodes >= dq->dq_isoftlimit &&
-		    dq->dq_own == u.u_quota)
+		    dq->dq_own == u->u_quota)
 			uprintf("\nWARNING - too many files (%s)\n",
 			    getfs(dq->dq_dev)->fs_fsmnt);
 		dqrele(dq);
@@ -237,7 +239,7 @@ chkiq(dev, ip, uid, force)
 	}
 	if (!force && dq->dq_ihardlimit &&
 	    dq->dq_curinodes + 1 >= dq->dq_ihardlimit) {
-		if ((dq->dq_flags & DQ_INODS) == 0 && dq->dq_own == u.u_quota) {
+		if ((dq->dq_flags & DQ_INODS) == 0 && dq->dq_own == u->u_quota) {
 		     uprintf("\nFILE LIMIT REACHED - CREATE FAILED (%s)\n",
 			getfs(dq->dq_dev)->fs_fsmnt);
 		     dq->dq_flags |= DQ_INODS;

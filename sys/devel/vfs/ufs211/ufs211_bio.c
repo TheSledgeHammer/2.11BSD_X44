@@ -16,8 +16,8 @@
 #include <sys/map.h>
 #include <sys/trace.h>
 
-#include "../vfs/ufs211/ufs211_extern.h"
-#include "../vfs/ufs211/ufs211_fs.h"
+#include "vfs/ufs211/ufs211_extern.h"
+#include "vfs/ufs211/ufs211_fs.h"
 
 /*
  * Read in (if necessary) the block and return a buffer pointer.

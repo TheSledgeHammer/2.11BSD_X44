@@ -259,6 +259,7 @@ minphys(bp)
 /*
  * Do a read on a device for a user process.
  */
+int
 rawread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
@@ -270,6 +271,7 @@ rawread(dev, uio)
 /*
  * Do a write on a device for a user process.
  */
+int
 rawwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;

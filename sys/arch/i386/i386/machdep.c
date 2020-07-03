@@ -955,6 +955,7 @@ init386(first)
 	enable_intr();
 
 	i386_bus_space_check(avail_end, biosbasemem, biosextmem);
+	vm86_initialize();
 
 	/*
 	 * This memory size stuff is a real mess.  Here is a simple

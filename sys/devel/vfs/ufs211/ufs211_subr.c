@@ -13,10 +13,11 @@
 #include <sys/mount.h>
 #include <sys/kernel.h>
 #include <sys/buf.h>
-#include "../vfs/ufs211/ufs211_fs.h"
-#include "../vfs/ufs211/ufs211_inode.h"
-#include "../vfs/ufs211/ufs211_mount.h"
-#include "../vfs/ufs211/ufs211_quota.h"
+#include "vfs/ufs211/ufs211_fs.h"
+#include "vfs/ufs211/ufs211_inode.h"
+#include "vfs/ufs211/ufs211_mount.h"
+#include "vfs/ufs211/ufs211_quota.h"
+#include "vfs/ufs211/ufs211_extern.h"
 
 /*
  * Flush all the blocks associated with an inode.
@@ -68,7 +69,7 @@ syncip(ip)
 			bwrite(bp);
 		}
 	}
-	ip->i_flag |= ICHG;
+	ip->i_flag |= UFS211_ICHG;
 	iupdat(ip, &time, &time, 1);
 }
 

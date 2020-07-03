@@ -110,11 +110,8 @@ void	ffs_checkoverlap (struct buf *, struct inode *);
 #endif
 __END_DECLS
 
-extern struct ffs_vnodeops;
-extern struct ffs_specops;
+extern struct vnodeops ffs_vnodeops;
+extern struct vnodeops ffs_specops;
 #ifdef FIFO
-extern struct ffs_fifoops;
-#define FFS_FIFOOPS ffs_fifoop_p
-#else
-#define FFS_FIFOOPS NULL
+extern struct vnodeops ffs_fifoops;
 #endif
