@@ -200,8 +200,13 @@ struct region_descriptor {
 #define	GINVTSS_SEL		12	/* Task state to take invalid tss on */
 #define	GDBLFLT_SEL		13	/* Task state to take double fault on */
 #define	GEXIT_SEL		14	/* Task state to process cpu_texit() on */
+#define GBIOSCODE32_SEL 15	/* BIOS interface (32bit Code) */
+#define GBIOSCODE16_SEL 16	/* BIOS interface (16bit Code) */
+#define GBIOSDATA_SEL	17	/* BIOS interface (Data) */
+#define GBIOSUTIL_SEL	18	/* BIOS interface (Utility) */
+#define GBIOSARGS_SEL 	19	/* BIOS interface (Arguments) */
 
-#define NGDT 			15
+#define NGDT 			20
 
 /* local descriptor table */
 #define	LUNULL_SEL		0	/* Null Descriptor */

@@ -56,3 +56,5 @@ typedef char *va_list;
 #define	va_end(ap)
 
 #endif /* !_STDARG_H_ */
+
+

@@ -47,6 +47,10 @@
 #ifndef	_SYS_DISK_H_
 #define	_SYS_DISK_H_
 
+#include <sys/disklabel.h>
+#include <sys/ioctl.h>
+#include <sys/ioccom.h>
+
 /*
  * Disk device structures.
  *
@@ -138,6 +142,19 @@ struct disksort_stats {
 	long	ds_endsecond;		/* # insertions at end of 2nd list */
 };
 #endif
+
+#define	DIOCGSECTORSIZE	_IOR('d', 128, u_int)
+	/*
+	 * Get the sector size of the device in bytes.  The sector size is the
+	 * smallest unit of data which can be transferred from this device.
+	 * Usually this is a power of 2 but it might not be (i.e. CDROM audio).
+	 */
+
+#define	DIOCGMEDIASIZE	_IOR('d', 129, off_t)	/* Get media size in bytes */
+	/*
+	 * Get the size of the entire device in bytes.  This should be a
+	 * multiple of the sector size.
+	 */
 
 #ifdef KERNEL
 extern	int disk_count;			/* number of disks in global disklist */

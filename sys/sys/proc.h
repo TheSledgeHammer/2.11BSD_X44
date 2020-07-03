@@ -35,8 +35,8 @@ struct	proc {
 	char				p_dummy;		/* room for one more, here */
 
     short				p_uid;			/* user id, used to direct tty signals */
-	short				p_pid;			/* unique process id */
-	short				p_ppid;			/* process id of parent */
+    pid_t				p_pid;			/* unique process id */
+    pid_t				p_ppid;			/* process id of parent */
 
     /* Substructures: */
 	struct	pcred 	 	*p_cred;		/* Process owner's identity. */
@@ -107,6 +107,9 @@ struct	proc {
     struct  pgrp 	    *p_pgrp;        /* Pointer to process group. */
     struct  sysentvec   *p_sysent; 	    /* System call dispatch information. */
 
+/* End area that is copied on creation. */
+#define	p_endcopy		p_thread
+
     void				*p_thread;		/* Id for this "thread"; Mach glue. XXX */
 
     struct	proc 	    *p_link;		/* linked list of running processes */
@@ -128,6 +131,8 @@ struct	proc {
     short				p_xstat;		/* exit status for wait */
 	struct  rusage    	p_ru;			/* exit information */
 	struct  k_rusage    p_kru;			/* exit information kernel */
+
+	struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
 };
 
 struct	session {

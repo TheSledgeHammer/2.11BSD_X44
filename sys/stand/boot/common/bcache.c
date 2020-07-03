@@ -27,6 +27,10 @@
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
+#include <sys/user.h>
+
+#include "bootstand.h"
+
 /*__FBSDID("$FreeBSD$"); */
 
 /*

@@ -50,8 +50,8 @@
 #include <sys/ktrace.h>
 #endif
 
-#include <vm/include/vm_param.h>
 #include <vm/include/pmap.h>
+#include <vm/include/vm_param.h>
 #include <vm/include/vm_map.h>
 
 #include <machine/trap.h>
@@ -76,6 +76,7 @@ extern short cpl;
  */
 
 /*ARGSUSED*/
+void
 trap(frame)
 	struct trapframe frame;
 {
@@ -300,6 +301,7 @@ out:
  * Like trap(), argument is call by reference.
  */
 /*ARGSUSED*/
+void
 syscall(frame)
 	volatile struct syscframe frame;
 {

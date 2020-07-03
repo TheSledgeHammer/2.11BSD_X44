@@ -29,10 +29,11 @@
 #include <sys/cdefs.h>
 /* __FBSDID("$FreeBSD: src/sys/boot/common/misc.c,v 1.8.4.1 2004/09/03 19:25:40 iedowse Exp $"); */
 
-#include <lib/libsa/loadfile.h>
+#include <sys/user.h>
+
 #include <bootstrap.h>
 #include <boot/bootstand.h>
-
+#include <lib/libsa/loadfile.h>
 
 #define	min(A, B)	(((A) < (B)) ? (A) : (B))
 
@@ -211,5 +212,10 @@ hexdump(void *region, size_t len)
 void
 dev_cleanup(void)
 {
+	int i;
 
+	/* Call cleanup routines */
+	for (i = 0; devsw[i] != NULL; ++i)
+		if (devsw[i]->dv_cleanup != NULL)
+			(devsw[i]->dv_cleanup)();
 }

@@ -72,13 +72,77 @@ char	*strncpy(char *, const char *, size_t);
 void	__assert(const char *, const char *, int, const char *);
 void	kern_assert(const char *, ...);
 
+/* Prototypes for which GCC built-ins exist. */
+void	*memcpy (void *, const void *, size_t);
+int	 	memcmp (const void *, const void *, size_t);
+void	*memset (void *, int, size_t);
+
 #define __KASSERTSTR  "kernel %sassertion \"%s\" failed: file \"%s\", line %d "
+
 #ifdef NDEBUG						/* tradition! */
 #define	assert(e)	((void)0)
 #else
 #define	assert(e)	(__predict_true((e)) ? (void)0 :		    \
 		kern_assert(__KASSERTSTR, "", #e, __FILE__, __LINE__))
+#ifdef __STDC__
+#define	assert(e)	(__predict_true((e)) ? (void)0 :		    \
+			    __assert("", __FILE__, __LINE__, #e))
+#else
+#define	assert(e)	(__predict_true((e)) ? (void)0 :		    \
+			    __assert("", __FILE__, __LINE__, "e"))
 #endif
+#endif
+
+#ifdef __COVERITY__
+#ifndef DIAGNOSTIC
+#define DIAGNOSTIC
+#endif
+#endif
+
+#ifndef DIAGNOSTIC
+#define _DIAGASSERT(a)			(void)0
+#ifdef lint
+#define	KASSERTMSG(e, msg, ...)	/* NOTHING */
+#define	KASSERT(e)				/* NOTHING */
+#else /* !lint */
+#define	KASSERTMSG(e, msg, ...)	((void)0)
+#define	KASSERT(e)				((void)0)
+#endif /* !lint */
+#else /* DIAGNOSTIC */
+#define _DIAGASSERT(a)			assert(a)
+#define	KASSERTMSG(e, msg, ...)										\
+			(__predict_true((e)) ? (void)0 :		    			\
+			    kern_assert(__KASSERTSTR msg, "diagnostic ", #e,	\
+				__FILE__, __LINE__, ## __VA_ARGS__))
+
+#define	KASSERT(e)	(__predict_true((e)) ? (void)0 :		    	\
+			    kern_assert(__KASSERTSTR, "diagnostic ", #e,	    \
+				__FILE__, __LINE__))
+#ifdef __STDC__
+#define	KASSERT(e)	(__predict_true((e)) ? (void)0 :		    	\
+			    __assert("diagnostic ", __FILE__, __LINE__, #e))
+#else
+#define	KASSERT(e)	(__predict_true((e)) ? (void)0 :		    	\
+			    __assert("diagnostic ", __FILE__, __LINE__, "e"))
+#endif
+#endif
+
+#ifndef DEBUG
+#ifdef lint
+#define	KDASSERT(e)	/* NOTHING */
+#else /* lint */
+#define	KDASSERT(e)	((void)0)
+#endif /* lint */
+#else
+#ifdef __STDC__
+#define	KDASSERT(e)	(__predict_true((e)) ? (void)0 :		    \
+			    __assert("debugging ", __FILE__, __LINE__, #e))
+#else
+#define	KDASSERT(e)	(__predict_true((e)) ? (void)0 :		    \
+			    __assert("debugging ", __FILE__, __LINE__, "e"))
+#endif
+#endif
+
 
 #ifndef	CTASSERT
 #define	CTASSERT(x)				__CTASSERT(x)
@@ -88,25 +152,4 @@ void	kern_assert(const char *, ...);
 #endif
 #ifndef	CTASSERT_UNSIGNED
 #define	CTASSERT_UNSIGNED(x)	__CTASSERT(((typeof(x))-1) >= 0)
-#endif
-
-#ifndef DIAGNOSTIC
-#define _DIAGASSERT(a)	(void)0
-#ifdef lint
-#define	KASSERTMSG(e, msg, ...)	/* NOTHING */
-#define	KASSERT(e)				/* NOTHING */
-#else /* !lint */
-#define	KASSERTMSG(e, msg, ...)	((void)0)
-#define	KASSERT(e)				((void)0)
-#endif /* !lint */
-#else /* DIAGNOSTIC */
-#define _DIAGASSERT(a)	assert(a)
-#define	KASSERTMSG(e, msg, ...)		\
-			(__predict_true((e)) ? (void)0 :		    \
-			    kern_assert(__KASSERTSTR msg, "diagnostic ", #e,	    \
-				__FILE__, __LINE__, ## __VA_ARGS__))
-
-#define	KASSERT(e)	(__predict_true((e)) ? (void)0 :		    \
-			    kern_assert(__KASSERTSTR, "diagnostic ", #e,	    \
-				__FILE__, __LINE__))
 #endif

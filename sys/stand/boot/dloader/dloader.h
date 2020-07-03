@@ -55,6 +55,18 @@ void 	dvar_free(dvar_t *lastp);
 
 int 	perform(int ac, char **av);
 
+struct dcommand_table {
+	int (*command_local)(int ac, char **av);
+	int (*command_lunset)(int ac, char **av);
+	int (*command_lunsetif)(int ac, char **av);
+	int (*command_loadall)(int ac, char **av);
+	int (*command_menuclear)(int ac, char **av);
+	int (*command_menuitem)(int ac, char **av);
+	int (*command_menuadd)(int ac, char **av);
+	int (*command_menu)(int ac, char **av);
+};
+extern struct dcommand_table dcmds;
+
 #define COMMON_DCOMMANDS																		\
 		{	"local", "List local variables", command_local },									\
 		{	"lunset", "Unset local variable", command_lunset },									\

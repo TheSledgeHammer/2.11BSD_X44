@@ -66,15 +66,15 @@ relocater:
 				 * set up GDT from new location
 				 */
 				movl	%eax, %esi		/* our base address */
-				add	$(relocater.1-relocater), %eax
-				jmp	*%eax
+				add		$(relocater.1-relocater), %eax
+				jmp		*%eax
 relocater.1:
 				/* set up jump */
-				lea	(relocater.2-relocater)(%esi), %eax
+				lea		(relocater.2-relocater)(%esi), %eax
 				movl	%eax, (jump_vector-relocater) (%esi)
 
 				/* set up gdt */
-				lea	(gdt-relocater) (%esi), %eax
+				lea		(gdt-relocater) (%esi), %eax
 				movl	%eax, (gdtaddr-relocater) (%esi)
 
 				/* load gdt */
@@ -82,7 +82,7 @@ relocater.1:
 				lidt	(idt-relocater) (%esi)
 
 				/* update cs */
-				ljmp *(jump_vector-relocater) (%esi)
+				ljmp 	*(jump_vector-relocater) (%esi)
 
 				.code32
 relocater.2:
@@ -111,27 +111,27 @@ relocater.2:
 loop.1:
 				movl	(relocater_data-relocater)(%ebx, %edx, 4), %eax
 				testl	%eax, %eax
-				jz	loop.2
+				jz		loop.2
 				movl	(relocater_data-relocater)(%ebx, %edx, 4), %esi
-				inc	%edx
+				inc		%edx
 				movl	(relocater_data-relocater)(%ebx, %edx, 4), %edi
-				inc	%edx
+				inc		%edx
 				movl	(relocater_data-relocater)(%ebx, %edx, 4), %ecx
-				inc	%edx
+				inc		%edx
 				rep
 				movsb
-				jmp	loop.1
+				jmp		loop.1
 loop.2:
 				movl	%ebx, %esi		/* restore esi */
 				/*
 				 * data is relocated, switch to 16bit mode
 				 */
-				lea	(relocater.3-relocater)(%esi), %eax
+				lea		(relocater.3-relocater)(%esi), %eax
 				movl	%eax, (jump_vector-relocater) (%esi)
 				movl	$SEL_RCODE, %eax
 				movl	%eax, (jump_vector-relocater+4) (%esi)
 
-				ljmp *(jump_vector-relocater) (%esi)
+				ljmp 	*(jump_vector-relocater) (%esi)
 relocater.3:
 				.code16
 
@@ -161,29 +161,29 @@ relocater.4:
 				/*
 				 * set real mode irq offsets
 				 */
-				movw $0x7008,%bx
-				in 	 $0x21,%al			# Save master
-				push %ax				#  IMR
-				in 	 $0xa1,%al			# Save slave
-				push %ax				#  IMR
-				movb $0x11,%al			# ICW1 to
-				outb %al,$0x20			#  master,
-				outb %al,$0xa0			#  slave
-				movb %bl,%al			# ICW2 to
-				outb %al,$0x21			#  master
-				movb %bh,%al			# ICW2 to
-				outb %al,$0xa1			#  slave
-				movb $0x4,%al			# ICW3 to
-				outb %al,$0x21			#  master
-				movb $0x2,%al			# ICW3 to
-				outb %al,$0xa1			#  slave
-				movb $0x1,%al			# ICW4 to
-				outb %al,$0x21			#  master,
-				outb %al,$0xa1			#  slave
-				pop  %ax				# Restore slave
-				outb %al,$0xa1			#  IMR
-				pop  %ax				# Restore master
-				outb %al,$0x21			#  IMR
+				movw 	$0x7008,%bx
+				in 	 	$0x21,%al			# Save master
+				push 	%ax					#  IMR
+				in 	 	$0xa1,%al			# Save slave
+				push 	%ax					#  IMR
+				movb 	$0x11,%al			# ICW1 to
+				outb 	%al,$0x20			#  master,
+				outb 	%al,$0xa0			#  slave
+				movb 	%bl,%al				# ICW2 to
+				outb 	%al,$0x21			#  master
+				movb 	%bh,%al				# ICW2 to
+				outb 	%al,$0xa1			#  slave
+				movb 	$0x4,%al			# ICW3 to
+				outb 	%al,$0x21			#  master
+				movb 	$0x2,%al			# ICW3 to
+				outb	%al,$0xa1			#  slave
+				movb	$0x1,%al			# ICW4 to
+				outb 	%al,$0x21			#  master,
+				outb 	%al,$0xa1			#  slave
+				pop  	%ax					# Restore slave
+				outb 	%al,$0xa1			#  IMR
+				pop  	%ax					# Restore master
+				outb 	%al,$0x21			#  IMR
 								# done
 				/*
 				 * Should A20 be left enabled?
@@ -342,15 +342,15 @@ idt:			.word 0x3ff
 
 				.globl relocater_data
 relocater_data:
-				.long 0			/* src */
-				.long 0			/* dest */
-				.long 0			/* size */
-				.long 0			/* src */
-				.long 0			/* dest */
-				.long 0			/* size */
-				.long 0			/* src */
-				.long 0			/* dest */
-				.long 0			/* size */
+				.long 0						/* src */
+				.long 0						/* dest */
+				.long 0						/* size */
+				.long 0						/* src */
+				.long 0						/* dest */
+				.long 0						/* size */
+				.long 0						/* src */
+				.long 0						/* dest */
+				.long 0						/* size */
 				.long 0
 
 				.globl relocater_size

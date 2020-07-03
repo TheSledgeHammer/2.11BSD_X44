@@ -157,6 +157,20 @@ extern const char bootprog_interp[];
 #define	INTERP_DEFINE(interpstr) \
 const char bootprog_interp[] = "$Interpreter:" interpstr
 
+/*
+ * Preloaded file metadata header.
+ *
+ * Metadata are allocated on our heap, and copied into kernel space
+ * before executing the kernel.
+ */
+struct file_metadata
+{
+    size_t					md_size;
+    uint16_t				md_type;
+    struct file_metadata	*md_next;
+    char					md_data[1];	/* data are immediately appended */
+};
+
 struct preloaded_file;
 
 /*
@@ -170,14 +184,23 @@ struct preloaded_file;
  */
 struct preloaded_file
 {
-    char					*f_name;		/* file name */
-    char					*f_type;		/* verbose file type, eg 'ELF kernel', 'pnptable', etc. */
-    char					*f_args;		/* arguments for the file */
-    int						f_loader;		/* index of the loader that read the file */
-    vm_offset_t				f_addr;			/* load address */
-    size_t					f_size;			/* file size */
-    struct preloaded_file	*f_next;		/* next file */
-    u_long                  marks[MARK_MAX];/* filled by loadfile() */
+	struct preloaded_file	*f_next;			/* next file */
+    char					*f_name;			/* file name */
+    char					*f_type;			/* verbose file type, eg 'ELF kernel', 'pnptable', etc. */
+    char					*f_args;			/* arguments for the file */
+    int						f_loader;			/* index of the loader that read the file */
+    vm_offset_t				f_addr;				/* load address */
+    size_t					f_size;				/* file size */
+    u_long                  f_marks[MARK_MAX];	/* filled by loadfile() */
+
+    /* ELF Symbols */
+	uint32_t				f_flags;
+	uint32_t 				f_mem_lower;
+	uint32_t 				f_mem_upper;
+	uint32_t				f_elfshdr_num;
+	uint32_t				f_elfshdr_size;
+	caddr_t					f_elfshdr_addr;
+	uint32_t				f_elfshdr_shndx;
 };
 
 struct file_format
@@ -191,19 +214,10 @@ struct file_format
 extern struct file_format		*file_formats[];	/* supplied by consumer */
 extern struct preloaded_file	*preloaded_files;
 
-int						mod_load(char *name, struct mod_depend *verinfo, int argc, char *argv[]);
-int						mod_loadkld(const char *name, int argc, char *argv[]);
-void					unload(void);
-
 struct preloaded_file 	*file_alloc(void);
 struct preloaded_file 	*file_findfile(char *name, char *type);
 struct preloaded_file 	*file_loadraw(const char *name, char *type, int insert);
 void 					file_discard(struct preloaded_file *fp);
-
-int	aout_loadfile(char *filename, u_int32_t dest, struct preloaded_file **result);
-int	ecoff_loadfile(char *filename, u_int32_t dest, struct preloaded_file **result);
-int	elf32_loadfile(char *filename, u_int32_t dest, struct preloaded_file **result);
-int	elf64_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result);
 
 /*
  * The intention of the architecture switch is to provide a convenient
@@ -256,4 +270,12 @@ time_t	time(time_t *tloc);
 #define ELF32_KERNELTYPE 	"elf32 kernel"
 #define ELF64_KERNELTYPE 	"elf64 kernel"
 
+int	aout_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result);
+int	ecoff_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result);
+int	elf32_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result);
+int	elf64_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result);
+
+/* ksyms.c: elf objects */
+void 	ksyms_addr_set(void *ehdr, void *shdr, void *symbase);
+int		preload_ksyms(struct bootinfo *bi, struct preloaded_file *fp);
 #endif /* !_BOOTSTRAP_H_ */

@@ -50,76 +50,25 @@
 #ifndef	_PMAP_MACHINE_
 #define	_PMAP_MACHINE_
 
-#include <sys/queue.h>
 /*
  * 386 page table entry and page table directory
  * W.Jolitz, 8/89
  */
 
-struct pde {
-unsigned int
-		pd_v:1,			/* valid bit */
-		pd_prot:2,		/* access control */
-		pd_mbz1:2,		/* reserved, must be zero */
-		pd_u:1,			/* hardware maintained 'used' bit */
-		:1,				/* not used */
-		pd_mbz2:2,		/* reserved, must be zero */
-		:3,				/* reserved for software */
-		pd_pfnum:20;	/* physical page frame number of pte's*/
-};
-
-#define	PD_MASK		0xffc00000	/* page directory address bits */
-#define	PT_MASK		0x003ff000	/* page table address bits */
-#define	PD_SHIFT	22			/* page directory address shift */
-#define	PG_SHIFT	12			/* page table address shift */
-
-struct pte {
-unsigned int
-		pg_v:1,			/* valid bit */
-		pg_prot:2,		/* access control */
-		pg_mbz1:2,		/* reserved, must be zero */
-		pg_u:1,			/* hardware maintained 'used' bit */
-		pg_m:1,			/* hardware maintained modified bit */
-		pg_mbz2:2,		/* reserved, must be zero */
-		pg_w:1,			/* software, wired down page */
-		:1,				/* software (unused) */
-		pg_nc:1,		/* 'uncacheable page' bit */
-		pg_pfnum:20;	/* physical page frame number */
-};
-
-#define	PG_V		0x00000001
-#define	PG_RO		0x00000000
-#define	PG_RW		0x00000002
-#define	PG_u		0x00000004
-#define	PG_PROT		0x00000006 /* all protection bits . */
-#define	PG_W		0x00000200
-#define PG_N		0x00000800 /* Non-cacheable */
-#define	PG_M		0x00000040
-#define PG_U		0x00000020
-#define PG_A		0x00000060
-#define	PG_FRAME	0xfffff000
-
-
-#define	PG_NOACC	0
-#define	PG_KR		0x00000000
-#define	PG_KW		0x00000002
-#define	PG_URKR		0x00000004
-#define	PG_URKW		0x00000004
-#define	PG_UW		0x00000006
-
-/* Garbage for current bastardized pager that assumes a hp300 */
-#define	PG_NV	0
-#define	PG_CI	0
-/*
- * Page Protection Exception bits
- */
-
-#define PGEX_P		0x01		/* Protection violation vs. not present */
-#define PGEX_W		0x02		/* during a Write cycle */
-#define PGEX_U		0x04		/* access from User mode (UPL) */
-
 typedef struct pde	pd_entry_t;	/* page directory entry */
 typedef struct pte	pt_entry_t;	/* Mach page table entry */
+
+#define	PD_SHIFT_PAE		21
+#define	PG_FRAME_PAE		(0x000ffffffffff000ull)
+#define	PG_PS_FRAME_PAE		(0x000fffffffe00000ull)
+
+#define	PD_SHIFT_NOPAE		22
+#define	PG_FRAME_NOPAE		(~PGMASK)
+#define	PG_PS_FRAME_NOPAE	(0xffc00000)
+
+#ifndef NKPDE
+#define NKPDE				(KVA_PAGES)	/* number of page tables/pde's */
+#endif
 
 /*
  * One page directory, shared between
@@ -128,8 +77,8 @@ typedef struct pte	pt_entry_t;	/* Mach page table entry */
 #define I386_PAGE_SIZE	NBPG
 #define I386_PDR_SIZE	NBPDR
 
-#define I386_KPDES		8 							/* KPT page directory size */
-#define I386_UPDES		NBPDR/sizeof(struct pde)-8 	/* UPT page directory size */
+#define I386_KPDES		8 										/* KPT page directory size */
+#define I386_UPDES		(NBPDR/sizeof(struct pde) - I386_KPDES) /* UPT page directory size */
 
 #define	UPTDI			0x3f6						/* ptd entry for u./kernel&user stack */
 #define	PTDPTDI			0x3f7						/* ptd entry that points to ptd! */
@@ -164,12 +113,6 @@ extern int	IdlePTD;	/* physical address of "Idle" state directory */
 #define	ptetoav(pt)	 	(i386_ptob(pt - APTmap))
 #define	avtophys(va)  	(i386_ptob(avtopte(va)->pg_pfnum) | ((int)(va) & PGOFSET))
 
-/*
- * macros to generate page directory/table indicies
- */
-
-#define	pdei(va)	(((va)&PD_MASK)>>PD_SHIFT)
-#define	ptei(va)	(((va)&PT_MASK)>>PT_SHIFT)
 
 /*
  * Pmap stuff
@@ -190,7 +133,7 @@ struct pmap {
 	int 					pm_ldt_sel;		/* LDT selector */
 };
 
-typedef struct pmap	*pmap_t;
+typedef struct pmap			*pmap_t;
 
 #ifdef KERNEL
 extern struct pmap	kernel_pmap_store;
@@ -220,16 +163,17 @@ typedef struct pv_entry {
 	pmap_t			pv_pmap;	/* pmap where mapping lies */
 	vm_offset_t		pv_va;		/* virtual address for mapping */
 	int				pv_flags;	/* flags */
+
 } *pv_entry_t;
 
 #define	PV_ENTRY_NULL	((pv_entry_t) 0)
 
-#define	PV_CI		0x01		/* all entries must be cache inhibited */
-#define PV_PTPAGE	0x02		/* entry maps a page table page */
+#define	PV_CI			0x01		/* all entries must be cache inhibited */
+#define PV_PTPAGE		0x02		/* entry maps a page table page */
 
 #ifdef	KERNEL
 
-pv_entry_t	pv_table;			/* array of entries, one per page */
+pv_entry_t		pv_table;			/* array of entries, one per page */
 
 #define pa_index(pa)				atop(pa - vm_first_phys)
 #define pa_to_pvh(pa)				(&pv_table[pa_index(pa)])
@@ -237,5 +181,7 @@ pv_entry_t	pv_table;			/* array of entries, one per page */
 #define	pmap_resident_count(pmap)	((pmap)->pm_stats.resident_count)
 #define	pmap_wired_count(pmap)		((pmap)->pm_stats.wired_count)
 
+extern int pae_mode;
+extern int i386_pmap_PDRSHIFT;
 #endif	KERNEL
 #endif	_PMAP_MACHINE_

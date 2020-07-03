@@ -83,7 +83,7 @@ struct devsw {
 };
 
 extern struct devsw devsw[];	/* device array */
-extern int ndevs;				/* number of elements in devsw[] */
+extern int 			ndevs;		/* number of elements in devsw[] */
 
 struct open_file {
 	int				f_flags;	/* see F_* below */
@@ -98,9 +98,13 @@ struct open_file {
 extern struct open_file files[SOPEN_MAX];
 
 /* f_flags values */
-#define	F_READ		0x0001	/* file opened for reading */
-#define	F_WRITE		0x0002	/* file opened for writing */
-#define	F_RAW		0x0004	/* raw device open - no file system */
+#define	F_READ		0x0001			/* file opened for reading */
+#define	F_WRITE		0x0002			/* file opened for writing */
+#define	F_RAW		0x0004			/* raw device open - no file system */
+#define F_NODEV		0x0008			/* network open - no device */
+#define	F_MASK		0xFFFF
+/* Mode modifier for strategy() */
+#define	F_NORA		(0x01 << 16)	/* Disable Read-Ahead */
 
 int		devopen (struct open_file *f, char *fname, char **file);
 void	*alloc (unsigned size);
@@ -110,3 +114,7 @@ struct	disklabel;
 char	*getdisklabel (const char *buf, struct disklabel *lp);
 
 void	twiddle(void);
+
+void	setheap(void *base, void *top);
+char 	*getheap(size_t *sizep);
+char 	*sbrk(intptr_t incr);

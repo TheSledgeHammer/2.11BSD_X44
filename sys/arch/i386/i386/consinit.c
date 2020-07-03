@@ -27,7 +27,6 @@
  */
 
 #include <sys/cdefs.h>
-#include <sys/bootinfo.h>
 #include <machine/bootinfo.h>
 
 #include "pc.h"
@@ -58,7 +57,7 @@
 int comcnmode = CONMODE;
 #endif /* NCOM */
 
-struct btinfo_console default_consinfo = {
+struct bootinfo_console default_consinfo = {
 	{0, 0},
 	CONSDEVNAME,
 #if (NCOM > 0)
@@ -84,11 +83,7 @@ consinit()
 		return;
 	initted = 1;
 
-#ifndef CONS_OVERRIDE
-	consinfo = lookup_bootinfo(BOOTINFO_CONSOLE);
-	if (!consinfo)
-#endif
-		consinfo = &default_consinfo;
+	consinfo = &default_consinfo;
 
 #if (NPC > 0) || (NVT > 0)
 	if(!strcmp(consinfo->bi_devname, "pc")) {

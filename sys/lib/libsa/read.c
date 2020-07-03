@@ -64,6 +64,7 @@
 
 #include <libsa/stand.h>
 
+int
 read(fd, dest, bcount)
 	int fd;
 	char *dest;

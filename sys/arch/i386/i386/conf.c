@@ -53,8 +53,7 @@ int	ttselect	(dev_t, int, struct proc *);
 #define	dev_type_open(n)		int n (dev_t, int, int, struct proc *)
 #define	dev_type_close(n)		int n (dev_t, int, int, struct proc *)
 #define	dev_type_strategy(n)	int n (struct buf *)
-#define	dev_type_ioctl(n) \
-	int n (dev_t, int, caddr_t, int, struct proc *)
+#define	dev_type_ioctl(n) 		int n (dev_t, int, caddr_t, int, struct proc *)
 
 /* bdevsw-specific types */
 #define	dev_type_dump(n)	int n (dev_t)
@@ -240,11 +239,11 @@ cdev_decl(bpf);
 	(dev_type_reset((*))) enodev, 0, dev_init(c,n,select), \
 	(dev_type_map((*))) enodev, 0 }
 
-struct cdevsw	cdevsw[] =
+struct cdevsw cdevsw[] =
 {
 	cdev_cn_init(1,cn),		/* 0: virtual console */
 	cdev_ctty_init(1,ctty),		/* 1: controlling terminal */
-	cdev_mm_init(1,mm),		/* 2: /dev/{null,mem,kmem,...} */
+	cdev_mm_init(1,mm),			/* 2: /dev/{null,mem,kmem,...} */
 	cdev_disk_init(NWD,wd),		/* 3: st506/rll/esdi/ide disk */
 	cdev_swap_init(1,sw),		/* 4: /dev/drum (swap pseudo-device) */
 	cdev_tty_init(NPTY,pts),	/* 5: pseudo-tty slave */

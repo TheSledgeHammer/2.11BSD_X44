@@ -440,7 +440,7 @@ ENTRY(lgdt)
 		nop
 1:
 /* reload "stale" selectors */
-		# movw	$KDSEL,%ax
+		# movw	$GSEL(GDATA_SEL, SEL_KPL),%ax
 		movw	$0x10,%ax
 		movw	%ax,%ds
 		movw	%ax,%es
@@ -449,7 +449,7 @@ ENTRY(lgdt)
 /* reload code selector by turning return into intersegmental return */
 		movl	0(%esp),%eax
 		pushl	%eax
-		# movl	$KCSEL,4(%esp)
+		# movl	$GSEL(GCODE_SEL, SEL_KPL),4(%esp)
 		movl	$8,4(%esp)
 		lret
 

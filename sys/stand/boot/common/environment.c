@@ -35,6 +35,7 @@
  * variables in order to allow some type strength.
  */
 
+#include <sys/user.h>
 #include <lib/libkern/libkern.h>
 #include <lib/libsa/loadfile.h>
 #include <bootstrap.h>

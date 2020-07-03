@@ -86,8 +86,18 @@ allocate_gdt(gdt)
 	setup_descriptor_table(&gdt[GDBLFLT_SEL], 0x0, sizeof(struct i386tss)-1, SDT_SYS386TSS, 0, 1, 0, 0, 0, 0);
 	/* GEXIT_SEL	14 Exit Tss Descriptor */
 	setup_descriptor_table(&gdt[GEXIT_SEL], 0x0, sizeof(struct i386tss)-1, SDT_SYS386TSS, 0, 1, 0, 0, 0, 0);
-}
 
+	/* GBIOSCODE32_SEL 15 BIOS 32-bit interface (32bit Code) */
+	setup_descriptor_table(&gdt[GBIOSCODE32_SEL], 0x0, 0xfffff, SDT_MEMERA, 0, 1, 0, 0, 0, 1);
+	/* GBIOSCODE16_SEL 16 BIOS 32-bit interface (16bit Code) */
+	setup_descriptor_table(&gdt[GBIOSCODE16_SEL], 0x0, 0xfffff, SDT_MEMERA, 0, 1, 0, 0, 0, 1);
+	/* GBIOSDATA_SEL 17 BIOS 32-bit interface (Data) */
+	setup_descriptor_table(&gdt[GBIOSDATA_SEL], 0x0, 0xfffff, SDT_MEMERA, 0, 1, 0, 0, 0, 1);
+	/* GBIOSUTIL_SEL 18 BIOS 16-bit interface (Utility) */
+	setup_descriptor_table(&gdt[GBIOSUTIL_SEL], 0x0, 0xfffff, SDT_MEMERA, 0, 1, 0, 0, 0, 1);
+	/* GBIOSARGS_SEL 19 BIOS 16-bit interface (Arguments) */
+	setup_descriptor_table(&gdt[GBIOSARGS_SEL], 0x0, 0xfffff, SDT_MEMERA, 0, 1, 0, 0, 0, 1);
+}
 
 /* Allocates & Predefines all the parameters for the Local Descriptor Table (LDT) segments */
 void

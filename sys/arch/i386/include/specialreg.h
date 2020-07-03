@@ -87,4 +87,9 @@
 #define CR4_OSFXSR		0x00000200	/* enable fxsave/fxrestor and SSE */
 #define CR4_OSXMMEXCPT	0x00000400	/* enable unmasked SSE exceptions */
 
+/*
+ * CPUID instruction features register
+ */
+#define	CPUID_VME		0x00000002
+
 #endif /* !_MACHINE_SPECIALREG_H_ */

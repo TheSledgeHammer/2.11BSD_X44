@@ -92,8 +92,8 @@ NENTRY(apmcall)
 			jne		1f
 			xorl	%eax,%eax
 1:	
-		popl	%ebx
-		popl	%edi
-		popl	%esi
-		popl	%ebp
-		ret
+			popl	%ebx
+			popl	%edi
+			popl	%esi
+			popl	%ebp
+			ret

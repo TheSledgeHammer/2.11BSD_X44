@@ -35,7 +35,7 @@
  #
  #	@(#)genassym.c	8.2 (Berkeley) 9/23/93
  #
- 
+
 include <sys/param.h>
 include <sys/buf.h>
 include <sys/map.h>
@@ -151,7 +151,7 @@ define PR_BASE 				offsetof(struct uprof, pr_base)
 define PR_SIZE 				offsetof(struct uprof, pr_size)
 define PR_OFF 				offsetof(struct uprof, pr_off)
 define PR_SCALE 			offsetof(struct uprof, pr_scale)
-	
+
 define RU_MINFLT 			offsetof(struct rusage, rup->ru_minflt)
 
 define	TF_CS				offsetof(struct trapframe, tf_cs)

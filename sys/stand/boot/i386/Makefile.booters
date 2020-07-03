@@ -1,0 +1,33 @@
+#	$NetBSD: Makefile.booters,v 1.8 2016/08/04 18:07:43 scole Exp $
+
+.include <bsd.own.mk>
+.include <bsd.klinks.mk>
+
+STRIPFLAG=
+BINMODE=444
+
+LIBCRT0=		# nothing
+LIBCRTI=		# nothing
+LIBCRTBEGIN=	# nothing
+LIBCRTEND=		# nothing
+LIBC=			# nothing
+
+COPTS=	-Os -ffreestanding
+
+# Options used when building standalone components
+CFLAGS+=	-ffreestanding -fshort-wchar -Wformat -D_STANDALONE
+LDFLAGS+=	#-nostdlib
+CPPFLAGS+=	-D_STANDALONE
+
+### find out what to use for libkern
+KERN_AS=	library
+.include 	"${S}/lib/libkern/Makefile.inc"
+LIBKERN=	${KERNLIB}
+
+### find out what to use for libsa
+SA_AS=		library
+SAMISCMAKEFLAGS+="SA_USE_LOADFILE=yes" "SA_INCLUDE_NET=yes"
+.include 	"${S}/lib/libsa/Makefile.inc"
+LIBSA=		${SALIB}
+
+LIBLIST=${LIBKERN} ${LIBSA} ${LIBKERN}

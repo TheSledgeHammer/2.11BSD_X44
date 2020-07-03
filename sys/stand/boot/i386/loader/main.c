@@ -32,15 +32,16 @@
  * MD bootstrap main() and assorted miscellaneous
  * commands.
  */
-
+#include <sys/user.h>
 #include <sys/stddef.h>
 #include <sys/reboot.h>
 
 #include <boot/bootstand.h>
 #include <boot/common/bootstrap.h>
 #include <boot/common/smbios.h>
-#include <i386/common/bootargs.h>
+#include <boot/i386/common/bootargs.h>
 #include <lib/libkern/libkern.h>
+
 #include <machine/bootinfo.h>
 #include <machine/cpufunc.h>
 #include <machine/psl.h>
@@ -51,16 +52,16 @@
 /* Arguments passed in from the boot1/boot2 loader */
 static struct bootargs *kargs;
 
-static uint32_t			initial_howto;
-static uint32_t			initial_bootdev;
-static struct bootinfo	*initial_bootinfo;
+static uint32_t				initial_howto;
+static uint32_t				initial_bootdev;
+static struct bootinfo		*initial_bootinfo;
 
-struct arch_switch		archsw;		/* MI/MD interface boundary */
+struct arch_switch			archsw;		/* MI/MD interface boundary */
 
-static void				extract_currdev(void);
-static int				isa_inb(int port);
-static void				isa_outb(int port, int value);
-void					exit(int code);
+static void					extract_currdev(void);
+static int					isa_inb(int port);
+static void					isa_outb(int port, int value);
+void						exit(int code);
 
 caddr_t
 ptov(uintptr_t x)
@@ -80,12 +81,17 @@ main(void)
 	initial_bootdev = kargs->bootdev;
 	initial_bootinfo = kargs->bootinfo ? (struct bootinfo *)PTOV(kargs->bootinfo) : NULL;
 
+
+    /* Initialize the v86 register set to a known-good state. */
+    bzero(&v86, sizeof(v86));
+    v86.efl = PSL_RESERVED_DEFAULT | PSL_I;
+
     /*
      * Initialise the heap as early as possible.  Once this is done, malloc() is usable.
      */
 	bios_getmem();
 
-	calloc((void *)malloc, (void *)(malloc + 512*1024));
+	setheap((void *)malloc, (void *)(malloc + 512*1024));
 
 	/*
 	 * XXX Chicken-and-egg problem; we want to have console output early, but some
@@ -122,20 +128,11 @@ main(void)
 		 * We only want the PXE disk to try to init itself in the below
 		 * walk through devsw if we actually booted off of PXE.
 		 */
-		if (kargs->bootflags & KARGS_FLAGS_PXE)
-			pxe_enable(kargs->pxeinfo ? PTOV(kargs->pxeinfo) : NULL);
-		else if (kargs->bootflags & KARGS_FLAGS_CD)
+		//if (kargs->bootflags & KARGS_FLAGS_PXE)
+			//pxe_enable(kargs->pxeinfo ? PTOV(kargs->pxeinfo) : NULL);
+		if (kargs->bootflags & KARGS_FLAGS_CD)
 			bc_add(initial_bootdev);
 	}
-
-
-	//archsw.arch_autoload = i386_autoload;
-	archsw.arch_getdev = i386_getdev;
-	archsw.arch_copyin = i386_copyin;
-	archsw.arch_copyout = i386_copyout;
-	archsw.arch_readin = i386_readin;
-    archsw.arch_isainb = isa_inb;
-    archsw.arch_isaoutb = isa_outb;
 
     /* ZFS & GELI SUPPORT Belongs Here */
 
@@ -147,11 +144,15 @@ main(void)
     		(devsw[i]->dv_init)();
     	}
     }
+
     printf("BIOS %dkB/%dkB available memory\n", bios_basemem / 1024, bios_extmem / 1024);
     if (initial_bootinfo != NULL) {
-    	initial_bootinfo->bi_basemem = bios_basemem / 1024;
-    	initial_bootinfo->bi_extmem = bios_extmem / 1024;
+    	initial_bootinfo->bi_bios.bi_basemem = bios_basemem / 1024;
+    	initial_bootinfo->bi_bios.bi_extmem = bios_extmem / 1024;
     }
+
+    /* detect ACPI for future reference */
+    //biosacpi_detect();
 
     /* detect SMBIOS for future reference */
     smbios_detect(NULL);
@@ -162,8 +163,17 @@ main(void)
     printf("\n%s", bootprog_info);
 
     extract_currdev();				/* set $currdev and $loaddev */
+    setenv("LINES", "24", 1);		/* optional */
 
-    bios_getsmap();
+    //bios_getsmap();
+
+	//archsw.arch_autoload = i386_autoload;
+	archsw.arch_getdev = i386_getdev;
+	archsw.arch_copyin = i386_copyin;
+	archsw.arch_copyout = i386_copyout;
+	archsw.arch_readin = i386_readin;
+    archsw.arch_isainb = isa_inb;
+    archsw.arch_isaoutb = isa_outb;
 
     interact();
 
@@ -204,7 +214,7 @@ extract_currdev(void)
 	} else {
 	    currdev.d_kind.biosdisk.slice = B_SLICE(initial_bootdev) - 1;
 	    currdev.d_kind.biosdisk.partition = B_PARTITION(initial_bootdev);
-		biosdev = initial_bootinfo->bi_bios_dev;
+		biosdev = initial_bootinfo->bi_bios.bi_bios_dev;
 
 
 		/*
@@ -249,5 +259,6 @@ isa_inb(int port)
 static void
 isa_outb(int port, int value)
 {
+
 	outb(port, value);
 }

@@ -40,7 +40,13 @@
  * Machine dependent constants for Intel 386.
  */
 
-#define MACHINE "i386"
+#ifndef MACHINE
+#define MACHINE			"i386"
+#endif
+#ifndef MACHINE_ARCH
+#define	MACHINE_ARCH	"i386"
+#endif
+#define MID_MACHINE	MID_I386
 #define NCPUS 1
 
 /*
@@ -51,15 +57,24 @@
 #define	ALIGNBYTES		3
 #define	ALIGN(p)		(((u_int)(p) + ALIGNBYTES) &~ ALIGNBYTES)
 
-#define	NBPG			4096			/* bytes/page */
-#define	PGOFSET			(NBPG-1)		/* byte offset into page */
-#define	PGSHIFT			12				/* LOG2(NBPG) */
-#define	NPTEPG			(NBPG/(sizeof (struct pte)))
-#define NBPDE			1024			/* page directory size in bytes */
 
-#define NBPDR			(NBPDE*NBPG)	/* bytes/page dir */
+#define	NBPG			4096			/* bytes/page (PAGE SIZE) */
+#define NBPDE			1024			/* page directory size in bytes (PDE SIZE) */
+#define	PGOFSET			(NBPG-1)		/* byte offset into page */
+
+#define	PGSHIFT			12				/* LOG2(NBPG) */
+#define PGSIZE			(1 << PGSHIFT)	/* bytes/page (PAGE SIZE) */
+#define PGMASK			(PGSIZE - 1)
+#define	NPTEPG			(NBPG/ sizeof (pt_entry_t))
+
+#ifndef PDRSHIFT
+#define	PDRSHIFT		i386_pmap_PDRSHIFT
+#endif
+
+#ifndef NBPDR
+#define NBPDR			(1 << PDRSHIFT)	/* bytes/page dir */
+#endif
 #define	PDROFSET		(NBPDR-1)		/* byte offset into page dir */
-#define	PDRSHIFT		22				/* LOG2(NBPDR) */
 
 #define	KERNBASE		0xFE000000		/* start of kernel virtual */
 #define	BTOPKERNBASE	((u_long)KERNBASE >> PGSHIFT)
@@ -77,10 +92,10 @@
 #define	SINCR			1				/* increment of stack/NBPG */
 
 #define	UPAGES			2				/* pages of u-area */
-#define	USPACE			(UPAGES * NBPG)	/* total size of u-area */
+#define	USPACE			(UPAGES * PGSIZE)/* total size of u-area */
 
 #ifndef KSTACK_PAGES
-#define KSTACK_PAGES 4					/* Includes pcb! */
+#define KSTACK_PAGES 	4				/* Includes pcb! */
 #endif
 
 
@@ -160,18 +175,7 @@
 #ifndef _SIMPLELOCK_H_
 #define _SIMPLELOCK_H_
 
-/*
- * A simple spin lock.
- *
- * This structure only sets one bit of data, but is sized based on the
- * minimum word size that can be operated on by the hardware test-and-set
- * instruction. It is only needed for multiprocessors, as uniprocessors
- * will always run to completion or a sleep. It is an error to hold one
- * of these locks while a process is sleeping.
- */
-struct simplelock {
-	int	lock_data;
-};
+#include <lock.h>
 
 #if !defined(DEBUG) && NCPUS > 1
 
@@ -187,7 +191,6 @@ static __inline void
 simple_lock_init(lkp)
 	struct simplelock *lkp;
 {
-
 	lkp->lock_data = 0;
 }
 
@@ -195,7 +198,6 @@ static __inline void
 simple_lock(lkp)
 	__volatile struct simplelock *lkp;
 {
-
 	while (test_and_set(&lkp->lock_data))
 		continue;
 }
@@ -204,7 +206,6 @@ static __inline int
 simple_lock_try(lkp)
 	__volatile struct simplelock *lkp;
 {
-
 	return (!test_and_set(&lkp->lock_data))
 }
 
@@ -212,7 +213,6 @@ static __inline void
 simple_unlock(lkp)
 	__volatile struct simplelock *lkp;
 {
-
 	lkp->lock_data = 0;
 }
 #endif /* NCPUS > 1 */

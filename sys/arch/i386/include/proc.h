@@ -40,6 +40,8 @@ struct mdproc {
 	struct	trapframe 	*md_regs;		/* registers on current frame */
 	int					md_flags;		/* machine-dependent flags */
 	int					md_tss_sel;		/* TSS selector */
+
+	void				(*md_syscall)(struct trapframe *);/* Syscall handling function */
 };
 
 /* md_flags */

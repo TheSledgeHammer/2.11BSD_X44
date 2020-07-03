@@ -1,11 +1,8 @@
-/*	$NetBSD: vm86.c,v 1.26 2002/03/29 17:07:06 christos Exp $	*/
-
 /*-
- * Copyright (c) 1996 The NetBSD Foundation, Inc.
- * All rights reserved.
+ * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
  *
- * This code is derived from software contributed to The NetBSD Foundation
- * by John T. Kohl and Charles M. Hannum.
+ * Copyright (c) 1997 Jonathan Lemon
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -15,391 +12,743 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
- * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
- * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
 #include <sys/cdefs.h>
-/* __KERNEL_RCSID(0, "$NetBSD: vm86.c,v 1.26 2002/03/29 17:07:06 christos Exp $"); */
+/* __FBSDID("$FreeBSD$"); */
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/signalvar.h>
-#include <sys/kernel.h>
-#include <sys/map.h>
 #include <sys/proc.h>
-#include <sys/user.h>
-#include <sys/exec.h>
-#include <sys/buf.h>
-#include <sys/reboot.h>
-#include <sys/conf.h>
-#include <sys/file.h>
-#include <sys/callout.h>
+#include <sys/lock.h>
 #include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/msgbuf.h>
-#include <sys/mount.h>
-#include <sys/vnode.h>
-#include <sys/device.h>
-#include <sys/syscallargs.h>
+#include <sys/signal.h>
 
+#include <vm/include/vm.h>
+#include <vm/include/pmap.h>
+#include <vm/include/vm_map.h>
+#include <vm/include/vm_page.h>
+
+#include <machine/pcb.h>
+#include <machine/psl.h>
+#include <machine/specialreg.h>
 #include <machine/sysarch.h>
-#include <machine/vm86.h>
+#include <machine/segments.h>
+#include <machine/support.s>
 
-static void fast_intxx __P((struct proc *, int));
-static __inline int is_bitset __P((int, caddr_t));
+extern int 			vm86pa;
+extern struct pcb 	*vm86pcb;
 
-#define	CS(tf)		(*(u_short *)&tf->tf_cs)
-#define	IP(tf)		(*(u_short *)&tf->tf_eip)
-#define	SS(tf)		(*(u_short *)&tf->tf_ss)
-#define	SP(tf)		(*(u_short *)&tf->tf_esp)
+static struct lock 	vm86_lock;
 
-#define putword(base, ptr, val) 					\
-	({ ptr = (ptr - 1) & 0xffff;					\
-	   subyte((void *)(base+ptr), (val>>8));		\
-           ptr = (ptr - 1) & 0xffff;				\
-	   subyte((void *)(base+ptr), (val&0xff)); })
+extern int vm86_bioscall(struct vm86frame *);
+extern void vm86_biosret(struct vm86frame *);
 
-#define putdword(base, ptr, val) 					\
-	({ putword(base, ptr, (val >> 16));	        	\
-	   putword(base, ptr, (val & 0xffff)); })
+void vm86_prepcall(struct vm86frame *);
 
-#define getbyte(base, ptr) 							\
-	({ unsigned long __tmp = fubyte((void *)(base+ptr));	 \
-	   if (__tmp == ~0) goto bad;				 	\
-	   ptr = (ptr + 1) & 0xffff; __tmp; })
+struct system_map {
+	int			type;
+	vm_offset_t	start;
+	vm_offset_t	end;
+};
 
-#define getword(base, ptr) 							\
-	({ unsigned long __tmp = getbyte(base, ptr);	\
-	   __tmp |= (getbyte(base, ptr) << 8); __tmp;})
+#define	HLT					0xf4
+#define	CLI					0xfa
+#define	STI					0xfb
+#define	PUSHF				0x9c
+#define	POPF				0x9d
+#define	INTn				0xcd
+#define	IRET				0xcf
+#define	CALLm				0xff
+#define OPERAND_SIZE_PREFIX	0x66
+#define ADDRESS_SIZE_PREFIX	0x67
+#define PUSH_MASK			~(PSL_VM | PSL_RF | PSL_I)
+#define POP_MASK			~(PSL_VIP | PSL_VIF | PSL_VM | PSL_RF | PSL_IOPL)
 
-#define getdword(base, ptr) 						\
-	({ unsigned long __tmp = getword(base, ptr);	\
-	   __tmp |= (getword(base, ptr) << 16); __tmp;})
-
-static __inline int
-is_bitset(nr, bitmap)
-	int nr;
-	caddr_t bitmap;
+static int
+vm86_suword16(void *base, int word)
 {
-	u_int byte;		/* bt instruction doesn't do
-					   bytes--it examines ints! */
-	bitmap += nr / NBBY;
-	nr = nr % NBBY;
-	byte = fubyte(bitmap);
-
-	__asm__ __volatile__("btl %2,%1\n\tsbbl %0,%0"
-			     :"=r" (nr)
-			     :"r" (byte),"r" (nr));
-	return (nr);
+	return (susword(base, word));
 }
 
-
-#define V86_AH(regs)	(((u_char *)&((regs)->tf_eax))[1])
-#define V86_AL(regs)	(((u_char *)&((regs)->tf_eax))[0])
-
-static void
-fast_intxx(p, intrno)
-	struct proc *p;
-	int intrno;
+static int
+vm86_suword(void *base, long word)
 {
-	struct trapframe *tf = p->p_md.md_regs;
-	/*
-	 * handle certain interrupts directly by pushing the interrupt
-	 * frame and resetting registers, but only if user said that's ok
-	 * (i.e. not revectored.)  Otherwise bump to 32-bit user handler.
-	 */
-	struct vm86_struct *u_vm86p;
-	struct {
-		u_short ip, cs;
-	} ihand;
-
-	u_long ss, sp;
-
-	/*
-	 * Note: u_vm86p points to user-space, we only compute offsets
-	 * and don't deref it. is_revectored() above does fubyte() to
-	 * get stuff from it
-	 */
-	u_vm86p = (struct vm86_struct*) p->p_addr->u_pcb.vm86_userp;
-
-	/*
-	 * If user requested special handling, return to user space with
-	 * indication of which INT was requested.
-	 */
-	if (is_bitset(intrno, &u_vm86p->int_byuser[0]))
-		goto vector;
-
-	/*
-	 * If it's interrupt 0x21 (special in the DOS world) and the
-	 * sub-command (in AH) was requested for special handling,
-	 * return to user mode.
-	 */
-	if (intrno == 0x21 && is_bitset(V86_AH(tf), &u_vm86p->int21_byuser[0]))
-		goto vector;
-
-	/*
-	 * Fetch intr handler info from "real-mode" IDT based at addr 0 in
-	 * the user address space.
-	 */
-	if (copyin((caddr_t) (intrno * sizeof(ihand)), &ihand, sizeof(ihand)))
-		goto bad;
-
-	/*
-	 * Otherwise, push flags, cs, eip, and jump to handler to
-	 * simulate direct INT call.
-	 */
-	ss = SS(tf) << 4;
-	sp = SP(tf);
-
-	putword(ss, sp, get_vflags_short(p));
-	putword(ss, sp, CS(tf));
-	putword(ss, sp, IP(tf));
-	SP(tf) = sp;
-
-	IP(tf) = ihand.ip;
-	CS(tf) = ihand.cs;
-
-	return;
-
-	vector: vm86_return(p, VM86_MAKEVAL(VM86_INTx, intrno));
-	return;
-
-	bad: vm86_return(p, VM86_UNKNOWN);
-	return;
+	return (suword(base, word));
 }
 
-void
-vm86_return(p, retval)
-	struct proc *p;
-	int retval;
+static int
+vm86_fubyte(const void *base)
 {
-
-	/*
-	 * We can't set the virtual flags in our real trap frame,
-	 * since it's used to jump to the signal handler.  Instead we
-	 * let sendsig() pull in the vm86_eflags bits.
-	 */
-	if (sigismember(&p->p_sigacts->ps_sigmask, SIGURG)) {
-#ifdef DIAGNOSTIC
-		printf("pid %d killed on VM86 protocol screwup (SIGURG blocked)\n",
-		    p->p_pid);
-#endif
-		sigexit(p, SIGILL);
-		/* NOTREACHED */
-	} else if (sigismember(&p->p_sigacts->ps_sigintr, SIGURG)) {
-#ifdef DIAGNOSTIC
-		printf("pid %d killed on VM86 protocol screwup (SIGURG ignored)\n",
-		    p->p_pid);
-#endif
-		sigexit(p, SIGILL);
-	}
-	trapsignal(p, SIGURG, retval);
+	return (fubyte(base));
 }
 
-#define	CLI		0xFA
-#define	STI		0xFB
-#define	INTxx	0xCD
-#define	INTO	0xCE
-#define	IRET	0xCF
-#define	OPSIZ	0x66
-#define	INT3	0xCC	/* Actually the process gets 32-bit IDT to handle it */
-#define	LOCK	0xF0
-#define	PUSHF	0x9C
-#define	POPF	0x9D
-
-/*
- * Handle a GP fault that occurred while in VM86 mode.  Things that are easy
- * to handle here are done here (much more efficient than trapping to 32-bit
- * handler code and then having it restart VM86 mode).
- */
-void
-vm86_gpfault(p, type)
-	struct proc *p;
-	int type;
+static int
+vm86_fuword16(const void *base)
 {
-	struct trapframe *tf = p->p_md.md_regs;
-	/*
-	 * we want to fetch some stuff from the current user virtual
-	 * address space for checking.  remember that the frame's
-	 * segment selectors are real-mode style selectors.
-	 */
-	u_long cs, ip, ss, sp;
-	u_char tmpbyte;
-	int trace;
+	return (fusword(base));
+}
 
-	cs = CS(tf) << 4;
-	ip = IP(tf);
-	ss = SS(tf) << 4;
-	sp = SP(tf);
+static long
+vm86_fuword(const void *base)
+{
+	return (fuword(base));
+}
 
-	trace = tf->tf_eflags & PSL_T;
+static __inline caddr_t
+MAKE_ADDR(u_short sel, u_short off)
+{
+	return ((caddr_t)((sel << 4) + off));
+}
 
-	/*
-	 * For most of these, we must set all the registers before calling
-	 * macros/functions which might do a vm86_return.
-	 */
-	tmpbyte = getbyte(cs, ip);
-	IP(tf) = ip;
-	switch (tmpbyte) {
-	case CLI:
-		/* simulate handling of IF */
-		clr_vif(p);
-		break;
+static __inline void
+GET_VEC(u_int vec, u_short *sel, u_short *off)
+{
+	*sel = vec >> 16;
+	*off = vec & 0xffff;
+}
 
-	case STI:
-		/* simulate handling of IF.
-		 * XXX the i386 enables interrupts one instruction later.
-		 * code here is wrong, but much simpler than doing it Right.
-		 */
-		set_vif(p);
-		break;
+static __inline u_int
+MAKE_VEC(u_short sel, u_short off)
+{
+	return ((sel << 16) | off);
+}
 
-	case INTxx:
-		/* try fast intxx, or return to 32bit mode to handle it. */
-		tmpbyte = getbyte(cs, ip);
-		IP(tf) = ip;
-		fast_intxx(p, tmpbyte);
-		break;
+static __inline void
+PUSH(u_short x, struct vm86frame *vmf)
+{
+	vmf->vmf_sp -= 2;
+	vm86_suword16(MAKE_ADDR(vmf->vmf_ss, vmf->vmf_sp), x);
+}
 
-	case INTO:
-		if (tf->tf_eflags & PSL_V)
-			fast_intxx(p, 4);
-		break;
+static __inline void
+PUSHL(u_int x, struct vm86frame *vmf)
+{
+	vmf->vmf_sp -= 4;
+	vm86_suword(MAKE_ADDR(vmf->vmf_ss, vmf->vmf_sp), x);
+}
 
-	case PUSHF:
-		putword(ss, sp, get_vflags_short(p));
-		SP(tf) = sp;
-		break;
+static __inline u_short
+POP(struct vm86frame *vmf)
+{
+	u_short x = vm86_fuword16(MAKE_ADDR(vmf->vmf_ss, vmf->vmf_sp));
 
-	case IRET:
-		IP(tf) = getword(ss, sp);
-		CS(tf) = getword(ss, sp);
-	case POPF:
-		set_vflags_short(p, getword(ss, sp));
-		SP(tf) = sp;
-		break;
+	vmf->vmf_sp += 2;
+	return (x);
+}
 
-	case OPSIZ:
-		tmpbyte = getbyte(cs, ip);
-		IP(tf) = ip;
-		switch (tmpbyte) {
-		case PUSHF:
-			putdword(ss, sp, get_vflags(p) & ~PSL_VM);
-			SP(tf) = sp;
-			break;
+static __inline u_int
+POPL(struct vm86frame *vmf)
+{
+	u_int x = vm86_fuword(MAKE_ADDR(vmf->vmf_ss, vmf->vmf_sp));
 
-		case IRET:
-			IP(tf) = getdword(ss, sp);
-			CS(tf) = getdword(ss, sp);
-		case POPF:
-			set_vflags(p, getdword(ss, sp) | PSL_VM);
-			SP(tf) = sp;
-			break;
-
-		default:
-			IP(tf) -= 2;
-			goto bad;
-		}
-		break;
-
-	case LOCK:
-	default:
-		IP(tf) -= 1;
-		goto bad;
-	}
-
-	if (trace && (tf->tf_eflags & PSL_VM))
-		trapsignal(p, SIGTRAP, T_TRCTRAP);
-	return;
-
-	bad: vm86_return(p, VM86_UNKNOWN);
-	return;
+	vmf->vmf_sp += 4;
+	return (x);
 }
 
 int
-i386_vm86(p, args, retval)
+vm86_emulate(struct vm86frame *vmf)
+{
+	struct vm86_kernel *vm86;
+	caddr_t addr;
+	u_char i_byte;
+	u_int temp_flags;
+	int inc_ip = 1;
+	int retcode = 0;
+
+	/*
+	 * pcb_ext contains the address of the extension area, or zero if
+	 * the extension is not present.  (This check should not be needed,
+	 * as we can't enter vm86 mode until we set up an extension area)
+	 */
+	if (curpcb == 0)
+		return (SIGBUS);
+	vm86 = &curpcb->pcb_vm86;
+
+	if (vmf->vmf_eflags & PSL_T)
+		retcode = SIGTRAP;
+
+	addr = MAKE_ADDR(vmf->vmf_cs, vmf->vmf_ip);
+	i_byte = vm86_fubyte(addr);
+	if (i_byte == ADDRESS_SIZE_PREFIX) {
+		i_byte = vm86_fubyte(++addr);
+		inc_ip++;
+	}
+
+	if (vm86->vm86_has_vme) {
+		switch (i_byte) {
+		case OPERAND_SIZE_PREFIX:
+			i_byte = vm86_fubyte(++addr);
+			inc_ip++;
+			switch (i_byte) {
+			case PUSHF:
+				if (vmf->vmf_eflags & PSL_VIF)
+					PUSHL((vmf->vmf_eflags & PUSH_MASK)
+					    | PSL_IOPL | PSL_I, vmf);
+				else
+					PUSHL((vmf->vmf_eflags & PUSH_MASK)
+					    | PSL_IOPL, vmf);
+				vmf->vmf_ip += inc_ip;
+				return (retcode);
+
+			case POPF:
+				temp_flags = POPL(vmf) & POP_MASK;
+				vmf->vmf_eflags = (vmf->vmf_eflags & ~POP_MASK)
+				    | temp_flags | PSL_VM | PSL_I;
+				vmf->vmf_ip += inc_ip;
+				if (temp_flags & PSL_I) {
+					vmf->vmf_eflags |= PSL_VIF;
+					if (vmf->vmf_eflags & PSL_VIP)
+						break;
+				} else {
+					vmf->vmf_eflags &= ~PSL_VIF;
+				}
+				return (retcode);
+			}
+			break;
+
+		/* VME faults here if VIP is set, but does not set VIF. */
+		case STI:
+			vmf->vmf_eflags |= PSL_VIF;
+			vmf->vmf_ip += inc_ip;
+			if ((vmf->vmf_eflags & PSL_VIP) == 0) {
+				uprintf("fatal sti\n");
+				return (SIGKILL);
+			}
+			break;
+
+		/* VME if no redirection support */
+		case INTn:
+			break;
+
+		/* VME if trying to set PSL_T, or PSL_I when VIP is set */
+		case POPF:
+			temp_flags = POP(vmf) & POP_MASK;
+			vmf->vmf_flags = (vmf->vmf_flags & ~POP_MASK)
+			    | temp_flags | PSL_VM | PSL_I;
+			vmf->vmf_ip += inc_ip;
+			if (temp_flags & PSL_I) {
+				vmf->vmf_eflags |= PSL_VIF;
+				if (vmf->vmf_eflags & PSL_VIP)
+					break;
+			} else {
+				vmf->vmf_eflags &= ~PSL_VIF;
+			}
+			return (retcode);
+
+		/* VME if trying to set PSL_T, or PSL_I when VIP is set */
+		case IRET:
+			vmf->vmf_ip = POP(vmf);
+			vmf->vmf_cs = POP(vmf);
+			temp_flags = POP(vmf) & POP_MASK;
+			vmf->vmf_flags = (vmf->vmf_flags & ~POP_MASK)
+			    | temp_flags | PSL_VM | PSL_I;
+			if (temp_flags & PSL_I) {
+				vmf->vmf_eflags |= PSL_VIF;
+				if (vmf->vmf_eflags & PSL_VIP)
+					break;
+			} else {
+				vmf->vmf_eflags &= ~PSL_VIF;
+			}
+			return (retcode);
+
+		}
+		return (SIGBUS);
+	}
+
+	switch (i_byte) {
+	case OPERAND_SIZE_PREFIX:
+		i_byte = vm86_fubyte(++addr);
+		inc_ip++;
+		switch (i_byte) {
+		case PUSHF:
+			if (vm86->vm86_eflags & PSL_VIF)
+				PUSHL((vmf->vmf_flags & PUSH_MASK)
+				    | PSL_IOPL | PSL_I, vmf);
+			else
+				PUSHL((vmf->vmf_flags & PUSH_MASK)
+				    | PSL_IOPL, vmf);
+			vmf->vmf_ip += inc_ip;
+			return (retcode);
+
+		case POPF:
+			temp_flags = POPL(vmf) & POP_MASK;
+			vmf->vmf_eflags = (vmf->vmf_eflags & ~POP_MASK)
+			    | temp_flags | PSL_VM | PSL_I;
+			vmf->vmf_ip += inc_ip;
+			if (temp_flags & PSL_I) {
+				vm86->vm86_eflags |= PSL_VIF;
+				if (vm86->vm86_eflags & PSL_VIP)
+					break;
+			} else {
+				vm86->vm86_eflags &= ~PSL_VIF;
+			}
+			return (retcode);
+		}
+		return (SIGBUS);
+
+	case CLI:
+		vm86->vm86_eflags &= ~PSL_VIF;
+		vmf->vmf_ip += inc_ip;
+		return (retcode);
+
+	case STI:
+		/* if there is a pending interrupt, go to the emulator */
+		vm86->vm86_eflags |= PSL_VIF;
+		vmf->vmf_ip += inc_ip;
+		if (vm86->vm86_eflags & PSL_VIP)
+			break;
+		return (retcode);
+
+	case PUSHF:
+		if (vm86->vm86_eflags & PSL_VIF)
+			PUSH((vmf->vmf_flags & PUSH_MASK)
+			    | PSL_IOPL | PSL_I, vmf);
+		else
+			PUSH((vmf->vmf_flags & PUSH_MASK) | PSL_IOPL, vmf);
+		vmf->vmf_ip += inc_ip;
+		return (retcode);
+
+	case INTn:
+		i_byte = vm86_fubyte(addr + 1);
+		if ((vm86->vm86_intmap[i_byte >> 3] & (1 << (i_byte & 7))) != 0)
+			break;
+		if (vm86->vm86_eflags & PSL_VIF)
+			PUSH((vmf->vmf_flags & PUSH_MASK)
+			    | PSL_IOPL | PSL_I, vmf);
+		else
+			PUSH((vmf->vmf_flags & PUSH_MASK) | PSL_IOPL, vmf);
+		PUSH(vmf->vmf_cs, vmf);
+		PUSH(vmf->vmf_ip + inc_ip + 1, vmf);	/* increment IP */
+		GET_VEC(vm86_fuword((caddr_t)(i_byte * 4)),
+		     &vmf->vmf_cs, &vmf->vmf_ip);
+		vmf->vmf_flags &= ~PSL_T;
+		vm86->vm86_eflags &= ~PSL_VIF;
+		return (retcode);
+
+	case IRET:
+		vmf->vmf_ip = POP(vmf);
+		vmf->vmf_cs = POP(vmf);
+		temp_flags = POP(vmf) & POP_MASK;
+		vmf->vmf_flags = (vmf->vmf_flags & ~POP_MASK)
+		    | temp_flags | PSL_VM | PSL_I;
+		if (temp_flags & PSL_I) {
+			vm86->vm86_eflags |= PSL_VIF;
+			if (vm86->vm86_eflags & PSL_VIP)
+				break;
+		} else {
+			vm86->vm86_eflags &= ~PSL_VIF;
+		}
+		return (retcode);
+
+	case POPF:
+		temp_flags = POP(vmf) & POP_MASK;
+		vmf->vmf_flags = (vmf->vmf_flags & ~POP_MASK)
+		    | temp_flags | PSL_VM | PSL_I;
+		vmf->vmf_ip += inc_ip;
+		if (temp_flags & PSL_I) {
+			vm86->vm86_eflags |= PSL_VIF;
+			if (vm86->vm86_eflags & PSL_VIP)
+				break;
+		} else {
+			vm86->vm86_eflags &= ~PSL_VIF;
+		}
+		return (retcode);
+	}
+	return (SIGBUS);
+}
+
+#define PGTABLE_SIZE	((1024 + 64) * 1024 / PAGE_SIZE)
+#define INTMAP_SIZE		32
+#define IOMAP_SIZE		ctob(IOPAGES)
+#define TSS_SIZE \
+	(sizeof(struct pcb_ext) - sizeof(struct segment_descriptor) + \
+	 INTMAP_SIZE + IOMAP_SIZE + 1)
+
+struct vm86_layout {
+	pt_entry_t		vml_pgtbl[PGTABLE_SIZE];
+	struct 	pcb 	vml_pcb;
+	struct	pcb_ext vml_ext;
+	char			vml_intmap[INTMAP_SIZE];
+	char			vml_iomap[IOMAP_SIZE];
+	char			vml_iomap_trailer;
+};
+
+void
+vm86_initialize(void)
+{
+	int i;
+	u_int *addr;
+	struct vm86_layout *vml = (struct vm86_layout *)vm86paddr;
+	struct pcb *pcb;
+	struct soft_segment_descriptor ssd = {
+		0,					/* segment base address (overwritten) */
+		0,					/* length (overwritten) */
+		SDT_SYS386TSS,		/* segment type */
+		0,					/* priority level */
+		1,					/* descriptor present */
+		0, 0,
+		0,					/* default 16 size */
+		0					/* granularity */
+	};
+
+	/*
+	 * this should be a compile time error, but cpp doesn't grok sizeof().
+	 */
+	if (sizeof(struct vm86_layout) > ctob(3))
+		panic("struct vm86_layout exceeds space allocated in locore.s");
+
+	/*
+	 * Below is the memory layout that we use for the vm86 region.
+	 *
+	 * +--------+
+	 * |        |
+	 * |        |
+	 * | page 0 |
+	 * |        | +--------+
+	 * |        | | stack  |
+	 * +--------+ +--------+ <--------- vm86paddr
+	 * |        | |Page Tbl| 1M + 64K = 272 entries = 1088 bytes
+	 * |        | +--------+
+	 * |        | |  PCB   | size: ~240 bytes
+	 * | page 1 | |PCB Ext | size: ~140 bytes (includes TSS)
+	 * |        | +--------+
+	 * |        | |int map |
+	 * |        | +--------+
+	 * +--------+ |        |
+	 * | page 2 | |  I/O   |
+	 * +--------+ | bitmap |
+	 * | page 3 | |        |
+	 * |        | +--------+
+	 * +--------+
+	 */
+
+	/*
+	 * A rudimentary PCB must be installed, in order to get to the
+	 * PCB extension area.  We use the PCB area as a scratchpad for
+	 * data storage, the layout of which is shown below.
+	 *
+	 * pcb_esi	= new PTD entry 0
+	 * pcb_ebp	= pointer to frame on vm86 stack
+	 * pcb_esp	=    stack frame pointer at time of switch
+	 * pcb_ebx	= va of vm86 page table
+	 * pcb_eip	=    argument pointer to initial call
+	 * pcb_vm86[0]	=    saved TSS descriptor, word 0
+	 * pcb_vm86[1]	=    saved TSS descriptor, word 1
+	 */
+#define new_ptd		pcb_esi
+#define vm86_frame	pcb_ebp
+#define pgtable_va	pcb_ebx
+
+	pcb = &vml->vml_pcb;
+
+	//simple_lock_init(&vm86_lock);
+
+	bzero(pcb, sizeof(struct pcb));
+	pcb->new_ptd = vm86pa | PG_V | PG_RW | PG_U;
+	pcb->vm86_frame = vm86paddr - sizeof(struct vm86frame);
+	pcb->pgtable_va = vm86paddr;
+	pcb->pcb_flags = PCB_VM86CALL;
+
+
+	pcb->pcb_tss.tss_esp0 = vm86paddr;
+	pcb->pcb_tss.tss_ss0 = GSEL(GDATA_SEL, SEL_KPL);
+	pcb->pcb_tss.tss_ioopt =
+		((u_int)vml->vml_iomap - (u_int)&pcb->pcb_tss) << 16;
+	pcb->pcb_iomap = vml->vml_iomap;
+	pcb->pcb_vm86.vm86_intmap = vml->vml_intmap;
+
+	if (cpu_feature & CPUID_VME)
+		pcb->pcb_vm86.vm86_has_vme = (rcr4() & CR4_VME ? 1 : 0);
+
+	addr = (u_int *)pcb->pcb_vm86.vm86_intmap;
+	for (i = 0; i < (INTMAP_SIZE + IOMAP_SIZE) / sizeof(u_int); i++)
+		*addr++ = 0;
+	vml->vml_iomap_trailer = 0xff;
+
+	ssd.ssd_base = (u_int)&pcb->pcb_tss;
+	ssd.ssd_limit = TSS_SIZE - 1;
+	ssdtosd(&ssd, &pcb->pcb_tssd);
+
+	vm86pcb = pcb;
+
+#if 0
+        /*
+         * use whatever is leftover of the vm86 page layout as a
+         * message buffer so we can capture early output.
+         */
+        msgbufinit((vm_offset_t)vm86paddr + sizeof(struct vm86_layout),
+            ctob(3) - sizeof(struct vm86_layout));
+#endif
+}
+
+vm_offset_t
+vm86_getpage(struct vm86context *vmc, int pagenum)
+{
+	int i;
+
+	for (i = 0; i < vmc->npages; i++)
+		if (vmc->pmap[i].pte_num == pagenum)
+			return (vmc->pmap[i].kva);
+	return (0);
+}
+
+vm_offset_t
+vm86_addpage(struct vm86context *vmc, int pagenum, vm_offset_t kva)
+{
+	int i, flags = 0;
+
+	for (i = 0; i < vmc->npages; i++)
+		if (vmc->pmap[i].pte_num == pagenum)
+			goto overlap;
+
+	if (vmc->npages == VM86_PMAPSIZE)
+		goto full;			/* XXX grow map? */
+
+	if (kva == 0) {
+		kva = (vm_offset_t)malloc(PAGE_SIZE, M_TEMP, M_WAITOK);
+		flags = VMAP_MALLOC;
+	}
+
+	i = vmc->npages++;
+	vmc->pmap[i].flags = flags;
+	vmc->pmap[i].kva = kva;
+	vmc->pmap[i].pte_num = pagenum;
+	return (kva);
+overlap:
+	panic("vm86_addpage: overlap");
+full:
+	panic("vm86_addpage: not enough room");
+}
+
+/*
+ * called from vm86_bioscall, while in vm86 address space, to finalize setup.
+ */
+void
+vm86_prepcall(struct vm86frame *vmf)
+{
+	struct vm86_kernel *vm86;
+	uint32_t *stack;
+	uint8_t *code;
+
+	code = (void *)0xa00;
+	stack = (void *)(0x1000 - 2);	/* keep aligned */
+	if ((vmf->vmf_trapno & PAGE_MASK) <= 0xff) {
+		/* interrupt call requested */
+		code[0] = INTn;
+		code[1] = vmf->vmf_trapno & 0xff;
+		code[2] = HLT;
+		vmf->vmf_ip = (uintptr_t)code;
+		vmf->vmf_cs = 0;
+	} else {
+		code[0] = HLT;
+		stack--;
+		stack[0] = MAKE_VEC(0, (uintptr_t)code);
+	}
+	vmf->vmf_sp = (uintptr_t)stack;
+	vmf->vmf_ss = 0;
+	vmf->kernel_fs = vmf->kernel_es = vmf->kernel_ds = 0;
+	vmf->vmf_eflags = PSL_VIF | PSL_VM | PSL_USER;
+
+	vm86 = &curpcb->pcb_vm86;
+	if (!vm86->vm86_has_vme)
+		vm86->vm86_eflags = vmf->vmf_eflags;  /* save VIF, VIP */
+}
+
+/*
+ * vm86 trap handler; determines whether routine succeeded or not.
+ * Called while in vm86 space, returns to calling process.
+ */
+void
+vm86_trap(struct vm86frame *vmf)
+{
+	void (*p)(struct vm86frame *);
+	caddr_t addr;
+
+	/* "should not happen" */
+	if ((vmf->vmf_eflags & PSL_VM) == 0)
+		panic("vm86_trap called, but not in vm86 mode");
+
+	addr = MAKE_ADDR(vmf->vmf_cs, vmf->vmf_ip);
+	if (*(u_char *)addr == HLT)
+		vmf->vmf_trapno = vmf->vmf_eflags & PSL_C;
+	else
+		vmf->vmf_trapno = vmf->vmf_trapno << 16;
+
+	p = (void (*)(struct vm86frame *))((uintptr_t)vm86_biosret);
+	p(vmf);
+}
+
+int
+vm86_intcall(int intnum, struct vm86frame *vmf)
+{
+	int (*p)(struct vm86frame *);
+	int retval;
+
+	if (intnum < 0 || intnum > 0xff)
+		return (EINVAL);
+
+	vmf->vmf_trapno = intnum;
+	p = (int (*)(struct vm86frame *))((uintptr_t)vm86_bioscall);
+	simple_lock(&vm86_lock);
+	critical_enter();
+	retval = p(vmf);
+	critical_exit();
+	simple_unlock(&vm86_lock);
+	return (retval);
+}
+
+/*
+ * struct vm86context contains the page table to use when making
+ * vm86 calls.  If intnum is a valid interrupt number (0-255), then
+ * the "interrupt trampoline" will be used, otherwise we use the
+ * caller's cs:ip routine.
+ */
+int
+vm86_datacall(int intnum, struct vm86frame *vmf, struct vm86context *vmc)
+{
+	pt_entry_t *pte;
+	int (*p)(struct vm86frame *);
+	caddr_t page;
+	int i, entry, retval;
+
+	pte = (pt_entry_t *)vm86paddr;
+	simple_lock(&vm86_lock);
+	for (i = 0; i < vmc->npages; i++) {
+		page = vtophys(vmc->pmap[i].kva & PG_FRAME);
+		entry = vmc->pmap[i].pte_num;
+		vmc->pmap[i].old_pte = pte[entry];
+		pte[entry] = page | PG_V | PG_RW | PG_U;
+		pmap_invalidate_page(kernel_pmap, vmc->pmap[i].kva);
+	}
+
+	vmf->vmf_trapno = intnum;
+	p = (int (*)(struct vm86frame *))((uintptr_t)vm86_bioscall);
+	critical_enter();
+	retval = p(vmf);
+	critical_exit();
+
+	for (i = 0; i < vmc->npages; i++) {
+		entry = vmc->pmap[i].pte_num;
+		pte[entry] = vmc->pmap[i].old_pte;
+		pmap_invalidate_page(kernel_pmap, vmc->pmap[i].kva);
+	}
+	simple_unlock(&vm86_lock);
+
+	return (retval);
+}
+
+vm_offset_t
+vm86_getaddr(struct vm86context *vmc, u_short sel, u_short off)
+{
+	int i, page;
+	vm_offset_t addr;
+
+	addr = (vm_offset_t)MAKE_ADDR(sel, off);
+	page = addr >> PAGE_SHIFT;
+	for (i = 0; i < vmc->npages; i++)
+		if (page == vmc->pmap[i].pte_num)
+			return (vmc->pmap[i].kva + (addr & PAGE_MASK));
+	return (0);
+}
+
+int
+vm86_getptr(struct vm86context *vmc, vm_offset_t kva, u_short *sel,
+     u_short *off)
+{
+	int i;
+
+	for (i = 0; i < vmc->npages; i++)
+		if (kva >= vmc->pmap[i].kva &&
+		    kva < vmc->pmap[i].kva + PAGE_SIZE) {
+			*off = kva - vmc->pmap[i].kva;
+			*sel = vmc->pmap[i].pte_num << 8;
+			return (1);
+		}
+	return (0);
+}
+
+int
+vm86_sysarch(p, args, retval)
 	struct proc *p;
 	char *args;
 	register_t *retval;
 {
-	struct trapframe *tf = p->p_md.md_regs;
-	struct pcb *pcb = &p->p_addr->u_pcb;
-	struct vm86_kern vm86s;
-	int error;
+	int error = 0;
+	struct i386_vm86_args ua;
+	struct vm86_kernel *vm86 = &p->p_addr->u_pcb.pcb_vm86;
 
-	error = copyin(args, &vm86s, sizeof(vm86s));
-	if (error)
+	if ((error = copyin(args, &ua, sizeof(struct i386_vm86_args))) != 0)
 		return (error);
 
-	pcb->vm86_userp = (void *)args;
+	vm86 = &p->p_addr->u_pcb.pcb_vm86;
 
-	/*
-	 * Keep mask of flags we simulate to simulate a particular type of
-	 * processor.
-	 */
-	switch (vm86s.ss_cpu_type) {
-	case VCPU_086:
-	case VCPU_186:
-	case VCPU_286:
-		pcb->vm86_flagmask = PSL_ID|PSL_AC|PSL_NT|PSL_IOPL;
-		break;
-	case VCPU_386:
-		pcb->vm86_flagmask = PSL_ID|PSL_AC;
-		break;
-	case VCPU_486:
-		pcb->vm86_flagmask = PSL_ID;
-		break;
-	case VCPU_586:
-		pcb->vm86_flagmask = 0;
-		break;
-	default:
-		return (EINVAL);
+	switch (ua.sub_op) {
+	case VM86_INIT: {
+		struct vm86_init_args sa;
+
+		if ((error = copyin(ua.sub_args, &sa, sizeof(sa))) != 0)
+			return (error);
+		if (cpu_feature & CPUID_VME)
+			vm86->vm86_has_vme = (rcr4() & CR4_VME ? 1 : 0);
+		else
+			vm86->vm86_has_vme = 0;
+		vm86->vm86_inited = 1;
+		vm86->vm86_debug = sa.debug;
+		bcopy(&sa.int_map, vm86->vm86_intmap, 32);
 	}
+		break;
 
-#define DOVREG(reg) tf->tf_vm86_##reg = (u_short) vm86s.regs.vmsc.sc_##reg
-#define DOREG(reg) tf->tf_##reg = (u_short) vm86s.regs.vmsc.sc_##reg
+#if 0
+	case VM86_SET_VME: {
+		struct vm86_vme_args sa;
 
-	DOVREG(ds);
-	DOVREG(es);
-	DOVREG(fs);
-	DOVREG(gs);
-	DOREG(edi);
-	DOREG(esi);
-	DOREG(ebp);
-	DOREG(eax);
-	DOREG(ebx);
-	DOREG(ecx);
-	DOREG(edx);
-	DOREG(eip);
-	DOREG(cs);
-	DOREG(esp);
-	DOREG(ss);
+		if ((cpu_feature & CPUID_VME) == 0)
+			return (ENODEV);
 
-#undef	DOVREG
-#undef	DOREG
+		if (error = copyin(ua.sub_args, &sa, sizeof(sa)))
+			return (error);
+		if (sa.state)
+			load_cr4(rcr4() | CR4_VME);
+		else
+			load_cr4(rcr4() & ~CR4_VME);
+		}
+		break;
+#endif
 
-	/* Going into vm86 mode jumps off the signal stack. */
-	p->p_sigacts->ps_sigstk.ss_flags  &= ~SS_ONSTACK;
+	case VM86_GET_VME: {
+		struct vm86_vme_args sa;
 
-	set_vflags(p, vm86s.regs.vmsc.sc_eflags | PSL_VM);
+		sa.state = (rcr4() & CR4_VME ? 1 : 0);
+		error = copyout(&sa, ua.sub_args, sizeof(sa));
+	}
+		break;
 
-	return (EJUSTRETURN);
+	case VM86_INTCALL: {
+		struct vm86_intcall_args sa;
+
+		if ((error = copyin(ua.sub_args, &sa, sizeof(sa))))
+			return (error);
+		if ((error = vm86_intcall(sa.intnum, &sa.vmf)))
+			return (error);
+		error = copyout(&sa, ua.sub_args, sizeof(sa));
+	}
+		break;
+
+	default:
+		error = EINVAL;
+	}
+	return (error);
 }

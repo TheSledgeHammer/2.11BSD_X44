@@ -68,11 +68,6 @@
 int	loadfile(const char *, u_long *, int);
 int	fdloadfile(int fd, u_long *, int);
 
-#ifndef MACHINE_LOADFILE_MACHDEP
-#define MACHINE_LOADFILE_MACHDEP "machine/loadfile_machdep.h"
-#endif
-#include MACHINE_LOADFILE_MACHDEP
-
 #ifdef BOOT_ECOFF
 #include <sys/exec_ecoff.h>
 int	loadfile_coff(int, struct ecoff_exechdr *, u_long *, int);
@@ -92,3 +87,5 @@ int	loadfile_elf64(int, Elf64_Ehdr *, u_long *, int);
 #include <sys/exec_aout.h>
 int	loadfile_aout(int, struct exec *, u_long *, int);
 #endif
+
+#include <machine/loadfile_machdep.h>

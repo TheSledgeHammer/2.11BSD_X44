@@ -6,7 +6,15 @@
  *	@(#)param.h	1.6 (2.11BSD) 1999/9/5
  */
 
+/*
+ * Historic BSD #defines -- probably will remain untouched for all time.
+ */
 #define	BSD	211		/* 2.11 * 10, as cpp doesn't do floats */
+
+#define	__211BSD_Version__	0000000100	/* 211BSD 0.00.01 */
+
+#define __211BSD_Prereq__(M,m,p) (((((M) * 100000000) + \
+    (m) * 1000000) + (p) * 100) <= __211BSD_Version__)
 
 #ifndef	NULL
 #define	NULL	0
@@ -187,3 +195,31 @@
  */
 #define	FSHIFT	11		/* bits to right of fixed binary point */
 #define FSCALE	(1<<FSHIFT)
+
+/*
+ * Round p (pointer or byte index) up to a correctly-aligned value for all
+ * data types (int, long, ...).   The result is u_int and must be cast to
+ * any desired pointer type.
+ *
+ * ALIGNED_POINTER is a boolean macro that checks whether an address
+ * is valid to fetch data elements of type t from on this architecture
+ * using ALIGNED_POINTER_LOAD.  This does not reflect the optimal
+ * alignment, just the possibility (within reasonable limits).
+ *
+ *	uint32_t x;
+ *	unsigned char *p = ...;
+ *
+ *	if (ALIGNED_POINTER(p, uint32_t)) {
+ *		uint32_t t;
+ *		ALIGNED_POINTER_LOAD(&t, p, uint32_t);
+ *		x = t;
+ *	} else {
+ *		uint32_t t;
+ *		memcpy(&t, p, sizeof(t));
+ *		x = t;
+ *	}
+ *
+ */
+#ifndef ALIGNED_POINTER
+#define	ALIGNED_POINTER(p,t)	((((uintptr_t)(p)) & (sizeof(t) - 1)) == 0)
+#endif

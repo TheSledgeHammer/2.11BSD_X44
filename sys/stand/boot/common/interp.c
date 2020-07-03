@@ -34,12 +34,17 @@
  *
  * XXX may be obsoleted by BootFORTH or some other, better, interpreter.
  */
+
+/*
+ * Needs fix-up: minimum "perform" will not work with command_table.
+ * Shouldn't be difficult to re-implement.
+ */
+
 #include <dloader/dloader.h>
 #include <lib/libsa/loadfile.h>
 #include <lib/libkern/libkern.h>
 #include <boot/bootstand.h>
 #include "bootstrap.h"
-
 
 #define	MAXARGS	20			/* maximum number of arguments allowed */
 
@@ -110,7 +115,7 @@ interact(void)
     /*
      * XXX: Before interacting, we might want to autoboot.
      */
-
+	cmds_init();
     dloader_init_cmds();
 
 	/*
@@ -130,7 +135,6 @@ interact(void)
 		interp_run(input);
 	}
 }
-
 
 /*
  * Read commands from a file, then execute them.

@@ -26,20 +26,19 @@
  * $FreeBSD$
  */
 
-
 #include <sys/param.h>
 #include <sys/reboot.h>
 #include <sys/exec.h>
 #include <sys/exec_linker.h>
-#include <sys/bootinfo.h>
+#include <sys/boot.h>
 
 #include <lib/libsa/loadfile.h>
-#include <machine/bootinfo.h>
-
 #include <boot/bootstand.h>
 #include "bootstrap.h"
 #include "libi386.h"
 #include "btxv86.h"
+
+#include <machine/bootinfo.h>
 
 int
 bi_getboothowto(char *kargs)
@@ -48,8 +47,8 @@ bi_getboothowto(char *kargs)
     int		howto;
     int		vidconsole;
 
-    //howto = boot_parse_cmdline(kargs);
-    //howto |= boot_env_to_howto();
+    howto = boot_parse_cmdline(kargs);
+    howto |= boot_env_to_howto();
 
     howto = 0;
 
@@ -86,7 +85,7 @@ bi_getboothowto(char *kargs)
 void
 bi_setboothowto(int howto)
 {
-	struct bootinfo_common *common;
+	boot_howto_to_env(howto);
 }
 
 /*
@@ -115,89 +114,4 @@ bi_copyenv(vm_offset_t addr)
     i386_copyin("", addr, 1);
     addr++;
     return(addr);
-}
-
-/* Copied from NetBSD arch/ia64
- * Load the information expected by an ia64 kernel.
- *
- * - The kernel environment is copied into kernel space.
- * - Module metadata are formatted and placed in kernel space.
- */
-int
-bi_load(union bootinfo *bi, struct preloaded_file *fp, char *args)
-{
-	char					*rootdevname;
-	struct i386_devdesc		*rootdev;
-	struct preloaded_file	*xp;
-	caddr_t					addr, bootinfo_addr;
-    char					*kernelname;
-    caddr_t					ssym, esym;
-	struct file_metadata	*md;
-
-	/*
-	 * boot environment
-	 */
-	struct bootinfo_environment bienvp = bi->bi_envp;
-
-    /*
-     * Version 1 bootinfo.
-     */
-    bi->bi_magic = BOOTINFO_MAGIC;
-    bi->bi_version = 1;
-
-    /*
-     * Calculate boothowto.
-     */
-    bi->bi_boothowto = bi_getboothowto(fp->f_args);
-
-
-    /*
-     * Allow the environment variable 'rootdev' to override the supplied device
-     * This should perhaps go to MI code and/or have $rootdev tested/set by
-     * MI code before launching the kernel.
-     */
-    rootdevname = getenv("rootdev");
-    i386_getdev((void **)(&rootdev), rootdevname, NULL);
-    if (rootdev == NULL) {		/* bad $rootdev/$currdev */
-    	printf("can't determine root device\n");
-    	return(EINVAL);
-    }
-
-
-    /* Try reading the /etc/fstab file to select the root device */
-    getrootmount(i386_fmtdev((void *)rootdev));
-    free(rootdev);
-
-    ssym = esym = 0;
-
-    ssym = fp->marks[MARK_SYM];
-    esym = fp->marks[MARK_END];
-
-    if (ssym == 0 || esym == 0)
-    	ssym = esym = 0;		/* sanity */
-
-    bienvp->bi_symtab = ssym;
-    bienvp->bi_esymtab = esym;
-
-    /* find the last module in the chain */
-    addr = 0;
-	for (xp = file_findfile(NULL, NULL); xp != NULL; xp = xp->f_next) {
-		if (addr < (xp->f_addr + xp->f_size))
-			addr = xp->f_addr + xp->f_size;
-	}
-
-	/* pad to a page boundary */
-	addr = (addr + PAGE_MASK) & ~PAGE_MASK;
-
-	/* copy our environment */
-	bienvp = addr;
-	addr = bi_copyenv(addr);
-
-	/* pad to a page boundary */
-	addr = (addr + PAGE_MASK) & ~PAGE_MASK;
-
-	/* all done copying stuff in, save end of loaded object space */
-	bienvp->bi_kernend = addr;
-    
-    return ((bi));
 }

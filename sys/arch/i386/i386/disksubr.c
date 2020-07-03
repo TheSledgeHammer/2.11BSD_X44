@@ -42,6 +42,8 @@
 #include <sys/disklabel.h>
 #include <sys/syslog.h>
 
+#include <libsa/diskmbr.h>
+
 #define	b_cylin	b_resid
 
 #define MBRSIGOFS 0x1fe
@@ -62,7 +64,7 @@ int fat_types[] = { DOSPTYP_FAT12, DOSPTYP_FAT16S,
 #define NO_MBR_SIGNATURE ((struct dos_partition *) -1)
 
 static struct dos_partition *
-mbr_findslice __P((struct dos_partition* dp, struct buf *bp));
+mbr_findslice (struct dos_partition* dp, struct buf *bp);
 
 
 /*

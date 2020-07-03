@@ -46,6 +46,28 @@
 #include <machine/frame.h>
 #include <machine/segments.h>
 
+struct cpu_info {
+	u_int32_t		ci_kern_cr3;	/* U+K page table */
+	u_int32_t		ci_scratch;		/* for U<-->K transition */
+	struct device 	*ci_dev;		/* our device */
+	struct cpu_info *ci_self;		/* pointer to this structure */
+	struct cpu_info *ci_next;		/* next cpu */
+
+	/*
+	 * Public members.
+	 */
+	struct proc 	*ci_curproc; 	/* current owner of the processor */
+	cpuid_t 		ci_cpuid; 		/* our CPU ID */
+	u_int 			ci_apicid;		/* our APIC ID */
+	u_int 			ci_acpi_proc_id;
+	u_int32_t		ci_randseed;
+
+	u_int32_t 		ci_kern_esp;	/* kernel-only stack */
+	u_int32_t 		ci_intr_esp;	/* U<-->K trampoline stack */
+	u_int32_t 		ci_user_cr3;	/* U-K page table */
+
+};
+
 /*
  * definitions of cpu-dependent requirements
  * referenced in generic code
@@ -111,7 +133,6 @@ struct cpu_nocpuid_nameclass {
 	void 		(*cpu_setup) (void);
 };
 
-
 struct cpu_cpuid_nameclass {
 	const char 	*cpu_id;
 	int 		cpu_vendor;
@@ -153,9 +174,9 @@ void	vm86_gpfault (struct proc *, int);
 #define	CPU_CONSDEV		1	/* dev_t: console terminal device */
 #define	CPU_MAXID		2	/* number of valid machdep ids */
 
-#define CTL_MACHDEP_NAMES { \
-	{ 0, 0 }, \
-	{ "console_device", CTLTYPE_STRUCT }, \
+#define CTL_MACHDEP_NAMES { 				\
+	{ 0, 0 }, 								\
+	{ "console_device", CTLTYPE_STRUCT }, 	\
 }
 
 #ifndef LOCORE

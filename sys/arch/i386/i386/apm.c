@@ -70,14 +70,13 @@
 #include <machine/cpufunc.h>
 #include <machine/gdt.h>
 #include <machine/psl.h>
+#include <machine/bioscall.h>
+#include <machine/apmvar.h>
 
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>
 #include <i386/isa/isa_machdep.h>
 #include <dev/isa/rtc.h>
-
-#include <machine/bioscall.h>
-#include <machine/apmvar.h>
 
 #if defined(APMDEBUG)
 #define	DPRINTF(f, x)		do { if (apmdebug & (f)) printf x; } while (0)
@@ -131,8 +130,7 @@ static int	apm_get_event (struct bioscallregs *);
 static int	apm_get_powstat (struct bioscallregs *);
 static void	apm_get_powstate (u_int);
 static void	apm_periodic_check (void *);
-static void	apm_perror (const char *, struct bioscallregs *, ...)
-		    __kprintf_attribute__((__format__(__printf__,1,3)));
+static void	apm_perror (const char *, struct bioscallregs *, ...) __kprintf_attribute__((__format__(__printf__,1,3)));
 static void	apm_power_print (struct apm_softc *, struct bioscallregs *);
 static void	apm_powmgt_enable (int);
 static void	apm_powmgt_engage (int, u_int);
@@ -782,7 +780,6 @@ apmattach(parent, self, aux)
 #endif
 
 	printf(": ");
-
 	regs.ax = APM_BIOS_FN(APM_INSTALLATION_CHECK);
 	regs.bx = APM_DEV_APM_BIOS;
 	regs.cx = regs.dx = regs.si = regs.di = regs.flags = 0;

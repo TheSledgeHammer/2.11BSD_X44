@@ -115,17 +115,17 @@ struct ttysize {
 #define	TIOCHPCL	_IO(t, 2)			/* hang up on last close */
 #define	TIOCMODG	_IOR(t, 3, int)		/* get modem control state */
 #define	TIOCMODS	_IOW(t, 4, int)		/* set modem control state */
-#define	TIOCM_LE	0001		/* line enable */
-#define	TIOCM_DTR	0002		/* data terminal ready */
-#define	TIOCM_RTS	0004		/* request to send */
-#define	TIOCM_ST	0010		/* secondary transmit */
-#define	TIOCM_SR	0020		/* secondary receive */
-#define	TIOCM_CTS	0040		/* clear to send */
-#define	TIOCM_CAR	0100		/* carrier detect */
+#define	TIOCM_LE	0001				/* line enable */
+#define	TIOCM_DTR	0002				/* data terminal ready */
+#define	TIOCM_RTS	0004				/* request to send */
+#define	TIOCM_ST	0010				/* secondary transmit */
+#define	TIOCM_SR	0020				/* secondary receive */
+#define	TIOCM_CTS	0040				/* clear to send */
+#define	TIOCM_CAR	0100				/* carrier detect */
 #define	TIOCM_CD	TIOCM_CAR
-#define	TIOCM_RNG	0200		/* ring */
+#define	TIOCM_RNG	0200				/* ring */
 #define	TIOCM_RI	TIOCM_RNG
-#define	TIOCM_DSR	0400		/* data set ready */
+#define	TIOCM_DSR	0400				/* data set ready */
 #define	TIOCGETP	_IOR(t, 8,struct sgttyb)/* get parameters -- gtty */
 #define	TIOCSETP	_IOW(t, 9,struct sgttyb)/* set parameters -- stty */
 #define	TIOCSETN	_IOW(t,10,struct sgttyb)/* as above, but no flushtty */

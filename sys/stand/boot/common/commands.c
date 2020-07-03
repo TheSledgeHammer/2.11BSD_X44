@@ -39,6 +39,43 @@ static char command_errbuf[256];
 
 static int page_file(char *filename);
 
+void
+cmds_init()
+{
+	cmds_alloc(&cmds);
+}
+
+void
+cmds_alloc(cmds)
+	struct command_table cmds;
+{
+	cmds = malloc(sizeof(struct command_table));
+}
+
+struct command_table cmds = {
+    .command_help = 		command_help,
+    .command_commandlist = 	command_commandlist,
+    .command_show = 		command_show,
+    .command_set = 			command_set,
+    .command_unset = 		command_unset,
+    .command_echo = 		command_echo,
+    .command_read = 		command_read,
+    .command_more = 		command_more,
+    .command_lsdev =		command_lsdev,
+    .command_quit = 		command_quit,
+    .command_boot = 		command_boot,
+    .command_autoboot = 	command_autoboot,
+    .command_load = 		command_load,
+    .command_unload = 		command_unload,
+    .command_lskern = 		command_lskern,
+    .command_include = 		command_include,
+    .command_ls = 			command_ls,
+    .command_bcache = 		command_bcache,
+    .command_biosmem = 		command_biosmem,
+    .command_reboot = 		command_reboot,
+    .command_heap = 		command_heap
+};
+
 int
 command_seterr(const char *fmt, ...)
 {
@@ -414,7 +451,6 @@ command_read(int argc, char *argv[])
 	}
 
 	ngets(buf, sizeof(buf));
-
 	if (name != NULL)
 		setenv(name, buf, 1);
 	return (CMD_OK);
@@ -511,4 +547,30 @@ command_quit(int argc, char *argv[])
 {
 	exit(0);
 	return (CMD_OK);
+}
+
+int
+command_heap(int argc, char *argv[])
+{
+    char *base;
+    size_t bytes;
+
+    base = getheap(&bytes);
+    printf("heap %p-%p (%d)\n", base, base + bytes, (int)bytes);
+    printf("stack at %p\n", &argc);
+    return (CMD_OK);
+}
+
+int
+command_reboot(int argc, char *argv[])
+{
+	int i;
+
+	for (i = 0; devsw[i] != NULL; ++i)
+		if (devsw[i]->dv_cleanup != NULL)
+			(devsw[i]->dv_cleanup)();
+
+	printf("Rebooting...\n");
+	delay(1000000);
+	__exit(0);
 }

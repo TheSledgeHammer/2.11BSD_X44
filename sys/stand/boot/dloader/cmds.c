@@ -41,6 +41,8 @@
 static void menu_display(void);
 static int menu_execute(int);
 
+
+
 /*
  * This is called from common and must reference files to bring
  * library modules into common during linking.
@@ -48,7 +50,25 @@ static int menu_execute(int);
 void
 dloader_init_cmds(void)
 {
+	dcmds_alloc(&dcmds);
+}
 
+struct dcommand_table dcmds = {
+		.command_local = 		command_local,
+		.command_lunset = 		command_lunset,
+		.command_lunsetif = 	command_lunsetif,
+		.command_loadall = 		command_loadall,
+		.command_menuclear = 	command_menuclear,
+		.command_menuitem = 	command_menuitem,
+		.command_menuadd = 		command_menuadd,
+		.command_menu = 		command_menu,
+};
+
+void
+dcmds_alloc(dcmds)
+	struct dcommand_table dcmds;
+{
+	dcmds = malloc(sizeof(struct dcommand_table));
 }
 
 static int curitem;

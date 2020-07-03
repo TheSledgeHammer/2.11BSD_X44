@@ -66,6 +66,7 @@
 #include <sys/protosw.h>
 #include <sys/reboot.h>
 #include <sys/user.h>
+#include <sys/ksyms.h>
 #include <vm/include/vm.h>
 
 #include <machine/cpu.h>
@@ -90,6 +91,11 @@ struct 	vnode *rootvp, *swapdev_vp;
 int		boothowto;
 struct	timeval boottime;
 struct	timeval runtime;
+
+#ifndef BOOTVERBOSE
+#define	BOOTVERBOSE	0
+#endif
+int	bootverbose = 	BOOTVERBOSE;
 
 extern const struct emul emul_211bsd; 					/* defined in kern_exec.c */
 
@@ -118,7 +124,6 @@ main(framep)
 	int s;
 	register_t rval[2];
 	extern struct pdevinit pdevinit[];
-	extern struct sysentvec sysvec;
 	extern void roundrobin (void *);
 	extern void schedcpu (void *);
 
@@ -140,6 +145,8 @@ main(framep)
 
 	startup();
 
+	ksyms_init();
+
 	/*
 	 * Initialize process and pgrp structures.
 	 */
@@ -152,8 +159,6 @@ main(framep)
 	p->p_prev = (struct proc **)&allproc;
 	p->p_pgrp = &pgrp0;
 	pgrphash[0] = &pgrp0;
-
-	p->p_sysent = &sysvec;
 
 	p->p_stat = SRUN;
 	p->p_flag |= P_SLOAD|P_SSYS;
@@ -248,6 +253,11 @@ main(framep)
 	domaininit();
 	splx(s);
 
+#ifdef GPROF
+	/* Initialize kernel profiling. */
+	kmstartup();
+#endif
+
 	/* Kick off timeout driven events by calling first time. */
 	roundrobin(NULL);
 	schedcpu(NULL);
@@ -322,7 +332,8 @@ start_init(p, framep)
 	int options, i, error;
 	register_t retval[2];
 	char flags[4] = "-", *flagsp;
-	char **pathp, *path, *ucp, **uap, *arg0, *arg1;
+	char **pathp, *path, *ucp, **uap, *arg0, *arg1, *var;
+	char *free_initpaths, *tmp_initpaths;
 
 	initproc = p;
 
@@ -342,6 +353,12 @@ start_init(p, framep)
 	if (vm_allocate(&p->p_vmspace->vm_map, &addr, PAGE_SIZE, FALSE) != 0)
 		panic("init: couldn't allocate argument space");
 	p->p_vmspace->vm_maxsaddr = (caddr_t) addr;
+
+	if ((var = kern_getenv("init_path")) != NULL) {
+		strlcpy(initpaths, var, sizeof(initpaths));
+		freeenv(var);
+	}
+	free_initpaths = tmp_initpaths = strdup(initpaths, M_TEMP);
 
 	for (pathp = &initpaths[0]; (path = *pathp) != NULL; pathp++) {
 		/*
@@ -399,10 +416,12 @@ start_init(p, framep)
 		 */
 		error = execve(p, &args, retval);
 		if (error == 0 || error == EJUSTRETURN)
+			free(free_initpaths, M_TEMP);
 			return;
 		if (error != ENOENT)
 			printf("exec %s: error %d\n", path, error);
 	}
+	free(free_initpaths, M_TEMP);
 	printf("init: not found\n");
 	panic("no init");
 }

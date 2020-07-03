@@ -31,7 +31,6 @@
 
 #define BOOT_AOUT
 #define BOOT_ELF32
-//#define BOOT_ELF64
 #define ELFSIZE 32
 
 #define LOAD_KERNEL		(LOAD_ALL & ~LOAD_TEXTA)

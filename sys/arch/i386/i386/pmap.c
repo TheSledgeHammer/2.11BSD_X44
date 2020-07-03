@@ -171,16 +171,16 @@ int	protection_codes[8];
 
 struct pmap	kernel_pmap_store;
 
-vm_offset_t avail_start;		/* PA of first available physical page */
-vm_offset_t	avail_end;			/* PA of last available physical page */
-vm_size_t	mem_size;			/* memory size in bytes */
-vm_offset_t	virtual_avail;  	/* VA of first avail page (after kernel bss)*/
-vm_offset_t	virtual_end;		/* VA of last avail page (end of kernel AS) */
-vm_offset_t	vm_first_phys;		/* PA of first managed page */
-vm_offset_t	vm_last_phys;		/* PA just past last managed page */
-int			i386pagesperpage;	/* PAGE_SIZE / I386_PAGE_SIZE */
+vm_offset_t avail_start;				/* PA of first available physical page */
+vm_offset_t	avail_end;					/* PA of last available physical page */
+vm_size_t	mem_size;					/* memory size in bytes */
+vm_offset_t	virtual_avail;  			/* VA of first avail page (after kernel bss)*/
+vm_offset_t	virtual_end;				/* VA of last avail page (end of kernel AS) */
+vm_offset_t	vm_first_phys;				/* PA of first managed page */
+vm_offset_t	vm_last_phys;				/* PA just past last managed page */
+int			i386pagesperpage;			/* PAGE_SIZE / I386_PAGE_SIZE */
 boolean_t	pmap_initialized = FALSE;	/* Has pmap_init completed? */
-char		*pmap_attributes;	/* reference and modify bits */
+char		*pmap_attributes;			/* reference and modify bits */
 
 boolean_t	pmap_testbit();
 void		pmap_clear_modify();
@@ -1700,6 +1700,45 @@ pmap_t pm;
 }
 #endif
 
+struct bios16_pmap_handle {
+	pt_entry_t	*pte;
+	pd_entry_t	*ptd;
+	pt_entry_t	orig_ptd;
+};
+
+static void *
+pmap_bios16_enter(void)
+{
+	struct bios16_pmap_handle *h;
+	extern int IdlePTD;
+
+	/*
+	 * no page table, so create one and install it.
+	 */
+	h = malloc(sizeof(struct bios16_pmap_handle), M_TEMP, M_WAITOK);
+	h->pte = (pt_entry_t*) malloc(PAGE_SIZE, M_TEMP, M_WAITOK);
+	h->ptd = IdlePTD;
+	*h->pte = vm86phystk | PG_RW | PG_V;
+	h->orig_ptd = *h->ptd;
+	*h->ptd = vtophys(h->pte) | PG_RW | PG_V;
+	//pmap_invalidate_all_int(kernel_pmap); /* XXX insurance for now */
+	return (h);
+}
+
+static void
+pmap_bios16_leave(void *arg)
+{
+	struct bios16_pmap_handle *h;
+
+	h = arg;
+	*h->ptd = h->orig_ptd; /* remove page table */
+	/*
+	 * XXX only needs to be invlpg(0) but that doesn't work on the 386
+	 */
+	//pmap_invalidate_all_int(kernel_pmap);
+	free(h->pte, M_TEMP); /* ... and free it */
+}
+
 /* PMap Arguments */
 struct pmap_args pmap_arg = {
     &pmap_bootstrap,
@@ -1739,4 +1778,6 @@ struct pmap_args pmap_arg = {
     &pmap_pvdump,
     &pmap_check_wiring,
     &pads,
+	&pmap_bios16_enter,
+	&pmap_bios16_leave,
 };

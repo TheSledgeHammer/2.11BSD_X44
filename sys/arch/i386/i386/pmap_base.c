@@ -37,7 +37,7 @@
  *	@(#)pmap.c	8.1 (Berkeley) 6/11/93
  *
  */
-/* PMAP Base extension for PAE and NON-PAE (Not Yet Implemented) */
+/* PMAP Base extension for PAE and NON-PAE (Not Fully Implemented) */
 
 #include <sys/cdefs.h>
 
@@ -281,4 +281,16 @@ void
 pads(pmap_t pm)
 {
 	pmap_args_ptr->pads(pm);
+}
+
+void *
+pmap_bios16_enter(void)
+{
+	return (pmap_args_ptr->pmap_bios16_enter());
+}
+
+void
+pmap_bios16_leave(void *handle)
+{
+	pmap_args_ptr->pmap_bios16_leave(handle);
 }

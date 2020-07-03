@@ -72,8 +72,8 @@ struct dos_partition {
 #ifndef __ASSEMBLER__
 #include <sys/dkbad.h>
 struct cpu_disklabel {
-	struct dos_partition dosparts[NDOSPART];
-	struct dkbad bad;
+	struct dos_partition 	dosparts[NDOSPART];
+	struct dkbad 			bad;
 };
 
 /* Isolate the relevant bits to get sector and cylinder. */

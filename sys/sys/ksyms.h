@@ -1,4 +1,5 @@
-/*	$NetBSD: ksyms.h,v 1.8 2003/11/17 10:16:18 cube Exp $	*/
+/*	$NetBSD: ksyms.h,v 1.37 2017/11/06 17:56:25 christos Exp $	*/
+
 /*
  * Copyright (c) 2001, 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -29,24 +30,67 @@
 #ifndef _SYS_KSYMS_H_
 #define _SYS_KSYMS_H_
 
-/*
- * Do a lookup of a symbol using the in-kernel lookup algorithm.
- */
-struct ksyms_gsymbol {
-	const char *kg_name;
-	union {
-		void 			*ku_sym;		 /* Normally Elf_Sym */
-		unsigned long 	*ku_value;
-	} _un;
-#define	kg_sym 		_un.ku_sym
-#define	kg_value 	_un.ku_value
+#if !defined(ELFSIZE)
+#define ELFSIZE KERN_ELFSIZE
+#endif
+
+#include <sys/exec_elf.h>
+
+#include <sys/ioccom.h>
+#include <sys/queue.h>
+
+struct ksyms_symtab {
+	TAILQ_ENTRY(ksyms_symtab) 	sd_queue; 		/* All active tables */
+	const char 					*sd_name;		/* Name of this table */
+	Elf_Sym 					*sd_symstart;	/* Address of symbol table */
+	uintptr_t		 			sd_minsym;		/* symbol with minimum value */
+	uintptr_t 					sd_maxsym;		/* symbol with maximum value */
+	char 						*sd_strstart;	/* Address of corresponding string table */
+	int 						sd_usroffset;	/* Real address for userspace */
+	int 						sd_symsize;		/* Size in bytes of symbol table */
+	int 						sd_strsize;		/* Size of string table */
+	int 						sd_nglob;		/* Number of global symbols */
+	bool 						sd_gone;		/* dead but around for open() */
+	void 						*sd_ctfstart;	/* Address of CTF contents */
+	int 						sd_ctfsize;		/* Size in bytes of CTF contents */
+	uint32_t 					*sd_nmap;		/* Name map for sorted symbols */
+	int 						sd_nmapsize;	/* Total span of map */
 };
 
-#define	KIOCGSYMBOL	_IOW('l', 1, struct ksyms_gsymbol)
-#define	KIOCGVALUE	_IOW('l', 2, struct ksyms_gsymbol)
-#define	KIOCGSIZE	_IOR('l', 3, int)
+/*
+ * Static allocated ELF header.
+ * Basic info is filled in at attach, sizes at open.
+ */
+#define	SHNOTE		1
+#define	SYMTAB		2
+#define	STRTAB		3
+#define	SHSTRTAB	4
+#define	SHBSS		5
+#define	SHCTF		6
+#define	NSECHDR		7
 
-#ifdef _KERNEL
+#define	NPRGHDR		1
+#define	SHSTRSIZ	64
+
+struct ksyms_hdr {
+	Elf_Ehdr	kh_ehdr;
+	Elf_Phdr	kh_phdr[NPRGHDR];
+	Elf_Shdr	kh_shdr[NSECHDR];
+	char 		kh_strtab[SHSTRSIZ];
+	/* 0=NameSize, 1=DescSize, 2=Tag, 3="NetB", 4="SD\0\0", 5=Version */
+	int32_t		kh_note[6];
+};
+
+static int 					ksyms_maxlen;
+static bool 				ksyms_isopen;
+static bool 				ksyms_initted;
+static bool 				ksyms_loaded;
+static struct simple_lock 	ksyms_lock;
+static struct ksyms_symtab 	kernel_symtab;
+
+static void ksyms_sizes_calc(void);
+
+#if defined(_KERNEL)
 /*
  * Definitions used in ksyms_getname() and ksyms_getval().
  */
@@ -59,16 +103,11 @@ struct ksyms_gsymbol {
 /*
  * Prototypes
  */
-int 	ksyms_getname(const char **, char **, caddr_t, int);
-int 	ksyms_getval(const char *, char *, unsigned long *, int, int);
-#define	ksyms_getval_from_kernel(a,b,c,d)	ksyms_getval(a,b,c,d,0)
-#define	ksyms_getval_from_userland(a,b,c,d)	ksyms_getval(a,b,c,d,1)
 int 	ksyms_addsymtab(const char *, void *, size_t, char *, size_t);
 int 	ksyms_delsymtab(const char *);
-int 	ksyms_rensymtab(const char *, const char*);
-void 	ksyms_init(int, void *, void *);
-#ifdef DDB
-int 	ksyms_sift(char *, char *, int);
-#endif
+void 	ksyms_init(void);
+void 	ksyms_addsyms_elf(int, void *, void *);
+void 	ksyms_addsyms_explicit(void *, void *, size_t, void *, size_t);
+
 #endif /* _KERNEL */
 #endif /* _SYS_KSYMS_H_ */

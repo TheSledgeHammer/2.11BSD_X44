@@ -53,6 +53,9 @@ struct bootblk_command
     bootblk_cmd_t		*c_fn;
 };
 
+/* initilize command_table */
+void cmds_init();
+
 /* Prototypes for the command handlers within stand/common/ */
 
 /*	commands.c		*/
@@ -70,7 +73,10 @@ int command_quit(int argc, char *argv[]);
 /*	boot.c		*/
 int command_boot(int argc, char *argv[]);
 int command_autoboot(int argc, char *argv[]);
-//int command_reboot(int argc, char *argv[]); Could be useful??
+
+/* machine main.c */
+int command_reboot(int argc, char *argv[]);
+int command_heap(int argc, char *argv[]);
 
 /*	fileload.c	*/
 int command_load(int argc, char *argv[]);
@@ -88,6 +94,31 @@ int command_bcache(int argc, char *argv[]);
 
 /*  biosmem.c	*/
 int command_biosmem(int argc, char *argv[]);
+
+struct command_table {
+    int     (*command_help)(int argc, char *argv[]);
+    int 	(*command_commandlist)(int argc, char *argv[]);
+    int 	(*command_show)(int argc, char *argv[]);
+    int 	(*command_set)(int argc, char *argv[]);
+    int 	(*command_unset)(int argc, char *argv[]);
+    int 	(*command_echo)(int argc, char *argv[]);
+    int 	(*command_read)(int argc, char *argv[]);
+    int 	(*command_more)(int argc, char *argv[]);
+    int 	(*command_lsdev)(int argc, char *argv[]);
+    int 	(*command_quit)(int argc, char *argv[]);
+    int 	(*command_boot)(int argc, char *argv[]);
+    int 	(*command_autoboot)(int argc, char *argv[]);
+    int 	(*command_load)(int argc, char *argv[]);
+    int 	(*command_unload)(int argc, char *argv[]);
+    int 	(*command_lskern)(int argc, char *argv[]);
+    int 	(*command_include)(int argc, char *argv[]);
+    int 	(*command_ls)(int argc, char *argv[]);
+    int		(*command_bcache)(int argc, char *argv[]);
+    int 	(*command_biosmem)(int argc, char *argv[]);
+    int 	(*command_reboot)(int argc, char *argv[]);
+    int 	(*command_heap)(int argc, char *argv[]);
+};
+extern struct command_table cmds;
 
 #define COMMAND_SET(a, b, c, d) /* Nothing */
 
@@ -110,61 +141,10 @@ int command_biosmem(int argc, char *argv[]);
 		{ "lskern", "list loaded kernel", command_lskern },										\
 		{ "include", "read commands from a file", command_include },							\
 		{ "ls", "list files", command_ls },														\
-		{ "biosmem", "show BIOS memory setup", command_biosmem },
-
+		{ "biosmem", "show BIOS memory setup", command_biosmem },								\
+		{ "reboot", "reboot", "reboot the system", command_reboot },							\
+		{ "heap", "heap", "show heap usage", command_heap }
 
 extern struct bootblk_command commands[];
-/*
-struct command_set {
-    int     (*command_help)(int argc, char *argv[]);
-    int 	(*command_commandlist)(int argc, char *argv[]);
-    int 	(*command_show)(int argc, char *argv[]);
-    int 	(*command_set)(int argc, char *argv[]);
-    int 	(*command_unset)(int argc, char *argv[]);
-    int 	(*command_echo)(int argc, char *argv[]);
-    int 	(*command_read)(int argc, char *argv[]);
-    int 	(*command_more)(int argc, char *argv[]);
-    int 	(*command_lsdev)(int argc, char *argv[]);
-    int 	(*command_quit)(int argc, char *argv[]);
-    int 	(*command_boot)(int argc, char *argv[]);
-    int 	(*command_autoboot)(int argc, char *argv[]);
-    int 	(*command_load)(int argc, char *argv[]);
-    int 	(*command_unload)(int argc, char *argv[]);
-    int 	(*command_lskern)(int argc, char *argv[]);
-    int 	(*command_include)(int argc, char *argv[]);
-    int 	(*command_ls)(int argc, char *argv[]);
-    int		(*command_bcache)(int argc, char *argv[]);
-    int 	(*command_biosmem)(int argc, char *argv[]);
-};
-*/
-/* Command Set Commands */
-/*
-struct command_set cmds[] = {
-        &command_help,
-		&command_commandlist,
-		&command_show,
-		&command_set,
-		&command_unset,
-		&command_echo,
-		&command_read,
-		&command_more,
-		&command_lsdev,
-		&command_quit,
-		&command_boot,
-		&command_autoboot,
-		&command_load,
-		&command_unload,
-		&command_lskern,
-		&command_include,
-		&command_ls,
-		&command_bcache,
-		&command_biosmem,
-};
-/*
-
-/* Number of Commands in Command set:
-struct command_set *cmd = &cmds[0];
-int cmd_setsize = (sizeof(cmds[0])/ (sizeof(&cmd)));
-*/
 
 #endif /* _COMMANDS_H_ */

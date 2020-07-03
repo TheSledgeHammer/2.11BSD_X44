@@ -31,7 +31,7 @@
 /*
  * file/module function dispatcher, support, etc.
  */
-
+#include <sys/user.h>
 #include <sys/param.h>
 #include <sys/queue.h>
 #include <lib/libsa/loadfile.h>
@@ -179,7 +179,7 @@ int
 file_loadkernel(char *filename, int argc, char *argv[])
 {
     struct preloaded_file	*fp, *last_file;
-    int				err;
+    int						err;
 
     /*
      * Check if KLD already loaded
@@ -253,8 +253,8 @@ file_discard(struct preloaded_file *fp)
         free(fp->f_type);
     if (fp->f_args != NULL)
         free(fp->f_args);
-    if (fp->marks != NULL)
-    	free(fp->marks);
+    if (fp->f_marks != NULL)
+    	free(fp->f_marks);
     free(fp);
 }
 
@@ -269,11 +269,6 @@ file_alloc(void)
 
     if ((fp = alloc(sizeof(struct preloaded_file))) != NULL) {
     	memset(fp, 0, sizeof(struct preloaded_file));
-/*
-	if (fp->marks = alloc(sizeof(u_long))) {
-		memset(fp->marks, 0, sizeof(u_long));
-	}
-*/
     }
     return (fp);
 }
