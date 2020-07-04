@@ -34,6 +34,7 @@ typedef long	 ufs211_off_t;
 typedef short	 ufs211_dev_t;
 typedef u_short	 ufs211_mode_t;
 typedef	u_int	 ufs211_size_t;
+typedef	u_int	 ufs211_doff_t;
 
 int				 updlock;					/* lock for sync */
 ufs211_daddr_t	 rablock;					/* block to be read ahead */

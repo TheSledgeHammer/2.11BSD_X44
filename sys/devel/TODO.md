@@ -1,5 +1,4 @@
 UFS211:
-- Remove bio (after taking needed components) 
 Completed:
 - alloc
 - bmap
@@ -8,10 +7,10 @@ Completed:
 - disksubr 	(fix-up use of pdp memory segmentation)
 - mount		(fix-up use of pdp memory segmentation)
 - subr
+- lookup
 To Complete:
 - vnops
 - vfsops
-- namei (lookup)
 - inode
 
 LOFS:

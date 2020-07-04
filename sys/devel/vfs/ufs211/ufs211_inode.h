@@ -49,6 +49,12 @@ struct ufs211_inode {
 	struct	 lock 			i_lock;					/* Inode lock. */
 	struct 	ufs211_dquot	i_dquot;				/* dquotas */
 	u_quad_t 				i_modrev;				/* Revision level for NFS lease. */
+
+	ufs211_doff_t	  		i_endoff;				/* End of useful stuff in directory. */
+	ufs211_doff_t	  		i_diroff;				/* Offset in dir, where we found last entry. */
+	ufs211_doff_t	 		i_offset;				/* Offset of free space in directory. */
+	ufs211_ino_t	  		i_ino;					/* Inode number of found directory. */
+	u_int32_t 				i_reclen;				/* Size of found directory entry. */
 	union {
 		struct {
 			u_char			I_shlockc;				/* count of shared locks */

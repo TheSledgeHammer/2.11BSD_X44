@@ -19,12 +19,32 @@
  * like a good idea to change the "real direct structure".  SMS
 */
 
-struct	ufs211_direct {
-	ufs211_ino_t	d_ino;					/* inode number of entry */
-	u_short			d_reclen;				/* length of this record */
-	u_short			d_namlen;				/* length of string in d_name */
+struct ufs211_direct {
+	ufs211_ino_t	d_ino;						/* inode number of entry */
+	u_short			d_reclen;					/* length of this record */
+	u_int8_t  		d_type; 					/* file type, see below */
+	u_short			d_namlen;					/* length of string in d_name */
 	char			d_name[UFS211_MAXNAMLEN+1];	/* name must be no longer than this */
 };
+
+/*
+ * File types
+ */
+#define	DT_UNKNOWN	 0
+#define	DT_FIFO		 1
+#define	DT_CHR		 2
+#define	DT_DIR		 4
+#define	DT_BLK		 6
+#define	DT_REG		 8
+#define	DT_LNK		10
+#define	DT_SOCK		12
+#define	DT_WHT		14
+
+/*
+ * Convert between stat structure types and directory types.
+ */
+#define	IFTODT(mode)	(((mode) & 0170000) >> 12)
+#define	DTTOIF(dirtype)	((dirtype) << 12)
 
 /*
  * A directory consists of some number of blocks of DIRBLKSIZ
@@ -52,9 +72,9 @@ struct	ufs211_direct {
  * dp->d_ino set to 0.
  */
 
-#undef DIRSIZ
+//#undef DIRSIZ
 #define DIRSIZ(dp) \
-    ((((sizeof (struct direct) - (UFS211_MAXNAMLEN+1)) + (dp)->d_namlen+1) + 3) &~ 3)
+    ((((sizeof (struct ufs211_direct) - (UFS211_MAXNAMLEN+1)) + (dp)->d_namlen+1) + 3) &~ 3)
 
 /*
  * Definitions for library routines operating on directories.

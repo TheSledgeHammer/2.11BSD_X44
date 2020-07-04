@@ -53,8 +53,7 @@
 #include "vfs/ufs211/ufs211_mount.h"
 #include "vfs/ufs211/ufs211_quota.h"
 
-int (**ufs211_vnodeop_p)();
-struct vnodeops ufs211_vnodeops[] = {
+struct vnodeops ufs211_vnodeops = {
 		.vop_lookup = ufs211_lookup,		/* lookup */
 		.vop_create = ufs211_create,		/* create */
 		.vop_mknod = ufs211_mknod,			/* mknod */
@@ -101,16 +100,11 @@ struct vnodeops ufs211_vnodeops[] = {
 };
 
 int
-ufs211_lookup(ap)
-	struct vop_lookup_args ap;
-{
-	return (0);
-}
-
-int
 ufs211_create(ap)
 	struct vop_create_args ap;
 {
+	if(u->u_error == ufs211_makeinode(MAKEIMODE(ap->a_vap->va_type, ap->a_vap->va_mode), ap->a_dvp, ap->a_vpp, ap->a_cnp))
+		return (u->u_error);
 	return (0);
 }
 
@@ -259,7 +253,7 @@ ufs211_getattr(ap)
 		vap->va_blocksize = vp->v_mount->mnt_stat.f_iosize;
 	vap->va_bytes = dbtob((u_quad_t)ip->di_blocks);
 	vap->va_type = vp->v_type;
-	vap->va_filerev = ip->i_modrev; /* nfs */
+	//vap->va_filerev = ip->i_modrev; /* nfs */
 	return (0);
 }
 
@@ -531,8 +525,30 @@ int
 ufs211_mknod(ap)
 	struct vop_mknod_args *ap;
 {
+	struct vattr *vap = ap->a_vap;
+	struct vnode **vpp = ap->a_vpp;
 	register struct ufs211_inode *ip;
 
+	if (u->u_error == ufs211_makeinode(MAKEIMODE(vap->va_type, vap->va_mode), ap->a_dvp, vpp, ap->a_cnp))
+		return (u->u_error);
+	ip = VTOI(*vpp);
+	ip->i_flag |= IN_ACCESS | IN_CHANGE | IN_UPDATE;
+	if (vap->va_rdev != VNOVAL) {
+		/*
+		 * Want to be able to use this to make badblock
+		 * inodes, so don't truncate the dev number.
+		 */
+		ip->i_rdev = vap->va_rdev;
+	}
+	/*
+	 * Remove inode so that it will be reloaded by VFS_VGET and
+	 * checked to see if it is an alias of an existing entry in
+	 * the inode cache.
+	 */
+	vput(*vpp);
+	(*vpp)->v_type = VNON;
+	vgone(*vpp);
+	*vpp = 0;
 	return (0);
 }
 
@@ -714,8 +730,8 @@ ufs_vinit(mntp, specops, fifoops, vpp)
 	/*
 	 * Initialize modrev times
 	 */
-	SETHIGH(ip->i_modrev, mono_time.tv_sec);
-	SETLOW(ip->i_modrev, mono_time.tv_usec * 4294);
+	//SETHIGH(ip->i_modrev, mono_time.tv_sec);
+	//SETLOW(ip->i_modrev, mono_time.tv_usec * 4294);
 	*vpp = vp;
 	return (0);
 }

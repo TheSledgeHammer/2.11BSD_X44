@@ -34,8 +34,6 @@
 #define	_SYS_BUF_H_
 #include <sys/queue.h>
 
-#define NOLIST ((struct buf *)0x87654321)
-
 struct buf
 {
 	LIST_ENTRY(buf) b_hash;			/* Hash chain. */
@@ -182,6 +180,8 @@ struct cluster_save {
 /* Flags to low-level allocation routines. */
 #define B_CLRBUF	0x01	/* Request allocated buffer be cleared. */
 #define B_SYNC		0x02	/* Do all allocations synchronously. */
+
+#define NOLIST ((struct buf *)0x87654321)
 
 #ifdef KERNEL
 extern int		nbuf;				/* number of buffer headers */

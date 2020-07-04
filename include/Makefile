@@ -16,7 +16,7 @@ FILES=	a.out.h ar.h assert.h bitstring.h ctype.h dbm.h dirent.h \
 		paths.h pcc.h pwd.h ranlib.h regexp.h resolv.h setjmp.h \
 		sgtty.h signal.h stab.h stddef.h stdio.h stdlib.h string.h strings.h \
 		struct.h sysexits.h tar.h time.h ttyent.h tzfile.h unistd.h util.h \
-		utime.h utmp.h vfont.h vmf.h 
+		utime.h utmp.h vfont.h vmf.h
 
 .if (${MACHINE_ARCH} != "alpha")
 FILES+=	dlfcn.h link.h
@@ -26,7 +26,7 @@ MFILES=	float.h frame.h stdarg.h varargs.h
 LFILES=	errno.h fcntl.h syslog.h termios.h
 
 DIRS=	arpa protocols rpc
-LDIRS=	dev net netinet netiso netns sys ufs vm 
+LDIRS=	dev net netinet netiso netns sys ufs vm
 
 NOOBJ=	noobj
 
@@ -81,7 +81,7 @@ copies:
 		${DESTDIR}/usr/include/machine
 	pax -rw -pa -s "|../sys/arch/${MACHINE}/include||" \
 	    ../sys/arch/${MACHINE}/include/*.h \
-	    ${DESTDIR}/usr/include/machine   
+	    ${DESTDIR}/usr/include/machine
 	rm -rf ${DESTDIR}/usr/include/${MACHINE_ARCH}
 	if test ${MACHINE} != ${MACHINE_ARCH} -a \
 	    -d ../sys/arch/${MACHINE_ARCH}/include; then \
@@ -110,6 +110,15 @@ symlinks:
 	else \
 		ln -s machine ${DESTDIR}/usr/include/${MACHINE_ARCH} ; \
 	fi
+
+tags:
+	cwd=/usr/include; \
+	for i in ${STD} ${LINKS}; do \
+		ctags -a -f ${TAGSFILE} $$cwd/$$i; \
+	done
+
+clean:
+	rm -f tags
 
 includes: ${SYS_INCLUDE}
 

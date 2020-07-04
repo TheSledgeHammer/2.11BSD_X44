@@ -117,7 +117,7 @@ getfs(dev)
 		return(fs);
 	}
 	printf("no fs on dev %u/%u\n",major(dev), minor(dev));
-	return((struct fs *) NULL);
+	return((struct ufs211_fs *) NULL);
 }
 
 #ifdef QUOTA
