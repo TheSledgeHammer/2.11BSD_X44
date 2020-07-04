@@ -84,7 +84,7 @@ struct vm_object {
 	u_short					flags;			/* see below */
 	u_short					paging_in_progress; 	/* Paging (in or out) so
 						    						don't collapse or destroy */
-	simple_lock_data_t		Lock;			/* Synchronization */
+	simple_lock_data_t		lock;			/* Synchronization */
 	int						ref_count;		/* How many refs?? */
 	vm_size_t				size;			/* Object size */
 	int						resident_page_count;

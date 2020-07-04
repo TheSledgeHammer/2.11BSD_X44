@@ -66,7 +66,7 @@
 #define	MAXMODNAME	32 		/* Unused: modules not implemented */
 
 #include <sys/systm.h>
-#include <sys/kobj.h>
+#include <dev/kobj.h>
 #include <sys/exec.h>
 #include <sys/exec_elf.h>
 
@@ -102,10 +102,6 @@ typedef int (*kobj_read_fn)(kobj_t, void **, size_t, off_t, bool);
 typedef void (*kobj_close_fn)(kobj_t);
 
 struct kobj {
-	struct linker_file 	ko_linker;			/* Common fields */
-	int					ko_preloaded;		/* Was file pre-loaded */
-	caddr_t				ko_relo_address;	/* Relocation address */
-
 	char				ko_name[MAXMODNAME];
 	kobjtype_t			ko_type;
 	void				*ko_source;
@@ -137,8 +133,4 @@ struct kobj {
 	kobj_close_fn		ko_close;
 };
 
-#ifdef _KERNEL
-int		kobj_load(kobj_t);
-void	kobj_setname(kobj_t, const char *);
-#endif
 #endif	/* _SYS_KOBJ_IMPL_H_ */

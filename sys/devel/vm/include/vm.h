@@ -63,6 +63,9 @@ typedef struct vm_page  		*vm_page_t;
 struct pager_struct;
 typedef struct pager_struct 	*vm_pager_t;
 
+struct vm_anon;
+typedef struct vm_anon			*vm_anon_t;
+
 struct vm_amap;
 typedef struct vm_amap 			*vm_amap_t;
 

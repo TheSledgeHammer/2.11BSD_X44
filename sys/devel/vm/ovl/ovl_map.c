@@ -5,15 +5,15 @@
  *      Author: marti
  */
 
-#include "../vm/ovl/ovl_map.h"
+#include "vm/ovl/ovl_map.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include "../vm/ovl/ovl.h"
+#include "vm/ovl/ovl.h"
 
 vm_offset_t			kovl_data;
-vovl_map_entry_t 	kovl_entry_free;
-vovl_map_t 			kovl_free;
+ovl_map_entry_t 	kovl_entry_free;
+ovl_map_t 			kovl_free;
 
 void
 ovl_map_startup()
@@ -41,7 +41,7 @@ ovlspace_free()
 
 }
 
-vovl_map_t
+ovl_map_t
 ovl_map_create(min, max)
 	vm_offset_t	min, max;
 {
@@ -49,7 +49,7 @@ ovl_map_create(min, max)
 
 }
 
-vovl_map_init()
+ovl_map_init()
 {
 
 }

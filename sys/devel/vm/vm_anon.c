@@ -54,12 +54,12 @@
  * locked by swap_syscall_lock (since we never remove
  * anything from this list and we only add to it via swapctl(2)).
  */
-struct uvm_anonblock {
-	LIST_ENTRY(uvm_anonblock) list;
+struct vm_anonblock {
+	LIST_ENTRY(vm_anonblock) list;
 	int count;
 	struct vm_anon *anons;
 };
-static LIST_HEAD(anonlist, uvm_anonblock) anonblock_list;
+static LIST_HEAD(anonlist, vm_anonblock) anonblock_list;
 
 
 static boolean_t anon_pagein(struct vm_anon *);
@@ -91,7 +91,7 @@ int
 vm_anon_add(count)
 	int	count;
 {
-	struct uvm_anonblock *anonblock;
+	struct vm_anonblock *anonblock;
 	struct vm_anon *anon;
 	int lcv, needed;
 
@@ -225,9 +225,9 @@ vm_anfree(anon)
 			uvm_lock_pageq();
 			KASSERT(pg->loan_count > 0);
 			pg->loan_count--;
-			pg->uanon = NULL;
+			pg->anon = NULL;
 			uvm_unlock_pageq();
-			simple_unlock(&pg->object->vmobjlock);
+			simple_unlock(&pg->object->lock);
 		} else {
 
 			/*
@@ -352,7 +352,7 @@ vm_anon_lockloanpg(anon)
 			uvm_lock_pageq();
 			if (pg->object) {
 				locked =
-				    simple_lock_try(&pg->object->vmobjlock);
+				    simple_lock_try(&pg->object->lock);
 			} else {
 				/* object disowned before we got PQ lock */
 				locked = TRUE;
@@ -403,7 +403,7 @@ boolean_t
 anon_swap_off(startslot, endslot)
 	int startslot, endslot;
 {
-	struct uvm_anonblock *anonblock;
+	struct vm_anonblock *anonblock;
 
 	LIST_FOREACH(anonblock, &anonblock_list, list) {
 		int i;
@@ -533,7 +533,7 @@ anon_pagein(anon)
 
 	simple_unlock(&anon->an_lock);
 	if (uobj) {
-		simple_unlock(&uobj->vmobjlock);
+		simple_unlock(&uobj->lock);
 	}
 	return FALSE;
 }

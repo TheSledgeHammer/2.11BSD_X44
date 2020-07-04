@@ -83,8 +83,8 @@ struct vm_anon {
  */
 
 struct vm_aref {
-	int 			ar_pageoff;	/* page offset into amap we start */
-	struct vm_amap *ar_amap;	/* pointer to amap */
+	int 				ar_pageoff;	/* page offset into amap we start */
+	struct vm_amap 		*ar_amap;	/* pointer to amap */
 };
 
 /*

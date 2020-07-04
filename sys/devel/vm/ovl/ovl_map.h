@@ -8,18 +8,20 @@
 #ifndef	OVL_MAP_
 #define	OVL_MAP_
 
+#include "ovl.h"
+
 union ovl_map_object {
 	struct ovl_object					*ovl_object;	/* object object */
 };
 
 struct ovl_map_entry {
-  CIRCLEQ_ENTRY(ovl_map_entry)  		ovl_entry;		/* entries in a circular list */
-  vm_offset_t		                	ovle_start;		/* start address */
-  vm_offset_t		                	ovle_end;		/* end address */
-  caddr_t								ovle_ownspace;	/* free space after */
-  caddr_t								ovle_space;		/* space in subtree */
-  union ovl_map_object			   		ovle_object;	/* object I point to */
-  vm_offset_t				          	ovle_offset;	/* offset into object */
+  CIRCLEQ_ENTRY(ovl_map_entry)  		ovl_entry;			/* entries in a circular list */
+  vm_offset_t		                	ovle_start;			/* start address */
+  vm_offset_t		                	ovle_end;			/* end address */
+  caddr_t								ovle_ownspace;		/* free space after */
+  caddr_t								ovle_space;			/* space in subtree */
+  union ovl_map_object			   		ovle_object;		/* object I point to */
+  vm_offset_t				          	ovle_offset;		/* offset into object */
 };
 
 CIRCLEQ_HEAD(ovl_map_clist, ovl_map_entry);

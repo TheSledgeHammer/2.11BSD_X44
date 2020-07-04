@@ -44,6 +44,7 @@
 #include <sys/malloc.h>
 #include <sys/map.h>
 #include <sys/file.h>
+#include <sys/user.h>
 
 #include <miscfs/specfs/specdev.h>
 

@@ -81,7 +81,7 @@ int		kobj_find_section(kobj_t, const char *, void **, size_t *);
 /* MI-MD interface. */
 int		kobj_sym_lookup(kobj_t, uintptr_t, Elf_Addr *);
 int		kobj_reloc(kobj_t, uintptr_t, const void *, bool, bool);
-//int		kobj_machdep(kobj_t, void *, size_t, bool);
+int		kobj_machdep(kobj_t, void *, size_t, bool);
 
 /* implementation interface. */
 int		kobj_renamespace(Elf_Sym *, size_t, char **, size_t *);

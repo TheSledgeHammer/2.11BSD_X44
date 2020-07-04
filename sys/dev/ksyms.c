@@ -56,8 +56,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* To be placed into /dev */
-
 #include <sys/param.h>
 #include <sys/exec.h>
 #include <sys/systm.h>

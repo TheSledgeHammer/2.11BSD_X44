@@ -91,15 +91,15 @@ simple_lock_data_t	vm_page_queue_lock;
 simple_lock_data_t	vm_page_queue_free_lock;
 
 /* has physical page allocation been initialized? */
-boolean_t vm_page_startup_initialized;
+boolean_t 			vm_page_startup_initialized;
 
-vm_page_t	vm_page_array;
-long		first_page;
-long		last_page;
-vm_offset_t	first_phys_addr;
-vm_offset_t	last_phys_addr;
-vm_size_t	page_mask;
-int			page_shift;
+vm_page_t			vm_page_array;
+long				first_page;
+long				last_page;
+vm_offset_t			first_phys_addr;
+vm_offset_t			last_phys_addr;
+vm_size_t			page_mask;
+int					page_shift;
 
 /*
  *	vm_set_page_size:
@@ -308,7 +308,7 @@ vm_page_insert(mem, object, offset)
 	register vm_offset_t	offset;
 {
 	register struct pglist	*bucket;
-	int			spl;
+	int						spl;
 
 	VM_PAGE_CHECK(mem);
 
@@ -339,6 +339,7 @@ vm_page_insert(mem, object, offset)
 
 	TAILQ_INSERT_TAIL(&object->memq, mem, listq);
 	mem->flags |= PG_TABLED;
+
 
 	/*
 	 *	And show that the object has one more resident
