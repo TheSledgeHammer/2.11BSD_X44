@@ -33,7 +33,7 @@
 //#include <sys/malloc.h>
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
-#include "../kern/memory/malloc2.h"
+#include "kern/memory/malloc2.h"
 
 struct kmembuckets p[MINBUCKET + 16];
 static int isPowerOfTwo(long n); 	/* 0 = true, 1 = false */
@@ -201,7 +201,7 @@ kmemtree_insert(size, type, ktp)
 
 struct kmemtree *
 kmemtree_push_left(size, dsize, ktp)
-	u_long size, dsize;  /*dsize = difference (if any) */
+	u_long size, dsize;  /* dsize = size difference (if any) */
 	struct kmemtree *ktp;
 {
 	struct asl* free = ktp->kt_freelist1;
@@ -216,7 +216,7 @@ kmemtree_push_left(size, dsize, ktp)
 
 struct kmemtree *
 kmemtree_push_middle(size, dsize, ktp)
-	u_long size, dsize;  /*dsize = difference (if any) */
+	u_long size, dsize;   /* dsize = size difference (if any) */
 	struct kmemtree *ktp;
 {
 	struct asl* free = ktp->kt_freelist2;
@@ -231,7 +231,7 @@ kmemtree_push_middle(size, dsize, ktp)
 
 struct kmemtree *
 kmemtree_push_right(size, dsize, ktp)
-	u_long size, dsize; /*dsize = difference (if any) */
+	u_long size, dsize;  /* dsize = size difference (if any) */
 	struct kmemtree *ktp;
 {
 	struct asl* free = ktp->kt_freelist2;
@@ -381,7 +381,10 @@ kmemtree_find(ktp, size)
     }
 }
 
-/* Assumes that the current address of kmembucket is null */
+/*
+ * Assumes that the current address of kmembucket is null
+ * If size is not a power of 2 else will check is size log base 2.
+ */
 caddr_t
 kmemtree_trealloc(ktp, size, flags)
 	struct kmemtree *ktp;

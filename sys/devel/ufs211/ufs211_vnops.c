@@ -46,6 +46,7 @@
 
 #include <vm/include/vm.h>
 #include <miscfs/specfs/specdev.h>
+
 #include "vfs/ufs211/ufs211_dir.h"
 #include "vfs/ufs211/ufs211_extern.h"
 #include "vfs/ufs211/ufs211_fs.h"
@@ -98,6 +99,100 @@ struct vnodeops ufs211_vnodeops = {
 		.vop_bwrite = ufs211_bwrite,		/* bwrite */
 		(struct vnodeops *)NULL = (int(*)())NULL
 };
+
+struct vnodeops ufs211_specops = {
+		.vop_lookup = spec_lookup,			/* lookup */
+		.vop_create = spec_create,			/* create */
+		.vop_mknod = spec_mknod,			/* mknod */
+		.vop_open = spec_open,				/* open */
+		.vop_close = ufs211_close,			/* close */
+		.vop_access = ufs211_access,		/* access */
+		.vop_getattr = ufs211_getattr,		/* getattr */
+		.vop_setattr = ufs211_setattr,		/* setattr */
+		.vop_read = ufs211_read,			/* read */
+		.vop_write = ufs211_write,			/* write */
+		.vop_lease = spec_lease_check,		/* lease */
+		.vop_ioctl = spec_ioctl,			/* ioctl */
+		.vop_select = spec_select,			/* select */
+		.vop_revoke = spec_revoke,			/* revoke */
+		.vop_mmap = spec_mmap,				/* mmap */
+		.vop_fsync = spec_fsync,			/* fsync */
+		.vop_seek = spec_seek,				/* seek */
+		.vop_remove = spec_remove,			/* remove */
+		.vop_link = spec_link,				/* link */
+		.vop_rename = spec_rename,			/* rename */
+		.vop_mkdir = spec_mkdir,			/* mkdir */
+		.vop_rmdir = spec_rmdir,			/* rmdir */
+		.vop_symlink = spec_symlink,		/* symlink */
+		.vop_readdir = spec_readdir,		/* readdir */
+		.vop_readlink = spec_readlink,		/* readlink */
+		.vop_abortop = spec_abortop,		/* abortop */
+		.vop_inactive = ufs211_inactive,	/* inactive */
+		.vop_reclaim = ufs211_reclaim,		/* reclaim */
+		.vop_lock = ufs211_lock,			/* lock */
+		.vop_unlock = ufs211_unlock,		/* unlock */
+		.vop_bmap = spec_bmap,				/* bmap */
+		.vop_strategy = spec_strategy,		/* strategy */
+		.vop_print = ufs211_print,			/* print */
+		.vop_islocked = ufs211_islocked,	/* islocked */
+		.vop_pathconf = spec_pathconf,		/* pathconf */
+		.vop_advlock = spec_advlock,		/* advlock */
+		.vop_blkatoff = spec_blkatoff,		/* blkatoff */
+		.vop_valloc = spec_valloc,			/* valloc */
+		.vop_vfree = ufs211_vfree,			/* vfree */
+		.vop_truncate = spec_truncate,		/* truncate */
+		.vop_update = ufs211_update,		/* update */
+		.vop_bwrite = ufs211_bwrite,		/* bwrite */
+		(struct vnodeops *)NULL = (int(*)())NULL
+};
+
+#ifdef FIFO
+struct vnodeops ufs211_fifoops = {
+		.vop_lookup = fifo_lookup,			/* lookup */
+		.vop_create = fifo_create,			/* create */
+		.vop_mknod = fifo_mknod,			/* mknod */
+		.vop_open = fifo_open,				/* open */
+		.vop_close = ufs211_close,			/* close */
+		.vop_access = ufs211_access,		/* access */
+		.vop_getattr = ufs211_getattr,		/* getattr */
+		.vop_setattr = ufs_setattr,			/* setattr */
+		.vop_read = ufs211_read,			/* read */
+		.vop_write = ufs211_write,			/* write */
+		.vop_lease = fifo_lease_check,		/* lease */
+		.vop_ioctl = fifo_ioctl,			/* ioctl */
+		.vop_select = fifo_select,			/* select */
+		.vop_revoke = fifo_revoke,			/* revoke */
+		.vop_mmap = fifo_mmap,				/* mmap */
+		.vop_fsync = fifo_fsync,			/* fsync */
+		.vop_seek = fifo_seek,				/* seek */
+		.vop_remove = fifo_remove,			/* remove */
+		.vop_link = fifo_link,				/* link */
+		.vop_rename = fifo_rename,			/* rename */
+		.vop_mkdir = fifo_mkdir,			/* mkdir */
+		.vop_rmdir = fifo_rmdir,			/* rmdir */
+		.vop_symlink = fifo_symlink,		/* symlink */
+		.vop_readdir = fifo_readdir,		/* readdir */
+		.vop_readlink = fifo_readlink,		/* readlink */
+		.vop_abortop = fifo_abortop,		/* abortop */
+		.vop_inactive = ufs211_inactive,	/* inactive */
+		.vop_reclaim = ufs211_reclaim,		/* reclaim */
+		.vop_lock = ufs211_lock,			/* lock */
+		.vop_unlock = ufs211_unlock,		/* unlock */
+		.vop_bmap = fifo_bmap,				/* bmap */
+		.vop_strategy = fifo_strategy,		/* strategy */
+		.vop_print = ufs211_print,			/* print */
+		.vop_islocked = ufs211_islocked,	/* islocked */
+		.vop_pathconf = fifo_pathconf,		/* pathconf */
+		.vop_advlock = fifo_advlock,		/* advlock */
+		.vop_blkatoff = fifo_blkatoff,		/* blkatoff */
+		.vop_valloc = fifo_valloc,			/* valloc */
+		.vop_vfree = ufs211_vfree,			/* vfree */
+		.vop_truncate = fifo_truncate,		/* truncate */
+		.vop_update = ufs211_update,		/* update */
+		.vop_bwrite = ufs211_bwrite,		/* bwrite */
+		(struct vnodeops *)NULL = (int(*)())NULL
+};
+#endif /* FIFO */
 
 int
 ufs211_create(ap)
@@ -600,41 +695,6 @@ ufs211_bwrite(ap)
 	return (0);
 }
 
-int
-ufs211spec_read(ap)
-	struct vop_read_args *ap;
-{
-	//if ((ap->a_vp->v_mount->mnt_flag & MNT_NODEVMTIME) == 0)
-	VTOI(ap->a_vp)->i_flag |= IN_ACCESS;
-	return (VOPARGS(ap, vop_read));
-}
-
-/*
- * Write wrapper for special devices.
- */
-int
-ufs211spec_write(ap)
-	struct vop_write_args *ap;
-{
-	//if ((ap->a_vp->v_mount->mnt_flag & MNT_NODEVMTIME) == 0)
-	VTOI(ap->a_vp)->i_flag |= IN_MODIFY;
-	return (VOPARGS(ap, vop_write));
-}
-
-int
-ufs211spec_close(ap)
-	struct vop_close_args *ap;
-{
-	struct vnode *vp = ap->a_vp;
-	struct ufs211_inode *ip = VTOI(vp);
-
-	simple_lock(&vp->v_interlock);
-	if (ap->a_vp->v_usecount > 1)
-		ITIMES(ip, &time, &time);
-	simple_unlock(&vp->v_interlock);
-	return (VOPARGS(ap, vop_close));
-}
-
 #ifdef FIFO
 int
 ufs211fifo_read(ap)
@@ -727,11 +787,6 @@ ufs_vinit(mntp, specops, fifoops, vpp)
 	}
 	if (ip->i_number == UFS211_ROOTINO)
 		vp->v_flag |= VROOT;
-	/*
-	 * Initialize modrev times
-	 */
-	//SETHIGH(ip->i_modrev, mono_time.tv_sec);
-	//SETLOW(ip->i_modrev, mono_time.tv_usec * 4294);
 	*vpp = vp;
 	return (0);
 }

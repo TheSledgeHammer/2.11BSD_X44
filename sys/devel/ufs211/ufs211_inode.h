@@ -114,7 +114,7 @@ struct ufs211_dinode {
 	struct	ufs211_icommon1     di_icom1;
 	ufs211_daddr_t		        di_addr[7];			/* 7 block addresses 4 bytes each */
 	u_short				        di_reserved[5];		/* pad of 10 to make total size 64 */
-	u_short				        di_flags;			/* 100: Status flags (chflags). */
+	u_short				        di_flag;			/* 100: Status flags (chflags). */
 	u_short				        di_size;
 	struct	ufs211_icommon2 	di_icom2;
 	u_short						di_gen;				/* 108: Generation number. */
@@ -149,7 +149,7 @@ struct ufs211_dinode {
 #define	i_forw			i_chain[0]
 #define	i_back			i_chain[1]
 
-#define	di_flags		i_din.di_flags
+#define	di_flags		i_din.di_flag
 #define	di_blocks		i_din.di_blocks
 #define	di_gen			i_din.di_gen
 #define di_ic1			di_icom1

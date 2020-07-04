@@ -55,6 +55,29 @@
 #include <sys/buf.h>
 #include <miscfs/lofs/lofs.h>
 
+/* lofs reimplemented */
+struct lofsmount {
+	struct mount	*lofs_vfs;
+	struct vnode	*lofs_rootvp;	/* Reference to root lofsnode */
+};
+
+/*
+ * A cache of vnode references
+ */
+struct lofs_node {
+	LIST_ENTRY(lofs_node)	lofs_hash;		/* Hash list */
+	struct vnode			*lofs_lofsvp;	/* Aliased vnode - VREFed once */
+	struct vnode			*lofs_vnode;	/* Back pointer to vnode/lofsnode */
+	int						lofs_flags;
+};
+
+/* Place in lofs_subr.c
+#define	LOFS_NHASH(vp) \
+	(&lofs_node_hashtbl[(((u_long)vp)>>LOG2_SIZEVNODE) & lofs_node_hash])
+LIST_HEAD(lofs_node_hashhead, lofs_node) *lofs_node_hashtbl;
+u_long lofs_node_hash;
+*/
+
 /*
  * Basic strategy: as usual, do as little work as possible.
  * Nothing is ever locked in the lofs'ed filesystem, all
@@ -74,8 +97,8 @@
 /*
  * Undo the PUSHREF
  */
-#define POP(v, nd) {	\
-	(nd) = v.vnp; 		\
+#define POP(v, nd) {					\
+	(nd) = v.vnp; 						\
 }
 
 int

@@ -77,26 +77,3 @@ extern struct vnode *lofs_checkvp (struct vnode *vp, char *fil, int lno);
 extern struct lofs_vnodeops;
 extern struct vfsops lofs_vfsops;
 #endif /* KERNEL */
-
-/* lofs reimplemented */
-struct lofsmount {
-	struct mount	*lofs_vfs;
-	struct vnode	*lofs_rootvp;	/* Reference to root lofsnode */
-};
-
-/*
- * A cache of vnode references
- */
-struct lofs_node {
-	LIST_ENTRY(lofs_node)	lofs_hash;		/* Hash list */
-	struct vnode			*lofs_lofsvp;	/* Aliased vnode - VREFed once */
-	struct vnode			*lofs_vnode;	/* Back pointer to vnode/lofsnode */
-	int						lofs_flags;
-};
-
-/* Place in lofs_subr.c
-#define	LOFS_NHASH(vp) \
-	(&lofs_node_hashtbl[(((u_long)vp)>>LOG2_SIZEVNODE) & lofs_node_hash])
-LIST_HEAD(lofs_node_hashhead, lofs_node) *lofs_node_hashtbl;
-u_long lofs_node_hash;
-*/

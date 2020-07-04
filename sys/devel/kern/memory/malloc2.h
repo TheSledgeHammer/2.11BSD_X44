@@ -125,19 +125,9 @@ extern void 					kmemtree_trealloc(struct kmemtree *ktp, u_long size, int flags)
 extern void 					kmemtree_trealloc_free(struct kmemtree *ktp, u_long size);
 
 /* Tertiary Tree: Available Space List */
-extern struct asl 			*asl_list(struct asl *free, u_long size);
-extern struct asl 			*asl_insert(struct asl *free, u_long size);
-extern struct asl 			*asl_remove(struct asl *free, u_long size);
-extern struct asl 			*asl_search(struct asl *free, u_long size);
+extern struct asl 				*asl_list(struct asl *free, u_long size);
+extern struct asl 				*asl_insert(struct asl *free, u_long size);
+extern struct asl 				*asl_remove(struct asl *free, u_long size);
+extern struct asl 				*asl_search(struct asl *free, u_long size);
 
 #endif /* SYS_MALLOC2_H_ */
-
-/*
- * 		if(!ktp->kt_space) {
-			ktp->kt_space = TRUE;
-		    ktp->kt_size = 0;
-		    ktp->kt_entries = 0;
-		}
-
-		va = (caddr_t) kmemtree_trealloc(ktp, (vm_size_t)ctob(npg), !(flags & M_NOWAIT));
- */

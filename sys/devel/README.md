@@ -36,9 +36,6 @@ New Content:
 	- Provides a modular unified layer for archiving, snapshots and compression across UFS, FFS, MFS & LFS
 - UFS211:
 	- 2.11BSD's UFS. (Seperate from UFS)
-	- TODO: 
-		- vnode integration
-		- remove pdp memory refrences 
 - VM: 
 	- A 4.4BSD-Lite2 VM with features from NetBSD's UVM
 	

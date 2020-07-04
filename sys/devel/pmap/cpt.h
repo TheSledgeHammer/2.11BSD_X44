@@ -74,9 +74,10 @@ extern struct cpte cpte_base[];
 typedef struct cpt 	cpt_entry_t;		/* clustered page table */
 typedef struct cpte cpte_entry_t;		/* clustered page table entry */
 
-/* Clustered Page Table */
+/* Virtual Physical Block Number */
 unsigned int 		VPBN(vm_offset_t entry);
 
+/* Clustered Page Table */
 extern void         cpt_add(struct cpt *cpt, struct cpte *cpte, u_long vpbn);
 extern struct cpt   *cpt_lookup(struct cpt *cpt, u_long vpbn);
 extern struct cpt   *cpt_traversal(struct cpt *cpt, u_long addr);
@@ -90,7 +91,7 @@ extern void         cpte_add(struct cpte *cpte, struct pte *pte, int boff);
 extern struct cpte  *cpte_lookup(struct cpte *cpte, int boff);
 extern void         cpte_remove(struct cpte *cpte, int boff);
 
-/* PDE & PTE Compatability */
+/* PDE & PTE Compatibility */
 extern struct pde	*cpt_to_pde(struct cpt *cpt, u_long vpbn);
 extern struct cpt	*pde_to_cpt(struct pde *pde, u_long vpbn);
 extern struct pte   *cpte_to_pte(struct cpte *cpte, int boff);

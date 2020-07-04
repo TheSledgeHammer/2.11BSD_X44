@@ -20,6 +20,7 @@
 #include "vfs/ufs211/ufs211_fs.h"
 #include "vfs/ufs211/ufs211_inode.h"
 #include "vfs/ufs211/ufs211_mount.h"
+
 #ifdef QUOTA
 
 /*

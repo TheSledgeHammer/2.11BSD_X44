@@ -126,7 +126,8 @@ updname:
 	return;
 cmnout:
 	iput(ip);
-	return(u->u_error = error);
+	u->u_error = error;
+	return;
 }
 
 void

@@ -1,0 +1,16 @@
+UFS211:
+Completed:
+- alloc
+- bmap
+- quota
+- dsort 	(except: dk_alloc)
+- disksubr 	(fix-up use of pdp memory segmentation)
+- mount		(fix-up use of pdp memory segmentation)
+- subr
+- lookup
+- inode		(mapin, mapout)
+
+To Complete:
+- vnops
+- vfsops
+

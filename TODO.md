@@ -1,11 +1,10 @@
 TODO:
 - Build Toolchain (Cross-Compile): NetBSD's
 	- Attempt build on NetBSD (Can't build on Linux without a Toolchain)
-- Merge KASSERT CTASSERT into ASSERT
 
 - arch:
 	- i386:
-		- consinit.c (Needs working bootloader)
+		- consinit.c (blank out for now)
 		- machdep.c: cpu_reboot, cpu_reset
 		- vm_machdep.c: u->u_procp->p_p0br: (no reference in 4.4BSD-Lite2)
 			- 4.3BSD Reno/ 4.4BSD Remanent: once in struct proc. Obsolete?? 
