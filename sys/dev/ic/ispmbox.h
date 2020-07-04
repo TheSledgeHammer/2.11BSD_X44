@@ -40,14 +40,14 @@
  * Mailbox Command Opcodes
  */
 
-#define MBOX_NO_OP			0x0000
+#define MBOX_NO_OP				0x0000
 #define MBOX_LOAD_RAM			0x0001
 #define MBOX_EXEC_FIRMWARE		0x0002
 #define MBOX_DUMP_RAM			0x0003
 #define MBOX_WRITE_RAM_WORD		0x0004
 #define MBOX_READ_RAM_WORD		0x0005
-#define MBOX_MAILBOX_REG_TEST		0x0006
-#define MBOX_VERIFY_CHECKSUM		0x0007
+#define MBOX_MAILBOX_REG_TEST	0x0006
+#define MBOX_VERIFY_CHECKSUM	0x0007
 #define MBOX_ABOUT_FIRMWARE		0x0008
 					/*   9 */
 					/*   a */
@@ -61,13 +61,13 @@
 #define MBOX_EXECUTE_IOCB		0x0012
 #define MBOX_WAKE_UP			0x0013
 #define MBOX_STOP_FIRMWARE		0x0014
-#define MBOX_ABORT			0x0015
+#define MBOX_ABORT				0x0015
 #define MBOX_ABORT_DEVICE		0x0016
 #define MBOX_ABORT_TARGET		0x0017
 #define MBOX_BUS_RESET			0x0018
 #define MBOX_STOP_QUEUE			0x0019
 #define MBOX_START_QUEUE		0x001a
-#define MBOX_SINGLE_STEP_QUEUE		0x001b
+#define MBOX_SINGLE_STEP_QUEUE	0x001b
 #define MBOX_ABORT_QUEUE		0x001c
 #define MBOX_GET_DEV_QUEUE_STATUS	0x001d
 					/*  1e */
@@ -76,7 +76,7 @@
 #define MBOX_GET_SELECT_TIMEOUT		0x0021
 #define MBOX_GET_RETRY_COUNT		0x0022
 #define MBOX_GET_TAG_AGE_LIMIT		0x0023
-#define MBOX_GET_CLOCK_RATE		0x0024
+#define MBOX_GET_CLOCK_RATE			0x0024
 #define MBOX_GET_ACT_NEG_STATE		0x0025
 #define MBOX_GET_ASYNC_DATA_SETUP_TIME	0x0026
 #define MBOX_GET_SBUS_PARAMS		0x0027
@@ -92,7 +92,7 @@
 #define MBOX_SET_SELECT_TIMEOUT		0x0031
 #define MBOX_SET_RETRY_COUNT		0x0032
 #define MBOX_SET_TAG_AGE_LIMIT		0x0033
-#define MBOX_SET_CLOCK_RATE		0x0034
+#define MBOX_SET_CLOCK_RATE			0x0034
 #define MBOX_SET_ACTIVE_NEG_STATE	0x0035
 #define MBOX_SET_ASYNC_DATA_SETUP_TIME	0x0036
 #define MBOX_SET_SBUS_CONTROL_PARAMS	0x0037
@@ -107,28 +107,28 @@
 					/*  3f */
 #define	MBOX_RETURN_BIOS_BLOCK_ADDR	0x0040
 #define	MBOX_WRITE_FOUR_RAM_WORDS	0x0041
-#define	MBOX_EXEC_BIOS_IOCB		0x0042
+#define	MBOX_EXEC_BIOS_IOCB			0x0042
 
 /* These are for the ISP2100 FC cards */
-#define	MBOX_GET_LOOP_ID		0x20
+#define	MBOX_GET_LOOP_ID			0x20
 #define	MBOX_EXEC_COMMAND_IOCB_A64	0x54
-#define	MBOX_INIT_FIRMWARE		0x60
+#define	MBOX_INIT_FIRMWARE			0x60
 #define	MBOX_GET_INIT_CONTROL_BLOCK	0x61
-#define	MBOX_INIT_LIP			0x62
+#define	MBOX_INIT_LIP				0x62
 #define	MBOX_GET_FC_AL_POSITION_MAP	0x63
-#define	MBOX_GET_PORT_DB		0x64
-#define	MBOX_CLEAR_ACA			0x65
-#define	MBOX_TARGET_RESET		0x66
-#define	MBOX_CLEAR_TASK_SET		0x67
-#define	MBOX_ABORT_TASK_SET		0x68
-#define	MBOX_GET_FW_STATE		0x69
+#define	MBOX_GET_PORT_DB			0x64
+#define	MBOX_CLEAR_ACA				0x65
+#define	MBOX_TARGET_RESET			0x66
+#define	MBOX_CLEAR_TASK_SET			0x67
+#define	MBOX_ABORT_TASK_SET			0x68
+#define	MBOX_GET_FW_STATE			0x69
 #define	MBOX_GET_LINK_STATUS		0x6a
-#define	MBOX_INIT_LIP_RESET		0x6c
-#define	MBOX_INIT_LIP_LOGIN		0x72
+#define	MBOX_INIT_LIP_RESET			0x6c
+#define	MBOX_INIT_LIP_LOGIN			0x72
 
 #define	ISP2100_SET_PCI_PARAM		0x00ff
 
-#define	MBOX_BUSY			0x04
+#define	MBOX_BUSY					0x04
 
 typedef struct {
 	u_int16_t param[8];
@@ -140,8 +140,8 @@ typedef struct {
 #define	MBOX_COMMAND_COMPLETE		0x4000
 #define	MBOX_INVALID_COMMAND		0x4001
 #define	MBOX_HOST_INTERFACE_ERROR	0x4002
-#define	MBOX_TEST_FAILED		0x4003
-#define	MBOX_COMMAND_ERROR		0x4005
+#define	MBOX_TEST_FAILED			0x4003
+#define	MBOX_COMMAND_ERROR			0x4005
 #define	MBOX_COMMAND_PARAM_ERROR	0x4006
 
 /*
@@ -154,7 +154,7 @@ typedef struct {
 #define	ASYNC_QWAKEUP			0x8005
 #define	ASYNC_TIMEOUT_RESET		0x8006
 #define	ASYNC_UNSPEC_TMODE		0x8007
-#define	ASYNC_EXTMSG_UNDERRUN		0x800A
+#define	ASYNC_EXTMSG_UNDERRUN	0x800A
 #define	ASYNC_SCAM_INT			0x800B
 #define	ASYNC_HUNG_SCSI			0x800C
 #define	ASYNC_KILLED_BUS		0x800D
@@ -208,7 +208,7 @@ typedef struct {
 #define	RQSTYPE_ATIO		0x06	/* Target Mode */
 #define	RQSTYPE_CTIO0		0x07	/* Target Mode */
 #define	RQSTYPE_SCAM		0x08
-#define	RQSTYPE_A64		0x09
+#define	RQSTYPE_A64			0x09
 #define	RQSTYPE_A64_CONT	0x0a
 #define	RQSTYPE_ENABLE_LUN	0x0b	/* Target Mode */
 #define	RQSTYPE_MODIFY_LUN	0x0c	/* Target Mode */
@@ -361,44 +361,44 @@ typedef struct {
 /* 
  * Completion Status Codes.
  */
-#define RQCS_COMPLETE			0x0000
-#define RQCS_INCOMPLETE			0x0001
-#define RQCS_DMA_ERROR			0x0002
-#define RQCS_TRANSPORT_ERROR		0x0003
-#define RQCS_RESET_OCCURRED		0x0004
-#define RQCS_ABORTED			0x0005
-#define RQCS_TIMEOUT			0x0006
-#define RQCS_DATA_OVERRUN		0x0007
-#define RQCS_COMMAND_OVERRUN		0x0008
-#define RQCS_STATUS_OVERRUN		0x0009
-#define RQCS_BAD_MESSAGE		0x000a
-#define RQCS_NO_MESSAGE_OUT		0x000b
-#define RQCS_EXT_ID_FAILED		0x000c
-#define RQCS_IDE_MSG_FAILED		0x000d
-#define RQCS_ABORT_MSG_FAILED		0x000e
-#define RQCS_REJECT_MSG_FAILED		0x000f
-#define RQCS_NOP_MSG_FAILED		0x0010
+#define RQCS_COMPLETE					0x0000
+#define RQCS_INCOMPLETE					0x0001
+#define RQCS_DMA_ERROR					0x0002
+#define RQCS_TRANSPORT_ERROR			0x0003
+#define RQCS_RESET_OCCURRED				0x0004
+#define RQCS_ABORTED					0x0005
+#define RQCS_TIMEOUT					0x0006
+#define RQCS_DATA_OVERRUN				0x0007
+#define RQCS_COMMAND_OVERRUN			0x0008
+#define RQCS_STATUS_OVERRUN				0x0009
+#define RQCS_BAD_MESSAGE				0x000a
+#define RQCS_NO_MESSAGE_OUT				0x000b
+#define RQCS_EXT_ID_FAILED				0x000c
+#define RQCS_IDE_MSG_FAILED				0x000d
+#define RQCS_ABORT_MSG_FAILED			0x000e
+#define RQCS_REJECT_MSG_FAILED			0x000f
+#define RQCS_NOP_MSG_FAILED				0x0010
 #define RQCS_PARITY_ERROR_MSG_FAILED	0x0011
 #define RQCS_DEVICE_RESET_MSG_FAILED	0x0012
-#define RQCS_ID_MSG_FAILED		0x0013
-#define RQCS_UNEXP_BUS_FREE		0x0014
-#define RQCS_DATA_UNDERRUN		0x0015
-#define	RQCS_XACT_ERR1			0x0018
-#define	RQCS_XACT_ERR2			0x0019
-#define	RQCS_XACT_ERR3			0x001A
-#define	RQCS_BAD_ENTRY			0x001B
-#define	RQCS_QUEUE_FULL			0x001C
-#define	RQCS_PHASE_SKIPPED		0x001D
-#define	RQCS_ARQS_FAILED		0x001E
-#define	RQCS_WIDE_FAILED		0x001F
-#define	RQCS_SYNCXFER_FAILED		0x0020
-#define	RQCS_LVD_BUSERR			0x0021
+#define RQCS_ID_MSG_FAILED				0x0013
+#define RQCS_UNEXP_BUS_FREE				0x0014
+#define RQCS_DATA_UNDERRUN				0x0015
+#define	RQCS_XACT_ERR1					0x0018
+#define	RQCS_XACT_ERR2					0x0019
+#define	RQCS_XACT_ERR3					0x001A
+#define	RQCS_BAD_ENTRY					0x001B
+#define	RQCS_QUEUE_FULL					0x001C
+#define	RQCS_PHASE_SKIPPED				0x001D
+#define	RQCS_ARQS_FAILED				0x001E
+#define	RQCS_WIDE_FAILED				0x001F
+#define	RQCS_SYNCXFER_FAILED			0x0020
+#define	RQCS_LVD_BUSERR					0x0021
 
 /* 2100 Only Completion Codes */
-#define	RQCS_PORT_UNAVAILABLE		0x0028
-#define	RQCS_PORT_LOGGED_OUT		0x0029
-#define	RQCS_PORT_CHANGED		0x002A
-#define	RQCS_PORT_BUSY			0x002B
+#define	RQCS_PORT_UNAVAILABLE			0x0028
+#define	RQCS_PORT_LOGGED_OUT			0x0029
+#define	RQCS_PORT_CHANGED				0x002A
+#define	RQCS_PORT_BUSY					0x002B
 
 /*
  * State Flags (not applicable to 2100)
@@ -456,10 +456,10 @@ typedef struct {
 	u_int16_t	req_timeout;	/* HOST->FW: Lun timeout value */
 } isplun_t;
 /* inbound status */
-#define	LUN_OKAY	0x01
-#define	LUN_ERR		0x04
-#define	LUN_NOCAP	0x16
-#define	LUN_ENABLED	0x3e
+#define	LUN_OKAY		0x01
+#define	LUN_ERR			0x04
+#define	LUN_NOCAP		0x16
+#define	LUN_ENABLED		0x3e
 /* outbound flags */
 #define	LUN_INCR_CMD	0x0001
 #define	LUN_DECR_CMD	0x0002
@@ -483,7 +483,7 @@ typedef struct {
 	u_int16_t	req_sequence;
 } ispnotify_t;
 
-#define	IN_NOCAP	0x16
+#define	IN_NOCAP		0x16
 #define	IN_IDE_RECEIVED	0x33
 #define	IN_RSRC_UNAVAIL	0x34
 #define	IN_MSG_RECEIVED	0x36
@@ -522,7 +522,7 @@ typedef struct {
 
 #define	ATIO_PATH_INVALID	0x07
 #define	ATIO_PHASE_ERROR	0x14
-#define	ATIO_NOCAP		0x16
+#define	ATIO_NOCAP			0x16
 #define	ATIO_BDR_MSG		0x17
 #define	ATIO_CDB_RECEIVED	0x3d
 
@@ -573,7 +573,7 @@ typedef struct {
 #define	CTIO_SEND_STATUS	0x8000
 #define	CTIO_SEND_DATA		0x0040	/* To initiator */
 #define	CTIO_RECV_DATA		0x0080
-#define	CTIO_NODATA		0x00C0
+#define	CTIO_NODATA			0x00C0
 
 #define	CTIO2_SMODE0		0x0000
 #define	CTIO2_SMODE1		0x0001
@@ -632,21 +632,21 @@ typedef struct {
 } isp_icb_t;
 #define	ICB_VERSION1	1
 
-#define	ICBOPT_HARD_ADDRESS	(1<<0)
-#define	ICBOPT_FAIRNESS		(1<<1)
-#define	ICBOPT_FULL_DUPLEX	(1<<2)
-#define	ICBOPT_FAST_POST	(1<<3)
-#define	ICBOPT_TGT_ENABLE	(1<<4)
-#define	ICBOPT_INI_DISABLE	(1<<5)
-#define	ICBOPT_INI_ADISC	(1<<6)
-#define	ICBOPT_INI_TGTTYPE	(1<<7)
-#define	ICBOPT_PDBCHANGE_AE	(1<<8)
-#define	ICBOPT_NOLIP		(1<<9)
-#define	ICBOPT_SRCHDOWN		(1<<10)
-#define	ICBOPT_PREVLOOP		(1<<11)
+#define	ICBOPT_HARD_ADDRESS		(1<<0)
+#define	ICBOPT_FAIRNESS			(1<<1)
+#define	ICBOPT_FULL_DUPLEX		(1<<2)
+#define	ICBOPT_FAST_POST		(1<<3)
+#define	ICBOPT_TGT_ENABLE		(1<<4)
+#define	ICBOPT_INI_DISABLE		(1<<5)
+#define	ICBOPT_INI_ADISC		(1<<6)
+#define	ICBOPT_INI_TGTTYPE		(1<<7)
+#define	ICBOPT_PDBCHANGE_AE		(1<<8)
+#define	ICBOPT_NOLIP			(1<<9)
+#define	ICBOPT_SRCHDOWN			(1<<10)
+#define	ICBOPT_PREVLOOP			(1<<11)
 #define	ICBOPT_STOP_ON_QFULL	(1<<12)
-#define	ICBOPT_FULL_LOGIN	(1<<13)
-#define	ICBOPT_USE_PORTNAME	(1<<14)
+#define	ICBOPT_FULL_LOGIN		(1<<13)
+#define	ICBOPT_USE_PORTNAME		(1<<14)
 
 
 #define	ICB_MIN_FRMLEN		256

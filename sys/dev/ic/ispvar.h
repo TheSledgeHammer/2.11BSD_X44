@@ -56,11 +56,9 @@ struct ispsoftc;
 struct ispmdvec {
 	u_int16_t	(*dv_rd_reg) __P((struct ispsoftc *, int));
 	void		(*dv_wr_reg) __P((struct ispsoftc *, int, u_int16_t));
-	int		(*dv_mbxdma) __P((struct ispsoftc *));
-	int		(*dv_dmaset) __P((struct ispsoftc *,
-		ISP_SCSI_XFER_T *, ispreq_t *, u_int8_t *, u_int8_t));
-	void		(*dv_dmaclr)
-		__P((struct ispsoftc *, ISP_SCSI_XFER_T *, u_int32_t));
+	int			(*dv_mbxdma) __P((struct ispsoftc *));
+	int			(*dv_dmaset) __P((struct ispsoftc *, ISP_SCSI_XFER_T *, ispreq_t *, u_int8_t *, u_int8_t));
+	void		(*dv_dmaclr) __P((struct ispsoftc *, ISP_SCSI_XFER_T *, u_int32_t));
 	void		(*dv_reset0) __P((struct ispsoftc *));
 	void		(*dv_reset1) __P((struct ispsoftc *));
 	void		(*dv_dregs) __P((struct ispsoftc *));

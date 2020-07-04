@@ -61,6 +61,7 @@
 #include <sys/device.h>
 #include <sys/proc.h>
 #include <sys/conf.h>
+#include <sys/user.h>
 
 #include <vm/include/vm_param.h>
 
@@ -117,56 +118,56 @@ static struct wtregs {
 };
 
 struct wt_softc {
-	struct device sc_dev;
-	void *sc_ih;
+	struct device 		sc_dev;
+	void 				*sc_ih;
 
 	bus_space_tag_t		sc_iot;
 	bus_space_handle_t	sc_ioh;
 
-	enum wttype type;	/* type of controller */
-	int chan;		/* dma channel number, 1..3 */
-	int flags;		/* state of tape drive */
-	unsigned dens;		/* tape density */
-	int bsize;		/* tape block size */
-	void *buf;		/* internal i/o buffer */
+	enum wttype 		type;		/* type of controller */
+	int 				chan;		/* dma channel number, 1..3 */
+	int 				flags;		/* state of tape drive */
+	unsigned	 		dens;		/* tape density */
+	int 				bsize;		/* tape block size */
+	void 				*buf;		/* internal i/o buffer */
 
-	void *dmavaddr;		/* virtual address of dma i/o buffer */
-	size_t dmatotal;	/* size of i/o buffer */
-	int dmaflags;		/* i/o direction */
-	size_t dmacount;	/* resulting length of dma i/o */
+	void 				*dmavaddr;	/* virtual address of dma i/o buffer */
+	size_t	 			dmatotal;	/* size of i/o buffer */
+	int 				dmaflags;	/* i/o direction */
+	size_t 				dmacount;	/* resulting length of dma i/o */
 
-	u_short error;		/* code for error encountered */
-	u_short ercnt;		/* number of error blocks */
-	u_short urcnt;		/* number of underruns */
+	u_short 			error;		/* code for error encountered */
+	u_short 			ercnt;		/* number of error blocks */
+	u_short 			urcnt;		/* number of underruns */
 
-	struct wtregs regs;
+	struct wtregs 		regs;
 };
 
 /* XXX: These don't belong here really */
 cdev_decl(wt);
 bdev_decl(wt);
 
-int wtwait __P((struct wt_softc *sc, int catch, char *msg));
-int wtcmd __P((struct wt_softc *sc, int cmd));
-int wtstart __P((struct wt_softc *sc, int flag, void *vaddr, size_t len));
-void wtdma __P((struct wt_softc *sc));
-void wttimer __P((void *arg));
-void wtclock __P((struct wt_softc *sc));
-int wtreset __P((bus_space_tag_t, bus_space_handle_t, struct wtregs *));
-int wtsense __P((struct wt_softc *sc, int verbose, int ignore));
-int wtstatus __P((struct wt_softc *sc));
-void wtrewind __P((struct wt_softc *sc));
-int wtreadfm __P((struct wt_softc *sc));
-int wtwritefm __P((struct wt_softc *sc));
-u_char wtsoft __P((struct wt_softc *sc, int mask, int bits));
+int wtwait (struct wt_softc *sc, int catch, char *msg);
+int wtcmd (struct wt_softc *sc, int cmd);
+int wtstart (struct wt_softc *sc, int flag, void *vaddr, size_t len);
+void wtdma (struct wt_softc *sc);
+void wttimer (void *arg);
+void wtclock (struct wt_softc *sc);
+int wtreset (bus_space_tag_t, bus_space_handle_t, struct wtregs *);
+int wtsense (struct wt_softc *sc, int verbose, int ignore);
+int wtstatus (struct wt_softc *sc);
+void wtrewind (struct wt_softc *sc);
+int wtreadfm (struct wt_softc *sc);
+int wtwritefm (struct wt_softc *sc);
+u_char wtsoft (struct wt_softc *sc, int mask, int bits);
 
 #ifdef __BROKEN_INDIRECT_CONFIG
-int wtprobe __P((struct device *, void *, void *));
+int wtprobe (struct device *, void *, void *);
 #else
-int wtprobe __P((struct device *, struct cfdata *, void *));
+int wtprobe (struct device *, struct cfdata *, void *);
 #endif
-void wtattach __P((struct device *, struct device *, void *));
-int wtintr __P((void *sc));
+void wtattach (struct device *, struct device *, void *);
+int wtintr (void *sc);
 
 struct cfattach wt_ca = {
 	sizeof(struct wt_softc), wtprobe, wtattach
@@ -277,15 +278,13 @@ ok:
 
 	sc->chan = ia->ia_drq;
 
-	if (isa_dmamap_create(parent, sc->chan, MAXPHYS,
-	    BUS_DMA_NOWAIT|BUS_DMA_ALLOCNOW)) {
+	if (isa_dmamap_create(parent, sc->chan, MAXPHYS, BUS_DMA_NOWAIT|BUS_DMA_ALLOCNOW)) {
 		printf("%s: can't set up ISA DMA map\n",
 		    sc->sc_dev.dv_xname);
 		return;
 	}
 
-	sc->sc_ih = isa_intr_establish(ia->ia_ic, ia->ia_irq, IST_EDGE,
-	    IPL_BIO, wtintr, sc);
+	sc->sc_ih = isa_intr_establish(ia->ia_ic, ia->ia_irq, IST_EDGE, IPL_BIO, wtintr, sc);
 }
 
 int

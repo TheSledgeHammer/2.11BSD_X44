@@ -48,53 +48,53 @@ int com_is_console (bus_space_tag_t, int, bus_space_handle_t *);
 #define	COM_RING_SIZE	2048
 
 struct com_softc {
-	struct device sc_dev;
-	void *sc_si;
-	struct tty *sc_tty;
+	struct device 		sc_dev;
+	void 				*sc_si;
+	struct tty 			*sc_tty;
 
-	int sc_iobase;			/* XXX ISA-centric name */
-	int sc_frequency;
+	int 				sc_iobase;			/* XXX ISA-centric name */
+	int 				sc_frequency;
 
-	bus_space_tag_t sc_iot;
-	bus_space_handle_t sc_ioh;
-	bus_space_handle_t sc_hayespioh;
+	bus_space_tag_t 	sc_iot;
+	bus_space_handle_t 	sc_ioh;
+	bus_space_handle_t 	sc_hayespioh;
 
-	u_int sc_overflows,
-	      sc_floods,
-	      sc_errors;
+	u_int 				sc_overflows,
+	      	  	  	  	sc_floods,
+						sc_errors;
 
-	int sc_hwflags,
-	    sc_swflags;
-	u_int sc_fifolen;
+	int 				sc_hwflags,
+	    				sc_swflags;
+	u_int 				sc_fifolen;
 
-	u_int sc_r_hiwat,
-	      sc_r_lowat;
-	u_char *volatile sc_rbget,
-	       *volatile sc_rbput;
- 	volatile u_int sc_rbavail;
-	u_char *sc_rbuf,
-	       *sc_ebuf;
+	u_int 				sc_r_hiwat,
+	      	  	  	  	sc_r_lowat;
+	u_char *volatile 	sc_rbget,
+	       *volatile 	sc_rbput;
+ 	volatile u_int 		sc_rbavail;
+	u_char 				*sc_rbuf,
+	       	   	   	   	*sc_ebuf;
 
- 	u_char *sc_tba;
- 	u_int sc_tbc,
-	      sc_heldtbc;
+ 	u_char 				*sc_tba;
+ 	u_int 				sc_tbc,
+	      	  	  	  	sc_heldtbc;
 
-	volatile u_char sc_rx_flags,
+	volatile u_char 	sc_rx_flags,
 #define	RX_TTY_BLOCKED		0x01
 #define	RX_TTY_OVERFLOWED	0x02
 #define	RX_IBUF_BLOCKED		0x04
 #define	RX_IBUF_OVERFLOWED	0x08
 #define	RX_ANY_BLOCK		0x0f
-			sc_tx_busy,
-			sc_tx_done,
-			sc_tx_stopped,
-			sc_st_check,
-			sc_rx_ready;
+						sc_tx_busy,
+						sc_tx_done,
+						sc_tx_stopped,
+						sc_st_check,
+						sc_rx_ready;
 
-	volatile u_char sc_heldchange;
-	volatile u_char sc_msr, sc_msr_delta, sc_msr_mask, sc_mcr,
-	    sc_mcr_active, sc_lcr, sc_ier, sc_fifo, sc_dlbl, sc_dlbh, sc_efr;
-	u_char sc_mcr_dtr, sc_mcr_rts, sc_msr_cts, sc_msr_dcd;
+	volatile u_char 	sc_heldchange;
+	volatile u_char 	sc_msr, sc_msr_delta, sc_msr_mask, sc_mcr,
+	    				sc_mcr_active, sc_lcr, sc_ier, sc_fifo, sc_dlbl, sc_dlbh, sc_efr;
+	u_char 				sc_mcr_dtr, sc_mcr_rts, sc_msr_cts, sc_msr_dcd;
 
 #if NRND > 0 && defined(RND_COM)
 	rndsource_element_t  rnd_source;

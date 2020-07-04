@@ -72,6 +72,7 @@
 #include <sys/device.h>
 #include <sys/proc.h>
 #include <sys/buf.h>
+#include <sys/user.h>
 
 #include <machine/cpu.h>
 #include <machine/intr.h>
@@ -116,11 +117,11 @@ int	wssdebug = 0;
 #endif
 
 struct wss_softc {
-	struct	device sc_dev;		/* base device */
-	struct	isadev sc_id;		/* ISA device */
-	void	*sc_ih;			/* interrupt vectoring */
-	bus_space_tag_t sc_iot;		/* tag */
-	bus_space_handle_t sc_ioh;	/* handle */
+	struct	device 		sc_dev;		/* base device */
+	struct	isadev 		sc_id;		/* ISA device */
+	void				*sc_ih;		/* interrupt vectoring */
+	bus_space_tag_t 	sc_iot;		/* tag */
+	bus_space_handle_t 	sc_ioh;		/* handle */
 
 	struct  ad1848_softc sc_ad1848;
 #define wss_irq    sc_ad1848.sc_irq
@@ -138,20 +139,20 @@ struct audio_device wss_device = {
 	"WSS"
 };
 
-int	wss_getdev __P((void *, struct audio_device *));
+int	wss_getdev (void *, struct audio_device *);
 
-int	wss_mixer_set_port __P((void *, mixer_ctrl_t *));
-int	wss_mixer_get_port __P((void *, mixer_ctrl_t *));
-int	wss_query_devinfo __P((void *, mixer_devinfo_t *));
+int	wss_mixer_set_port (void *, mixer_ctrl_t *);
+int	wss_mixer_get_port (void *, mixer_ctrl_t *);
+int	wss_query_devinfo (void *, mixer_devinfo_t *);
 
-static int wss_to_vol __P((mixer_ctrl_t *, struct ad1848_volume *));
-static int wss_from_vol __P((mixer_ctrl_t *, struct ad1848_volume *));
+static int wss_to_vol (mixer_ctrl_t *, struct ad1848_volume *);
+static int wss_from_vol (mixer_ctrl_t *, struct ad1848_volume *);
 
-static int	wssfind __P((struct device *, struct wss_softc *, struct isa_attach_args *));
+static int	wssfind (struct device *, struct wss_softc *, struct isa_attach_args *);
 
-static int 	madprobe __P((struct wss_softc *, int));
-static void	madattach __P((struct wss_softc *));
-static void	madunmap __P((struct wss_softc *));
+static int 	madprobe (struct wss_softc *, int);
+static void	madattach (struct wss_softc *);
+static void	madunmap (struct wss_softc *);
 
 /*
  * Define our interface to the higher level audio driver.

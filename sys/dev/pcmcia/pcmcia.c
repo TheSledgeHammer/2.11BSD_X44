@@ -238,7 +238,6 @@ pcmcia_submatch(parent, cf, aux)
 	if (cf->cf_loc[PCMCIACF_FUNCTION] != PCMCIACF_FUNCTION_DEFAULT &&
 	    cf->cf_loc[PCMCIACF_FUNCTION] != paa->pf->number)
 		return (0);
-
 	return ((*cf->cf_attach->ca_match)(parent, cf, aux));
 }
 

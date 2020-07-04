@@ -61,10 +61,10 @@
 #include <dev/isa/isavar.h>
 
 struct com_isa_softc {
-	struct	com_softc sc_com;	/* real "com" softc */
+	struct	com_softc 	sc_com;	/* real "com" softc */
 
 	/* ISA-specific goo. */
-	void	*sc_ih;			/* interrupt handler */
+	void				*sc_ih;			/* interrupt handler */
 };
 
 #ifdef __BROKEN_INDIRECT_CONFIG

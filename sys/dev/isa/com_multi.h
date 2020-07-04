@@ -31,10 +31,10 @@
  */
 
 struct commulti_attach_args {
-	int		ca_slave;		/* slave number */
+	int					ca_slave;		/* slave number */
 
-	bus_space_tag_t	ca_iot;
-	bus_space_handle_t ca_ioh;
-	int		ca_iobase;
-	int		ca_noien;
+	bus_space_tag_t		ca_iot;
+	bus_space_handle_t 	ca_ioh;
+	int					ca_iobase;
+	int					ca_noien;
 };

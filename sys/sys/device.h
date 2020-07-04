@@ -80,13 +80,13 @@ struct evcnt {
  * Configuration data (i.e., data placed in ioconf.c).
  */
 struct cfdata {
-	struct	cfdriver *cf_driver;	/* config driver */
-	short	cf_unit;				/* unit number */
-	short	cf_fstate;				/* finding state (below) */
-	int		*cf_loc;				/* locators (machine dependent) */
-	int		cf_flags;				/* flags from config */
-	short	*cf_parents;			/* potential parents */
-	void	(**cf_ivstubs)();		/* config-generated vectors, if any */
+	struct	cfdriver 	*cf_driver;				/* config driver */
+	short				cf_unit;				/* unit number */
+	short				cf_fstate;				/* finding state (below) */
+	int					*cf_loc;				/* locators (machine dependent) */
+	int					cf_flags;				/* flags from config */
+	short				*cf_parents;			/* potential parents */
+	void				(**cf_ivstubs)();		/* config-generated vectors, if any */
 };
 #define FSTATE_NOTFOUND	0	/* has not been found */
 #define	FSTATE_FOUND	1	/* has been found */

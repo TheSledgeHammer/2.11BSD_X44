@@ -88,25 +88,23 @@ static const char tgtiqd[36] = {
 /*
  * Local function prototypes.
  */
-static int isp_parse_async __P((struct ispsoftc *, u_int16_t));
-static int isp_handle_other_response
-__P((struct ispsoftc *, ispstatusreq_t *, u_int8_t *));
+static int isp_parse_async (struct ispsoftc *, u_int16_t);
+static int isp_handle_other_response (struct ispsoftc *, ispstatusreq_t *, u_int8_t *);
 #if	defined(ISP2100_TARGET_MODE) || defined(ISP_TARGET_MODE)
-static int isp_modify_lun __P((struct ispsoftc *, int, int, int));
+static int isp_modify_lun (struct ispsoftc *, int, int, int);
 #endif
-static void isp_parse_status
-__P((struct ispsoftc *, ispstatusreq_t *, ISP_SCSI_XFER_T *));
-static void isp_fibre_init __P((struct ispsoftc *));
-static void isp_fw_state __P((struct ispsoftc *));
-static void isp_dumpregs __P((struct ispsoftc *, const char *));
-static void isp_dumpxflist __P((struct ispsoftc *));
-static void isp_prtstst __P((ispstatusreq_t *));
-static void isp_mboxcmd __P((struct ispsoftc *, mbreg_t *));
+static void isp_parse_status (struct ispsoftc *, ispstatusreq_t *, ISP_SCSI_XFER_T *);
+static void isp_fibre_init (struct ispsoftc *);
+static void isp_fw_state (struct ispsoftc *);
+static void isp_dumpregs (struct ispsoftc *, const char *);
+static void isp_dumpxflist (struct ispsoftc *);
+static void isp_prtstst (ispstatusreq_t *);
+static void isp_mboxcmd (struct ispsoftc *, mbreg_t *);
 
-static void isp_update  __P((struct ispsoftc *));
-static void isp_setdfltparm __P((struct ispsoftc *));
-static int isp_read_nvram __P((struct ispsoftc *));
-static void isp_rdnvram_word __P((struct ispsoftc *, int, u_int16_t *));
+static void isp_update  (struct ispsoftc *);
+static void isp_setdfltparm (struct ispsoftc *);
+static int isp_read_nvram (struct ispsoftc *);
+static void isp_rdnvram_word (struct ispsoftc *, int, u_int16_t *);
 
 /*
  * Reset Hardware.
@@ -140,8 +138,7 @@ isp_reset(isp)
 		int rev = ISP_READ(isp, BIU_CONF0) & BIU_CONF0_HW_MASK;
 		switch (rev) {
 		default:
-			PRINTF("%s: unknown chip rev. 0x%x- assuming a 1020\n",
-			    isp->isp_name, rev);
+			PRINTF("%s: unknown chip rev. 0x%x- assuming a 1020\n", isp->isp_name, rev);
 			/* FALLTHROUGH */
 		case 1:
 			revname = "1020";	

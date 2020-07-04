@@ -90,9 +90,9 @@ struct com_softc {
 	int sc_hayespbase;
 #endif
 
-	bus_chipset_tag_t sc_bc;
-	bus_io_handle_t sc_ioh;
-	bus_io_handle_t sc_hayespioh;
+	bus_chipset_tag_t 	sc_bc;
+	bus_io_handle_t 	sc_ioh;
+	bus_io_handle_t 	sc_hayespioh;
 
 	u_char sc_hwflags;
 #define	COM_HW_NOIEN	0x01
