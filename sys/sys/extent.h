@@ -42,31 +42,29 @@
 #include <sys/queue.h>
 
 struct extent_region {
-	LIST_ENTRY(extent_region) er_link;	/* link in region list */
-	u_long 	er_start;			/* start of region */
-	u_long	er_end;				/* end of region */
-	int		er_flags;			/* misc. flags */
+	LIST_ENTRY(extent_region) 	er_link;		/* link in region list */
+	u_long 						er_start;		/* start of region */
+	u_long						er_end;			/* end of region */
+	int							er_flags;		/* misc. flags */
 };
 
 /* er_flags */
 #define ER_ALLOC	0x01		/* region descriptor dynamically allocated */
 
 struct extent {
-	char	*ex_name;			/* name of extent */
-								/* allocated regions in extent */
-	LIST_HEAD(, extent_region) ex_regions;
-	u_long	ex_start;			/* start of extent */
-	u_long	ex_end;				/* end of extent */
-	int		ex_mtype;			/* memory type */
-	int		ex_flags;			/* misc. information */
+	char						*ex_name;		/* name of extent */
+	LIST_HEAD(, extent_region) 	ex_regions;		/* allocated regions in extent */
+	u_long						ex_start;		/* start of extent */
+	u_long						ex_end;			/* end of extent */
+	int							ex_mtype;		/* memory type */
+	int							ex_flags;		/* misc. information */
 };
 
 struct extent_fixed {
-	struct extent	fex_extent;	/* MUST BE FIRST */
-								/* freelist of region descriptors */
-	LIST_HEAD(, extent_region) fex_freelist;
-	caddr_t			fex_storage;	/* storage space for descriptors */
-	size_t			fex_storagesize;/* size of storage space */
+	struct extent				fex_extent;		/* MUST BE FIRST */
+	LIST_HEAD(, extent_region) 	fex_freelist;	/* freelist of region descriptors */
+	caddr_t						fex_storage;	/* storage space for descriptors */
+	size_t						fex_storagesize;/* size of storage space */
 };
 
 /* ex_flags; for internal use only */

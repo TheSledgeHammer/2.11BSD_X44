@@ -86,7 +86,7 @@ uao_find_swhash_elt(aobj, pageidx, create)
 {
 	struct uao_swhash *swhash;
 	struct uao_swhash_elt *elt;
-	voff_t page_tag;
+	vm_offset_t page_tag;
 
 	swhash = UAO_SWHASH_HASH(aobj, pageidx);
 	page_tag = UAO_SWHASH_ELT_TAG(pageidx);
@@ -333,12 +333,12 @@ uao_free(aobj)
  *	UAO_FLAG_KERNSWAP - enable swapping of kernel object ("           ")
  */
 
-struct uvm_object *
+struct vm_object *
 uao_create(size, flags)
-	vsize_t size;
+	vm_size_t size;
 	int flags;
 {
-	static struct uvm_aobj kernel_object_store;
+	static struct vm_aobject kernel_object_store;
 	static int kobj_alloced = 0;
 	int pages = round_page(size) >> PAGE_SHIFT;
 	struct uvm_aobj *aobj;

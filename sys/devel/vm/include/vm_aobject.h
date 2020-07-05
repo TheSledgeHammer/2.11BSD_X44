@@ -127,8 +127,8 @@ struct vm_aobject {
 };
 
 static void	uao_free(struct vm_aobject *);
-static int	uao_get(struct vm_object *, voff_t, struct vm_page **, int *, int, vm_prot_t, int, int);
-static int	uao_put(struct vm_object *, voff_t, voff_t, int);
+static int	uao_get(struct vm_object *, vm_offset_t, struct vm_page **, int *, int, vm_prot_t, int, int);
+static int	uao_put(struct vm_object *, vm_offset_t, vm_offset_t, int);
 
 #if defined(VMSWAP)
 static struct uao_swhash_elt *uao_find_swhash_elt
@@ -138,7 +138,7 @@ static boolean_t uao_pagein(struct uvm_aobject *, int, int);
 static boolean_t uao_pagein_page(struct uvm_aobject *, int);
 #endif /* defined(VMSWAP) */
 
-static struct vm_page	*uao_pagealloc(struct vm_object *, voff_t, int);
+static struct vm_page *uao_pagealloc(struct vm_object *, vm_offset_t, int);
 
 /*
  * aobj_pager
@@ -175,7 +175,7 @@ int			uao_set_swslot(struct vm_object *, int, int);
 int			uao_find_swslot(struct vm_object *, int);
 void		uao_dropswap(struct vm_object *, int);
 boolean_t	uao_swap_off(int, int);
-void		uao_dropswap_range(struct vm_object *, voff_t, voff_t);
+void		uao_dropswap_range(struct vm_object *, vm_offset_t, vm_offset_t);
 #else
 #define		uao_find_swslot(obj, off)	(__USE(off), 0)
 #define		uao_dropswap(obj, off)			/* nothing */

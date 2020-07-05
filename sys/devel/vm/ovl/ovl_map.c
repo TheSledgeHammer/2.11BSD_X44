@@ -15,14 +15,33 @@ vm_offset_t			kovl_data;
 ovl_map_entry_t 	kovl_entry_free;
 ovl_map_t 			kovl_free;
 
+//vm_map_t			overlay_map;
+
+
+//#ifdef OVL
+extern struct pmap	overlay_pmap_store;
+#define overlay_pmap (&overlay_pmap_store)
+//#endif
+
+vm_offset_t
+pmap_map_overlay(virt, start, end, prot)
+	vm_offset_t	virt;
+	vm_offset_t	start;
+	vm_offset_t	end;
+	int			prot;
+{
+	while (start < end) {
+		pmap_enter(overlay_pmap, virt, start, prot, FALSE);
+		virt += PAGE_SIZE;
+		start += PAGE_SIZE;
+	}
+	return (virt);
+}
+
 void
 ovl_map_startup()
 {
-	register vovl_map_entry_t mep;
-	vovl_map_t mp;
 
-	kovl_free = mp (vovl_map_t) kovl_data;
-	mp->vovl_header
 }
 
 struct vovlspace *

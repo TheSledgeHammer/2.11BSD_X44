@@ -27,102 +27,101 @@
  */
 
 #include <sys/user.h>
-#include "vm_extent.h"
+#include <sys/tree.h>
+#include "vm_seg.h"
 
-struct vm_extentops vm_segment[] = {
-	.vm_extent_create =	extent_create,
-	.vm_extent_mallocok = vm_segment_mallocok,
-	.vm_extent_alloc = extent_alloc_region,
-	.vm_extent_suballoc = extent_alloc_subregion,
-	.vm_extent_free = extent_free,
-	.vm_extent_destroy = extent_destroy
-};
+/* TODO:
+ * - Allocate vm_segment
+ */
+
+void
+vm_segment_init(void)
+{
+	register struct vm_segment *seg;
+	RB_INIT(&seg->seg_rbroot);
+	seg = (struct vm_segment *) rmalloc(seg, sizeof(struct vm_segment *));
+}
+
+/* vm segment extent memory management */
+struct extent *
+vm_segment_create(seg, name, start, end, mtype, storage, storagesize, flags)
+	struct vm_segment *seg;
+	char *name;
+	vm_offset_t start, end;
+	int mtype, flags;
+	caddr_t	storage;
+	vm_size_t storagesize;
+{
+	seg->seg_name = name;
+	seg->seg_start = start;
+	seg->seg_end = end;
+	seg->seg_addr += start;
+	seg->seg_vsize = start - end;
+
+	seg->seg_extent = extent_create(seg->seg_extent, name, start, end, mtype, storage, storagesize, flags);
+
+	return (seg->seg_extent);
+}
 
 int
-vm_segment_create(ap)
-	struct vm_extentops_create_args *ap;
+vm_segment_allocate_region(seg, start, size, flags)
+	struct vm_segment *seg;
+	u_long start, size;
+	int flags;
 {
-	struct vm_extent *vext = ap->a_vext;
-	struct extent *ext = vext->vext_ext;
+	int error;
 
-	if(vext == NULL) {
-		MALLOC(vext, struct vm_extent *, sizeof(struct vm_extent *), M_VMEXTENT, M_WAITOK);
+	error = extent_alloc_region(seg->seg_extent, start, size, flags);
+
+	if(error) {
+		return (error);
 	}
-
-	ext = extent_create(ext, ap->a_name, ap->a_start, ap->a_end, ap->a_mtype, ap->a_storage, ap->a_storagesize, ap->a_flags);
-
 	return (0);
 }
 
 int
-vm_segment_mallocok(ap)
-	struct vm_extentops_mallocok_args *ap;
+vm_segment_allocate_subregion(seg, substart, subend, size, alignment, boundary, flags, result)
+	struct vm_segment *seg;
+	u_long substart, subend, size, alignment, boundary;
+	int flags;
+	u_long *result;
 {
-	struct vm_extent *vext = ap->a_vext;
-	int mallocok = ap->a_mallocok;
+	int error;
 
-	if(vext != NULL && mallocok != 0) {
-		return (1);
+	error = extent_alloc_subregion(seg->seg_extent, substart, subend, size, alignment, boundary, flags, result);
+
+	if(error) {
+		return (error);
 	}
 	return (0);
 }
 
 int
-vm_segment_alloc(ap)
-	struct vm_extentops_alloc_args *ap;
+vm_segment_free(seg, start, size, flags)
+	struct vm_segment *seg;
+	u_long start, size;
+	int flags;
 {
-	struct vm_extent *vext = ap->a_vext;
-	struct extent *ext = vext->vext_ext;
 	int error;
 
-	if(ext != NULL) {
-		error = extent_alloc_region(ext, ap->a_start, ap->a_size, ap->a_flags);
+	error = extent_free(seg->seg_extent, start, size, flags);
+
+	if(error) {
+		return (error);
 	}
-	return (error);
+	return (0);
 }
 
 int
-vm_segment_suballoc(ap)
-	struct vm_extentops_suballoc_args *ap;
+vm_segment_destroy(seg)
+	struct vm_segment *seg;
 {
-	struct vm_extent *vext = ap->a_vext;
-	struct extent *ext = vext->vext_ext;
-	int mallocflags = ap->a_mallocflags;
-	int malloctypes = ap->a_malloctypes;
 	int error;
 
-	if(ext != NULL && (mallocflags & malloctypes)) {
-		error = extent_alloc_subregion(ext, ap->a_start, ap->a_end, ap->a_size, ap->a_malloctypes, ap->a_mallocflags, ap->a_alignment, ap->a_boundary, ap->a_flags, ap->a_result);
+	error = extent_destroy(seg->seg_extent);
+
+	if(error) {
+		return (error);
 	}
-	return (error);
-}
-
-int
-vm_segment_free(ap)
-	struct vm_extentops_free_args *ap;
-{
-	struct vm_extent *vext = ap->a_vext;
-	struct extent *ext = vext->vext_ext;
-	int flags = ap->a_flags;
-	int malloctypes = ap->a_malloctypes;
-	int error;
-
-	if(ext != NULL && (flags & malloctypes)) {
-		error = extent_free(ext, ap->a_start, ap->a_size, flags);
-	}
-	return (error);
-}
-
-int
-vm_segment_destroy(ap)
-	struct vm_extentops_destroy_args *ap;
-{
-	struct vm_extent *vext = ap->a_vext;
-	struct extent *ext = vext->vext_ext;
-	int error;
-
-	if(ext != NULL) {
-		error = extent_destroy(ext);
-	}
-	return (error);
+	return (0);
 }

@@ -35,6 +35,8 @@
  *
  * OVA_MAX_ADDRESS = VM_MAX_ADDRESS - x amount
  * OVA_MIN_ADDRESS = VM_MIN_ADDRESS - x amount
+ *
+ *
  */
 /*	koverlay:
  * 	-
@@ -58,16 +60,25 @@
 #define NOVLSR 	(NOVL/2)		/* maximum mumber of kernel overlay sub-regions */
 #define NOVLPSR	NOVLSR			/* XXX: number of overlays per sub-region */
 
+/* Before VM Space */
+#define OVL_MIN_ADDRESS 		((vm_offset_t)0)
+#define OVL_MAX_ADDRESS			((PGSIZE/100)*10)	/* Total Size of Overlay Address Space (Roughly 10% of PGSIZE) */
+#define VM_MIN_ADDRESS			OVL_MAX_ADDRESS
+
+/* Above VM Max Kernel Space */
+/*
+OVL_MIN = VM_MAX_KERNEL_ADDRESS
+OVL_MAX = (VM_MAX_KERNEL_ADDRESS + ((PGSIZE/100)*10))
+*/
+
 #define OVL_MIN_KERNEL_ADDRESS
 #define OVL_MAX_KERNEL_ADDRESS
-#define OVL_MIN_VIRTUAL_ADDRESS
-#define OVL_MAX_VIRTUAL_ADDRESS
 
 #include <sys/extent.h>
 #include <sys/queue.h>
 
-#include "../vm/ovl/ovl_map.h"
-#include "../vm/ovl/ovl_object.h"
+#include "vm/ovl/ovl_map.h"
+#include "vm/ovl/ovl_object.h"
 
 union ovl_map_object;
 typedef union ovl_map_object 	ovl_map_object_t;

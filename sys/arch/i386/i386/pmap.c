@@ -324,8 +324,7 @@ pmap_bootstrap_alloc(size) {
 		while (!pmap_isvalidphys(avail_start))
 				avail_start += PAGE_SIZE;
 
-		virtual_avail = pmap_map(virtual_avail, avail_start,
-			avail_start + PAGE_SIZE, VM_PROT_READ|VM_PROT_WRITE);
+		virtual_avail = pmap_map(virtual_avail, avail_start, avail_start + PAGE_SIZE, VM_PROT_READ|VM_PROT_WRITE);
 		avail_start += PAGE_SIZE;
 	}
 

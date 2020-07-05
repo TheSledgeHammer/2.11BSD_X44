@@ -32,21 +32,21 @@
 #include <sys/malloc.h>
 #include <sys/user.h>
 
-struct vm_extentops vextops;
+struct vextops vextops;
 
-/* initilize vm_extentops */
+/* initilize vextops */
 void
-vm_extentops_init()
+vextops_init()
 {
 	vop_malloc(&vextops);
 }
 
-/* allocate vm_extentops */
+/* allocate vextops */
 void
-vm_extentops_malloc(vextops)
-	struct vm_extentops *vextops;
+vextops_malloc(vextops)
+	struct vextops *vextops;
 {
-	MALLOC(vextops, struct vm_extentops *, sizeof(struct vm_extentops *), M_VMEXTENTOPS, M_WAITOK);
+	MALLOC(vextops, struct vextops *, sizeof(struct vextops *), M_VEXTOPS, M_WAITOK);
 }
 
 int
@@ -59,7 +59,7 @@ vm_extent_create(vext, ext, name, start, end, mtype, storage, storagesize, flags
 	caddr_t	storage;
 	vm_size_t storagesize;
 {
-    struct vm_extentops_create_args vap;
+    struct vextops_create_args vap;
     int error;
 
     vap.a_head.a_ops = &vextops;
@@ -87,7 +87,7 @@ vm_extent_mallocok(vext, mallocok)
 	struct vm_extent *vext;
 	int mallocok;
 {
-	struct vm_extentops_mallocok_args vap;
+	struct vextops_mallocok_args vap;
 	int error;
 
 	vap.a_head.a_ops = &vextops;
@@ -100,6 +100,10 @@ vm_extent_mallocok(vext, mallocok)
 
 	error = vextops.vm_extent_mallocok(vext, mallocok);
 
+	if(mallocok != 0) {
+		error = 1;
+	}
+
 	return (error);
 }
 
@@ -110,7 +114,7 @@ vm_extent_alloc(vext, start, size, flags)
 	vm_size_t	size;
 	int flags;
 {
-	struct vm_extentops_alloc_args vap;
+	struct vextops_alloc_args vap;
 	int error;
 
 	vap.a_head.a_ops = &vextops;
@@ -138,7 +142,7 @@ vm_extent_suballoc(vext, start, end, size, malloctypes, mallocflags, alignment, 
 	int flags, malloctypes, mallocflags;
 	u_long *result, alignment, boundary;
 {
-	struct vm_extentops_suballoc_args vap;
+	struct vextops_suballoc_args vap;
 	int error;
 
 	vap.a_head.a_ops = &vextops;
@@ -169,7 +173,7 @@ vm_extent_free(vext, start, size, malloctypes, flags)
 	vm_size_t	size;
 	int malloctypes, flags;
 {
-	struct vm_extentops_free_args vap;
+	struct vextops_free_args vap;
 	int error;
 
 	vap.a_head.a_ops = &vextops;
@@ -191,7 +195,7 @@ int
 vm_extent_destroy(vext)
 	struct vm_extent *vext;
 {
-	struct vm_extentops_destroy_args vap;
+	struct vextops_destroy_args vap;
 	int error;
 
 	vap.a_head.a_ops = &vextops;

@@ -46,7 +46,7 @@
 #ifndef MACHINE_ARCH
 #define	MACHINE_ARCH	"i386"
 #endif
-#define MID_MACHINE	MID_I386
+#define MID_MACHINE		MID_I386
 #define NCPUS 1
 
 /*

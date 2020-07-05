@@ -104,11 +104,11 @@ typedef struct swpagerclean *swp_clean_t;
 #define SPC_ERROR	0x04
 
 struct swtab {
-	vm_size_t st_osize;	/* size of object (bytes) */
-	int	  st_bsize;	/* vs. size of swap block (DEV_BSIZE units) */
+	vm_size_t 	st_osize;	/* size of object (bytes) */
+	int	  		st_bsize;	/* vs. size of swap block (DEV_BSIZE units) */
 #ifdef DEBUG
-	u_long	  st_inuse;	/* number in this range in use */
-	u_long	  st_usecnt;	/* total used of this size */
+	u_long	  	st_inuse;	/* number in this range in use */
+	u_long	  	st_usecnt;	/* total used of this size */
 #endif
 } swtab[NSWSIZES+1];
 

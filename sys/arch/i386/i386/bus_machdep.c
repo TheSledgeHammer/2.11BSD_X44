@@ -262,8 +262,7 @@ _i386_memio_map(t, bpa, size, flags, bshp)
 }
 
 int
-i386_memio_alloc(t, rstart, rend, size, alignment, boundary, flags,
-    bpap, bshp)
+i386_memio_alloc(t, rstart, rend, size, alignment, boundary, flags, bpap, bshp)
 	bus_space_tag_t t;
 	bus_addr_t rstart, rend;
 	bus_size_t size, alignment, boundary;

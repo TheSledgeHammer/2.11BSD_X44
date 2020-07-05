@@ -35,45 +35,52 @@
 #ifndef _VM_SEG_H_
 #define _VM_SEG_H_
 
+#include <sys/queue.h>
+
 /*
  * pmap_segment method: allocate physical memory or virtual memory
  *	TODO:
  *	- mapping vm_segmentspace to various spaces (vmspace, avmspace, ovlspace)
  */
 
+struct vm_seg_clist;
 struct vm_seg_rbtree;
-RB_HEAD(vm_seg_rbtree, vm_segmentspace);
-struct vm_segment {
-	struct vm_seg_rbtree 		seg_rbtree;			/* tree of segments space entries */
-	struct pmap					seg_pmap;			/* private physical map */
-	struct extent 				*seg_extent;		/* segment extent manager */
-
-	/* VM Segment Space */
-	char 						*seg_name;			/* segment name */
-	vm_offset_t 				seg_start;			/* start address */
-	vm_offset_t 				seg_end;			/* end address */
-	caddr_t						seg_addr;			/* virtual address */
-	vm_size_t					seg_size;			/* virtual size */
-};
 
 /* Segmented Space */
-struct vm_segmentspace {
-	RB_ENTRY(vm_segmentspace) 	seg_rbentry;		/* tree entries */
+struct vm_segment_entry {
+	CIRCLEQ_ENTRY(vm_segment_entry) seg_clentry;		/* entries in a circular list */
+	RB_ENTRY(vm_segment_entry) 		seg_rbentry;		/* tree entries */
 
-	char 						*segs_name;
-	vm_offset_t 				segs_start;			/* start address */
-	vm_offset_t 				segs_end;			/* end address */
-	caddr_t						segs_addr;
-	vm_size_t					segs_size;			/* virtual size */
+	char 							*segs_name;
+	vm_offset_t 					segs_start;			/* start address */
+	vm_offset_t 					segs_end;			/* end address */
+	caddr_t							segs_addr;
+	vm_size_t						segs_vsize;			/* virtual size */
 
 	/* VM Space Related Address Segments & Sizes */
-	segsz_t 					segs_tsize;			/* text size (pages) XXX */
-	segsz_t 					segs_dsize;			/* data size (pages) XXX */
-	segsz_t 					segs_ssize;			/* stack size (pages) */
-	caddr_t						segs_taddr;			/* user virtual address of text XXX */
-	caddr_t						segs_daddr;			/* user virtual address of data XXX */
-	caddr_t 					segs_minsaddr;		/* user VA at min stack growth */
-	caddr_t 					segs_maxsaddr;		/* user VA at max stack growth */
+	segsz_t 						segs_tsize;			/* text size (pages) XXX */
+	segsz_t 						segs_dsize;			/* data size (pages) XXX */
+	segsz_t 						segs_ssize;			/* stack size (pages) */
+	caddr_t							segs_taddr;			/* user virtual address of text XXX */
+	caddr_t							segs_daddr;			/* user virtual address of data XXX */
+	caddr_t 						segs_minsaddr;		/* user VA at min stack growth */
+	caddr_t 						segs_maxsaddr;		/* user VA at max stack growth */
+};
+
+RB_HEAD(vm_seg_rbtree, vm_segment_entry);
+CIRCLEQ_HEAD(vm_seg_clist, vm_segment_entry);
+struct vm_segment {
+	struct vm_seg_clist				seg_clheader;
+	struct vm_seg_rbtree 			seg_rbroot;			/* tree of segments space entries */
+	struct pmap						seg_pmap;			/* private physical map */
+	struct extent 					*seg_extent;		/* vm_segment extent manager */
+
+	/* VM Segment Space */
+	char 							*seg_name;			/* segment name */
+	vm_offset_t 					seg_start;			/* start address */
+	vm_offset_t 					seg_end;			/* end address */
+	caddr_t							seg_addr;			/* virtual address */
+	vm_size_t						seg_vsize;			/* virtual size */
 };
 
 /* Segmented Space Address Layout */
@@ -81,6 +88,7 @@ struct vm_segmentspace {
 #define VMSPACE_END
 #define AVMSPACE_START
 #define AVMSPACE_END
+
 #define OVLSPACE_START
 #define OVLSPACE_END
 

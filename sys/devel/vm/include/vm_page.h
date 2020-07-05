@@ -95,8 +95,8 @@
  *	queues (P).
  */
 
-TAILQ_HEAD(pglist, vm_page);
 
+TAILQ_HEAD(pglist, vm_page);
 struct vm_page {
 	TAILQ_ENTRY(vm_page)	pageq;		/* queue info for FIFO
 						 	 	 	 	 * queue or free list (P) */

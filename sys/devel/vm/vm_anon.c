@@ -300,7 +300,7 @@ vm_anon_dropswap(anon)
 		return;
 
 	//UVMHIST_LOG(maphist,"freeing swap for anon %p, paged to swslot 0x%x", anon, anon->an_swslot, 0, 0);
-	uvm_swap_free(anon->an_swslot, 1);
+	vm_swap_free(anon->an_swslot, 1);
 	anon->an_swslot = 0;
 }
 

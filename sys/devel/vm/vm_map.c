@@ -191,7 +191,6 @@ void
 vmspace_free(vm)
 	register struct vmspace *vm;
 {
-
 	if (--vm->vm_refcnt == 0) {
 		/*
 		 * Lock the map, to wait out all other references to it.
@@ -199,8 +198,7 @@ vmspace_free(vm)
 		 * then call the pmap module to reclaim anything left.
 		 */
 		vm_map_lock(&vm->vm_map);
-		(void) vm_map_delete(&vm->vm_map, vm->vm_map.min_offset,
-		    vm->vm_map.max_offset);
+		(void) vm_map_delete(&vm->vm_map, vm->vm_map.min_offset, vm->vm_map.max_offset);
 		pmap_release(&vm->vm_pmap);
 		FREE(vm, M_VMMAP);
 	}
@@ -608,7 +606,7 @@ vm_map_deallocate(map)
 		return;
 
 	simple_lock(&map->ref_lock);
-	if (--map->ref_count > 0) {
+	if (map->ref_count-- > 0) {
 		simple_unlock(&map->ref_lock);
 		return;
 	}
@@ -620,7 +618,7 @@ vm_map_deallocate(map)
 
 	vm_map_lock_drain_interlock(map);
 
-	(void) vm_map_delete(map, map->min_offset, map->max_offset);
+	(void)vm_map_delete(map, map->min_offset, map->max_offset);
 
 	pmap_destroy(map->pmap);
 
@@ -789,13 +787,6 @@ vm_map_insert(map, object, offset, start, end)
 		(map)->hint = (value); 				\
 		simple_unlock(&(map)->hint_lock);
 
-#define	SAVE_HINT2(map,check,value) do {	\
-		simple_lock(&(map)->hint_lock); 	\
-		if ((map)->hint == (check)) 		\
-				(map)->hint = (value); 		\
-		simple_unlock(&(map)->hint_lock);	\
-} while (0)
-
 /*
  *	vm_map_lookup_entry:	[ internal use only ]
  *
@@ -823,7 +814,6 @@ vm_map_lookup_entry(map, address, entry)
     if(address < cur->start) {
         if(vm_map_search_prev_entry(map, address, cur)) {
             SAVE_HINT(map, cur);
-            //SAVE_HINT(map, map->hint, *entry);
             KDASSERT((*entry)->start <= address);
             KDASSERT(address < (*entry)->end);
             return (TRUE);
@@ -835,7 +825,6 @@ vm_map_lookup_entry(map, address, entry)
     if (address > cur->start){
         if(vm_map_search_next_entry(map, address, cur)) {
             SAVE_HINT(map, cur);
-            //SAVE_HINT(map, map->hint, *entry);
             KDASSERT((*entry)->start <= address);
             KDASSERT(address < (*entry)->end);
             return (TRUE);
@@ -858,7 +847,6 @@ search_tree:
                 if (address < cur->end) {
                     *entry = cur;
                     SAVE_HINT(map, cur);
-                    //SAVE_HINT(map, map->hint, *entry);
                     KDASSERT((*entry)->start <= address);
                     KDASSERT(address < (*entry)->end);
                     return (TRUE);
@@ -875,7 +863,6 @@ search_tree:
 
 failed:
     SAVE_HINT(map, entry);
-    //SAVE_HINT(map, map->hint, *entry);
     KDASSERT((*entry) == CIRCLEQ_FIRST(&map->cl_header) || (*entry)->end <= address);
     KDASSERT(CIRCLEQ_NEXT(*entry, cl_entry) == CIRCLEQ_FIRST(&map->cl_header) || address < CIRCLEQ_NEXT(*entry, cl_entry)->start);
     return (FALSE);
@@ -1054,7 +1041,7 @@ vm_map_simplify_entry(map, entry)
 	if (entry->is_a_map) {
 #if	0
 		vm_map_t	my_share_map;
-		int		count;
+		int			count;
 
 		my_share_map = entry->object.share_map;
 		simple_lock(&my_share_map->ref_lock);
@@ -1272,10 +1259,8 @@ vm_map_submap(map, start, end, submap)
 
 	vm_map_clip_end(map, entry, end);
 
-	if ((entry->start == start) && (entry->end == end) &&
-	    (!entry->is_a_map) &&
-	    (entry->object.vm_object == NULL) &&
-	    (!entry->copy_on_write)) {
+	if ((entry->start == start) && (entry->end == end) && (!entry->is_a_map)
+			&& (entry->object.vm_object == NULL) && (!entry->copy_on_write)) {
 		entry->is_a_map = FALSE;
 		entry->is_sub_map = TRUE;
 		vm_map_reference(entry->object.sub_map = submap);
@@ -1364,40 +1349,30 @@ vm_map_protect(map, start, end, new_prot, set_max)
 #define	max(a,b)	((a) > (b) ? (a) : (b))
 
 			if (current->is_a_map) {
-				vm_map_entry_t	share_entry;
-				vm_offset_t	share_end;
+				vm_map_entry_t share_entry;
+				vm_offset_t share_end;
 
 				vm_map_lock(current->object.share_map);
-				(void) vm_map_lookup_entry(
-						current->object.share_map,
-						current->offset,
-						&share_entry);
-				share_end = current->offset +
-					(current->end - current->start);
-				while ((share_entry !=
-					&current->object.share_map->header) &&
-					(share_entry->start < share_end)) {
+				(void) vm_map_lookup_entry(current->object.share_map,
+						current->offset, &share_entry);
+				share_end = current->offset + (current->end - current->start);
+				while ((share_entry != &current->object.share_map->header)
+						&& (share_entry->start < share_end)) {
 
 					pmap_protect(map->pmap,
-						(max(share_entry->start,
-							current->offset) -
-							current->offset +
-							current->start),
-						min(share_entry->end,
-							share_end) -
-						current->offset +
-						current->start,
-						current->protection &
-							MASK(share_entry));
+							(max(share_entry->start,
+									current->offset) - current->offset
+									+ current->start),
+							min(share_entry->end, share_end) - current->offset
+									+ current->start,
+							current->protection & MASK(share_entry));
 
 					share_entry = CIRCLEQ_NEXT(share_entry, cl_entry);
 				}
 				vm_map_unlock(current->object.share_map);
-			}
-			else
-			 	pmap_protect(map->pmap, current->start,
-					current->end,
-					current->protection & MASK(entry));
+			} else
+				pmap_protect(map->pmap, current->start, current->end,
+						current->protection & MASK(entry));
 #undef	max
 #undef	MASK
 		}
@@ -1515,14 +1490,15 @@ vm_map_pageable(map, start, end, new_pageable)
 		 */
 		while ((entry != CIRCLEQ_FIRST(&map->cl_header)) && (entry->start < end)) {
 
-		    if (entry->wired_count == 0 ||
-			(entry->end < end &&
-			 (CIRCLEQ_NEXT(entry, cl_entry) == CIRCLEQ_FIRST(&map->cl_header) ||
-					 CIRCLEQ_NEXT(entry, cl_entry)->start > entry->end))) {
-			vm_map_unlock(map);
-			return(KERN_INVALID_ARGUMENT);
-		    }
-		    entry = entry->next;
+			if (entry->wired_count == 0
+					|| (entry->end < end
+							&& (CIRCLEQ_NEXT(entry, cl_entry)
+									== CIRCLEQ_FIRST(&map->cl_header) ||
+							CIRCLEQ_NEXT(entry, cl_entry)->start > entry->end))) {
+				vm_map_unlock(map);
+				return (KERN_INVALID_ARGUMENT);
+			}
+			entry = entry->next;
 		}
 
 		/*
@@ -1534,13 +1510,13 @@ vm_map_pageable(map, start, end, new_pageable)
 
 		entry = start_entry;
 		while ((entry != CIRCLEQ_FIRST(&map->cl_header)) && (entry->start < end)) {
-		    vm_map_clip_end(map, entry, end);
+			vm_map_clip_end(map, entry, end);
 
-		    entry->wired_count--;
-		    if (entry->wired_count == 0)
-			vm_fault_unwire(map, entry->start, entry->end);
+			entry->wired_count--;
+			if (entry->wired_count == 0)
+				vm_fault_unwire(map, entry->start, entry->end);
 
-		    entry = CIRCLEQ_NEXT(entry, cl_entry);
+			entry = CIRCLEQ_NEXT(entry, cl_entry);
 		}
 		vm_map_clear_recursive(&map->lock);
 	}
@@ -1576,59 +1552,57 @@ vm_map_pageable(map, start, end, new_pageable)
 		 *	Pass 1.
 		 */
 		while ((entry != CIRCLEQ_FIRST(&map->cl_header)) && (entry->start < end)) {
-		    if (entry->wired_count == 0) {
+			if (entry->wired_count == 0) {
 
-			/*
-			 *	Perform actions of vm_map_lookup that need
-			 *	the write lock on the map: create a shadow
-			 *	object for a copy-on-write region, or an
-			 *	object for a zero-fill region.
-			 *
-			 *	We don't have to do this for entries that
-			 *	point to sharing maps, because we won't hold
-			 *	the lock on the sharing map.
-			 */
-			if (!entry->is_a_map) {
-			    if (entry->needs_copy &&
-				((entry->protection & VM_PROT_WRITE) != 0)) {
+				/*
+				 *	Perform actions of vm_map_lookup that need
+				 *	the write lock on the map: create a shadow
+				 *	object for a copy-on-write region, or an
+				 *	object for a zero-fill region.
+				 *
+				 *	We don't have to do this for entries that
+				 *	point to sharing maps, because we won't hold
+				 *	the lock on the sharing map.
+				 */
+				if (!entry->is_a_map) {
+					if (entry->needs_copy
+							&& ((entry->protection & VM_PROT_WRITE) != 0)) {
 
-				vm_object_shadow(&entry->object.vm_object,
-						&entry->offset,
-						(vm_size_t)(entry->end
-							- entry->start));
-				entry->needs_copy = FALSE;
-			    }
-			    else if (entry->object.vm_object == NULL) {
-				entry->object.vm_object =
-				    vm_object_allocate((vm_size_t)(entry->end
-				    			- entry->start));
-				entry->offset = (vm_offset_t)0;
-			    }
+						vm_object_shadow(&entry->object.vm_object,
+								&entry->offset,
+								(vm_size_t) (entry->end - entry->start));
+						entry->needs_copy = FALSE;
+					} else if (entry->object.vm_object == NULL) {
+						entry->object.vm_object = vm_object_allocate(
+								(vm_size_t) (entry->end - entry->start));
+						entry->offset = (vm_offset_t) 0;
+					}
+				}
 			}
-		    }
-		    vm_map_clip_start(map, entry, start);
-		    vm_map_clip_end(map, entry, end);
-		    entry->wired_count++;
+			vm_map_clip_start(map, entry, start);
+			vm_map_clip_end(map, entry, end);
+			entry->wired_count++;
 
 		    /*
 		     * Check for holes
 		     */
-		    if (entry->end < end &&
-			(entry->next == CIRCLEQ_FIRST(&map->cl_header) ||
-			 entry->next->start > entry->end)) {
-			/*
-			 *	Found one.  Object creation actions
-			 *	do not need to be undone, but the
-			 *	wired counts need to be restored.
-			 */
-			while (entry != CIRCLEQ_FIRST(&map->cl_header) && entry->end > start) {
-			    entry->wired_count--;
-			    entry = entry->prev;
+			if (entry->end < end
+					&& (entry->next == CIRCLEQ_FIRST(&map->cl_header)
+							|| entry->next->start > entry->end)) {
+				/*
+				 *	Found one.  Object creation actions
+				 *	do not need to be undone, but the
+				 *	wired counts need to be restored.
+				 */
+				while (entry != CIRCLEQ_FIRST(&map->cl_header)
+						&& entry->end > start) {
+					entry->wired_count--;
+					entry = entry->prev;
+				}
+				vm_map_unlock(map);
+				return (KERN_INVALID_ARGUMENT);
 			}
-			vm_map_unlock(map);
-			return(KERN_INVALID_ARGUMENT);
-		    }
-		    entry = entry->next;
+			entry = entry->next;
 		}
 
 		/*
@@ -1658,37 +1632,36 @@ vm_map_pageable(map, start, end, new_pageable)
 		rv = 0;
 		entry = start_entry;
 		while (entry != CIRCLEQ_FIRST(&map->cl_header) && entry->start < end) {
-		    /*
-		     * If vm_fault_wire fails for any page we need to
-		     * undo what has been done.  We decrement the wiring
-		     * count for those pages which have not yet been
-		     * wired (now) and unwire those that have (later).
-		     *
-		     * XXX this violates the locking protocol on the map,
-		     * needs to be fixed.
-		     */
-		    if (rv)
-			entry->wired_count--;
-		    else if (entry->wired_count == 1) {
-			rv = vm_fault_wire(map, entry->start, entry->end);
-			if (rv) {
-			    failed = entry->start;
-			    entry->wired_count--;
+			/*
+			 * If vm_fault_wire fails for any page we need to
+			 * undo what has been done.  We decrement the wiring
+			 * count for those pages which have not yet been
+			 * wired (now) and unwire those that have (later).
+			 *
+			 * XXX this violates the locking protocol on the map,
+			 * needs to be fixed.
+			 */
+			if (rv)
+				entry->wired_count--;
+			else if (entry->wired_count == 1) {
+				rv = vm_fault_wire(map, entry->start, entry->end);
+				if (rv) {
+					failed = entry->start;
+					entry->wired_count--;
+				}
 			}
-		    }
-		    entry = entry->next;
+			entry = entry->next;
 		}
 
 		if (vm_map_pmap(map) == kernel_pmap) {
-		    vm_map_lock(map);
-		}
-		else {
-		    vm_map_clear_recursive(&map->lock);
+			vm_map_lock(map);
+		} else {
+			vm_map_clear_recursive(&map->lock);
 		}
 		if (rv) {
-		    vm_map_unlock(map);
-		    (void) vm_map_pageable(map, start, failed, TRUE);
-		    return(rv);
+			vm_map_unlock(map);
+			(void) vm_map_pageable(map, start, failed, TRUE);
+			return (rv);
 		}
 	}
 
@@ -1750,9 +1723,10 @@ vm_map_clean(map, start, end, syncio, invalidate)
 	 * Make a second pass, cleaning/uncaching pages from the indicated
 	 * objects as we go.
 	 */
-	for (current = entry; current->start < end; current = CIRCLEQ_NEXT(current, cl_entry)) {
-		amap = current->aref.ar_amap;		/* top layer */
-		object = current->object.vm_object;	/* bottom layer */
+	for (current = entry; current->start < end;
+			current = CIRCLEQ_NEXT(current, cl_entry)) {
+		amap = current->aref.ar_amap; /* top layer */
+		object = current->object.vm_object; /* bottom layer */
 
 		amap_lock(amap);
 
@@ -1781,15 +1755,15 @@ vm_map_clean(map, start, end, syncio, invalidate)
 		 * Flush pages if writing is allowed.
 		 * XXX should we continue on an error?
 		 */
-		if ((current->protection & VM_PROT_WRITE) &&
-		    !vm_object_page_clean(object, offset, offset+size,
-					  syncio, FALSE)) {
+		if ((current->protection & VM_PROT_WRITE)
+				&& !vm_object_page_clean(object, offset, offset + size, syncio,
+						FALSE)) {
 			vm_object_unlock(object);
 			vm_map_unlock_read(map);
-			return(KERN_FAILURE);
+			return (KERN_FAILURE);
 		}
 		if (invalidate)
-			vm_object_page_remove(object, offset, offset+size);
+			vm_object_page_remove(object, offset, offset + size);
 		vm_object_unlock(object);
 		start += size;
 	}
@@ -2096,12 +2070,9 @@ vm_map_copy_entry(src_map, dst_map, src_entry, dst_entry)
 		 *	Make a copy of the object.
 		 */
 		temp_object = dst_entry->object.vm_object;
-		vm_object_copy(src_entry->object.vm_object,
-				src_entry->offset,
-				(vm_size_t)(src_entry->end -
-					    src_entry->start),
-				&dst_entry->object.vm_object,
-				&dst_entry->offset,
+		vm_object_copy(src_entry->object.vm_object, src_entry->offset,
+				(vm_size_t) (src_entry->end - src_entry->start),
+				&dst_entry->object.vm_object, &dst_entry->offset,
 				&src_needs_copy);
 		/*
 		 *	If we didn't get a copy-object now, mark the
@@ -2512,18 +2483,16 @@ vmspace_fork(vm1)
 	register struct vmspace *vm1;
 {
 	register struct vmspace *vm2;
-	vm_map_t		old_map = &vm1->vm_map;
-	vm_map_t		new_map;
-	vm_map_entry_t	old_entry;
-	vm_map_entry_t	new_entry;
-	pmap_t			new_pmap;
+	vm_map_t				old_map = &vm1->vm_map;
+	vm_map_t				new_map;
+	vm_map_entry_t			old_entry;
+	vm_map_entry_t			new_entry;
+	pmap_t					new_pmap;
 
 	vm_map_lock(old_map);
 
-	vm2 = vmspace_alloc(old_map->min_offset, old_map->max_offset,
-	    old_map->entries_pageable);
-	bcopy(&vm1->vm_startcopy, &vm2->vm_startcopy,
-	    (caddr_t) (vm1 + 1) - (caddr_t) &vm1->vm_startcopy);
+	vm2 = vmspace_alloc(old_map->min_offset, old_map->max_offset, old_map->entries_pageable);
+	bcopy(&vm1->vm_startcopy, &vm2->vm_startcopy, (caddr_t) (vm1 + 1) - (caddr_t) &vm1->vm_startcopy);
 	new_pmap = &vm2->vm_pmap;		/* XXX */
 	new_map = &vm2->vm_map;			/* XXX */
 
@@ -2669,11 +2638,9 @@ vmspace_fork(vm1)
 				if (check != KERN_SUCCESS)
 					printf("vm_map_fork: copy in share_map region failed\n");
 			} else {
-				 if (old_entry->aref.ar_amap && !UVM_ET_ISNEEDSCOPY(old_entry)) {
+				 if (old_entry->aref.ar_amap && !VM_ET_ISNEEDSCOPY(old_entry)) {
 					 if (old_entry->max_protection & VM_PROT_WRITE) {
-						pmap_protect(old_map->pmap, old_entry->start,
-								old_entry->end,
-								old_entry->protection & ~VM_PROT_WRITE);
+						pmap_protect(old_map->pmap, old_entry->start, old_entry->end, old_entry->protection & ~VM_PROT_WRITE);
 						pmap_update(old_map->pmap);
 					 }
 					// old_entry->etype |= UVM_ET_NEEDSCOPY;
@@ -2715,16 +2682,16 @@ vmspace_fork(vm1)
  */
 int
 vm_map_lookup(var_map, vaddr, fault_type, out_entry, object, offset, out_prot, wired, single_use)
-	vm_map_t		*var_map;	/* IN/OUT */
+	vm_map_t				*var_map;		/* IN/OUT */
 	register vm_offset_t	vaddr;
-	register vm_prot_t	fault_type;
+	register vm_prot_t		fault_type;
 
-	vm_map_entry_t	*out_entry;		/* OUT */
-	vm_object_t		*object;		/* OUT */
-	vm_offset_t		*offset;		/* OUT */
-	vm_prot_t		*out_prot;		/* OUT */
-	boolean_t		*wired;			/* OUT */
-	boolean_t		*single_use;	/* OUT */
+	vm_map_entry_t			*out_entry;		/* OUT */
+	vm_object_t				*object;		/* OUT */
+	vm_offset_t				*offset;		/* OUT */
+	vm_prot_t				*out_prot;		/* OUT */
+	boolean_t				*wired;			/* OUT */
+	boolean_t				*single_use;	/* OUT */
 {
 	vm_map_t				share_map;
 	vm_offset_t				share_offset;
@@ -2743,7 +2710,7 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry, object, offset, out_prot, w
 
 #define	RETURN(why) { 			\
 	vm_map_unlock_read(map); 	\
-	return(why); 				\
+	return (why); 				\
 }
 
 	/*

@@ -69,14 +69,14 @@ rminit(mp, size, addr, name, mapsize)
 	char *name;
 	int mapsize;
 {
-		register struct mapent *ep = (struct mapent *)(mp+1);
+	register struct mapent *ep = (struct mapent *)(mp+1);
 
-		mp->m_name = name;
-		mp->m_limit = (struct mapent *)&mp[mapsize];
-		ep->m_size = size;
-		ep->m_addr = addr;
-		(++ep)->m_size = 0;
-		ep->m_addr = 0;
+	mp->m_name = name;
+	mp->m_limit = (struct mapent *)&mp[mapsize];
+	ep->m_size = size;
+	ep->m_addr = addr;
+	(++ep)->m_size = 0;
+	ep->m_addr = 0;
 }
 
 memaddr

@@ -894,8 +894,7 @@ vm_object_lookup(pager)
 		if (object->pager == pager) {
 			vm_object_lock(object);
 			if (object->ref_count == 0) {
-				TAILQ_REMOVE(&vm_object_cached_list, object,
-					cached_list);
+				TAILQ_REMOVE(&vm_object_cached_list, object, cached_list);
 				vm_object_cached--;
 			}
 			object->ref_count++;

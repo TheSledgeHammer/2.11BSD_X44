@@ -17,6 +17,9 @@ Kern:
 - kern_xxx.c: reboot: needs fixing
 - kern_physio.c: Incomplete: getphysbuf, putphysbuf (NetBSD 1.3)
 
+VM:
+- Copy: Devel vm_map without amap to vm
+
 Of Interest Todo:
 - ifdef INET: remanents of 2.11BSD's networking stack overlay (keep in place for now)
 	- Used in later BSD's
