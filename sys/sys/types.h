@@ -155,6 +155,5 @@ typedef int	boolean_t;
 #ifndef FALSE
 #define	FALSE	0
 #endif
-
 #endif /* _KERNEL || _STANDALONE */
 #endif

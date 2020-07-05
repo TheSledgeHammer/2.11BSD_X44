@@ -8,20 +8,23 @@ maxpartitions 16
 
 maxusers 2 16 64
 
-file	arch/i386/i386/aout_machdep.c	exec_aout
+file	  arch/i386/i386/aout_machdep.c	 exec_aout
 file    arch/i386/i386/autoconf.c
 file    arch/i386/i386/bios32.c
 file    arch/i386/i386/bus_machdep.c
 file    arch/i386/i386/conf.c
 file    arch/i386/i386/consinit.c
 file    arch/i386/i386/copyout.c
-file	arch/i386/i386/disksubr.c	    disk
+file	  arch/i386/i386/db_disasm.c	   ddb
+file	  arch/i386/i386/db_interface.c	 ddb
+file	  arch/i386/i386/db_trace.c	     ddb
+file	  arch/i386/i386/disksubr.c	     disk
 file    arch/i386/i386/dkbad.c
-file    arch/i386/i386/gdt.c		    
-file    arch/i386/i386/in_cksum.c	    inet
+file    arch/i386/i386/gdt.c
+file    arch/i386/i386/in_cksum.c	     inet
 file    arch/i386/i386/initcpu.c
 file    arch/i386/i386/machdep.c
-file	arch/i386/i386/math_emulate.c	math_emulate
+file	  arch/i386/i386/math_emulate.c	 math_emulate
 file    arch/i386/i386/mem.c
 file    arch/i386/i386/pmap_base.c
 file    arch/i386/i386/pmap.c
@@ -33,14 +36,14 @@ file    arch/i386/i386/trap.c
 file    arch/i386/i386/vector.s
 file    arch/i386/i386/vm_machdep.c
 file    dev/cons.c
-#file    netns/ns_cksum.c	            ns
-#major	{vn = 14}
+#file   netns/ns_cksum.c	             ns
+#major	{vnd = 14}
 
 #
 # Machine-independent SCSI drivers
 #
 
-include "dev/scsipi/files.scsipi"
+include "dev/scsi/files.scsipi"
 major	{sd = 4}
 major	{st = 5}
 major	{cd = 6}
