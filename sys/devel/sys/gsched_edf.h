@@ -59,6 +59,12 @@ boolean_t cpu_util;
 boolean_t cpu_demand;
 boolean_t cpu_workload;
 
+int 	edf_utilization(char, char);
+int 	edf_demand(char, char, char, char);
+int 	edf_workload(char, char, char);
+u_char 	edf_slack(char, u_char, char);
+void 	edf_testrq(struct gsched *);
+
 /*
 Preemption:
     - Preempt: Determined by the priority weighting & the preemption flag
@@ -92,7 +98,7 @@ Time-Slice per Run Queue:
 - Scheduler expands on those rountines, in a pluggable manner
 - All current rountines in kern_synch are generic for proc
 - edf goals: maintain and prioritise the run queues, pass of to cfs
-- cfs goals: Equal time, must adhere to edf's priorities. But providing fair time.
+- cfs goals: Equal time, must adhere to edf's priorities (priority weighting). But providing fair time.
     Incomplete jobs are passed back to edf after x time or completed CFS loop
 Multiple CFS?
  - Each priority queue runs its own CFS

@@ -66,9 +66,9 @@ struct gsched_cfs {
     u_char  					cfs_time;
     char    					cfs_slptime;
 
-    u_char 						cfs_tl;
-    u_char 						cfs_mg;
-    u_char 						cfs_timeslice;
+    u_char 						cfs_tl;			/* target latency */
+    u_char 						cfs_mg;			/* minimum granularity */
+    u_char 						cfs_timeslice; 	/* timeslice */
 
     u_char  					cfs_priweight;	/* priority weighting (calculated from various factors) */
 };

@@ -42,24 +42,24 @@
  */
 struct pstats {
 #define	pstat_startzero	p_sru
-	struct	k_rusage p_ksru;		/* stats for this proc */
-	struct	k_rusage p_kcru;		/* sum of stats for reaped children */
-	struct	rusage	 p_ru;			/*  */
+	struct	k_rusage 	p_ksru;		/* stats for this proc */
+	struct	k_rusage 	p_kcru;		/* sum of stats for reaped children */
+	struct	rusage	 	p_ru;
 #define	pstat_endzero	pstat_startcopy
 
 #define	pstat_startcopy	p_timer
-	struct	itimerval p_timer[3];	/* virtual-time timers */
+	struct	itimerval 	p_timer[3];	/* virtual-time timers */
 
-	struct uprof {			/* profile arguments */
-		caddr_t	pr_base;	/* buffer base */
-		u_long	pr_size;	/* buffer size */
-		u_long	pr_off;		/* pc offset */
-		u_long	pr_scale;	/* pc scaling */
-		u_long	pr_addr;	/* temp storage for addr until AST */
-		u_long	pr_ticks;	/* temp storage for ticks until AST */
+	struct uprof {					/* profile arguments */
+		caddr_t			pr_base;	/* buffer base */
+		u_long			pr_size;	/* buffer size */
+		u_long			pr_off;		/* pc offset */
+		u_long			pr_scale;	/* pc scaling */
+		u_long			pr_addr;	/* temp storage for addr until AST */
+		u_long			pr_ticks;	/* temp storage for ticks until AST */
 	} p_prof;
 #define	pstat_endcopy	p_start
-	struct	timeval p_start;	/* starting time */
+	struct	timeval 	p_start;	/* starting time */
 };
 
 /*
@@ -71,10 +71,10 @@ struct pstats {
  * sharing modifications to the limits.
  */
 struct plimit {
-	struct	rlimit pl_rlimit[RLIM_NLIMITS];
+	struct	rlimit 	pl_rlimit[RLIM_NLIMITS];
 #define	PL_SHAREMOD	0x01		/* modifications are shared */
-	int	p_lflags;
-	int	p_refcnt;				/* number of references */
+	int				p_lflags;
+	int				p_refcnt;	/* number of references */
 };
 
 /* add user profiling from AST */
@@ -84,8 +84,8 @@ struct plimit {
 
 #ifdef KERNEL
 int	 	addupc (int pc, struct uprof *up, int ticks);
-void	addupc_intr (struct proc *p, u_long pc, u_int ticks);
-void	addupc_task (struct proc *p, u_long pc, u_int ticks);
+//void	addupc_intr (struct proc *p, u_long pc, u_int ticks);
+//void	addupc_task (struct proc *p, u_long pc, u_int ticks);
 void	calcru (struct proc *p, struct timeval *up, struct timeval *sp,
 		     struct timeval *ip);
 int	 	fuswintr (void *base);

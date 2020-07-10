@@ -42,7 +42,7 @@ gsched_init(p)
 {
 	register struct gsched *gsd = gsched_setup(p);
 	gsched_edf_setup(gsd);
-	gsched_edf_setup(gsd);
+	gsched_cfs_setup(gsd);
 	//simple_lock_int(&gsd->gsc_lock); /* Unused */
 }
 
@@ -59,6 +59,7 @@ gsched_setup(p)
 	gsd->gsc_cpu = p->p_cpu;
 	gsd->gsc_time = p->p_time;
 	gsd->gsc_slptime = p->p_slptime;
+	gsd->gsc_priweight = 0;
 
 	return (gsd);
 }

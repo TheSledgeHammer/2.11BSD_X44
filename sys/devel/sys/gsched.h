@@ -81,11 +81,18 @@ enum priw {
 
 #define PW_FACTOR(w, f)  ((float)(w) / 100 * (f)) /* w's weighting for a given factor(f)(above) */
 
-void 		sched_init();
-void 		sched_enqueue(struct sched *, struct proc *);
-void 		sched_dequeue(struct sched *, struct proc *);
-struct proc *sched_getproc(struct sched *, struct proc *);
-int			setpriweight(float pwp, float pwd, float pwr, float pws);
+void 				gsched_init( struct proc *);
+void				gsched_edf_setup(struct gsched *);
+void				gsched_cfs_setup(struct gsched *);
+void 				gsched_setrq(struct gsched *);
+void 				gsched_remrq(struct gsched *);
+struct proc			*gsched_getrq(struct gsched *);
+struct gsched_edf 	*gsched_edf(struct gsched *);
+struct gsched_cfs 	*gsched_cfs(struct gsched *);
+u_char				gsched_timediff(u_char, u_int);
+int					gsched_setpriweight(float pwp, float pwd, float pwr, float pws);
+void				gsched_lock(struct gsched *);
+void				gsched_unlock(struct gsched *);
 
 #endif /* _SYS_GSCHED_H */
 /*

@@ -31,7 +31,7 @@
 
 #include "sys/gsched_edf.h"
 
-/* CPU Utilization of a task (U <= 1) */
+/* CPU Utilization per task (U <= 1) */
 int
 edf_utilization(release, cost)
 	char release, cost;
@@ -79,7 +79,7 @@ edf_slack(deadline, time, cost)
 }
 
 void
-edf_testrunq(gsd)
+edf_testrq(gsd)
 	struct gsched *gsd;
 {
 	struct gsched_edf *edf = gsched_edf(gsd);

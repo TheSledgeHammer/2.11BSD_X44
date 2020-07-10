@@ -86,8 +86,6 @@ schedcpu(arg)
 				remrq(p);
 				p->p_pri = currproc;
 				setpri(p);
-				/* setrq(p); in 2.11BSD;
-				 * setrunqueue(p) in 4.4BSD-Lite2 */
 			} else {
 				setpri(p);
 			}
@@ -441,14 +439,27 @@ yield(p)
 	struct proc *p;
 {
 	struct proc *np = curproc;
-	int s;
-	int usrpri = setpri(np);
-	p->p_pri = usrpri;
-	s = splstatclock();
+
 	setrq(p);
-	p->p_stats->p_ru.ru_nvcsw++;
+	u->u_stats->p_ru.ru_nvcsw++;
 	swtch();
-	splx(s);
+}
+*/
+
+/*
+ * General preemption call.  Puts the current process back on its run queue
+ * and performs an involuntary context switch.  If a process is supplied,
+ * we switch to that process.  Otherwise, we use the normal process selection
+ * criteria.
+ */
+/*
+void
+preempt(p)
+	struct proc *p;
+{
+	setrq(p);
+	u->u_stats->p_ru.ru_nvcsw++;
+	swtch();
 }
 */
 
