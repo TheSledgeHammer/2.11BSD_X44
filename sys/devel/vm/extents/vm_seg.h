@@ -37,25 +37,25 @@
 
 #include <sys/queue.h>
 
+extern struct extent vm_extent;
+
 /*
  * pmap_segment method: allocate physical memory or virtual memory
  *	TODO:
  *	- mapping vm_segmentspace to various spaces (vmspace, avmspace, ovlspace)
  */
-
 struct vm_seg_clist;
 struct vm_seg_rbtree;
-
 /* Segmented Space */
 struct vm_segment_entry {
 	CIRCLEQ_ENTRY(vm_segment_entry) seg_clentry;		/* entries in a circular list */
 	RB_ENTRY(vm_segment_entry) 		seg_rbentry;		/* tree entries */
 
-	char 							*segs_name;
-	vm_offset_t 					segs_start;			/* start address */
-	vm_offset_t 					segs_end;			/* end address */
-	caddr_t							segs_addr;
-	vm_size_t						segs_vsize;			/* virtual size */
+	/* Segment Entry (Extent Subregion) */
+	vm_offset_t 					segs_start;			/* entry start address */
+	vm_offset_t 					segs_end;			/* entry end address */
+	caddr_t							segs_addr;			/* entry address */
+	vm_size_t						segs_size;			/* entry size */
 
 	/* VM Space Related Address Segments & Sizes */
 	segsz_t 						segs_tsize;			/* text size (pages) XXX */
@@ -77,10 +77,10 @@ struct vm_segment {
 
 	/* VM Segment Space */
 	char 							*seg_name;			/* segment name */
-	vm_offset_t 					seg_start;			/* start address */
-	vm_offset_t 					seg_end;			/* end address */
-	caddr_t							seg_addr;			/* virtual address */
-	vm_size_t						seg_vsize;			/* virtual size */
+	vm_offset_t 					seg_start;			/* segment start address */
+	vm_offset_t 					seg_end;			/* segment end address */
+	caddr_t							seg_addr;			/* segment address */
+	vm_size_t						seg_size;			/* segment size */
 };
 
 /* Segmented Space Address Layout */
@@ -91,5 +91,8 @@ struct vm_segment {
 
 #define OVLSPACE_START
 #define OVLSPACE_END
+
+
+
 
 #endif /* _VM_SEG_H_ */

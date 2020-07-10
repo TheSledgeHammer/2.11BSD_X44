@@ -18,11 +18,11 @@
 
 #include <machine/cpu.h>
 
-#define	SQSIZE	16	/* Must be power of 2 */
+#define	SQSIZE	16						/* Must be power of 2 */
 
 #define	HASH(x)	(((int)x >> 5) & (SQSIZE - 1))
 #define	SCHMAG	8/10
-#define	PPQ	(128 / NQS)				/* priorities per queue */
+#define	PPQ		(128 / NQS)				/* priorities per queue */
 
 struct proc *slpque[SQSIZE];
 
@@ -87,7 +87,7 @@ schedcpu(arg)
 				p->p_pri = currproc;
 				setpri(p);
 				/* setrq(p); in 2.11BSD;
-				 * setrunqueue(p) in 4.4BSD-Lite2: in sparc, i386 (missing) */
+				 * setrunqueue(p) in 4.4BSD-Lite2 */
 			} else {
 				setpri(p);
 			}
@@ -111,15 +111,16 @@ updatepri(p)
 {
 	register int a = p->p_cpu & 0377;
 
-	p->p_slptime--;		/* the first time was done in schedcpu */
+	p->p_slptime--;					/* the first time was done in schedcpu */
 	while (a && --p->p_slptime)
-		a = (SCHMAG * a) /* + p->p_nice */;
+		a = (SCHMAG * a) 			/* + p->p_nice */;
 	if (a < 0)
 		a = 0;
 	if (a > 255)
 		a = 255;
 	p->p_cpu = a;
-	(void) resetpri(p);
+	(void) setpri(p);
+	//(void) resetpri(p);
 }
 
 /*
@@ -157,11 +158,11 @@ tsleep(ident, priority, timo)
  * was being used but for now avoid network interrupts that might cause
  * another panic.
 */
-		(void)_splnet();
+		(void) _splnet();
 		noop();
 		splx(s);
-		return(0);
-		}
+		return (0);
+	}
 #ifdef	DIAGNOSTIC
 	if	(ident == NULL || p->p_stat != SRUN)
 		panic("tsleep");
@@ -263,10 +264,10 @@ void
 sleep(chan, pri)
 	caddr_t chan;
 	int pri;
-	{
+{
 	register int priority = pri;
-	
-	if	(pri > PZERO)
+
+	if (pri > PZERO)
 		priority |= PCATCH;
 
 	u->u_error = tsleep(chan, priority, 0);
@@ -288,7 +289,7 @@ sleep(chan, pri)
 */
 	longjmp(u->u_procp->p_addr, &u->u_qsave);
 	/*NOTREACHED*/
-	}
+}
 
 /*
  * Remove a process from its wait queue
@@ -600,13 +601,24 @@ struct proc *
 getrq(p)
 	register struct proc *p;
 {
-	register int i;
-	for (i = 0; i < NQS; i++) {
-		if(p->p_link == qs[i].ph_link) {
-			return p->p_link;
+	register struct proc *q;
+	register int s;
+
+	s = splhigh();
+	if(p == qs) {
+		qs = p->p_link;
+	} else {
+		for (q = qs; q; q = q->p_link) {
+			if (q->p_link == p) {
+				return q->p_link;
+			} else {
+				goto done;
+			}
 		}
-		panic("getrq");
 	}
+done:
+	panic("getrq");
+	splx(s);
 	return NULL;
 }
 
@@ -636,6 +648,9 @@ resetpri(p)
 	int curpri = setpri(p);
 	newpri = PUSER + p->p_estcpu / 4 + 2 * p->p_nice;
 	newpri = min(newpri, MAXPRI);
-	if (newpri < curpri)
-		need_resched();
+	if (newpri < curpri) {
+		p->p_cpu = newpri;
+		updatepri(p);
+		//need_resched();
+	}
 }

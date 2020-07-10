@@ -26,10 +26,10 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SCHED_CFS_H
-#define _SYS_SCHED_CFS_H
+#ifndef _SYS_GSCHED_CFS_H
+#define _SYS_GSCHED_CFS_H
 
-#include <sys/proc.h>
+#include <gsched.h>
 #include <sys/tree.h>
 
 /* Generic Base stats for CFS */
@@ -44,39 +44,33 @@
 #define ERESCHEDULE(t)  ((t) * BMG)             /* new rescheduling time if (n * tasks) exceeds BTL/BMG */
 #define EMG(t)          (BMG > BTIMESLICE(t))   /* new minimum granularity if BMG is greater than base timeslice */
 
-struct sched_cfs {
-	TAILQ_ENTRY(sched) 			cfs_sc_entry;
-	struct proc 				*cfs_proc;
-    //struct sched 	 			*cfs_gsched;	/* pointer to proc sched */
-    //struct sched_edf 			*cfs_edf; 		/* pointer to EDF */
+struct gsched_cfs_rbtree;
+RB_HEAD(gsched_cfs_rbtree, gsched_cfs);
+struct gsched_cfs {
+	struct gsched 				*cfs_gsched;	/* pointer to global scheduler */
 
-    RB_HEAD(rb_cfs, sched_cfs) 	cfs_parent;
-    RB_ENTRY(sched_cfs) 		cfs_queue;
+	struct gsched_cfs_rbtree	cfs_parent;
+    RB_ENTRY(gsched_cfs) 		cfs_entry;
+
+	struct proc 				*cfs_rqlink;	/* pointer to linked list of running processes */
+	struct proc 				*cfs_proc;
 
     int	    					cfs_flag;
     char    					cfs_stat;
 
     u_int  	 					cfs_estcpu;
     int							cfs_cpticks;
-    fixpt_t 					cfs_pctcpu;
 
     u_char  					cfs_pri;
     u_char  					cfs_cpu;
     u_char  					cfs_time;
-    char    					cfs_nice;
     char    					cfs_slptime;
 
-    u_char 						cfs_priweight;	/* priority weighting */
-
-    /* CFS Relavent Stats */
     u_char 						cfs_tl;
     u_char 						cfs_mg;
     u_char 						cfs_timeslice;
 
-    /* EDF Relavent Stats */
-    char 						cfs_release;	/* Time till release from current block */
-    char 						cfs_deadline;	/* Deadline */
-    char 						cfs_remtime; 	/* time remaining */
+    u_char  					cfs_priweight;	/* priority weighting (calculated from various factors) */
 };
 
 extern struct sched_cfs cfs_runq[CFQS];  		/* cfs run-queues */
@@ -95,10 +89,10 @@ the other to maintain a balance of execution across the set of runnable tasks.
 
 Priorities and CFS
 
-CFS doesn’t use priorities directly but instead uses them as a decay factor for the time a task is permitted to execute.
+CFS doesn't use priorities directly but instead uses them as a decay factor for the time a task is permitted to execute.
 Lower-priority tasks have higher factors of decay, where higher-priority tasks have lower factors of delay.
 This means that the time a task is permitted to execute dissipates more quickly for a lower-priority task than for a
-higher-priority task. That’s an elegant solution to avoid maintaining run queues per priority.
+higher-priority task. That's an elegant solution to avoid maintaining run queues per priority.
 
 Scheduling classes and domains
 
@@ -116,12 +110,5 @@ of scheduling domains. These domains allow you to group one or more processors h
 segregation. One or more processors can share scheduling policies (and load balance between them) or implement independent
 scheduling policies to intentionally segregate tasks.
 
-next
-Enqueue
-Dequeue
-yield task
-check preempt
-pick next tsk
-put prev task
 */
-#endif //_SYS_SCHED_CFS_H
+#endif //_SYS_GSCHED_CFS_H

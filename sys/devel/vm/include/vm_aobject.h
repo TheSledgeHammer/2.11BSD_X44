@@ -112,18 +112,18 @@ struct uao_swhash_elt {
  */
 
 struct vm_aobject {
-	struct vm_object 		u_obj; 			/* has: lock, pgops, #pages, #refs */
-	//pgoff_t 				u_pages;	 	/* number of pages in entire object */
-	int 					u_flags;		/* the flags (see uvm_aobj.h) */
-	int 					*u_swslots;		/* array of offset->swapslot mappings */
-				 	 	 	 	 	 		/*
-				 	 	 	 	 	 	 	 * hashtable of offset->swapslot mappings
-				 	 	 	 	 	 	 	 * (u_swhash is an array of bucket heads)
-				 	 	 	 	 	 	 	 */
-	struct uao_swhash 		*u_swhash;
-	u_long 					u_swhashmask;	/* mask for hashtable */
-	LIST_ENTRY(vm_aobject) 	u_list;			/* global list of aobjs */
-	int 					u_freelist;		/* freelist to allocate pages from */
+	struct vm_object 			u_obj; 			/* has: lock, pgops, #pages, #refs */
+	//pgoff_t 					u_pages;	 	/* number of pages in entire object */
+	int 						u_flags;		/* the flags (see uvm_aobj.h) */
+	int 						*u_swslots;		/* array of offset->swapslot mappings */
+				 	 	 	 	 	 			/*
+				 	 	 	 	 	 			 * hashtable of offset->swapslot mappings
+				 	 	 	 	 	 			 * (u_swhash is an array of bucket heads)
+				 	 	 	 	 	 			 */
+	struct uao_swhash 			*u_swhash;
+	u_long 						u_swhashmask;	/* mask for hashtable */
+	LIST_ENTRY(vm_aobject) 		u_list;			/* global list of aobjs */
+	int 						u_freelist;		/* freelist to allocate pages from */
 };
 
 static void	uao_free(struct vm_aobject *);

@@ -246,6 +246,7 @@ lofs_setattr(ap)
 				return (EROFS);
 		}
 	}
+
 	error = VOP_SETATTR(LOFSVP(vp), vap, ap->a_cred, ap->a_p);
 	if(error) {
 		return (error);

@@ -34,6 +34,11 @@
 #define	_SYS_BUF_H_
 #include <sys/queue.h>
 
+#define NOLIST ((struct buf *)0x87654321)
+
+/*
+ * The buffer header describes an I/O operation in the kernel.
+ */
 struct buf
 {
 	LIST_ENTRY(buf) b_hash;			/* Hash chain. */
@@ -66,21 +71,7 @@ struct buf
 	struct	ucred 	*b_wcred;		/* Write credentials reference. */
 	int				b_validoff;		/* Offset in buffer of valid region. */
 	int				b_validend;		/* Offset of end of valid region. */
-	daddr_t			b_pblkno;       /* physical block number */
-	caddr_t			b_savekva;      /* saved kva for transfer while bouncing */
-
-#ifndef VMIO
-	void			*b_pages[(MAXBSIZE + PAGE_SIZE - 1)/PAGE_SIZE];
-#else
-	vm_page_t		b_pages[(MAXBSIZE + PAGE_SIZE - 1)/PAGE_SIZE];
-#endif
-	int				b_npages;
 };
-
-/* Device driver compatibility definitions. */
-//struct	buf 		*av_forw, *av_back;	/* position on free list if not BUSY */
-//#define	b_actf		av_forw				/* alternate names for driver queue */
-//#define	b_actl		av_back				/* head - isn't history wonderful */
 
 #define	b_active 	b_bcount			/* driver queue head: drive active */
 #define	b_data	 	b_un.b_addr			/* b_un.b_addr is not changeable. */
@@ -89,71 +80,38 @@ struct buf
 #define	iodone	 	biodone				/* Old name for biodone. */
 #define	iowait	 	biowait				/* Old name for biowait. */
 
-/*
- * This structure describes a clustered I/O.  It is stored in the b_saveaddr
- * field of the buffer on which I/O is done.  At I/O completion, cluster
- * callback uses the structure to parcel I/O's to individual buffers, and
- * then free's this structure.
- */
-struct cluster_save {
-	long		bs_bcount;			/* Saved b_bcount. */
-	long		bs_bufsize;			/* Saved b_bufsize. */
-	void		*bs_saveaddr;		/* Saved b_addr. */
-	int			bs_nchildren;		/* Number of associated buffers. */
-	struct buf 	**bs_children;		/* List of associated buffers. */
-};
-
 /* These flags are kept in b_flags. */
-#define	B_WRITE			0x00000		/* non-read pseudo-flag */
-#define	B_READ			0x00001		/* read when I/O occurs */
-#define	B_DONE			0x00002		/* transaction finished */
-#define	B_ERROR			0x00004		/* transaction aborted */
-#define	B_BUSY			0x00008		/* not on av_forw/back list */
-#define	B_PHYS			0x00010		/* physical IO */
-#define	B_MAP			0x00020		/* alloc UNIBUS */
-#define	B_WANTED 		0x00040		/* issue wakeup when BUSY goes off */
-#define	B_AGE			0x00080		/* delayed write for correct aging */
-#define	B_ASYNC			0x00100		/* don't wait for I/O completion */
-#define	B_DELWRI 		0x00200		/* write at exit of avail list */
-#define	B_TAPE 			0x00400		/* this is a magtape (no bdwrite) */
-#define	B_INVAL			0x00800		/* does not contain valid info */
-#define	B_BAD			0x01000		/* bad block revectoring in progress */
-#define	B_LOCKED		0x02000		/* locked in core (not reusable) */
-#define	B_UBAREMAP		0x04000		/* addr UNIBUS virtual, not physical */
-#define	B_RAMREMAP		0x08000		/* remapped into ramdisk */
-#define	B_CACHE			0x10000		/* Bread found us in the cache. */
-#define	B_CALL			0x20000		/* Call b_iodone from biodone. */
-#define	B_WRITEINPROG	0x40000		/* Write in progress. */
-#define	B_NOCACHE		0x80000		/* Do not cache block after use. */
-#define B_VMIO			0x100000	/* VMIO flag */
-#define	B_RAW			0x200000	/* I/O to user memory. */
-
-/*
- * number of buffer hash entries
- */
-#define	BUFHSZ	512	/* must be power of 2 */
-/*
- * buffer hash table calculation, originally by David Greenman
- */
-#define BUFHASH(vnp, bn)        \
-	(&bufhashtbl[(((int)(vnp) / sizeof(struct vnode))+(int)(bn)) % BUFHSZ])
-
-/*
- * We never use BQ_LOCKED or BQ_EMPTY, but if you want the 4.X block I/O
- * code to drop in, you have to have BQ_AGE and BQ_LRU *after* the first
- * queue, and it only costs 6 bytes of data space.
- */
-#define	BQUEUES			5		/* number of free buffer queues */
-
-#define	BQ_NONE			0		/* on no queue */
-#define BQ_LOCKED		1		/* locked buffers */
-#define	BQ_LRU			2		/* lru, useful buffers */
-#define	BQ_AGE			3		/* rubbish */
-#define	BQ_EMPTY		4		/* buffer headers with no memory */
-
-LIST_HEAD(bufhashhdr, buf) bufhashtbl[BUFHSZ], invalhash;
-TAILQ_HEAD(bqueues, buf) bufqueues[BQUEUES];
-
+#define	B_WRITE			0x00000000		/* non-read pseudo-flag */
+#define	B_READ			0x00000001		/* read when I/O occurs */
+#define	B_DONE			0x00000002		/* transaction finished */
+#define	B_ERROR			0x00000004		/* transaction aborted */
+#define	B_BUSY			0x00000008		/* not on av_forw/back list */
+#define	B_PHYS			0x00000010		/* physical IO */
+#define	B_MAP			0x00000020		/* alloc UNIBUS */
+#define	B_WANTED 		0x00000040		/* issue wakeup when BUSY goes off */
+#define	B_AGE			0x00000080		/* delayed write for correct aging */
+#define	B_ASYNC			0x00000100		/* don't wait for I/O completion */
+#define	B_DELWRI 		0x00000200		/* write at exit of avail list */
+#define	B_TAPE 			0x00000400		/* this is a magtape (no bdwrite) */
+#define	B_INVAL			0x00000800		/* does not contain valid info */
+#define	B_BAD			0x00001000		/* bad block revectoring in progress */
+#define	B_LOCKED		0x00002000		/* locked in core (not reusable) */
+#define	B_UBAREMAP		0x00004000		/* addr UNIBUS virtual, not physical */
+#define	B_RAMREMAP		0x00008000		/* remapped into ramdisk */
+#define	B_CACHE			0x00010000		/* Bread found us in the cache. */
+#define	B_CALL			0x00020000		/* Call b_iodone from biodone. */
+#define	B_WRITEINPROG	0x00040000		/* Write in progress. */
+#define	B_NOCACHE		0x00080000		/* Do not cache block after use. */
+#define	B_DIRTY			0x00100000		/* Dirty page to be pushed out async. */
+#define	B_RAW			0x00200000		/* I/O to user memory. */
+#define	B_PAGET			0x00400000		/* Page in/out of page table space. */
+#define	B_PGIN			0x00800000		/* Pagein op, so swap() can count it. */
+#define	B_UAREA			0x01000000		/* Buffer describes Uarea I/O. */
+#define	B_NEEDCOMMIT	0x02000000		/* Append-write in progress. */
+#define	B_EINTR			0x04000000		/* I/O was interrupted */
+#define	B_GATHERED		0x08000000		/* LFS: already in a segment. */
+#define	B_VFLUSH		0x10000000		/* Buffer is being synced. */
+#define	B_XXX			0x20000000		/* Debugging flag. */
 
 /*
  * This structure describes a clustered I/O.  It is stored in the b_saveaddr
@@ -162,26 +120,29 @@ TAILQ_HEAD(bqueues, buf) bufqueues[BQUEUES];
  * then free's this structure.
  */
 struct cluster_save {
-	long		bs_bcount;		/* Saved b_bcount. */
-	long		bs_bufsize;		/* Saved b_bufsize. */
-	void		*bs_saveaddr;	/* Saved b_addr. */
-	int			bs_nchildren;	/* Number of associated buffers. */
-	struct buf 	**bs_children;	/* List of associated buffers. */
+	long		bs_bcount;				/* Saved b_bcount. */
+	long		bs_bufsize;				/* Saved b_bufsize. */
+	void		*bs_saveaddr;			/* Saved b_addr. */
+	int			bs_nchildren;			/* Number of associated buffers. */
+	struct buf 	**bs_children;			/* List of associated buffers. */
 };
 
 /*
  * Zero out the buffer's data area.
  */
-#define	clrbuf(bp) {										\
-	blkclr((bp)->b_data, (u_int)(bp)->b_bcount);			\
-	(bp)->b_resid = 0;										\
+#define	clrbuf(bp) {													\
+	bzero((bp)->b_data, (u_int)(bp)->b_bcount);							\
+	(bp)->b_resid = 0;													\
 }
 
 /* Flags to low-level allocation routines. */
 #define B_CLRBUF	0x01	/* Request allocated buffer be cleared. */
 #define B_SYNC		0x02	/* Do all allocations synchronously. */
 
-#define NOLIST ((struct buf *)0x87654321)
+/*
+ * number of buffer hash entries
+ */
+#define	BUFHSZ	512	/* must be power of 2 */
 
 #ifdef KERNEL
 extern int		nbuf;				/* number of buffer headers */
@@ -190,39 +151,40 @@ extern char		*buffers;			/* The buffer contents. */
 extern int		bufpages;			/* Number of memory pages in the buffer pool. */
 extern struct	buf *swbuf;			/* Swap I/O buffer headers. */
 extern int		nswbuf;				/* Number of swap I/O buffer headers. */
-extern TAILQ_HEAD(swqueue, buf) bswlist;
-
+struct	buf 	bswlist;			/* Head of swap I/O buffer headers free list. */
+struct	buf 	*bclnlist;			/* Head of cleaned page list. */
 
 __BEGIN_DECLS
-void	bufinit (void);
-void	bremfree (struct buf *);
-int		bread (struct vnode *, daddr_t, int, struct ucred *, struct buf **);
-int		breadn (struct vnode *, daddr_t, int, daddr_t *, int *, int, struct ucred *, struct buf **);
-int		bwrite (struct buf *);
-void	bdwrite (struct buf *);
-void	bawrite (struct buf *);
-void	brelse (struct buf *);
+void		bufinit (void);
+void		bremfree (struct buf *);
+int			bread (struct vnode *, daddr_t, int, struct ucred *, struct buf **);
+int			breadn (struct vnode *, daddr_t, int, daddr_t *, int *, int, struct ucred *, struct buf **);
+int			breada(struct vnode *, daddr_t, daddr_t, int, struct ucred *);
+int			bwrite (struct buf *);
+void		bdwrite (struct buf *);
+void		bawrite (struct buf *);
+void		brelse (struct buf *);
 struct 	buf *getnewbuf (int slpflag, int slptimeo);
 struct 	buf *getpbuf (void);
 struct 	buf *incore (struct vnode *, daddr_t);
 struct 	buf *getblk (struct vnode *, daddr_t, int, int, int);
 struct 	buf *geteblk (int);
-void	allocbuf (struct buf *, int);
-int		biowait (struct buf *);
-void	biodone (struct buf *);
+void		allocbuf (struct buf *, int);
+int			biowait (struct buf *);
+void		biodone (struct buf *);
 
-void	cluster_callback (struct buf *);
-int		cluster_read (struct vnode *, u_quad_t, daddr_t, long, struct ucred *, struct buf **);
-void	cluster_write (struct buf *, u_quad_t);
-u_int	minphys (struct buf *);
+void		cluster_callback (struct buf *);
+int			cluster_read (struct vnode *, u_quad_t, daddr_t, long, struct ucred *, struct buf **);
+void		cluster_write (struct buf *, u_quad_t);
+u_int		minphys (struct buf *);
 
-void	vwakeup (struct buf *);
-void	vmapbuf (struct buf *);
-void	vunmapbuf (struct buf *);
-void	relpbuf (struct buf *);
-void	brelvp (struct buf *);
-void	bgetvp (struct vnode *, struct buf *);
-void	reassignbuf (struct buf *, struct vnode *);
+void		vwakeup (struct buf *);
+void		vmapbuf (struct buf *);
+void		vunmapbuf (struct buf *);
+void		relpbuf (struct buf *);
+void		brelvp (struct buf *);
+void		bgetvp (struct vnode *, struct buf *);
+void		reassignbuf (struct buf *, struct vnode *);
 __END_DECLS
 #endif
 

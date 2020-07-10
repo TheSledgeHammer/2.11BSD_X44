@@ -1344,8 +1344,7 @@ vm_map_protect(map, start, end, new_prot, set_max)
 
 		if (current->protection != old_prot) {
 
-#define MASK(entry)	((entry)->copy_on_write ? ~VM_PROT_WRITE : \
-							VM_PROT_ALL)
+#define MASK(entry)	((entry)->copy_on_write ? ~VM_PROT_WRITE : VM_PROT_ALL)
 #define	max(a,b)	((a) > (b) ? (a) : (b))
 
 			if (current->is_a_map) {

@@ -88,9 +88,9 @@ RB_PROTOTYPE(vm_map_rb_tree, vm_map_entry, rb_entry, vm_rb_compare);
  */
 
 union vm_map_object {
-	struct vm_object	*vm_object;	/* object object */
-	struct vm_map		*share_map;	/* share map */
-	struct vm_map		*sub_map;	/* belongs to another map */
+	struct vm_object			*vm_object;			/* object object */
+	struct vm_map				*share_map;			/* share map */
+	struct vm_map				*sub_map;			/* belongs to another map */
 };
 
 /*
@@ -100,27 +100,27 @@ union vm_map_object {
  *	Also included is control information for virtual copy operations.
  */
 struct vm_map_entry {
-	CIRCLEQ_ENTRY(vm_map_entry) cl_entry;		/* entries in a circular list */
-	RB_ENTRY(vm_map_entry) 		rb_entry;		/* tree information */
-	vm_offset_t					start;			/* start address */
-	vm_offset_t					end;			/* end address */
-	caddr_t						ownspace;		/* free space after */
-	caddr_t						space;			/* space in subtree */
-	union vm_map_object			object;			/* object I point to */
-	vm_offset_t					offset;			/* offset into object */
-	int							etype;			/* entry type */
-	boolean_t					is_a_map;		/* Is "object" a map? */
-	boolean_t					is_sub_map;		/* Is "object" a submap? */
-												/* Only in sharing maps: */
-	boolean_t					copy_on_write;	/* is data copy-on-write */
-	boolean_t					needs_copy;		/* does object need to be copied */
-												/* Only in task maps: */
-	vm_prot_t					protection;		/* protection code */
-	vm_prot_t					max_protection;	/* maximum protection */
-	vm_inherit_t				inheritance;	/* inheritance */
-	int							wired_count;	/* can be paged if = 0 */
-	struct vm_aref				aref;			/* anonymous overlay */
-	int							advice;			/* madvise advice */
+	CIRCLEQ_ENTRY(vm_map_entry) cl_entry;			/* entries in a circular list */
+	RB_ENTRY(vm_map_entry) 		rb_entry;			/* tree information */
+	vm_offset_t					start;				/* start address */
+	vm_offset_t					end;				/* end address */
+	caddr_t						ownspace;			/* free space after */
+	caddr_t						space;				/* space in subtree */
+	union vm_map_object			object;				/* object I point to */
+	vm_offset_t					offset;				/* offset into object */
+	int							etype;				/* entry type */
+	boolean_t					is_a_map;			/* Is "object" a map? */
+	boolean_t					is_sub_map;			/* Is "object" a submap? */
+													/* Only in sharing maps: */
+	boolean_t					copy_on_write;		/* is data copy-on-write */
+	boolean_t					needs_copy;			/* does object need to be copied */
+													/* Only in task maps: */
+	vm_prot_t					protection;			/* protection code */
+	vm_prot_t					max_protection;		/* maximum protection */
+	vm_inherit_t				inheritance;		/* inheritance */
+	int							wired_count;		/* can be paged if = 0 */
+	struct vm_aref				aref;				/* anonymous overlay */
+	int							advice;				/* madvise advice */
 };
 
 /*

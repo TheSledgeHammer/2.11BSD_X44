@@ -26,33 +26,39 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_SCHED_H
-#define _SYS_SCHED_H
+#ifndef _SYS_GSCHED_H
+#define _SYS_GSCHED_H
 
+#include <sys/proc.h>
+#include <sys/lock.h>
 #include <sys/queue.h>
 
 /* Schedulers + Info used by both EDF & CFS */
-TAILQ_HEAD(schedhead, sched); /* global scheduler */
-struct sched {
-	struct schedhead	*sc_header; 	/* head to move to proc */
-	TAILQ_ENTRY(sched)  *sc_gsched;
+/* global scheduler */
+struct gsched {
+	struct proc 		*gsc_rqlink; 	/* pointer to linked list of running processes */
+	struct proc 		*gsc_proc;		/* pointer to proc */
 
-    struct proc 		*sc_proc;
-    struct sched_edf	*sc_edf;
-    struct sched_cfs 	*sc_cfs;
+	struct lock			*gsc_lock;
+
+    struct gsched_edf	*gsc_edf;		/* earliest deadline first scheduler */
+    struct gsched_cfs 	*gsc_cfs;		/* completely fair scheduler */
 
     /* Proc Specific */
-    u_char				sc_pri;			/* Process  priority, negative is high */
-    u_char				sc_cpu;			/* cpu usage for scheduling */
-    u_char				sc_time;		/* resident time for scheduling */
-    char				sc_nice;		/* nice for cpu usage */
+    u_int				gsc_estcpu;	 	/* Time averaged value of p_cpticks. */
+    int					gsc_cpticks;	/* Ticks of cpu time. */
+
+    u_char				gsc_pri;		/* Process  priority, negative is high */
+    u_char				gsc_cpu;		/* cpu usage for scheduling */
+    u_char				gsc_time;		/* resident time for scheduling */
+    char 				gsc_slptime; 	/* sleep time in secs */
 
     /* Global Scheduler Specific */
-    u_char  			sc_priweight;	/* priority weighting (calculated from various factors) */
-    char 				sc_release;		/* Time till release from current block */
-    char 				sc_deadline;	/* Deadline */
-    char 				sc_remtime; 	/* time remaining */
-    char 				sc_slptime; 	/* sleep time in secs */
+    u_char  			gsc_priweight;	/* priority weighting (calculated from various factors) */
+
+    char 				gsc_release;	/* Time till release from current block */
+    char 				gsc_remtime; 	/* time remaining */
+
 };
 
 /* Scheduler Domains: Hyperthreading, multi-cpu, etc... */
@@ -65,7 +71,7 @@ enum priw {
 	 PW_PRIORITY = 25, 	 	/* Current Processes Priority */
 	 PW_DEADLINE = 25,		/* Current Processes Deadline Time */
 	 PW_RELEASE = 25,		/* Current Processes Release Time */
-	 PW_SLEEP = 25			/* Current Processes Sleep Time */
+	 PW_SLEEP = 25,			/* Current Processes Sleep Time */
 };
 
 //#define PW_PRIORITY 25      /* Current Processes Priority */
@@ -81,4 +87,26 @@ void 		sched_dequeue(struct sched *, struct proc *);
 struct proc *sched_getproc(struct sched *, struct proc *);
 int			setpriweight(float pwp, float pwd, float pwr, float pws);
 
-#endif /* _SYS_SCHED_H */
+#endif /* _SYS_GSCHED_H */
+/*
+ priority weighting: replace release time with cpu utilization.
+
+cost/usage = p_cpu
+
+time = p_estcpu & p_time. (factor p_estcpu if task does not complete in given time)
+
+deadline = p_cpticks
+
+release = if deadline is greater than time. release is 0. else release = time
+- if release is 0, schedulability should fail. (Impossible to complete a task by a deadline which is greater than the time given)
+
+slack = (deadline - time) - cost
+
+remtime = calculated at the end of CFS run queue
+*/
+
+
+/* Load average structure. */
+
+/* calculations for digital decay to forget 90% of usage in 5*loadav sec */
+//#define	loadfactor(loadav)	(2 * (loadav))

@@ -133,6 +133,7 @@ struct	proc {
 	struct  k_rusage    p_kru;			/* exit information kernel */
 
 	struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
+	struct gsched		*p_gsched;		/* global scheduler */
 };
 
 struct	session {
@@ -271,24 +272,24 @@ extern struct emul emul_211bsd;
 struct 	proc *pfind (pid_t);			/* Find process by id. */
 struct 	pgrp *pgfind (pid_t);			/* Find process group by id. */
 
-int		setpri (struct proc *);
-void	setrun (struct proc *);
-void	setrq (struct proc *);
-void	remrq (struct proc *);
+int			setpri (struct proc *);
+void		setrun (struct proc *);
+void		setrq (struct proc *);
+void		remrq (struct proc *);
 struct proc getrq(struct proc *);
-void	swtch ();
-void	sleep (void *chan, int pri);
-int		tsleep (void *chan, int pri, char *wmesg, int timo);
-void	unsleep (struct proc *);
-void	wakeup (void *chan);
+void		swtch ();
+void		sleep (void *chan, int pri);
+int			tsleep (void *chan, int pri, char *wmesg, int timo);
+void		unsleep (struct proc *);
+void		wakeup (void *chan);
 
-void	procinit (void);
-int 	chgproccnt (uid_t, int diff);
-int		acct_process (struct proc *);
-int		leavepgrp (struct proc *);
-int		enterpgrp (struct proc *, pid_t, int);
-void	fixjobc (struct proc *, struct pgrp *, int);
-int		inferior (struct proc *);
+void		procinit (void);
+int 		chgproccnt (uid_t, int diff);
+int			acct_process (struct proc *);
+int			leavepgrp (struct proc *);
+int			enterpgrp (struct proc *, pid_t, int);
+void		fixjobc (struct proc *, struct pgrp *, int);
+int			inferior (struct proc *);
 #endif 	/* KERNEL */
 
 #endif	/* !_SYS_PROC_H_ */

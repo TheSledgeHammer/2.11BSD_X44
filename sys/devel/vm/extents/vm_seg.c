@@ -29,21 +29,10 @@
 #include <sys/user.h>
 #include <sys/tree.h>
 #include "vm_seg.h"
+#include "sys/extent.h"
 
-/* TODO:
- * - Allocate vm_segment
- */
-
-void
-vm_segment_init(void)
-{
-	register struct vm_segment *seg;
-	RB_INIT(&seg->seg_rbroot);
-	seg = (struct vm_segment *) rmalloc(seg, sizeof(struct vm_segment *));
-}
-
-/* vm segment extent memory management */
-struct extent *
+/* vm segment extent manager */
+struct vm_segment *
 vm_segment_create(seg, name, start, end, mtype, storage, storagesize, flags)
 	struct vm_segment *seg;
 	char *name;
@@ -56,11 +45,11 @@ vm_segment_create(seg, name, start, end, mtype, storage, storagesize, flags)
 	seg->seg_start = start;
 	seg->seg_end = end;
 	seg->seg_addr += start;
-	seg->seg_vsize = start - end;
+	seg->seg_size = start - end;
 
-	seg->seg_extent = extent_create(seg->seg_extent, name, start, end, mtype, storage, storagesize, flags);
+	seg->seg_extent = extent_create(seg->seg_extent, name, start, end, mtype, storage, storagesize, EX_WAITOK | EX_MALLOCOK);
 
-	return (seg->seg_extent);
+	return (seg);
 }
 
 int
@@ -125,3 +114,68 @@ vm_segment_destroy(seg)
 	}
 	return (0);
 }
+
+/* VM Segment & VM Segment Entries */
+void
+vm_segment_init(start, end)
+	vm_offset_t start, end;
+{
+	register struct vm_segment *seg;
+
+	RB_INIT(&seg->seg_rbroot);
+	CIRCLEQ_INIT(&seg->seg_clheader);
+	seg->seg_start = start;
+	seg->seg_end = end;
+	seg = vm_segment_create(seg, "vm_segment", start, end, M_VMSEG, NULL, 0, EX_WAITOK | EX_MALLOCOK);
+
+	if(seg != NULL) {
+		vm_segment_allocate_region(seg, seg->seg_start, seg->seg_size, EX_WAITOK | EX_MALLOCOK);
+	} else {
+		panic("could not allocate vm_segment extent region");
+	}
+}
+
+/* alignment & boundary should match pages. */
+struct vm_segment_entry *
+vm_segment_entry_allocate(seg, substart, subend, size, alignment, boundary, flags, result)
+	struct vm_segment *seg;
+	vm_offset_t substart, subend;
+	vm_size_t size;
+	int flags;
+	u_long *result, alignment, boundary;
+{
+	struct vm_segment_entry	*entry;
+	int error;
+
+	entry->segs_start = substart;
+	entry->segs_end = subend;
+	entry->segs_size = size;
+	entry->segs_addr += substart;
+
+	error = vm_segment_allocate_subregion(seg, substart, subend, size, alignment, boundary, flags, result);
+
+	if(error) {
+		panic("could not allocate vm_segment_extry subregion");
+	}
+
+	vm_segment_rb_insert(seg, entry);
+	vm_segment_cl_insert(seg, entry);
+
+	return (entry);
+}
+
+void
+vm_segment_entry_init(entry, tsize, dsize, ssize, taddr, daddr, minsaddr, maxsaddr)
+	struct vm_segment_entry	*entry;
+	segsz_t tsize, dsize, ssize;
+	caddr_t taddr, daddr, minsaddr, maxsaddr;
+{
+	entry->segs_tsize = tsize;
+	entry->segs_dsize = dsize;
+	entry->segs_ssize = ssize;
+	entry->segs_taddr = taddr;
+	entry->segs_daddr = daddr;
+	entry->segs_minsaddr = minsaddr;
+	entry->segs_maxsaddr = maxsaddr;
+}
+

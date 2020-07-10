@@ -183,147 +183,33 @@
 #include <sys/namei.h>
 #include <sys/malloc.h>
 #include <sys/buf.h>
-#include "../ufs/ufml/ufml.h"
-
-
-int null_bug_bypass = 0;   /* for debugging: enables bypass printf'ing */
+#include "ufs/ufml/ufml.h"
 
 /*
- * This is the 10-Apr-92 bypass routine.
- *    This version has been optimized for speed, throwing away some
- * safety checks.  It should still always work, but it's not as
- * robust to programmer errors.
- *    Define SAFETY to include some error checking code.
- *
- * In general, we map all vnodes going down and unmap them on the way back.
- * As an exception to this, vnodes can be marked "unmapped" by setting
- * the Nth bit in operation's vdesc_flags.
- *
- * Also, some BSD vnode operations have the side effect of vrele'ing
- * their arguments.  With stacking, the reference counts are held
- * by the upper node, not the lower one, so we must handle these
- * side-effects here.  This is not of concern in Sun-derived systems
- * since there are no such side-effects.
- *
- * This makes the following assumptions:
- * - only one returned vpp
- * - no INOUT vpp's (Sun's vop_open has one of these)
- * - the vnode operation vector of the first vnode should be used
- *   to determine what implementation of the op should be invoked
- * - all mapped vnodes are of our vnode-type (NEEDSWORK:
- *   problems on rmdir'ing mount points and renaming?)
- */ 
-int
-ufml_bypass(ap)
-	struct vop_generic_args /* {
-		struct vnodeop_desc *a_desc;
-		<other random data follows, presumably>
-	} */ *ap;
-{
-	extern int (**null_vnodeop_p)();  /* not extern, really "forward" */
-	register struct vnode **this_vp_p;
-	int error;
-	struct vnode *old_vps[VDESC_MAX_VPS];
-	struct vnode **vps_p[VDESC_MAX_VPS];
-	struct vnode ***vppp;
-	struct vnodeop_desc *descp = ap->a_desc;
-	int reles, i;
+ * Basic strategy: as usual, do as little work as possible.
+ * Nothing is ever locked in the lofs'ed filesystem, all
+ * locks are held in the underlying filesystems.
+ */
 
-	if (null_bug_bypass)
-		printf ("null_bypass: %s\n", descp->vdesc_name);
+/*
+ * Save a vnode and replace with
+ * the lofs'ed one
+ */
+#define PUSHREF(v, nd) 					\
+{ 										\
+	struct { struct vnode *vnp; } v; 	\
+	v.vnp = (nd); 						\
+	(nd) = LOFSVP(v.vnp)
 
-#ifdef SAFETY
-	/*
-	 * We require at least one vp.
-	 */
-	if (descp->vdesc_vp_offsets == NULL ||
-	    descp->vdesc_vp_offsets[0] == VDESC_NO_OFFSET)
-		panic ("null_bypass: no vp's in map.\n");
-#endif
-
-	/*
-	 * Map the vnodes going in.
-	 * Later, we'll invoke the operation based on
-	 * the first mapped vnode's operation vector.
-	 */
-	reles = descp->vdesc_flags;
-	for (i = 0; i < VDESC_MAX_VPS; reles >>= 1, i++) {
-		if (descp->vdesc_vp_offsets[i] == VDESC_NO_OFFSET)
-			break;   /* bail out at end of list */
-		vps_p[i] = this_vp_p = VOPARG_OFFSETTO(struct vnode**,descp->vdesc_vp_offsets[i],ap);
-		/*
-		 * We're not guaranteed that any but the first vnode
-		 * are of our type.  Check for and don't map any
-		 * that aren't.  (We must always map first vp or vclean fails.)
-		 */
-		if (i && (*this_vp_p == NULL ||
-		    (*this_vp_p)->v_op != null_vnodeop_p)) {
-			old_vps[i] = NULL;
-		} else {
-			old_vps[i] = *this_vp_p;
-			*(vps_p[i]) = NULLVPTOLOWERVP(*this_vp_p);
-			/*
-			 * XXX - Several operations have the side effect
-			 * of vrele'ing their vp's.  We must account for
-			 * that.  (This should go away in the future.)
-			 */
-			if (reles & 1)
-				VREF(*this_vp_p);
-		}
-			
-	}
-
-	/*
-	 * Call the operation on the lower layer
-	 * with the modified argument structure.
-	 */
-	error = VCALL(*(vps_p[0]), descp->vdesc_offset, ap);
-
-	/*
-	 * Maintain the illusion of call-by-value
-	 * by restoring vnodes in the argument structure
-	 * to their original value.
-	 */
-	reles = descp->vdesc_flags;
-	for (i = 0; i < VDESC_MAX_VPS; reles >>= 1, i++) {
-		if (descp->vdesc_vp_offsets[i] == VDESC_NO_OFFSET)
-			break;   /* bail out at end of list */
-		if (old_vps[i]) {
-			*(vps_p[i]) = old_vps[i];
-			if (reles & 1)
-				vrele(*(vps_p[i]));
-		}
-	}
-
-	/*
-	 * Map the possible out-going vpp
-	 * (Assumes that the lower layer always returns
-	 * a VREF'ed vpp unless it gets an error.)
-	 */
-	if (descp->vdesc_vpp_offset != VDESC_NO_OFFSET &&
-	    !(descp->vdesc_flags & VDESC_NOMAP_VPP) &&
-	    !error) {
-		/*
-		 * XXX - even though some ops have vpp returned vp's,
-		 * several ops actually vrele this before returning.
-		 * We must avoid these ops.
-		 * (This should go away when these ops are regularized.)
-		 */
-		if (descp->vdesc_flags & VDESC_VPP_WILLRELE)
-			goto out;
-		vppp = VOPARG_OFFSETTO(struct vnode***, descp->vdesc_vpp_offset,ap);
-		error = ufml_node_create(old_vps[0]->v_mount, **vppp, *vppp);
-	}
-
- out:
-	return (error);
+/*
+ * Undo the PUSHREF
+ */
+#define POP(v, nd) 	\
+					\
+	(nd) = v.vnp; 	\
 }
 
-/*
- * We have to carry on the locking protocol on the null layer vnodes
- * as we progress through the tree. We also have to enforce read-only
- * if this layer is mounted read-only.
- */
+int
 ufml_lookup(ap)
 	struct vop_lookup_args /* {
 		struct vnode * a_dvp;
@@ -337,26 +223,57 @@ ufml_lookup(ap)
 	struct vop_lock_args lockargs;
 	struct vop_unlock_args unlockargs;
 	struct vnode *dvp, *vp;
+	struct vnode *newvp;
+	struct vnode *targetdvp;
 	int error;
 
-	if ((flags & ISLASTCN) && (ap->a_dvp->v_mount->mnt_flag & MNT_RDONLY) &&
-	    (cnp->cn_nameiop == DELETE || cnp->cn_nameiop == RENAME))
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_lookup(ap->a_dvp = %x->%x, \"%s\", op = %d)\n",
+		dvp, UFMLVPTOLOWERVP(dvp), ap->a_cnp->cn_nameptr, flag);
+#endif
+
+	if ((flags & ISLASTCN) && (ap->a_dvp->v_mount->mnt_flag & MNT_RDONLY)
+			&& (cnp->cn_nameiop == DELETE || cnp->cn_nameiop == RENAME))
 		return (EROFS);
-	error = null_bypass(ap);
-	if (error == EJUSTRETURN && (flags & ISLASTCN) &&
-	    (ap->a_dvp->v_mount->mnt_flag & MNT_RDONLY) &&
-	    (cnp->cn_nameiop == CREATE || cnp->cn_nameiop == RENAME))
-		error = EROFS;
 	/*
-	 * We must do the same locking and unlocking at this layer as 
-	 * is done in the layers below us. We could figure this out 
+	 * (ap->a_dvp) was locked when passed in, and it will be replaced
+	 * with the target vnode, BUT that will already have been
+	 * locked when (ap->a_dvp) was locked [see lofs_lock].  all that
+	 * must be done here is to keep track of reference counts.
+	 */
+	targetdvp = UFMLVPTOLOWERVP(dvp);
+
+#ifdef UFMLFS_DIAGNOSTIC
+	vprint("ufml VOP_LOOKUP", targetdvp);
+#endif
+
+	error = VOP_LOOKUP(targetdvp, &newvp, ap->a_cnp);
+	if (error) {
+		*ap->a_vpp = NULLVP;
+#ifdef UFMLFS_DIAGNOSTIC
+		printf("ufml_lookup(%x->%x) = %d\n", dvp, UFMLVPTOLOWERVP(dvp), error);
+#endif
+	} else if (error == EJUSTRETURN && (flags & ISLASTCN)
+			&& (ap->a_dvp->v_mount->mnt_flag & MNT_RDONLY)
+			&& (cnp->cn_nameiop == CREATE || cnp->cn_nameiop == RENAME)) {
+		error = EROFS;
+	}
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_lookup(%x->%x) = OK\n", dvp, UFMLVPTOLOWERVP(dvp));
+#endif
+	/*
+	 * We must do the same locking and unlocking at this layer as
+	 * is done in the layers below us. We could figure this out
 	 * based on the error return and the LASTCN, LOCKPARENT, and
-	 * LOCKLEAF flags. However, it is more expidient to just find 
+	 * LOCKLEAF flags. However, it is more expidient to just find
 	 * out the state of the lower level vnodes and set ours to the
 	 * same state.
 	 */
+
+	*ap->a_vpp = newvp;
 	dvp = ap->a_dvp;
 	vp = *ap->a_vpp;
+
 	if (dvp == vp)
 		return (error);
 	if (!VOP_ISLOCKED(dvp)) {
@@ -371,6 +288,92 @@ ufml_lookup(ap)
 		lockargs.a_p = p;
 		vop_nolock(&lockargs);
 	}
+
+	/*
+	 * If we just found a directory then make
+	 * a loopback node for it and return the loopback
+	 * instead of the real vnode.  Otherwise simply
+	 * return the aliased directory and vnode.
+	 */
+	if (newvp && newvp->v_type == VDIR && flags == LOOKUP) {
+#ifdef UFMLFS_DIAGNOSTIC
+		printf("ufml_lookup: found VDIR\n");
+#endif
+		/*
+		 * At this point, newvp is the vnode to be looped.
+		 * Activate a loopback and return the looped vnode.
+		 */
+		return (ufml_node_create(dvp->v_mount, targetdvp, ap->a_vpp));
+	}
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_lookup: not VDIR\n");
+#endif
+
+	return (error);
+}
+
+/*
+ * this = ni_dvp
+ * ni_dvp references the locked directory.
+ * ni_vp is NULL.
+ */
+ufml_mknod(ap)
+	struct vop_mknod_args /* {
+		struct vnode *a_dvp;
+		struct vnode **a_vpp;
+		struct componentname *a_cnp;
+		struct vattr *a_vap;
+	} */ *ap;
+{
+	int error;
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_mknod(vp = %x->%x)\n", ap->a_dvp, UFMLVPTOLOWERVP(ap->a_dvp));
+#endif
+
+	PUSHREF(xdvp, ap->a_dvp);
+	VREF(ap->a_dvp);
+
+	error = VOP_MKNOD(ap->a_dvp, ap->a_vpp, ap->a_cnp, ap->a_vap);
+
+	POP(xdvp, ap->a_dvp);
+	vrele(ap->a_dvp);
+
+	return (error);
+}
+
+/*
+ * this = ni_dvp;
+ * ni_dvp references the locked directory
+ * ni_vp is NULL.
+ */
+ufml_create(ap)
+	struct vop_create_args /* {
+		struct vnode *a_dvp;
+		struct vnode **a_vpp;
+		struct componentname *a_cnp;
+		struct vattr *a_vap;
+	} */ *ap;
+{
+	int error;
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_create(ap->a_dvp = %x->%x)\n", ap->a_dvp, UFMLVPTOLOWERVP(ap->a_dvp));
+#endif
+
+	PUSHREF(xdvp, ap->a_dvp);
+	VREF(ap->a_dvp);
+
+	error = VOP_CREATE(ap->a_dvp, ap->a_vpp, ap->a_cnp, ap->a_vap);
+
+	POP(xdvp, ap->a_dvp);
+	vrele(ap->a_dvp);
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_create(ap->a_dvp = %x->%x)\n", ap->a_dvp, UFMLVPTOLOWERVP(ap->a_dvp));
+#endif
+
 	return (error);
 }
 
@@ -389,6 +392,11 @@ ufml_setattr(ap)
 {
 	struct vnode *vp = ap->a_vp;
 	struct vattr *vap = ap->a_vap;
+	int error;
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_setattr(ap->a_vp = %x->%x)\n", ap->a_vp, UFMLVPTOLOWERVP(ap->a_vp));
+#endif
 
   	if ((vap->va_flags != VNOVAL || vap->va_uid != (uid_t)VNOVAL ||
 	    vap->va_gid != (gid_t)VNOVAL || vap->va_atime.tv_sec != VNOVAL ||
@@ -415,7 +423,11 @@ ufml_setattr(ap)
 				return (EROFS);
 		}
 	}
-	return (ufml_bypass(ap));
+	error = VOP_SETATTR(UFMLVPTOLOWERVP(vp), vap, ap->a_cred, ap->a_p);
+	if(error) {
+		return (error);
+	}
+	return (0);
 }
 
 /*
@@ -432,8 +444,9 @@ ufml_getattr(ap)
 {
 	int error;
 
-	if (error == null_bypass(ap))
+	if (error == VOP_GETATTR(UFMLVPTOLOWERVP(ap->a_vp), ap->a_vap, ap->a_cred, ap->a_p))
 		return (error);
+
 	/* Requires that arguments be restored. */
 	ap->a_vap->va_fsid = ap->a_vp->v_mount->mnt_stat.f_fsid.val[0];
 	return (0);
@@ -450,6 +463,10 @@ ufml_access(ap)
 {
 	struct vnode *vp = ap->a_vp;
 	mode_t mode = ap->a_mode;
+	int error;
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_access(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
+#endif
 
 	/*
 	 * Disallow write attempts on read-only layers;
@@ -466,7 +483,13 @@ ufml_access(ap)
 			break;
 		}
 	}
-	return (ufml_bypass(ap));
+
+	error = VOP_ACCESS(UFMLVPTOLOWERVP(ap->a_vp), ap->a_mode, ap->a_cred, ap->a_p);
+
+	if (error)
+		return (error);
+
+	return (0);
 }
 
 /*
@@ -482,12 +505,28 @@ ufml_lock(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
+	int error;
+	struct vnode *targetvp = UFMLVPTOLOWERVP(ap->a_vp);
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_lock(ap->a_vp = %x->%x)\n", ap->a_vp, targetvp);
+	/*vprint("lofs_lock ap->a_vp", ap->a_vp);
+	if (targetvp)
+		vprint("lofs_lock ->ap->a_vp", targetvp);
+	else
+		printf("lofs_lock ->ap->a_vp = NIL\n");*/
+#endif
 
 	vop_nolock(ap);
 	if ((ap->a_flags & LK_TYPE_MASK) == LK_DRAIN)
 		return (0);
 	ap->a_flags &= ~LK_INTERLOCK;
-	return (ufml_bypass(ap));
+
+	if (targetvp) {
+		error = VOP_LOCK(targetvp, 0, ap->a_p);
+		if (error)
+			return (error);
+	}
+	return (0);
 }
 
 /*
@@ -503,11 +542,17 @@ ufml_unlock(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
-	struct vnode *vp = ap->a_vp;
+	struct vnode *targetvp = UFMLVPTOLOWERVP(ap->a_vp);
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_unlock(ap->a_vp = %x->%x)\n", ap->a_vp, targetvp);
+#endif
 
 	vop_nounlock(ap);
 	ap->a_flags &= ~LK_INTERLOCK;
-	return (ufml_bypass(ap));
+
+	if (targetvp)
+		return (VOP_UNLOCK(targetvp, 0, ap->a_p));
+	return (0);
 }
 
 int
@@ -621,9 +666,7 @@ ufml_bwrite(ap)
 /*
  * Global vfs data structures ufml
  */
-
-struct vnodeops ufml_vnodeops[] = {
-	.vop_default_desc = ufml_bypass,
+struct vnodeops ufml_vnodeops = {
 	.vop_lookup_desc = ufml_lookup,
 	.vop_setattr_desc = ufml_setattr,
 	.vop_getattr_desc = ufml_getattr,

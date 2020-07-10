@@ -51,6 +51,7 @@
 struct vmspace {
 	struct	vm_map 	 vm_map;		/* VM address map */
 	struct	pmap 	 vm_pmap;		/* private physical map */
+
 	int				 vm_refcnt;		/* number of references */
 	caddr_t			 vm_shm;		/* SYS5 shared memory private data XXX */
 /* we copy from vm_startcopy to the end of the structure on fork */
@@ -91,6 +92,7 @@ struct avmspace {
 struct ovlspace {
 	struct ovl_map 	ovl_map;	/* overlay address map */
 	struct pmap 	ovl_pmap;	/* private physical map */
+
 	struct koverlay ovl_kovl;	/* kernel overlay space */
 	struct voverlay ovl_vovl;	/* virtual overlay space */
 };

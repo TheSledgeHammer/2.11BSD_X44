@@ -54,7 +54,7 @@
  * Definitions for the buffer hash lists.
  */
 #define	BUFHASH(dvp, lbn)	\
-	(&bufhashtbl[((int)(dvp) / sizeof(*(dvp)) + (int)(lbn)) & bufhash])
+	(&bufhashtbl[((int)(dvp) / sizeof(*(dvp)) + (int)(lbn)) & (BUFHSZ * (lbn + bufhash) - 1)])
 LIST_HEAD(bufhashhdr, buf) *bufhashtbl, invalhash;
 u_long	bufhash;
 
@@ -141,6 +141,43 @@ bufinit()
 	}
 }
 
+struct buf *
+bio_doread(vp, blkno, size, cred, async)
+	struct vnode *vp;
+	daddr_t blkno;
+	int size;
+	struct ucred *cred;
+	int async;
+{
+	register struct buf *bp;
+	struct proc *p = (curproc != NULL ? curproc : &proc0);	/* XXX */
+
+	bp = getblk(vp, blkno, size, 0, 0);
+
+	/*
+	 * If buffer does not have data valid, start a read.
+	 * Note that if buffer is B_INVAL, getblk() won't return it.
+	 * Therefore, it's valid if it's I/O has completed or been delayed.
+	 */
+	if (!ISSET(bp->b_flags, (B_DONE | B_DELWRI))) {
+		/* Start I/O for the buffer (keeping credentials). */
+		SET(bp->b_flags, B_READ | async);
+		if (cred != NOCRED && bp->b_rcred == NOCRED) {
+			crhold(cred);
+			bp->b_rcred = cred;
+		}
+		VOP_STRATEGY(bp);
+
+		/* Pay for the read. */
+		p->p_stats->p_ru.ru_inblock++;
+	} else if (async) {
+		brelse(bp);
+	}
+
+	return (bp);
+}
+
+
 /*
  * Read a disk block.
  * This algorithm described in Bach (p.54).
@@ -216,6 +253,69 @@ breadn(vp, blkno, size, rablks, rasizes, nrablks, cred, bpp)
 	 * Otherwise, we had to start a read for it; wait until
 	 * it's valid and return the result.
 	 */
+	return (biowait(bp));
+}
+
+/*
+ * Read in the block, like bread, but also start I/O on the
+ * read-ahead block (which is not allocated to the caller)
+ */
+int
+breada(vp, dev, blkno, rablkno, size, cred)
+	struct vnode *vp;
+	daddr_t blkno;
+	daddr_t rablkno;
+	int size;
+	struct ucred *cred;
+{
+	register struct buf *bp, *rabp;
+
+	bp = NULL;
+	/*
+	 * If the block isn't in core, then allocate
+	 * a buffer and initiate i/o (getblk checks
+	 * for a cache hit).
+	 */
+	if (!incore(vp, blkno)) {
+		bp = bio_doread(vp, blkno, size, cred, 0);
+		if ((bp->b_flags & (B_DONE | B_DELWRI)) == 0) {
+			bp->b_flags |= B_READ;
+			bp->b_bcount = DEV_BSIZE; /* XXX? KB */
+			(*bdevsw[major(dev)].d_strategy)(bp);
+			trace(TR_BREADMISS);
+			u->u_ru.ru_inblock++; /* pay for read */
+		} else
+			trace(TR_BREADHIT);
+	}
+
+	/*
+	 * If there's a read-ahead block, start i/o
+	 * on it also (as above).
+	 */
+	if (rablkno) {
+		if (!incore(vp, rablkno)) {
+			rabp = bio_doread(vp, rablkno, size, cred, 0);
+			if (rabp->b_flags & (B_DONE | B_DELWRI)) {
+				brelse(rabp);
+				trace(TR_BREADHITRA);
+			} else {
+				rabp->b_flags |= B_READ | B_ASYNC;
+				rabp->b_bcount = DEV_BSIZE; /* XXX? KB */
+				(*bdevsw[major(dev)].d_strategy)(rabp);
+				trace(TR_BREADMISSRA);
+				u->u_ru.ru_inblock++; /* pay in advance */
+			}
+		} else
+			trace(TR_BREADHITRA);
+	}
+
+	/*
+	 * If block was in core, let bread get it.
+	 * If block wasn't in core, then the read was started
+	 * above, and just wait for it.
+	 */
+	if (bp == NULL)
+		return (bread(vp, blkno, size, cred, bp));
 	return (biowait(bp));
 }
 
@@ -571,8 +671,8 @@ allocbuf(bp, size)
 	int size;
 {
 	struct buf      *nbp;
-	vsize_t       desired_size;
-	int	     s;
+	size_t       	desired_size;
+	int	     		s;
 
 	desired_size = roundup(size, CLBYTES);
 	if (desired_size > MAXBSIZE)

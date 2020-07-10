@@ -93,8 +93,8 @@ struct orlimit {
 
 /* Load average structure. */
 struct loadavg {
-	fixpt_t	 ldavg[3];
-	int fscale;
+	fixpt_t	ldavg[3];
+	int 	fscale;
 };
 
 
