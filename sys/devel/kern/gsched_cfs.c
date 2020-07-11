@@ -65,55 +65,87 @@ cfs_remove_rq(cfs)
 }
 
 void
+cfs_compute(cfs)
+	struct gsched_cfs *cfs;
+{
+	cfs->cfs_btl = BTL;
+	cfs->cfs_bmg = BMG;
+	cfs->cfs_btimeslice = BTIMESLICE(cfs->cfs_time);
+	cfs->cfs_bsched = BRESCHEDULE;
+}
+
+/*
+ * TODO:
+ * Passed from EDF to CFS
+ * Note: below assumes task is schedulable and inserted into rb tree
+ * CFS:
+ * 1. calculate cfs variables (timeslice, granularity, target latency)
+ * 2. check granularity flags (aka. EMG)
+ * 3. run through rbtree until reaching task with highest priority weighting.
+ * 4. set task runnable with highest priority weighting.
+ * 5. run task for timeslice period or base minimum time before a reschedule (BRESCHEDULE)
+ * 6. check reschedule flags (aka. ERESCHEDULE) whether a reschedule or timeslice has expired
+ *
+ * 7. Two Scenarios:
+ * A) Task is completed and exits run-queue.
+ * B) Task is incomplete: exits rb_tree, and passed back to the EDF for re-processing
+ *
+ * Note: This doesn't include preemption or cpu_decay
+ */
+
+void
 cfs_schedcpu(gsd)
 	struct gsched *gsd;
 {
 	struct gsched_cfs *cfs = gsched_cfs(gsd);
+	u_char tmg = 0; 		/* temp min granularity */
+	u_char tsched = 0; 		/* temp reschedule time */
 
 	if(gsd->gsc_priweight != 0) {
 		cfs->cfs_priweight = gsd->gsc_priweight;
+		/* setrunq here? */
 	}
-	cfs->cfs_tl = BTL;
-	cfs->cfs_mg = BMG;
-	cfs->cfs_timeslice = BTIMESLICE(cfs->cfs_time);
 
-	/*
-	 * TODO:
-	 * Passed from EDF to CFS
-	 * Note: below assumes task is schedulable and inserted into rb tree
-	 * CFS:
-	 * 1. calculate cfs variables (timeslice, granularity, target latency)
-	 * 2. check granularity flags (aka. EMG)
-	 * 3. run through rbtree until reaching task with highest priority weighting.
-	 * 4. set task runnable with highest priority weighting.
-	 * 5. run task for timeslice period or base minimum time before a reschedule (BRESCHEDULE)
-	 * 6. check reschedule flags (aka. ERESCHEDULE) whether a reschedule or timeslice has expired
-	 *
-	 * Two Scenarios:
-	 * A) Task is completed and exits run-queue.
-	 * B) Task is incomplete: exits rb_tree, and passed back to the EDF for re-processing
-	 *
-	 * Note: This doesn't include Preemption
-	 */
-}
+	/* calculate cfs variables */
+	cfs_compute(cfs);
 
-u_char
-cfs_base_timeslice(time)
-	u_char time;
-{
-	return (BTIMESLICE(time));
-}
+	/* check min granularity */
+	if(EMG(cfs->cfs_time)) {
+		tmg = BMG;
+		BMG = tmg;
+		cfs->cfs_bmg = BMG; /* Not needed? in loop... taken from cfs_compute */
+	}
 
-u_char
-cfs_reschedule(time)
-	u_char time;
-{
-	return (ERESCHEDULE(time));
-}
+	/* TODO: search rb_tree for task with highest priority weighting */
 
-u_char
-cfs_min_granularity(time)
-	u_char time;
-{
-	return (EMG(time));
+	/* set task runnable */
+	setrun(cfs->cfs_proc);
+
+	/* check if it has time. Shouldn't be possible but check anyway */
+	if(cfs->cfs_time != 127) {
+		/* run task for timeslice */
+		for(int i = 0; i <= cfs->cfs_btimeslice; i++) {
+			/* TODO: needs execution code here */
+			cfs->cfs_time++;
+			if(cfs->cfs_time == 127) {
+				break;
+			}
+			if(i == cfs->cfs_bsched) {
+				break;
+			}
+		}
+	}
+	/* missing code here */
+
+	/* check reschedule */
+	if(ERESCHEDULE(cfs->cfs_time)) {
+		tsched = (cfs->cfs_time * cfs->cfs_bmg);
+		BRESCHEDULE = tsched;
+		cfs->cfs_bsched = BRESCHEDULE; /* Not needed? in loop... taken from cfs_compute */
+	}
+
+	/* task complete: remove of queue */
+	gsched_remrq(gsd);
+
+	/* TODO: task incomplete: remove from CFS & re-enter EDF to update */
 }

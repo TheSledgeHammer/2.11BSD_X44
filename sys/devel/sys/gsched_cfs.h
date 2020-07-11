@@ -35,14 +35,15 @@
 /* Generic Base stats for CFS */
 #define NCFSQS 	        8 					    /* 8 CFS Queues */
 #define CFQS 	        (NQS/NCFSQS)		    /* Number of CFS Queues to Number of Run Queues (32/8 = 4) */
+
 #define BTL             20                      /* base target latency */
 #define BMG             4                       /* base minimum granularity  */
 #define BTIMESLICE(t)   ((t) / BTL)             /* base timeslice per task */
 #define BRESCHEDULE     (BTL / BMG)             /* base minimum time for (n * tasks) before rescheduling occurs */
 
 /* Error Checking */
-#define ERESCHEDULE(t)  ((t) * BMG)             /* new rescheduling time if (n * tasks) exceeds BTL/BMG */
-#define EMG(t)          (BMG > BTIMESLICE(t))   /* new minimum granularity if BMG is greater than base timeslice */
+#define ERESCHEDULE(t)  (((t) * BMG) >  BRESCHEDULE)    /* new rescheduling time if (n * tasks) exceeds BTL/BMG */
+#define EMG(t)          (BMG > BTIMESLICE(t))   		/* new minimum granularity if BMG is greater than base timeslice */
 
 struct gsched_cfs_rbtree;
 RB_HEAD(gsched_cfs_rbtree, gsched_cfs);
@@ -66,9 +67,11 @@ struct gsched_cfs {
     u_char  					cfs_time;
     char    					cfs_slptime;
 
-    u_char 						cfs_tl;			/* target latency */
-    u_char 						cfs_mg;			/* minimum granularity */
-    u_char 						cfs_timeslice; 	/* timeslice */
+    u_char 						cfs_btl;		/* base target latency */
+    u_char 						cfs_bmg;		/* base minimum granularity */
+    u_char 						cfs_btimeslice; /* base timeslice per task */
+
+    u_char 						cfs_bsched;		/* base rescheduling time */
 
     u_char  					cfs_priweight;	/* priority weighting (calculated from various factors) */
 };
