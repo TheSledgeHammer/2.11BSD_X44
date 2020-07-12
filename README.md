@@ -4,7 +4,8 @@
 2.11BSD_X44 is 2.11BSD that continues with that tradition. Replacing the 4.3BSD styled VM space and inodes with 4.4BSD-Lite2 VM space and vnodes. While retaining 2.11BSD's kernel and user space. 2.11BSD_X44 adopts the 4.4BSD & later BSD's (i.e. FreeBSD, NetBSD, OpenBSD & DragonflyBSD) approach of having a clearly defined architecture dependent code and architecture independent code, allowing for easier portability.
 
 ## Project Goals:
-- Maintain Traditional BSD Style while keeping current.
+- Maintain Traditional 2.11BSD Style while keeping current.
+- Small Footprint: Ideally less than 200 system calls.
 - Clean code
 
 ## Architecture Support:
@@ -28,23 +29,42 @@
     - Dirhash
     - WAPBL
     - Extended Attributes
-- Extend Filesystem Support: NFS, SMB
+- Filesystem Support For: (Needs improved network features first)
+  - NFS
+  - SMB
 - Kernel Modules
 - Symmetric Multi-Processing (SMP)
-- AMD64/ x86_64 (64-bit)
-- Package Management
 
-## Development/ Porting
+## Development: (Folder: devel)
+- The "devel" folder is temporary.
+- Contains code that fits into two categories. 1). In Development & 2). Needs Testing.
+- Please read the README in their respective folders for more information.
+
+### Devel Contents:
+- HTBC: HTree Based Blockchain to augment LFS & other existing Log-Structured Filesystems (akin to Soft-updates & WAPBL).
+- Malloc: A Tertiary Buddy System Allocator (No Plans or use cases). Originally planned as part of a larger memory allocation stack for the kernel. (Needs a home!)
+- PMAP: Clustered Page Table variant, backed by a two red-black trees.
+- Scheduler: A Stackable Scheduler that sits atop 2.11BSD's existing scheduler.
+  - Consists of a Hybrid EDF/CFS scheduling algorithm.
+- Threads: kernel-space & user-space threading implementation.
+- UFML: LOFS based filesystem layer, combined with features from HTBC.
+  - Aims to provide a Fossil + Venti inspired support to UFS, FFS, MFS & LFS.
+  - Planned features include: snapshots, versioning, cache, archive, compression & encryption.
+- UFS211: Direct port of 2.11BSD's UFS Filesystem.
+- VM: Updates to the VM Layer.
+  - VM Map: Implements a red-black tree & circular list, with the intended goal of constant-time lookup.
+
+## Porting:
 2.11BSD_X44 is entirely open to being ported to different architectures.
 Though due to limited access to hardware, testing of 2.11BSD_X44 on that architecture will be dependent on the individual/group (especially more exotic hardware).
 
 ## Contribution:
 - Anyone is welcome to contribute.
 - Your code should ideally fit the following guidelines & rules below
-- Licensing: 3-Clause BSD license Preferable
+- Licensing: 3-Clause BSD license preferable
   - Non BSD licensed code should be placed in the (folder: external/"license"/"project name")
     - Different versions of the same License (e.g. GPLv1, GPLv2, etc.) can be placed under one folder
-- These rules in place to make it pleasant for everyone.
+- These rules in place to make it pleasant & easier for everyone.
 	- It is highly recommended that you adhere to the following Contribution Guidelines & Rules.
 	- Failing to follow the Contribution Guidelines & Rules will prevent your code from being accepted.
 
@@ -53,6 +73,6 @@ Though due to limited access to hardware, testing of 2.11BSD_X44 on that archite
 2. Contain a License Header. Clearly stating year, author and the license.
 
 ### Contribution Rules:
-1. No profanity
+1. No excessive use of profanity
 2. No abuse of others
 	- Constructive criticism is welcome
