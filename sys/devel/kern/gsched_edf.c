@@ -91,7 +91,7 @@ edf_testrq(gsd)
 	}
     edf->edf_release = edf->edf_time;
 
-	/* check linked list for running processes */
+	/* check linked list for running processes is not empty */
 	edf->edf_rqlink = gsched_getrq(edf->edf_gsched);
 	if(edf->edf_rqlink == NULL) {
 		goto error;
@@ -100,25 +100,39 @@ edf_testrq(gsd)
 		edf->edf_proc = edf->edf_rqlink;
 		/* test cpu utilization, demand & workload can be scheduled */
 		if (edf_utilization(edf->edf_release, edf->edf_cpu)) {
-			//cpu_util = TRUE;
 			printf("utilization is schedulable");
 		} else if (edf_demand(edf->edf_time, edf->edf_cpticks, edf->edf_release, edf->edf_cpu)) {
-			//cpu_demand = TRUE;
 			printf("demand is schedulable");
 		} else if (edf_workload(edf->edf_time, edf->edf_release, edf->edf_cpu)) {
-			//cpu_workload = TRUE;
 			printf("workload is schedulable");
 		}
-		if(edf->edf_qschedulability == NULL) {
-			edf->edf_qschedulability = edf->edf_proc;
-		}
-		gsd->gsc_priweight = gsched_setpriweight(edf->edf_pri, edf->edf_cpticks, edf->edf_release, edf->edf_slptime);
 	}
+	if(edf->edf_qschedulability == NULL) {
+		edf->edf_qschedulability = edf->edf_proc;
+	}
+	gsd->gsc_priweight = gsched_setpriweight(edf->edf_pri, edf->edf_cpticks, edf->edf_release, edf->edf_slptime);
 
 error:
-	//cpu_util = FALSE;
-	//cpu_demand = FALSE;
-	//cpu_workload = FALSE;
 	edf->edf_qschedulability = NULL;
 	printf(" is likely not schedulable");
+}
+
+edf_sanity_check(edf)
+	struct gsched_edf *edf;
+{
+	if(edf->edf_time == 0) {
+		printf("time not set");
+	}
+	if(edf->edf_cpu == 0) {
+		printf("cost not set");
+	}
+	if(edf->edf_cpticks > edf->edf_time) {
+		printf("deadline > time");
+	}
+	if(edf->edf_cpticks == 0) {
+		edf->edf_cpticks = edf->edf_time;
+	}
+	if(edf->edf_cpu > edf->edf_cpticks) {
+		printf("cost > deadline");
+	}
 }

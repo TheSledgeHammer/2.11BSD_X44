@@ -28,7 +28,7 @@
  *	@(#)cpt.c 1.0 	1/05/20
  */
 
-#include "../vm/pmap/cpt.h"
+#include "pmap/cpt.h"
 
 #include <sys/param.h>
 #include <sys/proc.h>

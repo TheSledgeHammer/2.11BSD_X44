@@ -33,13 +33,13 @@
 #include <sys/tree.h>
 
 /* Generic Base stats for CFS */
-#define NCFSQS 	        8 					    /* 8 CFS Queues */
-#define CFQS 	        (NQS/NCFSQS)		    /* Number of CFS Queues to Number of Run Queues (32/8 = 4) */
+#define NCFSQS 	        8 					    		/* 8 CFS Queues */
+#define CFQS 	        (NQS/NCFSQS)		    		/* Number of CFS Queues to Number of Run Queues (32/8 = 4) */
 
-#define BTL             20                      /* base target latency */
-#define BMG             4                       /* base minimum granularity  */
-#define BTIMESLICE(t)   ((t) / BTL)             /* base timeslice per task */
-#define BRESCHEDULE     (BTL / BMG)             /* base minimum time for (n * tasks) before rescheduling occurs */
+#define BTL             20                      		/* base target latency */
+#define BMG             4                       		/* base minimum granularity  */
+#define BTIMESLICE(t)   ((t) / BTL)             		/* base timeslice per task */
+#define BRESCHEDULE     (BTL / BMG)            			/* base minimum time for (n * tasks) before rescheduling occurs */
 
 /* Error Checking */
 #define ERESCHEDULE(t)  (((t) * BMG) >  BRESCHEDULE)    /* new rescheduling time if (n * tasks) exceeds BTL/BMG */

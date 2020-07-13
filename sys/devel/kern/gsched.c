@@ -161,10 +161,6 @@ gsched_setpriweight(pwp, pwd, pwr, pws)
 
 	int priweight = ((pw_pri + pw_dead + pw_rel + pw_slp) / 4);
 
-	if(priweight > 0) {
-		priweight = priweight * - 1;
-	}
-
 	return (priweight);
 }
 

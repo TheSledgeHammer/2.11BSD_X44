@@ -18,8 +18,7 @@
 
 #include <machine/cpu.h>
 
-#define	SQSIZE	16						/* Must be power of 2 */
-
+#define	SQSIZE	128						/* Must be power of 2 */
 #define	HASH(x)	(((int)x >> 5) & (SQSIZE - 1))
 #define	SCHMAG	8/10
 #define	PPQ		(128 / NQS)				/* priorities per queue */
@@ -46,7 +45,7 @@ schedcpu(arg)
 {
 	register struct proc *p;
 	register int a;
-	register u_char	currproc;
+	register u_char	currpri;
 
 	wakeup((caddr_t)&lbolt);
 	for (p = allproc; p != NULL; p = p->p_nxt) {
@@ -78,13 +77,13 @@ schedcpu(arg)
 		p->p_estcpu = min(p->p_cpu, UCHAR_MAX);
 		resetpri(p);
 		if (p->p_pri >= PUSER) {
-			currproc = setpri(p);
-			if((p != currproc) &&
+			currpri = setpri(p);
+			if((p != curproc) &&
 					p->p_stat == SRUN &&
 					(p->p_flag & P_INMEM) &&
-					(p->p_pri / PPQ) != (currproc / PPQ)) {
+					(p->p_pri / PPQ) != (currpri / PPQ)) {
 				remrq(p);
-				p->p_pri = currproc;
+				p->p_pri = currpri;
 				setpri(p);
 			} else {
 				setpri(p);
@@ -92,7 +91,7 @@ schedcpu(arg)
 		}
 	}
 	vmmeter();
-	if (runin!=0) {
+	if (runin != 0) {
 		runin = 0;
 		wakeup((caddr_t)&runin);
 	}
@@ -213,8 +212,7 @@ resume:
 		}
 	else if (timo)
 		untimeout(endtsleep, (caddr_t)p);
-	if	(catch && (sig != 0 || (sig = CURSIG(p))))
-		{
+	if	(catch && (sig != 0 || (sig = CURSIG(p)))) {
 		if	(u->u_sigintr & sigmask(sig))
 			return(EINTR);
 		return(ERESTART);
@@ -641,6 +639,7 @@ void
 rqinit()
 {
 	register int i;
+
 	for (i = 0; i < NQS; i++) {
 		qs[i].ph_link = qs[i].ph_rlink = (struct proc *)&qs[i];
 	}

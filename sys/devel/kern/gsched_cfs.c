@@ -31,37 +31,78 @@
 
 #include "sys/gsched_cfs.h"
 
+/* try: an array, to index deadline (example: cpt) */
+/* alternatively make a sorted rb_tree */
+
+/* cpu decay: A modified 4.4BSD decay that also accounts for a process's priority weighting */
+#define	loadfactor(loadav)		        (2 * (loadav))
+#define priwfactor(loadav, priweight)    (loadfactor(loadav) / (priweight))
+#define	decay_cpu(loadfac, cpu)	        (((loadfac) * (cpu)) / ((loadfac) + FSCALE))
+
+/* cpu decay  */
+unsigned int
+cfs_decay(p, priweight)
+	register struct proc *p;
+    int priweight;
+{
+	register fixpt_t loadfac;
+	register unsigned int newcpu;
+
+    if (priweight == 0) {
+        loadfac = loadfactor(averunnable.ldavg[0]);
+    } else {
+        loadfac = priwfactor(averunnable.ldavg[0], priweight);
+    }
+    newcpu = (u_int) decay_cpu(loadfac, p->p_estcpu) + p->p_nice;
+    return (newcpu);
+}
+
 RB_PROTOTYPE(gsched_cfs_rbtree, gsched_cfs, cfs_entry, cfs_rb_compare);
 RB_GENERATE(gsched_cfs_rbtree, gsched_cfs, cfs_entry, cfs_rb_compare);
-
-
-#define	cpu_decay_left(loadfac, cpu)	(((loadfac) * (cpu)) / ((loadfac) + FSCALE))
-#define	cpu_decay_right(loadfac, cpu)	(((loadfac) * (cpu)) / ((loadfac) + FSCALE))
 
 int
 cfs_rb_compare(a, b)
 	struct gsched_cfs *a, *b;
 {
-	if(a->cfs_priweight < b->cfs_priweight) {
+	if(a->cfs_cpticks < b->cfs_cpticks) {
 		return (-1);
-	} else if (a->cfs_priweight > b->cfs_priweight) {
+	} else if (a->cfs_cpticks > b->cfs_cpticks) {
 		return (1);
 	}
 	return (0);
 }
 
-cfs_insert_rq(cfs)
+/* insert into tree */
+void
+cfs_enqueue(cfs, p)
 	struct gsched_cfs *cfs;
+	struct proc *p;
 {
-	RB_LEFT(cfs, cfs_entry);
-	RB_RIGHT(cfs, cfs_entry);
-	RB_INSERT(gsched_cfs_rbtree, &(cfs)->cfs_parent, cfs->cfs_rqlink);
+	/* compare proc's estcpu & cfs estcpu */
+	cfs->cfs_estcpu = cfs_decay(p, cfs->cfs_priweight);
+	RB_INSERT(gsched_cfs_rbtree, &(cfs)->cfs_parent, p);
 }
 
-cfs_remove_rq(cfs)
+/* remove from tree */
+void
+cfs_dequeue(cfs, p)
 	struct gsched_cfs *cfs;
+	struct proc *p;
 {
-	RB_REMOVE(gsched_cfs_rbtree, &(cfs)->cfs_parent, cfs->cfs_rqlink);
+	RB_REMOVE(gsched_cfs_rbtree, &(cfs)->cfs_parent, p);
+}
+
+/* search for process with earliest deadline in rbtree & return */
+cfs_search(cfs, p)
+	struct gsched_cfs *cfs;
+	struct proc *p;
+{
+	cfs->cfs_proc = RB_FIND(gsched_cfs_rbtree, cfs->cfs_parent, p);
+	RB_FOREACH(p, gsched_cfs_rbtree, &(cfs)->cfs_parent) {
+		if(cfs->cfs_cpticks == p->p_cpticks) {
+
+		}
+	}
 }
 
 void
@@ -119,10 +160,10 @@ cfs_schedcpu(gsd)
 	/* TODO: search rb_tree for task with highest priority weighting */
 
 	/* set task runnable */
-	setrun(cfs->cfs_proc);
+	//setrun(cfs->cfs_proc);
 
 	/* check if it has time. Shouldn't be possible but check anyway */
-	if(cfs->cfs_time != 127) {
+	if(cfs->cfs_time != 127) { /* if placed within schedcpu, not required */
 		/* run task for timeslice */
 		for(int i = 0; i <= cfs->cfs_btimeslice; i++) {
 			/* TODO: needs execution code here */

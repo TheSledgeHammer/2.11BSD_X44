@@ -410,10 +410,10 @@ vm_cl_insert(map, entry)
     size_t space = vm_rb_space(map, entry);
     entry->ownspace = entry->space = space;
     if(head->space == vm_cl_space(map, entry)) {
-        CIRCLEQ_INSERT_HEAD(&map->cl_header, head, cl_entry)
+        CIRCLEQ_INSERT_HEAD(&map->cl_header, head, cl_entry);
     }
     if(tail->space == vm_cl_space(map, entry)) {
-        CIRCLEQ_INSERT_TAIL(&map->cl_header, tail, cl_entry)
+        CIRCLEQ_INSERT_TAIL(&map->cl_header, tail, cl_entry);
     }
 }
 
@@ -427,10 +427,10 @@ vm_cl_remove(map, entry)
     tail = CIRCLEQ_LAST(&map->cl_header);
 
     if(head && vm_cl_space(map, entry)) {
-        CIRCLEQ_REMOVE(&map->cl_header, head, cl_entry)
+        CIRCLEQ_REMOVE(&map->cl_header, head, cl_entry);
     }
     if(tail && vm_cl_space(map, entry)) {
-        CIRCLEQ_REMOVE(&map->cl_header, tail, cl_entry)
+        CIRCLEQ_REMOVE(&map->cl_header, tail, cl_entry);
     }
 }
 

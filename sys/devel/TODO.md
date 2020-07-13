@@ -1,3 +1,10 @@
+scheduler:
+	- fix gsched: for intilization
+		- remove deprecated variables relating to proc
+			- gsched_remq, gsched_setq, gsched_getq
+	- efs & cfs to interact with proc not gsched
+
+
 UFML:
 	- Fix to match current vfs
 	- Fix-up ufml_subr.c
