@@ -79,10 +79,10 @@ edf_slack(deadline, time, cost)
 }
 
 void
-edf_testrq(gsd)
-	struct gsched *gsd;
+edf_testrq(p)
+	struct proc *p;
 {
-	struct gsched_edf *edf = gsched_edf(gsd);
+	struct gsched_edf *edf = gsched_edf(p->p_gsched);
 
 	/* Check deadline is possible in given time */
 	if(edf->edf_time < edf->edf_cpticks) {
@@ -92,7 +92,7 @@ edf_testrq(gsd)
     edf->edf_release = edf->edf_time;
 
 	/* check linked list for running processes is not empty */
-	edf->edf_rqlink = gsched_getrq(edf->edf_gsched);
+	edf->edf_rqlink = getrq(p);
 	if(edf->edf_rqlink == NULL) {
 		goto error;
 	} else {
@@ -107,13 +107,9 @@ edf_testrq(gsd)
 			printf("workload is schedulable");
 		}
 	}
-	if(edf->edf_qschedulability == NULL) {
-		edf->edf_qschedulability = edf->edf_proc;
-	}
-	gsd->gsc_priweight = gsched_setpriweight(edf->edf_pri, edf->edf_cpticks, edf->edf_release, edf->edf_slptime);
+	p->p_gsched->gsc_priweight = gsched_setpriweight(edf->edf_pri, edf->edf_cpticks, edf->edf_release, edf->edf_slptime);
 
 error:
-	edf->edf_qschedulability = NULL;
 	printf(" is likely not schedulable");
 }
 

@@ -26,24 +26,94 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* try: an array, to index deadline (example: cpt) */
+/* alternatively make a sorted rb_tree */
+/* p_estcpu equals cfs_decay upon being adding to the cfs run queue */
 #include <sys/proc.h>
 #include <sys/user.h>
 
 #include "sys/gsched_cfs.h"
 
-/* try: an array, to index deadline (example: cpt) */
-/* alternatively make a sorted rb_tree */
-
-/* cpu decay: A modified 4.4BSD decay that also accounts for a process's priority weighting */
+/*
+ * Constants for digital decay and forget:
+ *	90% of (p_estcpu) usage in 5 * loadav time
+ *	95% of (p_pctcpu) usage in 60 seconds (load insensitive)
+ *          Note that, as ps(1) mentions, this can let percentages
+ *          total over 100% (I've seen 137.9% for 3 processes).
+ *
+ * Note that hardclock updates p_estcpu and p_cpticks independently.
+ *
+ * We wish to decay away 90% of p_estcpu in (5 * loadavg) seconds.
+ * That is, the system wants to compute a value of decay such
+ * that the following for loop:
+ * 	for (i = 0; i < (5 * loadavg); i++)
+ * 		p_estcpu *= decay;
+ * will compute
+ * 	p_estcpu *= 0.1;
+ * for all values of loadavg:
+ *
+ * Mathematically this loop can be expressed by saying:
+ * 	decay ** (5 * loadavg) ~= .1
+ *
+ * The system computes decay as:
+ * 	decay = (2 * loadavg) / (2 * loadavg + 1)
+ *
+ * We wish to prove that the system's computation of decay
+ * will always fulfill the equation:
+ * 	decay ** (5 * loadavg) ~= .1
+ *
+ * If we compute b as:
+ * 	b = 2 * loadavg
+ * then
+ * 	decay = b / (b + 1)
+ *
+ * We now need to prove two things:
+ *	1) Given factor ** (5 * loadavg) ~= .1, prove factor == b/(b+1)
+ *	2) Given b/(b+1) ** power ~= .1, prove power == (5 * loadavg)
+ *
+ * Facts:
+ *         For x close to zero, exp(x) =~ 1 + x, since
+ *              exp(x) = 0! + x**1/1! + x**2/2! + ... .
+ *              therefore exp(-1/b) =~ 1 - (1/b) = (b-1)/b.
+ *         For x close to zero, ln(1+x) =~ x, since
+ *              ln(1+x) = x - x**2/2 + x**3/3 - ...     -1 < x < 1
+ *              therefore ln(b/(b+1)) = ln(1 - 1/(b+1)) =~ -1/(b+1).
+ *         ln(.1) =~ -2.30
+ *
+ * Proof of (1):
+ *    Solve (factor)**(power) =~ .1 given power (5*loadav):
+ *	solving for factor,
+ *      ln(factor) =~ (-2.30/5*loadav), or
+ *      factor =~ exp(-1/((5/2.30)*loadav)) =~ exp(-1/(2*loadav)) =
+ *          exp(-1/b) =~ (b-1)/b =~ b/(b+1).                    QED
+ *
+ * Proof of (2):
+ *    Solve (factor)**(power) =~ .1 given factor == (b/(b+1)):
+ *	solving for power,
+ *      power*ln(b/(b+1)) =~ -2.30, or
+ *      power =~ 2.3 * (b + 1) = 4.6*loadav + 2.3 =~ 5*loadav.  QED
+ *
+ * Actual power values for the implemented algorithm are as follows:
+ *      loadav: 1       2       3       4
+ *      power:  5.68    10.32   14.94   19.55
+ */
+/* Modified 4.4BSD-Lite2: cpu decay. Accounts for a process's priority weighting
+ * Changes means that a process's priority weighting causes either of the following to occur:
+ * 1. A higher priority weighting equals a lower cpu decay.
+ * 2. A lower priority weighting equals a higher cpu decay.
+ */
+/* calculations for digital decay to forget 90% of usage in 5*loadav sec */
 #define	loadfactor(loadav)		        (2 * (loadav))
-#define priwfactor(loadav, priweight)    (loadfactor(loadav) / (priweight))
+#define priwfactor(loadav, priweight)   (loadfactor(loadav) / (priweight))
 #define	decay_cpu(loadfac, cpu)	        (((loadfac) * (cpu)) / ((loadfac) + FSCALE))
+
+/* make part of gsched, it potentially could be used elsewhere  */
 
 /* cpu decay  */
 unsigned int
 cfs_decay(p, priweight)
 	register struct proc *p;
-    int priweight;
+u_char priweight;
 {
 	register fixpt_t loadfac;
 	register unsigned int newcpu;
@@ -53,8 +123,39 @@ cfs_decay(p, priweight)
     } else {
         loadfac = priwfactor(averunnable.ldavg[0], priweight);
     }
+    if(p->p_estcpu == 0) {
+    	p->p_estcpu = p->p_cpu;
+    }
     newcpu = (u_int) decay_cpu(loadfac, p->p_estcpu) + p->p_nice;
     return (newcpu);
+}
+
+/* make part of gsched, it potentially could be used elsewhere  */
+
+/* update cpu decay */
+void
+cfs_update(p, priweight)
+	register struct proc *p;
+	u_char priweight;
+{
+	register unsigned int newcpu = p->p_estcpu;
+	register fixpt_t loadfac;
+
+    if (priweight == 0) {
+        loadfac = loadfactor(averunnable.ldavg[0]);
+    } else {
+        loadfac = priwfactor(averunnable.ldavg[0], priweight);
+    }
+
+	if (p->p_slptime > 5 * loadfac) {
+		p->p_estcpu = 0;
+	} else {
+		p->p_slptime--;	/* the first time was done in schedcpu */
+		while (newcpu && --p->p_slptime)
+			newcpu = (int) decay_cpu(loadfac, newcpu);
+		p->p_estcpu = min(newcpu, UCHAR_MAX);
+	}
+	resetpri(p); /* potentially */
 }
 
 RB_PROTOTYPE(gsched_cfs_rbtree, gsched_cfs, cfs_entry, cfs_rb_compare);
@@ -135,15 +236,15 @@ cfs_compute(cfs)
  */
 
 void
-cfs_schedcpu(gsd)
-	struct gsched *gsd;
+cfs_schedcpu(p)
+	struct proc *p;
 {
-	struct gsched_cfs *cfs = gsched_cfs(gsd);
+	struct gsched_cfs *cfs = gsched_cfs(p->p_gsched);
 	u_char tmg = 0; 		/* temp min granularity */
 	u_char tsched = 0; 		/* temp reschedule time */
 
-	if(gsd->gsc_priweight != 0) {
-		cfs->cfs_priweight = gsd->gsc_priweight;
+	if(p->p_gsched->gsc_priweight != 0) {
+		cfs->cfs_priweight = p->p_gsched->gsc_priweight;
 		/* setrunq here? */
 	}
 
@@ -158,9 +259,6 @@ cfs_schedcpu(gsd)
 	}
 
 	/* TODO: search rb_tree for task with highest priority weighting */
-
-	/* set task runnable */
-	//setrun(cfs->cfs_proc);
 
 	/* check if it has time. Shouldn't be possible but check anyway */
 	if(cfs->cfs_time != 127) { /* if placed within schedcpu, not required */
@@ -186,7 +284,7 @@ cfs_schedcpu(gsd)
 	}
 
 	/* task complete: remove of queue */
-	gsched_remrq(gsd);
+	remrq(p);
 
 	/* TODO: task incomplete: remove from CFS & re-enter EDF to update */
 }

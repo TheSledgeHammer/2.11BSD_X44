@@ -30,14 +30,18 @@
 #define _SYS_GSCHED_EDF_H
 
 #include <gsched.h>
-
+/*
+struct gsched_edf_cq;
+CIRCLEQ_HEAD(gsched_edf_cq, gsched_edf);
+struct gsched_edf_cq 		edf_header;
+CIRCLEQ_ENTRY(gsched_edf) 	edf_entry;
+*/
 struct gsched_edf {
 	struct gsched 		*edf_gsched;		/* pointer to global scheduler */
 
 	struct proc 		*edf_rqlink;		/* pointer to linked list of running processes */
 
 	struct proc			*edf_proc;
-	struct proc 		*edf_qschedulability;/* proc schedulability test */
 
     int	    			edf_flag;			/* P_* flags. */
     char    			edf_stat;			/* S* process status. */
@@ -63,7 +67,7 @@ int 	edf_utilization(char, char);
 int 	edf_demand(char, char, char, char);
 int 	edf_workload(char, char, char);
 u_char 	edf_slack(char, u_char, char);
-void 	edf_testrq(struct gsched *);
+void 	edf_testrq(struct proc *);
 
 /*
 Preemption:

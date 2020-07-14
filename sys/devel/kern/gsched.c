@@ -36,13 +36,16 @@
 #include <sys/lock.h>
 #include <sys/queue.h>
 
+/* The Global Scheduler Interface: For interfacing different scheduling algorithms into the 2.11BSD Kernel */
+/* Primarily for functions that will be used within both the kernel & the scheduler/s */
+
 void
 gsched_init(p)
 	struct proc *p;
 {
-	register struct gsched *gsd = gsched_setup(p);
-	gsched_edf_setup(gsd);
-	gsched_cfs_setup(gsd);
+	struct gsched *gsd = gsched_setup(p);
+	gsched_edf_setup(gsd, p);
+	gsched_cfs_setup(gsd, p);
 	//simple_lock_int(&gsd->gsc_lock); /* Unused */
 }
 
@@ -55,67 +58,44 @@ gsched_setup(p)
 		MALLOC(gsd, struct gsched *, sizeof(struct gsched *), M_GSCHED, M_WAITOK);
 	}
 	gsd->gsc_proc = p;
-	gsd->gsc_pri = p->p_pri;
-	gsd->gsc_cpu = p->p_cpu;
-	gsd->gsc_time = p->p_time;
-	gsd->gsc_slptime = p->p_slptime;
-	gsd->gsc_priweight = 0;
-
 	return (gsd);
 }
 
 void
-gsched_edf_setup(gsd)
+gsched_edf_setup(gsd, p)
 	struct gsched *gsd;
+	struct proc *p;
 {
 	register struct gsched_edf *edf = gsched_edf(gsd);
+
 	if (edf == NULL) {
 		MALLOC(edf, struct gsched_edf *, sizeof(struct gsched_edf *), M_GSCHED, M_WAITOK);
 	}
 
-	edf->edf_proc = gsd->gsc_proc;
-	edf->edf_pri = gsd->gsc_pri;
-	edf->edf_cpu = gsd->gsc_cpu;
-	edf->edf_time = gsd->gsc_time;
-	edf->edf_slptime = gsd->gsc_slptime;
+	edf->edf_proc = p;
+	edf->edf_pri = p->p_pri;
+	edf->edf_cpu = p->p_cpu;
+	edf->edf_time = p->p_time;
+	edf->edf_slptime = p->p_slptime;
 }
 
 void
-gsched_cfs_setup(gsd)
+gsched_cfs_setup(gsd, p)
 	struct gsched *gsd;
+	struct proc *p;
 {
 	register struct gsched_cfs *cfs = gsched_cfs(gsd);
+
 	if (cfs == NULL) {
 		MALLOC(cfs, struct gsched_cfs *, sizeof(struct gsched_cfs *), M_GSCHED, M_WAITOK);
 	}
 
 	RB_INIT(cfs->cfs_parent);
-	cfs->cfs_proc = gsd->gsc_proc;
-	cfs->cfs_pri = gsd->gsc_pri;
-	cfs->cfs_cpu = gsd->gsc_cpu;
-	cfs->cfs_time = gsd->gsc_time;
-	cfs->cfs_slptime = gsd->gsc_slptime;
-}
-
-void
-gsched_setrq(gsd)
-	struct gsched *gsd;
-{
-	setrq(gsd->gsc_proc);
-}
-
-void
-gsched_remrq(gsd)
-	struct gsched *gsd;
-{
-	remrq(gsd->gsc_proc);
-}
-
-struct proc *
-gsched_getrq(gsd)
-	struct gsched *gsd;
-{
-	return (getrq(gsd->gsc_proc));
+	cfs->cfs_proc = p;
+	cfs->cfs_pri = p->p_pri;
+	cfs->cfs_cpu = p->p_cpu;
+	cfs->cfs_time = p->p_time;
+	cfs->cfs_slptime = p->p_slptime;
 }
 
 /* return edf scheduler */
@@ -149,10 +129,10 @@ gsched_timediff(time, estcpu)
 	return (diff);
 }
 
-/* Negative means a higher priority weighting */
+/* a priority weighting, dependent on various factors */
 int
 gsched_setpriweight(pwp, pwd, pwr, pws)
-	float pwp, pwd, pwr, pws;
+	int pwp, pwd, pwr, pws;
 {
 	int pw_pri = PW_FACTOR(pwp, PW_PRIORITY);
 	int pw_dead = PW_FACTOR(pwd, PW_DEADLINE);
@@ -165,35 +145,15 @@ gsched_setpriweight(pwp, pwd, pwr, pws)
 }
 
 void
-gsched_lock(gsd)
-	struct gsched *gsd;
+gsched_lock(p)
+	struct proc *p;
 {
-	simple_lock(gsd->gsc_lock);
+	simple_lock(p->p_gsched->gsc_lock);
 }
 
 void
-gsched_unlock(gsd)
-	struct gsched *gsd;
+gsched_unlock(p)
+	struct proc *p;
 {
-	simple_unlock(gsd->gsc_lock);
-}
-
-/* Greatest Common Divisor: Unused */
-int
-gsched_gcd(a, b)
-	int a, b;
-{
-	if(b == 0) {
-		return (a);
-	} else {
-		return (gcd(b, a % b));
-	}
-}
-
-/* Least Common Multiple: Unused */
-int
-gsched_lcm(a, b)
-	int a, b;
-{
-	return ((a * b) / gcd(a, b));
+	simple_unlock(p->p_gsched->gsc_lock);
 }

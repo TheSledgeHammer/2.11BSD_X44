@@ -39,26 +39,12 @@ struct gsched {
 	struct proc 		*gsc_rqlink; 	/* pointer to linked list of running processes */
 	struct proc 		*gsc_proc;		/* pointer to proc */
 
-	struct lock			*gsc_lock;
-
     struct gsched_edf	*gsc_edf;		/* earliest deadline first scheduler */
     struct gsched_cfs 	*gsc_cfs;		/* completely fair scheduler */
 
-    /* Proc Specific */
-    u_int				gsc_estcpu;	 	/* Time averaged value of p_cpticks. */
-    int					gsc_cpticks;	/* Ticks of cpu time. */
+    struct lock			*gsc_lock;
 
-    u_char				gsc_pri;		/* Process  priority, negative is high */
-    u_char				gsc_cpu;		/* cpu usage for scheduling */
-    u_char				gsc_time;		/* resident time for scheduling */
-    char 				gsc_slptime; 	/* sleep time in secs */
-
-    /* Global Scheduler Specific */
     u_char  			gsc_priweight;	/* priority weighting (calculated from various factors) */
-
-    char 				gsc_release;	/* Time till release from current block */
-    char 				gsc_remtime; 	/* time remaining */
-
 };
 
 /* Scheduler Domains: Hyperthreading, multi-cpu, etc... */
@@ -74,25 +60,18 @@ enum priw {
 	 PW_SLEEP = 25,			/* Current Processes Sleep Time */
 };
 
-//#define PW_PRIORITY 25      /* Current Processes Priority */
-//#define PW_DEADLINE 25      /* Current Processes Deadline Time */
-//#define PW_RELEASE  25      /* Current Processes Release Time */
-//#define PW_SLEEP    25      /* Current Processes Sleep Time */
+#define PW_FACTOR(w, f)  ((int)(w) / 100 * (f)) /* w's weighting for a given factor(f)(above) */
 
-#define PW_FACTOR(w, f)  ((float)(w) / 100 * (f)) /* w's weighting for a given factor(f)(above) */
-
-void 				gsched_init( struct proc *);
-void				gsched_edf_setup(struct gsched *);
-void				gsched_cfs_setup(struct gsched *);
-void 				gsched_setrq(struct gsched *);
-void 				gsched_remrq(struct gsched *);
-struct proc			*gsched_getrq(struct gsched *);
+void 				gsched_init(struct proc *);
+void				gsched_edf_setup(struct gsched *, struct proc *);
+void				gsched_cfs_setup(struct gsched *, struct proc *);
+struct proc			*gsched_proc(struct gsched *);
 struct gsched_edf 	*gsched_edf(struct gsched *);
 struct gsched_cfs 	*gsched_cfs(struct gsched *);
 u_char				gsched_timediff(u_char, u_int);
-int					gsched_setpriweight(float pwp, float pwd, float pwr, float pws);
-void				gsched_lock(struct gsched *);
-void				gsched_unlock(struct gsched *);
+int					gsched_setpriweight(int pwp, int pwd, int pwr, int pws);
+void				gsched_lock(struct proc *);
+void				gsched_unlock(struct proc *);
 
 #endif /* _SYS_GSCHED_H */
 /*
@@ -111,9 +90,3 @@ slack = (deadline - time) - cost
 
 remtime = calculated at the end of CFS run queue
 */
-
-
-/* Load average structure. */
-
-/* calculations for digital decay to forget 90% of usage in 5*loadav sec */
-//#define	loadfactor(loadav)	(2 * (loadav))

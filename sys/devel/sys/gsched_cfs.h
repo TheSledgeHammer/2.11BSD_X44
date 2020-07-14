@@ -78,6 +78,9 @@ struct gsched_cfs {
 
 extern struct sched_cfs cfs_runq[CFQS];  		/* cfs run-queues */
 
+unsigned int cfs_decay(struct proc *, u_char);
+unsigned int cfs_update(struct proc *, u_char);
+
 /*
 left side = tasks with the gravest need for the processor (lowest virtual runtime) are stored toward the left side of the tree
 right side = tasks with the least need of the processor (highest virtual runtimes) are stored toward the right side of the tree

@@ -18,7 +18,7 @@
 
 #include <machine/cpu.h>
 
-#define	SQSIZE	128						/* Must be power of 2 */
+#define	SQSIZE	16						/* Must be power of 2 */
 #define	HASH(x)	(((int)x >> 5) & (SQSIZE - 1))
 #define	SCHMAG	8/10
 #define	PPQ		(128 / NQS)				/* priorities per queue */
@@ -74,8 +74,8 @@ schedcpu(arg)
 		if (a > 255)
 			a = 255;
 		p->p_cpu = a;
-		p->p_estcpu = min(p->p_cpu, UCHAR_MAX);
-		resetpri(p);
+		//p->p_estcpu = min(p->p_cpu, UCHAR_MAX);
+		//resetpri(p);
 		if (p->p_pri >= PUSER) {
 			currpri = setpri(p);
 			if((p != curproc) &&
@@ -123,8 +123,8 @@ updatepri(p)
 /*
  * General sleep call "borrowed" from 4.4BSD - the 'wmesg' parameter was
  * removed due to data space concerns.  Sleeps at most timo/hz seconds
- * 0 means no timeout). NOTE: timeouts in 2.11BSD use a signed int and 
- * thus can be at most 32767 'ticks' or about 540 seconds in the US with 
+ * 0 means no timeout). NOTE: timeouts in 2.11BSD use a signed int and
+ * thus can be at most 32767 'ticks' or about 540 seconds in the US with
  * 60hz power (~650 seconds if 50hz power is being used).
  *
  * If 'pri' includes the PCATCH flag signals are checked before and after
@@ -177,7 +177,7 @@ tsleep(ident, priority, timo)
  * CURSIG as we could stop there and a wakeup or a SIGCONT (or both) could
  * occur while we were stopped.  A SIGCONT would cause us to be marked SSLEEP
  * without resuming us thus we must be ready for sleep when CURSIG is called.
- * If the wakeup happens while we're stopped p->p_wchan will be 0 upon 
+ * If the wakeup happens while we're stopped p->p_wchan will be 0 upon
  * return from CURSIG.
 */
 	if	(catch)
@@ -245,15 +245,15 @@ endtsleep(p)
 }
 
 /*
- * Give up the processor till a wakeup occurs on chan, at which time the 
+ * Give up the processor till a wakeup occurs on chan, at which time the
  * process enters the scheduling queue at priority pri.
  *
  * This routine was rewritten to use 'tsleep'.  The  old behaviour of sleep
  * being interruptible (if 'pri>PZERO') is emulated by setting PCATCH and
- * then performing the 'longjmp' if the return value of 'tsleep' is 
+ * then performing the 'longjmp' if the return value of 'tsleep' is
  * ERESTART.
- * 
- * Callers of this routine must be prepared for premature return, and check 
+ *
+ * Callers of this routine must be prepared for premature return, and check
  * that the reason for sleeping has gone away.
  */
 void
@@ -268,7 +268,7 @@ sleep(chan, pri)
 
 	u->u_error = tsleep(chan, priority, 0);
 /*
- * sleep does not return anything.  If it was a non-interruptible sleep _or_ 
+ * sleep does not return anything.  If it was a non-interruptible sleep _or_
  * a successful/normal sleep (one for which a wakeup was done) then return.
 */
 	if	((priority & PCATCH) == 0 || (u->u_error == 0))
@@ -658,8 +658,8 @@ resetpri(p)
 	int curpri = setpri(p);
 	newpri = PUSER + p->p_estcpu / 4 + 2 * p->p_nice;
 	newpri = min(newpri, MAXPRI);
+	p->p_cpu = newpri;
 	if (newpri < curpri) {
-		p->p_cpu = newpri;
 		updatepri(p);
 		//need_resched();
 	}
