@@ -492,6 +492,360 @@ ufml_access(ap)
 	return (0);
 }
 
+int
+ufml_remove(ap)
+	struct vop_remove_args /* {
+		struct vnode *a_dvp;
+		struct vnode *a_vp;
+		struct componentname *a_cnp;
+	} */ *ap;
+{
+	int error;
+
+#ifdef LOFS_DIAGNOSTIC
+	printf("ufml_remove(ap->a_vp = %x->%x)\n", ap->a_dvp, UFMLVPTOLOWERVP(ap->a_dvp));
+#endif
+
+	PUSHREF(xdvp, ap->a_dvp);
+	VREF(ap->a_dvp);
+	PUSHREF(xvp, ap->a_vp);
+	VREF(ap->a_vp);
+
+	error = VOP_REMOVE(ap->a_dvp, ap->a_vp, ap->a_cnp);
+
+	POP(xvp, ap->a_vp);
+	vrele(ap->a_vp);
+	POP(xdvp, ap->a_dvp);
+	vrele(ap->a_dvp);
+
+	return (error);
+}
+
+/*
+ * vp is this.
+ * ni_dvp is the locked parent of the target.
+ * ni_vp is NULL.
+ */
+int
+ufml_link(ap)
+	struct vop_link_args /* {
+		struct vnode *a_vp;
+		struct vnode *a_tdvp;
+		struct componentname *a_cnp;
+	} */ *ap;
+{
+	int error;
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_link(ap->a_tdvp = %x->%x)\n", ap->a_vp, UFMLVPTOLOWERVP(ap->a_vp));
+#endif
+
+	PUSHREF(xdvp, ap->a_vp);
+	VREF(ap->a_vp);
+
+	error = VOP_LINK(ap->a_vp, UFMLVPTOLOWERVP(ap->a_tdvp), ap->a_cnp);
+
+	POP(xdvp, ap->a_vp);
+	vrele(ap->a_vp);
+
+	return (error);
+}
+
+int
+ufml_rename(ap)
+	struct vop_rename_args  /* {
+		struct vnode *a_fdvp;
+		struct vnode *a_fvp;
+		struct componentname *a_fcnp;
+		struct vnode *a_tdvp;
+		struct vnode *a_tvp;
+		struct componentname *a_tcnp;
+	} */ *ap;
+{
+	struct vnode *fvp, *tvp;
+	struct vnode *tdvp;
+#ifdef notdef
+	struct vnode *fsvp, *tsvp;
+#endif
+	int error;
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_rename(fdvp = %x->%x)\n", ap->a_fdvp, UFMLVPTOLOWERVP(ap->a_fdvp));
+#endif
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_rename - switch source dvp\n");
+#endif
+	/*
+	 * Switch source directory to point to lofsed vnode
+	 */
+	PUSHREF(fdvp, ap->a_fdvp);
+	VREF(ap->a_fdvp);
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_rename - switch source vp\n");
+#endif
+	/*
+	 * And source object if it is lofsed...
+	 */
+	fvp = ap->a_fvp;
+	if (fvp && fvp->v_op == ufml_vnodeops) {
+		ap->a_fvp = UFMLVPTOLOWERVP(fvp);
+		VREF(ap->a_fvp);
+	} else {
+		fvp = 0;
+	}
+
+#ifdef notdef
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_rename - switch source start vp\n");
+#endif
+	/*
+	 * And source startdir object if it is lofsed...
+	 */
+	fsvp = fndp->ni_startdir;
+	if (fsvp && fsvp->v_op == ufml_vnodeops) {
+		fndp->ni_startdir = UFMLVPTOLOWERVP(fsvp);
+		VREF(fndp->ni_startdir);
+	} else {
+		fsvp = 0;
+	}
+#endif
+
+#ifdef LOFS_DIAGNOSTIC
+	printf("ufml_rename - switch target dvp\n");
+#endif
+	/*
+ 	 * Switch target directory to point to lofsed vnode
+	 */
+	tdvp = ap->a_tdvp;
+	if (tdvp && tdvp->v_op == ufml_vnodeops) {
+		ap->a_tdvp = UFMLVPTOLOWERVP(tdvp);
+		VREF(ap->a_tdvp);
+	} else {
+		tdvp = 0;
+	}
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_rename - switch target vp\n");
+#endif
+	/*
+	 * And target object if it is lofsed...
+	 */
+	tvp = ap->a_tvp;
+	if (tvp && tvp->v_op == ufml_vnodeops) {
+		ap->a_tvp = UFMLVPTOLOWERVP(tvp);
+		VREF(ap->a_tvp);
+	} else {
+		tvp = 0;
+	}
+
+#ifdef notdef
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_rename - switch target start vp\n");
+#endif
+	/*
+	 * And target startdir object if it is lofsed...
+	 */
+	tsvp = tndp->ni_startdir;
+	if (tsvp && tsvp->v_op == ufml_vnodeops) {
+		tndp->ni_startdir = UFMLVPTOLOWERVP(fsvp);
+		VREF(tndp->ni_startdir);
+	} else {
+		tsvp = 0;
+	}
+#endif
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_rename - VOP_RENAME(%x, %x, %x, %x)\n",
+		ap->a_fdvp, ap->a_fvp, ap->a_tdvp, ap->a_tvp);
+	vprint("ap->a_fdvp", ap->a_fdvp);
+	vprint("ap->a_fvp", ap->a_fvp);
+	vprint("ap->a_tdvp", ap->a_tdvp);
+	if (ap->a_tvp) vprint("ap->a_tvp", ap->a_tvp);
+	DELAY(16000000);
+#endif
+
+	error = VOP_RENAME(ap->a_fdvp, ap->a_fvp, ap->a_fcnp, ap->a_tdvp, ap->a_tvp, ap->a_tcnp);
+
+	/*
+	 * Put everything back...
+	 */
+
+#ifdef notdef
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_rename - restore target startdir\n");
+#endif
+
+	if (tsvp) {
+		if (tndp->ni_startdir)
+			vrele(tndp->ni_startdir);
+		tndp->ni_startdir = tsvp;
+	}
+#endif
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_rename - restore target vp\n");
+#endif
+
+	if (tvp) {
+		ap->a_tvp = tvp;
+		vrele(ap->a_tvp);
+	}
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_rename - restore target dvp\n");
+#endif
+
+	if (tdvp) {
+		ap->a_tdvp = tdvp;
+		vrele(ap->a_tdvp);
+	}
+
+#ifdef notdef
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_rename - restore source startdir\n");
+#endif
+
+	if (fsvp) {
+		if (fndp->ni_startdir)
+			vrele(fndp->ni_startdir);
+		fndp->ni_startdir = fsvp;
+	}
+#endif
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_rename - restore source vp\n");
+#endif
+
+
+	if (fvp) {
+		ap->a_fvp = fvp;
+		vrele(ap->a_fvp);
+	}
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_rename - restore source dvp\n");
+#endif
+
+	POP(fdvp, ap->a_fdvp);
+	vrele(ap->a_fdvp);
+
+	return (error);
+}
+
+/*
+ * ni_dvp is the locked (alias) parent.
+ * ni_vp is NULL.
+ */
+int
+ufml_mkdir(ap)
+	struct vop_mkdir_args /* {
+		struct vnode *a_dvp;
+		struct vnode **a_vpp;
+		struct componentname *a_cnp;
+		struct vattr *a_vap;
+	} */ *ap;
+{
+	int error;
+	struct vnode *dvp = ap->a_dvp;
+	struct vnode *xdvp;
+	struct vnode *newvp;
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_mkdir(vp = %x->%x)\n", dvp, UFMLVPTOLOWERVP(dvp));
+#endif
+
+	xdvp = dvp;
+	dvp = UFMLVPTOLOWERVP(xdvp);
+	VREF(dvp);
+
+	error = VOP_MKDIR(dvp, &newvp, ap->a_cnp, ap->a_vap);
+
+	if (error) {
+		*ap->a_vpp = NULLVP;
+		vrele(xdvp);
+		return (error);
+	}
+
+	/*
+	 * Make a new lofs node
+	 */
+	/*VREF(dvp);*/
+
+	error = ufml_node_create(dvp->v_mount, dvp, &newvp);
+
+	*ap->a_vpp = newvp;
+
+	return (error);
+}
+
+/*
+ * ni_dvp is the locked parent.
+ * ni_vp is the entry to be removed.
+ */
+ufml_rmdir(ap)
+	struct vop_rmdir_args /* {
+		struct vnode *a_dvp;
+		struct vnode *a_vp;
+		struct componentname *a_cnp;
+	} */ *ap;
+{
+	struct vnode *vp = ap->a_vp;
+	struct vnode *dvp = ap->a_dvp;
+	int error;
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufml_rmdir(dvp = %x->%x)\n", dvp, UFMLVPTOLOWERVP(dvp));
+#endif
+
+	PUSHREF(xdvp, dvp);
+	VREF(dvp);
+	PUSHREF(xvp, vp);
+	VREF(vp);
+
+	error = VOP_RMDIR(dvp, vp, ap->a_cnp);
+
+	POP(xvp, vp);
+	vrele(vp);
+	POP(xdvp, dvp);
+	vrele(dvp);
+
+	return (error);
+}
+
+
+/*
+ * ni_dvp is the locked parent.
+ * ni_vp is NULL.
+ */
+int
+ufml_symlink(ap)
+	struct vop_symlink_args /* {
+		struct vnode *a_dvp;
+		struct vnode **a_vpp;
+		struct componentname *a_cnp;
+		struct vattr *a_vap;
+		char *a_target;
+	} */ *ap;
+{
+	int error;
+
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("VOP_SYMLINK(vp = %x->%x)\n", ap->a_dvp, UFMLVPTOLOWERVP(ap->a_dvp));
+#endif
+
+	PUSHREF(xdvp, ap->a_dvp);
+	VREF(ap->a_dvp);
+
+	error = VOP_SYMLINK(ap->a_dvp, ap->a_vpp, ap->a_cnp, ap->a_vap, ap->a_target);
+
+	POP(xdvp, ap->a_dvp);
+	vrele(ap->a_dvp);
+
+	return (error);
+}
+
 /*
  * We need to process our own vnode lock and then clear the
  * interlock flag as it applies only to our vnode, not the
@@ -556,12 +910,48 @@ ufml_unlock(ap)
 }
 
 int
+ufml_islocked(ap)
+	struct vop_islocked_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
+{
+
+	struct vnode *targetvp = UFMLVPTOLOWERVP(ap->a_vp);
+	if (targetvp)
+		return (VOP_ISLOCKED(targetvp));
+	return (0);
+}
+
+/*
+ * Anyone's guess...
+ */
+int
+ufml_abortop(ap)
+	struct vop_abortop_args /* {
+		struct vnode *a_dvp;
+		struct componentname *a_cnp;
+	} */ *ap;
+{
+	int error;
+
+	PUSHREF(xdvp, ap->a_dvp);
+
+	error = VOP_ABORTOP(ap->a_dvp, ap->a_cnp);
+
+	POP(xdvp, ap->a_dvp);
+
+	return (error);
+}
+
+int
 ufml_inactive(ap)
 	struct vop_inactive_args /* {
 		struct vnode *a_vp;
 		struct proc *a_p;
 	} */ *ap;
 {
+	struct vnode *targetvp = UFMLVPTOLOWERVP(ap->a_vp);
+
 	/*
 	 * Do nothing (and _don't_ bypass).
 	 * Wait to vrele lowervp until reclaim,
@@ -574,6 +964,10 @@ ufml_inactive(ap)
 	 * like they do in the name lookup cache code.
 	 * That's too much work for now.
 	 */
+	if (targetvp) {
+		vrele(targetvp);
+		VTOUFML(ap->a_vp)->ufml_lowervp = 0;
+	}
 	VOP_UNLOCK(ap->a_vp, 0, ap->a_p);
 	return (0);
 }
@@ -608,8 +1002,11 @@ ufml_print(ap)
 		struct vnode *a_vp;
 	} */ *ap;
 {
-	register struct vnode *vp = ap->a_vp;
+	register struct vnode *vp = UFMLVPTOLOWERVP(ap->a_vp);
 	printf ("\ttag VT_UFMLFS, vp=%x, lowervp=%x\n", vp, UFMLVPTOLOWERVP(vp));
+	if (vp)
+		return (VOP_PRINT(vp));
+	printf("NULLVP\n");
 	return (0);
 }
 
@@ -628,10 +1025,18 @@ ufml_strategy(ap)
 	int error;
 	struct vnode *savedvp;
 
+#ifdef LOFS_DIAGNOSTIC
+	printf("ufml_strategy(vp = %x->%x)\n", ap->a_bp->b_vp, UFMLVPTOLOWERVP(ap->a_bp->b_vp));
+#endif
+
 	savedvp = bp->b_vp;
 	bp->b_vp = UFMLVPTOLOWERVP(bp->b_vp);
 
+	PUSHREF(vp, ap->a_bp->b_vp);
+
 	error = VOP_STRATEGY(bp);
+
+	POP(vp, ap->a_bp->b_vp);
 
 	bp->b_vp = savedvp;
 
@@ -667,16 +1072,26 @@ ufml_bwrite(ap)
  * Global vfs data structures ufml
  */
 struct vnodeops ufml_vnodeops = {
-	.vop_lookup_desc = ufml_lookup,
-	.vop_setattr_desc = ufml_setattr,
-	.vop_getattr_desc = ufml_getattr,
-	.vop_access_desc = ufml_access,
-	.vop_lock_desc = ufml_lock,
-	.vop_unlock_desc = ufml_unlock,
-	.vop_inactive_desc = ufml_inactive,
-	.vop_reclaim_desc = ufml_reclaim,
-	.vop_print_desc = ufml_print,
-	.vop_strategy_desc = ufml_strategy,
-	.vop_bwrite_desc = ufml_bwrite,
-	(struct vnodeops*)NULL, (int(*)())NULL
+		.vop_lookup = 	ufs_lookup,			/* lookup */
+		.vop_create = 	ufs_create,			/* create */
+		.vop_mknod = 	ufs_mknod,			/* mknod */
+		.vop_access = 	ufml_access,		/* access */
+		.vop_getattr = 	ufml_getattr,		/* getattr */
+		.vop_setattr = 	ufml_setattr,		/* setattr */
+		.vop_remove = 	ufml_remove,		/* remove */
+		.vop_link = 	ufml_link,			/* link */
+		.vop_rename =	ufml_rename,		/* rename */
+		.vop_mkdir = 	ufml_mkdir,			/* mkdir */
+		.vop_rmdir = 	ufml_rmdir,			/* rmdir */
+		.vop_symlink = 	ufml_symlink,		/* symlink */
+		.vop_abortop = 	ufml_abortop,		/* abortop */
+		.vop_inactive = ufml_inactive,		/* inactive */
+		.vop_reclaim = 	ufml_reclaim,		/* reclaim */
+		.vop_lock = 	ufml_lock,			/* lock */
+		.vop_unlock = 	ufml_unlock,		/* unlock */
+		.vop_strategy = ufml_strategy,		/* strategy */
+		.vop_print = 	ufml_print,			/* print */
+		.vop_islocked = ufml_islocked,		/* islocked */
+		.vop_bwrite = 	ufml_bwrite,		/* bwrite */
+		(struct vnodeops *)NULL = (int(*)())NULL
 };

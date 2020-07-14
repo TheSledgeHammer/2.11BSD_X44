@@ -39,11 +39,6 @@
  * $Id: lofs_vfsops.c,v 1.9 1992/05/30 10:26:24 jsp Exp jsp $
  */
 
-/*
- * Null Layer
- * (See null_vnops.c for a description of what this does.)
- */
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
@@ -57,7 +52,7 @@
 #include "devel/ufs/ufml/ufml.h"
 
 /*
- * Mount null layer
+ * Mount ufml layer
  */
 int
 ufmlfs_mount(mp, path, data, ndp, p)
@@ -74,7 +69,7 @@ ufmlfs_mount(mp, path, data, ndp, p)
 	struct ufml_mount *xmp;
 	u_int size;
 
-#ifdef NULLFS_DIAGNOSTIC
+#ifdef UFMLFS_DIAGNOSTIC
 	printf("ufmlfs_mount(mp = %x)\n", mp);
 #endif
 
@@ -108,7 +103,7 @@ ufmlfs_mount(mp, path, data, ndp, p)
 	vrele(ndp->ni_dvp);
 	ndp->ni_dvp = NULL;
 
-	xmp = (struct null_mount *) malloc(sizeof(struct null_mount),
+	xmp = (struct ufml_mount *) malloc(sizeof(struct ufml_mount),
 				M_UFSMNT, M_WAITOK);	/* XXX */
 
 	/*
@@ -170,7 +165,7 @@ ufmlfs_start(mp, flags, p)
 	struct proc *p;
 {
 	return (0);
-	/* return VFS_START(MOUNTTONULLMOUNT(mp)->nullm_vfs, flags, p); */
+	/* return VFS_START(MOUNTTOUFMLMOUNT(mp)->ufmlm_vfs, flags, p); */
 }
 
 /*

@@ -197,8 +197,8 @@ struct ufs211_dinode {
 #define	UFS211_IEXEC	100
 
 /* Convert between inode pointers and vnode pointers. */
-#define VTOI(vp)	((struct ufs211_inode *)(vp)->v_data)
-#define ITOV(ip)	((ip)->i_vnode)
+#define UFS211_VTOI(vp)	((struct ufs211_inode *)(vp)->v_data)
+#define UFS211_ITOV(ip)	((ip)->i_vnode)
 
 /* This overlays the fid structure (see fstypes.h). */
 struct ufid {

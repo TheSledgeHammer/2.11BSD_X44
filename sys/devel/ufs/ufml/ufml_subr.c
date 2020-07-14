@@ -48,7 +48,7 @@
 #include <sys/mount.h>
 #include <sys/namei.h>
 #include <sys/malloc.h>
-#include "devel/ufs/ufml/ufml.h"
+#include <devel/ufs/ufml/ufml.h>
 
 #define LOG2_SIZEVNODE 7		/* log2(sizeof struct vnode) */
 #define	NUFMLNODECACHE 16
@@ -71,11 +71,14 @@ u_long ufml_node_hash;
  */
 ufmlfs_init()
 {
-
 #ifdef UFMLFS_DIAGNOSTIC
 	printf("ufmlfs_init\n");		/* printed during system boot */
 #endif
 	ufml_node_hashtbl = hashinit(NUFMLNODECACHE, M_CACHE, &ufml_node_hash);
+	uops_init(); 					/* start ufml vector operations */
+#ifdef UFMLFS_DIAGNOSTIC
+	printf("ufmlfs_uops_init\n");	/* printed during system boot */
+#endif
 }
 
 /*
@@ -97,7 +100,7 @@ null_node_find(mp, lowervp)
 	 * the lower vnode.  If found, the increment the null_node
 	 * reference count (but NOT the lower vnode's VREF counter).
 	 */
-	hd = NULL_NHASH(lowervp);
+	hd = UFML_NHASH(lowervp);
 loop:
 	for (a = hd->lh_first; a != 0; a = a->ufml_hash.le_next) {
 		if (a->ufml_lowervp == lowervp && UFMLTOV(a)->v_mount == mp) {

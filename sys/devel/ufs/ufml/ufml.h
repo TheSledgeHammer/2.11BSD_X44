@@ -49,7 +49,7 @@ struct ufml_mount {
 	struct vnode	*ufmlm_rootvp;	/* Reference to root ufml_node */
 };
 
-#ifdef KERNEL
+//#ifdef KERNEL
 /*
  * A cache of vnode references
  */
@@ -67,6 +67,7 @@ extern int ufml_node_create (struct mount *mp, struct vnode *target, struct vnod
 #define	MOUNTTOUFMLMOUNT(mp) 	((struct ufml_mount *)((mp)->mnt_data))
 #define	VTOUFML(vp) 			((struct ufml_node *)(vp)->v_data)
 #define	UFMLTOV(xp) 			((xp)->ufml_vnode)
+//#define UFMLTOMETA(mp)			((mp)->ufml_meta)
 #ifdef UFMLFS_DIAGNOSTIC
 extern struct vnode *ufml_checkvp (struct vnode *vp, char *fil, int lno);
 #define	UFMLVPTOLOWERVP(vp) 	ufml_checkvp((vp), __FILE__, __LINE__)

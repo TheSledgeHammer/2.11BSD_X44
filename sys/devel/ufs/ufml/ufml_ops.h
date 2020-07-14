@@ -31,15 +31,15 @@
 
 struct ufmlops {
 	int (*uop_archive)(struct ufml_node *up, struct vnode *vp);
-	int (*uop_extract)(struct vnode *vp);
-	int (*uop_compress)(struct vnode *vp);
-	int (*uop_decompress)(struct vnode *vp);
-	int (*uop_encrypt)(struct vnode *vp);
-	int (*uop_decrypt)(struct vnode *vp);
-	int (*uop_snapshot_write)(struct vnode *vp);
-	int (*uop_snapshot_read)(struct vnode *vp);
-	int (*uop_snapshot_delete)(struct vnode *vp);
-	int (*uop_snapshot_commit)(struct vnode *vp);
+	int (*uop_extract)(struct ufml_node *up, struct vnode *vp);
+	int (*uop_compress)(struct ufml_node *up, struct vnode *vp);
+	int (*uop_decompress)(struct ufml_node *up, struct vnode *vp);
+	int (*uop_encrypt)(struct ufml_node *up, struct vnode *vp);
+	int (*uop_decrypt)(struct ufml_node *up, struct vnode *vp);
+	int (*uop_snapshot_write)(struct ufml_node *up, struct vnode *vp);
+	int (*uop_snapshot_read)(struct ufml_node *up, struct vnode *vp);
+	int (*uop_snapshot_delete)(struct ufml_node *up, struct vnode *vp);
+	int (*uop_snapshot_commit)(struct ufml_node *up, struct vnode *vp);
 };
 
 #define UOP_ARCHIVE(up, vp)			(*((up)->ufml_op->uop_archive))(up, vp)

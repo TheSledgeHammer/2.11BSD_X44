@@ -40,12 +40,12 @@
 
 #include <miscfs/specfs/specdev.h>
 
-#include "vfs/ufs211/ufs211_dir.h"
-#include "vfs/ufs211/ufs211_extern.h"
-#include "vfs/ufs211/ufs211_fs.h"
-#include "vfs/ufs211/ufs211_inode.h"
-#include "vfs/ufs211/ufs211_mount.h"
-#include "vfs/ufs211/ufs211_quota.h"
+#include "ufs211/ufs211_dir.h"
+#include "ufs211/ufs211_extern.h"
+#include "ufs211/ufs211_fs.h"
+#include "ufs211/ufs211_inode.h"
+#include "ufs211/ufs211_mount.h"
+#include "ufs211/ufs211_quota.h"
 
 struct vfsops ufs211_vfsops = {
 		ufs211_mount,
@@ -237,7 +237,6 @@ ufs211_statfs(mp, sbp, p)
 	u->u_error = statfs1(mp, uap->buf);
 }
 
-
 /*
  * 'ufs_sync' is the routine which syncs a single filesystem.  This was
  * created to replace 'update' which 'unmount' called.  It seemed silly to
@@ -341,7 +340,7 @@ ufs211_vptofh(vp, fhp)
 	register struct ufs211_inode *ip;
 	register struct ufid *ufhp;
 
-	ip = VTOI(vp);
+	ip = UFS211_VTOI(vp);
 	ufhp = (struct ufid *)fhp;
 	ufhp->ufid_len = sizeof(struct ufid);
 	ufhp->ufid_ino = ip->i_number;

@@ -66,4 +66,6 @@ enum ufml_enctype { UFML_TWOFISH };
 #define UFMLTOMFS(vp)	(VTOMFS(vp))		/* MFS */
 #define UFMLTOLFS(vp)	(VTOI(vp)->i_lfs)	/* LFS */
 
+#define UFMLTOUFS211(vp) (UFS211_VTOI(vp))	/* UFS211 */
+
 #endif /* UFS_UFML_META_H_ */

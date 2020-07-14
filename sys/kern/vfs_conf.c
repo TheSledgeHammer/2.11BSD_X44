@@ -60,6 +60,9 @@ extern	struct vfsops msdos_vfsops;
 extern	struct vfsops lofs_vfsops;
 extern	struct vfsops nfs_vfsops;
 //extern	int nfs_mountroot();
+extern	struct vfsops ufml_vfsops;
+extern	struct vfsops ufs211_vfsops;
+
 /*
  * Set up the filesystem operations for vnodes.
  */
@@ -103,6 +106,16 @@ static struct vfsconf vfsconflist[] = {
 	/* Sun-compatible Network Filesystem */
 #ifdef NFS
 	{ &nfs_vfsops, "nfs", 2, 0, 0, nfs_mountroot, NULL },
+#endif
+
+	/* UFML Filesystem  */
+#ifdef UFML
+	{ &ufml_vfsops, "ufml", 16, 0, 0, NULL, NULL }
+#endif
+
+	/* 2.11BSD UFS Filesystem  */
+#ifdef UFS211
+	{ &ufs211_vfsops, "ufs211", 17, 0, MNT_LOCAL, NULL, NULL }
 #endif
 };
 

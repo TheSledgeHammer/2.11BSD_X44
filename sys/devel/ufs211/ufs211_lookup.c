@@ -80,7 +80,7 @@ ufs211_lookup(ap)
 	slotoffset = -1;
 	*vpp = NULL;
 	vdp = ap->a_dvp;
-	dp = VTOI(vdp);
+	dp = UFS211_VTOI(vdp);
 	lockparent = flags & LOCKPARENT;
 	wantparent = flags & (LOCKPARENT | WANTPARENT);
 	docache = 	(flags  & NOCACHE) ^ NOCACHE;
@@ -118,7 +118,7 @@ ufs211_lookup(ap)
 		 * an explaination of the locking protocol.
 		 */
 		pdp = vdp;
-		dp = VTOI(*vpp);
+		dp = UFS211_VTOI(*vpp);
 		vdp = *vpp;
 		vpid = vdp->v_id;
 		if (pdp == vdp) { /* lookup on "." */
@@ -148,7 +148,7 @@ ufs211_lookup(ap)
 		if (error == vn_lock(pdp, LK_EXCLUSIVE, p))
 			return (error);
 		vdp = pdp;
-		dp = VTOI(pdp);
+		dp = UFS211_VTOI(pdp);
 		*vpp = NULL;
 	}
 
@@ -433,7 +433,7 @@ notfound:
 		 */
 		if ((dp->i_mode & UFS211_ISVTX) && cred->cr_uid != 0
 				&& cred->cr_uid != dp->i_uid && tdp->v_type != VLNK
-				&& VTOI(tdp)->i_uid != cred->cr_uid) {
+				&& UFS211_VTOI(tdp)->i_uid != cred->cr_uid) {
 			vput(tdp);
 			return (EPERM);
 		}
@@ -524,7 +524,7 @@ ufs211_dirbad(ip, offset, how)
 	char *how;
 {
 	struct mount *mp;
-	mp = ITOV(ip)->v_mount;
+	mp = UFS211_ITOV(ip)->v_mount;
 	printf("%s: bad dir I=%u off %ld: %s\n", ip->i_fs->fs_fsmnt, ip->i_number, offset, how);
 	if ((mp->mnt_stat.f_flags & MNT_RDONLY) == 0)
 		panic("bad dir");
@@ -587,7 +587,7 @@ ufs211_direnter(ip, dirp, dvp, cnp)
 	if ((cnp->cn_flags & SAVENAME) == 0)
 		panic("direnter: missing name");
 #endif
-	dp = VTOI(dvp);
+	dp = UFS211_VTOI(dvp);
 	newentrysize = DIRSIZ(ep);
 
 	ep->d_ino = ip->i_number;
@@ -729,7 +729,7 @@ ufs211_dirremove(dvp, cnp)
 	register struct buf *bp;
 	struct ufs211_direct *ep;
 
-	dp = VTOI(dvp);
+	dp = UFS211_VTOI(dvp);
 
 	if (cnp->cn_flags & DOWHITEOUT) {
 		/*
@@ -778,7 +778,7 @@ ufs211_dirrewrite(dp, ip, cnp)
 {
 	struct buf *bp;
 	struct ufs211_direct *ep;
-	struct vnode *vdp = ITOV(dp);
+	struct vnode *vdp = UFS211_ITOV(dp);
 
 	if (u->u_error == VOP_BLKATOFF(vdp, (ufs211_off_t)dp->i_offset, (char **)&ep, &bp)) {
 		return (u->u_error);

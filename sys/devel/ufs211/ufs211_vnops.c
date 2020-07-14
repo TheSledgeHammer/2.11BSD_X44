@@ -207,7 +207,7 @@ int
 ufs211_open(ap)
 	struct vop_open_args *ap;
 {
-	if ((VTOI(ap->a_vp)->di_flags & APPEND) && (ap->a_mode & (FWRITE | O_APPEND)) == FWRITE)
+	if ((UFS211_VTOI(ap->a_vp)->di_flags & APPEND) && (ap->a_mode & (FWRITE | O_APPEND)) == FWRITE)
 		return (EPERM);
 	return (0);
 }
@@ -217,7 +217,7 @@ ufs211_close(ap)
 	struct vop_close_args *ap;
 {
 	register struct vnode *vp = ap->a_vp;
-	register struct ufs211_inode *ip = VTOI(vp);
+	register struct ufs211_inode *ip = UFS211_VTOI(vp);
 
 	simple_lock(&vp->v_interlock);
 	if (vp->v_usecount > 1)
@@ -244,7 +244,7 @@ ufs211_access(ap)
 	struct vop_access_args *ap;
 {
 	struct vnode *vp = ap->a_vp;
-	register struct ufs211_inode *ip = VTOI(vp);
+	register struct ufs211_inode *ip = UFS211_VTOI(vp);
 	int mode;
 	register m;
 	register gid_t *gp;
@@ -316,7 +316,7 @@ ufs211_getattr(ap)
 	struct vop_getattr_args *ap;
 {
 	register struct vnode *vp = ap->a_vp;
-	register struct ufs211_inode *ip = VTOI(vp);
+	register struct ufs211_inode *ip = UFS211_VTOI(vp);
 	register struct vattr *vap = ap->a_vap;
 
 	ITIMES(ip, &time, &time);
@@ -362,7 +362,7 @@ ufs211_setattr(ap)
 {
 	struct vattr *vap = ap->a_vap;
 	struct vnode *vp = ap->a_vp;
-	struct ufs211_inode *ip = VTOI(vp);
+	struct ufs211_inode *ip = UFS211_VTOI(vp);
 	struct timeval atimeval, mtimeval;
 	int error;
 
@@ -500,7 +500,7 @@ ufs211_lock(ap)
 {
 	struct vnode *vp = ap->a_vp;
 
-	return (lockmgr(&VTOI(vp)->i_lock, ap->a_flags, &vp->v_interlock, ap->a_p));
+	return (lockmgr(&UFS211_VTOI(vp)->i_lock, ap->a_flags, &vp->v_interlock, ap->a_p));
 }
 
 /*
@@ -512,7 +512,7 @@ ufs211_unlock(ap)
 {
 	struct vnode *vp = ap->a_vp;
 
-	return (lockmgr(&VTOI(vp)->i_lock, ap->a_flags | LK_RELEASE, &vp->v_interlock, ap->a_p));
+	return (lockmgr(&UFS211_VTOI(vp)->i_lock, ap->a_flags | LK_RELEASE, &vp->v_interlock, ap->a_p));
 }
 
 int
@@ -547,7 +547,7 @@ int
 ufs211_advlock(ap)
 	struct vop_advlock_args *ap;
 {
-	struct ufs211_inode *ip = VTOI(ap->a_vp);
+	struct ufs211_inode *ip = UFS211_VTOI(ap->a_vp);
 	return lf_advlock(ap, &ip->i_lockf, ip->i_size);
 }
 
@@ -626,7 +626,7 @@ ufs211_mknod(ap)
 
 	if (u->u_error == ufs211_makeinode(MAKEIMODE(vap->va_type, vap->va_mode), ap->a_dvp, vpp, ap->a_cnp))
 		return (u->u_error);
-	ip = VTOI(*vpp);
+	ip = UFS211_VTOI(*vpp);
 	ip->i_flag |= IN_ACCESS | IN_CHANGE | IN_UPDATE;
 	if (vap->va_rdev != VNOVAL) {
 		/*
@@ -676,7 +676,7 @@ ufs211_truncate(ap)
 	struct vop_truncate_args *ap;
 {
 	register struct vnode *vp = ap->a_vp;
-	register struct ufs211_inode *ip =  VTOI(vp);
+	register struct ufs211_inode *ip =  UFS211_VTOI(vp);
 
 	return (0);
 }
@@ -705,7 +705,7 @@ ufs211fifo_read(ap)
 	/*
 	 * Set access flag.
 	 */
-	VTOI(ap->a_vp)->i_flag |= IN_ACCESS;
+	UFS211_VTOI(ap->a_vp)->i_flag |= IN_ACCESS;
 	return (VOPARGS(ap, vop_read));
 }
 
@@ -718,7 +718,7 @@ ufs211fifo_write(ap)
 	/*
 	 * Set update and change flags.
 	 */
-	VTOI(ap->a_vp)->i_flag |= IN_CHANGE | IN_UPDATE;
+	UFS211_VTOI(ap->a_vp)->i_flag |= IN_CHANGE | IN_UPDATE;
 	return (VOPARGS(ap, vop_write));
 }
 
@@ -728,7 +728,7 @@ ufs211fifo_close(ap)
 {
 	extern struct fifo_vnodeops;
 	struct vnode *vp = ap->a_vp;
-	struct ufs211_inode *ip = VTOI(vp);
+	struct ufs211_inode *ip = UFS211_VTOI(vp);
 
 	simple_lock(&vp->v_interlock);
 	if (ap->a_vp->v_usecount > 1)
@@ -754,7 +754,7 @@ ufs_vinit(mntp, specops, fifoops, vpp)
 	struct vnode *vp, *nvp;
 
 	vp = *vpp;
-	ip = VTOI(vp);
+	ip = UFS211_VTOI(vp);
 	switch (vp->v_type = IFTOVT(ip->i_mode)) {
 	case VCHR:
 	case VBLK:
@@ -806,7 +806,7 @@ ufs211_makeinode(mode, dvp, vpp, cnp)
 	struct vnode *tvp;
 	int error;
 
-	pdir = VTOI(dvp);
+	pdir = UFS211_VTOI(dvp);
 
 #ifdef DIAGNOSTIC
 	if ((cnp->cn_flags & HASBUF) == 0)
@@ -821,7 +821,7 @@ ufs211_makeinode(mode, dvp, vpp, cnp)
 		vput(dvp);
 		return (error);
 	}
-	ip = VTOI(tvp);
+	ip = UFS211_VTOI(tvp);
 	ip->i_gid = pdir->i_gid;
 	if ((mode & UFS211_IFMT) == UFS211_IFLNK)
 		ip->i_uid = pdir->i_uid;
