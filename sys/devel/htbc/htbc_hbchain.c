@@ -28,56 +28,105 @@
  * @(#)htbc_hbchain.c	1.00
  */
 
-/* Merge into vfs_htbc when complete
- * Hashed Blockchain:
- * - Create a Version/ Snapshot (with Timestamp & Hash) of the current HTBC tree location before committing the write to LFS.
- */
-
 #include <devel/htbc/htbc.h>
 #include <devel/htbc/htbc_htree.h>
+#include <sys/user.h>
 
-CIRCLEQ_HEAD(hbchain_head, hbchain);
-struct hbchain {
-	struct hbchain_head			hc_header;
-	CIRCLEQ_ENTRY(hbchain)		hc_entries;
-	uint32_t					hc_version;
-	uint32_t					hc_timestamp;
-	uint32_t					hc_hash;
-};
+//flush, biodone, truncate
 
-static uint32_t
-get_hash(struct hbchain *hch)
+/*
+ * Convert the logical block number of a file to its physical block number
+ * on the disk within ext4 extents.
+ */
+int
+htbc_bmapext(struct vnode *vp, int32_t bn, int64_t *bnp, int *runp, int *runb)
 {
-	return hch->hc_hash;
-}
+	struct htbc_hi_mfs *fs;
+	struct htbc_inode *ip;
+	struct htbc_extent *ep;
+	struct htbc_extent_path path = { .ep_bp = NULL };
+	daddr_t lbn;
+	int error = 0;
 
-static uint32_t
-get_timestamp(struct hbchain *hch)
-{
-	return hch->hc_timestamp;
-}
+	ip = VTOHTI(vp);
+	fs = ip->hi_mfs;
+	lbn = bn;
 
-static uint32_t
-get_version(struct hbchain *hch)
-{
-	return hch->hc_version;
+	/* XXX: Should not initialize on error? */
+	if (runp != NULL)
+		*runp = 0;
+
+	if (runb != NULL)
+		*runb = 0;
+
+	htbc_ext_find_extent(fs, ip, lbn, &path);
+	if (path.ep_is_sparse) {
+		*bnp = -1;
+		if (runp != NULL)
+			*runp = path.ep_sparse_ext.e_len - (lbn - path.ep_sparse_ext.e_blk)
+					- 1;
+		if (runb != NULL)
+			*runb = lbn - path.ep_sparse_ext.e_blk;
+	} else {
+		if (path.ep_ext == NULL) {
+			error = EIO;
+			goto out;
+		}
+		ep = path.ep_ext;
+		*bnp = fsbtodb(fs,
+				lbn - ep->e_blk
+						+ (ep->e_start_lo | (daddr_t) ep->e_start_hi << 32));
+
+		if (*bnp == 0)
+			*bnp = -1;
+
+		if (runp != NULL)
+			*runp = ep->e_len - (lbn - ep->e_blk) - 1;
+		if (runb != NULL)
+			*runb = lbn - ep->e_blk;
+	}
+
+out:
+	if (path.ep_bp != NULL) {
+		brelse(path.ep_bp, 0);
+	}
+
+	return (error);
 }
 
 static void
-set_hash(struct hbchain *hch, uint32_t hash)
+htbc_doio_accounting(struct vnode *devvp, int flags)
 {
-	hch->hc_hash = hash;
+
 }
 
-static void
-set_timestamp(struct hbchain *hch, uint32_t timestamp)
+static int
+htbc_doio(data, len, devvp, pbn, flags)
+	void *data;
+	size_t len;
+	struct vnode *devvp;
+	daddr_t pbn;
+	int flags;
 {
-	hch->hc_timestamp = timestamp;
-}
+	struct buf *bp;
+	int error;
 
-static void
-set_version(struct hbchain *hch, uint32_t version)
-{
-	hch->hc_version = version;
-}
+	KASSERT(devvp->v_type == VBLK);
 
+	htbc_doio_accounting(devvp, flags);
+
+	bp = getiobuf(devvp, TRUE);
+	bp->b_flags = flags;
+	//bp->b_cflags |= BC_BUSY;	/* mandatory, asserted by biowait() */
+	bp->b_dev = devvp->v_rdev;
+	bp->b_data = data;
+	bp->b_bufsize = bp->b_resid = bp->b_bcount = len;
+	bp->b_blkno = pbn;
+
+	VOP_STRATEGY(bp);
+
+	error = biowait(bp);
+	putiobuf(bp);
+
+	return error;
+}

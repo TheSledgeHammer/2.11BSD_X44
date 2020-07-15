@@ -15,10 +15,10 @@
 #include <sys/conf.h>
 #include <sys/uio.h>
 
-#include "vfs/ufs211/ufs211_dir.h"
-#include "vfs/ufs211/ufs211_extern.h"
-#include "vfs/ufs211/ufs211_fs.h"
-#include "vfs/ufs211/ufs211_inode.h"
+#include "ufs211/ufs211_dir.h"
+#include "ufs211/ufs211_extern.h"
+#include "ufs211/ufs211_fs.h"
+#include "ufs211/ufs211_inode.h"
 
 /*
  * Bmap defines the structure of file system storage
@@ -29,7 +29,7 @@
  * for use in read-ahead.
  */
 ufs211_daddr_t
-bmap(ip, bn, rwflg, flags)
+ufs211_bmap1(ip, bn, rwflg, flags)
 	register struct ufs211_inode *ip;
 	ufs211_daddr_t bn;
 	int rwflg, flags;
@@ -158,5 +158,5 @@ bmap(ip, bn, rwflg, flags)
 			brelse(bp);
 	}
 	rablock = ra;
-	return(nb);
+	return (nb);
 }

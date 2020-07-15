@@ -31,29 +31,14 @@
 #include "devel/ufs/ufml/ufml_meta.h"
 #include "devel/ufs/ufml/ufml_extern.h"
 
-/* Check encryption types to see if the encryption algorithm is supported */
 int
-ufml_check_encrypt(vp, type)
-	struct vnode *vp;
-	enum ufml_enctype type;
+ufml_encrypt()
 {
-	struct ufml_metadata *meta = VTOUFML(vp)->ufml_meta;
-
-	meta->ufml_filesystem = UFML_TWOFISH;
-
-	if (type != UFML_TWOFISH) {
-		return (1);
-	}
-
 	return (0);
 }
 
-ufml_encrypt()
-{
-
-}
-
+int
 ufml_decrypt()
 {
-
+	return (0);
 }

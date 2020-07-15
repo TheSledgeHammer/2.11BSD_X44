@@ -30,51 +30,14 @@
 #include "devel/ufs/ufml/ufml_meta.h"
 #include "devel/ufs/ufml/ufml_extern.h"
 
-/* Check compression types to see if the compression format is supported */
 int
-ufml_check_compression(vp, type)
-	struct vnode *vp;
-	enum ufml_comptype type;
-{
-	int error;
-	struct ufml_metadata *meta = VTOUFML(vp)->ufml_meta;
-
-	switch (type) {
-	case UFML_GZIP:
-		meta->ufml_compress = UFML_GZIP;
-		error = 0;
-		break;
-	case UFML_LZIP:
-		meta->ufml_compress = UFML_LZIP;
-		error = 0;
-		break;
-	case UFML_LZMA:
-		meta->ufml_compress = UFML_LZMA;
-		error = 0;
-		break;
-	case UFML_XZ:
-		meta->ufml_compress = UFML_XZ;
-		error = 0;
-		break;
-	default:
-		meta->ufml_compress = UFML_BZIP2;
-		error = 0;
-		break;
-	}
-
-	if (error != 0) {
-		return (1);
-	}
-
-	return (error);
-}
-
 ufml_compress()
 {
-
+	return (0);
 }
 
+int
 ufml_decompress()
 {
-
+	return (0);
 }

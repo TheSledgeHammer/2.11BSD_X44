@@ -216,7 +216,7 @@ dkcksum(lp)
 */
 
 #define	RAWPART	2	/* 'c' */  /* XXX */
-
+/*
 int
 dkoverlapchk(openmask, dev, label, name)
 	int	openmask;
@@ -233,7 +233,6 @@ dkoverlapchk(openmask, dev, label, name)
 	register struct partition *pp;
 
 	if ((openmask & partmask) == 0 && part != RAWPART) {
-		//mapseg5(label, LABELDESC);
 		pp = &lp->d_partitions[part];
 		start = pp->p_offset;
 		end = pp->p_offset + pp->p_size;
@@ -246,10 +245,10 @@ dkoverlapchk(openmask, dev, label, name)
 				log(LOG_WARNING, "%s%d%c: overlaps open part (%c)\n", name,
 						unit, part + 'a', i + 'a');
 		}
-		//normalseg5();
 	}
 	return (0);
 }
+*/
 
 /*
  * It was noticed that the ioctl processing of disklabels was the same
@@ -274,9 +273,7 @@ ioctldisklabel(dev, cmd, data, flag, disk, strat)
 	 * Copy in mapped out label to the local copy on the stack.  We're in the
 	 * high kernel at this point so saving the mapping is not necessary.
 	 */
-	//mapseg5(disk->dk_label, LABELDESC);
-	bcopy((struct disklabel*) SEG5, lp, sizeof(*lp));
-	//normalseg5();
+	bcopy((struct disklabel*) disk->dk_label, lp, sizeof(*lp));
 
 	switch (cmd) {
 	case DIOCGDINFO:
@@ -310,9 +307,7 @@ ioctldisklabel(dev, cmd, data, flag, disk, strat)
 		 * update the partition tables (which are resident in the kernel).
 		 */
 		if (error == 0) {
-			//mapseg5(disk->dk_label, LABELDESC);
-			bcopy(lp, (struct disklabel*) SEG5, sizeof(*lp));
-			//normalseg5();
+			bcopy(lp, (struct disklabel*) disk->dk_label, sizeof(*lp));
 			bcopy(&lp->d_partitions, &disk->dk_parts, sizeof(lp->d_partitions));
 		}
 		return (error);
@@ -327,9 +322,7 @@ ioctldisklabel(dev, cmd, data, flag, disk, strat)
 		 * Copy to external label.  Ah - need to also update the kernel resident
 		 * partition tables!
 		 */
-		//mapseg5(disk->dk_label, LABELDESC);
-		bcopy(lp, (struct disklabel*) SEG5, sizeof(*lp));
-		//normalseg5();
+		bcopy(lp, (struct disklabel*) disk->dk_label, sizeof(*lp));
 		bcopy(&lp->d_partitions, &disk->dk_parts, sizeof(lp->d_partitions));
 
 		/*

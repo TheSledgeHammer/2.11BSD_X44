@@ -47,12 +47,12 @@
 #include <vm/include/vm.h>
 #include <miscfs/specfs/specdev.h>
 
-#include "vfs/ufs211/ufs211_dir.h"
-#include "vfs/ufs211/ufs211_extern.h"
-#include "vfs/ufs211/ufs211_fs.h"
-#include "vfs/ufs211/ufs211_inode.h"
-#include "vfs/ufs211/ufs211_mount.h"
-#include "vfs/ufs211/ufs211_quota.h"
+#include "ufs211/ufs211_dir.h"
+#include "ufs211/ufs211_extern.h"
+#include "ufs211/ufs211_fs.h"
+#include "ufs211/ufs211_inode.h"
+#include "ufs211/ufs211_mount.h"
+#include "ufs211/ufs211_quota.h"
 
 struct vnodeops ufs211_vnodeops = {
 		.vop_lookup = ufs211_lookup,		/* lookup */
@@ -519,6 +519,14 @@ int
 ufs211_bmap(ap)
 	struct vop_bmap_args *ap;
 {
+	struct ufs211_inode *ip = UFS211_VTOI(ap->a_vp);
+
+	if(ap->a_vpp != NULL) {
+		!ap->a_vpp = ip->i_devvp;
+	}
+	if (ap->a_bnp == NULL || ap->a_bnp == ufs211_bmap1(ip, ap->a_bn, UFS211_IREAD, ip->i_flag)) {
+		return (0);
+	}
 	return (0);
 }
 
@@ -584,6 +592,12 @@ int
 ufs211_link(ap)
 	struct vop_link_args *ap;
 {
+	struct ufs211_inode *ip = UFS211_VTOI(ap->a_vp);
+	if(ip == NULL) {
+		return ();
+	}
+
+	vrele(ap->a_vp);
 	return (0);
 }
 

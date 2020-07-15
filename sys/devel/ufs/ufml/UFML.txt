@@ -1,16 +1,24 @@
-UFS / FFS / MFS / LFS (UFML FS): A Modular Super Filesystem 
-- Archive, Content Address Based
-- Checksums (on Archive)
-- Encryption
-- Compression
-- Snapshots
+UFML FS (UFS / FFS / MFS / LFS): 
+Modular Filesystem Layer For Content Address Based Storage
+Inspired from Plan 9's Fossil & Venti Filesystems.
 
-LOFS/NULLFS: (Stack Filesystem)
-UFML: (Base on LOFS/NULLFS)
-- UFML Optional
-- Implement lower & upper layers in UFML
-	- Allow for stacked mounts
-	- Lower Layer = UFS/FFS/MFS/LFS (Only)
-	- Upper Layer = UFML
-- Mounts designated file location (predefined or set)
-	- Must be an existing UFS/FFS/MFS/LFS filesystem
+UFML:
+- LOFS/NULLFS Based
+- UFML Upper layer:
+	- 
+	- Union mounts?
+	- Features: Format Support
+		- Archive: tar, cpio, ar
+		- Checksums:
+		- Encryption: twofish
+		- Compression: bzip2, gzip, lzip, lzma, xz
+		- Snapshots: 
+- UFML Lower Layer: (Support)
+	- UFS
+	- FFS
+	- MFS
+	- LFS 
+	
+Design Objectives of UFML:
+- A modular filesystem layer that can provide additional features to UFS, FFS, MFS & LFS.
+- Allow the interaction between one or more of these filesystems. In a similar way to how Fossil & Venti work on Plan 9. With one filesystem being the store for another.

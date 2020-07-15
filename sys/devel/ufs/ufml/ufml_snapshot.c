@@ -30,22 +30,26 @@
 #include "devel/ufs/ufml/ufml_meta.h"
 #include "devel/ufs/ufml/ufml_extern.h"
 
+int
 ufml_snapshot_write()
 {
-
+	return (0);
 }
 
+int
 ufml_read_snapshot_read()
 {
-
+	return (0);
 }
 
+int
 ufml_snapshot_commit()
 {
-
+	return (0);
 }
 
+int
 ufml_snapshot_delete()
 {
-
+	return (0);
 }

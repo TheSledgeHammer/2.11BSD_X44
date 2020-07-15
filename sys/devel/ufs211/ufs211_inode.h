@@ -5,7 +5,7 @@
  *
  *	@(#)inode.h	1.4 (2.11BSD GTE) 1995/12/24
  */
-#include "vfs/ufs211/ufs211_dir.h"
+#include "ufs211/ufs211_dir.h"
 
 /*
  * The I node is the focus of all file activity in UNIX.
@@ -47,7 +47,7 @@ struct ufs211_inode {
 	struct	 ufs211_fs 		*i_fs;					/* file sys associated with this inode */
 	struct	 lockf 			*i_lockf;				/* Head of byte-level lock list. */
 	struct	 lock 			i_lock;					/* Inode lock. */
-	struct 	ufs211_dquot	i_dquot;				/* dquotas */
+	struct 	 ufs211_dquot	i_dquot;				/* dquotas */
 	u_quad_t 				i_modrev;				/* Revision level for NFS lease. */
 
 	ufs211_doff_t	  		i_endoff;				/* End of useful stuff in directory. */

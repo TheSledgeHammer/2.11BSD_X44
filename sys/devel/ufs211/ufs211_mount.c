@@ -19,12 +19,12 @@
 #include <sys/disklabel.h>
 #include <sys/ioctl.h>
 
-#include "vfs/ufs211/ufs211_dir.h"
-#include "vfs/ufs211/ufs211_extern.h"
-#include "vfs/ufs211/ufs211_fs.h"
-#include "vfs/ufs211/ufs211_inode.h"
-#include "vfs/ufs211/ufs211_mount.h"
-#include "vfs/ufs211/ufs211_quota.h"
+#include "ufs211/ufs211_dir.h"
+#include "ufs211/ufs211_extern.h"
+#include "ufs211/ufs211_fs.h"
+#include "ufs211/ufs211_inode.h"
+#include "ufs211/ufs211_mount.h"
+#include "ufs211/ufs211_quota.h"
 
 void
 smount()
@@ -143,11 +143,9 @@ mount_updname(fs, on, from, lenon, lenfrom)
 	bcopy(on, fs->fs_fsmnt, sizeof (fs->fs_fsmnt) - 1);
 	mp = ((int)fs - offsetof(mp, mp->m_filsys));
 	xmp = (struct ufs211_xmount *) rmalloc(xmp, sizeof(struct ufs211_xmount *));
-	//mapseg5(mp->m_extern, XMOUNTDESC);
 	bzero(xmp, sizeof (struct xmount));
 	bcopy(on, xmp->xm_mnton, lenon);
 	bcopy(from, xmp->xm_mntfrom, lenfrom);
-	//normalseg5();
 }
 
 /* this routine has races if running twice */

@@ -11,10 +11,10 @@
 #include <sys/mount.h>
 #include <sys/kernel.h>
 #include <sys/buf.h>
-#include "vfs/ufs211/ufs211_dir.h"
-#include "vfs/ufs211/ufs211_fs.h"
-#include "vfs/ufs211/ufs211_inode.h"
-#include "vfs/ufs211/ufs211_quota.h"
+#include "ufs211/ufs211_dir.h"
+#include "ufs211/ufs211_fs.h"
+#include "ufs211/ufs211_inode.h"
+#include "ufs211/ufs211_quota.h"
 
 typedef	struct fblk *FBLKP;
 

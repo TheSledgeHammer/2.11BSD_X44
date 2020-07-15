@@ -156,6 +156,18 @@ struct disksort_stats {
 	 * multiple of the sector size.
 	 */
 
+/* encoding of disk minor numbers, should be elsewhere... but better
+ * here than in ufs_disksubr.c
+ *
+ * Note: the controller number in bits 6 and 7 of the minor device are NOT
+ *	 removed.  It is the responsibility of the driver to extract or mask
+ *	 these bits.
+*/
+
+#define dkunit(dev)			(minor(dev) >> 3)
+#define dkpart(dev)			(minor(dev) & 07)
+#define dkminor(unit, part)	(((unit) << 3) | (part))
+
 #ifdef KERNEL
 extern	int disk_count;			/* number of disks in global disklist */
 

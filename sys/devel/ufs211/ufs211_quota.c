@@ -15,11 +15,11 @@
 #include <sys/user.h>
 #include <sys/param.h>
 
-#include "vfs/ufs211/ufs211_quota.h"
-#include "vfs/ufs211/ufs211_extern.h"
-#include "vfs/ufs211/ufs211_fs.h"
-#include "vfs/ufs211/ufs211_inode.h"
-#include "vfs/ufs211/ufs211_mount.h"
+#include "ufs211/ufs211_quota.h"
+#include "ufs211/ufs211_extern.h"
+#include "ufs211/ufs211_fs.h"
+#include "ufs211/ufs211_inode.h"
+#include "ufs211/ufs211_mount.h"
 
 #ifdef QUOTA
 

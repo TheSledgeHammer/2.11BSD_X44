@@ -13,11 +13,11 @@
 #include <sys/mount.h>
 #include <sys/kernel.h>
 #include <sys/buf.h>
-#include "vfs/ufs211/ufs211_fs.h"
-#include "vfs/ufs211/ufs211_inode.h"
-#include "vfs/ufs211/ufs211_mount.h"
-#include "vfs/ufs211/ufs211_quota.h"
-#include "vfs/ufs211/ufs211_extern.h"
+#include "ufs211/ufs211_fs.h"
+#include "ufs211/ufs211_inode.h"
+#include "ufs211/ufs211_mount.h"
+#include "ufs211/ufs211_quota.h"
+#include "ufs211/ufs211_extern.h"
 
 /*
  * Flush all the blocks associated with an inode.

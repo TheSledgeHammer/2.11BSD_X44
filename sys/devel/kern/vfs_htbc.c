@@ -68,7 +68,12 @@ struct htbc_dealloc {
 
 LIST_HEAD(htbc_ino_head, htbc_ino);
 struct htbc {
-	CIRCLEQ_ENTRY(hbchain) 		*ht_bc_entry;
+	CIRCLEQ_ENTRY(htbc) 		hc_entries;
+	uint32_t					ht_version;
+	uint32_t					ht_timestamp;
+	uint32_t					ht_hash;
+
+
 	struct vnode 				*ht_devvp;
 	struct mount 				*ht_mount;
 
@@ -86,9 +91,17 @@ struct htbc {
 	TAILQ_HEAD(, htbc_entry) 	ht_entries;
 };
 
+CIRCLEQ_HEAD(htbc_hchain_head, htbc);
+struct htbc_hchain {
+	struct htbc_hchain_head		hc_header;
+	uint32_t					hc_version;
+	uint32_t					hc_timestamp;
+	uint32_t					hc_hash;
+};
+
 static struct htbc_dealloc 		*htbc_dealloc;
 static struct htbc_entry 		*htbc_entry;
-static struct htbc_hbchain 		*htbc_hbchain;
+static struct htbc_hchain 		*htbc_hchain;
 
 struct htbc_ino {
 	LIST_ENTRY(htbc_ino) 		hti_hash;
@@ -101,7 +114,8 @@ htbc_init()
 {
 	&htbc_entry = (struct htbc_entry *) malloc(sizeof(struct htbc_entry), M_HTBC, NULL);
 	&htbc_dealloc = (struct htbc_dealloc *) malloc(sizeof(struct htbc_dealloc), M_HTBC, NULL);
-	&htbc_hbchain = (struct hbchain *) malloc(sizeof(struct hbchain), M_HTBC, NULL);
+	&htbc_hchain = (struct htbc_hchain *) malloc(sizeof(struct htbc_hchain), M_HTBC, NULL);
+	CIRCLEQ_INIT(htbc_hchain->hc_header);
 }
 
 void
@@ -109,7 +123,7 @@ htbc_fini()
 {
 	FREE(&htbc_entry, M_HTBC);
 	FREE(&htbc_dealloc, M_HTBC);
-	FREE(&htbc_hbchain, M_HTBC);
+	FREE(&htbc_hchain, M_HTBC);
 }
 
 int
@@ -137,6 +151,93 @@ htbc_write()
 }
 
 /****************************************************************/
+/* HTBC htree chain */
+
+void
+htbc_hchain_insert_head(struct htbc_hchain *hch, struct htbc *ht, uint32_t hash, uint32_t timestamp, uint32_t version)
+{
+	htbc_hchain_set_hash(hch, ht, hash);
+	htbc_hchain_set_timestamp(hch, ht, timestamp);
+	htbc_hchain_set_version(hch, ht, version);
+
+	CIRCLEQ_INSERT_HEAD(hch->hc_header, ht, hc_entries);
+}
+
+void
+htbc_hchain_insert_tail(struct htbc_hchain *hch, struct htbc *ht, uint32_t hash, uint32_t timestamp, uint32_t version)
+{
+	htbc_hchain_set_hash(hch, hash);
+	htbc_hchain_set_timestamp(hch, timestamp);
+	htbc_hchain_set_version(hch, version);
+
+	CIRCLEQ_INSERT_TAIL(hch->hc_header, ht, hc_entries);
+}
+
+/* search next hchain entry by hash */
+struct htbc *
+htbc_hchain_search_next(struct htbc_hchain *hch, struct htbc *ht)
+{
+	CIRCLEQ_FOREACH(ht, hch->hc_header, hc_entries) {
+		if(CIRCLEQ_NEXT(ht, hc_entries)->ht_hash == htbc_hchain_get_hash(hch)) {
+			return (ht);
+		}
+	}
+	return (NULL);
+}
+
+/* search previous hchain entry by hash  */
+struct htbc *
+htbc_hchain_search_prev(struct htbc_hchain *hch, struct htbc *ht)
+{
+	CIRCLEQ_FOREACH(ht, hch->hc_header, hc_entries) {
+		if(CIRCLEQ_PREV(ht, hc_entries)->ht_hash == htbc_hchain_get_hash(hch)) {
+			return (ht);
+		}
+	}
+	return (NULL);
+}
+
+static uint32_t
+htbc_hchain_get_hash(struct htbc_hchain *hch)
+{
+	return hch->hc_hash;
+}
+
+static uint32_t
+htbc_hchain_get_timestamp(struct htbc_hchain *hch)
+{
+	return hch->hc_timestamp;
+}
+
+static uint32_t
+htbc_hchain_get_version(struct htbc_hchain *hch)
+{
+	return hch->hc_version;
+}
+
+static void
+htbc_hchain_set_hash(struct htbc_hchain *hch, struct htbc *ht, uint32_t hash)
+{
+	hch->hc_hash = hash;
+	ht->ht_hash = hch->hc_hash;
+}
+
+static void
+htbc_hchain_set_timestamp(struct htbc_hchain *hch, struct htbc *ht, uint32_t timestamp)
+{
+	hch->hc_timestamp = timestamp;
+	ht->ht_timestamp = hch->hc_timestamp;
+}
+
+static void
+htbc_hchain_set_version(struct htbc_hchain *hch, struct htbc *ht, uint32_t version)
+{
+	hch->hc_version = version;
+	ht->ht_version = hch->hc_version;
+}
+
+/****************************************************************/
+/* HTBC Inode */
 
 void
 htbc_register_inode(struct htbc *ht, ino_t ino, mode_t mode)
@@ -155,7 +256,7 @@ htbc_unregister_inode(struct htbc *ht, ino_t ino, mode_t mode)
 }
 
 /****************************************************************/
-
+/* HTBC Block */
 /*
  * Return buffer with the contents of block "offset" from the beginning of
  * directory "ip".  If "res" is non-zero, fill it in with a pointer to the
