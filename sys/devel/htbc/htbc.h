@@ -119,7 +119,9 @@ struct htbc_hi_mfs {
     int8_t	        			hi_uhash;				/* if hash should be signed, 0 if not */
 	int32_t	        			hi_bsize;				/* block size */
 	int32_t 					hi_bshift;				/* ``lblkno'' calc of logical blkno */
+	int32_t 					hi_bmask;				/* ``blkoff'' calc of blk offsets */
 	int64_t 					hi_qbmask;				/* ~fs_bmask - for use with quad size */
+	int32_t						hi_fsbtodb;				/* fsbtodb and dbtofsb shift constant */
     struct htbc_inode_ext 		hi_ext;
 };
 
@@ -229,6 +231,7 @@ struct htbc_extent_path *htbc_ext_find_extent(struct htbc_hi_mfs *fs, struct htb
 
 /****************************************************************/
 /* Generic HTBC functions */
+
 void 	htbc_init(void);
 int 	htbc_start(struct htbc **);
 int 	htbc_stop(struct htbc *, int);
@@ -241,6 +244,8 @@ void 	htbc_unregister_inode(struct htbc *, ino_t, mode_t);
 int 	htbc_write(void *, size_t, struct vnode *, daddr_t);
 int 	htbc_read(void *, size_t, struct vnode *, daddr_t);
 
+
+#define	htbc_fsbtodb(fs, b)  		((daddr_t)(b) << (fs)->hi_fsbtodb)
 /* calculates (loc % fs->hi_bsize) */
 #define htbc_blkoff(fs, loc)	 	((loc) & (fs)->hi_qbmask)
 /* calculates (loc / fs->hi_bsize) */

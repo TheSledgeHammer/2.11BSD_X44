@@ -73,7 +73,7 @@ htbc_bmapext(struct vnode *vp, int32_t bn, int64_t *bnp, int *runp, int *runb)
 			goto out;
 		}
 		ep = path.ep_ext;
-		*bnp = fsbtodb(fs,
+		*bnp = htbc_fsbtodb(fs,
 				lbn - ep->e_blk
 						+ (ep->e_start_lo | (daddr_t) ep->e_start_hi << 32));
 
@@ -92,41 +92,4 @@ out:
 	}
 
 	return (error);
-}
-
-static void
-htbc_doio_accounting(struct vnode *devvp, int flags)
-{
-
-}
-
-static int
-htbc_doio(data, len, devvp, pbn, flags)
-	void *data;
-	size_t len;
-	struct vnode *devvp;
-	daddr_t pbn;
-	int flags;
-{
-	struct buf *bp;
-	int error;
-
-	KASSERT(devvp->v_type == VBLK);
-
-	htbc_doio_accounting(devvp, flags);
-
-	bp = getiobuf(devvp, TRUE);
-	bp->b_flags = flags;
-	//bp->b_cflags |= BC_BUSY;	/* mandatory, asserted by biowait() */
-	bp->b_dev = devvp->v_rdev;
-	bp->b_data = data;
-	bp->b_bufsize = bp->b_resid = bp->b_bcount = len;
-	bp->b_blkno = pbn;
-
-	VOP_STRATEGY(bp);
-
-	error = biowait(bp);
-	putiobuf(bp);
-
-	return error;
 }
