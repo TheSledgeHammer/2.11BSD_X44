@@ -53,8 +53,8 @@
 #include <lib/libkern/libkern.h>
 #include <sys/kenv.h>
 
-#define KENV_SIZE	512	/* Maximum number of environment strings */
-static int	kenv_mvallen = KENV_MVALLEN;
+#define KENV_SIZE			512	/* Maximum number of environment strings */
+static int	kenv_mvallen = 	KENV_MVALLEN;
 
 /* pointer to the config-generated static environment */
 char				*kern_envp;

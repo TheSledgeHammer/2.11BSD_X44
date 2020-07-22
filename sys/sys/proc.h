@@ -133,6 +133,7 @@ struct	proc {
 	struct  k_rusage    p_kru;			/* exit information kernel */
 
 	struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
+	char				*p_name;		/* (: name, optional */
 	struct gsched		*p_gsched;		/* global scheduler */
 };
 

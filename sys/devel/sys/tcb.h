@@ -49,6 +49,8 @@ typedef struct uthread      *uthread_t;
 
 typedef long				tid_t;			/* thread id */
 
+typedef int 				pri_t;			/* priority */
+
 struct tgrp {
 	struct	tgrp 		*tg_hforw;		/* Forward link in hash bucket. */
 	struct	tgrp 		*tg_mem;		/* Pointer to tgrp members. */

@@ -31,7 +31,6 @@
 
 #include "kthread.h"
 #include "uthread.h"
-//#include <sys/queue.h>
 
 /*
  * Two Threadpools:
@@ -73,6 +72,8 @@ struct threadpool_job {
 	struct threadpool_itpc				*job_itc;
 #define job_ktpool						job_itc->itc_ktpool
 #define job_utpool						job_itc->itc_utpool
+#define	job_ktp_thread					job_ktpool.ktp_overseer
+#define	job_utp_thread					job_utpool.utp_overseer
 };
 
 
@@ -90,7 +91,6 @@ struct threadpool_itpc {
 	tid_t								itc_tid;		/* Thread's Thread ID */
 	int 								itc_refcnt;		/* Current Number of entries in pool */
 };
-
 extern struct itc_threadpool itpc;
 
 /* General ITPC */

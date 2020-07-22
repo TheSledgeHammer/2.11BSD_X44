@@ -49,6 +49,8 @@ struct kthread {
 	short 				kt_tid;			/* unique thread id */
 	short 				kt_ptid;		/* thread id of parent */
 
+	u_char				kt_pri;			/* thread  priority, negative is high */
+
 	/* Substructures: */
 	struct pcred 	 	*kt_cred;		/* Thread owner's identity. */
 	struct filedesc 	*kt_fd;			/* Ptr to open files structure. */
@@ -81,12 +83,12 @@ struct kthread {
 #define	kt_session		kt_tgrp->tg_session
 #define	kt_tgid			kt_tgrp->tg_id
 
-/* Locks */
-mutex_t 			kthread_mtx; 		/* mutex lock */
+mutex_t 				kthread_mtx; 	/* mutex lock */
 
 /* Kernel Threadpool Threads */
 TAILQ_HEAD(kthread_head, kthreadpool_thread);
 struct kthreadpool_thread {
+	struct proc							*ktpt_proc;
 	struct kthreads						*ktpt_kthread;				/* kernel threads */
     char				                *ktpt_kthread_savedname;
 	struct kthreadpool					*ktpt_pool;
@@ -106,6 +108,11 @@ struct kthreadpool {
     int 								ktp_active;			/* active thread count */
     int									ktp_inactive;		/* inactive thread count */
 
+#define	KTHREADPOOL_DYING				0x01
+    int									ktp_flags;
+    struct cpu_info						*ktp_cpu;
+    u_char								ktp_pri;			/* priority */
+
     /* Inter Threadpool Communication */
     struct threadpool_itpc				ktp_itc;			/* threadpool ipc ptr */
     boolean_t							ktp_issender;		/* is itc sender */
@@ -117,9 +124,11 @@ struct kthreadpool {
     //flags: send, (verify: success, fail), retry_attempts
 };
 
-extern struct kthread kthread0;
+extern struct kthread 					kthread0;
+extern struct kthreadpool_thread 		ktpool_thread;
+extern mutex_t 							kthreadpool_lock;
 
-/* ITC Functions */
+/* Kernel Thread ITPC */
 extern void kthreadpool_itc_send(struct kthreadpool *, struct threadpool_itpc *);
 extern void kthreadpool_itc_receive(struct kthreadpool *, struct threadpool_itpc *);
 
@@ -131,15 +140,6 @@ int kthread_exit(kthread_t kt);
 int kthread_detach(kthread_t kt);
 int kthread_equal(kthread_t kt1, kthread_t kt2);
 int kthread_kill(kthread_t kt);
-
-/* Kernel Thread Groups */
-extern struct kthread *ktidhash[];		/* In param.c. */
-
-struct kthread 	*ktfind (tid_t);		/* Find kernel thread by id. */
-int	 			leavetgrp(struct kthread *);
-int	 			entertgrp(struct kthread *, tid_t, int);
-void 			fixjobc(struct kthread *, struct tgrp *, int);
-int	 			inferior(struct kthread *);
 
 /* Kernel Thread Mutex */
 int kthread_mutexmgr(mutex_t, u_int, kthread_t);

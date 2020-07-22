@@ -29,10 +29,12 @@
 /* try: an array, to index deadline (example: cpt) */
 /* alternatively make a sorted rb_tree */
 /* p_estcpu equals cfs_decay upon being adding to the cfs run queue */
+#include <sys/cdefs.h>
+#include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/user.h>
 
-#include "sys/gsched_cfs.h"
+#include <sys/gsched_cfs.h>
 
 /*
  * Constants for digital decay and forget:

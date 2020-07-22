@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/malloc.h>
@@ -33,8 +33,8 @@
 #include "devel/sys/mutex.h"
 #include "devel/sys/rwlock.h"
 
-extern struct kthread kthread0;
-extern struct kthreadpool kthreadpool;
+extern struct kthread 		kthread0;
+extern struct kthreadpool 	kthreadpool;
 struct kthread *curkthread = &kthread0;
 
 void
@@ -50,22 +50,7 @@ startkthread(kt)
 
     /* setup kthread mutex manager */
     kthread_mutex_init(kthread_mtx, kt);
-
-    /* Initialize Thread Table  */
-    threadinit();
-    start_kthreadpool(&kthreadpool);
 }
-
-void
-start_kthreadpool(ktpool)
-	struct kthreadpool *ktpool;
-{
-	TAILQ_INIT(ktpool->ktp_idle_threads);
-	if(ktpool == NULL) {
-		MALLOC(ktpool, struct kthreadpool *, sizeof(struct kthreadpool *), M_KTHREADPOOL, M_WAITOK);
-	}
-}
-
 
 int
 kthread_create(p)
@@ -79,7 +64,6 @@ kthread_create(p)
 	}
 	if(kt == NULL) {
 		startkthread(kt);
-
 	}
 }
 

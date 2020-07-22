@@ -39,15 +39,9 @@
 #include <devel/sys/wapbl.h>
 #include <devel/sys/wapbl_ops.h>
 #include <devel/sys/wapbl_replay.h>
-//#include <sys/bitops.h>
 
 #ifdef _KERNEL
 
-//#include <sys/atomic.h>
-//#include <sys/evcnt.h>
-//#include <sys/kauth.h>
-//#include <sys/module.h>
-//#include <sys/mutex.h>
 #include <sys/conf.h>
 #include <sys/malloc.h>
 #include <sys/file.h>

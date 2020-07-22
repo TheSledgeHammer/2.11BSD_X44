@@ -47,6 +47,8 @@ struct uthread {
 	short 				ut_tid;			/* unique thread id */
 	short 				ut_ptid;		/* thread id of parent */
 
+	u_char				ut_pri;			/* thread priority, negative is high */
+
 	/* Substructures: */
 	struct pcred 	 	*ut_cred;		/* Thread owner's identity. */
 	struct filedesc 	*ut_fd;			/* Ptr to open files structure. */
@@ -98,6 +100,8 @@ struct uthreadpool {
     int 								utp_refcnt;			/* total thread count in pool */
     int 								utp_active;			/* active thread count */
     int									utp_inactive;		/* inactive thread count */
+
+    u_char								utp_pri;			/* priority */
 
     /* Inter Threadpool Communication */
     struct threadpool_itpc				utp_itc;			/* threadpool ipc ptr */
