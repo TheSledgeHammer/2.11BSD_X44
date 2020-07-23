@@ -78,6 +78,7 @@ struct uthread {
 
 /* Locks */
 mutex_t 				uthread_mtx; 		/* mutex lock */
+rwlock_t				uthread_rwl;		/* reader-writers lock */
 
 /* User Threadpool Thread */
 TAILQ_HEAD(uthread_head, uthreadpool_thread);
@@ -127,15 +128,6 @@ int uthread_exit(uthread_t ut);
 int uthread_detach(uthread_t ut);
 int uthread_equal(uthread_t ut1, uthread_t ut2);
 int uthread_kill(uthread_t ut);
-
-/* User Thread Group */
-extern struct uthread *utidhash[];		/* In param.c. */
-
-struct uthread 	*utfind (tid_t);		/* Find user thread by id. */
-int				leavetgrp(struct uthread *);
-int				entertgrp(struct uthread *, tid_t, int);
-void			fixjobc(struct uthread *, struct tgrp *, int);
-int				inferior(struct uthread *);
 
 /* User Thread Mutex */
 int uthread_mutexmgr(mutex_t, u_int, uthread_t);

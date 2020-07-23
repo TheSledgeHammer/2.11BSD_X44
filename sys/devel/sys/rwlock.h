@@ -30,8 +30,8 @@
 #define SYS_RWLOCK_H_
 
 #include <sys/lock.h>
-#include "../../sys/mutex.h"
-#include "../../sys/tcb.h"
+#include "sys/mutex.h"
+#include "sys/tcb.h"
 
 /* Reader Writers Lock */
 struct rwlock {
@@ -40,8 +40,10 @@ struct rwlock {
     struct kthread          *rwl_ktlockholder; 	/* Kernel Thread lock holder */
     struct uthread          *rwl_utlockholder;	/* User Thread lock holder */
 
+    struct lock				*rwl_lockp;
     struct mutex			*rwl_mutex;			/* mutex lock */
-    struct simplelock       *rwl_interlock;     /* lock on remaining fields */
+    struct simplelock       *rwl_lnterlock;    	/* lock on remaining fields */
+
     int 					rwl_readercount;	/* lock reader count */
     int						rwl_writercount;	/* lock writer count */
     int					    rwl_waitcount;		/* # of processes sleeping for lock */
@@ -51,12 +53,11 @@ struct rwlock {
     char				    *rwl_wmesg;			/* resource sleeping (for tsleep) */
     int					    rwl_timo;			/* maximum sleep time (for tsleep) */
 
-    tid_t                   rwl_lockholder;
-    struct lock				*rwl_lnterlock;
+    pid_t                   rwl_lockholder;
 };
 
-#define RW_THREAD  			((tid_t) -2)
-#define RW_NOTHREAD    		((tid_t) -1)
+#define RW_THREAD  			LK_THREAD
+#define RW_NOTHREAD    		LK_NOTHREAD
 
 /* These are flags that are passed to the lockmgr routine. */
 #define RW_TYPE_MASK	    0x0FFFFFFF
@@ -88,10 +89,10 @@ struct rwlock {
 void 	rwlock_init(rwlock_t, int, char *, int, u_int);
 
 int 	rwlockstatus(rwlock_t);
-int 	rwlockmgr(__volatile rwlock_t, u_int, tid_t);
+int 	rwlockmgr(__volatile rwlock_t, u_int, pid_t);
 
-int		rwlock_read_held(rwlock_t, tid_t);
-int		rwlock_write_held(rwlock_t, tid_t);
-int		rwlock_lock_held(rwlock_t, tid_t);
+int		rwlock_read_held(rwlock_t, pid_t);
+int		rwlock_write_held(rwlock_t, pid_t);
+int		rwlock_lock_held(rwlock_t, pid_t);
 
 #endif /* SYS_RWLOCK_H_ */

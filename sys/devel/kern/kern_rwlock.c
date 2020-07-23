@@ -41,6 +41,8 @@ rwlock_init(rwl, prio, wmesg, timo, flags)
 	int prio, timo;
 	unsigned int flags;
 {
+	bzero(rwl, sizeof(struct rwlock));
+	simple_lock_init(&rwl->rwl_lnterlock);
 	rwl->rwl_lock = 0;
 	rwl->rwl_flags = flags & RW_EXTFLG_MASK;
 	rwl->rwl_prio = prio;
@@ -49,7 +51,6 @@ rwlock_init(rwl, prio, wmesg, timo, flags)
 	rwl->rwl_lockholder = RW_NOTHREAD;
     rwl->rwl_ktlockholder = NULL;
     rwl->rwl_utlockholder = NULL;
-    simple_lock_init(&rwl->rwl_interlock);
 }
 
 int
@@ -69,15 +70,19 @@ rwlockstatus(rwl)
 
 /* should apply a reader writer lock */
 int
-rwlockmgr(rwl, flags, tid)
+rwlockmgr(rwl, flags, pid)
 	__volatile rwlock_t rwl;
 	unsigned int flags;
-	tid_t tid;
+	pid_t pid;
 {
 	int error;
 	int extflags;
+	struct lock *lkp = rwl->rwl_lockp;
 	error = 0;
 
+	if (!pid) {
+		pid = RW_THREAD;
+	}
 	rwlock_lock(&rwl);
 	if (flags & RW_INTERLOCK) {
 		rwlock_unlock(&rwl);
@@ -86,13 +91,13 @@ rwlockmgr(rwl, flags, tid)
 
 	switch (flags & RW_TYPE_MASK) {
 	case RW_WRITER:
-		if (rwl->rwl_lockholder != tid) {
+		if (rwl->rwl_lockholder != pid) {
 			if ((extflags & RW_NOWAIT)
 					&& (rwl->rwl_flags & (RW_HAVE_READ | RW_WANT_READ | RW_WANT_DOWNGRADE))) {
 				error = EBUSY;
 				break;
 			}
-			ACQUIRE(rwl, error, extflags, rwl->rwl_flags & (RW_HAVE_READ | RW_WANT_READ | RW_WANT_DOWNGRADE));
+			ACQUIRE(lkp, error, extflags, rwl->rwl_flags & (RW_HAVE_READ | RW_WANT_READ | RW_WANT_DOWNGRADE));
 			if (error)
 				break;
 			rwl->rwl_writercount++;
@@ -101,7 +106,7 @@ rwlockmgr(rwl, flags, tid)
 		rwl->rwl_writercount++;
 
 	case RW_DOWNGRADE:
-		if (rwl->rwl_lockholder != tid || rwl->rwl_readercount == 0)
+		if (rwl->rwl_lockholder != pid || rwl->rwl_readercount == 0)
 			panic("rwlockmgr: not holding reader lock");
 		rwl->rwl_writercount += rwl->rwl_readercount;
 		rwl->rwl_readercount = 0;
@@ -112,12 +117,12 @@ rwlockmgr(rwl, flags, tid)
 		break;
 
 	case RW_READER:
-		if (rwl->rwl_lockholder != tid) {
+		if (rwl->rwl_lockholder != pid) {
 			if ((extflags & RW_WAIT) && (rwl->rwl_flags & (RW_HAVE_WRITE | RW_WANT_WRITE | RW_WANT_UPGRADE))) {
 				error = EBUSY;
 				break;
 			}
-			ACQUIRE(rwl, error, extflags, rwl->rwl_flags & (RW_HAVE_WRITE | RW_WANT_WRITE | RW_WANT_UPGRADE));
+			ACQUIRE(lkp, error, extflags, rwl->rwl_flags & (RW_HAVE_WRITE | RW_WANT_WRITE | RW_WANT_UPGRADE));
 			if (error)
 				break;
 			rwl->rwl_readercount++;
@@ -126,7 +131,7 @@ rwlockmgr(rwl, flags, tid)
 		rwl->rwl_readercount++;
 
 	case RW_UPGRADE:
-		if (rwl->rwl_lockholder != tid || rwl->rwl_writercount < 1)
+		if (rwl->rwl_lockholder != pid || rwl->rwl_writercount < 1)
 			panic("rwlockmgr: not holding writer lock");
 		rwl->rwl_readercount += rwl->rwl_writercount;
 		rwl->rwl_writercount = 1;
@@ -151,7 +156,7 @@ rwlock_lock(rwl)
     __volatile rwlock_t rwl;
 {
     if (rwl->rwl_lock == 1) {
-    	simple_lock(&rwl->rwl_interlock);
+    	simple_lock(&rwl->rwl_lnterlock);
     }
 }
 
@@ -160,10 +165,9 @@ rwlock_unlock(rwl)
     __volatile rwlock_t rwl;
 {
     if (rwl->rwl_lock == 0) {
-    	simple_unlock(&rwl->rwl_interlock);
+    	simple_unlock(&rwl->rwl_lnterlock);
     }
 }
-
 
 /* Below is Not the right place for these: Should be in kernel threads and user threads  */
 /*

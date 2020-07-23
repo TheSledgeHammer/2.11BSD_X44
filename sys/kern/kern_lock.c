@@ -49,63 +49,6 @@
  * Locks provide shared/exclusive sychronization.
  */
 
-#ifdef DEBUG
-#define COUNT(p, x) if (p) (p)->p_locks += (x)
-#else
-#define COUNT(p, x)
-#endif
-#if NCPUS > 1
-
-/*
- * For multiprocessor system, try spin lock first.
- *
- * This should be inline expanded below, but we cannot have #if
- * inside a multiline define.
- */
-int lock_wait_time = 100;
-#define PAUSE(lkp, wanted) {						\
-		if (lock_wait_time > 0) {					\
-			int i;									\
-			simple_unlock(&lkp->lk_interlock);		\
-			for (i = lock_wait_time; i > 0; i--) {	\
-				if (!(wanted)) {					\
-					break;							\
-				}									\
-			}										\
-			simple_lock(&lkp->lk_interlock);		\
-		}											\
-		if (!(wanted)) {							\
-			break;									\
-		}											\
-};
-#else /* NCPUS == 1 */
-/*
- * It is an error to spin on a uniprocessor as nothing will ever cause
- * the simple lock to clear while we are executing.
- */
-#define PAUSE(lkp, wanted)
-#endif /* NCPUS == 1 */
-
-#define ACQUIRE(lkp, error, extflags, wanted) {		\
-	PAUSE(lkp, wanted);								\
-	for (error = 0; wanted; ) {						\
-		(lkp)->lk_waitcount++;						\
-		simple_unlock(&(lkp)->lk_interlock);		\
-		error = tsleep((void *)lkp, (lkp)->lk_prio,	\
-		    (lkp)->lk_wmesg, (lkp)->lk_timo);		\
-		simple_lock(&(lkp)->lk_interlock);			\
-		(lkp)->lk_waitcount--;						\
-		if (error) {								\
-			break;									\
-		}											\
-		if ((extflags) & LK_SLEEPFAIL) {			\
-			error = ENOLCK;							\
-			break;									\
-		}											\
-	}												\
-};
-
-
 /* Initialize a lock; required before use. */
 void
 lockinit(lkp, prio, wmesg, timo, flags)
@@ -117,11 +60,15 @@ lockinit(lkp, prio, wmesg, timo, flags)
 {
 	bzero(lkp, sizeof(struct lock));
 	simple_lock_init(&lkp->lk_interlock);
+	lkp->lk_lock = 0;
 	lkp->lk_flags = flags & LK_EXTFLG_MASK;
 	lkp->lk_prio = prio;
 	lkp->lk_timo = timo;
 	lkp->lk_wmesg = wmesg;
-	lkp->lk_lockholder = LK_NOPROC;
+	lkp->lk_lockholder |= LK_NOPROC | LK_NOTHREAD;
+	lkp->lk_prlockholder = NULL;
+    //lkp->lk_ktlockholder = NULL;
+    //lkp->lk_utlockholder = NULL;
 }
 
 /* Determine the status of a lock. */
@@ -160,11 +107,10 @@ lockmgr(lkp, flags, interlkp, p)
 	int extflags;
 
 	error = 0;
-	if (p) {
+	if (p)
 		pid = p->p_pid;
-	} else {
+	else
 		pid = LK_KERNPROC;
-	}
 	simple_lock(&lkp->lk_interlock);
 	if (flags & LK_INTERLOCK) {
 		simple_unlock(interlkp);
@@ -223,7 +169,7 @@ lockmgr(lkp, flags, interlkp, p)
 		 * An alternative would be to fail with EDEADLK.
 		 */
 		lkp->lk_sharecount++;
-		COUNT(p, 1);
+		COUNT(pid, 1);
 		/* fall into downgrade */
 		break;
 
@@ -441,6 +387,59 @@ lockmgr_printinfo(lkp)
 		printf(" with %d pending", lkp->lk_waitcount);
 }
 
+int lock_wait_time = 100;
+void
+pause(lkp, wanted)
+	struct lock *lkp;
+	int wanted;
+{
+	if (lock_wait_time > 0) {
+		int i;
+		simple_unlock(&lkp);
+		for(i = lock_wait_time; i > 0; i--) {
+			if (!(wanted)) {
+				break;
+			}
+		}
+		simple_lock(&lkp);
+	}
+	if (!(wanted)) {
+		break;
+	}
+}
+
+void
+acquire(lkp, error, extflags, wanted)
+	struct lock *lkp;
+	int error, extflags, wanted;
+{
+	pause(lkp, wanted);
+	for (error = 0; wanted; ) {
+		lkp->lk_waitcount++;
+		simple_unlock(&lkp);
+		error = tsleep((void *)lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo);
+		simple_lock(&lkp);
+		lkp->lk_waitcount--;
+		if (error) {
+			break;
+		}
+		if ((extflags) & LK_SLEEPFAIL) {
+			error = ENOLCK;
+			break;
+		}
+	}
+}
+
+void
+count(p, x)
+	struct proc p;
+	short x;
+{
+	if(p) {
+		p->p_locks += x;
+	}
+}
+
 #if defined(DEBUG) && NCPUS == 1
 #include <sys/kernel.h>
 #include <vm/include/vm.h>
@@ -529,5 +528,21 @@ _simple_unlock(alp, id, l)
 	alp->lock_data = 0;
 	if (curproc)
 		curproc->p_simple_locks--;
+}
+
+/* Not yet implemented */
+int
+_simple_timedlock(alp)
+	__volatile struct simplelock *alp;
+{
+	return 0;
+}
+
+/* Not yet implemented */
+int
+_simple_destroy(alp)
+	__volatile struct simplelock *alp;
+{
+    return 0;
 }
 #endif /* DEBUG && NCPUS == 1 */

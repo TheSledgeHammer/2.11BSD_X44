@@ -29,6 +29,7 @@
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/malloc.h>
+#include <sys/lock.h>
 #include "devel/sys/kthread.h"
 #include "devel/sys/mutex.h"
 #include "devel/sys/rwlock.h"
@@ -141,30 +142,30 @@ kthreadpool_itc_recieve(ktpool, itc)
 /* Initialize a Mutex on a kthread
  * Setup up Error flags */
 int
-kthread_mutex_init(mtx, kt)
-    mutex_t mtx;
+kthread_mutex_init(lkp, kt)
+    struct lock *lkp;
     kthread_t kt;
 {
     int error = 0;
-    mutex_init(mtx, mtx->mtx_prio, mtx->mtx_wmesg, mtx->mtx_timo, mtx->mtx_flags);
-    kt->kt_mutex = mtx;
-    mtx->mtx_ktlockholder = kt;
+    lock_init(lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo, lkp->lk_flags);
+    kt->kt_lock = kt;
+    lkp->lk_ktlockholder = kt;
     return (error);
 }
 
 int
-kthread_mutexmgr(mtx, flags, kt)
-    mutex_t mtx;
+kthread_mutexmgr(lkp, flags, kt)
+	struct lock *lkp;
 	u_int flags;
     kthread_t kt;
 {
-    tid_t tid;
+    pid_t pid;
     if (kt) {
-        tid = kt->kt_tid;
+        pid = kt->kt_tid;
     } else {
-        tid = MTX_THREAD;
+        pid = LK_THREAD;
     }
-    return mutexmgr(mtx, flags, tid);
+    return lockmgr(lkp, flags, lkp->lk_interlock, kt->kt_procp);
 }
 
 /* Initialize a rwlock on a kthread
@@ -187,11 +188,11 @@ kthread_rwlockmgr(rwl, flags, kt)
 	u_int flags;
 	kthread_t kt;
 {
-	tid_t tid;
+	pid_t pid;
 	if (kt) {
-		tid = kt->kt_tid;
+		pid = kt->kt_tid;
 	} else {
-		tid = RW_THREAD;
+		pid = LK_THREAD;
 	}
-	return rwlockmgr(rwl, flags, tid);
+	return rwlockmgr(rwl, flags, pid);
 }

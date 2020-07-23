@@ -30,7 +30,7 @@
 #define SYS_KTHREADS_H_
 
 #include <sys/proc.h>
-#include "../../../sys/tcb.h"
+#include "sys/tcb.h"
 
 /* Number of Threads per Process? */
 
@@ -84,6 +84,7 @@ struct kthread {
 #define	kt_tgid			kt_tgrp->tg_id
 
 mutex_t 				kthread_mtx; 	/* mutex lock */
+rwlock_t				kthread_rwl;	/* reader-writers lock */
 
 /* Kernel Threadpool Threads */
 TAILQ_HEAD(kthread_head, kthreadpool_thread);

@@ -51,14 +51,6 @@ typedef long				tid_t;			/* thread id */
 
 typedef int 				pri_t;			/* priority */
 
-struct tgrp {
-	struct	tgrp 		*tg_hforw;		/* Forward link in hash bucket. */
-	struct	tgrp 		*tg_mem;		/* Pointer to tgrp members. */
-	struct	session 	*tg_session;	/* Pointer to session. */
-	tid_t				tg_id;			/* Thread Group id. */
-	int					tg_jobc;		/* # threads qualifying tgrp for job control */
-};
-
 /* stat codes */
 #define TSSLEEP	1		/* sleeping/ awaiting an event */
 #define TSWAIT	2		/* waiting */
@@ -69,8 +61,13 @@ struct tgrp {
 #define TSREADY	7		/* ready */
 #define TSSTART	8		/* start */
 
-
-
+struct tgrp {
+	struct	tgrp 		*tg_hforw;		/* Forward link in hash bucket. */
+	struct	tgrp 		*tg_mem;		/* Pointer to tgrp members. */
+	struct	session 	*tg_session;	/* Pointer to session. */
+	tid_t				tg_id;			/* Thread Group id. */
+	int					tg_jobc;		/* # threads qualifying tgrp for job control */
+};
 
 #define	TIDHSZ							16
 #define	TIDHASH(tid)					(&tidhashtbl[(tid) & tid_hash & (TIDHSZ * ((tid) + tid_hash) - 1)])

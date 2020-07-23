@@ -47,15 +47,21 @@
  */
 
 struct lock {
-    struct	simplelock 	lk_interlock; 		/* lock on remaining fields */
-    u_int				lk_flags;			/* see below */
-    int					lk_sharecount;		/* # of accepted shared locks */
-    int					lk_waitcount;		/* # of processes sleeping for lock */
-    short				lk_exclusivecount;	/* # of recursive exclusive locks */
-    short				lk_prio;			/* priority at which to sleep */
-    char				*lk_wmesg;			/* resource sleeping (for tsleep) */
-    int					lk_timo;			/* maximum sleep time (for tsleep) */
-    pid_t				lk_lockholder;		/* pid of exclusive lock holder */
+	volatile unsigned int   lk_lock;
+
+    struct  proc			*lk_prlockholder;	/* Proc lock holder */
+    struct 	kthread         *lk_ktlockholder; 	/* Kernel Thread lock holder */
+    struct 	uthread         *lk_utlockholder;	/* User Thread lock holder */
+
+    struct	simplelock 		lk_interlock; 		/* lock on remaining fields */
+    u_int					lk_flags;			/* see below */
+    int						lk_sharecount;		/* # of accepted shared locks */
+    int						lk_waitcount;		/* # of processes sleeping for lock */
+    short					lk_exclusivecount;	/* # of recursive exclusive locks */
+    short					lk_prio;			/* priority at which to sleep */
+    char					*lk_wmesg;			/* resource sleeping (for tsleep) */
+    int						lk_timo;			/* maximum sleep time (for tsleep) */
+    pid_t					lk_lockholder;		/* pid of exclusive lock holder */
 };
 
 
@@ -151,14 +157,38 @@ struct lock {
 /*
  * Indicator that no process holds exclusive lock
  */
-#define LK_KERNPROC ((pid_t) -2)
-#define LK_NOPROC ((pid_t) -1)
+#define LK_KERNPROC 	((pid_t) -2)
+#define LK_NOPROC 		((pid_t) -1)
+#define LK_THREAD  		((pid_t) -2)
+#define LK_NOTHREAD    	((pid_t) -1)
 
 struct proc;
 
 void	lockinit (struct lock *, int prio, char *wmesg, int timo, int flags);
 int		lockmgr (__volatile struct lock *, u_int flags, struct simplelock *, struct proc *p);
+//int  	lockmgr(__volatile struct lock *, u_int, struct simplelock *, pid_t);
 int		lockstatus (struct lock *);
+
+extern void	pause(struct lock *, int);
+extern void	acquire(struct lock *, int, int, int);
+extern void	count(struct proc *, short);
+
+#if NCPUS > 1
+#define PAUSE(lkp, wanted)						\
+		pause(lkp, wanted);
+#else /* NCPUS == 1 */
+#define PAUSE(lkp, wanted)
+#endif /* NCPUS == 1 */
+
+#define ACQUIRE(lkp, error, extflags, wanted)	\
+		acquire(lkp, error, extflags, wanted);
+
+#ifdef DEBUG
+#define COUNT(p, x) 							\
+		count(p, x);
+#else
+#define COUNT(p, x)
+#endif
 
 #ifdef DEBUG
 void 	_simple_unlock (__volatile struct simplelock *alp, const char *, int);

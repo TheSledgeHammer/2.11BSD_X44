@@ -40,16 +40,18 @@
 #ifndef SYS_MUTEX_H_
 #define SYS_MUTEX_H_
 
-#include "../../sys/lockmgr.h"
-#include "../../sys/tcb.h"
+#include <sys/lock.h>
+#include "sys/tcb.h"
 
 struct mutex {
-    volatile unsigned int   mtx_lock;
+	volatile u_int   		mtx_lock;
 
     struct kthread          *mtx_ktlockholder; 	/* Kernel Thread lock holder */
     struct uthread          *mtx_utlockholder;	/* User Thread lock holder */
 
+    struct lock				*mtx_lockp;			/* pointer to struct lockmgr */
     struct simplelock 	    *mtx_interlock; 	/* lock on remaining fields */
+
     int					    mtx_sharecount;		/* # of accepted shared locks */
     int					    mtx_waitcount;		/* # of processes sleeping for lock */
     short				    mtx_exclusivecount;	/* # of recursive exclusive locks */
@@ -58,13 +60,11 @@ struct mutex {
     short				    mtx_prio;			/* priority at which to sleep */
     char				    *mtx_wmesg;			/* resource sleeping (for tsleep) */
     int					    mtx_timo;			/* maximum sleep time (for tsleep) */
-    tid_t                   mtx_lockholder;
-
-    struct lockmgr			*mtx_lockp;			/* pointer to struct lockmgr */
+    pid_t                   mtx_lockholder;
 };
 
-#define MTX_THREAD  		((tid_t) -2)
-#define MTX_NOTHREAD    	((tid_t) -1)
+#define MTX_THREAD  		LK_THREAD
+#define MTX_NOTHREAD    	LK_NOTHREAD
 
 /* These are flags that are passed to the lockmgr routine. */
 #define MTX_TYPE_MASK	    0x0FFFFFFF
@@ -102,25 +102,5 @@ int mutex_lock_try(__volatile mutex_t);
 int mutex_timedlock(__volatile mutex_t);
 int mutex_unlock(__volatile mutex_t);
 int mutex_destroy(__volatile mutex_t);
-
-int mutexstatus(mutex_t);
-int mutexmgr(__volatile mutex_t, unsigned int, tid_t);
-
-#if NCPUS > 1
-#define PAUSE(mtx, wanted)						\
-		pause((mtx)->mtx_lockp, wanted);
-#else /* NCPUS == 1 */
-#define PAUSE(mtx, wanted)
-#endif /* NCPUS == 1 */
-
-#define ACQUIRE(mtx, error, extflags, wanted)	\
-		acquire((mtx)->mtx_lockp, error, extflags, wanted);
-
-#ifdef DEBUG
-#define COUNT(p, x) 							\
-		count(p, x);
-#else
-#define COUNT(p, x)
-#endif
 
 #endif /* SYS_MUTEX_H_ */
