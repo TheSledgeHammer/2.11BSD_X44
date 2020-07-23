@@ -169,7 +169,7 @@ lockmgr(lkp, flags, interlkp, p)
 		 * An alternative would be to fail with EDEADLK.
 		 */
 		lkp->lk_sharecount++;
-		COUNT(pid, 1);
+		COUNT(p, 1);
 		/* fall into downgrade */
 		break;
 
