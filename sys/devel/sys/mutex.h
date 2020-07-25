@@ -46,11 +46,14 @@
 struct mutex {
 	volatile u_int   		mtx_lock;
 
+	struct proc				*mtx_prlockholder;	/* Proc lock holder */
     struct kthread          *mtx_ktlockholder; 	/* Kernel Thread lock holder */
     struct uthread          *mtx_utlockholder;	/* User Thread lock holder */
 
-    struct lock				*mtx_lockp;			/* pointer to struct lockmgr */
+    struct lock				*mtx_lockp;			/* pointer to struct lock */
     struct simplelock 	    *mtx_interlock; 	/* lock on remaining fields */
+
+    struct lock_object		*mtx_lockobject;	/* lock object */
 
     int					    mtx_sharecount;		/* # of accepted shared locks */
     int					    mtx_waitcount;		/* # of processes sleeping for lock */
@@ -60,6 +63,7 @@ struct mutex {
     short				    mtx_prio;			/* priority at which to sleep */
     char				    *mtx_wmesg;			/* resource sleeping (for tsleep) */
     int					    mtx_timo;			/* maximum sleep time (for tsleep) */
+
     pid_t                   mtx_lockholder;
 };
 
@@ -67,40 +71,24 @@ struct mutex {
 #define MTX_NOTHREAD    	LK_NOTHREAD
 
 /* These are flags that are passed to the lockmgr routine. */
-#define MTX_TYPE_MASK	    0x0FFFFFFF
-#define MTX_SHARED	        0x00000001	/* shared lock */
-#define MTX_EXCLUSIVE	    0x00000002
-#define MTX_UPGRADE	        0x00000003	/* shared-to-exclusive upgrade */
-#define MTX_EXCLUPGRADE	    0x00000004	/* first shared-to-exclusive upgrade */
-#define MTX_DOWNGRADE	    0x00000005	/* exclusive-to-shared downgrade */
-#define MTX_RELEASE  	    0x00000006	/* release any type of lock */
-#define MTX_DRAIN	        0x00000007	/* wait for all lock activity to end */
+#define MTX_TYPE_MASK	    0x00FFFFFF
 
-/* External lock flags. */
-#define MTX_EXTFLG_MASK	    0x00000070	/* mask of external flags */
-#define MTX_NOWAIT	        0x00000010	/* do not sleep to await lock */
-#define MTX_SLEEPFAIL	    0x00000020	/* sleep, then return failure */
-#define MTX_CANRECURSE	    0x00000040	/* allow recursive exclusive lock */
-#define MTX_REENABLE	    0x00000080	/* lock is be reenabled after drain */
-
-/* Internal lock flags. */
-#define MTX_WANT_UPGRADE	0x00000100	/* waiting for share-to-excl upgrade */
-#define MTX_WANT_EXCL	    0x00000200	/* exclusive lock sought */
-#define MTX_HAVE_EXCL	    0x00000400	/* exclusive lock obtained */
-#define MTX_WAITDRAIN	    0x00000800	/* process waiting for lock to drain */
-#define MTX_DRAINING	    0x00004000	/* lock is being drained */
-#define MTX_DRAINED	        0x00008000	/* lock has been decommissioned */
+/* External Lock flags. */
+#define MTX_EXTFLG_MASK		LK_EXTFLG_MASK	/* mask of external flags */
 
 /* Control flags. */
-#define MTX_INTERLOCK	    0x00010000	/* unlock passed simple lock after getting lk_interlock */
-#define MTX_RETRY			0x00020000	/* vn_lock: retry until locked */
+#define MTX_INTERLOCK	    LK_INTERLOCK	/* unlock passed simple lock after getting lk_interlock */
+#define MTX_RETRY			LK_RETRY		/* vn_lock: retry until locked */
 
 /* Generic Mutex Functions */
+int mutexmgr(mutex_t, int, pid_t);
 void mutex_init(mutex_t, int, char *, int, unsigned int);
-int mutex_lock(__volatile mutex_t);
+void mutex_lock(__volatile mutex_t);
+void mutex_unlock(__volatile mutex_t);
+int mutex_enter(__volatile mutex_t);
+int mutex_exit(__volatile mutex_t);
 int mutex_lock_try(__volatile mutex_t);
 int mutex_timedlock(__volatile mutex_t);
-int mutex_unlock(__volatile mutex_t);
 int mutex_destroy(__volatile mutex_t);
 
 #endif /* SYS_MUTEX_H_ */

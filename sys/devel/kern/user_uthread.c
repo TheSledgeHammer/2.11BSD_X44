@@ -159,7 +159,7 @@ uthread_mutex_init(lkp, ut)
     uthread_t ut;
 {
     int error = 0;
-    lock_init(lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo, lkp->lk_flags);
+    lockinit(lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo, lkp->lk_flags);
     ut->ut_lock = ut;
     lkp->lk_utlockholder = ut;
     return (error);

@@ -42,22 +42,81 @@
 
 /* Initialize a mutex_lock */
 void
-mutex_init(mtx, prio, wmesg, timo, flags)
+mutex_init(mtx, lkp, prio, wmesg, timo, flags)
     mutex_t mtx;
+	struct lock *lkp;
     char *wmesg;
     int prio, timo;
     unsigned int flags;
 {
     bzero(mtx, sizeof(struct mutex));
     simple_lock_init(&mtx->mtx_interlock);
+    mtx->mtx_lockp = lkp;
     mtx->mtx_lock = 0;
     mtx->mtx_flags = flags & MTX_EXTFLG_MASK;
     mtx->mtx_prio = prio;
     mtx->mtx_timo = timo;
     mtx->mtx_wmesg = wmesg;
     mtx->mtx_lockholder = MTX_NOTHREAD;
-    mtx->mtx_ktlockholder = NULL;
-    mtx->mtx_utlockholder = NULL;
+    set_proc_lock(&mtx->mtx_lockp, NULL);
+    set_kthread_lock(&mtx->mtx_lockp, NULL);
+    set_uthread_lock(&mtx->mtx_lockp, NULL);
+}
+
+/* Initialize a mutex_lock */
+mutex_init(mtx, lkp)
+	mutex_t mtx;
+	struct lock *lkp;
+{
+	bzero(mtx, sizeof(mutex_t));
+	mtx->mtx_lockp = lkp;
+    mtx->mtx_lock = lkp->lk_lock;
+    mtx->mtx_flags = lkp->lk_flags;
+    mtx->mtx_prio = lkp->lk_prio;
+    mtx->mtx_timo = lkp->lk_timo;
+    mtx->mtx_wmesg = lkp->lk_wmesg;
+    mtx->mtx_lockholder = lkp->lk_lockholder;
+    set_kthread_lock(&mtx->mtx_lockp, NULL);
+    set_uthread_lock(&mtx->mtx_lockp, NULL);
+	lockinit(lkp, mtx->mtx_prio, mtx->mtx_wmesg, mtx->mtx_timo, mtx->mtx_flags);
+}
+
+int
+mutexmgr(mtx, flags, pid)
+	mutex_t mtx;
+	unsigned int flags;
+	pid_t pid;
+{
+	int error;
+	int extflags;
+	struct lock *lkp = mtx->mtx_lockp;
+	error = 0;
+
+	if (!pid) {
+		pid = MTX_THREAD;
+	}
+	mutex_lock(&mtx);
+	if (flags & MTX_INTERLOCK) {
+		mutex_unlock(&mtx);
+	}
+	extflags = (flags | mtx->mtx_flags) & MTX_EXTFLG_MASK;
+	if(lkp != NULL) {
+		if(get_proc_lock(lkp, pid)) {
+			struct proc *p = get_proc_lock(lkp, pid);
+			return (lockmgr(lkp, flags, mtx->mtx_interlock, p));
+		}
+		if(get_kthread_lock(lkp, pid)) {
+			struct kthread *kt = get_kthread_lock(lkp, pid);
+			return (lockmgr(lkp, flags, mtx->mtx_interlock, kt->kt_procp));
+		}
+		if(get_uthread_lock(lkp, pid)) {
+			struct uthread *ut = get_uthread_lock(lkp, pid);
+			return (lockmgr(lkp, flags, mtx->mtx_interlock, ut->ut_userp->u_procp));
+		}
+	} else {
+		error = EBUSY;
+	}
+	return (error);
 }
 
 void
@@ -69,13 +128,6 @@ mutex_lock(mtx)
     }
 }
 
-int
-mutex_lock_try(mtx)
-    __volatile mutex_t mtx;
-{
-    return (simple_lock_try(&mtx->mtx_interlock));
-}
-
 void
 mutex_unlock(mtx)
     __volatile mutex_t mtx;
@@ -83,6 +135,33 @@ mutex_unlock(mtx)
     if (mtx->mtx_lock == 0) {
     	simple_unlock(&mtx->mtx_interlock);
     }
+}
+
+int
+mutex_enter(mtx)
+	__volatile mutex_t mtx;
+{
+	if(mtx->mtx_lock != 1) {
+		mtx_lock(mtx);
+	}
+	return (0);
+}
+
+int
+mutex_exit(mtx)
+	__volatile mutex_t mtx;
+{
+	if(mtx->mtx_lock != 0) {
+		mtx_unlock(mtx);
+	}
+	return (0);
+}
+
+int
+mutex_lock_try(mtx)
+    __volatile mutex_t mtx;
+{
+    return (simple_lock_try(&mtx->mtx_interlock));
 }
 
 /* Not yet implemented */
@@ -101,77 +180,4 @@ mutex_destroy(mtx)
 {
 	simple_destroy(&mtx->mtx_interlock);
     return 0;
-}
-
-
-void
-set_proc_lock(lkp, p)
-	struct lock *lkp;
-	struct proc *p;
-{
-	lkp->lk_prlockholder = p;
-	if(p == NULL) {
-		lkp->lk_prlockholder = NULL;
-	}
-}
-
-void
-set_kthread_lock(lkp, kt)
-	struct lock *lkp;
-	struct kthread *kt;
-{
-	lkp->lk_ktlockholder = kt;
-	if(kt == NULL) {
-		lkp->lk_ktlockholder = NULL;
-	}
-}
-
-void
-set_uthread_lock(lkp, ut)
-	struct lock *lkp;
-	struct uthread *ut;
-{
-	lkp->lk_utlockholder = ut;
-	if(ut == NULL) {
-		lkp->lk_utlockholder = NULL;
-	}
-}
-
-/* Returns proc if pid matches and lockholder is not null */
-struct proc *
-get_proc_lock(lkp, pid)
-	struct lock *lkp;
-	pid_t pid;
-{
-	struct proc *plk = lkp->lk_prlockholder;
-	if(plk != NULL && plk == pfind(pid)) {
-		return (plk);
-	}
-	return (NULL);
-}
-
-/* Returns kthread if pid matches and lockholder is not null */
-struct kthread *
-get_kthread_lock(lkp, pid)
-	struct lock *lkp;
-	pid_t pid;
-{
-	struct kthread *klk =  lkp->lk_ktlockholder;
-	if(klk != NULL && klk == pfind(pid)) {
-		return (klk);
-	}
-	return (NULL);
-}
-
-/* Returns uthread if pid matches and lockholder is not null */
-struct uthread *
-get_uthread_lock(lkp, pid)
-	struct lock *lkp;
-	pid_t pid;
-{
-	struct uthread *ulk = lkp->lk_utlockholder;
-	if(ulk != NULL && ulk == pfind(pid)) {
-		return (ulk);
-	}
-	return (NULL);
 }

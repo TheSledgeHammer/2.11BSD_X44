@@ -30,19 +30,22 @@
 #define SYS_RWLOCK_H_
 
 #include <sys/lock.h>
-#include "sys/mutex.h"
+#include <sys/mutex.h>
 #include "sys/tcb.h"
 
 /* Reader Writers Lock */
 struct rwlock {
     volatile u_int   		rwl_lock;
 
+    struct proc				*rwl_prlockholder;	/* Proc lock holder */
     struct kthread          *rwl_ktlockholder; 	/* Kernel Thread lock holder */
     struct uthread          *rwl_utlockholder;	/* User Thread lock holder */
 
-    struct lock				*rwl_lockp;
-    struct mutex			*rwl_mutex;			/* mutex lock */
+    struct lock				*rwl_lockp;			/* pointer to lock */
+    struct mutex			*rwl_mutex;			/* pointer to mutex */
     struct simplelock       *rwl_lnterlock;    	/* lock on remaining fields */
+
+    struct lock_object		*rwl_lockobject;	/* lock object */
 
     int 					rwl_readercount;	/* lock reader count */
     int						rwl_writercount;	/* lock writer count */
@@ -83,11 +86,10 @@ struct rwlock {
 #define	RW_NODEBUG			0x10UL				/* LOCKDEBUG disabled */
 
 /* Control flags. */
-#define RW_INTERLOCK		0x00010000			/* unlock passed simple lock after getting lk_interlock */
-#define RW_RETRY			0x00020000			/* vn_lock: retry until locked */
+#define RW_INTERLOCK		LK_INTERLOCK		/* unlock passed simple lock after getting lk_interlock */
+#define RW_RETRY			LK_RETRY			/* vn_lock: retry until locked */
 
 void 	rwlock_init(rwlock_t, int, char *, int, u_int);
-
 int 	rwlockstatus(rwlock_t);
 int 	rwlockmgr(__volatile rwlock_t, u_int, pid_t);
 

@@ -29,9 +29,9 @@
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/lock.h>
-#include "devel/sys/kthread.h"
-#include "devel/sys/rwlock.h"
-#include "devel/sys/uthread.h"
+#include <sys/rwlock.h>
+#include <sys/kthread.h>
+#include <sys/uthread.h>
 
 /* Initialize a rwlock */
 void
@@ -43,12 +43,14 @@ rwlock_init(rwl, prio, wmesg, timo, flags)
 {
 	bzero(rwl, sizeof(struct rwlock));
 	simple_lock_init(&rwl->rwl_lnterlock);
+	//rwl->rwl_lockp = lkp;
 	rwl->rwl_lock = 0;
 	rwl->rwl_flags = flags & RW_EXTFLG_MASK;
 	rwl->rwl_prio = prio;
 	rwl->rwl_timo = timo;
 	rwl->rwl_wmesg = wmesg;
 	rwl->rwl_lockholder = RW_NOTHREAD;
+	rwl->rwl_prlockholder = NULL;
     rwl->rwl_ktlockholder = NULL;
     rwl->rwl_utlockholder = NULL;
 }
@@ -151,6 +153,20 @@ rwlockmgr(rwl, flags, pid)
 	return (error);
 }
 
+/*
+ * Print out information about state of a lock. Used by VOP_PRINT
+ * routines to display ststus about contained locks.
+ */
+void
+rwlockmgr_printinfo(rwl)
+	struct rwlock *rwl;
+{
+	if (rwl->rwl_writercount)
+		printf(" lock type %s: RW_WRITER (count %d)", rwl->rwl_wmesg, rwl->rwl_writercount);
+	if (rwl->rwl_readercount)
+		printf(" lock type %s: RW_READER (count %d)", rwl->rwl_wmesg, rwl->rwl_readercount);
+}
+
 void
 rwlock_lock(rwl)
     __volatile rwlock_t rwl;
@@ -169,7 +185,6 @@ rwlock_unlock(rwl)
     }
 }
 
-/* Below is Not the right place for these: Should be in kernel threads and user threads  */
 /*
  * rw_read_held:
  *

@@ -147,7 +147,7 @@ kthread_mutex_init(lkp, kt)
     kthread_t kt;
 {
     int error = 0;
-    lock_init(lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo, lkp->lk_flags);
+    lockinit(lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo, lkp->lk_flags);
     kt->kt_lock = kt;
     lkp->lk_ktlockholder = kt;
     return (error);

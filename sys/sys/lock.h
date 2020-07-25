@@ -54,13 +54,16 @@ struct lock {
     struct 	uthread         *lk_utlockholder;	/* User Thread lock holder */
 
     struct	simplelock 		lk_interlock; 		/* lock on remaining fields */
-    u_int					lk_flags;			/* see below */
+
     int						lk_sharecount;		/* # of accepted shared locks */
     int						lk_waitcount;		/* # of processes sleeping for lock */
     short					lk_exclusivecount;	/* # of recursive exclusive locks */
+
+    u_int					lk_flags;			/* see below */
     short					lk_prio;			/* priority at which to sleep */
     char					*lk_wmesg;			/* resource sleeping (for tsleep) */
     int						lk_timo;			/* maximum sleep time (for tsleep) */
+
     pid_t					lk_lockholder;		/* pid of exclusive lock holder */
 };
 
@@ -166,8 +169,10 @@ struct proc;
 
 void	lockinit (struct lock *, int prio, char *wmesg, int timo, int flags);
 int		lockmgr (__volatile struct lock *, u_int flags, struct simplelock *, struct proc *p);
-//int  	lockmgr(__volatile struct lock *, u_int, struct simplelock *, pid_t);
 int		lockstatus (struct lock *);
+
+void	set_proc_lock(struct lock *, struct proc *);
+void	get_proc_lock(struct lock *, pid_t);
 
 extern void	pause(struct lock *, int);
 extern void	acquire(struct lock *, int, int, int);

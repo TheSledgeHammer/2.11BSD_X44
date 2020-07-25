@@ -65,10 +65,8 @@ lockinit(lkp, prio, wmesg, timo, flags)
 	lkp->lk_prio = prio;
 	lkp->lk_timo = timo;
 	lkp->lk_wmesg = wmesg;
-	lkp->lk_lockholder |= LK_NOPROC | LK_NOTHREAD;
-	lkp->lk_prlockholder = NULL;
-    //lkp->lk_ktlockholder = NULL;
-    //lkp->lk_utlockholder = NULL;
+	lkp->lk_lockholder = LK_NOPROC;
+	set_proc_lock(lkp, NULL);
 }
 
 /* Determine the status of a lock. */
@@ -438,6 +436,32 @@ count(p, x)
 	if(p) {
 		p->p_locks += x;
 	}
+}
+
+/* Sets proc to lockholder if not null */
+void
+set_proc_lock(lkp, p)
+	struct lock *lkp;
+	struct proc *p;
+{
+	if(p == NULL) {
+		lkp->lk_prlockholder = NULL;
+	} else {
+		lkp->lk_prlockholder = p;
+	}
+}
+
+/* Returns proc if pid matches and lockholder is not null */
+struct proc *
+get_proc_lock(lkp, pid)
+	struct lock *lkp;
+	pid_t pid;
+{
+	struct proc *plk = lkp->lk_prlockholder;
+	if(plk != NULL && plk == pfind(pid)) {
+		return (plk);
+	}
+	return (NULL);
 }
 
 #if defined(DEBUG) && NCPUS == 1
