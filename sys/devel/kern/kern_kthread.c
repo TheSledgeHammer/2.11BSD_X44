@@ -163,7 +163,7 @@ kthread_mutexmgr(lkp, flags, kt)
     if (kt) {
         pid = kt->kt_tid;
     } else {
-        pid = LK_THREAD;
+        pid = LK_KERNPROC;
     }
     return lockmgr(lkp, flags, lkp->lk_interlock, kt->kt_procp);
 }
@@ -192,7 +192,7 @@ kthread_rwlockmgr(rwl, flags, kt)
 	if (kt) {
 		pid = kt->kt_tid;
 	} else {
-		pid = LK_THREAD;
+		pid = LK_KERNPROC;
 	}
 	return rwlockmgr(rwl, flags, pid);
 }

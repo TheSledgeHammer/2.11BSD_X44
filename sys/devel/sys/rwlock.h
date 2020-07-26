@@ -59,8 +59,8 @@ struct rwlock {
     pid_t                   rwl_lockholder;
 };
 
-#define RW_THREAD  			LK_THREAD
-#define RW_NOTHREAD    		LK_NOTHREAD
+#define RW_THREAD  			LK_KERNPROC
+#define RW_NOTHREAD    		LK_NOPROC
 
 /* These are flags that are passed to the lockmgr routine. */
 #define RW_TYPE_MASK	    0x0FFFFFFF

@@ -243,9 +243,9 @@ SIMPLEQ_HEAD(witness_list, witness);
  * witness objects (struct witness *).
  */
 struct witness_hash {
-	struct witness			*wh_array[WITNESS_HASH_SIZE];
-	uint32_t				wh_size;
-	uint32_t				wh_count;
+	struct witness					*wh_array[WITNESS_HASH_SIZE];
+	uint32_t						wh_size;
+	uint32_t						wh_count;
 };
 
 /*

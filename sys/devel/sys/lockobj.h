@@ -68,4 +68,24 @@ struct lock_object {
 struct lock_type {
 	const char				*lt_name;
 };
+
+/* Merge into sys/lock.h */
+struct lock {
+    struct  lock_object		lk_lockobject;	/* lock object */
+};
+
+void lockwitness(struct lock *lkp, const struct lock_type *);
+
+#ifdef WITNESS
+#define __lockwitness(lkp) do {										\
+	static const struct lock_type __lock_type = { .lt_name = #lkp };\
+	__lockwitness((lkp), &__lock_type);								\
+} while (0)
+#else /* WITNESS */
+#define __lockwitness(lkp)		lockwitness((lkp), NULL)
+#endif /* WITNESS */
+
+extern struct lock kernel_lock;
+//extern struct lock sched_lock;
+
 #endif /* SYS_LOCKOBJ_H_ */

@@ -37,32 +37,38 @@
  *	@(#)lock.h	8.12 (Berkeley) 5/19/95
  */
 
-#include <sys/lockobj.h>
+//#include <sys/lock.h>
+#include <devel/sys/lockobj.h>
+#include <devel/sys/witness.h>
+#include <sys/user.h>
 
-#include <sys/kernel.h>
-#include <vm/include/vm.h>
-#include <sys/sysctl.h>
+struct lock kernel_lock;
+struct lock sched_lock;
 
-/* Initialize a lock; required before use. */
 void
-lockinit(lkp, prio, wmesg, timo, flags)
-	struct lock *lkp;
+kernel_lock_init(prio, wmesg, timo, flags)
 	int prio;
 	char *wmesg;
 	int timo;
 	int flags;
 {
-	bzero(lkp, sizeof(struct lock));
-	simple_lock_init(&lkp->lk_interlock);
-	lkp->lk_lock = 0;
-	lkp->lk_flags = flags & LK_EXTFLG_MASK;
-	lkp->lk_prio = prio;
-	lkp->lk_timo = timo;
-	lkp->lk_wmesg = wmesg;
-	lkp->lk_lockholder |= LK_NOPROC | LK_NOTHREAD;
-	set_proc_lock(lkp, NULL);
-	set_kthread_lock(lkp, NULL);
-	set_uthread_lock(lkp, NULL);
+	lockinit(&kernel_lock, prio, wmesg, timo, flags);
+	__lockwitness(&kernel_lock);
+}
+
+void
+lockwitness(struct lock *lkp, const struct lock_type *type)
+{
+#ifdef WITNESS
+	lkp->lk_lockobject.lock_name = type->lt_name;
+	lkp->lk_lockobject.lock_type = type;
+	if (lkp == &kernel_lock) {
+		lkp->lk_lockobject.lock_flags = LO_WITNESS | LO_INITIALIZED | LO_SLEEPABLE | (LO_CLASS_KERNEL_LOCK << LO_CLASSSHIFT);
+	} else if (lkp == &sched_lock) {
+		lkp->lk_lockobject.lock_flags = LO_WITNESS | LO_INITIALIZED | LO_RECURSABLE | (LO_CLASS_SCHED_LOCK  << LO_CLASSSHIFT);
+	}
+	WITNESS_INIT(&lkp->lk_lockobject, type);
+#endif
 }
 
 /* Sets kthread to lockholder if not null */
@@ -117,11 +123,18 @@ get_uthread_lock(lkp, pid)
 	return (NULL);
 }
 
+#if defined(DEBUG) && NCPUS == 1
 
-//#if defined(DEBUG) && NCPUS == 1
+#include <sys/kernel.h>
+#include <vm/include/vm.h>
+#include <sys/sysctl.h>
+
 int lockpausetime = 0;
 struct ctldebug debug2 = { "lockpausetime", &lockpausetime };
 int simplelockrecurse;
+
+/* Example in OpenBSD kern_lock.c */
+/* below are all re-implemented using a lock object instead of simplelock */
 
 /*
  * Simple lock functions so that the debugger can see from whence
@@ -165,7 +178,6 @@ _simple_lock_try(alp, id, l)
 	const char *id;
 	int l;
 {
-
 	if (alp->lock_data)
 		return (0);
 	if (simplelockrecurse)
@@ -200,22 +212,6 @@ _simple_unlock(alp, id, l)
 	alp->lock_data = 0;
 	if (curproc)
 		curproc->p_simple_locks--;
-}
-
-/* Not yet implemented */
-int
-_simple_timedlock(alp)
-	__volatile struct lock_object *alp;
-{
-	return 0;
-}
-
-/* Not yet implemented */
-int
-_simple_destroy(alp)
-	__volatile struct lock_object *alp;
-{
-    return 0;
 }
 
 #endif /* DEBUG && NCPUS == 1 */

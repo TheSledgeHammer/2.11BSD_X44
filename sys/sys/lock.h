@@ -162,8 +162,8 @@ struct lock {
  */
 #define LK_KERNPROC 	((pid_t) -2)
 #define LK_NOPROC 		((pid_t) -1)
-#define LK_THREAD  		((pid_t) -2)
-#define LK_NOTHREAD    	((pid_t) -1)
+//#define LK_THREAD  		((pid_t) -2)
+//#define LK_NOTHREAD    	((pid_t) -1)
 
 struct proc;
 

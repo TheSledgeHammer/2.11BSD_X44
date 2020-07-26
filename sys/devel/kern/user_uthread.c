@@ -175,7 +175,7 @@ uthread_mutexmgr(lkp, flags, ut)
     if (ut) {
         pid = ut->ut_tid;
     } else {
-        pid = LK_THREAD;
+        pid = LK_KERNPROC;
     }
     return lockmgr(lkp, flags, lkp->lk_interlock, ut->ut_userp->u_procp);
 }
@@ -204,7 +204,7 @@ uthread_rwlockmgr(rwl, flags, ut)
 	if (ut) {
 		pid = ut->ut_tid;
 	} else {
-		pid = LK_THREAD;
+		pid = LK_KERNPROC;
 	}
 	return rwlockmgr(rwl, flags, pid);
 }
