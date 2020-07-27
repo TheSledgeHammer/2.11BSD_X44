@@ -84,9 +84,6 @@ struct kthread {
 
 typedef struct kthread 	*kthread_t;
 
-mutex_t 				kthread_mtx; 	/* mutex lock */
-rwlock_t				kthread_rwl;	/* reader-writers lock */
-
 /* stat codes */
 #define TSSLEEP	1		/* sleeping/ awaiting an event */
 #define TSWAIT	2		/* waiting */
@@ -111,7 +108,7 @@ struct kthreadpool_thread {
 
 /* Kernel Threadpool */
 struct kthreadpool {
-	mutex_t								ktp_lock;
+	lock_t								ktp_lock;
 	struct kthreadpool_thread			ktp_overseer;
     struct job_head					    ktp_jobs;
     struct kthread_head		            ktp_idle_threads;
@@ -138,7 +135,11 @@ struct kthreadpool {
 
 extern struct kthread 					kthread0;
 extern struct kthreadpool_thread 		ktpool_thread;
-extern mutex_t 							kthreadpool_lock;
+extern lock_t 							kthreadpool_lock;
+
+lock_t 									kthread_lkp; 	/* lock */
+rwlock_t								kthread_rwl;	/* reader-writers lock */
+mutex_t 								kthread_mtx; 	/* mutex lock */
 
 /* Kernel Thread ITPC */
 extern void kthreadpool_itc_send(struct kthreadpool *, struct threadpool_itpc *);
@@ -153,9 +154,11 @@ int kthread_detach(kthread_t kt);
 int kthread_equal(kthread_t kt1, kthread_t kt2);
 int kthread_kill(kthread_t kt);
 
+/* Kernel Thread Lock */
+int kthread_lock_init(lock_t, kthread_t);
+int kthread_lockmgr(lock_t, u_int, kthread_t);
+
 /* Kernel Thread Mutex */
-int kthread_mutex_init(mutex_t, kthread_t);
-int kthread_mutexmgr(mutex_t, u_int, kthread_t);
 int kthread_mutex_lock(kthread_t, mutex_t);
 int kthread_mutex_lock_try(kthread_t, mutex_t);
 int kthread_mutex_timedlock(kthread_t, mutex_t);

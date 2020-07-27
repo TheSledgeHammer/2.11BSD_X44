@@ -49,7 +49,7 @@ startuthread(ut)
     ut->ut_stat |= TSIDL | TSWAIT | TSREADY;
 
     /* setup uthread locks */
-    uthread_mutex_init(uthread_mtx, ut);
+    uthread_lock_init(uthread_lkp, ut);
     uthread_rwlock_init(uthread_rwl, ut);
 }
 
@@ -142,7 +142,7 @@ uthreadpool_itc_recieve(utpool, itc)
 /* Initialize a Mutex on a kthread
  * Setup up Error flags */
 int
-uthread_mutex_init(lkp, ut)
+uthread_lock_init(lkp, ut)
     struct lock *lkp;
     uthread_t ut;
 {
@@ -153,7 +153,7 @@ uthread_mutex_init(lkp, ut)
 }
 
 int
-uthread_mutexmgr(lkp, flags, ut)
+uthread_lockmgr(lkp, flags, ut)
 	struct lock *lkp;
 	u_int flags;
 	uthread_t ut;

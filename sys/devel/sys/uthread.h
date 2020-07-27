@@ -80,10 +80,6 @@ struct uthread {
 
 typedef struct uthread 	*uthread_t;
 
-/* Locks */
-mutex_t 				uthread_mtx; 		/* mutex lock */
-rwlock_t				uthread_rwl;		/* reader-writers lock */
-
 /* stat codes */
 #define TSSLEEP	1		/* sleeping/ awaiting an event */
 #define TSWAIT	2		/* waiting */
@@ -100,7 +96,7 @@ struct uthreadpool_thread {
 	struct kthreads						*utpt_kthread;
 	struct uthreads						*utpt_uthread;		/* user threads */
     char				                *utpt_uthread_savedname;
-	struct user_threadpool				*utpt_pool;
+	struct uthreadpool					*utpt_pool;
 	struct threadpool_job				*utpt_job;
 
     TAILQ_ENTRY(uthreadpool_thread) 	utpt_entry;			/* list uthread entries */
@@ -108,7 +104,7 @@ struct uthreadpool_thread {
 
 /* User Threadpool */
 struct uthreadpool {
-	mutex_t								utp_lock;
+	lock_t								utp_lock;
 	struct uthreadpool_thread			utp_overseer;
     struct job_head					    utp_jobs;
     struct uthread_head		            utp_idle_threads;
@@ -134,7 +130,12 @@ struct uthreadpool {
 
 extern struct uthread 					uthread0;
 extern struct uthreadpool_thread 		utpool_thread;
-extern mutex_t 							uthreadpool_lock;
+extern lock_t 							uthreadpool_lock;
+
+/* Locks */
+lock_t									uthread_lkp;
+rwlock_t								uthread_rwl;		/* reader-writers lock */
+mutex_t 								uthread_mtx; 		/* mutex lock */
 
 extern void uthreadpool_itc_send(struct uthreadpool *, struct threadpool_itpc *);
 extern void uthreadpool_itc_receive(struct uthreadpool *, struct threadpool_itpc *);
@@ -149,8 +150,8 @@ int uthread_equal(uthread_t ut1, uthread_t ut2);
 int uthread_kill(uthread_t ut);
 
 /* User Thread Mutex */
-int uthread_mutex_init(mutex_t, uthread_t);
-int uthread_mutexmgr(mutex_t, u_int, uthread_t);
+int uthread_lock_init(lock_t, uthread_t);
+int uthread_lockmgr(lock_t, u_int, uthread_t);
 
 int uthread_mutex_lock(uthread_t, mutex_t);
 int uthread_mutex_lock_try(uthread_t, mutex_t);

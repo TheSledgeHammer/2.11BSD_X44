@@ -104,7 +104,7 @@ get_kthread_lock(lkp, pid)
 	pid_t pid;
 {
 	struct kthread *klk =  lkp->lk_ktlockholder;
-	if(klk != NULL && klk == pfind(pid)) {
+	if(klk != NULL && klk->kt_tid == pid) {
 		return (klk);
 	}
 	return (NULL);
@@ -117,7 +117,7 @@ get_uthread_lock(lkp, pid)
 	pid_t pid;
 {
 	struct uthread *ulk = lkp->lk_utlockholder;
-	if(ulk != NULL && ulk == pfind(pid)) {
+	if(ulk != NULL && ulk->ut_tid == pid) {
 		return (ulk);
 	}
 	return (NULL);

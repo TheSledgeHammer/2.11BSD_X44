@@ -25,6 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/* License header should be NetBSD */
 
 #include <sys/cdefs.h>
 
@@ -118,7 +119,7 @@ kthreadpool_create(struct kthreadpool *ktpool, u_char pri)
 fail:
 	KASSERT(error);
 	KASSERT(ktpool->ktp_overseer.ktpt_job == NULL);
-	//KASSERT(ktpool->ktp_overseer.ktpt_pool == pool); /* fix */
+	KASSERT(ktpool->ktp_overseer.ktpt_pool == ktpool);
 	KASSERT(ktpool->ktp_flags == 0);
 	KASSERT(ktpool->ktp_refcnt == 0);
 	KASSERT(TAILQ_EMPTY(&ktpool->ktp_idle_threads));

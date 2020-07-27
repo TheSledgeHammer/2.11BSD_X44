@@ -43,6 +43,7 @@ rwlock_init(rwl, prio, wmesg, timo, flags)
 {
 	bzero(rwl, sizeof(struct rwlock));
 	simple_lock_init(&rwl->rwl_lnterlock);
+
 	rwl->rwl_lock = 0;
 	rwl->rwl_flags = flags & RW_EXTFLG_MASK;
 	rwl->rwl_prio = prio;
@@ -297,7 +298,7 @@ get_proc_rwlock(rwl, pid)
 	pid_t pid;
 {
 	struct proc *plk = rwl->rwl_prlockholder;
-	if(plk != NULL && plk == pfind(pid)) {
+	if(plk != NULL && plk->p_pid == pid) {
 		return (plk);
 	}
 	return (NULL);
@@ -336,7 +337,7 @@ get_kthread_lock(rwl, pid)
 	pid_t pid;
 {
 	struct kthread *klk =  rwl->rwl_ktlockholder;
-	if(klk != NULL && klk == pfind(pid)) {
+	if(klk != NULL && klk->kt_tid == pid) {
 		return (klk);
 	}
 	return (NULL);
@@ -349,7 +350,7 @@ get_uthread_rwlock(rwl, pid)
 	pid_t pid;
 {
 	struct uthread *ulk = rwl->rwl_utlockholder;
-	if(ulk != NULL && ulk == pfind(pid)) {
+	if(ulk != NULL && ulk->ut_tid == pid) {
 		return (ulk);
 	}
 	return (NULL);

@@ -26,6 +26,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* License header should be NetBSD */
+
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
@@ -107,7 +109,7 @@ uthreadpool_create(struct uthreadpool *utpool, u_char pri)
 
 	utflags = 0;
 	if(pri) {
-		error = kthread_create(p);
+		error = uthread_create(kt);
 	}
 	if(error) {
 		goto fail;
@@ -118,7 +120,7 @@ uthreadpool_create(struct uthreadpool *utpool, u_char pri)
 fail:
 	KASSERT(error);
 	KASSERT(utpool->utp_overseer.utpt_job == NULL);
-	//KASSERT(utpool->utp_overseer.utpt_pool == ); /* fix */
+	KASSERT(utpool->utp_overseer.utpt_pool == utpool);
 	KASSERT(utpool->utp_flags == 0);
 	KASSERT(utpool->utp_refcnt == 0);
 	KASSERT(TAILQ_EMPTY(&utpool->utp_idle_threads));

@@ -458,7 +458,7 @@ get_proc_lock(lkp, pid)
 	pid_t pid;
 {
 	struct proc *plk = lkp->lk_prlockholder;
-	if(plk != NULL && plk == pfind(pid)) {
+	if(plk != NULL && plk->p_pid == pid) {
 		return (plk);
 	}
 	return (NULL);
