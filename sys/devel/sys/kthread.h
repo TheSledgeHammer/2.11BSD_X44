@@ -30,7 +30,6 @@
 #define SYS_KTHREADS_H_
 
 #include <sys/proc.h>
-#include "sys/tcb.h"
 
 /* Number of Threads per Process? */
 
@@ -57,12 +56,13 @@ struct kthread {
 	struct pstats 	 	*kt_stats;		/* Accounting/statistics (THREAD ONLY). */
 	struct sigacts 		*kt_sig;		/* Signal actions, state (THREAD ONLY). */
 
-#define	t_ucred			t_cred->pc_ucred
+#define	kt_ucred		kt_cred->pc_ucred
 
-	struct proc 		*kt_procp;		/* Pointer to Proc */
-	struct uthread		*kt_uthreadp;	/* Pointer User Threads */
+	struct proc 		*kt_procp;		/* pointer to proc */
+	struct uthread		*kt_uthreado;	/* uthread overseer (original uthread)  */
 
 	struct kthread    	*kt_hash;       /* hashed based on t_tid & p_pid for kill+exit+... */
+
 	struct kthread    	*kt_tgrpnxt;	/* Pointer to next thread in thread group. */
     struct kthread      *kt_tptr;		/* pointer to process structure of parent */
     struct kthread 		*kt_ostptr;	 	/* Pointer to older sibling processes. */
@@ -70,21 +70,32 @@ struct kthread {
 	struct kthread 		*kt_ysptr;	 	/* Pointer to younger siblings. */
 	struct kthread 		*kt_cptr;	 	/* Pointer to youngest living child. */
 
-	struct tgrp 	    *kt_tgrp;       /* Pointer to thread group. */
+	struct pgrp 	    *kt_pgrp;       /* Pointer to proc group. */
 	struct sysentvec	*kt_sysent;		/* System call dispatch information. */
 
-	struct kthread 		*kt_link;		/* linked list of running threads */
+	struct kthread 		*kt_link;		/* linked list of running kthreads */
+	char				*kt_name;		/* (: name, optional */
 
-	struct mutex        *kt_mutex;
-	struct rwlock		*kt_rwlock;
     short               kt_locks;
     short               kt_simple_locks;
 };
-#define	kt_session		kt_tgrp->tg_session
-#define	kt_tgid			kt_tgrp->tg_id
+#define	kt_session		kt_pgrp->pg_session
+#define	kt_tgid			kt_pgrp->pg_id
+
+typedef struct kthread 	*kthread_t;
 
 mutex_t 				kthread_mtx; 	/* mutex lock */
 rwlock_t				kthread_rwl;	/* reader-writers lock */
+
+/* stat codes */
+#define TSSLEEP	1		/* sleeping/ awaiting an event */
+#define TSWAIT	2		/* waiting */
+#define TSRUN	3		/* running */
+#define TSIDL	4		/* intermediate state in process creation */
+#define	TSZOMB	5		/* intermediate state in process termination */
+#define TSSTOP	6		/* process being traced */
+#define TSREADY	7		/* ready */
+#define TSSTART	8		/* start */
 
 /* Kernel Threadpool Threads */
 TAILQ_HEAD(kthread_head, kthreadpool_thread);
@@ -143,8 +154,8 @@ int kthread_equal(kthread_t kt1, kthread_t kt2);
 int kthread_kill(kthread_t kt);
 
 /* Kernel Thread Mutex */
-int kthread_mutexmgr(mutex_t, u_int, kthread_t);
 int kthread_mutex_init(mutex_t, kthread_t);
+int kthread_mutexmgr(mutex_t, u_int, kthread_t);
 int kthread_mutex_lock(kthread_t, mutex_t);
 int kthread_mutex_lock_try(kthread_t, mutex_t);
 int kthread_mutex_timedlock(kthread_t, mutex_t);
@@ -154,5 +165,8 @@ int kthread_mutex_destroy(kthread_t, mutex_t);
 /* Kernel Thread rwlock */
 int kthread_rwlock_init(rwlock_t, kthread_t);
 int kthread_rwlockmgr(rwlock_t, u_int, kthread_t);
+int	kthread_rwlock_read_held(kthread_t, rwlock_t);
+int	kthread_rwlock_write_held(kthread_t, rwlock_t);
+int	kthread_rwlock_lock_held(kthread_t, rwlock_t);
 
 #endif /* SYS_KTHREADS_H_ */

@@ -30,12 +30,11 @@
 #include <sys/user.h>
 #include <sys/malloc.h>
 #include <sys/lock.h>
-#include "devel/sys/kthread.h"
-#include "devel/sys/mutex.h"
 #include "devel/sys/rwlock.h"
+#include "devel/sys/mutex.h"
+#include "devel/sys/kthread.h"
 
 extern struct kthread 		kthread0;
-extern struct kthreadpool 	kthreadpool;
 struct kthread *curkthread = &kthread0;
 
 void
@@ -49,8 +48,9 @@ startkthread(kt)
     /* Set thread to idle & waiting */
     kt->kt_stat |= TSIDL | TSWAIT | TSREADY;
 
-    /* setup kthread mutex manager */
+    /* setup kthread locks */
     kthread_mutex_init(kthread_mtx, kt);
+    kthread_rwlock_init(kthread_rwl, kt);
 }
 
 int
@@ -148,8 +148,7 @@ kthread_mutex_init(lkp, kt)
 {
     int error = 0;
     lockinit(lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo, lkp->lk_flags);
-    kt->kt_lock = kt;
-    lkp->lk_ktlockholder = kt;
+    set_kthread_lock(lkp, kt);
     return (error);
 }
 
@@ -165,7 +164,7 @@ kthread_mutexmgr(lkp, flags, kt)
     } else {
         pid = LK_KERNPROC;
     }
-    return lockmgr(lkp, flags, lkp->lk_interlock, kt->kt_procp);
+    return lockmgr(lkp, flags, lkp->lk_lnterlock, kt->kt_procp);
 }
 
 /* Initialize a rwlock on a kthread
@@ -177,8 +176,7 @@ kthread_rwlock_init(rwl, kt)
 {
 	int error = 0;
 	rwlock_init(rwl, rwl->rwl_prio, rwl->rwl_wmesg, rwl->rwl_timo, rwl->rwl_flags);
-	kt->kt_rwlock = rwl;
-	rwl->rwl_ktlockholder = kt;
+	set_kthread_rwlock(rwl, kt);
 	return (error);
 }
 

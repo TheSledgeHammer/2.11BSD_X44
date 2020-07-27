@@ -198,14 +198,14 @@ typedef struct {
 #define	vm_map_unlock_read(map) 				\
 		lockmgr(&(map)->lock, LK_RELEASE, (void *)0, curproc)
 #define vm_map_set_recursive(map) { 			\
-	simple_lock(&(map)->lk_interlock); 			\
+	simple_lock(&(map)->lk_lnterlock); 			\
 	(map)->lk_flags |= LK_CANRECURSE; 			\
-	simple_unlock(&(map)->lk_interlock); 		\
+	simple_unlock(&(map)->lk_lnterlock); 		\
 }
 #define vm_map_clear_recursive(map) { 			\
-	simple_lock(&(map)->lk_interlock); 			\
+	simple_lock(&(map)->lk_lnterlock); 			\
 	(map)->lk_flags &= ~LK_CANRECURSE; 			\
-	simple_unlock(&(map)->lk_interlock); 		\
+	simple_unlock(&(map)->lk_lnterlock); 		\
 }
 /*
  *	Functions implemented as macros

@@ -90,7 +90,7 @@
 #include <miscfs/fifofs/fifo.h>
 #include <miscfs/specfs/specdev.h>
 
-#include "devel/sys/wapbl.h"
+#include "wapbl.h"
 
 #ifdef WAPBL_DEBUG_INODES
 #error WAPBL_DEBUG_INODES: not functional before ufs_wapbl.c is updated

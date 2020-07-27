@@ -32,6 +32,13 @@
 #include "devel/sys/kthread.h"
 #include "devel/sys/uthread.h"
 
+/* lockinit: setup proc, kthread, uthread lock (as null)
+ * kthread_mutex_init: setup kthread lock
+ * uthread_mutex_init: setup uthread lock
+ *
+ * - have threads check for proc lock?
+ */
+
 void
 mutex_lock(mtx)
     __volatile mutex_t mtx;

@@ -43,16 +43,16 @@ rwlock_init(rwl, prio, wmesg, timo, flags)
 {
 	bzero(rwl, sizeof(struct rwlock));
 	simple_lock_init(&rwl->rwl_lnterlock);
-	//rwl->rwl_lockp = lkp;
 	rwl->rwl_lock = 0;
 	rwl->rwl_flags = flags & RW_EXTFLG_MASK;
 	rwl->rwl_prio = prio;
 	rwl->rwl_timo = timo;
 	rwl->rwl_wmesg = wmesg;
-	rwl->rwl_lockholder = RW_NOTHREAD;
-	rwl->rwl_prlockholder = NULL;
-    rwl->rwl_ktlockholder = NULL;
-    rwl->rwl_utlockholder = NULL;
+	rwl->rwl_lockholder_pid = RW_NOTHREAD;
+
+    set_proc_rwlock(rwl, NULL);
+    set_kthread_rwlock(rwl, NULL);
+	set_uthread_rwlock(rwl, NULL);
 }
 
 int
@@ -79,7 +79,6 @@ rwlockmgr(rwl, flags, pid)
 {
 	int error;
 	int extflags;
-	struct lock *lkp = rwl->rwl_lockp;
 	error = 0;
 
 	if (!pid) {
@@ -93,13 +92,13 @@ rwlockmgr(rwl, flags, pid)
 
 	switch (flags & RW_TYPE_MASK) {
 	case RW_WRITER:
-		if (rwl->rwl_lockholder != pid) {
+		if (rwl->rwl_lockholder_pid != pid) {
 			if ((extflags & RW_NOWAIT)
 					&& (rwl->rwl_flags & (RW_HAVE_READ | RW_WANT_READ | RW_WANT_DOWNGRADE))) {
 				error = EBUSY;
 				break;
 			}
-			ACQUIRE(lkp, error, extflags, rwl->rwl_flags & (RW_HAVE_READ | RW_WANT_READ | RW_WANT_DOWNGRADE));
+			ACQUIRE(rwl, error, extflags, rwl->rwl_flags & (RW_HAVE_READ | RW_WANT_READ | RW_WANT_DOWNGRADE));
 			if (error)
 				break;
 			rwl->rwl_writercount++;
@@ -108,23 +107,23 @@ rwlockmgr(rwl, flags, pid)
 		rwl->rwl_writercount++;
 
 	case RW_DOWNGRADE:
-		if (rwl->rwl_lockholder != pid || rwl->rwl_readercount == 0)
+		if (rwl->rwl_lockholder_pid != pid || rwl->rwl_readercount == 0)
 			panic("rwlockmgr: not holding reader lock");
 		rwl->rwl_writercount += rwl->rwl_readercount;
 		rwl->rwl_readercount = 0;
 		rwl->rwl_flags &= ~RW_HAVE_READ;
-		rwl->rwl_lockholder = RW_NOTHREAD;
+		rwl->rwl_lockholder_pid = RW_NOTHREAD;
 		if (rwl->rwl_waitcount)
 			wakeup((void *)rwl);
 		break;
 
 	case RW_READER:
-		if (rwl->rwl_lockholder != pid) {
+		if (rwl->rwl_lockholder_pid != pid) {
 			if ((extflags & RW_WAIT) && (rwl->rwl_flags & (RW_HAVE_WRITE | RW_WANT_WRITE | RW_WANT_UPGRADE))) {
 				error = EBUSY;
 				break;
 			}
-			ACQUIRE(lkp, error, extflags, rwl->rwl_flags & (RW_HAVE_WRITE | RW_WANT_WRITE | RW_WANT_UPGRADE));
+			ACQUIRE(rwl, error, extflags, rwl->rwl_flags & (RW_HAVE_WRITE | RW_WANT_WRITE | RW_WANT_UPGRADE));
 			if (error)
 				break;
 			rwl->rwl_readercount++;
@@ -133,12 +132,12 @@ rwlockmgr(rwl, flags, pid)
 		rwl->rwl_readercount++;
 
 	case RW_UPGRADE:
-		if (rwl->rwl_lockholder != pid || rwl->rwl_writercount < 1)
+		if (rwl->rwl_lockholder_pid != pid || rwl->rwl_writercount < 1)
 			panic("rwlockmgr: not holding writer lock");
 		rwl->rwl_readercount += rwl->rwl_writercount;
 		rwl->rwl_writercount = 1;
 		rwl->rwl_flags &= ~RW_HAVE_WRITE;
-		rwl->rwl_lockholder = RW_NOTHREAD;
+		rwl->rwl_lockholder_pid = RW_NOTHREAD;
 		if (rwl->rwl_waitcount)
 			wakeup((void *)rwl);
 		break;
@@ -233,4 +232,125 @@ rwlock_lock_held(rwl)
 	if (rwl == NULL)
 		return 0;
 	return (rwl->rwl_lock & RW_THREAD) != 0;
+}
+
+int lock_wait_time = 100;
+void
+rwlock_pause(rwl, wanted)
+	struct rwlock *rwl;
+	int wanted;
+{
+	if (lock_wait_time > 0) {
+		int i;
+		rwlock_unlock(&rwl);
+		for(i = lock_wait_time; i > 0; i--) {
+			if (!(wanted)) {
+				break;
+			}
+		}
+		rwlock_lock(&rwl);
+	}
+	if (!(wanted)) {
+		break;
+	}
+}
+
+void
+rwlock_acquire(rwl, error, extflags, wanted)
+	struct rwlock *rwl;
+	int error, extflags, wanted;
+{
+	rwlock_pause(rwl, wanted);
+	for (error = 0; wanted; ) {
+		rwl->rwl_waitcount++;
+		rwlock_unlock(&rwl);
+		error = tsleep((void *)rwl, rwl->rwl_prio, rwl->rwl_wmesg, rwl->rwl_timo);
+		rwlock_lock(&rwl);
+		rwl->rwl_waitcount--;
+		if (error) {
+			break;
+		}
+		if ((extflags) & LK_SLEEPFAIL) {
+			error = ENOLCK;
+			break;
+		}
+	}
+}
+
+/* Sets proc to lockholder if not null */
+void
+set_proc_rwlock(rwl, p)
+	struct rwlock *rwl;
+	struct proc *p;
+{
+	if(p == NULL) {
+		rwl->rwl_prlockholder = NULL;
+	} else {
+		rwl->rwl_prlockholder = p;
+	}
+}
+
+/* Returns proc if pid matches and lockholder is not null */
+struct proc *
+get_proc_rwlock(rwl, pid)
+	struct rwlock *rwl;
+	pid_t pid;
+{
+	struct proc *plk = rwl->rwl_prlockholder;
+	if(plk != NULL && plk == pfind(pid)) {
+		return (plk);
+	}
+	return (NULL);
+}
+
+/* Sets kthread to lockholder if not null */
+void
+set_kthread_rwlock(rwl, kt)
+	struct rwlock *rwl;
+	struct kthread *kt;
+{
+	if(kt == NULL) {
+		rwl->rwl_ktlockholder = NULL;
+	} else {
+		rwl->rwl_ktlockholder = kt;
+	}
+}
+
+/* Sets uthread to lockholder if not null */
+void
+set_uthread_rwlock(rwl, ut)
+	struct rwlock *rwl;
+	struct uthread *ut;
+{
+	if(ut == NULL) {
+		rwl->rwl_utlockholder = NULL;
+	} else {
+		rwl->rwl_utlockholder = ut;
+	}
+}
+
+/* Returns kthread if pid matches and lockholder is not null */
+struct kthread *
+get_kthread_lock(rwl, pid)
+	struct rwlock *rwl;
+	pid_t pid;
+{
+	struct kthread *klk =  rwl->rwl_ktlockholder;
+	if(klk != NULL && klk == pfind(pid)) {
+		return (klk);
+	}
+	return (NULL);
+}
+
+/* Returns uthread if pid matches and lockholder is not null */
+struct uthread *
+get_uthread_rwlock(rwl, pid)
+	struct rwlock *rwl;
+	pid_t pid;
+{
+	struct uthread *ulk = rwl->rwl_utlockholder;
+	if(ulk != NULL && ulk == pfind(pid)) {
+		return (ulk);
+	}
+	return (NULL);
 }

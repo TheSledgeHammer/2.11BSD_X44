@@ -79,7 +79,7 @@ static inline size_t wapbl_space_free(size_t, off_t, off_t);
 #include <string.h>
 
 #include <sys/time.h>
-#include <sys/wapbl.h>
+#include "wapbl.h"
 
 #define	KDASSERT(x) 		assert(x)
 #define	KASSERT(x) 			assert(x)

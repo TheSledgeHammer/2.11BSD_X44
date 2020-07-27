@@ -52,11 +52,13 @@ struct uthread {
 	/* Substructures: */
 	struct pcred 	 	*ut_cred;		/* Thread owner's identity. */
 	struct filedesc 	*ut_fd;			/* Ptr to open files structure. */
-	struct pstats 	 	*ut_stats;		/* Accounting/statistics (PROC ONLY). */
-	struct sigacts 		*ut_sigacts;	/* Signal actions, state (PROC ONLY). */
+	struct pstats 	 	*ut_stats;		/* Accounting/statistics (THREAD ONLY). */
+	struct sigacts 		*ut_sig;		/* Signal actions, state (THREAD ONLY). */
 
-	struct user 		*ut_userp;		/* Pointer to User Structure */
-	struct kthread		*ut_kthreadp;	/* Pointer to Kernel Thread Structure */
+#define	ut_ucred		ut_cred->pc_ucred
+
+	struct user 		*ut_userp;		/* pointer to user */
+	struct kthread		*ut_kthreadp;	/* pointer to kernel threads */
 
 	struct uthread    	*ut_hash;       /* hashed based on t_tid & p_pid for kill+exit+... */
 	struct uthread    	*ut_tgrpnxt;	/* Pointer to next thread in thread group. */
@@ -66,23 +68,36 @@ struct uthread {
 	struct uthread 		*ut_ysptr;	 	/* Pointer to younger siblings. */
 	struct uthread 		*ut_cptr;	 	/* Pointer to youngest living child. */
 
-	struct tgrp 	    *ut_tgrp;       /* Pointer to thread group. */
+	struct pgrp 	    *ut_pgrp;       /* Pointer to proc group. */
 
-	struct mutex        *ut_mutex;
-	struct rwlock		*ut_rwlock;
+	struct uthread 		*ut_link;		/* linked list of running uthreads */
+
     short               ut_locks;
     short               ut_simple_locks;
 };
-#define	ut_session		ut_tgrp->tg_session
-#define	ut_tgid			ut_tgrp->tg_id
+#define	ut_session		ut_pgrp->pg_session
+#define	ut_tgid			ut_pgrp->pg_id
+
+typedef struct uthread 	*uthread_t;
 
 /* Locks */
 mutex_t 				uthread_mtx; 		/* mutex lock */
 rwlock_t				uthread_rwl;		/* reader-writers lock */
 
+/* stat codes */
+#define TSSLEEP	1		/* sleeping/ awaiting an event */
+#define TSWAIT	2		/* waiting */
+#define TSRUN	3		/* running */
+#define TSIDL	4		/* intermediate state in process creation */
+#define	TSZOMB	5		/* intermediate state in process termination */
+#define TSSTOP	6		/* process being traced */
+#define TSREADY	7		/* ready */
+#define TSSTART	8		/* start */
+
 /* User Threadpool Thread */
 TAILQ_HEAD(uthread_head, uthreadpool_thread);
 struct uthreadpool_thread {
+	struct kthreads						*utpt_kthread;
 	struct uthreads						*utpt_uthread;		/* user threads */
     char				                *utpt_uthread_savedname;
 	struct user_threadpool				*utpt_pool;
@@ -102,6 +117,9 @@ struct uthreadpool {
     int 								utp_active;			/* active thread count */
     int									utp_inactive;		/* inactive thread count */
 
+#define	UTHREADPOOL_DYING				0x01
+    int									utp_flags;
+    struct cpu_info						*utp_cpu;
     u_char								utp_pri;			/* priority */
 
     /* Inter Threadpool Communication */
@@ -109,13 +127,14 @@ struct uthreadpool {
     boolean_t							utp_issender;		/* is itc sender */
     boolean_t							utp_isreciever;		/* is itc reciever */
     int									utp_retcnt;			/* retry count in itc pool */
-
     boolean_t							utp_initcq;			/* check if in itc queue */
     //flags, refcnt, priority, lock
     //flags: send, (verify: success, fail), retry_attempts
 };
 
-extern struct uthread uthread0;
+extern struct uthread 					uthread0;
+extern struct uthreadpool_thread 		utpool_thread;
+extern mutex_t 							uthreadpool_lock;
 
 extern void uthreadpool_itc_send(struct uthreadpool *, struct threadpool_itpc *);
 extern void uthreadpool_itc_receive(struct uthreadpool *, struct threadpool_itpc *);
@@ -130,8 +149,9 @@ int uthread_equal(uthread_t ut1, uthread_t ut2);
 int uthread_kill(uthread_t ut);
 
 /* User Thread Mutex */
-int uthread_mutexmgr(mutex_t, u_int, uthread_t);
 int uthread_mutex_init(mutex_t, uthread_t);
+int uthread_mutexmgr(mutex_t, u_int, uthread_t);
+
 int uthread_mutex_lock(uthread_t, mutex_t);
 int uthread_mutex_lock_try(uthread_t, mutex_t);
 int uthread_mutex_timedlock(uthread_t, mutex_t);

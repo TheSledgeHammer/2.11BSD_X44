@@ -29,8 +29,8 @@
 #ifndef SYS_THREADPOOL_H_
 #define SYS_THREADPOOL_H_
 
-#include "kthread.h"
-#include "uthread.h"
+#include "sys/kthread.h"
+#include "sys/uthread.h"
 
 /*
  * Two Threadpools:
@@ -88,7 +88,7 @@ struct threadpool_itpc {
 
 	struct job_head						itc_job;		/* Thread' Job */
 	struct tgrp 						itc_tgrp; 		/* Thread's Thread Group */
-	tid_t								itc_tid;		/* Thread's Thread ID */
+	pid_t								itc_tid;		/* Thread's Thread ID */
 	int 								itc_refcnt;		/* Current Number of entries in pool */
 };
 extern struct itc_threadpool itpc;

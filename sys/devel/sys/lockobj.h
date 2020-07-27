@@ -69,9 +69,16 @@ struct lock_type {
 	const char				*lt_name;
 };
 
-/* Merge into sys/lock.h */
-struct lock {
-    struct  lock_object		lk_lockobject;	/* lock object */
+enum lock_holder_index {
+	LH_PROC,
+	LH_KTHREAD,
+	LH_UTHREAD
+};
+
+struct lock_holder {
+	struct proc		*lh_prlockholder;
+	struct kthread 	*lh_ktlockholder;
+	struct uthread 	*lh_utlockholder;
 };
 
 void lockwitness(struct lock *lkp, const struct lock_type *);

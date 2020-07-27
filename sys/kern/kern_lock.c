@@ -59,13 +59,13 @@ lockinit(lkp, prio, wmesg, timo, flags)
 	int flags;
 {
 	bzero(lkp, sizeof(struct lock));
-	simple_lock_init(&lkp->lk_interlock);
+	simple_lock_init(&lkp->lk_lnterlock);
 	lkp->lk_lock = 0;
 	lkp->lk_flags = flags & LK_EXTFLG_MASK;
 	lkp->lk_prio = prio;
 	lkp->lk_timo = timo;
 	lkp->lk_wmesg = wmesg;
-	lkp->lk_lockholder = LK_NOPROC;
+	lkp->lk_lockholder_pid = LK_NOPROC;
 	set_proc_lock(lkp, NULL);
 }
 
@@ -76,13 +76,13 @@ lockstatus(lkp)
 {
 	int lock_type = 0;
 
-	simple_lock(&lkp->lk_interlock);
+	simple_lock(&lkp->lk_lnterlock);
 	if (lkp->lk_exclusivecount != 0) {
 		lock_type = LK_EXCLUSIVE;
 	} else if(lkp->lk_sharecount != 0) {
 		lock_type = LK_SHARED;
 	}
-	simple_unlock(&lkp->lk_interlock);
+	simple_unlock(&lkp->lk_lnterlock);
 	return (lock_type);
 }
 
@@ -109,7 +109,7 @@ lockmgr(lkp, flags, interlkp, p)
 		pid = p->p_pid;
 	else
 		pid = LK_KERNPROC;
-	simple_lock(&lkp->lk_interlock);
+	simple_lock(&lkp->lk_lnterlock);
 	if (flags & LK_INTERLOCK) {
 		simple_unlock(interlkp);
 	}
@@ -130,7 +130,7 @@ lockmgr(lkp, flags, interlkp, p)
 		if (lkp->lk_flags & LK_DRAINED) {
 			panic("lockmgr: using decommissioned lock");
 		}
-		if ((flags & LK_TYPE_MASK) != LK_RELEASE || lkp->lk_lockholder != pid) {
+		if ((flags & LK_TYPE_MASK) != LK_RELEASE || lkp->lk_lockholder_pid != pid) {
 			panic("lockmgr: non-release on draining lock: %d\n", flags & LK_TYPE_MASK);
 		}
 		lkp->lk_flags &= ~LK_DRAINING;
@@ -143,7 +143,7 @@ lockmgr(lkp, flags, interlkp, p)
 	switch (flags & LK_TYPE_MASK) {
 
 	case LK_SHARED:
-		if (lkp->lk_lockholder != pid) {
+		if (lkp->lk_lockholder_pid != pid) {
 			/*
 			 * If just polling, check to see if we will block.
 			 */
@@ -172,12 +172,12 @@ lockmgr(lkp, flags, interlkp, p)
 		break;
 
 	case LK_DOWNGRADE:
-		if (lkp->lk_lockholder != pid || lkp->lk_exclusivecount == 0)
+		if (lkp->lk_lockholder_pid != pid || lkp->lk_exclusivecount == 0)
 			panic("lockmgr: not holding exclusive lock");
 		lkp->lk_sharecount += lkp->lk_exclusivecount;
 		lkp->lk_exclusivecount = 0;
 		lkp->lk_flags &= ~LK_HAVE_EXCL;
-		lkp->lk_lockholder = LK_NOPROC;
+		lkp->lk_lockholder_pid = LK_NOPROC;
 		if (lkp->lk_waitcount)
 			wakeup((void *)lkp);
 		break;
@@ -206,7 +206,7 @@ lockmgr(lkp, flags, interlkp, p)
 		 * after the upgrade). If we return an error, the file
 		 * will always be unlocked.
 		 */
-		if (lkp->lk_lockholder == pid || lkp->lk_sharecount <= 0)
+		if (lkp->lk_lockholder_pid == pid || lkp->lk_sharecount <= 0)
 			panic("lockmgr: upgrade exclusive lock");
 		lkp->lk_sharecount--;
 		COUNT(p, -1);
@@ -231,7 +231,7 @@ lockmgr(lkp, flags, interlkp, p)
 			if (error)
 				break;
 			lkp->lk_flags |= LK_HAVE_EXCL;
-			lkp->lk_lockholder = pid;
+			lkp->lk_lockholder_pid = pid;
 			if (lkp->lk_exclusivecount != 0)
 				panic("lockmgr: non-zero exclusive count");
 			lkp->lk_exclusivecount = 1;
@@ -249,7 +249,7 @@ lockmgr(lkp, flags, interlkp, p)
 		break;
 
 	case LK_EXCLUSIVE:
-		if (lkp->lk_lockholder == pid && pid != LK_KERNPROC) {
+		if (lkp->lk_lockholder_pid == pid && pid != LK_KERNPROC) {
 			/*
 			 *	Recursive lock.
 			 */
@@ -285,7 +285,7 @@ lockmgr(lkp, flags, interlkp, p)
 		if (error)
 			break;
 		lkp->lk_flags |= LK_HAVE_EXCL;
-		lkp->lk_lockholder = pid;
+		lkp->lk_lockholder_pid = pid;
 		if (lkp->lk_exclusivecount != 0)
 			panic("lockmgr: non-zero exclusive count");
 		lkp->lk_exclusivecount = 1;
@@ -294,15 +294,15 @@ lockmgr(lkp, flags, interlkp, p)
 
 	case LK_RELEASE:
 		if (lkp->lk_exclusivecount != 0) {
-			if (pid != lkp->lk_lockholder)
+			if (pid != lkp->lk_lockholder_pid)
 				panic("lockmgr: pid %d, not %s %d unlocking",
 				    pid, "exclusive lock holder",
-				    lkp->lk_lockholder);
+				    lkp->lk_lockholder_pid);
 			lkp->lk_exclusivecount--;
 			COUNT(p, -1);
 			if (lkp->lk_exclusivecount == 0) {
 				lkp->lk_flags &= ~LK_HAVE_EXCL;
-				lkp->lk_lockholder = LK_NOPROC;
+				lkp->lk_lockholder_pid = LK_NOPROC;
 			}
 		} else if (lkp->lk_sharecount != 0) {
 			lkp->lk_sharecount--;
@@ -319,7 +319,7 @@ lockmgr(lkp, flags, interlkp, p)
 		 * check for holding a shared lock, but at least we can
 		 * check for an exclusive one.
 		 */
-		if (lkp->lk_lockholder == pid)
+		if (lkp->lk_lockholder_pid == pid)
 			panic("lockmgr: draining against myself");
 		/*
 		 * If we are just polling, check to see if we will sleep.
@@ -337,22 +337,22 @@ lockmgr(lkp, flags, interlkp, p)
 		     (LK_HAVE_EXCL | LK_WANT_EXCL | LK_WANT_UPGRADE)) ||
 		     lkp->lk_sharecount != 0 || lkp->lk_waitcount != 0); ) {
 			lkp->lk_flags |= LK_WAITDRAIN;
-			simple_unlock(&lkp->lk_interlock);
+			simple_unlock(&lkp->lk_lnterlock);
 			if (error == tsleep((void *)&lkp->lk_flags, lkp->lk_prio,
 			    lkp->lk_wmesg, lkp->lk_timo))
 				return (error);
 			if ((extflags) & LK_SLEEPFAIL)
 				return (ENOLCK);
-			simple_lock(&lkp->lk_interlock);
+			simple_lock(&lkp->lk_lnterlock);
 		}
 		lkp->lk_flags |= LK_DRAINING | LK_HAVE_EXCL;
-		lkp->lk_lockholder = pid;
+		lkp->lk_lockholder_pid = pid;
 		lkp->lk_exclusivecount = 1;
 		COUNT(p, 1);
 		break;
 
 	default:
-		simple_unlock(&lkp->lk_interlock);
+		simple_unlock(&lkp->lk_lnterlock);
 		panic("lockmgr: unknown locktype request %d", flags & LK_TYPE_MASK);
 		/* NOTREACHED */
 	}
@@ -362,7 +362,7 @@ lockmgr(lkp, flags, interlkp, p)
 		lkp->lk_flags &= ~LK_WAITDRAIN;
 		wakeup((void *)&lkp->lk_flags);
 	}
-	simple_unlock(&lkp->lk_interlock);
+	simple_unlock(&lkp->lk_lnterlock);
 	return (error);
 }
 
@@ -380,14 +380,14 @@ lockmgr_printinfo(lkp)
 		    lkp->lk_sharecount);
 	else if (lkp->lk_flags & LK_HAVE_EXCL)
 		printf(" lock type %s: EXCL (count %d) by pid %d",
-		    lkp->lk_wmesg, lkp->lk_exclusivecount, lkp->lk_lockholder);
+		    lkp->lk_wmesg, lkp->lk_exclusivecount, lkp->lk_lockholder_pid);
 	if (lkp->lk_waitcount > 0)
 		printf(" with %d pending", lkp->lk_waitcount);
 }
 
 int lock_wait_time = 100;
 void
-pause(lkp, wanted)
+lock_pause(lkp, wanted)
 	struct lock *lkp;
 	int wanted;
 {
@@ -407,11 +407,11 @@ pause(lkp, wanted)
 }
 
 void
-acquire(lkp, error, extflags, wanted)
+lock_acquire(lkp, error, extflags, wanted)
 	struct lock *lkp;
 	int error, extflags, wanted;
 {
-	pause(lkp, wanted);
+	lock_pause(lkp, wanted);
 	for (error = 0; wanted; ) {
 		lkp->lk_waitcount++;
 		simple_unlock(&lkp);

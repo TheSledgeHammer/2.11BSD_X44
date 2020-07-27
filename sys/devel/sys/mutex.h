@@ -40,55 +40,27 @@
 #ifndef SYS_MUTEX_H_
 #define SYS_MUTEX_H_
 
-#include <sys/lock.h>
-#include "sys/tcb.h"
-
 struct mutex {
 	volatile u_int   		mtx_lock;
 
-	struct proc				*mtx_prlockholder;	/* Proc lock holder */
-    struct kthread          *mtx_ktlockholder; 	/* Kernel Thread lock holder */
-    struct uthread          *mtx_utlockholder;	/* User Thread lock holder */
+	struct proc				*mtx_prlockholder;	/* proc lock holder */
+    struct kthread          *mtx_ktlockholder; 	/* kernel thread lock holder */
+    struct uthread          *mtx_utlockholder;	/* user thread lock holder */
 
-    struct lock				*mtx_lockp;			/* pointer to struct lock */
+    pid_t                   mtx_lockholder_pid;
+
     struct simplelock 	    *mtx_interlock; 	/* lock on remaining fields */
 
-    struct lock_object		*mtx_lockobject;	/* lock object */
-
-    int					    mtx_sharecount;		/* # of accepted shared locks */
-    int					    mtx_waitcount;		/* # of processes sleeping for lock */
-    short				    mtx_exclusivecount;	/* # of recursive exclusive locks */
-
-    unsigned int		    mtx_flags;			/* see below */
-    short				    mtx_prio;			/* priority at which to sleep */
-    char				    *mtx_wmesg;			/* resource sleeping (for tsleep) */
-    int					    mtx_timo;			/* maximum sleep time (for tsleep) */
-
-    pid_t                   mtx_lockholder;
+    struct lock_object		*mtx_lockobject;	/* lock object (to replace simplelock) */
 };
 
-#define MTX_THREAD  		LK_THREAD
-#define MTX_NOTHREAD    	LK_NOTHREAD
-
-/* These are flags that are passed to the lockmgr routine. */
-#define MTX_TYPE_MASK	    0x00FFFFFF
-
-/* External Lock flags. */
-#define MTX_EXTFLG_MASK		LK_EXTFLG_MASK	/* mask of external flags */
-
-/* Control flags. */
-#define MTX_INTERLOCK	    LK_INTERLOCK	/* unlock passed simple lock after getting lk_interlock */
-#define MTX_RETRY			LK_RETRY		/* vn_lock: retry until locked */
+typedef struct mutex        *mutex_t;
 
 /* Generic Mutex Functions */
-int mutexmgr(mutex_t, int, pid_t);
-void mutex_init(mutex_t, int, char *, int, unsigned int);
 void mutex_lock(__volatile mutex_t);
 void mutex_unlock(__volatile mutex_t);
 int mutex_enter(__volatile mutex_t);
 int mutex_exit(__volatile mutex_t);
 int mutex_lock_try(__volatile mutex_t);
-int mutex_timedlock(__volatile mutex_t);
-int mutex_destroy(__volatile mutex_t);
 
 #endif /* SYS_MUTEX_H_ */

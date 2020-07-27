@@ -175,7 +175,8 @@
 #ifndef _SIMPLELOCK_H_
 #define _SIMPLELOCK_H_
 
-#include <lock.h>
+#include <sys/lock.h>
+#include <sys/lockobj.h>
 
 #if !defined(DEBUG) && NCPUS > 1
 

@@ -31,10 +31,10 @@
 #include <sys/lock.h>
 #include "devel/sys/mutex.h"
 #include "devel/sys/rwlock.h"
+#include "devel/sys/kthread.h"
 #include "devel/sys/uthread.h"
 
 extern struct uthread uthread0;
-extern struct uthreadpool uthreadpool;
 struct uthread *curuthread = &uthread0;
 
 void
@@ -48,21 +48,9 @@ startuthread(ut)
     /* Set thread to idle & waiting */
     ut->ut_stat |= TSIDL | TSWAIT | TSREADY;
 
-    /* setup uthread mutex manager */
+    /* setup uthread locks */
     uthread_mutex_init(uthread_mtx, ut);
-
-    /* setup uthreadpool */
-    start_uthreadpool(&uthreadpool);
-}
-
-void
-start_uthreadpool(utpool)
-	struct uthreadpool *utpool;
-{
-	TAILQ_INIT(utpool->utp_idle_threads);
-	if(utpool == NULL) {
-		MALLOC(utpool, struct uthreadpool *, sizeof(struct uthreadpool *), M_UTHREADPOOL, M_WAITOK);
-	}
+    uthread_rwlock_init(uthread_rwl, ut);
 }
 
 int
@@ -160,8 +148,7 @@ uthread_mutex_init(lkp, ut)
 {
     int error = 0;
     lockinit(lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo, lkp->lk_flags);
-    ut->ut_lock = ut;
-    lkp->lk_utlockholder = ut;
+    set_uthread_lock(lkp, ut);
     return (error);
 }
 
@@ -177,10 +164,10 @@ uthread_mutexmgr(lkp, flags, ut)
     } else {
         pid = LK_KERNPROC;
     }
-    return lockmgr(lkp, flags, lkp->lk_interlock, ut->ut_userp->u_procp);
+    return lockmgr(lkp, flags, lkp->lk_lnterlock, ut->ut_userp->u_procp);
 }
 
-/* Initialize a rwlock on a kthread
+/* Initialize a rwlock on a uthread
  * Setup up Error flags */
 int
 uthread_rwlock_init(rwl, ut)
@@ -189,8 +176,7 @@ uthread_rwlock_init(rwl, ut)
 {
 	int error = 0;
 	rwlock_init(rwl, rwl->rwl_prio, rwl->rwl_wmesg, rwl->rwl_timo, rwl->rwl_flags);
-	ut->ut_rwlock = rwl;
-	rwl->rwl_utlockholder = ut;
+	set_uthread_rwlock(rwl, ut);
 	return (error);
 }
 

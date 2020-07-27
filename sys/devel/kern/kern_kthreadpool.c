@@ -43,7 +43,7 @@ struct kthreadpool_unbound {
 	struct kthreadpool				ktpu_pool;
 
 	/* protected by threadpools_lock */
-	LIST_ENTRY(threadpool_unbound)	ktpu_link;
+	LIST_ENTRY(kthreadpool_unbound)	ktpu_link;
 	uint64_t						ktpu_refcnt;
 };
 static LIST_HEAD(, kthreadpool_unbound) unbound_kthreadpools;
@@ -83,7 +83,7 @@ kthreadpools_init(void)
 	itpc_threadpool_init();
 }
 
-/* Thread pool creation */
+/* KThread pool creation */
 
 static int
 kthreadpool_create(struct kthreadpool *ktpool, u_char pri)
@@ -118,7 +118,7 @@ kthreadpool_create(struct kthreadpool *ktpool, u_char pri)
 fail:
 	KASSERT(error);
 	KASSERT(ktpool->ktp_overseer.ktpt_job == NULL);
-	KASSERT(ktpool->ktp_overseer.ktpt_pool == pool);
+	//KASSERT(ktpool->ktp_overseer.ktpt_pool == pool); /* fix */
 	KASSERT(ktpool->ktp_flags == 0);
 	KASSERT(ktpool->ktp_refcnt == 0);
 	KASSERT(TAILQ_EMPTY(&ktpool->ktp_idle_threads));
@@ -180,7 +180,7 @@ kthreadpool_get(struct kthreadpool **ktpoolp, u_char pri)
 	//mutex_exit(&kthreadpools_lock);
 
 	if (tmp != NULL) {
-		threadpool_destroy(&tmp->ktpu_pool);
+		kthreadpool_destroy(&tmp->ktpu_pool);
 		FREE(tmp, M_KTPOOLTHREAD);
 	}
 
@@ -194,7 +194,7 @@ kthreadpool_put(struct kthreadpool *ktpool, u_char pri)
 {
 	struct kthreadpool_unbound *ktpu;
 
-	//mutex_enter(&kthreadpools_lock);
+	//mutex_lock(&kthreadpools_lock);
 	KASSERT(ktpu == kthreadpool_lookup_unbound(pri));
 	KASSERT(0 < ktpu->ktpu_refcnt);
 	if (ktpu->ktpu_refcnt-- == 0) {

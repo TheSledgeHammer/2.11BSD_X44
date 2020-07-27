@@ -44,7 +44,7 @@
  * - Setup as a global job/itpc for threadpools
  * - Functions specific to kthreadpool or uthreadpool to be separated
  * else
- * - setup job & itpc for both kthreadpool & uthreadpool
+ * - setup itpc & job for both kthreadpool & uthreadpool (probably optimal way)
  */
 
 void
@@ -237,14 +237,14 @@ itpc_threadpool_setup(itpc)
 
 /* Add a thread to the itc queue */
 void
-itpc_threadpool_enqueue(itpc, tid)
+itpc_threadpool_enqueue(itpc, pid)
 	struct threadpool_itpc *itpc;
-	tid_t tid;
+	pid_t pid;
 {
 	struct kthreadpool *ktpool;
 	struct uthreadpool *utpool;
 	/* check kernel threadpool is not null & has a job/task entry to send */
-	if(ktpool != NULL && itpc->itc_tid == tid) {
+	if(ktpool != NULL && itpc->itc_tid == pid) {
 		itpc->itc_ktpool = ktpool;
 		ktpool->ktp_initcq = TRUE;
 		itpc->itc_refcnt++;
@@ -252,7 +252,7 @@ itpc_threadpool_enqueue(itpc, tid)
 	}
 
 	/* check user threadpool is not null & has a job/task entry to send */
-	if(utpool != NULL && itpc->itc_tid == tid) {
+	if(utpool != NULL && itpc->itc_tid == pid) {
 		itpc->itc_utpool = utpool;
 		utpool->utp_initcq = TRUE;
 		itpc->itc_refcnt++;
@@ -265,9 +265,9 @@ itpc_threadpool_enqueue(itpc, tid)
  * If threadpool entry is not null, search queue for entry & remove
  */
 void
-itpc_threadpool_dequeue(itpc, tid)
+itpc_threadpool_dequeue(itpc, pid)
 	struct threadpool_itpc *itpc;
-	tid_t tid;
+	pid_t pid;
 {
 	struct kthreadpool *ktpool;
 	struct uthreadpool *utpool;
@@ -275,7 +275,7 @@ itpc_threadpool_dequeue(itpc, tid)
 	if(ktpool != NULL) {
 		TAILQ_FOREACH(itpc, itpc->itc_header, itc_entry) {
 			if(TAILQ_NEXT(itpc, itc_entry)->itc_ktpool == ktpool) {
-				if(itpc->itc_tid == tid) {
+				if(itpc->itc_tid == pid) {
 					ktpool->ktp_initcq = FALSE;
 					itpc->itc_refcnt--;
 					TAILQ_REMOVE(itpc->itc_header, itpc, itc_entry);
@@ -287,7 +287,7 @@ itpc_threadpool_dequeue(itpc, tid)
 	if(utpool != NULL) {
 		TAILQ_FOREACH(itpc, itpc->itc_header, itc_entry) {
 			if(TAILQ_NEXT(itpc, itc_entry)->itc_utpool == utpool) {
-				if(itpc->itc_tid == tid) {
+				if(itpc->itc_tid == pid) {
 					utpool->utp_initcq = FALSE;
 					itpc->itc_refcnt--;
 					TAILQ_REMOVE(itpc->itc_header, itpc, itc_entry);
@@ -299,20 +299,20 @@ itpc_threadpool_dequeue(itpc, tid)
 
 /* Sender checks request from receiver: providing info */
 void
-itpc_check(itpc, tid)
+itpc_check(itpc, pid)
 	struct threadpool_itpc *itpc;
-	tid_t tid;
+	pid_t pid;
 {
 	struct kthreadpool *ktpool = itpc->itc_ktpool;
 	struct uthreadpool *utpool = itpc->itc_utpool;
 
 	if(ktpool->ktp_issender) {
 		printf("kernel threadpool to send");
-		if(itpc->itc_tid == tid) {
+		if(itpc->itc_tid == pid) {
 			printf("kernel tid be found");
 			/* check */
 		} else {
-			if(itpc->itc_tid != tid) {
+			if(itpc->itc_tid != pid) {
 				if(ktpool->ktp_retcnt <= 5) { /* retry up to 5 times */
 					if(ktpool->ktp_initcq) {
 						/* exit and re-enter queue increasing retry count */
@@ -332,11 +332,11 @@ itpc_check(itpc, tid)
 
 	if(utpool->utp_issender) {
 		printf("user threadpool to send");
-		if(itpc->itc_tid == tid) {
+		if(itpc->itc_tid == pid) {
 			printf("user tid be found");
 			/* check */
 		} else {
-			if(itpc->itc_tid != tid) {
+			if(itpc->itc_tid != pid) {
 				if(utpool->utp_retcnt <= 5) { /* retry up to 5 times */
 					if(utpool->utp_initcq) {
 						/* exit and re-enter queue, increasing retry count */
@@ -357,16 +357,16 @@ itpc_check(itpc, tid)
 
 /* Receiver verifies request to sender: providing info */
 void
-itpc_verify(itpc, tid)
+itpc_verify(itpc, pid)
 	struct threadpool_itpc *itpc;
-	tid_t tid;
+	pid_t pid;
 {
 	struct kthreadpool *ktpool = itpc->itc_ktpool;
 	struct uthreadpool *utpool = itpc->itc_utpool;
 
 	if(ktpool->ktp_isreciever) {
 		printf("kernel threadpool to recieve");
-		if(itpc->itc_tid == tid) {
+		if(itpc->itc_tid == pid) {
 			printf("kernel tid found");
 
 		} else {
@@ -376,7 +376,7 @@ itpc_verify(itpc, tid)
 
 	if(utpool->utp_isreciever) {
 		printf("user threadpool to recieve");
-		if(itpc->itc_tid == tid) {
+		if(itpc->itc_tid == pid) {
 			printf("user tid found");
 		} else {
 			printf("user tid couldn't be found");

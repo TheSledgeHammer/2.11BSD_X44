@@ -30,39 +30,36 @@
 #define SYS_RWLOCK_H_
 
 #include <sys/lock.h>
-#include <sys/mutex.h>
-#include "sys/tcb.h"
 
 /* Reader Writers Lock */
 struct rwlock {
     volatile u_int   		rwl_lock;
 
-    struct proc				*rwl_prlockholder;	/* Proc lock holder */
-    struct kthread          *rwl_ktlockholder; 	/* Kernel Thread lock holder */
-    struct uthread          *rwl_utlockholder;	/* User Thread lock holder */
+    struct proc				*rwl_prlockholder;	/* proc lock holder */
+    struct kthread          *rwl_ktlockholder; 	/* kernel thread lock holder */
+    struct uthread          *rwl_utlockholder;	/* user thread lock holder */
 
-    struct lock				*rwl_lockp;			/* pointer to lock */
-    struct mutex			*rwl_mutex;			/* pointer to mutex */
+    pid_t                   rwl_lockholder_pid;
+
     struct simplelock       *rwl_lnterlock;    	/* lock on remaining fields */
-
-    struct lock_object		*rwl_lockobject;	/* lock object */
+    struct lock_object		*rwl_lockobject;	/* lock object (to replace simplelock) */
 
     int 					rwl_readercount;	/* lock reader count */
     int						rwl_writercount;	/* lock writer count */
-    int					    rwl_waitcount;		/* # of processes sleeping for lock */
+    int						rwl_waitcount;		/* # of processes sleeping for lock */
 
-    unsigned int		    rwl_flags;			/* see below */
-    short				    rwl_prio;			/* priority at which to sleep */
-    char				    *rwl_wmesg;			/* resource sleeping (for tsleep) */
-    int					    rwl_timo;			/* maximum sleep time (for tsleep) */
-
-    pid_t                   rwl_lockholder;
+    u_int					rwl_flags;			/* see below */
+    short					rwl_prio;			/* priority at which to sleep */
+    char					*rwl_wmesg;			/* resource sleeping (for tsleep) */
+    int						rwl_timo;			/* maximum sleep time (for tsleep) */
 };
+
+typedef struct rwlock       *rwlock_t;
 
 #define RW_THREAD  			LK_KERNPROC
 #define RW_NOTHREAD    		LK_NOPROC
 
-/* These are flags that are passed to the lockmgr routine. */
+/* These are flags that are passed to the rwlockmgr routine. */
 #define RW_TYPE_MASK	    0x0FFFFFFF
 #define RW_READER			0x00000001
 #define RW_WRITER			0x00000002
@@ -72,7 +69,7 @@ struct rwlock {
 /* External lock flags. */
 #define RW_EXTFLG_MASK	    0x00000070			/* mask of external flags */
 #define RW_NOWAIT	        0x00000010			/* do not sleep to await lock */
-#define RW_WAIT	        	0x00000020			/* seep to await lock */
+#define RW_WAIT	        	0x00000020			/* sleep to await lock */
 
 /* Internal lock flags. */
 #define RW_WANT_UPGRADE		0x00000100			/* waiting for reader-to-writer upgrade */
@@ -89,12 +86,35 @@ struct rwlock {
 #define RW_INTERLOCK		LK_INTERLOCK		/* unlock passed simple lock after getting lk_interlock */
 #define RW_RETRY			LK_RETRY			/* vn_lock: retry until locked */
 
-void 	rwlock_init(rwlock_t, int, char *, int, u_int);
-int 	rwlockstatus(rwlock_t);
-int 	rwlockmgr(__volatile rwlock_t, u_int, pid_t);
+void 			rwlock_init(rwlock_t, int, char *, int, u_int);
+int 			rwlockmgr(__volatile rwlock_t, u_int, pid_t);
+int 			rwlockstatus(rwlock_t);
 
-int		rwlock_read_held(rwlock_t, pid_t);
-int		rwlock_write_held(rwlock_t, pid_t);
-int		rwlock_lock_held(rwlock_t, pid_t);
+int				rwlock_read_held(rwlock_t, pid_t);
+int				rwlock_write_held(rwlock_t, pid_t);
+int				rwlock_lock_held(rwlock_t, pid_t);
+
+void			set_proc_rwlock(rwlock_t, struct proc *);
+struct proc 	*get_proc_rwlock(rwlock_t, pid_t);
+
+void			set_kthread_rwlock(rwlock_t, struct kthread *);
+struct kthread 	*get_kthread_rwlock(rwlock_t, pid_t);
+
+void			set_uthread_rwlock(rwlock_t, struct uthread *);
+struct uthread 	*get_uthread_rwlock(rwlock_t, pid_t);
+
+extern void		rwlock_pause(rwlock_t, int);
+extern void		rwlock_acquire(rwlock_t, int, int, int);
+
+#if NCPUS > 1
+#define PAUSE(rwl, wanted)						\
+		rwlock_pause(rwl, wanted);
+#else /* NCPUS == 1 */
+#define PAUSE(rwl, wanted)
+#endif /* NCPUS == 1 */
+
+#define ACQUIRE(rwl, error, extflags, wanted)	\
+		rwlock_acquire(rwl, error, extflags, wanted);
 
 #endif /* SYS_RWLOCK_H_ */
+

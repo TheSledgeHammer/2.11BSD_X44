@@ -36,9 +36,9 @@
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/malloc.h>
-#include <devel/sys/wapbl.h>
-#include <devel/sys/wapbl_ops.h>
-#include <devel/sys/wapbl_replay.h>
+#include "wapbl.h"
+#include "wapbl_ops.h"
+#include "wapbl_replay.h"
 
 #ifdef _KERNEL
 
