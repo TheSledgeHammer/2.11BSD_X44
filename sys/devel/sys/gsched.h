@@ -39,12 +39,13 @@ struct gsched {
 	struct proc 		*gsc_rqlink; 	/* pointer to linked list of running processes */
 	struct proc 		*gsc_proc;		/* pointer to proc */
 
-    struct gsched_edf	*gsc_edf;		/* earliest deadline first scheduler */
-    struct gsched_cfs 	*gsc_cfs;		/* completely fair scheduler */
-
-    struct lock			*gsc_lock;
+    struct lock			*gsc_lock;		/* global sched lock */
 
     u_char  			gsc_priweight;	/* priority weighting (calculated from various factors) */
+
+    /* pointer to schedulers */
+    struct gsched_edf	*gsc_edf;		/* earliest deadline first scheduler */
+    struct gsched_cfs 	*gsc_cfs;		/* completely fair scheduler */
 };
 
 /* Scheduler Domains: Hyperthreading, multi-cpu, etc... */
@@ -56,8 +57,9 @@ struct sched_domains {
 enum priw {
 	 PW_PRIORITY = 25, 	 	/* Current Processes Priority */
 	 PW_DEADLINE = 25,		/* Current Processes Deadline Time */
-	 PW_RELEASE = 25,		/* Current Processes Release Time */
+	 //PW_RELEASE = 25,		/* Current Processes Release Time */
 	 PW_SLEEP = 25,			/* Current Processes Sleep Time */
+	 PW_LAXITY = 25,		/* Current Processes Laxity/Slack Time */
 };
 
 #define PW_FACTOR(w, f)  ((int)(w) / 100 * (f)) /* w's weighting for a given factor(f)(above) */
@@ -69,17 +71,20 @@ struct proc			*gsched_proc(struct gsched *);
 struct gsched_edf 	*gsched_edf(struct gsched *);
 struct gsched_cfs 	*gsched_cfs(struct gsched *);
 u_char				gsched_timediff(u_char, u_int);
-int					gsched_setpriweight(int pwp, int pwd, int pwr, int pws);
+int					gsched_setpriweight(int, int, int, int);
 void				gsched_lock(struct proc *);
 void				gsched_unlock(struct proc *);
+int					gsched_compare(struct proc *, struct proc *);
+void				gsched_sort(struct proc *, struct proc *);
 
 #endif /* _SYS_GSCHED_H */
+
 /*
  priority weighting: replace release time with cpu utilization.
 
 cost/usage = p_cpu
 
-time = p_estcpu & p_time. (factor p_estcpu if task does not complete in given time)
+time = p_estcpu & p_time.
 
 deadline = p_cpticks
 

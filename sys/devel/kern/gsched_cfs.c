@@ -26,9 +26,9 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* try: an array, to index deadline (example: cpt) */
 /* alternatively make a sorted rb_tree */
 /* p_estcpu equals cfs_decay upon being adding to the cfs run queue */
+
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
@@ -104,6 +104,7 @@
  * 1. A higher priority weighting equals a lower cpu decay.
  * 2. A lower priority weighting equals a higher cpu decay.
  */
+
 /* calculations for digital decay to forget 90% of usage in 5*loadav sec */
 #define	loadfactor(loadav)		        (2 * (loadav))
 #define priwfactor(loadav, priweight)   (loadfactor(loadav) / (priweight))
@@ -115,7 +116,7 @@
 unsigned int
 cfs_decay(p, priweight)
 	register struct proc *p;
-u_char priweight;
+	u_char priweight;
 {
 	register fixpt_t loadfac;
 	register unsigned int newcpu;
@@ -163,6 +164,7 @@ cfs_update(p, priweight)
 RB_PROTOTYPE(gsched_cfs_rbtree, gsched_cfs, cfs_entry, cfs_rb_compare);
 RB_GENERATE(gsched_cfs_rbtree, gsched_cfs, cfs_entry, cfs_rb_compare);
 
+/* merge with gsched_compare (do same thing) or alter to priority weighting */
 int
 cfs_rb_compare(a, b)
 	struct gsched_cfs *a, *b;
@@ -181,8 +183,15 @@ cfs_enqueue(cfs, p)
 	struct gsched_cfs *cfs;
 	struct proc *p;
 {
-	/* compare proc's estcpu & cfs estcpu */
 	cfs->cfs_estcpu = cfs_decay(p, cfs->cfs_priweight);
+	/* compare proc's estcpu & cfs estcpu */
+	if(cfs->cfs_estcpu != p->p_estcpu) {
+		if(cfs->cfs_estcpu > p->p_estcpu) {
+			//Do something here:
+		} else {
+			//Do something here
+		}
+	}
 	RB_INSERT(gsched_cfs_rbtree, &(cfs)->cfs_parent, p);
 }
 
@@ -260,7 +269,7 @@ cfs_schedcpu(p)
 		cfs->cfs_bmg = BMG; /* Not needed? in loop... taken from cfs_compute */
 	}
 
-	/* TODO: search rb_tree for task with highest priority weighting */
+	/* TODO: search rb_tree for task with deadline */
 
 	/* check if it has time. Shouldn't be possible but check anyway */
 	if(cfs->cfs_time != 127) { /* if placed within schedcpu, not required */

@@ -89,14 +89,13 @@
 #include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/lock.h>
+#include <sys/lockobj.h>
 #include <sys/malloc.h>
-#include <sys/mutex.h>
 #include <sys/proc.h>
 #include <sys/sysctl.h>
 #include <sys/syslog.h>
 #include <sys/systm.h>
 #include <sys/queue.h>
-#include <sys/lockobj.h>
 #include <sys/witness.h>
 
 #include <machine/db_machdep.h>

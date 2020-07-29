@@ -31,6 +31,15 @@
 
 #include "sys/gsched_edf.h"
 
+/* return slack/laxity time */
+u_char
+edf_slack(deadline, time, cost)
+	char deadline, cost;
+	u_char time;
+{
+	return ((deadline - time) - cost);
+}
+
 /* CPU Utilization per task (U <= 1) */
 int
 edf_utilization(release, cost)
@@ -56,7 +65,7 @@ edf_demand(time, deadline, release, cost)
 	return (1);
 }
 
-/* CPU Workload: cumulative amount of cpu time for all tasks (W[t], t = time) */
+/* CPU Workload: accumulative amount of cpu time for all tasks (W[t], t = time) */
 int
 edf_workload(time, release, cost)
 	char time, release, cost;
@@ -69,34 +78,28 @@ edf_workload(time, release, cost)
 	return (1);
 }
 
-/* Return slack/laxity time */
-u_char
-edf_slack(deadline, time, cost)
-	char deadline, cost;
-	u_char time;
-{
-	return ((deadline - time) - cost);
-}
-
 void
 edf_testrq(p)
 	struct proc *p;
 {
 	struct gsched_edf *edf = gsched_edf(p->p_gsched);
 
-	/* Check deadline is possible in given time */
+	/* check deadline is possible in given time */
 	if(edf->edf_time < edf->edf_cpticks) {
 		edf->edf_release = 0;
 		goto error;
 	}
     edf->edf_release = edf->edf_time;
 
-	/* check linked list for running processes is not empty */
+    /* get laxity/slack */
+    edf->edf_slack = edf_slack(edf->edf_cpticks, edf->edf_time, edf->edf_cpu);
+
+	/* check linked list that running processes are not empty */
 	edf->edf_rqlink = getrq(p);
 	if(edf->edf_rqlink == NULL) {
 		goto error;
 	} else {
-		/* set proc to run-queue */
+		/* set edf proc to edf run-queue */
 		edf->edf_proc = edf->edf_rqlink;
 		/* test cpu utilization, demand & workload can be scheduled */
 		if (edf_utilization(edf->edf_release, edf->edf_cpu)) {
@@ -107,7 +110,7 @@ edf_testrq(p)
 			printf("workload is schedulable");
 		}
 	}
-	p->p_gsched->gsc_priweight = gsched_setpriweight(edf->edf_pri, edf->edf_cpticks, edf->edf_release, edf->edf_slptime);
+	p->p_gsched->gsc_priweight = gsched_setpriweight(edf->edf_pri, edf->edf_cpticks, edf->edf_slack, edf->edf_slptime);
 
 error:
 	printf(" is likely not schedulable");

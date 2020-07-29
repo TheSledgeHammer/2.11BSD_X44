@@ -112,6 +112,7 @@ struct htbc_inode {
     struct htbc_hi_mfs 			*hi_mfs;	    		/* htbc_hi_mfs */
     int32_t	  					hi_count;				/* Size of free slot in directory. */
     struct vnode 				*hi_vnode;
+    struct vnode 				*hi_devvp;				/* Vnode for block I/O. */
 };
 
 struct htbc_hi_mfs {
@@ -207,8 +208,8 @@ struct htbc_extent_path {
 	struct buf 	*ep_bp;
 	bool 		ep_is_sparse;
 	union {
-		struct htbc_extent 	ep_sparse_ext;
-		struct htbc_extent 	*ep_ext;
+		struct htbc_extent 		ep_sparse_ext;
+		struct htbc_extent 		*ep_ext;
 	};
 	struct htbc_extent_index 	*ep_index;
 	struct htbc_extent_header 	*ep_header;

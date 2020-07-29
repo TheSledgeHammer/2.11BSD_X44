@@ -87,12 +87,12 @@ struct lfs {
 #define	LFS_VERSION	1
 	u_int32_t lfs_version;		/* version number */
 
-	u_int32_t lfs_size;			/* number of blocks in fs */
-	u_int32_t lfs_ssize;		/* number of blocks per segment */
-	u_int32_t lfs_dsize;		/* number of disk blocks in fs */
-	u_int32_t lfs_bsize;		/* file system block size */
-	u_int32_t lfs_fsize;		/* size of frag blocks in fs */
-	u_int32_t lfs_frag;			/* number of frags in a block in fs */
+	u_int32_t 	lfs_size;		/* number of blocks in fs */
+	u_int32_t 	lfs_ssize;		/* number of blocks per segment */
+	u_int32_t 	lfs_dsize;		/* number of disk blocks in fs */
+	u_int32_t 	lfs_bsize;		/* file system block size */
+	u_int32_t 	lfs_fsize;		/* size of frag blocks in fs */
+	u_int32_t 	lfs_frag;		/* number of frags in a block in fs */
 
 /* Checkpoint region. */
 	ino_t	  	lfs_free;		/* start of the free list */
@@ -323,13 +323,13 @@ struct segsum {
  * about inodes and data blocks.
  */
 typedef struct block_info {
-	ino_t	bi_inode;			/* inode # */
-	ufs_daddr_t bi_lbn;			/* logical block w/in file */
-	ufs_daddr_t bi_daddr;		/* disk address of block */
-	time_t	bi_segcreate;		/* origin segment create time */
-	int		bi_version;			/* file version number */
-	void	*bi_bp;				/* data buffer */
-	int     bi_size;            /* size of the block (if fragment) */
+	ino_t		bi_inode;			/* inode # */
+	ufs_daddr_t bi_lbn;				/* logical block w/in file */
+	ufs_daddr_t bi_daddr;			/* disk address of block */
+	time_t		bi_segcreate;		/* origin segment create time */
+	int			bi_version;			/* file version number */
+	void		*bi_bp;				/* data buffer */
+	int     	bi_size;            /* size of the block (if fragment) */
 } BLOCK_INFO;
 
 /* In-memory description of a segment about to be written. */

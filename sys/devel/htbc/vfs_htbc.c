@@ -56,16 +56,20 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @(#)vfs_htbc.c	1.00
+ *
+ * - Ext2fs htree & extents base.
+ * - WAPBL style implementation
  */
 
-/* 	TODO: Missing interfaces...
- *  - lookup by htree
- *  - caching using ext2fs based extents
- *  - read/write to inode
+/* 	TODO:
+ *  - lookup
+ *  - caching
+ *  - read/writes
+ *  - vfs integration
  */
 
 /* Htree Blockchain*/
-/* Augment Caching, Defragmentation, Read-Write and Lookup for Log-Structured Filesystems  */
+/* Augmentation for Caching, Defrag, Read-Write, and Lookup in Log-Structured file systems. */
 
 #include <sys/cdefs.h>
 
@@ -114,7 +118,9 @@ struct htbc {
 	struct mount 				*ht_mount;
 
 	struct htbc_hc_header 		*ht_hc_header;
+
 	struct simplelock 			ht_interlock;
+	unsigned int 				ht_lock_count;
 
 	TAILQ_HEAD(, htbc_dealloc) 	ht_dealloclist;
 	int 						ht_dealloccnt;
@@ -151,6 +157,18 @@ struct htbc_ino {
 	mode_t 						hti_mode;
 };
 
+struct htbc_ops {
+	int 	(*ho_htbc_bmap)(struct vnode *, daddr_t, struct vnode **, daddr_t *, int *);
+	int 	(*ho_htbc_begin)(struct htbc *, const char *, int);
+	void 	(*ho_htbc_end)(struct htbc *);
+};
+
+struct htbc_ops htbc_ops = {
+		.ho_htbc_bmap = htbc_bmap,
+		.ho_htbc_begin = htbc_begin,
+		.ho_htbc_end = htbc_end,
+};
+
 void
 htbc_init()
 {
@@ -171,25 +189,52 @@ htbc_fini()
 int
 htbc_start()
 {
-
+	return (0);
 }
 
 int
 htbc_stop()
 {
-
+	return (0);
 }
 
 int
 htbc_read()
 {
-
+	return (0);
 }
 
 int
 htbc_write()
 {
+	return (0);
+}
 
+int
+htbc_begin(struct htbc *ht, const char *file, int line)
+{
+	int doflush;
+	unsigned int lockcount;
+
+	KDASSERT(ht);
+	simple_lock(&ht->ht_interlock);
+	lockcount = ht->ht_lock_count;
+	//doflush =
+	simple_unlock(&ht->ht_interlock);
+
+	simple_lock(&ht->ht_interlock);
+	ht->ht_lock_count++;
+	simple_unlock(&ht->ht_interlock);
+	return (0);
+}
+
+void
+htbc_end(struct htbc *ht)
+{
+	simple_lock(ht->ht_interlock);
+	KASSERT(ht->ht_lock_count > 0);
+	ht->ht_lock_count--;
+	simple_unlock(ht->ht_interlock);
 }
 
 /****************************************************************/
@@ -311,19 +356,19 @@ htbc_hchain_search_prev(struct htbc_hchain *hc, struct htbc *ht)
 static uint32_t
 htbc_hchain_get_hash(struct htbc_hchain *hc)
 {
-	return hc->hc_hash;
+	return (hc->hc_hash);
 }
 
 static uint32_t
 htbc_hchain_get_timestamp(struct htbc_hchain *hc)
 {
-	return hc->hc_timestamp;
+	return (hc->hc_timestamp);
 }
 
 static uint32_t
 htbc_hchain_get_version(struct htbc_hchain *hc)
 {
-	return hc->hc_version;
+	return (hc->hc_version);
 }
 
 static void
@@ -400,6 +445,90 @@ htbc_blkatoff(struct vnode *vp, off_t offset, char **res, struct buf **bpp)
 		*res = (char *)bp->b_data + htbc_blkoff(fs, offset);
 	*bpp = bp;
 	return 0;
+}
+
+/*
+ * Bmap converts a the logical block number of a file to its physical block
+ * number on the disk. The conversion is done by using the logical block
+ * number to index into the array of block pointers described by the htbc_inode.
+ */
+int
+htbc_bmap(vp, bn, vpp, bnp, runp)
+	struct vnode *vp;
+	daddr_t  bn;
+	struct vnode **vpp;
+	daddr_t *bnp;
+	int *runp;
+{
+	VTOHTI(vp)->hi_flag |= HTREE_EXTENTS;
+
+	if(vpp != NULL) {
+		vpp = VTOHTI(vp)->hi_devvp;
+	}
+	if(bnp == NULL) {
+		return (0);
+	}
+
+	return (htbc_bmapext(vp, bn, bnp, runp, NULL));
+}
+
+/*
+ * Convert the logical block number of a file to its physical block number
+ * on the disk within ext extents.
+ */
+int
+htbc_bmapext(struct vnode *vp, int32_t bn, int64_t *bnp, int *runp, int *runb)
+{
+	struct htbc_hi_mfs *fs;
+	struct htbc_inode *ip;
+	struct htbc_extent *ep;
+	struct htbc_extent_path path = { .ep_bp = NULL };
+	daddr_t lbn;
+	int error = 0;
+
+	ip = VTOHTI(vp);
+	fs = ip->hi_mfs;
+	lbn = bn;
+
+	/* XXX: Should not initialize on error? */
+	if (runp != NULL)
+		*runp = 0;
+
+	if (runb != NULL)
+		*runb = 0;
+
+	htbc_ext_find_extent(fs, ip, lbn, &path);
+	if (path.ep_is_sparse) {
+		*bnp = -1;
+		if (runp != NULL)
+			*runp = path.ep_sparse_ext.e_len - (lbn - path.ep_sparse_ext.e_blk)
+					- 1;
+		if (runb != NULL)
+			*runb = lbn - path.ep_sparse_ext.e_blk;
+	} else {
+		if (path.ep_ext == NULL) {
+			error = EIO;
+			goto out;
+		}
+		ep = path.ep_ext;
+		*bnp = htbc_fsbtodb(fs,
+				lbn - ep->e_blk
+						+ (ep->e_start_lo | (daddr_t) ep->e_start_hi << 32));
+
+		if (*bnp == 0)
+			*bnp = -1;
+
+		if (runp != NULL)
+			*runp = ep->e_len - (lbn - ep->e_blk) - 1;
+		if (runb != NULL)
+			*runb = lbn - ep->e_blk;
+	}
+
+out:
+	if (path.ep_bp != NULL) {
+		brelse(path.ep_bp, 0);
+	}
+	return (error);
 }
 
 /****************************************************************/
@@ -902,7 +1031,7 @@ htree_node_limit(struct htbc_inode *ip)
 	fs = ip->hi_mfs;
 	space = fs->hi_bsize - HTREE_DIR_REC_LEN(0);
 
-	return space / sizeof(struct htree_entry);
+	return (space / sizeof(struct htree_entry));
 }
 
 static int
@@ -929,7 +1058,7 @@ htree_append_block(struct vnode *vp, char *data, struct componentname *cnp, uint
 	if (!error)
 		dp->hi_size = newsize;
 
-	return error;
+	return (error);
 }
 
 static int
@@ -941,10 +1070,10 @@ htree_writebuf(struct htree_lookup_info *info)
 		struct buf *bp = info->h_levels[i].h_bp;
 		error = bwrite(bp);
 		if (error)
-			return error;
+			return (error);
 	}
 
-	return 0;
+	return (0);
 }
 
 static void
@@ -988,10 +1117,10 @@ htree_cmp_sort_entry(const void *e1, const void *e2)
 	entry2 = (const struct htree_sort_entry *)e2;
 
 	if (entry1->h_hash < entry2->h_hash)
-		return -1;
+		return (-1);
 	if (entry1->h_hash > entry2->h_hash)
-		return 1;
-	return 0;
+		return (1);
+	return (0);
 }
 
 /*
@@ -1122,7 +1251,7 @@ htree_split_dirblock(char *block1, char *block2, uint32_t blksize, uint32_t *has
 		    block2 + blksize - dest;
 	}
 
-	return 0;
+	return (0);
 }
 
 /*
@@ -1194,7 +1323,7 @@ htree_create_index(struct vnode *vp, struct componentname *cnp, struct htree_fak
 	/*
 	 * Write directory block 0.
 	 */
-	if ((vp)->v_mount->mnt_iflag & IO_SYNC)
+	if ((vp)->v_mount->mnt_flag & IO_SYNC)
 		(void)bwrite(bp);
 	else
 		bdwrite(bp);
@@ -1219,7 +1348,7 @@ out:
 out1:
 	free(buf1, M_TEMP);
 	free(buf2, M_TEMP);
-	return error;
+	return (error);
 }
 
 /*

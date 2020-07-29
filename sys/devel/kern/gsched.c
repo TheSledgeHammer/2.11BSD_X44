@@ -36,8 +36,10 @@
 #include <sys/lock.h>
 #include <sys/queue.h>
 
-/* The Global Scheduler Interface: For interfacing different scheduling algorithms into the 2.11BSD Kernel */
-/* Primarily for functions that will be used within both the kernel & the scheduler/s */
+/* The Global Scheduler Interface:
+ * For interfacing different scheduling algorithms into the 2.11BSD Kernel
+ * Should Primarily contain functions used in both the kernel & the various scheduler/s
+ */
 
 void
 gsched_init(p)
@@ -131,15 +133,16 @@ gsched_timediff(time, estcpu)
 
 /* a priority weighting, dependent on various factors */
 int
-gsched_setpriweight(pwp, pwd, pwr, pws)
-	int pwp, pwd, pwr, pws;
+gsched_setpriweight(pwp, pwd, pwl, pws)
+	int pwp, pwd, pwl, pws;
 {
 	int pw_pri = PW_FACTOR(pwp, PW_PRIORITY);
 	int pw_dead = PW_FACTOR(pwd, PW_DEADLINE);
-	int pw_rel = PW_FACTOR(pwr, PW_RELEASE);
+	int pw_lax = PW_FACTOR(pwl, PW_LAXITY);
 	int pw_slp = PW_FACTOR(pws, PW_SLEEP);
 
-	int priweight = ((pw_pri + pw_dead + pw_rel + pw_slp) / 4);
+
+	int priweight = ((pw_pri + pw_dead + pw_lax + pw_slp) / 4);
 
 	return (priweight);
 }
@@ -157,3 +160,36 @@ gsched_unlock(p)
 {
 	simple_unlock(p->p_gsched->gsc_lock);
 }
+
+/* compare cpu ticks (deadline) of cur proc and the next proc in run-queue */
+int
+gsched_compare(p1, p2)
+    struct proc *p1, *p2;
+{
+    if(p1->p_cpticks < p2->p_cpticks) {
+        return (-1);
+    } else if(p1->p_cpticks > p2->p_cpticks) {
+        return (1);
+    }
+    return (0);
+}
+
+/* Initial sort of run-queue (lowest first): using gsched_compare; see above */
+void
+gsched_sort(cur, nxt)
+    struct proc *cur;
+    struct proc *nxt;
+{
+    struct proc *tmp;
+
+    if(gsched_compare(cur, nxt) > 0) {
+        tmp = cur;
+        cur = nxt;
+        nxt = tmp;
+
+        if(cur->p_nxt != nxt) {
+            cur->p_nxt = nxt;
+        }
+    }
+}
+

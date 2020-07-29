@@ -54,19 +54,18 @@ struct gsched_edf {
     u_char  			edf_time;			/* resident time for scheduling */
     char    			edf_slptime;		/* Time since last blocked. secs sleeping */
 
-    char				edf_release;		/* Time till release from current block */
-    char 				edf_delta; 			/* Inherited Deadline */
-    u_char 				edf_remtime; 		/* time remaining */
+    char 				edf_slack;			/* slack / laxity time */
+    char				edf_release;		/* time till release from current block. see above */
+
+
+    char 				edf_delta; 			/* Inherited Deadline */ //UN-USED
+    u_char 				edf_remtime; 		/* time remaining */ 	//UN-USED
 };
 
-boolean_t cpu_util;
-boolean_t cpu_demand;
-boolean_t cpu_workload;
-
+u_char 	edf_slack(char, u_char, char);
 int 	edf_utilization(char, char);
 int 	edf_demand(char, char, char, char);
 int 	edf_workload(char, char, char);
-u_char 	edf_slack(char, u_char, char);
 void 	edf_testrq(struct proc *);
 
 /*

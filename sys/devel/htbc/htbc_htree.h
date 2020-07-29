@@ -28,8 +28,8 @@
  *
  * $FreeBSD: head/sys/fs/ext2fs/htree.h 262623 2014-02-28 21:25:32Z pfg $
  */
-#ifndef _FS_HTREE_H_
-#define	_FS_HTREE_H_
+#ifndef HTBC_HTREE_H_
+#define	HTBC_HTREE_H_
 
 #define	HTREE_MAXNAMLEN			255
 
@@ -41,10 +41,6 @@
 #define	HTREE_TEA_UNSIGNED			5
 
 #define	HTREE_EOF 					0x7FFFFFFF
-
-/* To Fix:
- * ext2fs_add_entry (line 483)
- */
 
 struct htree_fake_direct {
 	uint32_t 	h_ino;						/* inode number of entry */
@@ -105,9 +101,10 @@ struct htree_sort_entry {
 
 /* file flags */
 #define HTREE_INDEX		0x00001000 /* hash-indexed directory */
+#define HTREE_EXTENTS	0x00080000 /* Inode uses extents */
 
 /*
- * EXT2_DIR_PAD defines the directory entries boundaries
+ * HTREE_DIR_PAD defines the directory entries boundaries
  *
  * NOTE: It must be a multiple of 4
  */
@@ -140,4 +137,4 @@ static int 		htree_check_next(struct htbc_inode *ip, uint32_t hash, const char *
 static int 		htree_find_leaf(struct htbc_inode *ip, const char *name, int namelen, uint32_t *hash, uint8_t *hash_ver, struct htree_lookup_info *info);
 int 			htree_lookup(struct htbc_inode *ip, const char *name, int namelen, struct buf **bpp, int *entryoffp, int32_t *offp, int32_t *prevoffp, int32_t *endusefulp, struct htbc_hi_searchslot *ss);
 
-#endif /* !_FS_EXT2FS_HTREE_H_ */
+#endif /* HTBC_HTREE_H_ */
