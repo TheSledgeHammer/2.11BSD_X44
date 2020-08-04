@@ -45,3 +45,61 @@ shift(p)
 
 }
 
+/* TODO: Change where PPQ's are implemented/ calculated
+ * -
+ */
+void
+schedcpu(arg)
+	void *arg;
+{
+	register struct proc *p;
+	register int a;
+	register u_char	currpri;
+
+	wakeup((caddr_t)&lbolt);
+	for (p = allproc; p != NULL; p = p->p_nxt) {
+		if (p->p_time != 127)
+			p->p_time++;
+		/*
+		 * this is where 2.11 does its real time alarms.  4.X uses
+		 * timeouts, since it offers better than second resolution.
+		 * Putting it here allows us to continue using use an int
+		 * to store the number of ticks in the callout structure,
+		 * since the kernel never has a timeout of greater than
+		 * around 9 minutes.
+		 */
+		if (p->p_realtimer.it_value && !--p->p_realtimer.it_value) {
+			psignal(p, SIGALRM);
+			p->p_realtimer.it_value = p->p_realtimer.it_interval;
+		}
+		if (p->p_stat == SSLEEP || p->p_stat == SSTOP)
+			if (p->p_slptime != 127)
+				p->p_slptime++;
+		if (p->p_slptime > 1)
+			continue;
+		a = (p->p_cpu & 0377) * SCHMAG + p->p_nice;
+		if (a < 0)
+			a = 0;
+		if (a > 255)
+			a = 255;
+		p->p_cpu = a;
+		if (p->p_pri >= PUSER) {
+			setpri(p);
+		}
+		/*
+		 * sort by cpticks
+		 * pass to edf
+		 * test
+		 * pass to cfs
+		 * exit
+		 */
+	}
+
+	vmmeter();
+	if (runin != 0) {
+		runin = 0;
+		wakeup((caddr_t)&runin);
+	}
+	++runrun;			/* swtch at least once a second */
+	timeout(schedcpu, (caddr_t)0, hz);
+}

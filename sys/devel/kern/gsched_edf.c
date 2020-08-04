@@ -79,59 +79,73 @@ edf_workload(time, release, cost)
 }
 
 void
-edf_testrq(p)
+edf_compute(edf)
+	struct gsched_edf *edf;
+{
+    edf->edf_slack = edf_slack(edf->edf_cpticks, edf->edf_time, edf->edf_cpu); 									/* laxity/slack */
+    edf->edf_priweight = gsched_setpriweight(edf->edf_pri, edf->edf_cpticks, edf->edf_slack, edf->edf_slptime); /* priority weighting */
+}
+
+int
+edf_test(p)
 	struct proc *p;
 {
 	struct gsched_edf *edf = gsched_edf(p->p_gsched);
-
 	/* check deadline is possible in given time */
 	if(edf->edf_time < edf->edf_cpticks) {
 		edf->edf_release = 0;
 		goto error;
 	}
-    edf->edf_release = edf->edf_time;
-
-    /* get laxity/slack */
-    edf->edf_slack = edf_slack(edf->edf_cpticks, edf->edf_time, edf->edf_cpu);
-
-	/* check linked list that running processes are not empty */
-	edf->edf_rqlink = getrq(p);
-	if(edf->edf_rqlink == NULL) {
-		goto error;
-	} else {
-		/* set edf proc to edf run-queue */
-		edf->edf_proc = edf->edf_rqlink;
-		/* test cpu utilization, demand & workload can be scheduled */
-		if (edf_utilization(edf->edf_release, edf->edf_cpu)) {
-			printf("utilization is schedulable");
-		} else if (edf_demand(edf->edf_time, edf->edf_cpticks, edf->edf_release, edf->edf_cpu)) {
-			printf("demand is schedulable");
-		} else if (edf_workload(edf->edf_time, edf->edf_release, edf->edf_cpu)) {
-			printf("workload is schedulable");
-		}
-	}
-	p->p_gsched->gsc_priweight = gsched_setpriweight(edf->edf_pri, edf->edf_cpticks, edf->edf_slack, edf->edf_slptime);
-
-error:
-	printf(" is likely not schedulable");
-}
-
-edf_sanity_check(edf)
-	struct gsched_edf *edf;
-{
 	if(edf->edf_time == 0) {
 		printf("time not set");
+		goto error;
 	}
 	if(edf->edf_cpu == 0) {
 		printf("cost not set");
-	}
-	if(edf->edf_cpticks > edf->edf_time) {
-		printf("deadline > time");
+		goto error;
 	}
 	if(edf->edf_cpticks == 0) {
 		edf->edf_cpticks = edf->edf_time;
+		goto error;
 	}
 	if(edf->edf_cpu > edf->edf_cpticks) {
 		printf("cost > deadline");
+		goto error;
+	}
+    edf->edf_release = edf->edf_time;
+
+	/* test cpu utilization, demand & workload can be scheduled */
+	if (edf_utilization(edf->edf_release, edf->edf_cpu) != 0) {
+		goto error;
+	}
+
+	if (edf_demand(edf->edf_time, edf->edf_cpticks, edf->edf_release, edf->edf_cpu) != 0) {
+		goto error;
+	}
+
+	if (edf_workload(edf->edf_time, edf->edf_release, edf->edf_cpu) != 0) {
+		goto error;
+	}
+
+	printf("is schedulable");
+	return (0);
+
+error:
+	printf("is likely not schedulable");
+	return (1);
+}
+
+void
+edf_schedcpu(p)
+	struct proc *p;
+{
+	struct gsched_edf *edf = gsched_edf(p->p_gsched);
+
+	edf_compute(edf);
+	p->p_gsched->gsc_priweight = edf->edf_priweight;
+
+	if(edf_test(p)) {
+		/* setup run queues here */
+		setrq(p);
 	}
 }

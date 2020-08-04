@@ -59,7 +59,6 @@ threadpool_job_init(struct threadpool_job *job, threadpool_job_fn_t fn, mutex_t 
 	job->job_ktp_thread = NULL;
 	job->job_utp_thread = NULL;
 	job->job_refcnt = 0;
-	//cv_init(&job->job_cv, job->job_name);
 	job->job_fn = fn;
 }
 
@@ -112,8 +111,6 @@ threadpool_job_rele(struct threadpool_job *job)
 		if (refcnt == 1) {
 			refcnt = atomic_dec_uint_nv(&job->job_refcnt);
 			KASSERT(refcnt != UINT_MAX);
-			//if (refcnt == 0)
-			//	cv_broadcast(&job->job_cv);
 			return;
 		}
 	} while (atomic_cas_uint(&job->job_refcnt, refcnt, (refcnt - 1)) != refcnt);

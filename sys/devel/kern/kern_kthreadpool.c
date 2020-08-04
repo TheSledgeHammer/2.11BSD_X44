@@ -38,7 +38,7 @@
 #include <sys/kthread.h>
 
 struct kthreadpool_thread 			ktpool_thread;
-mutex_t 							kthreadpools_lock;
+lock_t	 							kthreadpools_lock;
 
 struct kthreadpool_unbound {
 	struct kthreadpool				ktpu_pool;

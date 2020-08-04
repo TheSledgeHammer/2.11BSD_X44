@@ -39,7 +39,7 @@
 #include <sys/uthread.h>
 
 struct uthreadpool_thread 			utpool_thread;
-mutex_t 							uthreadpools_lock;
+lock_t	 							uthreadpools_lock;
 
 struct uthreadpool_unbound {
 	struct uthreadpool				utpu_pool;

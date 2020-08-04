@@ -782,7 +782,7 @@ vm_map_insert(map, object, offset, start, end)
  *	Saves the specified entry as the hint for
  *	future lookups.  Performs necessary interlocks.
  */
-#define	SAVE_HINT(map,value) 				\
+#define	SAVE_HINT(map, value) 				\
 		simple_lock(&(map)->hint_lock); 	\
 		(map)->hint = (value); 				\
 		simple_unlock(&(map)->hint_lock);

@@ -134,7 +134,9 @@ struct	proc {
 
 	struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
 	char				*p_name;		/* (: name, optional */
+
 	struct gsched		*p_gsched;		/* global scheduler */
+	CIRCLEQ_ENTRY(proc)	p_entries;
 };
 
 struct	session {

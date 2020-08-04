@@ -27,7 +27,8 @@
  */
 
 /* alternatively make a sorted rb_tree */
-/* p_estcpu equals cfs_decay upon being adding to the cfs run queue */
+/* p_estcpu equals cfs_decay upon being adding to the cfs run queue
+ */
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
@@ -184,12 +185,17 @@ cfs_enqueue(cfs, p)
 	struct proc *p;
 {
 	cfs->cfs_estcpu = cfs_decay(p, cfs->cfs_priweight);
-	/* compare proc's estcpu & cfs estcpu */
 	if(cfs->cfs_estcpu != p->p_estcpu) {
 		if(cfs->cfs_estcpu > p->p_estcpu) {
-			//Do something here:
-		} else {
-			//Do something here
+			u_int diff = cfs->cfs_estcpu - p->p_estcpu;
+			if(diff >= 3) {
+				cfs->cfs_estcpu = p->p_estcpu;
+			}
+		} else if (cfs->cfs_estcpu < p->p_estcpu){
+			u_int diff = p->p_estcpu - cfs->cfs_estcpu;
+			if(diff >= 3) {
+				p->p_estcpu = cfs->cfs_estcpu;
+			}
 		}
 	}
 	RB_INSERT(gsched_cfs_rbtree, &(cfs)->cfs_parent, p);
@@ -221,10 +227,14 @@ void
 cfs_compute(cfs)
 	struct gsched_cfs *cfs;
 {
+	/*
+	 * should have cfs factors set here not in gsched_cfs.h.
+	 * - not dynamic, as factors always reset, each cycle calculation
+	 */
 	cfs->cfs_btl = BTL;
 	cfs->cfs_bmg = BMG;
 	cfs->cfs_btimeslice = BTIMESLICE(cfs->cfs_time);
-	cfs->cfs_bsched = BRESCHEDULE;
+	cfs->cfs_bsched = BSCHEDULE;
 }
 
 /*
@@ -243,7 +253,7 @@ cfs_compute(cfs)
  * A) Task is completed and exits run-queue.
  * B) Task is incomplete: exits rb_tree, and passed back to the EDF for re-processing
  *
- * Note: This doesn't include preemption or cpu_decay
+ * Note: This doesn't include preemption or cpu_decay and missing tasks
  */
 
 void
@@ -251,12 +261,14 @@ cfs_schedcpu(p)
 	struct proc *p;
 {
 	struct gsched_cfs *cfs = gsched_cfs(p->p_gsched);
-	u_char tmg = 0; 		/* temp min granularity */
-	u_char tsched = 0; 		/* temp reschedule time */
+	u_char tmp_bmg; 			/* temp base min granularity */
+	u_char tmp_resched; 		/* temp base reschedule time */
+	u_char new_bmg; 			/* new base min granularity */
+	u_char new_resched;			/* new base reschedule time */
 
 	if(p->p_gsched->gsc_priweight != 0) {
 		cfs->cfs_priweight = p->p_gsched->gsc_priweight;
-		/* setrunq here? */
+		/* setrq here? */
 	}
 
 	/* calculate cfs variables */
@@ -264,9 +276,9 @@ cfs_schedcpu(p)
 
 	/* check min granularity */
 	if(EMG(cfs->cfs_time)) {
-		tmg = BMG;
-		BMG = tmg;
-		cfs->cfs_bmg = BMG; /* Not needed? in loop... taken from cfs_compute */
+		tmp_bmg = cfs->cfs_bmg;
+		new_bmg = (cfs->cfs_btl / cfs->cfs_bmg);
+		cfs->cfs_bmg = new_bmg;
 	}
 
 	/* TODO: search rb_tree for task with deadline */
@@ -280,22 +292,46 @@ cfs_schedcpu(p)
 			if(cfs->cfs_time == 127) {
 				break;
 			}
-			if(i == cfs->cfs_bsched) {
-				break;
-			}
 		}
 	}
 	/* missing code here */
 
 	/* check reschedule */
 	if(ERESCHEDULE(cfs->cfs_time)) {
-		tsched = (cfs->cfs_time * cfs->cfs_bmg);
-		BRESCHEDULE = tsched;
-		cfs->cfs_bsched = BRESCHEDULE; /* Not needed? in loop... taken from cfs_compute */
+		tmp_resched = cfs->cfs_bsched;
+		new_resched = (cfs->cfs_time * cfs->cfs_bmg);
+		cfs->cfs_bsched = new_resched;
 	}
+
+	/*
+	 * - don't handle task completion here! (current scheduler & 4.4BSD don't)
+	 * - instead just timeout (exit) or reschedule
+	 */
 
 	/* task complete: remove of queue */
 	remrq(p);
 
 	/* TODO: task incomplete: remove from CFS & re-enter EDF to update */
+	//gsched_reschedule(); or need_resched();
+}
+
+/* scheduling base timeslice per task */
+int
+cfs_btimeslice(task)
+{
+	return (task/BTL);
+}
+
+/* scheduling time (before reschedule): (target latency (btl) / base min granularity (bmg))  */
+int
+cfs_bschedule(btl, bmg)
+{
+	return (btl/bmg);
+}
+
+/* new scheduling time (before reschedule): if number of tasks > (target latency (btl) / base min granularity (bmg)) */
+int
+cfs_nschedule(task)
+{
+	return (task * BMG);
 }

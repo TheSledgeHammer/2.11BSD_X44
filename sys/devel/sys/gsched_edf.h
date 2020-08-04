@@ -36,6 +36,7 @@ CIRCLEQ_HEAD(gsched_edf_cq, gsched_edf);
 struct gsched_edf_cq 		edf_header;
 CIRCLEQ_ENTRY(gsched_edf) 	edf_entry;
 */
+TAILQ_HEAD(edf_rq, gsched_edf);
 struct gsched_edf {
 	struct gsched 		*edf_gsched;		/* pointer to global scheduler */
 
@@ -56,17 +57,21 @@ struct gsched_edf {
 
     char 				edf_slack;			/* slack / laxity time */
     char				edf_release;		/* time till release from current block. see above */
-
+    int					edf_priweight;		/* priority weighting (calculated from various factors) */
 
     char 				edf_delta; 			/* Inherited Deadline */ //UN-USED
     u_char 				edf_remtime; 		/* time remaining */ 	//UN-USED
+
+
+	struct edf_rq			edf_header;
+	TAILQ_ENTRY(gsched_edf)	edf_entry;
 };
 
 u_char 	edf_slack(char, u_char, char);
 int 	edf_utilization(char, char);
 int 	edf_demand(char, char, char, char);
 int 	edf_workload(char, char, char);
-void 	edf_testrq(struct proc *);
+void 	edf_test(struct proc *);
 
 /*
 Preemption:

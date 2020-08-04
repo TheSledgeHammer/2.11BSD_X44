@@ -39,10 +39,10 @@
 #define BTL             20                      		/* base target latency */
 #define BMG             4                       		/* base minimum granularity  */
 #define BTIMESLICE(t)   ((t) / BTL)             		/* base timeslice per task */
-#define BRESCHEDULE     (BTL / BMG)            			/* base minimum time for (n * tasks) before rescheduling occurs */
+#define BSCHEDULE     	(BTL / BMG)            			/* base minimum time for (n * tasks) before rescheduling occurs */
 
 /* Error Checking */
-#define ERESCHEDULE(t)  (((t) * BMG) >  BRESCHEDULE)    /* new rescheduling time if (n * tasks) exceeds BTL/BMG */
+#define ERESCHEDULE(t)  (((t) * BMG) >  BSCHEDULE)    	/* new rescheduling time if (n * tasks) exceeds BTL/BMG */
 #define EMG(t)          (BMG > BTIMESLICE(t))   		/* new minimum granularity if BMG is greater than base timeslice */
 
 struct gsched_cfs_rbtree;
@@ -70,16 +70,17 @@ struct gsched_cfs {
     u_char 						cfs_btl;		/* base target latency */
     u_char 						cfs_bmg;		/* base minimum granularity */
     u_char 						cfs_btimeslice; /* base timeslice per task */
-
     u_char 						cfs_bsched;		/* base rescheduling time */
 
     u_char  					cfs_priweight;	/* priority weighting (calculated from various factors) */
 };
 
-extern struct sched_cfs cfs_runq[CFQS];  		/* cfs run-queues */
-
 unsigned int cfs_decay(struct proc *, u_char);
 unsigned int cfs_update(struct proc *, u_char);
+
+extern struct sched_cfs cfs_runq[CFQS];  		/* cfs run-queues */
+
+#endif /* _SYS_GSCHED_CFS_H */
 
 /*
 left side = tasks with the gravest need for the processor (lowest virtual runtime) are stored toward the left side of the tree
@@ -117,4 +118,3 @@ segregation. One or more processors can share scheduling policies (and load bala
 scheduling policies to intentionally segregate tasks.
 
 */
-#endif //_SYS_GSCHED_CFS_H

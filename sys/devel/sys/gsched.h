@@ -35,17 +35,25 @@
 
 /* Schedulers + Info used by both EDF & CFS */
 /* global scheduler */
+struct gsched_rqlink;
+CIRCLEQ_HEAD(gsched_rqlink, proc);
 struct gsched {
-	struct proc 		*gsc_rqlink; 	/* pointer to linked list of running processes */
-	struct proc 		*gsc_proc;		/* pointer to proc */
+	struct gsched_rqlink 	gsc_header;
+	CIRCLEQ_ENTRY(gsched) 	gsc_entries;
 
-    struct lock			*gsc_lock;		/* global sched lock */
+	struct proc 			*gsc_rqlink; 	/* pointer to linked list of running processes */
+	struct proc 			*gsc_proc;		/* pointer to proc */
 
-    u_char  			gsc_priweight;	/* priority weighting (calculated from various factors) */
+    struct lock				gsc_lock;		/* global sched lock */
+
+    struct simplelock		gsc_hint_lock;
+    struct proc 			*gsc_hint;
+
+    u_char  				gsc_priweight;	/* priority weighting (calculated from various factors) */
 
     /* pointer to schedulers */
-    struct gsched_edf	*gsc_edf;		/* earliest deadline first scheduler */
-    struct gsched_cfs 	*gsc_cfs;		/* completely fair scheduler */
+    struct gsched_edf		*gsc_edf;		/* earliest deadline first scheduler */
+    struct gsched_cfs 		*gsc_cfs;		/* completely fair scheduler */
 };
 
 /* Scheduler Domains: Hyperthreading, multi-cpu, etc... */

@@ -41,6 +41,11 @@
  * Should Primarily contain functions used in both the kernel & the various scheduler/s
  */
 
+/* Notes:
+ * - The scheduling algorithm should run in kern_synch.c: schedcpu() (may change if gains more schedulers)
+ * - edf & cfs only to need calculate from current schedcpu result (without priorities per queue: assumes single queue)
+ */
+
 void
 gsched_init(p)
 	struct proc *p;
@@ -48,7 +53,6 @@ gsched_init(p)
 	struct gsched *gsd = gsched_setup(p);
 	gsched_edf_setup(gsd, p);
 	gsched_cfs_setup(gsd, p);
-	//simple_lock_int(&gsd->gsc_lock); /* Unused */
 }
 
 struct gsched *
@@ -59,6 +63,7 @@ gsched_setup(p)
 	if (gsd == NULL) {
 		MALLOC(gsd, struct gsched *, sizeof(struct gsched *), M_GSCHED, M_WAITOK);
 	}
+	CIRCLEQ_INIT(gsd->gsc_header);
 	gsd->gsc_proc = p;
 	return (gsd);
 }
@@ -193,3 +198,94 @@ gsched_sort(cur, nxt)
     }
 }
 
+/* refcnt: keep track of entries? */
+void
+gsched_enqueue(gsd, p)
+	struct gsched *gsd;
+	struct proc *p;
+{
+	if(gsched_compare(p, p->p_nxt) > 0) {
+		gsched_sort(p, p->p_nxt);
+		CIRCLEQ_INSERT_HEAD(gsd->gsc_header, p, p_entries);
+	} else {
+		CIRCLEQ_INSERT_TAIL(gsd->gsc_header, p, p_entries);
+	}
+}
+
+void
+gsched_dequeue(gsd, p)
+	struct gsched *gsd;
+	struct proc *p;
+{
+	struct proc *cur = gsched_lookup(gsd, p, p->p_cpticks);
+
+	if (cur != NULL) {
+		CIRCLEQ_REMOVE(gsd->gsc_header, p, p_entries);
+	}
+}
+
+#define	SAVE_HINT(gsd, value)  \
+	(gsd)->gsc_hint = (value)
+
+boolean_t
+gsched_search_next(gsd, p, cpticks)
+	struct gsched *gsd;
+	struct proc *p;
+	u_int cpticks;
+{
+	struct proc *cur;
+    struct proc *first = CIRCLEQ_FIRST(gsd->gsc_header);
+    struct proc *last = CIRCLEQ_LAST(gsd->gsc_header);
+
+	CIRCLEQ_FOREACH(p, gsd->gsc_header, p_entries) {
+		if (cpticks >= first->p_cpticks) {
+			cur = CIRCLEQ_NEXT(first, p_entries);
+			if ((cur != last) && (cur->p_cpticks > cpticks)) {
+				cur = p;
+				SAVE_HINT(gsd, cur);
+				return (TRUE);
+			}
+		}
+	}
+	return (FALSE);
+}
+
+boolean_t
+gsched_search_prev(gsd, p, cpticks)
+	struct gsched *gsd;
+	struct proc *p;
+	u_int cpticks;
+{
+	struct proc *cur;
+	struct proc *first = CIRCLEQ_FIRST(gsd->gsc_header);
+	struct proc *last = CIRCLEQ_LAST(gsd->gsc_header);
+
+	CIRCLEQ_FOREACH(p, gsd->gsc_header, p_entries) {
+		if (cpticks >= last->p_cpticks) {
+			cur = CIRCLEQ_PREV(last, p_entries);
+			if ((cur != first) && (cur->p_cpticks > cpticks)) {
+				cur = p;
+				SAVE_HINT(gsd, cur);
+				return (TRUE);
+			}
+		}
+	}
+	return (FALSE);
+}
+
+struct proc *
+gsched_lookup(gsd, p, cpticks)
+	struct gsched *gsd;
+	struct proc *p;
+	u_int cpticks;
+{
+	struct proc *cur = gsd->gsc_hint;
+
+	if (gsched_search_prev(gsd, cur, cpticks)) {
+		return (cur);
+	}
+	if (gsched_search_next(gsd, cur, cpticks)) {
+		return (cur);
+	}
+	return (NULL);
+}

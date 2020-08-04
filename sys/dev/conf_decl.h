@@ -60,28 +60,28 @@
 /* bdevsw-specific initializations */
 #define	dev_size_init(c,n)	(c > 0 ? __CONCAT(n,size) : 0)
 
-#define	bdev_decl(n) 												\
-	dev_decl(n,open); dev_decl(n,close); dev_decl(n,strategy); 		\
+#define	bdev_decl(n) 														\
+	dev_decl(n,open); dev_decl(n,close); dev_decl(n,strategy); 				\
 	dev_decl(n,ioctl); dev_decl(n,dump); dev_decl(n,size)
 
-#define	bdev_disk_init(c,n) { 										\
-	dev_init(c,n,open), dev_init(c,n,close), 						\
-	dev_init(c,n,strategy), dev_init(c,n,ioctl), 					\
+#define	bdev_disk_init(c,n) { 												\
+	dev_init(c,n,open), dev_init(c,n,close), 								\
+	dev_init(c,n,strategy), dev_init(c,n,ioctl), 							\
 	dev_init(c,n,dump), dev_size_init(c,n), D_DISK }
 
-#define	bdev_swap_init(c,n) { 										\
-	(dev_type_open((*))) enodev, (dev_type_close((*))) enodev, 		\
-	dev_init(c,n,strategy), (dev_type_ioctl((*))) enodev, 			\
+#define	bdev_swap_init(c,n) { 												\
+	(dev_type_open((*))) enodev, (dev_type_close((*))) enodev, 				\
+	dev_init(c,n,strategy), (dev_type_ioctl((*))) enodev, 					\
 	(dev_type_dump((*))) enodev, 0 }
 
-#define	bdev_tape_init(c,n) { 										\
-	dev_init(c,n,open), dev_init(c,n,close), 						\
-	dev_init(c,n,strategy), dev_init(c,n,ioctl), 					\
+#define	bdev_tape_init(c,n) { 												\
+	dev_init(c,n,open), dev_init(c,n,close), 								\
+	dev_init(c,n,strategy), dev_init(c,n,ioctl), 							\
 	dev_init(c,n,dump), 0, B_TAPE }
 
 #define	bdev_notdef() { \
-	(dev_type_open((*))) enodev, (dev_type_close((*))) enodev, 		\
-	(dev_type_strategy((*))) enodev, (dev_type_ioctl((*))) enodev, 	\
+	(dev_type_open((*))) enodev, (dev_type_close((*))) enodev, 				\
+	(dev_type_strategy((*))) enodev, (dev_type_ioctl((*))) enodev, 			\
 	(dev_type_dump((*))) enodev, 0 }
 
 /* cdevsw-specific types */
