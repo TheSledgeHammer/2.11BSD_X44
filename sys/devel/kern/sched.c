@@ -5,7 +5,6 @@
  *      Author: marti
  */
 
-
 #include "sys/gsched.h"
 
 #include <sys/param.h>
@@ -45,9 +44,7 @@ shift(p)
 
 }
 
-/* TODO: Change where PPQ's are implemented/ calculated
- * -
- */
+/* TODO: Change where PPQ's are implemented / calculated */
 void
 schedcpu(arg)
 	void *arg;
@@ -86,6 +83,8 @@ schedcpu(arg)
 		if (p->p_pri >= PUSER) {
 			setpri(p);
 		}
+		//edf_schedcpu(p);
+		//cfs_schedcpu(p);
 		/*
 		 * sort by cpticks
 		 * pass to edf

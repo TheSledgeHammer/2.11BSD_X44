@@ -63,7 +63,7 @@
 TAILQ_HEAD(job_head, threadpool_job);
 typedef void threadpool_job_fn_t(struct threadpool_job *);
 struct threadpool_job {
-	mutex_t								*job_lock;
+	lock_t								*job_lock;
 	TAILQ_ENTRY(threadpool_job)			job_entry;
 	volatile unsigned int				job_refcnt;
 	threadpool_job_fn_t					*job_fn;

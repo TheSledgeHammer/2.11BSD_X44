@@ -103,6 +103,7 @@ gsched_cfs_setup(gsd, p)
 	cfs->cfs_cpu = p->p_cpu;
 	cfs->cfs_time = p->p_time;
 	cfs->cfs_slptime = p->p_slptime;
+	//cfs->cfs_tasks = 0;
 }
 
 /* return edf scheduler */

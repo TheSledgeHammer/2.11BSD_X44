@@ -87,10 +87,9 @@ edf_compute(edf)
 }
 
 int
-edf_test(p)
-	struct proc *p;
+edf_test(edf)
+	struct gsched_edf *edf;
 {
-	struct gsched_edf *edf = gsched_edf(p->p_gsched);
 	/* check deadline is possible in given time */
 	if(edf->edf_time < edf->edf_cpticks) {
 		edf->edf_release = 0;
@@ -135,6 +134,7 @@ error:
 	return (1);
 }
 
+/* Set to return? before moving forward */
 void
 edf_schedcpu(p)
 	struct proc *p;
@@ -144,8 +144,9 @@ edf_schedcpu(p)
 	edf_compute(edf);
 	p->p_gsched->gsc_priweight = edf->edf_priweight;
 
-	if(edf_test(p)) {
+	if(edf_test(edf)) {
 		/* setup run queues here */
 		setrq(p);
+		//return
 	}
 }

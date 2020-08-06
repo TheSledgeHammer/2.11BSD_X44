@@ -100,10 +100,12 @@
  *      loadav: 1       2       3       4
  *      power:  5.68    10.32   14.94   19.55
  */
-/* Modified 4.4BSD-Lite2: cpu decay. Accounts for a process's priority weighting
- * Changes means that a process's priority weighting causes either of the following to occur:
- * 1. A higher priority weighting equals a lower cpu decay.
- * 2. A lower priority weighting equals a higher cpu decay.
+/*
+ * Modified 4.4BSD-Lite2 CPU Decay Calculation:
+ * - To account for a process's priority weighting.
+ * - The priority weighting causes either of the following to occur:
+ * 		1. Higher priority weighting equals a lower CPU decay.
+ * 		2. Lower priority weighting equals a higher CPU decay.
  */
 
 /* calculations for digital decay to forget 90% of usage in 5*loadav sec */
@@ -199,6 +201,8 @@ cfs_enqueue(cfs, p)
 		}
 	}
 	RB_INSERT(gsched_cfs_rbtree, &(cfs)->cfs_parent, p);
+	//cfs->cfs_tasks++;
+	//setrq(p);
 }
 
 /* remove from tree */
@@ -208,6 +212,8 @@ cfs_dequeue(cfs, p)
 	struct proc *p;
 {
 	RB_REMOVE(gsched_cfs_rbtree, &(cfs)->cfs_parent, p);
+	//cfs->cfs_tasks--;
+	//remrq(p);
 }
 
 /* search for process with earliest deadline in rbtree & return */
@@ -227,13 +233,8 @@ void
 cfs_compute(cfs)
 	struct gsched_cfs *cfs;
 {
-	/*
-	 * should have cfs factors set here not in gsched_cfs.h.
-	 * - not dynamic, as factors always reset, each cycle calculation
-	 */
 	cfs->cfs_btl = BTL;
 	cfs->cfs_bmg = BMG;
-	cfs->cfs_btimeslice = BTIMESLICE(cfs->cfs_time);
 	cfs->cfs_bsched = BSCHEDULE;
 }
 
@@ -247,7 +248,7 @@ cfs_compute(cfs)
  * 3. run through rbtree until reaching task with highest priority weighting.
  * 4. set task runnable with highest priority weighting.
  * 5. run task for timeslice period or base minimum time before a reschedule (BRESCHEDULE)
- * 6. check reschedule flags (aka. ERESCHEDULE) whether a reschedule or timeslice has expired
+ * 6. check reschedule flags (aka. EBSCHEDULE) whether a reschedule or timeslice has expired
  *
  * 7. Two Scenarios:
  * A) Task is completed and exits run-queue.
@@ -261,77 +262,43 @@ cfs_schedcpu(p)
 	struct proc *p;
 {
 	struct gsched_cfs *cfs = gsched_cfs(p->p_gsched);
-	u_char tmp_bmg; 			/* temp base min granularity */
-	u_char tmp_resched; 		/* temp base reschedule time */
-	u_char new_bmg; 			/* new base min granularity */
-	u_char new_resched;			/* new base reschedule time */
+
+	u_char tmp_bsched; 			/* temp base schedule period */
+	u_char new_bsched;			/* new base schedule period */
 
 	if(p->p_gsched->gsc_priweight != 0) {
 		cfs->cfs_priweight = p->p_gsched->gsc_priweight;
-		/* setrq here? */
 	}
+
+	/* add to cfs queue */
+	cfs_enqueue(cfs, p);
 
 	/* calculate cfs variables */
 	cfs_compute(cfs);
 
-	/* check min granularity */
-	if(EMG(cfs->cfs_time)) {
-		tmp_bmg = cfs->cfs_bmg;
-		new_bmg = (cfs->cfs_btl / cfs->cfs_bmg);
-		cfs->cfs_bmg = new_bmg;
+	/* check base schedule period */
+	if(EBSCHEDULE(cfs)) {
+		tmp_bsched = cfs->cfs_bsched;
+		new_bsched = (cfs->cfs_tasks * cfs->cfs_bmg);
+		cfs->cfs_bsched = new_bsched;
 	}
 
-	/* TODO: search rb_tree for task with deadline */
+	/* TODO: rb_tree based loop */
 
-	/* check if it has time. Shouldn't be possible but check anyway */
-	if(cfs->cfs_time != 127) { /* if placed within schedcpu, not required */
-		/* run task for timeslice */
-		for(int i = 0; i <= cfs->cfs_btimeslice; i++) {
-			/* TODO: needs execution code here */
-			cfs->cfs_time++;
-			if(cfs->cfs_time == 127) {
-				break;
-			}
-		}
-	}
-	/* missing code here */
+	/* update cfs variables */
+	cfs_update(p, cfs->cfs_priweight);
 
-	/* check reschedule */
-	if(ERESCHEDULE(cfs->cfs_time)) {
-		tmp_resched = cfs->cfs_bsched;
-		new_resched = (cfs->cfs_time * cfs->cfs_bmg);
-		cfs->cfs_bsched = new_resched;
-	}
+	/* TODO: rb_tree based loop */
+
+	/* remove from cfs queue */
+	cfs_dequeue(p);
 
 	/*
-	 * - don't handle task completion here! (current scheduler & 4.4BSD don't)
-	 * - instead just timeout (exit) or reschedule
+	 * Incomplete or Completed Tasks: (In line with 2.11BSD & 4.4BSD schedulers)
+	 * - All tasks that need time will be re-enter the queue once removed
+	 * Order of Events:
+	 * 1. Check if timeslice / deadline reached
+	 * 2. remove from queue
+	 * 3. break for-loop (if needed)
 	 */
-
-	/* task complete: remove of queue */
-	remrq(p);
-
-	/* TODO: task incomplete: remove from CFS & re-enter EDF to update */
-	//gsched_reschedule(); or need_resched();
-}
-
-/* scheduling base timeslice per task */
-int
-cfs_btimeslice(task)
-{
-	return (task/BTL);
-}
-
-/* scheduling time (before reschedule): (target latency (btl) / base min granularity (bmg))  */
-int
-cfs_bschedule(btl, bmg)
-{
-	return (btl/bmg);
-}
-
-/* new scheduling time (before reschedule): if number of tasks > (target latency (btl) / base min granularity (bmg)) */
-int
-cfs_nschedule(task)
-{
-	return (task * BMG);
 }

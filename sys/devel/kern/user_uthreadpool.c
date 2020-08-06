@@ -38,15 +38,15 @@
 #include <sys/threadpool.h>
 #include <sys/uthread.h>
 
-struct uthreadpool_thread 			utpool_thread;
-lock_t	 							uthreadpools_lock;
+struct uthreadpool_thread 				utpool_thread;
+lock_t	 								uthreadpools_lock;
 
 struct uthreadpool_unbound {
-	struct uthreadpool				utpu_pool;
+	struct uthreadpool					utpu_pool;
 
-	/* protected by threadpools_lock */
-	LIST_ENTRY(uthreadpool_unbound)	utpu_link;
-	uint64_t						utpu_refcnt;
+	/* protected by uthreadpools_lock */
+	LIST_ENTRY(uthreadpool_unbound)		utpu_link;
+	uint64_t							utpu_refcnt;
 };
 static LIST_HEAD(, uthreadpool_unbound) unbound_uthreadpools;
 

@@ -38,12 +38,10 @@
 
 #define BTL             20                      		/* base target latency */
 #define BMG             4                       		/* base minimum granularity  */
-#define BTIMESLICE(t)   ((t) / BTL)             		/* base timeslice per task */
-#define BSCHEDULE     	(BTL / BMG)            			/* base minimum time for (n * tasks) before rescheduling occurs */
+#define BSCHEDULE     	(BTL / BMG)            			/* base scheduling period */
 
 /* Error Checking */
-#define ERESCHEDULE(t)  (((t) * BMG) >  BSCHEDULE)    	/* new rescheduling time if (n * tasks) exceeds BTL/BMG */
-#define EMG(t)          (BMG > BTIMESLICE(t))   		/* new minimum granularity if BMG is greater than base timeslice */
+#define EBSCHEDULE(p)   ((p)->cfs_tasks > (p)->cfs_bsched)   /* new scheduling period if number tasks exceeds base scheduling period (BTL/BMG) */
 
 struct gsched_cfs_rbtree;
 RB_HEAD(gsched_cfs_rbtree, gsched_cfs);
@@ -69,8 +67,9 @@ struct gsched_cfs {
 
     u_char 						cfs_btl;		/* base target latency */
     u_char 						cfs_bmg;		/* base minimum granularity */
-    u_char 						cfs_btimeslice; /* base timeslice per task */
-    u_char 						cfs_bsched;		/* base rescheduling time */
+    u_char 						cfs_bsched;		/* base scheduling period */
+
+    int							cfs_tasks;		/* counter for number of tasks XXX: Temporary */
 
     u_char  					cfs_priweight;	/* priority weighting (calculated from various factors) */
 };

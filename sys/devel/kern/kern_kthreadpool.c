@@ -37,15 +37,15 @@
 #include <sys/threadpool.h>
 #include <sys/kthread.h>
 
-struct kthreadpool_thread 			ktpool_thread;
-lock_t	 							kthreadpools_lock;
+struct kthreadpool_thread 				ktpool_thread;
+lock_t	 								kthreadpools_lock;
 
 struct kthreadpool_unbound {
-	struct kthreadpool				ktpu_pool;
+	struct kthreadpool					ktpu_pool;
 
-	/* protected by threadpools_lock */
-	LIST_ENTRY(kthreadpool_unbound)	ktpu_link;
-	uint64_t						ktpu_refcnt;
+	/* protected by kthreadpools_lock */
+	LIST_ENTRY(kthreadpool_unbound)		ktpu_link;
+	uint64_t							ktpu_refcnt;
 };
 static LIST_HEAD(, kthreadpool_unbound) unbound_kthreadpools;
 
