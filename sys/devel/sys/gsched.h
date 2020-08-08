@@ -49,7 +49,7 @@ struct gsched {
     struct simplelock		gsc_hint_lock;
     struct proc 			*gsc_hint;
 
-    u_char  				gsc_priweight;	/* priority weighting (calculated from various factors) */
+    u_char  				gsc_priweight;	/* priority weighting (calculated from various factors) *//* add priweight to proc */
 
     /* pointer to schedulers */
     struct gsched_edf		*gsc_edf;		/* earliest deadline first scheduler */
@@ -79,7 +79,7 @@ struct proc			*gsched_proc(struct gsched *);
 struct gsched_edf 	*gsched_edf(struct gsched *);
 struct gsched_cfs 	*gsched_cfs(struct gsched *);
 u_char				gsched_timediff(u_char, u_int);
-int					gsched_setpriweight(int, int, int, int);
+int					gsched_priweight(int, int, int, int);
 void				gsched_lock(struct proc *);
 void				gsched_unlock(struct proc *);
 int					gsched_compare(struct proc *, struct proc *);

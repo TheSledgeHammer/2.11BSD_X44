@@ -30,13 +30,7 @@
 #define _SYS_GSCHED_EDF_H
 
 #include <gsched.h>
-/*
-struct gsched_edf_cq;
-CIRCLEQ_HEAD(gsched_edf_cq, gsched_edf);
-struct gsched_edf_cq 		edf_header;
-CIRCLEQ_ENTRY(gsched_edf) 	edf_entry;
-*/
-TAILQ_HEAD(edf_rq, gsched_edf);
+
 struct gsched_edf {
 	struct gsched 		*edf_gsched;		/* pointer to global scheduler */
 
@@ -63,15 +57,18 @@ struct gsched_edf {
     u_char 				edf_remtime; 		/* time remaining */ 	//UN-USED
 
 
-	struct edf_rq			edf_header;
-	TAILQ_ENTRY(gsched_edf)	edf_entry;
+	struct edf_rq		edf_header;
 };
+
+#define P_EDFFAIL 0x8000	/* Failed EDF Test */
 
 u_char 	edf_slack(char, u_char, char);
 int 	edf_utilization(char, char);
 int 	edf_demand(char, char, char, char);
 int 	edf_workload(char, char, char);
 void 	edf_test(struct proc *);
+
+
 
 /*
 Preemption:

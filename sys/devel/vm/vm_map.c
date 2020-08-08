@@ -326,8 +326,7 @@ _vm_tree_sanity(map, name)
 	RB_FOREACH(tmp, vm_map_rb_tree, &map->rb_root) {
 		if (tmp->ownspace != vm_rb_space(map, tmp)) {
 			printf("%s: %d/%d ownspace %lx != %lx %s\n",
-			    name, n + 1, map->nentries,
-				(u_long)tmp->ownspace, (u_long)vm_rb_space(map, tmp),
+			    name, n + 1, map->nentries, (u_long)tmp->ownspace, (u_long)vm_rb_space(map, tmp),
 				CIRCLEQ_NEXT(tmp, cl_entry) == CIRCLEQ_FIRST(&map->cl_header) ? "(last)" : "");
 			goto error;
 		}
@@ -335,14 +334,11 @@ _vm_tree_sanity(map, name)
 	trtmp = NULL;
 	RB_FOREACH(tmp, vm_map_rb_tree, &map->rb_root) {
 		if (tmp->space != vm_rb_subtree_space(tmp)) {
-			printf("%s: space %lx != %lx\n",
-			    name, (u_long)tmp->space,
-			    (u_long)vm_rb_subtree_space(tmp));
+			printf("%s: space %lx != %lx\n", name, (u_long)tmp->space, (u_long)vm_rb_subtree_space(tmp));
 			goto error;
 		}
 		if (trtmp != NULL && trtmp->start >= tmp->start) {
-			printf("%s: corrupt: 0x%lx >= 0x%lx\n",
-			    name, trtmp->start, tmp->start);
+			printf("%s: corrupt: 0x%lx >= 0x%lx\n", name, trtmp->start, tmp->start);
 			goto error;
 		}
 		n++;
@@ -351,8 +347,7 @@ _vm_tree_sanity(map, name)
 	}
 
 	if (n != map->nentries) {
-		printf("%s: nentries: %d vs %d\n",
-		    name, n, map->nentries);
+		printf("%s: nentries: %d vs %d\n", name, n, map->nentries);
 		goto error;
 	}
 
@@ -360,9 +355,7 @@ _vm_tree_sanity(map, name)
 	    tmp = CIRCLEQ_NEXT(tmp, cl_entry), i++) {
 		trtmp = RB_FIND(vm_map_rb_tree, &map->rb_root, tmp);
 		if (trtmp != tmp) {
-			printf("%s: lookup: %d: %p - %p: %p\n",
-			    name, i, tmp, trtmp,
-			    RB_PARENT(tmp, rb_entry));
+			printf("%s: lookup: %d: %p - %p: %p\n", name, i, tmp, trtmp, RB_PARENT(tmp, rb_entry));
 			goto error;
 		}
 	}
@@ -499,7 +492,7 @@ vm_map_init(map, min, max, pageable)
  */
 vm_map_entry_t
 vm_map_entry_create(map)
-	vm_map_t	map;
+	vm_map_t		map;
 {
 	vm_map_entry_t	entry;
 #ifdef DEBUG
@@ -1445,15 +1438,15 @@ vm_map_inherit(map, start, end, new_inheritance)
  */
 int
 vm_map_pageable(map, start, end, new_pageable)
-	register vm_map_t	map;
+	register vm_map_t		map;
 	register vm_offset_t	start;
 	register vm_offset_t	end;
-	register boolean_t	new_pageable;
+	register boolean_t		new_pageable;
 {
 	register vm_map_entry_t	entry;
-	vm_map_entry_t		start_entry;
+	vm_map_entry_t			start_entry;
 	register vm_offset_t	failed;
-	int			rv;
+	int						rv;
 
 	vm_map_lock(map);
 
@@ -1722,8 +1715,7 @@ vm_map_clean(map, start, end, syncio, invalidate)
 	 * Make a second pass, cleaning/uncaching pages from the indicated
 	 * objects as we go.
 	 */
-	for (current = entry; current->start < end;
-			current = CIRCLEQ_NEXT(current, cl_entry)) {
+	for (current = entry; current->start < end; current = CIRCLEQ_NEXT(current, cl_entry)) {
 		amap = current->aref.ar_amap; /* top layer */
 		object = current->object.vm_object; /* bottom layer */
 
@@ -2983,7 +2975,7 @@ vm_map_simplify(map, start)
 void
 vm_map_print(map, full)
 	register vm_map_t	map;
-	boolean_t		full;
+	boolean_t			full;
 {
 	register vm_map_entry_t	entry;
 	extern int indent;

@@ -1,9 +1,5 @@
-/*
- * sched.c
- *
- *  Created on: 12 Jul 2020
- *      Author: marti
- */
+
+/* Source here is to eventually be merged with kern_synch.c */
 
 #include "sys/gsched.h"
 
@@ -14,21 +10,18 @@
 #include <sys/proc.h>
 #include <sys/lock.h>
 #include <sys/queue.h>
-/*
- * 2.11BSD's cpu decay: determines priority, during schedcpu
- * modified 4.4BSD cpu decay: determines decay factor (calculated using 2.11BSD cpu decay)
- *
- * TODO: placement of p_pctcpu calculation from FSHIFT & CCPU_SHIFT
- */
 
 /* decay 95% of `p_pctcpu' in 60 seconds; see CCPU_SHIFT before changing */
 fixpt_t	ccpu = 		0.95122942450071400909 * FSCALE;		/* exp(-1/20) */
 #define	CCPU_SHIFT	11
 
 void
-shift(p)
+ccpu_shift(p)
 	register struct proc *p;
 {
+	register int s;
+
+	s = splstatclock();	/* prevent state changes */
 	/*
 	 * p_pctcpu is only for ps.
 	 */
@@ -41,10 +34,8 @@ shift(p)
 	p->p_pctcpu += ((FSCALE - ccpu) * (p->p_cpticks * FSCALE / hz)) >> FSHIFT;
 #endif
 	p->p_cpticks = 0;
-
 }
 
-/* TODO: Change where PPQ's are implemented / calculated */
 void
 schedcpu(arg)
 	void *arg;
@@ -69,11 +60,14 @@ schedcpu(arg)
 			psignal(p, SIGALRM);
 			p->p_realtimer.it_value = p->p_realtimer.it_interval;
 		}
+		p->p_swtime++;
 		if (p->p_stat == SSLEEP || p->p_stat == SSTOP)
 			if (p->p_slptime != 127)
 				p->p_slptime++;
+		p->p_pctcpu = (p->p_pctcpu * ccpu) >> FSHIFT;
 		if (p->p_slptime > 1)
 			continue;
+		ccpu_shift(p);
 		a = (p->p_cpu & 0377) * SCHMAG + p->p_nice;
 		if (a < 0)
 			a = 0;
@@ -83,21 +77,26 @@ schedcpu(arg)
 		if (p->p_pri >= PUSER) {
 			setpri(p);
 		}
-		//edf_schedcpu(p);
-		//cfs_schedcpu(p);
-		/*
-		 * sort by cpticks
-		 * pass to edf
-		 * test
-		 * pass to cfs
-		 * exit
-		 */
+		if(edf_schedcpu(p)) {
+			if((p != curproc) && p->p_stat == SRUN && (p->p_flag & P_INMEM) && (p->p_pri / PPQ) != (currpri / PPQ)) {
+				if(cfs_schedcpu(p)) {
+					continue;
+				}
+				p->p_pri = currpri;
+				setpri(p);
+			} else {
+				setpri(p);
+			}
+		} else {
+			setpri(p);
+		}
 	}
 
 	vmmeter();
 	if (runin != 0) {
 		runin = 0;
 		wakeup((caddr_t)&runin);
+	//	wakeup((caddr_t)pageproc);
 	}
 	++runrun;			/* swtch at least once a second */
 	timeout(schedcpu, (caddr_t)0, hz);

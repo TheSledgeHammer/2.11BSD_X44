@@ -26,10 +26,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* alternatively make a sorted rb_tree */
-/* p_estcpu equals cfs_decay upon being adding to the cfs run queue
- */
-
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
@@ -161,7 +157,7 @@ cfs_update(p, priweight)
 			newcpu = (int) decay_cpu(loadfac, newcpu);
 		p->p_estcpu = min(newcpu, UCHAR_MAX);
 	}
-	resetpri(p); /* potentially */
+	//resetpri(p); /* potentially */
 }
 
 RB_PROTOTYPE(gsched_cfs_rbtree, gsched_cfs, cfs_entry, cfs_rb_compare);
@@ -202,7 +198,6 @@ cfs_enqueue(cfs, p)
 	}
 	RB_INSERT(gsched_cfs_rbtree, &(cfs)->cfs_parent, p);
 	//cfs->cfs_tasks++;
-	//setrq(p);
 }
 
 /* remove from tree */
@@ -213,10 +208,10 @@ cfs_dequeue(cfs, p)
 {
 	RB_REMOVE(gsched_cfs_rbtree, &(cfs)->cfs_parent, p);
 	//cfs->cfs_tasks--;
-	//remrq(p);
 }
 
 /* search for process with earliest deadline in rbtree & return */
+struct proc *
 cfs_search(cfs, p)
 	struct gsched_cfs *cfs;
 	struct proc *p;
@@ -224,9 +219,11 @@ cfs_search(cfs, p)
 	cfs->cfs_proc = RB_FIND(gsched_cfs_rbtree, cfs->cfs_parent, p);
 	RB_FOREACH(p, gsched_cfs_rbtree, &(cfs)->cfs_parent) {
 		if(cfs->cfs_cpticks == p->p_cpticks) {
-
+			cfs->cfs_proc = RB_FIND(gsched_cfs_rbtree, cfs->cfs_parent, p);
+			return (cfs->cfs_proc);
 		}
 	}
+	return (NULL);
 }
 
 void
@@ -238,26 +235,8 @@ cfs_compute(cfs)
 	cfs->cfs_bsched = BSCHEDULE;
 }
 
-/*
- * TODO:
- * Passed from EDF to CFS
- * Note: below assumes task is schedulable and inserted into rb tree
- * CFS:
- * 1. calculate cfs variables (timeslice, granularity, target latency)
- * 2. check granularity flags (aka. EMG)
- * 3. run through rbtree until reaching task with highest priority weighting.
- * 4. set task runnable with highest priority weighting.
- * 5. run task for timeslice period or base minimum time before a reschedule (BRESCHEDULE)
- * 6. check reschedule flags (aka. EBSCHEDULE) whether a reschedule or timeslice has expired
- *
- * 7. Two Scenarios:
- * A) Task is completed and exits run-queue.
- * B) Task is incomplete: exits rb_tree, and passed back to the EDF for re-processing
- *
- * Note: This doesn't include preemption or cpu_decay and missing tasks
- */
-
-void
+/* Set to return? once complete */
+int
 cfs_schedcpu(p)
 	struct proc *p;
 {
@@ -265,6 +244,7 @@ cfs_schedcpu(p)
 
 	u_char tmp_bsched; 			/* temp base schedule period */
 	u_char new_bsched;			/* new base schedule period */
+	int cpticks = 0;			/* p_cpticks counter (deadline) */
 
 	if(p->p_gsched->gsc_priweight != 0) {
 		cfs->cfs_priweight = p->p_gsched->gsc_priweight;
@@ -272,6 +252,7 @@ cfs_schedcpu(p)
 
 	/* add to cfs queue */
 	cfs_enqueue(cfs, p);
+	setrq(p);
 
 	/* calculate cfs variables */
 	cfs_compute(cfs);
@@ -283,22 +264,28 @@ cfs_schedcpu(p)
 		cfs->cfs_bsched = new_bsched;
 	}
 
-	/* TODO: rb_tree based loop */
+	/* TODO: rb_tree */
+	cpticks++;
+	/* Test if deadline was reached before end of scheduling period */
+	if(cfs->cfs_cpticks == cpticks) {
+		if(cfs->cfs_time != cfs->cfs_bsched) {
+			goto runout;
+		}
+	}
+	if(cfs->cfs_cpticks != cpticks) {
+		/* test time against schedule period */
+		if(cfs->cfs_time == cfs->cfs_bsched) {
+			goto runout;
+		}
+	}
 
+runout:
 	/* update cfs variables */
 	cfs_update(p, cfs->cfs_priweight);
 
-	/* TODO: rb_tree based loop */
-
 	/* remove from cfs queue */
 	cfs_dequeue(p);
+	remrq(p);
 
-	/*
-	 * Incomplete or Completed Tasks: (In line with 2.11BSD & 4.4BSD schedulers)
-	 * - All tasks that need time will be re-enter the queue once removed
-	 * Order of Events:
-	 * 1. Check if timeslice / deadline reached
-	 * 2. remove from queue
-	 * 3. break for-loop (if needed)
-	 */
+	return (0);
 }

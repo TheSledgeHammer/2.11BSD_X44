@@ -60,9 +60,11 @@ gsched_setup(p)
 	struct proc *p;
 {
 	struct gsched *gsd = p->p_gsched;
+
 	if (gsd == NULL) {
 		MALLOC(gsd, struct gsched *, sizeof(struct gsched *), M_GSCHED, M_WAITOK);
 	}
+
 	CIRCLEQ_INIT(gsd->gsc_header);
 	gsd->gsc_proc = p;
 	return (gsd);
@@ -139,7 +141,7 @@ gsched_timediff(time, estcpu)
 
 /* a priority weighting, dependent on various factors */
 int
-gsched_setpriweight(pwp, pwd, pwl, pws)
+gsched_priweight(pwp, pwd, pwl, pws)
 	int pwp, pwd, pwl, pws;
 {
 	int pw_pri = PW_FACTOR(pwp, PW_PRIORITY);

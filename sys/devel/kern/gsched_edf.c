@@ -26,6 +26,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* The edf scheduler runs per run-queue */
+
 #include <sys/proc.h>
 #include <sys/user.h>
 
@@ -83,7 +85,7 @@ edf_compute(edf)
 	struct gsched_edf *edf;
 {
     edf->edf_slack = edf_slack(edf->edf_cpticks, edf->edf_time, edf->edf_cpu); 									/* laxity/slack */
-    edf->edf_priweight = gsched_setpriweight(edf->edf_pri, edf->edf_cpticks, edf->edf_slack, edf->edf_slptime); /* priority weighting */
+    edf->edf_priweight = gsched_priweight(edf->edf_pri, edf->edf_cpticks, edf->edf_slack, edf->edf_slptime); 	/* priority weighting */
 }
 
 int
@@ -95,6 +97,7 @@ edf_test(edf)
 		edf->edf_release = 0;
 		goto error;
 	}
+	/* Sanity Check */
 	if(edf->edf_time == 0) {
 		printf("time not set");
 		goto error;
@@ -134,19 +137,22 @@ error:
 	return (1);
 }
 
-/* Set to return? before moving forward */
-void
+/* Set to return? once complete */
+int
 edf_schedcpu(p)
 	struct proc *p;
 {
 	struct gsched_edf *edf = gsched_edf(p->p_gsched);
+	int error;
 
 	edf_compute(edf);
 	p->p_gsched->gsc_priweight = edf->edf_priweight;
 
 	if(edf_test(edf)) {
-		/* setup run queues here */
-		setrq(p);
-		//return
+		return (0);
+	} else {
+		panic("edf_test failed");
+		error = P_EDFFAIL;
 	}
+	return (error);
 }
