@@ -1,22 +1,37 @@
-Development Folder: Can be split into two. 
-	- New Content: code in development. 
-	- Existing Content: code to be added into kernel
+## Development: (Folder: devel)
+- The "devel" folder is temporary.
+- Contains code that fits into two categories. 1). In Development & 2). Needs Testing.
+- Please look at the README for more information.
 
-New Content:
+### Devel Contents:
+- HTBC: HTree Based Blockchain to augment LFS & other existing Log-Structured Filesystems (akin to Soft-updates & WAPBL).
+- Malloc: A Tertiary Buddy System Allocator (No Plans or use cases). Originally planned as part of a larger memory allocation stack for the kernel. (Needs a home!)
+- PMAP: Clustered Page Table variant, backed by a two red-black trees.
+- Scheduler: A Stackable Scheduler that sits atop 2.11BSD's existing scheduler.
+  - Consists of a Hybrid EDF/CFS scheduling algorithm.
+- Threads: kernel-space & user-space threading implementation.
+- UFML: LOFS based filesystem layer, combined with features from HTBC.
+  - Aims to provide a Fossil + Venti inspired support to UFS, FFS, MFS & LFS.
+  - Planned features include: snapshots, versioning, cache, archive, compression & encryption.
+- UFS211: Direct port of 2.11BSD's UFS Filesystem.
+- VM: Updates to the VM Layer.
+  - VM Map: Implements a red-black tree & circular list, with the intended goal of constant-time lookup.
+
+Development Folder:
 - HTBC: HTree Blockchain
-	- A Versioning, Snapshot, Cache augmentation for LFS and other Log-Structured Filesystems. 
-	- Using a blockchain styled structure 
-	- Implemented in both LFS and the VFS Layer 
+	- A Versioning, Snapshot, Cache augmentation for LFS and other Log-Structured Filesystems.
+	- Using a blockchain styled structure
+	- Implemented in both LFS and the VFS Layer
 - Memory:
-	- An general memory allocator with several layers/ stack. 
-	- Idea: Top(Interface) to Bottom(Block Allocation) Layers: Slabs, Pools, Buckets, Tertiary Buddy 
+	- An general memory allocator with several layers/ stack.
+	- Idea: Top(Interface) to Bottom(Block Allocation) Layers: Slabs, Pools, Buckets, Tertiary Buddy
 - MPX: Multiplexors
 	- A reimplementation of multiplexors from the V7 and early BSD's
 	- Two concurrent versions:
 		- MPX: Based on bsd sockets
 		- MPX-FS: A filesystem, with multiple possible variations
-			- Implement in the VFS layer. To provide a multiplexors across filesystems 
-			- Independent FS like fdesc, fifo, etc 
+			- Implement in the VFS layer. To provide a multiplexors across filesystems
+			- Independent FS like fdesc, fifo, etc
 - Multitasking:
 	- Threads
 	- Threadpools
@@ -36,14 +51,5 @@ New Content:
 	- Provides a modular unified layer for archiving, snapshots and compression across UFS, FFS, MFS & LFS
 - UFS211:
 	- 2.11BSD's UFS. (Seperate from UFS)
-- VM: 
+- VM:
 	- A 4.4BSD-Lite2 VM with features from NetBSD's UVM
-	
-Existing Content:
-- Misc:
-	- Crypto: Camellia, Murmur3 & Twofish
-- UFS: Yet to be implemented
-	- UFS WAPBL
-	- VFS WAPBL
-	- dirhash
-	- extended attributes

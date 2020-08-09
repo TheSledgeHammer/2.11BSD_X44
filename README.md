@@ -5,6 +5,7 @@
 
 ## Project Goals:
 - Maintain Traditional 2.11BSD Style while keeping current.
+  - Current focus is on re-using & extending as much of the 2.11BSD codebase where applicable before importing new or existing code
 - Small Footprint: Ideally less than 200 system calls.
 - Clean code
 
@@ -35,24 +36,8 @@
 - Kernel Modules
 - Symmetric Multi-Processing (SMP)
 
-## Development: (Folder: devel)
-- The "devel" folder is temporary.
-- Contains code that fits into two categories. 1). In Development & 2). Needs Testing.
-- Please read the README in their respective folders for more information.
-
-### Devel Contents:
-- HTBC: HTree Based Blockchain to augment LFS & other existing Log-Structured Filesystems (akin to Soft-updates & WAPBL).
-- Malloc: A Tertiary Buddy System Allocator (No Plans or use cases). Originally planned as part of a larger memory allocation stack for the kernel. (Needs a home!)
-- PMAP: Clustered Page Table variant, backed by a two red-black trees.
-- Scheduler: A Stackable Scheduler that sits atop 2.11BSD's existing scheduler.
-  - Consists of a Hybrid EDF/CFS scheduling algorithm.
-- Threads: kernel-space & user-space threading implementation.
-- UFML: LOFS based filesystem layer, combined with features from HTBC.
-  - Aims to provide a Fossil + Venti inspired support to UFS, FFS, MFS & LFS.
-  - Planned features include: snapshots, versioning, cache, archive, compression & encryption.
-- UFS211: Direct port of 2.11BSD's UFS Filesystem.
-- VM: Updates to the VM Layer.
-  - VM Map: Implements a red-black tree & circular list, with the intended goal of constant-time lookup.
+## Development:
+- Please read the TODO for a list of what needs doing.
 
 ## Porting:
 2.11BSD_X44 is entirely open to being ported to different architectures.
