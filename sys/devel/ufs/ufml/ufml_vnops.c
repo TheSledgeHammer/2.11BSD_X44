@@ -204,9 +204,9 @@
 /*
  * Undo the PUSHREF
  */
-#define POP(v, nd) 	\
-					\
-	(nd) = v.vnp; 	\
+#define POP(v, nd) 						\
+										\
+	(nd) = v.vnp; 						\
 }
 
 int

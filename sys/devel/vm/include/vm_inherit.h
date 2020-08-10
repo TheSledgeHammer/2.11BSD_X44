@@ -78,6 +78,6 @@
 #define VM_INHERIT_NONE			((vm_inherit_t) 2)	/* absent from child */
 #define	VM_INHERIT_DONATE_COPY	((vm_inherit_t) 3)	/* copy and delete */
 
-#define VM_INHERIT_DEFAULT	VM_INHERIT_COPY
+#define VM_INHERIT_DEFAULT		VM_INHERIT_COPY
 
 #endif /* _VM_INHERIT_ */

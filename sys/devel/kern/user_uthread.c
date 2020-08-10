@@ -29,7 +29,6 @@
 #include <sys/param.h>
 #include <sys/malloc.h>
 #include <sys/lock.h>
-#include "devel/sys/mutex.h"
 #include "devel/sys/rwlock.h"
 #include "devel/sys/kthread.h"
 #include "devel/sys/uthread.h"

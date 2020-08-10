@@ -5,9 +5,9 @@
  *      Author: marti
  */
 
-#ifndef SYS_DEVEL_VM_INCLUDE_VM_KERN_H_
-#define SYS_DEVEL_VM_INCLUDE_VM_KERN_H_
+#ifndef VM_INCLUDE_VM_KERN_H_
+#define VM_INCLUDE_VM_KERN_H_
 
 
 
-#endif /* SYS_DEVEL_VM_INCLUDE_VM_KERN_H_ */
+#endif /* VM_INCLUDE_VM_KERN_H_ */

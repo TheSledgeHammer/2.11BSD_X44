@@ -843,7 +843,7 @@ amap_copy(map, entry, waitf, canchunk, startva, endva)
 
 	entry->aref.ar_pageoff = 0;
 	entry->aref.ar_amap = amap;
-	entry->etype &= ~UVM_ET_NEEDSCOPY;
+	entry->etype &= ~VM_ET_NEEDSCOPY;
 	//UVMHIST_LOG(maphist, "<- done",0, 0, 0, 0);
 }
 

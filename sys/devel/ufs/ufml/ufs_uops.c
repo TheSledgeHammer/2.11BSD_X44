@@ -129,15 +129,15 @@ ufs_snapshot_commit(ap)
 }
 
 struct ufmlops ufsuops = {
-	.uop_archive = 			ufs_archive,			/* archive */
-	.uop_extract = 			ufs_extract,			/* extract */
-	.uop_compress = 		ufs_compress,			/* compress */
-	.uop_decompress = 		ufs_decompress,			/* decompress */
-	.uop_encrypt = 			ufs_encrypt,			/* encrypt */
-	.uop_decrypt = 			ufs_decrypt,			/* decrypt */
-	.uop_snapshot_write = 	ufs_snapshot_write,		/* snapshot_write */
-	.uop_snapshot_read = 	ufs_snapshot_read,		/* snapshot_read */
-	.uop_snapshot_delete = 	ufs_snapshot_delete,	/* snapshot_delete */
-	.uop_snapshot_commit = 	ufs_snapshot_commit,	/* snapshot_commit */
-	(struct ufmlops *)NULL = (int(*)())NULL
+	.uop_archive 			=	ufs_archive,			/* archive */
+	.uop_extract 			=	ufs_extract,			/* extract */
+	.uop_compress 			=	ufs_compress,			/* compress */
+	.uop_decompress 		=	ufs_decompress,			/* decompress */
+	.uop_encrypt 			=	ufs_encrypt,			/* encrypt */
+	.uop_decrypt 			=	ufs_decrypt,			/* decrypt */
+	.uop_snapshot_write 	= 	ufs_snapshot_write,		/* snapshot_write */
+	.uop_snapshot_read 		= 	ufs_snapshot_read,		/* snapshot_read */
+	.uop_snapshot_delete 	= 	ufs_snapshot_delete,	/* snapshot_delete */
+	.uop_snapshot_commit 	= 	ufs_snapshot_commit,	/* snapshot_commit */
+	(struct ufmlops *)NULL 	= 	(int(*)())NULL
 };

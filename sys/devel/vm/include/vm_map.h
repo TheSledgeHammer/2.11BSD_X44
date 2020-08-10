@@ -173,39 +173,39 @@ typedef struct {
 
 #include <sys/proc.h>	/* XXX for curproc and p_pid */
 
-#define	vm_map_lock_drain_interlock(map) { \
-	lockmgr(&(map)->lock, LK_DRAIN|LK_INTERLOCK, \
-		&(map)->ref_lock, curproc); \
-	(map)->timestamp++; \
+#define	vm_map_lock_drain_interlock(map) { 						\
+	lockmgr(&(map)->lock, LK_DRAIN|LK_INTERLOCK, 				\
+		&(map)->ref_lock, curproc); 							\
+	(map)->timestamp++; 										\
 }
 #ifdef DIAGNOSTIC
-#define	vm_map_lock(map) { \
+#define	vm_map_lock(map) { 										\
 	if (lockmgr(&(map)->lock, LK_EXCLUSIVE, (void *)0, curproc) != 0) { \
-		panic("vm_map_lock: failed to get lock"); \
-	} \
-	(map)->timestamp++; \
+		panic("vm_map_lock: failed to get lock"); 				\
+	} 															\
+	(map)->timestamp++; 										\
 }
 #else
-#define	vm_map_lock(map) { \
-	lockmgr(&(map)->lock, LK_EXCLUSIVE, (void *)0, curproc); \
-	(map)->timestamp++; \
+#define	vm_map_lock(map) { 										\
+	lockmgr(&(map)->lock, LK_EXCLUSIVE, (void *)0, curproc); 	\
+	(map)->timestamp++; 										\
 }
 #endif /* DIAGNOSTIC */
-#define	vm_map_unlock(map) 						\
+#define	vm_map_unlock(map) 										\
 		lockmgr(&(map)->lock, LK_RELEASE, (void *)0, curproc)
-#define	vm_map_lock_read(map) 					\
+#define	vm_map_lock_read(map) 									\
 		lockmgr(&(map)->lock, LK_SHARED, (void *)0, curproc)
-#define	vm_map_unlock_read(map) 				\
+#define	vm_map_unlock_read(map) 								\
 		lockmgr(&(map)->lock, LK_RELEASE, (void *)0, curproc)
-#define vm_map_set_recursive(map) { 			\
-	simple_lock(&(map)->lk_lnterlock); 			\
-	(map)->lk_flags |= LK_CANRECURSE; 			\
-	simple_unlock(&(map)->lk_lnterlock); 		\
+#define vm_map_set_recursive(map) { 							\
+	simple_lock(&(map)->lk_lnterlock); 							\
+	(map)->lk_flags |= LK_CANRECURSE; 							\
+	simple_unlock(&(map)->lk_lnterlock); 						\
 }
-#define vm_map_clear_recursive(map) { 			\
-	simple_lock(&(map)->lk_lnterlock); 			\
-	(map)->lk_flags &= ~LK_CANRECURSE; 			\
-	simple_unlock(&(map)->lk_lnterlock); 		\
+#define vm_map_clear_recursive(map) { 							\
+	simple_lock(&(map)->lk_lnterlock); 							\
+	(map)->lk_flags &= ~LK_CANRECURSE; 							\
+	simple_unlock(&(map)->lk_lnterlock); 						\
 }
 /*
  *	Functions implemented as macros

@@ -39,7 +39,6 @@
 #ifndef _UVM_UVM_AOBJ_H_
 #define _UVM_UVM_AOBJ_H_
 
-
 /*
  * An anonymous UVM object (aobj) manages anonymous-memory.  In addition to
  * keeping the list of resident pages, it may also keep a list of allocated
@@ -62,19 +61,19 @@
 
 /* Get the "tag" for this page index. */
 #define	UAO_SWHASH_ELT_TAG(idx)		((idx) >> UAO_SWHASH_CLUSTER_SHIFT)
-#define UAO_SWHASH_ELT_PAGESLOT_IDX(idx) \
+#define UAO_SWHASH_ELT_PAGESLOT_IDX(idx) 	\
     ((idx) & (UAO_SWHASH_CLUSTER_SIZE - 1))
 
 /* Given an ELT and a page index, find the swap slot. */
-#define	UAO_SWHASH_ELT_PAGESLOT(elt, idx) \
+#define	UAO_SWHASH_ELT_PAGESLOT(elt, idx) 	\
     ((elt)->slots[UAO_SWHASH_ELT_PAGESLOT_IDX(idx)])
 
 /* Given an ELT, return its pageidx base. */
-#define	UAO_SWHASH_ELT_PAGEIDX_BASE(ELT) \
+#define	UAO_SWHASH_ELT_PAGEIDX_BASE(ELT) 	\
     ((elt)->tag << UAO_SWHASH_CLUSTER_SHIFT)
 
 /* The hash function. */
-#define	UAO_SWHASH_HASH(aobj, idx) \
+#define	UAO_SWHASH_HASH(aobj, idx) 			\
     (&(aobj)->u_swhash[(((idx) >> UAO_SWHASH_CLUSTER_SHIFT) \
     & (aobj)->u_swhashmask)])
 
@@ -83,12 +82,12 @@
  * hash table to store the list of allocated swap blocks.
  */
 #define	UAO_SWHASH_THRESHOLD		(UAO_SWHASH_CLUSTER_SIZE * 4)
-#define	UAO_USES_SWHASH(aobj) \
+#define	UAO_USES_SWHASH(aobj) 				\
     ((aobj)->u_pages > UAO_SWHASH_THRESHOLD)
 
 /* The number of buckets in a hash, with an upper bound. */
 #define	UAO_SWHASH_MAXBUCKETS		256
-#define	UAO_SWHASH_BUCKETS(aobj) \
+#define	UAO_SWHASH_BUCKETS(aobj) 			\
     (MIN((aobj)->u_pages >> UAO_SWHASH_CLUSTER_SHIFT, UAO_SWHASH_MAXBUCKETS))
 
 /*
@@ -150,10 +149,10 @@ static struct vm_page *uao_pagealloc(struct vm_object *, vm_offset_t, int);
  */
 
 const struct pagerops aobj_pager = {
-	.pgo_reference = uao_reference,
-	.pgo_detach = uao_detach,
-	.pgo_get = uao_get,
-	.pgo_put = uao_put,
+	.pgo_reference 	= uao_reference,
+	.pgo_detach 	= uao_detach,
+	.pgo_get 		= uao_get,
+	.pgo_put 		= uao_put,
 };
 
 /*

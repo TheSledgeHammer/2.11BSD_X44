@@ -101,8 +101,8 @@
 #include <machine/db_machdep.h>
 
 #include <ddb/db_access.h>
-//#include <ddb/db_var.h>
 #include <ddb/db_output.h>
+//#include <ddb/db_var.h>
 
 #define	LI_RECURSEMASK			0x0000ffff	/* Recursion depth of lock instance. */
 #define	LI_EXCLUSIVE			0x00010000	/* Exclusive lock instance. */
@@ -158,8 +158,8 @@
  */
 
 struct lock_class {
-	const	char 			*lc_name;
-	u_int					lc_flags;
+	const	char 					*lc_name;
+	u_int							lc_flags;
 };
 
 /*
@@ -175,8 +175,8 @@ struct lock_class {
 */
 
 union lock_stack {
-	union lock_stack		*ls_next;
-	struct stacktrace		ls_stack;
+	union lock_stack				*ls_next;
+	struct stacktrace				ls_stack;
 };
 
 
@@ -193,10 +193,10 @@ union lock_stack {
  * are held in a per-cpu list while sleep locks are held in per-thread list.
  */
 struct lock_instance {
-	struct lock_object		*li_lock;
-	const char				*li_file;
-	int						li_line;
-	u_int					li_flags;
+	struct lock_object				*li_lock;
+	const char						*li_file;
+	int								li_line;
+	u_int							li_flags;
 };
 
 /*
@@ -210,9 +210,9 @@ struct lock_instance {
  * down to children[0] as the final entry.
  */
 struct lock_list_entry {
-	struct lock_list_entry	*ll_next;
-	struct lock_instance	ll_children[LOCK_NCHILDREN];
-	int						ll_count;
+	struct lock_list_entry			*ll_next;
+	struct lock_instance			ll_children[LOCK_NCHILDREN];
+	int								ll_count;
 };
 
 /*
@@ -220,19 +220,19 @@ struct lock_list_entry {
  * (for example, "vnode interlock").
  */
 struct witness {
-	const struct lock_type	*w_type;
-	const char				*w_subtype;
-	uint32_t				w_index;  			/* Index in the relationship matrix */
-	struct lock_class		*w_class;
-	SIMPLEQ_ENTRY(witness)	w_list;				/* List of all witnesses. */
-	SIMPLEQ_ENTRY(witness)	w_typelist;			/* Witnesses of a type. */
-	struct witness			*w_hash_next; 		/* Linked list in hash buckets. */
-	uint16_t				w_num_ancestors; 	/* direct/indirect ancestor count */
-	uint16_t				w_num_descendants; 	/* direct/indirect descendant count */
-	int16_t					w_ddb_level;
-	unsigned				w_acquired:1;
-	unsigned				w_displayed:1;
-	unsigned				w_reversed:1;
+	const struct lock_type			*w_type;
+	const char						*w_subtype;
+	uint32_t						w_index;  			/* Index in the relationship matrix */
+	struct lock_class				*w_class;
+	SIMPLEQ_ENTRY(witness)			w_list;				/* List of all witnesses. */
+	SIMPLEQ_ENTRY(witness)			w_typelist;			/* Witnesses of a type. */
+	struct witness					*w_hash_next; 		/* Linked list in hash buckets. */
+	uint16_t						w_num_ancestors; 	/* direct/indirect ancestor count */
+	uint16_t						w_num_descendants; 	/* direct/indirect descendant count */
+	int16_t							w_ddb_level;
+	unsigned						w_acquired:1;
+	unsigned						w_displayed:1;
+	unsigned						w_reversed:1;
 };
 
 SIMPLEQ_HEAD(witness_list, witness);

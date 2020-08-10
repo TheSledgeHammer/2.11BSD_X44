@@ -114,11 +114,11 @@ vextops_destroy(vext)
 
 /* VM_SEGMENT EXTENT OPS */
 struct vextops vm_segmentops = {
-	.vm_extent_create =	extent_create,
-	.vm_extent_alloc = extent_alloc_region,
+	.vm_extent_create 	= extent_create,
+	.vm_extent_alloc 	= extent_alloc_region,
 	.vm_extent_suballoc = extent_alloc_subregion,
-	.vm_extent_free = extent_free,
-	.vm_extent_destroy = extent_destroy
+	.vm_extent_free 	= extent_free,
+	.vm_extent_destroy 	= extent_destroy
 };
 
 int
