@@ -1,55 +1,53 @@
-## Development: (Folder: devel)
-- The "devel" folder is temporary.
-- Contains code that fits into two categories. 1). In Development & 2). Needs Testing.
-- Please look at the README for more information.
+## Development: (devel folder)
+- All work here is proof of concept and hence temporary.
 
 ### Devel Contents:
-- HTBC: HTree Based Blockchain to augment LFS & other existing Log-Structured Filesystems (akin to Soft-updates & WAPBL).
-- Malloc: A Tertiary Buddy System Allocator (No Plans or use cases). Originally planned as part of a larger memory allocation stack for the kernel. (Needs a home!)
-- PMAP: Clustered Page Table variant, backed by a two red-black trees.
-- Scheduler: A Stackable Scheduler that sits atop 2.11BSD's existing scheduler.
-  - Consists of a Hybrid EDF/CFS scheduling algorithm.
-- Threads: kernel-space & user-space threading implementation.
-- UFML: LOFS based filesystem layer, combined with features from HTBC.
-  - Aims to provide a Fossil + Venti inspired support to UFS, FFS, MFS & LFS.
-  - Planned features include: snapshots, versioning, cache, archive, compression & encryption.
-- UFS211: Direct port of 2.11BSD's UFS Filesystem.
-- VM: Updates to the VM Layer.
-  - VM Map: Implements a red-black tree & circular list, with the intended goal of constant-time lookup.
+- HTBC: HTree Based Blockchain to augment LFS & other existing Log-Structured Filesystems (akin to Soft-updates & WAPBL)
 
-Development Folder:
-- HTBC: HTree Blockchain
-	- A Versioning, Snapshot, Cache augmentation for LFS and other Log-Structured Filesystems.
-	- Using a blockchain styled structure
-	- Implemented in both LFS and the VFS Layer
-- Memory:
-	- An general memory allocator with several layers/ stack.
-	- Idea: Top(Interface) to Bottom(Block Allocation) Layers: Slabs, Pools, Buckets, Tertiary Buddy
-- MPX: Multiplexors
-	- A reimplementation of multiplexors from the V7 and early BSD's
-	- Two concurrent versions:
-		- MPX: Based on bsd sockets
-		- MPX-FS: A filesystem, with multiple possible variations
-			- Implement in the VFS layer. To provide a multiplexors across filesystems
-			- Independent FS like fdesc, fifo, etc
-- Multitasking:
-	- Threads
-	- Threadpools
-	- Deadlocking: Mutexes, Reader-Writer Lock
-- OVL:
-	- A Seperate overlay address space for kernel & VM (devel)
-- Pmap:
-	- Machine-independent api for Clustered Page Tables variation.
-	- i386 arch partial pmap implementation
-- Scheduler: Stacked Scheduler
-	- Kernel feeds EDF which feeds the CFS. Circuler Queue
-	- Earliest Deadline First Priorities (Plan 9's EDFI Inspired)
-	- Completely Fair Scheduler
-- UFML:
-	- UFML is an abbrievation of the filesystems it's designed for (UFS + FFS + MFS + LFS)  
-	- A content based filesystem/layer inspired by Plan 9's Fossil & Venti Filesystem
-	- Provides a modular unified layer for archiving, snapshots and compression across UFS, FFS, MFS & LFS
-- UFS211:
-	- 2.11BSD's UFS. (Seperate from UFS)
-- VM:
-	- A 4.4BSD-Lite2 VM with features from NetBSD's UVM
+- Kern & Sys:
+	- Malloc: A Tertiary Buddy System Allocator (No Plans or use cases). Originally planned as part of a larger memory allocation stack for the kernel. (Needs a home!)
+	- Scheduler: A Stackable Scheduler that sits atop 2.11BSD's existing scheduler (kern_synch.c).
+		- Global Scheduler: Interface/API for new schedulers
+		- Hybrid EDF/CFS Scheduler
+	- Threading (Hybrid N:M Model): kernel & user threads
+		- Implements a new concept: Inter-Threadpool Proccess Communication (ITPC)
+	- Locks: Enhancements to lock
+		- Planned: Replace proc with pid in lockmgr
+		- Rwlock: Introduction of a reader-writers lock
+		- Witness: Partial port of FreeBSD/OpenBSD's witness
+
+- PMAP: Clustered Page Table variant, backed by a two red-black trees.
+
+- UFML: LOFS based filesystem layer, combined with features from HTBC.
+	- Aims to provide a Fossil + Venti inspired support to UFS, FFS, MFS & LFS.
+  	- Planned Features: 
+  		- Snapshots
+  		- Versioning
+  		- Archive
+  		- Compression
+  		- Encryption
+
+- UFS211: Port of 2.11BSD's UFS Filesystem.
+	- Independent of UFS
+
+- VM: Updates to the VM Layer.
+	- Planned: 
+		- VM Overlays: A re-implementation of 2.11BSD's use of Overlays (See below: OVLSpace)
+		- VM Extents: A VM extension of extents
+		- Segmented VM Model (A Hybrid UVM & VM): 3 Segments
+			- VMSpace: The current VM
+			- AVMSpace (Anonoymous VM): All anons, amaps & aobjects
+			- OVLSpace (Overlay VM): A portion of physical memory with vm like features
+				- Uses: Anything 2.11BSD Overlays can be used for, including in the vm
+
+- MISC:
+	- Crypto
+	- EXT2FS: Partial port of NetBSD's ext2fs
+	- UFS: Features to add 
+	- MPX: Multiplexors
+		- A reimplementation of multiplexors from the V7 and early BSD's
+		- Two concurrent versions (being considered):
+			- MPX: BSD Sockets as base (Currently)
+			- MPX-FS: A filesystem, with multiple possible variations
+				- Implement in the VFS layer. To provide multiplexors across filesystems
+				- Independent Filesystem
