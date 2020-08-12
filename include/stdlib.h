@@ -43,7 +43,19 @@
 #ifndef _STDLIB_H_
 #define _STDLIB_H_
 
-/* #include <machine/ansi.h> */
+#include <machine/ansi.h>
+#include <sys/cdefs.h>
+
+
+#ifdef	_BSD_SIZE_T_
+typedef	_BSD_SIZE_T_	size_t;
+#undef	_BSD_SIZE_T_
+#endif
+
+#if defined(_BSD_WCHAR_T_) && !defined(__cplusplus)
+typedef	_BSD_WCHAR_T_	wchar_t;
+#undef	_BSD_WCHAR_T_
+#endif
 
 #ifdef	notyet
 typedef struct {
@@ -66,45 +78,66 @@ typedef struct {
 
 #define	RAND_MAX	0x7fff
 
-void	abort();
-int		abs();
-int		atexit();
-double	atof();
-int		atoi();
-long	atol();
-void	*calloc();
-void	exit();
-void	free();
-char	*getenv();
-void	*malloc();
-void	qsort();
-int		rand();
-void	*realloc();
-void	srand();
-double	strtod();
-long	strtol();
-unsigned long strtoul();
-int	system();
+void			abort();
+int				abs();
+int				atexit();
+double			atof();
+int				atoi();
+long			atol();
+void			*calloc();
+void			exit();
+void			free();
+char			*getenv();
+void			*malloc();
+void			qsort();
+int				rand();
+void			*realloc();
+void			srand();
+double			strtod();
+long			strtol();
+unsigned long 	strtoul();
+int				system();
 
-int		putenv();
-int		setenv();
+int				putenv();
+int				setenv();
 
-void	*alloca();
+void			*alloca(size_t);
+char			*getbsize (int *, long *);
+char			*cgetcap (char *, char *, int);
+int	 			cgetclose (void);
+int	 			cgetent (char **, char **, char *);
+int	 			cgetfirst (char **, char **);
+int	 			cgetmatch (char *, char *);
+int	 			cgetnext (char **, char **);
+int	 			cgetnum (char *, char *, long *);
+int	 			cgetset (char *);
+int	 			cgetstr (char *, char *, char **);
+int	 			cgetustr (char *, char *, char **);
 
-int		daemon();
-char	*devname();
-int		getloadavg();
+int				daemon(int, int);
+char			*devname(int, int);
+int				getloadavg(double[], int);
+
+int	 			heapsort (void *, size_t, size_t, int (*)(const void *, const void *));
+char			*initstate (unsigned long, char *, long);
+int		 		mergesort (void *, size_t, size_t, int (*)(const void *, const void *));
+int	 			radixsort (const unsigned char **, int, const unsigned char *, unsigned);
+int	 			sradixsort (const unsigned char **, int, const unsigned char *, unsigned);
 
 extern char *optarg;			/* getopt(3) external variables */
 extern int opterr, optind, optopt;
-int	getopt();
+int				getopt();
 
 extern char *suboptarg;			/* getsubopt(3) external variable */
-int		getsubopt();
+int				getsubopt();
 
-long	random();
-char	*setstate();
-void	srandom();
-void	unsetenv();
+long			random();
+char			*setstate();
+void			srandom();
+void			unsetenv();
+
+long long	 	strtoq (const char *, char **, int);
+unsigned long long
+				strtouq (const char *, char **, int);
 
 #endif /* _STDLIB_H_ */

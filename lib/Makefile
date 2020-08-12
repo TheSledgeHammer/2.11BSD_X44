@@ -12,7 +12,7 @@ TAGSFILE=tags
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR=	ccom c2 cpp libc libkern
+SUBDIR=	ccom c2 cpp libarch libc libkern
 
 all:	${SUBDIR}
 

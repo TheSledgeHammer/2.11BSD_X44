@@ -20,40 +20,48 @@
  * Architecture specific syscalls (i386)
  */
 struct i386_get_ldt_args {
-	int start;
-	union descriptor *desc;
-	int num;
+	int 				start;
+	union descriptor 	*desc;
+	int 				num;
 };
 
 struct i386_set_ldt_args {
-	int start;
-	union descriptor *desc;
-	int num;
+	int 				start;
+	union descriptor 	*desc;
+	int 				num;
 };
 
 struct i386_iopl_args {
-	int iopl;
+	int 				iopl;
 };
 
 struct i386_get_ioperm_args {
-	u_long *iomap;
+	u_long 				*iomap;
 };
 
 struct i386_set_ioperm_args {
-	u_long *iomap;
+	u_long 				*iomap;
 };
 
-#ifndef _KERNEL
+#ifdef _KERNEL
 int i386_get_ldt (struct proc *, char *, register_t *);
 int i386_set_ldt (struct proc *, char *, register_t *);
 int i386_iopl (struct proc *, char *, register_t *);
 int i386_get_ioperm (struct proc *, char *, register_t *);
 int i386_set_ioperm (struct proc *, char *, register_t *);
-int i386_get_fsbase(struct proc *, char *, register_t *);
-int i386_set_fsbase(struct proc *, char *, register_t *);
-int i386_get_gsbase(struct proc *, char *, char);
-int i386_set_gsbase(struct proc *, char *, char);
-int sysarch (struct proc *, struct sysarch_args *, register_t *);
+int i386_get_sdbase(struct proc *, char *, register_t *);
+int i386_set_sdbase(struct proc *, char *, register_t *);
+#else
+__BEGIN_DECLS
+int i386_get_ldt(struct proc *, char *, register_t *);
+int i386_set_ldt(struct proc *, char *, register_t *);
+int i386_iopl(int);
+int i386_get_fsbase(void **);
+int i386_set_fsbase(void *);
+int i386_get_gsbase(void **);
+int i386_set_gsbase(void *);
+int sysarch(int, void *);
+__END_DECLS
 #endif
 
 #endif /* !_I386_SYSARCH_H_ */
