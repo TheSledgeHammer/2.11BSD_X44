@@ -26,8 +26,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SYS_DEVEL_VM_EXTENTS_VM_EXTENT_H_
-#define SYS_DEVEL_VM_EXTENTS_VM_EXTENT_H_
+#ifndef _VM_EXTENT_H_
+#define _VM_EXTENT_H_
 
 #include <sys/extent.h>
 
@@ -54,7 +54,7 @@ extern struct vextops vextops;
 #define VM_EXTENT_DESTROY(vext)																						(*((vext)->vext_op->vm_extent_destroy))(vext)
 
 struct vextops_generic_args {
-	struct vextops					*a_ops;
+	struct vextops						*a_ops;
 };
 
 struct vextops_create_args {
@@ -115,4 +115,4 @@ struct vextops_destroy_args	{
 void vextops_init();
 void vextops_malloc(struct vextops *vextops);
 
-#endif /* _VM_EXTOPS_H_ */
+#endif /* _VM_EXTENT_H_ */

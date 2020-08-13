@@ -39,16 +39,13 @@
 
 extern struct extent vm_extent;
 
-/*
- * pmap_segment method: allocate physical memory or virtual memory
- *	TODO:
- *	- mapping vm_segmentspace to various spaces (vmspace, avmspace, ovlspace)
- */
+typedef struct vm_segment 		*vm_seg_t;
+typedef struct vm_segment_entry *vm_seg_entry_t;
+
 struct vm_seg_clist;
 struct vm_seg_rbtree;
 /* Segmented Space */
 struct vm_segment_entry {
-	CIRCLEQ_ENTRY(vm_segment_entry) seg_clentry;		/* entries in a circular list */
 	RB_ENTRY(vm_segment_entry) 		seg_rbentry;		/* tree entries */
 
 	/* Segment Entry (Extent Subregion) */
@@ -65,15 +62,24 @@ struct vm_segment_entry {
 	caddr_t							segs_daddr;			/* user virtual address of data XXX */
 	caddr_t 						segs_minsaddr;		/* user VA at min stack growth */
 	caddr_t 						segs_maxsaddr;		/* user VA at max stack growth */
+
+	CIRCLEQ_ENTRY(vm_segment_entry) seg_clentry;		/* entries in a circular list */
 };
 
 RB_HEAD(vm_seg_rbtree, vm_segment_entry);
-CIRCLEQ_HEAD(vm_seg_clist, vm_segment_entry);
 struct vm_segment {
+	struct vm_extent				*seg_extent;		/* vm extent manager */
+
+	struct vm_seg_rbtree 			seg_rbroot;			/* tree of segment entries */
 	struct vm_seg_clist				seg_clheader;
-	struct vm_seg_rbtree 			seg_rbroot;			/* tree of segments space entries */
-	struct pmap						seg_pmap;			/* private physical map */
-	struct extent 					*seg_extent;		/* vm_segment extent manager */
+
+	lock_data_t						seg_lock;			/* Lock for map data */
+	int								seg_nentries;		/* Number of entries */
+	int								seg_ref_count;		/* Reference count */
+	simple_lock_data_t				seg_ref_lock;		/* Lock for ref_count field */
+	vm_seg_entry_t					seg_hint;			/* hint for quick lookups */
+	simple_lock_data_t				seg_hint_lock;		/* lock for hint storage */
+
 
 	/* VM Segment Space */
 	char 							*seg_name;			/* segment name */
@@ -81,6 +87,8 @@ struct vm_segment {
 	vm_offset_t 					seg_end;			/* segment end address */
 	caddr_t							seg_addr;			/* segment address */
 	vm_size_t						seg_size;			/* segment size */
+
+	struct pmap						seg_pmap;			/* private physical map */
 };
 
 /* Segmented Space Address Layout */
@@ -91,8 +99,5 @@ struct vm_segment {
 
 #define OVLSPACE_START
 #define OVLSPACE_END
-
-
-
 
 #endif /* _VM_SEG_H_ */

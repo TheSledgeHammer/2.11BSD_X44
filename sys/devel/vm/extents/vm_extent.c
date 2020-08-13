@@ -38,7 +38,7 @@ struct vextops vextops;
 void
 vextops_init()
 {
-	vop_malloc(&vextops);
+	vextops_malloc(&vextops);
 }
 
 /* allocate vextops */
@@ -208,4 +208,81 @@ vm_extent_destroy(vext)
 	error = vextops.vm_extent_destroy(vext);
 
 	return (error);
+}
+
+struct vextops vextops = {
+		.vm_extent_create 	= vextops_create,
+		.vm_extent_alloc 	= vextops_alloc,
+		.vm_extent_suballoc = vextops_suballoc,
+		.vm_extent_free 	= vextops_free,
+		.vm_extent_destroy 	= vextops_destroy
+};
+
+int
+vextops_create(vext, name, start, end, mallocok, mtype, storage, storagesize, flags)
+	struct vm_extent *vext;
+	char *name;
+	vm_offset_t start, end;
+	int mallocok, mtype, flags;
+	caddr_t storage;
+	vm_size_t storagesize;
+{
+	int error;
+
+	if(mallocok == 1) {
+		mallocok = vm_extent_mallocok(vext, 1);
+		error = vm_extent_create(vext, name, start, end, mtype, storage, storagesize, EX_MALLOCOK | flags);
+	} else {
+		mallocok = vm_extent_mallocok(vext, 0);
+		error = vm_extent_create(vext, name, start, end, mtype, storage, storagesize, flags);
+	}
+	return (error);
+}
+
+int
+vextops_alloc(start, size, flags)
+	vm_offset_t start;
+	vm_size_t size;
+	int flags;
+{
+	struct vm_extent *vext;
+	int error;
+	error = vm_extent_alloc(vext, start, size, flags);
+
+	return (error);
+}
+
+int
+vextops_suballoc(start, end, size, malloctypes, mallocflags, alignment, boundary, flags, result)
+	vm_offset_t start, end;
+	vm_size_t size;
+	u_long alignment, boundary, *result;
+	int malloctypes, mallocflags, flags;
+{
+	struct vm_extent *vext;
+	int error;
+
+	error = vm_extent_suballoc(vext, start, end, size, malloctypes, mallocflags, alignment, boundary, flags, result);
+
+	return (error);
+}
+
+int
+vextops_free(vext, start, size, malloctypes, flags)
+	struct vm_extent *vext;
+	vm_offset_t start;
+	vm_size_t size;
+	int malloctypes, flags;
+{
+	if(malloctypes & flags) {
+		return (vm_extent_free(vext, start, size, malloctypes, flags));
+	}
+	return (0);
+}
+
+int
+vextops_destroy(vext)
+	struct vm_extent *vext;
+{
+	return (vm_extent_destroy(vext));
 }

@@ -96,7 +96,7 @@ typedef struct vm_aobject		*vm_aobject_t;
 #include <devel/vm/include/vm_vmspace.h>
 
 #include <devel/vm/extents/vm_extent.h>	/* Work in Progress */
-#include <devel/vm/extents/vm_seg.h>	/* Work in Progress */
+#include "../extents/vm_segment.h"	/* Work in Progress */
 
 /*
  *	MACH VM locking type mappings to kernel types
