@@ -709,7 +709,7 @@ typedef struct {
 #define	ELF_NOTE_NETBSD_NAMESZ			7
 #define	ELF_NOTE_NETBSD_DESCSZ			4
 /* NetBSD-specific note name */
-#define	ELF_NOTE_NETBSD_NAME			"NetBSD\0\0"
+#define	ELF_NOTE_NETBSD_NAME			"211BSD\0\0"
 
 /* GNU-specific note name and description sizes */
 #define	ELF_NOTE_GNU_NAMESZ				4

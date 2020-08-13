@@ -1,8 +1,9 @@
+/* $NetBSD: common.c,v 1.14 2003/11/28 23:25:54 fvdl Exp $ */
+
 /*
- * The 3-Clause BSD License:
- * Copyright (c) 2020 Martin Kelly
+ * Copyright (c) 1995 Christopher G. Demetriou
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -11,9 +12,14 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission
- *
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *          This product includes software developed for the
+ *          NetBSD Project.  See http://www.NetBSD.org/ for
+ *          information about NetBSD.
+ * 4. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
  * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -24,31 +30,51 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * <<Id: LICENSE,v 1.2 2000/06/14 15:57:33 cgd Exp>>
  */
 
-#ifndef UFS_UFML_EXTERN_H_
-#define UFS_UFML_EXTERN_H_
+/*
+ * NOT A STANDALONE FILE!
+ */
 
-int ufml_check_fs(struct vnode *vp, enum ufml_fstype type);
+static char *
+_strrchr(p, ch)
+char *p, ch;
+{
+	char *save;
 
-/* ufml_archive.c */
-int ufml_check_archive(struct vnode *vp, enum ufml_archtype type);
-int ufml_archive();
-int ufml_extract();
+	for (save = NULL;; ++p) {
+		if (*p == ch)
+			save = (char *)p;
+		if (!*p)
+			return(save);
+	}
+/* NOTREACHED */
+}
 
-/* ufml_compress.c */
-int ufml_check_compression(struct vnode *vp, enum ufml_comptype type);
-int ufml_compress();
-int ufml_decompress();
+#ifdef MCRT0
+asm ("  .text");
+#ifdef EPROL_EXPORT
+EPROL_EXPORT;
+#endif
+asm ("_eprol:");
+#endif
 
-/* ufml_encrypt.c */
-int ufml_check_encyrpt(struct vnode *vp, enum ufml_enctype type);
-int ufml_encrypt();
-int ufml_decrypt();
+#ifdef DYNAMIC
 
-int ufml_snapshot_write();
-int ufml_snapshot_read();
-int ufml_snapshot_delete();
-int ufml_snapshot_commit();
+void
+_rtld_setup(cleanup, obj)
+	void (*cleanup) __P((void));
+	const Obj_Entry *obj;
+{
 
-#endif /* UFS_UFML_EXTERN_H_ */
+	if ((obj == NULL) || (obj->magic != RTLD_MAGIC))
+		_FATAL("Corrupt Obj_Entry pointer in GOT\n");
+	if (obj->version != RTLD_VERSION)
+		_FATAL("Dynamic linker version mismatch\n");
+
+	atexit(cleanup);
+}
+
+#endif /* DYNAMIC */

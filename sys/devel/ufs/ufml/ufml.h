@@ -41,12 +41,12 @@
 #include <sys/queue.h>
 
 struct ufml_args {
-	char			*target;		/* Target of loopback  */
+	char					*target;		/* Target of loopback  */
 };
 
 struct ufml_mount {
-	struct mount	*ufmlm_vfs;
-	struct vnode	*ufmlm_rootvp;	/* Reference to root ufml_node */
+	struct mount			*ufmlm_vfs;
+	struct vnode			*ufmlm_rootvp;	/* Reference to root ufml_node */
 };
 
 //#ifdef KERNEL
@@ -58,8 +58,8 @@ struct ufml_node {
 	struct vnode	        *ufml_lowervp;	/* VREFed once */
 	struct vnode			*ufml_vnode;	/* Back pointer */
 
-	struct ufml_metadata	*ufml_meta;		/* Node metadata */
-	struct ufmlops			*ufml_op		/* UFML operations vector */
+	struct ufml_metadata	*ufml_meta;		/* Node metadata (from ufmlops) */
+	struct ufmlops			*ufml_op;		/* UFML operations vector */
 };
 
 extern int ufml_node_create (struct mount *mp, struct vnode *target, struct vnode **vpp);

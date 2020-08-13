@@ -556,6 +556,7 @@ ufs211_advlock(ap)
 	struct vop_advlock_args *ap;
 {
 	struct ufs211_inode *ip = UFS211_VTOI(ap->a_vp);
+
 	return lf_advlock(ap, &ip->i_lockf, ip->i_size);
 }
 
@@ -594,7 +595,7 @@ ufs211_link(ap)
 {
 	struct ufs211_inode *ip = UFS211_VTOI(ap->a_vp);
 	if(ip == NULL) {
-		return ();
+		return (1);
 	}
 
 	vrele(ap->a_vp);
@@ -720,6 +721,7 @@ ufs211fifo_read(ap)
 	 * Set access flag.
 	 */
 	UFS211_VTOI(ap->a_vp)->i_flag |= IN_ACCESS;
+
 	return (VOPARGS(ap, vop_read));
 }
 
@@ -733,6 +735,7 @@ ufs211fifo_write(ap)
 	 * Set update and change flags.
 	 */
 	UFS211_VTOI(ap->a_vp)->i_flag |= IN_CHANGE | IN_UPDATE;
+
 	return (VOPARGS(ap, vop_write));
 }
 

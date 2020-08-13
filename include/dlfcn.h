@@ -41,10 +41,10 @@ typedef	_BSD_SSIZE_T_	ssize_t;
 #endif
 
 typedef struct _dl_info {
-	const char	*dli_fname;	/* File defining the symbol */
-	void		*dli_fbase;	/* Base address */
-	const char	*dli_sname;	/* Symbol name */
-	const void	*dli_saddr;	/* Symbol address */
+	const char	*dli_fname;		/* File defining the symbol */
+	void		*dli_fbase;		/* Base address */
+	const char	*dli_sname;		/* Symbol name */
+	const void	*dli_saddr;		/* Symbol address */
 } Dl_info;
 
 /*
@@ -67,11 +67,11 @@ __END_DECLS
 /* Values for dlopen `mode'. */
 #define RTLD_LAZY		1
 #define RTLD_NOW		2
-#define RTLD_GLOBAL		0x100		/* Allow global searches in object */
+#define RTLD_GLOBAL		0x100			/* Allow global searches in object */
 #define RTLD_LOCAL		0x200
-#define RTLD_NODELETE	0x01000		/* Do not remove members. */
-#define RTLD_NOLOAD		0x02000		/* Do not load if not already loaded. */
-#define DL_LAZY			RTLD_LAZY	/* Compat */
+#define RTLD_NODELETE	0x01000			/* Do not remove members. */
+#define RTLD_NOLOAD		0x02000			/* Do not load if not already loaded. */
+#define DL_LAZY			RTLD_LAZY		/* Compat */
 
 /*
  * Special handle arguments for dlsym().

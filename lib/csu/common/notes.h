@@ -1,0 +1,9 @@
+
+#include <sys/param.h>
+#include <sys/exec_elf.h>
+
+#define	ELF_NOTE_NETBSD_NAMESZ		ELF_NOTE_NETBSD_NAMESZ
+#define	ELF_NOTE_NETBSD_DESCSZ		ELF_NOTE_NETBSD_DESCSZ
+#define	ELF_NOTE_TYPE_NETBSD_TAG	ELF_NOTE_TYPE_NETBSD_TAG
+#define	ELF_NOTE_NETBSD_NAME		ELF_NOTE_NETBSD_NAME
+#define	__211BSD_Version__			__211BSD_Version__

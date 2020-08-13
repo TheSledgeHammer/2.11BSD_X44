@@ -90,11 +90,11 @@ struct avmspace {
  * Shareable overlay address space.
  */
 struct ovlspace {
-	struct ovl_map 	ovl_map;	/* overlay address map */
-	struct pmap 	ovl_pmap;	/* private physical map */
+	struct ovl_map 	ovl_map;		/* overlay address map */
+	struct pmap 	ovl_pmap;		/* private physical map */
 
-	struct koverlay ovl_kovl;	/* kernel overlay space */
-	struct voverlay ovl_vovl;	/* virtual overlay space */
+	struct koverlay ovl_kovl;		/* kernel overlay space */
+	struct voverlay ovl_vovl;		/* virtual overlay space */
 };
 
 #ifdef _KERNEL

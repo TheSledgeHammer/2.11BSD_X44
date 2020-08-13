@@ -27,12 +27,12 @@
 #define	NADDR	(NDADDR + NIADDR)	/* total addresses in inode */
 
 struct ufs211_icommon2 {
-	time_t	ic_atime;		/* time last accessed */
-	time_t	ic_mtime;		/* time last modified */
-	time_t	ic_ctime;		/* time created */
-	time_t	ic_atimensec;
-	time_t	ic_mtimensec;
-	time_t	ic_ctimensec;
+	time_t					ic_atime;		/* time last accessed */
+	time_t					ic_mtime;		/* time last modified */
+	time_t					ic_ctime;		/* time created */
+	time_t					ic_atimensec;
+	time_t					ic_mtimensec;
+	time_t					ic_ctimensec;
 };
 
 struct ufs211_inode {

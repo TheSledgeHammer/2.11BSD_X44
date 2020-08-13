@@ -23,9 +23,9 @@
 #define	INOHSZ				16			/* must be power of two */
 #define	INOHASH(dev,ino)	(((dev)+(ino))&(INOHSZ-1))
 
-#define	SINGLE	0	/* index of single indirect block */
-#define	DOUBLE	1	/* index of double indirect block */
-#define	TRIPLE	2	/* index of triple indirect block */
+#define	SINGLE				0	/* index of single indirect block */
+#define	DOUBLE				1	/* index of double indirect block */
+#define	TRIPLE				2	/* index of triple indirect block */
 
 /*
  * Check accessed and update flags on

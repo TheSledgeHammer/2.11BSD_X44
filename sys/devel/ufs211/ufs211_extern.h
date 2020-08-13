@@ -27,7 +27,7 @@
  *
  * @(#)ufs211_extern.h	1.00
  */
-
+/* 2.11BSD bit-length for UFS */
 typedef u_short	 ufs211_ino_t;
 typedef long	 ufs211_daddr_t;
 typedef long	 ufs211_off_t;
@@ -68,7 +68,9 @@ struct vfsconf;
 struct vnode;
 
 __BEGIN_DECLS
-int	ufs211_makeinode (int mode, struct vnode *, struct vnode **, struct componentname *);
+int	ufs211_makeinode (int, struct vnode *, struct vnode **, struct componentname *);
+int ufs211_bmap1 (struct ufs211_inode *, ufs211_daddr_t, int, int);
+
 int ufs211_lookup (struct vop_lookup_args *);
 int ufs211_create (struct vop_create_args *);
 int ufs211_open (struct vop_open_args *);
@@ -85,7 +87,6 @@ int ufs211_readdir (struct vop_readdir_args *);
 int ufs211_inactive (struct vop_inactive_args *);
 int ufs211_reclaim (struct vop_reclaim_args *);
 int ufs211_bmap (struct vop_bmap_args *);
-int ufs211_bmap1 (struct ufs211_inode *, ufs211_daddr_t, int, int);
 int ufs211_strategy (struct vop_strategy_args *);
 int ufs211_print (struct vop_print_args *);
 int ufs211_advlock (struct vop_advlock_args *);
