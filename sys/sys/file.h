@@ -19,21 +19,21 @@ struct uio;
  * One for each kernel object.
  */
 struct	file {
-	struct	file *f_filef;	/* list of active files */
-	struct	file **f_fileb;	/* list of active files */
-	int		f_flag;			/* see below */
-	short	f_type;			/* descriptor type */
-	short	f_count;		/* reference count */
-	short	f_msgcount;		/* references from message queue */
+	struct				file *f_filef;	/* list of active files */
+	struct				file **f_fileb;	/* list of active files */
+	int					f_flag;			/* see below */
+	short				f_type;			/* descriptor type */
+	short				f_count;		/* reference count */
+	short				f_msgcount;		/* references from message queue */
 	union {
-		caddr_t	*f_Data;
-		struct socket *f_Socket;
+		caddr_t			*f_Data;
+		struct socket 	*f_Socket;
 	} f_un;
 
-	off_t	f_offset;
-	struct ucred *f_cred;	/* credentials associated with descriptor */
-	struct fileops *f_ops;
-	struct simplelock f_slock;
+	off_t				f_offset;
+	struct ucred 		*f_cred;		/* credentials associated with descriptor */
+	struct fileops 		*f_ops;
+	struct simplelock 	f_slock;
 };
 
 struct fileops {
@@ -46,9 +46,9 @@ struct fileops {
 #define f_data		f_un->f_Data
 #define f_socket	f_un.f_Socket
 
-extern struct file *filehead;	/* head of list of open files */
-extern int maxfiles;			/* kernel limit on number of open files */
-extern int nfiles;				/* actual number of open files */
+extern struct file 	*filehead;	/* head of list of open files */
+extern int 			maxfiles;	/* kernel limit on number of open files */
+extern int 			nfiles;		/* actual number of open files */
 
 struct	file *getf();
 struct	file *falloc();
@@ -68,11 +68,11 @@ struct	file *falloc();
 #define	L_INCR		1	/* relative to current offset */
 #define	L_XTND		2	/* relative to end of file */
 
-#define	GETF(fp, fd) { \
-	if ((unsigned)(fd) >= NOFILE || ((fp) = u.u_ofile[fd]) == NULL) { \
-		u.u_error = EBADF; \
-		return; \
-	} \
+#define	GETF(fp, fd) { 													\
+	if ((unsigned)(fd) >= NOFILE || ((fp) = u->u_ofile[fd]) == NULL) { 	\
+		u->u_error = EBADF; 											\
+		return; 														\
+	} 																	\
 }
 
 #define	DTYPE_VNODE		1	/* file */

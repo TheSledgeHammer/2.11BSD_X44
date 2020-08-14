@@ -200,9 +200,9 @@ struct termios {
 /*
  * Standard speeds
  */
-#define B0	0
-#define B50	50
-#define B75	75
+#define B0		0
+#define B50		50
+#define B75		75
 #define B110	110
 #define B134	134
 #define B150	150
@@ -274,7 +274,8 @@ __END_DECLS
  * END OF PROTECTED INCLUDE.
  */
 #endif /* !_SYS_TERMIOS_H_ */
-
+/*
 #ifndef _POSIX_SOURCE
-#include <sys/ttydefaults.h>
+//#include <sys/ttydefaults.h>
 #endif
+*/

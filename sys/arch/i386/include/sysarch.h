@@ -60,8 +60,8 @@ int i386_get_fsbase(void **);
 int i386_set_fsbase(void *);
 int i386_get_gsbase(void **);
 int i386_set_gsbase(void *);
+int i386_vm86(int, void *);
 int sysarch(int, void *);
 __END_DECLS
 #endif
-
 #endif /* !_I386_SYSARCH_H_ */

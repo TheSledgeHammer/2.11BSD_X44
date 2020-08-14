@@ -49,7 +49,6 @@ struct utsname {
 	char	machine[128];	/* Hardware type. */
 };
 
-
 #include <sys/cdefs.h>
 
 #ifndef KERNEL

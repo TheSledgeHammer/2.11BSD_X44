@@ -70,19 +70,19 @@ struct exec_macho_fat_arch {
 	u_long		align;
 };
 
-#define	MACHO_CPU_TYPE_ANY		~0
-#define	MACHO_CPU_TYPE_VAX	 	1
-#define	MACHO_CPU_TYPE_MC680x0	6
-#define	MACHO_CPU_TYPE_I386	 	7
-#define	MACHO_CPU_TYPE_MIPS	 	8
-#define	MACHO_CPU_TYPE_MC98000	10
-#define	MACHO_CPU_TYPE_HPPA		11
-#define	MACHO_CPU_TYPE_ARM		12
-#define	MACHO_CPU_TYPE_MC88000	13
-#define	MACHO_CPU_TYPE_SPARC	14
-#define	MACHO_CPU_TYPE_I860		15
-#define	MACHO_CPU_TYPE_ALPHA	16
-#define	MACHO_CPU_TYPE_POWERPC	18
+#define	MACHO_CPU_TYPE_ANY					~0
+#define	MACHO_CPU_TYPE_VAX	 				1
+#define	MACHO_CPU_TYPE_MC680x0				6
+#define	MACHO_CPU_TYPE_I386	 				7
+#define	MACHO_CPU_TYPE_MIPS	 				8
+#define	MACHO_CPU_TYPE_MC98000				10
+#define	MACHO_CPU_TYPE_HPPA					11
+#define	MACHO_CPU_TYPE_ARM					12
+#define	MACHO_CPU_TYPE_MC88000				13
+#define	MACHO_CPU_TYPE_SPARC				14
+#define	MACHO_CPU_TYPE_I860					15
+#define	MACHO_CPU_TYPE_ALPHA				16
+#define	MACHO_CPU_TYPE_POWERPC				18
 
 #define	MACHO_CPU_SUBTYPE_MULTIPLE			~0
 #define	MACHO_CPU_SUBTYPE_LITTLE_ENDIAN		 0
@@ -157,14 +157,14 @@ struct exec_macho_object_header {
 /*
  * Object header flags
  */
-#define	MACHO_MOH_NOUNDEFS	0x001
-#define	MACHO_MOH_INCRLINK	0x002
-#define	MACHO_MOH_DYLDLINK	0x004
+#define	MACHO_MOH_NOUNDEFS		0x001
+#define	MACHO_MOH_INCRLINK		0x002
+#define	MACHO_MOH_DYLDLINK		0x004
 #define	MACHO_MOH_BINDATLOAD	0x008
-#define	MACHO_MOH_PREBOUND	0x010
+#define	MACHO_MOH_PREBOUND		0x010
 #define	MACHO_MOH_SPLIT_SEGS	0x020
-#define	MACHO_MOH_LAZY_INIT	0x040
-#define	MACHO_MOH_TWOLEVEL	0x080
+#define	MACHO_MOH_LAZY_INIT		0x040
+#define	MACHO_MOH_TWOLEVEL		0x080
 #define	MACHO_MOH_FORCE_FLAT	0x100
 
 struct exec_macho_load_command {
@@ -194,22 +194,22 @@ struct exec_macho_load_command {
 #define	MACHO_LC_SUB_CLIENT		0x14
 
 struct exec_macho_segment_command {
-	u_long		cmd;
-	u_long		cmdsize;
-	char		segname[16];
-	u_long		vmaddr;
-	u_long		vmsize;
-	u_long		fileoff;
-	u_long		filesize;
-	u_int32_t	maxprot;
-	u_int32_t	initprot;
-	u_long		nsects;
-	u_long		flags;
+	u_long					cmd;
+	u_long					cmdsize;
+	char					segname[16];
+	u_long					vmaddr;
+	u_long					vmsize;
+	u_long					fileoff;
+	u_long					filesize;
+	u_int32_t				maxprot;
+	u_int32_t				initprot;
+	u_long					nsects;
+	u_long					flags;
 };
 
 union macho_lc_str {
-	u_long		offset;
-	char		*ptr;
+	u_long					offset;
+	char					*ptr;
 };
 
 #define	MACHO_SG_HIGHVM		0x1
@@ -217,36 +217,36 @@ union macho_lc_str {
 #define	MACHO_SG_NORELOC	0x4
 
 struct exec_macho_dylinker_command {
-	u_long				cmd;
-	u_long				cmdsize;
-	union macho_lc_str	name;
+	u_long					cmd;
+	u_long					cmdsize;
+	union macho_lc_str		name;
 };
 
 struct exec_macho_dylib {
-    union macho_lc_str name;
-    u_long timestamp;
-    u_long current_version;
-    u_long compatibility_version;
+    union macho_lc_str 		name;
+    u_long 					timestamp;
+    u_long 					current_version;
+    u_long 					compatibility_version;
 };
 
 struct exec_macho_dylib_command {
-	u_long	cmd;
-	u_long	cmdsize;
+	u_long					cmd;
+	u_long					cmdsize;
 	struct exec_macho_dylib	dylib;
 };
 
 struct exec_macho_thread_command {
-	u_long	cmd;
-	u_long	cmdsize;
-	u_long	flavor;
-	u_long	count;
+	u_long					cmd;
+	u_long					cmdsize;
+	u_long					flavor;
+	u_long					count;
 };
 
 struct exec_macho_emul_arg {
-	const char *path;
-	char filename[MAXPATHLEN];
+	const char 				*path;
+	char 					filename[MAXPATHLEN];
 	struct exec_macho_object_header *macho_hdr;
-	int dynamic;
+	int 					dynamic;
 };
 
 

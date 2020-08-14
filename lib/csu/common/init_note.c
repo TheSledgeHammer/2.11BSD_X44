@@ -29,7 +29,11 @@
 /* __FBSDID("$FreeBSD$"); */
 
 #include <sys/param.h>
+#include <sys/exec_linker.h>
 #include <sys/exec_elf.h>
+#include <sys/syscall.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 extern int main(int, char **, char **);
 
