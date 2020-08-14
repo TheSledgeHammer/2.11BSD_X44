@@ -55,7 +55,7 @@
  * NetBSD binary, or some other OS's.
  */
 
-#include "notes.h"
+#include "note.h"
 
 		.section ".note.netbsd.ident", "a"
 		.p2align 2

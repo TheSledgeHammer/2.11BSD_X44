@@ -49,3 +49,12 @@ vm_segment_init(seg, name, start, end)
 		VM_EXTENT_ALLOC(seg->seg_extent, seg->seg_start, seg->seg_end, EX_WAITOK);
 	}
 }
+
+vm_segment_entry_create(entry, start, end, size, malloctypes, mallocflags, alignment, boundary, flags)
+	vm_seg_entry_t entry;
+{
+	entry->segs_start;
+	entry->segs_end;
+	entry->segs_addr;
+	entry->segs_size;
+}

@@ -26,28 +26,13 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "vm_extent.h"
-
 #include <sys/extent.h>
 #include <sys/malloc.h>
 #include <sys/user.h>
 
+#include "vm_extent.h"
+
 struct vextops vextops;
-
-/* initilize vextops */
-void
-vextops_init()
-{
-	vextops_malloc(&vextops);
-}
-
-/* allocate vextops */
-void
-vextops_malloc(vextops)
-	struct vextops *vextops;
-{
-	MALLOC(vextops, struct vextops *, sizeof(struct vextops *), M_VEXTOPS, M_WAITOK);
-}
 
 int
 vm_extent_create(vext, ext, name, start, end, mtype, storage, storagesize, flags)
@@ -133,7 +118,6 @@ vm_extent_alloc(vext, start, size, flags)
 	return (error);
 }
 
-
 int
 vm_extent_suballoc(vext, start, end, size, malloctypes, mallocflags, alignment, boundary, flags, result)
 	struct vm_extent *vext;
@@ -208,6 +192,21 @@ vm_extent_destroy(vext)
 	error = vextops.vm_extent_destroy(vext);
 
 	return (error);
+}
+
+/* initilize vextops */
+void
+vextops_init()
+{
+	vextops_malloc(&vextops);
+}
+
+/* allocate vextops */
+void
+vextops_malloc(vextops)
+	struct vextops *vextops;
+{
+	MALLOC(vextops, struct vextops *, sizeof(struct vextops *), M_VEXTOPS, M_WAITOK);
 }
 
 struct vextops vextops = {

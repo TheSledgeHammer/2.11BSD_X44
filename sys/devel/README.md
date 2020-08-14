@@ -32,18 +32,17 @@
 
 - VM: Updates to the VM Layer.
 	- Planned: 
-		- VM Overlays: A re-implementation of 2.11BSD's use of Overlays (See below: OVLSpace)
+		- VM Overlays (OVL): A re-implementation of 2.11BSD's use of Overlays (See below: OVLSpace)
 		- VM Extents: A VM extension of extents
-		- Segmented VM Model (A Hybrid UVM & VM): 3 Segments
+		- Segmented VM Model (A Hybrid UVM & VM): 3 Segments:
 			- VMSpace: The current VM
 			- AVMSpace (Anonoymous VM): All anons, amaps & aobjects
-			- OVLSpace (Overlay VM): A portion of physical memory with vm like features
-				- Uses: Anything 2.11BSD Overlays can be used for, including in the vm
+			- OVLSpace (Overlay VM): A portion of physical memory with vm like features (See: "/devel/vm/ovl")
 
 - MISC:
 	- Crypto
 	- EXT2FS: Partial port of NetBSD's ext2fs
-	- UFS: Features to add 
+	- UFS: Features to add
 	- MPX: Multiplexors
 		- A reimplementation of multiplexors from the V7 and early BSD's
 		- Two concurrent versions (being considered):

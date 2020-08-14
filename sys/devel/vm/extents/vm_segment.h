@@ -44,7 +44,7 @@ typedef struct vm_segment_entry *vm_seg_entry_t;
 
 struct vm_seg_clist;
 struct vm_seg_rbtree;
-/* Segmented Space */
+/* Segment Entry */
 struct vm_segment_entry {
 	RB_ENTRY(vm_segment_entry) 		seg_rbentry;		/* tree entries */
 
