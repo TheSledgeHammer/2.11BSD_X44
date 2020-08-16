@@ -38,7 +38,7 @@ typedef void (*fptr)(void);
 
 extern void _start(char *, ...);
 
-#ifdef GCRT
+#ifdef MCRT0
 extern void _mcleanup(void);
 extern void monstartup(void *, void *);
 extern int 	eprol;
@@ -63,7 +63,7 @@ _start1(fptr cleanup, int argc, char *argv[])
 		//_init_tls();
 	}
 
-#ifdef GCRT
+#ifdef MCRT
 	atexit(_mcleanup);
 	monstartup(&eprol, &etext);
 __asm__("eprol:");
