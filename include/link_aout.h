@@ -51,12 +51,12 @@
  */
 
 struct sod {	/* Shared Object Descriptor */
-	long	sod_name;				/* name (relative to load address) */
-	unsigned int sod_library  : 1,	/* Searched for by library rules */
-			sod_reserved : 31;
-	short	sod_major;				/* major version number */
-	short	sod_minor;				/* minor version number */
-	long	sod_next;				/* next sod */
+	long			sod_name;			/* name (relative to load address) */
+	unsigned int 	sod_library  : 1,	/* Searched for by library rules */
+					sod_reserved : 31;
+	short			sod_major;			/* major version number */
+	short			sod_minor;			/* minor version number */
+	long			sod_next;			/* next sod */
 };
 
 /*

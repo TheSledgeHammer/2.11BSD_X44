@@ -32,6 +32,8 @@
 #include <sys/exec_elf.h>
 #include <stdlib.h>
 
+#include "crt.h"
+
 typedef void (*fptr)(void);
 
 static void (*__CTOR_LIST__[])(void)
@@ -126,6 +128,12 @@ __do_global_dtors_aux(void)
 	 */
 	__dtors();
 }
+
+asm (
+    ".pushsection .fini		\n"
+    "\t" INIT_CALL_SEQ(__do_global_dtors_aux) "\n"
+    ".popsection		\n"
+);
 #endif
 
 /*
@@ -133,8 +141,8 @@ __do_global_dtors_aux(void)
  * out the .jcr section. We just need to call this function with a pointer
  * to the appropriate section.
  */
-extern void _Jv_RegisterClasses(void *);
-static void register_classes(void);
+extern void _Jv_RegisterClasses(void *) __weak_symbol;
+static void register_classes(void) __used;
 
 static void *__JCR_LIST__[]
     __attribute__((section(".jcr"))) = { };
@@ -145,6 +153,19 @@ __attribute__((constructor))
 static void
 register_classes(void)
 {
+
 	if (_Jv_RegisterClasses != NULL && __JCR_LIST__[0] != 0)
 		_Jv_RegisterClasses(__JCR_LIST__);
 }
+
+/*
+ * We can't use constructors when they use the .ctors section as they may be
+ * placed before __CTOR_LIST__.
+ */
+#ifdef CTORS_CONSTRUCTORS
+asm (
+    ".pushsection .init		\n"
+    "\t" INIT_CALL_SEQ(register_classes) "\n"
+    ".popsection		\n"
+);
+#endif

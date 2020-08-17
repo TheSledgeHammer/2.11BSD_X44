@@ -1,6 +1,8 @@
-/* LINTLIBRARY */
-/*-
- * Copyright 1996-1998 John D. Polstra.
+/*	$NetBSD: debug.c,v 1.2 1999/03/01 16:40:07 christos Exp $	*/
+
+/*
+ * Copyright 1996 John D. Polstra.
+ * Copyright 1996 Matt Thomas <matt@3am-software.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -11,6 +13,11 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *      This product includes software developed by John Polstra.
+ * 4. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -22,55 +29,48 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * $FreeBSD$
+ */
+
+/*
+ * Support for printing debugging messages.
  */
 
 #include <sys/cdefs.h>
-/* __FBSDID("$FreeBSD$"); */
-
-#include <stdlib.h>
-
-//#include "libc_private.h"
-#include "init_note.c"
-
-typedef void (*fptr)(void);
-
-extern void _start(char *, ...);
-
-#ifdef MCRT0
-extern void _mcleanup(void);
-extern void monstartup(void *, void *);
-extern int 	eprol;
-extern int 	etext;
+#ifdef __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
 #endif
 
-void _start1(fptr, int, char *[]) __dead2;
+#include "debug.h"
+#include "rtldenv.h"
 
-/* The entry function, C part. */
+#ifdef DEBUG
+int debug = 0;
+
 void
-_start1(fptr cleanup, int argc, char *argv[])
+#ifdef __STDC__
+debug_printf(const char *format, ...)
+#else
+debug_printf(va_alist)
+	va_dcl
+#endif
 {
-	char **env;
+	if(debug) {
+		va_list ap;
+#ifdef __STDC__
+		va_start(ap, format);
+#else
+		const char *format;
 
-	env = argv + argc + 1;
-	handle_argv(argc, argv, env);
-	if (&_DYNAMIC != NULL) {
-		atexit(cleanup);
-	} else {
-		/* not yet implemented */
-		//process_irelocs();
-		//_init_tls();
-	}
-
-#ifdef MCRT
-	atexit(_mcleanup);
-	monstartup(&eprol, &etext);
-__asm__("eprol:");
+		va_start(ap);
+		format = va_arg(ap, const char *);
 #endif
 
-	handle_static_init(argc, argv, env);
-	exit(main(argc, argv, env));
-}
+		xvprintf(format, ap);
 
-__asm(".hidden	_start1");
+		va_end(ap);
+		xprintf("\n");
+	}
+}
+#endif

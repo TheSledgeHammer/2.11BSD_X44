@@ -29,11 +29,21 @@
 /* __FBSDID("$FreeBSD$"); */
 
 #include <sys/param.h>
+#include <sys/exec.h>
 #include <sys/exec_linker.h>
 #include <sys/exec_elf.h>
 #include <sys/syscall.h>
+#include <sys/types.h>
 #include <stdlib.h>
 #include <unistd.h>
+#ifdef DYNAMIC
+#include <dlfcn.h>
+#include "rtld.h"
+#else
+typedef void Obj_Entry;
+#endif
+
+typedef void (*fptr)(void);
 
 extern int main(int, char **, char **);
 
@@ -46,11 +56,32 @@ extern void (*__fini_array_end[])(void);
 extern void _fini(void);
 extern void _init(void);
 
+extern int				__syscall(int, ...);
+#define	_exit(v)		__syscall(SYS_exit, (v))
+#define	write(fd, s, n)	__syscall(SYS_write, (fd), (s), (n))
+
+#define	_FATAL(str)				\
+do {							\
+	write(2, str, sizeof(str));	\
+	_exit(1);					\
+} while (0)
+
 extern int _DYNAMIC;
 #pragma weak _DYNAMIC
 
-char **environ;
-const char *__progname = "";
+char 				**environ;
+const char 			*__progname = "";
+struct ps_strings 	*__ps_strings = 0;
+
+void				_rtld_setup(fptr cleanup, const Obj_Entry *obj);
+const Obj_Entry 	*__mainprog_obj;
+
+#ifdef MCRT0
+extern void _mcleanup(void);
+extern void monstartup(void *, void *);
+extern int 	eprol;
+extern int 	etext;
+#endif
 
 static void
 finalizer(void)
@@ -108,3 +139,55 @@ handle_argv(int argc, char *argv[], char **env)
 		}
 	}
 }
+
+#ifdef DYNAMIC
+void
+_rtld_setup(cleanup, obj)
+	void (*cleanup)(void);
+	const Obj_Entry *obj;
+{
+	if ((obj == NULL) || (obj->magic != RTLD_MAGIC))
+		_FATAL("Corrupt Obj_Entry pointer in GOT");
+	if (obj->version != RTLD_VERSION)
+		_FATAL("Dynamic linker version mismatch");
+
+	__mainprog_obj = obj;
+}
+
+void *
+dlopen(name, mode)
+	const char *name;
+	int mode;
+{
+	if (__mainprog_obj == NULL)
+		return NULL;
+	return (__mainprog_obj->dlopen)(name, mode);
+}
+
+int
+dlclose(fd)
+	void *fd;
+{
+	if (__mainprog_obj == NULL)
+		return -1;
+	return (__mainprog_obj->dlclose)(fd);
+}
+
+void *
+dlsym(fd, name)
+	void *fd;
+	const char *name;
+{
+	if (__mainprog_obj == NULL)
+		return NULL;
+	return (__mainprog_obj->dlsym)(fd, name);
+}
+
+char *
+dlerror()
+{
+	if (__mainprog_obj == NULL)
+		return ("Dynamic linker interface not available");
+	return (__mainprog_obj->dlerror)();
+}
+#endif /* DYNAMIC */
