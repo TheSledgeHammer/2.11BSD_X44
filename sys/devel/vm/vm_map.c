@@ -962,7 +962,6 @@ vm_map_findspace(map, start, length, addr)
 		end = start + length;
 		if (end > map->max_offset || end < start)
 			return (1);
-		next = entry->next;
         next = CIRCLEQ_NEXT(entry, cl_entry);
         if (next == CIRCLEQ_FIRST(&map->cl_header) || next->start >= end)
             break;
@@ -1014,7 +1013,7 @@ vm_map_find(map, object, offset, addr, length, find_space)
  */
 void
 vm_map_simplify_entry(map, entry)
-	vm_map_t	map;
+	vm_map_t		map;
 	vm_map_entry_t	entry;
 {
 #ifdef	lint
@@ -1232,10 +1231,10 @@ _vm_map_clip_end(map, entry, end)
  */
 int
 vm_map_submap(map, start, end, submap)
-	register vm_map_t	map;
+	register vm_map_t		map;
 	register vm_offset_t	start;
 	register vm_offset_t	end;
-	vm_map_t		submap;
+	vm_map_t				submap;
 {
 	vm_map_entry_t		entry;
 	register int		result = KERN_INVALID_ARGUMENT;
@@ -1274,13 +1273,13 @@ vm_map_submap(map, start, end, submap)
  */
 int
 vm_map_protect(map, start, end, new_prot, set_max)
-	register vm_map_t	map;
+	register vm_map_t		map;
 	register vm_offset_t	start;
 	register vm_offset_t	end;
-	register vm_prot_t	new_prot;
-	register boolean_t	set_max;
+	register vm_prot_t		new_prot;
+	register boolean_t		set_max;
 {
-	register vm_map_entry_t		current;
+	register vm_map_entry_t	current;
 	vm_map_entry_t			entry;
 
 	vm_map_lock(map);
@@ -1411,7 +1410,7 @@ vm_map_inherit(map, start, end, new_inheritance)
 		vm_map_clip_start(map, entry, start);
 	}
 	else
-		entry = temp_entry->next;
+		entry = CIRCLEQ_NEXT(temp_entry, cl_entry);
 
 	while ((entry != CIRCLEQ_FIRST(&map->cl_header)) && (entry->start < end)) {
 		vm_map_clip_end(map, entry, end);
@@ -1490,7 +1489,7 @@ vm_map_pageable(map, start, end, new_pageable)
 				vm_map_unlock(map);
 				return (KERN_INVALID_ARGUMENT);
 			}
-			entry = entry->next;
+			entry = CIRCLEQ_NEXT(entry, cl_entry);
 		}
 
 		/*
@@ -1579,8 +1578,8 @@ vm_map_pageable(map, start, end, new_pageable)
 		     * Check for holes
 		     */
 			if (entry->end < end
-					&& (entry->next == CIRCLEQ_FIRST(&map->cl_header)
-							|| entry->next->start > entry->end)) {
+					&& (CIRCLEQ_NEXT(entry, cl_entry) == CIRCLEQ_FIRST(&map->cl_header)
+							|| CIRCLEQ_NEXT(entry, cl_entry)->start > entry->end)) {
 				/*
 				 *	Found one.  Object creation actions
 				 *	do not need to be undone, but the
@@ -1594,7 +1593,7 @@ vm_map_pageable(map, start, end, new_pageable)
 				vm_map_unlock(map);
 				return (KERN_INVALID_ARGUMENT);
 			}
-			entry = entry->next;
+			entry = CIRCLEQ_NEXT(entry, cl_entry);
 		}
 
 		/*
@@ -1815,19 +1814,19 @@ vm_map_entry_delete(map, entry)
  */
 int
 vm_map_delete(map, start, end)
-	register vm_map_t	map;
-	vm_offset_t		start;
+	register vm_map_t		map;
+	vm_offset_t				start;
 	register vm_offset_t	end;
 {
 	register vm_map_entry_t	entry;
-	vm_map_entry_t		first_entry;
+	vm_map_entry_t			first_entry;
 
 	/*
 	 *	Find the start of the region, and clip it
 	 */
 
 	if (!vm_map_lookup_entry(map, start, &first_entry))
-		entry = first_entry->next;
+		entry = CIRCLEQ_NEXT(first_entry, cl_entry);
 	else {
 		entry = first_entry;
 		vm_map_clip_start(map, entry, start);
@@ -1837,7 +1836,7 @@ vm_map_delete(map, start, end)
 		 *	time though the loop.
 		 */
 
-		SAVE_HINT(map, entry->prev);
+		SAVE_HINT(map, CIRCLEQ_PREV(entry, cl_entry));
 	}
 
 	/*
@@ -1845,20 +1844,20 @@ vm_map_delete(map, start, end)
 	 */
 
 	if (map->first_free->start >= start)
-		map->first_free = entry->prev;
+		map->first_free = CIRCLEQ_PREV(entry, cl_entry);
 
 	/*
 	 *	Step through all entries in this region
 	 */
 
 	while ((entry != CIRCLEQ_FIRST(&map->cl_header)) && (entry->start < end)) {
-		vm_map_entry_t		next;
+		vm_map_entry_t			next;
 		register vm_offset_t	s, e;
 		register vm_object_t	object;
 
 		vm_map_clip_end(map, entry, end);
 
-		next = entry->next;
+		next = CIRCLEQ_NEXT(entry, cl_entry);
 		s = entry->start;
 		e = entry->end;
 
@@ -1934,13 +1933,13 @@ vm_map_remove(map, start, end)
  */
 boolean_t
 vm_map_check_protection(map, start, end, protection)
-	register vm_map_t	map;
+	register vm_map_t		map;
 	register vm_offset_t	start;
 	register vm_offset_t	end;
-	register vm_prot_t	protection;
+	register vm_prot_t		protection;
 {
 	register vm_map_entry_t	entry;
-	vm_map_entry_t		tmp_entry;
+	vm_map_entry_t			tmp_entry;
 
 	if (!vm_map_lookup_entry(map, start, &tmp_entry)) {
 		return(FALSE);
@@ -1972,7 +1971,7 @@ vm_map_check_protection(map, start, end, protection)
 		/* go to next entry */
 
 		start = entry->end;
-		entry = entry->next;
+		entry = CIRCLEQ_NEXT(entry, cl_entry);
 	}
 	return(TRUE);
 }
@@ -2487,7 +2486,7 @@ vmspace_fork(vm1)
 	new_pmap = &vm2->vm_pmap;		/* XXX */
 	new_map = &vm2->vm_map;			/* XXX */
 
-	old_entry = old_map->header.next;
+	old_entry = CIRCLEQ_NEXT(old_map->header, cl_entry);
 
 	while (old_entry != CIRCLEQ_FIRST(&old_map->cl_header)) {
 		if (old_entry->is_sub_map)
@@ -2534,9 +2533,7 @@ vmspace_fork(vm1)
 				 *	map
 				 */
 
-				vm_map_entry_link(new_share_map,
-						new_share_map->header.prev,
-						new_share_entry);
+				vm_map_entry_link(new_share_map, CIRCLEQ_PREV(new_share_map->header, cl_entry), new_share_entry);
 
 				/*
 				 *	Fix up the task map entry to refer
@@ -2601,7 +2598,7 @@ vmspace_fork(vm1)
 			new_entry->wired_count = 0;
 			new_entry->object.vm_object = NULL;
 			new_entry->is_a_map = FALSE;
-			vm_map_entry_link(new_map, new_map->header.prev, new_entry);
+			vm_map_entry_link(new_map, CIRCLEQ_PREV(new_map->header, cl_entry), new_entry);
 
 			if (old_entry->aref.ar_amap != NULL) {
 				if ((amap_flags(old_entry->aref.ar_amap) & AMAP_SHARED) != 0 || VM_MAPENT_ISWIRED(old_entry)) {
@@ -2646,7 +2643,7 @@ vmspace_fork(vm1)
 	new_map->size = old_map->size;
 	vm_map_unlock(old_map);
 
-	return(vm2);
+	return (vm2);
 }
 
 /*
@@ -2934,7 +2931,7 @@ vm_map_simplify(map, start)
 	vm_map_lock(map);
 	if (
 		(vm_map_lookup_entry(map, start, &this_entry)) &&
-		((prev_entry = this_entry->prev) != &map->header) &&
+		((prev_entry = CIRCLEQ_PREV(this_entry, cl_entry)) != &map->header) &&
 
 		(prev_entry->end == start) &&
 		(map->is_main_map) &&

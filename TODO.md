@@ -18,6 +18,7 @@ User (All excluding "/sys"):
 		- rtld
 		
 Kernel ("/sys"):
+- swapmap & coremap: Check are being initilized and utilized properly
 arch:
 - i386/x86: (Merged under i386)
 	- conf

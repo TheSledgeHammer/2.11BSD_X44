@@ -473,10 +473,11 @@ brelse(bp)
 		 * otherwise leave it in its current position.
 		 */
 		CLR(bp->b_flags, B_VFLUSH);
-		if (!ISSET(bp->b_flags, B_ERROR|B_INVAL|B_LOCKED|B_AGE))
+		if (!ISSET(bp->b_flags, B_ERROR|B_INVAL|B_LOCKED|B_AGE)) {
 			goto already_queued;
-		else
+		} else {
 			bremfree(bp);
+		}
 	}
 
 	if ((bp->b_bufsize <= 0) || ISSET(bp->b_flags, B_INVAL)) {
@@ -484,15 +485,17 @@ brelse(bp)
 		 * If it's invalid or empty, dissociate it from its vnode
 		 * and put on the head of the appropriate queue.
 		 */
-		if (bp->b_vp)
+		if (bp->b_vp) {
 			brelvp(bp);
+		}
 		CLR(bp->b_flags, B_DONE|B_DELWRI);
-		if (bp->b_bufsize <= 0)
+		if (bp->b_bufsize <= 0) {
 			/* no data */
 			bufq = &bufqueues[BQ_EMPTY];
-		else
+		} else {
 			/* invalid data */
 			bufq = &bufqueues[BQ_AGE];
+		}
 		binsheadfree(bp, bufq);
 	} else {
 		/*

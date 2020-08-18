@@ -116,17 +116,17 @@ struct ovlspace_extent {
  * shareable overlay address space.
  */
 struct ovlspace {
-	struct ovl_map 	    ovls_map;	    	/* Overlay address */
-	struct pmap    		ovls_pmap;	    	/* private physical map */
+	struct ovl_map 	    ovl_map;	    	/* Overlay address */
+	struct pmap    		ovl_pmap;	    	/* private physical map */
 
-	int		        	ovls_refcnt;	   	/* number of references */
-	segsz_t 			ovls_tsize;			/* text size */
-	segsz_t 			ovls_dsize;			/* data size */
-	segsz_t 			ovls_ssize;			/* stack size */
-	caddr_t	        	ovls_taddr;			/* user overlay address of text */
-	caddr_t	        	ovls_daddr;			/* user overlay address of data */
-	caddr_t         	ovls_minsaddr;		/* user OVA at min stack growth */
-	caddr_t         	ovls_maxsaddr;		/* user OVA at max stack growth */
+	int		        	ovl_refcnt;	   		/* number of references */
+	segsz_t 			ovl_tsize;			/* text size */
+	segsz_t 			ovl_dsize;			/* data size */
+	segsz_t 			ovl_ssize;			/* stack size */
+	caddr_t	        	ovl_taddr;			/* user overlay address of text */
+	caddr_t	        	ovl_daddr;			/* user overlay address of data */
+	caddr_t         	ovl_minsaddr;		/* user OVA at min stack growth */
+	caddr_t         	ovl_maxsaddr;		/* user OVA at max stack growth */
 };
 
 /* Overlay Flags */

@@ -89,12 +89,12 @@ struct buf
 	int					b_validend;			/* Offset of end of valid region. */
 };
 
-#define	b_active 	b_bcount				/* driver queue head: drive active */
-#define	b_data	 	b_un.b_addr				/* b_un.b_addr is not changeable. */
-#define	b_cylin 	b_resid					/* disksort */
-#define	b_errcnt 	b_resid					/* while i/o in progress: # retries */
-#define	iodone	 	biodone					/* Old name for biodone. */
-#define	iowait	 	biowait					/* Old name for biowait. */
+#define	b_active 		b_bcount			/* driver queue head: drive active */
+#define	b_data	 		b_un.b_addr			/* b_un.b_addr is not changeable. */
+#define	b_cylin 		b_resid				/* disksort */
+#define	b_errcnt 		b_resid				/* while i/o in progress: # retries */
+#define	iodone	 		biodone				/* Old name for biodone. */
+#define	iowait	 		biowait				/* Old name for biowait. */
 
 /*
  * Definitions for the buffer free lists.
@@ -175,17 +175,6 @@ extern struct bqueues bufqueues[];
 	LIST_INSERT_HEAD(dp, bp, b_hash);		\
 }
 
-#define	_bremhash(bp) { 					\
-	(bp)->b_back->b_forw = (bp)->b_forw; 	\
-	(bp)->b_forw->b_back = (bp)->b_back; 	\
-}
-#define	_binshash(bp, dp) { 				\
-	(bp)->b_forw = (dp)->b_forw; 			\
-	(bp)->b_back = (dp); 					\
-	(dp)->b_forw->b_back = (bp); 			\
-	(dp)->b_forw = (bp); 					\
-}
-
 /*
  * Insq/Remq for the buffer free lists.
  */
@@ -197,6 +186,24 @@ extern struct bqueues bufqueues[];
 	TAILQ_INSERT_TAIL(dp, bp, b_freelist);	\
 }
 
+/*
+ * 2.11BSD Insq/Remq for the buffer hash lists.
+ */
+#define	_bremhash(bp) { 					\
+	(bp)->b_back->b_forw = (bp)->b_forw; 	\
+	(bp)->b_forw->b_back = (bp)->b_back; 	\
+}
+
+#define	_binshash(bp, dp) { 				\
+	(bp)->b_forw = (dp)->b_forw; 			\
+	(bp)->b_back = (dp); 					\
+	(dp)->b_forw->b_back = (bp); 			\
+	(dp)->b_forw = (bp); 					\
+}
+
+/*
+ * 2.11BSD Insq/Remq for the buffer free lists.
+ */
 #define	_bremfree(bp) { 					\
 	(bp)->av_back->av_forw = (bp)->av_forw; \
 	(bp)->av_forw->av_back = (bp)->av_back; \

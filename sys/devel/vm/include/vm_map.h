@@ -207,6 +207,7 @@ typedef struct {
 	(map)->lk_flags &= ~LK_CANRECURSE; 							\
 	simple_unlock(&(map)->lk_lnterlock); 						\
 }
+
 /*
  *	Functions implemented as macros
  */

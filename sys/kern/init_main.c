@@ -59,7 +59,6 @@
 #include <sys/signalvar.h>
 #include <sys/systm.h>
 #include <sys/vnode.h>
-//#include <sys/sysent.h>
 #include <sys/conf.h>
 #include <sys/buf.h>
 #include <sys/clist.h>
@@ -240,6 +239,8 @@ main(framep)
 
 	/* Initialize clists, tables, protocols. */
 	cinit();
+	//bhinit();
+	//binit();
 
 	/* Attach pseudo-devices. */
 	for (pdev = pdevinit; pdev->pdev_attach != NULL; pdev++)
@@ -444,5 +445,46 @@ cinit()
 		cp->c_next = cfreelist;
 		cfreelist = cp;
 		cfreecount += CBSIZE;
+	}
+}
+
+/*
+ * Initialize hash links for buffers.
+ */
+static void
+bhinit()
+{
+	register int i;
+	register struct bufhd *bp;
+
+	for (bp = bufhash, i = 0; i < BUFHSZ; i++, bp++)
+		bp->b_forw = bp->b_back = (struct buf *)bp;
+}
+
+memaddr	bpaddr;		/* physical click-address of buffers */
+/*
+ * Initialize the buffer I/O system by freeing
+ * all buffers and setting all device buffer lists to empty.
+ */
+static void
+binit()
+{
+	register struct buf *bp;
+	register int i;
+	long paddr;
+
+	for (bp = bufqueues; bp < &bufqueues[BQUEUES]; bp++)
+		bp->b_forw = bp->b_back = bp->av_forw = bp->av_back = bp;
+	paddr = ((long)bpaddr) << 6;
+	for (i = 0; i < nbuf; i++, paddr += MAXBSIZE) {
+		bp = &buf[i];
+		bp->b_dev = NODEV;
+		bp->b_bcount = 0;
+		//bp->b_un.b_addr = (caddr_t)loint(paddr);
+		//bp->b_xmem = hiint(paddr);
+		_binsheadfree(bp, TAILQ_FIRST(&bufqueues));
+		_binshash(bp, TAILQ_FIRST(&bufqueues));
+		bp->b_flags = B_BUSY|B_INVAL;
+		brelse(bp);
 	}
 }
