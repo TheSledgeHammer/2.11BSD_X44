@@ -66,7 +66,6 @@ physio(strategy, bp, dev, flags, minphys, uio)
 
 	error = 0;
 	flags &= B_READ | B_WRITE;
-
 	/*
 	 * [check user read/write access to the data buffer]
 	 *

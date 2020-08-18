@@ -31,8 +31,8 @@ struct map {
 };
 
 struct mapent {
-	size_t 	m_size;				/* size of this segment of the map */
-	memaddr	m_addr;				/* resource-space addr of start of segment */
+	size_t 			m_size;		/* size of this segment of the map */
+	memaddr			m_addr;		/* resource-space addr of start of segment */
 };
 
 #define RMALLOC(mp, cast, size) {							\

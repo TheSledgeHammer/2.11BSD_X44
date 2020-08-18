@@ -37,48 +37,99 @@
 #define NOLIST ((struct buf *)0x87654321)
 
 /*
+ * Bufhd structures used at the head of the hashed buffer queues.
+ * We only need three words for these, so this abbreviated
+ * definition saves some space.
+ */
+struct bufhd
+{
+	short				b_flags;			/* see defines below */
+	struct	buf 		*b_forw, *b_back;	/* fwd/bkwd pointer in chain */
+};
+
+/*
  * The buffer header describes an I/O operation in the kernel.
  */
 struct buf
 {
-	LIST_ENTRY(buf) b_hash;			/* Hash chain. */
-	LIST_ENTRY(buf) b_vnbufs;		/* Buffer's associated vnode. */
-	TAILQ_ENTRY(buf) b_freelist;	/* Free list position if not active. */
+	/* 2.11BSD Orig */
+	struct	buf 		*b_forw, *b_back;	/* hash chain (2 way street) */
+	struct	buf 		*av_forw, *av_back;	/* position on free list if not BUSY */
 
-	struct	buf 	*b_actf, **b_actb;	/* Device driver queue when active. */
-	struct  proc 	*b_proc;		/* Associated proc; NULL if kernel. */
-	volatile long	b_flags;		/* B_* flags. */
-	int				b_qindex;		/* buffer queue index */
-	int				b_error;		/* returned after I/O */
-	long			b_bufsize;		/* Allocated buffer size. */
-	long			b_bcount;		/* transfer count */
-	long			b_resid;		/* words not transferred after error */
-	char			b_xmem;			/* high order core address */
-	dev_t			b_dev;			/* major+minor device name */
+	/* 2.11BSD New */
+	LIST_ENTRY(buf) 	b_hash;				/* Hash chain. */
+	LIST_ENTRY(buf) 	b_vnbufs;			/* Buffer's associated vnode. */
+	TAILQ_ENTRY(buf) 	b_freelist;			/* Free list position if not active. */
+
+	struct	buf 		*b_actf, **b_actb;	/* Device driver queue when active. */
+	struct  proc 		*b_proc;			/* Associated proc; NULL if kernel. */
+	volatile long		b_flags;			/* B_* flags. */
+	int					b_qindex;			/* buffer queue index */
+	int					b_error;			/* returned after I/O */
+	long				b_bufsize;			/* Allocated buffer size. */
+	long				b_bcount;			/* transfer count */
+	long				b_resid;			/* words not transferred after error */
+	char				b_xmem;				/* high order core address */
+	dev_t				b_dev;				/* major+minor device name */
 	struct {
-	    caddr_t 	b_addr;			/* low order core address */
+	    caddr_t 		b_addr;				/* low order core address */
 	} b_un;
-	void			*b_saveaddr;	/* Original b_addr for physio. */
-	daddr_t			b_lblkno;		/* Logical block number. */
-	daddr_t			b_blkno;		/* Underlying physical block number. */
+	void				*b_saveaddr;		/* Original b_addr for physio. */
+	daddr_t				b_lblkno;			/* Logical block number. */
+	daddr_t				b_blkno;			/* Underlying physical block number. */
 
-	void			(*b_iodone)(struct buf *);
-	struct	vnode 	*b_vp;			/* Device vnode. */
-	int				b_pfcent;		/* Center page when swapping cluster. */
-	int				b_dirtyoff;		/* Offset in buffer of dirty region. */
-	int				b_dirtyend;		/* Offset of end of dirty region. */
-	struct	ucred 	*b_rcred;		/* Read credentials reference. */
-	struct	ucred 	*b_wcred;		/* Write credentials reference. */
-	int				b_validoff;		/* Offset in buffer of valid region. */
-	int				b_validend;		/* Offset of end of valid region. */
+	void				(*b_iodone)(struct buf *);
+	struct	vnode 		*b_vp;				/* Device vnode. */
+	int					b_pfcent;			/* Center page when swapping cluster. */
+	int					b_dirtyoff;			/* Offset in buffer of dirty region. */
+	int					b_dirtyend;			/* Offset of end of dirty region. */
+	struct	ucred 		*b_rcred;			/* Read credentials reference. */
+	struct	ucred 		*b_wcred;			/* Write credentials reference. */
+	int					b_validoff;			/* Offset in buffer of valid region. */
+	int					b_validend;			/* Offset of end of valid region. */
 };
 
-#define	b_active 	b_bcount			/* driver queue head: drive active */
-#define	b_data	 	b_un.b_addr			/* b_un.b_addr is not changeable. */
-#define	b_cylin 	b_resid				/* disksort */
-#define	b_errcnt 	b_resid				/* while i/o in progress: # retries */
-#define	iodone	 	biodone				/* Old name for biodone. */
-#define	iowait	 	biowait				/* Old name for biowait. */
+#define	b_active 	b_bcount				/* driver queue head: drive active */
+#define	b_data	 	b_un.b_addr				/* b_un.b_addr is not changeable. */
+#define	b_cylin 	b_resid					/* disksort */
+#define	b_errcnt 	b_resid					/* while i/o in progress: # retries */
+#define	iodone	 	biodone					/* Old name for biodone. */
+#define	iowait	 	biowait					/* Old name for biowait. */
+
+/*
+ * Definitions for the buffer free lists.
+ */
+#define	BQUEUES		4		/* number of free buffer queues */
+
+#define	BQ_LOCKED	0		/* super-blocks &c */
+#define	BQ_LRU		1		/* lru, useful buffers */
+#define	BQ_AGE		2		/* rubbish */
+#define	BQ_EMPTY	3		/* buffer headers with no memory */
+
+struct bufhashhdr;
+LIST_HEAD(bufhashhdr, buf);
+extern struct bufhashhdr *bufhashtbl, invalhash;
+
+struct bqueues;
+TAILQ_HEAD(bqueues, buf);
+extern struct bqueues bufqueues[];
+
+/*
+ * Zero out the buffer's data area.
+ */
+#define	clrbuf(bp) {													\
+	bzero((bp)->b_data, (u_int)(bp)->b_bcount);							\
+	(bp)->b_resid = 0;													\
+}
+
+/* Flags to low-level allocation routines. */
+#define B_CLRBUF	0x01	/* Request allocated buffer be cleared. */
+#define B_SYNC		0x02	/* Do all allocations synchronously. */
+
+/*
+ * number of buffer hash entries
+ */
+#define	BUFHSZ	512	/* must be power of 2 */
 
 /* These flags are kept in b_flags. */
 #define	B_WRITE			0x00000000		/* non-read pseudo-flag */
@@ -114,6 +165,57 @@ struct buf
 #define	B_XXX			0x20000000		/* Debugging flag. */
 
 /*
+ * Insq/Remq for the buffer hash lists.
+ */
+#define	bremhash(bp) { 						\
+	LIST_REMOVE(bp, b_hash);				\
+}
+
+#define	binshash(bp, dp) { 					\
+	LIST_INSERT_HEAD(dp, bp, b_hash);		\
+}
+
+#define	_bremhash(bp) { 					\
+	(bp)->b_back->b_forw = (bp)->b_forw; 	\
+	(bp)->b_forw->b_back = (bp)->b_back; 	\
+}
+#define	_binshash(bp, dp) { 				\
+	(bp)->b_forw = (dp)->b_forw; 			\
+	(bp)->b_back = (dp); 					\
+	(dp)->b_forw->b_back = (bp); 			\
+	(dp)->b_forw = (bp); 					\
+}
+
+/*
+ * Insq/Remq for the buffer free lists.
+ */
+#define	binsheadfree(bp, dp) { 				\
+	TAILQ_INSERT_HEAD(dp, bp, b_freelist);	\
+}
+
+#define	binstailfree(bp, dp) {				\
+	TAILQ_INSERT_TAIL(dp, bp, b_freelist);	\
+}
+
+#define	_bremfree(bp) { 					\
+	(bp)->av_back->av_forw = (bp)->av_forw; \
+	(bp)->av_forw->av_back = (bp)->av_back; \
+}
+
+#define _binsheadfree(bp, dp) { 			\
+	(dp)->av_forw->av_back = (bp); 			\
+	(bp)->av_forw = (dp)->av_forw; 			\
+	(dp)->av_forw = (bp); 					\
+	(bp)->av_back = (dp); 					\
+
+#define	_binstailfree(bp, dp) { 			\
+	(dp)->av_back->av_forw = (bp); 			\
+	(bp)->av_back = (dp)->av_back; 			\
+	(dp)->av_back = (bp); 					\
+	(bp)->av_forw = (dp); 					\
+}
+
+/*
  * This structure describes a clustered I/O.  It is stored in the b_saveaddr
  * field of the buffer on which I/O is done.  At I/O completion, cluster
  * callback uses the structure to parcel I/O's to individual buffers, and
@@ -126,23 +228,6 @@ struct cluster_save {
 	int			bs_nchildren;			/* Number of associated buffers. */
 	struct buf 	**bs_children;			/* List of associated buffers. */
 };
-
-/*
- * Zero out the buffer's data area.
- */
-#define	clrbuf(bp) {													\
-	bzero((bp)->b_data, (u_int)(bp)->b_bcount);							\
-	(bp)->b_resid = 0;													\
-}
-
-/* Flags to low-level allocation routines. */
-#define B_CLRBUF	0x01	/* Request allocated buffer be cleared. */
-#define B_SYNC		0x02	/* Do all allocations synchronously. */
-
-/*
- * number of buffer hash entries
- */
-#define	BUFHSZ	512	/* must be power of 2 */
 
 #ifdef KERNEL
 extern int		nbuf;				/* number of buffer headers */

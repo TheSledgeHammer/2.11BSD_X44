@@ -29,6 +29,12 @@
  */
 /* overlay address space (overlay memory) */
 
+/* overlay space is designed to compliment vmspace.
+ * It does this in 2 ways:
+ * 1) mimic'ing vmspace's mapping of objects.
+ * 2) Direct access to physical memory, separate from virtual memory without paging.
+ */
+
 /* TODO:
  * Size of Overlay Space is a smaller portion of VM Space.
  * Taken from VM_MAX_ADDRESS and VM_MIN_ADDRESS.
@@ -76,6 +82,7 @@ OVL_MAX = (VM_MAX_KERNEL_ADDRESS + ((PGSIZE/100)*10))
 
 #include <sys/extent.h>
 #include <sys/queue.h>
+#include <sys/tree.h>
 
 #include "vm/ovl/ovl_map.h"
 #include "vm/ovl/ovl_object.h"

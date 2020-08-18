@@ -10,12 +10,19 @@
 
 #include "ovl.h"
 
+struct ovl_map_clist;
+struct ovl_map_rb_tree;
+RB_PROTOTYPE(ovl_map_rb_tree, ovl_map_entry, orb_entry, ovl_rb_compare);
+
 union ovl_map_object {
-	struct ovl_object					*ovl_object;	/* object object */
+	struct ovl_object					*ovl_object;		/* overlay object */
+	//vm_object	/* vm_object */
+	//avm_object /* avm_object */
 };
 
 struct ovl_map_entry {
-  CIRCLEQ_ENTRY(ovl_map_entry)  		ovl_entry;			/* entries in a circular list */
+  CIRCLEQ_ENTRY(ovl_map_entry)  		ocl_entry;			/* entries in a circular list */
+  RB_ENTRY(ovl_map_entry) 				orb_entry;			/* tree information */
   vm_offset_t		                	ovle_start;			/* start address */
   vm_offset_t		                	ovle_end;			/* end address */
   caddr_t								ovle_ownspace;		/* free space after */
@@ -25,38 +32,41 @@ struct ovl_map_entry {
 };
 
 CIRCLEQ_HEAD(ovl_map_clist, ovl_map_entry);
+RB_HEAD(ovl_map_rb_tree, ovl_map_entry);
 struct ovl_map {
 	struct ovl_map_clist         		ovl_header;        	/* Circular List of entries */
+	struct ovl_map_rb_tree				ovl_root;			/* Tree of entries */
 	struct pmap *		           		pmap;		        /* Physical map */
     lock_data_t		                    lock;		        /* Lock for overlay data */
     int			                        nentries;	        /* Number of entries */
     vm_size_t		                    size;		        /* virtual size */
     int			                        ref_count;	        /* Reference count */
 	simple_lock_data_t	                ref_lock;	        /* Lock for ref_count field */
+	ovl_map_entry_t						hint;				/* hint for quick lookups */
     simple_lock_data_t	                hint_lock;	        /* lock for hint storage */
     unsigned int		                timestamp;	        /* Version number */
 
-#define	min_offset		                header.cqh_first->start
-#define max_offset		                header.cqh_first->end
+#define	min_offset			    		ovl_header.cqh_first->ovle_start
+#define max_offset			    		ovl_header.cqh_first->ovle_end
 };
 
-#define	ovl_lock_drain_interlock(ovl) { 			\
-	lockmgr(&(ovl)->lock, LK_DRAIN|LK_INTERLOCK, 	\
-		&(ovl)->ref_lock, curproc); 				\
-	(ovl)->timestamp++; 							\
+#define	ovl_lock_drain_interlock(ovl) { 								\
+	lockmgr(&(ovl)->lock, LK_DRAIN|LK_INTERLOCK, 						\
+		&(ovl)->ref_lock, curproc); 									\
+	(ovl)->timestamp++; 												\
 }
 
 #ifdef DIAGNOSTIC
-#define	vovl_lock(ovl) { \
+#define	ovl_lock(ovl) { 												\
 	if (lockmgr(&(ovl)->lock, LK_EXCLUSIVE, (void *)0, curproc) != 0) { \
-		panic("ova_lock: failed to get lock"); \
-	} \
-	(ova)->timestamp++; \
+		panic("ova_lock: failed to get lock"); 							\
+	} 																	\
+	(ova)->timestamp++; 												\
 }
 #else
-#define	vovl_lock(vovl) {  \
-    (lockmgr(&(vovl)->lock, LK_EXCLUSIVE, (void *)0, curproc) != 0); \
-    (vovl)->timestamp++; \
+#define	ovl_lock(ovl) {  												\
+    (lockmgr(&(ovl)->lock, LK_EXCLUSIVE, (void *)0, curproc) != 0); 	\
+    (ovl)->timestamp++; 												\
 }
 #endif /* DIAGNOSTIC */
 

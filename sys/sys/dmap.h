@@ -54,7 +54,7 @@ int dmmin, dmmax, dmtext;
 
 /* The following structure is that ``returned'' from a call to vstodb(). */
 struct dblock {
-	swblk_t db_base;	/* base of physical contig drum block */
-	swblk_t db_size;	/* size of block */
+	swblk_t db_base;		/* base of physical contig drum block */
+	swblk_t db_size;		/* size of block */
 };
 #endif	/* !_SYS_DMAP_H_ */

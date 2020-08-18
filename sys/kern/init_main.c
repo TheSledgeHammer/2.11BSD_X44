@@ -59,7 +59,7 @@
 #include <sys/signalvar.h>
 #include <sys/systm.h>
 #include <sys/vnode.h>
-#include <sys/sysent.h>
+//#include <sys/sysent.h>
 #include <sys/conf.h>
 #include <sys/buf.h>
 #include <sys/clist.h>
@@ -85,6 +85,7 @@ struct	proc *initproc, *pageproc;
 
 int		securelevel;
 int 	cmask = CMASK;
+extern	struct	mapent _coremap[];
 extern	struct user *proc0paddr;
 
 struct 	vnode *rootvp, *swapdev_vp;

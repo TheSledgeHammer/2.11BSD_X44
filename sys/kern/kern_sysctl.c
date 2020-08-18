@@ -217,8 +217,7 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (sysctl_rdint(oldp, oldlenp, newp, ARG_MAX));
 	case KERN_SECURELVL:
 		level = securelevel;
-		if ((error = sysctl_int(oldp, oldlenp, newp, newlen, &level)) ||
-		    newp == NULL)
+		if ((error = sysctl_int(oldp, oldlenp, newp, newlen, &level)) || newp == NULL)
 			return (error);
 		if (level < securelevel && u->u_procp->p_pid != 1)
 			return (EPERM);
@@ -622,7 +621,6 @@ sysctl_clockrate(where, sizep)
 	clkinfo.stathz = hz;
 	return(sysctl_rdstruct(where, sizep, NULL, &clkinfo, sizeof (clkinfo)));
 }
-
 
 /*
  * try over estimating by 5 procs

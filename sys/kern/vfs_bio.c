@@ -50,38 +50,17 @@
 #include <sys/conf.h>
 
 #include <vm/include/vm.h>
+
 /*
  * Definitions for the buffer hash lists.
  */
 #define	BUFHASH(dvp, lbn)	\
-	(&bufhashtbl[((int)(dvp) / sizeof(*(dvp)) + (int)(lbn)) & (BUFHSZ * (lbn + bufhash) - 1)])
-LIST_HEAD(bufhashhdr, buf) *bufhashtbl, invalhash;
+	(&bufhashtbl[((int)(dvp) / sizeof(*(dvp)) + (int)(lbn)) & (BUFHSZ * ((int)(lbn) + (bufhash)) - 1)])
 u_long	bufhash;
+int 	needbuffer;
 
-/*
- * Insq/Remq for the buffer hash lists.
- */
-#define	binshash(bp, dp)	LIST_INSERT_HEAD(dp, bp, b_hash)
-#define	bremhash(bp)		LIST_REMOVE(bp, b_hash)
-
-/*
- * Definitions for the buffer free lists.
- */
-#define	BQUEUES		4		/* number of free buffer queues */
-
-#define	BQ_LOCKED	0		/* super-blocks &c */
-#define	BQ_LRU		1		/* lru, useful buffers */
-#define	BQ_AGE		2		/* rubbish */
-#define	BQ_EMPTY	3		/* buffer headers with no memory */
-
-TAILQ_HEAD(bqueues, buf) bufqueues[BQUEUES];
-int needbuffer;
-
-/*
- * Insq/Remq for the buffer free lists.
- */
-#define	binsheadfree(bp, dp)	TAILQ_INSERT_HEAD(dp, bp, b_freelist)
-#define	binstailfree(bp, dp)	TAILQ_INSERT_TAIL(dp, bp, b_freelist)
+struct bufhashhdr 	*bufhashtbl, invalhash;
+struct bqueues 		bufqueues[BQUEUES];
 
 void
 bremfree(bp)

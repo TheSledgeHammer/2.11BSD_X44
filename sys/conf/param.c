@@ -99,3 +99,11 @@ struct	buf *buf, *swbuf;
 char	*buffers;
 
 
+#define CMAPSIZ	NPROC				/* size of core allocation map */
+#define SMAPSIZ	((9 * NPROC) / 10)	/* size of swap allocation map */
+
+struct mapent	_coremap[CMAPSIZ];
+struct map 		coremap[1] = { _coremap, &_coremap[CMAPSIZ], "coremap", };
+
+struct mapent	_swapmap[SMAPSIZ];
+struct map 		swapmap[1] = { _swapmap, &_swapmap[SMAPSIZ], "swapmap", };
