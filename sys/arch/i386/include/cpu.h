@@ -46,26 +46,56 @@
 #include <machine/frame.h>
 #include <machine/segments.h>
 
+struct pmap;
+
 struct cpu_info {
-	u_int32_t		ci_kern_cr3;	/* U+K page table */
-	u_int32_t		ci_scratch;		/* for U<-->K transition */
-	struct device 	*ci_dev;		/* our device */
-	struct cpu_info *ci_self;		/* pointer to this structure */
-	struct cpu_info *ci_next;		/* next cpu */
+	u_int32_t		ci_kern_cr3;			/* U+K page table */
+	u_int32_t		ci_scratch;				/* for U<-->K transition */
+	struct device 	*ci_dev;				/* our device */
+	struct cpu_info *ci_self;				/* pointer to this structure */
+	struct cpu_info *ci_next;				/* next cpu */
 
 	/*
 	 * Public members.
 	 */
-	struct proc 	*ci_curproc; 	/* current owner of the processor */
-	cpuid_t 		ci_cpuid; 		/* our CPU ID */
-	u_int 			ci_apicid;		/* our APIC ID */
+	struct proc 	*ci_curproc; 			/* current owner of the processor */
+	struct user		*ci_user;
+	cpuid_t 		ci_cpuid; 				/* our CPU ID */
+	u_int 			ci_apicid;				/* our APIC ID */
 	u_int 			ci_acpi_proc_id;
 	u_int32_t		ci_randseed;
 
-	u_int32_t 		ci_kern_esp;	/* kernel-only stack */
-	u_int32_t 		ci_intr_esp;	/* U<-->K trampoline stack */
-	u_int32_t 		ci_user_cr3;	/* U-K page table */
+	u_int32_t 		ci_kern_esp;			/* kernel-only stack */
+	u_int32_t 		ci_intr_esp;			/* U<-->K trampoline stack */
+	u_int32_t 		ci_user_cr3;			/* U-K page table */
 
+	/*
+	 * Private members.
+	 */
+	struct proc		*ci_fpcurproc;
+	struct proc 	*ci_fpsaveproc;
+	int 			ci_fpsaving;			/* save in progress */
+
+	struct pcb 		*ci_curpcb;				/* VA of current HW PCB */
+	struct pcb 		*ci_idle_pcb;			/* VA of current PCB */
+	struct pmap 	*ci_pmap;				/* current pmap */
+
+	u_int32_t 		ci_level;
+	u_int32_t 		ci_vendor[4];
+	u_int32_t 		ci_signature; 			/* X86 cpuid type */
+	u_int32_t 		ci_family; 				/* extended cpuid family */
+	u_int32_t 		ci_model; 				/* extended cpuid model */
+	u_int32_t 		ci_feature_flags; 		/* X86 CPUID feature bits */
+	u_int32_t		ci_feature_sefflags_ebx;/* more CPUID feature bits */
+	u_int32_t		ci_feature_sefflags_ecx;/* more CPUID feature bits */
+	u_int32_t		ci_feature_sefflags_edx;/* more CPUID feature bits */
+	u_int32_t		ci_feature_tpmflags;	/* thermal & power bits */
+	u_int32_t		cpu_class;				/* CPU class */
+	u_int32_t		ci_cflushsz;			/* clflush cache-line size */
+	u_int32_t		ci_amdcacheinfo[4];		/* AMD cache info */
+	u_int32_t		ci_extcacheinfo[4];		/* Intel cache info */
+
+	void (*cpu_setup)(struct cpu_info *);	/* proc-dependant init */
 };
 
 /*
@@ -134,9 +164,9 @@ struct cpu_nocpuid_nameclass {
 };
 
 struct cpu_cpuid_nameclass {
-	const char 	*cpu_id;
-	int 		cpu_vendor;
-	const char 	*cpu_vendorname;
+	const char 		*cpu_id;
+	int 			cpu_vendor;
+	const char 		*cpu_vendorname;
 	struct cpu_cpuid_family {
 		int 		cpu_class;
 		const char 	*cpu_models[CPU_MAXMODEL+2];
@@ -152,8 +182,18 @@ extern int cpuid_level;
 extern struct cpu_nocpuid_nameclass i386_nocpuid_cpus[];
 extern struct cpu_cpuid_nameclass i386_cpuid_cpus[];
 
+/* locore.s */
+struct pcb;
+void	savectx (struct pcb *);
+
+/* clock.c */
+void	startrtclock (void);
+
 /* autoconf.c */
 void	configure (void);
+
+/* vm_machdep.c */
+int		cpu_fork (struct proc *, struct proc *);
 
 #ifdef USER_LDT
 /* sys_machdep.h */
@@ -161,10 +201,14 @@ int		i386_get_ldt (struct proc *, char *, register_t *);
 int		i386_set_ldt (struct proc *, char *, register_t *);
 #endif
 
-#ifdef VM86
-/* vm86.c */
-void	vm86_gpfault (struct proc *, int);
-#endif /* VM86 */
+/* isa_machdep.c */
+void	isa_defaultirq (void);
+int		isa_nmi (void);
+
+/* bus_machdep.c */
+void 	i386_bus_space_init	(void);
+void 	i386_bus_space_mallocok	(void);
+void	i386_bus_space_check (vm_offset_t, int, int);
 
 #endif /* _KERNEL */
 
@@ -172,11 +216,16 @@ void	vm86_gpfault (struct proc *, int);
  * CTL_MACHDEP definitions.
  */
 #define	CPU_CONSDEV		1	/* dev_t: console terminal device */
-#define	CPU_MAXID		2	/* number of valid machdep ids */
+#define	CPU_BIOSBASEMEM	2	/* int: bios-reported base mem (K) */
+#define	CPU_BIOSEXTMEM	3	/* int: bios-reported ext. mem (K) */
+
+#define	CPU_MAXID		4	/* number of valid machdep ids */
 
 #define CTL_MACHDEP_NAMES { 				\
 	{ 0, 0 }, 								\
 	{ "console_device", CTLTYPE_STRUCT }, 	\
+	{ "biosbasemem", CTLTYPE_INT }, 		\
+	{ "biosextmem", CTLTYPE_INT }, 			\
 }
 
 #ifndef LOCORE

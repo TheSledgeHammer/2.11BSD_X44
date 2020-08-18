@@ -52,6 +52,7 @@ typedef	long	    		pid_t;		/* process id */
 typedef	u_short				mode_t;		/* permissions */
 typedef	register_t			register_t;
 typedef u_long 				sigset_t;
+typedef	unsigned long		cpuid_t;
 
  typedef struct	_quad {
 	long val[2];
@@ -88,45 +89,7 @@ typedef	_BSD_TIME_T_	time_t;
 #undef	_BSD_TIME_T_
 #endif
 
-#ifndef	_BSD_INT8_T_
-typedef	__int8_t	int8_t;
-#define	_BSD_INT8_T_
-#endif
-
-#ifndef	_BSD_UINT8_T_
-typedef	__uint8_t	uint8_t;
-#define	_BSD_UINT8_T_
-#endif
-
-#ifndef	_BSD_INT16_T_
-typedef	__int16_t	int16_t;
-#define	_BSD_INT16_T_
-#endif
-
-#ifndef	_BSD_UINT16_T_
-typedef	__uint16_t	uint16_t;
-#define	_BSD_UINT16_T_
-#endif
-
-#ifndef	_BSD_INT32_T_
-typedef	__int32_t	int32_t;
-#define	_BSD_INT32_T_
-#endif
-
-#ifndef	_BSD_UINT32_T_
-typedef	__uint32_t	uint32_t;
-#define	_BSD_UINT32_T_
-#endif
-
-#ifndef	_BSD_INT64_T_
-typedef	__int64_t	int64_t;
-#define	_BSD_INT64_T_
-#endif
-
-#ifndef	_BSD_UINT64_T_
-typedef	__uint64_t	uint64_t;
-#define	_BSD_UINT64_T_
-#endif
+#include <sys/stdint.h>
 
 typedef	uint8_t		u_int8_t;
 typedef	uint16_t	u_int16_t;

@@ -138,6 +138,7 @@ struct bootinfo bootinfo;
 int 			*esym;
 
 extern int kstack[];
+extern int biosbasemem, biosextmem;
 
 struct pcb *curpcb;			/* our current running pcb */
 
@@ -843,7 +844,12 @@ cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 			consdev = cn_tab->cn_dev;
 		else
 			consdev = NODEV;
-		return (sysctl_rdstruct(oldp, oldlenp, newp, &consdev, sizeof consdev));
+		return (sysctl_rdstruct(oldp, oldlenp, newp, &consdev, sizeof(consdev)));
+	case CPU_BIOSBASEMEM:
+		return (sysctl_rdint(oldp, oldlenp, newp, biosbasemem));
+	case CPU_BIOSEXTMEM:
+		return (sysctl_rdint(oldp, oldlenp, newp, biosextmem));
+
 	default:
 		return (EOPNOTSUPP);
 	}
@@ -893,7 +899,6 @@ init386(first)
 	int first;
 {
 	int x;
-	unsigned biosbasemem, biosextmem;
 	struct gate_descriptor *gdp;
 	extern int sigcode, szsigcode;
 
@@ -969,8 +974,7 @@ init386(first)
 	Maxmem = btoc((biosextmem + 1024) * 1024);
 	maxmem = Maxmem - 1;
 	physmem = btoc(biosbasemem * 1024 + (biosextmem - 1) * 1024);
-	printf("bios %dK+%dK. maxmem %x, physmem %x\n", biosbasemem, biosextmem,
-			ctob(maxmem), ctob(physmem));
+	printf("bios %dK+%dK. maxmem %x, physmem %x\n", biosbasemem, biosextmem, ctob(maxmem), ctob(physmem));
 	vm_set_page_size();
 
 	/* call pmap initialization to make new kernel address space */

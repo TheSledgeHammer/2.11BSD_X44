@@ -1073,40 +1073,40 @@ db_disasm(loc, altfmt)
 	prefix = TRUE;
 	do {
 		switch (inst) {
-		    case 0x66:		/* data16 */
+		case 0x66: /* data16 */
 			size = WORD;
 			break;
-		    case 0x67:
+		case 0x67:
 			short_addr = TRUE;
 			break;
-		    case 0x26:
+		case 0x26:
 			seg = "%es";
 			break;
-		    case 0x36:
+		case 0x36:
 			seg = "%ss";
 			break;
-		    case 0x2e:
+		case 0x2e:
 			seg = "%cs";
 			break;
-		    case 0x3e:
+		case 0x3e:
 			seg = "%ds";
 			break;
-		    case 0x64:
+		case 0x64:
 			seg = "%fs";
 			break;
-		    case 0x65:
+		case 0x65:
 			seg = "%gs";
 			break;
-		    case 0xf0:
+		case 0xf0:
 			db_printf("lock ");
 			break;
-		    case 0xf2:
+		case 0xf2:
 			db_printf("repne ");
 			break;
-		    case 0xf3:
-			db_printf("repe ");	/* XXX repe VS rep */
+		case 0xf3:
+			db_printf("repe "); /* XXX repe VS rep */
 			break;
-		    default:
+		default:
 			prefix = FALSE;
 			break;
 		}
@@ -1122,11 +1122,11 @@ db_disasm(loc, altfmt)
 
 	if (inst == 0x0f) {
 		get_value_inc(inst, loc, 1, FALSE);
-		ip = db_inst_0f[inst>>4];
+		ip = db_inst_0f[inst >> 4];
 		if (ip == 0)
 			ip = &db_bad_inst;
 		else
-			ip = &ip[inst&0xf];
+			ip = &ip[inst & 0xf];
 	} else {
 		ip = &db_inst_table[inst];
 	}
@@ -1140,20 +1140,18 @@ db_disasm(loc, altfmt)
 	i_size = ip->i_size;
 	i_mode = ip->i_mode;
 
-	if (ip->i_extra == (char *)db_Grp1 ||
-	    ip->i_extra == (char *)db_Grp2 ||
-	    ip->i_extra == (char *)db_Grp6 ||
-	    ip->i_extra == (char *)db_Grp7 ||
-	    ip->i_extra == (char *)db_Grp8) {
-		i_name = ((char **)ip->i_extra)[f_reg(regmodrm)];
-	} else if (ip->i_extra == (char *)db_Grp3) {
-		ip = (struct inst *)ip->i_extra;
+	if (ip->i_extra == (char*) db_Grp1 || ip->i_extra == (char*) db_Grp2
+			|| ip->i_extra == (char*) db_Grp6 || ip->i_extra == (char*) db_Grp7
+			|| ip->i_extra == (char*) db_Grp8) {
+		i_name = ((char**) ip->i_extra)[f_reg(regmodrm)];
+	} else if (ip->i_extra == (char*) db_Grp3) {
+		ip = (struct inst*) ip->i_extra;
 		ip = &ip[f_reg(regmodrm)];
 		i_name = ip->i_name;
 		i_mode = ip->i_mode;
-	} else if (ip->i_extra == (char *)db_Grp4 ||
-		   ip->i_extra == (char *)db_Grp5) {
-		ip = (struct inst *)ip->i_extra;
+	} else if (ip->i_extra == (char*) db_Grp4
+			|| ip->i_extra == (char*) db_Grp5) {
+		ip = (struct inst*) ip->i_extra;
 		ip = &ip[f_reg(regmodrm)];
 		i_name = ip->i_name;
 		i_mode = ip->i_mode;
@@ -1182,125 +1180,123 @@ db_disasm(loc, altfmt)
 		}
 	}
 	db_printf("\t");
-	for (first = TRUE;
-	     i_mode != 0;
-	     i_mode >>= 8, first = FALSE) {
+	for (first = TRUE; i_mode != 0; i_mode >>= 8, first = FALSE) {
 		if (!first)
 			db_printf(",");
 
 		switch (i_mode & 0xFF) {
-		    case E:
+		case E:
 			db_print_address(seg, size, &address);
 			break;
-		    case Eind:
+		case Eind:
 			db_printf("*");
 			db_print_address(seg, size, &address);
 			break;
-		    case Ew:
+		case Ew:
 			db_print_address(seg, WORD, &address);
 			break;
-		    case Eb:
+		case Eb:
 			db_print_address(seg, BYTE, &address);
 			break;
-		    case R:
+		case R:
 			db_printf("%s", db_reg[size][f_reg(regmodrm)]);
 			break;
-		    case Rw:
+		case Rw:
 			db_printf("%s", db_reg[WORD][f_reg(regmodrm)]);
 			break;
-		    case Ri:
+		case Ri:
 			db_printf("%s", db_reg[size][f_rm(inst)]);
 			break;
-		    case S:
+		case S:
 			db_printf("%s", db_seg_reg[f_reg(regmodrm)]);
 			break;
-		    case Si:
+		case Si:
 			db_printf("%s", db_seg_reg[f_reg(inst)]);
 			break;
-		    case A:
-			db_printf("%s", db_reg[size][0]);	/* acc */
+		case A:
+			db_printf("%s", db_reg[size][0]); /* acc */
 			break;
-		    case BX:
+		case BX:
 			if (seg)
 				db_printf("%s:", seg);
 			db_printf("(%s)", short_addr ? "%bx" : "%ebx");
 			break;
-		    case CL:
+		case CL:
 			db_printf("%%cl");
 			break;
-		    case DX:
+		case DX:
 			db_printf("%%dx");
 			break;
-		    case SI:
+		case SI:
 			if (seg)
 				db_printf("%s:", seg);
 			db_printf("(%s)", short_addr ? "%si" : "%esi");
 			break;
-		    case DI:
+		case DI:
 			db_printf("%%es:(%s)", short_addr ? "%di" : "%edi");
 			break;
-		    case CR:
+		case CR:
 			db_printf("%%cr%d", f_reg(regmodrm));
 			break;
-		    case DR:
+		case DR:
 			db_printf("%%dr%d", f_reg(regmodrm));
 			break;
-		    case TR:
+		case TR:
 			db_printf("%%tr%d", f_reg(regmodrm));
 			break;
-		    case I:
+		case I:
 			len = db_lengths[size];
 			get_value_inc(imm, loc, len, FALSE);/* unsigned */
 			db_printf("$%#n", imm);
 			break;
-		    case Is:
+		case Is:
 			len = db_lengths[size];
-			get_value_inc(imm, loc, len, TRUE);	/* signed */
+			get_value_inc(imm, loc, len, TRUE); /* signed */
 			db_printf("$%#r", imm);
 			break;
-		    case Ib:
-			get_value_inc(imm, loc, 1, FALSE);	/* unsigned */
+		case Ib:
+			get_value_inc(imm, loc, 1, FALSE); /* unsigned */
 			db_printf("$%#n", imm);
 			break;
-		    case Ibs:
-			get_value_inc(imm, loc, 1, TRUE);	/* signed */
+		case Ibs:
+			get_value_inc(imm, loc, 1, TRUE); /* signed */
 			db_printf("$%#r", imm);
 			break;
-		    case Iw:
-			get_value_inc(imm, loc, 2, FALSE);	/* unsigned */
+		case Iw:
+			get_value_inc(imm, loc, 2, FALSE); /* unsigned */
 			db_printf("$%#n", imm);
 			break;
-		    case Il:
+		case Il:
 			get_value_inc(imm, loc, 4, FALSE);
 			db_printf("$%#n", imm);
 			break;
-		    case O:
+		case O:
 			if (short_addr)
 				get_value_inc(displ, loc, 2, TRUE);
 			else
 				get_value_inc(displ, loc, 4, TRUE);
 			if (seg)
-				db_printf("%s:%#r",seg, displ);
+				db_printf("%s:%#r", seg, displ);
 			else
-				db_printsym((db_addr_t)displ, DB_STGY_ANY);
+				db_printsym((db_addr_t) displ, DB_STGY_ANY);
 			break;
-		    case Db:
+		case Db:
 			get_value_inc(displ, loc, 1, TRUE);
-			db_printsym((db_addr_t)(displ + loc), DB_STGY_XTRN);
+			db_printsym((db_addr_t) (displ + loc), DB_STGY_XTRN);
 			break;
-		    case Dl:
+		case Dl:
 			get_value_inc(displ, loc, 4, TRUE);
-			db_printsym((db_addr_t)(displ + loc), DB_STGY_XTRN);
+			db_printsym((db_addr_t) (displ + loc), DB_STGY_XTRN);
 			break;
-		    case o1:
+		case o1:
 			db_printf("$1");
 			break;
-		    case o3:
+		case o3:
 			db_printf("$3");
 			break;
-		    case OS:
-			get_value_inc(imm, loc, 4, FALSE);	/* offset */
-			get_value_inc(imm2, loc, 2, FALSE);	/* segment */
+		case OS:
+			get_value_inc(imm, loc, 4, FALSE); /* offset */
+			get_value_inc(imm2, loc, 2, FALSE); /* segment */
 			db_printf("$%#n,%#n", imm2, imm);
 			break;
 		}
@@ -1310,7 +1306,7 @@ db_disasm(loc, altfmt)
 		/*
 		 * GAS pads to longword boundary after unconditional jumps.
 		 */
-		loc = (loc + (4-1)) & ~(4-1);
+		loc = (loc + (4 - 1)) & ~(4 - 1);
 	}
 	db_printf("\n");
 	return (loc);

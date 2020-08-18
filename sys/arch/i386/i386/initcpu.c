@@ -315,8 +315,7 @@ identifycpu()
 
 	if (cpuid_level == -1) {
 #ifdef DIAGNOSTIC
-		if (cpu < 0 || cpu >=
-		    (sizeof i386_nocpuid_cpus/sizeof(struct cpu_nocpuid_nameclass)))
+		if (cpu < 0 || cpu >= (sizeof i386_nocpuid_cpus/sizeof(struct cpu_nocpuid_nameclass)))
 			panic("unknown cpu type %d\n", cpu);
 #endif
 		name = i386_nocpuid_cpus[cpu].cpu_name;
@@ -334,8 +333,7 @@ identifycpu()
 		model = (cpu_id >> 4) & 15;
 		step = cpu_id & 15;
 #ifdef CPUDEBUG
-		printf("cpu0: family %x model %x step %x\n", family, model,
-			step);
+		printf("cpu0: family %x model %x step %x\n", family, model, step);
 #endif
 
 		for (i = 0; i < max; i++) {

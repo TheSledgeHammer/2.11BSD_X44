@@ -428,40 +428,6 @@ setpri(pp)
 }
 
 /*
- * General yield call.  Puts the current process back on its run queue and
- * performs a voluntary context switch.
- */
-/*
-void
-yield(p)
-	struct proc *p;
-{
-	struct proc *np = curproc;
-
-	setrq(p);
-	u->u_stats->p_ru.ru_nvcsw++;
-	swtch();
-}
-*/
-
-/*
- * General preemption call.  Puts the current process back on its run queue
- * and performs an involuntary context switch.  If a process is supplied,
- * we switch to that process.  Otherwise, we use the normal process selection
- * criteria.
- */
-/*
-void
-preempt(p)
-	struct proc *p;
-{
-	setrq(p);
-	u->u_stats->p_ru.ru_nvcsw++;
-	swtch();
-}
-*/
-
-/*
  * This routine is called to reschedule the CPU.  If the calling process is
  * not in RUN state, arrangements for it to restart must have been made
  * elsewhere, usually by calling via sleep.  There is a race here.  A process

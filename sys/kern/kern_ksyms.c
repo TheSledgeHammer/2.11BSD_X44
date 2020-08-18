@@ -401,7 +401,7 @@ ksyms_addsyms_elf(int symsize, void *start, void *end)
 	if (!ksyms_verify(symstart, strstart))
 		return;
 
-	addsymtab("netbsd", symstart, symsize, strstart, strsize, &kernel_symtab, symstart, ctfstart, ctfsize, ksyms_nmap);
+	addsymtab("211bsd", symstart, symsize, strstart, strsize, &kernel_symtab, symstart, ctfstart, ctfsize, ksyms_nmap);
 
 #ifdef DEBUG
 	aprint_normal("Loaded initial symtab at %p, strtab at %p, # entries %ld\n",
@@ -425,7 +425,7 @@ ksyms_addsyms_explicit(void *ehdr, void *symstart, size_t symsize, void *strstar
 		return;
 
 	ksyms_hdr_init(ehdr);
-	addsymtab("netbsd", symstart, symsize, strstart, strsize, &kernel_symtab, symstart, NULL, 0, ksyms_nmap);
+	addsymtab("211bsd", symstart, symsize, strstart, strsize, &kernel_symtab, symstart, NULL, 0, ksyms_nmap);
 }
 
 /*

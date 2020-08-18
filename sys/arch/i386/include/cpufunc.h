@@ -113,6 +113,14 @@ rcr3(void)
 	return val;
 }
 
+static __inline u_short
+rgs(void)
+{
+	u_short sel;
+	__asm __volatile("movw %%gs,%0" : "=rm" (sel));
+	return (sel);
+}
+
 static __inline void
 tlbflush(void)
 {

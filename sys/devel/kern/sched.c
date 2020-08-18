@@ -101,3 +101,34 @@ schedcpu(arg)
 	++runrun;			/* swtch at least once a second */
 	timeout(schedcpu, (caddr_t)0, hz);
 }
+
+
+/*
+ * General yield call.  Puts the current process back on its run queue and
+ * performs a voluntary context switch.
+ */
+void
+yield(p)
+	struct proc *p;
+{
+	struct proc *np = curproc;
+
+	setrq(p);
+	u->u_stats->p_ru.ru_nvcsw++;
+	swtch();
+}
+
+/*
+ * General preemption call.  Puts the current process back on its run queue
+ * and performs an involuntary context switch.  If a process is supplied,
+ * we switch to that process.  Otherwise, we use the normal process selection
+ * criteria.
+ */
+void
+preempt(p)
+	struct proc *p;
+{
+	setrq(p);
+	u->u_stats->p_ru.ru_nvcsw++;
+	swtch();
+}

@@ -6,30 +6,41 @@ General:
 - Cross-Compiler
 	- Build Toolchain
 - Makefiles
-- Bug Fixes
+- Bug Fixes/ missing critical content
 
-User:
-- Everything (except lib & share):
-	- Contains various Tidbits
-
-Kernel (/sys):
+User (All excluding "/sys"):
+- lib:
+	- csu:
+		- elf relocation:
+			- see below: i386/cpu_info
+- libexec:
+	- ld.elf_so:
+		- rtld
+		
+Kernel ("/sys"):
 arch:
-- i386:
+- i386/x86: (Merged under i386)
 	- conf
+	- cpu_info
+		- cpu_setup: basics implemented i.e. identification
+	- pae: implemented but not fully integrated
+		- missing in machdep.c & locore.s
+	- devices: see dev &
 
-dev:
-- isa
-- ic
+dev:(Derived code mostly from NetBSD 1.4)
+- isa: 
+	- bloated: contains unused code, generally for other platforms
+- ic:
+	- bloated: contains unused code, generally for other platforms
 
 devel: (planned)
 - Code planned for future integration
 
 Of Interest Todo:
-- ifdef INET: remanents of 2.11BSD's networking stack overlay (keep in place for now)
-	- Needs Updating to include later Networking capabilities
+- 2.11BSD's networking stack
+	- Needs Updating to support: i.e. ipv6, firewall/packet filter
 
-
-Missing in various source files (mostly sys/dev)
+Missing in various source files (mostly /sys/dev)
 include <net/if_atm.h>
 include <net/if_dl.h>
 include <net/if_fddi.h>

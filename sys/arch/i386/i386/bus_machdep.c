@@ -117,7 +117,7 @@ typedef unsigned long paddr_t;
 int	i386_mem_add_mapping (bus_addr_t, bus_size_t, int, bus_space_handle_t *);
 
 void
-i386_bus_space_init()
+i386_bus_space_init(void)
 {
 	/*
 	 * Initialize the I/O port and I/O mem extent maps.
@@ -137,6 +137,12 @@ i386_bus_space_init()
 	iomem_ex = extent_create("iomem", 0x0, 0xffffffff, M_DEVBUF,
 		    (caddr_t)iomem_ex_storage, sizeof(iomem_ex_storage),
 		    EX_NOCOALESCE|EX_NOWAIT);
+}
+
+void
+i386_bus_space_mallocok(void)
+{
+	ioport_malloc_safe = 1;
 }
 
 void
@@ -167,13 +173,6 @@ i386_bus_space_check(avail_end, biosbasemem, biosextmem)
 		/* XXX What should we do? */
 		printf("WARNING: CAN'T ALLOCATE EXTENDED MEMORY FROM IOMEM EXTENT MAP!\n");
 	}
-}
-
-void
-i386_bus_space_mallocok(void)
-{
-
-	ioport_malloc_safe = 1;
 }
 
 int
