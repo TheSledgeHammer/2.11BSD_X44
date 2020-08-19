@@ -15,9 +15,15 @@ struct ovl_map_rb_tree;
 RB_PROTOTYPE(ovl_map_rb_tree, ovl_map_entry, ovl_rb_entry, ovl_rb_compare);
 
 union ovl_map_object {
-	struct ovl_object					*ovl_object;		/* overlay object */
-	//vm_object	/* vm_object */
-	//avm_object /* avm_object */
+	struct ovl_object					*ovl_object;		/* overlay_object object */
+
+	/* vm_map.h & vm_object.h */
+	struct vm_object					*ovl_vm_object;		/* vm_object object */
+	struct vm_map						*ovl_vm_map;		/* belongs to vm_map */
+
+	/* vm_amap.h & vm_aobject.h */
+	struct vm_aobject					*ovl_vm_aobject;	/* vm_aobject object */
+	struct vm_amap						*ovl_vm_amap;		/* belongs to vm_amap */
 };
 
 struct ovl_map_entry {
@@ -29,6 +35,9 @@ struct ovl_map_entry {
   caddr_t								ovle_space;			/* space in subtree */
   union ovl_map_object			   		ovle_object;		/* object I point to */
   vm_offset_t				          	ovle_offset;		/* offset into object */
+
+	boolean_t							ovle_is_vm_map;		/* Is "object" a vm map? */
+	boolean_t							ovle_is_vm_amap;	/* Is "object" a vm anon map? */
 
   vm_prot_t								ovle_protection;	/* protection code */
   vm_prot_t								ovle_max_protection;/* maximum protection */
@@ -44,13 +53,19 @@ struct ovl_map {
     lock_data_t		                    ovl_lock;		    /* Lock for overlay data */
     int			                        ovl_nentries;	    /* Number of entries */
     vm_size_t		                    ovl_size;		    /* virtual size */
+
     boolean_t							ovl_is_vm_map;		/* Am I a vm map? */
+    boolean_t							ovl_is_vm_amap;		/* Am I a vm anon map? */
+
     int			                        ovl_ref_count;	    /* Reference count */
 	simple_lock_data_t	                ovl_ref_lock;	    /* Lock for ref_count field */
 	ovl_map_entry_t						ovl_hint;			/* hint for quick lookups */
     simple_lock_data_t	                ovl_hint_lock;	    /* lock for hint storage */
 	ovl_map_entry_t						ovl_first_free;		/* First free space hint */
     unsigned int		                ovl_timestamp;	    /* Version number */
+
+    /* extents */
+    boolean_t							ovl_is_subregion;	/* am i in an extent sub-region */
 
 #define	min_offset			    		ovl_header.cqh_first->ovle_start
 #define max_offset			    		ovl_header.cqh_first->ovle_end

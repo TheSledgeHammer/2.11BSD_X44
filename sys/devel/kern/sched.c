@@ -96,7 +96,7 @@ schedcpu(arg)
 	if (runin != 0) {
 		runin = 0;
 		wakeup((caddr_t)&runin);
-	//	wakeup((caddr_t)pageproc);
+		wakeup((caddr_t)pageproc);
 	}
 	++runrun;			/* swtch at least once a second */
 	timeout(schedcpu, (caddr_t)0, hz);
@@ -131,4 +131,61 @@ preempt(p)
 	setrq(p);
 	u->u_stats->p_ru.ru_nvcsw++;
 	swtch();
+}
+
+/*
+ * The machine independent parts of mi_switch().
+ * Must be called at splstatclock() or higher.
+ */
+void
+mi_switch()
+{
+	register struct proc *p = curproc;	/* XXX */
+	register struct rlimit *rlim;
+	register long s, u;
+	struct timeval tv;
+
+#ifdef DEBUG
+	if (p->p_simple_locks)
+		panic("sleep: holding simple lock");
+#endif
+	microtime(&tv);
+	u = p->p_rtime.tv_usec + (tv.tv_usec - runtime.tv_usec);
+	s = p->p_rtime.tv_sec + (tv.tv_sec - runtime.tv_sec);
+	if (u < 0) {
+		u += 1000000;
+		s--;
+	} else if (u >= 1000000) {
+		u -= 1000000;
+		s++;
+	}
+	p->p_rtime.tv_usec = u;
+	p->p_rtime.tv_sec = s;
+
+	/*
+	 * Check if the process exceeds its cpu resource allocation.
+	 * If over max, kill it.  In any case, if it has run for more
+	 * than 10 minutes, reduce priority to give others a chance.
+	 */
+	rlim = &p->p_rlimit[RLIMIT_CPU];
+	if (s >= rlim->rlim_cur) {
+		if (s >= rlim->rlim_max)
+			psignal(p, SIGKILL);
+		else {
+			psignal(p, SIGXCPU);
+			if (rlim->rlim_cur < rlim->rlim_max)
+				rlim->rlim_cur += 5;
+		}
+	}
+	if (s > 10 * 60 && p->p_ucred->cr_uid && p->p_nice == NZERO) {
+		p->p_nice = NZERO + 4;
+		resetpri(p);
+	}
+
+	/*
+	 * Pick a new current process and record its start time.
+	 */
+	cnt.v_swtch++;
+	cpu_switch(p);
+	microtime(&runtime);
 }

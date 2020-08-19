@@ -28,6 +28,8 @@
 
 #include <sys/user.h>
 #include <sys/tree.h>
+#include <sys/malloc.h>
+#include <sys/map.h>
 #include <devel/vm/include/vm.h>
 #include "vm_segment.h"
 
@@ -57,4 +59,48 @@ vm_segment_entry_create(entry, start, end, size, malloctypes, mallocflags, align
 	entry->segs_end;
 	entry->segs_addr;
 	entry->segs_size;
+}
+
+
+struct vm_segment *
+vm_segment_init(rmalloc, segmented)
+	boolean_t rmalloc, segmented;
+{
+	struct vm_segment *seg;
+	if(rmalloc) {
+		if(segmented) {
+			RMALLOC3(seg, struct vm_segment *, d_size, s_size, t_size, sizeof(struct vm_segment *));
+		} else {
+			RMALLOC(seg, struct vm_segment *, sizeof(struct vm_segment *));
+		}
+	} else {
+		MALLOC(seg, struct vm_segment *, sizeof(struct vm_segment *), M_WAITOK, M_VMSEG);
+	}
+	return (seg);
+}
+
+struct extent *
+vm_segment_create(rmalloc, segmented)
+	boolean_t rmalloc, segmented;
+{
+	register struct vm_segment *seg;
+	if(seg == NULL) {
+		seg = vm_segment_alloc(rmalloc, segmented);
+	} else {
+		memset(seg, 0, sizeof(struct vm_segment *));
+	}
+
+	seg->seg_extent = extent_create(name, start, end, mtype, storage, storagesize, flags);
+
+	return (seg->seg_extent);
+}
+
+vm_segment_alloc(min, max, flags)
+{
+	register struct vm_segment *seg;
+	if(seg->seg_extent) {
+		if (extent_alloc_region(seg->seg_extent, min, max, flags)) {
+
+		}
+	}
 }

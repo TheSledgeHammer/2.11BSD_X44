@@ -1,45 +1,58 @@
 A list of what needs work in no order. To obtain a successful build.
 NOTE: Don't hesitate to add to this list. :)
 
-TODO:
-General:
+#TODO:
+#General:
 - Cross-Compiler
 	- Build Toolchain
 - Makefiles
 - Bug Fixes/ missing critical content
 
-User (All excluding "/sys"):
-- lib:
-	- csu:
-		- elf relocation:
-			- see below: i386/cpu_info
-- libexec:
-	- ld.elf_so:
-		- rtld
+#usr/:
+##lib:
+- csu:
+	- elf relocation:
+		- see below: i386
 		
-Kernel ("/sys"):
-- swapmap & coremap: Check are being initilized and utilized properly
-arch:
+##libexec:
+- ld.elf_so:
+	- rtld
+		
+#usr/sys/:
+##conf:
+- check
+
+##kern:
+- swapmap & coremap: 
+	- Check if setup? (if not setup)
+	
+##arch:
 - i386/x86: (Merged under i386)
 	- conf
 	- cpu_info
-		- cpu_setup: basics implemented i.e. identification
+		- cpu_setup: basics implemented
 	- pae: implemented but not fully integrated
 		- missing in machdep.c & locore.s
-	- devices: see dev &
+	- devices: 
+		- see below: dev
 
-dev:(Derived code mostly from NetBSD 1.4)
+##devel: (planned)
+- Code planned for future integration
+
+##dev:(Derived code mostly from NetBSD 1.4)
 - isa: 
 	- bloated: contains unused code, generally for other platforms
 - ic:
 	- bloated: contains unused code, generally for other platforms
 
-devel: (planned)
-- Code planned for future integration
-
+##net:
 Of Interest Todo:
 - 2.11BSD's networking stack
 	- Needs Updating to support: i.e. ipv6, firewall/packet filter
+
+##stand:
+- boot:
+	- efi support
 
 Missing in various source files (mostly /sys/dev)
 include <net/if_atm.h>

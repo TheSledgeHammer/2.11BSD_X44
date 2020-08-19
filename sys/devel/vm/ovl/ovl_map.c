@@ -8,6 +8,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
+#include <sys/map.h>
 
 #include <vm/include/vm.h>
 
@@ -24,7 +25,6 @@ ovl_map_t 			ovl_free;
 
 vm_offset_t			overlay_start;
 vm_offset_t 		overlay_end;
-
 
 //#ifdef OVL
 extern struct pmap	overlay_pmap_store;
@@ -55,20 +55,32 @@ ovl_map_startup()
 
 }
 
-struct ovlspace *
-ovlspace_alloc(min, max)
-	vm_offset_t min, max;
+/*
+ * - segmented(TRUE/FALSE): allocation of the 3 process segments (data, stack, text)
+ * - extent(TRUE/FALSE): uses the extent manager
+ */
+void
+ovlspace_alloc(segmented, extents)
+	boolean_t segmented, extents;
 {
 	register struct ovlspace *ovl;
 
-	//malloc
-	ovl_map_init(&ovl->ovl_map, min, max);
-	//pmap_pinit(&ovl->ovl_pmap);
-	ovl->ovl_map.ovl_pmap = &ovl->ovl_pmap;
-	ovl->ovl_refcnt = 1;
-	return (ovl);
+	ovl->ovl_is_segmented = segmented;
+	ovl->ovl_uses_extents = extents;
+
+	if(segmented) {
+		RMALLOC3(ovl, struct ovlspace *, ovl->ovl_dsize, ovl->ovl_ssize, ovl->ovl_tsize, sizeof(struct ovlspace *));
+	} else {
+		RMALLOC(ovl, struct ovlspace *, sizeof(struct ovlspace *));
+	}
+	if(extents == FALSE) {
+		ovl_map_init(&ovl->ovl_map, min, max);
+		ovl->ovl_map.ovl_pmap = &ovl->ovl_pmap;
+		ovl->ovl_refcnt = 1;
+	}
 }
 
+/* free ovlspace */
 void
 ovlspace_free(ovl)
 	register struct ovlspace *ovl;
@@ -81,9 +93,51 @@ ovlspace_free(ovl)
 		 */
 		ovl_map_lock(&ovl->ovl_map);
 		(void) ovl_map_delete(&ovl->ovl_map, ovl->ovl_map.min_offset, ovl->ovl_map.max_offset);
-		//pmap_release(&ovl->ovl_pmap);
-		//free
+		if(ovl->ovl_uses_extents) {
+			extent_free(ovl->ovl_extent, ovl, sizeof(struct ovlspace *), EX_NOWAIT);
+		}
+		RMFREE(ovl, sizeof(struct ovlspace *), ovl);
 	}
+}
+
+/* create ovlspace extent map */
+struct extent *
+ovlspace_extent_create(start, end, storage, storagesize)
+	vm_offset_t start, end;
+	caddr_t storage;
+	size_t storagesize;
+{
+	register struct ovlspace *ovl;
+
+	if(ovl == NULL) {
+		if(!ovl->ovl_uses_extents) {
+			printf("setting ovl uses extents to true");
+			ovl->ovl_uses_extents = TRUE;
+		}
+		ovlspace_alloc(ovl->ovl_is_segmented, ovl->ovl_uses_extents);
+	} else {
+		memset(ovl, 0, sizeof(struct ovlspace *));
+	}
+	ovl->ovl_extent = extent_create("vm_overlay", start, end, M_OVLMAP, storage, storagesize, EX_NOWAIT | EX_MALLOCOK);
+
+	return (ovl->ovl_extent);
+}
+
+/* allocate ovlspace extents */
+struct ovlspace *
+ovlspace_extent_alloc(min, max)
+	vm_offset_t min, max;
+{
+	register struct ovlspace *ovl;
+
+	if(ovl->ovl_extent) {
+		if (extent_alloc_region(ovl->ovl_extent, min, max, EX_NOWAIT | EX_MALLOCOK)) {
+			ovl_map_init(&ovl->ovl_map, min, max);
+			ovl->ovl_map.ovl_pmap = &ovl->ovl_pmap;
+			ovl->ovl_refcnt = 1;
+		}
+	}
+	return (ovl);
 }
 
 /*
@@ -718,8 +772,10 @@ ovl_map_entry_delete(map, entry)
 	ovl_map_entry_unlink(map, entry);
 	map->ovl_size -= entry->ovle_end - entry->ovle_start;
 
-	if (entry->ovl_is_vm_map || entry->is_sub_map)
-		ovl_map_deallocate(entry->ovle_object.vm_object);
+	if (entry->ovle_is_vm_map)
+		ovl_map_deallocate(entry->ovle_object.ovl_vm_object);
+	else if(entry->ovle_is_vm_amap)
+		ovl_map_deallocate(entry->ovle_object.ovl_vm_aobject);
 	else
 	 	vm_object_deallocate(entry->ovle_object.ovl_object);
 

@@ -451,16 +451,16 @@ swtch()
 	cnt.v_swtch++;
 
 	/* If not the idle process, resume the idle process. */
-	if (u->u_procp != &proc[0]) {
+	if (u->u_procp != &proc0) {
 		if (setjmp(&u->u_rsave)) {
-			sureg();
+			//sureg();
 			return;
 		}
 		if (u->u_fpsaved == 0) {
-			savfp(&u->u_fps);
+			//savfp(&u->u_fps);
 			u->u_fpsaved = 1;
 		}
-		longjmp(proc[0].p_addr, &u->u_qsave);
+		longjmp(proc0.p_addr, &u->u_qsave);
 	}
 	/*
 	 * The first save returns nonzero when proc 0 is resumed
@@ -473,7 +473,7 @@ swtch()
 	 * Thus when proc 0 is awakened by being made runnable, it will
 	 * find itself and resume itself at rsave, and return to sched().
 	 */
-	if (setjmp(&u->u_qsave)==0 && setjmp(&u->u_rsave))
+	if (setjmp(&u->u_qsave) == 0 && setjmp(&u->u_rsave))
 		return;
 loop:
 	s = splhigh();

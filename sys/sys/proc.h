@@ -256,7 +256,7 @@ extern int pidhashmask;					/* In param.c. */
 extern struct proc proc0;				/* Process slot for swapper. */
 int	nproc, maxproc;						/* Current and max number of procs. */
 
-struct proc proc[], *procNPROC;			/* the proc table itself */
+struct proc *procNPROC;					/* the proc table itself */
 
 struct proc *allproc;					/* List of active procs. */
 struct proc *freeproc;					/* List of free procs. */

@@ -223,6 +223,20 @@ extern struct bqueues bufqueues[];
 }
 
 /*
+ * Take a buffer off the free list it's on and
+ * mark it as being use (B_BUSY) by a device.
+ */
+#define	notavail(bp) { 						\
+	KASSERT((bp)->av_forw != NULL); 		\
+	KASSERT((bp)->av_back != NULL); 		\
+	KASSERT((bp)->av_forw != (bp)); 		\
+	KASSERT((bp)->av_back != (bp)); 		\
+	_bremfree(bp); 							\
+	(bp)->b_flags |= B_BUSY; 				\
+	(bp)->av_forw = (bp)->av_back = NULL; 	\
+}
+
+/*
  * This structure describes a clustered I/O.  It is stored in the b_saveaddr
  * field of the buffer on which I/O is done.  At I/O completion, cluster
  * callback uses the structure to parcel I/O's to individual buffers, and

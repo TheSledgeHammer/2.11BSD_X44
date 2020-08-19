@@ -101,13 +101,13 @@ pqinit()
 	 * most procs are initially on freequeue
 	 *	nb: we place them there in their "natural" order.
 	 */
-	procNPROC = proc + nproc;
+	//procNPROC = proc + nproc;
 	freeproc = NULL;
-	for (p = procNPROC; --p > proc; freeproc = p)
+	for (p = procNPROC; --p > proc0; freeproc = p)
 		p->p_nxt = freeproc;
 
 	/*
-	 * but proc[0] is special ...
+	 * but proc0 is special ...
 	 */
 
 	allproc = p;

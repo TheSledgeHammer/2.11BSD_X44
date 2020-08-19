@@ -540,8 +540,7 @@ incore(vp, blkno)
 
 	/* Search hash chain */
 	for (; bp != NULL; bp = bp->b_hash.le_next) {
-		if (bp->b_lblkno == blkno && bp->b_vp == vp &&
-		    !ISSET(bp->b_flags, B_INVAL))
+		if (bp->b_lblkno == blkno && bp->b_vp == vp && !ISSET(bp->b_flags, B_INVAL))
 		return (bp);
 	}
 
