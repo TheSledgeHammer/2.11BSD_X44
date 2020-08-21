@@ -55,27 +55,29 @@
 extern char	sigcode[], esigcode[];
 
 const struct emul emul_211bsd = {
-	"211bsd",
-	NULL,			/* emulation path */
-	sysent,
+		.e_name 		= "emul_211bsd",
+		.e_path 		= NULL,				/* emulation path */
+		.e_sysent 		= sysent,
 #ifdef SYSCALL_DEBUG
-	syscallnames,
+		.e_syscallnames = syscallnames,
 #else
-	NULL,
+		.e_syscallnames = NULL,
 #endif
-	0,
-	copyargs,
-	setregs,
-	sigcode,
-	esigcode
+		.e_arglen 		= 0,
+		.e_copyargs 	= copyargs,
+		.e_setregs 		= setregs,
+		.e_sigcode 		= sigcode,
+		.e_esigcode 	= esigcode,
+		.e_syscall		= syscall
 };
 
 void
 execv(p, uap, retval)
 	struct proc *p;
-	struct execa *uap = (struct execa *)u->u_ap;
+	struct execa *uap;
 	int *retval;
 {
+	uap = (struct execa *)u->u_ap;
 	uap->envp = NULL;
 	execve(p, uap, retval);
 }
@@ -83,208 +85,212 @@ execv(p, uap, retval)
 int
 execve(p, uap, retval)
 	struct proc *p;
-	register struct execa *uap = (struct execa *)u->u_ap;
+	struct execa *uap;
 	int *retval;
 {
-		struct nameidata nd, *ndp;
-		int error, i, szsigcode, len;
-		char *stack, *stack_base;
-		struct ps_strings *arginfo;
-		struct exec_linker elp;
-		struct vmspace *vm;
-		struct vnode *vnodep;
-		struct vattr attr;
-		char *dp, *sp;
-		char **tmpfap;
-		struct exec_vmcmd *base_vcp = NULL;
+	uap = (struct execa*) u->u_ap;
 
-		if (exec_maxhdrsz == 0) {
-			for (i = 0; i < nexecs; i++)
-				if (execsw[i]->ex_makecmds != NULL && execsw[i]->ex_hdrsz > exec_maxhdrsz)
-					exec_maxhdrsz = execsw[i]->ex_hdrsz;
-		}
+	struct nameidata nd, *ndp;
+	int error, i, szsigcode, len;
+	char *stack, *stack_base;
+	struct ps_strings *arginfo;
+	struct exec_linker elp;
+	struct vmspace *vm;
+	struct vnode *vnodep;
+	struct vattr attr;
+	char *dp, *sp;
+	char **tmpfap;
+	struct exec_vmcmd *base_vcp = NULL;
 
-		/* Initialize a few constants in the common area */
-		MALLOC(elp, struct exec_linker *, sizeof(elp->el_image_hdr), M_EXEC, M_WAITOK);
-		elp->el_proc = p;
-		elp->el_uap = uap;
-		elp->el_attr = &attr;
-		elp->el_argc = elp->el_envc = 0;
-		elp->el_entry = 0;
-		elp->el_hdrlen = exec_maxhdrsz;
-		elp->el_hdrvalid = 0;
-		elp->el_ndp = &ndp;
-		elp->el_emul_arg = NULL;
-		elp->el_vmcmds->evs_cnt = 0;
-		elp->el_vmcmds->evs_used = 0;
-		elp->el_vnodep = NULL;
-		elp->el_flags = 0;
-		elp->el_emul = &emul_211bsd;
+	if (exec_maxhdrsz == 0) {
+		for (i = 0; i < nexecs; i++)
+			if (execsw[i]->ex_makecmds != NULL
+					&& execsw[i]->ex_hdrsz > exec_maxhdrsz)
+				exec_maxhdrsz = execsw[i]->ex_hdrsz;
+	}
 
-		/* Allocate temporary demand zeroed space for argument and environment strings */
-		error = vm_allocate(kernel_map, (vm_offset_t *)&elp->el_stringbase, ARG_MAX, TRUE);
+	/* Initialize a few constants in the common area */
+	MALLOC(elp, struct exec_linker *, sizeof(elp->el_image_hdr), M_EXEC, M_WAITOK);
+	elp->el_proc = p;
+	elp->el_uap = uap;
+	elp->el_attr = &attr;
+	elp->el_argc = elp->el_envc = 0;
+	elp->el_entry = 0;
+	elp->el_hdrlen = exec_maxhdrsz;
+	elp->el_hdrvalid = 0;
+	elp->el_ndp = &ndp;
+	elp->el_emul_arg = NULL;
+	elp->el_vmcmds->evs_cnt = 0;
+	elp->el_vmcmds->evs_used = 0;
+	elp->el_vnodep = NULL;
+	elp->el_flags = 0;
+	elp->el_emul = &emul_211bsd;
 
-		if(error) {
-			log(LOG_WARNING, "execve: failed to allocate string space\n");
-			return (u->u_error);
-		}
+	/* Allocate temporary demand zeroed space for argument and environment strings */
+	error = vm_allocate(kernel_map, (vm_offset_t*) &elp->el_stringbase, ARG_MAX,
+			TRUE);
 
-		if (!elp->el_stringbase) {
-			error = ENOMEM;
-				goto exec_abort;
-		}
-		elp->el_stringp = elp->el_stringbase;
-		elp->el_stringspace = ARG_MAX;
+	if (error) {
+		log(LOG_WARNING, "execve: failed to allocate string space\n");
+		return (u->u_error);
+	}
 
-		/* see if we can run it. */
-		if ((error = check_exec(p, &elp)) != 0)
-			goto freehdr;
+	if (!elp->el_stringbase) {
+		error = ENOMEM;
+		goto exec_abort;
+	}
+	elp->el_stringp = elp->el_stringbase;
+	elp->el_stringspace = ARG_MAX;
 
-		error = exec_extract_strings(elp, dp);
-		if(error != 0) {
-			goto bad;
-		}
+	/* see if we can run it. */
+	if ((error = check_exec(p, &elp)) != 0)
+		goto freehdr;
 
-		szsigcode = elp.el_emul->e_esigcode - elp.el_emul->e_sigcode;
+	error = exec_extract_strings(elp, dp);
+	if (error != 0) {
+		goto bad;
+	}
 
-		/* Now check if args & environ fit into new stack */
-		if(elp->el_flags & EXEC_32)
-			len = ((elp.el_argc + elp->el_envc + 2 + elp.el_emul->e_arglen) * sizeof(int) +
-				       sizeof(int) + dp + STACKGAPLEN + szsigcode +
-				       sizeof(struct ps_strings)) - uap->argp;
-		else
-			len = ((elp.el_argc + elp->el_envc+ 2 + elp.el_emul->e_arglen) * sizeof(char *) +
-				       sizeof(int) + dp + STACKGAPLEN + szsigcode +
-				       sizeof(struct ps_strings)) - uap->argp;
+	szsigcode = elp.el_emul->e_esigcode - elp.el_emul->e_sigcode;
 
-		len = ALIGN(len);	/* make the stack "safely" aligned */
+	/* Now check if args & environ fit into new stack */
+	if (elp->el_flags & EXEC_32)
+		len = ((elp.el_argc + elp->el_envc + 2 + elp.el_emul->e_arglen)
+				* sizeof(int) + sizeof(int) + dp + STACKGAPLEN + szsigcode
+				+ sizeof(struct ps_strings)) - uap->argp;
+	else
+		len = ((elp.el_argc + elp->el_envc + 2 + elp.el_emul->e_arglen)
+				* sizeof(char*) + sizeof(int) + dp + STACKGAPLEN + szsigcode
+				+ sizeof(struct ps_strings)) - uap->argp;
 
-		if(len > elp.el_ssize)
-			error = ENOMEM;
-			goto bad;
+	len = ALIGN(len); /* make the stack "safely" aligned */
 
-		/* adjust "active stack depth" for process VSZ */
-		elp.el_ssize = len;
+	if (len > elp.el_ssize)
+		error = ENOMEM;
+	goto bad;
 
-		/* Map address Space  & create new process's VM space */
-		error = vmcmd_create_vmspace(elp);
-		if(error != 0) {
+	/* adjust "active stack depth" for process VSZ */
+	elp.el_ssize = len;
+
+	/* Map address Space  & create new process's VM space */
+	error = vmcmd_create_vmspace(elp);
+	if (error != 0) {
+		goto exec_abort;
+	}
+
+	/* From to line 149 may change */
+	stack_base = (char*) exec_copyout_strings(elp, arginfo);
+	stack = (char*) (vm->vm_minsaddr - len);
+	if (stack == stack_base) {
+		/* Now copy argc, args & environ to new stack */
+		if (!(*elp.el_emul->e_copyargs)(&elp, &arginfo, stack,
+				elp.el_uap->argp))
 			goto exec_abort;
-		}
-
-		/* From to line 149 may change */
-		stack_base = (char *) exec_copyout_strings(elp, arginfo);
-		stack = (char *) (vm->vm_minsaddr - len);
-		if(stack == stack_base) {
-			/* Now copy argc, args & environ to new stack */
-			if(!(*elp.el_emul->e_copyargs)(&elp, &arginfo, stack, elp.el_uap->argp))
-				goto exec_abort;
-		} else {
-			/* Now copy argc, args & environ to stack_base */
-			if(!(*elp.el_emul->e_copyargs)(&elp, &arginfo, stack_base, elp.el_uap->argp))
-				goto exec_abort;
-		}
-
-		/* copy out the process's ps_strings structure */
-		if (copyout(&arginfo, (char *) PS_STRINGS, sizeof(arginfo)))
+	} else {
+		/* Now copy argc, args & environ to stack_base */
+		if (!(*elp.el_emul->e_copyargs)(&elp, &arginfo, stack_base,
+				elp.el_uap->argp))
 			goto exec_abort;
+	}
 
-		fdcloseexec(p);		/* handle close on exec */
-		execsigs(p);		/* reset catched signals */
+	/* copy out the process's ps_strings structure */
+	if (copyout(&arginfo, (char*) PS_STRINGS, sizeof(arginfo)))
+		goto exec_abort;
 
-		/* set command name & other accounting info */
-		len = min(ndp->ni_cnd.cn_namelen, MAXCOMLEN);
-		memcpy(p->p_comm, ndp->ni_cnd.cn_nameptr, len);
-		p->p_comm[len] = 0;
-		p->p_acflag &= ~AFORK;
+	fdcloseexec(p); /* handle close on exec */
+	execsigs(p); /* reset catched signals */
 
-		/* record proc's vnode, for use by procfs and others */
-		if (p->p_textvp)
-			vrele(p->p_textvp);
-		VREF(elp.el_vnodep);
-		p->p_textvp = elp.el_vnodep;
+	/* set command name & other accounting info */
+	len = min(ndp->ni_cnd.cn_namelen, MAXCOMLEN);
+	memcpy(p->p_comm, ndp->ni_cnd.cn_nameptr, len);
+	p->p_comm[len] = 0;
+	p->p_acflag &= ~AFORK;
 
-		p->p_flag |= P_EXEC;
-		if (p->p_pptr && (p->p_flag & P_PPWAIT)) {
-			p->p_flag &= ~P_PPWAIT;
-			wakeup((caddr_t)p->p_pptr);
-		}
+	/* record proc's vnode, for use by procfs and others */
+	if (p->p_textvp)
+		vrele(p->p_textvp);
+	VREF(elp.el_vnodep);
+	p->p_textvp = elp.el_vnodep;
 
-		/* Turn off kernel tracing for set-id programs, except for root. */
-		if (p->p_tracep && (attr.va_mode & (VSUID | VSGID)) && suser(p->p_ucred, &p->p_acflag)) {
-			p->p_traceflag = 0;
-			vrele(p->p_tracep);
-			p->p_tracep = 0;
-		}
-		if ((attr.va_mode & VSUID) && (p->p_flag & P_TRACED) == 0) {
-			p->p_ucred = crcopy(p->p_ucred);
-			p->p_ucred->cr_uid = attr.va_uid;
-			p->p_flag |= P_SUGID;
-		}
-		if ((attr.va_mode & VSGID) && (p->p_flag & P_TRACED) == 0) {
-			p->p_ucred = crcopy(p->p_ucred);
-			p->p_ucred->cr_groups[0] = attr.va_gid;
-			p->p_flag |= P_SUGID;
-		}
+	p->p_flag |= P_EXEC;
+	if (p->p_pptr && (p->p_flag & P_PPWAIT)) {
+		p->p_flag &= ~P_PPWAIT;
+		wakeup((caddr_t) p->p_pptr);
+	}
 
-		p->p_cred->p_svuid = p->p_ucred->cr_uid;
-		p->p_cred->p_svgid = p->p_ucred->cr_gid;
+	/* Turn off kernel tracing for set-id programs, except for root. */
+	if (p->p_tracep && (attr.va_mode & (VSUID | VSGID))
+			&& suser(p->p_ucred, &p->p_acflag)) {
+		p->p_traceflag = 0;
+		vrele(p->p_tracep);
+		p->p_tracep = 0;
+	}
+	if ((attr.va_mode & VSUID) && (p->p_flag & P_TRACED) == 0) {
+		p->p_ucred = crcopy(p->p_ucred);
+		p->p_ucred->cr_uid = attr.va_uid;
+		p->p_flag |= P_SUGID;
+	}
+	if ((attr.va_mode & VSGID) && (p->p_flag & P_TRACED) == 0) {
+		p->p_ucred = crcopy(p->p_ucred);
+		p->p_ucred->cr_groups[0] = attr.va_gid;
+		p->p_flag |= P_SUGID;
+	}
 
-		if (vm_deallocate(kernel_map, (vm_offset_t)elp->el_stringbase, ARG_MAX))
-			panic("execve: string buffer dealloc failed (1)");
-		FREE(ndp->ni_cnd.cn_pnbuf, M_NAMEI);
-		vn_lock(elp.el_vnodep, LK_EXCLUSIVE | LK_RETRY);
-		VOP_CLOSE(elp.el_vnodep, FREAD, p->p_cred, p);
-		vput(elp.el_vnodep);
+	p->p_cred->p_svuid = p->p_ucred->cr_uid;
+	p->p_cred->p_svgid = p->p_ucred->cr_gid;
 
-		/* setup new registers and do misc. setup. */
-		if(stack == stack_base) {
+	if (vm_deallocate(kernel_map, (vm_offset_t) elp->el_stringbase, ARG_MAX))
+		panic("execve: string buffer dealloc failed (1)");
+	FREE(ndp->ni_cnd.cn_pnbuf, M_NAMEI);
+	vn_lock(elp.el_vnodep, LK_EXCLUSIVE | LK_RETRY);
+	VOP_CLOSE(elp.el_vnodep, FREAD, p->p_cred, p);
+	vput(elp.el_vnodep);
 
-		}
-		(*elp.el_emul->e_setregs)(p, &elp, (u_long) stack);
+	/* setup new registers and do misc. setup. */
+	if (stack == stack_base) {
 
-		if (p->p_flag & P_TRACED)
-				psignal(p, SIGTRAP);
+	}
+	(*elp.el_emul->e_setregs)(p, &elp, (u_long) stack);
 
-		p->p_emul = elp.el_emul;
-		FREE(elp.el_image_hdr, M_EXEC);
+	if (p->p_flag & P_TRACED)
+		psignal(p, SIGTRAP);
 
-		p->p_flag &= ~P_INEXEC;
-			return (EJUSTRETURN);
-bad:
-		p->p_flag &= ~P_INEXEC;
-		/* free the vmspace-creation commands, and release their references */
-		kill_vmcmds(&elp.el_vmcmds);
-		/* kill any opened file descriptor, if necessary */
-		if (elp.el_flags & EXEC_HASFD) {
-			elp.el_flags &= ~EXEC_HASFD;
-			(void) fdrelease(p, elp.el_fd);
-		}
-		/* close and put the exec'd file */
-		vn_lock(elp.el_vnodep, LK_EXCLUSIVE | LK_RETRY);
-		VOP_CLOSE(elp.el_vnodep, FREAD, p->p_cred, p);
-		vput(elp.el_vnodep);
-		FREE(ndp->ni_cnd.cn_pnbuf, M_NAMEI);
+	p->p_emul = elp.el_emul;
+	FREE(elp.el_image_hdr, M_EXEC);
 
-freehdr:
-		p->p_flag &= ~P_INEXEC;
-		FREE(elp.el_image_hdr, M_EXEC);
-		return error;
+	p->p_flag &= ~P_INEXEC;
+	return (EJUSTRETURN);
+	bad: p->p_flag &= ~P_INEXEC;
+	/* free the vmspace-creation commands, and release their references */
+	kill_vmcmds(&elp.el_vmcmds);
+	/* kill any opened file descriptor, if necessary */
+	if (elp.el_flags & EXEC_HASFD) {
+		elp.el_flags &= ~EXEC_HASFD;
+		(void) fdrelease(p, elp.el_fd);
+	}
+	/* close and put the exec'd file */
+	vn_lock(elp.el_vnodep, LK_EXCLUSIVE | LK_RETRY);
+	VOP_CLOSE(elp.el_vnodep, FREAD, p->p_cred, p);
+	vput(elp.el_vnodep);
+	FREE(ndp->ni_cnd.cn_pnbuf, M_NAMEI);
 
-exec_abort:
-		p->p_flag &= ~P_INEXEC;
-		vm_deallocate(&vm, VM_MIN_ADDRESS, VM_MAXUSER_ADDRESS - VM_MIN_ADDRESS);
-		if(elp->el_emul_arg)
-			FREE(elp->el_emul_arg, M_TEMP);
-		FREE(ndp->ni_cnd.cn_pnbuf, M_NAMEI);
-		vn_lock(elp->el_vnodep, LK_EXCLUSIVE | LK_RETRY);
-		VOP_CLOSE(elp->el_vnodep, FREAD, p->p_cred, p);
-		vput(elp->el_vnodep);
-		FREE(elp->el_image_hdr, M_EXEC);
-		exit1(p, W_EXITCODE(0, SIGABRT));
-		exit1(p,-1);
+	freehdr: p->p_flag &= ~P_INEXEC;
+	FREE(elp.el_image_hdr, M_EXEC);
+	return error;
 
-		return (0);
+	exec_abort: p->p_flag &= ~P_INEXEC;
+	vm_deallocate(&vm, VM_MIN_ADDRESS, VM_MAXUSER_ADDRESS - VM_MIN_ADDRESS);
+	if (elp->el_emul_arg)
+		FREE(elp->el_emul_arg, M_TEMP);
+	FREE(ndp->ni_cnd.cn_pnbuf, M_NAMEI);
+	vn_lock(elp->el_vnodep, LK_EXCLUSIVE | LK_RETRY);
+	VOP_CLOSE(elp->el_vnodep, FREAD, p->p_cred, p);
+	vput(elp->el_vnodep);
+	FREE(elp->el_image_hdr, M_EXEC);
+	exit1(p, W_EXITCODE(0, SIGABRT));
+	exit1(p, -1);
+
+	return (0);
 }
 
 /*
@@ -486,4 +492,3 @@ copyargs(elp, arginfo, stack, argp)
 
 	return cpp;
 }
-

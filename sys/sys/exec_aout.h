@@ -107,6 +107,13 @@
 /* String table offset. */
 #define	N_STROFF(ex) 	(N_SYMOFF(ex) + (ex).a_syms)
 
+/*
+ * eXtended header definition for use with the new macros in a.out.h
+*/
+struct	xexec {
+	struct	exec	e;
+	struct	ovlhdr	o;
+};
 
 /*
  * Header prepended to each a.out file.

@@ -41,10 +41,10 @@
 #include <sys/exec_aout.h>
 #include <sys/exec_coff.h>
 #include <sys/exec_ecoff.h>
-#include <sys/exec_xcoff.h>
 #include <sys/exec_macho.h>
 #include <sys/exec_pecoff.h>
 #include <sys/exec_elf.h>
+//#include <devel/sys/exec_xcoff.h>
 
 #ifdef SYSCALL_DEBUG
 extern char *syscallnames[];
@@ -59,19 +59,19 @@ struct execsw execsw[] = {
 		{ SCRIPT_HDR_SIZE, exec_script_linker, NULL, EXECSW_PRIO_ANY, 0, NULL, exec_setup_stack },
 
 		/* a.out binaries */
-		{ sizeof(struct exec), exec_aout_linker, &emul_211bsd, EXECSW_PRIO_FIRST, 0, copyargs, exec_setup_stack},
+		{ sizeof(struct exec), exec_aout_linker, &emul_211bsd, EXECSW_PRIO_FIRST, 0, copyargs, exec_setup_stack },
 
 		/* coff binaries */
-		{ COFF_HDR_SIZE, exec_coff_linker, &emul_211bsd, EXECSW_PRIO_ANY, 0, copyargs, exec_setup_stack},
+		{ COFF_HDR_SIZE, exec_coff_linker, &emul_211bsd, EXECSW_PRIO_ANY, 0, copyargs, exec_setup_stack },
 
 		/* ecoff binaries */
-		{ ECOFF_HDR_SIZE, exec_ecoff_linker, &emul_211bsd, EXECSW_PRIO_ANY, 0, copyargs, exec_setup_stack},
+		{ ECOFF_HDR_SIZE, exec_ecoff_linker, &emul_211bsd, EXECSW_PRIO_ANY, 0, copyargs, exec_setup_stack },
 
 		/* pecoff binaries */
-		{ PECOFF_HDR_SIZE, exec_pecoff_linker, &emul_211bsd, EXECSW_PRIO_ANY, howmany(sizeof(struct pecoff_args), sizeof(char *)), pecoff_copyargs, exec_setup_stack},
+		{ PECOFF_HDR_SIZE, exec_pecoff_linker, &emul_211bsd, EXECSW_PRIO_ANY, howmany(sizeof(struct pecoff_args), sizeof(char *)), pecoff_copyargs, exec_setup_stack },
 
 		/* mach-o binaries */
-		{ sizeof(struct exec_macho_fat_header), exec_macho_linker, &emul_211bsd, EXECSW_PRIO_ANY, MAXPATHLEN + 1, copyargs, exec_setup_stack},
+		{ sizeof(struct exec_macho_fat_header), exec_macho_linker, &emul_211bsd, EXECSW_PRIO_ANY, MAXPATHLEN + 1, copyargs, exec_setup_stack },
 
 		/* 32-Bit ELF binaries */
 		{ sizeof(Elf32_Ehdr), exec_elf_linker, &emul_211bsd, EXECSW_PRIO_ANY, howmany(ELF_AUX_ENTRIES * sizeof(Aux32Info), sizeof (Elf32_Addr)), elf_copyargs, exec_setup_stack },
@@ -80,10 +80,10 @@ struct execsw execsw[] = {
 		{ sizeof(Elf64_Ehdr), exec_elf_linker, &emul_211bsd, EXECSW_PRIO_ANY, howmany(ELF_AUX_ENTRIES * sizeof(Aux64Info), sizeof (Elf64_Addr)), elf_copyargs, exec_setup_stack },
 
 		/* 32-Bit xcoff binaries */
-		{ XCOFF32_HDR_SIZE, exec_xcoff_linker, &emul_211bsd, EXECSW_PRIO_ANY, 0, copyargs, exec_setup_stack},
+		//{ XCOFF32_HDR_SIZE, exec_xcoff_linker, &emul_211bsd, EXECSW_PRIO_ANY, 0, copyargs, exec_setup_stack },
 
 		/* 64-Bit xcoff binaries */
-		{ XCOFF64_HDR_SIZE, exec_xcoff_linker, &emul_211bsd, EXECSW_PRIO_ANY, 0, copyargs, exec_setup_stack},
+		//{ XCOFF64_HDR_SIZE, exec_xcoff_linker, &emul_211bsd, EXECSW_PRIO_ANY, 0, copyargs, exec_setup_stack },
 };
 
 int nexecs = (sizeof execsw / sizeof(struct execsw));

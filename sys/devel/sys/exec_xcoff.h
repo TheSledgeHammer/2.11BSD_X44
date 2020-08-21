@@ -1,4 +1,5 @@
 /*
+ * The 3-Clause BSD License:
  * Copyright (c) 2020 Martin Kelly
  * All rights reserved.
  *
@@ -10,11 +11,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *      This product includes software developed by Christopher G. Demetriou
- *      for the NetBSD Project.
- * 4. The name of the author may not be used to endorse or promote products
+ * 3. The name of the author may not be used to endorse or promote products
  *    derived from this software without specific prior written permission
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
@@ -29,7 +26,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* NOTE: The Follow Contents of exec_xcoff.h is derived from IBM Knowledge Center:
+/* NOTE: The Following Contents of exec_xcoff.h is derived from IBM Knowledge Center:
  * https://www.ibm.com/support/knowledgecenter/ssw_aix_72/filesreference/XCOFF.html
  */
 
@@ -39,27 +36,24 @@
 #include <machine/types.h>
 #include <machine/xcoff_machdep.h>
 
-#define XCOFF_LDPGSZ 4096
-
-/* xcoff file header */
 typedef struct {
-	uint16_t 	magic;			/* magic number */
-	uint16_t 	nscns;			/* # of sections */
-	uint32_t   	timdat;			/* time and date stamp */
-	uint32_t 	symptr;			/* file offset of symbol table */
-	uint32_t   	nsyms;			/* # of symbol table entries */
-	uint16_t 	opthdr;			/* sizeof the optional header */
-	uint16_t 	flags;			/* flags??? */
+	uint16_t 	f_magic;			/* magic number */
+	uint16_t 	f_nscns;			/* # of sections */
+	uint32_t   	f_timdat;			/* time and date stamp */
+	uint32_t 	f_symptr;			/* file offset of symbol table */
+	uint32_t   	f_nsyms;			/* # of symbol table entries */
+	uint16_t 	f_opthdr;			/* sizeof the optional header */
+	uint16_t 	f_flags;			/* flags??? */
 } xcoff32_filehdr;
 
 typedef struct {
-	uint16_t 	magic;			/* magic number */
-	uint16_t 	nscns;			/* # of sections */
-	uint32_t   	timdat;			/* time and date stamp */
-	uint64_t	symptr;			/* file offset of symbol table */
-	uint32_t   	nsyms;			/* # of symbol table entries */
-	uint16_t 	opthdr;			/* sizeof the optional header */
-	uint16_t 	flags;			/* flags??? */
+	uint16_t 	f_magic;			/* magic number */
+	uint16_t 	f_nscns;			/* # of sections */
+	uint32_t   	f_timdat;			/* time and date stamp */
+	uint64_t	f_symptr;			/* file offset of symbol table */
+	uint32_t   	f_nsyms;			/* # of symbol table entries */
+	uint16_t 	f_opthdr;			/* sizeof the optional header */
+	uint16_t 	f_flags;			/* flags??? */
 } xcoff64_filehdr;
 
 /* f_magic */
@@ -160,29 +154,29 @@ typedef struct {
 #define XCOFF_O_64_AOUT_SHR_SYMTAB 	0x8000
 
 typedef struct {
-	char		name[8];		/* name */
-	uint32_t  	paddr;			/* physical addr? for ROMing?*/
-	uint32_t  	vaddr;			/* virtual addr? */
-	uint32_t  	size;			/* size */
-	uint32_t  	scnptr;			/* file offset of raw data */
-	uint32_t  	relptr;			/* file offset of reloc data */
-	uint32_t  	lnnoptr;		/* file offset of line data */
-	uint16_t 	nreloc;			/* # of relocation entries */
-	uint16_t 	nlnno;			/* # of line entries */
-	uint16_t   	flags;			/* flags */
+	char		s_name[8];		/* name */
+	uint32_t  	s_paddr;		/* physical addr? for ROMing?*/
+	uint32_t  	s_vaddr;		/* virtual addr? */
+	uint32_t  	s_size;			/* size */
+	uint32_t  	s_scnptr;		/* file offset of raw data */
+	uint32_t  	s_relptr;		/* file offset of reloc data */
+	uint32_t  	s_lnnoptr;		/* file offset of line data */
+	uint16_t 	s_nreloc;		/* # of relocation entries */
+	uint16_t 	s_nlnno;		/* # of line entries */
+	uint16_t   	s_flags;		/* flags */
 } xcoff32_scnhdr;
 
 typedef struct {
-	char		name[8];		/* name */
-	uint64_t  	paddr;			/* physical addr? for ROMing?*/
-	uint64_t  	vaddr;			/* virtual addr? */
-	uint64_t  	size;			/* size */
-	uint64_t  	scnptr;			/* file offset of raw data */
-	uint64_t  	relptr;			/* file offset of reloc data */
-	uint64_t  	lnnoptr;		/* file offset of line data */
-	uint32_t 	nreloc;			/* # of relocation entries */
-	uint32_t 	nlnno;			/* # of line entries */
-	uint32_t   	flags;			/* flags */
+	char		s_name[8];		/* name */
+	uint64_t  	s_paddr;		/* physical addr? for ROMing?*/
+	uint64_t  	s_vaddr;		/* virtual addr? */
+	uint64_t  	s_size;			/* size */
+	uint64_t  	s_scnptr;		/* file offset of raw data */
+	uint64_t  	s_relptr;		/* file offset of reloc data */
+	uint64_t  	s_lnnoptr;		/* file offset of line data */
+	uint32_t 	s_nreloc;		/* # of relocation entries */
+	uint32_t 	s_nlnno;		/* # of line entries */
+	uint32_t   	s_flags;		/* flags */
 } xcoff64_scnhdr;
 
 /* s_flags */
@@ -230,6 +224,7 @@ typedef struct {
 
 #define xcoff_exechdr		xcoff32_exechdr
 #define XCOFF_HDR_SIZE		XCOFF32_HDR_SIZE
+#define XCOFF_F_MAGIC		XCOFF_F_32_MAGIC
 
 #elif defined(XCOFFSIZE) && (XCOFFSIZE == 64)
 #define xcoff_filehdr		xcoff64_filehdr
@@ -238,6 +233,7 @@ typedef struct {
 
 #define xcoff_exechdr		xcoff64_exechdr
 #define XCOFF_HDR_SIZE		XCOFF64_HDR_SIZE
+#define XCOFF_F_MAGIC		XCOFF_F_64_MAGIC
 #endif
 
 #define XCOFF_OMAGIC 0407
@@ -265,8 +261,6 @@ typedef struct {
 
 #ifdef _KERNEL
 int	 exec_xcoff_linker (struct exec_linker *));
-void cpu_exec_xcoff_setregs (struct proc *, struct exec_linker *, u_long);
-
 int	 exec_xcoff_prep_zmagic (struct exec_linker *, struct xcoff_exechdr *, struct vnode *);
 int	 exec_xcoff_prep_nmagic (struct exec_linker *, struct xcoff_exechdr *, struct vnode *);
 int	 exec_xcoff_prep_omagic (struct exec_linker *, struct xcoff_exechdr *, struct vnode *);

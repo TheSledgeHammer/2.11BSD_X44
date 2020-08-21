@@ -171,7 +171,6 @@ struct ps_strings;
 struct emul {
 	const char			*e_name[8];			/* Symbolic name */
 	const char			*e_path;			/* Extra emulation path (NULL if none)*/
-
 	const struct sysent *e_sysent;			/* System call array */
 	const char * const 	*e_syscallnames; 	/* System call name array */
 	int					e_arglen;			/* Extra argument size in words */
@@ -182,19 +181,18 @@ struct emul {
 	char				*e_esigcode;		/* End of sigcode */
 
 	void				(*e_syscall)(void);
-	caddr_t				(*e_vm_default_addr)(struct proc *, caddr_t, size_t);
 };
 
 #define	p_session		p_pgrp->pg_session
 #define	p_pgid			p_pgrp->pg_id
 
 /* stat codes */
-#define	SSLEEP	1		/* awaiting an event */
-#define	SWAIT	2		/* (abandoned state) */
-#define	SRUN	3		/* running */
-#define	SIDL	4		/* intermediate state in process creation */
-#define	SZOMB	5		/* intermediate state in process termination */
-#define	SSTOP	6		/* process being traced */
+#define	SSLEEP	1			/* awaiting an event */
+#define	SWAIT	2			/* (abandoned state) */
+#define	SRUN	3			/* running */
+#define	SIDL	4			/* intermediate state in process creation */
+#define	SZOMB	5			/* intermediate state in process termination */
+#define	SSTOP	6			/* process being traced */
 
 /* flag codes */
 #define	P_CONTROLT	0x00002	/* Has a controlling terminal. */
@@ -270,7 +268,7 @@ struct	prochd {
 	struct	proc *ph_rlink;
 } qs[NQS];
 
-extern struct emul emul_211bsd;
+extern struct emul emul_211bsd;			/* emulation struct */
 
 struct 	proc *pfind (pid_t);			/* Find process by id. */
 struct 	pgrp *pgfind (pid_t);			/* Find process group by id. */

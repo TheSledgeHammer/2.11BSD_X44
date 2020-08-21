@@ -1,4 +1,5 @@
 /*
+ * The 3-Clause BSD License:
  * Copyright (c) 2020 Martin Kelly
  * All rights reserved.
  *
@@ -10,11 +11,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *      This product includes software developed by Christopher G. Demetriou
- *      for the NetBSD Project.
- * 4. The name of the author may not be used to endorse or promote products
+ * 3. The name of the author may not be used to endorse or promote products
  *    derived from this software without specific prior written permission
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
@@ -29,8 +26,34 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#ifndef _I386_XCOFF_MACHDEP_H_
+#define _I386_XCOFF_MACHDEP_H_
 
-#define	XCOFFSIZE	64
+#define XCOFF_LDPGSZ 				4096
 
-#include "../kern/exec_xcoff32.c"
+#define	KERN_ELFSIZE				32
+#define ARCH_ELFSIZE				32	/* MD native binary size */
+
+#define XCOFF_PAD
+
+#define XCOFF_MACHDEP				\
+	u_long gprmask; 				\
+	u_long cprmask[4]; 				\
+    u_long gp_value
+
+
+#ifdef _KERNEL
+#define XCOFF_MAGIC_I386			0x14c
+#define	XCOFF_BADMAG(ex)			\
+	(ex->f_magic != ECOFF_MAGIC_I386)
+
+#define XCOFF_FLAG_EXEC				0002
+#define XCOFF_SEGMENT_ALIGNMENT(ep) \
+	(((ep)->f.f_flags & XCOFF_FLAG_EXEC) == x ? 8 : 16) /* x not correct for i386 */
+
+
+struct 	proc;
+struct 	exec_linker;
+#endif	/* _KERNEL */
+
+#endif /* _I386_XCOFF_MACHDEP_H_ */

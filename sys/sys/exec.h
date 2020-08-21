@@ -50,14 +50,6 @@ struct	ovlhdr {
 };
 
 /*
- * eXtended header definition for use with the new macros in a.out.h
-*/
-struct	xexec {
-	struct	exec	e;
-	struct	ovlhdr	o;
-};
-
-/*
  * The following structure is found at the top of the user stack of each
  * user process. The ps program uses it to locate argv and environment
  * strings. Programs that wish ps to display other information may modify
@@ -104,6 +96,7 @@ struct execsw {
 	int					ex_prio;		/* entry priority */
 	int					ex_arglen;		/* Extra argument size in words */
 										/* Copy arguments on the new stack */
+	int					(*ex_copyargs)(struct proc *, struct exec_linker *, struct ps_strings *, void *, void *);
 	int					(*ex_setup_stack)(struct exec_linker *);
 };
 

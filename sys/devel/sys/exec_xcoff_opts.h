@@ -1,4 +1,5 @@
 /*
+ * The 3-Clause BSD License:
  * Copyright (c) 2020 Martin Kelly
  * All rights reserved.
  *
@@ -10,11 +11,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *      This product includes software developed by Christopher G. Demetriou
- *      for the NetBSD Project.
- * 4. The name of the author may not be used to endorse or promote products
+ * 3. The name of the author may not be used to endorse or promote products
  *    derived from this software without specific prior written permission
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
@@ -29,7 +26,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* NOTE: The Follow Contents of exec_xcoff.h is derived from IBM Knowledge Center:
+/* NOTE: The Following Contents of exec_xcoff_opts.h is derived from IBM Knowledge Center:
  * https://www.ibm.com/support/knowledgecenter/ssw_aix_72/filesreference/XCOFF.html
  */
 

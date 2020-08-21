@@ -35,9 +35,6 @@
 
 #include <machine/ecoff_machdep.h>
 
-#define ECOFF_LDPGSZ 4096
-//#ifdef ECOFF32_PAD
-
 struct ecoff_filehdr {
 	u_short f_magic;	/* magic number */
 	u_short f_nscns;	/* # of sections */
@@ -106,8 +103,8 @@ struct ecoff_exechdr {
          ECOFF_SEGMENT_ALIGNMENT(ep))))
 
 #ifdef _KERNEL
-int	 exec_ecoff_linker (struct exec_linker *));
-void cpu_exec_ecoff_setregs (struct proc *, struct exec_linker *, u_long);
+int	 exec_ecoff_linker (struct exec_linker *);
+//void cpu_exec_ecoff_setregs (struct proc *, struct exec_linker *, u_long);
 
 int	 exec_ecoff_prep_zmagic (struct exec_linker *, struct ecoff_exechdr *, struct vnode *);
 int	 exec_ecoff_prep_nmagic (struct exec_linker *, struct ecoff_exechdr *, struct vnode *);

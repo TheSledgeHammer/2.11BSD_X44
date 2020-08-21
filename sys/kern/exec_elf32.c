@@ -100,7 +100,7 @@ int
 elf_copyargs(elp, arginfo, stackp, argp)
 	struct exec_linker *elp;
 	struct ps_strings *arginfo;
-	char **stackp;
+	void *stackp;
 	void *argp;
 {
 	struct proc *p = elp->el_proc;

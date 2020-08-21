@@ -1,4 +1,5 @@
 /*
+ * The 3-Clause BSD License:
  * Copyright (c) 2020 Martin Kelly
  * All rights reserved.
  *
@@ -10,11 +11,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *      This product includes software developed by Christopher G. Demetriou
- *      for the NetBSD Project.
- * 4. The name of the author may not be used to endorse or promote products
+ * 3. The name of the author may not be used to endorse or promote products
  *    derived from this software without specific prior written permission
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
@@ -41,7 +38,7 @@
 #include <sys/mman.h>
 #include <sys/exec.h>
 #include <sys/exec_linker.h>
-#include "../sys/exec_xcoff.h"
+#include "../devel/sys/exec_xcoff.h"
 #include <sys/resourcevar.h>
 
 int
@@ -51,12 +48,15 @@ exec_xcoff_linker(elp)
 	struct xcoff_exechdr *xcoff = (struct xcoff_exechdr *) elp->el_image_hdr;
 	int error;
 
+	xcoff->f.f_magic = XCOFF_F_MAGIC;
+
 	if (elp->el_hdrvalid < XCOFF_HDR_SIZE) {
 		return ENOEXEC;
 	}
 
-	if (XCOFF_BADMAG(xcoff))
+	if (XCOFF_BADMAG(xcoff)) {
 		return ENOEXEC;
+	}
 
 	switch (xcoff->a.magic) {
 	case XCOFF_OMAGIC:
