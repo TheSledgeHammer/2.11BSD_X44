@@ -453,8 +453,7 @@ elf_load_file(elp, path, vcset, entryoff, ap, last)
 				else
 					addr = ELF_ROUND(addr, ph0->p_align);
 			} else {
-				u_long limit = round_page(last_ph->p_vaddr
-				    + last_ph->p_memsz);
+				u_long limit = round_page(last_ph->p_vaddr + last_ph->p_memsz);
 				u_long base = trunc_page(ph0->p_vaddr);
 
 				/*

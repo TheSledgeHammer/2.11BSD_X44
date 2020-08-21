@@ -35,6 +35,7 @@
 
 #include <machine/ecoff_machdep.h>
 
+#define ECOFF_LDPGSZ 4096
 //#ifdef ECOFF32_PAD
 
 struct ecoff_filehdr {
@@ -85,23 +86,23 @@ struct ecoff_exechdr {
 #define ECOFF_NMAGIC 0410
 #define ECOFF_ZMAGIC 0413
 
-#define ECOFF_ROUND(value, by) \
+#define ECOFF_ROUND(value, by) 													\
         (((value) + (by) - 1) & ~((by) - 1))
 
-#define ECOFF_BLOCK_ALIGN(ep, value) \
-	((ep)->a.magic == ECOFF_ZMAGIC ? ECOFF_ROUND((value), ECOFF_LDPGSZ) : \
+#define ECOFF_BLOCK_ALIGN(ep, value) 											\
+	((ep)->a.magic == ECOFF_ZMAGIC ? ECOFF_ROUND((value), ECOFF_LDPGSZ) : 		\
 	(value))
 
-#define ECOFF_TXTOFF(ep) \
-        ((ep)->a.magic == ECOFF_ZMAGIC ? 0 : \
-        ECOFF_ROUND(ECOFF_HDR_SIZE + (ep)->f.f_nscns * \
+#define ECOFF_TXTOFF(ep) 														\
+        ((ep)->a.magic == ECOFF_ZMAGIC ? 0 : 									\
+        ECOFF_ROUND(ECOFF_HDR_SIZE + (ep)->f.f_nscns * 							\
 		     sizeof(struct ecoff_scnhdr), ECOFF_SEGMENT_ALIGNMENT(ep)))
 
-#define ECOFF_DATOFF(ep) \
+#define ECOFF_DATOFF(ep) 														\
         ((ECOFF_BLOCK_ALIGN((ep), ECOFF_TXTOFF(ep) + (ep)->a.tsize)))
 
-#define ECOFF_SEGMENT_ALIGN(ep, value) \
-        (ECOFF_ROUND((value), ((ep)->a.magic == ECOFF_ZMAGIC ? ECOFF_LDPGSZ : \
+#define ECOFF_SEGMENT_ALIGN(ep, value) 											\
+        (ECOFF_ROUND((value), ((ep)->a.magic == ECOFF_ZMAGIC ? ECOFF_LDPGSZ : 	\
          ECOFF_SEGMENT_ALIGNMENT(ep))))
 
 #ifdef _KERNEL

@@ -56,7 +56,7 @@ struct pecoff_dos_filehdr {
 				   	   	   	   direct paging */
 #define COFF_SMAGIC	0443	/* shared lib */
 
-#define COFF_LDPGSZ 4096 /* XXX */
+#define COFF_LDPGSZ 4096 	/* XXX */
 
 struct pecoff_imghdr {
 	long i_vaddr;
