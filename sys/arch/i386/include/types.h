@@ -57,20 +57,65 @@ typedef	unsigned long	vm_size_t;
  * Basic integral types.  Omit the typedef if
  * not possible for a machine/compiler combination.
  */
-typedef	__signed char		int8_t;
-typedef	unsigned char		u_int8_t;
-typedef	short			  	int16_t;
-typedef	unsigned short		u_int16_t;
-typedef	int			  		int32_t;
-typedef	unsigned int		u_int32_t;
-typedef	long long		  	int64_t;
-typedef	unsigned long long	u_int64_t;
+/* 7.18.1.1 Exact-width integer types */
+typedef	signed char			__int8_t;
+typedef	unsigned char		__uint8_t;
+typedef	short				__int16_t;
+typedef	unsigned short		__uint16_t;
+typedef	int					__int32_t;
+typedef	unsigned int		__uint32_t;
+typedef	long long			__int64_t;
+typedef	unsigned long long	__uint64_t;
 
-typedef	int32_t				register_t;
-typedef	u_int32_t			u_register_t;
+/* 7.18.1.2 Minimum-width integer types */
+typedef	__int8_t			__int_least8_t;
+typedef	__uint8_t			__uint_least8_t;
+typedef	__int16_t			__int_least16_t;
+typedef	__uint16_t			__uint_least16_t;
+typedef	__int32_t			__int_least32_t;
+typedef	__uint32_t			__uint_least32_t;
+typedef	__int64_t			__int_least64_t;
+typedef	__uint64_t			__uint_least64_t;
 
-typedef	int64_t				register_t;
-typedef	u_int64_t			u_register_t;
+/* 7.18.1.3 Fastest minimum-width integer types */
+typedef	__int32_t			__int_fast8_t;
+typedef	__uint32_t			__uint_fast8_t;
+typedef	__int32_t			__int_fast16_t;
+typedef	__uint32_t			__uint_fast16_t;
+typedef	__int32_t			__int_fast32_t;
+typedef	__uint32_t			__uint_fast32_t;
+typedef	__int64_t			__int_fast64_t;
+typedef	__uint64_t			__uint_fast64_t;
+#define	__INT_FAST8_MIN		INT32_MIN
+#define	__INT_FAST16_MIN	INT32_MIN
+#define	__INT_FAST32_MIN	INT32_MIN
+#define	__INT_FAST64_MIN	INT64_MIN
+#define	__INT_FAST8_MAX		INT32_MAX
+#define	__INT_FAST16_MAX	INT32_MAX
+#define	__INT_FAST32_MAX	INT32_MAX
+#define	__INT_FAST64_MAX	INT64_MAX
+#define	__UINT_FAST8_MAX	UINT32_MAX
+#define	__UINT_FAST16_MAX	UINT32_MAX
+#define	__UINT_FAST32_MAX	UINT32_MAX
+#define	__UINT_FAST64_MAX	UINT64_MAX
+
+/* 7.18.1.4 Integer types capable of holding object pointers */
+typedef	long				__intptr_t;
+typedef	unsigned long		__uintptr_t;
+
+/* 7.18.1.5 Greatest-width integer types */
+typedef	__int64_t			__intmax_t;
+typedef	__uint64_t			__uintmax_t;
+
+/* Register size */
+typedef long				__register_t;
+typedef	unsigned long		__uregister_t;
+
+/* VM system types */
+typedef unsigned long		__vaddr_t;
+typedef unsigned long		__paddr_t;
+typedef unsigned long		__vsize_t;
+typedef unsigned long		__psize_t;
 
 
 /* 7.18.1.4 Integer types capable of holding object pointers */

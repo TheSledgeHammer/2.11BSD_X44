@@ -33,6 +33,16 @@
 #ifndef _SYS_EXEC_XCOFF_OPTS_H_
 #define _SYS_EXEC_XCOFF_OPTS_H_
 
+/* coff data types */
+typedef int8_t			coff_char;
+typedef int16_t			coff_short;
+typedef int32_t			coff_int;
+typedef int64_t			coff_long;
+typedef uint8_t			coff_uchar;
+typedef uint16_t		coff_ushort;
+typedef uint32_t		coff_uint;
+typedef uint64_t		coff_ulong;
+
 /* xcoff: loader header */
 struct xcoff_ldrhdr {
 	int32_t 	l_version;		/* loader section version number */

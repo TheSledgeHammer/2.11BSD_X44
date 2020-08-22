@@ -9,18 +9,14 @@
 #ifndef _SYS_TYPES_H
 #define	_SYS_TYPES_H
 
-/* Machine type dependent parameters. */
-#include <machine/types.h>
-#include <machine/ansi.h>
-
 #include <sys/ansi.h>
+#include <sys/select.h>
+#include <sys/stdint.h>
 
-/*
- * Basic system types and major/minor device constructing/busting macros.
- */
-#define	major(x)			((int)(((int)(x)>>8)&0377))		/* major part of a device */
-#define	minor(x)			((int)((x)&0377)) 				/* minor part of a device */
-#define	makedev(x,y)		((dev_t)(((x)<<8)|(y)))			/* make a device number */
+/* Machine type dependent parameters. */
+#include <machine/ansi.h>
+#include <machine/endian_machdep.h>
+#include <machine/types.h>
 
 typedef	unsigned char		u_char;
 typedef	unsigned short		u_short;
@@ -39,6 +35,7 @@ typedef	long				segsz_t;	/* segment size */
 
 typedef	long				daddr_t;	/* disk address */
 typedef	char *				caddr_t;	/* core address */
+typedef unsigned long		vaddr_t;	/* virtual address */
 typedef	u_long				ino_t;		/* inode number*/
 typedef	long				swblk_t;	/* swap offset */
 typedef	u_long				size_t;
@@ -50,24 +47,27 @@ typedef	u_long				uid_t;		/* user id */
 typedef	u_long				gid_t;		/* group id */
 typedef	long	    		pid_t;		/* process id */
 typedef	u_short				mode_t;		/* permissions */
-typedef	register_t			register_t;
 typedef u_long 				sigset_t;
 typedef	unsigned long		cpuid_t;
+typedef char				bool_t;		/* boolean */
+typedef long				memaddr;	/* core or swap address */
 
  typedef struct	_quad {
 	long val[2];
 } quad;
+
+/*
+ * Basic system types and major/minor device constructing/busting macros.
+ */
+#define	major(x)			((int)(((int)(x)>>8)&0377))		/* major part of a device */
+#define	minor(x)			((int)((x)&0377)) 				/* minor part of a device */
+#define	makedev(x,y)		((dev_t)(((x)<<8)|(y)))			/* make a device number */
 
 #define	NBBY	8			/* number of bits in a byte */
 
 #ifndef howmany
 #define	howmany(x, y)		(((x)+((y)-1))/(y))
 #endif
-
-#include <sys/select.h>
-
-typedef char				bool_t;		/* boolean */
-typedef long				memaddr;	/* core or swap address */
 
 #ifdef	_BSD_CLOCK_T_
 typedef	_BSD_CLOCK_T_	clock_t;
@@ -89,14 +89,12 @@ typedef	_BSD_TIME_T_	time_t;
 #undef	_BSD_TIME_T_
 #endif
 
-#include <sys/stdint.h>
-
+/* BSD-style unsigned bits types */
+typedef uregister_t	u_register_t;
 typedef	uint8_t		u_int8_t;
 typedef	uint16_t	u_int16_t;
 typedef	uint32_t	u_int32_t;
 typedef	uint64_t	u_int64_t;
-
-#include <machine/endian.h>
 
 #if defined(_KERNEL) || defined(_STANDALONE)
 #define SET(t, f)	((t) |= (f))
@@ -104,10 +102,27 @@ typedef	uint64_t	u_int64_t;
 #define	CLR(t, f)	((t) &= ~(f))
 #endif
 
+#if defined(__STDC__) && defined(_KERNEL)
+/*
+ * Forward structure declarations for function prototypes.  We include the
+ * common structures that cross subsystem boundaries here; others are mostly
+ * used in the same place that the structure is defined.
+ */
+struct	proc;
+struct	pgrp;
+struct	ucred;
+struct	rusage;
+struct	k_rusage;
+struct	file;
+struct	buf;
+struct	tty;
+struct	uio;
+struct	user;
+#endif
+
 #if defined(_KERNEL) || defined(_STANDALONE)
 
 #include <sys/stdbool.h>
-
 /*
  * Deprecated Mach-style boolean_t type.  Should not be used by new code.
  */

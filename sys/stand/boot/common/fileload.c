@@ -40,8 +40,6 @@
 
 #include "bootstrap.h"
 
-typedef caddr_t vaddr_t;
-
 static int	file_load(char *filename, vaddr_t dest, struct preloaded_file **result);
 static int	file_havepath(const char *name);
 static void file_insert_tail(struct preloaded_file *mp);

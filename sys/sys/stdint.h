@@ -36,53 +36,63 @@
 #include <machine/types.h>
 
 #ifndef	_BSD_INT8_T_
-typedef	__int8_t	int8_t;
+typedef	__int8_t		int8_t;
 #define	_BSD_INT8_T_
 #endif
 
 #ifndef	_BSD_UINT8_T_
-typedef	__uint8_t	uint8_t;
+typedef	__uint8_t		uint8_t;
 #define	_BSD_UINT8_T_
 #endif
 
 #ifndef	_BSD_INT16_T_
-typedef	__int16_t	int16_t;
+typedef	__int16_t		int16_t;
 #define	_BSD_INT16_T_
 #endif
 
 #ifndef	_BSD_UINT16_T_
-typedef	__uint16_t	uint16_t;
+typedef	__uint16_t		uint16_t;
 #define	_BSD_UINT16_T_
 #endif
 
 #ifndef	_BSD_INT32_T_
-typedef	__int32_t	int32_t;
+typedef	__int32_t		int32_t;
 #define	_BSD_INT32_T_
 #endif
 
 #ifndef	_BSD_UINT32_T_
-typedef	__uint32_t	uint32_t;
+typedef	__uint32_t		uint32_t;
 #define	_BSD_UINT32_T_
 #endif
 
 #ifndef	_BSD_INT64_T_
-typedef	__int64_t	int64_t;
+typedef	__int64_t		int64_t;
 #define	_BSD_INT64_T_
 #endif
 
 #ifndef	_BSD_UINT64_T_
-typedef	__uint64_t	uint64_t;
+typedef	u_int64_t		uint64_t;
 #define	_BSD_UINT64_T_
 #endif
 
 #ifndef	_BSD_INTPTR_T_
-typedef	__intptr_t	intptr_t;
+typedef	__intptr_t		intptr_t;
 #define	_BSD_INTPTR_T_
 #endif
 
 #ifndef	_BSD_UINTPTR_T_
-typedef	__uintptr_t	uintptr_t;
+typedef	__uintptr_t		uintptr_t;
 #define	_BSD_UINTPTR_T_
+#endif
+
+#ifndef _BSD_REGISTER_T_
+typedef	__register_t 	register_t;
+#define _BSD_REGISTER_T_
+#endif
+
+#ifndef _BSD_UREGISTER_T_
+typedef	__uregister_t 	uregister_t;
+#define _BSD_UREGISTER_T_
 #endif
 
 #endif /* !_SYS_STDINT_H_ */

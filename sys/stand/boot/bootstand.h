@@ -63,10 +63,10 @@
 
 #ifndef	BOOTSTAND_H
 #define	BOOTSTAND_H
+#include <sys/cdefs.h>
 
 #include <sys/user.h>
 #include <sys/types.h>
-#include <sys/cdefs.h>
 #include <sys/stat.h>
 #include <sys/dirent.h>
 #include <sys/errno.h>
@@ -98,17 +98,6 @@
  */
 extern struct fs_ops ufs_fsops;
 extern struct fs_ops cd9660_fsops;
-/*
-extern struct fs_ops tftp_fsops;
-extern struct fs_ops nfs_fsops;
-extern struct fs_ops gzipfs_fsops;
-extern struct fs_ops bzipfs_fsops;
-extern struct fs_ops dosfs_fsops;
-extern struct fs_ops ext2fs_fsops;
-extern struct fs_ops splitfs_fsops;
-extern struct fs_ops pkgfs_fsops;
-extern struct fs_ops efihttp_fsops;
-/*
 
 /*
  * Generic device specifier; architecture-dependent
