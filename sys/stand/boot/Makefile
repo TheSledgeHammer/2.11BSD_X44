@@ -1,25 +1,33 @@
-# $FreeBSD$
+# $FreeBSD: src/sys/boot/Makefile,v 1.18 2003/08/16 02:48:20 obrien Exp $
 
-#.include <src.opts.mk>
+#EFISRC=		${BOOTSRC}/efi
+#EFIINC=		${EFISRC}/include
+#EFIINCMD=		${EFIINC}/${MACHINE}
+DLOADER=		${BOOTSRC}/dloader
+LDRSRC=			${BOOTSRC}/common
+#UBOOTSRC=		${BOOTSRC}/uboot
+LIBCSRC=		${SRCTOP}/lib/libc
 
-S.yes+=					libsa
+BOOTOBJ=		${STANDDIR}
 
-S.${MK_DLOADER}+=		dloader
-S.yes+=					man
+# BINDIR is where we install
+BINDIR?=		/boot
 
-.include <bsd.arch.inc.mk>
+# Standard options:
+# Options used when building standalone components
+CFLAGS+=		-nostdinc
+CFLAGS+=		-ffreestanding -fshort-wchar -Wformat -D_STANDALONE
+LDFLAGS+=		#-nostdlib
+CPPFLAGS+=		-D_STANDALONE
 
-S.${MK_EFI}+=			efi
-S.${MK_LOADER_UBOOT}+=	uboot
+### find out what to use for libkern
+KERN_AS=		library
+.include 		"${LIBKERN}/Makefile.inc"
 
-.if exists(${.CURDIR}/${MACHINE}/.)
-S.yes+=         ${MACHINE}
-.endif
-
-# Build the actual subdir list from S.yes, adding in the 32-bit
-# variant if necessary.
-.for _x in ${S.yes}
-SUBDIR+=${_x}
-.endfor
+### find out what to use for libsa
+SA_AS=			library
+SAMISCMAKEFLAGS+="SA_USE_LOADFILE=yes"
+.include 		"${LIBSA}/Makefile.inc"
 
 .include <bsd.subdir.mk>
+		

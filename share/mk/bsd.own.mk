@@ -8,43 +8,43 @@
 
 # where the system object and source trees are kept; can be configurable
 # by the user in case they want them in ~/foosrc and ~/fooobj, for example
-BSDSRCDIR?=	/usr/src
-BSDOBJDIR?=	/usr/obj
+BSDSRCDIR?=		/usr/src
+BSDOBJDIR?=		/usr/obj
 
-BINGRP?=	bin
-BINOWN?=	bin
-BINMODE?=	555
+BINGRP?=		bin
+BINOWN?=		bin
+BINMODE?=		555
 NONBINMODE?=	444
 
 # Define MANZ to have the man pages compressed (gzip)
 #MANZ=		1
 
-MANDIR?=	/usr/share/man
-MANGRP?=	bin
-MANOWN?=	bin
-MANMODE?=	${NONBINMODE}
+MANDIR?=		/usr/share/man
+MANGRP?=		bin
+MANOWN?=		bin
+MANMODE?=		${NONBINMODE}
 MANINSTALL?=	maninstall catinstall
 
-LIBDIR?=	/usr/lib
+LIBDIR?=		/usr/lib
 LINTLIBDIR?=	/usr/libdata/lint
-LIBGRP?=	${BINGRP}
-LIBOWN?=	${BINOWN}
-LIBMODE?=	${NONBINMODE}
+LIBGRP?=		${BINGRP}
+LIBOWN?=		${BINOWN}
+LIBMODE?=		${NONBINMODE}
 
-DOCDIR?=    /usr/share/doc
-DOCGRP?=	bin
-DOCOWN?=	bin
-DOCMODE?=   ${NONBINMODE}
+DOCDIR?=    	/usr/share/doc
+DOCGRP?=		bin
+DOCOWN?=		bin
+DOCMODE?=   	${NONBINMODE}
 
-NLSDIR?=	/usr/share/nls
-NLSGRP?=	bin
-NLSOWN?=	bin
-NLSMODE?=	${NONBINMODE}
+NLSDIR?=		/usr/share/nls
+NLSGRP?=		bin
+NLSOWN?=		bin
+NLSMODE?=		${NONBINMODE}
 
-#KMODDIR?=	/usr/lkm
-#KMODGRP?=	bin
-#KMODOWN?=	bin
-#KMODMODE?=	${NONBINMODE}
+#KMODDIR?=		/usr/lkm
+#KMODGRP?=		bin
+#KMODOWN?=		bin
+#KMODMODE?=		${NONBINMODE}
 
 COPY?=		-c
 STRIPFLAG?=	-s

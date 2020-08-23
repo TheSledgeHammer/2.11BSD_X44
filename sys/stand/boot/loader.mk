@@ -1,12 +1,10 @@
 # $FreeBSD$
 
-.PATH: ${LDRSRC} ${BOOTSRC}/libsa
+CFLAGS+= -I${LDRSRC}
 
-CFLAGS+=-I${LDRSRC}
-
-SRCS+=	boot.c commands.c console.c devopen.c environment.c 
+SRCS+=	boot.c commands.c console.c devopen.c environment.c
 SRCS+=	fileload.c getopts.c interp_backslash.c interp_parse.c interp.c
-SRCS+=	ls.c misc.c pager.c panic.c readdir.c 
+SRCS+=	ls.c misc.c pager.c panic.c readdir.c
 SRCS+=  smbios.c strdup.c strspn.c strtol.c ufsread.c
 
 .if ${MACHINE} == "i386"
@@ -27,6 +25,10 @@ SRCS+=	isapnp.c
 .endif
 .if defined(HAVE_PNP)
 SRCS+=	pnp.c
+.endif
+
+.if ${BOOT_DLOADER} == "yes"
+SRCS+=	subs.c cmds.c logo_beastie.c logo_fred.c
 .endif
 
 # Filesystem support

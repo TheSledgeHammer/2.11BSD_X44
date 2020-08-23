@@ -1,3 +1,3 @@
-# $FreeBSD$
-
-.include "defs.mk"
+# $FreeBSD
+.include 	<bsd.own.mk>
+.include 	"conf/generic.mk"

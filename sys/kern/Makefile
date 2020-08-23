@@ -5,8 +5,8 @@
 ARCH=	i386
 
 all:
-	@echo "make tags, links, init_sysent.c"
-	@false
+		@echo "make tags, links, init_sysent.c"
+	
 
 
 SYSCALLSRC = makesyscalls.sh syscalls.conf syscalls.master

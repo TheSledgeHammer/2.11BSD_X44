@@ -297,4 +297,3 @@ ${DESTDIR}${LINTLIBDIR}/llib-l${LIB}.ln: llib-l${LIB}.ln
 
 # Make sure all of the standard targets are defined, even if they do nothing.
 lint regress:
-	

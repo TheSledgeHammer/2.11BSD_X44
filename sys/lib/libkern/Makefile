@@ -1,6 +1,6 @@
 #	$NetBSD: Makefile,v 1.36.8.1 1997/11/12 23:51:52 thorpej Exp $
 
-LIB=	kern
+LIB=		kern
 NOPIC=
 LLIBS=	# defined
 
@@ -19,9 +19,6 @@ SRCS+=	adddi3.c anddi3.c ashldi3.c ashrdi3.c cmpdi2.c divdi3.c iordi3.c \
 	lshldi3.c lshrdi3.c moddi3.c muldi3.c negdi2.c notdi2.c qdivrem.c \
 	subdi3.c  ucmpdi2.c udivdi3.c umoddi3.c xordi3.c
 .endif
-
-# Other stuff
-SRCS+=	md5c.c
 
 # Files to clean up
 CLEANFILES+= lib${LIB}.o lib${LIB}.po
