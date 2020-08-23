@@ -1,0 +1,67 @@
+# $FreeBSD$
+
+.include 		"${DLOADER}/Makefile"
+
+LOADER_NET_SUPPORT?=	no
+LOADER_CD9660_SUPPORT?=	no
+LOADER_EXT2FS_SUPPORT?=	no
+LOADER_MSDOS_SUPPORT?=	no
+LOADER_UFS_SUPPORT?=	yes
+
+.include <bsd.init.mk>
+
+LOADER?=		${LOADER_INTERP}
+PROG=			${LOADER}.sym
+INTERNALPROG=
+NEWVERSWHAT?=	"bootstrap loader" i386
+#VERSION_FILE=	${.CURDIR}/../loader/version
+
+.PATH:			${BOOTSRC}/i386/loader
+
+# architecture-specific loader code
+SRCS=			main.c conf.c
+
+# Include bcache code.
+HAVE_BCACHE=	yes
+
+# Enable PnP and ISA-PnP code.
+HAVE_PNP=		yes
+HAVE_ISABUS=	yes
+
+.if exists(${.CURDIR}/help.i386)
+HELP_FILES=		${.CURDIR}/help.i386
+.endif
+
+# Always add MI sources
+.include		"${BOOTSRC}/loader.mk"
+
+CLEANFILES+=	${LOADER} ${LOADER}.bin
+
+ORG=			0x0
+
+CFLAGS+=		-Wall
+LDFLAGS+=		-static ${LDFLAGS_ORG} -Wl,--gc-sections
+
+# i386 standalone support library
+LIBI386=		${BOOTOBJ}/i386/libi386/libi386.a
+CFLAGS+=		-I${BOOTSRC}/i386
+
+
+# Debug me!
+#CFLAGS+=		-g
+#LDFLAGS+=		-g
+
+${LOADER}: ${LOADER}.bin ${BTXLDR} ${BTXKERN}
+	btxld -v -f aout -e ${LOADER_ADDRESS} -o ${.TARGET} -l ${BTXLDR} \
+		-b ${BTXKERN} ${LOADER}.bin
+
+${LOADER}.bin: ${LOADER}.sym
+	${STRIPBIN} -R .comment -R .note -o ${.TARGET} ${.ALLSRC}
+	
+FILES+=	${LOADER}
+FILESMODE_${LOADER}= ${BINMODE} -b
+
+# XXX crt0.o needs to be first for pxeboot(8) to work
+OBJS=	${BTXCRT}
+
+.include <bsd.prog.mk>

@@ -1,4 +1,9 @@
-- boot: Check & create Makefiles if needed
+- boot:
+	- Makefiles: (Overcomplicated for following folders)
+		- Makefile, Makefile.inc
+		- dloader:
+		- i386:
+			- loader
 	- efi:
 		- libefi & loader: Update From FreeBSD to be NetBSD/2.11BSD compatable
 	- i386: 			

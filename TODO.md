@@ -5,7 +5,8 @@ NOTE: Don't hesitate to add to this list. :)
 #General:
 - Cross-Compiler
 	- Build Toolchain
-- Makefiles
+- Makefiles:
+	- Use .mk for definitions
 - Bug Fixes/ missing critical content
 
 #usr/:
@@ -45,6 +46,10 @@ NOTE: Don't hesitate to add to this list. :)
 - ic:
 	- bloated: contains unused code, generally for other platforms
 
+##lib:
+- libkern:
+	- add Makefile.inc
+	
 ##net:
 Of Interest Todo:
 - 2.11BSD's networking stack

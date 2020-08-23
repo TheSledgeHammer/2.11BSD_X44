@@ -2,8 +2,9 @@
 
 LIB=	kern
 NOPIC=
+LLIBS=	# defined
 
-M=	${.CURDIR}/arch/${MACHINE_ARCH}
+M=			${.CURDIR}/arch/${MACHINE_ARCH}
 
 CPPFLAGS=	-I$M ${KERNCPPFLAGS} ${KERNMISCCPPFLAGS}
 
