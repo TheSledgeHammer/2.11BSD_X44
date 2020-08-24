@@ -56,6 +56,8 @@ extern void (*__fini_array_end[])(void);
 extern void _fini(void);
 extern void _init(void);
 
+#define	write(fd, s, n)	__syscall(SYS_write, (fd), (s), (n))
+
 #define	_FATAL(str)				\
 do {							\
 	write(2, str, sizeof(str));	\
@@ -134,6 +136,71 @@ handle_argv(int argc, char *argv[], char **env)
 				__progname = s + 1;
 		}
 	}
+}
+
+#if defined(HAS_IPLTA)
+#include <stdio.h>
+extern const Elf_Rela __rela_iplt_start[] __dso_hidden __weak;
+extern const Elf_Rela __rela_iplt_end[] __dso_hidden __weak;
+#define write_plt(where, value) *where = value
+#define IFUNC_RELOCATION	RTYPE(IRELATIVE)
+
+static void
+fix_iplta(void)
+{
+	const Elf_Rela *rela, *relalim;
+	uintptr_t relocbase = 0;
+	Elf_Addr *where, target;
+
+	rela = __rela_iplt_start;
+	relalim = __rela_iplt_end;
+	for (; rela < relalim; ++rela) {
+		if (ELF_R_TYPE(rela->r_info) != IFUNC_RELOCATION) {
+			abort();
+		}
+		where = (Elf_Addr *)(relocbase + rela->r_offset);
+		target = (Elf_Addr)(relocbase + rela->r_addend);
+		target = ((Elf_Addr(*)(void))target)();
+		write_plt(where, target);
+	}
+}
+#endif
+
+#if defined(HAS_IPLT)
+#include <stdio.h>
+extern const Elf_Rel __rel_iplt_start[] __dso_hidden __weak;
+extern const Elf_Rel __rel_iplt_end[] __dso_hidden __weak;
+#define IFUNC_RELOCATION	RTYPE(IRELATIVE)
+
+static void
+fix_iplt(void)
+{
+	const Elf_Rel *rel, *rellim;
+	uintptr_t relocbase = 0;
+	Elf_Addr *where, target;
+
+	rel = __rel_iplt_start;
+	rellim = __rel_iplt_end;
+	for (; rel < rellim; ++rel) {
+		if (ELF_R_TYPE(rel->r_info) != IFUNC_RELOCATION) {
+			abort();
+		}
+		where = (Elf_Addr *)(relocbase + rel->r_offset);
+		target = ((Elf_Addr(*)(void))*where)();
+		*where = target;
+	}
+}
+#endif
+
+void
+process_irelocs(void)
+{
+#ifdef HAS_IPLTA
+		fix_iplta();
+#endif
+#ifdef HAS_IPLT
+		fix_iplt();
+#endif
 }
 
 #ifdef DYNAMIC

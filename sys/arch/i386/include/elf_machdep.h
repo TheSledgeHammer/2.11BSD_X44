@@ -72,6 +72,6 @@
 #define R_386_IRELATIVE		42
 #define R_386_GOT32X		43
 
-#define	R_TYPE(name)		__CONCAT(R_386_,name)
+#define	R_TYPE(name)		__CONCAT(R_386_, name)
 
 #endif /* _I386_ELF_MACHDEP_H_ */

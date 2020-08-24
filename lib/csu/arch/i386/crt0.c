@@ -26,6 +26,8 @@
  * $FreeBSD$
  */
 
+#define HAS_IPLT
+
 #include <sys/cdefs.h>
 /* __FBSDID("$FreeBSD$"); */
 
@@ -64,12 +66,7 @@ _start(cleanup, obj, ps_strings, argc, argv)
 		_rtld_setup(cleanup, obj);
 		atexit(cleanup);
 	} else {
-#ifdef HAS_IPLTA
-
-#endif
-#ifdef HAS_IPLT
-
-#endif
+		process_irelocs();
 	}
 
 #ifdef MCRT0
@@ -82,4 +79,4 @@ __asm__("eprol:");
 	exit(main(argc, argv, env));
 }
 
-__asm(".hidden	_start1");
+__asm(".hidden	_start");

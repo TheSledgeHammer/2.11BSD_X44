@@ -28,7 +28,7 @@ SRCS+=	pnp.c
 .endif
 
 .if ${BOOT_DLOADER} == "yes"
-SRCS+=	subs.c cmds.c logo_beastie.c logo_fred.c
+.include 		"dloader/Makefile.inc"
 .endif
 
 # Filesystem support
