@@ -38,7 +38,7 @@
 #include <sys/mman.h>
 #include <sys/exec.h>
 #include <sys/exec_linker.h>
-#include "../devel/sys/exec_xcoff.h"
+#include <sys/exec_xcoff.h>
 #include <sys/resourcevar.h>
 
 int

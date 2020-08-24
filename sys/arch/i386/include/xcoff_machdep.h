@@ -43,17 +43,20 @@
 
 
 #ifdef _KERNEL
-#define XCOFF_MAGIC_I386			0x14c
+#define XCOFF_MAGIC_I386			0x1fe
 #define	XCOFF_BADMAG(ex)			\
 	(ex->f_magic != ECOFF_MAGIC_I386)
 
 #define XCOFF_FLAG_EXEC				0002
 #define XCOFF_SEGMENT_ALIGNMENT(ep) \
-	(((ep)->f.f_flags & XCOFF_FLAG_EXEC) == x ? 8 : 16) /* x not correct for i386 */
-
+	(((ep)->f.f_flags & XCOFF_FLAG_EXEC) == 23 ? 8 : 16) /* x not correct for i386 */
 
 struct 	proc;
 struct 	exec_linker;
 #endif	/* _KERNEL */
+
+struct xcoff_symhdr {
+
+};
 
 #endif /* _I386_XCOFF_MACHDEP_H_ */

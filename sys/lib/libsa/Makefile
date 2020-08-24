@@ -16,7 +16,7 @@ SRCS+=	close.c dev.c disklabel.c ls.c \
 		lseek.c open.c read.c stat.c write.c
 
 .if (${SA_USE_LOADFILE} == "yes")
-SRCS+=	loadfile.c loadfile_ecoff.c loadfile_elf32.c lookup_elf32.c 
+SRCS+=	loadfile.c loadfile_ecoff.c loadfile_elf32.c loadfile_elf64.c lookup_elf32.c loadfile_xcoff32.c loadfile_xcoff64.c
 .if (${MACHINE_CPU} != "mips")
 SRCS+=	loadfile_aout.c
 .endif

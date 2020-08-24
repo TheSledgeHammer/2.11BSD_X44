@@ -44,8 +44,6 @@
 	u_long cprmask[4]; 				\
     u_long gp_value
 
-//0x1fe = 0510
-//0x14c = 0332
 #ifdef _KERNEL
 #define ECOFF_MAGIC_I386			0x1fe
 #define	ECOFF_BADMAG(ex)			\
@@ -53,12 +51,12 @@
 
 #define ECOFF_FLAG_EXEC				0002
 #define ECOFF_SEGMENT_ALIGNMENT(ep) \
-	(((ep)->f.f_flags & ECOFF_FLAG_EXEC) == 23 ? 8 : 16) /* x not correct for i386 */
+	(((ep)->f.f_flags & ECOFF_FLAG_EXEC) == 23 ? 8 : 16) /* not correct for i386 */
 
 
 struct 	proc;
 struct 	exec_linker;
-void	cpu_exec_ecoff_setregs (struct proc *, struct exec_linker *, u_long);
+//void	cpu_exec_ecoff_setregs (struct proc *, struct exec_linker *, u_long);
 #endif	/* _KERNEL */
 
 struct ecoff_symhdr {

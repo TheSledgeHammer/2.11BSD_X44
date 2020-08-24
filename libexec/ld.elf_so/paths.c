@@ -43,7 +43,7 @@
 #include "debug.h"
 #include "rtld.h"
 
-static Search_Path *_rtld_find_path __P((Search_Path *, const char *, size_t));
+static Search_Path *_rtld_find_path (Search_Path *, const char *, size_t);
 
 static Search_Path *
 _rtld_find_path(path, pathstr, pathlen)

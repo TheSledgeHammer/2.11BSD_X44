@@ -114,10 +114,10 @@ kmem_alloc(map, size)
 	register vm_map_t	map;
 	register vm_size_t	size;
 {
-	vm_offset_t		addr;
+	vm_offset_t				addr;
 	register vm_offset_t	offset;
-	extern vm_object_t	kernel_object;
-	vm_offset_t		i;
+	extern vm_object_t		kernel_object;
+	vm_offset_t				i;
 
 	size = round_page(size);
 

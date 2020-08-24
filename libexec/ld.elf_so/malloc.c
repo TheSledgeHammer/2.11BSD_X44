@@ -62,7 +62,7 @@
  */
 #define	NPOOLPAGES	(32*1024/pagesz)
 static caddr_t		pagepool_start, pagepool_end;
-static int		morepages __P((int));
+static int			morepages (int);
 
 /*
  * The overhead on a block is at least 4 bytes.  When free, this space
@@ -90,8 +90,8 @@ union	overhead {
 #define	ov_size		ovu.ovu_size
 };
 
-static void morecore __P((int));
-static int findbucket __P((union overhead *, int));
+static void morecore (int));
+static int findbucket (union overhead *, int);
 
 #define	MAGIC		0xef		/* magic # on accounting info */
 #define RMAGIC		0x5555		/* magic # on range info */

@@ -26,8 +26,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#define	XCOFFSIZE 64
 
-#define	XCOFFSIZE	64
-
-#include "../devel/kern/exec_xcoff32.c"
+#include "../lib/libsa/loadfile_xcoff32.c"

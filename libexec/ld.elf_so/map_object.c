@@ -63,7 +63,7 @@ _rtld_map_object(path, fd)
 	Obj_Entry      *obj;
 	union {
 		Elf_Ehdr hdr;
-		char     buf[PAGESIZE];
+		char     buf[_rtld_pagesz];
 	} u;
 	int             nbytes;
 	Elf_Phdr       *phdr;
@@ -91,7 +91,7 @@ _rtld_map_object(path, fd)
 	caddr_t         bss_addr;
 #endif
 
-	if ((nbytes = read(fd, u.buf, PAGESIZE)) == -1) {
+	if ((nbytes = read(fd, u.buf, _rtld_pagesz)) == -1) {
 		_rtld_error("%s: read error: %s", path, xstrerror(errno));
 		return NULL;
 	}
@@ -172,8 +172,8 @@ default:
 	}
 	assert(nsegs == 2);
 #ifdef __i386__
-	assert(segs[0]->p_align <= PAGESIZE);
-	assert(segs[1]->p_align <= PAGESIZE);
+	assert(segs[0]->p_align <= _rtld_pagesz);
+	assert(segs[1]->p_align <= _rtld_pagesz);
 #endif
 
 	/*

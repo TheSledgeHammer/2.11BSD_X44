@@ -38,55 +38,55 @@
 
 #include <machine/asm.h>
 
-	.text
-	.align	4
-	.globl	.rtld_start
-	.type	.rtld_start,@function
+		.text
+		.align	4
+		.globl	.rtld_start
+		.type	.rtld_start,@function
 .rtld_start:
-	subl	$8,%esp			# make room of obj_main and exit proc
-	movl	%esp,%eax		# save stack pointer for _rtld
-	pushl	%ebx			# save ps_strings
+		subl	$8,%esp			# make room of obj_main and exit proc
+		movl	%esp,%eax		# save stack pointer for _rtld
+		pushl	%ebx			# save ps_strings
 
-	pushl	%eax
-	call	_rtld@PLT		# _rtld(sp)
-	addl	$4,%esp			# pop args
+		pushl	%eax
+		call	_rtld@PLT		# _rtld(sp)
+		addl	$4,%esp			# pop args
 
-	popl	%ebx			# %ebx = ps_strings
-	popl	%edx			# %edx = cleanup
-	popl	%ecx			# %ecx = obj_main
-	jmp	*%eax
+		popl	%ebx			# %ebx = ps_strings
+		popl	%edx			# %edx = cleanup
+		popl	%ecx			# %ecx = obj_main
+		jmp	*%eax
 
-	.align	4
-	.globl	_rtld_bind_start
-	.type	_rtld_bind_start,@function
-_rtld_bind_start:	# (obj, reloff)
-	pushf				# save registers
-	pushl	%eax
-	pushl	%ecx
-	pushl	%edx
-	pushl	%ebx
-	pushl	%ebp
-	pushl	%esi
-	pushl	%edi
-	pushl	%ds
-	pushl	%es
+		.align	4
+		.globl	_rtld_bind_start
+		.type	_rtld_bind_start,@function
+_rtld_bind_start:				# (obj, reloff)
+		pushf					# save registers
+		pushl	%eax
+		pushl	%ecx
+		pushl	%edx
+		pushl	%ebx
+		pushl	%ebp
+		pushl	%esi
+		pushl	%edi
+		pushl	%ds
+		pushl	%es
 
-	pushl	44(%esp)		# Copy of reloff
-	pushl	44(%esp)		# Copy of obj
-	call	_rtld_bind@PLT		# Call the binder
-	addl	$8,%esp			# pop binder args
-	movl	%eax,44(%esp)		# Store function to be called in obj
+		pushl	44(%esp)		# Copy of reloff
+		pushl	44(%esp)		# Copy of obj
+		call	_rtld_bind@PLT		# Call the binder
+		addl	$8,%esp			# pop binder args
+		movl	%eax,44(%esp)	# Store function to be called in obj
 
-	popl	%es			# restore registers
-	popl	%ds
-	popl	%edi
-	popl	%esi
-	popl	%ebp
-	popl	%ebx
-	popl	%edx
-	popl	%ecx
-	popl	%eax
-	popf
+		popl	%es				# restore registers
+		popl	%ds
+		popl	%edi
+		popl	%esi
+		popl	%ebp
+		popl	%ebx
+		popl	%edx
+		popl	%ecx
+		popl	%eax
+		popf
 
-	leal	4(%esp),%esp		# Discard reloff, do not change eflags
-	ret
+		leal	4(%esp),%esp	# Discard reloff, do not change eflags
+		ret

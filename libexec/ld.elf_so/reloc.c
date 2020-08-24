@@ -53,7 +53,7 @@
 #include "rtld.h"
 
 #ifndef RTLD_INHIBIT_COPY_RELOCS
-static int _rtld_do_copy_relocation __P((const Obj_Entry *, const Elf_RelA *, bool));
+static int _rtld_do_copy_relocation (const Obj_Entry *, const Elf_RelA *, bool);
 
 /*
  * XXX: These don't work for the alpha and i386; don't know about powerpc
@@ -351,8 +351,6 @@ _rtld_relocate_nonplt_object(obj, rela, dodebug)
 	return 0;
 }
 
-
-
 int
 _rtld_relocate_plt_object(obj, rela, addrp, bind_now, dodebug)
 	const Obj_Entry *obj;
@@ -579,7 +577,7 @@ _rtld_relocate_objects(first, bind_now, dodebug)
 			 */
 #define SAVE	0x9de3bfc0	/* i.e. `save %sp,-64,%sp' */
 #define CALL	0x40000000
-#define NOP	0x01000000
+#define NOP		0x01000000
 			obj->pltgot[0] = SAVE;
 			obj->pltgot[1] = CALL |
 			    ((Elf_Addr)&_rtld_bind_start -

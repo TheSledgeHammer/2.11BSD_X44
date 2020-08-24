@@ -56,10 +56,6 @@ extern void (*__fini_array_end[])(void);
 extern void _fini(void);
 extern void _init(void);
 
-extern int				__syscall(int, ...);
-#define	_exit(v)		__syscall(SYS_exit, (v))
-#define	write(fd, s, n)	__syscall(SYS_write, (fd), (s), (n))
-
 #define	_FATAL(str)				\
 do {							\
 	write(2, str, sizeof(str));	\

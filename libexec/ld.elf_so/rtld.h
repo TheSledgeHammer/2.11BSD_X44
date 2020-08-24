@@ -41,25 +41,15 @@
 #include "rtldenv.h"
 #include "link.h"
 
+#ifndef	RTLD_DEFAULT_LIBRARY_PATH
 #define	RTLD_DEFAULT_LIBRARY_PATH	"/usr/lib"
-
-#if 0
-#define SVR4_LIBDIR	"/usr/lib"
 #endif
+#define _PATH_LD_HINTS				"/etc/ld.so.conf"
 
-#define LIBDIRLEN	(sizeof LIBDIR - 1)
-#define SVR4_LIBDIRLEN	(sizeof SVR4_LIBDIR - 1)
+extern size_t _rtld_pagesz;
 
-#ifndef	PAGESIZE
-# ifndef __sparc__
-#  define PAGESIZE	CLBYTES
-# else
-#  define PAGESIZE	8192	/* NPBG is not constant! */
-# endif
-#endif
-
-#define round_down(x)	((x) & ~(PAGESIZE-1))
-#define round_up(x)	round_down((x) + PAGESIZE - 1)
+#define round_down(x)	((x) & ~(_rtld_pagesz - 1))
+#define round_up(x)	round_down((x) + _rtld_pagesz - 1)
 
 #define NEW(type)	((type *) xmalloc(sizeof(type)))
 #define CNEW(type)	((type *) xcalloc(sizeof(type)))
@@ -169,7 +159,7 @@ void _rtld_bind_start (void);
 
 /* rtld.c */
 void 			_rtld_error (const char *, ...) __attribute__((__format__(__printf__,1,2)));
-void 			_rtld_die (void);
+void 			_rtld_die (void) __dead;
 char 			*_rtld_dlerror (void);
 void 			*_rtld_dlopen (const char *, int);
 void 			*_rtld_dlsym (void *, const char *);

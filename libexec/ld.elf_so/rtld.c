@@ -61,15 +61,15 @@
  * Debugging support.
  */
 
-typedef void    (*funcptr) __P((void));
+typedef void    (*funcptr)(void);
 
 /*
  * Function declarations.
  */
-static void     _rtld_init __P((caddr_t));
-static void     _rtld_exit __P((void));
+static void     _rtld_init (caddr_t);
+static void     _rtld_exit (void);
 
-Elf_Addr        _rtld __P((Elf_Word *));
+Elf_Addr        _rtld (Elf_Word *);
 
 
 /*
@@ -79,13 +79,13 @@ static char    *error_message;	/* Message for dlopen(), or NULL */
 
 struct r_debug  _rtld_debug;	/* for GDB; */
 bool            _rtld_trust;	/* False for setuid and setgid programs */
-Obj_Entry      *_rtld_objlist;	/* Head of linked list of shared objects */
-Obj_Entry     **_rtld_objtail;	/* Link field of last object in list */
-Obj_Entry      *_rtld_objmain;	/* The main program shared object */
+Obj_Entry      	*_rtld_objlist;	/* Head of linked list of shared objects */
+Obj_Entry     	**_rtld_objtail;	/* Link field of last object in list */
+Obj_Entry      	*_rtld_objmain;	/* The main program shared object */
 Obj_Entry       _rtld_objself;	/* The dynamic linker shared object */
 char            _rtld_path[] = _PATH_RTLD;
 
-Search_Path    *_rtld_paths;
+Search_Path    	*_rtld_paths;
 /*
  * Global declarations normally provided by crt0.
  */
@@ -99,10 +99,10 @@ extern Elf_Addr _GLOBAL_OFFSET_TABLE_[];
 extern Elf_Dyn  _DYNAMIC;
 #endif
 
-static void _rtld_call_fini_functions __P((Obj_Entry *));
-static void _rtld_call_init_functions __P((Obj_Entry *));
-static Obj_Entry *_rtld_dlcheck __P((void *));
-static void _rtld_unref_object_dag __P((Obj_Entry *));
+static void _rtld_call_fini_functions (Obj_Entry *);
+static void _rtld_call_init_functions (Obj_Entry *);
+static Obj_Entry *_rtld_dlcheck (void *);
+static void _rtld_unref_object_dag (Obj_Entry *);
 
 static void
 _rtld_call_fini_functions(first)
