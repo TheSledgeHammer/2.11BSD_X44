@@ -3,6 +3,7 @@ static char sccsid[] = "@(#)ungetc.c	5.3 (Berkeley) 3/26/86";
 #endif LIBC_SCCS and not lint
 
 #include <stdio.h>
+#include <stddef.h>
 
 ungetc(c, iop)
 	register int c;

@@ -287,8 +287,8 @@ execve(p, uap, retval)
 	VOP_CLOSE(elp->el_vnodep, FREAD, p->p_cred, p);
 	vput(elp->el_vnodep);
 	FREE(elp->el_image_hdr, M_EXEC);
-	exit1(p, W_EXITCODE(0, SIGABRT));
-	exit1(p, -1);
+	exit(W_EXITCODE(0, SIGABRT));
+	exit(-1);
 
 	return (0);
 }

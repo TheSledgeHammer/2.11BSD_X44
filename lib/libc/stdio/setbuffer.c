@@ -39,6 +39,7 @@ static char sccsid[] = "@(#)setbuffer.c	8.1.1 (2.11BSD) 1997/7/29";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
+#include <stddef.h>
 #include <sys/types.h>
 
 void

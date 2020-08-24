@@ -3,7 +3,8 @@ static char sccsid[] = "@(#)doscan.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
 #include <stdio.h>
-#include	<ctype.h>
+#include <stddef.h>
+#include <ctype.h>
 
 #define	SPC	01
 #define	STP	02
@@ -38,70 +39,72 @@ _doscan(iop, fmt, argp)
 
 	nmatch = 0;
 	fileended = 0;
-	for (;;) switch (ch = *fmt++) {
-	case '\0': 
-		return (nmatch);
-	case '%': 
-		if ((ch = *fmt++) == '%')
-			goto def;
-		ptr = 0;
-		if (ch != '*')
-			ptr = argp++;
-		else
-			ch = *fmt++;
-		len = 0;
-		size = REGULAR;
-		while (isdigit(ch)) {
-			len = len*10 + ch - '0';
-			ch = *fmt++;
-		}
-		if (len == 0)
-			len = 30000;
-		if (ch=='l') {
-			size = LONG;
-			ch = *fmt++;
-		} else if (ch=='h') {
-			size = SHORT;
-			ch = *fmt++;
-		} else if (ch=='[')
-			fmt = _getccl(fmt);
-		if (isupper(ch)) {
-			ch = tolower(ch);
-			size = LONG;
-		}
-		if (ch == '\0')
-			return(-1);
-		if (_innum(ptr, ch, len, size, iop, &fileended) && ptr)
-			nmatch++;
-		if (fileended)
-			return(nmatch? nmatch: -1);
-		break;
+	for (;;) {
+		switch (ch = *fmt++) {
+		case '\0':
+			return (nmatch);
+		case '%':
+			if ((ch = *fmt++) == '%')
+				goto def;
+			ptr = 0;
+			if (ch != '*')
+				ptr = argp++;
+			else
+				ch = *fmt++;
+			len = 0;
+			size = REGULAR;
+			while (isdigit(ch)) {
+				len = len * 10 + ch - '0';
+				ch = *fmt++;
+			}
+			if (len == 0)
+				len = 30000;
+			if (ch == 'l') {
+				size = LONG;
+				ch = *fmt++;
+			} else if (ch == 'h') {
+				size = SHORT;
+				ch = *fmt++;
+			} else if (ch == '[')
+				fmt = _getccl(fmt);
+			if (isupper(ch)) {
+				ch = tolower(ch);
+				size = LONG;
+			}
+			if (ch == '\0')
+				return (-1);
+			if (_innum(ptr, ch, len, size, iop, &fileended) && ptr)
+				nmatch++;
+			if (fileended)
+				return (nmatch ? nmatch : -1);
+			break;
 
-	case ' ':
-	case '\n':
-	case '\t': 
-		while ((ch1 = getc(iop))==' ' || ch1=='\t' || ch1=='\n')
-			;
-		if (ch1 != EOF)
-			ungetc(ch1, iop);
-		break;
+		case ' ':
+		case '\n':
+		case '\t':
+			while ((ch1 = getc(iop)) == ' ' || ch1 == '\t' || ch1 == '\n')
+				;
+			if (ch1 != EOF)
+				ungetc(ch1, iop);
+			break;
 
-	default: 
-	def:
-		ch1 = getc(iop);
-		if (ch1 != ch) {
-			if (ch1==EOF)
-				return(-1);
-			ungetc(ch1, iop);
-			return(nmatch);
+		default:
+			def: ch1 = getc(iop);
+			if (ch1 != ch) {
+				if (ch1 == EOF)
+					return (-1);
+				ungetc(ch1, iop);
+				return (nmatch);
+			}
 		}
 	}
 }
 
 static
 _innum(ptr, type, len, size, iop, eofptr)
-int **ptr, *eofptr;
-FILE *iop;
+	int **ptr, *eofptr;
+	int len, size;
+	FILE *iop;
 {
 	extern double atof();
 	register char *np;
@@ -209,9 +212,10 @@ FILE *iop;
 
 static
 _instr(ptr, type, len, iop, eofptr)
-register char *ptr;
-register FILE *iop;
-int *eofptr;
+	register char *ptr;
+	register FILE *iop;
+	int len;
+	int *eofptr;
 {
 	register ch;
 	register char *optr;
@@ -254,7 +258,7 @@ int *eofptr;
 
 static char *
 _getccl(s)
-register unsigned char *s;
+	register unsigned char *s;
 {
 	register c, t;
 

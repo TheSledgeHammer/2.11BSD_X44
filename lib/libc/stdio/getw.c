@@ -4,8 +4,9 @@ static char sccsid[] = "@(#)getw.c	5.2.1 (2.11BSD GTE) 1/1/94";
 
 #include <stdio.h>
 
+int
 getw(iop)
-register FILE *iop;
+	register FILE *iop;
 {
 	register i;
 	register char *p;
@@ -22,7 +23,7 @@ register FILE *iop;
 #ifdef pdp11
 long
 getlw(iop)
-register FILE *iop;
+	register FILE *iop;
 {
 	register i;
 	register char *p;

@@ -4,8 +4,10 @@ static char sccsid[] = "@(#)putw.c	5.2.1 (2.11BSD GTE) 1/1/94";
 
 #include <stdio.h>
 
+int
 putw(w, iop)
-register FILE *iop;
+	long w;
+	register FILE *iop;
 {
 	register char *p;
 	register i;
@@ -18,8 +20,8 @@ register FILE *iop;
 
 #ifdef pdp11
 putlw(w, iop)
-long w;
-register FILE *iop;
+	long w;
+	register FILE *iop;
 {
 	register char *p;
 	register i;

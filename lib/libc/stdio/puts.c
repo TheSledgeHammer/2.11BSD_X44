@@ -4,8 +4,9 @@ static char sccsid[] = "@(#)puts.c	5.2 (Berkeley) 3/9/86";
 
 #include	<stdio.h>
 
+int
 puts(s)
-register char *s;
+	register char *s;
 {
 	register c;
 

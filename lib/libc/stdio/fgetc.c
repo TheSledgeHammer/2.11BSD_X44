@@ -5,7 +5,7 @@ static char sccsid[] = "@(#)fgetc.c	5.3 (Berkeley) 3/4/87";
 #include <stdio.h>
 
 fgetc(fp)
-register FILE *fp;
+	register FILE *fp;
 {
 	return(getc(fp));
 }

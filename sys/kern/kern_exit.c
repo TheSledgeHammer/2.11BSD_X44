@@ -377,35 +377,35 @@ proc_reparent(child, parent)
 	register struct proc *child;
 	register struct proc *parent;
 {
-		register struct proc *o;
-		register struct proc *y;
+	register struct proc *o;
+	register struct proc *y;
 
-		if(child->p_pptr == parent) {
-			return;
-		}
+	if (child->p_pptr == parent) {
+		return;
+	}
 
-		/* fix up the child linkage for the old parent */
-		o = child->p_osptr;
-		y = child->p_ysptr;
-		if (y) {
-			y->p_osptr = o;
-		}
+	/* fix up the child linkage for the old parent */
+	o = child->p_osptr;
+	y = child->p_ysptr;
+	if (y) {
+		y->p_osptr = o;
+	}
 
-		if (o) {
-			o->p_ysptr = y;
-		}
-		if (child->p_pptr->p_cptr == child) {
-			child->p_pptr->p_cptr = o;
-		}
+	if (o) {
+		o->p_ysptr = y;
+	}
+	if (child->p_pptr->p_cptr == child) {
+		child->p_pptr->p_cptr = o;
+	}
 
-		/* fix up child linkage for new parent */
-		o = parent->p_cptr;
-		if(o) {
-			o->p_ysptr = child;
-		}
-		child->p_osptr = o;
-		child->p_ysptr = NULL;
-		parent->p_cptr = child;
-		child->p_pptr = parent;
+	/* fix up child linkage for new parent */
+	o = parent->p_cptr;
+	if (o) {
+		o->p_ysptr = child;
+	}
+	child->p_osptr = o;
+	child->p_ysptr = NULL;
+	parent->p_cptr = child;
+	child->p_pptr = parent;
 }
 

@@ -9,14 +9,15 @@ static char sccsid[] = "@(#)flsbuf.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
 #include	<stdio.h>
+#include 	<stddef.h>
 #include	<sys/types.h>
 #include	<sys/stat.h>
 
 char	*malloc();
 
 _flsbuf(c, iop)
-unsigned char c;
-register FILE *iop;
+	unsigned char c;
+	register FILE *iop;
 {
 	register char *base;
 	register n, rn;
@@ -81,7 +82,7 @@ tryagain:
 }
 
 fflush(iop)
-register FILE *iop;
+	register FILE *iop;
 {
 	register char *base;
 	register n;

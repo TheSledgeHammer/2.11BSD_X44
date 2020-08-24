@@ -11,6 +11,7 @@ static char sccsid[] = "@(#)fopen.c	5.2 (Berkeley) 3/9/86";
 #include <sys/types.h>
 #include <sys/file.h>
 #include <stdio.h>
+#include <stddef.h>
 
 FILE *
 fopen(file, mode)

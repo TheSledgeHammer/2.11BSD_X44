@@ -9,12 +9,14 @@ static char sccsid[] = "@(#)filbuf.c	5.3 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
 #include	<stdio.h>
+#include	<stddef.h>
 #include	<sys/types.h>
 #include	<sys/stat.h>
+
 char	*malloc();
 
 _filbuf(iop)
-register FILE *iop;
+	register FILE *iop;
 {
 	int size;
 	struct stat stbuf;

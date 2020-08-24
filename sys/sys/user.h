@@ -38,12 +38,12 @@
 #define USIZE 		UPAGES
 
 struct	pcb {									/* fake pcb structure */
-	int	(*pcb_sigc)();							/* pointer to trampoline code in user space */
+	int					(*pcb_sigc)();			/* pointer to trampoline code in user space */
 };
 
 struct	fps {
-	short	u_fpsr;								/* FP status register */
-	double	u_fpregs[6];						/* FP registers */
+	short				u_fpsr;					/* FP status register */
+	double				u_fpregs[6];			/* FP registers */
 };
 
 struct user {
@@ -62,14 +62,14 @@ struct user {
 	label_t				u_qsave;				/* for non-local gotos on interrupts */
 	union {										/* syscall return values */
 		struct	{
-			int	R_val1;
-			int	R_val2;
+			int			R_val1;
+			int			R_val2;
 		} u_rv;
-#define	r_val1	u_rv.R_val1
-#define	r_val2	u_rv.R_val2
-		long	r_long;
-		off_t	r_off;
-		time_t	r_time;
+#define	r_val1			u_rv.R_val1
+#define	r_val2			u_rv.R_val2
+		long			r_long;
+		off_t			r_off;
+		time_t			r_time;
 	} u_r;
 	char				u_error;				/* return error code */
 	char				u_dummy0;
@@ -86,9 +86,18 @@ struct user {
 	size_t				u_tsize;				/* text size (clicks) */
 	size_t				u_dsize;				/* data size (clicks) */
 	size_t				u_ssize;				/* stack size (clicks) */
-
 	label_t				u_ssave;				/* label variable for swapping */
 	label_t				u_rsave;				/* save info when exchanging stacks */
+	char				u_sep;					/* flag for I and D separation */
+
+/* 1.2.5 - overlay information */
+	struct u_ovd { 								/* automatic overlay data */
+		short 			uo_curov; 				/* current overlay */
+		short 			uo_ovbase; 				/* base of overlay area, seg. */
+		u_short 		uo_dbase; 				/* start of data, clicks */
+		u_short 		uo_ov_offst[NOVL + 1]; 	/* overlay offsets in text */
+		short 			uo_nseg; 				/* number of overlay seg. regs. */
+	} u_ovdata;
 
 /* 1.3 - signal management */
 	int					u_signal[NSIG];			/* disposition of signals */

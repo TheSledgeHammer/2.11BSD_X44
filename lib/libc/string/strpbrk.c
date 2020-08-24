@@ -37,7 +37,8 @@ static char sccsid[] = "@(#)strpbrk.c	8.1.1 (2.11BSD) 1996/1/11";
 
 #include <sys/types.h>
 #include <string.h>
-#include <stdio.h>	/* for NULL */
+#include <stdio.h>
+#include <stddef.h>	/* for NULL */
 
 /*
  * Find the first occurrence in s1 of a character in s2 (excluding NUL).

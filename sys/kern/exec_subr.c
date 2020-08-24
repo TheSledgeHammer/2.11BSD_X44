@@ -44,7 +44,8 @@
 
 #include <vm/include/vm.h>
 
-void new_vmcmd(struct exec_vmcmd_set *evsp, int (*proc)(struct proc * p, struct exec_vmcmd *),
+void
+new_vmcmd(struct exec_vmcmd_set *evsp, int (*proc)(struct proc * p, struct exec_vmcmd *),
 		u_long size, u_long addr, u_int  prot, u_int  maxprot, int flags, struct vnode *vnode, u_long offset)
 {
 	struct exec_linker *elp;
@@ -66,7 +67,8 @@ void new_vmcmd(struct exec_vmcmd_set *evsp, int (*proc)(struct proc * p, struct 
 	elp->el_vmcmds = vcp;
 }
 
-void vmcmd_extend(evsp)
+void
+vmcmd_extend(evsp)
 	struct exec_vmcmd_set *evsp;
 {
 	struct exec_vmcmd *nvcp;
@@ -87,7 +89,8 @@ void vmcmd_extend(evsp)
 	}
 }
 
-void kill_vmcmd(evsp)
+void
+kill_vmcmd(evsp)
 	struct exec_vmcmd_set *evsp;
 {
 	struct exec_vmcmd *vcp;
@@ -105,7 +108,8 @@ void kill_vmcmd(evsp)
 	free(evsp->evs_cmds, M_EXEC);
 }
 
-int vmcmd_map_pagedvn(elp)
+int
+vmcmd_map_pagedvn(elp)
 	struct exec_linker *elp;
 {
 	struct vmspace *vmspace = elp->el_proc->p_vmspace;
@@ -160,7 +164,8 @@ int vmcmd_map_pagedvn(elp)
 	return (error);
 }
 
-int vmcmd_map_readvn(elp)
+int
+vmcmd_map_readvn(elp)
 	struct exec_linker *elp;
 {
 	struct vmspace *vmspace = elp->el_proc->p_vmspace;
@@ -187,7 +192,8 @@ int vmcmd_map_readvn(elp)
 	return vmcmd_readvn(elp);
 }
 
-int vmcmd_readvn(elp)
+int
+vmcmd_readvn(elp)
 	struct exec_linker *elp;
 {
 	struct proc *p = elp->el_proc;

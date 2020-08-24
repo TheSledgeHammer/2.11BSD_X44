@@ -40,6 +40,7 @@ static char sccsid[] = "@(#)setvbuf.c	8.1.1 (2.11BSD) 1997/7/27";
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <sys/types.h>
 
 /*

@@ -43,12 +43,6 @@
 #ifndef _EXEC_
 #define _EXEC_
 
-#define	NOVL	15						/* number of overlays */
-struct	ovlhdr {
-		 int			max_ovl;		/* maximum overlay size */
-		 unsigned int	ov_siz[NOVL];	/* size of i'th overlay */
-};
-
 /*
  * The following structure is found at the top of the user stack of each
  * user process. The ps program uses it to locate argv and environment

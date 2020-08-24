@@ -11,7 +11,7 @@ static char sccsid[] = "@(#)putchar.c	5.2 (Berkeley) 3/9/86";
 #undef putchar
 
 putchar(c)
-register c;
+	register c;
 {
 	putc(c, stdout);
 }

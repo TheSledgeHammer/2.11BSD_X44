@@ -8,11 +8,13 @@
 static char sccsid[] = "@(#)fprintf.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
-#include	<stdio.h>
+#include <stdio.h>
+#include <stddef.h>
 
 fprintf(iop, fmt, args)
-register FILE *iop;
-char *fmt;
+	register FILE *iop;
+	char *fmt;
+
 {
 	char localbuf[BUFSIZ];
 

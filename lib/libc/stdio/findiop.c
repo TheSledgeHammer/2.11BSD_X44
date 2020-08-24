@@ -9,6 +9,7 @@ static char sccsid[] = "@(#)findiop.c	5.6 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
 #include <stdio.h>
+#include <stddef.h>
 #include <errno.h>
 
 extern int errno;
@@ -18,9 +19,9 @@ extern int errno;
 #define NSTATIC	20	/* stdin + stdout + stderr + the usual */
 
 FILE _iob[NSTATIC] = {
-	{ 0, NULL, NULL, 0, _IOREAD,		0 },	/* stdin  */
-	{ 0, NULL, NULL, 0, _IOWRT,		1 },	/* stdout */
-	{ 0, NULL, NULL, 0, _IOWRT|_IONBF,	2 },	/* stderr */
+		{ 0, NULL, NULL, 0, _IOREAD, 0 },		/* stdin  */
+		{ 0, NULL, NULL, 0, _IOWRT,	1 },		/* stdout */
+		{ 0, NULL, NULL, 0, _IOWRT|_IONBF, 2 },	/* stderr */
 };
 
 extern	char	*calloc();

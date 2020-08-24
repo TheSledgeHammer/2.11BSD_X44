@@ -35,6 +35,7 @@
 static char sccsid[] = "@(#)getsubopt.c	8.1.1 (2.11BSD) 1996/1/11";
 #endif /* not lint */
 
+#include <stddef.h>
 #include <stdlib.h>
 
 /*

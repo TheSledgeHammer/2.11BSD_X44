@@ -3,11 +3,13 @@ static char sccsid[] = "@(#)fgets.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
 #include	<stdio.h>
+#include	<stddef.h>
 
 char *
 fgets(s, n, iop)
-char *s;
-register FILE *iop;
+	char *s;
+	int n;
+	register FILE *iop;
 {
 	register c;
 	register char *cs;

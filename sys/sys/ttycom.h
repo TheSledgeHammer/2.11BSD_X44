@@ -117,6 +117,7 @@ struct winsize {
 #define	TIOCUCNTL		_IOW('t', 102, int)	/* pty: set/clr usr cntl mode */
 #define	TIOCSTAT		_IOW('t', 101, int)	/* simulate a control-T status msg */
 #define			UIOCCMD(n)	_IO('u', n)		/* usr cntl op "n" */
+#define	TIOCGSID		_IOR('t', 99, int)	/* get sid of tty */
 #define	TIOCCONS		_IOW('t', 98, int)	/* become virtual console */
 #define	TIOCSCTTY	 	_IO('t', 97)		/* become controlling tty */
 #define	TIOCEXT			_IOW('t', 96, int)	/* pty: external processing */
@@ -126,7 +127,7 @@ struct winsize {
 #define TIOCMGBIDIR		_IOR('t', 92, int)	/* modem: get bidir cap. */
 #define TIOCMSDTRWAIT	_IOW('t', 91, int)	/* modem: set wait on close */
 #define TIOCMGDTRWAIT	_IOR('t', 90, int)	/* modem: get wait on close */
-#define TIOCTIMESTAMP	_IOR('t', 89, struct timeval)	/* get timestamp of last interrupt for xntp. */
+#define TIOCTIMESTAMP	 _IOR('t', 89, struct timeval)	/* get timestamp of last interrupt for xntp. */
 #define TIOCDSIMICROCODE _IO('t', 88)	/* Download microcode to DSI Softmodem */
 
 #define	TTYDISC		0		/* termios tty line discipline */

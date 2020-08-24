@@ -5,7 +5,6 @@ static char sccsid[] = "@(#)exit.c	5.2 (Berkeley) 3/9/86";
 exit(code)
 	int code;
 {
-
 	_cleanup();
 	_exit(code);
 }

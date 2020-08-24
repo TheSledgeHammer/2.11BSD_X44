@@ -39,6 +39,7 @@ static char sccsid[] = "@(#)strstr.c	8.1.1 (2.11BSD) 1996/1/15";
 #endif /* LIBC_SCCS and not lint */
 
 #include <string.h>
+#include <stddef.h>
 
 /*
  * Find the first occurrence of find in s.

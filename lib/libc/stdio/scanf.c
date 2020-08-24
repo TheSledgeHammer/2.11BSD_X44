@@ -4,22 +4,28 @@ static char sccsid[] = "@(#)scanf.c	5.2 (Berkeley) 3/9/86";
 
 #include	<stdio.h>
 
+int
 scanf(fmt, args)
-char *fmt;
+	char *fmt;
+	register int args;
 {
 	return(_doscan(stdin, fmt, &args));
 }
 
+int
 fscanf(iop, fmt, args)
-FILE *iop;
-char *fmt;
+	FILE *iop;
+	char *fmt;
+	register int args;
 {
 	return(_doscan(iop, fmt, &args));
 }
 
+int
 sscanf(str, fmt, args)
 	register char *str;
 	char *fmt;
+	register int args;
 {
 	FILE _strbuf;
 

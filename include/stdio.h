@@ -10,7 +10,10 @@
 #define	_STDIO_H_
 
 #include <sys/cdefs.h>
-#include <sys/ansi.h>
+#include <sys/types.h>
+#include <sys/null.h>
+
+#include <machine/ansi.h>
 
 #ifdef	_BSD_SIZE_T_
 typedef	_BSD_SIZE_T_	size_t;
@@ -21,13 +24,16 @@ typedef	_BSD_SSIZE_T_	ssize_t;
 #undef	_BSD_SSIZE_T_
 #endif
 
-#ifndef NULL
-#define	NULL	0
+#if defined(_POSIX_C_SOURCE)
+#ifndef __VA_LIST_DECLARED
+typedef __va_list va_list;
+#define __VA_LIST_DECLARED
+#endif
 #endif
 
-# ifndef FILE
+#ifndef FILE
 #define	BUFSIZ	1024
-extern	struct	_iobuf {
+struct	_iobuf {
 	int		_cnt;
 	char	*_ptr;		/* should be unsigned char */
 	char	*_base;		/* ditto */
@@ -82,3 +88,4 @@ char	*gets();
 char	*sprintf();		/* too painful to do right */
 #endif
 # endif
+

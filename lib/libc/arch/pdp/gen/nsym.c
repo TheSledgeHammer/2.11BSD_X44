@@ -14,30 +14,30 @@
  *				   call these routines.
  *      --------------------------------------------------              
 */
-
+#include <sys/exec.h>
 #include <a.out.h>
 
 off_t
 n_stroff(ep)
 	register struct xexec *ep;
-	{
+{
 	off_t	l;
 
 	l = n_symoff(ep);
 	l += ep->e.a_syms;
 	return(l);
-	}
+}
 
 off_t
 n_datoff(ep)
 	register struct xexec *ep;
-	{
+{
 	off_t	l;
 
 	l = n_treloc(ep);
 	l -= ep->e.a_data;
 	return(l);
-	}
+}
 
 /*
  * Obviously if bit 0 of the flags word (a_flag) is not off then there's
@@ -48,7 +48,7 @@ n_datoff(ep)
 off_t
 n_dreloc(ep)
 	register struct xexec *ep;
-	{
+{
 	off_t	l;
 	register u_short *ov = ep->o.ov_siz;
 	register int	i;
@@ -62,23 +62,23 @@ n_dreloc(ep)
 		}
 	l += ep->e.a_text;
 	return(l);
-	}
+}
 
 off_t
 n_treloc(ep)
 	register struct xexec *ep;
-	{
+{
 	off_t	l;
 
 	l = n_dreloc(ep);
 	l -= ep->e.a_text;
 	return(l);
-	}
+}
 
 off_t
 n_symoff(ep)
 	register struct xexec *ep;
-	{
+{
 	register int	i;
 	register u_short *ov;
 	off_t	sum, l;
@@ -94,4 +94,4 @@ n_symoff(ep)
 	if	((ep->e.a_flag & 1) == 0)	/* relocation present? */
 		l += sum;
 	return(l);
-	}
+}

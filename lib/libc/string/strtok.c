@@ -37,6 +37,7 @@ static char sccsid[] = "@(#)strtok.c	8.1.1 (2.11BSD) 1996/1/11";
 
 #include <string.h>
 #include <stdio.h>
+#include <stddef.h>
 
 char *
 strtok(s, delim)

@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include <string.h>
 #include <stdio.h>
+#include <stddef.h>
 
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)strsep.c	8.1.1 (2.11BSD) 1996/1/11";

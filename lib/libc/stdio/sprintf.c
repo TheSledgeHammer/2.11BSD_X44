@@ -24,6 +24,7 @@ static char sccsid[] = "@(#)vsprintf.c	5.2.1 (2.11BSD) 1995/04/02";
 int
 sprintf(str, fmt, args)
 	char *str, *fmt;
+	register int args;
 {
 	FILE _strbuf;
 

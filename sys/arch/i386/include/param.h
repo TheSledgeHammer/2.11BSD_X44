@@ -124,6 +124,7 @@
 #ifndef NKMEMCLUSTERS
 #define	NKMEMCLUSTERS	(2048*1024/CLBYTES)
 #endif
+
 /*
  * Some macros for units conversion
  */

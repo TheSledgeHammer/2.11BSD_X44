@@ -108,14 +108,6 @@
 #define	N_STROFF(ex) 	(N_SYMOFF(ex) + (ex).a_syms)
 
 /*
- * eXtended header definition for use with the new macros in a.out.h
-*/
-struct	xexec {
-	struct	exec	e;
-	struct	ovlhdr	o;
-};
-
-/*
  * Header prepended to each a.out file.
  * only manipulate the a_midmag field via the
  * N_SETMAGIC/N_GET{MAGIC,MID,FLAG} macros in a.out.h
@@ -132,6 +124,21 @@ struct exec {
 	unsigned long	a_unused;	/* not used */
 	unsigned long	a_flag; 	/* relocation info stripped */
 };
+
+#define	NOVL	15					/* number of overlays */
+struct	ovlhdr {
+	int				max_ovl;		/* maximum overlay size */
+	unsigned int	ov_siz[NOVL];	/* size of i'th overlay */
+};
+
+/*
+ * eXtended header definition for use with the new macros in a.out.h
+*/
+struct	xexec {
+	struct	exec	e;
+	struct	ovlhdr	o;
+};
+
 #define a_magic 	a_midmag /* XXX Hack to work with current kern_execve.c */
 
 /* a_magic */

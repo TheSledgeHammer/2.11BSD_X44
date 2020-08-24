@@ -12,7 +12,7 @@ long	lseek();
 
 
 long ftell(iop)
-register FILE *iop;
+	register FILE *iop;
 {
 	register long tres;
 	register adjust;

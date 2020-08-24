@@ -17,9 +17,11 @@ static char sccsid[] = "@(#)fdopen.c	5.2 (Berkeley) 3/9/86";
 #include <sys/types.h>
 #include <sys/file.h>
 #include <stdio.h>
+#include <stddef.h>
 
 FILE *
 fdopen(fd, mode)
+	int fd;
 	register char *mode;
 {
 	extern FILE *_findiop();

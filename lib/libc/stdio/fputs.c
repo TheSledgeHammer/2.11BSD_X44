@@ -9,10 +9,11 @@ static char sccsid[] = "@(#)fputs.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
 #include	<stdio.h>
+#include 	<stddef.h>
 
 fputs(s, iop)
-register char *s;
-register FILE *iop;
+	register char *s;
+	register FILE *iop;
 {
 	register r = 0;
 	register c;
