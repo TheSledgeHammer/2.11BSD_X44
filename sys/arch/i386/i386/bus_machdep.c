@@ -681,9 +681,7 @@ _bus_dmamem_alloc(t, size, alignment, boundary, segs, nsegs, rsegs, flags)
 	int *rsegs;
 	int flags;
 {
-
-	return (_bus_dmamem_alloc_range(t, size, alignment, boundary,
-	    segs, nsegs, rsegs, flags, 0, trunc_page(avail_end)));
+	return (_bus_dmamem_alloc_range(t, size, alignment, boundary, segs, nsegs, rsegs, flags, 0, trunc_page(avail_end)));
 }
 
 /*

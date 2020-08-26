@@ -3,7 +3,7 @@
 .include <bsd.own.mk>			# for OBJECT_FMT definition
 
 .if ${OBJECT_FMT} == "ELF" && ${MKPIC} != "no"
-PROG=	ld.elf_so
+PROG=	ld.so
 .endif
 
 ARCHSUBDIR= ${MACHINE_ARCH:C/mipse[bl]/mips/}

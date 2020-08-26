@@ -99,7 +99,7 @@ ovlspace_free(ovl)
 		RMFREE(ovl, sizeof(struct ovlspace *), ovl);
 	}
 }
-
+#include <vm_extent.h>
 /* create ovlspace extent map */
 struct extent *
 ovlspace_extent_create(start, end, storage, storagesize)

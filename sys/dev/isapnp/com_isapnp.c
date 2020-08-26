@@ -56,10 +56,10 @@
 #include <dev/ic/comvar.h>
 
 struct com_isapnp_softc {
-	struct	com_softc sc_com;	/* real "com" softc */
+	struct	com_softc 	sc_com;	/* real "com" softc */
 
 	/* ISAPnP-specific goo. */
-	void	*sc_ih;			/* interrupt handler */
+	void				*sc_ih;			/* interrupt handler */
 };
 
 int		com_isapnp_match (struct device *, void *, void *);

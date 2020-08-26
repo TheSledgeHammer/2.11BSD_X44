@@ -39,12 +39,11 @@
 #include <sys/malloc.h>
 #include <sys/user.h>
 
-#include <machine/bus.h>
+//#include <machine/bus.h>
 
-#include <dev/isa/isavar.h>
-
-#include <dev/isapnp/isapnpreg.h>
-#include <dev/isapnp/isapnpvar.h>
+#include "../isa_generic/isapnpreg.h"
+#include "../isa_generic/isapnpvar.h"
+#include "../isa_generic/isavar.h"
 
 
 static int isapnp_wait_status (struct isapnp_softc *);

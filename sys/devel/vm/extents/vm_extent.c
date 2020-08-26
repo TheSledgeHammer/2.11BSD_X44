@@ -35,9 +35,8 @@
 struct vextops vextops;
 
 int
-vm_extent_create(vext, ext, name, start, end, mtype, storage, storagesize, flags)
+vm_extent_create(vext, name, start, end, mtype, storage, storagesize, flags)
 	struct vm_extent *vext;
-	struct extent *ext;
 	char *name;
 	vm_offset_t start, end;
 	int mtype, flags;
@@ -61,35 +60,9 @@ vm_extent_create(vext, ext, name, start, end, mtype, storage, storagesize, flags
     	return (EOPNOTSUPP);
     }
 
-	vext->vext_ext = ext;
-    error = vextops.vm_extent_create(ext, name, start, end, mtype, storage, storagesize, flags);
+    error = vextops.vm_extent_create(vext, vext->vext_ext, name, start, end, mtype, storage, storagesize, flags);
 
     return (error);
-}
-
-int
-vm_extent_mallocok(vext, mallocok)
-	struct vm_extent *vext;
-	int mallocok;
-{
-	struct vextops_mallocok_args vap;
-	int error;
-
-	vap.a_head.a_ops = &vextops;
-	vap.a_vext = vext;
-	vap.a_mallocok = mallocok;
-
-    if (vextops.vm_extent_mallocok == NULL) {
-    	return (EOPNOTSUPP);
-    }
-
-	error = vextops.vm_extent_mallocok(vext, mallocok);
-
-	if(mallocok != 0) {
-		error = 1;
-	}
-
-	return (error);
 }
 
 int

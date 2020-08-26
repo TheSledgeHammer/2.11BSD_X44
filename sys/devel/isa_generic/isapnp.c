@@ -41,11 +41,10 @@
 
 #include <machine/bus.h>
 
-#include <dev/isa/isavar.h>
-#include <dev/isa/isadmavar.h>
-
-#include <dev/isapnp/isapnpreg.h>
-#include <dev/isapnp/isapnpvar.h>
+#include "../isa_generic/isadmavar.h"
+#include "../isa_generic/isapnpreg.h"
+#include "../isa_generic/isapnpvar.h"
+#include "../isa_generic/isavar.h"
 
 static void isapnp_init (struct isapnp_softc *);
 static __inline u_char isapnp_shift_bit (struct isapnp_softc *);

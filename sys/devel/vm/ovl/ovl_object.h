@@ -25,4 +25,16 @@ struct ovl_object_hash_entry {
 	ovl_object_t						object;
 };
 
+struct object_q		vm_object_cached_list;	/* list of objects persisting */
+int					vm_object_cached;		/* size of cached list */
+simple_lock_data_t	vm_cache_lock;			/* lock for object cache */
+
+struct object_q		vm_object_list;			/* list of allocated objects */
+long				vm_object_count;		/* count of all objects */
+simple_lock_data_t	vm_object_list_lock;
+											/* lock for object list and count */
+
+ovl_object_t		kern_ovl_object;			/* the single kernel overlay object */
+ovl_object_t		vm_ovl_object;
+
 #endif /* _OVL_OBJECT_H_ */
