@@ -36,40 +36,40 @@
 #include <machine/ecoff_machdep.h>
 
 struct ecoff_filehdr {
-	u_short f_magic;	/* magic number */
-	u_short f_nscns;	/* # of sections */
-	u_int   f_timdat;	/* time and date stamp */
-	u_long  f_symptr;	/* file offset of symbol table */
-	u_int   f_nsyms;	/* # of symbol table entries */
-	u_short f_opthdr;	/* sizeof the optional header */
-	u_short f_flags;	/* flags??? */
+	u_short 			f_magic;		/* magic number */
+	u_short 			f_nscns;		/* # of sections */
+	u_int   			f_timdat;		/* time and date stamp */
+	u_long  			f_symptr;		/* file offset of symbol table */
+	u_int   			f_nsyms;		/* # of symbol table entries */
+	u_short 			f_opthdr;		/* sizeof the optional header */
+	u_short 			f_flags;		/* flags??? */
 };
 
 struct ecoff_aouthdr {
-	u_short magic;
-	u_short vstamp;
+	u_short 			magic;
+	u_short 			vstamp;
 	ECOFF_PAD
-	u_long  tsize;
-	u_long  dsize;
-	u_long  bsize;
-	u_long  entry;
-	u_long  text_start;
-	u_long  data_start;
-	u_long  bss_start;
+	u_long  			tsize;
+	u_long  			dsize;
+	u_long  			bsize;
+	u_long  			entry;
+	u_long  			text_start;
+	u_long  			data_start;
+	u_long  			bss_start;
 	ECOFF_MACHDEP;
 };
 
 struct ecoff_scnhdr {	/* needed for size info */
-	char	s_name[8];	/* name */
-	u_long  s_paddr;	/* physical addr? for ROMing?*/
-	u_long  s_vaddr;	/* virtual addr? */
-	u_long  s_size;		/* size */
-	u_long  s_scnptr;	/* file offset of raw data */
-	u_long  s_relptr;	/* file offset of reloc data */
-	u_long  s_lnnoptr;	/* file offset of line data */
-	u_short s_nreloc;	/* # of relocation entries */
-	u_short s_nlnno;	/* # of line entries */
-	u_int   s_flags;	/* flags */
+	char				s_name[8];		/* name */
+	u_long  			s_paddr;		/* physical addr? for ROMing?*/
+	u_long  			s_vaddr;		/* virtual addr? */
+	u_long  			s_size;			/* size */
+	u_long  			s_scnptr;		/* file offset of raw data */
+	u_long  			s_relptr;		/* file offset of reloc data */
+	u_long  			s_lnnoptr;		/* file offset of line data */
+	u_short 			s_nreloc;		/* # of relocation entries */
+	u_short 			s_nlnno;		/* # of line entries */
+	u_int   			s_flags;		/* flags */
 };
 
 struct ecoff_exechdr {
@@ -77,11 +77,125 @@ struct ecoff_exechdr {
 	struct ecoff_aouthdr a;
 };
 
+/* ECOFF symbol header */
+struct ecoff_symhdr {
+	int16_t				magic;			/* validity of the symbol table, this field must contain the constant magicSym, defined as 0x1992 */
+	int16_t				vstamp;			/* symbol table version stamp: maj_sym_stamp: 3 or min_sym_stamp: 13 */
+	int32_t				ilineMax;		/* number of line number entries */
+	int32_t				cbLine;			/* byte size of (packed) line number entries */
+	int32_t				cbLineOfset;	/* byte offset to start of (packed) line numbers */
+	int32_t				idnMax;			/* obsolete */
+	int32_t				cbDnOffset;		/* obsolete */
+	int32_t				ipdMax;			/* number of procedure descriptors */
+	int32_t				cbPdOffset;		/* byte offset to start of procedure descriptors */
+	int32_t				isymMax;		/* number of local symbols */
+	int32_t				cbSymOffset;	/* byte offset to start of local symbols */
+	int32_t				ioptMax;		/* byte size of optimization symbol table */
+	int32_t				cbOptOffset;	/* byte offset to start of optimization entries */
+	int32_t				iauxMax;		/* number of auxiliary symbols */
+	int32_t				cbAuxOffset;	/* byte offset to start of auxiliary symbols */
+	int32_t				issMax;			/* byte size of local string table */
+	int32_t				cbSsOffset;		/* byte offset to start of local strings */
+	int32_t				issExtMax;		/* byte size of external string table */
+	int32_t				cbSsExtOffset;	/* byte offset to start of external strings */
+	int32_t				ifdMax;			/* number of file descriptors */
+	int32_t				cbFdOffset;		/* byte offset to start of file descriptors */
+	int32_t				crfd;			/* number of relative file descriptors */
+	int32_t				cbRfdOffset;	/* byte offset to start of relative file descriptors */
+	int32_t				iextMax;		/* number of external symbols */
+	int32_t				cbExtOffset;	/* byte offset to start of external symbols */
+};
+
+/* ECOFF local symbol entry */
+struct ecoff_lsym {
+	long 				ls_value;		/* a field that can contain an address, size, offset, or index */
+	int 				ls_iss;			/* byte offset from the issBase field of a file descriptor table entry to the name of the symbol. -1 if no name for symbol */
+	uint				ls_type;		/* symbol type */
+	uint				ls_class;		/* storage class */
+	uint				ls_index;		/* an index into either the local symbol table or auxiliary symbol table, depending on the symbol type and class */
+};
+
+/* ECOFF external symbol entry */
+struct ecoff_esym {
+	struct	ecoff_lsyms es_lsym;		/* local symbol entry pointer */
+	int32_t				es_value;		/* symbol address for most defined symbols */
+	int32_t				es_iss;			/* byte offset in external string table to symbol name. -1 if no name for symbol */
+	uint				es_type:6;		/* symbol type */
+	uint				es_class:5;		/* storage class */
+	unsigned			es_symauxindex:20;	/* an index into the auxiliary symbol table for a type description or an index into the local symbol table to pointing to a related symbol */
+	uint				es_weakext;		/* flag set to identify the symbol as a weak external. */
+	u_int16_t			es_ifd;			/* index of the file descriptor where the symbol is defined. -1 for undefined symbols */
+	u_int16_t			es_flags;
+};
+
+/* ECOFF symbol type constants */
+enum symtype {
+	stNil,
+	stGlobal,
+	stStatic,
+	stParam,
+	stLocal,
+	stLabel,
+	stProc,
+	stBlock,
+	stEnd,
+	stMember,
+	stTypedef,
+	stFile,
+	stStaticProc,
+	stConstant,
+	stBase,
+	stVirtBase,
+	stTag,
+	stInter,
+	stModule,
+	stNamespace,
+	stModview,
+	stUsing,
+	stAlias
+};
+
+/* ECOFF storage class constants */
+enum strclass {
+	scNil,
+	scText,
+	scData,
+	scBss,
+	scRegister,
+	scAbs,
+	scUndefined,
+	scUnallocated,
+	scTlsUndefined,
+	scInfo,
+	scSData,
+	scSBss,
+	scRData,
+	scVar,
+	scCommon,
+	scSCommon,
+	scVarRegister,
+	scVariant,
+	scFileDesc,
+	scSUndefined,
+	scInit,
+	scReportDesc,
+	scXData,
+	scPData,
+	scFini,
+	scRConst,
+	scTlsCommon,
+	scTlsData,
+	scTlsBss,
+	scMax
+};
+
 #define ECOFF_HDR_SIZE (sizeof(struct ecoff_exechdr))
 
-#define ECOFF_OMAGIC 0407
-#define ECOFF_NMAGIC 0410
-#define ECOFF_ZMAGIC 0413
+#define ECOFF_OMAGIC 	0407
+#define ECOFF_NMAGIC 	0410
+#define ECOFF_ZMAGIC 	0413
+
+#define ECOFF_MAGIC_SYM 0x1992
 
 #define ECOFF_ROUND(value, by) 													\
         (((value) + (by) - 1) & ~((by) - 1))

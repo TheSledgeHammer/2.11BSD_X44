@@ -493,7 +493,6 @@ _bus_dmamap_destroy(t, map)
 	bus_dma_tag_t t;
 	bus_dmamap_t map;
 {
-
 	free(map, M_DEVBUF);
 }
 

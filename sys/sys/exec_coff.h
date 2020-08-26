@@ -31,6 +31,16 @@
 
 #include <machine/coff_machdep.h>
 
+/* coff basic abstract types */
+typedef int8_t			coff_char;
+typedef int16_t			coff_short;
+typedef int32_t			coff_int;
+typedef int64_t			coff_long;
+typedef uint8_t			coff_uchar;
+typedef uint16_t		coff_ushort;
+typedef uint32_t		coff_uint;
+typedef uint64_t		coff_ulong;
+
 /* COFF file header */
 struct coff_filehdr {
 	u_short	f_magic;	/* magic number */
@@ -80,9 +90,26 @@ struct coff_scnhdr {
 
 /* COFF shared library header */
 struct coff_slhdr {
-	long	entry_len;	/* in words */
-	long	path_index;	/* in words */
+	long	sl_entry_len;	/* in words */
+	long	sl_path_index;	/* in words */
 	char	sl_name[1];
+};
+
+/* COFF symbol table */
+struct coff_symtab {
+	char	n_name[8];		/* symbol name */
+	long	n_value;		/* value of symbol */
+	short	n_scnum;		/* section number */
+	u_short	n_type;			/* symbol type */
+	char	n_sclass;		/* storage class */
+	char	n_numaux;		/* auxiliary count */
+};
+
+/* COFF relocation entries */
+struct coff_reloc {
+	long	r_vaddr;		/* reference address */
+	long	r_symndx;		/* symbol index */
+	u_short	r_type;			/* type of relocation */
 };
 
 struct coff_exechdr {
@@ -94,24 +121,24 @@ struct coff_exechdr {
 
 #define COFF_ALIGN(a) ((a) & ~(COFF_LDPGSZ - 1))
 
-#define COFF_HDR_SIZE \
+#define COFF_HDR_SIZE 														\
 	(sizeof(struct coff_filehdr) + sizeof(struct coff_aouthdr))
 
-#define COFF_BLOCK_ALIGN(ap, value) \
-        ((ap)->a_magic == COFF_ZMAGIC ? COFF_ROUND(value, COFF_LDPGSZ) : \
+#define COFF_BLOCK_ALIGN(ap, value) 										\
+        ((ap)->a_magic == COFF_ZMAGIC ? COFF_ROUND(value, COFF_LDPGSZ) : 	\
          value)
 
-#define COFF_TXTOFF(fp, ap) \
-        ((ap)->a_magic == COFF_ZMAGIC ? 0 : \
-         COFF_ROUND(COFF_HDR_SIZE + (fp)->f_nscns * \
-		    sizeof(struct coff_scnhdr), \
+#define COFF_TXTOFF(fp, ap) 												\
+        ((ap)->a_magic == COFF_ZMAGIC ? 0 : 								\
+         COFF_ROUND(COFF_HDR_SIZE + (fp)->f_nscns * 						\
+		    sizeof(struct coff_scnhdr), 									\
 		    COFF_SEGMENT_ALIGNMENT(fp, ap)))
 
-#define COFF_DATOFF(fp, ap) \
+#define COFF_DATOFF(fp, ap) 												\
         (COFF_BLOCK_ALIGN(ap, COFF_TXTOFF(fp, ap) + (ap)->a_tsize))
 
-#define COFF_SEGMENT_ALIGN(fp, ap, value) \
-        (COFF_ROUND(value, ((ap)->a_magic == COFF_ZMAGIC ? COFF_LDPGSZ : \
+#define COFF_SEGMENT_ALIGN(fp, ap, value) 									\
+        (COFF_ROUND(value, ((ap)->a_magic == COFF_ZMAGIC ? COFF_LDPGSZ : 	\
          COFF_SEGMENT_ALIGNMENT(fp, ap))))
 
 #ifdef _KERNEL

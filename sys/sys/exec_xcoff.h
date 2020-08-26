@@ -197,14 +197,108 @@ typedef struct {
 typedef struct {
 	struct xcoff32_filehdr f;
 	struct xcoff32_aouthdr a;
-	struct xcoff32_scnhdr  s;
 } xcoff32_exechdr;
 
 typedef struct {
 	struct xcoff64_filehdr f;
 	struct xcoff64_aouthdr a;
-	struct xcoff64_scnhdr  s;
 } xcoff64_exechdr;
+
+/* XCOFF relocation entry */
+typedef struct {
+	uint32_t	r_vaddr;		/* virtual address (position) in section to be relocated */
+	uint32_t	r_symndx;		/* symbol table index of item that is referenced */
+	uint8_t		r_rsize;		/* relocation size and information */
+	uint8_t		r_rtype;		/* relocation type */
+} xcoff32_reloc;
+
+typedef struct {
+	uint64_t	r_vaddr;		/* virtual address (position) in section to be relocated */
+	uint32_t	r_symndx;		/* symbol table index of item that is referenced */
+	uint8_t		r_rsize;		/* relocation size and information */
+	uint8_t		r_rtype;		/* relocation type */
+} xcoff64_reloc;
+
+/* r_rtype fields */
+#define XCOFF_RTYPE_POS				0x00
+#define XCOFF_RTYPE_NEG				0x01
+#define XCOFF_RTYPE_REL				0x02
+#define XCOFF_RTYPE_TOC				0x03
+#define XCOFF_RTYPE_TRL				0x04
+#define XCOFF_RTYPE_TRLA			0x13
+#define XCOFF_RTYPE_GL				0x05
+#define XCOFF_RTYPE_TCL				0x06
+#define XCOFF_RTYPE_RL				0x0C
+#define XCOFF_RTYPE_RLA				0x0D
+#define XCOFF_RTYPE_REF				0x0F
+#define XCOFF_RTYPE_BA				0x08
+#define XCOFF_RTYPE_RBA				0x18
+#define XCOFF_RTYPE_BR				0x0A
+#define XCOFF_RTYPE_RBR				0x1A
+#define XCOFF_RTYPE_TLS				0x20
+#define XCOFF_RTYPE_TLS_IE			0x21
+#define XCOFF_RTYPE_TLS_LD			0x22
+#define XCOFF_RTYPE_TLS_LE			0x23
+#define XCOFF_RTYPE_TLSM			0x24
+#define XCOFF_RTYPE_TLSML			0x25
+#define XCOFF_RTYPE_TOCU			0x30
+#define XCOFF_RTYPE_TOCL			0x31
+
+/* XCOFF symbol entries */
+typedef struct {
+	char		n_name[8];		/* symbol name (occupies the same 8 bytes as n_zeroes and n_offset) */
+	int32_t 	n_zeroes;		/* zero, indicating name in string table or .debug section (overlays first 4 bytes of n_name) */
+	int32_t 	n_offset;		/* offset of the name in string table or .debug section (In XCOFF32: overlays last 4 bytes of n_name) */
+	int32_t 	n_value;		/* symbol value; storage class-dependent */
+	int16_t 	n_scnum;		/* section number of symbol */
+	int16_t 	n_type;			/* basic and derived type specification */
+	int8_t 		n_lang;			/* source language ID (overlays first byte of n_type) */
+	int8_t 		n_cpu;			/* CPU Type ID (overlays second byte of n_type) */
+	int8_t 		n_sclass;		/* storage class of symbol */
+	int8_t 		n_numaux;		/* number of auxiliary entries */
+} xcoff32_syms;
+
+typedef struct {
+	char		n_name[8];		/* symbol name (occupies the same 8 bytes as n_zeroes and n_offset) */
+	int32_t 	n_zeroes;		/* zero, indicating name in string table or .debug section (overlays first 4 bytes of n_name) */
+	int32_t 	n_offset;		/* offset of the name in string table or .debug section (In XCOFF32: overlays last 4 bytes of n_name) */
+	int64_t 	n_value;		/* symbol value; storage class-dependent */
+	int16_t 	n_scnum;		/* section number of symbol */
+	int16_t 	n_type;			/* basic and derived type specification */
+	int8_t 		n_lang;			/* source language ID (overlays first byte of n_type) */
+	int8_t 		n_cpu;			/* CPU Type ID (overlays second byte of n_type) */
+	int8_t 		n_sclass;		/* storage class of symbol */
+	int8_t 		n_numaux;		/* number of auxiliary entries */
+} xcoff64_syms;
+
+/* XCOFF storage class constants */
+enum strclass {
+	scC_EXT,
+	scC_WEAKEST,
+	scC_HIDEXT,
+	scC_FCN,
+	scC_BLOCK,
+	scC_STAT,
+	scC_GSYM,
+	scC_BCOMM,
+	scC_DECL,
+	scC_ENTRY,
+	scC_ESTAT,
+	scC_ECOMM,
+	scC_FUN,
+	scC_STSYM,
+	scC_BINCL,
+	scC_EINCL,
+	scC_INFO,
+	scC_FILE,
+	scC_BSTAT,
+	scC_LSYM,
+	scC_PSYM,
+	scC_RPSYM,
+	scC_RSYM,
+	scC_ECOML,
+	scC_DWARF
+};
 
 #define XCOFF32_HDR_SIZE (sizeof(struct xcoff32_exechdr))
 #define XCOFF64_HDR_SIZE (sizeof(struct xcoff64_exechdr))
@@ -221,15 +315,18 @@ typedef struct {
 #define xcoff_filehdr		xcoff32_filehdr
 #define xcoff_aouthdr		xcoff32_aouthdr
 #define xcoff_scnhdr		xcoff32_scnhdr
+#define xcoff_reloc			xcoff32_reloc
+#define xcoff_syms			xcoff32_syms
 
 #define xcoff_exechdr		xcoff32_exechdr
 #define XCOFF_HDR_SIZE		XCOFF32_HDR_SIZE
 #define XCOFF_F_MAGIC		XCOFF_F_32_MAGIC
-
 #elif defined(XCOFFSIZE) && (XCOFFSIZE == 64)
 #define xcoff_filehdr		xcoff64_filehdr
 #define xcoff_aouthdr		xcoff64_aouthdr
 #define xcoff_scnhdr		xcoff64_scnhdr
+#define xcoff_reloc			xcoff64_reloc
+#define xcoff_syms			xcoff64_syms
 
 #define xcoff_exechdr		xcoff64_exechdr
 #define XCOFF_HDR_SIZE		XCOFF64_HDR_SIZE

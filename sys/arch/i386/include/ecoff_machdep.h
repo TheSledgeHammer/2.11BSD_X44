@@ -59,43 +59,4 @@ struct 	exec_linker;
 //void	cpu_exec_ecoff_setregs (struct proc *, struct exec_linker *, u_long);
 #endif	/* _KERNEL */
 
-struct ecoff_symhdr {
-	int16_t		magic;
-	int16_t		vstamp;
-	int32_t		ilineMax;
-	int32_t		cbLine;
-	int32_t		cbLineOffset;
-	int32_t		idnMax;
-	int32_t		cbDnOffset;
-	int32_t		ipdMax;
-	int32_t		cbPdOffset;
-	int32_t		isymMax;
-	int32_t		cbSymOffset;
-	int32_t		ioptMax;
-	int32_t		cbOptOffset;
-	int32_t		iauxMax;
-	int32_t		cbAuxOffset;
-	int32_t		issMax;
-	int32_t		cbSsOffset;
-	int32_t		issExtMax;
-	int32_t		cbSsExtOffset;
-	int32_t		ifdMax;
-	int32_t		cbFdOffset;
-	int32_t		crfd;
-	int32_t		cbRfdOffset;
-	int32_t		iextMax;
-	int32_t		cbExtOffset;
-};
-
-struct ecoff_extsym {
-	u_int16_t	es_flags;
-	u_int16_t	es_ifd;
-	int32_t		es_strindex;
-	int32_t		es_value;
-	unsigned	es_type:6;
-	unsigned	es_class:5;
-	unsigned	:1;
-	unsigned	es_symauxindex:20;
-};
-
 #endif /* _I386_ECOFF_MACHDEP_H_ */

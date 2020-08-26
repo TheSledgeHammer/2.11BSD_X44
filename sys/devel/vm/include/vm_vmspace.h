@@ -51,6 +51,7 @@
 struct vmspace {
 	struct	vm_map 	 vm_map;		/* VM address map */
 	struct	pmap 	 vm_pmap;		/* private physical map */
+	struct	extent	 *vm_extent;	/* extent manager */
 
 	int				 vm_refcnt;		/* number of references */
 	caddr_t			 vm_shm;		/* SYS5 shared memory private data XXX */

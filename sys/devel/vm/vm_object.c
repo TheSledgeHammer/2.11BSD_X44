@@ -104,7 +104,7 @@ struct vm_object	kmem_object_store;
 
 #define	VM_OBJECT_HASH_COUNT	157
 
-int	vm_cache_max = 100;	/* can patch if necessary */
+int		vm_cache_max = 100;	/* can patch if necessary */
 struct	vm_object_hash_head vm_object_hashtable[VM_OBJECT_HASH_COUNT];
 
 long	object_collapses = 0;
