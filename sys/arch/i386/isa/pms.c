@@ -48,6 +48,7 @@
 #include <sys/proc.h>
 #include <sys/vnode.h>
 #include <sys/device.h>
+#include <sys/user.h>
 
 #include <machine/cpu.h>
 #include <machine/intr.h>

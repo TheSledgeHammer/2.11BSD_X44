@@ -126,13 +126,13 @@
 #include <sys/device.h>
 #include <sys/queue.h>
 #include <sys/malloc.h>
+#include <sys/user.h>
 
 #include <machine/bus.h>
 #include <machine/intr.h>
 
-#include <dev/scsipi/scsi_all.h>
-#include <dev/scsipi/scsipi_all.h>
-#include <dev/scsipi/scsiconf.h>
+#include <dev/scsi/scsi_all.h>
+#include <dev/scsi/scsiconf.h>
 
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>

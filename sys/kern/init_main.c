@@ -144,6 +144,8 @@ main(framep)
 
 	startup();
 
+	kmemmapinit();
+
 	ksyms_init();
 
 	/*
@@ -479,8 +481,6 @@ binit()
 		bp = &buf[i];
 		bp->b_dev = NODEV;
 		bp->b_bcount = 0;
-		//bp->b_un.b_addr = (caddr_t)loint(paddr);
-		//bp->b_xmem = hiint(paddr);
 		_binsheadfree(bp, TAILQ_FIRST(&bufqueues));
 		_binshash(bp, TAILQ_FIRST(&bufqueues));
 		bp->b_flags = B_BUSY|B_INVAL;

@@ -168,7 +168,7 @@ typedef struct lock       	*lock_t;
 struct proc;
 
 void			lockinit (struct lock *, int prio, char *wmesg, int timo, int flags);
-int				lockmgr (__volatile struct lock *, u_int flags, struct simplelock *, struct proc *p);
+int				lockmgr (__volatile struct lock *, u_int flags, struct simplelock *, struct proc *p); /* TODO: Replace proc with pid, once threads are implemented */
 int				lockstatus (struct lock *);
 
 void			set_proc_lock(struct lock *, struct proc *);

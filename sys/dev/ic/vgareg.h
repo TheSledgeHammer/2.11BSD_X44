@@ -1,7 +1,9 @@
-/*	$NetBSD: comvar.h,v 1.5 1996/05/05 19:50:47 christos Exp $	*/
+/* $OpenBSD: vgareg.h,v 1.5 2009/02/01 14:37:22 miod Exp $ */
+/* $NetBSD: vgareg.h,v 1.2 1998/05/28 16:48:41 drochner Exp $ */
 
 /*
- * Copyright (c) 1996 Christopher G. Demetriou.  All rights reserved.
+ * Copyright (c) 1998
+ *	Matthias Drochner.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -11,12 +13,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *      This product includes software developed by Christopher G. Demetriou
- *	for the NetBSD Project.
- * 4. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -28,22 +24,33 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
-struct commulti_attach_args {
-	int					ca_slave;		/* slave number */
+struct reg_vgaattr { /* indexed via port 0x3c0 */
+	u_int8_t palette[16];
+	u_int8_t mode, overscan, colplen, horpixpan;
+	u_int8_t colreset, misc;
+} __packed;
+#define VGA_ATC_INDEX 0
+#define VGA_ATC_DATAW 0
+#define VGA_ATC_DATAR 1
 
-	bus_chipset_tag_t 	ca_bc;
-	bus_io_handle_t 	ca_ioh;
-	int					ca_iobase;
-	int					ca_noien;
-};
+struct reg_vgats { /* indexed via port 0x3c4 */
+	u_int8_t syncreset, mode, wrplmask, fontsel, memmode;
+} __packed;
+#define VGA_TS_INDEX 4
+#define VGA_TS_DATA 5
 
-int comprobe1 (bus_chipset_tag_t, bus_io_handle_t, int);
-int comintr (void *);
+struct reg_vgagdc { /* indexed via port 0x3ce */
+	u_int8_t setres, ensetres, colorcomp, rotfunc;
+	u_int8_t rdplanesel, mode, misc, colorcare;
+	u_int8_t bitmask;
+} __packed;
+#define VGA_GDC_INDEX 	0xe
+#define VGA_GDC_DATA 	0xf
 
-extern int 					comconsaddr;
-extern int 					comconsattached;
-extern bus_chipset_tag_t 	comconsbc;
-extern bus_io_handle_t 		comconsioh;
-extern tcflag_t 			comconscflag;
+#define	VGA_DAC_MASK	0x06	/* pixel write mask */
+#define	VGA_DAC_READ	0x07	/* palette read address */
+#define	VGA_DAC_WRITE	0x08	/* palette write address */
+#define	VGA_DAC_DATA	0x09	/* palette data register */

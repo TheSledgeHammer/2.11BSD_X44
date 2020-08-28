@@ -33,8 +33,8 @@
 #include "devel/sys/rwlock.h"
 #include "devel/sys/kthread.h"
 
-extern struct kthread 		kthread0;
-struct kthread *curkthread = &kthread0;
+extern struct kthread 			kthread0;
+struct kthread *curkthread = 	&kthread0;
 
 void
 startkthread(kt)
@@ -44,8 +44,11 @@ startkthread(kt)
     kt = &kthread0;
     curkthread = kt;
 
-    /* Set thread to idle & waiting */
-    kt->kt_stat |= TSIDL | TSWAIT | TSREADY;
+    /* Set kthread to idle & waiting */
+    kt->kt_stat |= KTSIDL | KTSWAIT | KTSREADY;
+
+    /* init kthread queues */
+    ktqinit();
 
     /* setup kthread locks */
     kthread_lock_init(kthread_lkp, kt);
@@ -62,9 +65,12 @@ kthread_create(p)
 	if(!proc0.p_stat) {
 		panic("kthread_create called too soon");
 	}
+
 	if(kt == NULL) {
 		startkthread(kt);
 	}
+
+	return (0);
 }
 
 int
@@ -108,6 +114,41 @@ kthread_kill(kthread_t kt)
 
 }
 
+/*
+ * init the kthread queues
+ */
+void
+ktqinit()
+{
+	register struct kthread *kt;
+
+	freekthread = NULL;
+	for (kt = kthreadNKTHREAD; --kt > kthread0; freekthread = kt)
+		kt->kt_nxt = freekthread;
+
+	allkthread = p;
+	kt->kt_nxt = NULL;
+	kt->kt_prev = &allkthread;
+
+	zombkthread = NULL;
+}
+
+/*
+ * Locate a kthread by number
+ */
+struct kthread *
+ktfind(pid)
+	register int pid;
+{
+	register struct kthread *kt;
+	for (kt = PIDHASH(pid); kt != 0; kt = kt->kt_hash.le_next) {
+		if(kt->kt_tid == pid) {
+			return (kt);
+		}
+	}
+	return (NULL);
+}
+
 /* Threadpool's FIFO Queue (IPC) */
 void
 kthreadpool_itc_send(ktpool, itc)
@@ -148,6 +189,10 @@ kthread_lock_init(lkp, kt)
     int error = 0;
     lockinit(lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo, lkp->lk_flags);
     set_kthread_lock(lkp, kt);
+    if(lkp->lk_ktlockholder == NULL) {
+    	panic("kthread lock unavailable");
+    	error = EBUSY;
+    }
     return (error);
 }
 
@@ -163,7 +208,7 @@ kthread_lockmgr(lkp, flags, kt)
     } else {
         pid = LK_KERNPROC;
     }
-    return lockmgr(lkp, flags, lkp->lk_lnterlock, kt->kt_procp);
+    return lockmgr(lkp, flags, lkp->lk_lnterlock, pid);
 }
 
 /* Initialize a rwlock on a kthread
@@ -192,4 +237,158 @@ kthread_rwlockmgr(rwl, flags, kt)
 		pid = LK_KERNPROC;
 	}
 	return rwlockmgr(rwl, flags, pid);
+}
+
+int
+newkthread(p, isvfork)
+	struct proc *p;
+	int isvfork;
+{
+	struct kthread *kt1, *kt2;
+	static int mpid, pidchecked = 0;
+	register_t *retval;
+	mpid++;
+retry:
+	if (mpid >= PID_MAX) {
+		mpid = 100;
+		pidchecked = 0;
+	}
+	if (mpid >= pidchecked) {
+		int doingzomb = 0;
+
+		pidchecked = PID_MAX;
+
+		kt2 = allkthread;
+again:
+	for (; kt2 != NULL; kt2 = kt2->kt_nxt) {
+			while (kt2->kt_tid == mpid || kt2->kt_pgrp->pg_id == mpid) {
+				mpid++;
+				if (mpid >= pidchecked)
+					goto retry;
+			}
+			if (kt2->kt_tid > mpid && pidchecked > kt2->kt_tid)
+				pidchecked = kt2->kt_tid;
+			if (kt2->kt_pgrp->pg_id > mpid && pidchecked > kt2->kt_pgrp->pg_id)
+				pidchecked = kt2->kt_pgrp->pg_id;
+		}
+		if (!doingzomb) {
+			doingzomb = 1;
+			kt2 = zombkthread;
+			goto again;
+		}
+	}
+	if ((kt2 = freekthread) == NULL)
+		panic("no kthreads");
+
+	freekthread = kt2->kt_nxt; 				/* off freekthread */
+
+	/*
+	 * Make a kthread table entry for the new kthread.
+	 */
+	nproc++;
+	kt1 = p->p_kthreado;
+	kt2->kt_stat = KTSIDL;
+	kt2->kt_tid = mpid;
+	kt2->kt_realtimer.it_value = 0;
+	kt2->kt_flag = P_SLOAD;
+	kt2->kt_uid = kt1->kt_uid;
+	kt2->kt_pgrp = kt1->kt_pgrp;
+	kt2->kt_nice = kt1->kt_nice;
+	kt2->kt_ptid = kt1->kt_tid;
+	kt2->kt_pptr = kt1;
+	kt2->kt_rtime = 0;
+	kt2->kt_cpu = 0;
+	kt2->kt_sigmask = kt1->kt_sigmask;
+	kt2->kt_sigcatch = kt1->kt_sigcatch;
+	kt2->kt_sigignore = kt1->kt_sigignore;
+	/* take along any pending signals like stops? */
+	kt2->kt_wchan = 0;
+	kt2->kt_slptime = 0;
+
+	LIST_INSERT_HEAD(PIDHASH(kt2->kt_tid), kt1->kt_procp, p_hash);
+
+	kt2->kt_nxt = allkthread;				/* onto allkthread */
+	kt2->kt_nxt->kt_prev = &kt2->kt_nxt;	/* (allkthread is never NULL) */
+	kt2->kt_prev = &allkthread;
+	allkthread = kt2;
+
+	bzero(&kt2->kt_startzero, (unsigned) ((caddr_t)&kt2->kt_endzero - (caddr_t)&kt2->kt_startzero));
+	bzero(&kt1->kt_startzero, (unsigned) ((caddr_t)&kt2->kt_endzero - (caddr_t)&kt2->kt_startzero));
+
+	kt2->kt_flag = P_INMEM;
+	MALLOC(kt2->kt_cred, struct pcred *, sizeof(struct pcred), M_SUBPROC, M_WAITOK);
+	bcopy(kt1->kt_cred, kt2->kt_cred, sizeof(*kt2->kt_cred));
+	kt2->kt_cred->p_refcnt = 1;
+	crhold(kt1->kt_ucred);
+
+	/* bump references to the text vnode (for procfs) */
+	kt2->kt_textvp = kt1->kt_textvp;
+	if (kt2->kt_textvp)
+		VREF(kt2->kt_textvp);
+
+	kt2->kt_fd = fdcopy(kt1);
+
+	if (kt1->kt_limit->p_lflags & PL_SHAREMOD)
+		kt2->kt_limit = limcopy(kt1->kt_limit);
+	else {
+		kt2->kt_limit = kt1->kt_limit;
+		kt2->kt_limit->p_refcnt++;
+	}
+
+	if (kt1->kt_session->s_ttyvp != NULL && (kt1->kt_flag & P_CONTROLT))
+		kt2->kt_flag |= P_CONTROLT;
+
+	if (isvfork)
+		kt2->kt_flag |= P_PPWAIT;
+
+	kt2->kt_pgrpnxt = kt1->kt_pgrpnxt;
+	kt1->kt_pgrpnxt = kt2;
+	kt2->kt_pptr = kt1;
+	kt2->kt_ostptr = kt1->kt_cptr;
+	if (kt1->kt_cptr)
+		kt1->kt_cptr->kt_ysptr = kt2;
+	kt1->kt_cptr = kt2;
+
+	/*
+	 * set priority of child to be that of parent
+	 */
+	kt2->kt_estcpu = kt1->kt_estcpu;
+
+	kt1->kt_flag |= P_NOSWAP;
+	retval[0] = kt1->kt_tid;
+	retval[1] = 1;
+	if(vm_kthread_fork(kt1, kt2, isvfork)) {
+		/*
+		 * Child process.  Set start time and get to work.
+		 */
+		(void) splclock();
+		kt2->kt_stats->p_start = time;
+		(void) spl0();
+		kt2->kt_acflag = AFORK;
+		return (0);
+	}
+
+	kt2->kt_stat = KTSRUN;
+
+	kt1->kt_flag |= P_NOSWAP;
+
+	retval[0] = kt2->kt_tid;
+	retval[1] = 0;
+	return (0);
+}
+
+int
+vm_kthread_fork(kt1, kt2, isvfork)
+	struct kthread *kt1, *kt2;
+	int isvfork;
+{
+
+	return (cpu_kthread_fork(kt1, kt2));
+}
+
+int
+cpu_kthread_fork(kt1, kt2)
+	struct kthread *kt1, *kt2;
+{
+	return (0);
 }

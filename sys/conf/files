@@ -160,9 +160,8 @@ file 	dev/md.c							md				needs-flag
 file 	dev/mulaw.c							mulaw			needs-flag
 file 	dev/vnd.c							vnd				needs-flag
 #file	dev/cninit.c
-#file	dev/cons.c
-#file	dev/kobj.c
-#file	dev/ksyms.c
+file	dev/kobj.c
+file	dev/ksyms.c
 
 #ddb sources
 file 	ddb/db_access.c						ddb

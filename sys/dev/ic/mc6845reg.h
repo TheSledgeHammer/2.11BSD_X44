@@ -1,7 +1,9 @@
-/*	$NetBSD: comvar.h,v 1.5 1996/05/05 19:50:47 christos Exp $	*/
+/* $OpenBSD: mc6845reg.h,v 1.2 2004/04/02 04:39:50 deraadt Exp $ */
+/* $NetBSD: mc6845reg.h,v 1.1 1998/05/28 16:48:40 drochner Exp $ */
 
 /*
- * Copyright (c) 1996 Christopher G. Demetriou.  All rights reserved.
+ * Copyright (c) 1998
+ *	Matthias Drochner.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -11,12 +13,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *      This product includes software developed by Christopher G. Demetriou
- *	for the NetBSD Project.
- * 4. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -28,22 +24,17 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
-struct commulti_attach_args {
-	int					ca_slave;		/* slave number */
-
-	bus_chipset_tag_t 	ca_bc;
-	bus_io_handle_t 	ca_ioh;
-	int					ca_iobase;
-	int					ca_noien;
+struct reg_mc6845 { /* indexed via port 0x3d4 (mono 0x3b4) */
+	char htotal, hdisple, hblanks, hblanke;
+	char hsyncs, hsynce, vtotal, overfll;
+	char irowaddr, maxrow, curstart, curend;
+	char startadrh, startadrl, cursorh, cursorl;
+	char vsyncs, vsynce, vde, offset;
+	char uloc, vbstart, vbend, mode;
+	char splitl;
 };
-
-int comprobe1 (bus_chipset_tag_t, bus_io_handle_t, int);
-int comintr (void *);
-
-extern int 					comconsaddr;
-extern int 					comconsattached;
-extern bus_chipset_tag_t 	comconsbc;
-extern bus_io_handle_t 		comconsioh;
-extern tcflag_t 			comconscflag;
+#define MC6845_INDEX 4
+#define MC6845_DATA 5

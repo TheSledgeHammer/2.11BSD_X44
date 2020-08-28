@@ -91,6 +91,7 @@
 
 #include <machine/pio.h>
 #include <machine/cpufunc.h>
+#include <machine/segments.h>
 
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>
@@ -167,8 +168,7 @@ isa_defaultirq()
 
 	/* icu vectors */
 	for (i = 0; i < ICU_LEN; i++)
-		setgate(&idt[ICU_OFFSET + i], IDTVEC(intr)[i], 0, SDT_SYS386IGT,
-				SEL_KPL);
+		setgate(&idt[ICU_OFFSET + i], IDTVEC(intr)[i], 0, SDT_SYS386IGT, SEL_KPL);
 
 	/* initialize 8259's */
 	outb(IO_ICU1, 0x11);				/* reset; program device, four bytes */

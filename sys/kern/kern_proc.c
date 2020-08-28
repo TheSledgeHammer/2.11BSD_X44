@@ -74,7 +74,6 @@ struct uidinfo {
 LIST_HEAD(uihashhead, uidinfo) *uihashtbl;
 u_long	uihash;					/* size of hash table - 1 */
 
-
 struct pidhashhead *pidhashtbl;
 u_long pidhash;
 struct pgrphashhead *pgrphashtbl;

@@ -106,14 +106,14 @@
 #define	LEMAC_RX_DBE		0x04	/* Dribble Bit Error */
 #define	LEMAC_RX_MCM		0x08	/* Multicast Match */
 #define	LEMAC_RX_IAM		0x10	/* Individual Address Match */
-#define	LEMAC_RX_OK		0x80	/* No Errors */
+#define	LEMAC_RX_OK			0x80	/* No Errors */
 
 /* Transmit Status Definitions (not valid if TXD == 0) */
 
 #define	LEMAC_TS_RTRYMSK	0x0F	/* Retries of last TX PDU */
 #define	LEMAC_TS_ECL		0x10	/* Excessive collision of ... */
 #define	LEMAC_TS_LCL		0x20	/* Late collision of ... */
-#define	LEMAC_TS_ID		0x40	/* Initially Deferred  ... */
+#define	LEMAC_TS_ID			0x40	/* Initially Deferred  ... */
 #define	LEMAC_TS_NCL		0x08	/* No carrier loopback ... */
 
 /* Transmit Control Definitions */
@@ -151,7 +151,7 @@
 #define	LEMAC_CS_MBZ4		0x10	/* MBZ */
 #define	LEMAC_CS_MCE		0x20	/* Multicast Enable */
 #define	LEMAC_CS_PME		0x40	/* Promiscuous Mode Enable */
-#define	LEMAC_CS_RA		0x80	/* Runt Accept */
+#define	LEMAC_CS_RA			0x80	/* Runt Accept */
 
 /* Control Definitions */
 
@@ -171,7 +171,7 @@
 #define	LEMAC_IC_IRQ10		0x20	/*   Select IRQ 10 */
 #define	LEMAC_IC_IRQ11		0x40	/*   Select IRQ 11 */
 #define	LEMAC_IC_IRQ15		0x60	/*   Select IRQ 15 */
-#define	LEMAC_IC_IE		0x80	/* Interrupt Enable */
+#define	LEMAC_IC_IE			0x80	/* Interrupt Enable */
 
 /* I/O Page Definitions */
 

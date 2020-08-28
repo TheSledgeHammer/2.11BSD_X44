@@ -35,6 +35,7 @@
 #include <sys/proc.h>
 #include <sys/vnode.h>
 #include <sys/device.h>
+#include <sys/user.h>
 
 #include <machine/cpu.h>
 #include <machine/bus.h>
@@ -151,8 +152,7 @@ lmsattach(parent, self, aux)
 	sc->sc_ioh = ioh;
 	sc->sc_state = 0;
 
-	sc->sc_ih = isa_intr_establish(ia->ia_ic, ia->ia_irq, IST_PULSE,
-	    IPL_TTY, lmsintr, sc);
+	sc->sc_ih = isa_intr_establish(ia->ia_ic, ia->ia_irq, IST_PULSE, IPL_TTY, lmsintr, sc);
 }
 
 int

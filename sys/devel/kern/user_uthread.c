@@ -65,6 +65,7 @@ uthread_create(kt)
 	if(ut == NULL) {
 		startuthread(ut);
 	}
+	return (0);
 }
 
 int
@@ -109,6 +110,22 @@ uthread_kill(uthread_t ut)
 
 }
 
+/*
+ * Locate a uthread by number
+ */
+struct uthread *
+utfind(pid)
+	register int pid;
+{
+	register struct uthread *ut;
+	for (ut = PIDHASH(pid); ut != 0; ut = ut->ut_hash.le_next) {
+		if(ut->ut_tid == pid) {
+			return (ut);
+		}
+	}
+	 return (NULL);
+}
+
 void
 uthreadpool_itc_send(utpool, itc)
     struct uthreadpool *utpool;
@@ -148,6 +165,10 @@ uthread_lock_init(lkp, ut)
     int error = 0;
     lockinit(lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo, lkp->lk_flags);
     set_uthread_lock(lkp, ut);
+    if(lkp->lk_utlockholder == NULL) {
+    	panic("uthread lock unavailable");
+    	error = EBUSY;
+    }
     return (error);
 }
 
@@ -163,7 +184,7 @@ uthread_lockmgr(lkp, flags, ut)
     } else {
         pid = LK_KERNPROC;
     }
-    return lockmgr(lkp, flags, lkp->lk_lnterlock, ut->ut_userp->u_procp);
+    return lockmgr(lkp, flags, lkp->lk_lnterlock, pid);
 }
 
 /* Initialize a rwlock on a uthread

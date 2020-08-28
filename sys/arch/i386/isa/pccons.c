@@ -529,8 +529,7 @@ pcattach(parent, self, aux)
 	printf(": %s\n", vs.color ? "color" : "mono");
 	do_async_update((void *)1);
 
-	sc->sc_ih = isa_intr_establish(ia->ia_ic, ia->ia_irq, IST_EDGE,
-	    IPL_TTY, pcintr, sc);
+	sc->sc_ih = isa_intr_establish(ia->ia_ic, ia->ia_irq, IST_EDGE, IPL_TTY, pcintr, sc);
 
 	/*
 	 * Look for children of the keyboard controller.

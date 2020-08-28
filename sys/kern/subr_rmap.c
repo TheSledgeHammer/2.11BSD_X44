@@ -27,6 +27,10 @@
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 
+extern size_t physmem;
+extern struct mapent _coremap[];
+extern struct mapent _swapmap[];
+
 /*
  * Resource map handling routines.
  *
@@ -312,4 +316,24 @@ resolve:
 					break;
 			}
 	return(a[2]);
+}
+
+/* 2.11BSD related memory maps */
+void
+kmemmapinit()
+{
+	struct mapent __coremap[0] = &_coremap[0];
+	struct mapent __swapmap[0] = &_swapmap[0];
+
+	if(__coremap[0] == NULL) {
+		MALLOC(__coremap[0], struct mapent, sizeof(struct mapent), M_COREMAP, M_WAITOK);
+	}
+	if(__swapmap[0] == NULL) {
+		MALLOC(__swapmap[0], struct mapent, sizeof(struct mapent), M_SWAPMAP, M_WAITOK);
+	}
+
+	printf("phys mem  = %D\n", ctob((long)physmem));
+	printf("avail mem in coremap = %D\n", ctob((long)__coremap[0].m_size));
+	maxmem = MAXMEM;
+	printf("user mem  = %D\n", ctob((long)MAXMEM));
 }

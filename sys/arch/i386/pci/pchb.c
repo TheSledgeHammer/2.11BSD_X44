@@ -40,6 +40,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>
+#include <sys/user.h>
 
 #include <machine/bus.h>
 
@@ -48,11 +49,11 @@
 
 #include <dev/pci/pcidevs.h>
 
-#define PCISET_BRIDGETYPE_MASK	0x3
-#define PCISET_TYPE_COMPAT	0x1
-#define PCISET_TYPE_AUX		0x2
+#define PCISET_BRIDGETYPE_MASK		0x3
+#define PCISET_TYPE_COMPAT			0x1
+#define PCISET_TYPE_AUX				0x2
 
-#define PCISET_BUSCONFIG_REG	0x48
+#define PCISET_BUSCONFIG_REG		0x48
 #define PCISET_BRIDGE_NUMBER(reg)	(((reg) >> 8) & 0xff)
 #define PCISET_PCI_BUS_NUMBER(reg)	(((reg) >> 16) & 0xff)
 

@@ -297,7 +297,7 @@ hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	case HW_PHYSMEM:
 		return (sysctl_rdlong(oldp, oldlenp, newp, ctob((long)physmem)));
 	case HW_USERMEM:
-		return (sysctl_rdlong(oldp, oldlenp, newp, ctob((long)freemem)));
+		return (sysctl_rdlong(oldp, oldlenp, newp, ctob((long)physmem - cnt.v_wire_count)));
 	case HW_PAGESIZE:
 		return (sysctl_rdint(oldp, oldlenp, newp, PAGE_SIZE));
 	default:

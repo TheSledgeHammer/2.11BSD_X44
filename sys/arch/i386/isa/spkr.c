@@ -23,6 +23,7 @@
 #include <sys/malloc.h>
 #include <sys/uio.h>
 #include <sys/proc.h>
+#include <sys/user.h>
 
 #include <machine/cpu.h>
 #include <machine/pio.h>
@@ -70,7 +71,7 @@ struct cfdriver spkr_cd = {
 static void endtone (void *);
 static void tone (u_int, u_int);
 static void endrest (void *);
-static void rest (int));
+static void rest (int);
 static void playinit (void);
 static void playtone (int, int, int);
 static void playstring (char *, int);

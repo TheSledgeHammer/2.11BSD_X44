@@ -57,8 +57,6 @@
  *  dufault@hda.com (Peter Dufault)
  */
 
-#include "rnd.h"
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
@@ -75,9 +73,7 @@
 #include <sys/queue.h>
 #include <sys/proc.h>
 #include <sys/fdio.h>
-#if NRND > 0
-#include <sys/rnd.h>
-#endif
+#include <sys/user.h>
 
 #include <dev/cons.h>
 
@@ -91,6 +87,7 @@
 #include <dev/isa/isadmavar.h>
 #include <i386/isa/fdreg.h>
 
+#include <dev/ic/nec765reg.h>
 #include <dev/ic/mc146818reg.h>			/* for NVRAM access */
 #include <dev/isa/rtc.h>
 

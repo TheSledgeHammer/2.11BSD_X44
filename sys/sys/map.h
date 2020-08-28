@@ -53,11 +53,7 @@ struct map *kmemmap, *mbmap;
 struct map *coremap[1];																	/* space for core allocation */
 struct map *swapmap[1];																	/* space for swap allocation */
 int	nswapmap;
-#else
-struct map *coremap[1];																	/* space for core allocation */
-struct map *swapmap[1];																	/* space for swap allocation */
-#endif
-#ifdef _KERNEL
+
 long 	rmalloc (struct map *mp, long size); 											/* Allocate units from the given map. */
 void 	rmfree (struct map *mp, long size, long addr); 									/* Free the previously allocated units at addr into the specified map.*/
 long 	rmalloc3 (struct map *mp, long d_size, long s_size, long u_size, long a[3]);	/* Allocate resources for the three segments of a process.*/

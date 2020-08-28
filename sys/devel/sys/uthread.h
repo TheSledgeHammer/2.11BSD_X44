@@ -33,6 +33,7 @@
 #include <sys/user.h>
 
 /* user threads */
+typedef struct uthread 	*uthread_t;
 struct uthread {
 	struct uthread		*ut_nxt;		/* linked list of allocated thread slots */
 	struct uthread		**ut_prev;
@@ -44,8 +45,8 @@ struct uthread {
 	char 				ut_stat;		/* TS* thread status. */
 	char 				ut_lock;		/* Thread lock count. */
 
-	short 				ut_tid;			/* unique thread id */
-	short 				ut_ptid;		/* thread id of parent */
+	pid_t 				ut_tid;			/* unique thread id */
+	pid_t 				ut_ptid;		/* thread id of parent */
 
 	u_char				ut_pri;			/* thread priority, negative is high */
 
@@ -60,7 +61,7 @@ struct uthread {
 	struct user 		*ut_userp;		/* pointer to user */
 	struct kthread		*ut_kthreadp;	/* pointer to kernel threads */
 
-	struct uthread    	*ut_hash;       /* hashed based on t_tid & p_pid for kill+exit+... */
+	LIST_ENTRY(proc)	ut_hash;		/* hashed based on t_tid & p_pid for kill+exit+... */
 	struct uthread    	*ut_tgrpnxt;	/* Pointer to next thread in thread group. */
     struct uthread      *ut_tptr;		/* pointer to process structure of parent */
     struct uthread 		*ut_ostptr;	 	/* Pointer to older sibling processes. */
@@ -78,17 +79,15 @@ struct uthread {
 #define	ut_session		ut_pgrp->pg_session
 #define	ut_tgid			ut_pgrp->pg_id
 
-typedef struct uthread 	*uthread_t;
-
 /* stat codes */
-#define TSSLEEP	1		/* sleeping/ awaiting an event */
-#define TSWAIT	2		/* waiting */
-#define TSRUN	3		/* running */
-#define TSIDL	4		/* intermediate state in process creation */
-#define	TSZOMB	5		/* intermediate state in process termination */
-#define TSSTOP	6		/* process being traced */
-#define TSREADY	7		/* ready */
-#define TSSTART	8		/* start */
+#define UTSSLEEP	1		/* sleeping/ awaiting an event */
+#define UTSWAIT		2		/* waiting */
+#define UTSRUN		3		/* running */
+#define UTSIDL		4		/* intermediate state in process creation */
+#define	UTSZOMB		5		/* intermediate state in process termination */
+#define UTSSTOP		6		/* process being traced */
+#define UTSREADY	7		/* ready */
+#define UTSSTART	8		/* start */
 
 /* User Threadpool Thread */
 TAILQ_HEAD(uthread_head, uthreadpool_thread);
@@ -124,18 +123,15 @@ struct uthreadpool {
     boolean_t							utp_isreciever;		/* is itc reciever */
     int									utp_retcnt;			/* retry count in itc pool */
     boolean_t							utp_initcq;			/* check if in itc queue */
-    //flags, refcnt, priority, lock
-    //flags: send, (verify: success, fail), retry_attempts
 };
-
-extern struct uthread 					uthread0;
-extern struct uthreadpool_thread 		utpool_thread;
-extern lock_t 							uthreadpool_lock;
 
 /* Locks */
 lock_t									uthread_lkp;
 rwlock_t								uthread_rwl;		/* reader-writers lock */
-mutex_t 								uthread_mtx; 		/* mutex lock */
+
+extern struct uthread 					uthread0;
+extern struct uthreadpool_thread 		utpool_thread;
+extern lock_t 							uthreadpool_lock;
 
 extern void uthreadpool_itc_send(struct uthreadpool *, struct threadpool_itpc *);
 extern void uthreadpool_itc_receive(struct uthreadpool *, struct threadpool_itpc *);
@@ -149,15 +145,9 @@ int uthread_detach(uthread_t ut);
 int uthread_equal(uthread_t ut1, uthread_t ut2);
 int uthread_kill(uthread_t ut);
 
-/* User Thread Mutex */
+/* User Thread Lock */
 int uthread_lock_init(lock_t, uthread_t);
 int uthread_lockmgr(lock_t, u_int, uthread_t);
-
-int uthread_mutex_lock(uthread_t, mutex_t);
-int uthread_mutex_lock_try(uthread_t, mutex_t);
-int uthread_mutex_timedlock(uthread_t, mutex_t);
-int uthread_mutex_unlock(uthread_t, mutex_t);
-int uthread_mutex_destroy(uthread_t, mutex_t);
 
 /* User Thread rwlock */
 int uthread_rwlock_init(rwlock_t, uthread_t);

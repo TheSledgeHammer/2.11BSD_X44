@@ -75,70 +75,70 @@
 #define	COM_IHIGHWATER	((3 * COM_IBUFSIZE) / 4)
 
 struct com_softc {
-	struct device sc_dev;
-	void *sc_ih;
-	struct tty *sc_tty;
+	struct device 		sc_dev;
+	void 				*sc_ih;
+	struct tty 			*sc_tty;
 
-	int sc_overflows;
-	int sc_floods;
-	int sc_errors;
+	int 				sc_overflows;
+	int 				sc_floods;
+	int 				sc_errors;
 
-	int sc_halt;
+	int 				sc_halt;
 
-	int sc_iobase;
+	int 				sc_iobase;
 #ifdef COM_HAYESP
-	int sc_hayespbase;
+	int 				sc_hayespbase;
 #endif
 
 	bus_chipset_tag_t 	sc_bc;
 	bus_io_handle_t 	sc_ioh;
 	bus_io_handle_t 	sc_hayespioh;
 
-	u_char sc_hwflags;
+	u_char 				sc_hwflags;
 #define	COM_HW_NOIEN	0x01
-#define	COM_HW_FIFO	0x02
+#define	COM_HW_FIFO		0x02
 #define	COM_HW_HAYESP	0x04
 #define	COM_HW_CONSOLE	0x40
-	u_char sc_swflags;
+	u_char 				sc_swflags;
 #define	COM_SW_SOFTCAR	0x01
 #define	COM_SW_CLOCAL	0x02
 #define	COM_SW_CRTSCTS	0x04
 #define	COM_SW_MDMBUF	0x08
-	u_char sc_msr, sc_mcr, sc_lcr, sc_ier;
-	u_char sc_dtr;
+	u_char 				sc_msr, sc_mcr, sc_lcr, sc_ier;
+	u_char 				sc_dtr;
 
-	u_char *sc_ibuf, *sc_ibufp, *sc_ibufhigh, *sc_ibufend;
-	u_char sc_ibufs[2][COM_IBUFSIZE];
+	u_char 				*sc_ibuf, *sc_ibufp, *sc_ibufhigh, *sc_ibufend;
+	u_char 				sc_ibufs[2][COM_IBUFSIZE];
 };
 
 #ifdef COM_HAYESP
-int comprobeHAYESP __P((bus_io_handle_t hayespioh, struct com_softc *sc));
+int 	comprobeHAYESP (bus_io_handle_t hayespioh, struct com_softc *sc);
 #endif
-void	comdiag		__P((void *));
-int	comspeed	__P((long));
-int	comparam	__P((struct tty *, struct termios *));
-void	comstart	__P((struct tty *));
-void	compoll		__P((void *));
+void 	comdiag	(void *);
+int		comspeed (long);
+int		comparam (struct tty *, struct termios *);
+void	comstart (struct tty *);
+void	compoll	(void *);
 
 /* XXX: These belong elsewhere */
 cdev_decl(com);
 bdev_decl(com);
 
 struct consdev;
-void	comcnprobe	__P((struct consdev *));
-void	comcninit	__P((struct consdev *));
-int	comcngetc	__P((dev_t));
-void	comcnputc	__P((dev_t, int));
-void	comcnpollc	__P((dev_t, int));
+void	comcnprobe (struct consdev *);
+void	comcninit (struct consdev *);
+int		comcngetc (dev_t);
+void	comcnputc (dev_t, int);
+void	comcnpollc (dev_t, int);
 
-static u_char tiocm_xxx2mcr __P((int));
+static u_char tiocm_xxx2mcr (int);
 
 /*
  * XXX the following two cfattach structs should be different, and possibly
  * XXX elsewhere.
  */
-int comprobe __P((struct device *, void *, void *));
-void comattach __P((struct device *, struct device *, void *));
+int comprobe (struct device *, void *, void *);
+void comattach (struct device *, struct device *, void *);
 
 #if NCOM_ISA
 struct cfattach com_isa_ca = {
@@ -156,7 +156,7 @@ struct cfdriver com_cd = {
 	NULL, "com", DV_TTY
 };
 
-void cominit __P((bus_chipset_tag_t, bus_io_handle_t, int));
+void cominit (bus_chipset_tag_t, bus_io_handle_t, int);
 
 #ifdef COMCONSOLE
 int	comdefaultrate = CONSPEED;		/* XXX why set default? */
@@ -776,6 +776,7 @@ comioctl(dev, cmd, data, flag, p)
 		break;
 	case TIOCMSET:
 		CLR(sc->sc_mcr, MCR_DTR | MCR_RTS);
+		break;
 	case TIOCMBIS:
 		SET(sc->sc_mcr, tiocm_xxx2mcr(*(int *)data));
 		bus_io_write_1(bc, ioh, com_mcr, sc->sc_mcr);

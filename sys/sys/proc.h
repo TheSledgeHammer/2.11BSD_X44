@@ -80,9 +80,6 @@ struct	proc {
     struct	vnode 	    *p_tracep;		/* Trace to vnode. */
     struct	vnode 	    *p_textvp;		/* Vnode of executable. */
 
-    caddr_t				p_wchan;		/* event process is awaiting */
-    caddr_t				p_wmesg;	 	/* Reason for sleep. */
-
     struct	emul		*p_emul;		/* Emulation information */
     const struct execsw *p_execsw;		/* Exec package information */
 

@@ -156,6 +156,7 @@ int		kern_unsetenv(const char *name);
 int		testenv(const char *name);
 
 int		getenv_array(const char *name, void *data, int size, int *psize, int type_size, bool allow_signed);
+
 #define	GETENV_UNSIGNED	false	/* negative numbers not allowed */
 #define	GETENV_SIGNED	true	/* negative numbers allowed */
 

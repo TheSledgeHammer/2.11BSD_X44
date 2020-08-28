@@ -68,12 +68,12 @@ struct com_isa_softc {
 };
 
 #ifdef __BROKEN_INDIRECT_CONFIG
-int com_isa_probe __P((struct device *, void *, void *));
+int com_isa_probe (struct device *, void *, void *);
 #else
-int com_isa_probe __P((struct device *, struct cfdata *, void *));
+int com_isa_probe (struct device *, struct cfdata *, void *);
 #endif
-void com_isa_attach __P((struct device *, struct device *, void *));
-void com_isa_cleanup __P((void *));
+void com_isa_attach (struct device *, struct device *, void *);
+void com_isa_cleanup (void *);
 
 struct cfattach com_isa_ca = {
 	sizeof(struct com_isa_softc), com_isa_probe, com_isa_attach

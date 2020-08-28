@@ -98,7 +98,7 @@
  */
 typedef void *isa_chipset_tag_t;
 
-struct device;			/* XXX */
+struct device;				/* XXX */
 struct isabus_attach_args;	/* XXX */
 
 /*
@@ -173,12 +173,12 @@ struct i386_isa_dma_cookie {
  */
 
 struct intrhand {
-	int	(*ih_fun) (void *);
-	void	*ih_arg;
-	u_long	ih_count;
-	struct	intrhand *ih_next;
-	int	ih_level;
-	int	ih_irq;
+	int					(*ih_fun) (void *);
+	void				*ih_arg;
+	u_long				ih_count;
+	struct	intrhand 	*ih_next;
+	int					ih_level;
+	int					ih_irq;
 };
 
  
