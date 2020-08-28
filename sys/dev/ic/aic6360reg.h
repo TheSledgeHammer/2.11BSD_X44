@@ -89,10 +89,10 @@
 #define DMADATALONG	0x18
 #define PORTA		0x1a	/* Port A */
 #define PORTB		0x1b	/* Port B */
-#define REV		0x1c	/* Revision (001 for 6360) */
+#define REV			0x1c	/* Revision (001 for 6360) */
 #define STACK		0x1d	/* Stack */
 #define TEST		0x1e	/* Test register */
-#define ID		0x1f	/* ID register */
+#define ID			0x1f	/* ID register */
 
 #define IDSTRING "(C)1991ADAPTECAIC6360           "
 

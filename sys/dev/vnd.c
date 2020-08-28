@@ -78,6 +78,7 @@
 #include <sys/file.h>
 #include <sys/uio.h>
 #include <sys/conf.h>
+#include <sys/user.h>
 
 #include <miscfs/specfs/specdev.h>
 

@@ -4,12 +4,12 @@
 #include <sys/device.h>
 #include <sys/malloc.h>
 
-#include <devel/isa_generic/isavar.h>
-
 #include <dev/ic/mc6845reg.h>
 #include <dev/ic/pcdisplayvar.h>
 #include <dev/ic/vgavar.h>
 #include <dev/ic/vgareg.h>
+
+#include <dev/isa/isavar.h>
 
 #include <dev/wscons/wsconsio.h>
 #include <dev/wscons/wsdisplayvar.h>

@@ -45,29 +45,25 @@
 
 struct proc;
 
-void	   isa_dmacascade __P((struct device *, int));
+void	   	isa_dmacascade (struct device *, int);
 
-int	   isa_dmamap_create __P((struct device *, int, bus_size_t, int));
-void	   isa_dmamap_destroy __P((struct device *, int));
+int	  		isa_dmamap_create (struct device *, int, bus_size_t, int);
+void	   	isa_dmamap_destroy (struct device *, int);
 
-int	   isa_dmastart __P((struct device *, int, void *, bus_size_t,
-	       struct proc *, int, int));
-void	   isa_dmaabort __P((struct device *, int));
-bus_size_t isa_dmacount __P((struct device *, int));
-int	   isa_dmafinished __P((struct device *, int));
-void	   isa_dmadone __P((struct device *, int));
+int	   		isa_dmastart (struct device *, int, void *, bus_size_t, struct proc *, int, int);
+void	   	isa_dmaabort (struct device *, int);
+bus_size_t 	isa_dmacount (struct device *, int);
+int	   		isa_dmafinished (struct device *, int);
+void		isa_dmadone (struct device *, int);
 
-int	   isa_dmamem_alloc __P((struct device *, int, bus_size_t,
-	       bus_addr_t *, int));
-void	   isa_dmamem_free __P((struct device *, int, bus_addr_t, bus_size_t));
-int	   isa_dmamem_map __P((struct device *, int, bus_addr_t, bus_size_t,
-	       caddr_t *, int));
-void	   isa_dmamem_unmap __P((struct device *, int, caddr_t, size_t));
-int	   isa_dmamem_mmap __P((struct device *, int, bus_addr_t, bus_size_t,
-	       int, int, int));
+int	   		isa_dmamem_alloc (struct device *, int, bus_size_t, bus_addr_t *, int);
+void		isa_dmamem_free (struct device *, int, bus_addr_t, bus_size_t);
+int	   		isa_dmamem_map (struct device *, int, bus_addr_t, bus_size_t, caddr_t *, int);
+void		isa_dmamem_unmap (struct device *, int, caddr_t, size_t);
+int	   		isa_dmamem_mmap (struct device *, int, bus_addr_t, bus_size_t, int, int, int);
 
-int	   isa_drq_isfree __P((struct device *, int));
+int	   		isa_drq_isfree (struct device *, int);
 
-void      *isa_malloc __P((struct device *, int, size_t, int, int));
-void	   isa_free __P((void *, int));
-int	   isa_mappage __P((void *, int, int));
+void    	*isa_malloc (struct device *, int, size_t, int, int);
+void		isa_free (void *, int);
+int	   		isa_mappage (void *, int, int);

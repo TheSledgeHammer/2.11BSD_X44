@@ -56,10 +56,11 @@
 /*****************************************************************************
  * Configurable parameters.
  *****************************************************************************/
-
+/*
 #include "opt_pcic_isa_alloc_iobase.h"
 #include "opt_pcic_isa_alloc_iosize.h"
 #include "opt_pcic_isa_intr_alloc_mask.h"
+*/
 
 /*
  * Default I/O allocation range.  If both are set to non-zero, these

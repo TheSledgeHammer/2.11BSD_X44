@@ -117,7 +117,7 @@ struct aic_softc {
 	bus_space_tag_t sc_iot;
 	bus_space_handle_t sc_ioh;
 
-	struct scsipi_link sc_link;	/* prototype for subdevs */
+	struct scsi_link sc_link;	/* prototype for subdevs */
 
 	TAILQ_HEAD(, aic_acb) free_list, ready_list, nexus_list;
 	struct aic_acb *sc_nexus;	/* current command */
@@ -202,6 +202,6 @@ extern int aic_debug; /* AIC_SHOWSTART|AIC_SHOWMISC|AIC_SHOWTRACE; */
 #define AIC_ISA_IOSIZE	0x20	/* XXX */
 
 void	aicattach	__P((struct aic_softc *));
-int	aicintr		__P((void *));
-int	aic_find	__P((bus_space_tag_t, bus_space_handle_t));
+int		aicintr		__P((void *));
+int		aic_find	__P((bus_space_tag_t, bus_space_handle_t));
 void	aic_isa_attach	__P((struct device *, struct device *, void *));

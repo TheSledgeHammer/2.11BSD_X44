@@ -53,9 +53,9 @@
 #define	PCMCIA_PRODUCT_ADAPTEC_APA1460_2	0x0002
 
 #ifdef __BROKEN_INDIRECT_CONFIG
-int	aic_pcmcia_match (struct device *, void *, void *);
+int		aic_pcmcia_match (struct device *, void *, void *);
 #else
-int	aic_pcmcia_match (struct device *, struct cfdata *, void *);
+int		aic_pcmcia_match (struct device *, struct cfdata *, void *);
 #endif
 void	aic_pcmcia_attach (struct device *, struct device *, void *);
 

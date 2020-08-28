@@ -96,7 +96,7 @@ struct cfdriver scsibus_cd = {
 	NULL, "scsibus", DV_DULL
 };
 
-int scsibusprint __P((void *, char *));
+int scsibusprint (void *, char *);
 
 int
 scsibusmatch(parent, match, aux)

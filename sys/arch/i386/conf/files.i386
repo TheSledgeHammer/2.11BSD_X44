@@ -47,7 +47,7 @@ file    dev/cons.c
 # Machine-independent SCSI drivers
 #
 
-include "dev/scsi/files.scsipi"
+include "dev/scsi/files.scsi"
 major	{sd = 4}
 major	{st = 5}
 major	{cd = 6}

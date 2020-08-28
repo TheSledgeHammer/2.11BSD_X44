@@ -53,7 +53,7 @@
 
 #include <ic/comvar.h>
 #include <ic/comreg.h>
-#include <ic/ns16550.h>
+#include <ic/ns16550reg.h>
 
 void	comstart();
 int 	comprobe(), comattach(), comintr(), comparam();

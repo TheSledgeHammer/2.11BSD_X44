@@ -50,18 +50,19 @@
 #include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/errno.h>
-#include <sys/dkstat.h>
+#include <sys/dk.h>
 #include <sys/buf.h>
 #include <sys/malloc.h>
 #include <sys/conf.h>
 #include <sys/stat.h>
+#include <sys/user.h>
 #ifdef COMPAT_NOLABEL
 #include <sys/ioctl.h>
 #include <sys/disklabel.h>
 #include <sys/fcntl.h>
 #endif
 
-#include <dev/cdvar.h>
+#include <dev/ccdvar.h>
 
 #ifdef DEBUG
 int cddebug = 0x00;

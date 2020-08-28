@@ -35,20 +35,21 @@
 #include <sys/conf.h>
 #include <sys/malloc.h>
 #include <sys/device.h>
+#include <sys/user.h>
 
 #include <machine/intr.h>
 
+#include <dev/isa/isadmareg.h>
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>
-#include <dev/isa/isadmareg.h>
 
 #ifdef __BROKEN_INDIRECT_CONFIG
-int isamatch __P((struct device *, void *, void *));
+int 	isamatch (struct device *, void *, void *);
 #else
-int isamatch __P((struct device *, struct cfdata *, void *));
+int 	isamatch (struct device *, struct cfdata *, void *);
 #endif
-void isaattach __P((struct device *, struct device *, void *));
-int isaprint __P((void *, const char *));
+void 	isaattach (struct device *, struct device *, void *);
+int 	isaprint (void *, const char *);
 
 struct cfattach isa_ca = {
 	sizeof(struct isa_softc), isamatch, isaattach
@@ -63,9 +64,9 @@ struct cfdriver isa_cd = {
 };
 
 #ifdef __BROKEN_INDIRECT_CONFIG
-void	isascan __P((struct device *, void *));
+void	isascan (struct device *, void *);
 #else
-int	isasearch __P((struct device *, struct cfdata *, void *));
+int	isasearch (struct device *, struct cfdata *, void *);
 #endif
 
 int

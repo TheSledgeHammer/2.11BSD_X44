@@ -36,7 +36,7 @@
 
 #include <sys/types.h>
 #include <sys/audioio.h>
-#include <machine/endian.h>
+#include <machine/endian_machdep.h>
 #include <dev/auconv.h>
 
 #if BYTE_ORDER == LITTLE_ENDIAN

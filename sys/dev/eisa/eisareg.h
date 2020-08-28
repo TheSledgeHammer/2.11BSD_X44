@@ -75,11 +75,11 @@
 	    (((vid)[0] & 0x80) != 0)
 #define	EISA_VENDID_IDDELAY(vid)					\
 	    (((vid)[0] & 0xf0) == 0x70)
-#define	EISA_VENDID_0(vid)						\
+#define	EISA_VENDID_0(vid)							\
 	    ((((vid)[0] & 0x7c) >> 2) + '@')
-#define	EISA_VENDID_1(vid)						\
+#define	EISA_VENDID_1(vid)							\
 	    (((((vid)[0] & 0x03) << 3) | (((vid)[1] & 0xe0) >> 5)) + '@')
-#define	EISA_VENDID_2(vid)						\
+#define	EISA_VENDID_2(vid)							\
 	    (((vid)[1] & 0x1f) + '@')
 
 /*

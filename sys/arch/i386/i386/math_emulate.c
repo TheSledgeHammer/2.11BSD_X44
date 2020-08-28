@@ -64,10 +64,10 @@ static void fpush(void);
 static void fxchg(temp_real_unaligned * a, temp_real_unaligned * b);
 static temp_real_unaligned * __st(int i);
 
-#define	fninit()	do { \
+#define	fninit()	do { 			\
 	I387.cwd = __INITIAL_NPXCW__;	\
-	I387.swd = 0x0000;		\
-	I387.twd = 0x0000;		\
+	I387.swd = 0x0000;				\
+	I387.twd = 0x0000;				\
 } while (0)
 
 int

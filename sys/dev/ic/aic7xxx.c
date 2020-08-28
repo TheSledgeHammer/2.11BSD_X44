@@ -127,13 +127,12 @@
 #include <sys/buf.h>
 #include <sys/proc.h>
 
-#include <dev/scsipi/scsi_all.h>
-#include <dev/scsipi/scsipi_all.h>
-#include <dev/scsipi/scsi_message.h>
+#include <dev/scsi/scsi_all.h>
+#include <dev/scsi/scsi_message.h>
 #if defined(__NetBSD__)
-#include <dev/scsipi/scsipi_debug.h>
+#include <dev/scsi/scsipi_debug.h>
 #endif
-#include <dev/scsipi/scsiconf.h>
+#include <dev/scsi/scsiconf.h>
 
 #if defined(__FreeBSD__)
 #include <machine/clock.h>
@@ -142,6 +141,8 @@
 #include <vm/include/vm.h>
 #include <vm/include/vm_param.h>
 #include <vm/include/pmap.h>
+#include <dev/ic/aic7xxxreg.h>
+#include <dev/ic/aic7xxxvar.h>
 
 #if defined(__FreeBSD__)
 #include <i386/scsi/aic7xxx.h>
@@ -156,8 +157,8 @@
 #define bootverbose	1
 
 #define AIC_SCSI_TARGET scsipi_scsi.target
-#define AIC_SCSI_LUN scsipi_scsi.lun
-#define AIC_SCSI_SENSE sense.scsi_sense
+#define AIC_SCSI_LUN 	scsipi_scsi.lun
+#define AIC_SCSI_SENSE 	sense.scsi_sense
 
 #define DEBUGTARG	DEBUGTARGET
 #if DEBUGTARG < 0	/* Negative numbers for disabling cause warnings */

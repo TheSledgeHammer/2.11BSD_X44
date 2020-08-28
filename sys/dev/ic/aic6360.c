@@ -134,10 +134,9 @@
 #include <machine/intr.h>
 #include <machine/pio.h>
 
-#include <dev/scsipi/scsi_all.h>
-#include <dev/scsipi/scsipi_all.h>
-#include <dev/scsipi/scsi_message.h>
-#include <dev/scsipi/scsiconf.h>
+#include <dev/scsi/scsi_all.h>
+#include <dev/scsi/scsi_message.h>
+#include <dev/scsi/scsiconf.h>
 
 #include <dev/isa/isavar.h>
 #include <dev/ic/aic6360reg.h>
@@ -157,8 +156,8 @@ void	aic_minphys	__P((struct buf *));
 void	aic_init	__P((struct aic_softc *));
 void	aic_done	__P((struct aic_softc *, struct aic_acb *));
 void	aic_dequeue	__P((struct aic_softc *, struct aic_acb *));
-int	aic_scsi_cmd	__P((struct scsipi_xfer *));
-int	aic_poll	__P((struct aic_softc *, struct scsipi_xfer *, int));
+int		aic_scsi_cmd __P((struct scsipi_xfer *));
+int		aic_poll	__P((struct aic_softc *, struct scsipi_xfer *, int));
 integrate void	aic_sched_msgout __P((struct aic_softc *, u_char));
 integrate void	aic_setsync	__P((struct aic_softc *, struct aic_tinfo *));
 void	aic_select	__P((struct aic_softc *, struct aic_acb *));
@@ -168,13 +167,13 @@ void	aic_scsi_reset	__P((struct aic_softc *));
 void	aic_reset	__P((struct aic_softc *));
 void	aic_free_acb	__P((struct aic_softc *, struct aic_acb *, int));
 struct aic_acb* aic_get_acb __P((struct aic_softc *, int));
-int	aic_reselect	__P((struct aic_softc *, int));
+int		aic_reselect	__P((struct aic_softc *, int));
 void	aic_sense	__P((struct aic_softc *, struct aic_acb *));
 void	aic_msgin	__P((struct aic_softc *));
 void	aic_abort	__P((struct aic_softc *, struct aic_acb *));
 void	aic_msgout	__P((struct aic_softc *));
-int	aic_dataout_pio	__P((struct aic_softc *, u_char *, int));
-int	aic_datain_pio	__P((struct aic_softc *, u_char *, int));
+int		aic_dataout_pio	__P((struct aic_softc *, u_char *, int));
+int		aic_datain_pio	__P((struct aic_softc *, u_char *, int));
 #if AIC_DEBUG
 void	aic_print_acb	__P((struct aic_acb *));
 void	aic_dump_driver __P((struct aic_softc *));
@@ -288,11 +287,11 @@ aicattach(sc)
 	 */
 	sc->sc_link.scsipi_scsi.channel = SCSI_CHANNEL_ONLY_ONE;
 	sc->sc_link.adapter_softc = sc;
-	sc->sc_link.scsipi_scsi.adapter_target = sc->sc_initiator;
+	sc->sc_link.adapter_target = sc->sc_initiator;
 	sc->sc_link.adapter = &aic_switch;
 	sc->sc_link.device = &aic_dev;
 	sc->sc_link.openings = 2;
-	sc->sc_link.scsipi_scsi.max_target = 7;
+	sc->sc_link.max_target = 7;
 	sc->sc_link.type = BUS_SCSI;
 
 	/*
