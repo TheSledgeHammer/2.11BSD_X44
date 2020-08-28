@@ -11,6 +11,7 @@
 		- Hybrid EDF/CFS Scheduler
 	- Threading (Hybrid N:M Model): kernel & user threads
 		- Implements a new concept: Inter-Threadpool Proccess Communication (ITPC)
+		- For User Threads, goto: (usr.lib/libuthread)
 	- Locks: Enhancements to lock
 		- Planned: Replace proc with pid in lockmgr
 		- Rwlock: Introduction of a reader-writers lock

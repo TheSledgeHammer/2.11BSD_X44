@@ -1,7 +1,11 @@
-/*
- * The 3-Clause BSD License:
- * Copyright (c) 2020 Martin Kelly
+/*	$NetBSD: kern_threadpool.c,v 1.18 2020/04/25 17:43:23 thorpej Exp $	*/
+
+/*-
+ * Copyright (c) 2014, 2018 The NetBSD Foundation, Inc.
  * All rights reserved.
+ *
+ * This code is derived from software contributed to The NetBSD Foundation
+ * by Taylor R. Campbell and Jason R. Thorpe.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -11,22 +15,19 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
-
-/* License header should be NetBSD */
 
 #include <sys/cdefs.h>
 
@@ -81,7 +82,7 @@ uthreadpools_init(void)
 	MALLOC(&utpool_thread, struct uthreadpool_thread *, sizeof(struct uthreadpool_thread *), M_UTPOOLTHREAD, NULL);
 	LIST_INIT(&unbound_uthreadpools);
 //	LIST_INIT(&percpu_threadpools);
-//	uthread_mutex_init(&uthreadpools_lock, &utpool_thread->utpt_pool->);
+	kthread_lock_init(&uthreadpools_lock, &utpool_thread->utpt_uthread);
 	itpc_threadpool_init();
 }
 
@@ -94,7 +95,7 @@ uthreadpool_create(struct uthreadpool *utpool, u_char pri)
 	int utflags;
 	int error;
 
-//	uthread_mutex_init(&utpool->utp_lock, )
+	simple_lock(&utpool->utp_lock);
 	/* XXX overseer */
 	TAILQ_INIT(&utpool->utp_jobs);
 	TAILQ_INIT(&utpool->utp_idle_threads);
@@ -125,7 +126,7 @@ fail:
 	KASSERT(utpool->utp_refcnt == 0);
 	KASSERT(TAILQ_EMPTY(&utpool->utp_idle_threads));
 	KASSERT(TAILQ_EMPTY(&utpool->utp_jobs));
-	//mutex_destroy(&utpool->utp_lock);
+	simple_unlock(&utpool->utp_lock);
 	return (error);
 }
 
@@ -160,7 +161,7 @@ uthreadpool_get(struct uthreadpool **utpoolp, u_char pri)
 	struct uthreadpool_unbound *utpu, *tmp = NULL;
 	int error;
 
-	//mutex_enter(&kthreadpools_lock);
+	simple_lock(&uthreadpools_lock);
 	utpu = uthreadpool_lookup_unbound(pri);
 	if (utpu == NULL) {
 		error = uthreadpool_create(&tmp->utpu_pool, pri);
@@ -168,7 +169,7 @@ uthreadpool_get(struct uthreadpool **utpoolp, u_char pri)
 			FREE(tmp, M_UTPOOLTHREAD);
 			return error;
 		}
-		//mutex_enter(&kthreadpools_lock);
+		simple_lock(&uthreadpools_lock);
 		utpu = uthreadpool_lookup_unbound(pri);
 		if (utpu == NULL) {
 			utpu = tmp;
@@ -179,7 +180,7 @@ uthreadpool_get(struct uthreadpool **utpoolp, u_char pri)
 	KASSERT(utpu != NULL);
 	utpu->utpu_refcnt++;
 	KASSERT(utpu->utpu_refcnt != 0);
-	//mutex_exit(&kthreadpools_lock);
+	simple_unlock(&uthreadpools_lock);
 
 	if (tmp != NULL) {
 		uthreadpool_destroy(&tmp->utpu_pool);
@@ -196,7 +197,7 @@ uthreadpool_put(struct uthreadpool *utpool, u_char pri)
 {
 	struct uthreadpool_unbound *utpu;
 
-	//mutex_lock(&uthreadpools_lock);
+	simple_lock(&uthreadpools_lock);
 	KASSERT(utpu == uthreadpool_lookup_unbound(pri));
 	KASSERT(0 < utpu->utpu_refcnt);
 	if (utpu->utpu_refcnt-- == 0) {
@@ -204,7 +205,7 @@ uthreadpool_put(struct uthreadpool *utpool, u_char pri)
 	} else {
 		utpu = NULL;
 	}
-	//mutex_exit(&uthreadpools_lock);
+	simple_unlock(&uthreadpools_lock);
 
 	if (utpu) {
 		kthreadpool_destroy(&utpu->utpu_pool);
@@ -226,7 +227,7 @@ uthreadpool_overseer_thread(void *arg)
 	KASSERT((utpool->utp_cpu == NULL) || (curkthread->kt_flag & LP_BOUND));
 
 	/* Wait until we're initialized.  */
-	//mutex_spin_enter(&ktpool->ktp_lock);
+	simple_lock(&utpool->utp_lock);
 
 	for (;;) {
 		/* Wait until there's a job.  */
@@ -239,7 +240,7 @@ uthreadpool_overseer_thread(void *arg)
 		/* If there are no threads, we'll have to try to start one.  */
 		if (TAILQ_EMPTY(&utpool->utp_idle_threads)) {
 			uthreadpool_hold(utpool);
-			mutex_spin_exit(&utpool->utp_lock);
+			simple_unlock(&utpool->utp_lock);
 
 			struct uthreadpool_thread *const uthread = (struct uthreadpool_thread *) malloc(sizeof(struct uthreadpool_thread *), M_UTPOOLTHREAD, M_WAITOK);
 			uthread->utpt_kthread = NULL;
@@ -253,7 +254,7 @@ uthreadpool_overseer_thread(void *arg)
 				utflags |= UTHREAD_TS;
 			error = uthread_create(utpool->utp_pri, utflags, utpool->utp_cpu, &uthreadpool_thread, uthread, &p, "poolthread/%d@%d", (utpool->utp_cpu ? cpu_index(utpool->utp_cpu) : -1), (int)utpool->utp_pri);
 
-			//mutex_spin_enter(&pool->tp_lock);
+			simple_lock(&utpool->utp_lock);
 			if (error) {
 			//	pool_cache_put(kthreadpool_thread_pc, kthread);
 				uthreadpool_rele(utpool);
@@ -281,12 +282,12 @@ uthreadpool_overseer_thread(void *arg)
 		 * it won't disappear on us while we have both locks dropped.
 		 */
 		threadpool_job_hold(job);
-		//mutex_spin_exit(&pool->tp_lock);
+		simple_unlock(&utpool->utp_lock);
 
-		//mutex_enter(job->job_lock);
+		simple_lock(job->job_lock);
 		/* If the job was cancelled, we'll no longer be its thread.  */
 		if (__predict_true(job->job_utp_thread == overseer)) {
-			//mutex_spin_enter(&pool->tp_lock);
+			simple_lock(&utpool->utp_lock);
 			if (__predict_false(TAILQ_EMPTY(&utpool->utp_idle_threads))) {
 				/*
 				 * Someone else snagged the thread
@@ -306,15 +307,15 @@ uthreadpool_overseer_thread(void *arg)
 				job->job_ktp_thread = thread;
 				//cv_broadcast(&thread->tpt_cv);
 			}
-			//mutex_spin_exit(&pool->tp_lock);
+			simple_unlock(&utpool->utp_lock);
 		}
 		threadpool_job_rele(job);
-		//mutex_exit(job->job_lock);
+		simple_unlock(job->job_lock);
 
-		//mutex_spin_enter(&pool->tp_lock);
+		simple_lock(&utpool->utp_lock);
 	}
 	kthreadpool_rele(utpool);
-	//mutex_spin_exit(&pool->tp_lock);
+	simple_unlock(&utpool->utp_lock);
 
 	uthread_exit(0);
 }
@@ -326,7 +327,7 @@ uthreadpool_thread(void *arg)
 	struct uthreadpool *const utpool = uthread->utpt_pool;
 
 	/* Wait until we're initialized and on the queue.  */
-	//mutex_spin_enter(&ktpool->ktp_lock);
+	simple_lock(&utpool->utp_lock);
 
 	KASSERT(uthread->utpt_kthread == curkthread);
 	for (;;) {
@@ -343,13 +344,13 @@ uthreadpool_thread(void *arg)
 
 
 		/* Set our lwp name to reflect what job we're doing.  */
-		kthread_lock(curkthread);
+		//kthread_lock(curkthread);
 		char *const kthread_name = curkthread->kt_name;
 		uthread->utpt_uthread_savedname = curkthread->kt_name;
 		curkthread->kt_name = job->job_name;
-		kthread_unlock(curkthread);
+		//kthread_unlock(curkthread);
 
-		//mutex_spin_exit(&ktpool->ktp_lock);
+		simple_unlock(&utpool->utp_lock);
 
 
 		/* Run the job.  */
@@ -364,13 +365,13 @@ uthreadpool_thread(void *arg)
 		 * last reference on the job while the job is locked.
 		 */
 
-		//mutex_spin_enter(&ktpool->ktp_lock);
+		simple_lock(&utpool->utp_lock);
 		KASSERT(uthread->utpt_job == job);
 		uthread->utpt_job = NULL;
 		TAILQ_INSERT_TAIL(&utpool->utp_idle_threads, uthread, utpt_entry);
 	}
 	uthreadpool_rele(utpool);
-	//mutex_spin_exit(&ktpool->ktp_lock);
+	simple_unlock(&utpool->utp_lock);
 
 	uthread_exit(0);
 }

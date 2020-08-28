@@ -36,9 +36,9 @@
 #include <dev/ic/mc6845reg.h>
 #include <dev/ic/pcdisplayvar.h>
 #include <dev/ic/vgareg.h>
+#include <dev/ic/vgavar.h>
 
 #include <dev/wscons/wsdisplayvar.h>
-#include <dev/ic/vgavar.h>
 
 static void fontram(struct vga_handle *);
 static void textram(struct vga_handle *);

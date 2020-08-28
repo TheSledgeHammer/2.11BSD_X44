@@ -95,9 +95,15 @@ extern struct itc_threadpool itpc;
 
 /* General ITPC */
 void itpc_threadpool_init();
-void itpc_threadpool_enqueue(struct threadpool_itpc *, tid_t);
-void itpc_threadpool_dequeue(struct threadpool_itpc *, tid_t);
-void itpc_check(struct threadpool_itpc *, tid_t);
-void itpc_verify(struct threadpool_itpc *, tid_t);
+
+void itpc_kthreadpool_enqueue(struct threadpool_itpc *, pid_t);
+void itpc_kthreadpool_dequeue(struct threadpool_itpc *, pid_t);
+void itpc_check_kthreadpool(struct threadpool_itpc *, pid_t);
+void itpc_verify_kthreadpool(struct threadpool_itpc *, pid_t);
+
+void itpc_uthreadpool_enqueue(struct threadpool_itpc *, pid_t);
+void itpc_uthreadpool_dequeue(struct threadpool_itpc *, pid_t);
+void itpc_check_uthreadpool(struct threadpool_itpc *, pid_t);
+void itpc_verify_uthreadpool(struct threadpool_itpc *, pid_t);
 
 #endif /* SYS_THREADPOOL_H_ */

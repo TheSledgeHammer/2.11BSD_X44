@@ -26,6 +26,12 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* NOTE:
+ * Libuthread
+ * - Is a proof of concept that is still in early development.
+ * - All related Kernel threads is located in: (/usr/sys/devel)
+*/
+
 #include <sys/param.h>
 #include <sys/malloc.h>
 #include <sys/lock.h>
@@ -45,7 +51,10 @@ startuthread(ut)
     curuthread = ut;
 
     /* Set thread to idle & waiting */
-    ut->ut_stat |= TSIDL | TSWAIT | TSREADY;
+    ut->ut_stat |= UTSIDL | UTSWAIT | UTSREADY;
+
+    /* init uthread queues */
+    //utqinit();
 
     /* setup uthread locks */
     uthread_lock_init(uthread_lkp, ut);
@@ -63,6 +72,7 @@ uthread_create(kt)
 		panic("uthread_create called too soon");
 	}
 	if(ut == NULL) {
+		//ut = kt->kt_uthreado;
 		startuthread(ut);
 	}
 	return (0);
@@ -71,7 +81,6 @@ uthread_create(kt)
 int
 uthread_join(uthread_t ut)
 {
-
 
 }
 
@@ -108,6 +117,25 @@ int
 uthread_kill(uthread_t ut)
 {
 
+}
+
+/*
+ * init the uthread queues
+ */
+void
+utqinit()
+{
+	register struct uthread *ut;
+
+	freeuthread = NULL;
+	for (ut = uthreadNUTHREAD; --ut > uthread0; freeuthread = ut)
+		ut->ut_nxt = freeuthread;
+
+	alluthread = ut;
+	ut->ut_nxt = NULL;
+	ut->ut_prev = &alluthread;
+
+	zombuthread = NULL;
 }
 
 /*

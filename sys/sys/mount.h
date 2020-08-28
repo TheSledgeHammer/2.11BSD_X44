@@ -72,8 +72,8 @@ struct	mount {
 	struct statfs		mnt_stat;			/* cache of filesystem stats */
 	qaddr_t				mnt_data;			/* private data */
 
-	dev_t				m_dev;				/* device mounted */
-	memaddr				m_extern;			/* click address of mount table extension */
+	dev_t				mnt_dev;			/* device mounted */
+	memaddr				mnt_extern;			/* click address of mount table extension */
 };
 
 struct	xmount {

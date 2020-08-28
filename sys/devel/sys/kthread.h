@@ -31,8 +31,6 @@
 
 #include <sys/proc.h>
 
-/* Number of Threads per Process? */
-
 /* kernel threads */
 typedef struct kthread 	*kthread_t;
 struct kthread {
@@ -124,8 +122,8 @@ struct kthread {
 /* Kernel Threadpool Threads */
 TAILQ_HEAD(kthread_head, kthreadpool_thread);
 struct kthreadpool_thread {
-	struct proc							*ktpt_proc;
-	struct kthreads						*ktpt_kthread;				/* kernel threads */
+	struct proc							*ktpt_proc;					/* proc */
+	struct kthread						*ktpt_kthread;				/* kernel threads */
     char				                *ktpt_kthread_savedname;
 	struct kthreadpool					*ktpt_pool;
 	struct threadpool_job				*ktpt_job;

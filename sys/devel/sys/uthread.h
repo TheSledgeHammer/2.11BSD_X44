@@ -133,6 +133,12 @@ extern struct uthread 					uthread0;
 extern struct uthreadpool_thread 		utpool_thread;
 extern lock_t 							uthreadpool_lock;
 
+struct uthread 							*uthreadNUTHREAD;	/* the uthread table itself */
+
+struct uthread 							*alluthread;		/* List of active uthreads. */
+struct uthread 							*freeuthread;		/* List of free uthreads. */
+struct uthread 							*zombuthread;		/* List of zombie uthreads. */
+
 extern void uthreadpool_itc_send(struct uthreadpool *, struct threadpool_itpc *);
 extern void uthreadpool_itc_receive(struct uthreadpool *, struct threadpool_itpc *);
 

@@ -67,7 +67,7 @@ kthread_create(p)
 	}
 
 	if(kt == NULL) {
-		startkthread(kt);
+		kt = p->p_kthreado;
 	}
 
 	return (0);
@@ -126,7 +126,7 @@ ktqinit()
 	for (kt = kthreadNKTHREAD; --kt > kthread0; freekthread = kt)
 		kt->kt_nxt = freekthread;
 
-	allkthread = p;
+	allkthread = kt;
 	kt->kt_nxt = NULL;
 	kt->kt_prev = &allkthread;
 

@@ -27,8 +27,8 @@
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
  */
-
-#include <sys/timeout.h>
+#include <sys/queue.h>
+//#include <sys/timeout.h>
 
 struct vga_handle {
 	struct pcdisplay_handle vh_ph;
@@ -74,7 +74,7 @@ struct vga_config {
 
 	caddr_t (*vc_mmap)(void *, off_t, int);
 
-	struct timeout vc_switch_timeout;
+	//struct timeout vc_switch_timeout;
 
 #ifdef __alpha__
 	/* placeholder for a custom wsscreen_descr for odd resolutions */
