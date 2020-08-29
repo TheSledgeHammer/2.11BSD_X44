@@ -8,6 +8,9 @@
 static char sccsid[] = "@(#)valloc.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
+#include <stdlib.h>
+#include <unistd.h>
+
 char	*malloc();
 
 char *

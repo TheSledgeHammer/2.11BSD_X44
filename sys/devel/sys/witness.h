@@ -69,24 +69,24 @@
 
 #ifdef _KERNEL
 
-void	witness_initialize(void);
-void	witness_init(struct lock_object *, const struct lock_type *);
-int		witness_defineorder(struct lock_object *, struct lock_object *);
-void	witness_checkorder(struct lock_object *, int, struct lock_object *);
-void	witness_lock(struct lock_object *, int);
-void	witness_upgrade(struct lock_object *, int);
-void	witness_downgrade(struct lock_object *, int);
-void	witness_unlock(struct lock_object *, int);
-int		witness_warn(int, struct lock_object *, const char *, ...);
-void	witness_assert(const struct lock_object *, int);
-void	witness_display_spinlock(struct lock_object *, struct proc *, int (*)(const char *, ...));
-int		witness_line(struct lock_object *);
-void	witness_norelease(struct lock_object *);
-void	witness_releaseok(struct lock_object *);
-const char *witness_file(struct lock_object *);
-void	witness_thread_exit(struct proc *);
-int		witness_sysctl(int *, u_int, void *, size_t *, void *, size_t);
-int		witness_sysctl_watch(void *, size_t *, void *, size_t);
+void		witness_initialize(void);
+void		witness_init(struct lock_object *, const struct lock_type *);
+int			witness_defineorder(struct lock_object *, struct lock_object *);
+void		witness_checkorder(struct lock_object *, int, struct lock_object *);
+void		witness_lock(struct lock_object *, int);
+void		witness_upgrade(struct lock_object *, int);
+void		witness_downgrade(struct lock_object *, int);
+void		witness_unlock(struct lock_object *, int);
+int			witness_warn(int, struct lock_object *, const char *, ...);
+void		witness_assert(const struct lock_object *, int);
+void		witness_display_spinlock(struct lock_object *, struct proc *, int (*)(const char *, ...));
+int			witness_line(struct lock_object *);
+void		witness_norelease(struct lock_object *);
+void		witness_releaseok(struct lock_object *);
+const char 	*witness_file(struct lock_object *);
+void		witness_thread_exit(struct proc *);
+int			witness_sysctl(int *, u_int, void *, size_t *, void *, size_t);
+int			witness_sysctl_watch(void *, size_t *, void *, size_t);
 
 #ifdef	WITNESS
 

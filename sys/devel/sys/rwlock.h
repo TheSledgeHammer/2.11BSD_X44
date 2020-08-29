@@ -53,7 +53,6 @@ struct rwlock {
     char					*rwl_wmesg;			/* resource sleeping (for tsleep) */
     int						rwl_timo;			/* maximum sleep time (for tsleep) */
 };
-
 typedef struct rwlock       *rwlock_t;
 
 #define RW_THREAD  			LK_KERNPROC

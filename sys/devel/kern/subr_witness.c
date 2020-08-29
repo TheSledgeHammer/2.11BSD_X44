@@ -294,8 +294,7 @@ witness_lock_type_equal(struct witness *w1, struct witness *w2)
 }
 
 static __inline int
-witness_lock_order_key_equal(const struct witness_lock_order_key *a,
-    const struct witness_lock_order_key *b)
+witness_lock_order_key_equal(const struct witness_lock_order_key *a, const struct witness_lock_order_key *b)
 {
 	return (a->from == b->from && a->to == b->to);
 }
@@ -333,10 +332,6 @@ static struct lock_class lock_class_kernel_lock = {
 };
 
 static struct lock_class lock_class_sched_lock = {
-
-};
-
-static struct lock_class lock_class_mutex = {
 
 };
 

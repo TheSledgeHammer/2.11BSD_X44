@@ -9,11 +9,12 @@ static char sccsid[] = "@(#)utime.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
 #include <sys/time.h>
+#include <utime.h>
 #include <sys/types.h>
 /*
  * Backwards compatible utime.
  */
-
+int
 utime(name, otv)
 	char *name;
 	time_t otv[];

@@ -123,6 +123,12 @@ loadfile_header(char *kerneltype, char *filename)
 #ifdef BOOT_ELF64
 	    printf("elf64_loadfile: cannot allocate module info\n");
 #endif
+#ifdef BOOT_XCOFF32
+	    printf("xcoff32_loadfile: cannot allocate module info\n");
+#endif
+#ifdef BOOT_XCOFF64
+	    printf("xcoff64_loadfile: cannot allocate module info\n");
+#endif
 		 err = EPERM;
 	 }
 	 return (err);
@@ -150,4 +156,16 @@ int
 elf64_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result)
 {
 	return (exec_loadfile(ELF64_KERNELTYPE, filename, dest, result));
+}
+
+int
+xcoff32_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result)
+{
+	return (exec_loadfile(XCOFF32_KERNELTYPE, filename, dest, result));
+}
+
+int
+xcoff64_loadfile(char *filename, u_int64_t dest, struct preloaded_file **result)
+{
+	return (exec_loadfile(XCOFF64_KERNELTYPE, filename, dest, result));
 }

@@ -13,10 +13,12 @@ static char sccsid[] = "@(#)times.c	5.2 (Berkeley) 3/9/86";
 #include <sys/types.h>
 #include <sys/times.h>
 
+int
 times(tmsp)
 	register struct tms *tmsp;
 {
 	struct rusage ru;
+	struct timeval t;
 	long scale60();
 
 	if (getrusage(RUSAGE_SELF, &ru) < 0)
@@ -27,6 +29,8 @@ times(tmsp)
 		return (-1);
 	tmsp->tms_cutime = scale60(&ru.ru_utime);
 	tmsp->tms_cstime = scale60(&ru.ru_stime);
+	if (gettimeofday(&t, (struct timezone *)0))
+		return (-1);
 	return (0);
 }
 
@@ -34,6 +38,5 @@ static long
 scale60(tvp)
 	register struct timeval *tvp;
 {
-
 	return (tvp->tv_sec * 60 + tvp->tv_usec / 16667);
 }

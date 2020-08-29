@@ -22,6 +22,7 @@ ccpu_shift(p)
 	register int s;
 
 	s = splstatclock();	/* prevent state changes */
+
 	/*
 	 * p_pctcpu is only for ps.
 	 */

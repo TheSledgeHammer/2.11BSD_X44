@@ -37,7 +37,7 @@
  */
 
 #include <sys/syscall.h>
-//#include <machine/asm.h>
+#include <machine/asm.h>
 
 #ifdef PROF
 #define	ENTRY(x)		.globl _/**/x; \
