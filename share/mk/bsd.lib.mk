@@ -11,7 +11,7 @@ __initialized__:
 .MAIN:		all
 .endif
 
-.PHONY:		cleanlib libinstall
+.PHONY:			cleanlib libinstall
 realinstall:	libinstall
 clean cleandir:	cleanlib
 

@@ -12,6 +12,7 @@ static char sccsid[] = "@(#)alarm.c	5.2 (Berkeley) 3/9/86";
  * Backwards compatible alarm.
  */
 #include <sys/time.h>
+#include <unistd.h>
 
 alarm(secs)
 	int secs;

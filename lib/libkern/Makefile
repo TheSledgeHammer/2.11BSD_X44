@@ -11,60 +11,42 @@
 # a kernel is compiled..
 
 DEFS=	-DKERNEL
-CFLAGS=	 -O ${DEFS} -I../libc/pdp/gen
-CPP=	/lib/cpp -P ${DEFS} -I../libc/pdp/gen
-AS=	/bin/as -u
-PREFIX=	/usr/src/lib/libc/pdp
+CFLAGS=	 -O ${DEFS} -I../libc/arch/${MACHINE}/gen
+CPP=	/lib/cpp -P ${DEFS} -I../libc/arch/${MACHINE}/gen
+AS=		/bin/as -u
+PREFIX=	/usr/src/lib/libc/arch/${MACHINE}
 
-SRCS=	bcmp.s bcopy.s bzero.s ffs.s htonl.s htons.s insque.s \
-	ldiv.s lmul.s lrem.s remque.s strlen.s udiv.s uldiv.s ulsh.s
+CPPFLAGS+= -nostdinc -I${.OBJDIR} -I${S} -I${S}/arch
 
-OBJS=	bcmp.o bcopy.o bzero.o ffs.o htonl.o htons.o insque.o \
-	ldiv.o lmul.o lrem.o remque.o strlen.o udiv.o uldiv.o ulsh.o
+CPPFLAGS+= -D_STANDALONE
 
-.c.o:
-	${CC} ${CFLAGS} $*.c
-	ld -X -r $*.o
-	mv a.out $*.o
+COPTS+=	-ffreestanding
+COPTS+=	-fno-stack-protector
+COPTS+=	-fno-unwind-tables
+CWARNFLAGS+= -Werror
+CWARNFLAGS+= -Wall -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith
+CPPFLAGS+= -D_KERNTYPES
 
-.s.o:
-	${CPP} $*.s | ${AS} -o $*.o
-	ld -X -r $*.o
-	mv a.out $*.o
+### find out what to use for libkern
+KERN_AS=	library
+KERNDIR=	${S}/lib/libkern
 
-all: FRC libkern.a
+.include "${KERNDIR}/Makefile.libkern"
 
-libkern.a: ${OBJS}
-	rm -f libkern.a
-	ar rv libkern.a ${OBJS}
+KQSRCS=	adddi3.c anddi3.c ashldi3.c ashrdi3.c cmpdi2.c divdi3.c iordi3.c \
+		lshldi3.c lshrdi3.c moddi3.c muldi3.c negdi2.c notdi2.c qdivrem.c \
+		subdi3.c ucmpdi2.c udivdi3.c umoddi3.c xordi3.c
+KSRCS=	bcmp.c ffs.c index.c mcount.c rindex.c strcat.c strcmp.c strcpy.c \
+		strlen.c strncpy.c
+		
+libkern: libkern.gen libkern.${MACHINE}
 
-clean:
-	rm -f ${OBJS} ${SRCS} libkern.a
+libkern.gen: ${KQSRCS} ${KSRCS}
+	cp -p ${.CURDIR}/quad/quad.h ${.ALLSRC} /sys/libkern
 
-depend: ${SRCS}
-	mkdep ${CFLAGS} ${SRCS}
+libkern.${MACHINE}:: ${KMSRCS}
+.if defined(KMSRCS) && !empty(KMSRCS)
+	cp -p ${.ALLSRC} /sys/libkern/${MACHINE}
+.endif
 
-install: FRC libkern.a
-	install -o root -g bin -m 644 libkern.a ${DESTDIR}/usr/lib/libkern.a
-	ranlib ${DESTDIR}/usr/lib/libkern.a
-
-FRC:
-	rm -f ${SRCS}
-	ln ${PREFIX}/gen/bcmp.s bcmp.s 
-	ln ${PREFIX}/gen/bcopy.s bcopy.s
-	ln ${PREFIX}/gen/bzero.s bzero.s
-	ln ${PREFIX}/gen/ffs.s ffs.s
-	ln ${PREFIX}/gen/insque.s insque.s
-	ln ${PREFIX}/gen/remque.s remque.s
-	ln ${PREFIX}/gen/strlen.s strlen.s
-	ln ${PREFIX}/crt/ldiv.s ldiv.s
-	ln ${PREFIX}/crt/lmul.s lmul.s
-	ln ${PREFIX}/crt/lrem.s lrem.s
-	ln ${PREFIX}/crt/udiv.s udiv.s
-	ln ${PREFIX}/crt/uldiv.s uldiv.s
-	ln ${PREFIX}/crt/ulsh.s ulsh.s
-	ln ${PREFIX}/net/htonl.s htonl.s
-	ln ${PREFIX}/net/htons.s htons.s
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+.include <bsd.lib.mk>

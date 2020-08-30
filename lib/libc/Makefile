@@ -40,67 +40,43 @@
 #	defining HOSTLOOKUP to be "hosttable", compiles
 #	the host lookup routines that use /etc/hosts.
 #
-HOSTLOOKUP=	named
-#HOSTLOOKUP=	hosttable
-#							
-DESTDIR=
-INSTALL=install -m 644
-DFLMON=	mon.o
-MACHINE=pdp
-DEFS=
-COMPAT=	compat-4.1 compat-sys5 compat-43
-ALL=	gen inet net ns stdio stdlib string ${MACHINE} ${COMPAT}
-TAGSFILE=tags
 
-libc.a libc_p.a: ${MACHINE}/csu ${ALL} net/${HOSTLOOKUP}
-	rm -rf tmp
-	mkdir tmp
-	cd tmp; \
-		for i in ${ALL}; do ar x ../$$i/$${i}lib; done; \
-		ar x ../net/${HOSTLOOKUP}/hostlib; \
-		ar cr ../libc.a `lorder *.o | tsort` \
-			../${MACHINE}/csu/${DFLMON}
-	ar ma findiop.o libc.a exit.o
-	ar ma exit.o libc.a fakcu.o
-	ar ma fltpr.o libc.a doprnt.o
-	ar ma doprnt.o libc.a ffltpr.o
-	rm -rf tmp
-	mkdir tmp
-	cd tmp; \
-		for i in ${ALL}; do ar x ../$$i/$${i}lib_p; done; \
-		ar x ../net/${HOSTLOOKUP}/hostlib_p; \
-		ar cr ../libc_p.a `lorder *.o | tsort` \
-			../${MACHINE}/csu/${DFLMON}
-	ar ma findiop.o libc_p.a exit.o
-	ar ma exit.o libc_p.a fakcu.o
-	ar ma fltpr.o libc_p.a doprnt.o
-	ar ma doprnt.o libc_p.a ffltpr.o
-	rm -rf tmp
+LIB=c
+CPPFLAGS+=	-I${.CURDIR}/include -I${.CURDIR}
+AINC=		-I${.CURDIR}/${MACHINE}
+CLEANFILES+=tags
 
-${MACHINE}/csu ${ALL} net/${HOSTLOOKUP}: FRC
-	cd $@; make ${MFLAGS} DEFS=${DEFS}
+.include "${.CURDIR}/db/Makefile.inc"
+.include "${.CURDIR}/dlfcn/Makefile.inc"
+.include "${.CURDIR}/compat-4.1/Makefile.inc"
+.include "${.CURDIR}/compat-43/Makefile.inc"
+.include "${.CURDIR}/compat-sys5/Makefile.inc"
+.include "${.CURDIR}/gen/Makefile.inc"
+.include "${.CURDIR}/gmon/Makefile.inc"
+.include "${.CURDIR}/inet/Makefile.inc"
+.include "${.CURDIR}/locale/Makefile.inc"
+.include "${.CURDIR}/net/Makefile.inc"
+.include "${.CURDIR}/ns/Makefile.inc"
+.include "${.CURDIR}/quad/Makefile.inc"
+.include "${.CURDIR}/regex/Makefile.inc"
+.include "${.CURDIR}/stdio/Makefile.inc"
+.include "${.CURDIR}/stdlib/Makefile.inc"
+.include "${.CURDIR}/string/Makefile.inc"
+.include "${.CURDIR}/termios/Makefile.inc"
 
-FRC:
+beforeinstall: tags
+	install -c -o bin -g bin -m 444 tags /var/db/libc.tags
 
-install: libc.a libc_p.a
-	${INSTALL} libc.a ${DESTDIR}/lib/libc.a
-	ranlib ${DESTDIR}/lib/libc.a
-	${INSTALL} libc_p.a ${DESTDIR}/usr/lib/libc_p.a
-	ranlib ${DESTDIR}/usr/lib/libc_p.a
-	cd ${MACHINE}/csu; make DESTDIR=${DESTDIR} install
+tags: ${SRCS}
+	ctags ${.ALLSRC:M*.c}
+	egrep -o "^ENTRY(.*)|^FUNC(.*)|^SYSCALL(.*)" ${.ALLSRC:M*.s} | \
+	    sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
+	    >> tags; sort -o tags tags
 
-tags:
-	for i in ${ALL}; do \
-		(cd $$i; make ${MFLAGS} TAGSFILE=../${TAGSFILE} tags); \
-	done
-	cd net/${HOSTLOOKUP}; \
-		make ${MFLAGS} TAGSFILE=../../${TAGSFILE} tags
+.include <bsd.lib.mk>
 
-clean:
-	for i in ${MACHINE}/csu ${ALL} net/hosttable net/named; \
-		do (cd $$i; make ${MFLAGS} clean); done
-	rm -rf tmp
-
-depend:
-	for i in ${MACHINE}/csu ${ALL} net/hosttable net/named; \
-		do (cd $$i; make ${MFLAGS} DEFS=${DEFS} depend); done
+# force the dynamic linker to initialize libc first
+SHLIB_SHFLAGS+=	-Wl,-z,initfirst
+.if ${HAVE_LIBGCC} == "no"
+SHLIB_SHFLAGS+= -Wl,-z,defs
+.endif

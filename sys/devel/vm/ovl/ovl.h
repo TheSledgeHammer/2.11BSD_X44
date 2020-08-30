@@ -99,15 +99,13 @@ typedef struct ovl_map_entry	*ovl_map_entry_t;
 struct ovl_object;
 typedef struct ovl_object 		*ovl_object_t; 		/* akin to a vm_object but in ovlspace */
 
-
-
 /*
  * shareable overlay address space.
  */
 struct ovlspace {
-	struct ovl_map 	    ovl_map;	    	/* Overlay address */
+	struct ovl_map 	    ovl_map;	    	/* overlay address */
 	struct pmap    		ovl_pmap;	    	/* private physical map */
-	struct extent 		*ovl_extent;		/* Overlay extent allocation */
+	struct extent 		*ovl_extent;		/* overlay extent allocation */
 
 	boolean_t			ovl_uses_extents;	/* is overlay using extent allocation */
 	boolean_t 			ovl_is_segmented;	/* is overlay using separated process segments */
@@ -121,6 +119,18 @@ struct ovlspace {
 	caddr_t         	ovl_minsaddr;		/* user OVA at min stack growth */
 	caddr_t         	ovl_maxsaddr;		/* user OVA at max stack growth */
 };
+
+/*
+ * Shareable overlay address space.
+ */
+struct ovlspace {
+	struct ovl_map 	ovl_map;		/* overlay address map */
+	struct pmap 	ovl_pmap;		/* private physical map */
+
+	struct koverlay ovl_kovl;		/* kernel overlay space */
+	struct voverlay ovl_vovl;		/* virtual overlay space */
+};
+
 
 /* Overlay Flags */
 #define OVL_ALLOCATED  (1 < 0) 							/* kernel overlay region allocated */

@@ -4,7 +4,7 @@ lib2648/		4.3
 libF77/			4.3
 libI77/			4.3
 libU77/			4.3
-libcurses/	4.3  (some long/int fixes to tstp.c)
+libcurses/		4.3  (some long/int fixes to tstp.c)
 libdbm/			4.3
 libg/				UNIMPLEMENTED (4.3 should be ported)
 libln/			4.3
@@ -13,8 +13,8 @@ libmp/			4.3
 libpc/			4.3
 libom/			4.3  (used for both libom.a and libm.a)
 libplot/		4.3
-libtermlib/	4.3
-liby/				4.3
+libtermlib/		4.3
+liby/			4.3
 
 Notes
 -----

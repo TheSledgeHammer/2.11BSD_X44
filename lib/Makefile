@@ -5,30 +5,12 @@
 #
 #	@(#)Makefile	5.4.1 (2.11BSD) 1996/1/11
 #
-DESTDIR=
-CFLAGS=	-O
-SEPFLAG= -i
-TAGSFILE=tags
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR=	ccom c2 cpp libarch libc libkern
 
-all:	${SUBDIR}
+SUBDIR=		libarch libc libkern
 
-${SUBDIR}: FRC
-	cd $@; make SEPFLAG=${SEPFLAG} ${MFLAGS}
+SUBDIR+=	csu/${MACHINE}
 
-FRC:
-	
-install:
-	-for i in ${SUBDIR}; do \
-		(cd $$i; make SEPFLAG=${SEPFLAG} ${MFLAGS} \
-			DESTDIR=${DESTDIR} install); done
-
-tags:
-	cd libc; make ${MFLAGS} TAGSFILE=../${TAGSFILE} tags
-
-clean:
-	rm -f a.out core *.s *.o
-	-for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
+.include <bsd.subdir.mk>

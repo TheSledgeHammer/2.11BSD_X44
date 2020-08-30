@@ -101,6 +101,33 @@ static struct vm_amap *amap_alloc1(int, int, int);
 static __inline void pp_getreflen(int *, int, int *, int *);
 static __inline void pp_setreflen(int *, int, int, int);
 
+struct avmspace *
+avmspace_alloc(min, max)
+	vm_offset_t min, max;
+{
+	register struct avmspace *avm;
+	MALLOC(avm, struct avmspace *, sizeof(struct avmspace), M_AVMMAP, M_WAITOK);
+	avm->avm_extent = extent_create("avm_map", min, max, M_AVMMAP, NULL, 0, EX_WAITOK | EX_MALLOCOK);
+	if(avm->avm_extent) {
+		if(extent_alloc_region(avm->avm_extent, min, max, EX_WAITOK | EX_MALLOCOK)) {
+			amap_init(&avm->avm_amap, min, max);
+			avm->avm_refcnt = 1;
+		}
+	}
+	return (avm);
+}
+
+void
+avmspace_free(avm)
+	register struct avmspace *avm;
+{
+	if (--avm->avm_refcnt == 0) {
+		amap_lock(&avm->avm_amap);
+		extent_free(avm->avm_extent, avm, sizeof(struct avmspace *), EX_WAITOK);
+		FREE(avm, M_AVMMAP);
+	}
+}
+
 /*
  * pp_getreflen: get the reference and length for a specific offset
  *
@@ -145,14 +172,24 @@ pp_setreflen(ppref, offset, ref, len)
  */
 
 void
-amap_init(void)
+amap_init(amap, min, max)
+	register struct avm_amap *amap;
+	vm_offset_t	min, max;
 {
-
-	/*
-	 * Initialize the vm_amap pool.
-	 */
 	//malloc(&vm_amap_extent, sizeof(struct vm_amap), VM_AMAP);
 	//pool_init(&uvm_amap_pool, sizeof(struct vm_amap), 0, 0, 0, "amappl", &pool_allocator_nointr);
+	amap->nentries = 0;
+	amap->size = 0;
+	amap->ref_count = 1;
+	amap->is_main_map = TRUE;
+	//amap->min_offset = min;
+	//amap->max_offset = max;
+	amap->first_free = &amap->header;
+	amap->hint = &amap->header;
+	amap->timestamp = 0;
+	lockinit(&amap->lock, PVM, "thrd_sleep", 0, 0);
+	simple_lock_init(&amap->ref_lock);
+	simple_lock_init(&amap->hint_lock);
 }
 
 /*

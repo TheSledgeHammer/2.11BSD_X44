@@ -7,6 +7,8 @@ NOTE: Don't hesitate to add to this list. :)
 	- Build Toolchain
 - Makefiles:
 	- Use .mk for definitions
+	- fix multiple generic definitions: e.g. MACHINE ARCHDIR etc
+		- i.e. lib
 - Bug Fixes/ missing critical content
 
 #usr/:
@@ -36,11 +38,9 @@ NOTE: Don't hesitate to add to this list. :)
 - Code planned for future integration
 - See devel folder: README.md & TODO.md
 
-##dev:(Derived code mostly from NetBSD 1.2 - 1.4)
-- isa: 
-	- bloated: contains unused code
-- ic:
-	- bloated: contains unused code
+##dev:
+- devices
+
 
 ##lib:
 	

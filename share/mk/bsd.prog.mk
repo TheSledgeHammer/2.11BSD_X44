@@ -15,41 +15,41 @@ __initialized__:
 realinstall:	proginstall scriptsinstall
 clean cleandir:	cleanprog
 
-CFLAGS+=	${COPTS}
+CFLAGS+=		${COPTS}
 
-LIBCRT0?=	${DESTDIR}/usr/lib/crt0.o
-LIBBFD?=	${DESTDIR}/usr/lib/libbfd.a
-LIBC?=		${DESTDIR}/usr/lib/libc.a
-LIBC_PIC?=	${DESTDIR}/usr/lib/libc_pic.a
-LIBCOMPAT?=	${DESTDIR}/usr/lib/libcompat.a
-LIBCRYPT?=	${DESTDIR}/usr/lib/libcrypt.a
-LIBCURSES?=	${DESTDIR}/usr/lib/libcurses.a
-LIBDBM?=	${DESTDIR}/usr/lib/libdbm.a
-LIBDES?=	${DESTDIR}/usr/lib/libdes.a
-LIBEDIT?=	${DESTDIR}/usr/lib/libedit.a
-LIBGCC?=	${DESTDIR}/usr/lib/libgcc.a
+LIBCRT0?=		${DESTDIR}/usr/lib/crt0.o
+LIBBFD?=		${DESTDIR}/usr/lib/libbfd.a
+LIBC?=			${DESTDIR}/usr/lib/libc.a
+LIBC_PIC?=		${DESTDIR}/usr/lib/libc_pic.a
+LIBCOMPAT?=		${DESTDIR}/usr/lib/libcompat.a
+LIBCRYPT?=		${DESTDIR}/usr/lib/libcrypt.a
+LIBCURSES?=		${DESTDIR}/usr/lib/libcurses.a
+LIBDBM?=		${DESTDIR}/usr/lib/libdbm.a
+LIBDES?=		${DESTDIR}/usr/lib/libdes.a
+LIBEDIT?=		${DESTDIR}/usr/lib/libedit.a
+LIBGCC?=		${DESTDIR}/usr/lib/libgcc.a
 LIBGNUMALLOC?=	${DESTDIR}/usr/lib/libgnumalloc.a
-LIBKDB?=	${DESTDIR}/usr/lib/libkdb.a
-LIBKRB?=	${DESTDIR}/usr/lib/libkrb.a
-LIBKVM?=	${DESTDIR}/usr/lib/libkvm.a
-LIBL?=		${DESTDIR}/usr/lib/libl.a
-LIBM?=		${DESTDIR}/usr/lib/libm.a
-LIBMP?=		${DESTDIR}/usr/lib/libmp.a
-LIBNTP?=	${DESTDIR}/usr/lib/libntp.a
-LIBOBJC?=	${DESTDIR}/usr/lib/libobjc.a
-LIBPC?=		${DESTDIR}/usr/lib/libpc.a
-LIBPCAP?=	${DESTDIR}/usr/lib/libpcap.a
-LIBPLOT?=	${DESTDIR}/usr/lib/libplot.a
-LIBPOSIX?=	${DESTDIR}/usr/lib/libposix.a
-LIBRESOLV?=	${DESTDIR}/usr/lib/libresolv.a
-LIBRPCSVC?=	${DESTDIR}/usr/lib/librpcsvc.a
-LIBSKEY?=	${DESTDIR}/usr/lib/libskey.a
+LIBKDB?=		${DESTDIR}/usr/lib/libkdb.a
+LIBKRB?=		${DESTDIR}/usr/lib/libkrb.a
+LIBKVM?=		${DESTDIR}/usr/lib/libkvm.a
+LIBL?=			${DESTDIR}/usr/lib/libl.a
+LIBM?=			${DESTDIR}/usr/lib/libm.a
+LIBMP?=			${DESTDIR}/usr/lib/libmp.a
+LIBNTP?=		${DESTDIR}/usr/lib/libntp.a
+LIBOBJC?=		${DESTDIR}/usr/lib/libobjc.a
+LIBPC?=			${DESTDIR}/usr/lib/libpc.a
+LIBPCAP?=		${DESTDIR}/usr/lib/libpcap.a
+LIBPLOT?=		${DESTDIR}/usr/lib/libplot.a
+LIBPOSIX?=		${DESTDIR}/usr/lib/libposix.a
+LIBRESOLV?=		${DESTDIR}/usr/lib/libresolv.a
+LIBRPCSVC?=		${DESTDIR}/usr/lib/librpcsvc.a
+LIBSKEY?=		${DESTDIR}/usr/lib/libskey.a
 LIBTERMCAP?=	${DESTDIR}/usr/lib/libtermcap.a
-LIBTELNET?=	${DESTDIR}/usr/lib/libtelnet.a
-LIBUTIL?=	${DESTDIR}/usr/lib/libutil.a
-LIBWRAP?=	${DESTDIR}/usr/lib/libwrap.a
-LIBY?=		${DESTDIR}/usr/lib/liby.a
-LIBZ?=		${DESTDIR}/usr/lib/libz.a
+LIBTELNET?=		${DESTDIR}/usr/lib/libtelnet.a
+LIBUTIL?=		${DESTDIR}/usr/lib/libutil.a
+LIBWRAP?=		${DESTDIR}/usr/lib/libwrap.a
+LIBY?=			${DESTDIR}/usr/lib/liby.a
+LIBZ?=			${DESTDIR}/usr/lib/libz.a
 
 .if defined(SHAREDSTRINGS)
 CLEANFILES+=strings

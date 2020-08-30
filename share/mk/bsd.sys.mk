@@ -12,7 +12,7 @@ CPPFLAGS+= -nostdinc -idirafter ${DESTDIR}/usr/include
 .endif
 
 # Helpers for cross-compiling
-HOST_CC?=	cc
+HOST_CC?=		cc
 HOST_CFLAGS?=	-O
 HOST_COMPILE.c?=${HOST_CC} ${HOST_CFLAGS} ${HOST_CPPFLAGS} -c
 HOST_LINK.c?=	${HOST_CC} ${HOST_CFLAGS} ${HOST_CPPFLAGS} ${HOST_LDFLAGS}
@@ -20,7 +20,7 @@ HOST_LINK.c?=	${HOST_CC} ${HOST_CFLAGS} ${HOST_CPPFLAGS} ${HOST_LDFLAGS}
 HOST_CPP?=	cpp
 HOST_CPPFLAGS?=
 
-HOST_LD?=	ld
+HOST_LD?=		ld
 HOST_LDFLAGS?=
 
 STRIPPROG?=	strip
@@ -37,8 +37,22 @@ STRIPPROG?=	strip
 .m.o:
 	${COMPILE.m} ${.IMPSRC}
 
+# C
+.c.o:
+	${_MKTARGET_COMPILE}
+	${COMPILE.c} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} ${.IMPSRC}
+.if defined(CTFCONVERT)
+	${CTFCONVERT} ${CTFFLAGS} ${.TARGET}
+.endif
 
-.if defined(PARALLEL)
+# Assembly
+.s.o:
+	${_MKTARGET_COMPILE}
+	${COMPILE.s} ${COPTS.${.IMPSRC:T}} ${CPUFLAGS.${.IMPSRC:T}} ${CPPFLAGS.${.IMPSRC:T}} ${.IMPSRC}
+.if defined(CTFCONVERT)
+	${CTFCONVERT} ${CTFFLAGS} ${.TARGET}
+.endif
+
 # Lex
 .l:
 	${LEX.l} -o${.TARGET:R}.yy.c ${.IMPSRC}
@@ -63,4 +77,5 @@ STRIPPROG?=	strip
 	${YACC.y} -b ${.TARGET:R} ${.IMPSRC}
 	${COMPILE.c} -o ${.TARGET} ${.TARGET:R}.tab.c
 	rm -f ${.TARGET:R}.tab.c
+	
 .endif

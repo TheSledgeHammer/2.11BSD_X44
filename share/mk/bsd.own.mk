@@ -79,7 +79,7 @@ NEED_OWN_INSTALL_TARGET?=	yes
 
 .if (${NEED_OWN_INSTALL_TARGET} == "yes")
 .if !target(install)
-install:	.NOTMAIN beforeinstall subdir-install realinstall afterinstall
+install:		.NOTMAIN beforeinstall subdir-install realinstall afterinstall
 beforeinstall:	.NOTMAIN
 subdir-install:	.NOTMAIN beforeinstall
 realinstall:	.NOTMAIN beforeinstall

@@ -66,3 +66,5 @@ lint:		$(TZCSRCS) $(TZDSRCS)
 
 clean:
 		rm -f *.o zdump zic $(ZICMAN) $(ZDUMAN)
+
+.include <bsd.prog.mk>

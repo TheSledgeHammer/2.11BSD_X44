@@ -1,11 +1,11 @@
 #	$NetBSD: sys.mk,v 1.33.2.2 1997/11/05 05:37:41 thorpej Exp $
 #	@(#)sys.mk	8.2 (Berkeley) 3/21/94
 
-unix?=		We run 2.11BSD.
+unix?=			We run 2.11BSD.
 
-.SUFFIXES: .out .a .ln .o .s .S .c .cc .C .F .f .r .y .l .cl .p .h .sh .m4
+.SUFFIXES: 		.out .a .ln .o .s .S .c .cc .cpp .C .F .f .r .y .l .cl .p .h .sh .m4
 
-.LIBS:		.a
+.LIBS:			.a
 
 AR?=			ar
 ARFLAGS?=		rl
@@ -13,14 +13,14 @@ RANLIB?=		ranlib
 
 AS?=			as
 AFLAGS?=
-COMPILE.s?=	${CC} ${AFLAGS} -c
+COMPILE.s?=		${CC} ${AFLAGS} -c
 LINK.s?=		${CC} ${AFLAGS} ${LDFLAGS}
-COMPILE.S?=	${CC} ${AFLAGS} ${CPPFLAGS} -c -traditional-cpp
+COMPILE.S?=		${CC} ${AFLAGS} ${CPPFLAGS} -c -traditional-cpp
 LINK.S?=		${CC} ${AFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
 CC?=			cc
 CFLAGS?=		-O
-COMPILE.c?=	${CC} ${CFLAGS} ${CPPFLAGS} -c
+COMPILE.c?=		${CC} ${CFLAGS} ${CPPFLAGS} -c
 LINK.c?=		${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
 CXX?=			g++
@@ -28,9 +28,9 @@ CXXFLAGS?=		${CFLAGS}
 COMPILE.cc?=	${CXX} ${CXXFLAGS} ${CPPFLAGS} -c
 LINK.cc?=		${CXX} ${CXXFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
-OBJC?=		${CC}
-OBJCFLAGS?=	${CFLAGS}
-COMPILE.m?=	${OBJC} ${OBJCFLAGS} ${CPPFLAGS} -c
+OBJC?=			${CC}
+OBJCFLAGS?=		${CFLAGS}
+COMPILE.m?=		${OBJC} ${OBJCFLAGS} ${CPPFLAGS} -c
 LINK.m?=		${OBJC} ${OBJCFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
 CPP?=			cpp
@@ -39,43 +39,43 @@ CPPFLAGS?=
 FC?=			f77
 FFLAGS?=		-O
 RFLAGS?=
-COMPILE.f?=	${FC} ${FFLAGS} -c
+COMPILE.f?=		${FC} ${FFLAGS} -c
 LINK.f?=		${FC} ${FFLAGS} ${LDFLAGS}
-COMPILE.F?=	${FC} ${FFLAGS} ${CPPFLAGS} -c
+COMPILE.F?=		${FC} ${FFLAGS} ${CPPFLAGS} -c
 LINK.F?=		${FC} ${FFLAGS} ${CPPFLAGS} ${LDFLAGS}
-COMPILE.r?=	${FC} ${FFLAGS} ${RFLAGS} -c
+COMPILE.r?=		${FC} ${FFLAGS} ${RFLAGS} -c
 LINK.r?=		${FC} ${FFLAGS} ${RFLAGS} ${LDFLAGS}
 
 INSTALL?=		install
 
 LEX?=			lex
 LFLAGS?=
-LEX.l?=		${LEX} ${LFLAGS}
+LEX.l?=			${LEX} ${LFLAGS}
 
 LD?=			ld
 LDFLAGS?=
 
-LINT?=		lint
-LINTFLAGS?=	-chapbxz
+LINT?=			lint
+LINTFLAGS?=		-chapbxz
 
 LORDER?=		lorder
 
-MAKE?=		make
+MAKE?=			make
 
 NM?=			nm
 
 PC?=			pc
 PFLAGS?=
-COMPILE.p?=	${PC} ${PFLAGS} ${CPPFLAGS} -c
+COMPILE.p?=		${PC} ${PFLAGS} ${CPPFLAGS} -c
 LINK.p?=		${PC} ${PFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
-SHELL?=		sh
+SHELL?=			sh
 
-SIZE?=		size
+SIZE?=			size
 
 TSORT?= 		tsort -q
 
-YACC?=		yacc
+YACC?=			yacc
 YFLAGS?=		-d
 YACC.y?=		${YACC} ${YFLAGS}
 
