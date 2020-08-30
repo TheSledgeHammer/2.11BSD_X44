@@ -9,8 +9,8 @@
 # Programs that live in subdirectories, and have makefiles of their own.
 #
 
-SUBDIR=		libarch libc libkern
+.include <bsd.own.mk>
 
-SUBDIR+=	csu/${MACHINE}
+SUBDIR=		csu libarch libc libcompat libkern
 
 .include <bsd.subdir.mk>

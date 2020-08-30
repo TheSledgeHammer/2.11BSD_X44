@@ -184,6 +184,3 @@ lint: ${LOBJS}
 .include <bsd.dep.mk>
 .include <bsd.sys.mk>
 
-# Make sure all of the standard targets are defined, even if they do nothing.
-regress:
-

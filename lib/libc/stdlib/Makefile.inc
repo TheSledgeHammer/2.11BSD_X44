@@ -10,3 +10,5 @@
 .PATH: ${ARCHDIR}/stdlib ${.CURDIR}/stdlib
 
 SRCS+=	getopt.c getsubopt.c strtol.c strtoul.c
+
+.include "${ARCHDIR}/stdlib/Makefile.inc"

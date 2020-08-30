@@ -12,7 +12,7 @@
 #	@(#)Makefile	5.16 (Berkeley) 3/14/88
 #
 # machine-independent net sources
-.PATH:	${.CURDIR}/net
+.PATH:	${ARCHDIR}/net ${.CURDIR}/net
 SRCS+=	getnbyaddr.c getnbyname.c getnent.c getpent.c getpname.c	\
 		getproto.c getsbyname.c getsbyport.c getsent.c herror.c 	\
 		rcmd.c res_comp.c res_debug.c res_init.c res_mkquery.c		\
@@ -22,3 +22,5 @@ SRCS+=	getnbyaddr.c getnbyname.c getnent.c getpent.c getpname.c	\
 # sub-directories net sources
 .include "${.CURDIR}/net/hosttable/Makefile.inc"
 .include "${.CURDIR}/net/named/Makefile.inc"
+
+.include "${ARCHDIR}/net/Makefile.inc"

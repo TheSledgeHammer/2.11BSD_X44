@@ -7,4 +7,4 @@ SRCS+=	adddi3.c anddi3.c ashldi3.c ashrdi3.c cmpdi2.c divdi3.c fixdfdi.c \
 		negdi2.c notdi2.c qdivrem.c subdi3.c ucmpdi2.c udivdi3.c umoddi3.c \
 		xordi3.c
 
-.PATH: ${.CURDIR}/${MACHINE}/quad ${.CURDIR}/quad
+.PATH: ${ARCHDIR}/quad ${.CURDIR}/quad

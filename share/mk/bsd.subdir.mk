@@ -1,14 +1,7 @@
-#	$NetBSD: bsd.subdir.mk,v 1.28.2.2 1997/11/13 09:20:52 thorpej Exp $
+#	$NetBSD: bsd.subdir.mk,v 1.47 2004/01/29 01:48:45 lukem Exp $
 #	@(#)bsd.subdir.mk	8.1 (Berkeley) 6/8/93
 
-.if !target(__initialized__)
-__initialized__:
-.if exists(${.CURDIR}/../Makefile.inc)
-.include "${.CURDIR}/../Makefile.inc"
-.endif
-.include <bsd.own.mk>
-.MAIN:		all
-.endif
+.include <bsd.init.mk>
 
 .for dir in ${SUBDIR}
 .if exists(${dir}.${MACHINE})
@@ -18,21 +11,43 @@ __REALSUBDIR+=${dir}
 .endif
 .endfor
 
+__recurse: .USE
+	@targ=${.TARGET:C/-.*$//};dir=${.TARGET:C/^[^-]*-//};		\
+	case "$$dir" in /*)											\
+		echo "$$targ ===> $$dir";								\
+		cd "$$dir";												\
+		${MAKE} "_THISDIR_=$$dir/" $$targ;						\
+		;;														\
+	*)															\
+		echo "$$targ ===> ${_THISDIR_}$$dir";					\
+		cd "${.CURDIR}/$$dir";									\
+		${MAKE} "_THISDIR_=${_THISDIR_}$$dir/" $$targ;			\
+		;;														\
+	esac
+
+.if make(cleandir)
+__RECURSETARG=	${TARGETS:Nclean}
+clean:
+.else
+__RECURSETARG=	${TARGETS}
+.endif
+
+# for obscure reasons, we can't do a simple .if ${dir} == ".WAIT"
+# but have to assign to __TARGDIR first.
+.for targ in ${__RECURSETARG}
 .for dir in ${__REALSUBDIR}
-.for targ in ${TARGETS}
-.PHONY: ${targ}-${dir}
-${targ}-${dir}: .MAKE
-	@echo "${targ} ===> ${_THISDIR_}${dir}"
-	@cd ${.CURDIR}/${dir}; \
-	${MAKE} "_THISDIR_=${_THISDIR_}${dir}/" ${targ}
-subdir-${targ}: ${targ}-${dir}
+__TARGDIR := ${dir}
+.if ${__TARGDIR} == ".WAIT"
+SUBDIR_${targ} += .WAIT
+.elif !commands(${targ}-${dir})
+${targ}-${dir}: .PHONY .MAKE __recurse
+SUBDIR_${targ} += ${targ}-${dir}
+.endif
+.endfor
+.if defined(__REALSUBDIR)
+subdir-${targ}: .PHONY ${SUBDIR_${targ}}
 ${targ}: subdir-${targ}
+.endif
 .endfor
 
-# Backward-compatibility with the old rules.  If this went away,
-# 'xlint' could become 'lint', 'xinstall' could become 'install', etc.
-${dir}: all-${dir}
-.endfor
-
-# Make sure all of the standard targets are defined, even if they do nothing.
-${TARGETS}:
+${TARGETS}:	# ensure existence

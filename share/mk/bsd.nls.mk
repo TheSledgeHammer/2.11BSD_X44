@@ -1,63 +1,72 @@
-#	$NetBSD: bsd.nls.mk,v 1.10 1997/10/11 08:16:28 mycroft Exp $
+#	$NetBSD: bsd.nls.mk,v 1.45 2004/01/29 01:48:45 lukem Exp $
 
-.if !target(.MAIN)
-.if exists(${.CURDIR}/../Makefile.inc)
-.include "${.CURDIR}/../Makefile.inc"
-.endif
+.include <bsd.init.mk>
 
-.MAIN:		all
-.endif
-.PHONY:		cleannls nlsinstall
-.if !defined(NONLS)
+##### Basic targets
+cleandir:		cleannls
 realinstall:	nlsinstall
-.endif
-cleandir:	cleannls
+
+##### Default values
+NLSNAME?=		${PROG:Ulib${LIB}}
+
+NLS?=
+
+##### Build rules
+.if ${MKNLS} != "no"
+
+NLSALL=			${NLS:.msg=.cat}
+
+realall:		${NLSALL}
+.NOPATH:		${NLSALL}
 
 .SUFFIXES: .cat .msg
 
 .msg.cat:
-	@rm -f ${.TARGET}
-	gencat ${.TARGET} ${.IMPSRC}
+		@rm -f ${.TARGET}
+		${_MKTARGET_CREATE}
+		${TOOL_GENCAT} ${.TARGET} ${.IMPSRC}
 
-.if defined(NLS) && !empty(NLS)
-NLSALL= ${NLS:.msg=.cat}
+.endif # ${MKNLS} != "no"
+
+##### Install rules
+nlsinstall::	# ensure existence
+.PHONY:		nlsinstall
+
+.if ${MKNLS} != "no"
+
+__nlsinstall: .USE
+	${_MKTARGET_INSTALL}
+	${INSTALL_FILE} -o ${NLSOWN} -g ${NLSGRP} -m ${NLSMODE} \
+		${SYSPKGTAG} ${.ALLSRC} ${.TARGET}
+
+.for F in ${NLSALL:O:u}
+_F:=		${DESTDIR}${NLSDIR}/${F:T:R}/${NLSNAME}.cat # installed path
+
+.if ${MKUPDATE} == "no"
+${_F}!		${F} __nlsinstall			# install rule
+.if !defined(BUILD) && !make(all) && !make(${F})
+${_F}!		.MADE					# no build at install
 .endif
-
-.if !defined(NLSNAME)
-.if defined(PROG)
-NLSNAME=${PROG}
 .else
-NLSNAME=lib${LIB}
+${_F}:		${F} __nlsinstall			# install rule
+.if !defined(BUILD) && !make(all) && !make(${F})
+${_F}:		.MADE					# no build at install
 .endif
 .endif
 
-.if defined(NLSALL)
-.if !defined(NONLS)
-all: ${NLSALL}
-.endif
-
-cleannls:
-	rm -f ${NLSALL}
-
-.for F in ${NLSALL}
-nlsinstall:: ${DESTDIR}${NLSDIR}/${F:T:R}/${NLSNAME}.cat
-.if !defined(UPDATE)
-.PHONY: ${DESTDIR}${NLSDIR}/${F:T:R}/${NLSNAME}.cat
-.endif
-.if !defined(BUILD)
-${DESTDIR}${NLSDIR}/${F:T:R}/${NLSNAME}.cat: .MADE
-.endif
-
-.PRECIOUS: ${DESTDIR}${NLSDIR}/${F:T:R}/${NLSNAME}.cat
-${DESTDIR}${NLSDIR}/${F:T:R}/${NLSNAME}.cat: ${F}
-	${INSTALL} -d ${.TARGET:H}
-	${INSTALL} ${COPY} -o ${NLSOWN} -g ${NLSGRP} -m ${NLSMODE} ${.ALLSRC} \
-		${.TARGET}
+nlsinstall::	${_F}
+.PRECIOUS:	${_F}					# keep if install fails
 .endfor
-.else
-cleannls:
+
+.undef _F
+.endif # ${MKNLS} != "no"
+
+##### Clean rules
+cleannls: .PHONY
+.if ${MKNLS} != "no" && !empty(NLS)
+	rm -f ${NLSALL}
 .endif
 
-.if !target(nlsinstall)
-nlsinstall::
-.endif
+##### Pull in related .mk logic
+.include <bsd.obj.mk>
+.include <bsd.sys.mk>

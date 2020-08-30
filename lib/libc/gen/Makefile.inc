@@ -5,10 +5,6 @@
 #
 #	@(#)Makefile	5.7.11 (2.11BSD) 1997/12/31
 #
-# Several routines have been rewritten in assembly language for the VAX and
-# the PDP. If you are not running on a VAX or PDP, you should use the
-# original C sources which are included in this directory.
-#
 
 # machine-independent gen sources
 .PATH: ${ARCHDIR}/gen ${.CURDIR}/gen

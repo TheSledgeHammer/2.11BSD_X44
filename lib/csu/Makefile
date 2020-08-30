@@ -24,3 +24,5 @@ COPTS+=		-fcommon
 .PATH:	${ARCHDIR}
 .include "${ARCHDIR}/Makefile.inc"
 .include "${.CURDIR}/common/Makefile.inc"
+
+.include <bsd.subdir.mk>

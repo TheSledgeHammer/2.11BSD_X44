@@ -55,4 +55,4 @@
 
 #define	ASMSTR			.asciz
 
-		.globl	cerror
+						.globl	cerror

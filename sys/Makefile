@@ -103,6 +103,6 @@ symlinks:
 		    ${DESTDIR}/usr/include/${MACHINE_ARCH} ; \
 	else \
 		ln -s machine ${DESTDIR}/usr/include/${MACHINE_ARCH} ; \
-	fi
+	f
 
 .include <bsd.subdir.mk>

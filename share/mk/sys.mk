@@ -3,7 +3,7 @@
 
 unix?=			We run 2.11BSD.
 
-.SUFFIXES: 		.out .a .ln .o .s .S .c .cc .cpp .C .F .f .r .y .l .cl .p .h .sh .m4
+.SUFFIXES: 		.a .o .ln .s .S .c .cc .cpp .cxx .C .f .F .r .p .l .y .sh
 
 .LIBS:			.a
 
@@ -19,12 +19,14 @@ COMPILE.S?=		${CC} ${AFLAGS} ${CPPFLAGS} -c -traditional-cpp
 LINK.S?=		${CC} ${AFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
 CC?=			cc
-CFLAGS?=		-O
+.if ${MACHINE_ARCH} == "i386"
+DBG?=			-O
+CFLAGS?=		${DBG}
 COMPILE.c?=		${CC} ${CFLAGS} ${CPPFLAGS} -c
 LINK.c?=		${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
-CXX?=			g++
-CXXFLAGS?=		${CFLAGS}
+CXX?=			c++
+CXXFLAGS?=		${CFLAGS:S/-Wno-traditional//}
 COMPILE.cc?=	${CXX} ${CXXFLAGS} ${CPPFLAGS} -c
 LINK.cc?=		${CXX} ${CXXFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
@@ -48,15 +50,15 @@ LINK.r?=		${FC} ${FFLAGS} ${RFLAGS} ${LDFLAGS}
 
 INSTALL?=		install
 
+LD?=			ld
+LDFLAGS?=
+
 LEX?=			lex
 LFLAGS?=
 LEX.l?=			${LEX} ${LFLAGS}
 
-LD?=			ld
-LDFLAGS?=
-
 LINT?=			lint
-LINTFLAGS?=		-chapbxz
+LINTFLAGS?=		-chapbxzF
 
 LORDER?=		lorder
 
@@ -76,125 +78,166 @@ SIZE?=			size
 TSORT?= 		tsort -q
 
 YACC?=			yacc
-YFLAGS?=		-d
+YFLAGS?=
 YACC.y?=		${YACC} ${YFLAGS}
 
 # C
 .c:
-	${LINK.c} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
+		${LINK.c} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
 .c.o:
-	${COMPILE.c} ${.IMPSRC}
-.if (${MACHINE_ARCH} != "alpha")
+		${COMPILE.c} ${.IMPSRC}
 .c.a:
-	${COMPILE.c} ${.IMPSRC}
-	${AR} ${ARFLAGS} $@ $*.o
-	rm -f $*.o
-.endif
+		${COMPILE.c} ${.IMPSRC}
+		${AR} ${ARFLAGS} ${.TARGET} ${.PREFIX}.o
+		rm -f ${.PREFIX}.o
 .c.ln:
-	${LINT} ${LINTFLAGS} ${CPPFLAGS:M-[IDU]*} -i ${.IMPSRC}
+		${LINT} ${LINTFLAGS} \
+	    ${CPPFLAGS:C/-([IDU])[  ]*/-\1/Wg:M-[IDU]*} \
+	    -i ${.IMPSRC}
 
 # C++
-.cc:
-	${LINK.cc} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
-.cc.o:
-	${COMPILE.cc} ${.IMPSRC}
-.cc.a:
-	${COMPILE.cc} ${.IMPSRC}
-	${AR} ${ARFLAGS} $@ $*.o
-	rm -f $*.o
-
-.C:
-	${LINK.cc} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
-.C.o:
-	${COMPILE.cc} ${.IMPSRC}
-.C.a:
-	${COMPILE.cc} ${.IMPSRC}
-	${AR} ${ARFLAGS} $@ $*.o
-	rm -f $*.o
+.cc .cpp .cxx .C:
+		${LINK.cc} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
+.cc.o .cpp.o .cxx.o .C.o:
+		${COMPILE.cc} ${.IMPSRC}
+.cc.a .cpp.a .cxx.a .C.a:
+		${COMPILE.cc} ${.IMPSRC}
+		${AR} ${ARFLAGS} ${.TARGET} ${.PREFIX}.o
+		rm -f ${.PREFIX}.o
 
 # Fortran/Ratfor
 .f:
-	${LINK.f} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
+		${LINK.f} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
 .f.o:
-	${COMPILE.f} ${.IMPSRC}
+		${COMPILE.f} ${.IMPSRC}
 .f.a:
-	${COMPILE.f} ${.IMPSRC}
-	${AR} ${ARFLAGS} $@ $*.o
-	rm -f $*.o
+		${COMPILE.f} ${.IMPSRC}
+		${AR} ${ARFLAGS} ${.TARGET} ${.PREFIX}.o
+		rm -f ${.PREFIX}.o
 
 .F:
-	${LINK.F} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
+		${LINK.F} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
 .F.o:
-	${COMPILE.F} ${.IMPSRC}
+		${COMPILE.F} ${.IMPSRC}
 .F.a:
-	${COMPILE.F} ${.IMPSRC}
-	${AR} ${ARFLAGS} $@ $*.o
-	rm -f $*.o
+		${COMPILE.F} ${.IMPSRC}
+		${AR} ${ARFLAGS} ${.TARGET} ${.PREFIX}.o
+		rm -f ${.PREFIX}.o
 
 .r:
-	${LINK.r} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
+		${LINK.r} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
 .r.o:
-	${COMPILE.r} ${.IMPSRC}
+		${COMPILE.r} ${.IMPSRC}
 .r.a:
-	${COMPILE.r} ${.IMPSRC}
-	${AR} ${ARFLAGS} $@ $*.o
-	rm -f $*.o
+		${COMPILE.r} ${.IMPSRC}
+		${AR} ${ARFLAGS} ${.TARGET} ${.PREFIX}.o
+		rm -f ${.PREFIX}.o
 
 # Pascal
 .p:
-	${LINK.p} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
+		${LINK.p} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
 .p.o:
-	${COMPILE.p} ${.IMPSRC}
+		${COMPILE.p} ${.IMPSRC}
 .p.a:
-	${COMPILE.p} ${.IMPSRC}
-	${AR} ${ARFLAGS} $@ $*.o
-	rm -f $*.o
+		${COMPILE.p} ${.IMPSRC}
+		${AR} ${ARFLAGS} ${.TARGET} ${.PREFIX}.o
+		rm -f ${.PREFIX}.o
 
 # Assembly
 .s:
-	${LINK.s} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
+		${LINK.s} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
 .s.o:
-	${COMPILE.s} ${.IMPSRC}
+		${COMPILE.s} ${.IMPSRC}
 .s.a:
-	${COMPILE.s} ${.IMPSRC}
-	${AR} ${ARFLAGS} $@ $*.o
-	rm -f $*.o
+		${COMPILE.s} ${.IMPSRC}
+		${AR} ${ARFLAGS} ${.TARGET} ${.PREFIX}.o
+		rm -f ${.PREFIX}.o
 .S:
-	${LINK.S} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
+		${LINK.S} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
 .S.o:
-	${COMPILE.S} ${.IMPSRC}
+		${COMPILE.S} ${.IMPSRC}
 .S.a:
-	${COMPILE.S} ${.IMPSRC}
-	${AR} ${ARFLAGS} $@ $*.o
-	rm -f $*.o
+		${COMPILE.S} ${.IMPSRC}
+		${AR} ${ARFLAGS} ${.TARGET} ${.PREFIX}.o
+		rm -f ${.PREFIX}.o
 
 # Lex
 .l:
-	${LEX.l} ${.IMPSRC}
-	${LINK.c} -o ${.TARGET} lex.yy.c ${LDLIBS} -ll
-	rm -f lex.yy.c
+		${LEX.l} ${.IMPSRC}
+		${LINK.c} -o ${.TARGET} lex.yy.c ${LDLIBS} -ll
+		rm -f lex.yy.c
 .l.c:
-	${LEX.l} ${.IMPSRC}
-	mv lex.yy.c ${.TARGET}
+		${LEX.l} ${.IMPSRC}
+		mv lex.yy.c ${.TARGET}
 .l.o:
-	${LEX.l} ${.IMPSRC}
-	${COMPILE.c} -o ${.TARGET} lex.yy.c 
-	rm -f lex.yy.c
+		${LEX.l} ${.IMPSRC}
+		${COMPILE.c} -o ${.TARGET} lex.yy.c
+		rm -f lex.yy.c
 
 # Yacc
 .y:
-	${YACC.y} ${.IMPSRC}
-	${LINK.c} -o ${.TARGET} y.tab.c ${LDLIBS}
-	rm -f y.tab.c
+		${YACC.y} ${.IMPSRC}
+		${LINK.c} -o ${.TARGET} y.tab.c ${LDLIBS}
+		rm -f y.tab.c
 .y.c:
-	${YACC.y} ${.IMPSRC}
-	mv y.tab.c ${.TARGET}
+		${YACC.y} ${.IMPSRC}
+		mv y.tab.c ${.TARGET}
 .y.o:
-	${YACC.y} ${.IMPSRC}
-	${COMPILE.c} -o ${.TARGET} y.tab.c
-	rm -f y.tab.c
+		${YACC.y} ${.IMPSRC}
+		${COMPILE.c} -o ${.TARGET} y.tab.c
+		rm -f y.tab.c
 
 # Shell
 .sh:
-	rm -f ${.TARGET}
-	cp ${.IMPSRC} ${.TARGET}
+		rm -f ${.TARGET}
+		cp ${.IMPSRC} ${.TARGET}
+		chmod a+x ${.TARGET}
+	
+# Assembly
+.s:
+		${LINK.s} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
+.s.o:
+		${COMPILE.s} ${.IMPSRC}
+.s.a:
+		${COMPILE.s} ${.IMPSRC}
+		${AR} ${ARFLAGS} $@ $*.o
+		rm -f $*.o
+.S:
+		${LINK.S} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
+.S.o:
+		${COMPILE.S} ${.IMPSRC}
+.S.a:
+		${COMPILE.S} ${.IMPSRC}
+		${AR} ${ARFLAGS} $@ $*.o
+		rm -f $*.o
+
+# Lex
+.l:
+		${LEX.l} ${.IMPSRC}
+		${LINK.c} -o ${.TARGET} lex.yy.c ${LDLIBS} -ll
+		rm -f lex.yy.c
+.l.c:
+		${LEX.l} ${.IMPSRC}
+		mv lex.yy.c ${.TARGET}
+.l.o:
+		${LEX.l} ${.IMPSRC}
+		${COMPILE.c} -o ${.TARGET} lex.yy.c 
+		rm -f lex.yy.c
+
+# Yacc
+.y:
+		${YACC.y} ${.IMPSRC}
+		${LINK.c} -o ${.TARGET} y.tab.c ${LDLIBS}
+		rm -f y.tab.c
+.y.c:
+		${YACC.y} ${.IMPSRC}
+		mv y.tab.c ${.TARGET}
+.y.o:
+		${YACC.y} ${.IMPSRC}
+		${COMPILE.c} -o ${.TARGET} y.tab.c
+		rm -f y.tab.c
+
+# Shell
+.sh:
+		rm -f ${.TARGET}
+		cp ${.IMPSRC} ${.TARGET}

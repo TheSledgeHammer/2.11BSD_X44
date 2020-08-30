@@ -7,6 +7,7 @@ COMMON_DIR:=	${.CURDIR}/common
 
 CPPFLAGS+=		-I${COMMON_DIR} -I.
 
+SRCS+=	crt0.c
 OBJS+=	crt0.o gcrt0.o crti.o crtn.o
 OBJS+=	init_note.o
 
