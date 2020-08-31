@@ -149,7 +149,6 @@ _rtld_init(mapbase)
 	objself.rtld = true;
 	objself.mapbase = mapbase;
 
-
 	objself.relocbase = mapbase;
 
 	objself.pltgot = NULL;

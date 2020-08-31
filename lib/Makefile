@@ -7,10 +7,12 @@
 #
 
 # Programs that live in subdirectories, and have makefiles of their own.
-#
+# 
+# To stay in keeping with 2.11BSD: All libs are in usr.lib
+# Excluding csu, libarch, libc, libcompat & libkern
 
 .include <bsd.own.mk>
 
-SUBDIR=		csu libarch libc libcompat libkern
+SUBDIR=	csu libarch libc libcompat libkern
 
 .include <bsd.subdir.mk>

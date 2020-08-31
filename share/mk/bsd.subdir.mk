@@ -1,53 +1,83 @@
-#	$NetBSD: bsd.subdir.mk,v 1.47 2004/01/29 01:48:45 lukem Exp $
-#	@(#)bsd.subdir.mk	8.1 (Berkeley) 6/8/93
+#	$NetBSD: bsd.subdir.mk,v 1.11 1996/04/04 02:05:06 jtc Exp $
+#	@(#)bsd.subdir.mk	5.9 (Berkeley) 2/1/91
 
-.include <bsd.init.mk>
-
-.for dir in ${SUBDIR}
-.if exists(${dir}.${MACHINE})
-__REALSUBDIR+=${dir}.${MACHINE}
-.else
-__REALSUBDIR+=${dir}
-.endif
-.endfor
-
-__recurse: .USE
-	@targ=${.TARGET:C/-.*$//};dir=${.TARGET:C/^[^-]*-//};		\
-	case "$$dir" in /*)											\
-		echo "$$targ ===> $$dir";								\
-		cd "$$dir";												\
-		${MAKE} "_THISDIR_=$$dir/" $$targ;						\
-		;;														\
-	*)															\
-		echo "$$targ ===> ${_THISDIR_}$$dir";					\
-		cd "${.CURDIR}/$$dir";									\
-		${MAKE} "_THISDIR_=${_THISDIR_}$$dir/" $$targ;			\
-		;;														\
-	esac
-
-.if make(cleandir)
-__RECURSETARG=	${TARGETS:Nclean}
-clean:
-.else
-__RECURSETARG=	${TARGETS}
+.if !target(.MAIN)
+.MAIN: all
 .endif
 
-# for obscure reasons, we can't do a simple .if ${dir} == ".WAIT"
-# but have to assign to __TARGDIR first.
-.for targ in ${__RECURSETARG}
-.for dir in ${__REALSUBDIR}
-__TARGDIR := ${dir}
-.if ${__TARGDIR} == ".WAIT"
-SUBDIR_${targ} += .WAIT
-.elif !commands(${targ}-${dir})
-${targ}-${dir}: .PHONY .MAKE __recurse
-SUBDIR_${targ} += ${targ}-${dir}
-.endif
-.endfor
-.if defined(__REALSUBDIR)
-subdir-${targ}: .PHONY ${SUBDIR_${targ}}
-${targ}: subdir-${targ}
-.endif
-.endfor
+_SUBDIRUSE: .USE
+.if defined(SUBDIR)
+	@for entry in ${SUBDIR}; do \
+		(set -e; if test -d ${.CURDIR}/$${entry}.${MACHINE}; then \
+			_newdir_="$${entry}.${MACHINE}"; \
+		else \
+			_newdir_="$${entry}"; \
+		fi; \
+		if test X"${_THISDIR_}" = X""; then \
+			_nextdir_="$${_newdir_}"; \
+		else \
+			_nextdir_="$${_THISDIR_}/$${_newdir_}"; \
+		fi; \
+		echo "===> $${_nextdir_}"; \
+		cd ${.CURDIR}/$${_newdir_}; \
+		${MAKE} _THISDIR_="$${_nextdir_}" \
+		    ${.TARGET:S/realinstall/install/:S/.depend/depend/}); \
+	done
 
-${TARGETS}:	# ensure existence
+${SUBDIR}::
+	@set -e; if test -d ${.CURDIR}/${.TARGET}.${MACHINE}; then \
+		_newdir_=${.TARGET}.${MACHINE}; \
+	else \
+		_newdir_=${.TARGET}; \
+	fi; \
+	echo "===> $${_newdir_}"; \
+	cd ${.CURDIR}/$${_newdir_}; \
+	${MAKE} _THISDIR_="$${_newdir_}" all
+.endif
+
+.if !target(install)
+.if !target(beforeinstall)
+beforeinstall:
+.endif
+.if !target(afterinstall)
+afterinstall:
+.endif
+install: maninstall
+maninstall: afterinstall
+afterinstall: realinstall
+realinstall: beforeinstall _SUBDIRUSE
+.endif
+
+.if !target(all)
+all: _SUBDIRUSE
+.endif
+
+.if !target(clean)
+clean: _SUBDIRUSE
+.endif
+
+.if !target(cleandir)
+cleandir: _SUBDIRUSE
+.endif
+
+.if !target(includes)
+includes: _SUBDIRUSE
+.endif
+
+.if !target(depend)
+depend: _SUBDIRUSE
+.endif
+
+.if !target(lint)
+lint: _SUBDIRUSE
+.endif
+
+.if !target(obj)
+obj: _SUBDIRUSE
+.endif
+
+.if !target(tags)
+tags: _SUBDIRUSE
+.endif
+
+.include <bsd.own.mk>

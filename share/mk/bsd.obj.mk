@@ -1,108 +1,48 @@
-#	$NetBSD: bsd.obj.mk,v 1.46 2003/12/04 12:15:20 lukem Exp $
+#	$NetBSD: bsd.obj.mk,v 1.9 1996/04/10 21:08:05 thorpej Exp $
 
-.if !defined(_BSD_OBJ_MK_)
-_BSD_OBJ_MK_=1
-
-.include <bsd.own.mk>
-
-__curdir:=	${.CURDIR}
-
-.if ${MKOBJ} == "no"
+.if !target(obj)
+.if defined(NOOBJ)
 obj:
 .else
-.if defined(MAKEOBJDIRPREFIX) || defined(MAKEOBJDIR)
-.if defined(MAKEOBJDIRPREFIX)
-__objdir:= ${MAKEOBJDIRPREFIX}${__curdir}
+
+.if defined(OBJMACHINE)
+__objdir=		obj.${MACHINE}
 .else
-__objdir:= ${MAKEOBJDIR}
+__objdir=		obj
 .endif
-# MAKEOBJDIR and MAKEOBJDIRPREFIX are env variables supported
-# by make(1).  We simply mkdir -p the specified path.
-# If that fails - we do a mkdir to get the appropriate error message
-# before bailing out.
-obj:
-.if defined(MAKEOBJDIRPREFIX)
-	@if [ ! -d ${MAKEOBJDIRPREFIX} ]; then \
-		echo "MAKEOBJDIRPREFIX ${MAKEOBJDIRPREFIX} does not exist, bailing..."; \
-		exit 1; \
-	fi;
-.endif
-	@if [ ! -d ${__objdir} ]; then \
-		mkdir -p ${__objdir}; \
-		if [ ! -d ${__objdir} ]; then \
-			mkdir ${__objdir}; exit 1; \
-		fi; \
-		${_MKSHMSG} " objdir  ${__objdir}"; \
-	fi
+
+.if defined(USR_OBJMACHINE)
+__usrobjdir=	${BSDOBJDIR}.${MACHINE}
+__usrobjdirpf=	
 .else
-PAWD?=			/bin/pwd
-
-__objdir=		obj${OBJMACHINE:D.${MACHINE}}
-
-__usrobjdir=	${BSDOBJDIR}${USR_OBJMACHINE:D.${MACHINE}}
-__usrobjdirpf=	${USR_OBJMACHINE:D:U${OBJMACHINE:D.${MACHINE}}}
-
-.if defined(BUILDID)
-__objdir:=	${__objdir}.${BUILDID}
-__usrobjdirpf:=	${__usrobjdirpf}.${BUILDID}
-__need_objdir_target=yes
+__usrobjdir=	${BSDOBJDIR}
+.if defined(OBJMACHINE)
+__usrobjdirpf=	.${MACHINE}
+.else
+__usrobjdirpf=
+.endif
 .endif
 
-.if defined(OBJHOSTMACHINE) && (${MKHOSTOBJ:Uno} != "no")
-# In case .CURDIR has been twiddled by a .mk file and is now relative,
-# make it absolute again.
-.if ${__curdir:M/*} == ""
-__curdir!=	cd ${__curdir} && ${PAWD}
-.endif
-
-__objdir:=	${__objdir}.${HOST_OSTYPE}
-__usrobjdirpf:=	${__usrobjdirpf}.${HOST_OSTYPE}
-__need_objdir_target=yes
-.endif
-
-.if defined(__need_objdir_target)
-.OBJDIR:	${__objdir}
-.endif
-
-obj:
-	@cd ${__curdir}; \
-	here=`${PAWD}`/; subdir=$${here#${BSDSRCDIR}/}; \
-	if [ "$$here" != "$$subdir" ]; then \
-		if [ ! -d ${__usrobjdir} ]; then \
-			echo "BSDOBJDIR ${__usrobjdir} does not exist, bailing..."; \
-			exit 1; \
-		fi; \
-		subdir=$${subdir%/}; \
-		dest=${__usrobjdir}/$$subdir${__usrobjdirpf}; \
-		if  [ -x ${TOOL_STAT} ] && \
-		    ttarg=`${TOOL_STAT} -qf '%Y' $${here}${__objdir}` && \
-		    [ "$$dest" = "$$ttarg" ]; then \
-			: ; \
-		else \
-			${_MKSHMSG} " objdir  $$dest"; \
-			rm -rf ${__objdir}; \
-			ln -s $$dest ${__objdir}; \
-		fi; \
-		if [ ! -d $$dest ]; then \
+obj: _SUBDIRUSE
+	@cd ${.CURDIR}; rm -f ${__objdir} > /dev/null 2>&1 || true; \
+	here=`/bin/pwd`; subdir=$${here#${BSDSRCDIR}/}; \
+	if test $$here != $$subdir ; then \
+		dest=${__usrobjdir}/$$subdir${__usrobjdirpf} ; \
+		echo "$$here/${__objdir} -> $$dest"; \
+		rm -rf ${__objdir}; \
+		ln -s $$dest ${__objdir}; \
+		if test -d ${__usrobjdir} -a ! -d $$dest; then \
 			mkdir -p $$dest; \
 		else \
 			true; \
 		fi; \
 	else \
 		true ; \
-		dest=$${here}${__objdir} ; \
-		if [ ! -d ${__objdir} ] || [ -h ${__objdir} ]; then \
-			${_MKSHMSG} " objdir  $$dest"; \
-			rm -f ${__objdir}; \
+		dest=$$here/${__objdir} ; \
+		if test ! -d ${__objdir} ; then \
+			echo "making $$dest" ; \
 			mkdir $$dest; \
 		fi ; \
 	fi;
 .endif
 .endif
-
-print-objdir:
-		@echo ${.OBJDIR}
-
-.include <bsd.sys.mk>
-
-.endif	# !defined(_BSD_OBJ_MK_)

@@ -1,72 +1,47 @@
-#	$NetBSD: bsd.nls.mk,v 1.45 2004/01/29 01:48:45 lukem Exp $
+#	$NetBSD: bsd.nls.mk,v 1.2 1995/04/27 18:05:38 jtc Exp $
 
-.include <bsd.init.mk>
+.if !target(.MAIN)
+.if exists(${.CURDIR}/../Makefile.inc)
+.include "${.CURDIR}/../Makefile.inc"
+.endif
 
-##### Basic targets
-cleandir:		cleannls
-realinstall:	nlsinstall
-
-##### Default values
-NLSNAME?=		${PROG:Ulib${LIB}}
-
-NLS?=
-
-##### Build rules
-.if ${MKNLS} != "no"
-
-NLSALL=			${NLS:.msg=.cat}
-
-realall:		${NLSALL}
-.NOPATH:		${NLSALL}
+.MAIN: all
+.endif
 
 .SUFFIXES: .cat .msg
 
 .msg.cat:
 		@rm -f ${.TARGET}
-		${_MKTARGET_CREATE}
-		${TOOL_GENCAT} ${.TARGET} ${.IMPSRC}
+		gencat ${.TARGET} ${.IMPSRC}
 
-.endif # ${MKNLS} != "no"
-
-##### Install rules
-nlsinstall::	# ensure existence
-.PHONY:		nlsinstall
-
-.if ${MKNLS} != "no"
-
-__nlsinstall: .USE
-	${_MKTARGET_INSTALL}
-	${INSTALL_FILE} -o ${NLSOWN} -g ${NLSGRP} -m ${NLSMODE} \
-		${SYSPKGTAG} ${.ALLSRC} ${.TARGET}
-
-.for F in ${NLSALL:O:u}
-_F:=		${DESTDIR}${NLSDIR}/${F:T:R}/${NLSNAME}.cat # installed path
-
-.if ${MKUPDATE} == "no"
-${_F}!		${F} __nlsinstall			# install rule
-.if !defined(BUILD) && !make(all) && !make(${F})
-${_F}!		.MADE					# no build at install
+.if defined(NLS) && !empty(NLS)
+NLSALL= ${NLS:.msg=.cat}
 .endif
+
+.if !defined(NLSNAME)
+.if defined(PROG)
+NLSNAME=${PROG}
 .else
-${_F}:		${F} __nlsinstall			# install rule
-.if !defined(BUILD) && !make(all) && !make(${F})
-${_F}:		.MADE					# no build at install
+NLSNAME=lib${LIB}
 .endif
 .endif
 
-nlsinstall::	${_F}
-.PRECIOUS:	${_F}					# keep if install fails
-.endfor
+nlsinstall:
+.if defined(NLSALL)
+	@for msg in ${NLSALL}; do \
+		NLSLANG=`basename $$msg .cat`; \
+		dir=${DESTDIR}${NLSDIR}/$${NLSLANG}; \
+		install -d $$dir; \
+		install ${COPY} -o ${NLSOWN} -g ${NLSGRP} -m ${NLSMODE} $$msg $$dir/${NLSNAME}.cat; \
+	done
+.endif
 
-.undef _F
-.endif # ${MKNLS} != "no"
+.if defined(NLSALL)
+all: ${NLSALL}
 
-##### Clean rules
-cleannls: .PHONY
-.if ${MKNLS} != "no" && !empty(NLS)
+install:  nlsinstall
+
+cleandir: cleannls
+cleannls:
 	rm -f ${NLSALL}
 .endif
-
-##### Pull in related .mk logic
-.include <bsd.obj.mk>
-.include <bsd.sys.mk>

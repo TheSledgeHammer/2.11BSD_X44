@@ -1,57 +1,25 @@
-#	$NetBSD: bsd.inc.mk,v 1.30 2004/01/29 01:48:45 lukem Exp $
+#	$NetBSD: bsd.inc.mk,v 1.12 1999/02/04 11:58:30 christos Exp $
 
-.include <bsd.init.mk>
+.PHONY:		incinstall
+includes:	${INCS} incinstall
 
-##### Basic targets
-includes:	${INCS} incinstall inclinkinstall
+.if defined(INCS)
+.for I in ${INCS}
+incinstall:: ${DESTDIR}${INCSDIR}/$I
 
-##### Default values
-INCSYMLINKS?=
-
-##### Install rules
-incinstall::	# ensure existence
-.PHONY:			incinstall
-
-# -c is forced on here, in order to preserve modtimes for "make depend"
-__incinstall: .USE
-		@cmp -s ${.ALLSRC} ${.TARGET} > /dev/null 2>&1 || \
-	    	(${_MKSHMSG_INSTALL} ${.TARGET}; \
-	    	 ${_MKSHECHO} "${INSTALL_FILE} -c -o ${BINOWN} -g ${BINGRP} \
-				-m ${NONBINMODE} ${SYSPKGTAG} ${.ALLSRC} ${.TARGET}" && \
-	    	 ${INSTALL_FILE} -c -o ${BINOWN} -g ${BINGRP} \
-				-m ${NONBINMODE} ${SYSPKGTAG} ${.ALLSRC} ${.TARGET})
-
-.for F in ${INCS:O:u}
-_FDIR:=			${INCSDIR_${F:C,/,_,g}:U${INCSDIR}}	# dir override
-_FNAME:=		${INCSNAME_${F:C,/,_,g}:U${INCSNAME:U${F}}} # name override
-_F:=			${DESTDIR}${_FDIR}/${_FNAME}		# installed path
-
-.if ${MKUPDATE} == "no"
-${_F}!			${F} __incinstall			# install rule
-.else
-${_F}:			${F} __incinstall			# install rule
+.PRECIOUS: ${DESTDIR}${INCSDIR}/$I
+.if !defined(UPDATE)
+.PHONY: ${DESTDIR}${INCSDIR}/$I
+.endif
+${DESTDIR}${INCSDIR}/$I: $I
+	@cmp -s ${.ALLSRC} ${.TARGET} > /dev/null 2>&1 || \
+	    (echo "${INSTALL} ${RENAME} ${PRESERVE} -c -o ${BINOWN} \
+		-g ${BINGRP} -m ${NONBINMODE} ${.ALLSRC} ${.TARGET}" && \
+	     ${INSTALL} ${RENAME} ${PRESERVE} -c -o ${BINOWN} -g ${BINGRP} \
+		-m ${NONBINMODE} ${.ALLSRC} ${.TARGET})
+.endfor
 .endif
 
-incinstall::	${_F}
-.PRECIOUS:		${_F}					# keep if install fails
-.endfor
-
-.undef _FDIR
-.undef _FNAME
-.undef _F
-
-inclinkinstall::
-.if !empty(INCSYMLINKS)
-	@(set ${INCSYMLINKS}; \
-	 while test $$# -ge 2; do \
-		l=$$1; shift; \
-		t=${DESTDIR}$$1; shift; \
-		if  ttarg=`${TOOL_STAT} -qf '%Y' $$t` && \
-		    [ "$$l" = "$$ttarg" ]; then \
-			continue ; \
-		fi ; \
-		${_MKSHMSG_INSTALL} $$t; \
-		${_MKSHECHO} ${INSTALL_SYMLINK} ${SYSPKGTAG} $$l $$t; \
-		${INSTALL_SYMLINK} ${SYSPKGTAG} $$l $$t; \
-	 done; )
+.if !target(incinstall)
+incinstall::
 .endif

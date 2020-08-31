@@ -3,7 +3,7 @@
 
 unix?=			We run 2.11BSD.
 
-.SUFFIXES: 		.a .o .ln .s .S .c .cc .cpp .cxx .C .f .F .r .p .l .y .sh
+.SUFFIXES: 		.out .a .o .c .cc .C .cxx .cpp .F .f .r .y .l .s .S .cl .p .h .sh .m4
 
 .LIBS:			.a
 
@@ -19,14 +19,12 @@ COMPILE.S?=		${CC} ${AFLAGS} ${CPPFLAGS} -c -traditional-cpp
 LINK.S?=		${CC} ${AFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
 CC?=			cc
-.if ${MACHINE_ARCH} == "i386"
-DBG?=			-O
-CFLAGS?=		${DBG}
+CFLAGS?=		-O
 COMPILE.c?=		${CC} ${CFLAGS} ${CPPFLAGS} -c
 LINK.c?=		${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
-CXX?=			c++
-CXXFLAGS?=		${CFLAGS:S/-Wno-traditional//}
+CXX?=			g++
+CXXFLAGS?=		${CFLAGS}
 COMPILE.cc?=	${CXX} ${CXXFLAGS} ${CPPFLAGS} -c
 LINK.cc?=		${CXX} ${CXXFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
@@ -72,10 +70,6 @@ COMPILE.p?=		${PC} ${PFLAGS} ${CPPFLAGS} -c
 LINK.p?=		${PC} ${PFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
 SHELL?=			sh
-
-SIZE?=			size
-
-TSORT?= 		tsort -q
 
 YACC?=			yacc
 YFLAGS?=

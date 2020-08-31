@@ -1,9 +1,12 @@
-#	$NetBSD: bsd.files.mk,v 1.5 1997/05/09 13:25:49 mycroft Exp $
+#	$NetBSD: bsd.files.mk,v 1.8.2.1 1999/09/10 22:50:46 he Exp $
+
+# This file can be included multiple times.  It clears the definition of
+# FILES at the end so that this is possible.
 
 .PHONY:			filesinstall
 realinstall:	filesinstall
 
-.if defined(FILES)
+.if defined(FILES) && !empty(FILES)
 FILESDIR?=${BINDIR}
 FILESOWN?=${BINOWN}
 FILESGRP?=${BINGRP}
@@ -18,22 +21,23 @@ FILESNAME_${F} ?= ${FILESNAME}
 .else
 FILESNAME_${F} ?= ${F:T}
 .endif
-FILESDIR_${F} ?= ${FILESDIR}
 filesinstall:: ${DESTDIR}${FILESDIR_${F}}/${FILESNAME_${F}}
 .if !defined(UPDATE)
 .PHONY: ${DESTDIR}${FILESDIR_${F}}/${FILESNAME_${F}}
 .endif
-.if !defined(BUILD)
+.if !defined(BUILD) && !make(all) && !make(${F})
 ${DESTDIR}${FILESDIR_${F}}/${FILESNAME_${F}}: .MADE
 .endif
 
 .PRECIOUS: ${DESTDIR}${FILESDIR_${F}}/${FILESNAME_${F}}
 ${DESTDIR}${FILESDIR_${F}}/${FILESNAME_${F}}: ${F}
-	${INSTALL} ${COPY} -o ${FILESOWN_${F}} -g ${FILESGRP_${F}} \
-		-m ${FILESMODE_${F}} ${.ALLSRC} ${.TARGET}
+	${INSTALL} ${RENAME} ${PRESERVE} ${COPY} -o ${FILESOWN_${F}} \
+		-g ${FILESGRP_${F}} -m ${FILESMODE_${F}} ${.ALLSRC} ${.TARGET}
 .endfor
 .endif
 
 .if !target(filesinstall)
 filesinstall::
 .endif
+
+FILES:=
