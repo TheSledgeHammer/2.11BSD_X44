@@ -16,7 +16,7 @@ file	dev/isa/isa.c			isa needs-flag
 
 # ISA DMA controller
 define	isadma
-file	dev/isa/isadma.c		isadma needs-flag
+file	dev/isa/isadma.c			isadma needs-flag
 
 #
 # 8250/16[45]50-based multi-port serial boards
@@ -170,7 +170,7 @@ file	dev/isa/if_ie.c			ie
 # (Intel EtherExpress PRO)
 device  iy: ether, ifnet         
 attach	iy at isa
-file    dev/isa/if_iy.c			iy
+file    dev/isa/if_iy.c		iy
 
 # XXX ???
 # XXX NOT IN TREE?

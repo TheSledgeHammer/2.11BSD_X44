@@ -154,12 +154,6 @@ DEFAULT_PIE_DEF=-DPIE_DEFAULT=1
 NOPROFILE=
 .endif
 
-BUILDUSER?= build
-WOBJGROUP?= wobj
-WOBJUMASK?= 007
-
-BSD_OWN_MK=Done
-
 .PHONY: spell clean cleandir obj manpages print all \
 		depend beforedepend afterdepend cleandepend subdirdepend \
 		all cleanman includes \

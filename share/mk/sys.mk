@@ -5,8 +5,6 @@ unix?=			We run 2.11BSD.
 
 .SUFFIXES: 		.out .a .o .c .cc .C .cxx .cpp .F .f .r .y .l .s .S .cl .p .h .sh .m4
 
-.LIBS:			.a
-
 AR?=			ar
 ARFLAGS?=		rl
 RANLIB?=		ranlib
@@ -186,52 +184,3 @@ YACC.y?=		${YACC} ${YFLAGS}
 		rm -f ${.TARGET}
 		cp ${.IMPSRC} ${.TARGET}
 		chmod a+x ${.TARGET}
-	
-# Assembly
-.s:
-		${LINK.s} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
-.s.o:
-		${COMPILE.s} ${.IMPSRC}
-.s.a:
-		${COMPILE.s} ${.IMPSRC}
-		${AR} ${ARFLAGS} $@ $*.o
-		rm -f $*.o
-.S:
-		${LINK.S} -o ${.TARGET} ${.IMPSRC} ${LDLIBS}
-.S.o:
-		${COMPILE.S} ${.IMPSRC}
-.S.a:
-		${COMPILE.S} ${.IMPSRC}
-		${AR} ${ARFLAGS} $@ $*.o
-		rm -f $*.o
-
-# Lex
-.l:
-		${LEX.l} ${.IMPSRC}
-		${LINK.c} -o ${.TARGET} lex.yy.c ${LDLIBS} -ll
-		rm -f lex.yy.c
-.l.c:
-		${LEX.l} ${.IMPSRC}
-		mv lex.yy.c ${.TARGET}
-.l.o:
-		${LEX.l} ${.IMPSRC}
-		${COMPILE.c} -o ${.TARGET} lex.yy.c 
-		rm -f lex.yy.c
-
-# Yacc
-.y:
-		${YACC.y} ${.IMPSRC}
-		${LINK.c} -o ${.TARGET} y.tab.c ${LDLIBS}
-		rm -f y.tab.c
-.y.c:
-		${YACC.y} ${.IMPSRC}
-		mv y.tab.c ${.TARGET}
-.y.o:
-		${YACC.y} ${.IMPSRC}
-		${COMPILE.c} -o ${.TARGET} y.tab.c
-		rm -f y.tab.c
-
-# Shell
-.sh:
-		rm -f ${.TARGET}
-		cp ${.IMPSRC} ${.TARGET}
