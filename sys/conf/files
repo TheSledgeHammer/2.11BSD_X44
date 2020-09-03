@@ -54,38 +54,11 @@ define	tcbus { }				# TurboChannel attachment
 #pseudo-device strip: 						ifnet
 #pseudo-device ipfilter: 					ifnet
 
-# dev sources
-file 	dev/auconv.c						auconv
-file 	dev/audio.c							audio			needs-flag
-file 	dev/ccd.c							ccd				needs-flag
-file 	dev/md.c							md				needs-flag
-file 	dev/mulaw.c							mulaw			needs-flag
-file 	dev/vnd.c							vnd				needs-flag
-#file	dev/cninit.c
-file	dev/kobj.c
-file	dev/ksyms.c
+# Common Kernel Source Files
+include 									"dev/files.dev"
+include 									"ddb/files.ddb"
 
-#ddb sources
-file 	ddb/db_access.c						ddb
-file 	ddb/db_aout.c						ddb
-file 	ddb/db_break.c						ddb
-file 	ddb/db_command.c					ddb
-file 	ddb/db_elf.c						ddb
-file 	ddb/db_examine.c					ddb
-file 	ddb/db_expr.c						ddb
-file 	ddb/db_input.c						ddb
-file 	ddb/db_lex.c						ddb
-file 	ddb/db_output.c						ddb
-file 	ddb/db_print.c						ddb
-file 	ddb/db_run.c						ddb
-file 	ddb/db_sym.c						ddb
-file 	ddb/db_trap.c						ddb
-file 	ddb/db_variables.c					ddb
-file 	ddb/db_watch.c						ddb
-file 	ddb/db_write_cmd.c					ddb
-file 	ddb/db_xxx.c						ddb
-
-# kernel sources
+# Kernel Sources
 file	kern/exec_aout.c					exec_aout
 file	kern/exec_coff.c					exec_coff
 file	kern/exec_conf.c		

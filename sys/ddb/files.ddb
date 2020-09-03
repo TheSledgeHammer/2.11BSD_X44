@@ -1,0 +1,23 @@
+#
+# $211BSD$
+#
+
+#ddb sources
+file 	ddb/db_access.c						ddb
+file 	ddb/db_aout.c						ddb
+file 	ddb/db_break.c						ddb
+file 	ddb/db_command.c					ddb
+file 	ddb/db_elf.c						ddb
+file 	ddb/db_examine.c					ddb
+file 	ddb/db_expr.c						ddb
+file 	ddb/db_input.c						ddb
+file 	ddb/db_lex.c						ddb
+file 	ddb/db_output.c						ddb
+file 	ddb/db_print.c						ddb
+file 	ddb/db_run.c						ddb
+file 	ddb/db_sym.c						ddb
+file 	ddb/db_trap.c						ddb
+file 	ddb/db_variables.c					ddb
+file 	ddb/db_watch.c						ddb
+file 	ddb/db_write_cmd.c					ddb
+file 	ddb/db_xxx.c						ddb
