@@ -92,4 +92,4 @@ KERNLINTFLAGS=	-bceghnxzF
 ##
 ## (9) port independent kernel machinery
 ##
-.include "$S/conf/Makefile.kern.inc"
+.include "${S}/conf/Makefile.kern.inc"

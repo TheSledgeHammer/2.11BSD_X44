@@ -55,8 +55,8 @@ define	tcbus { }				# TurboChannel attachment
 #pseudo-device ipfilter: 					ifnet
 
 # Common Kernel Source Files
-include 									"dev/files.dev"
 include 									"ddb/files.ddb"
+include 									"dev/files.device"
 
 # Kernel Sources
 file	kern/exec_aout.c					exec_aout

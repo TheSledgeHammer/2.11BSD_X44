@@ -1,0 +1,27 @@
+#	$NetBSD: majors.storage,v 1.1 2014/09/19 17:32:34 matt Exp $
+# $211BSD$
+#
+#
+# XXX Needs to be included in devices.archtype (Follow i386 for an example)
+
+# 
+# common files for devices
+#
+# Machine-Independent Devices & Drivers
+file 		dev/auconv.c					auconv
+file 		dev/audio.c						audio			needs-flag
+file		dev/cons.c						cons
+file 		dev/ccd.c						ccd				needs-flag
+file 		dev/md.c						md				needs-flag
+file 		dev/mulaw.c						mulaw			needs-flag
+file 		dev/vnd.c						vnd				needs-flag
+
+#
+# Device & Driver Files
+#
+include 	"dev/files.eisa"
+include 	"dev/files.isa"
+include 	"dev/files.isapnp"
+include 	"dev/files.pci"
+include 	"dev/files.pcmcia"
+include 	"dev/files.scsi"
