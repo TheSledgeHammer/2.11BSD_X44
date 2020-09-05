@@ -22,62 +22,64 @@ NEED_OWN_INSTALL_TARGET?=no
 ##
 ## (1) port identification
 ##
+
 I386=			$S/arch/i386
 GENASSYM_CONF=	${I386}/i386/genassym.cf
 
 ##
 ## (2) compile settings
 ##
-CPPFLAGS+=	-Di386
-AFLAGS+=	-x assembler-with-cpp -traditional-cpp
+AR?=	ar
+AS?=	as
+CC?=	cc
+CPP?=	cpp
+LD?=	ld
+LORDER?=lorder
+MKDEP?=	mkdep
+NM?=	nm
+RANLIB?=ranlib
+SIZE?=	size
+STRIP?=	strip
+TSORT?=	tsort -q
+
+COPTS?=			-O2
+
+INCLUDES=		-I. -I$S/arch -I$S -nostdinc
+CPPFLAGS=		${INCLUDES} ${IDENT} ${PARAM} -D_KERNEL -Di386
+AFLAGS+=		-x assembler-with-cpp -traditional-cpp -D_LOCORE
+CWARNFLAGS=		-Werror -Wall -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith
 
 ##
-## (3) libkern and compat
+## (3) link settings
 ##
-KERN_AS=	obj
-
-##
-## (4) local objects, compile rules, and dependencies
-##
-MD_OBJS=	locore.o support.o vector.o
-MD_CFILES=
-MD_SFILES=	${I386}/i386/locore.s ${I386}/i386/support.s ${I386}/i386/vector.s
-
-locore.o: ${I386}/i386/locore.s assym.h
-	${NORMAL_S}
-
-support.o: ${I386}/i386/support.s assym.h
-	${NORMAL_S}
-
-vector.o: ${I386}/i386/vector.s assym.h
-	${NORMAL_S}
-
-##
-## (5) link settings
-##
-TEXTADDR?=		c0100000
-LINKFLAGS_NORMAL=	-X
+LINKFLAGS=		-T kern.ldscript -X --warn-common -nopie
 .if (${OBJECT_FMT} == "ELF")
 KERN_LDSCRIPT?=	kern.ldscript
-LINKFORMAT=	-T ${I386}/conf/${KERN_LDSCRIPT}
+LINKFORMAT=		-T ${I386}/conf/${KERN_LDSCRIPT}
 .else
-LINKFORMAT=	-z
+LINKFORMAT=		-z
+.endif
+
+%INCLUDES
+
+##
+## (4) libkern
+##
+KERN_AS=		obj
+.include "$S/lib/libkern/Makefile.inc"
+.ifndef PROF
+LIBKERN=		${KERNLIB}
+.else
+LIBKERN=		${KERNLIB_PROF}
 .endif
 
 ##
-## (6) port specific target dependencies
+## (5) local objects, compile rules, and dependencies
 ##
 
-##
-## (7) misc settings
-##
-
-KERNLINTFLAGS=	-bceghnxzF
-
-##
-## (8) config(8) generated machinery
-##
-%INCLUDES
+NORMAL_C=		${CC} ${CFLAGS} ${CPPFLAGS} ${PROF} -c $<
+NOPROF_C=		${CC} ${CFLAGS} ${CPPFLAGS} -c $<
+NORMAL_S=		${CC} ${AFLAGS} ${CPPFLAGS} -c $<
 
 %OBJS
 
@@ -85,11 +87,120 @@ KERNLINTFLAGS=	-bceghnxzF
 
 %SFILES
 
+# load lines for config "xxx" will be emitted as:
+# xxx: ${SYSTEM_DEP} swapxxx.o
+#		${SYSTEM_LD_HEAD}
+#		${SYSTEM_LD} swapxxx.o
+#		${SYSTEM_LD_TAIL}
+SYSTEM_OBJ=		locore.o \
+				param.o ioconf.o ${OBJS} ${LIBKERN}
+SYSTEM_DEP=		Makefile ${SYSTEM_OBJ}
+SYSTEM_LD_HEAD=	rm -f $@
+SYSTEM_LD=		@echo ${LD} ${LINKFLAGS} -o $@ '$${SYSTEM_OBJ}' vers.o; \
+				${LD} ${LINKFLAGS} -o $@ ${SYSTEM_OBJ} vers.o
+SYSTEM_LD_TAIL=	@${SIZE} $@; chmod 755 $@
+
+DEBUG?=
+.if ${DEBUG} == "-g"
+LINKFLAGS+=		-X
+SYSTEM_LD_TAIL+=; \
+				echo mv -f $@ $@.gdb; mv -f $@ $@.gdb; \
+				echo ${STRIP} ${STRIPFLAGS} -o $@ $@.gdb; \
+				${STRIP} ${STRIPFLAGS} -o $@ $@.gdb
+.else
+LINKFLAGS+=		-S
+.endif
+
 %LOAD
 
-%RULES
+assym.h: $S/kern/genassym.sh ${I386}/i386/genassym.cf
+		sh $S/kern/genassym.sh ${CC} ${CFLAGS} ${CPPFLAGS} ${PROF} \
+	    < ${I386}/i386/genassym.cf > assym.h.tmp && \
+		mv -f assym.h.tmp assym.h
 
-##
-## (9) port independent kernel machinery
-##
-.include "${S}/conf/Makefile.kern.inc"
+param.c: $S/conf/param.c
+		rm -f param.c
+		cp $S/conf/param.c .
+
+param.o: param.c Makefile
+		${NORMAL_C}
+		
+mcount.o: $S/lib/libkern/mcount.c Makefile
+		${NOPROF_C}
+
+ioconf.o: ioconf.c
+		${NORMAL_C}
+
+newvers: ${SYSTEM_DEP} ${SYSTEM_SWAP_DEP}
+		sh $S/conf/newvers.sh
+		${CC} ${CFLAGS} ${CPPFLAGS} ${PROF} -c vers.c
+
+
+__CLEANKERNEL: .USE
+		@echo "${.TARGET}ing the kernel objects"
+		rm -f eddep *netbsd netbsd.gdb tags *.[io] [a-z]*.s \
+	    [Ee]rrs linterrs makelinks assym.h.tmp assym.h
+
+__CLEANDEPEND: .USE
+		rm -f .depend
+
+clean: __CLEANKERNEL
+
+cleandir: __CLEANKERNEL __CLEANDEPEND
+
+lint:
+		@lint -hbxncez -Dvolatile= ${CPPFLAGS} -UKGDB \
+	    	${I386}/i386/Locore.c ${CFILES} \
+	    	ioconf.c param.c | \
+	    	grep -v 'static function .* unused'
+
+tags:
+		@echo "see $S/kern/Makefile for tags"
+
+links:
+		egrep '#if' ${CFILES} | sed -f $S/conf/defines | \
+		  sed -e 's/:.*//' -e 's/\.c/.o/' | sort -u > dontlink
+		echo ${CFILES} | tr -s ' ' '\12' | sed 's/\.c/.o/' | \
+		  sort -u | comm -23 - dontlink | \
+		  sed 's,../.*/\(.*.o\),rm -f \1; ln -s ../GENERIC/\1 \1,' > makelinks
+		sh makelinks && rm -f dontlink
+
+SRCS=	${I386}/i386/locore.s \
+		param.c ioconf.c ${CFILES} ${SFILES}
+depend: .depend
+.depend: ${SRCS} assym.h param.c
+		${MKDEP} ${AFLAGS} ${CPPFLAGS} ${I386}/i386/locore.s
+		${MKDEP} -a ${CFLAGS} ${CPPFLAGS} param.c ioconf.c ${CFILES}
+		${MKDEP} -a ${AFLAGS} ${CPPFLAGS} ${SFILES}
+		sh $S/kern/genassym.sh ${MKDEP} -f assym.dep ${CFLAGS} \
+	  		${CPPFLAGS} < ${I386}/i386/genassym.cf
+		@sed -e 's/.*\.o:.*\.c/assym.h:/' < assym.dep >> .depend
+		@rm -f assym.dep
+
+dependall: depend all
+
+# depend on root or device configuration
+autoconf.o conf.o: Makefile
+
+# depend on network or filesystem configuration
+uipc_proto.o: Makefile
+
+# depend on maxusers
+machdep.o: Makefile
+
+# depend on CPU configuration
+locore.o machdep.o: Makefile
+
+locore.o: ${I386}/i386/locore.s assym.h
+		${NORMAL_S}
+		
+		
+# The install target can be redefined by putting a
+# install-kernel-${MACHINE_NAME} target into /etc/mk.conf
+MACHINE_NAME!=  uname -n
+install: install-kernel-${MACHINE_NAME}
+.if !target(install-kernel-${MACHINE_NAME}})
+install-kernel-${MACHINE_NAME}:
+.endif
+
+%RULES

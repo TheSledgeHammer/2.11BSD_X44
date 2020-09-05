@@ -2,6 +2,8 @@
 
 # Makefile for i386 links, tags file
 
+SYSDIR?=	/sys
+
 TI386=	${SYSDIR}/arch/i386/tags
 SI386=	${SYSDIR}/arch/i386/eisa/*.[ch] \
 		${SYSDIR}/arch/i386/i386/*.[ch] \
