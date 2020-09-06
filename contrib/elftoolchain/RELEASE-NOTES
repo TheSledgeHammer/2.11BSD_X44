@@ -1,0 +1,361 @@
+.. $Id: RELEASE-NOTES 3416 2016-02-17 21:41:20Z jkoshy $
+
+Release Notes for Elftoolchain Software Version 0.7.1
+=====================================================
+
+About The Project
+-----------------
+
+The `Elftoolchain project`_ develops BSD-licensed implementations of
+essential compilation tools and libraries for handling ELF based program
+objects.
+
+About The Release
+-----------------
+
+This is the first release on the v0.7 "stable" code line.
+
+Since the prior v0.6.1 release, we have added support for a few more
+machine architectures, improved our support of the DWARF4 debug format,
+and have added experimental support for the Microsoft (TM) Portable
+Executable format.  A number of bugs have been fixed, and the project's
+documentation has been improved.  An implementation of a link editor
+**ld** is in progress.
+
+Libraries and Utilities
+~~~~~~~~~~~~~~~~~~~~~~~
+
+This release comprises the following libraries and utilities.
+
+  =================       ==========================================
+  **Name**                **Description**
+  =================       ==========================================
+  **ar**                  Archive manager.
+  **addr2line**           Debug tool.
+  **brandelf**            Manage the ELF brand on executables.
+  **c++filt**             Translate encoded symbols.
+  **elfcopy**             Copy and translate between object formats.
+  **elfdump**             Diagnostic tool.
+  **findtextrel**         Find undesired text relocations.
+  **libdwarf**            DWARF access library.
+  **libelf**              ELF access library.
+  **mcs**                 Manage comment sections.
+  **nm**                  List symbols in an ELF object.
+  **ranlib**              Add archive symbol tables to an archive.
+  **readelf**             Display ELF information.
+  **size**                List object sizes.
+  **strings**             Extract printable strings.
+  **strip**               Discard information from ELF objects.
+  =================       ==========================================
+
+This release also contains the following software that is under
+development:
+
+  =================       ==========================================
+  **Name**                **Description**
+  =================       ==========================================
+  **ld**                  Program linker.
+  **libpe**               PE (Portable Executable) access library.
+  =================       ==========================================
+
+Documentation
+~~~~~~~~~~~~~
+
+Each public API and invocable utility has a reference manual entry.
+We currently offer 355 manual entries, documented in 197 manual pages.
+
+Additionally, this release contains the following documentation:
+
+  =================       ==========================================
+  **Name**                **Description**
+  =================       ==========================================
+  libelf-by-example       A tutorial introduction to **libelf**.
+  =================       ==========================================
+
+Test Suites
+~~~~~~~~~~~
+
+The release contains the following test suites:
+
+  =================       ==========================================
+  **Name**                **Description**
+  =================       ==========================================
+  ar                      Test the **ar** utility.
+  elfcopy                 Test the **elfcopy** utility.
+  elfdump                 Test the **elfdump** utility.
+  libdwarf                Test the **libdwarf** library.
+  libelf                  Test the **libelf** library.
+  libelftc                Test the **libelftc** support library.
+  nm                      Test the **nm** utility.
+  =================       ==========================================
+
+
+System Requirements
+-------------------
+
+This software is designed to run on Unix(TM)-like operating systems
+such as the BSD-family of operating systems and GNU/Linux.
+
+This release has been built and tested on the following operating
+systems:
+
+  ====================  ===========  ===========================
+  **Operating System**  **Version**  **Supported Architectures**
+  --------------------  -----------  ---------------------------
+  FreeBSD_              10.2         amd64 & i386
+  NetBSD_               7.0          i386
+  Ubuntu_ GNU/Linux     14.04LTS     x86_64
+  ====================  ===========  ===========================
+
+
+Installation and Upgrades
+=========================
+
+Installation
+------------
+
+Instructions for building and installing this software from source are
+described in the file "INSTALL".
+
+Upgrading
+---------
+
+* Consumers of the libdwarf API should note that the `Dwarf_Off` type
+  has changed to an unsigned type, so as to be compatible with other
+  open-source libdwarf implementations.
+* Three functions in the libdwarf API have been deprecated and two
+  extension APIs have been added.
+
+Release Information
+===================
+
+Changes in this release
+-----------------------
+
+Significant changes include:
+
+* **addr2line**
+
+  - Support the ``DW_AT_ranges`` debug attribute.
+  - Improve DWARF4 compatibility.
+  - **addr2line** supports new options ``-a``, ``-i``, ``-p``.
+  - Compilation units lacking debug information are handled more robustly.
+  - Memory leaks were fixed.
+
+* **ar/ranlib**
+
+  - The **ranlib** utility is now documented in its own manual page.
+  - The handling of corrupt archives has been improved.
+  - **ar** now supports a ``-U`` option that disables its
+    deterministic (``-D``) mode.
+  - **ar** no longer allows extraction of archive entries whose
+    pathnames contain ``..``, or whose target directory would be
+    altered by a symbolic link.
+
+* **brandelf**
+
+  - The documentation for **brandelf** has been improved.
+
+* **elfcopy/strip/mcs**
+
+  - **strip** no longer strips local debugging symbols when the ``-x``
+    option is specified.
+  - Compatibility with GNU binutils has been improved.
+  - The **elfcopy** and **strip** utilities will now preserve hard
+    links when modifying an object file.
+  - Support for new functionality controlled by options
+    ``--localize-hidden``, ``--extract-dwo`` and ``--strip-dwo`` has
+    been added.
+  - Bugs in the behavior of the ``-N`` and ``-X`` options were fixed.
+  - Nameless global symbols are now handled correctly.
+  - ``SHT_GROUP`` handling has been fixed in **elfcopy** and
+    **strip**.
+  - **elfcopy** now supports the conversion of ELF objects to PE images.
+
+* **elfdump**
+
+  - **elfdump** can now dump multiple GOT sections.
+  - **elfdump** now understands the ``EM_AARCH64``, ``EM_IAMCU``,
+    ``EM_PPC64``, and ``EM_RISCV`` machine types and the
+    ``STT_SPARC_REGISTER`` section type.
+  - Symbols with ``STB_GNU_UNIQUE`` are now supported.
+
+* **findtextrel**
+
+  - The manual pages were improved.
+
+* **ld**
+
+  - This utility is new in this release.  This utility is currently under
+    development, and should be considered unstable.
+
+* **libdwarf**
+  - The line number program generated by **libdwarf** has been improved.
+  - Support for the DWARF4 ``.debug_types`` section was added.
+  - Parsing of DWARF4 line sections was fixed.
+  - New APIs ``dwarf_attroffset()``,
+    ``dwarf_get_cu_die_offset_given_cu_header_offset_b()``,
+    ``dwarf_get_die_infotypes_flag()``,
+    ``dwarf_get_section_max_offsets()``,
+    ``dwarf_get_section_max_offsets_b()``, ``dwarf_highpc_b()``,
+    ``dwarf_loclist_from_expr_b()``, ``dwarf_next_types_section()``,
+    ``dwarf_offdie_b()``, and ``dwarf_siblingof_b()`` have been added.
+    Of these, ``dwarf_attroffset()`` and ``dwarf_next_types_section()``
+    are extensions to the SGI libdwarf API.
+  - Support for operators ``DW_OP_GNU_addr_index``,
+    ``DW_OP_GNU_const_index``, ``DW_OP_GNU_const_type``,
+    ``DW_OP_GNU_convert``, ``DW_OP_GNU_deref_type``,
+    ``DW_OP_GNU_encoded_addr``, ``DW_OP_GNU_entry_value``,
+    ``DW_OP_GNU_implicit_pointer``, ``DW_OP_GNU_parameter_ref``,
+    ``DW_OP_GNU_regval_type``, ``DW_OP_GNU_reinterpret``,
+    ``DW_OP_GNU_uninit`` and ``DW_OP_push_object_address`` have been
+    added.
+  - APIs ``dwarf_get_cu_die_offset_given_cu_header_offset()``,
+    ``dwarf_offdie()``, ``dwarf_siblingof()`` have been deprecated.
+  - **libdwarf** now supports relocation for the ``aarch64``
+    architecture.
+  - **libdwarf** now handles architectures that use ".rel" relocations
+    for debug data correctly.
+  - The ``EM_IAMCU`` architecture is now recognized.
+  - Documentation has been improved, memory leaks and other bugs have
+    been fixed.
+
+* **libelf**
+
+  - Reference documentation has been improved.
+  - Support building on the AARCH64 architecture has added.
+  - Bug fixes have been applied.
+
+* **libelf-by-example**
+
+  - No changes since the prior release.
+
+* **libelftc**
+
+  - Support for the Portable Executable format has been added.
+  - Overview documentation for this support library has been added.
+  - New APIs ``elftc_string_table_from_section()``.
+    ``elftc_string_table_image()``, ``elftc_string_table_insert()``,
+    ``elftc_string_table_lookup()``, ``elftc_string_table_remove()``
+    and ``elftc_string_table_to_string()`` have been added.
+  - The demangling support functions now support IEEE floating point
+    types, TLS special names and various GNU extensions.
+  - Other bugs have fixed.
+
+* **libpe**
+
+  - This library is new in this release.  This library is currently
+    under development, and should be considered unstable.
+
+* **nm**
+
+  - A new alias ``--extern-only`` for option ``-g`` is now supported.
+  - Bugs have been fixed.
+
+* **readelf**
+
+  - The handling of objects with missing symbol names was improved.
+  - **readelf** now supports dumping ``.debug_types`` sections.
+  - The ``DW_AT_language``, ``DW_FORM_exprloc``,
+    ``DW_FORM_flag_present``, ``DW_FORM_ref_sig8`` and
+    ``DW_FORM_sec_offset`` types are now supported.
+  - GNU DWARF operator extensions are now recognized by **readelf**.
+  - **readelf** can now display architecture specific register names on
+    some architectures.
+  - **readelf** now handles AArch64 types and relocations and
+    recognizes the ``RISC-V`` and ``IAMCU`` architectures.
+  - Support has been added for printing binary notes for FreeBSD, Xen
+    and Linux, and for printing core notes for FreeBSD and Linux.
+  - Support for dumping symbols with the ``STB_GNU_UNIQUE`` binding
+    has been added.
+  - Support for dumping symbols with the ``STT_SPARC_REGISTER``
+    register type has been added.
+
+* **size**
+
+  - The manual page for **size** has been improved.
+
+* **strings**
+
+  - The manual page for **strings** has been improved.
+
+Outstanding Issues
+------------------
+
+There were no outstanding issues at the time of the release.
+
+Known Limitations
+-----------------
+
+This release has the following limitations:
+
+:Test coverage:
+    Our test suites are being developed; test coverage is still
+    partial.
+:Performance and Memory Use:
+    Our tools have not been fully analyzed for their memory use or for
+    their performance characteristics.
+
+Test Statistics
+---------------
+
+The test summary for this release is presented below:
+
+ ========= ========== =============== ================ ===================
+ **Suite** **Tests**  **FreeBSD**     **NetBSD**       **Ubuntu 10.04LTS**
+           (32&64bit) (i386 & amd64)  (i386)           (x86_64)
+ ========= ========== =============== ================ ===================
+ ar        235 & 230  P:235 & 230     P:235            P:230
+ elfcopy   160        P:160           P:160            P:160
+ elfdump   155        P:155           P:155            P:155
+ libdwarf  153        P:153           P:153            P:153
+ libelf    1030       P:1026, U:4     P:1026, U:4      P:1026, U:4
+ libelftc  16         P:16            P:16             P:16
+ nm        183        P:183           P:183            P:183
+ ========= ========== =============== ================ ===================
+
+Key:
+
+  :P:
+      Test successes.
+  :F:
+      Test failures.
+  :U:
+      Unresolved tests.
+
+Notes
+~~~~~
+
+More Information
+================
+
+The project's website is at http://elftoolchain.sourceforge.net/.
+
+Developer Community
+-------------------
+
+The project's developers may be contacted using the mailing list:
+``<elftoolchain-developers@lists.sourceforge.net>``.
+
+Reporting Bugs
+--------------
+
+Please use our `bug tracker`_ for viewing existing bug reports and
+for submitting new bug reports.
+
+Copyright and License
+=====================
+
+This software is copyright its authors, and is distributed under the
+`BSD License`_.
+
+.. _BSD License: http://www.opensource.org/licenses/bsd-license.php
+.. _`bug tracker`: https://sourceforge.net/p/elftoolchain/tickets/
+.. _Elftoolchain project: http://elftoolchain.sourceforge.net/
+.. _FreeBSD: http://www.freebsd.org/
+.. _NetBSD:  http://www.netbsd.org/
+.. _Ubuntu:  http://www.ubuntu.com/
+
+.. Local Variables:
+.. mode: rst
+.. End:
