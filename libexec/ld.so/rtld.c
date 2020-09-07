@@ -48,7 +48,6 @@
 #include <sys/param.h>
 #include <sys/mman.h>
 #include <dirent.h>
-
 #include <ctype.h>
 
 #include <dlfcn.h>
@@ -89,8 +88,8 @@ Search_Path    	*_rtld_paths;
 /*
  * Global declarations normally provided by crt0.
  */
-char           *__progname;
-char          **environ;
+char           	*__progname;
+char          	**environ;
 
 #ifdef OLD_GOT
 extern Elf_Addr _GLOBAL_OFFSET_TABLE_[];

@@ -13,6 +13,6 @@
 
 .include <bsd.own.mk>
 
-SUBDIR=	csu libarch libc libcompat libkern
+SUBDIR=	csu libarch libc libcompat libelftc libkern
 
 .include <bsd.subdir.mk>
