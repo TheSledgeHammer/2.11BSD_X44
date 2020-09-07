@@ -11,20 +11,21 @@ NOTE: Don't hesitate to add to this list. :)
 		- i.e. lib
 - Bug Fixes/ missing critical content
 
-#usr/:
-##lib:
+# usr/ (User & OS Libraries):
+## lib:
+- libkvm
 		
-##libexec:
+## libexec:
 		
-#usr/sys/:
-##conf:
+# usr/sys/ (Kernel):
+## conf:
 - check: setup is correct
 
-##kern:
+## kern:
 - gprof.h & gmon.h: (both look to do the same thing)
 	- fix double up
 	
-##arch:
+## arch:
 - i386/x86: (Merged under i386)
 	- conf
 	- cpu_info
@@ -34,30 +35,39 @@ NOTE: Don't hesitate to add to this list. :)
 	- devices: 
 		- see below: dev
 
-##devel: (planned)
+## devel: (planned)
 - Code planned for future integration
 - See devel folder: README.md & TODO.md
 
-##dev:
-- devices
+## dev:
+- devices:
 
-
-##lib:
+## lib:
 	
-##net / netimp / netinet / netns:
+## net / netimp / netinet / netns:
 Of Interest Todo:
 - 2.11BSD's networking stack
 	- Needs Updating to support: i.e. ipv6, firewall/packet filter
 
-##stand:
+## stand:
 - boot:
 	- efi support: needs work
 	- commands: needs work
 	- install: not present
+	- efi:
+		- libefi & loader: Update From FreeBSD to be NetBSD/2.11BSD compatable
+	### arch:
+	- i386: 			
+		- gptboot
+		- isoboot
+		- loader:
+			- loader.conf: incomplete
+		- pmbr
+		- pxeldr
 
-##ufs:
+## ufs:
 
-##vfs:
+## vfs:
 
-##vm:
+## vm:
 
