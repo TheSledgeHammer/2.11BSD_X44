@@ -52,7 +52,7 @@ struct bootinfo {
 	int 						bi_type;
 	uint32_t					bi_nentries;		/* Number of bootinfo_* entries in bi_data. */
 	uint32_t 					bi_entry[1];
-	//uint8_t						bi_data[BOOTINFO_MAXSIZE - sizeof(uint32_t)];
+//	uint8_t						bi_data[BOOTINFO_MAXSIZE - sizeof(uint32_t)];
 
 	struct bootinfo_bios {		/* BIOS */
 #define	bi_endcommon			bi_n_bios_used

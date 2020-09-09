@@ -10,15 +10,20 @@ static char sccsid[] = "@(#)init.c	5.6.4 (2.11BSD) 1999/2/23";
 
 #include <sys/param.h>
 #include <sys/sysctl.h>
+#include <sys/syslog.h>
+#include <sys/stat.h>
+#include <sys/file.h>
+#include <sys/wait.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <sys/mount.h>
+
 #include <signal.h>
 #include <utmp.h>
 #include <setjmp.h>
 #include <sys/reboot.h>
 #include <errno.h>
-#include <sys/file.h>
 #include <ttyent.h>
-#include <sys/syslog.h>
-#include <sys/stat.h>
 #include <paths.h>
 
 #define	LINSIZ	sizeof(wtmp.ut_line)
