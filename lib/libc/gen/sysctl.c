@@ -41,8 +41,7 @@ static char sccsid[] = "@(#)sysctl.c	8.2.2 (2.11BSD GTE) 1996/11/27";
 #include <paths.h>
 
 extern	int	errno;
-static 
-char _PATH_STDPATH[]="/usr/bin:/bin:/usr/ucb:/sbin:/usr/sbin:/usr/local:/usr/new";
+static char _PATH_STDPATH[]="/usr/bin:/bin:/usr/ucb:/sbin:/usr/sbin:/usr/local:/usr/new";
 
 
 int

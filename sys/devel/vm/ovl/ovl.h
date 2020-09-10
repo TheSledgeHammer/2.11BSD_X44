@@ -80,13 +80,6 @@ OVL_MAX = (VM_MAX_KERNEL_ADDRESS + ((PGSIZE/100)*10))
 #define OVL_MIN_KERNEL_ADDRESS
 #define OVL_MAX_KERNEL_ADDRESS
 
-#include <sys/extent.h>
-#include <sys/queue.h>
-#include <sys/tree.h>
-
-#include "vm/ovl/ovl_map.h"
-#include "vm/ovl/ovl_object.h"
-
 union ovl_map_object;
 typedef union ovl_map_object 	ovl_map_object_t;
 
@@ -98,6 +91,10 @@ typedef struct ovl_map_entry	*ovl_map_entry_t;
 
 struct ovl_object;
 typedef struct ovl_object 		*ovl_object_t; 		/* akin to a vm_object but in ovlspace */
+
+#include <devel/vm/include/vm.h>
+#include <vm/ovl/ovl_map.h>
+#include <vm/ovl/ovl_object.h>
 
 /*
  * shareable overlay address space.
@@ -130,7 +127,6 @@ struct ovlspace {
 	struct koverlay ovl_kovl;		/* kernel overlay space */
 	struct voverlay ovl_vovl;		/* virtual overlay space */
 };
-
 
 /* Overlay Flags */
 #define OVL_ALLOCATED  (1 < 0) 							/* kernel overlay region allocated */

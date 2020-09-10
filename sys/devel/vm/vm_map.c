@@ -180,10 +180,15 @@ vmspace_alloc(min, max, pageable)
 
 	MALLOC(vm, struct vmspace *, sizeof(struct vmspace), M_VMMAP, M_WAITOK);
 	bzero(vm, (caddr_t) &vm->vm_startcopy - (caddr_t) vm);
-	vm_map_init(&vm->vm_map, min, max, pageable);
-	pmap_pinit(&vm->vm_pmap);
-	vm->vm_map.pmap = &vm->vm_pmap;		/* XXX */
-	vm->vm_refcnt = 1;
+	vm->vm_extent = extent_create("vm_map", min, max, M_VMMAP, NULL, 0, EX_WAITOK | EX_MALLOCOK);
+	if(vm->vm_extent) {
+		if(extent_alloc_region(vm->vm_extent, min, max, EX_WAITOK | EX_MALLOCOK)) {
+			vm_map_init(&vm->vm_map, min, max, pageable);
+			pmap_pinit(&vm->vm_pmap);
+			vm->vm_map.pmap = &vm->vm_pmap;		/* XXX */
+			vm->vm_refcnt = 1;
+		}
+	}
 	return (vm);
 }
 
@@ -200,9 +205,11 @@ vmspace_free(vm)
 		vm_map_lock(&vm->vm_map);
 		(void) vm_map_delete(&vm->vm_map, vm->vm_map.min_offset, vm->vm_map.max_offset);
 		pmap_release(&vm->vm_pmap);
+		extent_free(vm->vm_extent, vm, sizeof(struct vmspace *), EX_WAITOK);
 		FREE(vm, M_VMMAP);
 	}
 }
+
 
 /*
  * Red black tree functions
@@ -448,8 +455,9 @@ vm_map_create(pmap, min, max, pageable)
 		if (result == NULL)
 			panic("vm_map_create: out of maps");
 		kmap_free = (vm_map_t) CIRCLEQ_FIRST(&result->cl_header)->cl_entry.cqe_next;
-	} else
-		MALLOC(result, vm_map_t, sizeof(struct vm_map), M_VMMAP, M_WAITOK);
+	} else {
+		MALLOC(result, struct vm_map, sizeof(struct vm_map), M_VMMAP, M_WAITOK);
+	}
 
 	vm_map_init(result, min, max, pageable);
 	result->pmap = pmap;
@@ -504,7 +512,7 @@ vm_map_entry_create(map)
 		panic("vm_map_entry_create: bogus map");
 #endif
 	if (map->entries_pageable) {
-		MALLOC(entry, vm_map_entry_t, sizeof(struct vm_map_entry), M_VMMAPENT, M_WAITOK);
+		MALLOC(entry, struct vm_map_entry, sizeof(struct vm_map_entry), M_VMMAPENT, M_WAITOK);
 	} else {
 		if (entry == kentry_free)
 			kentry_free = CIRCLEQ_NEXT(kentry_free, cl_entry);
@@ -1016,7 +1024,7 @@ vm_map_simplify_entry(map, entry)
 	vm_map_t		map;
 	vm_map_entry_t	entry;
 {
-#ifdef	lint
+#ifdef lint
 	map++;
 #endif
 

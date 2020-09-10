@@ -688,8 +688,7 @@ amap_wipeout(amap)
 			panic("amap_wipeout: corrupt amap");
 
 		simple_lock(&anon->an_lock);
-//		UVMHIST_LOG(maphist,"  processing anon 0x%x, ref=%d", anon,
-		    anon->an_ref, 0, 0);
+//		UVMHIST_LOG(maphist,"  processing anon 0x%x, ref=%d", anon, anon->an_ref, 0, 0);
 		refs = --anon->an_ref;
 		simple_unlock(&anon->an_lock);
 		if (refs == 0) {
@@ -785,7 +784,7 @@ amap_copy(map, entry, waitf, canchunk, startva, endva)
 		entry->aref.ar_amap = amap_alloc(entry->end - entry->start, 0,
 		    waitf);
 		if (entry->aref.ar_amap != NULL)
-			entry->etype &= ~UVM_ET_NEEDSCOPY;
+			entry->etype &= ~VM_ET_NEEDSCOPY;
 		return;
 	}
 
@@ -800,7 +799,7 @@ amap_copy(map, entry, waitf, canchunk, startva, endva)
 	 */
 
 	if (entry->aref.ar_amap->am_ref == 1) {
-		entry->etype &= ~UVM_ET_NEEDSCOPY;
+		entry->etype &= ~VM_ET_NEEDSCOPY;
 		//UVMHIST_LOG(maphist, "<- done [ref cnt = 1, took it over]", 0, 0, 0, 0);
 		return;
 	}
@@ -828,7 +827,7 @@ amap_copy(map, entry, waitf, canchunk, startva, endva)
 	 */
 
 	if (srcamap->am_ref == 1) {		/* take it over? */
-		entry->etype &= ~UVM_ET_NEEDSCOPY;
+		entry->etype &= ~VM_ET_NEEDSCOPY;
 		amap->am_ref--;		/* drop final reference to map */
 		amap_free(amap);	/* dispose of new (unused) amap */
 		amap_unlock(srcamap);

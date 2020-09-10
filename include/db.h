@@ -59,17 +59,17 @@ typedef struct {
 } DBT;
 
 /* Routine flags. */
-#define	R_CURSOR	1		/* del, put, seq */
-#define	__R_UNUSED	2		/* UNUSED */
-#define	R_FIRST		3		/* seq */
-#define	R_IAFTER	4		/* put (RECNO) */
-#define	R_IBEFORE	5		/* put (RECNO) */
-#define	R_LAST		6		/* seq (BTREE, RECNO) */
-#define	R_NEXT		7		/* seq */
+#define	R_CURSOR		1		/* del, put, seq */
+#define	__R_UNUSED		2		/* UNUSED */
+#define	R_FIRST			3		/* seq */
+#define	R_IAFTER		4		/* put (RECNO) */
+#define	R_IBEFORE		5		/* put (RECNO) */
+#define	R_LAST			6		/* seq (BTREE, RECNO) */
+#define	R_NEXT			7		/* seq */
 #define	R_NOOVERWRITE	8		/* put */
-#define	R_PREV		9		/* seq (BTREE, RECNO) */
-#define	R_SETCURSOR	10		/* put (RECNO) */
-#define	R_RECNOSYNC	11		/* sync (RECNO) */
+#define	R_PREV			9		/* seq (BTREE, RECNO) */
+#define	R_SETCURSOR		10		/* put (RECNO) */
+#define	R_RECNOSYNC		11		/* sync (RECNO) */
 
 typedef enum { DB_BTREE, DB_HASH, DB_RECNO } DBTYPE;
 
@@ -99,17 +99,17 @@ typedef enum { DB_BTREE, DB_HASH, DB_RECNO } DBTYPE;
 /* Access method description structure. */
 typedef struct __db {
 	DBTYPE type;			/* Underlying db type. */
-	int (*close)	__P((struct __db *));
-	int (*del)	__P((const struct __db *, const DBT *, u_int));
-	int (*get)	__P((const struct __db *, const DBT *, DBT *, u_int));
-	int (*put)	__P((const struct __db *, DBT *, const DBT *, u_int));
-	int (*seq)	__P((const struct __db *, DBT *, DBT *, u_int));
-	int (*sync)	__P((const struct __db *, u_int));
+	int (*close)(struct __db *);
+	int (*del)(const struct __db *, const DBT *, u_int);
+	int (*get)(const struct __db *, const DBT *, DBT *, u_int);
+	int (*put)(const struct __db *, DBT *, const DBT *, u_int);
+	int (*seq)(const struct __db *, DBT *, DBT *, u_int);
+	int (*sync)(const struct __db *, u_int);
 	void *internal;			/* Access method private. */
-	int (*fd)	__P((const struct __db *));
+	int (*fd)(const struct __db *);
 } DB;
 
-#define	BTREEMAGIC	0x053162
+#define	BTREEMAGIC		0x053162
 #define	BTREEVERSION	3
 
 /* Structure used to pass parameters to the btree routines. */
@@ -149,7 +149,7 @@ typedef struct {
 	u_long	flags;
 	u_int	cachesize;	/* bytes to cache */
 	u_int	psize;		/* page size */
-	int	lorder;		/* byte order */
+	int		lorder;		/* byte order */
 	size_t	reclen;		/* record length (fixed-length records) */
 	u_char	bval;		/* delimiting byte (variable-length records */
 	char	*bfname;	/* btree file name */ 
@@ -162,21 +162,21 @@ typedef struct {
  *	P_32_SWAP	swap a referenced memory location
  *	P_32_COPY	swap from one location to another
  */
-#define	M_32_SWAP(a) {							\
-	u_int32_t _tmp = a;						\
+#define	M_32_SWAP(a) {									\
+	u_int32_t _tmp = a;									\
 	((char *)&a)[0] = ((char *)&_tmp)[3];				\
 	((char *)&a)[1] = ((char *)&_tmp)[2];				\
 	((char *)&a)[2] = ((char *)&_tmp)[1];				\
 	((char *)&a)[3] = ((char *)&_tmp)[0];				\
 }
-#define	P_32_SWAP(a) {							\
-	u_int32_t _tmp = *(u_int32_t *)a;				\
+#define	P_32_SWAP(a) {									\
+	u_int32_t _tmp = *(u_int32_t *)a;					\
 	((char *)a)[0] = ((char *)&_tmp)[3];				\
 	((char *)a)[1] = ((char *)&_tmp)[2];				\
 	((char *)a)[2] = ((char *)&_tmp)[1];				\
 	((char *)a)[3] = ((char *)&_tmp)[0];				\
 }
-#define	P_32_COPY(a, b) {						\
+#define	P_32_COPY(a, b) {								\
 	((char *)&(b))[0] = ((char *)&(a))[3];				\
 	((char *)&(b))[1] = ((char *)&(a))[2];				\
 	((char *)&(b))[2] = ((char *)&(a))[1];				\
@@ -189,30 +189,30 @@ typedef struct {
  *	P_16_SWAP	swap a referenced memory location
  *	P_16_COPY	swap from one location to another
  */
-#define	M_16_SWAP(a) {							\
-	u_int16_t _tmp = a;						\
+#define	M_16_SWAP(a) {									\
+	u_int16_t _tmp = a;									\
 	((char *)&a)[0] = ((char *)&_tmp)[1];				\
 	((char *)&a)[1] = ((char *)&_tmp)[0];				\
 }
-#define	P_16_SWAP(a) {							\
-	u_int16_t _tmp = *(u_int16_t *)a;				\
+#define	P_16_SWAP(a) {									\
+	u_int16_t _tmp = *(u_int16_t *)a;					\
 	((char *)a)[0] = ((char *)&_tmp)[1];				\
 	((char *)a)[1] = ((char *)&_tmp)[0];				\
 }
-#define	P_16_COPY(a, b) {						\
+#define	P_16_COPY(a, b) {								\
 	((char *)&(b))[0] = ((char *)&(a))[1];				\
 	((char *)&(b))[1] = ((char *)&(a))[0];				\
 }
 #endif
 
 __BEGIN_DECLS
-DB *dbopen __P((const char *, int, int, DBTYPE, const void *));
+DB *dbopen(const char *, int, int, DBTYPE, const void *);
 
 #ifdef __DBINTERFACE_PRIVATE
-DB	*__bt_open __P((const char *, int, int, const BTREEINFO *, int));
-DB	*__hash_open __P((const char *, int, int, const HASHINFO *, int));
-DB	*__rec_open __P((const char *, int, int, const RECNOINFO *, int));
-void	 __dbpanic __P((DB *dbp));
+DB		*__bt_open(const char *, int, int, const BTREEINFO *, int);
+DB		*__hash_open(const char *, int, int, const HASHINFO *, int);
+DB		*__rec_open(const char *, int, int, const RECNOINFO *, int);
+void	 __dbpanic(DB *dbp);
 #endif
 __END_DECLS
 #endif /* !_DB_H_ */

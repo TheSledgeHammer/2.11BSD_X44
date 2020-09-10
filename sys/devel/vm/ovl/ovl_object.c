@@ -9,7 +9,7 @@
 #include <sys/malloc.h>
 
 #include <devel/vm/include/vm_page.h>
-#include <devel/vm/include/vm.h>
+#include <devel/vm/ovl/ovl.h>
 #include <devel/vm/ovl/ovl_object.h>
 
 struct ovl_object	kernel_ovl_object_store;

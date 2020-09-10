@@ -25,8 +25,10 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _UVM_UVM_AMAP_H_
-#define _UVM_UVM_AMAP_H_
+#ifndef _AVM_MAP_H_
+#define _AVM_MAP_H_
+
+#include <devel/vm/avm/avm.h>
 
 /*
  * uvm_amap.h: general amap interface and amap implementation-specific info
@@ -49,7 +51,7 @@
  * part 1: amap interface
  */
 
-void uvm_amap_init(void);
+void avm_map_init(void);
 
 /*
  * forward definition of vm_amap structure.  only amap
@@ -57,31 +59,31 @@ void uvm_amap_init(void);
  * this structure.
  */
 
-struct vm_amap;
+struct avm_map;
 
 
 /*
  * prototypes for the amap interface
  */
 
-void			amap_add (struct vm_aref *, caddr_t, struct vm_anon *, boolean_t); 			/* add an anon to an amap */
+void			amap_add (struct avm_ref *, caddr_t, struct avm_anon *, boolean_t); 		/* add an anon to an amap */
 struct vm_amap	*amap_alloc (caddr_t, caddr_t, int); 										/* allocate a new amap */
 void			amap_copy (struct vm_map *, struct vm_map_entry *, int, caddr_t, caddr_t); 	/* clear amap needs-copy flag */
 void			amap_cow_now (struct vm_map *, struct vm_map_entry *); 						/* resolve all COW faults now */
 int				amap_extend	(struct vm_map_entry *, size_t, int); 							/* make amap larger */
-int				amap_flags (struct vm_amap *);												/* get amap's flags */
-void			amap_free (struct vm_amap *); 												/* free amap */
-void			amap_lock (struct vm_amap *);												/* lock amap */
-struct vm_anon	*amap_lookup (struct vm_aref *, caddr_t);									/* lookup an anon @ offset in amap */
-void			amap_lookups (struct vm_aref *, caddr_t, struct vm_anon **, int);			/* lookup multiple anons */
-void			amap_ref (struct vm_amap *, vaddr_t, size_t, int);							/* add a reference to an amap */
-int				amap_refs (struct vm_amap *); 												/* get number of references of amap */
+int				amap_flags (struct avm_map *);												/* get amap's flags */
+void			amap_free (struct avm_map *); 												/* free amap */
+void			amap_lock (struct avm_map *);												/* lock amap */
+struct vm_anon	*amap_lookup (struct avm_ref *, caddr_t);									/* lookup an anon @ offset in amap */
+void			amap_lookups (struct avm_ref *, caddr_t, struct avm_anon **, int);			/* lookup multiple anons */
+void			amap_ref (struct avm_map *, vaddr_t, size_t, int);							/* add a reference to an amap */
+int				amap_refs (struct avm_map *); 												/* get number of references of amap */
 void			amap_share_protect (struct vm_map_entry *, vm_prot_t); 						/* protect pages in a shared amap */
-void			amap_splitref (struct vm_aref *, struct vm_aref *, caddr_t); 				/* split reference to amap into two */
-void			amap_unadd (struct vm_aref *, caddr_t); 									/* remove an anon from an amap */
-void			amap_unlock	(struct vm_amap *); 											/* unlock amap */
-void			amap_unref (struct vm_amap *, caddr_t, size_t, bool); 						/* drop reference to an amap */
-void			amap_wipeout (struct vm_amap *); 											/* remove all anons from amap */
+void			amap_splitref (struct avm_ref *, struct avm_ref *, caddr_t); 				/* split reference to amap into two */
+void			amap_unadd (struct avm_ref *, caddr_t); 									/* remove an anon from an amap */
+void			amap_unlock	(struct avm_map *); 											/* unlock amap */
+void			amap_unref (struct avm_map *, caddr_t, size_t, bool); 						/* drop reference to an amap */
+void			amap_wipeout (struct avm_map *); 											/* remove all anons from amap */
 boolean_t		amap_swap_off (int, int);
 
 /*
@@ -115,13 +117,13 @@ boolean_t		amap_swap_off (int, int);
  * part 2: amap implementation-specific info
  */
 
-struct vm_amap_rb_tree;
-RB_PROTOTYPE(vm_amap_rb_tree, vm_amap_entry, rb_entry, rb_vm_amap_compare);
+struct avm_map_rb_tree;
+RB_PROTOTYPE(avm_map_rb_tree, avm_map_entry, rb_entry, rb_vm_amap_compare);
 
-struct vm_amap_entry {
-	RB_ENTRY(vm_amap_entry) 	rb_entry;
-    struct vm_amap_entry		*prev;			/* previous entry */
-	struct vm_amap_entry		*next;			/* next entry */
+struct avm_map_entry {
+	RB_ENTRY(avm_map_entry) 	rb_entry;
+    struct avm_map_entry		*prev;			/* previous entry */
+	struct avm_map_entry		*next;			/* next entry */
 };
 
 /*
@@ -136,10 +138,10 @@ struct vm_amap_entry {
 /*
  * here is the definition of the vm_amap structure for this implementation.
  */
-RB_HEAD(vm_amap_rb_tree, vm_amap_entry);
-struct vm_amap {
-	struct vm_amap_rb_tree 	rb_root;		/* Tree of entries */
-	struct vm_amap_entry	header;			/* List of entries */
+RB_HEAD(avm_map_rb_tree, vm_map_entry);
+struct avm_map {
+	struct avm_map_rb_tree 	rb_root;		/* Tree of entries */
+	struct avm_map_entry	header;			/* List of entries */
 	lock_data_t 			*am_lock;		/* lock [locks all vm_amap fields] */
 	simple_lock_data_t		am_ref_lock;	/* Lock for ref_count field */
 	int 					am_ref;			/* reference count */
@@ -149,11 +151,11 @@ struct vm_amap {
 	int 					am_nused;		/* # of slots currently in use */
 	int 					*am_slots;		/* contig array of active slots */
 	int 					*am_bckptr;		/* back pointer array to am_slots */
-	struct vm_anon 			**am_anon; 		/* array of anonymous pages */
+	struct avm_anon			**am_anon; 		/* array of anonymous pages */
 #ifdef UVM_AMAP_PPREF
 	int 					*am_ppref;		/* per page reference count (if !NULL) */
 #endif
-	LIST_ENTRY(vm_amap) 	am_list;
+	LIST_ENTRY(avm_map) 	am_list;
 };
 
 /*
@@ -269,10 +271,10 @@ struct vm_amap {
 
 #define PPREF_NONE ((int *) -1)	/* not using ppref */
 
-void		amap_pp_adjref (struct vm_amap *, int, vm_size_t, int, struct vm_anon **); 	/* adjust references */
-void		amap_pp_establish (struct vm_amap *, caddr_t); 								/* establish ppref */
-void		amap_wiperange (struct vm_amap *, int, int, struct vm_anon **); 			/* wipe part of an amap */
+void		amap_pp_adjref (struct avm_map *, int, vm_size_t, int, struct avm_anon **); /* adjust references */
+void		amap_pp_establish (struct avm_map *, caddr_t); 								/* establish ppref */
+void		amap_wiperange (struct avm_map *, int, int, struct avm_anon **); 			/* wipe part of an amap */
 #endif	/* UVM_AMAP_PPREF */
 
 #endif /* _KERNEL */
-#endif /* _UVM_UVM_AMAP_H_ */
+#endif /* _AVM_MAP_H_ */
