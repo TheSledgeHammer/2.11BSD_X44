@@ -93,10 +93,12 @@ typedef struct vm_aobject		*vm_aobject_t;
 #include <devel/vm/include/vm_param.h>
 #include <devel/vm/include/vm_prot.h>
 #include <devel/vm/include/vm_swap.h>
-#include <devel/vm/include/vm_vmspace.h>
+
+#include <devel/vm/avm/avm.h>
+#include <devel/vm/ovl/ovl.h>
 
 #include <devel/vm/extents/vm_extent.h>		/* Work in Progress */
-#include "devel/vm/extents/vm_segment.h"	/* Work in Progress */
+#include <devel/vm/extents/vm_segment.h>	/* Work in Progress */
 
 /*
  *	MACH VM locking type mappings to kernel types
@@ -105,6 +107,31 @@ typedef struct simplelock	simple_lock_data_t;
 typedef struct simplelock	*simple_lock_t;
 typedef struct lock			lock_data_t;
 typedef struct lock			*lock_t;
+
+/*
+ * Shareable process virtual address space.
+ * May eventually be merged with vm_map.
+ * Several fields are temporary (text, data stuff).
+ */
+struct vmspace {
+	struct	vm_map 	 	vm_map;			/* VM address map */
+	struct	pmap 	 	vm_pmap;		/* private physical map */
+	struct	extent	 	*vm_extent;		/* extent manager */
+
+	int				 	vm_refcnt;		/* number of references */
+	caddr_t			 	vm_shm;			/* SYS5 shared memory private data XXX */
+/* we copy from vm_startcopy to the end of the structure on fork */
+#define vm_startcopy 	vm_rssize
+	segsz_t 		 	vm_rssize; 		/* current resident set size in pages */
+	segsz_t 		 	vm_swrss;		/* resident set size before last swap */
+	segsz_t 		 	vm_tsize;		/* text size (pages) XXX */
+	segsz_t 		 	vm_dsize;		/* data size (pages) XXX */
+	segsz_t 		 	vm_ssize;		/* stack size (pages) */
+	caddr_t			 	vm_taddr;		/* user virtual address of text XXX */
+	caddr_t			 	vm_daddr;		/* user virtual address of data XXX */
+	caddr_t 		 	vm_minsaddr;	/* user VA at min stack growth */
+	caddr_t 		 	vm_maxsaddr;	/* user VA at max stack growth */
+};
 
 struct vm {
 	/* vm_page queues */
@@ -178,4 +205,7 @@ extern struct vmexp vmexp;
 #define VM_ET_ISCOPYONWRITE(E)	(((E)->etype & VM_ET_COPYONWRITE) != 0)
 #define VM_ET_ISNEEDSCOPY(E)	(((E)->etype & VM_ET_NEEDSCOPY) != 0)
 
+#ifdef _KERNEL
+#include <machine/vmparam.h>
+#endif /* _KERNEL */
 #endif /* _VM_H */

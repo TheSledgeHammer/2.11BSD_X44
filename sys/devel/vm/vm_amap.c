@@ -128,6 +128,7 @@ avmspace_free(avm)
 	}
 }
 
+#ifdef UVM_AMAP_PPREF
 /*
  * pp_getreflen: get the reference and length for a specific offset
  *

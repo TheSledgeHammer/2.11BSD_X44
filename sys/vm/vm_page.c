@@ -91,7 +91,7 @@ simple_lock_data_t	vm_page_queue_lock;
 simple_lock_data_t	vm_page_queue_free_lock;
 
 /* has physical page allocation been initialized? */
-boolean_t vm_page_startup_initialized;
+boolean_t 	vm_page_startup_initialized;
 
 vm_page_t	vm_page_array;
 long		first_page;
@@ -123,7 +123,6 @@ vm_set_page_size()
 		if ((1 << page_shift) == cnt.v_page_size)
 			break;
 }
-
 
 /*
  *	vm_page_startup:
@@ -411,9 +410,9 @@ vm_page_lookup(object, offset)
 	register vm_object_t	object;
 	register vm_offset_t	offset;
 {
-	register vm_page_t	mem;
+	register vm_page_t		mem;
 	register struct pglist	*bucket;
-	int			spl;
+	int						spl;
 
 	/*
 	 *	Search the hash table for this object/offset pair
@@ -447,16 +446,15 @@ vm_page_lookup(object, offset)
  */
 void
 vm_page_rename(mem, new_object, new_offset)
-	register vm_page_t	mem;
+	register vm_page_t		mem;
 	register vm_object_t	new_object;
-	vm_offset_t		new_offset;
+	vm_offset_t				new_offset;
 {
 	if (mem->object == new_object)
 		return;
 
-	vm_page_lock_queues();	/* keep page from moving out from
-				   under pageout daemon */
-    	vm_page_remove(mem);
+	vm_page_lock_queues(); /* keep page from moving out from under pageout daemon */
+	vm_page_remove(mem);
 	vm_page_insert(mem, new_object, new_offset);
 	vm_page_unlock_queues();
 }

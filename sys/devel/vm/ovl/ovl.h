@@ -104,9 +104,6 @@ struct ovlspace {
 	struct pmap    		ovl_pmap;	    	/* private physical map */
 	struct extent 		*ovl_extent;		/* overlay extent allocation */
 
-	boolean_t			ovl_uses_extents;	/* is overlay using extent allocation */
-	boolean_t 			ovl_is_segmented;	/* is overlay using separated process segments */
-
 	int		        	ovl_refcnt;	   		/* number of references */
 	segsz_t 			ovl_tsize;			/* text size */
 	segsz_t 			ovl_dsize;			/* data size */

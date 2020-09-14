@@ -78,12 +78,12 @@
  *	Associated with page of user-allocatable memory is a
  *	page structure.
  */
-
 struct pglist		*vm_page_buckets;			/* Array of buckets */
 int					vm_page_bucket_count = 0;	/* How big is array? */
 int					vm_page_hash_mask;			/* Mask for hash function */
 simple_lock_data_t	bucket_lock;				/* lock for all buckets XXX */
 
+struct pgtree		vm_page_hash_tree;
 struct pglist		vm_page_queue_free;
 struct pglist		vm_page_queue_active;
 struct pglist		vm_page_queue_inactive;
@@ -119,7 +119,7 @@ vm_set_page_size()
 	page_mask = cnt.v_page_size - 1;
 	if ((page_mask & cnt.v_page_size) != 0)
 		panic("vm_set_page_size: page size not a power of two");
-	for (page_shift = 0; ; page_shift++)
+	for (page_shift = 0;; page_shift++)
 		if ((1 << page_shift) == cnt.v_page_size)
 			break;
 }
@@ -139,13 +139,13 @@ vm_page_startup(start, end)
 	vm_offset_t	*start;
 	vm_offset_t	*end;
 {
-	register vm_page_t	m;
+	register vm_page_t		m;
 	register struct pglist	*bucket;
-	vm_size_t		npages;
-	int			i;
-	vm_offset_t		pa;
-	extern	vm_offset_t	kentry_data;
-	extern	vm_size_t	kentry_data_size;
+	vm_size_t				npages;
+	int						i;
+	vm_offset_t				pa;
+	extern	vm_offset_t		kentry_data;
+	extern	vm_size_t		kentry_data_size;
 
 
 	/*
@@ -163,6 +163,9 @@ vm_page_startup(start, end)
 	TAILQ_INIT(&vm_page_queue_free);
 	TAILQ_INIT(&vm_page_queue_active);
 	TAILQ_INIT(&vm_page_queue_inactive);
+
+	/* Initialize rb_tree */
+	RB_INIT(&vm_page_hash_tree);
 
 	/*
 	 *	Calculate the number of hash table buckets.
@@ -323,21 +326,11 @@ vm_page_insert(mem, object, offset)
 	mem->offset = offset;
 
 	/*
-	 *	Insert it into the object_object/offset hash table
+	 *	Insert it into the object_object/offset hash table & link
 	 */
 
-	bucket = &vm_page_buckets[vm_page_hash(object, offset)];
-	spl = splimp();
-	simple_lock(&bucket_lock);
-	TAILQ_INSERT_TAIL(bucket, mem, hashq);
-	simple_unlock(&bucket_lock);
-	(void) splx(spl);
+	vm_page_htable_insert(mem, object, offset);
 
-	/*
-	 *	Now link into the object's list of backed pages.
-	 */
-
-	TAILQ_INSERT_TAIL(&object->memq, mem, listq);
 	mem->flags |= PG_TABLED;
 
 
@@ -372,21 +365,10 @@ vm_page_remove(mem)
 		return;
 
 	/*
-	 *	Remove from the object_object/offset hash table
+	 *	Remove from the object_object/offset hash table & unlink
 	 */
 
-	bucket = &vm_page_buckets[vm_page_hash(mem->object, mem->offset)];
-	spl = splimp();
-	simple_lock(&bucket_lock);
-	TAILQ_REMOVE(bucket, mem, hashq);
-	simple_unlock(&bucket_lock);
-	(void) splx(spl);
-
-	/*
-	 *	Now remove from the object's list of backed pages.
-	 */
-
-	TAILQ_REMOVE(&mem->object->memq, mem, listq);
+	vm_page_htable_remove(mem);
 
 	/*
 	 *	And show that the object has one fewer resident
@@ -412,14 +394,14 @@ vm_page_lookup(object, offset)
 	register vm_object_t	object;
 	register vm_offset_t	offset;
 {
-	register vm_page_t	mem;
-	register struct pglist	*bucket;
-	int			spl;
+	register vm_page_t		mem;
+	//register struct pglist	*bucket;
+	//int						spl;
 
 	/*
 	 *	Search the hash table for this object/offset pair
 	 */
-
+/*
 	bucket = &vm_page_buckets[vm_page_hash(object, offset)];
 
 	spl = splimp();
@@ -435,7 +417,10 @@ vm_page_lookup(object, offset)
 
 	simple_unlock(&bucket_lock);
 	splx(spl);
-	return(NULL);
+	*/
+	mem = vm_page_htable_lookup(object, offset);
+
+	return (mem);
 }
 
 /*
@@ -455,9 +440,8 @@ vm_page_rename(mem, new_object, new_offset)
 	if (mem->object == new_object)
 		return;
 
-	vm_page_lock_queues();	/* keep page from moving out from
-				   under pageout daemon */
-    	vm_page_remove(mem);
+	vm_page_lock_queues(); /* keep page from moving out from under pageout daemon */
+	vm_page_remove(mem);
 	vm_page_insert(mem, new_object, new_offset);
 	vm_page_unlock_queues();
 }
@@ -706,4 +690,152 @@ vm_page_copy(src_m, dest_m)
 
 	dest_m->flags &= ~PG_CLEAN;
 	pmap_copy_page(VM_PAGE_TO_PHYS(src_m), VM_PAGE_TO_PHYS(dest_m));
+}
+
+
+/* vm_page: hash table prototypes */
+struct pglist *
+vm_page_htable_create(object, offset)
+	register vm_object_t	object;
+	register vm_offset_t	offset;
+{
+	register struct pglist *bucket = &vm_page_buckets[vm_page_hash(object, offset)];
+	if(bucket != NULL) {
+		return (bucket);
+	}
+	return (NULL);
+}
+
+void
+vm_page_htable_insert(mem, object, offset)
+	register vm_page_t		mem;
+	register vm_object_t	object;
+	register vm_offset_t	offset;
+{
+	register struct pglist *bucket;
+	int						spl;
+
+	/*
+	 *	Insert it into the object_object/offset hash table
+	 */
+	bucket = vm_page_htable_create(object, offset);
+	spl = splimp();
+	simple_lock(&bucket_lock);
+	TAILQ_INSERT_TAIL(bucket, mem, hashq);
+	simple_unlock(&bucket_lock);
+	(void) splx(spl);
+
+	/*
+	 *	Now link into the object's list of backed pages.
+	 */
+
+	TAILQ_INSERT_TAIL(&object->memq, mem, listq);
+}
+
+void
+vm_page_htable_remove(mem)
+	register vm_page_t		mem;
+{
+	register struct pglist *bucket;
+	int spl;
+
+	/*
+	 *	Remove from the object_object/offset hash table
+	 */
+	bucket = vm_page_htable_create(mem->object, mem->offset);
+	spl = splimp();
+	simple_lock(&bucket_lock);
+	TAILQ_REMOVE(bucket, mem, hashq);
+	simple_unlock(&bucket_lock);
+	(void) splx(spl);
+
+	/*
+	 *	Now remove from the object's list of backed pages.
+	 */
+
+	TAILQ_REMOVE(&mem->object->memq, mem, listq);
+}
+
+vm_page_t
+vm_page_htable_lookup(object, offset)
+	register vm_object_t	object;
+	register vm_offset_t	offset;
+{
+	register vm_page_t		mem;
+	register struct pglist	*bucket;
+	int						spl;
+
+	/*
+	 *	Search the hash table for this object/offset pair
+	 */
+
+	bucket = vm_page_htable_create(object, offset);
+
+	spl = splimp();
+	simple_lock(&bucket_lock);
+	for (mem = TAILQ_FIRST(bucket); mem != NULL; mem = TAILQ_NEXT(mem, hashq)) {
+		VM_PAGE_CHECK(mem);
+		if ((mem->object == object) && (mem->offset == offset)) {
+			simple_unlock(&bucket_lock);
+			splx(spl);
+			return (mem);
+		}
+	}
+
+	simple_unlock(&bucket_lock);
+	splx(spl);
+	return (NULL);
+}
+
+/* vm_page: red-black tree prototypes */
+int
+vm_page_rb_compare(pg1, pg2)
+	vm_page_t pg1, pg2;
+{
+	if(pg1->offset < pg2->offset) {
+		return(-1);
+	} else if(pg1->offset > pg2->offset) {
+		return(1);
+	}
+	return (0);
+}
+
+RB_PROTOTYPE(pgtree, vm_page, objt, vm_page_rb_compare);
+RB_GENERATE(pgtree, vm_page, objt, vm_page_rb_compare);
+
+void
+vm_page_rb_insert(mem, object, offset)
+	register vm_page_t		mem;
+	register vm_object_t	object;
+	register vm_offset_t	offset;
+{
+	register struct pglist *bucket = vm_page_htable_create(object, offset);
+	if(bucket != NULL) {
+		RB_INSERT(pgtree, mem, bucket);
+	}
+}
+
+void
+vm_page_rb_remove(mem)
+	register vm_page_t		mem;
+{
+	register struct pglist *bucket = vm_page_htable_create(mem->object, mem->offset);
+	if(bucket) {
+		RB_REMOVE(pgtree, mem, bucket);
+	}
+}
+
+struct pglist *
+vm_page_rb_lookup(mem, object, offset)
+	register vm_page_t		mem;
+	register vm_object_t	object;
+	register vm_offset_t	offset;
+{
+	struct pglist *result;
+	if(&vm_page_buckets[vm_page_hash(object, offset)] != NULL) {
+		result = &vm_page_buckets[vm_page_hash(object, offset)];
+		 return (RB_FIND(pgtree, mem, result));
+	} else {
+		return (NULL);
+	}
 }

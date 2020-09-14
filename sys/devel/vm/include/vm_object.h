@@ -94,6 +94,7 @@ struct vm_object {
 	vm_offset_t				shadow_offset;		/* Offset in shadow */
 	TAILQ_ENTRY(vm_object)	cached_list;		/* for persistence */
 };
+
 /*
  * Flags
  */
@@ -107,22 +108,20 @@ struct vm_object_hash_entry {
 	TAILQ_ENTRY(vm_object_hash_entry)  hash_links;	/* hash chain links */
 	vm_object_t			   			   object;		/* object represented */
 };
-
 typedef struct vm_object_hash_entry	*vm_object_hash_entry_t;
 
 #ifdef	KERNEL
 TAILQ_HEAD(object_q, vm_object);
 
-struct object_q	vm_object_cached_list;	/* list of objects persisting */
-int		vm_object_cached;				/* size of cached list */
-simple_lock_data_t	vm_cache_lock;		/* lock for object cache */
+struct object_q		vm_object_cached_list;	/* list of objects persisting */
+int					vm_object_cached;		/* size of cached list */
+simple_lock_data_t	vm_cache_lock;			/* lock for object cache */
 
-struct object_q	vm_object_list;			/* list of allocated objects */
-long		vm_object_count;			/* count of all objects */
-simple_lock_data_t	vm_object_list_lock;
-										/* lock for object list and count */
+struct object_q		vm_object_list;			/* list of allocated objects */
+long				vm_object_count;		/* count of all objects */
+simple_lock_data_t	vm_object_list_lock;	/* lock for object list and count */
 
-vm_object_t	kernel_object;				/* the single kernel object */
+vm_object_t	kernel_object;					/* the single kernel object */
 vm_object_t	kmem_object;
 
 #define	vm_object_cache_lock()		simple_lock(&vm_cache_lock)
