@@ -31,6 +31,36 @@
 
 #include <sys/extent.h>
 
+struct extent 	*vm_extent_create(char *name, vm_offset_t start, vm_offset_t end, int mtype, caddr_t storage, vm_size_t storagesize, int flags);
+int				vm_extent_alloc_region(struct extent *ex, vm_offset_t start, vm_size_t size, int flags);
+int				vm_extent_alloc_subregion(struct extent *ex, vm_offset_t substart, vm_offset_t subend, vm_size_t size, u_long alignment, u_long boundary, int flags, u_long *result);
+int				vm_extent_free(struct extent *ex, vm_offset_t start, vm_size_t size, int flags);
+void			vm_extent_destroy(struct extent *ex);
+void			vm_extent_print(struct extent *ex);
+
+#define VM_EXTENT_CREATE(ex, name, start, end, mtype, storage, storagesize, flags) \
+		(ex) = vm_extent_create(name, start, end, mtype, storage, storagesize, flags);
+
+#define VM_EXTENT_ALLOC_REGION(ex, start, size, flags) \
+		vm_extent_alloc_region(ex, start, size, flags);
+
+#define VM_EXTENT_ALLOC_SUBREGION(ex, substart, subend, size, alignment, boundary, flags, result) \
+		vm_extent_alloc_subregion(ex, substart, subend, size, alignment, boundary, flags, result);
+
+#define VM_EXTENT_FREE(ex, start, size, flags) \
+		vm_extent_free(ex, start, size, flags);
+
+#define VM_EXTENT_DESTROY(ex) \
+		vm_extent_destroy(ex);
+
+#define VM_EXTENT_PRINT(ex) \
+		vm_extent_print(ex);
+
+/* vm extent flags */
+#define EX_SEGMENTED 	0x01	/* use segmented memory (requires rmalloc) */
+#define EX_RMALLOCOK	0x03	/* use rmalloc as extent back-end */
+
+/*
 struct vm_extent {
 	struct extent		*vext_ext;
 	struct vextops 		*vext_op;
@@ -112,5 +142,7 @@ struct vextops_destroy_args	{
 
 void vextops_init();
 void vextops_malloc(struct vextops *vextops);
+
+*/
 
 #endif /* _VM_EXTENT_H_ */

@@ -19,6 +19,7 @@
 
 /* TODO: Improve algorithm for number of overlays */
 #define	NOVL	(32)			/* number of kernel overlays */
+#define	VOVL	(32)			/* number of vm overlays */
 #define NOVLSR 	(NOVL/2)		/* maximum mumber of kernel overlay sub-regions */
 #define NOVLPSR	NOVLSR			/* XXX: number of overlays per sub-region */
 

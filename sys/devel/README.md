@@ -1,5 +1,5 @@
 ## Development: (devel folder)
-- All work here is proof of concept and hence temporary.
+- All work here is proof of concept and hence temporary in nature.
 
 ### Devel Contents:
 - HTBC: HTree Based Blockchain to augment LFS & other existing Log-Structured Filesystems (akin to Soft-updates & WAPBL)
@@ -31,8 +31,8 @@
 - UFS211: Port of 2.11BSD's UFS Filesystem.
 	- Independent of UFS
 
-- VM: Updates to the VM Layer.
-	- Planned: 
+- VM: Updates to the VM Layer (Contains portions of NetBSD's UVM)
+	- Planned:
 		- VM Overlays (OVL): A re-implementation of 2.11BSD's use of Overlays (See below: OVLSpace)
 		- VM Extents: A VM extension of extents
 		- Segmented VM Model (A Hybrid UVM & VM): 3 Segments:
@@ -42,8 +42,6 @@
 
 - MISC:
 	- Crypto
-	- EXT2FS: Partial port of NetBSD's ext2fs
-	- UFS: Features to add
 	- MPX: Multiplexors
 		- A reimplementation of multiplexors from the V7 and early BSD's
 		- Two concurrent versions (being considered):

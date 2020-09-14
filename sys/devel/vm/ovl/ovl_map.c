@@ -1,8 +1,29 @@
 /*
- * ovl_map.c
+ * The 3-Clause BSD License:
+ * Copyright (c) 2020 Martin Kelly
+ * All rights reserved.
  *
- *  Created on: 25 Apr 2020
- *      Author: marti
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <sys/param.h>
@@ -13,6 +34,7 @@
 #include <vm/include/vm.h>
 
 #include <vm/ovl/ovl.h>
+#include <vm/extents/vm_extent.h>
 
 #undef RB_AUGMENT
 #define	RB_AUGMENT(x)	ovl_rb_augment(x)
@@ -55,29 +77,51 @@ ovl_map_startup()
 
 }
 
-/*
+/* create & allocated ovlspace extent map
  * - segmented(TRUE/FALSE): allocation of the 3 process segments (data, stack, text)
- * - extent(TRUE/FALSE): uses the extent manager
  */
 void
-ovlspace_alloc(segmented, extents)
-	boolean_t segmented, extents;
+ovlspace_create(start, end, storage, storagesize, segmented)
+	vm_offset_t start, end;
+	caddr_t storage;
+	size_t storagesize;
+	boolean_t segmented;
 {
 	register struct ovlspace *ovl;
 
-	ovl->ovl_is_segmented = segmented;
-	ovl->ovl_uses_extents = extents;
-
 	if(segmented) {
-		RMALLOC3(ovl, struct ovlspace *, ovl->ovl_dsize, ovl->ovl_ssize, ovl->ovl_tsize, sizeof(struct ovlspace *));
+		if(ovl == NULL) {
+			RMALLOC3(ovl, struct ovlspace *, ovl->ovl_dsize, ovl->ovl_ssize, ovl->ovl_tsize, sizeof(struct ovlspace *));
+		} else {
+			memset(ovl, 0, sizeof(struct ovlspace *));
+		}
+		VM_EXTENT_CREATE(ovl->ovl_extent, "vm_overlay", start, end, M_OVLMAP, storage, storagesize, EX_NOWAIT | EX_MALLOCOK | EX_RMALLOCOK | EX_SEGMENTED);
+
 	} else {
-		RMALLOC(ovl, struct ovlspace *, sizeof(struct ovlspace *));
+		if(ovl == NULL) {
+			RMALLOC(ovl, struct ovlspace *, sizeof(struct ovlspace *));
+		} else {
+			memset(ovl, 0, sizeof(struct ovlspace *));
+		}
+		VM_EXTENT_CREATE(ovl->ovl_extent, "vm_overlay", start, end, M_OVLMAP, storage, storagesize, EX_NOWAIT | EX_MALLOCOK | EX_RMALLOCOK);
 	}
-	if(extents == FALSE) {
-		ovl_map_init(&ovl->ovl_map, min, max);
-		ovl->ovl_map.ovl_pmap = &ovl->ovl_pmap;
-		ovl->ovl_refcnt = 1;
+}
+
+/* allocate ovlspace */
+struct ovlspace *
+ovlspace_alloc(min, max)
+	vm_offset_t min, max;
+{
+	register struct ovlspace *ovl;
+
+	if(ovl->ovl_extent) {
+		if (vm_extent_alloc_region(ovl->ovl_extent, min, max, EX_NOWAIT | EX_MALLOCOK)) {
+			ovl_map_init(&ovl->ovl_map, min, max);
+			ovl->ovl_map.ovl_pmap = &ovl->ovl_pmap;
+			ovl->ovl_refcnt = 1;
+		}
 	}
+	return (ovl);
 }
 
 /* free ovlspace */
@@ -93,51 +137,9 @@ ovlspace_free(ovl)
 		 */
 		ovl_map_lock(&ovl->ovl_map);
 		(void) ovl_map_delete(&ovl->ovl_map, ovl->ovl_map.min_offset, ovl->ovl_map.max_offset);
-		if(ovl->ovl_uses_extents) {
-			extent_free(ovl->ovl_extent, ovl, sizeof(struct ovlspace *), EX_NOWAIT);
-		}
+		VM_EXTENT_FREE(ovl->ovl_extent, ovl, sizeof(struct ovlspace *), EX_NOWAIT);
 		RMFREE(ovl, sizeof(struct ovlspace *), ovl);
 	}
-}
-#include <vm_extent.h>
-/* create ovlspace extent map */
-struct extent *
-ovlspace_extent_create(start, end, storage, storagesize)
-	vm_offset_t start, end;
-	caddr_t storage;
-	size_t storagesize;
-{
-	register struct ovlspace *ovl;
-
-	if(ovl == NULL) {
-		if(!ovl->ovl_uses_extents) {
-			printf("setting ovl uses extents to true");
-			ovl->ovl_uses_extents = TRUE;
-		}
-		ovlspace_alloc(ovl->ovl_is_segmented, ovl->ovl_uses_extents);
-	} else {
-		memset(ovl, 0, sizeof(struct ovlspace *));
-	}
-	ovl->ovl_extent = extent_create("vm_overlay", start, end, M_OVLMAP, storage, storagesize, EX_NOWAIT | EX_MALLOCOK);
-
-	return (ovl->ovl_extent);
-}
-
-/* allocate ovlspace extents */
-struct ovlspace *
-ovlspace_extent_alloc(min, max)
-	vm_offset_t min, max;
-{
-	register struct ovlspace *ovl;
-
-	if(ovl->ovl_extent) {
-		if (extent_alloc_region(ovl->ovl_extent, min, max, EX_NOWAIT | EX_MALLOCOK)) {
-			ovl_map_init(&ovl->ovl_map, min, max);
-			ovl->ovl_map.ovl_pmap = &ovl->ovl_pmap;
-			ovl->ovl_refcnt = 1;
-		}
-	}
-	return (ovl);
 }
 
 /*
@@ -477,11 +479,11 @@ ovl_map_deallocate(map)
 
 int
 ovl_map_insert(map, object, offset, start, end)
-	ovl_map_t	map;
-	vm_object_t	object;
-	vm_offset_t	offset;
-	vm_offset_t	start;
-	vm_offset_t	end;
+	ovl_map_t		map;
+	ovl_object_t	object;
+	vm_offset_t		offset;
+	vm_offset_t		start;
+	vm_offset_t		end;
 {
 	register ovl_map_entry_t	new_entry;
 	register ovl_map_entry_t	prev_entry;
@@ -512,18 +514,32 @@ ovl_map_insert(map, object, offset, start, end)
 	 */
 
 	if (object == NULL) {
-		if ((prev_entry != &map->ovl_header) &&
-		    (prev_entry->ovle_end == start) &&
-			(map->ovl_is_vm_map) &&
-		    (prev_entry->ovle_inheritance == VM_INHERIT_DEFAULT) &&
-		    (prev_entry->ovle_protection == VM_PROT_DEFAULT) &&
-		    (prev_entry->ovle_max_protection == VM_PROT_DEFAULT)) {
+		if ((prev_entry != &map->ovl_header)
+				&& (prev_entry->ovle_end == start)) {
+			/* vm overlay */
+			if ((map->ovl_is_vm_overlay) && (map->ovl_vovl < VOVLE)) {
+				if ((map->ovl_is_vm_map)
+						&& (prev_entry->ovle_inheritance == VM_INHERIT_DEFAULT)
+						&& (prev_entry->ovle_protection == VM_PROT_DEFAULT)
+						&& (prev_entry->ovle_max_protection == VM_PROT_DEFAULT)) {
 
-			map->ovl_size += (end - prev_entry->ovle_end);
-			prev_entry->ovle_end = end;
-			return(KERN_SUCCESS);
+					map->ovl_size += (end - prev_entry->ovle_end);
+					prev_entry->ovle_end = end;
+					return (KERN_SUCCESS);
+				}
+			}
+			/* kernel overlay */
+			if ((map->ovl_is_kern_overlay) && (map->ovl_novl < NOVLE)) {
+				/*
+				 * Add kernel overlay
+				 */
+				map->ovl_size += (end - prev_entry->ovle_end);
+				prev_entry->ovle_end = end;
+				return (KERN_SUCCESS);
+			}
 		}
 	}
+
 
 	/*
 	 *	Create a new entry
@@ -603,7 +619,7 @@ search_tree:
     ovl_tree_sanity(map, __func__);
 
     if (use_tree) {
-        struct vm_map_entry *prev = CIRCLEQ_FIRST(&map->ovl_header);
+        struct ovl_map_entry *prev = CIRCLEQ_FIRST(&map->ovl_header);
         cur = RB_ROOT(&map->ovl_root);
 
         while (cur) {
@@ -878,14 +894,40 @@ ovl_map_remove(map, start, end)
 	return (result);
 }
 
-/* swap an overlay in: overlay is active */
-ovl_swapin()
+/* swap an overlay in: overlay is set to active */
+ovl_swapin(map, address, entry)
+	register ovl_map_t			map;
+	register vm_offset_t		address;
+	register ovl_map_entry_t	entry;
 {
+	struct ovl_object object;
 
+	ovl_map_lock(map);
+
+	if (ovl_map_lookup_entry(map, address, entry)) {
+		/*
+		 * - find overlay entry
+		 * - determine the entry type (amap, vm_map, ovl)
+		 */
+		map->ovl_is_active = TRUE;
+	}
 }
 
-/* swap an overlay out: overlay is inactive */
-ovl_swapout()
+/* swap an overlay out: overlay is set to inactive */
+ovl_swapout(map, address, entry)
+	register ovl_map_t			map;
+	register vm_offset_t		address;
+	register ovl_map_entry_t	entry;
 {
+	struct ovl_object object;
 
+	if (ovl_map_lookup_entry(map, address, entry) && map->ovl_is_active) {
+		/*
+		 * - find overlay entry
+		 * - determine the entry type (amap, vm_map, ovl)
+		 */
+		map->ovl_is_active = FALSE;
+	}
+
+	ovl_map_unlock(map);
 }

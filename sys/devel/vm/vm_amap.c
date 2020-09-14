@@ -107,9 +107,9 @@ avmspace_alloc(min, max)
 {
 	register struct avmspace *avm;
 	MALLOC(avm, struct avmspace *, sizeof(struct avmspace), M_AVMMAP, M_WAITOK);
-	avm->avm_extent = extent_create("avm_map", min, max, M_AVMMAP, NULL, 0, EX_WAITOK | EX_MALLOCOK);
+	VM_EXTENT_CREATE(avm->avm_extent, "avm_map", min, max, M_AVMMAP, NULL, 0, EX_WAITOK | EX_MALLOCOK);
 	if(avm->avm_extent) {
-		if(extent_alloc_region(avm->avm_extent, min, max, EX_WAITOK | EX_MALLOCOK)) {
+		if(vm_extent_alloc_region(avm->avm_extent, min, max, EX_WAITOK | EX_MALLOCOK)) {
 			amap_init(&avm->avm_amap, min, max);
 			avm->avm_refcnt = 1;
 		}
@@ -123,7 +123,7 @@ avmspace_free(avm)
 {
 	if (--avm->avm_refcnt == 0) {
 		amap_lock(&avm->avm_amap);
-		extent_free(avm->avm_extent, avm, sizeof(struct avmspace *), EX_WAITOK);
+		VM_EXTENT_FREE(avm->avm_extent, avm, sizeof(struct avmspace *), EX_WAITOK);
 		FREE(avm, M_AVMMAP);
 	}
 }

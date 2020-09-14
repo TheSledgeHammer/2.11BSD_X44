@@ -318,7 +318,9 @@ resolve:
 	return(a[2]);
 }
 
-/* 2.11BSD related memory maps */
+/* 2.11BSD kmem map fail-safe initialization:
+ * Allocates coremap & swapmap in the event one or both were not allocated properly during startup.
+ */
 void
 kmemmapinit()
 {

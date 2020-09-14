@@ -30,8 +30,66 @@
 #include <sys/malloc.h>
 #include <sys/user.h>
 
-#include "vm_extent.h"
+#include <vm_extent.h>
 
+struct extent *
+vm_extent_create(ex, name, start, end, mtype, storage, storagesize, flags)
+	struct extent *ex;
+	char *name;
+	vm_offset_t start, end;
+	int mtype;
+	caddr_t storage;
+	size_t storagesize;
+	int flags;
+{
+	return (extent_create(name, start, end, mtype, storage, storagesize, flags));
+}
+
+int
+vm_extent_alloc_region(ex, start, size, flags)
+	struct extent *ex;
+	vm_offset_t start, size;
+	int flags;
+{
+	return (extent_alloc_region(ex, start, size, flags));
+}
+
+int
+vm_extent_alloc_subregion(ex, substart, subend, size, alignment, boundary, flags, result)
+	struct extent *ex;
+	vm_offset_t substart, subend;
+	vm_size_t size;
+	u_long alignment, boundary;
+	int flags;
+	u_long *result;
+{
+	return (extent_alloc_subregion(ex, substart, subend, size, alignment, boundary, flags, result));
+}
+
+int
+vm_extent_free(ex, start, size, flags)
+	struct extent *ex;
+	vm_offset_t start, size;
+	int flags;
+{
+	return (extent_free(ex, start, size, flags));
+}
+
+void
+vm_extent_destroy(ex)
+	struct extent *ex;
+{
+	extent_destroy(ex);
+}
+
+void
+vm_extent_print(ex)
+	struct extent *ex;
+{
+	extent_print(ex);
+}
+
+/*
 struct vextops vextops;
 
 int
@@ -166,15 +224,18 @@ vm_extent_destroy(vext)
 
 	return (error);
 }
+*/
 
 /* initilize vextops */
+/*
 void
 vextops_init()
 {
 	vextops_malloc(&vextops);
 }
-
+*/
 /* allocate vextops */
+/*
 void
 vextops_malloc(vextops)
 	struct vextops *vextops;
@@ -258,3 +319,4 @@ vextops_destroy(vext)
 {
 	return (vm_extent_destroy(vext));
 }
+*/

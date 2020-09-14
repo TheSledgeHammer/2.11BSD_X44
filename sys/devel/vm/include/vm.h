@@ -163,7 +163,6 @@ struct vmexp {
 	int nanonneeded;	/* number of anons currently needed */
 	int nfreeanon; 		/* number of free anon's */
 };
-
 extern struct vmexp vmexp;
 
 /*

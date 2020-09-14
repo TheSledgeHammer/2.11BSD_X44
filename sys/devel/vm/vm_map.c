@@ -180,7 +180,7 @@ vmspace_alloc(min, max, pageable)
 
 	MALLOC(vm, struct vmspace *, sizeof(struct vmspace), M_VMMAP, M_WAITOK);
 	bzero(vm, (caddr_t) &vm->vm_startcopy - (caddr_t) vm);
-	vm->vm_extent = extent_create("vm_map", min, max, M_VMMAP, NULL, 0, EX_WAITOK | EX_MALLOCOK);
+	VM_EXTENT_CREATE(vm->vm_extent, "vm_map", min, max, M_VMMAP, NULL, 0, EX_WAITOK | EX_MALLOCOK);
 	if(vm->vm_extent) {
 		if(extent_alloc_region(vm->vm_extent, min, max, EX_WAITOK | EX_MALLOCOK)) {
 			vm_map_init(&vm->vm_map, min, max, pageable);
@@ -205,7 +205,7 @@ vmspace_free(vm)
 		vm_map_lock(&vm->vm_map);
 		(void) vm_map_delete(&vm->vm_map, vm->vm_map.min_offset, vm->vm_map.max_offset);
 		pmap_release(&vm->vm_pmap);
-		extent_free(vm->vm_extent, vm, sizeof(struct vmspace *), EX_WAITOK);
+		VM_EXTENT_FREE(vm->vm_extent, vm, sizeof(struct vmspace *), EX_WAITOK);
 		FREE(vm, M_VMMAP);
 	}
 }

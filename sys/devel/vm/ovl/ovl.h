@@ -93,8 +93,8 @@ struct ovl_object;
 typedef struct ovl_object 		*ovl_object_t; 		/* akin to a vm_object but in ovlspace */
 
 #include <devel/vm/include/vm.h>
-#include <vm/ovl/ovl_map.h>
-#include <vm/ovl/ovl_object.h>
+#include <devel/vm/ovl/ovl_map.h>
+#include <devel/vm/ovl/ovl_object.h>
 
 /*
  * shareable overlay address space.
