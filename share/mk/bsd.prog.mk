@@ -11,6 +11,9 @@
 
 CFLAGS+=		${COPTS}
 
+CRTBEGIN?=      ${DESTDIR}/usr/lib/crtbegin.o
+CRTEND?=        ${DESTDIR}/usr/lib/crtend.o
+
 LIBCRT0?=		${DESTDIR}/usr/lib/crt0.o
 LIBC?=			${DESTDIR}/usr/lib/libc.a
 LIBCOMPAT?=		${DESTDIR}/usr/lib/libcompat.a

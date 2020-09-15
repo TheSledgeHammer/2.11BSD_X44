@@ -28,6 +28,7 @@
  */
 
 #include <sys/cdefs.h>
+
 #include <sys/param.h>
 #include <sys/exec_elf.h>
 #include <stdlib.h>
@@ -36,13 +37,9 @@
 
 typedef void (*fptr)(void);
 
-static void (*__CTOR_LIST__[])(void)
-    __attribute__((section(".ctors"))) = { (void *)-1 };	/* XXX */
 static void (*__DTOR_LIST__[])(void)
     __attribute__((section(".dtors"))) = { (void *)-1 };	/* XXX */
 
-static void (*__CTOR_END__[])(void)
-    __attribute__((section(".ctors"))) = { (void *)0 };		/* XXX */
 static void (*__DTOR_END__[])(void)
     __attribute__((section(".dtors"))) = { (void *)0 };		/* XXX */
 
@@ -73,16 +70,8 @@ run_cxa_finalize(void)
  * On some architectures and toolchains we may need to call the .dtors.
  * These are called in the order they are in the ELF file.
  */
-#ifdef HAVE_CTORS
-static void
-__ctors(void)
-{
-	void (**p)(void);
-	for (p = __CTOR_END__; p > __CTOR_LIST__ + 1; ) {
-		(*(*--p))();
-	}
-}
 
+#ifdef HAVE_CTORS
 static void
 __dtors(void)
 {
@@ -90,23 +79,6 @@ __dtors(void)
 	for (p = __DTOR_LIST__ + 1; p < __DTOR_END__; ) {
 		(*(*--p))();
 	}
-}
-
-static void __do_global_ctors_aux(void) __used;
-
-static void
-__do_global_ctors_aux(void)
-{
-	static int initialized;
-
-	if (!initialized) {
-		initialized = 1;
-	}
-
-	/*
-	 * Call global constructors.
-	 */
-	__ctors();
 }
 
 static void __do_global_dtors_aux(void) __used;
@@ -141,8 +113,8 @@ asm (
  * out the .jcr section. We just need to call this function with a pointer
  * to the appropriate section.
  */
-extern void _Jv_RegisterClasses(void *) __weak_symbol;
-static void register_classes(void) __used;
+extern void _Jv_RegisterClasses(void *);
+static void register_classes(void);
 
 static void *__JCR_LIST__[]
     __attribute__((section(".jcr"))) = { };

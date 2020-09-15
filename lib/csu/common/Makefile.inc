@@ -8,20 +8,21 @@ COMMON_DIR:=	${.CURDIR}/common
 CPPFLAGS+=		-I${COMMON_DIR} -I.
 
 SRCS+=	crt0.c
-OBJS+=	crt0.o gcrt0.o crti.o crtn.o
+OBJS+=	crt0.o gcrt0.o crtbegin.o crtend.o crti.o crtn.o
 OBJS+=	init_note.o
 
 realall: ${OBJS}
 
-crt0.o: crt0.c crt_elf.c crt.h init_note.c
+crt0.o: crt0.c crtbegin.c crtend.c crt.h init_note.c
 		${CC} ${CFLAGS} -c -DCRT0 ${ARCHDIR}/${.ALLSRC}
 		${LD} -x -r ${.TARGET}
 
-gcrt0.o: crt0.c crt_elf.c crt.h init_note.c
+gcrt0.o: crt0.c crtbegin.c crtend.c crt.h init_note.c
 		${CC} ${CFLAGS} -c -DMCRT0 ${COMMON_DIR}/${.ALLSRC} -o ${.TARGET}
 		${LD} -x -r ${.TARGET}
 
-
+crtbegin.o: crtbegin.c
+crtend.o: crtend.c
 crti.o: crti.S
 crtn.o: crtn.S
 init_note.o: init_note.S note.h
