@@ -70,10 +70,11 @@
 struct ovl_object {
 	TAILQ_ENTRY(ovl_object)				object_list;	/* list of all objects */
 	u_short								flags;			/* see below */
-
+	u_long								index;			/* index in hash table */
 	simple_lock_data_t					lock;			/* Synchronization */
 	int									ref_count;		/* How many refs?? */
 	vm_size_t							size;			/* Object size */
+	TAILQ_ENTRY(ovl_object)				cached_list;	/* for persistence */
 };
 
 /*
@@ -120,7 +121,14 @@ ovl_object_t		vm_ovl_object;			/* single vm overlay object */
 
 #ifdef KERNEL
 ovl_object_t	ovl_object_allocate (vm_size_t);
+void		 	ovl_object_cache_clear (void);
+void			ovl_object_cache_trim (void);
+void		 	ovl_object_deallocate (ovl_object_t);
+void		 	ovl_object_htable_enter (ovl_object_t, u_long);
 void		 	ovl_object_init (vm_size_t);
+ovl_object_t	ovl_object_lookup (u_long);
 void		 	ovl_object_reference (ovl_object_t);
+void			ovl_object_htable_remove(u_long);
+void		 	ovl_object_terminate (ovl_object_t);
 #endif /* KERNEL */
 #endif /* _OVL_OBJECT_H_ */

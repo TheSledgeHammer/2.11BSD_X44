@@ -77,15 +77,12 @@ struct ovl_object	vm_ovl_object_store;
 int		ovl_cache_max = 100;	/* can patch if necessary */
 struct	ovl_object_hash_head 	ovl_object_hashtable[OVL_OBJECT_HASH_COUNT];
 
-long	object_collapses = 0;
-long	object_bypasses  = 0;
-
 static void _ovl_object_allocate (vm_size_t, ovl_object_t);
 
 /*
- *	vm_object_init:
+ *	ovl_object_init:
  *
- *	Initialize the VM objects module.
+ *	Initialize the OVL objects module.
  */
 void
 ovl_object_init(size)
@@ -121,8 +118,7 @@ ovl_object_allocate(size)
 {
 	register ovl_object_t	result;
 
-	result = (ovl_object_t)
-		malloc((u_long)sizeof *result, M_OVLOBJ, M_WAITOK);
+	result = (ovl_object_t)malloc((u_long)sizeof *result, M_OVLOBJ, M_WAITOK);
 
 	_ovl_object_allocate(size, result);
 
@@ -134,11 +130,10 @@ _ovl_object_allocate(size, object)
 	vm_size_t				size;
 	register ovl_object_t	object;
 {
-	//TAILQ_INIT(&object->memq);
 	ovl_object_lock_init(object);
 	object->ref_count = 1;
 	object->size = size;
-	object->flags = OBJ_INTERNAL;	/* vm_allocate_with_pager will reset */
+	object->flags = OVL_OBJ_INTERNAL;
 
 	/*
 	 *	Object starts out read-write.
@@ -168,3 +163,216 @@ ovl_object_reference(object)
 	ovl_object_unlock(object);
 }
 
+void
+ovl_object_deallocate(object)
+	register ovl_object_t	object;
+{
+	ovl_object_t	temp;
+
+	while (object != NULL) {
+
+		/*
+		 *	The cache holds a reference (uncounted) to
+		 *	the object; we must lock it before removing
+		 *	the object.
+		 */
+
+		ovl_object_cache_lock();
+
+		/*
+		 *	Lose the reference
+		 */
+		ovl_object_lock(object);
+		if (--(object->ref_count) != 0) {
+
+			/*
+			 *	If there are still references, then
+			 *	we are done.
+			 */
+			ovl_object_unlock(object);
+			ovl_object_cache_unlock();
+			return;
+		}
+
+		/*
+		 *	See if this object can persist.  If so, enter
+		 *	it in the cache, then deactivate all of its
+		 *	pages.
+		 */
+
+		if (object->flags & OVL_OBJ_CANPERSIST) {
+
+			TAILQ_INSERT_TAIL(&ovl_object_cached_list, object, cached_list);
+			ovl_object_cached++;
+			ovl_object_cache_unlock();
+
+			ovl_object_deactivate_pages(object);
+			ovl_object_unlock(object);
+
+			ovl_object_cache_trim();
+			return;
+		}
+
+		/*
+		 *	Make sure no one can look us up now.
+		 */
+		ovl_object_remove(object->index);
+		ovl_object_cache_unlock();
+
+		//temp = object->shadow;
+		ovl_object_terminate(object);
+		/* unlocks and deallocates object */
+		object = temp;
+	}
+}
+
+/*
+ *	Trim the object cache to size.
+ */
+void
+ovl_object_cache_trim()
+{
+	register ovl_object_t	object;
+
+	ovl_object_cache_lock();
+	while (ovl_object_cached > ovl_cache_max) {
+		object = TAILQ_FIRST(ovl_object_cached_list);
+		ovl_object_cache_unlock();
+
+		if (object != ovl_object_lookup(object->index))
+			panic("ovl_object_deactivate: I'm sooo confused.");
+
+		ovl_object_cache_lock();
+	}
+	ovl_object_cache_unlock();
+}
+
+/*
+ *	ovl_object_hash generates a hash the object/id pair.
+ */
+u_long
+ovl_object_hash(index)
+	u_long index;
+{
+	u_long hash1 = (prospector32(index) % OVL_OBJECT_HASH_COUNT);
+	u_long hash2 = (lowbias32(index) % OVL_OBJECT_HASH_COUNT);
+
+	return (hash1 ^ hash2);
+}
+
+/*
+ *	ovl_object_lookup looks in the object cache for an object with the
+ *	specified hash index.
+ */
+
+ovl_object_t
+ovl_object_lookup(index)
+	u_long index;
+{
+	register ovl_object_hash_entry_t	entry;
+	ovl_object_t						object;
+
+	ovl_object_cache_lock();
+
+	for (entry = TAILQ_FIRST(ovl_object_hashtable[ovl_object_hash(index)]);
+			entry != NULL; entry = TAILQ_NEXT(entry, hash_links)) {
+		object = entry->object;
+		if (object->index == index) {
+			ovl_object_lock(object);
+			if (object->ref_count == 0) {
+				TAILQ_REMOVE(&ovl_object_cached_list, object, cached_list);
+				ovl_object_cached--;
+			}
+			object->ref_count++;
+			ovl_object_unlock(object);
+			ovl_object_cache_unlock();
+			return (object);
+		}
+	}
+
+	ovl_object_cache_unlock();
+	return (NULL);
+}
+
+/*
+ *	ovl_object_enter enters the specified object/index/id into
+ *	the hash table.
+ */
+void
+ovl_object_htable_enter(object, index)
+	ovl_object_t	object;
+	u_long 			index;
+{
+	struct ovl_object_hash_head	*bucket;
+	register ovl_object_hash_entry_t entry;
+
+	if (object == NULL)
+			return;
+
+	bucket = &ovl_object_hashtable[ovl_object_hash(index)];
+	entry = (ovl_object_hash_entry_t)malloc((u_long)sizeof *entry, M_OVLOBJHASH, M_WAITOK);
+	entry->object = object;
+	object->flags |= OVL_OBJ_CANPERSIST;
+
+	ovl_object_cache_lock();
+	TAILQ_INSERT_TAIL(bucket, entry, hash_links);
+	ovl_object_cache_unlock();
+}
+
+/*
+ *	ovl_object_remove:
+ *
+ *	Remove the entry from the hash table.
+ *	Note:  This assumes that the object cache
+ *	is locked.  XXX this should be fixed
+ *	by reorganizing vm_object_deallocate.
+ */
+void
+ovl_object_htable_remove(index)
+	u_long 			index;
+{
+	struct ovl_object_hash_head			*bucket;
+	register ovl_object_hash_entry_t	entry;
+	register ovl_object_t				object;
+
+	bucket = &ovl_object_hashtable[ovl_object_hash(index)];
+
+	for(entry = TAILQ_FIRST(bucket); entry != NULL; entry = TAILQ_NEXT(entry, hash_links)) {
+		object = entry->object;
+		if(object->index == index) {
+			TAILQ_REMOVE(bucket, entry, hash_links);
+			free((caddr_t)entry, M_OVLOBJHASH);
+			break;
+		}
+	}
+}
+
+/*
+ *	ovl_object_cache_clear removes all objects from the cache.
+ */
+void
+ovl_object_cache_clear()
+{
+	register ovl_object_t		object;
+
+	/*
+	 *	Remove each object in the cache by scanning down the
+	 *	list of cached objects.
+	 */
+	ovl_object_cache_lock();
+	while ((object = TAILQ_FIRST(ovl_object_cached_list)) != NULL) {
+		ovl_object_cache_unlock();
+
+		/*
+		 * Note: it is important that we use vm_object_lookup
+		 * to gain a reference, and not vm_object_reference, because
+		 * the logic for removing an object from the cache lies in
+		 * lookup.
+		 */
+		if (object != ovl_object_lookup(object->index))
+			panic("ovl_object_cache_clear: I'm sooo confused.");
+
+		ovl_object_cache_lock();
+	}
+	ovl_object_cache_unlock();
+}
