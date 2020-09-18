@@ -69,6 +69,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
+#include <sys/fnv_hash.h>
 
 #include <devel/vm/include/vm_page.h>
 #include <devel/vm/include/vm.h>
@@ -137,4 +138,160 @@ vm_object_init(size)
 
 	kmem_object = &kmem_object_store;
 	_vm_object_allocate(VM_KMEM_SIZE + VM_MBUF_SIZE, kmem_object);
+}
+
+/*
+ *	vm_object_allocate:
+ *
+ *	Returns a new object with the given size.
+ */
+
+vm_object_t
+vm_object_allocate(size)
+	vm_size_t	size;
+{
+	register vm_object_t	result;
+
+	result = (vm_object_t)malloc((u_long)sizeof *result, M_VMOBJ, M_WAITOK);
+
+	_vm_object_allocate(size, result);
+
+	return(result);
+}
+
+static void
+_vm_object_allocate(size, object)
+	vm_size_t		size;
+	register vm_object_t	object;
+{
+	TAILQ_INIT(&object->memq);
+	vm_object_lock_init(object);
+	object->ref_count = 1;
+	object->resident_page_count = 0;
+	object->size = size;
+	object->flags = OBJ_INTERNAL;	/* vm_allocate_with_pager will reset */
+	object->paging_in_progress = 0;
+	object->copy = NULL;
+
+	/*
+	 *	Object starts out read-write, with no pager.
+	 */
+
+	object->pager = NULL;
+	object->paging_offset = 0;
+	object->shadow = NULL;
+	object->shadow_offset = (vm_offset_t) 0;
+
+	simple_lock(&vm_object_list_lock);
+	TAILQ_INSERT_TAIL(&vm_object_list, object, object_list);
+	vm_object_count++;
+	cnt.v_nzfod += atop(size);
+	simple_unlock(&vm_object_list_lock);
+}
+
+/*
+ *	vm_object_hash hashes the pager/id pair.
+ */
+u_long
+vm_object_hash(pager)
+	vm_pager_t pager;
+{
+    Fnv32_t hash1 = fnv_32_buf(&pager, sizeof(&pager), FNV1_32_INIT) % VM_OBJECT_HASH_COUNT;
+    //Fnv32_t hash2 = fnv_32_buf(&pager, sizeof(&pager), FNV1_32_INIT) % OVL_OBJECT_HASH_COUNT;
+    return (hash1);
+}
+
+/*
+ *	vm_object_lookup looks in the object cache for an object with the
+ *	specified pager and paging id.
+ */
+
+vm_object_t
+vm_object_lookup(pager)
+	vm_pager_t	pager;
+{
+	register vm_object_hash_entry_t	entry;
+	vm_object_t			object;
+
+	vm_object_cache_lock();
+
+	for (entry = TAILQ_FIRST(vm_object_hashtable[vm_object_hash(pager)]); entry != NULL; entry = TAILQ_NEXT(entry, hash_links)) {
+		object = entry->object;
+		if (object->pager == pager) {
+			vm_object_lock(object);
+			if (object->ref_count == 0) {
+				TAILQ_REMOVE(&vm_object_cached_list, object, cached_list);
+				vm_object_cached--;
+			}
+			object->ref_count++;
+			vm_object_unlock(object);
+			vm_object_cache_unlock();
+			return(object);
+		}
+	}
+
+	vm_object_cache_unlock();
+	return (NULL);
+}
+
+/*
+ *	vm_object_enter enters the specified object/pager/id into
+ *	the hash table.
+ */
+
+void
+vm_object_enter(object, pager)
+	vm_object_t	object;
+	vm_pager_t	pager;
+{
+	struct vm_object_hash_head	*bucket;
+	register vm_object_hash_entry_t	entry;
+
+	/*
+	 *	We don't cache null objects, and we can't cache
+	 *	objects with the null pager.
+	 */
+
+	if (object == NULL)
+		return;
+	if (pager == NULL)
+		return;
+
+	bucket = &vm_object_hashtable[vm_object_hash(pager)];
+	entry = (vm_object_hash_entry_t)malloc((u_long)sizeof *entry, M_VMOBJHASH, M_WAITOK);
+	entry->object = object;
+	object->flags |= OBJ_CANPERSIST;
+
+	vm_object_cache_lock();
+	TAILQ_INSERT_TAIL(bucket, entry, hash_links);
+	vm_object_cache_unlock();
+}
+
+/*
+ *	vm_object_remove:
+ *
+ *	Remove the pager from the hash table.
+ *	Note:  This assumes that the object cache
+ *	is locked.  XXX this should be fixed
+ *	by reorganizing vm_object_deallocate.
+ */
+
+void
+vm_object_remove(pager)
+	register vm_pager_t	pager;
+{
+	struct vm_object_hash_head		*bucket;
+	register vm_object_hash_entry_t	entry;
+	register vm_object_t			object;
+
+	bucket = &vm_object_hashtable[vm_object_hash(pager)];
+
+	for (entry = TAILQ_FIRST(bucket); entry != NULL; entry = TAILQ_NEXT(entry, hash_links)) {
+		object = entry->object;
+		if (object->pager == pager) {
+			TAILQ_REMOVE(bucket, entry, hash_links);
+			free((caddr_t)entry, M_VMOBJHASH);
+			break;
+		}
+	}
 }

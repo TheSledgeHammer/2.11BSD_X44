@@ -65,6 +65,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
+#include <sys/fnv_hash.h>
 
 #include <devel/vm/include/vm_page.h>
 #include <devel/vm/ovl/ovl_object.h>
@@ -251,13 +252,13 @@ ovl_object_cache_trim()
  *	ovl_object_hash generates a hash the object/id pair.
  */
 u_long
-ovl_object_hash(index)
-	u_long index;
+ovl_object_hash(object)
+	ovl_object_t object;
 {
-	u_long hash1 = (prospector32(index) % OVL_OBJECT_HASH_COUNT);
-	u_long hash2 = (lowbias32(index) % OVL_OBJECT_HASH_COUNT);
-
-	return (hash1 ^ hash2);
+    Fnv32_t hash1 = fnv_32_buf(&object, sizeof(&object), FNV1_32_INIT) % OVL_OBJECT_HASH_COUNT;
+    //Fnv32_t hash2 = fnv_32_buf(&val, sizeof(val), FNV1_32_INIT) % OVL_OBJECT_HASH_COUNT;
+    //Fnv32_t h3 = (h1^h2);
+    return (hash1);
 }
 
 /*
@@ -266,18 +267,18 @@ ovl_object_hash(index)
  */
 
 ovl_object_t
-ovl_object_lookup(index)
-	u_long index;
+ovl_object_lookup(object)
+	ovl_object_t object;
 {
 	register ovl_object_hash_entry_t	entry;
-	ovl_object_t						object;
+	//ovl_object_t						object;
+	u_long index = ovl_object_hash(object);
 
 	ovl_object_cache_lock();
 
-	for (entry = TAILQ_FIRST(ovl_object_hashtable[ovl_object_hash(index)]);
-			entry != NULL; entry = TAILQ_NEXT(entry, hash_links)) {
+	for (entry = TAILQ_FIRST(ovl_object_hashtable[ovl_object_hash(object)]); entry != NULL; entry = TAILQ_NEXT(entry, hash_links)) {
 		object = entry->object;
-		if (object->index == index) {
+		if (ovl_object_hash(entry->object) == index) {
 			ovl_object_lock(object);
 			if (object->ref_count == 0) {
 				TAILQ_REMOVE(&ovl_object_cached_list, object, cached_list);
@@ -299,19 +300,19 @@ ovl_object_lookup(index)
  *	the hash table.
  */
 void
-ovl_object_htable_enter(object, index)
+ovl_object_htable_enter(object)
 	ovl_object_t	object;
-	u_long 			index;
 {
 	struct ovl_object_hash_head	*bucket;
 	register ovl_object_hash_entry_t entry;
 
 	if (object == NULL)
-			return;
+		return;
 
-	bucket = &ovl_object_hashtable[ovl_object_hash(index)];
+	bucket = &ovl_object_hashtable[ovl_object_hash(object)];
 	entry = (ovl_object_hash_entry_t)malloc((u_long)sizeof *entry, M_OVLOBJHASH, M_WAITOK);
 	entry->object = object;
+	//object->index = ovl_object_hash(object);
 	object->flags |= OVL_OBJ_CANPERSIST;
 
 	ovl_object_cache_lock();
@@ -328,18 +329,19 @@ ovl_object_htable_enter(object, index)
  *	by reorganizing vm_object_deallocate.
  */
 void
-ovl_object_htable_remove(index)
-	u_long 			index;
+ovl_object_htable_remove(object)
+	register ovl_object_t	object;
 {
 	struct ovl_object_hash_head			*bucket;
 	register ovl_object_hash_entry_t	entry;
-	register ovl_object_t				object;
+	//register ovl_object_t				object;
 
-	bucket = &ovl_object_hashtable[ovl_object_hash(index)];
+	bucket = &ovl_object_hashtable[ovl_object_hash(object)];
+	u_long index = ovl_object_hash(object);
 
 	for(entry = TAILQ_FIRST(bucket); entry != NULL; entry = TAILQ_NEXT(entry, hash_links)) {
 		object = entry->object;
-		if(object->index == index) {
+		if(ovl_object_hash(entry->object) == index) {
 			TAILQ_REMOVE(bucket, entry, hash_links);
 			free((caddr_t)entry, M_OVLOBJHASH);
 			break;
@@ -353,7 +355,7 @@ ovl_object_htable_remove(index)
 void
 ovl_object_cache_clear()
 {
-	register ovl_object_t		object;
+	register ovl_object_t	object;
 
 	/*
 	 *	Remove each object in the cache by scanning down the
@@ -369,7 +371,7 @@ ovl_object_cache_clear()
 		 * the logic for removing an object from the cache lies in
 		 * lookup.
 		 */
-		if (object != ovl_object_lookup(object->index))
+		if (object != ovl_object_lookup(object))
 			panic("ovl_object_cache_clear: I'm sooo confused.");
 
 		ovl_object_cache_lock();

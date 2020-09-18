@@ -199,7 +199,7 @@ int
 vm_pager_put_pages(pager, mlist, npages, sync)
 	vm_pager_t	pager;
 	vm_page_t	*mlist;
-	int		npages;
+	int			npages;
 	boolean_t	sync;
 {
 	if (pager == NULL)

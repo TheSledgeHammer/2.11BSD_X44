@@ -307,7 +307,7 @@ vm_page_insert(mem, object, offset)
 	register vm_offset_t	offset;
 {
 	register struct pglist	*bucket;
-	int			spl;
+	int						spl;
 
 	VM_PAGE_CHECK(mem);
 

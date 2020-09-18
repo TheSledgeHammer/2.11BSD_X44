@@ -512,7 +512,7 @@ ovl_map_insert(map, object, offset, start, end)
 	 *	See if we can avoid creating a new entry by
 	 *	extending one of our neighbors.
 	 */
-
+    /* TODO: redo */
 	if (object == NULL) {
 		if ((prev_entry != &map->ovl_header)
 				&& (prev_entry->ovle_end == start)) {
@@ -894,8 +894,29 @@ ovl_map_remove(map, start, end)
 	return (result);
 }
 
+void
+ovl_map_set_active(map)
+	ovl_map_t map;
+{
+	map->ovl_is_active = TRUE;
+}
+
+void
+ovl_map_set_inactive(map)
+	ovl_map_t map;
+{
+	map->ovl_is_active = FALSE;
+}
+
+boolean_t
+ovl_map_is_active(map)
+	ovl_map_t map;
+{
+	return (map->ovl_is_active);
+}
+
 /* swap an overlay in: overlay is set to active */
-ovl_swapin(map, address, entry)
+ovl_map_swapin(map, address, entry)
 	register ovl_map_t			map;
 	register vm_offset_t		address;
 	register ovl_map_entry_t	entry;
@@ -904,29 +925,31 @@ ovl_swapin(map, address, entry)
 
 	ovl_map_lock(map);
 
-	if (ovl_map_lookup_entry(map, address, entry)) {
+	if (ovl_map_lookup_entry(map, address, entry) && ovl_map_is_inactive(map)) {
 		/*
 		 * - find overlay entry
 		 * - determine the entry type (amap, vm_map, ovl)
 		 */
-		map->ovl_is_active = TRUE;
+		object = entry->ovle_object;
+		ovl_map_set_active(map);
 	}
 }
 
 /* swap an overlay out: overlay is set to inactive */
-ovl_swapout(map, address, entry)
+ovl_map_swapout(map, address, entry)
 	register ovl_map_t			map;
 	register vm_offset_t		address;
 	register ovl_map_entry_t	entry;
 {
 	struct ovl_object object;
 
-	if (ovl_map_lookup_entry(map, address, entry) && map->ovl_is_active) {
+	if (ovl_map_lookup_entry(map, address, entry) && ovl_map_is_active(map)) {
 		/*
 		 * - find overlay entry
 		 * - determine the entry type (amap, vm_map, ovl)
 		 */
-		map->ovl_is_active = FALSE;
+		object = entry->ovle_object;
+		ovl_map_set_inactive(map);
 	}
 
 	ovl_map_unlock(map);

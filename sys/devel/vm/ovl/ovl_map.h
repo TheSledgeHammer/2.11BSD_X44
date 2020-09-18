@@ -36,8 +36,8 @@ struct ovl_map_entry {
   union ovl_map_object			   		ovle_object;		/* object I point to */
   vm_offset_t				          	ovle_offset;		/* offset into object */
 
-  boolean_t 							ovle_is_kern_overlay;/* Am I a kernel overlay? */
-  boolean_t								ovle_is_vm_overlay;	/* Am I a vm overlay? */
+  boolean_t 							ovle_is_kern_overlay;	/* Am I a kernel overlay? */
+  boolean_t								ovle_is_vm_overlay;		/* Am I a vm overlay? */
 
   boolean_t								ovle_is_vm_map;		/* Is "object" a vm map? */
   boolean_t								ovle_is_vm_amap;	/* Is "object" a vm anon map? */
@@ -67,17 +67,17 @@ struct ovl_map {
 	ovl_map_entry_t						ovl_first_free;		/* First free space hint */
     unsigned int		                ovl_timestamp;	    /* Version number */
 
-    /* extents */
-    boolean_t							ovl_is_subregion;	/* am i in an extent sub-region */
-
 #define	min_offset			    		ovl_header.cqh_first->ovle_start
 #define max_offset			    		ovl_header.cqh_first->ovle_end
+
+    /* extents */
+    boolean_t							ovl_is_subregion;	/* am i in an extent sub-region */
 
     /* overlay management */
     boolean_t 							ovl_is_kern_overlay;/* Am I a kernel overlay? */
     boolean_t							ovl_is_vm_overlay;	/* Am I a vm overlay? */
-    int 								ovl_novl;			/* Number of kernel overlays */
-    int 								ovl_vovl;			/* Number of vm overlays */
+    int 								ovl_nkovl;			/* Number of kernel overlays */
+    int 								ovl_nvovl;			/* Number of vm overlays */
 
     boolean_t							ovl_is_active;		/* overlay is active (in use) */
 };
@@ -118,8 +118,8 @@ struct ovl_map {
 
 /* XXX: number of overlay maps and entries to statically allocate */
 #define MAX_OMAP	64
-#define	NOVLE		(32)			/* number of kernel overlay entries */
-#define	VOVLE		(32)			/* number of virtual (vm) overlay entries */
+#define	NKOVLE		(32)			/* number of kernel overlay entries */
+#define	NVOVLE		(32)			/* number of virtual (vm) overlay entries */
 
 #ifdef _KERNEL
 struct pmap;
@@ -139,7 +139,10 @@ void			ovl_map_reference (ovl_map_t);
 int		 		ovl_map_remove (ovl_map_t, vm_offset_t, vm_offset_t);
 void			ovl_map_startup (void);
 
-void 			ovl_swapin(ovl_map_t, vm_offset_t, ovl_map_entry_t *);
-void 			ovl_swapout(ovl_map_t, vm_offset_t, ovl_map_entry_t *);
+void 			ovl_map_swapin(ovl_map_t, vm_offset_t, ovl_map_entry_t *);
+void 			ovl_map_swapout(ovl_map_t, vm_offset_t, ovl_map_entry_t *);
+void			ovl_map_set_active(ovl_map_t);
+void			ovl_map_set_inactive(ovl_map_t);
+boolean_t		ovl_map_is_active(ovl_map_t);
 #endif
 #endif /* OVL_MAP_ */

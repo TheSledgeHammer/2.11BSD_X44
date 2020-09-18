@@ -39,7 +39,7 @@
 #define	_MACHTYPES_H_
 
 #include <sys/cdefs.h>
-
+#include <sys/types.h>
 #if !defined(_ANSI_SOURCE)
 typedef struct _physadr {
 	int r[1];
@@ -122,5 +122,34 @@ typedef unsigned long		__psize_t;
 
 typedef	int		       		__intptr_t;
 typedef	unsigned int	    __uintptr_t;
+
+typedef	__int64_t			__ptrdiff_t;	/* ptr1 - ptr2 */
+typedef	__int64_t			__register_t;
+typedef	__int64_t			__segsz_t;		/* segment size (in pages) */
+typedef	__uint64_t			__size_t;		/* sizeof() */
+typedef	__int64_t			__ssize_t;		/* byte count or error */
+typedef	__int64_t			__time_t;		/* time()... */
+typedef	__uint64_t			__uintfptr_t;
+typedef	__uint64_t			__uintptr_t;
+
+typedef	__int32_t			__ptrdiff_t;
+typedef	__int32_t			__register_t;
+typedef	__int32_t			__segsz_t;
+typedef	__uint32_t			__size_t;
+typedef	__int32_t			__ssize_t;
+typedef	__int32_t			__time_t;
+typedef	__uint32_t			__uintfptr_t;
+typedef	__uint32_t			__uintptr_t;
+
+typedef	int					___wchar_t;
+
+#define	__WCHAR_MIN			__INT_MIN	/* min value for a wchar_t */
+#define	__WCHAR_MAX			__INT_MAX	/* max value for a wchar_t */
+
+/* Clang already provides these types as built-ins, but only in C++ mode. */
+#if !defined(__clang__) || !defined(__cplusplus)
+typedef	__uint_least16_t 	__char16_t;
+typedef	__uint_least32_t 	__char32_t;
+#endif
 
 #endif /* _MACHTYPES_H_ */

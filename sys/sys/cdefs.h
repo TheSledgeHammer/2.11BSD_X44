@@ -48,6 +48,7 @@
 #endif
 
 #include <machine/cdefs.h>
+
 #ifdef __ELF__
 #include <sys/cdefs_elf.h>
 #else
@@ -55,7 +56,7 @@
 #endif
 
 #ifdef __GNUC__
-#define	__strict_weak_alias(alias,sym)					\
+#define	__strict_weak_alias(alias,sym)								\
 	__unused static __typeof__(alias) *__weak_alias_##alias = &sym;	\
 	__weak_alias(alias,sym)
 #else
@@ -177,7 +178,6 @@
 #endif /* NO_KERNEL_RCSIDS */
 #endif /* _KERNEL */
 
-
 /*
  * __unused: Note that item or function might be unused.
  */
@@ -196,4 +196,39 @@
 #define	__used		__unused
 #endif
 
+/*
+ * Testing against Clang-specific extensions.
+ */
+#ifndef	__has_attribute
+#define	__has_attribute(x)	0
+#endif
+#ifndef	__has_extension
+#define	__has_extension		__has_feature
+#endif
+#ifndef	__has_feature
+#define	__has_feature(x)	0
+#endif
+#ifndef	__has_include
+#define	__has_include(x)	0
+#endif
+#ifndef	__has_builtin
+#define	__has_builtin(x)	0
+#endif
+
+/*
+ * Keywords added in C11.
+ */
+
+#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
+
+#if !defined(__cplusplus) && !__has_extension(c_atomic) && \
+	!__has_extension(cxx_atomic) && !__GNUC_PREREQ__(4, 7)
+/*
+ * No native support for _Atomic(). Place object in structure to prevent
+ * most forms of direct non-atomic access.
+ */
+#define	_Atomic(T)		struct { T volatile __val; }
+#endif
+
+#endif
 #endif /* !_CDEFS_H_ */
