@@ -165,7 +165,7 @@ vm_page_startup(start, end)
 	TAILQ_INIT(&vm_page_queue_inactive);
 
 	/* Initialize rb_tree */
-	RB_INIT(&vm_page_hash_tree);
+	//RB_INIT(&vm_page_hash_tree);
 
 	/*
 	 *	Calculate the number of hash table buckets.

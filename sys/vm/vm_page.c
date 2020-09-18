@@ -138,13 +138,13 @@ vm_page_startup(start, end)
 	vm_offset_t	*start;
 	vm_offset_t	*end;
 {
-	register vm_page_t	m;
+	register vm_page_t		m;
 	register struct pglist	*bucket;
-	vm_size_t		npages;
-	int			i;
-	vm_offset_t		pa;
-	extern	vm_offset_t	kentry_data;
-	extern	vm_size_t	kentry_data_size;
+	vm_size_t				npages;
+	int						i;
+	vm_offset_t				pa;
+	extern	vm_offset_t		kentry_data;
+	extern	vm_size_t		kentry_data_size;
 
 
 	/*

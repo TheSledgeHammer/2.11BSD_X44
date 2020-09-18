@@ -95,7 +95,7 @@ ovlspace_create(start, end, storage, storagesize, segmented)
 		} else {
 			memset(ovl, 0, sizeof(struct ovlspace *));
 		}
-		VM_EXTENT_CREATE(ovl->ovl_extent, "vm_overlay", start, end, M_OVLMAP, storage, storagesize, EX_NOWAIT | EX_MALLOCOK | EX_RMALLOCOK | EX_SEGMENTED);
+		VM_EXTENT_CREATE(ovl->ovl_extent, "vm_overlay", start, end, M_OVLMAP, storage, storagesize, EX_NOWAIT | EX_MALLOCOK);
 
 	} else {
 		if(ovl == NULL) {
@@ -103,7 +103,7 @@ ovlspace_create(start, end, storage, storagesize, segmented)
 		} else {
 			memset(ovl, 0, sizeof(struct ovlspace *));
 		}
-		VM_EXTENT_CREATE(ovl->ovl_extent, "vm_overlay", start, end, M_OVLMAP, storage, storagesize, EX_NOWAIT | EX_MALLOCOK | EX_RMALLOCOK);
+		VM_EXTENT_CREATE(ovl->ovl_extent, "vm_overlay", start, end, M_OVLMAP, storage, storagesize, EX_NOWAIT | EX_MALLOCOK);
 	}
 }
 
@@ -380,7 +380,7 @@ ovl_map_create(pmap, min, max)
 
 void
 ovl_map_init(map, min, max)
-	struct ovl_map *map;
+	ovl_map_t map;
 	vm_offset_t	min, max;
 {
 	CIRCLEQ_INIT(&map->ovl_header);

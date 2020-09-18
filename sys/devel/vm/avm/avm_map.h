@@ -140,8 +140,8 @@ struct avm_map_entry {
  */
 RB_HEAD(avm_map_rb_tree, vm_map_entry);
 struct avm_map {
-	struct avm_map_rb_tree 	rb_root;		/* Tree of entries */
-	struct avm_map_entry	header;			/* List of entries */
+	struct avm_map_rb_tree 	am_rb_root;		/* Tree of entries */
+	struct avm_map_entry	am_header;		/* List of entries */
 	lock_data_t 			*am_lock;		/* lock [locks all vm_amap fields] */
 	simple_lock_data_t		am_ref_lock;	/* Lock for ref_count field */
 	int 					am_ref;			/* reference count */

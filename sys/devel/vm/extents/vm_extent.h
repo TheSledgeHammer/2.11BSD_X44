@@ -142,7 +142,6 @@ struct vextops_destroy_args	{
 
 void vextops_init();
 void vextops_malloc(struct vextops *vextops);
-
 */
 
 #endif /* _VM_EXTENT_H_ */

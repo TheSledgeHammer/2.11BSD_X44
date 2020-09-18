@@ -177,6 +177,7 @@ amap_init(amap, min, max)
 	register struct avm_amap *amap;
 	vm_offset_t	min, max;
 {
+	VM_EXTENT_ALLOC_REGION();
 	//malloc(&vm_amap_extent, sizeof(struct vm_amap), VM_AMAP);
 	//pool_init(&uvm_amap_pool, sizeof(struct vm_amap), 0, 0, 0, "amappl", &pool_allocator_nointr);
 	amap->nentries = 0;

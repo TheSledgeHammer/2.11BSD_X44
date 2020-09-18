@@ -46,7 +46,10 @@ Unsolved Problems:
 		- NOVLPSR = NOVLSR 	(max number of overlays in a subregion)
 
 TODO:
-- ovl_object.c
+- missing underlying storage: 
+	- map interaction for objects
+	- allocation of map & objects
+	- store of objects? (vm_pager/vm_page equivalent)
 	
 TO FIX:
 - ovl_map:

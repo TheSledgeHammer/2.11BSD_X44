@@ -276,7 +276,7 @@ vm_pager_clusternull(pager, offset, loff, hoff)
 vm_offset_t
 vm_pager_map_pages(mlist, npages, canwait)
 	vm_page_t	*mlist;
-	int		npages;
+	int			npages;
 	boolean_t	canwait;
 {
 	vm_offset_t kva, va;

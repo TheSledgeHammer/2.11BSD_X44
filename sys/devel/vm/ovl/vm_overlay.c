@@ -10,12 +10,16 @@ struct kern_overlay {
 	ovl_map_t 		ovl_map;
 	ovl_map_entry_t ovl_entry;
 	ovl_object_t 	ovl_object;
+
+	vm_offset_t		phys_addr;
 };
 
 struct vm_overlay {
 	ovl_map_t 		ovl_map;
 	ovl_map_entry_t ovl_entry;
 	ovl_object_t 	ovl_object;
+
+	vm_offset_t		phys_addr;
 };
 
 ovl_insert(map, entry, object)
@@ -40,3 +44,4 @@ ovl_insert(map, entry, object)
 }
 
 
+//ovl_object -> vm_object/page or avm_object
