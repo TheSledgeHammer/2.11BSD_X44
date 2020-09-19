@@ -81,6 +81,5 @@ void lockwitness(struct lock *lkp, const struct lock_type *);
 #endif /* WITNESS */
 
 extern struct lock kernel_lock;
-//extern struct lock sched_lock;
 
 #endif /* SYS_LOCKOBJ_H_ */

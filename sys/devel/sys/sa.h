@@ -36,8 +36,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* scheduler activations */
-/*
+/* scheduler activations:
  * Internal data usd by the scheduler activation implementation
  */
 

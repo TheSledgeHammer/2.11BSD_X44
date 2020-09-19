@@ -39,6 +39,32 @@
 #include <sys/threadpool.h>
 #include <sys/kthread.h>
 
+job_queue_init(jobq)
+	struct job_queue *jobq;
+{
+	TAILQ_INIT(&jobq->job_head);
+}
+
+void
+job_pool(job, fn)
+	struct job_pool *job;
+	job_pool_fn_t 	fn;
+{
+	job->job_lock = lock;
+	job->job_ktp_thread = NULL;
+	job->job_utp_thread = NULL;
+	job->job_refcnt = 0;
+	job->job_fn = fn;
+}
+
+job_pool_add(jobq, job, fn)
+	struct job_queue 	*jobq;
+	struct job_pool 	*job;
+	job_pool_fn_t 		fn;
+{
+	TAILQ_INSERT_HEAD(&jobq->job_head, job, job_entry);
+}
+
 void
 threadpool_job_init(struct threadpool_job *job, threadpool_job_fn_t fn, mutex_t *lock, const char *fmt, ...)
 {

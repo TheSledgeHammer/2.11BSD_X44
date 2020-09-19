@@ -35,16 +35,6 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 
-#if __has_extension(c_atomic) || __has_extension(cxx_atomic)
-#define	__CLANG_ATOMICS
-#elif __GNUC_PREREQ__(4, 7)
-#define	__GNUC_ATOMICS
-#elif defined(__GNUC__)
-#define	__SYNC_ATOMICS
-#else
-//#error "stdatomic.h does not support your compiler"
-#endif
-
 /*
  * 7.17.1 Atomic lock-free macros.
  */

@@ -127,6 +127,7 @@ fail:
 	KASSERT(TAILQ_EMPTY(&ktpool->ktp_idle_threads));
 	KASSERT(TAILQ_EMPTY(&ktpool->ktp_jobs));
 	simple_unlock(&ktpool->ktp_lock);
+
 	return (error);
 }
 

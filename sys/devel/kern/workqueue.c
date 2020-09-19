@@ -26,47 +26,83 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SYS_WORKQUEUE_H_
-#define SYS_WORKQUEUE_H_
+#include <sys/lock.h>
+#include <sys/user.h>
+#include <workqueue.h>
 
-#include <sys/queue.h>
+struct wqueue *
+wqueue_create(wq, nthreads)
+	struct wqueue *wq;
+	int nthreads;
+{
+	LIST_INIT(&wq->wq_pending);
+	LIST_INIT(&wq->wq_running);
+	wq->wq_nthreads = nthreads;
 
-/* Tasks: taken from job_pool */
-struct task {
-	LIST_ENTRY(task) 			tk_entry;
-	void 						(*tk_func)(void *);
-	void 						*tk_arg;
+	return (wq);
+}
 
-	int 						tk_state;
+void
+task_set(tk, prio, wmesg, timo, flags, state)
+	struct task *tk;
+	int prio, timo, flags;
+	char *wmesg;
+	int state;
+{
+	tk->tk_prio = prio;
+	tk->tk_wmesg = wmesg;
+	tk->tk_timo = timo;
+	tk->tk_flags = flags;
+	tk->tk_state = state;
+	lockinit(tk->tk_lock, prio, wmesg, flags);
+}
 
-	lock_t 						tk_lock;
-	rwlock_t					tk_rwlock;
+struct task *
+task_lookup(wq, tk, state)
+	struct wqueue *wq;
+	struct task *tk;
+	int state;
+{
+	struct task *entry;
+	if (tk->tk_state == state) {
+		for (entry = LIST_FIRST(&wq->wq_pending); entry != NULL; entry = LIST_NEXT(tk, tk_entry)) {
+			if(tk == entry) {
+				return (tk);
+			}
+		}
+	}
+	return (NULL);
+}
 
-	int 						tk_prio;
-	char						*tk_wmesg;
-	int 						tk_timo;
-	int 						tk_flags;
-};
-LIST_HEAD(taskhead, task);
+void
+task_add(wq, tk)
+	struct wqueue *wq;
+	struct task *tk;
+{
+	if(tk->tk_state == TQ_PENDING) {
+		LIST_INSERT_HEAD(&wq->wq_pending, tk, tk_entry);
+	}
+	if(tk->tk_state == TQ_RUNNING) {
+		LIST_INSERT_HEAD(&wq->wq_running, tk, tk_entry);
+	}
+}
 
-/* Workqueue */
-struct wqueue {
-	struct taskhead 			wq_running;
-	struct taskhead 			wq_pending;
-	struct proc					*wq_worker;
-	int                 		wq_nthreads;
-};
-
-#define	POISON					0xaabbccdd
-
-/* task states  */
-#define TQ_PENDING 				0x01	/* task is waiting for time to run */
-#define TQ_RUNNING 				0x02	/* task is running */
-#define TQ_IDLE 				0x03	/* task not finished but set to idle */
-
-void		task_set(struct task *, int, char *, int, int, int);
-void		task_add(struct wqueue *, struct task *);
-void		task_remove(struct wqueue *, struct task *);
-struct task *task_lookup(struct wqueue *, struct task *, int);
-
-#endif /* SYS_WORKQUEUE_H_ */
+void
+task_remove(wq, tk)
+	struct wqueue *wq;
+	struct task *tk;
+{
+	struct task *entry;
+	if (tk->tk_state == TQ_PENDING) {
+		entry = task_lookup(wq, tk, TQ_PENDING);
+		if(entry != NULL) {
+			LIST_REMOVE(entry, tk_entry);
+		}
+	}
+	if (tk->tk_state == TQ_RUNNING) {
+		entry = task_lookup(wq, tk, TQ_RUNNING);
+		if(entry != NULL) {
+			LIST_REMOVE(entry, tk_entry);
+		}
+	}
+}
