@@ -28,45 +28,54 @@
 
 #ifndef SYS_WORKQUEUE_H_
 #define SYS_WORKQUEUE_H_
-
+/* job_head:
+ * - kthreadpool
+ *
+ * threadpool_job:
+ * - kthreadpool_thread
+ */
 #include <sys/queue.h>
-
-/* Tasks: taken from job_pool */
-struct task {
-	LIST_ENTRY(task) 			tk_entry;
-	void 						(*tk_func)(void *);
-	void 						*tk_arg;
-
-	int 						tk_state;
-
-	lock_t 						tk_lock;
-	rwlock_t					tk_rwlock;
-
-	int 						tk_prio;
-	char						*tk_wmesg;
-	int 						tk_timo;
-	int 						tk_flags;
-};
-LIST_HEAD(taskhead, task);
-
-/* Workqueue */
-struct wqueue {
-	struct taskhead 			wq_running;
-	struct taskhead 			wq_pending;
-	struct proc					*wq_worker;
-	int                 		wq_nthreads;
-};
 
 #define	POISON					0xaabbccdd
 
-/* task states  */
-#define TQ_PENDING 				0x01	/* task is waiting for time to run */
-#define TQ_RUNNING 				0x02	/* task is running */
-#define TQ_IDLE 				0x03	/* task not finished but set to idle */
+/* Tasks */
+typedef void task_fn_t(void *);
+struct task {
+	TAILQ_ENTRY(task) 			tk_entry;
+	task_fn_t 					*tk_func;
+	void 						*tk_arg;
 
-void		task_set(struct task *, int, char *, int, int, int);
-void		task_add(struct wqueue *, struct task *);
-void		task_remove(struct wqueue *, struct task *);
-struct task *task_lookup(struct wqueue *, struct task *, int);
+	int 						tk_state;
+	int 						tk_flags;
+
+	lock_t 						tk_lock;
+	rwlock_t					tk_rwlock;
+};
+TAILQ_HEAD(taskhead, task);
+
+/* Workqueue */
+struct wqueue {
+	struct taskhead 			wq_head;
+	struct proc					*wq_worker;	/* kthread?? */
+	const char 					*wq_name;
+	int                 		wq_nthreads;
+	int 						wq_state;
+	int 						wq_flags;
+};
+
+/* workqueue states */
+#define WQ_CREATED				0x01
+#define WQ_DESTROYED			0x02
+
+void			task_set(struct task *, void *, void *);
+void			task_add(struct wqueue *, struct task *);
+void			task_remove(struct wqueue *, struct task *);
+struct task 	*task_lookup(struct wqueue *, struct task *);
+bool			task_check(struct wqueue *, struct task *);
+
+void			wqueue_alloc(struct wqueue *);
+void			wqueue_free(struct wqueue *);
+struct wqueue 	*wqueue_create(struct wqueue *, const char *, int, int);
+void			wqueue_destroy(struct wqueue *, const char *);
 
 #endif /* SYS_WORKQUEUE_H_ */

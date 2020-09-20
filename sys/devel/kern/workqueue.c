@@ -30,48 +30,90 @@
 #include <sys/user.h>
 #include <workqueue.h>
 
-struct wqueue *
-wqueue_create(wq, nthreads)
-	struct wqueue *wq;
-	int nthreads;
+/* workqueue */
+void
+wqueue_alloc(wq)
+	struct wqueue 	*wq;
 {
-	LIST_INIT(&wq->wq_pending);
-	LIST_INIT(&wq->wq_running);
+	if(wq == NULL) {
+		MALLOC(wq, struct wqueue *, sizeof(struct wqueue *), M_WQUEUE, NULL);
+	}
+	TAILQ_INIT(&wq->wq_head);
+}
+
+void
+wqueue_free(wq)
+	struct wqueue 	*wq;
+{
+	if(wq != NULL) {
+		FREE(wq, M_WQUEUE);
+	}
+}
+
+struct wqueue *
+wqueue_create(wq, name, nthreads, flags)
+	struct wqueue 	*wq;
+	const char		*name;
+	int 			nthreads;
+	int 			flags;
+{
+	wqueue_alloc(wq);
+
+	if(wq == NULL) {
+		return (NULL);
+	}
+
+	wq->wq_name = name;
 	wq->wq_nthreads = nthreads;
+	wq->wq_state = WQ_CREATED;
+	wq->wq_flags = flags;
 
 	return (wq);
 }
 
 void
-task_set(tk, prio, wmesg, timo, flags, state)
-	struct task *tk;
-	int prio, timo, flags;
-	char *wmesg;
-	int state;
+wqueue_destroy(wq, name)
+	struct wqueue 	*wq;
+	const char		*name;
 {
-	tk->tk_prio = prio;
-	tk->tk_wmesg = wmesg;
-	tk->tk_timo = timo;
-	tk->tk_flags = flags;
-	tk->tk_state = state;
-	lockinit(tk->tk_lock, prio, wmesg, flags);
+	if(wq->wq_name == name) {
+		if(wq->wq_state == WQ_CREATED) {
+			wq->wq_state = WQ_DESTROYED;
+			wqueue_free(wq);
+		}
+		if (wq->wq_state == WQ_DESTROYED){
+			wqueue_free(wq);
+		}
+	} else {
+		panic("unexpected %s wq state %u", wq->wq_name, wq->wq_state);
+	}
+}
+
+/* workqueue: tasks */
+void
+task_set(tk, fn, arg)
+	struct task *tk;
+	void (*fn)(void *);
+	void *arg;
+{
+	tk->tk_func = fn;
+	tk->tk_arg = arg;
+	tk->tk_flags = 0;
+	tk->tk_state = 0;
 }
 
 struct task *
-task_lookup(wq, tk, state)
-	struct wqueue *wq;
-	struct task *tk;
-	int state;
+task_lookup(wq, tk)
+    struct wqueue *wq;
+    struct task *tk;
 {
-	struct task *entry;
-	if (tk->tk_state == state) {
-		for (entry = LIST_FIRST(&wq->wq_pending); entry != NULL; entry = LIST_NEXT(tk, tk_entry)) {
-			if(tk == entry) {
-				return (tk);
-			}
-		}
-	}
-	return (NULL);
+    struct task *entry;
+    for (entry = TAILQ_FIRST(&wq->wq_head); entry != NULL; entry = TAILQ_NEXT(tk, tk_entry)) {
+        if(tk == entry) {
+            return (tk);
+        }
+    }
+    return (NULL);
 }
 
 void
@@ -79,12 +121,7 @@ task_add(wq, tk)
 	struct wqueue *wq;
 	struct task *tk;
 {
-	if(tk->tk_state == TQ_PENDING) {
-		LIST_INSERT_HEAD(&wq->wq_pending, tk, tk_entry);
-	}
-	if(tk->tk_state == TQ_RUNNING) {
-		LIST_INSERT_HEAD(&wq->wq_running, tk, tk_entry);
-	}
+	TAILQ_INSERT_HEAD(&wq->wq_head, tk, tk_entry);
 }
 
 void
@@ -93,16 +130,22 @@ task_remove(wq, tk)
 	struct task *tk;
 {
 	struct task *entry;
-	if (tk->tk_state == TQ_PENDING) {
-		entry = task_lookup(wq, tk, TQ_PENDING);
-		if(entry != NULL) {
-			LIST_REMOVE(entry, tk_entry);
-		}
+	entry = task_lookup(wq, tk);
+	if (entry != NULL) {
+		TAILQ_REMOVE(&wq->wq_head, entry, tk_entry);
 	}
-	if (tk->tk_state == TQ_RUNNING) {
-		entry = task_lookup(wq, tk, TQ_RUNNING);
-		if(entry != NULL) {
-			LIST_REMOVE(entry, tk_entry);
-		}
-	}
+}
+
+bool_t
+task_check(wq, tk)
+    struct wqueue *wq;
+    struct task *tk;
+{
+    if(wq == NULL || tk == NULL) {
+        return (FALSE);
+    }
+    if(task_lookup(wq, tk) != NULL) {
+        return (TRUE);
+    }
+    return (FALSE);
 }

@@ -247,7 +247,6 @@ kthreadpool_overseer_thread(void *arg)
 			kthread->ktpt_proc = NULL;
 			kthread->ktpt_pool = pool;
 			kthread->ktpt_job = NULL;
-			//cv_init(&thread->tpt_cv, "poolthrd");
 
 			ktflags = 0;
 			ktflags |= KTHREAD_MPSAFE;
@@ -257,10 +256,7 @@ kthreadpool_overseer_thread(void *arg)
 
 			simple_lock(&ktpool->ktp_lock);
 			if (error) {
-			//	pool_cache_put(kthreadpool_thread_pc, kthread);
 				kthreadpool_rele(ktpool);
-				/* XXX What to do to wait for memory?  */
-				//(void)kpause("thrdplcr", FALSE, hz, &ktpool->ktp_lock);
 				continue;
 			}
 			/*
@@ -271,13 +267,16 @@ kthreadpool_overseer_thread(void *arg)
 			TAILQ_INSERT_TAIL(&ktpool->ktp_idle_threads, kthread, ktpt_entry);
 			kthread->ktpt_proc = p;
 			p = NULL;
-			//cv_broadcast(&thread->tpt_cv);
 			continue;
 		}
 
 		/* There are idle threads, so try giving one a job.  */
 		struct threadpool_job *const job = TAILQ_FIRST(&ktpool->ktp_jobs);
-		TAILQ_REMOVE(&ktpool->ktp_jobs, job, job_entry);
+	    struct wqueue  *workq = TAILQ_FIRST(&ktpool->ktp_jobs)->job_wqueue;
+	    struct task  *tsk =  TAILQ_FIRST(&workq->wq_head);
+
+	    job_pool_task_dequeue(&ktpool->ktp_jobs, job, workq, tsk);
+		//TAILQ_REMOVE(&ktpool->ktp_jobs, job, job_entry);
 		/*
 		 * Take an extra reference on the job temporarily so that
 		 * it won't disappear on us while we have both locks dropped.
@@ -286,7 +285,7 @@ kthreadpool_overseer_thread(void *arg)
 		simple_unlock(&ktpool->ktp_lock);
 
 		simple_lock(job->job_lock);
-		/* If the job was cancelled, we'll no longer be its thread.  */
+		/* If the job was cancelled, we'll no longer be its thread. */
 		if (__predict_true(job->job_ktp_thread == overseer)) {
 			simple_lock(&ktpool->ktp_lock);
 			if (__predict_false(TAILQ_EMPTY(&ktpool->ktp_idle_threads))) {
@@ -294,7 +293,8 @@ kthreadpool_overseer_thread(void *arg)
 				 * Someone else snagged the thread
 				 * first.  We'll have to try again.
 				 */
-				TAILQ_INSERT_HEAD(&ktpool->ktp_jobs, job, job_entry);
+				job_pool_task_enqueue(&ktpool->ktp_jobs, job, workq, tsk);
+				//TAILQ_INSERT_HEAD(&ktpool->ktp_jobs, job, job_entry);
 			} else {
 				/*
 				 * Assign the job to the thread and
@@ -306,7 +306,6 @@ kthreadpool_overseer_thread(void *arg)
 				TAILQ_REMOVE(&ktpool->ktp_idle_threads, thread, ktpt_entry);
 				thread->ktpt_job = job;
 				job->job_ktp_thread = thread;
-				//cv_broadcast(&thread->tpt_cv);
 			}
 			simple_unlock(&ktpool->ktp_lock);
 		}
@@ -355,7 +354,8 @@ kthreadpool_thread(void *arg)
 
 
 		/* Run the job.  */
-		(*job->job_fn)(job);
+		job_pool_task_run(job, wq, tk);
+		//(*job->job_fn)(job);
 
 		/* lwp name restored in threadpool_job_done(). */
 		KASSERTMSG((curproc->p_name == proc_name), "someone forgot to call threadpool_job_done()!");

@@ -39,45 +39,67 @@
 #include <sys/threadpool.h>
 #include <sys/kthread.h>
 
-job_queue_init(jobq)
-	struct job_queue *jobq;
-{
-	TAILQ_INIT(&jobq->job_head);
-}
-
+/* Job Pool: The Pool of Jobs/tasks to be done */
 void
-job_pool(job, fn)
+job_pool_task_run(job, wq, tk)
 	struct job_pool *job;
-	job_pool_fn_t 	fn;
+	struct wqueue 	*wq;
+	struct task 	*tk;
 {
-	job->job_lock = lock;
-	job->job_ktp_thread = NULL;
-	job->job_utp_thread = NULL;
-	job->job_refcnt = 0;
-	job->job_fn = fn;
-}
-
-job_pool_add(jobq, job, fn)
-	struct job_queue 	*jobq;
-	struct job_pool 	*job;
-	job_pool_fn_t 		fn;
-{
-	TAILQ_INSERT_HEAD(&jobq->job_head, job, job_entry);
+	struct task *entry;
+	if (task_check(wq, tk)) {
+		entry = task_lookup(wq, tk);
+		if (entry) {
+			/* run task */
+			((*job->job_func)(job, wq, entry, entry->tk_func));
+		}
+	} else {
+		panic("no wqueue tasks found in job pool");
+	}
 }
 
 void
-threadpool_job_init(struct threadpool_job *job, threadpool_job_fn_t fn, mutex_t *lock, const char *fmt, ...)
+job_pool_task_enqueue(list, job, wq, tk)
+	struct job_head			list;
+    struct job_pool 		*job;
+    struct wqueue 			*wq;
+    struct task 			*tk;
+{
+    if(task_check(wq, tk)) {
+        task_add(wq, tk);
+        TAILQ_INSERT_TAIL(&list, job, job_entry);
+    }
+}
+
+void
+job_pool_task_dequeue(list, job, wq, tk)
+	struct job_head			list;
+	struct job_pool 		*job;
+    struct wqueue 			*wq;
+    struct task 			*tk;
+{
+	if(task_check(wq, tk)) {
+		task_remove(wq, tk);
+	}
+	TAILQ_REMOVE(&list, job, job_entry);
+}
+
+/* Threadpool Jobs: */
+void
+threadpool_job_init(struct threadpool_job *tpj, struct job_pool *job, job_pool_fn_t func, lock_t lock, char *name, const char *fmt, ...)
 {
 	va_list ap;
 	va_start(ap, fmt);
-	(void) vsnprintf(job->job_name, sizeof(job->job_name), fmt, ap);
+	(void) vsnprintf(tpj->job_name, sizeof(tpj->job_name), fmt, ap);
 	va_end(ap);
 
-	job->job_lock = lock;
-	job->job_ktp_thread = NULL;
-	job->job_utp_thread = NULL;
-	job->job_refcnt = 0;
-	job->job_fn = fn;
+	tpj->job_lock = lock;
+	tpj->job_name = name;
+	tpj->job_refcnt = 0;
+	tpj->job_ktp_thread = NULL;
+	tpj->job_utp_thread = NULL;
+
+	job->job_func = func;
 }
 
 void
@@ -90,18 +112,10 @@ void
 threadpool_job_destroy(struct threadpool_job *job)
 {
 	KASSERTMSG((job->job_ktp_thread == NULL), "job %p still running", job);
-
-	//mutex_enter(job->job_lock);
-	//while (0 < job->job_refcnt)
-		//cv_wait(&job->job_cv, job->job_lock);
-	//mutex_exit(job->job_lock);
-
 	job->job_lock = NULL;
 	KASSERT(job->job_ktp_thread == NULL);
 	KASSERT(job->job_refcnt == 0);
-	//KASSERT(!cv_has_waiters(&job->job_cv));
-	//cv_destroy(&job->job_cv);
-	job->job_fn = threadpool_job_dead;
+	job->job_func = threadpool_job_dead;
 	(void) strlcpy(job->job_name, "deadjob", sizeof(job->job_name));
 }
 
@@ -158,9 +172,8 @@ threadpool_job_done(struct threadpool_job *job)
 	 * anyway.
 	 */
 	KASSERT(0 < job->job_refcnt);
-	//unsigned int refcnt __diagused = atomic_dec_uint_nv(&job->job_refcnt);
+	unsigned int refcnt __diagused = atomic_dec_uint_nv(&job->job_refcnt);
 	KASSERT(refcnt != UINT_MAX);
-	//cv_broadcast(&job->job_cv);
 	job->job_ktp_thread = NULL;
 }
 
@@ -197,6 +210,7 @@ threadpool_cancel_job_async(struct kthreadpool *ktpool, struct threadpool_job *j
 		/* Take it off the list to guarantee it won't run.  */
 		job->job_ktp_thread = NULL;
 		simple_lock(&ktpool->ktp_lock);
+
 		TAILQ_REMOVE(&ktpool->ktp_jobs, job, job_entry);
 		simple_unlock(&ktpool->ktp_lock);
 		threadpool_job_rele(job);
@@ -229,12 +243,12 @@ threadpool_cancel_job(struct kthreadpool *ktpool, struct threadpool_job *job)
 /* Not Yet Implemented */
 
 /****************************************************************/
-/* KThreadpool ITPC */
+/* Threadpool ITPC */
 
 struct threadpool_itpc itpc;
 
 void
-itpc_threadpool_init()
+itpc_threadpool_init(void)
 {
 	itpc_threadpool_setup(&itpc);
 }

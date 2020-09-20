@@ -38,6 +38,7 @@ NOTE: Don't hesitate to add to this list. :)
 ## devel: (planned)
 - Code planned for future integration
 - See devel folder: README.md & TODO.md
+- Touch up (job_pool, wqueue & tasks) intergration with threadpools
 
 ## dev:
 - devices:

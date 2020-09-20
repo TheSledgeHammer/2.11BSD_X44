@@ -33,41 +33,6 @@
 #include "sys/uthread.h"
 
 /*
- * Jobs to be run by threads:
- * New Implementation Structure:
- * Job_Pool -> Tasks (wqueue: pending/running list) -> Threadpool
- * Changes:
- * - Threadpool Jobs is split in two "job pool" and "job_queue" (control structure).
- * - All jobs in job queue are passed to the Workqueue (tasks)
- * - Tasks contains two components "wqueue" & "task"
- * 		- wqueue: task control structure
- * 		- task: jobs do to, split into two categories (running & pending)
- * 		-
- */
-
-/* Job Pool: Threadpool Jobs redesigned */
-TAILQ_HEAD(job_head, job_pool);
-typedef void job_pool_fn_t(struct job_pool *);
-struct job_pool {
-	TAILQ_ENTRY(job_pool)				job_entry;
-	lock_t								*job_lock;
-	volatile unsigned int				job_refcnt;
-	job_pool_fn_t						*job_fn;
-	char								job_name[MAXCOMLEN];
-
-	struct threadpool_itpc				*job_itc;
-#define job_ktpool						job_itc->itc_ktpool
-#define job_utpool						job_itc->itc_utpool
-#define	job_ktp_thread					job_ktpool.ktp_overseer
-#define	job_utp_thread					job_utpool.utp_overseer
-};
-
-/* job_pool queue */
-struct job_queue {
-	struct job_head						job_head;
-};
-
-/*
  * Two Threadpools:
  * - Kernel Thread pool
  * - User Thread pool
@@ -92,12 +57,10 @@ struct job_queue {
  * 	- Threadpool_Job: Jobs to be done by threads in threadpool
  *
  * 	Look at kthreadpool & uthreadpool for corresponding information
- *
- * 	Threadpool Jobs Structure:
- * 	Threadpool Jobs -> Threadpool
  */
 
 /* Threadpool Jobs */
+/*
 TAILQ_HEAD(job_head, threadpool_job);
 typedef void threadpool_job_fn_t(struct threadpool_job *);
 struct threadpool_job {
@@ -108,6 +71,30 @@ struct threadpool_job {
 	char								job_name[MAXCOMLEN];
 
 	struct threadpool_itpc				*job_itc;
+#define job_ktpool						job_itc->itc_ktpool
+#define job_utpool						job_itc->itc_utpool
+#define	job_ktp_thread					job_ktpool.ktp_overseer
+#define	job_utp_thread					job_utpool.utp_overseer
+};
+*/
+
+/* Job Pool */
+TAILQ_HEAD(job_head, job_pool);
+typedef void job_pool_fn_t(struct job_pool *, struct wqueue *, struct task *, task_fn_t);
+struct job_pool {
+	TAILQ_ENTRY(job_pool)				job_entry;
+	struct wqueue						job_wqueue;			/* may belong in kthread or threadpool_job */
+	job_pool_fn_t						*job_func;
+};
+
+/* Threadpool Jobs */
+struct threadpool_job  {
+	const char							*job_name;
+	lock_t								*job_lock;
+	volatile unsigned int				job_refcnt;
+
+	struct threadpool_itpc				*job_itc;
+
 #define job_ktpool						job_itc->itc_ktpool
 #define job_utpool						job_itc->itc_utpool
 #define	job_ktp_thread					job_ktpool.ktp_overseer
@@ -130,7 +117,7 @@ struct threadpool_itpc {
 extern struct itc_threadpool itpc;
 
 /* General ITPC */
-void itpc_threadpool_init();
+void itpc_threadpool_init(void);
 
 void itpc_kthreadpool_enqueue(struct threadpool_itpc *, pid_t);
 void itpc_kthreadpool_dequeue(struct threadpool_itpc *, pid_t);
