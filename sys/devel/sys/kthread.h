@@ -119,6 +119,11 @@ struct kthread {
 #define KTSREADY	7		/* ready */
 #define KTSSTART	8		/* start */
 
+/* flag codes */
+#define	KT_SYSTEM	0x00200		/* System proc: no sigs, stats or swapping. */
+#define	KT_INMEM	0x00004		/* Loaded into memory. */
+#define KT_INEXEC	0x100000	/* Process is exec'ing and cannot be traced */
+
 /* Kernel Threadpool Threads */
 TAILQ_HEAD(kthread_head, kthreadpool_thread);
 struct kthreadpool_thread {
@@ -155,18 +160,24 @@ struct kthreadpool {
     boolean_t							ktp_initcq;			/* check if in itc queue */
 };
 
+#define	TIDHSZ							16
+#define	TIDHASH(tid)					(&tidhashtbl[(tid) & tid_hash & (TIDHSZ * ((tid) + tid_hash) - 1)])
+extern 	LIST_HEAD(tidhashhead, proc) 	*tidhashtbl;
+u_long 	tid_hash;
+
+struct kthread 							*kthreadNKTHREAD;		/* the kthread table itself */
+
+struct kthread 							*allkthread;			/* List of active kthreads. */
+struct kthread 							*freekthread;			/* List of free kthreads. */
+struct kthread 							*zombkthread;			/* List of zombie kthreads. */
+
+
 lock_t 									kthread_lkp; 	/* lock */
 rwlock_t								kthread_rwl;	/* reader-writers lock */
 
 extern struct kthread 					kthread0;
 extern struct kthreadpool_thread 		ktpool_thread;
 extern lock_t 							kthreadpool_lock;
-
-struct kthread *kthreadNKTHREAD;		/* the kthread table itself */
-
-struct kthread *allkthread;				/* List of active kthreads. */
-struct kthread *freekthread;			/* List of free kthreads. */
-struct kthread *zombkthread;			/* List of zombie kthreads. */
 
 /* Kernel Thread ITPC */
 extern void kthreadpool_itc_send(struct kthreadpool *, struct threadpool_itpc *);

@@ -238,7 +238,7 @@ void *a;
 			savacctp = NULLVP;
 			return;
 		}
-		(void)VFS_STATFS(savacctp->v_mount, &sb, (struct proc *)0);
+		(void) VFS_STATFS(savacctp->v_mount, &sb, (struct proc*) 0);
 		if (sb.f_bavail > acctresume * sb.f_blocks / 100) {
 			acctp = savacctp;
 			savacctp = NULLVP;
@@ -250,7 +250,7 @@ void *a;
 			acctp = NULLVP;
 			return;
 		}
-		(void)VFS_STATFS(acctp->v_mount, &sb, (struct proc *)0);
+		(void) VFS_STATFS(acctp->v_mount, &sb, (struct proc*) 0);
 		if (sb.f_bavail <= acctsuspend * sb.f_blocks / 100) {
 			savacctp = acctp;
 			acctp = NULLVP;

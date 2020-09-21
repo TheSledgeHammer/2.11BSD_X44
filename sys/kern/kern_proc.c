@@ -67,8 +67,8 @@
  */
 struct uidinfo {
 	LIST_ENTRY(uidinfo) ui_hash;
-	uid_t	ui_uid;
-	long	ui_proccnt;
+	uid_t				ui_uid;
+	long				ui_proccnt;
 };
 #define	UIHASH(uid)	(&uihashtbl[(uid) & uihash])
 LIST_HEAD(uihashhead, uidinfo) *uihashtbl;
@@ -137,10 +137,10 @@ pfind(pid)
 	register int pid;
 {
 	register struct proc *p;
-    for (p = PIDHASH(pid); p != 0; p = p->p_hash.le_next)
-        if (p->p_pid == pid)
-            return (p);
-    return (NULL);
+	for (p = PIDHASH(pid); p != 0; p = LIST_NEXT(p, p_hash))
+		if (p->p_pid == pid)
+			return (p);
+	return (NULL);
 }
 
 
