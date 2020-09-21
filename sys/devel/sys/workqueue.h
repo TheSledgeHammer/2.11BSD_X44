@@ -56,7 +56,6 @@ TAILQ_HEAD(taskhead, task);
 /* Workqueue */
 struct wqueue {
 	struct taskhead 			wq_head;
-	struct proc					*wq_worker;	/* kthread?? */
 	const char 					*wq_name;
 	int                 		wq_nthreads;
 	int 						wq_state;
@@ -77,5 +76,9 @@ void			wqueue_alloc(struct wqueue *);
 void			wqueue_free(struct wqueue *);
 struct wqueue 	*wqueue_create(struct wqueue *, const char *, int, int);
 void			wqueue_destroy(struct wqueue *, const char *);
+
+void 			job_pool_task_run(struct threadpool_job *, struct wqueue *, struct task *);
+void 			job_pool_task_enqueue(struct kthreadpool *, struct threadpool_job *);
+void 			job_pool_task_dequeue(struct kthreadpool *, struct threadpool_job *);
 
 #endif /* SYS_WORKQUEUE_H_ */

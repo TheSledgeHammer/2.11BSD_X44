@@ -89,7 +89,7 @@ wqueue_destroy(wq, name)
 	}
 }
 
-/* workqueue: tasks */
+/* tasks */
 void
 task_set(tk, fn, arg)
 	struct task *tk;
@@ -148,4 +148,39 @@ task_check(wq, tk)
         return (TRUE);
     }
     return (FALSE);
+}
+
+/* Job Pool */
+void
+job_pool_task_run(job, wq, tk)
+	struct threadpool_job 	*job;
+	struct wqueue 			*wq;
+	struct task 			*tk;
+{
+	struct task *entry;
+	if (task_check(wq, tk)) {
+		entry = task_lookup(wq, tk);
+		if (entry) {
+			/* run task */
+			((*job->job_func)(job, wq, entry, entry->tk_func));
+		}
+	} else {
+		panic("no wqueue tasks found in job pool");
+	}
+}
+
+void
+job_pool_task_enqueue(ktpool, job)
+	struct kthreadpool 		*ktpool;
+    struct threadpool_job	*job;
+{
+   TAILQ_INSERT_TAIL(&ktpool->ktp_jobs, job, job_entry);
+}
+
+void
+job_pool_task_dequeue(ktpool, job)
+	struct kthreadpool		*ktpool;
+	struct threadpool_job	*job;
+{
+	TAILQ_REMOVE(&ktpool->ktp_jobs, job, job_entry);
 }

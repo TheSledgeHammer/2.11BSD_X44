@@ -272,11 +272,10 @@ kthreadpool_overseer_thread(void *arg)
 
 		/* There are idle threads, so try giving one a job.  */
 		struct threadpool_job *const job = TAILQ_FIRST(&ktpool->ktp_jobs);
-	    struct wqueue  *workq = TAILQ_FIRST(&ktpool->ktp_jobs)->job_wqueue;
-	    struct task  *tsk =  TAILQ_FIRST(&workq->wq_head);
 
-	    job_pool_task_dequeue(&ktpool->ktp_jobs, job, workq, tsk);
 		//TAILQ_REMOVE(&ktpool->ktp_jobs, job, job_entry);
+		job_pool_task_dequeue(&ktpool->ktp_jobs, job);
+
 		/*
 		 * Take an extra reference on the job temporarily so that
 		 * it won't disappear on us while we have both locks dropped.
@@ -293,8 +292,10 @@ kthreadpool_overseer_thread(void *arg)
 				 * Someone else snagged the thread
 				 * first.  We'll have to try again.
 				 */
-				job_pool_task_enqueue(&ktpool->ktp_jobs, job, workq, tsk);
+
 				//TAILQ_INSERT_HEAD(&ktpool->ktp_jobs, job, job_entry);
+				job_pool_task_enqueue(&ktpool->ktp_jobs, job);
+
 			} else {
 				/*
 				 * Assign the job to the thread and
@@ -352,10 +353,11 @@ kthreadpool_thread(void *arg)
 
 		simple_unlock(&ktpool->ktp_lock);
 
-
 		/* Run the job.  */
-		job_pool_task_run(job, wq, tk);
-		//(*job->job_fn)(job);
+		if (task_check(job->job_wqueue, TAILQ_FIRST(job->job_wqueue->wq_head))) {
+			job_pool_task_run(job, job->job_wqueue->wq_head, TAILQ_FIRST(job->job_wqueue->wq_head));
+			//(*job->job_func)(job);
+		}
 
 		/* lwp name restored in threadpool_job_done(). */
 		KASSERTMSG((curproc->p_name == proc_name), "someone forgot to call threadpool_job_done()!");

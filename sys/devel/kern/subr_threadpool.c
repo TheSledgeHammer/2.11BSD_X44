@@ -39,65 +39,20 @@
 #include <sys/threadpool.h>
 #include <sys/kthread.h>
 
-/* Job Pool: The Pool of Jobs/tasks to be done */
+/* Threadpool Jobs */
 void
-job_pool_task_run(job, wq, tk)
-	struct job_pool *job;
-	struct wqueue 	*wq;
-	struct task 	*tk;
-{
-	struct task *entry;
-	if (task_check(wq, tk)) {
-		entry = task_lookup(wq, tk);
-		if (entry) {
-			/* run task */
-			((*job->job_func)(job, wq, entry, entry->tk_func));
-		}
-	} else {
-		panic("no wqueue tasks found in job pool");
-	}
-}
-
-void
-job_pool_task_enqueue(list, job, wq, tk)
-	struct job_head			list;
-    struct job_pool 		*job;
-    struct wqueue 			*wq;
-    struct task 			*tk;
-{
-    if(task_check(wq, tk)) {
-        task_add(wq, tk);
-        TAILQ_INSERT_TAIL(&list, job, job_entry);
-    }
-}
-
-void
-job_pool_task_dequeue(list, job, wq, tk)
-	struct job_head			list;
-	struct job_pool 		*job;
-    struct wqueue 			*wq;
-    struct task 			*tk;
-{
-	if(task_check(wq, tk)) {
-		task_remove(wq, tk);
-	}
-	TAILQ_REMOVE(&list, job, job_entry);
-}
-
-/* Threadpool Jobs: */
-void
-threadpool_job_init(struct threadpool_job *tpj, struct job_pool *job, job_pool_fn_t func, lock_t lock, char *name, const char *fmt, ...)
+threadpool_job_init(struct threadpool_job *job, threadpool_job_fn_t func, lock_t lock, char *name, const char *fmt, ...)
 {
 	va_list ap;
 	va_start(ap, fmt);
-	(void) vsnprintf(tpj->job_name, sizeof(tpj->job_name), fmt, ap);
+	(void) vsnprintf(job->job_name, sizeof(job->job_name), fmt, ap);
 	va_end(ap);
 
-	tpj->job_lock = lock;
-	tpj->job_name = name;
-	tpj->job_refcnt = 0;
-	tpj->job_ktp_thread = NULL;
-	tpj->job_utp_thread = NULL;
+	job->job_lock = lock;
+	job->job_name = name;
+	job->job_refcnt = 0;
+	job->job_ktp_thread = NULL;
+	job->job_utp_thread = NULL;
 
 	job->job_func = func;
 }

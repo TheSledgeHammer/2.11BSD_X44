@@ -60,35 +60,13 @@
  */
 
 /* Threadpool Jobs */
-/*
 TAILQ_HEAD(job_head, threadpool_job);
-typedef void threadpool_job_fn_t(struct threadpool_job *);
-struct threadpool_job {
-	lock_t								*job_lock;
-	TAILQ_ENTRY(threadpool_job)			job_entry;
-	volatile unsigned int				job_refcnt;
-	threadpool_job_fn_t					*job_fn;
-	char								job_name[MAXCOMLEN];
-
-	struct threadpool_itpc				*job_itc;
-#define job_ktpool						job_itc->itc_ktpool
-#define job_utpool						job_itc->itc_utpool
-#define	job_ktp_thread					job_ktpool.ktp_overseer
-#define	job_utp_thread					job_utpool.utp_overseer
-};
-*/
-
-/* Job Pool */
-TAILQ_HEAD(job_head, job_pool);
-typedef void job_pool_fn_t(struct job_pool *, struct wqueue *, struct task *, task_fn_t);
-struct job_pool {
-	TAILQ_ENTRY(job_pool)				job_entry;
-	struct wqueue						job_wqueue;			/* may belong in kthread or threadpool_job */
-	job_pool_fn_t						*job_func;
-};
-
+typedef void threadpool_job_fn_t(struct threadpool_job *, struct wqueue *, struct task *, task_fn_t);
 /* Threadpool Jobs */
 struct threadpool_job  {
+	TAILQ_ENTRY(threadpool_job)			job_entry;
+	struct wqueue						job_wqueue;
+	threadpool_job_fn_t					*job_func;
 	const char							*job_name;
 	lock_t								*job_lock;
 	volatile unsigned int				job_refcnt;
