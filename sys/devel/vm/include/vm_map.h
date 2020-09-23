@@ -119,7 +119,7 @@ struct vm_map_entry {
 	vm_prot_t					max_protection;		/* maximum protection */
 	vm_inherit_t				inheritance;		/* inheritance */
 	int							wired_count;		/* can be paged if = 0 */
-	struct vm_aref				aref;				/* anonymous overlay */
+	struct avm_ref				aref;				/* anonymous overlay */
 	int							advice;				/* madvise advice */
 };
 

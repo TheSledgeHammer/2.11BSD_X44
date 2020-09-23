@@ -114,7 +114,7 @@ struct uao_swhash_elt {
 
 struct avm_object {
 	struct vm_object 			u_obj; 			/* has: lock, pgops, #pages, #refs */
-	//pgoff_t 					u_pages;	 	/* number of pages in entire object */
+	int 						u_pages;	 	/* number of pages in entire object */
 	int 						u_flags;		/* the flags (see uvm_aobj.h) */
 	int 						*u_swslots;		/* array of offset->swapslot mappings */
 				 	 	 	 	 	 			/*
@@ -165,8 +165,8 @@ const struct pagerops aobj_pager = {
 #define	UAO_FLAG_KERNSWAP	0x2	/* enable kernel swap */
 #define	UAO_FLAG_NOSWAP		0x8	/* aobj may not swap */
 
-static LIST_HEAD(aobjlist, avm_object) uao_list;
-static struct simplelock uao_list_lock;
+static LIST_HEAD(aobjlist, avm_object) 	uao_list;
+static struct simplelock 				uao_list_lock;
 
 #ifdef _KERNEL
 void		uao_init(void);

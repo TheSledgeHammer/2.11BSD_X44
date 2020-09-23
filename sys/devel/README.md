@@ -17,7 +17,7 @@
 		- Rwlock: Introduction of a reader-writers lock
 		- Witness: Partial port of FreeBSD/OpenBSD's witness
 
-- PMAP: Clustered Page Table variant, backed by a two red-black trees.
+- PMAP: Clustered Page Table variant, backed by two nested red-black trees with hashing.
 
 - UFML: LOFS based filesystem layer, combined with features from HTBC.
 	- Aims to provide a Fossil + Venti inspired support to UFS, FFS, MFS & LFS.
@@ -31,21 +31,11 @@
 - UFS211: Port of 2.11BSD's UFS Filesystem.
 	- Independent of UFS
 
-- VM: Updates to the VM Layer (Contains portions of NetBSD's UVM)
+- VM: Updates to the VM Layer
 	- Planned:
-		- VM Overlays (OVL): A re-implementation of 2.11BSD's use of Overlays (See below: OVLSpace)
-		- VM Extents: A VM extension of extents
-		- Segmented VM Model (A Hybrid UVM & VM): 3 Segments:
-			- VMSpace: The current VM
-			- AVMSpace (Anonoymous VM): All anons, amaps & aobjects
-			- OVLSpace (Overlay VM): A portion of physical memory with vm like features (See: "/devel/vm/ovl")
-
-- MISC:
-	- Crypto
-	- MPX: Multiplexors
-		- A reimplementation of multiplexors from the V7 and early BSD's
-		- Two concurrent versions (being considered):
-			- MPX: BSD Sockets as base (Currently)
-			- MPX-FS: A filesystem, with multiple possible variations
-				- Implement in the VFS layer. To provide multiplexors across filesystems
-				- Independent Filesystem
+		- VM Extents: VM Memory Management using extent allocation (See: "/devel/vm/extents")
+		- Segmented VM Model (A Hybrid of UVM & VM): 3 Segments:
+			- VMSpace (aka VM): The current VM 
+			- AVMSpace (aka AVM): All anons, amaps & aobjects (See: "/devel/vm/avm")
+			- OVLSpace (aka OVL): A portion of physical memory with vm like features (See: "/devel/vm/ovl")
+					- A re-implementation of 2.11BSD's use of Overlays

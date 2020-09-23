@@ -29,7 +29,7 @@
 /* NOTE:
  * Libuthread
  * - Is a proof of concept that is still in early development.
- * - All related Kernel threads is located in: (/usr/sys/devel)
+ * - To be moved into userspace
 */
 
 #include <sys/param.h>
@@ -43,64 +43,70 @@ extern struct uthread uthread0;
 struct uthread *curuthread = &uthread0;
 
 void
-startuthread(ut)
+uthread_init(kt, ut)
+	register struct kthread *kt;
 	register struct uthread *ut;
 {
+	register_t rval[2];
+	int error;
+
 	/* initialize current uthread(0) */
     ut = &uthread0;
     curuthread = ut;
 
+    /* Initialize uthread structures. */
+    utqinit();
+
+    /* set up uthreads */
+    alluthread = (struct uthread *)ut;
+    ut->ut_prev = (struct uthread **)&alluthread;
+
     /* Set thread to idle & waiting */
     ut->ut_stat |= UT_SIDL | UT_SWAIT | UT_SREADY;
-
-    /* init uthread queues */
-    //utqinit();
 
     /* setup uthread locks */
     uthread_lock_init(uthread_lkp, ut);
     uthread_rwlock_init(uthread_rwl, ut);
+
+	/* uthread overseer */
+	if(newthread(kt->kt_procp, 0))
+		panic("uthread overseer creation");
+	if(rval[1])
+		ut = kt->kt_uthreado;
+		ut->ut_flag |= KT_INMEM | KT_SYSTEM;
+
+		/* initialize uthreadpools  */
+		uthreadpools_init();
 }
 
 int
-uthread_create(kt)
-	struct kthread *kt;
+uthread_create(uthread_t ut)
 {
-	register struct uthread *ut;
-	register_t rval[2];
-	int error;
-
-	if(!kthread0.kt_stat) {
-		panic("uthread_create called too soon");
-	}
-	if(ut == NULL) {
-		ut = kt->kt_uthreado;
-		startuthread(ut);
-	}
 	return (0);
 }
 
 int
 uthread_join(uthread_t ut)
 {
-
+	return (0);
 }
 
 int
 uthread_cancel(uthread_t ut)
 {
-
+	return (0);
 }
 
 int
 uthread_exit(uthread_t ut)
 {
-
+	return (0);
 }
 
 int
 uthread_detach(uthread_t ut)
 {
-
+	return (0);
 }
 
 int
@@ -117,7 +123,7 @@ uthread_equal(uthread_t ut1, uthread_t ut2)
 int
 uthread_kill(uthread_t ut)
 {
-
+	return (0);
 }
 
 /*
@@ -137,22 +143,6 @@ utqinit()
 	ut->ut_prev = &alluthread;
 
 	zombuthread = NULL;
-}
-
-/*
- * Locate a uthread by number
- */
-struct uthread *
-utfind(tid)
-	register int tid;
-{
-	register struct uthread *ut;
-	for (ut = TIDHASH(tid); ut != 0; ut = LIST_NEXT(ut, ut_hash)) {
-		if(ut->ut_tid == tid) {
-			return (ut);
-		}
-	}
-	 return (NULL);
 }
 
 void
@@ -242,4 +232,45 @@ uthread_rwlockmgr(rwl, flags, ut)
 		pid = LK_KERNPROC;
 	}
 	return rwlockmgr(rwl, flags, pid);
+}
+
+/*
+ * Locate a uthread by number
+ */
+struct uthread *
+utfind(tid)
+	register int tid;
+{
+	register struct uthread *ut;
+	for (ut = TIDHASH(tid); ut != 0; ut = LIST_NEXT(ut, ut_hash)) {
+		if(ut->ut_tid == tid) {
+			return (ut);
+		}
+	}
+	 return (NULL);
+}
+
+/*
+ * remove uthread from thread group
+ */
+int
+leavetgrp(ut)
+	register struct uthread *ut;
+{
+	register struct uthread **utt = &ut->ut_pgrp->pg_mem;
+
+	for (; *utt; utt = &(*utt)->ut_pgrpnxt) {
+		if (*utt == ut) {
+			*utt = ut->ut_pgrpnxt;
+			break;
+		}
+	}
+#ifdef DIAGNOSTIC
+	if (utt == NULL)
+		panic("leavetgrp: can't find u in tgrp");
+#endif
+	if (!ut->ut_pgrp->pg_mem)
+		tgdelete(ut->ut_pgrp);
+	ut->ut_pgrp = 0;
+	return (0);
 }

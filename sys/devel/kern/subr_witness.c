@@ -346,7 +346,7 @@ static struct lock_class lock_class_lock = {
 static struct lock_class *lock_classes[] = {
 	&lock_class_kernel_lock,
 	&lock_class_sched_lock,
-	&lock_class_mutex,
+	//&lock_class_mutex,
 	&lock_class_rwlock,
 	&lock_class_lock,
 };

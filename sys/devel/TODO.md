@@ -4,14 +4,6 @@
 	- char	u_sep;						/* flag for I and D separation */
 	- struct u_ovd						/* automatic overlay data */
 
-NetBSD 5.0.2: Threads & Multitasking
-- kern_proc.c
-- kern_lwp.c
-- kern_rwlock.c
-- kern_runq.c
-- subr_threadpool.c
-- subr_workqueue.c
-
 FreeBSD 3.0.0:
 - sys_pipe.c & pipe.h
 

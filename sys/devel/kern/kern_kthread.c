@@ -39,14 +39,17 @@ struct kthread *curkthread = 	&kthread0;
 
 struct tidhashhead *tidhashtbl;
 u_long tidhash;
-int	maxthread;// = NPROC;
+struct tgrphashhead *tgrphashtbl;
+u_long tgrphash;
+
+int	maxthread;// = NTHREAD;
 
 void
 threadinit()
 {
 	ktqinit();
-	utqinit();
-	tidhashtbl = hashinit(maxthread / 4, M_PROC, M_NOWAIT, &tidhash);
+	tidhashtbl = hashinit(maxthread / 4, M_PROC, &tidhash);
+	tgrphashtbl = hashinit(maxthread / 4, M_PROC, &tgrphash);
 }
 
 /*
@@ -69,36 +72,31 @@ ktqinit()
 }
 
 void
-startkthread(kt)
+kthread_init(p, kt)
+	register struct proc  *p;
 	register struct kthread *kt;
 {
-	/* initialize current kthread(0) */
+	register_t rval[2];
+	int error;
+
+	/* initialize current kthread 0 */
     kt = &kthread0;
     curkthread = kt;
+
+	/* Initialize kthread and tgrp structures. */
+    threadinit();
+
+	/* set up kernel thread */
+    allkthread = (struct kthread *) kt;
+    kt->kt_prev = (struct kthread **)&allkthread;
+	tgrphash[0] = &pgrp0;
 
     /* Set kthread to idle & waiting */
     kt->kt_stat |= KT_SIDL | KT_SWAIT | KT_SREADY;
 
-    /* init threads */
-    threadinit();
-
     /* setup kthread locks */
     kthread_lock_init(kthread_lkp, kt);
     kthread_rwlock_init(kthread_rwl, kt);
-}
-
-/* create new kthread from proc */
-int
-kthread_create(p)
-	struct proc *p;
-{
-	register struct kthread *kt;
-	register_t rval[2];
-	int error;
-
-	if(!proc0.p_stat) {
-		panic("kthread_create called too soon");
-	}
 
 	/* kthread overseer */
 	if(newproc(0))
@@ -106,31 +104,41 @@ kthread_create(p)
 	if(rval[1])
 		kt = p->p_kthreado;
 		kt->kt_flag |= KT_INMEM | KT_SYSTEM;
+
+		/* initialize kthreadpools */
+		kthreadpools_init();
+}
+
+/* create new kthread from proc */
+int
+kthread_create(kt)
+	struct kthread *kt;
+{
 	return (0);
 }
 
 int
 kthread_join(kthread_t kt)
 {
-
+	return (0);
 }
 
 int
 kthread_cancel(kthread_t kt)
 {
-
+	return (0);
 }
 
 int
 kthread_exit(kthread_t kt)
 {
-
+	return (0);
 }
 
 int
 kthread_detach(kthread_t kt)
 {
-
+	return (0);
 }
 
 int
@@ -147,21 +155,7 @@ kthread_equal(kthread_t kt1, kthread_t kt2)
 int
 kthread_kill(kthread_t kt)
 {
-
-}
-
-/*
- * Locate a kthread by number
- */
-struct kthread *
-ktfind(tid)
-	register int tid;
-{
-	register struct kthread *kt;
-	for (kt = TIDHASH(tid); kt != 0; kt = LIST_NEXT(kt, kt_hash))
-		if(kt->kt_tid == tid)
-			return (kt);
-	return (NULL);
+	return (0);
 }
 
 /* Threadpool's FIFO Queue (IPC) */
@@ -252,4 +246,88 @@ kthread_rwlockmgr(rwl, flags, kt)
 		pid = LK_KERNPROC;
 	}
 	return rwlockmgr(rwl, flags, pid);
+}
+
+/*
+ * Locate a kthread by number
+ */
+struct kthread *
+ktfind(tid)
+	register int tid;
+{
+	register struct kthread *kt;
+	for (kt = TIDHASH(tid); kt != 0; kt = LIST_NEXT(kt, kt_hash))
+		if(kt->kt_tid == tid)
+			return (kt);
+	return (NULL);
+}
+
+/*
+ * Locate a thread group by number
+ */
+struct pgrp *
+tgfind(pgid)
+	register pid_t pgid;
+{
+	register struct pgrp *tgrp;
+	for (tgrp = tgrphash[TIDHASH(pgid)]; tgrp != NULL; tgrp = tgrp->pg_hforw)
+	{
+		if (tgrp->pg_id == pgid)
+		{
+			return (tgrp);
+		}
+	}
+	return (NULL);
+}
+
+/*
+ * remove kthread from thread group
+ */
+int
+leavetgrp(kt)
+	register struct kthread *kt;
+{
+	register struct kthread **ktt = &kt->kt_pgrp->pg_mem;
+
+	for (; *ktt; ktt = &(*ktt)->kt_pgrpnxt) {
+		if (*ktt == kt) {
+			*ktt = kt->kt_pgrpnxt;
+			break;
+		}
+	}
+#ifdef DIAGNOSTIC
+	if (ktt == NULL)
+		panic("leavepgrp: can't find p in pgrp");
+#endif
+	if (!kt->kt_pgrp->pg_mem)
+		tgdelete(kt->kt_pgrp);
+	kt->kt_pgrp = 0;
+	return (0);
+}
+
+/*
+ * delete a thread group
+ */
+void
+tgdelete(tgrp)
+	register struct pgrp *tgrp;
+{
+	register struct pgrp **tgp = &tgrphash[TIDHASH(tgrp->pg_id)];
+
+	if (tgrp->pg_session->s_ttyp != NULL &&
+		tgrp->pg_session->s_ttyp->t_pgrp == tgrp)
+		tgrp->pg_session->s_ttyp->t_pgrp = NULL;
+	for (; *tgp; tgp = &(*tgp)->pg_hforw) {
+		if (*tgp == tgrp) {
+			*tgp = tgrp->pg_hforw;
+			break;
+		}
+	}
+#ifdef DIAGNOSTIC
+	if (pgp == NULL)
+		panic("tgdelete: can't find pgrp on hash chain");
+#endif
+	if (--tgrp->pg_session->s_count == 0)
+		FREE(tgrp, M_PGRP);
+	FREE(tgrp, M_PGRP);
 }

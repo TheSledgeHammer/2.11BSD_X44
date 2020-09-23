@@ -42,9 +42,9 @@ union ovl_map_object {
 	struct vm_object					*ovl_vm_object;		/* vm_object object */
 	struct vm_map						*ovl_vm_map;		/* belongs to vm_map */
 
-	/* vm_amap.h & vm_aobject.h */
-	struct vm_aobject					*ovl_vm_aobject;	/* vm_aobject object */
-	struct vm_amap						*ovl_vm_amap;		/* belongs to vm_amap */
+	/* avm_map.h & avm_object.h */
+	struct avm_object					*ovl_avm_object;	/* vm_aobject object */
+	struct avm_map						*ovl_avm_map;		/* belongs to vm_amap */
 };
 
 struct ovl_map_entry {
@@ -79,7 +79,7 @@ struct ovl_map {
     vm_size_t		                    ovl_size;		    /* virtual size */
 
     boolean_t							ovl_is_vm_map;		/* Am I a vm map? */
-    boolean_t							ovl_is_vm_amap;		/* Am I a vm anon map? */
+    boolean_t							ovl_is_avm_map;		/* Am I a vm anon map? */
 
     int			                        ovl_ref_count;	    /* Reference count */
 	simple_lock_data_t	                ovl_ref_lock;	    /* Lock for ref_count field */

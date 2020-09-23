@@ -47,10 +47,11 @@
 #include <sys/proc.h>
 #include <sys/malloc.h>
 #include <sys/user.h>
+
 #include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_page.h>
 #include <devel/vm/include/vm_kern.h>
-#include <devel/vm/include/vm_aobject.h>
+#include <devel/vm/avm/avm_object.h>
 
 /*
  * an aobj manages anonymous-memory backed uvm_objects.   in addition
@@ -80,9 +81,9 @@
 
 static struct uao_swhash_elt *
 uao_find_swhash_elt(aobj, pageidx, create)
-	struct uvm_aobj *aobj;
-	int pageidx;
-	boolean_t create;
+	struct avm_object 	*aobj;
+	int 				pageidx;
+	boolean_t 			create;
 {
 	struct uao_swhash *swhash;
 	struct uao_swhash_elt *elt;
@@ -108,7 +109,7 @@ uao_find_swhash_elt(aobj, pageidx, create)
 	 * allocate a new entry for the bucket and init/insert it in
 	 */
 
-	elt = pool_get(&uao_swhash_elt_pool, PR_NOWAIT);
+	//elt = pool_get(&uao_swhash_elt_pool, PR_NOWAIT);
 	if (elt == NULL) {
 		return NULL;
 	}
@@ -127,7 +128,7 @@ uao_find_swhash_elt(aobj, pageidx, create)
 
 int
 uao_find_swslot(uobj, pageidx)
-	struct uvm_object *uobj;
+	struct avm_object *uobj;
 	int pageidx;
 {
 	struct uvm_aobj *aobj = (struct uvm_aobj *)uobj;
@@ -170,10 +171,10 @@ uao_find_swslot(uobj, pageidx)
 
 int
 uao_set_swslot(uobj, pageidx, slot)
-	struct uvm_object *uobj;
+	struct avm_object *uobj;
 	int pageidx, slot;
 {
-	struct uvm_aobj *aobj = (struct uvm_aobj *)uobj;
+	struct avm_object *aobj = (struct avm_object *)uobj;
 	struct uao_swhash_elt *elt;
 	int oldslot;
 	//UVMHIST_FUNC("uao_set_swslot"); UVMHIST_CALLED(pdhist);
@@ -225,7 +226,7 @@ uao_set_swslot(uobj, pageidx, slot)
 
 			if (elt->count == 0) {
 				LIST_REMOVE(elt, list);
-				pool_put(&uao_swhash_elt_pool, elt);
+				//pool_put(&uao_swhash_elt_pool, elt);
 			}
 		}
 	} else {
@@ -248,7 +249,7 @@ uao_set_swslot(uobj, pageidx, slot)
 
 static void
 uao_free(aobj)
-	struct uvm_aobj *aobj;
+	struct avm_object *aobj;
 {
 	int swpgonlydelta = 0;
 
@@ -279,10 +280,10 @@ uao_free(aobj)
 				}
 
 				next = LIST_NEXT(elt, list);
-				pool_put(&uao_swhash_elt_pool, elt);
+				//pool_put(&uao_swhash_elt_pool, elt);
 			}
 		}
-		free(aobj->u_swhash, M_UVMAOBJ);
+		free(aobj->u_swhash, M_AVMOBJ);
 	} else {
 		int i;
 
@@ -298,14 +299,14 @@ uao_free(aobj)
 				swpgonlydelta++;
 			}
 		}
-		free(aobj->u_swslots, M_UVMAOBJ);
+		free(aobj->u_swslots, M_AVMOBJ);
 	}
 
 	/*
 	 * finally free the aobj itself
 	 */
 
-	pool_put(&uvm_aobj_pool, aobj);
+	//pool_put(&uvm_aobj_pool, aobj);
 
 	/*
 	 * adjust the counter of pages only in swap for all
@@ -332,16 +333,16 @@ uao_free(aobj)
  *	UAO_FLAG_KERNOBJ - allocate the kernel object (can only happen once)
  *	UAO_FLAG_KERNSWAP - enable swapping of kernel object ("           ")
  */
-
+#define VM_OBJ_KERN		(-2)
 struct vm_object *
 uao_create(size, flags)
 	vm_size_t size;
 	int flags;
 {
-	static struct vm_aobject kernel_object_store;
+	static struct avm_object kernel_object_store;
 	static int kobj_alloced = 0;
 	int pages = round_page(size) >> PAGE_SHIFT;
-	struct uvm_aobj *aobj;
+	struct avm_object *aobj;
 
 	/*
 	 * malloc a new aobj unless we are asked for the kernel object
@@ -352,14 +353,14 @@ uao_create(size, flags)
 		aobj = &kernel_object_store;
 		aobj->u_pages = pages;
 		aobj->u_flags = UAO_FLAG_NOSWAP;
-		aobj->u_obj.uo_refs = UVM_OBJ_KERN;
+		aobj->u_obj.uo_refs = VM_OBJ_KERN;
 		kobj_alloced = UAO_FLAG_KERNOBJ;
 	} else if (flags & UAO_FLAG_KERNSWAP) {
 		KASSERT(kobj_alloced == UAO_FLAG_KERNOBJ);
 		aobj = &kernel_object_store;
 		kobj_alloced = UAO_FLAG_KERNSWAP;
 	} else {
-		aobj = pool_get(&uvm_aobj_pool, PR_WAITOK);
+		aobj = //pool_get(&uvm_aobj_pool, PR_WAITOK);
 		aobj->u_pages = pages;
 		aobj->u_flags = 0;
 		aobj->u_obj.uo_refs = 1;
@@ -378,11 +379,11 @@ uao_create(size, flags)
 
 		/* allocate hash table or array depending on object size */
 		if (UAO_USES_SWHASH(aobj)) {
-			aobj->u_swhash = hashinit(UAO_SWHASH_BUCKETS(aobj), HASH_LIST, M_UVMAOBJ, mflags, &aobj->u_swhashmask);
+			aobj->u_swhash = hashinit(UAO_SWHASH_BUCKETS(aobj), HASH_LIST, M_AVMOBJ, mflags, &aobj->u_swhashmask);
 			if (aobj->u_swhash == NULL)
 				panic("uao_create: hashinit swhash failed");
 		} else {
-			aobj->u_swslots = malloc(pages * sizeof(int), M_UVMAOBJ, mflags);
+			aobj->u_swslots = malloc(pages * sizeof(int), M_AVMOBJ, mflags);
 			if (aobj->u_swslots == NULL)
 				panic("uao_create: malloc swslots failed");
 			memset(aobj->u_swslots, 0, pages * sizeof(int));
@@ -410,7 +411,7 @@ uao_create(size, flags)
 	simple_lock(&uao_list_lock);
 	LIST_INSERT_HEAD(&uao_list, aobj, u_list);
 	simple_unlock(&uao_list_lock);
-	return(&aobj->u_obj);
+	return (&aobj->u_obj);
 }
 
 
@@ -449,7 +450,7 @@ uao_init(void)
 
 void
 uao_reference(uobj)
-	struct uvm_object *uobj;
+	struct vm_object *uobj;
 {
 	simple_lock(&uobj->vmobjlock);
 	uao_reference_locked(uobj);
@@ -467,7 +468,7 @@ uao_reference(uobj)
 
 void
 uao_reference_locked(uobj)
-	struct uvm_object *uobj;
+	struct vm_object *uobj;
 {
 	//UVMHIST_FUNC("uao_reference"); UVMHIST_CALLED(maphist);
 
@@ -491,7 +492,7 @@ uao_reference_locked(uobj)
 
 void
 uao_detach(uobj)
-	struct uvm_object *uobj;
+	struct vm_object *uobj;
 {
 	simple_lock(&uobj->vmobjlock);
 	uao_detach_locked(uobj);
@@ -508,9 +509,9 @@ uao_detach(uobj)
 
 void
 uao_detach_locked(uobj)
-	struct uvm_object *uobj;
+	struct vm_object *uobj;
 {
-	struct uvm_aobj *aobj = (struct uvm_aobj *)uobj;
+	struct avm_object *aobj = (struct avm_object *)uobj;
 	struct vm_page *pg;
 	//UVMHIST_FUNC("uao_detach"); UVMHIST_CALLED(maphist);
 

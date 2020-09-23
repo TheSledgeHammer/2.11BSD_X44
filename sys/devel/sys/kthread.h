@@ -53,7 +53,8 @@ struct kthread {
 	struct filedesc 	*kt_fd;			/* Ptr to open files structure. */
 	struct pstats 	 	*kt_stats;		/* Accounting/statistics (THREAD ONLY). */
 	struct plimit 	 	*kt_limit;		/* Process limits. */
-	struct sigacts 		*kt_sig;		/* Signal actions, state (THREAD ONLY). */
+	struct vmspace  	*kt_vmspace;	/* Address space. */
+	struct sigacts 		*kt_sigacts;	/* Signal actions, state (THREAD ONLY). */
 
 #define	kt_ucred		kt_cred->pc_ucred
 
@@ -105,6 +106,8 @@ struct kthread {
     short               kt_simple_locks;
 
 	char				*kt_name;		/* (: name, optional */
+
+
 };
 #define	kt_session		kt_pgrp->pg_session
 #define	kt_tgid			kt_pgrp->pg_id
@@ -175,6 +178,10 @@ struct kthreadpool {
 extern 	LIST_HEAD(tidhashhead, proc) 	*tidhashtbl;
 u_long 	tid_hash;
 
+#define	TGRPHASH(tgid)					(&tgrphashtbl[(tgid) & tgrphash])
+extern LIST_HEAD(tgrphashhead, pgrp) 	*tgrphashtbl;
+extern u_long tgrphash;
+
 struct kthread 							*kthreadNKTHREAD;		/* the kthread table itself */
 
 struct kthread 							*allkthread;			/* List of active kthreads. */
@@ -193,6 +200,7 @@ extern void kthreadpool_itc_send(struct kthreadpool *, struct threadpool_itpc *)
 extern void kthreadpool_itc_receive(struct kthreadpool *, struct threadpool_itpc *);
 
 /* Kernel Thread */
+void kthread_init(struct proc *, kthread_t);
 int kthread_create(kthread_t kt);
 int kthread_join(kthread_t kt);
 int kthread_cancel(kthread_t kt);
@@ -200,16 +208,18 @@ int kthread_exit(kthread_t kt);
 int kthread_detach(kthread_t kt);
 int kthread_equal(kthread_t kt1, kthread_t kt2);
 int kthread_kill(kthread_t kt);
-
-/* Kernel Thread Lock */
 int kthread_lock_init(lock_t, kthread_t);
 int kthread_lockmgr(lock_t, u_int, kthread_t);
-
-/* Kernel Thread rwlock */
 int kthread_rwlock_init(rwlock_t, kthread_t);
 int kthread_rwlockmgr(rwlock_t, u_int, kthread_t);
 int	kthread_rwlock_read_held(kthread_t, rwlock_t);
 int	kthread_rwlock_write_held(kthread_t, rwlock_t);
 int	kthread_rwlock_lock_held(kthread_t, rwlock_t);
+
+struct kthread *ktfind (pid_t);				/* Find kthread by id. */
+int				leavetgrp(kthread_t);
+
+void			threadinit (void);
+struct pgrp 	*tgfind (pid_t);			/* Find thread group by id. */
 
 #endif /* SYS_KTHREADS_H_ */

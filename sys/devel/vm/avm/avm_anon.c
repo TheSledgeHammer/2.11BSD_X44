@@ -54,15 +54,15 @@
  * locked by swap_syscall_lock (since we never remove
  * anything from this list and we only add to it via swapctl(2)).
  */
-struct vm_anonblock {
-	LIST_ENTRY(vm_anonblock) list;
+struct avm_anonblock {
+	LIST_ENTRY(avm_anonblock) list;
 	int count;
-	struct vm_anon *anons;
+	struct avm_anon *anons;
 };
-static LIST_HEAD(anonlist, vm_anonblock) anonblock_list;
+static LIST_HEAD(anonlist, avm_anonblock) anonblock_list;
 
 
-static boolean_t anon_pagein(struct vm_anon *);
+static boolean_t anon_pagein(struct avm_anon *);
 
 /*
  * allocate anons
@@ -91,8 +91,8 @@ int
 vm_anon_add(count)
 	int	count;
 {
-	struct vm_anonblock *anonblock;
-	struct vm_anon *anon;
+	struct avm_anonblock *anonblock;
+	struct avm_anon *anon;
 	int lcv, needed;
 
 	simple_lock(&vm.afreelock);
@@ -110,7 +110,7 @@ vm_anon_add(count)
 		simple_unlock(&vm.afreelock);
 		return ENOMEM;
 	}
-	MALLOC(anonblock, void *, sizeof(*anonblock), M_VMAMAP, M_WAITOK);
+	MALLOC(anonblock, void *, sizeof(*anonblock), M_AVMMAP, M_WAITOK);
 
 	anonblock->count = needed;
 	anonblock->anons = anon;
@@ -151,10 +151,10 @@ vm_anon_remove(count)
  *
  * => new anon is returned locked!
  */
-struct vm_anon *
+struct avm_anon *
 vm_analloc()
 {
-	struct vm_anon *a;
+	struct avm_anon *a;
 
 	simple_lock(&vm.afreelock);
 	a = vm.afree;
@@ -182,9 +182,10 @@ vm_analloc()
 
 void
 vm_anfree(anon)
-	struct vm_anon *anon;
+	struct avm_anon *anon;
 {
 	struct vm_page *pg;
+
 	//UVMHIST_FUNC("uvm_anfree"); UVMHIST_CALLED(maphist);
 	//UVMHIST_LOG(maphist,"(anon=0x%x)", anon, 0,0,0);
 
@@ -292,7 +293,7 @@ vm_anfree(anon)
  */
 void
 vm_anon_dropswap(anon)
-	struct vm_anon *anon;
+	struct avm_anon *anon;
 {
 	//UVMHIST_FUNC("uvm_anon_dropswap"); UVMHIST_CALLED(maphist);
 
@@ -323,7 +324,7 @@ vm_anon_dropswap(anon)
  */
 struct vm_page *
 vm_anon_lockloanpg(anon)
-	struct vm_anon *anon;
+	struct avm_anon *anon;
 {
 	struct vm_page *pg;
 	boolean_t locked = FALSE;
@@ -403,7 +404,7 @@ boolean_t
 anon_swap_off(startslot, endslot)
 	int startslot, endslot;
 {
-	struct vm_anonblock *anonblock;
+	struct avm_anonblock *anonblock;
 
 	LIST_FOREACH(anonblock, &anonblock_list, list) {
 		int i;
@@ -414,7 +415,7 @@ anon_swap_off(startslot, endslot)
 		 */
 
 		for (i = 0; i < anonblock->count; i++) {
-			struct vm_anon *anon = &anonblock->anons[i];
+			struct avm_anon *anon = &anonblock->anons[i];
 			int slot;
 
 			/*
@@ -465,7 +466,7 @@ anon_swap_off(startslot, endslot)
 
 static boolean_t
 anon_pagein(anon)
-	struct vm_anon *anon;
+	struct avm_anon *anon;
 {
 	struct vm_page *pg;
 	struct vm_object *uobj;
@@ -546,7 +547,7 @@ anon_pagein(anon)
 
 void
 uvm_anon_release(anon)
-	struct vm_anon *anon;
+	struct avm_anon *anon;
 {
 	struct vm_page *pg = anon->an_page;
 

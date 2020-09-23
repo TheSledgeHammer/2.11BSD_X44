@@ -57,8 +57,7 @@ typedef struct avm_ref			*avm_ref_t;
  * Shareable process anonymous virtual address space.
  */
 struct avmspace {
-	//struct	avm_map  avm_amap;		/* AVM anon address map */
-	struct vm_amap   avm_amap;		/* AVM anon address map */
+	struct avm_map   avm_amap;		/* AVM address map */
 	struct extent	 *avm_extent;	/* extent manager */
 
 	int				 avm_refcnt;	/* number of references */

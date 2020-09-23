@@ -63,18 +63,6 @@ typedef struct vm_page  		*vm_page_t;
 struct pager_struct;
 typedef struct pager_struct 	*vm_pager_t;
 
-struct vm_anon;
-typedef struct vm_anon			*vm_anon_t;
-
-struct vm_amap;
-typedef struct vm_amap 			*vm_amap_t;
-
-struct vm_amap_entry;
-typedef struct vm_amap_entry 	*vm_amap_entry_t;
-
-struct vm_aobject;
-typedef struct vm_aobject		*vm_aobject_t;
-
 #include <sys/lock.h>
 #include <sys/queue.h>
 #include <sys/tree.h>
@@ -83,9 +71,6 @@ typedef struct vm_aobject		*vm_aobject_t;
 
 #include <devel/vm/include/pmap.h>
 #include <devel/vm/include/swap_pager.h>
-#include <devel/vm/include/vm_amap.h>
-#include <devel/vm/include/vm_anon.h>
-#include <devel/vm/include/vm_aobject.h>
 #include <devel/vm/include/vm_extern.h>
 #include <devel/vm/include/vm_inherit.h>
 #include <devel/vm/include/vm_map.h>
@@ -94,8 +79,8 @@ typedef struct vm_aobject		*vm_aobject_t;
 #include <devel/vm/include/vm_prot.h>
 #include <devel/vm/include/vm_swap.h>
 
-#include <devel/vm/avm/avm.h>
-#include <devel/vm/ovl/ovl.h>
+//#include <devel/vm/avm/avm.h>
+//#include <devel/vm/ovl/ovl.h>
 
 #include <devel/vm/extents/vm_extent.h>		/* Work in Progress */
 #include <devel/vm/extents/vm_segment.h>	/* Work in Progress */

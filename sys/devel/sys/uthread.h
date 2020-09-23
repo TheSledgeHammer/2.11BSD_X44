@@ -54,7 +54,7 @@ struct uthread {
 	struct pcred 	 	*ut_cred;		/* Thread owner's identity. */
 	struct filedesc 	*ut_fd;			/* Ptr to open files structure. */
 	struct pstats 	 	*ut_stats;		/* Accounting/statistics (THREAD ONLY). */
-	struct sigacts 		*ut_sig;		/* Signal actions, state (THREAD ONLY). */
+	struct sigacts 		*ut_sigacts;	/* Signal actions, state (THREAD ONLY). */
 
 #define	ut_ucred		ut_cred->pc_ucred
 
@@ -163,6 +163,7 @@ extern void uthreadpool_itc_send(struct uthreadpool *, struct threadpool_itpc *)
 extern void uthreadpool_itc_receive(struct uthreadpool *, struct threadpool_itpc *);
 
 /* User Thread */
+void uthread_init(kthread_t, uthread_t);
 int uthread_create(uthread_t ut);
 int uthread_join(uthread_t ut);
 int uthread_cancel(uthread_t ut);
@@ -170,13 +171,12 @@ int uthread_exit(uthread_t ut);
 int uthread_detach(uthread_t ut);
 int uthread_equal(uthread_t ut1, uthread_t ut2);
 int uthread_kill(uthread_t ut);
-
-/* User Thread Lock */
 int uthread_lock_init(lock_t, uthread_t);
 int uthread_lockmgr(lock_t, u_int, uthread_t);
-
-/* User Thread rwlock */
 int uthread_rwlock_init(rwlock_t, uthread_t);
 int uthread_rwlockmgr(rwlock_t, u_int, uthread_t);
+
+struct 	uthread *utfind (pid_t);			/* Find uthread by id. */
+int				leavetgrp(uthread_t);
 
 #endif /* SYS_UTHREADS_H_ */

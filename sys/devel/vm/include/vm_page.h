@@ -108,7 +108,7 @@ struct vm_page {
 	vm_object_t				object;		/* which object am I in (O,P)*/
 	vm_offset_t				offset;		/* offset into object (O,P) */
 
-	vm_anon_t				anon;		/* anon (O,P) */
+	avm_anon_t				anon;		/* anon (O,P) */
 	u_short					loan_count;
 	u_short					pqflags;	/* page queue flags [P] */
 

@@ -36,15 +36,9 @@
 
 int nthread = maxthread;
 
-
-kthread_fork1()
-{
-
-}
-
 /* fork kthread from an kthread overseer */
 int
-newkthread(p, isvfork)
+newthread(p, isvfork)
 	struct proc *p;
 	int isvfork;
 {
@@ -161,7 +155,7 @@ again:
 	kt1->kt_flag |= P_NOSWAP;
 	retval[0] = kt1->kt_tid;
 	retval[1] = 1;
-	if(vm_kthread_fork(kt1, kt2, isvfork)) {
+	if(vm_thread_fork(kt1, kt2, isvfork)) {
 		/*
 		 * Child process.  Set start time and get to work.
 		 */
@@ -181,10 +175,30 @@ again:
 	return (0);
 }
 
+#include <sys/resourcevar.h>
 int
-vm_thread_fork(p1, p2, isvfork)
-	register struct proc *p1, *p2;
+vm_thread_fork(kt1, kt2, isvfork)
+	register struct kthread *kt1, *kt2;
 	int isvfork;
 {
+	register struct user *up;
+	vm_offset_t addr;
 
+	(void)vm_map_inherit(&kt1->kt_vmspace->vm_map, UPT_MIN_ADDRESS-UPAGES*NBPG, VM_MAX_ADDRESS, VM_INHERIT_NONE);
+
+	kt2->kt_vmspace = vmspace_fork(kt1->kt_vmspace);
+
+	/*
+	 * p_stats and p_sigacts currently point at fields
+	 * in the user struct but not at &u, instead at p_addr.
+	 * Copy p_sigacts and parts of p_stats; zero the rest
+	 * of p_stats (statistics).
+	 */
+	kt2->kt_stats = &up->u_stats;
+	kt2->kt_sigacts = &up->u_sigacts;
+	up->u_sigacts = *kt1->kt_sigacts;
+	bzero(&up->u_stats.pstat_startzero, (unsigned) ((caddr_t) &up->u_stats.pstat_endzero - (caddr_t) &up->u_stats.pstat_startzero));
+	bcopy(&kt1->kt_stats->pstat_startcopy, &up->u_stats.pstat_startcopy, ((caddr_t) &up->u_stats.pstat_endcopy - (caddr_t) &up->u_stats.pstat_startcopy));
+
+	return (0);
 }
