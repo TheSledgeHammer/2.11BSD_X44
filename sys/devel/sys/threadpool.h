@@ -35,7 +35,7 @@
 /*
  * Two Threadpools:
  * - Kernel Thread pool
- * - User Thread pool
+ * - User Thread pool (userspace)
  *
  * primary jobs:
  * - dispatch and hold x number of threads
@@ -61,7 +61,8 @@
 
 /* Threadpool Jobs */
 TAILQ_HEAD(job_head, threadpool_job);
-typedef void threadpool_job_fn_t(struct threadpool_job *, struct wqueue *, struct task *, task_fn_t);
+//typedef void threadpool_job_fn_t(struct threadpool_job *, struct wqueue *, struct task *, task_fn_t);
+typedef void threadpool_job_fn_t(struct threadpool_job *);
 /* Threadpool Jobs */
 struct threadpool_job  {
 	TAILQ_ENTRY(threadpool_job)			job_entry;
@@ -93,6 +94,19 @@ struct threadpool_itpc {
 	int 								itc_refcnt;		/* Current Number of entries in pool */
 };
 extern struct itc_threadpool itpc;
+
+void	kthreadpools_init(void);
+
+int		kthreadpool_get(struct kthreadpool **, u_char);
+void	kthreadpool_put(struct kthreadpool *, u_char);
+
+void	threadpool_job_init(struct threadpool_job *, threadpool_job_fn_t, lock_t, const char *, ...) __printflike(4,5);
+void	threadpool_job_destroy(struct threadpool_job *);
+void	threadpool_job_done(struct threadpool_job *);
+
+void	threadpool_schedule_job(struct kthreadpool *, struct threadpool_job *);
+void	threadpool_cancel_job(struct kthreadpool *, struct threadpool_job *);
+bool	threadpool_cancel_job_async(struct kthreadpool *, struct threadpool_job *);
 
 /* General ITPC */
 void itpc_threadpool_init(void);

@@ -110,19 +110,29 @@ struct kthread {
 #define	kt_tgid			kt_pgrp->pg_id
 
 /* stat codes */
-#define KTSSLEEP	1		/* sleeping/ awaiting an event */
-#define KTSWAIT		2		/* waiting */
-#define KTSRUN		3		/* running */
-#define KTSIDL		4		/* intermediate state in process creation */
-#define	KTSZOMB		5		/* intermediate state in process termination */
-#define KTSSTOP		6		/* process being traced */
-#define KTSREADY	7		/* ready */
-#define KTSSTART	8		/* start */
+#define KT_SSLEEP			1			/* sleeping/ awaiting an event */
+#define KT_SWAIT			2			/* waiting */
+#define KT_SRUN				3			/* running */
+#define KT_SIDL				4			/* intermediate state in process creation */
+#define	KT_SZOMB			5			/* intermediate state in process termination */
+#define KT_SSTOP			6			/* process being traced */
+#define KT_SREADY			7			/* ready */
+#define KT_SSTART			8			/* start */
 
 /* flag codes */
-#define	KT_SYSTEM	0x00200		/* System proc: no sigs, stats or swapping. */
-#define	KT_INMEM	0x00004		/* Loaded into memory. */
-#define KT_INEXEC	0x100000	/* Process is exec'ing and cannot be traced */
+
+#define	KT_SYSTEM			0x00200		/* System proc: no sigs, stats or swapping. */
+#define	KT_INMEM			0x00004		/* Loaded into memory. */
+#define KT_INEXEC			0x100000	/* Process is exec'ing and cannot be traced */
+
+#define	KT_BOUND			0x80000000 	/* Bound to a CPU */
+
+/* Kernel thread handling. */
+#define	KTHREAD_IDLE		0x01		/* Do not run on creation */
+#define	KTHREAD_MPSAFE		0x02		/* Do not acquire kernel_lock */
+#define	KTHREAD_INTR		0x04		/* Software interrupt handler */
+#define	KTHREAD_TS			0x08		/* Time-sharing priority range */
+#define	KTHREAD_MUSTJOIN	0x10		/* Must join on exit */
 
 /* Kernel Threadpool Threads */
 TAILQ_HEAD(kthread_head, kthreadpool_thread);
@@ -171,9 +181,8 @@ struct kthread 							*allkthread;			/* List of active kthreads. */
 struct kthread 							*freekthread;			/* List of free kthreads. */
 struct kthread 							*zombkthread;			/* List of zombie kthreads. */
 
-
-lock_t 									kthread_lkp; 	/* lock */
-rwlock_t								kthread_rwl;	/* reader-writers lock */
+lock_t 									kthread_lkp; 			/* lock */
+rwlock_t								kthread_rwl;			/* reader-writers lock */
 
 extern struct kthread 					kthread0;
 extern struct kthreadpool_thread 		ktpool_thread;

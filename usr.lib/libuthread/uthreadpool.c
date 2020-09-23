@@ -224,7 +224,7 @@ uthreadpool_overseer_thread(void *arg)
 
 
 	KASSERT((utpool->utp_cpu == NULL) || (utpool->utp_cpu == curcpu()));
-	KASSERT((utpool->utp_cpu == NULL) || (curkthread->kt_flag & LP_BOUND));
+	KASSERT((utpool->utp_cpu == NULL) || (curkthread->kt_flag & KT_BOUND));
 
 	/* Wait until we're initialized.  */
 	simple_lock(&utpool->utp_lock);
@@ -246,20 +246,16 @@ uthreadpool_overseer_thread(void *arg)
 			uthread->utpt_kthread = NULL;
 			uthread->utpt_pool = pool;
 			uthread->utpt_job = NULL;
-			//cv_init(&thread->tpt_cv, "poolthrd");
 
 			utflags = 0;
 			utflags |= UTHREAD_MPSAFE;
-			if (utpool->utp_pri < PRI_KERNEL)
+			if (utpool->utp_pri < PUSER)
 				utflags |= UTHREAD_TS;
 			error = uthread_create(utpool->utp_pri, utflags, utpool->utp_cpu, &uthreadpool_thread, uthread, &p, "poolthread/%d@%d", (utpool->utp_cpu ? cpu_index(utpool->utp_cpu) : -1), (int)utpool->utp_pri);
 
 			simple_lock(&utpool->utp_lock);
 			if (error) {
-			//	pool_cache_put(kthreadpool_thread_pc, kthread);
 				uthreadpool_rele(utpool);
-				/* XXX What to do to wait for memory?  */
-				//(void)kpause("thrdplcr", FALSE, hz, &ktpool->ktp_lock);
 				continue;
 			}
 			/*
@@ -270,7 +266,6 @@ uthreadpool_overseer_thread(void *arg)
 			TAILQ_INSERT_TAIL(&utpool->utp_idle_threads, uthread, utpt_entry);
 			uthread->utpt_kthread = kt;
 			p = NULL;
-			//cv_broadcast(&thread->tpt_cv);
 			continue;
 		}
 
@@ -305,7 +300,6 @@ uthreadpool_overseer_thread(void *arg)
 				TAILQ_REMOVE(&utpool->utp_idle_threads, thread, utpt_entry);
 				thread->utpt_job = job;
 				job->job_ktp_thread = thread;
-				//cv_broadcast(&thread->tpt_cv);
 			}
 			simple_unlock(&utpool->utp_lock);
 		}
@@ -354,7 +348,7 @@ uthreadpool_thread(void *arg)
 
 
 		/* Run the job.  */
-		(*job->job_fn)(job);
+		(*job->job_func)(job);
 
 		/* lwp name restored in threadpool_job_done(). */
 		KASSERTMSG((curkthread->kt_name == kthread_name), "someone forgot to call threadpool_job_done()!");

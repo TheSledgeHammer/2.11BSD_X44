@@ -225,7 +225,7 @@ kthreadpool_overseer_thread(void *arg)
 
 
 	KASSERT((ktpool->ktp_cpu == NULL) || (ktpool->ktp_cpu == curcpu()));
-	KASSERT((ktpool->ktp_cpu == NULL) || (curproc->p_flag & LP_BOUND));
+	KASSERT((ktpool->ktp_cpu == NULL) || (curproc->p_flag & KT_BOUND));
 
 	/* Wait until we're initialized.  */
 	simple_lock(&ktpool->ktp_lock);
@@ -250,7 +250,7 @@ kthreadpool_overseer_thread(void *arg)
 
 			ktflags = 0;
 			ktflags |= KTHREAD_MPSAFE;
-			if (ktpool->ktp_pri < PRI_KERNEL)
+			if (ktpool->ktp_pri < PUSER)
 				ktflags |= KTHREAD_TS;
 			error = kthread_create(ktpool->ktp_pri, ktflags, ktpool->ktp_cpu, &kthreadpool_thread, kthread, &p, "poolthread/%d@%d", (ktpool->ktp_cpu ? cpu_index(ktpool->ktp_cpu) : -1), (int)ktpool->ktp_pri);
 
@@ -273,8 +273,8 @@ kthreadpool_overseer_thread(void *arg)
 		/* There are idle threads, so try giving one a job.  */
 		struct threadpool_job *const job = TAILQ_FIRST(&ktpool->ktp_jobs);
 
-		//TAILQ_REMOVE(&ktpool->ktp_jobs, job, job_entry);
-		job_pool_task_dequeue(&ktpool->ktp_jobs, job);
+		TAILQ_REMOVE(&ktpool->ktp_jobs, job, job_entry);
+
 
 		/*
 		 * Take an extra reference on the job temporarily so that
@@ -293,8 +293,7 @@ kthreadpool_overseer_thread(void *arg)
 				 * first.  We'll have to try again.
 				 */
 
-				//TAILQ_INSERT_HEAD(&ktpool->ktp_jobs, job, job_entry);
-				job_pool_task_enqueue(&ktpool->ktp_jobs, job);
+				TAILQ_INSERT_HEAD(&ktpool->ktp_jobs, job, job_entry);
 
 			} else {
 				/*
@@ -344,7 +343,7 @@ kthreadpool_thread(void *arg)
 		KASSERT(job != NULL);
 
 
-		/* Set our lwp name to reflect what job we're doing.  */
+		/* Set our proc name to reflect what job we're doing.  */
 		//proc_lock(curproc);
 		char *const proc_name = curproc->p_name;
 		kthread->ktpt_kthread_savedname = curproc->p_name;
@@ -354,12 +353,9 @@ kthreadpool_thread(void *arg)
 		simple_unlock(&ktpool->ktp_lock);
 
 		/* Run the job.  */
-		if (task_check(job->job_wqueue, TAILQ_FIRST(job->job_wqueue->wq_head))) {
-			job_pool_task_run(job, job->job_wqueue->wq_head, TAILQ_FIRST(job->job_wqueue->wq_head));
-			//(*job->job_func)(job);
-		}
+		(*job->job_func)(job);
 
-		/* lwp name restored in threadpool_job_done(). */
+		/* proc name restored in threadpool_job_done(). */
 		KASSERTMSG((curproc->p_name == proc_name), "someone forgot to call threadpool_job_done()!");
 
 		/*

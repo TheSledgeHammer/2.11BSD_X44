@@ -33,14 +33,14 @@
 
 /* Add a thread to the itc queue */
 void
-itpc_uthreadpool_enqueue(itpc, pid)
+itpc_uthreadpool_enqueue(itpc, tid)
 	struct threadpool_itpc *itpc;
-	pid_t pid;
+	pid_t tid;
 {
 	struct uthreadpool *utpool;
 
 	/* check user threadpool is not null & has a job/task entry to send */
-	if(utpool != NULL && itpc->itc_tid == pid) {
+	if(utpool != NULL && itpc->itc_tid == tid) {
 		itpc->itc_utpool = utpool;
 		utpool->utp_initcq = TRUE;
 		itpc->itc_refcnt++;
@@ -53,16 +53,16 @@ itpc_uthreadpool_enqueue(itpc, pid)
  * If threadpool entry is not null, search queue for entry & remove
  */
 void
-itpc_uthreadpool_dequeue(itpc, pid)
+itpc_uthreadpool_dequeue(itpc, tid)
 	struct threadpool_itpc *itpc;
-	pid_t pid;
+	pid_t tid;
 {
 	struct uthreadpool *utpool;
 
 	if(utpool != NULL) {
 		TAILQ_FOREACH(itpc, itpc->itc_header, itc_entry) {
 			if(TAILQ_NEXT(itpc, itc_entry)->itc_utpool == utpool) {
-				if(itpc->itc_tid == pid) {
+				if(itpc->itc_tid == tid) {
 					utpool->utp_initcq = FALSE;
 					itpc->itc_refcnt--;
 					TAILQ_REMOVE(itpc->itc_header, itpc, itc_entry);
@@ -74,19 +74,19 @@ itpc_uthreadpool_dequeue(itpc, pid)
 
 /* Sender checks request from receiver: providing info */
 void
-itpc_check_uthreadpool(itpc, pid)
+itpc_check_uthreadpool(itpc, tid)
 	struct threadpool_itpc *itpc;
-	pid_t pid;
+	pid_t tid;
 {
 	struct uthreadpool *utpool = itpc->itc_utpool;
 
 	if(utpool->utp_issender) {
 		printf("user threadpool to send");
-		if(itpc->itc_tid == pid) {
+		if(itpc->itc_tid == tid) {
 			printf("user tid be found");
 			/* check */
 		} else {
-			if(itpc->itc_tid != pid) {
+			if(itpc->itc_tid != tid) {
 				if(utpool->utp_retcnt <= 5) { /* retry up to 5 times */
 					if(utpool->utp_initcq) {
 						/* exit and re-enter queue, increasing retry count */
@@ -107,15 +107,15 @@ itpc_check_uthreadpool(itpc, pid)
 
 /* Receiver verifies request to sender: providing info */
 void
-itpc_verify_uthreadpool(itpc, pid)
+itpc_verify_uthreadpool(itpc, tid)
 	struct threadpool_itpc *itpc;
-	pid_t pid;
+	pid_t tid;
 {
 	struct uthreadpool *utpool = itpc->itc_utpool;
 
 	if(utpool->utp_isreciever) {
 		printf("user threadpool to recieve");
-		if(itpc->itc_tid == pid) {
+		if(itpc->itc_tid == tid) {
 			printf("user tid found");
 		} else {
 			printf("user tid couldn't be found");

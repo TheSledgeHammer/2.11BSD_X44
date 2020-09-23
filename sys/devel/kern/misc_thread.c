@@ -120,7 +120,7 @@ again:
 	bzero(&kt1->kt_startzero, (unsigned) ((caddr_t)&kt2->kt_endzero - (caddr_t)&kt2->kt_startzero));
 
 	kt2->kt_flag = P_INMEM;
-	MALLOC(kt2->kt_cred, struct pcred *, sizeof(struct pcred), M_SUBPROC, M_WAITOK);
+	MALLOC(kt2->kt_cred, struct pcred *, sizeof(struct pcred), M_PROC, M_WAITOK);
 	bcopy(kt1->kt_cred, kt2->kt_cred, sizeof(*kt2->kt_cred));
 	kt2->kt_cred->p_refcnt = 1;
 	crhold(kt1->kt_ucred);
@@ -179,4 +179,12 @@ again:
 	retval[0] = kt2->kt_tid;
 	retval[1] = 0;
 	return (0);
+}
+
+int
+vm_thread_fork(p1, p2, isvfork)
+	register struct proc *p1, *p2;
+	int isvfork;
+{
+
 }

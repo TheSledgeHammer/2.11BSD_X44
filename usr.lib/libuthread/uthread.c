@@ -51,7 +51,7 @@ startuthread(ut)
     curuthread = ut;
 
     /* Set thread to idle & waiting */
-    ut->ut_stat |= UTSIDL | UTSWAIT | UTSREADY;
+    ut->ut_stat |= UT_SIDL | UT_SWAIT | UT_SREADY;
 
     /* init uthread queues */
     //utqinit();
@@ -66,13 +66,14 @@ uthread_create(kt)
 	struct kthread *kt;
 {
 	register struct uthread *ut;
+	register_t rval[2];
 	int error;
 
 	if(!kthread0.kt_stat) {
 		panic("uthread_create called too soon");
 	}
 	if(ut == NULL) {
-		//ut = kt->kt_uthreado;
+		ut = kt->kt_uthreado;
 		startuthread(ut);
 	}
 	return (0);
@@ -142,12 +143,12 @@ utqinit()
  * Locate a uthread by number
  */
 struct uthread *
-utfind(pid)
-	register int pid;
+utfind(tid)
+	register int tid;
 {
 	register struct uthread *ut;
-	for (ut = PIDHASH(pid); ut != 0; ut = ut->ut_hash.le_next) {
-		if(ut->ut_tid == pid) {
+	for (ut = TIDHASH(tid); ut != 0; ut = LIST_NEXT(ut, ut_hash)) {
+		if(ut->ut_tid == tid) {
 			return (ut);
 		}
 	}

@@ -30,6 +30,7 @@
 #ifndef SYS_UTHREADS_H_
 #define SYS_UTHREADS_H_
 
+#include <sys/kthread.h>
 #include <sys/user.h>
 
 /* user threads */
@@ -45,10 +46,9 @@ struct uthread {
 	char 				ut_stat;		/* TS* thread status. */
 	char 				ut_lock;		/* Thread lock count. */
 
+	short				ut_uid;			/* user id, used to direct tty signals */
 	pid_t 				ut_tid;			/* unique thread id */
 	pid_t 				ut_ptid;		/* thread id of parent */
-
-	u_char				ut_pri;			/* thread priority, negative is high */
 
 	/* Substructures: */
 	struct pcred 	 	*ut_cred;		/* Thread owner's identity. */
@@ -62,32 +62,52 @@ struct uthread {
 	struct kthread		*ut_kthreadp;	/* pointer to kernel threads */
 
 	LIST_ENTRY(proc)	ut_hash;		/* hashed based on t_tid & p_pid for kill+exit+... */
-	struct uthread    	*ut_tgrpnxt;	/* Pointer to next thread in thread group. */
-    struct uthread      *ut_tptr;		/* pointer to process structure of parent */
+	struct uthread    	*ut_pgrpnxt;	/* Pointer to next thread in thread group. */
+    struct uthread      *ut_pptr;		/* pointer to process structure of parent */
     struct uthread 		*ut_ostptr;	 	/* Pointer to older sibling processes. */
+
+#define	ut_startzero	ut_ysptr
 
 	struct uthread 		*ut_ysptr;	 	/* Pointer to younger siblings. */
 	struct uthread 		*ut_cptr;	 	/* Pointer to youngest living child. */
 
+#define	ut_endzero		ut_startcopy
+#define	ut_startcopy	ut_sigmask
+
+	u_char				ut_pri;			/* thread priority, negative is high */
+
 	struct pgrp 	    *ut_pgrp;       /* Pointer to proc group. */
+
+#define ut_endcopy
 
 	struct uthread 		*ut_link;		/* linked list of running uthreads */
 
     short               ut_locks;
     short               ut_simple_locks;
+
+    char				*ut_name;		/* (: name, optional */
 };
 #define	ut_session		ut_pgrp->pg_session
 #define	ut_tgid			ut_pgrp->pg_id
 
 /* stat codes */
-#define UTSSLEEP	1		/* sleeping/ awaiting an event */
-#define UTSWAIT		2		/* waiting */
-#define UTSRUN		3		/* running */
-#define UTSIDL		4		/* intermediate state in process creation */
-#define	UTSZOMB		5		/* intermediate state in process termination */
-#define UTSSTOP		6		/* process being traced */
-#define UTSREADY	7		/* ready */
-#define UTSSTART	8		/* start */
+#define UT_SSLEEP			1			/* sleeping/ awaiting an event */
+#define UT_SWAIT			2			/* waiting */
+#define UT_SRUN				3			/* running */
+#define UT_SIDL				4			/* intermediate state in process creation */
+#define	UT_SZOMB			5			/* intermediate state in process termination */
+#define UT_SSTOP			6			/* process being traced */
+#define UT_SREADY			7			/* ready */
+#define UT_SSTART			8			/* start */
+
+#define	UT_BOUND			0x80000000 	/* Bound to a CPU */
+
+/* Kernel thread handling. */
+#define	UTHREAD_IDLE		0x01		/* Do not run on creation */
+#define	UTHREAD_MPSAFE		0x02		/* Do not acquire kernel_lock */
+#define	UTHREAD_INTR		0x04		/* Software interrupt handler */
+#define	UTHREAD_TS			0x08		/* Time-sharing priority range */
+#define	UTHREAD_MUSTJOIN	0x10		/* Must join on exit */
 
 /* User Threadpool Thread */
 TAILQ_HEAD(uthread_head, uthreadpool_thread);
@@ -125,19 +145,19 @@ struct uthreadpool {
     boolean_t							utp_initcq;			/* check if in itc queue */
 };
 
-/* Locks */
-lock_t									uthread_lkp;
-rwlock_t								uthread_rwl;		/* reader-writers lock */
-
-extern struct uthread 					uthread0;
-extern struct uthreadpool_thread 		utpool_thread;
-extern lock_t 							uthreadpool_lock;
 
 struct uthread 							*uthreadNUTHREAD;	/* the uthread table itself */
 
 struct uthread 							*alluthread;		/* List of active uthreads. */
 struct uthread 							*freeuthread;		/* List of free uthreads. */
 struct uthread 							*zombuthread;		/* List of zombie uthreads. */
+
+lock_t									uthread_lkp;		/* lock */
+rwlock_t								uthread_rwl;		/* reader-writers lock */
+
+extern struct uthread 					uthread0;
+extern struct uthreadpool_thread 		utpool_thread;
+extern lock_t 							uthreadpool_lock;
 
 extern void uthreadpool_itc_send(struct uthreadpool *, struct threadpool_itpc *);
 extern void uthreadpool_itc_receive(struct uthreadpool *, struct threadpool_itpc *);

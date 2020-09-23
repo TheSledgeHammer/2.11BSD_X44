@@ -28,12 +28,7 @@
 
 #ifndef SYS_WORKQUEUE_H_
 #define SYS_WORKQUEUE_H_
-/* job_head:
- * - kthreadpool
- *
- * threadpool_job:
- * - kthreadpool_thread
- */
+
 #include <sys/queue.h>
 
 #define	POISON					0xaabbccdd

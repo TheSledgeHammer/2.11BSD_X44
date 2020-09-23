@@ -77,7 +77,7 @@ startkthread(kt)
     curkthread = kt;
 
     /* Set kthread to idle & waiting */
-    kt->kt_stat |= KTSIDL | KTSWAIT | KTSREADY;
+    kt->kt_stat |= KT_SIDL | KT_SWAIT | KT_SREADY;
 
     /* init threads */
     threadinit();
