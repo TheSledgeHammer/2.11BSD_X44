@@ -51,18 +51,18 @@
 enum lock_class_index {
 	LO_CLASS_KERNEL_LOCK,
 	LO_CLASS_SCHED_LOCK,
-	LO_CLASS_MUTEX,
+	//LO_CLASS_MUTEX,
 	LO_CLASS_RWLOCK,
 	LO_CLASS_LOCK
 };
 
 /* Should replace simplelock */
 struct lock_object {
-	const struct lock_type	*lock_type;
-	const char 				*lock_name;		/* Individual lock name. */
-	u_int					lock_flags;
-	u_int					lock_data;		/* General class specific data. */
-	struct witness 			*lock_witness;	/* Data for witness. */
+	const struct lock_type	*lo_type;
+	const char 				*lo_name;		/* Individual lock name. */
+	u_int					lo_flags;
+	u_int					lo_data;		/* General class specific data. */
+	struct witness 			*lo_witness;	/* Data for witness. */
 };
 
 struct lock_type {
@@ -77,9 +77,35 @@ void lockwitness(struct lock *lkp, const struct lock_type *);
 	__lockwitness((lkp), &__lock_type);								\
 } while (0)
 #else /* WITNESS */
-#define __lockwitness(lkp)		lockwitness((lkp), NULL)
+#define __lockwitness(lkp)	lockwitness((lkp), NULL)
 #endif /* WITNESS */
 
-extern struct lock kernel_lock;
+static int					_isitmyx(struct witness *w1, struct witness *w2, int rmask, const char *fname);
+static void					adopt(struct witness *parent, struct witness *child);
+static struct witness		*enroll(const struct lock_type *, const char *, struct lock_class *);
+static struct lock_instance	*find_instance(struct lock_list_entry *list, const struct lock_object *lock);
+static int					isitmychild(struct witness *parent, struct witness *child);
+static int					isitmydescendant(struct witness *parent, struct witness *child);
+static void					itismychild(struct witness *parent, struct witness *child);
+
+static int					witness_alloc_stacks(void);
+static void					witness_debugger(int dump);
+static void					witness_free(struct witness *m);
+static struct witness		*witness_get(void);
+static uint32_t				witness_hash_djb2(const uint8_t *key, uint32_t size);
+static struct witness		*witness_hash_get(const struct lock_type *, const char *);
+static void					witness_hash_put(struct witness *w);
+static void					witness_init_hash_tables(void);
+static void					witness_increment_graph_generation(void);
+static int					witness_list_locks(struct lock_list_entry **, int (*)(const char *, ...));
+static void					witness_lock_list_free(struct lock_list_entry *lle);
+static struct lock_list_entry	*witness_lock_list_get(void);
+static void					witness_lock_stack_free(union lock_stack *stack);
+static union lock_stack		*witness_lock_stack_get(void);
+static int					witness_lock_order_add(struct witness *parent, struct witness *child);
+static int					witness_lock_order_check(struct witness *parent, struct witness *child);
+static struct witness_lock_order_data	*witness_lock_order_get(struct witness *parent, struct witness *child);
+static void					witness_list_lock(struct lock_instance *instance, int (*prnt)(const char *fmt, ...));
+static void					witness_setflag(struct lock_object *lock, int flag, int set);
 
 #endif /* SYS_LOCKOBJ_H_ */
