@@ -192,13 +192,14 @@ _vm_object_allocate(size, object)
 /*
  *	vm_object_hash hashes the pager/id pair.
  */
-u_long
+
+unsigned long
 vm_object_hash(pager)
 	vm_pager_t pager;
 {
     Fnv32_t hash1 = fnv_32_buf(&pager, sizeof(&pager), FNV1_32_INIT) % VM_OBJECT_HASH_COUNT;
-    //Fnv32_t hash2 = fnv_32_buf(&pager, sizeof(&pager), FNV1_32_INIT) % OVL_OBJECT_HASH_COUNT;
-    return (hash1);
+    Fnv32_t hash2 = (((unsigned long)pager)%VM_OBJECT_HASH_COUNT);
+    return (hash1^hash2);
 }
 
 /*

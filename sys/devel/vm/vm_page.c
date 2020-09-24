@@ -68,6 +68,7 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/fnv_hash.h>
 
 #include <devel/vm/include/vm_page.h>
 #include <devel/vm/include/vm_map.h>
@@ -78,12 +79,14 @@
  *	Associated with page of user-allocatable memory is a
  *	page structure.
  */
+struct pgtree		*vm_page_hashtree;
 struct pglist		*vm_page_buckets;			/* Array of buckets */
 int					vm_page_bucket_count = 0;	/* How big is array? */
 int					vm_page_hash_mask;			/* Mask for hash function */
 simple_lock_data_t	bucket_lock;				/* lock for all buckets XXX */
 
-struct pgtree		vm_page_hash_tree;
+
+
 struct pglist		vm_page_queue_free;
 struct pglist		vm_page_queue_active;
 struct pglist		vm_page_queue_inactive;
@@ -141,6 +144,7 @@ vm_page_startup(start, end)
 {
 	register vm_page_t		m;
 	register struct pglist	*bucket;
+	register struct pgtree	*root;
 	vm_size_t				npages;
 	int						i;
 	vm_offset_t				pa;
@@ -164,9 +168,6 @@ vm_page_startup(start, end)
 	TAILQ_INIT(&vm_page_queue_active);
 	TAILQ_INIT(&vm_page_queue_inactive);
 
-	/* Initialize rb_tree */
-	//RB_INIT(&vm_page_hash_tree);
-
 	/*
 	 *	Calculate the number of hash table buckets.
 	 *
@@ -189,13 +190,16 @@ vm_page_startup(start, end)
 	/*
 	 *	Allocate (and initialize) the hash table buckets.
 	 */
-	vm_page_buckets = (struct pglist *)
-	    pmap_bootstrap_alloc(vm_page_bucket_count * sizeof(struct pglist));
+	vm_page_buckets = (struct pglist *)pmap_bootstrap_alloc(vm_page_bucket_count * sizeof(struct pglist));
 	bucket = vm_page_buckets;
+	vm_page_hashtree= (struct pgtree *)pmap_bootstrap_alloc(vm_page_bucket_count * sizeof(struct pgtree));
+	root = vm_page_hashtree;
 
 	for (i = vm_page_bucket_count; i--;) {
 		TAILQ_INIT(bucket);
+		RB_INIT(root);
 		bucket++;
+		root++;
 	}
 
 	simple_lock_init(&bucket_lock);
@@ -292,8 +296,15 @@ vm_page_startup(start, end)
  *
  *	NOTE:  This macro depends on vm_page_bucket_count being a power of 2.
  */
-#define vm_page_hash(object, offset) \
-	(((unsigned long)object+(unsigned long)atop(offset))&vm_page_hash_mask)
+unsigned long
+vm_page_hash(object, offset)
+	vm_object_t	object;
+	vm_offset_t offset;
+{
+	Fnv32_t hash1 = fnv_32_buf(&object, (sizeof(&object) + atop(offset))&vm_page_hash_mask, FNV1_32_INIT)%vm_page_hash_mask;
+	Fnv32_t hash2 = (((unsigned long)object+(unsigned long)atop(offset))&vm_page_hash_mask);
+    return (hash1^hash2);
+}
 
 /*
  *	vm_page_insert:		[ internal use only ]
@@ -310,9 +321,6 @@ vm_page_insert(mem, object, offset)
 	register vm_object_t	object;
 	register vm_offset_t	offset;
 {
-	register struct pglist	*bucket;
-	int						spl;
-
 	VM_PAGE_CHECK(mem);
 
 	if (mem->flags & PG_TABLED)
@@ -330,6 +338,7 @@ vm_page_insert(mem, object, offset)
 	 */
 
 	vm_page_htable_insert(mem, object, offset);
+	vm_page_hrbtree_insert(mem, object, offset);
 
 	mem->flags |= PG_TABLED;
 
@@ -356,9 +365,6 @@ void
 vm_page_remove(mem)
 	register vm_page_t	mem;
 {
-	register struct pglist	*bucket;
-	int			spl;
-
 	VM_PAGE_CHECK(mem);
 
 	if (!(mem->flags & PG_TABLED))
@@ -369,6 +375,7 @@ vm_page_remove(mem)
 	 */
 
 	vm_page_htable_remove(mem);
+	vm_page_hrbtree_remove(mem);
 
 	/*
 	 *	And show that the object has one fewer resident
@@ -395,32 +402,20 @@ vm_page_lookup(object, offset)
 	register vm_offset_t	offset;
 {
 	register vm_page_t		mem;
-	//register struct pglist	*bucket;
-	//int						spl;
 
 	/*
 	 *	Search the hash table for this object/offset pair
 	 */
-/*
-	bucket = &vm_page_buckets[vm_page_hash(object, offset)];
-
-	spl = splimp();
-	simple_lock(&bucket_lock);
-	for (mem = bucket->tqh_first; mem != NULL; mem = mem->hashq.tqe_next) {
-		VM_PAGE_CHECK(mem);
-		if ((mem->object == object) && (mem->offset == offset)) {
-			simple_unlock(&bucket_lock);
-			splx(spl);
-			return(mem);
-		}
+	if(vm_page_htable_lookup(object, offset)) {
+		mem = vm_page_htable_lookup(object, offset);
+		return (mem);
+	}
+	if(vm_page_hrbtree_lookup(object, offset)) {
+		mem = vm_page_hrbtree_lookup(object, offset);
+		return (mem);
 	}
 
-	simple_unlock(&bucket_lock);
-	splx(spl);
-	*/
-	mem = vm_page_htable_lookup(object, offset);
-
-	return (mem);
+	return (NULL);
 }
 
 /*
@@ -692,20 +687,7 @@ vm_page_copy(src_m, dest_m)
 	pmap_copy_page(VM_PAGE_TO_PHYS(src_m), VM_PAGE_TO_PHYS(dest_m));
 }
 
-
-/* vm_page: hash table prototypes */
-struct pglist *
-vm_page_htable_create(object, offset)
-	register vm_object_t	object;
-	register vm_offset_t	offset;
-{
-	register struct pglist *bucket = &vm_page_buckets[vm_page_hash(object, offset)];
-	if(bucket != NULL) {
-		return (bucket);
-	}
-	return (NULL);
-}
-
+/* vm_page: hashtable prototypes */
 void
 vm_page_htable_insert(mem, object, offset)
 	register vm_page_t		mem;
@@ -718,7 +700,7 @@ vm_page_htable_insert(mem, object, offset)
 	/*
 	 *	Insert it into the object_object/offset hash table
 	 */
-	bucket = vm_page_htable_create(object, offset);
+	bucket = &vm_page_buckets[vm_page_hash(object, offset)];
 	spl = splimp();
 	simple_lock(&bucket_lock);
 	TAILQ_INSERT_TAIL(bucket, mem, hashq);
@@ -742,7 +724,7 @@ vm_page_htable_remove(mem)
 	/*
 	 *	Remove from the object_object/offset hash table
 	 */
-	bucket = vm_page_htable_create(mem->object, mem->offset);
+	bucket = &vm_page_buckets[vm_page_hash(mem->object, mem->offset)];
 	spl = splimp();
 	simple_lock(&bucket_lock);
 	TAILQ_REMOVE(bucket, mem, hashq);
@@ -769,7 +751,7 @@ vm_page_htable_lookup(object, offset)
 	 *	Search the hash table for this object/offset pair
 	 */
 
-	bucket = vm_page_htable_create(object, offset);
+	bucket = &vm_page_buckets[vm_page_hash(object, offset)];
 
 	spl = splimp();
 	simple_lock(&bucket_lock);
@@ -792,50 +774,64 @@ int
 vm_page_rb_compare(pg1, pg2)
 	vm_page_t pg1, pg2;
 {
-	if(pg1->offset < pg2->offset) {
+	if(pg1->hindex < pg2->hindex) {
 		return(-1);
-	} else if(pg1->offset > pg2->offset) {
+	} else if(pg1->hindex > pg2->hindex) {
 		return(1);
 	}
 	return (0);
 }
 
-RB_PROTOTYPE(pgtree, vm_page, objt, vm_page_rb_compare);
-RB_GENERATE(pgtree, vm_page, objt, vm_page_rb_compare);
+RB_PROTOTYPE(pgtree, vm_page, hasht, vm_page_rb_compare);
+RB_GENERATE(pgtree, vm_page, hasht, vm_page_rb_compare);
 
 void
-vm_page_rb_insert(mem, object, offset)
+vm_page_hrbtree_insert(mem, object, offset)
 	register vm_page_t		mem;
 	register vm_object_t	object;
 	register vm_offset_t	offset;
 {
-	register struct pglist *bucket = vm_page_htable_create(object, offset);
-	if(bucket != NULL) {
-		RB_INSERT(pgtree, mem, bucket);
-	}
+	simple_lock(&bucket_lock);
+	register struct pgtree *root = &vm_page_hashtree[vm_page_hash(object, offset)];
+	simple_unlock(&bucket_lock);
+
+	RB_INSERT(pgtree, root, mem);
 }
 
 void
-vm_page_rb_remove(mem)
+vm_page_hrbtree_remove(mem)
 	register vm_page_t		mem;
 {
-	register struct pglist *bucket = vm_page_htable_create(mem->object, mem->offset);
-	if(bucket) {
-		RB_REMOVE(pgtree, mem, bucket);
+	register struct pgtree *root = &vm_page_hashtree[vm_page_hash(mem->object, mem->offset)];
+	simple_lock(&bucket_lock);
+	if(root) {
+		RB_REMOVE(pgtree, root, mem);
 	}
+	simple_unlock(&bucket_lock);
 }
 
-struct pglist *
-vm_page_rb_lookup(mem, object, offset)
-	register vm_page_t		mem;
+vm_page_t
+vm_page_hrbtree_lookup(object, offset)
 	register vm_object_t	object;
 	register vm_offset_t	offset;
 {
-	struct pglist *result;
-	if(&vm_page_buckets[vm_page_hash(object, offset)] != NULL) {
-		result = &vm_page_buckets[vm_page_hash(object, offset)];
-		 return (RB_FIND(pgtree, mem, result));
-	} else {
-		return (NULL);
+	register vm_page_t		mem;
+	register struct pgtree	*root;
+
+	/*
+	 *	Search the hash red-black tree for this object/offset pair
+	 */
+
+	simple_lock(&bucket_lock);
+	root = &vm_page_hashtree[vm_page_hash(object, offset)];
+	for(mem = RB_FIRST(pgtree, root); mem != NULL; mem = RB_NEXT(pgtree, root, mem)) {
+		if(RB_FIND(pgtree, root, mem)->hindex == vm_page_hash(object, offset)) {
+			if(RB_FIND(pgtree, root, mem)->object == object && RB_FIND(pgtree, root, mem)->offset == offset) {
+				return (mem);
+			}
+		}
 	}
+	simple_unlock(&bucket_lock);
+
+	return (NULL);
 }

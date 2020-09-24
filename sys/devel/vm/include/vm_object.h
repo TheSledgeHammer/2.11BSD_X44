@@ -79,7 +79,9 @@
  */
 
 struct vm_object {
-	struct pglist			memq;				/* Resident memory */
+	struct pgtree			memt;				/* Resident memory (red-black tree) */
+	struct pglist			memq;				/* Resident memory (hashtable) */
+
 	TAILQ_ENTRY(vm_object)	object_list;		/* list of all objects */
 	u_short					flags;				/* see below */
 	u_short					paging_in_progress; /* Paging (in or out) so don't collapse or destroy */
@@ -109,7 +111,6 @@ struct vm_object {
 #define OBJ_ACTIVE		0x0004	/* used to mark active objects */
 
 TAILQ_HEAD(vm_object_hash_head, vm_object_hash_entry);
-
 struct vm_object_hash_entry {
 	TAILQ_ENTRY(vm_object_hash_entry)  hash_links;	/* hash chain links */
 	vm_object_t			   			   object;		/* object represented */

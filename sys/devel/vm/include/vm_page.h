@@ -70,6 +70,7 @@
 #define	_VM_PAGE_
 
 #include <devel/vm/include/vm.h>
+#include <sys/tree.h>
 /*
  *	Management of resident (logical) pages.
  *
@@ -98,12 +99,10 @@
 RB_HEAD(pgtree, vm_page);
 TAILQ_HEAD(pglist, vm_page);
 struct vm_page {
-	TAILQ_ENTRY(vm_page)	pageq;		/* queue info for FIFO
-						 	 	 	 	 * queue or free list (P) */
+	TAILQ_ENTRY(vm_page)	pageq;		/* queue info for FIFO queue or free list (P) */
 	TAILQ_ENTRY(vm_page)	hashq;		/* hash table links (O)*/
 	TAILQ_ENTRY(vm_page)	listq;		/* pages in same object (O)*/
-
-	RB_ENTRY(vm_page)       objt;       /* tree of hashed objects */
+	RB_ENTRY(vm_page)       hasht;       /* hash rbtree */
 
 	vm_object_t				object;		/* which object am I in (O,P)*/
 	vm_offset_t				offset;		/* offset into object (O,P) */
@@ -116,6 +115,7 @@ struct vm_page {
 	u_short					flags;		/* see below */
 
 	vm_offset_t				phys_addr;	/* physical address of page */
+	unsigned long           hindex;		/* hash index */
 };
 
 /*
@@ -168,8 +168,6 @@ struct vm_page {
  *		ordered, in LRU-like fashion.
  */
 
-extern
-struct pgtree	vm_page_hash_tree;		/* hashed object tree */
 extern
 struct pglist	vm_page_queue_free;		/* memory free queue */
 extern

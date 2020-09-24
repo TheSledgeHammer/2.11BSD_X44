@@ -686,16 +686,77 @@ name##_RB_MINMAX(struct name *head, int val)							\
 	return (parent);													\
 }
 
+/*
+ * This extended version implements a fast LOOKUP function given
+ * a numeric data type.
+ *
+ * The element whos index/offset field is exactly the specified value
+ * will be returned, or NULL.
+ */
+#define RB_GENERATE2(name, type, field, cmp, datatype, indexfield)		\
+	RB_GENERATE(name, type, field, cmp);                                \
+																		\
+struct type *								        					\
+name##_RB_LOOKUP(struct name *head, datatype value)						\
+{									                					\
+	struct type *tmp;						        					\
+									                					\
+	tmp = RB_ROOT(head);						    					\
+	while (tmp) {							        					\
+		if (value > tmp->indexfield) 									\
+			tmp = RB_RIGHT(tmp, field);			    					\
+		else if (value < tmp->indexfield) 								\
+			tmp = RB_LEFT(tmp, field);			    					\
+		else 							            					\
+			return(tmp);					        					\
+	}								                					\
+	return (NULL);							        					\
+}									                					\
+																		\
+struct type *								        					\
+name##_RB_LOOKUP_REL(struct name *head, datatype value, struct type *rel)\
+{									                					\
+	struct type *tmp;						        					\
+									                					\
+	if (value == rel->indexfield - 1) {									\
+		tmp = name##_RB_PREV(rel);				    					\
+		if (tmp && value != tmp->indexfield)							\
+			tmp = NULL;					            					\
+		return tmp;						            					\
+	}								                					\
+	if (value == rel->indexfield + 1) {									\
+		tmp = name##_RB_NEXT(rel);				    					\
+		if (tmp && value != tmp->indexfield)							\
+			tmp = NULL;					            					\
+		return tmp;						            					\
+	}								                					\
+									                					\
+	tmp = RB_ROOT(head);						    					\
+	while (tmp) {							        					\
+		if (value > tmp->indexfield) 									\
+			tmp = RB_RIGHT(tmp, field);			    					\
+		else if (value < tmp->indexfield) 								\
+			tmp = RB_LEFT(tmp, field);			    					\
+		else 							            					\
+			return(tmp);					        					\
+	}								                					\
+	return (NULL);							        					\
+}
+
 #define RB_NEGINF	-1
 #define RB_INF		1
 
-#define RB_INSERT(name, x, y)	name##_RB_INSERT(x, y)
-#define RB_REMOVE(name, x, y)	name##_RB_REMOVE(x, y)
-#define RB_FIND(name, x, y)		name##_RB_FIND(x, y)
-#define RB_NEXT(name, x, y)		name##_RB_NEXT(y)
-#define RB_PREV(name, x, y)	    name##_RB_PREV(y)
-#define RB_MIN(name, x)			name##_RB_MINMAX(x, RB_NEGINF)
-#define RB_MAX(name, x)			name##_RB_MINMAX(x, RB_INF)
+#define RB_INSERT(name, x, y)			name##_RB_INSERT(x, y)
+#define RB_REMOVE(name, x, y)			name##_RB_REMOVE(x, y)
+#define RB_FIND(name, x, y)				name##_RB_FIND(x, y)
+#define RB_LOOKUP(name, root, value) 	name##_RB_LOOKUP(root, value)
+#define RB_FIRST(name, root)			name##_RB_MINMAX(root, RB_NEGINF)
+#define RB_LAST(name, root)				name##_RB_MINMAX(root, RB_INF)
+#define RB_NEXT(name, x, y)				name##_RB_NEXT(y)
+#define RB_PREV(name, x, y)	    		name##_RB_PREV(y)
+#define RB_MIN(name, x)					name##_RB_MINMAX(x, RB_NEGINF)
+#define RB_MAX(name, x)					name##_RB_MINMAX(x, RB_INF)
+
 
 #define RB_FOREACH(x, name, head)										\
 	for ((x) = RB_MIN(name, head);										\
