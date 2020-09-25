@@ -39,11 +39,10 @@
 #undef RB_AUGMENT
 #define	RB_AUGMENT(x)	ovl_rb_augment(x)
 
-vm_offset_t			ovl_data;
-ovl_map_entry_t 	ovl_entry_free;
+vm_offset_t			ovle_data;
+vm_size_t			ovle_data_size;
+ovl_map_entry_t 	ovle_free;
 ovl_map_t 			ovl_free;
-
-//vm_map_t			overlay_map;
 
 vm_offset_t			overlay_start;
 vm_offset_t 		overlay_end;
@@ -75,6 +74,22 @@ ovl_map_startup()
     register ovl_map_entry_t mep;
     ovl_map_t mp;
 
+    ovle_free = mp = (ovl_map_t) ovle_data;
+    i = MAX_OMAP;
+
+    while (--i > 0) {
+        CIRCLEQ_NEXT(mep, ovl_cl_entry) = (ovl_map_entry_t) (mp + 1);
+        mp++;
+    }
+    CIRCLEQ_FIRST(&mp->ovl_header)++->ovl_cl_entry.cqe_next = NULL;
+
+    ovle_free = mep = (ovl_map_entry_t) mp;
+    i = (ovle_data_size - MAX_OMAP * sizeof * mp) / sizeof *mep;
+    while (--i > 0) {
+        CIRCLEQ_NEXT(mep, ovl_cl_entry) = mep + 1;
+        mep++;
+    }
+    CIRCLEQ_NEXT(mep, ovl_cl_entry) = NULL;
 }
 
 /* create & allocated ovlspace extent map
@@ -372,7 +387,7 @@ ovl_map_create(pmap, min, max)
 	vm_offset_t	min, max;
 {
 	register ovl_map_t	result;
-	extern ovl_map_t	kmem_ovl;
+	extern ovl_map_t	ovl_map;
 
 	result->ovl_pmap = pmap;
 	return (result);
@@ -388,7 +403,7 @@ ovl_map_init(map, min, max)
 	map->ovl_nentries = 0;
 	map->ovl_size = 0;
 	map->ovl_ref_count = 1;
-	map->ovl_is_vm_map = TRUE;
+	map->ovl_is_main_map = TRUE;
 	map->min_offset = min;
 	map->max_offset = max;
 	map->ovl_hint = &map->ovl_header;
@@ -451,7 +466,6 @@ void
 ovl_map_deallocate(map)
 	register ovl_map_t	map;
 {
-
 	if (map == NULL)
 		return;
 
@@ -470,7 +484,7 @@ ovl_map_deallocate(map)
 
 	(void)ovl_map_delete(map, map->min_offset, map->max_offset);
 
-	pmap_destroy(map->ovl_pmap);
+	//pmap_destroy(map->ovl_pmap);
 
 	ovl_map_unlock(map);
 
@@ -512,34 +526,19 @@ ovl_map_insert(map, object, offset, start, end)
 	 *	See if we can avoid creating a new entry by
 	 *	extending one of our neighbors.
 	 */
-    /* TODO: redo */
 	if (object == NULL) {
-		if ((prev_entry != &map->ovl_header)
-				&& (prev_entry->ovle_end == start)) {
-			/* vm overlay */
-			if ((map->ovl_is_vm_overlay) && (map->ovl_vovl < VOVLE)) {
-				if ((map->ovl_is_vm_map)
-						&& (prev_entry->ovle_inheritance == VM_INHERIT_DEFAULT)
-						&& (prev_entry->ovle_protection == VM_PROT_DEFAULT)
-						&& (prev_entry->ovle_max_protection == VM_PROT_DEFAULT)) {
+		if ((prev_entry != &map->ovl_header) &&
+				(prev_entry->ovle_end == start) &&
+				(map->ovl_is_main_map) &&
+				(prev_entry->ovle_inheritance == VM_INHERIT_DEFAULT) &&
+				(prev_entry->ovle_protection == VM_PROT_DEFAULT) &&
+				(prev_entry->ovle_max_protection == VM_PROT_DEFAULT)) {
 
-					map->ovl_size += (end - prev_entry->ovle_end);
-					prev_entry->ovle_end = end;
-					return (KERN_SUCCESS);
-				}
-			}
-			/* kernel overlay */
-			if ((map->ovl_is_kern_overlay) && (map->ovl_novl < NOVLE)) {
-				/*
-				 * Add kernel overlay
-				 */
-				map->ovl_size += (end - prev_entry->ovle_end);
-				prev_entry->ovle_end = end;
-				return (KERN_SUCCESS);
-			}
+			map->ovl_size += (end - prev_entry->ovle_end);
+			prev_entry->ovle_end = end;
+			return (KERN_SUCCESS);
 		}
 	}
-
 
 	/*
 	 *	Create a new entry
@@ -551,7 +550,7 @@ ovl_map_insert(map, object, offset, start, end)
 	new_entry->ovle_object.ovl_object = object;
 	new_entry->ovle_offset = offset;
 
-	if (map->ovl_is_vm_map) {
+	if (map->ovl_is_main_map) {
 		new_entry->ovle_inheritance = VM_INHERIT_DEFAULT;
 		new_entry->ovle_protection = VM_PROT_DEFAULT;
 		new_entry->ovle_max_protection = VM_PROT_DEFAULT;
@@ -788,12 +787,10 @@ ovl_map_entry_delete(map, entry)
 	ovl_map_entry_unlink(map, entry);
 	map->ovl_size -= entry->ovle_end - entry->ovle_start;
 
-	if (entry->ovle_is_vm_map)
-		ovl_map_deallocate(entry->ovle_object.ovl_vm_object);
-	else if(entry->ovle_is_vm_amap)
-		ovl_map_deallocate(entry->ovle_object.ovl_vm_aobject);
+	if (entry->ovle_is_a_map || entry->ovle_is_sub_map)
+		ovl_map_deallocate(entry->ovle_object.ovl_sub_map);
 	else
-	 	vm_object_deallocate(entry->ovle_object.ovl_object);
+		ovl_map_deallocate(entry->ovle_object.ovl_object);
 
 	ovl_map_entry_dispose(map, entry);
 }
@@ -899,6 +896,7 @@ ovl_map_set_active(map)
 	ovl_map_t map;
 {
 	map->ovl_is_active = TRUE;
+
 }
 
 void

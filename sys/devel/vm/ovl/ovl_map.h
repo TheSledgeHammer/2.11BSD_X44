@@ -37,14 +37,7 @@ RB_PROTOTYPE(ovl_map_rb_tree, ovl_map_entry, ovl_rb_entry, ovl_rb_compare);
 
 union ovl_map_object {
 	struct ovl_object					*ovl_object;		/* overlay_object object */
-
-	/* vm_map.h & vm_object.h */
-	struct vm_object					*ovl_vm_object;		/* vm_object object */
-	struct vm_map						*ovl_vm_map;		/* belongs to vm_map */
-
-	/* avm_map.h & avm_object.h */
-	struct avm_object					*ovl_avm_object;	/* vm_aobject object */
-	struct avm_map						*ovl_avm_map;		/* belongs to vm_amap */
+	struct ovl_map						*ovl_sub_map;
 };
 
 struct ovl_map_entry {
@@ -57,11 +50,8 @@ struct ovl_map_entry {
   union ovl_map_object			   		ovle_object;		/* object I point to */
   vm_offset_t				          	ovle_offset;		/* offset into object */
 
-  boolean_t 							ovle_is_kern_overlay;	/* Am I a kernel overlay? */
-  boolean_t								ovle_is_vm_overlay;		/* Am I a vm overlay? */
-
-  boolean_t								ovle_is_vm_map;		/* Is "object" a vm map? */
-  boolean_t								ovle_is_vm_amap;	/* Is "object" a vm anon map? */
+  boolean_t								ovle_is_a_map;		/* Is "object" a map? */
+  boolean_t								ovle_is_sub_map;	/* Is "object" a submap? */
 
   vm_prot_t								ovle_protection;	/* protection code */
   vm_prot_t								ovle_max_protection;/* maximum protection */
@@ -78,8 +68,7 @@ struct ovl_map {
     int			                        ovl_nentries;	    /* Number of entries */
     vm_size_t		                    ovl_size;		    /* virtual size */
 
-    boolean_t							ovl_is_vm_map;		/* Am I a vm map? */
-    boolean_t							ovl_is_avm_map;		/* Am I a vm anon map? */
+    boolean_t							ovl_is_main_map;	/* Am I a main map? */
 
     int			                        ovl_ref_count;	    /* Reference count */
 	simple_lock_data_t	                ovl_ref_lock;	    /* Lock for ref_count field */

@@ -115,7 +115,7 @@ struct vm_page {
 	u_short					flags;		/* see below */
 
 	vm_offset_t				phys_addr;	/* physical address of page */
-	unsigned long           hindex;		/* hash index */
+	u_long           		hindex;		/* hash index */
 };
 
 /*

@@ -166,7 +166,7 @@ ovl_object_reference(object)
 
 void
 ovl_object_deallocate(object)
-	register ovl_object_t	object;
+	register ovl_object_t object;
 {
 	ovl_object_t	temp;
 
@@ -256,9 +256,8 @@ ovl_object_hash(object)
 	ovl_object_t object;
 {
     Fnv32_t hash1 = fnv_32_buf(&object, sizeof(&object), FNV1_32_INIT) % OVL_OBJECT_HASH_COUNT;
-    //Fnv32_t hash2 = fnv_32_buf(&val, sizeof(val), FNV1_32_INIT) % OVL_OBJECT_HASH_COUNT;
-    //Fnv32_t h3 = (h1^h2);
-    return (hash1);
+    Fnv32_t hash2 = (((unsigned long)object)%OVL_OBJECT_HASH_COUNT);
+    return (hash1^hash2);
 }
 
 /*

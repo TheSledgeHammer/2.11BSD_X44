@@ -237,8 +237,7 @@ kmem_suballoc(parent, min, max, size, pageable)
 	size = round_page(size);
 
 	*min = (vm_offset_t) vm_map_min(parent);
-	ret = vm_map_find(parent, NULL, (vm_offset_t) 0,
-				min, size, TRUE);
+	ret = vm_map_find(parent, NULL, (vm_offset_t) 0, min, size, TRUE);
 	if (ret != KERN_SUCCESS) {
 		printf("kmem_suballoc: bad status return of %d.\n", ret);
 		panic("kmem_suballoc");
@@ -273,13 +272,13 @@ vm_offset_t
 kmem_malloc(map, size, canwait)
 	register vm_map_t	map;
 	register vm_size_t	size;
-	boolean_t		canwait;
+	boolean_t			canwait;
 {
 	register vm_offset_t	offset, i;
-	vm_map_entry_t		entry;
-	vm_offset_t		addr;
-	vm_page_t		m;
-	extern vm_object_t	kmem_object;
+	vm_map_entry_t			entry;
+	vm_offset_t				addr;
+	vm_page_t				m;
+	extern vm_object_t		kmem_object;
 
 	if (map != kmem_map && map != mb_map)
 		panic("kern_malloc_alloc: map != {kmem,mb}_map");
@@ -296,8 +295,7 @@ kmem_malloc(map, size, canwait)
 	if (vm_map_findspace(map, 0, size, &addr)) {
 		vm_map_unlock(map);
 		if (canwait)		/* XXX  should wait */
-			panic("kmem_malloc: %s too small",
-			    map == kmem_map ? "kmem_map" : "mb_map");
+			panic("kmem_malloc: %s too small", map == kmem_map ? "kmem_map" : "mb_map");
 		return (0);
 	}
 	offset = addr - vm_map_min(kmem_map);

@@ -6,44 +6,53 @@
  */
 
 #include <sys/fnv_hash.h>
+
 #include <ovl.h>
-
-struct ovl_segment;
-typedef struct ovl_segment 	*ovl_segment_t;
-
-RB_HEAD(ovltree, ovl_segment);
-struct ovl_segment {
-	RB_ENTRY(ovl_segment)		os_entry;
-	unsigned long           	os_hindex;		/* hash index */
-
-	ovl_object_t				os_object;		/* which object am I in (O,P)*/
-	vm_offset_t					os_offset;		/* offset into object (O,P) */
-};
-
-struct kern_overlay {
-	ovl_map_t 		ovl_map;
-	ovl_map_entry_t ovl_entry;
-	ovl_object_t 	ovl_object;
-
-	vm_offset_t		phys_addr;
-};
-
-struct vm_overlay {
-	ovl_map_t 		ovl_map;
-	ovl_map_entry_t ovl_entry;
-	ovl_object_t 	ovl_object;
-
-	vm_offset_t		phys_addr;
-};
+#include <ovl_segment.h>
 
 struct ovltree 		*ovl_segment_hashtree;
 int					ovl_segment_bucket_count = 0;	/* How big is array? */
 int					ovl_segment_hash_mask;			/* Mask for hash function */
 
 void
-ovl_segment_startup()
+ovl_segment_startup(start, end)
+	vm_offset_t	*start;
+	vm_offset_t	*end;
 {
+	register ovl_segment_t	seg;
+	register struct ovltree	*bucket;
+	vm_size_t				nsegments;
+	int						i;
+	extern	vm_offset_t		ovle_data;
+	extern	vm_size_t		ovle_data_size;
 
+	simple_lock_init(&ovl_segment_list_free_lock);
+	//simple_lock_init(&ovl_segment_list_lock);
+
+	TAILQ_INIT(&ovl_segment_list_free);
+	TAILQ_INIT(&ovl_segment_list_active);
+	TAILQ_INIT(&ovl_segment_list_inactive);
+
+	if (ovl_segment_bucket_count == 0) {
+		ovl_segment_bucket_count = 1;
+		while (ovl_segment_bucket_count < (*end - *start))
+			ovl_segment_bucket_count <<= 1;
+	}
+
+	ovl_segment_hash_mask = ovl_segment_bucket_count - 1;
+
+	ovl_segment_hashtree = (struct ovltree *)(ovl_segment_bucket_count * sizeof(struct ovltree));
+	bucket = ovl_segment_hashtree;
+
+	for (i = ovl_segment_bucket_count; i--;) {
+		RB_INIT(bucket);
+		bucket++;
+	}
+
+	while (nsegments--) {
+		TAILQ_INSERT_TAIL(&ovl_segment_list_free, seg, os_segq);
+		seg++;
+	}
 }
 
 unsigned long
@@ -51,8 +60,8 @@ ovl_segment_hash(object, offset)
 	ovl_object_t	object;
 	vm_offset_t 	offset;
 {
-	Fnv32_t hash1 = fnv_32_buf(&object, (sizeof(&object) + atop(offset))&ovl_segment_hash_mask, FNV1_32_INIT)%ovl_segment_hash_mask;
-	Fnv32_t hash2 = (((unsigned long)object+(unsigned long)atop(offset))&ovl_segment_hash_mask);
+	Fnv32_t hash1 = fnv_32_buf(&object, (sizeof(&object) + offset)&ovl_segment_hash_mask, FNV1_32_INIT)%ovl_segment_hash_mask;
+	Fnv32_t hash2 = (((unsigned long)object+(unsigned long)offset)&ovl_segment_hash_mask);
     return (hash1^hash2);
 }
 
@@ -77,6 +86,9 @@ ovl_segment_insert(seg, object, offset)
 	register ovl_object_t	object;
 	register vm_offset_t	offset;
 {
+	if (seg->os_flags & SEG_TABLED)
+		panic("ovl_segment_insert: already inserted");
+
 	seg->os_object = object;
 	seg->os_offset = offset;
 
@@ -84,7 +96,7 @@ ovl_segment_insert(seg, object, offset)
 
 	RB_INSERT(ovltree, bucket, seg);
 
-	//seg->flags |= PG_TABLED;
+	seg->os_flags |= SEG_TABLED;
 }
 
 void
@@ -117,3 +129,44 @@ ovl_segment_lookup(object, offset)
 
 	return (NULL);
 }
+
+ovl_segment_t
+ovl_segment_alloc(object, offset)
+	ovl_object_t	object;
+	vm_offset_t		offset;
+{
+	register ovl_segment_t	seg;
+	int		spl;
+
+	spl = splimp();				/* XXX */
+	simple_lock(&ovl_segment_list_free_lock);
+	if(TAILQ_FIRST(ovl_segment_list_free) == NULL) {
+		simple_unlock(&ovl_segment_list_free_lock);
+		return (NULL);
+	}
+	seg = TAILQ_FIRST(ovl_segment_list_free);
+	TAILQ_REMOVE(&ovl_segment_list_free, seg, os_segq);
+
+	simple_unlock(&ovl_segment_list_free_lock);
+	splx(spl);
+
+	OVL_SEGMENT_INIT(seg, object, offset);
+
+	return (seg);
+}
+
+void
+ovl_segment_free(seg)
+	register ovl_segment_t seg;
+{
+	if (seg->os_flags & SEG_ACTIVE) {
+		TAILQ_REMOVE(&ovl_segment_list_active, seg, os_segq);
+		seg->os_flags = SEG_ACTIVE;
+	}
+
+	if (seg->os_flags & SEG_INACTIVE) {
+		TAILQ_REMOVE(&ovl_segment_list_inactive, seg, os_segq);
+		seg->os_flags = SEG_INACTIVE;
+	}
+}
+
