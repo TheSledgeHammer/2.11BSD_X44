@@ -69,10 +69,10 @@
 
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
+#include <vm/include/vm.h>
 
 #include <machine/cpu.h>
 #include <machine/stdarg.h>
-#include <vm/include/vm.h>
 
 int	avefree = 0;			/* XXX */
 unsigned maxdmap = MAXDSIZ;	/* XXX */

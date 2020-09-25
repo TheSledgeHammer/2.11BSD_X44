@@ -380,7 +380,7 @@ static struct lock_class lock_class_rwlock = {
 };
 
 static struct lock_class lock_class_lock = {
-		.lc_name = "simple_lock",
+		.lc_name = "lock",
 		.lc_flags = LC_SLEEPLOCK | LC_SLEEPABLE | LC_UPGRADABLE
 };
 
@@ -410,13 +410,13 @@ witness_initialize(void)
 	struct witness *w;
 	int i, s;
 
-	//w_data = (void *)vm_pageboot_alloc(sizeof(struct witness) * witness_count);
+	w_data = (void *)malloc(w_data, sizeof(struct witness) * witness_count, M_WITNESS);
 	memset(w_data, 0, sizeof(struct witness) * witness_count);
 
-	w_rmatrix = (void *)uvm_pageboot_alloc(sizeof(*w_rmatrix) * (witness_count + 1));
+	w_rmatrix = (void *)malloc(w_rmatrix, sizeof(*w_rmatrix) * (witness_count + 1), M_WITNESS);
 
 	for (i = 0; i < witness_count + 1; i++) {
-		w_rmatrix[i] = (void *)uvm_pageboot_alloc(sizeof(*w_rmatrix[i]) * (witness_count + 1));
+		w_rmatrix[i] = (void *)malloc(w_rmatrix, sizeof(*w_rmatrix) * (witness_count + 1), M_WITNESS);
 		memset(w_rmatrix[i], 0, sizeof(*w_rmatrix[i]) * (witness_count + 1));
 	}
 
@@ -873,7 +873,7 @@ witness_checkorder(struct lock_object *lock, int flags,
 	 * wrong direction.  The correct lock order is that sleepable locks
 	 * always come before Giant.
 	 */
-	if (flags & LOP_NEWORDER
+	if ((flags & LOP_NEWORDER)
 			&& !(is_kernel_lock(plock->li_lock)
 					&& (lock->lo_flags & LO_SLEEPABLE) != 0))
 		itismychild(plock->li_lock->lo_witness, w);
@@ -1179,9 +1179,9 @@ witness_warn(int flags, struct lock_object *lock, const char *fmt, ...)
 			lock1 = &lle->ll_children[i];
 			if (lock1->li_lock == lock)
 				continue;
-			if (flags & WARN_KERNELOK && is_kernel_lock(lock1->li_lock))
+			if ((flags & WARN_KERNELOK) && is_kernel_lock(lock1->li_lock))
 				continue;
-			if (flags & WARN_SLEEPOK
+			if ((flags & WARN_SLEEPOK)
 					&& (lock1->li_lock->lo_flags & LO_SLEEPABLE) != 0)
 				continue;
 			if (n == 0) {
@@ -1920,7 +1920,7 @@ witness_alloc_stacks(void)
 		return (0);
 
 	nstacks -= w_lock_stack_num;
-	stacks = mallocarray(nstacks, sizeof(*stacks), M_WITNESS, M_WAITOK | M_CANFAIL | M_ZERO);
+	stacks = malloc(nstacks, sizeof(*stacks), M_WITNESS, M_WAITOK | M_ZERO);
 	if (stacks == NULL)
 		return (ENOMEM);
 

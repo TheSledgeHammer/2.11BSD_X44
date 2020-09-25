@@ -102,7 +102,7 @@ struct vm_page {
 	TAILQ_ENTRY(vm_page)	pageq;		/* queue info for FIFO queue or free list (P) */
 	TAILQ_ENTRY(vm_page)	hashq;		/* hash table links (O)*/
 	TAILQ_ENTRY(vm_page)	listq;		/* pages in same object (O)*/
-	RB_ENTRY(vm_page)       hasht;       /* hash rbtree */
+	RB_ENTRY(vm_page)       hasht;      /* hash rbtree (O) */
 
 	vm_object_t				object;		/* which object am I in (O,P)*/
 	vm_offset_t				offset;		/* offset into object (O,P) */

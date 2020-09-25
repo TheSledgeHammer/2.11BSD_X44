@@ -721,6 +721,16 @@ extent_alloc_subregion(ex, substart, subend, size, alignment, boundary, flags, r
 }
 
 int
+extent_alloc(ex, size, alignment, boundary, flags, result)
+	struct extent *ex;
+	u_long size, alignment, boundary;
+	int flags;
+	u_long *result;
+{
+	return (extent_alloc_subregion(ex, ex->ex_start, ex->ex_end, size, alignment, boundary, flags, result));
+}
+
+int
 extent_free(ex, start, size, flags)
 	struct extent *ex;
 	u_long start, size;

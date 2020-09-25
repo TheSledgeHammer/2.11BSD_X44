@@ -43,9 +43,6 @@
 #include <sys/user.h>
 
 struct lock kernel_lock;
-struct lock sched_lock;
-struct lock rwlock;
-struct lock simlock;
 
 void
 kernel_lock_init(prio, wmesg, timo, flags)

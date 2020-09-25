@@ -107,8 +107,7 @@ void	extent_print (struct extent *);
 
 /* Simple case of extent_alloc_subregion() */
 #define extent_alloc(_ex, _size, _alignment, _boundary, _flags, _result) 	\
-	extent_alloc_subregion((_ex), (_ex)->ex_start, (_ex)->ex_end,			\
-	(_size), (_alignment), (_boundary), (_flags), (_result))
+	extent_alloc((_ex), (_size), (_alignment), (_boundary), (_flags), (_result));
 #endif /* _KERNEL || _EXTENT_TESTING */
 
 #endif /* ! _SYS_EXTENT_H_ */

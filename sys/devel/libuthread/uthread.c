@@ -267,7 +267,7 @@ leavetgrp(ut)
 	}
 #ifdef DIAGNOSTIC
 	if (utt == NULL)
-		panic("leavetgrp: can't find u in tgrp");
+		panic("leavetgrp: can't find uthread in tgrp");
 #endif
 	if (!ut->ut_pgrp->pg_mem)
 		tgdelete(ut->ut_pgrp);

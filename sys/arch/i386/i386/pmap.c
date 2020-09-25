@@ -1715,7 +1715,7 @@ pmap_bios16_enter(void)
 	 * no page table, so create one and install it.
 	 */
 	h = malloc(sizeof(struct bios16_pmap_handle), M_TEMP, M_WAITOK);
-	h->pte = (pt_entry_t*) malloc(PAGE_SIZE, M_TEMP, M_WAITOK);
+	h->pte = (pt_entry_t *) malloc(PAGE_SIZE, M_TEMP, M_WAITOK);
 	h->ptd = IdlePTD;
 	*h->pte = vm86phystk | PG_RW | PG_V;
 	h->orig_ptd = *h->ptd;

@@ -47,6 +47,9 @@ void			vm_extent_print(struct extent *ex);
 #define VM_EXTENT_ALLOC_SUBREGION(ex, substart, subend, size, alignment, boundary, flags, result) \
 		vm_extent_alloc_subregion(ex, substart, subend, size, alignment, boundary, flags, result);
 
+#define VM_EXTENT_ALLOC(ex, size, alignment, boundary, flags, result) \
+		vm_extent_alloc_subregion(ex, ex->ex_start, ex->ex_end, size, alignment, boundary, flags, result);
+
 #define VM_EXTENT_FREE(ex, start, size, flags) \
 		vm_extent_free(ex, start, size, flags);
 

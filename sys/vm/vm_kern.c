@@ -82,10 +82,10 @@
  */
 vm_offset_t
 kmem_alloc_pageable(map, size)
-	vm_map_t		map;
+	vm_map_t			map;
 	register vm_size_t	size;
 {
-	vm_offset_t		addr;
+	vm_offset_t			addr;
 	register int		result;
 
 #if	0
@@ -204,9 +204,9 @@ kmem_alloc(map, size)
  */
 void
 kmem_free(map, addr, size)
-	vm_map_t		map;
+	vm_map_t				map;
 	register vm_offset_t	addr;
-	vm_size_t		size;
+	vm_size_t				size;
 {
 	(void) vm_map_remove(map, trunc_page(addr), round_page(addr + size));
 }
@@ -227,12 +227,12 @@ kmem_free(map, addr, size)
 vm_map_t
 kmem_suballoc(parent, min, max, size, pageable)
 	register vm_map_t	parent;
-	vm_offset_t		*min, *max;
+	vm_offset_t			*min, *max;
 	register vm_size_t	size;
-	boolean_t		pageable;
+	boolean_t			pageable;
 {
 	register int	ret;
-	vm_map_t	result;
+	vm_map_t		result;
 
 	size = round_page(size);
 

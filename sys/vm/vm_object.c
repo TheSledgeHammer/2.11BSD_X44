@@ -849,8 +849,7 @@ vm_object_shadow(object, offset, length)
  */
 
 void
-vm_object_setpager(object, pager, paging_offset,
-			read_only)
+vm_object_setpager(object, pager, paging_offset, read_only)
 	vm_object_t	object;
 	vm_pager_t	pager;
 	vm_offset_t	paging_offset;
