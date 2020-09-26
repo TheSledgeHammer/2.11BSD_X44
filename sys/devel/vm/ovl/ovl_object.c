@@ -2,6 +2,9 @@
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
+ * Copyright (c) 2020
+ *	Martin Kelly. All rights reserved.
+ *
  * This code is derived from software contributed to Berkeley by
  * The Mach Operating System project at Carnegie-Mellon University.
  *
@@ -220,7 +223,6 @@ ovl_object_deallocate(object)
 		ovl_object_remove(object->index);
 		ovl_object_cache_unlock();
 
-		//temp = object->shadow;
 		ovl_object_terminate(object);
 		/* unlocks and deallocates object */
 		object = temp;
@@ -266,18 +268,17 @@ ovl_object_hash(object)
  */
 
 ovl_object_t
-ovl_object_lookup(object)
-	ovl_object_t object;
+ovl_object_lookup(index, object)
+	u_long 			index;
+	ovl_object_t 	object;
 {
 	register ovl_object_hash_entry_t	entry;
-	//ovl_object_t						object;
-	u_long index = ovl_object_hash(object);
 
 	ovl_object_cache_lock();
 
 	for (entry = TAILQ_FIRST(ovl_object_hashtable[ovl_object_hash(object)]); entry != NULL; entry = TAILQ_NEXT(entry, hash_links)) {
 		object = entry->object;
-		if (ovl_object_hash(entry->object) == index) {
+		if (object->index == index) {
 			ovl_object_lock(object);
 			if (object->ref_count == 0) {
 				TAILQ_REMOVE(&ovl_object_cached_list, object, cached_list);
@@ -311,7 +312,7 @@ ovl_object_htable_enter(object)
 	bucket = &ovl_object_hashtable[ovl_object_hash(object)];
 	entry = (ovl_object_hash_entry_t)malloc((u_long)sizeof *entry, M_OVLOBJHASH, M_WAITOK);
 	entry->object = object;
-	//object->index = ovl_object_hash(object);
+	object->index = ovl_object_hash(object);
 	object->flags |= OVL_OBJ_CANPERSIST;
 
 	ovl_object_cache_lock();

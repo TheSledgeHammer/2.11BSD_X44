@@ -222,8 +222,7 @@ vm_page_startup(start, end)
 	 *	of a page structure per page).
 	 */
 
-	cnt.v_free_count = npages = (*end - *start + sizeof(struct vm_page))
-		/ (PAGE_SIZE + sizeof(struct vm_page));
+	cnt.v_free_count = npages = (*end - *start + sizeof(struct vm_page)) / (PAGE_SIZE + sizeof(struct vm_page));
 
 	/*
 	 *	Record the extent of physical memory that the

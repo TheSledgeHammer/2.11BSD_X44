@@ -757,7 +757,6 @@ name##_RB_LOOKUP_REL(struct name *head, datatype value, struct type *rel)\
 #define RB_MIN(name, x)					name##_RB_MINMAX(x, RB_NEGINF)
 #define RB_MAX(name, x)					name##_RB_MINMAX(x, RB_INF)
 
-
 #define RB_FOREACH(x, name, head)										\
 	for ((x) = RB_MIN(name, head);										\
 	     (x) != NULL;													\

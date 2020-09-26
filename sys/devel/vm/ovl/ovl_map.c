@@ -39,18 +39,10 @@
 #undef RB_AUGMENT
 #define	RB_AUGMENT(x)	ovl_rb_augment(x)
 
-vm_offset_t			ovle_data;
-vm_size_t			ovle_data_size;
-ovl_map_entry_t 	ovle_free;
-ovl_map_t 			ovl_free;
-
-vm_offset_t			overlay_start;
-vm_offset_t 		overlay_end;
-
-//#ifdef OVL
-extern struct pmap	overlay_pmap_store;
-#define overlay_pmap (&overlay_pmap_store)
-//#endif
+vm_offset_t				ovle_data;
+vm_size_t				ovle_data_size;
+ovl_map_entry_t 		ovle_free;
+ovl_map_t 				ovl_free;
 
 vm_offset_t
 pmap_map_overlay(virt, start, end, prot)
@@ -74,7 +66,7 @@ ovl_map_startup()
     register ovl_map_entry_t mep;
     ovl_map_t mp;
 
-    ovle_free = mp = (ovl_map_t) ovle_data;
+    ovl_free = mp = (ovl_map_t) ovle_data;
     i = MAX_OMAP;
 
     while (--i > 0) {
@@ -779,6 +771,69 @@ ovl_map_find(map, object, offset, addr, length, find_space)
 	return (result);
 }
 
+
+#define	OVL_MAP_RANGE_CHECK(map, start, end) {	\
+		if (start < ovl_map_min(map))			\
+			start = ovl_map_min(map);			\
+		if (end > ovl_map_max(map))				\
+			end = ovl_map_max(map);				\
+		if (start > end)						\
+			start = end;						\
+}
+
+/*
+ *	ovl_map_submap:		[ kernel use only ]
+ *
+ *	Mark the given range as handled by a subordinate map.
+ *
+ *	This range must have been created with vm_map_find,
+ *	and no other operations may have been performed on this
+ *	range prior to calling vm_map_submap.
+ *
+ *	Only a limited number of operations can be performed
+ *	within this rage after calling vm_map_submap:
+ *		vm_fault
+ *	[Don't try vm_map_copy!]
+ *
+ *	To remove a submapping, one must first remove the
+ *	range from the superior map, and then destroy the
+ *	submap (if desired).  [Better yet, don't try it.]
+ */
+int
+ovl_map_submap(map, start, end, submap)
+	register ovl_map_t		map;
+	register vm_offset_t	start;
+	register vm_offset_t	end;
+	ovl_map_t				submap;
+{
+	ovl_map_entry_t		entry;
+	register int		result = KERN_INVALID_ARGUMENT;
+
+	ovl_map_lock(map);
+
+	ovl_MAP_RANGE_CHECK(map, start, end);
+
+	if (ovl_map_lookup_entry(map, start, &entry)) {
+		ovl_map_clip_start(map, entry, start);
+	}
+	 else
+		entry = CIRCLEQ_NEXT(entry, ovl_cl_entry);
+
+	ovl_map_clip_end(map, entry, end);
+
+	if ((entry->ovle_start == start) && (entry->ovle_end == end) &&
+	    (!entry->ovle_is_a_map) &&
+	    (entry->ovle_object.ovl_object == NULL)) {
+		entry->ovle_is_a_map = FALSE;
+		entry->ovle_is_sub_map = TRUE;
+		ovl_map_reference(entry->ovle_object.ovl_sub_map = submap);
+		result = KERN_SUCCESS;
+	}
+	ovl_map_unlock(map);
+
+	return(result);
+}
+
 void
 ovl_map_entry_delete(map, entry)
 	register ovl_map_t			map;
@@ -838,7 +893,7 @@ ovl_map_delete(map, start, end)
 		register vm_offset_t	s, e;
 		register ovl_object_t	object;
 
-		//vm_map_clip_end(map, entry, end);
+		//ovl_map_clip_end(map, entry, end);
 
 		next = CIRCLEQ_NEXT(entry, ovl_cl_entry);
 		s = entry->ovle_start;
@@ -866,15 +921,6 @@ ovl_map_delete(map, start, end)
 	return(KERN_SUCCESS);
 }
 
-#define	OVL_MAP_RANGE_CHECK(map, start, end) {	\
-		if (start < ovl_map_min(map))			\
-			start = ovl_map_min(map);			\
-		if (end > ovl_map_max(map))				\
-			end = ovl_map_max(map);				\
-		if (start > end)						\
-			start = end;						\
-}
-
 int
 ovl_map_remove(map, start, end)
 	register ovl_map_t		map;
@@ -896,7 +942,6 @@ ovl_map_set_active(map)
 	ovl_map_t map;
 {
 	map->ovl_is_active = TRUE;
-
 }
 
 void
@@ -926,7 +971,7 @@ ovl_map_swapin(map, address, entry)
 	if (ovl_map_lookup_entry(map, address, entry) && ovl_map_is_inactive(map)) {
 		/*
 		 * - find overlay entry
-		 * - determine the entry type (amap, vm_map, ovl)
+		 * - determine the entry type (avm, vm, kernel)
 		 */
 		object = entry->ovle_object;
 		ovl_map_set_active(map);
@@ -944,7 +989,7 @@ ovl_map_swapout(map, address, entry)
 	if (ovl_map_lookup_entry(map, address, entry) && ovl_map_is_active(map)) {
 		/*
 		 * - find overlay entry
-		 * - determine the entry type (amap, vm_map, ovl)
+		 * - determine the entry type (avm, vm, kernel)
 		 */
 		object = entry->ovle_object;
 		ovl_map_set_inactive(map);

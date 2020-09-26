@@ -22,8 +22,6 @@ NOTE: Don't hesitate to add to this list. :)
 - check: setup is correct
 
 ## kern:
-- gprof.h & gmon.h: (both look to do the same thing)
-	- fix double up
 	
 ## arch:
 - i386/x86: (Merged under i386)
@@ -37,6 +35,7 @@ NOTE: Don't hesitate to add to this list. :)
 
 ## devel: (planned)
 - Code planned for future integration
+- update copyright headers
 - See devel folder: README.md & TODO.md
 - Touch up (job_pool, wqueue & tasks) intergration with threadpools
 

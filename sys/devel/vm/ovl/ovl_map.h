@@ -77,19 +77,10 @@ struct ovl_map {
 	ovl_map_entry_t						ovl_first_free;		/* First free space hint */
     unsigned int		                ovl_timestamp;	    /* Version number */
 
+    boolean_t							ovl_is_active;		/* overlay is active (in use) */
+
 #define	min_offset			    		ovl_header.cqh_first->ovle_start
 #define max_offset			    		ovl_header.cqh_first->ovle_end
-
-    /* extents */
-    boolean_t							ovl_is_subregion;	/* am i in an extent sub-region */
-
-    /* overlay management */
-    boolean_t 							ovl_is_kern_overlay;/* Am I a kernel overlay? */
-    boolean_t							ovl_is_vm_overlay;	/* Am I a vm overlay? */
-    int 								ovl_nkovl;			/* Number of kernel overlays */
-    int 								ovl_nvovl;			/* Number of vm overlays */
-
-    boolean_t							ovl_is_active;		/* overlay is active (in use) */
 };
 
 #define	ovl_lock_drain_interlock(ovl) { 								\

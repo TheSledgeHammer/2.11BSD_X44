@@ -49,6 +49,11 @@ ovl_segment_startup(start, end)
 		bucket++;
 	}
 
+	ovle_data_size = MAX_KMAP*sizeof(struct ovl_map) +  MAX_KMAPENT*sizeof(struct ovl_map_entry);
+	ovle_data = (vm_offset_t) pmap_bootstrap_alloc(ovle_data_size);
+
+	nsegments = (*end - *start + sizeof(struct ovl_segment)) / (PAGE_SIZE + sizeof(struct ovl_segment));
+
 	while (nsegments--) {
 		TAILQ_INSERT_TAIL(&ovl_segment_list_free, seg, os_segq);
 		seg++;

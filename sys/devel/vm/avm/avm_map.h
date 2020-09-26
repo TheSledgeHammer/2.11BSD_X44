@@ -45,7 +45,7 @@
  * amap implementation-specific definitions.
  */
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 
 /*
  * part 1: amap interface
@@ -109,7 +109,7 @@ boolean_t		amap_swap_off (int, int);
 #define AMAP_EXTEND_FORWARDS	0x01	/* add "size" to end of map */
 #define AMAP_EXTEND_NOWAIT		0x02	/* not allowed to sleep */
 
-//#endif /* _KERNEL */
+#endif /* _KERNEL */
 
 /**********************************************************************/
 

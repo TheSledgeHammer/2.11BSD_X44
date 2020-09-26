@@ -173,7 +173,7 @@ typedef struct pv_entry {
 
 #ifdef	KERNEL
 
-pv_entry_t		pv_table;			/* array of entries, one per page */
+pv_entry_t				pv_table;	/* array of entries, one per page */
 
 #define pa_index(pa)				atop(pa - vm_first_phys)
 #define pa_to_pvh(pa)				(&pv_table[pa_index(pa)])

@@ -100,6 +100,6 @@ vm_segment_put_segments(segment, mlist, npages, sync)
 	boolean_t		sync;
 {
 	if (segment == NULL)
-		panic("vm_pager_put_pages: null pager");
+		panic("vm_segment_put_pages: null pager");
 	return ((*segment->sg_ops->sgo_putsegments)(segment, mlist, npages, sync));
 }

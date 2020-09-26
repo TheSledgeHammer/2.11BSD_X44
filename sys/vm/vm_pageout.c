@@ -102,8 +102,8 @@ vm_pageout_scan()
 	register int		page_shortage;
 	register int		s;
 	register int		pages_freed;
-	int			free;
-	vm_object_t		object;
+	int					free;
+	vm_object_t			object;
 
 	/*
 	 *	Only continue when we want more pages to be "free"

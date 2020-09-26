@@ -36,10 +36,30 @@
 #include <sys/user.h>
 #include "vm/ovl/koverlay.h"
 
+/* Kernel Overlay Memory Management */
+char *kovlbase, *kovllimit;
+char *vovlbase, *vovllimit;
+
+koverlay_malloc()
+{
+
+}
+
+koverlay_free()
+{
+
+}
+
+void
+overlay_init()
+{
+	kmemusage = (struct kmemusage *) ovl_alloc(ovl_map, (vm_size_t)(npg * sizeof(struct kmemusage)));
+	kovl_memmap = ovl_suballoc(ovl_map, (vm_offset_t *)&kovlbase, (vm_offset_t *)&kovllimit, (vm_size_t *) npg);
+	vovl_memmap = ovl_suballoc(ovl_map, (vm_offset_t *)&vovlbase, (vm_offset_t *)&vovllimit, (vm_size_t *) npg);
+}
+
 //static size_t koverlay_ex_storage[EXTENT_FIXED_STORAGE_SIZE(NOVLSR)];
 //koverlay_ex_storage = extent_create(kovl->kovl_name, kovl->kovl_start, kovl->kovl_end, (void *)koverlay_ex_storage, sizeof(koverlay_ex_storage), EX_NOCOALESCE | EX_NOWAIT);
-
-/* Kernel Overlay Memory Management */
 
 /* Allocate a region of memory for Kernel Overlay's */
 struct koverlay *
@@ -197,236 +217,4 @@ koverlay_unmap(kovl, start, size)
 	if (error) {
 		printf("%#lx-%#lx of %s space lost\n", start, start + size, ex->ex_name);
 	}
-}
-
-/* TODO: Allocate by type (kernel overlay or vm overlay) */
-vm_offset_t
-ovl_alloc(map, size)
-	register ovl_map_t	map;
-	register vm_size_t	size;
-{
-	vm_offset_t 			addr;
-	register vm_offset_t 	offset;
-	extern ovl_object_t 	kern_ovl_object;
-	vm_offset_t 			i;
-
-	ovl_map_lock(map);
-	if (ovl_map_findspace(map, 0, size, &addr)) {
-		ovl_map_unlock(map);
-		return (0);
-	}
-
-	ovl_object_reference(kern_ovl_object);
-	ovl_map_insert(map, kern_ovl_object, offset, addr, addr + size);
-	ovl_map_unlock(map);
-	/*
-	ovl_object_lock(kernel_object);
-	for (i = 0; i < size; i += PAGE_SIZE) {
-		vm_segment_t seg;
-
-		while ((seg = vm_segment_alloc(kern_ovl_object, offset + i)) == NULL) {
-			ovl_object_unlock(kern_ovl_object);
-			VM_WAIT;
-			ovl_object_lock(kern_ovl_object);
-		}
-		vm_page_zero_fill(seg);
-		seg->os_flags &= ~SEG_BUSY;
-	}
-	ovl_object_unlock(kern_ovl_object);
-	*/
-	ovl_map_simplify(map, addr);
-
-	return (addr);
-}
-
-void
-ovl_free(map, addr, size)
-	ovl_map_t				map;
-	register vm_offset_t	addr;
-	vm_size_t				size;
-{
-	(void) ovl_map_remove(map, addr, (addr + size));
-}
-
-ovl_map_t
-ovl_suballoc(parent, min, max, size)
-	register ovl_map_t	parent;
-	vm_offset_t			*min, *max;
-	register vm_size_t	size;
-{
-	register int ret;
-	ovl_map_t result;
-
-	*min = (vm_offset_t) ovl_map_min(parent);
-	ret = ovl_map_find(parent, NULL, (vm_offset_t) 0, min, size);
-	if (ret != KERN_SUCCESS) {
-		printf("ovl_suballoc: bad status return of %d.\n", ret);
-		panic("ovl_suballoc");
-	}
-	*max = *min + size;
-
-	result = ovl_map_create(parent, *min, *max);
-	if (result == NULL)
-		panic("ovl_suballoc: cannot create submap");
-	if ((ret = ovl_map_submap(parent, *min, *max, result)) != KERN_SUCCESS)
-		panic("ovl_suballoc: unable to change range to submap");
-	return (result);
-}
-
-vm_offset_t
-ovl_malloc(map, size, canwait)
-	register ovl_map_t	map;
-	register vm_size_t	size;
-	boolean_t			canwait;
-{
-	register vm_offset_t	offset, i;
-	ovl_map_entry_t			entry;
-	vm_offset_t				addr;
-	ovl_segment_t			m;
-	extern ovl_object_t		kmem_object;
-
-	if (map != kmem_map && map != mb_map)
-		panic("ovl_malloc_alloc: map != {kmem,mb}_map");
-
-	addr = ovl_map_min(map);
-
-	/*
-	 * Locate sufficient space in the map.  This will give us the
-	 * final virtual address for the new memory, and thus will tell
-	 * us the offset within the kernel map.
-	 */
-	ovl_map_lock(map);
-	if (ovl_map_findspace(map, 0, size, &addr)) {
-		ovl_map_unlock(map);
-		if (canwait) /* XXX  should wait */
-			panic("kmem_malloc: %s too small",
-					map == kmem_map ? "kmem_map" : "mb_map");
-		return (0);
-	}
-	offset = addr - ovl_map_min(kmem_map);
-	ovl_object_reference(kmem_object);
-	ovl_map_insert(map, kmem_object, offset, addr, addr + size);
-
-	/*
-	 * If we can wait, just mark the range as wired
-	 * (will fault pages as necessary).
-	 */
-	/*
-	if (canwait) {
-		ovl_map_unlock(map);
-		(void) vm_map_pageable(map, (vm_offset_t) addr, addr + size, FALSE);
-		ovl_map_simplify(map, addr);
-		return (addr);
-	}
-	*/
-
-	/*
-	 * If we cannot wait then we must allocate all memory up front,
-	 * pulling it off the active queue to prevent pageout.
-	 */
-	ovl_object_lock(kmem_object);
-	for (i = 0; i < size; i += PAGE_SIZE) {
-		m = ovl_segment_alloc(kmem_object, offset + i);
-
-		/*
-		 * Ran out of space, free everything up and return.
-		 * Don't need to lock page queues here as we know
-		 * that the pages we got aren't on any queues.
-		 */
-		if (m == NULL) {
-			while (i != 0) {
-				i -= PAGE_SIZE;
-				m = ovl_segment_lookup(kmem_object, offset + i);
-				ovl_segment_free(m);
-			}
-			ovl_object_unlock(kmem_object);
-			ovl_map_delete(map, addr, addr + size);
-			ovl_map_unlock(map);
-			return (0);
-		}
-#if 0
-			vm_page_zero_fill(m);
-#endif
-		m->os_flags &= ~SEG_BUSY;
-	}
-	ovl_object_unlock(kmem_object);
-
-	/*
-	 * Mark map entry as non-pageable.
-	 * Assert: vm_map_insert() will never be able to extend the previous
-	 * entry so there will be a new entry exactly corresponding to this
-	 * address range and it will have wired_count == 0.
-	 */
-	if (!ovl_map_lookup_entry(map, addr, &entry) || entry->ovle_start != addr || entry->ovle_end != addr + size)
-		panic("ovl_malloc: entry not found or misaligned");
-
-	/*
-	 * Loop thru pages, entering them in the pmap.
-	 * (We cannot add them to the wired count without
-	 * wrapping the vm_page_queue_lock in splimp...)
-	 */
-	for (i = 0; i < size; i += PAGE_SIZE) {
-		ovl_object_lock(kmem_object);
-		m = vm_page_lookup(kmem_object, offset + i);
-		ovl_object_unlock(kmem_object);
-		pmap_enter(map->ovl_pmap, addr + i, VM_PAGE_TO_PHYS(m), VM_PROT_DEFAULT, TRUE);
-	}
-	ovl_map_unlock(map);
-
-	ovl_map_simplify(map, addr);
-
-	return (addr);
-}
-
-vm_offset_t
-ovl_alloc_wait(map, size)
-	ovl_map_t	map;
-	vm_size_t	size;
-{
-	vm_offset_t	addr;
-
-	for (;;) {
-		/*
-		 * To make this work for more than one map,
-		 * use the map's lock to lock out sleepers/wakers.
-		 */
-		ovl_map_lock(map);
-		if (ovl_map_findspace(map, 0, size, &addr) == 0)
-			break;
-		/* no space now; see if we can ever get space */
-		if (ovl_map_max(map) - ovl_map_min(map) < size) {
-			ovl_map_unlock(map);
-			return (0);
-		}
-		assert_wait(map, TRUE);
-		ovl_map_unlock(map);
-		thread_block();
-	}
-	ovl_map_insert(map, NULL, (vm_offset_t)0, addr, addr + size);
-	ovl_map_unlock(map);
-	return (addr);
-}
-
-void
-ovl_free_wakeup(map, addr, size)
-	ovl_map_t	map;
-	vm_offset_t	addr;
-	vm_size_t	size;
-{
-	ovl_map_lock(map);
-	(void) ovl_map_delete(map, addr, (addr + size));
-	thread_wakeup(map);
-	ovl_map_unlock(map);
-}
-
-void
-ovl_init(start, end)
-	vm_offset_t start, end;
-{
-	register ovl_map_t map;
-
-	map = ovl_map_create(/* to add (kernel_pmap) */, OVL_MIN_ADDRESS, end);
-	ovl_map_lock(map);
-	(void) ovl_map_insert(map, NULL, (vm_offset_t)0, OVL_MIN_ADDRESS, start);
-	ovl_map_unlock(map);
 }

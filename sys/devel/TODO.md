@@ -12,15 +12,13 @@ Memory Segmentation (Software):
 Seperate Process Segments: text, data, stack
 Seperate Instruction & Data Spaces
 
-
-
 OVLSpace:
+- swapin & swapout:
+	- setting the entry active or inactive  
+	- swapping needs to swap contents of map
 Unsolved Problems:
 - physical memory (machine-dependent: arch machdep / pmap)
 	- vm address physical memory with pmap intergration?
-- cannot be initiated with kern_malloc (uses vm memory(ovl becomes defunct))
-- seperate memory allocation: 
-	- rmalloc / extent: rmalloc backed by extent allocation with ability to be extended via malloc (kernel malloc) if needed.
 - Size/ space: 
 	- Ovl max size (Currently): is 10% of vm space allocated (aka: VM = 4GB, OVL = 400MB)
 	- memory stack layout:
@@ -33,12 +31,6 @@ Unsolved Problems:
 		- OVL_OMAP = 64 (max overlay maps to allocate)
 		- NKOVL = 32 (max number of kernel overlay entries)
 		- NVOVL = 32 (max number of vm overlay entries)
-
-TODO:
-- missing underlying storage: 
-	- map interaction for objects
-	- allocation of map & objects
-	- store of objects? (vm_pager/vm_page equivalent)
 	
 TO FIX:
 - ovl_map:

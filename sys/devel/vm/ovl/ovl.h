@@ -1,7 +1,6 @@
 /*
  * The 3-Clause BSD License:
- * Copyright (c) 2020 Martin Kelly
- * All rights reserved.
+ * Copyright (c) 2020 Martin Kelly All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,10 +28,11 @@
  */
 /* overlay address space (overlay memory) */
 
-/* overlay space is designed to compliment vmspace.
+/* overlay space is designed to compliment vm & kernel
  * It does this in 2 ways:
  * 1) mimic'ing vmspace's mapping of objects.
  * 2) Direct access to physical memory, separate from virtual memory without paging.
+ * 3) Split into 2 spaces, VM & Kernel
  */
 
 /* TODO:
@@ -41,8 +41,6 @@
  *
  * OVA_MAX_ADDRESS = VM_MAX_ADDRESS - x amount
  * OVA_MIN_ADDRESS = VM_MIN_ADDRESS - x amount
- *
- *
  */
 /*	koverlay:
  * 	-
@@ -80,6 +78,18 @@ OVL_MAX = (VM_MAX_KERNEL_ADDRESS + ((PGSIZE/100)*10))
 #define OVL_MIN_KERNEL_ADDRESS
 #define OVL_MAX_KERNEL_ADDRESS
 
+/* memory management definitions */
+ovl_map_t 						ovl_map;
+/*
+vm_offset_t						overlay_start;
+vm_offset_t 					overlay_end;
+*/
+
+//#ifdef OVL
+extern struct pmap				overlay_pmap_store;
+#define overlay_pmap 			(&overlay_pmap_store)
+//#endif
+
 union ovl_map_object;
 typedef union ovl_map_object 	ovl_map_object_t;
 
@@ -114,24 +124,6 @@ struct ovlspace {
 	caddr_t         	ovl_maxsaddr;		/* user OVA at max stack growth */
 };
 
-/*
- * Shareable overlay address space.
- */
-struct ovlspace {
-	struct ovl_map 	ovl_map;		/* overlay address map */
-	struct pmap 	ovl_pmap;		/* private physical map */
-
-	struct koverlay ovl_kovl;		/* kernel overlay space */
-	struct voverlay ovl_vovl;		/* virtual overlay space */
-};
-
 /* Overlay Flags */
-#define OVL_ALLOCATED  (1 < 0) 							/* kernel overlay region allocated */
-
-extern struct koverlay 	*koverlay_extent_create(kovl, name, start, end, addr, size);
-extern void				koverlay_destroy(kovl);
-extern int				koverlay_extent_alloc_region(kovl, size);
-extern int				koverlay_extent_alloc_subregion(kovl, name, start, end, size, alignment, boundary, result);
-extern void				koverlay_free(kovl, start, size);
-
+#define OVL_ALLOCATED  (1 < 0) 				/* kernel overlay region allocated */
 #endif /* _OVL_H_ */
