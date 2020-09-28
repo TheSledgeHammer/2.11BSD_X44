@@ -323,7 +323,7 @@ vm_pager_map_pages(mlist, npages, canwait)
 void
 vm_pager_unmap_pages(kva, npages)
 	vm_offset_t	kva;
-	int		npages;
+	int			npages;
 {
 	vm_size_t size = npages * PAGE_SIZE;
 

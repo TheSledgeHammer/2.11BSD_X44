@@ -102,7 +102,7 @@ uao_find_swhash_elt(aobj, pageidx, create)
 		}
 	}
 	if (!create) {
-		return NULL;
+		return (NULL);
 	}
 
 	/*
@@ -117,7 +117,7 @@ uao_find_swhash_elt(aobj, pageidx, create)
 	elt->tag = page_tag;
 	elt->count = 0;
 	memset(elt->slots, 0, sizeof(elt->slots));
-	return elt;
+	return (elt);
 }
 
 /*
@@ -157,7 +157,7 @@ uao_find_swslot(uobj, pageidx)
 	 * otherwise, look in the array
 	 */
 
-	return(aobj->u_swslots[pageidx]);
+	return (aobj->u_swslots[pageidx]);
 }
 
 /*
@@ -553,8 +553,7 @@ uao_detach_locked(uobj)
 		if (pg->flags & PG_BUSY) {
 			pg->flags |= PG_WANTED;
 			uvm_unlock_pageq();
-			UVM_UNLOCK_AND_WAIT(pg, &uobj->vmobjlock, FALSE,
-			    "uao_det", 0);
+			UVM_UNLOCK_AND_WAIT(pg, &uobj->vmobjlock, FALSE, "uao_det", 0);
 			simple_lock(&uobj->vmobjlock);
 			uvm_lock_pageq();
 			continue;

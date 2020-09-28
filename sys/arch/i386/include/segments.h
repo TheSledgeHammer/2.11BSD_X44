@@ -161,7 +161,7 @@ union descriptor	{
  * when needed to be used by the 386 hardware
  */
 
-struct	soft_segment_descriptor	{
+struct soft_segment_descriptor	{
 	unsigned ssd_base ;			/* segment base address  */
 	unsigned ssd_limit ;		/* segment extent */
 	unsigned ssd_type:5 ;		/* segment type */

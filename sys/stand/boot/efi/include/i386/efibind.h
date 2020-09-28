@@ -33,14 +33,14 @@ Revision History
 
 /* Use Microsoft C compiler integer width declarations */
 
-        typedef unsigned __int64    uint64_t;
-        typedef __int64             int64_t;
-        typedef unsigned __int32    uint32_t;
-        typedef __int32             int32_t;
-        typedef unsigned short      uint16_t;
-        typedef short               int16_t;
-        typedef unsigned char       uint8_t;
-        typedef char                int8_t;
+        typedef unsigned __int64    	uint64_t;
+        typedef __int64             	int64_t;
+        typedef unsigned __int32    	uint32_t;
+        typedef __int32             	int32_t;
+        typedef unsigned short      	uint16_t;
+        typedef short               	int16_t;
+        typedef unsigned char       	uint8_t;
+        typedef char                	int8_t;
     #else             
         #ifdef UNIX_LP64
 
@@ -74,26 +74,26 @@ Revision History
  * Basic EFI types of various widths
  */
 
-typedef uint64_t   UINT64;
-typedef int64_t    INT64;
+typedef uint64_t   		UINT64;
+typedef int64_t    		INT64;
 
 #ifndef _BASETSD_H_
-    typedef uint32_t   UINT32;
-    typedef int32_t    INT32;
+    typedef uint32_t   	UINT32;
+    typedef int32_t    	INT32;
 #endif
 
-typedef uint16_t   UINT16;
-typedef int16_t    INT16;
-typedef uint8_t    UINT8;
-typedef int8_t     INT8;
+typedef uint16_t   		UINT16;
+typedef int16_t    		INT16;
+typedef uint8_t    		UINT8;
+typedef int8_t     		INT8;
 
 
 #undef VOID
 #define VOID    void
 
 
-typedef int32_t    INTN;
-typedef uint32_t   UINTN;
+typedef int32_t    		INTN;
+typedef uint32_t   		UINTN;
 
 #ifdef EFI_NT_EMULATOR
     #define POST_CODE(_Data)

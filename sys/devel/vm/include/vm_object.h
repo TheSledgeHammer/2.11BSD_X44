@@ -128,8 +128,8 @@ struct object_q		vm_object_list;			/* list of allocated objects */
 long				vm_object_count;		/* count of all objects */
 simple_lock_data_t	vm_object_list_lock;	/* lock for object list and count */
 
-vm_object_t	kernel_object;					/* the single kernel object */
-vm_object_t	kmem_object;
+vm_object_t			kernel_object;			/* the single kernel object */
+vm_object_t			kmem_object;
 
 #define	vm_object_cache_lock()		simple_lock(&vm_cache_lock)
 #define	vm_object_cache_unlock()	simple_unlock(&vm_cache_lock)

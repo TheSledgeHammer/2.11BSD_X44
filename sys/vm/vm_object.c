@@ -292,7 +292,7 @@ vm_object_terminate(object)
 	register vm_object_t	object;
 {
 	register vm_page_t	p;
-	vm_object_t		shadow_object;
+	vm_object_t			shadow_object;
 
 	/*
 	 *	Detach the object from its shadow if we are the shadow's
@@ -882,7 +882,7 @@ vm_object_lookup(pager)
 	vm_pager_t	pager;
 {
 	register vm_object_hash_entry_t	entry;
-	vm_object_t			object;
+	vm_object_t						object;
 
 	vm_object_cache_lock();
 

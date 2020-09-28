@@ -80,10 +80,10 @@ typedef struct pte	pt_entry_t;	/* Mach page table entry */
 #define I386_KPDES		8 										/* KPT page directory size */
 #define I386_UPDES		(NBPDR/sizeof(struct pde) - I386_KPDES) /* UPT page directory size */
 
-#define	UPTDI			0x3f6						/* ptd entry for u./kernel&user stack */
-#define	PTDPTDI			0x3f7						/* ptd entry that points to ptd! */
-#define	KPTDI_FIRST		0x3f8						/* start of kernel virtual pde's */
-#define	KPTDI_LAST		0x3fA						/* last of kernel virtual pde's */
+#define	UPTDI			0x3f6									/* ptd entry for u./kernel&user stack */
+#define	PTDPTDI			0x3f7									/* ptd entry that points to ptd! */
+#define	KPTDI_FIRST		0x3f8									/* start of kernel virtual pde's */
+#define	KPTDI_LAST		0x3fA									/* last of kernel virtual pde's */
 
 /*
  * Address of current and alternate address space page table maps
@@ -94,7 +94,7 @@ extern struct pte	PTmap[], APTmap[], Upte;
 extern struct pde	PTD[], APTD[], PTDpde, APTDpde, Upde;
 extern	pt_entry_t	*Sysmap;
 
-extern int	IdlePTD;	/* physical address of "Idle" state directory */
+extern int			IdlePTD;	/* physical address of "Idle" state directory */
 #endif
 
 /*
@@ -112,7 +112,6 @@ extern int	IdlePTD;	/* physical address of "Idle" state directory */
 #define	avtopte(va)		(APTmap + i386_btop(va))
 #define	ptetoav(pt)	 	(i386_ptob(pt - APTmap))
 #define	avtophys(va)  	(i386_ptob(avtopte(va)->pg_pfnum) | ((int)(va) & PGOFSET))
-
 
 /*
  * Pmap stuff

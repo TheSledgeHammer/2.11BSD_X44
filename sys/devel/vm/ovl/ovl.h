@@ -54,6 +54,21 @@
  * - While useful (in some situations), for extending memory management
  * - This version would not provide any benefit to vm paging, if the overlay is a page in itself.
  * - would likely be slower than using just paging.
+ *
+
+/* segment types */
+/* Segmented Space Address Layout */
+/*
+#define SEG_DFLT	-1
+#define	SEG_VM		0
+#define	SEG_AVM		1
+#define SEG_OVL		2
+#define VMSPACE_START
+#define VMSPACE_END
+#define AVMSPACE_START
+#define AVMSPACE_END
+#define OVLSPACE_START
+#define OVLSPACE_END
  */
 
 #ifndef _OVL_H_

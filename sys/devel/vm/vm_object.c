@@ -161,7 +161,7 @@ vm_object_allocate(size)
 
 static void
 _vm_object_allocate(size, object)
-	vm_size_t		size;
+	vm_size_t				size;
 	register vm_object_t	object;
 {
 	TAILQ_INIT(&object->memq);
@@ -212,7 +212,7 @@ vm_object_lookup(pager)
 	vm_pager_t	pager;
 {
 	register vm_object_hash_entry_t	entry;
-	vm_object_t			object;
+	vm_object_t						object;
 
 	vm_object_cache_lock();
 

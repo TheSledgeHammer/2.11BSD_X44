@@ -147,7 +147,6 @@ struct syscframe {
 	int	sf_ss;
 };
 
-
 struct sigframe {
 	int					sf_signum;
 	int					sf_code;

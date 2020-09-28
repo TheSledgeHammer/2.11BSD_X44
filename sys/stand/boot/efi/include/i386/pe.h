@@ -193,10 +193,10 @@ typedef struct _IMAGE_ROM_HEADERS {
     IMAGE_ROM_OPTIONAL_HEADER OptionalHeader;
 } IMAGE_ROM_HEADERS, *PIMAGE_ROM_HEADERS;
 
-#define IMAGE_FIRST_SECTION( ntheader ) ((PIMAGE_SECTION_HEADER)        \
-    ((UINT32)ntheader +                                                  \
-     FIELD_OFFSET( IMAGE_NT_HEADERS, OptionalHeader ) +                 \
-     ((PIMAGE_NT_HEADERS)(ntheader))->FileHeader.SizeOfOptionalHeader   \
+#define IMAGE_FIRST_SECTION( ntheader ) ((PIMAGE_SECTION_HEADER)        	\
+    ((UINT32)ntheader +                                                  	\
+     FIELD_OFFSET( IMAGE_NT_HEADERS, OptionalHeader ) +                 	\
+     ((PIMAGE_NT_HEADERS)(ntheader))->FileHeader.SizeOfOptionalHeader   	\
     ))
 
 
