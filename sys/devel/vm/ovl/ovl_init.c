@@ -71,7 +71,7 @@
 
 #include <devel/vm/ovl/ovl.h>
 
-/* start in vm_mem_init or seperate */
+/* start in vm_mem_init or seperate? */
 void
 ovl_mem_init()
 {

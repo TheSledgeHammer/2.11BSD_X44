@@ -24,60 +24,44 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @(#)kern_overlay.c	1.00
  */
 
-#include <sys/param.h>
-#include <sys/proc.h>
-#include <sys/extent.h>
-#include <sys/malloc.h>
-#include <sys/map.h>
-#include <sys/user.h>
+#ifndef _VM_SEG_H_
+#define _VM_SEG_H_
 
-#include "vm/ovl/ovl.h"
-#include "vm/ovl/koverlay.h"
+#include <sys/queue.h>
+#include <sys/tree.h>
 
-#define MINBUCKET		4				/* 4 => min allocation of 16 bytes */
-#define MAXALLOCSAVE	(2 * )
+struct vm_segment;
+typedef struct vm_segment 	*vm_segment_t;
 
-/* Kernel Overlay Memory Management */
-struct ovlbuckets 		bucket[MINBUCKET + 16];
-struct ovlstats 		ovlstats[M_LAST];
-struct ovlusage 		*ovlusage;
+struct seg_tree;
+RB_HEAD(seg_tree, vm_segment);
+struct vm_segment {
+	struct pgtree			memt;					/* Resident memory (red-black tree) */
+	RB_ENTRY(vm_segment)	segt;
+	u_long					index;
+	int						flags;
+	vm_object_t				object;
+	vm_offset_t 			offset;
+	int						ref_count;				/* How many refs?? */
+	vm_size_t				size;					/* segment size */
+	int						resident_page_count;	/* number of resident pages */
+	vm_pager_t				pager;					/* Where to get data */
+	vm_offset_t				paging_offset;			/* Offset into paging space */
+};
 
-char 					*ovlbase, *ovllimit;
-char 					*kovlbase, *kovllimit;
-char 					*vovlbase, *vovllimit;
+/* flags */
+#define SEG_ACTIVE
+#define SEG_INACTIVE
 
-koverlay_insert(size)
-{
-	register struct ovlbuckets 	*obp;
-	register struct ovlusage 	*oup;
-	register struct asl 		*freep;
+/* faults */
+//MULTICS VM: (segmented paging)
+//page multiplexing: core blocks among active segments.
+//least-recently-used algorithm
+//supervisor;
+//segment control; 		(SC)
+//page control; 		(PC)
+//directory control; 	(DC)
 
-	long indx, npg, allocsize;
-
-	indx = BUCKETINDX(size);
-	obp = &bucket[indx];
-
-
-	if(oup->ou_kovlcnt < NKOVL) {
-		if (obp->ob_next == NULL) {
-			obp->ob_last = NULL;
-
-		}
-	} else {
-		goto out;
-	}
-}
-
-void
-koverlay_init()
-{
-	register long indx;
-	int npg = (OVL_MEM_SIZE / NBOVL);
-	ovlusage = (struct ovlusage *) ovl_alloc(ovl_map, (vm_size_t)(npg * sizeof(struct ovlusage)));
-	kovl_mmap = ovl_suballoc(ovl_map, (vm_offset_t *)&kovlbase, (vm_offset_t *)&kovllimit, (vm_size_t *) npg);
-	vovl_mmap = ovl_suballoc(ovl_map, (vm_offset_t *)&vovlbase, (vm_offset_t *)&vovllimit, (vm_size_t *) npg);
-}
+#endif /* _VM_SEG_H_ */

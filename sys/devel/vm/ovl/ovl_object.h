@@ -96,7 +96,7 @@ struct ovl_object_hash_entry {
 };
 typedef struct ovl_object_hash_entry	*ovl_object_hash_entry_t;
 
-#ifdef KERNEL
+//#ifdef KERNEL
 TAILQ_HEAD(object_q, ovl_object);
 
 struct object_q		ovl_object_cached_list;	/* list of objects persisting */
@@ -113,7 +113,7 @@ ovl_object_t		vm_ovl_object;			/* single vm overlay object */
 
 #define	ovl_object_cache_lock()			simple_lock(&ovl_cache_lock)
 #define	ovl_object_cache_unlock()		simple_unlock(&ovl_cache_lock)
-#endif /* KERNEL */
+//#endif /* KERNEL */
 
 #define	ovl_object_lock_init(object)	simple_lock_init(&(object)->lock)
 #define	ovl_object_lock(object)			simple_lock(&(object)->lock)

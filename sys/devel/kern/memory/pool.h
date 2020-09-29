@@ -13,7 +13,7 @@
 /* Implements the infrastructure for slabs & pool */
 /* table = buckets, tert tree */
 struct kmem_entry {
-	struct kmemtable 		ke_tble;
+//	struct kmemtable 		ke_tble;
 	struct kmempool_entry 	ke_pool;
 };
 
@@ -30,18 +30,18 @@ struct kmempool_entry {
 
 struct kmempools
 {
-	struct kple_list		kpl_head;
+	struct kple_list			kpl_head;
 
-	unsigned long			maxsize;
-	unsigned long			cursize;
-	unsigned long			curfree;
-	unsigned long			curalloc;
+	unsigned long				maxsize;
+	unsigned long				cursize;
+	unsigned long				curfree;
+	unsigned long				curalloc;
 
-	unsigned long			minarena;						/* smallest size of new arena */
-	unsigned long			quantum;						/* allocated blocks should be multiple of */
-	unsigned long			minblock;						/* smallest newly allocated block */
+	unsigned long				minarena;						/* smallest size of new arena */
+	unsigned long				quantum;						/* allocated blocks should be multiple of */
+	unsigned long				minblock;						/* smallest newly allocated block */
 };
 
-extern struct kmempool_entry  pool[];
+extern struct kmempool_entry  	pool[];
 
 #endif /* SYS_POOL_H_ */

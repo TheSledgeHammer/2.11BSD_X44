@@ -35,21 +35,18 @@
 #include <vm/include/vm_kern.h>
 #include "kern/memory/malloc2.h"
 
-struct kmembuckets p[MINBUCKET + 16];
-static int isPowerOfTwo(long n); 	/* 0 = true, 1 = false */
+struct kmembuckets kmembuckets[MINBUCKET + 16];
 
-void
-kmembucket_init(kbp)
-	struct kmembuckets *kbp;
-{
-    CIRCLEQ_INIT(&kbp->kb_header);
-}
+static int isPowerOfTwo(long n); 	/* 0 = true, 1 = false */
 
 void
 kmembucket_setup(indx)
     long indx;
 {
-    register struct kmembuckets *kbp = &p[indx];
+    register struct kmembuckets *kbp = &kmembuckets[indx];
+    CIRCLEQ_INIT(&kbp->kb_header);
+    kmembucket_allocate_head(kbp);
+    kmembucket_allocate_tail(kbp);
 }
 
 /* Allocate a bucket at the head of the Table */

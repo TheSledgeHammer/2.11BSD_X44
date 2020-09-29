@@ -161,7 +161,7 @@ vm_analloc()
 	if (a) {
 		vm.afree = a->an_u.an_nxt;
 		vmexp.nfreeanon--;
-		a->an_u.au_ref = 1;
+		a->an_ref = 1;
 		a->an_swslot = 0;
 		a->an_page = NULL;		/* so we can free quickly */
 		//LOCK_ASSERT(simple_lock_held(&a->an_lock) == 0);

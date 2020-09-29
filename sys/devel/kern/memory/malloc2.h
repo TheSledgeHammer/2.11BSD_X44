@@ -41,6 +41,12 @@
 //#define M_KOVL		70	/* Kernel Overlay */
 //#define M_VOVL		71	/* Virtual Overlay */
 //#define M_VMSEG			72	/* VM Segmentation */
+
+#define M_OVLMAP		/* OVL Map */
+#define M_OVLOBJ		/* OVL Object */
+#define M_AVMMAP		/* AVM Map (anonymous map: uvm_amap) */
+#define M_AVMOBJ		/* AVM Object (anonymous object: uvm_aobj) */
+#define M_CANFAIL
 /**********************************************/
 
 /* Two-bit Type field to distinguish between different splits of sized blocks */
@@ -69,7 +75,7 @@ struct kmembucket_entry {
 
 CIRCLEQ_HEAD(kmembucket_clist, kmembucket_entry);
 struct kmembuckets {
-	struct kmembucket_clist 		kb_header;		/* Bucket List */
+	struct kmembucket_clist 		kb_header;			/* Bucket List */
 };
 
 /* Tertiary Tree within each bucket, for each size of memory block that is retained */
@@ -103,7 +109,7 @@ struct asl {
 };
 
 
-#define BUCKETSIZE(indx)	(powertwo(indx))
+#define BUCKETSIZE(indx)	(isPowerOfTwo(indx))
 
 #define SplitLeft(n)    	(n / 2)
 #define SplitMiddle(n)  	(((SplitLeft(n)) * 2) / 3)
@@ -113,7 +119,6 @@ struct asl {
 #define LOG2(n)         	(n >> 2)
 
 /* All methods below are for internal use only for kern_malloc */
-extern void 					kmembucket_init();
 extern void 					kmembucket_setup(long indx);
 extern struct kmembucket_entry	*kmembucket_allocate_head(struct kmembuckets *kbp, u_long size);
 extern struct kmembucket_entry	*kmembucket_allocate_tail(struct kmembuckets *kbp, u_long size);

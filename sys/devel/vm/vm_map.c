@@ -210,7 +210,6 @@ vmspace_free(vm)
 	}
 }
 
-
 /*
  * Red black tree functions
  *

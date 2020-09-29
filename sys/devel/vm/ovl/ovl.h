@@ -54,56 +54,10 @@
  * - While useful (in some situations), for extending memory management
  * - This version would not provide any benefit to vm paging, if the overlay is a page in itself.
  * - would likely be slower than using just paging.
- *
-
-/* segment types */
-/* Segmented Space Address Layout */
-/*
-#define SEG_DFLT	-1
-#define	SEG_VM		0
-#define	SEG_AVM		1
-#define SEG_OVL		2
-#define VMSPACE_START
-#define VMSPACE_END
-#define AVMSPACE_START
-#define AVMSPACE_END
-#define OVLSPACE_START
-#define OVLSPACE_END
  */
 
 #ifndef _OVL_H_
 #define _OVL_H_
-
-/* TODO: Improve algorithm for number of overlays */
-#define	NOVL	(32)			/* number of kernel overlays */
-#define NOVLSR 	(NOVL/2)		/* maximum mumber of kernel overlay sub-regions */
-#define NOVLPSR	NOVLSR			/* XXX: number of overlays per sub-region */
-
-/* Before VM Space */
-#define OVL_MIN_ADDRESS 		((vm_offset_t)0)
-#define OVL_MAX_ADDRESS			((PGSIZE/100)*10)	/* Total Size of Overlay Address Space (Roughly 10% of PGSIZE) */
-#define VM_MIN_ADDRESS			OVL_MAX_ADDRESS
-
-/* Above VM Max Kernel Space */
-/*
-OVL_MIN = VM_MAX_KERNEL_ADDRESS
-OVL_MAX = (VM_MAX_KERNEL_ADDRESS + ((PGSIZE/100)*10))
-*/
-
-#define OVL_MIN_KERNEL_ADDRESS
-#define OVL_MAX_KERNEL_ADDRESS
-
-/* memory management definitions */
-ovl_map_t 						ovl_map;
-/*
-vm_offset_t						overlay_start;
-vm_offset_t 					overlay_end;
-*/
-
-//#ifdef OVL
-extern struct pmap				overlay_pmap_store;
-#define overlay_pmap 			(&overlay_pmap_store)
-//#endif
 
 union ovl_map_object;
 typedef union ovl_map_object 	ovl_map_object_t;
@@ -139,6 +93,4 @@ struct ovlspace {
 	caddr_t         	ovl_maxsaddr;		/* user OVA at max stack growth */
 };
 
-/* Overlay Flags */
-#define OVL_ALLOCATED  (1 < 0) 				/* kernel overlay region allocated */
 #endif /* _OVL_H_ */

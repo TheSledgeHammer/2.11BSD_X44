@@ -25,59 +25,55 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @(#)kern_overlay.c	1.00
+ * @(#)ovl_pmap.h	1.00
  */
 
-#include <sys/param.h>
-#include <sys/proc.h>
-#include <sys/extent.h>
-#include <sys/malloc.h>
-#include <sys/map.h>
-#include <sys/user.h>
+/* segment types */
+/* Segmented Space Address Layout */
+/*
+#define SEG_DFLT	-1
+#define	SEG_VM		0
+#define	SEG_AVM		1
+#define SEG_OVL		2
+#define VMSPACE_START
+#define VMSPACE_END
+#define AVMSPACE_START
+#define AVMSPACE_END
+#define OVLSPACE_START
+#define OVLSPACE_END
 
-#include "vm/ovl/ovl.h"
-#include "vm/ovl/koverlay.h"
+//#ifdef OVL
+vm_offset_t						overlay_start;
+vm_offset_t 					overlay_end;
+extern struct pmap				overlay_pmap_store;
+#define overlay_pmap 			(&overlay_pmap_store)
+//#endif
+ */
 
-#define MINBUCKET		4				/* 4 => min allocation of 16 bytes */
-#define MAXALLOCSAVE	(2 * )
+#ifndef _OVL_PMAP_H_
+#define _OVL_PMAP_H_
 
-/* Kernel Overlay Memory Management */
-struct ovlbuckets 		bucket[MINBUCKET + 16];
-struct ovlstats 		ovlstats[M_LAST];
-struct ovlusage 		*ovlusage;
+/* Before VM Space */
+#define OVL_MIN_ADDRESS 		((vm_offset_t)0)
+#define OVL_MAX_ADDRESS			((PGSIZE/100)*10)	/* Total Size of Overlay Address Space (Roughly 10% of PGSIZE) */
+#define VM_MIN_ADDRESS			OVL_MAX_ADDRESS
 
-char 					*ovlbase, *ovllimit;
-char 					*kovlbase, *kovllimit;
-char 					*vovlbase, *vovllimit;
+#define OVL_MIN_KERNEL_ADDRESS	OVL_MIN_ADDRESS
+#define OVL_MAX_KERNEL_ADDRESS
+#define OVL_MIN_VM_ADDRESS
+#define OVL_MAX_VM_ADDRESS
 
-koverlay_insert(size)
-{
-	register struct ovlbuckets 	*obp;
-	register struct ovlusage 	*oup;
-	register struct asl 		*freep;
+#define OVL_MEM_SIZE			OVL_MAX_ADDRESS	/* total ovlspace for allocation */
+#define NBOVL 					1024			/* bytes per overlay */
 
-	long indx, npg, allocsize;
+/* memory management definitions */
+ovl_map_t 						ovl_map;
+ovl_map_t						kovl_mmap;
+ovl_map_t						vovl_mmap;
 
-	indx = BUCKETINDX(size);
-	obp = &bucket[indx];
+/* as defined in ovl_map.h */
+#define MAX_OMAP	(64)
+#define	NKOVLE		(32)			/* number of kernel overlay entries */
+#define	NVOVLE		(32)			/* number of virtual (vm) overlay entries */
 
-
-	if(oup->ou_kovlcnt < NKOVL) {
-		if (obp->ob_next == NULL) {
-			obp->ob_last = NULL;
-
-		}
-	} else {
-		goto out;
-	}
-}
-
-void
-koverlay_init()
-{
-	register long indx;
-	int npg = (OVL_MEM_SIZE / NBOVL);
-	ovlusage = (struct ovlusage *) ovl_alloc(ovl_map, (vm_size_t)(npg * sizeof(struct ovlusage)));
-	kovl_mmap = ovl_suballoc(ovl_map, (vm_offset_t *)&kovlbase, (vm_offset_t *)&kovllimit, (vm_size_t *) npg);
-	vovl_mmap = ovl_suballoc(ovl_map, (vm_offset_t *)&vovlbase, (vm_offset_t *)&vovllimit, (vm_size_t *) npg);
-}
+#endif /* _OVL_PMAP_H_ */

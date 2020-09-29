@@ -45,7 +45,7 @@
  * amap implementation-specific definitions.
  */
 
-#ifdef _KERNEL
+//#ifdef _KERNEL
 
 /*
  * part 1: amap interface
@@ -223,8 +223,8 @@ struct avm_map {
  * 16 slot chunk is enough to handle the whole stack).
  */
 
-#define UVM_AMAP_LARGE	256	/* # of slots in "large" amap */
-#define UVM_AMAP_CHUNK	16	/* # of slots to chunk large amaps in */
+#define VM_AMAP_LARGE	256	/* # of slots in "large" amap */
+#define VM_AMAP_CHUNK	16	/* # of slots to chunk large amaps in */
 
 #ifdef _KERNEL
 

@@ -96,6 +96,7 @@
  *	queues (P).
  */
 
+struct pgtree;
 RB_HEAD(pgtree, vm_page);
 struct vm_page {
 
@@ -136,6 +137,11 @@ struct vm_page {
 #define	PG_DIRTY		0x0800		/* client flag to set when dirty */
 #define	PG_PAGEROWNED	0x4000		/* DEBUG: async paging op in progress */
 #define	PG_PTPAGE		0x8000		/* DEBUG: is a user page table page */
+
+#define	PG_RELEASED		0x00000020	/* page to be freed when unbusied */
+
+#define PQ_ANON			0x10		/* page is part of an anon, rather than an uvm_object */
+#define PQ_AOBJ			0x20		/* page is part of an anonymous uvm_object */
 
 #if	VM_PAGE_DEBUG
 #define	VM_PAGE_CHECK(mem) { \

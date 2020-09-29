@@ -81,12 +81,9 @@
  *	page structure.
  */
 struct pgtree		*vm_page_buckets;			/* RBTree of buckets */
-//struct pglist		*vm_page_buckets;			/* Array of buckets */
 int					vm_page_bucket_count = 0;	/* How big is array? */
 int					vm_page_hash_mask;			/* Mask for hash function */
 simple_lock_data_t	bucket_lock;				/* lock for all buckets XXX */
-
-
 
 struct pgtree		vm_page_queue_free;
 struct pgtree		vm_page_queue_active;
@@ -227,8 +224,7 @@ vm_page_startup(start, end)
 	 *	of a page structure per page).
 	 */
 
-	cnt.v_free_count = npages = (*end - *start + sizeof(struct vm_page))
-		/ (PAGE_SIZE + sizeof(struct vm_page));
+	cnt.v_free_count = npages = (*end - *start + sizeof(struct vm_page)) / (PAGE_SIZE + sizeof(struct vm_page));
 
 	/*
 	 *	Record the extent of physical memory that the
@@ -692,8 +688,14 @@ vm_page_rb_compare(pg1, pg2)
 RB_PROTOTYPE(pgtree, vm_page, hashq, vm_page_rb_compare);
 RB_GENERATE(pgtree, vm_page, hashq, vm_page_rb_compare);
 
+RB_PROTOTYPE(pgtree, vm_page, pageq, vm_page_rb_compare);
+RB_GENERATE(pgtree, vm_page, pageq, vm_page_rb_compare);
+
+RB_PROTOTYPE(pgtree, vm_page, listq, vm_page_rb_compare);
+RB_GENERATE(pgtree, vm_page, listq, vm_page_rb_compare);
+
 void
-vm_page_hrbtree_insert(mem, object, offset)
+vm_page_rbtree_insert(mem, object, offset)
 	register vm_page_t		mem;
 	register vm_object_t	object;
 	register vm_offset_t	offset;
@@ -706,7 +708,7 @@ vm_page_hrbtree_insert(mem, object, offset)
 }
 
 void
-vm_page_hrbtree_remove(mem)
+vm_page_rbtree_remove(mem)
 	register vm_page_t		mem;
 {
 	register struct pgtree *root = &vm_page_buckets[vm_page_hash(mem->object, mem->offset)];
@@ -718,7 +720,7 @@ vm_page_hrbtree_remove(mem)
 }
 
 vm_page_t
-vm_page_hrbtree_lookup(object, offset)
+vm_page_rbtree_lookup(object, offset)
 	register vm_object_t	object;
 	register vm_offset_t	offset;
 {

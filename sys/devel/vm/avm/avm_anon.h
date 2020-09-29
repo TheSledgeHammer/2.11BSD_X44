@@ -42,8 +42,9 @@
 
 struct avm_anon {
 	lock_data_t			*an_lock;	/* Lock for an_ref */
+	uintptr_t			an_ref;		/* Reference count [an_lock] */
 	union {
-		uintptr_t		au_ref;		/* Reference count [an_lock] */
+
 		struct avm_anon *an_nxt;	/* if on free list [afreelock] */
 		struct avm_anon	*au_link;	/* Link for deferred free */
 	} an_u;
