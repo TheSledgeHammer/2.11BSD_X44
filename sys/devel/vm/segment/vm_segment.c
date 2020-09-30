@@ -31,92 +31,155 @@
 #include <sys/malloc.h>
 #include <sys/map.h>
 #include <sys/fnv_hash.h>
+
 #include <devel/vm/include/vm.h>
 #include "vm_segment.h"
 
-struct seg_tree 		*vm_segment_bucket;
-int						vm_segment_bucket_count = 0;	/* How big is array? */
-int						vm_segment_hash_mask;			/* Mask for hash function */
-simple_lock_data_t		bucket_lock;					/* lock for all buckets XXX */
+struct vm_segment_hash_head  	*vm_segment_hashtable;
+int								vm_segment_bucket_count = 0;	/* How big is array? */
+int								vm_segment_hash_mask;			/* Mask for hash function */
 
+unsigned long
+alloc_hash(segment)
+	vm_segment_t segment;
+{
+	Fnv32_t seg_hash = fnv_32_buf(&segment, sizeof(&segment), FNV1_32_INIT)%vm_segment_hash_mask;
+	return (seg_hash);
+}
 
-vm_segment
+void
+vm_segment_init(start, end)
+	vm_offset_t	*start;
+	vm_offset_t	*end;
+{
+	register int	i;
+
+	if (vm_segment_bucket_count == 0) {
+		vm_segment_bucket_count = 1;
+		while (vm_segment_bucket_count < atop(*end - *start))
+			vm_segment_bucket_count <<= 1;
+	}
+
+	vm_segment_hash_mask = vm_segment_bucket_count - 1;
+
+	for(i = 0; i < vm_segment_hash_mask; i++) {
+		CIRCLEQ_INIT(&vm_segment_hashtable[i]);
+	}
+}
+
+void
+_vm_segment_allocate(size, segment)
+	vm_size_t				size;
+	register vm_segment_t 	segment;
+{
+	RB_INIT(segment->sg_pgtable);
+
+	segment->sg_size = size;
+
+	if(size > alloc_hash(segment)) {
+		CIRCLEQ_INSERT_TAIL(&vm_segment_list, segment, sg_list);
+	} else {
+		CIRCLEQ_INSERT_HEAD(&vm_segment_list, segment, sg_list);
+	}
+}
+
+vm_segment_t
+vm_segment_allocate(size)
+	vm_size_t		size;
+{
+	register vm_segment_t result;
+
+	result = (vm_segment_t)malloc((u_long)sizeof(*result), M_VMSEG, M_WAITOK);
+	_vm_segment_allocate(size, result);
+
+	return (result);
+}
 
 unsigned long
 vm_segment_hash(object, offset)
-	vm_object_t		object;
-	vm_offset_t 	offset;
+	vm_object_t	object;
+	vm_offset_t offset;
 {
-	Fnv32_t hash1 = fnv_32_buf(&object, (sizeof(&object) + offset)&vm_segment_hash_mask, FNV1_32_INIT)%vm_segment_hash_mask;
+	Fnv32_t hash1 = fnv_32_buf(&object, (sizeof(&object)+offset)&vm_segment_hash_mask, FNV1_32_INIT)%vm_segment_hash_mask;
 	Fnv32_t hash2 = (((unsigned long)object+(unsigned long)offset)&vm_segment_hash_mask);
     return (hash1^hash2);
 }
 
-int
-vm_segment_rb_compare(seg1, seg2)
-	vm_segment_t seg1, seg2;
-{
-	if(seg1->index < seg2->index) {
-		return(-1);
-	} else if(seg1->index > seg2->index) {
-		return(1);
-	}
-	return (0);
-}
-
-RB_PROTOTYPE(seg_tree, vm_segment, segt, vm_segment_rb_compare);
-RB_GENERATE(seg_tree, vm_segment, segt, vm_segment_rb_compare);
-
-
-/* insert segment into object */
-void
-vm_segment_insert(seg, object, offset)
-	register vm_segment_t	seg;
-	register vm_object_t	object;
-	register vm_offset_t	offset;
-{
-
-	seg->object = object;
-	seg->offset = offset;
-
-	register struct seg_tree *bucket = &vm_segment_bucket[vm_segment_hash(object, offset)];
-
-	RB_INSERT(seg_tree, bucket, seg);
-
-	//seg->flags;
-}
-
-/* remove segment from object */
-void
-vm_segment_remove(seg)
-	vm_segment_t seg;
-{
-	register struct seg_tree *bucket = &vm_segment_bucket[vm_segment_hash(seg->object, seg->offset)];
-
-	if(bucket) {
-		RB_REMOVE(seg_tree, bucket, seg);
-	}
-}
-
-/* lookup segment from object/offset pair */
 vm_segment_t
 vm_segment_lookup(object, offset)
-	register vm_object_t	object;
-	register vm_offset_t	offset;
+	vm_object_t	object;
+	vm_offset_t offset;
 {
-	register vm_segment_t		seg;
-	register struct seg_tree 	*bucket;
+	register struct vm_segment_hash_head 	*bucket;
+	register vm_segment_hash_entry_t		entry;
+	vm_segment_t 							segment;
 
-	bucket = &vm_segment_bucket[vm_segment_hash(object, offset)];
-	for(seg = RB_FIRST(seg_tree, bucket); seg != NULL; seg = RB_NEXT(seg_tree, bucket, seg)) {
-		if(RB_FIND(seg_tree, bucket, seg)->index == vm_segment_hash(object, offset)) {
-			if(RB_FIND(seg_tree, bucket, seg)->object == object && RB_FIND(seg_tree, bucket, seg)->offset == offset) {
-				return (seg);
-			}
+	bucket = &vm_segment_hashtable[vm_segment_hash(object, offset)];
+	entry = CIRCLEQ_FIRST(bucket);
+
+	CIRCLEQ_FOREACH(entry, bucket, sge_hlinks) {
+		if(CIRCLEQ_NEXT(entry, sge_hlinks) ) {
+			segment = entry->sge_segment;
+
+			return (segment);
 		}
 	}
-
 	return (NULL);
 }
 
+void
+vm_segment_enter(segment, object, offset)
+	vm_segment_t 	segment;
+	vm_object_t		object;
+	vm_offset_t 	offset;
+{
+	register struct vm_segment_hash_head *bucket;
+	register vm_segment_hash_entry_t	entry;
 
+	if(segment == NULL) {
+		return;
+	}
+
+	bucket = &vm_segment_hashtable[vm_segment_hash(object, offset)];
+	entry = (vm_segment_hash_entry_t)malloc((u_long)sizeof *entry);
+	entry->sge_segment = segment;
+	segment->sg_flags = SEG_TABLED;
+
+	CIRCLEQ_INSERT_TAIL(bucket, entry, sge_hlinks);
+}
+
+void
+vm_segment_remove(segment)
+	vm_segment_t 	segment;
+{
+	register struct vm_segment_hash_head 	*bucket;
+	register vm_segment_hash_entry_t		entry;
+
+	bucket = &vm_segment_hashtable[vm_segment_hash(segment->sg_object, segment->sg_offset)];
+
+	for(entry = CIRCLEQ_FIRST(bucket); entry != NULL; entry = CIRCLEQ_NEXT(entry, sge_hlinks)) {
+
+
+	}
+}
+
+vm_segment_hash_entry_t
+vm_segment_search_next(entry, object)
+	vm_segment_hash_entry_t entry;
+	vm_object_t				object;
+{
+	register struct vm_segment_hash_head *bucket;
+	register vm_segment_hash_entry_t cur;
+	register vm_segment_hash_entry_t first = CIRCLEQ_FIRST(bucket);
+	register vm_segment_hash_entry_t last = CIRCLEQ_LAST(bucket);
+
+	bucket = &vm_segment_hashtable[vm_segment_hash(object)];
+
+	CIRCLEQ_FOREACH(entry, bucket, sge_hlinks) {
+		cur = CIRCLEQ_NEXT(first, sge_hlinks);
+		if(entry == cur) {
+			return (entry);
+		}
+	}
+	return (NULL);
+}

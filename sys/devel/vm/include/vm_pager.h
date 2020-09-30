@@ -33,7 +33,6 @@
  *
  * from: Id: uvm_pager.h,v 1.1.2.14 1998/01/13 19:00:50 chuck Exp
  */
-
 /*
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -68,7 +67,6 @@
  *
  *	@(#)vm_pager.h	8.5 (Berkeley) 7/7/94
  */
-
 /*
  * Copyright (c) 1990 University of Utah.
  *

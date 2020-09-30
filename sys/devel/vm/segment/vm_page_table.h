@@ -26,51 +26,37 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _VM_SEGMENT_H_
-#define _VM_SEGMENT_H_
+#ifndef _VM_PAGE_TABLE_H_
+#define _VM_PAGE_TABLE_H_
 
 #include <sys/queue.h>
 #include <sys/tree.h>
 
-struct vm_segment;
-typedef struct vm_segment 	*vm_segment_t;
+struct vm_page_table;
+typedef struct vm_page_table 	*vm_page_table_t;
 
-struct seglist;
-CIRCLEQ_HEAD(seglist, vm_segment);
-struct vm_segment {
-	struct pttree							sg_pgtable;	/* list of all page tables in segment */
+struct pttree;
+RB_HEAD(pttree, vm_page_table);
+struct vm_page_table {
+	struct pgtree                   	pt_pagetree;
 
-	CIRCLEQ_ENTRY(vm_segment)				sg_list;
+	RB_ENTRY(vm_page_table)				pt_tree;
 
-	int										sg_flags;
-	vm_object_t								sg_object;
-	vm_offset_t 							sg_offset;
-	vm_size_t								sg_size;	/* segment size */
+	vm_segment_t						pt_segment;
+    vm_page_t                       	pt_page;
+
+    vm_size_t							pt_size;
+    unsigned long                   	pt_offset;
 };
 
-/* flags */
-#define SEG_ACTIVE		0x01
-#define SEG_INACTIVE	0x02
-#define SEG_TABLED		0x04
-
-CIRCLEQ_HEAD(vm_segment_hash_head, vm_segment_hash_entry);
-struct vm_segment_hash_entry {
-    CIRCLEQ_ENTRY(vm_segment_hash_entry)   	sge_hlinks;
-    vm_segment_t                      		sge_segment;
+RB_HEAD(vm_page_table_hash_root, vm_page_table_hash_entry);
+struct vm_page_table_hash_entry {
+	RB_ENTRY(vm_page_table_hash_entry) 	pte_hlinks;
+	vm_page_table_t						pte_pgtable;
 };
-typedef struct vm_segment_hash_entry  		*vm_segment_hash_entry_t;
+typedef struct vm_page_table_hash_entry *vm_page_table_hash_entry_t;
 
-struct seglist  vm_segment_list;
+struct pttree 	vm_pagetable_tree;
 
 
-
-/* faults */
-//MULTICS VM: (segmented paging)
-//page multiplexing: core blocks among active segments.
-//least-recently-used algorithm
-//supervisor;
-//segment control; 		(SC)
-//page control; 		(PC)
-//directory control; 	(DC)
-
-#endif /* _VM_SEGMENT_H_ */
+#endif /* _VM_PAGE_TABLE_H_ */
