@@ -32,9 +32,6 @@
 #include <sys/queue.h>
 #include <sys/tree.h>
 
-struct vm_page_table;
-typedef struct vm_page_table 	*vm_page_table_t;
-
 struct pttree;
 RB_HEAD(pttree, vm_page_table);
 struct vm_page_table {
@@ -56,7 +53,6 @@ struct vm_page_table_hash_entry {
 };
 typedef struct vm_page_table_hash_entry *vm_page_table_hash_entry_t;
 
-struct pttree 	vm_pagetable_tree;
-
+struct pttree vm_pagetable_tree;
 
 #endif /* _VM_PAGE_TABLE_H_ */

@@ -28,34 +28,17 @@
 
 #include <sys/user.h>
 #include <sys/tree.h>
+#include <sys/fnv_hash.h>
 #include <sys/malloc.h>
 #include <sys/map.h>
-#include <sys/fnv_hash.h>
 
 #include <devel/vm/include/vm.h>
-#include <devel/vm/segment/vm_page_table.h>
+#include <devel/vm/include/vm_page.h>
 #include <devel/vm/segment/vm_segment.h>
 
 struct vm_page_table_hash_root 	vm_pagetable_buckets;
 int								vm_pagetable_bucket_count = 0;	/* How big is array? */
 int								vm_pagetable_hash_mask;			/* Mask for hash function */
-
-int
-vm_page_table_rb_compare(pt1, pt2)
-	vm_page_table_t pt1, pt2;
-{
-	if(pt1->pt_offset < pt2->pt_offset) {
-		return(-1);
-	} else if(pt1->pt_offset > pt2->pt_offset) {
-		return(1);
-	}
-	return (0);
-}
-
-RB_PROTOTYPE(pttree, vm_page_table, pt_tree, vm_page_table_rb_compare);
-RB_GENERATE(pttree, vm_page_table, pt_tree, vm_page_table_rb_compare);
-RB_PROTOTYPE(vm_page_table_hash_root, vm_page_table_hash_entry, pte_hlinks, vm_page_table_rb_compare);
-RB_GENERATE(vm_page_table_hash_root, vm_page_table_hash_entry, pte_hlinks, vm_page_table_rb_compare);
 
 void
 vm_page_table_init(start, end)
@@ -112,6 +95,23 @@ vm_page_table_hash(segment, offset)
     return (hash1^hash2);
 }
 
+int
+vm_page_table_rb_compare(pt1, pt2)
+	vm_page_table_t pt1, pt2;
+{
+	if(pt1->pt_offset < pt2->pt_offset) {
+		return (-1);
+	} else if(pt1->pt_offset > pt2->pt_offset) {
+		return (1);
+	}
+	return (0);
+}
+
+RB_PROTOTYPE(pttree, vm_page_table, pt_tree, vm_page_table_rb_compare);
+RB_GENERATE(pttree, vm_page_table, pt_tree, vm_page_table_rb_compare);
+RB_PROTOTYPE(vm_page_table_hash_root, vm_page_table_hash_entry, pte_hlinks, vm_page_table_rb_compare);
+RB_GENERATE(vm_page_table_hash_root, vm_page_table_hash_entry, pte_hlinks, vm_page_table_rb_compare);
+
 /* insert page table into segment */
 void
 vm_page_table_enter(pagetable, segment, offset)
@@ -119,7 +119,7 @@ vm_page_table_enter(pagetable, segment, offset)
 	register vm_segment_t		segment;
 	register vm_offset_t		offset;
 {
-	register struct vm_page_table_hash_root *bucket;
+	struct vm_page_table_hash_root *bucket;
 
 	pagetable->pt_segment = segment;
 	pagetable->pt_offset = offset;
@@ -134,10 +134,10 @@ void
 vm_page_table_remove(pagetable)
 	register vm_page_table_t pagetable;
 {
-	register struct vm_page_table_hash_root *bucket = &vm_pagetable_buckets[vm_page_table_hash(pagetable->pt_segment, pagetable->pt_offset)];
+	struct vm_page_table_hash_root *bucket = &vm_pagetable_buckets[vm_page_table_hash(pagetable->pt_segment, pagetable->pt_offset)];
 
 	if(bucket) {
-		RB_REMOVE(seg_tree, bucket, pagetable);
+		RB_REMOVE(vm_page_table_hash_root, bucket, pagetable);
 	}
 }
 
@@ -147,13 +147,10 @@ vm_page_table_lookup(segment, offset)
 	register vm_segment_t	segment;
 	register vm_offset_t	offset;
 {
-	register struct vm_page_table_hash_root *bucket;
-	register vm_page_table_t 				pagetable;
+	struct vm_page_table_hash_root *bucket;
+	register vm_page_table_t 		pagetable;
 
 	bucket = &vm_pagetable_buckets[vm_page_table_hash(segment, offset)];
-//	RB_FOREACH(pagetable, vm_page_table_hash_root, bucket) {
-
-//	}
 
 	for (pagetable = RB_FIRST(vm_page_table_hash_root, bucket); pagetable != NULL; pagetable = RB_NEXT(vm_page_table_hash_root, bucket, pagetable)) {
 		if ((RB_FIND(vm_page_table_hash_root, bucket, pagetable)->pte_pgtable == pagetable)) {

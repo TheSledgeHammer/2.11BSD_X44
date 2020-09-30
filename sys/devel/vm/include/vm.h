@@ -57,6 +57,12 @@ typedef struct vm_map 			*vm_map_t;
 struct vm_object;
 typedef struct vm_object 		*vm_object_t;
 
+struct vm_segment;
+typedef struct vm_segment 		*vm_segment_t;
+
+struct vm_page_table;
+typedef struct vm_page_table 	*vm_page_table_t;
+
 struct vm_page;
 typedef struct vm_page  		*vm_page_t;
 
@@ -79,11 +85,12 @@ typedef struct pager_struct 	*vm_pager_t;
 #include <devel/vm/include/vm_prot.h>
 #include <devel/vm/include/vm_swap.h>
 
-//#include <devel/vm/avm/avm.h>
-//#include <devel/vm/ovl/ovl.h>
-
 #include <devel/vm/extents/vm_extent.h>		/* Work in Progress */
-#include <devel/vm/extents/vm_segment.h>	/* Work in Progress */
+#include <devel/vm/segment/vm_page_table.h>	/* Work in Progress */
+#include <devel/vm/segment/vm_segment.h>	/* Work in Progress */
+
+#include <devel/vm/avm/avm.h>				/* Work in Progress */
+#include <devel/vm/ovl/ovl.h>				/* Work in Progress */
 
 /*
  *	MACH VM locking type mappings to kernel types
@@ -132,11 +139,11 @@ struct vm {
 	struct simplelock 	hashlock; 		/* lock on page_hash array */
 
 	/* anon stuff */
-	struct vm_anon 		*afree; 		/* anon free list */
+	struct avm_anon 	*afree; 		/* anon free list */
 	struct simplelock 	afreelock; 		/* lock on anon free list */
 
 	/* static kernel map entry pool */
-	struct vm_map_entry *kentry_free; 	/* free page pool */
+	struct vm_map_entry *kentry_free; 	/* free page */
 	struct simplelock 	kentry_lock;
 
 	/* swap-related items */

@@ -68,7 +68,7 @@ struct	pager_struct {
 #define PG_CLUSTERPUT	2
 
 struct	pagerops {
-	void		(*pgo_init)		/* Initialize pager. */
+	void		(*pgo_init)			/* Initialize pager. */
 			    	(void);
 	vm_pager_t	(*pgo_alloc)		/* Allocate pager. */
 			    	(caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
@@ -81,8 +81,7 @@ struct	pagerops {
 	boolean_t  	(*pgo_haspage)		/* Does pager have page? */
 			    	(vm_pager_t, vm_offset_t);
 	void		(*pgo_cluster)		/* Return range of cluster. */
-			    	(vm_pager_t, vm_offset_t,
-				 vm_offset_t *, vm_offset_t *);
+			    	(vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
 };
 
 /*

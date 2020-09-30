@@ -29,23 +29,22 @@
 #ifndef _VM_SEGMENT_H_
 #define _VM_SEGMENT_H_
 
-#include <sys/queue.h>
-#include <sys/tree.h>
-
-struct vm_segment;
-typedef struct vm_segment 	*vm_segment_t;
+#include <devel/vm/include/vm_object.h>
+#include <devel/vm/include/vm_page.h>
 
 struct seglist;
 CIRCLEQ_HEAD(seglist, vm_segment);
 struct vm_segment {
-	struct pttree							sg_pgtable;	/* list of all page tables in segment */
+	struct pttree							sg_pgtable;		/* list of all page tables in segment */
 
 	CIRCLEQ_ENTRY(vm_segment)				sg_list;
 
 	int										sg_flags;
 	vm_object_t								sg_object;
 	vm_offset_t 							sg_offset;
-	vm_size_t								sg_size;	/* segment size */
+	vm_size_t								sg_size;		/* segment size */
+
+	CIRCLEQ_ENTRY(vm_segment)				sg_cached_list;	/* for persistence */
 };
 
 /* flags */
@@ -61,16 +60,16 @@ struct vm_segment_hash_entry {
 typedef struct vm_segment_hash_entry  		*vm_segment_hash_entry_t;
 
 struct seglist  vm_segment_list;
-
-
+struct seglist  vm_segment_cache_list;
 
 /* faults */
+
 //MULTICS VM: (segmented paging)
 //page multiplexing: core blocks among active segments.
 //least-recently-used algorithm
-//supervisor;
-//segment control; 		(SC)
-//page control; 		(PC)
-//directory control; 	(DC)
+// - supervisor;
+//	 - segment control; 	(SC)
+//	 - page control; 		(PC)
+//	 - directory control; 	(DC)
 
 #endif /* _VM_SEGMENT_H_ */

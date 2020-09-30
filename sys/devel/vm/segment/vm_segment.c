@@ -28,12 +28,12 @@
 
 #include <sys/user.h>
 #include <sys/tree.h>
+#include <sys/fnv_hash.h>
 #include <sys/malloc.h>
 #include <sys/map.h>
-#include <sys/fnv_hash.h>
 
 #include <devel/vm/include/vm.h>
-#include "vm_segment.h"
+#include <devel/vm/segment/vm_segment.h>
 
 struct vm_segment_hash_head  	*vm_segment_hashtable;
 int								vm_segment_bucket_count = 0;	/* How big is array? */
