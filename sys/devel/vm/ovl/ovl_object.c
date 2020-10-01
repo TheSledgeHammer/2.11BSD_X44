@@ -94,14 +94,14 @@ ovl_object_init(size)
 {
 	register int	i;
 
-	TAILQ_INIT(&ovl_object_cached_list);
-	TAILQ_INIT(&ovl_object_list);
+	RB_INIT(&ovl_object_cached_tree);
+	RB_INIT(&ovl_object_tree);
 	ovl_object_count = 0;
 	simple_lock_init(&ovl_cache_lock);
-	simple_lock_init(&ovl_object_list_lock);
+	simple_lock_init(&ovl_object_tree_lock);
 
 	for (i = 0; i < OVL_OBJECT_HASH_COUNT; i++)
-		TAILQ_INIT(&ovl_object_hashtable[i]);
+		RB_INIT(&ovl_object_hashtable[i]);
 
 	kern_ovl_object = &kernel_object_store;
 	_ovl_object_allocate(size, kern_ovl_object);
@@ -135,19 +135,19 @@ _ovl_object_allocate(size, object)
 	register ovl_object_t	object;
 {
 	ovl_object_lock_init(object);
-	object->ref_count = 1;
-	object->size = size;
-	object->flags = OVL_OBJ_INTERNAL;
+	object->ovo_ref_count = 1;
+	object->ovo_size = size;
+	object->ovo_flags = OVL_OBJ_INTERNAL;
 
 	/*
 	 *	Object starts out read-write.
 	 */
 
-	simple_lock(&ovl_object_list_lock);
-	TAILQ_INSERT_TAIL(&ovl_object_list, object, object_list);
+	simple_lock(&ovl_object_tree_lock);
+	RB_INSERT(object_q, &ovl_object_tree, object);
 	ovl_object_count++;
 	//cnt.v_nzfod += atop(size);
-	simple_unlock(&ovl_object_list_lock);
+	simple_unlock(&ovl_object_tree_lock);
 }
 
 /*
@@ -163,7 +163,7 @@ ovl_object_reference(object)
 		return;
 
 	ovl_object_lock(object);
-	object->ref_count++;
+	object->ovo_ref_count++;
 	ovl_object_unlock(object);
 }
 
@@ -187,7 +187,7 @@ ovl_object_deallocate(object)
 		 *	Lose the reference
 		 */
 		ovl_object_lock(object);
-		if (--(object->ref_count) != 0) {
+		if (--(object->ovo_ref_count) != 0) {
 
 			/*
 			 *	If there are still references, then
@@ -204,13 +204,13 @@ ovl_object_deallocate(object)
 		 *	pages.
 		 */
 
-		if (object->flags & OVL_OBJ_CANPERSIST) {
+		if (object->ovo_flags & OVL_OBJ_CANPERSIST) {
 
-			TAILQ_INSERT_TAIL(&ovl_object_cached_list, object, cached_list);
+			RB_INSERT(object_q, &ovl_object_cached_tree, object);
 			ovl_object_cached++;
 			ovl_object_cache_unlock();
 
-			ovl_object_deactivate_pages(object);
+//			ovl_object_deactivate_pages(object);
 			ovl_object_unlock(object);
 
 			ovl_object_cache_trim();
@@ -220,7 +220,7 @@ ovl_object_deallocate(object)
 		/*
 		 *	Make sure no one can look us up now.
 		 */
-		ovl_object_remove(object->index);
+		ovl_object_remove(object->ovo_index);
 		ovl_object_cache_unlock();
 
 		ovl_object_terminate(object);
@@ -239,16 +239,34 @@ ovl_object_cache_trim()
 
 	ovl_object_cache_lock();
 	while (ovl_object_cached > ovl_cache_max) {
-		object = TAILQ_FIRST(ovl_object_cached_list);
+		object = RB_FIRST(object_q, ovl_object_cached_tree);
 		ovl_object_cache_unlock();
 
-		if (object != ovl_object_lookup(object->index))
+		if (object != ovl_object_lookup(object->ovo_index))
 			panic("ovl_object_deactivate: I'm sooo confused.");
 
 		ovl_object_cache_lock();
 	}
 	ovl_object_cache_unlock();
 }
+
+/* ovl object rbtree comparator */
+int
+ovl_object_rb_compare(obj1, obj2)
+	struct ovl_object *obj1, *obj2;
+{
+	if(obj1->ovo_size < obj2->ovo_size) {
+		return (-1);
+	} else if(obj1->ovo_size > obj2->ovo_size) {
+		return (1);
+	}
+	return (0);
+}
+
+RB_PROTOTYPE(object_t, ovl_object, ovo_object_tree, ovl_object_rb_compare);
+RB_GENERATE(object_t, ovl_object, ovo_object_tree, ovl_object_rb_compare);
+RB_PROTOTYPE(ovl_object_hash_head, ovl_object_hash_entry, ovoe_hlinks, ovl_object_rb_compare);
+RB_GENERATE(ovl_object_hash_head, ovl_object_hash_entry, ovoe_hlinks, ovl_object_rb_compare);
 
 /*
  *	ovl_object_hash generates a hash the object/id pair.
@@ -272,19 +290,21 @@ ovl_object_lookup(index, object)
 	u_long 			index;
 	ovl_object_t 	object;
 {
+	struct ovl_object_hash_head	*bucket;
 	register ovl_object_hash_entry_t	entry;
 
+	bucket = &ovl_object_hashtable[ovl_object_hash(object)];
 	ovl_object_cache_lock();
 
-	for (entry = TAILQ_FIRST(ovl_object_hashtable[ovl_object_hash(object)]); entry != NULL; entry = TAILQ_NEXT(entry, hash_links)) {
-		object = entry->object;
-		if (object->index == index) {
+	for (entry = RB_FIRST(ovl_object_hash_head , bucket); entry != NULL; entry = RB_NEXT(ovl_object_hash_head, bucket, entry)) {
+		object = entry->ovoe_object;
+		if (object->ovo_index == index) {
 			ovl_object_lock(object);
-			if (object->ref_count == 0) {
-				TAILQ_REMOVE(&ovl_object_cached_list, object, cached_list);
+			if (object->ovo_ref_count == 0) {
+				RB_REMOVE(object_q, &ovl_object_cached_tree, object);
 				ovl_object_cached--;
 			}
-			object->ref_count++;
+			object->ovo_ref_count++;
 			ovl_object_unlock(object);
 			ovl_object_cache_unlock();
 			return (object);
@@ -300,7 +320,7 @@ ovl_object_lookup(index, object)
  *	the hash table.
  */
 void
-ovl_object_htable_enter(object)
+ovl_object_enter(object)
 	ovl_object_t	object;
 {
 	struct ovl_object_hash_head	*bucket;
@@ -311,12 +331,11 @@ ovl_object_htable_enter(object)
 
 	bucket = &ovl_object_hashtable[ovl_object_hash(object)];
 	entry = (ovl_object_hash_entry_t)malloc((u_long)sizeof *entry, M_OVLOBJHASH, M_WAITOK);
-	entry->object = object;
-	object->index = ovl_object_hash(object);
-	object->flags |= OVL_OBJ_CANPERSIST;
+	entry->ovoe_object = object;
+	object->ovo_flags |= OVL_OBJ_CANPERSIST;
 
 	ovl_object_cache_lock();
-	TAILQ_INSERT_TAIL(bucket, entry, hash_links);
+	RB_INSERT(ovl_object_hash_head, bucket, entry);
 	ovl_object_cache_unlock();
 }
 
@@ -329,7 +348,7 @@ ovl_object_htable_enter(object)
  *	by reorganizing vm_object_deallocate.
  */
 void
-ovl_object_htable_remove(object)
+ovl_object_remove(object)
 	register ovl_object_t	object;
 {
 	struct ovl_object_hash_head			*bucket;
@@ -339,10 +358,10 @@ ovl_object_htable_remove(object)
 	bucket = &ovl_object_hashtable[ovl_object_hash(object)];
 	u_long index = ovl_object_hash(object);
 
-	for(entry = TAILQ_FIRST(bucket); entry != NULL; entry = TAILQ_NEXT(entry, hash_links)) {
-		object = entry->object;
-		if(ovl_object_hash(entry->object) == index) {
-			TAILQ_REMOVE(bucket, entry, hash_links);
+	for(entry = RB_FIRST(ovl_object_hash_head, bucket); entry != NULL; entry = RB_NEXT(ovl_object_hash_head, bucket, entry)) {
+		object = entry->ovoe_object;
+		if(ovl_object_hash(entry->ovoe_object) == index) {
+			RB_REMOVE(ovl_object_hash_head, bucket, entry);
 			free((caddr_t)entry, M_OVLOBJHASH);
 			break;
 		}
@@ -362,7 +381,7 @@ ovl_object_cache_clear()
 	 *	list of cached objects.
 	 */
 	ovl_object_cache_lock();
-	while ((object = TAILQ_FIRST(ovl_object_cached_list)) != NULL) {
+	while ((object = RB_FIRST(object_q, ovl_object_cached_tree)) != NULL) {
 		ovl_object_cache_unlock();
 
 		/*

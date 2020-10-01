@@ -26,6 +26,14 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+//MULTICS VM: (segmented paging)
+//page multiplexing: core blocks among active segments.
+//least-recently-used algorithm
+// - supervisor;
+//	 - segment control; 	(SC)
+//	 - page control; 		(PC)
+//	 - directory control; 	(DC)
+
 #ifndef _VM_SEGMENT_H_
 #define _VM_SEGMENT_H_
 
@@ -64,12 +72,6 @@ struct seglist  vm_segment_cache_list;
 
 /* faults */
 
-//MULTICS VM: (segmented paging)
-//page multiplexing: core blocks among active segments.
-//least-recently-used algorithm
-// - supervisor;
-//	 - segment control; 	(SC)
-//	 - page control; 		(PC)
-//	 - directory control; 	(DC)
+
 
 #endif /* _VM_SEGMENT_H_ */

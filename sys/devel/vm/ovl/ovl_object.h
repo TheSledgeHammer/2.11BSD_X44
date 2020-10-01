@@ -71,13 +71,12 @@
 #include <devel/vm/ovl/ovl.h>
 
 struct ovl_object {
-	TAILQ_ENTRY(ovl_object)				object_list;	/* list of all objects */
-	u_short								flags;			/* see below */
-	u_long								index;			/* index in hash table */
-	simple_lock_data_t					lock;			/* Synchronization */
-	int									ref_count;		/* How many refs?? */
-	vm_size_t							size;			/* Object size */
-	TAILQ_ENTRY(ovl_object)				cached_list;	/* for persistence */
+	RB_ENTRY(ovl_object)				ovo_object_tree;	/* list of all objects */
+	u_long								ovo_index;
+	u_short								ovo_flags;			/* see below */
+	simple_lock_data_t					ovo_lock;			/* Synchronization */
+	int									ovo_ref_count;		/* How many refs?? */
+	vm_size_t							ovo_size;			/* Object size */
 };
 
 /*
@@ -89,23 +88,24 @@ struct ovl_object {
 #define OVL_OBJ_KERNEL		0x0006	/* kernel overlay object */
 #define OVL_OBJ_VM			0x0008	/* vm overlay object */
 
-TAILQ_HEAD(ovl_object_hash_head, ovl_object_hash_entry);
+RB_HEAD(ovl_object_hash_head, ovl_object_hash_entry);
 struct ovl_object_hash_entry {
-	TAILQ_ENTRY(ovl_object_hash_entry)  hash_links;		/* hash chain links */
-	ovl_object_t						object;
+	RB_ENTRY(ovl_object_hash_entry)  	ovoe_hlinks;		/* hash chain links */
+	ovl_object_t						ovoe_object;
 };
 typedef struct ovl_object_hash_entry	*ovl_object_hash_entry_t;
 
 //#ifdef KERNEL
-TAILQ_HEAD(object_q, ovl_object);
+struct object_t;
+RB_HEAD(object_t, ovl_object);
 
-struct object_q		ovl_object_cached_list;	/* list of objects persisting */
+struct object_t		ovl_object_cached_tree;	/* list of objects persisting */
 int					ovl_object_cached;		/* size of cached list */
 simple_lock_data_t	ovl_cache_lock;			/* lock for object cache */
 
-struct object_q		ovl_object_list;		/* list of allocated objects */
+struct object_t		ovl_object_tree;		/* list of allocated objects */
 long				ovl_object_count;		/* count of all objects */
-simple_lock_data_t	ovl_object_list_lock;
+simple_lock_data_t	ovl_object_tree_lock;
 											/* lock for object list and count */
 
 ovl_object_t		kern_ovl_object;		/* single kernel overlay object */
@@ -115,23 +115,36 @@ ovl_object_t		vm_ovl_object;			/* single vm overlay object */
 #define	ovl_object_cache_unlock()		simple_unlock(&ovl_cache_lock)
 //#endif /* KERNEL */
 
-#define	ovl_object_lock_init(object)	simple_lock_init(&(object)->lock)
-#define	ovl_object_lock(object)			simple_lock(&(object)->lock)
-#define	ovl_object_unlock(object)		simple_unlock(&(object)->lock)
-#define	ovl_object_lock_try(object)		simple_lock_try(&(object)->lock)
+#define	ovl_object_lock_init(object)	simple_lock_init(&(object)->ovo_lock)
+#define	ovl_object_lock(object)			simple_lock(&(object)->ovo_lock)
+#define	ovl_object_unlock(object)		simple_unlock(&(object)->ovo_lock)
+#define	ovl_object_lock_try(object)		simple_lock_try(&(object)->ovo_lock)
 #define	ovl_object_sleep(event, object, interruptible) \
-			thread_sleep((event), &(object)->lock, (interruptible))
+			thread_sleep((event), &(object)->ovo_lock, (interruptible))
 
-#ifdef KERNEL
+//#ifdef KERNEL
 ovl_object_t	ovl_object_allocate (vm_size_t);
 void		 	ovl_object_cache_clear (void);
 void			ovl_object_cache_trim (void);
 void		 	ovl_object_deallocate (ovl_object_t);
-void		 	ovl_object_htable_enter (ovl_object_t, u_long);
+void		 	ovl_object_enter (ovl_object_t, u_long);
 void		 	ovl_object_init (vm_size_t);
 ovl_object_t	ovl_object_lookup (u_long);
 void		 	ovl_object_reference (ovl_object_t);
-void			ovl_object_htable_remove(u_long);
+void			ovl_object_remove(u_long);
 void		 	ovl_object_terminate (ovl_object_t);
+
+void		 	ovl_object_collapse (ovl_object_t);
+void		 	ovl_object_copy_vm_object (ovl_object_t, vm_offset_t, vm_size_t, vm_object_t *, vm_offset_t *, boolean_t *);
+void		 	ovl_object_copy_avm_object (ovl_object_t, vm_offset_t, vm_size_t, avm_object_t *, vm_offset_t *, boolean_t *);
+void			ovl_object_copy_to();
+void			ovl_object_copy_from();
+void			ovl_object_shadow(ovl_object_t *, vm_offset_t *, vm_size_t);
+/* Place in segment? */
+void			ovl_object_coalesce_segment();
+void			ovl_object_split_segment();
+void			ovl_object_shrink_segment();
+void			ovl_object_expand_segment();
+
 #endif /* KERNEL */
 #endif /* _OVL_OBJECT_H_ */

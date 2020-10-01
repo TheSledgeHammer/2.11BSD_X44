@@ -109,7 +109,7 @@ _vm_object_allocate(size, object)
 	vm_size_t				size;
 	register vm_object_t	object;
 {
-	CIRCLEQ_INIT(&object->segt);
+	CIRCLEQ_INIT(&object->segl);
 	vm_object_lock_init(object);
 	object->ref_count = 1;
 	object->resident_segment_count = 0;
@@ -205,7 +205,7 @@ vm_object_deallocate(object)
 			vm_object_cached++;
 			vm_object_cache_unlock();
 
-			vm_object_deactivate_pages(object);
+			//vm_object_deactivate_pages(object);
 			vm_object_unlock(object);
 
 			vm_object_cache_trim();
@@ -274,7 +274,7 @@ vm_object_terminate(object)
 	 * Now free the pages.
 	 * For internal objects, this also removes them from paging queues.
 	 */
-	while ((p = CIRCLEQ_FIRST(object->segt)) != NULL) {
+	while ((p = CIRCLEQ_FIRST(object->segl)) != NULL) {
 		//VM_PAGE_CHECK(p);
 		//vm_page_lock_queues();
 		//vm_page_free(p);
@@ -287,8 +287,8 @@ vm_object_terminate(object)
 	 * Let the pager know object is dead.
 	 */
 
-	//if (object->pager != NULL)
-		//vm_pager_deallocate(object->pager);
+	if (object->pager != NULL)
+		vm_pager_deallocate(object->pager);
 
 	simple_lock(&vm_object_tree_lock);
 	RB_REMOVE(objecttree, &vm_object_tree, object);
@@ -501,4 +501,36 @@ vm_object_remove(pager)
 			break;
 		}
 	}
+}
+
+/*
+ *	vm_object_cache_clear removes all objects from the cache.
+ *
+ */
+void
+vm_object_cache_clear()
+{
+	register vm_object_t	object;
+
+	/*
+	 *	Remove each object in the cache by scanning down the
+	 *	list of cached objects.
+	 */
+	vm_object_cache_lock();
+	while ((object = RB_FIRST(objtree, &vm_object_cached_tree)) != NULL) {
+		vm_object_cache_unlock();
+
+		/*
+		 * Note: it is important that we use vm_object_lookup
+		 * to gain a reference, and not vm_object_reference, because
+		 * the logic for removing an object from the cache lies in
+		 * lookup.
+		 */
+		if (object != vm_object_lookup(object->pager))
+			panic("vm_object_cache_clear: I'm sooo confused.");
+		pager_cache(object, FALSE);
+
+		vm_object_cache_lock();
+	}
+	vm_object_cache_unlock();
 }

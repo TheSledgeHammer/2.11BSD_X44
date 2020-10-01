@@ -6,6 +6,12 @@
  *	3-Clause BSD License
  */
 
+/*	koverlay:
+ * 	-
+ * 	- Should be changed ovlspace allocation
+ * 		- as to access and allocate a portion of physical memory
+ * 		- ovlspace can be split
+ */
 /* Current Kernel Overlays:
  * - Akin to a more advanced & versatile overlay from original 2.11BSD
  * - Allocates memory from kernelspace (thus vm allocation)

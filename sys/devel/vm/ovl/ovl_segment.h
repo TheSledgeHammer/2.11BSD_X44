@@ -24,58 +24,39 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @(#)ovl_pmap.h	1.00
  */
 
-/* segment types */
-/* Segmented Space Address Layout */
-/*
-#define SEG_DFLT	-1
-#define	SEG_VM		0
-#define	SEG_AVM		1
-#define SEG_OVL		2
-#define VMSPACE_START
-#define VMSPACE_END
-#define AVMSPACE_START
-#define AVMSPACE_END
-#define OVLSPACE_START
-#define OVLSPACE_END
+#ifndef _OVL_SEGMENT_H_
+#define _OVL_SEGMENT_H_
 
-//#ifdef OVL
-vm_offset_t						overlay_start;
-vm_offset_t 					overlay_end;
-extern struct pmap				overlay_pmap_store;
-#define overlay_pmap 			(&overlay_pmap_store)
-//#endif
- */
+#include <sys/queue.h>
 
-#ifndef OVL_PMAP_H_
-#define OVL_PMAP_H_
+struct ovseglist;
+CIRCLEQ_HEAD(ovseglist, ovl_segment);
+struct ovl_segment {
+	CIRCLEQ_ENTRY(ovl_segment) 				ovsg_list;
 
-/* OVL Space Address Layout */
-#define OVL_MIN_ADDRESS 		((vm_offset_t)0)	/* put ovlspace before vmspace in memory stack */
-#define OVL_MAX_ADDRESS			((PGSIZE/100)*10)	/* Total Size of Overlay Address Space (Roughly 10% of PGSIZE) */
-#define VM_MIN_ADDRESS			OVL_MAX_ADDRESS
+	int										ovsg_flags;
+	ovl_object_t							ovsg_object;
+	vm_offset_t 							ovsg_offset;
+	vm_size_t								ovsg_size;			/* segment size */
 
-#define OVL_MIN_KERNEL_ADDRESS	OVL_MIN_ADDRESS
-#define OVL_MAX_KERNEL_ADDRESS
-#define OVL_MIN_VM_ADDRESS
-#define OVL_MAX_VM_ADDRESS
+	CIRCLEQ_ENTRY(ovl_segment)				ovsg_cached_list;	/* for persistence */
+};
 
-#define OVL_MEM_SIZE			OVL_MAX_ADDRESS		/* total ovlspace for allocation */
-#define NBOVL 										/* bytes per overlay */
 
-/* memory management definitions */
-ovl_map_t 						ovl_map;
-ovl_map_t						kovl_mmap;			/* kernel overlay memory map */
-ovl_map_t						vovl_mmap;			/* vm overlay memory map */
+CIRCLEQ_HEAD(ovl_segment_hash_head, ovl_segment_hash_entry);
+struct ovl_segment_hash_entry {
+    CIRCLEQ_ENTRY(ovl_segment_hash_entry)   ovsge_hlinks;
+    ovl_segment_t                      		ovsge_segment;
+};
+typedef struct ovl_segment_hash_entry  		*ovl_segment_hash_entry_t;
 
-#ifndef OVL_MAP
-/* as defined in ovl_map.h */
-#define MAX_OMAP				(64)
-#define	NKOVLE					(32)				/* number of kernel overlay entries */
-#define	NVOVLE					(32)				/* number of virtual (vm) overlay entries */
-#endif
+struct ovseglist  ovl_segment_list;
+struct ovseglist  ovl_segment_cache_list;
 
-#endif /* OVL_PMAP_H_ */
+
+
+void ovl_segment_shadow();
+
+#endif /* _OVL_SEGMENT_H_ */

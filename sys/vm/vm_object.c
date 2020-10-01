@@ -608,14 +608,13 @@ vm_object_pmap_remove(object, start, end)
  *	up by a non-default pager.
  */
 void
-vm_object_copy(src_object, src_offset, size,
-		    dst_object, dst_offset, src_needs_copy)
+vm_object_copy(src_object, src_offset, size, dst_object, dst_offset, src_needs_copy)
 	register vm_object_t	src_object;
-	vm_offset_t		src_offset;
-	vm_size_t		size;
-	vm_object_t		*dst_object;	/* OUT */
-	vm_offset_t		*dst_offset;	/* OUT */
-	boolean_t		*src_needs_copy;	/* OUT */
+	vm_offset_t				src_offset;
+	vm_size_t				size;
+	vm_object_t				*dst_object;		/* OUT */
+	vm_offset_t				*dst_offset;		/* OUT */
+	boolean_t				*src_needs_copy;	/* OUT */
 {
 	register vm_object_t	new_copy;
 	register vm_object_t	old_copy;

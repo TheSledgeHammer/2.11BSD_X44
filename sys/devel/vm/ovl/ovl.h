@@ -42,19 +42,7 @@
  * OVA_MAX_ADDRESS = VM_MAX_ADDRESS - x amount
  * OVA_MIN_ADDRESS = VM_MIN_ADDRESS - x amount
  */
-/*	koverlay:
- * 	-
- * 	- Should be changed ovlspace allocation
- * 		- as to access and allocate a portion of physical memory
- * 		- ovlspace can be split
- */
-/* Current Kernel Overlays:
- * - Akin to a more advanced & versatile overlay from original 2.11BSD
- * - Allocates memory from kernelspace (thus vm allocation)
- * - While useful (in some situations), for extending memory management
- * - This version would not provide any benefit to vm paging, if the overlay is a page in itself.
- * - would likely be slower than using just paging.
- */
+
 
 #ifndef _OVL_H_
 #define _OVL_H_
@@ -69,11 +57,16 @@ struct ovl_map_entry;
 typedef struct ovl_map_entry	*ovl_map_entry_t;
 
 struct ovl_object;
-typedef struct ovl_object 		*ovl_object_t; 		/* akin to a vm_object but in ovlspace */
+typedef struct ovl_object 		*ovl_object_t;
+
+struct ovl_segment;
+typedef struct ovl_segment		*ovl_segment_t;
 
 #include <devel/vm/include/vm.h>
 #include <devel/vm/ovl/ovl_map.h>
 #include <devel/vm/ovl/ovl_object.h>
+#include <devel/vm/ovl/ovl_pmap.h>
+#include <devel/vm/ovl/ovl_segment.h>
 
 /*
  * shareable overlay address space.
