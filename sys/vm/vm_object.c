@@ -1021,9 +1021,9 @@ vm_object_collapse(object)
 {
 	register vm_object_t	backing_object;
 	register vm_offset_t	backing_offset;
-	register vm_size_t	size;
+	register vm_size_t		size;
 	register vm_offset_t	new_offset;
-	register vm_page_t	p, pp;
+	register vm_page_t		p, pp;
 
 	if (!vm_object_collapse_allowed)
 		return;

@@ -44,7 +44,7 @@
 /* Kernel Overlay Memory Management */
 struct ovlbuckets 		bucket[MINBUCKET + 16];
 struct ovlstats 		ovlstats[M_LAST];
-struct ovlusage 		*ovlusage;
+struct ovlusage 		*ovlusage, *vovlusage;
 
 char 					*ovlbase, *ovllimit;
 char 					*kovlbase, *kovllimit;
@@ -77,7 +77,18 @@ koverlay_init()
 {
 	register long indx;
 	int npg = (OVL_MEM_SIZE / NBOVL);
-	ovlusage = (struct ovlusage *) ovl_alloc(ovl_map, (vm_size_t)(npg * sizeof(struct ovlusage)));
+	/* kernel overlay allocation */
+	ovlusage = (struct ovlusage *) ovl_alloc(ovl_map, (vm_size_t)(npg * sizeof(struct ovlusage)), OVL_OBJ_KERNEL);
 	kovl_mmap = ovl_suballoc(ovl_map, (vm_offset_t *)&kovlbase, (vm_offset_t *)&kovllimit, (vm_size_t *) npg);
+}
+
+void
+voverlay_init()
+{
+	register long indx;
+	int npg = (OVL_MEM_SIZE / NBOVL);
+
+	/* vm overlay allocation */
+	vovlusage = (struct ovlusage *) ovl_alloc(ovl_map, (vm_size_t)(npg * sizeof(struct ovlusage)), OVL_OBJ_VM);
 	vovl_mmap = ovl_suballoc(ovl_map, (vm_offset_t *)&vovlbase, (vm_offset_t *)&vovllimit, (vm_size_t *) npg);
 }

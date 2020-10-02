@@ -1,66 +1,10 @@
 /*
- * Copyright (c) 1991, 1993
- *	The Regents of the University of California.  All rights reserved.
+ * vm_object.c
  *
- * This code is derived from software contributed to Berkeley by
- * The Mach Operating System project at Carnegie-Mellon University.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- *
- *	@(#)vm_object.c	8.7 (Berkeley) 5/11/95
- *
- *
- * Copyright (c) 1987, 1990 Carnegie-Mellon University.
- * All rights reserved.
- *
- * Authors: Avadis Tevanian, Jr., Michael Wayne Young
- *
- * Permission to use, copy, modify and distribute this software and
- * its documentation is hereby granted, provided that both the copyright
- * notice and this permission notice appear in all copies of the
- * software, derivative works or modified versions, and any portions
- * thereof, and that both notices appear in supporting documentation.
- *
- * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
- * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND
- * FOR ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
- *
- * Carnegie Mellon requests users of this software to return to
- *
- *  Software Distribution Coordinator  or  Software.Distribution@CS.CMU.EDU
- *  School of Computer Science
- *  Carnegie Mellon University
- *  Pittsburgh PA 15213-3890
- *
- * any improvements or extensions that they make and grant Carnegie the
- * rights to redistribute these changes.
+ *  Created on: 30 Sep 2020
+ *      Author: marti
  */
+
 
 /*
  *	Virtual memory object module.
@@ -71,6 +15,7 @@
 #include <sys/malloc.h>
 #include <sys/fnv_hash.h>
 
+#include <devel/vm/include/vm_object.h>
 #include <devel/vm/include/vm_page.h>
 #include <devel/vm/include/vm.h>
 
@@ -125,13 +70,13 @@ vm_object_init(size)
 	register int	i;
 
 	TAILQ_INIT(&vm_object_cached_list);
-	TAILQ_INIT(&vm_object_list);
+	RB_INIT(&vm_object_tree);
 	vm_object_count = 0;
 	simple_lock_init(&vm_cache_lock);
-	simple_lock_init(&vm_object_list_lock);
+	simple_lock_init(&vm_object_tree_lock);
 
 	for (i = 0; i < VM_OBJECT_HASH_COUNT; i++)
-		TAILQ_INIT(&vm_object_hashtable[i]);
+		RB_INIT(&vm_object_hashtable[i]);
 
 	kernel_object = &kernel_object_store;
 	_vm_object_allocate(size, kernel_object);
@@ -152,7 +97,7 @@ vm_object_allocate(size)
 {
 	register vm_object_t	result;
 
-	result = (vm_object_t)malloc((u_long)sizeof *result, M_VMOBJ, M_WAITOK);
+	result = (vm_object_t)malloc((u_long)sizeof(*result), M_VMOBJ, M_WAITOK);
 
 	_vm_object_allocate(size, result);
 
@@ -164,13 +109,13 @@ _vm_object_allocate(size, object)
 	vm_size_t				size;
 	register vm_object_t	object;
 {
-	TAILQ_INIT(&object->memq);
+	CIRCLEQ_INIT(&object->seglist);
 	vm_object_lock_init(object);
 	object->ref_count = 1;
-	object->resident_page_count = 0;
+	object->resident_segment_count = 0;
 	object->size = size;
-	object->flags = OBJ_INTERNAL;	/* vm_allocate_with_pager will reset */
-	object->paging_in_progress = 0;
+	object->flags = OBJ_INTERNAL;	/* vm_allocate_with_segment will reset */
+	object->segment_active = 0;
 	object->copy = NULL;
 
 	/*
@@ -178,21 +123,282 @@ _vm_object_allocate(size, object)
 	 */
 
 	object->pager = NULL;
-	object->paging_offset = 0;
+	object->segment_offset = 0;
 	object->shadow = NULL;
 	object->shadow_offset = (vm_offset_t) 0;
 
-	simple_lock(&vm_object_list_lock);
-	TAILQ_INSERT_TAIL(&vm_object_list, object, object_list);
+	simple_lock(&vm_object_tree_lock);
+	RB_INSERT(objecttree, &vm_object_tree, object);
 	vm_object_count++;
 	cnt.v_nzfod += atop(size);
-	simple_unlock(&vm_object_list_lock);
+	simple_unlock(&vm_object_tree_lock);
 }
+
+/*
+ *	vm_object_reference:
+ *
+ *	Gets another reference to the given object.
+ */
+void
+vm_object_reference(object)
+	register vm_object_t	object;
+{
+	if (object == NULL)
+		return;
+
+	vm_object_lock(object);
+	object->ref_count++;
+	vm_object_unlock(object);
+}
+
+/*
+ *	vm_object_deallocate:
+ *
+ *	Release a reference to the specified object,
+ *	gained either through a vm_object_allocate
+ *	or a vm_object_reference call.  When all references
+ *	are gone, storage associated with this object
+ *	may be relinquished.
+ *
+ *	No object may be locked.
+ */
+void
+vm_object_deallocate(object)
+	register vm_object_t	object;
+{
+	vm_object_t	temp;
+
+	while (object != NULL) {
+
+		/*
+		 *	The cache holds a reference (uncounted) to
+		 *	the object; we must lock it before removing
+		 *	the object.
+		 */
+
+		vm_object_cache_lock();
+
+		/*
+		 *	Lose the reference
+		 */
+		vm_object_lock(object);
+		if (--(object->ref_count) != 0) {
+
+			/*
+			 *	If there are still references, then
+			 *	we are done.
+			 */
+			vm_object_unlock(object);
+			vm_object_cache_unlock();
+			return;
+		}
+
+		/*
+		 *	See if this object can persist.  If so, enter
+		 *	it in the cache, then deactivate all of its
+		 *	pages.
+		 */
+
+		if (object->flags & OBJ_CANPERSIST) {
+
+			TAILQ_INSERT_TAIL(&vm_object_cached_list, object, cached_list);
+			vm_object_cached++;
+			vm_object_cache_unlock();
+
+			//vm_object_deactivate_pages(object);
+			vm_object_unlock(object);
+
+			vm_object_cache_trim();
+			return;
+		}
+
+		/*
+		 *	Make sure no one can look us up now.
+		 */
+		vm_object_remove(object->pager);
+		vm_object_cache_unlock();
+
+		temp = object->shadow;
+		vm_object_terminate(object);
+		/* unlocks and deallocates object */
+		object = temp;
+	}
+}
+
+/*
+ *	vm_object_terminate actually destroys the specified object, freeing
+ *	up all previously used resources.
+ *
+ *	The object must be locked.
+ */
+void
+vm_object_terminate(object)
+	register vm_object_t	object;
+{
+	register vm_segment_t	p;
+	vm_object_t				shadow_object;
+
+	/*
+	 *	Detach the object from its shadow if we are the shadow's
+	 *	copy.
+	 */
+	if ((shadow_object = object->shadow) != NULL) {
+		vm_object_lock(shadow_object);
+		if (shadow_object->copy == object)
+			shadow_object->copy = NULL;
+#if 0
+		else if (shadow_object->copy != NULL)
+			panic("vm_object_terminate: copy/shadow inconsistency");
+#endif
+		vm_object_unlock(shadow_object);
+	}
+
+	/*
+	 * Wait until the pageout daemon is through with the object.
+	 */
+	while (object->segment_active) {
+		vm_object_sleep(object, object, FALSE);
+		vm_object_lock(object);
+	}
+
+	/*
+	 * If not an internal object clean all the pages, removing them
+	 * from paging queues as we go.
+	 *
+	 * XXX need to do something in the event of a cleaning error.
+	 */
+	//if ((object->flags & OBJ_INTERNAL) == 0)
+	//	(void) vm_object_page_clean(object, 0, 0, TRUE, TRUE);
+
+	/*
+	 * Now free the pages.
+	 * For internal objects, this also removes them from paging queues.
+	 */
+	while ((p = CIRCLEQ_FIRST(object->seglist)) != NULL) {
+		//VM_PAGE_CHECK(p);
+		//vm_page_lock_queues();
+		//vm_page_free(p);
+		//cnt.v_pfree++;
+		//vm_page_unlock_queues();
+	}
+	vm_object_unlock(object);
+
+	/*
+	 * Let the pager know object is dead.
+	 */
+
+	if (object->pager != NULL)
+		vm_pager_deallocate(object->pager);
+
+	simple_lock(&vm_object_tree_lock);
+	RB_REMOVE(objecttree, &vm_object_tree, object);
+	vm_object_count--;
+	simple_unlock(&vm_object_tree_lock);
+
+	/*
+	 * Free the space for the object.
+	 */
+	free((caddr_t)object, M_VMOBJ);
+}
+
+/*
+ *	Trim the object cache to size.
+ */
+void
+vm_object_cache_trim()
+{
+	register vm_object_t	object;
+
+	vm_object_cache_lock();
+	while (vm_object_cached > vm_cache_max) {
+		object = TAILQ_FIRST(vm_object_cached_list);
+		vm_object_cache_unlock();
+
+		if (object != vm_object_lookup(object->pager))
+			panic("vm_object_deactivate: I'm sooo confused.");
+
+		pager_cache(object, FALSE);
+
+		vm_object_cache_lock();
+	}
+	vm_object_cache_unlock();
+}
+
+/*
+ *	vm_object_shadow:
+ *
+ *	Create a new object which is backed by the
+ *	specified existing object range.  The source
+ *	object reference is deallocated.
+ *
+ *	The new object and offset into that object
+ *	are returned in the source parameters.
+ */
+
+void
+vm_object_shadow(object, offset, length)
+	vm_object_t	*object;	/* IN/OUT */
+	vm_offset_t	*offset;	/* IN/OUT */
+	vm_size_t	length;
+{
+	register vm_object_t	source;
+	register vm_object_t	result;
+
+	source = *object;
+
+	/*
+	 *	Allocate a new object with the given length
+	 */
+
+	if ((result = vm_object_allocate(length)) == NULL)
+		panic("vm_object_shadow: no object for shadowing");
+
+	/*
+	 *	The new object shadows the source object, adding
+	 *	a reference to it.  Our caller changes his reference
+	 *	to point to the new object, removing a reference to
+	 *	the source object.  Net result: no change of reference
+	 *	count.
+	 */
+	result->shadow = source;
+
+	/*
+	 *	Store the offset into the source object,
+	 *	and fix up the offset into the new object.
+	 */
+
+	result->shadow_offset = *offset;
+
+	/*
+	 *	Return the new things
+	 */
+
+	*offset = 0;
+	*object = result;
+}
+
+/* vm object rbtree comparator */
+int
+vm_object_rb_compare(obj1, obj2)
+	struct vm_object *obj1, *obj2;
+{
+	if(obj1->size < obj2->size) {
+		return (-1);
+	} else if(obj1->size > obj2->size) {
+		return (1);
+	}
+	return (0);
+}
+
+RB_PROTOTYPE(objecttree, vm_object, object_tree, vm_object_rb_compare);
+RB_GENERATE(objecttree, vm_object, object_tree, vm_object_rb_compare);
+
+RB_PROTOTYPE(vm_object_hash_head, vm_object_hash_entry, hash_links, vm_object_rb_compare);
+RB_GENERATE(vm_object_hash_head, vm_object_hash_entry, hash_links, vm_object_rb_compare);
 
 /*
  *	vm_object_hash hashes the pager/id pair.
  */
-
 unsigned long
 vm_object_hash(pager)
 	vm_pager_t pager;
@@ -211,12 +417,13 @@ vm_object_t
 vm_object_lookup(pager)
 	vm_pager_t	pager;
 {
+	struct vm_object_hash_head		*bucket;
 	register vm_object_hash_entry_t	entry;
 	vm_object_t						object;
 
 	vm_object_cache_lock();
-
-	for (entry = TAILQ_FIRST(vm_object_hashtable[vm_object_hash(pager)]); entry != NULL; entry = TAILQ_NEXT(entry, hash_links)) {
+	bucket = &vm_object_hashtable[vm_object_hash(pager)];
+	for (entry = RB_FIRST(vm_object_hash_head, bucket); entry != NULL; entry = RB_NEXT(vm_object_hash_head, bucket, entry)) {
 		object = entry->object;
 		if (object->pager == pager) {
 			vm_object_lock(object);
@@ -227,7 +434,7 @@ vm_object_lookup(pager)
 			object->ref_count++;
 			vm_object_unlock(object);
 			vm_object_cache_unlock();
-			return(object);
+			return (object);
 		}
 	}
 
@@ -264,7 +471,7 @@ vm_object_enter(object, pager)
 	object->flags |= OBJ_CANPERSIST;
 
 	vm_object_cache_lock();
-	TAILQ_INSERT_TAIL(bucket, entry, hash_links);
+	RB_INSERT(vm_object_hash_head, bucket, entry);
 	vm_object_cache_unlock();
 }
 
@@ -287,12 +494,44 @@ vm_object_remove(pager)
 
 	bucket = &vm_object_hashtable[vm_object_hash(pager)];
 
-	for (entry = TAILQ_FIRST(bucket); entry != NULL; entry = TAILQ_NEXT(entry, hash_links)) {
+	for (entry = RB_FIRST(vm_object_hash_head, bucket); entry != NULL; entry = RB_NEXT(vm_object_hash_head, bucket, entry)) {
 		object = entry->object;
 		if (object->pager == pager) {
-			TAILQ_REMOVE(bucket, entry, hash_links);
+			RB_REMOVE(vm_object_hash_head, bucket, entry);
 			free((caddr_t)entry, M_VMOBJHASH);
 			break;
 		}
 	}
+}
+
+/*
+ *	vm_object_cache_clear removes all objects from the cache.
+ *
+ */
+void
+vm_object_cache_clear()
+{
+	register vm_object_t	object;
+
+	/*
+	 *	Remove each object in the cache by scanning down the
+	 *	list of cached objects.
+	 */
+	vm_object_cache_lock();
+	while ((object = TAILQ_FIRST(&vm_object_cached_list)) != NULL) {
+		vm_object_cache_unlock();
+
+		/*
+		 * Note: it is important that we use vm_object_lookup
+		 * to gain a reference, and not vm_object_reference, because
+		 * the logic for removing an object from the cache lies in
+		 * lookup.
+		 */
+		if (object != vm_object_lookup(object->pager))
+			panic("vm_object_cache_clear: I'm sooo confused.");
+		pager_cache(object, FALSE);
+
+		vm_object_cache_lock();
+	}
+	vm_object_cache_unlock();
 }

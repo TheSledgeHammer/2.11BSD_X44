@@ -89,7 +89,7 @@ vm_offset_t
 ovl_alloc(map, size, type)
 	register ovl_map_t		map;
 	register vm_size_t		size;
-	ovl_object_t 			type;
+	int 					type; /* vm or kernel */
 {
 	vm_offset_t 			addr;
 	register vm_offset_t 	offset;
@@ -100,18 +100,16 @@ ovl_alloc(map, size, type)
 		ovl_map_unlock(map);
 		return (0);
 	}
-
-	if(type == kern_ovl_object) {
-		type = kern_ovl_object;
+	switch (type) {
+	case OVL_OBJ_KERNEL:
 		ovl_object_reference(type);
-		ovl_map_insert(map, type, offset, addr, addr + size);
-	}
-
-	if(type == vm_ovl_object) {
-		type = vm_ovl_object;
+		ovl_map_insert(map, kern_ovl_object, offset, addr, addr + size);
+		break;
+	case OVL_OBJ_VM:
 		ovl_object_reference(type);
-		ovl_map_insert(map, type, offset, addr, addr + size);
-	}
+		ovl_map_insert(map, vm_ovl_object, offset, addr, addr + size);
+		break;
+	};
 	ovl_map_unlock(map);
 
 	return (addr);
@@ -155,7 +153,7 @@ vm_offset_t
 ovl_malloc(map, size, type, canwait)
 	register ovl_map_t	map;
 	register vm_size_t	size;
-	ovl_object_t		type;
+	int					type;		/* vm or kernel */
 	boolean_t			canwait;
 {
 	register vm_offset_t	offset, i;
@@ -180,16 +178,17 @@ ovl_malloc(map, size, type, canwait)
 		return (0);
 	}
 	offset = addr - ovl_map_min(ovl_map);
-	if(type == kern_ovl_object) {
-		type = kern_ovl_object;
+
+	switch (type) {
+	case OVL_OBJ_KERNEL:
 		ovl_object_reference(type);
-		ovl_map_insert(map, type, offset, addr, addr + size);
-	}
-	if(type == vm_ovl_object) {
-		type = vm_ovl_object;
+		ovl_map_insert(map, kern_ovl_object, offset, addr, addr + size);
+		break;
+	case OVL_OBJ_VM:
 		ovl_object_reference(type);
-		ovl_map_insert(map, type, offset, addr, addr + size);
-	}
+		ovl_map_insert(map, vm_ovl_object, offset, addr, addr + size);
+		break;
+	};
 
 	/*
 	 * Mark map entry as non-pageable.

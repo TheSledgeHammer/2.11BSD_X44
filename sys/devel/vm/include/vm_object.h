@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -40,17 +40,17 @@
  * All rights reserved.
  *
  * Authors: Avadis Tevanian, Jr., Michael Wayne Young
- * 
+ *
  * Permission to use, copy, modify and distribute this software and
  * its documentation is hereby granted, provided that both the copyright
  * notice and this permission notice appear in all copies of the
  * software, derivative works or modified versions, and any portions
  * thereof, and that both notices appear in supporting documentation.
- * 
- * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS" 
- * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND 
+ *
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
+ * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND
  * FOR ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
- * 
+ *
  * Carnegie Mellon requests users of this software to return to
  *
  *  Software Distribution Coordinator  or  Software.Distribution@CS.CMU.EDU
@@ -66,67 +66,50 @@
  *	Virtual memory object module definitions.
  */
 
-#ifndef	_VM_OBJECT_
-#define	_VM_OBJECT_
+#ifndef	VM_OBJECT_
+#define	VM_OBJECT_
 
-#include <vm/include/vm_page.h>
-#include <vm/include/vm_pager.h>
-
-/*
- *	Types defined:
- *
- *	vm_object_t		Virtual memory object.
- */
+#include <devel/vm/include/vm.h>
+#include <devel/vm/include/vm_segment.h>
+#include <devel/vm/include/vm_pager.h>
 
 struct vm_object {
-	struct pgtree			memt;				/* Resident memory (red-black tree) */
-	struct pglist			memq;				/* Resident memory (hashtable) */
+	struct seglist					seglist;					/* resident memory segments */
 
-	TAILQ_ENTRY(vm_object)	object_list;		/* list of all objects */
-	u_short					flags;				/* see below */
-	u_short					paging_in_progress; /* Paging (in or out) so don't collapse or destroy */
-	simple_lock_data_t		lock;				/* Synchronization */
-	int						ref_count;			/* How many refs?? */
-	vm_size_t				size;				/* Object size */
-	int						resident_page_count;/* number of resident pages */
-	struct vm_object		*copy;				/* Object that holds copies of my changed pages */
-	vm_pager_t				pager;				/* Where to get data */
-	vm_offset_t				paging_offset;		/* Offset into paging space */
-	struct vm_object		*shadow;			/* My shadow */
-	vm_offset_t				shadow_offset;		/* Offset in shadow */
-	TAILQ_ENTRY(vm_object)	cached_list;		/* for persistence */
-
-	/* avm */
-	struct simplelock		*vmobjlock;			/* lock on memq */
-	int						uo_npages;			/* # of pages in memq */
-	int						uo_refs;			/* reference count */
-	struct vm_pagerops		*pgops;				/* pager ops */
+	RB_ENTRY(vm_object)				object_tree;
+	u_short							flags;					/* see below */
+	u_short							segment_active;
+	simple_lock_data_t				Lock;					/* Synchronization */
+	int								ref_count;				/* How many refs?? */
+	vm_size_t						size;					/* Object size */
+	int								resident_segment_count;	/* number of resident segments */
+	vm_pager_t						pager;					/* Where to get data */
+	vm_offset_t						segment_offset;			/* Offset into segment */
+	struct vm_object				*shadow;				/* My shadow */
+	vm_offset_t						shadow_offset;			/* Offset in shadow */
+	TAILQ_ENTRY(vm_object)			cached_list;			/* for persistence */
 };
 
-/*
- * Flags
- */
-#define OBJ_CANPERSIST	0x0001	/* allow to persist */
-#define OBJ_INTERNAL	0x0002	/* internally created object */
-#define OBJ_ACTIVE		0x0004	/* used to mark active objects */
-
-TAILQ_HEAD(vm_object_hash_head, vm_object_hash_entry);
+RB_HEAD(vm_object_hash_head, vm_object_hash_entry);
 struct vm_object_hash_entry {
-	TAILQ_ENTRY(vm_object_hash_entry)  hash_links;	/* hash chain links */
-	vm_object_t			   			   object;		/* object represented */
+	RB_ENTRY(vm_object_hash_entry)  hash_links;	/* hash chain links */
+	vm_object_t			   			object;		/* object represented */
 };
 typedef struct vm_object_hash_entry	*vm_object_hash_entry_t;
 
 #ifdef	KERNEL
-TAILQ_HEAD(object_q, vm_object);
+struct objecttree;
+RB_HEAD(objecttree, vm_object);
+struct objectlist;
+TAILQ_HEAD(objectlist, vm_object);
 
-struct object_q		vm_object_cached_list;	/* list of objects persisting */
+struct objectlist	vm_object_cached_list;	/* rbtree of objects persisting */
 int					vm_object_cached;		/* size of cached list */
 simple_lock_data_t	vm_cache_lock;			/* lock for object cache */
 
-struct object_q		vm_object_list;			/* list of allocated objects */
+struct objecttree	vm_object_tree;			/* rbtree of allocated objects */
 long				vm_object_count;		/* count of all objects */
-simple_lock_data_t	vm_object_list_lock;	/* lock for object list and count */
+simple_lock_data_t	vm_object_tree_lock;	/* lock for object rbtree and count */
 
 vm_object_t			kernel_object;			/* the single kernel object */
 vm_object_t			kmem_object;
@@ -146,23 +129,29 @@ vm_object_t			kmem_object;
 vm_object_t	 vm_object_allocate (vm_size_t);
 void		 vm_object_cache_clear (void);
 void		 vm_object_cache_trim (void);
+/*
 boolean_t	 vm_object_coalesce (vm_object_t, vm_object_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_size_t);
 void		 vm_object_collapse (vm_object_t);
 void		 vm_object_copy (vm_object_t, vm_offset_t, vm_size_t, vm_object_t *, vm_offset_t *, boolean_t *);
-void		 vm_object_deactivate_pages (vm_object_t);
+*/
 void		 vm_object_deallocate (vm_object_t);
 void		 vm_object_enter (vm_object_t, vm_pager_t);
 void		 vm_object_init (vm_size_t);
 vm_object_t	 vm_object_lookup (vm_pager_t);
-boolean_t	 vm_object_page_clean (vm_object_t, vm_offset_t, vm_offset_t, boolean_t, boolean_t);
-void		 vm_object_page_remove (vm_object_t, vm_offset_t, vm_offset_t);
-void		 vm_object_pmap_copy (vm_object_t, vm_offset_t, vm_offset_t);
-void		 vm_object_pmap_remove (vm_object_t, vm_offset_t, vm_offset_t);
-void		 vm_object_print (vm_object_t, boolean_t);
 void		 vm_object_reference (vm_object_t);
 void		 vm_object_remove (vm_pager_t);
-void		 vm_object_setpager (vm_object_t, vm_pager_t, vm_offset_t, boolean_t);
 void		 vm_object_shadow (vm_object_t *, vm_offset_t *, vm_size_t);
 void		 vm_object_terminate (vm_object_t);
+
+/* XXX INTEREST: NetBSD: uvm_loan:
+ * XXX
+ */
+void		vm_object_copy_to_overlay();
+void		vm_object_copy_from_overlay();
+
+void		vm_object_coalesce_segment();
+void		vm_object_split_segment();
+void		vm_object_shrink_segment();
+void		vm_object_expand_segment();
 #endif
 #endif /* _VM_OBJECT_ */

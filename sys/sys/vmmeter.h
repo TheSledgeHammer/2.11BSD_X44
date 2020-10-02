@@ -22,7 +22,6 @@ struct vmrate
 	unsigned 	v_faults;		/* total faults taken */
 
 	/* Virtual memory activity. */
-
 	unsigned 	v_pdma;			/* pseudo-dma interrupts */
 	unsigned 	v_ovly;			/* overlay emts */
 	unsigned 	v_fpsim;		/* floating point simulator faults */

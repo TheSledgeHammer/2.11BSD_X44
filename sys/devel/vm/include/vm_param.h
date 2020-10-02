@@ -79,17 +79,20 @@ typedef boolean_t bool;
 #define	TRUE	1
 #define	FALSE	0
 
+
+
 /*
- *	The machine independent pages are refered to as PAGES.  A page
+ *	The machine independent pages are referred to as PAGES.  A page
  *	is some number of hardware pages, depending on the target machine.
  */
-#define	DEFAULT_PAGE_SIZE	4096
+#define	DEFAULT_PAGE_SIZE		4096
 
 /*
  *	All references to the size of a page should be done with PAGE_SIZE
  *	or PAGE_SHIFT.  The fact they are variables is hidden here so that
  *	we can easily make them constant if we so desire.
  */
+
 #define	PAGE_SIZE	cnt.v_page_size		/* size of page */
 #define	PAGE_MASK	page_mask			/* size of page - 1 */
 #define	PAGE_SHIFT	page_shift			/* bits to shift for pages */
@@ -97,6 +100,14 @@ typedef boolean_t bool;
 extern vm_size_t	page_mask;
 extern int			page_shift;
 #endif
+
+/*
+ *	The machine independent segments are referred to as SEGMENTS.
+ */
+#define	DEFAULT_SEGMENT_SIZE	(DEFAULT_PAGE_SIZE / 4)
+
+#define SEGMENT_SIZE 			cnt.v_segment_size	/* size of segment */
+#define SEGMENT_MASK			segment_mask		/* size of segment - 1 */
 
 /*
  * CTL_VM identifiers

@@ -96,16 +96,15 @@
  *	queues (P).
  */
 
-struct pgtree;
-RB_HEAD(pgtree, vm_page);
+struct pglist;
+TAILQ_HEAD(pglist, vm_page);
 struct vm_page {
+	TAILQ_ENTRY(vm_page)	pageq;		/* queue info for FIFO queue or free list (P) */
+	TAILQ_ENTRY(vm_page)	hashq;		/* hash table links (O)*/
+	TAILQ_ENTRY(vm_page)	listq;		/* pages in same object (O)*/
 
-	RB_ENTRY(vm_page)		pageq;		/* queue info for FIFO queue or free list (P) */
-	RB_ENTRY(vm_page)		hashq;		/* hash table links (O)*/
-	RB_ENTRY(vm_page)		listq;		/* pages in same object (O)*/
-
-	vm_object_t				object;		/* which object am I in (O,P)*/
-	vm_offset_t				offset;		/* offset into object (O,P) */
+	vm_page_table_t			pgtable;	/* which page table am I in (PT,P)*/
+	vm_offset_t				offset;		/* offset into page table (O,P) */
 
 	avm_anon_t				anon;		/* anon (O,P) */
 	u_short					loan_count;
@@ -115,7 +114,6 @@ struct vm_page {
 	u_short					flags;		/* see below */
 
 	vm_offset_t				phys_addr;	/* physical address of page */
-	u_long           		hindex;		/* hash index */
 };
 
 /*
@@ -156,7 +154,7 @@ struct vm_page {
 #define	VM_PAGE_CHECK(mem)
 #endif /* VM_PAGE_DEBUG */
 
-#ifdef KERNEL
+//#ifdef KERNEL
 /*
  *	Each pageable resident page falls into one of three lists:
  *
@@ -174,11 +172,11 @@ struct vm_page {
  */
 
 extern
-struct pgtree	vm_page_queue_free;		/* memory free queue */
+struct pglist	vm_page_queue_free;		/* memory free queue */
 extern
-struct pgtree	vm_page_queue_active;	/* active memory queue */
+struct pglist	vm_page_queue_active;	/* active memory queue */
 extern
-struct pgtree	vm_page_queue_inactive;	/* inactive memory queue */
+struct pglist	vm_page_queue_inactive;	/* inactive memory queue */
 
 extern
 vm_page_t		vm_page_array;			/* First resident page in table */
@@ -229,9 +227,9 @@ simple_lock_data_t	vm_page_queue_free_lock; 	/* lock on free page queue */
 
 #define vm_page_set_modified(m)	{ (m)->flags &= ~PG_CLEAN; }
 
-#define	VM_PAGE_INIT(mem, object, offset) { 		\
+#define	VM_PAGE_INIT(mem, ptable, offset) { 		\
 	(mem)->flags = PG_BUSY | PG_CLEAN | PG_FAKE; 	\
-	vm_page_insert((mem), (object), (offset)); 		\
+	vm_page_insert((mem), (ptable), (offset)); 		\
 	(mem)->wire_count = 0; 							\
 }
 
