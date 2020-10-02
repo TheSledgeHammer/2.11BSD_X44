@@ -74,7 +74,7 @@
 #include <devel/vm/include/vm_pager.h>
 
 struct vm_object {
-	struct seglist					seglist;					/* resident memory segments */
+	struct seglist					seglist;				/* resident memory segments */
 
 	RB_ENTRY(vm_object)				object_tree;
 	u_short							flags;					/* see below */
@@ -88,6 +88,12 @@ struct vm_object {
 	struct vm_object				*shadow;				/* My shadow */
 	vm_offset_t						shadow_offset;			/* Offset in shadow */
 	TAILQ_ENTRY(vm_object)			cached_list;			/* for persistence */
+
+		/* avm */
+	struct simplelock				*vmobjlock;				/* lock on memq */
+	int								uo_npages;				/* # of pages in memq */
+	int								uo_refs;				/* reference count */
+	struct vm_pagerops				*pgops;					/* pager ops */
 };
 
 RB_HEAD(vm_object_hash_head, vm_object_hash_entry);
