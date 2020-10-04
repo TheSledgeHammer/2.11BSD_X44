@@ -154,7 +154,7 @@ struct vm_page {
 #define	VM_PAGE_CHECK(mem)
 #endif /* VM_PAGE_DEBUG */
 
-//#ifdef KERNEL
+#ifdef KERNEL
 /*
  *	Each pageable resident page falls into one of three lists:
  *

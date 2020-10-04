@@ -46,15 +46,10 @@ struct ovlusage {
 	short 			ou_indx;		/* bucket index */
 	u_short 		ou_kovlcnt;		/* kernel overlay count */
 	u_short 		ou_vovlcnt;		/* vm overlay count */
+	u_short			ou_bucketcnt;	/* buckets */
 };
 
-CIRCLEQ_HEAD(ovlbucket_head, ovlbuckets);
 struct ovlbuckets {
-	struct ovltree          		*ob_ztree;			/* Pointer ovltree */
-	unsigned long            		ob_bsize;			/* bucket size */
-	long                     		ob_bindx;			/* bucket indx */
-	boolean_t                		ob_bspace;			/* bucket contains a tree: Default = False or 0 */
-
 	caddr_t 						ob_next;			/* list of free blocks */
 	caddr_t 						ob_last;			/* last free block */
 
@@ -66,22 +61,27 @@ struct ovlbuckets {
 	long							ob_couldfree;		/* over high water mark and could free */
 };
 
-struct asl {
-	struct asl 						*asl_next;
-	struct asl 						*asl_prev;
-	unsigned long  					asl_size;
-	caddr_t 						asl_addr;
-	long							asl_spare0;
-	long							asl_spare1;
-	short							asl_type;
+struct overlay {
+	caddr_t 						ot_next;			/* list of free blocks */
+	caddr_t 						ot_last;			/* last free block */
+
+	struct tbtree					*ot_tbtree;			/* tertiary buddy tree allocation */
+
+    unsigned long					ot_size;
+    u_short							ot_cnt;
+    u_short							ot_flags;
 };
 
+#define ovlmemxtob(base, alloc)	((base) + (alloc) * NBPG)
+#define btoovlmemx(addr, base)	(((char)(addr) - (base)) / NBPG)
+#define btooup(addr, base)		(&ovlusage[((char)(addr) - (base)) >> CLSHIFT])
+
 /* Overlay Flags */
-#define OVL_ALLOCATED  (1 < 0) 						/* kernel overlay region allocated */
+#define OVL_ALLOCATED  (1 < 0) 							/* kernel overlay region allocated */
 
 extern struct ovlstats 	ovlstats[];
 extern struct ovlusage 	*ovlusage;
-extern char *vovlbase, 	*kovlbase;
-extern struct ovlbuckets bucket[];
+extern char 			*kovlbase;
+extern struct overlay 	bucket[];
 
 #endif /* SYS_KOVERLAY_H_ */

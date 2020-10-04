@@ -113,8 +113,7 @@ useracc(addr, len, rw)
 	boolean_t rv;
 	vm_prot_t prot = rw == B_READ ? VM_PROT_READ : VM_PROT_WRITE;
 
-	rv = vm_map_check_protection(&curproc->p_vmspace->vm_map,
-	    trunc_page(addr), round_page(addr+len), prot);
+	rv = vm_map_check_protection(&curproc->p_vmspace->vm_map, trunc_page(addr), round_page(addr+len), prot);
 	return(rv == TRUE);
 }
 

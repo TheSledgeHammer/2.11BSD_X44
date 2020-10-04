@@ -87,6 +87,7 @@ simple_lock_data_t	vm_segment_cache_lock;
 #define	vm_segment_sleep(event, segment, interruptible) \
 			thread_sleep((event), &(segment)->sg_lock, (interruptible))
 
+vm_pager_t		vm_segment_getpager(vm_segment_t);
 void			vm_segment_setpager(vm_segment_t, boolean_t);
 
 /* faults */

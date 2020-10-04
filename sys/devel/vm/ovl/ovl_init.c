@@ -151,10 +151,10 @@ ovl_suballoc(parent, min, max, size)
 
 vm_offset_t
 ovl_malloc(map, size, type, canwait)
-	register ovl_map_t	map;
-	register vm_size_t	size;
-	int					type;		/* vm or kernel */
-	boolean_t			canwait;
+	register ovl_map_t		map;
+	register vm_size_t		size;
+	int						type;		/* vm or kernel */
+	boolean_t				canwait;
 {
 	register vm_offset_t	offset, i;
 	ovl_map_entry_t			entry;

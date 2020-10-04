@@ -34,7 +34,7 @@
 #include <sys/malloc.h>
 #include <sys/map.h>
 #include <sys/user.h>
-
+#include "kern/memory/tbtree.h"
 #include "vm/ovl/ovl.h"
 #include "vm/ovl/koverlay.h"
 
@@ -42,34 +42,108 @@
 #define MAXALLOCSAVE	(2 * )
 
 /* Kernel Overlay Memory Management */
-struct ovlbuckets 		bucket[MINBUCKET + 16];
-struct ovlstats 		ovlstats[M_LAST];
-struct ovlusage 		*ovlusage, *vovlusage;
+struct overlay 				bucket[MINBUCKET + 16];
+struct ovlstats 			ovlstats[M_LAST];
+struct ovlusage 			*ovlusage;
+char 						*kovlbase, *kovllimit;
 
-char 					*ovlbase, *ovllimit;
-char 					*kovlbase, *kovllimit;
-char 					*vovlbase, *vovllimit;
 
-koverlay_insert(size)
+/* TODO: fix asl and freep next.
+ * freep->next reference freelist in buckets.
+ */
+void *
+koverlay_insert(size, type, flags)
+	unsigned long size;
+	int type, flags;
 {
-	register struct ovlbuckets 	*obp;
-	register struct ovlusage 	*oup;
-	register struct asl 		*freep;
-
+	register struct overlay 	*ovp;
+    register struct ovlusage 	*oup;
+    register struct asl         *freep;
 	long indx, npg, allocsize;
+	caddr_t  va, cp, savedlist;
 
 	indx = BUCKETINDX(size);
-	obp = &bucket[indx];
+	ovp = &bucket[indx];
+	ovp->ot_tbtree = tbtree_allocate(&bucket[indx]);
 
+	if (oup->ou_kovlcnt < NKOVL) {
+		if (ovp->ot_next == NULL) {
+			ovp->ot_last = NULL;
 
-	if(oup->ou_kovlcnt < NKOVL) {
-		if (obp->ob_next == NULL) {
-			obp->ob_last = NULL;
+			if (size > MAXALLOCSAVE) {
+				allocsize = roundup(size, CLBYTES);
+			} else {
+				allocsize = 1 << indx;
+			}
+			npg = clrnd(btoc(allocsize));
 
+			va = (caddr_t) tbtree_malloc(ovp->ot_tbtree, (vm_size_t) ctob(npg), OVL_OBJ_KERNEL, !(flags & M_NOWAIT));
+
+			if(va != NULL) {
+				oup->ou_kovlcnt++;
+			}
+
+			if (va == NULL) {
+				return ((void*) NULL);
+			}
+
+			oup = btooup(va, kovlbase);
+			oup->ou_indx = indx;
+			if (allocsize > MAXALLOCSAVE) {
+				if (npg > 65535)
+					panic("malloc: allocation too large");
+				oup->ou_bucketcnt = npg;
+				goto out;
+			}
+			savedlist = ovp->ot_next;
+			ovp->ot_next = cp = (caddr_t) va + (npg * NBPG) - allocsize;
+			for(;;) {
+				freep = (struct asl*) cp;
+
+				cp -= allocsize;
+				freep->asl_next->asl_addr = cp;
+			}
+
+			asl_set_addr(freep->asl_next, savedlist);
+			if(ovp->ot_last == NULL) {
+				ovp->ot_last = (caddr_t)freep;
+			}
 		}
-	} else {
-		goto out;
+		va = ovp->ot_next;
+		ovp->ot_next = asl_get_addr(((struct asl *)va)->asl_next);
 	}
+
+out:
+	//splx(s);
+	return ((void *) va);
+}
+
+void
+koverlay_free(addr, type)
+	void *addr;
+	int type;
+{
+	register struct overlay *ovp;
+	register struct ovlusage *oup;
+	register struct asl *freep;
+	long size;
+
+	oup = btokup(addr);
+	size = 1 << oup->ou_indx;
+	ovp = &bucket[oup->ou_indx];
+
+	if (size > MAXALLOCSAVE) {
+		ovl_free(ovl_map, (vm_offset_t)addr, oup->ou_bucketcnt);
+		tbtree_free(ovp->ot_tbtree, size);
+		return;
+	}
+	freep = (struct asl *)addr;
+	if (ovp->ot_next == NULL)
+		ovp->ot_next = addr;
+	else
+		((struct asl *)ovp->ot_last)->asl_next->asl_addr = addr;
+	freep->asl_next->asl_addr = NULL;
+	ovp->ot_last = addr;
 }
 
 void
@@ -77,18 +151,8 @@ koverlay_init()
 {
 	register long indx;
 	int npg = (OVL_MEM_SIZE / NBOVL);
+
 	/* kernel overlay allocation */
 	ovlusage = (struct ovlusage *) ovl_alloc(ovl_map, (vm_size_t)(npg * sizeof(struct ovlusage)), OVL_OBJ_KERNEL);
 	kovl_mmap = ovl_suballoc(ovl_map, (vm_offset_t *)&kovlbase, (vm_offset_t *)&kovllimit, (vm_size_t *) npg);
-}
-
-void
-voverlay_init()
-{
-	register long indx;
-	int npg = (OVL_MEM_SIZE / NBOVL);
-
-	/* vm overlay allocation */
-	vovlusage = (struct ovlusage *) ovl_alloc(ovl_map, (vm_size_t)(npg * sizeof(struct ovlusage)), OVL_OBJ_VM);
-	vovl_mmap = ovl_suballoc(ovl_map, (vm_offset_t *)&vovlbase, (vm_offset_t *)&vovllimit, (vm_size_t *) npg);
 }

@@ -40,10 +40,26 @@ struct vm_page_table_hash_root 	vm_pagetable_buckets;
 int								vm_pagetable_bucket_count = 0;	/* How big is array? */
 int								vm_pagetable_hash_mask;			/* Mask for hash function */
 
-long	pagetable_collapses = 0;
-long	pagetable_bypasses  = 0;
+long				pagetable_collapses = 0;
+long				pagetable_bypasses  = 0;
+
+extern vm_size_t	pagetable_mask;
+extern int			pagetable_shift;
 
 static void	_vm_pagetable_allocate(vm_size_t, vm_page_table_t);
+
+void
+vm_set_pagetable_size()
+{
+	if (cnt.v_pagetable_size == 0)
+		cnt.v_pagetable_size = DEFAULT_PAGETABLE_SIZE;
+	pagetable_mask = cnt.v_pagetable_size - 1;
+	if ((pagetable_mask & cnt.v_pagetable_size) != 0)
+		panic("vm_set_pagetable_size: pagetable size not a power of two");
+	for (pagetable_shift = 0;; pagetable_shift++)
+		if ((1 << pagetable_shift) == cnt.v_pagetable_size)
+			break;
+}
 
 void
 vm_pagetable_init(start, end)
@@ -451,7 +467,7 @@ vm_pagetable_collapse(pagetable)
 	register vm_offset_t		new_offset;
 	register vm_page_t			p, pp;
 
-	if (!vm_object_collapse_allowed)
+	if (!vm_pagetable_collapse_allowed)
 			return;
 
 	while (TRUE) {

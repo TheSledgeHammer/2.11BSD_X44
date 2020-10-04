@@ -80,12 +80,59 @@ typedef boolean_t bool;
 #define	FALSE	0
 
 
+/* New VM Structure with segments:
+ * Layout:
+ * 							   ----> Pagetable 1 ---> Pages
+ * 							   |
+ * 			----> Segment 1 -------> Pagetable 2 ---> Pages
+ * 			|				   |
+ * 			|				   ----> Pagetable 3 ---> Pages
+ * 			|
+ * 			|				   ----> Pagetable 4 ---> Pages
+ * 			|				   |
+ * Object ------> Segment 2 -------> Pagetable 5 ---> Pages
+ * 			|				   |
+ * 			|				   ----> Pagetable 6 ---> Pages
+ * 			|
+ * 			|				   ----> Pagetable 7 ---> Pages
+ * 			|				   |
+ * 			----> Segment 3 -------> Pagetable 8 ---> Pages
+ * 			 				   |
+ * 							   ----> Pagetable 9 ---> Pages
+ *
+ */
+
+/*
+ *	The machine independent segments are referred to as SEGMENTS.
+ */
+#define	DEFAULT_SEGMENT_SIZE	36864					/* 36 kib segments (3 * segments per object) */
+
+#define SEGMENT_SIZE 			cnt.v_segment_size		/* size of segment */
+#define SEGMENT_MASK			segment_mask			/* size of segment - 1 */
+#define	SEGMENT_SHIFT			segment_shift			/* bits to shift for segments */
+#ifdef KERNEL
+extern vm_size_t				segment_mask;
+extern int						segment_shift;
+#endif
+
+/*
+ *	The machine independent pagetables are referred to as PAGETABLES.
+ */
+#define	DEFAULT_PAGETABLE_SIZE	12228					/* 12 kib pagetable (3 * pagetables per segment) */
+
+#define PAGETABLE_SIZE 			cnt.v_pagetable_size	/* size of pagetable */
+#define PAGETABLE_MASK			pagetable_mask			/* size of pagetable - 1 */
+#define	PAGETABLE_SHIFT			pagetable_shift			/* bits to shift for pagetables */
+#ifdef KERNEL
+extern vm_size_t				pagetable_mask;
+extern int						pagetable_shift;
+#endif
 
 /*
  *	The machine independent pages are referred to as PAGES.  A page
  *	is some number of hardware pages, depending on the target machine.
  */
-#define	DEFAULT_PAGE_SIZE		4096
+#define	DEFAULT_PAGE_SIZE		4096					/* 4 kib pages per pagetable */
 
 /*
  *	All references to the size of a page should be done with PAGE_SIZE
@@ -93,21 +140,13 @@ typedef boolean_t bool;
  *	we can easily make them constant if we so desire.
  */
 
-#define	PAGE_SIZE	cnt.v_page_size		/* size of page */
-#define	PAGE_MASK	page_mask			/* size of page - 1 */
-#define	PAGE_SHIFT	page_shift			/* bits to shift for pages */
+#define	PAGE_SIZE				cnt.v_page_size			/* size of page */
+#define	PAGE_MASK				page_mask				/* size of page - 1 */
+#define	PAGE_SHIFT				page_shift				/* bits to shift for pages */
 #ifdef KERNEL
-extern vm_size_t	page_mask;
-extern int			page_shift;
+extern vm_size_t				page_mask;
+extern int						page_shift;
 #endif
-
-/*
- *	The machine independent segments are referred to as SEGMENTS.
- */
-#define	DEFAULT_SEGMENT_SIZE	(DEFAULT_PAGE_SIZE / 4)
-
-#define SEGMENT_SIZE 			cnt.v_segment_size	/* size of segment */
-#define SEGMENT_MASK			segment_mask		/* size of segment - 1 */
 
 /*
  * CTL_VM identifiers

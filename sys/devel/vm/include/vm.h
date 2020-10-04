@@ -75,19 +75,19 @@ typedef struct pager_struct 	*vm_pager_t;
 #include <sys/user.h>
 #include <sys/vmmeter.h>
 
-#include <devel/vm/include/pmap.h>
-#include <devel/vm/include/swap_pager.h>
-#include <devel/vm/include/vm_extern.h>
-#include <devel/vm/include/vm_inherit.h>
+#include <vm/include/pmap.h>
+#include <vm/include/swap_pager.h>
+#include <vm/include/vm_extern.h>
+#include <vm/include/vm_inherit.h>
+#include <vm/include/vm_prot.h>
+
 #include <devel/vm/include/vm_map.h>
 #include <devel/vm/include/vm_object.h>
 #include <devel/vm/include/vm_param.h>
-#include <devel/vm/include/vm_prot.h>
 #include <devel/vm/include/vm_swap.h>
-
 #include <devel/vm/extents/vm_extent.h>		/* Work in Progress */
-#include "vm_page_table.h"	/* Work in Progress */
-#include "vm_segment.h"	/* Work in Progress */
+#include <devel/vm/include/vm_page_table.h>	/* Work in Progress */
+#include <devel/vm/include/vm_segment.h>	/* Work in Progress */
 
 #include <devel/vm/avm/avm.h>				/* Work in Progress */
 #include <devel/vm/ovl/ovl.h>				/* Work in Progress */

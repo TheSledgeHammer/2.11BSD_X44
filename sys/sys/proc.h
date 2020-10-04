@@ -223,6 +223,8 @@ struct emul {
 /* Should probably be changed into a hold count (They have. -DG). */
 #define	P_NOSWAP	0x08000	/* Another flag to prevent swap out. */
 #define	P_PHYSIO	0x10000	/* Doing physical I/O. */
+#define	P_WEXIT
+#define P_SWAPPING
 
 #define	S_DATA		0		/* specified segment */
 #define	S_STACK		1

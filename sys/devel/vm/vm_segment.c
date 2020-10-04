@@ -41,6 +41,22 @@ struct vm_segment_hash_head  	*vm_segment_buckets;
 int								vm_segment_bucket_count = 0;	/* How big is array? */
 int								vm_segment_hash_mask;			/* Mask for hash function */
 
+vm_size_t						segment_mask;
+int								segment_shift;
+
+void
+vm_set_segment_size()
+{
+	if (cnt.v_segment_size == 0)
+		cnt.v_segment_size = DEFAULT_SEGMENT_SIZE;
+	segment_mask = cnt.v_segment_size - 1;
+	if ((segment_mask & cnt.v_segment_size) != 0)
+		panic("vm_set_segment_size: segment size not a power of two");
+	for (segment_shift = 0;; segment_shift++)
+		if ((1 << segment_shift) == cnt.v_segment_size)
+			break;
+}
+
 void
 vm_segment_init(start, end)
 	vm_offset_t	*start;
@@ -61,6 +77,18 @@ vm_segment_init(start, end)
 	}
 }
 
+vm_segment_t
+vm_segment_allocate(size)
+	vm_size_t		size;
+{
+	register vm_segment_t result;
+
+	result = (vm_segment_t)malloc((u_long)sizeof(*result), M_VMSEG, M_WAITOK);
+	_vm_segment_allocate(size, result);
+
+	return (result);
+}
+
 void
 _vm_segment_allocate(size, segment)
 	vm_size_t				size;
@@ -75,18 +103,6 @@ _vm_segment_allocate(size, segment)
 	} else {
 		CIRCLEQ_INSERT_HEAD(&vm_segment_list, segment, sg_list);
 	}
-}
-
-vm_segment_t
-vm_segment_allocate(size)
-	vm_size_t		size;
-{
-	register vm_segment_t result;
-
-	result = (vm_segment_t)malloc((u_long)sizeof(*result), M_VMSEG, M_WAITOK);
-	_vm_segment_allocate(size, result);
-
-	return (result);
 }
 
 vm_pager_t

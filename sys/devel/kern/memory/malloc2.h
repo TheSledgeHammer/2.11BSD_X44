@@ -54,33 +54,32 @@
 #define TYPE_01     01      /* left split from a 3 2k-3 block */
 #define TYPE_10     10      /* right split from a 3 2k-3 block  */
 
-struct kmembucket_entry {
-	CIRCLEQ_ENTRY(kmembucket_entry) kbe_entry;			/* bucket entries */
-	struct kmemtree          		*kbe_ztree;			/* Pointer kmemtree */
-	unsigned long            		kbe_bsize;			/* bucket size */
-	long                     		kbe_bindx;			/* bucket indx */
-	boolean_t                		kbe_bspace;			/* bucket contains a tree: Default = False or 0 */
-
-	/* Original kmembuckets: */
-	caddr_t 						kbe_next;			/* list of free blocks */
-	caddr_t 						kbe_last;			/* last free block */
-
-	long							kbe_calls;			/* total calls to allocate this size */
-	long							kbe_total;			/* total number of blocks allocated */
-	long							kbe_totalfree;		/* # of free elements in this bucket */
-	long							kbe_elmpercl;		/* # of elements in this sized allocation */
-	long							kbe_highwat;		/* high water mark */
-	long							kbe_couldfree;		/* over high water mark and could free */
-};
-
-CIRCLEQ_HEAD(kmembucket_clist, kmembucket_entry);
+CIRCLEQ_HEAD(kmembucket_clist, kmembuckets);
 struct kmembuckets {
 	struct kmembucket_clist 		kb_header;			/* Bucket List */
+	CIRCLEQ_ENTRY(kmembuckets) 		kb_entry;			/* bucket entries */
+
+	struct kmemtree          		*kb_ztree;			/* Pointer kmemtree */
+
+	unsigned long            		kb_bsize;			/* bucket size */
+	long                     		kb_bindx;			/* bucket indx */
+	boolean_t                		kb_bspace;			/* bucket contains a tree: Default = False or 0 */
+
+	/* Original kmembuckets: */
+	caddr_t 						kb_next;			/* list of free blocks */
+	caddr_t 						kb_last;			/* last free block */
+
+	long							kb_calls;			/* total calls to allocate this size */
+	long							kb_total;			/* total number of blocks allocated */
+	long							kb_totalfree;		/* # of free elements in this bucket */
+	long							kb_elmpercl;		/* # of elements in this sized allocation */
+	long							kb_highwat;			/* high water mark */
+	long							kb_couldfree;		/* over high water mark and could free */
 };
 
 /* Tertiary Tree within each bucket, for each size of memory block that is retained */
 struct kmemtree {
-	struct kmembucket_entry     	*kt_kmemtable;
+	struct kmembuckets     			*kt_kmembucket;
     struct kmemtree 				*kt_left;		    /* free blocks on left child */
     struct kmemtree 				*kt_middle;		    /* free blocks on middle child */
     struct kmemtree 				*kt_right;		    /* free blocks on right child */

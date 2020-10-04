@@ -30,20 +30,29 @@
 #include <sys/proc.h>
 #include <sys/kernel.h>
 #include <sys/queue.h>
-//#include <sys/malloc.h>
+
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>
 #include "kern/memory/malloc2.h"
+#include <sys/fnv_hash.h>
 
-struct kmembuckets kmembuckets[MINBUCKET + 16];
+struct kmembuckets 				kmembuckets[MINBUCKET + 16];
 
 static int isPowerOfTwo(long n); 	/* 0 = true, 1 = false */
+
+unsigned long
+kmembucket_hash(buckets)
+	struct kmembuckets *buckets;
+{
+	Fnv32_t hash1 = fnv_32_buf(&buckets, sizeof(&buckets), FNV1_32_INIT)%(MINBUCKET + 16);
+	return (hash1);
+}
 
 void
 kmembucket_setup(indx)
     long indx;
 {
-    register struct kmembuckets *kbp = &kmembuckets[indx];
+    register struct kmembuckets *kbp = &kmembuckets[kmembucket_hash()];
     CIRCLEQ_INIT(&kbp->kb_header);
     kmembucket_allocate_head(kbp);
     kmembucket_allocate_tail(kbp);
@@ -56,10 +65,10 @@ kmembucket_allocate_head(kbp, size)
     u_long size;
 {
     long indx = BUCKETINDX(size);
-    register struct kmembucket_entry *kbe = CIRCLEQ_FIRST(&kbp->kb_header);
-    kbe->kbe_bsize = size;
-    kbe->kbe_bindx = indx;
-    CIRCLEQ_INSERT_HEAD(&kbp->kb_header, kbe, kbe_entry);
+    register struct kmembuckets *kbe = CIRCLEQ_FIRST(&kbp->kb_header);
+    kbe->kb_bsize = size;
+    kbe->kb_bindx = indx;
+    CIRCLEQ_INSERT_HEAD(&kbp->kb_header, kbe, kb_entry);
     return (kbe);
 }
 
@@ -70,29 +79,29 @@ kmembucket_allocate_tail(kbp, size)
     u_long size;
 {
     long indx = BUCKETINDX(size);
-    register struct kmembucket_entry *kbe = CIRCLEQ_LAST(&kbp->kb_header);
-    kbe->kbe_bsize = size;
-    kbe->kbe_bindx = indx;
-    CIRCLEQ_INSERT_TAIL(&kbp->kb_header, kbe, kbe_entry);
+    register struct kmembuckets *kbe = CIRCLEQ_LAST(&kbp->kb_header);
+    kbe->kb_bsize = size;
+    kbe->kb_bindx = indx;
+    CIRCLEQ_INSERT_TAIL(&kbp->kb_header, kbe, kb_entry);
     return (kbe);
 }
 
 /* Allocate kmemtrees from Table */
 struct kmemtree *
-kmemtree_allocate(kbe)
-	struct kmembucket_entry *kbe;
+kmemtree_allocate(kbp)
+	struct kmembuckets *kbp;
 {
-    register struct kmemtree *ktp;
-    ktp = kbe->kbe_ztree;
+    register struct kmemtree *ktp = kmemtree_hash(kbp);
+    ktp = kbp->kb_ztree;
     ktp->kt_left = NULL;
     ktp->kt_middle = NULL;
     ktp->kt_right = NULL;
-    ktp->kt_space = kbe->kbe_bspace;
+    ktp->kt_space = kbp->kb_bspace;
     if(ktp->kt_space == FALSE) {
-        ktp->kt_bindx = kbe->kbe_bindx;
-        ktp->kt_bsize = kbe->kbe_bsize;
+        ktp->kt_bindx = kbp->kb_bindx;
+        ktp->kt_bsize = kbp->kb_bsize;
         ktp->kt_space = TRUE;
-        kbe->kbe_bspace = ktp->kt_space;
+        kbp->kb_bspace = ktp->kt_space;
     }
     ktp->kt_freelist1 = (struct asl *)ktp;
     ktp->kt_freelist2 = (struct asl *)ktp;
@@ -112,7 +121,7 @@ kmembucket_search_next(kbp, kbe, next)
     caddr_t next;
 {
     CIRCLEQ_FOREACH(kbe, &kbp->kb_header, kbe_entry) {
-        if(CIRCLEQ_FIRST(&kbp->kb_header)->kbe_entry == kbe) {
+        if(CIRCLEQ_FIRST(&kbp->kb_header)->kb_entry == kbe) {
             if(kbe->kbe_next == next) {
                 return kbe;
             }
@@ -128,7 +137,7 @@ kmembucket_search_last(kbp, kbe, last)
 	caddr_t last;
 {
     CIRCLEQ_FOREACH(kbe, &kbp->kb_header, kbe_entry) {
-        if(CIRCLEQ_LAST(&kbp->kb_header)->kbe_entry == kbe) {
+        if(CIRCLEQ_LAST(&kbp->kb_header)->kb_entry == kbe) {
         	if(kbe->kbe_last == last) {
         		return kbe;
         	}
@@ -137,7 +146,7 @@ kmembucket_search_last(kbp, kbe, last)
     return (NULL);
 }
 
-/* Tertiary Tree: Available Space List (asl) */
+/* Available Space List (ASL) in TBTree */
 struct asl *
 asl_list(free, size)
 	struct asl *free;
