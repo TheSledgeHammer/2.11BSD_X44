@@ -32,7 +32,6 @@
  *
  *	@(#)kern_malloc.c	8.4 (Berkeley) 5/20/95
  */
-/* Contains modifications from NetBSD 1.3: realloc */
 
 #include <sys/param.h>
 #include <sys/proc.h>
@@ -130,12 +129,13 @@ malloc(size, type, flags)
 			allocsize = 1 << indx;
 		npg = clrnd(btoc(allocsize));
 
-        va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & M_NOWAIT));
+        va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & (M_NOWAIT | M_CANFAIL)));
         if (va == NULL) {
         	splx(s);
 #ifdef DEBUG
-        	if (flags & M_NOWAIT)
+        	if (flags & (M_NOWAIT|M_CANFAIL))
         		simplelockrecurse--;
+        		panic("malloc: out of space in kmem_map");
 #endif
         	return ((void *) NULL);
         }
@@ -232,6 +232,8 @@ out:
 	if (flags & M_NOWAIT)
 		simplelockrecurse--;
 #endif
+	if ((flags & M_ZERO) && va != NULL)
+		memset(va, 0, size);
 	return ((void *) va);
 }
 
@@ -318,89 +320,6 @@ free(addr, type)
 	freep->next = NULL;
 	kbp->kb_last = addr;
 	splx(s);
-}
-
-/*
- * Change the size of a block of memory.
- */
-void *
-realloc(curaddr, newsize, type, flags)
-	void *curaddr;
-	unsigned long newsize;
-	int type, flags;
-{
-	register struct kmemusage *kup;
-	long cursize;
-	void *newaddr;
-#ifdef DIAGNOSTIC
-	long alloc;
-#endif
-
-	/*
-	 * Realloc() with a NULL pointer is the same as malloc().
-	 */
-	if (curaddr == NULL)
-		return (malloc(newsize, type, flags));
-
-	/*
-	 * Realloc() with zero size is the same as free().
-	 */
-	if (newsize == 0) {
-		free(curaddr, type);
-		return (NULL);
-	}
-
-	/*
-	 * Find out how large the old allocation was (and do some
-	 * sanity checking).
-	 */
-	kup = btokup(curaddr);
-	cursize = 1 << kup->ku_indx;
-
-#ifdef DIAGNOSTIC
-	/*
-	 * Check for returns of data that do not point to the
-	 * beginning of the allocation.
-	 */
-	if (cursize > NBPG * CLSIZE)
-		alloc = addrmask[BUCKETINDX(NBPG * CLSIZE)];
-	else
-		alloc = addrmask[kup->ku_indx];
-	if (((u_long)curaddr & alloc) != 0)
-		panic("realloc: unaligned addr %p, size %ld, type %s, mask %ld\n",
-			curaddr, cursize, memname[type], alloc);
-#endif /* DIAGNOSTIC */
-
-	if (cursize > MAXALLOCSAVE)
-		cursize = ctob(kup->ku_pagecnt);
-
-	/*
-	 * If we already actually have as much as they want, we're done.
-	 */
-	if (newsize <= cursize)
-		return (curaddr);
-
-	/*
-	 * Can't satisfy the allocation with the existing block.
-	 * Allocate a new one and copy the data.
-	 */
-	newaddr = malloc(newsize, type, flags);
-	if (newaddr == NULL) {
-		/*
-		 * Malloc() failed, because flags included M_NOWAIT.
-		 * Return NULL to indicate that failure.  The old
-		 * pointer is still valid.
-		 */
-		return NULL;
-	}
-	bcopy(curaddr, newaddr, cursize);
-
-	/*
-	 * We were successful: free the old allocation and return
-	 * the new one.
-	 */
-	free(curaddr, type);
-	return (newaddr);
 }
 
 /* Initialize the kernel memory allocator */

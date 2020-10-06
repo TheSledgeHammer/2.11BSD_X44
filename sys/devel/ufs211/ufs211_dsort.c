@@ -51,7 +51,7 @@ disksort(dp, bp)
 		dp->b_actb = bp;
 }
 
-#ifdef UCB_METER
+
 /*
  * Allocate iostat disk monitoring slots for a driver.  If slots already
  * allocated (*dkn >= 0) or not enough slots left to satisfy request simply
@@ -86,4 +86,3 @@ dk_alloc(dkn, slots, name, wps)
 		}
 	}
 }
-#endif /* UCB_METER */

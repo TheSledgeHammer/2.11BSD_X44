@@ -33,20 +33,18 @@
 
 /**********************************************/
 /* Planned (New): Yet to be Implemented: */
-//#define M_DIRHASH	62	/* UFS dirhash */								/* UN-USED */
-//#define M_WAPBL		65	/* UFS & VFS WAPBL */							/* UN-USED */
-//#define M_TGRP		66	/* thread group header */						/* UN-USED */
-//#define M_THREAD	67	/* thread structures */							/* UN-USED */
 
-//#define M_KOVL		70	/* Kernel Overlay */
-//#define M_VOVL		71	/* Virtual Overlay */
-//#define M_VMSEG			72	/* VM Segmentation */
+#define M_VMSEG			/* VM Segments */
+#define M_VMPGTABLE		/* VM Pagetable */
 
 #define M_OVLMAP		/* OVL Map */
 #define M_OVLOBJ		/* OVL Object */
+#define M_OBLSEG		/* OVL Segment */
 #define M_AVMMAP		/* AVM Map (anonymous map: uvm_amap) */
 #define M_AVMOBJ		/* AVM Object (anonymous object: uvm_aobj) */
-#define M_CANFAIL
+
+#define M_KOVL			/* Kernel Overlay */
+#define M_VOVL			/* VM Overlay */
 /**********************************************/
 
 /* Two-bit Type field to distinguish between different splits of sized blocks */
@@ -99,14 +97,13 @@ struct kmemtree {
    long 							kt_bindx;			/* bucket indx this tree belongs too */
 };
 
-/* Tertiary Tree: Available Space List */
+/* Available Space List */
 struct asl {
     struct asl 						*asl_next;
     struct asl 						*asl_prev;
     unsigned long 					asl_size;
     //Total space allocated & free: Can provide a secondary validation to kmemstats
 };
-
 
 #define BUCKETSIZE(indx)	(isPowerOfTwo(indx))
 

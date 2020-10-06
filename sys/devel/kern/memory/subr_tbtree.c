@@ -239,9 +239,9 @@ tbtree_find(ktp, size)
  */
 caddr_t
 tbtree_malloc(ktp, size, objtype, flags)
-	struct tbtree *ktp;
-	u_long size;
-    int objtype, flags;
+	struct tbtree 	*ktp;
+	u_long 			size;
+    int 			objtype, flags;
 {
     struct tbtree *left, *middle, *right = NULL;
 
@@ -278,32 +278,31 @@ tbtree_malloc(ktp, size, objtype, flags)
     return (ktp->tb_addr);
 }
 
-/* free block of memory from kmem_malloc: update asl, bucket freelist
- * Todo: Must match addr: No way of knowing what block of memory is being freed otherwise!
- * Sol 1 = Add addr ptr to asl &/ or kmemtree to log/ track addr.
- *  - Add to asl: Add addr ptr to functions (insert, search, remove, etc), then trealloc_free can run a check on addr
- */
 void
-tbtree_free(ktp, size)
-	struct tbtree *ktp;
-	u_long size;
+tbtree_free(ktp, addr, size)
+	struct tbtree 	*ktp;
+	caddr_t 		addr;
+	u_long 			size;
 {
-	struct tbtree *toFind = NULL;
-	struct asl *free = NULL;
+	struct tbtree 	*toFind = NULL;
+	struct asl 		*free =	NULL;
 
 	if(tbtree_find(ktp, size)->tb_size == size) {
 		toFind = tbtree_find(ktp, size);
 	}
-	if(toFind->tb_type == TYPE_11) {
+	if(toFind->tb_type == TYPE_11 && toFind == tbtree_left(ktp, size)) {
 		free = ktp->tb_freelist1;
-		if(free->asl_size == toFind->tb_size) {
+		if(free->asl_size == toFind->tb_size && toFind->tb_addr == addr) {
 			free = asl_remove(ktp->tb_freelist1, size);
+			ovl_free(ovl_map, toFind->tb_addr, size);
 		}
 	}
-	if(toFind->tb_type == TYPE_01 || toFind->tb_type == TYPE_10) {
+	if((toFind->tb_type == TYPE_01 && toFind == tbtree_middle(ktp, size))|| (toFind->tb_type == TYPE_10 && toFind == tbtree_right(ktp, size))) {
 		free = ktp->tb_freelist2;
-		if(free->asl_size == toFind->tb_size) {
+		if(free->asl_size == toFind->tb_size && toFind->tb_addr == addr) {
 			free = asl_remove(ktp->tb_freelist2, size);
+			ovl_free(ovl_map, toFind->tb_addr, size);
+
 		}
 	}
 	ktp->tb_entries--;

@@ -353,6 +353,8 @@ vm_object_shadow(object, offset, length)
 	if ((result = vm_object_allocate(length)) == NULL)
 		panic("vm_object_shadow: no object for shadowing");
 
+	//source->flags |= OBJ_SHADOW;
+
 	/*
 	 *	The new object shadows the source object, adding
 	 *	a reference to it.  Our caller changes his reference

@@ -33,44 +33,44 @@
 /* Advanced Power Management (v1.0 and v1.1 specification)
  * functions/defines/etc.
  */
-#define APM_BIOS_FNCODE	(0x53)
-#define APM_SYSTEM_BIOS	(0x15)
-#define APM_BIOS_FN(x)	((APM_BIOS_FNCODE<<8)|(x))
+#define APM_BIOS_FNCODE			(0x53)
+#define APM_SYSTEM_BIOS			(0x15)
+#define APM_BIOS_FN(x)			((APM_BIOS_FNCODE<<8)|(x))
 
 /*
  * APM info bits from BIOS
  */
-#define APM_16BIT_SUPPORT	0x01
-#define APM_32BIT_SUPPORT	0x02
-#define APM_CPUIDLE_SLOW	0x04
-#define APM_DISABLED		0x08
-#define APM_DISENGAGED		0x10
+#define APM_16BIT_SUPPORT		0x01
+#define APM_32BIT_SUPPORT		0x02
+#define APM_CPUIDLE_SLOW		0x04
+#define APM_DISABLED			0x08
+#define APM_DISENGAGED			0x10
 
-#define	APM_ERR_CODE(regs)	(((regs)->ax & 0xff00) >> 8)
-#define	APM_ERR_PM_DISABLED	0x01
-#define	APM_ERR_REALALREADY	0x02
-#define	APM_ERR_NOTCONN		0x03
-#define	APM_ERR_16ALREADY	0x05
-#define	APM_ERR_16NOTSUPP	0x06
-#define	APM_ERR_32ALREADY	0x07
-#define	APM_ERR_32NOTSUPP	0x08
-#define	APM_ERR_UNRECOG_DEV	0x09
-#define	APM_ERR_ERANGE		0x0A
-#define	APM_ERR_NOTENGAGED	0x0B
-#define APM_ERR_UNABLE		0x60
-#define APM_ERR_NOEVENTS	0x80
-#define	APM_ERR_NOT_PRESENT	0x86
+#define	APM_ERR_CODE(regs)		(((regs)->ax & 0xff00) >> 8)
+#define	APM_ERR_PM_DISABLED		0x01
+#define	APM_ERR_REALALREADY		0x02
+#define	APM_ERR_NOTCONN			0x03
+#define	APM_ERR_16ALREADY		0x05
+#define	APM_ERR_16NOTSUPP		0x06
+#define	APM_ERR_32ALREADY		0x07
+#define	APM_ERR_32NOTSUPP		0x08
+#define	APM_ERR_UNRECOG_DEV		0x09
+#define	APM_ERR_ERANGE			0x0A
+#define	APM_ERR_NOTENGAGED		0x0B
+#define APM_ERR_UNABLE			0x60
+#define APM_ERR_NOEVENTS		0x80
+#define	APM_ERR_NOT_PRESENT		0x86
 
-#define APM_DEV_APM_BIOS	0x0000
-#define APM_DEV_ALLDEVS		0x0001
+#define APM_DEV_APM_BIOS		0x0000
+#define APM_DEV_ALLDEVS			0x0001
 /* device classes are high byte; device IDs go in low byte */
-#define	APM_DEV_DISPLAY(x)	(0x0100|((x)&0xff))
-#define	APM_DEV_DISK(x)		(0x0200|((x)&0xff))
-#define	APM_DEV_PARALLEL(x)	(0x0300|((x)&0xff))
-#define	APM_DEV_SERIAL(x)	(0x0400|((x)&0xff))
-#define	APM_DEV_NETWORK(x)	(0x0500|((x)&0xff))
-#define	APM_DEV_PCMCIA(x)	(0x0600|((x)&0xff))
-#define	APM_DEV_ALLUNITS	0xff
+#define	APM_DEV_DISPLAY(x)		(0x0100|((x)&0xff))
+#define	APM_DEV_DISK(x)			(0x0200|((x)&0xff))
+#define	APM_DEV_PARALLEL(x)		(0x0300|((x)&0xff))
+#define	APM_DEV_SERIAL(x)		(0x0400|((x)&0xff))
+#define	APM_DEV_NETWORK(x)		(0x0500|((x)&0xff))
+#define	APM_DEV_PCMCIA(x)		(0x0600|((x)&0xff))
+#define	APM_DEV_ALLUNITS		0xff
 
 #define	APM_INSTALLATION_CHECK	0x00		/* int15 only */
 #define	APM_INSTALL_SIGNATURE	0x504d		/* %bh = 'P', %bl = 'M' */

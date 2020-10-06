@@ -52,7 +52,7 @@ void
 vop_alloc(vops)
 	struct vnodeops *vops;
 {
-	MALLOC(vops, struct vnodeops *, sizeof(struct vnodeops *), M_VNODEOPS, M_WAITOK);
+	MALLOC(vops, struct vnodeops *, sizeof(struct vnodeops *), M_VNODE, M_WAITOK);
 }
 
 int

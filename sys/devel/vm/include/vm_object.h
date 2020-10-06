@@ -89,12 +89,22 @@ struct vm_object {
 	vm_offset_t						shadow_offset;			/* Offset in shadow */
 	TAILQ_ENTRY(vm_object)			cached_list;			/* for persistence */
 
-		/* avm */
+	/* avm */
 	struct simplelock				*vmobjlock;				/* lock on memq */
 	int								uo_npages;				/* # of pages in memq */
 	int								uo_refs;				/* reference count */
 	struct vm_pagerops				*pgops;					/* pager ops */
 };
+
+/* flags */
+#define OBJ_CANPERSIST	0x0001	/* allow to persist */
+#define OBJ_INTERNAL	0x0002	/* internally created object */
+#define OBJ_ACTIVE		0x0004	/* used to mark active objects */
+#define OBJ_SHADOW		0x0006	/* mark to shadow object */
+#define OBJ_COPY		0x0008	/* mark to copy object */
+#define OBJ_COALESCE	0x0010	/* mark to coalesce object */
+#define OBJ_COLLAPSE	0x0012	/* mark to collapse object */
+#define OBJ_OVERLAY		0x0014	/* mark to transfer object to overlay */
 
 RB_HEAD(vm_object_hash_head, vm_object_hash_entry);
 struct vm_object_hash_entry {

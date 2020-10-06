@@ -48,7 +48,8 @@
 #include <sys/clist.h>
 #include <sys/mbuf.h>
 #include <sys/kernel.h>
-
+#include <sys/malloc.h>
+#include <sys/map.h>
 #include <ufs/ufs/quota.h>
 
 /*
@@ -78,7 +79,7 @@ int	maxfiles = 3 * (NPROC + MAXUSERS) + 80;
 int	ncallout = 16 + NPROC;
 int	nclist = 60 + 12 * MAXUSERS;
 int	nmbclusters = NMBCLUSTERS;
-int	fscale = FSCALE;	/* kernel uses `FSCALE', user uses `fscale' */
+int	fscale = FSCALE;					/* kernel uses `FSCALE', user uses `fscale' */
 
 /*
  * These are initialized at bootstrap time
@@ -101,9 +102,11 @@ char	*buffers;
 
 #define CMAPSIZ	NPROC				/* size of core allocation map */
 #define SMAPSIZ	((9 * NPROC) / 10)	/* size of swap allocation map */
+int cmapsiz = CMAPSIZ;
+int smapsiz = SMAPSIZ;
 
-struct mapent	_coremap[CMAPSIZ];
-struct map 		coremap[1] = { _coremap, &_coremap[CMAPSIZ], "coremap", };
+struct mapent	_coremap[cmapsiz];
+//struct map 		coremap[1] = { _coremap, &_coremap[CMAPSIZ], "coremap" };
 
-struct mapent	_swapmap[SMAPSIZ];
-struct map 		swapmap[1] = { _swapmap, &_swapmap[SMAPSIZ], "swapmap", };
+struct mapent	_swapmap[smapsiz];
+//struct map 		swapmap[1] = { _swapmap, &_swapmap[SMAPSIZ], "swapmap" };

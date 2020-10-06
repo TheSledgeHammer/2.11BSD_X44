@@ -39,7 +39,7 @@
 #include "vm/ovl/koverlay.h"
 
 #define MINBUCKET		4				/* 4 => min allocation of 16 bytes */
-#define MAXALLOCSAVE	(2 * )
+#define MAXALLOCSAVE	(2 * CLBYTES)
 
 /* Kernel Overlay Memory Management */
 struct overlay 				bucket[MINBUCKET + 16];
@@ -133,8 +133,7 @@ koverlay_free(addr, type)
 	ovp = &bucket[oup->ou_indx];
 
 	if (size > MAXALLOCSAVE) {
-		ovl_free(ovl_map, (vm_offset_t)addr, oup->ou_bucketcnt);
-		tbtree_free(ovp->ot_tbtree, size);
+		tbtree_free(ovp->ot_tbtree, (vm_offset_t)addr, oup->ou_bucketcnt);
 		return;
 	}
 	freep = (struct asl *)addr;

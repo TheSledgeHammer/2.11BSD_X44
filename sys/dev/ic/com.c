@@ -58,7 +58,7 @@
 void	comstart();
 int 	comprobe(), comattach(), comintr(), comparam();
 
-struct	isa_driver comdriver = {
+struct isa_driver comdriver = {
 	comprobe, comattach, "com"
 };
 

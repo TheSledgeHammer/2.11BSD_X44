@@ -91,7 +91,7 @@ struct kmemtree *
 kmemtree_allocate(kbp)
 	struct kmembuckets *kbp;
 {
-    register struct kmemtree *ktp = kmemtree_hash(kbp);
+    register struct kmemtree *ktp;// = kmemtree_hash(kbp);
     ktp = kbp->kb_ztree;
     ktp->kt_left = NULL;
     ktp->kt_middle = NULL;
@@ -110,40 +110,6 @@ kmemtree_allocate(kbp)
     ktp->kt_freelist2->asl_next = NULL;
     ktp->kt_freelist2->asl_prev = NULL;
     return (ktp);
-}
-
-
-/* Bucket List Search (kmembuckets) */
-struct kmembucket_entry *
-kmembucket_search_next(kbp, kbe, next)
-    struct kmembuckets *kbp;
-	struct kmembucket_entry *kbe;
-    caddr_t next;
-{
-    CIRCLEQ_FOREACH(kbe, &kbp->kb_header, kbe_entry) {
-        if(CIRCLEQ_FIRST(&kbp->kb_header)->kb_entry == kbe) {
-            if(kbe->kbe_next == next) {
-                return kbe;
-            }
-        }
-    }
-    return (NULL);
-}
-
-struct kmembucket_entry *
-kmembucket_search_last(kbp, kbe, last)
-	struct kmembuckets *kbp;
-	struct kmembucket_entry *kbe;
-	caddr_t last;
-{
-    CIRCLEQ_FOREACH(kbe, &kbp->kb_header, kbe_entry) {
-        if(CIRCLEQ_LAST(&kbp->kb_header)->kb_entry == kbe) {
-        	if(kbe->kbe_last == last) {
-        		return kbe;
-        	}
-        }
-    }
-    return (NULL);
 }
 
 /* Available Space List (ASL) in TBTree */

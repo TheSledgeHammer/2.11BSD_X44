@@ -27,14 +27,14 @@
 #include <sys/queue.h>
 
 struct ovlstats {
-	long			os_inuse;		/* # of packets of this type currently in use */
-	long			os_calls;		/* total packets of this type ever allocated */
-	long 			os_memuse;		/* total memory held in bytes */
-	u_short			os_limblocks;	/* number of times blocked for hitting limit */
-	u_short			os_mapblocks;	/* number of times blocked for kernel map */
-	long			os_maxused;		/* maximum number ever used */
-	long			os_limit;		/* most that are allowed to exist */
-	long			os_size;		/* sizes of this thing that are allocated */
+	long			os_inuse;			/* # of packets of this type currently in use */
+	long			os_calls;			/* total packets of this type ever allocated */
+	long 			os_memuse;			/* total memory held in bytes */
+	u_short			os_limblocks;		/* number of times blocked for hitting limit */
+	u_short			os_mapblocks;		/* number of times blocked for kernel map */
+	long			os_maxused;			/* maximum number ever used */
+	long			os_limit;			/* most that are allowed to exist */
+	long			os_size;			/* sizes of this thing that are allocated */
 	long			os_spare;
 
 	int 			slotsfilled;
@@ -43,33 +43,29 @@ struct ovlstats {
 };
 
 struct ovlusage {
-	short 			ou_indx;		/* bucket index */
-	u_short 		ou_kovlcnt;		/* kernel overlay count */
-	u_short 		ou_vovlcnt;		/* vm overlay count */
-	u_short			ou_bucketcnt;	/* buckets */
+	short 			ou_indx;			/* bucket index */
+	u_short 		ou_kovlcnt;			/* kernel overlay count */
+	u_short 		ou_vovlcnt;			/* vm overlay count */
+	u_short			ou_bucketcnt;		/* buckets */
 };
 
 struct ovlbuckets {
-	caddr_t 						ob_next;			/* list of free blocks */
-	caddr_t 						ob_last;			/* last free block */
+	caddr_t 		ob_next;			/* list of free blocks */
+	caddr_t 		ob_last;			/* last free block */
 
-	long							ob_calls;			/* total calls to allocate this size */
-	long							ob_total;			/* total number of blocks allocated */
-	long							ob_totalfree;		/* # of free elements in this bucket */
-	long							ob_elmpercl;		/* # of elements in this sized allocation */
-	long							ob_highwat;			/* high water mark */
-	long							ob_couldfree;		/* over high water mark and could free */
+	long			ob_calls;			/* total calls to allocate this size */
+	long			ob_total;			/* total number of blocks allocated */
+	long			ob_totalfree;		/* # of free elements in this bucket */
+	long			ob_elmpercl;		/* # of elements in this sized allocation */
+	long			ob_highwat;			/* high water mark */
+	long			ob_couldfree;		/* over high water mark and could free */
 };
 
 struct overlay {
-	caddr_t 						ot_next;			/* list of free blocks */
-	caddr_t 						ot_last;			/* last free block */
+	caddr_t 		ot_next;			/* list of free blocks */
+	caddr_t 		ot_last;			/* last free block */
 
-	struct tbtree					*ot_tbtree;			/* tertiary buddy tree allocation */
-
-    unsigned long					ot_size;
-    u_short							ot_cnt;
-    u_short							ot_flags;
+	struct tbtree	*ot_tbtree;			/* tertiary buddy tree allocation */
 };
 
 #define ovlmemxtob(base, alloc)	((base) + (alloc) * NBPG)

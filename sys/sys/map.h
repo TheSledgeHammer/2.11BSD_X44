@@ -27,12 +27,22 @@ struct map {
 	struct mapent	*m_map;		/* start of the map */
 	struct mapent	*m_limit;	/* address of last slot in map */
 	char   			*m_name;	/* name of resource */
+	int				m_type;		/* kern_malloc type */
+	//int 			m_flags;	/* kern_malloc flags */
+
+	struct  vmmap	*m_vmmap;	/* vm kernel memory management definitions */
 /* we use m_name when the map overflows, in warning messages */
 };
 
 struct mapent {
 	size_t 			m_size;		/* size of this segment of the map */
 	memaddr			m_addr;		/* resource-space addr of start of segment */
+};
+
+/* vm_kern.h: memory definitions  */
+struct vmmap {
+    char           *m_name;
+    vm_map_t        m_vmmap;
 };
 
 #define RMALLOC(mp, cast, size) {							\

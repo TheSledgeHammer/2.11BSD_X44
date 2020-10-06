@@ -295,8 +295,8 @@ vm_pagetable_setpager(pagetable, read_only)
 void
 vm_pagetable_shadow(pagetable, offset, length)
 	vm_page_table_t	*pagetable;	/* IN/OUT */
-	vm_offset_t	*offset;	/* IN/OUT */
-	vm_size_t	length;
+	vm_offset_t		*offset;	/* IN/OUT */
+	vm_size_t		length;
 {
 	register vm_page_table_t	source;
 	register vm_page_table_t	result;
@@ -459,7 +459,6 @@ boolean_t	vm_pagetable_collapse_allowed = TRUE;
 void
 vm_pagetable_collapse(pagetable)
 	register vm_page_table_t	pagetable;
-
 {
 	register vm_page_table_t	backing_pagetable;
 	register vm_offset_t		backing_offset;

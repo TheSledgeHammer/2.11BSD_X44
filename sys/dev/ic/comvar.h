@@ -113,8 +113,8 @@ int 	cominit (bus_space_tag_t, int, int, int, tcflag_t, bus_space_handle_t *);
 
 #ifndef __GENERIC_SOFT_INTERRUPTS
 #ifdef alpha
-#define	IPL_SERIAL	IPL_TTY
-#define	splserial()	spltty()
+#define	IPL_SERIAL		IPL_TTY
+#define	splserial()		spltty()
 #define	IPL_SOFTSERIAL	IPL_TTY
 #define	splsoftserial()	spltty()
 #endif

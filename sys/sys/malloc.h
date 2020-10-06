@@ -42,8 +42,10 @@
 #define MAXALLOCSAVE	(2 * CLBYTES)
 
 /* flags to malloc */
-#define	M_WAITOK	0x0000
-#define	M_NOWAIT	0x0001
+#define	M_WAITOK		0x0000
+#define	M_NOWAIT		0x0001
+#define M_CANFAIL		0x0002
+#define M_ZERO			0x0004
 
 /* Types of memory to be allocated */
 #define	M_FREE			0	/* should be on free list */
@@ -111,14 +113,12 @@
 #define	M_MSDOSFSMNT	62	/* MSDOS FS mount structure */
 #define	M_MSDOSFSFAT	63	/* MSDOS FS fat table */
 #define	M_MSDOSFSNODE	64	/* MSDOS FS vnode private part */
-#define M_ZERO			65	/* Zero */
+#define M_KENV			65	/* kern environment */
 #define M_EXEC			66	/* argument lists & other mem used by exec */
 #define M_COREMAP		67	/* 2.11BSD's Coremap */
 #define M_SWAPMAP		68	/* 2.11BSD's Swapmap */
-#define M_VNODEOPS		69  /* vnode operations vector */
-#define M_KENV			70	/* kern environment */
-#define	M_TEMP			71	/* misc temporary data buffers */
-#define	M_LAST			72	/* Must be last type + 1 */
+#define	M_TEMP			69	/* misc temporary data buffers */
+#define	M_LAST			70	/* Must be last type + 1 */
 
 #define INITKMEMNAMES { \
 	"free",			/* 0 M_FREE */ 			\
@@ -186,13 +186,11 @@
 	"MSDOSFS mount"	/* 62 M_MSDOSFSMNT */	\
 	"MSDOSFS fat",	/* 63 M_MSDOSFSFAT */ 	\
 	"MSDOSFS node",	/* 64 M_MSDOSFSNODE */ 	\
-	"zero",			/* 65 M_ZERO */			\
+	"kern envir" 	/* 65 M_KENV */			\
 	"exec",			/* 66 M_EXEC */			\
 	"coremap",		/* 67 M_COREMAP */		\
 	"swapmap",		/* 68 M_SWAPMAP */		\
-	"vnodeops"		/* 69 M_VNODEOPS */		\
-	"kern envir" 	/* 70 M_KENV */			\
-	"temp",			/* 71 M_TEMP */ 		\
+	"temp",			/* 69 M_TEMP */ 		\
 }
 
 struct kmemstats {
@@ -314,7 +312,6 @@ extern char *kmembase;
 
 extern void *malloc (unsigned long size, int type, int flags);
 extern void free (void *addr, int type);
-extern void *realloc (void *curaddr, unsigned long newsize, int type, int flags);
 
 #endif /* KERNEL */
 #endif /* !_SYS_MALLOC_H_ */

@@ -31,6 +31,21 @@ extern size_t physmem;
 extern struct mapent _coremap[];
 extern struct mapent _swapmap[];
 
+struct map coremap[1] = {
+		.m_map 		= _coremap,
+		.m_limit 	= &_coremap[cmapsiz],
+		.m_name 	= "coremap",
+		.m_type		= M_COREMAP,
+		.m_vmmap 	= &corevmmap[0],
+};
+
+struct map swapmap[1] = {
+		.m_map 		= _swapmap,
+		.m_limit 	= &_swapmap[smapsiz],
+		.m_name 	= "swapmap",
+		.m_type		= M_SWAPMAP,
+};
+
 /*
  * Resource map handling routines.
  *
@@ -339,3 +354,4 @@ kmemmapinit()
 	maxmem = MAXMEM;
 	printf("user mem  = %D\n", ctob((long)MAXMEM));
 }
+

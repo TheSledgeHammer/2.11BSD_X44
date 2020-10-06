@@ -87,7 +87,7 @@ struct pcb {
  * core dumps. For the i386: ???
  */
 struct md_coredump {
-        int     pad;		/* XXX? -- cgd */
+	int     pad;		/* XXX? -- cgd */
 };
 
 #ifdef _KERNEL
