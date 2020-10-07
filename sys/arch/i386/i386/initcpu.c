@@ -80,9 +80,9 @@
 
 #include <sys/user.h>
 
-#include <machine/cpu.h>
-#include <machine/cpufunc.h>
-#include <machine/cputypes.h>
+#include <include/cpu.h>
+#include <include/cpufunc.h>
+#include <include/cputypes.h>
 
 /*
  * Info for CTL_HW
@@ -90,6 +90,15 @@
 char	cpu_model[120];
 char 	version[];
 int		cpu_class;
+
+/*
+ * -1: automatic (default)
+ *  0: keep enable CLFLUSH
+ *  1: force disable CLFLUSH
+ */
+static int	hw_clflush_disable = -1;
+
+u_int	cyrix_did;		/* Device ID of Cyrix CPU */
 
 /*
  * Note: these are just the ones that may not have a cpuid instruction.

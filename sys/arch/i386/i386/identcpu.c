@@ -1,0 +1,1420 @@
+/*-
+ * Copyright (c) 1992 Terrence R. Lambert.
+ * Copyright (c) 1982, 1987, 1990 The Regents of the University of California.
+ * Copyright (c) 1997 KATO Takenori.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * William Jolitz.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	from: Id: machdep.c,v 1.193 1996/06/18 01:22:04 bde Exp
+ */
+
+#include <sys/cdefs.h>
+#include <sys/param.h>
+#include <sys/bus.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/sysctl.h>
+#include <sys/user.h>
+
+#include <vm/include/vm.h>
+#include <vm/include/pmap.h>
+
+#include <machine/cpu.h>
+#include <machine/cpufunc.h>
+#include <machine/cputypes.h>
+#include <machine/specialreg.h>
+
+#ifdef __i386__
+#define	IDENTBLUE_CYRIX486	0
+#define	IDENTBLUE_IBMCPU	1
+#define	IDENTBLUE_CYRIXM2	2
+
+
+static void identifycyrix(void);
+static void print_transmeta_info(void);
+#endif
+static u_int find_cpu_vendor_id(void);
+
+
+#ifdef __i386__
+int			cpu;					/* Are we 386, 386sx, 486, etc? */
+int			cpu_class;
+#endif
+u_int		cpu_feature;			/* Feature flags */
+u_int		cpu_feature2;			/* Feature flags */
+u_int		amd_feature;			/* AMD feature flags */
+u_int		amd_feature2;			/* AMD feature flags */
+u_int		amd_rascap;				/* AMD RAS capabilities */
+u_int		amd_pminfo;				/* AMD advanced power management info */
+u_int		amd_extended_feature_extensions;
+u_int		via_feature_rng;		/* VIA RNG features */
+u_int		via_feature_xcrypt;		/* VIA ACE features */
+u_int		cpu_high;				/* Highest arg to CPUID */
+u_int		cpu_exthigh;			/* Highest arg to extended CPUID */
+u_int		cpu_id;					/* Stepping ID */
+u_int		cpu_procinfo;			/* HyperThreading Info / Brand Index / CLFUSH */
+u_int		cpu_procinfo2;			/* Multicore info */
+char		cpu_vendor[20];			/* CPU Origin code */
+u_int		cpu_vendor_id;			/* CPU vendor ID */
+u_int		cpu_fxsr;				/* SSE enabled */
+u_int		cpu_mxcsr_mask;			/* Valid bits in mxcsr */
+u_int		cpu_clflush_line_size = 32;
+u_int		cpu_stdext_feature;		/* %ebx */
+u_int		cpu_stdext_feature2;	/* %ecx */
+u_int		cpu_stdext_feature3;	/* %edx */
+uint64_t 	cpu_ia32_arch_caps;
+u_int	 	cpu_max_ext_state_size;
+u_int		cpu_mon_mwait_flags;	/* MONITOR/MWAIT flags (CPUID.05H.ECX) */
+u_int		cpu_mon_min_size;		/* MONITOR minimum range size, bytes */
+u_int		cpu_mon_max_size;		/* MONITOR minimum range size, bytes */
+u_int		cpu_maxphyaddr;			/* Max phys addr width in bits */
+u_int		cpu_power_eax;			/* 06H: Power management leaf, %eax */
+u_int		cpu_power_ebx;			/* 06H: Power management leaf, %ebx */
+u_int		cpu_power_ecx;			/* 06H: Power management leaf, %ecx */
+u_int		cpu_power_edx;			/* 06H: Power management leaf, %edx */
+char machine[] = MACHINE;
+
+static char cpu_model[128];
+static int 	hw_clockrate;
+static char cpu_brand[48];
+
+#define	MAX_BRAND_INDEX	8
+
+static const char *cpu_cpuid_brandtable[MAX_BRAND_INDEX + 1] = {
+	NULL,							/* No brand */
+	"Intel Celeron",
+	"Intel Pentium III",
+	"Intel Pentium III Xeon",
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	"Intel Pentium 4"
+};
+
+static struct {
+	char	*cpu_name;
+	int		cpu_class;
+} cpus[] = {
+		{ "Intel 80286",		CPUCLASS_286 },			/* CPU_286   */
+		{ "i386SX",		    	CPUCLASS_386 },			/* CPU_386SX */
+		{ "i386DX",		    	CPUCLASS_386 },			/* CPU_386   */
+		{ "i486SX",		    	CPUCLASS_486 },			/* CPU_486SX */
+		{ "i486DX",		    	CPUCLASS_486 },			/* CPU_486   */
+		{ "Pentium",			CPUCLASS_586 },			/* CPU_586   */
+		{ "Cyrix 486",			CPUCLASS_486 },			/* CPU_486DLC */
+		{ "Pentium Pro",		CPUCLASS_686 },			/* CPU_686 */
+		{ "Cyrix 5x86",			CPUCLASS_486 },			/* CPU_M1SC */
+		{ "Cyrix 6x86",			CPUCLASS_486 },			/* CPU_M1 */
+		{ "Blue Lightning",		CPUCLASS_486 },			/* CPU_BLUE */
+		{ "Cyrix 6x86MX",		CPUCLASS_686 },			/* CPU_M2 */
+		{ "NexGen 586",			CPUCLASS_386 },			/* CPU_NX586 (XXX) */
+		{ "Cyrix 486S/DX",		CPUCLASS_486 },			/* CPU_CY486DX */
+		{ "Pentium II",			CPUCLASS_686 },			/* CPU_PII */
+		{ "Pentium III",		CPUCLASS_686 },			/* CPU_PIII */
+		{ "Pentium 4",			CPUCLASS_686 },			/* CPU_P4 */
+};
+
+static struct {
+	char	*vendor;
+	u_int	vendor_id;
+} cpu_vendors[] = {
+		{ INTEL_VENDOR_ID,		CPUVENDOR_INTEL },		/* GenuineIntel */
+		{ AMD_VENDOR_ID,		CPUVENDOR_AMD },		/* AuthenticAMD */
+		{ HYGON_VENDOR_ID,		CPUVENDOR_HYGON },		/* HygonGenuine*/
+		{ CENTAUR_VENDOR_ID,	CPUVENDOR_CENTAUR },	/* CentaurHauls */
+#ifdef __i386__
+		{ NSC_VENDOR_ID,		CPUVENDOR_NSC },		/* Geode by NSC */
+		{ CYRIX_VENDOR_ID,		CPUVENDOR_CYRIX },		/* CyrixInstead */
+		{ TRANSMETA_VENDOR_ID,	CPUVENDOR_TRANSMETA },	/* GenuineTMx86 */
+		{ SIS_VENDOR_ID,		CPUVENDOR_SIS },		/* SiS SiS SiS  */
+		{ UMC_VENDOR_ID,		CPUVENDOR_UMC },		/* UMC UMC UMC  */
+		{ NEXGEN_VENDOR_ID,		CPUVENDOR_NEXGEN },		/* NexGenDriven */
+		{ RISE_VENDOR_ID,		CPUVENDOR_RISE },		/* RiseRiseRise */
+#if 0
+		/* XXX CPUID 8000_0000h and 8086_0000h, not 0000_0000h */
+		{ "TransmetaCPU",		CPUVENDOR_TRANSMETA },
+#endif
+#endif
+};
+
+void
+printcpuinfo(void)
+{
+	u_int regs[4], i;
+	char *brand;
+
+	printf("CPU: ");
+#ifdef __i386__
+	cpu_class = cpus[cpu].cpu_class;
+	strncpy(cpu_model, cpus[cpu].cpu_name, sizeof (cpu_model));
+#else
+	strncpy(cpu_model, "Hammer", sizeof (cpu_model));
+#endif
+
+	/* Check for extended CPUID information and a processor name. */
+	if (cpu_exthigh >= 0x80000004) {
+		brand = cpu_brand;
+		for (i = 0x80000002; i < 0x80000005; i++) {
+			do_cpuid(i, regs);
+			memcpy(brand, regs, sizeof(regs));
+			brand += sizeof(regs);
+		}
+	}
+
+	switch (cpu_vendor_id) {
+		case CPUVENDOR_INTEL:
+#ifdef __i386__
+		if ((cpu_id & 0xf00) > 0x300) {
+			u_int brand_index;
+
+			cpu_model[0] = '\0';
+
+			switch (cpu_id & 0x3000) {
+			case 0x1000:
+				strcpy(cpu_model, "Overdrive ");
+				break;
+			case 0x2000:
+				strcpy(cpu_model, "Dual ");
+				break;
+			}
+
+			switch (cpu_id & 0xf00) {
+			case 0x400:
+				strcat(cpu_model, "i486 ");
+				/* Check the particular flavor of 486 */
+				switch (cpu_id & 0xf0) {
+				case 0x00:
+				case 0x10:
+					strcat(cpu_model, "DX");
+					break;
+				case 0x20:
+					strcat(cpu_model, "SX");
+					break;
+				case 0x30:
+					strcat(cpu_model, "DX2");
+					break;
+				case 0x40:
+					strcat(cpu_model, "SL");
+					break;
+				case 0x50:
+					strcat(cpu_model, "SX2");
+					break;
+				case 0x70:
+					strcat(cpu_model, "DX2 Write-Back Enhanced");
+					break;
+				case 0x80:
+					strcat(cpu_model, "DX4");
+					break;
+				}
+				break;
+			case 0x500:
+				/* Check the particular flavor of 586 */
+				strcat(cpu_model, "Pentium");
+				switch (cpu_id & 0xf0) {
+				case 0x00:
+					strcat(cpu_model, " A-step");
+					break;
+				case 0x10:
+					strcat(cpu_model, "/P5");
+					break;
+				case 0x20:
+					strcat(cpu_model, "/P54C");
+					break;
+				case 0x30:
+					strcat(cpu_model, "/P24T");
+					break;
+				case 0x40:
+					strcat(cpu_model, "/P55C");
+					break;
+				case 0x70:
+					strcat(cpu_model, "/P54C");
+					break;
+				case 0x80:
+					strcat(cpu_model, "/P55C (quarter-micron)");
+					break;
+				default:
+					/* nothing */
+					break;
+				}
+#if defined(I586_CPU) && !defined(NO_F00F_HACK)
+				/*
+				 * XXX - If/when Intel fixes the bug, this
+				 * should also check the version of the
+				 * CPU, not just that it's a Pentium.
+				 */
+				has_f00f_bug = 1;
+#endif
+				break;
+			case 0x600:
+				/* Check the particular flavor of 686 */
+				switch (cpu_id & 0xf0) {
+				case 0x00:
+					strcat(cpu_model, "Pentium Pro A-step");
+					break;
+				case 0x10:
+					strcat(cpu_model, "Pentium Pro");
+					break;
+				case 0x30:
+				case 0x50:
+				case 0x60:
+					strcat(cpu_model, "Pentium II/Pentium II Xeon/Celeron");
+					cpu = CPU_PII;
+					break;
+				case 0x70:
+				case 0x80:
+				case 0xa0:
+				case 0xb0:
+					strcat(cpu_model, "Pentium III/Pentium III Xeon/Celeron");
+					cpu = CPU_PIII;
+					break;
+				default:
+					strcat(cpu_model, "Unknown 80686");
+					break;
+				}
+				break;
+			case 0xf00:
+				strcat(cpu_model, "Pentium 4");
+				cpu = CPU_P4;
+				break;
+			default:
+				strcat(cpu_model, "unknown");
+				break;
+			}
+
+			/*
+			 * If we didn't get a brand name from the extended
+			 * CPUID, try to look it up in the brand table.
+			 */
+			if (cpu_high > 0 && *cpu_brand == '\0') {
+				brand_index = cpu_procinfo & CPUID_BRAND_INDEX;
+				if (brand_index <= MAX_BRAND_INDEX
+						&& cpu_brandtable[brand_index] != NULL)
+					strcpy(cpu_brand, cpu_brandtable[brand_index]);
+			}
+		}
+#else
+		/* Please make up your mind folks! */
+		strcat(cpu_model, "EM64T");
+#endif
+		break;
+		case CPUVENDOR_AMD:
+		/*
+		 * Values taken from AMD Processor Recognition
+		 * http://www.amd.com/K6/k6docs/pdf/20734g.pdf
+		 * (also describes ``Features'' encodings.
+		 */
+		strcpy(cpu_model, "AMD ");
+#ifdef __i386__
+		switch (cpu_id & 0xFF0) {
+		case 0x410:
+			strcat(cpu_model, "Standard Am486DX");
+			break;
+		case 0x430:
+			strcat(cpu_model, "Enhanced Am486DX2 Write-Through");
+			break;
+		case 0x470:
+			strcat(cpu_model, "Enhanced Am486DX2 Write-Back");
+			break;
+		case 0x480:
+			strcat(cpu_model, "Enhanced Am486DX4/Am5x86 Write-Through");
+			break;
+		case 0x490:
+			strcat(cpu_model, "Enhanced Am486DX4/Am5x86 Write-Back");
+			break;
+		case 0x4E0:
+			strcat(cpu_model, "Am5x86 Write-Through");
+			break;
+		case 0x4F0:
+			strcat(cpu_model, "Am5x86 Write-Back");
+			break;
+		case 0x500:
+			strcat(cpu_model, "K5 model 0");
+			break;
+		case 0x510:
+			strcat(cpu_model, "K5 model 1");
+			break;
+		case 0x520:
+			strcat(cpu_model, "K5 PR166 (model 2)");
+			break;
+		case 0x530:
+			strcat(cpu_model, "K5 PR200 (model 3)");
+			break;
+		case 0x560:
+			strcat(cpu_model, "K6");
+			break;
+		case 0x570:
+			strcat(cpu_model, "K6 266 (model 1)");
+			break;
+		case 0x580:
+			strcat(cpu_model, "K6-2");
+			break;
+		case 0x590:
+			strcat(cpu_model, "K6-III");
+			break;
+		case 0x5a0:
+			strcat(cpu_model, "Geode LX");
+			break;
+		default:
+			strcat(cpu_model, "Unknown");
+			break;
+		}
+#else
+		if ((cpu_id & 0xf00) == 0xf00)
+			strcat(cpu_model, "AMD64 Processor");
+		else
+			strcat(cpu_model, "Unknown");
+#endif
+		break;
+#ifdef __i386__
+	case CPUVENDOR_CYRIX:
+		strcpy(cpu_model, "Cyrix ");
+		switch (cpu_id & 0xff0) {
+		case 0x440:
+			strcat(cpu_model, "MediaGX");
+			break;
+		case 0x520:
+			strcat(cpu_model, "6x86");
+			break;
+		case 0x540:
+			cpu_class = CPUCLASS_586;
+			strcat(cpu_model, "GXm");
+			break;
+		case 0x600:
+			strcat(cpu_model, "6x86MX");
+			break;
+		default:
+			/*
+			 * Even though CPU supports the cpuid
+			 * instruction, it can be disabled.
+			 * Therefore, this routine supports all Cyrix
+			 * CPUs.
+			 */
+			switch (cyrix_did & 0xf0) {
+			case 0x00:
+				switch (cyrix_did & 0x0f) {
+				case 0x00:
+					strcat(cpu_model, "486SLC");
+					break;
+				case 0x01:
+					strcat(cpu_model, "486DLC");
+					break;
+				case 0x02:
+					strcat(cpu_model, "486SLC2");
+					break;
+				case 0x03:
+					strcat(cpu_model, "486DLC2");
+					break;
+				case 0x04:
+					strcat(cpu_model, "486SRx");
+					break;
+				case 0x05:
+					strcat(cpu_model, "486DRx");
+					break;
+				case 0x06:
+					strcat(cpu_model, "486SRx2");
+					break;
+				case 0x07:
+					strcat(cpu_model, "486DRx2");
+					break;
+				case 0x08:
+					strcat(cpu_model, "486SRu");
+					break;
+				case 0x09:
+					strcat(cpu_model, "486DRu");
+					break;
+				case 0x0a:
+					strcat(cpu_model, "486SRu2");
+					break;
+				case 0x0b:
+					strcat(cpu_model, "486DRu2");
+					break;
+				default:
+					strcat(cpu_model, "Unknown");
+					break;
+				}
+				break;
+			case 0x10:
+				switch (cyrix_did & 0x0f) {
+				case 0x00:
+					strcat(cpu_model, "486S");
+					break;
+				case 0x01:
+					strcat(cpu_model, "486S2");
+					break;
+				case 0x02:
+					strcat(cpu_model, "486Se");
+					break;
+				case 0x03:
+					strcat(cpu_model, "486S2e");
+					break;
+				case 0x0a:
+					strcat(cpu_model, "486DX");
+					break;
+				case 0x0b:
+					strcat(cpu_model, "486DX2");
+					break;
+				case 0x0f:
+					strcat(cpu_model, "486DX4");
+					break;
+				default:
+					strcat(cpu_model, "Unknown");
+					break;
+				}
+				break;
+			case 0x20:
+				if ((cyrix_did & 0x0f) < 8)
+					strcat(cpu_model, "6x86");	/* Where did you get it? */
+				else
+					strcat(cpu_model, "5x86");
+				break;
+			case 0x30:
+				strcat(cpu_model, "6x86");
+				break;
+			case 0x40:
+				if ((cyrix_did & 0xf000) == 0x3000) {
+					cpu_class = CPUCLASS_586;
+					strcat(cpu_model, "GXm");
+				} else
+					strcat(cpu_model, "MediaGX");
+				break;
+			case 0x50:
+				strcat(cpu_model, "6x86MX");
+				break;
+			case 0xf0:
+				switch (cyrix_did & 0x0f) {
+				case 0x0d:
+					strcat(cpu_model, "Overdrive CPU");
+					break;
+				case 0x0e:
+					strcpy(cpu_model, "Texas Instruments 486SXL");
+					break;
+				case 0x0f:
+					strcat(cpu_model, "486SLC/DLC");
+					break;
+				default:
+					strcat(cpu_model, "Unknown");
+					break;
+				}
+				break;
+			default:
+				strcat(cpu_model, "Unknown");
+				break;
+			}
+			break;
+		}
+		break;
+	case CPUVENDOR_RISE:
+		strcpy(cpu_model, "Rise ");
+		switch (cpu_id & 0xff0) {
+		case 0x500: /* 6401 and 6441 (Kirin) */
+		case 0x520: /* 6510 (Lynx) */
+			strcat(cpu_model, "mP6");
+			break;
+		default:
+			strcat(cpu_model, "Unknown");
+		}
+		break;
+#endif
+	case CPUVENDOR_CENTAUR:
+#ifdef __i386__
+		switch (cpu_id & 0xff0) {
+		case 0x540:
+			strcpy(cpu_model, "IDT WinChip C6");
+			break;
+		case 0x580:
+			strcpy(cpu_model, "IDT WinChip 2");
+			break;
+		case 0x590:
+			strcpy(cpu_model, "IDT WinChip 3");
+			break;
+		case 0x660:
+			strcpy(cpu_model, "VIA C3 Samuel");
+			break;
+		case 0x670:
+			if (cpu_id & 0x8)
+				strcpy(cpu_model, "VIA C3 Ezra");
+			else
+				strcpy(cpu_model, "VIA C3 Samuel 2");
+			break;
+		case 0x680:
+			strcpy(cpu_model, "VIA C3 Ezra-T");
+			break;
+		case 0x690:
+			strcpy(cpu_model, "VIA C3 Nehemiah");
+			break;
+		case 0x6a0:
+		case 0x6d0:
+			strcpy(cpu_model, "VIA C7 Esther");
+			break;
+		case 0x6f0:
+			strcpy(cpu_model, "VIA Nano");
+			break;
+		default:
+			strcpy(cpu_model, "VIA/IDT Unknown");
+		}
+#else
+		strcpy(cpu_model, "VIA ");
+		if ((cpu_id & 0xff0) == 0x6f0)
+			strcat(cpu_model, "Nano Processor");
+		else
+			strcat(cpu_model, "Unknown");
+#endif
+		break;
+#ifdef __i386__
+	case CPUVENDOR_IBM:
+		strcpy(cpu_model, "Blue Lightning CPU");
+		break;
+	case CPUVENDOR_NSC:
+		switch (cpu_id & 0xff0) {
+		case 0x540:
+			strcpy(cpu_model, "Geode SC1100");
+			cpu = CPU_GEODE1100;
+			break;
+		default:
+			strcpy(cpu_model, "Geode/NSC unknown");
+			break;
+		}
+		break;
+#endif
+	case CPUVENDOR_HYGON:
+		strcpy(cpu_model, "Hygon ");
+#ifdef __i386__
+				strcat(cpu_model, "Unknown");
+		#else
+		if ((cpu_id & 0xf00) == 0xf00)
+			strcat(cpu_model, "AMD64 Processor");
+		else
+			strcat(cpu_model, "Unknown");
+#endif
+		break;
+
+	default:
+		strcat(cpu_model, "Unknown");
+		break;
+	}
+
+	/*
+	 * Replace cpu_model with cpu_brand minus leading spaces if
+	 * we have one.
+	 */
+	brand = cpu_brand;
+	while (*brand == ' ')
+		++brand;
+	if (*brand != '\0')
+		strcpy(cpu_model, brand);
+
+	printf("%s (", cpu_model);
+/*
+	if (tsc_freq != 0) {
+		hw_clockrate = (tsc_freq + 5000) / 1000000;
+		printf("%jd.%02d-MHz ", (intmax_t)(tsc_freq + 4999) / 1000000, (u_int)((tsc_freq + 4999) / 10000) % 100);
+	}
+*/
+#ifdef __i386__
+	switch (cpu_class) {
+	case CPUCLASS_286:
+		printf("286");
+		break;
+	case CPUCLASS_386:
+		printf("386");
+		break;
+#if defined(I486_CPU)
+	case CPUCLASS_486:
+		printf("486");
+		break;
+#endif
+#if defined(I586_CPU)
+	case CPUCLASS_586:
+		printf("586");
+		break;
+#endif
+#if defined(I686_CPU)
+	case CPUCLASS_686:
+		printf("686");
+		break;
+#endif
+	default:
+		printf("Unknown"); /* will panic below... */
+	}
+#else
+	printf("K8");
+#endif
+	printf("-class CPU)\n");
+	if (*cpu_vendor)
+		printf("  Origin=\"%s\"", cpu_vendor);
+	if (cpu_id)
+		printf("  Id=0x%x", cpu_id);
+
+	if (cpu_vendor_id == CPUVENDOR_INTEL ||
+		cpu_vendor_id == CPUVENDOR_AMD ||
+		cpu_vendor_id == CPUVENDOR_HYGON ||
+		cpu_vendor_id == CPUVENDOR_CENTAUR ||
+#ifdef __i386__
+		cpu_vendor_id == CPUVENDOR_TRANSMETA ||
+		cpu_vendor_id == CPUVENDOR_RISE ||
+		cpu_vendor_id == CPUVENDOR_NSC ||
+		(cpu_vendor_id == CPUVENDOR_CYRIX && ((cpu_id & 0xf00) > 0x500)) ||
+#endif
+		0) {
+		printf("  Family=0x%x", CPUID_TO_FAMILY(cpu_id));
+		printf("  Model=0x%x", CPUID_TO_MODEL(cpu_id));
+		printf("  Stepping=%u", cpu_id & CPUID_STEPPING);
+#ifdef __i386__
+		if (cpu_vendor_id == CPUVENDOR_CYRIX)
+			printf("\n  DIR=0x%04x", cyrix_did);
+#endif
+		/*
+		 * AMD CPUID Specification
+		 * http://support.amd.com/us/Embedded_TechDocs/25481.pdf
+		 *
+		 * Intel Processor Identification and CPUID Instruction
+		 * http://www.intel.com/assets/pdf/appnote/241618.pdf
+		 */
+		if (cpu_high > 0) {
+			/*
+			 * Here we should probably set up flags indicating
+			 * whether or not various features are available.
+			 * The interesting ones are probably VME, PSE, PAE,
+			 * and PGE.  The code already assumes without bothering
+			 * to check that all CPUs >= Pentium have a TSC and
+			 * MSRs.
+			 */
+			printf("\n  Features=0x%b", cpu_feature,
+					"\020"
+					"\001FPU"		/* Integral FPU */
+					"\002VME"		/* Extended VM86 mode support */
+					"\003DE"		/* Debugging Extensions (CR4.DE) */
+					"\004PSE"		/* 4MByte page tables */
+					"\005TSC"		/* Timestamp counter */
+					"\006MSR"		/* Machine specific registers */
+					"\007PAE"		/* Physical address extension */
+					"\010MCE"		/* Machine Check support */
+					"\011CX8"		/* CMPEXCH8 instruction */
+					"\012APIC"		/* SMP local APIC */
+					"\013oldMTRR"	/* Previous implementation of MTRR */
+					"\014SEP"		/* Fast System Call */
+					"\015MTRR"		/* Memory Type Range Registers */
+					"\016PGE"		/* PG_G (global bit) support */
+					"\017MCA"		/* Machine Check Architecture */
+					"\020CMOV"		/* CMOV instruction */
+					"\021PAT"		/* Page attributes table */
+					"\022PSE36"		/* 36 bit address space support */
+					"\023PN"		/* Processor Serial number */
+					"\024CLFLUSH"	/* Has the CLFLUSH instruction */
+					"\025<b20>"
+					"\026DTS"		/* Debug Trace Store */
+					"\027ACPI"		/* ACPI support */
+					"\030MMX"		/* MMX instructions */
+					"\031FXSR"		/* FXSAVE/FXRSTOR */
+					"\032SSE"		/* Streaming SIMD Extensions */
+					"\033SSE2"		/* Streaming SIMD Extensions #2 */
+					"\034SS"		/* Self snoop */
+					"\035HTT"		/* Hyperthreading (see EBX bit 16-23) */
+					"\036TM"		/* Thermal Monitor clock slowdown */
+					"\037IA64"		/* CPU can execute IA64 instructions */
+					"\040PBE"		/* Pending Break Enable */
+					);
+
+			if (cpu_feature2 != 0) {
+				printf("\n  Features2=0x%b", cpu_feature2,
+						"\020"
+						"\001SSE3"		/* SSE3 */
+						"\002PCLMULQDQ"	/* Carry-Less Mul Quadword */
+						"\003DTES64"	/* 64-bit Debug Trace */
+						"\004MON"		/* MONITOR/MWAIT Instructions */
+						"\005DS_CPL"	/* CPL Qualified Debug Store */
+						"\006VMX"		/* Virtual Machine Extensions */
+						"\007SMX"		/* Safer Mode Extensions */
+						"\010EST"		/* Enhanced SpeedStep */
+						"\011TM2"		/* Thermal Monitor 2 */
+						"\012SSSE3"		/* SSSE3 */
+						"\013CNXT-ID"	/* L1 context ID available */
+						"\014SDBG"		/* IA32 silicon debug */
+						"\015FMA"		/* Fused Multiply Add */
+						"\016CX16"		/* CMPXCHG16B Instruction */
+						"\017xTPR"		/* Send Task Priority Messages*/
+						"\020PDCM"		/* Perf/Debug Capability MSR */
+						"\021<b16>"
+						"\022PCID"		/* Process-context Identifiers*/
+						"\023DCA"		/* Direct Cache Access */
+						"\024SSE4.1"	/* SSE 4.1 */
+						"\025SSE4.2"	/* SSE 4.2 */
+						"\026x2APIC"	/* xAPIC Extensions */
+						"\027MOVBE"		/* MOVBE Instruction */
+						"\030POPCNT"	/* POPCNT Instruction */
+						"\031TSCDLT"	/* TSC-Deadline Timer */
+						"\032AESNI"		/* AES Crypto */
+						"\033XSAVE"		/* XSAVE/XRSTOR States */
+						"\034OSXSAVE"	/* OS-Enabled State Management*/
+						"\035AVX"		/* Advanced Vector Extensions */
+						"\036F16C"		/* Half-precision conversions */
+						"\037RDRAND"	/* RDRAND Instruction */
+						"\040HV"		/* Hypervisor */
+				);
+			}
+			if (amd_feature != 0) {
+				printf("\n  AMD Features=0x%b", amd_feature,
+						"\020"			/* in hex */
+						"\001<s0>" 		/* Same */
+						"\002<s1>" 		/* Same */
+						"\003<s2>" 		/* Same */
+						"\004<s3>" 		/* Same */
+						"\005<s4>" 		/* Same */
+						"\006<s5>" 		/* Same */
+						"\007<s6>" 		/* Same */
+						"\010<s7>" 		/* Same */
+						"\011<s8>" 		/* Same */
+						"\012<s9>" 		/* Same */
+						"\013<b10>" 	/* Undefined */
+						"\014SYSCALL" 	/* Have SYSCALL/SYSRET */
+						"\015<s12>" 	/* Same */
+						"\016<s13>" 	/* Same */
+						"\017<s14>" 	/* Same */
+						"\020<s15>" 	/* Same */
+						"\021<s16>" 	/* Same */
+						"\022<s17>" 	/* Same */
+						"\023<b18>" 	/* Reserved, unknown */
+						"\024MP" 		/* Multiprocessor Capable */
+						"\025NX" 		/* Has EFER.NXE, NX */
+						"\026<b21>" 	/* Undefined */
+						"\027MMX+" 		/* AMD MMX Extensions */
+						"\030<s23>" 	/* Same */
+						"\031<s24>" 	/* Same */
+						"\032FFXSR" 	/* Fast FXSAVE/FXRSTOR */
+						"\033Page1GB" 	/* 1-GB large page support */
+						"\034RDTSCP" 	/* RDTSCP */
+						"\035<b28>" 	/* Undefined */
+						"\036LM" 		/* 64 bit long mode */
+						"\0373DNow!+" 	/* AMD 3DNow! Extensions */
+						"\0403DNow!" 	/* AMD 3DNow! */
+				);
+			}
+
+			if (amd_feature2 != 0) {
+				printf("\n  AMD Features2=0x%b", amd_feature2, "\020"
+						"\001LAHF" 		/* LAHF/SAHF in long mode */
+						"\002CMP" 		/* CMP legacy */
+						"\003SVM" 		/* Secure Virtual Mode */
+						"\004ExtAPIC" 	/* Extended APIC register */
+						"\005CR8" 		/* CR8 in legacy mode */
+						"\006ABM" 		/* LZCNT instruction */
+						"\007SSE4A" 	/* SSE4A */
+						"\010MAS" 		/* Misaligned SSE mode */
+						"\011Prefetch" 	/* 3DNow! Prefetch/PrefetchW */
+						"\012OSVW" 		/* OS visible workaround */
+						"\013IBS" 		/* Instruction based sampling */
+						"\014XOP" 		/* XOP extended instructions */
+						"\015SKINIT" 	/* SKINIT/STGI */
+						"\016WDT" 		/* Watchdog timer */
+						"\017<b14>"
+						"\020LWP" 		/* Lightweight Profiling */
+						"\021FMA4"	 	/* 4-operand FMA instructions */
+						"\022TCE" 		/* Translation Cache Extension */
+						"\023<b18>"
+						"\024NodeId" 	/* NodeId MSR support */
+						"\025<b20>"
+						"\026TBM" 		/* Trailing Bit Manipulation */
+						"\027Topology" 	/* Topology Extensions */
+						"\030PCXC" 		/* Core perf count */
+						"\031PNXC" 		/* NB perf count */
+						"\032<b25>"
+						"\033DBE" 		/* Data Breakpoint extension */
+						"\034PTSC" 		/* Performance TSC */
+						"\035PL2I" 		/* L2I perf count */
+						"\036MWAITX" 	/* MONITORX/MWAITX instructions */
+						"\037ADMSKX" 	/* Address mask extension */
+						"\040<b31>"
+						);
+			}
+
+			if (cpu_stdext_feature != 0) {
+						printf("\n  Structured Extended Features=0x%b",
+						    cpu_stdext_feature, "\020"
+						       /* RDFSBASE/RDGSBASE/WRFSBASE/WRGSBASE */
+						       "\001FSGSBASE"
+						       "\002TSCADJ"
+						       "\003SGX"
+						       /* Bit Manipulation Instructions */
+						       "\004BMI1"
+						       /* Hardware Lock Elision */
+						       "\005HLE"
+						       /* Advanced Vector Instructions 2 */
+						       "\006AVX2"
+						       /* FDP_EXCPTN_ONLY */
+						       "\007FDPEXC"
+						       /* Supervisor Mode Execution Prot. */
+						       "\010SMEP"
+						       /* Bit Manipulation Instructions */
+						       "\011BMI2"
+						       "\012ERMS"
+						       /* Invalidate Processor Context ID */
+						       "\013INVPCID"
+						       /* Restricted Transactional Memory */
+						       "\014RTM"
+						       "\015PQM"
+						       "\016NFPUSG"
+						       /* Intel Memory Protection Extensions */
+						       "\017MPX"
+						       "\020PQE"
+						       /* AVX512 Foundation */
+						       "\021AVX512F"
+						       "\022AVX512DQ"
+						       /* Enhanced NRBG */
+						       "\023RDSEED"
+						       /* ADCX + ADOX */
+						       "\024ADX"
+						       /* Supervisor Mode Access Prevention */
+						       "\025SMAP"
+						       "\026AVX512IFMA"
+						       /* Formerly PCOMMIT */
+						       "\027<b22>"
+						       "\030CLFLUSHOPT"
+						       "\031CLWB"
+						       "\032PROCTRACE"
+						       "\033AVX512PF"
+						       "\034AVX512ER"
+						       "\035AVX512CD"
+						       "\036SHA"
+						       "\037AVX512BW"
+						       "\040AVX512VL"
+						       );
+			}
+
+			if (cpu_stdext_feature2 != 0) {
+				printf("\n  Structured Extended Features2=0x%b",
+						cpu_stdext_feature2, "\020"
+								"\001PREFETCHWT1"
+								"\002AVX512VBMI"
+								"\003UMIP"
+								"\004PKU"
+								"\005OSPKE"
+								"\006WAITPKG"
+								"\007AVX512VBMI2"
+								"\011GFNI"
+								"\012VAES"
+								"\013VPCLMULQDQ"
+								"\014AVX512VNNI"
+								"\015AVX512BITALG"
+								"\016TME"
+								"\017AVX512VPOPCNTDQ"
+								"\021LA57"
+								"\027RDPID"
+								"\032CLDEMOTE"
+								"\034MOVDIRI"
+								"\035MOVDIR64B"
+								"\036ENQCMD"
+								"\037SGXLC"
+						);
+			}
+
+			if (cpu_stdext_feature3 != 0) {
+				printf("\n  Structured Extended Features3=0x%b",
+						cpu_stdext_feature3,
+								"\020"
+								"\003AVX512_4VNNIW"
+								"\004AVX512_4FMAPS"
+								"\005FSRM"
+								"\011AVX512VP2INTERSECT"
+								"\012MCUOPT"
+								"\013MD_CLEAR"
+								"\016TSXFA"
+								"\023PCONFIG"
+								"\025IBT"
+								"\033IBPB"
+								"\034STIBP"
+								"\035L1DFL"
+								"\036ARCH_CAP"
+								"\037CORE_CAP"
+								"\040SSBD"
+						);
+			}
+
+			if ((cpu_feature2 & CPUID2_XSAVE) != 0) {
+				cpuid_count(0xd, 0x1, regs);
+				if (regs[0] != 0) {
+					printf("\n  XSAVE Features=0x%b",
+							regs[0],
+							"\020"
+							"\001XSAVEOPT"
+							"\002XSAVEC"
+							"\003XINUSE"
+							"\004XSAVES");
+				}
+			}
+
+			if (cpu_ia32_arch_caps != 0) {
+				printf("\n  IA32_ARCH_CAPS=0x%b",
+						(u_int) cpu_ia32_arch_caps,
+						"\020"
+						"\001RDCL_NO"
+						"\002IBRS_ALL"
+						"\003RSBA"
+						"\004SKIP_L1DFL_VME"
+						"\005SSB_NO"
+						"\006MDS_NO"
+						"\010TSX_CTRL"
+						"\011TAA_NO"
+						);
+			}
+
+			if (amd_extended_feature_extensions != 0) {
+				u_int amd_fe_masked;
+
+				amd_fe_masked = amd_extended_feature_extensions;
+				if ((amd_fe_masked & AMDFEID_IBRS) == 0)
+					amd_fe_masked &= ~(AMDFEID_IBRS_ALWAYSON
+							| AMDFEID_PREFER_IBRS);
+				if ((amd_fe_masked & AMDFEID_STIBP) == 0)
+					amd_fe_masked &= ~AMDFEID_STIBP_ALWAYSON;
+
+				printf("\n  "
+						"AMD Extended Feature Extensions ID EBX="
+						"0x%b", amd_fe_masked,
+						"\020"
+						"\001CLZERO"
+						"\002IRPerf"
+						"\003XSaveErPtr"
+						"\005RDPRU"
+						"\011MCOMMIT"
+						"\012WBNOINVD"
+						"\015IBPB"
+						"\017IBRS"
+						"\020STIBP"
+						"\021IBRS_ALWAYSON"
+						"\022STIBP_ALWAYSON"
+						"\023PREFER_IBRS"
+						"\030PPIN"
+						"\031SSBD"
+						"\032VIRT_SSBD"
+						"\033SSB_NO"
+						);
+			}
+
+			if (via_feature_rng != 0 || via_feature_xcrypt != 0)
+				print_via_padlock_info();
+
+			if (cpu_feature2 & CPUID2_VMX)
+				print_vmx_info();
+
+			if (amd_feature2 & AMDID2_SVM)
+				print_svm_info();
+
+			if ((cpu_feature & CPUID_HTT)
+					&& (cpu_vendor_id == CPUVENDOR_AMD
+							|| cpu_vendor_id == CPUVENDOR_HYGON))
+				cpu_feature &= ~CPUID_HTT;
+
+			/*
+			 * If this CPU supports P-state invariant TSC then
+			 * mention the capability.
+			 */
+			/*
+			if (tsc_is_invariant) {
+				printf("\n  TSC: P-state invariant");
+				if (tsc_perf_stat)
+					printf(", performance statistics");
+			}
+			*/
+		}
+#ifdef __i386__
+	} else if (cpu_vendor_id == CPUVENDOR_CYRIX) {
+		printf("  DIR=0x%04x", cyrix_did);
+		printf("  Stepping=%u", (cyrix_did & 0xf000) >> 12);
+		printf("  Revision=%u", (cyrix_did & 0x0f00) >> 8);
+#ifndef CYRIX_CACHE_REALLY_WORKS
+		if (cpu == CPU_M1 && (cyrix_did & 0xff00) < 0x1700)
+			printf("\n  CPU cache: write-through mode");
+#endif
+#endif
+	}
+
+	/* Avoid ugly blank lines: only print newline when we have to. */
+	if (*cpu_vendor || cpu_id)
+		printf("\n");
+
+	if (bootverbose) {
+		if (cpu_vendor_id == CPUVENDOR_AMD || cpu_vendor_id == CPUVENDOR_HYGON)
+			print_AMD_info();
+		else if (cpu_vendor_id == CPUVENDOR_INTEL)
+			print_INTEL_info();
+#ifdef __i386__
+		else if (cpu_vendor_id == CPUVENDOR_TRANSMETA)
+			print_transmeta_info();
+#endif
+	}
+}
+
+#ifdef __i386__
+void
+panicifcpuunsupported(void)
+{
+
+#if !defined(lint)
+#if !defined(I486_CPU) && !defined(I586_CPU) && !defined(I686_CPU)
+#error This kernel is not configured for one of the supported CPUs
+#endif
+#else /* lint */
+#endif /* lint */
+	/*
+	 * Now that we have told the user what they have,
+	 * let them know if that machine type isn't configured.
+	 */
+	switch (cpu_class) {
+		case CPUCLASS_286: /* a 286 should not make it this far, anyway */
+		case CPUCLASS_386:
+#if !defined(I486_CPU)
+		case CPUCLASS_486:
+#endif
+#if !defined(I586_CPU)
+		case CPUCLASS_586:
+#endif
+#if !defined(I686_CPU)
+		case CPUCLASS_686:
+#endif
+		panic("CPU class not configured");
+		default:
+		break;
+	}
+}
+
+static	volatile u_int trap_by_rdmsr;
+
+/*
+ * Distinguish IBM Blue Lightning CPU from Cyrix CPUs that does not
+ * support cpuid instruction.  This function should be called after
+ * loading interrupt descriptor table register.
+ *
+ * I don't like this method that handles fault, but I couldn't get
+ * information for any other methods.  Does blue giant know?
+ */
+static int identblue(void) {
+
+	trap_by_rdmsr = 0;
+
+	/*
+	 * Cyrix 486-class CPU does not support rdmsr instruction.
+	 * The rdmsr instruction generates invalid opcode fault, and exception
+	 * will be trapped by bluetrap6() on Cyrix 486-class CPU.  The
+	 * bluetrap6() set the magic number to trap_by_rdmsr.
+	 */
+	setidt(IDT_UD, bluetrap6, SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+
+	/*
+	 * Certain BIOS disables cpuid instruction of Cyrix 6x86MX CPU.
+	 * In this case, rdmsr generates general protection fault, and
+	 * exception will be trapped by bluetrap13().
+	 */
+	setidt(IDT_GP, bluetrap13, SDT_SYS386TGT, SEL_KPL, GSEL(GCODE_SEL, SEL_KPL));
+
+	rdmsr(0x1002); /* Cyrix CPU generates fault. */
+
+	if (trap_by_rdmsr == 0xa8c1d)
+		return IDENTBLUE_CYRIX486;
+	else if (trap_by_rdmsr == 0xa89c4)
+		return IDENTBLUE_CYRIXM2;
+	return IDENTBLUE_IBMCPU;
+}
+
+/*
+ * identifycyrix() set lower 16 bits of cyrix_did as follows:
+ *
+ *  F E D C B A 9 8 7 6 5 4 3 2 1 0
+ * +-------+-------+---------------+
+ * |  SID  |  RID  |   Device ID   |
+ * |    (DIR 1)    |    (DIR 0)    |
+ * +-------+-------+---------------+
+ */
+static void identifycyrix(void) {
+	register_t saveintr;
+	int ccr2_test = 0, dir_test = 0;
+	u_char ccr2, ccr3;
+
+	saveintr = intr_disable();
+
+	ccr2 = read_cyrix_reg(CCR2);
+	write_cyrix_reg(CCR2, ccr2 ^ CCR2_LOCK_NW);
+	read_cyrix_reg(CCR2);
+	if (read_cyrix_reg(CCR2) != ccr2)
+		ccr2_test = 1;
+	write_cyrix_reg(CCR2, ccr2);
+
+	ccr3 = read_cyrix_reg(CCR3);
+	write_cyrix_reg(CCR3, ccr3 ^ CCR3_MAPEN3);
+	read_cyrix_reg(CCR3);
+	if (read_cyrix_reg(CCR3) != ccr3)
+		dir_test = 1; /* CPU supports DIRs. */
+	write_cyrix_reg(CCR3, ccr3);
+
+	if (dir_test) {
+		/* Device ID registers are available. */
+		cyrix_did = read_cyrix_reg(DIR1) << 8;
+		cyrix_did += read_cyrix_reg(DIR0);
+	} else if (ccr2_test)
+		cyrix_did = 0x0010; /* 486S A-step */
+	else
+		cyrix_did = 0x00ff; /* Old 486SLC/DLC and TI486SXLC/SXL */
+
+	intr_restore(saveintr);
+}
+#endif
+
+void
+identify_cpu1(void)
+{
+	u_int regs[4];
+
+	do_cpuid(0, regs);
+	cpu_high = regs[0];
+	((u_int *)&cpu_vendor)[0] = regs[1];
+	((u_int *)&cpu_vendor)[1] = regs[3];
+	((u_int *)&cpu_vendor)[2] = regs[2];
+	cpu_vendor[12] = '\0';
+
+	do_cpuid(1, regs);
+	cpu_id = regs[0];
+	cpu_procinfo = regs[1];
+	cpu_feature = regs[3];
+	cpu_feature2 = regs[2];
+}
+
+void
+identify_cpu2(void)
+{
+	u_int regs[4], cpu_stdext_disable;
+
+	if (cpu_high >= 6) {
+		cpuid_count(6, 0, regs);
+		cpu_power_eax = regs[0];
+		cpu_power_ebx = regs[1];
+		cpu_power_ecx = regs[2];
+		cpu_power_edx = regs[3];
+	}
+
+	if (cpu_high >= 7) {
+		cpuid_count(7, 0, regs);
+		cpu_stdext_feature = regs[1];
+
+		/*
+		 * Some hypervisors failed to filter out unsupported
+		 * extended features.  Allow to disable the
+		 * extensions, activation of which requires setting a
+		 * bit in CR4, and which VM monitors do not support.
+		 */
+		cpu_stdext_disable = 0;
+		TUNABLE_INT_FETCH("hw.cpu_stdext_disable", &cpu_stdext_disable);
+		cpu_stdext_feature &= ~cpu_stdext_disable;
+
+		cpu_stdext_feature2 = regs[2];
+		cpu_stdext_feature3 = regs[3];
+
+		if ((cpu_stdext_feature3 & CPUID_STDEXT3_ARCH_CAP) != 0)
+			cpu_ia32_arch_caps = rdmsr(MSR_IA32_ARCH_CAP);
+	}
+}
+
+void
+identify_cpu_fixup_bsp(void)
+{
+	u_int regs[4];
+
+	cpu_vendor_id = find_cpu_vendor_id();
+
+	if (fix_cpuid()) {
+		do_cpuid(0, regs);
+		cpu_high = regs[0];
+	}
+}
+
+/*
+ * Final stage of CPU identification.
+ */
+void
+finishidentcpu(void)
+{
+	u_int regs[4];
+#ifdef __i386__
+	u_char ccr3;
+#endif
+
+	identify_cpu_fixup_bsp();
+
+	if (cpu_high >= 5 && (cpu_feature2 & CPUID2_MON) != 0) {
+		do_cpuid(5, regs);
+		cpu_mon_mwait_flags = regs[2];
+		cpu_mon_min_size = regs[0] & CPUID5_MON_MIN_SIZE;
+		cpu_mon_max_size = regs[1] & CPUID5_MON_MAX_SIZE;
+	}
+
+	identify_cpu2();
+
+#ifdef __i386__
+	if (cpu_high > 0
+			&& (cpu_vendor_id == CPUVENDOR_INTEL
+					|| cpu_vendor_id == CPUVENDOR_AMD
+					|| cpu_vendor_id == CPUVENDOR_HYGON
+					|| cpu_vendor_id == CPUVENDOR_TRANSMETA
+					|| cpu_vendor_id == CPUVENDOR_CENTAUR
+					|| cpu_vendor_id == CPUVENDOR_NSC)) {
+		do_cpuid(0x80000000, regs);
+		if (regs[0] >= 0x80000000)
+			cpu_exthigh = regs[0];
+	}
+#else
+	if (cpu_vendor_id == CPUVENDOR_INTEL ||
+			cpu_vendor_id == CPUVENDOR_AMD ||
+			cpu_vendor_id == CPUVENDOR_HYGON ||
+			cpu_vendor_id == CPUVENDOR_CENTAUR) {
+		do_cpuid(0x80000000, regs);
+		cpu_exthigh = regs[0];
+	}
+#endif
+	if (cpu_exthigh >= 0x80000001) {
+		do_cpuid(0x80000001, regs);
+		amd_feature = regs[3] & ~(cpu_feature & 0x0183f3ff);
+		amd_feature2 = regs[2];
+	}
+	if (cpu_exthigh >= 0x80000007) {
+		do_cpuid(0x80000007, regs);
+		amd_rascap = regs[1];
+		amd_pminfo = regs[3];
+	}
+	if (cpu_exthigh >= 0x80000008) {
+		do_cpuid(0x80000008, regs);
+		cpu_maxphyaddr = regs[0] & 0xff;
+		amd_extended_feature_extensions = regs[1];
+		cpu_procinfo2 = regs[2];
+	} else {
+		cpu_maxphyaddr = (cpu_feature & CPUID_PAE) != 0 ? 36 : 32;
+	}
+
+#ifdef __i386__
+	if (cpu_vendor_id == CPUVENDOR_CYRIX) {
+		if (cpu == CPU_486) {
+			/*
+			 * These conditions are equivalent to:
+			 *     - CPU does not support cpuid instruction.
+			 *     - Cyrix/IBM CPU is detected.
+			 */
+			if (identblue() == IDENTBLUE_IBMCPU) {
+				strcpy(cpu_vendor, "IBM");
+				cpu_vendor_id = CPUVENDOR_IBM;
+				cpu = CPU_BLUE;
+				return;
+			}
+		}
+		switch (cpu_id & 0xf00) {
+		case 0x600:
+			/*
+			 * Cyrix's datasheet does not describe DIRs.
+			 * Therefor, I assume it does not have them
+			 * and use the result of the cpuid instruction.
+			 * XXX they seem to have it for now at least. -Peter
+			 */
+			identifycyrix();
+			cpu = CPU_M2;
+			break;
+		default:
+			identifycyrix();
+			/*
+			 * This routine contains a trick.
+			 * Don't check (cpu_id & 0x00f0) == 0x50 to detect M2, now.
+			 */
+			switch (cyrix_did & 0x00f0) {
+			case 0x00:
+			case 0xf0:
+				cpu = CPU_486DLC;
+				break;
+			case 0x10:
+				cpu = CPU_CY486DX;
+				break;
+			case 0x20:
+				if ((cyrix_did & 0x000f) < 8)
+					cpu = CPU_M1;
+				else
+					cpu = CPU_M1SC;
+				break;
+			case 0x30:
+				cpu = CPU_M1;
+				break;
+			case 0x40:
+				/* MediaGX CPU */
+				cpu = CPU_M1SC;
+				break;
+			default:
+				/* M2 and later CPUs are treated as M2. */
+				cpu = CPU_M2;
+
+				/*
+				 * enable cpuid instruction.
+				 */
+				ccr3 = read_cyrix_reg(CCR3);
+				write_cyrix_reg(CCR3, CCR3_MAPEN0);
+				write_cyrix_reg(CCR4, read_cyrix_reg(CCR4) | CCR4_CPUID);
+				write_cyrix_reg(CCR3, ccr3);
+
+				do_cpuid(0, regs);
+				cpu_high = regs[0]; /* eax */
+				do_cpuid(1, regs);
+				cpu_id = regs[0]; /* eax */
+				cpu_feature = regs[3]; /* edx */
+				break;
+			}
+		}
+	} else if (cpu == CPU_486 && *cpu_vendor == '\0') {
+		/*
+		 * There are BlueLightning CPUs that do not change
+		 * undefined flags by dividing 5 by 2.  In this case,
+		 * the CPU identification routine in locore.s leaves
+		 * cpu_vendor null string and puts CPU_486 into the
+		 * cpu.
+		 */
+		if (identblue() == IDENTBLUE_IBMCPU) {
+			strcpy(cpu_vendor, "IBM");
+			cpu_vendor_id = CPUVENDOR_IBM;
+			cpu = CPU_BLUE;
+			return;
+		}
+	}
+#endif
+}
+
+static u_int
+find_cpu_vendor_id(void)
+{
+	int	i;
+	for (i = 0; i < nitems(cpu_vendors); i++)
+		if (strcmp(cpu_vendor, cpu_vendors[i].vendor) == 0)
+			return (cpu_vendors[i].vendor_id);
+	return (0);
+}

@@ -74,16 +74,16 @@ typedef struct pte	pt_entry_t;	/* Mach page table entry */
  * One page directory, shared between
  * kernel and user modes.
  */
-#define I386_PAGE_SIZE	NBPG
-#define I386_PDR_SIZE	NBPDR
+#define I386_PAGE_SIZE		NBPG
+#define I386_PDR_SIZE		NBPDR
 
-#define I386_KPDES		8 										/* KPT page directory size */
-#define I386_UPDES		(NBPDR/sizeof(struct pde) - I386_KPDES) /* UPT page directory size */
+#define I386_KPDES			8 										/* KPT page directory size */
+#define I386_UPDES			(NBPDR/sizeof(struct pde) - I386_KPDES) /* UPT page directory size */
 
-#define	UPTDI			0x3f6									/* ptd entry for u./kernel&user stack */
-#define	PTDPTDI			0x3f7									/* ptd entry that points to ptd! */
-#define	KPTDI_FIRST		0x3f8									/* start of kernel virtual pde's */
-#define	KPTDI_LAST		0x3fA									/* last of kernel virtual pde's */
+#define	UPTDI				0x3f6									/* ptd entry for u./kernel&user stack */
+#define	PTDPTDI				0x3f7									/* ptd entry that points to ptd! */
+#define	KPTDI_FIRST			0x3f8									/* start of kernel virtual pde's */
+#define	KPTDI_LAST			0x3fA									/* last of kernel virtual pde's */
 
 /*
  * Address of current and alternate address space page table maps
@@ -142,13 +142,13 @@ extern struct pmap	kernel_pmap_store;
 /*
  * Macros for speed
  */
-#define PMAP_ACTIVATE(pmapp, pcbp) \
-	if ((pmapp) != NULL /*&& (pmapp)->pm_pdchanged */) {  \
-		(pcbp)->pcb_cr3 = \
-		    pmap_extract(kernel_pmap, (pmapp)->pm_pdir); \
-		if ((pmapp) == &curproc->p_vmspace->vm_pmap) \
-			load_cr3((pcbp)->pcb_cr3); \
-		(pmapp)->pm_pdchanged = FALSE; \
+#define PMAP_ACTIVATE(pmapp, pcbp) 							\
+	if ((pmapp) != NULL /*&& (pmapp)->pm_pdchanged */) {  	\
+		(pcbp)->pcb_cr3 = 									\
+		    pmap_extract(kernel_pmap, (pmapp)->pm_pdir); 	\
+		if ((pmapp) == &curproc->p_vmspace->vm_pmap) 		\
+			load_cr3((pcbp)->pcb_cr3); 						\
+		(pmapp)->pm_pdchanged = FALSE; 						\
 	}
 
 #define PMAP_DEACTIVATE(pmapp, pcbp)

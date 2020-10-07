@@ -40,7 +40,10 @@
 #include "libi386.h"
 #include "btxv86.h"
 
-#include <i386/include/bootinfo.h>
+#include <machine/bootinfo.h>
+#include <machine/cpufunc.h>
+#include <machine/psl.h>
+#include <machine/specialreg.h>
 
 struct bootinfo boot;
 
@@ -64,10 +67,10 @@ bi_alloc(bi)
 static int
 bi_checkcpu(void)
 {
-	char *cpu_vendor;
-	int vendor[3];
-	int eflags;
-	unsigned int regs[4];
+	char 			*cpu_vendor;
+	int 			vendor[3];
+	int 			eflags;
+	unsigned int 	regs[4];
 
 	/* Check for presence of "cpuid". */
 	eflags = read_eflags();

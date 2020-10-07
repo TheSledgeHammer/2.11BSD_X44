@@ -47,57 +47,6 @@
 #include <machine/segments.h>
 
 struct pmap;
-
-struct cpu_info {
-	u_int32_t		ci_kern_cr3;			/* U+K page table */
-	u_int32_t		ci_scratch;				/* for U<-->K transition */
-	struct device 	*ci_dev;				/* our device */
-	struct cpu_info *ci_self;				/* pointer to this structure */
-	struct cpu_info *ci_next;				/* next cpu */
-
-	/*
-	 * Public members.
-	 */
-	struct proc 	*ci_curproc; 			/* current owner of the processor */
-	struct user		*ci_user;
-	cpuid_t 		ci_cpuid; 				/* our CPU ID */
-	u_int 			ci_apicid;				/* our APIC ID */
-	u_int 			ci_acpi_proc_id;
-	u_int32_t		ci_randseed;
-
-	u_int32_t 		ci_kern_esp;			/* kernel-only stack */
-	u_int32_t 		ci_intr_esp;			/* U<-->K trampoline stack */
-	u_int32_t 		ci_user_cr3;			/* U-K page table */
-
-	/*
-	 * Private members.
-	 */
-	struct proc		*ci_fpcurproc;
-	struct proc 	*ci_fpsaveproc;
-	int 			ci_fpsaving;			/* save in progress */
-
-	struct pcb 		*ci_curpcb;				/* VA of current HW PCB */
-	struct pcb 		*ci_idle_pcb;			/* VA of current PCB */
-	struct pmap 	*ci_pmap;				/* current pmap */
-
-	u_int32_t 		ci_level;
-	u_int32_t 		ci_vendor[4];
-	u_int32_t 		ci_signature; 			/* X86 cpuid type */
-	u_int32_t 		ci_family; 				/* extended cpuid family */
-	u_int32_t 		ci_model; 				/* extended cpuid model */
-	u_int32_t 		ci_feature_flags; 		/* X86 CPUID feature bits */
-	u_int32_t		ci_feature_sefflags_ebx;/* more CPUID feature bits */
-	u_int32_t		ci_feature_sefflags_ecx;/* more CPUID feature bits */
-	u_int32_t		ci_feature_sefflags_edx;/* more CPUID feature bits */
-	u_int32_t		ci_feature_tpmflags;	/* thermal & power bits */
-	u_int32_t		cpu_class;				/* CPU class */
-	u_int32_t		ci_cflushsz;			/* clflush cache-line size */
-	u_int32_t		ci_amdcacheinfo[4];		/* AMD cache info */
-	u_int32_t		ci_extcacheinfo[4];		/* Intel cache info */
-
-	void (*cpu_setup)(struct cpu_info *);	/* proc-dependant init */
-};
-
 /*
  * definitions of cpu-dependent requirements
  * referenced in generic code
@@ -130,7 +79,7 @@ struct clockframe {
  * Preempt the current process if in interrupt from user mode,
  * or after the current trap/syscall if in system mode.
  */
-#define	need_resched()	{ want_resched++; aston(); }
+#define	need_resched()			{ want_resched++; aston(); }
 
 /*
  * Give a profiling tick to the current process from the softclock
@@ -183,7 +132,7 @@ extern struct cpu_nocpuid_nameclass i386_nocpuid_cpus[];
 extern struct cpu_cpuid_nameclass i386_cpuid_cpus[];
 
 /* locore.s */
-struct pcb;
+struct 	pcb;
 void	savectx (struct pcb *);
 
 /* clock.c */

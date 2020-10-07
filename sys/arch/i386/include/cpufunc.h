@@ -169,4 +169,42 @@ enable_intr(void)
 	__asm __volatile("sti");
 }
 
+#ifdef _KERNEL
+static __inline void
+do_cpuid(u_int ax, u_int *p)
+{
+	__asm __volatile("cpuid"
+	    : "=a" (p[0]), "=b" (p[1]), "=c" (p[2]), "=d" (p[3])
+	    :  "0" (ax));
+}
+
+#else
+static __inline void
+do_cpuid(u_int ax, u_int *p)
+{
+	__asm __volatile(
+	    "pushl\t%%ebx\n\t"
+	    "cpuid\n\t"
+	    "movl\t%%ebx,%1\n\t"
+	    "popl\t%%ebx"
+	    : "=a" (p[0]), "=DS" (p[1]), "=c" (p[2]), "=d" (p[3])
+	    :  "0" (ax));
+}
+#endif /* _KERNEL */
+
+static __inline u_int
+read_eflags(void)
+{
+	u_int	ef;
+
+	__asm __volatile("pushfl; popl %0" : "=r" (ef));
+	return (ef);
+}
+
+static __inline void
+write_eflags(u_int ef)
+{
+	__asm __volatile("pushl %0; popfl" : : "r" (ef));
+}
+
 #endif /* !_I386_CPUFUNC_H_ */

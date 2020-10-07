@@ -25,6 +25,8 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * $FreeBSD$
  */
 
 /*
@@ -63,17 +65,25 @@
 #define CPU_K6				19	/* NexGen 686 aka AMD K6 */
 #define CPU_C6				20	/* IDT WinChip C6 */
 #define CPU_TMX86			21	/* Transmeta TMx86 */
+#define	CPU_GEODE1100		22	/* NS Geode SC1100 */
 
 /*
  * CPU vendors
  */
 #define CPUVENDOR_UNKNOWN	0
-#define CPUVENDOR_INTEL		1
-#define CPUVENDOR_CYRIX		2
-#define CPUVENDOR_NEXGEN	3
-#define CPUVENDOR_AMD		4
-#define CPUVENDOR_IDT		5
-#define CPUVENDOR_TRANSMETA	6
+#define CPUVENDOR_INTEL		1				/* Intel */
+#define CPUVENDOR_CYRIX		2				/* Cyrix */
+#define CPUVENDOR_NEXGEN	3				/* Nexgen */
+#define CPUVENDOR_AMD		4				/* AMD */
+#define CPUVENDOR_IDT		5				/* Centaur/IDT/VIA */
+#define CPUVENDOR_TRANSMETA	6				/* Transmeta */
+#define	CPUVENDOR_IBM		7				/* IBM */
+#define	CPUVENDOR_RISE		8				/* Rise */
+#define	CPUVENDOR_CENTAUR	CPUVENDOR_IDT
+#define	CPUVENDOR_HYGON		9				/* Hygon */
+#define	CPUVENDOR_NSC		10				/* NSC */
+#define	CPUVENDOR_SIS		12				/* SiS */
+#define	CPUVENDOR_UMC		13				/* UMC */
 
 /*
  * Some other defines, dealing with values returned by cpuid.
