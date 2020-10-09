@@ -89,6 +89,13 @@ vm_extent_print(ex)
 	extent_print(ex);
 }
 
+
+vm_slab_allocate(slab)
+	struct vm_slab *slab;
+{
+	CIRCLEQ_INIT(slab->vs_header);
+}
+
 /*
 struct vextops vextops;
 

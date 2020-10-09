@@ -202,7 +202,10 @@ startup(firstaddr)
 	/*
 	 * Good {morning,afternoon,evening,night}.
 	 */
+
 	printf(version);
+	//printcpuinfo();
+	//panicifcpuunsupported();
 	identifycpu();
 	printf("real mem  = %d\n", ctob(physmem));
 
@@ -951,6 +954,11 @@ init386(first)
 
 	lgdt(gdt, sizeof(gdt)-1);
 	lidt(idt, sizeof(idt)-1);
+
+	//finishidentcpu();	/* Final stage of CPU initialization */
+
+	//initializecpu();	/* Initialize CPU registers */
+	//initializecpucache();
 
 #if	NISA > 0
 	isa_defaultirq();

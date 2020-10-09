@@ -59,9 +59,22 @@ void			vm_extent_print(struct extent *ex);
 #define VM_EXTENT_PRINT(ex) \
 		vm_extent_print(ex);
 
-/* vm extent flags */
-#define EX_SEGMENTED 	0x01	/* use segmented memory (requires rmalloc) */
-#define EX_RMALLOCOK	0x03	/* use rmalloc as extent back-end */
+struct slablist;
+CIRCLEQ_HEAD(slablist, vm_slab_cache);
+struct vm_slab_cache {
+	CIRCLEQ_ENTRY(vm_slab_cache) 	vsc_small_entry;
+	CIRCLEQ_ENTRY(vm_slab_cache) 	vsc_large_entry;
+	char 							*vsc_name;
+	vm_offset_t						vsc_start;
+	vm_offset_t						vsc_end;
+
+};
+
+struct vm_slab {
+	struct slablist 				vs_header;
+	struct extent					*vs_extent;
+};
+
 
 /*
 struct vm_extent {

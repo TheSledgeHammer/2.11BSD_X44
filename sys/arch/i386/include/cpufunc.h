@@ -78,6 +78,34 @@ ltr(u_short sel)
 }
 
 static __inline void
+invd(void)
+{
+	__asm __volatile("invd");
+}
+
+static __inline uint64_t
+rdmsr(u_int msr)
+{
+	uint64_t rv;
+
+	__asm __volatile("rdmsr" : "=A" (rv) : "c" (msr));
+	return (rv);
+}
+
+static __inline void
+wbinvd(void)
+{
+	__asm __volatile("wbinvd");
+}
+
+static __inline void
+wrmsr(u_int msr, uint64_t newval)
+{
+	__asm __volatile("wrmsr" : : "A" (newval), "c" (msr));
+}
+
+/* load cr0 */
+static __inline void
 lcr0(u_int val)
 {
 	__asm __volatile("movl %0,%%cr0" : : "r" (val));
@@ -99,6 +127,7 @@ rcr2(void)
 	return val;
 }
 
+/* load cr3 */
 static __inline void
 lcr3(u_int val)
 {
@@ -111,6 +140,22 @@ rcr3(void)
 	u_int val;
 	__asm __volatile("movl %%cr3,%0" : "=r" (val));
 	return val;
+}
+
+/* load cr4 */
+static __inline void
+lcr4(u_int data)
+{
+	__asm __volatile("movl %0,%%cr4" : : "r" (data));
+}
+
+static __inline u_int
+rcr4(void)
+{
+	u_int	data;
+
+	__asm __volatile("movl %%cr4,%0" : "=r" (data));
+	return (data);
 }
 
 static __inline u_short
@@ -154,9 +199,7 @@ tlbflush(void)
 void	setidt	(int idx, /*XXX*/caddr_t func, int typ, int dpl);
 #endif
 
-
 /* XXXX ought to be in psl.h with spl() functions */
-
 static __inline void
 disable_intr(void)
 {
@@ -205,6 +248,36 @@ static __inline void
 write_eflags(u_int ef)
 {
 	__asm __volatile("pushl %0; popfl" : : "r" (ef));
+}
+
+static __inline register_t
+intr_disable(void)
+{
+	register_t eflags;
+
+	eflags = read_eflags();
+	disable_intr();
+	return (eflags);
+}
+
+static __inline void
+intr_restore(register_t eflags)
+{
+	write_eflags(eflags);
+}
+
+static __inline u_char
+read_cyrix_reg(u_char reg)
+{
+	outb(0x22, reg);
+	return inb(0x23);
+}
+
+static __inline void
+write_cyrix_reg(u_char reg, u_char data)
+{
+	outb(0x22, reg);
+	outb(0x23, data);
 }
 
 #endif /* !_I386_CPUFUNC_H_ */
