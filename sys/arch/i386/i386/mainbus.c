@@ -36,18 +36,12 @@
 #include <sys/user.h>
 
 #include <machine/bus.h>
-
 #include <dev/eisa/eisavar.h>
 #include <dev/pci/pcivar.h>
 
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>
 #include <i386/isa/isa_machdep.h>
-
-#include "pci.h"
-#include "eisa.h"
-#include "isa.h"
-#include "apm.h"
 
 #if NAPM > 0
 #include <machine/bioscall.h>
@@ -68,10 +62,10 @@ struct cfdriver mainbus_cd = {
 int	mainbus_print (void *, const char *);
 
 union mainbus_attach_args {
-	const char *mba_busname;		/* first elem of all */
-	struct pcibus_attach_args mba_pba;
-	struct eisabus_attach_args mba_eba;
-	struct isabus_attach_args mba_iba;
+	const char 					*mba_busname;		/* first elem of all */
+	struct pcibus_attach_args 	mba_pba;
+	struct eisabus_attach_args 	mba_eba;
+	struct isabus_attach_args 	mba_iba;
 #if NAPM > 0
 	struct apm_attach_args mba_aaa;
 #endif

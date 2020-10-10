@@ -5,36 +5,32 @@
 
 ## Project Goals:
 - Maintain Traditional 2.11BSD Style while keeping current.
-  - Current focus is on re-using & extending as much of the 2.11BSD codebase where applicable before importing new or existing code
+  - Hybrid mix of old with new.
 - Small Footprint: Ideally less than 200 system calls.
 - Clean code
 
 ## Architecture Support:
-- i386 (In Development)
-- amd64 (Planned)
+- i386/x86 (In Development)
+- AMD64 (Planned)
+- Arm (32-Bit/64-Bit) (Planned)
 
 ## Current Project Tasks:
-### Short-Term:
-- Multitasking:
-    - Threading
-    - Mutual Exclusion
-    - Readers-Writer Lock
-- Networking:
-    - Firewall/ Packet Filter: NPF or PF & IPFW
-    - IPv6
-- Filesystem Updates for UFS, FFS & LFS
-
-### Long-Term:
 - Improve 2.11BSD's Dual Control (Proc & User)
-- Improve UFS, FFS & LFS
-    - Dirhash
-    - WAPBL
-    - Extended Attributes
-- Filesystem Support For: (Needs improved network features first)
+- Multitasking:
+  - Multi-Threading & SMP
+  - Scheduler Improvements
+- Networking:
+  - Firewall/ Packet Filter: NPF or PF & IPFW
+  - IPv6
+- Filesystem Updates:
+  - Extended Attributes
+  - UFS2 Support
+  - WAPBL
+  - Dirhash
+- Filesystem Support:
   - NFS
   - SMB
-- Kernel Modules
-- Symmetric Multi-Processing (SMP)
+  - PUFFS or FUSE
 
 ## Development:
 - Please read the TODO for a list of what needs doing.
@@ -55,9 +51,10 @@ Though due to limited access to hardware, testing of 2.11BSD_X44 on that archite
 
 ### Contribution Guidelines:
 1. Clean Code.
-2. Contain a License Header. Clearly stating year, author and the license.
+2. Must Contain a License Header. Clearly stating year, author and the license.
 
 ### Contribution Rules:
-1. No excessive use of profanity
+1. Use of profanity.
+  - Will not accept code that contains profanity.
 2. No abuse of others
 	- Constructive criticism is welcome

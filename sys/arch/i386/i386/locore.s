@@ -41,7 +41,7 @@
 
 
 /*
- * locore.s:	4BSD machine support for the Intel 386
+ * locore.s: 4BSD machine support for the Intel 386
  *		Preliminary version
  *		Written by William F. Jolitz, 386BSD Project
  */
@@ -423,7 +423,7 @@ try586:	/* Use the `cpuid' instruction. */
 #endif
 
 /**********************************************************************/
-/* Create Page Tables */
+/* Page Table Creation */
 
 /* find end of kernel image */
 		movl	$_end-SYSTEM,%ecx

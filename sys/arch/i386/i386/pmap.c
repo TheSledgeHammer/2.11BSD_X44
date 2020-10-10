@@ -370,6 +370,7 @@ pmap_init(phys_start, phys_end)
 	s = (vm_size_t) (sizeof(struct pv_entry) * npg + npg);
 	s = round_page(s);
 	addr = (vm_offset_t) kmem_alloc(kernel_map, s);
+	/* segment here */
 	pv_table = (pv_entry_t) addr;
 	addr += sizeof(struct pv_entry) * npg;
 	pmap_attributes = (char *) addr;
@@ -477,8 +478,7 @@ pmap_pinit(pmap)
 	pmap->pm_pdir = (pd_entry_t *) kmem_alloc(kernel_map, NBPG);
 
 	/* wire in kernel global address entries */
-	bcopy(PTD+KPTDI_FIRST, pmap->pm_pdir+KPTDI_FIRST,
-		(KPTDI_LAST-KPTDI_FIRST+1)*4);
+	bcopy(PTD+KPTDI_FIRST, pmap->pm_pdir+KPTDI_FIRST, (KPTDI_LAST-KPTDI_FIRST+1)*4);
 
 	/* install self-referential address mapping entry */
 	*(int *)(pmap->pm_pdir+PTDPTDI) =
@@ -1044,17 +1044,17 @@ pmap_page_protect(phys, prot)
         vm_offset_t     phys;
         vm_prot_t       prot;
 {
-        switch (prot) {
-        case VM_PROT_READ:
-        case VM_PROT_READ|VM_PROT_EXECUTE:
-                pmap_copy_on_write(phys);
-                break;
-        case VM_PROT_ALL:
-                break;
-        default:
-                pmap_remove_all(phys);
-                break;
-        }
+	switch (prot) {
+	case VM_PROT_READ:
+	case VM_PROT_READ | VM_PROT_EXECUTE:
+		pmap_copy_on_write(phys);
+		break;
+	case VM_PROT_ALL:
+		break;
+	default:
+		pmap_remove_all(phys);
+		break;
+	}
 }
 
 /*

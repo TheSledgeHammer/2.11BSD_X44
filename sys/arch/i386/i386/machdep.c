@@ -196,9 +196,6 @@ startup(firstaddr)
 		pmap_enter(kernel_pmap, msgbufp, avail_end + i * NBPG, VM_PROT_ALL, TRUE);
 	msgbufmapped = 1;
 
-#ifdef KDB
-	kdb_init();			/* startup kernel debugger */
-#endif
 	/*
 	 * Good {morning,afternoon,evening,night}.
 	 */

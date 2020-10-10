@@ -1409,6 +1409,17 @@ finishidentcpu(void)
 #endif
 }
 
+int pti_get_default(void) {
+
+	if (strcmp(cpu_vendor, AMD_VENDOR_ID) == 0
+			|| strcmp(cpu_vendor, HYGON_VENDOR_ID) == 0)
+		return (0);
+	if ((cpu_ia32_arch_caps & IA32_ARCH_CAP_RDCL_NO) != 0)
+		return (0);
+	return (1);
+}
+
+
 static u_int
 find_cpu_vendor_id(void)
 {
@@ -1417,4 +1428,938 @@ find_cpu_vendor_id(void)
 		if (strcmp(cpu_vendor, cpu_vendors[i].vendor) == 0)
 			return (cpu_vendors[i].vendor_id);
 	return (0);
+}
+
+static void
+print_AMD_assoc(int i)
+{
+	if (i == 255)
+		printf(", fully associative\n");
+	else
+		printf(", %d-way associative\n", i);
+}
+
+static void
+print_AMD_l2_assoc(int i)
+{
+	switch (i & 0x0f) {
+	case 0:
+		printf(", disabled/not present\n");
+		break;
+	case 1:
+		printf(", direct mapped\n");
+		break;
+	case 2:
+		printf(", 2-way associative\n");
+		break;
+	case 4:
+		printf(", 4-way associative\n");
+		break;
+	case 6:
+		printf(", 8-way associative\n");
+		break;
+	case 8:
+		printf(", 16-way associative\n");
+		break;
+	case 15:
+		printf(", fully associative\n");
+		break;
+	default:
+		printf(", reserved configuration\n");
+		break;
+	}
+}
+
+static void
+print_AMD_info(void)
+{
+#ifdef __i386__
+	uint64_t amd_whcr;
+#endif
+	u_int regs[4];
+
+	if (cpu_exthigh >= 0x80000005) {
+		do_cpuid(0x80000005, regs);
+		printf("L1 2MB data TLB: %d entries", (regs[0] >> 16) & 0xff);
+		print_AMD_assoc(regs[0] >> 24);
+
+		printf("L1 2MB instruction TLB: %d entries", regs[0] & 0xff);
+		print_AMD_assoc((regs[0] >> 8) & 0xff);
+
+		printf("L1 4KB data TLB: %d entries", (regs[1] >> 16) & 0xff);
+		print_AMD_assoc(regs[1] >> 24);
+
+		printf("L1 4KB instruction TLB: %d entries", regs[1] & 0xff);
+		print_AMD_assoc((regs[1] >> 8) & 0xff);
+
+		printf("L1 data cache: %d kbytes", regs[2] >> 24);
+		printf(", %d bytes/line", regs[2] & 0xff);
+		printf(", %d lines/tag", (regs[2] >> 8) & 0xff);
+		print_AMD_assoc((regs[2] >> 16) & 0xff);
+
+		printf("L1 instruction cache: %d kbytes", regs[3] >> 24);
+		printf(", %d bytes/line", regs[3] & 0xff);
+		printf(", %d lines/tag", (regs[3] >> 8) & 0xff);
+		print_AMD_assoc((regs[3] >> 16) & 0xff);
+	}
+
+	if (cpu_exthigh >= 0x80000006) {
+		do_cpuid(0x80000006, regs);
+		if ((regs[0] >> 16) != 0) {
+			printf("L2 2MB data TLB: %d entries", (regs[0] >> 16) & 0xfff);
+			print_AMD_l2_assoc(regs[0] >> 28);
+			printf("L2 2MB instruction TLB: %d entries", regs[0] & 0xfff);
+			print_AMD_l2_assoc((regs[0] >> 28) & 0xf);
+		} else {
+			printf("L2 2MB unified TLB: %d entries", regs[0] & 0xfff);
+			print_AMD_l2_assoc((regs[0] >> 28) & 0xf);
+		}
+		if ((regs[1] >> 16) != 0) {
+			printf("L2 4KB data TLB: %d entries", (regs[1] >> 16) & 0xfff);
+			print_AMD_l2_assoc(regs[1] >> 28);
+
+			printf("L2 4KB instruction TLB: %d entries",
+					(regs[1] >> 16) & 0xfff);
+			print_AMD_l2_assoc((regs[1] >> 28) & 0xf);
+		} else {
+			printf("L2 4KB unified TLB: %d entries", (regs[1] >> 16) & 0xfff);
+			print_AMD_l2_assoc((regs[1] >> 28) & 0xf);
+		}
+		printf("L2 unified cache: %d kbytes", regs[2] >> 16);
+		printf(", %d bytes/line", regs[2] & 0xff);
+		printf(", %d lines/tag", (regs[2] >> 8) & 0x0f);
+		print_AMD_l2_assoc((regs[2] >> 12) & 0x0f);
+	}
+
+#ifdef __i386__
+	if (((cpu_id & 0xf00) == 0x500)
+			&& (((cpu_id & 0x0f0) > 0x80)
+					|| (((cpu_id & 0x0f0) == 0x80) && (cpu_id & 0x00f) > 0x07))) {
+		/* K6-2(new core [Stepping 8-F]), K6-III or later */
+		amd_whcr = rdmsr(0xc0000082);
+		if (!(amd_whcr & (0x3ff << 22))) {
+			printf("Write Allocate Disable\n");
+		} else {
+			printf("Write Allocate Enable Limit: %dM bytes\n",
+					(u_int32_t) ((amd_whcr & (0x3ff << 22)) >> 22) * 4);
+			printf("Write Allocate 15-16M bytes: %s\n",
+					(amd_whcr & (1 << 16)) ? "Enable" : "Disable");
+		}
+	} else if (((cpu_id & 0xf00) == 0x500) && ((cpu_id & 0x0f0) > 0x50)) {
+		/* K6, K6-2(old core) */
+		amd_whcr = rdmsr(0xc0000082);
+		if (!(amd_whcr & (0x7f << 1))) {
+			printf("Write Allocate Disable\n");
+		} else {
+			printf("Write Allocate Enable Limit: %dM bytes\n",
+					(u_int32_t) ((amd_whcr & (0x7f << 1)) >> 1) * 4);
+			printf("Write Allocate 15-16M bytes: %s\n",
+					(amd_whcr & 0x0001) ? "Enable" : "Disable");
+			printf("Hardware Write Allocate Control: %s\n",
+					(amd_whcr & 0x0100) ? "Enable" : "Disable");
+		}
+	}
+#endif
+	/*
+	 * Opteron Rev E shows a bug as in very rare occasions a read memory
+	 * barrier is not performed as expected if it is followed by a
+	 * non-atomic read-modify-write instruction.
+	 * As long as that bug pops up very rarely (intensive machine usage
+	 * on other operating systems generally generates one unexplainable
+	 * crash any 2 months) and as long as a model specific fix would be
+	 * impractical at this stage, print out a warning string if the broken
+	 * model and family are identified.
+	 */
+	if (CPUID_TO_FAMILY(cpu_id) == 0xf && CPUID_TO_MODEL(cpu_id) >= 0x20
+			&& CPUID_TO_MODEL(cpu_id) <= 0x3f)
+		printf("WARNING: This architecture revision has known SMP "
+				"hardware bugs which may cause random instability\n");
+}
+
+static void print_INTEL_info(void) {
+	u_int regs[4];
+	u_int rounds, regnum;
+	u_int nwaycode, nway;
+
+	if (cpu_high >= 2) {
+		rounds = 0;
+		do {
+			do_cpuid(0x2, regs);
+			if (rounds == 0 && (rounds = (regs[0] & 0xff)) == 0)
+				break; /* we have a buggy CPU */
+
+			for (regnum = 0; regnum <= 3; ++regnum) {
+				if (regs[regnum] & (1 << 31))
+					continue;
+				if (regnum != 0)
+					print_INTEL_TLB(regs[regnum] & 0xff);
+				print_INTEL_TLB((regs[regnum] >> 8) & 0xff);
+				print_INTEL_TLB((regs[regnum] >> 16) & 0xff);
+				print_INTEL_TLB((regs[regnum] >> 24) & 0xff);
+			}
+		} while (--rounds > 0);
+	}
+
+	if (cpu_exthigh >= 0x80000006) {
+		do_cpuid(0x80000006, regs);
+		nwaycode = (regs[2] >> 12) & 0x0f;
+		if (nwaycode >= 0x02 && nwaycode <= 0x08)
+			nway = 1 << (nwaycode / 2);
+		else
+			nway = 0;
+		printf("L2 cache: %u kbytes, %u-way associative, %u bytes/line\n",
+				(regs[2] >> 16) & 0xffff, nway, regs[2] & 0xff);
+	}
+}
+
+static void print_INTEL_TLB(u_int data) {
+	switch (data) {
+	case 0x0:
+	case 0x40:
+	default:
+		break;
+	case 0x1:
+		printf(
+				"Instruction TLB: 4 KB pages, 4-way set associative, 32 entries\n");
+		break;
+	case 0x2:
+		printf("Instruction TLB: 4 MB pages, fully associative, 2 entries\n");
+		break;
+	case 0x3:
+		printf("Data TLB: 4 KB pages, 4-way set associative, 64 entries\n");
+		break;
+	case 0x4:
+		printf("Data TLB: 4 MB Pages, 4-way set associative, 8 entries\n");
+		break;
+	case 0x6:
+		printf(
+				"1st-level instruction cache: 8 KB, 4-way set associative, 32 byte line size\n");
+		break;
+	case 0x8:
+		printf(
+				"1st-level instruction cache: 16 KB, 4-way set associative, 32 byte line size\n");
+		break;
+	case 0x9:
+		printf(
+				"1st-level instruction cache: 32 KB, 4-way set associative, 64 byte line size\n");
+		break;
+	case 0xa:
+		printf(
+				"1st-level data cache: 8 KB, 2-way set associative, 32 byte line size\n");
+		break;
+	case 0xb:
+		printf(
+				"Instruction TLB: 4 MByte pages, 4-way set associative, 4 entries\n");
+		break;
+	case 0xc:
+		printf(
+				"1st-level data cache: 16 KB, 4-way set associative, 32 byte line size\n");
+		break;
+	case 0xd:
+		printf(
+				"1st-level data cache: 16 KBytes, 4-way set associative, 64 byte line size");
+		break;
+	case 0xe:
+		printf(
+				"1st-level data cache: 24 KBytes, 6-way set associative, 64 byte line size\n");
+		break;
+	case 0x1d:
+		printf(
+				"2nd-level cache: 128 KBytes, 2-way set associative, 64 byte line size\n");
+		break;
+	case 0x21:
+		printf(
+				"2nd-level cache: 256 KBytes, 8-way set associative, 64 byte line size\n");
+		break;
+	case 0x22:
+		printf(
+				"3rd-level cache: 512 KB, 4-way set associative, sectored cache, 64 byte line size\n");
+		break;
+	case 0x23:
+		printf(
+				"3rd-level cache: 1 MB, 8-way set associative, sectored cache, 64 byte line size\n");
+		break;
+	case 0x24:
+		printf(
+				"2nd-level cache: 1 MBytes, 16-way set associative, 64 byte line size\n");
+		break;
+	case 0x25:
+		printf(
+				"3rd-level cache: 2 MB, 8-way set associative, sectored cache, 64 byte line size\n");
+		break;
+	case 0x29:
+		printf(
+				"3rd-level cache: 4 MB, 8-way set associative, sectored cache, 64 byte line size\n");
+		break;
+	case 0x2c:
+		printf(
+				"1st-level data cache: 32 KB, 8-way set associative, 64 byte line size\n");
+		break;
+	case 0x30:
+		printf(
+				"1st-level instruction cache: 32 KB, 8-way set associative, 64 byte line size\n");
+		break;
+	case 0x39: /* De-listed in SDM rev. 54 */
+		printf(
+				"2nd-level cache: 128 KB, 4-way set associative, sectored cache, 64 byte line size\n");
+		break;
+	case 0x3b: /* De-listed in SDM rev. 54 */
+		printf(
+				"2nd-level cache: 128 KB, 2-way set associative, sectored cache, 64 byte line size\n");
+		break;
+	case 0x3c: /* De-listed in SDM rev. 54 */
+		printf(
+				"2nd-level cache: 256 KB, 4-way set associative, sectored cache, 64 byte line size\n");
+		break;
+	case 0x41:
+		printf(
+				"2nd-level cache: 128 KB, 4-way set associative, 32 byte line size\n");
+		break;
+	case 0x42:
+		printf(
+				"2nd-level cache: 256 KB, 4-way set associative, 32 byte line size\n");
+		break;
+	case 0x43:
+		printf(
+				"2nd-level cache: 512 KB, 4-way set associative, 32 byte line size\n");
+		break;
+	case 0x44:
+		printf(
+				"2nd-level cache: 1 MB, 4-way set associative, 32 byte line size\n");
+		break;
+	case 0x45:
+		printf(
+				"2nd-level cache: 2 MB, 4-way set associative, 32 byte line size\n");
+		break;
+	case 0x46:
+		printf(
+				"3rd-level cache: 4 MB, 4-way set associative, 64 byte line size\n");
+		break;
+	case 0x47:
+		printf(
+				"3rd-level cache: 8 MB, 8-way set associative, 64 byte line size\n");
+		break;
+	case 0x48:
+		printf(
+				"2nd-level cache: 3MByte, 12-way set associative, 64 byte line size\n");
+		break;
+	case 0x49:
+		if (CPUID_TO_FAMILY(cpu_id) == 0xf && CPUID_TO_MODEL(cpu_id) == 0x6)
+			printf(
+					"3rd-level cache: 4MB, 16-way set associative, 64-byte line size\n");
+		else
+			printf(
+					"2nd-level cache: 4 MByte, 16-way set associative, 64 byte line size");
+		break;
+	case 0x4a:
+		printf(
+				"3rd-level cache: 6MByte, 12-way set associative, 64 byte line size\n");
+		break;
+	case 0x4b:
+		printf(
+				"3rd-level cache: 8MByte, 16-way set associative, 64 byte line size\n");
+		break;
+	case 0x4c:
+		printf(
+				"3rd-level cache: 12MByte, 12-way set associative, 64 byte line size\n");
+		break;
+	case 0x4d:
+		printf(
+				"3rd-level cache: 16MByte, 16-way set associative, 64 byte line size\n");
+		break;
+	case 0x4e:
+		printf(
+				"2nd-level cache: 6MByte, 24-way set associative, 64 byte line size\n");
+		break;
+	case 0x4f:
+		printf("Instruction TLB: 4 KByte pages, 32 entries\n");
+		break;
+	case 0x50:
+		printf(
+				"Instruction TLB: 4 KB, 2 MB or 4 MB pages, fully associative, 64 entries\n");
+		break;
+	case 0x51:
+		printf(
+				"Instruction TLB: 4 KB, 2 MB or 4 MB pages, fully associative, 128 entries\n");
+		break;
+	case 0x52:
+		printf(
+				"Instruction TLB: 4 KB, 2 MB or 4 MB pages, fully associative, 256 entries\n");
+		break;
+	case 0x55:
+		printf(
+				"Instruction TLB: 2-MByte or 4-MByte pages, fully associative, 7 entries\n");
+		break;
+	case 0x56:
+		printf("Data TLB0: 4 MByte pages, 4-way set associative, 16 entries\n");
+		break;
+	case 0x57:
+		printf("Data TLB0: 4 KByte pages, 4-way associative, 16 entries\n");
+		break;
+	case 0x59:
+		printf("Data TLB0: 4 KByte pages, fully associative, 16 entries\n");
+		break;
+	case 0x5a:
+		printf(
+				"Data TLB0: 2-MByte or 4 MByte pages, 4-way set associative, 32 entries\n");
+		break;
+	case 0x5b:
+		printf("Data TLB: 4 KB or 4 MB pages, fully associative, 64 entries\n");
+		break;
+	case 0x5c:
+		printf(
+				"Data TLB: 4 KB or 4 MB pages, fully associative, 128 entries\n");
+		break;
+	case 0x5d:
+		printf(
+				"Data TLB: 4 KB or 4 MB pages, fully associative, 256 entries\n");
+		break;
+	case 0x60:
+		printf(
+				"1st-level data cache: 16 KB, 8-way set associative, sectored cache, 64 byte line size\n");
+		break;
+	case 0x61:
+		printf(
+				"Instruction TLB: 4 KByte pages, fully associative, 48 entries\n");
+		break;
+	case 0x63:
+		printf(
+				"Data TLB: 2 MByte or 4 MByte pages, 4-way set associative, 32 entries and a separate array with 1 GByte pages, 4-way set associative, 4 entries\n");
+		break;
+	case 0x64:
+		printf(
+				"Data TLB: 4 KBytes pages, 4-way set associative, 512 entries\n");
+		break;
+	case 0x66:
+		printf(
+				"1st-level data cache: 8 KB, 4-way set associative, sectored cache, 64 byte line size\n");
+		break;
+	case 0x67:
+		printf(
+				"1st-level data cache: 16 KB, 4-way set associative, sectored cache, 64 byte line size\n");
+		break;
+	case 0x68:
+		printf(
+				"1st-level data cache: 32 KB, 4 way set associative, sectored cache, 64 byte line size\n");
+		break;
+	case 0x6a:
+		printf("uTLB: 4KByte pages, 8-way set associative, 64 entries\n");
+		break;
+	case 0x6b:
+		printf("DTLB: 4KByte pages, 8-way set associative, 256 entries\n");
+		break;
+	case 0x6c:
+		printf("DTLB: 2M/4M pages, 8-way set associative, 128 entries\n");
+		break;
+	case 0x6d:
+		printf("DTLB: 1 GByte pages, fully associative, 16 entries\n");
+		break;
+	case 0x70:
+		printf("Trace cache: 12K-uops, 8-way set associative\n");
+		break;
+	case 0x71:
+		printf("Trace cache: 16K-uops, 8-way set associative\n");
+		break;
+	case 0x72:
+		printf("Trace cache: 32K-uops, 8-way set associative\n");
+		break;
+	case 0x76:
+		printf("Instruction TLB: 2M/4M pages, fully associative, 8 entries\n");
+		break;
+	case 0x78:
+		printf(
+				"2nd-level cache: 1 MB, 4-way set associative, 64-byte line size\n");
+		break;
+	case 0x79:
+		printf(
+				"2nd-level cache: 128 KB, 8-way set associative, sectored cache, 64 byte line size\n");
+		break;
+	case 0x7a:
+		printf(
+				"2nd-level cache: 256 KB, 8-way set associative, sectored cache, 64 byte line size\n");
+		break;
+	case 0x7b:
+		printf(
+				"2nd-level cache: 512 KB, 8-way set associative, sectored cache, 64 byte line size\n");
+		break;
+	case 0x7c:
+		printf(
+				"2nd-level cache: 1 MB, 8-way set associative, sectored cache, 64 byte line size\n");
+		break;
+	case 0x7d:
+		printf(
+				"2nd-level cache: 2-MB, 8-way set associative, 64-byte line size\n");
+		break;
+	case 0x7f:
+		printf(
+				"2nd-level cache: 512-KB, 2-way set associative, 64-byte line size\n");
+		break;
+	case 0x80:
+		printf(
+				"2nd-level cache: 512 KByte, 8-way set associative, 64-byte line size\n");
+		break;
+	case 0x82:
+		printf(
+				"2nd-level cache: 256 KB, 8-way set associative, 32 byte line size\n");
+		break;
+	case 0x83:
+		printf(
+				"2nd-level cache: 512 KB, 8-way set associative, 32 byte line size\n");
+		break;
+	case 0x84:
+		printf(
+				"2nd-level cache: 1 MB, 8-way set associative, 32 byte line size\n");
+		break;
+	case 0x85:
+		printf(
+				"2nd-level cache: 2 MB, 8-way set associative, 32 byte line size\n");
+		break;
+	case 0x86:
+		printf(
+				"2nd-level cache: 512 KB, 4-way set associative, 64 byte line size\n");
+		break;
+	case 0x87:
+		printf(
+				"2nd-level cache: 1 MB, 8-way set associative, 64 byte line size\n");
+		break;
+	case 0xa0:
+		printf("DTLB: 4k pages, fully associative, 32 entries\n");
+		break;
+	case 0xb0:
+		printf(
+				"Instruction TLB: 4 KB Pages, 4-way set associative, 128 entries\n");
+		break;
+	case 0xb1:
+		printf(
+				"Instruction TLB: 2M pages, 4-way, 8 entries or 4M pages, 4-way, 4 entries\n");
+		break;
+	case 0xb2:
+		printf(
+				"Instruction TLB: 4KByte pages, 4-way set associative, 64 entries\n");
+		break;
+	case 0xb3:
+		printf("Data TLB: 4 KB Pages, 4-way set associative, 128 entries\n");
+		break;
+	case 0xb4:
+		printf("Data TLB1: 4 KByte pages, 4-way associative, 256 entries\n");
+		break;
+	case 0xb5:
+		printf(
+				"Instruction TLB: 4KByte pages, 8-way set associative, 64 entries\n");
+		break;
+	case 0xb6:
+		printf(
+				"Instruction TLB: 4KByte pages, 8-way set associative, 128 entries\n");
+		break;
+	case 0xba:
+		printf("Data TLB1: 4 KByte pages, 4-way associative, 64 entries\n");
+		break;
+	case 0xc0:
+		printf(
+				"Data TLB: 4 KByte and 4 MByte pages, 4-way associative, 8 entries\n");
+		break;
+	case 0xc1:
+		printf(
+				"Shared 2nd-Level TLB: 4 KByte/2MByte pages, 8-way associative, 1024 entries\n");
+		break;
+	case 0xc2:
+		printf("DTLB: 4 KByte/2 MByte pages, 4-way associative, 16 entries\n");
+		break;
+	case 0xc3:
+		printf(
+				"Shared 2nd-Level TLB: 4 KByte /2 MByte pages, 6-way associative, 1536 entries. Also 1GBbyte pages, 4-way, 16 entries\n");
+		break;
+	case 0xc4:
+		printf("DTLB: 2M/4M Byte pages, 4-way associative, 32 entries\n");
+		break;
+	case 0xca:
+		printf(
+				"Shared 2nd-Level TLB: 4 KByte pages, 4-way associative, 512 entries\n");
+		break;
+	case 0xd0:
+		printf(
+				"3rd-level cache: 512 KByte, 4-way set associative, 64 byte line size\n");
+		break;
+	case 0xd1:
+		printf(
+				"3rd-level cache: 1 MByte, 4-way set associative, 64 byte line size\n");
+		break;
+	case 0xd2:
+		printf(
+				"3rd-level cache: 2 MByte, 4-way set associative, 64 byte line size\n");
+		break;
+	case 0xd6:
+		printf(
+				"3rd-level cache: 1 MByte, 8-way set associative, 64 byte line size\n");
+		break;
+	case 0xd7:
+		printf(
+				"3rd-level cache: 2 MByte, 8-way set associative, 64 byte line size\n");
+		break;
+	case 0xd8:
+		printf(
+				"3rd-level cache: 4 MByte, 8-way set associative, 64 byte line size\n");
+		break;
+	case 0xdc:
+		printf(
+				"3rd-level cache: 1.5 MByte, 12-way set associative, 64 byte line size\n");
+		break;
+	case 0xdd:
+		printf(
+				"3rd-level cache: 3 MByte, 12-way set associative, 64 byte line size\n");
+		break;
+	case 0xde:
+		printf(
+				"3rd-level cache: 6 MByte, 12-way set associative, 64 byte line size\n");
+		break;
+	case 0xe2:
+		printf(
+				"3rd-level cache: 2 MByte, 16-way set associative, 64 byte line size\n");
+		break;
+	case 0xe3:
+		printf(
+				"3rd-level cache: 4 MByte, 16-way set associative, 64 byte line size\n");
+		break;
+	case 0xe4:
+		printf(
+				"3rd-level cache: 8 MByte, 16-way set associative, 64 byte line size\n");
+		break;
+	case 0xea:
+		printf(
+				"3rd-level cache: 12MByte, 24-way set associative, 64 byte line size\n");
+		break;
+	case 0xeb:
+		printf(
+				"3rd-level cache: 18MByte, 24-way set associative, 64 byte line size\n");
+		break;
+	case 0xec:
+		printf(
+				"3rd-level cache: 24MByte, 24-way set associative, 64 byte line size\n");
+		break;
+	case 0xf0:
+		printf("64-Byte prefetching\n");
+		break;
+	case 0xf1:
+		printf("128-Byte prefetching\n");
+		break;
+	}
+}
+
+static void
+print_svm_info(void)
+{
+	u_int features, regs[4];
+	uint64_t msr;
+	int comma;
+
+	printf("\n  SVM: ");
+	do_cpuid(0x8000000A, regs);
+	features = regs[3];
+
+	msr = rdmsr(MSR_VM_CR);
+	if ((msr & VM_CR_SVMDIS) == VM_CR_SVMDIS)
+		printf("(disabled in BIOS) ");
+
+	if (!bootverbose) {
+		comma = 0;
+		if (features & (1 << 0)) {
+			printf("%sNP", comma ? "," : "");
+			comma = 1;
+		}
+		if (features & (1 << 3)) {
+			printf("%sNRIP", comma ? "," : "");
+			comma = 1;
+		}
+		if (features & (1 << 5)) {
+			printf("%sVClean", comma ? "," : "");
+			comma = 1;
+		}
+		if (features & (1 << 6)) {
+			printf("%sAFlush", comma ? "," : "");
+			comma = 1;
+		}
+		if (features & (1 << 7)) {
+			printf("%sDAssist", comma ? "," : "");
+			comma = 1;
+		}
+		printf("%sNAsids=%d", comma ? "," : "", regs[1]);
+		return;
+	}
+
+	printf("Features=0x%b", features,
+	       "\020"
+	       "\001NP"			/* Nested paging */
+	       "\002LbrVirt"		/* LBR virtualization */
+	       "\003SVML"		/* SVM lock */
+	       "\004NRIPS"		/* NRIP save */
+	       "\005TscRateMsr"		/* MSR based TSC rate control */
+	       "\006VmcbClean"		/* VMCB clean bits */
+	       "\007FlushByAsid"	/* Flush by ASID */
+	       "\010DecodeAssist"	/* Decode assist */
+	       "\011<b8>"
+	       "\012<b9>"
+	       "\013PauseFilter"	/* PAUSE intercept filter */
+	       "\014EncryptedMcodePatch"
+	       "\015PauseFilterThreshold" /* PAUSE filter threshold */
+	       "\016AVIC"		/* virtual interrupt controller */
+	       "\017<b14>"
+	       "\020V_VMSAVE_VMLOAD"
+	       "\021vGIF"
+	       "\022GMET"		/* Guest Mode Execute Trap */
+	       "\023<b18>"
+	       "\024<b19>"
+	       "\025GuesSpecCtl"	/* Guest Spec_ctl */
+	       "\026<b21>"
+	       "\027<b22>"
+	       "\030<b23>"
+	       "\031<b24>"
+	       "\032<b25>"
+	       "\033<b26>"
+	       "\034<b27>"
+	       "\035<b28>"
+	       "\036<b29>"
+	       "\037<b30>"
+	       "\040<b31>"
+	       );
+	printf("\nRevision=%d, ASIDs=%d", regs[0] & 0xff, regs[1]);
+}
+
+#ifdef __i386__
+static void
+print_transmeta_info(void)
+{
+	u_int regs[4], nreg = 0;
+
+	do_cpuid(0x80860000, regs);
+	nreg = regs[0];
+	if (nreg >= 0x80860001) {
+		do_cpuid(0x80860001, regs);
+		printf("  Processor revision %u.%u.%u.%u\n",
+		       (regs[1] >> 24) & 0xff,
+		       (regs[1] >> 16) & 0xff,
+		       (regs[1] >> 8) & 0xff,
+		       regs[1] & 0xff);
+	}
+	if (nreg >= 0x80860002) {
+		do_cpuid(0x80860002, regs);
+		printf("  Code Morphing Software revision %u.%u.%u-%u-%u\n",
+		       (regs[1] >> 24) & 0xff,
+		       (regs[1] >> 16) & 0xff,
+		       (regs[1] >> 8) & 0xff,
+		       regs[1] & 0xff,
+		       regs[2]);
+	}
+	if (nreg >= 0x80860006) {
+		char info[65];
+		do_cpuid(0x80860003, (u_int*) &info[0]);
+		do_cpuid(0x80860004, (u_int*) &info[16]);
+		do_cpuid(0x80860005, (u_int*) &info[32]);
+		do_cpuid(0x80860006, (u_int*) &info[48]);
+		info[64] = 0;
+		printf("  %s\n", info);
+	}
+}
+#endif
+
+static void
+print_via_padlock_info(void)
+{
+	u_int regs[4];
+
+	do_cpuid(0xc0000001, regs);
+	printf("\n  VIA Padlock Features=0x%b", regs[3],
+	"\020"
+	"\003RNG"			/* RNG */
+	"\007AES"			/* ACE */
+	"\011AES-CTR"		/* ACE2 */
+	"\013SHA1,SHA256"	/* PHE */
+	"\015RSA"			/* PMM */
+	);
+}
+
+static uint32_t
+vmx_settable(uint64_t basic, int msr, int true_msr)
+{
+	uint64_t val;
+
+	if (basic & (1ULL << 55))
+		val = rdmsr(true_msr);
+	else
+		val = rdmsr(msr);
+
+	/* Just report the controls that can be set to 1. */
+	return (val >> 32);
+}
+
+static void
+print_vmx_info(void)
+{
+	uint64_t basic, msr;
+	uint32_t entry, exit, mask, pin, proc, proc2;
+	int comma;
+
+	printf("\n  VT-x: ");
+	msr = rdmsr(MSR_IA32_FEATURE_CONTROL);
+	if (!(msr & IA32_FEATURE_CONTROL_VMX_EN))
+		printf("(disabled in BIOS) ");
+	basic = rdmsr(MSR_VMX_BASIC);
+	pin = vmx_settable(basic, MSR_VMX_PINBASED_CTLS,
+			MSR_VMX_TRUE_PINBASED_CTLS);
+	proc = vmx_settable(basic, MSR_VMX_PROCBASED_CTLS,
+			MSR_VMX_TRUE_PROCBASED_CTLS);
+	if (proc & PROCBASED_SECONDARY_CONTROLS)
+		proc2 = vmx_settable(basic, MSR_VMX_PROCBASED_CTLS2,
+				MSR_VMX_PROCBASED_CTLS2);
+	else
+		proc2 = 0;
+	exit = vmx_settable(basic, MSR_VMX_EXIT_CTLS, MSR_VMX_TRUE_EXIT_CTLS);
+	entry = vmx_settable(basic, MSR_VMX_ENTRY_CTLS, MSR_VMX_TRUE_ENTRY_CTLS);
+
+	if (!bootverbose) {
+		comma = 0;
+		if (exit & VM_EXIT_SAVE_PAT && exit & VM_EXIT_LOAD_PAT
+				&& entry & VM_ENTRY_LOAD_PAT) {
+			printf("%sPAT", comma ? "," : "");
+			comma = 1;
+		}
+		if (proc & PROCBASED_HLT_EXITING) {
+			printf("%sHLT", comma ? "," : "");
+			comma = 1;
+		}
+		if (proc & PROCBASED_MTF) {
+			printf("%sMTF", comma ? "," : "");
+			comma = 1;
+		}
+		if (proc & PROCBASED_PAUSE_EXITING) {
+			printf("%sPAUSE", comma ? "," : "");
+			comma = 1;
+		}
+		if (proc2 & PROCBASED2_ENABLE_EPT) {
+			printf("%sEPT", comma ? "," : "");
+			comma = 1;
+		}
+		if (proc2 & PROCBASED2_UNRESTRICTED_GUEST) {
+			printf("%sUG", comma ? "," : "");
+			comma = 1;
+		}
+		if (proc2 & PROCBASED2_ENABLE_VPID) {
+			printf("%sVPID", comma ? "," : "");
+			comma = 1;
+		}
+		if (proc & PROCBASED_USE_TPR_SHADOW
+				&& proc2 & PROCBASED2_VIRTUALIZE_APIC_ACCESSES
+				&& proc2 & PROCBASED2_VIRTUALIZE_X2APIC_MODE
+				&& proc2 & PROCBASED2_APIC_REGISTER_VIRTUALIZATION
+				&& proc2 & PROCBASED2_VIRTUAL_INTERRUPT_DELIVERY) {
+			printf("%sVID", comma ? "," : "");
+			comma = 1;
+			if (pin & PINBASED_POSTED_INTERRUPT)
+				printf(",PostIntr");
+		}
+		return;
+	}
+
+	mask = basic >> 32;
+	printf("Basic Features=0x%b", mask, "\020"
+			"\02132PA" /* 32-bit physical addresses */
+			"\022SMM" /* SMM dual-monitor */
+			"\027INS/OUTS" /* VM-exit info for INS and OUTS */
+			"\030TRUE" /* TRUE_CTLS MSRs */
+	);
+	printf("\n        Pin-Based Controls=0x%b", pin, "\020"
+			"\001ExtINT" /* External-interrupt exiting */
+			"\004NMI" /* NMI exiting */
+			"\006VNMI" /* Virtual NMIs */
+			"\007PreTmr" /* Activate VMX-preemption timer */
+			"\010PostIntr" /* Process posted interrupts */
+	);
+	printf("\n        Primary Processor Controls=0x%b", proc,
+			"\020"
+			"\003INTWIN" /* Interrupt-window exiting */
+			"\004TSCOff" /* Use TSC offsetting */
+			"\010HLT" /* HLT exiting */
+			"\012INVLPG" /* INVLPG exiting */
+			"\013MWAIT" /* MWAIT exiting */
+			"\014RDPMC" /* RDPMC exiting */
+			"\015RDTSC" /* RDTSC exiting */
+			"\020CR3-LD" /* CR3-load exiting */
+			"\021CR3-ST" /* CR3-store exiting */
+			"\024CR8-LD" /* CR8-load exiting */
+			"\025CR8-ST" /* CR8-store exiting */
+			"\026TPR" /* Use TPR shadow */
+			"\027NMIWIN" /* NMI-window exiting */
+			"\030MOV-DR" /* MOV-DR exiting */
+			"\031IO" /* Unconditional I/O exiting */
+			"\032IOmap" /* Use I/O bitmaps */
+			"\034MTF" /* Monitor trap flag */
+			"\035MSRmap" /* Use MSR bitmaps */
+			"\036MONITOR" /* MONITOR exiting */
+			"\037PAUSE" /* PAUSE exiting */
+	);
+	if (proc & PROCBASED_SECONDARY_CONTROLS)
+		printf("\n        Secondary Processor Controls=0x%b", proc2, "\020"
+				"\001APIC" /* Virtualize APIC accesses */
+				"\002EPT" /* Enable EPT */
+				"\003DT" /* Descriptor-table exiting */
+				"\004RDTSCP" /* Enable RDTSCP */
+				"\005x2APIC" /* Virtualize x2APIC mode */
+				"\006VPID" /* Enable VPID */
+				"\007WBINVD" /* WBINVD exiting */
+				"\010UG" /* Unrestricted guest */
+				"\011APIC-reg" /* APIC-register virtualization */
+				"\012VID" /* Virtual-interrupt delivery */
+				"\013PAUSE-loop" /* PAUSE-loop exiting */
+				"\014RDRAND" /* RDRAND exiting */
+				"\015INVPCID" /* Enable INVPCID */
+				"\016VMFUNC" /* Enable VM functions */
+				"\017VMCS" /* VMCS shadowing */
+				"\020EPT#VE" /* EPT-violation #VE */
+				"\021XSAVES" /* Enable XSAVES/XRSTORS */
+		);
+	printf("\n        Exit Controls=0x%b", mask, "\020"
+			"\003DR" /* Save debug controls */
+			/* Ignore Host address-space size */
+			"\015PERF" /* Load MSR_PERF_GLOBAL_CTRL */
+			"\020AckInt" /* Acknowledge interrupt on exit */
+			"\023PAT-SV" /* Save MSR_PAT */
+			"\024PAT-LD" /* Load MSR_PAT */
+			"\025EFER-SV" /* Save MSR_EFER */
+			"\026EFER-LD" /* Load MSR_EFER */
+			"\027PTMR-SV" /* Save VMX-preemption timer value */
+	);
+	printf("\n        Entry Controls=0x%b", mask, "\020"
+			"\003DR" /* Save debug controls */
+			/* Ignore IA-32e mode guest */
+			/* Ignore Entry to SMM */
+			/* Ignore Deactivate dual-monitor treatment */
+			"\016PERF" /* Load MSR_PERF_GLOBAL_CTRL */
+			"\017PAT" /* Load MSR_PAT */
+			"\020EFER" /* Load MSR_EFER */
+	);
+	if (proc & PROCBASED_SECONDARY_CONTROLS
+			&& (proc2 & (PROCBASED2_ENABLE_EPT | PROCBASED2_ENABLE_VPID))
+					!= 0) {
+		msr = rdmsr(MSR_VMX_EPT_VPID_CAP);
+		mask = msr;
+		printf("\n        EPT Features=0x%b", mask, "\020"
+				"\001XO" /* Execute-only translations */
+				"\007PW4" /* Page-walk length of 4 */
+				"\011UC" /* EPT paging-structure mem can be UC */
+				"\017WB" /* EPT paging-structure mem can be WB */
+				"\0212M" /* EPT PDE can map a 2-Mbyte page */
+				"\0221G" /* EPT PDPTE can map a 1-Gbyte page */
+				"\025INVEPT" /* INVEPT is supported */
+				"\026AD" /* Accessed and dirty flags for EPT */
+				"\032single" /* INVEPT single-context type */
+				"\033all" /* INVEPT all-context type */
+		);
+		mask = msr >> 32;
+		printf("\n        VPID Features=0x%b", mask, "\020"
+				"\001INVVPID" /* INVVPID is supported */
+				"\011individual" /* INVVPID individual-address type */
+				"\012single" /* INVVPID single-context type */
+				"\013all" /* INVVPID all-context type */
+				/* INVVPID single-context-retaining-globals type */
+				"\014single-globals");
+	}
 }

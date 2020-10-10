@@ -1,14 +1,11 @@
-A list of what needs work in no order. To obtain a successful build.
-NOTE: Don't hesitate to add to this list. :)
+A General todo list. Don't hesitate to add to this list. :)
 
-#TODO:
-##General:
-- Cross-Compiler
-	- Build Toolchain
+# TODO:
+## General:
+- Compiler
+- Build Toolchain
 - Makefiles:
 	- Use .mk for definitions
-	- fix multiple generic definitions: e.g. MACHINE ARCHDIR etc
-		- i.e. lib
 - Bug Fixes/ missing critical content
 
 # usr/ (User & OS Libraries):
@@ -19,15 +16,12 @@ NOTE: Don't hesitate to add to this list. :)
 		
 # usr/sys/ (Kernel):
 ## conf:
-- check: setup is correct
 
 ## kern:
 	
 ## arch:
 - i386/x86: (Merged under i386)
 	- conf
-	- cpu_info
-		- cpu_setup: basics implemented
 	- pae: implemented but not fully integrated
 		- missing in machdep.c & locore.s
 	- devices: 
@@ -37,10 +31,9 @@ NOTE: Don't hesitate to add to this list. :)
 - Code planned for future integration
 - update copyright headers
 - See devel folder: README.md & TODO.md
-- Touch up (job_pool, wqueue & tasks) intergration with threadpools
 
 ## dev:
-- devices:
+- No devices, only basic (to get working compiler)
 
 ## lib:
 	
@@ -51,17 +44,14 @@ Of Interest Todo:
 
 ## stand:
 - boot:
-	- efi support: needs work
+	- efi: needs work
+		- Not compatable with 2.11BSD 
 	- commands: needs work
 	- install: not present
-	- efi:
-		- libefi & loader: Update From FreeBSD to be NetBSD/2.11BSD compatable
 	### arch:
-	- i386: 			
+	- i386:
 		- gptboot
 		- isoboot
-		- loader:
-			- loader.conf: incomplete
 		- pmbr
 		- pxeldr
 
@@ -70,4 +60,3 @@ Of Interest Todo:
 ## vfs:
 
 ## vm:
-

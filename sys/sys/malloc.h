@@ -117,8 +117,9 @@
 #define M_EXEC			66	/* argument lists & other mem used by exec */
 #define M_COREMAP		67	/* 2.11BSD's Coremap */
 #define M_SWAPMAP		68	/* 2.11BSD's Swapmap */
-#define	M_TEMP			69	/* misc temporary data buffers */
-#define	M_LAST			70	/* Must be last type + 1 */
+#define M_MEMDESC		69	/* memory range descriptors */
+#define	M_TEMP			70	/* misc temporary data buffers */
+#define	M_LAST			71	/* Must be last type + 1 */
 
 #define INITKMEMNAMES { \
 	"free",			/* 0 M_FREE */ 			\
@@ -190,7 +191,8 @@
 	"exec",			/* 66 M_EXEC */			\
 	"coremap",		/* 67 M_COREMAP */		\
 	"swapmap",		/* 68 M_SWAPMAP */		\
-	"temp",			/* 69 M_TEMP */ 		\
+	"memdesc",		/* 69 M_MEMDESC */		\
+	"temp",			/* 70 M_TEMP */ 		\
 }
 
 struct kmemstats {
