@@ -32,10 +32,10 @@
 #include <sys/queue.h>
 #include <sys/tree.h>
 
-struct vm_page_table {
+struct vm_pagetable {
 	struct pglist                   	pt_pglist;
 
-	RB_ENTRY(vm_page_table)				pt_tree;
+	RB_ENTRY(vm_pagetable)				pt_tree;
     u_short								pt_flags;
     u_short								pt_paging_in_progress;		/* Paging (in or out) so don't collapse or destroy */
 
@@ -44,29 +44,29 @@ struct vm_page_table {
     vm_size_t							pt_size;					/* Segment size */
     int									pt_resident_page_count;		/* number of resident pages */
 
-	struct vm_page_table				*pt_copy;					/* page table that holds copies of my changed pages */
+	struct vm_pagetable					*pt_copy;					/* page table that holds copies of my changed pages */
 
 	vm_segment_t						pt_segment;
 	vm_offset_t		 					pt_paging_offset;			/* Offset into paging space */
 	vm_offset_t                   		pt_offset;					/* offset in segment */
 
-	struct vm_page_table				*pt_shadow;					/* My shadow */
+	struct vm_pagetable				*pt_shadow;					/* My shadow */
 	vm_offset_t							pt_shadow_offset;			/* Offset in shadow */
 
-    TAILQ_ENTRY(vm_page_table)			pt_cache_list;				/* for persistence */
+    TAILQ_ENTRY(vm_pagetable)			pt_cache_list;				/* for persistence */
 };
 
-RB_HEAD(vm_page_table_hash_root, vm_page_table_hash_entry);
-struct vm_page_table_hash_entry {
-	RB_ENTRY(vm_page_table_hash_entry) 	pte_hlinks;
-	vm_page_table_t						pte_pgtable;
+RB_HEAD(vm_pagetable_hash_root, vm_pagetable_hash_entry);
+struct vm_pagetable_hash_entry {
+	RB_ENTRY(vm_pagetable_hash_entry) 	pte_hlinks;
+	vm_pagetable_t						pte_pgtable;
 };
-typedef struct vm_page_table_hash_entry *vm_page_table_hash_entry_t;
+typedef struct vm_pagetable_hash_entry *vm_pagetable_hash_entry_t;
 
 struct pttree;
-RB_HEAD(pttree, vm_page_table);
+RB_HEAD(pttree, vm_pagetable);
 struct ptlist;
-TAILQ_HEAD(ptlist, vm_page_table);
+TAILQ_HEAD(ptlist, vm_pagetable);
 
 struct pttree 		vm_pagetable_tree;
 long				vm_pagetable_count;			/* count of all pagetables */
@@ -87,23 +87,23 @@ simple_lock_data_t	vm_pagetable_cache_lock;
 			thread_sleep((event), &(pagetable)->pt_lock, (interruptible))
 
 void			vm_pagetable_init(vm_offset_t *, vm_offset_t *);
-vm_page_table_t	vm_pagetable_allocate(vm_size_t);
-void			vm_pagetable_deallocate(vm_page_table_t);
-void			vm_pagetable_reference(vm_page_table_t);
-void			vm_pagetable_terminate(vm_page_table_t);
-boolean_t		vm_pagetable_page_clean(vm_page_table_t, vm_offset_t, vm_offset_t, boolean_t, boolean_t);
-void			vm_pagetable_deactivate_pages(vm_page_table_t);
-void			vm_pagetable_pmap_copy(vm_page_table_t, vm_offset_t, vm_offset_t);
-void			vm_pagetable_pmap_remove(vm_page_table_t, vm_offset_t, vm_offset_t);
-vm_pager_t		vm_pagetable_getpager(vm_page_table_t);
-void			vm_pagetable_setpager(vm_page_table_t, boolean_t);
-void			vm_pagetable_shadow(vm_page_table_t, vm_offset_t, vm_size_t);
-void			vm_pagetable_enter(vm_page_table_t, vm_segment_t, vm_offset_t);
-vm_page_table_t	vm_pagetable_lookup(vm_segment_t, vm_offset_t);
-void 			vm_pagetable_remove(vm_page_table_t);
+vm_pagetable_t	vm_pagetable_allocate(vm_size_t);
+void			vm_pagetable_deallocate(vm_pagetable_t);
+void			vm_pagetable_reference(vm_pagetable_t);
+void			vm_pagetable_terminate(vm_pagetable_t);
+boolean_t		vm_pagetable_page_clean(vm_pagetable_t, vm_offset_t, vm_offset_t, boolean_t, boolean_t);
+void			vm_pagetable_deactivate_pages(vm_pagetable_t);
+void			vm_pagetable_pmap_copy(vm_pagetable_t, vm_offset_t, vm_offset_t);
+void			vm_pagetable_pmap_remove(vm_pagetable_t, vm_offset_t, vm_offset_t);
+vm_pager_t		vm_pagetable_getpager(vm_pagetable_t);
+void			vm_pagetable_setpager(vm_pagetable_t, boolean_t);
+void			vm_pagetable_shadow(vm_pagetable_t, vm_offset_t, vm_size_t);
+void			vm_pagetable_enter(vm_pagetable_t, vm_segment_t, vm_offset_t);
+vm_pagetable_t	vm_pagetable_lookup(vm_segment_t, vm_offset_t);
+void 			vm_pagetable_remove(vm_pagetable_t);
 void			vm_pagetable_cache_clear();
-void			vm_pagetable_collapse(vm_page_table_t);
-void			vm_pagetable_page_remove(vm_page_table_t, vm_offset_t, vm_offset_t);
-boolean_t		vm_pagetable_coalesce(vm_page_table_t, vm_page_table_t, vm_offset_t, vm_offset_t, vm_size_t, vm_size_t);
+void			vm_pagetable_collapse(vm_pagetable_t);
+void			vm_pagetable_page_remove(vm_pagetable_t, vm_offset_t, vm_offset_t);
+boolean_t		vm_pagetable_coalesce(vm_pagetable_t, vm_pagetable_t, vm_offset_t, vm_offset_t, vm_size_t, vm_size_t);
 
 #endif /* _VM_PAGE_TABLE_H_ */

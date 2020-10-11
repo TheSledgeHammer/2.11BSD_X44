@@ -79,29 +79,6 @@ typedef boolean_t bool;
 #define	TRUE	1
 #define	FALSE	0
 
-
-/* New VM Structure with segments:
- * Layout:
- * 							   ----> Pagetable 1 ---> Pages
- * 							   |
- * 			----> Segment 1 -------> Pagetable 2 ---> Pages
- * 			|				   |
- * 			|				   ----> Pagetable 3 ---> Pages
- * 			|
- * 			|				   ----> Pagetable 4 ---> Pages
- * 			|				   |
- * Object ------> Segment 2 -------> Pagetable 5 ---> Pages
- * 			|				   |
- * 			|				   ----> Pagetable 6 ---> Pages
- * 			|
- * 			|				   ----> Pagetable 7 ---> Pages
- * 			|				   |
- * 			----> Segment 3 -------> Pagetable 8 ---> Pages
- * 			 				   |
- * 							   ----> Pagetable 9 ---> Pages
- *
- */
-
 /*
  *	The machine independent segments are referred to as SEGMENTS.
  */

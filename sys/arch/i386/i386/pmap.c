@@ -355,8 +355,7 @@ pmap_init(phys_start, phys_end)
 	 * unavailable regions which we have mapped in locore.
 	 */
 	addr = atdevbase;
-	(void) vm_map_find(kernel_map, NULL, (vm_offset_t) 0,
-			   &addr, (0x100000-0xa0000), FALSE);
+	(void) vm_map_find(kernel_map, NULL, (vm_offset_t) 0, &addr, (0x100000-0xa0000), FALSE);
 
 	addr = (vm_offset_t) 0xfe000000+KPTphys/* *NBPG */;
 	vm_object_reference(kernel_object);
@@ -481,8 +480,7 @@ pmap_pinit(pmap)
 	bcopy(PTD+KPTDI_FIRST, pmap->pm_pdir+KPTDI_FIRST, (KPTDI_LAST-KPTDI_FIRST+1)*4);
 
 	/* install self-referential address mapping entry */
-	*(int *)(pmap->pm_pdir+PTDPTDI) =
-		(int)pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pdir) | PG_V | PG_URKW;
+	*(int *)(pmap->pm_pdir+PTDPTDI) = (int)pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pdir) | PG_V | PG_URKW;
 
 	pmap->pm_count = 1;
 	simple_lock_init(&pmap->pm_lock);
@@ -1125,7 +1123,8 @@ pmap_change_wiring(pmap, va, wired)
  * [ what about induced faults -wfj]
  */
 
-struct pte *pmap_pte(pmap, va)
+struct pte *
+pmap_pte(pmap, va)
 	register pmap_t	pmap;
 	vm_offset_t va;
 {

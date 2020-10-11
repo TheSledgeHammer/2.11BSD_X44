@@ -103,7 +103,7 @@ struct vm_page {
 	TAILQ_ENTRY(vm_page)	hashq;		/* hash table links (O)*/
 	TAILQ_ENTRY(vm_page)	listq;		/* pages in same object (O)*/
 
-	vm_page_table_t			pgtable;	/* which page table am I in (PT,P)*/
+	vm_pagetable_t			pgtable;	/* which page table am I in (PT,P)*/
 	vm_offset_t				offset;		/* offset into page table (O,P) */
 
 	avm_anon_t				anon;		/* anon (O,P) */

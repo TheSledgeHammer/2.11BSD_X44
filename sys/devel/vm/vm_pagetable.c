@@ -36,7 +36,7 @@
 #include <devel/vm/include/vm_page.h>
 #include "devel/vm/include/vm_segment.h"
 
-struct vm_page_table_hash_root 	vm_pagetable_buckets;
+struct vm_pagetable_hash_root 	vm_pagetable_buckets;
 int								vm_pagetable_bucket_count = 0;	/* How big is array? */
 int								vm_pagetable_hash_mask;			/* Mask for hash function */
 
@@ -46,7 +46,7 @@ long				pagetable_bypasses  = 0;
 extern vm_size_t	pagetable_mask;
 extern int			pagetable_shift;
 
-static void	_vm_pagetable_allocate(vm_size_t, vm_page_table_t);
+static void	_vm_pagetable_allocate(vm_size_t, vm_pagetable_t);
 
 void
 vm_set_pagetable_size()
@@ -81,13 +81,13 @@ vm_pagetable_init(start, end)
 	}
 }
 
-vm_page_table_t
+vm_pagetable_t
 vm_pagetable_allocate(size)
 	vm_size_t	size;
 {
-	register vm_page_table_t result;
+	register vm_pagetable_t result;
 
-	result = (vm_page_table_t)malloc((u_long)sizeof(*result), M_VMPGTABLE, M_WAITOK);
+	result = (vm_pagetable_t)malloc((u_long)sizeof(*result), M_VMPGTABLE, M_WAITOK);
 
 	_vm_pagetable_allocate(size, result);
 
@@ -97,7 +97,7 @@ vm_pagetable_allocate(size)
 static void
 _vm_pagetable_allocate(size, pagetable)
 	vm_size_t					size;
-	register vm_page_table_t 	pagetable;
+	register vm_pagetable_t 	pagetable;
 {
 	TAILQ_INIT(&pagetable->pt_pglist);
 	vm_pagetable_lock_init(pagetable);
@@ -117,9 +117,9 @@ _vm_pagetable_allocate(size, pagetable)
 
 void
 vm_pagetable_deallocate(pagetable)
-	register vm_page_table_t	pagetable;
+	register vm_pagetable_t	pagetable;
 {
-	vm_page_table_t temp;
+	vm_pagetable_t temp;
 
 	while (pagetable != NULL) {
 
@@ -152,7 +152,7 @@ vm_pagetable_deallocate(pagetable)
  */
 void
 vm_pagetable_reference(pagetable)
-	register vm_page_table_t	pagetable;
+	register vm_pagetable_t	pagetable;
 {
 	if (pagetable == NULL)
 		return;
@@ -164,7 +164,7 @@ vm_pagetable_reference(pagetable)
 
 void
 vm_pagetable_terminate(pagetable)
-	register vm_page_table_t	pagetable;
+	register vm_pagetable_t		pagetable;
 {
 	register vm_page_t			p;
 
@@ -173,7 +173,7 @@ vm_pagetable_terminate(pagetable)
 
 boolean_t
 vm_pagetable_page_clean(pagetable, start, end, syncio, de_queue)
-	register vm_page_table_t	pagetable;
+	register vm_pagetable_t	pagetable;
 	register vm_offset_t		start;
 	register vm_offset_t		end;
 	boolean_t					syncio;
@@ -192,7 +192,7 @@ vm_pagetable_page_clean(pagetable, start, end, syncio, de_queue)
 
 void
 vm_pagetable_deactivate_pages(pagetable)
-	register vm_page_table_t	pagetable;
+	register vm_pagetable_t	pagetable;
 {
 	register vm_page_t	p, next;
 
@@ -206,7 +206,7 @@ vm_pagetable_deactivate_pages(pagetable)
 
 void
 vm_pagetable_pmap_copy(pagetable, start, end)
-	register vm_page_table_t	pagetable;
+	register vm_pagetable_t		pagetable;
 	register vm_offset_t		start;
 	register vm_offset_t		end;
 {
@@ -227,7 +227,7 @@ vm_pagetable_pmap_copy(pagetable, start, end)
 
 void
 vm_pagetable_pmap_remove(pagetable, start, end)
-	register vm_page_table_t	pagetable;
+	register vm_pagetable_t		pagetable;
 	register vm_offset_t		start;
 	register vm_offset_t		end;
 {
@@ -248,7 +248,7 @@ vm_pagetable_pmap_remove(pagetable, start, end)
 
 vm_pager_t
 vm_pagetable_getpager(pagetable)
-	vm_page_table_t	pagetable;
+	vm_pagetable_t	pagetable;
 {
 	register vm_segment_t segment;
 
@@ -267,7 +267,7 @@ vm_pagetable_getpager(pagetable)
  */
 void
 vm_pagetable_setpager(pagetable, read_only)
-	vm_page_table_t	pagetable;
+	vm_pagetable_t	pagetable;
 	boolean_t		read_only;
 {
 	register vm_segment_t segment;
@@ -294,12 +294,12 @@ vm_pagetable_setpager(pagetable, read_only)
 
 void
 vm_pagetable_shadow(pagetable, offset, length)
-	vm_page_table_t	*pagetable;	/* IN/OUT */
+	vm_pagetable_t	*pagetable;	/* IN/OUT */
 	vm_offset_t		*offset;	/* IN/OUT */
 	vm_size_t		length;
 {
-	register vm_page_table_t	source;
-	register vm_page_table_t	result;
+	register vm_pagetable_t	source;
+	register vm_pagetable_t	result;
 
 	source = *pagetable;
 
@@ -346,7 +346,7 @@ vm_pagetable_hash(segment, offset)
 
 int
 vm_pagetable_rb_compare(pt1, pt2)
-	vm_page_table_t pt1, pt2;
+	vm_pagetable_t pt1, pt2;
 {
 	if(pt1->pt_offset < pt2->pt_offset) {
 		return (-1);
@@ -356,15 +356,15 @@ vm_pagetable_rb_compare(pt1, pt2)
 	return (0);
 }
 
-RB_PROTOTYPE(pttree, vm_page_table, pt_tree, vm_pagetable_rb_compare);
-RB_GENERATE(pttree, vm_page_table, pt_tree, vm_pagetable_rb_compare);
-RB_PROTOTYPE(vm_page_table_hash_root, vm_page_table_hash_entry, pte_hlinks, vm_pagetable_rb_compare);
-RB_GENERATE(vm_page_table_hash_root, vm_page_table_hash_entry, pte_hlinks, vm_pagetable_rb_compare);
+RB_PROTOTYPE(pttree, vm_pagetable, pt_tree, vm_pagetable_rb_compare);
+RB_GENERATE(pttree, vm_pagetable, pt_tree, vm_pagetable_rb_compare);
+RB_PROTOTYPE(vm_pagetable_hash_root, vm_page_table_hash_entry, pte_hlinks, vm_pagetable_rb_compare);
+RB_GENERATE(vm_pagetable_hash_root, vm_page_table_hash_entry, pte_hlinks, vm_pagetable_rb_compare);
 
 /* insert page table into segment */
 void
 vm_pagetable_enter(pagetable, segment, offset)
-	register vm_page_table_t 	pagetable;
+	register vm_pagetable_t 	pagetable;
 	register vm_segment_t		segment;
 	register vm_offset_t		offset;
 {
@@ -379,13 +379,13 @@ vm_pagetable_enter(pagetable, segment, offset)
 }
 
 /* lookup page table from segment/offset pair */
-vm_page_table_t
+vm_pagetable_t
 vm_pagetable_lookup(segment, offset)
 	register vm_segment_t	segment;
 	register vm_offset_t	offset;
 {
-	struct vm_page_table_hash_root *bucket;
-	register vm_page_table_t 		pagetable;
+	struct vm_pagetable_hash_root *bucket;
+	register vm_pagetable_t 		pagetable;
 
 	bucket = &vm_pagetable_buckets[vm_pagetable_hash(segment, offset)];
 
@@ -403,9 +403,9 @@ vm_pagetable_lookup(segment, offset)
 /* remove page table from segment */
 void
 vm_pagetable_remove(pagetable)
-	register vm_page_table_t pagetable;
+	register vm_pagetable_t pagetable;
 {
-	struct vm_page_table_hash_root *bucket = &vm_pagetable_buckets[vm_pagetable_hash(pagetable->pt_segment, pagetable->pt_offset)];
+	struct vm_pagetable_hash_root *bucket = &vm_pagetable_buckets[vm_pagetable_hash(pagetable->pt_segment, pagetable->pt_offset)];
 
 	if(bucket) {
 		RB_REMOVE(vm_page_table_hash_root, bucket, pagetable);
@@ -419,7 +419,7 @@ vm_pagetable_remove(pagetable)
 void
 vm_pagetable_cache_clear()
 {
-	register vm_page_table_t	pagetable;
+	register vm_pagetable_t	pagetable;
 
 	/*
 	 *	Remove each object in the cache by scanning down the
@@ -458,9 +458,9 @@ boolean_t	vm_pagetable_collapse_allowed = TRUE;
  */
 void
 vm_pagetable_collapse(pagetable)
-	register vm_page_table_t	pagetable;
+	register vm_pagetable_t		pagetable;
 {
-	register vm_page_table_t	backing_pagetable;
+	register vm_pagetable_t		backing_pagetable;
 	register vm_offset_t		backing_offset;
 	register vm_size_t			size;
 	register vm_offset_t		new_offset;
@@ -710,9 +710,9 @@ vm_pagetable_collapse(pagetable)
  */
 void
 vm_pagetable_page_remove(pagetable, start, end)
-	register vm_page_table_t	pagetable;
-	register vm_offset_t		start;
-	register vm_offset_t		end;
+	register vm_pagetable_t	pagetable;
+	register vm_offset_t	start;
+	register vm_offset_t	end;
 {
 	register vm_page_t	p, next;
 
@@ -754,10 +754,10 @@ vm_pagetable_page_remove(pagetable, start, end)
  */
 boolean_t
 vm_pagetable_coalesce(prev_pagetable, next_pagetable, prev_offset, next_offset, prev_size, next_size)
-	register vm_page_table_t	prev_pagetable;
-	vm_page_table_t				next_pagetable;
-	vm_offset_t					prev_offset, next_offset;
-	vm_size_t					prev_size, next_size;
+	register vm_pagetable_t	prev_pagetable;
+	vm_pagetable_t			next_pagetable;
+	vm_offset_t				prev_offset, next_offset;
+	vm_size_t				prev_size, next_size;
 {
 	vm_size_t	newsize;
 

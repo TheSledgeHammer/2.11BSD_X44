@@ -146,5 +146,5 @@ void			ovl_object_split_segment();
 void			ovl_object_shrink_segment();
 void			ovl_object_expand_segment();
 
-#endif /* KERNEL */
+//#endif /* KERNEL */
 #endif /* _OVL_OBJECT_H_ */

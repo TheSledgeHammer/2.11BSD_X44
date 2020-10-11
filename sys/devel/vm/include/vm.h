@@ -60,8 +60,8 @@ typedef struct vm_object 		*vm_object_t;
 struct vm_segment;
 typedef struct vm_segment 		*vm_segment_t;
 
-struct vm_page_table;
-typedef struct vm_page_table 	*vm_page_table_t;
+struct vm_pagetable;
+typedef struct vm_pagetable 	*vm_pagetable_t;
 
 struct vm_page;
 typedef struct vm_page  		*vm_page_t;
@@ -86,7 +86,7 @@ typedef struct pager_struct 	*vm_pager_t;
 #include <devel/vm/include/vm_param.h>
 #include <devel/vm/include/vm_swap.h>
 #include <devel/vm/extents/vm_extent.h>		/* Work in Progress */
-#include <devel/vm/include/vm_page_table.h>	/* Work in Progress */
+#include <devel/vm/include/vm_pagetable.h>	/* Work in Progress */
 #include <devel/vm/include/vm_segment.h>	/* Work in Progress */
 
 #include <devel/vm/avm/avm.h>				/* Work in Progress */

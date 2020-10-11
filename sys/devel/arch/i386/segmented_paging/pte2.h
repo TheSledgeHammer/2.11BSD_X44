@@ -50,19 +50,51 @@
 /* pte.h */
 /* segment table */
 struct ste {
-	unsigned int
-	sg_v:2,			/* valid bits */
-	sg_prot:1,		/* write protect bit */
-	sg_u:1,			/* hardware modified (dirty) bit */
-	:8,				/* reserved at 0 */
-	:1,				/* reserved at 1 */
-	sg_pfnum:20;	/* page table frame number */
+unsigned int
+		sg_v:2,			/* valid bits */
+		sg_prot:1,		/* write protect bit */
+		sg_mbz1:2,		/* reserved, must be zero */
+		sg_u:1,			/* hardware modified (dirty) bit */
+		:8,				/* reserved at 0 */
+		:1,				/* reserved at 1 */
+		sg_pfnum:20;	/* page table frame number of pde's */
 };
 
+struct pde {
+unsigned int
+		pd_v:1,			/* valid bit */
+		pd_prot:2,		/* access control */
+		pd_mbz1:2,		/* reserved, must be zero */
+		pd_u:1,			/* hardware maintained 'used' bit */
+		:1,				/* not used */
+		pd_mbz2:2,		/* reserved, must be zero */
+		:3,				/* reserved for software */
+		pd_pfnum:20;	/* physical page frame number of pte's*/
+};
+
+struct pte {
+unsigned int
+		pg_v:1,			/* valid bit */
+		pg_prot:2,		/* access control */
+		pg_mbz1:2,		/* reserved, must be zero */
+		pg_u:1,			/* hardware maintained 'used' bit */
+		pg_m:1,			/* hardware maintained modified bit */
+		pg_mbz2:2,		/* reserved, must be zero */
+		pg_w:1,			/* software, wired down page */
+		pg_fod:1,		/* is fill on demand (= 0) */
+		:1,				/* must write back to swap (unused) */
+		pg_nc:1,		/* 'uncacheable page' bit */
+		pg_pfnum:20;	/* physical page frame number */
+};
 
 typedef struct ste st_entry_t;	/* segment table entry */
+typedef struct pde pd_entry_t;	/* page directory entry */
+typedef struct pte pt_entry_t;	/* page table entry */
+
 
 #define	ST_ENTRY_NULL	((st_entry_t *) 0)
+#define	PD_ENTRY_NULL	((pd_entry_t *) 0)
+#define	PT_ENTRY_NULL	((pt_entry_t *) 0)
 
 #define	SG_V		0x00000002	/* segment is valid */
 #define	SG_NV		0x00000000
@@ -70,11 +102,46 @@ typedef struct ste st_entry_t;	/* segment table entry */
 #define	SG_RO		0x00000004
 #define	SG_RW		0x00000000
 #define	SG_U		0x00000008	/* modified bit (68040) */
+
 #define	SG_FRAME	0xfffff000
 #define	SG_IMASK	0xffc00000
 #define	SG_ISHIFT	22
 #define	SG_PMASK	0x003ff000
 #define	SG_PSHIFT	12
+
+#define	PG_V		0x00000001
+#define	PG_RO		0x00000000
+#define	PG_RW		0x00000002
+#define	PG_u		0x00000004
+#define	PG_PROT		0x00000006 /* all protection bits . */
+#define	PG_W		0x00000200
+#define	PG_SWAPM	0x00000400
+#define	PG_FOD		0x00000600
+#define PG_N		0x00000800 /* Non-cacheable */
+#define	PG_M		0x00000040
+#define PG_U		0x00000020
+#define PG_A		0x00000060
+#define	PG_FRAME	0xfffff000
+
+#define	PG_NOACC	0
+#define	PG_KR		0x00000000
+#define	PG_KW		0x00000002
+#define	PG_URKR		0x00000004
+#define	PG_URKW		0x00000004
+#define	PG_UW		0x00000006
+
+#define	PG_FZERO	0
+#define	PG_FTEXT	1
+#define	PG_FMAX		(PG_FTEXT)
+
+/*
+ * Page Protection Exception bits
+ */
+#define PGEX_P		0x01	/* Protection violation vs. not present */
+#define PGEX_W		0x02	/* during a Write cycle */
+#define PGEX_U		0x04	/* access from User mode (UPL) */
+#define PGEX_RSV	0x08	/* reserved PTE field is non-zero */
+#define PGEX_I		0x10	/* during an instruction fetch */
 
 /* pmap.h */
 #define I386_PAGE_SIZE		NBPG
@@ -87,8 +154,9 @@ typedef struct ste st_entry_t;	/* segment table entry */
  * Pmap stuff
  */
 struct pmap {
-	struct pte				*pm_ptab;		/* KVA of page table */
 	struct ste				*pm_stab;		/* KVA of segment table */
+	struct pde				*pm_pdir;		/* KVA of page directory */
+	struct pte				*pm_ptab;		/* KVA of page table */
 	int						pm_stchanged;	/* ST changed */
 	int						pm_stfree;		/* 040: free lev2 blocks */
 	struct ste				*pm_stpa;		/* 040: ST phys addr */
@@ -98,7 +166,6 @@ struct pmap {
 	struct pmap_statistics	pm_stats;		/* pmap statistics */
 	long					pm_ptpages;		/* more stats: PT pages */
 };
-
 typedef struct pmap	*pmap_t;
 
 /*
@@ -125,5 +192,16 @@ typedef struct pv_entry {
 	struct pmap		*pv_ptpmap;	/* if pv_ptste, pmap for PT page */
 	int				pv_flags;	/* flags */
 } *pv_entry_t;
+
+extern struct pte	PTmap[], APTmap[], Upte;
+extern struct pde	PTD[], APTD[], PTDpde, APTDpde, Upde;
+extern struct ste	STE[], ASTE[], STEptd, ASTEptd, Uste;
+extern	pt_entry_t	*Sysmap;
+extern	st_entry_t	*Sysseg;
+
+#define i386_btod(x)		((unsigned)(x) >> PDRSHIFT)
+
+#define vtopde(va) 			(PTD + i386_btod(va))
+#define avtopde(va)			(APTD + i386_btod(va))
 
 #endif /* SYS_DEVEL_ARCH_I386_PTE_H_ */

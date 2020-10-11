@@ -32,6 +32,8 @@
 
 #include <vm_extent.h>
 
+struct vm_slab slabbuckets[MINBUCKET + 16];
+
 struct extent *
 vm_extent_create(ex, name, start, end, mtype, storage, storagesize, flags)
 	struct extent *ex;
@@ -90,11 +92,18 @@ vm_extent_print(ex)
 }
 
 
-vm_slab_allocate(slab)
-	struct vm_slab *slab;
+vm_slab_allocate(cache)
+	register struct vm_slab_cache *cache;
 {
-	CIRCLEQ_INIT(slab->vs_header);
+	register int indx;
+	for(indx = 0; indx < MINBUCKET + 16; indx++) {
+		&slabbuckets[indx];
+	}
+	struct slablist *slabs;
 }
+
+
+
 
 /*
 struct vextops vextops;
