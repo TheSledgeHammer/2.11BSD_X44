@@ -132,10 +132,10 @@ struct	pager_struct {
 };
 
 /* pager types */
-#define PG_DFLT		-1
-#define	PG_SWAP		0
-#define	PG_VNODE	1
-#define PG_DEVICE	2
+#define PG_DFLT			-1
+#define	PG_SWAP			0
+#define	PG_VNODE		1
+#define PG_DEVICE		2
 
 /* flags */
 #define PG_CLUSTERGET	1

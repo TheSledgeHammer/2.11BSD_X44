@@ -72,7 +72,7 @@
 #include <sys/fnv_hash.h>
 
 #include <devel/vm/include/vm_object.h>
-#include <devel/vm/include/vm_page.h>
+#include <vm/include/vm_page.h>
 #include <devel/vm/include/vm.h>
 
 /*
@@ -101,25 +101,26 @@
  *
  */
 
-/* New VM Structure with segments:
- * Layout:
- * 							   ----> Pagetable 1 ---> Pages
+/* New VM Object Structure:
+ * Layout: (Assuming 3 Segments per Object)
+ *
+ * 							   ----> Pagedirectory 1 ---> Pages
  * 							   |
- * 			----> Segment 1 -------> Pagetable 2 ---> Pages
+ * 			----> Segment 1 -------> Pagedirectory 2 ---> Pages
  * 			|				   |
- * 			|				   ----> Pagetable 3 ---> Pages
+ * 			|				   ----> Pagedirectory 3 ---> Pages
  * 			|
- * 			|				   ----> Pagetable 4 ---> Pages
+ * 			|				   ----> Pagedirectory 4 ---> Pages
  * 			|				   |
- * Object ------> Segment 2 -------> Pagetable 5 ---> Pages
+ * Object ------> Segment 2 -------> Pagedirectory 5 ---> Pages
  * 			|				   |
- * 			|				   ----> Pagetable 6 ---> Pages
+ * 			|				   ----> Pagedirectory 6 ---> Pages
  * 			|
- * 			|				   ----> Pagetable 7 ---> Pages
+ * 			|				   ----> Pagedirectory 7 ---> Pages
  * 			|				   |
- * 			----> Segment 3 -------> Pagetable 8 ---> Pages
+ * 			----> Segment 3 -------> Pagedirectory 8 ---> Pages
  * 			 				   |
- * 							   ----> Pagetable 9 ---> Pages
+ * 							   ----> Pagedirectory 9 ---> Pages
  *
  */
 
@@ -353,11 +354,12 @@ vm_object_terminate(object)
 	 * For internal objects, this also removes them from paging queues.
 	 */
 	while ((p = CIRCLEQ_FIRST(object->seglist)) != NULL) {
-		//VM_PAGE_CHECK(p);
-		//vm_page_lock_queues();
-		//vm_page_free(p);
-		//cnt.v_pfree++;
-		//vm_page_unlock_queues();
+
+		VM_PAGE_CHECK(p);
+		vm_page_lock_queues();
+		vm_page_free(p);
+		cnt.v_pfree++;
+		vm_page_unlock_queues();
 	}
 	vm_object_unlock(object);
 
@@ -431,7 +433,7 @@ vm_object_shadow(object, offset, length)
 	if ((result = vm_object_allocate(length)) == NULL)
 		panic("vm_object_shadow: no object for shadowing");
 
-	//source->flags |= OBJ_SHADOW;
+	source->flags |= OBJ_SHADOW;
 
 	/*
 	 *	The new object shadows the source object, adding

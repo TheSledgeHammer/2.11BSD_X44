@@ -26,13 +26,11 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-
-#include <sys/user.h>
 #include <sys/tree.h>
 #include <sys/fnv_hash.h>
 #include <sys/malloc.h>
 #include <sys/map.h>
+#include <sys/user.h>
 
 #include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_segment.h>
@@ -43,6 +41,10 @@ int								vm_segment_hash_mask;			/* Mask for hash function */
 
 vm_size_t						segment_mask;
 int								segment_shift;
+
+//struct seglist	vm_segment_list;
+struct seglist					vm_segment_list_active;
+struct seglist					vm_segment_list_inactive;
 
 void
 vm_set_segment_size()
@@ -64,6 +66,12 @@ vm_segment_init(start, end)
 {
 	register int	i;
 
+	simple_lock_init(&vm_segment_list_lock);
+
+	CIRCLEQ_INIT(&vm_segment_list);
+	CIRCLEQ_INIT(&vm_segment_list_active);
+	CIRCLEQ_INIT(&vm_segment_list_inactive);
+
 	if (vm_segment_bucket_count == 0) {
 		vm_segment_bucket_count = 1;
 		while (vm_segment_bucket_count < atop(*end - *start))
@@ -75,6 +83,7 @@ vm_segment_init(start, end)
 	for(i = 0; i < vm_segment_hash_mask; i++) {
 		CIRCLEQ_INIT(&vm_segment_buckets[i]);
 	}
+//	simple_lock_init(&bucket_lock);
 }
 
 vm_segment_t
@@ -94,7 +103,7 @@ _vm_segment_allocate(size, segment)
 	vm_size_t				size;
 	register vm_segment_t 	segment;
 {
-	RB_INIT(segment->sg_pgtable);
+	RB_INIT(segment->sg_pdtable);
 
 	segment->sg_size = size;
 
@@ -103,22 +112,6 @@ _vm_segment_allocate(size, segment)
 	} else {
 		CIRCLEQ_INSERT_HEAD(&vm_segment_list, segment, sg_list);
 	}
-}
-
-vm_pager_t
-vm_segment_getpager(segment)
-	vm_segment_t 	segment;
-{
-	register vm_object_t object;
-
-	vm_segment_lock(segment);
-	object = segment->sg_object;
-	if(object != NULL) {
-		vm_segment_unlock(segment);
-		return (object->pager);
-	}
-	vm_segment_unlock(segment);
-	return (NULL);
 }
 
 /*
@@ -149,6 +142,7 @@ vm_segment_hash(object, offset)
 	Fnv32_t hash2 = (((unsigned long)object+(unsigned long)offset)&vm_segment_hash_mask);
     return (hash1^hash2);
 }
+
 
 vm_segment_t
 vm_segment_lookup(object, offset)
@@ -187,7 +181,7 @@ vm_segment_enter(segment, object, offset)
 	bucket = &vm_segment_buckets[vm_segment_hash(object, offset)];
 	entry = (vm_segment_hash_entry_t)malloc((u_long)sizeof *entry);
 	entry->sge_segment = segment;
-	segment->sg_flags = SEG_ALLOCATED;
+	segment->sg_flags = SEG_ALLOC;
 
     if((vm_segment_hash(object, offset) % 2) == 0) {
     	CIRCLEQ_INSERT_TAIL(bucket, entry, sge_hlinks);
@@ -213,5 +207,73 @@ vm_segment_remove(object, offset)
 			CIRCLEQ_REMOVE(bucket, entry, sge_hlinks);
 			break;
 		}
+	}
+}
+
+vm_segment_t
+vm_segment_alloc(object, offset)
+	vm_object_t	object;
+	vm_offset_t	offset;
+{
+	register vm_segment_t seg;
+
+	simple_lock(&vm_segment_list_lock);
+	if(CIRCLEQ_FIRST(&vm_segment_list) == NULL) {
+		simple_unlock(&vm_segment_list_lock);
+		return (NULL);
+	}
+	seg = CIRCLEQ_FIRST(&vm_segment_list);
+	CIRCLEQ_REMOVE(&vm_segment_list, seg, sg_list);
+
+	cnt.v_seg_free_count--;
+	simple_unlock(&vm_segment_list_lock);
+
+	return (seg);
+}
+
+void
+vm_segment_free(object, segment)
+	vm_object_t	object;
+	register vm_segment_t segment;
+{
+	vm_segment_remove(object, segment);
+	if(segment->sg_flags & SEG_ACTIVE) {
+		CIRCLEQ_REMOVE(&vm_segment_list_active, segment, sg_list);
+		segment->sg_flags &= SEG_ACTIVE;
+		cnt.v_seg_active_count--;
+	}
+	if(segment->sg_flags & SEG_INACTIVE) {
+		CIRCLEQ_REMOVE(&vm_segment_list_inactive, segment, sg_list);
+		segment->sg_flags &= SEG_INACTIVE;
+		cnt.v_seg_inactive_count--;
+	}
+}
+
+/*XXX: separate segment & page active & inactive counters  */
+void
+vm_segment_deactivate(segment)
+	register vm_segment_t segment;
+{
+	if(segment->sg_flags & SEG_ACTIVE) {
+		CIRCLEQ_REMOVE(&vm_segment_list_active, segment, sg_list);
+		CIRCLEQ_INSERT_TAIL(&vm_segment_list_inactive, segment, sg_list);
+		segment->sg_flags &= SEG_ACTIVE;
+		segment->sg_flags |= SEG_INACTIVE;
+		cnt.v_seg_active_count--;
+		cnt.v_seg_inactive_count++;
+	}
+}
+
+void
+vm_segment_activate(segment)
+	register vm_segment_t segment;
+{
+	if(segment->sg_flags & SEG_INACTIVE) {
+		CIRCLEQ_REMOVE(&vm_segment_list_inactive, segment, sg_list);
+		cnt.v_seg_inactive_count--;
+		segment->sg_flags &= SEG_INACTIVE;
+	}
+	if(segment->sg_flags & SEG_ACTIVE) {
+		panic("vm_segment_activate: already active");
 	}
 }

@@ -95,21 +95,21 @@ extern int						segment_shift;
 /*
  *	The machine independent pagetables are referred to as PAGETABLES.
  */
-#define	DEFAULT_PAGETABLE_SIZE	12228					/* 12 kib pagetable (3 * pagetables per segment) */
+#define	DEFAULT_PAGEDIRECTORY_SIZE	12228					/* 12 kib pagedirectory (3 * pagedirectory per segment) */
 
-#define PAGETABLE_SIZE 			cnt.v_pagetable_size	/* size of pagetable */
-#define PAGETABLE_MASK			pagetable_mask			/* size of pagetable - 1 */
-#define	PAGETABLE_SHIFT			pagetable_shift			/* bits to shift for pagetables */
+#define PAGEDIRECTORY_SIZE 		cnt.v_pagedirectory_size	/* size of pagedirectory */
+#define PAGEDIRECTORY_MASK		pagedirectory_mask			/* size of pagedirectory - 1 */
+#define	PAGEDIRECTORY_SHIFT		pagedirectory_shift			/* bits to shift for pagedirectory */
 #ifdef KERNEL
-extern vm_size_t				pagetable_mask;
-extern int						pagetable_shift;
+extern vm_size_t				pagedirectory_mask;
+extern int						pagedirectory_shift;
 #endif
 
 /*
  *	The machine independent pages are referred to as PAGES.  A page
  *	is some number of hardware pages, depending on the target machine.
  */
-#define	DEFAULT_PAGE_SIZE		4096					/* 4 kib pages per pagetable */
+#define	DEFAULT_PAGE_SIZE		4096					/* 4 kib pages per pagedirectory */
 
 /*
  *	All references to the size of a page should be done with PAGE_SIZE

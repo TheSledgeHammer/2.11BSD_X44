@@ -103,7 +103,7 @@ struct vm_page {
 	TAILQ_ENTRY(vm_page)	hashq;		/* hash table links (O)*/
 	TAILQ_ENTRY(vm_page)	listq;		/* pages in same object (O)*/
 
-	vm_pagetable_t			pgtable;	/* which page table am I in (PT,P)*/
+	vm_pagedirectory_t		pdtable;	/* which page directory am I in (PT,P)*/
 	vm_offset_t				offset;		/* offset into page table (O,P) */
 
 	avm_anon_t				anon;		/* anon (O,P) */
@@ -134,7 +134,8 @@ struct vm_page {
 #define	PG_FILLED		0x0400		/* client flag to set when filled */
 #define	PG_DIRTY		0x0800		/* client flag to set when dirty */
 #define	PG_PAGEROWNED	0x4000		/* DEBUG: async paging op in progress */
-#define	PG_PTPAGE		0x8000		/* DEBUG: is a user page table page */
+
+#define	PG_PDPAGE		0x8000		/* DEBUG: is a user page directory page */
 
 #define	PG_RELEASED		0x00000020	/* page to be freed when unbusied */
 
@@ -227,9 +228,9 @@ simple_lock_data_t	vm_page_queue_free_lock; 	/* lock on free page queue */
 
 #define vm_page_set_modified(m)	{ (m)->flags &= ~PG_CLEAN; }
 
-#define	VM_PAGE_INIT(mem, ptable, offset) { 		\
+#define	VM_PAGE_INIT(mem, pdable, offset) { 		\
 	(mem)->flags = PG_BUSY | PG_CLEAN | PG_FAKE; 	\
-	vm_page_insert((mem), (ptable), (offset)); 		\
+	vm_page_insert((mem), (pdable), (offset)); 		\
 	(mem)->wire_count = 0; 							\
 }
 

@@ -378,8 +378,8 @@ vm_object_page_clean(object, start, end, syncio, de_queue)
 	register vm_object_t	object;
 	register vm_offset_t	start;
 	register vm_offset_t	end;
-	boolean_t		syncio;
-	boolean_t		de_queue;
+	boolean_t				syncio;
+	boolean_t				de_queue;
 {
 	register vm_page_t	p;
 	int onqueue;
@@ -399,9 +399,7 @@ vm_object_page_clean(object, start, end, syncio, de_queue)
 			vm_pager_t pager;
 
 			vm_object_unlock(object);
-			pager = vm_pager_allocate(PG_DFLT, (caddr_t)0,
-						  object->size, VM_PROT_ALL,
-						  (vm_offset_t)0);
+			pager = vm_pager_allocate(PG_DFLT, (caddr_t)0, object->size, VM_PROT_ALL, (vm_offset_t)0);
 			if (pager)
 				vm_object_setpager(object, pager, 0, FALSE);
 			vm_object_lock(object);

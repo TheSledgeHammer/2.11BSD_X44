@@ -31,11 +31,12 @@
 - UFS211: Port of 2.11BSD's UFS Filesystem.
 	- Independent of UFS
 
-- VM: Updates to the VM Layer
+- VM: Updates to the VM Layer for Segmented Paging
 	- Planned:
 		- VM Extents: VM Memory Management using extent allocation (See: "/devel/vm/extents")
-		- Segmented VM Model (A Hybrid of UVM & VM): 3 Segments:
+		- Segmented Paging VM Model (A Hybrid of UVM & VM):
 			- VMSpace (aka VM): The current VM 
 			- AVMSpace (aka AVM): All anons, amaps & aobjects (See: "/devel/vm/avm")
 			- OVLSpace (aka OVL): A portion of physical memory with vm like features (See: "/devel/vm/ovl")
 					- A re-implementation of 2.11BSD's use of Overlays
+					- With support for VM & Kernel

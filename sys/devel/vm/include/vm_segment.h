@@ -45,7 +45,7 @@
 struct seglist;
 CIRCLEQ_HEAD(seglist, vm_segment);
 struct vm_segment {
-	struct pttree							sg_pgtable;		/* list of all page tables in segment */
+	struct pdtree							sg_pdtable;		/* list of all page tables in segment */
 
 	CIRCLEQ_ENTRY(vm_segment)				sg_list;
 	simple_lock_data_t 						sg_lock;
@@ -60,7 +60,10 @@ struct vm_segment {
 /* flags */
 #define SEG_ACTIVE		0x01
 #define SEG_INACTIVE	0x02
-#define SEG_ALLOCATED	0x04
+#define SEG_RO			0x03	/* read-only */
+#define SEG_WO			0x04	/* write-only */
+#define SEG_RW			0x05	/* read-write */
+#define SEG_ALLOC		0x06
 
 CIRCLEQ_HEAD(vm_segment_hash_head, vm_segment_hash_entry);
 struct vm_segment_hash_entry {
@@ -69,7 +72,12 @@ struct vm_segment_hash_entry {
 };
 typedef struct vm_segment_hash_entry  		*vm_segment_hash_entry_t;
 
+//extern
 struct seglist  	vm_segment_list;
+extern
+struct seglist		vm_segment_list_active;		/* active list */
+extern
+struct seglist		vm_segment_list_inactive;	/* inactive list */
 
 simple_lock_data_t	vm_segment_list_lock;
 

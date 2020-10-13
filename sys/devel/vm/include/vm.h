@@ -60,8 +60,8 @@ typedef struct vm_object 		*vm_object_t;
 struct vm_segment;
 typedef struct vm_segment 		*vm_segment_t;
 
-struct vm_pagetable;
-typedef struct vm_pagetable 	*vm_pagetable_t;
+struct vm_pagedirectory;
+typedef struct vm_pagedirectory *vm_pagedirectory_t;
 
 struct vm_page;
 typedef struct vm_page  		*vm_page_t;
@@ -85,12 +85,12 @@ typedef struct pager_struct 	*vm_pager_t;
 #include <devel/vm/include/vm_object.h>
 #include <devel/vm/include/vm_param.h>
 #include <devel/vm/include/vm_swap.h>
-#include <devel/vm/extents/vm_extent.h>		/* Work in Progress */
-#include <devel/vm/include/vm_pagetable.h>	/* Work in Progress */
-#include <devel/vm/include/vm_segment.h>	/* Work in Progress */
+#include <devel/vm/extents/vm_extent.h>			/* Work in Progress */
+#include <devel/vm/include/vm_pagedirectory.h>	/* Work in Progress */
+#include <devel/vm/include/vm_segment.h>		/* Work in Progress */
 
-#include <devel/vm/avm/avm.h>				/* Work in Progress */
-#include <devel/vm/ovl/ovl.h>				/* Work in Progress */
+#include <devel/vm/avm/avm.h>					/* Work in Progress */
+#include <devel/vm/ovl/ovl.h>					/* Work in Progress */
 
 /*
  *	MACH VM locking type mappings to kernel types
@@ -187,7 +187,7 @@ extern struct vmexp vmexp;
 /*
  * vm_map_entry etype bits:
  */
-#define VM_ET_OBJ				0x01	/* it is a uvm_object */
+#define VM_ET_OBJ				0x01	/* it is a vm_object */
 #define VM_ET_SUBMAP			0x02	/* it is a vm_map submap */
 #define VM_ET_COPYONWRITE 		0x04	/* copy_on_write */
 #define VM_ET_NEEDSCOPY			0x08	/* needs_copy */

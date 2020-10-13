@@ -289,8 +289,7 @@ swap_pager_alloc(handle, size, prot, foff)
 	swp->sw_bsize = swt->st_bsize;
 	swp->sw_nblocks = (btodb(size) + swp->sw_bsize - 1) / swp->sw_bsize;
 	swp->sw_blocks = (sw_blk_t)
-		malloc(swp->sw_nblocks*sizeof(*swp->sw_blocks),
-		       M_VMPGDATA, M_NOWAIT);
+		malloc(swp->sw_nblocks*sizeof(*swp->sw_blocks), M_VMPGDATA, M_NOWAIT);
 	if (swp->sw_blocks == NULL) {
 		free((caddr_t)swp, M_VMPGDATA);
 		free((caddr_t)pager, M_VMPAGER);

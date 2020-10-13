@@ -74,7 +74,7 @@
 #include <devel/vm/include/vm_pager.h>
 
 struct vm_object {
-	struct seglist					seglist;				/* resident memory segments */
+	struct seglist					seglist;				/* memory segments */
 
 	RB_ENTRY(vm_object)				object_tree;
 	u_short							flags;					/* see below */
@@ -83,8 +83,10 @@ struct vm_object {
 	int								ref_count;				/* How many refs?? */
 	vm_size_t						size;					/* Object size */
 	int								resident_segment_count;	/* number of resident segments */
+
 	vm_pager_t						pager;					/* Where to get data */
 	vm_offset_t						segment_offset;			/* Offset into segment */
+
 	struct vm_object				*shadow;				/* My shadow */
 	vm_offset_t						shadow_offset;			/* Offset in shadow */
 	TAILQ_ENTRY(vm_object)			cached_list;			/* for persistence */

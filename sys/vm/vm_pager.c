@@ -130,8 +130,7 @@ vm_pager_init()
 	/*
 	 * Allocate a kernel submap for tracking get/put page mappings
 	 */
-	pager_map = kmem_suballoc(kernel_map, &pager_sva, &pager_eva,
-				  PAGER_MAP_SIZE, FALSE);
+	pager_map = kmem_suballoc(kernel_map, &pager_sva, &pager_eva, PAGER_MAP_SIZE, FALSE);
 	/*
 	 * Initialize known pagers
 	 */
@@ -177,7 +176,7 @@ int
 vm_pager_get_pages(pager, mlist, npages, sync)
 	vm_pager_t	pager;
 	vm_page_t	*mlist;
-	int		npages;
+	int			npages;
 	boolean_t	sync;
 {
 	int rv;
