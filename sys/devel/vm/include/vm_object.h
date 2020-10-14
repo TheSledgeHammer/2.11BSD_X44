@@ -147,29 +147,30 @@ vm_object_t			kmem_object;
 vm_object_t	 vm_object_allocate (vm_size_t);
 void		 vm_object_cache_clear (void);
 void		 vm_object_cache_trim (void);
-/*
 boolean_t	 vm_object_coalesce (vm_object_t, vm_object_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_size_t);
 void		 vm_object_collapse (vm_object_t);
 void		 vm_object_copy (vm_object_t, vm_offset_t, vm_size_t, vm_object_t *, vm_offset_t *, boolean_t *);
-*/
+void		 vm_object_deactivate_pages (vm_object_t);
 void		 vm_object_deallocate (vm_object_t);
 void		 vm_object_enter (vm_object_t, vm_pager_t);
 void		 vm_object_init (vm_size_t);
 vm_object_t	 vm_object_lookup (vm_pager_t);
+boolean_t	 vm_object_page_clean (vm_object_t, vm_offset_t, vm_offset_t, boolean_t, boolean_t);
+void		 vm_object_page_remove (vm_object_t, vm_offset_t, vm_offset_t);
+void		 vm_object_pmap_copy (vm_object_t, vm_offset_t, vm_offset_t);
+void		 vm_object_pmap_remove (vm_object_t, vm_offset_t, vm_offset_t);
+void		 vm_object_print (vm_object_t, boolean_t);
 void		 vm_object_reference (vm_object_t);
 void		 vm_object_remove (vm_pager_t);
+void		 vm_object_setpager (vm_object_t, vm_pager_t, vm_offset_t, boolean_t);
 void		 vm_object_shadow (vm_object_t *, vm_offset_t *, vm_size_t);
 void		 vm_object_terminate (vm_object_t);
+
 
 /* XXX INTEREST: NetBSD: uvm_loan:
  * XXX
  */
 void		vm_object_copy_to_overlay();
 void		vm_object_copy_from_overlay();
-
-void		vm_object_coalesce_segment();
-void		vm_object_split_segment();
-void		vm_object_shrink_segment();
-void		vm_object_expand_segment();
 #endif
 #endif /* _VM_OBJECT_ */

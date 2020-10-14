@@ -60,9 +60,6 @@ typedef struct vm_object 		*vm_object_t;
 struct vm_segment;
 typedef struct vm_segment 		*vm_segment_t;
 
-struct vm_pagedirectory;
-typedef struct vm_pagedirectory *vm_pagedirectory_t;
-
 struct vm_page;
 typedef struct vm_page  		*vm_page_t;
 
@@ -86,7 +83,6 @@ typedef struct pager_struct 	*vm_pager_t;
 #include <devel/vm/include/vm_param.h>
 #include <devel/vm/include/vm_swap.h>
 #include <devel/vm/extents/vm_extent.h>			/* Work in Progress */
-#include <devel/vm/include/vm_pagedirectory.h>	/* Work in Progress */
 #include <devel/vm/include/vm_segment.h>		/* Work in Progress */
 
 #include <devel/vm/avm/avm.h>					/* Work in Progress */
@@ -121,6 +117,7 @@ struct vmspace {
 	segsz_t 		 	vm_ssize;		/* stack size (pages) */
 	caddr_t			 	vm_taddr;		/* user virtual address of text XXX */
 	caddr_t			 	vm_daddr;		/* user virtual address of data XXX */
+	caddr_t			 	vm_saddr;		/* user virtual address of stack XXX */
 	caddr_t 		 	vm_minsaddr;	/* user VA at min stack growth */
 	caddr_t 		 	vm_maxsaddr;	/* user VA at max stack growth */
 };

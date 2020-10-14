@@ -57,7 +57,8 @@ unsigned int
 		sg_u:1,			/* hardware modified (dirty) bit */
 		:8,				/* reserved at 0 */
 		:1,				/* reserved at 1 */
-		sg_pfnum:20;	/* page table frame number of pde's */
+		sg_pfnum:20,	/* page table frame number of pde's */
+		sg_ptaddr:24;	/* page table page addr */
 };
 
 struct pde {
@@ -101,7 +102,7 @@ typedef struct pte pt_entry_t;	/* page table entry */
 #define	SG_PROT		0x00000004	/* access protection mask */
 #define	SG_RO		0x00000004
 #define	SG_RW		0x00000000
-#define	SG_U		0x00000008	/* modified bit (68040) */
+#define	SG_U		0x00000008
 
 #define	SG_FRAME	0xfffff000
 #define	SG_IMASK	0xffc00000
@@ -188,9 +189,10 @@ typedef struct pv_entry {
 	struct pv_entry	*pv_next;	/* next pv_entry */
 	struct pmap		*pv_pmap;	/* pmap where mapping lies */
 	vm_offset_t		pv_va;		/* virtual address for mapping */
+	int				pv_flags;	/* flags */
+
 	struct ste		*pv_ptste;	/* non-zero if VA maps a PT page */
 	struct pmap		*pv_ptpmap;	/* if pv_ptste, pmap for PT page */
-	int				pv_flags;	/* flags */
 } *pv_entry_t;
 
 extern struct pte	PTmap[], APTmap[], Upte;

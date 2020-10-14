@@ -53,11 +53,24 @@ struct vm_segment {
 
 	vm_object_t					sg_object;				/* which object am I in (O,S)*/
 	vm_offset_t 				sg_offset;				/* offset into object (O,S) */
+	vm_size_t					sg_size;				/* size of segment */
 	int							sg_flags;				/* see below */
 
-	 int						sg_resident_page_count;	/* number of resident pages */
+	caddr_t						sg_addr;				/* segment addr */
+	int							sg_types;				/* see below (segment types) */
+
+	int							sg_resident_page_count;	/* number of resident pages */
 
 	vm_offset_t					sg_phys_addr;			/* physical address of segment */
+
+//	union {
+//		segsz_t 				sg_dsize;				/* data size */
+//		segsz_t 				sg_ssize;				/* stack size */
+//		segsz_t 				sg_tsize;				/* text size */
+//		caddr_t					sg_daddr;				/* virtual address of data */
+//		caddr_t					sg_saddr;				/* virtual address of stack */
+//		caddr_t					sg_taddr;				/* virtual address of text */
+//	} sg_segment;
 };
 
 /* flags */
@@ -70,12 +83,28 @@ struct vm_segment {
 #define	SEG_BUSY		0x020	/* segment is in transit (O) */
 #define	SEG_CLEAN		0x040	/* segment has not been modified */
 
+/* types */
+#define SEG_DATA		1		/* data segment */
+#define SEG_STACK		2		/* stack segment */
+#define SEG_TEXT		3		/* text segment */
+
+#define	VM_SEGMENT_CHECK(seg) { 											\
+	if ((((unsigned int) seg) < ((unsigned int) &vm_segment_array[0])) || 	\
+	    (((unsigned int) seg) > 											\
+		((unsigned int) &vm_segment_array[last_segment-first_segment])) || 	\
+	    ((seg->sg_flags & (SEG_ACTIVE | SEG_INACTIVE)) == 					\
+		(SEG_ACTIVE | SEG_INACTIVE))) 										\
+		panic("vm_segment_check: not valid!"); 								\
+}
+
 extern
-struct seglist  	vm_segment_list;
+struct seglist  	vm_segment_list;			/* free list */
 extern
 struct seglist		vm_segment_list_active;		/* active list */
 extern
 struct seglist		vm_segment_list_inactive;	/* inactive list */
+extern
+vm_segment_t		vm_segment_array;			/* First segment in table */
 
 extern
 long 				first_segment;				/* first physical segment number */
@@ -96,7 +125,7 @@ simple_lock_data_t	vm_segment_list_activity_lock;
 #define	VM_SEGMENT_INIT(seg, object, offset) { 			\
 	(seg)->sg_flags = SEG_BUSY | SEG_CLEAN | SEG_RW; 	\
 	vm_segment_insert((seg), (object), (offset)); 		\
-
+}
 
 void		 	vm_segment_activate(vm_segment_t);
 vm_segment_t 	vm_segment_alloc(vm_object_t, vm_offset_t);

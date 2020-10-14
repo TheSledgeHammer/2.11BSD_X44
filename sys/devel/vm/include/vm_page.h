@@ -144,19 +144,19 @@ struct vm_page {
 #define PQ_AOBJ			0x20		/* page is part of an anonymous uvm_object */
 
 #if	VM_PAGE_DEBUG
-#define	VM_PAGE_CHECK(mem) { \
-	if ((((unsigned int) mem) < ((unsigned int) &vm_page_array[0])) || \
-	    (((unsigned int) mem) > \
-		((unsigned int) &vm_page_array[last_page-first_page])) || \
-	    ((mem->flags & (PG_ACTIVE | PG_INACTIVE)) == \
-		(PG_ACTIVE | PG_INACTIVE))) \
-		panic("vm_page_check: not valid!"); \
+#define	VM_PAGE_CHECK(mem) { 											\
+	if ((((unsigned int) mem) < ((unsigned int) &vm_page_array[0])) || 	\
+	    (((unsigned int) mem) > 										\
+		((unsigned int) &vm_page_array[last_page-first_page])) || 		\
+	    ((mem->flags & (PG_ACTIVE | PG_INACTIVE)) == 					\
+		(PG_ACTIVE | PG_INACTIVE))) 									\
+		panic("vm_page_check: not valid!"); 							\
 }
 #else /* VM_PAGE_DEBUG */
 #define	VM_PAGE_CHECK(mem)
 #endif /* VM_PAGE_DEBUG */
 
-#ifdef KERNEL
+//#ifdef KERNEL
 /*
  *	Each pageable resident page falls into one of three lists:
  *
@@ -214,7 +214,7 @@ simple_lock_data_t	vm_page_queue_free_lock; 	/* lock on free page queue */
 #define PAGE_ASSERT_WAIT(m, interruptible)	{ 		\
 				(m)->flags |= PG_WANTED; 			\
 				assert_wait((m), (interruptible)); 	\
-			}
+}
 
 #define PAGE_WAKEUP(m)	{ 							\
 				(m)->flags &= ~PG_BUSY; 			\
@@ -222,14 +222,14 @@ simple_lock_data_t	vm_page_queue_free_lock; 	/* lock on free page queue */
 					(m)->flags &= ~PG_WANTED; 		\
 					thread_wakeup((m)); 			\
 				} 									\
-			}
+}
 
 #define	vm_page_lock_queues()	simple_lock(&vm_page_queue_lock)
 #define	vm_page_unlock_queues()	simple_unlock(&vm_page_queue_lock)
 
 #define vm_page_set_modified(m)	{ (m)->flags &= ~PG_CLEAN; }
 
-#define	VM_PAGE_INIT(mem, seg, offset) { 		\
+#define	VM_PAGE_INIT(mem, seg, offset) { 			\
 	(mem)->flags = PG_BUSY | PG_CLEAN | PG_FAKE; 	\
 	vm_page_insert((mem), (seg), (offset)); 		\
 	(mem)->wire_count = 0; 							\

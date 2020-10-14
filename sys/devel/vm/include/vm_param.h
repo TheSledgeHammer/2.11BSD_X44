@@ -75,14 +75,15 @@
  * This belongs in types.h, but breaks too many existing programs.
  */
 typedef int	boolean_t;
-typedef boolean_t bool;
-#define	TRUE	1
-#define	FALSE	0
+typedef boolean_t 	bool;
+#define	TRUE		1
+#define	FALSE		0
 
 /*
  *	The machine independent segments are referred to as SEGMENTS.
+ *	Note: All Segment information presented here is derived from 4.4BSD-Lite2 HP300.
  */
-#define	DEFAULT_SEGMENT_SIZE	36864					/* 36 kib segments (3 * segments per object) */
+#define	DEFAULT_SEGMENT_SIZE	4194304					/* 4 mib segments */
 
 #define SEGMENT_SIZE 			cnt.v_segment_size		/* size of segment */
 #define SEGMENT_MASK			segment_mask			/* size of segment - 1 */
@@ -93,23 +94,10 @@ extern int						segment_shift;
 #endif
 
 /*
- *	The machine independent pagetables are referred to as PAGETABLES.
- */
-#define	DEFAULT_PAGEDIRECTORY_SIZE	12228					/* 12 kib pagedirectory (3 * pagedirectory per segment) */
-
-#define PAGEDIRECTORY_SIZE 		cnt.v_pagedirectory_size	/* size of pagedirectory */
-#define PAGEDIRECTORY_MASK		pagedirectory_mask			/* size of pagedirectory - 1 */
-#define	PAGEDIRECTORY_SHIFT		pagedirectory_shift			/* bits to shift for pagedirectory */
-#ifdef KERNEL
-extern vm_size_t				pagedirectory_mask;
-extern int						pagedirectory_shift;
-#endif
-
-/*
  *	The machine independent pages are referred to as PAGES.  A page
  *	is some number of hardware pages, depending on the target machine.
  */
-#define	DEFAULT_PAGE_SIZE		4096					/* 4 kib pages per pagedirectory */
+#define	DEFAULT_PAGE_SIZE		4096					/* 4 kib pages per segment */
 
 /*
  *	All references to the size of a page should be done with PAGE_SIZE
@@ -180,17 +168,27 @@ extern int						page_shift;
 #define	KERN_NO_ACCESS			8
 
 #ifndef ASSEMBLER
+#ifdef KERNEL
+
 /*
- *	Convert addresses to segments / pages and vice versa.
+ *	Convert addresses to segments & pages and vice versa.
  *	No rounding is used.
  */
 
 #define atos(x)		(((unsigned long)(x)) >> SEGMENT_SHIFT)
 #define	stoa(x)		((vm_offset_t)((x) << SEGMENT_SHIFT))
-
-#ifdef KERNEL
 #define	atop(x)		(((unsigned long)(x)) >> PAGE_SHIFT)
 #define	ptoa(x)		((vm_offset_t)((x) << PAGE_SHIFT))
+
+/*
+ * Round off or truncate to the nearest segment.
+ */
+#define	round_segment(x) \
+	((vm_offset_t)((((vm_offset_t)(x)) + SEGMENT_MASK) & ~SEGMENT_MASK))
+#define	trunc_segment(x) \
+	((vm_offset_t)(((vm_offset_t)(x)) & ~SEGMENT_MASK))
+#define	num_segments(x) \
+	((vm_offset_t)((((vm_offset_t)(x)) + SEGMENT_MASK) >> SEGMENT_SHIFT))
 
 /*
  * Round off or truncate to the nearest page.  These will work
@@ -208,12 +206,16 @@ extern vm_offset_t	first_addr;	/* first physical page */
 extern vm_offset_t	last_addr;	/* last physical page */
 
 #else
-/* out-of-kernel versions of round_page and trunc_page */
+/* out-of-kernel versions of round_segment, trunc_segment, round_page & trunc_page */
 #define	round_page(x) \
-	((((vm_offset_t)(x) + (vm_page_size - 1)) / vm_page_size) * \
-	    vm_page_size)
+	((((vm_offset_t)(x) + (vm_page_size - 1)) / vm_page_size) * vm_page_size)
 #define	trunc_page(x) \
 	((((vm_offset_t)(x)) / vm_page_size) * vm_page_size)
+
+#define	round_segment(x) \
+	((((vm_offset_t)(x) + (vm_segment_size - 1)) / vm_segment_size) * vm_segment_size)
+#define	trunc_segment(x) \
+	((((vm_offset_t)(x)) / vm_segment_size) * vm_segment_size)
 
 #endif /* KERNEL */
 #endif /* ASSEMBLER */

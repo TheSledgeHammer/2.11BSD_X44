@@ -31,6 +31,13 @@ extern size_t physmem;
 extern struct mapent _coremap[];
 extern struct mapent _swapmap[];
 
+/*
+ * GOAL coremap (Revamped):
+ * The end goal for a revamped coremap is to place all relevant kernel memory mappings under
+ * the coremap array structure. This includes the current contents of vm_kern.h
+ * (i.e. buffer_map, exec_map, kernel_map, kmem_map, mb_map, & phys_map).
+ * This also includes updating rmap to make use of malloc flags & malloc types.
+ */
 struct map coremap[1] = {
 		.m_map 		= _coremap,
 		.m_limit 	= &_coremap[cmapsiz],

@@ -40,6 +40,8 @@ int					vm_segment_bucket_count = 0;	/* How big is array? */
 int					vm_segment_hash_mask;			/* Mask for hash function */
 simple_lock_data_t	vm_seg_bucket_lock;				/* lock for all buckets XXX */
 
+boolean_t 			vm_segment_startup_initialized;
+
 struct seglist		vm_segment_list;
 struct seglist		vm_segment_list_active;
 struct seglist		vm_segment_list_inactive;
@@ -115,11 +117,22 @@ vm_segment_startup(start, end)
 	first_phys_addr = stoa(first_segment);
 	last_phys_addr  = stoa(last_segment) + SEGMENT_MASK;
 
+	seg = vm_segment_array = (vm_segment_t)pmap_bootstrap_alloc(nsegments * sizeof(struct vm_segment));
+
 	/*
 	 *	Allocate and clear the mem entry structures.
 	 */
 
 	pa = first_phys_addr;
+	while (nsegments--) {
+		seg->sg_flags = 0;
+		seg->sg_object = NULL;
+		seg->sg_phys_addr = pa;
+		seg++;
+		pa += SEGMENT_SIZE;
+	}
+
+	vm_segment_startup_initialized = TRUE;
 }
 
 unsigned long
@@ -162,6 +175,8 @@ vm_segment_remove(segment)
 	register vm_segment_t 	segment;
 {
 	register struct seglist *bucket;
+
+	VM_SEGMENT_CHECK(segment);
 
 	if (!(segment->sg_flags & SEG_ALLOCATED)) {
 		return;
@@ -217,6 +232,8 @@ vm_segment_alloc(object, offset)
 	cnt.v_segment_count--;
 	simple_unlock(&vm_segment_list_activity_lock);
 
+	VM_SEGMENT_INIT(seg, object, offset)
+
 	return (seg);
 }
 
@@ -242,6 +259,8 @@ void
 vm_segment_deactivate(segment)
 	register vm_segment_t segment;
 {
+	VM_SEGMENT_CHECK(segment);
+
 	if(segment->sg_flags & SEG_ACTIVE) {
 		CIRCLEQ_REMOVE(&vm_segment_list_active, segment, sg_list);
 		CIRCLEQ_INSERT_TAIL(&vm_segment_list_inactive, segment, sg_list);
@@ -256,6 +275,8 @@ void
 vm_segment_activate(segment)
 	register vm_segment_t segment;
 {
+	VM_SEGMENT_CHECK(segment);
+
 	if(segment->sg_flags & SEG_INACTIVE) {
 		CIRCLEQ_REMOVE(&vm_segment_list_inactive, segment, sg_list);
 		cnt.v_segment_inactive_count--;
