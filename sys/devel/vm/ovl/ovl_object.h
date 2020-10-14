@@ -69,8 +69,11 @@
 #define _OVL_OBJECT_H_
 
 #include <devel/vm/ovl/ovl.h>
+//#include <devel/vm/ovl/ovl_segment.h>
 
 struct ovl_object {
+	struct ovseglist					ovo_ovseglist;		/* list of segments */
+
 	RB_ENTRY(ovl_object)				ovo_object_tree;	/* list of all objects */
 	u_long								ovo_index;
 	u_short								ovo_flags;			/* see below */
@@ -95,7 +98,7 @@ struct ovl_object_hash_entry {
 };
 typedef struct ovl_object_hash_entry	*ovl_object_hash_entry_t;
 
-#ifdef KERNEL
+//#ifdef KERNEL
 struct object_t;
 RB_HEAD(object_t, ovl_object);
 

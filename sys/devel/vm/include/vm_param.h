@@ -181,9 +181,13 @@ extern int						page_shift;
 
 #ifndef ASSEMBLER
 /*
- *	Convert addresses to pages and vice versa.
+ *	Convert addresses to segments / pages and vice versa.
  *	No rounding is used.
  */
+
+#define atos(x)		(((unsigned long)(x)) >> SEGMENT_SHIFT)
+#define	stoa(x)		((vm_offset_t)((x) << SEGMENT_SHIFT))
+
 #ifdef KERNEL
 #define	atop(x)		(((unsigned long)(x)) >> PAGE_SHIFT)
 #define	ptoa(x)		((vm_offset_t)((x) << PAGE_SHIFT))

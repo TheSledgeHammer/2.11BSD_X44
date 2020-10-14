@@ -36,6 +36,7 @@
  *	 	- page control; 	(PC)
  *	 	- directory control;(DC)
  */
+
 #ifndef _VM_SEGMENT_H_
 #define _VM_SEGMENT_H_
 
@@ -45,61 +46,65 @@
 struct seglist;
 CIRCLEQ_HEAD(seglist, vm_segment);
 struct vm_segment {
-	struct pdtree							sg_pdtable;		/* list of all page tables in segment */
+	struct pglist				sg_memq;				/* list of all pages in segment */
 
-	CIRCLEQ_ENTRY(vm_segment)				sg_list;
-	simple_lock_data_t 						sg_lock;
-	int										sg_flags;
-	vm_object_t								sg_object;
-	vm_offset_t 							sg_offset;
-	vm_size_t								sg_size;		/* segment size */
-	int 									sg_ref_count;
-	CIRCLEQ_ENTRY(vm_segment)				sg_cached_list;	/* for persistence */
+	CIRCLEQ_ENTRY(vm_segment)	sg_hlist;				/* hash table links (O) */
+	CIRCLEQ_ENTRY(vm_segment)	sg_list;				/* segments in same object (O) */
+
+	vm_object_t					sg_object;				/* which object am I in (O,S)*/
+	vm_offset_t 				sg_offset;				/* offset into object (O,S) */
+	int							sg_flags;				/* see below */
+
+	 int						sg_resident_page_count;	/* number of resident pages */
+
+	vm_offset_t					sg_phys_addr;			/* physical address of segment */
 };
 
 /* flags */
-#define SEG_ACTIVE		0x01
-#define SEG_INACTIVE	0x02
-#define SEG_RO			0x03	/* read-only */
-#define SEG_WO			0x04	/* write-only */
-#define SEG_RW			0x05	/* read-write */
-#define SEG_ALLOC		0x06
+#define SEG_ACTIVE		0x001	/* segment is active */
+#define SEG_INACTIVE	0x002	/* segment is inactive */
+#define SEG_RO			0x004	/* read-only */
+#define SEG_WO			0x006	/* write-only */
+#define SEG_RW			0x008	/* read-write */
+#define SEG_ALLOCATED	0x010	/* segment has been allocated */
+#define	SEG_BUSY		0x020	/* segment is in transit (O) */
+#define	SEG_CLEAN		0x040	/* segment has not been modified */
 
-CIRCLEQ_HEAD(vm_segment_hash_head, vm_segment_hash_entry);
-struct vm_segment_hash_entry {
-    CIRCLEQ_ENTRY(vm_segment_hash_entry)   	sge_hlinks;
-    vm_segment_t                      		sge_segment;
-};
-typedef struct vm_segment_hash_entry  		*vm_segment_hash_entry_t;
-
-//extern
+extern
 struct seglist  	vm_segment_list;
 extern
 struct seglist		vm_segment_list_active;		/* active list */
 extern
 struct seglist		vm_segment_list_inactive;	/* inactive list */
 
+extern
+long 				first_segment;				/* first physical segment number */
+
+extern
+long 				last_segment;				/* last physical segment number */
+
+extern
+vm_offset_t			first_phys_addr;			/* physical address for first_segment */
+extern
+vm_offset_t			last_phys_addr;				/* physical address for last_segment */
+
+extern
 simple_lock_data_t	vm_segment_list_lock;
+extern
+simple_lock_data_t	vm_segment_list_activity_lock;
 
-struct seglist  	vm_segment_cache_list;
-int					vm_segment_cached;			/* size of cached list */
-simple_lock_data_t	vm_segment_cache_lock;
-
-#define	vm_segment_cache_lock()			simple_lock(&vm_segment_cache_lock)
-#define	vm_segment_cache_unlock()		simple_unlock(&vm_segment_cache_lock)
-
-#define	vm_segment_lock_init(segment)	simple_lock_init(&(segment)->sg_lock)
-#define	vm_segment_lock(segment)		simple_lock(&(segment)->sg_lock)
-#define	vm_segment_unlock(segment)		simple_unlock(&(segment)->sg_lock)
-#define	vm_segment_lock_try(segment)	simple_lock_try(&(segment)->sg_lock)
-#define	vm_segment_sleep(event, segment, interruptible) \
-			thread_sleep((event), &(segment)->sg_lock, (interruptible))
-
-vm_pager_t		vm_segment_getpager(vm_segment_t);
-void			vm_segment_setpager(vm_segment_t, boolean_t);
-
-/* faults */
+#define	VM_SEGMENT_INIT(seg, object, offset) { 			\
+	(seg)->sg_flags = SEG_BUSY | SEG_CLEAN | SEG_RW; 	\
+	vm_segment_insert((seg), (object), (offset)); 		\
 
 
+void		 	vm_segment_activate(vm_segment_t);
+vm_segment_t 	vm_segment_alloc(vm_object_t, vm_offset_t);
+void			vm_segment_deactivate(vm_segment_t);
+void		 	vm_segment_free(vm_segment_t);
+void			vm_segment_insert(vm_segment_t, vm_object_t, vm_offset_t);
+void			vm_segment_remove(vm_segment_t);
+vm_segment_t	vm_segment_lookup(vm_object_t, vm_offset_t);
+void			vm_segment_startup(vm_offset_t, vm_offset_t);
 
 #endif /* VM_SEGMENT_H_ */

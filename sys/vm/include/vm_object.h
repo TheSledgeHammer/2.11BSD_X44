@@ -110,7 +110,7 @@ struct vm_object_hash_entry {
 };
 typedef struct vm_object_hash_entry	*vm_object_hash_entry_t;
 
-#ifdef	KERNEL
+//#ifdef	KERNEL
 TAILQ_HEAD(object_q, vm_object);
 
 struct object_q		vm_object_cached_list;	/* list of objects persisting */

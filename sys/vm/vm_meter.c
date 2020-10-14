@@ -40,6 +40,8 @@
 #include <sys/sysctl.h>
 #include <vm/include/vm.h>
 
+#define	MINFINITY	-32767			/* minus infinity */
+
 struct	loadavg averunnable;		/* load average, of runnable procs */
 
 int	maxslp = 	MAXSLP;
@@ -48,6 +50,9 @@ int	saferss = 	SAFERSS;
 void
 vmmeter()
 {
+	register u_short *cp, *rp;
+	register long *sp;
+
 	if (time.tv_sec % 5 == 0)
 		loadav(&averunnable);
 	if (proc0.p_slptime > maxslp/2)
@@ -170,7 +175,7 @@ vmtotal(totalp)
 	 * Mark all objects as inactive.
 	 */
 	simple_lock(&vm_object_list_lock);
-	for (object = vm_object_list.tqh_first; object != NULL; object = object->object_list.tqe_next)
+	for (object = TAILQ_FIRST(vm_object_list); object != NULL; object = TAILQ_NEXT(object, object_list))
 		object->flags &= ~OBJ_ACTIVE;
 	simple_unlock(&vm_object_list_lock);
 	/*
@@ -215,8 +220,7 @@ vmtotal(totalp)
 		 * the original, to catch just those cases.
 		 */
 		paging = 0;
-		for (map = &p->p_vmspace->vm_map, entry = map->header.next;
-		     entry != &map->header; entry = entry->next) {
+		for (map = &p->p_vmspace->vm_map, entry = map->header.next; entry != &map->header; entry = entry->next) {
 			if (entry->is_a_map || entry->is_sub_map ||
 			    (object = entry->object.vm_object) == NULL)
 				continue;
@@ -235,9 +239,7 @@ vmtotal(totalp)
 	 * Calculate object memory usage statistics.
 	 */
 	simple_lock(&vm_object_list_lock);
-	for (object = vm_object_list.tqh_first;
-	     object != NULL;
-	     object = object->object_list.tqe_next) {
+	for (object = TAILQ_FIRST(vm_object_list); object != NULL; object = TAILQ_NEXT(object, object_list)) {
 		totalp->t_vm += num_pages(object->size);
 		totalp->t_rm += object->resident_page_count;
 		if (object->flags & OBJ_ACTIVE) {

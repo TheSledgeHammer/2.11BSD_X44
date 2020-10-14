@@ -29,34 +29,47 @@
 #ifndef _OVL_SEGMENT_H_
 #define _OVL_SEGMENT_H_
 
+#include <devel/vm/ovl/ovl_object.h>
 #include <sys/queue.h>
 
 struct ovseglist;
 CIRCLEQ_HEAD(ovseglist, ovl_segment);
 struct ovl_segment {
-	CIRCLEQ_ENTRY(ovl_segment) 				ovsg_list;
+	struct pglist					ovsg_pglist; 	/* Pages in Resident memory */
 
-	int										ovsg_flags;
-	ovl_object_t							ovsg_object;
-	vm_offset_t 							ovsg_offset;
-	vm_size_t								ovsg_size;			/* segment size */
+	CIRCLEQ_ENTRY(ovl_segment) 		ovsg_hashlist;	/* hash table links (O) */
+	CIRCLEQ_ENTRY(ovl_segment) 		ovsg_seglist;	/* segments in same object (O) */
 
-	CIRCLEQ_ENTRY(ovl_segment)				ovsg_cached_list;	/* for persistence */
+	simple_lock_data_t 				ovsg_lock;
+
+	int								ovsg_flags;
+	ovl_object_t					ovsg_object;	/* which object am I in (O,S)*/
+	vm_offset_t 					ovsg_offset;	/* offset into object (O,S) */
+	int 							ovsg_ref_count;
+
+	vm_offset_t						ovsg_phys_addr;	/* physical address of segment */
 };
 
+/* flags */
+#define SEG_ACTIVE		0x01	/* segment is active */
+#define SEG_INACTIVE	0x02	/* segment is inactive */
+#define SEG_RO			0x03	/* read-only */
+#define SEG_WO			0x04	/* write-only */
+#define SEG_RW			0x05	/* read-write */
+#define SEG_ALLOCATED	0x06	/* allocated segment */
 
-CIRCLEQ_HEAD(ovl_segment_hash_head, ovl_segment_hash_entry);
-struct ovl_segment_hash_entry {
-    CIRCLEQ_ENTRY(ovl_segment_hash_entry)   ovsge_hlinks;
-    ovl_segment_t                      		ovsge_segment;
-};
-typedef struct ovl_segment_hash_entry  		*ovl_segment_hash_entry_t;
+extern
+struct ovseglist  	ovl_segment_list;
 
-struct ovseglist  ovl_segment_list;
-struct ovseglist  ovl_segment_cache_list;
+extern
+long 				first_segment;	/* first physical segment number */
 
+extern
+long 				last_segment;	/* last physical segment number */
 
-
-void ovl_segment_shadow();
+void				ovl_segment_insert(ovl_segment_t, ovl_object_t, vm_offset_t);
+void				ovl_segment_remove(ovl_segment_t);
+ovl_segment_t		ovl_segment_lookup(ovl_object_t, vm_offset_t);
+void				ovl_segment_init(vm_offset_t, vm_offset_t);
 
 #endif /* _OVL_SEGMENT_H_ */

@@ -35,16 +35,21 @@
 #include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_segment.h>
 
-struct vm_segment_hash_head  	*vm_segment_buckets;
-int								vm_segment_bucket_count = 0;	/* How big is array? */
-int								vm_segment_hash_mask;			/* Mask for hash function */
+struct seglist  	*vm_segment_buckets;
+int					vm_segment_bucket_count = 0;	/* How big is array? */
+int					vm_segment_hash_mask;			/* Mask for hash function */
+simple_lock_data_t	vm_seg_bucket_lock;				/* lock for all buckets XXX */
 
-vm_size_t						segment_mask;
-int								segment_shift;
+struct seglist		vm_segment_list;
+struct seglist		vm_segment_list_active;
+struct seglist		vm_segment_list_inactive;
+simple_lock_data_t	vm_segment_list_lock;
+simple_lock_data_t	vm_segment_list_activity_lock;
 
-//struct seglist	vm_segment_list;
-struct seglist					vm_segment_list_active;
-struct seglist					vm_segment_list_inactive;
+long				first_segment;
+long				last_segment;
+vm_size_t			segment_mask;
+int					segment_shift;
 
 void
 vm_set_segment_size()
@@ -60,13 +65,18 @@ vm_set_segment_size()
 }
 
 void
-vm_segment_init(start, end)
+vm_segment_startup(start, end)
 	vm_offset_t	*start;
 	vm_offset_t	*end;
 {
-	register int	i;
+	register vm_segment_t		seg;
+	register struct seglist		*bucket;
+	vm_size_t					nsegments;
+	int							i;
+	vm_offset_t					pa;
 
 	simple_lock_init(&vm_segment_list_lock);
+	simple_lock_init(&vm_segment_list_activity_lock);
 
 	CIRCLEQ_INIT(&vm_segment_list);
 	CIRCLEQ_INIT(&vm_segment_list_active);
@@ -74,63 +84,42 @@ vm_segment_init(start, end)
 
 	if (vm_segment_bucket_count == 0) {
 		vm_segment_bucket_count = 1;
-		while (vm_segment_bucket_count < atop(*end - *start))
+		while (vm_segment_bucket_count < atos(*end - *start))
 			vm_segment_bucket_count <<= 1;
 	}
 
 	vm_segment_hash_mask = vm_segment_bucket_count - 1;
 
+	//vm_segment_buckets =
+
 	for(i = 0; i < vm_segment_hash_mask; i++) {
 		CIRCLEQ_INIT(&vm_segment_buckets[i]);
 	}
-//	simple_lock_init(&bucket_lock);
-}
+	simple_lock_init(&vm_seg_bucket_lock);
 
-vm_segment_t
-vm_segment_allocate(size)
-	vm_size_t		size;
-{
-	register vm_segment_t result;
+	/*
+ 	 *	Compute the number of segments.
+	 */
+	cnt.v_segment_count = nsegments = (*end - *start + sizeof(struct vm_segment)) / (SEGMENT_SIZE + sizeof(struct vm_segment));
 
-	result = (vm_segment_t)malloc((u_long)sizeof(*result), M_VMSEG, M_WAITOK);
-	_vm_segment_allocate(size, result);
+	/*
+	 *	Record the extent of physical memory that the
+	 *	virtual memory system manages. taking into account the overhead
+	 *	of a segment structure per segment.
+	 */
+	first_segment = *start;
+	first_segment += nsegments*sizeof(struct vm_segment);
+	first_segment = atos(first_segment);
+	last_segment = first_segment + nsegments - 1;
 
-	return (result);
-}
+	first_phys_addr = stoa(first_segment);
+	last_phys_addr  = stoa(last_segment) + SEGMENT_MASK;
 
-void
-_vm_segment_allocate(size, segment)
-	vm_size_t				size;
-	register vm_segment_t 	segment;
-{
-	RB_INIT(segment->sg_pdtable);
+	/*
+	 *	Allocate and clear the mem entry structures.
+	 */
 
-	segment->sg_size = size;
-
-	if((size % 2) == 0) {
-		CIRCLEQ_INSERT_TAIL(&vm_segment_list, segment, sg_list);
-	} else {
-		CIRCLEQ_INSERT_HEAD(&vm_segment_list, segment, sg_list);
-	}
-}
-
-/*
- *	Set the specified object's pager to the specified pager.
- */
-void
-vm_segment_setpager(segment, read_only)
-	vm_segment_t 	segment;
-	boolean_t		read_only;
-{
-	register vm_object_t object;
-
-	vm_segment_lock(segment);
-	object = segment->sg_object;
-
-	if(object != NULL) {
-		vm_object_setpager(object, object->pager, object->paging_offset, read_only);
-	}
-	vm_segment_unlock(segment);
+	pa = first_phys_addr;
 }
 
 unsigned long
@@ -143,71 +132,71 @@ vm_segment_hash(object, offset)
     return (hash1^hash2);
 }
 
+void
+vm_segment_insert(segment, object, offset)
+	vm_segment_t 	segment;
+	vm_object_t		object;
+	vm_offset_t 	offset;
+{
+	register struct seglist *bucket;
+
+	if (segment->sg_flags & SEG_ALLOCATED) {
+		panic("vm_segment_insert: already inserted");
+	}
+
+	segment->sg_object = object;
+	segment->sg_offset = offset;
+
+	bucket = &vm_segment_buckets[vm_segment_hash(object, offset)];
+
+	simple_lock(&vm_seg_bucket_lock);
+	CIRCLEQ_INSERT_TAIL(bucket, segment, sg_hlist);
+	simple_unlock(&vm_seg_bucket_lock);
+
+	CIRCLEQ_INSERT_TAIL(&object->seglist, segment, sg_list);
+	segment->sg_flags |= SEG_ALLOCATED;
+}
+
+void
+vm_segment_remove(segment)
+	register vm_segment_t 	segment;
+{
+	register struct seglist *bucket;
+
+	if (!(segment->sg_flags & SEG_ALLOCATED)) {
+		return;
+	}
+
+	bucket = &vm_segment_buckets[vm_segment_hash(segment->sg_object, segment->sg_offset)];
+
+	simple_lock(&vm_seg_bucket_lock);
+	CIRCLEQ_REMOVE(bucket, segment, sg_hlist);
+	simple_unlock(&vm_seg_bucket_lock);
+
+	CIRCLEQ_REMOVE(&segment->sg_object->seglist, segment, sg_list);
+
+	segment->sg_flags &= ~SEG_ALLOCATED;
+}
 
 vm_segment_t
 vm_segment_lookup(object, offset)
 	vm_object_t	object;
 	vm_offset_t offset;
 {
-	register struct vm_segment_hash_head 	*bucket;
-	register vm_segment_hash_entry_t		entry;
-	vm_segment_t 							segment;
+	register struct seglist 	*bucket;
+	vm_segment_t 				segment;
 
 	bucket = &vm_segment_buckets[vm_segment_hash(object, offset)];
 
-	for(entry = CIRCLEQ_FIRST(bucket); entry != NULL; entry = CIRCLEQ_NEXT(entry, sge_hlinks)) {
-		if (segment->sg_ref_count == 0) {
-			CIRCLEQ_REMOVE(&vm_segment_cache_list, segment, sg_cached_list);
+	simple_lock(&vm_seg_bucket_lock);
+	for(segment = CIRCLEQ_FIRST(bucket); segment != NULL; segment = CIRCLEQ_NEXT(segment, sg_hlist)) {
+		if (segment->sg_object == object && segment->sg_offset == offset) {
+			simple_unlock(&vm_seg_bucket_lock);
+			return (segment);
 		}
-		segment->sg_ref_count++;
-		return (segment);
 	}
+	simple_unlock(&vm_seg_bucket_lock);
 	return (NULL);
-}
-
-void
-vm_segment_enter(segment, object, offset)
-	vm_segment_t 	segment;
-	vm_object_t		object;
-	vm_offset_t 	offset;
-{
-	register struct vm_segment_hash_head *bucket;
-	register vm_segment_hash_entry_t	 entry;
-
-	if(segment == NULL) {
-		return;
-	}
-
-	bucket = &vm_segment_buckets[vm_segment_hash(object, offset)];
-	entry = (vm_segment_hash_entry_t)malloc((u_long)sizeof *entry);
-	entry->sge_segment = segment;
-	segment->sg_flags = SEG_ALLOC;
-
-    if((vm_segment_hash(object, offset) % 2) == 0) {
-    	CIRCLEQ_INSERT_TAIL(bucket, entry, sge_hlinks);
-    } else {
-    	CIRCLEQ_INSERT_HEAD(bucket, entry, sge_hlinks);
-    }
-}
-
-void
-vm_segment_remove(object, offset)
-	vm_object_t 	object;
-	vm_offset_t 	offset;
-{
-	register struct vm_segment_hash_head 	*bucket;
-	register vm_segment_hash_entry_t		entry;
-	register vm_segment_t 					segment;
-
-	bucket = &vm_segment_buckets[vm_segment_hash(object, offset)];
-
-	for(entry = CIRCLEQ_FIRST(bucket); entry != NULL; entry = CIRCLEQ_NEXT(entry, sge_hlinks)) {
-		segment = entry->sge_segment;
-		if(segment->sg_object == object && segment->sg_offset == offset) {
-			CIRCLEQ_REMOVE(bucket, entry, sge_hlinks);
-			break;
-		}
-	}
 }
 
 vm_segment_t
@@ -217,16 +206,16 @@ vm_segment_alloc(object, offset)
 {
 	register vm_segment_t seg;
 
-	simple_lock(&vm_segment_list_lock);
+	simple_lock(&vm_segment_list_activity_lock);
 	if(CIRCLEQ_FIRST(&vm_segment_list) == NULL) {
-		simple_unlock(&vm_segment_list_lock);
+		simple_unlock(&vm_segment_list_activity_lock);
 		return (NULL);
 	}
 	seg = CIRCLEQ_FIRST(&vm_segment_list);
 	CIRCLEQ_REMOVE(&vm_segment_list, seg, sg_list);
 
-	cnt.v_seg_free_count--;
-	simple_unlock(&vm_segment_list_lock);
+	cnt.v_segment_count--;
+	simple_unlock(&vm_segment_list_activity_lock);
 
 	return (seg);
 }
@@ -240,16 +229,15 @@ vm_segment_free(object, segment)
 	if(segment->sg_flags & SEG_ACTIVE) {
 		CIRCLEQ_REMOVE(&vm_segment_list_active, segment, sg_list);
 		segment->sg_flags &= SEG_ACTIVE;
-		cnt.v_seg_active_count--;
+		cnt.v_segment_active_count--;
 	}
 	if(segment->sg_flags & SEG_INACTIVE) {
 		CIRCLEQ_REMOVE(&vm_segment_list_inactive, segment, sg_list);
 		segment->sg_flags &= SEG_INACTIVE;
-		cnt.v_seg_inactive_count--;
+		cnt.v_segment_inactive_count--;
 	}
 }
 
-/*XXX: separate segment & page active & inactive counters  */
 void
 vm_segment_deactivate(segment)
 	register vm_segment_t segment;
@@ -259,8 +247,8 @@ vm_segment_deactivate(segment)
 		CIRCLEQ_INSERT_TAIL(&vm_segment_list_inactive, segment, sg_list);
 		segment->sg_flags &= SEG_ACTIVE;
 		segment->sg_flags |= SEG_INACTIVE;
-		cnt.v_seg_active_count--;
-		cnt.v_seg_inactive_count++;
+		cnt.v_segment_active_count--;
+		cnt.v_segment_inactive_count++;
 	}
 }
 
@@ -270,10 +258,13 @@ vm_segment_activate(segment)
 {
 	if(segment->sg_flags & SEG_INACTIVE) {
 		CIRCLEQ_REMOVE(&vm_segment_list_inactive, segment, sg_list);
-		cnt.v_seg_inactive_count--;
+		cnt.v_segment_inactive_count--;
 		segment->sg_flags &= SEG_INACTIVE;
 	}
 	if(segment->sg_flags & SEG_ACTIVE) {
 		panic("vm_segment_activate: already active");
 	}
+	CIRCLEQ_INSERT_TAIL(&vm_segment_list_active, segment, sg_list);
+	segment->sg_flags |= SEG_ACTIVE;
+	cnt.v_segment_active_count++;
 }

@@ -60,6 +60,13 @@ struct vmrate
 	unsigned 	v_active_count;		/* number of pages active */
 	unsigned 	v_inactive_target; 	/* number of pages desired inactive */
 	unsigned 	v_inactive_count;  	/* number of pages inactive */
+
+	/* Distribution of segment usages */
+//	unsigned 	v_segment_size;				/* segment size in bytes */
+//	unsigned 	v_kernel_segments;			/* total number of segments in system */
+//	unsigned 	v_segment_count;			/* number of segments */
+//	unsigned 	v_segment_active_count;		/* number of segments active */
+//	unsigned 	v_segment_inactive_count;  	/* number of segments inactive */
 };
 #define	v_first	v_swtch
 #define	v_last	v_pswpout

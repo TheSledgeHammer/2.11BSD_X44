@@ -72,7 +72,7 @@
 #include <sys/fnv_hash.h>
 
 #include <devel/vm/include/vm_object.h>
-#include <vm/include/vm_page.h>
+#include <devel/vm/include/vm_page.h>
 #include <devel/vm/include/vm.h>
 
 /*
@@ -346,8 +346,8 @@ vm_object_terminate(object)
 	 *
 	 * XXX need to do something in the event of a cleaning error.
 	 */
-	//if ((object->flags & OBJ_INTERNAL) == 0)
-	//	(void) vm_object_page_clean(object, 0, 0, TRUE, TRUE);
+	if ((object->flags & OBJ_INTERNAL) == 0)
+		(void) vm_object_page_clean(object, 0, 0, TRUE, TRUE);
 
 	/*
 	 * Now free the pages.

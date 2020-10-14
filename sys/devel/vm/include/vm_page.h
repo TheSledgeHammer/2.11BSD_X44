@@ -100,11 +100,12 @@ struct pglist;
 TAILQ_HEAD(pglist, vm_page);
 struct vm_page {
 	TAILQ_ENTRY(vm_page)	pageq;		/* queue info for FIFO queue or free list (P) */
-	TAILQ_ENTRY(vm_page)	hashq;		/* hash table links (O)*/
-	TAILQ_ENTRY(vm_page)	listq;		/* pages in same object (O)*/
+	TAILQ_ENTRY(vm_page)	hashq;		/* hash table links (S)*/
+	TAILQ_ENTRY(vm_page)	listq;		/* pages in same segment (S)*/
 
-	vm_pagedirectory_t		pdtable;	/* which page directory am I in (PT,P)*/
-	vm_offset_t				offset;		/* offset into page table (O,P) */
+	vm_segment_t			segment;	/* which segment am I in (O,S,P)*/
+	//vm_pagedirectory_t		pdtable;	/* which page directory am I in (S,P)*/
+	vm_offset_t				offset;		/* offset into segment (O,S,P) */
 
 	avm_anon_t				anon;		/* anon (O,P) */
 	u_short					loan_count;
@@ -135,7 +136,7 @@ struct vm_page {
 #define	PG_DIRTY		0x0800		/* client flag to set when dirty */
 #define	PG_PAGEROWNED	0x4000		/* DEBUG: async paging op in progress */
 
-#define	PG_PDPAGE		0x8000		/* DEBUG: is a user page directory page */
+#define	PG_SEGPAGE		0x8000		/* DEBUG: is a user segment page */
 
 #define	PG_RELEASED		0x00000020	/* page to be freed when unbusied */
 
@@ -228,21 +229,21 @@ simple_lock_data_t	vm_page_queue_free_lock; 	/* lock on free page queue */
 
 #define vm_page_set_modified(m)	{ (m)->flags &= ~PG_CLEAN; }
 
-#define	VM_PAGE_INIT(mem, pdable, offset) { 		\
+#define	VM_PAGE_INIT(mem, seg, offset) { 		\
 	(mem)->flags = PG_BUSY | PG_CLEAN | PG_FAKE; 	\
-	vm_page_insert((mem), (pdable), (offset)); 		\
+	vm_page_insert((mem), (seg), (offset)); 		\
 	(mem)->wire_count = 0; 							\
 }
 
 void		 vm_page_activate (vm_page_t);
-vm_page_t	 vm_page_alloc (vm_object_t, vm_offset_t);
+vm_page_t	 vm_page_alloc (vm_segment_t, vm_offset_t);
 void		 vm_page_copy (vm_page_t, vm_page_t);
 void		 vm_page_deactivate (vm_page_t);
 void		 vm_page_free (vm_page_t);
-void		 vm_page_insert (vm_page_t, vm_object_t, vm_offset_t);
-vm_page_t	 vm_page_lookup (vm_object_t, vm_offset_t);
+void		 vm_page_insert (vm_page_t, vm_segment_t, vm_offset_t);
+vm_page_t	 vm_page_lookup (vm_segment_t, vm_offset_t);
 void		 vm_page_remove (vm_page_t);
-void		 vm_page_rename (vm_page_t, vm_object_t, vm_offset_t);
+void		 vm_page_rename (vm_page_t, vm_segment_t, vm_offset_t);
 void		 vm_page_startup (vm_offset_t *, vm_offset_t *);
 void		 vm_page_unwire (vm_page_t);
 void		 vm_page_wire (vm_page_t);

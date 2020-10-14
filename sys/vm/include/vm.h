@@ -66,6 +66,7 @@ typedef struct pager_struct *vm_pager_t;
 #include <sys/lock.h>
 #include <sys/queue.h>
 #include <sys/user.h>
+#include <sys/vmmac.h>
 #include <sys/vmmeter.h>
 
 #include <vm/include/vm_param.h>
