@@ -32,8 +32,6 @@
 
 #include <vm_extent.h>
 
-struct vm_slab slabbuckets[MINBUCKET + 16];
-
 struct extent *
 vm_extent_create(ex, name, start, end, mtype, storage, storagesize, flags)
 	struct extent *ex;
@@ -91,6 +89,7 @@ vm_extent_print(ex)
 	extent_print(ex);
 }
 
+struct vm_slab slabbuckets[MINBUCKET + 16];
 
 vm_slab_allocate(cache)
 	register struct vm_slab_cache *cache;

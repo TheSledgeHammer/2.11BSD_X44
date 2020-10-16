@@ -73,6 +73,7 @@
 
 #include <devel/vm/include/vm_object.h>
 #include <devel/vm/include/vm_page.h>
+#include <devel/vm/include/vm_segment.h>
 #include <devel/vm/include/vm.h>
 
 /*
@@ -181,7 +182,7 @@ _vm_object_allocate(size, object)
 	CIRCLEQ_INIT(&object->seglist);
 	vm_object_lock_init(object);
 	object->ref_count = 1;
-	//object->resident_segment_count = 0;
+	object->resident_segment_count = 0;
 	object->size = size;
 	object->flags = OBJ_INTERNAL;	/* vm_allocate_with_segment will reset */
 	object->copy = NULL;
@@ -191,7 +192,7 @@ _vm_object_allocate(size, object)
 	 */
 
 	object->pager = NULL;
-	//object->segment_offset = 0;
+	object->segment_offset = 0;
 	object->shadow = NULL;
 	object->shadow_offset = (vm_offset_t) 0;
 
@@ -325,7 +326,7 @@ vm_object_terminate(object)
 	/*
 	 * Wait until the pageout daemon is through with the object.
 	 */
-	while (object->segment_active) {
+	while (object->paging_in_progress) {
 		vm_object_sleep(object, object, FALSE);
 		vm_object_lock(object);
 	}
@@ -340,20 +341,22 @@ vm_object_terminate(object)
 		(void) vm_object_page_clean(object, 0, 0, TRUE, TRUE);
 
 	/*
-	 * Now free the pages.
+	 * Now free the pages & segments.
 	 * For internal objects, this also removes them from paging queues.
 	 */
 	while ((seg = CIRCLEQ_FIRST(object->seglist)) != NULL) {
 		VM_SEGMENT_CHECK(seg);
-		if(object == seg->sg_object && seg != NULL) {
-			while((page = TAILQ_FIRST(seg->sg_memq)) != NULL) {
-				VM_PAGE_CHECK(page);
-				vm_page_lock_queues();
-				vm_page_free(page);
-				cnt.v_pfree++;
-				vm_page_unlock_queues();
-			}
+		vm_segment_lock_list();
+		while ((page = TAILQ_FIRST(seg->sg_memq)) != NULL) {
+			VM_PAGE_CHECK(page);
+			vm_page_lock_queues();
+			vm_page_free(page);
+			cnt.v_pfree++;
+			vm_page_unlock_queues();
 		}
+		vm_segment_free(seg);
+		cnt.v_segment_free++;
+		vm_segment_unlock_list();
 	}
 	vm_object_unlock(object);
 
@@ -376,6 +379,139 @@ vm_object_terminate(object)
 }
 
 /*
+ *	vm_object_page_clean
+ *
+ *	Clean all dirty pages in the specified range of object.
+ *	If syncio is TRUE, page cleaning is done synchronously.
+ *	If de_queue is TRUE, pages are removed from any paging queue
+ *	they were on, otherwise they are left on whatever queue they
+ *	were on before the cleaning operation began.
+ *
+ *	Odd semantics: if start == end, we clean everything.
+ *
+ *	The object must be locked.
+ *
+ *	Returns TRUE if all was well, FALSE if there was a pager error
+ *	somewhere.  We attempt to clean (and dequeue) all pages regardless
+ *	of where an error occurs.
+ */
+boolean_t
+vm_object_page_clean(object, start, end, syncio, de_queue)
+	register vm_object_t	object;
+	register vm_offset_t	start;
+	register vm_offset_t	end;
+	boolean_t				syncio;
+	boolean_t				de_queue;
+{
+	register vm_segment_t	segment;
+	register vm_page_t		page;
+	int onqueue;
+	boolean_t noerror = TRUE;
+
+	if (object == NULL)
+		return (TRUE);
+
+	/*
+	 * If it is an internal object and there is no pager, attempt to
+	 * allocate one.  Note that vm_object_collapse may relocate one
+	 * from a collapsed object so we must recheck afterward.
+	 */
+	if ((object->flags & OBJ_INTERNAL) && object->pager == NULL) {
+		vm_object_collapse(object);
+		if (object->pager == NULL) {
+			vm_pager_t pager;
+
+			vm_object_unlock(object);
+			pager = vm_pager_allocate(PG_DFLT, (caddr_t) 0, object->size, VM_PROT_ALL, (vm_offset_t) 0);
+			if (pager)
+				vm_object_setpager(object, pager, 0, FALSE);
+			vm_object_lock(object);
+		}
+	}
+	if (object->pager == NULL)
+		return (FALSE);
+
+	again:
+	/*
+	 * Wait until the pageout daemon is through with the object.
+	 */
+	while (object->paging_in_progress) {
+		vm_object_sleep(object, object, FALSE);
+		vm_object_lock(object);
+	}
+	/*
+	 * Loop through the object page list cleaning as necessary.
+	 */
+	for (page = TAILQ_FIRST(segment->sg_memq); page != NULL; page = TAILQ_NEXT(page, listq)) {
+		if ((start == end || (page->offset >= start && page->offset < end)) && !(page->flags & PG_FICTITIOUS)) {
+			if ((page->flags & PG_CLEAN) && pmap_is_modified(VM_PAGE_TO_PHYS(page)))
+				page->flags &= ~PG_CLEAN;
+			/*
+			 * Remove the page from any paging queue.
+			 * This needs to be done if either we have been
+			 * explicitly asked to do so or it is about to
+			 * be cleaned (see comment below).
+			 */
+			if (de_queue || !(page->flags & PG_CLEAN)) {
+				vm_page_lock_queues();
+				if (page->flags & PG_ACTIVE) {
+					TAILQ_REMOVE(&vm_page_queue_active, page, pageq);
+					page->flags &= ~PG_ACTIVE;
+					cnt.v_active_count--;
+					onqueue = 1;
+				} else if (page->flags & PG_INACTIVE) {
+					TAILQ_REMOVE(&vm_page_queue_inactive, page, pageq);
+					page->flags &= ~PG_INACTIVE;
+					cnt.v_inactive_count--;
+					onqueue = -1;
+				} else
+					onqueue = 0;
+				vm_page_unlock_queues();
+			}
+			/*
+			 * To ensure the state of the page doesn't change
+			 * during the clean operation we do two things.
+			 * First we set the busy bit and write-protect all
+			 * mappings to ensure that write accesses to the
+			 * page block (in vm_fault).  Second, we remove
+			 * the page from any paging queue to foil the
+			 * pageout daemon (vm_pageout_scan).
+			 */
+			pmap_page_protect(VM_PAGE_TO_PHYS(page), VM_PROT_READ);
+			if (!(page->flags & PG_CLEAN)) {
+				page->flags |= PG_BUSY;
+				object->paging_in_progress++;
+				vm_object_unlock(object);
+				/*
+				 * XXX if put fails we mark the page as
+				 * clean to avoid an infinite loop.
+				 * Will loose changes to the page.
+				 */
+				if (vm_pager_put(object->pager, page, syncio)) {
+					printf("%s: pager_put error\n", "vm_object_page_clean");
+					page->flags |= PG_CLEAN;
+					noerror = FALSE;
+				}
+				vm_object_lock(object);
+				object->paging_in_progress--;
+				if (!de_queue && onqueue) {
+					vm_page_lock_queues();
+					if (onqueue > 0)
+						vm_page_activate(page);
+					else
+						vm_page_deactivate(page);
+					vm_page_unlock_queues();
+				}
+				page->flags &= ~PG_BUSY;
+				PAGE_WAKEUP(page);
+				goto again;
+			}
+		}
+	}
+	return (noerror);
+}
+
+/*
  *	vm_object_deactivate_pages
  *
  *	Deactivate all pages in the specified object.  (Keep its pages
@@ -387,12 +523,12 @@ void
 vm_object_deactivate_pages(object)
 	register vm_object_t	object;
 {
-	register vm_segment_t 	seg;
+	register vm_segment_t 	segment;
 	register vm_page_t		page;
 
-	for(seg = CIRCLEQ_FIRST(object->seglist); seg != NULL; seg = CIRCLEQ_NEXT(seg, sg_list)) {
-		if(seg->sg_object == object && seg != NULL) {
-			for(page = TAILQ_FIRST(seg->sg_memq); page != NULL; page = TAILQ_NEXT(page, listq)) {
+	for(segment = CIRCLEQ_FIRST(object->seglist); segment != NULL; segment = CIRCLEQ_NEXT(segment, sg_list)) {
+		if(segment->sg_object == object && segment->sg_memq != NULL) {
+			for(page = TAILQ_FIRST(segment->sg_memq); page != NULL; page = TAILQ_NEXT(page, listq)) {
 				vm_page_lock_queues();
 				vm_page_deactivate(page);
 				vm_page_unlock_queues();
@@ -727,7 +863,7 @@ vm_object_collapse(object)
 	register vm_offset_t	backing_offset;
 	register vm_size_t		size;
 	register vm_offset_t	new_offset;
-	register vm_segment_t	s, ss;
+	register vm_segment_t	segment;
 	register vm_page_t		p, pp;
 
 	if (!vm_object_collapse_allowed)
@@ -804,8 +940,8 @@ vm_object_collapse(object)
 			 *	will be overwritten by any of the parent's
 			 *	pages that shadow them.
 			 */
-			while ((s = CIRCLEQ_FIRST(backing_object->seglist)) != NULL) {
-				if(s->sg_object == backing_object) {
+			while ((segment = CIRCLEQ_FIRST(backing_object->seglist)) != NULL) {
+				if(segment->sg_object == backing_object) {
 					while ((p = TAILQ_FIRST(backing_object->memq)) != NULL) {
 						new_offset = (p->offset - backing_offset);
 
@@ -822,7 +958,7 @@ vm_object_collapse(object)
 							vm_page_free(p);
 							vm_page_unlock_queues();
 						} else {
-							pp = vm_page_lookup(object, new_offset);
+							pp = vm_page_lookup(segment, new_offset);
 							if (pp != NULL && !(pp->flags & PG_FAKE)) {
 								vm_page_lock_queues();
 								vm_page_free(p);
@@ -835,7 +971,7 @@ vm_object_collapse(object)
 									vm_page_free(pp);
 									vm_page_unlock_queues();
 								}
-								vm_page_rename(p, object, new_offset);
+								vm_page_rename(p, segment, new_offset);
 							}
 						}
 					}
@@ -907,8 +1043,8 @@ vm_object_collapse(object)
 			 *	Should have a check for a 'small' number
 			 *	of pages here.
 			 */
-			for(s = CIRCLEQ_FIRST(backing_object->seglist); s != NULL; s = CIRCLEQ_NEXT(s, sg_list)) {
-				for (p = TAILQ_FIRST(s->sg_memq); p != NULL; p = TAILQ_NEXT(p, listq)) {
+			for(segment = CIRCLEQ_FIRST(backing_object->seglist); segment != NULL; segment = CIRCLEQ_NEXT(segment, sg_list)) {
+				for (p = TAILQ_FIRST(segment->sg_memq); p != NULL; p = TAILQ_NEXT(p, listq)) {
 					new_offset = (p->offset - backing_offset);
 					/*
 					 *	If the parent has a page here, or if
@@ -919,7 +1055,7 @@ vm_object_collapse(object)
 					 *	left in the chain.
 					 */
 
-					if (p->offset >= backing_offset && new_offset < size && ((pp = vm_page_lookup(object, new_offset)) == NULL
+					if (p->offset >= backing_offset && new_offset < size && ((pp = vm_page_lookup(segment, new_offset)) == NULL
 									|| (pp->flags & PG_FAKE))) {
 						/*
 						 *	Page still needed.
@@ -968,6 +1104,36 @@ vm_object_collapse(object)
 }
 
 /*
+ *	vm_object_segment_page_remove: [internal]
+ *
+ *	Removes all physical pages in the specified
+ *	segment from the segments's list of pages.
+ *
+ *	The object must be locked.
+ */
+void
+vm_object_segment_page_remove(segment, start, end)
+	register vm_segment_t 	segment;
+	register vm_offset_t	start;
+	register vm_offset_t	end;
+{
+	register vm_page_t		page;
+
+	if(segment == NULL) {
+		return;
+	}
+
+	for (page = TAILQ_FIRST(segment->sg_memq); page != NULL; page =	TAILQ_NEXT(page, listq)) {
+		if ((start <= page->offset) && (page->offset < end)) {
+			pmap_page_protect(VM_PAGE_TO_PHYS(page), VM_PROT_NONE);
+			vm_page_lock_queues();
+			vm_page_free(page);
+			vm_page_unlock_queues();
+		}
+	}
+}
+
+/*
  *	vm_object_page_remove: [internal]
  *
  *	Removes all physical pages in the specified
@@ -981,20 +1147,43 @@ vm_object_page_remove(object, start, end)
 	register vm_offset_t	start;
 	register vm_offset_t	end;
 {
-	register vm_segment_t 	seg;
-	register vm_page_t		page;
+	register vm_segment_t 	segment;
 
 	if (object == NULL)
 		return;
-	for (seg = CIRCLEQ_FIRST(object->seglist); seg != NULL;	seg = CIRCLEQ_NEXT(seg, sg_list)) {
-		if (seg->sg_object == object && seg != NULL) {
-			for (page = TAILQ_FIRST(seg->sg_memq); page != NULL; page =	TAILQ_NEXT(page, listq)) {
-				if ((start <= page->offset) && (page->offset < end)) {
-					pmap_page_protect(VM_PAGE_TO_PHYS(page), VM_PROT_NONE);
-					vm_page_lock_queues();
-					vm_page_free(page);
-					vm_page_unlock_queues();
-				}
+
+	for (segment = CIRCLEQ_FIRST(object->seglist); segment != NULL;	segment = CIRCLEQ_NEXT(segment, sg_list)) {
+		if ((start <= segment->sg_offset) && (segment->sg_offset < end)) {
+			vm_object_segment_page_remove(segment, start, end);
+		}
+	}
+}
+
+/*
+ *	vm_object_segment_remove: [internal]
+ *
+ *	Removes all segments in the specified
+ *	object range from the object's list of segments.
+ *
+ *	The object must be locked.
+ */
+void
+vm_object_segment_remove(object, start, end)
+	register vm_object_t	object;
+	register vm_offset_t	start;
+	register vm_offset_t	end;
+{
+	register vm_segment_t 	segment;
+
+	if (object == NULL)
+		return;
+
+	for (segment = CIRCLEQ_FIRST(object->seglist); segment != NULL; segment = CIRCLEQ_NEXT(segment, sg_list)) {
+		if ((start <= segment->sg_offset) && (segment->sg_offset < end)) {
+			if (segment->sg_memq == NULL) {
+				vm_segment_lock_lists();
+				vm_segment_free(segment);
+				vm_segment_unlock_lists();
 			}
 		}
 	}
@@ -1023,14 +1212,12 @@ vm_object_page_remove(object, start, end)
  *	The object must *not* be locked.
  */
 boolean_t
-vm_object_coalesce(prev_object, next_object,
-			prev_offset, next_offset,
-			prev_size, next_size)
+vm_object_coalesce(prev_object, next_object, prev_offset, next_offset, prev_size, next_size)
 
 	register vm_object_t	prev_object;
-	vm_object_t	next_object;
-	vm_offset_t	prev_offset, next_offset;
-	vm_size_t	prev_size, next_size;
+	vm_object_t				next_object;
+	vm_offset_t				prev_offset, next_offset;
+	vm_size_t				prev_size, next_size;
 {
 	vm_size_t newsize;
 

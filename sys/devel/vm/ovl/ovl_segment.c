@@ -39,25 +39,10 @@
 struct ovseglist	*ovl_segment_buckets;
 int					ovl_segment_bucket_count = 0;	/* How big is array? */
 int					ovl_segment_hash_mask;			/* Mask for hash function */
-simple_lock_data_t	ovl_bucket_lock;				/* lock for all buckets XXX */
+simple_lock_data_t	ovl_segment_bucket_lock;		/* lock for all segment buckets XXX */
 
 struct ovseglist  	ovl_segment_list;
 simple_lock_data_t	ovl_segment_list_lock;
-vm_size_t			segment_mask;
-int					segment_shift;
-
-void
-ovl_set_segment_size()
-{
-	if (cnt.v_segment_size == 0)
-		cnt.v_segment_size = DEFAULT_SEGMENT_SIZE;
-	segment_mask = cnt.v_segment_size - 1;
-	if ((segment_mask & cnt.v_segment_size) != 0)
-		panic("vm_set_segment_size: segment size not a power of two");
-	for (segment_shift = 0;; segment_shift++)
-		if ((1 << segment_shift) == cnt.v_segment_size)
-			break;
-}
 
 void
 ovl_segment_init(start, end)
@@ -81,7 +66,7 @@ ovl_segment_init(start, end)
 	for(i = 0; i < ovl_segment_hash_mask; i++) {
 		CIRCLEQ_INIT(&ovl_segment_buckets[i]);
 	}
-	simple_lock_init(&ovl_bucket_lock);
+	simple_lock_init(&ovl_segment_bucket_lock);
 }
 
 unsigned long
@@ -114,9 +99,9 @@ ovl_segment_insert(segment, object, offset)
 
 	bucket = &vm_segment_buckets[vm_segment_hash(object, offset)];
 
-	simple_lock(&ovl_bucket_lock);
+	simple_lock(&ovl_segment_bucket_lock);
 	CIRCLEQ_INSERT_TAIL(bucket, segment, ovsg_hashlist);
-    simple_unlock(&ovl_bucket_lock);
+    simple_unlock(&ovl_segment_bucket_lock);
 
     CIRCLEQ_INSERT_TAIL(&object->ovo_ovseglist, segment, ovsg_seglist);
     segment->ovsg_flags |= SEG_ALLOCATED;
@@ -134,9 +119,9 @@ ovl_segment_remove(segment)
 
 	bucket = &vm_segment_buckets[vm_segment_hash(segment->ovsg_object, segment->ovsg_offset)];
 
-	simple_lock(&ovl_bucket_lock);
+	simple_lock(&ovl_segment_bucket_lock);
 	CIRCLEQ_REMOVE(bucket, segment, ovsg_hashlist);
-	simple_unlock(&ovl_bucket_lock);
+	simple_unlock(&ovl_segment_bucket_lock);
 
 	CIRCLEQ_REMOVE(&segment->ovsg_object->ovo_ovseglist, segment, ovsg_seglist);
 
@@ -153,14 +138,14 @@ ovl_segment_lookup(object, offset)
 
 	bucket = &vm_segment_buckets[vm_segment_hash(object, offset)];
 
-	simple_lock(&ovl_bucket_lock);
+	simple_lock(&ovl_segment_bucket_lock);
 	for(segment = CIRCLEQ_FIRST(bucket); segment != NULL; segment = CIRCLEQ_NEXT(segment, ovsg_hashlist)) {
 		if(segment->ovsg_object == object && segment->ovsg_offset == offset) {
-			simple_unlock(&ovl_bucket_lock);
+			simple_unlock(&ovl_segment_bucket_lock);
 			return (segment);
 		}
 	}
-	simple_unlock(&ovl_bucket_lock);
+	simple_unlock(&ovl_segment_bucket_lock);
 	return (NULL);
 }
 

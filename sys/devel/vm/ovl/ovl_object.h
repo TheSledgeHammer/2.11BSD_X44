@@ -69,12 +69,12 @@
 #define _OVL_OBJECT_H_
 
 #include <devel/vm/ovl/ovl.h>
-//#include <devel/vm/ovl/ovl_segment.h>
 
 struct ovl_object {
 	struct ovseglist					ovo_ovseglist;		/* list of segments */
 
 	RB_ENTRY(ovl_object)				ovo_object_tree;	/* list of all objects */
+
 	u_long								ovo_index;
 	u_short								ovo_flags;			/* see below */
 	simple_lock_data_t					ovo_lock;			/* Synchronization */
@@ -116,7 +116,7 @@ ovl_object_t		vm_ovl_object;			/* single vm overlay object */
 
 #define	ovl_object_cache_lock()			simple_lock(&ovl_cache_lock)
 #define	ovl_object_cache_unlock()		simple_unlock(&ovl_cache_lock)
-#endif /* KERNEL */
+//#endif /* KERNEL */
 
 #define	ovl_object_lock_init(object)	simple_lock_init(&(object)->ovo_lock)
 #define	ovl_object_lock(object)			simple_lock(&(object)->ovo_lock)
@@ -137,17 +137,10 @@ void		 	ovl_object_reference (ovl_object_t);
 void			ovl_object_remove(u_long);
 void		 	ovl_object_terminate (ovl_object_t);
 
-void		 	ovl_object_collapse (ovl_object_t);
 void		 	ovl_object_copy_vm_object (ovl_object_t, vm_offset_t, vm_size_t, vm_object_t *, vm_offset_t *, boolean_t *);
 void		 	ovl_object_copy_avm_object (ovl_object_t, vm_offset_t, vm_size_t, avm_object_t *, vm_offset_t *, boolean_t *);
 void			ovl_object_copy_to();
 void			ovl_object_copy_from();
-void			ovl_object_shadow(ovl_object_t *, vm_offset_t *, vm_size_t);
-/* Place in segment? */
-void			ovl_object_coalesce_segment();
-void			ovl_object_split_segment();
-void			ovl_object_shrink_segment();
-void			ovl_object_expand_segment();
 
 //#endif /* KERNEL */
 #endif /* _OVL_OBJECT_H_ */

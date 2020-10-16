@@ -47,7 +47,6 @@ struct ovlstats 		ovlstats[M_LAST];
 struct ovlusage 		*vovlusage;
 char 					*vovlbase, *vovllimit;
 
-
 void
 voverlay_init()
 {

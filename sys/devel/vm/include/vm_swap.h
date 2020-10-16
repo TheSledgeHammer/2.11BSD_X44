@@ -30,10 +30,10 @@
  * from: Id: uvm_swap.h,v 1.1.2.6 1997/12/15 05:39:31 mrg Exp
  */
 
-#ifndef _UVM_UVM_SWAP_H_
-#define _UVM_UVM_SWAP_H_
+#ifndef _VM_SWAP_H_
+#define _VM_SWAP_H_
 
-#include <devel/vm/include/swap_pager.h>
+#include <vm/include/swap_pager.h>
 
 /*
  * swapdev: describes a single swap partition/file
@@ -154,4 +154,4 @@ void		vm_swap_stats (int, struct swapent *, int, register_t *);
 
 #endif /* _KERNEL */
 
-#endif /* _UVM_UVM_SWAP_H_ */
+#endif /* _VM_SWAP_H_ */

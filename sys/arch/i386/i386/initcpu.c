@@ -92,15 +92,6 @@ char 	version[];
 int		cpu_class;
 
 /*
- * -1: automatic (default)
- *  0: keep enable CLFLUSH
- *  1: force disable CLFLUSH
- */
-static int	hw_clflush_disable = -1;
-
-u_int	cyrix_did;		/* Device ID of Cyrix CPU */
-
-/*
  * Note: these are just the ones that may not have a cpuid instruction.
  * We deal with the rest in a different way.
  */

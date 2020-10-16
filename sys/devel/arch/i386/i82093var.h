@@ -31,8 +31,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
-
 /*
  * Copyright (c) 1999 Stefan Grefen
  *
@@ -94,6 +92,7 @@ struct ioapic_softc {
 	struct ioapic_pin	*sc_pins;			/* sc_apic_sz entries */
 
 	lock_t				sc_lock;
+	struct device		*sc_dev;
 };
 
 /*

@@ -13,16 +13,23 @@ struct cpu_info;
  * Structure common to all PIC softcs
  */
 struct pic {
-	struct device pic_dev;
-	int pic_type;
-	struct lock pic_lock;
+	const char 			*pic_name;
+	struct device 		pic_dev;
+	int 				pic_type;
+	int 				pic_vecbase;
+	int 				pic_apicid;
+
+	struct lock 		pic_lock;
+	struct intrstub 	*pic_level_stubs;
+	struct intrstub 	*pic_edge_stubs;
+	struct ioapic_softc *pic_ioapic; /* if pic_type == PIC_IOAPIC */
+	struct msipic 		*pic_msipic; /* if (pic_type == PIC_MSI) || (pic_type == PIC_MSIX) */
 
 	void (*pic_hwmask)(struct pic*, int);
 	void (*pic_hwunmask)(struct pic*, int);
 	void (*pic_addroute)(struct pic*, struct cpu_info*, int, int, int);
 	void (*pic_delroute)(struct pic*, struct cpu_info*, int, int, int);
-	struct intrstub *pic_level_stubs;
-	struct intrstub *pic_edge_stubs;
+	bool (*pic_trymask)(struct pic *, int);
 };
 
 #define pic_name pic_dev.dv_xname

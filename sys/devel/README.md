@@ -1,8 +1,18 @@
 ## Development: (devel folder)
-- All work here is proof of concept and hence temporary in nature.
+- All work here is proof of concept and can change without notice.
+
+(NOTE: This folder is only temporary during initial development. It will be removed once
+an offical release is made.)
 
 ### Devel Contents:
-- HTBC: HTree Based Blockchain to augment LFS & other existing Log-Structured Filesystems (akin to Soft-updates & WAPBL)
+- Arch:
+	- i386: (Partially implemented in arch/i386)
+		- x86 related content. 
+			- lapic, ioapic, tsc, etc..
+			
+- HTBC: 
+	- HTree Based Blockchain to augment LFS & other existing Log-Structured Filesystems 
+	- akin to Soft-updates & WAPBL
 
 - Kern & Sys:
 	- Malloc: A Tertiary Buddy System Allocator (No Plans or use cases). Originally planned as part of a larger memory allocation stack for the kernel. (Needs a home!)

@@ -158,5 +158,4 @@ softintr(mask)
 #define	setsoftserial()	softintr(SIR_SERIAL)
 
 #endif /* !_LOCORE */
-
 #endif /* !_I386_INTR_H_ */

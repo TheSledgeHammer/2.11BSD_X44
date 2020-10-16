@@ -56,10 +56,11 @@ struct vm_segment {
 	vm_size_t					sg_size;				/* size of segment */
 	int							sg_flags;				/* see below */
 
+	vm_offset_t					sg_paging_offset;		/* Offset into paging space */
+	int							sg_resident_page_count;	/* number of resident pages */
+
 	caddr_t						sg_addr;				/* segment addr */
 	int							sg_types;				/* see below (segment types) */
-
-	int							sg_resident_page_count;	/* number of resident pages */
 
 	vm_offset_t					sg_phys_addr;			/* physical address of segment */
 
@@ -121,6 +122,9 @@ extern
 simple_lock_data_t	vm_segment_list_lock;
 extern
 simple_lock_data_t	vm_segment_list_activity_lock;
+
+#define	vm_segment_lock_lists()		simple_lock(&vm_segment_list_lock)
+#define	vm_segment_unlock_lists()	simple_unlock(&vm_segment_list_lock)
 
 #define	VM_SEGMENT_INIT(seg, object, offset) { 			\
 	(seg)->sg_flags = SEG_BUSY | SEG_CLEAN | SEG_RW; 	\

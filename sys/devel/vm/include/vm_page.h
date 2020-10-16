@@ -103,9 +103,8 @@ struct vm_page {
 	TAILQ_ENTRY(vm_page)	hashq;		/* hash table links (S)*/
 	TAILQ_ENTRY(vm_page)	listq;		/* pages in same segment (S)*/
 
-	vm_segment_t			segment;	/* which segment am I in (O,S,P)*/
-	//vm_pagedirectory_t		pdtable;	/* which page directory am I in (S,P)*/
-	vm_offset_t				offset;		/* offset into segment (O,S,P) */
+	vm_segment_t			segment;	/* which segment am I in (O,(S,P))*/
+	vm_offset_t				offset;		/* offset into segment (O,(S,P)) */
 
 	avm_anon_t				anon;		/* anon (O,P) */
 	u_short					loan_count;
@@ -156,7 +155,7 @@ struct vm_page {
 #define	VM_PAGE_CHECK(mem)
 #endif /* VM_PAGE_DEBUG */
 
-//#ifdef KERNEL
+#ifdef KERNEL
 /*
  *	Each pageable resident page falls into one of three lists:
  *

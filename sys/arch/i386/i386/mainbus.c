@@ -44,7 +44,7 @@
 #include <i386/isa/isa_machdep.h>
 
 #if NAPM > 0
-#include <machine/bioscall.h>
+//#include <machine/bioscall.h>
 #include <machine/apmvar.h>
 #endif
 

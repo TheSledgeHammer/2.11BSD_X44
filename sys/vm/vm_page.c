@@ -237,7 +237,6 @@ vm_page_startup(start, end)
 	first_phys_addr = ptoa(first_page);
 	last_phys_addr  = ptoa(last_page) + PAGE_MASK;
 
-
 	/*
 	 *	Allocate and clear the mem entry structures.
 	 */

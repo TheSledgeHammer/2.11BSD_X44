@@ -78,7 +78,7 @@ struct vm_object {
 
 	RB_ENTRY(vm_object)				object_tree;
 	u_short							flags;					/* see below */
-	u_short							segment_active;
+
 	simple_lock_data_t				Lock;					/* Synchronization */
 	int								ref_count;				/* How many refs?? */
 	vm_size_t						size;					/* Object size */
@@ -150,12 +150,14 @@ void		 vm_object_cache_trim (void);
 boolean_t	 vm_object_coalesce (vm_object_t, vm_object_t, vm_offset_t, vm_offset_t, vm_offset_t, vm_size_t);
 void		 vm_object_collapse (vm_object_t);
 void		 vm_object_copy (vm_object_t, vm_offset_t, vm_size_t, vm_object_t *, vm_offset_t *, boolean_t *);
+void		 vm_object_deactivate_segments (vm_object_t)
 void		 vm_object_deactivate_pages (vm_object_t);
 void		 vm_object_deallocate (vm_object_t);
 void		 vm_object_enter (vm_object_t, vm_pager_t);
 void		 vm_object_init (vm_size_t);
 vm_object_t	 vm_object_lookup (vm_pager_t);
 boolean_t	 vm_object_page_clean (vm_object_t, vm_offset_t, vm_offset_t, boolean_t, boolean_t);
+void		 vm_object_segment_remove (vm_object_t, vm_offset_t, vm_offset_t);
 void		 vm_object_page_remove (vm_object_t, vm_offset_t, vm_offset_t);
 void		 vm_object_pmap_copy (vm_object_t, vm_offset_t, vm_offset_t);
 void		 vm_object_pmap_remove (vm_object_t, vm_offset_t, vm_offset_t);

@@ -50,22 +50,8 @@ struct ovl_segment {
 	vm_offset_t						ovsg_phys_addr;	/* physical address of segment */
 };
 
-/* flags */
-#define SEG_ACTIVE		0x01	/* segment is active */
-#define SEG_INACTIVE	0x02	/* segment is inactive */
-#define SEG_RO			0x03	/* read-only */
-#define SEG_WO			0x04	/* write-only */
-#define SEG_RW			0x05	/* read-write */
-#define SEG_ALLOCATED	0x06	/* allocated segment */
-
 extern
 struct ovseglist  	ovl_segment_list;
-
-extern
-long 				first_segment;	/* first physical segment number */
-
-extern
-long 				last_segment;	/* last physical segment number */
 
 void				ovl_segment_insert(ovl_segment_t, ovl_object_t, vm_offset_t);
 void				ovl_segment_remove(ovl_segment_t);

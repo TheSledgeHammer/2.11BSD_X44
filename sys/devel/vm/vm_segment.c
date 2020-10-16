@@ -38,7 +38,7 @@
 struct seglist  	*vm_segment_buckets;
 int					vm_segment_bucket_count = 0;	/* How big is array? */
 int					vm_segment_hash_mask;			/* Mask for hash function */
-simple_lock_data_t	vm_seg_bucket_lock;				/* lock for all buckets XXX */
+simple_lock_data_t	segment_bucket_lock;			/* lock for all segment buckets XXX */
 
 boolean_t 			vm_segment_startup_initialized;
 
@@ -92,12 +92,20 @@ vm_segment_startup(start, end)
 
 	vm_segment_hash_mask = vm_segment_bucket_count - 1;
 
-	//vm_segment_buckets =
+	vm_segment_buckets = (struct seglist *)pmap_bootstrap_alloc(vm_segment_bucket_count * sizeof(struct seglist));
+	bucket = vm_segment_buckets;
 
-	for(i = 0; i < vm_segment_hash_mask; i++) {
-		CIRCLEQ_INIT(&vm_segment_buckets[i]);
+	for(i = vm_segment_bucket_count; i--;) {
+		CIRCLEQ_INIT(bucket);
+		bucket++;
 	}
-	simple_lock_init(&vm_seg_bucket_lock);
+
+	simple_lock_init(&segment_bucket_lock);
+
+	/*
+	 *	Truncate the remainder of memory to our segment size.
+	 */
+	*end = trunc_segment(*end);
 
 	/*
  	 *	Compute the number of segments.
@@ -111,7 +119,7 @@ vm_segment_startup(start, end)
 	 */
 	first_segment = *start;
 	first_segment += nsegments*sizeof(struct vm_segment);
-	first_segment = atos(first_segment);
+	first_segment = atos(round_segment(first_segment));
 	last_segment = first_segment + nsegments - 1;
 
 	first_phys_addr = stoa(first_segment);
@@ -131,6 +139,9 @@ vm_segment_startup(start, end)
 		seg++;
 		pa += SEGMENT_SIZE;
 	}
+
+	seg->sg_resident_page_count = 0;
+	seg->sg_paging_offset = 0;
 
 	vm_segment_startup_initialized = TRUE;
 }
@@ -162,9 +173,9 @@ vm_segment_insert(segment, object, offset)
 
 	bucket = &vm_segment_buckets[vm_segment_hash(object, offset)];
 
-	simple_lock(&vm_seg_bucket_lock);
+	simple_lock(&segment_bucket_lock);
 	CIRCLEQ_INSERT_TAIL(bucket, segment, sg_hlist);
-	simple_unlock(&vm_seg_bucket_lock);
+	simple_unlock(&segment_bucket_lock);
 
 	CIRCLEQ_INSERT_TAIL(&object->seglist, segment, sg_list);
 	segment->sg_flags |= SEG_ALLOCATED;
@@ -184,9 +195,9 @@ vm_segment_remove(segment)
 
 	bucket = &vm_segment_buckets[vm_segment_hash(segment->sg_object, segment->sg_offset)];
 
-	simple_lock(&vm_seg_bucket_lock);
+	simple_lock(&segment_bucket_lock);
 	CIRCLEQ_REMOVE(bucket, segment, sg_hlist);
-	simple_unlock(&vm_seg_bucket_lock);
+	simple_unlock(&segment_bucket_lock);
 
 	CIRCLEQ_REMOVE(&segment->sg_object->seglist, segment, sg_list);
 
@@ -203,14 +214,14 @@ vm_segment_lookup(object, offset)
 
 	bucket = &vm_segment_buckets[vm_segment_hash(object, offset)];
 
-	simple_lock(&vm_seg_bucket_lock);
+	simple_lock(&segment_bucket_lock);
 	for(segment = CIRCLEQ_FIRST(bucket); segment != NULL; segment = CIRCLEQ_NEXT(segment, sg_hlist)) {
 		if (segment->sg_object == object && segment->sg_offset == offset) {
-			simple_unlock(&vm_seg_bucket_lock);
+			simple_unlock(&segment_bucket_lock);
 			return (segment);
 		}
 	}
-	simple_unlock(&vm_seg_bucket_lock);
+	simple_unlock(&segment_bucket_lock);
 	return (NULL);
 }
 
