@@ -24,52 +24,115 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @(#)vm_overlay.c	1.00
  */
 
-/* Memory Management for VM Overlays */
+/* overlay subroutines & management */
 
-#include <sys/param.h>
-#include <sys/proc.h>
-#include <sys/extent.h>
-#include <sys/malloc.h>
 #include <sys/map.h>
-#include <sys/user.h>
-#include "ovl_overlay.h"
-#include "vm/ovl/ovl.h"
+#include <devel/vm/ovl/overlay.h>
 
-#define MINBUCKET		4				/* 4 => min allocation of 16 bytes */
-#define MAXALLOCSAVE	(2 * )
+struct overlay_ops ovlops = {
+		.koverlay_allocate = 	koverlay_allocate,
+		.koverlay_free = 		koverlay_free,
+		.voverlay_allocate = 	voverlay_allocate,
+		.voverlay_free = 		voverlay_free
+};
 
-struct ovlbuckets 		vovl_bucket[MINBUCKET + 16];
-struct ovlstats 		ovlstats[M_LAST];
-struct ovlusage 		*vovlusage;
-char 					*vovlbase, *vovllimit;
+void
+ovlops_init(ovlops)
+	struct overlay_ops *ovlops;
+{
+	RMALLOC(ovlops, struct overlay_ops *, sizeof(struct overlay_ops *));
+}
 
-void *
-voverlay_allocate(size, type, flags)
+void
+overlay_init()
+{
+	koverlay_init();
+	voverlay_init();
+	ovlops_init(&ovlops);
+}
+
+overlay_hash()
+{
+
+}
+
+overlay_startup()
+{
+
+}
+
+overlay_add()
+{
+}
+
+overlay_remove()
+{
+
+}
+
+overlay_find()
+{
+
+}
+
+overlay_exec(ovltp)
+	struct overlay_table *ovltp;
+{
+	struct overlay_exec *args = ovltp->o_private.ovl_exec;
+
+
+}
+
+void
+overlay_allocate(ovltp, size, type, flags)
+	struct overlay_table *ovltp;
 	unsigned long size;
 	int type, flags;
 {
+	struct overlay_ops *ops = ovltp->o_private.ovl_ops;
 
+	int error = 0;
+
+	switch (ovltp->o_type) {
+	case OVL_KERN:
+		return (ops->koverlay_allocate(size, type, flags));
+	case OVL_VM:
+		return (ops->voverlay_allocate(size, type, flags));
+	default:
+		error = EOPNOTSUPP;
+		break;
+	}
 }
 
 void
-voverlay_free(addr, type)
+overlay_free(ovltp, addr, type)
+	struct overlay_table *ovltp;
 	void *addr;
 	int type;
 {
+	struct overlay_ops *ops = ovltp->o_private.ovl_ops;
+
+	int error = 0;
+
+	switch (ovltp->o_type) {
+	case OVL_KERN:
+		return (ops->koverlay_free(addr, type));
+	case OVL_VM:
+		return (ops->voverlay_free(addr, type));
+	default:
+		error = EOPNOTSUPP;
+		break;
+	}
+}
+
+overlay_load()
+{
 
 }
 
-void
-voverlay_init()
+overlay_unload()
 {
-	register long indx;
-	int npg = (OVL_MEM_SIZE / NBOVL);
 
-	/* vm overlay allocation */
-	vovlusage = (struct ovlusage *) ovl_alloc(ovl_map, (vm_size_t)(npg * sizeof(struct ovlusage)), OVL_OBJ_VM);
-	vovl_mmap = ovl_suballoc(ovl_map, (vm_offset_t *)&vovlbase, (vm_offset_t *)&vovllimit, (vm_size_t *) npg);
 }

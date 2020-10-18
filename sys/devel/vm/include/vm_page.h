@@ -193,7 +193,9 @@ vm_offset_t		first_phys_addr;		/* physical address for first_page */
 extern
 vm_offset_t		last_phys_addr;			/* physical address for last_page */
 
-#define VM_PAGE_TO_PHYS(entry)	((entry)->phys_addr)
+#define VM_PAGE_TO_VM_SEGMENT(entry) ((entry)->segment)
+
+#define VM_PAGE_TO_PHYS(entry)		((entry)->phys_addr)
 
 #define IS_VM_PHYSADDR(pa) \
 		((pa) >= first_phys_addr && (pa) <= last_phys_addr)

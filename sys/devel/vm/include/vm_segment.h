@@ -56,23 +56,40 @@ struct vm_segment {
 	vm_size_t					sg_size;				/* size of segment */
 	int							sg_flags;				/* see below */
 
-	vm_offset_t					sg_paging_offset;		/* Offset into paging space */
 	int							sg_resident_page_count;	/* number of resident pages */
 
 	caddr_t						sg_addr;				/* segment addr */
 	int							sg_types;				/* see below (segment types) */
 
-	vm_offset_t					sg_phys_addr;			/* physical address of segment */
-
-//	union {
-//		segsz_t 				sg_dsize;				/* data size */
-//		segsz_t 				sg_ssize;				/* stack size */
-//		segsz_t 				sg_tsize;				/* text size */
-//		caddr_t					sg_daddr;				/* virtual address of data */
-//		caddr_t					sg_saddr;				/* virtual address of stack */
-//		caddr_t					sg_taddr;				/* virtual address of text */
-//	} sg_segment;
+	caddr_t						sg_lv_addr;
 };
+
+#define VM_LVSEG_MAX 8
+/*
+ * vm_lvseg: describes logical memory
+ */
+struct vm_lvseg {
+	caddr_t				start;
+	caddr_t 			end;
+	caddr_t				avail_start;
+	caddr_t 			avail_end;
+	struct vm_segment 	*segs;
+	struct vm_segment 	*lastseg;
+
+	segsz_t 			sg_dsize; /* data size */
+	segsz_t 			sg_ssize; /* stack size */
+	segsz_t 			sg_tsize; /* text size */
+	caddr_t 			sg_daddr; /* virtual address of data */
+	caddr_t 			sg_saddr; /* virtual address of stack */
+	caddr_t 			sg_taddr; /* virtual address of text */
+};
+
+extern struct vm_lvseg vm_lvmem[VM_LVSEG_MAX];
+extern int vm_nlvseg;
+
+#define SEGMENT_DATA(dsize, daddr)
+#define SEGMENT_STACK(ssize, saddr)
+#define SEGMENT_TEXT(tsize, taddr)
 
 /* flags */
 #define SEG_ACTIVE		0x001	/* segment is active */
@@ -108,28 +125,36 @@ extern
 vm_segment_t		vm_segment_array;			/* First segment in table */
 
 extern
-long 				first_segment;				/* first physical segment number */
+long 				first_segment;				/* first logical segment number */
 
 extern
-long 				last_segment;				/* last physical segment number */
+long 				last_segment;				/* last logical segment number */
 
 extern
-vm_offset_t			first_phys_addr;			/* physical address for first_segment */
+vm_offset_t			first_logical_addr;			/* logical address for first_segment */
 extern
-vm_offset_t			last_phys_addr;				/* physical address for last_segment */
+vm_offset_t			last_logical_addr;			/* logical address for last_segment */
 
 extern
 simple_lock_data_t	vm_segment_list_lock;
 extern
 simple_lock_data_t	vm_segment_list_activity_lock;
 
-#define	vm_segment_lock_lists()		simple_lock(&vm_segment_list_lock)
-#define	vm_segment_unlock_lists()	simple_unlock(&vm_segment_list_lock)
-
 #define	VM_SEGMENT_INIT(seg, object, offset) { 			\
 	(seg)->sg_flags = SEG_BUSY | SEG_CLEAN | SEG_RW; 	\
 	vm_segment_insert((seg), (object), (offset)); 		\
 }
+
+#define VM_SEGMENT_TO_PHYS(seg, page) 	\
+		vm_page_lookup(vm_segment_lookup((seg)->sg_object, (seg)->sg_offset), (page)->offset)->phys_addr;
+
+#define PHYS_TO_VM_SEGMENT(pa) 			\
+		(&vm_segment_array[atos[pa] - first_segment]);
+
+#define	vm_segment_lock_lists()		simple_lock(&vm_segment_list_lock)
+#define	vm_segment_unlock_lists()	simple_unlock(&vm_segment_list_lock)
+
+#define vm_segment_set_modified(m)	{ (m)->sg_flags &= ~SEG_CLEAN; }
 
 void		 	vm_segment_activate(vm_segment_t);
 vm_segment_t 	vm_segment_alloc(vm_object_t, vm_offset_t);

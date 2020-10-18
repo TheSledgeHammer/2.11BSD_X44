@@ -255,13 +255,13 @@ efinet_end(struct netif *nif)
 
 struct netif_driver efi_net = {
 	"net",			/* netif_bname */
-	efinet_match,		/* netif_match */
-	efinet_probe,		/* netif_probe */
-	efinet_init,		/* netif_init */
+	efinet_match,	/* netif_match */
+	efinet_probe,	/* netif_probe */
+	efinet_init,	/* netif_init */
 	efinet_get,		/* netif_get */
 	efinet_put,		/* netif_put */
 	efinet_end,		/* netif_end */
-	0,			/* netif_ifs */
-	0			/* netif_nifs */
+	0,				/* netif_ifs */
+	0				/* netif_nifs */
 };
 

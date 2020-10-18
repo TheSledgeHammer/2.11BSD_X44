@@ -57,9 +57,17 @@
 #include <machine/vmparam.h>
 #include <machine/pmap_base.h>
 
+vm_offset_t virtual_avail;	/* VA of first avail page (after kernel bss) */
+vm_offset_t virtual_end;	/* VA of last avail page (end of kernel AS) */
 
+u_long physfree;	/* phys addr of next free page */
+u_long vm86phystk;	/* PA of vm86/bios stack */
+u_long vm86paddr;	/* address of vm86 region */
+int vm86pa;			/* phys addr of vm86 region */
+int i386_pmap_PDRSHIFT;
+
+struct pmap kernel_pmap_store;
 static struct pmap_args *pmap_args_ptr;
-
 
 void
 pmap_bootstrap(vm_offset_t firstaddr, vm_offset_t loadaddr)

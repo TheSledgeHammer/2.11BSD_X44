@@ -1,0 +1,164 @@
+/*
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * the Systems Programming Group of the University of Utah Computer
+ * Science Department and William Jolitz of UUNET Technologies Inc.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)pmap.h	8.1 (Berkeley) 6/11/93
+ */
+
+#ifndef SYS_DEVEL_ARCH_I386_SEGMENTED_PAGING_PMAP2_H_
+#define SYS_DEVEL_ARCH_I386_SEGMENTED_PAGING_PMAP2_H_
+
+typedef struct ste st_entry_t;	/* segment table entry */
+typedef struct pde pd_entry_t;	/* page directory entry */
+typedef struct pte pt_entry_t;	/* page table entry (mach page table) */
+
+#define	PD_SHIFT_PAE		21
+#define	PG_FRAME_PAE		(0x000ffffffffff000ull)
+#define	PG_PS_FRAME_PAE		(0x000fffffffe00000ull)
+
+#define	PD_SHIFT_NOPAE		22
+#define	PG_FRAME_NOPAE		(~PGMASK)
+#define	PG_PS_FRAME_NOPAE	(0xffc00000)
+
+#ifndef NKPDE
+#define NKPDE				(KVA_PAGES)	/* number of page tables/pde's */
+#endif
+
+/*
+ * One page directory, shared between
+ * kernel and user modes.
+ */
+#define I386_SEG_SIZE		NBSEG
+#define I386_PDR_SIZE		NBPDR
+#define I386_PAGE_SIZE		NBPG
+
+#define I386_KPDES			8 										/* KPT page directory size */
+#define I386_UPDES			(NBPDR/sizeof(struct pde) - I386_KPDES) /* UPT page directory size */
+
+#define	UPTDI				0x3f6									/* ptd entry for u./kernel&user stack */
+#define	PTDPTDI				0x3f7									/* ptd entry that points to ptd! */
+#define	KPTDI_FIRST			0x3f8									/* start of kernel virtual pde's */
+#define	KPTDI_LAST			0x3fA									/* last of kernel virtual pde's */
+
+/*
+ * Address of current and alternate address space page table maps
+ * and directories.
+ */
+#ifdef KERNEL
+extern struct pte	PTmap[], APTmap[], Upte;
+extern struct pde	PTD[], APTD[], PTDpde, APTDpde, Upde;
+extern struct ste	STE[], ASTE[], STEptd, ASTEptd, Uste;
+extern	pt_entry_t	*Sysmap;
+extern	st_entry_t	*Sysseg;
+
+extern int			IdlePTD;	/* physical address of "Idle" state directory */
+#endif
+
+/*
+ * virtual address to page table entry and
+ * to physical address. Likewise for alternate address space.
+ * Note: these work recursively, thus vtopte of a pte will give
+ * the corresponding pde that in turn maps it.
+ */
+#define	vtopte(va)		(PTmap + i386_btop(va))
+#define	kvtopte(va)		vtopte(va)
+#define	ptetov(pt)		(i386_ptob(pt - PTmap))
+#define	vtophys(va)  	(i386_ptob(vtopte(va)->pg_pfnum) | ((int)(va) & PGOFSET))
+#define ispt(va)		((va) >= UPT_MIN_ADDRESS && (va) <= KPT_MAX_ADDRESS)
+
+#define	avtopte(va)		(APTmap + i386_btop(va))
+#define	ptetoav(pt)	 	(i386_ptob(pt - APTmap))
+#define	avtophys(va)  	(i386_ptob(avtopte(va)->pg_pfnum) | ((int)(va) & PGOFSET))
+
+/*
+ * Pmap stuff
+ */
+struct pmap {
+	struct ste				*pm_stab;		/* KVA of segment table */
+	struct pde				*pm_pdir;		/* KVA of page directory */
+	struct pte				*pm_ptab;		/* KVA of page table */
+
+	int						pm_stchanged;	/* ST changed */
+	short					pm_sref;		/* segment table ref count */
+
+	boolean_t				pm_pdchanged;	/* pdir changed */
+	short					pm_dref;		/* page directory ref count */
+
+	short					pm_count;		/* pmap reference count */
+	simple_lock_data_t		pm_lock;		/* lock on pmap */
+	struct pmap_statistics	pm_stats;		/* pmap statistics */
+	long					pm_ptpages;		/* more stats: PT pages */
+
+	int 					pm_flags;		/* see below */
+	union descriptor 		*pm_ldt;		/* user-set LDT */
+	int 					pm_ldt_len;		/* number of LDT entries */
+	int 					pm_ldt_sel;		/* LDT selector */
+};
+
+typedef struct pmap	*pmap_t;
+
+#ifdef KERNEL
+extern struct pmap	kernel_pmap_store;
+#define kernel_pmap (&kernel_pmap_store)
+#endif
+
+typedef struct pv_entry {
+	struct pv_entry			*pv_next;	/* next pv_entry */
+	struct pmap				*pv_pmap;	/* pmap where mapping lies */
+	vm_offset_t				pv_va;		/* virtual address for mapping */
+	int						pv_flags;	/* flags */
+} *pv_entry_t;
+
+#define	ST_ENTRY_NULL	((st_entry_t *) 0)
+#define	PD_ENTRY_NULL	((pd_entry_t *) 0)
+#define	PT_ENTRY_NULL	((pt_entry_t *) 0)
+
+#define	PV_CI			0x01		/* all entries must be cache inhibited */
+#define PV_PTPAGE		0x02		/* entry maps a page table page */
+
+#ifdef	KERNEL
+
+pv_entry_t							pv_table;	/* array of entries, one per page */
+
+#define pa_index(pa)				atop(pa - vm_first_phys)
+#define pa_to_pvh(pa)				(&pv_table[pa_index(pa)])
+
+#define	pmap_resident_count(pmap)	((pmap)->pm_stats.resident_count)
+#define	pmap_wired_count(pmap)		((pmap)->pm_stats.wired_count)
+
+extern int pae_mode;
+extern int i386_pmap_PDRSHIFT;
+#endif	KERNEL
+#endif	/* _PMAP_MACHINE_ */

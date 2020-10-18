@@ -104,10 +104,16 @@ ovl_alloc(map, size, type)
 	case OVL_OBJ_KERNEL:
 		ovl_object_reference(type);
 		ovl_map_insert(map, kern_ovl_object, offset, addr, addr + size);
+		//ovl_object_lock(kern_ovl_object);
+
+		//ovl_object_unlock(kern_ovl_object);
 		break;
 	case OVL_OBJ_VM:
 		ovl_object_reference(type);
 		ovl_map_insert(map, vm_ovl_object, offset, addr, addr + size);
+		//ovl_object_lock(vm_ovl_object);
+
+		//ovl_object_unlock(vm_ovl_object);
 		break;
 	};
 	ovl_map_unlock(map);

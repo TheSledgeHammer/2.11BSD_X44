@@ -24,58 +24,72 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @(#)ovl_pmap.h	1.00
  */
 
-/* segment types */
-/* Segmented Space Address Layout */
-/*
-#define SEG_DFLT	-1
-#define	SEG_VM		0
-#define	SEG_AVM		1
-#define SEG_OVL		2
-#define VMSPACE_START
-#define VMSPACE_END
-#define AVMSPACE_START
-#define AVMSPACE_END
-#define OVLSPACE_START
-#define OVLSPACE_END
+/* Overlay Management Interface for kernel & vm */
 
-//#ifdef OVL
-vm_offset_t						overlay_start;
-vm_offset_t 					overlay_end;
-extern struct pmap				overlay_pmap_store;
-#define overlay_pmap 			(&overlay_pmap_store)
-//#endif
- */
+#ifndef SYS_OVERLAY_H_
+#define SYS_OVERLAY_H_
 
-#ifndef OVL_PMAP_H_
-#define OVL_PMAP_H_
+#include <sys/queue.h>
+#include "ovl_overlay.h"
 
-/* OVL Space Address Layout */
-#define OVL_MIN_ADDRESS 		((vm_offset_t)0)	/* put ovlspace before vmspace in memory stack */
-#define OVL_MAX_ADDRESS			((PGSIZE/100)*10)	/* Total Size of Overlay Address Space (Roughly 10% of PGSIZE) */
-#define VM_MIN_ADDRESS			OVL_MAX_ADDRESS
+typedef enum loadoverlay {
+	OVL_KERN,
+	OVL_VM,
+} OVLTYPE;
 
-#define OVL_MIN_KERNEL_ADDRESS	OVL_MIN_ADDRESS
-#define OVL_MAX_KERNEL_ADDRESS
-#define OVL_MIN_VM_ADDRESS
-#define OVL_MAX_VM_ADDRESS
+CIRCLEQ_HEAD(overlay_head, overlay);
+struct overlay {
+	CIRCLEQ_ENTRY(overlay) 	o_entries;
+	OVLTYPE					o_type;
+};
 
-#define OVL_MEM_SIZE			OVL_MAX_ADDRESS		/* total ovlspace for allocation */
-#define NBOVL 										/* bytes per overlay */
+union overlay_generic {
+	struct overlay_exec 	*ovl_exec;
+	struct overlay_ops		*ovl_ops;
 
-/* memory management definitions */
-ovl_map_t 						ovl_map;
-ovl_map_t						kovl_mmap;			/* kernel overlay memory map */
-ovl_map_t						vovl_mmap;			/* vm overlay memory map */
+};
 
-#ifndef OVL_MAP
-/* as defined in ovl_map.h */
-#define MAX_OMAP				(64)
-#define	NKOVLE					(32)				/* number of kernel overlay entries */
-#define	NVOVLE					(32)				/* number of virtual (vm) overlay entries */
-#endif
+struct overlay_table {
+	int 					o_type;
+	u_long 					o_size;
+	u_long					o_offset;
+	u_long					o_area;
 
-#endif /* OVL_PMAP_H_ */
+	union overlay_generic 	o_private;
+};
+
+struct overlay_exec {
+	OVLTYPE					o_type;
+	int 					o_ver;
+	char					*o_name;
+	u_long					o_offset;
+	struct execsw			*o_exec;
+};
+
+/* overlay memory allocation ops: (see below: overlay_allocate & overlay_free)  */
+struct overlay_ops {
+	void (*koverlay_allocate)(unsigned long size, int type, int flags);
+	void (*koverlay_free)(void *addr, int type);
+	void (*voverlay_allocate)(unsigned long size, int type, int flags);
+	void (*voverlay_free)(void *addr, int type);
+};
+
+struct overlay_load {
+	caddr_t			ol_address;	/* overlayed address (kernel) */
+	ovl_segment_t 	ol_segment;	/* overlayed segment (vm only!) */
+	ovl_page_t 		ol_page;	/* overlayed page (vm only!) */
+
+	//id, status
+};
+
+struct overlay_unload {
+	caddr_t			ol_address;	/* overlayed address (kernel) */
+	ovl_segment_t 	ol_segment;	/* overlayed segment (vm only!) */
+	ovl_page_t 		ol_page;	/* overlayed page (vm only!) */
+
+	//id, status
+};
+
+#endif /* SYS_OVERLAY_H_ */

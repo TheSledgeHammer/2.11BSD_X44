@@ -454,7 +454,7 @@ vm86_initialize(void)
 
 	pcb = &vml->vml_pcb;
 
-	//simple_lock_init(&vm86_lock);
+	simple_lock_init(&vm86_lock);
 
 	bzero(pcb, sizeof(struct pcb));
 	pcb->new_ptd = vm86pa | PG_V | PG_RW | PG_U;
@@ -721,9 +721,9 @@ vm86_sysarch(p, args, retval)
 		if (error = copyin(ua.sub_args, &sa, sizeof(sa)))
 			return (error);
 		if (sa.state)
-			load_cr4(rcr4() | CR4_VME);
+			lcr4(rcr4() | CR4_VME);
 		else
-			load_cr4(rcr4() & ~CR4_VME);
+			lcr4(rcr4() & ~CR4_VME);
 		}
 		break;
 #endif

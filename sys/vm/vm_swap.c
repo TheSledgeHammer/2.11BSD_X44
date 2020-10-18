@@ -335,13 +335,13 @@ swfree(p, index)
 	struct proc *p;
 	int index;
 {
-	register struct swdevt *sp;
-	register swblk_t vsbase;
-	register long blk;
-	struct vnode *vp;
-	register swblk_t dvbase;
-	register int nblks;
-	int error;
+	register struct swdevt 	*sp;
+	register swblk_t 		vsbase;
+	register long 			blk;
+	struct vnode 			*vp;
+	register swblk_t 		dvbase;
+	register int 			nblks;
+	int 					error;
 
 	sp = &swdevt[index];
 	vp = sp->sw_vp;

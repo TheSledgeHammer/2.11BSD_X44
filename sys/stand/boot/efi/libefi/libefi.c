@@ -33,9 +33,9 @@ static const char rcsid[] =
 #include <efilib.h>
 #include <stand.h>
 
-EFI_HANDLE		IH;
-EFI_SYSTEM_TABLE	*ST;
-EFI_BOOT_SERVICES	*BS;
+EFI_HANDLE				IH;
+EFI_SYSTEM_TABLE		*ST;
+EFI_BOOT_SERVICES		*BS;
 EFI_RUNTIME_SERVICES	*RS;
 
 static EFI_PHYSICAL_ADDRESS heap;
@@ -44,7 +44,6 @@ static UINTN heapsize;
 static CHAR16 *
 arg_skipsep(CHAR16 *argp)
 {
-
 	while (*argp == ' ' || *argp == '\t')
 		argp++;
 	return (argp);
@@ -53,7 +52,6 @@ arg_skipsep(CHAR16 *argp)
 static CHAR16 *
 arg_skipword(CHAR16 *argp)
 {
-
 	while (*argp && *argp != ' ' && *argp != '\t')
 		argp++;
 	return (argp);
@@ -75,7 +73,6 @@ efi_get_table(EFI_GUID *tbl)
 
 void exit(EFI_STATUS exit_code)
 {
-
 	BS->FreePages(heap, EFI_SIZE_TO_PAGES(heapsize));
 	BS->Exit(IH, exit_code, 0, NULL);
 }

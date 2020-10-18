@@ -135,13 +135,11 @@ vm_segment_startup(start, end)
 	while (nsegments--) {
 		seg->sg_flags = 0;
 		seg->sg_object = NULL;
-		seg->sg_phys_addr = pa;
 		seg++;
 		pa += SEGMENT_SIZE;
 	}
 
 	seg->sg_resident_page_count = 0;
-	seg->sg_paging_offset = 0;
 
 	vm_segment_startup_initialized = TRUE;
 }

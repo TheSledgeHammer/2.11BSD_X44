@@ -3,10 +3,9 @@ A General todo list. Don't hesitate to add to this list. :)
 # TODO:
 ## General:
 - Compiler
-- Build Toolchain
 - Makefiles:
 	- Use .mk for definitions
-- Bug Fixes/ missing critical content
+- Bug Fixes &/or missing critical content
 
 # usr/ (User & OS Libraries):
 ## lib:
@@ -22,8 +21,10 @@ A General todo list. Don't hesitate to add to this list. :)
 ## arch:
 - i386/x86: (Merged under i386)
 	- conf
-	- pae: implemented but not fully integrated
-		- missing in machdep.c & locore.s
+	- vm86: implmented but missing tidbits in:
+		- pmap.c
+	- pae: implemented but missing tidbits in:
+		- machdep.c, locore.s & pmap.c
 	- devices: 
 		- see below: dev
 
@@ -33,7 +34,7 @@ A General todo list. Don't hesitate to add to this list. :)
 - See devel folder: README.md & TODO.md
 
 ## dev:
-- No devices, only basic (to get working compiler)
+- No devices, only basic (needs a working compiler)
 
 ## lib:
 	

@@ -16,8 +16,8 @@
 
 #include <arch/i386/include/param.h>
 #include <arch/i386/include/pmap.h>
-#include <sys/msgbuf.h>
-#include "../vm/pmap/cpt.h"
+//#include <sys/msgbuf.h>
+#include "devel/pmap/cpt.h"
 
 /*
  * All those kernel PT submaps that BSD is so fond of

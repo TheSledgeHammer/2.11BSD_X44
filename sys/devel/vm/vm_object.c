@@ -171,6 +171,7 @@ vm_object_allocate(size)
 
 	_vm_object_allocate(size, result);
 
+
 	return(result);
 }
 
@@ -192,7 +193,7 @@ _vm_object_allocate(size, object)
 	 */
 
 	object->pager = NULL;
-	object->segment_offset = 0;
+	object->paging_offset = 0;
 	object->shadow = NULL;
 	object->shadow_offset = (vm_offset_t) 0;
 

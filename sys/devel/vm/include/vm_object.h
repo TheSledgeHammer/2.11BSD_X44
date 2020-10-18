@@ -85,7 +85,7 @@ struct vm_object {
 	int								resident_segment_count;	/* number of resident segments */
 
 	vm_pager_t						pager;					/* Where to get data */
-	vm_offset_t						segment_offset;			/* Offset into segment */
+	vm_offset_t						paging_offset;			/* Offset into paging space */
 
 	struct vm_object				*shadow;				/* My shadow */
 	vm_offset_t						shadow_offset;			/* Offset in shadow */

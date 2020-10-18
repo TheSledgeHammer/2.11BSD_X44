@@ -35,23 +35,25 @@
 struct ovseglist;
 CIRCLEQ_HEAD(ovseglist, ovl_segment);
 struct ovl_segment {
-	struct pglist					ovsg_pglist; 	/* Pages in Resident memory */
+	struct ovpglist					ovsg_ovpglist; 	/* Pages in Resident memory */
 
 	CIRCLEQ_ENTRY(ovl_segment) 		ovsg_hashlist;	/* hash table links (O) */
 	CIRCLEQ_ENTRY(ovl_segment) 		ovsg_seglist;	/* segments in same object (O) */
 
-	simple_lock_data_t 				ovsg_lock;
-
 	int								ovsg_flags;
 	ovl_object_t					ovsg_object;	/* which object am I in (O,S)*/
 	vm_offset_t 					ovsg_offset;	/* offset into object (O,S) */
-	int 							ovsg_ref_count;
 
-	vm_offset_t						ovsg_phys_addr;	/* physical address of segment */
+	int								ovsg_resident_page_count;	/* number of resident pages */
 };
 
 extern
 struct ovseglist  	ovl_segment_list;
+extern
+simple_lock_data_t	ovl_segment_list_lock;
+
+#define	ovl_segment_lock_lists()	simple_lock(&ovl_segment_list_lock)
+#define	ovl_segment_unlock_lists()	simple_unlock(&ovl_segment_list_lock)
 
 void				ovl_segment_insert(ovl_segment_t, ovl_object_t, vm_offset_t);
 void				ovl_segment_remove(ovl_segment_t);

@@ -353,7 +353,6 @@ ovl_object_remove(object)
 {
 	struct ovl_object_hash_head			*bucket;
 	register ovl_object_hash_entry_t	entry;
-	//register ovl_object_t				object;
 
 	bucket = &ovl_object_hashtable[ovl_object_hash(object)];
 	u_long index = ovl_object_hash(object);
@@ -397,5 +396,3 @@ ovl_object_cache_clear()
 	}
 	ovl_object_cache_unlock();
 }
-
-

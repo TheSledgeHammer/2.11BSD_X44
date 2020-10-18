@@ -13,8 +13,6 @@
 #include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_segment.h>
 
-/* to be merge into vm_segment.c */
-
 /*
  * Change the size of the data+stack regions of the process.
  * If the size is shrinking, it's easy -- just release the extra core.
@@ -126,3 +124,5 @@ pmap_copy_segment(src, dst)
 		physcopyseg(src++, dst++);
 	} while (++ix != i386pagesperpage);
 }
+
+

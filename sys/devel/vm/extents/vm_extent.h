@@ -62,20 +62,22 @@ void			vm_extent_print(struct extent *ex);
 struct slablist;
 CIRCLEQ_HEAD(slablist, vm_slab_cache);
 struct vm_slab_cache {
-	CIRCLEQ_ENTRY(vm_slab_cache) 	vsc_small_entry;
-	CIRCLEQ_ENTRY(vm_slab_cache) 	vsc_large_entry;
-	char 							*vsc_name;
-	vm_offset_t						vsc_start;
-	vm_offset_t						vsc_end;
-
+	CIRCLEQ_ENTRY(vm_slab_cache) 	vsc_list;
+	vm_size_t						vsc_slabmax;
+	vm_size_t 						vsc_size;
+	vm_offset_t						vsc_addr;
+	vm_size_t 						vsc_stride;
+	int								vsc_flags;
 };
 
 struct vm_slab {
 	struct slablist 				vs_header;
-	struct extent					*vs_extent;
+	size_t 							vs_count;
 };
 
-
+#define SLAB_EMPTY 		0x01
+#define SLAB_FULL 		0x02
+#define SLAB_PARTIAL 	0x03
 /*
 struct vm_extent {
 	struct extent		*vext_ext;

@@ -446,7 +446,7 @@ try586:	/* Use the `cpuid' instruction. */
 		rep
 		stosb
 
-		movl	%esi,_IdlePTD-SYSTEM 				/*physical address of Idle Address space */
+		movl	%esi,_IdlePTD-SYSTEM 				/* physical address of Idle Address space */
 		movl	$ tmpstk-SYSTEM,%esp				# bootstrap stack end location
 
 /*

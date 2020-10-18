@@ -171,6 +171,12 @@ int	protection_codes[8];
 
 struct pmap	kernel_pmap_store;
 
+extern int elf32_nxstack;
+
+extern u_long vm86phystk;				/* PA of vm86/bios stack */
+extern u_long vm86paddr;				/* address of vm86 region */
+extern int 	vm86pa;						/* phys addr of vm86 region */
+
 vm_offset_t avail_start;				/* PA of first available physical page */
 vm_offset_t	avail_end;					/* PA of last available physical page */
 vm_size_t	mem_size;					/* memory size in bytes */

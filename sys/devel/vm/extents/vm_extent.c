@@ -89,17 +89,60 @@ vm_extent_print(ex)
 	extent_print(ex);
 }
 
-struct vm_slab slabbuckets[MINBUCKET + 16];
 
-vm_slab_allocate(cache)
-	register struct vm_slab_cache *cache;
+
+struct extent *slab_extent;
+long slab_ex_storage[MINBUCKET + 16];
+struct slablist vm_slab_hashtable[MINBUCKET + 16];
+
+void
+slab_extent_create(start, end, mtype, storage, storagesize, flags)
+	vm_offset_t start, end;
+	int mtype;
+	caddr_t storage;
+	size_t storagesize;
+	int flags;
 {
-	register int indx;
-	for(indx = 0; indx < MINBUCKET + 16; indx++) {
-		&slabbuckets[indx];
+	register long indx;
+	for(indx = 0; indx < MINBUCKET +16; indx++) {
+		CIRCLEQ_INIT(&vm_slab_hashtable[indx]);
 	}
-	struct slablist *slabs;
+	&slab_extent = extent_create("vm_slab_extent", start, end, mtype, storage, storagesize, flags);
+
 }
+
+void
+slab_extent_check(start, size)
+	vm_offset_t start, size;
+{
+	if(extent_alloc_region(&slab_extent, start, size, EX_NOWAIT)) {
+		printf("WARNING: CAN'T ALLOCATE MEMORY FROM SLAB EXTENT MAP!\n");
+	}
+}
+
+void
+slab_cache_insert(cache, addr, size, align, flags)
+	register struct vm_slab_cache 	*cache;
+	vm_offset_t 					addr;
+	vm_size_t						size, align;
+	int 							flags;
+{
+	struct vm_slab	*slabs;
+
+	long indx = BUCKETINDX(size);
+	slabs = &vm_slab_hashtable[indx];
+
+	cache->vsc_addr = addr;
+	cache->vsc_size = size;
+	cache->vsc_stride = align * ((size - 1) / align + 1);
+	cache->vsc_slabmax = (SLOTS(size) - sizeof(struct vm_slab)) / cache->vsc_stride;
+	cache->vsc_flags = flags;
+
+	CIRCLEQ_INSERT_HEAD(&slabs->vs_header, cache, vsc_list);
+	slabs->vs_count++;
+}
+
+
 
 
 
