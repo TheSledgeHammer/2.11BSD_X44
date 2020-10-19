@@ -97,13 +97,16 @@
 #include <devel/vm/ovl/ovl_page.h>
 #include <devel/vm/ovl/ovl_map.h>
 
-struct ovpglist		*ovl_page_buckets;			/* Array of buckets */
-int					ovl_page_bucket_count = 0;	/* How big is array? */
-int					ovl_page_hash_mask;			/* Mask for hash function */
-simple_lock_data_t	ovl_page_bucket_lock;		/* lock for all page buckets XXX */
+struct ovpglist			*ovl_page_buckets;			/* Array of buckets */
+int						ovl_page_bucket_count = 0;	/* How big is array? */
+int						ovl_page_hash_mask;			/* Mask for hash function */
+simple_lock_data_t		ovl_page_bucket_lock;		/* lock for all page buckets XXX */
 
-struct ovpglist		ovl_page_list;
-simple_lock_data_t	ovl_page_list_lock;
+struct ovpglist			ovl_page_list;
+simple_lock_data_t		ovl_page_list_lock;
+
+struct vpage_hash_head 	*ovl_vpage_hashtable;
+
 
 void
 ovl_page_startup(start, end)
@@ -126,6 +129,7 @@ ovl_page_startup(start, end)
 
 	for (i = 0; i < ovl_page_hash_mask; i++) {
 		TAILQ_INIT(&ovl_page_buckets[i]);
+		TAILQ_INIT(&ovl_vpage_hashtable[i]);
 	}
 	simple_lock_init(&ovl_page_bucket_lock);
 }
@@ -156,10 +160,10 @@ ovl_page_insert(mem, segment, offset)
 	TAILQ_INSERT_TAIL(bucket, mem, ovp_hashq);
 	simple_unlock(&ovl_page_bucket_lock);
 
-	TAILQ_INSERT_TAIL(&segment->ovsg_ovpglist, mem, ovp_listq);
+	TAILQ_INSERT_TAIL(&segment->ovs_ovpglist, mem, ovp_listq);
 	mem->ovp_flags |= PG_TABLED;
 
-	segment->ovsg_resident_page_count++;
+	segment->ovs_resident_page_count++;
 }
 
 /*
@@ -196,14 +200,14 @@ ovl_page_remove(mem)
 	 *	Now remove from the segment's list of backed pages.
 	 */
 
-	TAILQ_REMOVE(&mem->ovp_segment->ovsg_ovpglist, mem, ovp_listq);
+	TAILQ_REMOVE(&mem->ovp_segment->ovs_ovpglist, mem, ovp_listq);
 
 	/*
 	 *	And show that the segment has one fewer resident
 	 *	page.
 	 */
 
-	mem->ovp_segment->ovsg_resident_page_count--;
+	mem->ovp_segment->ovs_resident_page_count--;
 
 	mem->ovp_flags &= ~PG_TABLED;
 }
@@ -244,3 +248,65 @@ ovl_page_lookup(segment, offset)
 	return(NULL);
 }
 
+/* vm page */
+u_long
+ovl_vpage_hash(opage, vpage)
+	ovl_page_t 	opage;
+	vm_page_t 	vpage;
+{
+	Fnv32_t hash1 = fnv_32_buf(&opage, sizeof(&opage), FNV1_32_INIT) % ovl_page_hash_mask;
+	Fnv32_t hash2 = fnv_32_buf(&vpage, sizeof(&vpage), FNV1_32_INIT) % ovl_page_hash_mask;
+	return (hash1 ^ hash2);
+}
+
+void
+ovl_page_insert_vm_page(opage, vpage)
+	ovl_page_t 	opage;
+	vm_page_t 	vpage;
+{
+    struct vpage_hash_head 	*vbucket;
+
+    if(vpage == NULL) {
+        return;
+    }
+    vbucket = &ovl_vpage_hashtable[ovl_vpage_hash(opage, vpage)];
+    opage->ovp_vm_page = vpage;
+    opage->ovp_flags |= OVL_PG_VM_PG;
+
+    TAILQ_INSERT_HEAD(vbucket, opage, ovp_vpage_hlist);
+    ovl_vpage_count++;
+}
+
+vm_page_t
+ovl_page_lookup_vm_page(opage, vpage)
+	ovl_page_t 	opage;
+	vm_page_t 	vpage;
+{
+    struct vsegment_hash_head *vbucket;
+
+    vbucket = &ovl_vpage_hashtable[ovl_vpage_hash(opage, vpage)];
+    for(opage = TAILQ_FIRST(vbucket); opage != NULL; opage = TAILQ_NEXT(opage, ovp_vpage_hlist)) {
+        if(opage->ovp_vm_page == vpage) {
+            return (vpage);
+        }
+    }
+    return (NULL);
+}
+
+void
+ovl_page_remove_vm_page(opage, vpage)
+	ovl_page_t 	opage;
+	vm_page_t 	vpage;
+{
+    struct vsegment_hash_head *vbucket;
+
+    vbucket = &ovl_vpage_hashtable[ovl_vpage_hash(opage, vpage)];
+    for(opage = TAILQ_FIRST(vbucket); opage != NULL; opage = TAILQ_NEXT(opage, ovp_vpage_hlist)) {
+        if(opage->ovp_vm_page == vpage) {
+            if(opage != NULL) {
+                TAILQ_REMOVE(vbucket, opage, ovp_vpage_hlist);
+                ovl_vpage_count--;
+            }
+        }
+    }
+}

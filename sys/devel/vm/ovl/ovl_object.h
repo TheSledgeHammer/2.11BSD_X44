@@ -70,26 +70,38 @@
 
 #include <devel/vm/ovl/ovl.h>
 
+struct vobject_hash_head;
+TAILQ_HEAD(vobject_hash_head, ovl_object);
+struct object_t;
+RB_HEAD(object_t, ovl_object);
 struct ovl_object {
 	struct ovseglist					ovo_ovseglist;		/* list of segments */
 
 	RB_ENTRY(ovl_object)				ovo_object_tree;	/* list of all objects */
 
 	u_long								ovo_index;
+
 	u_short								ovo_flags;			/* see below */
 	simple_lock_data_t					ovo_lock;			/* Synchronization */
 	int									ovo_ref_count;		/* How many refs?? */
 	vm_size_t							ovo_size;			/* Object size */
+
+	TAILQ_ENTRY(ovl_object)				ovo_vobject_hlist; 	/* list of all associated vm_objects */
+	union {
+		vm_object_t 					vm_object;			/* a vm_object being held */
+		vm_segment_t 					vm_segment;			/* a vm_segment being held */
+		vm_page_t 						vm_page;			/* a vm_page being held */
+	} ovo_vm;
+
+#define ovo_vm_object					ovo_vm.vm_object
+#define ovo_vm_segment					ovo_vm.vm_segment
+#define ovo_vm_page						ovo_vm.vm_page
 };
 
-/*
- * Flags
- */
-#define OVL_OBJ_CANPERSIST	0x0001	/* allow to persist */
-#define OVL_OBJ_INTERNAL	0x0002	/* internally created object */
-#define OVL_OBJ_ACTIVE		0x0004	/* used to mark active objects */
+/* Flags */
 #define OVL_OBJ_KERNEL		0x0006	/* kernel overlay object */
 #define OVL_OBJ_VM			0x0008	/* vm overlay object */
+#define OVL_OBJ_VM_OBJ		0x0016	/* overlay object holds vm_object */
 
 RB_HEAD(ovl_object_hash_head, ovl_object_hash_entry);
 struct ovl_object_hash_entry {
@@ -99,23 +111,18 @@ struct ovl_object_hash_entry {
 typedef struct ovl_object_hash_entry	*ovl_object_hash_entry_t;
 
 //#ifdef KERNEL
-struct object_t;
-RB_HEAD(object_t, ovl_object);
+struct object_t				ovl_object_tree;		/* list of allocated objects */
+long						ovl_object_count;		/* count of all objects */
+simple_lock_data_t			ovl_object_tree_lock;	/* lock for object list and count */
 
-struct object_t		ovl_object_cached_tree;	/* list of objects persisting */
-int					ovl_object_cached;		/* size of cached list */
-simple_lock_data_t	ovl_cache_lock;			/* lock for object cache */
+ovl_object_t				kern_ovl_object;		/* single kernel overlay object */
+ovl_object_t				vm_ovl_object;			/* single vm overlay object */
 
-struct object_t		ovl_object_tree;		/* list of allocated objects */
-long				ovl_object_count;		/* count of all objects */
-simple_lock_data_t	ovl_object_tree_lock;
-											/* lock for object list and count */
+extern
+struct vobject_hash_head 	ovl_vobject_hashtable;
+long						ovl_vobject_count;
+simple_lock_data_t			ovl_vobject_hash_lock;
 
-ovl_object_t		kern_ovl_object;		/* single kernel overlay object */
-ovl_object_t		vm_ovl_object;			/* single vm overlay object */
-
-#define	ovl_object_cache_lock()			simple_lock(&ovl_cache_lock)
-#define	ovl_object_cache_unlock()		simple_unlock(&ovl_cache_lock)
 //#endif /* KERNEL */
 
 #define	ovl_object_lock_init(object)	simple_lock_init(&(object)->ovo_lock)
@@ -127,20 +134,15 @@ ovl_object_t		vm_ovl_object;			/* single vm overlay object */
 
 //#ifdef KERNEL
 ovl_object_t	ovl_object_allocate (vm_size_t);
-void		 	ovl_object_cache_clear (void);
-void			ovl_object_cache_trim (void);
-void		 	ovl_object_deallocate (ovl_object_t);
 void		 	ovl_object_enter (ovl_object_t, u_long);
 void		 	ovl_object_init (vm_size_t);
 ovl_object_t	ovl_object_lookup (u_long);
 void		 	ovl_object_reference (ovl_object_t);
-void			ovl_object_remove(u_long);
-void		 	ovl_object_terminate (ovl_object_t);
+void			ovl_object_remove (u_long);
 
-void		 	ovl_object_copy_vm_object (ovl_object_t, vm_offset_t, vm_size_t, vm_object_t *, vm_offset_t *, boolean_t *);
-void		 	ovl_object_copy_avm_object (ovl_object_t, vm_offset_t, vm_size_t, avm_object_t *, vm_offset_t *, boolean_t *);
-void			ovl_object_copy_to();
-void			ovl_object_copy_from();
+void			ovl_object_insert_vm_object (ovl_object_t, vm_object_t);
+vm_object_t		ovl_object_lookup_vm_object (ovl_object_t, vm_object_t);
+void			ovl_object_remove_vm_object (ovl_object_t, vm_object_t);
 
 //#endif /* KERNEL */
 #endif /* _OVL_OBJECT_H_ */

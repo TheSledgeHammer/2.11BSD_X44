@@ -36,13 +36,15 @@
 //#include <devel/vm/ovl/ovl_segment.h>
 //#include <devel/vm/ovl/ovl_object.h>
 
-struct ovseglist	*ovl_segment_buckets;
-int					ovl_segment_bucket_count = 0;	/* How big is array? */
-int					ovl_segment_hash_mask;			/* Mask for hash function */
-simple_lock_data_t	ovl_segment_bucket_lock;		/* lock for all segment buckets XXX */
+struct ovseglist			*ovl_segment_buckets;
+int							ovl_segment_bucket_count = 0;	/* How big is array? */
+int							ovl_segment_hash_mask;			/* Mask for hash function */
+simple_lock_data_t			ovl_segment_bucket_lock;		/* lock for all segment buckets XXX */
 
-struct ovseglist  	ovl_segment_list;
-simple_lock_data_t	ovl_segment_list_lock;
+struct ovseglist  			ovl_segment_list;
+simple_lock_data_t			ovl_segment_list_lock;
+
+struct vsegment_hash_head 	*ovl_vsegment_hashtable;
 
 void
 ovl_segment_init(start, end)
@@ -57,7 +59,7 @@ ovl_segment_init(start, end)
 
 	if (ovl_segment_bucket_count == 0) {
 		ovl_segment_bucket_count = 1;
-		while (ovl_segment_bucket_count < atop(*end - *start))
+		while (ovl_segment_bucket_count < atos(*end - *start))
 			ovl_segment_bucket_count <<= 1;
 	}
 
@@ -65,6 +67,7 @@ ovl_segment_init(start, end)
 
 	for(i = 0; i < ovl_segment_hash_mask; i++) {
 		CIRCLEQ_INIT(&ovl_segment_buckets[i]);
+		TAILQ_INIT(&ovl_vsegment_hashtable[i]);
 	}
 	simple_lock_init(&ovl_segment_bucket_lock);
 }
@@ -90,21 +93,21 @@ ovl_segment_insert(segment, object, offset)
 	if(segment == NULL) {
 		return;
 	}
-	if(segment->ovsg_flags & SEG_ALLOCATED) {
+	if(segment->ovs_flags & SEG_ALLOCATED) {
 		panic("ovl_segment_insert: already inserted");
 	}
 
-	segment->ovsg_object = object;
-	segment->ovsg_offset = offset;
+	segment->ovs_object = object;
+	segment->ovs_offset = offset;
 
 	bucket = &vm_segment_buckets[vm_segment_hash(object, offset)];
 
 	simple_lock(&ovl_segment_bucket_lock);
-	CIRCLEQ_INSERT_TAIL(bucket, segment, ovsg_hashlist);
+	CIRCLEQ_INSERT_TAIL(bucket, segment, ovs_hashlist);
     simple_unlock(&ovl_segment_bucket_lock);
 
-    CIRCLEQ_INSERT_TAIL(&object->ovo_ovseglist, segment, ovsg_seglist);
-    segment->ovsg_flags |= SEG_ALLOCATED;
+    CIRCLEQ_INSERT_TAIL(&object->ovo_ovseglist, segment, ovs_seglist);
+    segment->ovs_flags |= SEG_ALLOCATED;
 }
 
 void
@@ -113,19 +116,19 @@ ovl_segment_remove(segment)
 {
 	register struct ovseglist 	*bucket;
 
-	if(!(segment->ovsg_flags & SEG_ALLOCATED)) {
+	if(!(segment->ovs_flags & SEG_ALLOCATED)) {
 		return;
 	}
 
-	bucket = &vm_segment_buckets[vm_segment_hash(segment->ovsg_object, segment->ovsg_offset)];
+	bucket = &vm_segment_buckets[vm_segment_hash(segment->ovs_object, segment->ovs_offset)];
 
 	simple_lock(&ovl_segment_bucket_lock);
-	CIRCLEQ_REMOVE(bucket, segment, ovsg_hashlist);
+	CIRCLEQ_REMOVE(bucket, segment, ovs_hashlist);
 	simple_unlock(&ovl_segment_bucket_lock);
 
-	CIRCLEQ_REMOVE(&segment->ovsg_object->ovo_ovseglist, segment, ovsg_seglist);
+	CIRCLEQ_REMOVE(&segment->ovs_object->ovo_ovseglist, segment, ovs_seglist);
 
-	segment->ovsg_flags &= ~SEG_ALLOCATED;
+	segment->ovs_flags &= ~SEG_ALLOCATED;
 }
 
 ovl_segment_t
@@ -139,8 +142,8 @@ ovl_segment_lookup(object, offset)
 	bucket = &vm_segment_buckets[vm_segment_hash(object, offset)];
 
 	simple_lock(&ovl_segment_bucket_lock);
-	for(segment = CIRCLEQ_FIRST(bucket); segment != NULL; segment = CIRCLEQ_NEXT(segment, ovsg_hashlist)) {
-		if(segment->ovsg_object == object && segment->ovsg_offset == offset) {
+	for(segment = CIRCLEQ_FIRST(bucket); segment != NULL; segment = CIRCLEQ_NEXT(segment, ovs_hashlist)) {
+		if(segment->ovs_object == object && segment->ovs_offset == offset) {
 			simple_unlock(&ovl_segment_bucket_lock);
 			return (segment);
 		}
@@ -149,25 +152,65 @@ ovl_segment_lookup(object, offset)
 	return (NULL);
 }
 
-ovl_segment_t
-ovl_segment_alloc(object, offset)
-	ovl_object_t	object;
-	vm_offset_t		offset;
+/* vm segments */
+u_long
+ovl_vsegment_hash(osegment, vsegment)
+	ovl_segment_t 	osegment;
+	vm_segment_t 	vsegment;
 {
-	register ovl_segment_t 	segment;
-
-	return (segment);
+	Fnv32_t hash1 = fnv_32_buf(&osegment, sizeof(&osegment), FNV1_32_INIT) % ovl_segment_hash_mask;
+	Fnv32_t hash2 = fnv_32_buf(&vsegment, sizeof(&vsegment), FNV1_32_INIT) % ovl_segment_hash_mask;
+	return (hash1 ^ hash2);
 }
 
 void
-ovl_segment_free(segment)
-	register ovl_segment_t 	segment;
+ovl_segment_insert_vm_segment(osegment, vsegment)
+	ovl_segment_t 	osegment;
+	vm_segment_t 	vsegment;
 {
-	ovl_segment_remove(segment);
-	if(segment->ovsg_flags & SEG_ACTIVE) {
-		segment->ovsg_flags &= ~SEG_ACTIVE;
-	}
-	if(segment->ovsg_flags & SEG_INACTIVE) {
-		segment->ovsg_flags &= ~SEG_INACTIVE;
-	}
+    struct vsegment_hash_head 	*vbucket;
+
+    if(vsegment == NULL) {
+        return;
+    }
+    vbucket = &ovl_vsegment_hashtable[ovl_vsegment_hash(osegment, vsegment)];
+    osegment->ovs_vm_segment = vsegment;
+    osegment->ovs_flags |= OVL_SEG_VM_SEG;
+
+    TAILQ_INSERT_HEAD(vbucket, osegment, ovs_vsegment_hlist);
+    ovl_vsegment_count++;
+}
+
+vm_segment_t
+ovl_segment_lookup_vm_segment(osegment, vsegment)
+	ovl_segment_t 	osegment;
+	vm_segment_t 	vsegment;
+{
+    struct vsegment_hash_head *vbucket;
+
+    vbucket = &ovl_vsegment_hashtable[ovl_vsegment_hash(osegment, vsegment)];
+    for(osegment = TAILQ_FIRST(vbucket); osegment != NULL; osegment = TAILQ_NEXT(osegment, ovs_vsegment_hlist)) {
+        if(osegment->ovs_vm_segment == vsegment) {
+            return (vsegment);
+        }
+    }
+    return (NULL);
+}
+
+void
+ovl_segment_remove_vm_segment(osegment, vsegment)
+	ovl_segment_t 	osegment;
+	vm_segment_t 	vsegment;
+{
+    struct vsegment_hash_head *vbucket;
+
+    vbucket = &ovl_vsegment_hashtable[ovl_vsegment_hash(osegment, vsegment)];
+    for(osegment = TAILQ_FIRST(vbucket); osegment != NULL; osegment = TAILQ_NEXT(osegment, ovs_vsegment_hlist)) {
+        if(osegment->ovs_vm_segment == vsegment) {
+            if(osegment != NULL) {
+                TAILQ_REMOVE(vbucket, osegment, ovs_vsegment_hlist);
+                ovl_vsegment_count--;
+            }
+        }
+    }
 }

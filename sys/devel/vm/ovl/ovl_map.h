@@ -77,8 +77,6 @@ struct ovl_map {
 	ovl_map_entry_t						ovl_first_free;		/* First free space hint */
     unsigned int		                ovl_timestamp;	    /* Version number */
 
-    boolean_t							ovl_is_active;		/* overlay is active (in use) */
-
 #define	min_offset			    		ovl_header.cqh_first->ovle_start
 #define max_offset			    		ovl_header.cqh_first->ovle_end
 };
@@ -142,8 +140,5 @@ void			ovl_map_startup (void);
 
 void 			ovl_map_swapin(ovl_map_t, vm_offset_t, ovl_map_entry_t *);
 void 			ovl_map_swapout(ovl_map_t, vm_offset_t, ovl_map_entry_t *);
-void			ovl_map_set_active(ovl_map_t);
-void			ovl_map_set_inactive(ovl_map_t);
-boolean_t		ovl_map_is_active(ovl_map_t);
 #endif
 #endif /* OVL_MAP_ */

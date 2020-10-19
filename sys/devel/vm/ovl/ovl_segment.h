@@ -29,28 +29,45 @@
 #ifndef _OVL_SEGMENT_H_
 #define _OVL_SEGMENT_H_
 
+#include <devel/vm/ovl/ovl.h>
 #include <devel/vm/ovl/ovl_object.h>
 #include <sys/queue.h>
 
+struct vsegment_hash_head;
+TAILQ_HEAD(vsegment_hash_head , ovl_object);
 struct ovseglist;
 CIRCLEQ_HEAD(ovseglist, ovl_segment);
 struct ovl_segment {
-	struct ovpglist					ovsg_ovpglist; 	/* Pages in Resident memory */
+	struct ovpglist					ovs_ovpglist; 				/* Pages in Resident memory */
 
-	CIRCLEQ_ENTRY(ovl_segment) 		ovsg_hashlist;	/* hash table links (O) */
-	CIRCLEQ_ENTRY(ovl_segment) 		ovsg_seglist;	/* segments in same object (O) */
+	CIRCLEQ_ENTRY(ovl_segment) 		ovs_hashlist;				/* hash table links (O) */
+	CIRCLEQ_ENTRY(ovl_segment) 		ovs_seglist;				/* segments in same object (O) */
 
-	int								ovsg_flags;
-	ovl_object_t					ovsg_object;	/* which object am I in (O,S)*/
-	vm_offset_t 					ovsg_offset;	/* offset into object (O,S) */
+	int								ovs_flags;
+	ovl_object_t					ovs_object;					/* which object am I in (O,S)*/
+	vm_offset_t 					ovs_offset;					/* offset into object (O,S) */
 
-	int								ovsg_resident_page_count;	/* number of resident pages */
+	int								ovs_resident_page_count;	/* number of resident pages */
+
+	TAILQ_ENTRY(ovl_segment)    	ovs_vsegment_hlist;			/* list of all associated vm_segments */
+
+#define ovs_vm_object           	ovs_object->ovo_vm_object
+#define ovs_vm_segment          	ovs_object->ovo_vm_segment
+#define ovs_vm_page             	ovs_object->ovo_vm_page
 };
 
+/* flags */
+#define OVL_SEG_VM_SEG				0x0016	/* overlay segment holds vm_segment */
+
 extern
-struct ovseglist  	ovl_segment_list;
+struct ovseglist  					ovl_segment_list;
 extern
-simple_lock_data_t	ovl_segment_list_lock;
+simple_lock_data_t					ovl_segment_list_lock;
+
+extern
+struct vsegment_hash_head       	ovl_vsegment_hashtable;
+long				           		ovl_vsegment_count;
+simple_lock_data_t					ovl_vsegment_hash_lock;
 
 #define	ovl_segment_lock_lists()	simple_lock(&ovl_segment_list_lock)
 #define	ovl_segment_unlock_lists()	simple_unlock(&ovl_segment_list_lock)
@@ -59,5 +76,9 @@ void				ovl_segment_insert(ovl_segment_t, ovl_object_t, vm_offset_t);
 void				ovl_segment_remove(ovl_segment_t);
 ovl_segment_t		ovl_segment_lookup(ovl_object_t, vm_offset_t);
 void				ovl_segment_init(vm_offset_t, vm_offset_t);
+
+void				ovl_segment_insert_vm_segment(ovl_segment_t, vm_segment_t);
+vm_segment_t		ovl_segment_lookup_vm_segment(ovl_segment_t, vm_segment_t);
+void				ovl_segment_remove_vm_segment(ovl_segment_t, vm_segment_t);
 
 #endif /* _OVL_SEGMENT_H_ */

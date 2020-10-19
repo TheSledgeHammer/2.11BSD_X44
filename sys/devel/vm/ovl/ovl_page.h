@@ -95,31 +95,47 @@
 #include <devel/vm/ovl/ovl.h>
 #include <sys/tree.h>
 
+struct vpage_hash_head;
+TAILQ_HEAD(vpage_hash_head, ovl_page);
 struct ovpglist;
-TAILQ_HEAD(ovpglist, vm_page);
+TAILQ_HEAD(ovpglist, ovl_page);
 struct ovl_page {
-	TAILQ_ENTRY(ovl_page)	ovp_pageq;		/* queue info for FIFO queue or free list (P) */
-	TAILQ_ENTRY(ovl_page)	ovp_hashq;		/* hash table links (S)*/
-	TAILQ_ENTRY(ovl_page)	ovp_listq;		/* pages in same segment (S)*/
 
-	ovl_segment_t			ovp_segment;	/* which segment am I in (O,(S,P))*/
-	vm_offset_t				ovp_offset;		/* offset into segment (O,(S,P)) */
 
-	u_short					ovp_pqflags;	/* page queue flags [P] */
+	TAILQ_ENTRY(ovl_page)	ovp_hashq;					/* hash table links (S)*/
+	TAILQ_ENTRY(ovl_page)	ovp_listq;					/* pages in same segment (S)*/
 
-	u_short					ovp_wire_count;	/* wired down maps refs (P) */
-	u_short					ovp_flags;		/* see below */
+	ovl_segment_t			ovp_segment;				/* which segment am I in (O,(S,P))*/
+	vm_offset_t				ovp_offset;					/* offset into segment (O,(S,P)) */
 
-	vm_offset_t				ovp_phys_addr;	/* physical address of page */
+	u_short					ovp_flags;					/* see below */
+
+	TAILQ_ENTRY(ovl_page) 	ovp_vpage_hlist;			/* list of all associated vm_pages */
+
+#define ovp_vm_object       ovp_segment->ovs_vm_object
+#define ovp_vm_segment      ovp_segment->ovs_vm_segment
+#define ovp_vm_page         ovp_segment->ovs_vm_page
 };
 
-extern
-struct ovpglist		ovl_page_list;
+/* flags */
+#define OVL_PG_VM_PG		0x0016	/* overlay page holds vm_page */
 
 extern
-simple_lock_data_t	ovl_page_list_lock;
+struct ovpglist				ovl_page_list;
+extern
+simple_lock_data_t			ovl_page_list_lock;
+
+extern
+struct vpage_hash_head     	ovl_vpage_hashtable;
+long				       	ovl_vpage_count;
+simple_lock_data_t			ovl_vpage_hash_lock;
 
 #define	ovl_page_lock_lists()	simple_lock(&ovl_page_list_lock)
 #define	ovl_page_unlock_lists()	simple_unlock(&ovl_page_list_lock)
+
+
+void			ovl_page_insert_vm_page(ovl_page_t, vm_page_t);
+vm_page_t		ovl_page_lookup_vm_page(ovl_page_t, vm_page_t);
+void			ovl_page_remove_vm_page(ovl_page_t, vm_page_t);
 
 #endif /* _OVL_PAGE_H_ */

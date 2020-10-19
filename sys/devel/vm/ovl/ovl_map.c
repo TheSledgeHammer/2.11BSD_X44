@@ -937,27 +937,6 @@ ovl_map_remove(map, start, end)
 	return (result);
 }
 
-void
-ovl_map_set_active(map)
-	ovl_map_t map;
-{
-	map->ovl_is_active = TRUE;
-}
-
-void
-ovl_map_set_inactive(map)
-	ovl_map_t map;
-{
-	map->ovl_is_active = FALSE;
-}
-
-boolean_t
-ovl_map_is_active(map)
-	ovl_map_t map;
-{
-	return (map->ovl_is_active);
-}
-
 /* swap an overlay in: overlay is set to active */
 ovl_map_swapin(map, address, entry)
 	register ovl_map_t			map;
