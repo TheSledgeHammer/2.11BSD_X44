@@ -100,8 +100,6 @@ TAILQ_HEAD(vpage_hash_head, ovl_page);
 struct ovpglist;
 TAILQ_HEAD(ovpglist, ovl_page);
 struct ovl_page {
-
-
 	TAILQ_ENTRY(ovl_page)	ovp_hashq;					/* hash table links (S)*/
 	TAILQ_ENTRY(ovl_page)	ovp_listq;					/* pages in same segment (S)*/
 
@@ -110,7 +108,7 @@ struct ovl_page {
 
 	u_short					ovp_flags;					/* see below */
 
-	TAILQ_ENTRY(ovl_page) 	ovp_vpage_hlist;			/* list of all associated vm_pages */
+	TAILQ_ENTRY(ovl_page) 	ovp_vpage_hlist;			/* list of all my associated vm_pages */
 
 #define ovp_vm_object       ovp_segment->ovs_vm_object
 #define ovp_vm_segment      ovp_segment->ovs_vm_segment
@@ -118,7 +116,7 @@ struct ovl_page {
 };
 
 /* flags */
-#define OVL_PG_VM_PG		0x0016	/* overlay page holds vm_page */
+#define OVL_PG_VM_PG		0x16	/* overlay page holds vm_page */
 
 extern
 struct ovpglist				ovl_page_list;
@@ -128,6 +126,7 @@ simple_lock_data_t			ovl_page_list_lock;
 extern
 struct vpage_hash_head     	ovl_vpage_hashtable;
 long				       	ovl_vpage_count;
+extern
 simple_lock_data_t			ovl_vpage_hash_lock;
 
 #define	ovl_page_lock_lists()	simple_lock(&ovl_page_list_lock)
@@ -137,5 +136,8 @@ simple_lock_data_t			ovl_vpage_hash_lock;
 void			ovl_page_insert_vm_page(ovl_page_t, vm_page_t);
 vm_page_t		ovl_page_lookup_vm_page(ovl_page_t, vm_page_t);
 void			ovl_page_remove_vm_page(ovl_page_t, vm_page_t);
+
+//vm_page_copy_to_ovl_page		/* inserts into ovl_page hash list */
+//vm_page_copy_from_ovl_page	/* removes from ovl_page hash list */
 
 #endif /* _OVL_PAGE_H_ */

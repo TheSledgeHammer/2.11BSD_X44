@@ -67,55 +67,48 @@ koverlay_allocate(size, type, flags)
 	ovp = &kovl_bucket[indx];
 	ovp->ob_tbtree = tbtree_allocate(&kovl_bucket[indx]);
 
-	if (oup->ou_kovlcnt < NKOVL) {
-		if (ovp->ob_next == NULL) {
-			ovp->ob_last = NULL;
+	if (ovp->ob_next == NULL) {
+		ovp->ob_last = NULL;
 
-			if (size > MAXALLOCSAVE) {
-				allocsize = roundup(size, CLBYTES);
-			} else {
-				allocsize = 1 << indx;
-			}
-			npg = clrnd(btoc(allocsize));
-
-			va = (caddr_t) tbtree_malloc(ovp->ob_tbtree, (vm_size_t) ctob(npg), OVL_OBJ_KERNEL, !(flags & M_NOWAIT));
-
-			if(va != NULL) {
-				oup->ou_kovlcnt++;
-			}
-
-			if (va == NULL) {
-				return ((void*) NULL);
-			}
-
-			oup = btooup(va, kovlbase);
-			oup->ou_indx = indx;
-			if (allocsize > MAXALLOCSAVE) {
-				if (npg > 65535)
-					panic("malloc: allocation too large");
-				oup->ou_bucketcnt = npg;
-				goto out;
-			}
-			savedlist = ovp->ob_next;
-			ovp->ob_next = cp = (caddr_t) va + (npg * NBPG) - allocsize;
-			for(;;) {
-				freep = (struct asl*) cp;
-
-				cp -= allocsize;
-				freep->asl_next->asl_addr = cp;
-			}
-
-			asl_set_addr(freep->asl_next, savedlist);
-			if(ovp->ob_last == NULL) {
-				ovp->ob_last = (caddr_t)freep;
-			}
+		if (size > MAXALLOCSAVE) {
+			allocsize = roundup(size, CLBYTES);
+		} else {
+			allocsize = 1 << indx;
 		}
-		va = ovp->ob_next;
-		ovp->ob_next = asl_get_addr(((struct asl *)va)->asl_next);
+		npg = clrnd(btoc(allocsize));
+
+		va = (caddr_t) tbtree_malloc(ovp->ob_tbtree, (vm_size_t) ctob(npg), OVL_OBJ_KERNEL, !(flags & M_NOWAIT));
+
+		if (va == NULL) {
+			return ((void*) NULL);
+		}
+
+		oup = btooup(va, kovlbase);
+		oup->ou_indx = indx;
+		if (allocsize > MAXALLOCSAVE) {
+			if (npg > 65535)
+				panic("malloc: allocation too large");
+			oup->ou_bucketcnt = npg;
+			goto out;
+		}
+		savedlist = ovp->ob_next;
+		ovp->ob_next = cp = (caddr_t) va + (npg * NBPG) - allocsize;
+		for(;;) {
+			freep = (struct asl*) cp;
+
+			cp -= allocsize;
+			freep->asl_next->asl_addr = cp;
+		}
+
+		asl_set_addr(freep->asl_next, savedlist);
+		if(ovp->ob_last == NULL) {
+			ovp->ob_last = (caddr_t)freep;
+		}
 	}
+	va = ovp->ob_next;
+	ovp->ob_next = asl_get_addr(((struct asl *)va)->asl_next);
 
 out:
-	//splx(s);
 	return ((void *) va);
 }
 

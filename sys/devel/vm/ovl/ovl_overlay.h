@@ -93,9 +93,7 @@ struct ovlstats {
 
 struct ovlusage {
 	short 			ou_indx;			/* bucket index */
-	u_short 		ou_kovlcnt;			/* kernel overlay count */
-	u_short 		ou_vovlcnt;			/* vm overlay count */
-	u_short			ou_bucketcnt;		/* buckets */
+	u_short			ou_bucketcnt;		/* buckets alloced */
 };
 
 struct ovlbuckets {
@@ -110,7 +108,7 @@ struct ovlbuckets {
 #define btooup(addr, base)		(&ovlusage[((char)(addr) - (base)) >> CLSHIFT])
 
 /* Overlay Flags */
-#define OVL_ALLOCATED  (1 < 0) 			/* overlay region allocated */
+#define OVL_ALLOCATED  		(1 < 0) 	/* overlay region allocated */
 
 extern struct ovlstats 		ovlstats[];
 extern struct ovlusage 		*ovlusage;

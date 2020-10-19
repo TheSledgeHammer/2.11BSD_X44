@@ -86,7 +86,7 @@ struct ovl_object {
 	int									ovo_ref_count;		/* How many refs?? */
 	vm_size_t							ovo_size;			/* Object size */
 
-	TAILQ_ENTRY(ovl_object)				ovo_vobject_hlist; 	/* list of all associated vm_objects */
+	TAILQ_ENTRY(ovl_object)				ovo_vobject_hlist; 	/* list of all my associated vm_objects */
 	union {
 		vm_object_t 					vm_object;			/* a vm_object being held */
 		vm_segment_t 					vm_segment;			/* a vm_segment being held */
@@ -99,9 +99,9 @@ struct ovl_object {
 };
 
 /* Flags */
-#define OVL_OBJ_KERNEL		0x0006	/* kernel overlay object */
-#define OVL_OBJ_VM			0x0008	/* vm overlay object */
-#define OVL_OBJ_VM_OBJ		0x0016	/* overlay object holds vm_object */
+#define OVL_OBJ_KERNEL		0x06	/* kernel overlay object */
+#define OVL_OBJ_VM			0x08	/* vm overlay object */
+#define OVL_OBJ_VM_OBJ		0x16	/* overlay object holds vm_object */
 
 RB_HEAD(ovl_object_hash_head, ovl_object_hash_entry);
 struct ovl_object_hash_entry {

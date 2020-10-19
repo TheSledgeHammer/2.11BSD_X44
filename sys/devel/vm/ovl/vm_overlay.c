@@ -52,6 +52,60 @@ voverlay_allocate(size, type, flags)
 	unsigned long size;
 	int type, flags;
 {
+	register struct ovlbuckets *ovp;
+	register struct ovlusage *oup;
+	register struct asl *freep;
+	long indx, npg, allocsize;
+	caddr_t va, cp, savedlist;
+
+	indx = BUCKETINDX(size);
+	ovp = &kovl_bucket[indx];
+	ovp->ob_tbtree = tbtree_allocate(&vovl_bucket[indx]);
+
+	if (ovp->ob_next == NULL) {
+		ovp->ob_last = NULL;
+
+		if (size > MAXALLOCSAVE) {
+			allocsize = roundup(size, CLBYTES);
+		} else {
+			allocsize = 1 << indx;
+		}
+		npg = clrnd(btoc(allocsize));
+
+		va = (caddr_t) tbtree_malloc(ovp->ob_tbtree, (vm_size_t) ctob(npg),	OVL_OBJ_VM, !(flags & M_NOWAIT));
+
+		if (va == NULL) {
+			return ((void*) NULL);
+		}
+
+		oup = btooup(va, vovlbase);
+		oup->ou_indx = indx;
+		if (allocsize > MAXALLOCSAVE) {
+			if (npg > 65535)
+				panic("malloc: allocation too large");
+			oup->ou_bucketcnt = npg;
+			goto out;
+		}
+		savedlist = ovp->ob_next;
+		ovp->ob_next = cp = (caddr_t) va + (npg * NBPG) - allocsize;
+		for (;;) {
+			freep = (struct asl*) cp;
+
+			cp -= allocsize;
+			freep->asl_next->asl_addr = cp;
+		}
+
+		asl_set_addr(freep->asl_next, savedlist);
+		if (ovp->ob_last == NULL) {
+			ovp->ob_last = (caddr_t) freep;
+		}
+	}
+	va = ovp->ob_next;
+	ovp->ob_next = asl_get_addr(((struct asl*) va)->asl_next);
+
+out:
+	//splx(s);
+	return ((void*) va);
 
 }
 
@@ -60,7 +114,26 @@ voverlay_free(addr, type)
 	void *addr;
 	int type;
 {
+	register struct ovlbuckets *ovp;
+	register struct ovlusage *oup;
+	register struct asl *freep;
+	long size;
 
+	oup = btokup(addr);
+	size = 1 << oup->ou_indx;
+	ovp = &vovl_bucket[oup->ou_indx];
+
+	if (size > MAXALLOCSAVE) {
+		tbtree_free(ovp->ob_tbtree, (vm_offset_t) addr, oup->ou_bucketcnt);
+		return;
+	}
+	freep = (struct asl*) addr;
+	if (ovp->ob_next == NULL)
+		ovp->ob_next = addr;
+	else
+		((struct asl*) ovp->ob_last)->asl_next->asl_addr = addr;
+	freep->asl_next->asl_addr = NULL;
+	ovp->ob_last = addr;
 }
 
 void

@@ -34,41 +34,57 @@
 #include <sys/queue.h>
 #include "ovl_overlay.h"
 
-typedef enum loadoverlay {
+/* Overlay Object Type */
+typedef enum {
 	OVL_KERN,
-	OVL_VM,
-} OVLTYPE;
+	OVL_VM
+} OVL_OBJ_TYPE;
 
-CIRCLEQ_HEAD(overlay_head, overlay);
-struct overlay {
-	CIRCLEQ_ENTRY(overlay) 	o_entries;
-	OVLTYPE					o_type;
+extern struct overlay_head ovlist;
+
+/* flags */
+#define OVL_LOADED 		0x001		/* overlay is loaded */
+#define OVL_UNLOADED 	0x002		/* overlay is unloaded */
+#define OVL_ACTIVE 		0x004		/* overlay is active */
+#define OVL_INACTIVE 	0x008		/* overlay is inactive */
+#define OVL_EXEC		0x010 		/* overlay is executing */
+
+
+struct overlay_head;
+CIRCLEQ_HEAD(overlay_head, overlay_entries);
+struct overlay_entries {
+	CIRCLEQ_ENTRY(overlay_entries) 	o_entries;
+
+	int								o_nkovl;
+	int								o_nvovl;
 };
 
 union overlay_generic {
-	struct overlay_exec 	*ovl_exec;
-	struct overlay_ops		*ovl_ops;
+	struct overlay_entries			*ovl_list;		/* list of loaded overlay objects */
 
+	struct overlay_exec 			*ovl_exec;		/* overlay executable initializer */
+	struct overlay_ops				*ovl_ops;		/* overlay ops (vm & kernel) */
+	struct overlay_load				*ovl_load;		/* load into overlay list */
+	struct overlay_unload			*ovl_unload;	/* unload from overlay list */
 };
 
 struct overlay_table {
-	int 					o_type;
-	u_long 					o_size;
-	u_long					o_offset;
-	u_long					o_area;
+	int 							o_objtype;		/* overlay object type: (see above: OVL_OBJ_TYPE) */
+	u_long 							o_size;
+	u_long							o_offset;
+	u_long							o_area;
 
-	union overlay_generic 	o_private;
+	union overlay_generic 			o_private;
 };
 
 struct overlay_exec {
-	OVLTYPE					o_type;
-	int 					o_ver;
-	char					*o_name;
-	u_long					o_offset;
-	struct execsw			*o_exec;
+	int 							o_ver;
+	char							*o_name;
+	u_long							o_offset;
+	struct execsw					*o_exec;
 };
 
-/* overlay memory allocation ops: (see below: overlay_allocate & overlay_free)  */
+/* overlay ops */
 struct overlay_ops {
 	void (*koverlay_allocate)(unsigned long size, int type, int flags);
 	void (*koverlay_free)(void *addr, int type);
@@ -77,17 +93,21 @@ struct overlay_ops {
 };
 
 struct overlay_load {
-	caddr_t			ol_address;	/* overlayed address (kernel) */
-	ovl_segment_t 	ol_segment;	/* overlayed segment (vm only!) */
-	ovl_page_t 		ol_page;	/* overlayed page (vm only!) */
+	caddr_t							ol_address;	/* overlaid address */
+
+	ovl_object_t					ol_object;	/* overlaid object */
+	ovl_segment_t 					ol_segment;	/* overlaid segment */
+	ovl_page_t 						ol_page;	/* overlaid page */
 
 	//id, status
 };
 
 struct overlay_unload {
-	caddr_t			ol_address;	/* overlayed address (kernel) */
-	ovl_segment_t 	ol_segment;	/* overlayed segment (vm only!) */
-	ovl_page_t 		ol_page;	/* overlayed page (vm only!) */
+	caddr_t							ol_address;	/* overlaid address */
+
+	ovl_object_t					ol_object;	/* overlaid object */
+	ovl_segment_t 					ol_segment;	/* overlaid segment */
+	ovl_page_t 						ol_page;	/* overlaid page */
 
 	//id, status
 };

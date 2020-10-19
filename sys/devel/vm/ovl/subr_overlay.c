@@ -29,6 +29,7 @@
 /* overlay subroutines & management */
 
 #include <sys/map.h>
+#include <sys/queue.h>
 #include <devel/vm/ovl/overlay.h>
 
 struct overlay_ops ovlops = {
@@ -37,6 +38,8 @@ struct overlay_ops ovlops = {
 		.voverlay_allocate = 	voverlay_allocate,
 		.voverlay_free = 		voverlay_free
 };
+
+struct overlay_head *ovlist;
 
 void
 ovlops_init(ovlops)
@@ -51,11 +54,9 @@ overlay_init()
 	koverlay_init();
 	voverlay_init();
 	ovlops_init(&ovlops);
-}
 
-overlay_hash()
-{
 
+	CIRCLEQ_INIT(ovlist);
 }
 
 overlay_startup()
@@ -63,13 +64,52 @@ overlay_startup()
 
 }
 
-overlay_add()
+void
+overlay_add(ovltp)
+	struct overlay_table *ovltp;
 {
+	struct overlay_head *ovlist;
+
+	struct overlay_entries *ove = ovltp->o_private.ovl_list;
+
+	ovlist = &ovlist;
+/* TODO: default: set flags to inactive */
+	switch (ovltp->o_objtype) {
+	case OVL_KERN:
+		if(ove->o_nkovl <= NKOVLE) {
+			CIRCLEQ_INSERT_HEAD(ovlist, ove, o_entries);
+			ove->o_nkovl++;
+		};
+		break;
+	case OVL_VM:
+		if(ove->o_nvovl <= NVOVLE) {
+			CIRCLEQ_INSERT_TAIL(ovlist, ove, o_entries);
+			ove->o_nvovl++;
+		}
+		break;
+	}
 }
 
-overlay_remove()
+void
+overlay_remove(ovltp)
+	struct overlay_table *ovltp;
 {
+	struct overlay_head *ovlist;
 
+	struct overlay_entries *ove = ovltp->o_private.ovl_list;
+
+	ovlist = &ovlist;
+/* TODO: check flags: if active, set inactive */
+	switch (ovltp->o_objtype) {
+	case OVL_KERN:
+		CIRCLEQ_REMOVE(ovlist, ove, o_entries);
+		ove->o_nkovl--;
+		break;
+	case OVL_VM:
+		CIRCLEQ_REMOVE(ovlist, ove, o_entries);
+		ove->o_nvovl--;
+		break;
+	}
 }
 
 overlay_find()
@@ -82,6 +122,36 @@ overlay_exec(ovltp)
 {
 	struct overlay_exec *args = ovltp->o_private.ovl_exec;
 
+	/* set flags to exec */
+}
+
+overlay_load(ovltp)
+	struct overlay_table *ovltp;
+{
+	struct overlay_load *ovl = ovltp->o_private.ovl_load;
+
+	/* pseudo-code:
+	 * if(... == NULL)
+	 * 	set flags to loaded
+	 * 	overlay_allocate(ovltp, size, type, flags);
+	 *
+	 * 	overlay_add(ovltp, ..);
+	 */
+
+}
+
+overlay_unload(ovltp)
+	struct overlay_table *ovltp;
+{
+	struct overlay_unload *ovul = ovltp->o_private.ovl_unload;
+
+	/* pseudo-code:
+	 * if(... != NULL)
+	 * set flags to unloaded if loaded
+	 * 	 overlay_free(ovltp, addr, type);
+	 *
+	 * 	 overlay_remove(ovltp, ..);
+	 */
 
 }
 
@@ -95,7 +165,7 @@ overlay_allocate(ovltp, size, type, flags)
 
 	int error = 0;
 
-	switch (ovltp->o_type) {
+	switch (ovltp->o_objtype) {
 	case OVL_KERN:
 		return (ops->koverlay_allocate(size, type, flags));
 	case OVL_VM:
@@ -116,7 +186,7 @@ overlay_free(ovltp, addr, type)
 
 	int error = 0;
 
-	switch (ovltp->o_type) {
+	switch (ovltp->o_objtype) {
 	case OVL_KERN:
 		return (ops->koverlay_free(addr, type));
 	case OVL_VM:
@@ -125,14 +195,4 @@ overlay_free(ovltp, addr, type)
 		error = EOPNOTSUPP;
 		break;
 	}
-}
-
-overlay_load()
-{
-
-}
-
-overlay_unload()
-{
-
 }
