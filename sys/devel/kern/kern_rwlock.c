@@ -155,7 +155,7 @@ rwlockmgr(rwl, flags, pid)
 
 /*
  * Print out information about state of a lock. Used by VOP_PRINT
- * routines to display ststus about contained locks.
+ * routines to display status about contained locks.
  */
 void
 rwlockmgr_printinfo(rwl)

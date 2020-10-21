@@ -220,8 +220,7 @@ lfs_fsync(ap)
 	struct timeval tv;
 
 	tv = time;
-	return (VOP_UPDATE(ap->a_vp, &tv, &tv,
-	    ap->a_waitfor == MNT_WAIT ? LFS_SYNC : 0));
+	return (VOP_UPDATE(ap->a_vp, &tv, &tv, ap->a_waitfor == MNT_WAIT ? LFS_SYNC : 0));
 }
 
 /*

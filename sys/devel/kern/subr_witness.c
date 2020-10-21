@@ -162,18 +162,6 @@ struct lock_class {
 	u_int							lc_flags;
 };
 
-/*
-struct lock_class {
-	const		char *lc_name;
-	u_int		lc_flags;
-	void		(*lc_assert)(const struct lock_object *lock, int what);
-	void		(*lc_ddb_show)(const struct lock_object *lock);
-	void		(*lc_lock)(struct lock_object *lock, uintptr_t how);
-	int			(*lc_owner)(const struct lock_object *lock, struct thread **owner);
-	uintptr_t	(*lc_unlock)(struct lock_object *lock);
-};
-*/
-
 union lock_stack {
 	union lock_stack				*ls_next;
 	struct stacktrace				ls_stack;

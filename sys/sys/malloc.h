@@ -121,7 +121,7 @@
 #define	M_TEMP			70	/* misc temporary data buffers */
 #define	M_LAST			71	/* Must be last type + 1 */
 
-#define INITKMEMNAMES { \
+#define INITKMEMNAMES {						\
 	"free",			/* 0 M_FREE */ 			\
 	"mbuf",			/* 1 M_MBUF */ 			\
 	"devbuf",		/* 2 M_DEVBUF */ 		\

@@ -66,8 +66,8 @@ struct mem_range_op {
 	/* XXX want a flag that says "set and undo when I exit" */
 };
 
-#define MEMRANGE_GET	_IOWR('m', 50, struct mem_range_op)
-#define MEMRANGE_SET	_IOW('m', 51, struct mem_range_op)
+#define MEMRANGE_GET		_IOWR('m', 50, struct mem_range_op)
+#define MEMRANGE_SET		_IOW('m', 51, struct mem_range_op)
 
 #define	ME_STATE_INVALID	0
 #define	ME_STATE_VALID		1

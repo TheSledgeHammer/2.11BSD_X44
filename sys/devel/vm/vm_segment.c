@@ -50,6 +50,8 @@ simple_lock_data_t	vm_segment_list_activity_lock;
 
 long				first_segment;
 long				last_segment;
+vm_offset_t			first_logical_addr;
+vm_offset_t			last_logical_addr;
 vm_size_t			segment_mask;
 int					segment_shift;
 
@@ -75,7 +77,7 @@ vm_segment_startup(start, end)
 	register struct seglist		*bucket;
 	vm_size_t					nsegments;
 	int							i;
-	vm_offset_t					pa;
+	vm_offset_t					la;
 
 	simple_lock_init(&vm_segment_list_lock);
 	simple_lock_init(&vm_segment_list_activity_lock);
@@ -122,8 +124,8 @@ vm_segment_startup(start, end)
 	first_segment = atos(round_segment(first_segment));
 	last_segment = first_segment + nsegments - 1;
 
-	first_phys_addr = stoa(first_segment);
-	last_phys_addr  = stoa(last_segment) + SEGMENT_MASK;
+	first_logical_addr = stoa(first_segment);
+	last_logical_addr  = stoa(last_segment) + SEGMENT_MASK;
 
 	seg = vm_segment_array = (vm_segment_t)pmap_bootstrap_alloc(nsegments * sizeof(struct vm_segment));
 
@@ -131,12 +133,12 @@ vm_segment_startup(start, end)
 	 *	Allocate and clear the mem entry structures.
 	 */
 
-	pa = first_phys_addr;
+	la = first_logical_addr;
 	while (nsegments--) {
 		seg->sg_flags = 0;
 		seg->sg_object = NULL;
 		seg++;
-		pa += SEGMENT_SIZE;
+		la += SEGMENT_SIZE;
 	}
 
 	seg->sg_resident_page_count = 0;

@@ -41,6 +41,10 @@ struct overlay_ops ovlops = {
 
 struct overlay_head *ovlist;
 
+#ifndef MAXLKMS
+#define	MAXLKMS		20
+#endif
+
 void
 ovlops_init(ovlops)
 	struct overlay_ops *ovlops;
@@ -59,8 +63,29 @@ overlay_init()
 	CIRCLEQ_INIT(ovlist);
 }
 
-overlay_startup()
+static struct overlay_table	otoverlays[MAXLKMS];	/* table of loaded overlays */
+static struct overlay_table	*curp;					/* global for in-progress ops */
+
+overlay_startup(p)
+	struct proc *p;
 {
+	struct overlay_load		*ovl_load;		/* load into overlay list */
+	struct overlay_unload	*ovl_unload;	/* unload from overlay list */
+	int i;
+
+	for (i = 0; i < MAXLKMS; i++) {
+		if (!otoverlays[i].o_used) {
+			break;
+		}
+	}
+	if (i == MAXLKMS) {
+		error = ENOMEM;		/* no slots available */
+		break;
+	}
+	curp = &otoverlays[i];
+	curp->o_id = i;			/* self reference slot offset */
+
+	curp->o_area = rmalloc(ovl_map, curp->o_size);
 
 }
 

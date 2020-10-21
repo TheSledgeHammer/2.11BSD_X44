@@ -48,7 +48,7 @@ syncip(ip)
 	if (lastlbn < nbuf / 2) {
 		for (lbn = 0; lbn < lastlbn; lbn++) {
 			blkno = fsbtodb(bmap(ip, lbn, B_READ, 0));
-			blkflush(ip->i_dev, blkno);
+			blkflush(UFS211_ITOV(ip), blkno);
 		}
 	} else {
 		lastbufp = &buf[nbuf];
@@ -70,7 +70,7 @@ syncip(ip)
 		}
 	}
 	ip->i_flag |= UFS211_ICHG;
-	iupdat(ip, &time, &time, 1);
+	VOP_UPDATE(UFS211_ITOV(ip), &time, &time, 1);
 }
 
 /*
@@ -147,3 +147,43 @@ getfsx(dev)
 	return (-1);
 }
 #endif
+
+/* vops_syscalls.c: */
+#define	BUFHASH(dvp, lbn)	\
+	(&bufhashtbl[((int)(dvp) / sizeof(*(dvp)) + (int)(lbn)) & (BUFHSZ * ((int)(lbn) + (bufhash)) - 1)])
+
+/*
+ * Insure that no part of a specified block is in an incore buffer.
+ */
+
+void
+blkflush(vp, blkno)
+	register struct vnode *vp;
+	daddr_t blkno;
+{
+	register struct buf *ep;
+	struct buf *dp;
+	register int s;
+
+	dp = BUFHASH(vp, blkno)->lh_first;
+	blkno = fsbtodb(blkno);
+loop:
+	for (ep = dp->b_forw; ep != dp; ep = ep->b_forw) {
+		if (ep->b_blkno != blkno || ep->b_vp != vp || (ep->b_flags&B_INVAL))
+			continue;
+		s = splbio();
+		if (ep->b_flags&B_BUSY) {
+			ep->b_flags |= B_WANTED;
+			sleep((caddr_t)ep, PRIBIO+1);
+			splx(s);
+			goto loop;
+		}
+		if (ep->b_flags & B_DELWRI) {
+			splx(s);
+			notavail(ep);	/* XXX: may not work properly!!! */
+			bwrite(ep);
+			goto loop;
+		}
+		splx(s);
+	}
+}

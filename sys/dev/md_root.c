@@ -61,8 +61,7 @@ md_attach_hook(unit, md)
 		md->md_addr = (caddr_t)md_root_image;
 		md->md_size = (size_t)md_root_size;
 		md->md_type = MD_KMEM_FIXED;
-		printf("md%d: internal %dK image area\n", unit,
-		    ROOTBYTES / 1024);
+		printf("md%d: internal %dK image area\n", unit, ROOTBYTES / 1024);
 	}
 }
 

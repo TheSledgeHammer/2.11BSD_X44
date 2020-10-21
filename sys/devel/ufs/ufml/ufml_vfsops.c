@@ -331,7 +331,7 @@ ufmlfs_fhtovp(mp, fidp, nam, vpp, exflagsp, credanonp)
 	struct ucred**credanonp;
 {
 
-	return VFS_FHTOVP(MOUNTTOUFMLMOUNT(mp)->ufmlm_vfs, fidp, nam, vpp, exflagsp,credanonp);
+	return VFS_FHTOVP(MOUNTTOUFMLMOUNT(mp)->ufmlm_vfs, fidp, nam, vpp, exflagsp, credanonp);
 }
 
 int

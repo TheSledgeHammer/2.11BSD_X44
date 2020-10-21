@@ -77,7 +77,6 @@
 	 N_GETMAGIC_NET(ex) != OMAGIC && N_GETMAGIC_NET(ex) != NMAGIC && 		\
 	 N_GETMAGIC_NET(ex) != ZMAGIC && N_GETMAGIC_NET(ex) != QMAGIC)
 
-
 /* Address of the bottom of the text segment. */
 #define N_TXTADDR(ex) 														\
 	((N_GETMAGIC(ex) == OMAGIC || N_GETMAGIC(ex) == NMAGIC || 				\

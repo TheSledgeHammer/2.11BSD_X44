@@ -44,6 +44,9 @@
 #include <sys/ioctl.h>
 #include <sys/tty.h>
 #include <sys/conf.h>
+#include <sys/device.h>
+#include <sys/disklabel.h>
+#include <sys/vnode.h>
 
 int	rawread		(dev_t, struct uio *, int);
 int	rawwrite	(dev_t, struct uio *, int);
@@ -98,10 +101,10 @@ bdev_decl(Fd);
 bdev_decl(wt);
 bdev_decl(xd);
 
-struct bdevsw	bdevsw[] =
+struct bdevsw bdevsw[] =
 {
 	bdev_disk_init(NWD,wd),	/* 0: st506/rll/esdi/ide disk */
-	bdev_swap_init(),		/* 1: swap pseudo-device */
+	bdev_swap_init(1,sw),		/* 1: swap pseudo-device */
 	bdev_disk_init(NFD,Fd),	/* 2: floppy disk */
 	bdev_tape_init(NWT,wt),	/* 3: QIC-24/60/120/150 cartridge tape */
 	bdev_disk_init(NXD,xd),	/* 4: temp alt st506/rll/esdi/ide disk */
@@ -121,7 +124,7 @@ int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 	dev_decl(n,open); dev_decl(n,close); dev_decl(n,read); \
 	dev_decl(n,write); dev_decl(n,ioctl); dev_decl(n,stop); \
 	dev_decl(n,reset); dev_decl(n,select); dev_decl(n,map); \
-	dev_decl(n,strategy); extern struct tty __CONCAT(n,_tty)[]
+	dev_decl(n,strategy); extern struct tty __CONCAT(n,_tty)[]; \
 
 #define	dev_tty_init(c,n)	(c > 0 ? __CONCAT(n,_tty) : 0)
 
@@ -241,7 +244,7 @@ cdev_decl(bpf);
 
 struct cdevsw cdevsw[] =
 {
-	cdev_cn_init(1,cn),		/* 0: virtual console */
+	cdev_cn_init(1,cn),			/* 0: virtual console */
 	cdev_ctty_init(1,ctty),		/* 1: controlling terminal */
 	cdev_mm_init(1,mm),			/* 2: /dev/{null,mem,kmem,...} */
 	cdev_disk_init(NWD,wd),		/* 3: st506/rll/esdi/ide disk */

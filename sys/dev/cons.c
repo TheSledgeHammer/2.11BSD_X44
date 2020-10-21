@@ -1,4 +1,5 @@
-/*	$NetBSD: cons.c,v 1.32 1996/09/07 12:40:54 mycroft Exp $	*/
+/*	$OpenBSD: cons.c,v 1.29 2020/04/03 08:24:52 mpi Exp $	*/
+/*	$NetBSD: cons.c,v 1.30 1996/04/08 19:57:30 jonathan Exp $	*/
 
 /*
  * Copyright (c) 1988 University of Utah.
@@ -17,11 +18,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -52,12 +49,12 @@
 #include <sys/file.h>
 #include <sys/conf.h>
 #include <sys/vnode.h>
+#include <sys/poll.h>
 
 #include <dev/cons.h>
 
-struct	tty *constty = NULL;	/* virtual console output device */
-struct	consdev *cn_tab;		/* physical console device info */
-struct	vnode *cn_devvp;		/* vnode for underlying device. */
+struct tty *constty = NULL;			/* virtual console output device */
+struct vnode *cn_devvp = NULLVP;	/* vnode for underlying device. */
 
 int
 cnopen(dev, flag, mode, p)
@@ -65,6 +62,7 @@ cnopen(dev, flag, mode, p)
 	int flag, mode;
 	struct proc *p;
 {
+	dev_t cndev;
 
 	if (cn_tab == NULL)
 		return (0);
@@ -74,12 +72,18 @@ cnopen(dev, flag, mode, p)
 	 * later.  This follows normal device semantics; they always get
 	 * open() calls.
 	 */
-	dev = cn_tab->cn_dev;
+	cndev  = cn_tab->cn_dev;
+	if (cndev == NODEV) {
+		return (ENXIO);
+#ifdef DIAGNOSTIC
+	if (cndev == dev)
+		panic("cnopen: recursive");
+#endif
 	if (cn_devvp == NULLVP) {
 		/* try to get a reference on its vnode, but fail silently */
 		cdevvp(dev, &cn_devvp);
 	}
-	return ((*cdevsw[major(dev)].d_open)(dev, flag, mode, p));
+	return ((*cdevsw[major(cndev)].d_open)(cndev, flag, mode, p));
 }
 
 int
@@ -152,13 +156,14 @@ cnwrite(dev, uio, flag)
 	return ((*cdevsw[major(dev)].d_write)(dev, uio, flag));
 }
 
-void
+int
 cnstop(tp, flag)
 	struct tty *tp;
 	int flag;
 {
-
+	return (0);
 }
+
 
 int
 cnioctl(dev, cmd, data, flag, p)
@@ -204,7 +209,6 @@ cnpoll(dev, events, p)
 	int events;
 	struct proc *p;
 {
-
 	/*
 	 * Redirect the ioctl, if that's appropriate.
 	 * I don't want to think of the possible side effects
@@ -216,13 +220,12 @@ cnpoll(dev, events, p)
 		return ENXIO;
 	else
 		dev = cn_tab->cn_dev;
-	return ((*cdevsw[major(dev)].d_poll)(dev, events, p));
+	return (ttpoll(dev, events, p));
 }
 
 int
 cngetc()
 {
-
 	if (cn_tab == NULL)
 		return (0);
 	return ((*cn_tab->cn_getc)(cn_tab->cn_dev));

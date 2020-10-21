@@ -1072,9 +1072,9 @@ ufml_bwrite(ap)
  * Global vfs data structures ufml
  */
 struct vnodeops ufml_vnodeops = {
-		.vop_lookup = 	ufs_lookup,			/* lookup */
-		.vop_create = 	ufs_create,			/* create */
-		.vop_mknod = 	ufs_mknod,			/* mknod */
+		.vop_lookup = 	ufml_lookup,		/* lookup */
+		.vop_create = 	ufml_create,		/* create */
+		.vop_mknod = 	ufml_mknod,			/* mknod */
 		.vop_access = 	ufml_access,		/* access */
 		.vop_getattr = 	ufml_getattr,		/* getattr */
 		.vop_setattr = 	ufml_setattr,		/* setattr */

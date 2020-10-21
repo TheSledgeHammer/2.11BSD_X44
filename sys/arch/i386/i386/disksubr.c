@@ -56,10 +56,8 @@ static char mbrsig[2] = {0x55, 0xaa};
 #define DOSPTYP_LNXEXT2	0x83		/* Linux native */
 #endif
 
-int fat_types[] = { DOSPTYP_FAT12, DOSPTYP_FAT16S,
-		    		DOSPTYP_FAT16B, DOSPTYP_FAT32,
-					DOSPTYP_FAT32L, DOSPTYP_FAT16L,
-					-1 };
+int fat_types[] = { DOSPTYP_FAT12, DOSPTYP_FAT16S, DOSPTYP_FAT16B,
+		DOSPTYP_FAT32, DOSPTYP_FAT32L, DOSPTYP_FAT16L, -1 };
 
 #define NO_MBR_SIGNATURE ((struct dos_partition *) -1)
 

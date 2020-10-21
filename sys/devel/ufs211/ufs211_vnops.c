@@ -450,8 +450,56 @@ ufs211_write(ap)
 }
 
 int
+ufs211_lease_check(ap)
+	struct vop_lease_check_args ap;
+{
+	return (0);
+}
+
+int
+ufs211_ioctl(ap)
+	struct vop_ioctl_args ap;
+{
+	return (0);
+}
+
+int
+ufs211_select(ap)
+	struct vop_select_args ap;
+{
+	return (0);
+}
+
+int
+ufs211_revoke(ap)
+	struct vop_revoke_args ap;
+{
+	return (0);
+}
+
+int
+ufs211_mmap(ap)
+	struct vop_mmap_args ap;
+{
+	return (0);
+}
+
+int
 ufs211_fsync(ap)
 	struct vop_fsync_args *ap;
+{
+	struct vnode *vp = ap->a_vp;
+	//struct filedesc *fdp = ap->a_p->p_fd;
+	//struct file *fpp = fdp->fd_ofiles;
+
+	syncip(&UFS211_VTOI(vp));
+
+	return (VOP_UPDATE(ap->a_vp, &tv, &tv, ap->a_waitfor == MNT_WAIT));
+}
+
+int
+ufs211_seek(ap)
+	struct vop_seek_args *ap;
 {
 	return (0);
 }
@@ -473,6 +521,13 @@ ufs211_rename(ap)
 int
 ufs211_readdir(ap)
 	struct vop_readdir_args *ap;
+{
+	return (0);
+}
+
+int
+ufs211_abortop(ap)
+	struct vop_abortop_args ap;
 {
 	return (0);
 }

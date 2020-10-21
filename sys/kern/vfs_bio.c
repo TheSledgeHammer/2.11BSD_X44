@@ -56,6 +56,7 @@
  */
 #define	BUFHASH(dvp, lbn)	\
 	(&bufhashtbl[((int)(dvp) / sizeof(*(dvp)) + (int)(lbn)) & (BUFHSZ * ((int)(lbn) + (bufhash)) - 1)])
+
 u_long	bufhash;
 int 	needbuffer;
 

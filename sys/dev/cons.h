@@ -60,9 +60,10 @@ struct consdev {
 #define	CONSMAJOR	0
 
 #ifdef KERNEL
-extern	struct consdev constab[];
-extern	struct consdev *cn_tab;
-extern	struct tty *cn_tty;
+extern	struct consdev 	constab[];
+extern	struct consdev 	*cn_tab;
+extern	struct tty 		*cn_tty;
+extern	struct vnode 	*cn_devvp;
 
 void	cninit (void);
 int		cnopen (dev_t, int, int, struct proc *);
@@ -90,5 +91,6 @@ void	nullcnpollc (dev_t, int);
 
 #define	cons_init(n) { \
 	dev_init(1,n,cnprobe), dev_init(1,n,cninit), dev_init(1,n,cngetc), \
-	dev_init(1,n,cnputc), dev_init(1,n,cnpollc) }
+	dev_init(1,n,cnputc), dev_init(1,n,cnpollc)
+}
 #endif

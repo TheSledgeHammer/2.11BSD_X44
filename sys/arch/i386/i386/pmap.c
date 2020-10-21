@@ -973,8 +973,7 @@ pmap_enter(pmap, va, pa, prot, wired)
 				if (pmap == npv->pv_pmap && va == npv->pv_va)
 					panic("pmap_enter: already in pv_tab");
 #endif
-			npv = (pv_entry_t)
-				malloc(sizeof *npv, M_VMPVENT, M_NOWAIT);
+			npv = (pv_entry_t)malloc(sizeof *npv, M_VMPVENT, M_NOWAIT);
 			npv->pv_va = va;
 			npv->pv_pmap = pmap;
 			npv->pv_next = pv->pv_next;

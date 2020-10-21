@@ -20,4 +20,5 @@ UFML:
 	
 Design Objectives of UFML:
 - A modular filesystem layer that can provide additional features to UFS, FFS, MFS & LFS.
-- Allow the interaction between one or more of these filesystems. In a similar way to how Fossil & Venti work on Plan 9.
+- Allow the interaction between one or more of these filesystems. 
+In a similar way to how Fossil & Venti work on Plan 9.

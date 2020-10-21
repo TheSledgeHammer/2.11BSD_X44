@@ -324,7 +324,7 @@ static char *fstypenames[] = {
 /*
  * Drive data for SCSI.
  */
-#define	d_blind		d_drivedata[0]
+#define	d_blind			d_drivedata[0]
 
 #ifndef LOCORE
 /*

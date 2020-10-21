@@ -47,7 +47,7 @@
  */
 
 struct lock {
-	volatile unsigned int   lk_lock;
+	volatile u_int   		lk_lock;
 
     struct  proc			*lk_prlockholder;	/* Proc lock holder */
     //struct 	kthread         *lk_ktlockholder; 	/* Kernel Thread lock holder */

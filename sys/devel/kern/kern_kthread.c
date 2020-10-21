@@ -188,8 +188,7 @@ kthreadpool_itc_recieve(ktpool, itc)
 	/* update job pool */
 }
 
-/* Initialize a Mutex on a kthread
- * Setup up Error flags */
+/* Initialize a lock on a kthread */
 int
 kthread_lock_init(lkp, kt)
     struct lock *lkp;
@@ -220,8 +219,7 @@ kthread_lockmgr(lkp, flags, kt)
     return lockmgr(lkp, flags, lkp->lk_lnterlock, pid);
 }
 
-/* Initialize a rwlock on a kthread
- * Setup up Error flags */
+/* Initialize a rwlock on a kthread */
 int
 kthread_rwlock_init(rwl, kt)
 	rwlock_t rwl;
@@ -230,6 +228,10 @@ kthread_rwlock_init(rwl, kt)
 	int error = 0;
 	rwlock_init(rwl, rwl->rwl_prio, rwl->rwl_wmesg, rwl->rwl_timo, rwl->rwl_flags);
 	set_kthread_rwlock(rwl, kt);
+    if(rwl->rwl_ktlockholder == NULL) {
+    	panic("kthread rwlock unavailable");
+    	error = EBUSY;
+    }
 	return (error);
 }
 

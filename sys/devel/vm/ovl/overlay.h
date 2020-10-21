@@ -73,6 +73,7 @@ struct overlay_table {
 	u_long 							o_size;
 	u_long							o_offset;
 	u_long							o_area;
+	u_long							o_used;
 
 	union overlay_generic 			o_private;
 };

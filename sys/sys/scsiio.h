@@ -10,19 +10,19 @@
 #define	SENSEBUFLEN 48
 
 typedef struct	scsireq {
-	u_long	flags;		/* info about the request status and type */
+	u_long	flags;				/* info about the request status and type */
 	u_long	timeout;
-	u_char	cmd[16];	/* 12 is actually the max */
+	u_char	cmd[16];			/* 12 is actually the max */
 	u_char	cmdlen;
-	caddr_t	databuf;	/* address in user space of buffer */
-	u_long	datalen;	/* size of user buffer (request) */
-	u_long	datalen_used;	/* size of user buffer (used)*/
+	caddr_t	databuf;			/* address in user space of buffer */
+	u_long	datalen;			/* size of user buffer (request) */
+	u_long	datalen_used;		/* size of user buffer (used)*/
 	u_char	sense[SENSEBUFLEN]; /* returned sense will be in here */
-	u_char	senselen;	/* sensedata request size (MAX of SENSEBUFLEN)*/
-	u_char	senselen_used;	/* return value only */
-	u_char	status;		/* what the scsi status was from the adapter */
-	u_char	retsts;		/* the return status for the command */
-	int		error;		/* error bits */
+	u_char	senselen;			/* sensedata request size (MAX of SENSEBUFLEN)*/
+	u_char	senselen_used;		/* return value only */
+	u_char	status;				/* what the scsi status was from the adapter */
+	u_char	retsts;				/* the return status for the command */
+	int		error;				/* error bits */
 } scsireq_t;
 
 /* bit defintions for flags */
@@ -42,11 +42,11 @@ typedef struct	scsireq {
 
 #define SCIOCCOMMAND	_IOWR('Q', 1, scsireq_t)
 
-#define SC_DB_CMDS	0x00000001	/* show all scsi cmds and errors */
-#define SC_DB_FLOW	0x00000002	/* show routines entered	*/
-#define SC_DB_FLOW2	0x00000004	/* show path INSIDE routines	*/
-#define SC_DB_DMA	0x00000008	/* show DMA segments etc	*/
-#define SCIOCDEBUG	_IOW('Q', 2, int)	/* from 0 to 15 */
+#define SC_DB_CMDS		0x00000001			/* show all scsi cmds and errors */
+#define SC_DB_FLOW		0x00000002			/* show routines entered	*/
+#define SC_DB_FLOW2		0x00000004			/* show path INSIDE routines	*/
+#define SC_DB_DMA		0x00000008			/* show DMA segments etc	*/
+#define SCIOCDEBUG		_IOW('Q', 2, int)	/* from 0 to 15 */
 
 struct	oscsi_addr {
 	int	scbus;		/* -1 if wildcard */
@@ -67,13 +67,13 @@ struct	scsi_addr {
 	} addr;
 };
 
-#define SCIOCREPROBE	_IOW('Q', 3, struct scsi_addr) /* look for new devs */
-#define  OSCIOCREPROBE	_IOW('Q', 3, struct oscsi_addr)
-#define SCIOCIDENTIFY	_IOR('Q', 4, struct scsi_addr) /* where are you? */
-#define  OSCIOCIDENTIFY	_IOR('Q', 4, struct oscsi_addr)
-#define SCIOCDECONFIG	_IO('Q', 5)	/* please dissappear */
-#define SCIOCRECONFIG	_IO('Q', 6)	/* please check again */
-#define SCIOCRESET		_IO('Q', 7)	/* reset the device */
+#define SCIOCREPROBE	_IOW('Q', 3, struct scsi_addr) 	/* look for new devs */
+#define OSCIOCREPROBE	_IOW('Q', 3, struct oscsi_addr)
+#define SCIOCIDENTIFY	_IOR('Q', 4, struct scsi_addr) 	/* where are you? */
+#define OSCIOCIDENTIFY	_IOR('Q', 4, struct oscsi_addr)
+#define SCIOCDECONFIG	_IO('Q', 5)						/* please dissappear */
+#define SCIOCRECONFIG	_IO('Q', 6)						/* please check again */
+#define SCIOCRESET		_IO('Q', 7)						/* reset the device */
 
 
 #endif /* _SYS_SCSIIO_H_ */
