@@ -67,5 +67,17 @@
  */
 #define KVA_PAGES	(512*4)
 
+/*
+ * The initial number of kernel page table pages that are constructed
+ * by pmap_cold() must be sufficient to map vm_page_array.  That number can
+ * be calculated as follows:
+ *     max_phys / PAGE_SIZE * sizeof(struct vm_page) / NBPDR
+ * PAE:      max_phys 16G, sizeof(vm_page) 76, NBPDR 2M, 152 page table pages.
+ * PAE_TABLES: max_phys 4G,  sizeof(vm_page) 68, NBPDR 2M, 36 page table pages.
+ * Non-PAE:  max_phys 4G,  sizeof(vm_page) 68, NBPDR 4M, 18 page table pages.
+ */
+#ifndef NKPT
+#define	NKPT		240
+#endif
 
 #endif /* _MACHINE_PMAP_PAE_H */

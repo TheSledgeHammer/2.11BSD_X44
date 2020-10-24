@@ -102,6 +102,9 @@ vm_offset_t	last_phys_addr;
 vm_size_t	page_mask;
 int			page_shift;
 
+static vaddr_t      virtual_space_start;
+static vaddr_t      virtual_space_end;
+
 /*
  *	vm_set_page_size:
  *
@@ -186,8 +189,7 @@ vm_page_startup(start, end)
 	/*
 	 *	Allocate (and initialize) the hash table buckets.
 	 */
-	vm_page_buckets = (struct pglist *)
-	    pmap_bootstrap_alloc(vm_page_bucket_count * sizeof(struct pglist));
+	vm_page_buckets = (struct pglist *)pmap_bootstrap_alloc(vm_page_bucket_count * sizeof(struct pglist));
 	bucket = vm_page_buckets;
 
 	for (i = vm_page_bucket_count; i--;) {
@@ -224,8 +226,7 @@ vm_page_startup(start, end)
 	 *	of a page structure per page).
 	 */
 
-	cnt.v_free_count = npages = (*end - *start + sizeof(struct vm_page))
-			/ (PAGE_SIZE + sizeof(struct vm_page));
+	cnt.v_free_count = npages = (*end - *start + sizeof(struct vm_page)) / (PAGE_SIZE + sizeof(struct vm_page));
 
 	/*
 	 *	Record the extent of physical memory that the
@@ -279,6 +280,66 @@ vm_page_startup(start, end)
 
 	/* from now on, pmap_bootstrap_alloc can't be used */
 	vm_page_startup_initialized = TRUE;
+}
+
+vaddr_t
+vm_pageboot_alloc(size)
+	vm_size_t size;
+{
+#if defined(PMAP_STEAL_MEMORY)
+	vaddr_t addr;
+
+	/*
+	 * defer bootstrap allocation to MD code (it may want to allocate
+	 * from a direct-mapped segment).  pmap_steal_memory should round
+	 * off virtual_space_start/virtual_space_end.
+	 */
+
+	addr = pmap_steal_memory(size, &virtual_space_start, &virtual_space_end);
+
+	return (addr);
+
+#else /* !PMAP_STEAL_MEMORY */
+
+	vm_page_startup_initialized = FALSE;
+	vaddr_t addr, vaddr;
+	caddr_t paddr;
+
+	/* round to page size */
+	size = round_page(size);
+
+	if(vm_page_startup_initialized == FALSE) {
+		pmap_virtual_space(&virtual_space_start, &virtual_space_end);
+
+		/* round it the way we like it */
+		virtual_space_start = round_page(virtual_space_start);
+		virtual_space_end = trunc_page(virtual_space_end);
+
+		vm_page_startup_initialized = TRUE;
+	}
+
+	/* allocate virtual memory for this request */
+	if (virtual_space_start == virtual_space_end || (virtual_space_end - virtual_space_start) < size)
+		panic("vm_pageboot_alloc: out of virtual space");
+
+	addr = virtual_space_start;
+
+	virtual_space_start += size;
+
+	/* allocate and mapin physical pages to back new virtual pages */
+	for (vaddr = round_page(addr); vaddr < addr + size; vaddr += PAGE_SIZE) {
+		if (!vm_page_physget(&paddr))
+			panic("vm_pageboot_alloc: out of memory");
+
+		/*
+		 * Note this memory is no longer managed, so using
+		 * pmap_kenter is safe.
+		 */
+		pmap_kenter_pa(vaddr, paddr, VM_PROT_READ | VM_PROT_WRITE);
+	}
+	pmap_update(pmap_kernel());
+	return (addr);
+#endif	/* PMAP_STEAL_MEMORY */
 }
 
 /*

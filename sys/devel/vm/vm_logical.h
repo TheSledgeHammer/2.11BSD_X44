@@ -19,7 +19,7 @@ struct vm_logical {
 	vm_segment_t 	vl_first_segment;
 	vm_segment_t 	vl_last_segment;
 
-	struct vm_logical_freelist (*freelist);
+	struct vm_logical_freelist (*vl_freelist);
 };
 
 

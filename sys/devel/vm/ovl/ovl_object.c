@@ -73,8 +73,8 @@
 #include <devel/vm/include/vm_page.h>
 #include <devel/vm/ovl/ovl_object.h>
 
-struct ovl_object	kernel_ovl_object_store;
-struct ovl_object	vm_ovl_object_store;
+struct ovl_object	overlay_object_store;
+struct ovl_object	omem_object_store;
 
 #define	OVL_OBJECT_HASH_COUNT	157
 
@@ -103,11 +103,11 @@ ovl_object_init(size)
 		RB_INIT(&ovl_object_hashtable[i]);
 		TAILQ_INIT(&ovl_vobject_hashtable[i]);
 
-	kern_ovl_object = &kernel_ovl_object_store;
-	_ovl_object_allocate(size, kern_ovl_object);
+	overlay_object = &overlay_object_store;
+	_ovl_object_allocate(size, overlay_object);
 
-	vm_ovl_object = &vm_ovl_object_store;
-	_ovl_object_allocate(size, vm_ovl_object);
+	omem_object = &omem_object_store;
+	_ovl_object_allocate(size, omem_object);
 }
 
 /*

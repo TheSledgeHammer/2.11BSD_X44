@@ -36,12 +36,23 @@ extern u_long 		KERNend;			/* phys addr end of kernel (just after bss) */
 /* New For PDE & PTE Mapping */
 extern u_long 		physfree;			/* phys addr of next free page */
 extern u_long 		KCPTphys;			/* phys addr of kernel clustered page table */
-
+extern u_long 		KCPTsegs;			/* segmented phys addr *
 extern u_long 		IdleCPT;
 extern cpt_entry_t 	*KCPTmap;			/* Kernel Clustered Page Table Mapping */
 extern cpte_entry_t *KCPTEmap;			/* Kernel Clustered Page Table Entry Mapping */
 
 #define NPGPTD		4					/* Num of pages for page directory */
+
+static u_long
+allocsegments(u_int cnt, u_long *physfree)
+{
+	u_long res;
+
+	res = *physfree;
+	*physfree += SEGMENT_SIZE * cnt;
+	bzero((void *)res, SEGMENT_SIZE * cnt);
+	return (res);
+}
 
 static u_long
 allocpages(u_int cnt, u_long *physfree)
@@ -66,6 +77,9 @@ allocate_kern_cpt(cpt, cpte)
 
 	/* Allocate Page Table Directory */
 	IdleCPT = allocpages(NPGPTD, &physfree);
+
+	/* Allocate Kernel Segment Tables */
+	KCPTsegs = allocsegments(NKST, &physfree);
 
 	allocpages(1, &physfree);
 	proc0paddr = allocpages(P0_KSTACK_PAGES, &physfree);
@@ -127,9 +141,9 @@ pmap_cold()
 	cpt = &cpt_base[0];
 	cpte = &cpte_base[0];
 
-	/* Kernel Page Table */
-	pd = cpt_to_pde(cpt, 0);
-	pt = cpte_to_pte(cpte, 0);
+	/* Kernel Clustered Page Table */
+	pd = pmap_get_pde(cpt, 0);
+	pt = pmap_get_pte(cpte, 0);
 
 	allocate_kern_cpt(cpt, cpte);
 
@@ -144,6 +158,34 @@ pmap_cold()
 
 	/* Map proc0addr */
 	pmap_cold_mapident(cpte, proc0paddr, P0_KSTACK_PAGES);
+}
+
+pd_entry_t
+pmap_get_pde(cpt, vpbn)
+	cpt_entry_t *cpt;
+	u_long vpbn;
+{
+	pd_entry_t *pd;
+
+	if(cpt != NULL) {
+		pd = cpt_to_pde(cpt, vpbn);
+		return (pd);
+	}
+	return (NULL);
+}
+
+pt_entry_t
+pmap_get_pte(cpte, boff)
+	cpte_entry_t *cpte;
+	int boff;
+{
+	pt_entry_t *pt;
+
+	if(cpte != NULL) {
+		pt = cpte_to_pte(cpte, boff);
+		return (pt);
+	}
+	return (NULL);
 }
 
 /*

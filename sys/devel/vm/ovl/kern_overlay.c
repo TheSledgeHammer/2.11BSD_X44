@@ -43,10 +43,10 @@
 #define MINBUCKET			4				/* 4 => min allocation of 16 bytes */
 #define MAXALLOCSAVE		(2 * CLBYTES)
 
-struct ovlbuckets 			kovl_bucket[MINBUCKET + 16];
+struct ovlbuckets 			ovl_bucket[MINBUCKET + 16];
 struct ovlstats 			ovlstats[M_LAST];
 struct ovlusage 			*ovlusage;
-char 						*kovlbase, *kovllimit;
+char 						*ovlbase, *ovllimit;
 
 
 /* TODO: fix asl and freep next.
@@ -64,8 +64,8 @@ koverlay_allocate(size, type, flags)
 	caddr_t  va, cp, savedlist;
 
 	indx = BUCKETINDX(size);
-	ovp = &kovl_bucket[indx];
-	ovp->ob_tbtree = tbtree_allocate(&kovl_bucket[indx]);
+	ovp = &ovl_bucket[indx];
+	ovp->ob_tbtree = tbtree_allocate(&ovl_bucket[indx]);
 
 	if (ovp->ob_next == NULL) {
 		ovp->ob_last = NULL;
@@ -77,13 +77,13 @@ koverlay_allocate(size, type, flags)
 		}
 		npg = clrnd(btoc(allocsize));
 
-		va = (caddr_t) tbtree_malloc(ovp->ob_tbtree, (vm_size_t) ctob(npg), OVL_OBJ_KERNEL, !(flags & M_NOWAIT));
+		va = (caddr_t) tbtree_malloc(ovp->ob_tbtree, (vm_size_t) ctob(npg), !(flags & M_NOWAIT));
 
 		if (va == NULL) {
 			return ((void*) NULL);
 		}
 
-		oup = btooup(va, kovlbase);
+		oup = btooup(va, ovlbase);
 		oup->ou_indx = indx;
 		if (allocsize > MAXALLOCSAVE) {
 			if (npg > 65535)
@@ -124,7 +124,7 @@ koverlay_free(addr, type)
 
 	oup = btokup(addr);
 	size = 1 << oup->ou_indx;
-	ovp = &kovl_bucket[oup->ou_indx];
+	ovp = &ovl_bucket[oup->ou_indx];
 
 	if (size > MAXALLOCSAVE) {
 		tbtree_free(ovp->ob_tbtree, (vm_offset_t)addr, oup->ou_bucketcnt);
@@ -146,6 +146,6 @@ koverlay_init()
 	int npg = (OVL_MEM_SIZE / NBOVL);
 
 	/* kernel overlay allocation */
-	ovlusage = (struct ovlusage *) ovl_alloc(ovl_map, (vm_size_t)(npg * sizeof(struct ovlusage)), OVL_OBJ_KERNEL);
-	kovl_mmap = ovl_suballoc(ovl_map, (vm_offset_t *)&kovlbase, (vm_offset_t *)&kovllimit, (vm_size_t *) npg);
+	ovlusage = (struct ovlusage *) ovl_alloc(overlay_map, (vm_size_t)(npg * sizeof(struct ovlusage)));
+	omem_map = ovl_suballoc(overlay_map, (vm_offset_t *)&ovlbase, (vm_offset_t *)&ovllimit, (vm_size_t *) npg);
 }

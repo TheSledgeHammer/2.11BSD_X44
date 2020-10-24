@@ -35,8 +35,6 @@
 struct overlay_ops ovlops = {
 		.koverlay_allocate = 	koverlay_allocate,
 		.koverlay_free = 		koverlay_free,
-		.voverlay_allocate = 	voverlay_allocate,
-		.voverlay_free = 		voverlay_free
 };
 
 struct overlay_head *ovlist;

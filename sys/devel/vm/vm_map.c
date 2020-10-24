@@ -553,20 +553,31 @@ vm_map_entry_dispose(map, entry)
  *
  *	Insert/remove entries from maps.
  */
-#define	vm_map_entry_link(map, after_where, entry) { 					\
-		(map)->nentries++; 												\
-	    (entry)->cl_entry.cqe_prev = (after_where);                   	\
-	    (entry)->cl_entry.cqe_next = (after_where)->cl_entry.cqe_next; 	\
-	    (entry)->cl_entry.cqe_prev->cl_entry.cqe_next = (entry);       	\
-	    (entry)->cl_entry.cqe_next->cl_entry.cqe_prev = (entry);       	\
-		vm_cl_insert((map), (entry));                   				\
-		vm_rb_insert((map), (entry));  									\
+
+static void
+vm_map_entry_link(map, after_where, entry)
+	vm_map_t map;
+	vm_map_entry_t after_where, entry;
+{
+	map->nentries++;
+	CIRCLEQ_PREV(entry, cl_entry) = after_where;
+	CIRCLEQ_NEXT(entry, cl_entry) = CIRCLEQ_NEXT(after_where, cl_entry);
+	CIRCLEQ_PREV(entry, cl_entry)->cl_entry.cqe_next = entry;
+	CIRCLEQ_NEXT(entry, cl_entry)->cl_entry.cqe_prev = entry;
+	vm_cl_insert(map, entry);
+	vm_rb_insert(map, entry);
 }
-#define	vm_map_entry_unlink(map, entry) { 								\
-		(map)->nentries--; 												\
-		vm_cl_remove((map), (entry)); 			        				\
-		vm_rb_remove((map), (entry));  									\
+
+static void
+vm_map_entry_unlink(map, entry)
+	vm_map_t map;
+	vm_map_entry_t entry;
+{
+	map->nentries--;
+	vm_cl_remove(map, entry);
+	vm_rb_remove(map, entry);
 }
+
 
 /*
  *	vm_map_reference:

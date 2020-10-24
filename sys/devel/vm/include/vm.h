@@ -74,16 +74,18 @@ typedef struct pager_struct 	*vm_pager_t;
 
 #include <vm/include/pmap.h>
 #include <vm/include/swap_pager.h>
+
 #include <vm/include/vm_extern.h>
 #include <vm/include/vm_inherit.h>
 #include <vm/include/vm_prot.h>
 
+#include <devel/vm/include/vmexp.h>
 #include <devel/vm/include/vm_map.h>
 #include <devel/vm/include/vm_object.h>
 #include <devel/vm/include/vm_param.h>
 #include <devel/vm/include/vm_swap.h>
 #include <devel/vm/extents/vm_extent.h>			/* Work in Progress */
-#include <devel/vm/include/vm_segment.h>		/* Work in Progress */
+#include <devel/vm/include/vm_segment.h>
 
 #include <devel/vm/avm/avm.h>					/* Work in Progress */
 #include <devel/vm/ovl/ovl.h>					/* Work in Progress */
@@ -128,6 +130,7 @@ struct vm {
 	struct pglist 		page_inactive; 	/* pages between the clock hands */
 	struct simplelock 	pageqlock; 		/* lock for active/inactive page q */
 	struct simplelock 	fpageqlock; 	/* lock for free page q */
+	bool				page_init_done;
 
 	/* page hash */
 	struct pglist 		*page_hash; 	/* page hash table (vp/off->page) */
@@ -149,37 +152,7 @@ struct vm {
 	/* kernel object: to support anonymous pageable kernel memory */
 	struct vm_object 	*kernel_object;
 };
-extern struct vm vm;
 
-/*
- * vmexp: global data structures that are exported to parts of the kernel
- * other than the vm system.
- */
-struct vmexp {
-	/* vm_page constants */
-	int pagesize; 		/* size of a page (PAGE_SIZE): must be power of 2 */
-	int pagemask; 		/* page mask */
-	int pageshift; 		/* page shift */
-
-	/* vm_page counters */
-	int npages; 		/* number of pages we manage */
-	int free; 			/* number of free pages */
-	int active; 		/* number of active pages */
-	int inactive; 		/* number of pages that we free'd but may want back */
-	int paging; 		/* number of pages in the process of being paged out */
-	int wired; 			/* number of wired pages */
-
-	/* swap */
-	int nswapdev; 		/* number of configured swap devices in system */
-	int swpages; 		/* number of PAGE_SIZE'ed swap pages */
-	int swpginuse; 		/* number of swap pages in use */
-	int swpgonly; 		/* number of swap pages in use, not also in RAM */
-	int nswget; 		/* number of times fault calls uvm_swap_get() */
-	int nanon; 			/* number total of anon's in system */
-	int nanonneeded;	/* number of anons currently needed */
-	int nfreeanon; 		/* number of free anon's */
-};
-extern struct vmexp vmexp;
 
 /*
  * vm_map_entry etype bits:
@@ -194,7 +167,12 @@ extern struct vmexp vmexp;
 #define VM_ET_ISCOPYONWRITE(E)	(((E)->etype & VM_ET_COPYONWRITE) != 0)
 #define VM_ET_ISNEEDSCOPY(E)	(((E)->etype & VM_ET_NEEDSCOPY) != 0)
 
-#ifdef _KERNEL
+//#ifdef _KERNEL
+/*
+ * holds all the internal VM data
+ */
+extern struct vm vm;
+
 #include <machine/vmparam.h>
 #endif /* _KERNEL */
 #endif /* _VM_H */

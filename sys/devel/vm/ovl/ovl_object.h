@@ -115,8 +115,8 @@ struct object_t				ovl_object_tree;		/* list of allocated objects */
 long						ovl_object_count;		/* count of all objects */
 simple_lock_data_t			ovl_object_tree_lock;	/* lock for object list and count */
 
-ovl_object_t				kern_ovl_object;		/* single kernel overlay object */
-ovl_object_t				vm_ovl_object;			/* single vm overlay object */
+ovl_object_t				overlay_object;		/* single overlay object */
+ovl_object_t				omem_object;
 
 extern
 struct vobject_hash_head 	ovl_vobject_hashtable;

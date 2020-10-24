@@ -60,4 +60,8 @@
 
 #define KVA_PAGES	(256*4)
 
+#ifndef NKPT
+#define	NKPT		30
+#endif
+
 #endif /* _MACHINE_PMAP_NOPAE_H */

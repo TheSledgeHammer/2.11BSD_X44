@@ -91,8 +91,8 @@
 #define	SSIZE			1				/* initial stack size/NBPG */
 #define	SINCR			1				/* increment of stack/NBPG */
 
-#define	UPAGES			2				/* pages of u-area */
-#define	USPACE			(UPAGES * PGSIZE)/* total size of u-area */
+#define	UPAGES			2					/* pages of u-area */
+#define	USPACE			(UPAGES * PGSIZE)	/* total size of u-area */
 
 #ifndef KSTACK_PAGES
 #define KSTACK_PAGES 	4				/* Includes pcb! */

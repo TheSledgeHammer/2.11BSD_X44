@@ -50,7 +50,7 @@ extern struct pmap				overlay_pmap_store;
 
 /* OVL Space Address Layout */
 #define OVL_MIN_ADDRESS 		((vm_offset_t)0)	/* put ovlspace before vmspace in memory stack */
-#define OVL_MAX_ADDRESS			((PGSIZE/100)*10)	/* Total Size of Overlay Address Space (Roughly 10% of PGSIZE) */
+#define OVL_MAX_ADDRESS			((/*xxx*//100)*10)	/* Total Size of Overlay Address Space (Roughly 10% of PGSIZE) */
 #define VM_MIN_ADDRESS			OVL_MAX_ADDRESS
 
 #define OVL_MIN_KERNEL_ADDRESS	OVL_MIN_ADDRESS
@@ -62,9 +62,8 @@ extern struct pmap				overlay_pmap_store;
 #define NBOVL 										/* bytes per overlay */
 
 /* memory management definitions */
-ovl_map_t 						ovl_map;
-ovl_map_t						kovl_mmap;			/* kernel overlay memory map */
-ovl_map_t						vovl_mmap;			/* vm overlay memory map */
+ovl_map_t 						omem_map;
+ovl_map_t 						overlay_map;
 
 #ifndef OVL_MAP
 /* as defined in ovl_map.h */
@@ -112,7 +111,7 @@ struct ovlbuckets {
 
 extern struct ovlstats 		ovlstats[];
 extern struct ovlusage 		*ovlusage;
-extern char 				*kovlbase, *vovlbase;
-extern struct ovlbuckets 	kovl_bucket[], vovl_bucket[];
+extern char 				*ovlbase;
+extern struct ovlbuckets 	ovl_bucket[];
 
 #endif /* _OVL_IO_H_ */

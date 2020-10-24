@@ -171,12 +171,6 @@ int	protection_codes[8];
 
 struct pmap	kernel_pmap_store;
 
-extern int elf32_nxstack;
-
-extern u_long vm86phystk;				/* PA of vm86/bios stack */
-extern u_long vm86paddr;				/* address of vm86 region */
-extern int 	vm86pa;						/* phys addr of vm86 region */
-
 vm_offset_t avail_start;				/* PA of first available physical page */
 vm_offset_t	avail_end;					/* PA of last available physical page */
 vm_size_t	mem_size;					/* memory size in bytes */
@@ -184,6 +178,8 @@ vm_offset_t	virtual_avail;  			/* VA of first avail page (after kernel bss)*/
 vm_offset_t	virtual_end;				/* VA of last avail page (end of kernel AS) */
 vm_offset_t	vm_first_phys;				/* PA of first managed page */
 vm_offset_t	vm_last_phys;				/* PA just past last managed page */
+
+
 int			i386pagesperpage;			/* PAGE_SIZE / I386_PAGE_SIZE */
 boolean_t	pmap_initialized = FALSE;	/* Has pmap_init completed? */
 char		*pmap_attributes;			/* reference and modify bits */
@@ -288,7 +284,7 @@ pmap_bootstrap(firstaddr, loadaddr)
 #endif
 
 	/**(int *)PTD = 0;
-	load_cr3(rcr3());*/
+	lcr3(rcr3());*/
 }
 
 int
@@ -365,7 +361,7 @@ pmap_init(phys_start, phys_end)
 
 	addr = (vm_offset_t) 0xfe000000+KPTphys/* *NBPG */;
 	vm_object_reference(kernel_object);
-	(void) vm_map_find(kernel_map, kernel_object, addr, &addr, 2*NBPG, FALSE);
+	(void) vm_map_find(kernel_map, kernel_object, addr, &addr, 2 * NBPG, FALSE);
 
 	/*
 	 * Allocate memory for random pmap data structures.  Includes the
@@ -375,7 +371,7 @@ pmap_init(phys_start, phys_end)
 	s = (vm_size_t) (sizeof(struct pv_entry) * npg + npg);
 	s = round_page(s);
 	addr = (vm_offset_t) kmem_alloc(kernel_map, s);
-	/* segment here */
+
 	pv_table = (pv_entry_t) addr;
 	addr += sizeof(struct pv_entry) * npg;
 	pmap_attributes = (char *) addr;

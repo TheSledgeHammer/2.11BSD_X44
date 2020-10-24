@@ -86,13 +86,13 @@ ovl_mem_init()
 }
 
 vm_offset_t
-ovl_alloc(map, size, type)
+ovl_alloc(map, size)
 	register ovl_map_t		map;
 	register vm_size_t		size;
-	int 					type; /* vm or kernel */
 {
 	vm_offset_t 			addr;
 	register vm_offset_t 	offset;
+	extern ovl_object_t		overlay_object;
 	vm_offset_t 			i;
 
 	ovl_map_lock(map);
@@ -100,22 +100,9 @@ ovl_alloc(map, size, type)
 		ovl_map_unlock(map);
 		return (0);
 	}
-	switch (type) {
-	case OVL_OBJ_KERNEL:
-		ovl_object_reference(type);
-		ovl_map_insert(map, kern_ovl_object, offset, addr, addr + size);
-		//ovl_object_lock(kern_ovl_object);
-
-		//ovl_object_unlock(kern_ovl_object);
-		break;
-	case OVL_OBJ_VM:
-		ovl_object_reference(type);
-		ovl_map_insert(map, vm_ovl_object, offset, addr, addr + size);
-		//ovl_object_lock(vm_ovl_object);
-
-		//ovl_object_unlock(vm_ovl_object);
-		break;
-	};
+	offset = addr - OVL_MIN_KERNEL_ADDRESS;
+	ovl_object_reference(overlay_object);
+	ovl_map_insert(map, overlay_object, offset, addr, addr + size);
 	ovl_map_unlock(map);
 
 	return (addr);
@@ -146,8 +133,8 @@ ovl_suballoc(parent, min, max, size)
 		panic("ovl_suballoc");
 	}
 	*max = *min + size;
-
-	result = ovl_map_create(parent, *min, *max);
+	pmap_reference(ovl_map_pmap(parent));
+	result = ovl_map_create(ovl_map_pmap(parent), *min, *max);
 	if (result == NULL)
 		panic("ovl_suballoc: cannot create submap");
 	if ((ret = ovl_map_submap(parent, *min, *max, result)) != KERN_SUCCESS)
@@ -156,18 +143,18 @@ ovl_suballoc(parent, min, max, size)
 }
 
 vm_offset_t
-ovl_malloc(map, size, type, canwait)
+ovl_malloc(map, size, canwait)
 	register ovl_map_t		map;
 	register vm_size_t		size;
-	int						type;		/* vm or kernel */
 	boolean_t				canwait;
 {
 	register vm_offset_t	offset, i;
 	ovl_map_entry_t			entry;
 	vm_offset_t				addr;
+	extern ovl_object_t		omem_object;
 
-	if (map != ovl_map)
-		panic("ovl_malloc_alloc: map != ovl_map");
+	if (map != omem_map)
+		panic("ovl_malloc_alloc: map != omem_map");
 
 	addr = ovl_map_min(map);
 
@@ -180,21 +167,12 @@ ovl_malloc(map, size, type, canwait)
 	if (ovl_map_findspace(map, 0, size, &addr)) {
 		ovl_map_unlock(map);
 		if (canwait) /* XXX  should wait */
-			panic("ovl_malloc: %s too small", map == ovl_map ? "ovl_map" : "mb_map");
+			panic("ovl_malloc: %s too small", map == omem_map ? "omem_map" : "mb_map");
 		return (0);
 	}
-	offset = addr - ovl_map_min(ovl_map);
-
-	switch (type) {
-	case OVL_OBJ_KERNEL:
-		ovl_object_reference(type);
-		ovl_map_insert(map, kern_ovl_object, offset, addr, addr + size);
-		break;
-	case OVL_OBJ_VM:
-		ovl_object_reference(type);
-		ovl_map_insert(map, vm_ovl_object, offset, addr, addr + size);
-		break;
-	};
+	offset = addr - ovl_map_min(omem_map);
+	ovl_object_reference(omem_object);
+	ovl_map_insert(map, omem_object, offset, addr, addr + size);
 
 	/*
 	 * Mark map entry as non-pageable.
@@ -259,6 +237,7 @@ ovl_init(start, end)
 
 	map = ovl_map_create(overlay_pmap, OVL_MIN_ADDRESS, end);
 	ovl_map_lock(map);
+	overlay_map = map;
 	(void) ovl_map_insert(map, NULL, (vm_offset_t)0, OVL_MIN_ADDRESS, start);
 	ovl_map_unlock(map);
 }
