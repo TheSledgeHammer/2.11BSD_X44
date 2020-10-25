@@ -175,6 +175,8 @@ job_pool_task_enqueue(ktpool, job)
     struct threadpool_job	*job;
 {
    TAILQ_INSERT_TAIL(&ktpool->ktp_jobs, job, job_entry);
+
+   task_add();
 }
 
 void

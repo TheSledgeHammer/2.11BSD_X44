@@ -26,7 +26,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* The edf scheduler runs per run-queue */
+/* The edf scheduler runs per single run-queue */
 
 #include <sys/proc.h>
 #include <sys/user.h>
@@ -116,7 +116,7 @@ edf_test(edf)
 	}
     edf->edf_release = edf->edf_time;
 
-	/* test cpu utilization, demand & workload can be scheduled */
+	/* test cpu utilization, demand & workload, can be scheduled */
 	if (edf_utilization(edf->edf_release, edf->edf_cpu) != 0) {
 		goto error;
 	}
@@ -137,7 +137,7 @@ error:
 	return (1);
 }
 
-/* Set to return? once complete */
+/* Returns once complete or an error occured */
 int
 edf_schedcpu(p)
 	struct proc *p;

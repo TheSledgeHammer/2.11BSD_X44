@@ -29,7 +29,6 @@ struct map {
 	char   			*m_name;	/* name of resource */
 	int				m_type;		/* kern_malloc type */
 	//int 			m_flags;	/* kern_malloc flags */
-
 	struct  vmmap	*m_vmmap;	/* vm kernel memory management definitions */
 /* we use m_name when the map overflows, in warning messages */
 };
@@ -40,7 +39,7 @@ struct mapent {
 };
 
 /* vm_kern.h: memory definitions  */
-struct vmmap {
+struct vmmapent {
     char           *m_name;
     vm_map_t        m_vmmap;
 };

@@ -57,6 +57,7 @@ struct kthread {
 	struct sigacts 		*kt_sigacts;	/* Signal actions, state (THREAD ONLY). */
 
 #define	kt_ucred		kt_cred->pc_ucred
+#define	kt_rlimit		kt_limit->pl_rlimit
 
 	struct proc 		*kt_procp;		/* pointer to proc */
 	struct uthread		*kt_uthreado;	/* uthread overseer (original uthread)  */
@@ -123,10 +124,12 @@ struct kthread {
 #define KT_SSTART			8			/* start */
 
 /* flag codes */
-
+#define	KT_PPWAIT			0x00010		/* Parent is waiting for child to exec/exit. */
 #define	KT_SYSTEM			0x00200		/* System proc: no sigs, stats or swapping. */
 #define	KT_INMEM			0x00004		/* Loaded into memory. */
 #define KT_INEXEC			0x100000	/* Process is exec'ing and cannot be traced */
+
+#define	KT_NOSWAP			0x08000		/* Another flag to prevent swap out. */
 
 #define	KT_BOUND			0x80000000 	/* Bound to a CPU */
 
@@ -195,6 +198,12 @@ extern struct kthread 					kthread0;
 extern struct kthreadpool_thread 		ktpool_thread;
 extern lock_t 							kthreadpool_lock;
 
+struct kthread *ktfind (pid_t);				/* Find kthread by id. */
+int				leavetgrp(kthread_t);
+
+void			threadinit (void);
+struct pgrp 	*tgfind (pid_t);			/* Find thread group by id. */
+
 /* Kernel Thread ITPC */
 extern void kthreadpool_itc_send(struct kthreadpool *, struct threadpool_itpc *);
 extern void kthreadpool_itc_receive(struct kthreadpool *, struct threadpool_itpc *);
@@ -215,11 +224,5 @@ int kthread_rwlockmgr(rwlock_t, u_int, kthread_t);
 int	kthread_rwlock_read_held(kthread_t, rwlock_t);
 int	kthread_rwlock_write_held(kthread_t, rwlock_t);
 int	kthread_rwlock_lock_held(kthread_t, rwlock_t);
-
-struct kthread *ktfind (pid_t);				/* Find kthread by id. */
-int				leavetgrp(kthread_t);
-
-void			threadinit (void);
-struct pgrp 	*tgfind (pid_t);			/* Find thread group by id. */
 
 #endif /* SYS_KTHREADS_H_ */

@@ -46,8 +46,9 @@ struct task {
 	lock_t 						tk_lock;
 	rwlock_t					tk_rwlock;
 };
-TAILQ_HEAD(taskhead, task);
 
+struct taskhead;
+TAILQ_HEAD(taskhead, task);
 /* Workqueue */
 struct wqueue {
 	struct taskhead 			wq_head;

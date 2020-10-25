@@ -8,7 +8,7 @@ an offical release is made.)
 - Arch:
 	- i386: (Partially implemented in arch/i386)
 		- x86 related content. 
-			- lapic, ioapic, tsc, etc..
+			- lapic, ioapic, tsc, intr, pmap etc..
 			
 - HTBC: 
 	- HTree Based Blockchain to augment LFS & other existing Log-Structured Filesystems 
@@ -41,12 +41,14 @@ an offical release is made.)
 - UFS211: Port of 2.11BSD's UFS Filesystem.
 	- Independent of UFS
 
-- VM: Updates to the VM Layer for Segmented Paging
+- VM: Updates to the VM Layer
 	- Planned:
+		- Virtual Segments: Logical Address
+			- Provide optional psuedo-segments(stack, code, text)
+			- Improve vm copying,moving, etc.. within vm when used in conjunction with overlays (ovlspace)
 		- VM Extents: VM Memory Management using extent allocation (See: "/devel/vm/extents")
-		- Segmented Paging VM Model (A Hybrid of UVM & VM):
+		- VM Model (A Hybrid of UVM & VM):
 			- VMSpace (aka VM): The current VM 
 			- AVMSpace (aka AVM): All anons, amaps & aobjects (See: "/devel/vm/avm")
 			- OVLSpace (aka OVL): A portion of physical memory with vm like features (See: "/devel/vm/ovl")
 					- A re-implementation of 2.11BSD's use of Overlays
-					- With support for VM & Kernel

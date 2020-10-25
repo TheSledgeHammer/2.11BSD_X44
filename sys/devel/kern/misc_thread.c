@@ -28,21 +28,87 @@
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
+#include <sys/acct.h>
 #include <sys/user.h>
 #include <sys/malloc.h>
 #include <sys/lock.h>
-#include "devel/sys/rwlock.h"
 #include "devel/sys/kthread.h"
 
 int nthread = maxthread;
 
-/* fork kthread from an kthread overseer */
-int
-newthread(p, isvfork)
+static void
+kthread_fork(p, isvfork)
 	struct proc *p;
 	int isvfork;
 {
-	struct kthread *kt1, *kt2;
+	register int a;
+	register struct kthread *k1, *k2;
+	register uid_t uid;
+	int count, error;
+	register_t *retval;
+
+	error = 0;
+	a = 0;
+	if (u->u_uid != 0) {
+		for (k1 = allkthread; k1; k1 = k1->kt_nxt)
+			if (k1->kt_uid == p->p_uid)
+				a++;
+		for (k1 = zombkthread; k1; k1 = k1->kt_nxt)
+			if (k1->kt_uid == p->p_uid)
+				a++;
+	}
+	/*
+	 * Disallow if
+	 *  No threads at all;
+	 *  not su and too many procs owned; or
+	 *  not su and would take last slot.
+	 */
+	k2 = freekthread;
+	uid = k1->kt_cred->p_ruid;
+	if (k2 == NULL || (nthread >= maxthread - 1 && uid != 0) || nthread >= maxthread) {
+		tablefull("kthread");
+		error = EAGAIN;
+		goto out;
+	}
+	count = chgproccnt(p->p_uid, 1);
+	if (p->p_uid != 0 && count > k1->kt_rlimit[RLIMIT_NPROC].rlim_cur) {
+		(void)chgproccnt(p->p_uid, -1);
+		error = EAGAIN;
+		goto out;
+	}
+	if (k2==NULL || (u->u_uid!=0 && (k2->kt_nxt == NULL || a > MAXUPRC))) {
+		error = EAGAIN;
+		goto out;
+	}
+	k1 = p->p_kthreado;
+	if (newkthread(isvfork)) {
+		u->u_r.r_val1 = k1->kt_tid;
+		u->u_r.r_val2 = 1;  				/* child */
+		u->u_start = k1->kt_rtime->tv_sec;
+
+		/* set forked but preserve suid/gid state */
+		p->p_acflag = AFORK | (p->p_acflag & ASUGID);
+		bzero(&p->p_ru, sizeof(p->p_ru));
+		bzero(&p->p_kru, sizeof(p->p_kru));
+		return;
+	}
+
+	u->u_r.r_val1 = k2->kt_tid;
+out:
+	u->u_r.r_val2 = 0;
+}
+
+/*
+ * newkthread --
+ *	Create a new kthread -- the internal version of system call kthread_fork.
+ *	It returns 1 in the new kthread, 0 in the old.
+ */
+int
+newkthread(isvfork)
+	int isvfork;
+{
+	register struct kthread *kt1, *kt2;
+	struct kthread *newkthread;
 	static int mpid, tidchecked = 0;
 	register_t *retval;
 	mpid++;
@@ -80,12 +146,15 @@ again:
 
 	freekthread = kt2->kt_nxt; 				/* off freekthread */
 
+	/* Allocate new kthread. */
+	MALLOC(newkthread, struct kthread *, sizeof(struct kthread), M_PROC, M_WAITOK);
+
 	/*
 	 * Make a kthread table entry for the new kthread.
 	 */
 	nthread++;
-	kt1 = p->p_kthreado;
-	kt2->kt_stat = KTSIDL;
+	kt1 = newkthread;
+	kt2->kt_stat = KT_SIDL;
 	kt2->kt_tid = mpid;
 	kt2->kt_realtimer.it_value = 0;
 	kt2->kt_flag = P_SLOAD;
@@ -114,7 +183,7 @@ again:
 	bzero(&kt1->kt_startzero, (unsigned) ((caddr_t)&kt2->kt_endzero - (caddr_t)&kt2->kt_startzero));
 
 	kt2->kt_flag = P_INMEM;
-	MALLOC(kt2->kt_cred, struct pcred *, sizeof(struct pcred), M_PROC, M_WAITOK);
+	MALLOC(kt2->kt_cred, struct pcred *, sizeof(struct pcred), M_SUBPROC, M_WAITOK);
 	bcopy(kt1->kt_cred, kt2->kt_cred, sizeof(*kt2->kt_cred));
 	kt2->kt_cred->p_refcnt = 1;
 	crhold(kt1->kt_ucred);
@@ -155,6 +224,8 @@ again:
 	kt1->kt_flag |= P_NOSWAP;
 	retval[0] = kt1->kt_tid;
 	retval[1] = 1;
+
+	/* TODO: vm_thread_fork */
 	if(vm_thread_fork(kt1, kt2, isvfork)) {
 		/*
 		 * Child process.  Set start time and get to work.
@@ -166,9 +237,13 @@ again:
 		return (0);
 	}
 
-	kt2->kt_stat = KTSRUN;
+	kt2->kt_stat = KT_SRUN;
+	//setrq(k2);
 
-	kt1->kt_flag |= P_NOSWAP;
+	kt1->kt_flag |= KT_NOSWAP;
+	if (isvfork)
+		while (kt2->kt_flag & KT_PPWAIT)
+			tsleep(kt1, PWAIT, "kt_ppwait", 0);
 
 	retval[0] = kt2->kt_tid;
 	retval[1] = 0;

@@ -70,13 +70,3 @@ vm_map_t	kernel_map;
 vm_map_t	kmem_map;
 vm_map_t	mb_map;
 vm_map_t	phys_map;
-
-/* coremap: vm mapping */
-struct vmmap corevmmap[] = {
-        { .m_name = "buffer_map",   .m_vmmap = (vm_map_t) &buffer_map },
-        { .m_name = "exec_map",     .m_vmmap = (vm_map_t) &exec_map },
-        { .m_name = "kernel_map",   .m_vmmap = (vm_map_t) &kernel_map },
-        { .m_name = "kmem_map",     .m_vmmap = (vm_map_t) &kmem_map },
-        { .m_name = "mb_map",       .m_vmmap = (vm_map_t) &mb_map },
-        { .m_name = "phys_map",     .m_vmmap = (vm_map_t) &phys_map },
-};

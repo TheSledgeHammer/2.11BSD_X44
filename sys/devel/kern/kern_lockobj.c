@@ -36,181 +36,124 @@
  *
  *	@(#)lock.h	8.12 (Berkeley) 5/19/95
  */
+/* parts are to be merged into kern_lock.c */
 
-//#include <sys/lock.h>
+#include <sys/lock.h>
 #include <devel/sys/lockobj.h>
 #include <devel/sys/witness.h>
 #include <sys/user.h>
 
-struct lock kernel_lock;
+/* lock class */
+struct lock_class lock_class_lock = {
+		.lc_name = "lock",
+		.lc_flags = LC_SLEEPLOCK | LC_SLEEPABLE | LC_UPGRADABLE,
+		.lc_lock = lockoject_lock,
+		.lc_unlock = lockoject_unlock
+};
 
 void
-kernel_lock_init(prio, wmesg, timo, flags)
-	int prio;
-	char *wmesg;
-	int timo;
-	int flags;
+lockobject_init(lock, type, name, flags)
+	struct lock_object 		*lock;
+	const struct lock_type 	*type;
+    const char				*name;
+    u_int					flags;
 {
-	lockinit(&kernel_lock, prio, wmesg, timo, flags);
-	__lockwitness(&kernel_lock);
+	lock->lo_data = 0;
+	lock->lo_name = name;
+	lock->lo_flags = flags;
+	lock->lo_type = type;
+    type->lt_name = name;
+	WITNESS_INIT(&lock, type);
 }
 
 void
-lockwitness(struct lock *lkp, const struct lock_type *type)
+lockoject_lock(lock, name)
+	struct lock_object 	*lock;
+	const char			*name;
 {
-#ifdef WITNESS
-	lkp->lk_lockobject.lock_name = type->lt_name;
-	lkp->lk_lockobject.lock_type = type;
-	if (lkp == &kernel_lock) {
-		lkp->lk_lockobject.lock_flags = LO_WITNESS | LO_INITIALIZED | LO_SLEEPABLE | (LO_CLASS_KERNEL_LOCK << LO_CLASSSHIFT);
-	} else if (lkp == &sched_lock) {
-		lkp->lk_lockobject.lock_flags = LO_WITNESS | LO_INITIALIZED | LO_RECURSABLE | (LO_CLASS_SCHED_LOCK  << LO_CLASSSHIFT);
+	if(lock->lo_name == name) {
+		WITNESS_LOCK(&lock, lock->lo_flags);
 	}
-	WITNESS_INIT(&lkp->lk_lockobject, type);
-#endif
 }
 
-/* Sets kthread to lockholder if not null */
 void
-set_kthread_lock(lkp, kt)
+lockoject_unlock(lock, name)
+	struct lock_object 	*lock;
+	const char			*name;
+{
+	if(lock->lo_name == name) {
+		WITNESS_UNLOCK(&lock, lock->lo_flags);
+	}
+}
+
+void
+lock_lockholder_init(lkp)
 	struct lock *lkp;
-	struct kthread *kt;
 {
-	if(kt == NULL) {
-		lkp->lk_ktlockholder = NULL;
-	} else {
-		lkp->lk_ktlockholder = kt;
-	}
+	bzero(lkp->lk_lockholder, sizeof(struct lock_holder));
+	lkp->lk_lockholder->lh_pid = LK_NOPROC;
+
+	set_proc_lockholder(lkp->lk_lockholder, NULL);
+    set_kthread_lockholder(lkp->lk_lockholder, NULL);
+	set_uthread_lockholder(lkp->lk_lockholder, NULL);
 }
 
-/* Sets uthread to lockholder if not null */
 void
-set_uthread_lock(lkp, ut)
-	struct lock *lkp;
-	struct uthread *ut;
+set_proc_lockholder(holder, proc)
+	struct lock_holder 	*holder;
+	struct proc 		*proc;
 {
-	if(ut == NULL) {
-		lkp->lk_utlockholder = NULL;
-	} else {
-		lkp->lk_utlockholder = ut;
-	}
+	holder->lh_pid = proc->p_pid;
+	PROC_LOCKHOLDER(holder) = proc;
 }
 
-/* Returns kthread if pid matches and lockholder is not null */
+void
+set_kthread_lockholder(holder, kthread)
+	struct lock_holder 	*holder;
+	struct kthread 		*kthread;
+{
+	holder->lh_pid = kthread->kt_tid;
+	KTHREAD_LOCKHOLDER(holder) = kthread;
+}
+
+void
+set_uthread_lockholder(holder, uthread)
+	struct lock_holder 	*holder;
+	struct uthread 		*uthread;
+{
+	holder->lh_pid = uthread->ut_tid;
+	UTHREAD_LOCKHOLDER(holder) = uthread;
+}
+
+struct proc *
+get_proc_lockholder(holder, pid)
+	struct lock_holder 	*holder;
+	pid_t pid;
+{
+	if(PROC_LOCKHOLDER(holder)->p_pid == holder->lh_pid && holder->lh_pid == pid) {
+		return (PROC_LOCKHOLDER(holder));
+	}
+	return (NULL);
+}
+
 struct kthread *
-get_kthread_lock(lkp, pid)
-	struct lock *lkp;
+get_kthread_lockholder(holder, pid)
+	struct lock_holder 	*holder;
 	pid_t pid;
 {
-	struct kthread *klk =  lkp->lk_ktlockholder;
-	if(klk != NULL && klk->kt_tid == pid) {
-		return (klk);
+	if(KTHREAD_LOCKHOLDER(holder)->kt_tid == holder->lh_pid && holder->lh_pid == pid) {
+		return (KTHREAD_LOCKHOLDER(holder));
 	}
 	return (NULL);
 }
 
-/* Returns uthread if pid matches and lockholder is not null */
 struct uthread *
-get_uthread_lock(lkp, pid)
-	struct lock *lkp;
+get_uthread_lockholder(holder, pid)
+	struct lock_holder 	*holder;
 	pid_t pid;
 {
-	struct uthread *ulk = lkp->lk_utlockholder;
-	if(ulk != NULL && ulk->ut_tid == pid) {
-		return (ulk);
+	if(UTHREAD_LOCKHOLDER(holder)->ut_tid == holder->lh_pid && holder->lh_pid == pid) {
+		return (UTHREAD_LOCKHOLDER(holder));
 	}
 	return (NULL);
 }
-
-#if defined(DEBUG) && NCPUS == 1
-
-#include <sys/kernel.h>
-#include <vm/include/vm.h>
-#include <sys/sysctl.h>
-
-int lockpausetime = 0;
-struct ctldebug debug2 = { "lockpausetime", &lockpausetime };
-int simplelockrecurse;
-
-/* Example in OpenBSD kern_lock.c */
-/* below are all re-implemented using a lock object instead of simplelock */
-
-/*
- * Simple lock functions so that the debugger can see from whence
- * they are being called.
- */
-void
-simple_lock_init(alp)
-	struct lock_object *alp;
-{
-	alp->lock_data = 0;
-}
-
-void
-_simple_lock(alp, id, l)
-	__volatile struct lock_object *alp;
-	const char *id;
-	int l;
-{
-	if (simplelockrecurse)
-		return;
-	if (alp->lock_data == 1) {
-		if (lockpausetime == -1)
-			panic("%s:%d: simple_lock: lock held", id, l);
-		printf("%s:%d: simple_lock: lock held\n", id, l);
-		if (lockpausetime == 1) {
-			BACKTRACE(curproc);
-		} else if (lockpausetime > 1) {
-			printf("%s:%d: simple_lock: lock held...", id, l);
-			tsleep(&lockpausetime, PCATCH | PPAUSE, "slock", lockpausetime * hz);
-			printf(" continuing\n");
-		}
-	}
-	alp->lock_data = 1;
-	if (curproc)
-		curproc->p_simple_locks++;
-}
-
-int
-_simple_lock_try(alp, id, l)
-	__volatile struct lock_object *alp;
-	const char *id;
-	int l;
-{
-	if (alp->lock_data)
-		return (0);
-	if (simplelockrecurse)
-		return (1);
-	alp->lock_data = 1;
-	if (curproc)
-		curproc->p_simple_locks++;
-	return (1);
-}
-
-void
-_simple_unlock(alp, id, l)
-	__volatile struct lock_object *alp;
-	const char *id;
-	int l;
-{
-
-	if (simplelockrecurse)
-		return;
-	if (alp->lock_data == 0) {
-		if (lockpausetime == -1)
-			panic("%s:%d: simple_unlock: lock not held", id, l);
-		printf("%s:%d: simple_unlock: lock not held\n", id, l);
-		if (lockpausetime == 1) {
-			BACKTRACE(curproc);
-		} else if (lockpausetime > 1) {
-			printf("%s:%d: simple_unlock: lock not held...", id, l);
-			tsleep(&lockpausetime, PCATCH | PPAUSE, "sunlock", lockpausetime * hz);
-			printf(" continuing\n");
-		}
-	}
-	alp->lock_data = 0;
-	if (curproc)
-		curproc->p_simple_locks--;
-}
-
-#endif /* DEBUG && NCPUS == 1 */

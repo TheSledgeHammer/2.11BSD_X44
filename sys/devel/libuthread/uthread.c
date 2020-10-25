@@ -183,8 +183,8 @@ uthread_lock_init(lkp, ut)
 {
     int error = 0;
     lockinit(lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo, lkp->lk_flags);
-    set_uthread_lock(lkp, ut);
-    if(lkp->lk_utlockholder == NULL) {
+	set_uthread_lockholder(lkp->lk_lockholder, ut);
+    if(get_uthread_lockholder(lkp->lkp_lockholder, ut->ut_tid) == NULL) {
     	panic("uthread lock unavailable");
     	error = EBUSY;
     }
@@ -215,7 +215,11 @@ uthread_rwlock_init(rwl, ut)
 {
 	int error = 0;
 	rwlock_init(rwl, rwl->rwl_prio, rwl->rwl_wmesg, rwl->rwl_timo, rwl->rwl_flags);
-	set_uthread_rwlock(rwl, ut);
+	set_uthread_lockholder(rwl->rwl_lockholder, ut);
+    if(get_uthread_lockholder(rwl->rwl_lockholder, ut->ut_tid) == NULL) {
+    	panic("uthread rwlock unavailable");
+    	error = EBUSY;
+    }
 	return (error);
 }
 

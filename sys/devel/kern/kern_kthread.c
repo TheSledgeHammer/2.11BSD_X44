@@ -83,7 +83,7 @@ kthread_init(p, kt)
     kt = &kthread0;
     curkthread = kt;
 
-	/* Initialize kthread and tgrp structures. */
+	/* Initialize kthread and kthread group structures. */
     threadinit();
 
 	/* set up kernel thread */
@@ -109,11 +109,22 @@ kthread_init(p, kt)
 		kthreadpools_init();
 }
 
-/* create new kthread from proc */
+/* create new kthread */
 int
 kthread_create(kt)
 	struct kthread *kt;
 {
+	struct kthread *newthread;
+	register_t rval[2];
+
+	if(newkthread(0)) {
+		panic("kthread creation");
+	}
+	if(rval[1]) {
+		newthread = kt;
+		newthread->kt_flag |= KT_INMEM | KT_SYSTEM;
+	}
+
 	return (0);
 }
 
@@ -196,8 +207,8 @@ kthread_lock_init(lkp, kt)
 {
     int error = 0;
     lockinit(lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo, lkp->lk_flags);
-    set_kthread_lock(lkp, kt);
-    if(lkp->lk_ktlockholder == NULL) {
+    set_kthread_lockholder(lkp->lkp_lockholder, kt);
+    if(get_kthread_lockholder(lkp->lkp_lockholder, kt->kt_tid) == NULL) {
     	panic("kthread lock unavailable");
     	error = EBUSY;
     }
@@ -227,8 +238,8 @@ kthread_rwlock_init(rwl, kt)
 {
 	int error = 0;
 	rwlock_init(rwl, rwl->rwl_prio, rwl->rwl_wmesg, rwl->rwl_timo, rwl->rwl_flags);
-	set_kthread_rwlock(rwl, kt);
-    if(rwl->rwl_ktlockholder == NULL) {
+	set_kthread_lockholder(rwl->rwl_lockholder, kt);
+    if(get_kthread_lockholder(rwl->rwl_lockholder, kt->kt_tid) == NULL) {
     	panic("kthread rwlock unavailable");
     	error = EBUSY;
     }

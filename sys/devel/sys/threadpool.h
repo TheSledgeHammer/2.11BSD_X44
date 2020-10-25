@@ -100,7 +100,7 @@ void	kthreadpools_init(void);
 int		kthreadpool_get(struct kthreadpool **, u_char);
 void	kthreadpool_put(struct kthreadpool *, u_char);
 
-void	threadpool_job_init(struct threadpool_job *, threadpool_job_fn_t, lock_t, const char *, ...) __printflike(4,5);
+void	threadpool_job_init(struct threadpool_job *, threadpool_job_fn_t, lock_t, const char *, ...);
 void	threadpool_job_destroy(struct threadpool_job *);
 void	threadpool_job_done(struct threadpool_job *);
 

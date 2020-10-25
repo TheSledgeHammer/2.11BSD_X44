@@ -80,7 +80,7 @@
 
 struct vm_object {
 	struct pglist			memq;					/* Resident memory */
-	TAILQ_ENTRY(vm_object)	object_list;			/* list of all objects */
+	RB_ENTRY(vm_object)		object_tree;			/* tree of all objects */
 	u_short					flags;					/* see below */
 	u_short					paging_in_progress; 	/* Paging (in or out) so don't collapse or destroy */
 	simple_lock_data_t		Lock;					/* Synchronization */
@@ -102,27 +102,29 @@ struct vm_object {
 #define OBJ_INTERNAL	0x0002	/* internally created object */
 #define OBJ_ACTIVE		0x0004	/* used to mark active objects */
 
-TAILQ_HEAD(vm_object_hash_head, vm_object_hash_entry);
-
+RB_HEAD(vm_object_hash_head, vm_object_hash_entry);
 struct vm_object_hash_entry {
-	TAILQ_ENTRY(vm_object_hash_entry)  	hash_links;	/* hash chain links */
+	RB_ENTRY(vm_object_hash_entry)  	hash_links;	/* hash chain links */
 	vm_object_t			   				object;		/* object represented */
 };
 typedef struct vm_object_hash_entry	*vm_object_hash_entry_t;
 
-//#ifdef	KERNEL
+#ifdef	KERNEL
+struct object_t;
+RB_HEAD(object_t, vm_object);
+struct object_q;
 TAILQ_HEAD(object_q, vm_object);
 
 struct object_q		vm_object_cached_list;	/* list of objects persisting */
 int					vm_object_cached;		/* size of cached list */
 simple_lock_data_t	vm_cache_lock;			/* lock for object cache */
 
-struct object_q		vm_object_list;			/* list of allocated objects */
+struct object_t		vm_object_list;			/* list of allocated objects */
 long				vm_object_count;		/* count of all objects */
 simple_lock_data_t	vm_object_list_lock;	/* lock for object list and count */
 
-vm_object_t	kernel_object;					/* the single kernel object */
-vm_object_t	kmem_object;
+vm_object_t			kernel_object;			/* the single kernel object */
+vm_object_t			kmem_object;
 
 #define	vm_object_cache_lock()		simple_lock(&vm_cache_lock)
 #define	vm_object_cache_unlock()	simple_unlock(&vm_cache_lock)

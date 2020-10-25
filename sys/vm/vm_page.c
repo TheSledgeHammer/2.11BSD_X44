@@ -68,6 +68,7 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/fnv_hash.h>
 
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_map.h>
@@ -285,8 +286,15 @@ vm_page_startup(start, end)
  *
  *	NOTE:  This macro depends on vm_page_bucket_count being a power of 2.
  */
-#define vm_page_hash(object, offset) \
-	(((unsigned long)object+(unsigned long)atop(offset))&vm_page_hash_mask)
+unsigned long
+vm_page_hash(segment, offset)
+    vm_segment_t    segment;
+    vm_offset_t     offset;
+{
+    Fnv32_t hash1 = fnv_32_buf(&segment, (sizeof(&segment) + offset)&vm_page_hash_mask, FNV1_32_INIT)%vm_page_hash_mask;
+    Fnv32_t hash2 = (((unsigned long)segment+(unsigned long)offset)&vm_page_hash_mask);
+    return (hash1^hash2);
+}
 
 /*
  *	vm_page_insert:		[ internal use only ]

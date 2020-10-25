@@ -43,7 +43,14 @@ struct map coremap[1] = {
 		.m_limit 	= &_coremap[cmapsiz],
 		.m_name 	= "coremap",
 		.m_type		= M_COREMAP,
-		.m_vmmap 	= &corevmmap[0],
+		.m_vmmap[1] = {
+				{ .m_name = "buffer_map",   .m_vmmap = (vm_map_t) &buffer_map },
+				{ .m_name = "exec_map",     .m_vmmap = (vm_map_t) &exec_map },
+				{ .m_name = "kernel_map",   .m_vmmap = (vm_map_t) &kernel_map },
+				{ .m_name = "kmem_map",     .m_vmmap = (vm_map_t) &kmem_map },
+				{ .m_name = "mb_map",       .m_vmmap = (vm_map_t) &mb_map },
+				{ .m_name = "phys_map",     .m_vmmap = (vm_map_t) &phys_map },
+		},
 };
 
 struct map swapmap[1] = {

@@ -166,7 +166,7 @@ struct user {
 	int					u_kstack_pages;			/* (a) Size of the kstack. */
 
 /* 1.8 User Threads */
-	//struct uthread		*u_uthread;				/* ptr to uthread */
+	//struct uthread		*u_uthread;			/* ptr to uthread */
 };
 
 #ifdef KERNEL

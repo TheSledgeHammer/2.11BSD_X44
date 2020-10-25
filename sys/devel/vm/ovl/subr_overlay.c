@@ -209,6 +209,8 @@ overlay_free(ovltp, addr, type)
 
 	int error = 0;
 
+	overlay_free(addr, type);
+
 	switch (ovltp->o_objtype) {
 	case OVL_KERN:
 		return (ops->koverlay_free(addr, type));

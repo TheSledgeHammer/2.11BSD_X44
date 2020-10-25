@@ -147,32 +147,11 @@
 #define	WITNESS_RESERVED2        0x40    /* Unused flag, reserved. */
 #define	WITNESS_LOCK_ORDER_KNOWN 0x80    /* This lock order is known. */
 
-/*
- * Lock classes.  Each lock has a class which describes characteristics
- * common to all types of locks of a given class.
- *
- * Spin locks in general must always protect against preemption, as it is
- * an error to perform any type of context switch while holding a spin lock.
- * Also, for an individual lock to be recursable, its class must allow
- * recursion and the lock itself must explicitly allow recursion.
- */
-
-struct lock_class {
-	const	char 					*lc_name;
-	u_int							lc_flags;
-};
 
 union lock_stack {
 	union lock_stack				*ls_next;
 	struct stacktrace				ls_stack;
 };
-
-
-#define	LC_SLEEPLOCK	0x00000001	/* Sleep lock. */
-#define	LC_SPINLOCK		0x00000002	/* Spin lock. */
-#define	LC_SLEEPABLE	0x00000004	/* Sleeping allowed with this lock. */
-#define	LC_RECURSABLE	0x00000008	/* Locks of this type may recurse. */
-#define	LC_UPGRADABLE	0x00000010	/* Upgrades and downgrades permitted. */
 
 /*
  * Lock instances.  A lock instance is the data associated with a lock while
@@ -352,29 +331,8 @@ static unsigned int w_generation = 0;
 static union lock_stack *w_lock_stack_free;
 static unsigned int w_lock_stack_num;
 
-static struct lock_class lock_class_kernel_lock = {
-		.lc_name = "kernel_lock",
-		.lc_flags = LC_SLEEPLOCK | LC_RECURSABLE | LC_SLEEPABLE
-};
-
-static struct lock_class lock_class_sched_lock = {
-		.lc_name = "sched_lock",
-		.lc_flags = LC_SPINLOCK | LC_RECURSABLE
-};
-
-static struct lock_class lock_class_rwlock = {
-		.lc_name = "rwlock",
-		.lc_flags = LC_SLEEPLOCK | LC_SLEEPABLE | LC_UPGRADABLE
-};
-
-static struct lock_class lock_class_lock = {
-		.lc_name = "lock",
-		.lc_flags = LC_SLEEPLOCK | LC_SLEEPABLE | LC_UPGRADABLE
-};
-
 static struct lock_class *lock_classes[] = {
-	&lock_class_kernel_lock,
-	&lock_class_sched_lock,
+	&lock_class_abql,
 	&lock_class_rwlock,
 	&lock_class_lock,
 };
@@ -1210,6 +1168,55 @@ witness_warn(int flags, struct lock_object *lock, const char *fmt, ...)
 			witness_debugger(1);
 	}
 	return (n);
+}
+
+static struct witness *
+enroll(const struct lock_type *type, const char *subtype, struct lock_class *lock_class)
+{
+	struct witness *w;
+	struct witness_list *typelist;
+
+	KASSERT(type != NULL);
+
+	if (witness_watch < 0 || panicstr != NULL || db_active)
+		return (NULL);
+	if ((lock_class->lc_flags & LC_SPINLOCK)) {
+		typelist = &w_spin;
+	} else if ((lock_class->lc_flags & LC_SLEEPLOCK)) {
+		typelist = &w_sleep;
+	} else {
+		panic("lock class %s is not sleep or spin", lock_class->lc_name);
+		return (NULL);
+	}
+
+	mtx_enter(&w_mtx);
+	w = witness_hash_get(type, subtype);
+	if (w)
+		goto found;
+	if ((w = witness_get()) == NULL)
+		return (NULL);
+	w->w_type = type;
+	w->w_subtype = subtype;
+	w->w_class = lock_class;
+	SIMPLEQ_INSERT_HEAD(&w_all, w, w_list);
+	if (lock_class->lc_flags & LC_SPINLOCK) {
+		SIMPLEQ_INSERT_HEAD(&w_spin, w, w_typelist);
+		w_spin_cnt++;
+	} else if (lock_class->lc_flags & LC_SLEEPLOCK) {
+		SIMPLEQ_INSERT_HEAD(&w_sleep, w, w_typelist);
+		w_sleep_cnt++;
+	}
+
+	/* Insert new witness into the hash */
+	witness_hash_put(w);
+	witness_increment_graph_generation();
+	mtx_leave(&w_mtx);
+	return (w);
+	found: mtx_leave(&w_mtx);
+	if (lock_class != w->w_class)
+		panic("lock (%s) %s does not match earlier (%s) lock", type->lt_name,
+				lock_class->lc_name, w->w_class->lc_name);
+	return (w);
 }
 
 static void

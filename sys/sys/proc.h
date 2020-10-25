@@ -129,11 +129,11 @@ struct	proc {
 	struct  rusage    	p_ru;			/* exit information */
 	struct  k_rusage    p_kru;			/* exit information kernel */
 
-	struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
-	char				*p_name;		/* (: name, optional */
+	//struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
+	//char				*p_name;		/* (: name, optional */
 
-	struct gsched		*p_gsched;		/* global scheduler */
-	CIRCLEQ_ENTRY(proc)	p_entries;
+	//struct gsched		*p_gsched;		/* global scheduler */
+	//CIRCLEQ_ENTRY(proc)	p_gslinks;	/* run-queue to be scheduled by the global scheduler (see gsched.c) */
 };
 
 struct	session {

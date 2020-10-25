@@ -55,6 +55,8 @@ struct lock {
 
     pid_t					lk_lockholder_pid;	/* pid of exclusive lock holder */
 
+    //struct lock_holder		*lk_lockholder;		/* lock holder: proc, kthread & uthread */
+
     struct	simplelock 		lk_lnterlock; 		/* lock on remaining fields */
     //struct  lock_object		lk_lockobject;		/* lock object */
 

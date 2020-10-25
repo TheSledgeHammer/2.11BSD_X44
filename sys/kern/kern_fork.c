@@ -18,7 +18,6 @@
 #include <sys/vnode.h>
 #include <sys/acct.h>
 
-
 /*
  * fork --
  *	fork system call
@@ -111,6 +110,7 @@ newproc(isvfork)
 	int isvfork;
 {
 	register struct proc *rip, *rpp;
+	struct proc *newproc;
 	static int mpid, pidchecked = 0;
 	register_t *retval;
 
@@ -226,6 +226,17 @@ again:
 	if (rip->p_cptr)
 		rip->p_cptr->p_ysptr = rpp;
 	rip->p_cptr = rpp;
+
+	rpp->p_dsize = rip->p_dsize;
+	rpp->p_ssize = rip->p_ssize;
+	rpp->p_daddr = rip->p_daddr;
+	rpp->p_saddr = rip->p_saddr;
+
+    /*
+     * Partially simulate the environment of the new process so that
+     * when it is actually created (by copying) it will look right.
+     */
+	u->u_procp = rpp;
 
 	/*
 	 * set priority of child to be that of parent

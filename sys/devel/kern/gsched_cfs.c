@@ -33,6 +33,8 @@
 
 #include <sys/gsched_cfs.h>
 
+/* The cfs scheduler on multiple run-queues */
+
 /*
  * Constants for digital decay and forget:
  *	90% of (p_estcpu) usage in 5 * loadav time
@@ -157,7 +159,7 @@ cfs_update(p, priweight)
 			newcpu = (int) decay_cpu(loadfac, newcpu);
 		p->p_estcpu = min(newcpu, UCHAR_MAX);
 	}
-	//resetpri(p); /* potentially */
+	//resetpri(p);
 }
 
 RB_PROTOTYPE(gsched_cfs_rbtree, gsched_cfs, cfs_entry, cfs_rb_compare);
@@ -235,7 +237,6 @@ cfs_compute(cfs)
 	cfs->cfs_bsched = BSCHEDULE;
 }
 
-/* Set to return? once complete */
 int
 cfs_schedcpu(p)
 	struct proc *p;
@@ -264,7 +265,7 @@ cfs_schedcpu(p)
 		cfs->cfs_bsched = new_bsched;
 	}
 
-	/* TODO: rb_tree */
+	/* TODO: rb_tree: perform run-through */
 	cpticks++;
 	/* Test if deadline was reached before end of scheduling period */
 	if(cfs->cfs_cpticks == cpticks) {

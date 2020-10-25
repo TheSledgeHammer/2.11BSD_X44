@@ -69,6 +69,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
+#include <sys/fnv_hash.h>
 
 #include <vm/include/vm_page.h>
 #include <vm/include/vm.h>
@@ -124,13 +125,13 @@ vm_object_init(size)
 	register int	i;
 
 	TAILQ_INIT(&vm_object_cached_list);
-	TAILQ_INIT(&vm_object_list);
+	RB_INIT(&vm_object_list);
 	vm_object_count = 0;
 	simple_lock_init(&vm_cache_lock);
 	simple_lock_init(&vm_object_list_lock);
 
 	for (i = 0; i < VM_OBJECT_HASH_COUNT; i++)
-		TAILQ_INIT(&vm_object_hashtable[i]);
+		RB_INIT(&vm_object_hashtable[i]);
 
 	kernel_object = &kernel_object_store;
 	_vm_object_allocate(size, kernel_object);
@@ -183,7 +184,7 @@ _vm_object_allocate(size, object)
 	object->shadow_offset = (vm_offset_t) 0;
 
 	simple_lock(&vm_object_list_lock);
-	TAILQ_INSERT_TAIL(&vm_object_list, object, object_list);
+	RB_INSERT(object_t, &vm_object_list, object);
 	vm_object_count++;
 	cnt.v_nzfod += atop(size);
 	simple_unlock(&vm_object_list_lock);
@@ -330,7 +331,7 @@ vm_object_terminate(object)
 	 * Now free the pages.
 	 * For internal objects, this also removes them from paging queues.
 	 */
-	while ((p = object->memq.tqh_first) != NULL) {
+	while ((p = TAILQ_FIRST(object->memq)) != NULL) {
 		VM_PAGE_CHECK(p);
 		vm_page_lock_queues();
 		vm_page_free(p);
@@ -346,7 +347,7 @@ vm_object_terminate(object)
 		vm_pager_deallocate(object->pager);
 
 	simple_lock(&vm_object_list_lock);
-	TAILQ_REMOVE(&vm_object_list, object, object_list);
+	RB_REMOVE(object_t, &vm_object_list, object);
 	vm_object_count--;
 	simple_unlock(&vm_object_list_lock);
 
@@ -419,7 +420,7 @@ again:
 	/*
 	 * Loop through the object page list cleaning as necessary.
 	 */
-	for (p = object->memq.tqh_first; p != NULL; p = p->listq.tqe_next) {
+	for (p = TAILQ_FIRST(object->memq); p != NULL; p = TAILQ_NEXT(p, listq)) {
 		if ((start == end || (p->offset >= start && p->offset < end)) &&
 		    !(p->flags & PG_FICTITIOUS)) {
 			if ((p->flags & PG_CLEAN) &&
@@ -507,8 +508,8 @@ vm_object_deactivate_pages(object)
 {
 	register vm_page_t	p, next;
 
-	for (p = object->memq.tqh_first; p != NULL; p = next) {
-		next = p->listq.tqe_next;
+	for (p = TAILQ_FIRST(object->memq); p != NULL; p = next) {
+		next = TAILQ_NEXT(p, listq);
 		vm_page_lock_queues();
 		vm_page_deactivate(p);
 		vm_page_unlock_queues();
@@ -525,7 +526,7 @@ vm_object_cache_trim()
 
 	vm_object_cache_lock();
 	while (vm_object_cached > vm_cache_max) {
-		object = vm_object_cached_list.tqh_first;
+		object = TAILQ_FIRST(vm_object_cached_list);
 		vm_object_cache_unlock();
 
 		if (object != vm_object_lookup(object->pager))
@@ -559,7 +560,7 @@ vm_object_pmap_copy(object, start, end)
 		return;
 
 	vm_object_lock(object);
-	for (p = object->memq.tqh_first; p != NULL; p = p->listq.tqe_next) {
+	for (p = TAILQ_FIRST(object->memq); p != NULL; p = TAILQ_NEXT(p, listq)) {
 		if ((start <= p->offset) && (p->offset < end)) {
 			pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_READ);
 			p->flags |= PG_COPYONWRITE;
@@ -588,7 +589,7 @@ vm_object_pmap_remove(object, start, end)
 		return;
 
 	vm_object_lock(object);
-	for (p = object->memq.tqh_first; p != NULL; p = p->listq.tqe_next)
+	for (p = TAILQ_FIRST(object->memq); p != NULL; p = TAILQ_NEXT(p, listq))
 		if ((start <= p->offset) && (p->offset < end))
 			pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_NONE);
 	vm_object_unlock(object);
@@ -649,7 +650,7 @@ vm_object_copy(src_object, src_offset, size, dst_object, dst_offset, src_needs_c
 		/*
 		 *	Mark all of the pages copy-on-write.
 		 */
-		for (p = src_object->memq.tqh_first; p; p = p->listq.tqe_next)
+		for (p = TAILQ_FIRST(src_object->memq); p; p = TAILQ_NEXT(p, listq))
 			if (src_offset <= p->offset &&
 			    p->offset < src_offset + size)
 				p->flags |= PG_COPYONWRITE;
@@ -777,7 +778,7 @@ vm_object_copy(src_object, src_offset, size, dst_object, dst_offset, src_needs_c
 	 *	Mark all the affected pages of the existing object
 	 *	copy-on-write.
 	 */
-	for (p = src_object->memq.tqh_first; p != NULL; p = p->listq.tqe_next)
+	for (p = TAILQ_FIRST(src_object->memq); p != NULL; p = TAILQ_NEXT(p, listq))
 		if ((new_start <= p->offset) && (p->offset < new_end))
 			p->flags |= PG_COPYONWRITE;
 
@@ -862,12 +863,36 @@ vm_object_setpager(object, pager, paging_offset, read_only)
 	vm_object_unlock(object);			/* XXX ? */
 }
 
+/* vm object rbtree comparator */
+int
+vm_object_rb_compare(obj1, obj2)
+	struct vm_object *obj1, *obj2;
+{
+	if(obj1->size < obj2->size) {
+		return (-1);
+	} else if(obj1->size > obj2->size) {
+		return (1);
+	}
+	return (0);
+}
+
+RB_PROTOTYPE(object_t, vm_object, object_tree, vm_object_rb_compare);
+RB_GENERATE(object_t, vm_object, object_tree, vm_object_rb_compare);
+
+RB_PROTOTYPE(vm_object_hash_head, vm_object_hash_entry, hash_links, vm_object_rb_compare);
+RB_GENERATE(vm_object_hash_head, vm_object_hash_entry, hash_links, vm_object_rb_compare);
+
 /*
  *	vm_object_hash hashes the pager/id pair.
  */
-
-#define vm_object_hash(pager) \
-	(((unsigned long)pager)%VM_OBJECT_HASH_COUNT)
+unsigned long
+vm_object_hash(pager)
+	vm_pager_t pager;
+{
+    Fnv32_t hash1 = fnv_32_buf(&pager, sizeof(&pager), FNV1_32_INIT) % VM_OBJECT_HASH_COUNT;
+    Fnv32_t hash2 = (((unsigned long)pager)%VM_OBJECT_HASH_COUNT);
+    return (hash1^hash2);
+}
 
 /*
  *	vm_object_lookup looks in the object cache for an object with the
@@ -878,14 +903,13 @@ vm_object_t
 vm_object_lookup(pager)
 	vm_pager_t	pager;
 {
+	struct vm_object_hash_head		*bucket;
 	register vm_object_hash_entry_t	entry;
 	vm_object_t						object;
 
 	vm_object_cache_lock();
-
-	for (entry = vm_object_hashtable[vm_object_hash(pager)].tqh_first;
-	     entry != NULL;
-	     entry = entry->hash_links.tqe_next) {
+	bucket = &vm_object_hashtable[vm_object_hash(pager)];
+	for (entry = RB_FIRST(vm_object_hash_head, bucket); entry != NULL; entry = RB_NEXT(vm_object_hash_head, bucket, entry)) {
 		object = entry->object;
 		if (object->pager == pager) {
 			vm_object_lock(object);
@@ -928,13 +952,12 @@ vm_object_enter(object, pager)
 		return;
 
 	bucket = &vm_object_hashtable[vm_object_hash(pager)];
-	entry = (vm_object_hash_entry_t)
-		malloc((u_long)sizeof *entry, M_VMOBJHASH, M_WAITOK);
+	entry = (vm_object_hash_entry_t)malloc((u_long)sizeof *entry, M_VMOBJHASH, M_WAITOK);
 	entry->object = object;
 	object->flags |= OBJ_CANPERSIST;
 
 	vm_object_cache_lock();
-	TAILQ_INSERT_TAIL(bucket, entry, hash_links);
+	RB_INSERT(vm_object_hash_head, bucket, entry);
 	vm_object_cache_unlock();
 }
 
@@ -956,12 +979,10 @@ vm_object_remove(pager)
 
 	bucket = &vm_object_hashtable[vm_object_hash(pager)];
 
-	for (entry = bucket->tqh_first;
-	     entry != NULL;
-	     entry = entry->hash_links.tqe_next) {
+	for (entry = RB_FIRST(vm_object_hash_head, bucket); entry != NULL; entry = RB_NEXT(vm_object_hash_head, bucket, entry)) {
 		object = entry->object;
 		if (object->pager == pager) {
-			TAILQ_REMOVE(bucket, entry, hash_links);
+			RB_REMOVE(vm_object_hash_head, bucket, entry);
 			free((caddr_t)entry, M_VMOBJHASH);
 			break;
 		}
@@ -982,7 +1003,7 @@ vm_object_cache_clear()
 	 *	list of cached objects.
 	 */
 	vm_object_cache_lock();
-	while ((object = vm_object_cached_list.tqh_first) != NULL) {
+	while ((object = TAILQ_FIRST(&vm_object_cached_list)) != NULL) {
 		vm_object_cache_unlock();
 
 		/* 
@@ -1102,7 +1123,7 @@ vm_object_collapse(object)
 			 *	pages that shadow them.
 			 */
 
-			while ((p = backing_object->memq.tqh_first) != NULL) {
+			while ((p = TAILQ_FIRST(backing_object->memq)) != NULL) {
 				new_offset = (p->offset - backing_offset);
 
 				/*
@@ -1176,7 +1197,7 @@ vm_object_collapse(object)
 			vm_object_unlock(backing_object);
 
 			simple_lock(&vm_object_list_lock);
-			TAILQ_REMOVE(&vm_object_list, backing_object, object_list);
+			RB_REMOVE(object_t, &vm_object_list, backing_object);
 			vm_object_count--;
 			simple_unlock(&vm_object_list_lock);
 
@@ -1207,9 +1228,7 @@ vm_object_collapse(object)
 			 *	of pages here.
 			 */
 
-			for (p = backing_object->memq.tqh_first;
-			     p != NULL;
-			     p = p->listq.tqe_next) {
+			for (p = TAILQ_FIRST(backing_object->memq); p != NULL; p = TAILQ_NEXT(p, listq)) {
 				new_offset = (p->offset - backing_offset);
 
 				/*
@@ -1291,8 +1310,8 @@ vm_object_page_remove(object, start, end)
 	if (object == NULL)
 		return;
 
-	for (p = object->memq.tqh_first; p != NULL; p = next) {
-		next = p->listq.tqe_next;
+	for (p = TAILQ_FIRST(object->memq); p != NULL; p = next) {
+		next = TAILQ_NEXT(p, listq);
 		if ((start <= p->offset) && (p->offset < end)) {
 			pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_NONE);
 			vm_page_lock_queues();
@@ -1415,15 +1434,14 @@ vm_object_print(object, full)
 	printf("pager=0x%x+0x%x, shadow=(0x%x)+0x%x\n",
 	       (int) object->pager, (int) object->paging_offset,
 	       (int) object->shadow, (int) object->shadow_offset);
-	printf("cache: next=0x%x, prev=0x%x\n",
-	       object->cached_list.tqe_next, object->cached_list.tqe_prev);
+	printf("cache: next=0x%x, prev=0x%x\n", TAILQ_NEXT(object, cached_list), TAILQ_PREV(object, object_q, cached_list));
 
 	if (!full)
 		return;
 
 	indent += 2;
 	count = 0;
-	for (p = object->memq.tqh_first; p != NULL; p = p->listq.tqe_next) {
+	for (p = TAILQ_FIRST(object->memq); p != NULL; p = TAILQ_NEXT(p, listq)) {
 		if (count == 0)
 			iprintf("memory:=");
 		else if (count == 6) {

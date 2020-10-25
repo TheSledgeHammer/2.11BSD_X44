@@ -30,16 +30,13 @@
 #define SYS_RWLOCK_H_
 
 #include <sys/lock.h>
+#include <sys/lockobj.h>
 
 /* Reader Writers Lock */
 struct rwlock {
     volatile u_int   		rwl_lock;
 
-    struct proc				*rwl_prlockholder;	/* proc lock holder */
-    struct kthread          *rwl_ktlockholder; 	/* kernel thread lock holder */
-    struct uthread          *rwl_utlockholder;	/* user thread lock holder */
-
-    pid_t                   rwl_lockholder_pid;
+    struct lock_holder		*rwl_lockholder;	/* lock holder: proc, kthread & uthread */
 
     struct simplelock       *rwl_lnterlock;    	/* lock on remaining fields */
     struct lock_object		*rwl_lockobject;	/* lock object (to replace simplelock) */
