@@ -39,6 +39,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
+
 #include <machine/pcb.h>
 
 /*
@@ -81,6 +82,18 @@ static __inline void
 invd(void)
 {
 	__asm __volatile("invd");
+}
+
+static __inline void
+load_fs(u_short sel)
+{
+	__asm __volatile("movw %0,%%fs" : : "rm" (sel));
+}
+
+static __inline void
+load_gs(u_short sel)
+{
+	__asm __volatile("movw %0,%%gs" : : "rm" (sel));
 }
 
 static __inline uint64_t

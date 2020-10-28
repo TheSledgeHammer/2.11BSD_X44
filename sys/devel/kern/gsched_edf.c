@@ -26,7 +26,10 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* The edf scheduler runs per single run-queue */
+/*
+ * Global Scheduler's: Earliest Deadline First Scheduling Algorithm.
+ * Designed to schedule per single run-queue.
+ */
 
 #include <sys/proc.h>
 #include <sys/user.h>
@@ -85,7 +88,7 @@ edf_compute(edf)
 	struct gsched_edf *edf;
 {
     edf->edf_slack = edf_slack(edf->edf_cpticks, edf->edf_time, edf->edf_cpu); 									/* laxity/slack */
-    edf->edf_priweight = gsched_priweight(edf->edf_pri, edf->edf_cpticks, edf->edf_slack, edf->edf_slptime); 	/* priority weighting */
+    PRIORITY_WEIGHTING(edf->edf_priweight, edf->edf_pri, edf->edf_cpticks, edf->edf_slack, edf->edf_slptime); 	/* priority weighting */
 }
 
 int
@@ -142,7 +145,7 @@ int
 edf_schedcpu(p)
 	struct proc *p;
 {
-	struct gsched_edf *edf = gsched_edf(p->p_gsched);
+	register struct gsched_edf *edf = gsched_edf(p->p_gsched);
 	int error;
 
 	edf_compute(edf);

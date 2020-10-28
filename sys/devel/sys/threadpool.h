@@ -29,8 +29,8 @@
 #ifndef SYS_THREADPOOL_H_
 #define SYS_THREADPOOL_H_
 
+#include "../libuthread/uthread.h"
 #include "sys/kthread.h"
-#include "sys/uthread.h"
 
 /*
  * Two Threadpools:
@@ -58,10 +58,10 @@
  *
  * 	Look at kthreadpool & uthreadpool for corresponding information
  */
+//typedef void threadpool_job_fn_t(struct threadpool_job *, struct wqueue *, struct task *, task_fn_t);
 
 /* Threadpool Jobs */
 TAILQ_HEAD(job_head, threadpool_job);
-//typedef void threadpool_job_fn_t(struct threadpool_job *, struct wqueue *, struct task *, task_fn_t);
 typedef void threadpool_job_fn_t(struct threadpool_job *);
 /* Threadpool Jobs */
 struct threadpool_job  {
@@ -95,7 +95,7 @@ struct threadpool_itpc {
 };
 extern struct itc_threadpool itpc;
 
-void	kthreadpools_init(void);
+void	kthreadpool_init(void);
 
 int		kthreadpool_get(struct kthreadpool **, u_char);
 void	kthreadpool_put(struct kthreadpool *, u_char);

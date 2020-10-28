@@ -33,12 +33,6 @@
 #ifndef SYS_LOCKOBJ_H_
 #define SYS_LOCKOBJ_H_
 
-#define	LC_SLEEPLOCK	0x00000001		/* Sleep lock. */
-#define	LC_SPINLOCK		0x00000002		/* Spin lock. */
-#define	LC_SLEEPABLE	0x00000004		/* Sleeping allowed with this lock. */
-#define	LC_RECURSABLE	0x00000008		/* Locks of this type may recurse. */
-#define	LC_UPGRADABLE	0x00000010		/* Upgrades and downgrades permitted. */
-
 #define	LO_CLASSFLAGS	0x0000ffff		/* Class specific flags. */
 #define	LO_INITIALIZED	0x00010000		/* Lock has been initialized. */
 #define	LO_WITNESS		0x00020000		/* Should witness monitor this lock. */
@@ -54,35 +48,19 @@
 
 #define	LO_CLASSSHIFT	24
 
-enum lock_class_index {
-	LO_CLASS_ABQL,
-	LO_CLASS_RWLOCK,
-	LO_CLASS_LOCK
+/* Should replace simplelock: as common to all locks: modified object-lock */
+struct lock_object_cpu {
+	volatile u_int				loc_my_ticket;
 };
 
-/*
- * Lock classes.  Each lock has a class which describes characteristics
- * common to all types of locks of a given class.
- *
- * Spin locks in general must always protect against preemption, as it is
- * an error to perform any type of context switch while holding a spin lock.
- * Also, for an individual lock to be recursable, its class must allow
- * recursion and the lock itself must explicitly allow recursion.
- */
-
-struct lock_class {
-    const	char 	 			*lc_name;
-	u_int			 			lc_flags;
-    void		     			(*lc_lock)(struct lock_object *, const char *, u_int);
-    int		         			(*lc_unlock)(struct lock_object *, const char *, u_int);
-};
-
-/* Should replace simplelock: as common to all locks */
 struct lock_object {
+	struct lock_object_cpu	 	lo_cpus[MAXCPUS];
+	u_int						lo_nxt_ticket;
+	int							lo_can_serve;
+
 	const struct lock_type		*lo_type;
 	const char 					*lo_name;		/* Individual lock name. */
 	u_int						lo_flags;
-	u_int						lo_data;		/* General class specific data. */
 	struct witness 				*lo_witness;	/* Data for witness. */
 };
 
@@ -90,43 +68,33 @@ struct lock_type {
 	const char					*lt_name;
 };
 
+/* lock holder */
 struct lock_holder {
+	pid_t						lh_pid;
+	struct pgrp 				*lh_pgrp;
+
 	struct proc 				*lh_proc;
 	struct kthread 				*lh_kthread;
 	struct uthread 				*lh_uthread;
-	pid_t						lh_pid;
 };
+
+/* macros */
+#define LOCKHOLDER_PID(h)		((h)->lh_pid)
+#define LOCKHOLDER_PGRP(h)		((h)->lh_pgrp)
 
 #define PROC_LOCKHOLDER(h)		((h)->lh_proc)
 #define KTHREAD_LOCKHOLDER(h)	((h)->lh_kthread)
 #define UTHREAD_LOCKHOLDER(h)	((h)->lh_uthread)
 
-static int						_isitmyx(struct witness *w1, struct witness *w2, int rmask, const char *fname);
-static void						adopt(struct witness *parent, struct witness *child);
-static struct witness			*enroll(const struct lock_type *, const char *, struct lock_class *);
-static struct lock_instance		*find_instance(struct lock_list_entry *list, const struct lock_object *lock);
-static int						isitmychild(struct witness *parent, struct witness *child);
-static int						isitmydescendant(struct witness *parent, struct witness *child);
-static void						itismychild(struct witness *parent, struct witness *child);
+void			simple_lock_init(struct lock_object *, const struct lock_type *, const char *, u_int);
+void 			simple_lock(struct lock_object *);
+void 			simple_unlock(struct lock_object *);
 
-static int						witness_alloc_stacks(void);
-static void						witness_debugger(int dump);
-static void						witness_free(struct witness *m);
-static struct witness			*witness_get(void);
-static uint32_t					witness_hash_djb2(const uint8_t *key, uint32_t size);
-static struct witness			*witness_hash_get(const struct lock_type *, const char *);
-static void						witness_hash_put(struct witness *w);
-static void						witness_init_hash_tables(void);
-static void						witness_increment_graph_generation(void);
-static int						witness_list_locks(struct lock_list_entry **, int (*)(const char *, ...));
-static void						witness_lock_list_free(struct lock_list_entry *lle);
-static struct lock_list_entry	*witness_lock_list_get(void);
-static void						witness_lock_stack_free(union lock_stack *stack);
-static union lock_stack			*witness_lock_stack_get(void);
-static int						witness_lock_order_add(struct witness *parent, struct witness *child);
-static int						witness_lock_order_check(struct witness *parent, struct witness *child);
-static struct witness_lock_order_data	*witness_lock_order_get(struct witness *parent, struct witness *child);
-static void						witness_list_lock(struct lock_instance *instance, int (*prnt)(const char *fmt, ...));
-static void						witness_setflag(struct lock_object *lock, int flag, int set);
+void 			set_proc_lockholder(struct lock_holder *, struct proc *);
+void 			set_kthread_lockholder(struct lock_holder *, struct kthread *);
+void 			set_uthread_lockholder(struct lock_holder *, struct uthread *);
+struct proc 	*get_proc_lockholder(struct lock_holder *);
+struct kthread 	*get_kthread_lockholder(struct lock_holder *);
+struct uthread 	*get_uthread_lockholder(struct lock_holder *);
 
 #endif /* SYS_LOCKOBJ_H_ */

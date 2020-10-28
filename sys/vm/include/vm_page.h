@@ -69,6 +69,8 @@
 #ifndef	_VM_PAGE_
 #define	_VM_PAGE_
 
+#include <sys/queue.h>
+
 /*
  *	Management of resident (logical) pages.
  *

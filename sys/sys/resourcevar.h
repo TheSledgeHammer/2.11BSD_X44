@@ -41,7 +41,7 @@
  * (not necessarily resident except when running).
  */
 struct pstats {
-#define	pstat_startzero	p_sru
+#define	pstat_startzero	p_ru
 	struct	k_rusage 	p_ksru;		/* stats for this proc */
 	struct	k_rusage 	p_kcru;		/* sum of stats for reaped children */
 	struct	rusage	 	p_ru;

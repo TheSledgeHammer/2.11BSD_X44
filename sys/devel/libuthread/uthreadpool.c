@@ -37,7 +37,7 @@
 #include <sys/map.h>
 #include <sys/user.h>
 #include <sys/threadpool.h>
-#include <sys/uthread.h>
+#include "uthread.h"
 
 struct uthreadpool_thread 				utpool_thread;
 lock_t	 								uthreadpools_lock;

@@ -73,7 +73,6 @@
 extern int	vm_pages_needed;	/* should be some "event" structure */
 simple_lock_data_t	vm_pages_needed_lock;
 
-
 /*
  *	Exported routines.
  */
@@ -87,7 +86,7 @@ simple_lock_data_t	vm_pages_needed_lock;
 			thread_wakeup(&vm_pages_needed); 	\
 			thread_sleep(&cnt.v_free_count, 	\
 				&vm_pages_needed_lock, FALSE); 	\
-			}
+}
 #ifdef KERNEL
 void		 vm_pageout (void);
 void		 vm_pageout_scan (void);

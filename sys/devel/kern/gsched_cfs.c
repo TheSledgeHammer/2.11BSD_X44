@@ -26,14 +26,17 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * Global Scheduler's: Completely Fair Scheduling Algorithm.
+ * Designed to schedule on multiple run-queues.
+ */
+
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/user.h>
 
 #include <sys/gsched_cfs.h>
-
-/* The cfs scheduler on multiple run-queues */
 
 /*
  * Constants for digital decay and forget:
@@ -154,18 +157,16 @@ cfs_update(p, priweight)
 	if (p->p_slptime > 5 * loadfac) {
 		p->p_estcpu = 0;
 	} else {
-		p->p_slptime--;	/* the first time was done in schedcpu */
+		p->p_slptime--;						/* 2nd round: (1st round in schedcpu) */
 		while (newcpu && --p->p_slptime)
 			newcpu = (int) decay_cpu(loadfac, newcpu);
 		p->p_estcpu = min(newcpu, UCHAR_MAX);
 	}
-	//resetpri(p);
 }
 
 RB_PROTOTYPE(gsched_cfs_rbtree, gsched_cfs, cfs_entry, cfs_rb_compare);
 RB_GENERATE(gsched_cfs_rbtree, gsched_cfs, cfs_entry, cfs_rb_compare);
 
-/* merge with gsched_compare (do same thing) or alter to priority weighting */
 int
 cfs_rb_compare(a, b)
 	struct gsched_cfs *a, *b;
@@ -178,12 +179,31 @@ cfs_rb_compare(a, b)
 	return (0);
 }
 
-/* insert into tree */
+/* calculate cfs's dynamic variables */
 void
-cfs_enqueue(cfs, p)
+cfs_compute(cfs)
 	struct gsched_cfs *cfs;
+{
+	cfs->cfs_btl = BTL;
+	cfs->cfs_bmg = BMG;
+	cfs->cfs_bsched = BSCHEDULE;
+}
+
+int
+cfs_schedcpu(p)
 	struct proc *p;
 {
+	register struct gsched_cfs *cfs = gsched_cfs(p->p_gsched);
+
+	u_char tmp_bsched; 			/* temp base schedule period */
+	u_char new_bsched;			/* new base schedule period */
+	int cpticks = 0;			/* p_cpticks counter (deadline) */
+
+	if(p->p_gsched->gsc_priweight != 0) {
+		cfs->cfs_priweight = p->p_gsched->gsc_priweight;
+	}
+
+	/* add to cfs queue */
 	cfs->cfs_estcpu = cfs_decay(p, cfs->cfs_priweight);
 	if(cfs->cfs_estcpu != p->p_estcpu) {
 		if(cfs->cfs_estcpu > p->p_estcpu) {
@@ -198,85 +218,54 @@ cfs_enqueue(cfs, p)
 			}
 		}
 	}
-	RB_INSERT(gsched_cfs_rbtree, &(cfs)->cfs_parent, p);
-	//cfs->cfs_tasks++;
-}
-
-/* remove from tree */
-void
-cfs_dequeue(cfs, p)
-	struct gsched_cfs *cfs;
-	struct proc *p;
-{
-	RB_REMOVE(gsched_cfs_rbtree, &(cfs)->cfs_parent, p);
-	//cfs->cfs_tasks--;
-}
-
-/* search for process with earliest deadline in rbtree & return */
-struct proc *
-cfs_search(cfs, p)
-	struct gsched_cfs *cfs;
-	struct proc *p;
-{
-	cfs->cfs_proc = RB_FIND(gsched_cfs_rbtree, cfs->cfs_parent, p);
-	RB_FOREACH(p, gsched_cfs_rbtree, &(cfs)->cfs_parent) {
-		if(cfs->cfs_cpticks == p->p_cpticks) {
-			cfs->cfs_proc = RB_FIND(gsched_cfs_rbtree, cfs->cfs_parent, p);
-			return (cfs->cfs_proc);
-		}
-	}
-	return (NULL);
-}
-
-void
-cfs_compute(cfs)
-	struct gsched_cfs *cfs;
-{
-	cfs->cfs_btl = BTL;
-	cfs->cfs_bmg = BMG;
-	cfs->cfs_bsched = BSCHEDULE;
-}
-
-int
-cfs_schedcpu(p)
-	struct proc *p;
-{
-	struct gsched_cfs *cfs = gsched_cfs(p->p_gsched);
-
-	u_char tmp_bsched; 			/* temp base schedule period */
-	u_char new_bsched;			/* new base schedule period */
-	int cpticks = 0;			/* p_cpticks counter (deadline) */
-
-	if(p->p_gsched->gsc_priweight != 0) {
-		cfs->cfs_priweight = p->p_gsched->gsc_priweight;
-	}
-
-	/* add to cfs queue */
-	cfs_enqueue(cfs, p);
+	RB_INSERT(gsched_cfs_rbtree, cfs->cfs_parent, p);
+	/* add to run-queue */
 	setrq(p);
 
 	/* calculate cfs variables */
 	cfs_compute(cfs);
 
-	/* check base schedule period */
+	/* check base scheduling period */
 	if(EBSCHEDULE(cfs)) {
 		tmp_bsched = cfs->cfs_bsched;
 		new_bsched = (cfs->cfs_tasks * cfs->cfs_bmg);
 		cfs->cfs_bsched = new_bsched;
 	}
 
-	/* TODO: rb_tree: perform run-through */
-	cpticks++;
-	/* Test if deadline was reached before end of scheduling period */
-	if(cfs->cfs_cpticks == cpticks) {
-		if(cfs->cfs_time != cfs->cfs_bsched) {
-			goto runout;
-		}
-	}
-	if(cfs->cfs_cpticks != cpticks) {
-		/* test time against schedule period */
-		if(cfs->cfs_time == cfs->cfs_bsched) {
-			goto runout;
+	/* run-through red-black tree */
+	struct proc *nxt;
+	struct proc *tmp;
+	struct proc *left;
+	for(p = RB_FIRST(gsched_cfs_rbtree, cfs)->cfs_proc; p != NULL; p = nxt) {
+		nxt = RB_NEXT(gsched_cfs_rbtree, cfs, p)->cfs_proc;
+		left = RB_LEFT(cfs, cfs_entry)->cfs_proc;
+		/* found proc on left-side of tree */
+		if(p == left) {
+			/* sort run queue */
+			gsched_sort(p, nxt);
+			/* start deadline counter */
+			while(cpticks < cfs->cfs_cpticks) {
+				cpticks++;
+				/* Test if deadline was reached before end of scheduling period */
+				if(cfs->cfs_cpticks == cpticks) {
+					/* test if time doesn't equal the base scheduling period */
+					if(cfs->cfs_time != cfs->cfs_bsched) {
+						goto runout;
+						break;
+					}
+				} else if(cfs->cfs_cpticks != cpticks) {
+					/* test if time equals the base scheduling period */
+					if(cfs->cfs_time == cfs->cfs_bsched) {
+						goto runout;
+						break;
+					}
+				} else {
+					/* SHOULD NEVER REACH THIS POINT!! */
+					//panic??
+					goto runout;
+					break;
+				}
+			}
 		}
 	}
 
@@ -285,7 +274,8 @@ runout:
 	cfs_update(p, cfs->cfs_priweight);
 
 	/* remove from cfs queue */
-	cfs_dequeue(p);
+	RB_REMOVE(gsched_cfs_rbtree, cfs->cfs_parent, p);
+	/* remove from run-queue */
 	remrq(p);
 
 	return (0);

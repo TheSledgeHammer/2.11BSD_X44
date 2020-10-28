@@ -447,6 +447,7 @@ user_page_fault (p, map, addr, ftype, type)
 
 	/* check if page table is mapped, if not, fault it first */
 #define pde_v(v) (PTD[((v)>>PD_SHIFT)&1023].pd_v)
+
 	if (!pde_v(va)) {
 		v = trunc_page(vtopte(va));
 		if ((rv = vm_fault(map, v, ftype, FALSE)) != KERN_SUCCESS)

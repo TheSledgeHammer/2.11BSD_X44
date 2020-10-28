@@ -37,7 +37,7 @@
 int nthread = maxthread;
 
 static void
-kthread_fork(p, isvfork)
+kthread_fork1(p, isvfork)
 	struct proc *p;
 	int isvfork;
 {
@@ -225,7 +225,7 @@ again:
 	retval[0] = kt1->kt_tid;
 	retval[1] = 1;
 
-	/* TODO: vm_thread_fork */
+	/* TODO: vm_kthread_fork */
 	if(vm_thread_fork(kt1, kt2, isvfork)) {
 		/*
 		 * Child process.  Set start time and get to work.
@@ -251,6 +251,7 @@ again:
 }
 
 #include <sys/resourcevar.h>
+
 int
 vm_thread_fork(kt1, kt2, isvfork)
 	register struct kthread *kt1, *kt2;
@@ -263,12 +264,6 @@ vm_thread_fork(kt1, kt2, isvfork)
 
 	kt2->kt_vmspace = vmspace_fork(kt1->kt_vmspace);
 
-	/*
-	 * p_stats and p_sigacts currently point at fields
-	 * in the user struct but not at &u, instead at p_addr.
-	 * Copy p_sigacts and parts of p_stats; zero the rest
-	 * of p_stats (statistics).
-	 */
 	kt2->kt_stats = &up->u_stats;
 	kt2->kt_sigacts = &up->u_sigacts;
 	up->u_sigacts = *kt1->kt_sigacts;

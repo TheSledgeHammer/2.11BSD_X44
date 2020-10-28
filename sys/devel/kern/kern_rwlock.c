@@ -31,18 +31,8 @@
 #include <sys/lock.h>
 #include <sys/rwlock.h>
 #include <sys/kthread.h>
-#include <sys/uthread.h>
-
-#include <devel/sys/lockobj.h>
-#include <devel/sys/witness.h>
-
-/* lock class */
-struct lock_class lock_class_rwlock = {
-		.lc_name = "rwlock",
-		.lc_flags = LC_SLEEPLOCK | LC_SLEEPABLE | LC_UPGRADABLE,
-		.lc_lock = rwlock_lock,
-		.lc_unlock = rwlock_unlock
-};
+#include <sys/lockobj.h>
+#include "../libuthread/uthread.h"
 
 /* Initialize a rwlock */
 void
@@ -64,18 +54,6 @@ rwlock_init(rwl, prio, wmesg, timo, flags)
 	rwlock_lockholder_init(rwl);
 }
 
-void
-rwlock_lockholder_init(rwl)
-	struct rwlock *rwl;
-{
-	bzero(rwl->rwl_lockholder, sizeof(struct lock_holder));
-	rwl->rwl_lockholder->lh_pid = RW_NOTHREAD;
-
-	set_proc_lockholder(rwl->rwl_lockholder, NULL);
-    set_kthread_lockholder(rwl->rwl_lockholder, NULL);
-	set_uthread_lockholder(rwl->rwl_lockholder, NULL);
-}
-
 int
 rwlockstatus(rwl)
 	rwlock_t rwl;
@@ -91,15 +69,16 @@ rwlockstatus(rwl)
     return (lock_type);
 }
 
-/* should apply a readers writer lock */
 int
 rwlockmgr(rwl, flags, pid)
 	__volatile rwlock_t rwl;
 	unsigned int 		flags;
 	pid_t 				pid;
+
 {
 	int error;
 	int extflags;
+	register struct lock_holder *holder = rwl->rwl_lockholder;
 	error = 0;
 
 	if (!pid) {
@@ -113,7 +92,7 @@ rwlockmgr(rwl, flags, pid)
 
 	switch (flags & RW_TYPE_MASK) {
 	case RW_WRITER:
-		if (rwl->rwl_lockholder->lh_pid != pid) {
+		if (LOCKHOLDER_PID(holder) != pid) {
 			if ((extflags & RW_NOWAIT)
 					&& (rwl->rwl_flags & (RW_HAVE_READ | RW_WANT_READ | RW_WANT_DOWNGRADE))) {
 				error = EBUSY;
@@ -128,18 +107,18 @@ rwlockmgr(rwl, flags, pid)
 		rwl->rwl_writercount++;
 
 	case RW_DOWNGRADE:
-		if (rwl->rwl_lockholder->lh_pid != pid || rwl->rwl_readercount == 0)
+		if (LOCKHOLDER_PID(holder) != pid || rwl->rwl_readercount == 0)
 			panic("rwlockmgr: not holding reader lock");
 		rwl->rwl_writercount += rwl->rwl_readercount;
 		rwl->rwl_readercount = 0;
 		rwl->rwl_flags &= ~RW_HAVE_READ;
-		rwl->rwl_lockholder->lh_pid = RW_NOTHREAD;
+		LOCKHOLDER_PID(holder) = RW_NOTHREAD;
 		if (rwl->rwl_waitcount)
 			wakeup((void *)rwl);
 		break;
 
 	case RW_READER:
-		if (rwl->rwl_lockholder->lh_pid != pid) {
+		if (LOCKHOLDER_PID(holder) != pid) {
 			if ((extflags & RW_WAIT) && (rwl->rwl_flags & (RW_HAVE_WRITE | RW_WANT_WRITE | RW_WANT_UPGRADE))) {
 				error = EBUSY;
 				break;
@@ -153,12 +132,12 @@ rwlockmgr(rwl, flags, pid)
 		rwl->rwl_readercount++;
 
 	case RW_UPGRADE:
-		if (rwl->rwl_lockholder->lh_pid != pid || rwl->rwl_writercount < 1)
+		if (LOCKHOLDER_PID(holder) != pid || rwl->rwl_writercount < 1)
 			panic("rwlockmgr: not holding writer lock");
 		rwl->rwl_readercount += rwl->rwl_writercount;
 		rwl->rwl_writercount = 1;
 		rwl->rwl_flags &= ~RW_HAVE_WRITE;
-		rwl->rwl_lockholder->lh_pid = RW_NOTHREAD;
+		LOCKHOLDER_PID(holder) = RW_NOTHREAD;
 		if (rwl->rwl_waitcount)
 			wakeup((void *)rwl);
 		break;
@@ -192,8 +171,7 @@ rwlock_lock(rwl)
     __volatile rwlock_t rwl;
 {
     if (rwl->rwl_lock == 1) {
-    	simple_lock(&rwl->rwl_lnterlock);
-    	lockoject_lock(rwl->rwl_lockobject, "rwlock");
+    	lockoject_lock(rwl->rwl_lockobject);
     }
 }
 
@@ -202,8 +180,7 @@ rwlock_unlock(rwl)
     __volatile rwlock_t rwl;
 {
     if (rwl->rwl_lock == 0) {
-    	simple_unlock(&rwl->rwl_lnterlock);
-    	lockoject_unlock(rwl->rwl_lockobject, "rwlock");
+    	lockoject_unlock(rwl->rwl_lockobject);
     }
 }
 
@@ -258,6 +235,7 @@ rwlock_lock_held(rwl)
 }
 
 int lock_wait_time = 100;
+
 void
 rwlock_pause(rwl, wanted)
 	struct rwlock *rwl;

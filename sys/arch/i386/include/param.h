@@ -58,12 +58,12 @@
 #define	ALIGN(p)		(((u_int)(p) + ALIGNBYTES) &~ ALIGNBYTES)
 
 
-#define	NBPG			4096			/* bytes/page (PAGE SIZE) */
-#define NBPDE			1024			/* page directory size in bytes (PDE SIZE) */
-#define	PGOFSET			(NBPG-1)		/* byte offset into page */
+#define	NBPG			4096				/* bytes/page (PAGE SIZE) */
+#define NBPDE			1024				/* page directory size in bytes (PDE SIZE) */
+#define	PGOFSET			(NBPG-1)			/* byte offset into page */
 
-#define	PGSHIFT			12				/* LOG2(NBPG) */
-#define PGSIZE			(1 << PGSHIFT)	/* bytes/page (PAGE SIZE) */
+#define	PGSHIFT			12					/* LOG2(NBPG) */
+#define PGSIZE			(1 << PGSHIFT)		/* bytes/page (PAGE SIZE) */
 #define PGMASK			(PGSIZE - 1)
 #define	NPTEPG			(NBPG/ sizeof (pt_entry_t))
 
@@ -72,30 +72,30 @@
 #endif
 
 #ifndef NBPDR
-#define NBPDR			(1 << PDRSHIFT)	/* bytes/page dir */
+#define NBPDR			(1 << PDRSHIFT)		/* bytes/page dir */
 #endif
-#define	PDROFSET		(NBPDR-1)		/* byte offset into page dir */
+#define	PDROFSET		(NBPDR-1)			/* byte offset into page dir */
 
-#define	KERNBASE		0xFE000000		/* start of kernel virtual */
+#define	KERNBASE		0xFE000000			/* start of kernel virtual */
 #define	BTOPKERNBASE	((u_long)KERNBASE >> PGSHIFT)
 
 #define	DEV_BSIZE		512
-#define	DEV_BSHIFT		9				/* log2(DEV_BSIZE) */
+#define	DEV_BSHIFT		9					/* log2(DEV_BSIZE) */
 #define BLKDEV_IOSIZE	2048
-#define	MAXPHYS			(64 * 1024)		/* max raw I/O transfer size */
+#define	MAXPHYS			(64 * 1024)			/* max raw I/O transfer size */
 
 #define	CLSIZE			1
 #define	CLSIZELOG2		0
 
 /* NOTE: SSIZE, SINCR and UPAGES must be multiples of CLSIZE */
-#define	SSIZE			1				/* initial stack size/NBPG */
-#define	SINCR			1				/* increment of stack/NBPG */
+#define	SSIZE			1					/* initial stack size/NBPG */
+#define	SINCR			1					/* increment of stack/NBPG */
 
 #define	UPAGES			2					/* pages of u-area */
 #define	USPACE			(UPAGES * PGSIZE)	/* total size of u-area */
 
 #ifndef KSTACK_PAGES
-#define KSTACK_PAGES 	4				/* Includes pcb! */
+#define KSTACK_PAGES 	4					/* Includes pcb! */
 #endif
 
 
@@ -106,15 +106,15 @@
  * clusters (MAPPED_MBUFS), MCLBYTES must also be an integral multiple
  * of the hardware page size.
  */
-#define	MSIZE		128		/* size of an mbuf */
-#define	MCLBYTES	1024
-#define	MCLSHIFT	10
-#define	MCLOFSET	(MCLBYTES - 1)
+#define	MSIZE			128		/* size of an mbuf */
+#define	MCLBYTES		1024
+#define	MCLSHIFT		10
+#define	MCLOFSET		(MCLBYTES - 1)
 #ifndef NMBCLUSTERS
 #ifdef GATEWAY
-#define	NMBCLUSTERS	512		/* map size, max cluster allocation */
+#define	NMBCLUSTERS		512		/* map size, max cluster allocation */
 #else
-#define	NMBCLUSTERS	256		/* map size, max cluster allocation */
+#define	NMBCLUSTERS		256		/* map size, max cluster allocation */
 #endif
 #endif
 

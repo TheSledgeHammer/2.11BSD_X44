@@ -66,6 +66,7 @@
 #include <sys/resourcevar.h>
 #include <sys/buf.h>
 #include <sys/user.h>
+#include <sys/dk.h>
 
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
@@ -99,8 +100,7 @@ kernacc(addr, len, rw)
 	 * or worse, inconsistencies at the pmap level.  We only worry
 	 * about the buffer cache for now.
 	 */
-	if (!readbuffers && rv && (eaddr > (vm_offset_t)buffers &&
-		   saddr < (vm_offset_t)buffers + MAXBSIZE * nbuf))
+	if (!readbuffers && rv && (eaddr > (vm_offset_t)buffers && saddr < (vm_offset_t)buffers + MAXBSIZE * nbuf))
 		rv = FALSE;
 	return(rv == TRUE);
 }
@@ -160,8 +160,7 @@ vslock(addr, len)
 	caddr_t	addr;
 	u_int	len;
 {
-	vm_map_pageable(&curproc->p_vmspace->vm_map, trunc_page(addr),
-			round_page(addr+len), FALSE);
+	vm_map_pageable(&curproc->p_vmspace->vm_map, trunc_page(addr), round_page(addr+len), FALSE);
 }
 
 void
@@ -173,8 +172,7 @@ vsunlock(addr, len, dirtied)
 #ifdef	lint
 	dirtied++;
 #endif
-	vm_map_pageable(&curproc->p_vmspace->vm_map, trunc_page(addr),
-			round_page(addr+len), TRUE);
+	vm_map_pageable(&curproc->p_vmspace->vm_map, trunc_page(addr), round_page(addr+len), TRUE);
 }
 
 /*
@@ -201,8 +199,7 @@ vm_fork(p1, p2, isvfork)
 	 * avoid copying any of the parent's pagetables or other per-process
 	 * objects that reside in the map by marking all of them non-inheritable
 	 */
-	(void)vm_map_inherit(&p1->p_vmspace->vm_map,
-		UPT_MIN_ADDRESS-UPAGES*NBPG, VM_MAX_ADDRESS, VM_INHERIT_NONE);
+	(void)vm_map_inherit(&p1->p_vmspace->vm_map, UPT_MIN_ADDRESS-UPAGES*NBPG, VM_MAX_ADDRESS, VM_INHERIT_NONE);
 
 	p2->p_vmspace = vmspace_fork(p1->p_vmspace);
 
@@ -210,7 +207,6 @@ vm_fork(p1, p2, isvfork)
 	if (p1->p_vmspace->vm_shm)
 		shmfork(p1, p2, isvfork);
 #endif
-
 
 	/*
 	 * Allocate a wired-down (for now) pcb and kernel stack for the process
@@ -239,20 +235,21 @@ not yet clear, yet it does... */
 	p2->p_stats = &up->u_stats;
 	p2->p_sigacts = &up->u_sigacts;
 	up->u_sigacts = *p1->p_sigacts;
-	bzero(&up->u_stats.pstat_startzero,
-	    (unsigned) ((caddr_t)&up->u_stats.pstat_endzero -
+	bzero(&up->u_stats.pstat_startzero, (unsigned) ((caddr_t)&up->u_stats.pstat_endzero -
 	    (caddr_t)&up->u_stats.pstat_startzero));
 	bcopy(&p1->p_stats->pstat_startcopy, &up->u_stats.pstat_startcopy,
 	    ((caddr_t)&up->u_stats.pstat_endcopy -
 	     (caddr_t)&up->u_stats.pstat_startcopy));
 
 #ifdef i386
-	{ u_int addr = UPT_MIN_ADDRESS - UPAGES*NBPG; struct vm_map *vp;
+	{
+		u_int addr = UPT_MIN_ADDRESS - UPAGES * NBPG;
+		struct vm_map *vp;
 
-	vp = &p2->p_vmspace->vm_map;
-	(void)vm_deallocate(vp, addr, UPT_MAX_ADDRESS - addr);
-	(void)vm_allocate(vp, &addr, UPT_MAX_ADDRESS - addr, FALSE);
-	(void)vm_map_inherit(vp, addr, UPT_MAX_ADDRESS, VM_INHERIT_NONE);
+		vp = &p2->p_vmspace->vm_map;
+		(void) vm_deallocate(vp, addr, UPT_MAX_ADDRESS - addr);
+		(void) vm_allocate(vp, &addr, UPT_MAX_ADDRESS - addr, FALSE);
+		(void) vm_map_inherit(vp, addr, UPT_MAX_ADDRESS, VM_INHERIT_NONE);
 	}
 #endif
 	/*
@@ -318,9 +315,6 @@ scheduler()
 	struct proc *pp;
 	int ppri;
 
-	//vm_offset_t addr;
-	//vm_size_t size;
-
 	int lastidle, lastrun;
 	int curidle, currun;
 	int forceload;
@@ -351,7 +345,7 @@ loop1:
 	pp = NULL;
 	ppri = INT_MIN;
 	for (p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
-		if (p->p_stat == SRUN && (p->p_flag &  (P_INMEM|P_SWAPPING)) == 0) {
+		if (p->p_stat == SRUN && (p->p_flag & (P_INMEM|P_SWAPPING)) == 0) {
 			int mempri;
 			pri = p->p_swtime + p->p_slptime - p->p_nice * 8;
 			mempri = pri > 0 ? pri : 0;
@@ -367,7 +361,6 @@ loop1:
 			}
 		}
 	}
-
 
 	if ((pp == NULL) && (ntries == 0) && forceload) {
 		++ntries;
@@ -415,8 +408,7 @@ loop1:
 }
 
 #define	swappable(p)							\
-	(((p)->p_flag &								\
-			(P_TRACED|P_NOSWAP|P_SYSTEM|P_INMEM|P_WEXIT|P_PHYSIO|P_SWAPPING)) == P_INMEM)
+	(((p)->p_flag &	(P_TRACED|P_NOSWAP|P_SYSTEM|P_INMEM|P_WEXIT|P_PHYSIO|P_SWAPPING)) == P_INMEM)
 
 /*
  * Swapout is driven by the pageout daemon.  Very simple, we find eligible
@@ -522,8 +514,7 @@ swapout(p)
 	/*
 	 * remember the process resident count
 	 */
-	p->p_vmspace->vm_swrss =
-			p->p_vmspace->vm_pmap.pm_stats.resident_count;
+	p->p_vmspace->vm_swrss = p->p_vmspace->vm_pmap.pm_stats.resident_count;
 	/*
 	 * and decrement the amount of needed space
 	 */
@@ -537,11 +528,9 @@ swapout(p)
 
 	p->p_flag |= P_SWAPPING;
 /* let the upages be paged */
-	pmap_remove(vm_map_pmap(kernel_map),
-		(vm_offset_t) p->p_addr, ((vm_offset_t) p->p_addr) + UPAGES * NBPG);
+	pmap_remove(vm_map_pmap(kernel_map), (vm_offset_t) p->p_addr, ((vm_offset_t) p->p_addr) + UPAGES * NBPG);
 
-	vm_map_pageable(map, (vm_offset_t) kstack,
-		(vm_offset_t) kstack + UPAGES * NBPG, TRUE);
+	vm_map_pageable(map, (vm_offset_t) kstack, (vm_offset_t) kstack + UPAGES * NBPG, TRUE);
 
 	p->p_flag &= ~P_SWAPPING;
 	p->p_swtime = 0;

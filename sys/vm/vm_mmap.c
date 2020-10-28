@@ -78,7 +78,6 @@ sbrk(p, uap, retval)
 	} */ *uap;
 	register_t *retval;
 {
-
 	/* Not yet implemented */
 	return (EOPNOTSUPP);
 }

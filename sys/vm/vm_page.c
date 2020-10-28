@@ -427,7 +427,7 @@ vm_page_lookup(object, offset)
 
 	spl = splimp();
 	simple_lock(&bucket_lock);
-	for (mem = bucket->tqh_first; mem != NULL; mem = mem->hashq.tqe_next) {
+	for (mem = TAILQ_FIRST(bucket); mem != NULL; mem = TAILQ_NEXT(mem, hashq)) {
 		VM_PAGE_CHECK(mem);
 		if ((mem->object == object) && (mem->offset == offset)) {
 			simple_unlock(&bucket_lock);
@@ -482,7 +482,7 @@ vm_page_alloc(object, offset)
 
 	spl = splimp();				/* XXX */
 	simple_lock(&vm_page_queue_free_lock);
-	if (vm_page_queue_free.tqh_first == NULL) {
+	if (TAILQ_FIRST(vm_page_queue_free) == NULL) {
 		simple_unlock(&vm_page_queue_free_lock);
 		splx(spl);
 		return(NULL);

@@ -11,6 +11,7 @@
 
 #include <machine/pcb.h>
 #include <machine/param.h>
+
 #ifndef KERNEL
 #include <sys/errno.h>
 #include <sys/dir.h>
@@ -162,15 +163,15 @@ struct user {
 	struct kinfo_proc 	u_kproc;				/* proc + eproc */
 	struct md_coredump 	u_md;					/* machine dependent glop */
 
+
 	vm_offset_t			u_kstack;				/* (a) Kernel VA of kstack. */
 	int					u_kstack_pages;			/* (a) Size of the kstack. */
+	int					u_uspace;				/* (a) Size of the u-area (UPAGES * PGSIZE) */
 
 /* 1.8 User Threads */
 	//struct uthread		*u_uthread;			/* ptr to uthread */
 };
 
 #ifdef KERNEL
-extern struct user u;
-#else
 extern struct user u;
 #endif

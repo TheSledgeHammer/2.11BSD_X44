@@ -40,6 +40,7 @@
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/lock.h>
+#include <sys/lockobj.h>
 #include <sys/user.h>
 
 #include <machine/cpu.h>
@@ -68,6 +69,8 @@ lockinit(lkp, prio, wmesg, timo, flags)
 
 	lkp->lk_lockholder_pid = LK_NOPROC;
 	lkp->lk_prlockholder = NULL;
+
+	//lock_lockholder_init(&lkp);
 }
 
 /* Determine the status of a lock. */
@@ -95,14 +98,14 @@ lockstatus(lkp)
  * accepted shared locks and shared-to-exclusive upgrades to go away.
  */
 int
-lockmgr(lkp, flags, interlkp, p)
+lockmgr(lkp, flags, interlkp, pid)
 	__volatile struct lock *lkp;
 	u_int flags;
 	struct simplelock *interlkp;
-	struct proc *p;
-{
-	int error;
 	pid_t pid;
+{
+	register struct lock_holder *holder = lkp->lk_lockholder;
+	int error;
 	int extflags;
 
 	error = 0;
@@ -437,94 +440,3 @@ count(p, x)
 		p->p_locks += x;
 	}
 }
-
-#if defined(DEBUG) && NCPUS == 1
-#include <sys/kernel.h>
-#include <vm/include/vm.h>
-#include <sys/sysctl.h>
-int lockpausetime = 0;
-struct ctldebug debug2 = { "lockpausetime", &lockpausetime };
-int simplelockrecurse;
-
-/*
- * Simple lock functions so that the debugger can see from whence
- * they are being called.
- */
-void
-simple_lock_init(alp)
-	struct simplelock *alp;
-{
-	alp->lock_data = 0;
-}
-
-void
-_simple_lock(alp, id, l)
-	__volatile struct simplelock *alp;
-	const char *id;
-	int l;
-{
-
-	if (simplelockrecurse)
-		return;
-	if (alp->lock_data == 1) {
-		if (lockpausetime == -1)
-			panic("%s:%d: simple_lock: lock held", id, l);
-		printf("%s:%d: simple_lock: lock held\n", id, l);
-		if (lockpausetime == 1) {
-			BACKTRACE(curproc);
-		} else if (lockpausetime > 1) {
-			printf("%s:%d: simple_lock: lock held...", id, l);
-			tsleep(&lockpausetime, PCATCH | PPAUSE, "slock",
-			    lockpausetime * hz);
-			printf(" continuing\n");
-		}
-	}
-	alp->lock_data = 1;
-	if (curproc)
-		curproc->p_simple_locks++;
-}
-
-int
-_simple_lock_try(alp, id, l)
-	__volatile struct simplelock *alp;
-	const char *id;
-	int l;
-{
-
-	if (alp->lock_data)
-		return (0);
-	if (simplelockrecurse)
-		return (1);
-	alp->lock_data = 1;
-	if (curproc)
-		curproc->p_simple_locks++;
-	return (1);
-}
-
-void
-_simple_unlock(alp, id, l)
-	__volatile struct simplelock *alp;
-	const char *id;
-	int l;
-{
-
-	if (simplelockrecurse)
-		return;
-	if (alp->lock_data == 0) {
-		if (lockpausetime == -1)
-			panic("%s:%d: simple_unlock: lock not held", id, l);
-		printf("%s:%d: simple_unlock: lock not held\n", id, l);
-		if (lockpausetime == 1) {
-			BACKTRACE(curproc);
-		} else if (lockpausetime > 1) {
-			printf("%s:%d: simple_unlock: lock not held...", id, l);
-			tsleep(&lockpausetime, PCATCH | PPAUSE, "sunlock",
-			    lockpausetime * hz);
-			printf(" continuing\n");
-		}
-	}
-	alp->lock_data = 0;
-	if (curproc)
-		curproc->p_simple_locks--;
-}
-#endif /* DEBUG && NCPUS == 1 */

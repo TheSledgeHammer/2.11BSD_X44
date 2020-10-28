@@ -127,7 +127,7 @@ struct vm86_kernel {
 	caddr_t	vm86_sproc;				/* address of sproc */
 };
 
-#define VM86_INIT	1
+#define VM86_INIT		1
 #define VM86_SET_VME	2
 #define VM86_GET_VME	3
 #define VM86_INTCALL	4
@@ -146,6 +146,8 @@ struct vm86_intcall_args {
 	int					intnum;
 	struct 	vm86frame 	vmf;
 };
+
+#define	VM86_STACK_SPACE	16
 
 #ifdef _KERNEL
 extern 	int vm86paddr;

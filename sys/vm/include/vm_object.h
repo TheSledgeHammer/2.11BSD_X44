@@ -109,7 +109,7 @@ struct vm_object_hash_entry {
 };
 typedef struct vm_object_hash_entry	*vm_object_hash_entry_t;
 
-#ifdef	KERNEL
+//#ifdef	KERNEL
 struct object_t;
 RB_HEAD(object_t, vm_object);
 struct object_q;

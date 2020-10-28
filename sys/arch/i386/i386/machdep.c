@@ -137,7 +137,7 @@ int biosmem;
 struct bootinfo bootinfo;
 int 			*esym;
 
-extern int kstack[];
+//extern int kstack[];
 extern int biosbasemem, biosextmem;
 
 struct pcb *curpcb;			/* our current running pcb */
@@ -153,7 +153,8 @@ struct soft_segment_descriptor ldt_segs[];
 
 int _udatasel, _ucodesel, _gsel_tss;
 
-extern struct user *proc0paddr;
+struct user *proc0paddr;
+vm_offset_t proc0kstack;
 
 void
 init386_bootinfo(void)
@@ -227,11 +228,14 @@ startup(firstaddr)
 
 #define	valloc(name, type, num) \
 	    (name) = (type *)v; v = (caddr_t)((name)+(num))
+
 #define	valloclim(name, type, num, lim) \
 	    (name) = (type *)v; v = (caddr_t)((lim) = ((name)+(num)))
+
 	valloc(cfree, struct cblock, nclist);
 	valloc(callout, struct callout, ncallout);
 	valloc(swapmap, struct map, nswapmap = maxproc * 2);
+
 #ifdef SYSVSHM
 	valloc(shmsegs, struct shmid_ds, shminfo.shmmni);
 #endif
@@ -320,8 +324,7 @@ startup(firstaddr)
 	mclrefcnt = (char*) malloc(NMBCLUSTERS + CLBYTES / MCLBYTES,
 	M_MBUF, M_NOWAIT);
 	bzero(mclrefcnt, NMBCLUSTERS + CLBYTES / MCLBYTES);
-	mb_map = kmem_suballoc(kernel_map, (vm_offset_t) &mbutl, &maxaddr,
-			VM_MBUF_SIZE, FALSE);
+	mb_map = kmem_suballoc(kernel_map, (vm_offset_t) &mbutl, &maxaddr, VM_MBUF_SIZE, FALSE);
 	/*
 	 * Initialize callouts
 	 */
@@ -331,8 +334,7 @@ startup(firstaddr)
 	callout[i - 1].c_next = NULL;
 
 	/*printf("avail mem = %d\n", ptoa(vm_page_free_count));*/
-	printf("using %d buffers containing %d bytes of memory\n", nbuf,
-			bufpages * CLBYTES);
+	printf("using %d buffers containing %d bytes of memory\n", nbuf, bufpages * CLBYTES);
 
 	/*
 	 * Set up buffers, so they can be used to read disk labels.
@@ -354,22 +356,37 @@ startup(firstaddr)
  * Set up proc0's TSS and LDT.
  */
 void
-i386_proc0_tss_ldt_init()
+i386_proc0_tss_ldt_init(void)
 {
 	struct pcb *pcb;
 	int x;
+	unsigned int cr0;
 
+	proc0paddr->u_kstack = proc0kstack;
+	proc0paddr->u_kstack_pages = KSTACK_PAGES;
+	proc0paddr->u_uspace = USPACE;
+
+	proc0.p_addr = proc0paddr;
 	curpcb = pcb = &proc0.p_addr->u_pcb;
+
 	pcb->pcb_flags = 0;
-	pcb->pcb_tss.tss_ioopt =
-	    ((caddr_t)pcb->pcb_iomap - (caddr_t)&pcb->pcb_tss) << 16;
+	pcb->pcb_tss.tss_ioopt = ((caddr_t)pcb->pcb_iomap - (caddr_t)&pcb->pcb_tss) << 16;
 	for (x = 0; x < sizeof(pcb->pcb_iomap) / 4; x++)
 		pcb->pcb_iomap[x] = 0xffffffff;
 
 	pcb->pcb_ldt_sel = pmap_kernel()->pm_ldt_sel = GSEL(GLDT_SEL, SEL_KPL);
-	pcb->pcb_cr0 = rcr0();
-	pcb->pcb_tss.tss_ss0 = GSEL(GDATA_SEL, SEL_KPL);
-	pcb->pcb_tss.tss_esp0 = (int)proc0.p_addr + USPACE - 16;
+
+	cr0 = rcr0();
+	cr0 |= CR0_MP | CR0_NE | CR0_TS | CR0_WP | CR0_AM;
+	pcb->pcb_cr0 = cr0;
+	lcr0(pcb->pcb_cr0);
+
+	/* make a initial tss so microp can get interrupt stack on syscall! */
+
+	proc0.p_addr->u_pcb.pcb_tss.tss_esp0 = proc0paddr->u_kstack + proc0paddr->u_kstack_pages * proc0paddr->u_uspace - VM86_STACK_SPACE;
+	proc0.p_addr->u_pcb.pcb_tss.tss_ss0 = GSEL(GDATA_SEL, SEL_KPL);
+	_gsel_tss = GSEL(GPROC0_SEL, SEL_KPL);
+	ltr(_gsel_tss);
 
 	ltr(proc0.p_md.md_tss_sel);
 	lldt(pcb->pcb_ldt_sel);
@@ -387,6 +404,7 @@ i386_proc0_tss_ldt_init()
  * ipl, return error code.
  */
 /*ARGSUSED*/
+int
 vmtime(otime, olbolt, oicr)
 	register int otime, olbolt, oicr;
 {
@@ -902,9 +920,6 @@ init386(first)
 	struct gate_descriptor *gdp;
 	extern int sigcode, szsigcode;
 
-	proc0.p_addr = proc0paddr;
-	curpcb = &proc0.p_addr->u_pcb;
-
 	i386_bus_space_init();
 	init_descriptors();
 	init386_bootinfo();
@@ -952,9 +967,9 @@ init386(first)
 	lgdt(gdt, sizeof(gdt)-1);
 	lidt(idt, sizeof(idt)-1);
 
-	//finishidentcpu();	/* Final stage of CPU initialization */
-
-	//initializecpu();	/* Initialize CPU registers */
+	//finishidentcpu();		/* Final stage of CPU initialization */
+	//pmap_set_nx();
+	//initializecpu();		/* Initialize CPU registers */
 	//initializecpucache();
 
 #if	NISA > 0
@@ -985,12 +1000,6 @@ init386(first)
 	/* call pmap initialization to make new kernel address space */
 	pmap_bootstrap(first, 0);
 	/* now running on new page tables, configured,and u/iom is accessible */
-
-	/* make a initial tss so microp can get interrupt stack on syscall! */
-	proc0.p_addr->u_pcb.pcb_tss.tss_esp0 = (int) kstack + UPAGES * NBPG;
-	proc0.p_addr->u_pcb.pcb_tss.tss_ss0 = GSEL(GDATA_SEL, SEL_KPL);
-	_gsel_tss = GSEL(GPROC0_SEL, SEL_KPL);
-	ltr(_gsel_tss);
 
 	/* make a call gate to reenter kernel with */
 	setidt(LSYS5CALLS_SEL, &IDTVEC(osyscall), 1, SDT_SYS386CGT, SEL_UPL);

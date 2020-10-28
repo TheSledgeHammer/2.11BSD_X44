@@ -90,8 +90,7 @@ cpu_fork(p1, p2)
 	 */
 	p2->p_addr->u_pcb = p1->p_addr->u_pcb;
 	offset = mvesp() - (int)kstack;
-	bcopy((caddr_t)kstack + offset, (caddr_t)p2->p_addr + offset,
-	    (unsigned) ctob(UPAGES) - offset);
+	bcopy((caddr_t)kstack + offset, (caddr_t)p2->p_addr + offset, (unsigned) ctob(UPAGES) - offset);
 	p2->p_md.md_regs = p1->p_md.md_regs;
 
 	/*
@@ -101,9 +100,7 @@ cpu_fork(p1, p2)
         addr = trunc_page((u_int)vtopte(kstack));
 	(void)vm_map_pageable(&p2->p_vmspace->vm_map, addr, addr+NBPG, FALSE);
 	for (i=0; i < UPAGES; i++)
-		pmap_enter(&p2->p_vmspace->vm_pmap, (vm_offset_t)kstack+i*NBPG,
-			pmap_extract(kernel_pmap, ((int)p2->p_addr)+i*NBPG),
-			VM_PROT_READ, 1);
+		pmap_enter(&p2->p_vmspace->vm_pmap, (vm_offset_t)kstack+i*NBPG, pmap_extract(kernel_pmap, ((int)p2->p_addr)+i*NBPG), VM_PROT_READ, 1);
 	pmap_activate(&p2->p_vmspace->vm_pmap, &up->u_pcb);
 
 	/*
@@ -136,6 +133,7 @@ cpu_fork(p1, p2)
  * a special case].
  */
 struct proc *switch_to_inactive();
+
 void
 cpu_exit(p)
 	register struct proc *p;

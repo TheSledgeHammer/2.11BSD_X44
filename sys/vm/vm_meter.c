@@ -175,7 +175,7 @@ vmtotal(totalp)
 	 * Mark all objects as inactive.
 	 */
 	simple_lock(&vm_object_list_lock);
-	for (object = TAILQ_FIRST(vm_object_list); object != NULL; object = TAILQ_NEXT(object, object_list))
+	for (object = RB_FIRST(object_t, &vm_object_list); object != NULL; object = RB_NEXT(object_t, &vm_object_list, object))
 		object->flags &= ~OBJ_ACTIVE;
 	simple_unlock(&vm_object_list_lock);
 	/*
@@ -219,8 +219,9 @@ vmtotal(totalp)
 		 * Right now we require that such an object completely shadow
 		 * the original, to catch just those cases.
 		 */
+
 		paging = 0;
-		for (map = &p->p_vmspace->vm_map, entry = map->header.next; entry != &map->header; entry = entry->next) {
+		for (map = &p->p_vmspace->vm_map, entry = CIRCLEQ_FIRST(&map->cl_header)->cl_entry.cqe_next; entry != CIRCLEQ_FIRST(&map->cl_header); entry = CIRCLEQ_NEXT(entry, cl_entry)) {
 			if (entry->is_a_map || entry->is_sub_map ||
 			    (object = entry->object.vm_object) == NULL)
 				continue;
@@ -239,7 +240,7 @@ vmtotal(totalp)
 	 * Calculate object memory usage statistics.
 	 */
 	simple_lock(&vm_object_list_lock);
-	for (object = TAILQ_FIRST(vm_object_list); object != NULL; object = TAILQ_NEXT(object, object_list)) {
+	for (object = RB_FIRST(object_t, vm_object_list); object != NULL; object = RB_NEXT(object_t, vm_object_list, object)) {
 		totalp->t_vm += num_pages(object->size);
 		totalp->t_rm += object->resident_page_count;
 		if (object->flags & OBJ_ACTIVE) {

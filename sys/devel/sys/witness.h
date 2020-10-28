@@ -29,12 +29,66 @@
  *
  *	from BSDI Id: mutex.h,v 2.7.2.35 2000/04/27 03:10:26 cp
  * $FreeBSD: head/sys/sys/lock.h 313908 2017-02-18 01:52:10Z mjg $
+ *  $FreeBSD: head/sys/sys/_lock.h 179025 2008-05-15 20:10:06Z attilio $
  */
 
 #ifndef _SYS_WITNESS_H_
 #define _SYS_WITNESS_H_
 
-#include <sys/lockobj.h>
+#define	LC_SLEEPLOCK	0x00000001		/* Sleep lock. */
+#define	LC_SPINLOCK		0x00000002		/* Spin lock. */
+#define	LC_SLEEPABLE	0x00000004		/* Sleeping allowed with this lock. */
+#define	LC_RECURSABLE	0x00000008		/* Locks of this type may recurse. */
+#define	LC_UPGRADABLE	0x00000010		/* Upgrades and downgrades permitted. */
+
+#define	LO_CLASSFLAGS	0x0000ffff		/* Class specific flags. */
+#define	LO_INITIALIZED	0x00010000		/* Lock has been initialized. */
+#define	LO_WITNESS		0x00020000		/* Should witness monitor this lock. */
+#define	LO_QUIET		0x00040000		/* Don't log locking operations. */
+#define	LO_RECURSABLE	0x00080000		/* Lock may recurse. */
+#define	LO_SLEEPABLE	0x00100000		/* Lock may be held while sleeping. */
+#define	LO_UPGRADABLE	0x00200000		/* Lock may be upgraded/downgraded. */
+#define	LO_DUPOK		0x00400000		/* Don't check for duplicate acquires */
+#define	LO_IS_VNODE		0x00800000		/* Tell WITNESS about a VNODE lock */
+#define	LO_CLASSMASK	0x0f000000		/* Class index bitmask. */
+#define	LO_NOPROFILE	0x10000000		/* Don't profile this lock */
+#define	LO_NEW			0x20000000		/* Don't check for double-init */
+
+#define	LO_CLASSSHIFT	24
+
+enum lock_class_index {
+	LO_CLASS_RWLOCK,
+	LO_CLASS_LOCK
+};
+
+/*
+ * Lock classes.  Each lock has a class which describes characteristics
+ * common to all types of locks of a given class.
+ *
+ * Spin locks in general must always protect against preemption, as it is
+ * an error to perform any type of context switch while holding a spin lock.
+ * Also, for an individual lock to be recursable, its class must allow
+ * recursion and the lock itself must explicitly allow recursion.
+ */
+
+struct lock_class {
+    const	char 	 			*lc_name;
+	u_int			 			lc_flags;
+    void		     			(*lc_lock)(struct lock_object *, const char *, u_int);
+    int		         			(*lc_unlock)(struct lock_object *, const char *, u_int);
+};
+
+struct lock_object {
+	const struct lock_type		*lo_type;
+	const char 					*lo_name;		/* Individual lock name. */
+	u_int						lo_flags;
+	u_int						lo_data;		/* General class specific data. */
+	struct witness 				*lo_witness;	/* Data for witness. */
+};
+
+struct lock_type {
+	const char					*lt_name;
+};
 
 /*
  * Lock classes are statically assigned an index into the global lock_classes

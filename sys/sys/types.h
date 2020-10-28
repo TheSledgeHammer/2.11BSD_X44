@@ -45,7 +45,7 @@ typedef	u_long				dev_t;		/* device number */
 typedef	quad_t				off_t;		/* file offset */
 typedef	u_long				uid_t;		/* user id */
 typedef	u_long				gid_t;		/* group id */
-typedef	long	    		pid_t;		/* process id */
+typedef	u_char	    		pid_t;		/* process id */
 typedef	u_short				mode_t;		/* permissions */
 typedef u_long 				sigset_t;
 typedef	unsigned long		cpuid_t;

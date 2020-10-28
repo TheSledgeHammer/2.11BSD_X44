@@ -106,9 +106,11 @@ struct kthread {
     short               kt_locks;
     short               kt_simple_locks;
 
-	char				*kt_name;		/* (: name, optional */
+	char				*kt_name;			/* (: name, optional */
 
-
+	vm_offset_t			kt_kstack;			/* (a) Kernel VA of kstack. */
+	int					kt_kstack_pages; 	/* (a) Size of the kstack. */
+	vm_object_t			kt_kstack_obj;
 };
 #define	kt_session		kt_pgrp->pg_session
 #define	kt_tgid			kt_pgrp->pg_id
@@ -159,13 +161,14 @@ struct kthreadpool {
     struct job_head					    ktp_jobs;
     struct kthread_head		            ktp_idle_threads;
 
+    struct kthread_head		            ktp_active_threads;
+
     int 								ktp_refcnt;			/* total thread count in pool */
     int 								ktp_active;			/* active thread count */
     int									ktp_inactive;		/* inactive thread count */
 
 #define	KTHREADPOOL_DYING				0x01
     int									ktp_flags;
-    struct cpu_info						*ktp_cpu;
     u_char								ktp_pri;			/* priority */
 
     /* Inter Threadpool Communication */
@@ -221,8 +224,5 @@ int kthread_lock_init(lock_t, kthread_t);
 int kthread_lockmgr(lock_t, u_int, kthread_t);
 int kthread_rwlock_init(rwlock_t, kthread_t);
 int kthread_rwlockmgr(rwlock_t, u_int, kthread_t);
-int	kthread_rwlock_read_held(kthread_t, rwlock_t);
-int	kthread_rwlock_write_held(kthread_t, rwlock_t);
-int	kthread_rwlock_lock_held(kthread_t, rwlock_t);
 
 #endif /* SYS_KTHREADS_H_ */

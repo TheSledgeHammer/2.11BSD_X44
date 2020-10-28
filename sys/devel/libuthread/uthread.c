@@ -32,12 +32,13 @@
  * - To be moved into userspace
 */
 
+#include "uthread.h"
+
 #include <sys/param.h>
 #include <sys/malloc.h>
 #include <sys/lock.h>
 #include "devel/sys/rwlock.h"
 #include "devel/sys/kthread.h"
-#include "devel/sys/uthread.h"
 
 extern struct uthread uthread0;
 struct uthread *curuthread = &uthread0;

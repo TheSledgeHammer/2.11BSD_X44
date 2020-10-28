@@ -110,11 +110,13 @@ struct	proc {
     void				*p_thread;		/* Id for this "thread"; Mach glue. XXX */
 
     struct	proc 	    *p_link;		/* linked list of running processes */
+
     struct	user 		*p_addr;        /* virtual address of u. area */
     struct	user  		*p_daddr;		/* virtual address of data area */
     struct	user  		*p_saddr;		/* virtual address of stack area */
 	size_t				p_dsize;		/* size of data area (clicks) */
 	size_t				p_ssize;		/* size of stack segment (clicks) */
+
     struct	k_itimerval p_krealtimer;   /* Alarm Timer?? in 2.11BSD */
     u_short 			p_acflag;	    /* Accounting flags. */
 
@@ -133,7 +135,6 @@ struct	proc {
 	//char				*p_name;		/* (: name, optional */
 
 	//struct gsched		*p_gsched;		/* global scheduler */
-	//CIRCLEQ_ENTRY(proc)	p_gslinks;	/* run-queue to be scheduled by the global scheduler (see gsched.c) */
 };
 
 struct	session {
@@ -223,8 +224,8 @@ struct emul {
 /* Should probably be changed into a hold count (They have. -DG). */
 #define	P_NOSWAP	0x08000	/* Another flag to prevent swap out. */
 #define	P_PHYSIO	0x10000	/* Doing physical I/O. */
-#define	P_WEXIT
-#define P_SWAPPING
+#define	P_WEXIT		0x20000
+#define P_SWAPPING	0x40000
 
 #define	S_DATA		0		/* specified segment */
 #define	S_STACK		1

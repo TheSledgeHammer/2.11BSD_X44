@@ -35,21 +35,11 @@
 
 /* Schedulers + Info used by both EDF & CFS */
 /* global scheduler */
-struct gsched_rqlink;
-CIRCLEQ_HEAD(gsched_rqlink, proc);
 struct gsched {
-	struct gsched_rqlink 	gsc_header;
-	CIRCLEQ_ENTRY(gsched) 	gsc_entries;
-
 	struct proc 			*gsc_rqlink; 	/* pointer to linked list of running processes */
 	struct proc 			*gsc_proc;		/* pointer to proc */
 
-    struct lock				gsc_lock;		/* global sched lock */
-
-    struct simplelock		gsc_hint_lock;
-    struct proc 			*gsc_hint;
-
-    u_char  				gsc_priweight;	/* priority weighting (calculated from various factors) *//* add priweight to proc */
+    u_char  				gsc_priweight;	/* priority weighting: see below. */
 
     /* pointer to schedulers */
     struct gsched_edf		*gsc_edf;		/* earliest deadline first scheduler */
@@ -65,12 +55,22 @@ struct sched_domains {
 enum priw {
 	 PW_PRIORITY = 25, 	 	/* Current Processes Priority */
 	 PW_DEADLINE = 25,		/* Current Processes Deadline Time */
-	 //PW_RELEASE = 25,		/* Current Processes Release Time */
 	 PW_SLEEP = 25,			/* Current Processes Sleep Time */
 	 PW_LAXITY = 25,		/* Current Processes Laxity/Slack Time */
 };
 
-#define PW_FACTOR(w, f)  ((int)(w) / 100 * (f)) /* w's weighting for a given factor(f)(above) */
+#define PW_FACTOR(w, f)  ((float)(w) / 100 * (f)) /* w's weighting for a given factor(f)(above) */
+
+/*
+ * Priority Weighting Calculation:
+ * Needs Tuning: currently any factor below 4 results in 0 (with above weightings).
+ */
+#define PRIORITY_WEIGHTING(pw, pwp, pwd, pwl, pws) {		\
+	(pw) = 	((PW_FACTOR((pwp), PW_PRIORITY) +  				\
+			PW_FACTOR((pwd), PW_DEADLINE) + 				\
+			PW_FACTOR((pwl), PW_LAXITY) + 					\
+			PW_FACTOR((pws), PW_SLEEP)) / 4); 				\
+};
 
 void 				gsched_init(struct proc *);
 void				gsched_edf_setup(struct gsched *, struct proc *);
@@ -79,14 +79,9 @@ struct proc			*gsched_proc(struct gsched *);
 struct gsched_edf 	*gsched_edf(struct gsched *);
 struct gsched_cfs 	*gsched_cfs(struct gsched *);
 u_char				gsched_timediff(u_char, u_int);
-int					gsched_priweight(int, int, int, int);
-void				gsched_lock(struct proc *);
-void				gsched_unlock(struct proc *);
-int					gsched_compare(struct proc *, struct proc *);
 void				gsched_sort(struct proc *, struct proc *);
 
 #endif /* _SYS_GSCHED_H */
-
 /*
  priority weighting: replace release time with cpu utilization.
 

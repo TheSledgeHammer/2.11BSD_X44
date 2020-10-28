@@ -88,8 +88,6 @@
 
 #include <sys/param.h>
 #include <sys/kernel.h>
-#include <sys/lock.h>
-#include <sys/lockobj.h>
 #include <sys/malloc.h>
 #include <sys/proc.h>
 #include <sys/sysctl.h>
@@ -146,7 +144,6 @@
 #define	WITNESS_RESERVED1        0x20    /* Unused flag, reserved. */
 #define	WITNESS_RESERVED2        0x40    /* Unused flag, reserved. */
 #define	WITNESS_LOCK_ORDER_KNOWN 0x80    /* This lock order is known. */
-
 
 union lock_stack {
 	union lock_stack				*ls_next;
@@ -278,6 +275,36 @@ witness_lock_order_key_equal(const struct witness_lock_order_key *a, const struc
 	return (a->from == b->from && a->to == b->to);
 }
 
+static int								_isitmyx(struct witness *w1, struct witness *w2, int rmask, const char *fname);
+static void								adopt(struct witness *parent, struct witness *child);
+static struct witness					*enroll(const struct lock_type *, const char *, struct lock_class *);
+static struct lock_instance				*find_instance(struct lock_list_entry *list, const struct lock_object *lock);
+static int								isitmychild(struct witness *parent, struct witness *child);
+static int								isitmydescendant(struct witness *parent, struct witness *child);
+static void								itismychild(struct witness *parent, struct witness *child);
+#ifdef DDB
+
+#endif
+static int								witness_alloc_stacks(void);
+static void								witness_debugger(int dump);
+static void								witness_free(struct witness *m);
+static struct witness					*witness_get(void);
+static uint32_t							witness_hash_djb2(const uint8_t *key, uint32_t size);
+static struct witness					*witness_hash_get(const struct lock_type *, const char *);
+static void								witness_hash_put(struct witness *w);
+static void								witness_init_hash_tables(void);
+static void								witness_increment_graph_generation(void);
+static int								witness_list_locks(struct lock_list_entry **, int (*)(const char *, ...));
+static void								witness_lock_list_free(struct lock_list_entry *lle);
+static struct lock_list_entry			*witness_lock_list_get(void);
+static void								witness_lock_stack_free(union lock_stack *stack);
+static union lock_stack					*witness_lock_stack_get(void);
+static int								witness_lock_order_add(struct witness *parent, struct witness *child);
+static int								witness_lock_order_check(struct witness *parent, struct witness *child);
+static struct witness_lock_order_data	*witness_lock_order_get(struct witness *parent, struct witness *child);
+static void								witness_list_lock(struct lock_instance *instance, int (*prnt)(const char *fmt, ...));
+static void								witness_setflag(struct lock_object *lock, int flag, int set);
+
 /*
  * If set to 0, lock order checking is disabled.  If set to -1,
  * witness is completely disabled.  Otherwise witness performs full
@@ -331,10 +358,23 @@ static unsigned int w_generation = 0;
 static union lock_stack *w_lock_stack_free;
 static unsigned int w_lock_stack_num;
 
+struct lock_class lock_class_lock = {
+		.lc_name = "lock",
+		.lc_flags = LC_SLEEPLOCK | LC_SLEEPABLE | LC_UPGRADABLE,
+		.lc_lock = simple_lock,
+		.lc_unlock = simple_unlock
+};
+
+struct lock_class lock_class_rwlock = {
+		.lc_name = "rwlock",
+		.lc_flags = LC_SLEEPLOCK | LC_SLEEPABLE | LC_UPGRADABLE,
+		.lc_lock = rwlock_lock,
+		.lc_unlock = rwlock_unlock
+};
+
 static struct lock_class *lock_classes[] = {
-	&lock_class_abql,
-	&lock_class_rwlock,
-	&lock_class_lock,
+		&lock_class_lock,
+		&lock_class_rwlock,
 };
 
 /*

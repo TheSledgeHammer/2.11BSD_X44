@@ -77,7 +77,7 @@ kthreadpool_remove_unbound(struct kthreadpool_unbound *ktpu)
 }
 
 void
-kthreadpools_init(void)
+kthreadpool_init(void)
 {
 	MALLOC(&ktpool_thread, struct kthreadpool_thread *, sizeof(struct kthreadpool_thread *), M_KTPOOLTHREAD, NULL);
 	LIST_INIT(&unbound_kthreadpools);
@@ -137,6 +137,18 @@ kthreadpool_destroy(struct kthreadpool *ktpool)
 {
 	struct kthreadpool_thread *kthread;
 
+	simple_lock(&ktpool->ktp_lock);
+	KASSERT(TAILQ_EMPTY(&ktpool->ktp_jobs));
+	ktpool->ktp_flags |= KTHREADPOOL_DYING;
+
+	KASSERT(ktpool->ktp_overseer.ktpt_job == NULL);
+	KASSERT(ktpool->ktp_overseer.ktpt_pool == ktpool);
+	KASSERT(ktpool->ktp_flags == KTHREADPOOL_DYING);
+	KASSERT(ktpool->ktp_refcnt == 0);
+	KASSERT(TAILQ_EMPTY(&ktpool->ktp_idle_threads));
+	KASSERT(TAILQ_EMPTY(&ktpool->ktp_jobs));
+
+	simple_unlock(&ktpool->ktp_lock);
 }
 
 static void
@@ -245,7 +257,7 @@ kthreadpool_overseer_thread(void *arg)
 
 			struct kthreadpool_thread *const kthread = (struct kthreadpool_thread *) malloc(sizeof(struct kthreadpool_thread *), M_KTPOOLTHREAD, M_WAITOK);
 			kthread->ktpt_proc = NULL;
-			kthread->ktpt_pool = pool;
+			kthread->ktpt_pool = ktpool;
 			kthread->ktpt_job = NULL;
 
 			ktflags = 0;

@@ -32,11 +32,15 @@
 #include <sys/lock.h>
 #include <sys/lockobj.h>
 
+struct rwlock_cpu {
+	volatile u_int			rwlc_my_ticket;
+};
+
 /* Reader Writers Lock */
 struct rwlock {
     volatile u_int   		rwl_lock;
 
-    struct lock_holder		*rwl_lockholder;	/* lock holder: proc, kthread & uthread */
+    struct lock_holder		*rwl_lockholder;	/* the lock holder: proc, kthread & uthread */
 
     struct simplelock       *rwl_lnterlock;    	/* lock on remaining fields */
     struct lock_object		*rwl_lockobject;	/* lock object (to replace simplelock) */
