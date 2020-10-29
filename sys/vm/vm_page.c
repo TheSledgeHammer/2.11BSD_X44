@@ -151,8 +151,8 @@ vm_page_startup(start, end)
 	 *	Initialize the locks
 	 */
 
-	simple_lock_init(&vm_page_queue_free_lock);
-	simple_lock_init(&vm_page_queue_lock);
+	simple_lock_init(&vm_page_queue_free_lock, "vm_page_queue_free_lock");
+	simple_lock_init(&vm_page_queue_lock, "vm_page_queue_lock");
 
 	/*
 	 *	Initialize the queue headers for the free queue,
@@ -194,7 +194,7 @@ vm_page_startup(start, end)
 		bucket++;
 	}
 
-	simple_lock_init(&bucket_lock);
+	simple_lock_init(&bucket_lock, "vm_page_bucket_lock");
 
 	/*
 	 *	Truncate the remainder of physical memory to our page size.
@@ -273,7 +273,7 @@ vm_page_startup(start, end)
 	 *	Initialize vm_pages_needed lock here - don't wait for pageout
 	 *	daemon	XXX
 	 */
-	simple_lock_init(&vm_pages_needed_lock);
+	simple_lock_init(&vm_pages_needed_lock, "vm_pages_needed_lock");
 
 	/* from now on, pmap_bootstrap_alloc can't be used */
 	vm_page_startup_initialized = TRUE;

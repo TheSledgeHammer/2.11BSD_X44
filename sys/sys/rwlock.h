@@ -30,20 +30,11 @@
 #define SYS_RWLOCK_H_
 
 #include <sys/lock.h>
-#include <sys/lockobj.h>
-
-struct rwlock_cpu {
-	volatile u_int			rwlc_my_ticket;
-};
 
 /* Reader Writers Lock */
 struct rwlock {
-    volatile u_int   		rwl_lock;
-
-    struct lock_holder		*rwl_lockholder;	/* the lock holder: proc, kthread & uthread */
-
-    struct simplelock       *rwl_lnterlock;    	/* lock on remaining fields */
-    struct lock_object		*rwl_lockobject;	/* lock object (to replace simplelock) */
+	struct lock_object		rwl_lnterlock;		/* lock object */
+    struct lock_holder		*rwl_lockholder;	/* lock holder */
 
     int 					rwl_readercount;	/* lock reader count */
     int						rwl_writercount;	/* lock writer count */
@@ -87,34 +78,14 @@ typedef struct rwlock       *rwlock_t;
 #define RW_RETRY			LK_RETRY			/* vn_lock: retry until locked */
 
 void 			rwlock_init(rwlock_t, int, char *, int, u_int);
-int 			rwlockmgr(__volatile rwlock_t, u_int, pid_t);
+int 			rwlockmgr(__volatile rwlock_t, u_int, struct lock_object *, pid_t);
 int 			rwlockstatus(rwlock_t);
 
-int				rwlock_read_held(rwlock_t, pid_t);
-int				rwlock_write_held(rwlock_t, pid_t);
-int				rwlock_lock_held(rwlock_t, pid_t);
-
-void			set_proc_rwlock(rwlock_t, struct proc *);
-struct proc 	*get_proc_rwlock(rwlock_t, pid_t);
-
-void			set_kthread_rwlock(rwlock_t, struct kthread *);
-struct kthread 	*get_kthread_rwlock(rwlock_t, pid_t);
-
-void			set_uthread_rwlock(rwlock_t, struct uthread *);
-struct uthread 	*get_uthread_rwlock(rwlock_t, pid_t);
-
-extern void		rwlock_pause(rwlock_t, int);
-extern void		rwlock_acquire(rwlock_t, int, int, int);
-
-#if NCPUS > 1
-#define PAUSE(rwl, wanted)						\
-		rwlock_pause(rwl, wanted);
-#else /* NCPUS == 1 */
-#define PAUSE(rwl, wanted)
-#endif /* NCPUS == 1 */
-
-#define ACQUIRE(rwl, error, extflags, wanted)	\
-		rwlock_acquire(rwl, error, extflags, wanted);
+void			rwlock_lock(__volatile rwlock_t);
+void			rwlock_unlock(__volatile rwlock_t);
+int				rwlock_read_held(rwlock_t);
+int				rwlock_write_held(rwlock_t);
+int				rwlock_lock_held(rwlock_t);
 
 #endif /* SYS_RWLOCK_H_ */
 

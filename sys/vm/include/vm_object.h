@@ -109,7 +109,7 @@ struct vm_object_hash_entry {
 };
 typedef struct vm_object_hash_entry	*vm_object_hash_entry_t;
 
-//#ifdef	KERNEL
+#ifdef	KERNEL
 struct object_t;
 RB_HEAD(object_t, vm_object);
 struct object_q;
@@ -130,7 +130,7 @@ vm_object_t			kmem_object;
 #define	vm_object_cache_unlock()	simple_unlock(&vm_cache_lock)
 #endif /* KERNEL */
 
-#define	vm_object_lock_init(object)	simple_lock_init(&(object)->Lock)
+#define	vm_object_lock_init(object)	simple_lock_init(&(object)->Lock, "vm_object_lock")
 #define	vm_object_lock(object)		simple_lock(&(object)->Lock)
 #define	vm_object_unlock(object)	simple_unlock(&(object)->Lock)
 #define	vm_object_lock_try(object)	simple_lock_try(&(object)->Lock)

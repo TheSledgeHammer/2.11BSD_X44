@@ -170,7 +170,7 @@ typedef struct {
 
 #define	vm_map_lock_drain_interlock(map) { 						\
 	lockmgr(&(map)->lock, LK_DRAIN|LK_INTERLOCK, 				\
-		&(map)->ref_lock, curproc); 							\
+		&(map)->ref_lock, curproc->p_pid); 						\
 	(map)->timestamp++; 										\
 }
 #ifdef DIAGNOSTIC
@@ -182,16 +182,16 @@ typedef struct {
 }
 #else
 #define	vm_map_lock(map) { 										\
-	lockmgr(&(map)->lock, LK_EXCLUSIVE, (void *)0, curproc); 	\
+	lockmgr(&(map)->lock, LK_EXCLUSIVE, (void *)0, curproc->p_pid); 	\
 	(map)->timestamp++; 										\
 }
 #endif /* DIAGNOSTIC */
 #define	vm_map_unlock(map) 										\
-		lockmgr(&(map)->lock, LK_RELEASE, (void *)0, curproc)
+		lockmgr(&(map)->lock, LK_RELEASE, (void *)0, curproc->p_pid)
 #define	vm_map_lock_read(map) 									\
-		lockmgr(&(map)->lock, LK_SHARED, (void *)0, curproc)
+		lockmgr(&(map)->lock, LK_SHARED, (void *)0, curproc->p_pid)
 #define	vm_map_unlock_read(map) 								\
-		lockmgr(&(map)->lock, LK_RELEASE, (void *)0, curproc)
+		lockmgr(&(map)->lock, LK_RELEASE, (void *)0, curproc->p_pid)
 #define vm_map_set_recursive(map) { 							\
 	simple_lock(&(map)->lk_lnterlock); 							\
 	(map)->lk_flags |= LK_CANRECURSE; 							\

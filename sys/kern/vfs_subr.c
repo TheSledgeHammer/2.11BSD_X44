@@ -101,11 +101,11 @@ void
 vntblinit()
 {
 
-	simple_lock_init(&mntvnode_slock);
-	simple_lock_init(&mntid_slock);
-	simple_lock_init(&spechash_slock);
+	simple_lock_init(&mntvnode_slock, "mntvnode_slock");
+	simple_lock_init(&mntid_slock, "mntid_slock");
+	simple_lock_init(&spechash_slock, "spechash_slock");
 	TAILQ_INIT(&vnode_free_list);
-	simple_lock_init(&vnode_free_list_slock);
+	simple_lock_init(&vnode_free_list_slock, "vnode_free_list_slock");
 	CIRCLEQ_INIT(&mountlist);
 }
 

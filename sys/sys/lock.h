@@ -40,6 +40,8 @@
 #ifndef	_LOCK_H_
 #define	_LOCK_H_
 
+#include <machine/param.h>
+
 /*
  * The general lock structure.  Provides for multiple shared locks,
  * upgrading from shared to exclusive, and sleeping until the lock
@@ -47,18 +49,8 @@
  */
 
 struct lock {
-	volatile u_int   		lk_lock;
-
-    struct  proc			*lk_prlockholder;	/* Proc lock holder */
-    //struct 	kthread         *lk_ktlockholder; 	/* Kernel Thread lock holder */
-    //struct 	uthread         *lk_utlockholder;	/* User Thread lock holder */
-
-    pid_t					lk_lockholder_pid;	/* pid of exclusive lock holder */
-
-    //struct lock_holder		*lk_lockholder;		/* lock holder: proc, kthread & uthread */
-
-    struct	simplelock 		lk_lnterlock; 		/* lock on remaining fields */
-    //struct  lock_object		lk_lockobject;		/* lock object */
+	struct  lock_object		lk_lnterlock;		/* lock object */
+	struct 	lock_holder		*lk_lockholder;		/* lock holder */
 
     int						lk_sharecount;		/* # of accepted shared locks */
     int						lk_waitcount;		/* # of processes sleeping for lock */
@@ -167,50 +159,62 @@ typedef struct lock       	*lock_t;
 #define LK_KERNPROC 	((pid_t) -2)
 #define LK_NOPROC 		((pid_t) -1)
 
+/* Simple_Lock Replacement */
+
+/* lock object: array_based queuing lock */
+struct lock_object_cpu {
+	volatile u_int				loc_my_ticket;
+};
+
+struct lock_object {
+	struct lock_object_cpu	 	lo_cpus[NCPUS];
+	volatile u_int				lo_nxt_ticket;
+	int							lo_can_serve[NCPUS];
+
+	const struct lock_type		*lo_type;
+	const char 					*lo_name;		/* Individual lock name. */
+	u_int						lo_flags;
+	//struct witness 				*lo_witness;	/* Data for witness. */
+};
+
+struct lock_type {
+	const char					*lt_name;
+};
+
+/* lock holder */
+struct lock_holder {
+	pid_t						lh_pid;
+	struct pgrp 				*lh_pgrp;
+
+	struct proc 				*lh_proc;
+	struct kthread 				*lh_kthread;
+	struct uthread 				*lh_uthread;
+};
+
+/* lock holder macros */
+#define LOCKHOLDER_PID(h)		((h)->lh_pid)
+#define LOCKHOLDER_PGRP(h)		((h)->lh_pgrp)
+#define PROC_LOCKHOLDER(h)		((h)->lh_proc)
+//#define KTHREAD_LOCKHOLDER(h)	((h)->lh_kthread)
+//#define UTHREAD_LOCKHOLDER(h)	((h)->lh_uthread)
+
 struct proc;
 
 void			lockinit (struct lock *, int prio, char *wmesg, int timo, int flags);
-int				lockmgr (__volatile struct lock *, u_int flags, struct simplelock *, struct proc *p); /* TODO: Replace proc with pid, once threads are implemented */
+int				lockmgr (__volatile struct lock *, u_int flags, struct lock_object *, pid_t pid);
 int				lockstatus (struct lock *);
 
-void			set_proc_lock(struct lock *, struct proc *);
-struct proc 	*get_proc_lock(struct lock *, pid_t);
+void			simple_lock_init(struct lock_object *, const char *);
+void 			simple_lock(struct lock_holder *);
+void 			simple_unlock(struct lock_holder *);
+int				simple_lock_try(struct lock_holder *);
 
-extern void		lock_pause(struct lock *, int);
-extern void		lock_acquire(struct lock *, int, int, int);
-extern void		count(struct proc *, short);
-
-#if NCPUS > 1
-#define PAUSE(lkp, wanted)						\
-		lock_pause(lkp, wanted);
-#else /* NCPUS == 1 */
-#define PAUSE(lkp, wanted)
-#endif /* NCPUS == 1 */
-
-#define ACQUIRE(lkp, error, extflags, wanted)	\
-		lock_acquire(lkp, error, extflags, wanted);
-
-#ifdef DEBUG
-#define COUNT(p, x) 							\
-		count(p, x);
-#else
-#define COUNT(p, x)
-#endif
-
-#ifdef DEBUG
-void 	_simple_unlock (__volatile struct simplelock *alp, const char *, int);
-#define simple_unlock(alp) _simple_unlock(alp, __FILE__, __LINE__)
-int 	_simple_lock_try (__volatile struct simplelock *alp, const char *, int);
-#define simple_lock_try(alp) _simple_lock_try(alp, __FILE__, __LINE__)
-void 	_simple_lock (__volatile struct simplelock *alp, const char *, int);
-#define simple_lock(alp) _simple_lock(alp, __FILE__, __LINE__)
-void 	simple_lock_init (struct simplelock *alp);
-#else /* !DEBUG */
-#if NCPUS == 1 /* no multiprocessor locking is necessary */
-#define	simple_lock_init(alp)
-#define	simple_lock(alp)
-#define	simple_lock_try(alp)	(1)	/* always succeeds */
-#define	simple_unlock(alp)
-#endif /* NCPUS == 1 */
-#endif /* !DEBUG */
+void 			set_proc_lockholder(struct lock_holder *, struct proc *);
+struct proc 	*get_proc_lockholder(struct lock_holder *);
+/*
+void 			set_kthread_lockholder(struct lock_holder *, struct kthread *);
+struct kthread 	*get_kthread_lockholder(struct lock_holder *);
+void 			set_uthread_lockholder(struct lock_holder *, struct uthread *);
+struct uthread 	*get_uthread_lockholder(struct lock_holder *);
+*/
 #endif /* !_LOCK_H_ */

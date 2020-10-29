@@ -110,7 +110,7 @@
 #define	WITNESS_COUNT			1536
 #endif
 #define	WITNESS_HASH_SIZE		251			/* Prime, gives load factor < 2 */
-#define	WITNESS_PENDLIST		(1024 + MAXCPUS)
+#define	WITNESS_PENDLIST		(1024 + NCPUS)
 
 /* Allocate 256 KB of stack data space */
 #define	WITNESS_LO_DATA_COUNT	2048
@@ -257,7 +257,7 @@ struct witness_cpu {
 #define WITNESS_LLE_CACHE_MAX		8
 #define WITNESS_STK_CACHE_MAX		(WITNESS_LLE_CACHE_MAX * LOCK_NCHILDREN)
 
-struct witness_cpu witness_cpu[MAXCPUS];
+struct witness_cpu witness_cpu[NCPUS];
 
 /*
  * Returns 0 if one of the locks is a spin lock and the other is not.

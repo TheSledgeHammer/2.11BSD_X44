@@ -483,8 +483,8 @@ vm_map_init(map, min, max, pageable)
 	map->hint = CIRCLEQ_FIRST(&map->cl_header);
 	map->timestamp = 0;
 	lockinit(&map->lock, PVM, "thrd_sleep", 0, 0);
-	simple_lock_init(&map->ref_lock);
-	simple_lock_init(&map->hint_lock);
+	simple_lock_init(&map->ref_lock, "vm_map_ref_lock");
+	simple_lock_init(&map->hint_lock, "vm_map_hint_lock");
 }
 
 /*
@@ -1596,7 +1596,7 @@ vm_map_pageable(map, start, end, new_pageable)
 		    vm_map_unlock(map);		/* trust me ... */
 		} else {
 		    vm_map_set_recursive(&map->lock);
-		    lockmgr(&map->lock, LK_DOWNGRADE, (void *)0, curproc);
+		    lockmgr(&map->lock, LK_DOWNGRADE, (void *)0, curproc->p_pid);
 		}
 
 		rv = 0;
@@ -2693,8 +2693,7 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry, object, offset, out_prot, w
 			 *	share map to the new object.
 			 */
 
-			if (lockmgr(&share_map->lock, LK_EXCLUPGRADE,
-				    (void *)0, curproc)) {
+			if (lockmgr(&share_map->lock, LK_EXCLUPGRADE, (void *)0, curproc->p_pid)) {
 				if (share_map != map)
 					vm_map_unlock_read(map);
 				goto RetryLookup;
@@ -2707,8 +2706,7 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry, object, offset, out_prot, w
 				
 			entry->needs_copy = FALSE;
 			
-			lockmgr(&share_map->lock, LK_DOWNGRADE,
-				(void *)0, curproc);
+			lockmgr(&share_map->lock, LK_DOWNGRADE, (void *)0, curproc->p_pid);
 		}
 		else {
 			/*
@@ -2725,8 +2723,7 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry, object, offset, out_prot, w
 	 */
 	if (entry->object.vm_object == NULL) {
 
-		if (lockmgr(&share_map->lock, LK_EXCLUPGRADE,
-				(void *)0, curproc)) {
+		if (lockmgr(&share_map->lock, LK_EXCLUPGRADE, (void *)0, curproc->p_pid)) {
 			if (share_map != map)
 				vm_map_unlock_read(map);
 			goto RetryLookup;
@@ -2735,7 +2732,7 @@ vm_map_lookup(var_map, vaddr, fault_type, out_entry, object, offset, out_prot, w
 		entry->object.vm_object = vm_object_allocate(
 					(vm_size_t)(entry->end - entry->start));
 		entry->offset = 0;
-		lockmgr(&share_map->lock, LK_DOWNGRADE, (void *)0, curproc);
+		lockmgr(&share_map->lock, LK_DOWNGRADE, (void *)0, curproc->p_pid);
 	}
 
 	/*

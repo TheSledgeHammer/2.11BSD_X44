@@ -47,7 +47,15 @@
 #define	MACHINE_ARCH	"i386"
 #endif
 #define MID_MACHINE		MID_I386
-#define NCPUS 1
+
+/* Maximum Number of CPU's */
+#ifdef SMP
+#ifndef NCPUS
+#define NCPUS 			32
+#endif
+#else
+#define NCPUS 			1
+#endif
 
 /*
  * Round p (pointer or byte index) up to a correctly-aligned value for all
@@ -172,50 +180,3 @@
 /* DELAY is in locore.s for the kernel */
 #define	DELAY(n)			{ register int N = (n); while (--N > 0); }
 #endif
-
-#ifndef _SIMPLELOCK_H_
-#define _SIMPLELOCK_H_
-
-#include <sys/lock.h>
-#include <sys/lockobj.h>
-
-#if !defined(DEBUG) && NCPUS > 1
-
-/*
- * The simple-lock routines are the primitives out of which the lock
- * package is built. The machine-dependent code must implement an
- * atomic test_and_set operation that indivisibly sets the simple lock
- * to non-zero and returns its old value. It also assumes that the
- * setting of the lock to zero below is indivisible. Simple locks may
- * only be used for exclusive locks.
- */
-static __inline void
-simple_lock_init(lkp)
-	struct simplelock *lkp;
-{
-	lkp->lock_data = 0;
-}
-
-static __inline void
-simple_lock(lkp)
-	__volatile struct simplelock *lkp;
-{
-	while (test_and_set(&lkp->lock_data))
-		continue;
-}
-
-static __inline int
-simple_lock_try(lkp)
-	__volatile struct simplelock *lkp;
-{
-	return (!test_and_set(&lkp->lock_data))
-}
-
-static __inline void
-simple_unlock(lkp)
-	__volatile struct simplelock *lkp;
-{
-	lkp->lock_data = 0;
-}
-#endif /* NCPUS > 1 */
-#endif /* !_SIMPLELOCK_H_ */

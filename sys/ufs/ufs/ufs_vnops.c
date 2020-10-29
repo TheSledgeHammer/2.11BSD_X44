@@ -1599,7 +1599,7 @@ ufs_lock(ap)
 	struct vnode *vp = ap->a_vp;
 
 	return (lockmgr(&VTOI(vp)->i_lock, ap->a_flags, &vp->v_interlock,
-		ap->a_p));
+		ap->a_p->p_pid));
 }
 
 /*
@@ -1616,7 +1616,7 @@ ufs_unlock(ap)
 	struct vnode *vp = ap->a_vp;
 
 	return (lockmgr(&VTOI(vp)->i_lock, ap->a_flags | LK_RELEASE,
-		&vp->v_interlock, ap->a_p));
+		&vp->v_interlock, ap->a_p->p_pid));
 }
 
 /*

@@ -31,7 +31,7 @@
 #include <sys/user.h>
 #include <sys/malloc.h>
 #include <sys/lock.h>
-#include "devel/sys/rwlock.h"
+#include <sys/rwlock.h>
 #include "devel/sys/kthread.h"
 
 extern struct kthread 			kthread0;

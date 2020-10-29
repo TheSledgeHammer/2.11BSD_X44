@@ -82,8 +82,8 @@ typedef struct pager_struct *vm_pager_t;
 /*
  *	MACH VM locking type mappings to kernel types
  */
-typedef struct simplelock	simple_lock_data_t;
-typedef struct simplelock	*simple_lock_t;
+typedef struct lock_object	simple_lock_data_t;
+typedef struct lock_object	*simple_lock_t;
 typedef struct lock			lock_data_t;
 typedef struct lock			*lock_t;
 

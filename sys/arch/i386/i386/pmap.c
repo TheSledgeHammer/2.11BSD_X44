@@ -263,7 +263,7 @@ pmap_bootstrap(firstaddr, loadaddr)
 	kernel_pmap->pm_pdir = (pd_entry_t *)(0xfe000000 + IdlePTD);
 #endif
 
-	simple_lock_init(&kernel_pmap->pm_lock);
+	simple_lock_init(&kernel_pmap->pm_lock, "kernel_pmap_lock");
 	kernel_pmap->pm_count = 1;
 
 #if BSDVM_COMPAT
@@ -485,7 +485,7 @@ pmap_pinit(pmap)
 	*(int *)(pmap->pm_pdir+PTDPTDI) = (int)pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pdir) | PG_V | PG_URKW;
 
 	pmap->pm_count = 1;
-	simple_lock_init(&pmap->pm_lock);
+	simple_lock_init(&pmap->pm_lock, "pmap_lock");
 }
 
 /*

@@ -127,8 +127,8 @@ vm_object_init(size)
 	TAILQ_INIT(&vm_object_cached_list);
 	RB_INIT(&vm_object_list);
 	vm_object_count = 0;
-	simple_lock_init(&vm_cache_lock);
-	simple_lock_init(&vm_object_list_lock);
+	simple_lock_init(&vm_cache_lock, "vm_cache_lock");
+	simple_lock_init(&vm_object_list_lock, "vm_object_list_lock");
 
 	for (i = 0; i < VM_OBJECT_HASH_COUNT; i++)
 		RB_INIT(&vm_object_hashtable[i]);

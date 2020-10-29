@@ -28,11 +28,22 @@
 
 #include <sys/param.h>
 #include <sys/proc.h>
+#include <sys/user.h>
 #include <sys/lock.h>
 #include <sys/rwlock.h>
-#include <sys/kthread.h>
-#include <sys/lockobj.h>
-#include "../libuthread/uthread.h"
+
+void		rwlock_pause(rwlock_t, int);
+void		rwlock_acquire(rwlock_t, int, int, int);
+
+#if NCPUS > 1
+#define PAUSE(rwl, wanted)						\
+		rwlock_pause(rwl, wanted);
+#else /* NCPUS == 1 */
+#define PAUSE(rwl, wanted)
+#endif /* NCPUS == 1 */
+
+#define ACQUIRE(rwl, error, extflags, wanted)	\
+		rwlock_acquire(rwl, error, extflags, wanted);
 
 /* Initialize a rwlock */
 void
@@ -43,15 +54,14 @@ rwlock_init(rwl, prio, wmesg, timo, flags)
 	unsigned int flags;
 {
 	bzero(rwl, sizeof(struct rwlock));
-	simple_lock_init(&rwl->rwl_lnterlock);
+	simple_lock_init(&rwl->rwl_lnterlock, "rwlock_init");
 
-	rwl->rwl_lock = 0;
 	rwl->rwl_flags = flags & RW_EXTFLG_MASK;
 	rwl->rwl_prio = prio;
 	rwl->rwl_timo = timo;
 	rwl->rwl_wmesg = wmesg;
 
-	rwlock_lockholder_init(rwl);
+	rwlock_lockholder_init(&rwl);
 }
 
 int
@@ -70,15 +80,16 @@ rwlockstatus(rwl)
 }
 
 int
-rwlockmgr(rwl, flags, pid)
+rwlockmgr(rwl, flags, interlkp, pid)
 	__volatile rwlock_t rwl;
 	unsigned int 		flags;
+	struct lock_object *interlkp;
 	pid_t 				pid;
 
 {
+	register struct lock_holder *holder = rwl->rwl_lockholder;
 	int error;
 	int extflags;
-	register struct lock_holder *holder = rwl->rwl_lockholder;
 	error = 0;
 
 	if (!pid) {
@@ -166,24 +177,6 @@ rwlockmgr_printinfo(rwl)
 		printf(" lock type %s: RW_READER (count %d)", rwl->rwl_wmesg, rwl->rwl_readercount);
 }
 
-void
-rwlock_lock(rwl)
-    __volatile rwlock_t rwl;
-{
-    if (rwl->rwl_lock == 1) {
-    	lockoject_lock(rwl->rwl_lockobject);
-    }
-}
-
-void
-rwlock_unlock(rwl)
-    __volatile rwlock_t rwl;
-{
-    if (rwl->rwl_lock == 0) {
-    	lockoject_unlock(rwl->rwl_lockobject);
-    }
-}
-
 /*
  * rw_read_held:
  *
@@ -195,11 +188,10 @@ int
 rwlock_read_held(rwl)
 	rwlock_t rwl;
 {
-	__volatile u_int owner;
+	register struct lock_object_cpu *cpu = rwl->rwl_lnterlock.lo_cpus[cpu_number()];
 	if (rwl == NULL)
 		return 0;
-	owner = rwl->rwl_lock;
-	return (owner & RW_HAVE_WRITE) == 0 && (owner & RW_THREAD) != 0;
+	return (cpu->loc_my_ticket & RW_HAVE_WRITE) == 0 && (cpu->loc_my_ticket & RW_THREAD) != 0;
 }
 
 /*
@@ -213,9 +205,10 @@ int
 rwlock_write_held(rwl)
 	rwlock_t rwl;
 {
+	register struct lock_object_cpu *cpu = rwl->rwl_lnterlock.lo_cpus[cpu_number()];
 	if (rwl == NULL)
 		return (0);
-	return (rwl->rwl_lock & (RW_HAVE_WRITE | RW_THREAD)) == (RW_HAVE_WRITE | curproc);
+	return (cpu->loc_my_ticket & (RW_HAVE_WRITE | RW_THREAD)) == (RW_HAVE_WRITE | curproc);
 }
 
 /*
@@ -229,9 +222,10 @@ int
 rwlock_lock_held(rwl)
 	rwlock_t rwl;
 {
+	register struct lock_object_cpu *cpu = rwl->rwl_lnterlock.lo_cpus[cpu_number()];
 	if (rwl == NULL)
 		return 0;
-	return (rwl->rwl_lock & RW_THREAD) != 0;
+	return (cpu->loc_my_ticket & RW_THREAD) != 0;
 }
 
 int lock_wait_time = 100;
@@ -276,4 +270,30 @@ rwlock_acquire(rwl, error, extflags, wanted)
 			break;
 		}
 	}
+}
+
+void
+rwlock_lock(rwl)
+    __volatile rwlock_t rwl;
+{
+	lock_object_acquire(&rwl->rwl_lnterlock);
+}
+
+void
+rwlock_unlock(rwl)
+    __volatile rwlock_t rwl;
+{
+	lock_object_release(&rwl->rwl_lnterlock);
+}
+
+void
+rwlock_lockholder_init(rwl)
+	struct rwlock *rwl;
+{
+	bzero(rwl->rwl_lockholder, sizeof(struct lock_holder));
+	rwl->rwl_lockholder->lh_pid = RW_NOTHREAD;
+
+	set_proc_lockholder(rwl->rwl_lockholder, NULL);
+    //set_kthread_lockholder(rwl->rwl_lockholder, NULL);
+	//set_uthread_lockholder(rwl->rwl_lockholder, NULL);
 }

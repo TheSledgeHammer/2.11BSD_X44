@@ -79,7 +79,7 @@ cd9660_init(vfsp)
 {
 
 	isohashtbl = hashinit(desiredvnodes, M_ISOFSMNT, &isohash);
-	simple_lock_init(&cd9660_ihash_slock);
+	simple_lock_init(&cd9660_ihash_slock, "cd9660_ihash_slock");
 #ifdef ISODEVMAP
 	idvhashtbl = hashinit(desiredvnodes / 8, M_ISOFSMNT, &idvhash);
 #endif
@@ -189,7 +189,7 @@ cd9660_ihashins(ip)
 	*ipp = ip;
 	simple_unlock(&cd9660_ihash_slock);
 
-	lockmgr(&ip->i_lock, LK_EXCLUSIVE, (struct simplelock *)0, p);
+	lockmgr(&ip->i_lock, LK_EXCLUSIVE, (struct simplelock *)0, p->p_pid);
 }
 
 /*

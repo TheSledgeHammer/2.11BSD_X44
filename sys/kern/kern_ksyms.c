@@ -207,7 +207,7 @@ ksyms_init(void)
 #endif
 
 	if (!ksyms_initted) {
-		simple_lock_init(&ksyms_lock);
+		simple_lock_init(&ksyms_lock, "ksyms_lock");
 		ksyms_initted = TRUE;
 	}
 }

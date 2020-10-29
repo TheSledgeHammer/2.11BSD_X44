@@ -60,7 +60,7 @@ ufs_ihashinit()
 {
 
 	ihashtbl = hashinit(desiredvnodes, M_UFSMNT, &ihash);
-	simple_lock_init(&ufs_ihash_slock);
+	simple_lock_init(&ufs_ihash_slock, "ufs_ihash_slock");
 }
 
 /*
