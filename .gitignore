@@ -12,6 +12,7 @@
 *.idea
 *.dist
 *.vscode
+*.code-workspace
 cmake-build-debug
 cmake-build-debug-mingw
 

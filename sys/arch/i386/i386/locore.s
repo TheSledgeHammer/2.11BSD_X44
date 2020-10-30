@@ -169,17 +169,6 @@
 		.set	PPTEOFF,0x400-UPAGES					# 0x3FE
 
 /*
- * Note: This version greatly munged to avoid various assembler errors
- * that may be fixed in newer versions of gas. Perhaps newer versions
- * will have more pleasant appearance.
- */
-
-		.set	IDXSHIFT,10
-		.set	SYSTEM,0xFE000000						# virtual address of system start
-/*note: gas copys sign bit (e.g. arithmetic >>), can't do SYSTEM>>22! */
-		.set	SYSPDROFF,0x3F8							# Page dir index of System Base
-
-/*
  * Globals
  */
  		.data
@@ -950,7 +939,6 @@ LF:		.asciz "Xswitch %x"
 		.globl _astoff
 _astoff:
 		ret
-
 
 
 /**********************************************************************/

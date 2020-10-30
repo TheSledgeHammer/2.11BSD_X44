@@ -481,7 +481,6 @@ ENTRY(ltr)
 /*
  * void lcr3(caddr_t cr3)
  */
-ENTRY(load_cr3)
 ENTRY(lcr3)
 		inb		$0x84,%al	# check wristwatch
 		movl	4(%esp),%eax
@@ -501,7 +500,6 @@ ENTRY(tlbflush)
 
 # lcr0(cr0)
 ENTRY(lcr0)
-ENTRY(load_cr0)
 		movl	4(%esp),%eax
 		movl	%eax,%cr0
 		ret

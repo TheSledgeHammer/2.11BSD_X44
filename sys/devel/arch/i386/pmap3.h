@@ -31,7 +31,7 @@ typedef uint32_t pt_entry_t;	/* Mach page table entry */
 #define I386_PDR_SIZE		NBPDR
 
 #define I386_KPDES			8 										/* KPT page directory size */
-#define I386_UPDES			(NBPDR/sizeof(struct pde) - I386_KPDES) /* UPT page directory size */
+#define I386_UPDES			(NBPDR/sizeof(pt_entry_t) - I386_KPDES) /* UPT page directory size */
 
 #define	UPTDI				0x3f6									/* ptd entry for u./kernel&user stack */
 #define	PTDPTDI				0x3f7									/* ptd entry that points to ptd! */
@@ -43,18 +43,6 @@ typedef uint32_t pt_entry_t;	/* Mach page table entry */
  */
 #define ISA_HOLE_START    	0xa0000
 #define ISA_HOLE_LENGTH 	(0x100000-ISA_HOLE_START)
-
-/*
- * Address of current and alternate address space page table maps
- * and directories.
- */
-//#ifdef KERNEL
-extern pt_entry_t	PTmap[], APTmap[], Upte;
-extern pd_entry_t	PTD[], APTD[], PTDpde, APTDpde, Upde;
-extern pt_entry_t	*Sysmap;
-
-extern int			IdlePTD;	/* physical address of "Idle" state directory */
-//#endif
 
 /*
  * virtual address to page table entry and
@@ -106,16 +94,19 @@ typedef struct pv_entry {
 	struct pv_entry			*pv_next;	/* next pv_entry */
 	pmap_t					pv_pmap;	/* pmap where mapping lies */
 	vm_offset_t				pv_va;		/* virtual address for mapping */
+	struct pmap		        *pv_ptpmap;	/* if pmap for PT page */
 	int						pv_flags;	/* flags */
 
 } *pv_entry_t;
 
+#define	PT_ENTRY_NULL	((pt_entry_t) 0)
+#define	PD_ENTRY_NULL	((pd_entry_t) 0)
 #define	PV_ENTRY_NULL	((pv_entry_t) 0)
 
 #define	PV_CI			0x01		/* all entries must be cache inhibited */
 #define PV_PTPAGE		0x02		/* entry maps a page table page */
 
-//#ifdef	KERNEL
+#ifdef	KERNEL
 
 pv_entry_t				pv_table;	/* array of entries, one per page */
 

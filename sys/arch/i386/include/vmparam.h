@@ -52,27 +52,25 @@
  * Immediately after the user structure is the page table map, and then
  * kernal address space.
  */
-#define	USRTEXT			0
-#define	USRSTACK		0xFDBFE000
-#define	BTOPUSRSTACK	(0xFDC00-(UPAGES))	/* btop(USRSTACK) */
-#define	LOWPAGES		0
-#define HIGHPAGES		UPAGES
+#define	USRTEXT					0
+#define	USRSTACK				0xFDBFE000
+#define	BTOPUSRSTACK			(0xFDC00-(UPAGES))	/* btop(USRSTACK) */
 
 /*
  * Virtual memory related constants, all in bytes
  */
-#define	MAXTSIZ			(6*1024*1024)		/* max text size */
+#define	MAXTSIZ					(6*1024*1024)		/* max text size */
 #ifndef DFLDSIZ
-#define	DFLDSIZ			(6*1024*1024)		/* initial data size limit */
+#define	DFLDSIZ					(6*1024*1024)		/* initial data size limit */
 #endif
 #ifndef MAXDSIZ
-#define	MAXDSIZ			(32*1024*1024)		/* max data size */
+#define	MAXDSIZ					(32*1024*1024)		/* max data size */
 #endif
 #ifndef	DFLSSIZ
-#define	DFLSSIZ			(512*1024)			/* initial stack size limit */
+#define	DFLSSIZ					(512*1024)			/* initial stack size limit */
 #endif
 #ifndef	MAXSSIZ
-#define	MAXSSIZ			MAXDSIZ				/* max stack size */
+#define	MAXSSIZ					MAXDSIZ				/* max stack size */
 #endif
 
 /*
@@ -80,15 +78,36 @@
  * The actual values may be changed in vminit() based on MAXDSIZ.
  * With MAXDSIZ of 16Mb and NDMAP of 38, dmmax will be 1024.
  */
-#define	DMMIN	32			/* smallest swap allocation */
-#define	DMMAX	4096		/* largest potential swap allocation */
-#define	DMTEXT	1024		/* swap allocation for text */
+#define	DMMIN					32			/* smallest swap allocation */
+#define	DMMAX					4096		/* largest potential swap allocation */
+#define	DMTEXT					1024		/* swap allocation for text */
 
 /*
  * Sizes of the system and user portions of the system page table.
  */
-#define	SYSPTSIZE 	(2*NPTEPG)
-#define	USRPTSIZE 	(2*NPTEPG)
+#define	SYSPTSIZE 				(2*NPTEPG)
+#define	USRPTSIZE 				(2*NPTEPG)
+
+/*
+ * The largest allocation size is 2MB under PAE and 4MB otherwise.
+ */
+#define	VM_NFREEORDER_PAE		10
+#define	VM_NFREEORDER_NOPAE		11
+#define	VM_NFREEORDER_MAX		VM_NFREEORDER_NOPAE
+#define	VM_NFREEORDER			i386_pmap_VM_NFREEORDER
+
+/*
+ * Level 0 reservations consist of 512 pages when PAE pagetables are
+ * used, and 1024 pages otherwise.
+ */
+#ifndef	VM_LEVEL_0_ORDER
+#define	VM_LEVEL_0_ORDER_PAE	9
+#define	VM_LEVEL_0_ORDER_NOPAE	10
+#define	VM_LEVEL_0_ORDER_MAX	VM_LEVEL_0_ORDER_NOPAE
+#define	VM_LEVEL_0_ORDER		i386_pmap_VM_LEVEL_0_ORDER
+#else
+#define	VM_LEVEL_0_ORDER_MAX	VM_LEVEL_0_ORDER
+#endif
 
 /*
  * Size of User Raw I/O map
@@ -126,8 +145,7 @@
  * { wfj 6/16/89: Retail AT memory expansion $800/megabyte, loan of $17
  *   on disk costing $7/mb or $0.18 (in memory still 100:1 in cost!) }
  */
-#define	SAFERSS		8		/* nominal ``small'' resident set size
-					   protected against replacement */
+#define	SAFERSS		8		/* nominal ``small'' resident set size protected against replacement */
 
 /*
  * DISKRPM is used to estimate the number of paging i/o operations
@@ -145,17 +163,17 @@
  * units.  Note that KLMAX*CLSIZE must be <= DMMIN in dmap.h.
  */
 
-#define	KLMAX	(4/CLSIZE)
-#define	KLSEQL	(2/CLSIZE)		/* in klust if vadvise(VA_SEQL) */
-#define	KLIN	(4/CLSIZE)		/* default data/stack in klust */
-#define	KLTXT	(4/CLSIZE)		/* default text in klust */
-#define	KLOUT	(4/CLSIZE)
+#define	KLMAX		(4/CLSIZE)
+#define	KLSEQL		(2/CLSIZE)		/* in klust if vadvise(VA_SEQL) */
+#define	KLIN		(4/CLSIZE)		/* default data/stack in klust */
+#define	KLTXT		(4/CLSIZE)		/* default text in klust */
+#define	KLOUT		(4/CLSIZE)
 
 /*
  * KLSDIST is the advance or retard of the fifo reclaim for sequential
  * processes data space.
  */
-#define	KLSDIST	3		/* klusters advance/retard for seq. fifo */
+#define	KLSDIST		3		/* klusters advance/retard for seq. fifo */
 
 /*
  * Paging thresholds (see vm_sched.c).

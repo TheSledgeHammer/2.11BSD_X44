@@ -149,18 +149,23 @@ int pmapvacflush = 0;
 /*
  * Get PDEs and PTEs for user/kernel address space
  */
-#define	pmap_pde(m, v)				(&((m)->pm_pdir[((vm_offset_t)(v) >> PD_SHIFT)&1023]))
+#define	pmap_pde(m, v)				(&((m)->pm_pdir[((vm_offset_t)(v) >> PDRSHIFT)]))
+//#define pmap_pte(m, v)				(&((m)->pm_ptab[(vm_offset_t)(v) >> PGSHIFT]))
 
-#define pmap_pte_pa(pte)			(*(int *)(pte) & PG_FRAME)
+#define pmap_pte_pa(pte)			((*(int *)pte & PG_FRAME) != 0)
 
-#define pmap_pde_v(pte)				((pte)->pd_v)
-#define pmap_pte_w(pte)				((pte)->pg_w)
-/* #define pmap_pte_ci(pte)			((pte)->pg_ci) */
-#define pmap_pte_m(pte)				((pte)->pg_m)
-#define pmap_pte_u(pte)				((pte)->pg_u)
-#define pmap_pte_v(pte)				((pte)->pg_v)
-#define pmap_pte_set_w(pte, v)		((pte)->pg_w = (v))
-#define pmap_pte_set_prot(pte, v)	((pte)->pg_prot = (v))
+#define pmap_pte_ci(pte)			((*(int *)pte & PG_CI) != 0)
+
+#define pmap_pde_v(pte)				((*(int *)pte & PG_V) != 0)
+#define pmap_pte_w(pte)				((*(int *)pte & PG_W) != 0)
+#define pmap_pte_m(pte)				((*(int *)pte & PG_M) != 0)
+#define pmap_pte_u(pte)				((*(int *)pte & PG_A) != 0)
+#define pmap_pte_v(pte)				((*(int *)pte & PG_V) != 0)
+
+#define pmap_pte_set_w(pte, v) 		\
+	if (v) *(int *)(pte) |= PG_W; else *(int *)(pte) &= ~PG_W
+#define pmap_pte_set_prot(pte, v) 	\
+	if (v) *(int *)(pte) |= PG_PROT; else *(int *)(pte) &= ~PG_PROT
 
 /*
  * Given a map and a machine independent protection code,
@@ -623,8 +628,7 @@ pmap_remove(pmap, sva, eva)
 		 */
 #ifdef DEBUG
 		if (pmapdebug & PDB_REMOVE)
-			printf("remove: inv %x ptes at %x(%x) ",
-			       i386pagesperpage, pte, *(int *)pte);
+			printf("remove: inv %x ptes at %x(%x) ", i386pagesperpage, pte, *(int *)pte);
 #endif
 		bits = ix = 0;
 		do {
@@ -1201,8 +1205,7 @@ void pmap_copy(dst_pmap, src_pmap, dst_addr, len, src_addr)
 {
 #ifdef DEBUG
 	if (pmapdebug & PDB_FOLLOW)
-		printf("pmap_copy(%x, %x, %x, %x, %x)",
-		       dst_pmap, src_pmap, dst_addr, len, src_addr);
+		printf("pmap_copy(%x, %x, %x, %x, %x)", dst_pmap, src_pmap, dst_addr, len, src_addr);
 #endif
 }
 

@@ -12,21 +12,21 @@
 #define	PG_V		0x001		/* P	Valid			*/
 #define	PG_RW		0x002		/* R/W	Read/Write		*/
 #define	PG_u		0x004
-#define	PG_PROT		0x006 		/* all protection bits . */
-#define	PG_NC_PWT	0x008		/* PWT	Write through		*/
-#define	PG_NC_PCD	0x010		/* PCD	Cache disable		*/
-#define PG_U		0x020		/* U/S  User/Supervisor		*/
+#define	PG_PROT		0x006 		/* all protection bits .*/
+#define	PG_NC_PWT	0x008		/* PWT	Write through	*/
+#define	PG_NC_PCD	0x010		/* PCD	Cache disable	*/
+#define PG_U		0x020		/* U/S  User/Supervisor	*/
 #define	PG_M		0x040		/* D	Dirty			*/
 #define PG_A		0x060		/* A	Accessed		*/
 #define	PG_PS		0x080		/* PS	Page size (0=4k,1=4M)	*/
 #define	PG_PTE_PAT	0x080		/* PAT	PAT index		*/
 #define	PG_G		0x100		/* G	Global			*/
-#define	PG_W		0x200		/* "Wired" pseudoflag */
+#define	PG_W		0x200		/* "Wired" pseudoflag 	*/
 #define	PG_SWAPM	0x400
 #define	PG_FOD		0x600
-#define PG_N		0x800 		/* Non-cacheable */
+#define PG_N		0x800 		/* Non-cacheable 		*/
 #define	PG_PDE_PAT	0x1000		/* PAT	PAT index		*/
-#define	PG_NX		(1ull<<63) 	/* No-execute */
+#define	PG_NX		(1ull<<63) 	/* No-execute 			*/
 
 #define	PG_FRAME	0xfffff000
 
@@ -44,11 +44,11 @@
 /*
  * Page Protection Exception bits
  */
-#define PGEX_P		0x01	/* Protection violation vs. not present */
-#define PGEX_W		0x02	/* during a Write cycle */
-#define PGEX_U		0x04	/* access from User mode (UPL) */
-#define PGEX_RSV	0x08	/* reserved PTE field is non-zero */
-#define PGEX_I		0x10	/* during an instruction fetch */
+#define PGEX_P		0x01		/* Protection violation vs. not present */
+#define PGEX_W		0x02		/* during a Write cycle */
+#define PGEX_U		0x04		/* access from User mode (UPL) */
+#define PGEX_RSV	0x08		/* reserved PTE field is non-zero */
+#define PGEX_I		0x10		/* during an instruction fetch */
 
 extern pt_entry_t	PTmap[], APTmap[], Upte;
 extern pd_entry_t	PTD[], APTD[], PTDpde, APTDpde, Upde;

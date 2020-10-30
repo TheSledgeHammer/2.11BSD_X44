@@ -53,10 +53,16 @@
 #ifndef _MACHINE_PMAP_PAE_H
 #define	_MACHINE_PMAP_PAE_H
 
+#define	NTRPPTD			2		/* Number of PTDs for trampoline mapping */
+#define	LOWPTDI			2		/* low memory map pde */
+#define	KERNPTDI		4		/* start of kernel text pde */
+
+#define NPGPTD			4		/* Num of pages for page directory */
+#define NPGPTD_SHIFT	9
 #undef	PDRSHIFT
-#define	PDRSHIFT	PD_SHIFT_PAE
+#define	PDRSHIFT		PD_SHIFT_PAE
 #undef	NBPDR
-#define NBPDR		(1 << PD_SHIFT_PAE)	/* bytes/page dir */
+#define NBPDR			(1 << PD_SHIFT_PAE)	/* bytes/page dir */
 
 /*
  * Size of Kernel address space.  This is the number of page table pages
@@ -65,19 +71,40 @@
  * For PAE, the page table page unit size is 2MB.  This means that 512 pages
  * is 1 Gigabyte.  Double everything.  It must be a multiple of 8 for PAE.
  */
-#define KVA_PAGES	(512*4)
+#define KVA_PAGES		(512*4)
 
 /*
  * The initial number of kernel page table pages that are constructed
  * by pmap_cold() must be sufficient to map vm_page_array.  That number can
  * be calculated as follows:
- *     max_phys / PAGE_SIZE * sizeof(struct vm_page) / NBPDR
- * PAE:      max_phys 16G, sizeof(vm_page) 76, NBPDR 2M, 152 page table pages.
- * PAE_TABLES: max_phys 4G,  sizeof(vm_page) 68, NBPDR 2M, 36 page table pages.
- * Non-PAE:  max_phys 4G,  sizeof(vm_page) 68, NBPDR 4M, 18 page table pages.
+ *     			max_phys / PAGE_SIZE * sizeof(struct vm_page) / NBPDR
+ * PAE:      	max_phys 16G, sizeof(vm_page) 76, NBPDR 2M, 152 page table pages.
+ * PAE_TABLES: 	max_phys 4G,  sizeof(vm_page) 68, NBPDR 2M, 36 page table pages.
+ * Non-PAE:  	max_phys 4G,  sizeof(vm_page) 68, NBPDR 4M, 18 page table pages.
  */
 #ifndef NKPT
-#define	NKPT		240
+#define	NKPT			240
 #endif
+
+typedef uint64_t 		pdpt_entry_t;
+typedef uint64_t 		pd_entry_t;
+typedef uint64_t 		pt_entry_t;
+
+extern pdpt_entry_t 	*IdlePDPT;
+extern pt_entry_t 		pg_nx;
+extern pd_entry_t 		*IdlePTD_pae;	/* physical address of "Idle" state directory */
+
+/*
+ * KPTmap is a linear mapping of the kernel page table.  It differs from the
+ * recursive mapping in two ways: (1) it only provides access to kernel page
+ * table pages, and not user page table pages, and (2) it provides access to
+ * a kernel page table page after the corresponding virtual addresses have
+ * been promoted to a 2/4MB page mapping.
+ *
+ * KPTmap is first initialized by pmap_cold() to support just NPKT page table
+ * pages.  Later, it is reinitialized by pmap_bootstrap() to allow for
+ * expansion of the kernel page table.
+ */
+extern pt_entry_t 		*KPTmap_pae;
 
 #endif /* _MACHINE_PMAP_PAE_H */

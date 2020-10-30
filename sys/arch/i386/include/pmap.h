@@ -55,20 +55,20 @@
  * W.Jolitz, 8/89
  */
 
-typedef struct pde	pd_entry_t;	/* page directory entry */
-typedef struct pte	pt_entry_t;	/* Mach page table entry */
-
-#define	PD_SHIFT_PAE		21
-#define	PG_FRAME_PAE		(0x000ffffffffff000ull)
-#define	PG_PS_FRAME_PAE		(0x000fffffffe00000ull)
-
-#define	PD_SHIFT_NOPAE		22
-#define	PG_FRAME_NOPAE		(~PGMASK)
-#define	PG_PS_FRAME_NOPAE	(0xffc00000)
+//typedef struct pde	pd_entry_t;	/* page directory entry */
+//typedef struct pte	pt_entry_t;	/* Mach page table entry */
 
 #ifndef NKPDE
 #define NKPDE				(KVA_PAGES)	/* number of page tables/pde's */
 #endif
+
+#define	PD_SHIFT_PAE		21			/* LOG2(NBPDR) */
+#define	PG_FRAME_PAE		(0x000ffffffffff000ull)
+#define	PG_PS_FRAME_PAE		(0x000fffffffe00000ull)
+
+#define	PD_SHIFT_NOPAE		22
+#define	PG_FRAME_NOPAE		(~PAGE_MASK)
+#define	PG_PS_FRAME_NOPAE	(0xffc00000)
 
 /*
  * One page directory, shared between
@@ -84,6 +84,8 @@ typedef struct pte	pt_entry_t;	/* Mach page table entry */
 #define	PTDPTDI				0x3f7									/* ptd entry that points to ptd! */
 #define	KPTDI_FIRST			0x3f8									/* start of kernel virtual pde's */
 #define	KPTDI_LAST			0x3fA									/* last of kernel virtual pde's */
+
+//#define	KPTDI				0										/* start of kernel virtual pde's */
 
 /*
  * Address of current and alternate address space page table maps
@@ -159,12 +161,15 @@ extern struct pmap	kernel_pmap_store;
  */
 typedef struct pv_entry {
 	struct pv_entry	*pv_next;	/* next pv_entry */
-	pmap_t			pv_pmap;	/* pmap where mapping lies */
+	struct pmap		*pv_pmap;	/* pmap where mapping lies */
 	vm_offset_t		pv_va;		/* virtual address for mapping */
+	struct pmap		*pv_ptpmap;	/* if pmap for PT page */
 	int				pv_flags;	/* flags */
 
 } *pv_entry_t;
 
+#define	PT_ENTRY_NULL	((pt_entry_t) 0)
+#define	PD_ENTRY_NULL	((pd_entry_t) 0)
 #define	PV_ENTRY_NULL	((pv_entry_t) 0)
 
 #define	PV_CI			0x01		/* all entries must be cache inhibited */
@@ -181,6 +186,8 @@ pv_entry_t				pv_table;	/* array of entries, one per page */
 #define	pmap_wired_count(pmap)		((pmap)->pm_stats.wired_count)
 
 extern int pae_mode;
+extern int i386_pmap_VM_NFREEORDER;
+extern int i386_pmap_VM_LEVEL_0_ORDER;
 extern int i386_pmap_PDRSHIFT;
 #endif	KERNEL
-#endif	_PMAP_MACHINE_
+#endif	/* _PMAP_MACHINE_ */
