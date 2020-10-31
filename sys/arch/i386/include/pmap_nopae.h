@@ -72,10 +72,7 @@
 
 typedef uint32_t 		pd_entry_t;
 typedef uint32_t 		pt_entry_t;
-typedef	uint32_t 		pdpt_entry_t;	/* Only to keep struct pmap layout. */
-
-#define	PTESHIFT		(2)
-#define	PDESHIFT		(2)
+typedef	uint32_t 		pdpt_entry_t;
 
 extern pt_entry_t 		PTmap[], APTmap[];
 extern pd_entry_t 		PTD[], APTD[];

@@ -55,20 +55,17 @@
  * W.Jolitz, 8/89
  */
 
-typedef struct pde	pd_entry_t;	/* page directory entry */
-typedef struct pte	pt_entry_t;	/* Mach page table entry */
-
 #ifndef NKPDE
-#define NKPDE				(KVA_PAGES)	/* number of page tables/pde's */
+#define NKPDE				(KVA_PAGES)				/* number of page tables/pde's */
 #endif
 
-#define	PD_SHIFT_PAE		21			/* LOG2(NBPDR) */
+#define	PD_SHIFT_PAE		21						/* LOG2(NBPDR) */
 #define	PG_FRAME_PAE		(0x000ffffffffff000ull)
-#define	PG_PS_FRAME_PAE		(0x000fffffffe00000ull)
+#define	PG_PS_FRAME_PAE		(0x000fffffffe00000ull)	/* PD_MASK_PAE */
 
 #define	PD_SHIFT_NOPAE		22
 #define	PG_FRAME_NOPAE		(~PAGE_MASK)
-#define	PG_PS_FRAME_NOPAE	(0xffc00000)
+#define	PG_PS_FRAME_NOPAE	(0xffc00000)			/* PD_MASK_NOPAE */
 
 /*
  * One page directory, shared between
@@ -85,17 +82,13 @@ typedef struct pte	pt_entry_t;	/* Mach page table entry */
 #define	KPTDI_FIRST			0x3f8									/* start of kernel virtual pde's */
 #define	KPTDI_LAST			0x3fA									/* last of kernel virtual pde's */
 
-/*
- * Address of current and alternate address space page table maps
- * and directories.
- */
-#ifdef KERNEL
-extern struct pte	PTmap[], APTmap[], Upte;
-extern struct pde	PTD[], APTD[], PTDpde, APTDpde, Upde;
-extern	pt_entry_t	*Sysmap;
+//#define	KPTDI				0									/* start of kernel virtual pde's */
 
-extern int			IdlePTD;	/* physical address of "Idle" state directory */
-#endif
+/*
+ * XXX doesn't really belong here I guess...
+ */
+#define ISA_HOLE_START    	0xa0000
+#define ISA_HOLE_LENGTH 	(0x100000-ISA_HOLE_START)
 
 /*
  * virtual address to page table entry and
@@ -103,22 +96,25 @@ extern int			IdlePTD;	/* physical address of "Idle" state directory */
  * Note: these work recursively, thus vtopte of a pte will give
  * the corresponding pde that in turn maps it.
  */
-#define	vtopte(va)		(PTmap + i386_btop(va))
-#define	kvtopte(va)		vtopte(va)
-#define	ptetov(pt)		(i386_ptob(pt - PTmap))
-#define	vtophys(va)  	(i386_ptob(vtopte(va)->pg_pfnum) | ((int)(va) & PGOFSET))
-#define ispt(va)		((va) >= UPT_MIN_ADDRESS && (va) <= KPT_MAX_ADDRESS)
+#define	vtopte(va)			(PTmap + i386_btop(va))
+#define	kvtopte(va)			vtopte(va)
+#define	ptetov(pt)			(i386_ptob(pt - PTmap))
+#define	vtophys(va)  		(i386_ptob(vtopte(va)) | ((int)(va) & PGOFSET))
+#define ispt(va)			((va) >= UPT_MIN_ADDRESS && (va) <= KPT_MAX_ADDRESS)
 
-#define	avtopte(va)		(APTmap + i386_btop(va))
-#define	ptetoav(pt)	 	(i386_ptob(pt - APTmap))
-#define	avtophys(va)  	(i386_ptob(avtopte(va)->pg_pfnum) | ((int)(va) & PGOFSET))
+#define	avtopte(va)			(APTmap + i386_btop(va))
+#define	ptetoav(pt)	 		(i386_ptob(pt - APTmap))
+#define	avtophys(va)  		(i386_ptob(avtopte(va)) | ((int)(va) & PGOFSET))
 
 /*
  * Pmap stuff
  */
 struct pmap {
-	pd_entry_t				*pm_pdir;		/* KVA of page directory */
-	pt_entry_t				*pm_ptab;		/* KVA of page table */
+	uint32_t				*pm_pdir_nopae;	/* KVA of page directory */
+	uint32_t				*pm_ptab_nopae;	/* KVA of page table */
+	uint64_t				*pm_pdir_pae;	/* KVA of page directory */
+	uint64_t				*pm_ptab_pae;	/* KVA of page table */
+
 	boolean_t				pm_pdchanged;	/* pdir changed */
 	short					pm_dref;		/* page directory ref count */
 	short					pm_count;		/* pmap reference count */
@@ -134,10 +130,10 @@ struct pmap {
 
 typedef struct pmap			*pmap_t;
 
-#ifdef KERNEL
-extern struct pmap	kernel_pmap_store;
+//#ifdef KERNEL
+extern pmap_t	kernel_pmap_store;
 #define kernel_pmap (&kernel_pmap_store)
-#endif
+//#endif
 
 /*
  * Macros for speed
@@ -147,7 +143,7 @@ extern struct pmap	kernel_pmap_store;
 		(pcbp)->pcb_cr3 = 									\
 		    pmap_extract(kernel_pmap, (pmapp)->pm_pdir); 	\
 		if ((pmapp) == &curproc->p_vmspace->vm_pmap) 		\
-			load_cr3((pcbp)->pcb_cr3); 						\
+			lr3((pcbp)->pcb_cr3); 							\
 		(pmapp)->pm_pdchanged = FALSE; 						\
 	}
 
@@ -158,11 +154,10 @@ extern struct pmap	kernel_pmap_store;
  * mappings of that page.  An entry is a pv_entry_t, the list is pv_table.
  */
 typedef struct pv_entry {
-	struct pv_entry	*pv_next;	/* next pv_entry */
-	struct pmap		*pv_pmap;	/* pmap where mapping lies */
-	vm_offset_t		pv_va;		/* virtual address for mapping */
-	struct pmap		*pv_ptpmap;	/* if pmap for PT page */
-	int				pv_flags;	/* flags */
+	struct pv_entry			*pv_next;		/* next pv_entry */
+	struct pmap				*pv_pmap;		/* pmap where mapping lies */
+	vm_offset_t				pv_va;			/* virtual address for mapping */
+	int						pv_flags;		/* flags */
 
 } *pv_entry_t;
 
@@ -173,9 +168,9 @@ typedef struct pv_entry {
 #define	PV_CI			0x01		/* all entries must be cache inhibited */
 #define PV_PTPAGE		0x02		/* entry maps a page table page */
 
-#ifdef	KERNEL
+//#ifdef	KERNEL
 
-pv_entry_t				pv_table;	/* array of entries, one per page */
+pv_entry_t							pv_table;	/* array of entries, one per page */
 
 #define pa_index(pa)				atop(pa - vm_first_phys)
 #define pa_to_pvh(pa)				(&pv_table[pa_index(pa)])
@@ -187,5 +182,5 @@ extern int pae_mode;
 extern int i386_pmap_VM_NFREEORDER;
 extern int i386_pmap_VM_LEVEL_0_ORDER;
 extern int i386_pmap_PDRSHIFT;
-#endif	KERNEL
+//#endif	KERNEL
 #endif	/* _PMAP_MACHINE_ */

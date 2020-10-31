@@ -44,6 +44,7 @@ SECTIONS
 		*(.bss.*)
 		*(COMMON)
 		. = ALIGN(__PAGE_SIZE);
+		__bss_end = .;
 	}
 
 	. = ALIGN(__PAGE_SIZE);

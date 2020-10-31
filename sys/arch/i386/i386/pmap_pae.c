@@ -28,7 +28,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-/* PMAP PAE (Not Fully Implemented) */
 
 #include <sys/cdefs.h>
 /*__FBSDID("$FreeBSD$"); */
@@ -40,13 +39,15 @@
 #include "opt_vm.h"
 */
 
+
 #define	PMAP_PAE_COMP
 #include <sys/param.h>
 #include <vm/include/vm.h>
 #include <vm/include/vm_param.h>
-#define	PMTYPE	pmap_pae_
+//#define	PMTYPE	pmap_pae_
 #define	pm_pdir	pm_pdir_pae
-#define	pm_pdpt	pm_pdpt_pae
+#define	pm_ptab	pm_ptab_pae
+//#define	pm_pdpt	pm_pdpt_pae
 #include <machine/pmap_pae.h>
 #include <vm/include/pmap.h>
 #include "pmap.c"

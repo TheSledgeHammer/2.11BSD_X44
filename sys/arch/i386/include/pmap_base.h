@@ -40,9 +40,15 @@
 #define	_PMAP_BASE_MACHINE_
 
 struct pmap_args {
+	void (*pmap_cold_map)(u_long pa, u_long va, u_long cnt);
+	void (*pmap_cold_mapident)(u_long pa, u_long cnt);
+	void (*pmap_remap_lower)(boolean_t enable);
+	void (*pmap_cold)(void);
+	void (*pmap_set_nx)(void);
 	void (*pmap_bootstrap)(vm_offset_t firstaddr, vm_offset_t loadaddr);
 	int (*pmap_isvalidphys)(int addr);
-	void *(*pmap_bootstrap_alloc)(size);
+	void *(*pmap_bootstrap_alloc)(u_long size);
+	void (*pmap_init_pat)(void);
 	void (*pmap_init)(vm_offset_t phys_start, vm_offset_t phys_end);
 	vm_offset_t (*pmap_map)(vm_offset_t virt, vm_offset_t start, vm_offset_t end, int prot);
 	pmap_t (*pmap_create)(vm_size_t	size);
@@ -77,6 +83,8 @@ struct pmap_args {
 	void (*pmap_pvdump)(vm_offset_t pa);
 	void (*pmap_check_wiring)(char *str, vm_offset_t va);
 	void (*pads)(pmap_t pm);
+	u_int (*pmap_get_kcr3)(void);
+	u_int (*pmap_get_cr3)(pmap_t pmap);
 	void *(*pmap_bios16_enter)(void);
 	void (*pmap_bios16_leave)(void *handle);
 };

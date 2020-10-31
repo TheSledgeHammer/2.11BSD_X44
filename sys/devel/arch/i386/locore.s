@@ -78,7 +78,7 @@ ENTRY(identify_cpu)
 trynexgen:
 		popfl
 		movl	$CPU_NX586,cpu
-		movl	$0x4778654e,cpu_vendor		# store vendor string
+		movl	$0x4778654e,cpu_vendor			# store vendor string
 		movl	$0x72446e65,cpu_vendor+4
 		movl	$0x6e657669,cpu_vendor+8
 		movl	$0,cpu_vendor+12
@@ -134,20 +134,20 @@ trycyrix:
 
 trycpuid:	/* Use the `cpuid' instruction. */
 		xorl	%eax,%eax
-		cpuid							# cpuid 0
-		movl	%eax,cpu_high			# highest capability
-		movl	%ebx,cpu_vendor			# store vendor string
+		cpuid								# cpuid 0
+		movl	%eax,cpu_high				# highest capability
+		movl	%ebx,cpu_vendor				# store vendor string
 		movl	%edx,cpu_vendor+4
 		movl	%ecx,cpu_vendor+8
 		movb	$0,cpu_vendor+12
 
 		movl	$1,%eax
-		cpuid							# cpuid 1
-		movl	%eax,cpu_id				# store cpu_id
-		movl	%ebx,cpu_procinfo		# store cpu_procinfo
-		movl	%edx,cpu_feature		# store cpu_feature
-		movl	%ecx,cpu_feature2		# store cpu_feature2
-		rorl	$8,%eax					# extract family type
+		cpuid								# cpuid 1
+		movl	%eax,cpu_id					# store cpu_id
+		movl	%ebx,cpu_procinfo			# store cpu_procinfo
+		movl	%edx,cpu_feature			# store cpu_feature
+		movl	%ecx,cpu_feature2			# store cpu_feature2
+		rorl	$8,%eax						# extract family type
 		andl	$15,%eax
 		cmpl	$5,%eax
 		jae		1f

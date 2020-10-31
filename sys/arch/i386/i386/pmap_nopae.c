@@ -29,22 +29,15 @@
  * SUCH DAMAGE.
  */
 
-/* PMAP NON-PAE (Not Fully Implemented) */
-
 #include <sys/cdefs.h>
+
 /*__FBSDID("$FreeBSD$"); */
-/*
-#include "opt_apic.h"
-#include "opt_cpu.h"
-#include "opt_pmap.h"
-#include "opt_smp.h"
-#include "opt_vm.h"
-*/
+
 #include <sys/param.h>
 #include <vm/include/vm.h>
 #include <vm/include/vm_param.h>
-#define	PMTYPE	pmap_nopae_
+#define	pm_pdir	pm_pdir_nopae
+#define	pm_ptab	pm_ptab_nopae
 #include <machine/pmap_nopae.h>
 #include <vm/include/pmap.h>
-//_Static_assert(sizeof(struct pmap_KBI) >= sizeof(struct pmap), "pmap KBI");
 #include "pmap.c"

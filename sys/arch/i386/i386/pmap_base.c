@@ -60,14 +60,56 @@
 vm_offset_t virtual_avail;	/* VA of first avail page (after kernel bss) */
 vm_offset_t virtual_end;	/* VA of last avail page (end of kernel AS) */
 
-u_long physfree;	/* phys addr of next free page */
-u_long vm86phystk;	/* PA of vm86/bios stack */
-u_long vm86paddr;	/* address of vm86 region */
-int vm86pa;			/* phys addr of vm86 region */
+u_long 		physfree;		/* phys addr of next free page */
+u_long 		vm86phystk;		/* PA of vm86/bios stack */
+u_long 		vm86paddr;		/* address of vm86 region */
+int 		vm86pa;			/* phys addr of vm86 region */
+u_long 		KERNend;		/* phys addr end of kernel (just after bss) */
+u_long 		KPTphys;		/* phys addr of kernel page tables */
+vm_offset_t kernel_vm_end;
+
+int i386_pmap_VM_NFREEORDER;
+int i386_pmap_VM_LEVEL_0_ORDER;
 int i386_pmap_PDRSHIFT;
 
 struct pmap kernel_pmap_store;
 static struct pmap_args *pmap_args_ptr;
+
+void
+pmap_cold_map(u_long pa, u_long va, u_long cnt)
+{
+	pmap_args_ptr->pmap_cold_mapident(pa, va, cnt);
+}
+
+void
+pmap_cold_mapident(u_long pa, u_long cnt)
+{
+	pmap_args_ptr->pmap_cold_mapident(pa, cnt);
+}
+
+void
+pmap_remap_lower(boolean_t enable)
+{
+	pmap_args_ptr->pmap_remap_lower(enable);
+}
+
+void
+pmap_cold(void)
+{
+	init_static_kenv((char *)bootinfo.bi_envp, 0);
+	pae_mode = (cpu_feature & CPUID_PAE) != 0;
+	if (pae_mode) {
+		pmap_args_ptr = &pmap_pae_args;
+	} else {
+		pmap_args_ptr = &pmap_nopae_args;
+	}
+}
+
+void
+pmap_set_nx(void)
+{
+	pmap_args_ptr->pmap_set_nx();
+}
 
 void
 pmap_bootstrap(vm_offset_t firstaddr, vm_offset_t loadaddr)
@@ -85,6 +127,12 @@ void *
 pmap_bootstrap_alloc(size)
 {
 	return (pmap_args_ptr->pmap_bootstrap_alloc(size));
+}
+
+void
+pmap_init_pat(void)
+{
+	pmap_args_ptr->pmap_init_pat();
 }
 
 void
@@ -289,6 +337,18 @@ void
 pads(pmap_t pm)
 {
 	pmap_args_ptr->pads(pm);
+}
+
+u_int
+pmap_get_kcr3(void)
+{
+	return (pmap_args_ptr->pmap_get_kcr3());
+}
+
+u_int
+pmap_get_cr3(pmap_t pmap)
+{
+	return (pmap_args_ptr->pmap_get_cr3(pmap));
 }
 
 void *

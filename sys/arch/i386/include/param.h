@@ -68,12 +68,20 @@
 
 #define	NBPG			4096				/* bytes/page (PAGE SIZE) */
 #define NBPDE			1024				/* page directory size in bytes (PDE SIZE) */
-#define	PGOFSET			(NBPG-1)			/* byte offset into page */
 
+#define	PGOFSET			(NBPG-1)			/* byte offset into page */
 #define	PGSHIFT			12					/* LOG2(NBPG) */
+
 #define PGSIZE			(1 << PGSHIFT)		/* bytes/page (PAGE SIZE) */
-#define PGMASK			(PGSIZE - 1)
-#define	NPTEPG			(NBPG/ sizeof (pt_entry_t))
+//#define PGMASK			(PGSIZE - 1)		/* PGOFSET */
+#define	NPTEPG			(NBPG / sizeof(pt_entry_t))
+
+/* Size in bytes of the page directory */
+#define NBPTD			(NPGPTD << PGSHIFT)
+/* Number of PDEs in page directory, 2048 for PAE, 1024 for non-PAE */
+#define NPDEPTD			(NBPTD / sizeof(pd_entry_t))
+/* Number of PDEs in one page of the page directory, 512 vs. 1024 */
+#define NPDEPG			(NBPG / sizeof(pd_entry_t))
 
 #ifndef PDRSHIFT
 #define	PDRSHIFT		i386_pmap_PDRSHIFT
@@ -82,9 +90,10 @@
 #ifndef NBPDR
 #define NBPDR			(1 << PDRSHIFT)		/* bytes/page dir */
 #endif
-#define	PDROFSET		(NBPDR-1)			/* byte offset into page dir */
+#define	PDROFSET		(NBPDR - 1)			/* byte offset into page dir */
 
 #define	KERNBASE		0xFE000000			/* start of kernel virtual */
+#define KERNLOAD		KERNBASE			/* Kernel physical load address */
 #define	BTOPKERNBASE	((u_long)KERNBASE >> PGSHIFT)
 
 #define	DEV_BSIZE		512
