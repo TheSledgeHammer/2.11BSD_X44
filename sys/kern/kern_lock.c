@@ -41,6 +41,7 @@
 #include <sys/proc.h>
 #include <sys/atomic.h>
 #include <sys/lock.h>
+#include <sys/malloc.h>
 #include <sys/user.h>
 
 #include <machine/cpu.h>
@@ -86,7 +87,10 @@ lockinit(lkp, prio, wmesg, timo, flags)
 	lkp->lk_prio = prio;
 	lkp->lk_timo = timo;
 	lkp->lk_wmesg = wmesg;
-	lock_lockholder_init(&lkp);
+
+	/* lock holder */
+	memset(lkp->lk_lockholder, 0, sizeof(struct lock_holder));
+	LOCKHOLDER_PID(lkp->lk_lockholder) = LK_NOPROC;
 }
 
 /* Determine the status of a lock. */
@@ -120,13 +124,13 @@ lockmgr(lkp, flags, interlkp, pid)
 	struct lock_object *interlkp;
 	pid_t pid;
 {
-	register struct lock_holder *holder = lkp->lk_lockholder;
 	int error;
 	int extflags;
 	error = 0;
 
 	if (!pid) {
 		pid = LK_KERNPROC;
+		LOCKHOLDER_PID(lkp->lk_lockholder) = LK_KERNPROC;
 	}
 	__simple_lock(&lkp);
 	if (flags & LK_INTERLOCK) {
@@ -149,7 +153,7 @@ lockmgr(lkp, flags, interlkp, pid)
 		if (lkp->lk_flags & LK_DRAINED) {
 			panic("lockmgr: using decommissioned lock");
 		}
-		if ((flags & LK_TYPE_MASK) != LK_RELEASE || LOCKHOLDER_PID(holder) != pid) {
+		if ((flags & LK_TYPE_MASK) != LK_RELEASE || LOCKHOLDER_PID(lkp->lk_lockholder) != pid) {
 			panic("lockmgr: non-release on draining lock: %d\n", flags & LK_TYPE_MASK);
 		}
 		lkp->lk_flags &= ~LK_DRAINING;
@@ -162,7 +166,7 @@ lockmgr(lkp, flags, interlkp, pid)
 	switch (flags & LK_TYPE_MASK) {
 
 	case LK_SHARED:
-		if (LOCKHOLDER_PID(holder) != pid) {
+		if (LOCKHOLDER_PID(lkp->lk_lockholder) != pid) {
 			/*
 			 * If just polling, check to see if we will block.
 			 */
@@ -191,12 +195,12 @@ lockmgr(lkp, flags, interlkp, pid)
 		break;
 
 	case LK_DOWNGRADE:
-		if (LOCKHOLDER_PID(holder) != pid || lkp->lk_exclusivecount == 0)
+		if (LOCKHOLDER_PID(lkp->lk_lockholder) != pid || lkp->lk_exclusivecount == 0)
 			panic("lockmgr: not holding exclusive lock");
 		lkp->lk_sharecount += lkp->lk_exclusivecount;
 		lkp->lk_exclusivecount = 0;
 		lkp->lk_flags &= ~LK_HAVE_EXCL;
-		LOCKHOLDER_PID(holder) = LK_NOPROC;
+		LOCKHOLDER_PID(lkp->lk_lockholder) = LK_NOPROC;
 		if (lkp->lk_waitcount)
 			wakeup((void *)lkp);
 		break;
@@ -225,7 +229,7 @@ lockmgr(lkp, flags, interlkp, pid)
 		 * after the upgrade). If we return an error, the file
 		 * will always be unlocked.
 		 */
-		if (LOCKHOLDER_PID(holder) == pid || lkp->lk_sharecount <= 0)
+		if (LOCKHOLDER_PID(lkp->lk_lockholder) == pid || lkp->lk_sharecount <= 0)
 			panic("lockmgr: upgrade exclusive lock");
 		lkp->lk_sharecount--;
 		COUNT(p, -1);
@@ -250,7 +254,7 @@ lockmgr(lkp, flags, interlkp, pid)
 			if (error)
 				break;
 			lkp->lk_flags |= LK_HAVE_EXCL;
-			LOCKHOLDER_PID(holder) = pid;
+			LOCKHOLDER_PID(lkp->lk_lockholder) = pid;
 			if (lkp->lk_exclusivecount != 0)
 				panic("lockmgr: non-zero exclusive count");
 			lkp->lk_exclusivecount = 1;
@@ -268,7 +272,7 @@ lockmgr(lkp, flags, interlkp, pid)
 		break;
 
 	case LK_EXCLUSIVE:
-		if (LOCKHOLDER_PID(holder) == pid && pid != LK_KERNPROC) {
+		if (LOCKHOLDER_PID(lkp->lk_lockholder) == pid && pid != LK_KERNPROC) {
 			/*
 			 *	Recursive lock.
 			 */
@@ -304,7 +308,7 @@ lockmgr(lkp, flags, interlkp, pid)
 		if (error)
 			break;
 		lkp->lk_flags |= LK_HAVE_EXCL;
-		LOCKHOLDER_PID(holder) = pid;
+		LOCKHOLDER_PID(lkp->lk_lockholder) = pid;
 		if (lkp->lk_exclusivecount != 0)
 			panic("lockmgr: non-zero exclusive count");
 		lkp->lk_exclusivecount = 1;
@@ -313,15 +317,15 @@ lockmgr(lkp, flags, interlkp, pid)
 
 	case LK_RELEASE:
 		if (lkp->lk_exclusivecount != 0) {
-			if (pid != LOCKHOLDER_PID(holder))
+			if (pid != LOCKHOLDER_PID(lkp->lk_lockholder))
 				panic("lockmgr: pid %d, not %s %d unlocking",
 				    pid, "exclusive lock holder",
-					LOCKHOLDER_PID(holder));
+					LOCKHOLDER_PID(lkp->lk_lockholder));
 			lkp->lk_exclusivecount--;
 			COUNT(p, -1);
 			if (lkp->lk_exclusivecount == 0) {
 				lkp->lk_flags &= ~LK_HAVE_EXCL;
-				LOCKHOLDER_PID(holder) = LK_NOPROC;
+				LOCKHOLDER_PID(lkp->lk_lockholder) = LK_NOPROC;
 			}
 		} else if (lkp->lk_sharecount != 0) {
 			lkp->lk_sharecount--;
@@ -338,7 +342,7 @@ lockmgr(lkp, flags, interlkp, pid)
 		 * check for holding a shared lock, but at least we can
 		 * check for an exclusive one.
 		 */
-		if (LOCKHOLDER_PID(holder) == pid)
+		if (LOCKHOLDER_PID(lkp->lk_lockholder) == pid)
 			panic("lockmgr: draining against myself");
 		/*
 		 * If we are just polling, check to see if we will sleep.
@@ -365,7 +369,7 @@ lockmgr(lkp, flags, interlkp, pid)
 			__simple_lock(&lkp);
 		}
 		lkp->lk_flags |= LK_DRAINING | LK_HAVE_EXCL;
-		LOCKHOLDER_PID(holder) = pid;
+		LOCKHOLDER_PID(lkp->lk_lockholder) = pid;
 		lkp->lk_exclusivecount = 1;
 		COUNT(p, 1);
 		break;
@@ -581,21 +585,9 @@ lock_object_try(lock)
  * Lock Holder:
  */
 void
-lock_lockholder_init(lkp)
-	struct lock *lkp;
-{
-	bzero(lkp->lk_lockholder, sizeof(struct lock_holder));
-	lkp->lk_lockholder->lh_pid = LK_NOPROC;
-
-	set_proc_lockholder(lkp->lk_lockholder, NULL);
-// 	set_kthread_lockholder(lkp->lk_lockholder, NULL);
-//	set_uthread_lockholder(lkp->lk_lockholder, NULL);
-}
-
-void
 set_proc_lockholder(holder, proc)
-	struct lock_holder 	*holder;
-	struct proc 		*proc;
+	struct lock_holder *holder;
+	struct proc *proc;
 {
 	holder->lh_pid = proc->p_pid;
 	holder->lh_pgrp = proc->p_pgrp;

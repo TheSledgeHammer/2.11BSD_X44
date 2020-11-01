@@ -130,10 +130,10 @@ struct pmap {
 
 typedef struct pmap			*pmap_t;
 
-//#ifdef KERNEL
+#ifdef KERNEL
 extern pmap_t	kernel_pmap_store;
 #define kernel_pmap (&kernel_pmap_store)
-//#endif
+#endif
 
 /*
  * Macros for speed
@@ -168,7 +168,7 @@ typedef struct pv_entry {
 #define	PV_CI			0x01		/* all entries must be cache inhibited */
 #define PV_PTPAGE		0x02		/* entry maps a page table page */
 
-//#ifdef	KERNEL
+#ifdef	KERNEL
 
 pv_entry_t							pv_table;	/* array of entries, one per page */
 
@@ -179,8 +179,6 @@ pv_entry_t							pv_table;	/* array of entries, one per page */
 #define	pmap_wired_count(pmap)		((pmap)->pm_stats.wired_count)
 
 extern int pae_mode;
-extern int i386_pmap_VM_NFREEORDER;
-extern int i386_pmap_VM_LEVEL_0_ORDER;
 extern int i386_pmap_PDRSHIFT;
-//#endif	KERNEL
+#endif	KERNEL
 #endif	/* _PMAP_MACHINE_ */

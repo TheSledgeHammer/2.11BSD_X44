@@ -142,7 +142,7 @@ vfs_busy(mp, flags, interlkp, p)
 	lkflags = LK_SHARED;
 	if (interlkp)
 		lkflags |= LK_INTERLOCK;
-	if (lockmgr(&mp->mnt_lock, lkflags, interlkp, p))
+	if (lockmgr(&mp->mnt_lock, lkflags, interlkp, p->p_pid))
 		panic("vfs_busy: unexpected lock failure");
 	return (0);
 }
@@ -156,7 +156,7 @@ vfs_unbusy(mp, p)
 	struct proc *p;
 {
 
-	lockmgr(&mp->mnt_lock, LK_RELEASE, NULL, p);
+	lockmgr(&mp->mnt_lock, LK_RELEASE, NULL, p->p_pid);
 }
 
 /*
@@ -780,7 +780,7 @@ vop_nolock(ap)
 	}
 	if (flags & LK_INTERLOCK)
 		vnflags |= LK_INTERLOCK;
-	return(lockmgr(vp->v_vnlock, vnflags, &vp->v_interlock, ap->a_p));
+	return(lockmgr(vp->v_vnlock, vnflags, &vp->v_interlock, ap->a_p->p_pid));
 #else /* for now */
 	/*
 	 * Since we are not using the lock manager, we must clear
@@ -807,7 +807,7 @@ vop_nounlock(ap)
 
 	if (vp->v_vnlock == NULL)
 		return (0);
-	return (lockmgr(vp->v_vnlock, LK_RELEASE, NULL, ap->a_p));
+	return (lockmgr(vp->v_vnlock, LK_RELEASE, NULL, ap->a_p->p_pid));
 }
 
 /*

@@ -61,7 +61,9 @@ rwlock_init(rwl, prio, wmesg, timo, flags)
 	rwl->rwl_timo = timo;
 	rwl->rwl_wmesg = wmesg;
 
-	rwlock_lockholder_init(&rwl);
+	/* lock holder */
+	memset(rwl->rwl_lockholder, 0, sizeof(struct lock_holder));
+	LOCKHOLDER_PID(rwl->rwl_lockholder) = RW_NOTHREAD;
 }
 
 int
@@ -85,15 +87,14 @@ rwlockmgr(rwl, flags, interlkp, pid)
 	unsigned int 		flags;
 	struct lock_object *interlkp;
 	pid_t 				pid;
-
 {
-	register struct lock_holder *holder = rwl->rwl_lockholder;
 	int error;
 	int extflags;
 	error = 0;
 
 	if (!pid) {
 		pid = RW_THREAD;
+		LOCKHOLDER_PID(rwl->rwl_lockholder) = RW_THREAD;
 	}
 	rwlock_lock(&rwl);
 	if (flags & RW_INTERLOCK) {
@@ -103,7 +104,7 @@ rwlockmgr(rwl, flags, interlkp, pid)
 
 	switch (flags & RW_TYPE_MASK) {
 	case RW_WRITER:
-		if (LOCKHOLDER_PID(holder) != pid) {
+		if (LOCKHOLDER_PID(rwl->rwl_lockholder) != pid) {
 			if ((extflags & RW_NOWAIT)
 					&& (rwl->rwl_flags & (RW_HAVE_READ | RW_WANT_READ | RW_WANT_DOWNGRADE))) {
 				error = EBUSY;
@@ -118,18 +119,18 @@ rwlockmgr(rwl, flags, interlkp, pid)
 		rwl->rwl_writercount++;
 
 	case RW_DOWNGRADE:
-		if (LOCKHOLDER_PID(holder) != pid || rwl->rwl_readercount == 0)
+		if (LOCKHOLDER_PID(rwl->rwl_lockholder) != pid || rwl->rwl_readercount == 0)
 			panic("rwlockmgr: not holding reader lock");
 		rwl->rwl_writercount += rwl->rwl_readercount;
 		rwl->rwl_readercount = 0;
 		rwl->rwl_flags &= ~RW_HAVE_READ;
-		LOCKHOLDER_PID(holder) = RW_NOTHREAD;
+		LOCKHOLDER_PID(rwl->rwl_lockholder) = RW_NOTHREAD;
 		if (rwl->rwl_waitcount)
 			wakeup((void *)rwl);
 		break;
 
 	case RW_READER:
-		if (LOCKHOLDER_PID(holder) != pid) {
+		if (LOCKHOLDER_PID(rwl->rwl_lockholder) != pid) {
 			if ((extflags & RW_WAIT) && (rwl->rwl_flags & (RW_HAVE_WRITE | RW_WANT_WRITE | RW_WANT_UPGRADE))) {
 				error = EBUSY;
 				break;
@@ -143,12 +144,12 @@ rwlockmgr(rwl, flags, interlkp, pid)
 		rwl->rwl_readercount++;
 
 	case RW_UPGRADE:
-		if (LOCKHOLDER_PID(holder) != pid || rwl->rwl_writercount < 1)
+		if (LOCKHOLDER_PID(rwl->rwl_lockholder) != pid || rwl->rwl_writercount < 1)
 			panic("rwlockmgr: not holding writer lock");
 		rwl->rwl_readercount += rwl->rwl_writercount;
 		rwl->rwl_writercount = 1;
 		rwl->rwl_flags &= ~RW_HAVE_WRITE;
-		LOCKHOLDER_PID(holder) = RW_NOTHREAD;
+		LOCKHOLDER_PID(rwl->rwl_lockholder) = RW_NOTHREAD;
 		if (rwl->rwl_waitcount)
 			wakeup((void *)rwl);
 		break;
@@ -284,16 +285,4 @@ rwlock_unlock(rwl)
     __volatile rwlock_t rwl;
 {
 	lock_object_release(&rwl->rwl_lnterlock);
-}
-
-void
-rwlock_lockholder_init(rwl)
-	struct rwlock *rwl;
-{
-	bzero(rwl->rwl_lockholder, sizeof(struct lock_holder));
-	rwl->rwl_lockholder->lh_pid = RW_NOTHREAD;
-
-	set_proc_lockholder(rwl->rwl_lockholder, NULL);
-    //set_kthread_lockholder(rwl->rwl_lockholder, NULL);
-	//set_uthread_lockholder(rwl->rwl_lockholder, NULL);
 }

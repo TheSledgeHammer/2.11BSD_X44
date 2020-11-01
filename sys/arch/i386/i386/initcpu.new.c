@@ -40,7 +40,7 @@
 #include <machine/cpufunc.h>
 #include <machine/specialreg.h>
 
-#include <cpuid.h>
+//#include <cpuid.h>
 
 #ifdef I486_CPU
 static void init_5x86(void);

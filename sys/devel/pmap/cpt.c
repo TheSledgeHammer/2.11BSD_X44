@@ -69,20 +69,19 @@ cpte_cmp(cpte1, cpte2)
 }
 
 /* Virtual Page Block Number */
-unsigned int
+unsigned long
 VPBN(entry)
 	u_long entry;
 {
 	u_long hash1 = (prospector32(entry) % NCPT);
 	u_long hash2 = (lowbias32(entry) % NCPT);
 
-    if(hash1 != hash2) {
-        return (hash1);
-    } else if(hash1 == hash2) {
-        return ((hash1 + hash2) % NCPT);
-    } else {
-        return (hash2);
-    }
+	return (hash1^hash2);
+}
+
+allocate_pte()
+{
+
 }
 
 RB_PROTOTYPE(cpt_rbtree, cpt, cpt_entry, cpt_cmp);
@@ -95,15 +94,14 @@ RB_GENERATE(cpte_rbtree, cpte, cpte_entry, cpte_cmp);
  */
 /* Add to the Clustered Page Table */
 void
-cpt_add(cpt, cpte, vpbn)
-    struct cpt *cpt;
+cpt_add(cpte, vpbn)
     struct cpte *cpte;
     u_long vpbn;
 {
-    cpt = &cpt_base[VPBN(vpbn)];
+    struct cpt *cpt = &cpt_base[VPBN(vpbn)];
+    cpt->cpt_hindex = VPBN(vpbn);
     cpt->cpt_pa_addr = vpbn;
     cpt->cpt_va_addr = vpbn;
-    cpt->cpt_hindex = VPBN(vpbn);
     cpt->cpt_cpte = cpte;
     RB_INSERT(cpt_rbtree, &cpt_root, cpt);
 }
@@ -130,7 +128,7 @@ cpt_traversal(cpt, addr)
 	u_long addr;
 {
     struct cpt *result;
-    for(int i = 0; i < NCPT; i++) {
+    for(int i = 0; i < NKPT; i++) {
         result = cpt_lookup(cpt, addr);
         if(result->cpt_pa_addr == i) {
             return (result);
@@ -156,36 +154,6 @@ cpt_lookup_cpte(cpt, vpbn)
 	u_long vpbn;
 {
     return (cpt_lookup(cpt, vpbn)->cpt_cpte);
-}
-
-/* Retrieve a PDE from a CPT */
-struct pde *
-cpt_to_pde(cpt, vpbn)
-	struct cpt *cpt;
-	u_long vpbn;
-{
-	struct pde *result;
-	if (cpt_lookup(cpt, vpbn) != NULL) {
-		result = cpt_lookup(cpt, vpbn)->cpt_pde;
-		return (result);
-	}
-	return (NULL);
-}
-
-/* Retrieve a CPT from PDE */
-struct cpt *
-pde_to_cpt(pde, vpbn)
-	struct pde *pde;
-	u_long vpbn;
-{
-	struct cpt *result;
-	if (pde != NULL) {
-		if (&cpt_base[VPBN(vpbn)].cpt_pde == pde) {
-			result =  &cpt_base[VPBN(vpbn)];
-			return (result);
-		}
-	}
-	return (NULL);
 }
 
 /* (WIP) Clustered Page Table: Superpage Support */
@@ -222,15 +190,13 @@ cpt_add_partial_subblock(cpt, cpte, vpbn, pad)
  */
 /* Add Clustered Page Table Entries */
 void
-cpte_add(cpte, pte, boff)
+cpte_add(cpte, boff)
     struct cpte *cpte;
-    struct pte *pte;
     int boff;
 {
     if(boff <= NCPTE) {
         cpte = &cpte_base[boff];
         cpte->cpte_boff = boff;
-        cpte->cpte_pte = pte;
         RB_INSERT(cpte_rbtree, &cpte_root, cpte);
     } else {
         printf("%s\n", "This Clustered Page Table Entry is Full");
@@ -263,6 +229,7 @@ cpte_remove(cpte, boff)
 }
 
 /* Retrieve a PTE from a CPTE */
+/*
 struct pte *
 cpte_to_pte(cpte, boff)
     struct cpte *cpte;
@@ -275,8 +242,9 @@ cpte_to_pte(cpte, boff)
     }
     return (NULL);
 }
-
+*/
 /* Retrieve a CPTE from a PTE */
+/*
 struct cpte *
 pte_to_cpte(pte, boff)
     struct pte *pte;
@@ -291,3 +259,38 @@ pte_to_cpte(pte, boff)
     }
     return (NULL);
 }
+*/
+
+/* Retrieve a PDE from a CPT */
+/*
+struct pde *
+cpt_to_pde(cpt, vpbn)
+	struct cpt *cpt;
+	u_long vpbn;
+{
+	struct pde *result;
+	if (cpt_lookup(cpt, vpbn) != NULL) {
+		result = cpt_lookup(cpt, vpbn)->cpt_pde;
+		return (result);
+	}
+	return (NULL);
+}
+*/
+
+/* Retrieve a CPT from PDE */
+/*
+struct cpt *
+pde_to_cpt(pde, vpbn)
+	struct pde *pde;
+	u_long vpbn;
+{
+	struct cpt *result;
+	if (pde != NULL) {
+		if (&cpt_base[VPBN(vpbn)].cpt_pde == pde) {
+			result =  &cpt_base[VPBN(vpbn)];
+			return (result);
+		}
+	}
+	return (NULL);
+}
+*/

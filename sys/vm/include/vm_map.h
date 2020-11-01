@@ -175,7 +175,7 @@ typedef struct {
 }
 #ifdef DIAGNOSTIC
 #define	vm_map_lock(map) { 										\
-	if (lockmgr(&(map)->lock, LK_EXCLUSIVE, (void *)0, curproc) != 0) { \
+	if (lockmgr(&(map)->lock, LK_EXCLUSIVE, (void *)0, curproc->p_pid) != 0) { \
 		panic("vm_map_lock: failed to get lock"); 				\
 	} 															\
 	(map)->timestamp++; 										\

@@ -205,8 +205,7 @@ mount(p, uap, retval)
 	/*
 	 * Allocate and initialize the filesystem.
 	 */
-	mp = (struct mount *)malloc((u_long)sizeof(struct mount),
-		M_MOUNT, M_WAITOK);
+	mp = (struct mount *)malloc((u_long)sizeof(struct mount), M_MOUNT, M_WAITOK);
 	bzero((char *)mp, (u_long)sizeof(struct mount));
 	lockinit(&mp->mnt_lock, PVFS, "vfslock", 0, 0);
 	(void)vfs_busy(mp, LK_NOWAIT, 0, p);
@@ -378,7 +377,7 @@ dounmount(mp, flags, p)
 
 	simple_lock(&mountlist_slock);
 	mp->mnt_flag |= MNT_UNMOUNT;
-	lockmgr(&mp->mnt_lock, LK_DRAIN | LK_INTERLOCK, &mountlist_slock, p);
+	lockmgr(&mp->mnt_lock, LK_DRAIN | LK_INTERLOCK, &mountlist_slock, p->p_pid);
 	mp->mnt_flag &=~ MNT_ASYNC;
 	vnode_pager_umount(mp);	/* release cached vnodes */
 	cache_purgevfs(mp);	/* remove cache entries for this file sys */
@@ -390,7 +389,7 @@ dounmount(mp, flags, p)
 	if (error) {
 		mp->mnt_flag &= ~MNT_UNMOUNT;
 		lockmgr(&mp->mnt_lock, LK_RELEASE | LK_INTERLOCK | LK_REENABLE,
-		    &mountlist_slock, p);
+		    &mountlist_slock, p->p_pid);
 		return (error);
 	}
 	CIRCLEQ_REMOVE(&mountlist, mp, mnt_list);
@@ -401,7 +400,7 @@ dounmount(mp, flags, p)
 	mp->mnt_vfc->vfc_refcount--;
 	if (mp->mnt_vnodelist.lh_first != NULL)
 		panic("unmount: dangling vnode");
-	lockmgr(&mp->mnt_lock, LK_RELEASE | LK_INTERLOCK, &mountlist_slock, p);
+	lockmgr(&mp->mnt_lock, LK_RELEASE | LK_INTERLOCK, &mountlist_slock, p->p_pid);
 	if (mp->mnt_flag & MNT_MWAIT)
 		wakeup((caddr_t)mp);
 	free((caddr_t)mp, M_MOUNT);

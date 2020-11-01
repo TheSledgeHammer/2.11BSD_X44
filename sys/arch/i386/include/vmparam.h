@@ -89,27 +89,6 @@
 #define	USRPTSIZE 				(2*NPTEPG)
 
 /*
- * The largest allocation size is 2MB under PAE and 4MB otherwise.
- */
-#define	VM_NFREEORDER_PAE		10
-#define	VM_NFREEORDER_NOPAE		11
-#define	VM_NFREEORDER_MAX		VM_NFREEORDER_NOPAE
-#define	VM_NFREEORDER			i386_pmap_VM_NFREEORDER
-
-/*
- * Level 0 reservations consist of 512 pages when PAE pagetables are
- * used, and 1024 pages otherwise.
- */
-#ifndef	VM_LEVEL_0_ORDER
-#define	VM_LEVEL_0_ORDER_PAE	9
-#define	VM_LEVEL_0_ORDER_NOPAE	10
-#define	VM_LEVEL_0_ORDER_MAX	VM_LEVEL_0_ORDER_NOPAE
-#define	VM_LEVEL_0_ORDER		i386_pmap_VM_LEVEL_0_ORDER
-#else
-#define	VM_LEVEL_0_ORDER_MAX	VM_LEVEL_0_ORDER
-#endif
-
-/*
  * Size of User Raw I/O map
  */
 #define	USRIOSIZE 	300

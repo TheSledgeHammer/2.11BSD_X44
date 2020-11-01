@@ -21,10 +21,6 @@ A General todo list. Don't hesitate to add to this list. :)
 ## arch:
 - i386/x86: (Merged under i386)
 	- conf
-	- vm86: implmented but missing tidbits in:
-		- pmap.c
-	- pae: implemented but missing tidbits in:
-		- machdep.c, locore.s & pmap.c
 	- devices: 
 		- see below: dev
 

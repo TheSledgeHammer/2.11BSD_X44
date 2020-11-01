@@ -46,21 +46,21 @@
 
 struct cpt {
     RB_ENTRY(cpt)                 	cpt_entry;
-    u_int                  			cpt_hindex;		/* VPBN Hash Result */
+    u_long							cpt_hindex;
     u_long                   		cpt_pa_addr; 	/* Physical Address */
     u_long                   		cpt_va_addr; 	/* Virtual Address */
     u_long                 			cpt_pad;      	/* Partial-Subblock & Superpage Mapping */
     u_long 							cpt_sz;       	/* Superpage size: power of 2 */
     struct cpte                   	*cpt_cpte;    	/* pointer to cpte */
-    struct pde						*cpt_pde;		/* pointer to pde (For Compatability) */
 };
+struct cpte_rbtree;
 RB_HEAD(cpt_rbtree, cpt) cpt_root;
 
 struct cpte {
     RB_ENTRY(cpte)    				cpte_entry;
     int               				cpte_boff;        /* Block Offset */
-    struct pte        				*cpte_pte;        /* pointer to pte */
 };
+struct cpte_rbtree;
 RB_HEAD(cpte_rbtree, cpte) cpte_root;
 
 extern struct cpt cpt_base[];
@@ -68,14 +68,17 @@ extern struct cpte cpte_base[];
 
 #define NKPT		30					/* Number of Kernel Page Table Pages (No PAE) Temp */
 
-#define NCPT		(NKPT * 2)			/* Number of Buckets in Clustered Page Table (+ Overhead) */
+#define NCPT		NKPT				/* Number of Buckets in Clustered Page Table (+ Overhead) */
 #define NCPTE       16              	/* Number of PTE's per Clustered Page Table Entry */
 
 typedef struct cpt 	cpt_entry_t;		/* clustered page table */
 typedef struct cpte cpte_entry_t;		/* clustered page table entry */
 
-/* Virtual Physical Block Number */
+/* Virtual Page Block Number */
 unsigned int 		VPBN(vm_offset_t entry);
+
+extern cpt_entry_t 	*KCPTmap;			/* Kernel Clustered Page Table Mapping */
+extern cpte_entry_t *KCPTEmap;			/* Kernel Clustered Page Table Entry Mapping */
 
 /* Clustered Page Table */
 extern void         cpt_add(struct cpt *cpt, struct cpte *cpte, u_long vpbn);

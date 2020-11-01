@@ -95,6 +95,7 @@ simple_lock_data_t	vm_page_queue_free_lock;
 boolean_t 			vm_page_startup_initialized;
 
 vm_page_t			vm_page_array;
+long				vm_page_array_size;
 long				first_page;
 long				last_page;
 vm_offset_t			first_phys_addr;
@@ -224,6 +225,7 @@ vm_page_startup(start, end)
 	 */
 
 	cnt.v_free_count = npages = (*end - *start + sizeof(struct vm_page)) / (PAGE_SIZE + sizeof(struct vm_page));
+	vm_page_array_size = npages;
 
 	/*
 	 *	Record the extent of physical memory that the

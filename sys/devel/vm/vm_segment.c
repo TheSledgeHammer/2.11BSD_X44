@@ -79,8 +79,8 @@ vm_segment_startup(start, end)
 	int							i;
 	vm_offset_t					la;
 
-	simple_lock_init(&vm_segment_list_lock);
-	simple_lock_init(&vm_segment_list_activity_lock);
+	simple_lock_init(&vm_segment_list_lock, "vm_segment_list_lock");
+	simple_lock_init(&vm_segment_list_activity_lock, "vm_segment_list_activity_lock");
 
 	CIRCLEQ_INIT(&vm_segment_list);
 	CIRCLEQ_INIT(&vm_segment_list_active);
@@ -102,7 +102,7 @@ vm_segment_startup(start, end)
 		bucket++;
 	}
 
-	simple_lock_init(&segment_bucket_lock);
+	simple_lock_init(&segment_bucket_lock, "vm_segment_bucket_lock");
 
 	/*
 	 *	Truncate the remainder of memory to our segment size.

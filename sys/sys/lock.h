@@ -50,7 +50,7 @@
 
 struct lock {
 	struct  lock_object		lk_lnterlock;		/* lock object */
-	struct 	lock_holder		*lk_lockholder;		/* lock holder */
+	struct  lock_holder		lk_lockholder;		/* lock holder */
 
     int						lk_sharecount;		/* # of accepted shared locks */
     int						lk_waitcount;		/* # of processes sleeping for lock */
@@ -192,9 +192,9 @@ struct lock_holder {
 };
 
 /* lock holder macros */
-#define LOCKHOLDER_PID(h)		((h)->lh_pid)
-#define LOCKHOLDER_PGRP(h)		((h)->lh_pgrp)
-#define PROC_LOCKHOLDER(h)		((h)->lh_proc)
+#define LOCKHOLDER_PID(h)	((h)->lh_pid)
+#define LOCKHOLDER_PGRP(h)	((h)->lh_pgrp)
+#define PROC_LOCKHOLDER(h)	((h)->lh_proc)
 //#define KTHREAD_LOCKHOLDER(h)	((h)->lh_kthread)
 //#define UTHREAD_LOCKHOLDER(h)	((h)->lh_uthread)
 

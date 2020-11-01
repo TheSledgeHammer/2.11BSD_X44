@@ -1,90 +1,214 @@
-/*
- * pmap3.c
+/*-
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
- *  Created on: 22 Oct 2020
- *      Author: marti
+ * This code is derived from software contributed to Berkeley by
+ * the Systems Programming Group of the University of Utah Computer
+ * Science Department and William Jolitz of UUNET Technologies Inc.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)pmap.c	8.1 (Berkeley) 6/11/93
  */
 
+/*
+ * Derived from hp300 version by Mike Hibler, this version by William
+ * Jolitz uses a recursive map [a pde points to the page directory] to
+ * map the page tables using the pagetables themselves. This is done to
+ * reduce the impact on kernel virtual memory for lots of sparse address
+ * space, and to reduce the cost of memory to each process.
+ *
+ *	Derived from: hp300/@(#)pmap.c	7.1 (Berkeley) 12/5/90
+ */
+
+/*
+ *	Reno i386 version, from Mike Hibler's hp300 version.
+ */
+
+/*
+ *	Manages physical address maps.
+ *
+ *	In addition to hardware address maps, this
+ *	module is called upon to provide software-use-only
+ *	maps which may or may not be stored in the same
+ *	form as hardware maps.  These pseudo-maps are
+ *	used to store intermediate results from copy
+ *	operations to and from address spaces.
+ *
+ *	Since the information managed by this module is
+ *	also stored by the logical address mapping module,
+ *	this module may throw away valid virtual-to-physical
+ *	mappings at almost any time.  However, invalidations
+ *	of virtual-to-physical mappings must be done as
+ *	requested.
+ *
+ *	In order to cope with hardware architectures which
+ *	make virtual-to-physical map invalidates expensive,
+ *	this module may delay invalidate or reduced protection
+ *	operations until such time as they are actually
+ *	necessary.  This module is given full information as
+ *	to which processors are currently using which maps,
+ *	and to when physical maps must be made correct.
+ */
+
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/user.h>
 #include <sys/malloc.h>
 #include <sys/msgbuf.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_param.h>
 
-#include <arch/i386/include/param.h>
-#include <arch/i386/include/specialreg.h>
+#include <machine/param.h>
+#include <machine/specialreg.h>
+#include <machine/vmparam.h>
+#include <machine/pte.new.h>
+#include <machine/pmap.new.h>
+#include <machine/pmap_base.h>
+#include <machine/pmap_nopae.h>
+#include <machine/pmap_pae.h>
 
-#include <arch/i386/include/pte.h>
-#include <arch/i386/include/pmap.h>
-#include <arch/i386/include/pmap_base.h>
-#include <arch/i386/include/pmap_nopae.h>
-#include <arch/i386/include/pmap_pae.h>
+/*
+ * Allocate various and sundry SYSMAPs used in the days of old VM
+ * and not yet converted.  XXX.
+ */
+#ifdef DEBUG
+struct {
+	int kernel;	/* entering kernel mapping */
+	int user;	/* entering user mapping */
+	int ptpneeded;	/* needed to allocate a PT page */
+	int pwchange;	/* no mapping change, just wiring or protection */
+	int wchange;	/* no mapping change, just wiring */
+	int mchange;	/* was mapped but mapping to different page */
+	int managed;	/* a managed page */
+	int firstpv;	/* first mapping for this PA */
+	int secondpv;	/* second mapping for this PA */
+	int ci;		/* cache inhibited */
+	int unmanaged;	/* not a managed page */
+	int flushes;	/* cache flushes */
+} enter_stats;
+struct {
+	int calls;
+	int removes;
+	int pvfirst;
+	int pvsearch;
+	int ptinvalid;
+	int uflushes;
+	int sflushes;
+} remove_stats;
+
+int debugmap = 0;
+int pmapdebug = 0;
+#define PDB_FOLLOW	0x0001
+#define PDB_INIT	0x0002
+#define PDB_ENTER	0x0004
+#define PDB_REMOVE	0x0008
+#define PDB_CREATE	0x0010
+#define PDB_PTPAGE	0x0020
+#define PDB_CACHE	0x0040
+#define PDB_BITS	0x0080
+#define PDB_COLLECT	0x0100
+#define PDB_PROTECT	0x0200
+#define PDB_PDRTAB	0x0400
+#define PDB_PARANOIA	0x2000
+#define PDB_WIRING	0x4000
+#define PDB_PVDUMP	0x8000
+
+int pmapvacflush = 0;
+#define	PVF_ENTER	0x01
+#define	PVF_REMOVE	0x02
+#define	PVF_PROTECT	0x04
+#define	PVF_TOTAL	0x80
+#endif
+
+#define SYSTEM 		0xFE000000					/* virtual address of system start */
+#define SYSPDROFF 	0x3F8						/* Page dir index of System Base (i.e. KPTDI_FIRST) */
 
 /*
  * PTmap is recursive pagemap at top of virtual address space.
  * Within PTmap, the page directory can be found (third indirection).
  */
-#define PDRPDROFF   	0x3F7	        /* Page dir index of Page dir */
-pt_entry_t PTmap = 		0xFDC00000;
-pd_entry_t PTD = 		0xFDFF7000;
-pt_entry_t Sysmap = 	0xFDFF8000;
-pd_entry_t PTDpde = 	(0xFDFF7000 + 4 * PDRPDROFF);
-
-#define PTmap 			((pt_entry_t *)0xFDC00000);
+#define PDRPDROFF   0x3F7						/* Page dir index of Page dir */
+#define PTmap       ((pt_entry_t *)0xFDC00000)
+#define PTD         ((pd_entry_t *)0xFDFF7000)
+#define PTDpde      ((pt_entry_t *)0xFDFF7000+4*PDRPDROFF)
 
 /*
  * APTmap, APTD is the alternate recursive pagemap.
  * It's used when modifying another process's page tables.
  */
-#define APDRPDROFF  	0x3FE           /* Page dir index of Page dir */
-pt_entry_t APTmap = 	0xFF800000;
-pd_entry_t APTD = 		0xFFBFE000;
-pd_entry_t APTDpde = 	(0xFDFF7000 + 4 * APDRPDROFF);
-
-#define PDRPDROFF   0x3F7
-#define APDRPDROFF  0x3FE
-
-#define PTmap       ((pt_entry_t *)0xFDC00000)
-#define PTD         ((pd_entry_t *)0xFDFF7000)
-#define PTDpde      ((pt_entry_t *)0xFDFF7000+4*PDRPDROFF)
+#define APDRPDROFF  0x3FE						/* Page dir index of Page dir */
 #define APTmap      ((pt_entry_t *)0xFF800000)
 #define APTD        ((pd_entry_t *)0xFFBFE000)
 #define APTDpde     ((pt_entry_t *)0xFDFF7000+4*APDRPDROFF)
 
 /*
- * Access to each processes kernel stack is via a region of
- * per-process address space (at the beginning), immediatly above
- * the user process stack.
+ * Get PDEs and PTEs for user/kernel address space
  */
-#define kstack      USRSTACK
-#define PPDROFF     0x3F6
-#define PPTEOFF     0x400 - UPAGES /* 0x3FE */
+#define	pmap_pde(m, v)		(&((m)->pm_pdir[((vm_offset_t)(v) >> PDRSHIFT)]))
+//#define pmap_pte(m, v)	(&((m)->pm_ptab[(vm_offset_t)(v) >> PGSHIFT]))
 
-#define IDXSHIFT    10
-#define SYSTEM      0xFE000000      /* virtual address of system start */
-#define SYSPDROFF   0x3F8           /* Page dir index of System Base */
+#define pmap_pte_pa(pte)	((*(int *)pte & PG_FRAME) != 0)
 
+#define pmap_pte_ci(pte)	((*(int *)pte & PG_CI) != 0)
 
-#define	pmap_pde(m, v)				(&((m)->pm_pdir[((vm_offset_t)(v) >> PDRSHIFT)]))
-//#define pmap_pte(m, v)				(&((m)->pm_ptab[(vm_offset_t)(v) >> PGSHIFT]))
-
-#define pmap_pte_pa(pte)			((*(int *)pte & PG_FRAME) != 0)
-
-#define pmap_pde_v(pte)				((*(int *)pte & PG_V) != 0)
-#define pmap_pte_w(pte)				((*(int *)pte & PG_W) != 0)
-#define pmap_pte_m(pte)				((*(int *)pte & PG_M) != 0)
-#define pmap_pte_u(pte)				((*(int *)pte & PG_A) != 0)
-#define pmap_pte_v(pte)				((*(int *)pte & PG_V) != 0)
+#define pmap_pde_v(pte)		((*(int *)pte & PG_V) != 0)
+#define pmap_pte_w(pte)		((*(int *)pte & PG_W) != 0)
+#define pmap_pte_m(pte)		((*(int *)pte & PG_M) != 0)
+#define pmap_pte_u(pte)		((*(int *)pte & PG_A) != 0)
+#define pmap_pte_v(pte)		((*(int *)pte & PG_V) != 0)
 
 #define pmap_pte_set_w(pte, v) 		\
 	if (v) *(int *)(pte) |= PG_W; else *(int *)(pte) &= ~PG_W
 #define pmap_pte_set_prot(pte, v) 	\
 	if (v) *(int *)(pte) |= PG_PROT; else *(int *)(pte) &= ~PG_PROT
 
-static int pgeflag = 0;		/* PG_G or-in */
-static int pseflag = 0;		/* PG_PS or-in */
+/*
+ * Given a map and a machine independent protection code,
+ * convert to a vax protection code.
+ */
+#define pte_prot(m, p)	(protection_codes[p])
+int	protection_codes[8];
+
+struct pmap	kernel_pmap_store;
+
+static int pgeflag = 0;			/* PG_G or-in */
+static int pseflag = 0;			/* PG_PS or-in */
 
 static int nkpt = NKPT;
+
+#ifdef PMAP_PAE_COMP
+pt_entry_t pg_nx;
+#else
+#define	pg_nx	0
+#endif
 
 extern int pat_works;
 extern int pg_ps_enabled;
@@ -95,18 +219,22 @@ extern int elf32_nxstack;
 static int pat_index[PAT_INDEX_SIZE];	/* cache mode to PAT index conversion */
 
 extern char 		_end[];
-extern u_long 		physfree;		/* phys addr of next free page */
-extern u_long 		vm86phystk;		/* PA of vm86/bios stack */
-extern u_long 		vm86paddr;		/* address of vm86 region */
-extern int 			vm86pa;			/* phys addr of vm86 region */
+extern u_long 		physfree;			/* phys addr of next free page */
+extern u_long 		vm86phystk;			/* PA of vm86/bios stack */
+extern u_long 		vm86paddr;			/* address of vm86 region */
+extern int 			vm86pa;				/* phys addr of vm86 region */
 
-vm_offset_t 		avail_start;	/* PA of first available physical page */
-vm_offset_t			avail_end;		/* PA of last available physical page */
-vm_size_t			mem_size;		/* memory size in bytes */
-vm_offset_t			virtual_avail;  /* VA of first avail page (after kernel bss)*/
-vm_offset_t			virtual_end;	/* VA of last avail page (end of kernel AS) */
-vm_offset_t			vm_first_phys;	/* PA of first managed page */
-vm_offset_t			vm_last_phys;	/* PA just past last managed page */
+vm_offset_t 		avail_start;		/* PA of first available physical page */
+vm_offset_t			avail_end;			/* PA of last available physical page */
+vm_size_t			mem_size;			/* memory size in bytes */
+vm_offset_t			virtual_avail;  	/* VA of first avail page (after kernel bss)*/
+vm_offset_t			virtual_end;		/* VA of last avail page (end of kernel AS) */
+vm_offset_t			vm_first_phys;		/* PA of first managed page */
+vm_offset_t			vm_last_phys;		/* PA just past last managed page */
+
+int					i386pagesperpage;	/* PAGE_SIZE / I386_PAGE_SIZE */
+boolean_t			pmap_initialized = FALSE;	/* Has pmap_init completed? */
+char				*pmap_attributes;	/* reference and modify bits */
 
 #ifdef PMAP_PAE_COMP
 pd_entry_t 			*IdlePTD_pae;	/* phys addr of kernel PTD */
@@ -123,6 +251,10 @@ pt_entry_t 			*KPTmap_nopae;
 extern u_long 		KPTphys;		/* phys addr of kernel page tables */
 extern u_long 		tramp_idleptd;
 
+boolean_t			pmap_testbit();
+void				pmap_clear_modify();
+void 				pmap_activate (pmap_t, struct pcb *);
+
 /*
  * All those kernel PT submaps that BSD is so fond of
  */
@@ -132,8 +264,8 @@ caddr_t				CADDR1, CADDR2, CADDR3, vmmap;
 pt_entry_t			*msgbufmap;
 struct msgbuf		*msgbufp;
 
-static pt_entry_t *PMAP1 = NULL, *PMAP2, *PMAP3;
-static pt_entry_t *PADDR1 = NULL, *PADDR2, *PADDR3;
+static pt_entry_t 	*PMAP1 = NULL, *PMAP2, *PMAP3;
+static pt_entry_t 	*PADDR1 = NULL, *PADDR2, *PADDR3;
 
 static u_long
 allocpages(u_int cnt, u_long *physfree)
@@ -164,7 +296,8 @@ pmap_cold_mapident(pa, cnt)
 }
 
 static void
-pmap_remap_lower(bool enable)
+pmap_remap_lower(enable)
+	boolean_t enable;
 {
 	int i;
 
@@ -292,13 +425,9 @@ pmap_cold(void)
 
 	kernel_vm_end = /* 0 + */NKPT * NBPDR;
 #ifdef PMAP_PAE_COMP
-		i386_pmap_VM_NFREEORDER = VM_NFREEORDER_PAE;
-		i386_pmap_VM_LEVEL_0_ORDER = VM_LEVEL_0_ORDER_PAE;
-		i386_pmap_PDRSHIFT = PDRSHIFT_PAE;
+	i386_pmap_PDRSHIFT = PD_SHIFT_PAE;
 #else
-	i386_pmap_VM_NFREEORDER = VM_NFREEORDER_NOPAE;
-	i386_pmap_VM_LEVEL_0_ORDER = VM_LEVEL_0_ORDER_NOPAE;
-	i386_pmap_PDRSHIFT = PDRSHIFT_NOPAE;
+	i386_pmap_PDRSHIFT = PD_SHIFT_NOPAE;
 #endif
 }
 
@@ -325,7 +454,11 @@ pmap_bootstrap(firstaddr, loadaddr)
 	u_long res;
 	int i;
 
+	extern vm_offset_t 	maxmem, physmem;
+
 	res = atop(firstaddr - (vm_offset_t)KERNLOAD);
+
+	printf("ps %x pe %x ", firstaddr, maxmem << PGSHIFT);
 
 	avail_start = firstaddr;
 	avail_end = maxmem << PGSHIFT;
@@ -335,8 +468,11 @@ pmap_bootstrap(firstaddr, loadaddr)
 
 	mem_size = physmem << PGSHIFT;
 
+	//virtual_avail = atdevbase + 0x100000 - 0xa0000 + 10*NBPG;
+
 	virtual_avail = (vm_offset_t)firstaddr;
 	virtual_end = VM_MAX_KERNEL_ADDRESS;
+	i386pagesperpage = PAGE_SIZE / I386_PAGE_SIZE;
 
 	/*
 	 * Initialize protection array.
@@ -348,11 +484,20 @@ pmap_bootstrap(firstaddr, loadaddr)
 	 * Count bootstrap data as being resident in case any of this data is
 	 * later unmapped (using pmap_remove()) and freed.
 	 */
-	kernel_pmap->pm_pdir = IdlePTD;
+	if(kernel_pmap->pm_pdir != IdlePTD) {
+		kernel_pmap->pm_pdir = (SYSTEM + IdlePTD);
+	} else {
+		kernel_pmap->pm_pdir = IdlePTD;
+	}
+
 #ifdef PMAP_PAE_COMP
-	kernel_pmap->pm_pdpt = IdlePDPT;
+	if(kernel_pmap->pm_pdir != IdlePDPT) {
+		kernel_pmap->pm_pdir = (SYSTEM + IdlePDPT);
+	} else {
+		kernel_pmap->pm_pdir = IdlePDPT;
+	}
 #endif
-	simple_lock_init(&kernel_pmap->pm_lock);
+	simple_lock_init(&kernel_pmap->pm_lock, "kernel_pmap_lock");
 	kernel_pmap->pm_count = 1;
 	kernel_pmap->pm_stats.resident_count = res;
 
@@ -367,16 +512,6 @@ pmap_bootstrap(firstaddr, loadaddr)
 	SYSMAP(caddr_t, CMAP3, CADDR3, 1)
 	SYSMAP(caddr_t, mmap, vmmap, 1)
 	SYSMAP(struct msgbuf *, msgbufmap, msgbufp, 1)
-	//SYSMAP(struct msgbuf *, unused, msgbufp, atop(round_page(msgbufsize)))
-
-	/*
-	 * KPTmap is used by pmap_kextract().
-	 *
-	 * KPTmap is first initialized by pmap_cold().  However, that initial
-	 * KPTmap can only support NKPT page table pages.  Here, a larger
-	 * KPTmap is created that can support KVA_PAGES page table pages.
-	 */
-	SYSMAP(pt_entry_t*, KPTD, KPTmap, KVA_PAGES)
 
 	for (i = 0; i < NKPT; i++)
 		KPTD[i] = (KPTphys + ptoa(i)) | PG_RW | PG_V;
@@ -407,6 +542,7 @@ pmap_isvalidphys(addr)
 
 void *
 pmap_bootstrap_alloc(size)
+	u_long size;
 {
 	vm_offset_t val;
 	int i;
@@ -427,45 +563,8 @@ pmap_bootstrap_alloc(size)
 		avail_start += PAGE_SIZE;
 	}
 
-	blkclr ((caddr_t) val, size);
+	bzero ((caddr_t) val, size);
 	return ((void *) val);
-}
-
-void
-pmap_virtual_space(startp, endp)
-	vaddr_t *startp;
-	vaddr_t *endp;
-{
-	*startp = virtual_avail;
-	*endp = virtual_end;
-}
-
-/*
- * pmap_bootstrap_valloc: allocate a virtual address in the bootstrap area.
- * This function is to be used before any VM system has been set up.
- *
- * The va is taken from virtual_avail.
- */
-static vaddr_t
-pmap_bootstrap_valloc(size_t npages)
-{
-	vaddr_t va = virtual_avail;
-	virtual_avail += npages * PAGE_SIZE;
-	return (va);
-}
-
-/*
- * pmap_bootstrap_palloc: allocate a physical address in the bootstrap area.
- * This function is to be used before any VM system has been set up.
- *
- * The pa is taken from avail_start.
- */
-static caddr_t
-pmap_bootstrap_palloc(size_t npages)
-{
-	caddr_t pa = avail_start;
-	avail_start += npages * PAGE_SIZE;
-	return (pa);
 }
 
 /*
@@ -572,7 +671,7 @@ pmap_init_pat(void)
 	lcr4(cr4);
 }
 
-/* TODO: fix vm_page_array_size & KPTDI
+/*
  *	Initialize the pmap module.
  *	Called by vm_init, to initialize any structures that the pmap
  *	system needs to map virtual memory.
@@ -584,20 +683,23 @@ pmap_init(phys_start, phys_end)
 	vm_offset_t addr;
 	vm_page_t mpte;
 	vm_size_t npg, s;
-
 	int i;
-
-	for (i = 0; i < NKPT; i++) {
-		mpte = PHYS_TO_VM_PAGE(KPTphys + ptoa(i));
-		KASSERT(mpte >= vm_page_array && mpte < &vm_page_array[sizeof(vm_page_array)], ("pmap_init: page table page is out of range"));
-		mpte->offset = i + KPTDI;
-		mpte->phys_addr = KPTphys + ptoa(i);
-	}
 
 #ifdef DEBUG
 	if (pmapdebug & PDB_FOLLOW)
 		printf("pmap_init(%x, %x)\n", phys_start, phys_end);
 #endif
+
+	for (i = 0; i < NKPT; i++) {
+		mpte = PHYS_TO_VM_PAGE(KPTphys + ptoa(i));
+		KASSERT(mpte >= vm_page_array && mpte < &vm_page_array[vm_page_array_size], ("pmap_init: page table page is out of range")); /* XXX: fix me */
+		mpte->offset = i + KPTDI_FIRST; /* XXX: fix me */
+		mpte->phys_addr = KPTphys + ptoa(i);
+		/*
+		(void) vm_map_find(kernel_map, NULL, mpte->offset, mpte->phys_addr, mpte, FALSE);
+		vm_object_reference(kernel_object);
+		*/
+	}
 
 	/*
 	 * Allocate memory for random pmap data structures.  Includes the
@@ -646,7 +748,7 @@ pmap_map(virt, start, end, prot)
 		virt += PAGE_SIZE;
 		start += PAGE_SIZE;
 	}
-	return(virt);
+	return (virt);
 }
 
 /*
@@ -719,7 +821,7 @@ pmap_pinit(pmap)
 	*(int *)(pmap->pm_pdir+PTDPTDI) = (int)pmap_extract(kernel_pmap, (vm_offset_t)pmap->pm_pdir) | PG_V | PG_URKW;
 
 	pmap->pm_count = 1;
-	simple_lock_init(&pmap->pm_lock);
+	simple_lock_init(&pmap->pm_lock, "pmap_lock");
 }
 
 /*
@@ -856,8 +958,7 @@ pmap_remove(pmap, sva, eva)
 		 */
 #ifdef DEBUG
 		if (pmapdebug & PDB_REMOVE)
-			printf("remove: inv %x ptes at %x(%x) ",
-			       i386pagesperpage, pte, *(int *)pte);
+			printf("remove: inv %x ptes at %x(%x) ", i386pagesperpage, pte, *(int *)pte);
 #endif
 		bits = ix = 0;
 		do {
@@ -1384,7 +1485,7 @@ pmap_pte(pmap, va)
 				APTDpde = pmap->pm_pdir[PTDPTDI];
 				tlbflush();
 			}
-			return((pt_entry_t *) avtopte(va));
+			return ((pt_entry_t *) avtopte(va));
 		}
 	}
 	return(0);
@@ -1776,6 +1877,7 @@ pmap_testbit(pa, bit)
 	return (FALSE);
 }
 
+void
 pmap_changebit(pa, bit, setem)
 	register vm_offset_t pa;
 	int bit;
@@ -1789,8 +1891,7 @@ pmap_changebit(pa, bit, setem)
 
 #ifdef DEBUG
 	if (pmapdebug & PDB_BITS)
-		printf("pmap_changebit(%x, %x, %s)",
-		       pa, bit, setem ? "set" : "clear");
+		printf("pmap_changebit(%x, %x, %s)", pa, bit, setem ? "set" : "clear");
 #endif
 	if (pa < vm_first_phys || pa >= vm_last_phys)
 		return;
@@ -1859,6 +1960,7 @@ pmap_changebit(pa, bit, setem)
 }
 
 #ifdef DEBUG
+void
 pmap_pvdump(pa)
 	vm_offset_t pa;
 {
@@ -1866,13 +1968,15 @@ pmap_pvdump(pa)
 
 	printf("pa %x", pa);
 	for (pv = pa_to_pvh(pa); pv; pv = pv->pv_next) {
-		printf(" -> pmap %x, va %x, flags %x", pv->pv_pmap, pv->pv_va, pv->pv_flags);
+		printf(" -> pmap %x, va %x, flags %x", pv->pv_pmap, pv->pv_va,
+				pv->pv_flags);
 		pads(pv->pv_pmap);
 	}
 	printf(" ");
 }
 
 #ifdef notyet
+void
 pmap_check_wiring(str, va)
 	char *str;
 	vm_offset_t va;
@@ -1882,7 +1986,7 @@ pmap_check_wiring(str, va)
 
 	va = trunc_page(va);
 	if (!pmap_pde_v(pmap_pde(kernel_pmap, va)) ||
-	    !pmap_pte_v(pmap_pte(kernel_pmap, va)))
+	!pmap_pte_v(pmap_pte(kernel_pmap, va)))
 		return;
 
 	if (!vm_map_lookup_entry(pt_map, va, &entry)) {
@@ -1890,35 +1994,147 @@ pmap_check_wiring(str, va)
 		return;
 	}
 	count = 0;
-	for (pte = (int *)va; pte < (int *)(va+PAGE_SIZE); pte++)
+	for (pte = (int*) va; pte < (int*) (va + PAGE_SIZE); pte++)
 		if (*pte)
 			count++;
 	if (entry->wired_count != count)
-		pg("*%s*: %x: w%d/a%d\n",
-		       str, va, entry->wired_count, count);
+		pg("*%s*: %x: w%d/a%d\n", str, va, entry->wired_count, count);
 }
 #endif
 
 /* print address space of pmap*/
+void
 pads(pm)
-	pmap_t pm;
+pmap_t pm;
 {
 	unsigned va, i, j;
 	struct pte *ptep;
 
-	if(pm == kernel_pmap) return;
-	for (i = 0; i < 1024; i++)
-		if(pm->pm_pdir[i].pd_v)
-			for (j = 0; j < 1024 ; j++) {
-				va = (i<<22)+(j<<12);
+	if (pm == kernel_pmap)
+		return;
+	for (i = 0; i < 1024; i++) {
+		if (pm->pm_pdir[i].pd_v) {
+			for (j = 0; j < 1024; j++) {
+				va = (i << 22) + (j << 12);
 				if (pm == kernel_pmap && va < 0xfe000000)
-						continue;
+					continue;
 				if (pm != kernel_pmap && va > UPT_MAX_ADDRESS)
-						continue;
+					continue;
 				ptep = pmap_pte(pm, va);
-				if(pmap_pte_v(ptep))
-					printf("%x:%x ", va, *(int *)ptep);
-			} ;
-
+				if (pmap_pte_v(ptep))
+					printf("%x:%x ", va, *(int*) ptep);
+			};
+		}
+	}
 }
 #endif
+
+static u_int
+pmap_get_kcr3(void)
+{
+#ifdef PMAP_PAE_COMP
+	return ((u_int)IdlePDPT);
+#else
+	return ((u_int)IdlePTD);
+#endif
+}
+
+static u_int
+pmap_get_cr3(pmap)
+	pmap_t pmap;
+{
+#ifdef PMAP_PAE_COMP
+	return ((u_int)vtophys(pmap->pm_pdir));
+#else
+	return ((u_int)vtophys(pmap->pm_pdir));
+#endif
+}
+
+struct bios16_pmap_handle {
+	pt_entry_t	*pte;
+	pd_entry_t	*ptd;
+	pt_entry_t	orig_ptd;
+};
+
+static void *
+pmap_bios16_enter(void)
+{
+	struct bios16_pmap_handle *h;
+	extern int IdlePTD;
+
+	/*
+	 * no page table, so create one and install it.
+	 */
+	h = malloc(sizeof(struct bios16_pmap_handle), M_TEMP, M_WAITOK);
+	h->pte = (pt_entry_t *) malloc(PAGE_SIZE, M_TEMP, M_WAITOK);
+	h->ptd = IdlePTD;
+	*h->pte = vm86phystk | PG_RW | PG_V;
+	h->orig_ptd = *h->ptd;
+	*h->ptd = vtophys(h->pte) | PG_RW | PG_V;
+	//pmap_invalidate_all_int(kernel_pmap); /* XXX insurance for now */
+	return (h);
+}
+
+static void
+pmap_bios16_leave(void *arg)
+{
+	struct bios16_pmap_handle *h;
+
+	h = arg;
+	*h->ptd = h->orig_ptd; /* remove page table */
+	/*
+	 * XXX only needs to be invlpg(0) but that doesn't work on the 386
+	 */
+	//pmap_invalidate_all_int(kernel_pmap);
+	free(h->pte, M_TEMP); /* ... and free it */
+}
+
+/* PMap Arguments */
+struct pmap_args pmap_arg = {
+		&pmap_cold_map,
+		&pmap_cold_mapident,
+		&pmap_remap_lower,
+		&pmap_cold,
+		&pmap_set_nx,
+		&pmap_bootstrap,
+		&pmap_isvalidphys,
+		&pmap_bootstrap_alloc,
+		&pmap_init,
+		&pmap_map,
+		&pmap_create,
+		&pmap_pinit,
+		&pmap_destroy,
+		&pmap_release,
+		&pmap_reference,
+		&pmap_remove,
+		&pmap_remove_all,
+		&pmap_copy_on_write,
+		&pmap_protect,
+		&pmap_enter,
+		&pmap_page_protect,
+		&pmap_change_wiring,
+		&pmap_pte,
+		&pmap_extract,
+		&pmap_copy,
+		&pmap_update,
+		&pmap_collect,
+		&pmap_activate,
+		&pmap_zero_page,
+		&pmap_copy_page,
+		&pmap_pageable,
+		&pmap_clear_modify,
+		&pmap_clear_reference,
+		&pmap_is_referenced,
+		&pmap_is_modified,
+		&pmap_phys_address,
+		&i386_protection_init,
+		&pmap_testbit,
+		&pmap_changebit,
+		&pmap_pvdump,
+		&pmap_check_wiring,
+		&pads,
+		&pmap_get_kcr3,
+		&pmap_get_cr3,
+		&pmap_bios16_enter,
+		&pmap_bios16_leave,
+};

@@ -171,6 +171,10 @@ struct pglist	vm_page_queue_inactive;	/* inactive memory queue */
 
 extern
 vm_page_t		vm_page_array;			/* First resident page in table */
+
+extern
+long			vm_page_array_size;		/* number of vm_page_t's */
+
 extern
 long			first_page;				/* first physical page number */
 										/* ... represented in vm_page_array */

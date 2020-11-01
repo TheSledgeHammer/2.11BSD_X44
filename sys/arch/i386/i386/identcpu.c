@@ -102,6 +102,7 @@ u_int		cpu_power_eax;			/* 06H: Power management leaf, %eax */
 u_int		cpu_power_ebx;			/* 06H: Power management leaf, %ebx */
 u_int		cpu_power_ecx;			/* 06H: Power management leaf, %ecx */
 u_int		cpu_power_edx;			/* 06H: Power management leaf, %edx */
+
 char machine[] = MACHINE;
 
 static char cpu_model[128];
@@ -2336,7 +2337,7 @@ print_vmx_info(void)
 			"\017PAT" /* Load MSR_PAT */
 			"\020EFER" /* Load MSR_EFER */
 	);
-	if (proc & PROCBASED_SECONDARY_CONTROLS
+	if ((proc & PROCBASED_SECONDARY_CONTROLS)
 			&& (proc2 & (PROCBASED2_ENABLE_EPT | PROCBASED2_ENABLE_VPID))
 					!= 0) {
 		msr = rdmsr(MSR_VMX_EPT_VPID_CAP);
