@@ -66,17 +66,13 @@
 /**********************************************/
 /* Planned (New): Yet to be Implemented: */
 
-#define M_VMSEG			/* VM Segments */
-#define M_VMPGTABLE		/* VM Pagetable */
+#define M_VMVOLGRP		/* VM Volume Group */
 
 #define M_OVLMAP		/* OVL Map */
 #define M_OVLOBJ		/* OVL Object */
-#define M_OBLSEG		/* OVL Segment */
+
 #define M_AVMMAP		/* AVM Map (anonymous map: uvm_amap) */
 #define M_AVMOBJ		/* AVM Object (anonymous object: uvm_aobj) */
-
-#define M_KOVL			/* Kernel Overlay */
-#define M_VOVL			/* VM Overlay */
 /**********************************************/
 
 #define KMEMSTATS

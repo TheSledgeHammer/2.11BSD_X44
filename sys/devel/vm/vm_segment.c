@@ -48,6 +48,8 @@ struct seglist		vm_segment_list_inactive;
 simple_lock_data_t	vm_segment_list_lock;
 simple_lock_data_t	vm_segment_list_activity_lock;
 
+vm_segment_t 		vm_segment_array;
+long				vm_segment_array_size;
 long				first_segment;
 long				last_segment;
 vm_offset_t			first_logical_addr;
@@ -113,6 +115,7 @@ vm_segment_startup(start, end)
  	 *	Compute the number of segments.
 	 */
 	cnt.v_segment_count = nsegments = (*end - *start + sizeof(struct vm_segment)) / (SEGMENT_SIZE + sizeof(struct vm_segment));
+	vm_segment_array_size = nsegments;
 
 	/*
 	 *	Record the extent of physical memory that the
@@ -226,6 +229,48 @@ vm_segment_lookup(object, offset)
 }
 
 vm_segment_t
+vm_segment_search_next(object, offset)
+	vm_object_t	object;
+	vm_offset_t offset;
+{
+	register struct seglist 	*bucket;
+	vm_segment_t 				segment;
+
+	bucket = &vm_segment_buckets[vm_segment_hash(object, offset)];
+
+	simple_lock(&segment_bucket_lock);
+	for(segment = CIRCLEQ_FIRST(bucket); segment != NULL; segment = CIRCLEQ_NEXT(segment, sg_hlist)) {
+		if (segment->sg_object == object && segment->sg_offset == offset) {
+			simple_unlock(&segment_bucket_lock);
+			return (segment);
+		}
+	}
+	simple_unlock(&segment_bucket_lock);
+	return (NULL);
+}
+
+vm_segment_t
+vm_segment_search_prev(object, offset)
+	vm_object_t	object;
+	vm_offset_t offset;
+{
+	register struct seglist *bucket;
+	vm_segment_t segment;
+
+	bucket = &vm_segment_buckets[vm_segment_hash(object, offset)];
+
+	simple_lock(&segment_bucket_lock);
+	for (segment = CIRCLEQ_FIRST(bucket); segment != NULL; segment = CIRCLEQ_PREV(segment, sg_hlist)) {
+		if (segment->sg_object == object && segment->sg_offset == offset) {
+			simple_unlock(&segment_bucket_lock);
+			return (segment);
+		}
+	}
+	simple_unlock(&segment_bucket_lock);
+	return (NULL);
+}
+
+vm_segment_t
 vm_segment_alloc(object, offset)
 	vm_object_t	object;
 	vm_offset_t	offset;
@@ -299,4 +344,57 @@ vm_segment_activate(segment)
 	CIRCLEQ_INSERT_TAIL(&vm_segment_list_active, segment, sg_list);
 	segment->sg_flags |= SEG_ACTIVE;
 	cnt.v_segment_active_count++;
+}
+
+/*
+ *	vm_segment_sanity_check:
+ *
+ *	Checks the number of pages align to the number of segments.
+ *	This will always occur in the last segment. Due to how they are
+ *	currently allocated & initialized.
+ *
+ *	Return:
+ *	True: The segment contains empty pages.
+ *	False: The segment is full (no empty pages found).
+ */
+
+/* check alignment of segment size to page size */
+#define npages_per_segment (SEGMENT_SIZE/ PAGE_SIZE)
+
+boolean_t
+vm_segment_sanity_check(pgs, segs)
+    vm_size_t pgs, segs;
+{
+    vm_size_t nsegment;
+
+    /* check per single segment */
+    if(segs > 1) {
+        nsegment = 1;
+    } else {
+        nsegment = segs;
+    }
+
+    /* get the difference between a single segment & the default npages per segment (default: 1024 pages) */
+    vm_size_t diff = nsegment * npages_per_segment;
+    vm_size_t emptyspace;
+    if(pgs > npages_per_segment) {
+        emptyspace = pgs - npages_per_segment;
+    }
+
+    /* sanity check above */
+    int count = 0;
+    while(diff < pgs) {
+        diff++;
+        count++;
+        if(diff == pgs) {
+            break;
+        }
+    }
+
+    if((diff == pgs) && (count == emptyspace)) {
+    	 printf("this segment contains empty pages %lu\n", emptyspace);
+        return (TRUE);
+    } else {
+        return (FALSE);
+    }
 }

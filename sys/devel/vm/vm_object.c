@@ -347,7 +347,7 @@ vm_object_terminate(object)
 	 */
 	while ((seg = CIRCLEQ_FIRST(object->seglist)) != NULL) {
 		VM_SEGMENT_CHECK(seg);
-		vm_segment_lock_list();
+		vm_segment_lock_lists();
 		while ((page = TAILQ_FIRST(seg->sg_memq)) != NULL) {
 			VM_PAGE_CHECK(page);
 			vm_page_lock_queues();

@@ -53,7 +53,7 @@ ovl_segment_init(start, end)
 {
 	int	i;
 
-	simple_lock_init(&ovl_segment_list_lock);
+	simple_lock_init(&ovl_segment_list_lock, "ovl_segment_list_lock");
 
 	CIRCLEQ_INIT(&ovl_segment_list);
 
@@ -69,7 +69,7 @@ ovl_segment_init(start, end)
 		CIRCLEQ_INIT(&ovl_segment_buckets[i]);
 		TAILQ_INIT(&ovl_vsegment_hashtable[i]);
 	}
-	simple_lock_init(&ovl_segment_bucket_lock);
+	simple_lock_init(&ovl_segment_bucket_lock, "ovl_segment_bucket_lock");
 }
 
 unsigned long

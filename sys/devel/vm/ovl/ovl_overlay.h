@@ -59,7 +59,7 @@ extern struct pmap				overlay_pmap_store;
 #define OVL_MAX_VM_ADDRESS
 
 #define OVL_MEM_SIZE			OVL_MAX_ADDRESS		/* total ovlspace for allocation */
-#define NBOVL 										/* bytes per overlay */
+#define NBOVL 										/* number of overlays */
 
 /* memory management definitions */
 ovl_map_t 						omem_map;

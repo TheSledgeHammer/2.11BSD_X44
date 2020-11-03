@@ -102,9 +102,6 @@ vm_offset_t	last_phys_addr;
 vm_size_t	page_mask;
 int			page_shift;
 
-static vaddr_t      virtual_space_start;
-static vaddr_t      virtual_space_end;
-
 /*
  *	vm_set_page_size:
  *
@@ -117,7 +114,6 @@ static vaddr_t      virtual_space_end;
 void
 vm_set_page_size()
  {
-
 	if (cnt.v_page_size == 0)
 		cnt.v_page_size = DEFAULT_PAGE_SIZE;
 	page_mask = cnt.v_page_size - 1;
@@ -276,70 +272,10 @@ vm_page_startup(start, end)
 	 *	Initialize vm_pages_needed lock here - don't wait for pageout
 	 *	daemon	XXX
 	 */
-	simple_lock_init(&vm_pages_needed_lock);
+	simple_lock_init(&vm_pages_needed_lock, "vm_pages_needed_lock");
 
 	/* from now on, pmap_bootstrap_alloc can't be used */
 	vm_page_startup_initialized = TRUE;
-}
-
-vaddr_t
-vm_pageboot_alloc(size)
-	vm_size_t size;
-{
-#if defined(PMAP_STEAL_MEMORY)
-	vaddr_t addr;
-
-	/*
-	 * defer bootstrap allocation to MD code (it may want to allocate
-	 * from a direct-mapped segment).  pmap_steal_memory should round
-	 * off virtual_space_start/virtual_space_end.
-	 */
-
-	addr = pmap_steal_memory(size, &virtual_space_start, &virtual_space_end);
-
-	return (addr);
-
-#else /* !PMAP_STEAL_MEMORY */
-
-	vm_page_startup_initialized = FALSE;
-	vaddr_t addr, vaddr;
-	caddr_t paddr;
-
-	/* round to page size */
-	size = round_page(size);
-
-	if(vm_page_startup_initialized == FALSE) {
-		pmap_virtual_space(&virtual_space_start, &virtual_space_end);
-
-		/* round it the way we like it */
-		virtual_space_start = round_page(virtual_space_start);
-		virtual_space_end = trunc_page(virtual_space_end);
-
-		vm_page_startup_initialized = TRUE;
-	}
-
-	/* allocate virtual memory for this request */
-	if (virtual_space_start == virtual_space_end || (virtual_space_end - virtual_space_start) < size)
-		panic("vm_pageboot_alloc: out of virtual space");
-
-	addr = virtual_space_start;
-
-	virtual_space_start += size;
-
-	/* allocate and mapin physical pages to back new virtual pages */
-	for (vaddr = round_page(addr); vaddr < addr + size; vaddr += PAGE_SIZE) {
-		if (!vm_page_physget(&paddr))
-			panic("vm_pageboot_alloc: out of memory");
-
-		/*
-		 * Note this memory is no longer managed, so using
-		 * pmap_kenter is safe.
-		 */
-		pmap_kenter_pa(vaddr, paddr, VM_PROT_READ | VM_PROT_WRITE);
-	}
-	pmap_update(pmap_kernel());
-	return (addr);
-#endif	/* PMAP_STEAL_MEMORY */
 }
 
 /*

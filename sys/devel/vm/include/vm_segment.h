@@ -73,15 +73,15 @@ struct vm_lvseg {
 	caddr_t 			end;
 	caddr_t				avail_start;
 	caddr_t 			avail_end;
-	struct vm_segment 	*segs;
-	struct vm_segment 	*lastseg;
+	struct vm_segment 	*lvs_segs;
+	struct vm_segment 	*lvs_lastseg;
 
-	segsz_t 			sg_dsize; /* data size */
-	segsz_t 			sg_ssize; /* stack size */
-	segsz_t 			sg_tsize; /* text size */
-	caddr_t 			sg_daddr; /* virtual address of data */
-	caddr_t 			sg_saddr; /* virtual address of stack */
-	caddr_t 			sg_taddr; /* virtual address of text */
+	segsz_t 			lvs_dsize; /* data size */
+	segsz_t 			lvs_ssize; /* stack size */
+	segsz_t 			lvs_tsize; /* text size */
+	caddr_t 			lvs_daddr; /* virtual address of data */
+	caddr_t 			lvs_saddr; /* virtual address of stack */
+	caddr_t 			lvs_taddr; /* virtual address of text */
 };
 
 extern struct vm_lvseg vm_lvmem[VM_LVSEG_MAX];
@@ -164,5 +164,6 @@ void			vm_segment_insert(vm_segment_t, vm_object_t, vm_offset_t);
 void			vm_segment_remove(vm_segment_t);
 vm_segment_t	vm_segment_lookup(vm_object_t, vm_offset_t);
 void			vm_segment_startup(vm_offset_t, vm_offset_t);
+boolean_t		vm_segment_sanity_check(vm_size_t, vm_size_t);
 
 #endif /* VM_SEGMENT_H_ */

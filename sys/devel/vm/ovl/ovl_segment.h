@@ -49,7 +49,7 @@ struct ovl_segment {
 
 	int								ovs_resident_page_count;	/* number of resident pages */
 
-	TAILQ_ENTRY(ovl_segment)    	ovs_vsegment_hlist;			/* list of all my associated vm_segments */
+	TAILQ_ENTRY(ovl_segment)    	ovs_vsegment_hlist;			/* list of all associated vm_segments */
 
 #define ovs_vm_object           	ovs_object->ovo_vm_object
 #define ovs_vm_segment          	ovs_object->ovo_vm_segment
