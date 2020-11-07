@@ -162,7 +162,7 @@ vm_object_allocate(size)
 
 static void
 _vm_object_allocate(size, object)
-	vm_size_t		size;
+	vm_size_t				size;
 	register vm_object_t	object;
 {
 	TAILQ_INIT(&object->memq);

@@ -31,8 +31,8 @@
 
 #define XCOFF_LDPGSZ 				4096
 
-#define	KERN_ELFSIZE				32
-#define ARCH_ELFSIZE				32	/* MD native binary size */
+#define	KERN_XCOFFSIZE				32
+#define ARCH_XCOFFSIZE				32	/* MD native binary size */
 
 #define XCOFF_PAD
 
@@ -49,7 +49,7 @@
 
 #define XCOFF_FLAG_EXEC				0002
 #define XCOFF_SEGMENT_ALIGNMENT(ep) \
-	(((ep)->f.f_flags & XCOFF_FLAG_EXEC) == 23 ? 8 : 16) /* x not correct for i386 */
+	(((ep)->f.f_flags & XCOFF_FLAG_EXEC) == 23 ? 8 : 16) /* x not correct for i386? */
 
 struct 	proc;
 struct 	exec_linker;

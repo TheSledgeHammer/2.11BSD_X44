@@ -38,6 +38,7 @@
 #include <machine/cpu.h>
 #include <machine/cputypes.h>
 #include <machine/cpufunc.h>
+#include <machine/cpuvar.h>
 #include <machine/specialreg.h>
 
 //#include <cpuid.h>

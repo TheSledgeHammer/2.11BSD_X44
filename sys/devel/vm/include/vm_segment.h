@@ -42,6 +42,7 @@
 
 #include <devel/vm/include/vm_object.h>
 #include <devel/vm/include/vm_page.h>
+#include <devel/vm/include/vm_param.h>
 
 struct seglist;
 CIRCLEQ_HEAD(seglist, vm_segment);
@@ -61,7 +62,7 @@ struct vm_segment {
 	caddr_t						sg_addr;				/* segment addr */
 	int							sg_types;				/* see below (segment types) */
 
-	caddr_t						sg_lv_addr;
+	caddr_t						sg_laddr;				/* segments logical addr */
 };
 
 #define VM_LVSEG_MAX 8
@@ -121,6 +122,7 @@ extern
 struct seglist		vm_segment_list_active;		/* active list */
 extern
 struct seglist		vm_segment_list_inactive;	/* inactive list */
+
 extern
 vm_segment_t		vm_segment_array;			/* First segment in table */
 
@@ -145,11 +147,12 @@ simple_lock_data_t	vm_segment_list_activity_lock;
 	vm_segment_insert((seg), (object), (offset)); 		\
 }
 
-#define VM_SEGMENT_TO_PHYS(seg, page) 	\
-		vm_page_lookup(vm_segment_lookup((seg)->sg_object, (seg)->sg_offset), (page)->offset)->phys_addr;
+/* Test... Does it point to the right physical address? */
+#define VM_SEGMENT_TO_PHYS(seg) 						\
+		vm_segment_lookup((seg)->sg_object, (seg)->sg_offset)->sg_laddr
 
-#define PHYS_TO_VM_SEGMENT(pa) 			\
-		(&vm_segment_array[atos[pa] - first_segment]);
+#define PHYS_TO_VM_SEGMENT(pa) 							\
+		(&vm_segment_array[atos(pa) - first_segment])
 
 #define	vm_segment_lock_lists()		simple_lock(&vm_segment_list_lock)
 #define	vm_segment_unlock_lists()	simple_unlock(&vm_segment_list_lock)
@@ -163,7 +166,11 @@ void		 	vm_segment_free(vm_segment_t);
 void			vm_segment_insert(vm_segment_t, vm_object_t, vm_offset_t);
 void			vm_segment_remove(vm_segment_t);
 vm_segment_t	vm_segment_lookup(vm_object_t, vm_offset_t);
+void			vm_segment_page_insert(vm_object_t, vm_offset_t, vm_page_t, vm_offset_t);
+vm_page_t		vm_segment_page_lookup(vm_object_t, vm_offset_t, vm_offset_t);
+void			vm_segment_page_remove(vm_object_t, vm_offset_t, vm_offset_t);
 void			vm_segment_startup(vm_offset_t, vm_offset_t);
 boolean_t		vm_segment_sanity_check(vm_size_t, vm_size_t);
+boolean_t		vm_segment_zero_fill(vm_segment_t);
 
 #endif /* VM_SEGMENT_H_ */

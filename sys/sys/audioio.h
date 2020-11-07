@@ -49,25 +49,25 @@
  */
 struct audio_prinfo {
 	u_int	sample_rate;	/* sample rate in bit/s */
-	u_int	channels;	/* number of channels, usually 1 or 2 */
-	u_int	precision;	/* number of bits/sample */
-	u_int	encoding;	/* data encoding (AUDIO_ENCODING_* below) */
-	u_int	gain;		/* volume level */
-	u_int	port;		/* selected I/O port */
-	u_int	seek;		/* BSD extension */
+	u_int	channels;		/* number of channels, usually 1 or 2 */
+	u_int	precision;		/* number of bits/sample */
+	u_int	encoding;		/* data encoding (AUDIO_ENCODING_* below) */
+	u_int	gain;			/* volume level */
+	u_int	port;			/* selected I/O port */
+	u_int	seek;			/* BSD extension */
 	u_int	avail_ports;	/* available I/O ports */
 	u_int	buffer_size;	/* total size audio buffer */
 	u_int	_ispare[1];
 	/* Current state of device: */
-	u_int	samples;	/* number of samples */
-	u_int	eof;		/* End Of File (zero-size writes) counter */
-	u_char	pause;		/* non-zero if paused, zero to resume */
-	u_char	error;		/* non-zero if underflow/overflow ocurred */
-	u_char	waiting;	/* non-zero if another process hangs in open */
-	u_char	balance;	/* stereo channel balance */
+	u_int	samples;		/* number of samples */
+	u_int	eof;			/* End Of File (zero-size writes) counter */
+	u_char	pause;			/* non-zero if paused, zero to resume */
+	u_char	error;			/* non-zero if underflow/overflow ocurred */
+	u_char	waiting;		/* non-zero if another process hangs in open */
+	u_char	balance;		/* stereo channel balance */
 	u_char	cspare[2];
-	u_char	open;		/* non-zero if currently open */
-	u_char	active;		/* non-zero if I/O is currently active */
+	u_char	open;			/* non-zero if currently open */
+	u_char	active;			/* non-zero if I/O is currently active */
 };
 typedef struct audio_prinfo audio_prinfo_t;
 

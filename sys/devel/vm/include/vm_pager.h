@@ -136,6 +136,7 @@ struct	pager_struct {
 #define	PG_SWAP			0
 #define	PG_VNODE		1
 #define PG_DEVICE		2
+#define PG_OVERLAY		3
 
 /* flags */
 #define PG_CLUSTERGET	1
@@ -169,6 +170,15 @@ struct	vm_pagerops {
 	/* Does pager have page? */
 	boolean_t  	(*pgo_haspage)(vm_pager_t, vm_offset_t);
 
+	/* Get (read) segment. */
+	int			(*pgo_getsegments)(vm_pager_t, vm_segment_t *, int, boolean_t);
+
+	/* Put (write) segment. */
+	int			(*pgo_putsegments)(vm_pager_t, vm_segment_t *, int, boolean_t);
+
+	/* Does pager have segment? */
+	boolean_t  	(*pgo_hassegment)(vm_pager_t, vm_offset_t);
+
 	/* Return range of cluster. */
 	void		(*pgo_cluster)(vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
 };
@@ -189,11 +199,12 @@ struct	vm_pagerops {
 #define	VM_PAGER_ERROR	4
 #define VM_PAGER_AGAIN	5
 
-#ifdef KERNEL
+//#ifdef KERNEL
 extern struct vm_pagerops *dfltpagerops;
 
 vm_pager_t	 vm_pager_allocate (int, caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
 vm_page_t	 vm_pager_atop (vm_offset_t);
+vm_segment_t	vm_pager_atos (vm_offset_t);
 void		 vm_pager_cluster (vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
 void		 vm_pager_clusternull (vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
 void		 vm_pager_deallocate (vm_pager_t);

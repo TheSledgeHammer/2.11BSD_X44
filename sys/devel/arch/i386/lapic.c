@@ -397,7 +397,7 @@ apic_set_redir(struct ioapic_softc *sc, int pin)
  * However, the i386 port pretty much assumes isa is there anyway.
  * For example, pci_intr_establish calls isa_intr_establish unconditionally.
  */
-extern int fakeintr(void *); 	/* XXX headerify */
+extern int 	fakeintr(void *); 			/* XXX headerify */
 extern char *isa_intr_typename(int); 	/* XXX headerify */
 
 /*

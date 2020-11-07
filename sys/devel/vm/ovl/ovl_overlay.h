@@ -29,10 +29,6 @@
  */
 /* Current Kernel Overlays:
  * - Akin to a more advanced & versatile overlay from original 2.11BSD
- * - Allocates memory from kernelspace (thus vm allocation)
- * - While useful (in some situations), for extending memory management
- * - This version would not provide any benefit to vm paging, if the overlay is a page in itself.
- * - would likely be slower than using just paging.
  */
 
 #ifndef _OVL_IO_H_
@@ -68,10 +64,8 @@ ovl_map_t 						overlay_map;
 #ifndef OVL_MAP
 /* as defined in ovl_map.h */
 #define MAX_OMAP				(64)
-#define	NKOVLE					(32)				/* number of kernel overlay entries */
-#define	NVOVLE					(32)				/* number of virtual (vm) overlay entries */
+#define	NOVL					(32)				/* number of kernel overlay entries */
 #endif
-
 
 /* memory management */
 struct ovlstats {

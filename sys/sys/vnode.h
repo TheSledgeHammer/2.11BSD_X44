@@ -349,6 +349,7 @@ struct vnodeops {
 #define VOP_BWRITE(bp)											(*((bp)->b_vp->v_op->vop_bwrite))(bp)
 
 /*
+ * vnodeops args
  * A generic structure.
  * This can be used by bypass routines to identify generic arguments.
  */
@@ -772,7 +773,7 @@ void 	vref (struct vnode *vp);
 void 	vrele (struct vnode *vp);
 
 /* vfs_vops.c */
-void 	vop_init(); 					/* init vnode operations */
-void 	vop_alloc(struct vnodeops *); 	/* allocate vnode operations */
+void 	vop_init(); 					/* init vops */
+void 	vop_alloc(struct vnodeops *); 	/* allocate vops */
 #endif /* KERNEL */
 #endif /* !_SYS_VNODE_H_ */

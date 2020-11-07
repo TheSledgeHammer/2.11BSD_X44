@@ -58,9 +58,9 @@ typedef struct rwlock       *rwlock_t;
 #define RW_DOWNGRADE	    0x00000004			/* write-to-read downgrade */
 
 /* External lock flags. */
-#define RW_EXTFLG_MASK	    0x00000070			/* mask of external flags */
 #define RW_NOWAIT	        0x00000010			/* do not sleep to await lock */
 #define RW_WAIT	        	0x00000020			/* sleep to await lock */
+#define RW_EXTFLG_MASK	    0x00000070			/* mask of external flags */
 
 /* Internal lock flags. */
 #define RW_WANT_UPGRADE		0x00000100			/* waiting for reader-to-writer upgrade */

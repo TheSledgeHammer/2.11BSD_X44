@@ -79,6 +79,7 @@ struct vm_physical_volume {
     vm_size_t           			pv_npages;          /* page array size / number of pages */
 };
 
+
 struct vm_vg;
 TAILQ_HEAD(vm_vg, vm_volume_group);
 struct vm_volume_group {

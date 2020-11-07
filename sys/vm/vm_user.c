@@ -260,16 +260,16 @@ vm_deallocate(map, start, size)
  */
 int
 vm_allocate_with_pager(map, addr, size, anywhere, pager, poffset, internal)
-	register vm_map_t	map;
+	register vm_map_t		map;
 	register vm_offset_t	*addr;
-	register vm_size_t	size;
-	boolean_t		anywhere;
-	vm_pager_t		pager;
-	vm_offset_t		poffset;
-	boolean_t		internal;
+	register vm_size_t		size;
+	boolean_t				anywhere;
+	vm_pager_t				pager;
+	vm_offset_t				poffset;
+	boolean_t				internal;
 {
 	register vm_object_t	object;
-	register int		result;
+	register int			result;
 
 	if (map == NULL)
 		return(KERN_INVALID_ARGUMENT);

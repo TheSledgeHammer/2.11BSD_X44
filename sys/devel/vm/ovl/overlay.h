@@ -31,16 +31,8 @@
 #ifndef SYS_OVERLAY_H_
 #define SYS_OVERLAY_H_
 
-#include <sys/queue.h>
 #include "ovl_overlay.h"
-
-/* Overlay Object Type */
-typedef enum {
-	OVL_KERN,
-	OVL_VM
-} OVL_OBJ_TYPE;
-
-extern struct overlay_head ovlist;
+#include "ovl_segment.h"
 
 /* flags */
 #define OVL_LOADED 		0x001		/* overlay is loaded */
@@ -49,68 +41,78 @@ extern struct overlay_head ovlist;
 #define OVL_INACTIVE 	0x008		/* overlay is inactive */
 #define OVL_EXEC		0x010 		/* overlay is executing */
 
+/* types */
+#define OV_DFLT			-1
+#define	OV_OBJECT		0
+#define	OV_SEGMENT		1
+#define OV_PAGE			2
 
-struct overlay_head;
-CIRCLEQ_HEAD(overlay_head, overlay_entries);
-struct overlay_entries {
-	CIRCLEQ_ENTRY(overlay_entries) 	o_entries;
+/* overlay malloc types (to be place in more appropriate place i.e. malloc or tbtree) */
+#define OVL_OBJECT		1	/* ovl object */
+#define OVL_OBJHASH		2 	/* ovl object hash */
+#define OVL_OVERLAYER	3 	/* overlayer */
+#define OVL_OVOBJECT 	4 	/* overlaid object */
+#define OVL_OVSEGMENT 	5 	/* overlaid segment  */
+#define OVL_OVPAGE 		6 	/* overlaid page */
+#define OVL_OVTABLE		7 	/* overlay table */
 
-	int								o_nkovl;
-	int								o_nvovl;
+struct overlaylst;
+CIRCLEQ_HEAD(overlaylst, overlay_struct);
+struct overlay_struct {
+	CIRCLEQ_ENTRY(overlay_struct) 	o_list;		/* list of overlays */
+
+    int							    o_novl;		/* number of overlays */
+	int								o_type;		/* type of overlay */
+	int 							o_flags;	/* overlay flags */
 };
+typedef struct overlay_struct 		*ovl_overlay_t;
 
 union overlay_generic {
-	struct overlay_entries			*ovl_list;		/* list of loaded overlay objects */
+    ovl_overlay_t                   *og_overlay;
 
-	struct overlay_exec 			*ovl_exec;		/* overlay executable initializer */
-	struct overlay_ops				*ovl_ops;		/* overlay ops (vm & kernel) */
-	struct overlay_load				*ovl_load;		/* load into overlay list */
-	struct overlay_unload			*ovl_unload;	/* unload from overlay list */
+    struct overlay_object           *og_object;
+    struct overlay_segment          *og_segment;
+    struct overlay_page             *og_page;
 };
 
+/* overlay table */
 struct overlay_table {
-	int 							o_objtype;		/* overlay object type: (see above: OVL_OBJ_TYPE) */
-	u_long 							o_size;
-	u_long							o_offset;
-	u_long							o_area;
-	u_long							o_used;
+    union overlay_generic 			o_private;	/* private data */
 
-	union overlay_generic 			o_private;
+    ovl_map_t						o_mapper;	/* overlays map of ovlspace */
+    vm_offset_t						o_start;	/* start of available space */
+    vm_offset_t						o_end;		/* end of available space */
+    u_long 							o_size;
+	u_long							o_offset;
+    u_long	                        o_area;
 };
 
+/* overlay object: holds object data */
+struct overlay_object {
+	ovl_object_t					oo_object;	/* overlaid object */
+	ovl_overlay_t					oo_overlay;	/* overlaid object overlay */
+	vm_object_t						oo_vobject;	/* overlaid vm_object */
+};
+
+/* overlay segment: holds segment data */
+struct overlay_segment {
+	ovl_segment_t 					os_segment;	/* overlaid segment */
+	ovl_object_t					os_object;	/* overlaid object for this segment */
+	vm_offset_t						os_offset;	/* overlaid segment offset */
+	vm_segment_t					os_vsegment;/* overlaid vm_segment */
+};
+
+/* overlay page: holds page data */
+struct overlay_page {
+	ovl_page_t						op_page;	/* overlaid page */
+	ovl_segment_t 					op_segment;	/* overlaid segment for this page */
+	vm_offset_t						op_offset;	/* overlaid page offset */
+	vm_page_t						op_vpage;	/* overlaid vm_segment */
+};
+
+/* overlay exec: holds executable data */
 struct overlay_exec {
-	int 							o_ver;
-	char							*o_name;
-	u_long							o_offset;
-	struct execsw					*o_exec;
-};
 
-/* overlay ops */
-struct overlay_ops {
-	void (*koverlay_allocate)(unsigned long size, int type, int flags);
-	void (*koverlay_free)(void *addr, int type);
-	void (*voverlay_allocate)(unsigned long size, int type, int flags);
-	void (*voverlay_free)(void *addr, int type);
-};
-
-struct overlay_load {
-	caddr_t							ol_address;	/* overlaid address */
-
-	ovl_object_t					ol_object;	/* overlaid object */
-	ovl_segment_t 					ol_segment;	/* overlaid segment */
-	ovl_page_t 						ol_page;	/* overlaid page */
-
-	//id, status
-};
-
-struct overlay_unload {
-	caddr_t							ol_address;	/* overlaid address */
-
-	ovl_object_t					ol_object;	/* overlaid object */
-	ovl_segment_t 					ol_segment;	/* overlaid segment */
-	ovl_page_t 						ol_page;	/* overlaid page */
-
-	//id, status
 };
 
 #endif /* SYS_OVERLAY_H_ */

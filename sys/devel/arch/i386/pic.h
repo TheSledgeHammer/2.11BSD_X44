@@ -7,8 +7,6 @@
 #include <sys/device.h>
 #include <sys/lock.h>
 
-struct cpu_info;
-
 /*
  * Structure common to all PIC softcs
  */
@@ -45,4 +43,5 @@ struct pic {
 extern struct pic i8259_pic;
 extern struct pic local_pic;
 extern struct pic softintr_pic;
+
 #endif

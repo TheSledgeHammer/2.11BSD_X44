@@ -67,7 +67,7 @@
 /* Planned (New): Yet to be Implemented: */
 
 #define M_VMVOLGRP		/* VM Volume Group */
-
+#define M_OVERLAY		/* Allocate into Overlay Space */
 #define M_OVLMAP		/* OVL Map */
 #define M_OVLOBJ		/* OVL Object */
 

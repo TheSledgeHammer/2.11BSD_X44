@@ -26,6 +26,9 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+/* To setup correctly: pages may need to me remapped after segments have been initialized */
+
 #include <sys/tree.h>
 #include <sys/fnv_hash.h>
 #include <sys/malloc.h>
@@ -213,16 +216,28 @@ vm_segment_lookup(object, offset)
 	vm_offset_t offset;
 {
 	register struct seglist 	*bucket;
-	vm_segment_t 				segment;
+	vm_segment_t 				segment, first, last;
 
 	bucket = &vm_segment_buckets[vm_segment_hash(object, offset)];
+	first = CIRCLEQ_FIRST(bucket);
+	last = CIRCLEQ_LAST(bucket);
 
 	simple_lock(&segment_bucket_lock);
-	for(segment = CIRCLEQ_FIRST(bucket); segment != NULL; segment = CIRCLEQ_NEXT(segment, sg_hlist)) {
-		if (segment->sg_object == object && segment->sg_offset == offset) {
+	if(first->sg_offset != last->sg_offset) {
+		if(first->sg_offset >= offset) {
+			segment = vm_segment_search_next(object, offset);
 			simple_unlock(&segment_bucket_lock);
 			return (segment);
 		}
+		if(last->sg_offset >= offset) {
+			segment = vm_segment_search_prev(object, offset);
+			simple_unlock(&segment_bucket_lock);
+			return (segment);
+		}
+	}
+	if (first->sg_offset == last->sg_offset && first->sg_object == object) {
+		simple_unlock(&segment_bucket_lock);
+		return (first);
 	}
 	simple_unlock(&segment_bucket_lock);
 	return (NULL);
@@ -268,6 +283,54 @@ vm_segment_search_prev(object, offset)
 	}
 	simple_unlock(&segment_bucket_lock);
 	return (NULL);
+}
+
+void
+vm_segment_page_insert(object, offset1, page, offset2)
+	vm_object_t	object;
+	vm_page_t 	page;
+	vm_offset_t offset1, offset2;
+{
+	vm_segment_t segment;
+	segment = vm_segment_lookup(object, offset1);
+
+	if (segment != NULL) {
+		vm_page_insert(page, segment, offset2);
+	}
+}
+
+vm_page_t
+vm_segment_page_lookup(object, offset1, offset2)
+    vm_object_t	object;
+    vm_offset_t offset1, offset2;
+{
+    vm_page_t 	 page;
+    vm_segment_t segment;
+    segment = vm_segment_lookup(object, offset1);
+
+    if(segment != NULL) {
+        page = vm_page_lookup(segment, offset2);
+        return (page);
+    }
+    return (NULL);
+}
+
+void
+vm_segment_page_remove(object, offset1, offset2)
+	vm_object_t	object;
+	vm_offset_t offset1, offset2;
+{
+    vm_page_t 	 page;
+    vm_segment_t segment;
+    segment = vm_segment_lookup(object, offset1);
+
+    if(segment != NULL) {
+        page = vm_page_lookup(segment, offset2);
+
+        if(page != NULL) {
+        	vm_page_remove(page);
+        }
+    }
 }
 
 vm_segment_t
@@ -344,6 +407,24 @@ vm_segment_activate(segment)
 	CIRCLEQ_INSERT_TAIL(&vm_segment_list_active, segment, sg_list);
 	segment->sg_flags |= SEG_ACTIVE;
 	cnt.v_segment_active_count++;
+}
+
+/*
+ *	vm_segment_zero_fill:
+ *	Same as vm_page_zero_fill, but includes a
+ *	segment check.
+ */
+boolean_t
+vm_segment_zero_fill(s)
+    vm_segment_t s;
+{
+	vm_page_t p = vm_page_lookup(s, s->sg_offset); /* TODO: fix: segment offset is incorrect */
+
+	if(p) {
+        VM_SEGMENT_CHECK(s);
+        s->sg_flags &= ~SEG_CLEAN;
+	}
+	return (vm_page_zero_fill(p));
 }
 
 /*

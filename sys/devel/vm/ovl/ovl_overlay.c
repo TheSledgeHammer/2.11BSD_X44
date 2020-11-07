@@ -71,22 +71,8 @@
 
 #include <devel/vm/ovl/ovl.h>
 
-/* start in vm_mem_init or seperate? */
-void
-ovl_mem_init()
-{
-	extern vm_offset_t	virtual_avail, virtual_end;
-
-	/*
-	 * Initialize other OVL packages
-	 */
-	ovl_object_init(virtual_end - OVL_MIN_ADDRESS);
-	ovl_map_startup();
-	ovl_init(virtual_avail, virtual_end);
-}
-
 vm_offset_t
-ovl_alloc(map, size)
+ovlmem_alloc(map, size)
 	register ovl_map_t		map;
 	register vm_size_t		size;
 {
@@ -109,7 +95,7 @@ ovl_alloc(map, size)
 }
 
 void
-ovl_free(map, addr, size)
+ovlmem_free(map, addr, size)
 	ovl_map_t				map;
 	register vm_offset_t	addr;
 	vm_size_t				size;
@@ -118,7 +104,7 @@ ovl_free(map, addr, size)
 }
 
 ovl_map_t
-ovl_suballoc(parent, min, max, size)
+ovlmem_suballoc(parent, min, max, size)
 	register ovl_map_t	parent;
 	vm_offset_t			*min, *max;
 	register vm_size_t	size;
@@ -143,7 +129,7 @@ ovl_suballoc(parent, min, max, size)
 }
 
 vm_offset_t
-ovl_malloc(map, size, canwait)
+ovlmem_malloc(map, size, canwait)
 	register ovl_map_t		map;
 	register vm_size_t		size;
 	boolean_t				canwait;
@@ -189,7 +175,7 @@ ovl_malloc(map, size, canwait)
 }
 
 vm_offset_t
-ovl_alloc_wait(map, size)
+ovlmem_alloc_wait(map, size)
 	ovl_map_t	map;
 	vm_size_t	size;
 {
@@ -218,7 +204,7 @@ ovl_alloc_wait(map, size)
 }
 
 void
-ovl_free_wakeup(map, addr, size)
+ovlmem_free_wakeup(map, addr, size)
 	ovl_map_t	map;
 	vm_offset_t	addr;
 	vm_size_t	size;
@@ -230,7 +216,7 @@ ovl_free_wakeup(map, addr, size)
 }
 
 void
-ovl_init(start, end)
+ovlmem_init(start, end)
 	vm_offset_t start, end;
 {
 	register ovl_map_t map;

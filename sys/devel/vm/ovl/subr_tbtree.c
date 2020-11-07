@@ -271,29 +271,29 @@ tbtree_malloc(ktp, size, flags)
 
     if(isPowerOfTwo(size)) {
         left = tbtree_left(ktp, size);
-        ktp->tb_addr = (caddr_t) ovl_malloc(omem_map, right->tb_size, flags);
+        ktp->tb_addr = (caddr_t) ovlmem_malloc(omem_map, right->tb_size, flags);
 
 	} else if(isPowerOfTwo(size - 2)) {
 		middle = tbtree_middle(ktp, size);
-        ktp->tb_addr = (caddr_t) ovl_malloc(omem_map, middle->tb_size, flags);
+        ktp->tb_addr = (caddr_t) ovlmem_malloc(omem_map, middle->tb_size, flags);
 
 	} else if (isPowerOfTwo(size - 3)) {
 		right = tbtree_right(ktp, size);
-        ktp->tb_addr = (caddr_t) ovl_malloc(omem_map, right->tb_size, flags);
+        ktp->tb_addr = (caddr_t) ovlmem_malloc(omem_map, right->tb_size, flags);
 
 	} else {
 		/* allocates size (tmp) if it has a log base of 2 */
 		if(isPowerOfTwo(tmp)) {
 			left = tbtree_left(ktp, size);
-            ktp->tb_addr = (caddr_t) ovl_malloc(omem_map, left->tb_size, flags);
+            ktp->tb_addr = (caddr_t) ovlmem_malloc(omem_map, left->tb_size, flags);
 
 		} else if(isPowerOfTwo(tmp - 2)) {
 			middle = tbtree_middle(ktp, size);
-            ktp->tb_addr = (caddr_t) ovl_malloc(omem_map, middle->tb_size, flags);
+            ktp->tb_addr = (caddr_t) ovlmem_malloc(omem_map, middle->tb_size, flags);
 
 		} else if (isPowerOfTwo(tmp - 3)) {
 			right = tbtree_right(ktp, size);
-            ktp->tb_addr = (caddr_t) ovl_malloc(omem_map, right->tb_size, flags);
+            ktp->tb_addr = (caddr_t) ovlmem_malloc(omem_map, right->tb_size, flags);
 		}
     }
     return (ktp->tb_addr);
@@ -315,14 +315,14 @@ tbtree_free(ktp, addr, size)
 		free = ktp->tb_freelist1;
 		if(free->asl_size == toFind->tb_size && toFind->tb_addr == addr) {
 			free = asl_remove(ktp->tb_freelist1, size);
-			ovl_free(omem_map, toFind->tb_addr, size);
+			ovlmem_free(omem_map, toFind->tb_addr, size);
 		}
 	}
 	if((toFind->tb_type == TYPE_01 && toFind == tbtree_middle(ktp, size))|| (toFind->tb_type == TYPE_10 && toFind == tbtree_right(ktp, size))) {
 		free = ktp->tb_freelist2;
 		if(free->asl_size == toFind->tb_size && toFind->tb_addr == addr) {
 			free = asl_remove(ktp->tb_freelist2, size);
-			ovl_free(omem_map, toFind->tb_addr, size);
+			ovlmem_free(omem_map, toFind->tb_addr, size);
 
 		}
 	}

@@ -69,6 +69,7 @@
 #define _OVL_OBJECT_H_
 
 #include <devel/vm/ovl/ovl.h>
+#include <sys/tree.h>
 
 struct vobject_hash_head;
 TAILQ_HEAD(vobject_hash_head, ovl_object);
@@ -79,7 +80,8 @@ struct ovl_object {
 
 	RB_ENTRY(ovl_object)				ovo_object_tree;	/* list of all objects */
 
-	u_long								ovo_index;
+	ovl_overlay_t						ovo_overlay;		/* where to get data */
+	vm_offset_t							ovo_overlay_offset;	/* offset into overlay space */
 
 	u_short								ovo_flags;			/* see below */
 	simple_lock_data_t					ovo_lock;			/* Synchronization */

@@ -114,19 +114,19 @@ struct ioapic_softc {
 #define APIC_IRQ_APIC(x) ((x & APIC_INT_APIC_MASK) >> APIC_INT_APIC_SHIFT)
 #define APIC_IRQ_PIN(x) ((x & APIC_INT_PIN_MASK) >> APIC_INT_PIN_SHIFT)
 
-void   *apic_intr_establish(int, int, int, int (*)(void *), void *, const char *);
-void	apic_intr_disestablish(void *);
+void   						*apic_intr_establish(int, int, int, int (*)(void *), void *, const char *);
+void						apic_intr_disestablish(void *);
 
-void	ioapic_print_redir(struct ioapic_softc *, char *, int);
-void	ioapic_format_redir(char *, char *, int, u_int32_t, u_int32_t);
-struct ioapic_softc *ioapic_find(int);
-struct ioapic_softc *ioapic_find_bybase(int);
+void						ioapic_print_redir(struct ioapic_softc *, char *, int);
+void						ioapic_format_redir(char *, char *, int, u_int32_t, u_int32_t);
+struct ioapic_softc 		*ioapic_find(int);
+struct ioapic_softc 		*ioapic_find_bybase(int);
 
-void	ioapic_enable(void);
-void	lapic_vectorset(void); /* XXX */
+void						ioapic_enable(void);
+void						lapic_vectorset(void); /* XXX */
 
-extern int ioapic_bsp_id;
-extern int nioapics;
-extern struct ioapic_softc *ioapics;
-extern u_int16_t ioapic_id_map;
-extern u_int8_t ioapic_id_remap[];
+extern int 					ioapic_bsp_id;
+extern int 					nioapics;
+extern struct ioapic_softc 	*ioapics;
+extern u_int16_t 			ioapic_id_map;
+extern u_int8_t 			ioapic_id_remap[];

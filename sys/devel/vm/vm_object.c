@@ -530,9 +530,11 @@ vm_object_deactivate_pages(object)
 	for(segment = CIRCLEQ_FIRST(object->seglist); segment != NULL; segment = CIRCLEQ_NEXT(segment, sg_list)) {
 		if(segment->sg_object == object && segment->sg_memq != NULL) {
 			for(page = TAILQ_FIRST(segment->sg_memq); page != NULL; page = TAILQ_NEXT(page, listq)) {
-				vm_page_lock_queues();
-				vm_page_deactivate(page);
-				vm_page_unlock_queues();
+				if(page->segment == segment) {
+					vm_page_lock_queues();
+					vm_page_deactivate(page);
+					vm_page_unlock_queues();
+				}
 			}
 		}
 	}
@@ -943,7 +945,7 @@ vm_object_collapse(object)
 			 */
 			while ((segment = CIRCLEQ_FIRST(backing_object->seglist)) != NULL) {
 				if(segment->sg_object == backing_object) {
-					while ((p = TAILQ_FIRST(backing_object->memq)) != NULL) {
+					while ((p = TAILQ_FIRST(segment->sg_memq)) != NULL) {
 						new_offset = (p->offset - backing_offset);
 
 						/*

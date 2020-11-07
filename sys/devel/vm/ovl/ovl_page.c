@@ -109,13 +109,13 @@ struct vpage_hash_head 	*ovl_vpage_hashtable;
 
 
 void
-ovl_page_startup(start, end)
+ovl_page_init(start, end)
 	vm_offset_t	*start;
 	vm_offset_t	*end;
 {
 	int i;
 
-	simple_lock_init(&ovl_page_list_lock);
+	simple_lock_init(&ovl_page_list_lock, "ovl_page_list_lock");
 
 	TAILQ_INIT(&ovl_page_list);
 
@@ -131,7 +131,7 @@ ovl_page_startup(start, end)
 		TAILQ_INIT(&ovl_page_buckets[i]);
 		TAILQ_INIT(&ovl_vpage_hashtable[i]);
 	}
-	simple_lock_init(&ovl_page_bucket_lock);
+	simple_lock_init(&ovl_page_bucket_lock, "ovl_page_bucket_lock");
 }
 
 unsigned long

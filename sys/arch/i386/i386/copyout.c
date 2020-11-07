@@ -40,10 +40,11 @@
 #include <sys/errno.h>
 
 #include <machine/param.h>
+#include <machine/pmap.h>
 #include <machine/pte.h>
 
-struct pte			*CMAP1, *CMAP2;
-extern caddr_t		CADDR1, CADDR2;
+struct pte				*CMAP1, *CMAP2;
+extern caddr_t			CADDR1, CADDR2;
 
 /*
  * zero out physical memory
@@ -53,7 +54,7 @@ void
 clearseg(n)
 {
 	*(int*) CMAP2 = PG_V | PG_KW | ctob(n);
-	load_cr3(rcr3());
+	lcr3(rcr3());
 	bzero(CADDR2, NBPG);
 	*(int*) CADDR2 = 0;
 }
@@ -66,7 +67,7 @@ void
 copyseg(frm, n)
 {
 	*(int*) CMAP2 = PG_V | PG_KW | ctob(n);
-	load_cr3(rcr3());
+	lcr3(rcr3());
 	bcopy((void*) frm, (void*) CADDR2, NBPG);
 }
 
@@ -79,7 +80,7 @@ physcopyseg(frm, to)
 {
 	*(int*) CMAP1 = PG_V | PG_KW | ctob(frm);
 	*(int*) CMAP2 = PG_V | PG_KW | ctob(to);
-	load_cr3(rcr3());
+	lcr3(rcr3());
 	bcopy(CADDR1, CADDR2, NBPG);
 }
 

@@ -1,8 +1,9 @@
 /*-
- * SPDX-License-Identifier: BSD-3-Clause
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
- * Copyright (c) 1998 John Birrell <jb@cimlogic.com.au>.
- * All rights reserved.
+ * This code is derived from software contributed to Berkeley by
+ * William Jolitz.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -12,11 +13,15 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the author nor the names of any co-contributors
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY JOHN BIRRELL AND CONTRIBUTORS ``AS IS'' AND
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
@@ -28,20 +33,26 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD$
  */
 
-#ifndef _MACHINE_SETJMP_H_
-#define	_MACHINE_SETJMP_H_
+#ifndef MACHINE_PARAM_H_
+#define MACHINE_PARAM_H_
 
-#include <sys/cdefs.h>
+/* Machine params for segments */
 
-#define	_JBLEN	12				/* Size of the jmp_buf on AMD64. */
+#define	NBSEG				4194304				/* bytes/segment (SEGMENT SIZE) */
 
-#if _BSD_VISIBLE || __POSIX_VISIBLE
-typedef	struct _sigjmp_buf { long _sjb[_JBLEN]; } sigjmp_buf[1];
-#endif
+#define	SEGOFSET			(NBSEG-1)			/* byte offset into segment */
+#define	SEGSHIFT			22					/* LOG2(NBSEG) */
+#define	SEGSIZE				(1 << SEGSHIFT)		/* NBSEG */
+#define SEGMASK				(SEGSIZE - 1)		/* SEGOFSET */
 
-typedef	struct _jmp_buf { long _jb[_JBLEN]; } jmp_buf[1];
+/*
+ * Mach derived conversion macros
+ */
+#define i386_round_segment(x)	((((unsigned)(x)) + NBSEG - 1) & ~(NBSEG-1))
+#define i386_trunc_segment(x)	((unsigned)(x) & ~(NBSEG-1))
+#define i386_btos(x)			((unsigned)(x) >> SEGSHIFT)
+#define i386_stob(x)			((unsigned)(x) << SEGSHIFT)
 
-#endif /* !_MACHINE_SETJMP_H_ */
+#endif /* MACHINE_PARAM_H_ */

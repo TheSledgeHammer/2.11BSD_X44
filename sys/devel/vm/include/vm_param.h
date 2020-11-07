@@ -175,9 +175,9 @@ extern int						page_shift;
  *	No rounding is used.
  */
 
-#define atos(x)		(((unsigned long)(x)) >> SEGMENT_SHIFT)
+#define atos(x)		(((vm_offset_t)(x)) >> SEGMENT_SHIFT)
 #define	stoa(x)		((vm_offset_t)((x) << SEGMENT_SHIFT))
-#define	atop(x)		(((unsigned long)(x)) >> PAGE_SHIFT)
+#define	atop(x)		(((vm_offset_t)(x)) >> PAGE_SHIFT)
 #define	ptoa(x)		((vm_offset_t)((x) << PAGE_SHIFT))
 
 /*

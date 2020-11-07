@@ -28,7 +28,7 @@
  * @(#)kern_overlay.c	1.00
  */
 
-/* Memory Management for Kernel Overlays */
+/* Memory Management for Overlays */
 
 #include <sys/param.h>
 #include <sys/proc.h>
@@ -53,7 +53,7 @@ char 						*ovlbase, *ovllimit;
  * freep->next reference freelist in buckets.
  */
 void *
-koverlay_allocate(size, type, flags)
+overlay_malloc(size, type, flags)
 	unsigned long size;
 	int type, flags;
 {
@@ -113,7 +113,7 @@ out:
 }
 
 void
-koverlay_free(addr, type)
+overlay_free(addr, type)
 	void *addr;
 	int type;
 {
@@ -139,13 +139,14 @@ koverlay_free(addr, type)
 	ovp->ob_last = addr;
 }
 
+
 void
-koverlay_init()
+overlay_init()
 {
 	register long indx;
 	int npg = (OVL_MEM_SIZE / NBOVL);
 
-	/* kernel overlay allocation */
+	/* overlay allocation */
 	ovlusage = (struct ovlusage *) ovl_alloc(overlay_map, (vm_size_t)(npg * sizeof(struct ovlusage)));
-	omem_map = ovl_suballoc(overlay_map, (vm_offset_t *)&ovlbase, (vm_offset_t *)&ovllimit, (vm_size_t *) npg);
+	omem_map = ovlmem_suballoc(overlay_map, (vm_offset_t *)&ovlbase, (vm_offset_t *)&ovllimit, (vm_size_t *) npg);
 }

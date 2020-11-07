@@ -83,19 +83,16 @@ extern void Xrecurse_lapic_ltimer(void);
 #define LAPIC_PIN_LVINT1	4
 #define LAPIC_PIN_LVERR		5
 
+extern void 		lapic_boot_init(paddr_t);
+extern void 		lapic_set_lvt(void);
+extern void 		lapic_enable(void);
+extern void 		lapic_calibrate_timer(boolean_t);
+extern void 		lapic_reset(void);
 
-struct cpu_info;
-
-extern void lapic_boot_init(paddr_t);
-extern void lapic_set_lvt(void);
-extern void lapic_enable(void);
-extern void lapic_calibrate_timer(bool);
-extern void lapic_reset(void);
-
-extern uint32_t lapic_readreg(u_int);
-extern void lapic_writereg(u_int, uint32_t);
-extern void lapic_write_tpri(uint32_t);
-extern uint32_t lapic_cpu_number(void);
-extern bool lapic_is_x2apic(void);
+extern uint32_t 	lapic_readreg(u_int);
+extern void 		lapic_writereg(u_int, uint32_t);
+extern void 		lapic_write_tpri(uint32_t);
+extern uint32_t 	lapic_cpu_number(void);
+extern boolean_t 	lapic_is_x2apic(void);
 
 #endif

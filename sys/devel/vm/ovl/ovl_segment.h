@@ -31,7 +31,6 @@
 
 #include <devel/vm/ovl/ovl.h>
 #include <devel/vm/ovl/ovl_object.h>
-#include <sys/queue.h>
 
 struct vsegment_hash_head;
 TAILQ_HEAD(vsegment_hash_head , ovl_object);

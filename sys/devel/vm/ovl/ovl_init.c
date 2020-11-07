@@ -60,7 +60,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)vm_page.h	8.3 (Berkeley) 1/9/95
+ *	@(#)vm_init.c	8.1 (Berkeley) 6/11/93
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -89,59 +89,29 @@
  * rights to redistribute these changes.
  */
 
-#ifndef OVL_PAGE_H_
-#define OVL_PAGE_H_
+/*
+ *	Initialize the Overlay Memory subsystem.
+ */
 
-#include <devel/vm/ovl/ovl.h>
-#include <sys/tree.h>
+#include <sys/param.h>
 
-struct vpage_hash_head;
-TAILQ_HEAD(vpage_hash_head, ovl_page);
-struct ovpglist;
-TAILQ_HEAD(ovpglist, ovl_page);
-struct ovl_page {
-	TAILQ_ENTRY(ovl_page)	ovp_hashq;					/* hash table links (S)*/
-	TAILQ_ENTRY(ovl_page)	ovp_listq;					/* pages in same segment (S)*/
+#include <vm/ovl/ovl_overlay.h>
+#include <vm/ovl/ovl_page.h>
+#include <vm/ovl/ovl.h>
 
-	ovl_segment_t			ovp_segment;				/* which segment am I in (O,(S,P))*/
-	vm_offset_t				ovp_offset;					/* offset into segment (O,(S,P)) */
+void
+ovl_mem_init()
+{
+	extern vm_offset_t	overlay_avail, overlay_end;
 
-	u_short					ovp_flags;					/* see below */
+	ovl_segment_init(&overlay_avail, &overlay_end);
+	ovl_page_init(&overlay_avail, &overlay_end);
 
-	TAILQ_ENTRY(ovl_page) 	ovp_vpage_hlist;			/* list of all my associated vm_pages */
-
-#define ovp_vm_object       ovp_segment->ovs_vm_object
-#define ovp_vm_segment      ovp_segment->ovs_vm_segment
-#define ovp_vm_page         ovp_segment->ovs_vm_page
-};
-
-/* flags */
-#define OVL_PG_VM_PG		0x16	/* overlay page holds vm_page */
-
-extern
-struct ovpglist				ovl_page_list;
-extern
-simple_lock_data_t			ovl_page_list_lock;
-
-extern
-struct vpage_hash_head     	ovl_vpage_hashtable;
-long				       	ovl_vpage_count;
-extern
-simple_lock_data_t			ovl_vpage_hash_lock;
-
-#define	ovl_page_lock_lists()	simple_lock(&ovl_page_list_lock)
-#define	ovl_page_unlock_lists()	simple_unlock(&ovl_page_list_lock)
-
-void		ovl_page_init(vm_offset_t, vm_offset_t);
-void		ovl_page_insert(ovl_page_t, ovl_segment_t, vm_offset_t);
-void		ovl_page_remove(ovl_page_t);
-ovl_page_t	ovl_page_lookup(ovl_segment_t, vm_offset_t);
-
-void		ovl_page_insert_vm_page(ovl_page_t, vm_page_t);
-vm_page_t	ovl_page_lookup_vm_page(ovl_page_t, vm_page_t);
-void		ovl_page_remove_vm_page(ovl_page_t, vm_page_t);
-
-//vm_page_copy_to_ovl_page		/* inserts into ovl_page hash list */
-//vm_page_copy_from_ovl_page	/* removes from ovl_page hash list */
-
-#endif /* _OVL_PAGE_H_ */
+	/*
+	 * Initialize other OVL packages
+	 */
+	ovl_object_init(overlay_end - OVL_MIN_ADDRESS);
+	ovl_map_startup();
+	ovlmem_init(overlay_avail, overlay_end);
+	ovl_overlayer_init(overlay_avail, overlay_end, (overlay_end - OVL_MIN_ADDRESS));
+}
