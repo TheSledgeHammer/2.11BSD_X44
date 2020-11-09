@@ -118,40 +118,17 @@ extern int						page_shift;
  */
 #define	VM_METER		1		/* struct vmmeter */
 #define	VM_LOADAVG		2		/* struct loadavg */
-#define	VM_VMEXP		3		/* struct vmexp */
-#define	VM_NKMEMPAGES	4		/* kmem_map pages */
-#define	VM_SWAPMAP		5		/* struct mapent _swapmap[] */
-#define	VM_COREMAP		6		/* struct mapent _coremap[] */
-#define	VM_ANONMIN		7
-#define	VM_EXECMIN		8
-#define	VM_FILEMIN		9
-#define	VM_MAXSLP		10
-#define	VM_USPACE		11
-#define	VM_ANONMAX		12
-#define	VM_EXECMAX		13
-#define	VM_FILEMAX		14
-#define	VM_MINADDRESS	15
-#define	VM_MAXADDRESS	16
+#define	VM_SWAPMAP		3		/* struct mapent swapmap[] */
+#define	VM_COREMAP		4		/* struct mapent coremap[] */
 
-#define	VM_MAXID		17		/* number of valid vm ids */
+#define	VM_MAXID		5		/* number of valid vm ids */
 
 #define	CTL_VM_NAMES { 					\
 	{ 0, 0 }, 							\
 	{ "vmmeter", CTLTYPE_STRUCT }, 		\
 	{ "loadavg", CTLTYPE_STRUCT }, 		\
-	{ "vmexp", CTLTYPE_STRUCT }, 		\
-	{ "nkmempages", CTLTYPE_STRUCT }, 	\
 	{ "swapmap", CTLTYPE_STRUCT }, 		\
 	{ "coremap", CTLTYPE_STRUCT }, 		\
-	{ "anonmin", CTLTYPE_STRUCT }, 		\
-	{ "execmin", CTLTYPE_STRUCT }, 		\
-	{ "filemin", CTLTYPE_STRUCT }, 		\
-	{ "maxslp", CTLTYPE_STRUCT }, 		\
-	{ "uspace", CTLTYPE_STRUCT }, 		\
-	{ "maxslp", CTLTYPE_STRUCT }, 		\
-	{ "anonmax", CTLTYPE_STRUCT }, 		\
-	{ "execmax", CTLTYPE_STRUCT }, 		\
-	{ "filemax", CTLTYPE_STRUCT }, 		\
 }
 
 /* 

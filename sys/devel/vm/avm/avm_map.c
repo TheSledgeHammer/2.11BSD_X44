@@ -53,7 +53,7 @@
 
 #define UVM_AMAP_C		/* ensure disabled inlines are in */
 #include <devel/vm/include/vm.h>
-#include <devel/vm/include/vm_swap.h>
+#include "vm_swap.h"
 #include <devel/vm/avm/avm_map.h>
 
 /*

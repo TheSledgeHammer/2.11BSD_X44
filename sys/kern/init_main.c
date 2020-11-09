@@ -154,6 +154,11 @@ main(framep)
 	procinit();
 
 	/*
+	 * Initialize process lockholder structure
+	 */
+	lockholder_init(p);
+
+	/*
 	 * set up system process 0 (swapper)
 	 */
 	allproc = (struct proc *)p;
@@ -463,6 +468,7 @@ bhinit()
 }
 
 memaddr	bpaddr;		/* physical click-address of buffers */
+
 /*
  * Initialize the buffer I/O system by freeing
  * all buffers and setting all device buffer lists to empty.

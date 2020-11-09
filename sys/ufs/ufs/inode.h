@@ -37,6 +37,7 @@
  *
  *	@(#)inode.h	8.9 (Berkeley) 5/14/95
  */
+#include <sys/queue.h>
 
 #include <ufs/ufs/dir.h>
 #include <ufs/ufs/dinode.h>

@@ -146,15 +146,6 @@ struct	vm_pagerops {
 	/* Initialize pager. */
 	void		(*pgo_init)(void);
 
-	/* add reference to obj */
-	void		(*pgo_reference)(struct vm_object *);
-
-	/* drop reference to obj */
-	void		(*pgo_detach)(struct vm_object *);
-
-	/* special non-standard fault processing */
-	//int	(*pgo_fault)(struct uvm_faultinfo *, vaddr_t, struct vm_page **, int, int, vm_fault_t, vm_prot_t, int);
-
 	/* Allocate pager. */
 	vm_pager_t	(*pgo_alloc)(caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
 

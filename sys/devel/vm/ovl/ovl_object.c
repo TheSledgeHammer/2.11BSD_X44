@@ -72,7 +72,8 @@
 
 #include <devel/vm/include/vm_page.h>
 #include <devel/vm/ovl/ovl_object.h>
-#include <devel/vm/ovl/overlay.h>
+//#include <devel/vm/ovl/overlay.h>
+#include <devel/vm/ovl/ovl_ops.h>
 
 struct ovl_object	overlay_object_store;
 struct ovl_object	omem_object_store;
@@ -143,11 +144,12 @@ _ovl_object_allocate(size, object)
 	/*
 	 *	Object starts out read-write.
 	 */
+	object->ovo_pager = NULL;
+	object->ovo_paging_offset = 0;
 
 	simple_lock(&ovl_object_tree_lock);
 	RB_INSERT(object_t, &ovl_object_tree, object);
 	ovl_object_count++;
-	//cnt.v_nzfod += atop(size);
 	simple_unlock(&ovl_object_tree_lock);
 }
 
@@ -169,14 +171,15 @@ ovl_object_reference(object)
 }
 
 void
-ovl_object_setoverlayer(object, overlay, overlay_offset)
-	ovl_object_t	object;
-	ovl_overlay_t	overlay;
-	vm_offset_t		overlay_offset;
+ovl_object_setpager(object, pager, paging_offset, read_only)
+	ovl_object_t 	object;
+	vm_pager_t		pager;
+	vm_offset_t		paging_offset;
+	boolean_t		read_only;
 {
 	ovl_object_lock(object);
-	object->ovo_overlay = overlay;
-	object->ovo_overlay_offset = overlay_offset;
+	object->ovo_pager = pager;
+	object->ovo_paging_offset = paging_offset;
 	ovl_object_unlock(object);
 }
 
@@ -202,11 +205,11 @@ RB_GENERATE(ovl_object_hash_head, ovl_object_hash_entry, ovoe_hlinks, ovl_object
  *	ovl_object_hash generates a hash the object/id pair.
  */
 u_long
-ovl_object_hash(overlay)
-	ovl_overlay_t	overlay;
+ovl_object_hash(pager)
+	vm_pager_t	pager;
 {
-    Fnv32_t hash1 = fnv_32_buf(&overlay, sizeof(&overlay), FNV1_32_INIT) % OVL_OBJECT_HASH_COUNT;
-    Fnv32_t hash2 = (((unsigned long)overlay)%OVL_OBJECT_HASH_COUNT);
+    Fnv32_t hash1 = fnv_32_buf(&pager, sizeof(&pager), FNV1_32_INIT) % OVL_OBJECT_HASH_COUNT;
+    Fnv32_t hash2 = (((unsigned long)pager)%OVL_OBJECT_HASH_COUNT);
     return (hash1^hash2);
 }
 
@@ -216,18 +219,18 @@ ovl_object_hash(overlay)
  */
 
 ovl_object_t
-ovl_object_lookup(overlay)
-	ovl_overlay_t	overlay;
+ovl_object_lookup(pager)
+	vm_pager_t	pager;
 {
 	struct ovl_object_hash_head			*bucket;
 	register ovl_object_hash_entry_t	entry;
 	ovl_object_t 						object;
 
-	bucket = &ovl_object_hashtable[ovl_object_hash(overlay)];
+	bucket = &ovl_object_hashtable[ovl_object_hash(pager)];
 
 	for (entry = RB_FIRST(ovl_object_hash_head , bucket); entry != NULL; entry = RB_NEXT(ovl_object_hash_head, bucket, entry)) {
 		object = entry->ovoe_object;
-		if (object->ovo_overlay == overlay) {
+		if (object->ovo_pager == pager) {
 			ovl_object_lock(object);
 			object->ovo_ref_count++;
 			ovl_object_unlock(object);
@@ -242,19 +245,19 @@ ovl_object_lookup(overlay)
  *	the hash table.
  */
 void
-ovl_object_enter(object, overlay)
+ovl_object_enter(object, pager)
 	ovl_object_t	object;
-	ovl_overlay_t	overlay;
+	vm_pager_t		pager;
 {
 	struct ovl_object_hash_head	*bucket;
 	register ovl_object_hash_entry_t entry;
 
 	if (object == NULL)
 		return;
-	if (overlay == NULL)
+	if (pager == NULL)
 		return;
 
-	bucket = &ovl_object_hashtable[ovl_object_hash(overlay)];
+	bucket = &ovl_object_hashtable[ovl_object_hash(pager)];
 	entry = (ovl_object_hash_entry_t)overlay_malloc((u_long)sizeof *entry, OVL_OBJHASH, M_WAITOK);
 
 	entry->ovoe_object = object;
@@ -272,18 +275,18 @@ ovl_object_enter(object, overlay)
  *	by reorganizing vm_object_deallocate.
  */
 void
-ovl_object_remove(overlay)
-	register ovl_overlay_t	overlay;
+ovl_object_remove(pager)
+	register vm_pager_t	pager;
 {
 	struct ovl_object_hash_head			*bucket;
 	register ovl_object_hash_entry_t	entry;
 	register ovl_object_t				object;
 
-	bucket = &ovl_object_hashtable[ovl_object_hash(overlay)];
+	bucket = &ovl_object_hashtable[ovl_object_hash(pager)];
 
 	for(entry = RB_FIRST(ovl_object_hash_head, bucket); entry != NULL; entry = RB_NEXT(ovl_object_hash_head, bucket, entry)) {
 		object = entry->ovoe_object;
-		if(object->ovo_overlay == overlay) {
+		if(object->ovo_pager == pager) {
 			RB_REMOVE(ovl_object_hash_head, bucket, entry);
 			free((caddr_t)entry, OVL_OBJHASH);
 			break;
@@ -303,16 +306,16 @@ ovl_vobject_hash(oobject, vobject)
 }
 
 void
-ovl_object_insert_vm_object(oobject, vobject)
+ovl_object_enter_vm_object(oobject, vobject)
     ovl_object_t oobject;
     vm_object_t vobject;
 {
-    struct vobject_hash_head  *vbucket;
-
+    struct vobject_hash_head  	*vbucket;
 
     if(vobject == NULL) {
         return;
     }
+
     vbucket = &ovl_vobject_hashtable[ovl_vobject_hash(oobject, vobject)];
     oobject->ovo_vm_object = vobject;
     oobject->ovo_flags |= OVL_OBJ_VM_OBJ;
@@ -322,15 +325,15 @@ ovl_object_insert_vm_object(oobject, vobject)
 }
 
 vm_object_t
-ovl_object_lookup_vm_object(oobject, vobject)
+ovl_object_lookup_vm_object(oobject)
 	ovl_object_t 	oobject;
-    vm_object_t 	vobject;
 {
+	register vm_object_t 	vobject;
     struct vobject_hash_head *vbucket;
 
     vbucket = &ovl_vobject_hashtable[ovl_vobject_hash(oobject, vobject)];
-    for(oobject = TAILQ_FIRST(vbucket); oobject != NULL; oobject = TAILQ_NEXT(oobject, ovo_vobject_hlist)) {
-        if(oobject->ovo_vm_object == vobject) {
+    for(vobject = TAILQ_FIRST(vbucket)->ovo_vm_object; vobject != NULL; vobject = TAILQ_NEXT(oobject, ovo_vobject_hlist)->ovo_vm_object) {
+        if(vobject == oobject->ovo_vm_object) {
             return (vobject);
         }
     }
@@ -338,10 +341,10 @@ ovl_object_lookup_vm_object(oobject, vobject)
 }
 
 void
-ovl_object_remove_vm_object(oobject, vobject)
-	ovl_object_t oobject;
+ovl_object_remove_vm_object(vobject)
 	vm_object_t  vobject;
 {
+	register ovl_object_t oobject;
     struct vobject_hash_head *vbucket;
 
     vbucket = &ovl_vobject_hashtable[ovl_vobject_hash(oobject, vobject)];

@@ -25,6 +25,69 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/*
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * The Mach Operating System project at Carnegie-Mellon University.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)vm_map.c	8.9 (Berkeley) 5/17/95
+ *
+ *
+ * Copyright (c) 1987, 1990 Carnegie-Mellon University.
+ * All rights reserved.
+ *
+ * Authors: Avadis Tevanian, Jr., Michael Wayne Young
+ *
+ * Permission to use, copy, modify and distribute this software and
+ * its documentation is hereby granted, provided that both the copyright
+ * notice and this permission notice appear in all copies of the
+ * software, derivative works or modified versions, and any portions
+ * thereof, and that both notices appear in supporting documentation.
+ *
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
+ * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND
+ * FOR ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
+ *
+ * Carnegie Mellon requests users of this software to return to
+ *
+ *  Software Distribution Coordinator  or  Software.Distribution@CS.CMU.EDU
+ *  School of Computer Science
+ *  Carnegie Mellon University
+ *  Pittsburgh PA 15213-3890
+ *
+ * any improvements or extensions that they make and grant Carnegie the
+ * rights to redistribute these changes.
+ */
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -34,7 +97,6 @@
 #include <vm/include/vm.h>
 
 #include <vm/ovl/ovl.h>
-#include <vm/extents/vm_extent.h>
 
 #undef RB_AUGMENT
 #define	RB_AUGMENT(x)	ovl_rb_augment(x)
@@ -84,50 +146,27 @@ ovl_map_startup()
     CIRCLEQ_NEXT(mep, ovl_cl_entry) = NULL;
 }
 
-/* create & allocated ovlspace extent map
- * - segmented(TRUE/FALSE): allocation of the 3 process segments (data, stack, text)
+/* Allocate ovlspace
+ * segmented(TRUE/FALSE): allocation of the 3 process segments (data, stack, text)
  */
-void
-ovlspace_create(start, end, storage, storagesize, segmented)
-	vm_offset_t start, end;
-	caddr_t storage;
-	size_t storagesize;
+struct ovlspace *
+ovlspace_alloc(min, max, segmented)
+	vm_offset_t min, max;
 	boolean_t segmented;
 {
 	register struct ovlspace *ovl;
 
 	if(segmented) {
-		if(ovl == NULL) {
-			RMALLOC3(ovl, struct ovlspace *, ovl->ovl_dsize, ovl->ovl_ssize, ovl->ovl_tsize, sizeof(struct ovlspace *));
-		} else {
-			memset(ovl, 0, sizeof(struct ovlspace *));
-		}
-		VM_EXTENT_CREATE(ovl->ovl_extent, "vm_overlay", start, end, M_OVLMAP, storage, storagesize, EX_NOWAIT | EX_MALLOCOK);
-
+		RMALLOC3(ovl, struct ovlspace *, ovl->ovl_dsize, ovl->ovl_ssize, ovl->ovl_tsize, sizeof(struct ovlspace *));
 	} else {
-		if(ovl == NULL) {
-			RMALLOC(ovl, struct ovlspace *, sizeof(struct ovlspace *));
-		} else {
-			memset(ovl, 0, sizeof(struct ovlspace *));
-		}
-		VM_EXTENT_CREATE(ovl->ovl_extent, "vm_overlay", start, end, M_OVLMAP, storage, storagesize, EX_NOWAIT | EX_MALLOCOK);
+		RMALLOC(ovl, struct ovlspace *, sizeof(struct ovlspace *));
 	}
-}
+	memset(ovl, 0, sizeof(struct ovlspace *));
+	ovl_map_init(&ovl->ovl_map, min, max);
+	pmap_pinit(&ovl->ovl_pmap);
+	ovl->ovl_map.ovl_pmap = &ovl->ovl_pmap;
+	ovl->ovl_refcnt = 1;
 
-/* allocate ovlspace */
-struct ovlspace *
-ovlspace_alloc(min, max)
-	vm_offset_t min, max;
-{
-	register struct ovlspace *ovl;
-
-	if(ovl->ovl_extent) {
-		if (vm_extent_alloc_region(ovl->ovl_extent, min, max, EX_NOWAIT | EX_MALLOCOK)) {
-			ovl_map_init(&ovl->ovl_map, min, max);
-			ovl->ovl_map.ovl_pmap = &ovl->ovl_pmap;
-			ovl->ovl_refcnt = 1;
-		}
-	}
 	return (ovl);
 }
 
@@ -144,7 +183,7 @@ ovlspace_free(ovl)
 		 */
 		ovl_map_lock(&ovl->ovl_map);
 		(void) ovl_map_delete(&ovl->ovl_map, ovl->ovl_map.min_offset, ovl->ovl_map.max_offset);
-		VM_EXTENT_FREE(ovl->ovl_extent, ovl, sizeof(struct ovlspace *), EX_NOWAIT);
+		pmap_release(&ovl->ovl_pmap);
 		RMFREE(ovl, sizeof(struct ovlspace *), ovl);
 	}
 }

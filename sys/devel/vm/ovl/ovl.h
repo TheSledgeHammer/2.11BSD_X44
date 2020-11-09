@@ -79,7 +79,6 @@ typedef struct ovl_page			*ovl_page_t;
 struct ovlspace {
 	struct ovl_map 	    ovl_map;	    	/* overlay address */
 	struct pmap    		ovl_pmap;	    	/* private physical map */
-	struct extent 		*ovl_extent;		/* overlay extent allocation */
 
 	int		        	ovl_refcnt;	   		/* number of references */
 	segsz_t 			ovl_tsize;			/* text size */

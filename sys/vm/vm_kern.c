@@ -96,12 +96,10 @@ kmem_alloc_pageable(map, size)
 	size = round_page(size);
 
 	addr = vm_map_min(map);
-	result = vm_map_find(map, NULL, (vm_offset_t) 0,
-				&addr, size, TRUE);
+	result = vm_map_find(map, NULL, (vm_offset_t) 0, &addr, size, TRUE);
 	if (result != KERN_SUCCESS) {
 		return(0);
 	}
-
 	return(addr);
 }
 

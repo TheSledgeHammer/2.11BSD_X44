@@ -2,6 +2,57 @@
 
 #ifndef _VMEXP_H_
 #define _VMEXP_H_
+struct vm {
+	/* vm_page queues */
+	struct pglist 		page_active; 	/* allocated pages, in use */
+	struct pglist 		page_inactive; 	/* pages between the clock hands */
+	struct simplelock 	pageqlock; 		/* lock for active/inactive page q */
+	struct simplelock 	fpageqlock; 	/* lock for free page q */
+	bool				page_init_done;
+
+	/* page hash */
+	struct pglist 		*page_hash; 	/* page hash table (vp/off->page) */
+	int 				page_nhash; 	/* number of buckets */
+	int 				page_hashmask; 	/* hash mask */
+	struct simplelock 	hashlock; 		/* lock on page_hash array */
+
+	/* anon stuff */
+	struct avm_anon 	*afree; 		/* anon free list */
+	struct simplelock 	afreelock; 		/* lock on anon free list */
+
+	/* static kernel map entry pool */
+	struct vm_map_entry *kentry_free; 	/* free page */
+	struct simplelock 	kentry_lock;
+
+	/* swap-related items */
+	struct simplelock 	swap_data_lock;
+
+	/* kernel object: to support anonymous pageable kernel memory */
+	struct vm_object 	*kernel_object;
+};
+
+
+/*
+ * vm_map_entry etype bits:
+ */
+#define VM_ET_OBJ				0x01	/* it is a vm_object */
+#define VM_ET_SUBMAP			0x02	/* it is a vm_map submap */
+#define VM_ET_COPYONWRITE 		0x04	/* copy_on_write */
+#define VM_ET_NEEDSCOPY			0x08	/* needs_copy */
+
+#define VM_ET_ISOBJ(E)			(((E)->etype & VM_ET_OBJ) != 0)
+#define VM_ET_ISSUBMAP(E)		(((E)->etype & VM_ET_SUBMAP) != 0)
+#define VM_ET_ISCOPYONWRITE(E)	(((E)->etype & VM_ET_COPYONWRITE) != 0)
+#define VM_ET_ISNEEDSCOPY(E)	(((E)->etype & VM_ET_NEEDSCOPY) != 0)
+
+#ifdef _KERNEL
+/*
+ * holds all the internal VM data
+ */
+extern struct vm vm;
+
+#include <machine/vmparam.h>
+#endif /* _KERNEL */
 
 /*
  * vmexp: global data structures that are exported to parts of the kernel

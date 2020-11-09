@@ -80,8 +80,8 @@ struct ovl_object {
 
 	RB_ENTRY(ovl_object)				ovo_object_tree;	/* list of all objects */
 
-	ovl_overlay_t						ovo_overlay;		/* where to get data */
-	vm_offset_t							ovo_overlay_offset;	/* offset into overlay space */
+	vm_pager_t							ovo_pager;			/* where to get data */
+	vm_offset_t							ovo_paging_offset;	/* Offset into paging space */
 
 	u_short								ovo_flags;			/* see below */
 	simple_lock_data_t					ovo_lock;			/* Synchronization */
@@ -101,9 +101,7 @@ struct ovl_object {
 };
 
 /* Flags */
-#define OVL_OBJ_KERNEL		0x06	/* kernel overlay object */
-#define OVL_OBJ_VM			0x08	/* vm overlay object */
-#define OVL_OBJ_VM_OBJ		0x16	/* overlay object holds vm_object */
+#define OVL_OBJ_VM_OBJ		0x01	/* overlay object holds vm_object */
 
 RB_HEAD(ovl_object_hash_head, ovl_object_hash_entry);
 struct ovl_object_hash_entry {
@@ -117,7 +115,7 @@ struct object_t				ovl_object_tree;		/* list of allocated objects */
 long						ovl_object_count;		/* count of all objects */
 simple_lock_data_t			ovl_object_tree_lock;	/* lock for object list and count */
 
-ovl_object_t				overlay_object;		/* single overlay object */
+ovl_object_t				overlay_object;			/* single overlay object */
 ovl_object_t				omem_object;
 
 extern
@@ -130,17 +128,14 @@ simple_lock_data_t			ovl_vobject_hash_lock;
 #define	ovl_object_lock_init(object)	simple_lock_init(&(object)->ovo_lock)
 #define	ovl_object_lock(object)			simple_lock(&(object)->ovo_lock)
 #define	ovl_object_unlock(object)		simple_unlock(&(object)->ovo_lock)
-#define	ovl_object_lock_try(object)		simple_lock_try(&(object)->ovo_lock)
-#define	ovl_object_sleep(event, object, interruptible) \
-			thread_sleep((event), &(object)->ovo_lock, (interruptible))
 
 //#ifdef KERNEL
 ovl_object_t	ovl_object_allocate (vm_size_t);
-void		 	ovl_object_enter (ovl_object_t, u_long);
+void		 	ovl_object_enter (ovl_object_t, vm_pager_t);
 void		 	ovl_object_init (vm_size_t);
-ovl_object_t	ovl_object_lookup (u_long);
+ovl_object_t	ovl_object_lookup (vm_pager_t);
 void		 	ovl_object_reference (ovl_object_t);
-void			ovl_object_remove (u_long);
+void			ovl_object_remove (vm_pager_t);
 
 void			ovl_object_insert_vm_object (ovl_object_t, vm_object_t);
 vm_object_t		ovl_object_lookup_vm_object (ovl_object_t, vm_object_t);

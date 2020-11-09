@@ -291,9 +291,9 @@ vm_segment_page_insert(object, offset1, page, offset2)
 	vm_page_t 	page;
 	vm_offset_t offset1, offset2;
 {
-	vm_segment_t segment;
-	segment = vm_segment_lookup(object, offset1);
+	register vm_segment_t segment;
 
+	segment = vm_segment_lookup(object, offset1);
 	if (segment != NULL) {
 		vm_page_insert(page, segment, offset2);
 	}
@@ -304,11 +304,11 @@ vm_segment_page_lookup(object, offset1, offset2)
     vm_object_t	object;
     vm_offset_t offset1, offset2;
 {
-    vm_page_t 	 page;
-    vm_segment_t segment;
-    segment = vm_segment_lookup(object, offset1);
+    register vm_page_t 	 page;
+    register vm_segment_t segment;
 
-    if(segment != NULL) {
+    segment = vm_segment_lookup(object, offset1);
+    if(segment) {
         page = vm_page_lookup(segment, offset2);
         return (page);
     }
@@ -320,16 +320,19 @@ vm_segment_page_remove(object, offset1, offset2)
 	vm_object_t	object;
 	vm_offset_t offset1, offset2;
 {
-    vm_page_t 	 page;
-    vm_segment_t segment;
+	register vm_page_t 	 page;
+	register vm_segment_t segment;
+
     segment = vm_segment_lookup(object, offset1);
-
-    if(segment != NULL) {
+    if(segment) {
         page = vm_page_lookup(segment, offset2);
-
-        if(page != NULL) {
+        if(page) {
         	vm_page_remove(page);
+        } else {
+        	panic("page doesn't exist");
         }
+    } else {
+    	panic("segment not found");
     }
 }
 
@@ -415,16 +418,18 @@ vm_segment_activate(segment)
  *	segment check.
  */
 boolean_t
-vm_segment_zero_fill(s)
-    vm_segment_t s;
+vm_segment_zero_fill(s, p, o)
+    vm_segment_t 	s;
+	vm_page_t 		p;
+	vm_offset_t 	o;
 {
-	vm_page_t p = vm_page_lookup(s, s->sg_offset); /* TODO: fix: segment offset is incorrect */
-
-	if(p) {
-        VM_SEGMENT_CHECK(s);
-        s->sg_flags &= ~SEG_CLEAN;
-	}
-	return (vm_page_zero_fill(p));
+    VM_SEGMENT_CHECK(s);
+    s->sg_flags &= ~SEG_CLEAN;
+    p = vm_page_lookup(s, o);
+    VM_PAGE_CHECK(p);
+	p->flags &= ~PG_CLEAN;
+	pmap_zero_page(VM_PAGE_TO_PHYS(p));
+	return (TRUE);
 }
 
 /*

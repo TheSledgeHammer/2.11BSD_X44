@@ -938,7 +938,7 @@ vm_object_enter(object, pager)
 	vm_object_t	object;
 	vm_pager_t	pager;
 {
-	struct vm_object_hash_head	*bucket;
+	struct vm_object_hash_head		*bucket;
 	register vm_object_hash_entry_t	entry;
 
 	/*
@@ -973,9 +973,9 @@ void
 vm_object_remove(pager)
 	register vm_pager_t	pager;
 {
-	struct vm_object_hash_head	*bucket;
+	struct vm_object_hash_head		*bucket;
 	register vm_object_hash_entry_t	entry;
-	register vm_object_t		object;
+	register vm_object_t			object;
 
 	bucket = &vm_object_hashtable[vm_object_hash(pager)];
 

@@ -209,8 +209,11 @@ void 			simple_lock(struct lock_holder *);
 void 			simple_unlock(struct lock_holder *);
 int				simple_lock_try(struct lock_holder *);
 
+void			lockholder_init(struct proc *);
 void 			set_proc_lockholder(struct lock_holder *, struct proc *);
 struct proc 	*get_proc_lockholder(struct lock_holder *);
+
+
 /*
 void 			set_kthread_lockholder(struct lock_holder *, struct kthread *);
 struct kthread 	*get_kthread_lockholder(struct lock_holder *);

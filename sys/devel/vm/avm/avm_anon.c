@@ -47,7 +47,7 @@
 #include <sys/kernel.h>
 
 #include <devel/vm/include/vm.h>
-#include <devel/vm/include/vm_swap.h>
+#include "vm_swap.h"
 
 /*
  * anonblock_list: global list of anon blocks,

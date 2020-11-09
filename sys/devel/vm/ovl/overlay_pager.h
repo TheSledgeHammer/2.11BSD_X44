@@ -26,20 +26,27 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-struct ovlspace;
+#ifndef OVERLAY_PAGER_H_
+#define OVERLAY_PAGER_H_
 
-//#ifdef KERNEL
-void			ovl_mem_init(void);
-vm_offset_t		ovlmem_alloc(ovl_map_t, vm_size_t);
-void			ovlmem_free(ovl_map_t, vm_offset_t, vm_size_t);
-void			ovlmem_init(vm_offset_t , vm_offset_t );
-ovl_map_t		ovlmem_suballoc(ovl_map_t, vm_offset_t, vm_offset_t, vm_size_t);
-vm_offset_t		ovlmem_malloc(ovl_map_t, vm_size_t, boolean_t);
-vm_offset_t		ovlmem_alloc_wait(ovl_map_t, vm_size_t);
-void			ovlmem_free_wakeup(ovl_map_t, vm_offset_t, vm_size_t);
-int 			ovl_allocate(ovl_map_t, vm_offset_t, vm_size_t, boolean_t);
-int 			ovl_deallocate(ovl_map_t, vm_offset_t, vm_size_t);
-int				ovl_allocate_with_overlayer(ovl_map_t, vm_offset_t *, vm_size_t, boolean_t, ovl_overlay_t, boolean_t);
-struct ovlspace *ovlspace_alloc(vm_offset_t, vm_offset_t, boolean_t);
-struct ovlspace *ovlspace_free(struct ovlspace *);
-//#endif
+/* TODO:
+ * - Combine this with Existing ovl_ops.h/overlay.h
+ *
+ * Idea:
+ * - Overlay Pager: manage ovl_objects & mapping them with vm_objects.
+ * - Overlays should manage segments & pages
+ * - ovlpager: change to overlay_table/struct & ovl_object
+ *
+ * Changes:
+ * - ovl_objects structure
+ * 		- vm_object list contents: separate structure outside ovl_object
+ */
+
+struct ovlpager {
+	ovl_object_t	ovl_object;
+	ovl_segment_t	ovl_segment;
+	ovl_page_t		ovl_page;
+};
+typedef struct ovlpager	*ovl_pager_t;
+
+#endif /* OVERLAY_PAGER_H_ */

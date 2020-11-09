@@ -37,11 +37,10 @@ struct ufs211_quota {
 #define	Q_NDQ	            0x08					/* account has NO disc quota */
 	struct	ufs211_quota    *q_freef;
     struct	ufs211_quota    **q_freeb;
-	struct	ufs211_dquot    *q_dq[NMOUNT];	/* disc quotas for mounted filesys's */
+	struct	ufs211_dquot    *q_dq[NMOUNT];			/* disc quotas for mounted filesys's */
 };
 
 #define	NOQUOTA	((struct quota *) 0)
-
 
 /*
  * The following structure defines the format of the disc quota file

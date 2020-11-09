@@ -1,4 +1,4 @@
-## Development: (devel folder)
+## Development: ("sys/devel" folder)
 - All work here is proof of concept and can change without notice.
 
 (NOTE: This folder is only temporary during initial development. It will be removed once
@@ -7,12 +7,12 @@ an offical release is made.)
 ### Devel Contents:
 - Arch:
 	- i386: (Partially implemented in arch/i386)
-		- x86 related content. 
+		- x86 related content. (To be implemented)
 			- lapic, ioapic, tsc, intr, pmap etc..
 			
-- HTBC: 
-	- HTree Based Blockchain to augment LFS & other existing Log-Structured Filesystems 
-	- akin to Soft-updates & WAPBL
+- HTBC: A HTree Based Blockchain
+	- Intended to augment BSD's LFS & other Log-Structured Filesystems 
+	- provide features of a blockchain to the VFS
 
 - Kern & Sys:
 	- Malloc: A Tertiary Buddy System Allocator (No Plans or use cases). Originally planned as part of a larger memory allocation stack for the kernel. (Needs a home!)
@@ -22,33 +22,38 @@ an offical release is made.)
 	- Threading (Hybrid N:M Model): kernel & user threads
 		- Implements a new concept: Inter-Threadpool Proccess Communication (ITPC)
 		- For User Threads, goto: (usr.lib/libuthread)
-	- Locks: Enhancements to lock
-		- Planned: Replace proc with pid in lockmgr
-		- Rwlock: Introduction of a reader-writers lock
-		- Witness: Partial port of FreeBSD/OpenBSD's witness
 
-- PMAP: Clustered Page Table variant, backed by two nested red-black trees with hashing.
-
-- UFML: LOFS based filesystem layer, combined with features from HTBC.
-	- Aims to provide a Fossil + Venti inspired support to UFS, FFS, MFS & LFS.
-  	- Planned Features: 
+- UFML: A Fossil + Venti inspired filesystem layer 
+	- LOFS based, intended to support to UFS, FFS, MFS & LFS.
+  	- Planned Features: (when combined with the HTBC)
   		- Snapshots
   		- Versioning
   		- Archive
   		- Compression
   		- Encryption
 
-- UFS211: Port of 2.11BSD's UFS Filesystem.
-	- Independent of UFS
+- UFS211: A port of 2.11BSD's UFS Filesystem.
+	- Vnode integration
+	- Planned:
+		- UFML Support
 
-- VM: Updates to the VM Layer
+- VM: Updates & Changes (See: "/devel/vm")
 	- Planned:
 		- Virtual Segments: Logical Address
-			- Provide optional psuedo-segments(stack, code, text)
-			- Improve vm copying,moving, etc.. within vm when used in conjunction with overlays (ovlspace)
-		- VM Extents: VM Memory Management using extent allocation (See: "/devel/vm/extents")
-		- VM Model (A Hybrid of UVM & VM):
-			- VMSpace (aka VM): The current VM 
-			- AVMSpace (aka AVM): All anons, amaps & aobjects (See: "/devel/vm/avm")
-			- OVLSpace (aka OVL): A portion of physical memory with vm like features (See: "/devel/vm/ovl")
-					- A re-implementation of 2.11BSD's use of Overlays
+			- Improve internal operations.
+				- Most noteably when used in conjunction with overlays (see below)
+			- Planned:
+				- Optional support for seperate I & D space
+				- Optional support for psuedo-segments (stack, code, text)
+		- Overlay Space: A re-implementation of Overlays from 2.11BSD (See: "/devel/vm/ovl")
+			- OVLSpace: A portion of physical memory with vm-like features 
+			- Supports vm objects, pages & segments.
+			- Planned:
+				- Optional:
+					- Support for seperate I & D space
+					- Support for psuedo-segments (stack, code, text)
+				- Configurable:
+					- Overlay Space Size: Current Default = 10% of VM Size
+					- Number of Overlays: Current Default = 64
+				- Swap support when OVL memory is full
+				- Support overlaying executeables

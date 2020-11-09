@@ -26,48 +26,45 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* To Be moved into UFS when ready */
+/* To Be moved into LFS when ready */
 
 #include <sys/user.h>
-
-#include <ufs/ufs/inode.h>
+#include <sys/ufs/ufs/inode.h>
 
 #include "devel/ufs/ufml/ufml.h"
 #include "devel/ufs/ufml/ufml_meta.h"
 #include "devel/ufs/ufml/ufml_extern.h"
 #include "devel/ufs/ufml/ufml_ops.h"
 
-/* UFS's UFML-based vector operations */
-
+/* LFS's UFML-based vector operations */
 int
-ufs_archive(ap)
+lfs_archive(ap)
 	struct uop_archive_args *ap;
 {
-	struct inode *ip = UFMLTOUFS(ap->a_vp);
+	struct inode *ip = UFMLTOLFS(ap->a_vp);
 
 	return (0);
 }
 
 int
-ufs_extract(ap)
+lfs_extract(ap)
 	struct uop_extract_args *ap;
 {
-	struct inode *ip = UFMLTOUFS(ap->a_vp);
-
+	struct inode *ip = UFMLTOLFS(ap->a_vp);
 	return (0);
 }
 
 int
-ufs_compress(ap)
+lfs_compress(ap)
 	struct uop_compress_args *ap;
 {
-	struct inode *ip = UFMLTOUFS(ap->a_vp);
+	struct inode *ip = UFMLTOLFS(ap->a_vp);
 
 	return (0);
 }
 
 int
-ufs_decompress(ap)
+lfs_decompress(ap)
 	struct uop_decompress_args *ap;
 {
 	struct inode *ip = UFMLTOUFS(ap->a_vp);
@@ -76,7 +73,7 @@ ufs_decompress(ap)
 }
 
 int
-ufs_encrypt(ap)
+lfs_encrypt(ap)
 	struct uop_encrypt_args *ap;
 {
 	struct inode *ip = UFMLTOUFS(ap->a_vp);
@@ -85,7 +82,7 @@ ufs_encrypt(ap)
 }
 
 int
-ufs_decrypt(ap)
+lfs_decrypt(ap)
 	struct uop_decrypt_args *ap;
 {
 	struct inode *ip = UFMLTOUFS(ap->a_vp);
@@ -94,7 +91,7 @@ ufs_decrypt(ap)
 }
 
 int
-ufs_snapshot_write(ap)
+lfs_snapshot_write(ap)
 	struct uop_snapshot_write_args *ap;
 {
 	struct inode *ip = UFMLTOUFS(ap->a_vp);
@@ -103,7 +100,7 @@ ufs_snapshot_write(ap)
 }
 
 int
-ufs_snapshot_read(ap)
+lfs_snapshot_read(ap)
 	struct uop_snapshot_read_args *ap;
 {
 	struct inode *ip = UFMLTOUFS(ap->a_vp);
@@ -112,7 +109,7 @@ ufs_snapshot_read(ap)
 }
 
 int
-ufs_snapshot_delete(ap)
+lfs_snapshot_delete(ap)
 	struct uop_snapshot_delete_args *ap;
 {
 	struct inode *ip = UFMLTOUFS(ap->a_vp);
@@ -121,7 +118,7 @@ ufs_snapshot_delete(ap)
 }
 
 int
-ufs_snapshot_commit(ap)
+lfs_snapshot_commit(ap)
 	struct uop_snapshot_commit_args *ap;
 {
 	struct inode *ip = UFMLTOUFS(ap->a_vp);
@@ -129,16 +126,16 @@ ufs_snapshot_commit(ap)
 	return (0);
 }
 
-struct ufmlops ufsuops = {
-	.uop_archive 			=	ufs_archive,			/* archive */
-	.uop_extract 			=	ufs_extract,			/* extract */
-	.uop_compress 			=	ufs_compress,			/* compress */
-	.uop_decompress 		=	ufs_decompress,			/* decompress */
-	.uop_encrypt 			=	ufs_encrypt,			/* encrypt */
-	.uop_decrypt 			=	ufs_decrypt,			/* decrypt */
-	.uop_snapshot_write 	= 	ufs_snapshot_write,		/* snapshot_write */
-	.uop_snapshot_read 		= 	ufs_snapshot_read,		/* snapshot_read */
-	.uop_snapshot_delete 	= 	ufs_snapshot_delete,	/* snapshot_delete */
-	.uop_snapshot_commit 	= 	ufs_snapshot_commit,	/* snapshot_commit */
+struct ufmlops lfsuops = {
+	.uop_archive 			=	lfs_archive,			/* archive */
+	.uop_extract 			=	lfs_extract,			/* extract */
+	.uop_compress 			=	lfs_compress,			/* compress */
+	.uop_decompress 		=	lfs_decompress,			/* decompress */
+	.uop_encrypt 			=	lfs_encrypt,			/* encrypt */
+	.uop_decrypt 			=	lfs_decrypt,			/* decrypt */
+	.uop_snapshot_write 	= 	lfs_snapshot_write,		/* snapshot_write */
+	.uop_snapshot_read 		= 	lfs_snapshot_read,		/* snapshot_read */
+	.uop_snapshot_delete 	= 	lfs_snapshot_delete,	/* snapshot_delete */
+	.uop_snapshot_commit 	= 	lfs_snapshot_commit,	/* snapshot_commit */
 	(struct ufmlops *)NULL 	= 	(int(*)())NULL
 };

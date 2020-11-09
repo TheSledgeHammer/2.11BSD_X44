@@ -67,7 +67,6 @@
  *	for builtin pagers.
  */
 
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
@@ -177,6 +176,7 @@ vm_pager_atos(kva)
 	vm_offset_t pa;
 
 	pa = pmap_extract(vm_map_pmap(pager_map), kva);
+
 	if (pa == 0)
 		panic("vm_pager_stop");
 	return (PHYS_TO_VM_SEGMENT(pa));

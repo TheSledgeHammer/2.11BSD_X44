@@ -72,8 +72,8 @@
 
 #include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_page.h>
-#include <devel/vm/include/vm_map.h>
 #include <vm/include/vm_pageout.h>
+#include "avm/vm_map.h"
 
 /*
  *	Associated with page of user-allocatable memory is a

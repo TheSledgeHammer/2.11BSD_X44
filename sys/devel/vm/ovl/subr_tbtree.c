@@ -36,8 +36,6 @@
 
 #include "vm/ovl/tbtree.h"
 
-struct tbtree 	treebucket[MINBUCKET + 16];
-
 static int isPowerOfTwo(long n); 	/* 0 = true, 1 = false */
 
 

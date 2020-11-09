@@ -40,6 +40,7 @@
 #define OVL_ACTIVE 		0x004		/* overlay is active */
 #define OVL_INACTIVE 	0x008		/* overlay is inactive */
 #define OVL_EXEC		0x010 		/* overlay is executing */
+#define OVL_NOSPACE 	0x020		/* no space in overlay */
 
 /* types */
 #define OV_DFLT			-1
@@ -60,10 +61,25 @@ struct overlaylst;
 CIRCLEQ_HEAD(overlaylst, overlay_struct);
 struct overlay_struct {
 	CIRCLEQ_ENTRY(overlay_struct) 	o_list;		/* list of overlays */
-
+	struct overlayops 				*o_ops;		/* overlay ops */
     int							    o_novl;		/* number of overlays */
 	int								o_type;		/* type of overlay */
 	int 							o_flags;	/* overlay flags */
+
+	union {
+		struct overlay_object      	*og_object;
+		struct overlay_segment		*og_segment;
+		struct overlay_page        	*og_page;
+	} o_gen;
+
+#define o_object					o_gen.og_object->oo_object
+#define o_vobject					o_gen.og_object->oo_vobject
+#define o_segment					o_gen.og_segment->os_segment
+#define o_segoffset					o_gen.og_segment->os_offset
+#define o_vsegment					o_gen.og_segment->os_vsegment
+#define o_page						o_gen.og_page->op_page;
+#define o_pgoffset					o_gen.og_page->op_offset;
+#define o_vpage 					o_gen.og_page->op_vpage;
 };
 typedef struct overlay_struct 		*ovl_overlay_t;
 

@@ -34,6 +34,10 @@
  * - overlays list lookup
  * - loading & unloading an overlay in list
  * - execution of an overlay in list
+ *
+ * - Adjust:
+ * - overlay_table & overlay_struct
+ * - lookup, removal and insertion is convoluted & does not flow naturally with overlaid vm components
  */
 
 #include <sys/fnv_hash.h>
@@ -99,36 +103,60 @@ ovl_overlayer_init(start, end, size)
 	ovl->o_type = OV_DFLT;
 }
 
+/* [Internal use only] */
 void
-ovl_overlayer_insert(ovltable)
+ovl_overlayer_insert(ovltable, type)
 	struct overlay_table *ovltable;
+	int type;
 {
 	struct overlaylst *bucket = &overlays_hashtable[ovl_overlay_hash(ovltable)];
 	register ovl_overlay_t ovl = ovltable->o_private.og_overlay;
 
 	if(ovl->o_novl <= NOVL) {
 		ovl->o_flags = OVL_INACTIVE;
+		ovl->o_type = type;
 		CIRCLEQ_INSERT_HEAD(bucket, ovl, o_list);
 		ovl->o_novl++;
+	} else {
+		panic("overlays reached max number permitted: cur %d max %d", ovl->o_novl, NOVL);
 	}
 }
 
+/* [Internal use only] */
 void
-ovl_overlayer_remove(ovltable)
+ovl_overlayer_remove(ovltable, type)
 	struct overlay_table *ovltable;
+	int type;
 {
 	struct overlaylst *bucket = &overlays_hashtable[ovl_overlay_hash(ovltable)];
 	register ovl_overlay_t ovl = ovltable->o_private.og_overlay;
 
-	if(ovl->o_flags == OVL_ACTIVE) {
+	if(ovl->o_flags == OVL_ACTIVE && ovl->o_type == type) {
 		ovl->o_flags = OVL_INACTIVE;
 		CIRCLEQ_REMOVE(bucket, ovl, o_list);
 		ovl->o_novl--;
 	}
 }
 
+/* [Internal use only] */
+ovl_overlay_t
+ovl_overlayer_lookup(ovltable)
+	struct overlay_table *ovltable;
+{
+	struct overlaylst *bucket;
+	register ovl_overlay_t ovl;
+
+	bucket = &overlays_hashtable[ovl_overlay_hash(ovltable)];
+	for(ovl = CIRCLEQ_FIRST(bucket); ovl != NULL; ovl = CIRCLEQ_NEXT(ovl, o_list)) {
+		if(ovl == ovltable->o_private.og_overlay) {
+			return (ovl);
+		}
+	}
+	return (NULL);
+}
+
 void
-ovl_overlayer_vm_object(ovltable, object, vobject)
+ovl_overlayer_insert_vm_object(ovltable, object, vobject)
 	struct overlay_table 	*ovltable;
 	ovl_object_t 			object;
 	vm_object_t 			vobject;
@@ -150,7 +178,7 @@ ovl_overlayer_vm_object(ovltable, object, vobject)
 }
 
 void
-ovl_overlayer_vm_segment(ovltable, segment, vsegment)
+ovl_overlayer_insert_vm_segment(ovltable, segment, vsegment)
 	struct overlay_table 	*ovltable;
 	ovl_segment_t 			segment;
 	vm_segment_t 			vsegment;
@@ -173,7 +201,7 @@ ovl_overlayer_vm_segment(ovltable, segment, vsegment)
 }
 
 void
-ovl_overlayer_vm_page(ovltable, page, vpage)
+ovl_overlayer_insert_vm_page(ovltable, page, vpage)
 	struct overlay_table 	*ovltable;
 	ovl_page_t 				page;
 	vm_page_t				vpage;
@@ -193,4 +221,13 @@ ovl_overlayer_vm_page(ovltable, page, vpage)
 
 	ovlpage->op_vpage = vpage;
 	ovl_page_insert_vm_page(page, vpage);
+}
+
+void
+ovl_overlayer_remove_vm_page(ovltable)
+	struct overlay_table 	*ovltable;
+{
+	struct overlay_page *ovlpage = ovltable->o_private.og_page;
+
+	ovl_page_remove_vm_page(ovlpage->op_page, ovlpage->op_vpage);
 }

@@ -79,22 +79,19 @@ typedef struct pager_struct 	*vm_pager_t;
 #include <vm/include/vm_inherit.h>
 #include <vm/include/vm_prot.h>
 
-#include <devel/vm/include/vmexp.h>
-#include <devel/vm/include/vm_map.h>
 #include <devel/vm/include/vm_object.h>
 #include <devel/vm/include/vm_param.h>
-#include <devel/vm/include/vm_swap.h>
-#include <devel/vm/extents/vm_extent.h>			/* Work in Progress */
-#include <devel/vm/include/vm_segment.h>
-
-#include <devel/vm/avm/avm.h>					/* Work in Progress */
+#include <devel/vm/include/vm_segment.h>		/* Work in Progress */
 #include <devel/vm/ovl/ovl.h>					/* Work in Progress */
+
+#include "../avm/vm_map.h"
+#include "../avm/vm_swap.h"
 
 /*
  *	MACH VM locking type mappings to kernel types
  */
-typedef struct simplelock	simple_lock_data_t;
-typedef struct simplelock	*simple_lock_t;
+typedef struct lock_object	simple_lock_data_t;
+typedef struct lock_object	*simple_lock_t;
 typedef struct lock			lock_data_t;
 typedef struct lock			*lock_t;
 
@@ -106,10 +103,10 @@ typedef struct lock			*lock_t;
 struct vmspace {
 	struct	vm_map 	 	vm_map;			/* VM address map */
 	struct	pmap 	 	vm_pmap;		/* private physical map */
-	struct	extent	 	*vm_extent;		/* extent manager */
 
 	int				 	vm_refcnt;		/* number of references */
 	caddr_t			 	vm_shm;			/* SYS5 shared memory private data XXX */
+
 /* we copy from vm_startcopy to the end of the structure on fork */
 #define vm_startcopy 	vm_rssize
 	segsz_t 		 	vm_rssize; 		/* current resident set size in pages */
@@ -123,56 +120,4 @@ struct vmspace {
 	caddr_t 		 	vm_minsaddr;	/* user VA at min stack growth */
 	caddr_t 		 	vm_maxsaddr;	/* user VA at max stack growth */
 };
-
-struct vm {
-	/* vm_page queues */
-	struct pglist 		page_active; 	/* allocated pages, in use */
-	struct pglist 		page_inactive; 	/* pages between the clock hands */
-	struct simplelock 	pageqlock; 		/* lock for active/inactive page q */
-	struct simplelock 	fpageqlock; 	/* lock for free page q */
-	bool				page_init_done;
-
-	/* page hash */
-	struct pglist 		*page_hash; 	/* page hash table (vp/off->page) */
-	int 				page_nhash; 	/* number of buckets */
-	int 				page_hashmask; 	/* hash mask */
-	struct simplelock 	hashlock; 		/* lock on page_hash array */
-
-	/* anon stuff */
-	struct avm_anon 	*afree; 		/* anon free list */
-	struct simplelock 	afreelock; 		/* lock on anon free list */
-
-	/* static kernel map entry pool */
-	struct vm_map_entry *kentry_free; 	/* free page */
-	struct simplelock 	kentry_lock;
-
-	/* swap-related items */
-	struct simplelock 	swap_data_lock;
-
-	/* kernel object: to support anonymous pageable kernel memory */
-	struct vm_object 	*kernel_object;
-};
-
-
-/*
- * vm_map_entry etype bits:
- */
-#define VM_ET_OBJ				0x01	/* it is a vm_object */
-#define VM_ET_SUBMAP			0x02	/* it is a vm_map submap */
-#define VM_ET_COPYONWRITE 		0x04	/* copy_on_write */
-#define VM_ET_NEEDSCOPY			0x08	/* needs_copy */
-
-#define VM_ET_ISOBJ(E)			(((E)->etype & VM_ET_OBJ) != 0)
-#define VM_ET_ISSUBMAP(E)		(((E)->etype & VM_ET_SUBMAP) != 0)
-#define VM_ET_ISCOPYONWRITE(E)	(((E)->etype & VM_ET_COPYONWRITE) != 0)
-#define VM_ET_ISNEEDSCOPY(E)	(((E)->etype & VM_ET_NEEDSCOPY) != 0)
-
-//#ifdef _KERNEL
-/*
- * holds all the internal VM data
- */
-extern struct vm vm;
-
-#include <machine/vmparam.h>
-#endif /* _KERNEL */
 #endif /* _VM_H */
