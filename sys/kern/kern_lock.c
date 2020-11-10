@@ -89,7 +89,7 @@ lockinit(lkp, prio, wmesg, timo, flags)
 	lkp->lk_wmesg = wmesg;
 
 	/* lock holder */
-	//memset(lkp->lk_lockholder, 0, sizeof(struct lock_holder));
+	lkp->lk_lockholder = &kernel_lockholder;
 	LOCKHOLDER_PID(lkp->lk_lockholder) = LK_NOPROC;
 }
 
@@ -584,13 +584,14 @@ lock_object_try(lock)
 /*
  * Lock Holder:
  */
-struct lock_holder *kernel_lockholder;
+//struct lock_holder *kernel_lockholder;
 
 static void
 lockholder_alloc(holder)
 	struct lock_holder *holder;
 {
 	memset(holder, 0, sizeof(struct lock_holder));
+	//rmalloc(holder, sizeof(struct lock_holder));
 }
 
 void

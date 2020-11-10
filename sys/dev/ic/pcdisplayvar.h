@@ -75,12 +75,12 @@ _pcdisplay_6845_write(struct pcdisplay_handle *ph, int reg, u_int8_t val)
 
 void	pcdisplay_cursor_init(struct pcdisplayscreen *, int);
 void	pcdisplay_cursor_reset(struct pcdisplayscreen *);
-int	pcdisplay_cursor(void *, int, int, int);
-int	pcdisplay_mapchar(void *, int, unsigned int *);
-int	pcdisplay_putchar(void *, int, int, u_int, uint32_t);
+int		pcdisplay_cursor(void *, int, int, int);
+int		pcdisplay_mapchar(void *, int, unsigned int *);
+int		pcdisplay_putchar(void *, int, int, u_int, uint32_t);
 struct wsdisplay_charcell;
-int	pcdisplay_getchar(void *, int, int, struct wsdisplay_charcell *);
-int	pcdisplay_copycols(void *, int, int, int,int);
-int	pcdisplay_erasecols(void *, int, int, int, uint32_t);
-int	pcdisplay_copyrows(void *, int, int, int);
-int	pcdisplay_eraserows(void *, int, int, uint32_t);
+int		pcdisplay_getchar(void *, int, int, struct wsdisplay_charcell *);
+int		pcdisplay_copycols(void *, int, int, int,int);
+int		pcdisplay_erasecols(void *, int, int, int, uint32_t);
+int		pcdisplay_copyrows(void *, int, int, int);
+int		pcdisplay_eraserows(void *, int, int, uint32_t);

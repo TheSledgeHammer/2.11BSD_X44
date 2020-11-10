@@ -7,7 +7,7 @@
  */
 
 #include "tb.h"
-//#if NTB > 0
+#if NTB > 0
 
 /*
  * Line discipline for RS232 tablets;

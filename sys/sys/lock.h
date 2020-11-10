@@ -191,6 +191,10 @@ struct lock_holder {
 	struct uthread 				*lh_uthread;
 };
 
+//#ifdef KERNEL
+struct lock_holder 		*kernel_lockholder;
+#endif
+
 /* lock holder macros */
 #define LOCKHOLDER_PID(h)	((h)->lh_pid)
 #define LOCKHOLDER_PGRP(h)	((h)->lh_pgrp)

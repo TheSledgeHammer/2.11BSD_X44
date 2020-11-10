@@ -68,7 +68,7 @@
 #include <sys/fcntl.h>
 #include <sys/vnode.h>
 #include <sys/select.h>
-//#include <sys/poll.h>
+#include <sys/poll.h>
 #include <sys/malloc.h>
 #include <sys/proc.h>
 #include <sys/systm.h>
@@ -76,7 +76,7 @@
 #include <sys/kernel.h>
 #include <sys/signalvar.h>
 #include <sys/conf.h>
-#include <sys/audioio.h>
+#include <dev/audioio.h>
 #include <sys/device.h>
 
 #include <dev/audio_if.h>

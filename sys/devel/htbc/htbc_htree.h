@@ -28,10 +28,11 @@
  *
  * $FreeBSD: head/sys/fs/ext2fs/htree.h 262623 2014-02-28 21:25:32Z pfg $
  */
+
 #ifndef HTBC_HTREE_H_
 #define	HTBC_HTREE_H_
 
-#define	HTREE_MAXNAMLEN			255
+#define	HTREE_MAXNAMLEN				255
 
 #define	HTREE_LEGACY				0
 #define	HTREE_HALF_MD4				1
@@ -43,60 +44,60 @@
 #define	HTREE_EOF 					0x7FFFFFFF
 
 struct htree_fake_direct {
-	uint32_t 	h_ino;						/* inode number of entry */
-	uint16_t 	h_reclen;					/* length of this record */
-	uint8_t  	h_namlen;					/* length of string in d_name */
-	uint8_t  	h_type;						/* file type */
-	char        h_name[HTREE_MAXNAMLEN];	/* name with length<=HTREE_MAXNAMLEN */
+	uint32_t 					h_ino;						/* inode number of entry */
+	uint16_t 					h_reclen;					/* length of this record */
+	uint8_t  					h_namlen;					/* length of string in d_name */
+	uint8_t  					h_type;						/* file type */
+	char        				h_name[HTREE_MAXNAMLEN];	/* name with length<=HTREE_MAXNAMLEN */
 };
 
 struct htree_count {
-	uint16_t h_entries_max;
-	uint16_t h_entries_num;
+	uint16_t 					h_entries_max;
+	uint16_t 					h_entries_num;
 };
 
 struct htree_entry {
-	uint32_t h_hash;
-	uint32_t h_blk;
+	uint32_t 					h_hash;
+	uint32_t 					h_blk;
 };
 
 struct htree_root_info {
-	uint32_t h_reserved1;
-	uint8_t  h_hash_version;
-	uint8_t  h_info_len;
-	uint8_t  h_ind_levels;
-	uint8_t  h_reserved2;
+	uint32_t 					h_reserved1;
+	uint8_t  					h_hash_version;
+	uint8_t  					h_info_len;
+	uint8_t  					h_ind_levels;
+	uint8_t 	 				h_reserved2;
 };
 
 struct htree_root {
-	struct htree_fake_direct h_dot;
-	char h_dot_name[4];
-	struct htree_fake_direct h_dotdot;
-	char h_dotdot_name[4];
-	struct htree_root_info h_info;
-	struct htree_entry h_entries[0];
+	struct htree_fake_direct 	h_dot;
+	char 						h_dot_name[4];
+	struct htree_fake_direct 	h_dotdot;
+	char 						h_dotdot_name[4];
+	struct htree_root_info 		h_info;
+	struct htree_entry 			h_entries[0];
 };
 
 struct htree_node {
-	struct htree_fake_direct h_fake_dirent;
-	struct htree_htree_entry h_entries[0];
+	struct htree_fake_direct 	h_fake_dirent;
+	struct htree_htree_entry 	h_entries[0];
 };
 
 struct htree_lookup_level {
-	struct buf *h_bp;
-	struct htree_entry *h_entries;
-	struct htree_entry *h_entry;
+	struct buf 					*h_bp;
+	struct htree_entry 			*h_entries;
+	struct htree_entry 			*h_entry;
 };
 
 struct htree_lookup_info {
-	struct htree_lookup_level h_levels[2];
-	uint32_t h_levels_num;
+	struct htree_lookup_level 	h_levels[2];
+	uint32_t 					h_levels_num;
 };
 
 struct htree_sort_entry {
-	uint16_t h_offset;
-	uint16_t h_size;
-	uint32_t h_hash;
+	uint16_t 					h_offset;
+	uint16_t 					h_size;
+	uint32_t 					h_hash;
 };
 
 /* file flags */

@@ -35,12 +35,12 @@ int	SLOPEN(),SLCLOSE(),SLINPUT(),SLTIOCTL(),SLSTART();
 #endif
 
 
-struct	linesw linesw[] =
+struct linesw linesw[] =
 {
 	ttyopen, ttylclose, ttread, ttwrite, nullioctl,	/* 0- OTTYDISC */
 	ttyinput, nodev, nulldev, ttstart, ttymodem,
 #if NBK > 0
-	bkopen, bkclose, bkread, ttwrite, bkioctl,	/* 1- NETLDISC */
+	bkopen, bkclose, bkread, ttwrite, bkioctl,		/* 1- NETLDISC */
 	bkinput, nodev, nulldev, ttstart, nullmodem,
 #else
 	nodev, nodev, nodev, nodev, nodev,
@@ -57,7 +57,7 @@ struct	linesw linesw[] =
 #endif
 #if NSL > 0
 	SLOPEN, SLCLOSE, nodev, nodev, SLTIOCTL,
-	SLINPUT, nodev, nulldev, SLSTART, nulldev,	/* 4- SLIPDISC */
+	SLINPUT, nodev, nulldev, SLSTART, nulldev,		/* 4- SLIPDISC */
 #else
 	nodev, nodev, nodev, nodev, nodev,
 	nodev, nodev, nodev, nodev, nodev,

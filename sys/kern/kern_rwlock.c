@@ -62,7 +62,7 @@ rwlock_init(rwl, prio, wmesg, timo, flags)
 	rwl->rwl_wmesg = wmesg;
 
 	/* lock holder */
-	memset(rwl->rwl_lockholder, 0, sizeof(struct lock_holder));
+	rwl->rwl_lockholder = &kernel_lockholder;
 	LOCKHOLDER_PID(rwl->rwl_lockholder) = RW_NOTHREAD;
 }
 

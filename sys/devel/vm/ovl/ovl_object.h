@@ -137,7 +137,7 @@ ovl_object_t	ovl_object_lookup (vm_pager_t);
 void		 	ovl_object_reference (ovl_object_t);
 void			ovl_object_remove (vm_pager_t);
 
-void			ovl_object_insert_vm_object (ovl_object_t, vm_object_t);
+void			ovl_object_enter_vm_object (ovl_object_t, vm_object_t);
 vm_object_t		ovl_object_lookup_vm_object (ovl_object_t, vm_object_t);
 void			ovl_object_remove_vm_object (ovl_object_t, vm_object_t);
 

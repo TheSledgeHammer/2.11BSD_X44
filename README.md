@@ -4,8 +4,8 @@
 2.11BSD_X44 is 2.11BSD that continues with that tradition. Replacing the 4.3BSD styled VM space and inodes with 4.4BSD's vmspace and vnodes. While retaining 2.11BSD's kernel and user space. 2.11BSD_X44 adopts the 4.4BSD & later BSD's (i.e. FreeBSD, NetBSD, OpenBSD & DragonflyBSD) approach of having a clearly defined architecture dependent code and architecture independent code, allowing for easier portability.
 
 ## Project Goals:
-- Maintain Traditional 2.11BSD Style while keeping current.
-  - Hybrid mix of old with new.
+- Maintain a coding style in keeping with 2.11BSD's
+- Innovate new ways to improve the OS while following the above point.
 - Small Footprint: Ideally less than 200 system calls.
 - Clean code
 
@@ -14,26 +14,32 @@
 - AMD64 (Planned)
 - Arm (32-Bit/64-Bit) (Planned)
 
-## Current Project Tasks:
+## Current Project Aims:
 - Improve 2.11BSD's Dual Control (Proc & User)
-- Multitasking:
-  - Multi-Threading & SMP
-  - Scheduler Improvements
+- Threading: Work in Progress
+- Scheduler: Work in Progress
 - Networking:
-  - Firewall/ Packet Filter: NPF or PF & IPFW
-  - IPv6
+  	- Firewall/ Packet Filter: NPF or PF & IPFW
+  	- IPv6
 - Filesystem Updates:
-  - Extended Attributes
-  - UFS2 Support
-  - WAPBL
-  - Dirhash
-- Filesystem Support:
-  - NFS
-  - SMB
-  - PUFFS or FUSE
-
+	- UFS/FFS/LFS:
+  		- Support UFS2
+  		- UFS Journaling
+  		- Dirhash
+- New Filesystems (In Kernel):
+	- EXT2/3/4
+	- NTFS
+	- NFS: (Possible: 4.4BSD-Lite2: missing networking)
+	- SMB/CIFS
+	- PUFFS or FUSE
+  	
 ## Development:
-- Please read the TODO for a list of what needs doing.
+- Please read the TODO for an in-depth list. 
+Or
+- Read the Readme in "devel" for in-development concepts planned
+
+- Top Priority:
+	- Compiling for i386/x86 platform
 
 ## Porting:
 2.11BSD_X44 is entirely open to being ported to different architectures.
@@ -43,7 +49,7 @@ Though due to limited access to hardware, testing of 2.11BSD_X44 on that archite
 - Anyone is welcome to contribute.
 - Your code should ideally fit the following guidelines & rules below
 - Licensing: 3-Clause BSD license preferable
-  - Non BSD licensed code should be placed in the (folder: external/"license"/"project name")
+	- Non BSD licensed code should be placed in the (folder: external/"license"/"project name")
     - Different versions of the same License (e.g. GPLv1, GPLv2, etc.) can be placed under one folder
 - These rules in place to make it pleasant & easier for everyone.
 	- It is highly recommended that you adhere to the following Contribution Guidelines & Rules.
@@ -55,6 +61,6 @@ Though due to limited access to hardware, testing of 2.11BSD_X44 on that archite
 
 ### Contribution Rules:
 1. Use of profanity.
-  - Will not accept code that contains profanity.
+  	- Will not accept code that contains profanity.
 2. No abuse of others
 	- Constructive criticism is welcome

@@ -35,7 +35,7 @@
  */
 
 #include <sys/types.h>
-#include <sys/audioio.h>
+#include <dev/audioio.h>
 #include <machine/endian_machdep.h>
 #include <dev/auconv.h>
 

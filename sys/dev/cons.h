@@ -38,7 +38,6 @@
  *	@(#)cons.h	8.1 (Berkeley) 6/11/93
  */
 
-
 struct consdev {
 	void	(*cn_probe)(struct consdev *);	/* probe hardware and fill in consdev info */
 	void	(*cn_init)(struct consdev *);	/* turn on as console */

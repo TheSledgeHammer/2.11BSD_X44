@@ -15,9 +15,9 @@ an offical release is made.)
 	- provide features of a blockchain to the VFS
 
 - Kern & Sys:
-	- Malloc: A Tertiary Buddy System Allocator (No Plans or use cases). Originally planned as part of a larger memory allocation stack for the kernel. (Needs a home!)
+	- Malloc: A Tertiary Buddy System Allocator (Needs a home!)
 	- Scheduler: A Stackable Scheduler that sits atop 2.11BSD's existing scheduler (kern_synch.c).
-		- Global Scheduler: Interface/API for new schedulers
+		- Global Scheduler: Interface/API for other schedulers
 		- Hybrid EDF/CFS Scheduler
 	- Threading (Hybrid N:M Model): kernel & user threads
 		- Implements a new concept: Inter-Threadpool Proccess Communication (ITPC)
@@ -36,21 +36,22 @@ an offical release is made.)
 	- Vnode integration
 	- Planned:
 		- UFML Support
+		- Extended Attributes
 
 - VM: Updates & Changes (See: "/devel/vm")
 	- Planned:
 		- Virtual Segments: Logical Address
-			- Improve internal operations.
+			- Improve internal VM operations.
 				- Most noteably when used in conjunction with overlays (see below)
 			- Planned:
-				- Optional support for seperate I & D space
+				- Optional support for seperate Instruction & Data space
 				- Optional support for psuedo-segments (stack, code, text)
 		- Overlay Space: A re-implementation of Overlays from 2.11BSD (See: "/devel/vm/ovl")
 			- OVLSpace: A portion of physical memory with vm-like features 
 			- Supports vm objects, pages & segments.
 			- Planned:
 				- Optional:
-					- Support for seperate I & D space
+					- Support for seperate Instruction & Data space
 					- Support for psuedo-segments (stack, code, text)
 				- Configurable:
 					- Overlay Space Size: Current Default = 10% of VM Size

@@ -89,6 +89,7 @@
 #include <sys/malloc.h>
 #include <sys/user.h>
 #include <sys/stat.h>
+#include <sys/lock.h>
 #include <sys/lockf.h>
 #include <sys/signalvar.h>
 
@@ -103,8 +104,12 @@
 #define	htbc_free(a, s) 		free(a)
 #define	htbc_calloc(n, s) 		calloc((n), (s))
 
-#define htbc_lock()				simplelock()
-#define htbc_unlock() 			simpleunlock()
+#define htbc_lockinit(htbc)	{						\
+	simple_lock_init((htbc)->ht_lock, "htbc_lock"); \
+	(htbc)->ht_lock_count = 0; 						\
+}
+#define htbc_lock(htbc)			simple_lock((htbc)->ht_lock)
+#define htbc_unlock(htbc) 		simple_unlock((htbc)->ht_lock)
 
 struct htbc_dealloc {
 	TAILQ_ENTRY(htbc_dealloc) 	hd_entries;
@@ -119,7 +124,7 @@ struct htbc {
 
 	struct htbc_hc_header 		*ht_hc_header;
 
-	struct simplelock 			ht_interlock;
+	struct lock_object 			*ht_lock;
 	unsigned int 				ht_lock_count;
 
 	TAILQ_HEAD(, htbc_dealloc) 	ht_dealloclist;
@@ -217,24 +222,25 @@ htbc_begin(struct htbc *ht, const char *file, int line)
 	unsigned int lockcount;
 
 	KDASSERT(ht);
-	simple_lock(&ht->ht_interlock);
+	htbc_lockinit(ht);
+	htbc_lock(ht);
 	lockcount = ht->ht_lock_count;
 	//doflush =
-	simple_unlock(&ht->ht_interlock);
+	htbc_unlock(ht);
 
-	simple_lock(&ht->ht_interlock);
+	htbc_lock(ht);
 	ht->ht_lock_count++;
-	simple_unlock(&ht->ht_interlock);
+	htbc_unlock(ht);
 	return (0);
 }
 
 void
 htbc_end(struct htbc *ht)
 {
-	simple_lock(ht->ht_interlock);
+	simple_lock(ht->ht_lock);
 	KASSERT(ht->ht_lock_count > 0);
 	ht->ht_lock_count--;
-	simple_unlock(ht->ht_interlock);
+	simple_unlock(ht->ht_lock);
 }
 
 /****************************************************************/

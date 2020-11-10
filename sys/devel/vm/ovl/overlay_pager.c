@@ -34,7 +34,6 @@ overlay_pager_init()
 	TAILQ_INIT(&overlay_pager_list);
 }
 
-/* currently: assumes overlay object contains a vm_object  */
 static vm_pager_t
 overlay_pager_alloc(handle, size, prot, foff)
 	caddr_t handle;
@@ -58,15 +57,27 @@ overlay_pager_alloc(handle, size, prot, foff)
 
 	ovl = (ovl_pager_t)handle;
 	ovl_object = ovl->ovl_object;
-
 	pager = ovl_object->ovo_pager;
 
-	if (pager == NULL) {
+	vm_object_t fake_vm_object = ovl_object->ovo_vm_object;
+
+	if (ovl_object == NULL) {
+		ovl_object = ovl_object_allocate(0);
+		fake_vm_object = vm_object_allocate(0);
+	} else {
+
+		if (fake_vm_object) { 											/* check ovl_object contains a vm object */
+			fake_vm_object = ovl_object_lookup_vm_object(ovl_object); 	/* search for the vm_object */
+		}
 
 		TAILQ_INSERT_TAIL(&overlay_pager_list, pager, pg_list);
 
-		ovl_object = ovl_object_allocate(0);
+		/*
+		 * Associate ovl_object with pager & add vm_object to
+		 * the ovl_object's list of associated vm_objects.
+		 */
 		ovl_object_enter(ovl_object, pager);
+		ovl_object_enter_vm_object(ovl_object, fake_vm_object);
 		ovl_object_setpager(ovl_object, pager, (vm_offset_t)0, FALSE);
 	}
 
@@ -83,7 +94,7 @@ overlay_pager_dealloc(pager)
 	vm_pager_t  	pager;
 {
 	register ovl_pager_t  ovl;
-	ovl_object_t		ovl_object;
+	ovl_object_t		  ovl_object;
 
 	TAILQ_REMOVE(&overlay_pager_list, pager, pg_list);
 

@@ -3,8 +3,7 @@ A General todo list. Don't hesitate to add to this list. :)
 # TODO:
 ## General:
 - Compiler
-- Makefiles:
-	- Use .mk for definitions
+- Makefiles
 - Bug Fixes &/or missing critical content
 
 # usr/ (User & OS Libraries):
@@ -27,7 +26,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## devel: (planned)
 - Code planned for future integration
 - update copyright headers
-- See devel folder: README.md & TODO.md
+- See devel folder: README.md
 
 ## dev:
 - No devices, only basic (needs a working compiler)
@@ -41,8 +40,7 @@ Of Interest Todo:
 
 ## stand:
 - boot:
-	- efi: needs work
-		- Not compatable with 2.11BSD 
+	- efi
 	- commands: needs work
 	- install: not present
 	### arch:

@@ -349,7 +349,7 @@ struct vnodeops {
 #define VOP_BWRITE(bp)											(*((bp)->b_vp->v_op->vop_bwrite))(bp)
 
 /*
- * vnodeops args
+ * vnodeops args:
  * A generic structure.
  * This can be used by bypass routines to identify generic arguments.
  */

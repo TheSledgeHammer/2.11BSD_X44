@@ -11,7 +11,7 @@ define	 scsi {[channel = -1]}
 #define  miibus { }
 
 # audio device attributes
-define	mulaw
+#define	mulaw
 define	auconv
 
 # audio device, attaches to audio hardware driver

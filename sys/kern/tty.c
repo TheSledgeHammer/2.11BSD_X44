@@ -244,10 +244,9 @@ static	int	rts = TIOCM_RTS;
 /*
  * Send stop character on input overflow.
  */
-void
-ttyblock(tp)
+void ttyblock(tp)
 	register struct tty *tp;
-	{
+{
 	register int total;
 
 	total = tp->t_rawq.c_cc + tp->t_canq.c_cc;
@@ -255,52 +254,46 @@ ttyblock(tp)
 	 * Block further input iff:
 	 * Current input > threshold AND input is available to user program
 	 */
-	if	(total >= TTYBLOCK && 
-		 ((tp->t_flags & (RAW|CBREAK)) || (tp->t_canq.c_cc > 0)) &&
-		 (tp->t_state&TS_TBLOCK) == 0)
-		{
-/*
- * TANDEM is the same as IXOFF for all intents and purposes.  Since we could
- * get called for either software or hardware flow control we need to check
- * the IXOFF bit.
-*/
-		if	(ISSET(tp->t_flags,TANDEM) && 
-			 tp->t_stopc != _POSIX_VDISABLE && 
-			 putc(tp->t_stopc, &tp->t_outq) == 0)
-			{
+	if (total >= TTYBLOCK
+			&& ((tp->t_flags & (RAW | CBREAK)) || (tp->t_canq.c_cc > 0))
+			&& (tp->t_state & TS_TBLOCK) == 0) {
+		/*
+		 * TANDEM is the same as IXOFF for all intents and purposes.  Since we could
+		 * get called for either software or hardware flow control we need to check
+		 * the IXOFF bit.
+		 */
+		if (ISSET(tp->t_flags, TANDEM) && tp->t_stopc != _POSIX_VDISABLE
+				&& putc(tp->t_stopc, &tp->t_outq) == 0) {
 			SET(tp->t_state, TS_TBLOCK);
 			ttstart(tp);
-			}
-/*
- * If queue is full, drop RTS to tell modem to stop sending us stuff
-*/
-		if	(ISSET(tp->t_flags, RTSCTS) &&
-			 (*cdevsw[major(tp->t_dev)].d_ioctl)(tp->t_dev,TIOCMBIC, &rts, 0) == 0)
-			{
+		}
+		/*
+		 * If queue is full, drop RTS to tell modem to stop sending us stuff
+		 */
+		if (ISSET(tp->t_flags, RTSCTS)
+				&& (*cdevsw[major(tp->t_dev)].d_ioctl)(tp->t_dev, TIOCMBIC,
+						&rts, 0) == 0) {
 			SET(tp->t_state, TS_TBLOCK);
-			}
 		}
 	}
+}
 
-void
-ttyunblock(tp)
+void ttyunblock(tp)
 	register struct tty *tp;
-	{
+{
 	register int s = spltty();
 
-	if	(ISSET(tp->t_flags,TANDEM) &&
-		 tp->t_startc != _POSIX_VDISABLE && 
-		 putc(tp->t_startc, &tp->t_outq) == 0)
-		{
-		CLR(tp->t_state,TS_TBLOCK);
-		ttstart(tp);
-		}
-	if	(ISSET(tp->t_flags, RTSCTS) && 
-		 (*cdevsw[major(tp->t_dev)].d_ioctl)(tp->t_dev,TIOCMBIS,&rts,0) == 0)
-		{
+	if (ISSET(tp->t_flags, TANDEM) && tp->t_startc != _POSIX_VDISABLE
+			&& putc(tp->t_startc, &tp->t_outq) == 0) {
 		CLR(tp->t_state, TS_TBLOCK);
-		}
+		ttstart(tp);
 	}
+	if (ISSET(tp->t_flags, RTSCTS)
+			&& (*cdevsw[major(tp->t_dev)].d_ioctl)(tp->t_dev, TIOCMBIS, &rts, 0)
+					== 0) {
+		CLR(tp->t_state, TS_TBLOCK);
+	}
+}
 
 /*
  * Restart typewriter output following a delay timeout.
@@ -311,7 +304,6 @@ void
 ttrstrt(tp)
 	register struct tty *tp;
 {
-
 	tp->t_state &= ~TS_TIMEOUT;
 	ttstart(tp);
 }
@@ -324,14 +316,12 @@ ttrstrt(tp)
  *
  * The spl calls were removed because the priority should already be spltty.
  */
-void
-ttstart(tp)
+void ttstart(tp)
 	register struct tty *tp;
-	{
-
-	if	(tp->t_oproc)		/* kludge for pty */
+{
+	if (tp->t_oproc) /* kludge for pty */
 		(*tp->t_oproc)(tp);
-	}
+}
 
 /*
  * Common code for tty ioctls.
@@ -635,17 +625,17 @@ ttnread(tp)
 ttselect(dev, rw)
 	register dev_t dev;
 	int rw;
-	{
+{
 	struct tty *tp = &cdevsw[major(dev)].d_ttys[minor(dev)&0177];
 
-	return(ttyselect(tp,rw));
-	}
+	return (ttyselect(tp,rw));
+}
 
 int
 ttyselect(tp,rw)
 	register struct tty *tp;
 	int	rw;
-	{
+{
 	int nread;
 	register int s = spltty();
 
@@ -655,7 +645,7 @@ ttyselect(tp,rw)
 		nread = ttnread(tp);
 		if ((nread > 0) || ((tp->t_state & TS_CARR_ON) == 0))
 			goto win;
-		if (tp->t_rsel && tp->t_rsel->p_wchan == (caddr_t)&selwait)
+		if (tp->t_rsel && tp->t_rsel->p_wchan == (caddr_t) &selwait)
 			tp->t_state |= TS_RCOLL;
 		else
 			tp->t_rsel = u->u_procp;
@@ -664,7 +654,7 @@ ttyselect(tp,rw)
 	case FWRITE:
 		if (tp->t_outq.c_cc <= TTLOWAT(tp))
 			goto win;
-		if (tp->t_wsel && tp->t_wsel->p_wchan == (caddr_t)&selwait)
+		if (tp->t_wsel && tp->t_wsel->p_wchan == (caddr_t) &selwait)
 			tp->t_state |= TS_WCOLL;
 		else
 			tp->t_wsel = u->u_procp;
@@ -672,8 +662,7 @@ ttyselect(tp,rw)
 	}
 	splx(s);
 	return (0);
-win:
-	splx(s);
+	win: splx(s);
 	return (1);
 }
 
@@ -1861,7 +1850,7 @@ ttysleep(tp, chan, pri, wmesg, timo)
  *	   we pick out just "short-term" sleepers (P_SINTR == 0).
  *	4) Further ties are broken by picking the highest pid.
  */
-#define ISRUN(p)	(((p)->p_stat == SRUN) || ((p)->p_stat == SIDL))
+#define ISRUN(p)		(((p)->p_stat == SRUN) || ((p)->p_stat == SIDL))
 #define TESTAB(a, b)    ((a)<<1 | (b))
 #define ONLYA   2
 #define ONLYB   1

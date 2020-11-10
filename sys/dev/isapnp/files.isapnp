@@ -12,32 +12,3 @@ attach	isapnp at isa
 file	dev/isapnp/isapnp.c				isapnp
 file	dev/isapnp/isapnpdebug.c		isapnp
 file	dev/isapnp/isapnpres.c			isapnp
-
-# 3Com 3C509B
-attach	ep at isapnp with ep_isapnp
-file	dev/isapnp/if_ep_isapnp.c		ep_isapnp
-
-# PCnet-PnP
-attach	le at isapnp with le_isapnp
-file	dev/isapnp/if_le_isapnp.c		le_isapnp
-
-# NE2000-PnP
-attach	ne at isapnp with ne_isapnp
-file	dev/isapnp/if_ne_isapnp.c		ne_isapnp
-
-# serial ports/modems
-attach	com at isapnp with com_isapnp
-file	dev/isapnp/com_isapnp.c			com_isapnp
-
-#
-# ISAPnP Sound hardware
-#
-
-# SoundBlaster family
-attach	sb at isapnp with sb_isapnp
-file	dev/isapnp/sb_isapnp.c			sb_isapnp
-
-# GUS Pnp (Interwave)
-device	guspnp: audio, isadma, interwave, mulaw
-attach	guspnp at isapnp
-file	dev/isapnp/gus_isapnp.c			guspnp needs-flag

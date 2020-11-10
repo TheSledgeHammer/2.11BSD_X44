@@ -116,12 +116,12 @@ ovl_deallocate(map, start, size)
  * Similar to ovl_allocate but assigns an explicit overlayer.
  */
 int
-ovl_allocate_with_overlayer(map, addr, size, anywhere, overlayer, poffset, internal)
+ovl_allocate_with_pager(map, addr, size, anywhere, pager, poffset, internal)
 	register ovl_map_t		map;
 	register vm_offset_t	*addr;
 	register vm_size_t		size;
 	boolean_t				anywhere;
-	ovl_overlay_t			overlayer;
+	vm_pager_t				pager;
 	vm_offset_t				poffset;
 	boolean_t				internal;
 {
@@ -136,7 +136,7 @@ ovl_allocate_with_overlayer(map, addr, size, anywhere, overlayer, poffset, inter
 	 *	If it's not there, then create a new object and cache
 	 *	it.
 	 */
-	object = ovl_object_lookup(overlayer);
+	object = ovl_object_lookup(pager);
 
 	if (object == NULL) {
 		object = ovl_object_allocate(size);
@@ -147,7 +147,7 @@ ovl_allocate_with_overlayer(map, addr, size, anywhere, overlayer, poffset, inter
 		 * is an internal object ..."
 		 */
 		if (!internal)
-			ovl_object_enter(object, overlayer);
+			ovl_object_enter(object, pager);
 	}
 
 	if (internal)
@@ -159,7 +159,7 @@ ovl_allocate_with_overlayer(map, addr, size, anywhere, overlayer, poffset, inter
 	result = ovl_map_find(map, object, poffset, addr, size, anywhere);
 	if (result != KERN_SUCCESS)
 		ovl_object_deallocate(object);
-	else if (overlayer != NULL)
-		ovl_object_setoverlayer(object, overlayer, (vm_offset_t) 0);
+	else if (pager != NULL)
+		ovl_object_setpager(object, pager, (vm_offset_t) 0);
 	return(result);
 }
