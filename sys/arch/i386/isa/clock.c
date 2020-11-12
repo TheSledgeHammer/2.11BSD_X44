@@ -660,4 +660,5 @@ void
 setstatclockrate(arg)
 	int arg;
 {
+
 }

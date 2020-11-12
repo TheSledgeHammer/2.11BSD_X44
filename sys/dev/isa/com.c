@@ -166,8 +166,8 @@ int	comdefaultrate = TTYDEF_SPEED;
 int	comconsaddr;
 int	comconsinit;
 int	comconsattached;
-bus_chipset_tag_t comconsbc;
-bus_io_handle_t comconsioh;
+bus_chipset_tag_t 	comconsbc;
+bus_io_handle_t 	comconsioh;
 tcflag_t comconscflag = TTYDEF_CFLAG;
 
 int	commajor;

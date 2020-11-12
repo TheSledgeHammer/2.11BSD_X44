@@ -68,6 +68,7 @@ extern long npx0mask;
 /*
  * Probe routine - look device, otherwise set emulator bit
  */
+int
 npxprobe(dvp)
 	struct isa_device *dvp;
 {	static status, control;
@@ -77,7 +78,7 @@ npxprobe(dvp)
 #endif
 
 	/* insure EM bit off */
-	load_cr0(rcr0() & ~CR0_EM);
+	lcr0(rcr0() & ~CR0_EM);
 
 	asm("	fninit ");	/* put device in known state */
 
@@ -99,7 +100,7 @@ npxprobe(dvp)
 	}
 
 	/* insure EM bit on */
-	load_cr0(rcr0() | CR0_EM);
+	lcr0(rcr0() | CR0_EM);
 	return (0);
 }
 
@@ -123,7 +124,7 @@ npxinit(control) {
 
 	if (npxexists == 0) return;
 
-	load_cr0(rcr0() & ~CR0_EM);	/* stop emulating */
+	lcr0(rcr0() & ~CR0_EM);	/* stop emulating */
 #ifdef INTEL_COMPAT
 	asm ("	finit");
 	asm("	fldcw %0" : : "g" (control));
@@ -132,7 +133,7 @@ npxinit(control) {
 	asm("fninit");
 	asm("	fnsave %0 " : : "g" (curpcb->pcb_savefpu) );
 #endif
-	load_cr0(rcr0() | CR0_EM);	/* start emulating */
+	lcr0(rcr0() | CR0_EM);	/* start emulating */
 
 }
 
@@ -169,12 +170,13 @@ npxintr(frame)
 /*
  * Implement device not available (DNA) exception
  */
+int
 npxdna()
 {
 	if (npxexists == 0)
 		return(0);
 
-	load_cr0(rcr0() & ~CR0_EM);	/* stop emulating */
+	lcr0(rcr0() & ~CR0_EM);	/* stop emulating */
 	if (npxproc != curproc) {
 		if (npxproc)
 			asm(" fnsave %0 "::"g"

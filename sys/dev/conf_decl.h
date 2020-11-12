@@ -135,7 +135,7 @@ extern struct tty __CONCAT(n,_tty);
 #define	cdev_disk_init(c,n) { 												\
 	dev_init(c,n,open), (dev_type_close((*))) nullop, dev_init(c,n,read), 	\
 	dev_init(c,n,write), dev_init(c,n,ioctl), (dev_type_stop((*))) enodev, 	\
-	(dev_type_reset((*))) nullop 0, seltrue, (dev_type_mmap((*))) enodev, 	\
+	(dev_type_reset((*))) nullop, 0, seltrue, (dev_type_mmap((*))) enodev, 	\
 	dev_init(c,n,strategy) }
 
 /* open, close, read, write, ioctl, strategy */

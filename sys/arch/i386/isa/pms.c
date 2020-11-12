@@ -86,20 +86,20 @@
 #define	PMS_DEV_DISABLE	0xf5	/* mouse off */
 #define	PMS_RESET		0xff	/* reset */
 
-#define	PMS_CHUNK		128	/* chunk size for read */
+#define	PMS_CHUNK		128		/* chunk size for read */
 #define	PMS_BSIZE		1020	/* buffer size */
 
-struct pms_softc {		/* driver status information */
-	struct device sc_dev;
-	void *sc_ih;
+struct pms_softc {				/* driver status information */
+	struct device 	sc_dev;
+	void 			*sc_ih;
 
-	struct clist sc_q;
-	struct selinfo sc_rsel;
-	u_char sc_state;	/* mouse driver state */
-#define	PMS_OPEN	0x01	/* device is open */
-#define	PMS_ASLP	0x02	/* waiting for mouse data */
-	u_char sc_status;	/* mouse button status */
-	int sc_x, sc_y;		/* accumulated motion in the X,Y axis */
+	struct clist 	sc_q;
+	struct selinfo 	sc_rsel;
+	u_char 			sc_state;	/* mouse driver state */
+#define	PMS_OPEN	0x01		/* device is open */
+#define	PMS_ASLP	0x02		/* waiting for mouse data */
+	u_char 			sc_status;	/* mouse button status */
+	int 			sc_x, sc_y;	/* accumulated motion in the X,Y axis */
 };
 
 int pmsprobe (struct device *, void *, void *);
@@ -270,8 +270,7 @@ pmsattach(parent, self, aux)
 	/* Other initialization was done by pmsprobe. */
 	sc->sc_state = 0;
 
-	sc->sc_ih = isa_intr_establish(ic, irq, IST_EDGE, IPL_TTY,
-	    pmsintr, sc);
+	sc->sc_ih = isa_intr_establish(ic, irq, IST_EDGE, IPL_TTY, pmsintr, sc);
 }
 
 int

@@ -36,6 +36,7 @@
 #include <sys/vnode.h>
 #include <sys/device.h>
 #include <sys/user.h>
+#include <sys/poll.h>
 
 #include <machine/cpu.h>
 #include <machine/bus.h>
@@ -365,7 +366,7 @@ lmsintr(arg)
 	return -1;
 }
 
-/*
+
 int
 lmspoll(dev, events, p)
 	dev_t dev;
@@ -385,4 +386,3 @@ lmspoll(dev, events, p)
 	splx(s);
 	return (revents);
 }
-*/

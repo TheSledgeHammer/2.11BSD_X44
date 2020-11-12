@@ -1,0 +1,56 @@
+#	$211BSD: files.common,v 1.0.0 2020/12/11 Exp $
+#
+# Common machine-independent code for devices.
+# 
+# defined first.
+
+#
+# EISA Code
+#
+device	eisa {[slot = -1]}
+attach	eisa at eisabus
+file	dev/commom/eisa/eisa.c			eisa	needs-flag
+
+#
+# ISA Code
+#
+device	isa {[port = -1], [size = 0],
+		[iomem = -1], [iosiz = 0],
+	     [irq = -1], [drq = -1]}
+attach	isa at isabus
+
+file	dev/commom/isa/isa.c				isa needs-flag
+
+# ISA DMA controller
+define	isadma
+file	dev/commom/isa/isadma.c			isadma needs-flag
+
+#
+# ISAPnP Code
+#
+device	isapnp {[port = -1], [size = 0],
+	     [iomem = -1], [iosiz = 0],
+	     [irq = -1], [drq = -1]}
+attach	isapnp at isa
+
+file	dev/commom/isapnp/isapnp.c			isapnp
+file	dev/commom/isapnp/isapnpdebug.c		isapnp
+file	dev/commom/isapnp/isapnpres.c		isapnp
+
+#
+# PCI Code
+#
+device	pci {[dev = -1], [function = -1]}
+attach	pci at pcibus
+
+file	dev/commom/pci/pci.c				pci needs-flag
+file	dev/commom/pci/pci_subr.c			pci
+
+#
+# PCMIA Code
+#
+device	pcmcia {[function = -1], [irq = -1]}
+attach	pcmcia at pcic
+
+file	dev/commom/pcmcia/pcmcia.c			pcmcia
+file	dev/commom/pcmcia/pcmcia_cis.c		pcmcia

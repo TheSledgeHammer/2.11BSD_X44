@@ -63,7 +63,7 @@
 #include <machine/intr.h>
 #include <machine/pio.h>
 #include <machine/pc/display.h>
-#include <machine/pccons.h>
+#include <machine/pccons.h>			/* doesn't exist */
 #include <machine/conf.h>
 
 #include <dev/isa/isareg.h>
@@ -123,9 +123,9 @@ static struct video_state {
 } vs;
 
 struct pc_softc {
-	struct	device sc_dev;
-	void	*sc_ih;
-	struct	tty *sc_tty;
+	struct	device 	sc_dev;
+	void			*sc_ih;
+	struct	tty 	*sc_tty;
 };
 
 int pcprobe __P((struct device *, void *, void *));

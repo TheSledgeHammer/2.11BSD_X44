@@ -1008,6 +1008,7 @@ init386(first)
 
 	/* setup proc 0's pcb */
 	bcopy(&sigcode, proc0.p_addr->u_pcb.pcb_sigc, szsigcode);
+
 	proc0.p_addr->u_pcb.pcb_flags = 0;
 	proc0.p_addr->u_pcb.pcb_ptd = IdlePTD;
 }

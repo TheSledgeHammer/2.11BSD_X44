@@ -93,7 +93,7 @@ int		sm_pcmcia_match (struct device *, struct cfdata *, void *);
 void	sm_pcmcia_attach (struct device *, struct device *, void *);
 
 struct sm_pcmcia_softc {
-	struct	smc91cxx_softc sc_smc;		/* real "smc" softc */
+	struct	smc91cxx_softc 	sc_smc;		/* real "smc" softc */
 
 	/* PCMCIA-specific goo. */
 	struct	pcmcia_io_handle sc_pcioh;	/* PCMCIA i/o space info */

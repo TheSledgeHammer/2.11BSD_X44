@@ -35,6 +35,8 @@
 #include <sys/proc.h>
 #include <sys/vnode.h>
 #include <sys/device.h>
+#include <sys/user.h>
+#include <sys/poll.h>
 
 #include <machine/cpu.h>
 #include <machine/intr.h>
@@ -359,7 +361,7 @@ mmsintr(arg)
 	return -1;
 }
 
-/*
+
 int
 mmspoll(dev, events, p)
 	dev_t dev;
@@ -379,4 +381,4 @@ mmspoll(dev, events, p)
 	splx(s);
 	return (revents);
 }
-*/
+

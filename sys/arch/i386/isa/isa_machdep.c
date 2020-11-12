@@ -107,10 +107,8 @@
 
 extern	vm_offset_t avail_end;
 
-#define	IDTVEC(name)	__CONCAT(X,name)
+#define	IDTVEC(name)	__CONCAT(X, name)
 /* default interrupt vector table entries */
-typedef (*vector) (void);
-extern vector IDTVEC(intr)[];
 
 void 	isa_strayintr (int);
 void	intr_calculatemasks (void);
@@ -168,7 +166,7 @@ isa_defaultirq()
 
 	/* icu vectors */
 	for (i = 0; i < ICU_LEN; i++)
-		setgate(&idt[ICU_OFFSET + i], IDTVEC(intr)[i], 0, SDT_SYS386IGT, SEL_KPL);
+		setidt(&idt[ICU_OFFSET + i], &IDTVEC(intr)[i], 0, SDT_SYS386IGT, SEL_KPL);
 
 	/* initialize 8259's */
 	outb(IO_ICU1, 0x11);				/* reset; program device, four bytes */
@@ -449,6 +447,7 @@ isa_intr_establish(ic, irq, type, level, ih_fun, ih_arg)
 	case IST_LEVEL:
 		if (type == intrtype[irq])
 			break;
+		break;
 	case IST_PULSE:
 		if (type != IST_NONE)
 			panic("intr_establish: can't share %s with %s",

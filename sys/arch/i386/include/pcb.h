@@ -55,6 +55,8 @@ struct pcb {
 #define pcb_esp					pcb_tss.tss_esp
 #define pcb_ebx					pcb_tss.tss_ebx
 #define	pcb_eib					pcb_tss.tss_eip
+
+#define	pcb_ptd					pcb_tss.tss_cr3
 	struct	savefpu				pcb_savefpu;			/* floating point state (context) for 287/387 */
 	struct	emcsts				pcb_saveemc;			/* Cyrix EMC state */
 	u_long						pcb_iomap[NPORT/32];	/* i/o port bitmap */

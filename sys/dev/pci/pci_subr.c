@@ -54,9 +54,9 @@
  * NULL subclass pointer.
  */
 struct pci_class {
-	char		*name;
-	int		val;		/* as wide as pci_{,sub}class_t */
-	struct pci_class *subclasses;
+	char				*name;
+	int					val;		/* as wide as pci_{,sub}class_t */
+	struct pci_class 	*subclasses;
 };
 
 struct pci_class pci_subclass_prehistoric[] = {

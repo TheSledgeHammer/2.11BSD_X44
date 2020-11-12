@@ -137,12 +137,12 @@ struct fdc_softc {
 };
 
 /* controller driver configuration */
-int fdcprobe __P((struct device *, void *, void *));
-int fdprint __P((void *, const char *));
+int fdcprobe (struct device *, void *, void *);
+int fdprint (void *, const char *);
 #ifdef NEWCONFIG
 void fdcforceintr (void *);
 #endif
-void fdcattach __P((struct device *, struct device *, void *));
+void fdcattach (struct device *, struct device *, void *);
 
 struct cfattach fdc_ca = {
 	sizeof(struct fdc_softc), fdcprobe, fdcattach
@@ -157,18 +157,18 @@ struct cfdriver fdc_cd = {
  * we tell them apart.
  */
 struct fd_type {
-	int	sectrac;	/* sectors per track */
-	int	heads;		/* number of heads */
-	int	seccyl;		/* sectors per cylinder */
-	int	secsize;	/* size code for sectors */
-	int	datalen;	/* data len when secsize = 0 */
-	int	steprate;	/* step rate and head unload time */
-	int	gap1;		/* gap len between sectors */
-	int	gap2;		/* formatting gap */
-	int	cyls;		/* total num of cylinders */
-	int	size;		/* size of disk in sectors */
-	int	step;		/* steps per cylinder */
-	int	rate;		/* transfer speed code */
+	int		sectrac;	/* sectors per track */
+	int		heads;		/* number of heads */
+	int		seccyl;		/* sectors per cylinder */
+	int		secsize;	/* size code for sectors */
+	int		datalen;	/* data len when secsize = 0 */
+	int		steprate;	/* step rate and head unload time */
+	int		gap1;		/* gap len between sectors */
+	int		gap2;		/* formatting gap */
+	int		cyls;		/* total num of cylinders */
+	int		size;		/* size of disk in sectors */
+	int		step;		/* steps per cylinder */
+	int		rate;		/* transfer speed code */
 	u_char	fillbyte;	/* format fill byte */
 	u_char	interleave;	/* interleave factor (formatting) */
 	char	*name;
@@ -187,32 +187,32 @@ struct fd_type fd_types[] = {
 
 /* software state, per disk (with up to 4 disks per ctlr) */
 struct fd_softc {
-	struct device sc_dev;
-	struct disk sc_dk;
+	struct device 	sc_dev;
+	struct disk 	sc_dk;
 
-	struct fd_type *sc_deftype;		/* default type descriptor */
-	struct fd_type *sc_type;		/* current type descriptor */
-	struct fd_type sc_type_copy;	/* copy for fiddling when formatting */
+	struct fd_type 	*sc_deftype;	/* default type descriptor */
+	struct fd_type 	*sc_type;		/* current type descriptor */
+	struct fd_type 	sc_type_copy;	/* copy for fiddling when formatting */
 
-	daddr_t	sc_blkno;	/* starting block number */
-	int sc_bcount;		/* byte count left */
- 	int sc_opts;		/* user-set options */
-	int sc_skip;		/* bytes already transferred */
-	int sc_nblks;		/* number of blocks currently tranferring */
-	int sc_nbytes;		/* number of bytes currently tranferring */
+	daddr_t			sc_blkno;		/* starting block number */
+	int 			sc_bcount;		/* byte count left */
+ 	int 			sc_opts;		/* user-set options */
+	int 			sc_skip;		/* bytes already transferred */
+	int 			sc_nblks;		/* number of blocks currently tranferring */
+	int 			sc_nbytes;		/* number of bytes currently tranferring */
 
-	int sc_drive;		/* physical unit number */
-	int sc_flags;
+	int 			sc_drive;		/* physical unit number */
+	int 			sc_flags;
 #define	FD_OPEN			0x01		/* it's open */
 #define	FD_MOTOR		0x02		/* motor should be on */
 #define	FD_MOTOR_WAIT	0x04		/* motor coming up */
-	int sc_cylin;		/* where we think the head is */
+	int 			sc_cylin;		/* where we think the head is */
 
-	void *sc_sdhook;	/* saved shutdown hook for drive. */
+	void 			*sc_sdhook;		/* saved shutdown hook for drive. */
 
 	TAILQ_ENTRY(fd_softc) sc_drivechain;
-	int sc_ops;			/* I/O ops since last switch */
-	struct buf sc_q;	/* head of buf chain */
+	int 			sc_ops;			/* I/O ops since last switch */
+	struct buf 		sc_q;			/* head of buf chain */
 
 #if NRND > 0
 	rndsource_element_t	rnd_source;
@@ -337,8 +337,8 @@ fdcforceintr(aux)
  * Arguments passed between fdcattach and fdprobe.
  */
 struct fdc_attach_args {
-	int fa_drive;
-	struct fd_type *fa_deftype;
+	int 			fa_drive;
+	struct fd_type 	*fa_deftype;
 };
 
 /*

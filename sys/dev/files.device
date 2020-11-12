@@ -25,3 +25,5 @@ include 	"dev/files.isapnp"
 include 	"dev/files.pci"
 include 	"dev/files.pcmcia"
 #include 	"dev/files.scsi"
+
+#include 	"dev/files.common"
