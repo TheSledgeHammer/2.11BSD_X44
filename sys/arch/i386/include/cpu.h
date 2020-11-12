@@ -42,6 +42,7 @@
 /*
  * Definitions unique to i386 cpu support.
  */
+#include <machine/param.h>
 #include <machine/psl.h>
 #include <machine/frame.h>
 #include <machine/segments.h>
@@ -60,6 +61,7 @@ struct pmap;
 
 #define	BACKTRACE(p)				/* not implemented */
 
+#define cpu_number					NCPUS
 /*
  * Arguments to hardclock, softclock and gatherstats
  * encapsulate the previous machine state in an opaque

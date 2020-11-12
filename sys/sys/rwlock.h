@@ -81,8 +81,8 @@ void 			rwlock_init(rwlock_t, int, char *, int, u_int);
 int 			rwlockmgr(__volatile rwlock_t, u_int, struct lock_object *, pid_t);
 int 			rwlockstatus(rwlock_t);
 
-void			rwlock_lock(__volatile rwlock_t);
-void			rwlock_unlock(__volatile rwlock_t);
+void			rwlock_lock(rwlock_t);
+void			rwlock_unlock(rwlock_t);
 int				rwlock_read_held(rwlock_t);
 int				rwlock_write_held(rwlock_t);
 int				rwlock_lock_held(rwlock_t);

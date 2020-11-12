@@ -210,7 +210,7 @@ bi_load_stage1(struct bootinfo bi, struct preloaded_file *fp, char *args, vm_off
 		return (error);
 	} else {
 		bi_load_legacy(bi, fp, args);
-		bi_load_smap(fp, add_smap);
+		//bi_load_smap(fp, add_smap);
 	}
 	return (0);
 }
@@ -243,9 +243,12 @@ bi_load_legacy(struct bootinfo bi, struct preloaded_file *fp, char *args)
 	bi.bi_leg.bi_bip = VTOP(&bi);
 }
 
+/*
+ * Not Supported
 void
 bi_load_smap(struct preloaded_file *fp, int add_smap)
 {
 	if (add_smap != 0)
 		bios_addsmapdata(fp);
 }
+*/

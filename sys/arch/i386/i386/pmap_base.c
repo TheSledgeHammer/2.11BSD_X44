@@ -68,8 +68,6 @@ u_long 		KERNend;		/* phys addr end of kernel (just after bss) */
 u_long 		KPTphys;		/* phys addr of kernel page tables */
 vm_offset_t kernel_vm_end;
 
-int i386_pmap_VM_NFREEORDER;
-int i386_pmap_VM_LEVEL_0_ORDER;
 int i386_pmap_PDRSHIFT;
 
 struct pmap kernel_pmap_store;

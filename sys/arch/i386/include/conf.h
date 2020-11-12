@@ -29,7 +29,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/conf.h>
+#include <dev/conf_decl.h>
 
 #define	mmread	mmrw
 #define	mmwrite	mmrw

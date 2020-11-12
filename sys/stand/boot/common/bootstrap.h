@@ -254,7 +254,8 @@ struct arch_switch
 #define	LOAD_AOUT	1	/* data points to the AOUT header. */
 #define	LOAD_ECOFF	2	/* data points to the ECOFF header. */
 #define	LOAD_ELF	3	/* data points to the ELF header. */
-#define	LOAD_RAW	4	/* data points to the file name. */
+#define LOAD_XCOFF	4	/* data points to the XCOFF header. */
+#define	LOAD_RAW	5	/* data points to the file name. */
 };
 extern struct arch_switch archsw;
 

@@ -85,7 +85,7 @@ vfsinit()
 	maxvfsconf = maxtypenum;
 
 	/*
-	 * Initialize the vnode lockf
+	 * Initialize the vnode advisory lock vfs_lockf.c
 	 */
 	lf_init();
 }

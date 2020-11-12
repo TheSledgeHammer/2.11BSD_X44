@@ -49,38 +49,40 @@
 
 struct pcb {
 	struct	i386tss 			pcb_tss;
-#define	pcb_ksp					pcb_tss.tss_esp0
-#define	pcb_ptd					pcb_tss.tss_cr3
-#define	pcb_cr3					pcb_ptd
-#define	pcb_pc					pcb_tss.tss_eip
-#define	pcb_psl					pcb_tss.tss_eflags
-#define	pcb_usp					pcb_tss.tss_esp
-#define	pcb_fp					pcb_tss.tss_ebp
-#define	pcb_ldt_sel				pcb_tss.tss_ldt
+#define pcb_edi					pcb_tss.tss_edi
+#define pcb_esi					pcb_tss.tss_esi
+#define	pcb_ebp					pcb_tss.tss_ebp
+#define pcb_esp					pcb_tss.tss_esp
+#define pcb_ebx					pcb_tss.tss_ebx
+#define	pcb_eib					pcb_tss.tss_eip
 	struct	savefpu				pcb_savefpu;			/* floating point state (context) for 287/387 */
 	struct	emcsts				pcb_saveemc;			/* Cyrix EMC state */
 	u_long						pcb_iomap[NPORT/32];	/* i/o port bitmap */
-	int							pcb_cr0;				/* saved image of CR0 */
+#define	pcb_cr0					pcb_tss.tss_cr0			/* saved image of CR0 */
+#define	pcb_cr2					pcb_tss.tss_cr2
+#define	pcb_cr3					pcb_tss.tss_cr3
+#define	pcb_cr4					pcb_tss.tss_cr4
 	int							pcb_fsd[2];				/* %fs descriptor */
 	int							pcb_gsd[2];				/* %gs descriptor */
+	union descriptor			*pcb_desc;				/* gate & segment descriptors */
+	int							pcb_ldt_sel;
+	int							pcb_ldt_len;
 
-/*
- * Software pcb (extension)
- */
+/* Software pcb (extension) */
 	int							pcb_flags;
-#define	FP_WASUSED				0x01					/* floating point has been used in this proc */
-#define	FP_NEEDSSAVE			0x02					/* needs save on next context switch */
-#define	FP_NEEDSRESTORE			0x04					/* need restore on next DNA fault */
-#define	FP_USESEMC				0x08					/* process uses EMC memory-mapped mode */
-#define	FM_TRAP					0x10					/* process entered kernel on a trap frame */
+#define	PCB_USER_LDT			0x01					/* has user-set LDT */
+#define	PCB_VM86CALL			0x02					/* in vm86 call */
+#define	FM_TRAP					0x04					/* process entered kernel on a trap frame */
 	short						pcb_iml;				/* interrupt mask level */
 	caddr_t						pcb_onfault;			/* copyin/out fault recovery */
 	long						pcb_sigc[8];			/* XXX signal code trampoline */
 	int							pcb_cmap2;				/* XXX temporary PTE - will prefault instead */
+	struct segment_descriptor 	pcb_tssd;				/* tss descriptor */
 	int							vm86_eflags;			/* virtual eflags for vm86 mode */
-	struct 	segment_descriptor 	pcb_tssd;				/* tss descriptor */
-	struct	vm86_kernel 		pcb_vm86;				/* vm86 area */
+//	u_long						pcb_scvm86[2];			/* vm86bios scratch space */
+	struct vm86_kernel 			pcb_vm86;				/* vm86 area */
 };
+
 
 /*
  * The pcb is augmented with machine-dependent additional data for

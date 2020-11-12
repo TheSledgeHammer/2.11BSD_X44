@@ -159,7 +159,7 @@ typedef struct lock       	*lock_t;
 #define LK_KERNPROC 	((pid_t) -2)
 #define LK_NOPROC 		((pid_t) -1)
 
-/* Simple_Lock Replacement */
+/* Not so Simple_Lock */
 
 /* lock object: array_based queuing lock */
 struct lock_object_cpu {
@@ -171,10 +171,10 @@ struct lock_object {
 	volatile u_int				lo_nxt_ticket;
 	int							lo_can_serve[NCPUS];
 
-	const struct lock_type		*lo_type;
-	const char 					*lo_name;		/* Individual lock name. */
-	u_int						lo_flags;
-	//struct witness 				*lo_witness;	/* Data for witness. */
+	const struct lock_type		*lo_type;			/* Unused */
+	const char 					*lo_name;			/* Individual lock name. */
+	u_int						lo_flags;			/* Unused */
+	//struct witness 				*lo_witness;	/* Data for witness. Unused */
 };
 
 struct lock_type {
@@ -191,16 +191,16 @@ struct lock_holder {
 	struct uthread 				*lh_uthread;
 };
 
-//#ifdef KERNEL
-struct lock_holder 		*kernel_lockholder;
-#endif
-
 /* lock holder macros */
 #define LOCKHOLDER_PID(h)	((h)->lh_pid)
 #define LOCKHOLDER_PGRP(h)	((h)->lh_pgrp)
 #define PROC_LOCKHOLDER(h)	((h)->lh_proc)
 //#define KTHREAD_LOCKHOLDER(h)	((h)->lh_kthread)
 //#define UTHREAD_LOCKHOLDER(h)	((h)->lh_uthread)
+
+#ifdef KERNEL
+extern struct lock_holder 		*kernel_lockholder;
+#endif
 
 struct proc;
 
@@ -209,14 +209,13 @@ int				lockmgr (__volatile struct lock *, u_int flags, struct lock_object *, pid
 int				lockstatus (struct lock *);
 
 void			simple_lock_init(struct lock_object *, const char *);
-void 			simple_lock(struct lock_holder *);
-void 			simple_unlock(struct lock_holder *);
-int				simple_lock_try(struct lock_holder *);
+void 			simple_lock(struct lock_object *);
+void 			simple_unlock(struct lock_object *);
+int				simple_lock_try(struct lock_object *);
 
 void			lockholder_init(struct proc *);
 void 			set_proc_lockholder(struct lock_holder *, struct proc *);
 struct proc 	*get_proc_lockholder(struct lock_holder *);
-
 
 /*
 void 			set_kthread_lockholder(struct lock_holder *, struct kthread *);

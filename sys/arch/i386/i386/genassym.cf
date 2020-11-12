@@ -88,6 +88,11 @@ define V_INTR 				offsetof(struct vmmeter , v_intr)
 define V_SOFT 				offsetof(struct vmmeter , v_soft)
 define V_FAULTS 			offsetof(struct vmmeter , v_faults)
 
+define KSTACK_PAGES			KSTACK_PAGES
+define PAGE_SIZE			PGSIZE
+define PAGE_SHIFT			PGSHIFT
+define PAGE_MASK			PGOFSET
+
 define UPAGES 				UPAGES
 define HIGHPAGES			HIGHPAGES
 define CLSIZE 				CLSIZE
@@ -98,6 +103,12 @@ define PDRSHIFT 			PDRSHIFT
 define SYSPTSIZE 			SYSPTSIZE
 define USRPTSIZE 			USRPTSIZE
 define USRIOSIZE 			USRIOSIZE
+
+define PSL_T				PSL_T
+define PSL_NT				PSL_NT
+define PSL_MBO				PSL_MBO
+define PSL_AC				PSL_AC
+define PSL_ID				PSL_ID
 
 ifdef SYSVSHM
 define SHMMAXPGS 			SHMMAXPGS
@@ -110,12 +121,15 @@ define MCLBYTES 			MCLBYTES
 
 define PCB_LINK 			offsetof(struct pcb, pcb_tss.tss_link)
 define PCB_ESP0 			offsetof(struct pcb, pcb_tss.tss_esp0)
-define PCB_SS0 				offsetof(struct pcb, pcb_tss.tss_ss0)
 define PCB_ESP1 			offsetof(struct pcb, pcb_tss.tss_esp1)
-define PCB_SS1 				offsetof(struct pcb, pcb_tss.tss_ss1)
 define PCB_ESP2 			offsetof(struct pcb, pcb_tss.tss_esp2)
+define PCB_SS0 				offsetof(struct pcb, pcb_tss.tss_ss0)
+define PCB_SS1 				offsetof(struct pcb, pcb_tss.tss_ss1)
 define PCB_SS2 				offsetof(struct pcb, pcb_tss.tss_ss2)
+define PCB_CR0				offsetof(struct pcb, pcb_tss.tss_cr0)
+define PCB_CR2				offsetof(struct pcb, pcb_tss.tss_cr2)
 define PCB_CR3 				offsetof(struct pcb, pcb_tss.tss_cr3)
+define PCB_CR4				offsetof(struct pcb, pcb_tss.tss_cr4)
 define PCB_EIP 				offsetof(struct pcb, pcb_tss.tss_eip)
 define PCB_EFLAGS 			offsetof(struct pcb, pcb_tss.tss_eflags)
 define PCB_EAX 				offsetof(struct pcb, pcb_tss.tss_eax)
@@ -141,6 +155,9 @@ define PCB_CMAP2 			offsetof(struct pcb, pcb_cmap2)
 define PCB_SIGC 			offsetof(struct pcb, pcb_sigc)
 define PCB_IML 				offsetof(struct pcb, pcb_iml)
 define PCB_ONFAULT 			offsetof(struct pcb, pcb_onfault)
+define PCB_VM86				offsetof(struct pcb, pcb_vm86)
+define PCB_SIZE				sizeof(struct pcb)
+define PCB_VM86CALL			PCB_VM86CALL
 
 define NKMEMCLUSTERS 		NKMEMCLUSTERS
 
@@ -152,24 +169,21 @@ define PR_SIZE 				offsetof(struct uprof, pr_size)
 define PR_OFF 				offsetof(struct uprof, pr_off)
 define PR_SCALE 			offsetof(struct uprof, pr_scale)
 
-define RU_MINFLT 			offsetof(struct rusage, rup->ru_minflt)
-
+define TF_FS				offsetof(struct trapframe, tf_fs)
+define TF_ES				offsetof(struct trapframe, tf_es)
+define TF_DS				offsetof(struct trapframe, tf_ds)
 define TF_CS				offsetof(struct trapframe, tf_cs)
 define TF_EIP				offsetof(struct trapframe, tf_eip)
 define TF_ERR				offsetof(struct trapframe, tf_err)
 define TF_TRAPNO			offsetof(struct trapframe, tf_trapno)
 define TF_EFLAGS			offsetof(struct trapframe, tf_eflags)
+define TF_SZ				sizeof(struct trapframe)
 
 define SIGF_HANDLER			offsetof(struct sigframe, sf_handler)
 define SIGF_SC				offsetof(struct sigframe, sf_sc)
 define SC_FS				offsetof(struct sigcontext, sc_fs)
 define SC_GS				offsetof(struct sigcontext, sc_gs)
 define SC_EFLAGS			offsetof(struct sigcontext, sc_eflags)
-
-define FP_WASUSED 			FP_WASUSED
-define FP_NEEDSSAVE 		FP_NEEDSSAVE
-define FP_NEEDSRESTORE 		FP_NEEDSRESTORE
-define FP_USESEMC 			FP_USESEMC
 
 define B_READ  				B_READ
 define ENOENT  				ENOENT
@@ -200,3 +214,17 @@ define BIOSCALLREG_SI		offsetof(struct bioscallregs, si)
 define BIOSCALLREG_DI		offsetof(struct bioscallregs, di)
 define BIOSCALLREG_FLAGS	offsetof(struct bioscallregs, flags)
 endif
+
+define BOOTINFO_SIZE		sizeof(struct bootinfo)
+define BI_VERSION			offsetof(struct bootinfo, bi_version)
+define BI_KERNELNAME		offsetof(struct bootinfo, bi_kernelname)
+define BI_ENDCOMMON			offsetof(struct bootinfo, bi_bios.bi_endcommon)
+define BI_SIZE				offsetof(struct bootinfo, bi_bios.bi_size)
+define BI_SYMTAB			offsetof(struct bootinfo, bi_envp.bi_symtab)
+define BI_ESYMTAB			offsetof(struct bootinfo, bi_envp.bi_esymtab)
+define BI_KERNEND			offsetof(struct bootinfo, bi_envp.bi_kernend)
+define KERNLOAD				KERNLOAD
+define KERNBASE				KERNBASE
+
+define VM86_FRAMESIZE		sizeof(struct vm86frame)
+define VM86_STACK_SPACE 	VM86_STACK_SPACE

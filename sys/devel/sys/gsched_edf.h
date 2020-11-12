@@ -53,14 +53,12 @@ struct gsched_edf {
     char				edf_release;		/* time till release from current block. see above */
     int					edf_priweight;		/* priority weighting (calculated from various factors) */
 
-    char 				edf_delta; 			/* Inherited Deadline */ //UN-USED
-    u_char 				edf_remtime; 		/* time remaining */ 	//UN-USED
-
-
-	struct edf_rq		edf_header;
+    char 				edf_delta; 			/* Inherited Deadline (UN-USED) */
+    u_char 				edf_remtime; 		/* time remaining (UN-USED) */
 };
 
-#define P_EDFFAIL 0x8000	/* Failed EDF Test */
+#define P_EDFFAIL 		0x8000	/* Failed EDF Test */
+#define P_EDFPREEMPT 	0x16000 /* Preemption Flag: Suggest to CFS to preempt this process */
 
 u_char 	edf_slack(char, u_char, char);
 int 	edf_utilization(char, char);
@@ -69,32 +67,6 @@ int 	edf_workload(char, char, char);
 void 	edf_test(struct proc *);
 int		edf_schedcpu(struct proc *);
 
-/*
-Preemption:
-    - Preempt: Determined by the priority weighting & the preemption flag
-    - 1. Insertion into CFS. If task to be inserted is considered a higher priority than the current running task
-    - 2. When the task is being recalculated (i.e. check deadline)
-
-    Hierarchy:
-        - EDF:
-            - Cannot enforce a preempt, only suggested (preemption flag)
-            - Unless task is being moved to a different runq (2. is the only scenario this could happen)
-        - CFS:
-            - Prefers not too.
-            - If weighting on task is higher and the task has been flagged.
-
-Check Deadline:
-- Keep CFS & EDF in sync.
-- After task has run at least once.
-- This is where an interrupt (preemption) could take place.
-
-Time-Slice per Run Queue:
-- Determined by Earliest Deadline First Algorithm
-- Tasks with a higher deadline (shorter time to completion) will be placed in a run queue with a shorter time-slice
-- Task with a lower deadline (longer time to completion) will be placed in a run queue with a longer time-slice
-- EDF determines Run Queue by which queue's timeslice is closest to the task's deadline.
-    - A task with a lower deadline than a given runq timeslice is placed in the next lower runq (aka longer time-slice)
-*/
 
 /* Basic Concept */
 /*

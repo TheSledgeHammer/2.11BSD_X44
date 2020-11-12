@@ -41,8 +41,6 @@
 static void menu_display(void);
 static int menu_execute(int);
 
-
-
 /*
  * This is called from common and must reference files to bring
  * library modules into common during linking.

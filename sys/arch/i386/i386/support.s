@@ -44,6 +44,7 @@
 #include <machine/specialreg.h>
 
 #define	NOP	inb $0x84, %al ; inb $0x84, %al
+#define	IDXSHIFT 10
 
 /*
  * Support routines for GCC

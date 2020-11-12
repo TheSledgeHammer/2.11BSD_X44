@@ -25,6 +25,62 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/*
+ * Global Scheduler Design:
+ * Preemption: (Not implemented)
+ *  - Preempt: Determined by the priority weighting & the preemption flag
+ *  	- 1. Insertion into CFS. If task to be inserted is considered a higher priority than the current running task
+ * 		- 2. When the task is being recalculated (i.e. check deadline)
+ * 		- 3. EDF cannot enforce a preempt, only suggest (via a preemption flag)
+ * 			- Unless a process has been move to a different run-queue (2. is the only scenario this could happen)
+ * 		- 4. CFS prefers not preempt.
+ * 			- Will preempt if the priority weighting on a process is higher than the current process & the process
+ * 			was flagged by EDF.
+ * Hierarchy:
+ * - 2.11BSD Scheduler: (aka kernel_synch.c)
+ * 		- Same responsibilities as before
+ * - EDF:
+ * 		- Executes within schedcpu in kernel_synch.c
+ * 		- Runs on a per run-queue basis (i.e. single run-queue)
+ * 		- Determines the schedulability (i.e. schedulability test)
+ * 		- Determines the priority weighting.
+ * 		- Organizes run-queue
+ * 		- Generates necessary information from kernel
+ * 		- Passes onto CFS if process is schedulable
+ * - CFS:
+ * 		- Executes within schedcpu in kernel_synch.c
+ * 		- Runs on multiple run-queues
+ * 		- Only executes a process that pass the schedulability test
+ * 		- Uses the information provided by EDF to determine:
+ * 			- CPU Decay
+ * 			- Run-time per process
+ * 			- Process's preferable order
+ *		- Passes back to the 2.11BSD Scheduler or exits
+ *
+ * For the implementation:
+ * Please look at the following:
+ *  - devel/sys/gsched_cfs.h
+ *  - devel/sys/gsched_edf.h
+ *  - devel/kern/sys_gsched_cfs.c
+ *  - devel/kern/sys_gsched_edf.c
+ *  - devel/kern/sys_gsched.c
+ *  - devel/kern/sched.c
+ *
+ * Scheduler Decision Tree:
+ * 																						 --> Process Complete --> Process Exits
+ * 																						 |
+ * 										  					--> Pass --> CFS Scheduler --|
+ * 										  					|							 |
+ * 										  					|							 --> Process Incomplete --> 2.11BSD Scheduler
+ *  Process Enters -> 2.11BSD Scheduler --> EDF Scheduler --|
+ *  									  					|
+ *  									  					|
+ *  									  					--> Fail --> 2.11BSD Scheduler
+ *  Notes:
+ *  Due to how 2.11BSD's (& 4.4BSD's) scheduler works, all process's will exit the run-queue
+ *  (irrelevant of processor time needed) before re-entering.
+ *  Which is not shown in the above decision tree for the sake of simplicity.
+ */
 
 #ifndef _SYS_GSCHED_H
 #define _SYS_GSCHED_H
@@ -33,7 +89,7 @@
 #include <sys/lock.h>
 #include <sys/queue.h>
 
-/* Schedulers + Info used by both EDF & CFS */
+/* Schedulers & Common Information used across schedulers */
 /* global scheduler */
 struct gsched {
 	struct proc 			*gsc_rqlink; 	/* pointer to linked list of running processes */
@@ -46,9 +102,9 @@ struct gsched {
     struct gsched_cfs 		*gsc_cfs;		/* completely fair scheduler */
 };
 
-/* Scheduler Domains: Hyperthreading, multi-cpu, etc... */
-struct sched_domains {
-
+/* Linux Concept: Scheduler Domains: Hyperthreading, multi-cpu */
+struct gsched_domains {
+	/* Not Implemented */
 };
 
 /* Priority Weighting Factors */
@@ -63,7 +119,7 @@ enum priw {
 
 /*
  * Priority Weighting Calculation:
- * Needs Tuning: currently any factor below 4 results in 0 (with above weightings).
+ * XXX: Needs Tuning: currently any factor below 4 results in 0 (with above weightings).
  */
 #define PRIORITY_WEIGHTING(pw, pwp, pwd, pwl, pws) {		\
 	(pw) = 	((PW_FACTOR((pwp), PW_PRIORITY) +  				\
@@ -82,19 +138,3 @@ u_char				gsched_timediff(u_char, u_int);
 void				gsched_sort(struct proc *, struct proc *);
 
 #endif /* _SYS_GSCHED_H */
-/*
- priority weighting: replace release time with cpu utilization.
-
-cost/usage = p_cpu
-
-time = p_estcpu & p_time.
-
-deadline = p_cpticks
-
-release = if deadline is greater than time. release is 0. else release = time
-- if release is 0, schedulability should fail. (Impossible to complete a task by a deadline which is greater than the time given)
-
-slack = (deadline - time) - cost
-
-remtime = calculated at the end of CFS run queue
-*/

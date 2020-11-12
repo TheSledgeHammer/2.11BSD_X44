@@ -70,10 +70,10 @@ struct boot2_dmadat {
 	/* extended by *fsread() modules */
 };
 
-extern uint32_t fs_off;
-extern int		no_io_error;
-extern int		ls;
-extern struct boot2_dmadat *boot2_dmadat;
+extern uint32_t 			fs_off;
+extern int					no_io_error;
+extern int					ls;
+extern struct boot2_dmadat 	*boot2_dmadat;
 
 extern int dskread(void *, unsigned, unsigned);
 extern void printf(const char *,...);

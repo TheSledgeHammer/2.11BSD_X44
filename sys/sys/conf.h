@@ -8,18 +8,7 @@
 #ifndef _SYS_CONF_H_
 #define _SYS_CONF_H_
 
-struct buf;
-struct proc;
-struct tty;
-struct uio;
-struct vnode;
-
-/*
- * Types for d_type.
- */
-#define	D_TAPE	1
-#define	D_DISK	2
-#define	D_TTY	3
+#include <dev/conf_decl.h>
 
 /*
  * Declaration of block device
@@ -116,5 +105,4 @@ int	iszerodev 	(dev_t);
 int	isdisk 		(dev_t, int);
 int	chrtoblk 	(dev_t);
 #endif
-
 #endif

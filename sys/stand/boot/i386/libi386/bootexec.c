@@ -76,6 +76,20 @@ boot_loadfile(char *args, uint64_t dest, struct preloaded_file *fp)
 		goto out;
 	}
 #endif
+#ifdef BOOT_XCOFF32
+	error = xcoff32_loadfile(args, dest, fp);
+	if (error != 0) {
+		printf("xcoff32_loadfile failed: %d unable to load multiboot kernel\n", error);
+		goto out;
+	}
+#endif
+#ifdef BOOT_XCOFF64
+	error = xcoff64_loadfile(args, dest, fp);
+	if (error != 0) {
+		printf("xcoff64_loadfile failed: %d unable to load multiboot kernel\n", error);
+		goto out;
+	}
+#endif
 
 	/*
 	 * f_addr is already aligned to PAGE_SIZE, make sure
@@ -105,6 +119,12 @@ boot_exec(struct preloaded_file *fp)
 #endif
 #ifdef BOOT_ELF64 && ELFSIZE == 64
 	fp = file_findfile(NULL, ELF64_KERNELTYPE);
+#endif
+#ifdef BOOT_XCOFF32 && XCOFFSIZE == 32
+	fp = file_findfile(NULL, XCOFF32_KERNELTYPE);
+#endif
+#ifdef BOOT_XCOFF64 && XCOFFSIZE == 64
+	fp = file_findfile(NULL, XCOFF64_KERNELTYPE);
 #endif
 
 	if (fp == NULL) {

@@ -50,6 +50,8 @@ void	lock_pause(struct lock *, int);
 void	lock_acquire(struct lock *, int, int, int);
 void	count(struct proc *, short);
 
+struct lock_holder *kernel_lockholder;
+
 #if NCPUS > 1
 #define PAUSE(lkp, wanted)						\
 		lock_pause(lkp, wanted);
@@ -542,7 +544,7 @@ void
 lock_object_acquire(lock)
 	struct lock_object 	*lock;
 {
-	struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
+	struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number];
 	unsigned long s;
 
 	s = intr_disable();
@@ -559,7 +561,7 @@ void
 lock_object_release(lock)
 	struct lock_object 	*lock;
 {
-	struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
+	struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number];
 	unsigned long s;
 
 	s = intr_disable();
@@ -576,7 +578,7 @@ int
 lock_object_try(lock)
 	struct lock_object 	*lock;
 {
-	struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
+	struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number];
 
 	return (!lock->lo_can_serve[&cpu->loc_my_ticket]);
 }

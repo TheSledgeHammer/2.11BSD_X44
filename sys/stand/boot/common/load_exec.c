@@ -42,7 +42,7 @@
 
 /*
  * Attempts to load the file (file) as an module defined by the parameter 'kerneltype'.
- * Kernel types include aout, ecoff, elf32 and elf64.
+ * Kernel types include aout, ecoff, elf32, elf64, xcoff32 & xcoff64.
  * It will be stored at (dest), and a pointer to a module structure describing the loaded object
  * will be saved in (result).
  * The functions for the different files it can load as a module are below.

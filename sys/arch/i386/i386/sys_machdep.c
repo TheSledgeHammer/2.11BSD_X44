@@ -139,7 +139,7 @@ i386_get_ldt(p, args, retval)
 	register_t *retval;
 {
 	int error;
-	pmap_t pmap = p->p_vmspace->vm_map.pmap;
+	struct pcb *pcb = &p->p_addr->u_pcb;
 	int nldt, num;
 	union descriptor *lp;
 	struct i386_get_ldt_args ua;
@@ -158,9 +158,9 @@ i386_get_ldt(p, args, retval)
 	 * XXX LOCKING.
 	 */
 
-	if (pmap->pm_flags & PMF_USER_LDT) {
-		nldt = pmap->pm_ldt_len;
-		lp = pmap->pm_ldt;
+	if (pcb->pcb_flags & PMF_USER_LDT) {
+		nldt = pcb->pcb_ldt_len;
+		lp =  pcb->pcb_desc;
 	} else {
 		nldt = NLDT;
 		lp = ldt;
@@ -188,7 +188,6 @@ i386_set_ldt(p, args, retval)
 {
 	int error, i, n;
 	struct pcb *pcb = &p->p_addr->u_pcb;
-	pmap_t pmap = p->p_vmspace->vm_map.pmap;
 	struct i386_set_ldt_args ua;
 	union descriptor *descv;
 
@@ -196,15 +195,14 @@ i386_set_ldt(p, args, retval)
 		return (error);
 
 #ifdef	LDT_DEBUG
-	printf("i386_set_ldt: start=%d num=%d descs=%p\n", ua.start,
-	    ua.num, ua.desc);
+	printf("i386_set_ldt: start=%d num=%d descs=%p\n", ua.start, ua.num, ua.desc);
 #endif
 
 	if (ua.start < 0 || ua.num < 0 || ua.start > 8192 || ua.num > 8192 ||
 	    ua.start + ua.num > 8192)
 		return (EINVAL);
 
-	descv = MALLOC(sizeof(*descv) * ua.num, union descriptor, descv, M_TEMP, M_NOWAIT);
+	descv = malloc(sizeof(*descv) * ua.num, union descriptor, descv, M_TEMP, M_NOWAIT);
 
 	if (descv == NULL)
 		return (ENOMEM);
@@ -217,44 +215,30 @@ i386_set_ldt(p, args, retval)
 	 */
 
 	/* allocate user ldt */
-	if (pmap->pm_ldt == 0 || (ua.start + ua.num) > pmap->pm_ldt_len) {
+	if(pcb->pcb_desc == 0 || (ua.start + ua.num) > pcb->pcb_ldt_len) {
 		size_t old_len, new_len;
 		union descriptor *old_ldt, *new_ldt;
-
-		if (pmap->pm_flags & PMF_USER_LDT) {
-			old_len = pmap->pm_ldt_len * sizeof(union descriptor);
-			old_ldt = pmap->pm_ldt;
+		if(pcb->pcb_flags & PMF_USER_LDT) {
+			old_len = pcb->pcb_ldt_len * sizeof(union descriptor);
+			old_ldt = pcb->pcb_desc;
 		} else {
 			old_len = NLDT * sizeof(union descriptor);
 			old_ldt = ldt;
-			pmap->pm_ldt_len = 512;
+			pcb->pcb_ldt_len = 512;
 		}
-		while ((ua.start + ua.num) > pmap->pm_ldt_len)
-			pmap->pm_ldt_len *= 2;
-		new_len = pmap->pm_ldt_len * sizeof(union descriptor);
-		new_ldt = (union descriptor *)uvm_km_alloc(kernel_map, new_len);
+		while ((ua.start + ua.num) > pcb->pcb_ldt_len) {
+			pcb->pcb_ldt_len *= 2;
+		}
+		new_len = pcb->pcb_ldt_len * sizeof(union descriptor);
+		new_ldt = (union descriptor *)kmem_alloc(kernel_map, new_len);
 		memcpy(new_ldt, old_ldt, old_len);
 		memset((caddr_t)new_ldt + old_len, 0, new_len - old_len);
-		pmap->pm_ldt = new_ldt;
+		pcb->pcb_desc = new_ldt;
+		pcb->pcb_flags |= PCB_USER_LDT;
 
-		if (pmap->pm_flags & PCB_USER_LDT)
-			ldt_free(pmap);
-		else
-			pmap->pm_flags |= PCB_USER_LDT;
-		ldt_alloc(pmap, new_ldt, new_len);
-		pcb->pcb_ldt_sel = pmap->pm_ldt_sel;
 		if (pcb == curpcb)
 			lldt(pcb->pcb_ldt_sel);
 
-		/*
-		 * XXX Need to notify other processors which may be
-		 * XXX currently using this pmap that they need to
-		 * XXX re-load the LDT.
-		 */
-		pcb->pcb_tss.tss_ldt
-		if (old_ldt != ldt)
-
-			FREE(kernel_map, (caddr_t)old_ldt);
 #ifdef LDT_DEBUG
 		printf("i386_set_ldt(%d): new_ldt=%p\n", p->p_pid, new_ldt);
 #endif
@@ -281,8 +265,7 @@ i386_set_ldt(p, args, retval)
 			if (desc->gd.gd_p != 0 &&
 			    !ISLDT(desc->gd.gd_selector) &&
 			    ((IDXSEL(desc->gd.gd_selector) >= NGDT) ||
-			     (gdt[IDXSEL(desc->gd.gd_selector)].sd.sd_dpl !=
-				 SEL_UPL))) {
+			     (gdt[IDXSEL(desc->gd.gd_selector)].sd.sd_dpl != SEL_UPL))) {
 				error = EACCES;
 				goto out;
 			}
@@ -331,7 +314,7 @@ i386_set_ldt(p, args, retval)
 
 	/* Now actually replace the descriptors. */
 	for (i = 0, n = ua.start; i < ua.num; i++, n++)
-		pmap->pm_ldt[n] = descv[i];
+		pcb->pcb_desc[n] = descv[i];
 
 	*retval = ua.start;
 

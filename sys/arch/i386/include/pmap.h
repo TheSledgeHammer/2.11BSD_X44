@@ -125,11 +125,7 @@ struct pmap {
 	simple_lock_data_t		pm_lock;		/* lock on pmap */
 	struct pmap_statistics	pm_stats;		/* pmap statistics */
 	long					pm_ptpages;		/* more stats: PT pages */
-
 	int 					pm_flags;		/* see below */
-	union descriptor 		*pm_ldt;		/* user-set LDT */
-	int 					pm_ldt_len;		/* number of LDT entries */
-	int 					pm_ldt_sel;		/* LDT selector */
 };
 
 typedef struct pmap			*pmap_t;
@@ -184,8 +180,6 @@ pv_entry_t				pv_table;	/* array of entries, one per page */
 #define	pmap_wired_count(pmap)		((pmap)->pm_stats.wired_count)
 
 extern int pae_mode;
-extern int i386_pmap_VM_NFREEORDER;
-extern int i386_pmap_VM_LEVEL_0_ORDER;
 extern int i386_pmap_PDRSHIFT;
 #endif	KERNEL
 #endif	/* _PMAP_MACHINE_ */

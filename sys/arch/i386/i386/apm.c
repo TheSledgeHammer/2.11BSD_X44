@@ -101,10 +101,10 @@ int	apmdebug = 0;
 #define APM_NEVENTS 16
 
 struct apm_softc {
-	struct device sc_dev;
-	struct selinfo sc_rsel;
-	struct selinfo sc_xsel;
-	int	sc_flags;
+	struct device 	sc_dev;
+	struct selinfo 	sc_rsel;
+	struct selinfo 	sc_xsel;
+	int				sc_flags;
 	int	event_count;
 	int	event_ptr;
 	struct	apm_event_info event_list[APM_NEVENTS];

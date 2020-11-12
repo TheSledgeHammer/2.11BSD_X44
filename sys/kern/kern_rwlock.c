@@ -29,8 +29,9 @@
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/user.h>
-#include <sys/lock.h>
 #include <sys/rwlock.h>
+
+#include <machine/cpu.h>
 
 void		rwlock_pause(rwlock_t, int);
 void		rwlock_acquire(rwlock_t, int, int, int);
@@ -187,9 +188,10 @@ rwlockmgr_printinfo(rwl)
  */
 int
 rwlock_read_held(rwl)
-	rwlock_t rwl;
+	__volatile rwlock_t rwl;
 {
-	register struct lock_object_cpu *cpu = rwl->rwl_lnterlock.lo_cpus[cpu_number()];
+	register struct lock_object *lock = rwl->rwl_lnterlock;
+	register struct lock_object_cpu *cpu = lock->lo_cpus[cpu_number];
 	if (rwl == NULL)
 		return 0;
 	return (cpu->loc_my_ticket & RW_HAVE_WRITE) == 0 && (cpu->loc_my_ticket & RW_THREAD) != 0;
@@ -204,9 +206,10 @@ rwlock_read_held(rwl)
  */
 int
 rwlock_write_held(rwl)
-	rwlock_t rwl;
+	__volatile rwlock_t rwl;
 {
-	register struct lock_object_cpu *cpu = rwl->rwl_lnterlock.lo_cpus[cpu_number()];
+	register struct lock_object *lock = &rwl->rwl_lnterlock;
+	register struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number];
 	if (rwl == NULL)
 		return (0);
 	return (cpu->loc_my_ticket & (RW_HAVE_WRITE | RW_THREAD)) == (RW_HAVE_WRITE | curproc);
@@ -221,9 +224,10 @@ rwlock_write_held(rwl)
  */
 int
 rwlock_lock_held(rwl)
-	rwlock_t rwl;
+	__volatile rwlock_t rwl;
 {
-	register struct lock_object_cpu *cpu = rwl->rwl_lnterlock.lo_cpus[cpu_number()];
+	register struct lock_object *lock = &rwl->rwl_lnterlock;
+	register struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number];
 	if (rwl == NULL)
 		return 0;
 	return (cpu->loc_my_ticket & RW_THREAD) != 0;

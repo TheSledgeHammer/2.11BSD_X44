@@ -48,6 +48,8 @@
 #include <sys/disklabel.h>
 #include <sys/vnode.h>
 
+#include <dev/conf_decl.h>
+
 int	rawread		(dev_t, struct uio *, int);
 int	rawwrite	(dev_t, struct uio *, int);
 int	swstrategy	(struct buf *);
@@ -69,9 +71,8 @@ int	ttselect	(dev_t, int, struct proc *);
 /* bdevsw-specific initializations */
 #define	dev_size_init(c,n)	(c > 0 ? __CONCAT(n,size) : 0)
 
-#define	bdev_decl(n) 											\
-	dev_decl(n,open); dev_decl(n,close); dev_decl(n,strategy); 	\
-	dev_decl(n,ioctl); dev_decl(n,dump); dev_decl(n,size)
+/* bdevsw-specific initializations */
+#define	dev_size_init(c,n)	(c > 0 ? __CONCAT(n,size) : 0)
 
 #define	bdev_disk_init(c,n) { 									\
 	dev_init(c,n,open), (dev_type_close((*))) nullop, 			\
@@ -88,26 +89,29 @@ int	ttselect	(dev_t, int, struct proc *);
 	swstrategy, (dev_type_ioctl((*))) enodev, 					\
 	(dev_type_dump((*))) enodev, 0, 0 }
 
-#define	bdev_notdef()	bdev_tape_init(0,no)
+#define	bdev_notdef()	bdev_tape_init(0, no)
 bdev_decl(no);	/* dummy declarations */
 
+
 #include "wd.h"
+bdev_decl(wd);
 #include "fd.h"
 #include "wt.h"
 #include "xd.h"
 
-bdev_decl(wd);
+#include "vnd.h"
+
+
 bdev_decl(Fd);
 bdev_decl(wt);
 bdev_decl(xd);
 
-struct bdevsw bdevsw[] =
-{
-	bdev_disk_init(NWD,wd),	/* 0: st506/rll/esdi/ide disk */
+struct bdevsw bdevsw[] = {
+	bdev_disk_init(NWD,wd),		/* 0: st506/rll/esdi/ide disk */
 	bdev_swap_init(1,sw),		/* 1: swap pseudo-device */
-	bdev_disk_init(NFD,Fd),	/* 2: floppy disk */
-	bdev_tape_init(NWT,wt),	/* 3: QIC-24/60/120/150 cartridge tape */
-	bdev_disk_init(NXD,xd),	/* 4: temp alt st506/rll/esdi/ide disk */
+	bdev_disk_init(NFD,Fd),		/* 2: floppy disk */
+	bdev_tape_init(NWT,wt),		/* 3: QIC-24/60/120/150 cartridge tape */
+	bdev_disk_init(NXD,xd),		/* 4: temp alt st506/rll/esdi/ide disk */
 };
 
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
@@ -124,7 +128,9 @@ int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 	dev_decl(n,open); dev_decl(n,close); dev_decl(n,read); \
 	dev_decl(n,write); dev_decl(n,ioctl); dev_decl(n,stop); \
 	dev_decl(n,reset); dev_decl(n,select); dev_decl(n,map); \
-	dev_decl(n,strategy); extern struct tty __CONCAT(n,_tty)[]; \
+	dev_decl(n,strategy);
+
+extern struct tty __CONCAT(n,_tty);
 
 #define	dev_tty_init(c,n)	(c > 0 ? __CONCAT(n,_tty) : 0)
 
@@ -191,9 +197,9 @@ dev_type_read(mmrw);
 #include "pty.h"
 #define	pts_tty		pt_tty
 #define	ptsioctl	ptyioctl
-cdev_decl(pts);
 #define	ptc_tty		pt_tty
 #define	ptcioctl	ptyioctl
+cdev_decl(pts);
 cdev_decl(ptc);
 
 /* open, close, read, write, ioctl, tty, select */
@@ -242,22 +248,21 @@ cdev_decl(bpf);
 	(dev_type_reset((*))) enodev, 0, dev_init(c,n,select), \
 	(dev_type_map((*))) enodev, 0 }
 
-struct cdevsw cdevsw[] =
-{
-	cdev_cn_init(1,cn),			/* 0: virtual console */
-	cdev_ctty_init(1,ctty),		/* 1: controlling terminal */
-	cdev_mm_init(1,mm),			/* 2: /dev/{null,mem,kmem,...} */
-	cdev_disk_init(NWD,wd),		/* 3: st506/rll/esdi/ide disk */
-	cdev_swap_init(1,sw),		/* 4: /dev/drum (swap pseudo-device) */
-	cdev_tty_init(NPTY,pts),	/* 5: pseudo-tty slave */
-	cdev_ptc_init(NPTY,ptc),	/* 6: pseudo-tty master */
-	cdev_log_init(1,log),		/* 7: /dev/klog */
-	cdev_tty_init(NCOM,com),	/* 8: serial communications ports */
-	cdev_disk_init(NFD,Fd),		/* 9: floppy disk */
-	cdev_tape_init(NWT,wt),		/* 10: QIC-24/60/120/150 cartridge tape */
-	cdev_disk_init(NXD,xd),		/* 11: temp alt st506/rll/esdi/ide disk */
-	cdev_pc_init(1,pc),			/* 12: real console */
-	cdev_notdef(),				/* 13 */
+struct cdevsw cdevsw[] = {
+	cdev_cn_init(1,cn),				/* 0: virtual console */
+	cdev_ctty_init(1,ctty),			/* 1: controlling terminal */
+	cdev_mm_init(1,mm),				/* 2: /dev/{null,mem,kmem,...} */
+	cdev_disk_init(NWD,wd),			/* 3: st506/rll/esdi/ide disk */
+	cdev_swap_init(1,sw),			/* 4: /dev/drum (swap pseudo-device) */
+	cdev_tty_init(NPTY,pts),		/* 5: pseudo-tty slave */
+	cdev_ptc_init(NPTY,ptc),		/* 6: pseudo-tty master */
+	cdev_log_init(1,log),			/* 7: /dev/klog */
+	cdev_tty_init(NCOM,com),		/* 8: serial communications ports */
+	cdev_disk_init(NFD,Fd),			/* 9: floppy disk */
+	cdev_tape_init(NWT,wt),			/* 10: QIC-24/60/120/150 cartridge tape */
+	cdev_disk_init(NXD,xd),			/* 11: temp alt st506/rll/esdi/ide disk */
+	cdev_pc_init(1,pc),				/* 12: real console */
+	cdev_notdef(),					/* 13 */
 	cdev_bpf_init(NBPFILTER,bpf),	/* 14: berkeley packet filter */
 };
 
@@ -281,6 +286,7 @@ dev_t	swapdev = makedev(1, 0);
  *
  * A minimal stub routine can always return 0.
  */
+int
 iskmemdev(dev)
 	dev_t dev;
 {
@@ -288,8 +294,50 @@ iskmemdev(dev)
 	return (major(dev) == 2 && (minor(dev) == 0 || minor(dev) == 1));
 }
 
+int
 iszerodev(dev)
 	dev_t dev;
 {
 	return (major(dev) == 2 && minor(dev) == 12);
+}
+
+
+/*
+ * Routine to convert from character to block device number.
+ *
+ * A minimal stub routine can always return NODEV.
+ */
+int
+chrtoblk(dev)
+	register dev_t dev;
+{
+	register int blkmaj;
+
+	if (major(dev) >= MAXDEV || (blkmaj = chrtoblktbl[major(dev)]) == NODEV)
+		return (NODEV);
+	return (makedev(blkmaj, minor(dev)));
+}
+
+/*
+ * This routine returns the cdevsw[] index of the block device
+ * specified by the input parameter.    Used by init_main and ufs_mount to
+ * find the diskdriver's ioctl entry point so that the label and partition
+ * information can be obtained for 'block' (instead of 'character') disks.
+ *
+ * Rather than create a whole separate table 'chrtoblktbl' is scanned
+ * looking for a match.  This routine is only called a half dozen times during
+ * a system's life so efficiency isn't a big concern.
+*/
+int
+blktochr(dev)
+	register dev_t dev;
+{
+	register int maj = major(dev);
+	register int i;
+
+	for	(i = 0; i < MAXDEV; i++) {
+		if	(maj == chrtoblktbl[i])
+			return(i);
+	}
+	return(NODEV);
 }

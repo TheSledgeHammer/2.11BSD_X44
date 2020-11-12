@@ -94,8 +94,8 @@ struct	gate_descriptor	{
  * Generic descriptor
  */
 union descriptor	{
-	struct	segment_descriptor sd;
-	struct	gate_descriptor gd;
+	struct	segment_descriptor 	sd;
+	struct	gate_descriptor 	gd;
 };
 
 /* system segments and gate types */
