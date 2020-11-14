@@ -42,7 +42,8 @@
 #include <sys/device.h>
 #include <sys/user.h>
 
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 
 #include <dev/pci/pcivar.h>
 #include <dev/pci/pcireg.h>

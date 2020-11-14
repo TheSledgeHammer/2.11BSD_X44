@@ -83,7 +83,8 @@
 #ifndef _I386_ISA_MACHDEP_H_			/* XXX */
 #define _I386_ISA_MACHDEP_H_			/* XXX */
 
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 
 /*
  * XXX THIS FILE IS A MESS.  copyright: berkeley's probably.
@@ -145,8 +146,8 @@ struct i386_isa_dma_cookie {
 /*
  * RAM Physical Address Space (ignoring the above mentioned "hole")
  */
-#define	RAM_BEGIN	0x0000000	/* Start of RAM Memory */
-#define	RAM_END		0x1000000	/* End of RAM Memory */
+#define	RAM_BEGIN	0x0000000		/* Start of RAM Memory */
+#define	RAM_END		0x1000000		/* End of RAM Memory */
 #define	RAM_SIZE	(RAM_END - RAM_BEGIN)
 
 /*
@@ -165,7 +166,6 @@ struct i386_isa_dma_cookie {
 #define	CGA_BASE	0x3D4
 #define	CGA_BUF		0xB8000
 #define	IOPHYSMEM	0xA0000
-
 
 /*
  * Interrupt handler chains.  isa_intr_establish() inserts a handler into
@@ -219,7 +219,6 @@ extern u_long atdevbase;           /* kernel virtual address of "hole" */
  * return a kernel virtual address.
  */
 #define ISA_HOLE_VADDR(p)  ((void *) ((u_long)(p) - IOM_BEGIN + atdevbase))
-
 
 /*
  * Miscellanous functions.

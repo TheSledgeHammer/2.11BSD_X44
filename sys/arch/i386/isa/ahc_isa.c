@@ -128,7 +128,8 @@
 #include <sys/malloc.h>
 #include <sys/user.h>
 
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 #include <machine/intr.h>
 
 #include <dev/scsi/scsi_all.h>

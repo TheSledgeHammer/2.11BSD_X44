@@ -56,7 +56,8 @@
 #include <sys/device.h>
 
 #include <machine/intr.h>
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 
 #include <dev/ic/comreg.h>
 #include <dev/ic/comvar.h>

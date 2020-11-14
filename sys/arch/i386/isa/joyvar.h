@@ -44,11 +44,11 @@
  */
 
 struct joy_softc {
-	struct	device 	sc_dev;
-	bus_space_tag_t sc_iot;
-	bus_space_handle_t sc_ioh;
-	int	x_off[2], y_off[2];
-	int	timeout[2];
+	struct	device 		sc_dev;
+	bus_space_tag_t 	sc_iot;
+	bus_space_handle_t 	sc_ioh;
+	int					x_off[2], y_off[2];
+	int					timeout[2];
 };
 
 void	joyattach (struct joy_softc *);

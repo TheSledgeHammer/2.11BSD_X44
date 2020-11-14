@@ -81,7 +81,8 @@
  */
 
 #include <sys/queue.h>
-//#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 
 /* 
  * Structures and definitions needed by the machine-dependent header.

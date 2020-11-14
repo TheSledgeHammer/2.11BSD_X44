@@ -39,7 +39,8 @@
 #include <sys/malloc.h>
 #include <sys/user.h>
 
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 
 #include <dev/isa/isavar.h>
 #include <dev/isa/isadmavar.h>

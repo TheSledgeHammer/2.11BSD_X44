@@ -187,7 +187,7 @@ isa_dmamap_create(isadev, chan, size, flags)
 
 	ISA_DRQ_ALLOC(sc, chan);
 
-	return (_bus_dmamap_create(sc->sc_dmat, size, 1, size, maxsize, flags, &sc->sc_dmamaps[chan]));
+	return (bus_dmamap_create(sc->sc_dmat, size, 1, size, maxsize, flags, &sc->sc_dmamaps[chan]));
 
  lose:
 	panic("isa_dmamap_create");
@@ -213,7 +213,7 @@ isa_dmamap_destroy(isadev, chan)
 
 	ISA_DRQ_FREE(sc, chan);
 
-	_bus_dmamap_destroy(sc->sc_dmat, sc->sc_dmamaps[chan]);
+	bus_dmamap_destroy(sc->sc_dmat, sc->sc_dmamaps[chan]);
 	return;
 
  lose:
@@ -270,7 +270,7 @@ isa_dmastart(isadev, chan, addr, nbytes, p, flags, busdmaflags)
 	if (dmam == NULL)
 		panic("isa_dmastart: no DMA map for chan %d\n", chan);
 
-	error = _bus_dmamap_load(sc->sc_dmat, dmam, addr, nbytes,
+	error = bus_dmamap_load(sc->sc_dmat, dmam, addr, nbytes,
 	    p, busdmaflags);
 	if (error)
 		return (error);
@@ -280,10 +280,10 @@ isa_dmastart(isadev, chan, addr, nbytes, p, flags, busdmaflags)
 #endif
 
 	if (flags & DMAMODE_READ) {
-		_bus_dmamap_sync(sc->sc_dmat, dmam, BUS_DMASYNC_PREREAD);
+		bus_dmamap_sync(sc->sc_dmat, dmam, BUS_DMASYNC_PREREAD);
 		sc->sc_dmareads |= (1 << chan);
 	} else {
-		_bus_dmamap_sync(sc->sc_dmat, dmam, BUS_DMASYNC_PREWRITE);
+		bus_dmamap_sync(sc->sc_dmat, dmam, BUS_DMASYNC_PREWRITE);
 		sc->sc_dmareads &= ~(1 << chan);
 	}
 
@@ -362,7 +362,7 @@ isa_dmaabort(isadev, chan)
 	}
 
 	isa_dmamask(sc, chan);
-	_bus_dmamap_unload(sc->sc_dmat, sc->sc_dmamaps[chan]);
+	bus_dmamap_unload(sc->sc_dmat, sc->sc_dmamaps[chan]);
 	sc->sc_dmareads &= ~(1 << chan);
 }
 
@@ -459,11 +459,11 @@ isa_dmadone(isadev, chan)
 		printf("%s: isa_dmadone: channel %d not finished\n",
 		    sc->sc_dev.dv_xname, chan);
 
-	_bus_dmamap_sync(sc->sc_dmat, dmam,
+	bus_dmamap_sync(sc->sc_dmat, dmam,
 	    (sc->sc_dmareads & (1 << chan)) ? BUS_DMASYNC_POSTREAD :
 	    BUS_DMASYNC_POSTWRITE);
 
-	_bus_dmamap_unload(sc->sc_dmat, dmam);
+	bus_dmamap_unload(sc->sc_dmat, dmam);
 	sc->sc_dmareads &= ~(1 << chan);
 }
 
@@ -488,7 +488,7 @@ isa_dmamem_alloc(isadev, chan, size, addrp, flags)
 
 	size = round_page(size);
 
-	error = _bus_dmamem_alloc(sc->sc_dmat, size, NBPG, boundary,
+	error = bus_dmamem_alloc(sc->sc_dmat, size, NBPG, boundary,
 	    &seg, 1, &rsegs, flags);
 	if (error)
 		return (error);
@@ -515,7 +515,7 @@ isa_dmamem_free(isadev, chan, addr, size)
 	seg.ds_addr = addr;
 	seg.ds_len = size;
 
-	_bus_dmamem_free(sc->sc_dmat, &seg, 1);
+	bus_dmamem_free(sc->sc_dmat, &seg, 1);
 }
 
 int
@@ -538,7 +538,7 @@ isa_dmamem_map(isadev, chan, addr, size, kvap, flags)
 	seg.ds_addr = addr;
 	seg.ds_len = size;
 
-	return (_bus_dmamem_map(sc->sc_dmat, &seg, 1, size, kvap, flags));
+	return (bus_dmamem_map(sc->sc_dmat, &seg, 1, size, kvap, flags));
 }
 
 void
@@ -555,7 +555,7 @@ isa_dmamem_unmap(isadev, chan, kva, size)
 		panic("isa_dmamem_unmap");
 	}
 
-	_bus_dmamem_unmap(sc->sc_dmat, kva, size);
+	bus_dmamem_unmap(sc->sc_dmat, kva, size);
 }
 
 int
@@ -580,7 +580,7 @@ isa_dmamem_mmap(isadev, chan, addr, size, off, prot, flags)
 	seg.ds_addr = addr;
 	seg.ds_len = size;
 
-	return (_bus_dmamem_mmap(sc->sc_dmat, &seg, 1, off, prot, flags));
+	return (bus_dmamem_mmap(sc->sc_dmat, &seg, 1, off, prot, flags));
 }
 
 int

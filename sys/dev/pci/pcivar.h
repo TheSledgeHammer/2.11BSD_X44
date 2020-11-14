@@ -41,7 +41,8 @@
  * provided by pci_machdep.h.
  */
 
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 #include <dev/pci/pcireg.h>
 
 /*

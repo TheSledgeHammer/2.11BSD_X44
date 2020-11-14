@@ -11,7 +11,8 @@ maxusers 2 16 64
 file	arch/i386/i386/aout_machdep.c	 exec_aout 
 file    arch/i386/i386/autoconf.c
 file    arch/i386/i386/bios.c
-file    arch/i386/i386/bus_machdep.c
+file    arch/i386/i386/bus_dma.c
+file    arch/i386/i386/bus_space.c
 file    arch/i386/i386/conf.c
 file    arch/i386/i386/consinit.c
 file    arch/i386/i386/copyout.c
@@ -23,14 +24,15 @@ file    arch/i386/i386/dkbad.c
 file    arch/i386/i386/gdt.c
 file    arch/i386/i386/in_cksum.c	     inet
 file    arch/i386/i386/initcpu.c
+file    arch/i386/i386/k6_mem.c
 file    arch/i386/i386/kobj_machdep.c
 file    arch/i386/i386/mainbus.c
 file    arch/i386/i386/machdep.c
 file	arch/i386/i386/math_emulate.c	 math_emulate
 file    arch/i386/i386/mem.c
-file    arch/i386/i386/pmap_base.c
-file    arch/i386/i386/pmap_nopae.c
-file    arch/i386/i386/pmap_pae.c
+#file    arch/i386/i386/pmap_base.c
+#file    arch/i386/i386/pmap_nopae.c
+#file    arch/i386/i386/pmap_pae.c
 file    arch/i386/i386/pmap.c
 file    arch/i386/i386/procfs_machdep.c
 file    arch/i386/i386/support.s

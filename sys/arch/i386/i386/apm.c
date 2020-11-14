@@ -64,7 +64,8 @@
 //#include <sys/poll.h>
 #include <sys/conf.h>
 
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 #include <machine/stdarg.h>
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>

@@ -530,7 +530,6 @@ static temp_real_unaligned * __st(int i)
  * Calculate the effective address.
  */
 
-
 static int __regoffset[] = {
 	tEAX, tECX, tEDX, tEBX, tESP, tEBP, tESI, tEDI
 };

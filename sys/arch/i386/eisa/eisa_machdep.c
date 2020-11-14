@@ -80,7 +80,8 @@
 #include <sys/extent.h>
 
 #define _I386_BUS_DMA_PRIVATE
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 
 #include <i386/isa/icu.h>
 #include <dev/isa/isareg.h>
@@ -92,20 +93,20 @@
  * of these funcions.
  */
 struct i386_bus_dma_tag eisa_bus_dma_tag = {
-	NULL,			/* _cookie */
-	_bus_dmamap_create,
-	_bus_dmamap_destroy,
-	_bus_dmamap_load,
-	_bus_dmamap_load_mbuf,
-	_bus_dmamap_load_uio,
-	_bus_dmamap_load_raw,
-	_bus_dmamap_unload,
-	NULL,			/* _dmamap_sync */
-	_bus_dmamem_alloc,
-	_bus_dmamem_free,
-	_bus_dmamem_map,
-	_bus_dmamem_unmap,
-	_bus_dmamem_mmap,
+	NULL,				/* _cookie */
+	bus_dmamap_create,
+	bus_dmamap_destroy,
+	bus_dmamap_load,
+	bus_dmamap_load_mbuf,
+	bus_dmamap_load_uio,
+	bus_dmamap_load_raw,
+	bus_dmamap_unload,
+	NULL,				/* _dmamap_sync */
+	bus_dmamem_alloc,
+	bus_dmamem_free,
+	bus_dmamem_map,
+	bus_dmamem_unmap,
+	bus_dmamem_mmap,
 };
 
 void

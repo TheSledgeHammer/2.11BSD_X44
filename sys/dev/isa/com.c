@@ -56,7 +56,8 @@
 #include <sys/types.h>
 #include <sys/device.h>
 
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 #include <machine/intr.h>
 
 #include <dev/isa/isavar.h>

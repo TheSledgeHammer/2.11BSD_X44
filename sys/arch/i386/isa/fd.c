@@ -78,7 +78,8 @@
 #include <dev/cons.h>
 
 #include <machine/cpu.h>
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 #include <machine/conf.h>
 #include <machine/intr.h>
 

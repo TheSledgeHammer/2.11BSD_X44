@@ -42,7 +42,8 @@
 #include <vm/include/vm.h>
 #include <vm/include/pmap.h>
 
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 #include <machine/segments.h>
 #include <machine/stdarg.h>
 #include <machine/vmparam.h>

@@ -87,7 +87,8 @@
 #include <sys/proc.h>
 
 #define _I386_BUS_DMA_PRIVATE
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 
 #include <machine/pio.h>
 #include <machine/cpufunc.h>
@@ -604,7 +605,7 @@ _isa_bus_dmamap_create(t, size, nsegments, maxsegsz, boundary, flags, dmamp)
 	size_t cookiesize;
 
 	/* Call common function to create the basic map. */
-	error = _bus_dmamap_create(t, size, nsegments, maxsegsz, boundary,
+	error = bus_dmamap_create(t, size, nsegments, maxsegsz, boundary,
 	    flags, dmamp);
 	if (error)
 		return (error);
@@ -672,7 +673,7 @@ _isa_bus_dmamap_create(t, size, nsegments, maxsegsz, boundary, flags, dmamp)
 	if (error) {
 		if (map->_dm_cookie != NULL)
 			free(map->_dm_cookie, M_DEVBUF);
-		_bus_dmamap_destroy(t, map);
+		bus_dmamap_destroy(t, map);
 	}
 	return (error);
 }
@@ -694,7 +695,7 @@ _isa_bus_dmamap_destroy(t, map)
 		_isa_dma_free_bouncebuf(t, map);
 
 	free(cookie, M_DEVBUF);
-	_bus_dmamap_destroy(t, map);
+	bus_dmamap_destroy(t, map);
 }
 
 /*
@@ -724,7 +725,7 @@ _isa_bus_dmamap_load(t, map, buf, buflen, p, flags)
 		 */
 		if (_isa_dma_check_buffer(buf, buflen,
 		    map->_dm_segcnt, map->_dm_boundary, p) == 0)
-			return (_bus_dmamap_load(t, map, buf, buflen,
+			return (bus_dmamap_load(t, map, buf, buflen,
 			    p, flags));
 
 		STAT_INCR(isa_dma_stats_bounces);
@@ -745,7 +746,7 @@ _isa_bus_dmamap_load(t, map, buf, buflen, p, flags)
 		 */
 		cookie->id_origbuf = buf;
 		cookie->id_origbuflen = buflen;
-		error = _bus_dmamap_load(t, map, cookie->id_bouncebuf,
+		error = bus_dmamap_load(t, map, cookie->id_bouncebuf,
 		    buflen, p, flags);
 		
 		if (error) {
@@ -763,7 +764,7 @@ _isa_bus_dmamap_load(t, map, buf, buflen, p, flags)
 		/*
 		 * Just use the generic load function.
 		 */
-		error = _bus_dmamap_load(t, map, buf, buflen, p, flags); 
+		error = bus_dmamap_load(t, map, buf, buflen, p, flags);
 	}
 
 	return (error);
@@ -837,7 +838,7 @@ _isa_bus_dmamap_unload(t, map)
 	/*
 	 * Do the generic bits of the unload.
 	 */
-	_bus_dmamap_unload(t, map);
+	bus_dmamap_unload(t, map);
 }
 
 /*
@@ -887,7 +888,7 @@ _isa_bus_dmamap_sync(t, map, op)
 
 #if 0
 	/* This is a noop anyhow, so why bother calling it? */
-	_bus_dmamap_sync(t, map, op);
+	bus_dmamap_sync(t, map, op);
 #endif
 }
 
@@ -910,7 +911,7 @@ _isa_bus_dmamem_alloc(t, size, alignment, boundary, segs, nsegs, rsegs, flags)
 	else
 		high = trunc_page(avail_end);
 
-	return (_bus_dmamem_alloc_range(t, size, alignment, boundary,
+	return (bus_dmamem_alloc_range(t, size, alignment, boundary,
 	    segs, nsegs, rsegs, flags, 0, high));
 }
 
@@ -924,7 +925,7 @@ _isa_bus_dmamem_free(t, segs, nsegs)
 	int nsegs;
 {
 
-	_bus_dmamem_free(t, segs, nsegs);
+	bus_dmamem_free(t, segs, nsegs);
 }
 
 /*
@@ -940,7 +941,7 @@ _isa_bus_dmamem_map(t, segs, nsegs, size, kvap, flags)
 	int flags;
 {
 
-	return (_bus_dmamem_map(t, segs, nsegs, size, kvap, flags));
+	return (bus_dmamem_map(t, segs, nsegs, size, kvap, flags));
 }
 
 /*
@@ -953,7 +954,7 @@ _isa_bus_dmamem_unmap(t, kva, size)
 	size_t size;
 {
 
-	_bus_dmamem_unmap(t, kva, size);
+	bus_dmamem_unmap(t, kva, size);
 }
 
 /*
@@ -966,7 +967,7 @@ _isa_bus_dmamem_mmap(t, segs, nsegs, off, prot, flags)
 	int nsegs, off, prot, flags;
 {
 
-	return (_bus_dmamem_mmap(t, segs, nsegs, off, prot, flags));
+	return (bus_dmamem_mmap(t, segs, nsegs, off, prot, flags));
 }
 
 /**********************************************************************
@@ -1080,10 +1081,8 @@ _isa_dma_free_bouncebuf(t, map)
 
 	STAT_DECR(isa_dma_stats_nbouncebufs);
 
-	_isa_bus_dmamem_unmap(t, cookie->id_bouncebuf,
-	    cookie->id_bouncebuflen);
-	_isa_bus_dmamem_free(t, cookie->id_bouncesegs,
-	    cookie->id_nbouncesegs);
+	_isa_bus_dmamem_unmap(t, cookie->id_bouncebuf, cookie->id_bouncebuflen);
+	_isa_bus_dmamem_free(t, cookie->id_bouncesegs, cookie->id_nbouncesegs);
 	cookie->id_bouncebuflen = 0;
 	cookie->id_nbouncesegs = 0;
 	cookie->id_flags &= ~ID_HAS_BOUNCE;

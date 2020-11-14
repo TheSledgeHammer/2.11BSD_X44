@@ -41,7 +41,8 @@
 #include <net/if_media.h>
 #include <net/if_ether.h>
 
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 #include <machine/intr.h>
 
 #include <dev/pcmcia/pcmciareg.h>

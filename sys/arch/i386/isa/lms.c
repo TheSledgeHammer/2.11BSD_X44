@@ -39,7 +39,8 @@
 #include <sys/poll.h>
 
 #include <machine/cpu.h>
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 #include <machine/intr.h>
 #include <machine/mouse.h>
 #include <machine/conf.h>
@@ -54,23 +55,23 @@
 #define	LMS_CONFIG	3		/* for configuration port, read-write */
 #define	LMS_NPORTS	4
 
-#define	LMS_CHUNK	128	/* chunk size for read */
+#define	LMS_CHUNK	128		/* chunk size for read */
 #define	LMS_BSIZE	1020	/* buffer size */
 
 struct lms_softc {		/* driver status information */
-	struct device sc_dev;
-	void *sc_ih;
+	struct device 		sc_dev;
+	void 				*sc_ih;
 
-	bus_space_tag_t sc_iot;		/* bus i/o space identifier */
-	bus_space_handle_t sc_ioh;	/* bus i/o handle */
+	bus_space_tag_t 	sc_iot;		/* bus i/o space identifier */
+	bus_space_handle_t 	sc_ioh;		/* bus i/o handle */
 
-	struct clist sc_q;
-	struct selinfo sc_rsel;
-	u_char sc_state;	/* mouse driver state */
-#define	LMS_OPEN	0x01	/* device is open */
-#define	LMS_ASLP	0x02	/* waiting for mouse data */
-	u_char sc_status;	/* mouse button status */
-	int sc_x, sc_y;		/* accumulated motion in the X,Y axis */
+	struct clist 		sc_q;
+	struct selinfo 		sc_rsel;
+	u_char 				sc_state;	/* mouse driver state */
+#define	LMS_OPEN		0x01		/* device is open */
+#define	LMS_ASLP		0x02		/* waiting for mouse data */
+	u_char 				sc_status;	/* mouse button status */
+	int 				sc_x, sc_y;	/* accumulated motion in the X,Y axis */
 };
 
 int lmsprobe (struct device *, void *, void *);
