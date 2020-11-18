@@ -28,7 +28,7 @@ file 	dev/md_root.c	     				memory_disk_hooks
 # System bus types
 #
 define 	mainbus { }
-device	mainbus: isabus, eisabus, pcibus, mainbus
+device	mainbus: isabus, eisabus, pcibus, 	mainbus
 attach	mainbus at root
 file	arch/i386/i386/mainbus.c	    	mainbus
 
@@ -119,13 +119,6 @@ file	arch/i386/isa/isapnp_machdep.c	    isapnp
 
 attach	joy at isapnp with joy_isapnp
 file	arch/i386/isa/joy_isapnp.c	        joy_isapnp
-
-# Other mainbus-attached devices
-# Advanced Power Management support (APM)
-device apm: bioscall
-attach apm at mainbus
-file	arch/i386/i386/apm.c		        apm needs-count
-file	arch/i386/i386/apmcall.s	        apm
 
 # XXXX pcic here because it needs to be late.  The catch: pcic needs
 # to be late, so devices which attach to it are attached late.  But it

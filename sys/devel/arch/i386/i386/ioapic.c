@@ -77,26 +77,29 @@
 
 #include <vm/include/vm_extern.h>
 
-#include <arch/i386/isa/isa_machdep.h> /* XXX intrhand */
+#include <arch/i386/isa/isa_machdep.h> 			/* XXX intrhand */
+
 #include <pic.h>
-#include <apicvar.h>
+#include <devel/arch/i386/include/apicvar.h>
 #include <i82093reg.h>
 #include <i82093var.h>
+
 #include <arch/i386/include/pio.h>
 #include <arch/i386/include/pmap.h>
+#include <arch/i386/include/intr.h>
 
 /*
  * XXX locking
  */
 
-int     ioapic_match(struct device *, struct cfdata *, void *);
-void    ioapic_attach(struct device *, struct device *, void *);
+int     	ioapic_match(struct device *, struct cfdata *, void *);
+void    	ioapic_attach(struct device *, struct device *, void *);
 
-extern int i386_mem_add_mapping(bus_addr_t, bus_size_t, int, bus_space_handle_t *); /* XXX XXX */
+extern int 	i386_mem_add_mapping(bus_addr_t, bus_size_t, int, bus_space_handle_t *); /* XXX XXX */
 
-void ioapic_hwmask(struct pic *, int);
-void ioapic_hwunmask(struct pic *, int);
-bool ioapic_trymask(struct pic *, int);
+void 		ioapic_hwmask(struct pic *, int);
+void 		ioapic_hwunmask(struct pic *, int);
+boolean_t 	ioapic_trymask(struct pic *, int);
 static void ioapic_addroute(struct pic *, struct cpu_info *, int, int, int);
 static void ioapic_delroute(struct pic *, struct cpu_info *, int, int, int);
 
@@ -278,7 +281,7 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 	sc->sc_pa = aaa->apic_address;
 
 	sc->sc_pic.pic_type = PIC_IOAPIC;
-	simple_lock_init(&sc->sc_pic.pic_lock);
+	simple_lock_init(&sc->sc_pic.pic_lock, "pic_lock");
 	sc->sc_pic.pic_hwmask = ioapic_hwmask;
 	sc->sc_pic.pic_hwunmask = ioapic_hwunmask;
 	sc->sc_pic.pic_addroute = ioapic_addroute;
@@ -360,15 +363,11 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 	 * mapping later ...
 	 */
 	if (apic_id != sc->sc_pic.pic_apicid) {
-		aprint_debug_dev(sc->sc_dev, "misconfigured as apic %d\n",
-				 apic_id);
+		aprint_debug_dev(sc->sc_dev, "misconfigured as apic %d\n", apic_id);
 
-		ioapic_write(sc, IOAPIC_ID,
-		    (ioapic_read(sc, IOAPIC_ID) & ~IOAPIC_ID_MASK)
-		    | (sc->sc_pic.pic_apicid << IOAPIC_ID_SHIFT));
+		ioapic_write(sc, IOAPIC_ID, (ioapic_read(sc, IOAPIC_ID) & ~IOAPIC_ID_MASK) | (sc->sc_pic.pic_apicid << IOAPIC_ID_SHIFT));
 
-		apic_id = (ioapic_read(sc, IOAPIC_ID) & IOAPIC_ID_MASK)
-		    >> IOAPIC_ID_SHIFT;
+		apic_id = (ioapic_read(sc, IOAPIC_ID) & IOAPIC_ID_MASK) >> IOAPIC_ID_SHIFT;
 
 		if (apic_id != sc->sc_pic.pic_apicid)
 			aprint_error_dev(sc->sc_dev,
@@ -391,8 +390,7 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 }
 
 static void
-apic_set_redir(struct ioapic_softc *sc, int pin, int idt_vec,
-	       struct cpu_info *ci)
+apic_set_redir(struct ioapic_softc *sc, int pin, int idt_vec, struct cpu_info *ci)
 {
 	uint32_t redlo;
 	uint32_t redhi;
@@ -406,8 +404,7 @@ apic_set_redir(struct ioapic_softc *sc, int pin, int idt_vec,
 	redhi = 0;
 	delmode = (redlo & IOAPIC_REDLO_DEL_MASK) >> IOAPIC_REDLO_DEL_SHIFT;
 
-	if (delmode == IOAPIC_REDLO_DEL_FIXED ||
-	    delmode == IOAPIC_REDLO_DEL_LOPRI) {
+	if (delmode == IOAPIC_REDLO_DEL_FIXED || delmode == IOAPIC_REDLO_DEL_LOPRI) {
 	    	if (pp->ip_type == IST_NONE) {
 			redlo |= IOAPIC_REDLO_MASK;
 		} else {
@@ -477,8 +474,7 @@ ioapic_reenable(void)
 		}
 
 		for (p = 0; p < sc->sc_apic_sz; p++)
-			apic_set_redir(sc, p, sc->sc_pins[p].ip_vector,
-				    sc->sc_pins[p].ip_cpu);
+			apic_set_redir(sc, p, sc->sc_pins[p].ip_vector, sc->sc_pins[p].ip_cpu);
 	}
 
 	ioapic_enable();
@@ -518,9 +514,9 @@ ioapic_trymask(struct pic *pic, int pin)
 	if ((redlo & (IOAPIC_REDLO_RIRR | IOAPIC_REDLO_DELSTS)) != 0) {
 		redlo &= ~IOAPIC_REDLO_MASK;
 		ioapic_write_ul(sc, IOAPIC_REDLO(pin), redlo);
-		rv = false;
+		rv = FALSE;
 	} else {
-		rv = true;
+		rv = TRUE;
 	}
 	ioapic_unlock(sc, flags);
 	return rv;

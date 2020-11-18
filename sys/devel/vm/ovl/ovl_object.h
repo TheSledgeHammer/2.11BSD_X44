@@ -69,6 +69,7 @@
 #define _OVL_OBJECT_H_
 
 #include <devel/vm/ovl/ovl.h>
+#include <sys/queue.h>
 #include <sys/tree.h>
 
 struct vobject_hash_head;
@@ -88,16 +89,18 @@ struct ovl_object {
 	int									ovo_ref_count;		/* How many refs?? */
 	vm_size_t							ovo_size;			/* Object size */
 
-	TAILQ_ENTRY(ovl_object)				ovo_vobject_hlist; 	/* list of all my associated vm_objects */
+	int									ovo_segment_count;
+
 	union {
 		vm_object_t 					vm_object;			/* a vm_object being held */
 		vm_segment_t 					vm_segment;			/* a vm_segment being held */
 		vm_page_t 						vm_page;			/* a vm_page being held */
 	} ovo_vm;
-
 #define ovo_vm_object					ovo_vm.vm_object
 #define ovo_vm_segment					ovo_vm.vm_segment
 #define ovo_vm_page						ovo_vm.vm_page
+
+	TAILQ_ENTRY(ovl_object)				ovo_vobject_hlist; 	/* list of all my associated vm_objects */
 };
 
 /* Flags */
@@ -111,11 +114,11 @@ struct ovl_object_hash_entry {
 typedef struct ovl_object_hash_entry	*ovl_object_hash_entry_t;
 
 //#ifdef KERNEL
-struct object_t				ovl_object_tree;		/* list of allocated objects */
-long						ovl_object_count;		/* count of all objects */
-simple_lock_data_t			ovl_object_tree_lock;	/* lock for object list and count */
+struct object_t				ovl_object_tree;				/* list of allocated objects */
+long						ovl_object_count;				/* count of all objects */
+simple_lock_data_t			ovl_object_tree_lock;			/* lock for object list and count */
 
-ovl_object_t				overlay_object;			/* single overlay object */
+ovl_object_t				overlay_object;					/* single overlay object */
 ovl_object_t				omem_object;
 
 extern

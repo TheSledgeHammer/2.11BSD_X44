@@ -65,29 +65,6 @@ struct vm_segment {
 	caddr_t						sg_laddr;				/* segments logical addr */
 };
 
-#define VM_LVSEG_MAX 8
-/*
- * vm_lvseg: describes logical memory
- */
-struct vm_lvseg {
-	caddr_t				start;
-	caddr_t 			end;
-	caddr_t				avail_start;
-	caddr_t 			avail_end;
-	struct vm_segment 	*lvs_segs;
-	struct vm_segment 	*lvs_lastseg;
-
-	segsz_t 			lvs_dsize; /* data size */
-	segsz_t 			lvs_ssize; /* stack size */
-	segsz_t 			lvs_tsize; /* text size */
-	caddr_t 			lvs_daddr; /* virtual address of data */
-	caddr_t 			lvs_saddr; /* virtual address of stack */
-	caddr_t 			lvs_taddr; /* virtual address of text */
-};
-
-extern struct vm_lvseg vm_lvmem[VM_LVSEG_MAX];
-extern int vm_nlvseg;
-
 #define SEGMENT_DATA(dsize, daddr)
 #define SEGMENT_STACK(ssize, saddr)
 #define SEGMENT_TEXT(tsize, taddr)

@@ -145,7 +145,7 @@ extern int						page_shift;
 #define	KERN_NO_ACCESS			8
 
 #ifndef ASSEMBLER
-#ifdef KERNEL
+//#ifdef KERNEL
 
 /*
  *	Convert addresses to segments & pages and vice versa.
@@ -188,11 +188,15 @@ extern vm_offset_t	last_addr;	/* last physical page */
 	((((vm_offset_t)(x) + (vm_page_size - 1)) / vm_page_size) * vm_page_size)
 #define	trunc_page(x) \
 	((((vm_offset_t)(x)) / vm_page_size) * vm_page_size)
+#define	num_pages(x) \
+	((((vm_offset_t)(x)) + (vm_page_size - 1)) / vm_page_size)
 
 #define	round_segment(x) \
 	((((vm_offset_t)(x) + (vm_segment_size - 1)) / vm_segment_size) * vm_segment_size)
 #define	trunc_segment(x) \
 	((((vm_offset_t)(x)) / vm_segment_size) * vm_segment_size)
+#define	num_segments(x) \
+	((((vm_offset_t)(x)) + (vm_segment_size - 1)) / vm_segment_size)
 
 #endif /* KERNEL */
 #endif /* ASSEMBLER */

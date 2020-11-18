@@ -30,9 +30,11 @@
 #include <sys/fnv_hash.h>
 #include <sys/malloc.h>
 #include <sys/map.h>
+
 #include <sys/user.h>
 
 #include <devel/vm/ovl/ovl.h>
+#include <devel/vm/ovl/ovl_segment.h>
 
 struct ovseglist			*ovl_segment_buckets;
 int							ovl_segment_bucket_count = 0;	/* How big is array? */
@@ -106,6 +108,8 @@ ovl_segment_insert(segment, object, offset)
 
     CIRCLEQ_INSERT_TAIL(&object->ovo_ovseglist, segment, ovs_seglist);
     segment->ovs_flags |= SEG_ALLOCATED;
+
+    object->ovo_segment_count++;
 }
 
 void
@@ -126,6 +130,7 @@ ovl_segment_remove(segment)
 
 	CIRCLEQ_REMOVE(&segment->ovs_object->ovo_ovseglist, segment, ovs_seglist);
 
+	segment->ovs_object->ovo_segment_count--;
 	segment->ovs_flags &= ~SEG_ALLOCATED;
 }
 
@@ -225,44 +230,48 @@ ovl_segment_insert_vm_segment(osegment, vsegment)
     if(vsegment == NULL) {
         return;
     }
+
     vbucket = &ovl_vsegment_hashtable[ovl_vsegment_hash(osegment, vsegment)];
     osegment->ovs_vm_segment = vsegment;
     osegment->ovs_flags |= OVL_SEG_VM_SEG;
+    osegment->ovs_vm_segment;
 
     TAILQ_INSERT_HEAD(vbucket, osegment, ovs_vsegment_hlist);
     ovl_vsegment_count++;
 }
 
 vm_segment_t
-ovl_segment_lookup_vm_segment(osegment, vsegment)
-	ovl_segment_t 	osegment;
-	vm_segment_t 	vsegment;
+ovl_segment_lookup_vm_segment(osegment)
+	ovl_segment_t 				osegment;
 {
-    struct vsegment_hash_head *vbucket;
+	register vm_segment_t 	  	vsegment;
+    struct vsegment_hash_head 	*vbucket;
 
     vbucket = &ovl_vsegment_hashtable[ovl_vsegment_hash(osegment, vsegment)];
-    for(osegment = TAILQ_FIRST(vbucket); osegment != NULL; osegment = TAILQ_NEXT(osegment, ovs_vsegment_hlist)) {
-        if(osegment->ovs_vm_segment == vsegment) {
-            return (vsegment);
-        }
+    TAILQ_FOREACH(osegment, vbucket, ovs_vsegment_hlist) {
+    	if(vsegment == TAILQ_NEXT(osegment, ovs_vsegment_hlist)->ovs_vm_segment) {
+    		vsegment = TAILQ_NEXT(osegment, ovs_vsegment_hlist)->ovs_vm_segment;
+    		return (vsegment);
+    	}
     }
     return (NULL);
 }
 
 void
-ovl_segment_remove_vm_segment(osegment, vsegment)
-	ovl_segment_t 	osegment;
-	vm_segment_t 	vsegment;
+ovl_segment_remove_vm_segment(vsegment)
+	vm_segment_t 	  			vsegment;
 {
-    struct vsegment_hash_head *vbucket;
+	register ovl_segment_t 		osegment;
+    struct vsegment_hash_head 	*vbucket;
 
     vbucket = &ovl_vsegment_hashtable[ovl_vsegment_hash(osegment, vsegment)];
-    for(osegment = TAILQ_FIRST(vbucket); osegment != NULL; osegment = TAILQ_NEXT(osegment, ovs_vsegment_hlist)) {
-        if(osegment->ovs_vm_segment == vsegment) {
-            if(osegment != NULL) {
-                TAILQ_REMOVE(vbucket, osegment, ovs_vsegment_hlist);
-                ovl_vsegment_count--;
-            }
-        }
-    }
+	TAILQ_FOREACH(osegment, vbucket, ovs_vsegment_hlist) {
+		if (vsegment == TAILQ_NEXT(osegment, ovs_vsegment_hlist)->ovs_vm_segment) {
+			vsegment = TAILQ_NEXT(osegment, ovs_vsegment_hlist)->ovs_vm_segment;
+			if (vsegment != NULL) {
+				TAILQ_REMOVE(vbucket, osegment, ovs_vsegment_hlist);
+				ovl_vsegment_count--;
+			}
+		}
+	}
 }

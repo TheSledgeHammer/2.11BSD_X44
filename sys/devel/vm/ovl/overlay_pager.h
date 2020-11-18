@@ -43,10 +43,14 @@
  */
 
 struct ovlpager {
-	ovl_object_t	ovl_object;
-	ovl_segment_t	ovl_segment;
-	ovl_page_t		ovl_page;
+	ovl_object_t		ovl_object;
+	ovl_segment_t		ovl_segment;
+	ovl_page_t			ovl_page;
 };
 typedef struct ovlpager	*ovl_pager_t;
+
+/* flags */
+#define OVL_PGR_GET 0x01
+#define OVL_PGR_PUT 0x02
 
 #endif /* OVERLAY_PAGER_H_ */

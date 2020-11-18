@@ -73,7 +73,6 @@
 #include <devel/vm/include/vm_page.h>
 #include <devel/vm/ovl/ovl_object.h>
 //#include <devel/vm/ovl/overlay.h>
-#include <devel/vm/ovl/ovl_ops.h>
 
 struct ovl_object	overlay_object_store;
 struct ovl_object	omem_object_store;
@@ -138,6 +137,7 @@ _ovl_object_allocate(size, object)
 {
 	ovl_object_lock_init(object);
 	object->ovo_ref_count = 1;
+	object->ovo_segment_count = 0;
 	object->ovo_size = size;
 	object->ovo_flags = OBJ_INTERNAL;
 
@@ -332,10 +332,11 @@ ovl_object_lookup_vm_object(oobject)
     struct vobject_hash_head *vbucket;
 
     vbucket = &ovl_vobject_hashtable[ovl_vobject_hash(oobject, vobject)];
-    for(vobject = TAILQ_FIRST(vbucket)->ovo_vm_object; vobject != NULL; vobject = TAILQ_NEXT(oobject, ovo_vobject_hlist)->ovo_vm_object) {
-        if(vobject == oobject->ovo_vm_object) {
-            return (vobject);
-        }
+    TAILQ_FOREACH(oobject, vbucket, ovo_vobject_hlist) {
+    	if(vobject == TAILQ_NEXT(oobject, ovo_vobject_hlist)->ovo_vm_object) {
+    		vobject = TAILQ_NEXT(oobject, ovo_vobject_hlist)->ovo_vm_object;
+    		return (vobject);
+    	}
     }
     return (NULL);
 }
@@ -348,11 +349,13 @@ ovl_object_remove_vm_object(vobject)
     struct vobject_hash_head *vbucket;
 
     vbucket = &ovl_vobject_hashtable[ovl_vobject_hash(oobject, vobject)];
-    for(oobject = TAILQ_FIRST(vbucket); oobject != NULL; oobject = TAILQ_NEXT(oobject, ovo_vobject_hlist)) {
-        if(oobject->ovo_vm_object == vobject) {
-            if(vobject != NULL) {
-                TAILQ_REMOVE(vbucket, oobject, ovo_vobject_hlist);
-            }
-        }
+    TAILQ_FOREACH(oobject, vbucket, ovo_vobject_hlist) {
+       	if(vobject == TAILQ_NEXT(oobject, ovo_vobject_hlist)->ovo_vm_object) {
+       		vobject = TAILQ_NEXT(oobject, ovo_vobject_hlist)->ovo_vm_object;
+       		if(vobject != NULL) {
+       			TAILQ_REMOVE(vbucket, oobject, ovo_vobject_hlist);
+       			ovl_vobject_count--;
+       		}
+       	}
     }
 }

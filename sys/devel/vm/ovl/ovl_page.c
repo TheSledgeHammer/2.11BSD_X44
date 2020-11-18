@@ -95,7 +95,6 @@
 
 #include <devel/vm/ovl/ovl.h>
 #include <devel/vm/ovl/ovl_page.h>
-#include <devel/vm/ovl/ovl_map.h>
 
 struct ovpglist			*ovl_page_buckets;			/* Array of buckets */
 int						ovl_page_bucket_count = 0;	/* How big is array? */
@@ -278,35 +277,38 @@ ovl_page_insert_vm_page(opage, vpage)
 }
 
 vm_page_t
-ovl_page_lookup_vm_page(opage, vpage)
+ovl_page_lookup_vm_page(opage)
 	ovl_page_t 	opage;
-	vm_page_t 	vpage;
 {
-    struct vsegment_hash_head *vbucket;
+	register vm_page_t 			vpage;
+    struct vsegment_hash_head 	*vbucket;
 
     vbucket = &ovl_vpage_hashtable[ovl_vpage_hash(opage, vpage)];
-    for(opage = TAILQ_FIRST(vbucket); opage != NULL; opage = TAILQ_NEXT(opage, ovp_vpage_hlist)) {
-        if(opage->ovp_vm_page == vpage) {
-            return (vpage);
-        }
+    TAILQ_FOREACH(opage, vbucket, ovp_vpage_hlist) {
+    	 if(vpage == TAILQ_NEXT(opage, ovp_vpage_hlist)->ovp_vm_page) {
+    		 vpage = TAILQ_NEXT(opage, ovp_vpage_hlist)->ovp_vm_page;
+    		 return (vpage);
+    	 }
     }
     return (NULL);
 }
 
 void
-ovl_page_remove_vm_page(opage, vpage)
-	ovl_page_t 	opage;
-	vm_page_t 	vpage;
+ovl_page_remove_vm_page(vpage)
+	ovl_page_t 	vpage;
 {
-    struct vsegment_hash_head *vbucket;
+	register ovl_page_t 		opage;
+    struct vsegment_hash_head 	*vbucket;
 
     vbucket = &ovl_vpage_hashtable[ovl_vpage_hash(opage, vpage)];
-    for(opage = TAILQ_FIRST(vbucket); opage != NULL; opage = TAILQ_NEXT(opage, ovp_vpage_hlist)) {
-        if(opage->ovp_vm_page == vpage) {
-            if(opage != NULL) {
-                TAILQ_REMOVE(vbucket, opage, ovp_vpage_hlist);
-                ovl_vpage_count--;
-            }
-        }
+
+    TAILQ_FOREACH(opage, vbucket, ovp_vpage_hlist) {
+    	 if(vpage == TAILQ_NEXT(opage, ovp_vpage_hlist)->ovp_vm_page) {
+    		 vpage = TAILQ_NEXT(opage, ovp_vpage_hlist)->ovp_vm_page;
+    		 if(vpage != NULL) {
+    			 TAILQ_REMOVE(vbucket, opage, ovp_vpage_hlist);
+    	         ovl_vpage_count--;
+    		 }
+    	 }
     }
 }

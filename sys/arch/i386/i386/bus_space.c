@@ -56,13 +56,13 @@ static struct bus_space_tag i386_mem = { .bst_type = I386_BUS_SPACE_MEM };
 bus_space_tag_t i386_bus_space_io = &i386_io;
 bus_space_tag_t i386_bus_space_mem = &i386_mem;
 
-static inline bool
+static inline boolean_t
 i386_bus_space_is_io(bus_space_tag_t t)
 {
 	return t->bst_type == I386_BUS_SPACE_IO;
 }
 
-static inline bool
+static inline boolean_t
 i386_bus_space_is_mem(bus_space_tag_t t)
 {
 	return t->bst_type == I386_BUS_SPACE_MEM;
@@ -96,7 +96,7 @@ bus_space_unmap(t, h, s)
 	bus_space_handle_t h;
 	bus_size_t s;
 {
-	i386_memio_unmap((t), (h), (s));
+	i386_memio_unmap(t, h, s);
 }
 
 /*

@@ -1,8 +1,8 @@
 /*	$OpenBSD: pic.h,v 1.2 2014/12/16 21:40:05 tedu Exp $	*/
 /*	$NetBSD: pic.h,v 1.1 2003/02/26 21:26:11 fvdl Exp $	*/
 
-#ifndef _X86_PIC_H
-#define _X86_PIC_H
+#ifndef _I386_PIC_H
+#define _I386_PIC_H
 
 #include <sys/device.h>
 #include <sys/lock.h>
@@ -44,4 +44,4 @@ extern struct pic i8259_pic;
 extern struct pic local_pic;
 extern struct pic softintr_pic;
 
-#endif
+#endif /* _I386_PIC_H */

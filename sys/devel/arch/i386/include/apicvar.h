@@ -35,13 +35,13 @@
 #define _MACHINE_APICVAR_H_
 
 struct apic_attach_args {
-	int 		apic_id;
-	int 		apic_version;
-	int 		flags;
+	int 					apic_id;
+	int 					apic_version;
+	int 					flags;
 #define IOAPIC_PICMODE		0x01
 #define IOAPIC_VWIRE		0x02
-	u_int32_t  	apic_address;
-	int 		apic_vecbase;
+	u_int32_t  				apic_address;
+	int 					apic_vecbase;
 };
 
 /*
@@ -51,7 +51,7 @@ struct apic_attach_args {
 #define APIC_VECTYPE_LAPIC_LVT	1
 #define APIC_VECTYPE_LAPIC_ICR	2
 #define APIC_VECTYPE_IOAPIC		3
-void apic_format_redir(const char *, const char *, int, int, uint32_t, uint32_t);
+void 	apic_format_redir(const char *, const char *, int, int, uint32_t, uint32_t);
 
 /* For lapic.c */
 extern uint32_t lapic_per_second;

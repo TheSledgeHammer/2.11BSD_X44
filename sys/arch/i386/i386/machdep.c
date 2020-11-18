@@ -70,6 +70,7 @@
 
 #include <machine/cpu.h>
 #include <machine/cpufunc.h>
+#include <machine/cputypes.h>
 #include <machine/gdt.h>
 #include <machine/psl.h>
 #include <machine/reg.h>
@@ -84,20 +85,14 @@
 #include <machine/vm86.h>
 #endif
 
-#include "apm.h"
-#include "bioscall.h"
-
-#if NBIOSCALL > 0
-#include <machine/bioscall.h>
-#endif
-
 #if NAPM > 0
 #include <machine/apmvar.h>
 #endif
 
-#include "isa.h"
-#include "isadma.h"
+//#include "isa.h"
+//#include "isadma.h"
 #include "npx.h"
+
 #if NNPX > 0
 extern struct proc *npxproc;
 #endif
@@ -137,7 +132,6 @@ int biosmem;
 struct bootinfo bootinfo;
 int 			*esym;
 
-//extern int kstack[];
 extern int biosbasemem, biosextmem;
 
 struct pcb *curpcb;			/* our current running pcb */
@@ -965,6 +959,8 @@ init386(first)
 	lgdt(gdt, sizeof(gdt)-1);
 	lidt(idt, sizeof(idt)-1);
 
+
+
 	//finishidentcpu();		/* Final stage of CPU initialization */
 	//pmap_set_nx();
 	//initializecpu();		/* Initialize CPU registers */
@@ -1091,6 +1087,7 @@ makectx(tf, pcb)
  */
 
 /* silence compiler warnings */
+/*
 u_char inb_(u_short);
 void outb_(u_short, u_char);
 
@@ -1105,3 +1102,4 @@ outb_(u_short port, u_char data)
 {
 	outb(port, data);
 }
+*/

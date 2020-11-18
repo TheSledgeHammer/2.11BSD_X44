@@ -413,8 +413,7 @@ swap_pager_getpage(pager, mlist, npages, sync)
 		printf("swpg_getpage(%x, %x, %x, %x)\n",
 		       pager, mlist, npages, sync);
 #endif
-	return(swap_pager_io((sw_pager_t)pager->pg_data,
-			     mlist, npages, B_READ));
+	return(swap_pager_io((sw_pager_t)pager->pg_data, mlist, npages, B_READ));
 }
 
 static int
@@ -438,8 +437,7 @@ swap_pager_putpage(pager, mlist, npages, sync)
 	flags = B_WRITE;
 	if (!sync)
 		flags |= B_ASYNC;
-	return(swap_pager_io((sw_pager_t)pager->pg_data,
-			     mlist, npages, flags));
+	return(swap_pager_io((sw_pager_t)pager->pg_data, mlist, npages, flags));
 }
 
 static boolean_t

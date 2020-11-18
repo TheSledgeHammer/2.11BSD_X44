@@ -12,8 +12,9 @@
 #include <sys/lock.h>
 #include <sys/user.h>
 
-#include <machine/bus.h>
-#include <machine/psl.h>
+#include <i386/include/bus_dma.h>
+#include <i386/include/bus_space.h>
+#include <i386/include/psl.h>
 
 #include <i82093reg.h>
 #include <i82093var.h>
@@ -351,9 +352,9 @@ apic_set_redir(struct ioapic_softc *sc, int pin)
 	delmode = (redlo & IOAPIC_REDLO_DEL_MASK) >> IOAPIC_REDLO_DEL_SHIFT;
 
 	/* XXX magic numbers */
-	if ((delmode != 0) && (delmode != 1))
-		;
-	else if (pp->ip_handler == NULL) {
+	if ((delmode != 0) && (delmode != 1)) {
+
+	} else if (pp->ip_handler == NULL) {
 		redlo |= IOAPIC_REDLO_MASK;
 	} else {
 		redlo |= (pp->ip_vector & 0xff);
@@ -586,8 +587,7 @@ ioapic_hwunmask(struct pic *pic, int pin)
  */
 
 void *
-apic_intr_establish(int irq, int type, int level, int (*ih_fun)(void *),
-    void *ih_arg, const char *ih_what)
+apic_intr_establish(int irq, int type, int level, int (*ih_fun)(void *), void *ih_arg, const char *ih_what)
 {
 	unsigned int ioapic = APIC_IRQ_APIC(irq);
 	unsigned int intr = APIC_IRQ_PIN(irq);

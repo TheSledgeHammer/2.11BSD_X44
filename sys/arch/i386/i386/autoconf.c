@@ -56,6 +56,9 @@
 
 #include <machine/pte.h>
 
+#include <dev/isa/isareg.h>
+#include <dev/isa/isavar.h>
+
 /*
  * The following several variables are related to
  * the configuration process, and are used in initializing
@@ -70,12 +73,8 @@ extern int	cold;		/* cold start flag initialized in locore.s */
 void
 configure()
 {
+	startrtclock();
 
-#include <dev/isa/isareg.h>
-#include <dev/isa/isavar.h>
-#if NISA > 0
-	isa_configure();
-#endif
 	bios32_init();
 
 #if GENERICxxx
@@ -90,6 +89,9 @@ configure()
 	 * parameter based on device(s) used.
 	 */
 	swapconf();
+
+	spl0();
+
 	cold = 0;
 }
 

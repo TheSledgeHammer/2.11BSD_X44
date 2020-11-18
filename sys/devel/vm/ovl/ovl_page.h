@@ -138,8 +138,8 @@ void		ovl_page_remove(ovl_page_t);
 ovl_page_t	ovl_page_lookup(ovl_segment_t, vm_offset_t);
 
 void		ovl_page_insert_vm_page(ovl_page_t, vm_page_t);
-vm_page_t	ovl_page_lookup_vm_page(ovl_page_t, vm_page_t);
-void		ovl_page_remove_vm_page(ovl_page_t, vm_page_t);
+vm_page_t	ovl_page_lookup_vm_page(ovl_page_t);
+void		ovl_page_remove_vm_page(vm_page_t);
 
 //vm_page_copy_to_ovl_page		/* inserts into ovl_page hash list */
 //vm_page_copy_from_ovl_page	/* removes from ovl_page hash list */

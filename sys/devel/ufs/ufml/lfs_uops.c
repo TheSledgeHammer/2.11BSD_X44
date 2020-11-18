@@ -67,7 +67,7 @@ int
 lfs_decompress(ap)
 	struct uop_decompress_args *ap;
 {
-	struct inode *ip = UFMLTOUFS(ap->a_vp);
+	struct inode *ip = UFMLTOLFS(ap->a_vp);
 
 	return (0);
 }
@@ -76,7 +76,7 @@ int
 lfs_encrypt(ap)
 	struct uop_encrypt_args *ap;
 {
-	struct inode *ip = UFMLTOUFS(ap->a_vp);
+	struct inode *ip = UFMLTOLFS(ap->a_vp);
 
 	return (0);
 }
@@ -85,7 +85,7 @@ int
 lfs_decrypt(ap)
 	struct uop_decrypt_args *ap;
 {
-	struct inode *ip = UFMLTOUFS(ap->a_vp);
+	struct inode *ip = UFMLTOLFS(ap->a_vp);
 
 	return (0);
 }
@@ -94,7 +94,7 @@ int
 lfs_snapshot_write(ap)
 	struct uop_snapshot_write_args *ap;
 {
-	struct inode *ip = UFMLTOUFS(ap->a_vp);
+	struct inode *ip = UFMLTOLFS(ap->a_vp);
 
 	return (0);
 }
@@ -103,7 +103,7 @@ int
 lfs_snapshot_read(ap)
 	struct uop_snapshot_read_args *ap;
 {
-	struct inode *ip = UFMLTOUFS(ap->a_vp);
+	struct inode *ip = UFMLTOLFS(ap->a_vp);
 
 	return (0);
 }
@@ -112,7 +112,7 @@ int
 lfs_snapshot_delete(ap)
 	struct uop_snapshot_delete_args *ap;
 {
-	struct inode *ip = UFMLTOUFS(ap->a_vp);
+	struct inode *ip = UFMLTOLFS(ap->a_vp);
 
 	return (0);
 }
@@ -121,7 +121,7 @@ int
 lfs_snapshot_commit(ap)
 	struct uop_snapshot_commit_args *ap;
 {
-	struct inode *ip = UFMLTOUFS(ap->a_vp);
+	struct inode *ip = UFMLTOLFS(ap->a_vp);
 
 	return (0);
 }

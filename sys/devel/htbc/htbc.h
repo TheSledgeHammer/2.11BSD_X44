@@ -29,6 +29,38 @@
  * $FreeBSD: head/sys/fs/ext2fs/htree.h 262623 2014-02-28 21:25:32Z pfg $
  */
 
+/*
+ * Copyright (c) 2020 Martin Kelly
+ * HTBC (aka HTree Blockchain):
+ * Design & Goals:
+ * The HTree Blockchain is forked from BSD's ext2fs htree and extent implementation.
+ * Provide a VFS layer blockchain that can augment/improve existing filesystem/s;
+ * HTBC can be easily defined as having two layers, similar to NetBSD's WAPBL or Linux's JBD for EXT3/4.
+ * A VFS layer and a filesystem layer.
+ *
+ * VFS Layer: (To Be Implemented)
+ * HTBC Log Component:
+ *	- Provide the facilities for a log-based filesystem.
+ *
+ *	HTBC Journal Component:
+ *	- Provide the facilities for a journal-based filesystem.
+ *
+ * LFS: HTBC-Based Log: (To Be Implemented)
+ * Provide
+ * - Caching
+ * - Defrag
+ * - Checksums
+ *
+ * UFS/FFS: HTBC-Based Journal: (To Be Implemented)
+ * Provide
+ * - JFS/XFS like Journal abilities
+ * - External Journal
+ * - Log
+ * - Metadata only
+ * - Checksums
+ * - Caching
+ */
+
 #ifndef SYS_HTBC_H_
 #define SYS_HTBC_H_
 
@@ -41,12 +73,14 @@
 /****************************************************************/
 /* HTBC layout */
 
+/* null entry (on disk) */
 struct htbc_hc_null {
 	uint32_t	hc_type;
 	int32_t		hc_len;
 	uint8_t		hc_spare[0];
 };
 
+/* journal header (on-disk) */
 struct htbc_hc_header {
 	uint32_t	hc_type;
 	int32_t		hc_len;
@@ -78,7 +112,7 @@ struct htbc_hc_inodelist {
 	uint32_t	hc_type;
 	int32_t		hc_len;
 	int32_t		hc_inocnt;
-	int32_t		hc_clear;
+	int32_t		hc_clear; 								/* set if previously listed inodes hould be ignored */
 
 	struct {
 		uint32_t hc_inumber;
@@ -86,18 +120,18 @@ struct htbc_hc_inodelist {
 	} hc_inodes[0];
 };
 
+/* Holds per transaction log information */
 struct htbc_entry {
 	struct htbc 				*he_htbc;
 	CIRCLEQ_ENTRY(htbc_entry) 	he_entries;
-	size_t 						he_bufcount;
-	size_t 						he_reclaimable_bytes;
+	size_t 						he_bufcount;			/* Count of unsynced buffers */
+	size_t 						he_reclaimable_bytes;	/* Number on disk bytes for this transaction */
 	int							he_error;
 };
 
 /****************************************************************/
 /* HTBC HTree Inode Layout (From NetBSD ext2fs) */
 
-/* Work in Progress: Needs changes to operate on other Filesystems, primarily become vnode based */
 struct htbc_inode_ext {
 	daddr_t 					hi_last_lblk;			/* last logical block allocated */
 	daddr_t 					hi_last_blk;			/* last block allocated on disk */
@@ -129,6 +163,10 @@ struct htbc_hi_mfs {
 struct htbc_hi_fs {
 	uint32_t  					hi_hash_seed[4];		/* HTREE hash seed */
     char      					hi_def_hash_version;	/* Default hash version to use */
+
+    char     					hi_journal_uuid[16];	/* uuid of journal superblock */
+    uint32_t  					hi_journal_inum;		/* inode number of journal file */
+    uint32_t  					hi_journal_dev;			/* device number of journal file */
 };
 
 struct htbc_hi_searchslot {

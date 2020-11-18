@@ -56,16 +56,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @(#)vfs_htbc.c	1.00
- *
- * - Ext2fs htree & extents base.
- * - WAPBL style implementation
- */
-
-/* 	TODO:
- *  - lookup
- *  - caching
- *  - read/writes
- *  - vfs integration
  */
 
 /* Htree Blockchain*/
@@ -113,43 +103,50 @@
 
 struct htbc_dealloc {
 	TAILQ_ENTRY(htbc_dealloc) 	hd_entries;
-	daddr_t 					hd_blkno;	/* address of block */
-	int 						hd_len;		/* size of block */
+	daddr_t 					hd_blkno;			/* address of block */
+	int 						hd_len;				/* size of block */
 };
 
 LIST_HEAD(htbc_ino_head, htbc_ino);
 struct htbc {
-	struct vnode 				*ht_devvp;
-	struct mount 				*ht_mount;
+	struct vnode 				*ht_devvp;			/* log on this device */
+	struct mount 				*ht_mount;			/* mountpoint ht is associated with */
 
 	struct htbc_hc_header 		*ht_hc_header;
 
-	struct lock_object 			*ht_lock;
-	unsigned int 				ht_lock_count;
+	struct lock_object 			*ht_lock;			/* transaction lock */
+	unsigned int 				ht_lock_count;		/* Count of transactions in progress */
 
-	TAILQ_HEAD(, htbc_dealloc) 	ht_dealloclist;
-	int 						ht_dealloccnt;
-	int 						ht_dealloclim;
+	size_t 						ht_bufbytes;		/* Byte count of pages in ht_bufs */
+	size_t 						ht_bufcount;		/* Count of buffers in ht_bufs */
+	size_t 						ht_bcount;			/* Total bcount of ht_bufs */
 
+	TAILQ_HEAD(, buf) 			ht_bufs; 			/* Buffers in current transaction */
+
+	TAILQ_HEAD(, htbc_dealloc) 	ht_dealloclist;		/* list head */
+	int 						ht_dealloccnt;		/* total count */
+	int 						ht_dealloclim;		/* max count */
+
+	/* hashtable of inode numbers for allocated but unlinked inodes */
 	struct htbc_ino_head 		*ht_inohash;
 	u_long 						ht_inohashmask;
 	int 						ht_inohashcnt;
 
-	TAILQ_HEAD(, htbc_entry) 	ht_entries;
+	TAILQ_HEAD(, htbc_entry) 	ht_entries;			/* On disk transaction accounting */
 
-	/* hchain */
-	CIRCLEQ_ENTRY(htbc) 		hc_entries;
-	uint32_t					ht_version;
-	uint32_t					ht_timestamp;
-	uint32_t					ht_hash;
+	/* hash chain */
+	CIRCLEQ_ENTRY(htbc) 		ht_hchain_entries;	/* hash chain entry */
+	uint32_t					ht_version;			/* hash chain version */
+	uint32_t					ht_timestamp;		/* hash chain timestamp */
+	uint32_t					ht_hash;			/* hash chain hash algorithm used */
 };
 
 CIRCLEQ_HEAD(htbc_hchain_head, htbc);
 struct htbc_hchain {
-	struct htbc_hchain_head		hc_header;
-	uint32_t					hc_version;
-	uint32_t					hc_timestamp;
-	uint32_t					hc_hash;
+	struct htbc_hchain_head		hc_header;			/* hash chain header */
+	uint32_t					hc_version;			/* version */
+	uint32_t					hc_timestamp;		/* timestamp */
+	uint32_t					hc_hash;			/* hash algorithm */
 };
 
 static struct htbc_dealloc 		*htbc_dealloc;
@@ -166,12 +163,16 @@ struct htbc_ops {
 	int 	(*ho_htbc_bmap)(struct vnode *, daddr_t, struct vnode **, daddr_t *, int *);
 	int 	(*ho_htbc_begin)(struct htbc *, const char *, int);
 	void 	(*ho_htbc_end)(struct htbc *);
+	int		(*ho_htbc_write)(void *, size_t, struct vnode *, daddr_t);
+	int		(*ho_htbc_read)(void *, size_t, struct vnode *, daddr_t);
 };
 
 struct htbc_ops htbc_ops = {
-		.ho_htbc_bmap = htbc_bmap,
-		.ho_htbc_begin = htbc_begin,
-		.ho_htbc_end = htbc_end,
+		.ho_htbc_bmap = 	htbc_bmap,
+		.ho_htbc_begin = 	htbc_begin,
+		.ho_htbc_end = 		htbc_end,
+		.ho_htbc_write =	htbc_write,
+		.ho_htbc_read =		htbc_read,
 };
 
 void
@@ -199,18 +200,6 @@ htbc_start()
 
 int
 htbc_stop()
-{
-	return (0);
-}
-
-int
-htbc_read()
-{
-	return (0);
-}
-
-int
-htbc_write()
 {
 	return (0);
 }
@@ -289,7 +278,7 @@ htbc_doio(data, len, devvp, pbn, flags)
 	error = biowait(bp);
 	//putiobuf(bp);
 
-	return error;
+	return (error);
 }
 
 int
@@ -299,7 +288,7 @@ htbc_write(data, len, devvp, pbn)
 	struct vnode *devvp;
 	daddr_t pbn;
 {
-	return htbc_doio(data, len, devvp, pbn, B_WRITE);
+	return (htbc_doio(data, len, devvp, pbn, B_WRITE));
 }
 
 int
@@ -309,39 +298,47 @@ htbc_read(data, len, devvp, pbn)
 	struct vnode *devvp;
 	daddr_t pbn;
 {
-	return htbc_doio(data, len, devvp, pbn, B_READ);
+	return (htbc_doio(data, len, devvp, pbn, B_READ));
 }
 
 /****************************************************************/
-/* HTBC htree chain */
+/* HTBC hash chain */
 
 void
-htbc_hchain_insert_head(struct htbc_hchain *hc, struct htbc *ht, uint32_t hash, uint32_t timestamp, uint32_t version)
+htbc_hchain_insert_head(hc, ht, hash, timestamp, version)
+	struct htbc_hchain *hc;
+	struct htbc *ht;
+	uint32_t hash, timestamp, version;
 {
 	htbc_hchain_set_hash(hc, ht, hash);
 	htbc_hchain_set_timestamp(hc, ht, timestamp);
 	htbc_hchain_set_version(hc, ht, version);
 
-	CIRCLEQ_INSERT_HEAD(hc->hc_header, ht, hc_entries);
+	CIRCLEQ_INSERT_HEAD(hc->hc_header, ht, ht_hchain_entries);
 }
 
 void
-htbc_hchain_insert_tail(struct htbc_hchain *hc, struct htbc *ht, uint32_t hash, uint32_t timestamp, uint32_t version)
+htbc_hchain_insert_tail(hc, ht, hash, timestamp, version)
+	struct htbc_hchain *hc;
+	struct htbc *ht;
+	uint32_t hash, timestamp, version;
 {
 	htbc_hchain_set_hash(hc, hash);
 	htbc_hchain_set_timestamp(hc, timestamp);
 	htbc_hchain_set_version(hc, version);
 
-	CIRCLEQ_INSERT_TAIL(hc->hc_header, ht, hc_entries);
+	CIRCLEQ_INSERT_TAIL(&hc->hc_header, ht, ht_hchain_entries);
 }
 
 /* search next hchain entry by hash */
 struct htbc *
-htbc_hchain_search_next(struct htbc_hchain *hc, struct htbc *ht)
+htbc_hchain_search_next(hc)
+	struct htbc_hchain *hc;
 {
-	CIRCLEQ_FOREACH(ht, hc->hc_header, hc_entries) {
-		if(CIRCLEQ_NEXT(ht, hc_entries)->ht_hash == htbc_hchain_get_hash(hc)) {
-			return (ht);
+	register struct htbc *htbc;
+	for (htbc = CIRCLEQ_FIRST(&hc->hc_header); htbc != NULL; htbc =	CIRCLEQ_NEXT(htbc, ht_hchain_entries)) {
+		if (htbc->ht_hash == htbc_hchain_get_hash(hc)) {
+			return (htbc);
 		}
 	}
 	return (NULL);
@@ -349,50 +346,64 @@ htbc_hchain_search_next(struct htbc_hchain *hc, struct htbc *ht)
 
 /* search previous hchain entry by hash  */
 struct htbc *
-htbc_hchain_search_prev(struct htbc_hchain *hc, struct htbc *ht)
+htbc_hchain_search_prev(hc)
+	struct htbc_hchain *hc;
 {
-	CIRCLEQ_FOREACH(ht, hc->hc_header, hc_entries) {
-		if(CIRCLEQ_PREV(ht, hc_entries)->ht_hash == htbc_hchain_get_hash(hc)) {
-			return (ht);
+	register struct htbc *htbc;
+	for (htbc = CIRCLEQ_FIRST(&hc->hc_header); htbc != NULL; htbc =	CIRCLEQ_PREV(htbc, ht_hchain_entries)) {
+		if (htbc->ht_hash == htbc_hchain_get_hash(hc)) {
+			return (htbc);
 		}
 	}
 	return (NULL);
 }
 
 static uint32_t
-htbc_hchain_get_hash(struct htbc_hchain *hc)
+htbc_hchain_get_hash(hc)
+	struct htbc_hchain *hc;
 {
 	return (hc->hc_hash);
 }
 
 static uint32_t
-htbc_hchain_get_timestamp(struct htbc_hchain *hc)
+htbc_hchain_get_timestamp(hc)
+	struct htbc_hchain *hc;
 {
 	return (hc->hc_timestamp);
 }
 
 static uint32_t
-htbc_hchain_get_version(struct htbc_hchain *hc)
+htbc_hchain_get_version(hc)
+	struct htbc_hchain *hc;
 {
 	return (hc->hc_version);
 }
 
 static void
-htbc_hchain_set_hash(struct htbc_hchain *hc, struct htbc *ht, uint32_t hash)
+htbc_hchain_set_hash(hc, ht, hash)
+	struct htbc_hchain *hc;
+	struct htbc *ht;
+	uint32_t hash;
 {
 	hc->hc_hash = hash;
 	ht->ht_hash = hc->hc_hash;
 }
 
 static void
-htbc_hchain_set_timestamp(struct htbc_hchain *hc, struct htbc *ht, uint32_t timestamp)
+htbc_hchain_set_timestamp(hc, ht, timestamp)
+	struct htbc_hchain *hc;
+	struct htbc *ht;
+	uint32_t timestamp;
 {
 	hc->hc_timestamp = timestamp;
 	ht->ht_timestamp = hc->hc_timestamp;
 }
 
 static void
-htbc_hchain_set_version(struct htbc_hchain *hc, struct htbc *ht, uint32_t version)
+htbc_hchain_set_version(hc, ht, version)
+	struct htbc_hchain *hc;
+	struct htbc *ht;
+	uint32_t version;
 {
 	hc->hc_version = version;
 	ht->ht_version = hc->hc_version;
@@ -454,7 +465,7 @@ htbc_blkatoff(struct vnode *vp, off_t offset, char **res, struct buf **bpp)
 }
 
 /*
- * Bmap converts a the logical block number of a file to its physical block
+ * Bmap converts the logical block number of a file to its physical block
  * number on the disk. The conversion is done by using the logical block
  * number to index into the array of block pointers described by the htbc_inode.
  */
@@ -480,7 +491,7 @@ htbc_bmap(vp, bn, vpp, bnp, runp)
 
 /*
  * Convert the logical block number of a file to its physical block number
- * on the disk within ext extents.
+ * on the disk within htbc extents.
  */
 int
 htbc_bmapext(struct vnode *vp, int32_t bn, int64_t *bnp, int *runp, int *runb)
@@ -1059,7 +1070,7 @@ htree_append_block(struct vnode *vp, char *data, struct componentname *cnp, uint
 	auio.uio_iov = &aiov;
 	auio.uio_iovcnt = 1;
 	auio.uio_rw = UIO_WRITE;
-	auio.uio_vmspace = vmspace_kernel();
+	auio.uio_vmspace = vp->v_proc->p_vmspace;
 	error = VOP_WRITE(vp, &auio, IO_SYNC, cnp->cn_cred);
 	if (!error)
 		dp->hi_size = newsize;

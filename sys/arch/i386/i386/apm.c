@@ -61,7 +61,7 @@
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/select.h>
-//#include <sys/poll.h>
+#include <sys/poll.h>
 #include <sys/conf.h>
 
 #include <machine/bus_dma.h>
@@ -102,13 +102,13 @@ int	apmdebug = 0;
 #define APM_NEVENTS 16
 
 struct apm_softc {
-	struct device 	sc_dev;
-	struct selinfo 	sc_rsel;
-	struct selinfo 	sc_xsel;
-	int				sc_flags;
-	int	event_count;
-	int	event_ptr;
-	struct	apm_event_info event_list[APM_NEVENTS];
+	struct device 			sc_dev;
+	struct selinfo 			sc_rsel;
+	struct selinfo 			sc_xsel;
+	int						sc_flags;
+	int						event_count;
+	int						event_ptr;
+	struct	apm_event_info 	event_list[APM_NEVENTS];
 };
 #define	SCFLAG_OREAD	0x0000001
 #define	SCFLAG_OWRITE	0x0000002

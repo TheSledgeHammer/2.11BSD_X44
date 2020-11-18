@@ -68,7 +68,7 @@ union mainbus_attach_args {
 	struct eisabus_attach_args 	mba_eba;
 	struct isabus_attach_args 	mba_iba;
 #if NAPM > 0
-	struct apm_attach_args mba_aaa;
+	struct apm_attach_args 		mba_aaa;
 #endif
 };
 

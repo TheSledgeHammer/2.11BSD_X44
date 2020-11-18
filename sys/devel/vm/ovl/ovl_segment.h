@@ -50,6 +50,7 @@ struct ovl_segment {
 
 	TAILQ_ENTRY(ovl_segment)    	ovs_vsegment_hlist;			/* list of all associated vm_segments */
 
+#define ovs_vm						ovs_object->ovl_vm_map
 #define ovs_vm_object           	ovs_object->ovo_vm_object
 #define ovs_vm_segment          	ovs_object->ovo_vm_segment
 #define ovs_vm_page             	ovs_object->ovo_vm_page
@@ -78,7 +79,7 @@ ovl_segment_t		ovl_segment_lookup(ovl_object_t, vm_offset_t);
 void				ovl_segment_init(vm_offset_t, vm_offset_t);
 
 void				ovl_segment_insert_vm_segment(ovl_segment_t, vm_segment_t);
-vm_segment_t		ovl_segment_lookup_vm_segment(ovl_segment_t, vm_segment_t);
-void				ovl_segment_remove_vm_segment(ovl_segment_t, vm_segment_t);
+vm_segment_t		ovl_segment_lookup_vm_segment(ovl_segment_t);
+void				ovl_segment_remove_vm_segment(vm_segment_t);
 
 #endif /* _OVL_SEGMENT_H_ */

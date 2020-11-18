@@ -46,6 +46,7 @@ int ufml_check_encyrpt(struct vnode *vp, enum ufml_enctype type);
 int ufml_encrypt();
 int ufml_decrypt();
 
+/* ufml_snapshot.c */
 int ufml_snapshot_write();
 int ufml_snapshot_read();
 int ufml_snapshot_delete();

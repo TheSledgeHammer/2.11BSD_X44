@@ -89,6 +89,8 @@ struct user {
 	size_t				u_ssize;				/* stack size (clicks) */
 	label_t				u_ssave;				/* label variable for swapping */
 	label_t				u_rsave;				/* save info when exchanging stacks */
+	short				u_uisa[16];				/* segmentation address prototypes */
+	short				u_uisd[16];				/* segmentation descriptor prototypes */
 	char				u_sep;					/* flag for I and D separation */
 
 /* 1.2.5 - overlay information */
