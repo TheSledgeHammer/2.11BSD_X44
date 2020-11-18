@@ -187,10 +187,10 @@ overlay_pager_io(ovl, vm_page, npages, flags)
 		while(npages--) {
 			segoffset = stoa(round_segment(npages) / SEGMENT_SIZE);
 			pgoffset = ptoa(round_page(npages) / PAGE_SIZE);
-			if(ovl_segment == ovl_segment_lookup(ovl_object, segoffset)) {
+			if(ovl_segment_lookup(ovl_object, segoffset)) {
 				ovl_segment = ovl_segment_lookup(ovl_object, segoffset);
 
-				if(ovl_page == ovl_page_lookup(ovl_segment, pgoffset)) {
+				if(ovl_page_lookup(ovl_segment, pgoffset)) {
 					ovl_page = ovl_page_lookup(ovl_segment, pgoffset);
 					break;
 				}

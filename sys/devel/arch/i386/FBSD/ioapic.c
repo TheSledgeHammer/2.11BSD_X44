@@ -37,7 +37,7 @@ struct ioapic {
 	u_int 					io_haseoi:1;
 	volatile ioapic_t 		*io_addr;			/* XXX: should use bus_space */
 	vm_paddr_t 				io_paddr;
-	STAILQ_ENTRY(ioapic) 	io_next;
+	SIMPLEQ_ENTRY(ioapic) 	io_next;
 	struct device			*pci_dev;			/* matched pci device, if found */
 	struct resource 		*pci_wnd;			/* BAR 0, should be same or alias to io_paddr */
 	struct ioapic_intsrc 	io_pins[0];

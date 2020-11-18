@@ -35,6 +35,7 @@
 #define _MACHINE_APICVAR_H_
 
 struct apic_attach_args {
+	const char 				*aaa_name;
 	int 					apic_id;
 	int 					apic_version;
 	int 					flags;

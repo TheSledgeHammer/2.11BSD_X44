@@ -236,8 +236,28 @@ ioapic_print_redir(struct ioapic_softc *sc, const char *why, int pin)
 int
 ioapic_match(struct device *parent, struct cfdata *match, void *aux)
 {
+	struct apic_attach_args *aaa = (struct apic_attach_args *)aux;
 
-	return 1;
+	if (strcmp(aaa->aaa_name, match->cf_driver->cd_name) == 0) {
+		return (1);
+	}
+	return (0);
+}
+
+/* Reprogram the APIC ID, and check that it actually got set. */
+void
+ioapic_set_id(struct ioapic_softc *sc)
+{
+	u_int8_t apic_id;
+
+	ioapic_write(sc, IOAPIC_ID, (ioapic_read(sc, IOAPIC_ID) & ~IOAPIC_ID_MASK) | (sc->sc_apicid << IOAPIC_ID_SHIFT));
+
+	apic_id = (ioapic_read(sc, IOAPIC_ID) & IOAPIC_ID_MASK) >> IOAPIC_ID_SHIFT;
+
+	if (apic_id != sc->sc_apicid)
+		printf(", can't remap");
+	else
+		printf(", remapped");
 }
 
 /*
@@ -249,6 +269,7 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 	struct ioapic_softc *sc = device_private(self);
 	struct apic_attach_args *aaa = (struct apic_attach_args *)aux;
 	int apic_id;
+	bus_space_handle_t bh;
 	uint32_t ver_sz;
 	int i;
 
@@ -264,20 +285,18 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 		aprint_error(": duplicate apic id (ignored)\n");
 		return;
 	}
+	ioapic_add(sc);
 
-	aprint_verbose(": pa 0x%jx", (uintmax_t)aaa->apic_address);
-#ifndef _IOAPIC_CUSTOM_RW
-	{
-	bus_space_handle_t bh;
+	aprint_verbose(": pa 0x%jx", (uintmax_t) aaa->apic_address);
+
 
 	if (i386_mem_add_mapping(aaa->apic_address, PAGE_SIZE, 0, &bh) != 0) {
 		aprint_error(": map failed\n");
 		return;
 	}
-	sc->sc_reg = (volatile uint32_t *)(bh + IOAPIC_REG);
-	sc->sc_data = (volatile uint32_t *)(bh + IOAPIC_DATA);
-	}
-#endif
+	sc->sc_reg = (volatile uint32_t*) (bh + IOAPIC_REG);
+	sc->sc_data = (volatile uint32_t*) (bh + IOAPIC_DATA);
+
 	sc->sc_pa = aaa->apic_address;
 
 	sc->sc_pic.pic_type = PIC_IOAPIC;
@@ -290,18 +309,14 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 
 	sc->sc_pic.pic_edge_stubs = ioapic_edge_stubs;
 	sc->sc_pic.pic_level_stubs = ioapic_level_stubs;
+	/*
 	sc->sc_pic.pic_intr_get_devname = x86_intr_get_devname;
 	sc->sc_pic.pic_intr_get_assigned = x86_intr_get_assigned;
 	sc->sc_pic.pic_intr_get_count = x86_intr_get_count;
+	*/
 
-	apic_id = (ioapic_read(sc, IOAPIC_ID) & IOAPIC_ID_MASK)
-	    >> IOAPIC_ID_SHIFT;
+	apic_id = (ioapic_read(sc, IOAPIC_ID) & IOAPIC_ID_MASK) >> IOAPIC_ID_SHIFT;
 	ver_sz = ioapic_read(sc, IOAPIC_VER);
-
-	if (ver_sz == 0xffffffff) {
-		aprint_error(": failed to read version/size\n");
-		goto out;
-	}
 
 	ioapic_add(sc);
 
@@ -321,16 +336,13 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 	}
 
 	if (mp_verbose) {
-		printf(", %s mode",
-		    aaa->flags & IOAPIC_PICMODE ? "PIC" : "virtual wire");
+		printf(", %s mode", aaa->flags & IOAPIC_PICMODE ? "PIC" : "virtual wire");
 	}
 
-	aprint_verbose(", version 0x%x, %d pins", sc->sc_apic_vers,
-	    sc->sc_apic_sz);
+	aprint_verbose(", version 0x%x, %d pins", sc->sc_apic_vers, sc->sc_apic_sz);
 	aprint_normal("\n");
 
-	sc->sc_pins = malloc(sizeof(struct ioapic_pin) * sc->sc_apic_sz,
-	    M_DEVBUF, M_WAITOK);
+	sc->sc_pins = malloc(sizeof(struct ioapic_pin) * sc->sc_apic_sz, M_DEVBUF, M_WAITOK);
 
 	for (i = 0; i < sc->sc_apic_sz; i++) {
 		uint32_t redlo, redhi;
@@ -339,21 +351,8 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 		sc->sc_pins[i].ip_map = NULL;
 		sc->sc_pins[i].ip_vector = 0;
 		sc->sc_pins[i].ip_type = IST_NONE;
-
-		/* Mask all pins by default. */
-		redlo = IOAPIC_REDLO_MASK;
-		/*
-		 * ISA interrupts are connect to pin 0-15 and
-		 * edge triggered on high, which is the default.
-		 *
-		 * Expect all other interrupts to be PCI-like
-		 * level triggered on low.
-		 */
-		if (i >= 16)
-			redlo |= IOAPIC_REDLO_LEVEL | IOAPIC_REDLO_ACTLO;
-		redhi = (cpu_info_primary.ci_cpuid << IOAPIC_REDHI_DEST_SHIFT);
-		ioapic_write(sc, IOAPIC_REDHI(i), redhi);
-		ioapic_write(sc, IOAPIC_REDLO(i), redlo);
+		sc->sc_pins[i].ip_minlevel = 0xff;	 	/* XXX magic */
+		sc->sc_pins[i].ip_maxlevel = 0; 		/* XXX magic */
 	}
 
 	/*
@@ -365,21 +364,8 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 	if (apic_id != sc->sc_pic.pic_apicid) {
 		aprint_debug_dev(sc->sc_dev, "misconfigured as apic %d\n", apic_id);
 
-		ioapic_write(sc, IOAPIC_ID, (ioapic_read(sc, IOAPIC_ID) & ~IOAPIC_ID_MASK) | (sc->sc_pic.pic_apicid << IOAPIC_ID_SHIFT));
-
-		apic_id = (ioapic_read(sc, IOAPIC_ID) & IOAPIC_ID_MASK) >> IOAPIC_ID_SHIFT;
-
-		if (apic_id != sc->sc_pic.pic_apicid)
-			aprint_error_dev(sc->sc_dev,
-			    "can't remap to apid %d\n", sc->sc_pic.pic_apicid);
-		else
-			aprint_debug_dev(sc->sc_dev, "remapped to apic %d\n",
-			    sc->sc_pic.pic_apicid);
+		ioapic_set_id(sc);
 	}
-
- out:
-	if (!pmf_device_register(self, NULL, NULL))
-		aprint_error_dev(self, "couldn't establish power handler\n");
 
 #if 0
 	/* output of this was boring. */
@@ -389,8 +375,11 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 #endif
 }
 
+struct intrhand *apic_intrhand[256];
+int	apic_maxlevel[256];
+
 static void
-apic_set_redir(struct ioapic_softc *sc, int pin, int idt_vec, struct cpu_info *ci)
+apic_set_redir(struct ioapic_softc *sc, int pin)
 {
 	uint32_t redlo;
 	uint32_t redhi;
@@ -404,30 +393,42 @@ apic_set_redir(struct ioapic_softc *sc, int pin, int idt_vec, struct cpu_info *c
 	redhi = 0;
 	delmode = (redlo & IOAPIC_REDLO_DEL_MASK) >> IOAPIC_REDLO_DEL_SHIFT;
 
-	if (delmode == IOAPIC_REDLO_DEL_FIXED || delmode == IOAPIC_REDLO_DEL_LOPRI) {
-	    	if (pp->ip_type == IST_NONE) {
-			redlo |= IOAPIC_REDLO_MASK;
-		} else {
-			redhi = (ci->ci_cpuid << IOAPIC_REDHI_DEST_SHIFT);
-			redlo |= (idt_vec & 0xff);
-			redlo |= IOAPIC_REDLO_DEL_FIXED
-			    << IOAPIC_REDLO_DEL_SHIFT;
-			redlo &= ~IOAPIC_REDLO_DSTMOD;
+	/* XXX magic numbers */
+	if ((delmode != 0) && (delmode != 1))
+		;
+	else if (pp->ip_handler == NULL) {
+		redlo |= IOAPIC_REDLO_MASK;
+	} else {
+		redlo |= (pp->ip_vector & 0xff);
+		redlo &= ~IOAPIC_REDLO_DEL_MASK;
+		redlo |= (IOAPIC_REDLO_DEL_FIXED << IOAPIC_REDLO_DEL_SHIFT);
+		redlo &= ~IOAPIC_REDLO_DSTMOD;
 
-			/* XXX derive this bit from BIOS info */
+		/*
+		 * Destination: BSP CPU
+		 *
+		 * XXX will want to distribute interrupts across cpu's
+		 * eventually.  most likely, we'll want to vector each
+		 * interrupt to a specific CPU and load-balance across
+		 * cpu's.  but there's no point in doing that until after
+		 * most interrupts run without the kernel lock.
+		 */
+		redhi |= (ioapic_bsp_id << IOAPIC_REDHI_DEST_SHIFT);
+
+		/* XXX derive this bit from BIOS info */
+		if (pp->ip_type == IST_LEVEL)
+			redlo |= IOAPIC_REDLO_LEVEL;
+		else
+			redlo &= ~IOAPIC_REDLO_LEVEL;
+		if (map != NULL && ((map->flags & 3) == MPS_INTPO_DEF)) {
 			if (pp->ip_type == IST_LEVEL)
-				redlo |= IOAPIC_REDLO_LEVEL;
+				redlo |= IOAPIC_REDLO_ACTLO;
 			else
-				redlo &= ~IOAPIC_REDLO_LEVEL;
-			if ((map != NULL)
-			    && ((map->flags & 3) == MPS_INTPO_DEF)) {
-				if (pp->ip_type == IST_LEVEL)
-					redlo |= IOAPIC_REDLO_ACTLO;
-				else
-					redlo &= ~IOAPIC_REDLO_ACTLO;
-			}
+				redlo &= ~IOAPIC_REDLO_ACTLO;
 		}
 	}
+	/* Do atomic write */
+	ioapic_write(sc, IOAPIC_REDLO(pin), IOAPIC_REDLO_MASK);
 	ioapic_write(sc, IOAPIC_REDHI(pin), redhi);
 	ioapic_write(sc, IOAPIC_REDLO(pin), redlo);
 	if (mp_verbose)
