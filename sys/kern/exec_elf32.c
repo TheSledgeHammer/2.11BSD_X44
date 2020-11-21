@@ -422,7 +422,7 @@ elf_load_file(elp, path, vcset, entryoff, ap, last)
 		/*
 		 * Now compute the size and load address.
 		 */
-		addr = (*elp->el_esch->ex_emul->e_vm_default_addr)(p, elp->el_daddr, round_page(limit) - trunc_page(base_ph->p_vaddr));
+		addr = elp->el_daddr + (round_page(limit) - trunc_page(base_ph->p_vaddr));
 	} else
 		addr = *last; /* may be ELF_LINK_ADDR */
 

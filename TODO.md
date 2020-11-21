@@ -16,6 +16,8 @@ A General todo list. Don't hesitate to add to this list. :)
 ## conf:
 
 ## kern:
+- exec_macho: exec_mach_copyargs 
+	(NetBSD 5.2: /compat/mach/mach_exec.c)
 	
 ## arch:
 - i386/x86: (Merged under i386)

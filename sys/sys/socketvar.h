@@ -121,7 +121,7 @@ struct socket {
 #define	sowriteable(so) 								\
     (sbspace(&(so)->so_snd) > 0 && 						\
 	(((so)->so_state&SS_ISCONNECTED) || 				\
-	  ((so)->so_proto->pr_flags&PR_CONNREQUIRED)==0) || \
+	 ((so)->so_proto->pr_flags&PR_CONNREQUIRED)==0) || 	\
      ((so)->so_state & SS_CANTSENDMORE) ||				\
      (so)->so_error)
 

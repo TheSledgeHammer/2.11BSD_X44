@@ -34,11 +34,11 @@
 
 #define PATH_KERNEL	"/boot/kernel/kernel"
 
-int boot_env_to_howto(void);
-void boot_howto_to_env(int howto);
-int boot_parse_arg(char *v);
-int boot_parse_cmdline_delim(char *cmdline, const char *delim);
-int boot_parse_cmdline(char *cmdline);
-int boot_parse_args(int argc, char *argv[]);
+int 	boot_env_to_howto(void);
+void 	boot_howto_to_env(int howto);
+int 	boot_parse_arg(char *v);
+int 	boot_parse_cmdline_delim(char *cmdline, const char *delim);
+int 	boot_parse_cmdline(char *cmdline);
+int 	boot_parse_args(int argc, char *argv[]);
 
 #endif /* !_SYS_BOOT_H_ */

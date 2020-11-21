@@ -583,10 +583,10 @@ exec_macho_linker(elp)
 	elp->el_emul_arg = (void *)emea;
 	emea->dynamic = 0;
 
-	if (!elp->el_esch->u.mach_probe_func)
+	if (!exec_mach_probe(elp, &emea->path))
 		emea->path = "/";
 	else {
-		if ((error = (*elp->el_esch->u.mach_probe_func)(&emea->path)) != 0)
+		if ((error = exec_mach_probe(elp, &emea->path)) != 0)
 			goto bad2;
 	}
 
@@ -606,7 +606,7 @@ exec_macho_linker(elp)
 	 * we will need it later.
 	 */
 	if ((error = copyinstr(elp->el_name, emea->filename, MAXPATHLEN, NULL)) != 0) {
-		DPRINTF(("Copyinstr %p failed\n", epp->ep_name));
+		DPRINTF(("Copyinstr %p failed\n", elp->el_name));
 		goto bad;
 	}
 	return (*elp->el_esch->ex_setup_stack)(elp);
@@ -615,4 +615,13 @@ bad:
 bad2:
 	free(emea, M_EXEC);
 	return error;
+}
+
+int
+exec_mach_probe(struct exec_linker *elp, const char **path)
+{
+	struct emul *emul = elp->el_esch->ex_emul;
+
+	*path = emul->e_path;
+	return (0);
 }

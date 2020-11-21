@@ -48,6 +48,7 @@
 #include <sys/proc.h>
 #include <sys/vnode.h>
 #include <sys/device.h>
+#include <sys/poll.h>
 #include <sys/user.h>
 
 #include <machine/cpu.h>
@@ -123,7 +124,7 @@ static __inline void pms_dev_cmd (u_char);
 static __inline void pms_pit_cmd (u_char);
 static __inline void pms_aux_cmd (u_char);
 
-#define	PMS_DELAY \
+#define	PMS_DELAY 						\
 	{ u_char x = inb(0x84); (void) x; } \
 	{ u_char x = inb(0x84); (void) x; } \
 	{ u_char x = inb(0x84); (void) x; } \
@@ -513,7 +514,7 @@ pmsintr(arg)
 
 	return -1;
 }
-/*
+
 int
 pmspoll(dev, events, p)
 	dev_t dev;
@@ -533,4 +534,3 @@ pmspoll(dev, events, p)
 	splx(s);
 	return (revents);
 }
-*/

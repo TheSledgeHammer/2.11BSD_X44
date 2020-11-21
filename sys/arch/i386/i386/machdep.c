@@ -136,11 +136,15 @@ extern int biosbasemem, biosextmem;
 
 struct pcb *curpcb;			/* our current running pcb */
 
+#if defined(I586_CPU) && !defined(NO_F00F_HACK)
+extern int has_f00f_bug;
+#endif
+
 int	i386_use_fxsave;
 
-union descriptor gdt[NGDT];
-struct gate_descriptor idt[32+16];
-union descriptor ldt[NLDT];
+union descriptor 		gdt[NGDT];
+struct gate_descriptor 	idt[32+16];
+union descriptor 		ldt[NLDT];
 
 struct soft_segment_descriptor gdt_segs[];
 struct soft_segment_descriptor ldt_segs[];
@@ -369,7 +373,13 @@ i386_proc0_tss_ldt_init(void)
 		pcb->pcb_iomap[x] = 0xffffffff;
 
 	cr0 = rcr0();
-	cr0 |= CR0_MP | CR0_NE | CR0_TS | CR0_WP | CR0_AM;
+#ifdef SMP
+	cr0 |= CR0_NE;				/* Done by npxinit() */
+#endif
+	cr0 |= CR0_MP | CR0_TS;		/* Done at every execve() too. */
+#ifndef I386_CPU
+	cr0 |= CR0_WP | CR0_AM;
+#endif
 	pcb->pcb_cr0 = cr0;
 	lcr0(pcb->pcb_cr0);
 
@@ -1081,13 +1091,48 @@ makectx(tf, pcb)
 	pcb->pcb_tss.tss_gs = rgs();
 }
 
+#if defined(I586_CPU) && !defined(NO_F00F_HACK)
+static void f00f_hack(void *unused);
+
+static void
+f00f_hack(void *unused) {
+	struct gate_descriptor *new_idt;
+#ifndef SMP
+	struct region_descriptor r_idt;
+#endif
+	vm_offset_t tmp;
+
+	if (!has_f00f_bug)
+		return;
+
+	printf("Intel Pentium detected, installing workaround for F00F bug\n");
+
+	r_idt.rd_limit = sizeof(idt) - 1;
+
+	tmp = kmem_alloc(kernel_map, PAGE_SIZE * 2);
+	if (tmp == 0)
+		panic("kmem_alloc returned 0");
+	if (((unsigned int)tmp & (PAGE_SIZE-1)) != 0)
+		panic("kmem_alloc returned non-page-aligned memory");
+	/* Put the first seven entries in the lower page */
+	new_idt = (struct gate_descriptor*)(tmp + PAGE_SIZE - (7*8));
+	bcopy(idt, new_idt, sizeof(idt));
+	r_idt.rd_base = (int)new_idt;
+	lidt(&r_idt);
+	idt = new_idt;
+	if (vm_map_protect(kernel_map, tmp, tmp + PAGE_SIZE, VM_PROT_READ, FALSE) != KERN_SUCCESS)
+		panic("vm_map_protect failed");
+	return;
+}
+#endif /* defined(I586_CPU) && !NO_F00F_HACK */
+
 /*
  * Provide inb() and outb() as functions.  They are normally only available as
  * inline functions, thus cannot be called from the debugger.
  */
 
 /* silence compiler warnings */
-/*
+
 u_char inb_(u_short);
 void outb_(u_short, u_char);
 
@@ -1102,4 +1147,3 @@ outb_(u_short port, u_char data)
 {
 	outb(port, data);
 }
-*/

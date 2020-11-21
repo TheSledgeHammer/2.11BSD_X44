@@ -65,7 +65,6 @@ static void print_transmeta_info(void);
 #endif
 static u_int find_cpu_vendor_id(void);
 
-
 #ifdef __i386__
 int			cpu;					/* Are we 386, 386sx, 486, etc? */
 int			cpu_class;
@@ -1454,8 +1453,7 @@ finishidentcpu(void)
 
 int pti_get_default(void) {
 
-	if (strcmp(cpu_vendor, AMD_VENDOR_ID) == 0
-			|| strcmp(cpu_vendor, HYGON_VENDOR_ID) == 0)
+	if (strcmp(cpu_vendor, AMD_VENDOR_ID) == 0 || strcmp(cpu_vendor, HYGON_VENDOR_ID) == 0)
 		return (0);
 	if ((cpu_ia32_arch_caps & IA32_ARCH_CAP_RDCL_NO) != 0)
 		return (0);

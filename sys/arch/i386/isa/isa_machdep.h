@@ -146,9 +146,9 @@ struct i386_isa_dma_cookie {
 /*
  * RAM Physical Address Space (ignoring the above mentioned "hole")
  */
-#define	RAM_BEGIN	0x0000000		/* Start of RAM Memory */
-#define	RAM_END		0x1000000		/* End of RAM Memory */
-#define	RAM_SIZE	(RAM_END - RAM_BEGIN)
+#define	RAM_BEGIN		0x0000000		/* Start of RAM Memory */
+#define	RAM_END			0x1000000		/* End of RAM Memory */
+#define	RAM_SIZE		(RAM_END - RAM_BEGIN)
 
 /*
  * Oddball Physical Memory Addresses
@@ -161,11 +161,11 @@ struct i386_isa_dma_cookie {
 /*
  * stuff that used to be in pccons.c
  */
-#define	MONO_BASE	0x3B4
-#define	MONO_BUF	0xB0000
-#define	CGA_BASE	0x3D4
-#define	CGA_BUF		0xB8000
-#define	IOPHYSMEM	0xA0000
+#define	MONO_BASE		0x3B4
+#define	MONO_BUF		0xB0000
+#define	CGA_BASE		0x3D4
+#define	CGA_BUF			0xB8000
+#define	IOPHYSMEM		0xA0000
 
 /*
  * Interrupt handler chains.  isa_intr_establish() inserts a handler into
@@ -206,7 +206,7 @@ extern vm_offset_t isaphysmem;
  * function definitions, invoked through the softc.
  */
 
-extern u_long atdevbase;           /* kernel virtual address of "hole" */
+extern u_long 	 atdevbase;           /* kernel virtual address of "hole" */
 
 /*
  * Given a kernel virtual address for some location

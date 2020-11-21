@@ -44,7 +44,7 @@
 #include <sys/exec_macho.h>
 #include <sys/exec_pecoff.h>
 #include <sys/exec_elf.h>
-//#include <devel/sys/exec_xcoff.h>
+#include <sys/exec_xcoff.h>
 
 #ifdef SYSCALL_DEBUG
 extern char *syscallnames[];

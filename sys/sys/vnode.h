@@ -699,7 +699,7 @@ struct vop_bwrite_args {
 /*
  * Interlock for scanning list of vnodes attached to a mountpoint
  */
-struct simplelock mntvnode_slock;
+struct lock_object mntvnode_slock;
 
 /*
  * Finally, include the default set of vnode operations.

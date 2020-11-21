@@ -140,11 +140,8 @@ soo_stat(so, ub)
 	register struct socket *so;
 	register struct stat *ub;
 {
-
-	bzero((caddr_t)ub, sizeof (*ub));
-	return ((*so->so_proto->pr_usrreq)(so, PRU_SENSE,
-	    (struct mbuf *)ub, (struct mbuf *)0, 
-	    (struct mbuf *)0));
+	bzero((caddr_t) ub, sizeof(*ub));
+	return ((*so->so_proto->pr_usrreq)(so, PRU_SENSE, (struct mbuf*) ub, (struct mbuf*) 0, (struct mbuf*) 0));
 }
 
 /* ARGSUSED */
@@ -154,8 +151,7 @@ soo_read(fp, uio, cred)
 	struct uio *uio;
 	struct ucred *cred;
 {
-		return (soreceive((struct socket *)fp->f_data, (struct mbuf **)0,
-				uio, (struct mbuf **)0, (struct mbuf **)0, (int *)0));
+	return (soreceive((struct socket*) fp->f_data, (struct mbuf**) 0, uio, (struct mbuf**) 0, (struct mbuf**) 0, (int*) 0));
 }
 
 /* ARGSUSED */
@@ -165,8 +161,7 @@ soo_write(fp, uio, cred)
 	struct uio *uio;
 	struct ucred *cred;
 {
-		return (sosend((struct socket *)fp->f_data, (struct mbuf *)0,
-				uio, (struct mbuf *)0, (struct mbuf *)0, 0));
+	return (sosend((struct socket *)fp->f_data, (struct mbuf *)0, uio, (struct mbuf *)0, (struct mbuf *)0, 0));
 }
 
 /* ARGSUSED */
@@ -175,9 +170,9 @@ soo_close(fp, p)
 	struct file *fp;
 	struct proc *p;
 {
-		int error = 0;
-		if(fp->f_data)
-			error = soclose((struct socket *)fp->f_data);
-		fp->f_data = 0;
-		return (error);
+	int error = 0;
+	if (fp->f_data)
+		error = soclose((struct socket*) fp->f_data);
+	fp->f_data = 0;
+	return (error);
 }
