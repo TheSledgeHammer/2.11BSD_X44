@@ -123,7 +123,7 @@ ovl_object_allocate(size)
 {
 	register ovl_object_t	result;
 
-	result = (ovl_object_t)overlay_malloc((u_long)sizeof *result, OVL_OBJECT, M_WAITOK);
+	result = (ovl_object_t)overlay_malloc((u_long)sizeof *result, M_OVLOBJ, M_OVERLAY | M_WAITOK);
 
 	_ovl_object_allocate(size, result);
 
@@ -258,7 +258,7 @@ ovl_object_enter(object, pager)
 		return;
 
 	bucket = &ovl_object_hashtable[ovl_object_hash(pager)];
-	entry = (ovl_object_hash_entry_t)overlay_malloc((u_long)sizeof *entry, OVL_OBJHASH, M_WAITOK);
+	entry = (ovl_object_hash_entry_t)overlay_malloc((u_long)sizeof *entry, M_OVLOBJHASH, M_WAITOK);
 
 	entry->ovoe_object = object;
 	object->ovo_flags |= OBJ_CANPERSIST;
@@ -288,7 +288,7 @@ ovl_object_remove(pager)
 		object = entry->ovoe_object;
 		if(object->ovo_pager == pager) {
 			RB_REMOVE(ovl_object_hash_head, bucket, entry);
-			free((caddr_t)entry, OVL_OBJHASH);
+			free((caddr_t)entry, M_OVLOBJHASH);
 			break;
 		}
 	}

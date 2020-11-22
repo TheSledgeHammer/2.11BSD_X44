@@ -41,7 +41,7 @@ extern struct bdevsw bdevsw[];
  */
 struct cdevsw {
 	int		(*d_open)(dev_t dev, int oflags, int devtype, struct proc *p);
-	int		(*d_close)(dev_t dev, int fflag, int devtype, struct proc *);
+	int		(*d_close)(dev_t dev, int fflag, int devtype, struct proc *p);
 	int		(*d_read)(dev_t dev, struct uio *uio, int ioflag);
 	int		(*d_write)(dev_t dev, struct uio *uio, int ioflag);
 	int		(*d_ioctl)(dev_t dev, int cmd, caddr_t data, int fflag, struct proc *p);

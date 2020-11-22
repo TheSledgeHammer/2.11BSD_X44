@@ -26,186 +26,626 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/malloc.h>
 #include <sys/queue.h>
+#include <sys/fnv_hash.h>
 #include <sys/user.h>
+
 #include <devel/sys/devsw.h>
 
-struct devswops 	*dvops;
-struct devsw_head 	devsw_list;
-
-void
-devsw_add(devsw)
-	struct devsw *devsw;
-{
-	TAILQ_INSERT_HEAD(&devsw_list, devsw, dv_entries);
-}
-
-void
-devsw_remove(devsw)
-	struct devsw *devsw;
-{
-	TAILQ_REMOVE(&devsw_list, devsw, dv_entries);
-}
-
-devsw_lookup()
-{
-
-}
+struct devswtable_head 	devswtable[MAXDEVSW]; /* hash table of devices in the device switch table (includes bdevsw, cdevsw & linesw) */
 
 void
 devsw_init()
 {
-	TAILQ_INIT(&devsw_list);
+	for(int i = 0; i < MAXDEVSW; i++) {
+		TAILQ_INIT(&devswtable[i]);
+	}
+
 	dvop_malloc(&dvops);
+	simple_lock_init(&devsw_lock, "devsw_lock");
+}
+
+int
+devswtable_hash(data, dev)
+	void 	*data;
+	dev_t 	dev;
+{
+	Fnv32_t hash1 = fnv_32_buf(&dev, sizeof(&dev), FNV1_32_INIT) % MAXDEVSW;
+	Fnv32_t hash2 = fnv_32_buf(&data, sizeof(&data), FNV1_32_INIT) % MAXDEVSW;
+	return (hash1^hash2);
+}
+
+struct devswtable *
+devsw_lookup(data, major)
+	void 	*data;
+	dev_t 	major;
+{
+	struct devswtable_head 		*bucket;
+	register devswtable_entry_t entry;
+	struct devswtable 			*devsw;
+
+	bucket = &devswtable[devswtable_hash(data, major)];
+	for(entry = TAILQ_FIRST(bucket); entry != NULL; entry = TAILQ_NEXT(entry, dve_link)) {
+		devsw = entry->dve_devswtable;
+		if(devsw->dv_data == data && devsw->dv_major == major) {
+			return (devsw);
+		}
+	}
+	return (NULL);
 }
 
 void
-dvop_malloc(dvops)
-	struct devswops *dvops;
+devsw_add(devsw, data, major)
+	struct devswtable *devsw;
+	void 			*data;
+	dev_t 			major;
 {
-	MALLOC(dvops, struct devswops *, sizeof(struct devswops *), M_DEVSW, M_WAITOK);
+	struct devswtable_head 		*bucket;
+	register devswtable_entry_t entry;
+
+	devsw->dv_data = data;
+	devsw->dv_major = major;
+
+	bucket = &devswtable[devswtable_hash(data, major)];
+	entry = (devswtable_entry_t) malloc((u_long) sizeof *entry, M_DEVSW, M_WAITOK);
+	entry->dve_devswtable = devsw;
+
+	TAILQ_INSERT_HEAD(bucket, entry, dve_link);
+}
+
+void
+devsw_remove(data, major)
+	void 	*data;
+	dev_t 	major;
+{
+	struct devswtable_head 		*bucket;
+	register devswtable_entry_t entry;
+	struct devswtable 			*devsw;
+
+	bucket = &devswtable[devswtable_hash(data, major)];
+	for(entry = TAILQ_FIRST(bucket); entry != NULL; entry = TAILQ_NEXT(entry, dve_link)) {
+		devsw = entry->dve_devswtable;
+		if(devsw->dv_data == data && devsw->dv_major == major) {
+			TAILQ_REMOVE(bucket, entry, dve_link);
+		}
+	}
 }
 
 int
-dvop_attach(devname, device, major)
-    const char      *devname;
-    struct device   *device;
-    int 			major;
+devsw_lookup_bdevsw(devsw, dev)
+	struct devswtable *devsw;
+	dev_t 			dev;
 {
-    struct dvop_attach_args args;
-    int error;
+	struct bdevsw *bdevsw;
+	linesw = devop_lookup_bdevsw(devsw, dev);
 
-    args.d_devsw.dv_ops = &dvops;
-    args.d_name = devname;
-    args.d_device = device;
-    args.d_major = major;
+	if(bdevsw == NULL) {
+		return (ENXIO);
+	}
 
-    if(dvops->dvop_attach == NULL) {
-    	return (EOPNOTSUPP);
+	return (0);
+}
+
+int
+devsw_lookup_cdevsw(devsw, dev)
+	struct devswtable 	*devsw;
+	dev_t 				dev;
+{
+	struct cdevsw *cdevsw;
+	linesw = devop_lookup_cdevsw(devsw, dev);
+
+	if(cdevsw == NULL) {
+		return (ENXIO);
+	}
+
+	return (0);
+}
+
+int
+devsw_lookup_linesw(devsw, dev)
+	struct devswtable *devsw;
+	dev_t 			dev;
+{
+	struct linesw *linesw;
+	linesw = devop_lookup_linesw(devsw, dev);
+
+	if(linesw == NULL) {
+		return (ENXIO);
+	}
+
+	return (0);
+}
+
+int
+devsw_dev_finder(major, devsw, devswtype)
+    dev_t 			major;
+    int 			devswtype;
+    struct devswtable *devsw;
+{
+    int error = 0;
+
+    switch(devswtype) {
+    case BDEVTYPE:
+    	struct bdevsw *bd = DTOB(devsw);
+        if(bd) {
+            error = devsw_lookup_bdevsw(devsw, major);
+            return (error);
+        }
+        break;
+
+    case CDEVTYPE:
+        struct cdevsw *cd = DTOC(devsw);
+        if(cd) {
+            error = devsw_lookup_cdevsw(devsw, major);
+            return (error);
+        }
+        break;
+
+    case LINETYPE:
+        struct linesw *ld = DTOL(devsw);
+        if(ld) {
+            error = devsw_lookup_linesw(devsw, major);
+            return (error);
+        }
+        break;
     }
-
-    error = dvops->dvop_attach(devname, device, major);
 
     return (error);
 }
 
 int
-dvop_detach(devname, device, major)
-    const char      *devname;
-    struct device   *device;
-    int 			major;
+devsw_io(data, major, type)
+	void 	*data;
+	dev_t 	major;
+	int		type;
 {
-    struct dvop_detach_args args;
-    int error;
+	struct devswtbl *devsw = devsw_lookup(data, major);
 
-    args.d_devsw.dv_ops = &dvops;
-    args.d_name = devname;
-    args.d_device = device;
-    args.d_major = major;
+	if(devsw == NULL) {
+		return (ENXIO);
+	}
 
-    if(dvops->dvop_detach == NULL) {
-    	return (EOPNOTSUPP);
-    }
-
-    error = dvops->dvop_detach(devname, device, major);
-
-    return (error);
+	return (devsw_dev_finder(major, devsw, type));
 }
 
 int
-dvop_lookup(major)
-	int 		major;
+bdev_open(dev_t dev, int flag, int devtype, struct proc *p)
 {
-    struct dvop_lookup_args args;
-    int error;
+	const struct bdevsw *d;
+	int rv, error;
 
-    args.d_devsw.dv_ops = &dvops;
+	error = devsw_io(dev, d, BDEVTYPE);
+	if(error != 0) {
+		return (error);
+	}
 
-    args.d_major = major;
+	rv = (*d->d_open)(dev, flag, devtype, p);
 
-    if(dvops->dvop_lookup == NULL) {
-    	return (EOPNOTSUPP);
-    }
-
-    error = dvops->dvop_lookup(major);
-
-	return (error);
-}
-
-/* bdevsw */
-struct devswops *bdevswops = {
-	.dvop_attach = bdevsw_attach,
-	.dvop_detach = bdevsw_detach,
-};
-
-int
-bdevsw_attach(args)
-	struct dvop_attach_args *args;
-{
-	struct bdevsw *bdevsw = DTOB(args->d_devsw);
-	int maj = args->d_major;
-
-	return (0);
+	return (rv);
 }
 
 int
-bdevsw_detach(args)
-	struct dvop_detach_args *args;
+bdev_close(dev_t dev, int fflag, int devtype, struct proc *p)
 {
-	struct bdevsw *bdevsw = DTOB(args->d_devsw);
-	int maj = args->d_major;
+	const struct bdevsw *d;
+	int rv, error;
 
-	return (0);
-}
+	error = devsw_io(dev, d, BDEVTYPE);
+	if(error != 0) {
+		return (error);
+	}
 
-/* cdevsw */
-struct devswops *cdevswops = {
-	.dvop_attach = cdevsw_attach,
-	.dvop_detach = cdevsw_detach,
-};
+	rv = (*d->d_close)(dev, fflag, devtype, p);
 
-int
-cdevsw_attach(args)
-	struct dvop_attach_args *args;
-{
-	struct cdevsw *cdevsw = DTOC(args->d_devsw);
-	int maj = args->d_major;
-
-	return (0);
+	return (rv);
 }
 
 int
-cdevsw_detach(args)
-	struct dvop_detach_args *args;
+bdev_strategy(dev_t dev, int fflag, int devtype, struct proc *p)
 {
-	struct cdevsw *cdevsw = DTOC(args->d_devsw);
-	int maj = args->d_major;
+	const struct bdevsw *d;
+	int rv, error;
 
-	return (0);
-}
+	error = devsw_io(dev, d, BDEVTYPE);
+	if(error != 0) {
+		return (error);
+	}
 
-/* linesw */
-struct devswops *lineswops = {
-	.dvop_attach = linesw_attach,
-	.dvop_detach = linesw_detach,
-};
+	rv = (*d->d_strategy)(dev, fflag, devtype, p);
 
-int
-linesw_attach(args)
-	struct dvop_attach_args *args;
-{
-	struct linesw *linesw = DTOL(args->d_devsw);
-	int maj = args->d_major;
-
-	return (0);
+	return (rv);
 }
 
 int
-linesw_detach(args)
-	struct dvop_detach_args *args;
+bdev_ioctl(dev_t dev, int cmd, caddr_t data, int fflag, struct proc *p)
 {
-	struct linesw *linesw = DTOL(args->d_devsw);
-	int maj = args->d_major;
+	const struct bdevsw *d;
+	int rv, error;
 
-	return (0);
+	error = devsw_io(dev, d, BDEVTYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*d->d_ioctl)(dev, cmd, data, fflag, p);
+
+	return (rv);
+}
+
+/*
+int
+bdev_dump()
+{
+
+}
+
+int
+bdev_root()
+{
+	const struct bdevsw *d;
+	dev_t dev;
+	int rv;
+
+	int rv, error;
+
+	error = devsw_io(dev, d, BDEVTYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*d->d_root)();
+
+	return (rv);
+}
+*/
+
+daddr_t
+bdev_size(dev_t dev)
+{
+	const struct bdevsw *d;
+	int rv, error;
+
+	error = devsw_io(dev, d, BDEVTYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*d->d_psize)(dev);
+
+	return (rv);
+}
+
+int
+cdev_open(dev_t dev, int oflags, int devtype, struct proc *p)
+{
+	const struct cdevsw *c;
+	int rv, error;
+
+	error = devsw_io(dev, c, CDEVTYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*c->d_open)(dev, oflags, devtype, p);
+
+	return (rv);
+}
+
+int
+cdev_close(dev_t dev, int fflag, int devtype, struct proc *p)
+{
+	const struct cdevsw *c;
+	int rv, error;
+
+	error = devsw_io(dev, c, CDEVTYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*c->d_close)(dev, fflag, devtype, p);
+
+	return (rv);
+}
+
+int
+cdev_read(dev_t dev, struct uio *uio, int ioflag)
+{
+	const struct cdevsw *c;
+	int rv, error;
+
+	error = devsw_io(dev, c, CDEVTYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*c->d_read)(dev, uio, ioflag);
+
+	return (rv);
+}
+
+int
+cdev_write(dev_t dev, struct uio *uio, int ioflag)
+{
+	const struct cdevsw *c;
+	int rv, error;
+
+	error = devsw_io(dev, c, CDEVTYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*c->d_write)(dev, uio, ioflag);
+
+	return (rv);
+}
+
+int
+cdev_ioctl(dev_t dev, int cmd, caddr_t data, int fflag, struct proc *p)
+{
+	const struct cdevsw *c;
+	int rv, error;
+
+	error = devsw_io(dev, c, CDEVTYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*c->d_ioctl)(dev, cmd, data, fflag, p);
+
+	return (rv);
+}
+
+int
+cdev_stop(struct tty *tp, int rw)
+{
+	const struct cdevsw *c;
+	int rv, error;
+
+	error = devsw_io(tp->t_dev, c, CDEVTYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*c->d_stop)(tp, rw);
+
+	return (rv);
+}
+/*
+int
+cdev_reset(int uban)
+{
+
+}
+*/
+
+struct tty
+cdev_tty(dev_t dev)
+{
+	const struct cdevsw *c;
+	struct tty *rv;
+	int error;
+
+	error = devsw_io(dev, c, CDEVTYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*c->d_tty)(dev);
+
+	return (rv);
+}
+
+int
+cdev_select(dev_t dev, int which, struct proc *p)
+{
+	const struct cdevsw *c;
+	int rv, error;
+
+	error = devsw_io(dev, c, CDEVTYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*c->d_select)(dev, which, p);
+
+	return (rv);
+}
+
+int
+cdev_poll(dev_t dev, int events, struct proc *p)
+{
+	const struct cdevsw *c;
+	int rv, error;
+
+	error = devsw_io(dev, c, CDEVTYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*c->d_poll)(dev, events, p);
+
+	return (rv);
+}
+
+/*
+int
+cdev_mmap()
+{
+
+}
+*/
+
+int
+cdev_strategy(struct buf *bp)
+{
+	const struct cdevsw *c;
+	int rv, error;
+
+	error = devsw_io(bp->b_dev, c, CDEVTYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*c->d_strategy)(bp);
+
+	return (rv);
+}
+
+int
+line_open(dev_t dev, struct tty *tp)
+{
+	const struct linesw *l;
+	int rv, error;
+
+	error = devsw_io(tp->t_dev, c, LINETYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*l->l_open)(dev, tp);
+
+	return (rv);
+}
+
+int
+line_close(struct tty *tp, int flag)
+{
+	const struct linesw *l;
+	int rv, error;
+
+	error = devsw_io(tp->t_dev, c, LINETYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*l->l_close)(tp, flag);
+
+	return (rv);
+}
+
+int
+line_read(struct tty *tp, struct uio *uio, int flag)
+{
+	const struct linesw *l;
+	int rv, error;
+
+	error = devsw_io(tp->t_dev, c, LINETYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*l->l_read)(tp, uio, flag);
+
+	return (rv);
+}
+
+int
+line_write(struct tty *tp, struct uio *uio, int flag)
+{
+	const struct linesw *l;
+	int rv, error;
+
+	error = devsw_io(tp->t_dev, c, LINETYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*l->l_write)(tp, uio, flag);
+
+	return (rv);
+}
+
+int
+line_ioctl(struct tty *tp, int cmd, caddr_t data, int flag, struct proc *p)
+{
+	const struct linesw *l;
+	int rv, error;
+
+	error = devsw_io(tp->t_dev, c, LINETYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*l->l_ioctl)(tp, cmd, data, flag, p);
+
+	return (rv);
+}
+
+int
+line_rint(int c, struct tty *tp)
+{
+	const struct linesw *l;
+	int rv, error;
+
+	error = devsw_io(tp->t_dev, c, LINETYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*l->l_rint)(c, tp);
+
+	return (rv);
+}
+
+/*
+int
+line_rend()
+{
+
+}
+
+int
+line_meta()
+{
+
+}
+*/
+
+int
+line_start(struct tty *tp)
+{
+	const struct linesw *l;
+	int rv, error;
+
+	error = devsw_io(tp->t_dev, c, LINETYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*l->l_start)(tp);
+
+	return (rv);
+}
+
+int
+line_modem(struct tty *tp, int flag)
+{
+	const struct linesw *l;
+	int rv, error;
+
+	error = devsw_io(tp->t_dev, c, LINETYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*l->l_modem)(tp, flag);
+
+	return (rv);
+}
+
+int
+line_poll(struct tty *tp, int flag, struct proc *p)
+{
+	const struct linesw *l;
+	int rv, error;
+
+	error = devsw_io(tp->t_dev, c, LINETYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*l->l_poll)(tp, flag, p);
+
+	return (rv);
 }

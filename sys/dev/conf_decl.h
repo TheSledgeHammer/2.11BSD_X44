@@ -56,7 +56,7 @@ struct vnode;
 #define	D_DISK	2
 #define	D_TTY	3
 
-#ifdef _KERNEL
+//#ifdef _KERNEL
 #define	dev_type_open(n)		int n(dev_t, int, int, struct proc *)
 #define	dev_type_close(n)		int n(dev_t, int, int, struct proc *)
 #define	dev_type_read(n)		int n(dev_t, struct uio *, int)
@@ -67,8 +67,8 @@ struct vnode;
 #define	dev_type_poll(n)		int n(dev_t, int, struct lwp *)
 #define	dev_type_mmap(n)		caddr_t n(dev_t, off_t, int)
 #define	dev_type_strategy(n)	void n(struct buf *)
-#define	dev_type_dump(n)		int n (dev_t)
-#define	dev_type_size(n)		int n (dev_t)
+#define	dev_type_dump(n)		int n(dev_t)
+#define	dev_type_size(n)		int n(dev_t)
 
 #define devtype(c)				__CONCAT(dev_type_, c)
 #define	dev_decl(n,t) 			__CONCAT(devtype(t), __CONCAT(n, t))

@@ -46,6 +46,7 @@
 #define	M_NOWAIT		0x0001
 #define M_CANFAIL		0x0002
 #define M_ZERO			0x0004
+#define M_OVERLAY		0x0008	/* Allocate to Overlay Space (Note: Only use in tandem with Overlays) */
 
 /* Types of memory to be allocated */
 #define	M_FREE			0	/* should be on free list */
@@ -120,6 +121,12 @@
 #define M_MEMDESC		69	/* memory range descriptors */
 #define	M_TEMP			70	/* misc temporary data buffers */
 #define	M_LAST			71	/* Must be last type + 1 */
+
+#define M_DEVSW			70	/* device switch table */
+#define M_OVLMAP		71	/* OVL map structures */
+#define M_OVLOBJ		72	/* OVL object structure */
+#define M_OVLOBJHASH	73	/* OVL object hash structure */
+
 
 #define INITKMEMNAMES {						\
 	"free",			/* 0 M_FREE */ 			\
