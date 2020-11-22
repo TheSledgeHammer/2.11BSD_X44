@@ -79,10 +79,10 @@
 
 #include <arch/i386/isa/isa_machdep.h> 			/* XXX intrhand */
 
-#include <pic.h>
+#include <devel/arch/i386/include/pic.h>
 #include <devel/arch/i386/include/apicvar.h>
-#include <i82093reg.h>
-#include <i82093var.h>
+#include <devel/arch/i386/include/i82093reg.h>
+#include <devel/arch/i386/include/i82093var.h>
 
 #include <arch/i386/include/pio.h>
 #include <arch/i386/include/pmap.h>
@@ -496,7 +496,7 @@ ioapic_hwmask(struct pic *pic, int pin)
 	ioapic_unlock(sc, flags);
 }
 
-bool
+boolean_t
 ioapic_trymask(struct pic *pic, int pin)
 {
 	uint32_t redlo;
@@ -554,7 +554,6 @@ static void
 ioapic_delroute(struct pic *pic, struct cpu_info *ci, int pin,
     int idtvec, int type)
 {
-
 	ioapic_hwmask(pic, pin);
 }
 

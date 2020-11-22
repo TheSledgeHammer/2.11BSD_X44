@@ -31,7 +31,7 @@ struct pic {
 	bool (*pic_trymask)(struct pic *, int);
 };
 
-#define pic_name pic_dev.dv_xname
+#define pic_name 		pic_dev.dv_xname
 
 /*
  * PIC types.

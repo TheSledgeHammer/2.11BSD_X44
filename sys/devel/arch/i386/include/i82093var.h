@@ -66,7 +66,7 @@
 #ifndef _MACHINE_I82093VAR_H_
 #define _MACHINE_I82093VAR_H_
 
-#include <machine/apicvar.h>
+#include <apicvar.h>
 
 struct ioapic_pin {
 	struct intrhand		*ip_handler;

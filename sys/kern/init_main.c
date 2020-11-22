@@ -60,6 +60,7 @@
 #include <sys/systm.h>
 #include <sys/vnode.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/buf.h>
 #include <sys/clist.h>
 #include <sys/protosw.h>
@@ -157,6 +158,11 @@ main(framep)
 	 * Initialize process lockholder structure
 	 */
 	lockholder_init(p);
+
+	/*
+	 * Initialize device switch tables
+	 */
+	devswtable_init();
 
 	/*
 	 * set up system process 0 (swapper)

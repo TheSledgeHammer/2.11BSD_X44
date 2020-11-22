@@ -56,7 +56,7 @@ struct vnode;
 #define	D_DISK	2
 #define	D_TTY	3
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 #define	dev_type_open(n)		int n(dev_t, int, int, struct proc *)
 #define	dev_type_close(n)		int n(dev_t, int, int, struct proc *)
 #define	dev_type_read(n)		int n(dev_t, struct uio *, int)

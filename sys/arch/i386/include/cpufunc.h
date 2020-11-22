@@ -196,7 +196,7 @@ _cr3(void)
 }
 
 static __inline void
-load_cr3(u_long s)
+lcr3(u_long s)
 {
 	u_long val = (s) | I386_CR3PAT;
 	__asm __volatile("movl %0,%%eax; movl %%eax,%%cr3" : : "g" (val) : "ax");
@@ -277,6 +277,24 @@ static __inline void
 intr_restore(register_t eflags)
 {
 	write_eflags(eflags);
+}
+
+static __inline void
+lfence(void)
+{
+	__asm __volatile("lfence" : : : "memory");
+}
+
+static __inline void
+mfence(void)
+{
+	__asm __volatile("mfence" : : : "memory");
+}
+
+static __inline void
+sfence(void)
+{
+	__asm __volatile("sfence" : : : "memory");
 }
 
 static __inline u_char
