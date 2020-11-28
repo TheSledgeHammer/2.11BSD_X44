@@ -41,6 +41,7 @@
 #include <sys/kernel.h>
 #include <sys/device.h>
 #include <sys/errno.h>
+#include <sys/user.h>
 
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
@@ -49,7 +50,7 @@
 #include <machine/pio.h>
 #include <machine/cpufunc.h>
 #include <machine/joystick.h>
-#include <machine/conf.h>
+//#include <machine/conf.h>
 
 #include <dev/isa/isavar.h>
 #include <dev/isa/isareg.h>
@@ -83,8 +84,8 @@
 #define JOY_TIMEOUT   2000	/* 2 milliseconds */
 #endif
 
-int		joyopen (dev_t, int, int, struct proc *);
-int		joyclose (dev_t, int, int, struct proc *);
+int			joyopen (dev_t, int, int, struct proc *);
+int			joyclose (dev_t, int, int, struct proc *);
 static int	get_tick (void);
 
 struct cfdriver joy_cd = {

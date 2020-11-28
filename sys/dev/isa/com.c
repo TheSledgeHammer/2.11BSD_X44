@@ -55,6 +55,7 @@
 #include <sys/syslog.h>
 #include <sys/types.h>
 #include <sys/device.h>
+#include <sys/bus.h>
 
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>

@@ -57,3 +57,9 @@ Of Interest Todo:
 ## vfs:
 
 ## vm:
+
+
+Memory Segmentation (Hardware): CPU Registers
+Memory Segmentation (Software):
+Seperate Process Segments: text, data, stack
+Seperate Instruction & Data Spaces

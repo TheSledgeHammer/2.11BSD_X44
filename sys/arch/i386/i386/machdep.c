@@ -85,10 +85,6 @@
 #include <machine/vm86.h>
 #endif
 
-#if NAPM > 0
-#include <machine/apmvar.h>
-#endif
-
 //#include "isa.h"
 //#include "isadma.h"
 #include "npx.h"

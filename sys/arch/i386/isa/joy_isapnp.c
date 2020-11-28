@@ -92,10 +92,8 @@ joy_isapnp_attach(parent, self, aux)
 	}
 
 	if (ipa->ipa_io[0].length == 8) {
-		if (bus_space_subregion(ipa->ipa_iot, ipa->ipa_io[0].h, 1, 1,
-		    &ioh) < 0) {
-			printf("%s: error in region allocation\n",
-			    sc->sc_dev.dv_xname);
+		if (bus_space_subregion(ipa->ipa_iot, ipa->ipa_io[0].h, 1, 1, &ioh) < 0) {
+			printf("%s: error in region allocation\n", sc->sc_dev.dv_xname);
 			return;
 		}
 	} else
@@ -104,8 +102,7 @@ joy_isapnp_attach(parent, self, aux)
 	sc->sc_iot = ipa->ipa_iot;
 	sc->sc_ioh = ioh;
 
-	printf("%s: %s %s\n", sc->sc_dev.dv_xname, ipa->ipa_devident,
-	    ipa->ipa_devclass);
+	printf("%s: %s %s\n", sc->sc_dev.dv_xname, ipa->ipa_devident, ipa->ipa_devclass);
 
 	joyattach(sc);
 }

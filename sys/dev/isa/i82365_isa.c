@@ -108,7 +108,7 @@ int	pcicisa_debug = 0 /* XXX */ ;
 #define	DPRINTF(arg)
 #endif
 
-int	pcic_isa_probe __P((struct device *, void *, void *));
+int		pcic_isa_probe __P((struct device *, void *, void *));
 void	pcic_isa_attach __P((struct device *, struct device *, void *));
 
 void	*pcic_isa_chip_intr_establish __P((pcmcia_chipset_handle_t,

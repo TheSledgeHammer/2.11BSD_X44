@@ -29,19 +29,6 @@
 #ifndef OVERLAY_PAGER_H_
 #define OVERLAY_PAGER_H_
 
-/* TODO:
- * - Combine this with Existing ovl_ops.h/overlay.h
- *
- * Idea:
- * - Overlay Pager: manage ovl_objects & mapping them with vm_objects.
- * - Overlays should manage segments & pages
- * - ovlpager: change to overlay_table/struct & ovl_object
- *
- * Changes:
- * - ovl_objects structure
- * 		- vm_object list contents: separate structure outside ovl_object
- */
-
 struct ovlpager {
 	ovl_object_t		ovl_object;
 	ovl_segment_t		ovl_segment;

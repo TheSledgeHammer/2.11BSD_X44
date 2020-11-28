@@ -179,12 +179,11 @@ _vga_gdc_write(struct vga_handle *vh, int reg, u_int8_t val)
 #define vga_6845_write(vh, reg, val) \
 	pcdisplay_6845_write(&(vh)->vh_ph, reg, val)
 
-int	vga_common_probe(bus_space_tag_t, bus_space_tag_t);
-struct vga_config *
-	vga_common_attach(struct device *, bus_space_tag_t, bus_space_tag_t, int);
+int		vga_common_probe(bus_space_tag_t, bus_space_tag_t);
+struct vga_config *vga_common_attach(struct device *, bus_space_tag_t, bus_space_tag_t, int);
 struct vga_config *vga_extended_attach(struct device *, bus_space_tag_t, bus_space_tag_t, int, caddr_t (*)(void *, off_t, int));
-int	vga_is_console(bus_space_tag_t, int);
-int	vga_cnattach(bus_space_tag_t, bus_space_tag_t, int, int);
+int		vga_is_console(bus_space_tag_t, int);
+int		vga_cnattach(bus_space_tag_t, bus_space_tag_t, int, int);
 
 struct wsscreen_descr;
 void	vga_loadchars(struct vga_handle *, int, int, int, int, char *);

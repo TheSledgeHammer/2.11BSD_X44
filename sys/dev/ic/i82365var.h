@@ -37,25 +37,25 @@
 #include <dev/ic/i82365reg.h>
 
 struct pcic_handle {
-	struct pcic_softc *sc;
-	int	vendor;
-	int	sock;
-	int	flags;
-	int	memalloc;
+	struct pcic_softc 	*sc;
+	int					vendor;
+	int					sock;
+	int					flags;
+	int					memalloc;
 	struct {
-		bus_addr_t	addr;
-		bus_size_t	size;
-		long		offset;
-		int		kind;
+		bus_addr_t		addr;
+		bus_size_t		size;
+		long			offset;
+		int				kind;
 	} mem[PCIC_MEM_WINS];
-	int	ioalloc;
+	int					ioalloc;
 	struct {
-		bus_addr_t	addr;
-		bus_size_t	size;
-		int			width;
+		bus_addr_t		addr;
+		bus_size_t		size;
+		int				width;
 	} io[PCIC_IO_WINS];
-	int				ih_irq;
-	struct device *pcmcia;
+	int					ih_irq;
+	struct device 		*pcmcia;
 };
 
 #define	PCIC_FLAG_SOCKETP	0x0001
@@ -77,7 +77,7 @@ struct pcic_handle {
 #define	PCIC_NSLOTS	4
 
 struct pcic_softc {
-	struct device dev;
+	struct device 		dev;
 
 	bus_space_tag_t 	memt;
 	bus_space_handle_t 	memh;
@@ -108,7 +108,7 @@ struct pcic_softc {
 	int					irq;
 	void				*ih;
 
-	struct pcic_handle handle[PCIC_NSLOTS];
+	struct pcic_handle 	handle[PCIC_NSLOTS];
 };
 
 
@@ -144,8 +144,7 @@ pcic_read(h, idx)
 	int idx;
 {
 	if (idx != -1)
-		bus_space_write_1(h->sc->iot, h->sc->ioh, PCIC_REG_INDEX,
-		    h->sock + idx);
+		bus_space_write_1(h->sc->iot, h->sc->ioh, PCIC_REG_INDEX, h->sock + idx);
 	return (bus_space_read_1(h->sc->iot, h->sc->ioh, PCIC_REG_DATA));
 }
 
@@ -157,8 +156,7 @@ pcic_write(h, idx, data)
 	int data;
 {
 	if (idx != -1)
-		bus_space_write_1(h->sc->iot, h->sc->ioh, PCIC_REG_INDEX,
-		    h->sock + idx);
+		bus_space_write_1(h->sc->iot, h->sc->ioh, PCIC_REG_INDEX, h->sock + idx);
 	bus_space_write_1(h->sc->iot, h->sc->ioh, PCIC_REG_DATA, (data));
 }
 

@@ -101,10 +101,10 @@
 #undef RB_AUGMENT
 #define	RB_AUGMENT(x)	ovl_rb_augment(x)
 
-vm_offset_t				ovle_data;
-vm_size_t				ovle_data_size;
-ovl_map_entry_t 		ovle_free;
-ovl_map_t 				ovl_free;
+vm_offset_t				oentry_data;
+vm_size_t				oentry_data_size;
+ovl_map_entry_t 		oentry_free;
+ovl_map_t 				omap_free;
 
 vm_offset_t
 pmap_map_overlay(virt, start, end, prot)
@@ -128,7 +128,7 @@ ovl_map_startup()
     register ovl_map_entry_t mep;
     ovl_map_t mp;
 
-    ovl_free = mp = (ovl_map_t) ovle_data;
+    omap_free = mp = (ovl_map_t) oentry_data;
     i = MAX_OMAP;
 
     while (--i > 0) {
@@ -137,8 +137,8 @@ ovl_map_startup()
     }
     CIRCLEQ_FIRST(&mp->ovl_header)++->ovl_cl_entry.cqe_next = NULL;
 
-    ovle_free = mep = (ovl_map_entry_t) mp;
-    i = (ovle_data_size - MAX_OMAP * sizeof * mp) / sizeof *mep;
+    oentry_free = mep = (ovl_map_entry_t) mp;
+    i = (oentry_data_size - MAX_OMAP * sizeof * mp) / sizeof *mep;
     while (--i > 0) {
         CIRCLEQ_NEXT(mep, ovl_cl_entry) = mep + 1;
         mep++;
@@ -418,7 +418,16 @@ ovl_map_create(pmap, min, max)
 	vm_offset_t	min, max;
 {
 	register ovl_map_t	result;
-	extern ovl_map_t	ovl_map;
+	extern ovl_map_t	omem_map;
+	if(omem_map == NULL) {
+		result = omap_free;
+		if (result == NULL) {
+			panic("ovl_map_create: out of maps");
+		}
+		omap_free = (ovl_map_t) CIRCLEQ_FIRST(&result->ovl_header)->ovl_cl_entry.cqe_next;
+	} else {
+		RMALLOC(result, struct ovl_map, sizeof(struct ovl_map));
+	}
 
 	result->ovl_pmap = pmap;
 	return (result);
@@ -449,6 +458,19 @@ ovl_map_entry_create(map)
 	ovl_map_t		map;
 {
 	ovl_map_entry_t	entry;
+#ifdef DEBUG
+	extern ovl_map_t	overlay_map, omem_map;
+	isspecial = (map == overlay_map || map == omem_map);
+	if (isspecial || !isspecial) {
+		panic("ovl_map_entry_create: bogus map");
+	}
+#endif
+	RMALLOC(entry, struct ovl_map_entry, sizeof(struct ovl_map_entry));
+	if(entry == oentry_free) {
+		oentry_free = CIRCLEQ_NEXT(oentry_free, ovl_cl_entry);
+	}
+	if (entry == NULL)
+		panic("ovl_map_entry_create: out of map entries");
 
 	return(entry);
 }
@@ -458,7 +480,16 @@ ovl_map_entry_dispose(map, entry)
 	ovl_map_t		map;
 	ovl_map_entry_t	entry;
 {
-
+#ifdef DEBUG
+	extern ovl_map_t	overlay_map, omem_map;
+	isspecial = (map == overlay_map || map == omem_map);
+	if (isspecial || !isspecial) {
+		panic("ovl_map_entry_dispose: bogus map");
+	}
+#endif
+	RMFREE(entry, sizeof(struct ovl_map_entry), entry);
+	CIRCLEQ_NEXT(entry, ovl_cl_entry) = oentry_free;
+	oentry_free = entry;
 }
 
 #define	ovl_map_entry_link(map, after_where, entry) { 							\
@@ -974,44 +1005,4 @@ ovl_map_remove(map, start, end)
 	ovl_map_unlock(map);
 
 	return (result);
-}
-
-/* swap an overlay in: overlay is set to active */
-ovl_map_swapin(map, address, entry)
-	register ovl_map_t			map;
-	register vm_offset_t		address;
-	register ovl_map_entry_t	entry;
-{
-	struct ovl_object object;
-
-	ovl_map_lock(map);
-
-	if (ovl_map_lookup_entry(map, address, entry) && ovl_map_is_inactive(map)) {
-		/*
-		 * - find overlay entry
-		 * - determine the entry type (avm, vm, kernel)
-		 */
-		object = entry->ovle_object;
-		ovl_map_set_active(map);
-	}
-}
-
-/* swap an overlay out: overlay is set to inactive */
-ovl_map_swapout(map, address, entry)
-	register ovl_map_t			map;
-	register vm_offset_t		address;
-	register ovl_map_entry_t	entry;
-{
-	struct ovl_object object;
-
-	if (ovl_map_lookup_entry(map, address, entry) && ovl_map_is_active(map)) {
-		/*
-		 * - find overlay entry
-		 * - determine the entry type (avm, vm, kernel)
-		 */
-		object = entry->ovle_object;
-		ovl_map_set_inactive(map);
-	}
-
-	ovl_map_unlock(map);
 }

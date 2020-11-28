@@ -43,7 +43,7 @@
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
 #include <machine/mouse.h>
-#include <machine/conf.h>
+//#include <machine/conf.h>
 
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>
@@ -57,19 +57,19 @@
 #define	MMS_BSIZE	1020	/* buffer size */
 
 struct mms_softc {		/* driver status information */
-	struct device sc_dev;
-	void *sc_ih;
+	struct device 		sc_dev;
+	void 				*sc_ih;
 
-	bus_space_tag_t sc_iot;
-	bus_space_handle_t sc_ioh;
+	bus_space_tag_t 	sc_iot;
+	bus_space_handle_t 	sc_ioh;
 
-	struct clist sc_q;
-	struct selinfo sc_rsel;
-	u_char sc_state;	/* mouse driver state */
-#define	MMS_OPEN	0x01	/* device is open */
-#define	MMS_ASLP	0x02	/* waiting for mouse data */
-	u_char sc_status;	/* mouse button status */
-	int sc_x, sc_y;		/* accumulated motion in the X,Y axis */
+	struct clist 		sc_q;
+	struct selinfo 		sc_rsel;
+	u_char 				sc_state;	/* mouse driver state */
+#define	MMS_OPEN		0x01		/* device is open */
+#define	MMS_ASLP		0x02		/* waiting for mouse data */
+	u_char 				sc_status;	/* mouse button status */
+	int 				sc_x, sc_y;	/* accumulated motion in the X,Y axis */
 };
 
 int mmsprobe (struct device *, void *, void *);
@@ -361,7 +361,6 @@ mmsintr(arg)
 
 	return -1;
 }
-
 
 int
 mmspoll(dev, events, p)

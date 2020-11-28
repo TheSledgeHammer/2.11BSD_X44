@@ -43,11 +43,7 @@
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>
 #include <i386/isa/isa_machdep.h>
-
-#if NAPM > 0
-//#include <machine/bioscall.h>
-#include <machine/apmvar.h>
-#endif
+#include <i386/eisa/eisa_machdep.h>
 
 int	 mainbus_match (struct device *, void *, void *);
 void mainbus_attach (struct device *, struct device *, void *);
@@ -67,9 +63,6 @@ union mainbus_attach_args {
 	struct pcibus_attach_args 	mba_pba;
 	struct eisabus_attach_args 	mba_eba;
 	struct isabus_attach_args 	mba_iba;
-#if NAPM > 0
-	struct apm_attach_args 		mba_aaa;
-#endif
 };
 
 /*
@@ -140,12 +133,6 @@ mainbus_attach(parent, self, aux)
 #endif
 		config_found(self, &mba.mba_iba, mainbus_print);
 	}
-#if NAPM > 0
-	if (apm_busprobe()) {
-	    mba.mba_aaa.aaa_busname = "apm";
-	    config_found(self, &mba.mba_aaa, mainbus_print);
-	}
-#endif
 }
 
 int

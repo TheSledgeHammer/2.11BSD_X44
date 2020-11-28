@@ -42,4 +42,13 @@ int 			ovl_deallocate(ovl_map_t, vm_offset_t, vm_size_t);
 int				ovl_allocate_with_pager(ovl_map_t, vm_offset_t *, vm_size_t, boolean_t, vm_pager_t, boolean_t);
 struct ovlspace *ovlspace_alloc(vm_offset_t, vm_offset_t, boolean_t);
 struct ovlspace *ovlspace_free(struct ovlspace *);
+void			ovl_object_enter_vm_object (ovl_object_t, vm_object_t);
+vm_object_t		ovl_object_lookup_vm_object (ovl_object_t, vm_object_t);
+void			ovl_object_remove_vm_object (ovl_object_t, vm_object_t);
+void			ovl_segment_insert_vm_segment(ovl_segment_t, vm_segment_t);
+vm_segment_t	ovl_segment_lookup_vm_segment(ovl_segment_t);
+void			ovl_segment_remove_vm_segment(vm_segment_t);
+void			ovl_page_insert_vm_page(ovl_page_t, vm_page_t);
+vm_page_t		ovl_page_lookup_vm_page(ovl_page_t);
+void			ovl_page_remove_vm_page(vm_page_t);
 //#endif

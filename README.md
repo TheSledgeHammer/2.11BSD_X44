@@ -36,7 +36,7 @@
 ## Development:
 - Please read the TODO for an in-depth list. 
 Or
-- Read the Readme in "devel" for in-development concepts planned
+- Read the README.md in "devel" for in-development concepts planned
 
 - Top Priority:
 	- Compiling for i386/x86 platform

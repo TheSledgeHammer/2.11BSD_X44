@@ -63,18 +63,6 @@
 #ifndef SYS_MALLOC2_H_
 #define SYS_MALLOC2_H_
 
-/**********************************************/
-/* Planned (New): Yet to be Implemented: */
-
-#define M_VMVOLGRP		/* VM Volume Group */
-#define M_OVERLAY		/* Allocate into Overlay Space */
-#define M_OVLMAP		/* OVL Map */
-#define M_OVLOBJ		/* OVL Object */
-
-#define M_AVMMAP		/* AVM Map (anonymous map: uvm_amap) */
-#define M_AVMOBJ		/* AVM Object (anonymous object: uvm_aobj) */
-/**********************************************/
-
 #define KMEMSTATS
 
 #define MINBUCKET	    4				/* 4 => min allocation of 16 bytes */

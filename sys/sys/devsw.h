@@ -89,23 +89,22 @@ struct devswtable_entry {
 typedef struct devswtable_entry		*devswtable_entry_t;
 
 struct devswops {
-    int     (*dvop_attach)(struct devswtable *, const char *, struct device *, dev_t);
-    int     (*dvop_detach)(struct devswtable *, const char *, struct device *, dev_t);
+    int     (*dvop_attach)(struct devswtable *, struct device *, dev_t);
+    int     (*dvop_detach)(struct devswtable *, struct device *, dev_t);
 };
 
-#define DVOP_ATTACH(dv, name, device, major)	(*((dv)->dv_ops->dvop_attach))(dv, name, device, major)
-#define DVOP_DETACH(dv, name, device, major)	(*((dv)->dv_ops->dvop_detach))(dv, name, device, major)
+#define DVOP_ATTACH(dv, name, device, major)	(*((dv)->dv_ops->dvop_attach))(dv, device, major)
+#define DVOP_DETACH(dv, name, device, major)	(*((dv)->dv_ops->dvop_detach))(dv, device, major)
+
 
 struct dvop_attach_args {
     struct devswtable   d_devswtable;
-    const char      	*d_name;
     struct device   	*d_device;
     dev_t				d_major;
 };
 
 struct dvop_detach_args {
     struct devswtable 	d_devswtable;
-    const char      	*d_name;
     struct device   	*d_device;
     dev_t				d_major;
 };

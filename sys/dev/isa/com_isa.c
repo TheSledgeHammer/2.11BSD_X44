@@ -147,8 +147,7 @@ com_isa_attach(parent, self, aux)
 	com_attach_subr(sc);
 
 	if (irq != IRQUNK) {
-		isc->sc_ih = isa_intr_establish(ia->ia_ic, irq,
-		    IST_EDGE, IPL_SERIAL, comintr, sc);
+		isc->sc_ih = isa_intr_establish(ia->ia_ic, irq, IST_EDGE, IPL_SERIAL, comintr, sc);
 	}
 
 	/*

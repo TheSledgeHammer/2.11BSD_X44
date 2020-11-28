@@ -165,10 +165,10 @@ devswtable_remove(data, major)
 int
 devswtable_lookup_bdevsw(devsw, dev)
 	struct devswtable *devsw;
-	dev_t 			dev;
+	dev_t 				dev;
 {
 	struct bdevsw *bdevsw;
-	linesw = devop_lookup_bdevsw(devsw, dev);
+	bdevsw = devop_lookup_bdevsw(devsw, dev);
 
 	if(bdevsw == NULL) {
 		return (ENXIO);
@@ -183,7 +183,7 @@ devswtable_lookup_cdevsw(devsw, dev)
 	dev_t 				dev;
 {
 	struct cdevsw *cdevsw;
-	linesw = devop_lookup_cdevsw(devsw, dev);
+	cdevsw = devop_lookup_cdevsw(devsw, dev);
 
 	if(cdevsw == NULL) {
 		return (ENXIO);
@@ -261,9 +261,9 @@ devsw_io(data, major, type)
 
 /* devswtable operations */
 int
-dvop_attach(devsw, devname, device, major)
+dvop_attach(devsw, device, major)
 	struct devswtable 	*devsw;
-    const char      	*devname;
+    //const char      	*devname;
     struct device   	*device;
     dev_t 				major;
 {
@@ -272,7 +272,7 @@ dvop_attach(devsw, devname, device, major)
 
     args.d_devswtable.dv_ops = &dvops;
     args.d_devswtable = devsw;
-    args.d_name = devname;
+   // args.d_name = devname;
     args.d_device = device;
     args.d_major = major;
 
@@ -280,15 +280,15 @@ dvop_attach(devsw, devname, device, major)
     	return (EINVAL);
     }
 
-    error = dvops->dvop_attach(devsw, devname, device, major);
+    error = dvops->dvop_attach(devsw, device, major);
 
     return (error);
 }
 
 int
-dvop_detach(devsw, devname, device, major)
+dvop_detach(devsw, device, major)
 	struct devswtable 	*devsw;
-	const char      	*devname;
+	//const char      	*devname;
     struct device   	*device;
     dev_t 				major;
 {
@@ -297,7 +297,7 @@ dvop_detach(devsw, devname, device, major)
 
     args.d_devswtable.dv_ops = &dvops;
     args.d_devswtable = devsw;
-    args.d_name = devname;
+    //args.d_name = devname;
     args.d_device = device;
     args.d_major = major;
 
@@ -305,7 +305,7 @@ dvop_detach(devsw, devname, device, major)
     	return (EINVAL);
     }
 
-    error = dvops->dvop_detach(devsw, devname, device, major);
+    error = dvops->dvop_detach(devsw, device, major);
 
     return (error);
 }
@@ -419,7 +419,6 @@ bdevsw_attach(args)
 
 	bdevsw = DTOB(args->d_devswtable);
 	devswtable_add(devsw, bdevsw, maj);
-
 	simple_unlock(&devswtable_lock);
 
 	return (0);

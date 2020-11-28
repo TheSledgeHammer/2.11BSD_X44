@@ -24,11 +24,11 @@ struct pic {
 	struct ioapic_softc *pic_ioapic; /* if pic_type == PIC_IOAPIC */
 	struct msipic 		*pic_msipic; /* if (pic_type == PIC_MSI) || (pic_type == PIC_MSIX) */
 
-	void (*pic_hwmask)(struct pic*, int);
-	void (*pic_hwunmask)(struct pic*, int);
-	void (*pic_addroute)(struct pic*, struct cpu_info*, int, int, int);
-	void (*pic_delroute)(struct pic*, struct cpu_info*, int, int, int);
-	bool (*pic_trymask)(struct pic *, int);
+	void 				(*pic_hwmask)(struct pic*, int);
+	void 				(*pic_hwunmask)(struct pic*, int);
+	void 				(*pic_addroute)(struct pic*, struct cpu_info*, int, int, int);
+	void 				(*pic_delroute)(struct pic*, struct cpu_info*, int, int, int);
+	boolean_t 			(*pic_trymask)(struct pic *, int);
 };
 
 #define pic_name 		pic_dev.dv_xname

@@ -119,13 +119,14 @@
 #define M_COREMAP		67	/* 2.11BSD's Coremap */
 #define M_SWAPMAP		68	/* 2.11BSD's Swapmap */
 #define M_MEMDESC		69	/* memory range descriptors */
-#define	M_TEMP			70	/* misc temporary data buffers */
-#define	M_LAST			71	/* Must be last type + 1 */
-
 #define M_DEVSW			70	/* device switch table */
+#define	M_TEMP			71	/* misc temporary data buffers */
+#define	M_LAST			72	/* Must be last type + 1 */
+
 #define M_OVLMAP		71	/* OVL map structures */
-#define M_OVLOBJ		72	/* OVL object structure */
-#define M_OVLOBJHASH	73	/* OVL object hash structure */
+#define	M_OVLMAPENT		72	/* OVL map entry structures */
+#define M_OVLOBJ		73	/* OVL object structure */
+#define M_OVLOBJHASH	74	/* OVL object hash structure */
 
 
 #define INITKMEMNAMES {						\
@@ -199,7 +200,8 @@
 	"coremap",		/* 67 M_COREMAP */		\
 	"swapmap",		/* 68 M_SWAPMAP */		\
 	"memdesc",		/* 69 M_MEMDESC */		\
-	"temp",			/* 70 M_TEMP */ 		\
+	"devsw",		/* 70 M_DEVSW */		\
+	"temp",			/* 71 M_TEMP */ 		\
 }
 
 struct kmemstats {

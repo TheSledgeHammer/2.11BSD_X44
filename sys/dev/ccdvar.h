@@ -93,24 +93,24 @@
  * A concatenated disk is described at initialization time by this structure.
  */
 struct ccddevice {
-	int				ccd_unit;		/* logical unit of this ccd */
-	int				ccd_interleave;	/* interleave (DEV_BSIZE blocks) */
-	int				ccd_flags;		/* misc. information */
-	struct vnode	**ccd_vpp;		/* array of component vnodes */
-	char			**ccd_cpp;		/* array of component pathnames */
-	int				ccd_ndev;		/* number of component devices */
+	int						ccd_unit;		/* logical unit of this ccd */
+	int						ccd_interleave;	/* interleave (DEV_BSIZE blocks) */
+	int						ccd_flags;		/* misc. information */
+	struct vnode			**ccd_vpp;		/* array of component vnodes */
+	char					**ccd_cpp;		/* array of component pathnames */
+	int						ccd_ndev;		/* number of component devices */
 };
 
 /*
  * This structure is used to configure a ccd via ioctl(2).
  */
 struct ccd_ioctl {
-	char	**ccio_disks;	/* pointer to component paths */
-	int		ccio_ndisks;	/* number of disks to concatenate */
-	int		ccio_ileave;	/* interleave (DEV_BSIZE blocks) */
-	int		ccio_flags;		/* misc. information */
-	int		ccio_unit;		/* unit number: use varies */
-	size_t	ccio_size;		/* (returned) size of ccd */
+	char					**ccio_disks;	/* pointer to component paths */
+	int						ccio_ndisks;	/* number of disks to concatenate */
+	int						ccio_ileave;	/* interleave (DEV_BSIZE blocks) */
+	int						ccio_flags;		/* misc. information */
+	int						ccio_unit;		/* unit number: use varies */
+	size_t					ccio_size;		/* (returned) size of ccd */
 };
 
 /* ccd_flags */
@@ -126,11 +126,11 @@ struct ccd_ioctl {
  * Describes a single component of a concatenated disk.
  */
 struct ccdcinfo {
-	struct vnode	*ci_vp;			/* device's vnode */
-	dev_t			ci_dev;			/* XXX: device's dev_t */
-	size_t			ci_size; 		/* size */
-	char			*ci_path;		/* path to component */
-	size_t			ci_pathlen;		/* length of component path */
+	struct vnode			*ci_vp;			/* device's vnode */
+	dev_t					ci_dev;			/* XXX: device's dev_t */
+	size_t					ci_size; 		/* size */
+	char					*ci_path;		/* path to component */
+	size_t					ci_pathlen;		/* length of component path */
 };
 
 /*
@@ -160,20 +160,20 @@ struct ccdcinfo {
  * 2 starting at offset 5.
  */
 struct ccdiinfo {
-	int		ii_ndisk;		/* # of disks range is interleaved over */
-	daddr_t	ii_startblk;	/* starting scaled block # for range */
-	daddr_t	ii_startoff;	/* starting component offset (block #) */
-	int		*ii_index;		/* ordered list of components in range */
+	int					ii_ndisk;		/* # of disks range is interleaved over */
+	daddr_t				ii_startblk;	/* starting scaled block # for range */
+	daddr_t				ii_startoff;	/* starting component offset (block #) */
+	int					*ii_index;		/* ordered list of components in range */
 };
 
 /*
  * Concatenated disk pseudo-geometry information.
  */
 struct ccdgeom {
-	u_int32_t	ccg_secsize;	/* # bytes per sector */
-	u_int32_t	ccg_nsectors;	/* # data sectors per track */
-	u_int32_t	ccg_ntracks;	/* # tracks per cylinder */
-	u_int32_t	ccg_ncylinders;	/* # cylinders per unit */
+	u_int32_t			ccg_secsize;	/* # bytes per sector */
+	u_int32_t			ccg_nsectors;	/* # data sectors per track */
+	u_int32_t			ccg_ntracks;	/* # tracks per cylinder */
+	u_int32_t			ccg_ncylinders;	/* # cylinders per unit */
 };
 
 struct ccdbuf;

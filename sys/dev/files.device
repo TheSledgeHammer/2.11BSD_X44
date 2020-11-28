@@ -8,13 +8,9 @@
 # common files for devices
 #
 # Machine-Independent Devices & Drivers
-file 		dev/auconv.c					auconv
-file 		dev/audio.c						audio			needs-flag
-file		dev/cons.c						cons
-file 		dev/ccd.c						ccd				needs-flag
-file 		dev/md.c						md				needs-flag
-file 		dev/mulaw.c						mulaw			needs-flag
-file 		dev/vnd.c						vnd				needs-flag
+file		dev/cons.c			cons
+file 		dev/ccd.c			ccd		needs-flag
+file 		dev/vnd.c			vnd		needs-flag
 
 #
 # Device & Driver Files
@@ -25,5 +21,3 @@ include 	"dev/files.isapnp"
 include 	"dev/files.pci"
 include 	"dev/files.pcmcia"
 #include 	"dev/files.scsi"
-
-#include 	"dev/files.common"

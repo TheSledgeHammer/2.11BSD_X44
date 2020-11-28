@@ -51,6 +51,7 @@ vga_isa_match(struct device *parent, void *match, void *aux)
 	ia->ia_iosize = 0x30;	/* XXX 0x20 */
 	ia->ia_maddr = 0xa0000;
 	ia->ia_msize = 0x20000;
+
 	return (2);	/* more than generic pcdisplay */
 }
 

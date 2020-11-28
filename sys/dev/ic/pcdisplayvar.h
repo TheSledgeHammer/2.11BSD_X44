@@ -28,14 +28,14 @@
  */
 
 struct pcdisplayscreen {
-	struct pcdisplay_handle *hdl;
+	struct pcdisplay_handle 	*hdl;
 
 	const struct wsscreen_descr *type;
 
-	int active;		/* currently displayed */
-	u_int16_t *mem;		/* backing store for contents */
+	int 		active;		/* currently displayed */
+	u_int16_t 	*mem;		/* backing store for contents */
 
-	int cursoron;		/* cursor displayed? */
+	int 		cursoron;		/* cursor displayed? */
 #ifdef PCDISPLAY_SOFTCURSOR
 	int cursortmp;		/* glyph & attribute behind software cursor */
 #endif

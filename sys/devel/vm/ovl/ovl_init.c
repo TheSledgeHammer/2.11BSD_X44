@@ -113,5 +113,5 @@ ovl_mem_init()
 	ovl_object_init(overlay_end - OVL_MIN_ADDRESS);
 	ovl_map_startup();
 	ovlmem_init(overlay_avail, overlay_end);
-	ovl_overlayer_init(overlay_avail, overlay_end, (overlay_end - OVL_MIN_ADDRESS));
+	overlay_pager_init();
 }

@@ -57,6 +57,7 @@
 	}							\
 }
 
+int
 in_cksum(m, len)
 	register struct mbuf *m;
 	register int len;

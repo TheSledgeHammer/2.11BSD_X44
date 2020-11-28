@@ -66,11 +66,11 @@
 #include <dev/isa/com_multi.h>
 
 #ifdef __BROKEN_INDIRECT_CONFIG
-int com_multi_probe __P((struct device *, void *, void *));
+int com_multi_probe (struct device *, void *, void *);
 #else
-int com_multi_probe __P((struct device *, struct cfdata *, void *));
+int com_multi_probe (struct device *, struct cfdata *, void *);
 #endif
-void com_multi_attach __P((struct device *, struct device *, void *));
+void com_multi_attach (struct device *, struct device *, void *);
 
 struct cfattach com_multi_ca = {
 	sizeof(struct com_softc), com_multi_probe, com_multi_attach
@@ -90,8 +90,7 @@ com_multi_probe(parent, match, aux)
 	struct cfdata *cf = match;
 	struct commulti_attach_args *ca = aux;
  
-	if (cf->cf_loc[COMMULTICF_SLAVE] != COMMULTICF_SLAVE_DEFAULT &&
-	    cf->cf_loc[COMMULTICF_SLAVE] != ca->ca_slave)
+	if (cf->cf_loc[COMMULTICF_SLAVE] != COMMULTICF_SLAVE_DEFAULT && cf->cf_loc[COMMULTICF_SLAVE] != ca->ca_slave)
 		return (0);
 
 	iobase = ca->ca_iobase;

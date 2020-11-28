@@ -121,20 +121,20 @@ enum fdc_state {
 
 /* software state, per controller */
 struct fdc_softc {
-	struct device sc_dev;		/* boilerplate */
-	struct isadev sc_id;
-	void *sc_ih;
+	struct device 					sc_dev;			/* boilerplate */
+	struct isadev 					sc_id;
+	void 							*sc_ih;
 
-	bus_space_tag_t sc_iot;		/* ISA i/o space identifier */
-	bus_space_handle_t   sc_ioh;	/* ISA io handle */
+	bus_space_tag_t 				sc_iot;			/* ISA i/o space identifier */
+	bus_space_handle_t   			sc_ioh;			/* ISA io handle */
 
-	int sc_drq;
+	int 							sc_drq;
 
-	struct fd_softc *sc_fd[4];	/* pointers to children */
+	struct fd_softc 				*sc_fd[4];		/* pointers to children */
 	TAILQ_HEAD(drivehead, fd_softc) sc_drives;
-	enum fdc_state sc_state;
-	int sc_errors;			/* number of retries so far */
-	u_char sc_status[7];		/* copy of registers */
+	enum fdc_state 					sc_state;
+	int 							sc_errors;		/* number of retries so far */
+	u_char 							sc_status[7];	/* copy of registers */
 };
 
 /* controller driver configuration */
@@ -188,35 +188,35 @@ struct fd_type fd_types[] = {
 
 /* software state, per disk (with up to 4 disks per ctlr) */
 struct fd_softc {
-	struct device 	sc_dev;
-	struct disk 	sc_dk;
+	struct device 			sc_dev;
+	struct disk 			sc_dk;
 
-	struct fd_type 	*sc_deftype;	/* default type descriptor */
-	struct fd_type 	*sc_type;		/* current type descriptor */
-	struct fd_type 	sc_type_copy;	/* copy for fiddling when formatting */
+	struct fd_type 			*sc_deftype;	/* default type descriptor */
+	struct fd_type 			*sc_type;		/* current type descriptor */
+	struct fd_type 			sc_type_copy;	/* copy for fiddling when formatting */
 
-	daddr_t			sc_blkno;		/* starting block number */
-	int 			sc_bcount;		/* byte count left */
- 	int 			sc_opts;		/* user-set options */
-	int 			sc_skip;		/* bytes already transferred */
-	int 			sc_nblks;		/* number of blocks currently tranferring */
-	int 			sc_nbytes;		/* number of bytes currently tranferring */
+	daddr_t					sc_blkno;		/* starting block number */
+	int 					sc_bcount;		/* byte count left */
+ 	int 					sc_opts;		/* user-set options */
+	int 					sc_skip;		/* bytes already transferred */
+	int 					sc_nblks;		/* number of blocks currently tranferring */
+	int 					sc_nbytes;		/* number of bytes currently tranferring */
 
-	int 			sc_drive;		/* physical unit number */
-	int 			sc_flags;
-#define	FD_OPEN			0x01		/* it's open */
-#define	FD_MOTOR		0x02		/* motor should be on */
-#define	FD_MOTOR_WAIT	0x04		/* motor coming up */
-	int 			sc_cylin;		/* where we think the head is */
+	int 					sc_drive;		/* physical unit number */
+	int 					sc_flags;
+#define	FD_OPEN				0x01			/* it's open */
+#define	FD_MOTOR			0x02			/* motor should be on */
+#define	FD_MOTOR_WAIT		0x04			/* motor coming up */
+	int 					sc_cylin;		/* where we think the head is */
 
-	void 			*sc_sdhook;		/* saved shutdown hook for drive. */
+	void 					*sc_sdhook;		/* saved shutdown hook for drive. */
 
-	TAILQ_ENTRY(fd_softc) sc_drivechain;
-	int 			sc_ops;			/* I/O ops since last switch */
-	struct buf 		sc_q;			/* head of buf chain */
+	TAILQ_ENTRY(fd_softc) 	sc_drivechain;
+	int 					sc_ops;			/* I/O ops since last switch */
+	struct buf 				sc_q;			/* head of buf chain */
 
 #if NRND > 0
-	rndsource_element_t	rnd_source;
+	rndsource_element_t		rnd_source;
 #endif
 };
 
