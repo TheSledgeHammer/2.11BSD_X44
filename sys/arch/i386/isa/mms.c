@@ -48,13 +48,13 @@
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>
 
-#define	MMS_ADDR	0	/* offset for register select */
-#define	MMS_DATA	1	/* offset for InPort data */
-#define	MMS_IDENT	2	/* offset for identification register */
-#define	MMS_NPORTS	4
+#define	MMS_ADDR		0	/* offset for register select */
+#define	MMS_DATA		1	/* offset for InPort data */
+#define	MMS_IDENT		2	/* offset for identification register */
+#define	MMS_NPORTS		4
 
-#define	MMS_CHUNK	128	/* chunk size for read */
-#define	MMS_BSIZE	1020	/* buffer size */
+#define	MMS_CHUNK		128	/* chunk size for read */
+#define	MMS_BSIZE		1020	/* buffer size */
 
 struct mms_softc {		/* driver status information */
 	struct device 		sc_dev;

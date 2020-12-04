@@ -21,9 +21,8 @@ A General todo list. Don't hesitate to add to this list. :)
 	
 ## arch:
 - i386/x86: (Merged under i386)
-	- conf
-	- devices: 
-		- see below: dev
+	- isa: Update
+		- mms.c, lms.c, pms.c
 
 ## devel: (planned)
 - Code planned for future integration
@@ -31,14 +30,15 @@ A General todo list. Don't hesitate to add to this list. :)
 - See devel folder: README.md
 
 ## dev:
-- No devices, only basic (needs a working compiler)
+- No devices, only basic
+- Ideally would like it to be able to compile before adding devices..!
 
 ## lib:
 	
 ## net / netimp / netinet / netns:
 Of Interest Todo:
 - 2.11BSD's networking stack
-	- Needs Updating to support: i.e. ipv6, firewall/packet filter
+	- No Support for ipv6, firewall/packet filter plus much more
 
 ## stand:
 - boot:
@@ -53,13 +53,17 @@ Of Interest Todo:
 		- pxeldr
 
 ## ufs:
-
+- ufs/ffs:
+	- dirhash
+	- ufs2
+	- journaling
+	
 ## vfs:
 
 ## vm:
 
-
-Memory Segmentation (Hardware): CPU Registers
-Memory Segmentation (Software):
-Seperate Process Segments: text, data, stack
-Seperate Instruction & Data Spaces
+## Other:
+- Memory Segmentation (Hardware): CPU Registers
+- Memory Segmentation (Software):
+- Seperate Process Segments: text, data, stack
+- Seperate Instruction & Data Spaces

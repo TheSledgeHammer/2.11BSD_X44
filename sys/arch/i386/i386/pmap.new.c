@@ -690,15 +690,11 @@ pmap_init(phys_start, phys_end)
 		printf("pmap_init(%x, %x)\n", phys_start, phys_end);
 #endif
 
-	for (i = 0; i < NKPT; i++) {
+	for (i = 0; i < vm_page_array_size; i++) {
 		mpte = PHYS_TO_VM_PAGE(KPTphys + ptoa(i));
 		KASSERT(mpte >= vm_page_array && mpte < &vm_page_array[vm_page_array_size], ("pmap_init: page table page is out of range")); /* XXX: fix me */
-		mpte->offset = i + KPTDI_FIRST; /* XXX: fix me */
+		mpte->offset = i + KPTDI_FIRST;
 		mpte->phys_addr = KPTphys + ptoa(i);
-		/*
-		(void) vm_map_find(kernel_map, NULL, mpte->offset, mpte->phys_addr, mpte, FALSE);
-		vm_object_reference(kernel_object);
-		*/
 	}
 
 	/*

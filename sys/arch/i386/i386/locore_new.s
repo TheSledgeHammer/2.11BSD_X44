@@ -205,7 +205,7 @@ start:	movw	$0x1234,0x472							# warm boot
 		rep
 		stosb
 
-		//call	recover_bootinfo
+		call	recover_bootinfo
 		
 /* Get onto a stack that we can trust. */
 /*
@@ -265,7 +265,159 @@ start:	movw	$0x1234,0x472							# warm boot
 		call	_panic
 lretmsg1:
 		.asciz	"lret: toinit\n"
+
 		
+/**********************************************************************/
+/* Recover the Bootinfo */
+
+recover_bootinfo:
+		/*
+		 * This code is called in different ways depending on what loaded
+		 * and started the kernel.  This is used to detect how we get the
+		 * arguments from the other code and what we do with them.
+		 *
+		 * Old disk boot blocks:
+		 *	(*btext)(howto, bootdev, cyloffset, esym);
+		 *	[return address == 0, and can NOT be returned to]
+		 *	[cyloffset was not supported by the FreeBSD boot code
+		 *	 and always passed in as 0]
+		 *	[esym is also known as total in the boot code, and
+		 *	 was never properly supported by the FreeBSD boot code]
+		 *
+		 * Old diskless netboot code:
+		 *	(*btext)(0,0,0,0,&nfsdiskless,0,0,0);
+		 *	[return address != 0, and can NOT be returned to]
+		 *	If we are being booted by this code it will NOT work,
+		 *	so we are just going to halt if we find this case.
+		 *
+		 * New uniform boot code:
+		 *	(*btext)(howto, bootdev, 0, 0, 0, &bootinfo)
+		 *	[return address != 0, and can be returned to]
+		 *
+		 * There may seem to be a lot of wasted arguments in here, but
+		 * that is so the newer boot code can still load very old kernels
+		 * and old boot code can load new kernels.
+		 */
+	
+		/*
+		 * The old style disk boot blocks fake a frame on the stack and
+		 * did an lret to get here.  The frame on the stack has a return
+		 * address of 0.
+		 */
+		cmpl	$0,4(%ebp)
+		je		olddiskboot
+	
+		/*
+		 * We have some form of return address, so this is either the
+		 * old diskless netboot code, or the new uniform code.  That can
+		 * be detected by looking at the 5th argument, if it is 0
+		 * we are being booted by the new uniform boot code.
+		 */
+		cmpl	$0,24(%ebp)
+		je		newboot
+	
+		/*
+		 * Seems we have been loaded by the old diskless boot code, we
+		 * don't stand a chance of running as the diskless structure
+		 * changed considerably between the two, so just halt.
+		 */
+		 hlt
+	
+		/*
+		 * We have been loaded by the new uniform boot code.
+		 * Let's check the bootinfo version, and if we do not understand
+		 * it we return to the loader with a status of 1 to indicate this error
+		 */
+newboot:
+		movl	28(%ebp),%ebx			/* &bootinfo.version */
+		movl	BI_VERSION(%ebx),%eax
+		cmpl	$1,%eax					/* We only understand version 1 */
+		je		1f
+		movl	$1,%eax					/* Return status */
+		leave
+		/*
+		 * XXX this returns to our caller's caller (as is required) since
+		 * we didn't set up a frame and our caller did.
+		 */
+		ret
+
+1:
+		/*
+		 * If we have a kernelname copy it in
+		 */
+		movl	BI_KERNELNAME(%ebx),%esi
+		cmpl	$0,%esi
+		je		2f						/* No kernelname */
+		movl	$MAXPATHLEN,%ecx		/* Brute force!!! */
+		movl	$kernelname,%edi
+		cmpb	$'/',(%esi)				/* Make sure it starts with a slash */
+		je		1f
+		movb	$'/',(%edi)
+		incl	%edi
+		decl	%ecx
+1:
+		cld
+		rep
+		movsb
+
+2:
+		/*
+		 * Determine the size of the boot loader's copy of the bootinfo
+		 * struct.  This is impossible to do properly because old versions
+		 * of the struct don't contain a size field and there are 2 old
+		 * versions with the same version number.
+		 */
+		movl	$BI_ENDCOMMON,%ecx		/* prepare for sizeless version */
+		testl	$RB_BOOTINFO,8(%ebp)	/* bi_size (and bootinfo) valid? */
+		je		got_bi_size				/* no, sizeless version */
+		movl	BI_SIZE(%ebx),%ecx
+got_bi_size:
+	
+		/*
+		 * Copy the common part of the bootinfo struct
+		 */
+		movl	%ebx,%esi
+		movl	$bootinfo,%edi
+		cmpl	$BOOTINFO_SIZE,%ecx
+		jbe		got_common_bi_size
+		movl	$BOOTINFO_SIZE,%ecx
+got_common_bi_size:
+		cld
+		rep
+		movsb
+
+#ifdef NFS_ROOT
+#ifndef BOOTP_NFSV3
+		/*
+		 * If we have a nfs_diskless structure copy it in
+		 */
+		movl	BI_NFS_DISKLESS(%ebx),%esi
+		cmpl	$0,%esi
+		je		olddiskboot
+		movl	$nfs_diskless,%edi
+		movl	$NFSDISKLESS_SIZE,%ecx
+		cld
+		rep
+		movsb
+		movl	$nfs_diskless_valid,%edi
+		movl	$1,(%edi)
+#endif
+#endif
+
+		/*
+		 * The old style disk boot.
+		 *	(*btext)(howto, bootdev, cyloffset, esym);
+		 * Note that the newer boot code just falls into here to pick
+		 * up howto and bootdev, cyloffset and esym are no longer used
+		 */
+olddiskboot:
+		movl	8(%ebp),%eax
+		movl	%eax,boothowto
+		movl	12(%ebp),%eax
+		movl	%eax,bootdev
+	
+		ret
+
 /**********************************************************************/
 /* Identify CPU's */
 

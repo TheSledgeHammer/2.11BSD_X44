@@ -84,6 +84,9 @@ void	nullcnpollc (dev_t, int);
 #define	dev_type_cnputc(n)	void n (dev_t, int)
 #define	dev_type_cnpollc(n)	void n (dev_t, int)
 
+#define	dev_decl(n,t)		__CONCAT(dev_type_,t)(__CONCAT(n,t))
+#define	dev_init(n,t)		__CONCAT(n,t)
+
 #define	cons_decl(n) \
 	dev_decl(n,cnprobe); dev_decl(n,cninit); dev_decl(n,cngetc); \
 	dev_decl(n,cnputc); dev_decl(n,cnpollc)
