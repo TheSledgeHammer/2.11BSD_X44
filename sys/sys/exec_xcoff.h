@@ -67,15 +67,15 @@ typedef struct {
 #define XCOFF_F_FDPR_PROF	0x0010
 #define XCOFF_F_FDPR_OPTI 	0x0020
 #define XCOFF_F_DSA 		0x0040
-			/* Reserved: 0x0080 */
+			/* Reserved: 	0x0080 */
 #define XCOFF_F_VARPG		0x0100
-			/* Reserved: 0x0200 */
-			/* Reserved: 0x0400 */
-			/* Reserved: 0x0800 */
+			/* Reserved: 	0x0200 */
+			/* Reserved: 	0x0400 */
+			/* Reserved:	0x0800 */
 #define XCOFF_F_DYNLOAD 	0x1000
 #define XCOFF_F_SHROBJ		0x2000
 #define XCOFF_F_LOADONLY 	0x4000
-			/* Reserved: 0x8000 */
+			/* Reserved: 	0x8000 */
 
 typedef struct {
 	uint16_t	mflag;			/* flags */

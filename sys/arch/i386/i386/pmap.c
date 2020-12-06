@@ -89,8 +89,8 @@
 #include <machine/param.h>
 #include <machine/specialreg.h>
 #include <machine/vmparam.h>
-#include <machine/pte.new.h>
-#include <machine/pmap.new.h>
+#include <machine/pte.h>
+#include <machine/pmap.h>
 #include <machine/pmap_base.h>
 #include <machine/pmap_nopae.h>
 #include <machine/pmap_pae.h>

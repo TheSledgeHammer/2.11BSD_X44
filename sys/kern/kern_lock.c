@@ -527,7 +527,7 @@ lock_object_init(lock, type, name, flags)
     memset(lock->lo_cpus, 0, sizeof(lock->lo_cpus));
 
     lock->lo_nxt_ticket = 0;
-    for (int i = 1; i < cpu_number(); i++) {
+    for (int i = 1; i < cpu_number; i++) {
     	lock->lo_can_serve[i] = 0;
     }
     lock->lo_can_serve[0] = 1;

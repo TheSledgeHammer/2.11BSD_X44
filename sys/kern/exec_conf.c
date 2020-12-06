@@ -80,10 +80,10 @@ struct execsw execsw[] = {
 		{ sizeof(Elf64_Ehdr), exec_elf_linker, &emul_211bsd, EXECSW_PRIO_ANY, howmany(ELF_AUX_ENTRIES * sizeof(Aux64Info), sizeof (Elf64_Addr)), elf_copyargs, exec_setup_stack },
 
 		/* 32-Bit xcoff binaries */
-		//{ XCOFF32_HDR_SIZE, exec_xcoff_linker, &emul_211bsd, EXECSW_PRIO_ANY, 0, copyargs, exec_setup_stack },
+		{ XCOFF32_HDR_SIZE, exec_xcoff_linker, &emul_211bsd, EXECSW_PRIO_ANY, 0, copyargs, exec_setup_stack },
 
 		/* 64-Bit xcoff binaries */
-		//{ XCOFF64_HDR_SIZE, exec_xcoff_linker, &emul_211bsd, EXECSW_PRIO_ANY, 0, copyargs, exec_setup_stack },
+		{ XCOFF64_HDR_SIZE, exec_xcoff_linker, &emul_211bsd, EXECSW_PRIO_ANY, 0, copyargs, exec_setup_stack },
 };
 
 int nexecs = (sizeof execsw / sizeof(struct execsw));

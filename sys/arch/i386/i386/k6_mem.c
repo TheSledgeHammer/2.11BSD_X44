@@ -175,7 +175,6 @@ out:
 static void
 k6_mem_drvinit(void *unused)
 {
-
 	if (cpu_vendor_id != CPUVENDOR_AMD)
 		return;
 	if ((cpu_id & 0xf00) != 0x500)

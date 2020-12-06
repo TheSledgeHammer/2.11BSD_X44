@@ -101,37 +101,9 @@ struct clockframe {
 int	astpending;			/* need to trap before returning to user mode */
 int	want_resched;		/* resched() was called */
 
-/*
- * pull in #defines for kinds of processors
- */
-#include <machine/cputypes.h>
-
-struct cpu_nocpuid_nameclass {
-	int 		cpu_vendor;
-	const char 	*cpu_vendorname;
-	const char 	*cpu_name;
-	int 		cpu_class;
-	void 		(*cpu_setup) (void);
-};
-
-struct cpu_cpuid_nameclass {
-	const char 		*cpu_id;
-	int 			cpu_vendor;
-	const char 		*cpu_vendorname;
-	struct cpu_cpuid_family {
-		int 		cpu_class;
-		const char 	*cpu_models[CPU_MAXMODEL+2];
-		void 		(*cpu_setup) (void);
-	} cpu_family[CPU_MAXFAMILY - CPU_MINFAMILY + 1];
-};
-
 #ifdef _KERNEL
-extern int cpu;
-extern int cpu_class;
-extern int cpu_feature;
-extern int cpuid_level;
-extern struct cpu_nocpuid_nameclass i386_nocpuid_cpus[];
-extern struct cpu_cpuid_nameclass i386_cpuid_cpus[];
+extern char	btext[];
+extern char	etext[];
 
 /* locore.s */
 struct 	pcb;
@@ -178,10 +150,5 @@ void	i386_bus_space_check (vm_offset_t, int, int);
 	{ "biosbasemem", CTLTYPE_INT }, 		\
 	{ "biosextmem", CTLTYPE_INT }, 			\
 }
-
-#ifndef LOCORE
-extern int	cpu;
-extern int	cpu_class;
-#endif
 
 #endif /* !_I386_CPU_H_ */

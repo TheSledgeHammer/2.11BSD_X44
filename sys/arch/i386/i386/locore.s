@@ -90,31 +90,31 @@
 #define	TRAP(a)			pushl $(a) ; jmp alltraps
 #define	ZTRAP(a)		pushl $0 ; TRAP(a)
 
-#define	INTRENTRY \
-		pushl	%eax		; \
-		pushl	%ecx		; \
-		pushl	%edx		; \
-		pushl	%ebx		; \
-		pushl	%ebp		; \
-		pushl	%esi		; \
-		pushl	%edi		; \
-		pushl	%ds			; \
-		pushl	%es			; \
+#define	INTRENTRY 				  \
+		pushl	%eax			; \
+		pushl	%ecx			; \
+		pushl	%edx			; \
+		pushl	%ebx			; \
+		pushl	%ebp			; \
+		pushl	%esi			; \
+		pushl	%edi			; \
+		pushl	%ds				; \
+		pushl	%es				; \
 		movl	$GSEL(GDATA_SEL, SEL_KPL),%eax	; \
-		movl	%ax,%ds		; \
+		movl	%ax,%ds			; \
 		movl	%ax,%es
 
-#define	INTRFASTEXIT \
-		popl	%es			; \
-		popl	%ds			; \
-		popl	%edi		; \
-		popl	%esi		; \
-		popl	%ebp		; \
-		popl	%ebx		; \
-		popl	%edx		; \
-		popl	%ecx		; \
-		popl	%eax		; \
-		addl	$8,%esp		; \
+#define	INTRFASTEXIT 			  \
+		popl	%es				; \
+		popl	%ds				; \
+		popl	%edi			; \
+		popl	%esi			; \
+		popl	%ebp			; \
+		popl	%ebx			; \
+		popl	%edx			; \
+		popl	%ecx			; \
+		popl	%eax			; \
+		addl	$8,%esp			; \
 		iret
 
 /**********************************************************************/

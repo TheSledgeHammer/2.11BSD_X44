@@ -66,8 +66,8 @@ struct exec_linker {
 	void					*el_emul_arg;			/* emulation argument */
 
 	void				    *el_image_hdr;			/* file's exec header */
-	u_int				    el_hdrlen;				/* length of ep_hdr */
-	u_int				    el_hdrvalid;			/* bytes of ep_hdr that are valid */
+	u_int				    el_hdrlen;				/* length of el_hdr */
+	u_int				    el_hdrvalid;			/* bytes of el_hdr that are valid */
 
 	segsz_t				    el_tsize;				/* size of process's text */
 	segsz_t				    el_dsize;				/* size of process's data(+bss) */

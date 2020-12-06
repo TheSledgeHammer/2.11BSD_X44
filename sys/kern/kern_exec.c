@@ -260,7 +260,9 @@ execve(p, uap, retval)
 
 	p->p_flag &= ~P_INEXEC;
 	return (EJUSTRETURN);
-	bad: p->p_flag &= ~P_INEXEC;
+
+bad:
+	p->p_flag &= ~P_INEXEC;
 	/* free the vmspace-creation commands, and release their references */
 	kill_vmcmds(&elp.el_vmcmds);
 	/* kill any opened file descriptor, if necessary */
@@ -274,11 +276,13 @@ execve(p, uap, retval)
 	vput(elp.el_vnodep);
 	FREE(ndp->ni_cnd.cn_pnbuf, M_NAMEI);
 
-	freehdr: p->p_flag &= ~P_INEXEC;
+freehdr:
+	p->p_flag &= ~P_INEXEC;
 	FREE(elp.el_image_hdr, M_EXEC);
 	return error;
 
-	exec_abort: p->p_flag &= ~P_INEXEC;
+exec_abort:
+	p->p_flag &= ~P_INEXEC;
 	vm_deallocate(&vm, VM_MIN_ADDRESS, VM_MAXUSER_ADDRESS - VM_MIN_ADDRESS);
 	if (elp->el_emul_arg)
 		FREE(elp->el_emul_arg, M_TEMP);

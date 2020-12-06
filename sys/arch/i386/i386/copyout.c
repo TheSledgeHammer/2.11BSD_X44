@@ -43,7 +43,7 @@
 #include <machine/pmap.h>
 #include <machine/pte.h>
 
-pt_entry_t				*CMAP1, *CMAP2;
+extern pt_entry_t		*CMAP1, *CMAP2;
 extern caddr_t			CADDR1, CADDR2;
 
 /*

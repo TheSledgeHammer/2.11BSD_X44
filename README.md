@@ -29,7 +29,7 @@
 - New Filesystems (In Kernel):
 	- EXT2/3/4
 	- NTFS
-	- NFS: (Possible: 4.4BSD-Lite2: missing networking)
+	- NFS
 	- SMB/CIFS
 	- PUFFS or FUSE
   	

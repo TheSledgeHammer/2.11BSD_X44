@@ -67,19 +67,6 @@
 int			dkn;		/* number of iostat dk numbers assigned so far */
 extern int	cold;		/* cold start flag initialized in locore.s */
 
-/* FreeBSD Sysinit x86 */
-/*
-void
-sysinit()
-{
-	k6_mem_drvinit();
-	native_lapic_intrcnt();
-	apic_init();
-	apic_setup_local();
-	apic_setup_io();
-};
-*/
-
 /*
  * Determine i/o configuration for a machine.
  */
@@ -89,6 +76,7 @@ configure()
 	startrtclock();
 
 	bios32_init();
+	k6_mem_drvinit();
 
 #if GENERICxxx
 	if ((boothowto & RB_ASKNAME) == 0)

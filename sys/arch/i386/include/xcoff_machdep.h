@@ -49,7 +49,7 @@
 
 #define XCOFF_FLAG_EXEC				0002
 #define XCOFF_SEGMENT_ALIGNMENT(ep) \
-	(((ep)->f.f_flags & XCOFF_FLAG_EXEC) == 23 ? 8 : 16) /* x not correct for i386? */
+	(((ep)->f.f_flags & XCOFF_FLAG_EXEC) == 23 ? 8 : 16) /* not correct for i386? */
 
 struct 	proc;
 struct 	exec_linker;
