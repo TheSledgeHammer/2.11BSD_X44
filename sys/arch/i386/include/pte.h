@@ -47,53 +47,37 @@
  * structure used in page clustering.
  */
 
-struct pde {
-unsigned int
-		pd_v:1,			/* valid bit */
-		pd_prot:2,		/* access control */
-		pd_mbz1:2,		/* reserved, must be zero */
-		pd_u:1,			/* hardware maintained 'used' bit */
-		:1,				/* not used */
-		pd_mbz2:2,		/* reserved, must be zero */
-		:3,				/* reserved for software */
-		pd_pfnum:20;	/* physical page frame number of pte's*/
-};
+#ifndef _MACHINE_PTE_H_
+#define _MACHINE_PTE_H_
 
-struct pte {
-unsigned int
-		pg_v:1,			/* valid bit */
-		pg_prot:2,		/* access control */
-		pg_mbz1:2,		/* reserved, must be zero */
-		pg_u:1,			/* hardware maintained 'used' bit */
-		pg_m:1,			/* hardware maintained modified bit */
-		pg_mbz2:2,		/* reserved, must be zero */
-		pg_w:1,			/* software, wired down page */
-		pg_fod:1,		/* is fill on demand (=0) */
-		:1,				/* must write back to swap (unused) */
-		pg_nc:1,		/* 'uncacheable page' bit */
-		pg_pfnum:20;	/* physical page frame number */
-};
+#define	PG_RO		0x000		/* R/O	Read-Only		*/
+#define	PG_V		0x001		/* P	Valid			*/
+#define	PG_RW		0x002		/* R/W	Read/Write		*/
+#define	PG_u		0x004
+#define	PG_PROT		0x006 		/* all protection bits .*/
+#define	PG_NC_PWT	0x008		/* PWT	Write through	*/
+#define	PG_NC_PCD	0x010		/* PCD	Cache disable	*/
+#define PG_U		0x020		/* U/S  User/Supervisor	*/
+#define	PG_M		0x040		/* D	Dirty			*/
+#define PG_A		0x060		/* A	Accessed		*/
+#define	PG_PS		0x080		/* PS	Page size (0=4k,1=4M)	*/
+#define	PG_PTE_PAT	0x080		/* PAT	PAT index		*/
+#define	PG_G		0x100		/* G	Global			*/
+#define	PG_W		0x200		/* "Wired" pseudoflag 	*/
+#define	PG_SWAPM	0x400
+#define	PG_FOD		0x600
+#define PG_N		0x800 		/* Non-cacheable 		*/
+#define	PG_PDE_PAT	0x1000		/* PAT	PAT index		*/
+#define	PG_NX		(1ull<<63) 	/* No-execute 			*/
 
-#define	PG_V		0x00000001
-#define	PG_RO		0x00000000
-#define	PG_RW		0x00000002
-#define	PG_u		0x00000004
-#define	PG_PROT		0x00000006 /* all protection bits . */
-#define	PG_W		0x00000200
-#define	PG_SWAPM	0x00000400
-#define	PG_FOD		0x00000600
-#define PG_N		0x00000800 /* Non-cacheable */
-#define	PG_M		0x00000040
-#define PG_U		0x00000020
-#define PG_A		0x00000060
 #define	PG_FRAME	0xfffff000
 
 #define	PG_NOACC	0
-#define	PG_KR		0x00000000
-#define	PG_KW		0x00000002
-#define	PG_URKR		0x00000004
-#define	PG_URKW		0x00000004
-#define	PG_UW		0x00000006
+#define	PG_KR		0x2000
+#define	PG_KW		0x4000
+#define	PG_URKR		0x6000
+#define	PG_URKW		0x6000
+#define	PG_UW		0x8000
 
 #define	PG_FZERO	0
 #define	PG_FTEXT	1
@@ -102,34 +86,15 @@ unsigned int
 /*
  * Page Protection Exception bits
  */
-#define PGEX_P		0x01	/* Protection violation vs. not present */
-#define PGEX_W		0x02	/* during a Write cycle */
-#define PGEX_U		0x04	/* access from User mode (UPL) */
-#define PGEX_RSV	0x08	/* reserved PTE field is non-zero */
-#define PGEX_I		0x10	/* during an instruction fetch */
+#define PGEX_P		0x01		/* Protection violation vs. not present */
+#define PGEX_W		0x02		/* during a Write cycle */
+#define PGEX_U		0x04		/* access from User mode (UPL) */
+#define PGEX_RSV	0x08		/* reserved PTE field is non-zero */
+#define PGEX_I		0x10		/* during an instruction fetch */
 
 /*
  * Pte related macros
  */
-#define	dirty(pte)	((pte)->pg_m)
+#define	dirty(pte)	((*(int *)pte & PG_M) != 0)
 
-extern struct pte	*CMAP1, *CMAP2;
-
-/*
- * Address of current and alternate address space page table maps
- * and directories.
- */
-#ifdef KERNEL
-extern struct pte	PTmap[], APTmap[], Upte;
-extern struct pde	PTD[], APTD[], PTDpde, APTDpde, Upde;
-extern struct pte	*Sysmap;
-
-extern int	IdlePTD;	/* physical address of "Idle" state directory */
-#endif
-
-#ifndef LOCORE
-#ifdef KERNEL
-/* utilities defined in pmap.c */
-extern	struct pte *Sysmap;
-#endif
-#endif
+#endif /* _MACHINE_PTE_H_ */

@@ -1,4 +1,3 @@
-/*-
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -35,10 +34,9 @@
  *
  *	from: @(#)locore.s	7.3 (Berkeley) 5/13/91
  *	from NetBSD: Id: locore.s,v 1.12 1993/05/27 16:44:13 cgd Exp
- *
+ * $FreeBSD$
  *      @(#)locore.s	8.3 (Berkeley) 9/23/93
  */
-
 
 /*
  * locore.s: 4BSD machine support for the Intel 386
@@ -51,7 +49,8 @@
 #include <sys/errno.h>
 #include <machine/asm.h>
 #include <machine/psl.h>
-#include <machine/pte.h>
+#include <machine/pmap_new.h>
+#include <machine/pte_new.h>
 #include <machine/trap.h>
 #include <machine/specialreg.h>
 
@@ -67,12 +66,6 @@
 #define	NOP			inb $0x84, %al ; inb $0x84, %al
 #define	FASTER_NOP	pushl %eax ; inb $0x84,%al ; popl %eax
 #define	RELOC(x)	((x) - KERNBASE)
-
-#define	fillkpt														\
-	1:	movl	%eax,0(%ebx)	; 									\
-		addl	$ NBPG,%eax		; /* increment physical address */ 	\
-		addl	$4,%ebx			; /* next pte */ 					\
-		loop	1b				;
 
 #define	LCALL(x,y)	.byte 0x9a ; .long y; .word x
 
@@ -127,65 +120,25 @@
 /**********************************************************************/
 
 /*
- * Note: This version greatly munged to avoid various assembler errors
- * that may be fixed in newer versions of gas. Perhaps newer versions
- * will have more pleasant appearance.
+ * Compiled KERNBASE location and the kernel load address, now identical.
  */
-
-		.set	IDXSHIFT,10
-		.set	SYSTEM,0xFE000000						# virtual address of system start
-/*note: gas copys sign bit (e.g. arithmetic >>), can't do SYSTEM>>22! */
-		.set	SYSPDROFF,0x3F8							# Page dir index of System Base
-
-/*
- * PTmap is recursive pagemap at top of virtual address space.
- * Within PTmap, the page directory can be found (third indirection).
- */
-		.set	PDRPDROFF,0x3F7							# Page dir index of Page dir
-		.globl	_PTmap, _PTD, _PTDpde, _Sysmap
-		.set	_PTmap,0xFDC00000
-		.set	_PTD,0xFDFF7000
-		.set	_Sysmap,0xFDFF8000
-		.set	_PTDpde,0xFDFF7000+4*PDRPDROFF
-
-/*
- * APTmap, APTD is the alternate recursive pagemap.
- * It's used when modifying another process's page tables.
- */
-		.set	APDRPDROFF,0x3FE						# Page dir index of Page dir
-		.globl	_APTmap, _APTD, _APTDpde
-		.set	_APTmap,0xFF800000
-		.set	_APTD,0xFFBFE000
-		.set	_APTDpde,0xFDFF7000+4*APDRPDROFF
-
-/*
- * Access to each processes kernel stack is via a region of
- * per-process address space (at the beginning), immediatly above
- * the user process stack.
- */
-		.set	_kstack, USRSTACK
-		.globl	_kstack
-		.set	PPDROFF,0x3F6
-		.set	PPTEOFF,0x400-UPAGES					# 0x3FE
-
+		.globl	kernbase
+		.set	kernbase,KERNBASE
+		.globl	kernload
+		.set	kernload,KERNLOAD
+		
 /*
  * Globals
  */
  		.data
-		.globl	_cpu,_cold,_boothowto,_bootdev,_cyloffset,_atdevbase,_atdevphys
-_cpu:			.long	0								# are we 386, 386sx, or 486
-_cold:			.long	1								# cold till we are not
-_atdevbase:		.long	0								# location of start of iomem in virtual
-_atdevphys:		.long	0								# location of device mapping ptes (phys)
-
-		.globl	_IdlePTD, _KPTphys
-_IdlePTD:		.long	0
-_KPTphys:		.long	0
-
-		.globl	_curpcb
-_curpcb:		.long	0
-		.globl	_proc0paddr
-_proc0paddr: 	.long	0								/* address of proc 0 address space */
+		.globl	_bootinfo,_boothowto,_bootdev,_cyloffset
+bootinfo:		.space	BOOTINFO_SIZE	/* bootinfo that we can handle */
+		.text
+		
+		.globl	_IdlePTD
+		.set	_IdlePTD,IdlePTD
+		.globl 	_KPTphys
+		.set	_KPTphys,KPTphys
 
 /**********************************************************************/
 /* Initialization */
@@ -225,321 +178,77 @@ start:	movw	$0x1234,0x472							# warm boot
 		/* First, reset the PSL. */
 		pushl	$PSL_MBO
 		popfl
-
-/**********************************************************************/
-/* Identify CPU's */
-
-		/* find out our CPU type. */
-
-try386:	/* Try to toggle alignment check flag; does not exist on 386. */
-		pushfl
-		popl	%eax
-		movl	%eax,%ecx
-		orl		$PSL_AC,%eax
-		pushl	%eax
-		popfl
-		pushfl
-		popl	%eax
-		xorl	%ecx,%eax
-		andl	$PSL_AC,%eax
-		pushl	%ecx
-		popfl
-
-		testl	%eax,%eax
-		jnz		try486
-		movl	$CPU_386,RELOC(_cpu)
-		jmp		2f
-
-try486:	/* Try to toggle identification flag; does not exist on early 486s. */
-		pushfl
-		popl	%eax
-		movl	%eax,%ecx
-		xorl	$PSL_ID,%eax
-		pushl	%eax
-		popfl
-		pushfl
-		popl	%eax
-		xorl	%ecx,%eax
-		andl	$PSL_ID,%eax
-		pushl	%ecx
-		popfl
-
-		testl	%eax,%eax
-		jnz		try586
-is486:	movl	$CPU_486,RELOC(_cpu)
-
-	/*
-	 * Check for Cyrix CPU by seeing if the flags change during a divide.
-	 * This is documented in the Cx486SLC/e SMM Programmer's Guide.
-	 */
-		xorl	%edx,%edx
-		cmpl	%edx,%edx							# set flags to known state
-		pushfl
-		popl	%ecx								# store flags in ecx
-		movl	$-1,%eax
-		movl	$4,%ebx
-		divl	%ebx								# do a long division
-		pushfl
-		popl	%eax
-		xorl	%ecx,%eax							# are the flags different?
-		testl	$0x8d5,%eax							# only check C|PF|AF|Z|N|V
-		jne		2f									# yes; must not be Cyrix CPU
-
-		movl	$CPU_486DLC,RELOC(_cpu) 			# set CPU type
-		movl	$0x69727943,RELOC(_cpu_vendor)		# store vendor string
-		movb	$0x78,RELOC(_cpu_vendor)+4
-
-#ifndef CYRIX_CACHE_WORKS
-		/* Disable caching of the ISA hole only. */
-		invd
-		movb	$CCR0,%al							# Configuration Register index (CCR0)
-		outb	%al,$0x22
-		inb		$0x23,%al
-		orb		$(CCR0_NC1|CCR0_BARB),%al
-		movb	%al,%ah
-		movb	$CCR0,%al
-		outb	%al,$0x22
-		movb	%ah,%al
-		outb	%al,$0x23
-		invd
-#else /* CYRIX_CACHE_WORKS */
-		/* Set cache parameters */
-		invd										# Start with guaranteed clean cache
-		movb	$CCR0,%al							# Configuration Register index (CCR0)
-		outb	%al,$0x22
-		inb		$0x23,%al
-		andb	$~CCR0_NC0,%al
-#ifndef CYRIX_CACHE_REALLY_WORKS
-		orb		$(CCR0_NC1|CCR0_BARB),%al
-#else
-		orb		$CCR0_NC1,%al
-#endif
-		movb	%al,%ah
-		movb	$CCR0,%al
-		outb	%al,$0x22
-		movb	%ah,%al
-		outb	%al,$0x23
-		/* clear non-cacheable region 1	*/
-		movb	$(NCR1+2),%al
-		outb	%al,$0x22
-		movb	$NCR_SIZE_0K,%al
-		outb	%al,$0x23
-		/* clear non-cacheable region 2	*/
-		movb	$(NCR2+2),%al
-		outb	%al,$0x22
-		movb	$NCR_SIZE_0K,%al
-		outb	%al,$0x23
-		/* clear non-cacheable region 3	*/
-		movb	$(NCR3+2),%al
-		outb	%al,$0x22
-		movb	$NCR_SIZE_0K,%al
-		outb	%al,$0x23
-		/* clear non-cacheable region 4	*/
-		movb	$(NCR4+2),%al
-		outb	%al,$0x22
-		movb	$NCR_SIZE_0K,%al
-		outb	%al,$0x23
-		/* enable caching in CR0 */
-		movl	%cr0,%eax
-		andl	$~(CR0_CD|CR0_NW),%eax
-		movl	%eax,%cr0
-		invd
-#endif /* CYRIX_CACHE_WORKS */
-
-		jmp		2f
-
-try586:	/* Use the `cpuid' instruction. */
-		xorl	%eax,%eax
-		cpuid
-		movl	%ebx,RELOC(_cpu_vendor)				# store vendor string
-		movl	%edx,RELOC(_cpu_vendor)+4
-		movl	%ecx,RELOC(_cpu_vendor)+8
-
-		movl	$1,%eax
-		cpuid
-		rorl	$8,%eax								# extract family type
-		andl	$15,%eax
-		cmpl	$5,%eax
-		jb		is486								# less than a Pentium
-		movl	$CPU_586,RELOC(_cpu)
-
-2:
-		/*
-		 * Finished with old stack; load new %esp now instead of later so we
-		 * can trace this code without having to worry about the trace trap
-		 * clobbering the memory test or the zeroing of the bss+bootstrap page
-		 * tables.
-		 *
-		 * The boot program should check:
-		 *	text+data <= &stack_variable - more_space_for_stack
-		 *	text+data+bss+pad+space_for_page_tables <= end_of_memory
-		 * Oops, the gdt is in the carcass of the boot program so clearing
-		 * the rest of memory is still not possible.
-		 */
-		movl	$RELOC(tmpstk),%esp					# bootstrap stack end location
-
-/**********************************************************************/
-/* Garbage: Clean Up */
-
-#ifdef garbage
-		/* count up memory */
-		xorl	%eax,%eax							# start with base memory at 0x0
-		#movl	$ 0xA0000/NBPG,%ecx	# look every 4K up to 640K
-		movl	$ 0xA0,%ecx							# look every 4K up to 640K
-1:		movl	0(%eax),%ebx						# save location to check
-		movl	$0xa55a5aa5,0(%eax)					# write test pattern
-/* flush stupid cache here! (with bcopy (0,0,512*1024) ) */
-		cmpl	$0xa55a5aa5,0(%eax)					# does not check yet for rollover
-		jne		2f
-		movl	%ebx,0(%eax)						# restore memory
-		addl	$ NBPG,%eax
-		loop	1b
-2:		shrl	$12,%eax
-		movl	%eax,_Maxmem-SYSTEM
-
-		movl	$0x100000,%eax						# next, talley remaining memory
-		#movl	$((0xFFF000-0x100000)/NBPG),%ecx
-		movl	$(0xFFF-0x100),%ecx
-1:		movl	0(%eax),%ebx						# save location to check
-		movl	$0xa55a5aa5,0(%eax)					# write test pattern
-		cmpl	$0xa55a5aa5,0(%eax)					# does not check yet for rollover
-		jne		2f
-		movl	%ebx,0(%eax)						# restore memory
-		addl	$ NBPG,%eax
-		loop	1b
-2:		shrl	$12,%eax
-		movl	%eax,_Maxmem-SYSTEM
-#endif
-
-/**********************************************************************/
-/* Page Table Creation */
-
-/* find end of kernel image */
-		movl	$_end-SYSTEM,%ecx
-		addl	$ NBPG-1,%ecx
-		andl	$~(NBPG-1),%ecx
-		movl	%ecx,%esi
-
-/* clear bss and memory for bootstrap pagetables. */
-		movl	$_edata-SYSTEM,%edi
-		subl	%edi,%ecx
-		addl	$(UPAGES+5)*NBPG,%ecx
+		
 /*
- * Virtual address space of kernel:
- *
- *	text | data | bss | page dir | proc0 kernel stack | usr stk map | Sysmap
- *			     0               1       2       3             4
+ * Don't trust what the BIOS gives for %fs and %gs.  Trust the bootstrap
+ * to set %cs, %ds, %es and %ss.
  */
-		xorl	%eax,%eax							# pattern
+		mov		%ds, %ax
+		mov		%ax, %fs
+		mov		%ax, %gs
+		
+		/*
+ * Clear the bss.  Not all boot programs do it, and it is our job anyway.
+ *
+ * XXX we don't check that there is memory for our bss and page tables
+ * before using it.
+ *
+ * Note: we must be careful to not overwrite an active gdt or idt.  They
+ * inactive from now until we switch to new ones, since we don't load any
+ * more segment registers or permit interrupts until after the switch.
+ */
+		movl	$__bss_end,%ecx
+		movl	$__bss_start,%edi
+		subl	%edi,%ecx
+		xorl	%eax,%eax
 		cld
 		rep
 		stosb
 
-		movl	%esi,_IdlePTD-SYSTEM 				/* physical address of Idle Address space */
-		movl	$ tmpstk-SYSTEM,%esp				# bootstrap stack end location
-
+		call	recover_bootinfo
+		
+/* Get onto a stack that we can trust. */
 /*
- * Map Kernel
- * N.B. don't bother with making kernel text RO, as 386
- * ignores R/W AND U/S bits on kernel access (only v works) !
- *
- * First step - build page tables
+ * XXX this step is delayed in case recover_bootinfo needs to return via
+ * the old stack, but it need not be, since recover_bootinfo actually
+ * returns via the old frame.
  */
-		movl	%esi,%ecx							# this much memory,
-		shrl	$ PGSHIFT,%ecx						# for this many pte s
-		addl	$ UPAGES+4,%ecx						# including our early context
-		movl	$ PG_V,%eax							# having these bits set,
-		lea		(4*NBPG)(%esi),%ebx					# physical address of KPT in proc 0,
-		movl	%ebx,_KPTphys-SYSTEM				# in the kernel page table,
-		fillkpt
+ 		movl	$tmpstk,%esp
 
-/* map I/O memory map */
-
-		movl	$0x100-0xa0,%ecx					# for this many pte s,
-		movl	$(0xa0000|PG_V|PG_UW),%eax 			# having these bits set,(perhaps URW?) XXX 06 Aug 92
-		movl	%ebx,_atdevphys-SYSTEM				# remember phys addr of ptes
-		fillkpt
-
- /* map proc 0's kernel stack into user page table page */
-
-		movl	$ UPAGES,%ecx						# for this many pte s,
-		lea		(1*NBPG)(%esi),%eax					# physical address in proc 0
-		lea		(SYSTEM)(%eax),%edx
-		movl	%edx,_proc0paddr-SYSTEM  			# remember VA for 0th process init
-		orl		$ PG_V|PG_URKW,%eax					# having these bits set,
-		lea		(3*NBPG)(%esi),%ebx					# physical address of stack pt in proc 0
-		addl	$(PPTEOFF*4),%ebx
-		fillkpt
-
-/*
- * Construct a page table directory
- * (of page directory elements - pde's)
- */
-
-/* install a pde for temporary double map of bottom of VA */
-		lea		(4*NBPG)(%esi),%eax					# physical address of kernel page table
-		orl     $ PG_V|PG_UW,%eax					# pde entry is valid XXX 06 Aug 92
-		movl	%eax,(%esi)							# which is where temp maps!
-
-/* kernel pde's */
-		movl	$ 3,%ecx							# for this many pde s,
-		lea		(SYSPDROFF*4)(%esi), %ebx			# offset of pde for kernel
-		fillkpt
-
-/* install a pde recursively mapping page directory as a page table! */
-		movl	%esi,%eax							# phys address of ptd in proc 0
-		orl		$ PG_V|PG_UW,%eax					# pde entry is valid XXX 06 Aug 92
-		movl	%eax, PDRPDROFF*4(%esi)				# which is where PTmap maps!
-
-/* install a pde to map kernel stack for proc 0 */
-		lea		(3*NBPG)(%esi),%eax					# physical address of pt in proc 0
-		orl		$ PG_V,%eax							# pde entry is valid
-		movl	%eax,PPDROFF*4(%esi)				# which is where kernel stack maps!
-
-/* load base of page directory, and enable mapping */
-		movl	%esi,%eax							# phys address of ptd in proc 0
- 		orl		$ I386_CR3PAT,%eax
-		movl	%eax,%cr3							# load ptd addr into mmu
-		movl	%cr0,%eax							# get control word
-		orl		$0x80000001,%eax					# and let s page!
-		movl	%eax,%cr0							# NOW!
-
-		pushl	$begin								# jump to high mem!
-		ret
-
-begin: /* now running relocated at SYSTEM where the system is linked to run */
-
-		.globl 	_Crtat
-		movl	_Crtat,%eax
-		subl	$0xfe0a0000,%eax
-		movl	_atdevphys,%edx						# get pte PA
-		subl	_KPTphys,%edx						# remove base of ptes, now have phys offset
-		shll	$ PGSHIFT-2,%edx  					# corresponding to virt offset
-		addl	$ SYSTEM,%edx						# add virtual base
-		movl	%edx, _atdevbase
-		addl	%eax,%edx
-		movl	%edx,_Crtat
-
+		call	identify_cpu
+		call	pmap_cold
+		
 		/* set up bootstrap stack */
-		movl	_proc0paddr, %eax
-		movl	$ _kstack+UPAGES*NBPG-4*12,%esp		# bootstrap stack end location
-		xorl	%eax,%eax							# mark end of frames
-		movl	%eax,%ebp
-		movl	IdlePTD,%esi
-		movl	%esi, PCB_CR3(%eax)
+		movl	proc0kstack,%eax					/* location of in-kernel stack */
+	
+		/*
+		 * Only use bottom page for init386().  init386() calculates the
+		 * PCB + FPU save area size and returns the true top of stack.
+		 */
+		leal	PAGE_SIZE(%eax),%esp
 
-		lea		7*NBPG(%esi),%esi					# skip past stack.
-		pushl	%esi
-		call	_init386							# wire 386 chip for unix operation
+		xorl	%ebp,%ebp							/* mark end of frames */
 
-		movl	$0,_PTD
+		pushl	physfree							/* value of first for init386(first) */
+		call	_init386							/* wire 386 chip for unix operation */
+		
+		/*
+		 * Clean up the stack in a way that db_numargs() understands, so
+		 * that backtraces in ddb don't underrun the stack.  Traps for
+		 * inaccessible memory are more fatal than usual this early.
+		 */
+		addl	$4,%esp
+	
+		/* Switch to true top of stack. */
+		movl	%eax,%esp
+		
+
 		call 	main								/* autoconfiguration, mountroot etc */
-		popl	%esi
-
+		
 		.globl	__ucodesel,__udatasel
 		movzwl	__ucodesel,%eax
 		movzwl	__udatasel,%ecx
-
+		
 		# build outer stack frame
 
 		pushl	%ecx								# user ss
@@ -557,6 +266,287 @@ begin: /* now running relocated at SYSTEM where the system is linked to run */
 lretmsg1:
 		.asciz	"lret: toinit\n"
 
+		
+/**********************************************************************/
+/* Recover the Bootinfo */
+
+recover_bootinfo:
+		/*
+		 * This code is called in different ways depending on what loaded
+		 * and started the kernel.  This is used to detect how we get the
+		 * arguments from the other code and what we do with them.
+		 *
+		 * Old disk boot blocks:
+		 *	(*btext)(howto, bootdev, cyloffset, esym);
+		 *	[return address == 0, and can NOT be returned to]
+		 *	[cyloffset was not supported by the FreeBSD boot code
+		 *	 and always passed in as 0]
+		 *	[esym is also known as total in the boot code, and
+		 *	 was never properly supported by the FreeBSD boot code]
+		 *
+		 * Old diskless netboot code:
+		 *	(*btext)(0,0,0,0,&nfsdiskless,0,0,0);
+		 *	[return address != 0, and can NOT be returned to]
+		 *	If we are being booted by this code it will NOT work,
+		 *	so we are just going to halt if we find this case.
+		 *
+		 * New uniform boot code:
+		 *	(*btext)(howto, bootdev, 0, 0, 0, &bootinfo)
+		 *	[return address != 0, and can be returned to]
+		 *
+		 * There may seem to be a lot of wasted arguments in here, but
+		 * that is so the newer boot code can still load very old kernels
+		 * and old boot code can load new kernels.
+		 */
+	
+		/*
+		 * The old style disk boot blocks fake a frame on the stack and
+		 * did an lret to get here.  The frame on the stack has a return
+		 * address of 0.
+		 */
+		cmpl	$0,4(%ebp)
+		je		olddiskboot
+	
+		/*
+		 * We have some form of return address, so this is either the
+		 * old diskless netboot code, or the new uniform code.  That can
+		 * be detected by looking at the 5th argument, if it is 0
+		 * we are being booted by the new uniform boot code.
+		 */
+		cmpl	$0,24(%ebp)
+		je		newboot
+	
+		/*
+		 * Seems we have been loaded by the old diskless boot code, we
+		 * don't stand a chance of running as the diskless structure
+		 * changed considerably between the two, so just halt.
+		 */
+		 hlt
+	
+		/*
+		 * We have been loaded by the new uniform boot code.
+		 * Let's check the bootinfo version, and if we do not understand
+		 * it we return to the loader with a status of 1 to indicate this error
+		 */
+newboot:
+		movl	28(%ebp),%ebx			/* &bootinfo.version */
+		movl	BI_VERSION(%ebx),%eax
+		cmpl	$1,%eax					/* We only understand version 1 */
+		je		1f
+		movl	$1,%eax					/* Return status */
+		leave
+		/*
+		 * XXX this returns to our caller's caller (as is required) since
+		 * we didn't set up a frame and our caller did.
+		 */
+		ret
+
+1:
+		/*
+		 * If we have a kernelname copy it in
+		 */
+		movl	BI_KERNELNAME(%ebx),%esi
+		cmpl	$0,%esi
+		je		2f						/* No kernelname */
+		movl	$MAXPATHLEN,%ecx		/* Brute force!!! */
+		movl	$kernelname,%edi
+		cmpb	$'/',(%esi)				/* Make sure it starts with a slash */
+		je		1f
+		movb	$'/',(%edi)
+		incl	%edi
+		decl	%ecx
+1:
+		cld
+		rep
+		movsb
+
+2:
+		/*
+		 * Determine the size of the boot loader's copy of the bootinfo
+		 * struct.  This is impossible to do properly because old versions
+		 * of the struct don't contain a size field and there are 2 old
+		 * versions with the same version number.
+		 */
+		movl	$BI_ENDCOMMON,%ecx		/* prepare for sizeless version */
+		testl	$RB_BOOTINFO,8(%ebp)	/* bi_size (and bootinfo) valid? */
+		je		got_bi_size				/* no, sizeless version */
+		movl	BI_SIZE(%ebx),%ecx
+got_bi_size:
+	
+		/*
+		 * Copy the common part of the bootinfo struct
+		 */
+		movl	%ebx,%esi
+		movl	$bootinfo,%edi
+		cmpl	$BOOTINFO_SIZE,%ecx
+		jbe		got_common_bi_size
+		movl	$BOOTINFO_SIZE,%ecx
+got_common_bi_size:
+		cld
+		rep
+		movsb
+
+#ifdef NFS_ROOT
+#ifndef BOOTP_NFSV3
+		/*
+		 * If we have a nfs_diskless structure copy it in
+		 */
+		movl	BI_NFS_DISKLESS(%ebx),%esi
+		cmpl	$0,%esi
+		je		olddiskboot
+		movl	$nfs_diskless,%edi
+		movl	$NFSDISKLESS_SIZE,%ecx
+		cld
+		rep
+		movsb
+		movl	$nfs_diskless_valid,%edi
+		movl	$1,(%edi)
+#endif
+#endif
+
+		/*
+		 * The old style disk boot.
+		 *	(*btext)(howto, bootdev, cyloffset, esym);
+		 * Note that the newer boot code just falls into here to pick
+		 * up howto and bootdev, cyloffset and esym are no longer used
+		 */
+olddiskboot:
+		movl	8(%ebp),%eax
+		movl	%eax,boothowto
+		movl	12(%ebp),%eax
+		movl	%eax,bootdev
+	
+		ret
+
+/**********************************************************************/
+/* Identify CPU's */
+
+ENTRY(identify_cpu)
+
+		pushl	%ebx
+
+		/* Try to toggle alignment check flag; does not exist on 386. */
+		pushfl
+		popl	%eax
+		movl	%eax,%ecx
+		orl		$PSL_AC,%eax
+		pushl	%eax
+		popfl
+		pushfl
+		popl	%eax
+		xorl	%ecx,%eax
+		andl	$PSL_AC,%eax
+		pushl	%ecx
+		popfl
+
+		testl	%eax,%eax
+		jnz		try486
+
+		/* NexGen CPU does not have aligment check flag. */
+		pushfl
+		movl	$0x5555, %eax
+		xorl	%edx, %edx
+		movl	$2, %ecx
+		clc
+		divl	%ecx
+		jz		trynexgen
+		popfl
+		movl	$CPU_386,cpu
+		jmp		3f
+
+trynexgen:
+		popfl
+		movl	$CPU_NX586,cpu
+		movl	$0x4778654e,cpu_vendor					# store vendor string
+		movl	$0x72446e65,cpu_vendor+4
+		movl	$0x6e657669,cpu_vendor+8
+		movl	$0,cpu_vendor+12
+		jmp		3f
+
+try486:	/* Try to toggle identification flag; does not exist on early 486s. */
+		pushfl
+		popl	%eax
+		movl	%eax,%ecx
+		xorl	$PSL_ID,%eax
+		pushl	%eax
+		popfl
+		pushfl
+		popl	%eax
+		xorl	%ecx,%eax
+		andl	$PSL_ID,%eax
+		pushl	%ecx
+		popfl
+
+		testl	%eax,%eax
+		jnz		trycpuid
+		movl	$CPU_486,cpu
+
+		/*
+		 * Check Cyrix CPU
+		 * Cyrix CPUs do not change the undefined flags following
+		 * execution of the divide instruction which divides 5 by 2.
+		 *
+		 * Note: CPUID is enabled on M2, so it passes another way.
+		 */
+		pushfl
+		movl	$0x5555, %eax
+		xorl	%edx, %edx
+		movl	$2, %ecx
+		clc
+		divl	%ecx
+		jnc		trycyrix
+		popfl
+		jmp		3f		/* You may use Intel CPU. */
+
+trycyrix:
+		popfl
+		/*
+		 * IBM Bluelighting CPU also doesn't change the undefined flags.
+		 * Because IBM doesn't disclose the information for Bluelighting
+		 * CPU, we couldn't distinguish it from Cyrix's (including IBM
+		 * brand of Cyrix CPUs).
+		 */
+		movl	$0x69727943,cpu_vendor				# store vendor string
+		movl	$0x736e4978,cpu_vendor+4
+		movl	$0x64616574,cpu_vendor+8
+		jmp		3f
+
+trycpuid:	/* Use the `cpuid' instruction. */
+		xorl	%eax,%eax
+		cpuid										# cpuid 0
+		movl	%eax,cpu_high						# highest capability
+		movl	%ebx,cpu_vendor						# store vendor string
+		movl	%edx,cpu_vendor+4
+		movl	%ecx,cpu_vendor+8
+		movb	$0,cpu_vendor+12
+
+		movl	$1,%eax
+		cpuid										# cpuid 1
+		movl	%eax,cpu_id							# store cpu_id
+		movl	%ebx,cpu_procinfo					# store cpu_procinfo
+		movl	%edx,cpu_feature					# store cpu_feature
+		movl	%ecx,cpu_feature2					# store cpu_feature2
+		rorl	$8,%eax								# extract family type
+		andl	$15,%eax
+		cmpl	$5,%eax
+		jae		1f
+
+		/* less than Pentium; must be 486 */
+		movl	$CPU_486,cpu
+		jmp		3f
+1:
+		/* a Pentium? */
+		cmpl	$5,%eax
+		jne		2f
+		movl	$CPU_586,cpu
+		jmp		3f
+2:
+		/* Greater than Pentium...call it a Pentium Pro */
+		movl	$CPU_686,cpu
+3:
+		popl	%ebx
+		ret
+		
 /**********************************************************************/
 /*
  * Signal trampoline, copied to top of user stack
@@ -657,7 +647,7 @@ sw0:	.asciz	"Xswitch"
  * When no processes are on the runq, Swtch branches to idle
  * to wait for something to come ready.
  */
-ENTRy(Idle)
+ENTRY(Idle)
 		call	_spl0
 		cmpl	$0,_whichqs
 		jne		sw1

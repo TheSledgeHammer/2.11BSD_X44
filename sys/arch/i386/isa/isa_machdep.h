@@ -226,27 +226,17 @@ extern struct lock_object *icu_lock;
 #define	DMA_BOUNCE      8		/* one buffer per channel */
 #endif
 
-extern vm_offset_t isaphysmem;
-
 /*
  * Variables and macros to deal with the ISA I/O hole.
  * XXX These should be converted to machine- and bus-mapping-independent
  * function definitions, invoked through the softc.
  */
 
-extern u_long 	 atdevbase;           /* kernel virtual address of "hole" */
-
-/*
- * Given a kernel virtual address for some location
- * in the "hole" I/O space, return a physical address.
- */
-#define ISA_PHYSADDR(v) ((void *) ((u_long)(v) - atdevbase + IOM_BEGIN))
-
 /*
  * Given a physical address in the "hole",
  * return a kernel virtual address.
  */
-#define ISA_HOLE_VADDR(p)  ((void *) ((u_long)(p) - IOM_BEGIN + atdevbase))
+#define ISA_HOLE_VADDR(p)  ((void *) ((u_long)(p) - ISA_HOLE_START))
 
 /*
  * Miscellanous functions.

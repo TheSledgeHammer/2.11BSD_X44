@@ -551,7 +551,7 @@ isa_mem_alloc(t, size, align, boundary, flags, addrp, bshp)
 	/*
 	 * Allocate physical address space in the ISA hole.
 	 */
-	return (bus_space_alloc(t, IOM_BEGIN, IOM_END - 1, size, align,
+	return (bus_space_alloc(t, ISA_HOLE_START, ISA_HOLE_END - 1, size, align,
 	    boundary, flags, addrp, bshp));
 }
 

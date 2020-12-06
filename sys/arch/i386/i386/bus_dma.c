@@ -159,19 +159,19 @@ i386_bus_space_check(avail_end, biosbasemem, biosextmem)
 	 * not all BIOSes (Dell, Compaq, others) report the correct
 	 * amount of extended memory.
 	 */
-	avail_end = biosextmem ? IOM_END + biosextmem * 1024 : biosbasemem * 1024; /* just temporary use */
+	avail_end = biosextmem ? ISA_HOLE_END + biosextmem * 1024 : biosbasemem * 1024; /* just temporary use */
 
 	/*
 	 * Allocate the physical addresses used by RAM from the iomem
 	 * extent map.  This is done before the addresses are
 	 * page rounded just to make sure we get them all.
 	 */
-	if (extent_alloc_region(iomem_ex, 0, IOM_BEGIN, EX_NOWAIT)) {
+	if (extent_alloc_region(iomem_ex, 0, ISA_HOLE_START, EX_NOWAIT)) {
 		/* XXX What should we do? */
 		printf("WARNING: CAN'T ALLOCATE BASE MEMORY FROM IOMEM EXTENT MAP!\n");
 	}
-	if (avail_end > IOM_END && extent_alloc_region(iomem_ex, IOM_END,
-	    (avail_end - IOM_END), EX_NOWAIT)) {
+	if (avail_end > ISA_HOLE_END && extent_alloc_region(iomem_ex, ISA_HOLE_END,
+	    (avail_end - ISA_HOLE_END), EX_NOWAIT)) {
 		/* XXX What should we do? */
 		printf("WARNING: CAN'T ALLOCATE EXTENDED MEMORY FROM IOMEM EXTENT MAP!\n");
 	}

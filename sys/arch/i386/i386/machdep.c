@@ -85,8 +85,6 @@
 #include <machine/vm86.h>
 #endif
 
-//#include "isa.h"
-//#include "isadma.h"
 #include "npx.h"
 
 #if NNPX > 0
@@ -964,8 +962,6 @@ init386(first)
 
 	lgdt(gdt, sizeof(gdt)-1);
 	lidt(idt, sizeof(idt)-1);
-
-
 
 	//finishidentcpu();		/* Final stage of CPU initialization */
 	//pmap_set_nx();

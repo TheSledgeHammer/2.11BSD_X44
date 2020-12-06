@@ -166,11 +166,11 @@
 #define	AHC_ISA_PRIMING_VID(index)	(AHC_ISA_VID + (index))
 #define	AHC_ISA_PRIMING_PID(index)	(AHC_ISA_PID + (index))
 
-int	ahc_isa_irq (bus_space_tag_t, bus_space_handle_t);
-int	ahc_isa_idstring (bus_space_tag_t, bus_space_handle_t, char *);
-int	ahc_isa_match (struct isa_attach_args *, bus_addr_t);
+int		ahc_isa_irq (bus_space_tag_t, bus_space_handle_t);
+int		ahc_isa_idstring (bus_space_tag_t, bus_space_handle_t, char *);
+int		ahc_isa_match (struct isa_attach_args *, bus_addr_t);
 
-int	ahc_isa_probe (struct device *, void *, void *);
+int		ahc_isa_probe (struct device *, void *, void *);
 void	ahc_isa_attach (struct device *, struct device *, void *);
 
 struct cfattach ahc_isa_ca = {

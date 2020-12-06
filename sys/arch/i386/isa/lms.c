@@ -43,7 +43,6 @@
 #include <machine/bus_space.h>
 #include <machine/intr.h>
 #include <machine/mouse.h>
-#include <machine/conf.h>
 
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>

@@ -151,13 +151,3 @@
 #define	IO_VGASIZE	16	/* VGA controllers */
 #define	IO_PMPSIZE	2	/* 82347 Power Management Peripheral */
 #endif /* !IO_ISASIZES */
-
-/*
- * Input / Output Memory Physical Addresses
- */
-
-#ifndef	IOM_BEGIN
-#define	IOM_BEGIN	0x0a0000		/* Start of I/O Memory "hole" */
-#define	IOM_END		0x100000		/* End of I/O Memory "hole" */
-#define	IOM_SIZE	(IOM_END - IOM_BEGIN)
-#endif /* !IOM_BEGIN */

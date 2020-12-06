@@ -114,7 +114,6 @@ eisa_attach_hook(parent, self, eba)
 	struct device *parent, *self;
 	struct eisabus_attach_args *eba;
 {
-
 	/* Nothing to do. */
 }
 
@@ -122,7 +121,6 @@ int
 eisa_maxslots(ec)
 	eisa_chipset_tag_t ec;
 {
-
 	/*
 	 * Always try 16 slots.
 	 */
@@ -172,7 +170,6 @@ eisa_intr_establish(ec, ih, type, level, func, arg)
 	int type, level, (*func) (void *);
 	void *arg;
 {
-
 	if (ih == 0 || ih >= ICU_LEN || ih == 2)
 		panic("eisa_intr_establish: bogus handle 0x%x\n", ih);
 
@@ -184,7 +181,6 @@ eisa_intr_disestablish(ec, cookie)
 	eisa_chipset_tag_t ec;
 	void *cookie;
 {
-
 	return isa_intr_disestablish(NULL, cookie);
 }
 
@@ -202,7 +198,7 @@ eisa_mem_alloc(t, size, align, boundary, cacheable, addrp, bahp)
 	/*
 	 * Allocate physical address space after the ISA hole.
 	 */
-	return bus_space_alloc(t, IOM_END, iomem_ex->ex_end, size, align,
+	return bus_space_alloc(t, ISA_HOLE_END, iomem_ex->ex_end, size, align,
 	    boundary, cacheable, addrp, bahp);
 }
 
@@ -212,6 +208,5 @@ eisa_mem_free(t, bah, size)
 	bus_space_handle_t bah;
 	bus_size_t size;
 {
-
 	bus_space_free(t, bah, size);
 }
