@@ -42,7 +42,7 @@ Bill Broderick
 Director, Licensing Services
 * UNIX is a registered trademark of The Open Group in the US and other countries.
 
-
+/*******************************************************************/
 The 4.4BSD-Lite software is distributed under the following
 terms:
 
