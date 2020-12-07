@@ -135,7 +135,6 @@ newvers: ${SYSTEM_DEP} ${SYSTEM_SWAP_DEP}
 		sh $S/conf/newvers.sh
 		${CC} ${CFLAGS} ${CPPFLAGS} ${PROF} -c vers.c
 
-
 __CLEANKERNEL: .USE
 		@echo "${.TARGET}ing the kernel objects"
 		rm -f eddep *netbsd netbsd.gdb tags *.[io] [a-z]*.s \
@@ -193,7 +192,6 @@ locore.o machdep.o: Makefile
 
 locore.o: ${I386}/i386/locore.s assym.h
 		${NORMAL_S}
-		
 		
 # The install target can be redefined by putting a
 # install-kernel-${MACHINE_NAME} target into /etc/mk.conf

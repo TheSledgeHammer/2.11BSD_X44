@@ -55,4 +55,4 @@ options 		COMPAT_43		# and 4.3BSD
 options 	  	EISAVERBOSE		# verbose EISA device autoconfig messages
 options 		PCIVERBOSE		# verbose PCI device autoconfig messages
 #options 		PCMCIAVERBOSE	# verbose PCMCIA configuration messages
-options 		SCSIVERBOSE		# human readable SCSI error messages
+#options 		SCSIVERBOSE		# human readable SCSI error messages
