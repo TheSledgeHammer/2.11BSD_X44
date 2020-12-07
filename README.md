@@ -64,3 +64,14 @@ Though due to limited access to hardware, testing of 2.11BSD_X44 on that archite
   	- Will not accept code that contains profanity.
 2. No abuse of others
 	- Constructive criticism is welcome
+
+### Cross-Compiling:
+- There are 3 different toolchains present atm.
+	- GNU GCC Toolchain
+	- Clang/LLVM Toolchain
+	- NetBSD's Toolchain (recommended)
+
+# Using the NetBSD Toolchain:
+- Please read the following for how the toolchain works: https://www.netbsd.org/docs/guide/en/chap-build.html
+- Then run: ./netbsdtoolchain.sh
+- To retrieve the NetBSD source and compile NetBSD's Tools
