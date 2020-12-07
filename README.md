@@ -71,7 +71,7 @@ Though due to limited access to hardware, testing of 2.11BSD_X44 on that archite
 	- Clang/LLVM Toolchain
 	- NetBSD's Toolchain (recommended)
 
-# Using the NetBSD Toolchain:
+#### Using the NetBSD Toolchain:
 - Please read the following for how the toolchain works: https://www.netbsd.org/docs/guide/en/chap-build.html
 - Then run: ./netbsdtoolchain.sh
 - To retrieve the NetBSD source and compile NetBSD's Tools
