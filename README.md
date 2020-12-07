@@ -65,7 +65,7 @@ Though due to limited access to hardware, testing of 2.11BSD_X44 on that archite
 2. No abuse of others
 	- Constructive criticism is welcome
 
-### Cross-Compiling:
+## Cross-Compiling:
 - There are 3 different toolchains present atm.
 	- GNU GCC Toolchain
 	- Clang/LLVM Toolchain
