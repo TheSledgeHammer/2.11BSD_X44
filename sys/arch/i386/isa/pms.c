@@ -55,7 +55,6 @@
 #include <machine/intr.h>
 #include <machine/pio.h>
 #include <machine/mouse.h>
-#include <machine/conf.h>
 
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>

@@ -138,12 +138,10 @@ struct isa_attach_args {
 	bus_space_handle_t 	ia_delaybah; 	/* i/o handle for `delay port' */
 };
 
-//#include "locators.h"
-
-#define	IOBASEUNK	ISACF_PORT_DEFAULT	/* i/o address is unknown */
-#define	IRQUNK		ISACF_IRQ_DEFAULT	/* interrupt request line is unknown */
-#define	DRQUNK		ISACF_DRQ_DEFAULT	/* DMA request line is unknown */
-#define	MADDRUNK	ISACF_IOMEM_DEFAULT	/* shared memory address is unknown */
+#define	IOBASEUNK		-1		/* i/o address is unknown */
+#define	IRQUNK			-1		/* interrupt request line is unknown */
+#define	DRQUNK			-1		/* DMA request line is unknown */
+#define	MADDRUNK		-1		/* shared memory address is unknown */
 
 /*
  * Per-device ISA variables

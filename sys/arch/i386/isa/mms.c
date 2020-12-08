@@ -96,7 +96,7 @@ mmsprobe(parent, match, aux)
 	int rv;
 
 	/* Disallow wildcarded i/o address. */
-	if (ia->ia_iobase == ISACF_PORT_DEFAULT)
+	if (ia->ia_iobase == IOBASEUNK)
 		return 0;
 
 	/* Map the i/o space. */

@@ -62,7 +62,7 @@
 #include <dev/isa/isavar.h>
 
 struct com_isa_softc {
-	struct	com_softc 	sc_com;	/* real "com" softc */
+	struct	com_softc 	sc_com;			/* real "com" softc */
 
 	/* ISA-specific goo. */
 	void				*sc_ih;			/* interrupt handler */
@@ -97,7 +97,7 @@ com_isa_probe(parent, match, aux)
 	struct isa_attach_args *ia = aux;
 
 	/* Disallow wildcarded i/o address. */
-	if (ia->ia_iobase == ISACF_PORT_DEFAULT)
+	if (ia->ia_iobase == IOBASEUNK)
 		return (0);
 
 	iot = ia->ia_iot;

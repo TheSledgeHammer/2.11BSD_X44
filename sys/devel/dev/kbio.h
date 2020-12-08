@@ -11,9 +11,9 @@
 #include <sys/ioccom.h>
 
 /* get/set keyboard I/O mode */
-#define K_RAW			0			/* keyboard returns scancodes	*/
-#define K_XLATE			1			/* keyboard returns ascii 		*/
-#define K_CODE			2			/* keyboard returns keycodes 	*/
+#define K_RAW			0			/* keyboard returns scancodes		*/
+#define K_XLATE			1			/* keyboard returns ascii 			*/
+#define K_CODE			2			/* keyboard returns keycodes 		*/
 #define KDGKBMODE 		_IOR('K', 6, int)
 #define KDSKBMODE 		_IOWINT('K', 7)
 
@@ -28,10 +28,10 @@
 #endif
 
 /* get/set keyboard lock state */
-#define CLKED			1				/* Caps locked				*/
-#define NLKED			2				/* Num locked				*/
-#define SLKED			4				/* Scroll locked			*/
-#define ALKED			8				/* AltGr locked				*/
+#define CLKED			1				/* Caps locked					*/
+#define NLKED			2				/* Num locked					*/
+#define SLKED			4				/* Scroll locked				*/
+#define ALKED			8				/* AltGr locked					*/
 #define LOCK_MASK		(CLKED | NLKED | SLKED | ALKED)
 #define KDGKBSTATE		_IOR('K', 19, int)
 #define KDSKBSTATE		_IOWINT('K', 20)
@@ -92,14 +92,14 @@ typedef struct keyboard_repeat keyboard_repeat_t;
 
 /* get/set key map/accent map/function key strings */
 
-#define NUM_KEYS		256		/* number of keys in table	*/
-#define NUM_STATES		8		/* states per key		*/
-#define ALTGR_OFFSET	128		/* offset for altlock keys	*/
+#define NUM_KEYS		256		/* number of keys in table			*/
+#define NUM_STATES		8		/* states per key					*/
+#define ALTGR_OFFSET	128		/* offset for altlock keys			*/
 
-#define NUM_DEADKEYS	15		/* number of accent keys	*/
-#define NUM_ACCENTCHARS	52		/* max number of accent chars	*/
+#define NUM_DEADKEYS	15		/* number of accent keys			*/
+#define NUM_ACCENTCHARS	52		/* max number of accent chars		*/
 
-#define NUM_FKEYS		96		/* max number of function keys	*/
+#define NUM_FKEYS		96		/* max number of function keys		*/
 #define MAXFK			16		/* max length of a function key str */
 
 #ifndef _KEYMAP_DECLARED
@@ -248,14 +248,14 @@ typedef struct fkeyarg	fkeyarg_t;
 
 /* flags set to the return value in the KD_XLATE mode */
 
-#define	NOKEY			0x01000000	/* no key pressed marker 	*/
-#define	FKEY			0x02000000	/* function key marker 		*/
+#define	NOKEY			0x01000000	/* no key pressed marker 		*/
+#define	FKEY			0x02000000	/* function key marker 			*/
 #define	MKEY			0x04000000	/* meta key marker (prepend ESC)*/
-#define	BKEY			0x08000000	/* backtab (ESC [ Z)		*/
+#define	BKEY			0x08000000	/* backtab (ESC [ Z)			*/
 
-#define	SPCLKEY			0x80000000	/* special key			*/
-#define	RELKEY			0x40000000	/* key released			*/
-#define	ERRKEY			0x20000000	/* error			*/
+#define	SPCLKEY			0x80000000	/* special key					*/
+#define	RELKEY			0x40000000	/* key released					*/
+#define	ERRKEY			0x20000000	/* error						*/
 
 /*
  * The top byte is used to store the flags.  This means there are 24

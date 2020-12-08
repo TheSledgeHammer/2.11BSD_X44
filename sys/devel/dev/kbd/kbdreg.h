@@ -31,6 +31,7 @@
 #ifndef _DEV_KBD_KBDREG_H_
 #define _DEV_KBD_KBDREG_H_
 
+#include <sys/queue.h>
 #include <sys/user.h>
 
 /* forward declarations */
@@ -101,7 +102,7 @@ typedef struct keyboard_switch {
  * entirely, but patching individual methods is acceptable.
  */
 typedef struct keyboard_driver {
-    SLIST_ENTRY(keyboard_driver) link;
+    SIMPLEQ_ENTRY(keyboard_driver) link;
     const char * const			name;
     keyboard_switch_t * const	kbdsw;
     /* backdoor for the console driver */
@@ -351,8 +352,8 @@ void				kbd_ev_event(keyboard_t *kbd, uint16_t type, uint16_t code, int32_t valu
 #ifdef KBD_INSTALL_CDEV
 
 /* virtual keyboard cdev driver functions */
-int			kbd_attach(keyboard_t *kbd);
-int			kbd_detach(keyboard_t *kbd);
+int					kbd_attach(keyboard_t *kbd);
+int					kbd_detach(keyboard_t *kbd);
 
 #endif /* KBD_INSTALL_CDEV */
 

@@ -148,7 +148,7 @@ pcic_isa_probe(parent, match, aux)
 	int val, found;
 
 	/* Disallow wildcarded i/o address. */
-	if (ia->ia_iobase == ISACF_PORT_DEFAULT)
+	if (ia->ia_iobase == IOBASEUNK)
 		return (0);
 
 	if (bus_space_map(iot, ia->ia_iobase, PCIC_IOSIZE, 0, &ioh))
@@ -256,8 +256,7 @@ pcic_isa_attach(parent, self, aux)
 
 	if ((sc->irq = ia->ia_irq) == IRQUNK) {
 		if (isa_intr_alloc(ic,
-		    PCIC_CSC_INTR_IRQ_VALIDMASK & pcic_isa_intr_alloc_mask,
-		    IST_EDGE, &sc->irq)) {
+		    PCIC_CSC_INTR_IRQ_VALIDMASK & pcic_isa_intr_alloc_mask, IST_EDGE, &sc->irq)) {
 			printf("\n%s: can't allocate interrupt\n",
 			    sc->dev.dv_xname);
 			return;
@@ -341,20 +340,15 @@ pcic_isa_attach(parent, self, aux)
 #endif
 	}
 
-	DPRINTF(("%s: bus_space_alloc range 0x%04lx-0x%04lx (probed)\n",
-	    sc->dev.dv_xname, (long) sc->iobase,
-	    (long) sc->iobase + sc->iosize));
+	DPRINTF(("%s: bus_space_alloc range 0x%04lx-0x%04lx (probed)\n", sc->dev.dv_xname, (long) sc->iobase, (long) sc->iobase + sc->iosize));
 
 	if (pcic_isa_alloc_iobase && pcic_isa_alloc_iosize) {
 		sc->iobase = pcic_isa_alloc_iobase;
 		sc->iosize = pcic_isa_alloc_iosize;
 
-		DPRINTF(("%s: bus_space_alloc range 0x%04lx-0x%04lx "
-		    "(config override)\n", sc->dev.dv_xname, (long) sc->iobase,
-		    (long) sc->iobase + sc->iosize));
+		DPRINTF(("%s: bus_space_alloc range 0x%04lx-0x%04lx (config override)\n", sc->dev.dv_xname, (long) sc->iobase, (long) sc->iobase + sc->iosize));
 	}
-	sc->ih = isa_intr_establish(ic, sc->irq, IST_EDGE, IPL_TTY,
-	    pcic_intr, sc);
+	sc->ih = isa_intr_establish(ic, sc->irq, IST_EDGE, IPL_TTY, pcic_intr, sc);
 	if (sc->ih == NULL) {
 		printf("%s: can't establish interrupt\n", sc->dev.dv_xname);
 		return;
@@ -386,8 +380,7 @@ pcic_isa_chip_intr_establish(pch, pf, ipl, fct, arg)
 	if (isa_intr_alloc(h->sc->intr_est,
 	    PCIC_INTR_IRQ_VALIDMASK & pcic_isa_intr_alloc_mask, ist, &irq))
 		return (NULL);
-	if ((ih = isa_intr_establish(h->sc->intr_est, irq, ist, ipl,
-	    fct, arg)) == NULL)
+	if ((ih = isa_intr_establish(h->sc->intr_est, irq, ist, ipl, fct, arg)) == NULL)
 		return (NULL);
 
 	reg = pcic_read(h, PCIC_INTR);
