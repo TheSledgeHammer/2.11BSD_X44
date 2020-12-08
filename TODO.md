@@ -21,8 +21,11 @@ A General todo list. Don't hesitate to add to this list. :)
 	
 ## arch:
 - i386/x86: (Merged under i386)
-	- isa: Update
-		- mms.c, lms.c, pms.c
+	- Move to /dev: (update dependencies so this is possible)
+		- pms.c
+		- spkr.c, spkr.h, spkrreg.h, timerreg.h
+		- mouse.h
+		- joystick.h
 
 ## devel: (planned)
 - Code planned for future integration
@@ -30,8 +33,12 @@ A General todo list. Don't hesitate to add to this list. :)
 - See devel folder: README.md
 
 ## dev:
-- No devices, only basic
-- Ideally would like it to be able to compile before adding devices..!
+Hit a cross-road:
+1. Continue following: NetBSD/OpenBSD
+OR 
+2. Follow: FreeBSD/DragonflyBSD
+
+- Needs basic support to compile
 
 ## lib:
 	

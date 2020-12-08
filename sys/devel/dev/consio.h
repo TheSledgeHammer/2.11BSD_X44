@@ -37,7 +37,7 @@
 #include <sys/types.h>
 #endif
 #include <sys/ioccom.h>
-#include <sys/font.h>
+#include <font.h>
 
 /*
  * Console ioctl commands.  Some commands are named as KDXXXX, GIO_XXX, and
