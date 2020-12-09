@@ -102,12 +102,12 @@ typedef struct keyboard_switch {
  * entirely, but patching individual methods is acceptable.
  */
 typedef struct keyboard_driver {
-    SIMPLEQ_ENTRY(keyboard_driver) link;
-    const char * const			name;
-    keyboard_switch_t * const	kbdsw;
+    SIMPLEQ_ENTRY(keyboard_driver) 	link;
+    const char * const				name;
+    keyboard_switch_t * const		kbdsw;
     /* backdoor for the console driver */
-    int							(* const configure)(int);
-    int							flags;
+    int								(* const configure)(int);
+    int								flags;
 } keyboard_driver_t;
 
 #define	KBDF_REGISTERED		0x0001

@@ -140,8 +140,9 @@ struct vnode;
 #define	D_TAPE	1
 #define	D_DISK	2
 #define	D_TTY	3
+#define	D_OTHER	4
 
-#ifdef _KERNEL
+//#ifdef _KERNEL
 extern struct devswops 	 dvops;	/* device switch table operations */
 
 void					devswtable_init();

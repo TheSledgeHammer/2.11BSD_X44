@@ -78,9 +78,9 @@
 
 #define	MC_REGA			0xa		/* Control register A */
 
-#define	 MC_REGA_RSMASK	0x0f	/* Interrupt rate select mask (see below) */
-#define	 MC_REGA_DVMASK	0x70	/* Divisor select mask (see below) */
-#define	 MC_REGA_UIP	0x80	/* Update in progress; read only. */
+#define	MC_REGA_RSMASK	0x0f	/* Interrupt rate select mask (see below) */
+#define	MC_REGA_DVMASK	0x70	/* Divisor select mask (see below) */
+#define	MC_REGA_UIP	0x80	/* Update in progress; read only. */
 
 #define	MC_REGB			0xb		/* Control register B */
 
@@ -141,7 +141,6 @@
 #define	MC_BASE_32_KHz	0x20	/* 32KHz crystal */
 #define	MC_BASE_NONE	0x60	/* actually, both of these reset */
 #define	MC_BASE_RESET	0x70
-
 
 /*
  * RTC register/NVRAM read and write functions -- machine-dependent.

@@ -202,7 +202,7 @@ lmsclose(dev, flag, mode, p)
 
 	sc->sc_state &= ~LMS_OPEN;
 
-	clfree(&sc->sc_q);
+	//clfree(&sc->sc_q);
 
 	return 0;
 }

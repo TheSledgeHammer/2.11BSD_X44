@@ -8,8 +8,6 @@
 #ifndef _SYS_CONF_H_
 #define _SYS_CONF_H_
 
-#include <dev/conf_decl.h>
-
 /*
  * Declaration of block device
  * switch. Each entry (row) is
@@ -31,6 +29,7 @@ struct bdevsw {
 	int			(*d_dump)(dev_t dev);
 	daddr_t		(*d_psize)(dev_t dev);
 	int			(*d_discard)(dev_t, off_t, off_t);
+	int			d_type;
 	int			d_flags;
 };
 
@@ -56,6 +55,7 @@ struct cdevsw {
 	int			(*d_strategy)(struct buf *bp);
 	int			(*d_discard)(dev_t, off_t, off_t);
 	int			d_type;
+	int			d_flags;
 };
 #ifdef KERNEL
 extern struct cdevsw cdevsw[];

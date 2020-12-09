@@ -33,12 +33,8 @@ A General todo list. Don't hesitate to add to this list. :)
 - See devel folder: README.md
 
 ## dev:
-Hit a cross-road:
-1. Continue following: NetBSD/OpenBSD
-OR 
-2. Follow: FreeBSD/DragonflyBSD
-
 - Needs basic support to compile
+- wscons: (OpenBSD)
 
 ## lib:
 	

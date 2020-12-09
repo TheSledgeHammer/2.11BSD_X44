@@ -26,7 +26,6 @@ file    arch/i386/i386/in_cksum.c	     inet
 file    arch/i386/i386/initcpu.c
 file    arch/i386/i386/k6_mem.c
 file    arch/i386/i386/kobj_machdep.c
-file    arch/i386/i386/mainbus.c
 file    arch/i386/i386/machdep.c
 file	arch/i386/i386/math_emulate.c	 math_emulate
 file    arch/i386/i386/mem.c

@@ -61,13 +61,13 @@ int		aic_pcmcia_match (struct device *, struct cfdata *, void *);
 void	aic_pcmcia_attach (struct device *, struct device *, void *);
 
 struct aic_pcmcia_softc {
-	struct aic_softc sc_aic;		/* real "aic" softc */
+	struct aic_softc 		sc_aic;			/* real "aic" softc */
 
 	/* PCMCIA-specific goo. */
-	struct pcmcia_io_handle sc_pcioh;	/* PCMCIA i/o space info */
-	int sc_io_window;			/* our i/o window */
-	struct pcmcia_function *sc_pf;		/* our PCMCIA function */
-	void *sc_ih;				/* interrupt handler */
+	struct pcmcia_io_handle sc_pcioh;		/* PCMCIA i/o space info */
+	int 					sc_io_window;	/* our i/o window */
+	struct pcmcia_function 	*sc_pf;			/* our PCMCIA function */
+	void 					*sc_ih;			/* interrupt handler */
 };
 
 struct cfattach aic_pcmcia_ca = {

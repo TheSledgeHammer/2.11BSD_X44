@@ -150,17 +150,17 @@ struct mouse_event {
 typedef struct mouse_event mouse_event_t;
 
 struct mouse_info {
-	int					operation;
-#define MOUSE_SHOW		0x01
-#define MOUSE_HIDE		0x02
-#define MOUSE_MOVEABS	0x03
-#define MOUSE_MOVEREL	0x04
-#define MOUSE_GETINFO	0x05
-#define MOUSE_MODE		0x06
-#define MOUSE_ACTION	0x07
+	int						operation;
+#define MOUSE_SHOW			0x01
+#define MOUSE_HIDE			0x02
+#define MOUSE_MOVEABS		0x03
+#define MOUSE_MOVEREL		0x04
+#define MOUSE_GETINFO		0x05
+#define MOUSE_MODE			0x06
+#define MOUSE_ACTION		0x07
 #define MOUSE_MOTION_EVENT	0x08
 #define MOUSE_BUTTON_EVENT	0x09
-#define MOUSE_MOUSECHAR	0x0a
+#define MOUSE_MOUSECHAR		0x0a
 	union {
 		mouse_data_t			data;
 		mouse_mode_t			mode;
@@ -364,66 +364,66 @@ typedef struct vt_mode vtmode_t;
  * Video mode switching ioctl.  See sys/fbio.h for mode numbers.
  */
 
-#define SW_B40x25 		_IO('S', M_B40x25)
-#define SW_C40x25  		_IO('S', M_C40x25)
-#define SW_B80x25  		_IO('S', M_B80x25)
-#define SW_C80x25  		_IO('S', M_C80x25)
-#define SW_BG320   		_IO('S', M_BG320)
-#define SW_CG320   		_IO('S', M_CG320)
-#define SW_BG640   		_IO('S', M_BG640)
-#define SW_EGAMONO80x25 _IO('S', M_EGAMONO80x25)
-#define SW_CG320_D    	_IO('S', M_CG320_D)
-#define SW_CG640_E    	_IO('S', M_CG640_E)
-#define SW_EGAMONOAPA 	_IO('S', M_EGAMONOAPA)
-#define SW_CG640x350  	_IO('S', M_CG640x350)
-#define SW_ENH_MONOAPA2 _IO('S', M_ENHMONOAPA2)
-#define SW_ENH_CG640  	_IO('S', M_ENH_CG640)
-#define SW_ENH_B40x25  	_IO('S', M_ENH_B40x25)
-#define SW_ENH_C40x25  	_IO('S', M_ENH_C40x25)
-#define SW_ENH_B80x25  	_IO('S', M_ENH_B80x25)
-#define SW_ENH_C80x25  	_IO('S', M_ENH_C80x25)
-#define SW_ENH_B80x43  	_IO('S', M_ENH_B80x43)
-#define SW_ENH_C80x43  	_IO('S', M_ENH_C80x43)
-#define SW_MCAMODE    	_IO('S', M_MCA_MODE)
-#define SW_VGA_C40x25	_IO('S', M_VGA_C40x25)
-#define SW_VGA_C80x25	_IO('S', M_VGA_C80x25)
-#define SW_VGA_C80x30	_IO('S', M_VGA_C80x30)
-#define SW_VGA_C80x50	_IO('S', M_VGA_C80x50)
-#define SW_VGA_C80x60	_IO('S', M_VGA_C80x60)
-#define SW_VGA_M80x25	_IO('S', M_VGA_M80x25)
-#define SW_VGA_M80x30	_IO('S', M_VGA_M80x30)
-#define SW_VGA_M80x50	_IO('S', M_VGA_M80x50)
-#define SW_VGA_M80x60	_IO('S', M_VGA_M80x60)
-#define SW_VGA11		_IO('S', M_VGA11)
-#define SW_BG640x480	_IO('S', M_VGA11)
-#define SW_VGA12		_IO('S', M_VGA12)
-#define SW_CG640x480	_IO('S', M_VGA12)
-#define SW_VGA13		_IO('S', M_VGA13)
-#define SW_VGA_CG320	_IO('S', M_VGA13)
-#define SW_VGA_CG640	_IO('S', M_VGA_CG640)
-#define SW_VGA_MODEX	_IO('S', M_VGA_MODEX)
+#define SW_B40x25 			_IO('S', M_B40x25)
+#define SW_C40x25  			_IO('S', M_C40x25)
+#define SW_B80x25  			_IO('S', M_B80x25)
+#define SW_C80x25  			_IO('S', M_C80x25)
+#define SW_BG320   			_IO('S', M_BG320)
+#define SW_CG320   			_IO('S', M_CG320)
+#define SW_BG640   			_IO('S', M_BG640)
+#define SW_EGAMONO80x25 	_IO('S', M_EGAMONO80x25)
+#define SW_CG320_D    		_IO('S', M_CG320_D)
+#define SW_CG640_E    		_IO('S', M_CG640_E)
+#define SW_EGAMONOAPA 		_IO('S', M_EGAMONOAPA)
+#define SW_CG640x350  		_IO('S', M_CG640x350)
+#define SW_ENH_MONOAPA2 	_IO('S', M_ENHMONOAPA2)
+#define SW_ENH_CG640  		_IO('S', M_ENH_CG640)
+#define SW_ENH_B40x25  		_IO('S', M_ENH_B40x25)
+#define SW_ENH_C40x25  		_IO('S', M_ENH_C40x25)
+#define SW_ENH_B80x25  		_IO('S', M_ENH_B80x25)
+#define SW_ENH_C80x25  		_IO('S', M_ENH_C80x25)
+#define SW_ENH_B80x43  		_IO('S', M_ENH_B80x43)
+#define SW_ENH_C80x43  		_IO('S', M_ENH_C80x43)
+#define SW_MCAMODE    		_IO('S', M_MCA_MODE)
+#define SW_VGA_C40x25		_IO('S', M_VGA_C40x25)
+#define SW_VGA_C80x25		_IO('S', M_VGA_C80x25)
+#define SW_VGA_C80x30		_IO('S', M_VGA_C80x30)
+#define SW_VGA_C80x50		_IO('S', M_VGA_C80x50)
+#define SW_VGA_C80x60		_IO('S', M_VGA_C80x60)
+#define SW_VGA_M80x25		_IO('S', M_VGA_M80x25)
+#define SW_VGA_M80x30		_IO('S', M_VGA_M80x30)
+#define SW_VGA_M80x50		_IO('S', M_VGA_M80x50)
+#define SW_VGA_M80x60		_IO('S', M_VGA_M80x60)
+#define SW_VGA11			_IO('S', M_VGA11)
+#define SW_BG640x480		_IO('S', M_VGA11)
+#define SW_VGA12			_IO('S', M_VGA12)
+#define SW_CG640x480		_IO('S', M_VGA12)
+#define SW_VGA13			_IO('S', M_VGA13)
+#define SW_VGA_CG320		_IO('S', M_VGA13)
+#define SW_VGA_CG640		_IO('S', M_VGA_CG640)
+#define SW_VGA_MODEX		_IO('S', M_VGA_MODEX)
 
-#define SW_VGA_C90x25	_IO('S', M_VGA_C90x25)
-#define SW_VGA_M90x25	_IO('S', M_VGA_M90x25)
-#define SW_VGA_C90x30	_IO('S', M_VGA_C90x30)
-#define SW_VGA_M90x30	_IO('S', M_VGA_M90x30)
-#define SW_VGA_C90x43	_IO('S', M_VGA_C90x43)
-#define SW_VGA_M90x43	_IO('S', M_VGA_M90x43)
-#define SW_VGA_C90x50	_IO('S', M_VGA_C90x50)
-#define SW_VGA_M90x50	_IO('S', M_VGA_M90x50)
-#define SW_VGA_C90x60	_IO('S', M_VGA_C90x60)
-#define SW_VGA_M90x60	_IO('S', M_VGA_M90x60)
+#define SW_VGA_C90x25		_IO('S', M_VGA_C90x25)
+#define SW_VGA_M90x25		_IO('S', M_VGA_M90x25)
+#define SW_VGA_C90x30		_IO('S', M_VGA_C90x30)
+#define SW_VGA_M90x30		_IO('S', M_VGA_M90x30)
+#define SW_VGA_C90x43		_IO('S', M_VGA_C90x43)
+#define SW_VGA_M90x43		_IO('S', M_VGA_M90x43)
+#define SW_VGA_C90x50		_IO('S', M_VGA_C90x50)
+#define SW_VGA_M90x50		_IO('S', M_VGA_M90x50)
+#define SW_VGA_C90x60		_IO('S', M_VGA_C90x60)
+#define SW_VGA_M90x60		_IO('S', M_VGA_M90x60)
 
-#define SW_TEXT_80x25	_IO('S', M_TEXT_80x25)
-#define SW_TEXT_80x30	_IO('S', M_TEXT_80x30)
-#define SW_TEXT_80x43	_IO('S', M_TEXT_80x43)
-#define SW_TEXT_80x50	_IO('S', M_TEXT_80x50)
-#define SW_TEXT_80x60	_IO('S', M_TEXT_80x60)
-#define SW_TEXT_132x25	_IO('S', M_TEXT_132x25)
-#define SW_TEXT_132x30	_IO('S', M_TEXT_132x30)
-#define SW_TEXT_132x43	_IO('S', M_TEXT_132x43)
-#define SW_TEXT_132x50	_IO('S', M_TEXT_132x50)
-#define SW_TEXT_132x60	_IO('S', M_TEXT_132x60)
+#define SW_TEXT_80x25		_IO('S', M_TEXT_80x25)
+#define SW_TEXT_80x30		_IO('S', M_TEXT_80x30)
+#define SW_TEXT_80x43		_IO('S', M_TEXT_80x43)
+#define SW_TEXT_80x50		_IO('S', M_TEXT_80x50)
+#define SW_TEXT_80x60		_IO('S', M_TEXT_80x60)
+#define SW_TEXT_132x25		_IO('S', M_TEXT_132x25)
+#define SW_TEXT_132x30		_IO('S', M_TEXT_132x30)
+#define SW_TEXT_132x43		_IO('S', M_TEXT_132x43)
+#define SW_TEXT_132x50		_IO('S', M_TEXT_132x50)
+#define SW_TEXT_132x60		_IO('S', M_TEXT_132x60)
 
 #define SW_VESA_CG640x400	_IO('V', M_VESA_CG640x400 - M_VESA_BASE)
 #define SW_VESA_CG640x480	_IO('V', M_VESA_CG640x480 - M_VESA_BASE)

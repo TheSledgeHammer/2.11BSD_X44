@@ -188,8 +188,8 @@ struct cfattach ahc_isa_ca = {
  */
 struct ahc_isa_slot {
 	LIST_ENTRY(ahc_isa_slot)	link;
-	int				bus;
-	int				slot;
+	int							bus;
+	int							slot;
 };
 static LIST_HEAD(, ahc_isa_slot) ahc_isa_all_slots;
 static int ahc_isa_slot_initialized;

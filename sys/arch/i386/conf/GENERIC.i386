@@ -3,7 +3,6 @@
 #	GENERIC -- everything that's currently supported
 #
 
-ident			GENERIC
 machine 		i386
 maxusers		32				# estimated number of users
 
@@ -23,9 +22,6 @@ options 		I686_CPU
 
 # CPU-related options.
 options 		MATH_EMULATE	# floating point emulation
-
-# eliminate delay no-ops in I/O; recommended on all but very old machines
-#options 		DUMMY_NOPS
 
 # Standard system options
 options 		UCONSOLE		# users can use TIOCCONS (for xconsole)
@@ -54,5 +50,5 @@ options 		COMPAT_43		# and 4.3BSD
 # Warning, these may compile large string tables into the kernel!
 options 	  	EISAVERBOSE		# verbose EISA device autoconfig messages
 options 		PCIVERBOSE		# verbose PCI device autoconfig messages
-#options 		PCMCIAVERBOSE	# verbose PCMCIA configuration messages
-#options 		SCSIVERBOSE		# human readable SCSI error messages
+options 		PCMCIAVERBOSE	# verbose PCMCIA configuration messages
+options 		SCSIVERBOSE		# human readable SCSI error messages

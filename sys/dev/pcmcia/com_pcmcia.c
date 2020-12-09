@@ -82,13 +82,13 @@ void com_pcmcia_attach (struct device *, struct device *, void *);
 void com_pcmcia_cleanup (void *);
 
 struct com_pcmcia_softc {
-	struct com_softc sc_com;		/* real "com" softc */
+	struct com_softc 		sc_com;			/* real "com" softc */
 
 	/* PCMCIA-specific goo */
-	struct pcmcia_io_handle sc_pcioh;	/* PCMCIA i/o space info */
-	int sc_io_window;			/* our i/o window */
-	struct pcmcia_function *sc_pf;		/* our PCMCIA function */
-	void *sc_ih;				/* interrupt handler */
+	struct pcmcia_io_handle sc_pcioh;		/* PCMCIA i/o space info */
+	int 					sc_io_window;	/* our i/o window */
+	struct pcmcia_function 	*sc_pf;			/* our PCMCIA function */
+	void 					*sc_ih;			/* interrupt handler */
 };
 
 struct cfattach com_pcmcia_ca = {

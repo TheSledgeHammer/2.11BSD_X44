@@ -59,7 +59,7 @@ int	pcic_debug = 0;
 #define	DPRINTF(arg)
 #endif
 
-#define	PCIC_VENDOR_UNKNOWN		0
+#define	PCIC_VENDOR_UNKNOWN			0
 #define	PCIC_VENDOR_I82365SLR0		1
 #define	PCIC_VENDOR_I82365SLR1		2
 #define	PCIC_VENDOR_CIRRUS_PD6710	3

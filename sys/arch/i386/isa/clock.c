@@ -106,24 +106,24 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <i386/isa/timerreg.h>
 #include <i386/isa/spkrreg.h>
 
-void	spinwait (int);
-void	findcpuspeed (void);
-int		clockintr (void *);
-int		gettick (void);
-void	sysbeepstop (void *);
-void	sysbeep (int, int);
-void	rtcinit (void);
-int		rtcget (mc_todregs *);
-void	rtcput (mc_todregs *);
-static int yeartoday (int);
-int 	bcdtobin (int);
-int		bintobcd (int);
+void		spinwait (int);
+void		findcpuspeed (void);
+int			clockintr (void *);
+int			gettick (void);
+void		sysbeepstop (void *);
+void		sysbeep (int, int);
+void		rtcinit (void);
+int			rtcget (mc_todregs *);
+void		rtcput (mc_todregs *);
+static int 	yeartoday (int);
+int 		bcdtobin (int);
+int			bintobcd (int);
 
 
 __inline u_int mc146818_read (void *, u_int);
 __inline void mc146818_write (void *, u_int, u_int);
 
-#define	SECMIN	((unsigned)60)			/* seconds per minute */
+#define	SECMIN	((unsigned)60)				/* seconds per minute */
 #define	SECHOUR	((unsigned)(60*SECMIN))		/* seconds per hour */
 #define	SECDAY	((unsigned)(24*SECHOUR))	/* seconds per day */
 #define	SECYR	((unsigned)(365*SECDAY))	/* seconds per common year */
