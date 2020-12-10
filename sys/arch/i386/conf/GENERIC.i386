@@ -52,3 +52,9 @@ options 	  	EISAVERBOSE		# verbose EISA device autoconfig messages
 options 		PCIVERBOSE		# verbose PCI device autoconfig messages
 options 		PCMCIAVERBOSE	# verbose PCMCIA configuration messages
 options 		SCSIVERBOSE		# human readable SCSI error messages
+
+# miscellaneous pseudo-devices
+pseudo-device	ksyms			#/dev/ksyms
+
+# cmos(4) pseudo-device
+pseudo-device	cmos

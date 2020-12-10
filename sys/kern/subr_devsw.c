@@ -74,7 +74,8 @@ extern const struct linesw **linesw, *linesw0[];
 extern const int sys_bdevsws, sys_cdevsws, sys_linesws;
 extern int max_bdevsws, max_cdevsws, max_linesws;
 
-struct devswops 		*dvops;
+struct devswtable 		*sys_devsw;
+struct devswops 		*sys_dvops;
 struct lock_object  	*devswtable_lock;
 
 struct devswtable_head 	devsw_hashtable[MAXDEVSW]; /* hash table of devices in the device switch table (includes bdevsw, cdevsw & linesw) */
@@ -86,9 +87,24 @@ devswtable_init()
 		TAILQ_INIT(&devsw_hashtable[i]);
 	}
 
-	&dvops = malloc(sizeof(struct devswops *), M_DEVSW, M_WAITOK);
+	KASSERT(sys_bdevsws < MAXDEVSW - 1);
+	KASSERT(sys_cdevsws < MAXDEVSW - 1);
+	KASSERT(sys_linesws < MAXDEVSW - 1);
+
+	devswtable_allocate(&sys_devsw, &sys_dvops);
 
 	simple_lock_init(&devswtable_lock, "devswtable_lock");
+}
+
+/* allocate devswtable structures */
+static void
+devswtable_allocate(devsw, dvops)
+	register struct devswtable *devsw;
+	register struct devswops *dvops;
+{
+	devsw = (struct devswtable *)malloc(sizeof(*devsw), M_DEVSW, M_WAITOK);
+	dvops = (struct devswops *)malloc(sizeof(*dvops), M_DEVSW, M_WAITOK);
+	devsw->dv_ops = dvops;
 }
 
 int
@@ -136,7 +152,7 @@ devswtable_add(devsw, data, major)
 	devsw->dv_major = major;
 
 	bucket = &devsw_hashtable[devswtable_hash(data, major)];
-	entry = (devswtable_entry_t) malloc((u_long) sizeof *entry, M_DEVSW, M_WAITOK);
+	entry = (devswtable_entry_t) malloc((u_long) sizeof(*entry), M_DEVSWHASH, M_WAITOK);
 	entry->dve_devswtable = devsw;
 
 	simple_lock(&devswtable_lock);
@@ -162,6 +178,87 @@ devswtable_remove(data, major)
 	}
 }
 
+/*
+int
+devswtable_attach(major, devsw, type)
+	dev_t 				major;
+	struct devswtable  *devsw;
+	int 				type;
+{
+	int error = 0;
+
+    switch(type) {
+    case BDEVTYPE:
+    	struct bdevsw *bd = DTOB(devsw);
+    	error = DVOP_ATTACH(devsw, bd, major);
+        if(error) {
+        	devswtable_add(devsw, bd, major);
+            return (error);
+        }
+        break;
+
+    case CDEVTYPE:
+        struct cdevsw *cd = DTOC(devsw);
+    	error = DVOP_ATTACH(devsw, cd, major);
+        if(error) {
+        	devswtable_add(devsw, cd, major);
+            return (error);
+        }
+        break;
+
+    case LINETYPE:
+        struct linesw *ld = DTOL(devsw);
+    	error = DVOP_ATTACH(devsw, ld, major);
+        if(error) {
+        	devswtable_add(devsw, ld, major);
+            return (error);
+        }
+        break;
+    }
+
+    return (error);
+}
+
+int
+devswtable_detach(major, devsw, type)
+	dev_t 				major;
+	struct devswtable  *devsw;
+	 int 				type;
+{
+	int error = 0;
+
+    switch(type) {
+    case BDEVTYPE:
+    	struct bdevsw *bd = DTOB(devsw);
+    	error = DVOP_DETACH(devsw, bd, major);
+        if(error) {
+        	devswtable_remove(bd, major);
+            return (error);
+        }
+        break;
+
+    case CDEVTYPE:
+        struct cdevsw *cd = DTOC(devsw);
+    	error = DVOP_DETACH(devsw, cd, major);
+        if(error) {
+        	devswtable_remove(cd, major);
+            return (error);
+        }
+        break;
+
+    case LINETYPE:
+        struct linesw *ld = DTOL(devsw);
+    	error = DVOP_DETACH(devsw, ld, major);
+        if(error) {
+        	devswtable_remove(ld, major);
+            return (error);
+        }
+        break;
+    }
+
+    return (error);
+}
+*/
 int
 devswtable_lookup_bdevsw(devsw, dev)
 	struct devswtable *devsw;
@@ -245,9 +342,9 @@ devswtable_dev_finder(major, devsw, type)
 }
 
 int
-devsw_io(data, major, type)
-	void 	*data;
+devsw_io(major, data, type)
 	dev_t 	major;
+	void 	*data;
 	int		type;
 {
 	struct devswtable *devsw = devswtable_lookup(data, major);
@@ -259,11 +356,10 @@ devsw_io(data, major, type)
 	return (devswtable_dev_finder(major, devsw, type));
 }
 
-/* devswtable operations */
+/* devsw operations */
 int
 dvop_attach(devsw, device, major)
 	struct devswtable 	*devsw;
-    //const char      	*devname;
     struct device   	*device;
     dev_t 				major;
 {
@@ -272,7 +368,6 @@ dvop_attach(devsw, device, major)
 
     args.d_devswtable.dv_ops = &dvops;
     args.d_devswtable = devsw;
-   // args.d_name = devname;
     args.d_device = device;
     args.d_major = major;
 
@@ -288,7 +383,6 @@ dvop_attach(devsw, device, major)
 int
 dvop_detach(devsw, device, major)
 	struct devswtable 	*devsw;
-	//const char      	*devname;
     struct device   	*device;
     dev_t 				major;
 {
@@ -297,7 +391,6 @@ dvop_detach(devsw, device, major)
 
     args.d_devswtable.dv_ops = &dvops;
     args.d_devswtable = devsw;
-    //args.d_name = devname;
     args.d_device = device;
     args.d_major = major;
 
@@ -417,10 +510,7 @@ bdevsw_attach(args)
 		return (EEXIST);
 	}
 
-	bdevsw = DTOB(args->d_devswtable);
-	devswtable_add(devsw, bdevsw, maj);
 	simple_unlock(&devswtable_lock);
-
 	return (0);
 }
 
@@ -443,9 +533,8 @@ bdevsw_detach(args)
 			break;
 		}
 	}
-	devswtable_remove(bdevsw, maj);
-	simple_unlock(&devswtable_lock);
 
+	simple_unlock(&devswtable_lock);
 	return (0);
 }
 
@@ -518,10 +607,7 @@ cdevsw_attach(args)
 		return (EEXIST);
 	}
 
-	cdevsw = DTOC(args->d_devswtable);
-	devswtable_add(devsw, cdevsw, maj);
 	simple_unlock(&devswtable_lock);
-
 	return (0);
 }
 
@@ -544,9 +630,8 @@ cdevsw_detach(args)
 			break;
 		}
 	}
-	devswtable_remove(cdevsw, maj);
-	simple_unlock(&devswtable_lock);
 
+	simple_unlock(&devswtable_lock);
 	return (0);
 }
 
@@ -603,7 +688,7 @@ linesw_attach(args)
 	}
 
 	if (maj >= max_linesws) {
-		KASSERT(linesw == linesw0);
+		KASSERT(linesw == &linesw0);
 		newptr = malloc(MAXDEVSW * LINESW_SIZE, M_DEVSW, M_NOWAIT);
 		if (newptr == NULL) {
 			simple_unlock(&devswtable_lock);
@@ -619,10 +704,7 @@ linesw_attach(args)
 		return (EEXIST);
 	}
 
-	linesw = DTOL(args->d_devswtable);
-	devswtable_add(devsw, linesw, maj);
 	simple_unlock(&devswtable_lock);
-
 	return (0);
 }
 
@@ -645,9 +727,8 @@ linesw_detach(args)
 			break;
 		}
 	}
-	devswtable_remove(linesw, maj);
-	simple_unlock(&devswtable_lock);
 
+	simple_unlock(&devswtable_lock);
 	return (0);
 }
 

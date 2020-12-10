@@ -28,7 +28,6 @@
 #include <machine/cpu.h>
 #include <machine/pio.h>
 #include <machine/spkr.h>
-#include <machine/conf.h>
 
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>

@@ -146,26 +146,26 @@ struct i386_isa_dma_cookie {
 /*
  * RAM Physical Address Space (ignoring the above mentioned "hole")
  */
-#define	RAM_BEGIN		0x0000000		/* Start of RAM Memory */
-#define	RAM_END			0x1000000		/* End of RAM Memory */
-#define	RAM_SIZE		(RAM_END - RAM_BEGIN)
+#define	RAM_BEGIN				0x0000000		/* Start of RAM Memory */
+#define	RAM_END					0x1000000		/* End of RAM Memory */
+#define	RAM_SIZE				(RAM_END - RAM_BEGIN)
 
 /*
  * Oddball Physical Memory Addresses
  */
-#define	COMPAQ_RAMRELOC	0x80c00000	/* Compaq RAM relocation/diag */
-#define	COMPAQ_RAMSETUP	0x80c00002	/* Compaq RAM setup */
-#define	WEITEK_FPU		0xC0000000	/* WTL 2167 */
-#define	CYRIX_EMC		0xC0000000	/* Cyrix EMC */
+#define	COMPAQ_RAMRELOC			0x80c00000	/* Compaq RAM relocation/diag */
+#define	COMPAQ_RAMSETUP			0x80c00002	/* Compaq RAM setup */
+#define	WEITEK_FPU				0xC0000000	/* WTL 2167 */
+#define	CYRIX_EMC				0xC0000000	/* Cyrix EMC */
 
 /*
  * stuff that used to be in pccons.c
  */
-#define	MONO_BASE		0x3B4
-#define	MONO_BUF		0xB0000
-#define	CGA_BASE		0x3D4
-#define	CGA_BUF			0xB8000
-#define	IOPHYSMEM		0xA0000
+#define	MONO_BASE				0x3B4
+#define	MONO_BUF				0xB0000
+#define	CGA_BASE				0x3D4
+#define	CGA_BUF					0xB8000
+#define	IOPHYSMEM				0xA0000
 
 /*
  * Methods that a PIC provides to mask/unmask a given interrupt source,

@@ -94,7 +94,7 @@ dev_type_close(cmos_close);
 dev_type_read(cmos_read);
 dev_type_write(cmos_write);
 
-static int 	cmos_initialized;
+static int 	cmos_loaded;
 static void cmos_sum(uint8_t *, int, int, int);
 static int	cmos_check(void);
 
@@ -114,11 +114,11 @@ cmos_attach(int num)
 {
 	if (num > 1)
 		return;
-	if(cmos_initialized || cmos_check) {
+	if(cmos_loaded || cmos_check) {
 #ifdef CMOS_DEBUG
 		printf("cmos: initialized\n");
 #endif
-		cmos_initialized = 1;
+		cmos_loaded = 1;
 	} else {
 		printf("cmos: invalid checksum\n");
 	}
@@ -130,7 +130,7 @@ int
 cmos_open(dev_t dev, int flags, int ifmt, struct proc *p)
 {
 	simple_lock(&cmos_lock);
-	if ((minor(dev) != 0) || (!cmos_initialized)) {
+	if ((minor(dev) != 0) || (!cmos_loaded)) {
 		simple_unlock(&cmos_lock);
 		return (ENXIO);
 	}

@@ -48,10 +48,30 @@
 #include <sys/tty.h>
 #include <sys/file.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/vnode.h>
 #include <sys/poll.h>
 
 #include <dev/cons.h>
+
+dev_type_open(cnopen);
+dev_type_close(cnclose);
+dev_type_read(cnread);
+dev_type_write(cnwrite);
+dev_type_stop(cnstop);
+dev_type_ioctl(cnioctl);
+dev_type_poll(cnpoll);
+
+const struct cdevsw cons_cdevsw = {
+		.d_open = cnopen,
+		.d_close = cnclose,
+		.d_read = cnread,
+		.d_write = cnwrite,
+		.d_stop = cnstop,
+		.d_ioctl = cnioctl,
+		.d_poll = cnpoll,
+		.d_type = D_TTY
+};
 
 struct tty *constty = NULL;			/* virtual console output device */
 struct vnode *cn_devvp = NULLVP;	/* vnode for underlying device. */
@@ -83,7 +103,7 @@ cnopen(dev, flag, mode, p)
 		/* try to get a reference on its vnode, but fail silently */
 		cdevvp(dev, &cn_devvp);
 	}
-	return ((*cdevsw[major(cndev)].d_open)(cndev, flag, mode, p));
+	return (cdev_open(cndev, flag, mode, p));
 }
 
 int
@@ -110,7 +130,7 @@ cnclose(dev, flag, mode, p)
 	}
 	if (vfinddev(dev, VCHR, &vp) && vcount(vp))
 		return (0);
-	return ((*cdevsw[major(dev)].d_close)(dev, flag, mode, p));
+	return (cdev_close(dev, flag, mode, p));
 }
 
 int
@@ -133,7 +153,7 @@ cnread(dev, uio, flag)
 		return ENXIO;
 
 	dev = cn_tab->cn_dev;
-	return ((*cdevsw[major(dev)].d_read)(dev, uio, flag));
+	return (cdev_read(dev, uio, flag));
 }
 
 int
@@ -153,7 +173,7 @@ cnwrite(dev, uio, flag)
 		return ENXIO;
 	else
 		dev = cn_tab->cn_dev;
-	return ((*cdevsw[major(dev)].d_write)(dev, uio, flag));
+	return (cdev_write(dev, uio, flag));
 }
 
 int
@@ -161,7 +181,7 @@ cnstop(tp, flag)
 	struct tty *tp;
 	int flag;
 {
-	return (0);
+	return (cdev_stop(tp, flag));
 }
 
 
@@ -199,7 +219,7 @@ cnioctl(dev, cmd, data, flag, p)
 		return ENXIO;
 	else
 		dev = cn_tab->cn_dev;
-	return ((*cdevsw[major(dev)].d_ioctl)(dev, cmd, data, flag, p));
+	return (cdev_ioctl(dev, cmd, data, flag, p));
 }
 
 /*ARGSUSED*/
@@ -220,7 +240,7 @@ cnpoll(dev, events, p)
 		return ENXIO;
 	else
 		dev = cn_tab->cn_dev;
-	return (ttpoll(dev, events, p));
+	return (cdev_poll(dev, events, p));
 }
 
 int

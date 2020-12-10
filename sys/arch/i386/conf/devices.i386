@@ -35,6 +35,12 @@ file	arch/i386/i386/mainbus.c	    	mainbus
 define bioscall
 file	arch/i386/i386/bioscall.s	    	bioscall needs-flag
 
+#
+# CMOS RAM
+#
+defpseudo cmos
+file	arch/i386/isa/cmos.c				cmos needs-flag
+
 #device	mca at root {...}
 
 # PCI-only drivers
@@ -66,45 +72,10 @@ device	npx
 attach	npx at isa
 file	arch/i386/isa/npx.c		        	npx needs-flag
 
-# attribute used to represent the "keyboard controller"
-# XXX should be a real device
-define pckbd { [irq = -1], [port = -1] }
-
-# PC console support a la "pccons"
-device	pc: tty, pckbd
-attach	pc at isa
-file	arch/i386/isa/pccons.c		    	pc needs-flag
-
-# PC Mice; Logitech-style, Microsoft-style, and PS/2-style
-device	lms
-attach	lms at isa
-file	arch/i386/isa/lms.c		        	lms needs-flag
-device	mms
-attach	mms at isa
-file	arch/i386/isa/mms.c		        	mms needs-flag
-device	pms
-attach	pms at pckbd
-file	arch/i386/isa/pms.c		        	pms needs-flag
-
-# Floppy disk controller
-device	fdc {drive = -1}
-attach	fdc at isa
-device	fd: disk, isadma
-attach	fd at fdc
-file	arch/i386/isa/fd.c		            fdc needs-flag
-major	{fd = 2}
-
 # PC speaker
 #device	spkr: tty
 #attach	spkr at pckbd
 #file	arch/i386/isa/spkr.c		        spkr needs-flag
-
-# Game adapter (joystick)
-device	joy
-file	arch/i386/isa/joy.c		            joy needs-flag
-
-attach	joy at isa with joy_isa
-file	arch/i386/isa/joy_isa.c		        joy_isa
 
 # Adaptec AHA-284x VL SCSI controllers
 # device declaration in sys/conf/files
@@ -116,9 +87,6 @@ file	arch/i386/eisa/eisa_machdep.c	    eisa
 
 # ISA Plug 'n Play devices
 file	arch/i386/isa/isapnp_machdep.c	    isapnp
-
-attach	joy at isapnp with joy_isapnp
-file	arch/i386/isa/joy_isapnp.c	        joy_isapnp
 
 # XXXX pcic here because it needs to be late.  The catch: pcic needs
 # to be late, so devices which attach to it are attached late.  But it

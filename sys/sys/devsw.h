@@ -93,8 +93,8 @@ struct devswops {
     int     (*dvop_detach)(struct devswtable *, struct device *, dev_t);
 };
 
-#define DVOP_ATTACH(dv, name, device, major)	(*((dv)->dv_ops->dvop_attach))(dv, device, major)
-#define DVOP_DETACH(dv, name, device, major)	(*((dv)->dv_ops->dvop_detach))(dv, device, major)
+#define DVOP_ATTACH(dv, device, major)	(*((dv)->dv_ops->dvop_attach))(dv, device, major)
+#define DVOP_DETACH(dv, device, major)	(*((dv)->dv_ops->dvop_detach))(dv, device, major)
 
 
 struct dvop_attach_args {
@@ -142,8 +142,9 @@ struct vnode;
 #define	D_TTY	3
 #define	D_OTHER	4
 
-//#ifdef _KERNEL
-extern struct devswops 	 dvops;	/* device switch table operations */
+#ifdef _KERNEL
+extern struct devswops 	 sys_dvops;	/* device switch table operations */
+extern struct devswtable sys_devsw;
 
 void					devswtable_init();
 struct devswtable 		*devswtable_lookup(void *, dev_t);
@@ -152,7 +153,6 @@ void 					devswtable_remove(void *, dev_t);
 dev_t					bdevsw_lookup_major(struct bdevsw *);
 dev_t					cdevsw_lookup_major(struct cdevsw *);
 dev_t					linesw_lookup_major(struct linesw *);
-
 
 #define	dev_type_open(n)		int n(dev_t, int, int, struct proc *)
 #define	dev_type_close(n)		int n(dev_t, int, int, struct proc *)

@@ -37,6 +37,7 @@
 
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
+
 #include <dev/eisa/eisavar.h>
 #include <dev/pci/pcivar.h>
 

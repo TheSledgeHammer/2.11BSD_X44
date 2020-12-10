@@ -87,12 +87,12 @@ void	nullcnpollc (dev_t, int);
 #define	dev_decl(n,t)		__CONCAT(dev_type_,t)(__CONCAT(n,t))
 #define	dev_init(n,t)		__CONCAT(n,t)
 
-#define	cons_decl(n) \
-	dev_decl(n,cnprobe); dev_decl(n,cninit); dev_decl(n,cngetc); \
-	dev_decl(n,cnputc); dev_decl(n,cnpollc)
+#define	cons_decl(n) 												\
+	dev_decl(n,cnprobe); dev_decl(n,cninit); dev_decl(n,cngetc); 	\
+	dev_decl(n,cnputc); dev_decl(n,cnpollc);
 
 #define	cons_init(n) { \
-	dev_init(1,n,cnprobe), dev_init(1,n,cninit), dev_init(1,n,cngetc), \
-	dev_init(1,n,cnputc), dev_init(1,n,cnpollc)
-}
+	dev_init(n,cnprobe), dev_init(n,cninit), dev_init(n,cngetc), 	\
+	dev_init(n,cnputc), dev_init(n,cnpollc) 						\
+	0, 0 }
 #endif

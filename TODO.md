@@ -16,6 +16,10 @@ A General todo list. Don't hesitate to add to this list. :)
 ## conf:
 
 ## kern:
+- subr_devsw: Needs refining
+	- attaching & detaching devices in devsw
+	- adding & removing attached devices from the devswtable
+	
 - exec_macho: exec_mach_copyargs 
 	(NetBSD 5.2: /compat/mach/mach_exec.c)
 	

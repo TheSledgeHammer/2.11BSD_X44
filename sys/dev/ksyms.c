@@ -64,12 +64,26 @@
 #include <sys/malloc.h>
 #include <sys/fcntl.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/exec_elf.h>
 #include <sys/ioccom.h>
 #include <sys/queue.h>
 #include <sys/user.h>
 #include <sys/lock.h>
 #include <sys/ksyms.h>
+
+dev_type_open(ksymsopen);
+dev_type_close(ksymsclose);
+dev_type_read(ksymsread);
+dev_type_write(ksymswrite);
+
+const struct cdevsw ksyms_cdevsw = {
+		.d_open = ksymsopen,
+		.d_close = ksymsclose,
+		.d_read = ksymsread,
+		.d_write = ksymswrite,
+		.d_type = D_OTHER
+};
 
 void
 ksymsattach(int num)
@@ -201,4 +215,10 @@ ksymsread(dev_t dev, struct uio *uio, int flags)
 	}
 
 	return (0);
+}
+
+int
+ksymswrite(dev_t dev, struct uio *uio, int flags)
+{
+	return (EROFS);
 }
