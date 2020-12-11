@@ -91,8 +91,8 @@ struct com_pcmcia_softc {
 	void 					*sc_ih;			/* interrupt handler */
 };
 
-struct cfattach com_pcmcia_ca = {
-	sizeof(struct com_pcmcia_softc), com_pcmcia_match, com_pcmcia_attach
+struct cfdriver com_pcmcia_ca = {
+	NULL, "com_pcmcia", com_pcmcia_match, com_pcmcia_attach, NULL, DV_DULL, sizeof(struct com_pcmcia_softc)
 };
 
 int

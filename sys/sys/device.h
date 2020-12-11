@@ -44,6 +44,7 @@
 
 #ifndef _SYS_DEVICE_H_
 #define	_SYS_DEVICE_H_
+//#include <sys/queue.h>
 
 /*
  * Minimal device structures.
@@ -59,21 +60,23 @@ enum devclass {
 };
 
 struct device {
-	enum	devclass dv_class;	/* this device's classification */
-	struct	device *dv_next;	/* next in list of all */
-	struct	cfdata *dv_cfdata;	/* config data that found us */
-	int		dv_unit;			/* device unit number */
-	char	dv_xname[16];		/* external name (name + unit) */
-	struct	device *dv_parent;	/* pointer to parent device */
+	enum devclass	dv_class;		/* this device's classification */
+	struct	device 	*dv_next;		/* next in list of all */
+	struct	cfdata	*dv_cfdata;		/* config data that found us */
+	int				dv_unit;		/* device unit number */
+	char			dv_xname[16];	/* external name (name + unit) */
+	struct	device 	*dv_parent;		/* pointer to parent device */
+
+//	TAILQ_ENTRY(device)	dv_list;	/* entry on list of all devices */
 };
-TAILQ_HEAD(devicelist, device);
+//TAILQ_HEAD(devicelist, device);
 
 /* `event' counters (use zero or more per device instance, as needed) */
 struct evcnt {
-	struct	evcnt *ev_next;		/* linked list */
-	struct	device *ev_dev;		/* associated device */
-	int		ev_count;			/* how many have occurred */
-	char	ev_name[8];			/* what to call them (systat display) */
+	struct	evcnt 	*ev_next;		/* linked list */
+	struct	device 	*ev_dev;		/* associated device */
+	int				ev_count;		/* how many have occurred */
+	char			ev_name[8];		/* what to call them (systat display) */
 };
 
 /*
@@ -92,7 +95,9 @@ struct cfdata {
 #define	FSTATE_FOUND	1	/* has been found */
 #define	FSTATE_STAR		2	/* duplicable */
 
-typedef int (*cfmatch_t) (struct device *, struct cfdata *, void *);
+typedef int 	(*cfmatch_t)(struct device *, struct cfdata *, void *);
+typedef void 	(*cfattach_t)(struct device *, struct device *, void *);
+typedef int		(*cfdetach_t)(struct device *, int);
 
 /*
  * `configuration' driver (what the machine-independent autoconf uses).
@@ -103,14 +108,15 @@ typedef int (*cfmatch_t) (struct device *, struct cfdata *, void *);
  * can be found long after the machine is up and running.
  */
 struct cfdriver {
-	void	**cd_devs;			/* devices found */
-	char	*cd_name;			/* device name */
-	cfmatch_t cd_match;			/* returns a match level */
-	void	(*cd_attach) (struct device *, struct device *, void *);
-	enum	devclass cd_class;	/* device classification */
-	size_t	cd_devsize;			/* size of dev data (for malloc) */
-	void	*cd_aux;			/* additional driver, if any */
-	int		cd_ndevs;			/* size of cd_devs array */
+	void				**cd_devs;				/* devices found */
+	char				*cd_name;				/* device name */
+	int 				(*cd_match)(struct device *, struct cfdata *, void *);
+	void				(*cd_attach)(struct device *, struct device *, void *);
+	int					(*cd_detach)(struct device *, int);
+	enum	devclass 	cd_class;				/* device classification */
+	size_t				cd_devsize;				/* size of dev data (for malloc) */
+	void				*cd_aux;				/* additional driver, if any */
+	int					cd_ndevs;				/* size of cd_devs array */
 };
 
 /*
@@ -128,8 +134,8 @@ typedef int (*cfprint_t) (void *, char *);
  * Pseudo-device attach information (function + number of pseudo-devs).
  */
 struct pdevinit {
-	void	(*pdev_attach) (int);
-	int		pdev_count;
+	void				(*pdev_attach) (int);
+	int					pdev_count;
 };
 
 struct	device *alldevs;	/* head of list of all devices */

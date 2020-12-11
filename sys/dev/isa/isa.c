@@ -51,15 +51,11 @@ int 	isamatch (struct device *, struct cfdata *, void *);
 void 	isaattach (struct device *, struct device *, void *);
 int 	isaprint (void *, const char *);
 
-struct cfattach isa_ca = {
-	sizeof(struct isa_softc), isamatch, isaattach
-};
-
 struct cfdriver isa_cd = {
 #ifdef __BROKEN_INDIRECT_CONFIG
-	NULL, "isa", DV_DULL, 1
+	NULL, "isa", isamatch, isaattach, NULL, DV_DULL, 1
 #else
-	NULL, "isa", DV_DULL
+	NULL, "isa", isamatch, isaattach, NULL, DV_DULL, sizeof(struct isa_softc)
 #endif
 };
 

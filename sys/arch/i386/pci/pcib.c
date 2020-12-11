@@ -56,12 +56,8 @@
 int		pcibmatch (struct device *, void *, void *);
 void	pcibattach (struct device *, struct device *, void *);
 
-struct cfattach pcib_ca = {
-	sizeof(struct device), pcibmatch, pcibattach
-};
-
 struct cfdriver pcib_cd = {
-	NULL, "pcib", DV_DULL
+	NULL, "pcib", pcibmatch, pcibattach, NULL, DV_DULL, sizeof(struct device)
 };
 
 void	pcib_callback (void *);

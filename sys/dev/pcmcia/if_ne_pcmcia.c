@@ -65,18 +65,18 @@ int		ne_pcmcia_enable (struct dp8390_softc *);
 void	ne_pcmcia_disable (struct dp8390_softc *);
 
 struct ne_pcmcia_softc {
-	struct ne2000_softc sc_ne2000;		/* real "ne2000" softc */
+	struct ne2000_softc sc_ne2000;				/* real "ne2000" softc */
 
 	/* PCMCIA-specific goo */
-	struct pcmcia_io_handle sc_pcioh;	/* PCMCIA i/o information */
-	int sc_asic_io_window;			/* i/o window for ASIC */
-	int sc_nic_io_window;			/* i/o window for NIC */
-	struct pcmcia_function *sc_pf;		/* our PCMCIA function */
-	void *sc_ih;				/* interrupt handle */
+	struct pcmcia_io_handle sc_pcioh;			/* PCMCIA i/o information */
+	int 					sc_asic_io_window;	/* i/o window for ASIC */
+	int 					sc_nic_io_window;	/* i/o window for NIC */
+	struct pcmcia_function 	*sc_pf;				/* our PCMCIA function */
+	void 					*sc_ih;				/* interrupt handle */
 };
 
-struct cfattach ne_pcmcia_ca = {
-	sizeof(struct ne_pcmcia_softc), ne_pcmcia_match, ne_pcmcia_attach
+struct cfdriver ne_pcmcia_ca = {
+	NULL, "ne_pcmcia", ne_pcmcia_match, ne_pcmcia_attach, NULL, DV_DULL, sizeof(struct ne_pcmcia_softc)
 };
 
 struct ne2000dev {

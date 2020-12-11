@@ -41,7 +41,7 @@ struct spkr_softc {
 	struct device sc_dev;
 };
 
-struct cfattach spkr_ca = {
+struct cfdriver spkr_ca = {
 	sizeof(struct spkr_softc), spkrprobe, spkrattach
 };
 

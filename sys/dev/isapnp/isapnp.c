@@ -71,12 +71,8 @@ static int isapnp_match (struct device *, struct cfdata *, void *);
 #endif
 static void isapnp_attach (struct device *, struct device *, void *);
 
-struct cfattach isapnp_ca = {
-	sizeof(struct isapnp_softc), isapnp_match, isapnp_attach
-};
-
 struct cfdriver isapnp_cd = {
-	NULL, "isapnp", DV_DULL
+	NULL, "isapnp", isapnp_match, isapnp_attach, NULL, DV_DULL, sizeof(struct isapnp_softc)
 };
 
 

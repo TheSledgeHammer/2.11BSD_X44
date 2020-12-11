@@ -73,11 +73,7 @@ int		pcmcia_print (void *, const char *);
 int		pcmcia_card_intr (void *);
 
 struct cfdriver pcmcia_cd = {
-	NULL, "pcmcia", DV_DULL
-};
-
-struct cfattach pcmcia_ca = {
-	sizeof(struct pcmcia_softc), pcmcia_match, pcmcia_attach
+	NULL, "pcmcia", pcmcia_match, pcmcia_attach, NULL, DV_DULL, sizeof(struct pcmcia_softc)
 };
 
 int

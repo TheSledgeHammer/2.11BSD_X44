@@ -70,8 +70,8 @@ struct aic_pcmcia_softc {
 	void 					*sc_ih;			/* interrupt handler */
 };
 
-struct cfattach aic_pcmcia_ca = {
-	sizeof(struct aic_pcmcia_softc), aic_pcmcia_match, aic_pcmcia_attach
+struct cfdriver aic_pcmcia_ca = {
+	NULL, "aic_pcmcia", aic_pcmcia_match, aic_pcmcia_attach, NULL, DV_DULL, sizeof(struct aic_pcmcia_softc)
 };
 
 int

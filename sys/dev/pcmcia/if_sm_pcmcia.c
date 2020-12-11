@@ -94,21 +94,21 @@ int		sm_pcmcia_match (struct device *, struct cfdata *, void *);
 void	sm_pcmcia_attach (struct device *, struct device *, void *);
 
 struct sm_pcmcia_softc {
-	struct	smc91cxx_softc 	sc_smc;		/* real "smc" softc */
+	struct	smc91cxx_softc 		sc_smc;			/* real "smc" softc */
 
 	/* PCMCIA-specific goo. */
-	struct	pcmcia_io_handle sc_pcioh;	/* PCMCIA i/o space info */
-	int	sc_io_window;			/* our i/o window */
-	void	*sc_ih;				/* interrupt cookie */
-	struct	pcmcia_function *sc_pf;		/* our PCMCIA function */
+	struct	pcmcia_io_handle 	sc_pcioh;		/* PCMCIA i/o space info */
+	int							sc_io_window;	/* our i/o window */
+	void						*sc_ih;			/* interrupt cookie */
+	struct	pcmcia_function 	*sc_pf;			/* our PCMCIA function */
 };
 
-struct cfattach sm_pcmcia_ca = {
-	sizeof(struct sm_pcmcia_softc), sm_pcmcia_match, sm_pcmcia_attach
+struct cfdriver sm_pcmcia_ca = {
+	NULL, "sm_pcmcia", sm_pcmcia_match, sm_pcmcia_attach, NULL, DV_DULL, sizeof(struct sm_pcmcia_softc)
 };
 
-int	sm_pcmcia_enable __P((struct smc91cxx_softc *));
-void	sm_pcmcia_disable __P((struct smc91cxx_softc *));
+int		sm_pcmcia_enable __P((struct smc91cxx_softc *));
+void 	sm_pcmcia_disable __P((struct smc91cxx_softc *));
 
 int
 sm_pcmcia_match(parent, match, aux)

@@ -136,26 +136,26 @@ void	comcnpollc (dev_t, int);
 static u_char tiocm_xxx2mcr (int);
 
 /*
- * XXX the following two cfattach structs should be different, and possibly
+ * XXX the following two cfdriver structs should be different, and possibly
  * XXX elsewhere.
  */
 int comprobe (struct device *, void *, void *);
 void comattach (struct device *, struct device *, void *);
 
 #if NCOM_ISA
-struct cfattach com_isa_ca = {
-	sizeof(struct com_softc), comprobe, comattach
+struct cfdriver com_isa_ca = {
+		NULL, "ncom_isa", comprobe, comattach, NULL, DV_TTY, sizeof(struct com_softc)
 };
 #endif
 
 #if NCOM_COMMULTI
-struct cfattach com_commulti_ca = {
-	sizeof(struct com_softc), comprobe, comattach
+struct cfdriver com_commulti_ca = {
+		NULL, "ncom_multi", comprobe, comattach, NULL, DV_TTY, sizeof(struct com_softc)
 };
 #endif
 
 struct cfdriver com_cd = {
-	NULL, "com", DV_TTY
+	NULL, "com", comprobe, comattach, NULL, DV_TTY, sizeof(struct com_softc)
 };
 
 void cominit (bus_chipset_tag_t, bus_io_handle_t, int);

@@ -76,7 +76,7 @@ typedef int pci_intr_handle_t;
  * NOT TO BE USED DIRECTLY BY MACHINE INDEPENDENT CODE.
  */
 extern int pci_mode;
-int		pci_mode_detect (void);
+int			pci_mode_detect (void);
 
 /*
  * Functions provided to machine-independent PCI code.
@@ -96,6 +96,6 @@ void		pci_intr_disestablish (pci_chipset_tag_t, void *);
  * Compatibility functions, to map the old i386 PCI functions to the new ones.
  * NOT TO BE USED BY NEW CODE.
  */
-void	*pci_map_int (pcitag_t, int, int (*)(void *), void *);
-int		pci_map_io (pcitag_t, int, int *);
-int		pci_map_mem (pcitag_t, int, vm_offset_t *, vm_offset_t *);
+void		*pci_map_int (pcitag_t, int, int (*)(void *), void *);
+int			pci_map_io (pcitag_t, int, int *);
+int			pci_map_mem (pcitag_t, int, vm_offset_t *, vm_offset_t *);

@@ -57,12 +57,8 @@ int		eisamatch (struct device *, struct cfdata *, void *);
 #endif
 void	eisaattach (struct device *, struct device *, void *);
 
-struct cfattach eisa_ca = {
-	sizeof(struct device), eisamatch, eisaattach
-};
-
 struct cfdriver eisa_cd = {
-	NULL, "eisa", DV_DULL
+	NULL, "eisa", eisamatch, eisaattach, NULL, DV_DULL, sizeof(struct device)
 };
 
 #ifdef __BROKEN_INDIRECT_CONFIG

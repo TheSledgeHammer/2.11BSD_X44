@@ -44,6 +44,7 @@
 #include <sys/device.h>
 #include <sys/proc.h>
 #include <sys/termios.h>
+#include <sys/user.h>
 
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
@@ -57,7 +58,7 @@
 #include <dev/ic/comvar.h>
 
 struct com_isapnp_softc {
-	struct	com_softc 	sc_com;	/* real "com" softc */
+	struct	com_softc 	sc_com;			/* real "com" softc */
 
 	/* ISAPnP-specific goo. */
 	void				*sc_ih;			/* interrupt handler */
@@ -66,8 +67,8 @@ struct com_isapnp_softc {
 int		com_isapnp_match (struct device *, void *, void *);
 void	com_isapnp_attach (struct device *, struct device *, void *);
 
-struct cfattach com_isapnp_ca = {
-	sizeof(struct com_isapnp_softc), com_isapnp_match, com_isapnp_attach
+struct cfdriver com_isapnp_ca = {
+	NULL, "com_isapnp", com_isapnp_match, com_isapnp_attach, NULL, DV_TTY, sizeof(struct com_isapnp_softc)
 };
 
 int

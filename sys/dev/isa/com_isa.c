@@ -76,8 +76,8 @@ int com_isa_probe (struct device *, struct cfdata *, void *);
 void com_isa_attach (struct device *, struct device *, void *);
 void com_isa_cleanup (void *);
 
-struct cfattach com_isa_ca = {
-	sizeof(struct com_isa_softc), com_isa_probe, com_isa_attach
+struct cfdriver com_isa_ca = {
+	NULL, "com_isa", com_isa_probe, com_isa_attach, NULL, DV_DULL, sizeof(struct com_isa_softc)
 };
 
 int

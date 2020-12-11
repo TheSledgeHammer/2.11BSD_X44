@@ -115,8 +115,8 @@ void	*pcic_isa_chip_intr_establish __P((pcmcia_chipset_handle_t,
 	    struct pcmcia_function *, int, int (*) (void *), void *));
 void	pcic_isa_chip_intr_disestablish __P((pcmcia_chipset_handle_t, void *));
 
-struct cfattach pcic_isa_ca = {
-	sizeof(struct pcic_softc), pcic_isa_probe, pcic_isa_attach
+struct cfdriver pcic_isa_ca = {
+	NULL, "pcic_isa", pcic_isa_probe, pcic_isa_attach, NULL, DV_DULL, sizeof(struct pcic_softc)
 };
 
 static struct pcmcia_chip_functions pcic_isa_functions = {

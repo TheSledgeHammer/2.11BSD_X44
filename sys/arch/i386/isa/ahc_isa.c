@@ -173,7 +173,7 @@ int		ahc_isa_match (struct isa_attach_args *, bus_addr_t);
 int		ahc_isa_probe (struct device *, void *, void *);
 void	ahc_isa_attach (struct device *, struct device *, void *);
 
-struct cfattach ahc_isa_ca = {
+struct cfdriver ahc_isa_ca = {
 	sizeof(struct ahc_data), ahc_isa_probe, ahc_isa_attach
 };
 

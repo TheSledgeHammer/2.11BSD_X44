@@ -63,12 +63,8 @@ void	pchbattach (struct device *, struct device *, void *);
 
 int		pchb_print (void *, const char *);
 
-struct cfattach pchb_ca = {
-	sizeof(struct device), pchbmatch, pchbattach
-};
-
 struct cfdriver pchb_cd = {
-	NULL, "pchb", DV_DULL
+	NULL, "pchb", pchbmatch, pchbattach, NULL, DV_DULL, sizeof(struct device)
 };
 
 int

@@ -3,6 +3,7 @@
 #include <sys/kernel.h>
 #include <sys/device.h>
 #include <sys/malloc.h>
+#include <sys/user.h>
 
 #include <dev/ic/mc6845reg.h>
 #include <dev/ic/pcdisplayvar.h>
@@ -26,8 +27,8 @@ void	vga_isa_attach(struct device *, struct device *, void *);
 
 int		vga_isa_cnattach(bus_space_tag_t, bus_space_tag_t);
 
-struct cfattach vga_isa_ca = {
-	sizeof(struct vga_isa_softc), vga_isa_match, vga_isa_attach,
+struct cfdriver vga_isa_ca = {
+	NULL, "vga", vga_isa_match, vga_isa_attach, NULL, DV_DULL, sizeof(struct vga_isa_softc)
 };
 
 int

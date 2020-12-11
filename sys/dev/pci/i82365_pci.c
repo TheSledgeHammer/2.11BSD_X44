@@ -58,8 +58,8 @@ void	pcic_pci_attach (struct device *, struct device *, void *);
 void	*pcic_pci_chip_intr_establish (pcmcia_chipset_handle_t, struct pcmcia_function *, int, int (*) (void *), void *);
 void	pcic_pci_chip_intr_disestablish (pcmcia_chipset_handle_t, void *);
 
-struct cfattach pcic_pci_ca = {
-	sizeof(struct pcic_softc), pcic_pci_match, pcic_pci_attach
+struct cfdriver pcic_pci_ca = {
+	NULL, "pcic_pci", pcic_pci_match, pcic_pci_attach, NULL, DV_DULL, sizeof(struct pcic_softc)
 };
 
 static struct pcmcia_chip_functions pcic_pci_functions = {

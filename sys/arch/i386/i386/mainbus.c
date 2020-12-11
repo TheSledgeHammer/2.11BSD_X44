@@ -49,12 +49,8 @@
 int	 mainbus_match (struct device *, void *, void *);
 void mainbus_attach (struct device *, struct device *, void *);
 
-struct cfattach mainbus_ca = {
-	sizeof(struct device), mainbus_match, mainbus_attach
-};
-
 struct cfdriver mainbus_cd = {
-	NULL, "mainbus", DV_DULL
+	NULL, "mainbus", mainbus_match, mainbus_attach, NULL, DV_DULL, sizeof(struct device)
 };
 
 int	mainbus_print (void *, const char *);

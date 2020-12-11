@@ -92,16 +92,16 @@ int		ep_pcmcia_enable (struct ep_softc *);
 void	ep_pcmcia_disable (struct ep_softc *);
 
 struct ep_pcmcia_softc {
-	struct ep_softc sc_ep;			/* real "ep" softc */
+	struct ep_softc 		sc_ep;			/* real "ep" softc */
 
 	/* PCMCIA-specific goo */
-	struct pcmcia_io_handle sc_pcioh;	/* PCMCIA i/o space info */
-	int sc_io_window;			/* our i/o window */
-	struct pcmcia_function *sc_pf;		/* our PCMCIA function */
+	struct pcmcia_io_handle sc_pcioh;		/* PCMCIA i/o space info */
+	int 					sc_io_window;	/* our i/o window */
+	struct pcmcia_function 	*sc_pf;			/* our PCMCIA function */
 };
 
-struct cfattach ep_pcmcia_ca = {
-	sizeof(struct ep_pcmcia_softc), ep_pcmcia_match, ep_pcmcia_attach
+struct cfdriver ep_pcmcia_ca = {
+	NULL, "ep_pcmcia", ep_pcmcia_match, ep_pcmcia_attach, NULL, DV_DULL, sizeof(struct ep_pcmcia_softc)
 };
 
 int
