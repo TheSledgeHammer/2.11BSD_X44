@@ -33,7 +33,7 @@ file    arch/i386/i386/pmap_base.c
 file    arch/i386/i386/pmap_nopae.c
 file    arch/i386/i386/pmap_pae.c
 file    arch/i386/i386/pmap.c
-file    arch/i386/i386/procfs_machdep.c
+file    arch/i386/i386/process_machdep.c
 file    arch/i386/i386/support.s
 file    arch/i386/i386/swapgeneric.c
 file    arch/i386/i386/sys_machdep.c
