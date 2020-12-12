@@ -8,7 +8,7 @@
 define										isabus {}				# ISA attachment
 define										eisabus {}				# EISA attachment
 define										pcibus {[bus = -1]}		# PCI attachment
-define										tcbus { }				# TurboChannel attachment
+#define										tcbus { }				# TurboChannel attachment
 
 # generic attributes
 define	 									disk
@@ -22,11 +22,11 @@ define	 									scsi {[channel = -1]}
 
 # audio device attributes
 #define										mulaw
-define										auconv
+#define										auconv
 
 # audio device, attaches to audio hardware driver
-device										audio
-attach										audio at audio
+#device										audio
+#attach										audio at audio
 
 # net device attributes - we have generic code for arc(net), ether(net),
 # fddi, and atm.
@@ -41,7 +41,6 @@ define										arp
 # legitimate pseudo-devices
 #pseudo-device vnd: 						disk
 #pseudo-device ccd: 						disk
-#pseudo-device md: 							disk
 
 #pseudo-device pty: 						tty
 #pseudo-device tb: 							tty

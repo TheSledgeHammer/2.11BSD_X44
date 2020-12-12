@@ -10,5 +10,5 @@ device	isapnp {[port = -1], [size = 0],
 	     [irq = -1], [drq = -1]}
 attach	isapnp at isa
 file	dev/isapnp/isapnp.c				isapnp
-file	dev/isapnp/isapnpdebug.c		isapnp
+file	dev/isapnp/isapnpdebug.c			isapnp
 file	dev/isapnp/isapnpres.c			isapnp

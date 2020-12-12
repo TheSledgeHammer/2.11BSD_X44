@@ -83,14 +83,14 @@ void	cdiodone();
 	free((caddr_t)(bp), M_DEVBUF)
 
 struct cd_softc {
-	int		 sc_flags;			/* flags */
-	size_t	 sc_size;			/* size of cd */
-	int		 sc_ileave;			/* interleave */
-	int		 sc_ncdisks;		/* number of components */
-	struct cdcinfo	 sc_cinfo[NCDISKS];	/* component info */
-	struct cdiinfo	 *sc_itable;		/* interleave table */
-	int		 sc_usecnt;		/* number of requests active */
-	int		 sc_dk;			/* disk index */
+	int		 		sc_flags;			/* flags */
+	size_t	 		sc_size;			/* size of cd */
+	int		 		sc_ileave;			/* interleave */
+	int		 		sc_ncdisks;			/* number of components */
+	struct cdcinfo	sc_cinfo[NCDISKS];	/* component info */
+	struct cdiinfo	*sc_itable;			/* interleave table */
+	int		 		sc_usecnt;			/* number of requests active */
+	int		 		sc_dk;				/* disk index */
 };
 
 /* sc_flags */

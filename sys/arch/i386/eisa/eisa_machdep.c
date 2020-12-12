@@ -198,8 +198,7 @@ eisa_mem_alloc(t, size, align, boundary, cacheable, addrp, bahp)
 	/*
 	 * Allocate physical address space after the ISA hole.
 	 */
-	return bus_space_alloc(t, ISA_HOLE_END, iomem_ex->ex_end, size, align,
-	    boundary, cacheable, addrp, bahp);
+	return bus_space_alloc(t, ISA_HOLE_END, iomem_ex->ex_end, size, align, boundary, cacheable, addrp, bahp);
 }
 
 void

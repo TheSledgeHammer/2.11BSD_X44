@@ -54,6 +54,7 @@
 #include <dev/isa/isadmavar.h>
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>
+#include <dev/ic/i8237reg.h>
 
 struct isa_mem {
 	struct device 	*isadev;

@@ -44,6 +44,7 @@
 
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
+
 #include <dev/eisa/eisareg.h>		/* For ID register & string info. */
 
 /* 
@@ -55,7 +56,7 @@ struct eisabus_attach_args;
  * Machine-dependent definitions.
  */
 #if (alpha + i386 != 1)
-ERROR: COMPILING FOR UNSUPPORTED MACHINE, OR MORE THAN ONE.
+/* ERROR: COMPILING FOR UNSUPPORTED MACHINE, OR MORE THAN ONE. */
 #endif
 #if alpha
 #include <alpha/eisa/eisa_machdep.h>
@@ -70,26 +71,26 @@ typedef int	eisa_slot_t;		/* really only needs to be 4 bits */
  * EISA bus attach arguments.
  */
 struct eisabus_attach_args {
-	char	*eba_busname;		/* XXX should be common */
-	bus_space_tag_t eba_iot;	/* eisa i/o space tag */
-	bus_space_tag_t eba_memt;	/* eisa mem space tag */
-	bus_dma_tag_t eba_dmat;		/* DMA tag */
-	eisa_chipset_tag_t eba_ec;
+	char				*eba_busname;	/* XXX should be common */
+	bus_space_tag_t 	eba_iot;		/* eisa i/o space tag */
+	bus_space_tag_t 	eba_memt;		/* eisa mem space tag */
+	bus_dma_tag_t 		eba_dmat;		/* DMA tag */
+	eisa_chipset_tag_t 	eba_ec;
 };
 
 /*
  * EISA device attach arguments.
  */
 struct eisa_attach_args {
-	bus_space_tag_t ea_iot;		/* eisa i/o space tag */
-	bus_space_tag_t ea_memt;	/* eisa mem space tag */
-	bus_dma_tag_t ea_dmat;		/* DMA tag */
-	eisa_chipset_tag_t ea_ec;
+	bus_space_tag_t 	ea_iot;		/* eisa i/o space tag */
+	bus_space_tag_t 	ea_memt;	/* eisa mem space tag */
+	bus_dma_tag_t 		ea_dmat;	/* DMA tag */
+	eisa_chipset_tag_t 	ea_ec;
 
-	eisa_slot_t	ea_slot;
-	u_int8_t	ea_vid[EISA_NVIDREGS];
-	u_int8_t	ea_pid[EISA_NPIDREGS];
-	char		ea_idstring[EISA_IDSTRINGLEN];
+	eisa_slot_t			ea_slot;
+	u_int8_t			ea_vid[EISA_NVIDREGS];
+	u_int8_t			ea_pid[EISA_NPIDREGS];
+	char				ea_idstring[EISA_IDSTRINGLEN];
 };
 
 #include "locators.h"
