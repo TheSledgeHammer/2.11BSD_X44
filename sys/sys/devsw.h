@@ -75,8 +75,9 @@
  * device switch table
  */
 struct devswtable {
-    void                			*dv_data;	/* device data */
-    dev_t							dv_major;	/* device major */
+	dev_t							dv_major;	/* device switch major */
+    void                			*dv_data;	/* device switch data */
+
     struct devswops    				*dv_ops;	/* device switch operations */
 };
 
@@ -89,24 +90,29 @@ struct devswtable_entry {
 typedef struct devswtable_entry		*devswtable_entry_t;
 
 struct devswops {
-    int     (*dvop_attach)(struct devswtable *, struct device *, dev_t);
-    int     (*dvop_detach)(struct devswtable *, struct device *, dev_t);
+    int     (*dvop_attach)(struct devswtable *, void *, dev_t);
+    int     (*dvop_detach)(struct devswtable *, void *, dev_t);
 };
 
-#define DVOP_ATTACH(dv, device, major)	(*((dv)->dv_ops->dvop_attach))(dv, device, major)
-#define DVOP_DETACH(dv, device, major)	(*((dv)->dv_ops->dvop_detach))(dv, device, major)
+#define DVOP_ATTACH(dv, data, major)	(*((dv)->dv_ops->dvop_attach))(dv, data, major)
+#define DVOP_DETACH(dv, data, major)	(*((dv)->dv_ops->dvop_detach))(dv, data, major)
 
+struct dvop_generic_args {
+	struct devswops				*d_ops;
+};
 
 struct dvop_attach_args {
-    struct devswtable   d_devswtable;
-    struct device   	*d_device;
-    dev_t				d_major;
+	struct dvop_generic_args 	d_head;
+    struct devswtable   		d_devswtable;
+    void                		*d_data;
+    dev_t						d_major;
 };
 
 struct dvop_detach_args {
-    struct devswtable 	d_devswtable;
-    struct device   	*d_device;
-    dev_t				d_major;
+	struct dvop_generic_args 	d_head;
+    struct devswtable 			d_devswtable;
+    void                		*d_data;
+    dev_t						d_major;
 };
 
 /* devsw size */
@@ -142,17 +148,17 @@ struct vnode;
 #define	D_TTY	3
 #define	D_OTHER	4
 
-#ifdef _KERNEL
+//#ifdef _KERNEL
 extern struct devswops 	 sys_dvops;	/* device switch table operations */
 extern struct devswtable sys_devsw;
 
-void					devswtable_init();
-struct devswtable 		*devswtable_lookup(void *, dev_t);
-void					devswtable_add(struct devswtable *, void *, dev_t);
-void 					devswtable_remove(void *, dev_t);
-dev_t					bdevsw_lookup_major(struct bdevsw *);
-dev_t					cdevsw_lookup_major(struct cdevsw *);
-dev_t					linesw_lookup_major(struct linesw *);
+void							devswtable_init();
+struct devswtable 				*devswtable_lookup(void *, dev_t);
+void							devswtable_add(struct devswtable *, void *, dev_t);
+void 							devswtable_remove(void *, dev_t);
+dev_t							bdevsw_lookup_major(struct bdevsw *);
+dev_t							cdevsw_lookup_major(struct cdevsw *);
+dev_t							linesw_lookup_major(struct linesw *);
 
 #define	dev_type_open(n)		int n(dev_t, int, int, struct proc *)
 #define	dev_type_close(n)		int n(dev_t, int, int, struct proc *)

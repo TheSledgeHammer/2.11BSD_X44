@@ -63,11 +63,11 @@ extern short cfroots[];
 #define	ROOT ((struct device *)NULL)
 
 struct matchinfo {
-	cfmatch_t fn;
-	struct	device *parent;
-	void	*aux;
-	struct	cfdata *match;
-	int	pri;
+	cfmatch_t 		fn;
+	struct	device 	*parent;
+	void			*aux;
+	struct	cfdata 	*match;
+	int				pri;
 };
 
 /*

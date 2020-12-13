@@ -109,58 +109,58 @@ struct isabus_attach_args;
  * ISA bus attach arguments
  */
 struct isabus_attach_args {
-	char				*iba_busname;		/* XXX should be common */
-	bus_space_tag_t 	iba_iot;			/* isa i/o space tag */
-	bus_space_tag_t 	iba_memt;			/* isa mem space tag */
-	bus_dma_tag_t 		iba_dmat;			/* isa DMA tag */
-	isa_chipset_tag_t 	iba_ic;
+	char					*iba_busname;	/* XXX should be common */
+	bus_space_tag_t 		iba_iot;		/* isa i/o space tag */
+	bus_space_tag_t 		iba_memt;		/* isa mem space tag */
+	bus_dma_tag_t 			iba_dmat;		/* isa DMA tag */
+	isa_chipset_tag_t 		iba_ic;
 };
 
 /*
  * ISA driver attach arguments
  */
 struct isa_attach_args {
-	bus_space_tag_t 	ia_iot;				/* isa i/o space tag */
-	bus_space_tag_t 	ia_memt;			/* isa mem space tag */
-	bus_dma_tag_t 		ia_dmat;			/* DMA tag */
+	bus_space_tag_t 		ia_iot;			/* isa i/o space tag */
+	bus_space_tag_t 		ia_memt;		/* isa mem space tag */
+	bus_dma_tag_t 			ia_dmat;		/* DMA tag */
 
-	isa_chipset_tag_t 	ia_ic;
+	isa_chipset_tag_t 		ia_ic;
 
-	int					ia_iobase;			/* base i/o address */
-	int					ia_iosize;			/* span of ports used */
-	int					ia_irq;				/* interrupt request */
-	int					ia_drq;				/* DMA request */
-	int					ia_drq2;			/* second DMA request */
-	int					ia_maddr;			/* physical i/o mem addr */
-	u_int				ia_msize;			/* size of i/o memory */
-	void				*ia_aux;			/* driver specific */
+	int						ia_iobase;		/* base i/o address */
+	int						ia_iosize;		/* span of ports used */
+	int						ia_irq;			/* interrupt request */
+	int						ia_drq;			/* DMA request */
+	int						ia_drq2;		/* second DMA request */
+	int						ia_maddr;		/* physical i/o mem addr */
+	u_int					ia_msize;		/* size of i/o memory */
+	void					*ia_aux;		/* driver specific */
 
-	bus_space_handle_t 	ia_delaybah; 		/* i/o handle for `delay port' */
+	bus_space_handle_t 		ia_delaybah; 	/* i/o handle for `delay port' */
 };
 
-#define	IOBASEUNK		-1					/* i/o address is unknown */
-#define	IRQUNK			-1					/* interrupt request line is unknown */
-#define	DRQUNK			-1					/* DMA request line is unknown */
-#define	MADDRUNK		-1					/* shared memory address is unknown */
+#define	IOBASEUNK			-1				/* i/o address is unknown */
+#define	IRQUNK				-1				/* interrupt request line is unknown */
+#define	DRQUNK				-1				/* DMA request line is unknown */
+#define	MADDRUNK			-1				/* shared memory address is unknown */
 
 /*
  * Per-device ISA variables
  */
 struct isadev {
-	struct  device 			*id_dev;			/* back pointer to generic */
-	TAILQ_ENTRY(isadev) 	id_bchain;			/* bus chain */
+	struct  device 			*id_dev;		/* back pointer to generic */
+	TAILQ_ENTRY(isadev) 	id_bchain;		/* bus chain */
 };
 
 /*
  * ISA master bus
  */
 struct isa_softc {
-	struct	device 			sc_dev;				/* base device */
-	TAILQ_HEAD(, isadev) 	sc_subdevs;			/* list of all children */
+	struct	device 			sc_dev;			/* base device */
+	TAILQ_HEAD(, isadev) 	sc_subdevs;		/* list of all children */
 
-	bus_space_tag_t 		sc_iot;				/* isa io space tag */
-	bus_space_tag_t 		sc_memt;			/* isa mem space tag */
-	bus_dma_tag_t 			sc_dmat;			/* isa DMA tag */
+	bus_space_tag_t 		sc_iot;			/* isa io space tag */
+	bus_space_tag_t 		sc_memt;		/* isa mem space tag */
+	bus_dma_tag_t 			sc_dmat;		/* isa DMA tag */
 
 	isa_chipset_tag_t 		sc_ic;
 
@@ -170,9 +170,9 @@ struct isa_softc {
 	 */
 	int						sc_drqmap;
 
-	bus_space_handle_t 		sc_dma1h;			/* i/o handle for DMA controller #1 */
-	bus_space_handle_t 		sc_dma2h;			/* i/o handle for DMA controller #2 */
-	bus_space_handle_t 		sc_dmapgh;			/* i/o handle for DMA page registers */
+	bus_space_handle_t 		sc_dma1h;		/* i/o handle for DMA controller #1 */
+	bus_space_handle_t 		sc_dma2h;		/* i/o handle for DMA controller #2 */
+	bus_space_handle_t 		sc_dmapgh;		/* i/o handle for DMA page registers */
 
 	/*
 	 * DMA maps used for the 8 DMA channels.
@@ -180,8 +180,8 @@ struct isa_softc {
 	bus_dmamap_t			sc_dmamaps[8];
 	vm_size_t				sc_dmalength[8];
 
-	int						sc_dmareads;		/* state for isa_dmadone() */
-	int						sc_dmafinished;		/* DMA completion state */
+	int						sc_dmareads;	/* state for isa_dmadone() */
+	int						sc_dmafinished;	/* DMA completion state */
 
 	/*
 	 * This i/o handle is used to map port 0x84, which is
@@ -201,6 +201,7 @@ struct isa_softc {
 #define	ISA_DRQ_FREE(isadev, drq) \
 	((struct isa_softc *)(isadev))->sc_drqmap &= ~(1 << (drq))
 
+/*
 #define		cf_iobase		cf_loc[ISACF_PORT]
 #define		cf_iosize		cf_loc[ISACF_SIZE]
 #define		cf_maddr		cf_loc[ISACF_IOMEM]
@@ -208,6 +209,7 @@ struct isa_softc {
 #define		cf_irq			cf_loc[ISACF_IRQ]
 #define		cf_drq			cf_loc[ISACF_DRQ]
 #define		cf_drq2			cf_loc[ISACF_DRQ2]
+*/
 
 /*
  * ISA interrupt handler manipulation.

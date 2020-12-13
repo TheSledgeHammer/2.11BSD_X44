@@ -208,17 +208,18 @@ isasearch(parent, cf, aux)
 		ia.ia_memt = sc->sc_memt;
 		ia.ia_dmat = sc->sc_dmat;
 		ia.ia_ic = sc->sc_ic;
-		ia.ia_iobase = cf->cf_iobase;
+		ia.ia_iobase = cf->cf_loc[ISACF_PORT];
 		ia.ia_iosize = 0x666; /* cf->cf_iosize; */
-		ia.ia_maddr = cf->cf_maddr;
-		ia.ia_msize = cf->cf_msize;
-		ia.ia_irq = cf->cf_irq == 2 ? 9 : cf->cf_irq;
-		ia.ia_drq = cf->cf_drq;
-		ia.ia_drq2 = cf->cf_drq2;
+		ia.ia_maddr = cf->cf_loc[ISACF_IOMEM];
+		ia.ia_msize = cf->cf_loc[ISACF_IOSIZ];
+		ia.ia_irq = cf->cf_loc[ISACF_IRQ] == 2 ? 9 : cf->cf_loc[ISACF_IRQ];
+		ia.ia_drq = cf->cf_loc[ISACF_DRQ];
+		ia.ia_drq2 = cf->cf_loc[ISACF_DRQ2];
 		ia.ia_delaybah = sc->sc_delaybah;
 
 		tryagain = 0;
-		if ((*cf->cf_attach->ca_match)(parent, cf, &ia) > 0) {
+
+		if ((*cf->cf_driver->cd_match)(parent, cf, &ia) > 0) {
 			config_attach(parent, cf, &ia, isaprint);
 			tryagain = (cf->cf_fstate == FSTATE_STAR);
 		}
@@ -232,7 +233,6 @@ char *
 isa_intr_typename(type)
 	int type;
 {
-
 	switch (type) {
         case IST_NONE :
 		return ("none");

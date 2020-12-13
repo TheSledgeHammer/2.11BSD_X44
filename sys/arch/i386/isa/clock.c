@@ -453,7 +453,6 @@ void
 rtcput(regs)
 	mc_todregs *regs;
 {
-
 	rtcinit();
 	MC146818_PUTTOD(NULL, regs);			/* XXX softc */
 }

@@ -55,20 +55,20 @@ struct isapnp_softc;
 # include <string.h>
 # include <unistd.h>
 
-# define ISAPNP_WRITE_ADDR(sc, v) outb(ISAPNP_ADDR, v)
-# define ISAPNP_WRITE_DATA(sc, v) outb(ISAPNP_WRDATA, v)
-# define ISAPNP_READ_DATA(sc) inb(sc->sc_read_port)
+# define ISAPNP_WRITE_ADDR(sc, v) 	outb(ISAPNP_ADDR, v)
+# define ISAPNP_WRITE_DATA(sc, v) 	outb(ISAPNP_WRDATA, v)
+# define ISAPNP_READ_DATA(sc) 		inb(sc->sc_read_port)
 
-# define DELAY(us) usleep(us)
-# define ISAPNP_MALLOC(a) malloc(a)
-# define ISAPNP_FREE(a) free(a)
+# define DELAY(us) 					usleep(us)
+# define ISAPNP_MALLOC(a) 			malloc(a)
+# define ISAPNP_FREE(a) 			free(a)
 
 # define panic printf
 
 #else
 
 /* XXX */
-# define memset(a, b, c)	bzero(a, c)
+# define memset(a, b, c)			bzero(a, c)
 
 # define ISAPNP_WRITE_ADDR(sc, v) \
     bus_space_write_1(sc->sc_iot, sc->sc_addr_ioh, 0, v)
@@ -77,8 +77,8 @@ struct isapnp_softc;
 # define ISAPNP_READ_DATA(sc) \
     bus_space_read_1(sc->sc_iot, sc->sc_read_ioh, 0)
 
-# define ISAPNP_MALLOC(a) malloc(a, M_DEVBUF, M_WAITOK)
-# define ISAPNP_FREE(a) free(a, M_DEVBUF)
+# define ISAPNP_MALLOC(a) 			malloc(a, M_DEVBUF, M_WAITOK)
+# define ISAPNP_FREE(a) 			free(a, M_DEVBUF)
 
 #endif
 
@@ -89,60 +89,60 @@ struct isapnp_softc;
 #endif
 
 struct isapnp_softc {
-	struct device		sc_dev;
-	int					sc_read_port;
-	bus_space_tag_t		sc_iot;
-	bus_space_tag_t		sc_memt;
-	bus_space_handle_t	sc_addr_ioh;
-	bus_space_handle_t	sc_wrdata_ioh;
-	bus_space_handle_t	sc_read_ioh;
-	bus_space_handle_t	sc_memh;
-	u_int8_t			sc_ncards;
-    u_int8_t			sc_id[ISAPNP_MAX_CARDS][ISAPNP_SERIAL_SIZE];
+	struct device			sc_dev;
+	int						sc_read_port;
+	bus_space_tag_t			sc_iot;
+	bus_space_tag_t			sc_memt;
+	bus_space_handle_t		sc_addr_ioh;
+	bus_space_handle_t		sc_wrdata_ioh;
+	bus_space_handle_t		sc_read_ioh;
+	bus_space_handle_t		sc_memh;
+	u_int8_t				sc_ncards;
+    u_int8_t				sc_id[ISAPNP_MAX_CARDS][ISAPNP_SERIAL_SIZE];
 };
 
 struct isapnp_region {
-	bus_space_handle_t h;
-	u_int32_t base;
+	bus_space_handle_t 		h;
+	u_int32_t 				base;
 
-	u_int32_t minbase;
-	u_int32_t maxbase;
-	u_int32_t length;
-	u_int32_t align;
-	u_int8_t  flags;
+	u_int32_t 				minbase;
+	u_int32_t 				maxbase;
+	u_int32_t 				length;
+	u_int32_t 				align;
+	u_int8_t  				flags;
 };
 
 struct isapnp_pin {
-	u_int8_t  num;
-	u_int8_t  flags:4;
-	u_int8_t  type:4;
-	u_int16_t bits;
+	u_int8_t  				num;
+	u_int8_t  				flags:4;
+	u_int8_t  				type:4;
+	u_int16_t 				bits;
 };
 
 struct isapnp_attach_args {
-	struct device  *ipa_isa;	/* isa device */
-	bus_space_tag_t ipa_iot;	/* isa i/o space tag */
-	bus_space_tag_t ipa_memt;	/* isa mem space tag */
-	bus_dma_tag_t	ipa_dmat;	/* isa dma tag */
+	struct device  			*ipa_isa;	/* isa device */
+	bus_space_tag_t 		ipa_iot;	/* isa i/o space tag */
+	bus_space_tag_t 		ipa_memt;	/* isa mem space tag */
+	bus_dma_tag_t			ipa_dmat;	/* isa dma tag */
 
-	isa_chipset_tag_t ipa_ic;
+	isa_chipset_tag_t 		ipa_ic;
 
 	struct isapnp_attach_args *ipa_sibling;
 	struct isapnp_attach_args *ipa_child;
 
-	char	ipa_devident[ISAPNP_MAX_IDENT];
-	char	ipa_devlogic[ISAPNP_MAX_DEVCLASS];
-	char	ipa_devcompat[ISAPNP_MAX_DEVCLASS];
-	char	ipa_devclass[ISAPNP_MAX_DEVCLASS];
+	char					ipa_devident[ISAPNP_MAX_IDENT];
+	char					ipa_devlogic[ISAPNP_MAX_DEVCLASS];
+	char					ipa_devcompat[ISAPNP_MAX_DEVCLASS];
+	char					ipa_devclass[ISAPNP_MAX_DEVCLASS];
 
-	u_char	ipa_pref;
-	u_char	ipa_devnum;
+	u_char					ipa_pref;
+	u_char					ipa_devnum;
 
-	u_char	ipa_nio;
-	u_char	ipa_nirq;
-	u_char	ipa_ndrq;
-	u_char	ipa_nmem;
-	u_char	ipa_nmem32;
+	u_char					ipa_nio;
+	u_char					ipa_nirq;
+	u_char					ipa_ndrq;
+	u_char					ipa_nmem;
+	u_char					ipa_nmem32;
 
 	struct isapnp_region	ipa_io[ISAPNP_NUM_IO];
 	struct isapnp_region	ipa_mem[ISAPNP_NUM_MEM];

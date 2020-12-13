@@ -79,53 +79,53 @@ struct pcmcia_chip_functions {
 };
 
 /* Memory space functions. */
-#define pcmcia_chip_mem_alloc(tag, handle, size, pcmhp)			\
+#define pcmcia_chip_mem_alloc(tag, handle, size, pcmhp)					\
 	((*(tag)->mem_alloc)((handle), (size), (pcmhp)))
 
-#define pcmcia_chip_mem_free(tag, handle, pcmhp)			\
+#define pcmcia_chip_mem_free(tag, handle, pcmhp)						\
 	((*(tag)->mem_free)((handle), (pcmhp)))
 
 #define pcmcia_chip_mem_map(tag, handle, kind, card_addr, size, pcmhp,	\
-	    offsetp, windowp)						\
-	((*(tag)->mem_map)((handle), (kind), (card_addr), (size), (pcmhp), \
+	    offsetp, windowp)												\
+	((*(tag)->mem_map)((handle), (kind), (card_addr), (size), (pcmhp), 	\
 	    (offsetp), (windowp)))
 
-#define pcmcia_chip_mem_unmap(tag, handle, window)			\
+#define pcmcia_chip_mem_unmap(tag, handle, window)						\
 	((*(tag)->mem_unmap)((handle), (window)))
 
 /* I/O space functions. */
 #define pcmcia_chip_io_alloc(tag, handle, start, size, align, pcihp)	\
 	((*(tag)->io_alloc)((handle), (start), (size), (align), (pcihp)))
 
-#define pcmcia_chip_io_free(tag, handle, pcihp)				\
+#define pcmcia_chip_io_free(tag, handle, pcihp)							\
 	((*(tag)->io_free)((handle), (pcihp)))
 
 #define pcmcia_chip_io_map(tag, handle, width, card_addr, size, pcihp,	\
 	    windowp) \
-	((*(tag)->io_map)((handle), (width), (card_addr), (size), (pcihp), \
+	((*(tag)->io_map)((handle), (width), (card_addr), (size), (pcihp), 	\
 	    (windowp)))
 
-#define pcmcia_chip_io_unmap(tag, handle, window)			\
+#define pcmcia_chip_io_unmap(tag, handle, window)						\
 	((*(tag)->io_unmap)((handle), (window)))
 
 /* Interrupt functions. */
-#define pcmcia_chip_intr_establish(tag, handle, pf, ipl, fct, arg)	\
+#define pcmcia_chip_intr_establish(tag, handle, pf, ipl, fct, arg)		\
 	((*(tag)->intr_establish)((handle), (pf), (ipl), (fct), (arg)))
 
-#define pcmcia_chip_intr_disestablish(tag, handle, ih)			\
+#define pcmcia_chip_intr_disestablish(tag, handle, ih)					\
 	((*(tag)->intr_disestablish)((handle), (ih)))
 
 /* Socket functions. */
-#define	pcmcia_chip_socket_enable(tag, handle)				\
+#define	pcmcia_chip_socket_enable(tag, handle)							\
 	((*(tag)->socket_enable)((handle)))
-#define	pcmcia_chip_socket_disable(tag, handle)				\
+#define	pcmcia_chip_socket_disable(tag, handle)							\
 	((*(tag)->socket_disable)((handle)))
 
 struct pcmciabus_attach_args {
-	pcmcia_chipset_tag_t pct;
+	pcmcia_chipset_tag_t 	pct;
 	pcmcia_chipset_handle_t pch;
-	bus_addr_t iobase;		/* start i/o space allocation here */
-	bus_size_t iosize;		/* size of the i/o space range */
+	bus_addr_t 				iobase;		/* start i/o space allocation here */
+	bus_size_t 				iosize;		/* size of the i/o space range */
 };
 
 /* interfaces for the chipset to call pcmcia */

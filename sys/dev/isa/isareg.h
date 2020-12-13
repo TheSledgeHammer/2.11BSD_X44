@@ -97,8 +97,8 @@
 #define	IO_BT0		0x330		/* bustek 742a default addr. */
 #define	IO_AHA0		0x330		/* adaptec 1542 default addr. */
 #define	IO_UHA0		0x330		/* ultrastore 14f default addr. */
-#define	IO_BT1          0x334		/* bustek 742a default addr. */
-#define	IO_AHA1         0x334		/* adaptec 1542 default addr. */
+#define	IO_BT1      0x334		/* bustek 742a default addr. */
+#define	IO_AHA1     0x334		/* adaptec 1542 default addr. */
 
 					/* 0x338 - 0x34F Open */
 

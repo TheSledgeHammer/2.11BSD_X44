@@ -167,14 +167,17 @@ struct i386_isa_dma_cookie {
 #define	CGA_BUF					0xB8000
 #define	IOPHYSMEM				0xA0000
 
+
 /*
  * Methods that a PIC provides to mask/unmask a given interrupt source,
  * "turn on" the interrupt on the CPU side by setting up an IDT entry, and
  * return the vector associated with this source.
  */
+/* FreeBSD x86 intr_machdep.c/.h */
 struct pic {
     TAILQ_ENTRY(pic)    pics;
 };
+static TAILQ_HEAD(pics_head, pic) pics;
 
 /*
  * An interrupt source.  The upper-layer code uses the PIC methods to

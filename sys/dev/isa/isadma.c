@@ -49,6 +49,8 @@
 #include <sys/malloc.h>
 
 #include <vm/include/vm.h>
+#include <vm/include/vm_param.h>
+#include <machine/param.h>
 
 #include <dev/isa/isadmareg.h>
 #include <dev/isa/isadmavar.h>
@@ -227,13 +229,13 @@ isa_dmamap_destroy(isadev, chan)
  */
 int
 isa_dmastart(isadev, chan, addr, nbytes, p, flags, busdmaflags)
-	struct device *isadev;
-	int chan;
-	void *addr;
-	bus_size_t nbytes;
-	struct proc *p;
-	int flags;
-	int busdmaflags;
+	struct device 	*isadev;
+	int 			chan;
+	void 			*addr;
+	bus_size_t 		nbytes;
+	struct proc 	*p;
+	int 			flags;
+	int 			busdmaflags;
 {
 	struct isa_softc *sc = (struct isa_softc *)isadev;
 	bus_dmamap_t dmam;

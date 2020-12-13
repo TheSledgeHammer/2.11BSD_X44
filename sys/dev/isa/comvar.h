@@ -33,17 +33,17 @@
 struct commulti_attach_args {
 	int					ca_slave;		/* slave number */
 
-	bus_chipset_tag_t 	ca_bc;
-	bus_io_handle_t 	ca_ioh;
+	bus_space_tag_t	 	ca_bc;
+	bus_space_handle_t  ca_ioh;
 	int					ca_iobase;
 	int					ca_noien;
 };
 
-int comprobe1 (bus_chipset_tag_t, bus_io_handle_t, int);
+int comprobe1 (bus_space_tag_t	, bus_space_handle_t , int);
 int comintr (void *);
 
 extern int 					comconsaddr;
 extern int 					comconsattached;
-extern bus_chipset_tag_t 	comconsbc;
-extern bus_io_handle_t 		comconsioh;
+extern bus_space_tag_t	 	comconsbc;
+extern bus_space_handle_t 	comconsioh;
 extern tcflag_t 			comconscflag;

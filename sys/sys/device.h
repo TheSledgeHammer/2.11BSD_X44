@@ -60,12 +60,12 @@ enum devclass {
 };
 
 struct device {
-	enum devclass	dv_class;		/* this device's classification */
-	struct	device 	*dv_next;		/* next in list of all */
-	struct	cfdata	*dv_cfdata;		/* config data that found us */
-	int				dv_unit;		/* device unit number */
-	char			dv_xname[16];	/* external name (name + unit) */
-	struct	device 	*dv_parent;		/* pointer to parent device */
+	enum devclass		dv_class;				/* this device's classification */
+	struct	device 		*dv_next;				/* next in list of all */
+	struct	cfdata		*dv_cfdata;				/* config data that found us */
+	int					dv_unit;				/* device unit number */
+	char				dv_xname[16];			/* external name (name + unit) */
+	struct	device 		*dv_parent;				/* pointer to parent device */
 
 //	TAILQ_ENTRY(device)	dv_list;	/* entry on list of all devices */
 };
@@ -73,10 +73,10 @@ struct device {
 
 /* `event' counters (use zero or more per device instance, as needed) */
 struct evcnt {
-	struct	evcnt 	*ev_next;		/* linked list */
-	struct	device 	*ev_dev;		/* associated device */
-	int				ev_count;		/* how many have occurred */
-	char			ev_name[8];		/* what to call them (systat display) */
+	struct	evcnt 		*ev_next;				/* linked list */
+	struct	device 		*ev_dev;				/* associated device */
+	int					ev_count;				/* how many have occurred */
+	char				ev_name[8];				/* what to call them (systat display) */
 };
 
 /*
@@ -146,5 +146,6 @@ struct cfdata 	*config_rootsearch (cfmatch_t, char *, void *);
 int 			config_found (struct device *, void *, cfprint_t);
 int 			config_rootfound (char *, void *);
 void 			config_attach (struct device *, struct cfdata *, void *, cfprint_t);
+//int 			config_detach(struct device *, int);
 void 			evcnt_attach (struct device *, const char *, struct evcnt *);
 #endif /* !_SYS_DEVICE_H_ */
