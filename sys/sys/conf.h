@@ -31,9 +31,6 @@ struct bdevsw {
 	int			(*d_discard)(dev_t, off_t, off_t);
 	int			d_type;
 	int			d_flags;
-
-	int			(*d_attach)(dev_t dev);
-	int			(*d_detach)(dev_t dev);
 };
 
 #ifdef KERNEL
@@ -87,12 +84,6 @@ struct linesw {
 #ifdef KERNEL
 extern struct 	linesw linesw[];
 #endif
-
-/* master control switch */
-struct mastersw {
-	int			(*m_attach)(struct devswtable *devsw, dev_t dev, void *data);
-	int			(*m_detach)(dev_t dev, void *data);
-};
 
 /*
  * Swap device table

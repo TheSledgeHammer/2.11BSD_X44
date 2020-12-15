@@ -55,6 +55,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
@@ -75,7 +76,6 @@ extern const int sys_bdevsws, sys_cdevsws, sys_linesws;
 extern int max_bdevsws, max_cdevsws, max_linesws;
 
 struct devswtable 		*sys_devsw;
-struct devswops 		*sys_dvops;
 struct lock_object  	*devswtable_lock;
 
 struct devswtable_head 	devsw_hashtable[MAXDEVSW]; /* hash table of devices in the device switch table (includes bdevsw, cdevsw & linesw) */
@@ -91,28 +91,26 @@ devswtable_init()
 	KASSERT(sys_cdevsws < MAXDEVSW - 1);
 	KASSERT(sys_linesws < MAXDEVSW - 1);
 
-	devswtable_allocate(&sys_devsw, &sys_dvops);
+	devswtable_allocate(&sys_devsw);
 
 	simple_lock_init(&devswtable_lock, "devswtable_lock");
 }
 
 /* allocate devswtable structures */
 static void
-devswtable_allocate(devsw, dvops)
+devswtable_allocate(devsw)
 	register struct devswtable *devsw;
-	register struct devswops *dvops;
 {
 	devsw = (struct devswtable *)malloc(sizeof(*devsw), M_DEVSW, M_WAITOK);
-	dvops = (struct devswops *)malloc(sizeof(*dvops), M_DEVSW, M_WAITOK);
 }
 
 int
-devswtable_hash(data, dev)
+devswtable_hash(data, major)
 	void 	*data;
-	dev_t 	dev;
+	dev_t 	major;
 {
-	Fnv32_t hash1 = fnv_32_buf(&dev, sizeof(&dev), FNV1_32_INIT) % MAXDEVSW;
 	Fnv32_t hash2 = fnv_32_buf(&data, sizeof(&data), FNV1_32_INIT) % MAXDEVSW;
+	Fnv32_t hash1 = fnv_32_buf(&major, sizeof(&major), FNV1_32_INIT) % MAXDEVSW;
 	return (hash1^hash2);
 }
 
@@ -177,408 +175,90 @@ devswtable_remove(data, major)
 	}
 }
 
-int
-devswtable_attach_bdevsw(devsw, bdevsw, major)
-	struct devswtable  *devsw;
-	struct bdevsw 		*bdevsw;
-	dev_t 				major;
-{
-	devswtable_add(devsw, bdevsw, major);
-
-	return (DVOP_ATTACH(devsw, bdevsw, major));
-}
-
-int
-devswtable_attach_cdevsw(devsw, cdevsw, major)
-	struct devswtable  *devsw;
-	struct cdevsw 		*cdevsw;
-	dev_t 				major;
-{
-	devswtable_add(devsw, cdevsw, major);
-
-	return (DVOP_ATTACH(devsw, cdevsw, major));
-}
-
-int
-devswtable_attach_linesw(devsw, linesw, major)
-	struct devswtable  *devsw;
-	struct linesw 		*linesw;
-	dev_t 				major;
-{
-	devswtable_add(devsw, linesw, major);
-
-	return (DVOP_ATTACH(devsw, linesw, major));
-}
-
-int
-devswtable_dev_attach(major, devsw, type)
-    dev_t 	            major;
-    struct devswtable 	*devsw;
-     int 				type;
-{
-	int error = 0;
-	switch (type) {
-	case BDEVTYPE:
-		struct bdevsw *bd = DTOB(devsw);
-		if (bd) {
-			error = devswtable_attach_bdevsw(devsw, bd, major);
-			return (error);
-		}
-		break;
-
-	case CDEVTYPE:
-		struct cdevsw *cd = DTOC(devsw);
-		if (cd) {
-			error = devswtable_attach_cdevsw(devsw, cd, major);
-			return (error);
-		}
-		break;
-
-	case LINETYPE:
-		struct linesw *ld = DTOL(devsw);
-		if (ld) {
-			error = devswtable_attach_linesw(devsw, ld, major);
-			return (error);
-		}
-		break;
-	}
-
-	return (error);
-}
-
-int
-devswtable_detach_bdevsw(devsw, bdevsw, major)
-	struct devswtable  *devsw;
-	struct bdevsw 		*bdevsw;
-	dev_t 				major;
-{
-	devswtable_remove(bdevsw, major);
-
-	return (DVOP_DETACH(devsw, bdevsw, major));
-}
-
-int
-devswtable_detach_cdevsw(devsw, cdevsw, major)
-	struct devswtable  *devsw;
-	struct cdevsw 		*cdevsw;
-	dev_t 				major;
-{
-	devswtable_remove(cdevsw, major);
-
-	return (DVOP_DETACH(devsw, cdevsw, major));
-}
-
-int
-devswtable_detach_linesw(devsw, linesw, major)
-	struct devswtable  *devsw;
-	struct linesw 		*linesw;
-	dev_t 				major;
-{
-	devswtable_remove(linesw, major);
-
-	return (DVOP_DETACH(devsw, linesw, major));
-}
-
-int
-devswtable_dev_detach(major, devsw, type)
-    dev_t 	            major;
-    struct devswtable 	*devsw;
-     int 				type;
-{
-	int error = 0;
-	switch (type) {
-	case BDEVTYPE:
-		struct bdevsw *bd = DTOB(devsw);
-		if (bd) {
-			error = devswtable_detach_bdevsw(devsw, bd, major);
-			return (error);
-		}
-		break;
-
-	case CDEVTYPE:
-		struct cdevsw *cd = DTOC(devsw);
-		if (cd) {
-			error = devswtable_detach_cdevsw(devsw, cd, major);
-			return (error);
-		}
-		break;
-
-	case LINETYPE:
-		struct linesw *ld = DTOL(devsw);
-		if (ld) {
-			error = devswtable_detach_linesw(devsw, ld, major);
-			return (error);
-		}
-		break;
-	}
-
-	return (error);
-}
-
-int
-devswtable_lookup_bdevsw(devsw, dev)
-	struct devswtable *devsw;
-	dev_t 				dev;
-{
-	struct bdevsw *bdevsw;
-	bdevsw = devop_lookup_bdevsw(devsw, dev);
-
-	if(bdevsw == NULL) {
-		return (ENXIO);
-	}
-
-	return (0);
-}
-
-int
-devswtable_lookup_cdevsw(devsw, dev)
+void
+bdevsw_add(devsw, bdev, major)
 	struct devswtable 	*devsw;
-	dev_t 				dev;
+	struct bdevsw 		*bdev;
+	dev_t				major;
 {
-	struct cdevsw *cdevsw;
-	cdevsw = devop_lookup_cdevsw(devsw, dev);
-
-	if(cdevsw == NULL) {
-		return (ENXIO);
-	}
-
-	return (0);
+	devswtable_add(devsw, bdev, major);
 }
 
-int
-devswtable_lookup_linesw(devsw, dev)
-	struct devswtable *devsw;
-	dev_t 			dev;
-{
-	struct linesw *linesw;
-	linesw = devop_lookup_linesw(devsw, dev);
-
-	if(linesw == NULL) {
-		return (ENXIO);
-	}
-
-	return (0);
-}
-
-int
-devswtable_dev_finder(major, devsw, type)
-    dev_t 				major;
+void
+cdevsw_add(devsw, cdev, major)
 	struct devswtable 	*devsw;
-    int 				type;
+	struct cdevsw 		*cdev;
+	dev_t				major;
 {
-    int error = 0;
-
-    switch(type) {
-    case BDEVTYPE:
-    	struct bdevsw *bd = DTOB(devsw);
-        if(bd) {
-            error = devswtable_lookup_bdevsw(devsw, major);
-            return (error);
-        }
-        break;
-
-    case CDEVTYPE:
-        struct cdevsw *cd = DTOC(devsw);
-        if(cd) {
-            error = devswtable_lookup_cdevsw(devsw, major);
-            return (error);
-        }
-        break;
-
-    case LINETYPE:
-        struct linesw *ld = DTOL(devsw);
-        if(ld) {
-            error = devswtable_lookup_linesw(devsw, major);
-            return (error);
-        }
-        break;
-    }
-
-    return (error);
+	devswtable_add(devsw, cdev, major);
 }
 
-int
-devsw_io_lookup(major, data, type)
-	dev_t 	major;
-	void 	*data;
-	int		type;
-{
-	struct devswtable *devsw = devswtable_lookup(data, major);
-
-	if(devsw == NULL) {
-		return (ENXIO);
-	}
-
-	return (devswtable_dev_finder(major, devsw, type));
-}
-
-int
-devsw_io_attach(major, type)
-	dev_t 	major;
-	int		type;
-{
-	struct devswtable *devsw = &sys_devsw;
-
-	if(devsw == NULL) {
-		return (ENXIO);
-	}
-
-	return (devswtable_dev_attach(major, devsw, type));
-}
-
-int
-devsw_io_detach(major, data, type)
-	dev_t 	major;
-	void 	*data;
-	int		type;
-{
-	struct devswtable *devsw = devswtable_lookup(data, major);
-
-	if(devsw == NULL) {
-		return (0);
-	}
-
-	return (devswtable_dev_detach(major, devsw, type));
-}
-
-/* devsw operations */
-int
-dvop_attach(devsw, data, major)
+void
+linesw_add(devsw, line, major)
 	struct devswtable 	*devsw;
-	void				*data;
-    dev_t 				major;
+	struct linesw 		*line;
+	dev_t				major;
 {
-    struct dvop_attach_args args;
-    int error;
-
-    args.d_head.d_ops = &sys_dvops;
-    args.d_devswtable = devsw;
-    args.d_data = data;
-    args.d_major = major;
-
-    if(&sys_dvops->dvop_attach == NULL) {
-    	return (EINVAL);
-    }
-
-    error = &sys_dvops->dvop_attach(devsw, data, major);
-
-    return (error);
+	devswtable_add(devsw, line, major);
 }
 
+void
+bdevsw_remove(bdev, major)
+	struct bdevsw 	*bdev;
+	dev_t			major;
+{
+	devswtable_remove(bdev, major);
+}
+
+void
+cdevsw_remove(cdev, major)
+	struct cdevsw 	*cdev;
+	dev_t			major;
+{
+	devswtable_remove(cdev, major);
+}
+
+void
+linesw_remove(line, major)
+	struct linesw 	*line;
+	dev_t			major;
+{
+	devswtable_remove(line, major);
+}
+
+/* BDEVSW */
 int
-dvop_detach(devsw, data, major)
-	struct devswtable 	*devsw;
-	void				*data;
-    dev_t 				major;
+bdevsw_attach(bdev, major)
+	struct bdevsw 	*bdev;
+	dev_t			major;
 {
-    struct dvop_detach_args args;
-    int error;
-
-    args.d_head.d_ops = &sys_dvops;
-    args.d_devswtable = devsw;
-    args.d_data = data;
-    args.d_major = major;
-
-    if(&sys_dvops->dvop_detach == NULL) {
-    	return (EINVAL);
-    }
-
-    error = &sys_dvops->dvop_detach(devsw, data, major);
-
-    return (error);
-}
-
-struct bdevsw *
-devop_lookup_bdevsw(devsw, dev)
-	struct devswtable 	*devsw;
-	dev_t 				dev;
-{
-	struct bdevsw *bdevsw = DTOB(devsw);
-	dev_t maj;
-
-	if (dev == NODEV) {
-		return (NULL);
-	}
-	maj = major(dev);
-	if (maj < 0 || maj >= max_bdevsws) {
-		return (NULL);
-	}
-
-	return (bdevsw[maj]);
-}
-
-struct cdevsw *
-devop_lookup_cdevsw(devsw, dev)
-	struct devswtable 	*devsw;
-	dev_t 				dev;
-{
-	struct cdevsw *cdevsw = DTOC(devsw);
-	dev_t maj;
-
-	if (dev == NODEV) {
-		return (NULL);
-	}
-	maj = major(dev);
-	if (maj < 0 || maj >= max_cdevsws) {
-		return (NULL);
-	}
-
-	return (cdevsw[maj]);
-}
-
-struct linesw *
-devop_lookup_linesw(devsw, dev)
-	struct devswtable 	*devsw;
-	dev_t 				dev;
-{
-	struct linesw *linesw = DTOL(devsw);
-	dev_t maj;
-
-	if (dev == NODEV) {
-		return (NULL);
-	}
-	maj = major(dev);
-	if (maj < 0 || maj >= max_linesws) {
-		return (NULL);
-	}
-
-	return (linesw[maj]);
-}
-
-/* bdevsw op */
-struct devswops *bdevswops = {
-	.dvop_attach = bdevsw_attach,
-	.dvop_detach = bdevsw_detach,
-};
-
-int
-bdevsw_attach(args)
-	struct dvop_attach_args *args;
-{
-	struct bdevsw 		*bdevsw;
 	const struct bdevsw **newptr;
 	dev_t maj;
 	int i;
 
 	 simple_lock(&devswtable_lock);
 
-	if(maj < 0) {
+	if(bdev == NULL) {
+		return (0);
+	}
+
+	if(major < 0) {
 		for (maj = sys_bdevsws; maj < max_bdevsws ; maj++) {
 			if (bdevsw[maj] != NULL) {
 				continue;
 			}
 			break;
 		}
-		maj = args->d_major;
+		maj = major;
 	}
 
-	if(maj >= MAXDEVSW) {
+	if(major >= MAXDEVSW) {
 		printf("%s: block majors exhausted", __func__);
 		simple_unlock(&devswtable_lock);
 		return (ENOMEM);
 	}
 
-	if (maj >= max_bdevsws) {
+	if (major >= max_bdevsws) {
 		KASSERT(bdevsw == bdevsw0);
 		newptr = malloc(MAXDEVSW * BDEVSW_SIZE, M_DEVSW, M_NOWAIT);
 		if (newptr == NULL) {
@@ -590,28 +270,27 @@ bdevsw_attach(args)
 		max_bdevsws = MAXDEVSW;
 	}
 
-	if (bdevsw[maj] != NULL) {
+	if (bdevsw[major] != NULL) {
 		simple_unlock(&devswtable_lock);
 		return (EEXIST);
 	}
 
+	bdevsw[major] = bdev;
 	simple_unlock(&devswtable_lock);
 	return (0);
 }
 
 int
-bdevsw_detach(args)
-	struct dvop_detach_args *args;
+bdevsw_detach(bdev)
+	struct bdevsw *bdev;
 {
-	struct bdevsw *bdevsw = DTOB(args->d_devswtable);
-	dev_t maj = args->d_major;
 	int i;
 
 	simple_lock(&devswtable_lock);
 
 	if(bdevsw != NULL) {
 		for (i = 0 ; i < max_bdevsws ; i++) {
-			if(bdevsw[i] != bdevsw[maj]) {
+			if(bdevsw[i] != bdev) {
 				continue;
 			}
 			bdevsw[i] = NULL;
@@ -642,40 +321,56 @@ bdevsw_lookup_major(bdev)
 	return (NODEVMAJOR);
 }
 
-/* cdevsw ops */
-struct devswops *cdevswops = {
-	.dvop_attach = cdevsw_attach,
-	.dvop_detach = cdevsw_detach,
-};
-
-int
-cdevsw_attach(args)
-	struct dvop_attach_args *args;
+struct bdevsw *
+bdevsw_lookup(dev)
+	dev_t 	dev;
 {
-	struct cdevsw *cdevsw;
+	dev_t maj;
+
+	if (dev == NODEV) {
+		return (NULL);
+	}
+	maj = major(dev);
+	if (maj < 0 || maj >= max_bdevsws) {
+		return (NULL);
+	}
+
+	return (bdevsw[maj]);
+}
+
+/* CDEVSW */
+int
+cdevsw_attach(cdev, major)
+	struct cdevsw 	*cdev;
+	dev_t 			major;
+{
 	const struct cdevsw **newptr;
 	dev_t maj;
 	int i;
 
 	simple_lock(&devswtable_lock);
 
-	if(maj < 0) {
+	if(cdev == NULL) {
+		return (0);
+	}
+
+	if(major < 0) {
 		for (maj = sys_cdevsws; maj < max_cdevsws ; maj++) {
 			if (cdevsw[maj] != NULL) {
 				continue;
 			}
 			break;
 		}
-		maj = args->d_major;
+		maj = major;
 	}
 
-	if(maj >= MAXDEVSW) {
+	if(major >= MAXDEVSW) {
 		printf("%s: character majors exhausted", __func__);
 		simple_unlock(&devswtable_lock);
 		return (ENOMEM);
 	}
 
-	if (maj >= max_cdevsws) {
+	if (major >= max_cdevsws) {
 		KASSERT(cdevsw == cdevsw0);
 		newptr = malloc(MAXDEVSW * CDEVSW_SIZE, M_DEVSW, M_NOWAIT);
 		if (newptr == NULL) {
@@ -687,28 +382,27 @@ cdevsw_attach(args)
 		max_cdevsws = MAXDEVSW;
 	}
 
-	if (cdevsw[maj] != NULL) {
+	if (cdevsw[major] != NULL) {
 		simple_unlock(&devswtable_lock);
 		return (EEXIST);
 	}
 
+	cdevsw[major] = cdev;
 	simple_unlock(&devswtable_lock);
 	return (0);
 }
 
 int
-cdevsw_detach(args)
-	struct dvop_detach_args *args;
+cdevsw_detach(cdev)
+	struct cdevsw *cdev;
 {
-	struct cdevsw *cdevsw = DTOC(args->d_devswtable);
-	dev_t maj = args->d_major;
 	int i;
 
 	simple_lock(&devswtable_lock);
 
-	if(cdevsw != NULL) {
+	if(cdev != NULL) {
 		for (i = 0 ; i < max_cdevsws ; i++) {
-			if(cdevsw[i] != cdevsw[maj]) {
+			if(cdevsw[i] != cdev) {
 				continue;
 			}
 			cdevsw[i] = NULL;
@@ -739,40 +433,56 @@ cdevsw_lookup_major(cdev)
 	return (NODEVMAJOR);
 }
 
-/* linesw ops */
-struct devswops *lineswops = {
-	.dvop_attach = linesw_attach,
-	.dvop_detach = linesw_detach,
-};
-
-int
-linesw_attach(args)
-	struct dvop_attach_args *args;
+struct cdevsw *
+cdevsw_lookup(dev)
+	dev_t 	dev;
 {
-	struct linesw *linesw;
-	const struct cdevsw **newptr;
+	dev_t maj;
+
+	if (dev == NODEV) {
+		return (NULL);
+	}
+	maj = major(dev);
+	if (maj < 0 || maj >= max_cdevsws) {
+		return (NULL);
+	}
+
+	return (cdevsw[maj]);
+}
+
+/* LINESW */
+int
+linesw_attach(line, major)
+	struct linesw 	*line;
+	dev_t 			major;
+{
+	const struct linesw **newptr;
 	dev_t maj;
 	int i;
 
 	simple_lock(&devswtable_lock);
 
-	if(maj < 0) {
+	if(line == NULL) {
+		return (0);
+	}
+
+	if(major < 0) {
 		for (maj = sys_linesws; maj < max_linesws ; maj++) {
 			if (linesw[maj] != NULL) {
 				continue;
 			}
 			break;
 		}
-		maj = args->d_major;
+		maj = major;
 	}
 
-	if(maj >= MAXDEVSW) {
+	if(major >= MAXDEVSW) {
 		printf("%s: line majors exhausted", __func__);
 		simple_unlock(&devswtable_lock);
 		return (ENOMEM);
 	}
 
-	if (maj >= max_linesws) {
+	if (major >= max_linesws) {
 		KASSERT(linesw == &linesw0);
 		newptr = malloc(MAXDEVSW * LINESW_SIZE, M_DEVSW, M_NOWAIT);
 		if (newptr == NULL) {
@@ -784,28 +494,27 @@ linesw_attach(args)
 		max_linesws = MAXDEVSW;
 	}
 
-	if (linesw[maj] != NULL) {
+	if (linesw[major] != NULL) {
 		simple_unlock(&devswtable_lock);
 		return (EEXIST);
 	}
 
+	linesw[major] = line;
 	simple_unlock(&devswtable_lock);
 	return (0);
 }
 
 int
-linesw_detach(args)
-	struct dvop_detach_args *args;
+linesw_detach(line)
+	struct linesw *line;
 {
-	struct linesw *linesw = DTOL(args->d_devswtable);
-	dev_t maj = args->d_major;
 	int i;
 
 	simple_lock(&devswtable_lock);
 
 	if(linesw != NULL) {
 		for (i = 0 ; i < max_linesws ; i++) {
-			if(linesw[i] != linesw[maj]) {
+			if(linesw[i] != line) {
 				continue;
 			}
 			linesw[i] = NULL;
@@ -817,24 +526,86 @@ linesw_detach(args)
 	return (0);
 }
 
-/*
- * Look up a line device by reference to its operations set.
- *
- * => Caller must ensure that the device is not detached, and therefore
- *    that the returned major is still valid when dereferenced.
- */
 dev_t
 linesw_lookup_major(line)
 	const struct linesw *line;
 {
 	dev_t maj;
-
 	for(maj = 0; maj < max_linesws; maj++) {
 		if(linesw[maj] == line) {
 			return (maj);
 		}
 	}
 	return (NODEVMAJOR);
+}
+
+struct linesw *
+linesw_lookup(dev)
+	dev_t 	dev;
+{
+	dev_t 	maj;
+
+	if (dev == NODEV) {
+		return (NULL);
+	}
+	maj = major(dev);
+	if (maj < 0 || maj >= max_linesws) {
+		return (NULL);
+	}
+
+	return (linesw[maj]);
+}
+
+int
+devswtable_finder(major, devsw, type)
+    dev_t 				major;
+	struct devswtable 	*devsw;
+    int 				type;
+{
+    int error = 0;
+
+    switch(type) {
+    case BDEVTYPE:
+    	struct bdevsw *bd = DTOB(devsw);
+        if(bd) {
+            error = devswtable_lookup_bdevsw(major);
+            return (error);
+        }
+        break;
+
+    case CDEVTYPE:
+        struct cdevsw *cd = DTOC(devsw);
+        if(cd) {
+            error = devswtable_lookup_cdevsw(devsw, major);
+            return (error);
+        }
+        break;
+
+    case LINETYPE:
+        struct linesw *ld = DTOL(devsw);
+        if(ld) {
+            error = devswtable_lookup_linesw(major);
+            return (error);
+        }
+        break;
+    }
+
+    return (error);
+}
+
+int
+devsw_io_lookup(major, data, type)
+	dev_t 	major;
+	void 	*data;
+	int		type;
+{
+	struct devswtable *devsw = devswtable_lookup(data, major);
+
+	if(devsw == NULL) {
+		return (ENXIO);
+	}
+
+	return (devswtable_finder(major, devsw, type));
 }
 
 /* bdevsw */

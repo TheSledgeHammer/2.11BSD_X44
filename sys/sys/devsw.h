@@ -75,10 +75,10 @@
  * device switch table
  */
 struct devswtable {
+	const char 						*dv_name;	/* device switch name */
 	dev_t							dv_major;	/* device switch major */
     void                			*dv_data;	/* device switch data */
-
-    struct devswops    				*dv_ops;	/* device switch operations */
+    int								dv_type;	/* device switch type */
 };
 
 struct devswtable_head;
@@ -88,32 +88,6 @@ struct devswtable_entry {
 	struct devswtable				*dve_devswtable;
 };
 typedef struct devswtable_entry		*devswtable_entry_t;
-
-struct devswops {
-    int     (*dvop_attach)(struct devswtable *, void *, dev_t);
-    int     (*dvop_detach)(struct devswtable *, void *, dev_t);
-};
-
-#define DVOP_ATTACH(dv, data, major)	(*((dv)->dv_ops->dvop_attach))(dv, data, major)
-#define DVOP_DETACH(dv, data, major)	(*((dv)->dv_ops->dvop_detach))(dv, data, major)
-
-struct dvop_generic_args {
-	struct devswops				*d_ops;
-};
-
-struct dvop_attach_args {
-	struct dvop_generic_args 	d_head;
-    struct devswtable   		d_devswtable;
-    void                		*d_data;
-    dev_t						d_major;
-};
-
-struct dvop_detach_args {
-	struct dvop_generic_args 	d_head;
-    struct devswtable 			d_devswtable;
-    void                		*d_data;
-    dev_t						d_major;
-};
 
 /* devsw size */
 #define	MAXDEVSW		512	/* the maximum of major device number */
@@ -148,8 +122,7 @@ struct vnode;
 #define	D_TTY	3
 #define	D_OTHER	4
 
-//#ifdef _KERNEL
-extern struct devswops 	 sys_dvops;	/* device switch table operations */
+#ifdef _KERNEL
 extern struct devswtable sys_devsw;
 
 void							devswtable_init();
