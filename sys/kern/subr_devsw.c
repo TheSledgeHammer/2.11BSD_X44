@@ -175,57 +175,6 @@ devswtable_remove(data, major)
 	}
 }
 
-void
-bdevsw_add(devsw, bdev, major)
-	struct devswtable 	*devsw;
-	struct bdevsw 		*bdev;
-	dev_t				major;
-{
-	devswtable_add(devsw, bdev, major);
-}
-
-void
-cdevsw_add(devsw, cdev, major)
-	struct devswtable 	*devsw;
-	struct cdevsw 		*cdev;
-	dev_t				major;
-{
-	devswtable_add(devsw, cdev, major);
-}
-
-void
-linesw_add(devsw, line, major)
-	struct devswtable 	*devsw;
-	struct linesw 		*line;
-	dev_t				major;
-{
-	devswtable_add(devsw, line, major);
-}
-
-void
-bdevsw_remove(bdev, major)
-	struct bdevsw 	*bdev;
-	dev_t			major;
-{
-	devswtable_remove(bdev, major);
-}
-
-void
-cdevsw_remove(cdev, major)
-	struct cdevsw 	*cdev;
-	dev_t			major;
-{
-	devswtable_remove(cdev, major);
-}
-
-void
-linesw_remove(line, major)
-	struct linesw 	*line;
-	dev_t			major;
-{
-	devswtable_remove(line, major);
-}
-
 /* BDEVSW */
 int
 bdevsw_attach(bdev, major)
@@ -336,6 +285,23 @@ bdevsw_lookup(dev)
 	}
 
 	return (bdevsw[maj]);
+}
+
+void
+bdevsw_add(devsw, bdev, major)
+	struct devswtable 	*devsw;
+	struct bdevsw 		*bdev;
+	dev_t				major;
+{
+	devswtable_add(devsw, bdev, major);
+}
+
+void
+bdevsw_remove(bdev, major)
+	struct bdevsw 	*bdev;
+	dev_t			major;
+{
+	devswtable_remove(bdev, major);
 }
 
 /* CDEVSW */
@@ -450,6 +416,23 @@ cdevsw_lookup(dev)
 	return (cdevsw[maj]);
 }
 
+void
+cdevsw_add(devsw, cdev, major)
+	struct devswtable 	*devsw;
+	struct cdevsw 		*cdev;
+	dev_t				major;
+{
+	devswtable_add(devsw, cdev, major);
+}
+
+void
+cdevsw_remove(cdev, major)
+	struct cdevsw 	*cdev;
+	dev_t			major;
+{
+	devswtable_remove(cdev, major);
+}
+
 /* LINESW */
 int
 linesw_attach(line, major)
@@ -556,8 +539,136 @@ linesw_lookup(dev)
 	return (linesw[maj]);
 }
 
+void
+linesw_add(devsw, line, major)
+	struct devswtable 	*devsw;
+	struct linesw 		*line;
+	dev_t				major;
+{
+	devswtable_add(devsw, line, major);
+}
+
+void
+linesw_remove(line, major)
+	struct linesw 	*line;
+	dev_t			major;
+{
+	devswtable_remove(line, major);
+}
+
+/* DEVSW IO */
+void
+devsw_io_add(bdev, cdev, line, major)
+	struct bdevsw 	*bdev;
+	struct cdevsw 	*cdev;
+	struct linesw 	*line;
+	dev_t			major;
+{
+	register struct devswtable *devsw;
+
+	devsw = &sys_devsw;
+
+	if(devsw != NULL) {
+		if(bdev != NULL) {
+			bdevsw_add(devsw, bdev, major);
+		}
+		if(cdev != NULL) {
+			cdevsw_add(devsw, cdev, major);
+		}
+		if(line != NULL) {
+			linesw_add(devsw, line, major);
+		}
+	}
+}
+
+void
+devsw_io_remove(bdev, cdev, line, major)
+	struct bdevsw 	*bdev;
+	struct cdevsw 	*cdev;
+	struct linesw 	*line;
+	dev_t			major;
+{
+	if (bdev) {
+		bdevsw_remove(bdev, major);
+	}
+	if (cdev) {
+		cdevsw_remove(cdev, major);
+	}
+	if (line) {
+		linesw_remove(line, major);
+	}
+}
+
 int
-devswtable_finder(major, devsw, type)
+devsw_io_attach(bdev, cdev, line, major)
+	struct bdevsw 	*bdev;
+	struct cdevsw 	*cdev;
+	struct linesw 	*line;
+	dev_t			major;
+{
+	int error;
+
+	if(bdev) {
+		devsw_io_add(bdev, NULL, NULL, major);
+		error = bdevsw_attach(bdev, major);
+		if(error != 0) {
+			return (ENXIO);
+		}
+	}
+	if(cdev) {
+		devsw_io_add(NULL, NULL, cdev, major);
+		error = cdevsw_attach(cdev, major);
+		if(error != 0) {
+			return (ENXIO);
+		}
+	}
+	if(line) {
+		devsw_io_add(NULL, NULL, line, major);
+		error = linesw_attach(line, major);
+		if(error != 0) {
+			return (ENXIO);
+		}
+	}
+
+	return (0);
+}
+
+int
+devsw_io_detach(bdev, cdev, line, major)
+	struct bdevsw 	*bdev;
+	struct cdevsw 	*cdev;
+	struct linesw 	*line;
+	dev_t			major;
+{
+	int error;
+
+	if(bdev) {
+		devsw_io_remove(bdev, NULL, NULL, major);
+		error = bdevsw_detach(bdev, major);
+		if(error != 0) {
+			return (error);
+		}
+	}
+	if(cdev) {
+		devsw_io_remove(NULL, NULL, cdev, major);
+		error = cdevsw_detach(cdev, major);
+		if(error != 0) {
+			return (error);
+		}
+	}
+	if(line) {
+		devsw_io_remove(NULL, NULL, line, major);
+		error = linesw_detach(line, major);
+		if(error != 0) {
+			return (error);
+		}
+	}
+
+	return (0);
+}
+
+int
+devsw_io_search(major, devsw, type)
     dev_t 				major;
 	struct devswtable 	*devsw;
     int 				type;
@@ -566,31 +677,28 @@ devswtable_finder(major, devsw, type)
 
     switch(type) {
     case BDEVTYPE:
-    	struct bdevsw *bd = DTOB(devsw);
-        if(bd) {
-            error = devswtable_lookup_bdevsw(major);
-            return (error);
+    	struct bdevsw *bd = bdevsw_lookup(major);
+        if(bd == DTOB(devsw)) {
+            return (0);
         }
         break;
 
     case CDEVTYPE:
-        struct cdevsw *cd = DTOC(devsw);
-        if(cd) {
-            error = devswtable_lookup_cdevsw(devsw, major);
-            return (error);
+        struct cdevsw *cd = cdevsw_lookup(major);
+        if(cd == DTOC(devsw)) {
+        	return (0);
         }
         break;
 
     case LINETYPE:
-        struct linesw *ld = DTOL(devsw);
-        if(ld) {
-            error = devswtable_lookup_linesw(major);
-            return (error);
+        struct linesw *ld = linesw_lookup(major);
+        if(ld == DTOL(devsw)) {
+        	return (0);
         }
         break;
     }
 
-    return (error);
+    return (ENXIO);
 }
 
 int
@@ -602,13 +710,13 @@ devsw_io_lookup(major, data, type)
 	struct devswtable *devsw = devswtable_lookup(data, major);
 
 	if(devsw == NULL) {
-		return (ENXIO);
+		return (NODEV);
 	}
 
-	return (devswtable_finder(major, devsw, type));
+	return (devsw_io_search(major, devsw, type));
 }
 
-/* bdevsw */
+/* bdevsw dev ops */
 int
 bdev_open(dev_t dev, int flag, int devtype, struct proc *p)
 {
@@ -745,6 +853,7 @@ bdev_discard(dev_t dev, off_t pos, off_t len)
 	return (rv);
 }
 
+/* cdevsw dev ops */
 int
 cdev_open(dev_t dev, int oflags, int devtype, struct proc *p)
 {
@@ -949,6 +1058,7 @@ cdev_discard(dev_t dev, off_t pos, off_t len)
 	return (rv);
 }
 
+/* linesw dev ops */
 int
 line_open(dev_t dev, struct tty *tp)
 {

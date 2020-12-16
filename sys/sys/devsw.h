@@ -123,15 +123,12 @@ struct vnode;
 #define	D_OTHER	4
 
 #ifdef _KERNEL
-extern struct devswtable sys_devsw;
+extern struct devswtable 		sys_devsw;
 
 void							devswtable_init();
-struct devswtable 				*devswtable_lookup(void *, dev_t);
-void							devswtable_add(struct devswtable *, void *, dev_t);
-void 							devswtable_remove(void *, dev_t);
-dev_t							bdevsw_lookup_major(struct bdevsw *);
-dev_t							cdevsw_lookup_major(struct cdevsw *);
-dev_t							linesw_lookup_major(struct linesw *);
+int								devsw_io_attach(struct bdevsw *, struct cdevsw *, struct linesw *, dev_t);
+int								devsw_io_detach(struct bdevsw *, struct cdevsw *, struct linesw *, dev_t);
+int								devsw_io_lookup(dev_t, void *, int);
 
 #define	dev_type_open(n)		int n(dev_t, int, int, struct proc *)
 #define	dev_type_close(n)		int n(dev_t, int, int, struct proc *)

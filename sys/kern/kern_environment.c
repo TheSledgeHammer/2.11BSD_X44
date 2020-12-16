@@ -67,7 +67,7 @@ static int			md_env_pos;
 
 /* dynamic environment variables */
 char				**kenvp;
-struct simplelock 	kenv_lock;
+struct lock 		*kenv_lock;
 
 bool				dynamic_kenv;
 
