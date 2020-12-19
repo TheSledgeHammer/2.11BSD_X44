@@ -668,12 +668,16 @@ devsw_io_detach(bdev, cdev, line, major)
 }
 
 int
-devsw_io_search(major, devsw, type)
-    dev_t 				major;
-	struct devswtable 	*devsw;
-    int 				type;
+devsw_io_lookup(major, data, type)
+	dev_t 	major;
+	void 	*data;
+	int		type;
 {
-    int error = 0;
+	struct devswtable *devsw = devswtable_lookup(data, major);
+
+	if(devsw == NULL) {
+		return (NODEV);
+	}
 
     switch(type) {
     case BDEVTYPE:
@@ -699,21 +703,6 @@ devsw_io_search(major, devsw, type)
     }
 
     return (ENXIO);
-}
-
-int
-devsw_io_lookup(major, data, type)
-	dev_t 	major;
-	void 	*data;
-	int		type;
-{
-	struct devswtable *devsw = devswtable_lookup(data, major);
-
-	if(devsw == NULL) {
-		return (NODEV);
-	}
-
-	return (devsw_io_search(major, devsw, type));
 }
 
 /* bdevsw dev ops */
