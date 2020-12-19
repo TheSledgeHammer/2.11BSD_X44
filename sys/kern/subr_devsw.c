@@ -568,14 +568,14 @@ devsw_io_add(bdev, cdev, line, major)
 
 	devsw = &sys_devsw;
 
-	if(devsw != NULL) {
-		if(bdev != NULL) {
+	if(devsw) {
+		if(bdev) {
 			bdevsw_add(devsw, bdev, major);
 		}
-		if(cdev != NULL) {
+		if(cdev) {
 			cdevsw_add(devsw, cdev, major);
 		}
-		if(line != NULL) {
+		if(line) {
 			linesw_add(devsw, line, major);
 		}
 	}
