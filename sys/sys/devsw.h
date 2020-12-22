@@ -75,7 +75,6 @@
  * device switch table
  */
 struct devswtable {
-	const char 						*dv_name;	/* device switch name */
 	dev_t							dv_major;	/* device switch major */
     void                			*dv_data;	/* device switch data */
     int								dv_type;	/* device switch type */
@@ -88,6 +87,15 @@ struct devswtable_entry {
 	struct devswtable				*dve_devswtable;
 };
 typedef struct devswtable_entry		*devswtable_entry_t;
+
+typedef int (*attach_t)(dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
+typedef int (*detach_t)(dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
+
+struct devswio {
+	const char 			*do_name;
+	attach_t			do_attach;
+	detach_t			do_detach;
+};
 
 /* devsw size */
 #define	MAXDEVSW		512	/* the maximum of major device number */
@@ -124,11 +132,22 @@ struct vnode;
 
 #ifdef _KERNEL
 extern struct devswtable 		sys_devsw;
+extern struct devswio 			sys_devswio;
 
 void							devswtable_init();
-int								devsw_io_attach(struct bdevsw *, struct cdevsw *, struct linesw *, dev_t);
-int								devsw_io_detach(struct bdevsw *, struct cdevsw *, struct linesw *, dev_t);
-int								devsw_io_lookup(dev_t, void *, int);
+int								devsw_io_attach(dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
+int								devsw_io_detach(dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
+int								devsw_io_iskmemdev(dev_t);
+int								devsw_io_iszerodev(dev_t);
+int								devsw_io_isdisk(dev_t, int);
+dev_t							devsw_io_chrtoblk(dev_t);
+dev_t							devsw_io_blk2chr(dev_t);
+
+#define iskmemdev(dev)			devsw_io_iskmemdev(dev)
+#define iszerodev(dev)			devsw_io_iszerodev(dev)
+#define isdisk(dev, type)		devsw_io_isdisk(dev, type)
+#define chrtoblk(cdev) 			devsw_io_chrtoblk(cdev)
+#define blktochr(bdev)			devsw_io_blk2chr(bdev)
 
 #define	dev_type_open(n)		int n(dev_t, int, int, struct proc *)
 #define	dev_type_close(n)		int n(dev_t, int, int, struct proc *)

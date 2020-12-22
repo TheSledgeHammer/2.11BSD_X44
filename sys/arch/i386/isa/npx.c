@@ -33,12 +33,14 @@
  *
  *	@(#)npx.c	8.1 (Berkeley) 6/11/93
  */
+
 #include "npx.h"
-//#if NNPX > 0
+#if NNPX > 0
 
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/conf.h>
+#include <sys/device.h>
 #include <sys/file.h>
 #include <sys/proc.h>
 #include <sys/user.h>
@@ -55,10 +57,15 @@
  * 387 and 287 Numeric Coprocessor Extension (NPX) Driver.
  */
 
+struct npx_softc {
+	struct device 	sc_dev;
+	void 			*sc_ih;
+};
+
 int	npxprobe(), npxattach(), npxintr();
 
-struct	isa_driver npxdriver = {
-	npxprobe, npxattach, "npx",
+struct cfdriver npx_cd = {
+	NULL, "npx", npxprobe, npxattach, NULL, DV_DULL, sizeof(struct npx_softc)
 };
 
 struct proc *npxproc;	/* process who owns device, otherwise zero */
@@ -70,8 +77,8 @@ extern long npx0mask;
  * Probe routine - look device, otherwise set emulator bit
  */
 int
-npxprobe(dvp)
-	struct isa_device *dvp;
+npxprobe(ia)
+	struct isa_attach_args  *ia;
 {	static status, control;
 
 #ifdef lint
@@ -108,14 +115,14 @@ npxprobe(dvp)
 /*
  * Attach routine - announce which it is, and wire into system
  */
-npxattach(dvp)
-	struct isa_device *dvp;
+npxattach(ia)
+	struct isa_attach_args *ia;
 {
 
 	npxinit(0x262);
 	/* check for ET bit to decide 387/287 */
 	npxexists++;
-	npx0mask = dvp->id_irq;
+	npx0mask = ia->ia_irq;
 }
 
 /*

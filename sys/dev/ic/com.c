@@ -62,6 +62,10 @@ struct isa_driver comdriver = {
 	comprobe, comattach, "com"
 };
 
+struct cfdriver com_cd {
+	NULL, "com", comprobe, comattach, NULL, DV_TTY, sizeof(struct isa_softc)
+};
+
 int	comsoftCAR;
 int	com_active;
 int	com_hasfifo;

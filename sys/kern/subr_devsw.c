@@ -76,6 +76,7 @@ extern const int sys_bdevsws, sys_cdevsws, sys_linesws;
 extern int max_bdevsws, max_cdevsws, max_linesws;
 
 struct devswtable 		*sys_devsw;
+struct devswio 			*sys_devswio;
 struct lock_object  	*devswtable_lock;
 
 struct devswtable_head 	devsw_hashtable[MAXDEVSW]; /* hash table of devices in the device switch table (includes bdevsw, cdevsw & linesw) */
@@ -91,17 +92,19 @@ devswtable_init()
 	KASSERT(sys_cdevsws < MAXDEVSW - 1);
 	KASSERT(sys_linesws < MAXDEVSW - 1);
 
-	devswtable_allocate(&sys_devsw);
+	devswtable_allocate(&sys_devsw, &sys_devswio);
 
 	simple_lock_init(&devswtable_lock, "devswtable_lock");
 }
 
 /* allocate devswtable structures */
 static void
-devswtable_allocate(devsw)
-	register struct devswtable *devsw;
+devswtable_allocate(devsw, devswio)
+	register struct devswtable 	*devsw;
+	register struct devswio		*devswio;
 {
 	devsw = (struct devswtable *)malloc(sizeof(*devsw), M_DEVSW, M_WAITOK);
+	devswio = (struct devswio *)malloc(sizeof(*devswio), M_DEVSW, M_WAITOK);
 }
 
 int
@@ -159,8 +162,8 @@ devswtable_add(devsw, data, major)
 
 void
 devswtable_remove(data, major)
-	void 	*data;
-	dev_t 	major;
+	void 		*data;
+	dev_t 		major;
 {
 	struct devswtable_head 		*bucket;
 	register devswtable_entry_t entry;
@@ -169,7 +172,7 @@ devswtable_remove(data, major)
 	bucket = &devsw_hashtable[devswtable_hash(data, major)];
 	for(entry = TAILQ_FIRST(bucket); entry != NULL; entry = TAILQ_NEXT(entry, dve_link)) {
 		devsw = entry->dve_devswtable;
-		if(devsw->dv_data == data && devsw->dv_major == major) {
+		if(devsw->dv_data == data && devsw->dv_major == major && devsw->dv_name == name) {
 			TAILQ_REMOVE(bucket, entry, dve_link);
 		}
 	}
@@ -426,7 +429,7 @@ cdevsw_add(devsw, cdev, major)
 }
 
 void
-cdevsw_remove(cdev, major)
+cdevsw_remove(cdev, major, name)
 	struct cdevsw 	*cdev;
 	dev_t			major;
 {
@@ -558,11 +561,11 @@ linesw_remove(line, major)
 
 /* DEVSW IO */
 void
-devsw_io_add(bdev, cdev, line, major)
+devsw_io_add(major, bdev, cdev, line)
+	dev_t			major;
 	struct bdevsw 	*bdev;
 	struct cdevsw 	*cdev;
 	struct linesw 	*line;
-	dev_t			major;
 {
 	register struct devswtable *devsw;
 
@@ -582,11 +585,11 @@ devsw_io_add(bdev, cdev, line, major)
 }
 
 void
-devsw_io_remove(bdev, cdev, line, major)
+devsw_io_remove(major, bdev, cdev, line)
+	dev_t			major;
 	struct bdevsw 	*bdev;
 	struct cdevsw 	*cdev;
 	struct linesw 	*line;
-	dev_t			major;
 {
 	if (bdev) {
 		bdevsw_remove(bdev, major);
@@ -600,30 +603,30 @@ devsw_io_remove(bdev, cdev, line, major)
 }
 
 int
-devsw_io_attach(bdev, cdev, line, major)
+devsw_io_attach(major, bdev, cdev, line)
+	dev_t			major;
 	struct bdevsw 	*bdev;
 	struct cdevsw 	*cdev;
 	struct linesw 	*line;
-	dev_t			major;
 {
 	int error;
 
 	if(bdev) {
-		devsw_io_add(bdev, NULL, NULL, major);
+		devsw_io_add(major, bdev, NULL, NULL);
 		error = bdevsw_attach(bdev, major);
 		if(error != 0) {
 			return (ENXIO);
 		}
 	}
 	if(cdev) {
-		devsw_io_add(NULL, NULL, cdev, major);
+		devsw_io_add(major, NULL, cdev, NULL);
 		error = cdevsw_attach(cdev, major);
 		if(error != 0) {
 			return (ENXIO);
 		}
 	}
 	if(line) {
-		devsw_io_add(NULL, NULL, line, major);
+		devsw_io_add(major, NULL, NULL, line);
 		error = linesw_attach(line, major);
 		if(error != 0) {
 			return (ENXIO);
@@ -634,30 +637,30 @@ devsw_io_attach(bdev, cdev, line, major)
 }
 
 int
-devsw_io_detach(bdev, cdev, line, major)
+devsw_io_detach(major, bdev, cdev, line)
+	dev_t			major;
 	struct bdevsw 	*bdev;
 	struct cdevsw 	*cdev;
 	struct linesw 	*line;
-	dev_t			major;
 {
 	int error;
 
 	if(bdev) {
-		devsw_io_remove(bdev, NULL, NULL, major);
+		devsw_io_remove(major, bdev, NULL, NULL);
 		error = bdevsw_detach(bdev, major);
 		if(error != 0) {
 			return (error);
 		}
 	}
 	if(cdev) {
-		devsw_io_remove(NULL, NULL, cdev, major);
+		devsw_io_remove(major, NULL, cdev, NULL);
 		error = cdevsw_detach(cdev, major);
 		if(error != 0) {
 			return (error);
 		}
 	}
 	if(line) {
-		devsw_io_remove(NULL, NULL, line, major);
+		devsw_io_remove(major, NULL, NULL, line);
 		error = linesw_detach(line, major);
 		if(error != 0) {
 			return (error);
@@ -703,6 +706,109 @@ devsw_io_lookup(major, data, type)
     }
 
     return (ENXIO);
+}
+
+/*
+ * Routine that identifies /dev/mem and /dev/kmem.
+ *
+ * A minimal stub routine can always return 0.
+ */
+int
+devsw_io_iskmemdev(dev)
+	register dev_t dev;
+{
+	if (major(dev) == 2 && (minor(dev) == 0 || minor(dev) == 1)) {
+		return (1);
+	}
+	return (0);
+}
+
+int
+devsw_io_iszerodev(dev)
+	dev_t dev;
+{
+	if (major(dev) == 2 && minor(dev) == 12) {
+		return (1);
+	}
+	return (0);
+}
+
+/*
+ * Routine to determine if a device is a disk.
+ *
+ * A minimal stub routine can always return 0.
+ */
+int
+devsw_io_isdisk(dev, type)
+	dev_t dev;
+	register int type;
+{
+	switch (major(dev)) {
+	default:
+		return (0);
+	}
+}
+
+/*
+ * Convert from character dev_t to block dev_t.
+ *
+ * => Caller must ensure that the device is not detached, and therefore
+ *    that the major number is still valid when dereferenced.
+ */
+dev_t
+devsw_io_chrtoblk(dev)
+	dev_t dev;
+{
+	dev_t bmajor, cmajor;
+	int i;
+	dev_t rv;
+
+	cmajor = major(dev);
+	bmajor = NODEVMAJOR;
+	rv = NODEV;
+
+	simple_lock(&devswtable_lock);
+	if (cmajor < 0 || cmajor >= max_cdevsws || cdevsw[cmajor] == NULL) {
+		simple_unlock(&devswtable_lock);
+		return (NODEV);
+	}
+	if (bmajor >= 0 && bmajor < max_bdevsws && bdevsw[bmajor] != NULL) {
+		rv = makedev(bmajor, minor(dev));
+	}
+	simple_unlock(&devswtable_lock);
+
+	return (rv);
+}
+
+/*
+ * Convert from block dev_t to character dev_t.
+ *
+ * => Caller must ensure that the device is not detached, and therefore
+ *    that the major number is still valid when dereferenced.
+ */
+dev_t
+devsw_io_blk2chr(dev)
+	dev_t dev;
+{
+	dev_t bmajor, cmajor;
+	int i;
+	dev_t rv;
+
+	bmajor = major(dev);
+	cmajor = NODEVMAJOR;
+	rv = NODEV;
+
+	simple_lock(&devswtable_lock);
+	if (bmajor < 0 || bmajor >= max_bdevsws || bdevsw[bmajor] == NULL) {
+		simple_unlock(&devswtable_lock);
+		return (NODEV);
+	}
+	if (cmajor >= 0 && cmajor < max_cdevsws && cdevsw[cmajor] != NULL) {
+		rv = makedev(cmajor, minor(dev));
+	}
+	simple_unlock(&devswtable_lock);
+
+	return (rv);
 }
 
 /* bdevsw dev ops */
@@ -1054,7 +1160,7 @@ line_open(dev_t dev, struct tty *tp)
 	const struct linesw *l;
 	int rv, error;
 
-	error = devsw_io_lookup(tp->t_dev, c, LINETYPE);
+	error = devsw_io_lookup(tp->t_dev, l, LINETYPE);
 	if(error != 0) {
 		return (error);
 	}
@@ -1070,7 +1176,7 @@ line_close(struct tty *tp, int flag)
 	const struct linesw *l;
 	int rv, error;
 
-	error = devsw_io_lookup(tp->t_dev, c, LINETYPE);
+	error = devsw_io_lookup(tp->t_dev, l, LINETYPE);
 	if(error != 0) {
 		return (error);
 	}
@@ -1086,7 +1192,7 @@ line_read(struct tty *tp, struct uio *uio, int flag)
 	const struct linesw *l;
 	int rv, error;
 
-	error = devsw_io_lookup(tp->t_dev, c, LINETYPE);
+	error = devsw_io_lookup(tp->t_dev, l, LINETYPE);
 	if(error != 0) {
 		return (error);
 	}
@@ -1102,7 +1208,7 @@ line_write(struct tty *tp, struct uio *uio, int flag)
 	const struct linesw *l;
 	int rv, error;
 
-	error = devsw_io_lookup(tp->t_dev, c, LINETYPE);
+	error = devsw_io_lookup(tp->t_dev, l, LINETYPE);
 	if(error != 0) {
 		return (error);
 	}
@@ -1118,7 +1224,7 @@ line_ioctl(struct tty *tp, int cmd, caddr_t data, int flag, struct proc *p)
 	const struct linesw *l;
 	int rv, error;
 
-	error = devsw_io_lookup(tp->t_dev, c, LINETYPE);
+	error = devsw_io_lookup(tp->t_dev, l, LINETYPE);
 	if(error != 0) {
 		return (error);
 	}
@@ -1134,7 +1240,7 @@ line_rint(int c, struct tty *tp)
 	const struct linesw *l;
 	int rv, error;
 
-	error = devsw_io_lookup(tp->t_dev, c, LINETYPE);
+	error = devsw_io_lookup(tp->t_dev, l, LINETYPE);
 	if(error != 0) {
 		return (error);
 	}
@@ -1164,7 +1270,7 @@ line_start(struct tty *tp)
 	const struct linesw *l;
 	int rv, error;
 
-	error = devsw_io_lookup(tp->t_dev, c, LINETYPE);
+	error = devsw_io_lookup(tp->t_dev, l, LINETYPE);
 	if(error != 0) {
 		return (error);
 	}
@@ -1180,7 +1286,7 @@ line_modem(struct tty *tp, int flag)
 	const struct linesw *l;
 	int rv, error;
 
-	error = devsw_io_lookup(tp->t_dev, c, LINETYPE);
+	error = devsw_io_lookup(tp->t_dev, l, LINETYPE);
 	if(error != 0) {
 		return (error);
 	}
@@ -1196,7 +1302,7 @@ line_poll(struct tty *tp, int flag, struct proc *p)
 	const struct linesw *l;
 	int rv, error;
 
-	error = devsw_io_lookup(tp->t_dev, c, LINETYPE);
+	error = devsw_io_lookup(tp->t_dev, l, LINETYPE);
 	if(error != 0) {
 		return (error);
 	}

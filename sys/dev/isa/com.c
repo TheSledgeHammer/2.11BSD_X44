@@ -92,9 +92,9 @@ struct com_softc {
 	int 				sc_hayespbase;
 #endif
 
-	bus_chipset_tag_t 	sc_bc;
-	bus_io_handle_t 	sc_ioh;
-	bus_io_handle_t 	sc_hayespioh;
+	bus_space_tag_t 	sc_bc;
+	bus_space_handle_t 	sc_ioh;
+	bus_space_handle_t 	sc_hayespioh;
 
 	u_char 				sc_hwflags;
 #define	COM_HW_NOIEN	0x01
@@ -168,8 +168,8 @@ int	comdefaultrate = TTYDEF_SPEED;
 int	comconsaddr;
 int	comconsinit;
 int	comconsattached;
-bus_chipset_tag_t 	comconsbc;
-bus_io_handle_t 	comconsioh;
+bus_space_tag_t 	comconsbc;
+bus_space_handle_t 	comconsioh;
 tcflag_t comconscflag = TTYDEF_CFLAG;
 
 int	commajor;
@@ -217,8 +217,8 @@ comspeed(speed)
 
 int
 comprobe1(bc, ioh, iobase)
-	bus_chipset_tag_t bc;
-	bus_io_handle_t ioh;
+	bus_space_tag_t bc;
+	bus_space_handle_t ioh;
 	int iobase;
 {
 
@@ -234,7 +234,7 @@ comprobe1(bc, ioh, iobase)
 #ifdef COM_HAYESP
 int
 comprobeHAYESP(hayespioh, sc)
-	bus_io_handle_t hayespioh;
+	bus_space_handle_t hayespioh;
 	struct com_softc *sc;
 {
 	char	val, dips;
@@ -301,8 +301,8 @@ comprobe(parent, match, aux)
 	struct device *parent;
 	void *match, *aux;
 {
-	bus_chipset_tag_t bc;
-	bus_io_handle_t ioh;
+	bus_space_tag_t bc;
+	bus_space_handle_t ioh;
 	int iobase, needioh;
 	int rv = 1;
 
@@ -367,8 +367,8 @@ comattach(parent, self, aux)
 {
 	struct com_softc *sc = (void *)self;
 	int iobase, irq;
-	bus_chipset_tag_t bc;
-	bus_io_handle_t ioh;
+	bus_space_tag_t bc;
+	bus_space_handle_t ioh;
 #ifdef COM_HAYESP
 	int	hayesp_ports[] = { 0x140, 0x180, 0x280, 0x300, 0 };
 	int	*hayespp;
@@ -436,7 +436,7 @@ comattach(parent, self, aux)
 #ifdef COM_HAYESP
 	/* Look for a Hayes ESP board. */
 	for (hayespp = hayesp_ports; *hayespp != 0; hayespp++) {
-		bus_io_handle_t hayespioh;
+		bus_space_handle_t hayespioh;
 
 #define	HAYESP_NPORTS	8			/* XXX XXX XXX ??? ??? ??? */
 		if (bus_io_map(bc, *hayespp, HAYESP_NPORTS, &hayespioh))
@@ -518,8 +518,8 @@ comopen(dev, flag, mode, p)
 {
 	int unit = COMUNIT(dev);
 	struct com_softc *sc;
-	bus_chipset_tag_t bc;
-	bus_io_handle_t ioh;
+	bus_space_tag_t bc;
+	bus_space_handle_t ioh;
 	struct tty *tp;
 	int s;
 	int error = 0;
@@ -574,7 +574,7 @@ comopen(dev, flag, mode, p)
 #ifdef COM_HAYESP
 		/* Setup the ESP board */
 		if (ISSET(sc->sc_hwflags, COM_HW_HAYESP)) {
-			bus_io_handle_t hayespioh = sc->sc_hayespioh;
+			bus_space_handle_t hayespioh = sc->sc_hayespioh;
 
 			bus_io_write_1(bc, ioh, com_fifo,
 			     FIFO_DMA_MODE|FIFO_ENABLE|
@@ -658,8 +658,8 @@ comclose(dev, flag, mode, p)
 	int unit = COMUNIT(dev);
 	struct com_softc *sc = com_cd.cd_devs[unit];
 	struct tty *tp = sc->sc_tty;
-	bus_chipset_tag_t bc = sc->sc_bc;
-	bus_io_handle_t ioh = sc->sc_ioh;
+	bus_space_tag_t bc = sc->sc_bc;
+	bus_space_handle_t ioh = sc->sc_ioh;
 	int s;
 
 	/* XXX This is for cons.c. */
@@ -748,8 +748,8 @@ comioctl(dev, cmd, data, flag, p)
 	int unit = COMUNIT(dev);
 	struct com_softc *sc = com_cd.cd_devs[unit];
 	struct tty *tp = sc->sc_tty;
-	bus_chipset_tag_t bc = sc->sc_bc;
-	bus_io_handle_t ioh = sc->sc_ioh;
+	bus_space_tag_t bc = sc->sc_bc;
+	bus_space_handle_t ioh = sc->sc_ioh;
 	int error;
 
 	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag, p);
@@ -860,8 +860,8 @@ comparam(tp, t)
 	struct termios *t;
 {
 	struct com_softc *sc = com_cd.cd_devs[COMUNIT(tp->t_dev)];
-	bus_chipset_tag_t bc = sc->sc_bc;
-	bus_io_handle_t ioh = sc->sc_ioh;
+	bus_space_tag_t bc = sc->sc_bc;
+	bus_space_handle_t ioh = sc->sc_ioh;
 	int ospeed = comspeed(t->c_ospeed);
 	u_char lcr;
 	tcflag_t oldcflag;
@@ -999,8 +999,8 @@ comstart(tp)
 	struct tty *tp;
 {
 	struct com_softc *sc = com_cd.cd_devs[COMUNIT(tp->t_dev)];
-	bus_chipset_tag_t bc = sc->sc_bc;
-	bus_io_handle_t ioh = sc->sc_ioh;
+	bus_space_tag_t bc = sc->sc_bc;
+	bus_space_handle_t ioh = sc->sc_ioh;
 	int s;
 
 	s = spltty();
@@ -1180,8 +1180,8 @@ comintr(arg)
 	void *arg;
 {
 	struct com_softc *sc = arg;
-	bus_chipset_tag_t bc = sc->sc_bc;
-	bus_io_handle_t ioh = sc->sc_ioh;
+	bus_space_tag_t bc = sc->sc_bc;
+	bus_space_handle_t ioh = sc->sc_ioh;
 	struct tty *tp;
 	u_char lsr, data, msr, delta;
 #ifdef COM_DEBUG
@@ -1323,8 +1323,8 @@ comcnprobe(cp)
 	struct consdev *cp;
 {
 	/* XXX NEEDS TO BE FIXED XXX */
-	bus_chipset_tag_t bc = 0;
-	bus_io_handle_t ioh;
+	bus_space_tag_t bc = 0;
+	bus_space_handle_t ioh;
 	int found;
 
 	if (bus_io_map(bc, CONADDR, COM_NPORTS, &ioh)) {
@@ -1371,8 +1371,8 @@ comcninit(cp)
 
 void
 cominit(bc, ioh, rate)
-	bus_chipset_tag_t bc;
-	bus_io_handle_t ioh;
+	bus_space_tag_t bc;
+	bus_space_handle_t ioh;
 	int rate;
 {
 	int s = splhigh();
@@ -1397,8 +1397,8 @@ comcngetc(dev)
 	dev_t dev;
 {
 	int s = splhigh();
-	bus_chipset_tag_t bc = comconsbc;
-	bus_io_handle_t ioh = comconsioh;
+	bus_space_tag_t bc = comconsbc;
+	bus_space_handle_t ioh = comconsioh;
 	u_char stat, c;
 
 	while (!ISSET(stat = bus_io_read_1(bc, ioh, com_lsr), LSR_RXRDY))
@@ -1418,8 +1418,8 @@ comcnputc(dev, c)
 	int c;
 {
 	int s = splhigh();
-	bus_chipset_tag_t bc = comconsbc;
-	bus_io_handle_t ioh = comconsioh;
+	bus_space_tag_t bc = comconsbc;
+	bus_space_handle_t ioh = comconsioh;
 	u_char stat;
 	register int timo;
 

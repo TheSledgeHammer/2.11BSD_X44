@@ -102,10 +102,5 @@ struct swdevt {
 
 #ifdef KERNEL
 extern struct swdevt swdevt[];
-
-int	iskmemdev 	(dev_t);
-int	iszerodev 	(dev_t);
-int	isdisk 		(dev_t, int);
-int	chrtoblk 	(dev_t);
 #endif
 #endif
