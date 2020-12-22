@@ -141,13 +141,13 @@ int								devsw_io_iskmemdev(dev_t);
 int								devsw_io_iszerodev(dev_t);
 int								devsw_io_isdisk(dev_t, int);
 dev_t							devsw_io_chrtoblk(dev_t);
-dev_t							devsw_io_blk2chr(dev_t);
+dev_t							devsw_io_blktochr(dev_t);
 
 #define iskmemdev(dev)			devsw_io_iskmemdev(dev)
 #define iszerodev(dev)			devsw_io_iszerodev(dev)
 #define isdisk(dev, type)		devsw_io_isdisk(dev, type)
 #define chrtoblk(cdev) 			devsw_io_chrtoblk(cdev)
-#define blktochr(bdev)			devsw_io_blk2chr(bdev)
+#define blktochr(bdev)			devsw_io_blktochr(bdev)
 
 #define	dev_type_open(n)		int n(dev_t, int, int, struct proc *)
 #define	dev_type_close(n)		int n(dev_t, int, int, struct proc *)

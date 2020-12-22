@@ -787,7 +787,7 @@ devsw_io_chrtoblk(dev)
  *    that the major number is still valid when dereferenced.
  */
 dev_t
-devsw_io_blk2chr(dev)
+devsw_io_blktochr(dev)
 	dev_t dev;
 {
 	dev_t bmajor, cmajor;
