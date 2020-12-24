@@ -7,6 +7,8 @@
 
 #ifndef SYS_DEVEL_KERN_MASTER_H_
 #define SYS_DEVEL_KERN_MASTER_H_
+#include <sys/cdefs.h>
+
 
 #define	dev_decl(n,t)		__CONCAT(dev_type_,t)(__CONCAT(n,t))
 #define	dev_init(n,t)		__CONCAT(n,t)
@@ -17,12 +19,12 @@
 dev_type_attach(devswio_attach);
 dev_type_detach(devswio_detach);
 
-#define	devsw_decl_config(n) 	\
-	dev_decl(n, devswio_attach); dev_decl(n, devswio_detach);
 
+#define	devswio_decl(n) { \
+		dev_decl(n, attach); dev_decl(n, detach);	\
+};
 
-#define devsw_init_config(dwconf, name, driver) 	\
-		dev_init(n, )
-		dwconf->do_driver = (driver); 		\
+#define	devswio_init(n) \
+		dev_init(n, attach); dev_init(n, detach);
 
 #endif /* SYS_DEVEL_KERN_MASTER_H_ */

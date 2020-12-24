@@ -135,8 +135,9 @@ extern struct devswtable 		sys_devsw;
 extern struct devswio 			sys_devswio;
 
 void							devswtable_init();
-int								devsw_io_attach(dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
-int								devsw_io_detach(dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
+int								devswtable_configure(dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
+//int								devsw_io_attach(dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
+//int								devsw_io_detach(dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
 int								devsw_io_iskmemdev(dev_t);
 int								devsw_io_iszerodev(dev_t);
 int								devsw_io_isdisk(dev_t, int);

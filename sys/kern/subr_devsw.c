@@ -76,7 +76,6 @@ extern const int sys_bdevsws, sys_cdevsws, sys_linesws;
 extern int max_bdevsws, max_cdevsws, max_linesws;
 
 struct devswtable 		*sys_devsw;
-struct devswio 			*sys_devswio;
 struct lock_object  	*devswtable_lock;
 
 struct devswtable_head 	devsw_hashtable[MAXDEVSW]; /* hash table of devices in the device switch table (includes bdevsw, cdevsw & linesw) */
@@ -92,19 +91,35 @@ devswtable_init()
 	KASSERT(sys_cdevsws < MAXDEVSW - 1);
 	KASSERT(sys_linesws < MAXDEVSW - 1);
 
-	devswtable_allocate(&sys_devsw, &sys_devswio);
+	devswtable_allocate(&sys_devsw);
 
 	simple_lock_init(&devswtable_lock, "devswtable_lock");
 }
 
+/* configure devswtable */
+int
+devswtable_configure(dev, bdev, cdev, line)
+{
+	int error;
+	error = devsw_io_attach(dev, bdev, cdev, line);
+	if(error != 0) {
+		goto fail;
+	}
+
+	return (error);
+
+fail:
+
+	error = devsw_io_detach(dev, bdev, cdev, line);
+	return (error);
+}
+
 /* allocate devswtable structures */
 static void
-devswtable_allocate(devsw, devswio)
+devswtable_allocate(devsw)
 	register struct devswtable 	*devsw;
-	register struct devswio		*devswio;
 {
 	devsw = (struct devswtable *)malloc(sizeof(*devsw), M_DEVSW, M_WAITOK);
-	devswio = (struct devswio *)malloc(sizeof(*devswio), M_DEVSW, M_WAITOK);
 }
 
 int
