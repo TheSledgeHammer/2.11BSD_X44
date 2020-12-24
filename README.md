@@ -45,11 +45,22 @@ Or
 2.11BSD_X44 is entirely open to being ported to different architectures.
 Though due to limited access to hardware, testing of 2.11BSD_X44 on that architecture will be dependent on the individual/group (especially more exotic hardware).
 
+## Cross-Compiling:
+- There are 3 different toolchains present atm.
+	- GNU GCC Toolchain
+	- Clang/LLVM Toolchain
+	- NetBSD's Toolchain (recommended)
+
+#### Using the NetBSD Toolchain:
+- Please read the following for how the toolchain works: https://www.netbsd.org/docs/guide/en/chap-build.html
+- Then run: ./netbsdtoolchain.sh
+- To retrieve the NetBSD source and compile NetBSD's Tools
+
 ## Contribution:
 - Anyone is welcome to contribute.
 - Your code should ideally fit the following guidelines & rules below
 - Licensing: 3-Clause BSD license preferable
-	- Non BSD licensed code should be placed in the (folder: external/"license"/"project name")
+	- Non BSD licensed code should be placed in the (folder: contrib/"license"/"project name")
     - Different versions of the same License (e.g. GPLv1, GPLv2, etc.) can be placed under one folder
 - These rules in place to make it pleasant & easier for everyone.
 	- It is highly recommended that you adhere to the following Contribution Guidelines & Rules.
@@ -64,14 +75,3 @@ Though due to limited access to hardware, testing of 2.11BSD_X44 on that archite
   	- Will not accept code that contains profanity.
 2. No abuse of others
 	- Constructive criticism is welcome
-
-## Cross-Compiling:
-- There are 3 different toolchains present atm.
-	- GNU GCC Toolchain
-	- Clang/LLVM Toolchain
-	- NetBSD's Toolchain (recommended)
-
-#### Using the NetBSD Toolchain:
-- Please read the following for how the toolchain works: https://www.netbsd.org/docs/guide/en/chap-build.html
-- Then run: ./netbsdtoolchain.sh
-- To retrieve the NetBSD source and compile NetBSD's Tools

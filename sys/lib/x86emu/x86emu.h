@@ -98,13 +98,13 @@ union x86emu_register {
 };
 
 struct x86emu_regs {
-	uint16_t		register_cs;
-	uint16_t		register_ds;
-	uint16_t		register_es;
-	uint16_t		register_fs;
-	uint16_t		register_gs;
-	uint16_t		register_ss;
-	uint32_t		register_flags;
+	uint16_t				register_cs;
+	uint16_t				register_ds;
+	uint16_t				register_es;
+	uint16_t				register_fs;
+	uint16_t				register_gs;
+	uint16_t				register_ss;
+	uint32_t				register_flags;
 	union x86emu_register	register_a;
 	union x86emu_register	register_b;
 	union x86emu_register	register_c;
@@ -128,46 +128,46 @@ struct x86emu_regs {
 	 *  Extern interrupt        1 bits
 	 *  Halted                  1 bits
 	 */
-	uint32_t		mode;
+	uint32_t			mode;
 	volatile int		intr;   /* mask of pending interrupts */
-	uint8_t			intno;
-	uint8_t			__pad[3];
+	uint8_t				intno;
+	uint8_t				__pad[3];
 };
 
 struct x86emu {
-	char			*mem_base;
-	size_t			mem_size;
+	char				*mem_base;
+	size_t				mem_size;
 	void        		*sys_private;
 	struct x86emu_regs	x86;
 
 #ifdef _KERNEL
-	label_t		exec_state;
+	label_t				exec_state;
 #else
-	jmp_buf		exec_state;
+	jmp_buf				exec_state;
 #endif
 
-	uint64_t	cur_cycles;
+	uint64_t			cur_cycles;
 
-	unsigned int	cur_mod:2;
-	unsigned int	cur_rl:3;
-	unsigned int	cur_rh:3;
-	uint32_t	cur_offset;
+	unsigned int		cur_mod:2;
+	unsigned int		cur_rl:3;
+	unsigned int		cur_rh:3;
+	uint32_t			cur_offset;
 
-	uint8_t  	(*emu_rdb)(struct x86emu *, uint32_t addr);
-	uint16_t 	(*emu_rdw)(struct x86emu *, uint32_t addr);
-	uint32_t 	(*emu_rdl)(struct x86emu *, uint32_t addr);
-	void		(*emu_wrb)(struct x86emu *, uint32_t addr,uint8_t val);
-	void		(*emu_wrw)(struct x86emu *, uint32_t addr, uint16_t val);
-	void		(*emu_wrl)(struct x86emu *, uint32_t addr, uint32_t val);
+	uint8_t  			(*emu_rdb)(struct x86emu *, uint32_t addr);
+	uint16_t 			(*emu_rdw)(struct x86emu *, uint32_t addr);
+	uint32_t 			(*emu_rdl)(struct x86emu *, uint32_t addr);
+	void				(*emu_wrb)(struct x86emu *, uint32_t addr,uint8_t val);
+	void				(*emu_wrw)(struct x86emu *, uint32_t addr, uint16_t val);
+	void				(*emu_wrl)(struct x86emu *, uint32_t addr, uint32_t val);
 
-	uint8_t  	(*emu_inb)(struct x86emu *, uint16_t addr);
-	uint16_t 	(*emu_inw)(struct x86emu *, uint16_t addr);
-	uint32_t 	(*emu_inl)(struct x86emu *, uint16_t addr);
-	void		(*emu_outb)(struct x86emu *, uint16_t addr, uint8_t val);
-	void		(*emu_outw)(struct x86emu *, uint16_t addr, uint16_t val);
-	void		(*emu_outl)(struct x86emu *, uint16_t addr, uint32_t val);
+	uint8_t  			(*emu_inb)(struct x86emu *, uint16_t addr);
+	uint16_t 			(*emu_inw)(struct x86emu *, uint16_t addr);
+	uint32_t 			(*emu_inl)(struct x86emu *, uint16_t addr);
+	void				(*emu_outb)(struct x86emu *, uint16_t addr, uint8_t val);
+	void				(*emu_outw)(struct x86emu *, uint16_t addr, uint16_t val);
+	void				(*emu_outl)(struct x86emu *, uint16_t addr, uint32_t val);
 
-	void 		(*_x86emu_intrTab[256])(struct x86emu *, int);
+	void 				(*_x86emu_intrTab[256])(struct x86emu *, int);
 };
 
 __BEGIN_DECLS

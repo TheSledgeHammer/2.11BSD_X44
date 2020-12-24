@@ -35,7 +35,7 @@
 #include <sys/param.h>
 #include <sys/endian.h>
 
-#include <dev/x86emu/x86emu.h>
+#include "../../lib/x86emu/x86emu.h"
 
 
 

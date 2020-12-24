@@ -36,6 +36,7 @@ file	kern/kern_proc.c
 file	kern/kern_prot.c
 file	kern/kern_prot2.c
 file	kern/kern_resource.c
+file	kern/kern_rwlock.c
 file	kern/kern_sig.c
 file	kern/kern_sig2.c
 file	kern/kern_subr.c
@@ -45,6 +46,7 @@ file	kern/kern_time.c
 file	kern/kern_xxx.c
 file	kern/subr_autoconf.c
 file	kern/subr_boot.c
+file	kern/subr_devsw.c
 file	kern/subr_extent.c
 file	kern/subr_log.c
 file	kern/subr_prf.c
@@ -79,6 +81,7 @@ file	kern/vfs_subr.c
 file	kern/vfs_syscalls.c
 file	kern/vfs_vnops.c
 file	kern/vfs_vops.c
+# Miscfs Sources
 file	miscfs/deadfs/dead_vnops.c
 file	miscfs/fdesc/fdesc_vfsops.c			fdesc
 file	miscfs/fdesc/fdesc_vnops.c	    	fdesc
@@ -87,6 +90,7 @@ file	miscfs/lofs/lofs_subr.c       		lofs
 file	miscfs/lofs/lofs_vfsops.c     		lofs
 file	miscfs/lofs/lofs_vnops.c      		lofs
 file	miscfs/specfs/spec_vnops.c
+# Network Sources
 file    net/af.c
 file	net/bpf.c		        			bpfilter
 file	net/bpf_filter.c	    			bpfilter | ppp
@@ -129,6 +133,7 @@ file	netns/ns_pcb.c		    			ns
 file	netns/ns_proto.c	    			ns
 file	netns/spp_debug.c	    			ns
 file	netns/spp_usrreq.c	    			ns
+# UFS Sources
 file	ufs/ffs/ffs_alloc.c					ffs | mfs
 file	ufs/ffs/ffs_balloc.c				ffs | mfs
 file	ufs/lfs/ffs_inode.c					ffs | mfs
@@ -159,6 +164,7 @@ file	ufs/ufs/ufs_lookup.c				ffs | lfs | mfs
 file	ufs/ufs/ufs_quota.c					quota & (ffs | lfs | mfs)
 file	ufs/ufs/ufs_vfsops.c				ffs | lfs | mfs
 file	ufs/ufs/ufs_vnops.c					ffs | lfs | mfs
+# VFS Sources
 file 	vfs/isofs/cd9660/cd9660_bmap.c		cd9660
 file 	vfs/isofs/cd9660/cd9660_lookup.c	cd9660
 file 	vfs/isofs/cd9660/cd9660_node.c		cd9660
@@ -172,6 +178,7 @@ file 	vfs/msdosfs/msdosfs_fat.c			msdosfs
 file 	vfs/msdosfs/msdosfs_lookup.c		msdosfs
 file 	vfs/msdosfs/msdosfs_vfsops.c		msdosfs
 file 	vfs/msdosfs/msdosfs_vnops.c			msdosfs
+# VM Sources
 file	vm/device_pager.c	    			devpager
 file	vm/swap_pager.c		    			swappager
 file	vm/vm_fault.c

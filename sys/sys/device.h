@@ -125,7 +125,7 @@ struct cfdriver {
  * of the parent device.  The return value is ignored if the device was
  * configured, so most functions can return UNCONF unconditionally.
  */
-typedef int (*cfprint_t) (void *, char *);
+typedef int 	(*cfprint_t) (void *, char *);
 #define	QUIET	0		/* print nothing */
 #define	UNCONF	1		/* print " not configured\n" */
 #define	UNSUPP	2		/* print " not supported\n" */
@@ -138,8 +138,8 @@ struct pdevinit {
 	int					pdev_count;
 };
 
-struct	device *alldevs;	/* head of list of all devices */
-struct	evcnt *allevents;	/* head of list of all events */
+struct	device 	*alldevs;	/* head of list of all devices */
+struct	evcnt 	*allevents;	/* head of list of all events */
 
 struct cfdata 	*config_search (cfmatch_t, struct device *, void *);
 struct cfdata 	*config_rootsearch (cfmatch_t, char *, void *);

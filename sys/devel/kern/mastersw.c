@@ -10,71 +10,103 @@
 #include <sys/devsw.h>
 #include <master.h>
 #include <sys/user.h>
+#include <sys/map.h>
 
-struct devswio_driver *sys_devswio;
+struct devswio_config {
+	const char 				*do_name;
+	struct devswio_driver 	*do_driver;
+};
+
+struct devswio_driver {
+	attach_t				do_attach;
+	detach_t				do_detach;
+};
+
+struct devswio_config 	sys_dwconf;
 
 int
 devswio_attach(dev, bdev, cdev, line)
-	dev_t 			dev;
-	struct bdevsw 	*bdev;
-	struct cdevsw 	*cdev;
-	struct linesw 	*line;
+	dev_t 					dev;
+	struct bdevsw 			*bdev;
+	struct cdevsw 			*cdev;
+	struct linesw 			*line;
 {
-	struct devswio *dd;
+	struct devswio_driver *dwdriver;
 	int rv, error;
 
-	dd = &sys_devswio;
+	dwdriver = &sys_dwconf->do_driver;
 	error = devsw_io_attach(dev, bdev, cdev, line);
 
-	if (error != 0 && dd != NULL) {
-		return (error);
+	if(dwdriver == NULL || error != 0) {
+		return (ENXIO);
 	}
 
-	rv = (*dd->do_attach)(dev, bdev, cdev, line);
+	rv = (*dwdriver->do_attach)(dev, bdev, cdev, line);
 
 	return (rv);
 }
 
 int
 devswio_detach(dev, bdev, cdev, line)
-	dev_t 			dev;
-	struct bdevsw 	*bdev;
-	struct cdevsw 	*cdev;
-	struct linesw 	*line;
-{
-	struct devswio *dd;
-	int rv, error;
-
-	dd = &sys_devswio;
-	error = devsw_io_detach(dev, bdev, cdev, line);
-
-	if(error != 0 && dd != NULL) {
-		return (error);
-	}
-
-	rv = (*dd->do_detach)(dev, bdev, cdev, line);
-
-	return (rv);
-}
-
-void
-devsw_io_configure(dd, name, dev, bdev, cdev, line)
-	struct devswio 			*dd;
-	const char 				*name;
 	dev_t 					dev;
 	struct bdevsw 			*bdev;
 	struct cdevsw 			*cdev;
 	struct linesw 			*line;
 {
-	dd->do_name = name;
-	devswio_attach(dev, bdev, cdev, line);
-	if(dev == nodev && name == NULL) {
-		devswio_detach(dev, bdev, cdev, line);
+	struct devswio_driver *dwdriver;
+	int rv, error;
+
+	dwdriver = &sys_dwconf->do_driver;
+	error = devsw_io_detach(dev, bdev, cdev, line);
+
+	if(dwdriver == NULL || error != 0) {
+		return (ENXIO);
+	}
+
+	rv = (*dwdriver->do_detach)(dev, bdev, cdev, line);
+
+	return (rv);
+}
+
+devswio_setup(dev, bdev, cdev, line)
+	dev_t 					dev;
+	struct bdevsw 			*bdev;
+	struct cdevsw 			*cdev;
+	struct linesw 			*line;
+{
+	struct devswio_config *dwconf;
+	attach_t attach = devswio_attach(dev, bdev, cdev, line);
+	detach_t detach = devswio_detach(dev, bdev, cdev, line);
+
+	if(dwconf->do_driver->do_attach != attach) {
+
 	}
 }
 
-struct devswio drive[] = {
+
+struct devswio_config dwconf[] = {
+		devsw_init("ksyms", ksyms_driver),
+};
+
+devswio_configure()
+{
+	struct devswio_config *dwconf = &sys_dwconf[0];
+	int i;
+	for(i = 0; i < MAXDEVSW; i++) {
+		dwconf = sys_dwconf[i];
+		if(dwconf->do_name != NULL ) {
+
+		}
+	}
+}
+
+/* Ksyms Example */
+struct devswio_driver ksyms_driver = {
+		.do_attach = devsw_io_attach,
+		.do_detach = devsw_io_detach
+};
+
+struct devswio_devices ksyms_device = {
 		.do_name = "ksyms",
-		.do_attach = devswio_attach(0, NULL, &ksyms_cdevsw, NULL),
-		.do_detach = devswio_detach(0, NULL, &ksyms_cdevsw, NULL)
+		.do_driver = ksyms_driver,
 };

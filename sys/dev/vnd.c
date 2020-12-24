@@ -107,14 +107,14 @@ struct vndbuf {
 	free((caddr_t)(vbp), M_DEVBUF)
 
 struct vnd_softc {
-	int		 sc_flags;	/* flags */
-	size_t		 sc_size;	/* size of vnd */
-	struct vnode	*sc_vp;		/* vnode */
-	struct ucred	*sc_cred;	/* credentials */
-	int		 sc_maxactive;	/* max # of active requests */
-	struct buf	 sc_tab;	/* transfer queue */
-	char		 sc_xname[8];	/* XXX external name */
-	struct dkdevice	 sc_dkdev;	/* generic disk device info */
+	int			 	sc_flags;		/* flags */
+	size_t		 	sc_size;		/* size of vnd */
+	struct vnode	*sc_vp;			/* vnode */
+	struct ucred	*sc_cred;		/* credentials */
+	int		 		sc_maxactive;	/* max # of active requests */
+	struct buf	 	sc_tab;			/* transfer queue */
+	char		 	sc_xname[8];	/* XXX external name */
+	struct dkdevice	sc_dkdev;		/* generic disk device info */
 };
 
 /* sc_flags */

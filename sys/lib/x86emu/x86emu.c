@@ -32,8 +32,9 @@
  *
  */
 
-#include <dev/x86emu/x86emu.h>
-#include <dev/x86emu/x86emu_regs.h>
+#include "../../lib/x86emu/x86emu.h"
+
+#include "../../lib/x86emu/x86emu_regs.h"
 
 static void 	x86emu_intr_raise (struct x86emu *, uint8_t type);
 
