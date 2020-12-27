@@ -60,7 +60,7 @@ char *	db_le;		/* one past last character */
 #define	BLANK		' '
 #define	BACKUP		'\b'
 
-static int cnmaygetc __P((void));
+static int cnmaygetc (void);
 
 void
 db_putstring(s, count)

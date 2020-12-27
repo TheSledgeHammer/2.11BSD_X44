@@ -110,7 +110,7 @@ db_show_all_procs(addr, haddr, count, modif)
 	int doingzomb = 0;
 	struct proc *p, *pp;
     
-	p = allproc.lh_first;
+	p = allproc->p_nxt;
 	db_printf("  pid proc     addr     %s comm         wchan\n",
 	    map ? "map     " : "uid  ppid  pgrp  flag stat em ");
 	while (p != 0) {
@@ -133,10 +133,10 @@ db_show_all_procs(addr, haddr, count, modif)
 			}
 			db_printf("\n");
 		}
-		p = p->p_list.le_next;
+		p = p->p_nxt;
 		if (p == 0 && doingzomb == 0) {
 			doingzomb = 1;
-			p = zombproc.lh_first;
+			p = zombproc->p_nxt;
 		}
 	}
 }

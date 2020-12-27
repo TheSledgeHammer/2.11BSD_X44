@@ -58,14 +58,14 @@
 
 #include <sys/exec_elf.h>
 
-#define	CONCAT(x,y)	__CONCAT(x,y)
+#define	CONCAT(x,y)		__CONCAT(x,y)
 #define	ELFDEFNAME(x)	CONCAT(ELF,CONCAT(ELFSIZE,CONCAT(_,x)))
 
 static char *db_elf_find_strtab __P((db_symtab_t *));
 
 #define	STAB_TO_SYMSTART(stab)	((Elf_Sym *)((stab)->start))
 #define	STAB_TO_SYMEND(stab)	((Elf_Sym *)((stab)->end))
-#define	STAB_TO_EHDR(stab)	((Elf_Ehdr *)((stab)->private))
+#define	STAB_TO_EHDR(stab)		((Elf_Ehdr *)((stab)->private))
 #define	STAB_TO_SHDR(stab, e)	((Elf_Shdr *)((stab)->private + (e)->e_shoff))
 
 /*
@@ -378,7 +378,7 @@ ddb_init(sym_start, sym_end)
 {
 
 	if (sym_end > sym_start)
-		X_db_sym_init(sym_start, sym_end, "netbsd");
+		X_db_sym_init(sym_start, sym_end, "211bsd");
 }
 
 #endif /* DB_ELF_SYMBOLS */

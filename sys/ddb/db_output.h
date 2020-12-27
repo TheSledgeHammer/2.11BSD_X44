@@ -32,11 +32,9 @@
 /*
  * Printing routines for kernel debugger.
  */
-void db_force_whitespace __P((void));
-void db_putchar __P((int));
-int db_print_position __P((void));
-void db_printf __P((const char *, ...))
-    __kprintf_attribute__((__format__(__kprintf__,1,2)));
-void kdbprintf __P((const char *, ...))
-    __kprintf_attribute__((__format__(__kprintf__,1,2)));
-void db_end_line __P((void));
+void db_force_whitespace (void);
+void db_putchar (int);
+int db_print_position (void);
+void db_printf (const char *, ...)    __kprintf_attribute__((__format__(__kprintf__,1,2)));
+void kdbprintf (const char *, ...)   __kprintf_attribute__((__format__(__kprintf__,1,2)));
+void db_end_line (void);

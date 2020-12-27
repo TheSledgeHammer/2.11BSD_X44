@@ -32,38 +32,35 @@
 /*
  * Command loop declarations.
  */
-void db_skip_to_eol __P((void));
+void db_skip_to_eol (void);
 struct db_command;
-int db_cmd_search __P((char *, struct db_command *, struct db_command **));
-void db_cmd_list __P((struct db_command *));
-void db_command __P((struct db_command **, struct db_command *));
-void db_map_print_cmd __P((db_expr_t, int, db_expr_t, char *));
-void db_object_print_cmd __P((db_expr_t, int, db_expr_t, char *));
-void db_machine_commands_install __P((struct db_command *));
-void db_help_cmd __P((void));
-void db_command_loop __P((void));
-void db_error __P((char *));
-void db_fncall __P((db_expr_t, int, db_expr_t, char *));
-void db_reboot_cmd __P((db_expr_t, int, db_expr_t, char *));
+int db_cmd_search (char *, struct db_command *, struct db_command **);
+void db_cmd_list (struct db_command *);
+void db_command (struct db_command **, struct db_command *);
+void db_map_print_cmd (db_expr_t, int, db_expr_t, char *);
+void db_object_print_cmd (db_expr_t, int, db_expr_t, char *);
+void db_machine_commands_install (struct db_command *);
+void db_help_cmd (void);
+void db_command_loop (void);
+void db_error (char *);
+void db_fncall (db_expr_t, int, db_expr_t, char *);
+void db_reboot_cmd (db_expr_t, int, db_expr_t, char *);
 
 db_addr_t	db_dot;		/* current location */
 db_addr_t	db_last_addr;	/* last explicit address typed */
-db_addr_t	db_prev;	/* last address examined
-				   or written */
-db_addr_t	db_next;	/* next address to be examined
-				   or written */
+db_addr_t	db_prev;	/* last address examined or written */
+db_addr_t	db_next;	/* next address to be examined or written */
 
 /*
  * Command table
  */
 struct db_command {
-	char		*name;		/* command name */
+	char				*name;		/* command name */
 	/* function to call */
-	void		(*fcn) __P((db_expr_t, int, db_expr_t, char *));
-	int		flag;		/* extra info: */
-#define	CS_OWN		0x1		/* non-standard syntax */
-#define	CS_MORE		0x2		/* standard syntax, but may have other
-					   words at end */
-#define	CS_SET_DOT	0x100		/* set dot after command */
-	struct db_command *more;	/* another level of command */
+	void				(*fcn)(db_expr_t, int, db_expr_t, char *);
+	int					flag;		/* extra info: */
+#define	CS_OWN			0x1			/* non-standard syntax */
+#define	CS_MORE			0x2			/* standard syntax, but may have other words at end */
+#define	CS_SET_DOT		0x100		/* set dot after command */
+	struct db_command 	*more;		/* another level of command */
 };

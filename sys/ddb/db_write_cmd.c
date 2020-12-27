@@ -31,6 +31,7 @@
 
 #include <sys/param.h>
 #include <sys/proc.h>
+#include <sys/user.h>
 
 #include <machine/db_machdep.h>
 

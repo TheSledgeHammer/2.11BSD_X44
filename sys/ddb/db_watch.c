@@ -31,6 +31,7 @@
 
 #include <sys/param.h>
 #include <sys/proc.h>
+
 #include <machine/db_machdep.h>
 
 #include <ddb/db_break.h>
@@ -51,9 +52,9 @@ boolean_t	db_watchpoints_inserted = TRUE;
 
 #define	NWATCHPOINTS	100
 struct db_watchpoint	db_watch_table[NWATCHPOINTS];
-db_watchpoint_t		db_next_free_watchpoint = &db_watch_table[0];
-db_watchpoint_t		db_free_watchpoints = 0;
-db_watchpoint_t		db_watchpoint_list = 0;
+db_watchpoint_t			db_next_free_watchpoint = &db_watch_table[0];
+db_watchpoint_t			db_free_watchpoints = 0;
+db_watchpoint_t			db_watchpoint_list = 0;
 
 db_watchpoint_t
 db_watchpoint_alloc()

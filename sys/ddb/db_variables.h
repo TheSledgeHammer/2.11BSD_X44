@@ -39,22 +39,22 @@ struct db_variable {
 	char	*name;		/* Name of variable */
 	long	*valuep;	/* value of variable */
 				/* function to call when reading/writing */
-	int	(*fcn) __P((struct db_variable *, db_expr_t *, int));
+	int	(*fcn) (struct db_variable *, db_expr_t *, int);
 #define DB_VAR_GET	0
 #define DB_VAR_SET	1
 };
-#define	FCN_NULL ((int (*) __P((struct db_variable *, db_expr_t *, int)))0)
+#define	FCN_NULL ((int (*) (struct db_variable *, db_expr_t *, int))0)
 
 extern struct db_variable	db_vars[];	/* debugger variables */
 extern struct db_variable	*db_evars;
 extern struct db_variable	db_regs[];	/* machine registers */
 extern struct db_variable	*db_eregs;
 
-int db_find_variable __P((struct db_variable **));
-int db_get_variable __P((db_expr_t *));
-int db_set_variable __P((db_expr_t));
-void db_read_variable __P((struct db_variable *, db_expr_t *));
-void db_write_variable __P((struct db_variable *, db_expr_t *));
-void db_set_cmd __P((db_expr_t, int, db_expr_t, char *));
+int db_find_variable (struct db_variable **);
+int db_get_variable (db_expr_t *);
+int db_set_variable (db_expr_t);
+void db_read_variable (struct db_variable *, db_expr_t *);
+void db_write_variable (struct db_variable *, db_expr_t *);
+void db_set_cmd (db_expr_t, int, db_expr_t, char *);
 
 #endif	/* _DB_VARIABLES_H_ */

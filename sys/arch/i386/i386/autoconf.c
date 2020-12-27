@@ -190,3 +190,9 @@ setroot()
 		dumpdev = swdevt[0].sw_dev;
 #endif
 }
+
+void
+set_devices()
+{
+
+}

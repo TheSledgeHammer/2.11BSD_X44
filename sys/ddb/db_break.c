@@ -46,9 +46,9 @@
 
 #define	NBREAKPOINTS	100
 struct db_breakpoint	db_break_table[NBREAKPOINTS];
-db_breakpoint_t		db_next_free_breakpoint = &db_break_table[0];
-db_breakpoint_t		db_free_breakpoints = 0;
-db_breakpoint_t		db_breakpoint_list = 0;
+db_breakpoint_t			db_next_free_breakpoint = &db_break_table[0];
+db_breakpoint_t			db_free_breakpoints = 0;
+db_breakpoint_t			db_breakpoint_list = 0;
 
 db_breakpoint_t
 db_breakpoint_alloc()
@@ -56,12 +56,12 @@ db_breakpoint_alloc()
 	register db_breakpoint_t	bkpt;
 
 	if ((bkpt = db_free_breakpoints) != 0) {
-	    db_free_breakpoints = bkpt->link;
-	    return (bkpt);
+		db_free_breakpoints = bkpt->link;
+		return (bkpt);
 	}
 	if (db_next_free_breakpoint == &db_break_table[NBREAKPOINTS]) {
-	    db_printf("All breakpoints used.\n");
-	    return (0);
+		db_printf("All breakpoints used.\n");
+		return (0);
 	}
 	bkpt = db_next_free_breakpoint;
 	db_next_free_breakpoint++;
@@ -114,18 +114,15 @@ db_delete_breakpoint(map, addr)
 	register db_breakpoint_t	bkpt;
 	register db_breakpoint_t	*prev;
 
-	for (prev = &db_breakpoint_list;
-	     (bkpt = *prev) != 0;
-	     prev = &bkpt->link) {
-	    if (db_map_equal(bkpt->map, map) &&
-		(bkpt->address == addr)) {
-		*prev = bkpt->link;
-		break;
-	    }
+	for (prev = &db_breakpoint_list; (bkpt = *prev) != 0; prev = &bkpt->link) {
+		if (db_map_equal(bkpt->map, map) && (bkpt->address == addr)) {
+			*prev = bkpt->link;
+			break;
+		}
 	}
 	if (bkpt == 0) {
-	    db_printf("Not set.\n");
-	    return;
+		db_printf("Not set.\n");
+		return;
 	}
 
 	db_breakpoint_free(bkpt);
@@ -138,13 +135,9 @@ db_find_breakpoint(map, addr)
 {
 	register db_breakpoint_t	bkpt;
 
-	for (bkpt = db_breakpoint_list;
-	     bkpt != 0;
-	     bkpt = bkpt->link)
-	{
-	    if (db_map_equal(bkpt->map, map) &&
-		(bkpt->address == addr))
-		return (bkpt);
+	for (bkpt = db_breakpoint_list; bkpt != 0; bkpt = bkpt->link) {
+		if (db_map_equal(bkpt->map, map) && (bkpt->address == addr))
+			return (bkpt);
 	}
 	return (0);
 }
@@ -247,15 +240,11 @@ db_list_breakpoints()
 	}
 
 	db_printf(" Map      Count    Address\n");
-	for (bkpt = db_breakpoint_list;
-	     bkpt != 0;
-	     bkpt = bkpt->link)
-	{
-	    db_printf("%s%p %5d    ",
-		      db_map_current(bkpt->map) ? "*" : " ",
-		      bkpt->map, bkpt->init_count);
-	    db_printsym(bkpt->address, DB_STGY_PROC);
-	    db_printf("\n");
+	for (bkpt = db_breakpoint_list; bkpt != 0; bkpt = bkpt->link) {
+		db_printf("%s%p %5d    ", db_map_current(bkpt->map) ? "*" : " ",
+				bkpt->map, bkpt->init_count);
+		db_printsym(bkpt->address, DB_STGY_PROC);
+		db_printf("\n");
 	}
 }
 

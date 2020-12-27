@@ -5,6 +5,7 @@ A General todo list. Don't hesitate to add to this list. :)
 - Compiler
 - Makefiles
 - Bug Fixes &/or missing critical content
+- ksyms: NKSYMS
 
 # usr/ (User & OS Libraries):
 ## lib:

@@ -47,17 +47,17 @@
 #include <ddb/db_extern.h>
 
 int	db_run_mode;
-#define	STEP_NONE	0
-#define	STEP_ONCE	1
-#define	STEP_RETURN	2
-#define	STEP_CALLT	3
+#define	STEP_NONE		0
+#define	STEP_ONCE		1
+#define	STEP_RETURN		2
+#define	STEP_CALLT		3
 #define	STEP_CONTINUE	4
 #define STEP_INVISIBLE	5
-#define	STEP_COUNT	6
+#define	STEP_COUNT		6
 
 boolean_t	db_sstep_print;
-int		db_loop_count;
-int		db_call_depth;
+int			db_loop_count;
+int			db_call_depth;
 
 boolean_t
 db_stop_at_pc(regs, is_breakpoint)

@@ -31,6 +31,8 @@
  */
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/user.h>
+#include <sys/types.h>
 
 #include <machine/stdarg.h>
 
@@ -75,9 +77,9 @@ int	db_tab_stop_width = 8;		/* how wide are tab stops? */
 int	db_max_line = DB_MAX_LINE;	/* output max lines */
 int	db_max_width = DB_MAX_WIDTH;	/* output line width */
 
-static void db_more __P((void));
-static char *db_ksprintn __P((u_long, int, int *));
-static void db_printf_guts __P((const char *, va_list));
+static void db_more (void);
+static char *db_ksprintn (u_long, int, int *);
+static void db_printf_guts (const char *, va_list);
 
 /*
  * Force pending whitespace.
