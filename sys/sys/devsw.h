@@ -88,15 +88,6 @@ struct devswtable_entry {
 };
 typedef struct devswtable_entry		*devswtable_entry_t;
 
-typedef int (*attach_t)(dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
-typedef int (*detach_t)(dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
-
-struct devswio {
-	const char 			*do_name;
-	attach_t			do_attach;
-	detach_t			do_detach;
-};
-
 /* devsw size */
 #define	MAXDEVSW		512	/* the maximum of major device number */
 #define	BDEVSW_SIZE		(sizeof(struct bdevsw *))
@@ -131,13 +122,11 @@ struct vnode;
 #define	D_OTHER	4
 
 #ifdef _KERNEL
+/* devswtable & devsw_io */
 extern struct devswtable 		sys_devsw;
-extern struct devswio 			sys_devswio;
 
 void							devswtable_init();
-int								devswtable_configure(dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
-//int								devsw_io_attach(dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
-//int								devsw_io_detach(dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
+int								devswtable_configure(struct devswtable *, dev_t, struct bdevsw *, struct cdevsw *, struct linesw *);
 int								devsw_io_iskmemdev(dev_t);
 int								devsw_io_iszerodev(dev_t);
 int								devsw_io_isdisk(dev_t, int);
@@ -150,6 +139,11 @@ dev_t							devsw_io_blktochr(dev_t);
 #define chrtoblk(cdev) 			devsw_io_chrtoblk(cdev)
 #define blktochr(bdev)			devsw_io_blktochr(bdev)
 
+/* macro: machine autoconfiguration */
+#define DEVSWIO_CONFIG_INIT(devsw, major, bdev, cdev, line) 	\
+	(devswtable_configure(devsw, major, bdev, cdev, line) > 0)
+
+/* dev types */
 #define	dev_type_open(n)		int n(dev_t, int, int, struct proc *)
 #define	dev_type_close(n)		int n(dev_t, int, int, struct proc *)
 #define	dev_type_read(n)		int n(dev_t, struct uio *, int)

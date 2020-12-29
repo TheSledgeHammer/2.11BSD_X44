@@ -53,6 +53,8 @@
 #include <sys/conf.h>
 #include <sys/dmap.h>
 #include <sys/reboot.h>
+#include <sys/null.h>
+#include <sys/devsw.h>
 
 #include <machine/pte.h>
 
@@ -85,6 +87,11 @@ configure()
 #else
 	setroot();
 #endif
+	/*
+	 * Configure & Initialize device structures
+	 */
+	devices_configure(&sys_devsw);
+
 	/*
 	 * Configure swap area and related system
 	 * parameter based on device(s) used.
@@ -192,7 +199,8 @@ setroot()
 }
 
 void
-set_devices()
+devices_configure(devsw)
+	struct devswtable *devsw;
 {
-
+	DEVSWIO_CONFIG_INIT(devsw, NKSYMS, NULL, &ksyms_cdevsw, NULL);	/* ksyms */
 }

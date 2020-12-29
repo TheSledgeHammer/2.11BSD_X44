@@ -98,10 +98,15 @@ devswtable_init()
 
 /* configure devswtable */
 int
-devswtable_configure(dev, bdev, cdev, line)
+devswtable_configure(devsw, major, bdev, cdev, line)
+	struct devswtable 	*devsw;
+	dev_t				major;
+	struct bdevsw 		*bdev;
+	struct cdevsw 		*cdev;
+	struct linesw 		*line;
 {
 	int error;
-	error = devsw_io_attach(dev, bdev, cdev, line);
+	error = devsw_io_attach(devsw, major, bdev, cdev, line);
 	if(error != 0) {
 		goto fail;
 	}
@@ -110,7 +115,7 @@ devswtable_configure(dev, bdev, cdev, line)
 
 fail:
 
-	error = devsw_io_detach(dev, bdev, cdev, line);
+	error = devsw_io_detach(devsw, major, bdev, cdev, line);
 	return (error);
 }
 
@@ -187,7 +192,7 @@ devswtable_remove(data, major)
 	bucket = &devsw_hashtable[devswtable_hash(data, major)];
 	for(entry = TAILQ_FIRST(bucket); entry != NULL; entry = TAILQ_NEXT(entry, dve_link)) {
 		devsw = entry->dve_devswtable;
-		if(devsw->dv_data == data && devsw->dv_major == major && devsw->dv_name == name) {
+		if(devsw->dv_data == data && devsw->dv_major == major) {
 			TAILQ_REMOVE(bucket, entry, dve_link);
 		}
 	}
@@ -444,7 +449,7 @@ cdevsw_add(devsw, cdev, major)
 }
 
 void
-cdevsw_remove(cdev, major, name)
+cdevsw_remove(cdev, major)
 	struct cdevsw 	*cdev;
 	dev_t			major;
 {
@@ -576,26 +581,21 @@ linesw_remove(line, major)
 
 /* DEVSW IO */
 void
-devsw_io_add(major, bdev, cdev, line)
-	dev_t			major;
-	struct bdevsw 	*bdev;
-	struct cdevsw 	*cdev;
-	struct linesw 	*line;
+devsw_io_add(devsw, major, bdev, cdev, line)
+	struct devswtable 	*devsw;
+	dev_t				major;
+	struct bdevsw 		*bdev;
+	struct cdevsw 		*cdev;
+	struct linesw 		*line;
 {
-	register struct devswtable *devsw;
-
-	devsw = &sys_devsw;
-
-	if(devsw) {
-		if(bdev) {
-			bdevsw_add(devsw, bdev, major);
-		}
-		if(cdev) {
-			cdevsw_add(devsw, cdev, major);
-		}
-		if(line) {
-			linesw_add(devsw, line, major);
-		}
+	if (bdev) {
+		bdevsw_add(devsw, bdev, major);
+	}
+	if (cdev) {
+		cdevsw_add(devsw, cdev, major);
+	}
+	if (line) {
+		linesw_add(devsw, line, major);
 	}
 }
 
@@ -618,30 +618,31 @@ devsw_io_remove(major, bdev, cdev, line)
 }
 
 int
-devsw_io_attach(major, bdev, cdev, line)
-	dev_t			major;
-	struct bdevsw 	*bdev;
-	struct cdevsw 	*cdev;
-	struct linesw 	*line;
+devsw_io_attach(devsw, major, bdev, cdev, line)
+	struct devswtable 	*devsw;
+	dev_t				major;
+	struct bdevsw 		*bdev;
+	struct cdevsw 		*cdev;
+	struct linesw 		*line;
 {
 	int error;
 
 	if(bdev) {
-		devsw_io_add(major, bdev, NULL, NULL);
+		devsw_io_add(devsw, major, bdev, NULL, NULL);
 		error = bdevsw_attach(bdev, major);
 		if(error != 0) {
 			return (ENXIO);
 		}
 	}
 	if(cdev) {
-		devsw_io_add(major, NULL, cdev, NULL);
+		devsw_io_add(devsw, major, NULL, cdev, NULL);
 		error = cdevsw_attach(cdev, major);
 		if(error != 0) {
 			return (ENXIO);
 		}
 	}
 	if(line) {
-		devsw_io_add(major, NULL, NULL, line);
+		devsw_io_add(devsw, major, NULL, NULL, line);
 		error = linesw_attach(line, major);
 		if(error != 0) {
 			return (ENXIO);
@@ -891,7 +892,6 @@ bdev_ioctl(dev_t dev, int cmd, caddr_t data, int fflag, struct proc *p)
 	return (rv);
 }
 
-
 int
 bdev_dump(dev_t dev)
 {
@@ -1116,7 +1116,6 @@ cdev_poll(dev_t dev, int events, struct proc *p)
 
 	return (rv);
 }
-
 
 caddr_t
 cdev_mmap(dev_t dev, off_t off, int flag)

@@ -35,10 +35,10 @@
  * 1993.
  */
 
-#define	PCIC_IOSIZE		2
+#define	PCIC_IOSIZE							2
 
-#define	PCIC_REG_INDEX		0
-#define	PCIC_REG_DATA		1
+#define	PCIC_REG_INDEX						0
+#define	PCIC_REG_DATA						1
 
 /*
  * The PCIC allows two chips to share the same address.  In order not to run
@@ -46,13 +46,13 @@
  * the same device.
  */
 
-#define	PCIC_CHIP0_BASE		0x00
-#define	PCIC_CHIP1_BASE		0x80
+#define	PCIC_CHIP0_BASE						0x00
+#define	PCIC_CHIP1_BASE						0x80
 
 /* Each PCIC chip can drive two sockets */
 
-#define	PCIC_SOCKETA_INDEX	0x00
-#define	PCIC_SOCKETB_INDEX	0x40
+#define	PCIC_SOCKETA_INDEX					0x00
+#define	PCIC_SOCKETB_INDEX					0x40
 
 /* general setup registers */
 
@@ -222,12 +222,12 @@
  * MSB contains A23-A20, plus some other bits.
  */
 
-#define	PCIC_MEM_WINS						5
+#define	PCIC_MEM_WINS								5
 
-#define	PCIC_MEM_SHIFT						12
-#define	PCIC_MEM_PAGESIZE					(1<<PCIC_MEM_SHIFT)
+#define	PCIC_MEM_SHIFT								12
+#define	PCIC_MEM_PAGESIZE							(1<<PCIC_MEM_SHIFT)
 
-#define	PCIC_SYSMEM_ADDRX_SHIFT				PCIC_MEM_SHIFT
+#define	PCIC_SYSMEM_ADDRX_SHIFT						PCIC_MEM_SHIFT
 #define	PCIC_SYSMEM_ADDRX_START_MSB_DATASIZE_MASK	0x80
 #define	PCIC_SYSMEM_ADDRX_START_MSB_DATASIZE_16BIT	0x80
 #define	PCIC_SYSMEM_ADDRX_START_MSB_DATASIZE_8BIT	0x00
@@ -248,12 +248,12 @@
  * Again, the shift is 12 bits.
  */
 
-#define	PCIC_CARDMEM_ADDRX_SHIFT				PCIC_MEM_SHIFT
-#define	PCIC_CARDMEM_ADDRX_MSB_WP				0x80
-#define	PCIC_CARDMEM_ADDRX_MSB_REGACTIVE_MASK	0x40
-#define	PCIC_CARDMEM_ADDRX_MSB_REGACTIVE_ATTR	0x40
-#define	PCIC_CARDMEM_ADDRX_MSB_REGACTIVE_COMMON	0x00
-#define	PCIC_CARDMEM_ADDRX_MSB_ADDR_MASK		0x3F
+#define	PCIC_CARDMEM_ADDRX_SHIFT					PCIC_MEM_SHIFT
+#define	PCIC_CARDMEM_ADDRX_MSB_WP					0x80
+#define	PCIC_CARDMEM_ADDRX_MSB_REGACTIVE_MASK		0x40
+#define	PCIC_CARDMEM_ADDRX_MSB_REGACTIVE_ATTR		0x40
+#define	PCIC_CARDMEM_ADDRX_MSB_REGACTIVE_COMMON		0x00
+#define	PCIC_CARDMEM_ADDRX_MSB_ADDR_MASK			0x3F
 
 #define	PCIC_SYSMEM_ADDR0_START_LSB		0x10
 #define	PCIC_SYSMEM_ADDR0_START_MSB		0x11
