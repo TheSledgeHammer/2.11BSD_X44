@@ -103,6 +103,7 @@ struct trapframe_vm86 {
 struct intrframe {
 	int	if_vec;
 	int	if_ppl;
+	int	if_fs;
 	int	if_es;
 	int	if_ds;
 	int	if_edi;

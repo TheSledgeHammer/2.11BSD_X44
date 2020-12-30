@@ -48,26 +48,27 @@
 
 /* Default values for the mxcsr. All traps masked. */
 #define ___MXCSR___		0x1f80
+#define	__MXCSR_MASK__	0xffbf
 
 /* Environment information of floating point unit */
 struct	env87 {
-	long	en_cw;		/* control word (16bits) */
-	long	en_sw;		/* status word (16bits) */
-	long	en_tw;		/* tag word (16bits) */
-	long	en_fip;		/* floating point instruction pointer */
-	u_short	en_fcs;		/* floating code segment selector */
-	u_short	en_opcode;	/* opcode last executed (11 bits ) */
-	long	en_foo;		/* floating operand offset */
-	long	en_fos;		/* floating operand segment selector */
+	long	en_cw;							/* control word (16bits) */
+	long	en_sw;							/* status word (16bits) */
+	long	en_tw;							/* tag word (16bits) */
+	long	en_fip;							/* floating point instruction pointer */
+	u_short	en_fcs;							/* floating code segment selector */
+	u_short	en_opcode;						/* opcode last executed (11 bits ) */
+	long	en_foo;							/* floating operand offset */
+	long	en_fos;							/* floating operand segment selector */
 };
 
 /* Contents of each floating point accumulator */
 struct	fpacc87 {
-#ifdef dontdef	/* too unportable */
-	u_long	fp_mantlo;	/* mantissa low (31:0) */
-	u_long	fp_manthi;	/* mantissa high (63:32) */
-	int		fp_exp:15;	/* exponent */
-	int		fp_sgn:1;	/* mantissa sign */
+#ifdef dontdef								/* too unportable */
+	u_long	fp_mantlo;						/* mantissa low (31:0) */
+	u_long	fp_manthi;						/* mantissa high (63:32) */
+	int		fp_exp:15;						/* exponent */
+	int		fp_sgn:1;						/* mantissa sign */
 #else
 	u_char	fp_bytes[10];
 #endif
@@ -85,50 +86,51 @@ struct	save87 {
 };
 
 /* Environment information of FPU/MMX/SSE/SSE2 */
-struct 	envfx87 { 		/* ENVXMM */
-	long	fx_cw;		/* control word (16bits) */
-	long	fx_sw;		/* status word (16bits) */
-	long	fx_tw;		/* tag word (16bits) */
-	long	fx_zero;	/* zero  */
-	long	fx_fip;		/* floating point instruction pointer */
-	u_short	fx_fcs;		/* floating code segment selector */
-	u_short	fx_opcode;	/* opcode last executed (11 bits ) */
-	long	fx_foo;		/* floating operand offset */
-	long	fx_fos;		/* floating operand segment selector */
-	long 	fx_mxcsr;	/* MXCSR Register State */
+struct 	envfx87 { 							/* ENVXMM */
+	long				fx_cw;				/* control word (16bits) */
+	long				fx_sw;				/* status word (16bits) */
+	long				fx_tw;				/* tag word (16bits) */
+	long				fx_zero;			/* zero  */
+	long				fx_fip;				/* floating point instruction pointer */
+	u_short				fx_fcs;				/* floating code segment selector */
+	u_short				fx_opcode;			/* opcode last executed (11 bits ) */
+	long				fx_foo;				/* floating operand offset */
+	long				fx_fos;				/* floating operand segment selector */
+	long 				fx_mxcsr;			/* MXCSR Register State */
+	long 				fx_mxcsr_mask;		/* Mask for valid MXCSR bit (may be 0) */
 };
 
 /* FPU regsters in the extended save format. */
-struct 	fpaccfx87 {  	/* FPACCXMM  */
-	uint8_t fp_bytes[10];
-	uint8_t fp_rsvd[6];
+struct 	fpaccfx87 {  						/* FPACCXMM  */
+	uint8_t 			fp_bytes[10];
+	uint8_t 			fp_rsvd[6];
 };
 
 /* SSE/SSE2 registers. */
 struct xmmreg {
-	uint8_t sse_bytes[16];
+	uint8_t 			sse_bytes[16];
 };
 
 /* FPU/MMX/SSE/SSE2 context */
 struct 	fxsave {		/* SAVEXMM  */
-	struct envfx87 		fxv_env;		/* fxsave control/status */
-	struct fpaccfx87 	fxv_ac[8]; 		/* accumulator contents, 0-7 */
-	struct xmmreg 		fxv_xmmregs[8];	/* XMM regs */
+	struct envfx87 		fxv_env;			/* fxsave control/status */
+	struct fpaccfx87 	fxv_ac[8]; 			/* accumulator contents, 0-7 */
+	struct xmmreg 		fxv_xmmregs[8];		/* XMM regs */
 	uint8_t 			fxv_rsvd[16 * 14];
 	/* 512-bytes --- end of hardware portion of save area */
-	uint32_t 			fxv_ex_sw;		/* saved SW from last exception */
-	uint32_t 			fxv_ex_tw;		/* saved TW from last exception */
+	uint32_t 			fxv_ex_sw;			/* saved SW from last exception */
+	uint32_t 			fxv_ex_tw;			/* saved TW from last exception */
 };
 
 struct savefpu {
-	struct save87 	sv_87;		/* save87 sub structs: env87, fpacc87 */
-	struct fxsave 	sv_fx;		/* fxsave sub structs: envfx87, fpaccfx87 */
+	struct save87 		sv_87;				/* save87 sub structs: env87, fpacc87 */
+	struct fxsave 		sv_fx;				/* fxsave sub structs: envfx87, fpaccfx87 */
 };
 
 /* Cyrix EMC memory - mapped coprocessor context switch information */
 struct	emcsts {
-	long	em_msw;		/* memory mapped status register when swtched */
-	long	em_tar;		/* memory mapped temp A register when swtched */
-	long	em_dl;		/* memory mapped D low register when swtched */
+	long				em_msw;				/* memory mapped status register when swtched */
+	long				em_tar;				/* memory mapped temp A register when swtched */
+	long				em_dl;				/* memory mapped D low register when swtched */
 };
 #endif _NPX_H_

@@ -101,8 +101,9 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>
-#include <dev/ic/mc146818reg.h>
 #include <dev/isa/rtc.h>
+#include <dev/ic/mc146818reg.h>
+
 #include <i386/isa/timerreg.h>
 #include <i386/isa/spkrreg.h>
 
@@ -119,7 +120,6 @@ static int 	yeartoday (int);
 int 		bcdtobin (int);
 int			bintobcd (int);
 
-
 __inline u_int mc146818_read (void *, u_int);
 __inline void mc146818_write (void *, u_int, u_int);
 
@@ -133,7 +133,6 @@ mc146818_read(sc, reg)
 	void *sc;					/* XXX use it? */
 	u_int reg;
 {
-
 	outb(IO_RTC, reg);
 	return (inb(IO_RTC+1));
 }
@@ -143,7 +142,6 @@ mc146818_write(sc, reg, datum)
 	void *sc;					/* XXX use it? */
 	u_int reg, datum;
 {
-
 	outb(IO_RTC, reg);
 	outb(IO_RTC+1, datum);
 }

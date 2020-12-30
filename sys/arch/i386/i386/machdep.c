@@ -721,7 +721,8 @@ dumpsys()
 	dumpsize = physmem;
 	printf("\ndumping to dev %x, offset %d\n", dumpdev, dumplo);
 	printf("dump ");
-	switch ((*bdevsw[major(dumpdev)].d_dump)(dumpdev)) {
+
+	switch ((*bdevsw[major(dumpdev)].d_dump)(dumpdev)) { /* bdev_dump(major(dumpdev)) */
 
 	case ENXIO:
 		printf("device bad\n");

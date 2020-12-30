@@ -5,7 +5,7 @@ A General todo list. Don't hesitate to add to this list. :)
 - Compiler
 - Makefiles
 - Bug Fixes &/or missing critical content
-- ksyms: NKSYMS
+
 
 # usr/ (User & OS Libraries):
 ## lib:
@@ -17,20 +17,15 @@ A General todo list. Don't hesitate to add to this list. :)
 ## conf:
 
 ## kern:
-- subr_devsw: Needs refining
-	- attaching & detaching devices in devsw
-	- adding & removing attached devices from the devswtable
-	
+- ksyms: NKSYMS (default is 0 ???)
 - exec_macho: exec_mach_copyargs 
 	(NetBSD 5.2: /compat/mach/mach_exec.c)
 	
 ## arch:
 - i386/x86: (Merged under i386)
+	- npx.c: update
 	- Move to /dev: (update dependencies so this is possible)
-		- pms.c
 		- spkr.c, spkr.h, spkrreg.h, timerreg.h
-		- mouse.h
-		- joystick.h
 
 ## devel: (planned)
 - Code planned for future integration
@@ -38,8 +33,12 @@ A General todo list. Don't hesitate to add to this list. :)
 - See devel folder: README.md
 
 ## dev:
-- Needs basic support to compile
-- wscons: (OpenBSD)
+- Essential Driver Support:
+	- disk	(ata & scsi)
+	- video
+	- mouse/keyboard
+- isa/com: update (mostly incompatible!)
+- move all machine-dependent code to that arch (that isn't portable)
 
 ## lib:
 	

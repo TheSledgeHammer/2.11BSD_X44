@@ -281,8 +281,8 @@
 #define	PCIC_CARDMEM_ADDR2_LSB			0x24
 #define	PCIC_CARDMEM_ADDR2_MSB			0x25
 
-/* #define	PCIC_RESERVED			0x26 */
-/* #define	PCIC_RESERVED			0x27 */
+/* #define	PCIC_RESERVED				0x26 */
+/* #define	PCIC_RESERVED				0x27 */
 
 #define	PCIC_SYSMEM_ADDR3_START_LSB		0x28
 #define	PCIC_SYSMEM_ADDR3_START_MSB		0x29
@@ -292,8 +292,8 @@
 #define	PCIC_CARDMEM_ADDR3_LSB			0x2C
 #define	PCIC_CARDMEM_ADDR3_MSB			0x2D
 
-/* #define	PCIC_RESERVED			0x2E */
-/* #define	PCIC_RESERVED			0x2F */
+/* #define	PCIC_RESERVED				0x2E */
+/* #define	PCIC_RESERVED				0x2F */
 
 #define	PCIC_SYSMEM_ADDR4_START_LSB		0x30
 #define	PCIC_SYSMEM_ADDR4_START_MSB		0x31
@@ -303,16 +303,16 @@
 #define	PCIC_CARDMEM_ADDR4_LSB			0x34
 #define	PCIC_CARDMEM_ADDR4_MSB			0x35
 
-/* #define	PCIC_RESERVED			0x36 */
-/* #define	PCIC_RESERVED			0x37 */
-/* #define	PCIC_RESERVED			0x38 */
-/* #define	PCIC_RESERVED			0x39 */
-/* #define	PCIC_RESERVED			0x3A */
-/* #define	PCIC_RESERVED			0x3B */
-/* #define	PCIC_RESERVED			0x3C */
-/* #define	PCIC_RESERVED			0x3D */
-/* #define	PCIC_RESERVED			0x3E */
-/* #define	PCIC_RESERVED			0x3F */
+/* #define	PCIC_RESERVED				0x36 */
+/* #define	PCIC_RESERVED				0x37 */
+/* #define	PCIC_RESERVED				0x38 */
+/* #define	PCIC_RESERVED				0x39 */
+/* #define	PCIC_RESERVED				0x3A */
+/* #define	PCIC_RESERVED				0x3B */
+/* #define	PCIC_RESERVED				0x3C */
+/* #define	PCIC_RESERVED				0x3D */
+/* #define	PCIC_RESERVED				0x3E */
+/* #define	PCIC_RESERVED				0x3F */
 
 /* vendor-specific registers */
 

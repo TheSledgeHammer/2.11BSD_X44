@@ -59,8 +59,8 @@
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
 
-#include <dev/ic/comreg.h>
-#include <dev/ic/comvar.h>
+#include <dev/isa/comreg.h>
+#include <dev/isa/comvar.h>
 
 #include <dev/isa/isavar.h>
 #include <dev/isa/com_multi.h>
