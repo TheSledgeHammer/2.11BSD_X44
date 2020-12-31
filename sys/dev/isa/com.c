@@ -144,18 +144,18 @@ void comattach (struct device *, struct device *, void *);
 
 #if NCOM_ISA
 struct cfdriver com_isa_ca = {
-		NULL, "ncom_isa", comprobe, comattach, NULL, DV_TTY, sizeof(struct com_softc)
+		NULL, "ncom_isa", comprobe, comattach, DV_TTY, sizeof(struct com_softc)
 };
 #endif
 
 #if NCOM_COMMULTI
 struct cfdriver com_commulti_ca = {
-		NULL, "ncom_multi", comprobe, comattach, NULL, DV_TTY, sizeof(struct com_softc)
+		NULL, "ncom_multi", comprobe, comattach, DV_TTY, sizeof(struct com_softc)
 };
 #endif
 
 struct cfdriver com_cd = {
-	NULL, "com", comprobe, comattach, NULL, DV_TTY, sizeof(struct com_softc)
+	NULL, "com", comprobe, comattach, DV_TTY, sizeof(struct com_softc)
 };
 
 void cominit (bus_chipset_tag_t, bus_io_handle_t, int);

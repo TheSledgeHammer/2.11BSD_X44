@@ -58,15 +58,6 @@
 #include <dev/isa/isavar.h>
 #include <dev/ic/i8237reg.h>
 
-struct isa_mem {
-	struct device 	*isadev;
-	int 			chan;
-	bus_size_t 		size;
-	bus_addr_t 		addr;
-	caddr_t 		kva;
-	struct isa_mem 	*next;
-} *isa_mem_head = 0;
-
 /*
  * High byte of DMA address is stored in this DMAPG register for
  * the Nth DMA channel.
@@ -95,11 +86,9 @@ isa_dmaunmask(sc, chan)
 
 	/* set dma channel mode, and set dma channel mode */
 	if ((chan & 4) == 0)
-		bus_space_write_1(sc->sc_iot, sc->sc_dma1h,
-		    DMA1_SMSK, ochan | DMA37SM_CLEAR);
+		bus_space_write_1(sc->sc_iot, sc->sc_dma1h, DMA1_SMSK, ochan | DMA37SM_CLEAR);
 	else
-		bus_space_write_1(sc->sc_iot, sc->sc_dma2h,
-		    DMA2_SMSK, ochan | DMA37SM_CLEAR);
+		bus_space_write_1(sc->sc_iot, sc->sc_dma2h, DMA2_SMSK, ochan | DMA37SM_CLEAR);
 }
 
 static inline void
@@ -111,10 +100,8 @@ isa_dmamask(sc, chan)
 
 	/* set dma channel mode, and set dma channel mode */
 	if ((chan & 4) == 0) {
-		bus_space_write_1(sc->sc_iot, sc->sc_dma1h,
-		    DMA1_SMSK, ochan | DMA37SM_SET);
-		bus_space_write_1(sc->sc_iot, sc->sc_dma1h,
-		    DMA1_FFC, 0);
+		bus_space_write_1(sc->sc_iot, sc->sc_dma1h, DMA1_SMSK, ochan | DMA37SM_SET);
+		bus_space_write_1(sc->sc_iot, sc->sc_dma1h, DMA1_FFC, 0);
 	} else {
 		bus_space_write_1(sc->sc_iot, sc->sc_dma2h, DMA2_SMSK, ochan | DMA37SM_SET);
 		bus_space_write_1(sc->sc_iot, sc->sc_dma2h, DMA2_FFC, 0);
@@ -147,11 +134,9 @@ isa_dmacascade(isadev, chan)
 
 	/* set dma channel mode, and set dma channel mode */
 	if ((chan & 4) == 0)
-		bus_space_write_1(sc->sc_iot, sc->sc_dma1h,
-		    DMA1_MODE, ochan | DMA37MD_CASCADE);
+		bus_space_write_1(sc->sc_iot, sc->sc_dma1h, DMA1_MODE, ochan | DMA37MD_CASCADE);
 	else
-		bus_space_write_1(sc->sc_iot, sc->sc_dma2h,
-		    DMA2_MODE, ochan | DMA37MD_CASCADE);
+		bus_space_write_1(sc->sc_iot, sc->sc_dma2h, DMA2_MODE, ochan | DMA37MD_CASCADE);
 
 	isa_dmaunmask(sc, chan);
 	return;
@@ -601,16 +586,16 @@ isa_drq_isfree(isadev, chan)
 
 void *
 isa_malloc(isadev, chan, size, pool, flags)
-	struct device *isadev;
-	int chan;
-	size_t size;
-	int pool;
-	int flags;
+	struct device 	*isadev;
+	int 			chan;
+	size_t 			size;
+	int 			pool;
+	int 			flags;
 {
-	bus_addr_t addr;
-	caddr_t kva;
-	int bflags;
-	struct isa_mem *m;
+	bus_addr_t 		addr;
+	caddr_t 		kva;
+	int 			bflags;
+	struct isa_mem 	*m;
 
 	bflags = flags & M_WAITOK ? BUS_DMA_WAITOK : BUS_DMA_NOWAIT;
 

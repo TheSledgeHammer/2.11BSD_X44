@@ -68,7 +68,7 @@ int		com_isapnp_match (struct device *, void *, void *);
 void	com_isapnp_attach (struct device *, struct device *, void *);
 
 struct cfdriver com_isapnp_ca = {
-	NULL, "com_isapnp", com_isapnp_match, com_isapnp_attach, NULL, DV_TTY, sizeof(struct com_isapnp_softc)
+	NULL, "com_isapnp", com_isapnp_match, com_isapnp_attach, DV_TTY, sizeof(struct com_isapnp_softc)
 };
 
 int

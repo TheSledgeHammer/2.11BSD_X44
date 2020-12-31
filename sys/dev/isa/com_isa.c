@@ -56,8 +56,8 @@
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
 
-#include <dev/ic/comreg.h>
-#include <dev/ic/comvar.h>
+#include <dev/isa/comreg.h>
+#include <dev/isa/comvar.h>
 
 #include <dev/isa/isavar.h>
 
@@ -77,7 +77,7 @@ void com_isa_attach (struct device *, struct device *, void *);
 void com_isa_cleanup (void *);
 
 struct cfdriver com_isa_ca = {
-	NULL, "com_isa", com_isa_probe, com_isa_attach, NULL, DV_DULL, sizeof(struct com_isa_softc)
+	NULL, "com_isa", com_isa_probe, com_isa_attach, DV_DULL, sizeof(struct com_isa_softc)
 };
 
 int

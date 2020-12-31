@@ -65,7 +65,7 @@ struct npx_softc {
 int	npxprobe(), npxattach(), npxintr();
 
 struct cfdriver npx_cd = {
-	NULL, "npx", npxprobe, npxattach, NULL, DV_DULL, sizeof(struct npx_softc)
+	NULL, "npx", npxprobe, npxattach, DV_DULL, sizeof(struct npx_softc)
 };
 
 struct proc *npxproc;	/* process who owns device, otherwise zero */

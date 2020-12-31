@@ -41,12 +41,8 @@ struct spkr_softc {
 	struct device sc_dev;
 };
 
-struct cfdriver spkr_ca = {
-	sizeof(struct spkr_softc), spkrprobe, spkrattach
-};
-
 struct cfdriver spkr_cd = {
-	NULL, "spkr", DV_TTY
+	NULL, "spkr", spkrprobe, spkrattach, DV_TTY, sizeof(struct spkr_softc)
 };
 
 /**************** MACHINE DEPENDENT PART STARTS HERE *************************

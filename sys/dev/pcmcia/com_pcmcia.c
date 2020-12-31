@@ -59,8 +59,8 @@
 #include <dev/pcmcia/pcmciavar.h>
 #include <dev/pcmcia/pcmciareg.h>
 
-#include <dev/ic/comreg.h>
-#include <dev/ic/comvar.h>
+#include <dev/isa/comreg.h>
+#include <dev/isa/comvar.h>
 
 #include <dev/isa/isareg.h>
 
@@ -92,7 +92,7 @@ struct com_pcmcia_softc {
 };
 
 struct cfdriver com_pcmcia_ca = {
-	NULL, "com_pcmcia", com_pcmcia_match, com_pcmcia_attach, NULL, DV_DULL, sizeof(struct com_pcmcia_softc)
+	NULL, "com_pcmcia", com_pcmcia_match, com_pcmcia_attach, DV_DULL, sizeof(struct com_pcmcia_softc)
 };
 
 int

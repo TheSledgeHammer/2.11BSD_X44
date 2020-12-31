@@ -43,6 +43,15 @@
 #define	DMAMODE_READ	1
 #define	DMAMODE_LOOP	2
 
+struct isa_mem {
+	struct device 			*isadev;
+	int 					chan;
+	bus_size_t 				size;
+	bus_addr_t 				addr;
+	caddr_t 				kva;
+	struct isa_mem 			*next;
+} *isa_mem_head = 0;
+
 struct proc;
 
 void	   	isa_dmacascade (struct device *, int);

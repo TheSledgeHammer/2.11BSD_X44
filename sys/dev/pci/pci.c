@@ -51,7 +51,7 @@ int pcimatch (struct device *, struct cfdata *, void *);
 void pciattach (struct device *, struct device *, void *);
 
 struct cfdriver pci_cd = {
-	NULL, "pci", pcimatch, pciattach, NULL, DV_DULL, sizeof(struct device)
+	NULL, "pci", pcimatch, pciattach, DV_DULL, sizeof(struct device)
 };
 
 int	pciprint (void *, const char *);

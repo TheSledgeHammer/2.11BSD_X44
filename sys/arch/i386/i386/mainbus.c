@@ -50,7 +50,7 @@ int	 mainbus_match (struct device *, void *, void *);
 void mainbus_attach (struct device *, struct device *, void *);
 
 struct cfdriver mainbus_cd = {
-	NULL, "mainbus", mainbus_match, mainbus_attach, NULL, DV_DULL, sizeof(struct device)
+	NULL, "mainbus", mainbus_match, mainbus_attach, DV_DULL, sizeof(struct device)
 };
 
 int	mainbus_print (void *, const char *);

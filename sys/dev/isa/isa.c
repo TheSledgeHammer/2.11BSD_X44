@@ -53,9 +53,9 @@ int 	isaprint (void *, const char *);
 
 struct cfdriver isa_cd = {
 #ifdef __BROKEN_INDIRECT_CONFIG
-	NULL, "isa", isamatch, isaattach, NULL, DV_DULL, 1
+	NULL, "isa", isamatch, isaattach, DV_DULL, 1
 #else
-	NULL, "isa", isamatch, isaattach, NULL, DV_DULL, sizeof(struct isa_softc)
+	NULL, "isa", isamatch, isaattach, DV_DULL, sizeof(struct isa_softc)
 #endif
 };
 

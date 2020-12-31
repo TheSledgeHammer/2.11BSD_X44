@@ -33,6 +33,8 @@ A General todo list. Don't hesitate to add to this list. :)
 - See devel folder: README.md
 
 ## dev:
+- Clean up: A little messy
+	- com & isa
 - Essential Driver Support:
 	- disk	(ata & scsi)
 	- video

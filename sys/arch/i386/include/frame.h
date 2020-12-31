@@ -104,6 +104,7 @@ struct intrframe {
 	int	if_vec;
 	int	if_ppl;
 	int	if_fs;
+	int	if_gs;
 	int	if_es;
 	int	if_ds;
 	int	if_edi;

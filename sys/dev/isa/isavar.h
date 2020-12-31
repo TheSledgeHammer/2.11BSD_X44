@@ -89,17 +89,8 @@
  */
 struct isabus_attach_args;
 
-#if (alpha + atari + bebox + i386 != 1)
+#if (i386 != 1)
 //ERROR: COMPILING FOR UNSUPPORTED MACHINE, OR MORE THAN ONE.
-#endif
-#if alpha
-#include <alpha/isa/isa_machdep.h>
-#endif
-#if atari
-#include <atari/isa/isa_machdep.h>
-#endif
-#if bebox
-#include <bebox/isa/isa_machdep.h>
 #endif
 #if i386
 #include <i386/isa/isa_machdep.h>
@@ -114,6 +105,14 @@ struct isabus_attach_args {
 	bus_space_tag_t 		iba_memt;		/* isa mem space tag */
 	bus_dma_tag_t 			iba_dmat;		/* isa DMA tag */
 	isa_chipset_tag_t 		iba_ic;
+};
+
+/*
+ * ISA bus resources.
+ */
+struct isa_pnpname {
+	struct isa_pnpname 		*ipn_next;
+	char 					*ipn_name;
 };
 
 /*
@@ -136,12 +135,27 @@ struct isa_attach_args {
 	void					*ia_aux;		/* driver specific */
 
 	bus_space_handle_t 		ia_delaybah; 	/* i/o handle for `delay port' */
+
+	char 					*ia_pnpname;
+	struct isa_pnpname 		*ia_pnpcompatnames;
+
+	int 					ia_nio;
+	int 					ia_niomem;
+	int 					ia_nirq;
+	int 					ia_ndrq;
 };
 
 #define	IOBASEUNK			-1				/* i/o address is unknown */
 #define	IRQUNK				-1				/* interrupt request line is unknown */
 #define	DRQUNK				-1				/* DMA request line is unknown */
 #define	MADDRUNK			-1				/* shared memory address is unknown */
+
+/*
+ * Test to determine if a given call to an ISA device probe routine
+ * is actually an attempt to do direct configuration.
+ */
+#define	ISA_DIRECT_CONFIG(ia)						\
+	((ia)->ia_pnpname != NULL || (ia)->ia_pnpcompatnames != NULL)
 
 /*
  * Per-device ISA variables
@@ -165,11 +179,12 @@ struct isa_softc {
 	isa_chipset_tag_t 		sc_ic;
 
 	/*
-	 * Bitmap representing the DRQ channels available
-	 * for ISA.
+	 * Bitmap representing the DRQ channels available for ISA.
 	 */
 	int						sc_drqmap;
-
+	/*
+	 * DMA maps
+	 */
 	bus_space_handle_t 		sc_dma1h;		/* i/o handle for DMA controller #1 */
 	bus_space_handle_t 		sc_dma2h;		/* i/o handle for DMA controller #2 */
 	bus_space_handle_t 		sc_dmapgh;		/* i/o handle for DMA page registers */
@@ -200,16 +215,6 @@ struct isa_softc {
 
 #define	ISA_DRQ_FREE(isadev, drq) \
 	((struct isa_softc *)(isadev))->sc_drqmap &= ~(1 << (drq))
-
-/*
-#define		cf_iobase		cf_loc[ISACF_PORT]
-#define		cf_iosize		cf_loc[ISACF_SIZE]
-#define		cf_maddr		cf_loc[ISACF_IOMEM]
-#define		cf_msize		cf_loc[ISACF_IOSIZ]
-#define		cf_irq			cf_loc[ISACF_IRQ]
-#define		cf_drq			cf_loc[ISACF_DRQ]
-#define		cf_drq2			cf_loc[ISACF_DRQ2]
-*/
 
 /*
  * ISA interrupt handler manipulation.

@@ -97,7 +97,6 @@ struct cfdata {
 
 typedef int 	(*cfmatch_t)(struct device *, struct cfdata *, void *);
 typedef void 	(*cfattach_t)(struct device *, struct device *, void *);
-typedef int		(*cfdetach_t)(struct device *, int);
 
 /*
  * `configuration' driver (what the machine-independent autoconf uses).
@@ -112,7 +111,6 @@ struct cfdriver {
 	char				*cd_name;				/* device name */
 	int 				(*cd_match)(struct device *, struct cfdata *, void *);
 	void				(*cd_attach)(struct device *, struct device *, void *);
-	int					(*cd_detach)(struct device *, int);
 	enum	devclass 	cd_class;				/* device classification */
 	size_t				cd_devsize;				/* size of dev data (for malloc) */
 	void				*cd_aux;				/* additional driver, if any */
@@ -146,6 +144,5 @@ struct cfdata 	*config_rootsearch (cfmatch_t, char *, void *);
 int 			config_found (struct device *, void *, cfprint_t);
 int 			config_rootfound (char *, void *);
 void 			config_attach (struct device *, struct cfdata *, void *, cfprint_t);
-//int 			config_detach(struct device *, int);
 void 			evcnt_attach (struct device *, const char *, struct evcnt *);
 #endif /* !_SYS_DEVICE_H_ */
