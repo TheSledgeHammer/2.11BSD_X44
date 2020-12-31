@@ -139,8 +139,6 @@ nullop()
 	return (nulldev());
 }
 
-
-
 /*
  * socket(2) and socketpair(2) if networking not available.
  */

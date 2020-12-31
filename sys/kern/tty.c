@@ -12,6 +12,7 @@
 #include <sys/proc.h>
 #define	TTYDEFCHARS
 #include <sys/tty.h>
+#include <sys/ttycom.h>
 #undef	TTYDEFCHARS
 #include <sys/file.h>
 #include <sys/conf.h>
@@ -139,7 +140,6 @@ void
 ttychars(tp)
 	struct tty *tp;
 {
-
 	tp->t_chars = ttydefaults;
 }
 
@@ -151,23 +151,20 @@ ttychars(tp)
 void
 ttyowake(tp)
 	register struct tty *tp;
-	{
+{
 
-	if	(tp->t_outq.c_cc <= TTLOWAT(tp))
-		{
-		if	(ISSET(tp->t_state,TS_ASLEEP))
-			{
-			CLR(tp->t_state,TS_ASLEEP);
-			wakeup((caddr_t)&tp->t_outq);
-			}
-		if	(tp->t_wsel)
-			{
+	if (tp->t_outq.c_cc <= TTLOWAT(tp)) {
+		if (ISSET(tp->t_state, TS_ASLEEP)) {
+			CLR(tp->t_state, TS_ASLEEP);
+			wakeup((caddr_t) &tp->t_outq);
+		}
+		if (tp->t_wsel) {
 			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
 			tp->t_wsel = 0;
-			CLR(tp->t_state,TS_WCOLL);
-			}
+			CLR(tp->t_state, TS_WCOLL);
 		}
 	}
+}
 
 /*
  * Wait for output to drain, then flush input waiting.
@@ -187,18 +184,18 @@ ttywait(tp)
 {
 	register int s = spltty();
 
-	while ((tp->t_outq.c_cc || (tp->t_state&TS_BUSY)) &&
-			(tp->t_state&TS_CARR_ON) && tp->t_oproc) {
+	while ((tp->t_outq.c_cc || (tp->t_state & TS_BUSY))
+			&& (tp->t_state & TS_CARR_ON) && tp->t_oproc) {
 		(*tp->t_oproc)(tp);
-/*
- * If the output routine drains the queue and the device is no longer busy
- * then don't wait for something that's already happened.
-*/
-		if	(tp->t_outq.c_cc == 0 && !ISSET(tp->t_state,TS_BUSY))
+		/*
+		 * If the output routine drains the queue and the device is no longer busy
+		 * then don't wait for something that's already happened.
+		 */
+		if (tp->t_outq.c_cc == 0 && !ISSET(tp->t_state, TS_BUSY))
 			break;
 		tp->t_state |= TS_ASLEEP;
-		sleep((caddr_t)&tp->t_outq, TTOPRI);
-		splx(s);	/* drop priority, give interrupts a chance */
+		sleep((caddr_t) &tp->t_outq, TTOPRI);
+		splx(s); /* drop priority, give interrupts a chance */
 		s = spltty();
 	}
 	splx(s);
@@ -356,13 +353,12 @@ ttioctl(tp, com, data, flag)
 	case TIOCLSET:
 	case TIOCSTI:
 	case TIOCSWINSZ:
-		while (tp->t_line == NTTYDISC &&
-		   u->u_procp->p_pgrp != tp->t_pgrp && tp == u->u_ttyp &&
-		   (u->u_procp->p_flag&SVFORK) == 0 &&
-		   !(u->u_procp->p_sigignore & sigmask(SIGTTOU)) &&
-		   !(u->u_procp->p_sigmask & sigmask(SIGTTOU))) {
+		while (tp->t_line == NTTYDISC && u->u_procp->p_pgrp != tp->t_pgrp
+				&& tp == u->u_ttyp && (u->u_procp->p_flag & SVFORK) == 0
+				&& !(u->u_procp->p_sigignore & sigmask(SIGTTOU))
+				&& !(u->u_procp->p_sigmask & sigmask(SIGTTOU))) {
 			gsignal(u->u_procp->p_pgrp, SIGTTOU);
-			sleep((caddr_t)&lbolt, TTOPRI);
+			sleep((caddr_t) &lbolt, TTOPRI);
 		}
 		break;
 	}

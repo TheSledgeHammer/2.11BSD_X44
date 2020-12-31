@@ -13,6 +13,8 @@
 #include <sys/tty.h>
 #include <sys/errno.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
+#include <sys/user.h>
 
 int	nodev();
 int	nulldev();
@@ -29,11 +31,85 @@ int	bkopen(),bkclose(),bkread(),bkinput(),bkioctl();
 #if NTB > 0
 int	tbopen(),tbclose(),tbread(),tbinput(),tbioctl();
 #endif
-#include "sl.h"
+/* #include "sl.h" */
 #if NSL > 0
 int	SLOPEN(),SLCLOSE(),SLINPUT(),SLTIOCTL(),SLSTART();
 #endif
 
+/* 0- OTTYDISC */
+struct linesw ottydisc = {
+	.l_open = ttyopen,
+	.l_close = ttylclose,
+	.l_read = ttread,
+	.l_write = ttwrite,
+	.l_ioctl = nullioctl,
+	.l_rint = ttyinput,
+	.l_rend = nodev,
+	.l_meta = nulldev,
+	.l_start = ttstart,
+	.l_modem = ttymodem,
+	.l_poll = nodev			/* add poll */
+};
+
+/* 2- NTTYDISC */
+struct linesw nttydisc = {
+	.l_open = ttyopen,
+	.l_close = ttylclose,
+	.l_read = ttread,
+	.l_write = ttwrite,
+	.l_ioctl = nullioctl,
+	.l_rint = ttyinput,
+	.l_rend = nodev,
+	.l_meta = nulldev,
+	.l_start = ttstart,
+	.l_modem = ttymodem,
+	.l_poll = nodev			/* add poll */
+};
+
+/* 1- NETLDISC */
+struct linesw netldisc = {
+	.l_open = bkopen,
+	.l_close = bkclose,
+	.l_read = bkread,
+	.l_write = ttwrite,
+	.l_ioctl = bkioctl,
+	.l_rint = bkinput,
+	.l_rend = nodev,
+	.l_meta = nulldev,
+	.l_start = ttstart,
+	.l_modem = nullmodem,
+	.l_poll = nodev			/* add poll */
+};
+
+/* 3- TABLDISC */
+struct linesw tabldisc = {
+	.l_open = tbopen,
+	.l_close = tbclose,
+	.l_read = tbread,
+	.l_write = nodev,
+	.l_ioctl = tbioctl,
+	.l_rint = tbinput,
+	.l_rend = nodev,
+	.l_meta = nulldev,
+	.l_start = ttstart,
+	.l_modem = nullmodem,
+	.l_poll = nodev			/* add poll */
+};
+
+/* 4- SLIPDISC */
+struct linesw slipdisc = {
+	.l_open = SLOPEN,
+	.l_close = SLCLOSE,
+	.l_read = nodev,
+	.l_write = nodev,
+	.l_ioctl = SLTIOCTL,
+	.l_rint = SLINPUT,
+	.l_rend = nodev,
+	.l_meta = nulldev,
+	.l_start = SLSTART,
+	.l_modem = nulldev,
+	.l_poll = nodev			/* add poll */
+};
 
 struct linesw linesw[] =
 {
@@ -63,8 +139,25 @@ struct linesw linesw[] =
 	nodev, nodev, nodev, nodev, nodev,
 #endif
 };
-
 int	nldisp = sizeof (linesw) / sizeof (linesw[0]);
+
+/* New devswio conf initialization for tty */
+void
+tty_conf_init(devsw)
+	struct devswtable *devsw;
+{
+	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &ottydisc);	/* 0- OTTYDISC */
+#if NBK > 0
+	DEVSWIO_CONFIG_INIT(devsw, NBK, NULL, NULL, &netldisc);	/* 1- NETLDISC */
+#endif
+	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &nttydisc);	/* 2- NTTYDISC */
+#if NTB > 0
+	DEVSWIO_CONFIG_INIT(devsw, NTB, NULL, NULL, &tabldisc);	/* 3- TABLDISC */
+#endif
+#if NSL > 0
+	DEVSWIO_CONFIG_INIT(devsw, NSL, NULL, NULL, &slipdisc);	/* 4- SLIPDISC */
+#endif
+}
 
 /*
  * Do nothing specific version of line
@@ -78,7 +171,6 @@ nullioctl(tp, cmd, data, flags)
 	char *data;
 	int flags;
 {
-
 #ifdef lint
 	tp = tp; data = data; flags = flags;
 #endif

@@ -13,6 +13,7 @@
 #include <sys/systm.h>
 #include <sys/buf.h>
 #include <sys/map.h>
+#include <sys/user.h>
 
 char	cwaiting;
 
@@ -70,6 +71,7 @@ int
 q_to_b(q, cp, cc)
 	register struct clist *q;
 	char *cp;
+	int cc;
 {
 	register struct cblock *bp;
 	register nc;
@@ -135,12 +137,10 @@ q_to_b(q, cp, cc)
 int
 ndqb(q, flag)
 	register struct clist *q;
+	int flag;
 {
 	int cc;
 	int s;
-#ifdef UCB_CLIST
-	segm sav5;
-#endif
 
 	s = spltty();
 	if (q->c_cc <= 0) {
@@ -419,6 +419,7 @@ catq(from, to)
  */
 typedef	u_short word_t;
 
+int
 getw(p)
 	register struct clist *p;
 {
@@ -471,6 +472,7 @@ getw(p)
 	return (c);
 }
 
+int
 putw(c, p)
 	register struct clist *p;
 	word_t c;

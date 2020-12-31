@@ -99,9 +99,9 @@ struct ttysize {
 /* this should be _IORW, but stdio got there first */
 #define	_IOWR(x,y,t)	(('x'<<8)|y)
 #else
-#define	_IO(x,y)	(IOC_VOID|('x'<<8)|y)
-#define	_IOR(x,y,t)	(IOC_OUT|((long)(sizeof(t)&IOCPARM_MASK)<<16)|('x'<<8)|y)
-#define	_IOW(x,y,t)	(IOC_IN|((long)(sizeof(t)&IOCPARM_MASK)<<16)|('x'<<8)|y)
+#define	_IO(x,y)		(IOC_VOID|('x'<<8)|y)
+#define	_IOR(x,y,t)		(IOC_OUT|((long)(sizeof(t)&IOCPARM_MASK)<<16)|('x'<<8)|y)
+#define	_IOW(x,y,t)		(IOC_IN|((long)(sizeof(t)&IOCPARM_MASK)<<16)|('x'<<8)|y)
 /* this should be _IORW, but stdio got there first */
 #define	_IOWR(x,y,t)	(IOC_INOUT|((long)(sizeof(t)&IOCPARM_MASK)<<16)|('x'<<8)|y)
 #endif
@@ -129,8 +129,8 @@ struct ttysize {
 #define	TIOCGETP	_IOR(t, 8,struct sgttyb)/* get parameters -- gtty */
 #define	TIOCSETP	_IOW(t, 9,struct sgttyb)/* set parameters -- stty */
 #define	TIOCSETN	_IOW(t,10,struct sgttyb)/* as above, but no flushtty */
-#define	TIOCEXCL	_IO(t, 13)		/* set exclusive use of tty */
-#define	TIOCNXCL	_IO(t, 14)		/* reset exclusive use of tty */
+#define	TIOCEXCL	_IO(t, 13)				/* set exclusive use of tty */
+#define	TIOCNXCL	_IO(t, 14)				/* reset exclusive use of tty */
 #define	TIOCFLUSH	_IOW(t, 16, int)			/* flush buffers */
 #define	TIOCSETC	_IOW(t,17,struct tchars)	/* set special characters */
 #define	TIOCGETC	_IOR(t,18,struct tchars)	/* get special characters */
@@ -218,30 +218,30 @@ struct ttysize {
 #define	TIOCUCNTL		_IOW(t, 102, int)				/* pty: set/clr usr cntl mode */
 #define	UIOCCMD(n)		_IO(u, n)						/* usr cntl op "n" */
 
-#define	OTTYDISC	0		/* old, v7 std tty driver */
-#define	NETLDISC	1		/* line discip for berk net */
-#define	NTTYDISC	2		/* new tty discipline */
-#define	TABLDISC	3		/* tablet discipline */
-#define	SLIPDISC	4		/* serial IP discipline */
+#define	OTTYDISC		0							/* old, v7 std tty driver */
+#define	NETLDISC		1							/* line discip for berk net */
+#define	NTTYDISC		2							/* new tty discipline */
+#define	TABLDISC		3							/* tablet discipline */
+#define	SLIPDISC		4							/* serial IP discipline */
 
-#define	FIOCLEX			_IO(f, 1)		/* set exclusive use on fd */
-#define	FIONCLEX		_IO(f, 2)		/* remove exclusive use */
+#define	FIOCLEX			_IO(f, 1)					/* set exclusive use on fd */
+#define	FIONCLEX		_IO(f, 2)					/* remove exclusive use */
 /* another local */
 /* should use off_t for FIONREAD but that would require types.h */
-#define	FIONREAD		_IOR(f, 127, long)	/* get # bytes to read */
-#define	FIONBIO			_IOW(f, 126, int)	/* set/clear non-blocking i/o */
-#define	FIOASYNC		_IOW(f, 125, int)	/* set/clear async i/o */
-#define	FIOSETOWN		_IOW(f, 124, int)	/* set owner */
-#define	FIOGETOWN		_IOR(f, 123, int)	/* get owner */
+#define	FIONREAD		_IOR(f, 127, long)			/* get # bytes to read */
+#define	FIONBIO			_IOW(f, 126, int)			/* set/clear non-blocking i/o */
+#define	FIOASYNC		_IOW(f, 125, int)			/* set/clear async i/o */
+#define	FIOSETOWN		_IOW(f, 124, int)			/* set owner */
+#define	FIOGETOWN		_IOR(f, 123, int)			/* get owner */
 
 /* socket i/o controls */
-#define	SIOCSHIWAT		_IOW(s,  0, int)		/* set high watermark */
-#define	SIOCGHIWAT		_IOR(s,  1, int)		/* get high watermark */
-#define	SIOCSLOWAT		_IOW(s,  2, int)		/* set low watermark */
-#define	SIOCGLOWAT		_IOR(s,  3, int)		/* get low watermark */
-#define	SIOCATMARK		_IOR(s,  7, int)		/* at oob mark? */
-#define	SIOCSPGRP		_IOW(s,  8, int)		/* set process group */
-#define	SIOCGPGRP		_IOR(s,  9, int)		/* get process group */
+#define	SIOCSHIWAT		_IOW(s,  0, int)			/* set high watermark */
+#define	SIOCGHIWAT		_IOR(s,  1, int)			/* get high watermark */
+#define	SIOCSLOWAT		_IOW(s,  2, int)			/* set low watermark */
+#define	SIOCGLOWAT		_IOR(s,  3, int)			/* get low watermark */
+#define	SIOCATMARK		_IOR(s,  7, int)			/* at oob mark? */
+#define	SIOCSPGRP		_IOW(s,  8, int)			/* set process group */
+#define	SIOCGPGRP		_IOR(s,  9, int)			/* get process group */
 
 #define	SIOCADDRT		_IOW(r, 10, struct rtentry)	/* add route */
 #define	SIOCDELRT		_IOW(r, 11, struct rtentry)	/* delete route */

@@ -44,7 +44,7 @@
  */
 #if !defined(_LOCORE)
 
-#if defined(MULTIPROCESSOR) || !defined(_KERNEL)
+#if defined(SMP) || !defined(_KERNEL)
 #define _LOCK "lock"
 #else
 #define _LOCK
@@ -246,7 +246,7 @@ _atomic_sub_long_nv(volatile unsigned long *p, unsigned long v)
 
 #define __membar(_f) do { __asm __volatile(_f ::: "memory"); } while (0)
 
-#if defined(MULTIPROCESSOR) || !defined(_KERNEL)
+#if defined(SMP) || !defined(_KERNEL)
 #define membar_enter()		__membar("lock; addl $0,0(%%esp)")
 #define membar_exit()		__membar("")
 #define membar_producer()	__membar("")

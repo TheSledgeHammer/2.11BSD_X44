@@ -17,15 +17,23 @@
 #include <sys/tty.h>
 #include <sys/conf.h>
 
+const struct cdevsw sy_cdevsw = {
+		.d_open = syopen,
+		.d_read = syread,
+		.d_write = sywrite,
+		.d_ioctl = syioctl,
+		.d_select = syselect
+};
+
 /*ARGSUSED*/
 int
-syopen(dev, flag)
+syopen(dev, flag, type)
 	dev_t dev;
-	int flag;
+	int flag, type;
 {
 	if (u->u_ttyp == NULL)
 		return (ENXIO);
-	return((*cdevsw[major(u->u_ttyd)].d_open)(u->u_ttyd, flag));
+	return((*cdevsw[major(u->u_ttyd)].d_open)(u->u_ttyd, flag, type, u->u_procp));
 }
 
 /*ARGSUSED*/
@@ -68,7 +76,7 @@ syioctl(dev, cmd, addr, flag)
 	}
 	if (u->u_ttyp == NULL)
 		return (ENXIO);
-	return ((*cdevsw[major(u->u_ttyd)].d_ioctl)(u->u_ttyd, cmd, addr, flag));
+	return ((*cdevsw[major(u->u_ttyd)].d_ioctl)(u->u_ttyd, cmd, addr, flag, u->u_procp));
 }
 
 /*ARGSUSED*/
@@ -82,5 +90,5 @@ syselect(dev, flag)
 		u->u_error = ENXIO;
 		return (0);
 	}
-	return ((*cdevsw[major(u->u_ttyd)].d_select)(u->u_ttyd, flag));
+	return ((*cdevsw[major(u->u_ttyd)].d_select)(u->u_ttyd, flag, u->u_procp));
 }

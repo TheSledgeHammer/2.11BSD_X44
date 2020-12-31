@@ -34,7 +34,7 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## dev:
 - Clean up: A little messy
-	- com & isa
+	- com
 - Essential Driver Support:
 	- disk	(ata & scsi)
 	- video

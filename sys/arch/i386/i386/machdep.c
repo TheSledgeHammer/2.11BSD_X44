@@ -79,6 +79,7 @@
 #include <machine/isa_machdep.h>
 
 #include <dev/isa/isareg.h>
+#include <dev/isa/isavar.h>
 #include <dev/ic/i8042reg.h>
 
 #ifdef VM86
@@ -86,7 +87,6 @@
 #endif
 
 #include "npx.h"
-
 #if NNPX > 0
 extern struct proc *npxproc;
 #endif
@@ -806,7 +806,9 @@ setregs(p, elp, stack)
 	struct pcb *pcb = &p->p_addr->u_pcb;
 	struct trapframe *tf;
 #if NNPX > 0
-	npxinit(0x262);
+	/* If we were using the FPU, forget about it. */
+	if (npxproc == p)
+		npxdrop();
 #endif
 	p->p_md.md_flags &= ~MDL_USEDFPU;
 	if (i386_use_fxsave) {

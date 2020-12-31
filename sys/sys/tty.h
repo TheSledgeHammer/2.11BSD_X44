@@ -98,7 +98,6 @@ struct tty {
 #define	t_flushc	t_chars.tc_flushc
 #define	t_werasc	t_chars.tc_werasc
 #define	t_lnextc	t_chars.tc_lnextc
-
 };
 
 #define	t_cc		t_termios.c_cc
