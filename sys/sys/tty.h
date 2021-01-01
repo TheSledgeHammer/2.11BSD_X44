@@ -22,6 +22,10 @@ struct clist {
 	int		c_cc;		/* character count */
 	char	*c_cf;		/* pointer to first char */
 	char	*c_cl;		/* pointer to last char */
+	u_char	*c_cs;		/* start of ring buffer */
+	u_char	*c_ce;		/* c_ce + c_len */
+	u_char	*c_cq;		/* N bits/bytes long, see tty_subr.c */
+	int		c_cn;		/* total ring buffer length */
 };
 
 /*
@@ -71,16 +75,16 @@ struct tty {
 	struct	ttychars t_chars;		/* tty */
 	struct	winsize t_winsize;		/* window size */
 
-	void	(*t_oproc) (struct tty *);						/* Start output. */
+	void	(*t_oproc) (struct tty *);						/* device *//* Start output. */
 	void	(*t_stop) (struct tty *, int);					/* Stop output. */
 	int		(*t_param) (struct tty *, struct termios *);	/* Set hardware state. */
 
-	struct	pgrp 	*t_pgrp;		/* Foreground process group. */
-	struct	session *t_session;		/* Enclosing session. */
-	struct	termios t_termios;		/* Termios state. */
-	int				t_hiwat;		/* High water mark. */
-	int				t_lowat;		/* Low water mark. */
-	int				t_gen;			/* Generation number. */
+	struct	pgrp 		*t_pgrp;		/* Foreground process group. */
+	struct	session 	*t_session;		/* Enclosing session. */
+	struct	termios 	t_termios;		/* Termios state. */
+	int					t_hiwat;		/* High water mark. */
+	int					t_lowat;		/* Low water mark. */
+	int					t_gen;			/* Generation number. */
 
 
 /* be careful of tchars & co. */

@@ -8,6 +8,8 @@
 #ifndef _SYS_CONF_H_
 #define _SYS_CONF_H_
 
+#include <sys/devsw.h>
+
 /*
  * Declaration of block device
  * switch. Each entry (row) is

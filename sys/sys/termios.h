@@ -254,7 +254,7 @@ int	tcsendbreak (int, int);
 
 #ifndef _POSIX_SOURCE
 void	cfmakeraw (struct termios *);
-int	cfsetspeed (struct termios *, speed_t);
+int		cfsetspeed (struct termios *, speed_t);
 #endif /* !_POSIX_SOURCE */
 __END_DECLS
 
@@ -267,7 +267,7 @@ __END_DECLS
  * with the old tty driver.  These ioctl definitions were previously
  * in <sys/ioctl.h>.
  */
-#include <sys/ttycom.h>
+#include <sys/ioctl.h>
 #endif
 
 /*

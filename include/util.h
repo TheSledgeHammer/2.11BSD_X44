@@ -39,29 +39,28 @@
 #include <pwd.h>
 #include <utmp.h>
 #include <termios.h>
-#include <sys/ttycom.h>
+#include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
 void	login __P((struct utmp *));
-int	login_tty __P((int));
-int	logout __P((const char *));
+int		login_tty __P((int));
+int		logout __P((const char *));
 void	logwtmp __P((const char *, const char *, const char *));
-int	pw_lock __P((int retries));
-int	pw_mkdb __P((void));
-int	pw_abort __P((void));
+int		pw_lock __P((int retries));
+int		pw_mkdb __P((void));
+int		pw_abort __P((void));
 void	pw_init __P((void));
 void	pw_edit __P((int notsetuid, const char *filename));
 void	pw_prompt __P((void));
 void	pw_copy __P((int ffd, int tfd, struct passwd *pw));
-int	pw_scan __P((char *bp, struct passwd *pw, int *flags));
+int		pw_scan __P((char *bp, struct passwd *pw, int *flags));
 void	pw_error __P((const char *name, int err, int eval));
-int	openpty __P((int *, int *, char *, struct termios *,
-		     struct winsize *));
+int		openpty __P((int *, int *, char *, struct termios *, struct winsize *));
 pid_t	forkpty __P((int *, char *, struct termios *, struct winsize *));
-int	getmaxpartitions __P((void));
-int	getrawpartition __P((void));
+int		getmaxpartitions __P((void));
+int		getrawpartition __P((void));
 __END_DECLS
 
 #endif /* !_UTIL_H_ */

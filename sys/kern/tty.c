@@ -12,7 +12,6 @@
 #include <sys/proc.h>
 #define	TTYDEFCHARS
 #include <sys/tty.h>
-#include <sys/ttycom.h>
 #undef	TTYDEFCHARS
 #include <sys/file.h>
 #include <sys/conf.h>
@@ -46,7 +45,6 @@
 
 int	TTYBLOCK = 128;
 int	TTYUNBLOCK = 64;
-
 
 #define	E		0x00	/* Even parity. */
 #define	O		0x80	/* Odd parity. */
@@ -1904,4 +1902,3 @@ proc_compare(p1, p2)
 		return (0);
 	return (p2->p_pid > p1->p_pid);		/* tie - return highest pid */
 }
-

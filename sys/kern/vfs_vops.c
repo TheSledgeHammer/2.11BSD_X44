@@ -408,6 +408,31 @@ vop_select(vp, which, fflags, cred, p)
 }
 
 int
+vop_poll(vp, fflags, events, p)
+	struct vnode *vp;
+	int fflags;
+	int events;
+	struct proc *p;
+{
+	struct vop_poll_args a;
+	int error;
+
+	a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_fflags = fflags;
+	a.a_events = events;
+	a.a_p = p;
+
+	if(vops.vop_poll == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	error = vops.vop_poll(vp, fflags, events, p);
+
+	return (error);
+}
+
+int
 vop_revoke(vp, flags)
 	struct vnode *vp;
 	int flags;

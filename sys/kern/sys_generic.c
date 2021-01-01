@@ -17,6 +17,7 @@
 #include <sys/uio.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
+#include <sys/poll.h>
 
 /* 
  * this is consolidated here rather than being scattered all over the
@@ -504,8 +505,8 @@ seltrue(dev, flag)
 	dev_t dev;
 	int flag;
 {
-
-	return (1);
+	//return (1);
+	return (flag & (POLLIN | POLLOUT | POLLRDNORM | POLLWRNORM));
 }
 
 void

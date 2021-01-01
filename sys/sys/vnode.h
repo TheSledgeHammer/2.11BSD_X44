@@ -270,6 +270,7 @@ struct vnodeops {
 	int (*vop_lease)		(struct vnode *vp, struct proc *p, struct ucred *cred, int flag);
 	int	(*vop_ioctl)		(struct vnode *vp, u_long command, caddr_t data, int fflag, struct ucred *cred, struct proc *p);
 	int	(*vop_select)		(struct vnode *vp, int which, int fflags, struct ucred *cred, struct proc *p);
+	int	(*vop_poll)			(struct vnode *vp, int fflags, int events, struct proc *p);
 	int (*vop_revoke)		(struct vnode *vp, int flags);
 	int	(*vop_mmap)	    	(struct vnode *vp, int fflags, struct ucred *cred, struct proc *p);
 	int	(*vop_fsync)		(struct vnode *vp, int fflags, struct ucred *cred, int waitfor, struct proc *p);
@@ -317,6 +318,7 @@ struct vnodeops {
 #define VOP_LEASE(vp, p, cred, flag)							(*((vp)->v_op->vop_lease))(vp, p, cred, flag)
 #define	VOP_IOCTL(vp, command, data, fflag, cred, p)			(*((vp)->v_op->vop_ioctl))(vp, command, data, fflag, cred, p)
 #define	VOP_SELECT(vp, which, fflags, cred, p)					(*((vp)->v_op->vop_select))(vp, which, fflags, cred, p)
+#define VOP_POLL(vp, fflag, events, p)							(*((vp)->v_op->vop_poll))(vp, fflag, events, p)
 #define VOP_REVOKE(vp, flags)									(*((vp)->v_op->vop_revoke))(vp, flags)
 #define	VOP_MMAP(vp, fflags, cred, p)		    				(*((vp)->v_op->vop_mmap))(vp, fflags, cred, p)
 #define	VOP_FSYNC(vp, cred, waitfor, p)							(*((vp)->v_op->vop_fsync))(vp, cred, waitfor, p)
@@ -467,6 +469,14 @@ struct vop_select_args {
 	int 					a_which;
 	int 					a_fflags;
 	struct ucred 			*a_cred;
+	struct proc 			*a_p;
+};
+
+struct vop_poll_args {
+	struct vop_generic_args a_head;
+	struct vnode 			*a_vp;
+	int 					a_fflags;
+	int 					a_events;
 	struct proc 			*a_p;
 };
 

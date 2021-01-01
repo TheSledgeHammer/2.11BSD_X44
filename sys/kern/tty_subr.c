@@ -17,6 +17,15 @@
 
 char	cwaiting;
 
+void
+clfree(clp)
+	struct clist *clp;
+{
+	if (clp->c_cs) {
+		free()
+	}
+}
+
 /*
  * Character list get/put
  */
@@ -340,6 +349,39 @@ nextc(p, cp)
 	else
 		rcp = (char *)NULL;
 	return (rcp);
+}
+
+/*
+ * Given a non-NULL pointer into the clist return the pointer
+ * to the first character in the list or return NULL if no more chars.
+ *
+ * Callers must not allow getc's to happen between firstc's and getc's
+ * so that the pointer becomes invalid.  Note that interrupts are NOT
+ * masked.
+ *
+ * *c is set to the NEXT character
+ */
+char *
+firstc(clp, c)
+	register struct clist *clp;
+	register int *c;
+{
+	u_char *cp;
+
+	if (clp->c_cc == 0)
+		return NULL;
+	cp = clp->c_cf;
+	*c = *cp & 0xff;
+	if (clp->c_cq) {
+#ifdef QBITS
+		if (isset(clp->c_cq, cp - clp->c_cs))
+			*c |= TTY_QUOTE;
+#else
+		if (*(cp - clp->c_cs + clp->c_cq))
+			*c |= TTY_QUOTE;
+#endif
+	}
+	return (clp->c_cf);
 }
 
 /*

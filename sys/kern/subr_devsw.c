@@ -175,9 +175,7 @@ devswtable_add(devsw, data, major)
 	entry = (devswtable_entry_t) malloc((u_long) sizeof(*entry), M_DEVSWHASH, M_WAITOK);
 	entry->dve_devswtable = devsw;
 
-	simple_lock(&devswtable_lock);
 	TAILQ_INSERT_HEAD(bucket, entry, dve_link);
-	simple_unlock(&devswtable_lock);
 }
 
 void

@@ -24,21 +24,23 @@
 #include <sys/uio.h>
 #include <sys/kernel.h>
 #include <sys/vnode.h>
+#include <sys/poll.h>
 
 #if NPTY == 1
 #undef NPTY
 #define	NPTY	16		/* crude XXX */
 #endif
 
-#define BUFSIZ 100		/* Chunk size iomoved to/from user */
+#define BUFSIZ 	100		/* Chunk size iomoved to/from user */
 
 /*
  * pts == /dev/tty[pqrs]?
  * ptc == /dev/pty[pqrs]?
  */
-struct	tty pt_tty[NPTY];
-struct	pt_ioctl {
-	int	pt_flags;
+struct tty pt_tty[NPTY];
+struct pt_ioctl {
+	struct	tty *pt_tty;
+	int		pt_flags;
 	struct	proc *pt_selr, *pt_selw;
 	u_char	pt_send;
 	u_char	pt_ucntl;
@@ -52,6 +54,51 @@ int	npty = NPTY;		/* for pstat -t */
 #define	PF_REMOTE	0x20		/* remote and flow controlled input */
 #define	PF_NOSTOP	0x40
 #define PF_UCNTL	0x80		/* user control mode */
+
+dev_type_open(ptsopen);
+dev_type_close(ptsclose);
+dev_type_read(ptsread);
+dev_type_write(ptswrite);
+dev_type_start(ptsstart);
+dev_type_stop(ptsstop);
+
+dev_type_open(ptcopen);
+dev_type_close(ptcclose);
+dev_type_read(ptcread);
+dev_type_write(ptcwrite);
+dev_type_select(ptcselect);
+
+dev_type_ioctl(ptyioctl);
+dev_type_tty(ptytty);
+
+const struct cdevsw ptc_cdevsw = {
+		.d_open = ptcopen,
+		.d_close = ptcclose,
+		.d_read = ptcread,
+		.d_write = ptcwrite,
+		.d_ioctl = ptyioctl,
+		.d_stop = nodev,
+		.d_tty = ptytty,
+		.d_select = ptcselect,
+		.d_poll = ptcpoll,
+		.d_mmap = nodev,
+		.d_discard = nodev,
+		.d_flags = D_TTY
+};
+
+const struct cdevsw pts_cdevsw = {
+		.d_open = ptsopen,
+		.d_close = ptsclose,
+		.d_read = ptsread,
+		.d_write = ptswrite,
+		.d_ioctl = ptyioctl,
+		.d_stop = ptsstop,
+		.d_tty = ptytty,
+		.d_poll = ptspoll,
+		.d_mmap = nodev,
+		.d_discard = nodev,
+		.d_flags = D_TTY
+};
 
 /*ARGSUSED*/
 int
@@ -176,6 +223,22 @@ ptsstart(tp)
 		pti->pt_send = TIOCPKT_START;
 	}
 	ptcwakeup(tp, FREAD);
+}
+
+int
+ptspoll(dev, events, p)
+	dev_t dev;
+	int events;
+	struct proc *p;
+{
+	register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
+	struct tty *tp = pti->pt_tty;
+
+	if (tp->t_oproc == NULL) {
+		return (POLLHUP);
+	}
+
+	return ((*linesw[tp->t_line].l_poll)(tp, events, p));
 }
 
 void
@@ -392,6 +455,17 @@ ptcselect(dev, rw)
 }
 
 int
+ptcpoll(dev, events, p)
+	dev_t dev;
+	int events;
+	struct proc *p;
+{
+	struct pt_ioctl *pti = pt_ioctl[minor(dev)];
+	struct tty *tp = pti->pt_tty;
+	int revents = 0;
+}
+
+int
 ptcwrite(dev, uio, flag)
 	dev_t dev;
 	register struct uio *uio;
@@ -473,6 +547,15 @@ block:
 	}
 	sleep((caddr_t)&tp->t_rawq.c_cf, TTOPRI);
 	goto again;
+}
+
+struct tty *
+ptytty(dev_t dev)
+{
+	struct pt_ioctl *pti = pt_ioctl[minor(dev)];
+	struct tty *tp = pti->pt_tty;
+
+	return tp;
 }
 
 /*ARGSUSED*/
