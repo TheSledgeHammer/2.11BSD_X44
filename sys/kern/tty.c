@@ -46,11 +46,11 @@
 int	TTYBLOCK = 128;
 int	TTYUNBLOCK = 64;
 
-#define	E		0x00	/* Even parity. */
-#define	O		0x80	/* Odd parity. */
+#define	E				0x00	/* Even parity. */
+#define	O				0x80	/* Odd parity. */
 #define	PARITY(c)		(char_type[c] & O)
 
-#define	ALPHA	0x40	/* Alpha or underscore. */
+#define	ALPHA			0x40	/* Alpha or underscore. */
 #define	ISALPHA(c)		(char_type[(c) & TTY_CHARMASK] & ALPHA)
 
 #define	CCLASSMASK		0x3f
@@ -134,6 +134,15 @@ extern	char *nextc();
 extern	int	nldisp;
 extern	int	wakeup();
 
+/* new: tty global initialization via devsw */
+void
+tty_init()
+{
+	tty_conf_init(&sys_devsw);	/* tty_conf.c */
+	ctty_init(&sys_devsw); 		/* tty_ctty.c */
+	pty_init(&sys_devsw);		/* tty_pty.c */
+}
+
 void
 ttychars(tp)
 	struct tty *tp;
@@ -205,6 +214,7 @@ ttywait(tp)
 void
 ttyflush(tp, rw)
 	register struct tty *tp;
+	int rw;
 {
 	register int s;
 

@@ -39,11 +39,11 @@
  */
 struct tty pt_tty[NPTY];
 struct pt_ioctl {
-	struct	tty *pt_tty;
-	int		pt_flags;
-	struct	proc *pt_selr, *pt_selw;
-	u_char	pt_send;
-	u_char	pt_ucntl;
+	struct	tty 	*pt_tty;
+	int				pt_flags;
+	struct	proc 	*pt_selr, *pt_selw;
+	u_char			pt_send;
+	u_char			pt_ucntl;
 } pt_ioctl[NPTY];
 int	npty = NPTY;		/* for pstat -t */
 
@@ -99,6 +99,15 @@ const struct cdevsw pts_cdevsw = {
 		.d_discard = nodev,
 		.d_flags = D_TTY
 };
+
+/* initialize pty structures */
+void
+pty_init(devsw)
+	struct devswtable *devsw;
+{
+	DEVSWIO_CONFIG_INIT(devsw, NPTY, NULL, &ptc_cdevsw, NULL);	/* ptc */
+	DEVSWIO_CONFIG_INIT(devsw, NPTY, NULL, &pts_cdevsw, NULL);	/* pts */
+}
 
 /*ARGSUSED*/
 int

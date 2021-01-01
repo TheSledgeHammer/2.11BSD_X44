@@ -28,30 +28,29 @@
  * Tablet configuration table.
  */
 struct	tbconf {
-	short	tbc_recsize;	/* input record size in bytes */
-	short	tbc_uiosize;	/* size of data record returned user */
-	int	tbc_sync;	/* mask for finding sync byte/bit */
-	int	(*tbc_decode)();/* decoding routine */
-	char	*tbc_run;	/* enter run mode sequence */
-	char	*tbc_point;	/* enter point mode sequence */
-	char	*tbc_stop;	/* stop sequence */
-	char	*tbc_start;	/* start/restart sequence */
-	int	tbc_flags;
-#define	TBF_POL	0x1	/* polhemus hack */
+	short	tbc_recsize;		/* input record size in bytes */
+	short	tbc_uiosize;		/* size of data record returned user */
+	int		tbc_sync;			/* mask for finding sync byte/bit */
+	int		(*tbc_decode)();	/* decoding routine */
+	char	*tbc_run;			/* enter run mode sequence */
+	char	*tbc_point;			/* enter point mode sequence */
+	char	*tbc_stop;			/* stop sequence */
+	char	*tbc_start;			/* start/restart sequence */
+	int		tbc_flags;
+#define	TBF_POL	0x1				/* polhemus hack */
 };
 
 static	int tbdecode(), gtcodecode(), poldecode();
 static	int tblresdecode(), tbhresdecode();
 
 struct	tbconf tbconf[TBTYPE] = {
-{ 0 },
-{ 5, sizeof (struct tbpos), 0200, tbdecode, "6", "4" },
-{ 5, sizeof (struct tbpos), 0200, tbdecode, "\1CN", "\1RT", "\2", "\4" },
-{ 8, sizeof (struct gtcopos), 0200, gtcodecode },
-{17, sizeof (struct polpos), 0200, poldecode, 0, 0, "\21", "\5\22\2\23",
- TBF_POL },
-{ 5, sizeof (struct tbpos), 0100, tblresdecode, "\1CN", "\1PT", "\2", "\4"},
-{ 6, sizeof (struct tbpos), 0200, tbhresdecode, "\1CN", "\1PT", "\2", "\4"},
+		{ 0 },
+		{ 5, sizeof (struct tbpos), 0200, tbdecode, "6", "4" },
+		{ 5, sizeof (struct tbpos), 0200, tbdecode, "\1CN", "\1RT", "\2", "\4" },
+		{ 8, sizeof (struct gtcopos), 0200, gtcodecode },
+		{17, sizeof (struct polpos), 0200, poldecode, 0, 0, "\21", "\5\22\2\23", TBF_POL },
+		{ 5, sizeof (struct tbpos), 0100, tblresdecode, "\1CN", "\1PT", "\2", "\4"},
+		{ 6, sizeof (struct tbpos), 0200, tbhresdecode, "\1CN", "\1PT", "\2", "\4"},
 };
 
 /*
@@ -145,6 +144,7 @@ tbread(tp, uio, flag)
  * This routine could be expanded in-line in the receiver
  * interrupt routine to make it run as fast as possible.
  */
+void
 tbinput(c, tp)
 	register int c;
 	register struct tty *tp;
@@ -275,6 +275,7 @@ poldecode(cp, polpos)
 }
 
 /*ARGSUSED*/
+int
 tbioctl(tp, cmd, data, flag)
 	struct tty *tp;
 	u_int cmd;

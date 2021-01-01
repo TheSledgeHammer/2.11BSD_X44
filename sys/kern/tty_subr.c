@@ -17,15 +17,6 @@
 
 char	cwaiting;
 
-void
-clfree(clp)
-	struct clist *clp;
-{
-	if (clp->c_cs) {
-		free()
-	}
-}
-
 /*
  * Character list get/put
  */

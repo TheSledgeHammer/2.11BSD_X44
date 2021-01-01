@@ -188,3 +188,11 @@ const struct cdevsw ctty_cdevsw = {
 		.d_discard = nulldev,
 		.d_flags = D_TTY
 };
+
+/* initialize ctty structures */
+void
+ctty_init(devsw)
+	struct devswtable *devsw;
+{
+	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, &ctty_cdevsw, NULL);
+}

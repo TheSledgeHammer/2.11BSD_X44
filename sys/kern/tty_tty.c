@@ -22,7 +22,8 @@ const struct cdevsw sy_cdevsw = {
 		.d_read = syread,
 		.d_write = sywrite,
 		.d_ioctl = syioctl,
-		.d_select = syselect
+		.d_select = syselect,
+		.d_poll = sypoll
 };
 
 /*ARGSUSED*/
@@ -91,4 +92,17 @@ syselect(dev, flag)
 		return (0);
 	}
 	return ((*cdevsw[major(u->u_ttyd)].d_select)(u->u_ttyd, flag, u->u_procp));
+}
+
+int
+sypoll(dev, events)
+	dev_t dev;
+	int events;
+{
+
+	if (u->u_ttyp == NULL) {
+		u->u_error = ENXIO;
+		return (0);
+	}
+	return ((*cdevsw[major(u->u_ttyd)].d_poll)(u->u_ttyd, events, u->u_procp));
 }

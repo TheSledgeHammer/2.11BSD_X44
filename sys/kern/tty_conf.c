@@ -141,12 +141,12 @@ struct linesw linesw[] =
 };
 int	nldisp = sizeof (linesw) / sizeof (linesw[0]);
 
-/* New devswio conf initialization for tty */
+/* initialize tty conf structures */
 void
 tty_conf_init(devsw)
 	struct devswtable *devsw;
 {
-	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &ottydisc);	/* 0- OTTYDISC */
+	//DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &ttydisc);	/* 0- TTYDISC */
 #if NBK > 0
 	DEVSWIO_CONFIG_INIT(devsw, NBK, NULL, NULL, &netldisc);	/* 1- NETLDISC */
 #endif
@@ -157,6 +157,8 @@ tty_conf_init(devsw)
 #if NSL > 0
 	DEVSWIO_CONFIG_INIT(devsw, NSL, NULL, NULL, &slipdisc);	/* 4- SLIPDISC */
 #endif
+	//DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &pppdisc);	/* 5- PPPDISC */
+	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &ottydisc);	/* 6- OTTYDISC */
 }
 
 /*
@@ -177,6 +179,7 @@ nullioctl(tp, cmd, data, flags)
 	return (-1);
 }
 
+/* TODO: Fix or rewrite. Still Using PDP-11 machine code */
 #if NSL > 0
 SLOPEN(dev, tp)
 	dev_t dev;
