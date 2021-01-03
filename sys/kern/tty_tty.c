@@ -23,7 +23,8 @@ const struct cdevsw sy_cdevsw = {
 		.d_write = sywrite,
 		.d_ioctl = syioctl,
 		.d_select = syselect,
-		.d_poll = sypoll
+		.d_poll = sypoll,
+		.d_type = D_TTY
 };
 
 /*ARGSUSED*/

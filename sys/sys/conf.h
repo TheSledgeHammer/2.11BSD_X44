@@ -32,7 +32,6 @@ struct bdevsw {
 	daddr_t		(*d_psize)(dev_t dev);
 	int			(*d_discard)(dev_t, off_t, off_t);
 	int			d_type;
-	int			d_flags;
 };
 
 #ifdef KERNEL
@@ -57,7 +56,6 @@ struct cdevsw {
 	int			(*d_strategy)(struct buf *bp);
 	int			(*d_discard)(dev_t, off_t, off_t);
 	int			d_type;
-	int			d_flags;
 };
 #ifdef KERNEL
 extern struct cdevsw cdevsw[];

@@ -127,17 +127,53 @@ struct vnd_softc *vnd_softc;
 int numvnd = 0;
 
 /* called by main() at boot time */
-void	vndattach __P((int));
+void	vndattach (int);
 
-void	vndclear __P((struct vnd_softc *));
-void	vndstart __P((struct vnd_softc *));
-int		vndsetcred __P((struct vnd_softc *, struct ucred *));
-void	vndthrottle __P((struct vnd_softc *, struct vnode *));
-void	vndiodone __P((struct buf *));
-void	vndshutdown __P((void));
+void	vndclear (struct vnd_softc *);
+void	vndstart (struct vnd_softc *);
+int		vndsetcred (struct vnd_softc *, struct ucred *);
+void	vndthrottle (struct vnd_softc *, struct vnode *);
+void	vndiodone (struct buf *);
+void	vndshutdown (void);
 
-static	int vndlock __P((struct vnd_softc *));
-static	void vndunlock __P((struct vnd_softc *));
+static	int vndlock (struct vnd_softc *);
+static	void vndunlock (struct vnd_softc *);
+
+static dev_type_open(vndopen);
+static dev_type_close(vndclose);
+static dev_type_read(vndread);
+static dev_type_write(vndwrite);
+static dev_type_ioctl(vndioctl);
+static dev_type_strategy(vndstrategy);
+static dev_type_dump(vnddump);
+static dev_type_size(vndsize);
+
+const struct bdevsw vnd_bdevsw = {
+		.d_open = vndopen,
+		.d_close = vndclose,
+		.d_strategy = vndstrategy,
+		.d_ioctl = vndioctl,
+		.d_dump = vnddump,
+		.d_psize = vndsize,
+		.d_discard = nodiscard,
+		.d_type = D_DISK
+};
+
+const struct cdevsw vnd_cdevsw = {
+		.d_open = vndopen,
+		.d_close = vndclose,
+		.d_read = vndread,
+		.d_write = vndwrite,
+		.d_ioctl = vndioctl,
+		.d_stop = nostop,
+		.d_tty = notty,
+		.d_select = noselect,
+		.d_poll = nopoll,
+		.d_mmap = nommap,
+		.d_strategy = nostrategy,
+		.d_discard = nodiscard,
+		.d_type = D_DISK
+};
 
 void
 vndattach(num)

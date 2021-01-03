@@ -67,9 +67,14 @@ const struct cdevsw cons_cdevsw = {
 		.d_close = cnclose,
 		.d_read = cnread,
 		.d_write = cnwrite,
-		.d_stop = cnstop,
 		.d_ioctl = cnioctl,
+		.d_stop = cnstop,
+		.d_tty = notty,
+		.d_select = noselect,
 		.d_poll = cnpoll,
+		.d_mmap = nommap,
+		.d_strategy = nostrategy,
+		.d_discard = nodiscard,
 		.d_type = D_TTY
 };
 

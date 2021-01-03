@@ -7,6 +7,7 @@
 #ifndef _I386_SPKR_H_
 #define _I386_SPKR_H_
 
+#include <sys/ioccom.h>
 #include <sys/ioctl.h>
 
 #define SPKRTONE        _IOW('S', 1, tone_t)    /* emit tone */

@@ -64,6 +64,7 @@
 
 #include <dev/ccdvar.h>
 
+
 #ifdef DEBUG
 int cddebug = 0x00;
 #define CDB_FOLLOW	0x01
@@ -99,6 +100,33 @@ struct cd_softc {
 
 struct cd_softc *cd_softc;
 int numcd;
+
+const struct bdevsw ccd_bdevsw = {
+	.d_open = cdopen,
+	.d_close = cdclose,
+	.d_strategy = cdstrategy,
+	.d_ioctl = cdioctl,
+	.d_dump = nodump,
+	.d_psize = cdsize,
+	.d_discard = nodiscard,
+	.d_type = D_DISK
+};
+
+const struct cdevsw ccd_cdevsw = {
+	.d_open = cdopen,
+	.d_close = cdclose,
+	.d_read = cdread,
+	.d_write = cdwrite,
+	.d_ioctl = cdioctl,
+	.d_stop = nostop,
+	.d_tty = notty,
+	.d_select = noselect,
+	.d_poll = nopoll,
+	.d_mmap = nommap,
+	.d_strategy = nostrategy,
+	.d_discard = nodiscard,
+	.d_type = D_DISK
+};
 
 /*
  * Since this is called after auto-configuration of devices,

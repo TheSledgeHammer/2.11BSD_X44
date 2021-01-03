@@ -40,17 +40,17 @@
 /*
  * Protections are chosen from these bits, or-ed together
  */
-#define	PROT_READ	0x01	/* pages can be read */
-#define	PROT_WRITE	0x02	/* pages can be written */
-#define	PROT_EXEC	0x04	/* pages can be executed */
+#define	PROT_READ			0x01	/* pages can be read */
+#define	PROT_WRITE			0x02	/* pages can be written */
+#define	PROT_EXEC			0x04	/* pages can be executed */
 
 /*
  * Flags contain sharing type and options.
  * Sharing types; choose one.
  */
-#define	MAP_SHARED	0x0001	/* share changes */
-#define	MAP_PRIVATE	0x0002	/* changes are private */
-#define	MAP_COPY	0x0004	/* "copy" region at mmap time */
+#define	MAP_SHARED			0x0001	/* share changes */
+#define	MAP_PRIVATE			0x0002	/* changes are private */
+#define	MAP_COPY			0x0004	/* "copy" region at mmap time */
 
 /*
  * Other flags
@@ -65,17 +65,17 @@
 /*
  * Mapping type; default is map from file.
  */
-#define MAP_FILE	0x0000	/* for backward source compatibility */
-#define	MAP_ANON	0x1000	/* allocated from memory, swap space */
+#define MAP_FILE			0x0000	/* for backward source compatibility */
+#define	MAP_ANON			0x1000	/* allocated from memory, swap space */
 
 /*
  * Advice to madvise
  */
-#define	MADV_NORMAL		0	/* no further special treatment */
-#define	MADV_RANDOM		1	/* expect random page references */
-#define	MADV_SEQUENTIAL	2	/* expect sequential page references */
-#define	MADV_WILLNEED	3	/* will need these pages */
-#define	MADV_DONTNEED	4	/* dont need these pages */
+#define	MADV_NORMAL			0		/* no further special treatment */
+#define	MADV_RANDOM			1		/* expect random page references */
+#define	MADV_SEQUENTIAL		2		/* expect sequential page references */
+#define	MADV_WILLNEED		3		/* will need these pages */
+#define	MADV_DONTNEED		4		/* dont need these pages */
 
 #ifndef KERNEL
 

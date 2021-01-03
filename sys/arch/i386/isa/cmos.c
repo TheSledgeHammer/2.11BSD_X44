@@ -90,7 +90,6 @@
 #define	CMOS_SIZE		NVRAM_BIOSSPEC
 
 dev_type_open(cmos_open);
-dev_type_close(cmos_close);
 dev_type_read(cmos_read);
 dev_type_write(cmos_write);
 
@@ -100,9 +99,17 @@ static int	cmos_check(void);
 
 const struct cdevsw cmos_cdevsw = {
 		.d_open = 	cmos_open,
-		.d_close = 	cmos_close,
+		.d_close = 	noclose,
 		.d_read = 	cmos_read,
 		.d_write = 	cmos_write,
+		.d_ioctl = noioctl,
+		.d_stop = nostop,
+		.d_tty = notty,
+		.d_select = noselect,
+		.d_poll = nopoll,
+		.d_mmap = nommap,
+		.d_strategy = nostrategy,
+		.d_discard = nodiscard,
 		.d_type = 	D_OTHER
 };
 
@@ -140,12 +147,6 @@ cmos_open(dev_t dev, int flags, int ifmt, struct proc *p)
 	}
 
 	simple_unlock(&cmos_lock);
-	return (0);
-}
-
-int
-cmos_close(dev_t dev, int flags, int ifmt, struct proc *p)
-{
 	return (0);
 }
 

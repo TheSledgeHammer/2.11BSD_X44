@@ -198,13 +198,17 @@ extern	struct ttychars ttydefaults;
 /* Symbolic sleep message strings. */
 extern	 char ttyin[], ttyout[], ttopen[], ttclos[], ttybg[], ttybuf[];
 
+void tty_init(struct devswtable *);			/* tty.c */
+void ctty_init(struct devswtable *);		/* tty_ctty.c */
+void tty_conf_init(struct devswtable *);	/* tty_conf.c */
+
 void cblock_alloc_cblocks (int);
 void cblock_free_cblocks (int);
 int	 b_to_q (char *cp, int cc, struct clist *q);
 void catq (struct clist *from, struct clist *to);
 /* void	 clist_init (void); */ /* defined in systm.h for main() */
 int	 getc (struct clist *q);
-void  ndflush (struct clist *q, int cc);
+void ndflush (struct clist *q, int cc);
 int	 ndqb (struct clist *q, int flag);
 char *nextc (struct clist *q, char *cp, int *c);
 int	 putc (int c, struct clist *q);
@@ -235,10 +239,8 @@ int	 ttyoutput (int c, struct tty *tp));
 void ttypend (struct tty *tp));
 void ttyretype (struct tty *tp));
 void ttyrub (int c, struct tty *tp));
-int	 ttysleep (struct tty *tp,
-	    void *chan, int pri, char *wmesg, int timeout);
+int	 ttysleep (struct tty *tp, void *chan, int pri, char *wmesg, int timeout);
 int	 ttywait (struct tty *tp);
 int	 ttywflush (struct tty *tp);
 #endif
-
 #endif

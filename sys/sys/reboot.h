@@ -87,13 +87,13 @@
 #define	B_MAGICMASK			((u_long)0xf0000000)
 #define	B_DEVMAGIC			((u_long)0xa0000000)
 
-#define	MAKEBOOTDEV(type, slice, unit, partition) \
-	(((type) << B_TYPESHIFT) | ((slice) << B_SLICESHIFT) | \
-	((unit) << B_UNITSHIFT) | ((partition) << B_PARTITIONSHIFT) | \
+#define	MAKEBOOTDEV(type, slice, unit, partition) 					\
+	(((type) << B_TYPESHIFT) | ((slice) << B_SLICESHIFT) | 			\
+	((unit) << B_UNITSHIFT) | ((partition) << B_PARTITIONSHIFT) | 	\
 	B_DEVMAGIC)
 
-#define MAKEBOOTDEV(type, adaptor, controller, unit, partition) \
-	(((type) << B_TYPESHIFT) | ((adaptor) << B_ADAPTORSHIFT) | \
+#define MAKEBOOTDEV(type, adaptor, controller, unit, partition) 	\
+	(((type) << B_TYPESHIFT) | ((adaptor) << B_ADAPTORSHIFT) | 		\
 	((controller) << B_CONTROLLERSHIFT) | ((unit) << B_UNITSHIFT) | \
 	((partition) << B_PARTITIONSHIFT) | B_DEVMAGIC)
 

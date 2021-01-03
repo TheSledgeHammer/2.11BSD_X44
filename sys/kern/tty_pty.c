@@ -83,7 +83,7 @@ const struct cdevsw ptc_cdevsw = {
 		.d_poll = ptcpoll,
 		.d_mmap = nodev,
 		.d_discard = nodev,
-		.d_flags = D_TTY
+		.d_type = D_TTY
 };
 
 const struct cdevsw pts_cdevsw = {
@@ -97,7 +97,7 @@ const struct cdevsw pts_cdevsw = {
 		.d_poll = ptspoll,
 		.d_mmap = nodev,
 		.d_discard = nodev,
-		.d_flags = D_TTY
+		.d_type = D_TTY
 };
 
 /* initialize pty structures */

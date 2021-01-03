@@ -157,10 +157,10 @@ mc146818_write(sc, reg, datum)
  */
 #define	ISA_TIMER_MSB_TABLE_SIZE	128
 
-u_long	isa_timer_tick;		/* the number of microseconds in a tick */
-u_short	isa_timer_count;	/* the countdown count for the timer */
+u_long	isa_timer_tick;									/* the number of microseconds in a tick */
+u_short	isa_timer_count;								/* the countdown count for the timer */
 u_short	isa_timer_msb_table[ISA_TIMER_MSB_TABLE_SIZE];	/* timer->usec MSB */
-u_short	isa_timer_lsb_table[256];	/* timer->usec conversion for LSB */
+u_short	isa_timer_lsb_table[256];						/* timer->usec conversion for LSB */
 
 void
 startrtclock()
@@ -261,6 +261,9 @@ clockintr(arg)
 	void *arg;
 {
 	struct clockframe *frame = arg;		/* not strictly necessary */
+	if (timecounter->tc_get_timecount == i8254_get_timecount) {
+
+	}
 
 	hardclock(frame);
 	return -1;
@@ -657,5 +660,12 @@ void
 setstatclockrate(arg)
 	int arg;
 {
-
+	if (initclock_func == i8254_initclocks) {
+		if (arg == stathz)
+			mc146818_write(NULL, MC_REGA,
+			MC_BASE_32_KHz | MC_RATE_128_Hz);
+		else
+			mc146818_write(NULL, MC_REGA,
+			MC_BASE_32_KHz | MC_RATE_1024_Hz);
+	}
 }

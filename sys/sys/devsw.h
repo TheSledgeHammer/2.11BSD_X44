@@ -195,5 +195,43 @@ dev_type_rint(line_rint);
 dev_type_start(line_start);
 dev_type_modem(line_modem);
 dev_type_poll(line_poll);
+
+/* no dev routines */
+#define	noopen				(enodev)
+#define	noclose				(enodev)
+#define	noread				(enodev)
+#define	nowrite				(enodev)
+#define	noioctl				(enodev)
+#define	nostart				(enodev)
+#define	nostop				(enodev)
+#define	notty				(enodev)
+#define	noselect			(enodev)
+#define	nopoll				(enodev)
+#define	nommap				(enodev)
+#define	nostrategy			(enodev)
+#define	nomodem				(enodev)
+#define	norint				(enodev)
+#define	nodiscard			(enodev)
+#define	nodump				(enodev)
+#define	nosize				(enodev)
+
+/* null dev routines */
+#define	nullopen			(nullop)
+#define	nullclose			(nullop)
+#define	nullread			(nullop)
+#define	nullwrite			(nullop)
+#define	nullioctl			(nullop)
+#define	nullstart			(nullop)
+#define	nullstop			(nullop)
+#define	nulltty				(nullop)
+#define	nullselect			(nullop)
+#define	nullpoll			(nullop)
+#define	nullmmap			(nullop)
+#define	nullstrategy		(nullop)
+#define	nullmodem			(nullop)
+#define	nullrint			(nullop)
+#define	nulldiscard			(nullop)
+#define	nulldump			(nullop)
+#define	nullsize			(nullop)
 #endif /* _KERNEL */
 #endif /* _SYS_DEVSW_H_ */

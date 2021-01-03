@@ -24,11 +24,13 @@
 #include "conf.h"
 
 #ifndef PTY_NUNITS
-#define PTY_NUNITS 4            /* 4 units by default */
+#define PTY_NUNITS 4            			/* 4 units by default */
 #endif
 
 extern struct tty pt_tty[];
 extern int npty;
+
+extern void pty_init(struct devswtable *);	/* tty_pty.c */
 
 extern int ptsopen(dev_t dev, int flag, int mode);
 extern int ptsclose(dev_t dev, int flag, int mode);
