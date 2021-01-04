@@ -88,10 +88,9 @@
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
 
-#include <dev/isa/isavar.h>
-
-#include <dev/isapnp/isapnpreg.h>
-#include <dev/isapnp/isapnpvar.h>
+#include <dev/core/isa/isavar.h>
+#include <dev/core/isapnp/isapnpreg.h>
+#include <dev/core/isapnp/isapnpvar.h>
 
 /* isapnp_map():
  *	Map I/O regions used by PnP

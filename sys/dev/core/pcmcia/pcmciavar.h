@@ -35,7 +35,7 @@
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
 
-#include <dev/pcmcia/pcmciachip.h>
+#include <core/pcmcia/pcmciachip.h>
 
 /*
  * Contains information about mapped/allocated i/o spaces.

@@ -99,13 +99,12 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <machine/pio.h>
 #include <machine/cpufunc.h>
 
-#include <dev/isa/isareg.h>
-#include <dev/isa/isavar.h>
-#include <dev/isa/rtc.h>
-#include <dev/ic/mc146818reg.h>
-
 #include <i386/isa/timerreg.h>
 #include <i386/isa/spkrreg.h>
+#include <dev/core/ic/mc146818reg.h>
+#include <dev/core/isa/isareg.h>
+#include <dev/core/isa/isavar.h>
+#include <dev/core/isa/rtc.h>
 
 void		spinwait (int);
 void		findcpuspeed (void);

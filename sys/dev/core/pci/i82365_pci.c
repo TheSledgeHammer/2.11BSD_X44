@@ -35,13 +35,11 @@
 #include <sys/device.h>
 #include <sys/user.h>
 
-#include <dev/ic/i82365reg.h>
-#include <dev/ic/i82365var.h>
-
-#include <dev/pci/pcivar.h>
-#include <dev/pci/pcireg.h>
-#include <dev/pci/pcidevs.h>
-
+#include <core/ic/i82365reg.h>
+#include <core/ic/i82365var.h>
+#include <core/pci/pcidevs.h>
+#include <core/pci/pcireg.h>
+#include <core/pci/pcivar.h>
 /*
  * PCI constants.
  * XXX These should be in a common file!
@@ -199,8 +197,8 @@ pcic_pci_attach(parent, self, aux)
  * XXX which themselves map to somthing else.
  */
 
-#include <dev/isa/isareg.h>
-#include <dev/isa/isavar.h>
+#include "../core/isa/isareg.h"
+#include "../core/isa/isavar.h"
 
 void *
 pcic_pci_chip_intr_establish(pch, pf, ipl, fct, arg)

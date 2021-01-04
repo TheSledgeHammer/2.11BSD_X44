@@ -46,9 +46,9 @@
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
 
-#include <dev/eisa/eisareg.h>
-#include <dev/eisa/eisavar.h>
-#include <dev/eisa/eisadevs.h>
+#include <core/eisa/eisadevs.h>
+#include <core/eisa/eisareg.h>
+#include <core/eisa/eisavar.h>
 
 #ifdef __BROKEN_INDIRECT_CONFIG
 int		eisamatch (struct device *, void *, void *);

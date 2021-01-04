@@ -1,6 +1,7 @@
 /*	$NetBSD: ext2fs_htree.h,v 1.1 2016/06/24 17:21:30 christos Exp $	*/
 
-/*-
+/*
+ * Copyright (c) 2020 Martin Kelly
  * Copyright (c) 2010, 2012 Zheng Liu <lz@freebsd.org>
  * Copyright (c) 2012, Vyacheslav Matyushin
  * All rights reserved.
@@ -30,25 +31,24 @@
  */
 
 /*
- * Copyright (c) 2020 Martin Kelly
  * HTBC (aka HTree Blockchain):
  * Design & Goals:
  * The HTree Blockchain is forked from BSD's ext2fs htree and extent implementation.
  * Provide a VFS layer blockchain that can augment/improve existing filesystem/s;
  * HTBC can be easily defined as having two layers, similar to NetBSD's WAPBL or Linux's JBD for EXT3/4.
- * A VFS layer and a filesystem layer.
+ * The VFS layer and the FS layer.
  *
  * VFS Layer: (To Be Implemented)
  * HTBC Log Component:
- *	- Provide the facilities for a log-based filesystem.
+ *	- Provide the facilities for log-based filesystems.
  *
  *	HTBC Journal Component:
- *	- Provide the facilities for a journal-based filesystem.
+ *	- Provide the facilities for journal-based filesystems.
  *
  * LFS: HTBC-Based Log: (To Be Implemented)
  * Provide
  * - Caching
- * - Defrag
+ * - Defragment
  * - Checksums
  *
  * UFS/FFS: HTBC-Based Journal: (To Be Implemented)

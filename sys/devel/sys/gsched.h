@@ -50,7 +50,7 @@
  * - CFS:
  * 		- Executes within schedcpu in kernel_synch.c
  * 		- Runs on multiple run-queues
- * 		- Only executes a process that pass the schedulability test
+ * 		- Only executes a process that passes the schedulability test
  * 		- Uses the information provided by EDF to determine:
  * 			- CPU Decay
  * 			- Run-time per process

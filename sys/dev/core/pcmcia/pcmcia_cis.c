@@ -38,9 +38,9 @@
 #include <sys/malloc.h>
 #include <sys/user.h>
 
-#include <dev/pcmcia/pcmciareg.h>
-#include <dev/pcmcia/pcmciachip.h>
-#include <dev/pcmcia/pcmciavar.h>
+#include <core/pcmcia/pcmciareg.h>
+#include <core/pcmcia/pcmciachip.h>
+#include <core/pcmcia/pcmciavar.h>
 
 #ifdef PCMCIACISDEBUG
 int	pcmciacis_debug = 0;

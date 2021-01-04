@@ -39,9 +39,9 @@
 
 #include <machine/intr.h>
 
-#include <dev/isa/isadmareg.h>
-#include <dev/isa/isareg.h>
-#include <dev/isa/isavar.h>
+#include <core/isa/isadmareg.h>
+#include <core/isa/isareg.h>
+#include <core/isa/isavar.h>
 
 #ifdef __BROKEN_INDIRECT_CONFIG
 int 	isamatch (struct device *, void *, void *);
@@ -97,7 +97,7 @@ isaattach(parent, self, aux)
 	struct device *parent, *self;
 	void *aux;
 {
-	struct isa_softc *sc = (struct isa_softc *)self;
+	struct is_softc *sc = (struct isa_softc *)self;
 	struct isabus_attach_args *iba = aux;
 
 	isa_attach_hook(parent, self, iba);

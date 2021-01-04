@@ -45,7 +45,7 @@
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
 
-#include <dev/eisa/eisareg.h>		/* For ID register & string info. */
+#include <core/eisa/eisareg.h>		/* For ID register & string info. */
 
 /* 
  * Structures and definitions needed by the machine-dependent header.

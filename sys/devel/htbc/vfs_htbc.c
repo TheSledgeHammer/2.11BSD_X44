@@ -730,19 +730,19 @@ htbc_ext_find_extent(struct htbc_hi_mfs *fs, struct htbc_inode *ip, daddr_t lbn,
  * Rotation is separated from addition to prevent recomputation.
  */
 
-#define FF(a, b, c, d, x, s) { \
-	(a) += F ((b), (c), (d)) + (x); \
-	(a) = ROTATE_LEFT ((a), (s)); \
+#define FF(a, b, c, d, x, s) { 								\
+	(a) += F ((b), (c), (d)) + (x); 						\
+	(a) = ROTATE_LEFT ((a), (s)); 							\
 }
 
-#define GG(a, b, c, d, x, s) { \
-	(a) += G ((b), (c), (d)) + (x) + (uint32_t)0x5A827999; \
-	(a) = ROTATE_LEFT ((a), (s)); \
+#define GG(a, b, c, d, x, s) { 								\
+	(a) += G ((b), (c), (d)) + (x) + (uint32_t)0x5A827999; 	\
+	(a) = ROTATE_LEFT ((a), (s)); 							\
 }
 
-#define HH(a, b, c, d, x, s) { \
-	(a) += H ((b), (c), (d)) + (x) + (uint32_t)0x6ED9EBA1; \
-	(a) = ROTATE_LEFT ((a), (s)); \
+#define HH(a, b, c, d, x, s) { 								\
+	(a) += H ((b), (c), (d)) + (x) + (uint32_t)0x6ED9EBA1; 	\
+	(a) = ROTATE_LEFT ((a), (s)); 							\
 }
 
 static void
@@ -1609,14 +1609,14 @@ htree_find_leaf(struct htbc_inode *ip, const char *name, int namelen, uint32_t *
 	uint8_t hash_version;
 
 	if (name == NULL || info == NULL)
-		return -1;
+		return (-1);
 
 	vp = HTITOV(ip);
 	fs = &(ip->hi_mfs->hi_fs);
 	m_fs = ip->hi_mfs;
 
 	if (htbc_blkatoff(vp, 0, NULL, &bp) != 0)
-		return -1;
+		return (-1);
 
 	info->h_levels_num = 1;
 	info->h_levels[0].h_bp = bp;
@@ -1666,7 +1666,7 @@ htree_find_leaf(struct htbc_inode *ip, const char *name, int namelen, uint32_t *
 		level_info->h_entries = entp;
 		level_info->h_entry = found;
 		if (levels == 0)
-			return 0;
+			return (0);
 		levels--;
 		if (htbc_blkatoff(vp,
 		    htree_get_block(found) * m_fs->hi_bsize,
@@ -1679,7 +1679,7 @@ htree_find_leaf(struct htbc_inode *ip, const char *name, int namelen, uint32_t *
 
 error:
 	htree_release(info);
-	return -1;
+	return (-1);
 }
 
 /*
@@ -1708,7 +1708,7 @@ htree_lookup(struct htbc_inode *ip, const char *name, int namelen, struct buf **
 	memset(&info, 0, sizeof(info));
 	if (htree_find_leaf(ip, name, namelen, &dirhash,
 	    &hash_version, &info)) {
-		return -1;
+		return (-1);
 	}
 
 	do {
@@ -1716,7 +1716,7 @@ htree_lookup(struct htbc_inode *ip, const char *name, int namelen, struct buf **
 		blk = htree_get_block(leaf_node);
 		if (htbc_blkatoff(vp, blk * bsize, NULL, &bp) != 0) {
 			htree_release(&info);
-			return -1;
+			return (-1);
 		}
 
 		*offp = blk * bsize;
@@ -1735,13 +1735,13 @@ htree_lookup(struct htbc_inode *ip, const char *name, int namelen, struct buf **
 		    endusefulp, ss) != 0) {
 			brelse(bp, 0);
 			htree_release(&info);
-			return -1;
+			return (-1);
 		}
 
 		if (found) {
 			*bpp = bp;
 			htree_release(&info);
-			return 0;
+			return (0);
 		}
 
 		brelse(bp, 0);
@@ -1749,5 +1749,5 @@ htree_lookup(struct htbc_inode *ip, const char *name, int namelen, struct buf **
 	} while (search_next);
 
 	htree_release(&info);
-	return ENOENT;
+	return (ENOENT);
 }

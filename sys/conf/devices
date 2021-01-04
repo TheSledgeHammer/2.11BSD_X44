@@ -5,6 +5,7 @@
 # These should be defined here, because some of these busses can have
 # devices which provide these attributes, and we'd like to avoid hairy
 # ordering constraints on inclusion of the busses' "files" files.
+
 define										isabus {}				# ISA attachment
 define										eisabus {}				# EISA attachment
 define										pcibus {[bus = -1]}		# PCI attachment
@@ -16,7 +17,7 @@ define	 									tape
 define	 									ifnet
 define	 									tty
 define	 									audio { }
-define	 									scsi {[channel = -1]}
+#define	 									scsi {[channel = -1]}
 #define	 									atapi { }
 #define  									miibus { }
 

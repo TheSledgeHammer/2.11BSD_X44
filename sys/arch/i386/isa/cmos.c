@@ -76,10 +76,10 @@
 #include <sys/bus.h>
 #include <machine/intr.h>
 
-#include <dev/isa/isareg.h>
-#include <dev/isa/isavar.h>
-#include <dev/ic/mc146818reg.h>
-#include <dev/isa/rtc.h>
+#include <dev/core/ic/mc146818reg.h>
+#include <dev/core/isa/isareg.h>
+#include <dev/core/isa/isavar.h>
+#include <dev/core/isa/rtc.h>
 
 #define	CMOS_SUM		32
 #define	CMOS_BIOSSPEC	34	/* start of BIOS-specific configuration data */

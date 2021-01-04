@@ -60,6 +60,8 @@
  * Kernel loader for ELF objects.
  */
 
+
+
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
@@ -69,10 +71,10 @@
 #include <sys/user.h>
 #include <sys/exec_elf.h>
 #include <sys/ksyms.h>
-#include <kobj.h>
-#include <kobj_impl.h>
-
 #include <vm/include/vm_extern.h>
+
+#include <kobj/kobj.h>
+#include <kobj/kobj_impl.h>
 
 #define kobj_error(_kobj, ...) kobj_out(__func__, __LINE__, _kobj, __VA_ARGS__)
 

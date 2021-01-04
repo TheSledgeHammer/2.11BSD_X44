@@ -40,8 +40,8 @@
 #include <sys/device.h>
 #include <sys/user.h>
 
-#include <dev/pci/pcireg.h>
-#include <dev/pci/pcivar.h>
+#include <core/pci/pcireg.h>
+#include <core/pci/pcivar.h>
 
 #ifdef __BROKEN_INDIRECT_CONFIG
 int pcimatch (struct device *, void *, void *);
@@ -86,22 +86,11 @@ static void	(*pci_isa_bridge_callback) (void *);
 static void	*pci_isa_bridge_callback_arg;
 
 int
-#ifdef __BROKEN_INDIRECT_CONFIG
-pcimatch(parent, match, aux)
-#else
 pcimatch(parent, cf, aux)
-#endif
 	struct device *parent;
-#ifdef __BROKEN_INDIRECT_CONFIG
-	void *match;
-#else
 	struct cfdata *cf;
-#endif
 	void *aux;
 {
-#ifdef __BROKEN_INDIRECT_CONFIG
-	struct cfdata *cf = match;
-#endif
 	struct pcibus_attach_args *pba = aux;
 
 	if (strcmp(pba->pba_busname, cf->cf_driver->cd_name))

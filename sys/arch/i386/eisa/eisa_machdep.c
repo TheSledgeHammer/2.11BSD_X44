@@ -84,9 +84,9 @@
 #include <machine/bus_space.h>
 
 #include <i386/isa/icu.h>
-#include <dev/isa/isareg.h>
-#include <dev/isa/isavar.h>
-#include <dev/eisa/eisavar.h>
+#include <dev/core/isa/isareg.h>
+#include <dev/core/isa/isavar.h>
+#include <dev/core/eisa/eisavar.h>
 
 /*
  * EISA doesn't have any special needs; just use the generic versions

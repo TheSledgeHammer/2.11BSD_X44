@@ -1,7 +1,6 @@
 /*	$NetBSD: pcmcia.c,v 1.3 1997/10/19 14:04:29 enami Exp $	*/
 
 #define	PCMCIADEBUG
-
 /*
  * Copyright (c) 1997 Marc Horowitz.  All rights reserved.
  *
@@ -41,9 +40,9 @@
 /* XXX only needed for intr debugging */
 #include <vm/include/vm.h>
 
-#include <dev/pcmcia/pcmciareg.h>
-#include <dev/pcmcia/pcmciachip.h>
-#include <dev/pcmcia/pcmciavar.h>
+#include <core/pcmcia/pcmciareg.h>
+#include <core/pcmcia/pcmciachip.h>
+#include <core/pcmcia/pcmciavar.h>
 
 #include "locators.h"
 

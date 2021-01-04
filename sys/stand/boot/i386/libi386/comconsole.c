@@ -26,8 +26,8 @@
 #include <sys/cdefs.h>
 
 #include <machine/cpufunc.h>
-#include <i386/isa/ic/ns16550.h>
-#include <dev/pci/pcireg.h>
+#include <dev/core/ic/ns16550reg.h>
+#include <dev/core/pci/pcireg.h>
 
 #include <boot/bootstand.h>
 #include "bootstrap.h"

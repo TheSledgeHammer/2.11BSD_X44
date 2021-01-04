@@ -38,15 +38,15 @@
 #define BSCHEDULE     	(BTL / BMG)            				/* base scheduling period */
 
 /* Error Checking */
-#define EBSCHEDULE(p)   ((p)->cfs_tasks > (p)->cfs_bsched)   /* new scheduling period if number tasks exceeds base scheduling period (BTL/BMG) */
+#define EBSCHEDULE(p)   ((p)->cfs_tasks > (p)->cfs_bsched)  /* new scheduling period if number tasks exceeds base scheduling period (BTL/BMG) */
 
 struct gsched_cfs_rbtree;
 RB_HEAD(gsched_cfs_rbtree, gsched_cfs);
 struct gsched_cfs {
 	struct gsched 				*cfs_gsched;				/* pointer to global scheduler */
 
-	struct gsched_cfs_rbtree	cfs_parent;
-    RB_ENTRY(gsched_cfs) 		cfs_entry;
+	struct gsched_cfs_rbtree	cfs_parent;					/* rbtree cfs parent/root */
+    RB_ENTRY(gsched_cfs) 		cfs_entry;					/* rbtree cfs entries */
 
 	struct proc 				*cfs_rqlink;				/* pointer to linked list of running processes */
 	struct proc 				*cfs_proc;
@@ -83,6 +83,7 @@ extern struct sched_cfs cfs_runq[CFQS];  					/* cfs run-queues */
 #endif /* _SYS_GSCHED_CFS_H */
 
 /*
+
 left side = tasks with the gravest need for the processor (lowest virtual runtime) are stored toward the left side of the tree
 right side = tasks with the least need of the processor (highest virtual runtimes) are stored toward the right side of the tree
 

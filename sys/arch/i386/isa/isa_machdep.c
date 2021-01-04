@@ -94,8 +94,8 @@
 #include <machine/cpufunc.h>
 #include <machine/segments.h>
 
-#include <dev/isa/isareg.h>
-#include <dev/isa/isavar.h>
+#include <dev/core/isa/isareg.h>
+#include <dev/core/isa/isavar.h>
 #include <i386/isa/isa_machdep.h>
 #include <i386/isa/icu.h>
 

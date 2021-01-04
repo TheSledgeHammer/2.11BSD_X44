@@ -37,8 +37,8 @@
 #include <sys/systm.h>
 #include <sys/device.h>
 
-#include <dev/pci/pcireg.h>
-#include <dev/pci/pcivar.h>
+#include <core/pci/pcireg.h>
+#include <core/pci/pcivar.h>
 
 static int pci_io_find (pci_chipset_tag_t, pcitag_t, int, pcireg_t, bus_addr_t *, bus_size_t *, int *);
 static int pci_mem_find (pci_chipset_tag_t, pcitag_t, int, pcireg_t, bus_addr_t *, bus_size_t *, int *);

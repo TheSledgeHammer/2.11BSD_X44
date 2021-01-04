@@ -44,11 +44,11 @@
 #include <machine/bus_space.h>
 #include <machine/intr.h>
 
-#include <dev/pcmcia/pcmciareg.h>
-#include <dev/pcmcia/pcmciavar.h>
+#include <core/pcmcia/pcmciareg.h>
+#include <core/pcmcia/pcmciavar.h>
 
-#include <dev/ic/i82365reg.h>
-#include <dev/ic/i82365var.h>
+#include <core/ic/i82365reg.h>
+#include <core/ic/i82365var.h>
 
 #include "locators.h"
 

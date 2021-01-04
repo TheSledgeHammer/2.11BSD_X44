@@ -66,7 +66,7 @@
 #define	MAXMODNAME	32 		/* Unused: modules not implemented */
 
 #include <sys/systm.h>
-#include <dev/kobj.h>
+#include <kobj/kobj.h>
 #include <sys/exec.h>
 #include <sys/exec_elf.h>
 

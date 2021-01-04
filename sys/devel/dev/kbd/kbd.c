@@ -27,8 +27,6 @@
  */
 #include <sys/cdefs.h>
 
-
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
@@ -433,6 +431,10 @@ const struct cdevsw kbd_cdevsw = {
 		.d_ioctl =	genkbdioctl,
 		.d_poll =	genkbdpoll,
 		.d_type = 	D_NEEDGIANT
+};
+
+struct cfdriver kbd_cd = {
+	NULL, "kbd", kbd_attach
 };
 
 int

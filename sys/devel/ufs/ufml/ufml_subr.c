@@ -118,7 +118,7 @@ loop:
 		}
 	}
 
-	return NULL;
+	return (NULL);
 }
 
 
@@ -157,12 +157,12 @@ ufml_node_alloc(mp, lowervp, vpp)
 		vp->v_type = VBAD;	/* node is discarded */
 		vp->v_usecount = 0;	/* XXX */
 		*vpp = othervp;
-		return 0;
+		return (0);
 	};
 	VREF(lowervp);   /* Extra VREF will be vrele'd in null_node_create */
 	hd = UFML_NHASH(lowervp);
 	LIST_INSERT_HEAD(hd, xp, ufml_hash);
-	return 0;
+	return (0);
 }
 
 /*
@@ -273,6 +273,6 @@ ufml_checkvp(vp, fil, lno)
 		a->ufml_lowervp, a->ufml_lowervp->v_usecount,
 		fil, lno);
 #endif
-	return a->ufml_lowervp;
+	return (a->ufml_lowervp);
 }
 #endif

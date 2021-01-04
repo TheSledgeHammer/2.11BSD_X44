@@ -41,14 +41,13 @@
 
 #include <vm/include/vm_extern.h>
 
-#include <dev/isa/isareg.h>
-
 #include <sys/bus.h>
 #include <arch/i386/include/pio.h>
 #include <arch/i386/isa/isa_machdep.h>
 
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
+#include <dev/core/isa/isareg.h>
 
 static struct bus_space_tag i386_io = { .bst_type = I386_BUS_SPACE_IO };
 static struct bus_space_tag i386_mem = { .bst_type = I386_BUS_SPACE_MEM };

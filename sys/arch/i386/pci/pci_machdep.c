@@ -96,10 +96,10 @@
 #include <machine/pio.h>
 
 #include <i386/isa/icu.h>
-#include <dev/isa/isavar.h>
-#include <dev/pci/pcivar.h>
-#include <dev/pci/pcireg.h>
-#include <dev/pci/pcidevs.h>
+#include <dev/core/isa/isavar.h>
+#include <dev/core/pci/pcivar.h>
+#include <dev/core/pci/pcireg.h>
+#include <dev/core/pci/pcidevs.h>
 
 int pci_mode = -1;
 

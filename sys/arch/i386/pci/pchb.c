@@ -45,10 +45,9 @@
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
 
-#include <dev/pci/pcivar.h>
-#include <dev/pci/pcireg.h>
-
-#include <dev/pci/pcidevs.h>
+#include <dev/core/pci/pcidevs.h>
+#include <dev/core/pci/pcireg.h>
+#include <dev/core/pci/pcivar.h>
 
 #define PCISET_BRIDGETYPE_MASK		0x3
 #define PCISET_TYPE_COMPAT			0x1

@@ -31,10 +31,9 @@
 
 #include <sys/device.h>
 
-#include <dev/pcmcia/pcmciareg.h>
-#include <dev/pcmcia/pcmciachip.h>
-
-#include <dev/ic/i82365reg.h>
+#include <core/ic/i82365reg.h>
+#include <core/pcmcia/pcmciachip.h>
+#include <core/pcmcia/pcmciareg.h>
 
 struct pcic_handle {
 	struct pcic_softc 	*sc;

@@ -1,5 +1,6 @@
-UFML FS (UFS / FFS / MFS / LFS): 
-Modular Filesystem Layer For Content Address Based Storage
+# UFML FS (UFS / FFS / MFS / LFS):
+
+A Modular Filesystem Layer For Content Address Based Storage.
 Inspired from Plan 9's Fossil & Venti Filesystems.
 
 UFML:
@@ -12,7 +13,7 @@ UFML:
 		- Encryption: twofish
 		- Compression: bzip2, gzip, lzip, lzma, xz
 		- Snapshots: 
-- UFML Lower Layer: (Support)
+- UFML Lower Layer: (To Support)
 	- UFS
 	- FFS
 	- MFS
@@ -20,5 +21,4 @@ UFML:
 	
 Design Objectives of UFML:
 - A modular filesystem layer that can provide additional features to UFS, FFS, MFS & LFS.
-- Allow the interaction between one or more of these filesystems.
-Similar to how Fossil & Venti work on Plan 9.
+- Allow the interaction between one or more of the supported filesystems. Similar to how Fossil & Venti work on Plan 9.

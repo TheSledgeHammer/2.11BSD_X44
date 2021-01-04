@@ -136,7 +136,7 @@ edf_test(edf)
 	return (0);
 
 error:
-	printf("is likely not schedulable");
+	printf("is not schedulable");
 	return (1);
 }
 

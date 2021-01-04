@@ -41,10 +41,10 @@
 #include <sys/device.h>
 #include <sys/user.h>
 
-#include <dev/pci/pcireg.h>
-#include <dev/pci/pcivar.h>
+#include <core/pci/pcireg.h>
+#include <core/pci/pcivar.h>
 #ifdef PCIVERBOSE
-#include <dev/pci/pcidevs.h>
+#include <core/pci/pcidevs.h>
 #endif
 
 /*

@@ -1,0 +1,9 @@
+# $211BSD$
+#
+# Core Device & Driver Files
+#
+include 	"core/eisa/files.eisa"
+include 	"core/isa/files.isa"
+include 	"core/isapnp/files.isapnp"
+include 	"core/pci/files.pci"
+include 	"core/pcmcia/files.pcmcia"

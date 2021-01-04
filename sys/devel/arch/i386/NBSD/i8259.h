@@ -38,7 +38,7 @@
 #ifndef	_MACHINE_I8259_H_
 #define	_MACHINE_I8259_H_
 
-#include <dev/isa/isareg.h>
+#include "../../../../dev/core/isa/isareg.h"
 
 #ifndef	_LOCORE
 

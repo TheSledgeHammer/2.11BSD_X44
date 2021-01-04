@@ -78,9 +78,9 @@
 #include <machine/bootinfo.h>
 #include <machine/isa_machdep.h>
 
-#include <dev/isa/isareg.h>
-#include <dev/isa/isavar.h>
-#include <dev/ic/i8042reg.h>
+#include <dev/core/ic/i8042reg.h>
+#include <dev/core/isa/isareg.h>
+#include <dev/core/isa/isavar.h>
 
 #ifdef VM86
 #include <machine/vm86.h>

@@ -155,7 +155,7 @@ struct keyboard {
 #define KB_DELAY2			100
 	unsigned long			kb_count;		/* # of processed key strokes */
 	u_char					kb_lastact[NUM_KEYS/2];
-	struct cdev 			*kb_dev;
+	//struct cdev 			*kb_dev;
 	const keyboard_driver_t	*kb_drv;
 };
 

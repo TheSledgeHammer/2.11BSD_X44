@@ -36,10 +36,10 @@ A General todo list. Don't hesitate to add to this list. :)
 - Clean up: A little messy
 	- com
 - Essential Driver Support:
+	- usb
 	- disk	(ata & scsi)
 	- video
 	- mouse/keyboard
-- isa/com: update (mostly incompatible!)
 - move all machine-dependent code to that arch (that isn't portable)
 
 ## lib:

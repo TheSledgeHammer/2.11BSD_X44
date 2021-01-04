@@ -137,7 +137,7 @@ cfs_decay(p, priweight)
     return (newcpu);
 }
 
-/* make part of gsched, it potentially could be used elsewhere  */
+/* XXX: make part of gsched, it potentially could be used elsewhere  */
 
 /* update cpu decay */
 void
@@ -261,7 +261,7 @@ cfs_schedcpu(p)
 					}
 				} else {
 					/* SHOULD NEVER REACH THIS POINT!! */
-					//panic??
+					/* panic?? */
 					goto runout;
 					break;
 				}

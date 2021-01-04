@@ -38,13 +38,12 @@
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
 
-#include <dev/eisa/eisavar.h>
-#include <dev/pci/pcivar.h>
-
-#include <dev/isa/isareg.h>
-#include <dev/isa/isavar.h>
 #include <i386/isa/isa_machdep.h>
 #include <i386/eisa/eisa_machdep.h>
+#include <dev/core/eisa/eisavar.h>
+#include <dev/core/isa/isareg.h>
+#include <dev/core/isa/isavar.h>
+#include <dev/core/pci/pcivar.h>
 
 int	 mainbus_match (struct device *, void *, void *);
 void mainbus_attach (struct device *, struct device *, void *);
