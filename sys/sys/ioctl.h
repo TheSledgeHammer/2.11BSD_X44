@@ -181,14 +181,14 @@ struct ttysize {
 #define	TIOCSTI				_IOW(t, 114, char)				/* simulate terminal input */
 #define	TIOCNOTTY			_IO(t, 113)						/* void tty association */
 #define	TIOCPKT				_IOW(t, 112, int)				/* pty: set/clear packet mode */
-#define	TIOCPKT_DATA		0x00							/* data packet */
-#define	TIOCPKT_FLUSHREAD	0x01							/* flush packet */
-#define	TIOCPKT_FLUSHWRITE	0x02							/* flush packet */
-#define	TIOCPKT_STOP		0x04							/* stop output */
-#define	TIOCPKT_START		0x08							/* start output */
-#define	TIOCPKT_NOSTOP		0x10							/* no more ^S, ^Q */
-#define	TIOCPKT_DOSTOP		0x20							/* now do ^S ^Q */
-#define	TIOCPKT_IOCTL		0x40							/* state change of pty driver */
+#define	TIOCPKT_DATA		0x000							/* data packet */
+#define	TIOCPKT_FLUSHREAD	0x001							/* flush packet */
+#define	TIOCPKT_FLUSHWRITE	0x002							/* flush packet */
+#define	TIOCPKT_STOP		0x004							/* stop output */
+#define	TIOCPKT_START		0x008							/* start output */
+#define	TIOCPKT_NOSTOP		0x010							/* no more ^S, ^Q */
+#define	TIOCPKT_DOSTOP		0x020							/* now do ^S ^Q */
+#define	TIOCPKT_IOCTL		0x040							/* state change of pty driver */
 #define	TIOCSTOP			_IO(t, 111)						/* stop output, like ^S */
 #define	TIOCSTART			_IO(t, 110)						/* start output, like ^Q */
 #define	TIOCMSET			_IOW(t, 109, int)				/* set all modem bits */
@@ -212,6 +212,13 @@ struct ttysize {
 #define TIOCMGDTRWAIT		_IOR('t', 90, int)				/* modem: get wait on close */
 #define TIOCTIMESTAMP	 	_IOR('t', 89, struct timeval)	/* get timestamp of last interrupt for xntp. */
 #define TIOCDSIMICROCODE 	_IO('t', 88)					/* Download microcode to DSI Softmodem */
+#define	TIOCGFLAGS			_IOR('t', 87, int)				/* get device flags */
+#define	TIOCSFLAGS			_IOW('t', 86, int)				/* set device flags */
+#define	TIOCFLAG_SOFTCAR	0x080							/* ignore hardware carrier */
+#define	TIOCFLAG_CLOCAL		0x100							/* set clocal on open */
+#define	TIOCFLAG_CRTSCTS	0x120							/* set crtscts on open */
+#define	TIOCFLAG_MDMBUF		0x140							/* set mdmbuf on open */
+#define	TIOCFLAG_PPS		0x180							/* call hardpps on carrier up */
 
 #define	TTYDISC				0								/* termios tty line discipline */
 #define	NETLDISC			1								/* line discip for berk net */

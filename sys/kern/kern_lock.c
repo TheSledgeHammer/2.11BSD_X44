@@ -102,13 +102,13 @@ lockstatus(lkp)
 {
 	int lock_type = 0;
 
-	__simple_lock(lkp);
+	lkp_lock(lkp);
 	if (lkp->lk_exclusivecount != 0) {
 		lock_type = LK_EXCLUSIVE;
 	} else if(lkp->lk_sharecount != 0) {
 		lock_type = LK_SHARED;
 	}
-	__simple_unlock(lkp);
+	lkp_unlock(lkp);
 	return (lock_type);
 }
 
@@ -134,9 +134,9 @@ lockmgr(lkp, flags, interlkp, pid)
 		pid = LK_KERNPROC;
 		LOCKHOLDER_PID(lkp->lk_lockholder) = LK_KERNPROC;
 	}
-	__simple_lock(&lkp);
+	lkp_lock(&lkp);
 	if (flags & LK_INTERLOCK) {
-		__simple_unlock(&lkp);
+		lkp_unlock(&lkp);
 	}
 	extflags = (flags | lkp->lk_flags) & LK_EXTFLG_MASK;
 #ifdef DIAGNOSTIC
@@ -362,13 +362,13 @@ lockmgr(lkp, flags, interlkp, pid)
 		     (LK_HAVE_EXCL | LK_WANT_EXCL | LK_WANT_UPGRADE)) ||
 		     lkp->lk_sharecount != 0 || lkp->lk_waitcount != 0); ) {
 			lkp->lk_flags |= LK_WAITDRAIN;
-			__simple_unlock(&lkp);
+			lkp_unlock(&lkp);
 			if (error == tsleep((void *)&lkp->lk_flags, lkp->lk_prio,
 			    lkp->lk_wmesg, lkp->lk_timo))
 				return (error);
 			if ((extflags) & LK_SLEEPFAIL)
 				return (ENOLCK);
-			__simple_lock(&lkp);
+			lkp_lock(&lkp);
 		}
 		lkp->lk_flags |= LK_DRAINING | LK_HAVE_EXCL;
 		LOCKHOLDER_PID(lkp->lk_lockholder) = pid;
@@ -377,7 +377,7 @@ lockmgr(lkp, flags, interlkp, pid)
 		break;
 
 	default:
-		__simple_unlock(lkp);
+		lkp_unlock(lkp);
 		panic("lockmgr: unknown locktype request %d", flags & LK_TYPE_MASK);
 		/* NOTREACHED */
 	}
@@ -387,7 +387,7 @@ lockmgr(lkp, flags, interlkp, pid)
 		lkp->lk_flags &= ~LK_WAITDRAIN;
 		wakeup((void *)&lkp->lk_flags);
 	}
-	__simple_unlock(lkp);
+	lkp_unlock(lkp);
 	return (error);
 }
 
@@ -417,13 +417,13 @@ lock_pause(lkp, wanted)
 {
 	if (lock_wait_time > 0) {
 		int i;
-		__simple_unlock(lkp);
+		lkp_unlock(lkp);
 		for(i = lock_wait_time; i > 0; i--) {
 			if (!(wanted)) {
 				break;
 			}
 		}
-		__simple_lock(lkp);
+		lkp_lock(lkp);
 	}
 	if (!(wanted)) {
 		break;
@@ -438,9 +438,9 @@ lock_acquire(lkp, error, extflags, wanted)
 	lock_pause(lkp, wanted);
 	for (error = 0; wanted; ) {
 		lkp->lk_waitcount++;
-		__simple_unlock(lkp);
+		lkp_unlock(lkp);
 		error = tsleep((void *)lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo);
-		__simple_lock(lkp);
+		lkp_lock(lkp);
 		lkp->lk_waitcount--;
 		if (error) {
 			break;
@@ -464,13 +464,13 @@ count(p, x)
 
 /* Simple lock Interface: Compatibility with existing lock infrastructure */
 
-#define __simple_lock(lkp) 		\
+#define lkp_lock(lkp) 		\
 		simple_lock((lkp)->lk_lnterlock);
 
-#define __simple_unlock(lkp) 	\
+#define lkp_unlock(lkp) 	\
 		simple_unlock((lkp)->lk_lnterlock);
 
-#define __simple_lock_try(lkp) 	\
+#define lkp_lock_try(lkp) 	\
 		simple_lock_try((lkp)->lk_lnterlock);
 
 /* simple_lock_init */

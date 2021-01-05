@@ -272,14 +272,13 @@ ioctl()
 
 int	nselcoll;
 
-struct	pselect_args
-{
-	int		nd;
-	fd_set		*in;
-	fd_set		*ou;
-	fd_set		*ex;
-	struct	timespec *ts;
-	sigset_t	*maskp;
+struct pselect_args {
+	int					nd;
+	fd_set				*in;
+	fd_set				*ou;
+	fd_set				*ex;
+	struct	timespec 	*ts;
+	sigset_t			*maskp;
 };
 
 /*
@@ -288,12 +287,12 @@ struct	pselect_args
 int
 select()
 {
-	struct uap
-		{
+	struct uap {
 		int	nd;
 		fd_set	*in, *ou, *ex;
-		struct	timeval *tv;
-		} *uap = (struct uap *)u->u_ap;
+		struct timeval *tv;
+	} *uap = (struct uap *)u->u_ap;
+
 	register struct pselect_args *pselargs = (struct pselect_args *)uap;
 
 	/*

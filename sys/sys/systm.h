@@ -78,11 +78,6 @@ extern struct sysent {
 
 int	noproc;							/* no one is running just now */
 
-
-/* casts to keep lint happy */
-#define	insque(q,p)	_insque((caddr_t)q,(caddr_t)p)
-#define	remque(q)	_remque((caddr_t)q)
-
 /* Initialize the world */
 extern void startup();
 
@@ -96,13 +91,17 @@ int 	enxio (void);
 int 	eopnotsupp (void);
 int 	einval (void);
 int 	nonet (void);
+
+int		selscan (fd_set *ibits, *obits, int nfd, int retval);
 int		seltrue (dev_t dev, int flag);
+void	selwakeup (struct proc *p, long coll);
+
 void 	*hashinit (int count, int type, u_long *hashmask);
 
 #ifdef __GNUC__
 volatile void panic (const char *, ...);
 #else
-void panic (const char *, ...);
+void 	panic (const char *, ...);
 #endif
 void	tablefull (const char *);
 //void	addlog (const char *, ...);
@@ -141,6 +140,7 @@ void 	hardclock (dev_t dev, caddr_t sp, int r1, int ov, int nps, int r0, caddr_t
 void 	softclock (caddr_t pc, int ps);
 void	initclocks (void);
 
+/* kern_environment.c / kenv.h */
 char	*kern_getenv(const char *name);
 void	freeenv(char *env);
 int		getenv_int(const char *name, int *data);
@@ -154,10 +154,15 @@ int		getenv_quad(const char *name, quad_t *data);
 int		kern_setenv(const char *name, const char *value);
 int		kern_unsetenv(const char *name);
 int		testenv(const char *name);
-
 int		getenv_array(const char *name, void *data, int size, int *psize, int type_size, bool allow_signed);
 
 #define	GETENV_UNSIGNED	false	/* negative numbers not allowed */
 #define	GETENV_SIGNED	true	/* negative numbers allowed */
 
 #include <lib/libkern/libkern.h>
+
+/* casts to keep lint happy */
+#ifdef lint
+#define	insque(q,p)	_insque((caddr_t)q,(caddr_t)p)
+#define	remque(q)	_remque((caddr_t)q)
+#endif

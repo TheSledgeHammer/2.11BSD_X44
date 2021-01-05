@@ -37,6 +37,8 @@
 #ifndef _SYS_TERMIOS_H_
 #define _SYS_TERMIOS_H_
 
+#include <sys/cdefs.h>
+
 /* 
  * Special Control Characters 
  *
@@ -57,7 +59,7 @@
 #ifndef _POSIX_SOURCE
 #define	VREPRINT 	6	/* ICANON */
 #endif
-/*			7	   spare 1 */
+/*					7	   spare 1 */
 #define VINTR		8	/* ISIG */
 #define VQUIT		9	/* ISIG */
 #define VSUSP		10	/* ISIG */
@@ -74,7 +76,7 @@
 #define VTIME		17	/* !ICANON */
 #ifndef _POSIX_SOURCE
 #define VSTATUS		18	/* ICANON */
-/*			19	   spare 2 */
+/*					19	   spare 2 */
 #endif
 #define	NCCS		20
 

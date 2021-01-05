@@ -1,4 +1,11 @@
 /*
+ * Copyright (c) 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)param.c	2.2 (2.11BSD GTE) 1997/2/14
+ */
+/*
  * Copyright (c) 1980, 1986, 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  * (c) UNIX System Laboratories, Inc.
@@ -65,21 +72,24 @@
 #ifndef HZ
 #define	HZ 100
 #endif
-int	hz = HZ;
-int	tick = 1000000 / HZ;
-int	tickadj = 30000 / (60 * HZ);		/* can adjust 30ms in 60s */
-struct	timezone tz = { TIMEZONE, DST };
-#define	NPROC (20 + 16 * MAXUSERS)
-int	maxproc = NPROC;
-int nproc = maxproc;
-#define	NTEXT (80 + NPROC / 8)			/* actually the object cache */
-#define	NVNODE (NPROC + NTEXT + 100)
+int	hz = 			HZ;
+int	tick = 			1000000 / HZ;
+int	tickadj = 		30000 / (60 * HZ);			/* can adjust 30ms in 60s */
+struct	timezone tz = {
+		TIMEZONE,
+		DST
+};
+#define	NPROC 		(20 + 16 * MAXUSERS)
+int	maxproc = 		NPROC;
+int nproc = 		maxproc;
+#define	NTEXT 		(80 + NPROC / 8)			/* actually the object cache */
+#define	NVNODE 		(NPROC + NTEXT + 100)
 int	desiredvnodes = NVNODE;
-int	maxfiles = 3 * (NPROC + MAXUSERS) + 80;
-int	ncallout = 16 + NPROC;
-int	nclist = 60 + 12 * MAXUSERS;
-int	nmbclusters = NMBCLUSTERS;
-int	fscale = FSCALE;					/* kernel uses `FSCALE', user uses `fscale' */
+int	maxfiles = 		3 * (NPROC + MAXUSERS) + 80;
+int	ncallout = 		16 + NPROC;
+int	nclist = 		60 + 12 * MAXUSERS;
+int	nmbclusters = 	NMBCLUSTERS;
+int	fscale = 		FSCALE;						/* kernel uses `FSCALE', user uses `fscale' */
 
 /*
  * These are initialized at bootstrap time
@@ -99,14 +109,10 @@ struct	cblock *cfree;
 struct	buf *buf, *swbuf;
 char	*buffers;
 
+#define CMAPSIZ		NPROC						/* size of core allocation map */
+#define SMAPSIZ		((9 * NPROC) / 10)			/* size of swap allocation map */
+int cmapsiz = 		CMAPSIZ;
+int smapsiz = 		SMAPSIZ;
 
-#define CMAPSIZ	NPROC				/* size of core allocation map */
-#define SMAPSIZ	((9 * NPROC) / 10)	/* size of swap allocation map */
-int cmapsiz = CMAPSIZ;
-int smapsiz = SMAPSIZ;
-
-struct mapent	_coremap[cmapsiz];
-//struct map 		coremap[1] = { _coremap, &_coremap[CMAPSIZ], "coremap" };
-
-struct mapent	_swapmap[smapsiz];
-//struct map 		swapmap[1] = { _swapmap, &_swapmap[SMAPSIZ], "swapmap" };
+struct mapent		_coremap[cmapsiz]; 			/* read kern/subr_rmap.c for initialization */
+struct mapent		_swapmap[smapsiz];			/* read kern/subr_rmap.c for initialization */

@@ -11,6 +11,7 @@
 
 #include <sys/termios.h>
 #include <sys/select.h>
+#include <sys/ttydefaults.h>
 
 /*
  * A clist structure is the head of a linked list queue
@@ -58,8 +59,6 @@ struct tty {
 	} t_nu;
 
 	struct	clist t_outq;			/* Device output queue. */
-	//int	(*t_oproc)();			/* device */
-	//short	t_pgrp;					/* tty */
 	struct	proc *t_rsel;			/* Tty read/oob select. */
 	struct	proc *t_wsel;			/* Tty write select. */
 	caddr_t	T_LINEP;				/* ### */
