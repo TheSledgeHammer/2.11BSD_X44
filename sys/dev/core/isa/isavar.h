@@ -145,10 +145,10 @@ struct isa_attach_args {
 	int 					ia_ndrq;
 };
 
-#define	IOBASEUNK			-1				/* i/o address is unknown */
-#define	IRQUNK				-1				/* interrupt request line is unknown */
-#define	DRQUNK				-1				/* DMA request line is unknown */
-#define	MADDRUNK			-1				/* shared memory address is unknown */
+#define	IOBASEUNK			-1				/* i/o address is unknown (ISACF_PORT_DEFAULT) */
+#define	IRQUNK				-1				/* interrupt request line is unknown (ISACF_IRQ_DEFAULT) */
+#define	DRQUNK				-1				/* DMA request line is unknown (ISACF_DRQ_DEFAULT)  */
+#define	MADDRUNK			-1				/* shared memory address is unknown (ISACF_IOMEM_DEFAULT) */
 
 /*
  * Test to determine if a given call to an ISA device probe routine

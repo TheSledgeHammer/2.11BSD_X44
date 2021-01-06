@@ -39,88 +39,90 @@ struct clist {
 struct tty {
 	union {
 		struct {
-			struct	clist T_rawq;	/* Device raw input queue. */
-			struct	clist T_canq;	/* Device canonical queue. */
+			struct	clist 	T_rawq;	/* Device raw input queue. */
+			struct	clist 	T_canq;	/* Device canonical queue. */
 		} t_t;
 
-#define	t_rawq	t_nu.t_t.T_rawq		/* raw characters or partial line */
-#define	t_canq	t_nu.t_t.T_canq		/* raw characters or partial line */
+#define	t_rawq				t_nu.t_t.T_rawq		/* raw characters or partial line */
+#define	t_canq				t_nu.t_t.T_canq		/* raw characters or partial line */
 		struct {
-			struct	buf *T_bufp;
-			char	*T_cp;
-			int		T_inbuf;
-			int		T_rec;
+			struct	buf 	*T_bufp;
+			char			*T_cp;
+			int				T_inbuf;
+			int				T_rec;
 		} t_n;
 
-#define	t_bufp	t_nu.t_n.T_bufp		/* buffer allocated to protocol */
-#define	t_cp	t_nu.t_n.T_cp		/* pointer into the ripped off buffer */
-#define	t_inbuf	t_nu.t_n.T_inbuf	/* number chars in the buffer */
-#define	t_rec	t_nu.t_n.T_rec		/* have a complete record */
+#define	t_bufp				t_nu.t_n.T_bufp		/* buffer allocated to protocol */
+#define	t_cp				t_nu.t_n.T_cp		/* pointer into the ripped off buffer */
+#define	t_inbuf				t_nu.t_n.T_inbuf	/* number chars in the buffer */
+#define	t_rec				t_nu.t_n.T_rec		/* have a complete record */
 	} t_nu;
 
-	struct	clist t_outq;			/* Device output queue. */
-	struct	proc *t_rsel;			/* Tty read/oob select. */
-	struct	proc *t_wsel;			/* Tty write select. */
-	caddr_t	T_LINEP;				/* ### */
-	caddr_t	t_addr;					/* ??? */
-	dev_t	t_dev;					/* device */
-	long	t_flags;				/* Tty flags. */
-	long	t_state;				/* Device and driver (TS*) state. */
-	char	t_delct;				/* tty */
-	char	t_line;					/* Interface to device drivers. */
-	char	t_col;					/* Tty output column. */
-	char	t_ispeed, t_ospeed;		/* device */
-	char	t_rocount, t_rocol;		/* tty */
-	struct	ttychars t_chars;		/* tty */
-	struct	winsize t_winsize;		/* window size */
+	struct	pgrp 			*t_pgrp;										/* Foreground process group. */
+	struct	session 		*t_session;										/* Enclosing session. */
+	struct	termios 		t_termios;										/* Termios state. */
+	int						t_hiwat;										/* High water mark. */
+	int						t_lowat;										/* Low water mark. */
+	int						t_gen;											/* Generation number. */
+	struct	clist 			t_outq;											/* Device output queue. */
+	struct	proc 			*t_rsel;										/* Tty read/oob select. */
+	struct	proc 			*t_wsel;										/* Tty write select. */
+	caddr_t					T_LINEP;										/* ### */
+	caddr_t					t_addr;											/* ??? */
+	dev_t					t_dev;											/* device */
+	int						t_wopen;										/* Processes waiting for open. */
+	long					t_flags;										/* Tty flags. */
+	long					t_state;										/* Device and driver (TS*) state. */
+	char					t_delct;										/* tty */
+	char					t_line;											/* Interface to device drivers. */
+	char					t_col;											/* Tty output column. */
+	char					t_ispeed, t_ospeed;								/* device */
+	char					t_rocount, t_rocol;								/* tty */
+	struct	ttychars 		t_chars;										/* tty */
+	struct	winsize 		t_winsize;										/* window size */
 
-	void	(*t_oproc) (struct tty *);						/* device *//* Start output. */
-	void	(*t_stop) (struct tty *, int);					/* Stop output. */
-	int		(*t_param) (struct tty *, struct termios *);	/* Set hardware state. */
+	void					(*t_oproc) (struct tty *);						/* device *//* Start output. */
+	void					(*t_stop) (struct tty *, int);					/* Stop output. */
+	int						(*t_param) (struct tty *, struct termios *);	/* Set hardware state. */
 
-	struct	pgrp 		*t_pgrp;		/* Foreground process group. */
-	struct	session 	*t_session;		/* Enclosing session. */
-	struct	termios 	t_termios;		/* Termios state. */
-	int					t_hiwat;		/* High water mark. */
-	int					t_lowat;		/* Low water mark. */
-	int					t_gen;			/* Generation number. */
+	int						(*t_hwiflow)(struct tty *, int);				/* Set hardware flow control. */
 
 
 /* be careful of tchars & co. */
-#define	t_erase		t_chars.tc_erase
-#define	t_kill		t_chars.tc_kill
-#define	t_intrc		t_chars.tc_intrc
-#define	t_quitc		t_chars.tc_quitc
-#define	t_startc	t_chars.tc_startc
-#define	t_stopc		t_chars.tc_stopc
-#define	t_eofc		t_chars.tc_eofc
-#define	t_brkc		t_chars.tc_brkc
-#define	t_suspc		t_chars.tc_suspc
-#define	t_dsuspc	t_chars.tc_dsuspc
-#define	t_rprntc	t_chars.tc_rprntc
-#define	t_flushc	t_chars.tc_flushc
-#define	t_werasc	t_chars.tc_werasc
-#define	t_lnextc	t_chars.tc_lnextc
+#define	t_erase				t_chars.tc_erase
+#define	t_kill				t_chars.tc_kill
+#define	t_intrc				t_chars.tc_intrc
+#define	t_quitc				t_chars.tc_quitc
+#define	t_startc			t_chars.tc_startc
+#define	t_stopc				t_chars.tc_stopc
+#define	t_eofc				t_chars.tc_eofc
+#define	t_brkc				t_chars.tc_brkc
+#define	t_suspc				t_chars.tc_suspc
+#define	t_dsuspc			t_chars.tc_dsuspc
+#define	t_rprntc			t_chars.tc_rprntc
+#define	t_flushc			t_chars.tc_flushc
+#define	t_werasc			t_chars.tc_werasc
+#define	t_lnextc			t_chars.tc_lnextc
 };
 
-#define	t_cc		t_termios.c_cc
-#define	t_cflag		t_termios.c_cflag
-#define	t_iflag		t_termios.c_iflag
-#define	t_ispeed	t_termios.c_ispeed
-#define	t_lflag		t_termios.c_lflag
-#define	t_min		t_termios.c_min
-#define	t_oflag		t_termios.c_oflag
-#define	t_ospeed	t_termios.c_ospeed
-#define	t_time		t_termios.c_time
+#define	t_cc				t_termios.c_cc
+#define	t_cflag				t_termios.c_cflag
+#define	t_iflag				t_termios.c_iflag
+#define	t_ispeed			t_termios.c_ispeed
+#define	t_lflag				t_termios.c_lflag
+#define	t_min				t_termios.c_min
+#define	t_oflag				t_termios.c_oflag
+#define	t_ospeed			t_termios.c_ospeed
+#define	t_time				t_termios.c_time
 
-#define	TTIPRI	28	/* Sleep priority for tty reads. */
-#define	TTOPRI	29	/* Sleep priority for tty writes. */
+#define	TTIPRI		28	/* Sleep priority for tty reads. */
+#define	TTOPRI		29	/* Sleep priority for tty writes. */
 
 /* limits */
-#define	NSPEEDS	16
-#define	TTMASK	15
-#define	OBUFSIZ	100
-#define	TTYHOG	1024
+#define	NSPEEDS		16
+#define	TTMASK		15
+#define	OBUFSIZ		100
+#define	TTYHOG		1024
 
 #ifdef KERNEL
 short	tthiwat[NSPEEDS], ttlowat[NSPEEDS];

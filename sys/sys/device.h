@@ -66,6 +66,7 @@ struct device {
 	int					dv_unit;				/* device unit number */
 	char				dv_xname[16];			/* external name (name + unit) */
 	struct	device 		*dv_parent;				/* pointer to parent device */
+	int					dv_flags;				/* misc. flags; see below */
 
 //	TAILQ_ENTRY(device)	dv_list;	/* entry on list of all devices */
 };

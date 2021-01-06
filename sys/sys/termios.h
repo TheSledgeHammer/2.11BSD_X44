@@ -122,10 +122,10 @@
 #define	CIGNORE		0x00000001	/* ignore control flags */
 #endif
 #define CSIZE		0x00000300	/* character size mask */
-#define CS5		    0x00000000	    /* 5 bits (pseudo) */
-#define CS6		    0x00000100	    /* 6 bits */
-#define CS7		    0x00000200	    /* 7 bits */
-#define CS8		    0x00000300	    /* 8 bits */
+#define CS5		    0x00000000	/* 5 bits (pseudo) */
+#define CS6		    0x00000100	/* 6 bits */
+#define CS7		    0x00000200	/* 7 bits */
+#define CS8		    0x00000300	/* 8 bits */
 #define CSTOPB		0x00000400	/* send 2 stop bits */
 #define CREAD		0x00000800	/* enable receiver */
 #define PARENB		0x00001000	/* parity enable */
@@ -134,12 +134,13 @@
 #define CLOCAL		0x00008000	/* ignore modem status lines */
 #ifndef _POSIX_SOURCE
 #define CCTS_OFLOW	0x00010000	/* CTS flow control of output */
-#define CRTSCTS		(CCTS_OFLOW | CRTS_IFLOW)
 #define CRTS_IFLOW	0x00020000	/* RTS flow control of input */
 #define CDSR_OFLOW	0x00080000	/* DSR flow control of output */
 #define	MDMBUF		0x00100000	/* flow control output via Carrier */
+#define CRTSCTS		0x00200000	/* RTS/CTS full-duplex flow control */
+#define	CDTRCTS		0x00400000	/* DTR/CTS full-duplex flow control */
+#define	CHWFLOW		(MDMBUF|CRTSCTS|CDTRCTS|CCTS_OFLOW|CRTS_IFLOW|CDSR_OFLOW) /* all types of hw flow control */
 #endif
-
 
 /* 
  * "Local" flags - dumping ground for other state
@@ -276,8 +277,8 @@ __END_DECLS
  * END OF PROTECTED INCLUDE.
  */
 #endif /* !_SYS_TERMIOS_H_ */
-/*
+
 #ifndef _POSIX_SOURCE
-//#include <sys/ttydefaults.h>
+#include <sys/ttydefaults.h>
 #endif
-*/
+

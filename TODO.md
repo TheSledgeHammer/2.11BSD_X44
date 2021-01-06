@@ -34,7 +34,7 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## dev:
 - Clean up: A little messy
-	- com
+	- com: timeapps.h: add or leave out??
 - Essential Driver Support:
 	- usb
 	- disk	(ata & scsi)
