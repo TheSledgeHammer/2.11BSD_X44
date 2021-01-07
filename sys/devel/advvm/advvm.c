@@ -156,3 +156,12 @@ advvm_ioctl(dev_t dev, int cmd, caddr_t data, int fflag, struct proc *p)
 {
 	return (0);
 }
+
+int
+advvm_size(dev_t dev)
+{
+
+	int size;
+
+	return (size);
+}

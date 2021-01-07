@@ -36,29 +36,18 @@
 #include <sys/queue.h>
 #include <sys/types.h>
 
-#define HOSTNAMELEN         256
-#define MAXDRIVENAME        32		    /* maximum length of a device name */
-#define MAXVOLUMENAME       64          /* maximum length of a volume name */
-#define MAXDOMAINNAME       64          /* maximum length of a domain name */
-#define MAXFILESETNAME      64          /* maximum length of a fileset name */
-
-struct label {
-    char                            lb_sysname[HOSTNAMELEN];
-    char                            lb_name[MAXVOLUMENAME];
-    uint32_t                        lb_id;
-    struct timeval                  lb_creation_date;
-    struct timeval                  lb_last_update;
-    uint32_t                        lb_drive_size;
-};
+#include <advvm_var.h>
 
 struct volume {
     TAILQ_ENTRY(volume)             vol_entries;                /* list of volume entries per domain */
 
+    char							vol_name[MAXVOLUMENAME];	/* volume name */
+    uint32_t 						vol_id;						/* volume id */
+    int                             vol_flags;                  /* volume flags */
+
     /* device or drive fields */
-    char                            vol_device[MAXDRIVENAME];   /* drive/device volume is on */
-    struct label                    *vol_label;                 /* label information */
-    struct volume_block             *vol_block;                 /* block information per volume */
-    int                             vol_flags;                  /* flags */
+    struct advvm_label              *vol_label;                 /* label information */
+    struct advvm_block             	*vol_block;                 /* block information */
 
     /* domain-related fields */
     struct domain                   *vol_domain;                /* domain this volume belongs too */
@@ -68,24 +57,5 @@ struct volume {
     int                             vol_domain_used;            /* and the number used */
 };
 typedef struct volume               *volume_t;
-
-enum filesystem_format {
-    UFS1,       /* UFS version 1 */
-    UFS2,       /* UFS version 2 */
-    MFS,        /* BSD's MFS */
-    LFS,        /* BSD's LFS */
-    MSDOSFS     /* FAT */
-};
-
-/* volume physical block information */
-struct volume_block {
-    enum filesystem_format          vblk_filesystem;             /* supported filesystem formats */
-    int                             vblk_fsblocksize;            /* size of filesystem blocks */
-    uint32_t                        vblk_size;
-    uint64_t                        vblk_start;
-    uint64_t                        vblk_end;
-    uint32_t                        vblk_sectors;                /* number of sectors still available */
-    uint64_t                        vblk_secperblock;
-};
 
 #endif /* _DEV_ADVVM_VOLUME_H_ */

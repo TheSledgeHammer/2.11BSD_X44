@@ -62,11 +62,10 @@ struct fileset {
     tag_dir_t                       fst_tags;
 
     /* domain-related fields */
-    struct domain                   *fst_domain;                    /* domain this volume belongs too */
+    struct domain                   *fst_domain;                    /* domain this fileset belongs too */
 #define fst_domain_name             fst_domain->dom_name            /* domain name */
 #define fst_domain_id               fst_domain->dom_id              /* domain id */
 };
 typedef struct fileset              *fileset_t;
-
 
 #endif /* _DEV_ADVVM_FILESET_H_ */

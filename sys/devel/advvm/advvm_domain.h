@@ -49,6 +49,6 @@ struct domain {
 };
 typedef struct domain               	*domain_t;
 
-extern struct dom_list              	domains;
+extern struct domain_list              	domains;
 
 #endif /* _DEV_ADVVM_DOMAIN_H_ */
