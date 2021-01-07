@@ -20,7 +20,7 @@
  * file conf.c.
  */
 /*
- * Block device switch table
+ * Block device switch
  */
 struct bdevsw {
 	int			(*d_open)(dev_t dev, int oflags, int devtype, struct proc *p);
@@ -30,7 +30,7 @@ struct bdevsw {
 	int			(*d_root)();		/* parameters vary by architecture */
 	int			(*d_dump)(dev_t dev);
 	daddr_t		(*d_psize)(dev_t dev);
-	int			(*d_discard)(dev_t, off_t, off_t);
+	int			(*d_discard)(dev_t dev, off_t pos, off_t len);
 	int			d_type;
 };
 
@@ -52,9 +52,9 @@ struct cdevsw {
 	struct tty 	(*d_tty)(dev_t dev);
 	int			(*d_select)(dev_t dev, int which, struct proc *p);
 	int			(*d_poll)(dev_t dev, int events, struct proc *p);
-	caddr_t		(*d_mmap)(dev_t, off_t, int);
+	caddr_t		(*d_mmap)(dev_t dev, off_t off, int flag);
 	int			(*d_strategy)(struct buf *bp);
-	int			(*d_discard)(dev_t, off_t, off_t);
+	int			(*d_discard)(dev_t dev, off_t pos, off_t len);
 	int			d_type;
 };
 #ifdef KERNEL

@@ -10,6 +10,10 @@ an offical release is made.)
 		- x86 related content. (To be implemented)
 			- lapic, ioapic, tsc, intr, pmap etc..
 			
+- ADVVM (AdvVM): Logical Volume Manager
+	- A Volume Manager for BSD.
+	- Based on the ideas from Tru64 UNIX's AdvFS and incorporating concepts from Vinum and LVM2
+				
 - HTBC: A HTree Based Blockchain
 	- Intended to augment BSD's LFS & other Log-Structured Filesystems 
 	- provide features of a blockchain to the VFS
