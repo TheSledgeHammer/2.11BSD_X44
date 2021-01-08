@@ -42,6 +42,12 @@
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm.h>
 
+/*
+#include <devel/vm/ovl/ovl_extern.h>
+#include <devel/vm/ovl/ovl_overlay.h>
+#include <devel/vm/ovl/ovl.h>
+*/
+
 struct kmembuckets bucket[MINBUCKET + 16];
 struct kmemstats kmemstats[M_LAST];
 struct kmemusage *kmemusage;
@@ -129,7 +135,12 @@ malloc(size, type, flags)
 			allocsize = 1 << indx;
 		npg = clrnd(btoc(allocsize));
 
-        va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & (M_NOWAIT | M_CANFAIL)));
+		/* Allocates to Overlay Space */
+		if (flags | type == M_OVERLAY) {
+			//va = (caddr_t) ovlmem_malloc(omem_map, (vm_size_t)ctob(npg), !(flags & (M_NOWAIT | M_CANFAIL)));
+		}
+		va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & (M_NOWAIT | M_CANFAIL)));
+
         if (va == NULL) {
         	splx(s);
 #ifdef DEBUG
@@ -269,21 +280,26 @@ free(addr, type)
 		panic("free: unaligned addr 0x%x, size %d, type %s, mask %d\n", addr, size, memname[type], alloc);
 #endif /* DIAGNOSTIC */
 	if (size > MAXALLOCSAVE) {
-			kmem_free(kmem_map, (vm_offset_t)addr, ctob(kup->ku_pagecnt));
+		/* Free from Overlay Space */
+		if(type == M_OVERLAY) {
+			//ovlmem_free(omem_map, (vm_offset_t) addr, ctob(kup->ku_pagecnt));
+		}
+		kmem_free(kmem_map, (vm_offset_t) addr, ctob(kup->ku_pagecnt));
 #ifdef KMEMSTATS
-			size = kup->ku_pagecnt << PGSHIFT;
-			ksp->ks_memuse -= size;
-			kup->ku_indx = 0;
-			kup->ku_pagecnt = 0;
-			if (ksp->ks_memuse + size >= ksp->ks_limit && ksp->ks_memuse < ksp->ks_limit)
-				wakeup((caddr_t)ksp);
-			ksp->ks_inuse--;
-			kbp->kb_total -= 1;
+		size = kup->ku_pagecnt << PGSHIFT;
+		ksp->ks_memuse -= size;
+		kup->ku_indx = 0;
+		kup->ku_pagecnt = 0;
+		if (ksp->ks_memuse + size >= ksp->ks_limit
+				&& ksp->ks_memuse < ksp->ks_limit)
+			wakeup((caddr_t) ksp);
+		ksp->ks_inuse--;
+		kbp->kb_total -= 1;
 #endif
-			splx(s);
-			return;
+		splx(s);
+		return;
 	}
-	freep = (struct freelist *)addr;
+	freep = (struct freelist*) addr;
 #ifdef DIAGNOSTIC
 	if (freep->spare0 == WEIRD_ADDR) {
 		for (cp = kbp->kb_next; cp; cp = *(caddr_t *)cp) {
@@ -309,14 +325,15 @@ free(addr, type)
 			kbp->kb_couldfree++;
 	kbp->kb_totalfree++;
 	ksp->ks_memuse -= size;
-	if (ksp->ks_memuse + size >= ksp->ks_limit && ksp->ks_memuse < ksp->ks_limit)
-		wakeup((caddr_t)ksp);
+	if (ksp->ks_memuse + size >= ksp->ks_limit
+			&& ksp->ks_memuse < ksp->ks_limit)
+		wakeup((caddr_t) ksp);
 	ksp->ks_inuse--;
 #endif
 	if (kbp->kb_next == NULL)
 		kbp->kb_next = addr;
 	else
-		((struct freelist *)kbp->kb_last)->next = addr;
+		((struct freelist*) kbp->kb_last)->next = addr;
 	freep->next = NULL;
 	kbp->kb_last = addr;
 	splx(s);

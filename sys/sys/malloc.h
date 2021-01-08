@@ -121,13 +121,14 @@
 #define M_MEMDESC		69	/* memory range descriptors */
 #define M_DEVSW			70	/* device switch table */
 #define M_DEVSWHASH		71	/* device switch table hash structure */
-#define	M_TEMP			72	/* misc temporary data buffers */
-#define	M_LAST			73	/* Must be last type + 1 */
+#define M_OVERLAY		72	/* Use Overlay Space Memory */
+#define	M_TEMP			73	/* misc temporary data buffers */
+#define	M_LAST			74	/* Must be last type + 1 */
 
-#define M_OVLMAP		72	/* OVL map structures */
-#define	M_OVLMAPENT		73	/* OVL map entry structures */
-#define M_OVLOBJ		74	/* OVL object structure */
-#define M_OVLOBJHASH	75	/* OVL object hash structure */
+#define M_OVLMAP		73	/* OVL map structures */
+#define	M_OVLMAPENT		74	/* OVL map entry structures */
+#define M_OVLOBJ		75	/* OVL object structure */
+#define M_OVLOBJHASH	76	/* OVL object hash structure */
 
 
 #define INITKMEMNAMES {						\
@@ -203,7 +204,8 @@
 	"memdesc",		/* 69 M_MEMDESC */		\
 	"devsw",		/* 70 M_DEVSW */		\
 	"devswhash",	/* 71 M_DEVSWHASH */	\
-	"temp",			/* 72 M_TEMP */ 		\
+	"overlay space",/* 72 M_OVERLAY */		\
+	"temp",			/* 73 M_TEMP */ 		\
 }
 
 struct kmemstats {
@@ -232,6 +234,7 @@ struct kmemusage {
 
 /* Set of buckets for each size of memory block that is retained */
 struct kmembuckets {
+	struct tbtree 		*kb_trbtree;	/* tertiary buddy tree pointer */
 	caddr_t 			kb_next;		/* list of free blocks */
 	caddr_t 			kb_last;		/* last free block */
 

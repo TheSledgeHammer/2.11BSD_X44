@@ -19,7 +19,9 @@ an offical release is made.)
 	- provide features of a blockchain to the VFS
 
 - Kern & Sys:
-	- Malloc: A Tertiary Buddy System Allocator (Needs a home!)
+	- Malloc: A Tertiary Buddy System Allocator (Needs a home!). (subr_tbree.c & tbtree.h)
+		- Implemented to work with the existing kern_malloc.c
+		- Example in following folder "/devel/vm/ovl/kern_overlay.c"
 	- Scheduler: A Stackable Scheduler that sits atop 2.11BSD's existing scheduler (kern_synch.c).
 		- Global Scheduler: Interface/API for other schedulers
 		- Hybrid EDF/CFS Scheduler

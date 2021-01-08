@@ -26,24 +26,34 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Tertiary Buddy Tree Allocator (TBTree) */
+/*
+ * Tertiary Buddy Tree Allocator (TBTree)
+ * Requires kern_malloc.c
+ */
 
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/kernel.h>
 #include <sys/user.h>
+#include <sys/malloc.h>
 #include <sys/stdbool.h>
 
-#include "vm/ovl/tbtree.h"
+#include <devel/sys/tbtree.h>
+
+#include <devel/vm/ovl/ovl.h>
+#include <devel/vm/ovl/ovl_extern.h>
+#include <devel/vm/ovl/ovl_overlay.h>
 
 static int isPowerOfTwo(long n); 	/* 0 = true, 1 = false */
 
-
 /* Allocate Tertiary Buddy Tree */
-struct tbtree *
-tbtree_allocate(ktp)
+void
+tbtree_allocate(kbp, ktp)
+	struct kmembuckets *kbp;
 	struct tbtree *ktp;
 {
+	memset(ktp, 0, sizeof(struct tbtree *));
+
     ktp->tb_left = NULL;
     ktp->tb_middle = NULL;
     ktp->tb_right = NULL;
@@ -54,8 +64,6 @@ tbtree_allocate(ktp)
     ktp->tb_freelist1->asl_prev = NULL;
     ktp->tb_freelist2->asl_next = NULL;
     ktp->tb_freelist2->asl_prev = NULL;
-
-    return (ktp);
 }
 
 struct tbtree *
@@ -257,10 +265,10 @@ tbtree_find(ktp, size)
  * If size is not a power of 2 else will check is size log base 2.
  */
 caddr_t
-tbtree_malloc(ktp, size, flags)
+tbtree_malloc(ktp, size, type, flags)
 	struct tbtree 	*ktp;
 	u_long 			size;
-    int 			flags;
+    int 			type, flags;
 {
     struct tbtree *left, *middle, *right = NULL;
 
@@ -269,39 +277,40 @@ tbtree_malloc(ktp, size, flags)
 
     if(isPowerOfTwo(size)) {
         left = tbtree_left(ktp, size);
-        ktp->tb_addr = (caddr_t) ovlmem_malloc(omem_map, right->tb_size, flags);
+        ktp->tb_addr = (caddr_t) oorkmalloc(right->tb_size, type, flags);
 
 	} else if(isPowerOfTwo(size - 2)) {
 		middle = tbtree_middle(ktp, size);
-        ktp->tb_addr = (caddr_t) ovlmem_malloc(omem_map, middle->tb_size, flags);
+        ktp->tb_addr = (caddr_t) oorkmalloc(middle->tb_size, type, flags);
 
 	} else if (isPowerOfTwo(size - 3)) {
 		right = tbtree_right(ktp, size);
-        ktp->tb_addr = (caddr_t) ovlmem_malloc(omem_map, right->tb_size, flags);
+        ktp->tb_addr = (caddr_t) oorkmalloc(right->tb_size, type, flags);
 
 	} else {
 		/* allocates size (tmp) if it has a log base of 2 */
 		if(isPowerOfTwo(tmp)) {
 			left = tbtree_left(ktp, size);
-            ktp->tb_addr = (caddr_t) ovlmem_malloc(omem_map, left->tb_size, flags);
+            ktp->tb_addr = (caddr_t) oorkmalloc(left->tb_size, type, flags);
 
 		} else if(isPowerOfTwo(tmp - 2)) {
 			middle = tbtree_middle(ktp, size);
-            ktp->tb_addr = (caddr_t) ovlmem_malloc(omem_map, middle->tb_size, flags);
+            ktp->tb_addr = (caddr_t) oorkmalloc(middle->tb_size, type, flags);
 
 		} else if (isPowerOfTwo(tmp - 3)) {
 			right = tbtree_right(ktp, size);
-            ktp->tb_addr = (caddr_t) ovlmem_malloc(omem_map, right->tb_size, flags);
+            ktp->tb_addr = (caddr_t) oorkmalloc(right->tb_size, type, flags);
 		}
     }
     return (ktp->tb_addr);
 }
 
 void
-tbtree_free(ktp, addr, size)
+tbtree_free(ktp, addr, size, type)
 	struct tbtree 	*ktp;
 	caddr_t 		addr;
 	u_long 			size;
+	int 			type;
 {
 	struct tbtree 	*toFind = NULL;
 	struct asl 		*free =	NULL;
@@ -313,7 +322,7 @@ tbtree_free(ktp, addr, size)
 		free = ktp->tb_freelist1;
 		if(free->asl_size == toFind->tb_size && toFind->tb_addr == addr) {
 			free = asl_remove(ktp->tb_freelist1, size);
-			ovlmem_free(omem_map, toFind->tb_addr, size);
+			oorkfree(toFind->tb_addr, size, type);
 		}
 	}
 	if((toFind->tb_type == TYPE_01 && toFind == tbtree_middle(ktp, size))|| (toFind->tb_type == TYPE_10 && toFind == tbtree_right(ktp, size))) {
@@ -321,7 +330,7 @@ tbtree_free(ktp, addr, size)
 		if(free->asl_size == toFind->tb_size && toFind->tb_addr == addr) {
 			free = asl_remove(ktp->tb_freelist2, size);
 			ovlmem_free(omem_map, toFind->tb_addr, size);
-
+			oorkfree(toFind->tb_addr, size, type);
 		}
 	}
 	ktp->tb_entries--;
@@ -373,21 +382,6 @@ asl_search(free, size)
     return (NULL);
 }
 
-void
-asl_set_addr(free, addr)
-	struct asl *free;
-	caddr_t addr;
-{
-	free->asl_addr = addr;
-}
-
-caddr_t
-asl_get_addr(free)
-	struct asl *free;
-{
-	return (free->asl_addr);
-}
-
 /* Function to check if x is a power of 2 (Internal use only) */
 static int
 isPowerOfTwo(n)
@@ -401,4 +395,35 @@ isPowerOfTwo(n)
         n = n/2;
     }
     return (1);
+}
+
+/* [Internal use only] allocate to kernel or overlay */
+caddr_t
+oorkmalloc(size, type, flags)
+	unsigned long size;
+	int type, flags;
+{
+	caddr_t va;
+	/* Allocates to Overlay Space */
+	if (type == M_OVERLAY || flags == M_OVERLAY) {
+		va = (caddr_t) ovlmem_malloc(omem_map, size, flags);
+	} else {
+		va = (caddr_t) kmem_malloc(kmem_map, size, flags);
+	}
+	return (va);
+}
+
+/* [Internal use only] free from kernel or overlay */
+void
+oorkfree(addr, size, type)
+	void *addr;
+	unsigned long size;
+	int type;
+{
+	/* Free from Overlay Space */
+	if (type == M_OVERLAY) {
+		ovlmem_free(omem_map, addr, size);
+	} else {
+		kmem_free(kmem_map, addr, size);
+	}
 }
