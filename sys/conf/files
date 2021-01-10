@@ -57,12 +57,13 @@ file	kern/sys_generic.c
 file	kern/sys_kern.c
 file	kern/sys_process.c
 file	kern/sys_socket.c
-file	kern/tty.c
 file	kern/tty_conf.c
+file	kern/tty_ctty.c
 file	kern/tty_pty.c		    			pty
 file	kern/tty_subr.c
 file	kern/tty_tb.c		    			tb
 file	kern/tty_tty.c
+file	kern/tty.c
 file	kern/uipc_domain.c
 file	kern/uipc_mbuf.c
 file	kern/uipc_proto.c
@@ -101,16 +102,14 @@ file	net/radix.c
 file	net/raw_cb.c
 file	net/raw_usrreq.c
 file	net/route.c
-file	net/rtsock.c
-file	net/slcompress.c	    			sl | ppp | strip
 file	netimp/if_imp.c		    			imp
 file	netimp/if_imphost.c	    			imp
 file	netimp/raw_imp.c	    			imp
 file	netinet/if_ether.c	    			ether
 file	netinet/igmp.c		    			inet
-file	netinet/in.c		    			inet
 file	netinet/in_pcb.c	    			inet
 file	netinet/in_proto.c	    			inet
+file	netinet/in.c		    			inet
 file	netinet/ip_icmp.c	    			inet
 file	netinet/ip_input.c	    			inet
 file	netinet/ip_mroute.c					inet & mrouting	
@@ -124,13 +123,13 @@ file	netinet/tcp_timer.c	    			inet
 file	netinet/tcp_usrreq.c				inet
 file	netinet/udp_usrreq.c				inet
 file	netns/idp_usrreq.c	    			ns
-file	netns/ns.c		        			ns
 file	netns/ns_error.c	    			ns
 file	netns/ns_input.c	   				ns
 file	netns/ns_ip.c		    			ns
 file	netns/ns_output.c	    			ns
 file	netns/ns_pcb.c		    			ns
 file	netns/ns_proto.c	    			ns
+file	netns/ns.c		        			ns
 file	netns/spp_debug.c	    			ns
 file	netns/spp_usrreq.c	    			ns
 # UFS Sources

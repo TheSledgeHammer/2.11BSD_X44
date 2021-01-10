@@ -131,7 +131,6 @@ struct	ttychars ttydefaults = {
 #define	ISSET(t,f)	((t) & (f))
 
 extern	char *nextc();
-extern	int	nldisp;
 extern	int	wakeup();
 
 /* new: tty global initialization via devsw */
@@ -386,7 +385,7 @@ ttioctl(tp, com, data, flag)
 		register int t = *(int *)data;
 		int error = 0;
 
-		if ((unsigned) t >= nldisp)
+		if ((unsigned) t >= sys_linesws)
 			return (ENXIO);
 		if (t != tp->t_line) {
 			s = spltty();

@@ -7,7 +7,7 @@
  */
 
 #ifndef	KERNEL
-extern	int	errno;			/* global error number */
+extern	int	errno;				/* global error number */
 #endif
 
 #define	EPERM			1		/* Not owner */
@@ -108,16 +108,16 @@ extern	int	errno;			/* global error number */
 #define	EPROGMISMATCH	75		/* Program version wrong */
 #define	EPROCUNAVAIL	76		/* Bad procedure for program */
 
-#define	ENOLCK		77			/* No locks available */
-#define	ENOSYS		78			/* Function not implemented */
+#define	ENOLCK			77		/* No locks available */
+#define	ENOSYS			78		/* Function not implemented */
 
-#define	EFTYPE		79			/* Inappropriate file type or format */
-#define	EAUTH		80			/* Authentication error */
-#define	ENEEDAUTH	81			/* Need authenticator */
-#define	ELAST		81			/* Must be equal largest errno */
+#define	EFTYPE			79		/* Inappropriate file type or format */
+#define	EAUTH			80		/* Authentication error */
+#define	ENEEDAUTH		81		/* Need authenticator */
+#define	ELAST			81		/* Must be equal largest errno */
 
 #ifdef	KERNEL
 /* pseudo-errors returned inside kernel to modify return back to user mode */
-#define	ERESTART	-1			/* restart syscall */
-#define	EJUSTRETURN	-2			/* don't modify regs, just return */
+#define	ERESTART		-1		/* restart syscall */
+#define	EJUSTRETURN		-2		/* don't modify regs, just return */
 #endif

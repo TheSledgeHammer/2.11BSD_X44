@@ -35,11 +35,13 @@
 /* $Header: /usr/src/sys/net/RCS/if_sl.c,v 1.1 88/08/18 00:28:00 bin Exp Locker: bin $ */
 /* from if_sl.c,v 1.11 84/10/04 12:54:47 rick Exp */
 
+#include <sys/cdefs.h>
+
 #include "sl.h"
 #if NSL > 0
 #include <sys/param.h>
 #include <sys/mbuf.h>
-#include <sys/buff.h>
+#include <sys/buf.h>
 #include <sys/dk.h>
 #include <sys/domain.h>
 #include <sys/protosw.h>
@@ -48,6 +50,8 @@
 #include <sys/file.h>
 #include <sys/tty.h>
 #include <sys/errno.h>
+#include <sys/user.h>
+#include <sys/conf.h>
 
 #include <net/if.h>
 #include <net/netisr.h>
@@ -59,38 +63,35 @@
 #include <netinet/ip.h>
 #endif
 
+#include <net/if_slvar.h>
+
+#include <sys/time.h>
+#include <net/bpf.h>
+
 /*
  * N.B.: SLMTU is now a hard limit on input packet size.
  * SLMTU must be <= CLBYTES - sizeof(struct ifnet *).
  */
-#define	SLMTU	1006
-#define	SLIP_HIWAT	500	/* don't start a new packet if HIWAT on queue */
-#define	CLISTRESERVE	200	/* Can't let clists get too low */
-
-struct sl_softc {
-	struct	ifnet sc_if;	/* network-visible interface */
-	short	sc_flags;	/* see below */
-	short	sc_ilen;	/* length of input-packet-so-far */
-	struct	tty *sc_ttyp;	/* pointer to tty structure */
-	char	*sc_mp;		/* pointer to next available buf char */
-	char	*sc_buf;	/* input buffer */
-} sl_softc[NSL];
+#define	SLMTU				1006
+#define	SLIP_HIWAT			500		/* don't start a new packet if HIWAT on queue */
+#define	CLISTRESERVE		200		/* Can't let clists get too low */
 
 /* flags */
-#define	SC_ESCAPED	0x0001	/* saw a FRAME_ESCAPE */
+#define	SC_ESCAPED			0x0001	/* saw a FRAME_ESCAPE */
 
-#define FRAME_END	 	0300		/* Frame End */
-#define FRAME_ESCAPE		0333		/* Frame Esc */
-#define TRANS_FRAME_END	 	0334		/* transposed frame end */
-#define TRANS_FRAME_ESCAPE 	0335		/* transposed frame esc */
+#define FRAME_END	 		0300	/* Frame End */
+#define FRAME_ESCAPE		0333	/* Frame Esc */
+#define TRANS_FRAME_END	 	0334	/* transposed frame end */
+#define TRANS_FRAME_ESCAPE 	0335	/* transposed frame esc */
 
 #define t_sc T_LINEP
 
-int sloutput(), slioctl(), slopen(), sltioctl();
+//int sloutput(), slioctl(), slopen(), sltioctl();
 
 /*
  * Called from boot code to establish sl interfaces.
  */
+void
 slattach()
 {
 	register struct sl_softc *sc;
@@ -113,6 +114,7 @@ slattach()
  * Attach the given tty to the first available sl unit.
  */
 /* ARGSUSED */
+int
 slopen(dev, tp)
 	dev_t dev;
 	register struct tty *tp;
@@ -149,8 +151,10 @@ slopen(dev, tp)
  * Detach the tty from the sl unit.
  * Mimics part of ttyclose().
  */
-slclose(tp)
+int
+slclose(tp, flag)
 	struct tty *tp;
+	int flag;
 {
 	register struct sl_softc *sc;
 	int s;
@@ -169,6 +173,7 @@ slclose(tp)
 		sc->sc_buf = 0;
 	}
 	splx(s);
+	return (0);
 }
 
 /*
@@ -176,9 +181,12 @@ slclose(tp)
  * Provide a way to get the sl unit number.
  */
 /* ARGSUSED */
-sltioctl(tp, cmd, data, flag)
+int
+sltioctl(tp, cmd, data, flag, p)
 	struct tty *tp;
+	int cmd, flag;
 	caddr_t data;
+	struct proc *p;
 {
 
 	if (cmd == TIOCGETD) {
@@ -192,6 +200,7 @@ sltioctl(tp, cmd, data, flag)
 /*
  * Queue a packet.  Start transmission if not active.
  */
+int
 sloutput(ifp, m, dst)
 	register struct ifnet *ifp;
 	register struct mbuf *m;
@@ -244,6 +253,7 @@ sloutput(ifp, m, dst)
  * to send from the interface queue and map it to
  * the interface before starting output.
  */
+int
 slstart(tp)
 	register struct tty *tp;
 {
@@ -266,20 +276,20 @@ slstart(tp)
 		if ((c_cc = mfkd(&tp->t_outq.c_cc)) > 0)
 			TTSTART(tp);
 		if (c_cc > SLIP_HIWAT)
-			return;
+			return (0);
 
 		/*
 		 * This happens briefly when the line shuts down.
 		 */
 		if (sc == NULL)
-			return;
+			return (0);
 
 		/*
 		 * If system is getting low on clists
 		 * and we have something running already, stop here.
 		 */
 		if (mfkd(&cfreecount) < CLISTRESERVE + SLMTU && c_cc)
-			return;
+			return (0);
 
 		/*
 		 * Get a packet and send it to the interface.
@@ -288,7 +298,7 @@ slstart(tp)
 		IF_DEQUEUE(&sc->sc_if.if_snd, m);
 		splx(s);
 		if (m == NULL)
-			return;
+			return (0);
 
 		/*
 		 * The extra FRAME_END will start up a new packet, and thus
@@ -362,8 +372,10 @@ slstart(tp)
 		} else
 			sc->sc_if.if_opackets++;
 	}
+	return (0);
 }
 
+int
 slinit(sc)
 	register struct sl_softc *sc;
 {
@@ -452,6 +464,7 @@ nocopy:
 /*
  * tty interface receiver interrupt.
  */
+int
 slinput(c, tp)
 	register int c;
 	register struct tty *tp;
@@ -465,7 +478,7 @@ slinput(c, tp)
 #endif
 	sc = (struct sl_softc *)mfkd(&tp->t_sc);
 	if (sc == NULL)
-		return;
+		return (0);
 
 	c &= 0xff;
 	if (sc->sc_flags & SC_ESCAPED) {
@@ -484,18 +497,18 @@ slinput(c, tp)
 			sc->sc_if.if_ierrors++;
 			sc->sc_mp = sc->sc_buf + sizeof(struct ifnet *);
 			sc->sc_ilen = 0;
-			return;
+			return (0);
 		}
 	} else {
 		switch (c) {
 
 		case FRAME_END:
 			if (sc->sc_ilen == 0)	/* ignore */
-				return;
+				return (0);
 			m = sl_btom(sc, sc->sc_ilen, &sc->sc_if);
 			if (m == NULL) {
 				sc->sc_if.if_ierrors++;
-				return;
+				return (0);
 			}
 			sc->sc_mp = sc->sc_buf + sizeof(struct ifnet *);
 			sc->sc_ilen = 0;
@@ -510,25 +523,27 @@ slinput(c, tp)
 				schednetisr(NETISR_IP);
 			}
 			splx(s);
-			return;
+			return (0);
 
 		case FRAME_ESCAPE:
 			sc->sc_flags |= SC_ESCAPED;
-			return;
+			return (0);
 		}
 	}
 	if (++sc->sc_ilen > SLMTU) {
 		sc->sc_if.if_ierrors++;
 		sc->sc_mp = sc->sc_buf + sizeof(struct ifnet *);
 		sc->sc_ilen = 0;
-		return;
+		return (0);
 	}
 	*sc->sc_mp++ = c;
+	return (0);
 }
 
 /*
  * Process an ioctl request.
  */
+int
 slioctl(ifp, cmd, data)
 	register struct ifnet *ifp;
 	int cmd;

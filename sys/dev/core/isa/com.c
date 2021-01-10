@@ -194,12 +194,12 @@ u_int com_rbuf_size = COM_RING_SIZE;
 u_int com_rbuf_hiwat = (COM_RING_SIZE * 1) / 4;
 u_int com_rbuf_lowat = (COM_RING_SIZE * 3) / 4;
 
-static int	comconsaddr;
-static bus_space_tag_t comconstag;
-static bus_space_handle_t comconsioh;
-static int	comconsattached;
-static int comconsrate;
-static tcflag_t comconscflag;
+static int					comconsaddr;
+static bus_space_tag_t 		comconstag;
+static bus_space_handle_t 	comconsioh;
+static int					comconsattached;
+static int 					comconsrate;
+static tcflag_t 			comconscflag;
 
 static int ppscap =
 	PPS_TSFMT_TSPEC |
@@ -954,7 +954,7 @@ compoll(dev, events, p)
 	int events;
 	struct proc *p;
 {
-	struct com_softc *sc = device_lookup(&com_cd, COMUNIT(dev));
+	struct com_softc *sc = com_cd.cd_devs[COMUNIT(dev)];
 	struct tty *tp = sc->sc_tty;
 
 	if (COM_ISALIVE(sc) == 0)

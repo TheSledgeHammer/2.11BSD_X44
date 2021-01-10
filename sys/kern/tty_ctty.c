@@ -176,16 +176,16 @@ cttyselect(dev, flag, p)
 
 const struct cdevsw ctty_cdevsw = {
 		.d_open = cttyopen,
-		.d_close = nulldev,
+		.d_close = nullclose,
 		.d_read = cttyread,
 		.d_write = cttywrite,
 		.d_ioctl = cttyioctl,
-		.d_stop = nulldev,
-		.d_tty = nulldev,
+		.d_stop = nullstop,
+		.d_tty = nulltty,
 		.d_select = cttyselect,
 		.d_poll = cttypoll,
-		.d_mmap = nulldev,
-		.d_discard = nulldev,
+		.d_mmap = nullmmap,
+		.d_discard = nulldiscard,
 		.d_type = D_TTY
 };
 

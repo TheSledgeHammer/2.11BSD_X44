@@ -49,7 +49,10 @@ struct iovec {
 	size_t	 iov_len;	/* Length. */
 };
 
-enum	uio_rw { UIO_READ, UIO_WRITE };
+enum uio_rw {
+	UIO_READ,
+	UIO_WRITE
+};
 
 /* Segment flag values. */
 enum uio_seg {
@@ -58,22 +61,21 @@ enum uio_seg {
 	UIO_USERISPACE		/* from user I space */
 };
 
-
 #ifdef KERNEL
 struct uio {
-	struct	iovec *uio_iov;
-	int		uio_iovcnt;
-	off_t	uio_offset;
-	int		uio_resid;
+	struct	iovec 	*uio_iov;
+	int				uio_iovcnt;
+	off_t			uio_offset;
+	int				uio_resid;
 	enum	uio_seg uio_segflg;
-	enum	uio_rw uio_rw;
-	struct	proc *uio_procp
+	enum	uio_rw 	uio_rw;
+	struct	proc 	*uio_procp
 };
 
 /*
  * Limits
  */
-#define UIO_MAXIOV	1024		/* max 1K of iov's */
+#define UIO_MAXIOV		1024	/* max 1K of iov's */
 #define UIO_SMALLIOV	8		/* 8 on stack, else rmalloc */
 #endif /* KERNEL */
 

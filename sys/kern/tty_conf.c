@@ -33,11 +33,11 @@ int	tbopen(),tbclose(),tbread(),tbinput(),tbioctl();
 #endif
 /* #include "sl.h" */
 #if NSL > 0
-int	SLOPEN(),SLCLOSE(),SLINPUT(),SLTIOCTL(),SLSTART();
+int	slopen(),slclose(),slinput(),slioctl(),slstart();
 #endif
 
-/* 0- OTTYDISC */
-struct linesw ottydisc = {
+/* 0- TTYDISC (Termios) */
+struct linesw ttydisc = {
 	.l_open = ttyopen,
 	.l_close = ttylclose,
 	.l_read = ttread,
@@ -48,10 +48,10 @@ struct linesw ottydisc = {
 	.l_meta = nulldev,
 	.l_start = ttstart,
 	.l_modem = ttymodem,
-	.l_poll = nodev			/* add poll */
+	.l_poll = nopoll
 };
 
-/* 2- NTTYDISC */
+/* 1- NTTYDISC */
 struct linesw nttydisc = {
 	.l_open = ttyopen,
 	.l_close = ttylclose,
@@ -63,10 +63,25 @@ struct linesw nttydisc = {
 	.l_meta = nulldev,
 	.l_start = ttstart,
 	.l_modem = ttymodem,
-	.l_poll = nodev			/* add poll */
+	.l_poll = nopoll
 };
 
-/* 1- NETLDISC */
+/* 2- OTTYDISC */
+struct linesw ottydisc = {
+	.l_open = ttyopen,
+	.l_close = ttylclose,
+	.l_read = ttread,
+	.l_write = ttwrite,
+	.l_ioctl = nullioctl,
+	.l_rint = ttyinput,
+	.l_rend = nodev,
+	.l_meta = nulldev,
+	.l_start = ttstart,
+	.l_modem = ttymodem,
+	.l_poll = nopoll
+};
+
+/* 3- NETLDISC */
 struct linesw netldisc = {
 	.l_open = bkopen,
 	.l_close = bkclose,
@@ -78,10 +93,10 @@ struct linesw netldisc = {
 	.l_meta = nulldev,
 	.l_start = ttstart,
 	.l_modem = nullmodem,
-	.l_poll = nodev			/* add poll */
+	.l_poll = nopoll
 };
 
-/* 3- TABLDISC */
+/* 4- TABLDISC */
 struct linesw tabldisc = {
 	.l_open = tbopen,
 	.l_close = tbclose,
@@ -93,72 +108,57 @@ struct linesw tabldisc = {
 	.l_meta = nulldev,
 	.l_start = ttstart,
 	.l_modem = nullmodem,
-	.l_poll = nodev			/* add poll */
+	.l_poll = nopoll
 };
 
-/* 4- SLIPDISC */
+/* 5- SLIPDISC */
 struct linesw slipdisc = {
-	.l_open = SLOPEN,
-	.l_close = SLCLOSE,
-	.l_read = nodev,
-	.l_write = nodev,
-	.l_ioctl = SLTIOCTL,
-	.l_rint = SLINPUT,
+	.l_open = slopen,
+	.l_close = slclose,
+	.l_read = noread,
+	.l_write = nowrite,
+	.l_ioctl = slioctl,
+	.l_rint = slinput,
 	.l_rend = nodev,
-	.l_meta = nulldev,
-	.l_start = SLSTART,
-	.l_modem = nulldev,
-	.l_poll = nodev			/* add poll */
+	.l_meta = nodev,
+	.l_start = slstart,
+	.l_modem = nullmodem,
+	.l_poll = nopoll
 };
 
-struct linesw linesw[] =
-{
-	ttyopen, ttylclose, ttread, ttwrite, nullioctl,	/* 0- OTTYDISC */
-	ttyinput, nodev, nulldev, ttstart, ttymodem,
-#if NBK > 0
-	bkopen, bkclose, bkread, ttwrite, bkioctl,		/* 1- NETLDISC */
-	bkinput, nodev, nulldev, ttstart, nullmodem,
-#else
-	nodev, nodev, nodev, nodev, nodev,
-	nodev, nodev, nodev, nodev, nodev,
-#endif
-	ttyopen, ttylclose, ttread, ttwrite, nullioctl,	/* 2- NTTYDISC */
-	ttyinput, nodev, nulldev, ttstart, ttymodem,
-#if NTB > 0
-	tbopen, tbclose, tbread, nodev, tbioctl,
-	tbinput, nodev, nulldev, ttstart, nullmodem,	/* 3- TABLDISC */
-#else
-	nodev, nodev, nodev, nodev, nodev,
-	nodev, nodev, nodev, nodev, nodev,
-#endif
-#if NSL > 0
-	SLOPEN, SLCLOSE, nodev, nodev, SLTIOCTL,
-	SLINPUT, nodev, nulldev, SLSTART, nulldev,		/* 4- SLIPDISC */
-#else
-	nodev, nodev, nodev, nodev, nodev,
-	nodev, nodev, nodev, nodev, nodev,
-#endif
+/* 6- PPPDISC */
+struct linesw pppdisc = {
+	.l_open = noopen,
+	.l_close = noclose,
+	.l_read = noread,
+	.l_write = nowrite,
+	.l_ioctl = noioctl,
+	.l_rint = norint,
+	.l_rend = nodev,
+	.l_meta = nodev,
+	.l_start = nostart,
+	.l_modem = nomodem,
+	.l_poll = nopoll
 };
-int	nldisp = sizeof (linesw) / sizeof (linesw[0]);
 
 /* initialize tty conf structures */
 void
 tty_conf_init(devsw)
 	struct devswtable *devsw;
 {
-	//DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &ttydisc);	/* 0- TTYDISC */
+	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &ttydisc);	/* 0- TTYDISC */
+	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &nttydisc);	/* 1- NTTYDISC */
+	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &ottydisc);	/* 2- OTTYDISC */
 #if NBK > 0
-	DEVSWIO_CONFIG_INIT(devsw, NBK, NULL, NULL, &netldisc);	/* 1- NETLDISC */
+	DEVSWIO_CONFIG_INIT(devsw, NBK, NULL, NULL, &netldisc);	/* 3- NETLDISC */
 #endif
-	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &nttydisc);	/* 2- NTTYDISC */
 #if NTB > 0
-	DEVSWIO_CONFIG_INIT(devsw, NTB, NULL, NULL, &tabldisc);	/* 3- TABLDISC */
+	DEVSWIO_CONFIG_INIT(devsw, NTB, NULL, NULL, &tabldisc);	/* 4- TABLDISC */
 #endif
 #if NSL > 0
-	DEVSWIO_CONFIG_INIT(devsw, NSL, NULL, NULL, &slipdisc);	/* 4- SLIPDISC */
+	DEVSWIO_CONFIG_INIT(devsw, NSL, NULL, NULL, &slipdisc);	/* 5- SLIPDISC */
 #endif
-	//DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &pppdisc);	/* 5- PPPDISC */
-	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &ottydisc);	/* 6- OTTYDISC */
+	DEVSWIO_CONFIG_INIT(devsw, 0, NULL, NULL, &pppdisc);	/* 6- PPPDISC */
 }
 
 /*
@@ -178,61 +178,3 @@ nullioctl(tp, cmd, data, flags)
 #endif
 	return (-1);
 }
-
-/* TODO: Fix or rewrite. Still Using PDP-11 machine code */
-#if NSL > 0
-SLOPEN(dev, tp)
-	dev_t dev;
-	struct tty *tp;
-{
-	int error, slopen();
-
-	if (!suser())
-		return (EPERM);
-	if (tp->t_line == SLIPDISC)
-		return (EBUSY);
-	error = KScall(slopen, sizeof(dev_t) + sizeof(struct tty *), dev, tp);
-	if (!error)
-		ttyflush(tp, FREAD | FWRITE);
-	return(error);
-}
-
-SLCLOSE(tp, flag)
-	struct tty *tp;
-	int flag;
-{
-	int slclose();
-
-	ttywflush(tp);
-	tp->t_line = 0;
-	KScall(slclose, sizeof(struct tty *), tp);
-}
-
-SLTIOCTL(tp, cmd, data, flag)
-	struct tty *tp;
-	int cmd, flag;
-	caddr_t data;
-{
-	int sltioctl();
-
-	return(KScall(sltioctl, sizeof(struct tty *) + sizeof(int) +
-	    sizeof(caddr_t) + sizeof(int), tp, cmd, data, flag));
-}
-
-SLSTART(tp)
-	struct tty *tp;
-{
-	void slstart();
-
-	KScall(slstart, sizeof(struct tty *), tp);
-}
-
-SLINPUT(c, tp)
-	int c;
-	struct tty *tp;
-{
-	void slinput();
-
-	KScall(slinput, sizeof(int) + sizeof(struct tty *), c, tp);
-}
-#endif

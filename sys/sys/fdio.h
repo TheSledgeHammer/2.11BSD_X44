@@ -78,14 +78,14 @@ struct fdformat_parms {
 };
 
 
-#define FDOPT_NORETRY 0x0001	/* no retries on failure (cleared on close) */
-#define FDOPT_SILENT  0x0002	/* no error messages (cleared on close) */
+#define FDOPT_NORETRY 		0x0001	/* no retries on failure (cleared on close) */
+#define FDOPT_SILENT  		0x0002	/* no error messages (cleared on close) */
 
-#define FDIOCGETOPTS  _IOR('d', 114, int) /* drive options, see previous */
-#define FDIOCSETOPTS  _IOW('d', 115, int)
+#define FDIOCGETOPTS  		_IOR('d', 114, int) /* drive options, see previous */
+#define FDIOCSETOPTS  		_IOW('d', 115, int)
 
-#define FDIOCSETFORMAT _IOW('d', 116, struct fdformat_parms)  /* set format parms */
-#define FDIOCGETFORMAT 	_IOR('d', 117, struct fdformat_parms) /* get format parms */
-#define FDIOCFORMAT_TRACK _IOW('d', 118, struct fdformat_cmd) /* do it */
+#define FDIOCSETFORMAT 		_IOW('d', 116, struct fdformat_parms)  /* set format parms */
+#define FDIOCGETFORMAT 		_IOR('d', 117, struct fdformat_parms) /* get format parms */
+#define FDIOCFORMAT_TRACK 	_IOW('d', 118, struct fdformat_cmd) /* do it */
 
 #endif /* _SYS_FDIO_H_ */

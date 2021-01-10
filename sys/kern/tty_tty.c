@@ -7,8 +7,7 @@
  */
 
 /*
- * Indirect driver for controlling tty.
- *
+ * Indirect driver for controlling tty compatibility. Pass through to ctty
  */
 #include <sys/param.h>
 #include <sys/user.h>
@@ -16,16 +15,6 @@
 #include <sys/ioctl.h>
 #include <sys/tty.h>
 #include <sys/conf.h>
-
-const struct cdevsw sy_cdevsw = {
-		.d_open = syopen,
-		.d_read = syread,
-		.d_write = sywrite,
-		.d_ioctl = syioctl,
-		.d_select = syselect,
-		.d_poll = sypoll,
-		.d_type = D_TTY
-};
 
 /*ARGSUSED*/
 int
@@ -35,7 +24,7 @@ syopen(dev, flag, type)
 {
 	if (u->u_ttyp == NULL)
 		return (ENXIO);
-	return((*cdevsw[major(u->u_ttyd)].d_open)(u->u_ttyd, flag, type, u->u_procp));
+	return (cttyopen(u->u_ttyd, flag, type, u->u_procp));
 }
 
 /*ARGSUSED*/
@@ -47,7 +36,7 @@ syread(dev, uio, flag)
 {
 	if (u->u_ttyp == NULL)
 		return (ENXIO);
-	return ((*cdevsw[major(u->u_ttyd)].d_read)(u->u_ttyd, uio, flag));
+	return (cttyread(u->u_ttyd, uio, flag));
 }
 
 /*ARGSUSED*/
@@ -59,7 +48,7 @@ sywrite(dev, uio, flag)
 {
 	if (u->u_ttyp == NULL)
 		return (ENXIO);
-	return ((*cdevsw[major(u->u_ttyd)].d_write)(u->u_ttyd, uio, flag));
+	return (cttywrite(u->u_ttyd, uio, flag));
 }
 
 /*ARGSUSED*/
@@ -78,7 +67,7 @@ syioctl(dev, cmd, addr, flag)
 	}
 	if (u->u_ttyp == NULL)
 		return (ENXIO);
-	return ((*cdevsw[major(u->u_ttyd)].d_ioctl)(u->u_ttyd, cmd, addr, flag, u->u_procp));
+	return (cttyioctl(u->u_ttyd, cmd, addr, flag, u->u_procp));
 }
 
 /*ARGSUSED*/
@@ -92,7 +81,7 @@ syselect(dev, flag)
 		u->u_error = ENXIO;
 		return (0);
 	}
-	return ((*cdevsw[major(u->u_ttyd)].d_select)(u->u_ttyd, flag, u->u_procp));
+	return (cttypoll(u->u_ttyd, flag, u->u_procp));
 }
 
 int
@@ -105,5 +94,5 @@ sypoll(dev, events)
 		u->u_error = ENXIO;
 		return (0);
 	}
-	return ((*cdevsw[major(u->u_ttyd)].d_poll)(u->u_ttyd, events, u->u_procp));
+	return (cttyselect(u->u_ttyd, events, u->u_procp));
 }

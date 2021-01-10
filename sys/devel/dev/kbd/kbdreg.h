@@ -34,6 +34,8 @@
 #include <sys/queue.h>
 #include <sys/user.h>
 
+#include <genkbdreg.h>
+
 /* forward declarations */
 typedef struct keyboard keyboard_t;
 struct keymap;
@@ -155,7 +157,11 @@ struct keyboard {
 #define KB_DELAY2			100
 	unsigned long			kb_count;		/* # of processed key strokes */
 	u_char					kb_lastact[NUM_KEYS/2];
-	//struct cdev 			*kb_dev;
+
+	struct device			*kb_dev;
+
+	struct genkbd_softc 	*kb_sc;			/* back pointer */
+
 	const keyboard_driver_t	*kb_drv;
 };
 
@@ -184,140 +190,6 @@ struct keyboard {
 /*
  * Keyboard disciplines: call actual handlers via kbdsw[].
  */
-static __inline int
-kbdd_probe(keyboard_t *kbd, int unit, void *arg, int flags)
-{
-
-	return ((*kbd->kb_drv->kbdsw->probe)(unit, arg, flags));
-}
-
-static __inline int
-kbdd_init(keyboard_t *kbd, int unit, keyboard_t **kbdpp, void *arg, int flags)
-{
-
-	return ((*kbd->kb_drv->kbdsw->init)(unit, kbdpp, arg, flags));
-}
-
-static __inline int
-kbdd_term(keyboard_t *kbd)
-{
-
-	return ((*kbd->kb_drv->kbdsw->term)(kbd));
-}
-
-static __inline int
-kbdd_intr(keyboard_t *kbd, void *arg)
-{
-
-	return ((*kbd->kb_drv->kbdsw->intr)(kbd, arg));
-}
-
-static __inline int
-kbdd_test_if(keyboard_t *kbd)
-{
-
-	return ((*kbd->kb_drv->kbdsw->test_if)(kbd));
-}
-
-static __inline int
-kbdd_enable(keyboard_t *kbd)
-{
-
-	return ((*kbd->kb_drv->kbdsw->enable)(kbd));
-}
-
-static __inline int
-kbdd_disable(keyboard_t *kbd)
-{
-
-	return ((*kbd->kb_drv->kbdsw->disable)(kbd));
-}
-
-static __inline int
-kbdd_read(keyboard_t *kbd, int wait)
-{
-
-	return ((*kbd->kb_drv->kbdsw->read)(kbd, wait));
-}
-
-static __inline int
-kbdd_check(keyboard_t *kbd)
-{
-
-	return ((*kbd->kb_drv->kbdsw->check)(kbd));
-}
-
-static __inline u_int
-kbdd_read_char(keyboard_t *kbd, int wait)
-{
-
-	return ((*kbd->kb_drv->kbdsw->read_char)(kbd, wait));
-}
-
-static __inline int
-kbdd_check_char(keyboard_t *kbd)
-{
-
-	return ((*kbd->kb_drv->kbdsw->check_char)(kbd));
-}
-
-static __inline int
-kbdd_ioctl(keyboard_t *kbd, u_long cmd, caddr_t data)
-{
-
-	if (kbd == NULL)
-		return (ENODEV);
-	return ((*kbd->kb_drv->kbdsw->ioctl)(kbd, cmd, data));
-}
-
-static __inline int
-kbdd_lock(keyboard_t *kbd, int lock)
-{
-
-	return ((*kbd->kb_drv->kbdsw->lock)(kbd, lock));
-}
-
-static __inline void
-kbdd_clear_state(keyboard_t *kbd)
-{
-
-	(*kbd->kb_drv->kbdsw->clear_state)(kbd);
-}
-
-static __inline int
-kbdd_get_state(keyboard_t *kbd, void *buf, int len)
-{
-
-	return ((*kbd->kb_drv->kbdsw->get_state)(kbd, buf, len));
-}
-
-static __inline int
-kbdd_set_state(keyboard_t *kbd, void *buf, int len)
-{
-
-	return ((*kbd->kb_drv->kbdsw->set_state)(kbd, buf, len));
-}
-
-static __inline u_char *
-kbdd_get_fkeystr(keyboard_t *kbd, int fkey, size_t *len)
-{
-
-	return ((*kbd->kb_drv->kbdsw->get_fkeystr)(kbd, fkey, len));
-}
-
-static __inline int
-kbdd_poll(keyboard_t *kbd, int on)
-{
-
-	return ((*kbd->kb_drv->kbdsw->poll)(kbd, on));
-}
-
-static __inline void
-kbdd_diag(keyboard_t *kbd, int level)
-{
-
-	(*kbd->kb_drv->kbdsw->diag)(kbd, level);
-}
 
 #define KEYBOARD_DRIVER(name, sw, config)				\
 	static struct keyboard_driver name##_kbd_driver = { \

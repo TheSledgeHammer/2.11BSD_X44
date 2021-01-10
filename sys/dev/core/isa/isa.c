@@ -97,7 +97,7 @@ isaattach(parent, self, aux)
 	struct device *parent, *self;
 	void *aux;
 {
-	struct is_softc *sc = (struct isa_softc *)self;
+	struct isa_softc *sc = (struct isa_softc *)self;
 	struct isabus_attach_args *iba = aux;
 
 	isa_attach_hook(parent, self, iba);

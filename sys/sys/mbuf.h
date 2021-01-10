@@ -190,53 +190,55 @@ struct mbuf_cont {
  * MCLFREE frees clusters allocated by MCLALLOC.
  */
 #ifndef	pdp11
-#define	MCLALLOC(m, i) \
-	{ int ms = splimp(); \
-	  if (mclfree == 0) \
-		(void)m_clalloc((i), MPG_CLUSTERS, M_DONTWAIT); \
-	  if ((m)=mclfree) \
-	     {++mclrefcnt[mtocl(m)];mbstat.m_clfree--;mclfree = (m)->m_next;} \
-	  splx(ms); }
+#define	MCLALLOC(m, i) {													\
+	  int ms = splimp(); 													\
+	  if (mclfree == 0) 													\
+		(void)m_clalloc((i), MPG_CLUSTERS, M_DONTWAIT); 					\
+	  if ((m)=mclfree) 														\
+	     {++mclrefcnt[mtocl(m)];mbstat.m_clfree--;mclfree = (m)->m_next;} 	\
+	  splx(ms); 															\
+}
 #else
-#define	MCLALLOC(m, i) \
-	{ int ms = splimp(); \
-	  if ((m)=mclfree) \
-	     {++mclrefcnt[mtocl(m)];mbstat.m_clfree--;mclfree = (m)->m_next;} \
-	  splx(ms); }
+#define	MCLALLOC(m, i) {													\
+	  int ms = splimp(); 													\
+	  if ((m)=mclfree) 														\
+	     {++mclrefcnt[mtocl(m)];mbstat.m_clfree--;mclfree = (m)->m_next;} 	\
+	  splx(ms);																\
+}
 #endif
 #define	M_HASCL(m)	((m)->m_off >= MSIZE)
 #define	MTOCL(m)	((struct mbuf *)(mtod((m), int) &~ MCLOFSET))
 
-#define	MCLGET(m) \
-	{ struct mbuf *p; \
-	  MCLALLOC(p, 1); \
-	  if (p) { \
-		(m)->m_off = (int)p - (int)(m); \
-		(m)->m_len = MCLBYTES; \
-	  } else \
-		(m)->m_len = MLEN; \
-	}
-#define	MCLFREE(m) { \
-	if (--mclrefcnt[mtocl(m)] == 0) \
-	    { (m)->m_next = mclfree;mclfree = (m);mbstat.m_clfree++;} \
-	}
-#define	MFREE(m, n) \
-	{ int ms = splimp(); \
-	  if ((m)->m_type == MT_FREE) panic("mfree"); \
-	  mbstat.m_mtypes[(m)->m_type]--; mbstat.m_mtypes[MT_FREE]++; \
-	  (m)->m_type = MT_FREE; \
-	  if (M_HASCL(m)) { \
-		(n) = MTOCL(m); \
-		MCLFREE(n); \
-	  } \
-	  (n) = (m)->m_next; (m)->m_next = mfree; \
-	  (m)->m_off = 0; (m)->m_act = 0; mfree = (m); \
-	  splx(ms); \
-	  if (m_want) { \
-		  m_want = 0; \
-		  WAKEUP((caddr_t)&mfree); \
-	  } \
-	}
+#define	MCLGET(m) { 												\
+	  struct mbuf *p; 												\
+	  MCLALLOC(p, 1); 												\
+	  if (p) { 														\
+		(m)->m_off = (int)p - (int)(m); 							\
+		(m)->m_len = MCLBYTES; 										\
+	  } else 														\
+		(m)->m_len = MLEN; 											\
+}
+#define	MCLFREE(m) { 												\
+	if (--mclrefcnt[mtocl(m)] == 0) 								\
+	    { (m)->m_next = mclfree;mclfree = (m);mbstat.m_clfree++;} 	\
+}
+#define	MFREE(m, n) {												\
+	  int ms = splimp(); 											\
+	  if ((m)->m_type == MT_FREE) panic("mfree"); 					\
+	  mbstat.m_mtypes[(m)->m_type]--; mbstat.m_mtypes[MT_FREE]++; 	\
+	  (m)->m_type = MT_FREE; 										\
+	  if (M_HASCL(m)) { 											\
+		(n) = MTOCL(m); 											\
+		MCLFREE(n); 												\
+	  } 															\
+	  (n) = (m)->m_next; (m)->m_next = mfree; 						\
+	  (m)->m_off = 0; (m)->m_act = 0; mfree = (m); 					\
+	  splx(ms); 													\
+	  if (m_want) { 												\
+		  m_want = 0; 												\
+		  WAKEUP((caddr_t)&mfree); 									\
+	  } 															\
+}
 
 /*
  * Mbuf statistics.

@@ -81,8 +81,8 @@ struct vnode {
 	long				v_numoutput;	/* num of writes in progress */
 	enum vtype 			v_type;			/* vnode type */
 	union {
-		struct mount	*vu_mountedhere;/* ptr to mounted vfs (VDIR) */
 		struct proc		*vu_proc;		/* ptr to proc */
+		struct mount	*vu_mountedhere;/* ptr to mounted vfs (VDIR) */
 		struct socket	*vu_socket;		/* unix ipc (VSOCK) */
 		caddr_t			vu_vmdata;		/* private data for vm (VREG) */
 		struct specinfo	*vu_specinfo;	/* device (VCHR, VBLK) */

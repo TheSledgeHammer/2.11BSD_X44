@@ -221,12 +221,12 @@ struct ttysize {
 #define	TIOCFLAG_PPS		0x180							/* call hardpps on carrier up */
 
 #define	TTYDISC				0								/* termios tty line discipline */
-#define	NETLDISC			1								/* line discip for berk net */
-#define	NTTYDISC			2								/* new tty discipline */
-#define	TABLDISC			3								/* tablet discipline */
-#define	SLIPDISC			4								/* serial IP discipline */
-#define PPPDISC				5								/* PPP discipline */
-#define	OTTYDISC			6								/* old, v7 std tty driver */
+#define	NTTYDISC			1								/* new tty discipline */
+#define	OTTYDISC			2								/* old, v7 std tty driver */
+#define	NETLDISC			3								/* line discip for berk net */
+#define	TABLDISC			4								/* tablet discipline */
+#define	SLIPDISC			5								/* serial IP discipline */
+#define PPPDISC				6								/* PPP discipline */
 
 /* Generic file-descriptor ioctl's. */
 #define	FIOCLEX				_IO(f, 1)						/* set exclusive use on fd */

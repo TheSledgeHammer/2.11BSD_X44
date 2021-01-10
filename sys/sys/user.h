@@ -35,8 +35,8 @@
  * 0140000; contains the system stack (and possibly network stack) per
  * user; is cross referenced with the proc structure for the same process.
  */
-#define	MAXCOMLEN	MAXNAMLEN	/* <= MAXNAMLEN, >= sizeof(ac_comm) */
-#define USIZE 		UPAGES
+#define	MAXCOMLEN		MAXNAMLEN	/* <= MAXNAMLEN, >= sizeof(ac_comm) */
+#define USIZE 			UPAGES
 
 struct	pcb {									/* fake pcb structure */
 	int					(*pcb_sigc)();			/* pointer to trampoline code in user space */
@@ -138,10 +138,10 @@ struct user {
 	char				u_dupfd;				/* XXX - see kern_descrip.c/fdopen */
 
 	struct uprof {								/* profile arguments */
-		short	*pr_base;						/* buffer base */
-		unsigned pr_size;						/* buffer size */
-		unsigned pr_off;						/* pc offset */
-		unsigned pr_scale;						/* pc scaling */
+		short			*pr_base;				/* buffer base */
+		unsigned 		pr_size;				/* buffer size */
+		unsigned 		pr_off;					/* pc offset */
+		unsigned 		pr_scale;				/* pc scaling */
 	} u_prof;
 
 /* 1.6 - resource controls */
@@ -151,7 +151,7 @@ struct user {
 #define u_cmpn 			u_nd->ni_cnd			/* namei component name */
 #define u_cred 			u_cmpn->cn_cred			/* namei component name credentials */
 
-/* namei & co. */
+	/* namei & co. */
 	struct 	nameidata 	*u_nd;
 
 	short				u_xxxx[2];				/* spare */
@@ -160,15 +160,13 @@ struct user {
 					 	 	 	 	 	 	 	 * extends from u + USIZE*64
 					 	 	 	 	 	 	 	 * backward not to reach here
 					 	 	 	 	 	 	 	 */
+	vm_offset_t			u_kstack;				/* (a) Kernel VA of kstack. */
+	int					u_kstack_pages;			/* (a) Size of the kstack. */
+	int					u_uspace;				/* (a) Size of the u-area (UPAGES * PGSIZE) */
 
 /* 1.7 Remaining fields only for core dump and/or ptrace-- not valid at other times! */
 	struct kinfo_proc 	u_kproc;				/* proc + eproc */
 	struct md_coredump 	u_md;					/* machine dependent glop */
-
-
-	vm_offset_t			u_kstack;				/* (a) Kernel VA of kstack. */
-	int					u_kstack_pages;			/* (a) Size of the kstack. */
-	int					u_uspace;				/* (a) Size of the u-area (UPAGES * PGSIZE) */
 
 /* 1.8 User Threads */
 	//struct uthread		*u_uthread;			/* ptr to uthread */

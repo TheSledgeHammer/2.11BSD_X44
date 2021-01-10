@@ -57,21 +57,22 @@ struct	tbconf tbconf[TBTYPE] = {
  * Tablet state
  */
 struct tb {
-	int	tbflags;		/* mode & type bits */
-#define	TBMAXREC	17	/* max input record size */
-	char	cbuf[TBMAXREC];		/* input buffer */
+	int					tbflags;		/* mode & type bits */
+#define	TBMAXREC		17				/* max input record size */
+	char				cbuf[TBMAXREC];	/* input buffer */
 	union {
-		struct	tbpos tbpos;
+		struct	tbpos 	tbpos;
 		struct	gtcopos gtcopos;
-		struct	polpos polpos;
-	} rets;				/* processed state */
-#define NTBS	16
+		struct	polpos 	polpos;
+	} rets;								/* processed state */
+#define NTBS 			16
 } tb[NTBS];
 
 /*
  * Open as tablet discipline; called on discipline change.
  */
 /*ARGSUSED*/
+int
 tbopen(dev, tp)
 	dev_t dev;
 	register struct tty *tp;
@@ -120,6 +121,7 @@ tbclose(tp, flag)
  * Read from a tablet line.
  * Characters have been buffered in a buffer and decoded.
  */
+int
 tbread(tp, uio, flag)
 	register struct tty *tp;
 	struct uio *uio;

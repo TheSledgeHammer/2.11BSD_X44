@@ -70,6 +70,7 @@
 
 #include <sys/conf.h>
 #include <sys/queue.h>
+#include <sys/uio.h>
 
 /*
  * device switch table
