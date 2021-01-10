@@ -138,8 +138,9 @@ malloc(size, type, flags)
 		/* Allocates to Overlay Space */
 		if (flags | type == M_OVERLAY) {
 			//va = (caddr_t) ovlmem_malloc(omem_map, (vm_size_t)ctob(npg), !(flags & (M_NOWAIT | M_CANFAIL)));
+		} else {
+			va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & (M_NOWAIT | M_CANFAIL)));
 		}
-		va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & (M_NOWAIT | M_CANFAIL)));
 
         if (va == NULL) {
         	splx(s);
@@ -283,8 +284,9 @@ free(addr, type)
 		/* Free from Overlay Space */
 		if(type == M_OVERLAY) {
 			//ovlmem_free(omem_map, (vm_offset_t) addr, ctob(kup->ku_pagecnt));
+		} else {
+			kmem_free(kmem_map, (vm_offset_t) addr, ctob(kup->ku_pagecnt));
 		}
-		kmem_free(kmem_map, (vm_offset_t) addr, ctob(kup->ku_pagecnt));
 #ifdef KMEMSTATS
 		size = kup->ku_pagecnt << PGSHIFT;
 		ksp->ks_memuse -= size;
