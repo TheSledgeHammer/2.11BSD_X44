@@ -34,17 +34,26 @@
 #include <sys/queue.h>
 #include <sys/user.h>
 
-#include <genkbdreg.h>
+#define KBD_MAXKEYBOARDS		16
 
 /* forward declarations */
 typedef struct keyboard keyboard_t;
 struct keymap;
 struct accentmap;
 struct fkeytab;
-struct cdevsw;
+struct device;
+
+/* Locking functions */
+#define kbd_lock_init(k)		(simple_lock_init((k)->kb_lock->lk_lnterlock, "kbd_lock"))
+#define kbd_lock(k)	 			(simple_lock((k)->kb_lock->lk_lnterlock))
+#define kbd_unlock(k)			(simple_unlock((k)->kb_lock->lk_lnterlock))
 
 /* call back funcion */
 typedef int		kbd_callback_func_t(keyboard_t *kbd, int event, void *arg);
+
+/* keyboard cfdriver functions */
+typedef int		kbd_match_t(struct device *parent, struct cfdata *match, void *aux);
+typedef void	kbd_attach_t(struct device *parent, struct device *self, void *aux);
 
 /* keyboard function table */
 typedef int		kbd_probe_t(int unit, void *arg, int flags);
@@ -77,6 +86,9 @@ typedef struct keyboard_callback {
 } keyboard_callback_t;
 
 typedef struct keyboard_switch {
+	kbd_match_t			*match;
+	kbd_attach_t		*attach;
+
 	kbd_probe_t			*probe;
 	kbd_init_t			*init;
 	kbd_term_t			*term;
@@ -97,6 +109,30 @@ typedef struct keyboard_switch {
 	kbd_poll_mode_t 	*poll;
 	kbd_diag_t			*diag;
 } keyboard_switch_t;
+
+int genkbd_probe(keyboard_switch_t *sw, int unit, void *arg, int flags);
+int genkbd_init(keyboard_switch_t *sw, int unit, keyboard_t **kbdpp, void *arg, int flags);
+
+kbd_match_t			genkbd_match;
+kbd_attach_t		genkbd_attach;
+
+kbd_term_t			genkbd_term;
+kbd_intr_t			genkbd_intr;
+kbd_test_if_t		genkbd_test_if;
+kbd_enable_t		genkbd_enable;
+kbd_disable_t		genkbd_disable;
+kbd_read_t			genkbd_read;
+kbd_check_t			genkbd_check;
+kbd_read_char_t		genkbd_read_char;
+kbd_check_char_t 	genkbd_check_char;
+kbd_ioctl_t			genkbd_ioctl;
+kbd_lock_t			genkbd_lock;
+kbd_clear_state_t 	genkbd_clear_state;
+kbd_get_state_t		genkbd_get_state;
+kbd_set_state_t		genkbd_set_state;
+kbd_get_fkeystr_t 	genkbd_get_fkeystr;
+kbd_poll_mode_t 	genkbd_poll;
+kbd_diag_t			genkbd_diag;
 
 /*
  * Keyboard driver definition.  Some of these be immutable after definition
@@ -159,10 +195,10 @@ struct keyboard {
 	u_char					kb_lastact[NUM_KEYS/2];
 
 	struct device			*kb_dev;
-
 	struct genkbd_softc 	*kb_sc;			/* back pointer */
 
 	const keyboard_driver_t	*kb_drv;
+	struct lock				*kb_lock;
 };
 
 #define KBD_IS_VALID(k)			((k)->kb_flags & KB_VALID)
@@ -196,6 +232,7 @@ struct keyboard {
 		{ NULL }, #name, &sw, config					\
 	};													\
 	DATA_SET(kbddriver_set, name##_kbd_driver);
+
 
 /* functions for the keyboard driver */
 int					kbd_add_driver(keyboard_driver_t *driver);
@@ -264,6 +301,9 @@ int					kbd_detach(keyboard_t *kbd);
 #define LED_SCR		(1 << 2)
 #define LED_MASK	(LED_CAP | LED_NUM | LED_SCR)
 */
+
+/* global variables */
+extern keyboard_switch_t *kbdsw[KBD_MAXKEYBOARDS];
 
 /* Initialization for the kbd layer, performed by cninit. */
 void	kbdinit(void);

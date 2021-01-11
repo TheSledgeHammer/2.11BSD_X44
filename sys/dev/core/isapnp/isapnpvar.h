@@ -120,10 +120,14 @@ struct isapnp_pin {
 };
 
 struct isapnp_attach_args {
-	struct device  			*ipa_isa;	/* isa device */
-	bus_space_tag_t 		ipa_iot;	/* isa i/o space tag */
-	bus_space_tag_t 		ipa_memt;	/* isa mem space tag */
-	bus_dma_tag_t			ipa_dmat;	/* isa dma tag */
+	struct device  			*ipa_isa;		/* isa device */
+	bus_space_tag_t 		ipa_iot;		/* isa i/o space tag */
+	bus_space_tag_t 		ipa_memt;		/* isa mem space tag */
+
+#if NISADMA > 0
+	bus_dma_tag_t			ipa_dmat;		/* isa dma tag */
+#endif
+	bus_space_handle_t 		ipa_delaybah;	/* i/o handle for `delay port' */
 
 	isa_chipset_tag_t 		ipa_ic;
 

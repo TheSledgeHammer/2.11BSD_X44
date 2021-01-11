@@ -64,17 +64,12 @@ static int isapnp_print (void *, const char *);
 static int isapnp_submatch (struct device *, void *, void *);
 #endif
 static int isapnp_find (struct isapnp_softc *, int);
-#ifdef __BROKEN_INDIRECT_CONFIG
-static int isapnp_match (struct device *, void *, void *);
-#else
 static int isapnp_match (struct device *, struct cfdata *, void *);
-#endif
 static void isapnp_attach (struct device *, struct device *, void *);
 
 struct cfdriver isapnp_cd = {
 	NULL, "isapnp", isapnp_match, isapnp_attach, DV_DULL, sizeof(struct isapnp_softc)
 };
-
 
 /* isapnp_init():
  *	Write the PNP initiation key to wake up the cards...
@@ -113,9 +108,9 @@ isapnp_shift_bit(sc)
 	c2 = ISAPNP_READ_DATA(sc);
 
 	if (c1 == 0x55 && c2 == 0xAA)
-		return 0x80;
+		return (0x80);
 	else
-		return 0;
+		return (0);
 }
 
 
@@ -133,7 +128,7 @@ isapnp_findcard(sc)
 
 	if (sc->sc_ncards == ISAPNP_MAX_CARDS) {
 		printf("%s: Too many pnp cards\n", sc->sc_dev.dv_xname);
-		return 0;
+		return (0);
 	}
 
 	/* Set the read port */
@@ -146,7 +141,7 @@ isapnp_findcard(sc)
 	DELAY(1000);
 
 	/* Read the 8 bytes of the Vendor ID and Serial Number */
-	for(i = 0; i < 8; i++) {
+	for (i = 0; i < 8; i++) {
 		/* Read each bit separately */
 		for (w = 0, b = 0; b < 8; b++) {
 			u_char neg = isapnp_shift_bit(sc);
@@ -170,11 +165,10 @@ isapnp_findcard(sc)
 	if (csum == v) {
 		sc->sc_ncards++;
 		isapnp_write_reg(sc, ISAPNP_CARD_SELECT_NUM, sc->sc_ncards);
-		return 1;
+		return (1);
 	}
-	return 0;
+	return (0);
 }
-
 
 /* isapnp_free_region():
  *	Free a region
@@ -184,11 +178,8 @@ isapnp_free_region(t, r)
 	bus_space_tag_t t;
 	struct isapnp_region *r;
 {
-#ifdef _KERNEL
 	bus_space_unmap(t, r->h, r->length);
-#endif
 }
-
 
 /* isapnp_alloc_region():
  *	Allocate a single region if possible
@@ -200,19 +191,15 @@ isapnp_alloc_region(t, r)
 {
 	int error = 0;
 
-	for (r->base = r->minbase; r->base <= r->maxbase;
-	     r->base += r->align) {
-#ifdef _KERNEL
+	for (r->base = r->minbase; r->base <= r->maxbase; r->base += r->align) {
 		error = bus_space_map(t, r->base, r->length, 0, &r->h);
-#endif
 		if (error == 0)
-			return 0;
+			return (0);
 		if (r->align == 0)
 			break;
 	}
-	return error;
+	return (error);
 }
-
 
 /* isapnp_alloc_irq():
  *	Allocate an irq
@@ -228,15 +215,15 @@ isapnp_alloc_irq(ic, i)
 
 	if (i->bits == 0) {
 		i->num = 0;
-		return 0;
+		return (0);
 	}
 
 	if (isa_intr_alloc(ic, i->bits, i->type, &irq) == 0) {
 		i->num = irq;
-		return 0;
+		return (0);
 	}
 
-	return EINVAL;
+	return (EINVAL);
 }
 
 /* isapnp_alloc_drq():
@@ -247,20 +234,22 @@ isapnp_alloc_drq(isa, i)
 	struct device *isa;
 	struct isapnp_pin *i;
 {
+#if NISADMA > 0
 	int b;
 
 	if (i->bits == 0) {
 		i->num = 0;
-		return 0;
+		return (0);
 	}
 
 	for (b = 0; b < 16; b++)
 		if ((i->bits & (1 << b)) && isa_drq_isfree(isa, b)) {
 			i->num = b;
-			return 0;
+			return (0);
 		}
+#endif
 
-	return EINVAL;
+	return (EINVAL);
 }
 
 /* isapnp_testconfig():
@@ -390,7 +379,7 @@ isapnp_bestconfig(isa, sc, ipa)
 
 	for (;;) {
 		if (f == NULL)
-			return NULL;
+			return (NULL);
 
 #define SAMEDEV(a, b) (strcmp((a)->ipa_devlogic, (b)->ipa_devlogic) == 0)
 
@@ -424,17 +413,16 @@ isapnp_bestconfig(isa, sc, ipa)
 			/* Last config for this logical device is conflicting */
 			if (c == NULL) {
 				*ipa = f;
-				return best;
+				return (best);
 			}
 
 			ISAPNP_FREE(best);
 			continue;
-		}
-		else {
+		} else {
 			/* Remove all other configs for this device */
 			struct isapnp_attach_args *l = NULL, *n = NULL, *d;
 
-			for (c = f; c; ) {
+			for (c = f; c;) {
 				if (c == best)
 					continue;
 				d = c->ipa_sibling;
@@ -443,7 +431,7 @@ isapnp_bestconfig(isa, sc, ipa)
 				else {
 					if (n)
 						n->ipa_sibling = c;
-				
+
 					else
 						l = c;
 					n = c;
@@ -454,8 +442,9 @@ isapnp_bestconfig(isa, sc, ipa)
 			f = l;
 		}
 		*ipa = f;
-		return best;
+		return (best);
 	}
+	return (best);
 }
 
 
@@ -479,7 +468,7 @@ isapnp_id_to_vendor(v, id)
 	*p++ = hex[id[3] & 0x0f];
 	*p = '\0';
 
-	return v;
+	return (v);
 }
 
 
@@ -542,9 +531,8 @@ isapnp_print(aux, str)
 	struct isapnp_attach_args *ipa = aux;
 
 	if (str != NULL)
-		printf("%s: <%s, %s, %s, %s>",
-		    str, ipa->ipa_devident, ipa->ipa_devlogic,
-		    ipa->ipa_devcompat, ipa->ipa_devclass);
+		printf("%s: <%s, %s, %s, %s>", str, ipa->ipa_devident,
+				ipa->ipa_devlogic, ipa->ipa_devcompat, ipa->ipa_devclass);
 
 	isapnp_print_region("port", ipa->ipa_io, ipa->ipa_nio);
 	isapnp_print_region("mem", ipa->ipa_mem, ipa->ipa_nmem);
@@ -552,11 +540,35 @@ isapnp_print(aux, str)
 	isapnp_print_pin("irq", ipa->ipa_irq, ipa->ipa_nirq);
 	isapnp_print_pin("drq", ipa->ipa_drq, ipa->ipa_ndrq);
 
-	return UNCONF;
+	return (UNCONF);
 }
 
+/* isapnp_submatch():
+ * Special case.
+ * A lot of com devices do not have the PNPxxx identifiers
+ * they should have.  If it looks like a modem..... let's try it.
+ */
+int
+isapnp_com_submatch(parent, match, aux)
+	struct device *parent;
+	void *match, *aux;
+{
+	struct cfdata *cf = match;
+	struct isapnp_attach_args *ipa = aux;
 
-#ifdef _KERNEL
+	ipa->ipa_nmem;
+
+	if (strcmp("com", cf->cf_driver->cd_name) == 0 && ipa->ipa_nio == 1 && ipa->ipa_nirq == 1 &&
+	    ipa->ipa_ndrq == 0 && ipa->ipa_nmem == 0 && ipa->ipa_io == 8) {
+		if (isapnp_config(ipa->ipa_iot, ipa->ipa_memt, ipa)) {
+			printf("%s: error in region allocation\n", cf->cf_driver->cd_name);
+			return (0);
+		}
+		return ((*cf->cf_driver->cd_match)(parent, match, ipa));
+	}
+	return (0);
+}
+
 /* isapnp_submatch():
  *	Probe the logical device...
  */
@@ -566,10 +578,8 @@ isapnp_submatch(parent, match, aux)
 	void *match, *aux;
 {
 	struct cfdata *cf = match;
-	return ((*cf->cf_attach->ca_match)(parent, match, aux));
+	return ((*cf->cf_driver->cd_match)(parent, match, aux));
 }
-#endif
-
 
 /* isapnp_find():
  *	Probe and add cards
@@ -592,8 +602,7 @@ isapnp_find(sc, all)
 	for (p = ISAPNP_RDDATA_MIN; p <= ISAPNP_RDDATA_MAX; p += 4) {
 		sc->sc_read_port = p;
 		if (isapnp_map_readport(sc))
-			continue;
-		DPRINTF(("%s: Trying port %x\n", sc->sc_dev.dv_xname, p));
+			continue;DPRINTF(("%s: Trying port %x\n", sc->sc_dev.dv_xname, p));
 		if (isapnp_findcard(sc))
 			break;
 		isapnp_unmap_readport(sc);
@@ -601,14 +610,14 @@ isapnp_find(sc, all)
 
 	if (p > ISAPNP_RDDATA_MAX) {
 		sc->sc_read_port = 0;
-		return 0;
+		return (0);
 	}
 
 	if (all)
 		while (isapnp_findcard(sc))
 			continue;
 
-	return 1;
+	return (1);
 }
 
 
@@ -647,29 +656,27 @@ isapnp_configure(sc, ipa)
 		else
 			r = &rz;
 
-		isapnp_write_reg(sc,
-		    isapnp_io_range[i] + ISAPNP_IO_BASE_15_8, B1(r->base));
-		isapnp_write_reg(sc,
-		    isapnp_io_range[i] + ISAPNP_IO_BASE_7_0, B0(r->base));
+		isapnp_write_reg(sc, isapnp_io_range[i] + ISAPNP_IO_BASE_15_8,
+				B1(r->base));
+		isapnp_write_reg(sc, isapnp_io_range[i] + ISAPNP_IO_BASE_7_0,
+				B0(r->base));
 	}
 
 	for (i = 0; i < sizeof(isapnp_mem_range); i++) {
 		if (i < ipa->ipa_nmem)
 			r = &ipa->ipa_mem[i];
-		else 
+		else
 			r = &rz;
 
-		isapnp_write_reg(sc,
-		    isapnp_mem_range[i] + ISAPNP_MEM_BASE_23_16, B2(r->base));
-		isapnp_write_reg(sc,
-		    isapnp_mem_range[i] + ISAPNP_MEM_BASE_15_8, B1(r->base));
+		isapnp_write_reg(sc, isapnp_mem_range[i] + ISAPNP_MEM_BASE_23_16,
+				B2(r->base));
+		isapnp_write_reg(sc, isapnp_mem_range[i] + ISAPNP_MEM_BASE_15_8,
+				B1(r->base));
 
-		isapnp_write_reg(sc,
-		    isapnp_mem_range[i] + ISAPNP_MEM_LRANGE_23_16,
-		    B2(r->length));
-		isapnp_write_reg(sc,
-		    isapnp_mem_range[i] + ISAPNP_MEM_LRANGE_15_8,
-		    B1(r->length));
+		isapnp_write_reg(sc, isapnp_mem_range[i] + ISAPNP_MEM_LRANGE_23_16,
+				B2(r->length));
+		isapnp_write_reg(sc, isapnp_mem_range[i] + ISAPNP_MEM_LRANGE_15_8,
+				B1(r->length));
 	}
 
 	for (i = 0; i < sizeof(isapnp_irq_range); i++) {
@@ -680,12 +687,11 @@ isapnp_configure(sc, ipa)
 		else
 			p = &pz;
 
-		isapnp_write_reg(sc,
-		    isapnp_irq_range[i] + ISAPNP_IRQ_NUMBER, p->num);
+		isapnp_write_reg(sc, isapnp_irq_range[i] + ISAPNP_IRQ_NUMBER, p->num);
 
 		switch (p->flags) {
 		case ISAPNP_IRQTYPE_LEVEL_PLUS:
-			v = ISAPNP_IRQ_LEVEL|ISAPNP_IRQ_HIGH;
+			v = ISAPNP_IRQ_LEVEL | ISAPNP_IRQ_HIGH;
 			break;
 
 		case ISAPNP_IRQTYPE_EDGE_PLUS:
@@ -701,8 +707,7 @@ isapnp_configure(sc, ipa)
 			v = 0;
 			break;
 		}
-		isapnp_write_reg(sc,
-		    isapnp_irq_range[i] + ISAPNP_IRQ_CONTROL, v);
+		isapnp_write_reg(sc, isapnp_irq_range[i] + ISAPNP_IRQ_CONTROL, v);
 	}
 
 	for (i = 0; i < sizeof(isapnp_drq_range); i++) {
@@ -719,34 +724,26 @@ isapnp_configure(sc, ipa)
 	for (i = 0; i < sizeof(isapnp_mem32_range); i++) {
 		if (i < ipa->ipa_nmem32)
 			r = &ipa->ipa_mem32[i];
-		else 
+		else
 			r = &rz;
 
-		isapnp_write_reg(sc,
-		    isapnp_mem32_range[i] + ISAPNP_MEM32_BASE_31_24,
-		    B3(r->base));
-		isapnp_write_reg(sc,
-		    isapnp_mem32_range[i] + ISAPNP_MEM32_BASE_23_16,
-		    B2(r->base));
-		isapnp_write_reg(sc,
-		    isapnp_mem32_range[i] + ISAPNP_MEM32_BASE_15_8,
-		    B1(r->base));
-		isapnp_write_reg(sc,
-		    isapnp_mem32_range[i] + ISAPNP_MEM32_BASE_7_0,
-		    B0(r->base));
+		isapnp_write_reg(sc, isapnp_mem32_range[i] + ISAPNP_MEM32_BASE_31_24,
+				B3(r->base));
+		isapnp_write_reg(sc, isapnp_mem32_range[i] + ISAPNP_MEM32_BASE_23_16,
+				B2(r->base));
+		isapnp_write_reg(sc, isapnp_mem32_range[i] + ISAPNP_MEM32_BASE_15_8,
+				B1(r->base));
+		isapnp_write_reg(sc, isapnp_mem32_range[i] + ISAPNP_MEM32_BASE_7_0,
+				B0(r->base));
 
-		isapnp_write_reg(sc,
-		    isapnp_mem32_range[i] + ISAPNP_MEM32_LRANGE_31_24,
-		    B3(r->length));
-		isapnp_write_reg(sc,
-		    isapnp_mem32_range[i] + ISAPNP_MEM32_LRANGE_23_16,
-		    B2(r->length));
-		isapnp_write_reg(sc,
-		    isapnp_mem32_range[i] + ISAPNP_MEM32_LRANGE_15_8,
-		    B1(r->length));
-		isapnp_write_reg(sc,
-		    isapnp_mem32_range[i] + ISAPNP_MEM32_LRANGE_7_0,
-		    B0(r->length));
+		isapnp_write_reg(sc, isapnp_mem32_range[i] + ISAPNP_MEM32_LRANGE_31_24,
+				B3(r->length));
+		isapnp_write_reg(sc, isapnp_mem32_range[i] + ISAPNP_MEM32_LRANGE_23_16,
+				B2(r->length));
+		isapnp_write_reg(sc, isapnp_mem32_range[i] + ISAPNP_MEM32_LRANGE_15_8,
+				B1(r->length));
+		isapnp_write_reg(sc, isapnp_mem32_range[i] + ISAPNP_MEM32_LRANGE_7_0,
+				B0(r->length));
 	}
 }
 
@@ -757,11 +754,7 @@ isapnp_configure(sc, ipa)
 static int
 isapnp_match(parent, match, aux)
 	struct device *parent;
-#ifdef __BROKEN_INDIRECT_CONFIG
-	void *match;
-#else
 	struct cfdata *match;
-#endif
 	void *aux;
 {
 	int rv;
@@ -797,10 +790,14 @@ isapnp_attach(parent, self, aux)
 {
 	struct isapnp_softc *sc = (struct isapnp_softc *) self;
 	struct isa_attach_args *ia = aux;
+	void *match;
 	int c, d;
 
 	sc->sc_iot = ia->ia_iot;
 	sc->sc_memt = ia->ia_memt;
+#if NISADMA > 0
+	sc->sc_dmat = ia->ia_dmat;
+#endif
 	sc->sc_ncards = 0;
 
 	if (isapnp_map(sc))
@@ -821,8 +818,7 @@ isapnp_attach(parent, self, aux)
 			continue;
 
 		DPRINTF(("Selecting attachments\n"));
-		for (d = 0;
-		    (lpa = isapnp_bestconfig(parent, sc, &ipa)) != NULL; d++) {
+		for (d = 0; (lpa = isapnp_bestconfig(parent, sc, &ipa)) != NULL; d++) {
 			isapnp_write_reg(sc, ISAPNP_LOGICAL_DEV_NUM, d);
 			isapnp_configure(sc, lpa);
 #ifdef DEBUG_ISAPNP
@@ -835,15 +831,14 @@ isapnp_attach(parent, self, aux)
 #endif
 
 			DPRINTF(("%s: configuring <%s, %s, %s, %s>\n",
-			    sc->sc_dev.dv_xname,
-			    lpa->ipa_devident, lpa->ipa_devlogic,
-			    lpa->ipa_devcompat, lpa->ipa_devclass));
+							sc->sc_dev.dv_xname,
+							lpa->ipa_devident, lpa->ipa_devlogic,
+							lpa->ipa_devcompat, lpa->ipa_devclass));
 			if (lpa->ipa_pref == ISAPNP_DEP_CONFLICTING) {
 				printf("%s: <%s, %s, %s, %s> ignored; %s\n",
-				    sc->sc_dev.dv_xname,
-				    lpa->ipa_devident, lpa->ipa_devlogic,
-				    lpa->ipa_devcompat, lpa->ipa_devclass,
-				    "resource conflict");
+						sc->sc_dev.dv_xname, lpa->ipa_devident,
+						lpa->ipa_devlogic, lpa->ipa_devcompat,
+						lpa->ipa_devclass, "resource conflict");
 				ISAPNP_FREE(lpa);
 				continue;
 			}
@@ -851,19 +846,24 @@ isapnp_attach(parent, self, aux)
 			lpa->ipa_ic = ia->ia_ic;
 			lpa->ipa_iot = ia->ia_iot;
 			lpa->ipa_memt = ia->ia_memt;
-			lpa->ipa_dmat = ia->ia_dmat;
+#if NISADMA > 0
+			lpa->ia_dmat = ia->ia_dmat;
+#endif
+			lpa->ipa_delaybah = ia->ia_delaybah;
 
 			isapnp_write_reg(sc, ISAPNP_ACTIVATE, 1);
-#ifdef _KERNEL
-			if (config_found_sm(self, lpa, isapnp_print,
-			    isapnp_submatch) == NULL)
+
+			if ((match = config_search(isapnp_submatch, self, lpa))) {
+				config_attach(self, match, lpa, isapnp_print);
+			} else if ((match = config_search(isapnp_com_submatch, self, lpa))) {
+				config_attach(self, match, lpa, isapnp_print);
+			} else {
+				isapnp_print(lpa, self->dv_xname);
+				printf(" not configured\n");
 				isapnp_write_reg(sc, ISAPNP_ACTIVATE, 0);
-#else
-			isapnp_print(lpa, NULL);
-			printf("\n");
-#endif
+			}
 			ISAPNP_FREE(lpa);
 		}
-		isapnp_write_reg(sc, ISAPNP_WAKE, 0);    /* Good night cards */
+		isapnp_write_reg(sc, ISAPNP_WAKE, 0); /* Good night cards */
 	}
 }

@@ -13,10 +13,11 @@
 #include <sys/vnode.h>
 #include <sys/uio.h>
 #include <sys/device.h>
+#include <sys/queue.h>
 
 #include <machine/console.h>
 
-#include <dev/kbd/genkbdreg.h>
+#include <dev/kbd/kbdreg.h>
 
 /*
  * genkbd is used for all keyboard cdevsw routines.
@@ -36,66 +37,39 @@
  * 		- Setup genkbd cfdriver in a com/isa fashion. With other keyboards holding a pointer to genkbd_softc
  */
 
-/* Generic Keyboard Device */
-struct genkbd_device {
-	struct genkbd_softc		*gkb_sc;
-
-	struct device 			gkb_dev;			/* base device */
-
-	int						gkb_index;			/* kbdio index# */
-	int						gkb_minor;			/* minor number of the sub-device */
-
-	char					*gkb_name;			/* driver name */
-	int						gkb_unit;			/* unit # */
-};
-
-struct cfdriver genkbd_cd = {
-	NULL, "genkbd", genkbd_probe, genkbd_attach, DV_DULL, sizeof(struct genkbd_softc)
-};
-
-struct genkbd_driver {
-	int (*probe)();
-	int (*attach)();
-};
-
 void
-genkbd_init(parent, name, unit, index)
-	struct device *parent;
-	char *name;
-	int index, unit;
+genkbd_rights(keyboard_t *kbd, int index, char *name, int unit)
 {
-	struct genkbd_device *gkbd = (struct genkbd_device *) parent;
+	kbd->kb_index = index;
+	kbd->kb_name = name;
+	kbd->kb_unit = unit;
 
-	gkbd->gkb_name = name;
-	gkbd->gkb_unit = unit;
-	gkbd->gkb_index = index;
-	gkbd->gkb_sc = malloc(sizeof(struct genkbd_softc *), M_DEVBUF, M_WAITOK | M_ZERO);
-}
+	uid_t uid = UID_ROOT;
+	gid_t gid = GID_WHEEL;
+	int perms = 0600;
+	char *rw = "%s%r"; /* usage ?? */
 
-void
-kbd_device(driver, int index, uid_t uid, gid_t gid, int perms, /* ??, */char *name, int unit)
-{
-
+	kbd->kb_sc = malloc(sizeof(genkbd_softc_t), M_DEVBUF, M_WAITOK | M_ZERO);
+	printf("kbd%d at %s%d\n", kbd->kb_index, kbd->kb_name, kbd->kb_unit);
 }
 
 int
-genkbd_probe(struct genkbd_driver *gkbd, struct device *parent, struct cfdata *match, void *aux)
+genkbd_match(keyboard_t *kbd, struct device *parent, struct cfdata *match, void *aux)
 {
 	int error;
 
-	error = (*gkbd->probe)(gkbd, parent, match, aux);
+	error = (*kbdsw[kbd->kb_index]->match)(parent, match, aux);
+
 	return (error);
 }
 
 int
-genkbd_attach(gkbd, parent, self, aux)
-	struct genkbd_driver *gkbd;
-	struct device *parent, *self;
-	void *aux;
+genkbd_attach(keyboard_t *kbd, struct device *parent, struct device *self, void *aux)
 {
 	int error;
 
-	error = (*gkbd->attach)(gkbd, parent, self, aux);
+	error = (*kbdsw[kbd->kb_index]->attach)(parent, self, aux);
+
 	return (error);
 }
 
@@ -105,6 +79,7 @@ genkbd_probe(keyboard_switch_t *sw, int unit, void *arg, int flags)
 	int error;
 
 	error = (*sw->probe)(unit, arg, flags);
+
 	return (error);
 }
 

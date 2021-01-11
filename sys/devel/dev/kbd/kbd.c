@@ -48,8 +48,8 @@
 
 #define KBD_INDEX(dev)	minor(dev)
 
-#define KB_QSIZE	512
-#define KB_BUFSIZE	64
+#define KB_QSIZE		512
+#define KB_BUFSIZE		64
 
 struct genkbd_softc {
 	int				gkb_flags;				/* flag/status bits */
@@ -59,7 +59,6 @@ struct genkbd_softc {
 	unsigned int	gkb_q_start;
 	unsigned int	gkb_q_length;
 };
-
 typedef struct genkbd_softc genkbd_softc_t;
 
 static SIMPLEQ_HEAD(, keyboard_driver) keyboard_drivers = SIMPLEQ_HEAD_INITIALIZER(keyboard_drivers);
@@ -72,14 +71,6 @@ static SIMPLEQ_HEAD(, keyboard_driver) keyboard_drivers = SIMPLEQ_HEAD_INITIALIZ
  * for the kernel console.  The arrays will be increased dynamically
  * when necessary.
  */
-/*
-static int					keyboards = 1;
-static keyboard_t			*kbd_ini;
-static keyboard_t			**keyboard = &kbd_ini;
-static keyboard_switch_t 	*kbdsw_ini;
-       keyboard_switch_t 	**kbdsw = &kbdsw_ini;
-       */
-
 static keyboard_t *keyboard[KBD_MAXKEYBOARDS];
 
 keyboard_switch_t *kbdsw[KBD_MAXKEYBOARDS];
@@ -433,7 +424,7 @@ kbd_configure(int flags)
 
 #define KBD_UNIT(dev) minor(dev)
 
-const struct cdevsw kbd_cdevsw = {
+const struct cdevsw genkbd_cdevsw = {
 		.d_open =	genkbdopen,
 		.d_close =	genkbdclose,
 		.d_read =	genkbdread,
@@ -443,18 +434,14 @@ const struct cdevsw kbd_cdevsw = {
 		.d_type = 	D_OTHER
 };
 
+struct cfdriver genkbd_cd = {
+	NULL, "genkbd", genkbdmatch, genkbdattach, DV_TTY, sizeof(struct genkbd_softc)
+};
+
 int
 kbd_attach(keyboard_t *kbd)
 {
-
-	if (kbd->kb_index >= KBD_MAXKEYBOARDS) {
-		return (EINVAL);
-	}
-	if (keyboard[kbd->kb_index] != kbd) {
-		return (EINVAL);
-	}
-
-	kbd->kb_dev = make_dev(&kbd_cdevsw, kbd->kb_index, UID_ROOT, GID_WHEEL, 0600, "%s%r", kbd->kb_name, kbd->kb_unit);
+	kbd->kb_dev = make_dev(&genkbd_cdevsw, kbd->kb_index, UID_ROOT, GID_WHEEL, 0600, "%s%r", kbd->kb_name, kbd->kb_unit);
 	make_dev_alias(kbd->kb_dev, "kbd%r", kbd->kb_index);
 
 	kbd->kb_sc = malloc(sizeof(genkbd_softc_t), M_DEVBUF, M_WAITOK | M_ZERO);
@@ -471,9 +458,48 @@ kbd_detach(keyboard_t *kbd)
 		return (EINVAL);
 
 	free(kbd->kb_sc, M_DEVBUF);
-	destroy_dev(kbd->kb_dev);
+	//destroy_dev(kbd->kb_dev);
 
 	return (0);
+}
+
+int
+genkbdmatch(struct device *parent, struct cfdata *match, void *aux)
+{
+	genkbd_softc_t *sc = (genkbd_softc_t *) match;
+	keyboard_t *kbd = (keyboard_t) aux;
+	keyboard_driver_t *driver;
+
+	if (kbd->kb_index >= KBD_MAXKEYBOARDS) {
+		return (EINVAL);
+	}
+
+	if (keyboard[kbd->kb_index] != kbd) {
+		return (EINVAL);
+	}
+
+	/* check if keyboard is registered */
+	if(KBD_CONFIG_DONE(kbd)) {
+		/* search registered keyboard drivers */
+		SIMPLEQ_FOREACH(driver, &keyboard_drivers, link) {
+			if(strcmp(kbd->kb_name, SIMPLEQ_NEXT(driver, link)->name)) {
+				return (0);
+			}
+		}
+	} else {
+		/* search cfdriver for a match  */
+		if(strcmp(kbd->kb_name, match->cf_driver->cd_name)) {
+			return (0);
+		}
+	}
+	return (1);
+}
+
+void
+genkbdattach(struct device *parent, struct device *self, void *aux)
+{
+	genkbd_softc_t sc = (genkbd_softc_t *) self;
+	keyboard_t *kbd = aux;
 }
 
 /*
@@ -863,7 +889,7 @@ genkbd_commonioctl(keyboard_t *kbd, u_long cmd, caddr_t arg)
 			}
 		}
 
-		error = keymap_change_ok(kbd->kb_keymap, mapp, curthread);
+		error = keymap_change_ok(kbd->kb_keymap, mapp, curproc);
 		if (error != 0) {
 			splx(s);
 			free(mapp, M_TEMP);
@@ -897,7 +923,7 @@ genkbd_commonioctl(keyboard_t *kbd, u_long cmd, caddr_t arg)
 			return (EINVAL);
 		}
 		error = key_change_ok(&kbd->kb_keymap->key[keyp->keynum],
-		    &keyp->key, curthread);
+		    &keyp->key, curproc);
 		if (error != 0) {
 			splx(s);
 			return (error);
@@ -916,7 +942,7 @@ genkbd_commonioctl(keyboard_t *kbd, u_long cmd, caddr_t arg)
 	case PIO_DEADKEYMAP:	/* set accent key translation table */
 #ifndef KBD_DISABLE_KEYMAP_LOAD
 		error = accent_change_ok(kbd->kb_accentmap,
-		    (accentmap_t *)arg, curthread);
+		    (accentmap_t *)arg, curproc);
 		if (error != 0) {
 			splx(s);
 			return (error);
@@ -945,7 +971,7 @@ genkbd_commonioctl(keyboard_t *kbd, u_long cmd, caddr_t arg)
 			splx(s);
 			return (EINVAL);
 		}
-		error = fkey_change_ok(&kbd->kb_fkeytab[fkeyp->keynum], fkeyp, curthread);
+		error = fkey_change_ok(&kbd->kb_fkeytab[fkeyp->keynum], fkeyp, curproc);
 		if (error != 0) {
 			splx(s);
 			return (error);
@@ -969,15 +995,15 @@ genkbd_commonioctl(keyboard_t *kbd, u_long cmd, caddr_t arg)
 }
 
 #ifndef KBD_DISABLE_KEYMAP_LOAD
-#define RESTRICTED_KEY(key, i) \
-	((key->spcl & (0x80 >> i)) && \
-		(key->map[i] == RBT || key->map[i] == SUSP || \
-		 key->map[i] == STBY || key->map[i] == DBG || \
-		 key->map[i] == PNC || key->map[i] == HALT || \
+#define RESTRICTED_KEY(key, i) 							\
+	((key->spcl & (0x80 >> i)) && 						\
+		(key->map[i] == RBT || key->map[i] == SUSP || 	\
+		 key->map[i] == STBY || key->map[i] == DBG || 	\
+		 key->map[i] == PNC || key->map[i] == HALT || 	\
 		 key->map[i] == PDWN))
 
 static int
-key_change_ok(struct keyent_t *oldkey, struct keyent_t *newkey, struct thread *td)
+key_change_ok(struct keyent_t *oldkey, struct keyent_t *newkey, struct proc *p)
 {
 	int i;
 
@@ -989,11 +1015,11 @@ key_change_ok(struct keyent_t *oldkey, struct keyent_t *newkey, struct thread *t
 	if (keymap_restrict_change >= 2) {
 		for (i = 0; i < NUM_STATES; i++)
 			if (oldkey->map[i] != newkey->map[i])
-				return priv_check(td, PRIV_KEYBOARD);
+				return priv_check(p, PRIV_KEYBOARD);
 		if (oldkey->spcl != newkey->spcl)
-			return priv_check(td, PRIV_KEYBOARD);
+			return priv_check(p, PRIV_KEYBOARD);
 		if (oldkey->flgs != newkey->flgs)
-			return priv_check(td, PRIV_KEYBOARD);
+			return priv_check(p, PRIV_KEYBOARD);
 		return (0);
 	}
 
@@ -1008,27 +1034,27 @@ key_change_ok(struct keyent_t *oldkey, struct keyent_t *newkey, struct thread *t
 		if ((oldkey->spcl & (0x80 >> i)) == (newkey->spcl & (0x80 >> i))
 		    && oldkey->map[i] == newkey->map[i])
 			continue;
-		return priv_check(td, PRIV_KEYBOARD);
+		return priv_check(p, PRIV_KEYBOARD);
 	}
 
 	return (0);
 }
 
 static int
-keymap_change_ok(keymap_t *oldmap, keymap_t *newmap, struct thread *td)
+keymap_change_ok(keymap_t *oldmap, keymap_t *newmap, struct proc *p)
 {
 	int keycode, error;
 
 	for (keycode = 0; keycode < NUM_KEYS; keycode++) {
 		if ((error = key_change_ok(&oldmap->key[keycode],
-		    &newmap->key[keycode], td)) != 0)
+		    &newmap->key[keycode], p)) != 0)
 			return (error);
 	}
 	return (0);
 }
 
 static int
-accent_change_ok(accentmap_t *oldmap, accentmap_t *newmap, struct thread *td)
+accent_change_ok(accentmap_t *oldmap, accentmap_t *newmap, struct proc *p)
 {
 	struct acc_t *oldacc, *newacc;
 	int accent, i;
@@ -1037,20 +1063,20 @@ accent_change_ok(accentmap_t *oldmap, accentmap_t *newmap, struct thread *td)
 		return (0);
 
 	if (oldmap->n_accs != newmap->n_accs)
-		return priv_check(td, PRIV_KEYBOARD);
+		return priv_check(p, PRIV_KEYBOARD);
 
 	for (accent = 0; accent < oldmap->n_accs; accent++) {
 		oldacc = &oldmap->acc[accent];
 		newacc = &newmap->acc[accent];
 		if (oldacc->accchar != newacc->accchar)
-			return priv_check(td, PRIV_KEYBOARD);
+			return priv_check(p, PRIV_KEYBOARD);
 		for (i = 0; i < NUM_ACCENTCHARS; ++i) {
 			if (oldacc->map[i][0] != newacc->map[i][0])
-				return priv_check(td, PRIV_KEYBOARD);
+				return priv_check(p, PRIV_KEYBOARD);
 			if (oldacc->map[i][0] == 0)	/* end of table */
 				break;
 			if (oldacc->map[i][1] != newacc->map[i][1])
-				return priv_check(td, PRIV_KEYBOARD);
+				return priv_check(p, PRIV_KEYBOARD);
 		}
 	}
 
@@ -1058,14 +1084,14 @@ accent_change_ok(accentmap_t *oldmap, accentmap_t *newmap, struct thread *td)
 }
 
 static int
-fkey_change_ok(fkeytab_t *oldkey, fkeyarg_t *newkey, struct thread *td)
+fkey_change_ok(fkeytab_t *oldkey, fkeyarg_t *newkey, struct proc *p)
 {
 	if (keymap_restrict_change <= 3)
 		return (0);
 
 	if (oldkey->len != newkey->flen ||
 	    bcmp(oldkey->str, newkey->keydef, oldkey->len) != 0)
-		return priv_check(td, PRIV_KEYBOARD);
+		return priv_check(p, PRIV_KEYBOARD);
 
 	return (0);
 }
@@ -1105,7 +1131,6 @@ get_kbd_type_name(int type)
 	return ("unknown");
 }
 
-/*
 static void
 genkbd_diag(keyboard_t *kbd, int level)
 {
@@ -1119,7 +1144,6 @@ genkbd_diag(keyboard_t *kbd, int level)
 		printf("\n");
 	}
 }
-*/
 
 #define set_lockkey_state(k, s, l)						\
 	if (!((s) & l ## DOWN)) {							\
@@ -1187,8 +1211,7 @@ make_accent_char(keyboard_t *kbd, u_int ch, int *accents)
 }
 
 int
-genkbd_keyaction(keyboard_t *kbd, int keycode, int up, int *shiftstate,
-		 int *accents)
+genkbd_keyaction(keyboard_t *kbd, int keycode, int up, int *shiftstate, int *accents)
 {
 	struct keyent_t *key;
 	int state = *shiftstate;

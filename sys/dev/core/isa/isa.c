@@ -43,45 +43,21 @@
 #include <core/isa/isareg.h>
 #include <core/isa/isavar.h>
 
-#ifdef __BROKEN_INDIRECT_CONFIG
-int 	isamatch (struct device *, void *, void *);
-#else
 int 	isamatch (struct device *, struct cfdata *, void *);
-#endif
 void 	isaattach (struct device *, struct device *, void *);
 int 	isaprint (void *, const char *);
+int		isasearch (struct device *, struct cfdata *, void *);
 
 struct cfdriver isa_cd = {
-#ifdef __BROKEN_INDIRECT_CONFIG
-	NULL, "isa", isamatch, isaattach, DV_DULL, 1
-#else
 	NULL, "isa", isamatch, isaattach, DV_DULL, sizeof(struct isa_softc)
-#endif
 };
 
-#ifdef __BROKEN_INDIRECT_CONFIG
-void	isascan (struct device *, void *);
-#else
-int	isasearch (struct device *, struct cfdata *, void *);
-#endif
-
 int
-#ifdef __BROKEN_INDIRECT_CONFIG
-isamatch(parent, match, aux)
-#else
 isamatch(parent, cf, aux)
-#endif
 	struct device *parent;
-#ifdef __BROKEN_INDIRECT_CONFIG
-	void *match;
-#else
 	struct cfdata *cf;
-#endif
 	void *aux;
 {
-#ifdef __BROKEN_INDIRECT_CONFIG
-	struct cfdata *cf = match;
-#endif
 	struct isabus_attach_args *iba = aux;
 
 	if (strcmp(iba->iba_busname, cf->cf_driver->cd_name))
@@ -89,7 +65,7 @@ isamatch(parent, cf, aux)
 
 	/* XXX check other indicators */
 
-        return (1);
+	return (1);
 }
 
 void
@@ -105,8 +81,19 @@ isaattach(parent, self, aux)
 
 	sc->sc_iot = iba->iba_iot;
 	sc->sc_memt = iba->iba_memt;
+#if NISADMA > 0
 	sc->sc_dmat = iba->iba_dmat;
+#endif /* NISADMA > 0 */
 	sc->sc_ic = iba->iba_ic;
+
+#if NISAPNP > 0
+	/*
+	 * Reset isapnp cards that the bios configured for us
+	 */
+	isapnp_isa_attach_hook(sc);
+#endif
+
+#if NISADMA > 0
 
 	/*
 	 * Map the registers used by the ISA DMA controller.
@@ -122,16 +109,14 @@ isaattach(parent, self, aux)
 	 * Map port 0x84, which causes a 1.25us delay when read.
 	 * We do this now, since several drivers need it.
 	 */
-	if (bus_space_subregion(sc->sc_iot, sc->sc_dmapgh, 0x04, 1,
-	    &sc->sc_delaybah))
-		panic("isaattach: can't map `delay port'");	/* XXX */
+	if (bus_space_subregion(sc->sc_iot, sc->sc_dmapgh, 0x04, 1, &sc->sc_delaybah))
+#else /* NISADMA > 0 */
+	if (bus_space_map(sc->sc_iot, IO_DMAPG + 0x4, 0x1, 0, &sc->sc_delaybah))
+#endif /* NISADMA > 0 */
+		panic("isaattach: can't map `delay port'"); /* XXX */
 
 	TAILQ_INIT(&sc->sc_subdevs);
-#ifdef __BROKEN_INDIRECT_CONFIG
-	config_scan(isascan, self);
-#else
 	config_search(isasearch, self, NULL);
-#endif
 }
 
 int
@@ -158,41 +143,6 @@ isaprint(aux, isa)
 	return (UNCONF);
 }
 
-#ifdef __BROKEN_INDIRECT_CONFIG
-void
-isascan(parent, match)
-	struct device *parent;
-	void *match;
-{
-	struct isa_softc *sc = (struct isa_softc *)parent;
-	struct device *dev = match;
-	struct cfdata *cf = dev->dv_cfdata;
-	struct isa_attach_args ia;
-
-#if defined(__i386__)
-	if (cf->cf_fstate == FSTATE_STAR)
-		panic("clone devices not supported on ISA bus");
-#endif
-
-	ia.ia_iot = sc->sc_iot;
-	ia.ia_memt = sc->sc_memt;
-	ia.ia_dmat = sc->sc_dmat;
-	ia.ia_ic = sc->sc_ic;
-	ia.ia_iobase = cf->cf_iobase;
-	ia.ia_iosize = 0x666;/* cf->cf_iosize; */
-	ia.ia_maddr = cf->cf_maddr;
-	ia.ia_msize = cf->cf_msize;
-	ia.ia_irq = cf->cf_irq == 2 ? 9 : cf->cf_irq;
-	ia.ia_drq = cf->cf_drq;
-	ia.ia_drq2 = cf->cf_drq2;
-	ia.ia_delaybah = sc->sc_delaybah;
-
-	if ((*cf->cf_attach->ca_match)(parent, match, &ia) > 0)
-		config_attach(parent, match, &ia, isaprint);
-	else
-		free(dev, M_DEVBUF);
-}
-#else /* !__BROKEN_INDIRECT_CONFIG */
 int
 isasearch(parent, cf, aux)
 	struct device *parent;
@@ -208,10 +158,10 @@ isasearch(parent, cf, aux)
 		ia.ia_memt = sc->sc_memt;
 		ia.ia_dmat = sc->sc_dmat;
 		ia.ia_ic = sc->sc_ic;
-		ia.ia_iobase = cf->cf_loc[ISACF_PORT];
+		ia.ia_iobase = cf->cf_loc[ISACF_IOBASE];
 		ia.ia_iosize = 0x666; /* cf->cf_iosize; */
-		ia.ia_maddr = cf->cf_loc[ISACF_IOMEM];
-		ia.ia_msize = cf->cf_loc[ISACF_IOSIZ];
+		ia.ia_maddr = cf->cf_loc[ISACF_MADDR];
+		ia.ia_msize = cf->cf_loc[ISACF_MSIZE];
 		ia.ia_irq = cf->cf_loc[ISACF_IRQ] == 2 ? 9 : cf->cf_loc[ISACF_IRQ];
 		ia.ia_drq = cf->cf_loc[ISACF_DRQ];
 		ia.ia_drq2 = cf->cf_loc[ISACF_DRQ2];
@@ -227,20 +177,20 @@ isasearch(parent, cf, aux)
 
 	return (0);
 }
-#endif /* __BROKEN_INDIRECT_CONFIG */
+
 
 char *
 isa_intr_typename(type)
 	int type;
 {
 	switch (type) {
-        case IST_NONE :
+	case IST_NONE:
 		return ("none");
-        case IST_PULSE:
+	case IST_PULSE:
 		return ("pulsed");
-        case IST_EDGE:
+	case IST_EDGE:
 		return ("edge-triggered");
-        case IST_LEVEL:
+	case IST_LEVEL:
 		return ("level-triggered");
 	default:
 		panic("isa_intr_typename: invalid type %d", type);

@@ -216,6 +216,14 @@ struct isa_softc {
 #define	ISA_DRQ_FREE(isadev, drq) \
 	((struct isa_softc *)(isadev))->sc_drqmap &= ~(1 << (drq))
 
+#define	ISACF_IOBASE 		0
+#define	ISACF_IOSIZE 		1
+#define	ISACF_MADDR 		2
+#define	ISACF_MSIZE 		3
+#define	ISACF_IRQ			4
+#define	ISACF_DRQ			5
+#define	ISACF_DRQ2 			6
+
 /*
  * ISA interrupt handler manipulation.
  * 
