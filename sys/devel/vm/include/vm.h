@@ -84,9 +84,6 @@ typedef struct pager_struct 	*vm_pager_t;
 #include <devel/vm/include/vm_segment.h>		/* Work in Progress */
 #include <devel/vm/ovl/ovl.h>					/* Work in Progress */
 
-#include "../avm/vm_map.h"
-#include "../avm/vm_swap.h"
-
 /*
  *	MACH VM locking type mappings to kernel types
  */

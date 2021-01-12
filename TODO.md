@@ -32,6 +32,10 @@ A General todo list. Don't hesitate to add to this list. :)
 - update copyright headers
 - See devel folder: README.md
 
+- dev/(kbd & atkbd): change keyboard implementation:
+	- base on atkbd.c (DragonflyBSD)
+	- keeping basic methods needed (aka a generic keyboard layer)
+
 ## dev:
 - Clean up: A little messy
 	- com: timeapps.h: add or leave out??

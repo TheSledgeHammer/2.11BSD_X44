@@ -434,18 +434,19 @@ const struct cdevsw genkbd_cdevsw = {
 		.d_type = 	D_OTHER
 };
 
-struct cfdriver genkbd_cd = {
-	NULL, "genkbd", genkbdmatch, genkbdattach, DV_TTY, sizeof(struct genkbd_softc)
-};
-
 int
 kbd_attach(keyboard_t *kbd)
 {
-	kbd->kb_dev = make_dev(&genkbd_cdevsw, kbd->kb_index, UID_ROOT, GID_WHEEL, 0600, "%s%r", kbd->kb_name, kbd->kb_unit);
-	make_dev_alias(kbd->kb_dev, "kbd%r", kbd->kb_index);
+	if (kbd->kb_index >= KBD_MAXKEYBOARDS) {
+		return EINVAL;
+	}
+	if (keyboard[kbd->kb_index] != kbd) {
+		return EINVAL;
+	}
 
-	kbd->kb_sc = malloc(sizeof(genkbd_softc_t), M_DEVBUF, M_WAITOK | M_ZERO);
+	kbd->kb_data = malloc(sizeof(genkbd_softc_t), M_DEVBUF, M_WAITOK | M_ZERO);
 	printf("kbd%d at %s%d\n", kbd->kb_index, kbd->kb_name, kbd->kb_unit);
+
 	return (0);
 }
 
@@ -457,49 +458,8 @@ kbd_detach(keyboard_t *kbd)
 	if (keyboard[kbd->kb_index] != kbd)
 		return (EINVAL);
 
-	free(kbd->kb_sc, M_DEVBUF);
-	//destroy_dev(kbd->kb_dev);
-
+	free(kbd->kb_data, M_DEVBUF);
 	return (0);
-}
-
-int
-genkbdmatch(struct device *parent, struct cfdata *match, void *aux)
-{
-	genkbd_softc_t *sc = (genkbd_softc_t *) match;
-	keyboard_t *kbd = (keyboard_t) aux;
-	keyboard_driver_t *driver;
-
-	if (kbd->kb_index >= KBD_MAXKEYBOARDS) {
-		return (EINVAL);
-	}
-
-	if (keyboard[kbd->kb_index] != kbd) {
-		return (EINVAL);
-	}
-
-	/* check if keyboard is registered */
-	if(KBD_CONFIG_DONE(kbd)) {
-		/* search registered keyboard drivers */
-		SIMPLEQ_FOREACH(driver, &keyboard_drivers, link) {
-			if(strcmp(kbd->kb_name, SIMPLEQ_NEXT(driver, link)->name)) {
-				return (0);
-			}
-		}
-	} else {
-		/* search cfdriver for a match  */
-		if(strcmp(kbd->kb_name, match->cf_driver->cd_name)) {
-			return (0);
-		}
-	}
-	return (1);
-}
-
-void
-genkbdattach(struct device *parent, struct device *self, void *aux)
-{
-	genkbd_softc_t sc = (genkbd_softc_t *) self;
-	keyboard_t *kbd = aux;
 }
 
 /*

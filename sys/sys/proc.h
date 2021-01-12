@@ -111,11 +111,13 @@ struct	proc {
 
     struct	proc 	    *p_link;		/* linked list of running processes */
 
-    struct	user 		*p_addr;        /* virtual address of u. area */
-    struct	user  		*p_daddr;		/* virtual address of data area */
-    struct	user  		*p_saddr;		/* virtual address of stack area */
+    struct user			*p_addr;		/* virtual address of u. area */
+    caddr_t				p_daddr;		/* virtual address of data area */
+    caddr_t				p_saddr;		/* virtual address of stack area */
+    caddr_t				p_taddr;		/* virtual address of text area */
 	size_t				p_dsize;		/* size of data area (clicks) */
 	size_t				p_ssize;		/* size of stack segment (clicks) */
+	size_t				p_tsize;		/* size of text segment (clicks) */
 
     struct	k_itimerval p_krealtimer;   /* Alarm Timer?? in 2.11BSD */
     u_short 			p_acflag;	    /* Accounting flags. */

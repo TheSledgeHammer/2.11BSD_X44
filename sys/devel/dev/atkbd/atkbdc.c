@@ -12,7 +12,6 @@
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 #include <sys/syslog.h>
-//#include <sys/rman.h>
 #include <devel/dev/kbio.h>
 
 #include <machine/clock.h>

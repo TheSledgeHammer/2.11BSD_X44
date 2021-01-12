@@ -171,7 +171,7 @@
 
 //#ifdef _KERNEL
 
-#define ATKBDC_DRIVER_NAME	"atkbdc"
+#define ATKBDC_DRIVER_NAME		"atkbdc"
 
 /*
  * driver specific options: the following options may be set by
@@ -180,31 +180,31 @@
 
 /* retry count */
 #ifndef KBD_MAXRETRY
-#define KBD_MAXRETRY	3
+#define KBD_MAXRETRY			3
 #endif
 
 /* timing parameters */
 #ifndef KBD_RESETDELAY
-#define KBD_RESETDELAY  200     /* wait 200msec after kbd/mouse reset */
+#define KBD_RESETDELAY  		200     /* wait 200msec after kbd/mouse reset */
 #endif
 #ifndef KBD_MAXWAIT
-#define KBD_MAXWAIT		5 		/* wait 5 times at most after reset */
+#define KBD_MAXWAIT				5 		/* wait 5 times at most after reset */
 #endif
 
 /* I/O recovery time */
-#define KBDC_DELAYTIME	20
-#define KBDD_DELAYTIME	7
+#define KBDC_DELAYTIME			20
+#define KBDD_DELAYTIME			7
 
 /* debug option */
 #ifndef KBDIO_DEBUG
-#define KBDIO_DEBUG		0
+#define KBDIO_DEBUG				0
 #endif
 
 /* end of driver specific options */
 
 /* types/structures */
 
-#define KBDQ_BUFSIZE	32
+#define KBDQ_BUFSIZE			32
 
 typedef struct _kbdkqueue {
     int 				head;
@@ -219,8 +219,8 @@ typedef struct _kbdkqueue {
 
 struct resource;
 
-#define ATKBDC_DATA_SLOT	0
-#define ATKBDC_STATUS_SLOT	1
+#define ATKBDC_DATA_SLOT		0
+#define ATKBDC_STATUS_SLOT		1
 
 struct atkbdc_port {
 	int 				iobase;
@@ -301,5 +301,4 @@ int 			get_controller_command_byte(KBDC kbdc);
 int 			set_controller_command_byte(KBDC kbdc, int mask, int command);
 
 #endif /* _KERNEL */
-
 #endif /* !_DEV_KBD_ATKBDCREG_H_ */

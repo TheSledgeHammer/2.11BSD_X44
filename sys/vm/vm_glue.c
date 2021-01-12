@@ -70,9 +70,10 @@
 
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_page.h>
+#include <vm/include/vm_pageout.h>
 #include <vm/include/vm.h>
 
-#include <machine/cpu.h>
+#include <arch/i386/include/cpu.h>
 #include <machine/stdarg.h>
 
 int	avefree = 0;			/* XXX */
@@ -530,7 +531,7 @@ swapout(p)
 /* let the upages be paged */
 	pmap_remove(vm_map_pmap(kernel_map), (vm_offset_t) p->p_addr, ((vm_offset_t) p->p_addr) + UPAGES * NBPG);
 
-	vm_map_pageable(map, (vm_offset_t) kstack, (vm_offset_t) kstack + UPAGES * NBPG, TRUE);
+	vm_map_pageable(map, (vm_offset_t) p->p_addr->u_kstack, (vm_offset_t) p->p_addr->u_kstack + UPAGES * NBPG, TRUE);
 
 	p->p_flag &= ~P_SWAPPING;
 	p->p_swtime = 0;

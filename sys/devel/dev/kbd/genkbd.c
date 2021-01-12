@@ -19,40 +19,6 @@
 
 #include <dev/kbd/kbdreg.h>
 
-/*
- * genkbd is used for all keyboard cdevsw routines.
- *
- * keyboard_switch has an overlaid setup on the genkbd's cfdriver (FreeBSD's attach & detach equivalent)
- *
- * Todo:
- * - match(probe) & attach for genkbd
- * 	- issues:
- * 		- searching for said keyboard in probe
- * 		- allocating said keyboard in attach
- *
- * 	- Solution 1:
- * 		- setup cfdriver's independently of genkbd. allocating genkbd_softc via a helper method
- *
- * 	- Solution 2:
- * 		- Setup genkbd cfdriver in a com/isa fashion. With other keyboards holding a pointer to genkbd_softc
- */
-
-void
-genkbd_rights(keyboard_t *kbd, int index, char *name, int unit)
-{
-	kbd->kb_index = index;
-	kbd->kb_name = name;
-	kbd->kb_unit = unit;
-
-	uid_t uid = UID_ROOT;
-	gid_t gid = GID_WHEEL;
-	int perms = 0600;
-	char *rw = "%s%r"; /* usage ?? */
-
-	kbd->kb_sc = malloc(sizeof(genkbd_softc_t), M_DEVBUF, M_WAITOK | M_ZERO);
-	printf("kbd%d at %s%d\n", kbd->kb_index, kbd->kb_name, kbd->kb_unit);
-}
-
 int
 genkbd_match(keyboard_t *kbd, struct device *parent, struct cfdata *match, void *aux)
 {

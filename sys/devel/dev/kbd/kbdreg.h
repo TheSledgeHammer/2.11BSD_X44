@@ -195,7 +195,6 @@ struct keyboard {
 	u_char					kb_lastact[NUM_KEYS/2];
 
 	struct device			*kb_dev;
-	struct genkbd_softc 	*kb_sc;			/* back pointer */
 
 	const keyboard_driver_t	*kb_drv;
 	struct lock				*kb_lock;

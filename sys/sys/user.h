@@ -87,6 +87,7 @@ struct user {
 	size_t				u_tsize;				/* text size (clicks) */
 	size_t				u_dsize;				/* data size (clicks) */
 	size_t				u_ssize;				/* stack size (clicks) */
+
 	label_t				u_ssave;				/* label variable for swapping */
 	label_t				u_rsave;				/* save info when exchanging stacks */
 	short				u_uisa[16];				/* segmentation address prototypes */

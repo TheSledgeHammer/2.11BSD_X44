@@ -86,13 +86,6 @@ isaattach(parent, self, aux)
 #endif /* NISADMA > 0 */
 	sc->sc_ic = iba->iba_ic;
 
-#if NISAPNP > 0
-	/*
-	 * Reset isapnp cards that the bios configured for us
-	 */
-	isapnp_isa_attach_hook(sc);
-#endif
-
 #if NISADMA > 0
 
 	/*
