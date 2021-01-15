@@ -125,12 +125,12 @@ struct changer_element_status {
  * Data returned by CHIOGSTATUS is an array of flags bytes.
  * Not all flags have meaning for all element types.
  */
-#define CESTATUS_FULL		0x01	/* element is full */
-#define CESTATUS_IMPEXP		0x02	/* media deposited by operator */
-#define CESTATUS_EXCEPT		0x04	/* element in abnormal state */
-#define CESTATUS_ACCESS		0x08	/* media accessible by picker */
-#define CESTATUS_EXENAB		0x10	/* element supports exporting */
-#define CESTATUS_INENAB		0x20	/* element supports importing */
+#define CESTATUS_FULL			0x01	/* element is full */
+#define CESTATUS_IMPEXP			0x02	/* media deposited by operator */
+#define CESTATUS_EXCEPT			0x04	/* element in abnormal state */
+#define CESTATUS_ACCESS			0x08	/* media accessible by picker */
+#define CESTATUS_EXENAB			0x10	/* element supports exporting */
+#define CESTATUS_INENAB			0x20	/* element supports importing */
 
 #define CESTATUS_PICKER_MASK	0x05	/* flags valid for pickers */
 #define CESTATUS_SLOT_MASK		0x0c	/* flags valid for slots */
@@ -140,13 +140,13 @@ struct changer_element_status {
 #define CESTATUS_BITS	\
 	"\20\6INEAB\5EXENAB\4ACCESS\3EXCEPT\2IMPEXP\1FULL"
 
-#define CHIOMOVE		_IOW('c', 0x01, struct changer_move)
-#define CHIOEXCHANGE	_IOW('c', 0x02, struct changer_exchange)
-#define CHIOPOSITION	_IOW('c', 0x03, struct changer_position)
-#define CHIOGPICKER		_IOR('c', 0x04, int)
-#define CHIOSPICKER		_IOW('c', 0x05, int)
-#define CHIOGPARAMS		_IOR('c', 0x06, struct changer_params)
-#define CHIOIELEM	 	_IO('c', 0x07)
-#define CHIOGSTATUS		_IOW('c', 0x08, struct changer_element_status)
+#define CHIOMOVE				_IOW('c', 0x01, struct changer_move)
+#define CHIOEXCHANGE			_IOW('c', 0x02, struct changer_exchange)
+#define CHIOPOSITION			_IOW('c', 0x03, struct changer_position)
+#define CHIOGPICKER				_IOR('c', 0x04, int)
+#define CHIOSPICKER				_IOW('c', 0x05, int)
+#define CHIOGPARAMS				_IOR('c', 0x06, struct changer_params)
+#define CHIOIELEM	 			_IO('c', 0x07)
+#define CHIOGSTATUS				_IOW('c', 0x08, struct changer_element_status)
 
 #endif /* _SYS_CHIO_H_ */

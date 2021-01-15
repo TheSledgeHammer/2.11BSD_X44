@@ -8,6 +8,9 @@
 #ifndef _SYS_DKSTAT_H_
 #define _SYS_DKSTAT_H_ 1
 
+#include <sys/disklabel.h>
+#include <sys/ioccom.h>
+
 /*
  * Instrumentation
  */
@@ -40,4 +43,5 @@ extern long	tk_nout;				/* number of tty characters output */
 extern long tk_cancc;
 extern long tk_rawcc;
 
+#endif
 #endif

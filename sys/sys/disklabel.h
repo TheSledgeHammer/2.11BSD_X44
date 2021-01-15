@@ -108,10 +108,10 @@
 
 #ifndef LOCORE
 struct disklabel {
-	u_int32_t 	d_magic;			/* the magic number */
-	u_int16_t  	d_type;				/* drive type */
-	u_int16_t  	d_subtype;			/* controller/d_type specific */
-	char	  	d_typename[16];		/* type name, e.g. "eagle" */
+	u_int32_t 		d_magic;			/* the magic number */
+	u_int16_t  		d_type;				/* drive type */
+	u_int16_t  		d_subtype;			/* controller/d_type specific */
+	char	  		d_typename[16];		/* type name, e.g. "eagle" */
 	/* 
 	 * d_packname contains the pack identifier and is returned when
 	 * the disklabel is read off the disk or in-core copy.
@@ -132,26 +132,26 @@ struct disklabel {
 #define d_boot1		d_un.un_d_boot1
 #endif	/* ! KERNEL or STANDALONE */
 			/* disk geometry: */
-	u_int32_t 	d_secsize;			/* # of bytes per sector */
-	u_int32_t 	d_nsectors;			/* # of data sectors per track */
-	u_int32_t 	d_ntracks;			/* # of tracks per cylinder */
-	u_int32_t 	d_ncylinders;		/* # of data cylinders per unit */
-	u_int32_t 	d_secpercyl;		/* # of data sectors per cylinder */
-	u_int32_t 	d_secperunit;		/* # of data sectors per unit */
+	u_int32_t 		d_secsize;			/* # of bytes per sector */
+	u_int32_t 		d_nsectors;			/* # of data sectors per track */
+	u_int32_t 		d_ntracks;			/* # of tracks per cylinder */
+	u_int32_t 		d_ncylinders;		/* # of data cylinders per unit */
+	u_int32_t 		d_secpercyl;		/* # of data sectors per cylinder */
+	u_int32_t 		d_secperunit;		/* # of data sectors per unit */
 	/*
 	 * Spares (bad sector replacements) below
 	 * are not counted in d_nsectors or d_secpercyl.
 	 * Spare sectors are assumed to be physical sectors
 	 * which occupy space at the end of each track and/or cylinder.
 	 */
-	u_int16_t 	d_sparespertrack;	/* # of spare sectors per track */
-	u_int16_t 	d_sparespercyl;		/* # of spare sectors per cylinder */
+	u_int16_t 		d_sparespertrack;	/* # of spare sectors per track */
+	u_int16_t 		d_sparespercyl;		/* # of spare sectors per cylinder */
 
 	/*
 	 * Alternate cylinders include maintenance, replacement,
 	 * configuration description areas, etc.
 	 */
-	u_int32_t 	d_acylinders;		/* # of alt. cylinders per unit */
+	u_int32_t 		d_acylinders;		/* # of alt. cylinders per unit */
 
 			/* hardware characteristics: */
 	/*
@@ -170,24 +170,24 @@ struct disklabel {
 	 * Finally, d_cylskew is the offset of sector 0 on cylinder N
 	 * relative to sector 0 on cylinder N-1.
 	 */
-	u_int16_t 	d_rpm;				/* rotational speed */
-	u_int16_t 	d_interleave;		/* hardware sector interleave */
-	u_int16_t 	d_trackskew;		/* sector 0 skew, per track */
-	u_int16_t 	d_cylskew;			/* sector 0 skew, per cylinder */
-	u_int32_t 	d_headswitch;		/* head swith time, usec */
-	u_int32_t 	d_trkseek;			/* track-to-track seek, msec */
-	u_int32_t 	d_flags;			/* generic flags */
+	u_int16_t 		d_rpm;				/* rotational speed */
+	u_int16_t 		d_interleave;		/* hardware sector interleave */
+	u_int16_t 		d_trackskew;		/* sector 0 skew, per track */
+	u_int16_t 		d_cylskew;			/* sector 0 skew, per cylinder */
+	u_int32_t 		d_headswitch;		/* head swith time, usec */
+	u_int32_t 		d_trkseek;			/* track-to-track seek, msec */
+	u_int32_t 		d_flags;			/* generic flags */
 #define NDDATA 5
-	u_int32_t 	d_drivedata[NDDATA];/* drive-type specific information */
+	u_int32_t 		d_drivedata[NDDATA];/* drive-type specific information */
 #define NSPARE 5
-	u_int32_t 	d_spare[NSPARE];	/* reserved for future use */
-	u_int32_t 	d_magic2;			/* the magic number (again) */
-	u_int16_t 	d_checksum;			/* xor of data incl. partitions */
+	u_int32_t 		d_spare[NSPARE];	/* reserved for future use */
+	u_int32_t 		d_magic2;			/* the magic number (again) */
+	u_int16_t 		d_checksum;			/* xor of data incl. partitions */
 
 			/* filesystem and partition information: */
-	u_int16_t 	d_npartitions;		/* number of partitions in following */
-	u_int32_t 	d_bbsize;			/* size of boot area at sn0, bytes */
-	u_int32_t 	d_sbsize;			/* max size of fs superblock, bytes */
+	u_int16_t 		d_npartitions;		/* number of partitions in following */
+	u_int32_t 		d_bbsize;			/* size of boot area at sn0, bytes */
+	u_int32_t 		d_sbsize;			/* max size of fs superblock, bytes */
 	struct	partition {				/* the partition table */
 		u_int32_t 	p_size;			/* number of sectors in partition */
 		u_int32_t 	p_offset;		/* starting sector */
@@ -365,9 +365,29 @@ struct partinfo {
 
 #define DIOCSSTEP		_IOW(d, 107, int)			/* set step rate */
 #define DIOCSRETRIES	_IOW(d, 108, int)			/* set # of retries */
+#define DIOCKLABEL		_IOW(d, 119, int)			/* keep/drop label on close? */
 #define DIOCWLABEL		_IOW(d, 109, int)			/* write en/disable label */
 
 #define DIOCSBAD		_IOW(d, 110, struct dkbad)	/* set kernel dkbad */
+#define DIOCEJECT		_IOW('d', 112, int)			/* eject removable disk */
+#define ODIOCEJECT		_IO('d', 112)				/* eject removable disk */
+#define DIOCLOCK		_IOW('d', 113, int)			/* lock/unlock pack */
+
+/* get default label, clear label */
+#define	DIOCGDEFLABEL	_IOR('d', 114, struct disklabel)
+#define	DIOCCLRLABEL	_IO('d', 115)
+
+/* disk cache enable/disable */
+#define	DIOCGCACHE		_IOR('d', 116, int)			/* get cache enables */
+#define	DIOCSCACHE		_IOW('d', 117, int)			/* set cache enables */
+
+#define	DKCACHE_READ	0x000001 /* read cache enabled */
+#define	DKCACHE_WRITE	0x000002 /* write(back) cache enabled */
+#define	DKCACHE_RCHANGE	0x000100 /* read enable is changeable */
+#define	DKCACHE_WCHANGE	0x000200 /* write enable is changeable */
+#define	DKCACHE_SAVE	0x010000 /* cache parameters are savable/save them */
+#define	DKCACHE_FUA		0x020000 /* Force Unit Access supported */
+#define	DKCACHE_DPO		0x040000 /* Disable Page Out supported */
 
 #endif /* LOCORE */
 

@@ -45,18 +45,18 @@
 #define MAXBAD	126			/* Maximum bad sectors supported */
 
 struct dkbad {
-	long	bt_csn;			/* cartridge serial number */
-	u_short	bt_mbz;			/* unused; should be 0 */
-	u_short	bt_flag;		/* -1 => alignment cartridge */
+	long		bt_csn;		/* cartridge serial number */
+	u_short		bt_mbz;		/* unused; should be 0 */
+	u_short		bt_flag;	/* -1 => alignment cartridge */
 	struct bt_bad {
 		u_short	bt_cyl;		/* cylinder number of bad sector */
 		u_short	bt_trksec;	/* track and sector number */
 	} bt_bad[MAXBAD];
 };
 
-#define	ECC	0
-#define	SSE	1
-#define	BSE	2
+#define	ECC		0
+#define	SSE		1
+#define	BSE		2
 #define	CONT	3
 
 #endif

@@ -17,31 +17,42 @@ struct	mtop	{
 };
 
 /* operations */
-#define MTWEOF	0	/* write an end-of-file record */
-#define MTFSF	1	/* forward space file */
-#define MTBSF	2	/* backward space file */
-#define MTFSR	3	/* forward space record */
-#define MTBSR	4	/* backward space record */
-#define MTREW	5	/* rewind */
-#define MTOFFL	6	/* rewind and put the drive offline */
-#define MTNOP	7	/* no operation, sets status only */
-#define MTCACHE	8	/* enable controller cache */
-#define MTNOCACHE 9	/* disable controller cache */
-#define	MTFLUSH	10	/* flush cache */
+#define MTWEOF		0	/* write an end-of-file record */
+#define MTFSF		1	/* forward space file */
+#define MTBSF		2	/* backward space file */
+#define MTFSR		3	/* forward space record */
+#define MTBSR		4	/* backward space record */
+#define MTREW		5	/* rewind */
+#define MTOFFL		6	/* rewind and put the drive offline */
+#define MTNOP		7	/* no operation, sets status only */
+#define MTCACHE		8	/* enable controller cache */
+#define MTNOCACHE 	9	/* disable controller cache */
+#define	MTFLUSH		10	/* flush cache */
+#define	MTRETEN		11	/* retension */
+#define	MTERASE		12	/* erase entire tape */
+#define	MTEOM		13	/* forward to end of media */
+#define	MTSETBSIZ	14	/* set block size; 0 for variable */
+#define	MTSETDNSTY	15	/* set density code for current mode */
+#define	MTCMPRESS	16	/* set/clear device compression */
+#define	MTEWARN		17	/* set/clear early warning behaviour */
 
 /* structure for MTIOCGET - mag tape get status command */
 
 struct	mtget	{
-	short	mt_type;	/* type of magtape device */
+	short	mt_type;			/* type of magtape device */
 /* the following two registers are grossly device dependent */
-	short	mt_dsreg;	/* ``drive status'' register */
-	short	mt_erreg;	/* ``error'' register */
+	short	mt_dsreg;			/* ``drive status'' register */
+	short	mt_erreg;			/* ``error'' register */
 /* end device-dependent registers */
-	short	mt_resid;	/* residual count */
+	short	mt_resid;			/* residual count */
 /* the following two are not yet implemented */
-	daddr_t	mt_fileno;	/* file number of current position */
-	daddr_t	mt_blkno;	/* block number of current position */
+	daddr_t	mt_fileno;			/* file number of current position */
+	daddr_t	mt_blkno;			/* block number of current position */
 /* end not yet implemented */
+	int32_t	mt_blksiz;			/* current block size */
+	int32_t	mt_density;			/* current density code */
+	int32_t	mt_mblksiz[4];		/* block size for different modes */
+	int32_t mt_mdensity[4];		/* density codes for different modes */
 };
 
 /*
