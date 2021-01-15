@@ -48,8 +48,8 @@
 
 #define KBD_INDEX(dev)	minor(dev)
 
-#define KB_QSIZE		512
-#define KB_BUFSIZE		64
+#define KB_QSIZE				512
+#define KB_BUFSIZE				64
 
 struct genkbd_softc {
 	int				gkb_flags;				/* flag/status bits */
@@ -59,9 +59,8 @@ struct genkbd_softc {
 	unsigned int	gkb_q_start;
 	unsigned int	gkb_q_length;
 };
-typedef struct genkbd_softc genkbd_softc_t;
 
-static SIMPLEQ_HEAD(, keyboard_driver) keyboard_drivers = SIMPLEQ_HEAD_INITIALIZER(keyboard_drivers);
+SIMPLEQ_HEAD(, keyboard_driver) keyboard_drivers = SIMPLEQ_HEAD_INITIALIZER(keyboard_drivers);
 
 
 /* local arrays */
@@ -138,6 +137,7 @@ kbd_init_struct(keyboard_t *kbd, char *name, int type, int unit, int config, int
 	kbd->kb_led = 0;		/* unknown */
 	kbd->kb_io_base = port;
 	kbd->kb_io_size = port_size;
+	kbd_lock_init(kbd);
 	kbd->kb_data = NULL;
 	kbd->kb_keymap = NULL;
 	kbd->kb_accentmap = NULL;
@@ -191,7 +191,6 @@ kbd_register(keyboard_t *kbd)
 			break;
 	}
 	if (index >= KBD_MAXKEYBOARDS) {
-		if (kbd_realloc_array())
 			return -1;
 	}
 
@@ -434,14 +433,17 @@ const struct cdevsw genkbd_cdevsw = {
 		.d_type = 	D_OTHER
 };
 
+/* generic keyboard rountine driver */
+extern struct cfdriver genkbd_cd;
+
 int
-kbd_attach(keyboard_t *kbd)
+genkbd_attach(keyboard_t *kbd)
 {
 	if (kbd->kb_index >= KBD_MAXKEYBOARDS) {
-		return EINVAL;
+		return (EINVAL);
 	}
 	if (keyboard[kbd->kb_index] != kbd) {
-		return EINVAL;
+		return (EINVAL);
 	}
 
 	kbd->kb_data = malloc(sizeof(genkbd_softc_t), M_DEVBUF, M_WAITOK | M_ZERO);
@@ -451,7 +453,7 @@ kbd_attach(keyboard_t *kbd)
 }
 
 int
-kbd_detach(keyboard_t *kbd)
+genkbd_detach(keyboard_t *kbd)
 {
 	if (kbd->kb_index >= KBD_MAXKEYBOARDS)
 		return (EINVAL);

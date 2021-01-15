@@ -36,8 +36,11 @@
 
 #define KBD_MAXKEYBOARDS		16
 
+
+
 /* forward declarations */
 typedef struct keyboard keyboard_t;
+typedef struct genkbd_softc genkbd_softc_t;
 struct keymap;
 struct accentmap;
 struct fkeytab;
@@ -50,10 +53,6 @@ struct device;
 
 /* call back funcion */
 typedef int		kbd_callback_func_t(keyboard_t *kbd, int event, void *arg);
-
-/* keyboard cfdriver functions */
-typedef int		kbd_match_t(struct device *parent, struct cfdata *match, void *aux);
-typedef void	kbd_attach_t(struct device *parent, struct device *self, void *aux);
 
 /* keyboard function table */
 typedef int		kbd_probe_t(int unit, void *arg, int flags);
@@ -86,9 +85,6 @@ typedef struct keyboard_callback {
 } keyboard_callback_t;
 
 typedef struct keyboard_switch {
-	kbd_match_t			*match;
-	kbd_attach_t		*attach;
-
 	kbd_probe_t			*probe;
 	kbd_init_t			*init;
 	kbd_term_t			*term;
@@ -112,9 +108,6 @@ typedef struct keyboard_switch {
 
 int genkbd_probe(keyboard_switch_t *sw, int unit, void *arg, int flags);
 int genkbd_init(keyboard_switch_t *sw, int unit, keyboard_t **kbdpp, void *arg, int flags);
-
-kbd_match_t			genkbd_match;
-kbd_attach_t		genkbd_attach;
 
 kbd_term_t			genkbd_term;
 kbd_intr_t			genkbd_intr;
@@ -302,7 +295,9 @@ int					kbd_detach(keyboard_t *kbd);
 */
 
 /* global variables */
-extern keyboard_switch_t *kbdsw[KBD_MAXKEYBOARDS];
+extern SIMPLEQ_HEAD(, keyboard_driver) 	keyboard_drivers;
+extern keyboard_switch_t 				*kbdsw[KBD_MAXKEYBOARDS];
+extern struct cfdriver 					genkbd_cd;
 
 /* Initialization for the kbd layer, performed by cninit. */
 void	kbdinit(void);

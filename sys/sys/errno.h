@@ -120,4 +120,5 @@ extern	int	errno;				/* global error number */
 /* pseudo-errors returned inside kernel to modify return back to user mode */
 #define	ERESTART		-1		/* restart syscall */
 #define	EJUSTRETURN		-2		/* don't modify regs, just return */
+#define	ENOIOCTL		-3		/* ioctl not handled by this layer */
 #endif

@@ -210,38 +210,31 @@ typedef struct _kbdkqueue {
     int 				head;
     int 				tail;
     unsigned char 		q[KBDQ_BUFSIZE];
-//#if KBDIO_DEBUG >= 2
+#if KBDIO_DEBUG >= 2
     int 				call_count;
     int 				qcount;
     int 				max_qcount;
 #endif
 } kbdkqueue;
 
-struct resource;
-
 #define ATKBDC_DATA_SLOT		0
 #define ATKBDC_STATUS_SLOT		1
 
-struct atkbdc_port {
-	int 				iobase;
-    bus_space_tag_t 	iot;
-    bus_space_handle_t 	ioh0;
-    bus_space_handle_t 	ioh1;
-};
-
-
 typedef struct atkbdc_softc {
-    struct resource 	*port0;			/* data port *//* TODO: change */
-    struct resource 	*port1;			/* status port *//* TODO: change */
+	bus_space_handle_t	port0;			/* data port */
+	bus_space_handle_t	port1;			/* status port */
+
     bus_space_tag_t 	iot;
     bus_space_handle_t 	ioh0;
     bus_space_handle_t 	ioh1;
+
     int 				command_byte;	/* current command byte value */
     int 				command_mask;	/* command byte mask bits for kbd/aux devices */
     int 				mux_active;		/* multiplexer is active */
     int 				lock;			/* FIXME: XXX not quite a semaphore... */
     kbdkqueue 			kbd;			/* keyboard data queue */
     kbdkqueue 			aux;			/* auxiliary data queue */
+    int 				retry;
 } atkbdc_softc_t;
 
 enum kbdc_device_ivar {
@@ -255,14 +248,11 @@ enum kbdc_device_ivar {
 
 typedef struct atkbdc_softc *KBDC;
 
-#define KBDC_RID_KBD	 0
-#define KBDC_RID_AUX	 1
-
 /* function prototypes */
 
 atkbdc_softc_t 	*atkbdc_get_softc(int unit);
-int 			atkbdc_probe_unit(int unit, struct resource *port0, struct resource *port1);
-int 			atkbdc_attach_unit(int unit, atkbdc_softc_t *sc, struct resource *port0, struct resource *port1);
+int 			atkbdc_probe_unit(int unit, bus_space_tag_t iot, bus_space_handle_t port0, bus_space_handle_t port1);
+int 			atkbdc_attach_unit(int unit, atkbdc_softc_t *sc, bus_space_handle_t port0, bus_space_handle_t port1);
 int 			atkbdc_configure(void);
 
 KBDC 			atkbdc_open(int unit);
@@ -275,7 +265,7 @@ int 			write_controller_w1r1(KBDC kbdc, int c, int d);
 
 int 			write_kbd_command(KBDC kbdc,int c);
 int 			write_aux_command(KBDC kbdc,int c);
-int 			send_kbd_command(KBDC kbdc,int c);
+int 			send_kbd_command(KBDC kbdc,int c);W
 int 			send_aux_command(KBDC kbdc,int c);
 int 			send_kbd_command_and_data(KBDC kbdc,int c,int d);
 int 			send_aux_command_and_data(KBDC kbdc,int c,int d);

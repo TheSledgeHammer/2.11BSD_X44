@@ -1,3 +1,37 @@
+/*
+ * Copyright (c) 2010 The DragonFly Project.  All rights reserved.
+ *
+ * This code is derived from software contributed to The DragonFly Project
+ * by Matthew Dillon <dillon@backplane.com>
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ * 3. Neither the name of The DragonFly Project nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific, prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
+ * COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
@@ -19,23 +53,92 @@
 
 #include <dev/kbd/kbdreg.h>
 
+struct cfdriver genkbd_cd = {
+		NULL, "genkbd", genkbd_match, genkbd_attach, DV_DULL, sizeof(genkbd_softc_t)
+};
+
 int
-genkbd_match(keyboard_t *kbd, struct device *parent, struct cfdata *match, void *aux)
+genkbd_match(struct device *parent, struct cfdata *cf, void *aux)
 {
+	keyboard_t *kbd = (keyboard_t *) aux;
+
+	if(strcmp(kbd->kb_name, cf->cf_driver->cd_name)) {
+		return (0);
+	}
+
+	/* XXX check other indicators */
+
+	return (1);
+}
+
+void
+genkbd_attach(struct device *parent, struct device *self, void *aux)
+{
+	genkbd_softc_t *sc = (genkbd_softc_t *) parent;
+	keyboard_t *kbd = (keyboard_t *) aux;
 	int error;
 
-	error = (*kbdsw[kbd->kb_index]->match)(parent, match, aux);
+	error = genkbd_attach(kbd);
+	if(error) {
+		/* check keyboard has been registered & configured */
+		if(KBD_IS_REGISTERED(kbd)) {
+			if (KBD_IS_CONFIGURED(kbd)) {
+				config_search(genkbd_search, self, NULL);
+			} else {
+				goto noconfig;
+			}
+		} else {
+			goto noregister;
+		}
+	} else {
+		goto nokbd;
+	}
 
-	return (error);
+nokbd:
+	error = genkbd_detach(kbd);
+	panic("kbd_attach: no keyboard to attach");
+
+noregister:
+	error = genkbd_detach(kbd);
+	panic("kbd_attach: keyboard is not registered");
+
+noconfig:
+	error = genkbd_detach(kbd);
+	panic("kbd_attach: keyboard is not configured");
+}
+
+static int
+genkbd_print(void *aux, char *kb)
+{
+	keyboard_t *kbd = aux;
+	if(kbd->kb_index) {
+		printf("kbd index %d\n", kbd->kb_index);
+	}
+	if(kbd->kb_name) {
+		printf("kbd name %d\n", kbd->kb_name);
+	}
+	if(kbd->kb_unit) {
+		printf("kbd unit %d\n", kbd->kb_unit);
+	}
+	return (UNCONF);
 }
 
 int
-genkbd_attach(keyboard_t *kbd, struct device *parent, struct device *self, void *aux)
+genkbd_search(struct device *parent, struct cfdata *cf, void *aux)
 {
+	keyboard_t *kbd = aux;
 	int error;
 
-	error = (*kbdsw[kbd->kb_index]->attach)(parent, self, aux);
-
+	keyboard_driver_t *driver;
+	for(driver = SIMPLEQ_FIRST(&keyboard_drivers); driver != NULL; driver = SIMPLEQ_NEXT(driver, link)) {
+		if(strcmp(kbd->kb_name, driver->name)) {
+			if ((*cf->cf_driver->cd_match)(parent, cf, &kbd) > 0) {
+				config_attach(parent, cf, &kbd, genkbd_print);
+				error = (cf->cf_fstate == FSTATE_STAR);
+				break;
+			}
+		}
+	}
 	return (error);
 }
 
@@ -54,7 +157,6 @@ genkbd_init(keyboard_switch_t *sw, int unit, keyboard_t **kbdpp, void *arg, int 
 {
 	int error;
 
-	kbd_lock_init(*kbdpp);
 	error = (*sw->init)(unit, kbdpp, arg, flags);
 	return (error);
 }

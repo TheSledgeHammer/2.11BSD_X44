@@ -46,8 +46,7 @@ bus_space_reservation_size(bus_space_reservation_t *bsr)
 }
 
 static __inline bus_space_reservation_t *
-bus_space_reservation_init(bus_space_reservation_t *bsr,
-    bus_addr_t addr, bus_size_t size)
+bus_space_reservation_init(bus_space_reservation_t *bsr, bus_addr_t addr, bus_size_t size)
 {
 	bsr->_bsr_start = addr;
 	bsr->_bsr_size = size;
