@@ -38,7 +38,7 @@
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
 #include <sys/user.h>
-#else
+//#else
 #include <sys/systm.h>
 #include <sys/vnode.h>
 #include <sys/buf.h>
@@ -65,12 +65,19 @@ ffs_blkatoff(ap)
 	register struct fs *fs;
 	struct buf *bp;
 	ufs_daddr_t lbn;
+	ufs2_daddr_t lbn2;
 	int bsize, error;
 
 	ip = VTOI(ap->a_vp);
 	fs = ip->i_fs;
-	lbn = lblkno(fs, ap->a_offset);
-	bsize = blksize(fs, ip, lbn);
+
+	if (fs->fs_magic == FS_UFS2_MAGIC) {
+		lbn2 = lblkno(fs, ap->a_offset);
+		bsize = blksize3(fs, ip, lbn2);
+	} else {
+		lbn = lblkno(fs, ap->a_offset);
+		bsize = blksize2(fs, ip, lbn);
+	}
 
 	*ap->a_bpp = NULL;
 	if (error == bread(ap->a_vp, lbn, bsize, NOCRED, &bp)) {
@@ -133,22 +140,20 @@ ffs_checkoverlap(bp, ip)
 	start = bp->b_blkno;
 	last = start + btodb(bp->b_bcount) - 1;
 	for (ep = buf; ep < ebp; ep++) {
-		if (ep == bp || (ep->b_flags & B_INVAL) ||
-		    ep->b_vp == NULLVP)
+		if (ep == bp || (ep->b_flags & B_INVAL) || ep->b_vp == NULLVP)
 			continue;
-		if (VOP_BMAP(ep->b_vp, (ufs_daddr_t)0, &vp, (ufs_daddr_t)0,
-		    NULL))
+		if (VOP_BMAP(ep->b_vp, (ufs_daddr_t) 0, &vp, (ufs_daddr_t) 0,
+		NULL))
 			continue;
 		if (vp != ip->i_devvp)
 			continue;
 		/* look for overlap */
-		if (ep->b_bcount == 0 || ep->b_blkno > last ||
-		    ep->b_blkno + btodb(ep->b_bcount) <= start)
+		if (ep->b_bcount == 0 || ep->b_blkno > last
+				|| ep->b_blkno + btodb(ep->b_bcount) <= start)
 			continue;
 		vprint("Disk overlap", vp);
-		(void)printf("\tstart %d, end %d overlap start %d, end %d\n",
-			start, last, ep->b_blkno,
-			ep->b_blkno + btodb(ep->b_bcount) - 1);
+		(void) printf("\tstart %d, end %d overlap start %d, end %d\n", start,
+				last, ep->b_blkno, ep->b_blkno + btodb(ep->b_bcount) - 1);
 		panic("Disk buffer overlap");
 	}
 }
@@ -167,7 +172,7 @@ ffs_isblock(fs, cp, h)
 {
 	unsigned char mask;
 
-	switch ((int)fs->fs_frag) {
+	switch ((int) fs->fs_frag) {
 	case 8:
 		return (cp[h] == 0xff);
 	case 4:

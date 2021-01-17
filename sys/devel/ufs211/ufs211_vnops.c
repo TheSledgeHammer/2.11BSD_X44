@@ -146,7 +146,7 @@ struct vnodeops ufs211_specops = {
 		(struct vnodeops *)NULL = (int(*)())NULL
 };
 
-#ifdef FIFO
+//#ifdef FIFO
 struct vnodeops ufs211_fifoops = {
 		.vop_lookup = fifo_lookup,			/* lookup */
 		.vop_create = fifo_create,			/* create */
@@ -814,11 +814,13 @@ ufs211fifo_close(ap)
  * Initialize the vnode associated with a new inode, handle aliased
  * vnodes.
  */
+
+
 int
-ufs_vinit(mntp, specops, fifoops, vpp)
+ufs211_vinit(mntp, specops, fifoops, vpp)
 	struct mount *mntp;
-	int (**specops)();
-	int (**fifoops)();
+	struct vnodeops *specops;
+	struct vnodeops *fifoops;
 	struct vnode **vpp;
 {
 	struct proc *p = curproc;	/* XXX */
@@ -827,6 +829,7 @@ ufs_vinit(mntp, specops, fifoops, vpp)
 
 	vp = *vpp;
 	ip = UFS211_VTOI(vp);
+
 	switch (vp->v_type = IFTOVT(ip->i_mode)) {
 	case VCHR:
 	case VBLK:
@@ -839,7 +842,7 @@ ufs_vinit(mntp, specops, fifoops, vpp)
 			 */
 			nvp->v_data = vp->v_data;
 			vp->v_data = NULL;
-			vp->v_op = spec_vnodeops;
+			vp->v_op = &spec_vnodeops;
 			vrele(vp);
 			vgone(vp);
 			/*

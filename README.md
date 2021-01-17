@@ -23,7 +23,7 @@
   	- IPv6
 - Filesystem Updates:
 	- UFS/FFS/LFS:
-  		- Support UFS2
+  		- UFS2/FFS2 Support: Work in Progress
   		- UFS Journaling
   		- Dirhash
 - New Filesystems (In Kernel):

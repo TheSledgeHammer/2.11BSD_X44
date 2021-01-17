@@ -27,6 +27,8 @@
 #define	DOUBLE				1	/* index of double indirect block */
 #define	TRIPLE				2	/* index of triple indirect block */
 
+static void	ufs211_trsingle(struct ufs211_inode *, caddr_t, ufs211_daddr_t, int);
+
 /*
  * Check accessed and update flags on
  * an inode structure.
@@ -370,7 +372,7 @@ ufs211_indirtrunc(ip, bn, lastbn, level, aflags)
 	brelse(bp);
 }
 
-static
+static void
 ufs211_trsingle(ip, bp,last, aflags)
 	register struct ufs211_inode *ip;
 	caddr_t bp;

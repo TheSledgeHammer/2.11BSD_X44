@@ -52,19 +52,19 @@
  * active, and is put back when the file is no longer being used.
  */
 struct inode {
-	LIST_ENTRY(inode)  	i_hash;		/* Hash chain. */
-	struct	vnode  		*i_vnode;	/* Vnode associated with this inode. */
-	struct	vnode  		*i_devvp;	/* Vnode for block I/O. */
-	u_int32_t 			i_flag;		/* flags, see below */
-	dev_t	  			i_dev;		/* Device associated with the inode. */
-	ino_t	  			i_number;	/* The identity of the inode. */
+	LIST_ENTRY(inode)  	i_hash;				/* Hash chain. */
+	struct	vnode  		*i_vnode;			/* Vnode associated with this inode. */
+	struct	vnode  		*i_devvp;			/* Vnode for block I/O. */
+	u_int32_t 			i_flag;				/* flags, see below */
+	dev_t	  			i_dev;				/* Device associated with the inode. */
+	ino_t	  			i_number;			/* The identity of the inode. */
 
-	union {							/* Associated filesystem. */
-		struct	fs 	*fs;			/* FFS */
-		struct	lfs *lfs;			/* LFS */
+	union {									/* Associated filesystem. */
+		struct	fs 		*fs;				/* FFS */
+		struct	lfs 	*lfs;				/* LFS */
 	} inode_u;
-#define	i_fs	inode_u.fs
-#define	i_lfs	inode_u.lfs
+#define	i_fs			inode_u.fs
+#define	i_lfs			inode_u.lfs
 
 	struct	 dquot 		*i_dquot[MAXQUOTAS];/* Dquot structures. */
 	u_quad_t 			i_modrev;			/* Revision level for NFS lease. */
@@ -73,38 +73,86 @@ struct inode {
 	/*
 	 * Side effects; used during directory lookup.
 	 */
-	int32_t	  i_count;			/* Size of free slot in directory. */
-	doff_t	  i_endoff;			/* End of useful stuff in directory. */
-	doff_t	  i_diroff;			/* Offset in dir, where we found last entry. */
-	doff_t	  i_offset;			/* Offset of free space in directory. */
-	ino_t	  i_ino;			/* Inode number of found directory. */
-	u_int32_t i_reclen;			/* Size of found directory entry. */
-	int       i_effnlink;  		/* i_nlink when I/O completes */
+	int32_t	  			i_count;			/* Size of free slot in directory. */
+	doff_t	  			i_endoff;			/* End of useful stuff in directory. */
+	doff_t	  			i_diroff;			/* Offset in dir, where we found last entry. */
+	doff_t	  			i_offset;			/* Offset of free space in directory. */
+	ino_t	  			i_ino;				/* Inode number of found directory. */
+	u_int32_t 			i_reclen;			/* Size of found directory entry. */
+	int       			i_effnlink;  		/* i_nlink when I/O completes */
 
 	/*
 	 * The on-disk dinode itself.
 	 */
-	struct dinode i_din;		/* 128 bytes of the on-disk dinode. */
+	//struct dinode 		i_din;			/* 128 bytes of the on-disk dinode. */
+
+	union {
+		struct dinode 		*ffs1_din;		/* 128 bytes of the on-disk dinode. */
+		struct ufs2_dinode 	*ffs2_din;		/* 128 bytes of the on-disk dinode. */
+	} i_din;
 };
 
-#define	i_atime		i_din.di_atime
-#define	i_atimensec	i_din.di_atimensec
-#define	i_blocks	i_din.di_blocks
-#define	i_ctime		i_din.di_ctime
-#define	i_ctimensec	i_din.di_ctimensec
-#define	i_db		i_din.di_db
-#define	i_flags		i_din.di_flags
-#define	i_gen		i_din.di_gen
-#define	i_gid		i_din.di_gid
-#define	i_ib		i_din.di_ib
-#define	i_mode		i_din.di_mode
-#define	i_mtime		i_din.di_mtime
-#define	i_mtimensec	i_din.di_mtimensec
-#define	i_nlink		i_din.di_nlink
-#define	i_rdev		i_din.di_rdev
-#define	i_shortlink	i_din.di_shortlink
-#define	i_size		i_din.di_size
-#define	i_uid		i_din.di_uid
+#define	i_atime				i_din.di_atime
+#define	i_atimensec			i_din.di_atimensec
+#define	i_blocks			i_din.di_blocks
+#define	i_ctime				i_din.di_ctime
+#define	i_ctimensec			i_din.di_ctimensec
+#define	i_db				i_din.di_db
+#define	i_flags				i_din.di_flags
+#define	i_gen				i_din.di_gen
+#define	i_gid				i_din.di_gid
+#define	i_ib				i_din.di_ib
+#define	i_mode				i_din.di_mode
+#define	i_mtime				i_din.di_mtime
+#define	i_mtimensec			i_din.di_mtimensec
+#define	i_nlink				i_din.di_nlink
+#define	i_rdev				i_din.di_rdev
+#define	i_shortlink			i_din.di_shortlink
+#define	i_size				i_din.di_size
+#define	i_uid				i_din.di_uid
+
+#define	i_ffs1_atime		i_din.ffs1_din->di_atime
+#define	i_ffs1_atimensec	i_din.ffs1_din->di_atimensec
+#define	i_ffs1_blocks		i_din.ffs1_din->di_blocks
+#define	i_ffs1_ctime		i_din.ffs1_din->di_ctime
+#define	i_ffs1_ctimensec	i_din.ffs1_din->di_ctimensec
+#define	i_ffs1_db			i_din.ffs1_din->di_db
+#define	i_ffs1_flags		i_din.ffs1_din->di_flags
+#define	i_ffs1_gen			i_din.ffs1_din->di_gen
+#define	i_ffs1_gid			i_din.ffs1_din->di_gid
+#define	i_ffs1_ib			i_din.ffs1_din->di_ib
+#define	i_ffs1_mode			i_din.ffs1_din->di_mode
+#define	i_ffs1_mtime		i_din.ffs1_din->di_mtime
+#define	i_ffs1_mtimensec	i_din.ffs1_din->di_mtimensec
+#define	i_ffs1_nlink		i_din.ffs1_din->di_nlink
+#define	i_ffs1_rdev			i_din.ffs1_din->di_rdev
+#define	i_ffs1_shortlink	i_din.ffs1_din->di_shortlink
+#define	i_ffs1_size			i_din.ffs1_din->di_size
+#define	i_ffs1_uid			i_din.ffs1_din->di_uid
+
+#define	i_ffs2_atime		i_din.ffs2_din->di_atime
+#define	i_ffs2_atimensec	i_din.ffs2_din->di_atimensec
+#define	i_ffs2_birthtime	i_din.ffs2_din->di_birthtime
+#define	i_ffs2_birthnsec	i_din.ffs2_din->di_birthnsec
+#define	i_ffs2_blocks		i_din.ffs2_din->di_blocks
+#define	i_ffs2_blksize		i_din.ffs2_din->di_blksize
+#define	i_ffs2_ctime		i_din.ffs2_din->di_ctime
+#define	i_ffs2_ctimensec	i_din.ffs2_din->di_ctimensec
+#define	i_ffs2_db			i_din.ffs2_din->di_db
+#define	i_ffs2_flags		i_din.ffs2_din->di_flags
+#define	i_ffs2_gen			i_din.ffs2_din->di_gen
+#define	i_ffs2_gid			i_din.ffs2_din->di_gid
+#define	i_ffs2_ib			i_din.ffs2_din->di_ib
+#define	i_ffs2_mode			i_din.ffs2_din->di_mode
+#define	i_ffs2_mtime		i_din.ffs2_din->di_mtime
+#define	i_ffs2_mtimensec	i_din.ffs2_din->di_mtimensec
+#define	i_ffs2_nlink		i_din.ffs2_din->di_nlink
+#define	i_ffs2_rdev			i_din.ffs2_din->di_rdev
+#define	i_ffs2_size			i_din.ffs2_din->di_size
+#define	i_ffs2_uid			i_din.ffs2_din->di_uid
+#define	i_ffs2_kernflags	i_din.ffs2_din->di_kernflags
+#define	i_ffs2_extsize		i_din.ffs2_din->di_extsize
+#define	i_ffs2_extb			i_din.ffs2_din->di_extb
 
 /* These flags are kept in i_flag. */
 #define	IN_ACCESS		0x0001		/* Access time update request. */
@@ -134,19 +182,19 @@ struct indir {
 #define VTOI(vp)	((struct inode *)(vp)->v_data)
 #define ITOV(ip)	((ip)->i_vnode)
 
-#define	ITIMES(ip, t1, t2) {						\
+#define	ITIMES(ip, t1, t2) {									\
 	if ((ip)->i_flag & (IN_ACCESS | IN_CHANGE | IN_UPDATE)) {	\
-		(ip)->i_flag |= IN_MODIFIED;				\
-		if ((ip)->i_flag & IN_ACCESS)				\
-			(ip)->i_atime = (t1)->tv_sec;			\
-		if ((ip)->i_flag & IN_UPDATE) {				\
-			(ip)->i_mtime = (t2)->tv_sec;			\
-			(ip)->i_modrev++;				\
-		}							\
-		if ((ip)->i_flag & IN_CHANGE)				\
-			(ip)->i_ctime = time.tv_sec;			\
+		(ip)->i_flag |= IN_MODIFIED;							\
+		if ((ip)->i_flag & IN_ACCESS)							\
+			(ip)->i_atime = (t1)->tv_sec;						\
+		if ((ip)->i_flag & IN_UPDATE) {							\
+			(ip)->i_mtime = (t2)->tv_sec;						\
+			(ip)->i_modrev++;									\
+		}														\
+		if ((ip)->i_flag & IN_CHANGE)							\
+			(ip)->i_ctime = time.tv_sec;						\
 		(ip)->i_flag &= ~(IN_ACCESS | IN_CHANGE | IN_UPDATE);	\
-	}								\
+	}															\
 }
 
 /* This overlays the fid structure (see mount.h). */

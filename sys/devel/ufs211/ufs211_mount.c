@@ -139,11 +139,11 @@ mount_updname(fs, on, from, lenon, lenfrom)
 	struct	ufs211_mount	*mp;
 	register struct	ufs211_xmount	*xmp;
 
-	bzero(fs->fs_fsmnt, sizeof (fs->fs_fsmnt));
-	bcopy(on, fs->fs_fsmnt, sizeof (fs->fs_fsmnt) - 1);
-	mp = ((int)fs - offsetof(mp, mp->m_filsys));
-	xmp = (struct ufs211_xmount *) rmalloc(xmp, sizeof(struct ufs211_xmount *));
-	bzero(xmp, sizeof (struct xmount));
+	bzero(fs->fs_fsmnt, sizeof(fs->fs_fsmnt));
+	bcopy(on, fs->fs_fsmnt, sizeof(fs->fs_fsmnt) - 1);
+	mp = ((int) fs - offsetof(mp, mp->m_filsys));
+	xmp = (struct ufs211_xmount*) rmalloc(xmp, sizeof(struct ufs211_xmount*));
+	bzero(xmp, sizeof(struct xmount));
 	bcopy(on, xmp->xm_mnton, lenon);
 	bcopy(from, xmp->xm_mntfrom, lenfrom);
 }
@@ -274,9 +274,9 @@ unmount1(fname)
 	return (EINVAL);
 found:
 	//xumount(dev);	/* remove unused sticky files from text table */
-	nchinval(dev);	/* flush the name cache */
+	nchinval(dev); /* flush the name cache */
 	aflag = mp->m_flags & MNT_ASYNC;
-	mp->m_flags &= ~MNT_ASYNC;	/* Don't want async when unmounting */
+	mp->m_flags &= ~MNT_ASYNC; /* Don't want async when unmounting */
 	ufs_sync(mp);
 
 #ifdef QUOTA
@@ -284,10 +284,10 @@ found:
 #else
 	if (iflush(dev) < 0)
 #endif
-		{
+			{
 		mp->m_flags |= aflag;
 		return (EBUSY);
-		}
+	}
 #ifdef QUOTA
 	QUOTAMAP();
 	closedq(mp);
@@ -313,6 +313,7 @@ found:
  * Check that the user's argument is a reasonable
  * thing on which to mount, otherwise return error.
  */
+int
 getmdev(pdev, fname)
 	caddr_t fname;
 	ufs211_dev_t *pdev;

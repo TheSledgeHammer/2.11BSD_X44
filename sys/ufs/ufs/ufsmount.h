@@ -53,9 +53,9 @@ struct mfs_args {
 };
 #endif /* MFS */
 
-#ifdef KERNEL
+//#ifdef KERNEL
 
-#include <ufs/ufs/extattr.h>
+//#include <ufs/ufs/extattr.h>
 
 struct buf;
 struct inode;
@@ -99,11 +99,11 @@ struct ufsmount {
 /*
  * Flags describing the state of quotas.
  */
-#define	QTF_OPENING	0x01			/* Q_QUOTAON in progress */
-#define	QTF_CLOSING	0x02			/* Q_QUOTAOFF in progress */
+#define	QTF_OPENING					0x01			/* Q_QUOTAON in progress */
+#define	QTF_CLOSING					0x02			/* Q_QUOTAOFF in progress */
 
 /* Convert mount ptr to ufsmount ptr. */
-#define VFSTOUFS(mp)	((struct ufsmount *)((mp)->mnt_data))
+#define VFSTOUFS(mp)				((struct ufsmount *)((mp)->mnt_data))
 
 /*
  * Macros to access file system parameters in the ufsmount structure.

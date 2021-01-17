@@ -351,7 +351,7 @@ atkbd_init(int unit, keyboard_t **kbdp, void *arg, int flags)
 		keymap = &default_keymap;
 		accmap = &default_accentmap;
 		fkeymap = default_fkeytab;
-		fkeymap_size = NELEM(default_fkeytab);
+		fkeymap_size = nitems(default_fkeytab);
 	} else if (*kbdp == NULL) {
 		*kbdp = kbd = malloc(sizeof(*kbd), M_DEVBUF, M_WAITOK | M_ZERO);
 		state = malloc(sizeof(*state), M_DEVBUF, M_WAITOK | M_ZERO);
@@ -1497,12 +1497,12 @@ typematic(int delay, int rate)
 	int value;
 	int i;
 
-	for (i = NELEM(delays) - 1; i > 0; --i) {
+	for (i = nitems(delays) - 1; i > 0; --i) {
 		if (delay >= delays[i])
 			break;
 	}
 	value = i << 5;
-	for (i = NELEM(rates) - 1; i > 0; --i) {
+	for (i = nitems(rates) - 1; i > 0; --i) {
 		if (rate >= rates[i])
 			break;
 	}

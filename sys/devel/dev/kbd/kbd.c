@@ -62,6 +62,11 @@ struct genkbd_softc {
 
 SIMPLEQ_HEAD(, keyboard_driver) keyboard_drivers = SIMPLEQ_HEAD_INITIALIZER(keyboard_drivers);
 
+#define KEYBOARD_DRIVER(name, sw, config)				\
+	static struct keyboard_driver name##_kbd_driver = { \
+		{ NULL }, #name, &sw, config					\
+	};													\
+	SIMPLEQ_INSERT_HEAD(keyboard_drivers, name##_kbd_driver, link);
 
 /* local arrays */
 
@@ -77,46 +82,6 @@ keyboard_switch_t *kbdsw[KBD_MAXKEYBOARDS];
 static int keymap_restrict_change;
 
 #define ARRAY_DELTA			4
-
-static int
-kbd_realloc_array(void)
-{
-	keyboard_t 			**new_kbd;
-	keyboard_switch_t 	**new_kbdsw;
-	int newsize;
-	int s;
-
-	s = spltty();
-	newsize = ((KBD_MAXKEYBOARDS + ARRAY_DELTA) / ARRAY_DELTA) * ARRAY_DELTA;
-	new_kbd = malloc(sizeof(*new_kbd) * newsize, M_DEVBUF, M_NOWAIT);
-	if (new_kbd == NULL) {
-		splx(s);
-		return ENOMEM;
-	}
-	new_kbdsw = malloc(sizeof(*new_kbdsw) * newsize, M_DEVBUF, M_NOWAIT);
-	if (new_kbdsw == NULL) {
-		free(new_kbd, M_DEVBUF);
-		splx(s);
-		return ENOMEM;
-	}
-	bzero(new_kbd, sizeof(*new_kbd) * newsize);
-	bzero(new_kbdsw, sizeof(*new_kbdsw) * newsize);
-	bcopy(keyboard, new_kbd, sizeof(*keyboard) * KBD_MAXKEYBOARDS);
-	bcopy(kbdsw, new_kbdsw, sizeof(*kbdsw) * KBD_MAXKEYBOARDS);
-	if (KBD_MAXKEYBOARDS > 1) {
-		free(keyboard, M_DEVBUF);
-		free(kbdsw, M_DEVBUF);
-	}
-	keyboard = new_kbd;
-	kbdsw = new_kbdsw;
-	KBD_MAXKEYBOARDS = newsize;
-	splx(s);
-
-	if (bootverbose)
-		printf("kbd: new array size %d\n", KBD_MAXKEYBOARDS);
-
-	return 0;
-}
 
 /*
  * Low-level keyboard driver functions

@@ -49,19 +49,17 @@
 #include <ufs/ffs/ffs_extern.h>
 #include <vm/include/vm.h>
 
-extern u_long nextgennumber;
+extern u_long 		nextgennumber;
 
-static ufs_daddr_t ffs_alloccg (struct inode *, int, ufs_daddr_t, int);
-static ufs_daddr_t ffs_alloccgblk (struct fs *, struct cg *, ufs_daddr_t);
-static ufs_daddr_t ffs_clusteralloc (struct inode *, int, ufs_daddr_t,
-	    int);
-static ino_t	ffs_dirpref (struct fs *);
-static ufs_daddr_t ffs_fragextend (struct inode *, int, long, int, int);
-static void	ffs_fserr (struct fs *, u_int, char *);
-static u_long	ffs_hashalloc (struct inode *, int, long, int, u_int32_t (*)());
-static ino_t	ffs_nodealloccg (struct inode *, int, ufs_daddr_t, int);
-static ufs_daddr_t ffs_mapsearch (struct fs *, struct cg *, ufs_daddr_t,
-	    int);
+static ufs_daddr_t 	ffs_alloccg (struct inode *, int, ufs_daddr_t, int);
+static ufs_daddr_t 	ffs_alloccgblk (struct fs *, struct cg *, ufs_daddr_t);
+static ufs_daddr_t 	ffs_clusteralloc (struct inode *, int, ufs_daddr_t, int);
+static ino_t		ffs_dirpref (struct fs *);
+static ufs_daddr_t 	ffs_fragextend (struct inode *, int, long, int, int);
+static void			ffs_fserr (struct fs *, u_int, char *);
+static u_long		ffs_hashalloc (struct inode *, int, long, int, u_int32_t (*)());
+static ino_t		ffs_nodealloccg (struct inode *, int, ufs_daddr_t, int);
+static ufs_daddr_t 	ffs_mapsearch (struct fs *, struct cg *, ufs_daddr_t, int);
 
 /*
  * Allocate a block in the file system.
@@ -587,11 +585,11 @@ ffs_dirpref(fs)
 	mincg = 0;
 	for (cg = 0; cg < fs->fs_ncg; cg++)
 		if (fs->fs_cs(fs, cg).cs_ndir < minndir &&
-		    fs->fs_cs(fs, cg).cs_nifree >= avgifree) {
+		fs->fs_cs(fs, cg).cs_nifree >= avgifree) {
 			mincg = cg;
 			minndir = fs->fs_cs(fs, cg).cs_ndir;
 		}
-	return ((ino_t)(fs->fs_ipg * mincg));
+	return ((ino_t) (fs->fs_ipg * mincg));
 }
 
 /*
@@ -680,6 +678,71 @@ ffs_blkpref(ip, lbn, indx, bap)
 		 */
 		nextblk += roundup(fs->fs_rotdelay * fs->fs_rps * fs->fs_nsect /
 		    (NSPF(fs) * 1000), fs->fs_frag);
+	return (nextblk);
+}
+
+ufs_daddr_t
+ffs_blkpref_ufs2(ip, lbn, indx, bap)
+	struct inode *ip;
+	ufs2_daddr_t lbn;
+	int indx;
+	ufs2_daddr_t *bap;
+{
+	register struct fs *fs;
+	register int cg;
+	int avgbfree, startcg;
+	ufs2_daddr_t nextblk;
+
+	fs = ip->i_fs;
+	if (indx % fs->fs_maxbpg == 0 || bap[indx - 1] == 0) {
+		if (lbn < NDADDR) {
+			cg = ino_to_cg(fs, ip->i_number);
+			return (fs->fs_fpg * cg + fs->fs_frag);
+		}
+		/*
+		 * Find a cylinder with greater than average number of
+		 * unused data blocks.
+		 */
+		if (indx == 0 || bap[indx - 1] == 0)
+			startcg =
+			ino_to_cg(fs, ip->i_number) + lbn / fs->fs_maxbpg;
+		else
+			startcg = dtog(fs, bap[indx - 1]) + 1;
+		startcg %= fs->fs_ncg;
+		avgbfree = fs->fs_cstotal.cs_nbfree / fs->fs_ncg;
+		for (cg = startcg; cg < fs->fs_ncg; cg++)
+			if (fs->fs_cs(fs, cg).cs_nbfree >= avgbfree) {
+				fs->fs_cgrotor = cg;
+				return (fs->fs_fpg * cg + fs->fs_frag);
+			}
+		for (cg = 0; cg <= startcg; cg++)
+			if (fs->fs_cs(fs, cg).cs_nbfree >= avgbfree) {
+				fs->fs_cgrotor = cg;
+				return (fs->fs_fpg * cg + fs->fs_frag);
+			}
+		return (NULL);
+	}
+	/*
+	 * One or more previous blocks have been laid out. If less
+	 * than fs_maxcontig previous blocks are contiguous, the
+	 * next block is requested contiguously, otherwise it is
+	 * requested rotationally delayed by fs_rotdelay milliseconds.
+	 */
+	nextblk = bap[indx - 1] + fs->fs_frag;
+	if (indx < fs->fs_maxcontig
+			|| bap[indx - fs->fs_maxcontig] + blkstofrags(fs, fs->fs_maxcontig)
+					!= nextblk)
+		return (nextblk);
+	if (fs->fs_rotdelay != 0)
+		/*
+		 * Here we convert ms of delay to frags as:
+		 * (frags) = (ms) * (rev/sec) * (sect/rev) /
+		 *	((sect/frag) * (ms/sec))
+		 * then round up to the next block.
+		 */
+		nextblk += roundup(
+				fs->fs_rotdelay * fs->fs_rps * fs->fs_nsect / (NSPF(fs) * 1000),
+				fs->fs_frag);
 	return (nextblk);
 }
 
@@ -830,16 +893,16 @@ ffs_alloccg(ip, cg, bpref, size)
 
 	fs = ip->i_fs;
 	if (fs->fs_cs(fs, cg).cs_nbfree == 0 && size == fs->fs_bsize)
-		return (NULL);
-	error = bread(ip->i_devvp, fsbtodb(fs, cgtod(fs, cg)),
-		(int)fs->fs_cgsize, NOCRED, &bp);
+	return (NULL);
+	error = bread(ip->i_devvp, fsbtodb(fs, cgtod(fs, cg)), (int) fs->fs_cgsize,
+	NOCRED, &bp);
 	if (error) {
 		brelse(bp);
 		return (NULL);
 	}
-	cgp = (struct cg *)bp->b_data;
-	if (!cg_chkmagic(cgp) ||
-	    (cgp->cg_cs.cs_nbfree == 0 && size == fs->fs_bsize)) {
+	cgp = (struct cg*) bp->b_data;
+	if (!cg_chkmagic(cgp)
+			|| (cgp->cg_cs.cs_nbfree == 0 && size == fs->fs_bsize)) {
 		brelse(bp);
 		return (NULL);
 	}
@@ -1310,7 +1373,7 @@ ffs_blkfree(ip, bno, size)
 	bdwrite(bp);
 }
 
-#ifdef DIAGNOSTIC
+//#ifdef DIAGNOSTIC
 /*
  * Verify allocation of a block or fragment. Returns true if block or
  * fragment is allocated, false if it is free.

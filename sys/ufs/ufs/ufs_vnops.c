@@ -1886,10 +1886,10 @@ ufs_advlock(ap)
  */
 int
 ufs_vinit(mntp, specops, fifoops, vpp)
-	struct mount *mntp;
-	int (**specops)();
-	int (**fifoops)();
-	struct vnode **vpp;
+	struct mount 	*mntp;
+	struct vnodeops *specops;
+	struct vnodeops *fifoops;
+	struct vnode 	**vpp;
 {
 	struct proc *p = curproc;	/* XXX */
 	struct inode *ip;

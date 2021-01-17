@@ -197,7 +197,7 @@ atkbdc_configure(void)
 		return ENXIO;
 #endif
 
-	return atkbdc_setup(atkbdc_softc[0], tag, h0, h1);
+	return (atkbdc_setup(atkbdc_softc[0], tag, h0, h1));
 }
 
 static int
@@ -231,7 +231,7 @@ atkbdc_open(int unit)
 	if (unit >= MAXKBDC)
 		return NULL;
 	if ((atkbdc_softc[unit]->port0 != NULL) || (atkbdc_softc[unit]->ioh0 != 0)) /* XXX */
-		return (KBDC) atkbdc_softc[unit];
+		return ((KBDC) atkbdc_softc[unit]);
 	return NULL;
 }
 
@@ -307,9 +307,9 @@ addq(kbdkqueue *q, int c)
 	if (q->qcount > q->max_qcount)
             q->max_qcount = q->qcount;
 #endif
-		return TRUE;
+		return (TRUE);
 	}
-	return FALSE;
+	return (FALSE);
 }
 
 static int
@@ -323,9 +323,9 @@ removeq(kbdkqueue *q)
 #if KBDIO_DEBUG >= 2
         --q->qcount;
 #endif
-		return c;
+		return (c);
 	}
-	return -1;
+	return (-1);
 }
 
 /*

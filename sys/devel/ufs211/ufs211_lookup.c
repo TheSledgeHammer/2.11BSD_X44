@@ -999,8 +999,8 @@ nchinval(dev)
 		ncp->nc_idev = NODEV;
 		ncp->nc_dev = NODEV;
 		ncp->nc_id = NULL;
-		ncp->nc_ino = 0;
-		ncp->nc_ip = NULL;
+		ncp->nc_no = 0;
+		ncp->nc_vp = NULL;
 		remque(ncp);		/* remove entry from its hash chain */
 		ncp->nc_forw = ncp;	/* and make a dummy one */
 		ncp->nc_back = ncp;

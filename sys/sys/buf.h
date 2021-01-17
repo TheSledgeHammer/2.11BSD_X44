@@ -114,6 +114,9 @@ struct bqueues;
 TAILQ_HEAD(bqueues, buf);
 extern struct bqueues bufqueues[];
 
+#define	bftopaddr(bp)	((u_int)(bp)->b_un.b_addr >> 6 | (bp)->b_xmem << 10)
+#define	bfree(bp)		(bp)->b_bcount = 0
+
 /*
  * Zero out the buffer's data area.
  */
@@ -129,7 +132,7 @@ extern struct bqueues bufqueues[];
 /*
  * number of buffer hash entries
  */
-#define	BUFHSZ	512	/* must be power of 2 */
+#define	BUFHSZ		512	/* must be power of 2 */
 
 /* These flags are kept in b_flags. */
 #define	B_WRITE			0x00000000		/* non-read pseudo-flag */

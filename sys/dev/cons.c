@@ -79,6 +79,7 @@ const struct cdevsw cons_cdevsw = {
 };
 
 struct tty *constty = NULL;			/* virtual console output device */
+struct consdev 	*cn_tab;
 struct vnode *cn_devvp = NULLVP;	/* vnode for underlying device. */
 
 int

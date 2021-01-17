@@ -53,10 +53,6 @@
 
 #include <dev/kbd/kbdreg.h>
 
-struct cfdriver genkbd_cd = {
-		NULL, "genkbd", genkbd_match, genkbd_attach, DV_DULL, sizeof(genkbd_softc_t)
-};
-
 int
 genkbd_match(struct device *parent, struct cfdata *cf, void *aux)
 {

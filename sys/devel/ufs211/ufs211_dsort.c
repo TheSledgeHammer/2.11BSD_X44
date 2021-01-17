@@ -17,7 +17,7 @@
 #include <sys/user.h>
 
 void
-disksort(dp, bp)
+ufs211_disksort(dp, bp)
 	register struct buf *dp, *bp;
 {
 	register struct buf *ap;

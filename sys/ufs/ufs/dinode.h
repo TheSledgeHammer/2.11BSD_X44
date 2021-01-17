@@ -44,7 +44,7 @@
  * the root inode is 2.  (Inode 1 is no longer used for this purpose, however
  * numerous dump tapes make this assumption, so we are stuck with it).
  */
-#define	ROOTINO	((ino_t)2)
+#define	ROOTINO		((ino_t)2)
 
 /*
  * The Whiteout inode# is a dummy non-zero inode number which will
@@ -52,7 +52,7 @@
  * in the directory entry which has been tagged as a DT_W entry.
  * See the comments about ROOTINO above.
  */
-#define	WINO	((ino_t)1)
+#define	WINO		((ino_t)1)
 
 /*
  * A dinode contains all the meta-data associated with a UFS file.
@@ -61,21 +61,21 @@
  * are defined by types with precise widths.
  */
 
-typedef	int32_t	ufs_daddr_t;
-//typedef	int64_t	ufs2_daddr_t;
-typedef int64_t ufs_lbn_t;
-typedef int64_t ufs_time_t;
+typedef	int32_t		ufs_daddr_t;
+typedef	int64_t		ufs2_daddr_t;
+typedef int64_t 	ufs_lbn_t;
+typedef int64_t 	ufs_time_t;
 
-#define	NXADDR	2			/* External addresses in inode. */
-#define	NDADDR	12			/* Direct addresses in inode. */
-#define	NIADDR	3			/* Indirect addresses in inode. */
+#define	NXADDR		2				/* External addresses in inode. */
+#define	NDADDR		12				/* Direct addresses in inode. */
+#define	NIADDR		3				/* Indirect addresses in inode. */
 
 struct dinode {
 	u_int16_t		di_mode;		/*   0: IFMT, permissions; see below. */
 	int16_t			di_nlink;		/*   2: File link count. */
 	union {
-		u_int16_t oldids[2];		/*   4: Ffs: old user and group ids. */
-		int32_t	  inumber;			/*   4: Lfs: inode number. */
+		u_int16_t 	oldids[2];		/*   4: FFS: old user and group ids. */
+		int32_t	  	inumber;		/*   4: LFS: inode number. */
 	} di_u;
 	u_int64_t		di_size;		/*   8: File byte count. */
 	int32_t			di_atime;		/*  16: Last access time. */
@@ -94,6 +94,33 @@ struct dinode {
 	int32_t			di_spare[2];	/* 120: Reserved; currently unused */
 };
 
+struct ufs2_dinode {
+    uint16_t	    di_mode;	    /*   0: IFMT, permissions; see below. */
+	int16_t		    di_nlink;	    /*   2: File link count. */
+	uint32_t	    di_uid;		    /*   4: File owner. */
+	uint32_t	    di_gid;		    /*   8: File group. */
+	uint32_t	    di_blksize;	    /*  12: Inode blocksize. */
+	uint64_t	    di_size;	    /*  16: File byte count. */
+	uint64_t	    di_blocks;	    /*  24: Bytes actually held. */
+	int64_t		    di_atime;	    /*  32: Last access time. */
+	int64_t		    di_mtime;	    /*  40: Last modified time. */
+	int64_t		    di_ctime;	    /*  48: Last inode change time. */
+	int64_t		    di_birthtime;	/*  56: Inode creation time. */
+	int32_t		    di_mtimensec;	/*  64: Last modified time. */
+	int32_t		    di_atimensec;	/*  68: Last access time. */
+	int32_t		    di_ctimensec;	/*  72: Last inode change time. */
+	int32_t		    di_birthnsec;	/*  76: Inode creation time. */
+	int32_t		    di_gen;		    /*  80: Generation number. */
+	uint32_t	    di_kernflags;	/*  84: Kernel flags. */
+	uint32_t	    di_flags;	    /*  88: Status flags (chflags). */
+	int32_t		    di_extsize;	    /*  92: External attributes block. */
+	ufs2_daddr_t    di_extb[NXADDR];/* 96: External attributes block. */
+	ufs2_daddr_t    di_db[NDADDR];  /* 112: Direct disk blocks. */
+	ufs2_daddr_t    di_ib[NIADDR];  /* 208: Indirect disk blocks. */
+	uint64_t	    di_modrev;	    /* 232: i_modrev for NFSv4 */
+	int64_t		    di_spare[2];	/* 240: Reserved; currently unused */
+};
+
 /*
  * The di_db fields may be overlaid with other information for
  * file types that do not have associated disk storage. Block
@@ -101,12 +128,18 @@ struct dinode {
  * dev_t value. Short symbolic links place their path in the
  * di_db area.
  */
-#define	di_inumber		di_u.inumber
-#define	di_ogid			di_u.oldids[1]
-#define	di_ouid			di_u.oldids[0]
-#define	di_rdev			di_db[0]
-#define	di_shortlink	di_db
-#define	MAXSYMLINKLEN	((NDADDR + NIADDR) * sizeof(ufs_daddr_t))
+#define	di_inumber			di_u.inumber
+#define	di_ogid				di_u.oldids[1]
+#define	di_ouid				di_u.oldids[0]
+#define	di_rdev				di_db[0]
+#define	di_shortlink		di_db
+#define UFS1_MAXSYMLINKLEN	((NDADDR + NIADDR) * sizeof(ufs_daddr_t))
+#define UFS2_MAXSYMLINKLEN	((NDADDR + NIADDR) * sizeof(ufs2_daddr_t))
+
+#define	MAXSYMLINKLEN		UFS1_MAXSYMLINKLEN
+
+//#define MAXSYMLINKLEN(ip) \
+	((ip)->i_ump->um_fstype == UFS1) ? UFS1_MAXSYMLINKLEN : UFS2_MAXSYMLINKLEN
 
 /* File permissions. */
 #define	IEXEC		0000100		/* Executable. */

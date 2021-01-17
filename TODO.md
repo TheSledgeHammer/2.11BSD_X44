@@ -81,7 +81,9 @@ Of Interest Todo:
 ## ufs:
 - ufs/ffs:
 	- dirhash
-	- ufs2
+	- ufs2/ffs2 support: Work in Progress
+		- Fix ffs/fs.h: To account for ufs1 & ufs2
+			- #define blksize(fs, ip, lbn) 
 	- journaling
 	
 ## vfs:

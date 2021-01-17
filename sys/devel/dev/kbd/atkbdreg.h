@@ -30,7 +30,7 @@
 #ifndef _DEV_KBD_ATKBDREG_H_
 #define _DEV_KBD_ATKBDREG_H_
 
-#define ATKBD_DRIVER_NAME	"atkbd"
+#define ATKBD_DRIVER_NAME		"atkbd"
 
 /* device configuration flags (atkbdprobe, atkbdattach) */
 #define KB_CONF_FAIL_IF_NO_KBD	(1 << 0) /* don't install if no kbd is found */

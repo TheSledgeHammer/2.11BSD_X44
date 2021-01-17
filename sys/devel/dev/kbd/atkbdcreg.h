@@ -169,7 +169,7 @@
 #define PSM_4DPLUS_ID			8
 #define PSM_4DPLUS_RFSW35_ID  	24
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 
 #define ATKBDC_DRIVER_NAME		"atkbdc"
 
@@ -265,7 +265,7 @@ int 			write_controller_w1r1(KBDC kbdc, int c, int d);
 
 int 			write_kbd_command(KBDC kbdc,int c);
 int 			write_aux_command(KBDC kbdc,int c);
-int 			send_kbd_command(KBDC kbdc,int c);W
+int 			send_kbd_command(KBDC kbdc,int c);
 int 			send_aux_command(KBDC kbdc,int c);
 int 			send_kbd_command_and_data(KBDC kbdc,int c,int d);
 int 			send_aux_command_and_data(KBDC kbdc,int c,int d);

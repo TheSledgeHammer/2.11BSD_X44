@@ -225,7 +225,6 @@ struct keyboard {
 	};													\
 	DATA_SET(kbddriver_set, name##_kbd_driver);
 
-
 /* functions for the keyboard driver */
 int					kbd_add_driver(keyboard_driver_t *driver);
 int					kbd_delete_driver(keyboard_driver_t *driver);

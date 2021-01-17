@@ -114,7 +114,7 @@ int	 	ufs_strategy (struct vop_strategy_args *);
 int	 	ufs_symlink (struct vop_symlink_args *);
 int	 	ufs_unlock (struct vop_unlock_args *);
 int	 	ufs_whiteout (struct vop_whiteout_args *);
-int	 	ufs_vinit (struct mount *, int (**)(), int (**)(), struct vnode **);
+int	 	ufs_vinit (struct mount *, struct vnodeops *, struct vnodeops *, struct vnode **);
 int	 	ufsspec_close (struct vop_close_args *);
 int	 	ufsspec_read (struct vop_read_args *);
 int	 	ufsspec_write (struct vop_write_args *);

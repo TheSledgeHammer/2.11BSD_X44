@@ -21,7 +21,7 @@
 #include "ufs211/ufs211_inode.h"
 #include "ufs211/ufs211_mount.h"
 
-#ifdef QUOTA
+//#ifdef QUOTA
 
 /*
  * Find the dquot structure that should

@@ -57,7 +57,7 @@
  * string on failure.
  */
 char *
-readdisklabel(dev, strat, lp)
+ufs211_readdisklabel(dev, strat, lp)
 	ufs211_dev_t dev;
 	int (*strat)();
 	register struct disklabel *lp;
@@ -107,7 +107,7 @@ readdisklabel(dev, strat, lp)
  * application).
  */
 int
-setdisklabel(olp, nlp, openmask)
+ufs211_setdisklabel(olp, nlp, openmask)
 	struct disklabel *olp;
 	register struct disklabel *nlp;
 	u_short openmask;
@@ -147,7 +147,7 @@ setdisklabel(olp, nlp, openmask)
  * Write disk label back to device after modification.
  */
 int
-writedisklabel(dev, strat, lp)
+ufs211_writedisklabel(dev, strat, lp)
 	ufs211_dev_t dev;
 	int (*strat)();
 	register struct disklabel *lp;
@@ -193,7 +193,8 @@ done:
 /*
  * Compute checksum for disk label.
  */
-dkcksum(lp)
+int
+ufs211_dkcksum(lp)
 	struct disklabel *lp;
 {
 	register u_short *start, *end;
