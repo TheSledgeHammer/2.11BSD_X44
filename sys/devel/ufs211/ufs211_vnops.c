@@ -146,7 +146,7 @@ struct vnodeops ufs211_specops = {
 		(struct vnodeops *)NULL = (int(*)())NULL
 };
 
-//#ifdef FIFO
+#ifdef FIFO
 struct vnodeops ufs211_fifoops = {
 		.vop_lookup = fifo_lookup,			/* lookup */
 		.vop_create = fifo_create,			/* create */

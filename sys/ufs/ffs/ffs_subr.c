@@ -38,7 +38,7 @@
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
 #include <sys/user.h>
-//#else
+#else
 #include <sys/systm.h>
 #include <sys/vnode.h>
 #include <sys/buf.h>

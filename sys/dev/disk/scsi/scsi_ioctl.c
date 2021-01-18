@@ -354,7 +354,7 @@ scsi_do_ioctl(sc_link, dev, cmd, addr, flag, p)
 	case SCIOCREPROBE: {
 		struct scsi_addr *sca = (struct scsi_addr*) addr;
 
-		return scsi_probe_busses(sca->scbus, sca->target, sca->lun);
+		return scsi_probe_busses(sca->addr.scsi->scbus, sca->addr.scsi->target, sca->addr.scsi->lun);
 	}
 	case SCIOCRECONFIG:
 	case SCIOCDECONFIG:
@@ -362,9 +362,9 @@ scsi_do_ioctl(sc_link, dev, cmd, addr, flag, p)
 	case SCIOCIDENTIFY: {
 		struct scsi_addr *sca = (struct scsi_addr*) addr;
 
-		sca->scbus = sc_link->scsibus;
-		sca->target = sc_link->target;
-		sca->lun = sc_link->lun;
+		sca->addr.scsi->scbus = sc_link->scsibus;
+		sca->addr.scsi->target = sc_link->target;
+		sca->addr.scsi->lun = sc_link->lun;
 		return 0;
 	}
 	default:

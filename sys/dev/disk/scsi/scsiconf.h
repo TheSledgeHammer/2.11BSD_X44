@@ -93,10 +93,14 @@ struct scsi_xfer;
  * these statically allocated.
  */
 struct scsi_adapter {
+	int		scsi_refcnt;
+
 	int		(*scsi_cmd) (struct scsi_xfer *);
 	void	(*scsi_minphys) (struct buf *);
 	int		(*open_target_lu) (void);
 	int		(*close_target_lu) (void);
+
+	int		(*scsi_enable)(void *, int);
 };
 
 /*
@@ -180,10 +184,10 @@ struct scsi_inquiry_pattern {
  * the others, before they have the rest of the fields filled in
  */
 struct scsibus_softc {
-	struct device sc_dev;
-	struct scsi_link *adapter_link;		/* prototype supplied by adapter */
-	struct scsi_link *sc_link[8][8];
-	u_int8_t moreluns;
+	struct device 		sc_dev;
+	struct scsi_link 	*adapter_link;		/* prototype supplied by adapter */
+	struct scsi_link 	*sc_link[8][8];
+	u_int8_t 			moreluns;
 };
 
 /*
@@ -191,7 +195,7 @@ struct scsibus_softc {
  * to the device-specific drivers.
  */
 struct scsibus_attach_args {
-	struct scsi_link *sa_sc_link;
+	struct scsi_link		 *sa_sc_link;
 	struct scsi_inquiry_data *sa_inqbuf;
 };
 
@@ -219,9 +223,9 @@ struct scsi_xfer {
 	 * Believe it or not, Some targets fall on the ground with
 	 * anything but a certain sense length.
 	 */
-	int					req_sense_length;	/* Explicit request sense length */
-	u_int8_t 			status;			/* SCSI status */
-	struct	scsi_generic cmdstore;		/* stash the command in here */
+	int						req_sense_length;	/* Explicit request sense length */
+	u_int8_t 				status;			/* SCSI status */
+	struct	scsi_generic 	cmdstore;		/* stash the command in here */
 };
 
 /*
