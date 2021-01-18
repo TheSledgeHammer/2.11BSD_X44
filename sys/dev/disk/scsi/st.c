@@ -279,6 +279,39 @@ struct cfdriver st_cd = {
 	NULL, "st", stmatch, stattach, DV_TAPE, sizeof(struct st_softc)
 };
 
+static dev_type_open(stopen);
+static dev_type_close(stclose);
+static dev_type_read(stread);
+static dev_type_write(stwrite);
+static dev_type_ioctl(stioctl);
+static dev_type_strategy(ststrategy);
+static dev_type_dump(stdump);
+
+const struct bdevsw st_bdevsw = {
+		.d_open = stopen,
+		.d_close = stclose,
+		.d_strategy = ststrategy,
+		.d_ioctl = stioctl,
+		.d_dump = stdump,
+		.d_psize = nosize,
+		.d_discard = nodiscard,
+		.d_type = D_TAPE
+};
+
+const struct cdevsw st_cdevsw = {
+		.d_open = stopen,
+		.d_close = stclose,
+		.d_read = stread,
+		.d_write = stwrite,
+		.d_ioctl = stioctl,
+		.d_stop = nostop,
+		.d_tty = notty,
+		.d_poll = nopoll,
+		.d_mmap = nommap,
+		.d_discard = nodiscard,
+		.d_type = D_TAPE
+};
+
 struct scsi_device st_switch = {
 	st_interpret_sense,
 	ststart,

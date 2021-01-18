@@ -56,8 +56,8 @@ struct	oscsi_addr {
 
 struct	scsi_addr {
 	int type;       /* bus type */
-#define TYPE_SCSI 0
-#define TYPE_ATAPI 1
+#define TYPE_SCSI 	0
+#define TYPE_ATAPI 	1
 	union {
 		struct oscsi_addr scsi;
 		struct _atapi {
@@ -67,6 +67,9 @@ struct	scsi_addr {
 	} addr;
 };
 
+/*
+ * SCSI device ioctls
+ */
 #define SCIOCREPROBE	_IOW('Q', 3, struct scsi_addr) 	/* look for new devs */
 #define OSCIOCREPROBE	_IOW('Q', 3, struct oscsi_addr)
 #define SCIOCIDENTIFY	_IOR('Q', 4, struct scsi_addr) 	/* where are you? */
@@ -76,4 +79,16 @@ struct	scsi_addr {
 #define SCIOCRESET		_IO('Q', 7)						/* reset the device */
 
 
+/*
+ * SCSI bus ioctls
+ */
+
+/* Scan bus for new devices. */
+struct scbusioscan_args {
+	int	sa_target;	/* target to scan; -1 for wildcard */
+	int	sa_lun;		/* lun to scan; -1 for wildcard */
+};
+#define	SCBUSIOSCAN		_IOW('U', 0, struct scbusioscan_args)
+
+#define	SCBUSIORESET	_IO('U', 1)	/* reset SCSI bus */
 #endif /* _SYS_SCSIIO_H_ */

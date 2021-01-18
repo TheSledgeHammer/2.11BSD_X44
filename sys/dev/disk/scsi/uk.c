@@ -47,7 +47,7 @@
 #define	UKUNIT(z)	(minor(z))
 
 struct uk_softc {
-	struct device sc_dev;
+	struct device 	sc_dev;
 
 	struct scsi_link *sc_link;	/* all the inter level info */
 };
@@ -57,6 +57,24 @@ void ukattach (struct device *, struct device *, void *);
 
 struct cfdriver uk_cd = {
 	NULL, "uk", ukmatch, ukattach, DV_DULL, sizeof(struct uk_softc)
+};
+
+static dev_type_open(ukopen);
+static dev_type_close(ukclose);
+static dev_type_ioctl(ukioctl);
+
+const struct cdevsw uk_cdevsw = {
+		.d_open = ukopen,
+		.d_close = ukclose,
+		.d_read = noread,
+		.d_write = nowrite,
+		.d_ioctl = ukioctl,
+		.d_stop = nostop,
+		.d_tty = notty,
+		.d_poll = nopoll,
+		.d_mmap = nommap,
+		.d_discard = nodiscard,
+		.d_type = D_OTHER
 };
 
 /*

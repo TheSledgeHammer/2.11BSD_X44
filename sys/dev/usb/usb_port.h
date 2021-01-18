@@ -46,7 +46,7 @@
  * NetBSD
  */
 
-//#if defined(__NetBSD__)
+#if defined(__NetBSD__)
 //#include "opt_usbverbose.h"
 
 #define USBDEVNAME(bdev) ((bdev).dv_xname)
@@ -162,37 +162,37 @@ static driver_t __CONCAT(dname,_driver) = { 								\
         sizeof(struct __CONCAT(dname,_softc)) 								\
 }
 
-#define USB_MATCH(dname) \
-static int \
+#define USB_MATCH(dname) 													\
+static int											 						\
 __CONCAT(dname,_match)(device_t device)
 
-#define USB_MATCH_START(dname, uaa) \
+#define USB_MATCH_START(dname, uaa) 										\
         struct usb_attach_arg *uaa = device_get_ivars(device)
 
-#define USB_ATTACH(dname) \
-static int \
+#define USB_ATTACH(dname) 													\
+static int 																	\
 __CONCAT(dname,_attach)(device_t self)
 
-#define USB_ATTACH_START(dname, sc, uaa) \
-        struct __CONCAT(dname,_softc) *sc = device_get_softc(self); \
+#define USB_ATTACH_START(dname, sc, uaa) 									\
+        struct __CONCAT(dname,_softc) *sc = device_get_softc(self); 		\
         struct usb_attach_arg *uaa = device_get_ivars(self)
 
 /* Returns from attach */
 #define USB_ATTACH_ERROR_RETURN	return ENXIO
 #define USB_ATTACH_SUCCESS_RETURN	return 0
 
-#define USB_ATTACH_SETUP \
-	usbd_device_set_desc(self, devinfo); \
+#define USB_ATTACH_SETUP 													\
+	usbd_device_set_desc(self, devinfo); 									\
 	sc->sc_dev = self
 
-#define USB_GET_SC_OPEN(dname, unit, sc) \
-	struct __CONCAT(dname,_softc) *sc = \
-		devclass_get_softc(__CONCAT(dname,_devclass), unit); \
-	if (!sc) \
+#define USB_GET_SC_OPEN(dname, unit, sc) 									\
+	struct __CONCAT(dname,_softc) *sc = 									\
+		devclass_get_softc(__CONCAT(dname,_devclass), unit); 				\
+	if (!sc) 																\
 		return (ENXIO)
 
-#define USB_GET_SC(dname, unit, sc) \
-	struct __CONCAT(dname,_softc) *sc = \
+#define USB_GET_SC(dname, unit, sc) 										\
+	struct __CONCAT(dname,_softc) *sc = 									\
 		devclass_get_softc(__CONCAT(dname,_devclass), unit)
 
 #define USB_DO_ATTACH(dev, bdev, parent, args, print, sub) 					\
@@ -212,11 +212,11 @@ __CONCAT(dname,_attach)(device_t self)
 
 #define NONE {0,0}
 
-#define USB_DECLARE_DRIVER_NAME(name, dname) \
+#define USB_DECLARE_DRIVER_NAME(name, dname) 								\
 	USB_DECLARE_DRIVER_NAME_INIT(#name, dname, NONE )
-#define USB_DECLARE_DRIVER_INIT(dname, init) \
+#define USB_DECLARE_DRIVER_INIT(dname, init) 								\
 	USB_DECLARE_DRIVER_NAME_INIT(#dname, dname, init)
-#define USB_DECLARE_DRIVER(dname) \
+#define USB_DECLARE_DRIVER(dname) 											\
 	USB_DECLARE_DRIVER_NAME_INIT(#dname, dname, NONE )
 
 #undef NONE

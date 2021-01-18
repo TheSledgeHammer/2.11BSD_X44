@@ -82,8 +82,8 @@ struct ucom_softc {
 	usbd_interface_handle sc_iface;	/* interface */
 };
 
-void ucom_intr __P((usbd_request_handle, usbd_private_handle, usbd_status));
-void ucom_disco __P((void *));
+void ucom_intr (usbd_request_handle, usbd_private_handle, usbd_status);
+void ucom_disco (void *);
 
 USB_DECLARE_DRIVER(ucom);
 

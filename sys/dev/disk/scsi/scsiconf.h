@@ -99,7 +99,7 @@ struct scsi_adapter {
 	void	(*scsi_minphys) (struct buf *);
 	int		(*open_target_lu) (void);
 	int		(*close_target_lu) (void);
-
+	int		(*scsi_ioctl) (struct scsi_link *, u_long, caddr_t, int, struct proc *);
 	int		(*scsi_enable)(void *, int);
 };
 
@@ -138,42 +138,85 @@ struct scsi_device {
  * as well.
  */
 struct scsi_link {
-	u_int8_t scsibus;				/* the Nth scsibus */
-	u_int8_t target;				/* targ of this dev */
-	u_int8_t lun;					/* lun of this dev */
-	u_int8_t adapter_target;		/* what are we on the scsi bus */
-	u_int8_t openings;				/* available operations */
-	u_int8_t active;				/* operations in progress */
-	u_int8_t flags;					/* flags that all devices have */
-#define	SDEV_REMOVABLE	 	0x01	/* media is removable */
-#define	SDEV_MEDIA_LOADED 	0x02	/* device figures are still valid */
-#define	SDEV_WAITING	 	0x04	/* a process is waiting for this */
-#define	SDEV_OPEN	 		0x08	/* at least 1 open session */
-#define	SDEV_DBX			0xf0	/* debuging flags (scsi_debug.h) */
-	u_int8_t quirks;				/* per-device oddities */
-#define	SDEV_AUTOSAVE		0x01	/* do implicit SAVEDATAPOINTER on disconnect */
-#define	SDEV_NOSYNCWIDE		0x02	/* does not grok SDTR or WDTR */
-#define	SDEV_NOLUNS			0x04	/* does not grok LUNs */
-#define	SDEV_FORCELUNS		0x08	/* prehistoric drive/ctlr groks LUNs */
-#define SDEV_NOMODESENSE	0x10	/* removable media/optical drives */
-#define SDEV_NOSTARTUNIT	0x20	/* do not issue start unit requests in sd.c */
-	struct	scsi_device *device;	/* device entry points etc. */
-	void	*device_softc;			/* needed for call to foo_start */
-	struct	scsi_adapter *adapter;	/* adapter entry points etc. */
-	void	*adapter_softc;			/* needed for call to foo_scsi_cmd */
+	u_int8_t 				type;				/* device type, i.e. SCSI, ATAPI, ...*/
+#define BUS_SCSI			0
+#define BUS_ATAPI			1
+	u_int8_t 				openings;			/* available operations */
+	u_int8_t 				active;				/* operations in progress */
+	u_int8_t 				flags;				/* flags that all devices have */
+#define	SDEV_REMOVABLE	 	0x01				/* media is removable */
+#define	SDEV_MEDIA_LOADED 	0x02				/* device figures are still valid */
+#define	SDEV_WAITING	 	0x04				/* a process is waiting for this */
+#define	SDEV_OPEN	 		0x08				/* at least 1 open session */
+#define	SDEV_DBX			0xf0				/* debuging flags (scsi_debug.h) */
+#define	SDEV_WAITDRAIN		0x100				/* waiting for pending_xfers to drain */
+	u_int8_t 				quirks;				/* per-device oddities */
+#define	SDEV_AUTOSAVE		0x0001				/* do implicit SAVEDATAPOINTER on disconnect */
+#define	SDEV_NOSYNCWIDE		0x0002				/* does not grok SDTR or WDTR */
+#define	SDEV_NOLUNS			0x0004				/* does not grok LUNs */
+#define	SDEV_FORCELUNS		0x0008				/* prehistoric drive/ctlr groks LUNs */
+#define SDEV_NOMODESENSE	0x0010				/* removable media/optical drives */
+#define SDEV_NOSTARTUNIT	0x0020				/* do not issue start unit requests in sd.c */
+#define	SDEV_NOTAG			0x0040				/* does not do command tagging */
+#define	SDEV_NOSYNC			0x0080				/* does not grok SDTR */
+#define	SDEV_NOSYNCCACHE	0x0100				/* does not grok SYNCHRONIZE CACHE */
+#define	SDEV_NOWIDE			0x0200				/* does not grok WDTR */
+#define ADEV_CDROM			0x0400				/* device is a CD-ROM */
+#define ADEV_LITTLETOC		0x0800				/* Audio TOC uses wrong byte order */
+#define ADEV_NOCAPACITY		0x1000				/* no READ_CD_CAPACITY command */
+#define ADEV_NOTUR			0x2000				/* no TEST_UNIT_READY command */
+#define ADEV_NODOORLOCK		0x4000				/* device can't lock door */
+#define ADEV_NOSENSE		0x8000				/* device can't handle request sense */
+
+	struct	scsi_device 	*device;			/* device entry points etc. */
+	void					*device_softc;		/* needed for call to foo_start */
+	struct	scsi_adapter 	*adapter;			/* adapter entry points etc. */
+	void					*adapter_softc;		/* needed for call to foo_scsi_cmd */
+	union {
+		struct {
+			int 			channel;			/* channel, i.e. bus # on controller */
+			u_int8_t 		scsi_version;		/* SCSI-I, SCSI-II, etc. */
+			u_int8_t 		scsibus;			/* the Nth scsibus */
+			u_int8_t 		target;				/* targ of this dev */
+			u_int8_t 		lun;				/* lun of this dev */
+			u_int8_t 		adapter_target;		/* what are we on the scsi bus */
+			int16_t 		max_target;			/* XXX max target supported by adapter (inclusive) */
+			int16_t 		max_lun;			/* XXX number of luns supported by adapter (inclusive) */
+		} scsi_scsi;
+		struct {
+			u_int8_t 		drive; 				/* drive number on the bus */
+			u_int8_t 		channel;			/* channel, i.e. bus # on controller */
+			u_int8_t 		atapibus;
+			u_int8_t 		cap;				/* drive capability */
+/* 0x20-0x40 reserved for ATAPI_CFG_DRQ_MASK */
+#define ACAP_LEN            0x01 				/* 16 bit commands */
+		} scsi_atapi;
+	} _scsi_link;
+	TAILQ_HEAD(, scsi_xfer) pending_xfers;
+
+	int (*scsi_cmd) (struct scsi_link *, struct scsi_generic *, int cmdlen, u_char *data_addr, int datalen, int retries, int timeout, struct buf *bp, int flags);
+	int (*scsi_interpret_sense) (struct scsi_xfer *);
+	void (*sc_print_addr) (struct scsi_link *sc_link);
 };
+#define scsi_scsi 			_scsi_link.scsi_scsi
+#define scsi_atapi 			_scsi_link.scsi_atapi
 
 /*
  * This describes matching information for scsi_inqmatch().  The more things
  * match, the higher the configuration priority.
  */
 struct scsi_inquiry_pattern {
-	u_int8_t type;
-	boolean removable;
-	char 	*vendor;
-	char 	*product;
-	char 	*revision;
+	u_int8_t 				type;
+	boolean 				removable;
+	char 					*vendor;
+	char 					*product;
+	char 					*revision;
 };
+
+/*
+ * Other definitions used by autoconfiguration.
+ */
+#define	SCSI_CHANNEL_ONLY_ONE	-1	/* only one channel on controller */
 
 /*
  * One of these is allocated and filled in for each scsi bus.
@@ -184,10 +227,13 @@ struct scsi_inquiry_pattern {
  * the others, before they have the rest of the fields filled in
  */
 struct scsibus_softc {
-	struct device 		sc_dev;
-	struct scsi_link 	*adapter_link;		/* prototype supplied by adapter */
-	struct scsi_link 	*sc_link[8][8];
-	u_int8_t 			moreluns;
+	struct device 			sc_dev;
+	struct scsi_link 		*adapter_link;		/* prototype supplied by adapter */
+	struct scsi_link 		*sc_link[8][8];
+	u_int8_t 				moreluns;
+	int						sc_flags;
+	int16_t					sc_maxtarget;
+	int16_t					sc_maxlun;
 };
 
 /*
@@ -196,7 +242,10 @@ struct scsibus_softc {
  */
 struct scsibus_attach_args {
 	struct scsi_link		 *sa_sc_link;
-	struct scsi_inquiry_data *sa_inqbuf;
+	struct scsi_inquiry_data sa_inqbuf;
+	union {				/* bus-type specific infos */
+		u_int8_t 			scsi_version;	/* SCSI version */
+	} scsi_info;
 };
 
 /*
@@ -207,7 +256,11 @@ struct scsibus_attach_args {
  */
 struct scsi_xfer {
 	LIST_ENTRY(scsi_xfer) 	free_list;
-	int						flags;
+
+	TAILQ_ENTRY(scsipi_xfer) adapter_q; /* queue entry for use by adapter */
+	TAILQ_ENTRY(scsipi_xfer) device_q;  /* device's pending xfers */
+	volatile int 			flags;		/* 0x00ff0000 reserved for ATAPI */
+	//int						flags;
 	struct	scsi_link 		*sc_link;	/* all about our device and adapter */
 	int						retries;	/* the number of times to retry */
 	int						timeout;	/* in milliseconds */
@@ -218,7 +271,12 @@ struct scsi_xfer {
 	int						resid;		/* how much buffer was not touched */
 	int						error;		/* an error value	*/
 	struct	buf 			*bp;		/* If we need to associate with a buf */
-	struct	scsi_sense_data	sense; 		/* 32 bytes*/
+	//struct	scsi_sense_data	sense; 		/* 32 bytes*/
+	union {
+		struct  scsipi_sense_data 	scsi_sense; /* 32 bytes */
+		u_int32_t 					atapi_sense;
+	} sense;
+
 	/*
 	 * Believe it or not, Some targets fall on the ground with
 	 * anything but a certain sense length.
@@ -226,6 +284,14 @@ struct scsi_xfer {
 	int						req_sense_length;	/* Explicit request sense length */
 	u_int8_t 				status;			/* SCSI status */
 	struct	scsi_generic 	cmdstore;		/* stash the command in here */
+};
+
+/*
+ * this describes a quirk entry
+ */
+struct scsi_quirk_inquiry_pattern {
+	struct scsi_inquiry_pattern pattern;
+	u_int8_t					quirks;
 };
 
 /*
@@ -252,20 +318,29 @@ struct scsi_xfer {
  * Escape op codes.  This provides an extensible setup for operations
  * that are not scsi commands.  They are intended for modal operations.
  */
+#define	SCSIBUSF_OPEN				0x00000001	/* bus is open */
 
-#define SCSI_OP_TARGET	0x0001
-#define	SCSI_OP_RESET	0x0002
-#define	SCSI_OP_BDINFO	0x0003
+#define SCSI_OP_TARGET				0x0001
+#define	SCSI_OP_RESET				0x0002
+#define	SCSI_OP_BDINFO				0x0003
 
 /*
  * Error values an adapter driver may return
  */
-#define XS_NOERROR			0	/* there is no error, (sense is invalid)  */
-#define XS_SENSE			1	/* Check the returned sense for the error */
-#define	XS_DRIVER_STUFFUP 	2	/* Driver failed to perform operation	  */
-#define XS_SELTIMEOUT		3	/* The device timed out.. turned off?	  */
-#define XS_TIMEOUT			4	/* The Timeout reported was caught by SW  */
-#define XS_BUSY				5	/* The device busy, try again later?	  */
+#define XS_NOERROR					0	/* there is no error, (sense is invalid)  */
+#define XS_SENSE					1	/* Check the returned sense for the error */
+#define	XS_DRIVER_STUFFUP 			2	/* Driver failed to perform operation	  */
+#define XS_SELTIMEOUT				3	/* The device timed out.. turned off?	  */
+#define XS_TIMEOUT					4	/* The Timeout reported was caught by SW  */
+#define XS_BUSY						5	/* The device busy, try again later?	  */
+
+
+#define SCSICF_CHANNEL				0
+#define SCSICF_CHANNEL_DEFAULT		-1
+#define SCSIBUSCF_TARGET 			0
+#define SCSIBUSCF_TARGET_DEFAULT 	-1
+#define SCSIBUSCF_LUN 				1
+#define SCSIBUSCF_LUN_DEFAULT 		-1
 
 caddr_t scsi_inqmatch (struct scsi_inquiry_data *, caddr_t, int, int, int *);
 
@@ -280,12 +355,10 @@ int scsi_prevent (struct scsi_link *, int, int);
 int scsi_start (struct scsi_link *, int, int);
 void scsi_done (struct scsi_xfer *);
 void scsi_user_done (struct scsi_xfer *);
-int scsi_scsi_cmd(struct scsi_link*, struct scsi_generic*, int cmdlen,
-		u_char *data_addr, int datalen, int retries, int timeout,
-		struct buf *bp, int flags);
+int scsi_scsi_cmd(struct scsi_link*, struct scsi_generic*, int cmdlen, u_char *data_addr, int datalen, int retries, int timeout, struct buf *bp, int flags);
 int scsi_do_ioctl (struct scsi_link *, dev_t, u_long, caddr_t, int, struct proc *);
 void sc_print_addr (struct scsi_link *);
-
+void scsi_print_addr (struct scsi_link *);
 void show_scsi_xs (struct scsi_xfer *);
 void show_scsi_cmd (struct scsi_xfer *);
 void show_mem (u_char *, int);

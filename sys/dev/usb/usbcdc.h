@@ -63,7 +63,7 @@ typedef struct {
 	uByte		bDescriptorType;
 	uByte		bDescriptorSubtype;
 	uByte		bmCapabilities;
-#define USB_CDC_CM_DOES_CM		0x01
+#define USB_CDC_CM_DOES_CM			0x01
 #define USB_CDC_CM_CM_OVER_DATA		0x02
 	uByte		bDataInterface;
 } usb_cdc_cm_descriptor_t;
@@ -73,9 +73,9 @@ typedef struct {
 	uByte		bDescriptorType;
 	uByte		bDescriptorSubtype;
 	uByte		bmCapabilities;
-#define USB_CDC_ACM_HAS_FEATURE		0x01
-#define USB_CDC_ACM_HAS_LINE		0x02
-#define USB_CDC_ACM_HAS_BREAK		0x04
+#define USB_CDC_ACM_HAS_FEATURE			0x01
+#define USB_CDC_ACM_HAS_LINE			0x02
+#define USB_CDC_ACM_HAS_BREAK			0x04
 #define USB_CDC_ACM_HAS_NETWORK_CONN	0x08
 } usb_cdc_acm_descriptor_t;
 
@@ -99,7 +99,7 @@ typedef struct {
 
 typedef struct {
 	uWord	wState;
-#define UCDC_IDLE_SETTING		0x0001
+#define UCDC_IDLE_SETTING			0x0001
 #define UCDC_DATA_MULTIPLEXED		0x0002
 } usb_cdc_abstract_state_t;
 

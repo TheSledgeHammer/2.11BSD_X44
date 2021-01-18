@@ -23,7 +23,6 @@ A General todo list. Don't hesitate to add to this list. :)
 	
 ## arch:
 - i386/x86: (Merged under i386)
-	- npx.c: update
 	- Move to /dev: (update dependencies so this is possible)
 		- spkr.c, spkr.h, spkrreg.h, timerreg.h
 
@@ -50,14 +49,11 @@ A General todo list. Don't hesitate to add to this list. :)
 		- cfdriver is only used with the driver not the generic keyboard layer
 	
 ## dev:
-- Clean up: A little messy
-	- com: timeapps.h: add or leave out??
 - Essential Driver Support:
-	- usb
-	- disk	(ata & scsi)
-	- video
-	- mouse/keyboard
-- move all machine-dependent code to that arch (that isn't portable)
+	- usb: 								Work in progress
+	- disk	(ata, atapi, ahci & scsi): 	Work in progress
+	- video:								Work in progress
+	- mouse/keyboard:						Work in progress
 
 ## lib:
 	

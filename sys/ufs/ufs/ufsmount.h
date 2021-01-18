@@ -53,7 +53,7 @@ struct mfs_args {
 };
 #endif /* MFS */
 
-#ifdef KERNEL
+//#ifdef KERNEL
 
 //#include <ufs/ufs/extattr.h>
 
@@ -71,6 +71,7 @@ struct ufsmount {
 	struct	mount 				*um_mountp;				/* filesystem vfs structure */
 	dev_t						um_dev;					/* device mounted */
 	struct	vnode 				*um_devvp;				/* block device mounted vnode */
+	u_long						um_fstype;
 
 	union {												/* pointer to superblock */
 		struct	lfs 			*lfs;					/* LFS */
@@ -95,6 +96,12 @@ struct ufsmount {
 	int							um_maxsymlinklen;
 	int							um_dirblksiz;
 };
+
+/*
+ * Filesystem types
+ */
+#define UFS1  1
+#define UFS2  2
 
 /*
  * Flags describing the state of quotas.

@@ -65,7 +65,7 @@
 #include <dev/usb/usbdi_util.h>
 
 #ifdef USB_DEBUG
-#define DPRINTF(x)	if (ugendebug) printf x
+#define DPRINTF(x)		if (ugendebug) printf x
 #define DPRINTFN(n,x)	if (ugendebug>(n)) printf x
 int	ugendebug = 0;
 #else
@@ -108,13 +108,11 @@ int ugenread __P((dev_t, struct uio *uio, int));
 int ugenwrite __P((dev_t, struct uio *uio, int));
 int ugenioctl __P((dev_t, u_long, caddr_t, int, struct proc *));
 int ugenpoll __P((dev_t, int, struct proc *));
-void ugenintr __P((usbd_request_handle reqh, usbd_private_handle addr, 
-		   usbd_status status));
+void ugenintr __P((usbd_request_handle reqh, usbd_private_handle addr, usbd_status status));
 void ugen_disco __P((void *));
 
 int ugen_set_config __P((struct ugen_softc *sc, int configno));
-usb_config_descriptor_t *ugen_get_cdesc __P((struct ugen_softc *sc, int index,
-					     int *lenp));
+usb_config_descriptor_t *ugen_get_cdesc __P((struct ugen_softc *sc, int index, int *lenp));
 usbd_status ugen_set_interface __P((struct ugen_softc *, int, int));
 int ugen_get_alt_index __P((struct ugen_softc *sc, int ifaceidx));
 

@@ -34,6 +34,8 @@
 #include <sys/rwlock.h>
 #include "devel/sys/kthread.h"
 
+#include <vm/include/vm_param.h>
+
 extern struct kthread 			kthread0;
 struct kthread *curkthread = 	&kthread0;
 
@@ -207,8 +209,8 @@ kthread_lock_init(lkp, kt)
 {
     int error = 0;
     lockinit(lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo, lkp->lk_flags);
-    set_kthread_lockholder(lkp->lkp_lockholder, kt);
-    if(get_kthread_lockholder(lkp->lkp_lockholder, kt->kt_tid) == NULL) {
+    set_kthread_lockholder(lkp->lk_lockholder, kt);
+    if(get_kthread_lockholder(lkp->lk_lockholder, kt->kt_tid) == NULL) {
     	panic("kthread lock unavailable");
     	error = EBUSY;
     }

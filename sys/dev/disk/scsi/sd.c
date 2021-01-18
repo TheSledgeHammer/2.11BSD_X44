@@ -64,6 +64,7 @@
 #include <sys/conf.h>
 #include <sys/user.h>
 
+#include <dev/disk/scsi/sdvar.h>
 #include <dev/disk/scsi/scsi_all.h>
 #include <dev/disk/scsi/scsi_disk.h>
 #include <dev/disk/scsi/scsiconf.h>
@@ -77,32 +78,10 @@
 
 #define	SDLABELDEV(dev)				(MAKESDDEV(major(dev), SDUNIT(dev), RAW_PART))
 
-struct sd_softc {
-	struct device sc_dev;
-	struct dkdevice sc_dk;
-
-	int flags;
-#define	SDF_LOCKED		0x01
-#define	SDF_WANTED		0x02
-#define	SDF_WLABEL		0x04		/* label is writable */
-#define	SDF_LABELLING	0x08		/* writing label */
-#define	SDF_ANCIENT		0x10		/* disk is ancient; for minphys */
-	struct scsi_link *sc_link;		/* contains our targ, lun, etc. */
-	struct disk_parms {
-		u_char heads;				/* number of heads */
-		u_short cyls;				/* number of cylinders */
-		u_char sectors;				/* number of sectors/track */
-		int blksize;				/* number of bytes/sector */
-		u_long disksize;			/* total number sectors */
-	} params;
-	struct buf buf_queue;
-	u_int8_t type;
-};
-
 struct scsi_mode_sense_data {
 	struct scsi_mode_header header;
-	struct scsi_blk_desc blk_desc;
-	union disk_pages pages;
+	struct scsi_blk_desc 	blk_desc;
+	union disk_pages 		pages;
 } scsi_sense;
 
 int		sdmatch (struct device *, void *, void *);
@@ -122,7 +101,49 @@ struct cfdriver sd_cd = {
 	NULL, "sd", sdmatch, sdattach, DV_DISK, sizeof(struct sd_softc)
 };
 
-struct dkdriver sddkdriver = { sdstrategy };
+static dev_type_open(sdopen);
+static dev_type_close(sdclose);
+static dev_type_read(sdread);
+static dev_type_write(sdwrite);
+static dev_type_ioctl(sdioctl);
+static dev_type_strategy(sdstrategy);
+static dev_type_dump(sddump);
+static dev_type_size(sdsize);
+
+const struct bdevsw sd_bdevsw = {
+		.d_open = sdopen,
+		.d_close = sdclose,
+		.d_strategy = sdstrategy,
+		.d_ioctl = sdioctl,
+		.d_dump = sddump,
+		.d_psize = sdsize,
+		.d_discard = nodiscard,
+		.d_type = D_DISK
+};
+
+const struct cdevsw sd_cdevsw = {
+		.d_open = sdopen,
+		.d_close = sdclose,
+		.d_read = sdread,
+		.d_write = sdwrite,
+		.d_ioctl = sdioctl,
+		.d_stop = nostop,
+		.d_tty = notty,
+		.d_poll = nopoll,
+		.d_mmap = nommap,
+		.d_discard = nodiscard,
+		.d_type = D_DISK
+};
+
+static const struct dkdriver sddkdriver = {
+		.d_open = sdopen,
+		.d_close = sdclose,
+		.d_strategy = sdstrategy,
+		.d_minphys = sdminphys,
+		.d_start = sdstart,
+		.d_dump = sddump,
+		.d_mklabel = sdgetdisklabel,
+};
 
 struct scsi_device sd_switch = {
 	NULL,			/* Use default error handler */

@@ -1,0 +1,8 @@
+# $211BSD:
+#
+# Disk Configuration Files
+#
+
+include		"dev/disk/ata/files.ata"
+include		"dev/disk/atapi/files.atapi"
+include		"dev/disk/scsi/files.scsi"

@@ -354,7 +354,8 @@ scsi_do_ioctl(sc_link, dev, cmd, addr, flag, p)
 	case SCIOCREPROBE: {
 		struct scsi_addr *sca = (struct scsi_addr*) addr;
 
-		return scsi_probe_busses(sca->addr.scsi->scbus, sca->addr.scsi->target, sca->addr.scsi->lun);
+		return scsi_probe_busses(sca->addr.scsi->scbus, sca->addr.scsi->target,
+				sca->addr.scsi->lun);
 	}
 	case SCIOCRECONFIG:
 	case SCIOCDECONFIG:
@@ -362,10 +363,20 @@ scsi_do_ioctl(sc_link, dev, cmd, addr, flag, p)
 	case SCIOCIDENTIFY: {
 		struct scsi_addr *sca = (struct scsi_addr*) addr;
 
-		sca->addr.scsi->scbus = sc_link->scsibus;
-		sca->addr.scsi->target = sc_link->target;
-		sca->addr.scsi->lun = sc_link->lun;
-		return 0;
+		switch (sc_link->type) {
+		case BUS_SCSI:
+			sca->type = TYPE_SCSI;
+			sca->addr.scsi.scbus = sc_link->scsi_scsi.scsibus;
+			sca->addr.scsi.target = sc_link->scsi_scsi.target;
+			sca->addr.scsi.lun = sc_link->scsi_scsi.lun;
+			return (0);
+		case BUS_ATAPI:
+			sca->type = TYPE_ATAPI;
+			sca->addr.atapi.atbus = sc_link->scsi_atapi.atapibus;
+			sca->addr.atapi.drive = sc_link->scsi_atapi.drive;
+			return (0);
+		}
+		return (ENXIO);
 	}
 	default:
 		return ENOTTY;

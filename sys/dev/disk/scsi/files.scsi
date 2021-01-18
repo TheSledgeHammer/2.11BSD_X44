@@ -4,39 +4,42 @@
 # Included by ports that need it.  Ports that usee it must provide
 # their own "major" declarations for the appropriate devices.
 
-file	scsi/scsi_base.c		scsi
-file	scsi/scsi_ioctl.c		scsi
-file	scsi/scsiconf.c			scsi
+# SCSI disks
+file	dev/disk/scsi/scsi_base.c		scsi
+file	dev/disk/scsi/scsi_ioctl.c		scsi
+file	dev/disk/scsi/scsiconf.c		scsi
+file	dev/disk/scsi/scsi_base.c		scsi 
 
 device	scsibus {target = -1, lun = -1}
 attach	scsibus at scsi
+file	dev/disk/scsi/scsiconf.c		scsibus							needs-flag
 
 device	cd: disk
-attach	cd at scsibus
-file	scsi/cd.c			cd needs-flag
+attach	cd at scsibus with cd_scsibus
+#file	dev/disk/scsi/cd_scsi.c			cd_scsibus
+file	dev/disk/scsi/cd.c				cd | cd_scsibus | cd_atapibus 	needs-flag
 
 device	ch: disk
 attach	ch at scsibus
-file	scsi/ch.c			ch needs-flag
+file	dev/disk/scsi/ch.c				ch needs-flag
 
 device	sd: disk
-attach	sd at scsibus
-file	scsi/sd.c			sd needs-flag
+attach	sd at scsibus with sd_scsibus
+#file	dev/disk/scsi/sd_scsi.c			sd_scsibus
+file	dev/disk/scsi/sd.c				sd | sd_scsibus | sd_atapibus 	needs-flag
 
 device	st: tape
 attach	st at scsibus
-file	scsi/st.c			st needs-flag
+file	dev/disk/scsi/st.c				st 								needs-flag
 
 device	ss: tape
 attach	ss at scsibus
-file	scsi/ss.c			ss needs-flag
-file	scsi/ss_mustek.c		ss
-file	scsi/ss_scanjet.c		ss
-
-device	su: disk
-attach	su at scsibus
-file	scsi/su.c			su needs-flag
+file	dev/disk/scsi/ss.c				ss 								needs-flag
+file	dev/disk/scsi/ss_mustek.c		ss
+file	dev/disk/scsi/ss_scanjet.c		ss
 
 device	uk: disk
 attach	uk at scsibus
-file	scsi/uk.c			uk needs-flag
+#attach	uk at scsibus with uk_scsibus
+#attach	uk at atapibus with uk_atapibus
+file	dev/disk/scsi/uk.c				uk 								needs-flag

@@ -125,11 +125,15 @@
 #define	M_TEMP			73	/* misc temporary data buffers */
 #define	M_LAST			74	/* Must be last type + 1 */
 
+/* XXX: Below are Still In Development */
 #define M_OVLMAP		73	/* OVL map structures */
 #define	M_OVLMAPENT		74	/* OVL map entry structures */
 #define M_OVLOBJ		75	/* OVL object structure */
 #define M_OVLOBJHASH	76	/* OVL object hash structure */
-
+#define M_KTPOOLTHREAD  77	/* kernel threadpool */
+#define M_UTPOOLTHREAD  78	/* user threadpool */
+#define M_ITPC			79	/* inter-threadpool communication */
+#define M_WORKQUEUE		80	/* workqueue */
 
 #define INITKMEMNAMES {						\
 	"free",			/* 0 M_FREE */ 			\

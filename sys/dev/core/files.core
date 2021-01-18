@@ -1,9 +1,9 @@
 # $211BSD$
 #
-# Core Device & Driver Files
+# Core Configuration Files
 #
-include 	"core/eisa/files.eisa"
-include 	"core/isa/files.isa"
-include 	"core/isapnp/files.isapnp"
-include 	"core/pci/files.pci"
-include 	"core/pcmcia/files.pcmcia"
+include 	"dev/core/eisa/files.eisa"
+include 	"dev/core/isa/files.isa"
+include 	"dev/core/isapnp/files.isapnp"
+include 	"dev/core/pci/files.pci"
+include 	"dev/core/pcmcia/files.pcmcia"

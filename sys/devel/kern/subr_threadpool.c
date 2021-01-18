@@ -39,6 +39,8 @@
 #include <sys/threadpool.h>
 #include <sys/kthread.h>
 
+#include <vm/include/vm_param.h>
+
 /* Threadpool Jobs */
 void
 threadpool_job_init(struct threadpool_job *job, threadpool_job_fn_t func, lock_t lock, char *name, const char *fmt, ...)

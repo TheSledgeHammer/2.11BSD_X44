@@ -70,6 +70,25 @@ struct cfdriver ss_cd = {
 	NULL, "ss", ssmatch, ssattach, DV_DULL, sizeof(struct ss_softc)
 };
 
+static dev_type_open(ssopen);
+static dev_type_close(ssclose);
+static dev_type_read(ssread);
+static dev_type_ioctl(ssioctl);
+
+const struct cdevsw ss_cdevsw = {
+		.d_open = ssopen,
+		.d_close = ssclose,
+		.d_read = ssread,
+		.d_write = nowrite,
+		.d_ioctl = ssioctl,
+		.d_stop = nostop,
+		.d_tty = notty,
+		.d_poll = nopoll,
+		.d_mmap = nommap,
+		.d_discard = nodiscard,
+		.d_type = D_OTHER
+};
+
 void    ssstrategy (struct buf *);
 void    ssstart (void *);
 void	ssminphys (struct buf *);

@@ -77,4 +77,14 @@ void 			job_pool_task_run(struct threadpool_job *, struct wqueue *, struct task 
 void 			job_pool_task_enqueue(struct kthreadpool *, struct threadpool_job *);
 void 			job_pool_task_dequeue(struct kthreadpool *, struct threadpool_job *);
 
+
+struct work {
+	SIMPLEQ_ENTRY(work) wk_entry;
+};
+
+struct workqueue;
+
+int 	workqueue_create(struct workqueue **, const char *, void (*)(struct work *, void *), void *, int, int, int);
+void 	workqueue_destroy(struct workqueue *);
+void 	workqueue_enqueue(struct workqueue *, struct work *);
 #endif /* SYS_WORKQUEUE_H_ */

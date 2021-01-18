@@ -1,12 +1,11 @@
-/*	$NetBSD: usb_quirks.h,v 1.5 1998/12/29 15:23:59 augustss Exp $	*/
+/*	$NetBSD: sa.h,v 1.7 2005/12/11 20:06:57 christos Exp $	*/
 
-/*
- * Copyright (c) 1998 The NetBSD Foundation, Inc.
+/*-
+ * Copyright (c) 2001 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by Lennart Augustsson (augustss@carlstedt.se) at
- * Carlstedt Research & Technology.
+ * by Nathan J. Williams.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,15 +36,38 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-struct usbd_quirks {
-	u_int32_t uq_flags;	/* Device problems: */
-#define UQ_NO_SET_PROTO	0x01	/* cannot handle SET PROTOCOL. */
-#define UQ_SWAP_UNICODE	0x02	/* has some Unicode strings swapped. */
-#define UQ_HUB_POWER	0x04	/* does not respond correctly to get device status; use get hub status. */
-#define UQ_NO_STRINGS	0x08	/* string descriptors are broken. */
-#define UQ_BAD_ADC		0x10	/* bad audio spec version number. */
+#ifndef _SYS_SA_H_
+#define _SYS_SA_H_
+
+#include <sys/ucontext.h>
+
+struct sa_t {
+	ucontext_t 		*sa_context;
+	int 			sa_id;
+	int 			sa_cpu;
 };
 
-extern struct usbd_quirks usbd_no_quirk;
+/* kernel known per upcall stack data */
+struct sa_stackinfo_t {
+	unsigned int 	sasi_stackgen; /* stack generation counter */
+};
 
-struct usbd_quirks *usbd_find_quirk (usb_device_descriptor_t *);
+typedef void (*sa_upcall_t)(int, struct sa_t *[], int, int, void *);
+
+#define SA_UPCALL_NEWPROC		0
+#define SA_UPCALL_PREEMPTED		1
+#define SA_UPCALL_BLOCKED		2
+#define SA_UPCALL_UNBLOCKED		3
+#define SA_UPCALL_SIGNAL		4
+#define SA_UPCALL_SIGEV			5
+#define SA_UPCALL_USER 			6
+#define SA_UPCALL_NUPCALLS		7
+
+#define SA_UPCALL_STRINGS "newproc", "preempted", "blocked", "unblocked", \
+    "signal", "sigev", "user"
+
+#define SA_FLAG_PREEMPT		0x0001		/* Generate upcalls on a vanilla preempt() */
+
+#define	SA_FLAG_STACKINFO 	0x010000 	/* Use stackinfo for upcall stack return */
+
+#endif /* !_SYS_SA_H_ */

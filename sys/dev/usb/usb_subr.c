@@ -72,17 +72,16 @@ extern int usbdebug;
 #define DPRINTFN(n,x)
 #endif
 
-static usbd_status	usbd_set_config __P((usbd_device_handle, int));
-char *usbd_get_string __P((usbd_device_handle, int, char *));
-int usbd_getnewaddr __P((usbd_bus_handle bus));
+static usbd_status	usbd_set_config (usbd_device_handle, int);
+char *usbd_get_string (usbd_device_handle, int, char *);
+int usbd_getnewaddr (usbd_bus_handle bus);
 #if defined(__NetBSD__)
-int usbd_print __P((void *aux, const char *pnp));
-int usbd_submatch __P((bdevice *, struct cfdata *cf, void *));
+int usbd_print (void *aux, const char *pnp);
+int usbd_submatch (bdevice *, struct cfdata *cf, void *);
 #endif
-void usbd_free_iface_data __P((usbd_device_handle dev, int ifcno));
-void usbd_kill_pipe __P((usbd_pipe_handle));
-usbd_status usbd_probe_and_attach 
-	__P((bdevice *parent, usbd_device_handle dev, int port, int addr));
+void usbd_free_iface_data (usbd_device_handle dev, int ifcno);
+void usbd_kill_pipe (usbd_pipe_handle);
+usbd_status usbd_probe_and_attach (bdevice *parent, usbd_device_handle dev, int port, int addr);
 
 
 #ifdef USBVERBOSE

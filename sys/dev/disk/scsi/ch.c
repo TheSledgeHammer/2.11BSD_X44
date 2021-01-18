@@ -97,6 +97,27 @@ struct cfdriver ch_cd = {
 struct scsi_inquiry_pattern ch_patterns[] =
 		{ { T_CHANGER, T_REMOV, "", "", "" }, };
 
+
+static dev_type_open(chopen);
+static dev_type_close(chclose);
+static dev_type_ioctl(chioctl);
+static dev_type_poll(chpoll);
+
+const struct cdevsw ch_cdevsw = {
+	.d_open = chopen,
+	.d_close = chclose,
+	.d_read = noread,
+	.d_write = nowrite,
+	.d_ioctl = chioctl,
+	.d_stop = nostop,
+	.d_tty = notty,
+	.d_poll = chpoll,
+	.d_mmap = nommap,
+	.d_discard = nodiscard,
+	.d_type = D_OTHER
+};
+
+
 /* SCSI glue */
 struct scsi_device ch_switch = {
 	NULL, NULL, NULL, NULL

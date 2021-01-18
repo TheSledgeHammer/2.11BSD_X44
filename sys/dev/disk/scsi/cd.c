@@ -65,6 +65,7 @@
 #include <sys/conf.h>
 #include <sys/user.h>
 
+#include <dev/disk/scsi/cdvar.h>
 #include <dev/disk/scsi/scsi_all.h>
 #include <dev/disk/scsi/scsi_cd.h>
 #include <dev/disk/scsi/scsi_debug.h>
@@ -78,26 +79,6 @@
 #define	CDPART(z)					DISKPART(z)
 #define	MAKECDDEV(maj, unit, part)	MAKEDISKDEV(maj, unit, part)
 
-struct cd_softc {
-	struct device 		sc_dev;
-	struct dkdevice 	sc_dk;
-
-	int 				flags;
-#define	CDF_LOCKED		0x01
-#define	CDF_WANTED		0x02
-#define	CDF_WLABEL		0x04		/* label is writable */
-#define	CDF_LABELLING	0x08		/* writing label */
-#define	CDF_ANCIENT		0x10		/* disk is ancient; for minphys */
-	struct scsi_link 	*sc_link;	/* contains our targ, lun, etc. */
-	struct cd_parms {
-		int 			blksize;
-		u_long 			disksize;	/* total number sectors */
-	} params;
-	struct buf 			buf_queue;
-};
-
-int		cdmatch (struct device *, void *, void *);
-void	cdattach (struct device *, struct device *, void *);
 int		cdlock (struct cd_softc *);
 void	cdunlock (struct cd_softc *);
 void	cdstart (void *);
@@ -121,7 +102,14 @@ struct cfdriver cd_cd = {
 	NULL, "cd", cdmatch, cdattach, DV_DISK, sizeof(struct cd_softc)
 };
 
-struct dkdriver cddkdriver = { cdstrategy };
+struct dkdriver cddkdriver = {
+		.d_open = cdopen,
+		.d_close = cdclose,
+		.d_strategy = cdstrategy,
+		.d_minphys = cdminphys,
+		.d_start = cdstart,
+		.d_mklabel = cdgetdisklabel,
+};
 
 struct scsi_device cd_switch = {
 	NULL,			/* use default error handler */
@@ -137,6 +125,40 @@ struct scsi_inquiry_pattern cd_patterns[] = {
 	{T_CDROM, T_REMOV, /* more luns */
 	 "PIONEER ", "CD-ROM DRM-600  ", ""},
 #endif
+};
+
+static dev_type_open(cdopen);
+static dev_type_close(cdclose);
+static dev_type_read(cdread);
+static dev_type_write(cdwrite);
+static dev_type_ioctl(cdioctl);
+static dev_type_strategy(cdstrategy);
+static dev_type_dump(cddump);
+static dev_type_size(cdsize);
+
+const struct bdevsw cd_bdevsw = {
+		.d_open = cdopen,
+		.d_close = cdclose,
+		.d_strategy = cdstrategy,
+		.d_ioctl = cdioctl,
+		.d_dump = cddump,
+		.d_psize = cdsize,
+		.d_discard = nodiscard,
+		.d_type = D_DISK
+};
+
+const struct cdevsw cd_cdevsw = {
+		.d_open = cdopen,
+		.d_close = cdclose,
+		.d_read = cdread,
+		.d_write = cdwrite,
+		.d_ioctl = cdioctl,
+		.d_stop = nostop,
+		.d_tty = notty,
+		.d_poll = nopoll,
+		.d_mmap = nommap,
+		.d_discard = nodiscard,
+		.d_type = D_DISK
 };
 
 int
@@ -165,6 +187,7 @@ cdattach(parent, self, aux)
 	struct cd_softc *cd = (void *)self;
 	struct scsibus_attach_args *sa = aux;
 	struct scsi_link *sc_link = sa->sa_sc_link;
+	struct cd_ops *ops = cd->sc_ops;
 
 	SC_DEBUG(sc_link, SDEV_DB2, ("cdattach: "));
 
@@ -172,6 +195,7 @@ cdattach(parent, self, aux)
 	 * Store information needed to contact our base driver
 	 */
 	cd->sc_link = sc_link;
+	cd->sc_ops = ops;
 	sc_link->device = &cd_switch;
 	sc_link->device_softc = cd;
 	if (sc_link->openings > CDOUTSTANDING)

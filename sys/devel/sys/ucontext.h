@@ -1,12 +1,11 @@
-/*	$NetBSD: usb_quirks.h,v 1.5 1998/12/29 15:23:59 augustss Exp $	*/
+/*	$NetBSD: ucontext.h,v 1.9 2006/08/20 08:02:21 skrll Exp $	*/
 
-/*
- * Copyright (c) 1998 The NetBSD Foundation, Inc.
+/*-
+ * Copyright (c) 1999, 2003 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by Lennart Augustsson (augustss@carlstedt.se) at
- * Carlstedt Research & Technology.
+ * by Klaus Klein, and by Jason R. Thorpe.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,15 +36,47 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-struct usbd_quirks {
-	u_int32_t uq_flags;	/* Device problems: */
-#define UQ_NO_SET_PROTO	0x01	/* cannot handle SET PROTOCOL. */
-#define UQ_SWAP_UNICODE	0x02	/* has some Unicode strings swapped. */
-#define UQ_HUB_POWER	0x04	/* does not respond correctly to get device status; use get hub status. */
-#define UQ_NO_STRINGS	0x08	/* string descriptors are broken. */
-#define UQ_BAD_ADC		0x10	/* bad audio spec version number. */
+#ifndef _SYS_UCONTEXT_H_
+#define _SYS_UCONTEXT_H_
+
+//#include <sys/sigtypes.h>
+#include <devel/arch/i386/include/mcontext.h>
+
+typedef struct {
+	void			*ss_sp;			/* signal stack base */
+	size_t			ss_size;		/* signal stack length */
+	int				ss_flags;		/* SS_DISABLE and/or SS_ONSTACK */
+} stack_t;
+
+typedef struct __ucontext	ucontext_t;
+
+struct __ucontext {
+	unsigned int	uc_flags;		/* properties */
+	ucontext_t * 	uc_link;		/* context to resume */
+	sigset_t		uc_sigmask;		/* signals blocked in this context */
+	stack_t			uc_stack;		/* the stack used by this context */
+	mcontext_t		uc_mcontext;	/* machine state */
+#if defined(_UC_MACHINE_PAD)
+	long			__uc_pad[_UC_MACHINE_PAD];
+#endif
 };
 
-extern struct usbd_quirks usbd_no_quirk;
+#ifndef _UC_UCONTEXT_ALIGN
+#define _UC_UCONTEXT_ALIGN (~0)
+#endif
 
-struct usbd_quirks *usbd_find_quirk (usb_device_descriptor_t *);
+/* uc_flags */
+#define _UC_SIGMASK	0x01			/* valid uc_sigmask */
+#define _UC_STACK	0x02			/* valid uc_stack */
+#define _UC_CPU		0x04			/* valid GPR context in uc_mcontext */
+#define _UC_FPU		0x08			/* valid FPU context in uc_mcontext */
+
+#ifdef _KERNEL
+struct proc;
+
+void	getucontext(struct proc *, ucontext_t *);
+int		setucontext(struct proc *, const ucontext_t *);
+void	cpu_getmcontext(struct proc *, mcontext_t *, unsigned int *);
+int		cpu_setmcontext(struct proc *, const mcontext_t *, unsigned int);
+#endif /* _KERNEL */
+#endif /* !_SYS_UCONTEXT_H_ */

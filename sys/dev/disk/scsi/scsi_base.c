@@ -764,7 +764,7 @@ sc_print_addr(sc_link)
 					((struct device*) sc_link->device_softc)->dv_xname :
 					"probe",
 			((struct device*) sc_link->adapter_softc)->dv_xname,
-			sc_link->target, sc_link->lun);
+			sc_link->scsi_scsi.target, sc_link->scsi_scsi.lun);
 }
 
 #ifdef	SCSIDEBUG

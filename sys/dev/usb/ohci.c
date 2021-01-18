@@ -89,77 +89,76 @@
 
 struct ohci_pipe;
 
-ohci_soft_ed_t *ohci_alloc_sed __P((ohci_softc_t *));
-void		ohci_free_sed __P((ohci_softc_t *, ohci_soft_ed_t *));
+ohci_soft_ed_t *ohci_alloc_sed (ohci_softc_t *));
+void		ohci_free_sed (ohci_softc_t *, ohci_soft_ed_t *));
 
-ohci_soft_td_t *ohci_alloc_std __P((ohci_softc_t *));
-void		ohci_free_std __P((ohci_softc_t *, ohci_soft_td_t *));
+ohci_soft_td_t *ohci_alloc_std (ohci_softc_t *);
+void		ohci_free_std (ohci_softc_t *, ohci_soft_td_t *);
 
-usbd_status	ohci_open __P((usbd_pipe_handle));
-void		ohci_poll __P((struct usbd_bus *));
-void		ohci_waitintr __P((ohci_softc_t *, usbd_request_handle));
-void		ohci_rhsc __P((ohci_softc_t *, usbd_request_handle));
-void		ohci_process_done __P((ohci_softc_t *, ohci_physaddr_t));
-void		ohci_ii_done __P((ohci_softc_t *, usbd_request_handle));
-void		ohci_ctrl_done __P((ohci_softc_t *, usbd_request_handle));
-void		ohci_intr_done __P((ohci_softc_t *, usbd_request_handle));
-void		ohci_bulk_done __P((ohci_softc_t *, usbd_request_handle));
+usbd_status	ohci_open (usbd_pipe_handle);
+void		ohci_poll (struct usbd_bus *);
+void		ohci_waitintr (ohci_softc_t *, usbd_request_handle);
+void		ohci_rhsc (ohci_softc_t *, usbd_request_handle);
+void		ohci_process_done (ohci_softc_t *, ohci_physaddr_t);
+void		ohci_ii_done (ohci_softc_t *, usbd_request_handle);
+void		ohci_ctrl_done (ohci_softc_t *, usbd_request_handle);
+void		ohci_intr_done (ohci_softc_t *, usbd_request_handle);
+void		ohci_bulk_done (ohci_softc_t *, usbd_request_handle);
 
-usbd_status	ohci_device_request __P((usbd_request_handle reqh));
-void		ohci_add_ed __P((ohci_soft_ed_t *, ohci_soft_ed_t *));
-void		ohci_rem_ed __P((ohci_soft_ed_t *, ohci_soft_ed_t *));
-void		ohci_hash_add_td __P((ohci_softc_t *, ohci_soft_td_t *));
-void		ohci_hash_rem_td __P((ohci_softc_t *, ohci_soft_td_t *));
-ohci_soft_td_t *ohci_hash_find_td __P((ohci_softc_t *, ohci_physaddr_t));
+usbd_status	ohci_device_request (usbd_request_handle reqh);
+void		ohci_add_ed (ohci_soft_ed_t *, ohci_soft_ed_t *);
+void		ohci_rem_ed (ohci_soft_ed_t *, ohci_soft_ed_t *);
+void		ohci_hash_add_td (ohci_softc_t *, ohci_soft_td_t *);
+void		ohci_hash_rem_td (ohci_softc_t *, ohci_soft_td_t *);
+ohci_soft_td_t *ohci_hash_find_td (ohci_softc_t *, ohci_physaddr_t);
 
-usbd_status	ohci_root_ctrl_transfer __P((usbd_request_handle));
-usbd_status	ohci_root_ctrl_start __P((usbd_request_handle));
-void		ohci_root_ctrl_abort __P((usbd_request_handle));
-void		ohci_root_ctrl_close __P((usbd_pipe_handle));
+usbd_status	ohci_root_ctrl_transfer (usbd_request_handle);
+usbd_status	ohci_root_ctrl_start (usbd_request_handle);
+void		ohci_root_ctrl_abort (usbd_request_handle);
+void		ohci_root_ctrl_close (usbd_pipe_handle);
 
-usbd_status	ohci_root_intr_transfer __P((usbd_request_handle));
-usbd_status	ohci_root_intr_start __P((usbd_request_handle));
-void		ohci_root_intr_abort __P((usbd_request_handle));
-void		ohci_root_intr_close __P((usbd_pipe_handle));
+usbd_status	ohci_root_intr_transfer (usbd_request_handle);
+usbd_status	ohci_root_intr_start (usbd_request_handle);
+void		ohci_root_intr_abort (usbd_request_handle);
+void		ohci_root_intr_close (usbd_pipe_handle);
 
-usbd_status	ohci_device_ctrl_transfer __P((usbd_request_handle));
-usbd_status	ohci_device_ctrl_start __P((usbd_request_handle));
-void		ohci_device_ctrl_abort __P((usbd_request_handle));
-void		ohci_device_ctrl_close __P((usbd_pipe_handle));
+usbd_status	ohci_device_ctrl_transfer (usbd_request_handle);
+usbd_status	ohci_device_ctrl_start (usbd_request_handle);
+void		ohci_device_ctrl_abort (usbd_request_handle);
+void		ohci_device_ctrl_close (usbd_pipe_handle);
 
-usbd_status	ohci_device_bulk_transfer __P((usbd_request_handle));
-usbd_status	ohci_device_bulk_start __P((usbd_request_handle));
-void		ohci_device_bulk_abort __P((usbd_request_handle));
-void		ohci_device_bulk_close __P((usbd_pipe_handle));
+usbd_status	ohci_device_bulk_transfer (usbd_request_handle);
+usbd_status	ohci_device_bulk_start (usbd_request_handle);
+void		ohci_device_bulk_abort (usbd_request_handle);
+void		ohci_device_bulk_close (usbd_pipe_handle);
 
-usbd_status	ohci_device_intr_transfer __P((usbd_request_handle));
-usbd_status	ohci_device_intr_start __P((usbd_request_handle));
-void		ohci_device_intr_abort __P((usbd_request_handle));
-void		ohci_device_intr_close __P((usbd_pipe_handle));
-usbd_status	ohci_device_setintr __P((ohci_softc_t *sc, 
-					 struct ohci_pipe *pipe, int ival));
+usbd_status	ohci_device_intr_transfer (usbd_request_handle);
+usbd_status	ohci_device_intr_start (usbd_request_handle);
+void		ohci_device_intr_abort (usbd_request_handle);
+void		ohci_device_intr_close (usbd_pipe_handle);
+usbd_status	ohci_device_setintr (ohci_softc_t *sc, struct ohci_pipe *pipe, int ival);
 
-int		ohci_str __P((usb_string_descriptor_t *, int, char *));
+int			ohci_str (usb_string_descriptor_t *, int, char *);
 
-void		ohci_timeout __P((void *));
-void		ohci_rhsc_able __P((ohci_softc_t *, int));
+void		ohci_timeout (void *);
+void		ohci_rhsc_able (ohci_softc_t *, int);
 
 #ifdef USB_DEBUG
 ohci_softc_t   *thesc;
-void		ohci_dumpregs __P((ohci_softc_t *));
-void		ohci_dump_tds __P((ohci_soft_td_t *));
-void		ohci_dump_td __P((ohci_soft_td_t *));
-void		ohci_dump_ed __P((ohci_soft_ed_t *));
+void		ohci_dumpregs (ohci_softc_t *);
+void		ohci_dump_tds (ohci_soft_td_t *);
+void		ohci_dump_td (ohci_soft_td_t *);
+void		ohci_dump_ed (ohci_soft_ed_t *);
 #endif
 
 #if defined(__NetBSD__)
-#define OWRITE4(sc, r, x) bus_space_write_4((sc)->iot, (sc)->ioh, (r), (x))
-#define OREAD4(sc, r) bus_space_read_4((sc)->iot, (sc)->ioh, (r))
-#define OREAD2(sc, r) bus_space_read_2((sc)->iot, (sc)->ioh, (r))
+#define OWRITE4(sc, r, x) 					bus_space_write_4((sc)->iot, (sc)->ioh, (r), (x))
+#define OREAD4(sc, r) 						bus_space_read_4((sc)->iot, (sc)->ioh, (r))
+#define OREAD2(sc, r) 						bus_space_read_2((sc)->iot, (sc)->ioh, (r))
 #elif defined(__FreeBSD__)
-#define OWRITE4(sc, r, x) *(u_int32_t *) ((sc)->sc_iobase + (r)) = x
-#define OREAD4(sc, r) (*(u_int32_t *) ((sc)->sc_iobase + (r)))
-#define OREAD2(sc, r) (*(u_int16_t *) ((sc)->sc_iobase + (r)))
+#define OWRITE4(sc, r, x) *(u_int32_t *) 	((sc)->sc_iobase + (r)) = x
+#define OREAD4(sc, r) (*(u_int32_t *) 		((sc)->sc_iobase + (r)))
+#define OREAD2(sc, r) (*(u_int16_t *) 		((sc)->sc_iobase + (r)))
 #endif
 
 /* Reverse the bits in a value 0 .. 31 */
@@ -249,8 +248,7 @@ ohci_alloc_sed(sc)
 
 	if (!sc->sc_freeeds) {
 		DPRINTFN(2, ("ohci_alloc_sed: allocating chunk\n"));
-		sed = malloc(sizeof(ohci_soft_ed_t) * OHCI_ED_CHUNK, 
-			     M_USBDEV, M_NOWAIT);
+		sed = malloc(sizeof(ohci_soft_ed_t) * OHCI_ED_CHUNK, M_USBDEV, M_NOWAIT);
 		if (!sed)
 			return 0;
 		r = usb_allocmem(sc->sc_dmatag, OHCI_ED_SIZE * OHCI_ED_CHUNK,

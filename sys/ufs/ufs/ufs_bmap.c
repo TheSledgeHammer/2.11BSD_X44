@@ -77,8 +77,7 @@ ufs_bmap(ap)
 	if (ap->a_bnp == NULL)
 		return (0);
 
-	return (ufs_bmaparray(ap->a_vp, ap->a_bn, ap->a_bnp, NULL, NULL,
-	    ap->a_runp));
+	return (ufs_bmaparray(ap->a_vp, ap->a_bn, ap->a_bnp, NULL, NULL, ap->a_runp));
 }
 
 /*
@@ -113,6 +112,7 @@ ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 	ufs_daddr_t daddr;
 	long metalbn;
 	int error, maxrun, num;
+	u_long is_seq;
 
 	ip = VTOI(vp);
 	mp = vp->v_mount;
@@ -141,19 +141,31 @@ ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 
 	num = *nump;
 	if (num == 0) {
-		*bnp = blkptrtodb(ump, ip->i_db[bn]);
+		if(ump->um_fstype == UFS1) {
+			*bnp = blkptrtodb(ump, ip->i_ffs1_db[bn]);
+		} else {
+			*bnp = blkptrtodb(ump, ip->i_ffs2_db[bn]);
+		}
 		if (*bnp == 0)
 			*bnp = -1;
 		else if (runp)
-			for (++bn; bn < NDADDR && *runp < maxrun &&
-			    is_sequential(ump, ip->i_db[bn - 1], ip->i_db[bn]);
-			    ++bn, ++*runp);
+			if(ump->um_fstype == UFS1) {
+				is_seq = is_sequential(ump, ip->i_ffs1_db[bn - 1], ip->i_ffs1_db[bn]);
+			} else {
+				is_seq = is_sequential(ump, ip->i_ffs2_db[bn - 1], ip->i_ffs2_db[bn]);
+			}
+
+			for (++bn; bn < NDADDR && *runp < maxrun && is_seq; ++bn, ++*runp);
 		return (0);
 	}
 
 
 	/* Get disk address out of indirect block array */
-	daddr = ip->i_ib[xap->in_off];
+	if(ump->um_fstype == UFS1) {
+		daddr = ip->i_ffs1_ib[xap->in_off];
+	} else {
+		daddr = ip->i_ffs2_ib[xap->in_off];
+	}
 
 	devvp = VFSTOUFS(vp->v_mount)->um_devvp;
 	for (bp = NULL, ++xap; --num; ++xap) {

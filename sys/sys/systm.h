@@ -104,7 +104,7 @@ volatile void panic (const char *, ...);
 void 	panic (const char *, ...);
 #endif
 void	tablefull (const char *);
-//void	addlog (const char *, ...);
+void	addlog (const char *, ...);
 void	log (int, const char *, ...);
 void	printf (const char *, ...);
 int		sprintf (char *buf, const char *, ...);

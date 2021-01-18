@@ -95,7 +95,7 @@ struct dinode {
 };
 
 struct ufs2_dinode {
-    uint16_t	    di_mode;	    /*   0: IFMT, permissions; see below. */
+	uint16_t	    di_mode;	    /*   0: IFMT, permissions; see below. */
 	int16_t		    di_nlink;	    /*   2: File link count. */
 	uint32_t	    di_uid;		    /*   4: File owner. */
 	uint32_t	    di_gid;		    /*   8: File group. */

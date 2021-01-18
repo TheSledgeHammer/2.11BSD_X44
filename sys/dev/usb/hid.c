@@ -59,7 +59,7 @@ extern int usbdebug;
 #define DPRINTFN(n,x)
 #endif
 
-static void hid_clear_local __P((struct hid_item *));
+static void hid_clear_local (struct hid_item *);
 
 #define MAXUSAGE 100
 struct hid_data {
@@ -135,7 +135,7 @@ hid_get_item(s, h)
  top:
 	if (s->multimax) {
 		if (s->multi < s->multimax) {
-			c->usage = s->usages[min(s->multi, s->nu-1)];
+			c->usage = s->usages[min(s->multi, s->nu - 1)];
 			s->multi++;
 			*h = *c;
 			c->loc.pos += c->loc.size;
@@ -167,22 +167,23 @@ hid_get_item(s, h)
 			bTag = bSize >> 4;
 			bType = (bSize >> 2) & 3;
 			bSize &= 3;
-			if (bSize == 3) bSize = 4;
+			if (bSize == 3)
+				bSize = 4;
 			data = p;
 			p += bSize;
 		}
 		s->p = p;
-		switch(bSize) {
+		switch (bSize) {
 		case 0:
 			dval = 0;
 			break;
 		case 1:
-			dval = (int8_t)*data++;
+			dval = (int8_t) *data++;
 			break;
 		case 2:
 			dval = *data++;
 			dval |= *data++ << 8;
-			dval = (int16_t)dval;
+			dval = (int16_t) dval;
 			break;
 		case 4:
 			dval = *data++;
@@ -194,26 +195,24 @@ hid_get_item(s, h)
 			printf("BAD LENGTH %d\n", bSize);
 			continue;
 		}
-		
+
 		switch (bType) {
-		case 0:			/* Main */
+		case 0: /* Main */
 			switch (bTag) {
-			case 8:		/* Input */
+			case 8: /* Input */
 				if (!(s->kindset & (1 << hid_input)))
 					continue;
 				c->kind = hid_input;
 				c->flags = dval;
-			ret:
+ret:
 				if (c->flags & HIO_VARIABLE) {
 					s->multimax = c->loc.count;
 					s->multi = 0;
 					c->loc.count = 1;
 					if (s->minset) {
-						for (i = c->usage_minimum; 
-						     i <= c->usage_maximum; 
-						     i++) {
+						for (i = c->usage_minimum; i <= c->usage_maximum; i++) {
 							s->usages[s->nu] = i;
-							if (s->nu < MAXUSAGE-1)
+							if (s->nu < MAXUSAGE - 1)
 								s->nu++;
 						}
 						s->minset = 0;
@@ -222,19 +221,18 @@ hid_get_item(s, h)
 				} else {
 					*h = *c;
 					h->next = 0;
-					c->loc.pos += 
-						c->loc.size * c->loc.count;
+					c->loc.pos += c->loc.size * c->loc.count;
 					hid_clear_local(c);
 					s->minset = 0;
 					return (1);
 				}
-			case 9:		/* Output */
+			case 9: /* Output */
 				if (!(s->kindset & (1 << hid_output)))
 					continue;
 				c->kind = hid_output;
 				c->flags = dval;
 				goto ret;
-			case 10:	/* Collection */
+			case 10: /* Collection */
 				c->kind = hid_collection;
 				c->collection = dval;
 				c->collevel++;
@@ -242,13 +240,13 @@ hid_get_item(s, h)
 				hid_clear_local(c);
 				s->nu = 0;
 				return (1);
-			case 11:	/* Feature */
+			case 11: /* Feature */
 				if (!(s->kindset & (1 << hid_feature)))
 					continue;
 				c->kind = hid_feature;
 				c->flags = dval;
 				goto ret;
-			case 12:	/* End collection */
+			case 12: /* End collection */
 				c->kind = hid_endcollection;
 				c->collevel--;
 				*h = *c;
@@ -260,7 +258,7 @@ hid_get_item(s, h)
 				break;
 			}
 			break;
-		case 1:		/* Global */
+		case 1: /* Global */
 			switch (bTag) {
 			case 0:
 				c->_usage_page = dval << 16;
@@ -307,13 +305,13 @@ hid_get_item(s, h)
 				break;
 			}
 			break;
-		case 2:		/* Local */
+		case 2: /* Local */
 			switch (bTag) {
 			case 0:
-				if (bSize == 1) 
-					dval = c->_usage_page | (dval&0xff);
-				else if (bSize == 2) 
-					dval = c->_usage_page | (dval&0xffff);
+				if (bSize == 1)
+					dval = c->_usage_page | (dval & 0xff);
+				else if (bSize == 2)
+					dval = c->_usage_page | (dval & 0xffff);
 				c->usage = dval;
 				if (s->nu < MAXUSAGE)
 					s->usages[s->nu++] = dval;
@@ -321,17 +319,17 @@ hid_get_item(s, h)
 				break;
 			case 1:
 				s->minset = 1;
-				if (bSize == 1) 
-					dval = c->_usage_page | (dval&0xff);
-				else if (bSize == 2) 
-					dval = c->_usage_page | (dval&0xffff);
+				if (bSize == 1)
+					dval = c->_usage_page | (dval & 0xff);
+				else if (bSize == 2)
+					dval = c->_usage_page | (dval & 0xffff);
 				c->usage_minimum = dval;
 				break;
 			case 2:
-				if (bSize == 1) 
-					dval = c->_usage_page | (dval&0xff);
-				else if (bSize == 2) 
-					dval = c->_usage_page | (dval&0xffff);
+				if (bSize == 1)
+					dval = c->_usage_page | (dval & 0xff);
+				else if (bSize == 2)
+					dval = c->_usage_page | (dval & 0xffff);
 				c->usage_maximum = dval;
 				break;
 			case 3:

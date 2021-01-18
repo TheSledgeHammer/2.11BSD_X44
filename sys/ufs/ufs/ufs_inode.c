@@ -71,24 +71,40 @@ ufs_inactive(ap)
 	struct timeval tv;
 	int mode, error = 0;
 	extern int prtactive;
+	struct ufsmount *ump;
+	u_int16_t imode;
+	int16_t inlink;
+
+	ump = VFSTOUFS(vp->v_mount);
 
 	if (prtactive && vp->v_usecount != 0)
 		vprint("ffs_inactive: pushing active", vp);
 
+	if(ump->um_fstype == UFS1) {
+		imode = ip->i_ffs1_mode;
+		inlink = ip->i_ffs1_nlink;
+	} else {
+		imode = ip->i_ffs2_mode;
+		inlink = ip->i_ffs2_nlink;
+	}
 	/*
 	 * Ignore inodes related to stale file handles.
 	 */
-	if (ip->i_mode == 0)
+	if (imode == 0)
 		goto out;
-	if (ip->i_nlink <= 0 && (vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
+	if (inlink <= 0 && (vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
 #ifdef QUOTA
 		if (!getinoquota(ip))
 			(void)chkiq(ip, -1, NOCRED, 0);
 #endif
 		error = VOP_TRUNCATE(vp, (off_t)0, 0, NOCRED, p);
-		ip->i_rdev = 0;
-		mode = ip->i_mode;
-		ip->i_mode = 0;
+		if(ump->um_fstype == UFS1) {
+			ip->i_ffs1_rdev = 0;
+		} else {
+			ip->i_ffs2_rdev = 0;
+		}
+		mode = imode;
+		imode = 0;
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 		VOP_VFREE(vp, ip->i_number, mode);
 	}
@@ -102,7 +118,7 @@ out:
 	 * If we are done with the inode, reclaim it
 	 * so that it can be reused immediately.
 	 */
-	if (ip->i_mode == 0)
+	if (imode == 0)
 		vrecycle(vp, (struct simplelock *)0, p);
 	return (error);
 }

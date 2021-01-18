@@ -87,12 +87,12 @@ int	ohcidebug;
 #define USBUNIT(dev) (minor(dev))
 
 struct usb_softc {
-	bdevice sc_dev;			/* base device */
-	usbd_bus_handle sc_bus;		/* USB controller */
-	struct usbd_port sc_port;	/* dummy port for root hub */
-	char sc_running;
-	char sc_exploring;
-	struct selinfo sc_consel;	/* waiting for connect change */
+	bdevice 			sc_dev;			/* base device */
+	usbd_bus_handle 	sc_bus;			/* USB controller */
+	struct usbd_port 	sc_port;		/* dummy port for root hub */
+	char 				sc_running;
+	char 				sc_exploring;
+	struct selinfo 		sc_consel;		/* waiting for connect change */
 };
 
 #if defined(__NetBSD__)
@@ -108,10 +108,20 @@ d_ioctl_t usbioctl;
 int usbpoll __P((dev_t, int, struct proc *));
 
 struct cdevsw usb_cdevsw = {
-	usbopen,     usbclose,    noread,         nowrite,
-	usbioctl,    nullstop,    nullreset,      nodevtotty,
-	usbpoll,     nommap,      nostrat,
-	"usb",        NULL,   -1
+	usbopen,
+	usbclose,
+	noread,
+	nowrite,
+	usbioctl,
+	nullstop,
+	nullreset,
+	nodevtotty,
+	usbpoll,
+	nommap,
+	nostrat,
+	"usb",
+	NULL,
+	-1
 };
 #endif
 

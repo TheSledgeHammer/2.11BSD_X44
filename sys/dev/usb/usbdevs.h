@@ -186,4 +186,4 @@
 #define	USB_PRODUCT_INSIDEOUT_EDGEPORT4	0x0001		/* EdgePort/4 serial ports */
 
 /* Intel products */
-#define	USB_PRODUCT_INTEL_TESTBOARD	0x9890		/* 82930 test board */
+#define	USB_PRODUCT_INTEL_TESTBOARD		0x9890		/* 82930 test board */

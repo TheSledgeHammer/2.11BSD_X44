@@ -1,17 +1,22 @@
 #	$NetBSD: majors.storage,v 1.1 2014/09/19 17:32:34 matt Exp $
-# 	$211BSD$
+# 	$211BSD:
 #
 #
 # XXX Needs to be included in devices.archtype (Follow i386 for an example)
 
 # 
-# common files for devices
+# Common files for devices
 #
 #
-# Core Machine-Independent Device & Driver Files
+# sub-directory configuration files
 #
 include		"dev/core/files.core"
+include		"dev/disk/files.disk"
+include		"dev/usb/files.usb"
 
+#
+# Dev common configuration files 
+#
 file		dev/cons.c			cons
 file 		dev/ccd.c			ccd		needs-flag
 file 		dev/vnd.c			vnd		needs-flag

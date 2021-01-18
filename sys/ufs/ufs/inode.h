@@ -52,34 +52,36 @@
  * active, and is put back when the file is no longer being used.
  */
 struct inode {
-	LIST_ENTRY(inode)  	i_hash;				/* Hash chain. */
-	struct	vnode  		*i_vnode;			/* Vnode associated with this inode. */
-	struct	vnode  		*i_devvp;			/* Vnode for block I/O. */
-	u_int32_t 			i_flag;				/* flags, see below */
-	dev_t	  			i_dev;				/* Device associated with the inode. */
-	ino_t	  			i_number;			/* The identity of the inode. */
+	LIST_ENTRY(inode)  		i_hash;				/* Hash chain. */
+	struct	vnode  			*i_vnode;			/* Vnode associated with this inode. */
+	struct	vnode  			*i_devvp;			/* Vnode for block I/O. */
+	u_int32_t 				i_flag;				/* flags, see below */
+	dev_t	  				i_dev;				/* Device associated with the inode. */
+	ino_t	  				i_number;			/* The identity of the inode. */
 
-	union {									/* Associated filesystem. */
-		struct	fs 		*fs;				/* FFS */
-		struct	lfs 	*lfs;				/* LFS */
+	union {										/* Associated filesystem. */
+		struct	fs 			*fs;				/* FFS */
+		struct	lfs 		*lfs;				/* LFS */
 	} inode_u;
-#define	i_fs			inode_u.fs
-#define	i_lfs			inode_u.lfs
+#define	i_fs				inode_u.fs
+#define	i_lfs				inode_u.lfs
 
-	struct	 dquot 		*i_dquot[MAXQUOTAS];/* Dquot structures. */
-	u_quad_t 			i_modrev;			/* Revision level for NFS lease. */
-	struct	 lockf 		*i_lockf;			/* Head of byte-level lock list. */
-	struct	 lock 		i_lock;				/* Inode lock. */
+	struct	 dquot 			*i_dquot[MAXQUOTAS];/* Dquot structures. */
+	u_quad_t 				i_modrev;			/* Revision level for NFS lease. */
+	struct	 lockf 			*i_lockf;			/* Head of byte-level lock list. */
+	struct	 lock 			i_lock;				/* Inode lock. */
 	/*
 	 * Side effects; used during directory lookup.
 	 */
-	int32_t	  			i_count;			/* Size of free slot in directory. */
-	doff_t	  			i_endoff;			/* End of useful stuff in directory. */
-	doff_t	  			i_diroff;			/* Offset in dir, where we found last entry. */
-	doff_t	  			i_offset;			/* Offset of free space in directory. */
-	ino_t	  			i_ino;				/* Inode number of found directory. */
-	u_int32_t 			i_reclen;			/* Size of found directory entry. */
-	int       			i_effnlink;  		/* i_nlink when I/O completes */
+	int32_t	  				i_count;			/* Size of free slot in directory. */
+	doff_t	  				i_endoff;			/* End of useful stuff in directory. */
+	doff_t	  				i_diroff;			/* Offset in dir, where we found last entry. */
+	doff_t	  				i_offset;			/* Offset of free space in directory. */
+	ino_t	  				i_ino;				/* Inode number of found directory. */
+	u_int32_t 				i_reclen;			/* Size of found directory entry. */
+	int       				i_effnlink;  		/* i_nlink when I/O completes */
+	//u_int16_t				i_mode;				/*   0: IFMT, permissions; see below. */
+	//int16_t		    		i_nlink;	    	/*   2: File link count. */
 
 	/*
 	 * The on-disk dinode itself.
@@ -91,7 +93,7 @@ struct inode {
 		struct ufs2_dinode 	*ffs2_din;		/* 128 bytes of the on-disk dinode. */
 	} i_din;
 };
-
+/*
 #define	i_atime				i_din.di_atime
 #define	i_atimensec			i_din.di_atimensec
 #define	i_blocks			i_din.di_blocks
@@ -110,6 +112,7 @@ struct inode {
 #define	i_shortlink			i_din.di_shortlink
 #define	i_size				i_din.di_size
 #define	i_uid				i_din.di_uid
+*/
 
 #define	i_ffs1_atime		i_din.ffs1_din->di_atime
 #define	i_ffs1_atimensec	i_din.ffs1_din->di_atimensec

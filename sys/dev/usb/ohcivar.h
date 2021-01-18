@@ -38,28 +38,28 @@
  */
 
 typedef struct ohci_soft_ed {
-	ohci_ed_t *ed;
+	ohci_ed_t 			*ed;
 	struct ohci_soft_ed *next;
-	ohci_physaddr_t physaddr;
+	ohci_physaddr_t 	physaddr;
 } ohci_soft_ed_t;
 #define OHCI_ED_CHUNK 256
 
 typedef struct ohci_soft_td {
-	ohci_td_t *td;
+	ohci_td_t 			*td;
 	struct ohci_soft_td *nexttd; /* mirrors nexttd in TD */
 	struct ohci_soft_td *dnext; /* next in done list */
-	ohci_physaddr_t physaddr;
+	ohci_physaddr_t 	physaddr;
 	LIST_ENTRY(ohci_soft_td) hnext;
 	/*ohci_soft_ed_t *sed;*/
 	usbd_request_handle reqh;
-	u_int16_t len;
-	u_int16_t flags;
+	u_int16_t 			len;
+	u_int16_t 			flags;
 #define OHCI_CALL_DONE	0x0001
 #define OHCI_SET_LEN	0x0002
 } ohci_soft_td_t;
-#define OHCI_TD_CHUNK 256
+#define OHCI_TD_CHUNK 	256
 
-#define OHCI_NO_EDS (2*OHCI_NO_INTRS-1)
+#define OHCI_NO_EDS 	(2*OHCI_NO_INTRS-1)
 
 #define OHCI_HASH_SIZE 128
 
@@ -104,8 +104,8 @@ typedef struct ohci_softc {
 	int sc_id_vendor;
 } ohci_softc_t;
 
-usbd_status	ohci_init __P((ohci_softc_t *));
-int		ohci_intr __P((void *));
+usbd_status	ohci_init (ohci_softc_t *);
+int		ohci_intr (void *);
 
 #define MS_TO_TICKS(ms) ((ms) * hz / 1000)
 

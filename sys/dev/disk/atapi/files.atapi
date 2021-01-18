@@ -1,0 +1,26 @@
+#	$2.11BSD: files.atapi,v 1.0 2021/01/18 16:09:16 martin kelly Exp $
+#
+# Config file and device description for machine-independent devices
+# which attach to ATAPI busses.  Included by ports that need it.  Ports
+# that use it must provide their own "major" declarations for the
+# appropriate devices.
+
+# ATAPI disks
+file	dev/disk/scsi/scsiconf.c		atapibus
+file	dev/disk/scsi/scsi_base.c		atapibus
+file	dev/disk/scsi/scsi_ioctl.c		atapibus
+file	dev/disk/atapi/atapi_base.c		atapibus
+file	dev/disk/atapi/atapi_wdc.c		atapibus & wdc_base
+
+device	atapibus {drive = -1}
+attach	atapibus at atapi
+file	dev/disk/atapi/atapiconf.c      atapibus		needs-flag
+
+
+device	cd: disk
+attach	cd at atapibus with cd_atapibus
+file	dev/disk/atapi/cd_atapi.c		cd_atapibus
+
+device	sd: disk
+attach	sd at atapibus with sd_atapibus
+file	dev/disk/atapi/sd_atapi.c		sd_atapibus

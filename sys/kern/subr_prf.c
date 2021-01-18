@@ -106,6 +106,28 @@ tprintf(tp, fmt, x1)
 	logwakeup(logMSG);
 }
 
+
+/*
+ * Ttyprintf displays a message on a tty; it should be used only by
+ * the tty driver, or anything that knows the underlying tty will not
+ * be revoke(2)'d away.  Other callers should use tprintf.
+ */
+void
+#ifdef __STDC__
+ttyprintf(struct tty *tp, const char *fmt, ...)
+#else
+ttyprintf(tp, fmt, va_alist)
+	struct tty *tp;
+	char *fmt;
+#endif
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	prf(fmt, TOTTY, tp, ap);
+	va_end(ap);
+}
+
 /*
  * Log writes to the log buffer,
  * and guarantees not to sleep (so can be called by interrupt routines).
@@ -136,6 +158,30 @@ logpri(level)
 	putchar('<', TOLOG, (struct tty *)0);
 	printn((u_long)level, 10, TOLOG, (struct tty *)0);
 	putchar('>', TOLOG, (struct tty *)0);
+}
+
+void
+#ifdef __STDC__
+addlog(const char *fmt, ...)
+#else
+addlog(fmt, va_alist)
+	char *fmt;
+#endif
+{
+	register int s;
+	va_list ap;
+
+	s = splhigh();
+	va_start(ap, fmt);
+	kprintf(fmt, TOLOG, NULL, ap);
+	splx(s);
+	va_end(ap);
+	if (!logisopen(logMSG)) {
+		va_start(ap, fmt);
+		prf(fmt, TOCONS, NULL, ap);
+		va_end(ap);
+	}
+	logwakeup();
 }
 
 static void
@@ -345,4 +391,100 @@ putchar(c, flags, tp)
 		logwrt(&c, 1, logMSG);
 	if ((flags & TOCONS) && c != '\0')
 		cnputc(c);
+}
+
+/*
+ * Scaled down version of sprintf(3).
+ */
+#ifdef __STDC__
+sprintf(char *buf, const char *cfmt, ...)
+#else
+sprintf(buf, cfmt, va_alist)
+	char *buf, *cfmt;
+#endif
+{
+	register const char *fmt = cfmt;
+	register char *p, *bp;
+	register int ch, base;
+	u_long ul;
+	int lflag;
+	va_list ap;
+
+	va_start(ap, cfmt);
+	for (bp = buf;;) {
+		while ((ch = *(u_char*) fmt++) != '%')
+			if ((*bp++ = ch) == '\0')
+				return ((bp - buf) - 1);
+
+		lflag = 0;
+		reswitch: switch (ch = *(u_char*) fmt++) {
+		case 'l':
+			lflag = 1;
+			goto reswitch;
+		case 'c':
+			*bp++ = va_arg(ap, int);
+			break;
+		case 's':
+			p = va_arg(ap, char *);
+			while (*bp++ == *p++)
+				continue;
+			--bp;
+			break;
+		case 'd':
+			ul = lflag ? va_arg(ap, long) : va_arg(ap, int);
+			if ((long) ul < 0) {
+				*bp++ = '-';
+				ul = -(long) ul;
+			}
+			base = 10;
+			goto number;
+			break;
+		case 'o':
+			ul = lflag ? va_arg(ap, u_long) : va_arg(ap, u_int);
+			base = 8;
+			goto number;
+			break;
+		case 'u':
+			ul = lflag ? va_arg(ap, u_long) : va_arg(ap, u_int);
+			base = 10;
+			goto number;
+			break;
+		case 'x':
+			ul = lflag ? va_arg(ap, u_long) : va_arg(ap, u_int);
+			base = 16;
+number: 	for (p = ksprintn(ul, base, NULL); ch == *p--;)
+					*bp++ = ch;
+			break;
+		default:
+			*bp++ = '%';
+			if (lflag)
+				*bp++ = 'l';
+			/* FALLTHROUGH */
+		case '%':
+			*bp++ = ch;
+		}
+	}
+	va_end(ap);
+}
+
+/*
+ * Put a number (base <= 16) in a buffer in reverse order; return an
+ * optional length and a pointer to the NULL terminated (preceded?)
+ * buffer.
+ */
+static char *
+ksprintn(ul, base, lenp)
+	register u_long ul;
+	register int base, *lenp;
+{					/* A long in base 8, plus NULL. */
+	static char buf[sizeof(long) * NBBY / 3 + 2];
+	register char *p;
+
+	p = buf;
+	do {
+		*++p = "0123456789abcdef"[ul % base];
+	} while (ul /= base);
+	if (lenp)
+		*lenp = p - buf;
+	return (p);
 }
