@@ -45,6 +45,11 @@ an offical release is made.)
 		- Extended Attributes
 
 - VM: Updates & Changes (See: "/devel/vm")
+	- Anonymous virtual memory support: (see: "devel/vm/uvm")
+		- Ports the anonymous virtual memory from NetBSD's UVM 
+			- uvm_anon: aka vm_anon
+			- uvm_amap: aka vm_amap
+			- uvm_aobj: aka vm_aobject
 	- Planned:
 		- Virtual Segments: Logical Address
 			- Improve internal VM operations.

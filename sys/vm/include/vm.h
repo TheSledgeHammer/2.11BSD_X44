@@ -78,6 +78,7 @@ typedef struct pager_struct *vm_pager_t;
 #include <vm/include/vm_object.h>
 #include <vm/include/pmap.h>
 #include <vm/include/vm_extern.h>
+#include <devel/vm/uvm/uvm.h>
 
 /*
  *	MACH VM locking type mappings to kernel types

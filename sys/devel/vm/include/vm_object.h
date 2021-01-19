@@ -90,12 +90,6 @@ struct vm_object {
 	struct vm_object				*shadow;				/* My shadow */
 	vm_offset_t						shadow_offset;			/* Offset in shadow */
 	TAILQ_ENTRY(vm_object)			cached_list;			/* for persistence */
-
-	/* avm */
-	//struct simplelock				*vmobjlock;				/* lock on memq */
-	//int								uo_npages;				/* # of pages in memq */
-	//int								uo_refs;				/* reference count */
-	//struct vm_pagerops				*pgops;					/* pager ops */
 };
 
 /* flags */

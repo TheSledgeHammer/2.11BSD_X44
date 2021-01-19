@@ -116,6 +116,10 @@ struct vm_map_entry {
 	vm_prot_t					max_protection;	/* maximum protection */
 	vm_inherit_t				inheritance;	/* inheritance */
 	int							wired_count;	/* can be paged if = 0 */
+
+	/* etype is a bitmap that replaces the following 4 items */
+	int							etype;			/* entry type */
+	struct vm_aref				aref;			/* anonymous overlay */
 };
 
 /*
@@ -155,9 +159,9 @@ struct vm_map {
  *	does not include a reference for the imbedded share_map.]
  */
 typedef struct {
-	int			main_timestamp;
-	vm_map_t	share_map;
-	int			share_timestamp;
+	int							main_timestamp;
+	vm_map_t					share_map;
+	int							share_timestamp;
 } vm_map_version_t;
 
 /*
