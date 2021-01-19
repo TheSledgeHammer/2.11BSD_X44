@@ -53,10 +53,10 @@ struct scsi_test_unit_ready {
 struct scsi_send_diag {
 	u_int8_t opcode;
 	u_int8_t byte2;
-#define	SSD_UOL		0x01
-#define	SSD_DOL		0x02
-#define	SSD_SELFTEST	0x04
-#define	SSD_PF		0x10
+#define	SSD_UOL						0x01
+#define	SSD_DOL						0x02
+#define	SSD_SELFTEST				0x04
+#define	SSD_PF						0x10
 	u_int8_t unused[1];
 	u_int8_t paramlen[2];
 	u_int8_t control;
@@ -106,8 +106,8 @@ struct scsi_mode_sense_big {
 struct scsi_mode_select {
 	u_int8_t opcode;
 	u_int8_t byte2;
-#define	SMS_SP	0x01
-#define	SMS_PF	0x10
+#define	SMS_SP						0x01
+#define	SMS_PF						0x10
 	u_int8_t unused[2];
 	u_int8_t length;
 	u_int8_t control;
@@ -156,8 +156,26 @@ struct scsi_changedef {
 	u_int8_t datalen;
 	u_int8_t control;
 };
-#define SC_SCSI_1 0x01
-#define SC_SCSI_2 0x03
+#define SC_SCSI_1 				0x01
+#define SC_SCSI_2 				0x03
+
+
+#define	SKEY_NO_SENSE			0x00
+#define	SKEY_RECOVERED_ERROR	0x01
+#define	SKEY_NOT_READY			0x02
+#define	SKEY_MEDIUM_ERROR		0x03
+#define	SKEY_HARDWARE_ERROR		0x04
+#define	SKEY_ILLEGAL_REQUEST	0x05
+#define	SKEY_UNIT_ATTENTION		0x06
+#define	SKEY_WRITE_PROTECT		0x07
+#define	SKEY_BLANK_CHECK		0x08
+#define	SKEY_VENDOR_UNIQUE		0x09
+#define	SKEY_COPY_ABORTED		0x0A
+#define	SKEY_ABORTED_COMMAND	0x0B
+#define	SKEY_EQUAL				0x0C
+#define	SKEY_VOLUME_OVERFLOW	0x0D
+#define	SKEY_MISCOMPARE			0x0E
+#define	SKEY_RESERVED			0x0F
 
 /*
  * Opcodes

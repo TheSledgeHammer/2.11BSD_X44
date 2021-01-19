@@ -59,15 +59,11 @@ struct vm_segment {
 
 	int							sg_resident_page_count;	/* number of resident pages */
 
-	caddr_t						sg_addr;				/* segment addr */
-	int							sg_types;				/* see below (segment types) */
+	caddr_t						sg_laddr;				/* segment logical address */
 
-	caddr_t						sg_laddr;				/* segments logical addr */
+	union segment_register		*sg_register;			/* pointer to pseudo segment register */
+	int							sg_types;				/* see below (segment register type) */
 };
-
-#define SEGMENT_DATA(dsize, daddr)
-#define SEGMENT_STACK(ssize, saddr)
-#define SEGMENT_TEXT(tsize, taddr)
 
 /* flags */
 #define SEG_ACTIVE		0x001	/* segment is active */
@@ -79,11 +75,6 @@ struct vm_segment {
 #define	SEG_BUSY		0x020	/* segment is in transit (O) */
 #define	SEG_CLEAN		0x040	/* segment has not been modified */
 
-/* types */
-#define SEG_DATA		1		/* data segment */
-#define SEG_STACK		2		/* stack segment */
-#define SEG_TEXT		3		/* text segment */
-
 #define	VM_SEGMENT_CHECK(seg) { 											\
 	if ((((unsigned int) seg) < ((unsigned int) &vm_segment_array[0])) || 	\
 	    (((unsigned int) seg) > 											\
@@ -92,6 +83,50 @@ struct vm_segment {
 		(SEG_ACTIVE | SEG_INACTIVE))) 										\
 		panic("vm_segment_check: not valid!"); 								\
 }
+
+/* pseudo segment registers */
+union segment_register {
+	struct {
+		segsz_t 			sg_dsize;
+		caddr_t				sg_daddr;
+	} sp_data;
+	struct {
+		segsz_t 			sg_ssize;
+		caddr_t				sg_saddr;
+	} sp_stack;
+	struct {
+		segsz_t 			sg_tsize;
+		caddr_t				sg_taddr;
+	} sp_text;
+
+#define sg_daddr			sp_data.sg_daddr
+#define sg_dsize			sp_data.sg_dsize
+#define sg_saddr			sp_stack.sg_saddr
+#define sg_ssize			sp_stack.sg_ssize
+#define sg_taddr			sp_text.sg_taddr
+#define sg_tsize			sp_text.sg_tsize
+};
+
+/* types */
+#define SEG_DATA			1		/* data segment */
+#define SEG_STACK			2		/* stack segment */
+#define SEG_TEXT			3		/* text segment */
+
+/* macros */
+#define DATA_SEGMENT(data, dsize, daddr) {		\
+	(data)->sg_dsize = (dsize);					\
+	(data)->sg_daddr = (daddr);					\
+};
+
+#define STACK_SEGMENT(stack, ssize, saddr) {	\
+	(stack)->sg_ssize = (ssize);				\
+	(stack)->sg_saddr = (saddr);				\
+};
+
+#define TEXT_SEGMENT(text, tsize, taddr) {		\
+	(text)->sg_tsize = (tsize);					\
+	(text)->sg_taddr = (taddr);					\
+};
 
 extern
 struct seglist  	vm_segment_list;			/* free list */
@@ -125,8 +160,8 @@ simple_lock_data_t	vm_segment_list_activity_lock;
 }
 
 /* Test... Does it point to the right physical address? */
-#define VM_SEGMENT_TO_PHYS(seg) 						\
-		vm_segment_lookup((seg)->sg_object, (seg)->sg_offset)->sg_laddr
+//#define VM_SEGMENT_TO_PHYS(seg) 						\
+//		vm_segment_lookup((seg)->sg_object, (seg)->sg_offset)->sg_laddr
 
 #define PHYS_TO_VM_SEGMENT(pa) 							\
 		(&vm_segment_array[atos(pa) - first_segment])

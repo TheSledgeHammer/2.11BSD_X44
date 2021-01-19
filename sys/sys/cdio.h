@@ -1,4 +1,4 @@
-/*	$NetBSD: cdio.h,v 1.12.8.1 1999/01/18 06:11:33 cgd Exp $	*/
+/*	$NetBSD: cdio.h,v 1.17 1999/01/04 15:32:08 is Exp $	*/
 
 #ifndef _SYS_CDIO_H_
 #define _SYS_CDIO_H_
@@ -41,6 +41,40 @@ struct cd_sub_channel_header {
 #define CD_AS_PLAY_ERROR		0x14
 #define CD_AS_NO_STATUS			0x15
 	u_char	data_len[2];
+};
+
+struct cd_sub_channel_q_data {
+	u_char	data_format;
+#if BYTE_ORDER == LITTLE_ENDIAN
+	u_char	control:4;
+	u_char	addr_type:4;
+#endif
+#if BYTE_ORDER == BIG_ENDIAN
+	u_char	addr_type:4;
+	u_char	control:4;
+#endif
+	u_char	track_number;
+	u_char	index_number;
+	u_char	absaddr[4];
+	u_char	reladdr[4];
+#if BYTE_ORDER == LITTLE_ENDIAN
+        u_char  :7;
+        u_char  mc_valid:1;
+#endif
+#if BYTE_ORDER == BIG_ENDIAN
+        u_char  mc_valid:1;
+        u_char  :7;
+#endif
+        u_char  mc_number[15];
+#if BYTE_ORDER == LITTLE_ENDIAN
+        u_char  :7;
+        u_char  ti_valid:1;
+#endif
+#if BYTE_ORDER == BIG_ENDIAN
+        u_char  ti_valid:1;
+        u_char  :7;
+#endif
+        u_char  ti_number[15];
 };
 
 struct cd_sub_channel_position_data {
@@ -94,6 +128,7 @@ struct cd_sub_channel_track_info {
 struct cd_sub_channel_info {
 	struct cd_sub_channel_header header;
 	union {
+		struct cd_sub_channel_q_data q_data;
 		struct cd_sub_channel_position_data position;
 		struct cd_sub_channel_media_catalog media_catalog;
 		struct cd_sub_channel_track_info track_info;
@@ -115,7 +150,7 @@ struct ioc_play_blocks {
 	int	blk;
 	int	len;
 };
-#define	CDIOCPLAYBLOCKS	_IOW('c', 2, struct ioc_play_blocks)
+#define	CDIOCPLAYBLOCKS		_IOW('c', 2, struct ioc_play_blocks)
 
 struct ioc_read_subchannel {
 	u_char	address_format;
@@ -138,7 +173,7 @@ struct ioc_toc_header {
 	u_char	ending_track;
 };
 
-#define CDIOREADTOCHEADER _IOR('c', 4, struct ioc_toc_header)
+#define CDIOREADTOCHEADER 	_IOR('c', 4, struct ioc_toc_header)
 
 struct ioc_read_toc_entry {
 	u_char	address_format;
@@ -146,15 +181,16 @@ struct ioc_read_toc_entry {
 	u_short	data_len;
 	struct	cd_toc_entry *data;
 };
-#define CDIOREADTOCENTRYS _IOWR('c', 5, struct ioc_read_toc_entry)
+#define CDIOREADTOCENTRIES 	_IOWR('c', 5, struct ioc_read_toc_entry)
+#define CDIOREADTOCENTRYS 	_IOWR('c', 5, struct ioc_read_toc_entry)
 
 /* read LBA start of a given session; 0=last, others not yet supported */
-#define CDIOREADMSADDR _IOWR('c', 6, int)
+#define CDIOREADMSADDR 		_IOWR('c', 6, int)
 
 struct	ioc_patch {
 	u_char	patch[4];	/* one for each channel */
 };
-#define	CDIOCSETPATCH	_IOW('c', 9, struct ioc_patch)
+#define	CDIOCSETPATCH		_IOW('c', 9, struct ioc_patch)
 
 struct	ioc_vol {
 	u_char	vol[4];	/* one for each channel */
@@ -176,6 +212,7 @@ struct	ioc_vol {
 #define	CDIOCEJECT		_IO('c', 24)
 #define	CDIOCALLOW		_IO('c', 25)
 #define	CDIOCPREVENT	_IO('c', 26)
+#define	CDIOCCLOSE		_IO('c', 27)
 
 struct ioc_play_msf {
 	u_char	start_m;
@@ -186,5 +223,14 @@ struct ioc_play_msf {
 	u_char	end_f;
 };
 #define	CDIOCPLAYMSF	_IOW('c', 25, struct ioc_play_msf)
+
+struct ioc_load_unload {
+	u_char options;
+#define	CD_LU_ABORT		0x1	/* NOTE: These are the same as the ATAPI */
+#define	CD_LU_UNLOAD	0x2	/* op values for the LOAD_UNLOAD command */
+#define	CD_LU_LOAD		0x3
+	u_char slot;
+};
+#define		CDIOCLOADUNLOAD	_IOW('c', 26, struct ioc_load_unload)
 
 #endif /* !_SYS_CDIO_H_ */

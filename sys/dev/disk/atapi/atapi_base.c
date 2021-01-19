@@ -52,7 +52,6 @@
 #include <dev/disk/atapi/atapi_all.h>
 #include <dev/disk/scsi/scsiconf.h>
 #include <dev/disk/atapi/atapiconf.h>
-#include <dev/disk/scsi/scsi_base.h>
 
 /*
  * Look at the returned sense and act on the error, determining

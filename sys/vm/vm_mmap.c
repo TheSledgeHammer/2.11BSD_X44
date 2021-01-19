@@ -736,8 +736,7 @@ vm_mmap(map, addr, size, prot, maxprot, flags, handle, foff)
 				vm_object_deallocate(object);
 				goto out;
 			}
-			tmap = vm_map_create(pmap_create(size), VM_MIN_ADDRESS,
-					     VM_MIN_ADDRESS+size, TRUE);
+			tmap = vm_map_create(pmap_create(size), VM_MIN_ADDRESS, VM_MIN_ADDRESS+size, TRUE);
 			off = VM_MIN_ADDRESS;
 			rv = vm_allocate_with_pager(tmap, &off, size,
 						    TRUE, pager,

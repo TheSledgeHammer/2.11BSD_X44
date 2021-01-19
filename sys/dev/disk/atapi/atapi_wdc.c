@@ -105,8 +105,8 @@ wdc_atapibus_attach(chp)
 	/*
 	 * Fill in the adapter.
 	 */
-	wdc->sc_atapi_adapter.scsipi_cmd = wdc_atapi_send_cmd;
-	wdc->sc_atapi_adapter.scsipi_minphys = wdc_atapi_minphys;
+	wdc->sc_atapi_adapter.scsi_cmd = wdc_atapi_send_cmd;
+	wdc->sc_atapi_adapter.scsi_minphys = wdc_atapi_minphys;
 
 	memset(&aa_link, 0, sizeof(struct ata_atapi_attach));
 	aa_link.aa_type = T_ATAPI;
@@ -789,7 +789,7 @@ wdc_atapi_done(chp, xfer)
 	struct channel_softc *chp;
 	struct wdc_xfer *xfer;
 {
-	struct scsipi_xfer *sc_xfer = xfer->cmd;
+	struct scsi_xfer *sc_xfer = xfer->cmd;
 
 	WDCDEBUG_PRINT(
 			("wdc_atapi_done %s:%d:%d: flags 0x%x\n", chp->wdc->sc_dev.dv_xname, chp->channel, xfer->drive, (u_int)xfer->c_flags),
@@ -813,7 +813,7 @@ wdc_atapi_reset(chp, xfer)
 	struct wdc_xfer *xfer;
 {
 	struct ata_drive_datas *drvp = &chp->ch_drive[xfer->drive];
-	struct scsipi_xfer *sc_xfer = xfer->cmd;
+	struct scsi_xfer *sc_xfer = xfer->cmd;
 
 	wdccommandshort(chp, xfer->drive, ATAPI_SOFT_RESET);
 	drvp->state = 0;

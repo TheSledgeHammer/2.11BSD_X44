@@ -103,7 +103,7 @@ struct wdc_softc { /* Per controller state */
 	/*
 	 * The reference count here is used for both IDE and ATAPI devices.
 	 */
-	struct scsipi_adapter sc_atapi_adapter;
+	struct scsi_adapter sc_atapi_adapter;
 
 	/* if WDC_CAPABILITY_DMA set in 'cap' */
 	void            *dma_arg;

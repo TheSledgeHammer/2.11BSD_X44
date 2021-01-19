@@ -66,9 +66,9 @@ vm_segment_expand(vm, segment, newsize)
 		 */
 		while (n >= i) {
 			n -= i;
-			vm_segment_copy(a1+n, a2+n, i);
+	//		vm_segment_copy(a1+n, a2+n, i);
 		}
-		vm_segment_copy(a1, a2, n);
+	//	vm_segment_copy(a1, a2, n);
 	}
 	a2 = rmalloc(coremap, newsize);
 	if(a2 == NULL) {
@@ -82,44 +82,7 @@ vm_segment_expand(vm, segment, newsize)
 	} else {
 		vm->vm_daddr = a2;
 	}
-	vm_segment_copy(a1, a2, n);
+//	vm_segment_copy(a1, a2, n);
+	vm_page_copy();
 	rmfree(coremap, n, a1);
 }
-
-struct segment_procspace {
-	struct segment_data		*sp_data;
-	struct segment_stack	*sp_stack;
-	struct segment_text		*sp_text;
-};
-
-struct segment_data {
-	segsz_t 				sg_dsize;
-	caddr_t					sg_daddr;
-};
-
-struct segment_stack {
-	segsz_t 				sg_ssize;
-	caddr_t					sg_saddr;
-};
-
-struct segment_text {
-	segsz_t 				sg_tsize;
-	caddr_t					sg_taddr;
-};
-
-#define DATA_SEGMENT(p, data) {			\
-	(data)->sg_dsize = (p)->p_dsize;	\
-	(data)->sg_daddr = (p)->p_daddr;	\
-};
-
-#define STACK_SEGMENT(p, stack) {		\
-	(stack)->sg_ssize = (p)->p_ssize;	\
-	(stack)->sg_saddr = (p)->p_saddr;	\
-};
-
-#define TEXT_SEGMENT(p, text) {			\
-	(text)->sg_tsize = (p)->p_tsize;	\
-	(text)->sg_taddr = (p)->p_taddr;	\
-};
-
-

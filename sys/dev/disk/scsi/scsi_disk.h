@@ -121,6 +121,21 @@ struct scsi_read_cap_data {
 	u_int8_t length[4];
 };
 
+/*
+ * XXX Does ATAPI have an equivalent?
+ */
+#define	SCSI_SYNCHRONIZE_CACHE		0x35
+struct scsi_synchronize_cache {
+	u_int8_t opcode;
+	u_int8_t flags;
+#define	SSC_RELADR	0x01
+#define	SSC_IMMED	0x02
+	u_int8_t addr[4];
+	u_int8_t reserved;
+	u_int8_t length[2];
+	u_int8_t control;
+};
+
 struct scsi_reassign_blocks_data {
 	u_int8_t reserved[2];
 	u_int8_t length[2];
@@ -129,7 +144,7 @@ struct scsi_reassign_blocks_data {
 	} defect_descriptor[1];
 };
 
-union disk_pages {
+union scsi_disk_pages {
 #define	DISK_PGCODE	0x3F				/* only 6 bits valid */
 	struct page_disk_format {
 			u_int8_t pg_code;			/* page code (should be 3) */

@@ -111,6 +111,16 @@ struct scsi_adapter {
 #define	COMPLETE				2
 #define	ESCAPE_NOT_SUPPORTED	3
 
+
+/*
+ * Device Specific Sense Handlers return either an errno
+ * or one of these three items.
+ */
+
+#define SCSIRET_NOERROR   		0	/* No Error */
+#define SCSIRET_RETRY    		-1	/* Retry the command that got this sense */
+#define SCSIRET_CONTINUE 		-2	/* Continue with standard sense processing */
+
 /*
  * These entry points are called by the low-end drivers to get services from
  * whatever high-end drivers they are attached to.  Each device type has one
@@ -242,7 +252,7 @@ struct scsibus_softc {
  */
 struct scsibus_attach_args {
 	struct scsi_link		 *sa_sc_link;
-	struct scsi_inquiry_data sa_inqbuf;
+	struct scsi_inquiry_pattern sa_inqbuf;
 	union {				/* bus-type specific infos */
 		u_int8_t 			scsi_version;	/* SCSI version */
 	} scsi_info;
@@ -260,7 +270,6 @@ struct scsi_xfer {
 	TAILQ_ENTRY(scsipi_xfer) adapter_q; /* queue entry for use by adapter */
 	TAILQ_ENTRY(scsipi_xfer) device_q;  /* device's pending xfers */
 	volatile int 			flags;		/* 0x00ff0000 reserved for ATAPI */
-	//int						flags;
 	struct	scsi_link 		*sc_link;	/* all about our device and adapter */
 	int						retries;	/* the number of times to retry */
 	int						timeout;	/* in milliseconds */
@@ -271,7 +280,6 @@ struct scsi_xfer {
 	int						resid;		/* how much buffer was not touched */
 	int						error;		/* an error value	*/
 	struct	buf 			*bp;		/* If we need to associate with a buf */
-	//struct	scsi_sense_data	sense; 		/* 32 bytes*/
 	union {
 		struct  scsipi_sense_data 	scsi_sense; /* 32 bytes */
 		u_int32_t 					atapi_sense;
@@ -333,7 +341,8 @@ struct scsi_quirk_inquiry_pattern {
 #define XS_SELTIMEOUT				3	/* The device timed out.. turned off?	  */
 #define XS_TIMEOUT					4	/* The Timeout reported was caught by SW  */
 #define XS_BUSY						5	/* The device busy, try again later?	  */
-
+#define XS_SHORTSENSE				7	/* Check the ATAPI sense for the error 	  */
+#define	XS_RESET					8	/* bus was reset; possible retry command  */
 
 #define SCSICF_CHANNEL				0
 #define SCSICF_CHANNEL_DEFAULT		-1

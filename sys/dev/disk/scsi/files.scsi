@@ -16,7 +16,7 @@ file	dev/disk/scsi/scsiconf.c		scsibus							needs-flag
 
 device	cd: disk
 attach	cd at scsibus with cd_scsibus
-#file	dev/disk/scsi/cd_scsi.c			cd_scsibus
+file	dev/disk/scsi/cd_scsi.c			cd_scsibus
 file	dev/disk/scsi/cd.c				cd | cd_scsibus | cd_atapibus 	needs-flag
 
 device	ch: disk
@@ -25,7 +25,7 @@ file	dev/disk/scsi/ch.c				ch needs-flag
 
 device	sd: disk
 attach	sd at scsibus with sd_scsibus
-#file	dev/disk/scsi/sd_scsi.c			sd_scsibus
+file	dev/disk/scsi/sd_scsi.c			sd_scsibus
 file	dev/disk/scsi/sd.c				sd | sd_scsibus | sd_atapibus 	needs-flag
 
 device	st: tape

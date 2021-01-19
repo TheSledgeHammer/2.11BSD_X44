@@ -86,8 +86,8 @@ void	cdminphys (struct buf *);
 void	cdgetdisklabel (struct cd_softc *);
 int		cddone (struct scsi_xfer *, int);
 u_long	cd_size (struct cd_softc *, int);
-int		cd_get_mode (struct cd_softc *, struct cd_mode_data *, int);
-int		cd_set_mode (struct cd_softc *, struct cd_mode_data *);
+int		cd_get_mode (struct cd_softc *, struct scsi_cd_mode_data *, int);
+int		cd_set_mode (struct cd_softc *, struct scsi_cd_mode_data *);
 int		cd_play (struct cd_softc *, int, int );
 int		cd_play_big (struct cd_softc *, int, int );
 int		cd_play_tracks (struct cd_softc *, int, int, int, int );
@@ -211,12 +211,6 @@ cdattach(parent, self, aux)
 #if !defined(i386)
 	dk_establish(&cd->sc_dk, &cd->sc_dev); /* XXX */
 #endif
-
-	/*
-	 * Note if this device is ancient.  This is used in cdminphys().
-	 */
-	if ((sa->sa_inqbuf->version & SID_ANSII) == 0)
-		cd->flags |= CDF_ANCIENT;
 
 	printf("\n");
 }
@@ -727,7 +721,7 @@ cdioctl(dev, cmd, addr, flag, p)
 
 	case CDIOCPLAYTRACKS: {
 		struct ioc_play_track *args = (struct ioc_play_track*) addr;
-		struct cd_mode_data data;
+		struct scsi_cd_mode_data data;
 		if ((error = cd_get_mode(cd, &data, AUDIO_PAGE)) != 0)
 			return error;
 		data.page.audio.flags &= ~CD_PA_SOTC;
@@ -739,7 +733,7 @@ cdioctl(dev, cmd, addr, flag, p)
 	}
 	case CDIOCPLAYMSF: {
 		struct ioc_play_msf *args = (struct ioc_play_msf*) addr;
-		struct cd_mode_data data;
+		struct scsi_cd_mode_data data;
 		if ((error = cd_get_mode(cd, &data, AUDIO_PAGE)) != 0)
 			return error;
 		data.page.audio.flags &= ~CD_PA_SOTC;
@@ -751,7 +745,7 @@ cdioctl(dev, cmd, addr, flag, p)
 	}
 	case CDIOCPLAYBLOCKS: {
 		struct ioc_play_blocks *args = (struct ioc_play_blocks*) addr;
-		struct cd_mode_data data;
+		struct scsi_cd_mode_data data;
 		if ((error = cd_get_mode(cd, &data, AUDIO_PAGE)) != 0)
 			return error;
 		data.page.audio.flags &= ~CD_PA_SOTC;
@@ -810,7 +804,7 @@ cdioctl(dev, cmd, addr, flag, p)
 	}
 	case CDIOCSETPATCH: {
 		struct ioc_patch *arg = (struct ioc_patch*) addr;
-		struct cd_mode_data data;
+		struct scsi_cd_mode_data data;
 		if ((error = cd_get_mode(cd, &data, AUDIO_PAGE)) != 0)
 			return error;
 		data.page.audio.port[LEFT_PORT].channels = arg->patch[0];
@@ -821,7 +815,7 @@ cdioctl(dev, cmd, addr, flag, p)
 	}
 	case CDIOCGETVOL: {
 		struct ioc_vol *arg = (struct ioc_vol*) addr;
-		struct cd_mode_data data;
+		struct scsi_cd_mode_data data;
 		if ((error = cd_get_mode(cd, &data, AUDIO_PAGE)) != 0)
 			return error;
 		arg->vol[LEFT_PORT] = data.page.audio.port[LEFT_PORT].volume;
@@ -832,7 +826,7 @@ cdioctl(dev, cmd, addr, flag, p)
 	}
 	case CDIOCSETVOL: {
 		struct ioc_vol *arg = (struct ioc_vol*) addr;
-		struct cd_mode_data data;
+		struct scsi_cd_mode_data data;
 		if ((error = cd_get_mode(cd, &data, AUDIO_PAGE)) != 0)
 			return error;
 		data.page.audio.port[LEFT_PORT].channels = CHANNEL_0;
@@ -844,7 +838,7 @@ cdioctl(dev, cmd, addr, flag, p)
 		return cd_set_mode(cd, &data);
 	}
 	case CDIOCSETMONO: {
-		struct cd_mode_data data;
+		struct scsi_cd_mode_data data;
 		if ((error = cd_get_mode(cd, &data, AUDIO_PAGE)) != 0)
 			return error;
 		data.page.audio.port[LEFT_PORT].channels =
@@ -856,7 +850,7 @@ cdioctl(dev, cmd, addr, flag, p)
 		return cd_set_mode(cd, &data);
 	}
 	case CDIOCSETSTEREO: {
-		struct cd_mode_data data;
+		struct scsi_cd_mode_data data;
 		if ((error = cd_get_mode(cd, &data, AUDIO_PAGE)) != 0)
 			return error;
 		data.page.audio.port[LEFT_PORT].channels = LEFT_CHANNEL;
@@ -866,7 +860,7 @@ cdioctl(dev, cmd, addr, flag, p)
 		return cd_set_mode(cd, &data);
 	}
 	case CDIOCSETMUTE: {
-		struct cd_mode_data data;
+		struct scsi_cd_mode_data data;
 		if ((error = cd_get_mode(cd, &data, AUDIO_PAGE)) != 0)
 			return error;
 		data.page.audio.port[LEFT_PORT].channels = 0;
@@ -876,7 +870,7 @@ cdioctl(dev, cmd, addr, flag, p)
 		return cd_set_mode(cd, &data);
 	}
 	case CDIOCSETLEFT: {
-		struct cd_mode_data data;
+		struct scsi_cd_mode_data data;
 		if ((error = cd_get_mode(cd, &data, AUDIO_PAGE)) != 0)
 			return error;
 		data.page.audio.port[LEFT_PORT].channels = LEFT_CHANNEL;
@@ -886,7 +880,7 @@ cdioctl(dev, cmd, addr, flag, p)
 		return cd_set_mode(cd, &data);
 	}
 	case CDIOCSETRIGHT: {
-		struct cd_mode_data data;
+		struct scsi_cd_mode_data data;
 		if ((error = cd_get_mode(cd, &data, AUDIO_PAGE)) != 0)
 			return error;
 		data.page.audio.port[LEFT_PORT].channels = RIGHT_CHANNEL;
@@ -1046,7 +1040,7 @@ cd_get_mode(cd, data, page)
 int
 cd_set_mode(cd, data)
 	struct cd_softc *cd;
-	struct cd_mode_data *data;
+	struct scsi_cd_mode_data *data;
 {
 	struct scsi_mode_select scsi_cmd;
 

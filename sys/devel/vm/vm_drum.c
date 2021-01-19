@@ -104,3 +104,99 @@ vm_vsexpand(vssize, dmp, canshrink)
 	dmp->dm_size = vssize;
 	return (1);
 }
+
+void
+vschunk(p, base, size, type, dmp)
+	register struct proc *p;
+	register int base, size;
+	int type;
+	struct dmap *dmp;
+{
+	register struct pte *pte;
+	struct dblock db;
+	unsigned v;
+
+	base = ctod(base);
+	size = ctod(size);
+	if (type == CTEXT) {
+		while (size > 0) {
+			db.db_size = dmtext - base % dmtext;
+			if (db.db_size > size)
+				db.db_size = size;
+			(void) swap(p, p->p_textp->x_daddr[base / dmtext] + base % dmtext,
+					ptob(tptov(p, dtoc(base))), (int) dtob(db.db_size), B_WRITE,
+					0, swapdev_vp, 0);
+			pte = tptopte(p, dtoc(base));
+			p->p_textp->x_rssize -= vmemfree(pte, (int) dtoc(db.db_size));
+			base += db.db_size;
+			size -= db.db_size;
+		}
+		return;
+	}
+	do {
+		vstodb(base, size, dmp, &db, type == CSTACK);
+		v = type == CSTACK ?
+				sptov(p, dtoc(base+db.db_size) - 1) : dptov(p, dtoc(base));
+		(void) swap(p, db.db_base, ptob(v), (int) dtob(db.db_size), B_WRITE, 0, swapdev_vp, 0);
+		pte = type == CSTACK ?
+				sptopte(p, dtoc(base+db.db_size) - 1) : dptopte(p, dtoc(base));
+		p->p_rssize -= vmemfree(pte, (int) dtoc(db.db_size));
+		base += db.db_size;
+		size -= db.db_size;
+	} while (size != 0);
+}
+
+/*
+ * Given a base/size pair in virtual swap area,
+ * return a physical base/size pair which is the
+ * (largest) initial, physically contiguous block.
+ */
+void
+vstodb(vsbase, vssize, dmp, dbp, rev)
+	register int vsbase, vssize;
+	struct dmap *dmp;
+	register struct dblock *dbp;
+	int rev;
+{
+	register int blk = dmmin;
+	register swblk_t *ip = dmp->dm_map;
+	if (vsbase < 0 || vssize < 0 || vsbase + vssize > dmp->dm_size)
+		panic("vstodb");
+	while (vsbase >= blk) {
+		vsbase -= blk;
+		if (blk < dmmax)
+			blk *= 2;
+		ip++;
+	}
+	if (*ip + blk > nswap)
+		panic("vstodb *ip");
+	dbp->db_size = imin(vssize, blk - vsbase);
+	dbp->db_base = *ip + (rev ? blk - (vsbase + dbp->db_size) : vsbase);
+}
+
+/*
+ * Convert a virtual page number
+ * to its corresponding disk block number.
+ * Used in pagein/pageout to initiate single page transfers.
+ * An assumption here is that dmmin >= CLBYTES/DEV_BSIZE
+ * i.e. a page cluster must be stored contiguously in the swap area.
+ */
+swblk_t
+vtod(p, v, dmap, smap)
+	register struct proc *p;
+	unsigned v;
+	struct dmap *dmap, *smap;
+{
+	struct dblock db;
+	int tp;
+
+	if (isatsv(p, v)) {
+		tp = ctod(vtotp(p, v));
+		return (p->p_text->x_daddr[tp / dmtext] + tp % dmtext);
+	}
+	if (isassv(p, v))
+		vstodb(ctod(vtosp(p, v)), ctod(1), smap, &db, 1);
+	else
+		vstodb(ctod(vtodp(p, v)), ctod(1), dmap, &db, 0);
+	return (db.db_base);
+}

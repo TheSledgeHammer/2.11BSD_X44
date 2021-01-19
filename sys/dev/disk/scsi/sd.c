@@ -81,7 +81,7 @@
 struct scsi_mode_sense_data {
 	struct scsi_mode_header header;
 	struct scsi_blk_desc 	blk_desc;
-	union disk_pages 		pages;
+	union scsi_disk_pages 	pages;
 } scsi_sense;
 
 int		sdmatch (struct device *, void *, void *);
@@ -191,6 +191,7 @@ sdattach(parent, self, aux)
 	struct disk_parms *dp = &sd->params;
 	struct scsibus_attach_args *sa = aux;
 	struct scsi_link *sc_link = sa->sa_sc_link;
+	const struct sd_ops *ops;
 
 	SC_DEBUG(sc_link, SDEV_DB2, ("sdattach: "));
 
@@ -198,7 +199,7 @@ sdattach(parent, self, aux)
 	 * Store information needed to contact our base driver
 	 */
 	sd->sc_link = sc_link;
-	sd->type = (sa->sa_inqbuf->device & SID_TYPE);
+	sd->sc_ops = ops;
 	sc_link->device = &sd_switch;
 	sc_link->device_softc = sd;
 	if (sc_link->openings > SDOUTSTANDING)
@@ -214,12 +215,6 @@ sdattach(parent, self, aux)
 #if !defined(i386)
 	dk_establish(&sd->sc_dk, &sd->sc_dev); /* XXX */
 #endif
-
-	/*
-	 * Note if this device is ancient.  This is used in sdminphys().
-	 */
-	if ((sa->sa_inqbuf->version & SID_ANSII) == 0)
-		sd->flags |= SDF_ANCIENT;
 
 	/*
 	 * Use the subdriver to request information regarding
@@ -898,7 +893,7 @@ sd_get_optparms(sd, flags, dp)
 	struct scsi_mode_sense_data {
 		struct scsi_mode_header header;
 		struct scsi_blk_desc blk_desc;
-		union disk_pages pages;
+		union scsi_disk_pages pages;
 	} scsi_sense;
 	u_long sectors;
 	int error;
