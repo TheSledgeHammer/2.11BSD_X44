@@ -200,8 +200,6 @@ extern	struct ttychars ttydefaults;
 extern	 char ttyin[], ttyout[], ttopen[], ttclos[], ttybg[], ttybuf[];
 
 void tty_init(struct devswtable *);			/* tty.c */
-void ctty_init(struct devswtable *);		/* tty_ctty.c */
-void tty_conf_init(struct devswtable *);	/* tty_conf.c */
 
 void cblock_alloc_cblocks (int);
 void cblock_free_cblocks (int);

@@ -39,6 +39,7 @@
 #include <sys/kernel.h>
 #include <sys/sysctl.h>
 #include <vm/include/vm.h>
+#include <sys/vmmeter.h>
 
 #define	MINFINITY	-32767			/* minus infinity */
 
@@ -184,33 +185,54 @@ vmtotal(totalp)
 	for (p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
 		if (p->p_flag & P_SYSTEM)
 			continue;
+		if (p->p_stat) {
+			totalp->t_vm += p->p_dsize + p->p_ssize + UPAGES;
+			if (p->p_flag & P_SLOAD)
+				totalp->t_rm += p->p_dsize + p->p_ssize + UPAGES;
+		}
 		switch (p->p_stat) {
 		case 0:
 			continue;
 
 		case SSLEEP:
 		case SSTOP:
-			if (p->p_flag & P_INMEM) {
-				if (p->p_pri <= PZERO)
+			if (!(p->p_flag & P_SINTR) && p->p_stat == SSLEEP) {
+				nrun++;
+			}
+			if (p->p_flag & (P_INMEM | P_SLOAD)) {
+				if (p->p_pri <= PZERO || !(p->p_flag & P_SINTR))
 					totalp->t_dw++;
 				else if (p->p_slptime < maxslp)
 					totalp->t_sl++;
 			} else if (p->p_slptime < maxslp)
 				totalp->t_sw++;
 			if (p->p_slptime >= maxslp)
-				continue;
+				goto active;
 			break;
 
 		case SRUN:
 		case SIDL:
-			if (p->p_flag & P_INMEM)
+			nrun++;
+			if (p->p_flag & (P_INMEM | P_SLOAD))
 				totalp->t_rq++;
 			else
 				totalp->t_sw++;
+active:
+			totalp->t_avm += p->p_dsize + p->p_ssize + UPAGES;
+			if (p->p_flag & P_SLOAD)
+				totalp->t_arm += p->p_dsize + p->p_ssize + UPAGES;
 			if (p->p_stat == SIDL)
 				continue;
 			break;
+		case SSTOP:
+		case SSLEEP:
+			if (p->p_slptime >= maxslp)
+				continue;
+			break;
+		case SRUN:
+		case SIDL:
 		}
+
 		/*
 		 * Note active objects.
 		 *

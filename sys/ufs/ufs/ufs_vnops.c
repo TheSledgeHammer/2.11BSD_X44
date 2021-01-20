@@ -52,6 +52,7 @@
 #include <sys/vnode.h>
 #include <sys/malloc.h>
 #include <sys/dirent.h>
+#include <sys/endian.h>
 
 #include <ufs/ufs/lockf.h>
 #include <ufs/ufs/quota.h>
@@ -131,7 +132,11 @@ ufs_mknod(ap)
 		 * Want to be able to use this to make badblock
 		 * inodes, so don't truncate the dev number.
 		 */
-		ip->i_rdev = vap->va_rdev;
+		if (ip->i_ump->um_fstype == UFS1) {
+			ip->i_ffs1_rdev = vap->va_rdev;
+		} else {
+			ip->i_ffs2_rdev = vap->va_rdev;
+		}
 	}
 	/*
 	 * Remove inode so that it will be reloaded by VFS_VGET and
@@ -298,16 +303,30 @@ ufs_getattr(ap)
 	vap->va_nlink = ip->i_nlink;
 	vap->va_uid = ip->i_uid;
 	vap->va_gid = ip->i_gid;
-	vap->va_rdev = (dev_t)ip->i_rdev;
-	vap->va_size = ip->i_din.di_size;
-	vap->va_atime.tv_sec = ip->i_atime;
-	vap->va_atime.tv_nsec = ip->i_atimensec;
-	vap->va_mtime.tv_sec = ip->i_mtime;
-	vap->va_mtime.tv_nsec = ip->i_mtimensec;
-	vap->va_ctime.tv_sec = ip->i_ctime;
-	vap->va_ctime.tv_nsec = ip->i_ctimensec;
+	if (ip->i_ump->um_fstype == UFS1) {
+		vap->va_rdev = (dev_t)ip->i_ffs1_rdev;
+		vap->va_size = ip->i_ffs1_size;
+		vap->va_atime.tv_sec = ip->i_ffs1_atime;
+		vap->va_atime.tv_nsec = ip->i_ffs1_atimensec;
+		vap->va_mtime.tv_sec = ip->i_ffs1_mtime;
+		vap->va_mtime.tv_nsec = ip->i_ffs1_mtimensec;
+		vap->va_ctime.tv_sec = ip->i_ffs1_ctime;
+		vap->va_ctime.tv_nsec = ip->i_ffs1_ctimensec;
+		vap->va_bytes = dbtob((u_quad_t)ip->i_ffs1_blocks);
+	} else {
+		vap->va_rdev = (dev_t)ip->i_ffs2_rdev;
+		vap->va_size = ip->i_ffs2_size;
+		vap->va_atime.tv_sec = ip->i_ffs2_atime;
+		vap->va_atime.tv_nsec = ip->i_ffs2_atimensec;
+		vap->va_mtime.tv_sec = ip->i_ffs2_mtime;
+		vap->va_mtime.tv_nsec = ip->i_ffs2_mtimensec;
+		vap->va_ctime.tv_sec = ip->i_ffs2_ctime;
+		vap->va_ctime.tv_nsec = ip->i_ffs2_ctimensec;
+		vap->va_bytes = dbtob((u_quad_t)ip->i_ffs2_blocks);
+	}
 	vap->va_flags = ip->i_flags;
 	vap->va_gen = ip->i_gen;
+
 	/* this doesn't belong here */
 	if (vp->v_type == VBLK)
 		vap->va_blocksize = BLKDEV_IOSIZE;
@@ -315,7 +334,6 @@ ufs_getattr(ap)
 		vap->va_blocksize = MAXBSIZE;
 	else
 		vap->va_blocksize = vp->v_mount->mnt_stat.f_iosize;
-	vap->va_bytes = dbtob((u_quad_t)ip->i_blocks);
 	vap->va_type = vp->v_type;
 	vap->va_filerev = ip->i_modrev;
 	return (0);
@@ -474,14 +492,17 @@ ufs_chown(vp, uid, gid, cred, p)
 	struct ucred *cred;
 	struct proc *p;
 {
-	register struct inode *ip = VTOI(vp);
+	register struct inode *ip;
 	uid_t ouid;
 	gid_t ogid;
-	int error = 0;
+	int error;
 #ifdef QUOTA
 	register int i;
-	long change;
+	int64_t	change;
 #endif
+
+	ip = VTOI(vp);
+	error = 0;
 
 	if (uid == (uid_t)VNOVAL)
 		uid = ip->i_uid;
@@ -509,7 +530,7 @@ ufs_chown(vp, uid, gid, cred, p)
 		dqrele(vp, ip->i_dquot[GRPQUOTA]);
 		ip->i_dquot[GRPQUOTA] = NODQUOT;
 	}
-	change = ip->i_blocks;
+	change = DIP(ip, blocks);
 	(void) chkdq(ip, -change, cred, CHOWN);
 	(void) chkiq(ip, -1, cred, CHOWN);
 	for (i = 0; i < MAXQUOTAS; i++) {
@@ -518,7 +539,9 @@ ufs_chown(vp, uid, gid, cred, p)
 	}
 #endif
 	ip->i_gid = gid;
+	DIP_ASSIGN(ip, gid, gid);
 	ip->i_uid = uid;
+	DIP_ASSIGN(ip, uid, uid);
 #ifdef QUOTA
 	if ((error = getinoquota(ip)) == 0) {
 		if (ouid == uid) {
@@ -541,7 +564,9 @@ ufs_chown(vp, uid, gid, cred, p)
 		}
 	}
 	ip->i_gid = ogid;
+	DIP_ASSIGN(ip, gid, ogid);
 	ip->i_uid = ouid;
+	DIP_ASSIGN(ip, uid, ouid);
 	if (getinoquota(ip) == 0) {
 		if (ouid == uid) {
 			dqrele(vp, ip->i_dquot[USRQUOTA]);

@@ -35,8 +35,8 @@
  * 0140000; contains the system stack (and possibly network stack) per
  * user; is cross referenced with the proc structure for the same process.
  */
-#define	MAXCOMLEN		MAXNAMLEN	/* <= MAXNAMLEN, >= sizeof(ac_comm) */
-#define USIZE 			UPAGES
+#define	MAXCOMLEN		MAXNAMLEN				/* <= MAXNAMLEN, >= sizeof(ac_comm) */
+#define USIZE 			UPAGES					/* pdp11 equivalent of UPAGES */
 
 struct	pcb {									/* fake pcb structure */
 	int					(*pcb_sigc)();			/* pointer to trampoline code in user space */

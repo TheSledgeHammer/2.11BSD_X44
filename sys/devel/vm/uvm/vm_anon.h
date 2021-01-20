@@ -48,13 +48,15 @@
  */
 
 struct vm_anon {
-	int 				an_ref;		/* reference count [an_lock] */
-	simple_lock_data_t 	an_lock;	/* lock for an_ref */
+	int 					an_ref;			/* reference count [an_lock] */
+	simple_lock_data_t 		an_lock;		/* lock for an_ref */
 	union {
-		struct vm_anon 	*an_nxt;	/* if on free list [afreelock] */
-		struct vm_page 	*an_page;	/* if in RAM [an_lock] */
+		struct vm_anon 		*an_nxt;		/* if on free list [afreelock] */
+		struct vm_anon 		*an_free;		/* anon free list */
+		simple_lock_data_t 	an_freelock; 	/* lock on anon free list */
+		struct vm_page 		*an_page;		/* if in RAM [an_lock] */
 	} u;
-	int 				an_swslot;	/* drum swap slot # (if != 0) [an_lock.  also, it is ok to read an_swslot if we hold an_page PG_BUSY] */
+	int 					an_swslot;		/* drum swap slot # (if != 0) [an_lock.  also, it is ok to read an_swslot if we hold an_page PG_BUSY] */
 };
 
 /*

@@ -135,11 +135,12 @@ extern	int	wakeup();
 
 /* new: tty global initialization via devsw */
 void
-tty_init()
+tty_init(devsw)
+	struct devswtable *devsw;
 {
-	tty_conf_init(&sys_devsw);	/* tty_conf.c */
-	ctty_init(&sys_devsw); 		/* tty_ctty.c */
-	pty_init(&sys_devsw);		/* tty_pty.c */
+	ctty_init(&sys_devsw); 		/* tty_ctty.c: controlling terminal */
+	pty_init(&sys_devsw);		/* tty_pty.c: pseudo-tty slave, pseudo-tty master */
+	tty_conf_init(&sys_devsw);	/* tty_conf.c: pseudo-tty ptm device */
 }
 
 void

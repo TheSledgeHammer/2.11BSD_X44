@@ -76,10 +76,9 @@ void	cd_scsibus_attach (struct device *, struct device *, void *);
 int		cd_scsibus_get_mode (struct cd_softc *, struct scsi_cd_mode_data *, int, int, int);
 int		cd_scsibus_set_mode (struct cd_softc *, struct scsi_cd_mode_data *, int, int);
 
-struct cfattach cd_scsibus_ca = {
-	sizeof(struct cd_softc), cd_scsibus_match, cd_scsibus_attach
+struct cfdriver cd_scsibus_cd = {
+	NULL, "cd_scsibus", cd_scsibus_match, cd_scsibus_attach, DV_DULL, sizeof(struct cd_softc)
 };
-
 
 struct scsipi_inquiry_pattern cd_scsibus_patterns[] = {
 	{T_CDROM, T_REMOV,
@@ -118,7 +117,7 @@ cd_scsibus_match(parent, match, aux)
 	if (sa->sa_sc_link->type != BUS_SCSI)
 		return (0);
 
-	(void)scsipi_inqmatch(&sa->sa_inqbuf,
+	(void)scsi_inqmatch(&sa->sa_inqbuf,
 	    (caddr_t)cd_scsibus_patterns,
 	    sizeof(cd_scsibus_patterns) / sizeof(cd_scsibus_patterns[0]),
 	    sizeof(cd_scsibus_patterns[0]), &priority);
@@ -140,7 +139,7 @@ cd_scsibus_attach(parent, self, aux)
 
 	SC_DEBUG(sc_link, SDEV_DB2, ("cd_scsibus_attach: "));
 
-	scsipi_strvis(cd->name, 16, sa->sa_inqbuf.product, 16);
+	scsi_strvis(cd->name, 16, sa->sa_inqbuf.product, 16);
 
 	cdattach(parent, cd, sc_link, &cd_scsibus_ops);
 

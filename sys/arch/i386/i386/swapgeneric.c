@@ -52,13 +52,13 @@ dev_t	rootdev = makedev(0,0);
 dev_t	dumpdev = makedev(0,1);
 int	nswap;
 struct	swdevt swdevt[] = {
-	{ 1, 0,	0 },
-	{ NODEV, 1,	0 },
+		{ 1, 0,	0 },
+		{ NODEV, 1,	0 },
 };
 long dumplo;
 int	dmmin, dmmax, dmtext;
 
-extern	struct driver wddriver;
+extern struct driver wddriver;
 
 struct genericconf {
 	caddr_t gc_driver;

@@ -61,10 +61,6 @@ typedef struct vm_aref 		*vm_aref_t;
  * TODO: place missing in relevant structures
  */
 struct uvm {
-	/* anon stuff */
-	struct vm_anon 				*afree;		/* anon free list */
-	simple_lock_data_t 			afreelock; 	/* lock on anon free list */
-
 	/* swap-related items */
 	simple_lock_data_t 			swap_data_lock;
 };
@@ -75,14 +71,9 @@ extern struct uvm uvm;
  * other than the vm system.
  * TODO: place missing in vmmeter.h
  */
-
 struct uvmexp {
-	/* vm_page counters */
-	int 						free;       /* number of free pages */
 	/* swap */
 	int 						swpgonly;	/* number of swap pages in use, not also in RAM */
-	int 						nanon;		/* number total of anon's in system */
-	int 						nfreeanon;	/* number of free anon's */
 };
 extern struct uvmexp uvmexp;
 

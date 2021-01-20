@@ -103,6 +103,22 @@ configure()
 	cold = 0;
 }
 
+/* Configure Machine-Dependent Devices */
+void
+devices_configure(devsw)
+	struct devswtable *devsw;
+{
+	/* machine-independent */
+	tty_init(devsw);	/* TTY */
+	dev_init(devsw);	/* dev */
+
+	/* machine-dependent */
+	DEVSWIO_CONFIG_INIT(devsw, NCMOS, NULL, &cmos_cdevsw, NULL);		/* CMOS Interface */
+
+	/* TODO: Need to be configured or fix missing */
+	DEVSWIO_CONFIG_INIT(devsw, NBPFILTER, NULL, &bpf_cdevsw, NULL);		/* 23: Berkeley packet filter */
+}
+
 /*
  * Configure swap space and related parameters.
  */
@@ -196,22 +212,4 @@ setroot()
 	if (temp == dumpdev)
 		dumpdev = swdevt[0].sw_dev;
 #endif
-}
-
-void
-devices_configure(devsw)
-	struct devswtable *devsw;
-{
-	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cons_cdevsw, NULL);			/* 0: virtual console */
-
-	DEVSWIO_CONFIG_INIT(devsw, NVND, &vnd_bdevsw, &vnd_cdevsw, NULL);	/* 14: vnode disk driver */
-
-	DEVSWIO_CONFIG_INIT(devsw, NCD, &ccd_bdevsw, &ccd_cdevsw, NULL);	/* 15: "Concatenated" disk driver */
-
-	DEVSWIO_CONFIG_INIT(devsw, NKSYMS, NULL, &ksyms_cdevsw, NULL);		/* 50: Kernel symbols device */
-
-	/* TODO: Need to be configured or fix missing */
-	DEVSWIO_CONFIG_INIT(devsw, NBPFILTER, NULL, &bpf_cdevsw, NULL);		/* 23: Berkeley packet filter */
-
-	DEVSWIO_CONFIG_INIT(devsw, NCMOS, NULL, &cmos_cdevsw, NULL);		/* cmos ram */
 }

@@ -56,7 +56,8 @@ void
 vm_anon_init()
 {
 	struct vm_anon *anon;
-	int nanon = uvmexp.free - (uvmexp.free / 16); /* XXXCDC ??? */
+
+	int nanon = cnt.v_free_count - (cnt.v_free_count / 16); /* XXXCDC ??? */
 	int lcv;
 
 	/*
@@ -69,13 +70,13 @@ vm_anon_init()
 	}
 
 	memset(anon, 0, sizeof(*anon) * nanon);
-	uvm.afree = NULL;
-	uvmexp.nanon = uvmexp.nfreeanon = nanon;
+	anon->u.an_free = NULL;
+	cnt.v_free_count = cnt.v_anon_free_count = nanon;
 	for (lcv = 0 ; lcv < nanon ; lcv++) {
-		anon[lcv].u.an_nxt = uvm.afree;
-		uvm.afree = &anon[lcv];
+		anon[lcv].u.an_nxt = anon->u.an_free;
+		anon->u.an_free = &anon[lcv];
 	}
-	simple_lock_init(&uvm.afreelock);
+	simple_lock_init(&anon->u.an_freelock);
 }
 
 /*
@@ -97,16 +98,16 @@ vm_anon_add(pages)
 		panic("uvm_anon_add");
 	}
 
-	simple_lock(&uvm.afreelock);
+	simple_lock(&anon->u.an_freelock);
 	memset(anon, 0, sizeof(*anon) * pages);
-	uvmexp.nanon += pages;
-	uvmexp.nfreeanon += pages;
+	cnt.v_kernel_anons += pages;
+	cnt.v_anon_free_count += pages;
 	for (lcv = 0; lcv < pages; lcv++) {
 		simple_lock_init(&anon->an_lock);
-		anon[lcv].u.an_nxt = uvm.afree;
-		uvm.afree = &anon[lcv];
+		anon[lcv].u.an_nxt = anon->u.an_free;
+		anon->u.an_free = &anon[lcv];
 	}
-	simple_unlock(&uvm.afreelock);
+	simple_unlock(&anon->u.an_freelock);
 }
 
 /*
@@ -117,16 +118,16 @@ vm_analloc()
 {
 	struct vm_anon *a;
 
-	simple_lock(&uvm.afreelock);
-	a = uvm.afree;
+	simple_lock(&a->u->an_freelock);
+	a = a->u.an_free;
 	if (a) {
-		uvm.afree = a->u.an_nxt;
-		uvmexp.nfreeanon--;
+		a->u.an_free = a->u.an_nxt;
+		cnt.v_anon_free_count--;
 		a->an_ref = 1;
 		a->an_swslot = 0;
 		a->u.an_page = NULL;		/* so we can free quickly */
 	}
-	simple_unlock(&uvm.afreelock);
+	simple_unlock(&a->u.an_freelock);
 	return(a);
 }
 
@@ -218,11 +219,11 @@ vm_anfree(anon)
 	 * now that we've stripped the data areas from the anon, free the anon
 	 * itself!
 	 */
-	simple_lock(&uvm.afreelock);
-	anon->u.an_nxt = uvm.afree;
-	uvm.afree = anon;
-	uvmexp.nfreeanon++;
-	simple_unlock(&uvm.afreelock);
+	simple_lock(&anon->u.an_freelock);
+	anon->u.an_nxt = anon->u.an_free;
+	anon->u.an_free = anon;
+	cnt.v_anon_free_count++;
+	simple_unlock(&anon->u.an_freelock);
 }
 
 /*

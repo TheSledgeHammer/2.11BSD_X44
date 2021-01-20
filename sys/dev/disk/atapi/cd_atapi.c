@@ -70,7 +70,7 @@ int	cd_atapibus_match (struct device *, struct cfdata *, void *);
 void	cd_atapibus_attach (struct device *, struct device *, void *);
 
 struct cfdriver cd_atapibus_cd = {
-	NULL, "cd_atapibus", cd_atapibus_match, cd_atapibus_attach, DV_DISK, sizeof(struct cd_softc)
+	NULL, "cd_atapibus", cd_atapibus_match, cd_atapibus_attach, DV_DULL, sizeof(struct cd_softc)
 };
 
 struct scsipi_inquiry_pattern cd_atapibus_patterns[] = {

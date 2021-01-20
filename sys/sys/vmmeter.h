@@ -10,45 +10,45 @@
 /*
  * Virtual memory related instrumentation
  */
-struct vmrate
-{
+struct vmrate {
 	/* General system activity. */
-
-	unsigned 	v_swtch;		/* context switches */
-	unsigned 	v_trap;			/* calls to trap */
-	unsigned 	v_syscall;		/* calls to syscall() */
-	unsigned 	v_intr;			/* device interrupts */
-	unsigned 	v_soft;			/* software interrupts */
-	unsigned 	v_faults;		/* total faults taken */
+#define	v_first	v_swtch
+	unsigned 	v_swtch;			/* context switches */
+	unsigned 	v_trap;				/* calls to trap */
+	unsigned 	v_syscall;			/* calls to syscall() */
+	unsigned 	v_intr;				/* device interrupts */
+	unsigned 	v_soft;				/* software interrupts */
+	unsigned 	v_faults;			/* total faults taken */
 
 	/* Virtual memory activity. */
-	unsigned 	v_pdma;			/* pseudo-dma interrupts */
-	unsigned 	v_ovly;			/* overlay emts */
-	unsigned 	v_fpsim;		/* floating point simulator faults */
-	unsigned 	v_pswpin;		/* pages swapped in */
-	unsigned 	v_pswpout;		/* pages swapped out */
-	unsigned 	v_pgin;			/* pageins */
-	unsigned 	v_pgout;		/* pageouts */
-	unsigned 	v_swpin;		/* swapins */
-	unsigned 	v_swpout;		/* swapouts */
+	unsigned 	v_pdma;				/* pseudo-dma interrupts */
+	unsigned 	v_ovly;				/* overlay emts */
+	unsigned 	v_fpsim;			/* floating point simulator faults */
+	unsigned 	v_pswpin;			/* pages swapped in */
+	unsigned 	v_pswpout;			/* pages swapped out */
+	unsigned 	v_pgin;				/* pageins */
+	unsigned 	v_pgout;			/* pageouts */
+#define	v_last	v_pswpout
+	unsigned 	v_swpin;			/* swapins */
+	unsigned 	v_swpout;			/* swapouts */
 
-	unsigned 	v_lookups;		/* object cache lookups */
-	unsigned 	v_hits;			/* object cache hits */
-	unsigned 	v_vm_faults;	/* number of address memory faults */
-	unsigned 	v_cow_faults;	/* number of copy-on-writes */
-	unsigned 	v_pageins;		/* number of pageins */
-	unsigned 	v_pageouts;		/* number of pageouts */
-	unsigned	v_pgpgin;		/* pages paged in */
-	unsigned 	v_pgpgout;		/* pages paged out */
-	unsigned 	v_intrans;		/* intransit blocking page faults */
-	unsigned 	v_reactivated;	/* number of pages reactivated from free list */
-	unsigned 	v_rev;			/* revolutions of the hand */
-	unsigned 	v_scan;			/* scans in page out daemon */
-	unsigned 	v_dfree;		/* pages freed by daemon */
-	unsigned 	v_pfree;		/* pages freed by exiting processes */
-	unsigned 	v_tfree;		/* total pages freed */
-	unsigned 	v_zfod;			/* pages zero filled on demand */
-	unsigned 	v_nzfod;		/* number of zfod's created */
+	unsigned 	v_lookups;			/* object cache lookups */
+	unsigned 	v_hits;				/* object cache hits */
+	unsigned 	v_vm_faults;		/* number of address memory faults */
+	unsigned 	v_cow_faults;		/* number of copy-on-writes */
+	unsigned 	v_pageins;			/* number of pageins */
+	unsigned 	v_pageouts;			/* number of pageouts */
+	unsigned	v_pgpgin;			/* pages paged in */
+	unsigned 	v_pgpgout;			/* pages paged out */
+	unsigned 	v_intrans;			/* intransit blocking page faults */
+	unsigned 	v_reactivated;		/* number of pages reactivated from free list */
+	unsigned 	v_rev;				/* revolutions of the hand */
+	unsigned 	v_scan;				/* scans in page out daemon */
+	unsigned 	v_dfree;			/* pages freed by daemon */
+	unsigned 	v_pfree;			/* pages freed by exiting processes */
+	unsigned 	v_tfree;			/* total pages freed */
+	unsigned 	v_zfod;				/* pages zero filled on demand */
+	unsigned 	v_nzfod;			/* number of zfod's created */
 
 	/* Distribution of page usages. */
 	unsigned 	v_page_size;		/* page size in bytes */
@@ -61,6 +61,10 @@ struct vmrate
 	unsigned 	v_inactive_target; 	/* number of pages desired inactive */
 	unsigned 	v_inactive_count;  	/* number of pages inactive */
 
+	/* Distribution of anon usages. */
+//	unsigned	v_kernel_anons;		/* total number of anons in system */
+//	unsigned	v_anon_free_count;	/* number of anons free */
+
 	/* Distribution of segment usages */
 //	unsigned 	v_segment_size;				/* segment size in bytes */
 //	unsigned 	v_kernel_segments;			/* total number of segments in system */
@@ -68,25 +72,22 @@ struct vmrate
 //	unsigned 	v_segment_active_count;		/* number of segments active */
 //	unsigned 	v_segment_inactive_count;  	/* number of segments inactive */
 };
-#define	v_first	v_swtch
-#define	v_last	v_pswpout
 
-struct vmsum
-{
-	long	v_swtch;	/* context switches */
-	long	v_trap;		/* calls to trap */
-	long	v_syscall;	/* calls to syscall() */
-	long	v_intr;		/* device interrupts */
-	long	v_soft;		/* software interrupts */
-	long	v_pdma;		/* pseudo-dma interrupts */
-	long	v_ovly;		/* overlay emts */
-	long	v_fpsim;	/* floating point simulator faults */
-	long	v_pswpin;	/* pages swapped in */
-	long	v_pswpout;	/* pages swapped out */
-	long	v_pgin;		/* pageins */
-	long	v_pgout;	/* pageouts */
-	long	v_swpin;	/* swapins */
-	long	v_swpout;	/* swapouts */
+struct vmsum {
+	long		v_swtch;			/* context switches */
+	long		v_trap;				/* calls to trap */
+	long		v_syscall;			/* calls to syscall() */
+	long		v_intr;				/* device interrupts */
+	long		v_soft;				/* software interrupts */
+	long		v_pdma;				/* pseudo-dma interrupts */
+	long		v_ovly;				/* overlay emts */
+	long		v_fpsim;			/* floating point simulator faults */
+	long		v_pswpin;			/* pages swapped in */
+	long		v_pswpout;			/* pages swapped out */
+	long		v_pgin;				/* pageins */
+	long		v_pgout;			/* pageouts */
+	long		v_swpin;			/* swapins */
+	long		v_swpout;			/* swapouts */
 };
 #ifdef KERNEL
 struct vmrate	cnt, rate;
@@ -94,22 +95,21 @@ struct vmsum	sum;
 #endif
 
 /* systemwide totals computed every five seconds */
-struct vmtotal
-{
-	short	t_rq;		/* length of the run queue */
-	short	t_dw;		/* jobs in ``disk wait'' (neg priority) */
-	short	t_pw;		/* jobs in page wait */
-	short	t_sl;		/* jobs sleeping in core */
-	short	t_sw;		/* swapped out runnable/short block jobs */
-	long	t_vm;		/* total virtual memory, clicks */
-	long	t_avm;		/* active virtual memory, clicks */
-	long	t_rm;		/* total real memory, clicks */
-	long	t_arm;		/* active real memory, clicks */
-	long	t_vmshr;	/* virtual memory used by text, clicks */
-	long	t_avmshr;	/* active virtual memory used by text, clicks */
-	long	t_rmshr;	/* real memory used by text, clicks */
-	long	t_armshr;	/* active real memory used by text, clicks */
-	long	t_free;		/* free memory pages, kb */
+struct vmtotal {
+	short		t_rq;				/* length of the run queue */
+	short		t_dw;				/* jobs in ``disk wait'' (neg priority) */
+	short		t_pw;				/* jobs in page wait */
+	short		t_sl;				/* jobs sleeping in core */
+	short		t_sw;				/* swapped out runnable/short block jobs */
+	long		t_vm;				/* total virtual memory, clicks */
+	long		t_avm;				/* active virtual memory, clicks */
+	long		t_rm;				/* total real memory, clicks */
+	long		t_arm;				/* active real memory, clicks */
+	long		t_vmshr;			/* virtual memory used by text, clicks */
+	long		t_avmshr;			/* active virtual memory used by text, clicks */
+	long		t_rmshr;			/* real memory used by text, clicks */
+	long		t_armshr;			/* active real memory used by text, clicks */
+	long		t_free;				/* free memory pages, kb */
 };
 #ifdef KERNEL
 struct	vmtotal total;

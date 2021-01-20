@@ -84,9 +84,6 @@
 #include <sys/disk.h>
 #include <sys/syslog.h>
 #include <sys/proc.h>
-#if NRND > 0
-#include <sys/rnd.h>
-#endif
 
 #include <vm/include/vm.h>
 

@@ -106,7 +106,7 @@ struct vm_page {
 	vm_segment_t			segment;	/* which segment am I in (O,(S,P))*/
 	vm_offset_t				offset;		/* offset into segment (O,(S,P)) */
 
-	avm_anon_t				anon;		/* anon (O,P) */
+	vm_anon_t				anon;		/* anon (O,(S,P)) */
 	u_short					loan_count;
 	u_short					pqflags;	/* page queue flags [P] */
 
