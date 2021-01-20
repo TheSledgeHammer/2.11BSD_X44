@@ -54,12 +54,24 @@ void scsi_error (struct scsi_xfer *, int);
 
 LIST_HEAD(xs_free_list, scsi_xfer) xs_free_list;
 
-static __inline struct scsi_xfer* scsi_make_xs(struct scsi_link*,
-		struct scsi_generic*, int cmdlen, u_char *data_addr, int datalen,
-		int retries, int timeout, struct buf*, int flags);
+static __inline struct scsi_xfer* scsi_make_xs(struct scsi_link*, struct scsi_generic*, int cmdlen, u_char *data_addr, int datalen, int retries, int timeout, struct buf*, int flags);
 
 int sc_err1 (struct scsi_xfer *, int);
 int scsi_interpret_sense (struct scsi_xfer *);
+/*
+ * Called when a scsibus is attached to initialize global data.
+ */
+void
+scsipi_init()
+{
+	static int scsipi_init_done;
+
+
+	if (scsipi_init_done)
+		return;
+	scsipi_init_done = 1;
+
+}
 
 /*
  * Get a scsi transfer structure for the caller. Charge the structure

@@ -13,4 +13,4 @@
 #define	DMA37MD_CASCADE	0xc0	/* cascade mode */
 	
 #define	DMA37SM_CLEAR	0x00	/* clear mask bit */
-#define	DMA37SM_SET	0x04	/* set mask bit */
+#define	DMA37SM_SET		0x04	/* set mask bit */

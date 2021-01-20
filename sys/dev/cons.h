@@ -91,7 +91,7 @@ void	nullcnpollc (dev_t, int);
 	dev_decl(n,cnprobe); dev_decl(n,cninit); dev_decl(n,cngetc); 	\
 	dev_decl(n,cnputc); dev_decl(n,cnpollc);
 
-#define	cons_init(n) { \
+#define	cons_init(n) { 												\
 	dev_init(n,cnprobe), dev_init(n,cninit), dev_init(n,cngetc), 	\
 	dev_init(n,cnputc), dev_init(n,cnpollc) 						\
 	0, 0 }

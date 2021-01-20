@@ -68,9 +68,9 @@
 #define	PCIC_IDENT_REV_I82365SLR1			0x03
 
 #define	PCIC_IF_STATUS						0x01	/* RO */
-#define	PCIC_IF_STATUS_GPI					0x80 /* General Purpose Input */
+#define	PCIC_IF_STATUS_GPI					0x80 	/* General Purpose Input */
 #define	PCIC_IF_STATUS_POWERACTIVE			0x40
-#define	PCIC_IF_STATUS_READY				0x20 /* really READY/!BUSY */
+#define	PCIC_IF_STATUS_READY				0x20 	/* really READY/!BUSY */
 #define	PCIC_IF_STATUS_MEM_WP				0x10
 #define	PCIC_IF_STATUS_CARDDETECT_MASK		0x0C
 #define	PCIC_IF_STATUS_CARDDETECT_PRESENT	0x0C
@@ -101,7 +101,7 @@
 #define	PCIC_CSC							0x04	/* RW */
 #define	PCIC_CSC_ZERO						0xE0
 #define	PCIC_CSC_GPI						0x10
-#define	PCIC_CSC_CD							0x08 /* Card Detect Change */
+#define	PCIC_CSC_CD							0x08 	/* Card Detect Change */
 #define	PCIC_CSC_READY						0x04
 #define	PCIC_CSC_BATTWARN					0x02
 #define	PCIC_CSC_BATTDEAD					0x01	/* for memory cards */
@@ -330,3 +330,8 @@
 #define	PCIC_CIRRUS_CHIP_INFO_CHIP_ID			0xC0
 #define	PCIC_CIRRUS_CHIP_INFO_SLOTS				0x20
 #define	PCIC_CIRRUS_CHIP_INFO_REV				0x1F
+
+#define PCICCF_CONTROLLER				0
+#define PCICCF_CONTROLLER_DEFAULT 		-1
+#define PCICCF_SOCKET					1
+#define PCICCF_SOCKET_DEFAULT 			-1

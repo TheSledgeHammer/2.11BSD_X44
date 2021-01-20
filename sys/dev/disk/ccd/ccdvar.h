@@ -114,9 +114,9 @@ struct ccd_ioctl {
 };
 
 /* ccd_flags */
-#define	CCDF_SWAP		0x01	/* interleave should be dmmax */
-#define CCDF_UNIFORM	0x02	/* use LCCD of sizes for uniform interleave */
-#define CCDF_MIRROR		0x04	/* enable data mirroring */
+#define	CCDF_SWAP			0x01	/* interleave should be dmmax */
+#define CCDF_UNIFORM		0x02	/* use LCCD of sizes for uniform interleave */
+#define CCDF_MIRROR			0x04	/* enable data mirroring */
 
 /* Mask of user-settable ccd flags. */
 #define CCDF_USERMASK	(CCDF_SWAP|CCDF_UNIFORM|CCDF_MIRROR)

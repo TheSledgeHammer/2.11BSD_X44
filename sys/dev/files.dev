@@ -1,13 +1,16 @@
 #	$NetBSD: majors.storage,v 1.1 2014/09/19 17:32:34 matt Exp $
 # 	$211BSD:
 #
+#	The dev folder is broken down into two layers.
+#	- Core (1st Layer): 
+#		- Consists of all the machine-independent common code using the following categories:
+#			- Currently: EISA, IC, ISA, ISAPNP, PCI, PCMCIA
+#	- Devices (2nd Layer):
+#		- Consists of all machine-independent devices using the following categories:
+#			- Currently: Audio, Disk, Misc(kobj, ksym, etc), USB, Video
 #
-# XXX Needs to be included in devices.archtype (Follow i386 for an example)
-
+# 	XXX: Needs to be included in devices.archtype (Follow i386 for an example)
 # 
-# Common files for devices
-#
-#
 # sub-directory configuration files
 #
 
@@ -17,13 +20,8 @@ include		"dev/disk/files.disk"
 include		"dev/usb/files.usb"
 #include	"dev/video/files.video"
 
-#
-# Dev common configuration files 
-#
+# Misc configuration files 
 file		dev/cons.c			cons
-file 		dev/ccd.c			ccd		needs-flag
-file 		dev/vnd.c			vnd		needs-flag
-
 file		dev/kobj/kobj.c
-file		dev/ksym/ksyms.c	ksyms	needs-flag
+file		dev/ksym/ksyms.c	ksyms		needs-flag
 

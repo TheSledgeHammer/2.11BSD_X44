@@ -43,13 +43,13 @@ dev_init(devsw)
 	audio_init(devsw);
 	console_init(devsw);
 	disk_init(devsw);
-	pseudo_init(devsw);
+	misc_init(devsw);
 	usb_init(devsw);
 	video_init(devsw);
 }
 
 /* Add audio driver configuration */
-void
+static void
 audio_init(devsw)
 	struct devswtable *devsw;
 {
@@ -57,7 +57,7 @@ audio_init(devsw)
 }
 
 /* Add console driver configuration */
-void
+static void
 console_init(devsw)
 	struct devswtable *devsw;
 {
@@ -65,7 +65,7 @@ console_init(devsw)
 }
 
 /* Add disk driver configuration */
-void
+static void
 disk_init(devsw)
 	struct devswtable *devsw;
 {
@@ -81,26 +81,19 @@ disk_init(devsw)
 	DEVSWIO_CONFIG_INIT(devsw, NSS, NULL, &ss_cdevsw, NULL);			/* SCSI scanner */
 }
 
-/* Add ports driver configuration */
-void
-ports_init(devsw)
+/* Add miscellaneous driver configuration */
+static void
+misc_init(devsw)
 	struct devswtable *devsw;
 {
 	DEVSWIO_CONFIG_INIT(devsw, NCOM, NULL, &com_cdevsw, NULL);			/* Serial port */
-}
-
-/* Add pseudo driver configuration */
-void
-pseudo_init(devsw)
-	struct devswtable *devsw;
-{
 	DEVSWIO_CONFIG_INIT(devsw, NVND, &vnd_bdevsw, &vnd_cdevsw, NULL);	/* vnode disk driver */
 	DEVSWIO_CONFIG_INIT(devsw, NCD, &ccd_bdevsw, &ccd_cdevsw, NULL);	/* "Concatenated" disk driver */
 	DEVSWIO_CONFIG_INIT(devsw, NKSYMS, NULL, &ksyms_cdevsw, NULL);		/* Kernel symbols device */
 }
 
 /* Add usb driver configuration */
-void
+static void
 usb_init(devsw)
 	struct devswtable *devsw;
 {
@@ -108,7 +101,7 @@ usb_init(devsw)
 }
 
 /* Add video driver configuration */
-void
+static void
 video_init(devsw)
 	struct devswtable *devsw;
 {

@@ -6,21 +6,18 @@
 # appropriate devices.
 
 # ATAPI disks
-file	dev/disk/scsi/scsiconf.c		atapibus
-file	dev/disk/scsi/scsi_base.c		atapibus
-file	dev/disk/scsi/scsi_ioctl.c		atapibus
 file	dev/disk/atapi/atapi_base.c		atapibus
-file	dev/disk/atapi/atapi_wdc.c		atapibus & wdc_base
+file	dev/disk/atapi/atapi_wdc.c		atapibus & atabus & wdc_base
 
 device	atapibus {drive = -1}
 attach	atapibus at atapi
-file	dev/disk/atapi/atapiconf.c      atapibus		needs-flag
+file	dev/disk/atapi/atapiconf.c      atapibus						needs-flag
 
 
 device	cd: disk
-attach	cd at atapibus with cd_atapibus
+attach	cd at atapibus
 file	dev/disk/atapi/cd_atapi.c		cd_atapibus
 
 device	sd: disk
-attach	sd at atapibus with sd_atapibus
+attach	sd at atapibus
 file	dev/disk/atapi/sd_atapi.c		sd_atapibus

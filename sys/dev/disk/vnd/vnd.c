@@ -82,7 +82,7 @@
 
 #include <miscfs/specfs/specdev.h>
 
-#include <dev/vndioctl.h>
+#include <dev/disk/vnd/vndioctl.h>
 
 #ifdef DEBUG
 int dovndcluster = 1;

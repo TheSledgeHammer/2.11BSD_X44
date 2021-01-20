@@ -62,7 +62,7 @@
 #include <sys/fcntl.h>
 #endif
 
-#include <dev/ccdvar.h>
+#include <dev/disk/ccd/ccdvar.h>
 
 
 #ifdef DEBUG

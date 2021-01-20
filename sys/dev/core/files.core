@@ -1,6 +1,7 @@
 # $211BSD$
 #
-# Core Configuration Files
+# Core Configuration Files:
+# Common device code
 #
 include 	"dev/core/eisa/files.eisa"
 include 	"dev/core/isa/files.isa"

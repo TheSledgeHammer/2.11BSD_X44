@@ -54,10 +54,10 @@
 #include <machine/bus.h>
 
 #ifndef __BUS_SPACE_HAS_STREAM_METHODS
-#define    bus_space_write_multi_stream_2    bus_space_write_multi_2
-#define    bus_space_write_multi_stream_4    bus_space_write_multi_4
-#define    bus_space_read_multi_stream_2    bus_space_read_multi_2
-#define    bus_space_read_multi_stream_4    bus_space_read_multi_4
+#define    bus_space_write_multi_stream_2   	bus_space_write_multi_2
+#define    bus_space_write_multi_stream_4   	bus_space_write_multi_4
+#define    bus_space_read_multi_stream_2    	bus_space_read_multi_2
+#define    bus_space_read_multi_stream_4    	bus_space_read_multi_4
 #endif /* __BUS_SPACE_HAS_STREAM_METHODS */
 
 #include <dev/disk/ata/atareg.h>

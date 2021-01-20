@@ -43,23 +43,14 @@
 #include <core/pci/pcireg.h>
 #include <core/pci/pcivar.h>
 
-#ifdef __BROKEN_INDIRECT_CONFIG
-int pcimatch (struct device *, void *, void *);
-#else
-int pcimatch (struct device *, struct cfdata *, void *);
-#endif
-void pciattach (struct device *, struct device *, void *);
+int 	pcimatch (struct device *, struct cfdata *, void *);
+void 	pciattach (struct device *, struct device *, void *);
+int		pciprint (void *, const char *);
+int		pcisubmatch (struct device *, struct cfdata *, void *);
 
 struct cfdriver pci_cd = {
 	NULL, "pci", pcimatch, pciattach, DV_DULL, sizeof(struct device)
 };
-
-int	pciprint (void *, const char *);
-#ifdef __BROKEN_INDIRECT_CONFIG
-int	pcisubmatch (struct device *, void *, void *);
-#else
-int	pcisubmatch (struct device *, struct cfdata *, void *);
-#endif
 
 /*
  * Callback so that ISA/EISA bridges can attach their child busses

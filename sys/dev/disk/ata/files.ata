@@ -8,7 +8,7 @@
 # ATA disks
 device	wd: disk
 attach	wd at ata
-file	dev/ata/wd.c				wd needs-flag
+file	dev/ata/wd.c				wd 							needs-flag
 file	dev/ata/ata_wdc.c			wd & wdc_base
 
 file	dev/ata/ata.c				ata | atapi

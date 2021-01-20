@@ -5,17 +5,17 @@
 # their own "major" declarations for the appropriate devices.
 
 # SCSI disks
-file	dev/disk/scsi/scsi_base.c		scsi
-file	dev/disk/scsi/scsi_ioctl.c		scsi
-file	dev/disk/scsi/scsiconf.c		scsi
-file	dev/disk/scsi/scsi_base.c		scsi 
+file	dev/disk/scsi/scsi_base.c		scsi | atapibus
+file	dev/disk/scsi/scsi_ioctl.c		scsi | atapibus
+file	dev/disk/scsi/scsiconf.c		scsi | atapibus
+file	dev/disk/scsi/scsi_base.c		scsi | atapibus
 
 device	scsibus {target = -1, lun = -1}
 attach	scsibus at scsi
 file	dev/disk/scsi/scsiconf.c		scsibus							needs-flag
 
 device	cd: disk
-attach	cd at scsibus with cd_scsibus
+attach	cd at scsibus
 file	dev/disk/scsi/cd_scsi.c			cd_scsibus
 file	dev/disk/scsi/cd.c				cd | cd_scsibus | cd_atapibus 	needs-flag
 
@@ -24,7 +24,7 @@ attach	ch at scsibus
 file	dev/disk/scsi/ch.c				ch needs-flag
 
 device	sd: disk
-attach	sd at scsibus with sd_scsibus
+attach	sd at scsibus
 file	dev/disk/scsi/sd_scsi.c			sd_scsibus
 file	dev/disk/scsi/sd.c				sd | sd_scsibus | sd_atapibus 	needs-flag
 
@@ -39,7 +39,5 @@ file	dev/disk/scsi/ss_mustek.c		ss
 file	dev/disk/scsi/ss_scanjet.c		ss
 
 device	uk: disk
-attach	uk at scsibus
-#attach	uk at scsibus with uk_scsibus
-#attach	uk at atapibus with uk_atapibus
+attach	uk at scsibus, atapibus
 file	dev/disk/scsi/uk.c				uk 								needs-flag

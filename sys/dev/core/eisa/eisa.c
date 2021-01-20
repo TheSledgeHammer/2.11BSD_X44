@@ -50,42 +50,22 @@
 #include <core/eisa/eisareg.h>
 #include <core/eisa/eisavar.h>
 
-#ifdef __BROKEN_INDIRECT_CONFIG
-int		eisamatch (struct device *, void *, void *);
-#else
 int		eisamatch (struct device *, struct cfdata *, void *);
-#endif
 void	eisaattach (struct device *, struct device *, void *);
+int		eisasubmatch (struct device *, struct cfdata *, void *);
+int	 	eisaprint (void *, const char *);
+void 	eisa_devinfo (const char *, char *);
 
 struct cfdriver eisa_cd = {
 	NULL, "eisa", eisamatch, eisaattach, DV_DULL, sizeof(struct device)
 };
 
-#ifdef __BROKEN_INDIRECT_CONFIG
-int	eisasubmatch (struct device *, void *, void *);
-#else
-int	eisasubmatch (struct device *, struct cfdata *, void *);
-#endif
-int	 eisaprint (void *, const char *);
-void eisa_devinfo (const char *, char *);
-
 int
-#ifdef __BROKEN_INDIRECT_CONFIG
-eisamatch(parent, match, aux)
-#else
 eisamatch(parent, cf, aux)
-#endif
 	struct device *parent;
-#ifdef __BROKEN_INDIRECT_CONFIG
-	void *match;
-#else
 	struct cfdata *cf;
-#endif
 	void *aux;
 {
-#ifdef __BROKEN_INDIRECT_CONFIG
-	struct cfdata *cf = match;
-#endif
 	struct eisabus_attach_args *eba = aux;
 
 	if (strcmp(eba->eba_busname, cf->cf_driver->cd_name))
@@ -113,28 +93,17 @@ eisaprint(aux, pnp)
 }
 
 int
-#ifdef __BROKEN_INDIRECT_CONFIG
-eisasubmatch(parent, match, aux)
-#else
 eisasubmatch(parent, cf, aux)
-#endif
 	struct device *parent;
-#ifdef __BROKEN_INDIRECT_CONFIG
-	void *match;
-#else
 	struct cfdata *cf;
-#endif
 	void *aux;
 {
-#ifdef __BROKEN_INDIRECT_CONFIG
-	struct cfdata *cf = match;
-#endif
 	struct eisa_attach_args *ea = aux;
 
 	if (cf->eisacf_slot != EISA_UNKNOWN_SLOT &&
 	    cf->eisacf_slot != ea->ea_slot)
 		return 0;
-	return ((*cf->cf_attach->ca_match)(parent, cf, aux));
+	return ((*cf->cf_driver->cd_match)(parent, cf, aux));
 }
 
 void

@@ -114,12 +114,12 @@
 
 LIST_HEAD(xfer_free_list, wdc_xfer) xfer_free_list;
 
-static void  __wdcerror	  (struct channel_softc*, char *);
-static int   __wdcwait_reset (struct channel_softc *, int);
-void  __wdccommand_done (struct channel_softc *, struct wdc_xfer *);
-void  __wdccommand_start (struct channel_softc *, struct wdc_xfer *);
-int   __wdccommand_intr (struct channel_softc *, struct wdc_xfer *, int);
-int   wdprint (void *, const char *);
+static void __wdcerror	  (struct channel_softc*, char *);
+static int  __wdcwait_reset (struct channel_softc *, int);
+void  		__wdccommand_done (struct channel_softc *, struct wdc_xfer *);
+void  		__wdccommand_start (struct channel_softc *, struct wdc_xfer *);
+int   		__wdccommand_intr (struct channel_softc *, struct wdc_xfer *, int);
+int   		wdprint (void *, const char *);
 
 
 #define DEBUG_INTR   0x01

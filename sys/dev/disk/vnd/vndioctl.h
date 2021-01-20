@@ -50,6 +50,15 @@ struct vnd_ioctl {
 	int		vnd_size;	/* (returned) size of disk */
 };
 
+
+/* sc_flags */
+#define	VNF_INITED		0x01	/* unit has been initialized */
+#define	VNF_WLABEL		0x02	/* label area is writable */
+#define	VNF_LABELLING	0x04	/* unit is currently being labelled */
+#define	VNF_WANTED		0x08	/* someone is waiting to obtain a lock */
+#define	VNF_LOCKED		0x10	/* unit is locked */
+#define	VNF_BUSY		0x20	/* unit is busy */
+
 /*
  * Before you can use a unit, it must be configured with VNDIOCSET.
  * The configuration persists across opens and closes of the device;

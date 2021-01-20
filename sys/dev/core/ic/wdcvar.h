@@ -39,9 +39,9 @@
 /* XXX for scsi_adapter */
 #include <sys/queue.h>
 #include <dev/disk/scsi/scsi_all.h>
-#include <dev/disk/scsi/atapiconf.h>
+#include <dev/disk/atapi/atapiconf.h>
 
-#define	WAITTIME    (10 * hz)    /* time to wait for a completion */
+#define	WAITTIME    		(10 * hz)    /* time to wait for a completion */
 	/* this is a lot for hard drives, but not for cdroms */
 
 struct channel_queue {  /* per channel queue (may be shared) */
@@ -50,14 +50,14 @@ struct channel_queue {  /* per channel queue (may be shared) */
 
 struct channel_softc { /* Per channel data */
 	/* Our location */
-	int channel;
+	int 					channel;
 	/* Our controller's softc */
-	struct wdc_softc *wdc;
+	struct wdc_softc 		*wdc;
 	/* Our registers */
-	bus_space_tag_t       cmd_iot;
-	bus_space_handle_t    cmd_ioh;
-	bus_space_tag_t       ctl_iot;
-	bus_space_handle_t    ctl_ioh;
+	bus_space_tag_t       	cmd_iot;
+	bus_space_handle_t    	cmd_ioh;
+	bus_space_tag_t       	ctl_iot;
+	bus_space_handle_t    	ctl_ioh;
 	/* data32{iot,ioh} are only used for 32 bit xfers */
 	bus_space_tag_t         data32iot;
 	bus_space_handle_t      data32ioh;
@@ -75,13 +75,13 @@ struct channel_softc { /* Per channel data */
 	 * channel queues. May be the same for all channels, if hw channels
 	 * are not independants
 	 */
-	struct channel_queue *ch_queue;
+	struct channel_queue 	*ch_queue;
 };
 
 struct wdc_softc { /* Per controller state */
-	struct device sc_dev;
+	struct device 			sc_dev;
 	/* mandatory fields */
-	int           cap;
+	int           			cap;
 /* Capabilities supported by the controller */
 #define	WDC_CAPABILITY_DATA16 			0x0001    /* can do  16-bit data access */
 #define	WDC_CAPABILITY_DATA32 			0x0002    /* can do 32-bit data access */
@@ -94,39 +94,39 @@ struct wdc_softc { /* Per controller state */
 #define WDC_CAPABILITY_NO_EXTRA_RESETS 	0x0100 	/* only reset once */
 #define WDC_CAPABILITY_PREATA 			0x0200 	/* ctrl can be a pre-ata one */
 #define WDC_CAPABILITY_IRQACK 			0x0400 	/* callback to ack interrupt */
-	u_int8_t      PIO_cap; /* highest PIO mode supported */
-	u_int8_t      DMA_cap; /* highest DMA mode supported */
-	u_int8_t      UDMA_cap; /* highest UDMA mode supported */
-	int nchannels;	/* Number of channels on this controller */
-	struct channel_softc **channels;  /* channels-specific datas (array) */
+	u_int8_t      			PIO_cap; /* highest PIO mode supported */
+	u_int8_t      			DMA_cap; /* highest DMA mode supported */
+	u_int8_t      			UDMA_cap; /* highest UDMA mode supported */
+	int 					nchannels;	/* Number of channels on this controller */
+	struct channel_softc 	**channels;  /* channels-specific datas (array) */
 
 	/*
 	 * The reference count here is used for both IDE and ATAPI devices.
 	 */
-	struct scsi_adapter sc_atapi_adapter;
+	struct scsi_adapter 	sc_atapi_adapter;
 
 	/* if WDC_CAPABILITY_DMA set in 'cap' */
-	void            *dma_arg;
-	int            (*dma_init) (void *, int, int, void *, size_t, int);
-	void           (*dma_start) (void *, int, int);
-	int            (*dma_finish) (void *, int, int, int);
+	void            		*dma_arg;
+	int            			(*dma_init) (void *, int, int, void *, size_t, int);
+	void           			(*dma_start) (void *, int, int);
+	int            			(*dma_finish) (void *, int, int, int);
 /* flags passed to dma_init */
-#define WDC_DMA_READ 	0x01
-#define WDC_DMA_IRQW 	0x02
-	int		dma_status; /* status returned from dma_finish() */
-#define WDC_DMAST_NOIRQ	0x01	/* missing IRQ */
-#define WDC_DMAST_ERR	0x02	/* DMA error */
-#define WDC_DMAST_UNDER	0x04	/* DMA underrun */
+#define WDC_DMA_READ 		0x01
+#define WDC_DMA_IRQW 		0x02
+	int						dma_status; /* status returned from dma_finish() */
+#define WDC_DMAST_NOIRQ		0x01	/* missing IRQ */
+#define WDC_DMAST_ERR		0x02	/* DMA error */
+#define WDC_DMAST_UNDER		0x04	/* DMA underrun */
 
 	/* if WDC_CAPABILITY_HWLOCK set in 'cap' */
-	int            	(*claim_hw) (void *, int);
-	void           	(*free_hw) (void *);
+	int            			(*claim_hw) (void *, int);
+	void           			(*free_hw) (void *);
 
 	/* if WDC_CAPABILITY_MODE set in 'cap' */
-	void 			(*set_modes) (struct channel_softc *);
+	void 					(*set_modes) (struct channel_softc *);
 
 	/* if WDC_CAPABILITY_IRQACK set in 'cap' */
-	void			(*irqack) (struct channel_softc *);
+	void					(*irqack) (struct channel_softc *);
 };
 
  /*
@@ -134,27 +134,27 @@ struct wdc_softc { /* Per controller state */
   * These commands are queued in a list.
   */
 struct wdc_xfer {
-	volatile u_int c_flags;    
-#define C_ATAPI  	0x0001 /* xfer is ATAPI request */
-#define C_TIMEOU  	0x0002 /* xfer processing timed out */
-#define C_POLL		0x0004 /* cmd is polled */
-#define C_DMA		0x0008 /* cmd uses DMA */
-#define C_SENSE		0x0010 /* cmd is a internal command */
-#define C_INUSE  	0x0020 /* xfer struct is in use */
+	volatile u_int 			c_flags;
+#define C_ATAPI  			0x0001 /* xfer is ATAPI request */
+#define C_TIMEOU  			0x0002 /* xfer processing timed out */
+#define C_POLL				0x0004 /* cmd is polled */
+#define C_DMA				0x0008 /* cmd uses DMA */
+#define C_SENSE				0x0010 /* cmd is a internal command */
+#define C_INUSE  			0x0020 /* xfer struct is in use */
 
 	/* Informations about our location */
-	struct channel_softc *chp;
-	u_int8_t drive;
+	struct channel_softc 	*chp;
+	u_int8_t 				drive;
 
 	/* Information about the current transfer  */
-	void *cmd; /* wdc, ata or scsipi command structure */
-	void *databuf;
-	int c_bcount;      /* byte count left */
-	int c_skip;        /* bytes already transferred */
-	TAILQ_ENTRY(wdc_xfer) c_xferchain;
-	LIST_ENTRY(wdc_xfer) free_list;
-	void (*c_start) (struct channel_softc *, struct wdc_xfer *);
-	int  (*c_intr)  (struct channel_softc *, struct wdc_xfer *, int);
+	void 					*cmd; /* wdc, ata or scsipi command structure */
+	void 					*databuf;
+	int 					c_bcount;      /* byte count left */
+	int 					c_skip;        /* bytes already transferred */
+	TAILQ_ENTRY(wdc_xfer) 	c_xferchain;
+	LIST_ENTRY(wdc_xfer) 	free_list;
+	void 					(*c_start) (struct channel_softc *, struct wdc_xfer *);
+	int  					(*c_intr)  (struct channel_softc *, struct wdc_xfer *, int);
 };
 
 /*
@@ -189,12 +189,11 @@ void	wdc_delref (struct channel_softc *);
  * ST506 spec says that if READY or SEEKCMPLT go off, then the read or write
  * command is aborted.
  */   
-#define wait_for_drq(chp, timeout) wdcwait((chp), WDCS_DRQ, WDCS_DRQ, (timeout))
+#define wait_for_drq(chp, timeout) 		wdcwait((chp), WDCS_DRQ, WDCS_DRQ, (timeout))
 #define wait_for_unbusy(chp, timeout)	wdcwait((chp), 0, 0, (timeout))
-#define wait_for_ready(chp, timeout) wdcwait((chp), WDCS_DRDY, \
-		WDCS_DRDY, (timeout))
+#define wait_for_ready(chp, timeout) 	wdcwait((chp), WDCS_DRDY, WDCS_DRDY, (timeout))
 /* ATA/ATAPI specs says a device can take 31s to reset */
 #define WDC_RESET_WAIT 31000
 
 void wdc_atapibus_attach (struct channel_softc *);
-int  atapi_print       (void *, const char *);
+int  atapi_print (void *, const char *);

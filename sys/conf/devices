@@ -16,9 +16,9 @@ define	 									tape
 define	 									ifnet
 define	 									tty
 define	 									audio { }
-#define	 									scsi {[channel = -1]}
-#define	 									atapi { }
-#define  									miibus { }
+define	 									scsi {[channel = -1]}
+define	 									atapi { }
+
 
 # audio device attributes
 #define										mulaw

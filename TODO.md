@@ -23,8 +23,7 @@ A General todo list. Don't hesitate to add to this list. :)
 	
 ## arch:
 - i386/x86: (Merged under i386)
-	- Move to /dev: (update dependencies so this is possible)
-		- spkr.c, spkr.h, spkrreg.h, timerreg.h
+	- Move common code to /dev in following: spkr.c, spkr.h, spkrreg.h, timerreg.h
 
 ## devel: (planned)
 - Code planned for future integration
@@ -51,9 +50,12 @@ A General todo list. Don't hesitate to add to this list. :)
 ## dev:
 - Essential Driver Support:
 	- usb: 								Work in progress
-	- disk	(ata, atapi, ahci & scsi): 	Work in progress
 	- video:								Work in progress
 	- mouse/keyboard:						Work in progress
+- Add: Common Speaker code from i386
+- Fix:
+	- eisa: Missing tidbits.
+	- pci: Missing tidbits.
 
 ## lib:
 	

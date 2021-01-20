@@ -364,23 +364,11 @@ pcic_init_socket(h)
 }
 
 int
-#ifdef __BROKEN_INDIRECT_CONFIG
-pcic_submatch(parent, match, aux)
-#else
 pcic_submatch(parent, cf, aux)
-#endif
 	struct device *parent;
-#ifdef __BROKEN_INDIRECT_CONFIG
-	void *match;
-#else
 	struct cfdata *cf;
-#endif
 	void *aux;
 {
-#ifdef __BROKEN_INDIRECT_CONFIG
-	struct cfdata *cf = match;
-#endif
-
 	struct pcmciabus_attach_args *paa = aux;
 	struct pcic_handle *h = (struct pcic_handle *) paa->pch;
 
@@ -429,7 +417,7 @@ pcic_submatch(parent, cf, aux)
 		panic("unknown pcic socket");
 	}
 
-	return ((*cf->cf_attach->ca_match)(parent, cf, aux));
+	return ((*cf->cf_driver->cd_match)(parent, cf, aux));
 }
 
 int
