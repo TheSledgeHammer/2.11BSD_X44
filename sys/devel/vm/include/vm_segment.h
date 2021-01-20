@@ -61,8 +61,13 @@ struct vm_segment {
 
 	caddr_t						sg_laddr;				/* segment logical address */
 
-	union segment_register		*sg_register;			/* pointer to pseudo segment register */
-	int							sg_types;				/* see below (segment register type) */
+	union segment_register		sg_register;			/* pointer to pseudo segment register */
+
+#define sg_data 				sg_register.sp_data
+#define sg_stack 				sg_register.sp_stack
+#define sg_text 				sg_register.sp_text
+
+	int							sg_type;				/* see below (segment register type) */
 };
 
 /* flags */
@@ -87,24 +92,24 @@ struct vm_segment {
 /* pseudo segment registers */
 union segment_register {
 	struct {
-		segsz_t 			sg_dsize;
-		caddr_t				sg_daddr;
+		segsz_t 			sp_dsize;
+		caddr_t				sp_daddr;
 	} sp_data;
 	struct {
-		segsz_t 			sg_ssize;
-		caddr_t				sg_saddr;
+		segsz_t 			sp_ssize;
+		caddr_t				sp_saddr;
 	} sp_stack;
 	struct {
-		segsz_t 			sg_tsize;
-		caddr_t				sg_taddr;
+		segsz_t 			sp_tsize;
+		caddr_t				sp_taddr;
 	} sp_text;
 
-#define sg_daddr			sp_data.sg_daddr
-#define sg_dsize			sp_data.sg_dsize
-#define sg_saddr			sp_stack.sg_saddr
-#define sg_ssize			sp_stack.sg_ssize
-#define sg_taddr			sp_text.sg_taddr
-#define sg_tsize			sp_text.sg_tsize
+#define sg_daddr			sp_data.sp_daddr
+#define sg_dsize			sp_data.sp_dsize
+#define sg_saddr			sp_stack.sp_saddr
+#define sg_ssize			sp_stack.sp_ssize
+#define sg_taddr			sp_text.sp_taddr
+#define sg_tsize			sp_text.sp_tsize
 };
 
 /* types */
@@ -118,14 +123,29 @@ union segment_register {
 	(data)->sg_daddr = (daddr);					\
 };
 
+#define DATA_EXPAND(data, dsize, daddr) {		\
+	(data)->sg_dsize += (dsize);				\
+	(data)->sg_daddr += (daddr);				\
+};
+
 #define STACK_SEGMENT(stack, ssize, saddr) {	\
 	(stack)->sg_ssize = (ssize);				\
 	(stack)->sg_saddr = (saddr);				\
 };
 
+#define STACK_EXPAND(stack, ssize, saddr) {		\
+	(stack)->sg_ssize += (ssize);				\
+	(stack)->sg_saddr += (ssize);				\
+};
+
 #define TEXT_SEGMENT(text, tsize, taddr) {		\
 	(text)->sg_tsize = (tsize);					\
 	(text)->sg_taddr = (taddr);					\
+};
+
+#define TEXT_EXPAND(text, tsize, taddr) {		\
+	(text)->sg_tsize += (tsize);				\
+	(text)->sg_taddr += (taddr);				\
 };
 
 extern

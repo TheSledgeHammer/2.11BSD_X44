@@ -95,6 +95,8 @@ kthreadpool_create(struct kthreadpool *ktpool, u_char pri)
 	int ktflags;
 	int error;
 
+	register struct threadpool_itpc *itpc;
+
 	simple_lock(&ktpool->ktp_lock);
 	/* XXX overseer */
 	TAILQ_INIT(&ktpool->ktp_jobs);
@@ -236,7 +238,7 @@ kthreadpool_overseer_thread(void *arg)
 	int error;
 
 
-	KASSERT((ktpool->ktp_cpu == NULL) || (ktpool->ktp_cpu == curcpu()));
+	KASSERT((ktpool->ktp_cpu == NULL) || (ktpool->ktp_cpu == curcpu));
 	KASSERT((ktpool->ktp_cpu == NULL) || (curproc->p_flag & KT_BOUND));
 
 	/* Wait until we're initialized.  */

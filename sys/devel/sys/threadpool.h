@@ -58,7 +58,6 @@
  *
  * 	Look at kthreads & uthreads for corresponding information
  */
-//typedef void threadpool_job_fn_t(struct threadpool_job *, struct wqueue *, struct task *, task_fn_t);
 
 /* Threadpool Jobs */
 TAILQ_HEAD(job_head, threadpool_job);
@@ -73,26 +72,54 @@ struct threadpool_job  {
 	volatile unsigned int				job_refcnt;
 
 	struct threadpool_itpc				*job_itc;
-
 #define job_ktpool						job_itc->itc_ktpool
 #define job_utpool						job_itc->itc_utpool
 #define	job_ktp_thread					job_ktpool.ktp_overseer
 #define	job_utp_thread					job_utpool.utp_overseer
 };
 
+
 /* Inter-Threadpool-Communication (ITPC) */
 TAILQ_HEAD(itc_head, threadpool_itpc);
 struct threadpool_itpc {
-	struct itc_head						itc_header;		/* Threadpool ITPC queue header */
-	TAILQ_ENTRY(threadpool_itpc) 		itc_entry;		/* Threadpool ITPC queue entries */
-	struct kthreadpool					itc_ktpool;		/* Pointer to Kernel Threadpool */
-	struct uthreadpool					itc_utpool;		/* Pointer to User Threadpool */
+	struct itc_head						itc_header;			/* Threadpool ITPC queue header */
+	TAILQ_ENTRY(threadpool_itpc) 		itc_entry;			/* Threadpool ITPC queue entries */
+	int 								itc_refcnt;			/* Threadpool ITPC entries in pool */
 
-	struct job_head						itc_job;		/* Thread' Job */
-	struct tgrp 						itc_tgrp; 		/* Thread's Thread Group */
-	pid_t								itc_tid;		/* Thread's Thread ID */
-	int 								itc_refcnt;		/* Current Number of entries in pool */
+	struct kthreadpool					itc_ktpool;			/* Pointer to Kernel Threadpool */
+	struct uthreadpool					itc_utpool;			/* Pointer to User Threadpool */
+	int 								itc_threadpooltype;	/* Current Threadpool type (kthread or uthread) */
+
+/* itpc threadtype flags */
+#define ITPC_NOTHREAD 	0
+#define ITPC_KTHREAD 	1
+#define ITPC_UTHREAD 	2
+
+	/* job related info */
+	struct threadpool_job				itc_jobs;
+	const char							*itc_job_name;
+
+	/* thread info */
+	union  {
+		struct {
+			struct kthread				*itc_kthread;
+			pid_t						itc_ktid;			/* KThread's Thread ID */
+			struct tgrp 				itc_ktgrp; 			/* KThread's Thread Group */
+			struct job_head				itc_ktjob;			/* KThread's Job */
+		} kt;
+
+		struct {
+			struct uthread				*itc_uthread;
+			pid_t						itc_utid;			/* UThread's Thread ID */
+			struct tgrp 				itc_utgrp; 			/* UThread's Thread Group */
+			struct job_head				itc_utjob;			/* UThread's Job */
+		} ut;
+	} info;
+#define itc_ktinfo		info.kt
+#define itc_utinfo		info.ut
 };
+
+
 extern struct itc_threadpool itpc;
 
 void	kthreadpool_init(void);

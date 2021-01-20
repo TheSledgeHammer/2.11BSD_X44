@@ -27,36 +27,40 @@
  * stack segment will not have to be copied again after expansion.
  */
 void
-vm_segment_expand(vm, segment, newsize)
-	struct vmspace 	*vm;
+vm_segment_expand(segment, newsize)
 	vm_segment_t 	segment;
 	vm_size_t 	 	newsize;
 {
+	register struct proc *p;
 	register vm_size_t i, n;
 	caddr_t a1, a2;
 
-	if (segment->sg_types == SEG_DATA) {
-		n = vm->vm_dsize;
-		vm->vm_dsize = newsize;
-		a1 = vm->vm_daddr;
+	p = u->u_procp;
+	if (segment->sg_type == SEG_DATA) {
+		n = segment->sg_data.sp_dsize;
+		segment->sg_data.sp_dsize = newsize;
+		p->p_dsize = segment->sg_data.sp_dsize;
+		a1 = segment->sg_data.sp_daddr;
 		if (n >= newsize) {
 			n -= newsize;
-			rmfree(coremap, n, a1+newsize);
+			rmfree(coremap, n, a1 + newsize);
 			return;
 		}
 	} else {
-		n = vm->vm_ssize;
-		vm->vm_ssize = newsize;
-		a1 = vm->vm_saddr;
+		n = segment->sg_stack.sp_ssize;
+		segment->sg_stack.sp_ssize = newsize;
+		p->p_ssize = segment->sg_stack.sp_ssize;
+		a1 = segment->sg_stack.sp_saddr;
 		if (n >= newsize) {
 			n -= newsize;
-			vm->vm_saddr += n;
+			segment->sg_stack.sp_saddr += n;
+			p->p_saddr = segment->sg_stack.sp_saddr;
 			rmfree(coremap, n, a1);
 			return;
 		}
 	}
-	if (segment->sg_types == SEG_STACK) {
-		a1 = vm->vm_saddr;
+	if (segment->sg_type == SEG_STACK) {
+		a1 = segment->sg_stack.sp_saddr;
 		i = newsize - n;
 		a2 = a1 + i;
 		/*
@@ -66,23 +70,29 @@ vm_segment_expand(vm, segment, newsize)
 		 */
 		while (n >= i) {
 			n -= i;
-	//		vm_segment_copy(a1+n, a2+n, i);
+			bcopy(a1 + n, a2 + n, i);
 		}
-	//	vm_segment_copy(a1, a2, n);
+		bcopy(a1, a2, n);
 	}
 	a2 = rmalloc(coremap, newsize);
-	if(a2 == NULL) {
+	if (a2 == NULL) {
 		if (segment == SEG_DATA) {
-			swapout();
+			//swapout(p);
+		} else {
+			//swapout(p);
 		}
 	}
-	if (segment->sg_types == SEG_STACK) {
-		vm->vm_saddr = a2;
+	if (segment->sg_type == SEG_STACK) {
+		segment->sg_stack.sp_saddr = a2;
+		p->p_saddr = segment->sg_stack.sp_saddr;
+		/*
+		 * Make the copy put the stack at the top of the new area.
+		 */
 		a2 += newsize - n;
 	} else {
-		vm->vm_daddr = a2;
+		segment->sg_data.sp_daddr = a2;
+		p->p_daddr = segment->sg_data.sp_daddr;
 	}
-//	vm_segment_copy(a1, a2, n);
-	vm_page_copy();
+	bcopy(a1, a2, n);
 	rmfree(coremap, n, a1);
 }

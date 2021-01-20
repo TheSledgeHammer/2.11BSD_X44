@@ -53,9 +53,8 @@ threadpool_job_init(struct threadpool_job *job, threadpool_job_fn_t func, lock_t
 	job->job_lock = lock;
 	job->job_name = name;
 	job->job_refcnt = 0;
-	job->job_ktp_thread = NULL;
-	job->job_utp_thread = NULL;
-
+	job->job_itc->itc_ktpool = NULL;
+	job->job_itc->itc_utpool = NULL;
 	job->job_func = func;
 }
 
@@ -92,8 +91,6 @@ threadpool_job_rele(struct threadpool_job *job)
 {
 	unsigned int refcnt;
 
-	KASSERT(mutex_owned(job->job_lock));
-
 	do {
 		refcnt = job->job_refcnt;
 		KASSERT(0 < refcnt);
@@ -108,7 +105,6 @@ threadpool_job_rele(struct threadpool_job *job)
 void
 threadpool_job_done(struct threadpool_job *job)
 {
-	KASSERT(mutex_owned(job->job_lock));
 	KASSERT(job->job_ktp_thread != NULL);
 	KASSERT(job->job_ktp_thread->ktpt_proc == curproc);
 
@@ -161,8 +157,6 @@ threadpool_schedule_job(struct kthreadpool *ktpool, struct threadpool_job *job)
 bool
 threadpool_cancel_job_async(struct kthreadpool *ktpool, struct threadpool_job *job)
 {
-	//KASSERT(mutex_owned(job->job_lock));
-
 	/*
 	 * XXXJRT This fails (albeit safely) when all of the following
 	 * are true:
@@ -212,8 +206,6 @@ threadpool_cancel_job(struct kthreadpool *ktpool, struct threadpool_job *job)
 	 * as a false-positive.
 	 */
 
-	//KASSERT(mutex_owned(job->job_lock));
-
 	if (threadpool_cancel_job_async(ktpool, job))
 		return;
 }
@@ -224,116 +216,4 @@ threadpool_cancel_job(struct kthreadpool *ktpool, struct threadpool_job *job)
 /* Not Yet Implemented */
 
 /****************************************************************/
-/* Threadpool ITPC */
 
-struct threadpool_itpc itpc;
-
-void
-itpc_threadpool_init(void)
-{
-	itpc_threadpool_setup(&itpc);
-}
-
-static void
-itpc_threadpool_setup(itpc)
-	struct threadpool_itpc *itpc;
-{
-	if(itpc == NULL) {
-		MALLOC(itpc, struct threadpool_itpc *, sizeof(struct threadpool_itpc *), M_ITPC, NULL);
-	}
-	TAILQ_INIT(itpc->itc_header);
-	itpc->itc_refcnt = 0;
-}
-
-/* Add a thread to the itc queue */
-void
-itpc_kthreadpool_enqueue(itpc, tid)
-	struct threadpool_itpc *itpc;
-	pid_t tid;
-{
-	struct kthreadpool *ktpool;
-
-	/* check kernel threadpool is not null & has a job/task entry to send */
-	if(ktpool != NULL && itpc->itc_tid == tid) {
-		itpc->itc_ktpool = ktpool;
-		ktpool->ktp_initcq = TRUE;
-		itpc->itc_refcnt++;
-		TAILQ_INSERT_HEAD(itpc->itc_header, itpc, itc_entry);
-	}
-}
-
-/*
- * Remove a thread from the itc queue:
- * If threadpool entry is not null, search queue for entry & remove
- */
-void
-itpc_kthreadpool_dequeue(itpc, tid)
-	struct threadpool_itpc *itpc;
-	pid_t tid;
-{
-	struct kthreadpool *ktpool;
-
-	if(ktpool != NULL) {
-		TAILQ_FOREACH(itpc, itpc->itc_header, itc_entry) {
-			if(TAILQ_NEXT(itpc, itc_entry)->itc_ktpool == ktpool) {
-				if(itpc->itc_tid == tid) {
-					ktpool->ktp_initcq = FALSE;
-					itpc->itc_refcnt--;
-					TAILQ_REMOVE(itpc->itc_header, itpc, itc_entry);
-				}
-			}
-		}
-	}
-}
-
-/* Sender checks request from receiver: providing info */
-void
-itpc_check_kthreadpool(itpc, tid)
-	struct threadpool_itpc *itpc;
-	pid_t tid;
-{
-	struct kthreadpool *ktpool = itpc->itc_ktpool;
-
-	if(ktpool->ktp_issender) {
-		printf("kernel threadpool to send");
-		if(itpc->itc_tid == tid) {
-			printf("kernel tid be found");
-			/* check */
-		} else {
-			if(itpc->itc_tid != tid) {
-				if(ktpool->ktp_retcnt <= 5) { /* retry up to 5 times */
-					if(ktpool->ktp_initcq) {
-						/* exit and re-enter queue increasing retry count */
-						itpc_threadpool_dequeue(itpc);
-						ktpool->ktp_retcnt++;
-						itpc_threadpool_enqueue(itpc);
-					}
-				} else {
-					/* exit queue, reset count to 0 and panic */
-					itpc_threadpool_dequeue(itpc);
-					ktpool->ktp_retcnt = 0;
-					panic("kthreadpool x exited itc queue after 5 failed attempts");
-				}
-			}
-		}
-	}
-}
-
-/* Receiver verifies request to sender: providing info */
-void
-itpc_verify_kthreadpool(itpc, tid)
-	struct threadpool_itpc *itpc;
-	pid_t tid;
-{
-	struct kthreadpool *ktpool = itpc->itc_ktpool;
-
-	if(ktpool->ktp_isreciever) {
-		printf("kernel threadpool to recieve");
-		if(itpc->itc_tid == tid) {
-			printf("kernel tid found");
-
-		} else {
-			printf("kernel tid couldn't be found");
-		}
-	}
-}

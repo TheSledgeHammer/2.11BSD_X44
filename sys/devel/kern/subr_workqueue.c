@@ -41,10 +41,10 @@
 SIMPLEQ_HEAD(workqhead, work);
 
 struct workqueue_queue {
-	struct lock_object 	*q_lock;
-	int 				q_savedipl;
-	struct workqhead 	q_queue;
-	struct proc 		*q_worker;
+	struct lock_object 		*q_lock;
+	int 					q_savedipl;
+	struct workqhead 		q_queue;
+	struct proc 			*q_worker;
 };
 
 struct workqueue {
@@ -243,9 +243,8 @@ workqueue_create(struct workqueue **wqp, const char *name,
 void
 workqueue_destroy(struct workqueue *wq)
 {
-
 	workqueue_finiqueue(wq);
-	kmem_free(wq, sizeof(*wq));
+	free(wq, M_WORKQUEUE);
 }
 
 void

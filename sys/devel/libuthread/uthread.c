@@ -38,10 +38,27 @@
 #include <sys/malloc.h>
 #include <sys/lock.h>
 #include <sys/rwlock.h>
+#include <sys/user.h>
 #include "devel/sys/kthread.h"
 
 extern struct uthread uthread0;
 struct uthread *curuthread = &uthread0;
+
+void
+utqinit()
+{
+	register struct uthread *ut;
+
+	freeuthread = NULL;
+	for (ut = uthreadNUTHREAD; --ut > uthread0; freeuthread = ut)
+		ut->ut_nxt = freeuthread;
+
+	alluthread = ut;
+	ut->ut_nxt = NULL;
+	ut->ut_prev = &alluthread;
+
+	zombuthread = NULL;
+}
 
 void
 uthread_init(kt, ut)
@@ -83,6 +100,17 @@ uthread_init(kt, ut)
 int
 uthread_create(uthread_t ut)
 {
+	struct uthread *newthread;
+	register_t rval[2];
+
+	if(newuthread(0)) {
+		panic("uthread creation");
+	}
+	if(rval[1]) {
+		newthread = ut;
+		newthread->ut_flag |= UT_INMEM | UT_SYSTEM;
+	}
+
 	return (0);
 }
 
@@ -153,7 +181,7 @@ uthreadpool_itc_send(utpool, itc)
 {
     /* command / action */
 	itc->itc_utpool = utpool;
-	itc->itc_job = utpool->utp_jobs;
+	itc->itc_jobs = utpool->utp_jobs;
 	/* send flagged jobs */
 	utpool->utp_issender = TRUE;
 	utpool->utp_isreciever = FALSE;
@@ -168,7 +196,7 @@ uthreadpool_itc_recieve(utpool, itc)
 {
     /* command / action */
 	itc->itc_utpool = utpool;
-	itc->itc_job = utpool->utp_jobs;
+	itc->itc_jobs = utpool->utp_jobs;
 	utpool->utp_issender = FALSE;
 	utpool->utp_isreciever = TRUE;
 
@@ -185,7 +213,7 @@ uthread_lock_init(lkp, ut)
     int error = 0;
     lockinit(lkp, lkp->lk_prio, lkp->lk_wmesg, lkp->lk_timo, lkp->lk_flags);
 	set_uthread_lockholder(lkp->lk_lockholder, ut);
-    if(get_uthread_lockholder(lkp->lkp_lockholder, ut->ut_tid) == NULL) {
+    if(get_uthread_lockholder(lkp->lk_lockholder, ut->ut_tid) == NULL) {
     	panic("uthread lock unavailable");
     	error = EBUSY;
     }

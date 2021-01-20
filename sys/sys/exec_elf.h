@@ -675,8 +675,8 @@ typedef struct {
 #define	AT_SUN_CPU		2011	/* cpu name */
 
 /* ibcs2 emulation band aid */
-#define	AT_SUN_EMUL_ENTRY 2012	/* coff entry point */
-#define	AT_SUN_EMUL_EXECFD 2013	/* coff file descriptor */
+#define	AT_SUN_EMUL_ENTRY 	2012	/* coff entry point */
+#define	AT_SUN_EMUL_EXECFD 	2013	/* coff file descriptor */
 
 /* Executable's fully resolved name */
 #define	AT_SUN_EXECNAME	2014

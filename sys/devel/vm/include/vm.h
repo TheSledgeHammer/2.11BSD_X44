@@ -66,6 +66,18 @@ typedef struct vm_page  		*vm_page_t;
 struct pager_struct;
 typedef struct pager_struct 	*vm_pager_t;
 
+struct vm_aobject;
+typedef struct vm_aobject 		*vm_aobject_t;
+
+struct vm_amap;
+typedef struct vm_amap 			*vm_amap_t;
+
+struct vm_anon;
+typedef struct vm_anon 			*vm_anon_t;
+
+struct vm_aref;
+typedef struct vm_aref 			*vm_aref_t;
+
 #include <sys/lock.h>
 #include <sys/queue.h>
 #include <sys/tree.h>
@@ -83,6 +95,11 @@ typedef struct pager_struct 	*vm_pager_t;
 #include <devel/vm/include/vm_param.h>
 #include <devel/vm/include/vm_segment.h>		/* Work in Progress */
 #include <devel/vm/ovl/ovl.h>					/* Work in Progress */
+
+#include <devel/vm/uvm/vm_aobject.h>			/* Work in Progress */
+#include <devel/vm/uvm/vm_amap.h>				/* Work in Progress */
+#include <devel/vm/uvm/vm_anon.h>				/* Work in Progress */
+#include <devel/vm/uvm/uvm.h>
 
 /*
  *	MACH VM locking type mappings to kernel types

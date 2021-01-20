@@ -100,6 +100,12 @@ struct uthread {
 #define UT_SREADY			7			/* ready */
 #define UT_SSTART			8			/* start */
 
+/* flag codes */
+#define	UT_PPWAIT			0x00010		/* Parent is waiting for child to exec/exit. */
+#define	UT_SYSTEM			0x00200		/* System proc: no sigs, stats or swapping. */
+#define	UT_INMEM			0x00004		/* Loaded into memory. */
+#define UT_INEXEC			0x100000	/* Process is exec'ing and cannot be traced */
+
 #define	UT_BOUND			0x80000000 	/* Bound to a CPU */
 
 /* Kernel thread handling. */

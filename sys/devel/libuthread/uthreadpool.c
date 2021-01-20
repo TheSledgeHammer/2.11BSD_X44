@@ -244,14 +244,14 @@ uthreadpool_overseer_thread(void *arg)
 
 			struct uthreadpool_thread *const uthread = (struct uthreadpool_thread *) malloc(sizeof(struct uthreadpool_thread *), M_UTPOOLTHREAD, M_WAITOK);
 			uthread->utpt_kthread = NULL;
-			uthread->utpt_pool = pool;
+			uthread->utpt_pool = utpool;
 			uthread->utpt_job = NULL;
 
 			utflags = 0;
 			utflags |= UTHREAD_MPSAFE;
 			if (utpool->utp_pri < PUSER)
 				utflags |= UTHREAD_TS;
-			error = uthread_create(utpool->utp_pri, utflags, utpool->utp_cpu, &uthreadpool_thread, uthread, &p, "poolthread/%d@%d", (utpool->utp_cpu ? cpu_index(utpool->utp_cpu) : -1), (int)utpool->utp_pri);
+			error = uthread_create(utpool->utp_pri, utflags, utpool->utp_cpu, &uthreadpool_thread, uthread, &kt, "poolthread/%d@%d", (utpool->utp_cpu ? cpu_index(utpool->utp_cpu) : -1), (int)utpool->utp_pri);
 
 			simple_lock(&utpool->utp_lock);
 			if (error) {
@@ -262,10 +262,10 @@ uthreadpool_overseer_thread(void *arg)
 			 * New kthread now owns the reference to the pool
 			 * taken above.
 			 */
-			KASSERT(p != NULL);
+			KASSERT(kt != NULL);
 			TAILQ_INSERT_TAIL(&utpool->utp_idle_threads, uthread, utpt_entry);
 			uthread->utpt_kthread = kt;
-			p = NULL;
+			kt = NULL;
 			continue;
 		}
 

@@ -179,7 +179,7 @@ kthreadpool_itc_send(ktpool, itc)
 {
     /* command / action */
 	itc->itc_ktpool = ktpool;
-	itc->itc_job = ktpool->ktp_jobs;  /* add/ get current job */
+	itc->itc_jobs = ktpool->ktp_jobs;  /* add/ get current job */
 	/* send flagged jobs */
 	ktpool->ktp_issender = TRUE;
 	ktpool->ktp_isreciever = FALSE;
@@ -194,7 +194,7 @@ kthreadpool_itc_recieve(ktpool, itc)
 {
     /* command / action */
 	itc->itc_ktpool = ktpool;
-	itc->itc_job = ktpool->ktp_jobs; /* add/ get current job */
+	itc->itc_jobs = ktpool->ktp_jobs; /* add/ get current job */
 	ktpool->ktp_issender = FALSE;
 	ktpool->ktp_isreciever = TRUE;
 

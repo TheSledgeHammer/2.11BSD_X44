@@ -153,6 +153,7 @@ struct vm_amap {
 	#ifdef VM_AMAP_PPREF
 	int 				*am_ppref;		/* per page reference count (if !NULL) */
 	#endif
+	LIST_ENTRY(vm_amap) am_list;
 };
 
 /*
@@ -239,8 +240,8 @@ struct vm_amap {
 
 #define amap_flags(AMAP)	((AMAP)->am_flags)
 #define amap_refs(AMAP)		((AMAP)->am_ref)
-#define amap_lock(AMAP)		simple_lock((AMAP)->am_lock)
-#define amap_unlock(AMAP)	simple_unlock((AMAP)->am_lock)
+#define amap_lock(AMAP)		simple_lock(&(AMAP)->am_lock)
+#define amap_unlock(AMAP)	simple_unlock(&(AMAP)->am_lock)
 
 /*
  * if we enable PPREF, then we have a couple of extra functions that

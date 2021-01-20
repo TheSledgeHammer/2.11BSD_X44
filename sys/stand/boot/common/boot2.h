@@ -56,9 +56,9 @@
 typedef uint32_t boot2_ino_t;
 
 struct boot2_fsapi {
-	int (*fsinit)(void);
+	int 		(*fsinit)(void);
 	boot2_ino_t (*fslookup)(const char *);
-	ssize_t (*fsread)(boot2_ino_t, void *, size_t);
+	ssize_t 	(*fsread)(boot2_ino_t, void *, size_t);
 };
 
 /*

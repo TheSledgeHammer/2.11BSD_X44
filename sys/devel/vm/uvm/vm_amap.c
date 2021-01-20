@@ -59,11 +59,29 @@
 #include <devel/vm/uvm/uvm.h>
 #include <devel/vm/uvm/vm_amap.h>
 
+static struct vm_amap *amap_alloc1(int, int, int);
+
+static struct simplelock amap_list_lock;
+static LIST_HEAD(, vm_amap) amap_list;
+
 /*
  * local functions
  */
+static inline void
+amap_list_insert(struct vm_amap *amap)
+{
+	simple_lock(&amap_list_lock);
+	LIST_INSERT_HEAD(&amap_list, amap, am_list);
+	simple_unlock(&amap_list_lock);
+}
 
-static struct vm_amap *amap_alloc1(int, int, int);
+static inline void
+amap_list_remove(struct vm_amap *amap)
+{
+	simple_lock(&amap_list_lock);
+	LIST_REMOVE(amap, am_list);
+	simple_unlock(&amap_list_lock);
+}
 
 #ifdef VM_AMAP_PPREF
 
@@ -146,8 +164,11 @@ amap_init()
 {
 	register struct vm_amap *amap;
 	MALLOC(amap, struct vm_amap *, sizeof(struct vm_amap), M_VMAMAP, M_WAITOK);
+
+	LIST_INIT(&amap_list);
 	amap->am_ref = 1;
 	simple_lock_init(&amap->am_lock, "amap_lock");
+	simple_lock_init(&amap_list_lock, "amap_list_lock");
 }
 
 /*
@@ -165,9 +186,8 @@ amap_alloc1(slots, padslots, waitf)
 
 	amap = (struct vm_amap *)malloc(sizeof(struct vm_amap *), M_VMAMAP, M_WAITOK);
 	if (amap == NULL)
-		return(NULL);
+		return (NULL);
 
-	simple_lock_init(&amap->am_lock, "amap_lock");
 	amap->am_ref = 1;
 	amap->am_flags = 0;
 #ifdef VM_AMAP_PPREF
@@ -222,6 +242,7 @@ amap_alloc(sz, padsz, waitf)
 	amap = amap_alloc1(slots, padslots, waitf);
 	if (amap)
 		memset(amap->am_anon, 0, (slots + padslots) * sizeof(struct vm_anon*));
+		amap_list_insert(amap);
 	return (amap);
 }
 
@@ -441,7 +462,7 @@ amap_share_protect(entry, prot)
 			if (amap->am_anon[lcv] == NULL)
 				continue;
 			if (amap->am_anon[lcv]->u.an_page != NULL)
-				pmap_page_protect(PMAP_PGARG(amap->am_anon[lcv]->u.an_page), prot);
+				pmap_page_protect(amap->am_anon[lcv]->u.an_page, prot);
 		}
 		return;
 	}
@@ -452,7 +473,7 @@ amap_share_protect(entry, prot)
 		if (slot < entry->aref.ar_pageoff || slot >= stop)
 			continue;
 		if (amap->am_anon[slot]->u.an_page != NULL)
-			pmap_page_protect(PMAP_PGARG(amap->am_anon[slot]->u.an_page), prot);
+			pmap_page_protect(amap->am_anon[slot]->u.an_page, prot);
 	}
 	return;
 }
@@ -472,6 +493,9 @@ amap_wipeout(amap)
 	int lcv, slot;
 	struct vm_anon *anon;
 
+	amap_list_remove(amap);
+	amap_unlock(amap);
+
 	for (lcv = 0 ; lcv < amap->am_nused ; lcv++) {
 		int refs;
 
@@ -489,7 +513,7 @@ amap_wipeout(amap)
 			/*
 			 * we had the last reference to a vm_anon. free it.
 			 */
-			uvm_anfree(anon);
+			vm_anfree(anon);
 		}
 	}
 
@@ -637,6 +661,8 @@ amap_copy(map, entry, waitf, canchunk, startva, endva)
 #endif
 
 	amap_unlock(srcamap);
+
+	amap_list_insert(amap);
 
 	/*
 	 * install new amap.

@@ -37,23 +37,7 @@
 #ifndef _VM_UVM_H_
 #define _VM_UVM_H_
 
-struct vm_aobject;
-typedef struct vm_aobject 	*vm_aobject_t;
-
-struct vm_amap;
-typedef struct vm_amap 		*vm_amap_t;
-
-struct vm_anon;
-typedef struct vm_anon 		*vm_anon_t;
-
-struct vm_aref;
-typedef struct vm_aref 		*vm_aref_t;
-
-#include <vm/include/vm.h>
-
-#include <devel/vm/uvm/vm_aobject.h>
-#include <devel/vm/uvm/vm_amap.h>
-#include <devel/vm/uvm/vm_anon.h>
+#include <devel/vm/include/vm.h>
 
 /* XXX: Temporary
  * uvm structure (vm global state: collected in one structure for ease
