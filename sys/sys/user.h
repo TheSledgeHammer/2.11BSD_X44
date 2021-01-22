@@ -76,13 +76,30 @@ struct user {
 	char				u_dummy0;
 
 /* 1.1 - processes and protection */
-	struct ucred		*u_ucred;				/* credentials */
-	uid_t				u_uid;					/* effective user id */
-	uid_t				u_svuid;				/* saved user id */
-	uid_t				u_ruid;					/* real user id */
-	gid_t				u_svgid;				/* saved group id */
-	gid_t				u_rgid;					/* real group id */
-	gid_t				u_groups[NGROUPS];		/* groups, 0 terminated */
+	struct ucred {								/* Credentials */
+		u_short			cr_ref;					/* reference count */
+		uid_t			cr_uid;					/* effective user id */
+		short			cr_ngroups;				/* number of groups */
+		gid_t			cr_groups[NGROUPS];		/* groups, 0 terminated */
+	} u_ucred;
+#define cr_gid 			u_ucred.cr_groups[0]
+
+	struct pcred {
+		struct ucred	u_ucred;				/* Current credentials. */
+		uid_t			u_svuid;				/* saved user id */
+		uid_t			u_ruid;					/* real user id */
+		gid_t			u_svgid;				/* saved group id */
+		gid_t			u_rgid;					/* real group id */
+		int				u_refcnt;				/* Number of references. */
+	} u_pcred;
+
+	//uid_t				u_uid;					/* effective user id */
+	//uid_t				u_svuid;				/* saved user id */
+	//uid_t				u_ruid;					/* real user id */
+	//gid_t				u_svgid;				/* saved group id */
+	//gid_t				u_rgid;					/* real group id */
+	//gid_t				u_groups[NGROUPS];		/* groups, 0 terminated */
+
 
 /* 1.2 - memory management */
 	size_t				u_tsize;				/* text size (clicks) */
@@ -174,6 +191,18 @@ struct user {
 	//struct uthread		*u_uthread;			/* ptr to uthread */
 };
 
+/* credentials */
+#define cr_gid 			cr_groups[0]
+#define NOCRED 			((struct ucred *)-1)	/* no credential available */
+#define FSCRED 			((struct ucred *)-2)	/* filesystem credential */
+
 //#ifdef KERNEL
+#define	crhold(cr)		(cr)->cr_ref++
+struct ucred 			*crget(void);
+struct ucred 			*crcopy(struct ucred *);
+struct ucred 			*crdup(struct ucred *);
+extern void 			crfree(struct ucred *);
+//extern int 				suser(struct ucred *, short *);
+
 extern struct user u;
 #endif

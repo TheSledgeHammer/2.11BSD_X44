@@ -137,6 +137,8 @@ struct	proc {
 	//char				*p_name;		/* (: name, optional */
 
 	//struct gsched		*p_gsched;		/* global scheduler */
+
+
 };
 
 struct	session {
@@ -155,14 +157,27 @@ struct	pgrp {
 	int					pg_jobc;		/* # procs qualifying pgrp for job control */
 };
 
-struct pcred {
-	struct	ucred 		*pc_ucred;		/* Current credentials. */
-	uid_t				p_ruid;			/* Real user id. */
-	uid_t				p_svuid;		/* Saved effective user id. */
-	gid_t				p_rgid;			/* Real group id. */
-	gid_t				p_svgid;		/* Saved effective group id. */
-	int					p_refcnt;		/* Number of references. */
-};
+#include <sys/user.h>
+
+/*
+ * pcred references:
+ * please refer to user.h
+ */
+#define pc_ucred		pcred.u_ucred	/* Current credentials. */
+#define	p_ruid;			pcred.u_ruid	/* Real user id. */
+#define p_svuid			pcred.u_svuid	/* Saved effective user id. */
+#define p_rgid			pcred.u_rgid	/* Real group id. */
+#define	p_svgid;		pcred.u_svgid	/* Saved effective group id. */
+#define	p_refcnt;		pcred.u_refcnt	/* Number of references. */
+
+//struct pcred {
+	//struct ucred 		*pc_ucred;		/* Current credentials. */
+	//uid_t				p_ruid;			/* Real user id. */
+	//uid_t				p_svuid;		/* Saved effective user id. */
+	//gid_t				p_rgid;			/* Real group id. */
+	//gid_t				p_svgid;		/* Saved effective group id. */
+	//int				p_refcnt;		/* Number of references. */
+//};
 
 struct exec_linker;
 struct proc;

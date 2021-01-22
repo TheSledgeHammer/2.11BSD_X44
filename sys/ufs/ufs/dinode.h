@@ -136,10 +136,11 @@ struct ufs2_dinode {
 #define UFS1_MAXSYMLINKLEN	((NDADDR + NIADDR) * sizeof(ufs_daddr_t))
 #define UFS2_MAXSYMLINKLEN	((NDADDR + NIADDR) * sizeof(ufs2_daddr_t))
 
-#define	MAXSYMLINKLEN		UFS1_MAXSYMLINKLEN
+//#define	MAXSYMLINKLEN		UFS1_MAXSYMLINKLEN
 
-//#define MAXSYMLINKLEN(ip) \
+#define MAXSYMLINKLEN(ip) 		\
 	((ip)->i_ump->um_fstype == UFS1) ? UFS1_MAXSYMLINKLEN : UFS2_MAXSYMLINKLEN
+
 
 /* File permissions. */
 #define	IEXEC		0000100		/* Executable. */

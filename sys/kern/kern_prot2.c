@@ -63,12 +63,12 @@ int
 _setuid(uid)
 	register uid_t uid;
 {
-	if (uid != u->u_ruid && !suser())
+	if (uid != u->u_pcred->u_ruid && !suser())
 		return(u->u_error);
 	u->u_procp->p_uid = uid;
-	u->u_uid = uid;
-	u->u_ruid = uid;
-	u->u_svuid = uid;
+	u->u_ucred->cr_uid = uid;
+	u->u_pcred->u_ruid = uid;
+	u->u_pcred->u_svuid = uid;
 	//u.u_acflag |= ASUGID;
 	return (u->u_error = 0);
 }
@@ -88,12 +88,12 @@ _seteuid(euid)
 	register uid_t euid;
 {
 
-	if (euid != u->u_ruid && euid != u->u_svuid && !suser())
+	if (euid != u->u_pcred->u_ruid && euid != u->u_pcred->u_svuid && !suser())
 		return (u->u_error);
 	/*
 	 * Everything's okay, do it.
 	 */
-	u->u_uid = euid;
+	u->u_ucred->cr_uid = euid;
 	u->u_acflag |= ASUGID;
 	return (u->u_error = 0);
 }
@@ -112,11 +112,11 @@ int
 _setgid(gid)
 	register gid_t gid;
 {
-	if (gid != u->u_rgid && !suser())
+	if (gid != u->u_pcred->u_rgid && !suser())
 		return (u->u_error);	/* XXX */
-	u->u_groups[0] = gid;		/* effective gid is u_groups[0] */
-	u->u_rgid = gid;
-	u->u_svgid = gid;
+	u->u_ucred->cr_groups[0] = gid;		/* effective gid is u_groups[0] */
+	u->u_pcred->u_rgid = gid;
+	u->u_pcred->u_svgid = gid;
 	//u.u_acflag |= ASUGID;
 	return (u->u_error = 0);
 }
@@ -135,86 +135,82 @@ int
 _setegid(egid)
 	register gid_t egid;
 {
-	if (egid != u->u_rgid && egid != u->u_svgid && !suser())
+	if (egid != u->u_pcred->u_rgid && egid != u->u_pcred->u_svgid && !suser())
 		return (u->u_error);
-	u->u_groups[0] = egid;
+	u->u_ucred->cr_groups[0] = egid;
 	u->u_acflag |= ASUGID;
 	return (u->u_error = 0);
 }
 
-/*
- * 4.4BSD groupmember routine
- */
 int
-groupmember1(gid, cred)
-	gid_t gid;
-	register struct ucred *cred;
+_setsid()
 {
-	register gid_t *gp;
-	gid_t *egp;
+	register struct a {
+		pid_t 	pid;
+	}*uap = (struct a *) u->u_ap;
 
-	egp = &(cred->cr_groups[cred->cr_ngroups]);
-	for (gp = cred->cr_groups; gp < egp; gp++) {
-		if (*gp == gid) {
-			crupdate(cred, 0);
-			return (1);
-		}
-	}
-	crupdate(cred, 0);
-	return (0);
+	return(_setsid(uap->pid));
 }
 
-/*
- * 4.4BSD suser routine
- */
 int
-suser1(cred, acflag)
-	struct ucred *cred;
-	u_short *acflag;
+setsid(pid)
+	register pid_t pid;
 {
-	if (cred->cr_uid == 0) {
-		if (acflag) {
-			*acflag |= ASU;
-			crupdate(cred, acflag);
-		}
-		return (0);
-	}
-	crupdate(cred, EPERM);
-	return (EPERM);
-}
+	register struct proc *p;
 
-/*
- * 4.4BSD ucred compat:
- * updates 'u'(user) from ucred
- */
-void
-crupdate(cr, flags)
-	struct ucred *cr;
-	int flags;
-{
-	if(u->u_ucred != cr) {
-		u->u_ucred = cr;
-		u->u_uid = cr->cr_uid;
-		u->u_groups = cr->cr_groups;
-		u->u_groups[NGROUPS] = cr->cr_groups[cr->cr_ngroups];
-		if(u->u_acflag != flags) {
-			u->u_acflag = flags;
+	if(u->u_procp == pfind(pid)) {
+		u->u_procp->p_pid = pid;
+		p = u->u_procp;
+
+		if(p->p_pgid == p->p_pid || pgfind(p->p_pid)) {
+			return (u->u_error = EPERM);
+		} else {
+			(void)enterpgrp(p, p->p_pid, 1);
+			return (u->u_error = 0);
 		}
+	} else {
+		return (u->u_error = EPERM);
 	}
 }
 
-/*
- * 4.4BSD ucred compat:
- * updates ucred from 'u'(user)
- */
 void
-crset(cr)
-	struct ucred *cr;
+setpgid()
 {
-	if(cr != u->u_ucred) {
-		cr = u->u_ucred;
-		cr->cr_uid = u->u_uid;
-		cr->cr_groups = u->u_groups;
-		cr->cr_groups[cr->cr_ngroups] = u->u_groups[NGROUPS];
+	register struct a {
+			pid_t 	pid;
+			pid_t	pgid;
+	}*uap = (struct a *) u->u_ap;
+
+	register struct proc *targp;		/* target process */
+	register struct pgrp *pgrp;			/* target pgrp */
+
+	if(uap->pid != 0 && uap->pid != u->u_procp->p_pid) {
+		if((targp = pfind(uap->pid)) == 0 || !inferior(targp)) {
+			u->u_error = ESRCH;
+			return;
+		}
+		if(targp->p_session != u->u_procp->p_session) {
+			u->u_error = EPERM;
+			return;
+		}
+		if (targp->p_flag & P_EXEC) {
+			u->u_error = EACCES;
+			return;
+		}
+	} else {
+		targp = u->u_procp;
 	}
+	if(SESS_LEADER(targp)) {
+		u->u_error = EPERM;
+		return;
+	}
+	if(uap->pgid == 0) {
+		uap->pgid = targp->p_pid;
+	} else if(uap->pgid != targp->p_pid) {
+		if((pgrp = pgfind(uap->pgid)) == 0 || pgrp->pg_session != u->u_procp->p_session) {
+			u->u_error = EPERM;
+			return;
+		}
+	}
+	u->u_error = enterpgrp(targp, uap->pgid, 0);
 }

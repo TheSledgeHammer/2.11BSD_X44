@@ -19,7 +19,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## conf:
 
 ## kern:
-- ksyms: NKSYMS (default is 0 ???)
+- kern_prot/2.c: setreuid & setregid
 - exec_macho: exec_mach_copyargs 
 	(NetBSD 5.2: /compat/mach/mach_exec.c)
 	
