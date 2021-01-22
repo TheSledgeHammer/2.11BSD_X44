@@ -125,7 +125,7 @@ adjtime()
 	register int s;
 	long adjust;
 
-	if (!suser()) 
+	if (!suser())
 		return;
 	u->u_error = copyin((caddr_t)uap->delta, (caddr_t)&atv,
 		sizeof (struct timeval));

@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 1992 The Regents of the University of California
- * Copyright (c) 1990, 1992 Jan-Simon Pendry
- * All rights reserved.
- *
- * This code is derived from software donated to Berkeley by
- * Jan-Simon Pendry.
+ * Copyright (c) 1982, 1986, 1989, 1990, 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ * (c) UNIX System Laboratories, Inc.
+ * All or some portions of this file are derived from material licensed
+ * to the University of California by American Telephone and Telegraph
+ * Co. or Unix System Laboratories, Inc. and are reproduced herein with
+ * the permission of UNIX System Laboratories, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,46 +35,54 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)lofs.h	7.1 (Berkeley) 7/12/92
- *
- * $Id: lofs.h,v 1.8 1992/05/30 10:05:43 jsp Exp jsp $
+ *	@(#)kern_prot.c	8.9 (Berkeley) 2/14/95
  */
 
-#include <sys/queue.h>
-
-struct lofs_args {
-	char				*target;	/* Target of loopback  */
-};
-
-struct lofsmount {
-	struct mount		*looped_vfs;
-	struct vnode		*rootvp;	/* Reference to root lofsnode */
-};
-
-//#ifdef KERNEL
 /*
- * A cache of vnode references
+ * 4.4BSD Compatibility System calls related to processes and protection
  */
-struct lofsnode {
-	struct lofsnode		*a_forw;	/* Hash chain */
-	struct lofsnode		*a_back;
-	struct vnode		*a_lofsvp;	/* Aliased vnode - VREFed once */
-	struct vnode		*a_vnode;	/* Back pointer to vnode/lofsnode */
-};
 
-extern int make_lofs (struct mount *mp, struct vnode **vpp);
-extern int lofs_node_create (struct mount *mp, struct vnode *target, struct vnode **vpp);
+#include <sys/param.h>
+#include <sys/user.h>
+#include <sys/proc.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
 
-#define	VFSTOLOFS(mp) 	((struct lofsmount *)((mp)->mnt_data))
-#define	LOFSP(vp) 		((struct lofsnode *)(vp)->v_data)
-#ifdef LOFS_DIAGNOSTIC
-extern struct vnode *lofs_checkvp (struct vnode *vp, char *fil, int lno);
-#define	LOFSVP(vp) lofs_checkvp(vp, __FILE__, __LINE__)
+#include <sys/mount.h>
 
-#else
-#define	LOFSVP(vp) 		(LOFSP(vp)->a_lofsvp)
-#endif
+/*
+ * Check if gid is a member of the group set.
+ */
+int
+bsd44_groupmember(gid, cred)
+	gid_t gid;
+	register struct ucred *cred;
+{
+	register gid_t *gp;
+	gid_t *egp;
 
-extern struct lofs_vnodeops;
-extern struct vfsops lofs_vfsops;
-#endif /* KERNEL */
+	egp = &(cred->cr_groups[cred->cr_ngroups]);
+	for (gp = cred->cr_groups; gp < egp; gp++)
+		if (*gp == gid)
+			return (1);
+	return (0);
+}
+
+/*
+ * Test whether the specified credentials imply "super-user"
+ * privilege; if so, and we have accounting info, set the flag
+ * indicating use of super-powers.
+ * Returns 0 or error.
+ */
+int
+bsd44_suser(cred, acflag)
+	struct ucred *cred;
+	u_short *acflag;
+{
+	if (cred->cr_uid == 0) {
+		if (acflag)
+			*acflag |= ASU;
+		return (0);
+	}
+	return (EPERM);
+}

@@ -217,20 +217,20 @@ ufs211_dkcksum(lp)
 */
 
 #define	RAWPART	2	/* 'c' */  /* XXX */
-/*
+
 int
-dkoverlapchk(openmask, dev, label, name)
-	int	openmask;
+dkoverlapchk(lp, openmask, dev, label, name)
+	struct disklabel *lp;
+	int				openmask;
 	ufs211_dev_t	dev;
 	ufs211_size_t	label;
-	char	*name;
+	char			*name;
 {
 	int unit = dkunit(dev);
 	int part = dkpart(dev);
 	int partmask = 1 << part;
 	int i;
 	daddr_t start, end;
-	register struct disklabel *lp = (struct disklabel*) SEG5;
 	register struct partition *pp;
 
 	if ((openmask & partmask) == 0 && part != RAWPART) {
@@ -249,7 +249,7 @@ dkoverlapchk(openmask, dev, label, name)
 	}
 	return (0);
 }
-*/
+
 
 /*
  * It was noticed that the ioctl processing of disklabels was the same

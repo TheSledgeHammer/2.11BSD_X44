@@ -499,6 +499,7 @@ struct vop_fsync_args {
 	struct vnode 			*a_vp;
 	struct ucred 			*a_cred;
 	int 					a_waitfor;
+	//int						a_flags;
 	struct proc 			*a_p;
 };
 

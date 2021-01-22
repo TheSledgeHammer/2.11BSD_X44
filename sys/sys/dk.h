@@ -34,7 +34,7 @@ extern long	dk_seek[DK_NDRIVE];		/* number of seeks */
 extern long	dk_xfer[DK_NDRIVE];		/* number of transfers */
 extern long	dk_wds[DK_NDRIVE];		/* number of clicks transfered */
 extern long	dk_wps[DK_NDRIVE];		/* words per second */
-extern char	dk_names[DK_NDRIVE][DK_NAMELEN];	/* name of drive */
+extern char	*dk_name[DK_NDRIVE];	/* name of drive */
 extern int	dk_unit[DK_NDRIVE];		/* unit numbers of monitored drives */
 extern int	dk_n;					/* number of dk numbers assigned so far */
 

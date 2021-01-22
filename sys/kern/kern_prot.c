@@ -86,7 +86,7 @@ getgroups()
 {
 	register struct	a {
 		u_int	gidsetsize;
-		int	*gidset;
+		int		*gidset;
 	} *uap = (struct a *)u->u_ap;
 	register gid_t *gp;
 
@@ -126,6 +126,7 @@ setpgrp()
 		u->u_error = EPERM;
 		return;
 	}
+
 	p->p_pgrp = uap->pgrp;
 }
 
@@ -161,10 +162,13 @@ groupmember(gid)
 	gid_t gid;
 {
 	register gid_t *gp;
-
-	for (gp = u->u_groups; gp < &u->u_groups[NGROUPS] && *gp != NOGROUP; gp++)
-		if (*gp == gid)
+	for (gp = u->u_groups; gp < &u->u_groups[NGROUPS] && *gp != NOGROUP; gp++) {
+		if (*gp == gid) {
+			crset(u->u_ucred);
 			return (1);
+		}
+	}
+	crset(u->u_ucred);
 	return (0);
 }
 
@@ -217,27 +221,6 @@ setlogin()
 	if	(error == 0)
 		bcopy(newname, u->u_login, sizeof (u->u_login));
 	return(u->u_error = error);
-}
-
-
-
-/*
- * Test whether the specified credentials imply "super-user"
- * privilege; if so, and we have accounting info, set the flag
- * indicating use of super-powers.
- * Returns 0 or error.
- */
-int
-suser(cred, acflag)
-	struct ucred *cred;
-	u_short *acflag;
-{
-	if (cred->cr_uid == 0) {
-		if (acflag)
-			*acflag |= ASU;
-		return (0);
-	}
-	return (EPERM);
 }
 
 /*

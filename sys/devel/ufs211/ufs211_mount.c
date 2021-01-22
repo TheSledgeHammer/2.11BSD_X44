@@ -273,7 +273,6 @@ unmount1(fname)
 			goto found;
 	return (EINVAL);
 found:
-	//xumount(dev);	/* remove unused sticky files from text table */
 	nchinval(dev); /* flush the name cache */
 	aflag = mp->m_flags & MNT_ASYNC;
 	mp->m_flags &= ~MNT_ASYNC; /* Don't want async when unmounting */

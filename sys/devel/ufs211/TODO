@@ -1,16 +1,20 @@
 UFS211:
-Completed:
-- alloc
-- bmap
-- quota
-- dsort 	(except: dk_alloc)
-- disksubr 	(fix-up use of pdp memory segmentation)
-- mount		(fix-up use of pdp memory segmentation)
-- subr
-- lookup
-- inode		(mapin, mapout)
+Need Touching up:
+- update buflists
+- ufs211_quota: missing other quota related code
+- ufs211_mount: quota_kern.c refs		
+- ufs211_lookup: void nchinval(dev) & void nchinit() are replaced with vnode equivalents
+
+fix: pdp11 mapin & mapout refs
+- ufs211_alloc
+- ufs211_bmap:
+- ufs211_disksubr:
+- ufs211_inode: 
+- ufs211_lookup
+- ufs211_mount
+- ufs211_vfsops
 
 To Complete:
-- vnops
-- vfsops
+- ufs211_vnops
+- ufs211_vfsops
 

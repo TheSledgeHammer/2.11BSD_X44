@@ -103,7 +103,7 @@ struct	xmount {
 #define	MNT_EXPORTED	0x00000100	/* file system is exported */
 #define	MNT_DEFEXPORTED	0x00000200	/* exported to the world */
 #define	MNT_EXPORTANON	0x00000400	/* use anon uid mapping for everyone */
-#define	MNT_EXKERB	0x00000800	/* exported with Kerberos uid mapping */
+#define	MNT_EXKERB		0x00000800	/* exported with Kerberos uid mapping */
 
 /*
  * Flags set by internal operations.
@@ -236,16 +236,16 @@ struct vfsops {
 
 #define VFS_MOUNT(MP, PATH, DATA, NDP, P) \
 	(*(MP)->mnt_op->vfs_mount)(MP, PATH, DATA, NDP, P)
-#define VFS_START(MP, FLAGS, P)	  (*(MP)->mnt_op->vfs_start)(MP, FLAGS, P)
-#define VFS_UNMOUNT(MP, FORCE, P) (*(MP)->mnt_op->vfs_unmount)(MP, FORCE, P)
-#define VFS_ROOT(MP, VPP)	  (*(MP)->mnt_op->vfs_root)(MP, VPP)
-#define VFS_QUOTACTL(MP,C,U,A,P)  (*(MP)->mnt_op->vfs_quotactl)(MP, C, U, A, P)
-#define VFS_STATFS(MP, SBP, P)	  (*(MP)->mnt_op->vfs_statfs)(MP, SBP, P)
-#define VFS_SYNC(MP, WAIT, C, P)  (*(MP)->mnt_op->vfs_sync)(MP, WAIT, C, P)
-#define VFS_VGET(MP, INO, VPP)	  (*(MP)->mnt_op->vfs_vget)(MP, INO, VPP)
+#define VFS_START(MP, FLAGS, P)	  	(*(MP)->mnt_op->vfs_start)(MP, FLAGS, P)
+#define VFS_UNMOUNT(MP, FORCE, P) 	(*(MP)->mnt_op->vfs_unmount)(MP, FORCE, P)
+#define VFS_ROOT(MP, VPP)	  		(*(MP)->mnt_op->vfs_root)(MP, VPP)
+#define VFS_QUOTACTL(MP,C,U,A,P)  	(*(MP)->mnt_op->vfs_quotactl)(MP, C, U, A, P)
+#define VFS_STATFS(MP, SBP, P)	  	(*(MP)->mnt_op->vfs_statfs)(MP, SBP, P)
+#define VFS_SYNC(MP, WAIT, C, P)  	(*(MP)->mnt_op->vfs_sync)(MP, WAIT, C, P)
+#define VFS_VGET(MP, INO, VPP)	  	(*(MP)->mnt_op->vfs_vget)(MP, INO, VPP)
 #define VFS_FHTOVP(MP, FIDP, NAM, VPP, EXFLG, CRED) \
 	(*(MP)->mnt_op->vfs_fhtovp)(MP, FIDP, NAM, VPP, EXFLG, CRED)
-#define	VFS_VPTOFH(VP, FIDP)	  (*(VP)->v_mount->mnt_op->vfs_vptofh)(VP, FIDP)
+#define	VFS_VPTOFH(VP, FIDP)	  	(*(VP)->v_mount->mnt_op->vfs_vptofh)(VP, FIDP)
 
 /*
  * Network address lookup element
@@ -260,7 +260,7 @@ struct netcred {
  * Network export information
  */
 struct netexport {
-	struct	netcred 		ne_defexported;		      		/* Default export */
+	struct	netcred 		ne_defexported;		    /* Default export */
 	struct	radix_node_head *ne_rtable[AF_MAX+1]; 	/* Individual exports */
 };
 
@@ -282,7 +282,7 @@ int		vfs_mountroot (void);
 void	vfs_getnewfsid (struct mount *);
 void	vfs_unmountall (void);
 extern	CIRCLEQ_HEAD(mntlist, mount) mountlist;											/* mounted filesystem list */
-extern	struct simplelock mountlist_slock;
+extern	struct lock_object mountlist_slock;
 extern	struct vfsops *vfssw[];															/* filesystem type table */
 
 #else /* KERNEL */

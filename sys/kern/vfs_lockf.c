@@ -52,16 +52,16 @@
 TAILQ_HEAD(locklist, lockf);
 
 struct lockf {
-	short	lf_flags;	 		/* Lock semantics: F_POSIX, F_FLOCK, F_WAIT */
-	short	lf_type;	 		/* Lock type: F_RDLCK, F_WRLCK */
-	off_t	lf_start;	 		/* The byte # of the start of the lock */
-	off_t	lf_end;		 		/* The byte # of the end of the lock (-1=EOF)*/
-	void	*lf_id;		 		/* process or file description holding lock */
-	struct	lockf **lf_head; 	/* Back pointer to the head of lockf list */
-	struct	lockf *lf_next;	 	/* Next lock on this vnode, or blocking lock */
-	struct  locklist lf_blkhd; 	/* List of requests blocked on this lock */
-	TAILQ_ENTRY(lockf) lf_block;/* A request waiting for a lock */
-	uid_t	lf_uid;		 		/* User ID responsible */
+	short				lf_flags;	/* Lock semantics: F_POSIX, F_FLOCK, F_WAIT */
+	short				lf_type;	/* Lock type: F_RDLCK, F_WRLCK */
+	off_t				lf_start;	/* The byte # of the start of the lock */
+	off_t				lf_end;		/* The byte # of the end of the lock (-1=EOF)*/
+	void				*lf_id;		/* process or file description holding lock */
+	struct	lockf 		**lf_head; 	/* Back pointer to the head of lockf list */
+	struct	lockf 		*lf_next;	/* Next lock on this vnode, or blocking lock */
+	struct  locklist 	lf_blkhd; 	/* List of requests blocked on this lock */
+	TAILQ_ENTRY(lockf) 	lf_block;	/* A request waiting for a lock */
+	uid_t				lf_uid;		/* User ID responsible */
 };
 
 /* Maximum length of sleep chains to traverse to try and detect deadlock. */
@@ -293,7 +293,7 @@ lf_advlock(struct vop_advlock_args *ap, struct lockf **head, off_t size)
 	}
 
 quit_unlock:
-	mutex_exit(interlock);
+	//mutex_exit(interlock);
 quit:
 	if (lock)
 		lf_free(lock);

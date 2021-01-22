@@ -5,7 +5,9 @@ A General todo list. Don't hesitate to add to this list. :)
 - Compiler
 - Makefiles
 - Bug Fixes &/or missing critical content
-
+- Cross-Compatability with 4.4BSD: Following routines are used:
+	- e.g. groupmember & suser
+	- kern_prot.c ???
 
 # usr/ (User & OS Libraries):
 ## lib:

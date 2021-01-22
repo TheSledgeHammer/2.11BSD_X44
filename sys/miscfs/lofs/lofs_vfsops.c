@@ -91,8 +91,7 @@ lofs_mount(mp, path, data, ndp, p)
 	/*
 	 * Find target node
 	 */
-	NDINIT(ndp, LOOKUP, FOLLOW|WANTPARENT|LOCKLEAF,
-		UIO_USERSPACE, args.target, p);
+	NDINIT(ndp, LOOKUP, FOLLOW|WANTPARENT|LOCKLEAF,	UIO_USERSPACE, args.target, p);
 	if (error == namei(ndp))
 		return (error);
 
@@ -115,8 +114,7 @@ lofs_mount(mp, path, data, ndp, p)
 	printf("mp = %x\n", mp);
 #endif
 
-	amp = (struct lofsmount *) malloc(sizeof(struct lofsmount),
-				M_UFSMNT, M_WAITOK);	/* XXX */
+	amp = (struct lofsmount *) malloc(sizeof(struct lofsmount), M_UFSMNT, M_WAITOK);	/* XXX */
 
 	/*
 	 * Save reference to underlying target FS
@@ -151,7 +149,7 @@ lofs_mount(mp, path, data, ndp, p)
 	if (LOFSVP(rootvp)->v_mount->mnt_flag & MNT_LOCAL)
 		mp->mnt_flag |= MNT_LOCAL;
 	mp->mnt_data = (qaddr_t) amp;
-	getnewfsid(mp, MOUNT_LOFS);
+	vfs_getnewfsid(mp);
 
 	(void) copyinstr(path, mp->mnt_stat.f_mntonname, MNAMELEN - 1, &size);
 	bzero(mp->mnt_stat.f_mntonname + size, MNAMELEN - size);

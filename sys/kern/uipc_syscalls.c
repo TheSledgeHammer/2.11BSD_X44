@@ -379,7 +379,6 @@ sendmsg()
 	sendit(uap->s, &msg, uap->flags);
 }
 
-void
 sendit(s, mp, flags)
 	int s;
 	register struct msghdr *mp;
@@ -525,7 +524,6 @@ recvmsg()
 	    (caddr_t)&uap->msg->msg_accrightslen);
 }
 
-void
 recvit(s, mp, flags, namelenp, rightslenp)
 	int s;
 	register struct msghdr *mp;
@@ -592,7 +590,6 @@ recvit(s, mp, flags, namelenp, rightslenp)
 	if (from)
 		M_FREEM(from);
 }
-
 
 shutdown()
 {
@@ -725,6 +722,7 @@ getsockname()
 /*
  * Get name of peer for connected socket.
  */
+void
 getpeername()
 {
 	register struct a {
@@ -758,7 +756,7 @@ getpeername()
 	u->u_error = copyout((caddr_t)&len, (caddr_t)uap->alen, sizeof (len));
 }
 
-#ifndef pdp11
+int
 sockargs(aname, name, namelen, type)
 	struct mbuf **aname;
 	caddr_t name;
@@ -781,7 +779,6 @@ sockargs(aname, name, namelen, type)
 		*aname = m;
 	return (error);
 }
-#endif
 
 struct file *
 gtsockf(fdes)

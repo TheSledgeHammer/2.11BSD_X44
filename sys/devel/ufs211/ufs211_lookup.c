@@ -951,10 +951,7 @@ nchinit()
 {
 	register union nchash *nchp;
 	register struct namecache *ncp;
-	//segm	seg5;
 
-	//saveseg5(seg5);
-	//mapseg5(nmidesc.se_addr,nmidesc.se_desc);
 	nchhead = 0;
 	nchtail = &nchhead;
 	for (ncp = namecache; ncp < &namecache[nchsize]; ncp++) {
@@ -970,7 +967,6 @@ nchinit()
 		nchp->nch_head[0] = nchp;
 		nchp->nch_head[1] = nchp;
 	}
-	//restorseg5(seg5);
 }
 
 /*
@@ -985,21 +981,19 @@ void
 nchinval(dev)
 	register ufs211_dev_t dev;
 {
-	register struct namecache *ncp, *nxtcp;
-	//segm	seg5;
 
-	//saveseg5(seg5);
-	//mapseg5(nmidesc.se_addr,nmidesc.se_desc);
+	register struct namecache *ncp, *nxtcp;
+
 	for (ncp = nchhead; ncp; ncp = nxtcp) {
 		nxtcp = ncp->nc_nxt;
-		if (ncp->nc_ip == NULL ||
-		    (ncp->nc_idev != dev && ncp->nc_dev != dev))
+		if (ncp->nc_vp == NULL || (ncp->nc_idev != dev && ncp->nc_dev != dev))
 			continue;
 		/* free the resources we had */
+		ncp->nc_dvp
 		ncp->nc_idev = NODEV;
 		ncp->nc_dev = NODEV;
 		ncp->nc_id = NULL;
-		ncp->nc_no = 0;
+		ncp->nc_ino = 0;
 		ncp->nc_vp = NULL;
 		remque(ncp);		/* remove entry from its hash chain */
 		ncp->nc_forw = ncp;	/* and make a dummy one */
@@ -1018,7 +1012,6 @@ nchinval(dev)
 		nxtcp->nc_prev = &ncp->nc_nxt;
 		nchhead = ncp;
 	}
-	//restorseg5(seg5);
 }
 
 /*

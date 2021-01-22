@@ -17,38 +17,38 @@
  * minimize space allocated on the kernel stack.
  */
 struct nameidata {
-	caddr_t			ni_dirp;			/* pathname pointer */
-	enum	uio_seg	ni_segflg;			/* segment flag */
-	short			ni_nameiop;			/* see below */
-	struct	vnode 	*ni_cdir;			/* current directory */
-	struct	vnode 	*ni_rdir;			/* root directory, if not normal root */
+	caddr_t				ni_dirp;			/* pathname pointer */
+	enum	uio_seg		ni_segflg;			/* segment flag */
+	short				ni_nameiop;			/* see below */
+	struct	vnode 		*ni_cdir;			/* current directory */
+	struct	vnode 		*ni_rdir;			/* root directory, if not normal root */
 
 	/* Arguments to lookup */
-	struct	vnode 	*ni_startdir;		/* starting directory */
-	struct	vnode 	*ni_rootdir;		/* logical root directory */
+	struct	vnode 		*ni_startdir;		/* starting directory */
+	struct	vnode 		*ni_rootdir;		/* logical root directory */
 
 	/* Results: returned from/manipulated by lookup  */
-	struct	vnode 	*ni_vp;				/* vnode of result */
-	struct	vnode 	*ni_dvp;			/* vnode of intermediate directory */
+	struct	vnode 		*ni_vp;				/* vnode of result */
+	struct	vnode 		*ni_dvp;			/* vnode of intermediate directory */
 
 	/* Shared between namei and lookup/commit routines. */
-	long			ni_pathlen;			/* remaining chars in path */
-	char			*ni_next;			/* next location in pathname */
-	u_long			ni_loopcnt;			/* count of symlinks encountered */
+	long				ni_pathlen;			/* remaining chars in path */
+	char				*ni_next;			/* next location in pathname */
+	u_long				ni_loopcnt;			/* count of symlinks encountered */
 
 	struct componentname {
 		/* Arguments to lookup */
-		u_long			cn_nameiop;		/* namei operation */
-		u_long			cn_flags;		/* flags to namei */
-		struct	proc 	*cn_proc;		/* process requesting lookup */
-		struct	ucred 	*cn_cred;		/* credentials */
+		u_long			cn_nameiop;			/* namei operation */
+		u_long			cn_flags;			/* flags to namei */
+		struct	proc 	*cn_proc;			/* process requesting lookup */
+		struct	ucred 	*cn_cred;			/* credentials */
 
 		/* Shared between lookup and commit routines */
-		char			*cn_pnbuf;		/* pathname buffer */
-		char			*cn_nameptr;	/* pointer to looked up name */
-		long			cn_namelen;		/* length of looked up component */
-		u_long			cn_hash;		/* hash value of looked up name */
-		long			cn_consume;		/* chars to consume in lookup() */
+		char			*cn_pnbuf;			/* pathname buffer */
+		char			*cn_nameptr;		/* pointer to looked up name */
+		long			cn_namelen;			/* length of looked up component */
+		u_long			cn_hash;			/* hash value of looked up name */
+		long			cn_consume;			/* chars to consume in lookup() */
 	} ni_cnd;
 };
 
@@ -98,12 +98,12 @@ struct nameidata {
 #define	DOWHITEOUT		0x40000	/* do whiteouts */
 #define PARAMASK		0xfff00	/* mask of parameter descriptors */
 
-#define NDINIT(ndp, op, flags, segflg, namep, p) { \
-	(ndp)->ni_cnd.cn_nameiop = op; \
-	(ndp)->ni_cnd.cn_flags = flags; \
-	(ndp)->ni_segflg = segflg; \
-	(ndp)->ni_dirp = namep; \
-	(ndp)->ni_cnd.cn_proc = p; \
+#define NDINIT(ndp, op, flags, segflg, namep, p) { 	\
+	(ndp)->ni_cnd.cn_nameiop = op; 					\
+	(ndp)->ni_cnd.cn_flags = flags; 				\
+	(ndp)->ni_segflg = segflg; 						\
+	(ndp)->ni_dirp = namep; 						\
+	(ndp)->ni_cnd.cn_proc = p; 						\
 }
 #endif
 
@@ -134,6 +134,7 @@ struct	namecache {
 
 #ifdef KERNEL
 u_long	nextvnodeid;
+struct namecache 	*namecache;
 int	namei (struct nameidata *ndp);
 int	lookup (struct nameidata *ndp);
 int	relookup (struct vnode *dvp, struct vnode **vpp, struct componentname *cnp);

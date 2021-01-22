@@ -664,7 +664,7 @@ postsig(sig)
 
 static int
 core(p)
-register struct proc *p;
+	register struct proc *p;
 {
 	register struct vnode *vp;
 	register struct pcred *pcred = p->p_cred;

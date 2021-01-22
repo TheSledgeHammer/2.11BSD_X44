@@ -57,8 +57,9 @@ struct ucred *crcopy(struct ucred *);
 struct ucred *crdup(struct ucred *);
 extern void crfree(struct ucred *);
 extern int suser(struct ucred *, short *);
-int	groupmember (gid_t, struct ucred *);
 
+//int	groupmember(gid_t, struct ucred *);
+int	groupmember(gid_t);
 #endif /* KERNEL */
 
 #endif /* !_SYS_UCRED_H_ */

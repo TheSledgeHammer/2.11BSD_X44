@@ -87,12 +87,12 @@ int	vttoif_tab[9] = {
 }
 
 TAILQ_HEAD(freelst, vnode) vnode_free_list;	/* vnode free list */
-struct mntlist mountlist;			/* mounted filesystem list */
-struct simplelock mountlist_slock;
-static struct simplelock mntid_slock;
-struct simplelock mntvnode_slock;
-struct simplelock vnode_free_list_slock;
-static struct simplelock spechash_slock;
+struct mntlist mountlist;					/* mounted filesystem list */
+struct lock_object mountlist_slock;
+static struct lock_object mntid_slock;
+struct lock_object mntvnode_slock;
+struct lock_object vnode_free_list_slock;
+static struct lock_object spechash_slock;
 
 /*
  * Initialize the vnode management data structures.

@@ -74,9 +74,9 @@
 /*
  * Undo the PUSHREF
  */
-#define POP(v, nd) 	\
-					\
-	(nd) = v.vnp; 	\
+#define POP(v, nd) 						\
+										\
+	(nd) = v.vnp; 						\
 }
 
 
@@ -779,9 +779,12 @@ lofs_symlink(ap)
 
 lofs_readdir(ap)
 	struct vop_readdir_args /* {
-		struct vnode *a_vp;
-		struct uio *a_uio;
-		struct ucred *a_cred;
+		struct vnode 			*a_vp;
+		struct uio 				*a_uio;
+		struct ucred 			*a_cred;
+		int 					*a_eofflag;
+		int 					*a_ncookies;
+		u_long 					**a_cookies;
 	} */ *ap;
 {
 
@@ -789,7 +792,7 @@ lofs_readdir(ap)
 	printf("lofs_readdir(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
 #endif
 
-	return VOP_READDIR(LOFSVP(ap->a_vp), ap->a_uio, ap->a_cred);
+	return (VOP_READDIR(LOFSVP(ap->a_vp), ap->a_uio, ap->a_cred, ap->a_eofflag, ap->a_ncookies, ap->a_cookies));
 }
 
 lofs_readlink(ap)
@@ -804,7 +807,7 @@ lofs_readlink(ap)
 	printf("lofs_readlink(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
 #endif
 
-	return VOP_READLINK(LOFSVP(ap->a_vp), ap->a_uio, ap->a_cred);
+	return (VOP_READLINK(LOFSVP(ap->a_vp), ap->a_uio, ap->a_cred));
 }
 
 /*
@@ -916,18 +919,18 @@ lofs_unlock(ap)
 
 lofs_bmap(ap)
 	struct vop_bmap_args /* {
-		struct vnode *a_vp;
-		daddr_t  a_bn;
-		struct vnode **a_vpp;
-		daddr_t *a_bnp;
+		struct vnode 	*a_vp;
+		daddr_t  		a_bn;
+		struct vnode 	**a_vpp;
+		daddr_t 		*a_bnp;
+		int				a_runp;
 	} */ *ap;
 {
-
 #ifdef LOFS_DIAGNOSTIC
 	printf("lofs_bmap(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
 #endif
 
-	return VOP_BMAP(LOFSVP(ap->a_vp), ap->a_bn, ap->a_vpp, ap->a_bnp);
+	return (VOP_BMAP(LOFSVP(ap->a_vp), ap->a_bn, ap->a_vpp, ap->a_bnp, ap->a_runp));
 }
 
 lofs_strategy(ap)
@@ -1002,7 +1005,7 @@ lofs_blkatoff(ap)
 	} */ *ap;
 {
 
-	return (EOPNOTSUPP);
+	return (VOP_BLKATOFF(LOFSVP(ap->a_vp), ap->a_offset, ap->a_res, ap->a_bpp));
 }
 
 /*
@@ -1018,7 +1021,7 @@ lofs_valloc(ap)
 	} */ *ap;
 {
 
-	return (EOPNOTSUPP);
+	return (VOP_VALLOC(LOFSVP(ap->a_pvp), ap->a_mode, ap->a_cred, ap->a_vpp));
 }
 
 /*
@@ -1034,7 +1037,7 @@ lofs_vfree(ap)
 	} */ *ap;
 {
 
-	return (0);
+	return (VOP_VFREE(LOFSVP(ap->a_pvp), ap->a_ino, ap->a_mode));
 }
 
 /*
@@ -1052,7 +1055,7 @@ lofs_truncate(ap)
 
 	/* Use lofs_setattr */
 	printf("lofs_truncate: need to implement!!");
-	return (EOPNOTSUPP);
+	return (VOP_TRUNCATE(LOFSVP(ap->a_vp), ap->a_length, ap->a_flags, ap->a_cred, ap->a_p));
 }
 
 /*
@@ -1061,15 +1064,15 @@ lofs_truncate(ap)
 lofs_update(ap)
 	struct vop_update_args /* {
 		struct vnode *a_vp;
-		struct timeval *a_ta;
-		struct timeval *a_tm;
+		struct timeval *a_access;
+		struct timeval *a_modify;
 		int a_waitfor;
 	} */ *ap;
 {
 
 	/* Use lofs_setattr */
 	printf("lofs_update: need to implement!!");
-	return (EOPNOTSUPP);
+	return (VOP_UPDATE(LOFSVP(ap->a_vp), ap->a_access, ap->a_modify, ap->a_waitfor));
 }
 
 /*
@@ -1080,8 +1083,7 @@ lofs_bwrite(ap)
 		struct buf *a_bp;
 	} */ *ap;
 {
-
-	return (EOPNOTSUPP);
+	return (VOP_BWRITE(ap->a_bp));
 }
 
 /*

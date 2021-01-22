@@ -76,6 +76,7 @@ struct user {
 	char				u_dummy0;
 
 /* 1.1 - processes and protection */
+	struct ucred		*u_ucred;				/* credentials */
 	uid_t				u_uid;					/* effective user id */
 	uid_t				u_svuid;				/* saved user id */
 	uid_t				u_ruid;					/* real user id */
@@ -173,6 +174,6 @@ struct user {
 	//struct uthread		*u_uthread;			/* ptr to uthread */
 };
 
-#ifdef KERNEL
+//#ifdef KERNEL
 extern struct user u;
 #endif

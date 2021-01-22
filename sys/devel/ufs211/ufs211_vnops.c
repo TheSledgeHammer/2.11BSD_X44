@@ -43,6 +43,7 @@
 #include <sys/vnode.h>
 #include <sys/malloc.h>
 #include <sys/dirent.h>
+#include <sys/unistd.h>
 
 #include <vm/include/vm.h>
 #include <miscfs/specfs/specdev.h>
@@ -391,17 +392,17 @@ ufs211_setattr(ap)
 	 * Go thru the fields (other than 'flags') and update iff not VNOVAL.
 	 */
 	if (vap->va_uid != (uid_t) VNOVAL || vap->va_gid != (gid_t) VNOVAL)
-		if (error == chown1(ip, vap->va_uid, vap->va_gid))
+		if (error == ufs211_chown1(ip, vap->va_uid, vap->va_gid))
 			return (error);
 	if (vap->va_size != (off_t) VNOVAL) {
 		if ((ip->i_mode & UFS211_IFMT) == UFS211_IFDIR)
 			return (EISDIR);
-		itrunc(ip, vap->va_size, 0);
+		ufs211_trunc(ip, vap->va_size, 0);
 		if (u->u_error)
 			return (u->u_error);
 	}
 	if (vap->va_atime != (time_t) VNOVAL || vap->va_mtime != (time_t) VNOVAL) {
-		if (u->u_uid != ip->i_uid && !ufs211_suser()
+		if (u->u_uid != ip->i_uid && !suser()
 				&& ((vap->va_vaflags & VA_UTIMES_NULL) == 0
 						|| access(ip, UFS211_IWRITE)))
 			return (u->u_error);
@@ -412,10 +413,10 @@ ufs211_setattr(ap)
 			ip->i_flag |= (UFS211_IUPD | UFS211_ICHG);
 		atimeval.tv_sec = vap->va_atime;
 		mtimeval.tv_sec = vap->va_mtime;
-		iupdat(ip, &atimeval, &mtimeval, 1);
+		ufs211_updat(ip, &atimeval, &mtimeval, 1);
 	}
 	if (vap->va_mode != (mode_t) VNOVAL)
-		return (chmod1(ip, vap->va_mode));
+		return (ufs211_chmod1(ip, vap->va_mode));
 	return(0);
 }
 
@@ -429,9 +430,11 @@ ufs211_suser()
 {
 	if (u->u_uid == 0) {
 		u->u_acflag |= ASU;
+		crset(u->u_ucred);
 		return (1);
 	}
 	u->u_error = EPERM;
+	crset(u->u_ucred);
 	return (0);
 }
 
@@ -492,7 +495,7 @@ ufs211_fsync(ap)
 	//struct filedesc *fdp = ap->a_p->p_fd;
 	//struct file *fpp = fdp->fd_ofiles;
 
-	syncip(&UFS211_VTOI(vp));
+	syncip(UFS211_VTOI(vp));
 
 	return (VOP_UPDATE(ap->a_vp, &tv, &tv, ap->a_waitfor == MNT_WAIT));
 }
@@ -589,6 +592,9 @@ int
 ufs211_strategy(ap)
 	struct vop_strategy_args *ap;
 {
+	register struct vnode *vp = ap->a_vp;
+	struct ufs211_inode *ip = UFS211_VTOI(vp);
+
 	return (0);
 }
 
@@ -596,6 +602,16 @@ int
 ufs211_print(ap)
 	struct vop_print_args *ap;
 {
+	register struct vnode *vp = ap->a_vp;
+	struct ufs211_inode *ip = UFS211_VTOI(vp);
+
+	printf("tag VT_UFS211, ino %d, on dev %d, %d", ip->i_number, major(ip->i_dev), minor(ip->i_dev));
+#ifdef FIFO
+	if (vp->v_type == VFIFO)
+		fifo_printinfo(vp);
+#endif /* FIFO */
+	lockmgr_printinfo(&ip->i_lock);
+	printf("\n");
 	return (0);
 }
 
@@ -916,8 +932,7 @@ ufs211_makeinode(mode, dvp, vpp, cnp)
 	ip->i_mode = mode;
 	tvp->v_type = IFTOVT(mode);	/* Rest init'd in getnewvnode(). */
 	ip->i_nlink = 1;
-	if ((ip->i_mode & UFS211_ISGID) && !groupmember(ip->i_gid, cnp->cn_cred) &&
-	    suser(cnp->cn_cred, NULL))
+	if ((ip->i_mode & UFS211_ISGID) && !groupmember(ip->i_gid, cnp->cn_cred) && suser())
 		ip->i_mode &= ~UFS211_ISGID;
 
 	if (cnp->cn_flags & ISWHITEOUT)

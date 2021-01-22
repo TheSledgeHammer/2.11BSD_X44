@@ -28,8 +28,6 @@
 int	sorw(), soctl(), sosel(), socls();
 struct	fileops	socketops = { sorw, soctl, sosel, socls };
 
-register struct user *u;
-
 /*
  * Read system call.
  */

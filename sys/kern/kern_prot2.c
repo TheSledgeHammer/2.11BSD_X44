@@ -141,3 +141,80 @@ _setegid(egid)
 	u->u_acflag |= ASUGID;
 	return (u->u_error = 0);
 }
+
+/*
+ * 4.4BSD groupmember routine
+ */
+int
+groupmember1(gid, cred)
+	gid_t gid;
+	register struct ucred *cred;
+{
+	register gid_t *gp;
+	gid_t *egp;
+
+	egp = &(cred->cr_groups[cred->cr_ngroups]);
+	for (gp = cred->cr_groups; gp < egp; gp++) {
+		if (*gp == gid) {
+			crupdate(cred, 0);
+			return (1);
+		}
+	}
+	crupdate(cred, 0);
+	return (0);
+}
+
+/*
+ * 4.4BSD suser routine
+ */
+int
+suser1(cred, acflag)
+	struct ucred *cred;
+	u_short *acflag;
+{
+	if (cred->cr_uid == 0) {
+		if (acflag) {
+			*acflag |= ASU;
+			crupdate(cred, acflag);
+		}
+		return (0);
+	}
+	crupdate(cred, EPERM);
+	return (EPERM);
+}
+
+/*
+ * 4.4BSD ucred compat:
+ * updates 'u'(user) from ucred
+ */
+void
+crupdate(cr, flags)
+	struct ucred *cr;
+	int flags;
+{
+	if(u->u_ucred != cr) {
+		u->u_ucred = cr;
+		u->u_uid = cr->cr_uid;
+		u->u_groups = cr->cr_groups;
+		u->u_groups[NGROUPS] = cr->cr_groups[cr->cr_ngroups];
+		if(u->u_acflag != flags) {
+			u->u_acflag = flags;
+		}
+	}
+}
+
+/*
+ * 4.4BSD ucred compat:
+ * updates ucred from 'u'(user)
+ */
+void
+crset(cr)
+	struct ucred *cr;
+{
+	if(cr != u->u_ucred) {
+		cr = u->u_ucred;
+		cr->cr_uid = u->u_uid;
+		cr->cr_groups = u->u_groups;
+		cr->cr_groups[cr->cr_ngroups] = u->u_groups[NGROUPS];
+	}
+}
