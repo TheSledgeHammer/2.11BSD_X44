@@ -663,10 +663,10 @@ postsig(sig)
  */
 
 static int
-core(p)
-	register struct proc *p;
+core()
 {
 	register struct vnode *vp;
+	register struct proc *p = u->u_procp;
 	register struct pcred *pcred = p->p_cred;
 	register struct ucred *cred = pcred->pc_ucred;
 	register struct vmspace *vm = p->p_vmspace;

@@ -583,10 +583,10 @@ exec_macho_linker(elp)
 	elp->el_emul_arg = (void *)emea;
 	emea->dynamic = 0;
 
-	if (!exec_mach_probe(elp, &emea->path))
+	if (!exec_macho_probe(elp, &emea->path))
 		emea->path = "/";
 	else {
-		if ((error = exec_mach_probe(elp, &emea->path)) != 0)
+		if ((error = exec_macho_probe(elp, &emea->path)) != 0)
 			goto bad2;
 	}
 
@@ -618,10 +618,61 @@ bad2:
 }
 
 int
-exec_mach_probe(struct exec_linker *elp, const char **path)
+exec_macho_probe(struct exec_linker *elp, const char **path)
 {
 	struct emul *emul = elp->el_esch->ex_emul;
 
 	*path = emul->e_path;
 	return (0);
+}
+
+int
+macho_copyargs(struct exec_linker *elp, struct ps_strings *arginfo, char **stackp, void *argp)
+{
+	struct exec_macho_emul_arg *emea;
+	struct exec_macho_object_header *macho_hdr;
+	size_t len;
+	size_t zero = 0;
+	int error;
+
+	*stackp = (char *)(((unsigned long)*stackp - 1) & ~0xfUL);
+
+	emea = (struct exec_macho_emul_arg*) elp->el_emul_arg;
+	macho_hdr = (struct exec_macho_object_header*) emea->macho_hdr;
+	if ((error = copyout(&macho_hdr, *stackp, sizeof(macho_hdr))) != 0)
+		return error;
+
+	*stackp += sizeof(macho_hdr);
+
+	if ((error = copyargs(elp, arginfo, stackp, argp)) != 0) {
+		DPRINTF(("mach: copyargs failed\n"));
+		return error;
+	}
+
+	if ((error = copyout(&zero, *stackp, sizeof(zero))) != 0)
+		return error;
+	*stackp += sizeof(zero);
+
+	if ((error = copyoutstr(emea->filename, *stackp, MAXPATHLEN, &len)) != 0) {
+		DPRINTF(("mach: copyout path failed\n"));
+		return error;
+	}
+	*stackp += len + 1;
+
+	/* We don't need this anymore */
+	free(elp->el_emul_arg, M_TEMP);
+	elp->el_emul_arg = NULL;
+
+	len = len % sizeof(zero);
+	if (len) {
+		if ((error = copyout(&zero, *stackp, len)) != 0)
+			return error;
+		*stackp += len;
+	}
+
+	if ((error = copyout(&zero, *stackp, sizeof(zero))) != 0)
+		return error;
+	*stackp += sizeof(zero);
+
+	return 0;
 }

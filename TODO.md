@@ -19,9 +19,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## conf:
 
 ## kern:
-- kern_prot/2.c: setreuid & setregid
-- exec_macho: exec_mach_copyargs 
-	(NetBSD 5.2: /compat/mach/mach_exec.c)
+- kern_prot/2.c: credentials- ucred & pcred structs
 	
 ## arch:
 - i386/x86: (Merged under i386)

@@ -40,6 +40,7 @@
 
 #include <sys/param.h>
 #include <sys/user.h>
+#include <sys/ucred.h>
 #include <sys/acct.h>
 #include <sys/proc.h>
 #include <sys/systm.h>
@@ -63,12 +64,12 @@ int
 _setuid(uid)
 	register uid_t uid;
 {
-	if (uid != u->u_pcred->u_ruid && !suser())
+	if (uid != u->u_pcred->p_ruid && !suser())
 		return(u->u_error);
 	u->u_procp->p_uid = uid;
 	u->u_ucred->cr_uid = uid;
-	u->u_pcred->u_ruid = uid;
-	u->u_pcred->u_svuid = uid;
+	u->u_pcred->p_ruid = uid;
+	u->u_pcred->p_svuid = uid;
 	//u.u_acflag |= ASUGID;
 	return (u->u_error = 0);
 }
@@ -88,7 +89,7 @@ _seteuid(euid)
 	register uid_t euid;
 {
 
-	if (euid != u->u_pcred->u_ruid && euid != u->u_pcred->u_svuid && !suser())
+	if (euid != u->u_pcred->p_ruid && euid != u->u_pcred->p_svuid && !suser())
 		return (u->u_error);
 	/*
 	 * Everything's okay, do it.
@@ -112,11 +113,11 @@ int
 _setgid(gid)
 	register gid_t gid;
 {
-	if (gid != u->u_pcred->u_rgid && !suser())
+	if (gid != u->u_pcred->p_rgid && !suser())
 		return (u->u_error);	/* XXX */
 	u->u_ucred->cr_groups[0] = gid;		/* effective gid is u_groups[0] */
-	u->u_pcred->u_rgid = gid;
-	u->u_pcred->u_svgid = gid;
+	u->u_pcred->p_rgid = gid;
+	u->u_pcred->p_svgid = gid;
 	//u.u_acflag |= ASUGID;
 	return (u->u_error = 0);
 }
@@ -135,7 +136,7 @@ int
 _setegid(egid)
 	register gid_t egid;
 {
-	if (egid != u->u_pcred->u_rgid && egid != u->u_pcred->u_svgid && !suser())
+	if (egid != u->u_pcred->p_rgid && egid != u->u_pcred->p_svgid && !suser())
 		return (u->u_error);
 	u->u_ucred->cr_groups[0] = egid;
 	u->u_acflag |= ASUGID;
@@ -171,9 +172,11 @@ setsid(pid)
 	} else {
 		return (u->u_error = EPERM);
 	}
+
+	p->p_ucred;
 }
 
-void
+int
 setpgid()
 {
 	register struct a {
@@ -186,31 +189,132 @@ setpgid()
 
 	if(uap->pid != 0 && uap->pid != u->u_procp->p_pid) {
 		if((targp = pfind(uap->pid)) == 0 || !inferior(targp)) {
-			u->u_error = ESRCH;
-			return;
+			return (u->u_error = ESRCH);
 		}
 		if(targp->p_session != u->u_procp->p_session) {
-			u->u_error = EPERM;
-			return;
+			return (u->u_error = EPERM);
 		}
 		if (targp->p_flag & P_EXEC) {
-			u->u_error = EACCES;
-			return;
+
+			return (u->u_error = EACCES);
 		}
 	} else {
 		targp = u->u_procp;
 	}
 	if(SESS_LEADER(targp)) {
-		u->u_error = EPERM;
-		return;
+		return (u->u_error = EPERM);
 	}
 	if(uap->pgid == 0) {
 		uap->pgid = targp->p_pid;
 	} else if(uap->pgid != targp->p_pid) {
 		if((pgrp = pgfind(uap->pgid)) == 0 || pgrp->pg_session != u->u_procp->p_session) {
-			u->u_error = EPERM;
-			return;
+			return (u->u_error = EPERM);
 		}
 	}
-	u->u_error = enterpgrp(targp, uap->pgid, 0);
+	return (u->u_error = enterpgrp(targp, uap->pgid, 0));
+}
+
+void
+setreuid()
+{
+	struct a {
+		int	ruid;
+		int	euid;
+	} *uap = (struct a *)u.u_ap;
+
+	register int ruid, euid;
+	ruid = uap->ruid;
+
+	if (ruid == -1) {
+		ruid = u->u_pcred->p_ruid;
+	}
+	if (u->u_pcred->p_ruid != ruid && u->u_ucred->cr_uid != ruid && !suser()) {
+		return;
+	}
+	euid = uap->euid;
+	if (euid == -1) {
+		euid = u->u_ucred->cr_uid;
+	}
+	if (u->u_pcred->p_ruid != euid && u->u_ucred->cr_uid != euid && !suser()) {
+		return;
+	}
+
+	u->u_procp->p_uid = ruid;
+	u->u_pcred->p_ruid = ruid;
+	u->u_ucred->cr_uid = euid;
+}
+
+void
+setregid()
+{
+	register struct a {
+		int rgid;
+		int egid;
+	} *uap = (struct a*) u->u_ap;
+	register int rgid, egid;
+
+	rgid = uap->rgid;
+	if (rgid == -1) {
+		rgid = u->u_pcred->p_rgid;
+	}
+	if (u->u_pcred->p_rgid != rgid && u->u_ucred->cr_gid != rgid && !suser()) {
+		return;
+	}
+	egid = uap->egid;
+	if (egid == -1) {
+		egid = u->u_ucred->cr_gid;
+	}
+	if (u->u_pcred->p_rgid != egid && u->u_ucred->cr_gid != egid && !suser()) {
+		return;
+	}
+	if (u->u_pcred->p_rgid != rgid) {
+		leavegroup(u->u_pcred->p_rgid);
+		(void) entergroup(rgid);
+		u->u_pcred->p_rgid = rgid;
+	}
+	u->u_ucred->cr_gid = egid;
+}
+
+/*
+ * Delete gid from the group set.
+ */
+void
+leavegroup(gid)
+	gid_t gid;
+{
+	register gid_t *gp;
+
+	for (gp = u->u_ucred->cr_groups; gp < &u->u_ucred->cr_groups[NGROUPS]; gp++) {
+		if (*gp == gid) {
+			goto found;
+		}
+	}
+	return;
+
+found:
+	for (; gp < &u->u_ucred->cr_groups[NGROUPS - 1]; gp++) {
+		*gp = *(gp + 1);
+	}
+	*gp = NOGROUP;
+}
+
+/*
+ * Add gid to the group set.
+ */
+int
+entergroup(gid)
+	gid_t gid;
+{
+	register gid_t *gp;
+
+	for (gp = u->u_ucred->cr_groups; gp < &u->u_ucred->cr_groups[NGROUPS]; gp++) {
+		if (*gp == gid) {
+			return (0);
+		}
+		if (*gp == NOGROUP) {
+			*gp = gid;
+			return (0);
+		}
+	}
+	return (-1);
 }

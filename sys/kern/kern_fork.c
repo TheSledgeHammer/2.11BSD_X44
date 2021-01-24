@@ -339,12 +339,8 @@ copyproc(rip, rpp, isvfork)
 	rpp->p_saddr = rip->p_saddr;
 	a1 = rip->p_addr;
 	if (isvfork) {
-		//a[2] = MALLOC(coremap, struct map *, USIZE, M_COREMAP, M_WAITOK);
-
-		a[2] = malloc(coremap, USIZE);
+		a[2] = rmalloc(coremap, USIZE);
 	} else {
-		//a[2] = MALLOC(coremap, struct map *, a, M_COREMAP, M_WAITOK);
-
 		a[2] = rmalloc3(coremap, rip->p_dsize, rip->p_ssize, USIZE, a);
 	}
 
@@ -399,7 +395,6 @@ copyproc(rip, rpp, isvfork)
 		rpp->p_flag |= P_SVFORK;
 		rip->p_flag |= P_SVFPRNT;
 		if (a[2] == NULL) {
-			//FREE(coremap, M_COREMAP);
 			mfree(coremap, rip->p_dsize, rip->p_daddr);
 			mfree(coremap, rip->p_ssize, rip->p_saddr);
 		}

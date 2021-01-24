@@ -116,8 +116,6 @@ preempt(p)
 	setrq(p);
 	u->u_stats->p_ru.ru_nvcsw++;
 	swtch();
-
-	p->p_cred->p_uid;
 }
 
 /*

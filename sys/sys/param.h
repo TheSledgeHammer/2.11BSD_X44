@@ -50,6 +50,7 @@
 #include <sys/resource.h>
 #include <sys/uio.h>
 #include <sys/ucred.h>
+#include <sys/user.h>
 #endif
 
 /* Signals */

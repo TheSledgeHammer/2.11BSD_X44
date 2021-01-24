@@ -133,13 +133,12 @@ struct	proc {
 	struct  rusage    	p_ru;			/* exit information */
 	struct  k_rusage    p_kru;			/* exit information kernel */
 
-	//struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
-	//char				*p_name;		/* (: name, optional */
-
 	//struct gsched		*p_gsched;		/* global scheduler */
-
-
+	//struct kthread	*p_kthreado;	/* kthread overseer (original kthread)  */
+	//char				*p_name;		/* (: name, optional */
 };
+#define	p_session		p_pgrp->pg_session
+#define	p_pgid			p_pgrp->pg_id
 
 struct	session {
 	int					s_count;		/* Ref cnt; pgrps in session. */
@@ -157,27 +156,14 @@ struct	pgrp {
 	int					pg_jobc;		/* # procs qualifying pgrp for job control */
 };
 
-#include <sys/user.h>
-
-/*
- * pcred references:
- * please refer to user.h
- */
-#define pc_ucred		pcred.u_ucred	/* Current credentials. */
-#define	p_ruid;			pcred.u_ruid	/* Real user id. */
-#define p_svuid			pcred.u_svuid	/* Saved effective user id. */
-#define p_rgid			pcred.u_rgid	/* Real group id. */
-#define	p_svgid;		pcred.u_svgid	/* Saved effective group id. */
-#define	p_refcnt;		pcred.u_refcnt	/* Number of references. */
-
-//struct pcred {
-	//struct ucred 		*pc_ucred;		/* Current credentials. */
-	//uid_t				p_ruid;			/* Real user id. */
-	//uid_t				p_svuid;		/* Saved effective user id. */
-	//gid_t				p_rgid;			/* Real group id. */
-	//gid_t				p_svgid;		/* Saved effective group id. */
-	//int				p_refcnt;		/* Number of references. */
-//};
+struct pcred {
+	struct ucred 		*pc_ucred;		/* Current credentials. */
+	uid_t				p_ruid;			/* Real user id. */
+	uid_t				p_svuid;		/* Saved effective user id. */
+	gid_t				p_rgid;			/* Real group id. */
+	gid_t				p_svgid;		/* Saved effective group id. */
+	int					p_refcnt;		/* Number of references. */
+};
 
 struct exec_linker;
 struct proc;
@@ -197,9 +183,6 @@ struct emul {
 
 	void				(*e_syscall)(void);
 };
-
-#define	p_session		p_pgrp->pg_session
-#define	p_pgid			p_pgrp->pg_id
 
 /* stat codes */
 #define	SSLEEP	1			/* awaiting an event */

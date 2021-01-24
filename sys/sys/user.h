@@ -8,26 +8,28 @@
 
 #ifndef _SYS_USER_H_
 #define _SYS_USER_H_
+#include <sys/cdefs.h>
 
 #include <machine/pcb.h>
 #include <machine/param.h>
 
 #ifndef KERNEL
-#include <sys/errno.h>
-#include <sys/dir.h>
-#include <sys/exec.h>
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <sys/uio.h>
-#include <sys/ucred.h>
-#else
 #include <sys/param.h>
-#include <sys/syslimits.h>
-#include <sys/sysctl.h>
+#include <sys/dir.h>
+#include <sys/errno.h>
+#include <sys/exec.h>
+#include <sys/exec_aout.h>
+#include <sys/fperr.h>
+#include <sys/resource.h>
 #include <sys/resourcevar.h>
+#include <sys/signal.h>
 #include <sys/signalvar.h>
 #include <sys/sysctl.h>
-#include <vm/include/vm.h>				/* XXX */
+#include <sys/syslimits.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/ucred.h>
+#include <vm/include/vm.h>			/* XXX */
 #endif
 /*
  * data that doesn't need to be referenced while the process is swapped.
@@ -76,30 +78,8 @@ struct user {
 	char				u_dummy0;
 
 /* 1.1 - processes and protection */
-	struct ucred {								/* Credentials */
-		u_short			cr_ref;					/* reference count */
-		uid_t			cr_uid;					/* effective user id */
-		short			cr_ngroups;				/* number of groups */
-		gid_t			cr_groups[NGROUPS];		/* groups, 0 terminated */
-	} u_ucred;
-#define cr_gid 			u_ucred.cr_groups[0]
-
-	struct pcred {
-		struct ucred	u_ucred;				/* Current credentials. */
-		uid_t			u_svuid;				/* saved user id */
-		uid_t			u_ruid;					/* real user id */
-		gid_t			u_svgid;				/* saved group id */
-		gid_t			u_rgid;					/* real group id */
-		int				u_refcnt;				/* Number of references. */
-	} u_pcred;
-
-	//uid_t				u_uid;					/* effective user id */
-	//uid_t				u_svuid;				/* saved user id */
-	//uid_t				u_ruid;					/* real user id */
-	//gid_t				u_svgid;				/* saved group id */
-	//gid_t				u_rgid;					/* real group id */
-	//gid_t				u_groups[NGROUPS];		/* groups, 0 terminated */
-
+	struct pcred		*u_pcred;				/* Process owner's identity. */
+	struct ucred		*u_ucred;				/* Credentials */
 
 /* 1.2 - memory management */
 	size_t				u_tsize;				/* text size (clicks) */
@@ -191,18 +171,24 @@ struct user {
 	//struct uthread		*u_uthread;			/* ptr to uthread */
 };
 
-/* credentials */
-#define cr_gid 			cr_groups[0]
-#define NOCRED 			((struct ucred *)-1)	/* no credential available */
-#define FSCRED 			((struct ucred *)-2)	/* filesystem credential */
+/* User process identity */
+struct upcred {
+	uid_t				u_svuid;				/* saved user id */
+	uid_t				u_ruid;					/* real user id */
+	gid_t				u_svgid;				/* saved group id */
+	gid_t				u_rgid;					/* real group id */
+	int					u_refcnt;				/* Number of references. */
+};
+
+/* User struct credentials */
+struct uucred {
+	u_short				ur_ref;					/* reference count */
+	uid_t				ur_uid;					/* effective user id */
+	short				ur_ngroups;				/* number of groups */
+	gid_t				ur_groups[NGROUPS];		/* groups, 0 terminated */
+#define ur_gid			ur_groups[0]			/* effective group id */
+};
 
 //#ifdef KERNEL
-#define	crhold(cr)		(cr)->cr_ref++
-struct ucred 			*crget(void);
-struct ucred 			*crcopy(struct ucred *);
-struct ucred 			*crdup(struct ucred *);
-extern void 			crfree(struct ucred *);
-//extern int 				suser(struct ucred *, short *);
-
-extern struct user u;
+extern struct user 		u;
 #endif

@@ -11,9 +11,9 @@
  */
 
 #include <sys/param.h>
-#include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/systm.h>
+#include <sys/user.h>
 #include <sys/malloc.h>
 
 void
@@ -48,6 +48,8 @@ getpgrp()
 	if (p == 0) {
 		u->u_error = ESRCH;
 		goto retry;
+	} else {
+		goto out;
 	}
 
 retry:
@@ -67,8 +69,7 @@ out:
 void
 getuid()
 {
-
-	u->u_r.r_val1 = u->u_pcred->u_ruid;
+	u->u_r.r_val1 = u->u_pcred->p_ruid;
 	u->u_r.r_val2 = u->u_ucred->cr_uid;		/* XXX */
 }
 
@@ -82,8 +83,7 @@ geteuid()
 void
 getgid()
 {
-
-	u->u_r.r_val1 = u->u_pcred->u_ruid;
+	u->u_r.r_val1 = u->u_pcred->p_ruid;
 	u->u_r.r_val2 = u->u_ucred->cr_groups[0];		/* XXX */
 }
 
@@ -174,30 +174,46 @@ setgroups()
 /*
  * Check if gid is a member of the group set.
  */
-
 int
 groupmember(gid)
 	gid_t gid;
 {
-	register struct ucred *cred = u->u_ucred;
+	/*
 	register gid_t *gp;
 	gid_t *egp;
 
-	egp = &(cred->cr_groups[cred->cr_ngroups]);
-	for (gp = cred->cr_groups; gp < egp; gp++) {
+	egp = &(u->u_ucred->cr_groups[u->u_ucred->cr_ngroups]);
+	for (gp = u->u_ucred->cr_groups; gp < egp; gp++) {
 		if (*gp == gid) {
 			return (1);
 		}
 	}
+	return (0);
+	*/
+
+	return (_groupmember(gid, u->u_ucred));
+}
+
+int
+_groupmember(gid, cred)
+	gid_t 			gid;
+	struct ucred 	*cred;
+{
+	register gid_t *gp;
+	gid_t *egp;
+
+	egp = &(cred->cr_groups[cred->cr_ngroups]);
+	for (gp = cred->cr_groups; gp < egp; gp++)
+		if (*gp == gid)
+			return (1);
 	return (0);
 }
 
 int
 suser()
 {
-	register struct ucred *cred = u->u_ucred;
-
-	if (cred->cr_uid == 0) {
+	/*
+	if (u->u_ucred->cr_uid == 0) {
 		if(u->u_acflag) {
 			u->u_acflag |= ASU;
 		}
@@ -205,6 +221,25 @@ suser()
 	}
 	u->u_error = EPERM;
 	return (u->u_error);
+	*/
+	if(_suser(u->u_ucred, u->u_acflag) == EPERM) {
+		u->u_error = EPERM;
+	}
+	return (_suser(u->u_ucred, u->u_acflag));
+}
+
+int
+_suser(cred, acflag)
+	register struct ucred 	*cred;
+	short 				*acflag;
+{
+	if (cred->cr_uid == 0) {
+		if (acflag) {
+			acflag |= ASU;
+		}
+		return (0);
+	}
+	return (EPERM);
 }
 
 /*
@@ -243,7 +278,7 @@ setlogin()
 	register int error;
 	char	newname[MAXLOGNAME + 1];
 
-	if	(!ufs211_suser())
+	if	(!suser())
 		return(u->u_error);	/* XXX - suser should be changed! */
 /*
  * copinstr() wants to copy a string including a nul but u_login is not
@@ -319,4 +354,33 @@ crdup(cr)
 	*newcr = *cr;
 	newcr->cr_ref = 1;
 	return (newcr);
+}
+
+/* Fill in a struct uucred based on a struct ucred. */
+void
+crtoup(cr, ucr)
+	struct ucred *cr;
+	struct uucred *ucr;
+{
+	bzero(ucr, sizeof(*ucr));
+
+	ucr->ur_uid = cr->cr_uid;
+	ucr->ur_gid = cr->cr_gid;
+	ucr->ur_ngroups = cr->cr_ngroups;
+	bcopy(cr->cr_groups, ucr->ur_groups, sizeof(cr->cr_groups));
+}
+
+/* Fill in a struct upcred based on a struct pcred. */
+void
+pcrtoupcr(pcr, upcr)
+	struct pcred *pcr;
+	struct upcred *upcr;
+{
+	bzero(upcr, sizeof(*upcr));
+
+	upcr->u_svuid = pcr->p_svuid;
+	upcr->u_ruid = pcr->p_ruid;
+	upcr->u_svgid = pcr->p_svgid;
+	upcr->u_rgid = pcr->p_rgid;
+	bcopy(pcr, upcr, sizeof(*pcr));
 }

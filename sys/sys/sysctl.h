@@ -48,6 +48,7 @@
 #include <sys/file.h>
 #include <sys/vnode.h>
 #include <sys/ucred.h>
+#include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/map.h>
 #include <vm/include/vm.h>
