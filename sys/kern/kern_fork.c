@@ -17,6 +17,7 @@
 #include <sys/resourcevar.h>
 #include <sys/vnode.h>
 #include <sys/acct.h>
+#include <sys/ktrace.h>
 
 /*
  * fork --

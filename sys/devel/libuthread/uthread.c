@@ -45,22 +45,6 @@ extern struct uthread uthread0;
 struct uthread *curuthread = &uthread0;
 
 void
-utqinit()
-{
-	register struct uthread *ut;
-
-	freeuthread = NULL;
-	for (ut = uthreadNUTHREAD; --ut > uthread0; freeuthread = ut)
-		ut->ut_nxt = freeuthread;
-
-	alluthread = ut;
-	ut->ut_nxt = NULL;
-	ut->ut_prev = &alluthread;
-
-	zombuthread = NULL;
-}
-
-void
 uthread_init(kt, ut)
 	register struct kthread *kt;
 	register struct uthread *ut;
@@ -155,50 +139,33 @@ uthread_kill(uthread_t ut)
 	return (0);
 }
 
-/*
- * init the uthread queues
- */
 void
-utqinit()
-{
-	register struct uthread *ut;
-
-	freeuthread = NULL;
-	for (ut = uthreadNUTHREAD; --ut > uthread0; freeuthread = ut)
-		ut->ut_nxt = freeuthread;
-
-	alluthread = ut;
-	ut->ut_nxt = NULL;
-	ut->ut_prev = &alluthread;
-
-	zombuthread = NULL;
-}
-
-void
-uthreadpool_itc_send(utpool, itc)
+uthreadpool_itc_send(itpc, utpool)
+	struct threadpool_itpc *itpc;
     struct uthreadpool *utpool;
-	struct threadpool_itpc *itc;
 {
     /* command / action */
-	itc->itc_utpool = utpool;
-	itc->itc_jobs = utpool->utp_jobs;
+	itpc->itc_utpool = utpool;
+	itpc->itc_jobs = utpool->utp_jobs;
 	/* send flagged jobs */
 	utpool->utp_issender = TRUE;
 	utpool->utp_isreciever = FALSE;
+	itpc_check_uthreadpool(itpc, utpool);
 
 	/* update job pool */
 }
 
 void
-uthreadpool_itc_recieve(utpool, itc)
-    struct uthreadpool *utpool;
-	struct threadpool_itpc *itc;
+uthreadpool_itc_recieve(itpc, utpool)
+	struct threadpool_itpc *itpc;
+	struct uthreadpool *utpool;
 {
     /* command / action */
-	itc->itc_utpool = utpool;
-	itc->itc_jobs = utpool->utp_jobs;
+	itpc->itc_utpool = utpool;
+	itpc->itc_jobs = utpool->utp_jobs;
 	utpool->utp_issender = FALSE;
 	utpool->utp_isreciever = TRUE;
+	itpc_verify_uthreadpool(itpc, utpool);
 
 	/* update job pool */
 }
@@ -287,7 +254,7 @@ utfind(tid)
  * remove uthread from thread group
  */
 int
-leavetgrp(ut)
+leaveutgrp(ut)
 	register struct uthread *ut;
 {
 	register struct uthread **utt = &ut->ut_pgrp->pg_mem;

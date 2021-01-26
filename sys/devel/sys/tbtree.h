@@ -87,6 +87,7 @@ struct asl {
 
 #define LOG2(n)         		(n >> 2)
 
+extern struct tbtree			*tbtree_get(struct kmembuckets *);
 extern void  					tbtree_allocate(struct kmembuckets *, struct tbtree *);
 extern void 					tbtree_malloc(struct tbtree *, u_long, int, int);
 extern void 					tbtree_free(struct tbtree *, caddr_t, u_long);

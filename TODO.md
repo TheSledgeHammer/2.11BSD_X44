@@ -30,6 +30,18 @@ A General todo list. Don't hesitate to add to this list. :)
 - update copyright headers
 - See devel folder: README.md
 
+- HTBC:
+	- Modify structures under htbc layout and htbc htree.
+		- Inodes & HTree:
+			- Specifically struct htbc_hc_blocklist, htbc_hc_inodelist & htbc_ino
+			- These are double ups on structures present in htbc htree and should be merged
+		- Transactions/Blockchain:
+			- Merge htbc_entry & htbc_hchain
+			- Do the same thing. 
+		- Journalling & Logs:
+			- integrate later
+			- Merge struct htbc_hi_fs & htbc_hc_header
+
 - dev/kbd: current implementation: ((WILL NOT WORK AS IS!!!) Would require the entire device layout to be re-implemented around FreeBSD)
 	- no virtual keyboard in kernel (deprecated)
 	- resource maps: change from FreeBSD/ DragonflyBSD's to NetBSD style

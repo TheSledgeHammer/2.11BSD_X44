@@ -181,3 +181,23 @@ hashinit(elements, type, hashmask)
 	*hashmask = hashsize - 1;
 	return (hashtbl);
 }
+
+/*
+ * General routine to free a hash table.
+ */
+void *
+hashfree(hashtbl, elements, type, hashmask)
+	void *hashtbl;
+	int elements, type;
+	u_long *hashmask;
+{
+	long hashsize;
+	int i;
+
+	if (elements <= 0)
+	for (hashsize = 1; hashsize <= elements; hashsize <<= 1)
+			continue;
+	hashsize >>= 1;
+	hashtbl = rmfree(hashtbl, (u_long)hashsize * (hashmask + 1), type);
+	return (hashtbl);
+}

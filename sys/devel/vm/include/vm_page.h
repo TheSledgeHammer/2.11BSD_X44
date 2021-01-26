@@ -70,6 +70,7 @@
 #define	_VM_PAGE_
 
 #include <devel/vm/include/vm.h>
+#include <devel/vm/include/vm_segment.h>
 #include <sys/tree.h>
 /*
  *	Management of resident (logical) pages.

@@ -55,6 +55,7 @@
 #include <devel/sys/sa.h>
 #include <devel/sys/savar.h>
 #include <devel/sys/ucontext.h>
+#include <devel/sys/malloctypes.h>
 
 #define M_SA 77 /* scheduler activation (Malloc type) */
 

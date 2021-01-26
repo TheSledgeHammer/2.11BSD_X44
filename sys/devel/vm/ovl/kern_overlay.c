@@ -127,7 +127,8 @@ malloc(size, type, flags)
 #endif
 	indx = BUCKETINDX(size);
 	kbp = &bucket[indx];
-	tbtree_allocate(kbp, kbp->kb_trbtree);
+	kbp->kb_tbtree = tbtree_get(&bucket[indx]);
+
 	s = splimp();
 #ifdef KMEMSTATS
 	while (ksp->ks_memuse >= ksp->ks_limit) {
@@ -157,7 +158,7 @@ malloc(size, type, flags)
 			allocsize = 1 << indx;
 		npg = clrnd(btoc(allocsize));
 
-		va = (caddr_t) tbtree_malloc(kbp->kb_trbtree, (vm_size_t) ctob(npg),
+		va = (caddr_t) tbtree_malloc(kbp->kb_tbtree, (vm_size_t) ctob(npg),
 				type, !(flags & (M_NOWAIT | M_CANFAIL)));
 
 		if (va == NULL) {
@@ -287,7 +288,7 @@ free(addr, type)
 	kup = btokup(addr);
 	size = 1 << kup->ku_indx;
 	kbp = &bucket[kup->ku_indx];
-	tbtree_allocate(kbp, kbp->kb_trbtree);
+	kbp->kb_tbtree = tbtree_get(&bucket[indx]);
 	s = splimp();
 #ifdef DIAGNOSTIC
 	if (size > NBPG * CLSIZE)
@@ -298,7 +299,7 @@ free(addr, type)
 		panic("free: unaligned addr 0x%x, size %d, type %s, mask %d\n", addr, size, memname[type], alloc);
 #endif /* DIAGNOSTIC */
 	if (size > MAXALLOCSAVE) {
-		tbtree_free(kbp->kb_trbtree, (vm_offset_t) addr, ctob(kup->ku_pagecnt),
+		tbtree_free(kbp->kb_tbtree, (vm_offset_t) addr, ctob(kup->ku_pagecnt),
 				type);
 #ifdef KMEMSTATS
 		size = kup->ku_pagecnt << PGSHIFT;
@@ -382,6 +383,7 @@ kmeminit()
 			bucket[indx].kb_elmpercl = CLBYTES / (1 << indx);
 		}
 		bucket[indx].kb_highwat = 5 * bucket[indx].kb_elmpercl;
+		tbtree_allocate(bucket[indx], bucket[indx]->kb_tbtree);
 	}
 	for (indx = 0; indx < M_LAST; indx++) {
 		kmemstats[indx].ks_limit = npg * NBPG * 6 / 10;

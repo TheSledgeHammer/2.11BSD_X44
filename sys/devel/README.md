@@ -14,7 +14,7 @@ an offical release is made.)
 	- A Volume Manager for BSD.
 	- Based on the ideas from Tru64 UNIX's AdvFS and incorporating concepts from Vinum and LVM2
 				
-- HTBC: A HTree Based Blockchain
+- HTBC: A HTree Based Blockchain (NetBSD 5.2 WAPBL)
 	- Intended to augment BSD's LFS & other Log-Structured Filesystems 
 	- provide features of a blockchain to the VFS
 

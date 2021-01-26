@@ -61,10 +61,6 @@ struct uvmexp {
 };
 extern struct uvmexp uvmexp;
 
-/* malloc.h */
-#define M_VMAMAP 				81
-#define M_VMAOBJ 				82
-
 /* vm_page.h */
 #define PQ_FREE					0x0001		/* page is on free list */
 #define PQ_INACTIVE				0x0002		/* page is in inactive list */

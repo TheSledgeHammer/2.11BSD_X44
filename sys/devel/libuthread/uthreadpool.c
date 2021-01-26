@@ -82,8 +82,7 @@ uthreadpools_init(void)
 	MALLOC(&utpool_thread, struct uthreadpool_thread *, sizeof(struct uthreadpool_thread *), M_UTPOOLTHREAD, NULL);
 	LIST_INIT(&unbound_uthreadpools);
 //	LIST_INIT(&percpu_threadpools);
-	kthread_lock_init(&uthreadpools_lock, &utpool_thread->utpt_uthread);
-	itpc_threadpool_init();
+	uthread_lock_init(&uthreadpools_lock, &utpool_thread->utpt_uthread);
 }
 
 /* Thread pool creation */

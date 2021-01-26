@@ -165,10 +165,7 @@ extern struct uthread 					uthread0;
 extern struct uthreadpool_thread 		utpool_thread;
 extern lock_t 							uthreadpool_lock;
 
-extern void uthreadpool_itc_send(struct uthreadpool *, struct threadpool_itpc *);
-extern void uthreadpool_itc_receive(struct uthreadpool *, struct threadpool_itpc *);
-
-/* User Thread */
+/* UThread */
 void uthread_init(kthread_t, uthread_t);
 int uthread_create(uthread_t ut);
 int uthread_join(uthread_t ut);
@@ -177,12 +174,20 @@ int uthread_exit(uthread_t ut);
 int uthread_detach(uthread_t ut);
 int uthread_equal(uthread_t ut1, uthread_t ut2);
 int uthread_kill(uthread_t ut);
+
+struct uthread *utfind (pid_t);
+int				leaveutgrp(uthread_t);
+
+/* UThread ITPC */
+extern void uthreadpool_itc_send(struct threadpool_itpc *, struct uthreadpool *);
+extern void uthreadpool_itc_receive(struct threadpool_itpc *, struct uthreadpool *);
+extern void	itpc_add_uthreadpool(struct threadpool_itpc *, struct uthreadpool *);
+extern void	itpc_remove_uthreadpool(struct threadpool_itpc *, struct uthreadpool *);
+
+/* UThread Lock */
 int uthread_lock_init(lock_t, uthread_t);
 int uthread_lockmgr(lock_t, u_int, uthread_t);
 int uthread_rwlock_init(rwlock_t, uthread_t);
 int uthread_rwlockmgr(rwlock_t, u_int, uthread_t);
-
-struct 	uthread *utfind (pid_t);			/* Find uthread by id. */
-int				leavetgrp(uthread_t);
 
 #endif /* SYS_UTHREADS_H_ */

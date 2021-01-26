@@ -242,9 +242,9 @@ struct htbc_extent_cache {
  * Save path to some extent.
  */
 struct htbc_extent_path {
-	uint16_t 	ep_depth;
-	struct buf 	*ep_bp;
-	bool 		ep_is_sparse;
+	uint16_t 					ep_depth;
+	struct buf 					*ep_bp;
+	bool 						ep_is_sparse;
 	union {
 		struct htbc_extent 		ep_sparse_ext;
 		struct htbc_extent 		*ep_ext;

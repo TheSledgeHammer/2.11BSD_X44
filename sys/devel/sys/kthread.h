@@ -201,28 +201,35 @@ extern struct kthread 					kthread0;
 extern struct kthreadpool_thread 		ktpool_thread;
 extern lock_t 							kthreadpool_lock;
 
-struct kthread *ktfind (pid_t);				/* Find kthread by id. */
-int				leavetgrp(kthread_t);
+
 
 void			threadinit (void);
-struct pgrp 	*tgfind (pid_t);			/* Find thread group by id. */
+struct pgrp 	*tgfind (pid_t);
+void			tgdelete (struct pgrp *);
 
-/* Kernel Thread ITPC */
-extern void kthreadpool_itc_send(struct kthreadpool *, struct threadpool_itpc *);
-extern void kthreadpool_itc_receive(struct kthreadpool *, struct threadpool_itpc *);
-
-/* Kernel Thread */
-void kthread_init(struct proc *, kthread_t);
-int kthread_create(kthread_t kt);
+/* KThread */
+void kthread_init (struct proc *, kthread_t);
+int kthread_create (kthread_t kt);
 int kthread_join(kthread_t kt);
-int kthread_cancel(kthread_t kt);
-int kthread_exit(kthread_t kt);
-int kthread_detach(kthread_t kt);
-int kthread_equal(kthread_t kt1, kthread_t kt2);
-int kthread_kill(kthread_t kt);
-int kthread_lock_init(lock_t, kthread_t);
-int kthread_lockmgr(lock_t, u_int, kthread_t);
-int kthread_rwlock_init(rwlock_t, kthread_t);
-int kthread_rwlockmgr(rwlock_t, u_int, kthread_t);
+int kthread_cancel (kthread_t kt);
+int kthread_exit (kthread_t kt);
+int kthread_detach (kthread_t kt);
+int kthread_equal (kthread_t kt1, kthread_t kt2);
+int kthread_kill (kthread_t kt);
+
+struct kthread *ktfind (pid_t);				/* Find kthread by id. */
+int				leavektgrp (kthread_t);
+
+/* KThread ITPC */
+extern void kthreadpool_itc_send (struct threadpool_itpc *, struct kthreadpool *);
+extern void kthreadpool_itc_receive (struct threadpool_itpc *, struct kthreadpool *);
+extern void	itpc_add_kthreadpool (struct threadpool_itpc *, struct kthreadpool *);
+extern void	itpc_remove_kthreadpool (struct threadpool_itpc *, struct kthreadpool *);
+
+/* KThread Lock */
+int kthread_lock_init (lock_t, kthread_t);
+int kthread_lockmgr (lock_t, u_int, kthread_t);
+int kthread_rwlock_init (rwlock_t, kthread_t);
+int kthread_rwlockmgr (rwlock_t, u_int, kthread_t);
 
 #endif /* SYS_KTHREADS_H_ */

@@ -42,7 +42,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)kern_exit.c	8.10 (Berkeley) 2/23/95
+ *	@(#)kern_proc.c	8.10 (Berkeley) 2/23/95
  */
 
 #include <sys/param.h>
@@ -194,10 +194,8 @@ pgfind(pgid)
 	register pid_t pgid;
 {
 	register struct pgrp *pgrp;
-	for (pgrp = pgrphash[PIDHASH(pgid)]; pgrp != NULL; pgrp = pgrp->pg_hforw)
-	{
-		if (pgrp->pg_id == pgid)
-		{
+	for (pgrp = pgrphash[PIDHASH(pgid)]; pgrp != NULL; pgrp = pgrp->pg_hforw) {
+		if (pgrp->pg_id == pgid) {
 			return (pgrp);
 		}
 	}
@@ -298,8 +296,7 @@ enterpgrp(p, pgid, mksess)
 			sess->s_count = 1;
 			sess->s_ttyvp = NULL;
 			sess->s_ttyp = NULL;
-			bcopy(p->p_session->s_login, sess->s_login,
-			    sizeof(sess->s_login));
+			bcopy(p->p_session->s_login, sess->s_login, sizeof(sess->s_login));
 			p->p_flag &= ~P_CONTROLT;
 			pgrp->pg_session = sess;
 #ifdef DIAGNOSTIC

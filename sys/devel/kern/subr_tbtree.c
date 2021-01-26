@@ -67,6 +67,16 @@ tbtree_allocate(kbp, ktp)
 }
 
 struct tbtree *
+tbtree_get(kbp)
+	struct kmembuckets *kbp;
+{
+	if(kbp->kb_tbtree != NULL) {
+		return (kbp->kb_tbtree);
+	}
+	return (NULL);
+}
+
+struct tbtree *
 tbtree_insert(size, type, ktp)
     register struct tbtree *ktp;
 	int type;

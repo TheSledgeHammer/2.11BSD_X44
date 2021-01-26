@@ -91,6 +91,7 @@ typedef struct vm_aref 			*vm_aref_t;
 #include <vm/include/vm_inherit.h>
 #include <vm/include/vm_prot.h>
 
+#include <devel/vm/include/vm_page.h>
 #include <devel/vm/include/vm_object.h>
 #include <devel/vm/include/vm_param.h>
 #include <devel/vm/include/vm_segment.h>		/* Work in Progress */

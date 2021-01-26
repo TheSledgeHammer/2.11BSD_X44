@@ -81,6 +81,8 @@ struct user {
 	struct pcred		*u_pcred;				/* Process owner's identity. */
 	struct ucred		*u_ucred;				/* Credentials */
 
+#define u_uid			u_ucred->cr_uid			/* effective user id */
+
 /* 1.2 - memory management */
 	size_t				u_tsize;				/* text size (clicks) */
 	size_t				u_dsize;				/* data size (clicks) */

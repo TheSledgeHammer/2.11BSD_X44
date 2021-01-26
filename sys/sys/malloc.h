@@ -125,16 +125,6 @@
 #define	M_TEMP			73	/* misc temporary data buffers */
 #define	M_LAST			74	/* Must be last type + 1 */
 
-/* XXX: Below are Still In Development */
-#define M_OVLMAP		73	/* OVL map structures */
-#define	M_OVLMAPENT		74	/* OVL map entry structures */
-#define M_OVLOBJ		75	/* OVL object structure */
-#define M_OVLOBJHASH	76	/* OVL object hash structure */
-#define M_KTPOOLTHREAD  77	/* kernel threadpool */
-#define M_UTPOOLTHREAD  78	/* user threadpool */
-#define M_ITPC			79	/* inter-threadpool communication */
-#define M_WORKQUEUE		80	/* workqueue */
-
 #define INITKMEMNAMES {						\
 	"free",			/* 0 M_FREE */ 			\
 	"mbuf",			/* 1 M_MBUF */ 			\
@@ -213,32 +203,32 @@
 }
 
 struct kmemstats {
-	long	ks_inuse;		/* # of packets of this type currently in use */
-	long	ks_calls;		/* total packets of this type ever allocated */
-	long 	ks_memuse;		/* total memory held in bytes */
-	u_short	ks_limblocks;	/* number of times blocked for hitting limit */
-	u_short	ks_mapblocks;	/* number of times blocked for kernel map */
-	long	ks_maxused;		/* maximum number ever used */
-	long	ks_limit;		/* most that are allowed to exist */
-	long	ks_size;		/* sizes of this thing that are allocated */
-	long	ks_spare;
+	long				ks_inuse;		/* # of packets of this type currently in use */
+	long				ks_calls;		/* total packets of this type ever allocated */
+	long 				ks_memuse;		/* total memory held in bytes */
+	u_short				ks_limblocks;	/* number of times blocked for hitting limit */
+	u_short				ks_mapblocks;	/* number of times blocked for kernel map */
+	long				ks_maxused;		/* maximum number ever used */
+	long				ks_limit;		/* most that are allowed to exist */
+	long				ks_size;		/* sizes of this thing that are allocated */
+	long				ks_spare;
 };
 
 /* Array of descriptors that describe the contents of each page */
 struct kmemusage {
-	short ku_indx;			/* bucket index */
+	short 				ku_indx;		/* bucket index */
 	union {
-		u_short freecnt;	/* for small allocations, free pieces in page */
-		u_short pagecnt;	/* for large allocations, pages alloced */
+		u_short 		freecnt;		/* for small allocations, free pieces in page */
+		u_short 		pagecnt;		/* for large allocations, pages alloced */
 	} ku_un;
 };
-#define ku_freecnt ku_un.freecnt
-#define ku_pagecnt ku_un.pagecnt
+#define ku_freecnt 		ku_un.freecnt
+#define ku_pagecnt 		ku_un.pagecnt
 
 
 /* Set of buckets for each size of memory block that is retained */
 struct kmembuckets {
-	//struct tbtree 		*kb_trbtree;	/* tertiary buddy tree pointer */
+	//struct tbtree 		*kb_tbtree;		/* tertiary buddy tree pointer */
 	caddr_t 			kb_next;		/* list of free blocks */
 	caddr_t 			kb_last;		/* last free block */
 
@@ -252,37 +242,37 @@ struct kmembuckets {
 
 #ifdef KERNEL
 #define	MINALLOCSIZE		(1 << MINBUCKET)
-#define BUCKETINDX(size) \
-	((size) <= (MINALLOCSIZE * 128) \
-		? (size) <= (MINALLOCSIZE * 8) \
-			? (size) <= (MINALLOCSIZE * 2) \
-				? (size) <= (MINALLOCSIZE * 1) \
-					? (MINBUCKET + 0) \
-					: (MINBUCKET + 1) \
-				: (size) <= (MINALLOCSIZE * 4) \
-					? (MINBUCKET + 2) \
-					: (MINBUCKET + 3) \
-			: (size) <= (MINALLOCSIZE* 32) \
-				? (size) <= (MINALLOCSIZE * 16) \
-					? (MINBUCKET + 4) \
-					: (MINBUCKET + 5) \
-				: (size) <= (MINALLOCSIZE * 64) \
-					? (MINBUCKET + 6) \
-					: (MINBUCKET + 7) \
-		: (size) <= (MINALLOCSIZE * 2048) \
-			? (size) <= (MINALLOCSIZE * 512) \
-				? (size) <= (MINALLOCSIZE * 256) \
-					? (MINBUCKET + 8) \
-					: (MINBUCKET + 9) \
-				: (size) <= (MINALLOCSIZE * 1024) \
-					? (MINBUCKET + 10) \
-					: (MINBUCKET + 11) \
-			: (size) <= (MINALLOCSIZE * 8192) \
-				? (size) <= (MINALLOCSIZE * 4096) \
-					? (MINBUCKET + 12) \
-					: (MINBUCKET + 13) \
-				: (size) <= (MINALLOCSIZE * 16384) \
-					? (MINBUCKET + 14) \
+#define BUCKETINDX(size) 							\
+	((size) <= (MINALLOCSIZE * 128) 				\
+		? (size) <= (MINALLOCSIZE * 8) 				\
+			? (size) <= (MINALLOCSIZE * 2) 			\
+				? (size) <= (MINALLOCSIZE * 1) 		\
+					? (MINBUCKET + 0) 				\
+					: (MINBUCKET + 1) 				\
+				: (size) <= (MINALLOCSIZE * 4) 		\
+					? (MINBUCKET + 2) 				\
+					: (MINBUCKET + 3) 				\
+			: (size) <= (MINALLOCSIZE* 32) 			\
+				? (size) <= (MINALLOCSIZE * 16) 	\
+					? (MINBUCKET + 4) 				\
+					: (MINBUCKET + 5) 				\
+				: (size) <= (MINALLOCSIZE * 64) 	\
+					? (MINBUCKET + 6) 				\
+					: (MINBUCKET + 7) 				\
+		: (size) <= (MINALLOCSIZE * 2048) 			\
+			? (size) <= (MINALLOCSIZE * 512) 		\
+				? (size) <= (MINALLOCSIZE * 256) 	\
+					? (MINBUCKET + 8) 				\
+					: (MINBUCKET + 9) 				\
+				: (size) <= (MINALLOCSIZE * 1024) 	\
+					? (MINBUCKET + 10) 				\
+					: (MINBUCKET + 11) 				\
+			: (size) <= (MINALLOCSIZE * 8192) 		\
+				? (size) <= (MINALLOCSIZE * 4096) 	\
+					? (MINBUCKET + 12) 				\
+					: (MINBUCKET + 13) 				\
+				: (size) <= (MINALLOCSIZE * 16384) 	\
+					? (MINBUCKET + 14) 				\
 					: (MINBUCKET + 15))
 
 #define kmemxtob(alloc)	(kmembase + (alloc) * NBPG)

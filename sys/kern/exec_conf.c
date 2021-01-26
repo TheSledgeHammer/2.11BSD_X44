@@ -71,7 +71,7 @@ struct execsw execsw[] = {
 		{ PECOFF_HDR_SIZE, exec_pecoff_linker, &emul_211bsd, EXECSW_PRIO_ANY, howmany(sizeof(struct pecoff_args), sizeof(char *)), pecoff_copyargs, exec_setup_stack },
 
 		/* mach-o binaries */
-		{ sizeof(struct exec_macho_fat_header), exec_macho_linker, &emul_211bsd, EXECSW_PRIO_ANY, MAXPATHLEN + 1, mach_copyargs, exec_setup_stack },
+		{ sizeof(struct exec_macho_fat_header), exec_macho_linker, &emul_211bsd, EXECSW_PRIO_ANY, MAXPATHLEN + 1, macho_copyargs, exec_setup_stack },
 
 		/* 32-Bit ELF binaries */
 		{ sizeof(Elf32_Ehdr), exec_elf_linker, &emul_211bsd, EXECSW_PRIO_ANY, howmany(ELF_AUX_ENTRIES * sizeof(Aux32Info), sizeof (Elf32_Addr)), elf_copyargs, exec_setup_stack },

@@ -39,40 +39,6 @@
 extern struct kthread 			kthread0;
 struct kthread *curkthread = 	&kthread0;
 
-struct tidhashhead *tidhashtbl;
-u_long tidhash;
-struct tgrphashhead *tgrphashtbl;
-u_long tgrphash;
-
-int	maxthread;// = NTHREAD;
-
-void
-threadinit()
-{
-	ktqinit();
-	tidhashtbl = hashinit(maxthread / 4, M_PROC, &tidhash);
-	tgrphashtbl = hashinit(maxthread / 4, M_PROC, &tgrphash);
-}
-
-/*
- * init the kthread queues
- */
-void
-ktqinit()
-{
-	register struct kthread *kt;
-
-	freekthread = NULL;
-	for (kt = kthreadNKTHREAD; --kt > kthread0; freekthread = kt)
-		kt->kt_nxt = freekthread;
-
-	allkthread = kt;
-	kt->kt_nxt = NULL;
-	kt->kt_prev = &allkthread;
-
-	zombkthread = NULL;
-}
-
 void
 kthread_init(p, kt)
 	register struct proc  *p;
@@ -173,13 +139,13 @@ kthread_kill(kthread_t kt)
 
 /* Threadpool's FIFO Queue (IPC) */
 void
-kthreadpool_itc_send(ktpool, itc)
+kthreadpool_itc_send(itpc, ktpool)
+	struct threadpool_itpc *itpc;
     struct kthreadpool *ktpool;
-	struct threadpool_itpc *itc;
 {
     /* command / action */
-	itc->itc_ktpool = ktpool;
-	itc->itc_jobs = ktpool->ktp_jobs;  /* add/ get current job */
+    itpc->itc_ktpool = ktpool;
+    itpc->itc_jobs = ktpool->ktp_jobs;  /* add/ get current job */
 	/* send flagged jobs */
 	ktpool->ktp_issender = TRUE;
 	ktpool->ktp_isreciever = FALSE;
@@ -188,13 +154,13 @@ kthreadpool_itc_send(ktpool, itc)
 }
 
 void
-kthreadpool_itc_recieve(ktpool, itc)
+kthreadpool_itc_recieve(itpc, ktpool)
+	struct threadpool_itpc *itpc;
     struct kthreadpool *ktpool;
-	struct threadpool_itpc *itc;
 {
     /* command / action */
-	itc->itc_ktpool = ktpool;
-	itc->itc_jobs = ktpool->ktp_jobs; /* add/ get current job */
+	itpc->itc_ktpool = ktpool;
+	itpc->itc_jobs = ktpool->ktp_jobs; /* add/ get current job */
 	ktpool->ktp_issender = FALSE;
 	ktpool->ktp_isreciever = TRUE;
 
@@ -278,28 +244,10 @@ ktfind(tid)
 }
 
 /*
- * Locate a thread group by number
- */
-struct pgrp *
-tgfind(pgid)
-	register pid_t pgid;
-{
-	register struct pgrp *tgrp;
-	for (tgrp = tgrphash[TIDHASH(pgid)]; tgrp != NULL; tgrp = tgrp->pg_hforw)
-	{
-		if (tgrp->pg_id == pgid)
-		{
-			return (tgrp);
-		}
-	}
-	return (NULL);
-}
-
-/*
  * remove kthread from thread group
  */
 int
-leavetgrp(kt)
+leavektgrp(kt)
 	register struct kthread *kt;
 {
 	register struct kthread **ktt = &kt->kt_pgrp->pg_mem;
@@ -318,31 +266,4 @@ leavetgrp(kt)
 		tgdelete(kt->kt_pgrp);
 	kt->kt_pgrp = 0;
 	return (0);
-}
-
-/*
- * delete a thread group
- */
-void
-tgdelete(tgrp)
-	register struct pgrp *tgrp;
-{
-	register struct pgrp **tgp = &tgrphash[TIDHASH(tgrp->pg_id)];
-
-	if (tgrp->pg_session->s_ttyp != NULL &&
-		tgrp->pg_session->s_ttyp->t_pgrp == tgrp)
-		tgrp->pg_session->s_ttyp->t_pgrp = NULL;
-	for (; *tgp; tgp = &(*tgp)->pg_hforw) {
-		if (*tgp == tgrp) {
-			*tgp = tgrp->pg_hforw;
-			break;
-		}
-	}
-#ifdef DIAGNOSTIC
-	if (pgp == NULL)
-		panic("tgdelete: can't find pgrp on hash chain");
-#endif
-	if (--tgrp->pg_session->s_count == 0)
-		FREE(tgrp, M_PGRP);
-	FREE(tgrp, M_PGRP);
 }

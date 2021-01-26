@@ -36,6 +36,7 @@
 
 #ifndef	_SYS_RESOURCEVAR_H_
 #define	_SYS_RESOURCEVAR_H_
+
 /*
  * Kernel per-process accounting / statistics
  * (not necessarily resident except when running).
@@ -71,10 +72,10 @@ struct pstats {
  * sharing modifications to the limits.
  */
 struct plimit {
-	struct	rlimit 	pl_rlimit[RLIM_NLIMITS];
-#define	PL_SHAREMOD	0x01		/* modifications are shared */
-	int				p_lflags;
-	int				p_refcnt;	/* number of references */
+	struct	rlimit 		pl_rlimit[RLIM_NLIMITS];
+#define	PL_SHAREMOD		0x01		/* modifications are shared */
+	int					p_lflags;
+	int					p_refcnt;	/* number of references */
 };
 
 /* add user profiling from AST */
