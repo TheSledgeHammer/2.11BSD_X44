@@ -87,6 +87,11 @@ struct buf
 	struct	ucred 		*b_wcred;			/* Write credentials reference. */
 	int					b_validoff;			/* Offset in buffer of valid region. */
 	int					b_validend;			/* Offset of end of valid region. */
+
+	/* HTBC Related */
+//	LIST_ENTRY(buf)		b_htbclist;			/* htree hashchain buffer list */
+//	u_int				b_cflags;			/* BC_* flags */
+//	u_int				b_oflags;			/* BO_* flags */
 };
 
 #define	b_active 		b_bcount			/* driver queue head: drive active */

@@ -104,51 +104,56 @@
 #define htbc_unlock(htbc) 		simple_unlock((htbc)->ht_lock)
 
 struct htbc_dealloc {
-	TAILQ_ENTRY(htbc_dealloc) 	hd_entries;
-	daddr_t 					hd_blkno;			/* address of block */
-	int 						hd_len;				/* size of block */
+	TAILQ_ENTRY(htbc_dealloc) 			hd_entries;
+	daddr_t 							hd_blkno;			/* address of block */
+	int 								hd_len;				/* size of block */
 };
 
 struct htbc {
-	struct vnode 				*ht_logvp;			/* log here */
-	struct vnode 				*ht_devvp;			/* log on this device */
-	struct mount 				*ht_mount;			/* mountpoint ht is associated with */
-	daddr_t 					ht_logpbn;			/* Physical block number of start of log */
+	struct vnode 						*ht_devvp;			/* log on this device */
+	struct mount 						*ht_mount;			/* mountpoint ht is associated with */
+	struct htbc_inode					*ht_inode;			/* inode */
 
-	size_t 						ht_circ_size; 		/* Number of bytes in buffer of log */
-	size_t 						ht_circ_off;		/* Number of bytes reserved at start */
+	daddr_t 							ht_logpbn;			/* Physical block number of start of log */
+	int 								ht_log_dev_bshift;	/* logarithm of device block size of log device */
+	int 								ht_fs_dev_bshift;	/* logarithm of device block size of filesystem device */
 
-	size_t 						ht_bufcount_max;	/* Number of buffers reserved for log */
-	size_t 						ht_bufbytes_max;	/* Number of buf bytes reserved for log */
+	size_t 								ht_circ_size; 		/* Number of bytes in buffer of log */
+	size_t 								ht_circ_off;		/* Number of bytes reserved at start */
 
-	struct htbc_hc_header 		*ht_hc_header;
-	void 						*ht_hc_scratch;		/* scratch space (XXX: por que?!?) */
+	size_t 								ht_bufcount_max;	/* Number of buffers reserved for log */
+	size_t 								ht_bufbytes_max;	/* Number of buf bytes reserved for log */
 
-	struct lock_object 			*ht_lock;			/* transaction lock */
-	unsigned int 				ht_lock_count;		/* Count of transactions in progress */
+	struct htbc_hc_header 				*ht_hc_header;
+	void 								*ht_hc_scratch;		/* scratch space (XXX: por que?!?) */
 
-	size_t 						ht_bufbytes;		/* Byte count of pages in ht_bufs */
-	size_t 						ht_bufcount;		/* Count of buffers in ht_bufs */
-	size_t 						ht_bcount;			/* Total bcount of ht_bufs */
+	struct lock_object 					*ht_lock;			/* transaction lock */
+	unsigned int 						ht_lock_count;		/* Count of transactions in progress */
 
-	LIST_HEAD(, buf) 			ht_bufs; 			/* Buffers in current transaction */
+	size_t 								ht_bufbytes;		/* Byte count of pages in ht_bufs */
+	size_t 								ht_bufcount;		/* Count of buffers in ht_bufs */
+	size_t 								ht_bcount;			/* Total bcount of ht_bufs */
 
-	TAILQ_HEAD(, htbc_dealloc) 	ht_dealloclist;		/* list head */
-	int 						ht_dealloccnt;		/* total count */
-	int 						ht_dealloclim;		/* max count */
+	LIST_HEAD(, buf) 					ht_bufs; 			/* Buffers in current transaction */
+
+	TAILQ_HEAD(, htbc_dealloc) 			ht_dealloclist;		/* list head */
+	daddr_t 							*ht_deallocblks;	/* address of block */
+	int 								*ht_dealloclens;	/* size of block */
+	int 								ht_dealloccnt;		/* total count */
+	int 								ht_dealloclim;		/* max count */
 
 	/* hashtable of inode numbers for allocated but unlinked inodes */
-	LIST_HEAD(htbc_ino_head, htbc_ino) *ht_inohash;
-	u_long 						ht_inohashmask;
-	int 						ht_inohashcnt;
+	LIST_HEAD(htbc_ino_head, htbc_ino) 	*ht_inohash;
+	u_long 								ht_inohashmask;
+	int 								ht_inohashcnt;
 
-	CIRCLEQ_HEAD(, htbc_entry) 	ht_entries;			/* On disk transaction accounting */
+	CIRCLEQ_HEAD(, htbc_entry) 			ht_entries;			/* On disk transaction accounting */
 
 	/* hash chain */
-	CIRCLEQ_ENTRY(htbc) 		ht_hchain_entries;	/* hash chain entry */
-	uint32_t					ht_version;			/* hash chain version */
-	uint32_t					ht_timestamp;		/* hash chain timestamp */
-	uint32_t					ht_hash;			/* hash chain hash algorithm used */
+	CIRCLEQ_ENTRY(htbc) 				ht_hchain_entries;	/* hash chain entry */
+	uint32_t							ht_version;			/* hash chain version */
+	uint32_t							ht_timestamp;		/* hash chain timestamp */
+	uint32_t							ht_hash;			/* hash chain hash algorithm used */
 };
 
 CIRCLEQ_HEAD(htbc_hchain_head, htbc);
@@ -170,19 +175,23 @@ struct htbc_ino {
 };
 
 struct htbc_ops {
-	int 	(*ho_htbc_bmap)(struct vnode *, daddr_t, struct vnode **, daddr_t *, int *);
+	void	(*ho_htbc_discard)(struct htbc *);
+	void	(*ho_htbc_add_buf)(struct htbc *, struct buf *);
+	void	(*ho_htbc_remove_buf)(struct htbc *, struct buf *);
+	void	(*ho_htbc_resize_buf)(struct htbc *, struct buf *, long, long);
 	int 	(*ho_htbc_begin)(struct htbc *, const char *, int);
 	void 	(*ho_htbc_end)(struct htbc *);
+
 	int		(*ho_htbc_read)(void *, size_t, struct vnode *, daddr_t);
 	int		(*ho_htbc_write)(void *, size_t, struct vnode *, daddr_t);
 };
 
 struct htbc_ops htbc_ops = {
-		.ho_htbc_bmap = 	htbc_bmap,
-		.ho_htbc_begin = 	htbc_begin,
-		.ho_htbc_end = 		htbc_end,
-		.ho_htbc_read =		htbc_read,
-		.ho_htbc_write =	htbc_write,
+		.ho_htbc_add_buf = 		htbc_add_buf,
+		.ho_htbc_remove_buf = 	htbc_remove_buf,
+		.ho_htbc_resize_buf = 	htbc_resize_buf,
+		.ho_htbc_begin = 		htbc_begin,
+		.ho_htbc_end = 			htbc_end,
 };
 
 void
@@ -210,11 +219,16 @@ htbc_start(htp, mp, vp, off, count, blksize)
 	size_t count, blksize;
 {
 	struct htbc *ht;
-	struct htbc_hchain *hchain;
 	struct vnode *devvp;
 	daddr_t logpbn;
 	int error;
+	int log_dev_bshift = DEV_BSHIFT;
+	int fs_dev_bshift = DEV_BSHIFT;
 	int run;
+
+	if (log_dev_bshift > fs_dev_bshift) {
+		return ENOSYS;
+	}
 
 	if (off < 0)
 		return EINVAL;
@@ -226,7 +240,7 @@ htbc_start(htp, mp, vp, off, count, blksize)
 
 	error = htbc_bmap(vp, off, &devvp, &logpbn, &run);
 	if (error != 0) {
-		return error;
+		return (error);
 	}
 
 	ht = htbc_calloc(1, sizeof(*ht));
@@ -234,12 +248,14 @@ htbc_start(htp, mp, vp, off, count, blksize)
 
 	LIST_INIT(&ht->ht_bufs);
 	CIRCLEQ_INIT(&ht->ht_entries);
-	CIRCLEQ_INIT(&hchain->hc_header);
 
-	ht->ht_logvp = vp;
+	ht->ht_inode->hi_vp = vp;
 	ht->ht_devvp = devvp;
+	ht->ht_inode->hi_devvp = ht->ht_devvp;
 	ht->ht_mount = mp;
 	ht->ht_logpbn = logpbn;
+	ht->ht_log_dev_bshift = log_dev_bshift;
+	ht->ht_fs_dev_bshift = fs_dev_bshift;
 
 	/* XXX fix actual number of pages reserved per filesystem. */
 	ht->ht_bufbytes_max = MIN(ht->ht_circ_size, buf_memcalc() / 2);
@@ -259,26 +275,14 @@ htbc_start(htp, mp, vp, off, count, blksize)
 	/* XXX tie this into resource estimation */
 	ht->ht_dealloclim = ht->ht_bufbytes_max / mp->mnt_stat.f_bsize / 2;
 
-	{
-		struct htbc_hc_header *hc;
-		size_t len = 1 << ht->ht_log_dev_bshift;
-		hc = htbc_calloc(1, len);
-		hc->hc_type = HTBC_HC_HEADER;
-		hc->hc_len = len;
-		hc->hc_circ_off = ht->ht_circ_off;
-		hc->hc_circ_size = ht->ht_circ_size;
-		/* XXX wc->wc_fsid */
-		hc->hc_log_dev_bshift = ht->ht_log_dev_bshift;
-		hc->hc_fs_dev_bshift = ht->ht_fs_dev_bshift;
-		ht->ht_hc_header = hc;
-		ht->ht_hc_scratch = htbc_alloc(len);
-	}
+	ht->ht_deallocblks = htbc_alloc(sizeof(*ht->ht_deallocblks) * ht->ht_dealloclim);
+	ht->ht_dealloclens = htbc_alloc(sizeof(*ht->ht_dealloclens) * ht->ht_dealloclim);
 
 	return (0);
 }
 
 int
-htbc_stop()
+htbc_stop(struct htbc *ht, int force)
 {
 	return (0);
 }
@@ -325,6 +329,79 @@ htbc_end(struct htbc *ht)
 	simple_unlock(ht->ht_lock);
 }
 
+void
+htbc_add_buf(struct htbc *ht, struct buf *bp)
+{
+	KASSERT(bp->b_cflags & BC_BUSY);
+	KASSERT(bp->b_vp);
+	if (bp->b_flags & B_LOCKED) {
+			LIST_REMOVE(bp, b_htbclist);
+	} else {
+		/* unlocked by dirty buffers shouldn't exist */
+		KASSERT(!(bp->b_oflags & BO_DELWRI));
+		ht->ht_bufbytes += bp->b_bufsize;
+		ht->ht_bcount += bp->b_bcount;
+		ht->ht_bufcount++;
+	}
+	LIST_INSERT_HEAD(&ht->ht_bufs, bp, b_htbclist);
+	bp->b_flags |= B_LOCKED;
+}
+
+static void
+htbc_remove_buf_locked(struct htbc *ht, struct buf *bp)
+{
+	KASSERT(bp->b_cflags & BC_BUSY);
+#if 0
+	/*
+	 * XXX this might be an issue for swapfiles.
+	 * see uvm_swap.c:1725
+	 *
+	 * XXXdeux: see above
+	 */
+	KASSERT((bp->b_flags & BC_NOCACHE) == 0);
+#endif
+	KASSERT(bp->b_flags & B_LOCKED);
+
+	KASSERT(ht->ht_bufbytes >= bp->b_bufsize);
+	ht->ht_bufbytes -= bp->b_bufsize;
+	KASSERT(ht->ht_bcount >= bp->b_bcount);
+	ht->ht_bcount -= bp->b_bcount;
+	KASSERT(ht->ht_bufcount > 0);
+	ht->ht_bufcount--;
+	KASSERT((ht->ht_bufcount == 0) == (ht->ht_bufbytes == 0));
+	KASSERT((ht->ht_bufcount == 0) == (ht->ht_bcount == 0));
+	LIST_REMOVE(bp, b_htbclist);
+
+	bp->b_flags &= ~B_LOCKED;
+}
+
+/* called from brelsel() in vfs_bio among other places */
+void
+htbc_remove_buf(struct htbc *ht, struct buf *bp)
+{
+	htbc_lock(ht);
+	htbc_remove_buf_locked(ht, bp);
+	htbc_unlock(ht);
+}
+
+void
+htbc_resize_buf(struct htbc *ht, struct buf *bp, long oldsz, long oldcnt)
+{
+	KASSERT(bp->b_cflags & BC_BUSY);
+
+	/*
+	 * XXX: why does this depend on B_LOCKED?  otherwise the buf
+	 * is not for a transaction?  if so, why is this called in the
+	 * first place?
+	 */
+	if (bp->b_flags & B_LOCKED) {
+		htbc_lock(ht);
+		ht->ht_bufbytes += bp->b_bufsize - oldsz;
+		ht->ht_bcount += bp->b_bcount - oldcnt;
+		htbc_unlock(ht);
+	}
+}
+
 /****************************************************************/
 /* HTBC Unbuffered disk I/O */
 
@@ -360,7 +437,7 @@ htbc_doio(data, len, devvp, pbn, flags)
 	htbc_doio_accounting(devvp, flags);
 
 	bp->b_flags = flags;
-	//bp->b_cflags = BC_BUSY; /* silly & dubious */
+	bp->b_cflags = BC_BUSY; /* silly & dubious */
 	bp->b_dev = devvp->v_rdev;
 	bp->b_data = data;
 	bp->b_bufsize = bp->b_resid = bp->b_bcount = len;
@@ -536,9 +613,6 @@ htbc_inodetrk_init(ht, size)
 		LIST_INIT(ht->ht_inohash[i]);
 	}
 	u_long hash = htbc_inodetrk_hash();
-
-
-	htree_set_hash();
 	htbc_hchain_insert_head(NULL, ht, hash, 0, 0);
 }
 
@@ -628,10 +702,10 @@ htbc_transaction_inodes_len(ht)
 
 /* Calculate amount of space a transaction will take on disk */
 static size_t
-wapbl_transaction_len(ht)
+htbc_transaction_len(ht)
 	struct htbc *ht;
 {
-	int blocklen = 1<<ht->wl_log_dev_bshift;
+	int blocklen = 1<<ht->ht_log_dev_bshift;
 	size_t len;
 	int bph;
 

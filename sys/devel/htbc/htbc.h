@@ -91,6 +91,9 @@ struct htbc_hc_header {
 	uint32_t	hc_timensec;
 	uint32_t	hc_version;
 
+	uint32_t	hc_log_dev_bshift;
+	uint32_t	hc_fs_dev_bshift;
+
 	int64_t		hc_head;
 	int64_t		hc_tail;
 };
@@ -130,7 +133,7 @@ struct htbc_entry {
 };
 
 /****************************************************************/
-/* HTBC HTree Inode Layout (From NetBSD ext2fs) */
+/* HTBC HTree Inode Layout */
 
 struct htbc_inode_ext {
 	daddr_t 					hi_last_lblk;			/* last logical block allocated */
@@ -145,6 +148,7 @@ struct htbc_inode {
     u_int32_t   				hi_sflags;				/* Status flags (chflags) */
     struct htbc_hi_mfs 			*hi_mfs;	    		/* htbc_hi_mfs */
     int32_t	  					hi_count;				/* Size of free slot in directory. */
+
     struct vnode 				*hi_vp;
     struct vnode 				*hi_devvp;				/* Vnode for block I/O. */
 };
@@ -290,5 +294,23 @@ int 	htbc_read(void *, size_t, struct vnode *, daddr_t);
 /* calculates (loc / fs->hi_bsize) */
 #define htbc_lblkno(fs, loc)		((loc) >> (fs)->hi_bshift)
 #define	htbc_blksize(fs, ip, lbn) 	((fs)->hi_bsize)
+
+/* place in sys/buf.h */
+/*
+ * These flags are kept in b_cflags (owned by buffer cache).
+ */
+#define	BC_AGE		0x00000001	/* Move to age queue when I/O done. */
+#define	BC_BUSY		0x00000010	/* I/O in progress. */
+#define BC_SCANNED	0x00000020	/* Block already pushed during sync */
+#define	BC_INVAL	0x00002000	/* Does not contain valid info. */
+#define	BC_NOCACHE	0x00008000	/* Do not cache block after use. */
+#define	BC_WANTED	0x00800000	/* Process wants this buffer. */
+#define	BC_VFLUSH	0x04000000	/* Buffer is being synced. */
+
+/*
+ * These flags are kept in b_oflags (owned by associated object).
+ */
+#define	BO_DELWRI	0x00000080	/* Delay I/O until buffer reused. */
+#define	BO_DONE		0x00000200	/* I/O completed. */
 
 #endif /* SYS_HTBC_H_ */
