@@ -26,7 +26,7 @@
 
 #include <sys/cdefs.h>
 
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 /*
  * MD primitives supporting placement of module data
  *

@@ -32,7 +32,7 @@
 /* from: netbsd:lib/libc/stdlib/getopt.c */
 
 #include <lib/libkern/libkern.h>
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 
 int	opterr = 1,		/* if error message should be printed */
 	optind = 1,		/* index into parent argv vector */

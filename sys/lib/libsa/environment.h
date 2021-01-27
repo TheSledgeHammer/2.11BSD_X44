@@ -57,102 +57,29 @@
  *
  *	@(#)stand.h	8.1 (Berkeley) 6/11/93
  */
-/*
- * Please refer to lib/libsa/stand.h for all other missing content.
- */
 
-#ifndef	BOOTSTAND_H
-#define	BOOTSTAND_H
-#include <sys/cdefs.h>
+#ifndef _LIBSA_ENVIRONMENT_H_
+#define _LIBSA_ENVIRONMENT_H_
 
-#include <sys/user.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/dirent.h>
-#include <sys/errno.h>
 #include <lib/libsa/stand.h>
 
-/* this header intentionally exports NULL from <string.h> */
-#include <string.h>
-
-/* special stand error codes */
-#define	EADAPT	(ELAST+1)	/* bad adaptor */
-#define	ECTLR	(ELAST+2)	/* bad controller */
-#define	EUNIT	(ELAST+3)	/* bad unit */
-#define ESLICE	(ELAST+4)	/* bad slice */
-#define	EPART	(ELAST+5)	/* bad partition */
-#define	ERDLAB	(ELAST+6)	/* can't read disk label */
-#define	EUNLAB	(ELAST+7)	/* unlabeled disk */
-#define	EOFFSET	(ELAST+8)	/* relative seek not supported */
-#define	ESALAST	(ELAST+8)	/* */
-
-#define DEVT_NONE	0
-#define DEVT_DISK	1
-#define DEVT_NET	2
-#define DEVT_CD		3
-#define DEVT_ZFS	4
-#define DEVT_FD		5
-
-/*
- * libstand-supplied filesystems
- */
-extern struct fs_ops ufs_fsops;
-extern struct fs_ops cd9660_fsops;
-
-/*
- * Generic device specifier; architecture-dependent
- * versions may be larger, but should be allowed to
- * overlap.
- */
-struct devdesc {
-    struct devsw	*d_dev;
-    int				d_unit;
-    void			*d_opendata;
-};
-
-/* sbrk emulation */
-extern int	fgetstr(char *buf, int size, int fd);
-extern void	ngets(char *, int);
-
-#define	O_RDONLY	0x0
-#define O_WRONLY	0x1
-#define O_RDWR		0x2
-#define O_ACCMODE	0x3
-
-extern struct dirent *readdirfd(int);
-
-/* stdlib.h routines */
-/* imports from stdlib, locally modified */
-extern char		*optarg;			/* getopt(3) external variables */
-extern int		optind, opterr, optopt, optreset;
-extern int		getopt(int, char * const [], const char *);
-extern char 	*strdup(const char *);
-extern size_t 	strspn(const char *, const char *);
-extern long		strtol(const char *, char **, int);
-
-/* pager.c */
-extern void	pager_open(void);
-extern void	pager_close(void);
-extern int	pager_output(const char *lines);
-extern int	pager_file(const char *fname);
-
 /* environment.c */
-#define EV_DYNAMIC	(1<<0)		/* value was dynamically allocated, free if changed/unset */
-#define EV_VOLATILE	(1<<1)		/* value is volatile, make a copy of it */
-#define EV_NOHOOK	(1<<2)		/* don't call hook when setting */
+#define EV_DYNAMIC		(1<<0)		/* value was dynamically allocated, free if changed/unset */
+#define EV_VOLATILE		(1<<1)		/* value is volatile, make a copy of it */
+#define EV_NOHOOK		(1<<2)		/* don't call hook when setting */
 
 struct env_var;
-typedef char	*(ev_format_t)(struct env_var *ev);
-typedef int		(ev_sethook_t)(struct env_var *ev, int flags, const void *value);
-typedef int		(ev_unsethook_t)(struct env_var *ev);
+typedef char			*(ev_format_t)(struct env_var *ev);
+typedef int				(ev_sethook_t)(struct env_var *ev, int flags, const void *value);
+typedef int				(ev_unsethook_t)(struct env_var *ev);
 
 struct env_var {
-    char			*ev_name;
-    int				ev_flags;
-    void			*ev_value;
-    ev_sethook_t	*ev_sethook;
-    ev_unsethook_t	*ev_unsethook;
-    struct env_var	*ev_next, *ev_prev;
+    char				*ev_name;
+    int					ev_flags;
+    void				*ev_value;
+    ev_sethook_t		*ev_sethook;
+    ev_unsethook_t		*ev_unsethook;
+    struct env_var		*ev_next, *ev_prev;
 };
 extern struct env_var	*environ;
 
@@ -166,4 +93,4 @@ extern int				unsetenv(const char *name);
 extern ev_sethook_t		env_noset;			/* refuse set operation */
 extern ev_unsethook_t	env_nounset;		/* refuse unset operation */
 
-#endif /* BOOTSTAND_H_ */
+#endif /* _LIBSA_ENVIRONMENT_H_ */

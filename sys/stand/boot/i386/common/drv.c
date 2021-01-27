@@ -18,7 +18,7 @@
 /*__FBSDID("$FreeBSD$");*/
 
 #include <sys/param.h>
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 #include <boot/common/rbx.h>
 
 #include <btxv86.h>

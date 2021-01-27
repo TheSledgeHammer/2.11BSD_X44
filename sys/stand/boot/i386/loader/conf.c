@@ -26,7 +26,7 @@
  * $FreeBSD: src/sys/boot/i386/loader/conf.c,v 1.24 2003/08/25 23:28:32 obrien Exp $
  * $DragonFly: src/sys/boot/pc32/loader/conf.c,v 1.4 2005/09/03 23:52:49 dillon Exp $
  */
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 #include <common/bootstrap.h>
 #include <libi386/libi386.h>
 

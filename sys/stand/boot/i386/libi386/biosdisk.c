@@ -46,7 +46,7 @@
 #include <bootstrap.h>
 #include <btxv86.h>
 #include <edd.h>
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 #include "disk.h"
 #include "libi386.h"
 

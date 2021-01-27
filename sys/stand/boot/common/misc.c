@@ -32,7 +32,7 @@
 #include <sys/user.h>
 
 #include <bootstrap.h>
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 #include <lib/libsa/loadfile.h>
 
 #define	min(A, B)	(((A) < (B)) ? (A) : (B))

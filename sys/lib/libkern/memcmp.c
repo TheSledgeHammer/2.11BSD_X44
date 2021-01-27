@@ -36,13 +36,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #include <sys/types.h>
-#ifdef _STANDALONE
-#include <lib/libkern/libkern.h>
-#else
+#if !defined(_KERNEL) && !defined(_STANDALONE)
 #include <string.h>
+#else
+#include <lib/libkern/libkern.h>
 #endif
-#include "stand.h"
 
 #undef memcmp
 #undef bcmp

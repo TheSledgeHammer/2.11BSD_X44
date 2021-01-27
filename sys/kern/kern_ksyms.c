@@ -335,7 +335,7 @@ addsymtab(const char *name, void *symstart, size_t symsize,
 	tab->sd_nglob = nglob;
 
 	addsymtab_strstart = str;
-	if (kheapsort(nsym, n, sizeof(Elf_Sym), addsymtab_compar, &ts) != 0)
+	if (qsort(nsym, n, sizeof(Elf_Sym), addsymtab_compar, &ts) != 0)
 		panic("addsymtab");
 
 	/* ksymsread() is unlocked, so membar. */

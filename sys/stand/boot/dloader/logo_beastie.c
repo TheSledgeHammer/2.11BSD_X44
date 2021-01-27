@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  */
 
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 #include "dloader.h"
 
 #define BEASTIE_LINES 	20

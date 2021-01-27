@@ -35,7 +35,11 @@
 static char sccsid[] = "@(#)bcmp.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
+#if !defined(_KERNEL) && !defined(_STANDALONE)
 #include <string.h>
+#else
+#include <lib/libkern/libkern.h>
+#endif
 
 /*
  * bcmp -- vax cmpc3 instruction

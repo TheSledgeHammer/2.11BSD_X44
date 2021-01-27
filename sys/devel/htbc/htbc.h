@@ -145,7 +145,7 @@ struct htbc_inode {
     u_int32_t   				hi_sflags;				/* Status flags (chflags) */
     struct htbc_hi_mfs 			*hi_mfs;	    		/* htbc_hi_mfs */
     int32_t	  					hi_count;				/* Size of free slot in directory. */
-    struct vnode 				*hi_vnode;
+    struct vnode 				*hi_vp;
     struct vnode 				*hi_devvp;				/* Vnode for block I/O. */
 };
 
@@ -186,7 +186,7 @@ enum htbc_hi_slotstatus {
 
 /* Convert between inode pointers and vnode pointers. */
 #define VTOHTI(vp)	((struct htbc_inode *)(vp)->v_data)
-#define HTITOV(ip)	((ip)->hi_vnode)
+#define HTITOV(ip)	((ip)->hi_vp)
 
 /****************************************************************/
 /* HTBC Extents */

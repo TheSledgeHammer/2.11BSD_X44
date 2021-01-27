@@ -36,7 +36,7 @@
 #include <sys/stddef.h>
 #include <sys/reboot.h>
 
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 #include <boot/common/bootstrap.h>
 #include <boot/common/smbios.h>
 #include <boot/i386/common/bootargs.h>

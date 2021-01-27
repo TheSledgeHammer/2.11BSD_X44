@@ -31,7 +31,7 @@
 
 #include <lib/libsa/loadfile.h>
 #include <i386/include/bootinfo.h>
-#include <bootstand.h>
+#include <lib/libsa/stand.h>
 
 #include "bootstrap.h"
 #include "libi386.h"

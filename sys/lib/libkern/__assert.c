@@ -1,7 +1,8 @@
-/* $NetBSD: memset.c,v 1.3 1999/11/13 21:17:57 thorpej Exp $ */
+/*	$NetBSD: __assert.c,v 1.6 2002/09/27 15:37:47 provos Exp $	*/
 
 /*
- * Copyright (c) 1999 Christopher G. Demetriou.  All rights reserved.
+ * Copyright (c) 1996 Christopher G. Demetriou
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,18 +32,47 @@
  */
 
 #include <sys/cdefs.h>
+#include <sys/types.h>
+#include <sys/systm.h>
+#include <sys/null.h>
+
+#ifdef _STANDALONE
 #include <lib/libkern/libkern.h>
+#endif
 
-void *
-memset(dstv, c, length)
-	void *dstv;
-	int c;
-	size_t length;
+
+void
+__assert(func, file, line, expression)
+	const char *func, *file, *expression;
+	int line;
 {
-	u_char *dst = dstv;
+	if (func == NULL)
+		panic("Assertion failed: (%s), file %s, line %d.",
+		    expression, file, line);
+	else
+		panic(
+		    "Assertion failed: (%s), function %s, file %s, line %d.", expression, func, file, line);
+}
 
-	while (length-- > 0) {
-		*dst++ = c;
-	}
-	return dstv;
+/* coverity[+kill] */
+void
+kern_assert(const char *fmt, ...)
+{
+	va_list ap;
+#ifdef _KERNEL
+	if (panicstr != NULL)
+		return;
+#endif
+	va_start(ap, fmt);
+	vpanic(fmt, ap);
+	va_end(ap);
+
+	/*
+	 * Force instructions at the return address of vpanic before
+	 * the next symbol, which otherwise the compiler may omit
+	 * because vpanic is marked noreturn.  This prevents seeing
+	 * whatever random symbol came after kern_assert in the linked
+	 * kernel in stack traces for assertion failures.
+	 */
+	asm volatile(".long 0");
 }

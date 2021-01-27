@@ -32,7 +32,7 @@
 #include <sys/cdefs.h>
 
 #include <lib/libsa/loadfile.h>
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 #include <bootstrap.h>
 
 static int	p_maxlines = -1;

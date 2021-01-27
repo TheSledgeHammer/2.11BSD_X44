@@ -142,7 +142,7 @@ struct htbc {
 	u_long 						ht_inohashmask;
 	int 						ht_inohashcnt;
 
-	TAILQ_HEAD(, htbc_entry) 	ht_entries;			/* On disk transaction accounting */
+	CIRCLEQ_HEAD(, htbc_entry) 	ht_entries;			/* On disk transaction accounting */
 
 	/* hash chain */
 	CIRCLEQ_ENTRY(htbc) 		ht_hchain_entries;	/* hash chain entry */
@@ -224,15 +224,16 @@ htbc_start(htp, mp, vp, off, count, blksize)
 	if (blksize % DEV_BSIZE)
 		return EINVAL;
 
-	if ((error = VOP_BMAP(vp, off, &devvp, &logpbn, &run)) != 0) {
-			return error;
+	error = htbc_bmap(vp, off, &devvp, &logpbn, &run);
+	if (error != 0) {
+		return error;
 	}
 
 	ht = htbc_calloc(1, sizeof(*ht));
 	htbc_lockinit(ht);
 
 	LIST_INIT(&ht->ht_bufs);
-	TAILQ_INIT(&ht->ht_entries);
+	CIRCLEQ_INIT(&ht->ht_entries);
 	CIRCLEQ_INIT(&hchain->hc_header);
 
 	ht->ht_logvp = vp;
@@ -918,7 +919,7 @@ htbc_ext_find_extent(struct htbc_hi_mfs *fs, struct htbc_inode *ip, daddr_t lbn,
 			brelse(path->ep_bp, 0);
 			path->ep_bp = NULL;
 		}
-		error = bread(ip->hi_vnode, fsbtodb(fs, nblk), size, 0, &path->ep_bp);
+		error = bread(ip->hi_vp, fsbtodb(fs, nblk), size, 0, &path->ep_bp);
 		if (error) {
 			brelse(path->ep_bp, 0);
 			path->ep_bp = NULL;
@@ -1359,13 +1360,13 @@ htree_cmp_sort_entry(const void *e1, const void *e2)
  * Append an entry to the end of the directory block.
  */
 static void
-htree_append_entry(char *block, uint32_t blksize, struct htree_fake_direct *last_entry, struct htree_fake_direct *new_entry)
+htree_append_entry(char *block, uint32_t blksize, struct htree_direct *last_entry, struct htree_direct *new_entry)
 {
 	uint16_t entry_len;
 
 	entry_len = HTREE_DIR_REC_LEN(last_entry->h_namlen);
 	last_entry->h_reclen = entry_len;
-	last_entry = (struct htree_fake_direct *)((char *)last_entry + entry_len);
+	last_entry = (struct htree_direct *)((char *)last_entry + entry_len);
 	new_entry->h_reclen = block + blksize - (char *)last_entry;
 	memcpy(last_entry, new_entry, HTREE_DIR_REC_LEN(new_entry->h_namlen));
 }
@@ -1374,7 +1375,7 @@ htree_append_entry(char *block, uint32_t blksize, struct htree_fake_direct *last
  * Move half of entries from the old directory block to the new one.
  */
 static int
-htree_split_dirblock(char *block1, char *block2, uint32_t blksize, uint32_t *hash_seed, uint8_t hash_version, uint32_t *split_hash, struct htree_fake_direct *entry)
+htree_split_dirblock(char *block1, char *block2, uint32_t blksize, uint32_t *hash_seed, uint8_t hash_version, uint32_t *split_hash, struct htree_direct *entry)
 {
 	int entry_cnt = 0;
 	int size = 0;
@@ -1382,11 +1383,11 @@ htree_split_dirblock(char *block1, char *block2, uint32_t blksize, uint32_t *has
 	uint32_t offset;
 	uint16_t entry_len = 0;
 	uint32_t entry_hash;
-	struct htree_fake_direct *ep, *last;
+	struct htree_direct *ep, *last;
 	char *dest;
 	struct htree_sort_entry *sort_info, dummy;
 
-	ep = (struct htree_fake_direct *)block1;
+	ep = (struct htree_direct *)block1;
 	dest = block2;
 	sort_info = (struct htree_sort_entry *)
 	    ((char *)block2 + blksize);
@@ -1394,8 +1395,7 @@ htree_split_dirblock(char *block1, char *block2, uint32_t blksize, uint32_t *has
 	/*
 	 * Calculate name hash value for the entry which is to be added.
 	 */
-	htbc_tree_hash(entry->h_name, entry->h_namlen, hash_seed,
-	    hash_version, &entry_hash, NULL);
+	htbc_htree_hash(entry->h_name, entry->h_namlen, hash_seed, hash_version, &entry_hash, NULL);
 
 	/*
 	 * Fill in directory entry sort descriptors.
@@ -1410,15 +1410,14 @@ htree_split_dirblock(char *block1, char *block2, uint32_t blksize, uint32_t *has
 			    hash_seed, hash_version,
 			    &sort_info->h_hash, NULL);
 		}
-		ep = (struct htree_fake_direct *)
+		ep = (struct htree_direct *)
 		    ((char *)ep + ep->h_reclen);
 	}
 
 	/*
 	 * Sort directory entry descriptors by name hash value.
 	 */
-	kheapsort(sort_info, entry_cnt, sizeof(struct htree_sort_entry),
-	    htree_cmp_sort_entry, &dummy);
+	qsort(sort_info, entry_cnt, sizeof(struct htree_sort_entry), htree_cmp_sort_entry, &dummy);
 
 	/*
 	 * Count the number of entries to move to directory block 2.
@@ -1441,11 +1440,11 @@ htree_split_dirblock(char *block1, char *block2, uint32_t blksize, uint32_t *has
 	 * Move half of directory entries from block 1 to block 2.
 	 */
 	for (k = i + 1; k < entry_cnt; k++) {
-		ep = (struct htree_fake_direct *)((char *)block1 +
+		ep = (struct htree_direct *)((char *)block1 +
 		    sort_info[k].h_offset);
 		entry_len = HTREE_DIR_REC_LEN(ep->h_namlen);
 		memcpy(dest, ep, entry_len);
-		((struct htree_fake_direct *)dest)->h_reclen = entry_len;
+		((struct htree_direct *)dest)->h_reclen = entry_len;
 		/* Mark directory entry as unused. */
 		ep->h_ino = 0;
 		dest += entry_len;
@@ -1453,13 +1452,13 @@ htree_split_dirblock(char *block1, char *block2, uint32_t blksize, uint32_t *has
 	dest -= entry_len;
 
 	/* Shrink directory entries in block 1. */
-	last = (struct htree_fake_direct *)block1;
+	last = (struct htree_direct *)block1;
 	entry_len = 0;
 	for (offset = 0; offset < blksize;) {
-		ep = (struct htree_fake_direct *)(block1 + offset);
+		ep = (struct htree_direct *)(block1 + offset);
 		offset += ep->h_reclen;
 		if (ep->h_ino) {
-			last = (struct htree_fake_direct *)
+			last = (struct htree_direct *)
 			   ((char *)last + entry_len);
 			entry_len = HTREE_DIR_REC_LEN(ep->h_namlen);
 			memcpy((void *)last, (void *)ep, entry_len);
@@ -1470,7 +1469,7 @@ htree_split_dirblock(char *block1, char *block2, uint32_t blksize, uint32_t *has
 	if (entry_hash >= *split_hash) {
 		/* Add entry to block 2. */
 		htree_append_entry(block2, blksize,
-		    (struct htree_fake_direct *)dest, entry);
+		    (struct htree_direct *)dest, entry);
 
 		/* Adjust length field of last entry of block 1. */
 		last->h_reclen = block1 + blksize - (char *)last;
@@ -1479,7 +1478,7 @@ htree_split_dirblock(char *block1, char *block2, uint32_t blksize, uint32_t *has
 		htree_append_entry(block1, blksize, last, entry);
 
 		/* Adjust length field of last entry of block 2. */
-		((struct htree_fake_direct *)dest)->h_reclen =
+		((struct htree_direct *)dest)->h_reclen =
 		    block2 + blksize - dest;
 	}
 
@@ -1491,13 +1490,13 @@ htree_split_dirblock(char *block1, char *block2, uint32_t blksize, uint32_t *has
  * accommodable in a single dir-block.
  */
 int
-htree_create_index(struct vnode *vp, struct componentname *cnp, struct htree_fake_direct *new_entry)
+htree_create_index(struct vnode *vp, struct componentname *cnp, struct htree_direct *new_entry)
 {
 	struct buf *bp = NULL;
 	struct htbc_inode *dp;
 	struct htbc_hi_fs *fs;
 	struct htbc_hi_mfs 	*m_fs;
-	struct htree_fake_direct *ep, *dotdot;
+	struct htree_direct *ep, *dotdot;
 	struct htree_root *root;
 	struct htree_lookup_info info;
 	uint32_t blksize, dirlen, split_hash;
@@ -1518,13 +1517,13 @@ htree_create_index(struct vnode *vp, struct componentname *cnp, struct htree_fak
 		goto out;
 
 	root = (struct htree_root *)bp->b_data;
-	dotdot = (struct htree_fake_direct *)((char *)&(root->h_dotdot));
-	ep = (struct htree_fake_direct *)((char *)dotdot + dotdot->h_reclen);
+	dotdot = (struct htree_direct *)((char *)&(root->h_dotdot));
+	ep = (struct htree_direct *)((char *)dotdot + dotdot->h_reclen);
 	dirlen = (char *)root + blksize - (char *)ep;
 	memcpy(buf1, ep, dirlen);
-	ep = (struct htree_fake_direct *)buf1;
+	ep = (struct htree_direct *)buf1;
 	while ((char *)ep < buf1 + dirlen)
-		ep = (struct htree_fake_direct *)((char *)ep + ep->h_reclen);
+		ep = (struct htree_direct *)((char *)ep + ep->h_reclen);
 	ep->h_reclen = buf1 + blksize - (char *)ep;
 	/* XXX It should be made dp->i_flag |= IN_E3INDEX; */
 	dp->hi_sflags |= HTREE_INDEX;
@@ -1587,7 +1586,7 @@ out1:
  * Add an entry to the directory using htree index.
  */
 int
-htree_add_entry(struct vnode *dvp, struct htree_fake_direct *entry, struct componentname *cnp, size_t newentrysize)
+htbc_htree_add_entry(struct vnode *dvp, struct htree_direct *entry, struct componentname *cnp, size_t newentrysize)
 {
 	struct htree_entry *entries, *leaf_node;
 	struct htree_lookup_info info;
@@ -1614,7 +1613,7 @@ htree_add_entry(struct vnode *dvp, struct htree_fake_direct *entry, struct compo
 	blksize = m_fs->hi_bsize;
 
 	if (ip->hi_count != 0)
-		return ext2fs_add_entry(dvp, entry, &(ip), newentrysize);
+		return htree_add_entry(dvp, entry, &(ip), newentrysize);
 
 	/* Target directory block is full, split it */
 	memset(&info, 0, sizeof(info));
@@ -1681,8 +1680,7 @@ htree_add_entry(struct vnode *dvp, struct htree_fake_direct *entry, struct compo
 				    dst_entries;
 				info.h_levels[1].h_entries = dst_entries;
 			}
-			htree_insert_entry_to_level(&info.h_levels[0],
-			    split_hash, blknum);
+			htree_insert_entry_to_level(&info.h_levels[0], split_hash, blknum);
 
 			/* Write new index node to disk */
 			error = bwrite(dst_bp);
@@ -1945,8 +1943,7 @@ htree_lookup(struct htbc_inode *ip, const char *name, int namelen, struct buf **
 		}
 
 		int found;
-		if (htbc_search_dirblock(ip, bp->b_data, &found,
-		    name, namelen, entryoffp, offp, prevoffp,
+		if (htbc_search_dirblock(ip, bp->b_data, &found, name, namelen, entryoffp, offp, prevoffp,
 		    endusefulp, ss) != 0) {
 			brelse(bp, 0);
 			htree_release(&info);
@@ -1965,4 +1962,75 @@ htree_lookup(struct htbc_inode *ip, const char *name, int namelen, struct buf **
 
 	htree_release(&info);
 	return (ENOENT);
+}
+
+int
+htree_add_entry(struct vnode* dvp, struct htree_direct *entry, const struct htree_lookup_results *hlr, size_t newentrysize)
+{
+	struct htree_direct *ep, *nep;
+	struct htbc_inode *dp;
+	struct buf *bp;
+	u_int dsize;
+	int error, loc, spacefree;
+	char *dirbuf;
+
+	dp = VTOHTI(dvp);
+
+	/*
+	 * Get the block containing the space for the new directory entry.
+	 */
+	if ((error = htbc_blkatoff(dvp, (off_t)hlr->hlr_offset, &dirbuf, &bp)) != 0)
+			return error;
+
+	/*
+	 * Find space for the new entry. In the simple case, the entry at
+	 * offset base will have the space. If it does not, then namei
+	 * arranged that compacting the region ulr_offset to
+	 * ulr_offset + ulr_count would yield the
+	 * space.
+	 */
+	ep = (struct htree_direct*) dirbuf;
+	dsize = HTREE_DIR_REC_LEN(ep->h_namlen);
+	spacefree = fs2h16(ep->h_reclen) - dsize;
+	for (loc = fs2h16(ep->h_reclen); loc < hlr->hlr_count;) {
+		nep = (struct htree_direct*) (dirbuf + loc);
+		if (ep->h_ino) {
+			/* trim the existing slot */
+			ep->h_reclen = h2fs16(dsize);
+			ep = (struct htree_direct*) ((char*) ep + dsize);
+		} else {
+			/* overwrite; nothing there; header is ours */
+			spacefree += dsize;
+		}
+		dsize = HTREE_DIR_REC_LEN(nep->h_namlen);
+		spacefree += fs2h16(nep->h_reclen) - dsize;
+		loc += fs2h16(nep->h_reclen);
+		memcpy((void*) ep, (void*) nep, dsize);
+	}
+	/*
+	 * Update the pointer fields in the previous entry (if any),
+	 * copy in the new entry, and write out the block.
+	 */
+	if (ep->h_ino == 0) {
+#ifdef DIAGNOSTIC
+		if (spacefree + dsize < newentrysize)
+			panic("htree_direnter: compact1");
+#endif
+		entry->h_reclen = h2fs16(spacefree + dsize);
+	} else {
+#ifdef DIAGNOSTIC
+		if (spacefree < newentrysize) {
+			printf("htree_direnter: compact2 %u %u",
+			    (u_int)spacefree, (u_int)newentrysize);
+			panic("htree_direnter: compact2");
+		}
+#endif
+		entry->h_reclen = h2fs16(spacefree);
+		ep->h_reclen = h2fs16(dsize);
+		ep = (struct htree_direct*) ((char*) ep + dsize);
+	}
+	memcpy(ep, entry, (u_int) newentrysize);
+	error = VOP_BWRITE(bp);
+	dp->hi_flag |= IN_CHANGE | IN_UPDATE;
+	return error;
 }

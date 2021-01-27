@@ -25,7 +25,7 @@
 
 #include <sys/cdefs.h>
 
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 #include "libi386.h"
 
 /*

@@ -33,7 +33,7 @@
 #include <sys/boot.h>
 
 #include <lib/libsa/loadfile.h>
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 #include "bootstrap.h"
 #include "libi386.h"
 #include "btxv86.h"

@@ -35,7 +35,7 @@
 #include <lib/libsa/loadfile.h>
 #include <lib/libkern/libkern.h>
 #include <bootstrap.h>
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 #include "dloader.h"
 
 dvar_t dvbase;

@@ -27,7 +27,7 @@
 /* __FBSDID("$FreeBSD$"); */
 
 #include <sys/user.h>
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 
 #define PTOV(x)		ptov(x)
 

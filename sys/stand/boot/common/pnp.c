@@ -14,7 +14,7 @@
  * such hardware.
  */
 
-#include <stand/boot/bootstand.h>
+#include <lib/libsa/stand.h>
 #include <string.h>
 #include <bootstrap.h>
 

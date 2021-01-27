@@ -43,7 +43,7 @@
 
 #define	HTREE_EOF 					0x7FFFFFFF
 
-struct htree_fake_direct {
+struct htree_direct {
 	uint32_t 					h_ino;						/* inode number of entry */
 	uint16_t 					h_reclen;					/* length of this record */
 	uint8_t  					h_namlen;					/* length of string in d_name */
@@ -70,16 +70,16 @@ struct htree_root_info {
 };
 
 struct htree_root {
-	struct htree_fake_direct 	h_dot;
+	struct htree_direct 		h_dot;
 	char 						h_dot_name[4];
-	struct htree_fake_direct 	h_dotdot;
+	struct htree_direct 		h_dotdot;
 	char 						h_dotdot_name[4];
 	struct htree_root_info 		h_info;
 	struct htree_entry 			h_entries[0];
 };
 
 struct htree_node {
-	struct htree_fake_direct 	h_fake_dirent;
+	struct htree_direct 		h_fake_dirent;
 	struct htree_htree_entry 	h_entries[0];
 };
 
@@ -92,6 +92,14 @@ struct htree_lookup_level {
 struct htree_lookup_info {
 	struct htree_lookup_level 	h_levels[2];
 	uint32_t 					h_levels_num;
+};
+
+struct htree_lookup_results {
+	int32_t	  					hlr_count;				/* Size of free slot in directory. */
+	int32_t	  					hlr_endoff;				/* End of useful stuff in directory. */
+	int32_t	  					hlr_diroff;				/* Offset in dir, where we found last entry. */
+	int32_t	  					hlr_offset;				/* Offset of free space in directory. */
+	u_int32_t 					hlr_reclen;				/* Size of found directory entry. */
 };
 
 struct htree_sort_entry {
@@ -114,6 +122,14 @@ struct htree_sort_entry {
 #define	HTREE_DIR_REC_LEN(namelen) \
     (((namelen) + 8 + HTREE_DIR_ROUND) & ~HTREE_DIR_ROUND)
 
+/* EXT2FS metadatas are stored in little-endian byte order. These macros
+ * helps reading theses metadatas
+ */
+#if BYTE_ORDER == LITTLE_ENDIAN
+#	define h2fs16(x) (x)
+#	define fs2h16(x) (x)
+#endif
+
 static off_t	htree_get_block(struct htree_entry *ep);
 static void 	htree_release(struct htree_lookup_info *info);
 static uint16_t htree_get_limit(struct htree_entry *ep);
@@ -130,10 +146,10 @@ static int 		htree_writebuf(struct htree_lookup_info *info);
 static void 	htree_insert_entry_to_level(struct htree_lookup_level *level, uint32_t hash, uint32_t blk);
 static void 	htree_insert_entry(struct htree_lookup_info *info, uint32_t hash, uint32_t blk);
 static int 		htree_cmp_sort_entry(const void *e1, const void *e2);
-static void 	htree_append_entry(char *block, uint32_t blksize, struct htree_fake_direct *last_entry, struct htree_fake_direct *new_entry);
-static int 		htree_split_dirblock(char *block1, char *block2, uint32_t blksize, uint32_t *hash_seed, uint8_t hash_version, uint32_t *split_hash, struct htree_fake_direct *entry);
-int 			htree_create_index(struct vnode *vp, struct componentname *cnp, struct htree_fake_direct *new_entry);
-int 			htree_add_entry(struct vnode *dvp, struct htree_fake_direct *entry, struct componentname *cnp, size_t newentrysize);
+static void 	htree_append_entry(char *block, uint32_t blksize, struct htree_direct *last_entry, struct htree_direct *new_entry);
+static int 		htree_split_dirblock(char *block1, char *block2, uint32_t blksize, uint32_t *hash_seed, uint8_t hash_version, uint32_t *split_hash, struct htree_direct *entry);
+int 			htree_create_index(struct vnode *vp, struct componentname *cnp, struct htree_direct *new_entry);
+int 			htree_add_entry(struct vnode *dvp, struct htree_direct *entry, struct componentname *cnp, size_t newentrysize);
 static int 		htree_check_next(struct htbc_inode *ip, uint32_t hash, const char *name, struct htree_lookup_info *info);
 static int 		htree_find_leaf(struct htbc_inode *ip, const char *name, int namelen, uint32_t *hash, uint8_t *hash_ver, struct htree_lookup_info *info);
 int 			htree_lookup(struct htbc_inode *ip, const char *name, int namelen, struct buf **bpp, int *entryoffp, int32_t *offp, int32_t *prevoffp, int32_t *endusefulp, struct htbc_hi_searchslot *ss);

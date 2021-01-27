@@ -1,3 +1,5 @@
+/*	$NetBSD: mcount.c,v 1.12 2003/08/07 16:32:08 agc Exp $	*/
+
 /*-
  * Copyright (c) 1983, 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,12 +29,22 @@
  * SUCH DAMAGE.
  */
 
-#if !defined(lint) && !defined(KERNEL) && defined(LIBC_SCCS)
+/* If building a standalone libkern, don't include mcount. */
+#ifndef _STANDALONE
+
+#include <sys/cdefs.h>
+#if !defined(lint) && !defined(_KERNEL) && defined(LIBC_SCCS)
+#if 0
 static char sccsid[] = "@(#)mcount.c	8.1 (Berkeley) 6/4/93";
+#else
+__RCSID("$NetBSD: mcount.c,v 1.12 2003/08/07 16:32:08 agc Exp $");
+#endif
 #endif
 
 #include <sys/param.h>
 #include <sys/gmon.h>
+
+_MCOUNT_DECL __P((u_long, u_long)) __attribute__((__unused__));	/* see below. */
 
 /*
  * mcount is called on entry to each function compiled with the profiling
@@ -54,14 +62,14 @@ static char sccsid[] = "@(#)mcount.c	8.1 (Berkeley) 6/4/93";
  * perform this optimization.
  */
 _MCOUNT_DECL(frompc, selfpc)	/* _mcount; may be static, inline, etc */
-	register u_long frompc, selfpc;
+	u_long frompc, selfpc;
 {
-	register u_short *frompcindex;
-	register struct tostruct *top, *prevtop;
-	register struct gmonparam *p;
-	register long toindex;
-#ifdef KERNEL
-	register int s;
+	u_short *frompcindex;
+	struct tostruct *top, *prevtop;
+	struct gmonparam *p;
+	long toindex;
+#ifdef _KERNEL
+	int s;
 #endif
 
 	p = &_gmonparam;
@@ -71,11 +79,10 @@ _MCOUNT_DECL(frompc, selfpc)	/* _mcount; may be static, inline, etc */
 	 */
 	if (p->state != GMON_PROF_ON)
 		return;
-#ifdef KERNEL
+#ifdef _KERNEL
 	MCOUNT_ENTER;
-#else
-	p->state = GMON_PROF_BUSY;
 #endif
+	p->state = GMON_PROF_BUSY;
 	/*
 	 * check that frompcindex is a reasonable pc value.
 	 * for example:	signal catchers get called from the stack,
@@ -85,7 +92,14 @@ _MCOUNT_DECL(frompc, selfpc)	/* _mcount; may be static, inline, etc */
 	if (frompc > p->textsize)
 		goto done;
 
-	frompcindex = &p->froms[frompc / (p->hashfraction * sizeof(*p->froms))];
+#if (HASHFRACTION & (HASHFRACTION - 1)) == 0
+	if (p->hashfraction == HASHFRACTION)
+		frompcindex =
+		    &p->froms[frompc / (HASHFRACTION * sizeof(*p->froms))];
+	else
+#endif
+		frompcindex =
+		    &p->froms[frompc / (p->hashfraction * sizeof(*p->froms))];
 	toindex = *frompcindex;
 	if (toindex == 0) {
 		/*
@@ -157,22 +171,25 @@ _MCOUNT_DECL(frompc, selfpc)	/* _mcount; may be static, inline, etc */
 		
 	}
 done:
-#ifdef KERNEL
-	MCOUNT_EXIT;
-#else
 	p->state = GMON_PROF_ON;
+#ifdef _KERNEL
+	MCOUNT_EXIT;
 #endif
 	return;
 overflow:
 	p->state = GMON_PROF_ERROR;
-#ifdef KERNEL
+#ifdef _KERNEL
 	MCOUNT_EXIT;
 #endif
 	return;
 }
 
+#ifdef MCOUNT
 /*
  * Actual definition of mcount function.  Defined in <machine/profile.h>,
  * which is included by <sys/gmon.h>.
  */
 MCOUNT
+#endif
+
+#endif /* !_STANDALONE */

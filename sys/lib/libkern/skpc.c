@@ -1,6 +1,8 @@
-/*-
- * Copyright (c) 1992, 1993
- *	The Regents of the University of California.  All rights reserved.
+/*	$NetBSD: skpc.c,v 1.5 2003/08/07 16:32:11 agc Exp $	*/
+
+/*
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -30,21 +28,21 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)skpc.c	8.1 (Berkeley) 6/10/93
+ *	@(#)ufs_subr.c	7.13 (Berkeley) 6/28/90
  */
 
+#include <sys/types.h>
 #include <lib/libkern/libkern.h>
 
 int
-skpc(mask0, size, cp0)
-	int mask0;
-	int size;
-	char *cp0;
+skpc(mask, size, cp)
+	int mask;
+	size_t size;
+	u_char *cp;
 {
-	register u_char *cp, *end, mask;
+	u_char *end = &cp[size];
 
-	mask = mask0;
-	cp = (u_char *)cp0;
-	for (end = &cp[size]; cp < end && *cp == mask; ++cp);
+	while (cp < end && *cp == (u_char) mask)
+		cp++;
 	return (end - cp);
 }

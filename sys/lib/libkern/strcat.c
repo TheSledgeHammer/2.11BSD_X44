@@ -1,3 +1,5 @@
+/*	$NetBSD: strcat.c,v 1.10 2003/08/07 16:32:11 agc Exp $	*/
+
 /*
  * Copyright (c) 1988, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,20 +29,31 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)strcat.c	8.1 (Berkeley) 6/4/93";
+#else
+__RCSID("$NetBSD: strcat.c,v 1.10 2003/08/07 16:32:11 agc Exp $");
+#endif
 #endif /* LIBC_SCCS and not lint */
 
+#if !defined(_KERNEL) && !defined(_STANDALONE)
 #include <string.h>
+#else
+#include <lib/libkern/libkern.h>
+#endif
 
 char *
 strcat(s, append)
-	register char *s;
-	register const char *append;
+	char *s;
+	const char *append;
 {
-	char *save = s;
+	char	*t = s;
 
-	for (; *s; ++s);
-	while (*s++ == *append++);
-	return(save);
+	for (; *t; ++t)
+		;
+	while ((*t++ = *append++) != '\0')
+		;
+	return (s);
 }

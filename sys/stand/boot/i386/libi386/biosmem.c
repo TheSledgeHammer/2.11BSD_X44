@@ -29,7 +29,7 @@
 /*
  * Obtain memory configuration information from the BIOS
  */
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 #include <boot/common/commands.h>
 #include <boot/common/smbios.h>
 #include "bootstrap.h"

@@ -35,7 +35,7 @@
 #include <sys/user.h>
 
 #include <lib/libsa/loadfile.h>
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 #include "bootstrap.h"
 
 #include <machine/loadfile_machdep.h>

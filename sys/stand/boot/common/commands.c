@@ -33,7 +33,7 @@
 #include <lib/libkern/libkern.h>
 #include "bootstrap.h"
 #include "commands.h"
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 
 static char command_errbuf[256];
 

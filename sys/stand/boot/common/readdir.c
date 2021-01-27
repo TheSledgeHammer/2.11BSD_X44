@@ -28,13 +28,13 @@
 
 #include <sys/cdefs.h>
 
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 #include <lib/libsa/loadfile.h>
 
 #include <sys/param.h>
 #include <sys/dirent.h>
 
-#include <efi/libefi/efifsdev.h>
+//#include <efi/libefi/efifsdev.h>
 #include <bootstrap.h>
 
 struct dirent *

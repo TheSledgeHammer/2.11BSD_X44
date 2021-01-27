@@ -29,7 +29,7 @@
 #include <sys/param.h>
 #include <sys/user.h>
 
-#include "bootstand.h"
+#include <lib/libsa/stand.h>
 
 /*__FBSDID("$FreeBSD$"); */
 

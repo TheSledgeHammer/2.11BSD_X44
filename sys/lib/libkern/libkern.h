@@ -1,3 +1,4 @@
+/*	$NetBSD: libkern.h,v 1.50 2003/08/13 11:34:24 ragge Exp $	*/
 /*-
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -31,64 +32,252 @@
  * SUCH DAMAGE.
  *
  *	@(#)libkern.h	8.1 (Berkeley) 6/10/93
- * $Id: libkern.h,v 1.3 1994/08/30 18:19:47 davidg Exp $
+ * 	$Id: libkern.h,v 1.3 1994/08/30 18:19:47 davidg Exp $
  */
 
 #include <sys/types.h>
 
-static __inline int imax(int a, int b) { return (a > b ? a : b); }
-static __inline int imin(int a, int b) { return (a < b ? a : b); }
-static __inline long lmax(long a, long b) { return (a > b ? a : b); }
-static __inline long lmin(long a, long b) { return (a < b ? a : b); }
-static __inline u_int max(u_int a, u_int b) { return (a > b ? a : b); }
-static __inline u_int min(u_int a, u_int b) { return (a < b ? a : b); }
-static __inline quad_t qmax(quad_t a, quad_t b) { return (a > b ? a : b); }
-static __inline quad_t qmin(quad_t a, quad_t b) { return (a < b ? a : b); }
-static __inline u_long ulmax(u_long a, u_long b) { return (a > b ? a : b); }
-static __inline u_long ulmin(u_long a, u_long b) { return (a < b ? a : b); }
+static __inline int 	imax (int, int) __attribute__ ((unused));
+static __inline int 	imin (int, int) __attribute__ ((unused));
+static __inline u_int 	max (u_int, u_int) __attribute__ ((unused));
+static __inline u_int 	min (u_int, u_int) __attribute__ ((unused));
+static __inline long 	lmax (long, long) __attribute__ ((unused));
+static __inline long 	lmin (long, long) __attribute__ ((unused));
+static __inline u_long 	ulmax (u_long, u_long) __attribute__ ((unused));
+static __inline u_long 	ulmin (u_long, u_long) __attribute__ ((unused));
+static __inline int 	abs (int) __attribute__ ((unused));
 
-/* hash_prospector.c Functions */
-extern uint32_t prospector32(uint32_t x);
-extern uint32_t lowbias32(uint32_t x);
-extern uint32_t lowbias32_r(uint32_t x);
-extern uint32_t triple32(uint32_t x);
-extern uint32_t triple32_r(uint32_t x);
-extern uint32_t hash32(uint32_t x);
-extern uint32_t murmurhash32_mix32(uint32_t x);
+static __inline int 	isspace (int) __attribute__((__unused__));
+static __inline int 	isascii (int) __attribute__((__unused__));
+static __inline int 	isupper (int) __attribute__((__unused__));
+static __inline int 	islower (int) __attribute__((__unused__));
+static __inline int 	isalpha (int) __attribute__((__unused__));
+static __inline int 	isdigit (int) __attribute__((__unused__));
+static __inline int 	isxdigit (int) __attribute__((__unused__));
+static __inline int 	toupper (int) __attribute__((__unused__));
+static __inline int 	tolower (int) __attribute__((__unused__));
+
+static __inline int
+imax(int a, int b)
+{
+	return (a > b ? a : b);
+}
+
+static __inline int
+imin(int a, int b)
+{
+	return (a < b ? a : b);
+}
+
+static __inline long
+lmax(long a, long b)
+{
+	return (a > b ? a : b);
+}
+
+static __inline long
+lmin(long a, long b)
+{
+	return (a < b ? a : b);
+}
+
+static __inline u_int
+max(u_int a, u_int b)
+{
+	return (a > b ? a : b);
+}
+
+static __inline u_int
+min(u_int a, u_int b)
+{
+	return (a < b ? a : b);
+}
+
+static __inline quad_t
+qmax(quad_t a, quad_t b)
+{
+	return (a > b ? a : b);
+}
+
+static __inline quad_t
+qmin(quad_t a, quad_t b)
+{
+	return (a < b ? a : b);
+}
+
+static __inline u_long
+ulmax(u_long a, u_long b)
+{
+	return (a > b ? a : b);
+}
+
+static __inline u_long
+ulmin(u_long a, u_long b)
+{
+	return (a < b ? a : b);
+}
+
+static __inline int
+abs(int j)
+{
+	return(j < 0 ? -j : j);
+}
+
+static __inline
+isspace(int ch)
+{
+	return (ch == ' ' || (ch >= '\t' && ch <= '\r'));
+}
+
+static __inline int
+isascii(int ch)
+{
+	return ((ch & ~0x7f) == 0);
+}
+
+static __inline int
+isupper(int ch)
+{
+	return (ch >= 'A' && ch <= 'Z');
+}
+
+static __inline int
+islower(int ch)
+{
+	return (ch >= 'a' && ch <= 'z');
+}
+
+static __inline int
+isalpha(int ch)
+{
+	return (isupper(ch) || islower(ch));
+}
+
+static __inline int
+isdigit(int ch)
+{
+	return (ch >= '0' && ch <= '9');
+}
+
+static __inline int
+isxdigit(int ch)
+{
+	return (isdigit(ch) ||
+	    (ch >= 'A' && ch <= 'F') ||
+	    (ch >= 'a' && ch <= 'f'));
+}
+
+static __inline int
+toupper(int ch)
+{
+	if (islower(ch))
+		return (ch - 0x20);
+	return (ch);
+}
+
+static __inline int
+tolower(int ch)
+{
+	if (isupper(ch))
+		return (ch + 0x20);
+	return (ch);
+}
+
+#ifndef offsetof
+#define	offsetof(type, member) \
+	((size_t)(unsigned long)(&(((type *)0)->member)))
+#endif
+
+/* hash Functions */
+uint32_t 	prospector32(uint32_t x);
+uint32_t 	lowbias32(uint32_t x);
+uint32_t 	lowbias32_r(uint32_t x);
+uint32_t 	triple32(uint32_t x);
+uint32_t 	triple32_r(uint32_t x);
+uint32_t 	hash32(uint32_t x);
+uint32_t 	murmurhash32_mix32(uint32_t x);
 
 /* Prototypes for non-quad routines. */
-int	 	bcmp(const void *, const void *, size_t);
-int	 	ffs(int);
-int	 	locc(int, char *, u_int);
-u_long	random(void);
-char	*rindex(const char *, int);
-int	 	scanc(u_int, u_char *, u_char *, int);
-int	 	skpc(int, int, char *);
-char	*strcat(char *, const char *);
-char	*strcpy(char *, const char *);
-size_t	 strlen(const char *);
-char	*strncpy(char *, const char *, size_t);
-
-void	__assert(const char *, const char *, int, const char *);
-void	kern_assert(const char *, ...);
-
+/* XXX notyet #ifdef _STANDALONE */
+int	 		bcmp (const void *, const void *, size_t);
+void	 	bzero (void *, size_t);
+/* #endif */
 /* Prototypes for which GCC built-ins exist. */
-void	*memcpy (void *, const void *, size_t);
-int	 	memcmp (const void *, const void *, size_t);
-void	*memset (void *, int, size_t);
+void		*memcpy (void *, const void *, size_t);
+int	 		memcmp (const void *, const void *, size_t);
+void		*memset (void *, int, size_t);
+#if __GNUC_PREREQ__(2, 95) && !defined(__vax__)
+#define	memcpy(d, s, l)		__builtin_memcpy(d, s, l)
+#define	memcmp(a, b, l)		__builtin_memcmp(a, b, l)
+#define	memset(d, v, l)		__builtin_memset(d, v, l)
+#endif
+
+char		*strcpy (char *, const char *);
+int	 		strcmp (const char *, const char *);
+size_t	 	strlen (const char *);
+#if __GNUC_PREREQ__(2, 95)
+#define	strcpy(d, s)		__builtin_strcpy(d, s)
+#define	strcmp(a, b)		__builtin_strcmp(a, b)
+#define	strlen(a)			__builtin_strlen(a)
+#endif
+
+/* Functions for which we always use built-ins. */
+#ifdef __GNUC__
+#define	alloca(s)		__builtin_alloca(s)
+#endif
+
+/* These exist in GCC 3.x, but we don't bother. */
+char		*strcat (char *, const char *);
+char		*strncpy (char *, const char *, size_t);
+int	 		strncmp (const char *, const char *, size_t);
+char		*strchr (const char *, int);
+char		*strrchr (const char *, int);
+
+char		*strstr (const char *, const char *);
+
+/*
+ * ffs is an instruction on vax.
+ */
+int	 		ffs (int);
+#if __GNUC_PREREQ__(2, 95) && !defined(__vax__)
+#define	ffs(x)			__builtin_ffs(x)
+#endif
+
+void	 	__assert (const char *, const char *, int, const char *) __attribute__((__noreturn__));
+void		kern_assert (const char *, ...);
+u_int32_t 	inet_addr (const char *);
+int	 		locc (int, char *, u_int);
+char		*intoa (u_int32_t);
+#define inet_ntoa(a) intoa((a).s_addr)
+void		*memchr (const void *, int, size_t);
+void		*memmove (void *, const void *, size_t);
+int	 		pmatch (const char *, const char *, const char **);
+u_int32_t 	arc4random (void);
+void	 	arc4randbytes (void *, size_t);
+void		qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));
+void		qsort_r(void *base, size_t nmemb, size_t size, void *thunk, int (*compar)(void *, const void *, const void *));
+u_long	 	random (void);
+char		*rindex (const char *, int);
+int	 		scanc (u_int, const u_char *, const u_char *, int);
+int	 		skpc (int, size_t, u_char *);
+int	 		strcasecmp (const char *, const char *);
+size_t	 	strlcpy (char *, const char *, size_t);
+size_t	 	strlcat (char *, const char *, size_t);
+int	 		strncasecmp (const char *, const char *, size_t);
+u_long	 	strtoul (const char *, char **, int);
 
 #define __KASSERTSTR  "kernel %sassertion \"%s\" failed: file \"%s\", line %d "
 
 #ifdef NDEBUG						/* tradition! */
 #define	assert(e)	((void)0)
 #else
-#define	assert(e)	(__predict_true((e)) ? (void)0 :		    \
+#define	assert(e)	(__predict_true((e)) ? (void)0 :		    	\
 		kern_assert(__KASSERTSTR, "", #e, __FILE__, __LINE__))
 #ifdef __STDC__
-#define	assert(e)	(__predict_true((e)) ? (void)0 :		    \
+#define	assert(e)	(__predict_true((e)) ? (void)0 :		   		\
 			    __assert("", __FILE__, __LINE__, #e))
 #else
-#define	assert(e)	(__predict_true((e)) ? (void)0 :		    \
+#define	assert(e)	(__predict_true((e)) ? (void)0 :		    	\
 			    __assert("", __FILE__, __LINE__, "e"))
 #endif
 #endif
@@ -135,14 +324,13 @@ void	*memset (void *, int, size_t);
 #endif /* lint */
 #else
 #ifdef __STDC__
-#define	KDASSERT(e)	(__predict_true((e)) ? (void)0 :		    \
+#define	KDASSERT(e)	(__predict_true((e)) ? (void)0 :		    	\
 			    __assert("debugging ", __FILE__, __LINE__, #e))
 #else
-#define	KDASSERT(e)	(__predict_true((e)) ? (void)0 :		    \
+#define	KDASSERT(e)	(__predict_true((e)) ? (void)0 :		    	\
 			    __assert("debugging ", __FILE__, __LINE__, "e"))
 #endif
 #endif
-
 
 #ifndef	CTASSERT
 #define	CTASSERT(x)				__CTASSERT(x)

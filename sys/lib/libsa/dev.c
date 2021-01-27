@@ -33,7 +33,7 @@
  *	@(#)dev.c	8.1 (Berkeley) 6/11/93
  */
 
-#include <libsa/stand.h>
+#include <lib/libsa/stand.h>
 
 /* ARGSUSED */
 int

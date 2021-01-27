@@ -1,8 +1,12 @@
-/*	$NetBSD: memcpy.c,v 1.6 2005/12/11 12:24:46 christos Exp $	*/
+/*	$NetBSD: intoa.c,v 1.1 1999/05/07 14:49:52 drochner Exp $	*/
 
-/*-
- * Copyright (c) 1993
- *	The Regents of the University of California.  All rights reserved.
+/*
+ * Copyright (c) 1992 Regents of the University of California.
+ * All rights reserved.
+ *
+ * This software was developed by the Computer Systems Engineering group
+ * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
+ * contributed to Berkeley.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -12,7 +16,11 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the University nor the names of its contributors
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Lawrence Berkeley Laboratory and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -28,25 +36,45 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)bcopy.c	8.1 (Berkeley) 6/11/93
+ * @(#) Header: net.c,v 1.9 93/08/06 19:32:15 leres Exp  (LBL)
  */
 
 #include <sys/types.h>
-#include "stand.h"
 
-/*
- * This is designed to be small, not fast.
- */
-void *
-memcpy(s1, s2, n)
-	void *s1;
-	const void *s2;
-	size_t n;
+#if defined(_KERNEL) || defined(_STANDALONE)
+#include <lib/libkern/libkern.h>
+#else
+char *intoa (u_int32_t); /* XXX */
+#endif
+
+/* Similar to inet_ntoa() */
+char *
+intoa(addr)
+	u_int32_t addr;
 {
-	const char *f = s2;
-	char *t = s1;
+	char *cp;
+	u_int byte;
+	int n;
+	static char buf[17];	/* strlen(".255.255.255.255") + 1 */
 
-	while (n-- > 0)
-		*t++ = *f++;
-	return (s1);
+	addr = ntohl(addr);
+	cp = &buf[sizeof buf];
+	*--cp = '\0';
+
+	n = 4;
+	do {
+		byte = addr & 0xff;
+		*--cp = byte % 10 + '0';
+		byte /= 10;
+		if (byte > 0) {
+			*--cp = byte % 10 + '0';
+			byte /= 10;
+			if (byte > 0)
+				*--cp = byte + '0';
+		}
+		*--cp = '.';
+		addr >>= 8;
+	} while (--n > 0);
+
+	return (cp+1);
 }

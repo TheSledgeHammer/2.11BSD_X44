@@ -67,7 +67,7 @@
 
 #include "dev_net.h"
 
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 #include "bootstrap.h"
 
 #ifdef	NETIF_DEBUG

@@ -47,7 +47,7 @@
 #include <sys/dirent.h>
 
 #include <lib/libsa/loadfile.h>
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 
 #include "bootstrap.h"
 

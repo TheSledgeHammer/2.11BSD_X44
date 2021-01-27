@@ -18,7 +18,7 @@
 
 #include <sys/param.h>
 
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 #include <boot/common/rbx.h>
 #include <i386/boot2/lib.h>
 #include <i386/btx/lib/btxv86.h>

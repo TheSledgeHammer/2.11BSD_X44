@@ -29,7 +29,7 @@
 #include <dev/core/ic/ns16550reg.h>
 #include <dev/core/pci/pcireg.h>
 
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 #include "bootstrap.h"
 #include "libi386.h"
 

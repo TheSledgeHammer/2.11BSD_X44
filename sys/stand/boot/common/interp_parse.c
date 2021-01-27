@@ -21,7 +21,7 @@
 
 #include <lib/libsa/loadfile.h>
 #include <lib/libkern/libkern.h>
-#include <boot/bootstand.h>
+#include <lib/libsa/stand.h>
 #include "bootstrap.h"
 
 static void	 clean(void);

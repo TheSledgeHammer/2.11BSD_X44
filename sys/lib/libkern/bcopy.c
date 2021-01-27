@@ -31,10 +31,13 @@
  *	@(#)bcopy.c	8.1 (Berkeley) 6/11/93
  */
 
-#include <sys/types.h>
-#include "stand.h"
+#include <sys/cdefs.h>
 
-#undef bcopy			/* in case of LIBSA_USE_MEMCPY */
+#if !defined(_KERNEL) && !defined(_STANDALONE)
+#include <string.h>
+#else
+#include <lib/libkern/libkern.h>
+#endif
 
 /*
  * This is designed to be small, not fast.
