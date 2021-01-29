@@ -53,7 +53,8 @@ static void
 audio_init(devsw)
 	struct devswtable *devsw;
 {
-
+	DEVSWIO_CONFIG_INIT(devsw, NAUDIO, NULL, &audio_cdevsw, NULL);		/* generic audio I/O */
+	DEVSWIO_CONFIG_INIT(devsw, NMIDI, NULL, &midi_cdevsw, NULL);		/* MIDI I/O */
 }
 
 /* Add console driver configuration */
@@ -105,5 +106,5 @@ static void
 video_init(devsw)
 	struct devswtable *devsw;
 {
-
+	DEVSWIO_CONFIG_INIT(devsw, NVIDEO , NULL, &video_cdevsw, NULL);		/* generic video I/O */
 }

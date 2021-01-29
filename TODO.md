@@ -72,6 +72,7 @@ A General todo list. Don't hesitate to add to this list. :)
 	- mouse/keyboard:						Work in progress
 - Add: Common Speaker code from i386
 - Fix:
+	- video & audio
 	- eisa: Missing tidbits.
 	- pci: Missing tidbits.
 

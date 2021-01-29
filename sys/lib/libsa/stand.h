@@ -189,6 +189,4 @@ void			setheap(void *base, void *top);
 char 			*getheap(size_t *sizep);
 char 			*sbrk(intptr_t incr);
 
-
-
 #endif	/* _LIBSA_STAND_H */

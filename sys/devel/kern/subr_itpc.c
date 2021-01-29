@@ -77,7 +77,6 @@ itpc_add_kthreadpool(itpc, ktpool)
         	itpc->itc_ktinfo->itc_ktid = kt->kt_tid;
         	itpc->itc_ktinfo->itc_ktgrp = kt->kt_pgrp;
         	itpc->itc_ktinfo->itc_ktjob =  ktpool->ktp_overseer.ktpt_job;
-            itpc->itc_threadpooltype = ITPC_KTHREAD;
             itpc->itc_refcnt++;
             ktpool->ktp_initcq = TRUE;
             TAILQ_INSERT_HEAD(itpc->itc_header, itpc, itc_entry);
@@ -104,7 +103,6 @@ itpc_remove_kthreadpool(itpc, ktpool)
 				if(kt != NULL) {
 		        	itpc->itc_ktinfo->itc_kthread = NULL;
 		        	itpc->itc_ktinfo->itc_ktjob = NULL;
-					itpc->itc_threadpooltype = ITPC_NOTHREAD;
 					itpc->itc_refcnt--;
 					ktpool->ktp_initcq = FALSE;
 					TAILQ_REMOVE(itpc->itc_header, itpc, itc_entry);
@@ -125,13 +123,13 @@ threadpool_schedule_jobs(itpc, job)
     itpc->itc_jobs = job;
     itpc->itc_job_name = job->job_name;
 
-    if(itpc->itc_threadpooltype == ITPC_KTHREAD && itpc->itc_ktpool != NULL) {
+    if(itpc->itc_ktpool != NULL) {
         register struct kthreadpool *ktpool = itpc->itc_ktpool;
         itpc_add_kthreadpool(itpc, ktpool);
         kthreadpool_schedule_job(ktpool, job);
     }
 
-    if(itpc->itc_threadpooltype == ITPC_UTHREAD && itpc->itc_utpool != NULL) {
+    if(itpc->itc_utpool != NULL) {
         register struct uthreadpool *utpool = itpc->itc_utpool;
         itpc_add_uthreadpool(itpc, utpool);
         uthreadpool_schedule_job(utpool, job);
@@ -145,11 +143,11 @@ threadpool_cancel_jobs(itpc, job)
   struct threadpool_job *job;
 {
     if(itpc->itc_jobs == job && itpc->itc_job_name == job->job_name) {
-    	if(itpc->itc_threadpooltype == ITPC_KTHREAD && itpc->itc_ktpool != NULL) {
+    	if(itpc->itc_ktpool != NULL) {
     	      kthreadpool_cancel_job(itpc->itc_ktpool, job);
     	      itpc_remove_kthreadpool(itpc, itpc->itc_ktpool);
     	}
-        if(itpc->itc_threadpooltype == ITPC_UTHREAD && itpc->itc_utpool != NULL) {
+        if(itpc->itc_utpool != NULL) {
             uthreadpool_cancel_job(itpc->itc_utpool, job);
             itpc_remove_uthreadpool(itpc, itpc->itc_utpool);
         }
@@ -215,6 +213,7 @@ itpc_verify_kthreadpool(itpc, ktpool)
 				if(itpc->itc_ktinfo->itc_ktid == kt->kt_tid) {
 					printf("kthread tid found");
 				} else {
+					//itpc->itc_ktinfo->itc_kthread = ktfind(kt->kt_tid);
 					printf("kthread tid not found");
 				}
 			} else {

@@ -84,9 +84,9 @@ typedef u_int8_t uWord[2];
 #define USETW2(w,h,l) ((w)[0] = (u_int8_t)(l), (w)[1] = (u_int8_t)(h))
 typedef u_int8_t uDWord[4];
 #define UGETDW(w) ((w)[0] | ((w)[1] << 8) | ((w)[2] << 16) | ((w)[3] << 24))
-#define USETDW(w,v) ((w)[0] = (u_int8_t)(v), \
-		     (w)[1] = (u_int8_t)((v) >> 8), \
-		     (w)[2] = (u_int8_t)((v) >> 16), \
+#define USETDW(w,v) ((w)[0] = (u_int8_t)(v), 	\
+		     (w)[1] = (u_int8_t)((v) >> 8), 	\
+		     (w)[2] = (u_int8_t)((v) >> 16), 	\
 		     (w)[3] = (u_int8_t)((v) >> 24))
 /* 
  * On little-endian machines that can handle unanliged accesses
@@ -443,8 +443,8 @@ struct usb_device_info {
 	u_int8_t	class;
 	u_int8_t	config;
 	u_int8_t	lowspeed;
-	int		power;	/* power consumption in mA, 0 if selfpowered */
-	int		nports;
+	int			power;	/* power consumption in mA, 0 if selfpowered */
+	int			nports;
 	u_int8_t	ports[16];/* hub only: addresses of devices on ports */
 #define USB_PORT_ENABLED 0xff
 #define USB_PORT_SUSPENDED 0xfe

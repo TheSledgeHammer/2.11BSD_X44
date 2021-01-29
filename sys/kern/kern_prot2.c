@@ -172,8 +172,6 @@ setsid(pid)
 	} else {
 		return (u->u_error = EPERM);
 	}
-
-	p->p_ucred;
 }
 
 int

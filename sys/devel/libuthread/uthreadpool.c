@@ -34,10 +34,12 @@
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/malloc.h>
+
 #include <sys/map.h>
 #include <sys/user.h>
-#include <sys/threadpool.h>
-#include "uthread.h"
+#include <devel/sys/threadpool.h>
+#include <devel/sys/malloctypes.h>
+#include <devel/libuthread/uthread.h>
 
 struct uthreadpool_thread 				utpool_thread;
 lock_t	 								uthreadpools_lock;

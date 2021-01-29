@@ -68,12 +68,12 @@ struct pmap;
  * clockframe; for now, use generic intrframe.
  */
 struct clockframe {
-	struct intrframe	cf_if;
+	struct intrframe				cf_if;
 };
 
-#define	CLKF_USERMODE(framep)	(ISPL((framep)->cf_if.if_cs) == SEL_UPL)
-#define	CLKF_BASEPRI(framep)	((framep)->cf_if.if_ppl == 0)
-#define	CLKF_PC(framep)			((framep)->cf_if.if_eip)
+#define	CLKF_USERMODE(framep)		(ISPL((framep)->cf_if.if_cs) == SEL_UPL)
+#define	CLKF_BASEPRI(framep)		((framep)->cf_if.if_ppl == 0)
+#define	CLKF_PC(framep)				((framep)->cf_if.if_eip)
 
 #define	resettodr()	/* no todr to set */
 
@@ -81,22 +81,22 @@ struct clockframe {
  * Preempt the current process if in interrupt from user mode,
  * or after the current trap/syscall if in system mode.
  */
-#define	need_resched()			{ want_resched++; aston(); }
+#define	need_resched()				{ want_resched++; aston(); }
 
 /*
  * Give a profiling tick to the current process from the softclock
  * interrupt.  On tahoe, request an ast to send us through trap(),
  * marking the proc as needing a profiling tick.
  */
-#define	profile_tick(p, framep)	{ (p)->p_flag |= P_OWEUPC; aston(); }
+#define	profile_tick(p, framep)		{ (p)->p_flag |= P_OWEUPC; aston(); }
 
 /*
  * Notify the current process (p) that it has a signal pending,
  * process as soon as possible.
  */
-#define	signotify(p)	aston()
+#define	signotify(p)				aston()
 
-#define aston() 		(astpending++)
+#define aston() 					(astpending++)
 
 int	astpending;			/* need to trap before returning to user mode */
 int	want_resched;		/* resched() was called */

@@ -229,6 +229,8 @@
  */
 #define	_Atomic(T)		struct { T volatile __val; }
 #endif
-
 #endif
+
+#define	__GLOBL1(sym)	__asm__(".globl " #sym)
+#define	__GLOBL(sym)	__GLOBL1(sym)
 #endif /* !_CDEFS_H_ */

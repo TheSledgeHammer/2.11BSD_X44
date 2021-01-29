@@ -81,6 +81,10 @@ struct name {															\
 	struct type *lh_first;		/* first element */						\
 }
 
+#define	LIST_HEAD_INITIALIZER(head)	{ 									\
+	NULL, &(head).lh_first												\
+}
+
 #define LIST_ENTRY(type)												\
 struct {																\
 	struct type *le_next;		/* next element */						\
@@ -144,7 +148,6 @@ struct {																\
 	*(elm)->field.le_prev = (elm)->field.le_next;						\
 }
 
-
 /*
  * Simple queue definitions.
  */
@@ -154,8 +157,9 @@ struct name {															\
 	struct type **sqh_last;	/* addr of last next element */				\
 }
 
-#define	SIMPLEQ_HEAD_INITIALIZER(head)									\
-	{ NULL, &(head).sqh_first }
+#define	SIMPLEQ_HEAD_INITIALIZER(head)	{ 								\
+	NULL, &(head).sqh_first												\
+}
 
 #define	SIMPLEQ_ENTRY(type)												\
 struct {																\
@@ -255,6 +259,10 @@ struct name {															\
 	struct type **tqh_last;	/* addr of last next element */				\
 }
 
+#define	TAILQ_HEAD_INITIALIZER(head)	{ 								\
+	NULL, &(head).tqh_first												\
+}
+
 #define TAILQ_ENTRY(type)												\
 struct {																\
 	struct type *tqe_next;	/* next element */							\
@@ -320,6 +328,13 @@ struct {																\
 	(head)->tqh_last = &(elm)->field.tqe_next;							\
 }
 
+#define	TAILQ_INSERT_BEFORE(listelm, elm, field) {						\
+	(elm)->field.tqe_prev = (listelm)->field.tqe_prev;					\
+	(elm)->field.tqe_next = (listelm);									\
+	*(listelm)->field.tqe_prev = (elm);									\
+	(listelm)->field.tqe_prev = &(elm)->field.tqe_next;					\
+}
+
 #define TAILQ_INSERT_AFTER(head, listelm, elm, field) {					\
 	if (((elm)->field.tqe_next = (listelm)->field.tqe_next) != NULL)	\
 		(elm)->field.tqe_next->field.tqe_prev = 						\
@@ -355,6 +370,10 @@ struct {																\
 struct name {															\
 	struct type *cqh_first;		/* first element */						\
 	struct type *cqh_last;		/* last element */						\
+}
+
+#define	CIRCLEQ_HEAD_INITIALIZER(head)	{ 								\
+	NULL, &(head).cqh_first												\
 }
 
 #define CIRCLEQ_ENTRY(type)												\

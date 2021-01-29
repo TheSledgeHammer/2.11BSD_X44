@@ -103,8 +103,17 @@ struct gsched {
 };
 
 /* Linux Concept: Scheduler Domains: Hyperthreading, multi-cpu */
-struct gsched_domains {
+union gsched_group {
+	CIRCLEQ_ENTRY(gsd_group) gsg_entry;
+};
+
+struct gsched_grphead;
+CIRCLEQ_HEAD(gsched_grphead, gsched_group);
+struct gsched_domain {
 	/* Not Implemented */
+	struct gsched_grphead	 *gsd_header;
+	int 					 gsd_nentries;
+	int 					 gsd_refcnt;
 };
 
 /* Priority Weighting Factors */

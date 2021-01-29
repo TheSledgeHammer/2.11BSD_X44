@@ -168,5 +168,3 @@ gsched_sort(cur, nxt)
         }
     }
 }
-
-

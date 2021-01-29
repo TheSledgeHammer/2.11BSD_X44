@@ -88,12 +88,6 @@ struct threadpool_itpc {
 
 	struct kthreadpool					itc_ktpool;			/* Pointer to Kernel Threadpool */
 	struct uthreadpool					itc_utpool;			/* Pointer to User Threadpool */
-	int 								itc_threadpooltype;	/* Current Threadpool type (kthread or uthread) */
-
-/* itpc threadtype flags */
-#define ITPC_NOTHREAD 	0
-#define ITPC_KTHREAD 	1
-#define ITPC_UTHREAD 	2
 
 	/* job related info */
 	struct threadpool_job				itc_jobs;
@@ -118,7 +112,6 @@ struct threadpool_itpc {
 #define itc_ktinfo		info.kt
 #define itc_utinfo		info.ut
 };
-
 
 extern struct itc_threadpool itpc;
 

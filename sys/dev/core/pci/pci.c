@@ -243,7 +243,7 @@ pcisubmatch(parent, cf, aux)
 	if (cf->pcicf_function != PCI_UNK_FUNCTION &&
 	    cf->pcicf_function != pa->pa_function)
 		return 0;
-	return ((*cf->cf_attach->ca_match)(parent, cf, aux));
+	return ((*cf->cf_driver->cd_match)(parent, cf, aux));
 }
 
 void
