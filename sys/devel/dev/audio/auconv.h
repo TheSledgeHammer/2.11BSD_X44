@@ -1,11 +1,11 @@
-/*	$NetBSD: mulaw.h,v 1.10 1998/08/09 19:22:15 mycroft Exp $	*/
+/*	$NetBSD: auconv.h,v 1.3.10.1 1999/04/16 20:26:52 augustss Exp $	*/
 
 /*-
- * Copyright (c) 1996 The NetBSD Foundation, Inc.
+ * Copyright (c) 1997 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by John T. Kohl.
+ * by Lennart Augustsson.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -36,23 +36,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Convert 8-bit mu-law to 16 bit unsigned linear. */
-extern void mulaw_to_ulinear16 (void *, u_char *buf, int cnt);
-/* Convert 8-bit mu-law to 16 bit signed linear. */
-extern void mulaw_to_slinear16 (void *, u_char *buf, int cnt);
-/* Convert 8-bit mu-law to/from 8 bit unsigned linear. */
-extern void mulaw_to_ulinear8 (void *, u_char *buf, int cnt);
-extern void ulinear8_to_mulaw (void *, u_char *buf, int cnt);
-/* Convert 8-bit mu-law to/from 8 bit signed linear. */
-extern void mulaw_to_slinear8 (void *, u_char *buf, int cnt);
-extern void slinear8_to_mulaw (void *, u_char *buf, int cnt);
-/* Convert 8-bit a-law to 16 bit unsigned linear. */
-extern void alaw_to_ulinear16 (void *, u_char *buf, int cnt);
-/* Convert 8-bit a-law to 16 bit signed linear. */
-extern void alaw_to_slinear16 (void *, u_char *buf, int cnt);
-/* Convert 8-bit a-law to/from 8 bit unsigned linear. */
-extern void alaw_to_ulinear8 (void *, u_char *buf, int cnt);
-extern void ulinear8_to_alaw (void *, u_char *buf, int cnt);
-/* Convert 8-bit a-law to/from 8 bit signed linear. */
-extern void alaw_to_slinear8 (void *, u_char *buf, int cnt);
-extern void slinear8_to_alaw (void *, u_char *buf, int cnt);
+/* Convert between signed and unsigned. */
+extern void change_sign8 __P((void *, u_char *, int));
+extern void change_sign16 __P((void *, u_char *, int));
+/* Convert between little and big endian. */
+extern void swap_bytes __P((void *, u_char *, int));
+extern void swap_bytes_change_sign16 __P((void *, u_char *, int));
+extern void change_sign16_swap_bytes __P((void *, u_char *, int));
+/* Byte expansion/contraction */
+extern void linear8_to_linear16 __P((void *, u_char *, int));
+extern void linear16_to_linear8 __P((void *, u_char *, int));

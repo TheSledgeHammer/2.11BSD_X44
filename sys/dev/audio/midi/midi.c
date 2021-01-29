@@ -1,58 +1,96 @@
-/*	$OpenBSD: midi.c,v 1.47 2020/04/07 13:27:51 visa Exp $	*/
+/*	$NetBSD: midi.c,v 1.11 1999/02/26 01:18:09 nathanw Exp $	*/
 
 /*
- * Copyright (c) 2003, 2004 Alexandre Ratchov
+ * Copyright (c) 1998 The NetBSD Foundation, Inc.
+ * All rights reserved.
  *
- * Permission to use, copy, modify, and distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
+ * This code is derived from software contributed to The NetBSD Foundation
+ * by Lennart Augustsson (augustss@netbsd.org).
  *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *        This product includes software developed by the NetBSD
+ *        Foundation, Inc. and its contributors.
+ * 4. Neither the name of The NetBSD Foundation nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/param.h>
-#include <sys/fcntl.h>
-#include <sys/systm.h>
-#include <sys/ioctl.h>
-#include <sys/conf.h>
-#include <sys/poll.h>
-#include <sys/kernel.h>
-#include <sys/timeout.h>
-#include <sys/user.h>
-#include <sys/vnode.h>
-#include <sys/signalvar.h>
-#include <sys/device.h>
+#include "midi.h"
+#include "sequencer.h"
 
-#include <dev/audio/midi/midi_if.h>
+#include <sys/param.h>
+#include <sys/ioctl.h>
+#include <sys/fcntl.h>
+#include <sys/vnode.h>
+#include <sys/select.h>
+#include <sys/poll.h>
+#include <sys/malloc.h>
+#include <sys/proc.h>
+#include <sys/systm.h>
+#include <sys/syslog.h>
+#include <sys/kernel.h>
+#include <sys/signalvar.h>
+#include <sys/conf.h>
+#include <sys/audioio.h>
+#include <sys/midiio.h>
+#include <sys/device.h>
+#include <sys/user.h>
+
 #include <dev/audio/audio_if.h>
+#include <dev/audio/midi/midi_if.h>
 #include <dev/audio/midi/midivar.h>
 
+#if NMIDI > 0
+
+#ifdef AUDIO_DEBUG
+#define DPRINTF(x)		if (mididebug) printf x
+#define DPRINTFN(n,x)	if (mididebug >= (n)) printf x
+int	mididebug = 0;
+#else
+#define DPRINTF(x)
+#define DPRINTFN(n,x)
+#endif
+
+int midi_wait;
+
+void	midi_in (void *, int);
+void	midi_out (void *);
+int		midi_start_output (struct midi_softc *, int);
+int		midi_sleep_timo (int *, char *, int);
+int		midi_sleep (int *, char *);
+void	midi_wakeup (int *);
+void	midi_initbuf (struct midi_buffer *);
+void	midi_timeout (void *);
 
 int		midiopen(dev_t, int, int, struct proc *);
 int		midiclose(dev_t, int, int, struct proc *);
 int		midiread(dev_t, struct uio *, int);
 int		midiwrite(dev_t, struct uio *, int);
 int		midipoll(dev_t, int, struct proc *);
-int		midikqfilter(dev_t, struct knote *);
 int		midiioctl(dev_t, u_long, caddr_t, int, struct proc *);
-int		midiprobe(struct device *, void *, void *);
-void	midiattach(struct device *, struct device *, void *);
-int		mididetach(struct device *, int);
-int		midiprint(void *, const char *);
-
-void	midi_iintr(void *, int);
-void 	midi_ointr(void *);
-void	midi_timeout(void *);
-void	midi_out_start(struct midi_softc *);
-void	midi_out_stop(struct midi_softc *);
-void	midi_out_do(struct midi_softc *);
-void	midi_attach(struct midi_softc *, struct device *);
+int		midiprobe (struct device *, struct cfdata *, void *);
+void	midiattach (struct device *, struct device *, void *);
 
 static dev_type_open(midiopen);
 static dev_type_close(midiclose);
@@ -60,7 +98,6 @@ static dev_type_read(midiread);
 static dev_type_write(midiwrite);
 static dev_type_ioctl(midiioctl);
 static dev_type_poll(midipoll);
-static dev_type_kqfilter(midikqfilter);
 
 const struct cdevsw midi_cdevsw = {
 	.d_open = midiopen,
@@ -80,538 +117,667 @@ struct cfdriver midi_cd = {
 	NULL, "midi", midiprobe, midiattach, DV_DULL, sizeof(struct midi_softc)
 };
 
-void filt_midiwdetach(struct knote *);
-int filt_midiwrite(struct knote *, long);
+#ifdef MIDI_SAVE
+#define MIDI_SAVE_SIZE 100000
+int midicnt;
+struct {
+	int cnt;
+	u_char buf[MIDI_SAVE_SIZE];
+} midisave;
+#define MIDI_GETSAVE		_IOWR('m', 100, int)
 
-const struct filterops midiwrite_filtops = {
-	.f_flags	= FILTEROP_ISFD,
-	.f_attach	= NULL,
-	.f_detach	= filt_midiwdetach,
-	.f_event	= filt_midiwrite,
-};
-
-void filt_midirdetach(struct knote *);
-int filt_midiread(struct knote *, long);
-
-const struct filterops midiread_filtops = {
-	.f_flags	= FILTEROP_ISFD,
-	.f_attach	= NULL,
-	.f_detach	= filt_midirdetach,
-	.f_event	= filt_midiread,
-};
-
-void
-midi_iintr(void *addr, int data)
-{
-	struct midi_softc  *sc = (struct midi_softc *)addr;
-	struct midi_buffer *mb = &sc->inbuf;
-
-	MUTEX_ASSERT_LOCKED(&audio_lock);
-	if (!(sc->dev.dv_flags & DVF_ACTIVE) || !(sc->flags & FREAD))
-		return;
-
-	if (MIDIBUF_ISFULL(mb))
-		return; /* discard data */
-
-	MIDIBUF_WRITE(mb, data);
-	if (mb->used == 1) {
-		if (sc->rchan) {
-			sc->rchan = 0;
-			wakeup(&sc->rchan);
-		}
-		selwakeup(&sc->rsel);
-	}
-}
-
-int
-midiread(dev_t dev, struct uio *uio, int ioflag)
-{
-	struct midi_softc *sc;
-	struct midi_buffer *mb;
-	size_t count;
-	int error;
-
-	sc = (struct midi_softc *)device_lookup(&midi_cd, minor(dev));
-	if (sc == NULL)
-		return ENXIO;
-	if (!(sc->flags & FREAD)) {
-		error = ENXIO;
-		goto done;
-	}
-	mb = &sc->inbuf;
-
-	/* if there is no data then sleep (unless IO_NDELAY flag is set) */
-	error = 0;
-	mtx_enter(&audio_lock);
-	while (MIDIBUF_ISEMPTY(mb)) {
-		if (ioflag & IO_NDELAY) {
-			error = EWOULDBLOCK;
-			goto done_mtx;
-		}
-		sc->rchan = 1;
-		error = msleep_nsec(&sc->rchan, &audio_lock, PWAIT | PCATCH,
-		    "mid_rd", INFSLP);
-		if (!(sc->dev.dv_flags & DVF_ACTIVE))
-			error = EIO;
-		if (error)
-			goto done_mtx;
-	}
-
-	/* at this stage, there is at least 1 byte */
-
-	while (uio->uio_resid > 0 && mb->used > 0) {
-		count = MIDIBUF_SIZE - mb->start;
-		if (count > mb->used)
-			count = mb->used;
-		if (count > uio->uio_resid)
-			count = uio->uio_resid;
-		mtx_leave(&audio_lock);
-		error = uiomove(mb->data + mb->start, count, uio);
-		if (error)
-			goto done;
-		mtx_enter(&audio_lock);
-		MIDIBUF_REMOVE(mb, count);
-	}
-
-done_mtx:
-	mtx_leave(&audio_lock);
-done:
-	device_unref(&sc->dev);
-	return error;
-}
-
-void
-midi_ointr(void *addr)
-{
-	struct midi_softc *sc = (struct midi_softc *)addr;
-	struct midi_buffer *mb;
-
-	MUTEX_ASSERT_LOCKED(&audio_lock);
-	if (!(sc->dev.dv_flags & DVF_ACTIVE) || !(sc->flags & FWRITE))
-		return;
-	
-	mb = &sc->outbuf;
-	if (mb->used > 0) {
-#ifdef MIDI_DEBUG
-		if (!sc->isbusy) {
-			printf("midi_ointr: output must be busy\n");
-		}
 #endif
-		midi_out_do(sc);
-	} else if (sc->isbusy)
-		midi_out_stop(sc);
-}
-
-void
-midi_timeout(void *addr)
-{
-	mtx_enter(&audio_lock);
-	midi_ointr(addr);
-	mtx_leave(&audio_lock);
-}
-
-void
-midi_out_start(struct midi_softc *sc)
-{
-	if (!sc->isbusy) {
-		sc->isbusy = 1;
-		midi_out_do(sc);
-	}
-}
-
-void
-midi_out_stop(struct midi_softc *sc)
-{
-	sc->isbusy = 0;
-	if (sc->wchan) {
-		sc->wchan = 0;
-		wakeup(&sc->wchan);
-	}
-	selwakeup(&sc->wsel);
-}
-
-void
-midi_out_do(struct midi_softc *sc)
-{
-	struct midi_buffer *mb = &sc->outbuf;
-
-	while (mb->used > 0) {
-		if (!sc->hw_if->output(sc->hw_hdl, mb->data[mb->start]))
-			break;
-		MIDIBUF_REMOVE(mb, 1);
-		if (MIDIBUF_ISEMPTY(mb)) {
-			if (sc->hw_if->flush != NULL)
-				sc->hw_if->flush(sc->hw_hdl);
-			midi_out_stop(sc);
-			return;
-		}
-	}
-
-	if (!(sc->props & MIDI_PROP_OUT_INTR)) {
-		if (MIDIBUF_ISEMPTY(mb))
-			midi_out_stop(sc);
-		else
-			timeout_add(&sc->timeo, 1);
-	}
-}
 
 int
-midiwrite(dev_t dev, struct uio *uio, int ioflag)
-{
-	struct midi_softc *sc;
-	struct midi_buffer *mb;
-	size_t count;
-	int error;
-
-	sc = (struct midi_softc *)device_lookup(&midi_cd, minor(dev));
-	if (sc == NULL)
-		return ENXIO;
-	if (!(sc->flags & FWRITE)) {
-		error = ENXIO;
-		goto done;
-	}
-	mb = &sc->outbuf;
-
-	/*
-	 * If IO_NDELAY flag is set then check if there is enough room
-	 * in the buffer to store at least one byte. If not then dont
-	 * start the write process.
-	 */
-	error = 0;
-	mtx_enter(&audio_lock);
-	if ((ioflag & IO_NDELAY) && MIDIBUF_ISFULL(mb) && (uio->uio_resid > 0)) {
-		error = EWOULDBLOCK;
-		goto done_mtx;
-	}
-
-	while (uio->uio_resid > 0) {
-		while (MIDIBUF_ISFULL(mb)) {
-			if (ioflag & IO_NDELAY) {
-				/*
-				 * At this stage at least one byte is already
-				 * moved so we do not return EWOULDBLOCK
-				 */
-				goto done_mtx;
-			}
-			sc->wchan = 1;
-			error = msleep_nsec(&sc->wchan, &audio_lock,
-			    PWAIT | PCATCH, "mid_wr", INFSLP);
-			if (!(sc->dev.dv_flags & DVF_ACTIVE))
-				error = EIO;
-			if (error)
-				goto done_mtx;
-		}
-
-		count = MIDIBUF_SIZE - MIDIBUF_END(mb);
-		if (count > MIDIBUF_AVAIL(mb))
-			count = MIDIBUF_AVAIL(mb);
-		if (count > uio->uio_resid)
-			count = uio->uio_resid;
-		mtx_leave(&audio_lock);
-		error = uiomove(mb->data + MIDIBUF_END(mb), count, uio);
-		if (error)
-			goto done;
-		mtx_enter(&audio_lock);
-		mb->used += count;
-		midi_out_start(sc);
-	}
-
-done_mtx:
-	mtx_leave(&audio_lock);
-done:
-	device_unref(&sc->dev);
-	return error;
-}
-
-int
-midipoll(dev_t dev, int events, struct proc *p)
-{
-	struct midi_softc *sc;
-	int revents;
-
-	sc = (struct midi_softc *)device_lookup(&midi_cd, minor(dev));
-	if (sc == NULL)
-		return POLLERR;
-	revents = 0;
-	mtx_enter(&audio_lock);
-	if (events & (POLLIN | POLLRDNORM)) {
-		if (!MIDIBUF_ISEMPTY(&sc->inbuf))
-			revents |= events & (POLLIN | POLLRDNORM);
-	}
-	if (events & (POLLOUT | POLLWRNORM)) {
-		if (!MIDIBUF_ISFULL(&sc->outbuf))
-			revents |= events & (POLLOUT | POLLWRNORM);
-	}
-	if (revents == 0) {
-		if (events & (POLLIN | POLLRDNORM))
-			selrecord(p, &sc->rsel);
-		if (events & (POLLOUT | POLLWRNORM))
-			selrecord(p, &sc->wsel);
-	}
-	mtx_leave(&audio_lock);
-	device_unref(&sc->dev);
-	return (revents);
-}
-
-int
-midikqfilter(dev_t dev, struct knote *kn)
-{
-	struct midi_softc *sc;
-	struct klist 	  *klist;
-	int error;
-
-	sc = (struct midi_softc *)device_lookup(&midi_cd, minor(dev));
-	if (sc == NULL)
-		return ENXIO;
-	error = 0;
-	switch (kn->kn_filter) {
-	case EVFILT_READ:
-		klist = &sc->rsel.si_note;
-		kn->kn_fop = &midiread_filtops;
-		break;
-	case EVFILT_WRITE:
-		klist = &sc->wsel.si_note;
-		kn->kn_fop = &midiwrite_filtops;
-		break;
-	default:
-		error = EINVAL;
-		goto done;
-	}
-	kn->kn_hook = (void *)sc;
-
-	mtx_enter(&audio_lock);
-	klist_insert(klist, kn);
-	mtx_leave(&audio_lock);
-done:
-	device_unref(&sc->dev);
-	return error;
-}
-
-void
-filt_midirdetach(struct knote *kn)
-{
-	struct midi_softc *sc = (struct midi_softc *)kn->kn_hook;
-
-	mtx_enter(&audio_lock);
-	klist_remove(&sc->rsel.si_note, kn);
-	mtx_leave(&audio_lock);
-}
-
-int
-filt_midiread(struct knote *kn, long hint)
-{
-	struct midi_softc *sc = (struct midi_softc *)kn->kn_hook;
-	int retval;
-
-	mtx_enter(&audio_lock);
-	retval = !MIDIBUF_ISEMPTY(&sc->inbuf);
-	mtx_leave(&audio_lock);
-
-	return (retval);
-}
-
-void
-filt_midiwdetach(struct knote *kn)
-{
-	struct midi_softc *sc = (struct midi_softc *)kn->kn_hook;
-
-	mtx_enter(&audio_lock);
-	klist_remove(&sc->wsel.si_note, kn);
-	mtx_leave(&audio_lock);
-}
-
-int
-filt_midiwrite(struct knote *kn, long hint)
-{
-	struct midi_softc *sc = (struct midi_softc *)kn->kn_hook;
-	int		   retval;
-
-	mtx_enter(&audio_lock);
-	retval = !MIDIBUF_ISFULL(&sc->outbuf);
-	mtx_leave(&audio_lock);
-
-	return (retval);
-}
-
-int
-midiioctl(dev_t dev, u_long cmd, caddr_t addr, int flag, struct proc *p)
-{
-	struct midi_softc *sc;
-	int error;
-
-	sc = (struct midi_softc *)device_lookup(&midi_cd, minor(dev));
-	if (sc == NULL)
-		return ENXIO;
-	error = 0;
-	switch(cmd) {
-	case FIONBIO:
-		/* All handled in the upper FS layer */
-		break;
-	default:
-		error = ENOTTY;
-	}
-	device_unref(&sc->dev);
-	return error;
-}
-
-int
-midiopen(dev_t dev, int flags, int mode, struct proc *p)
-{
-	struct midi_softc *sc;
-	int error;
-
-	sc = (struct midi_softc *)device_lookup(&midi_cd, minor(dev));
-	if (sc == NULL)
-		return ENXIO;
-	error = 0;
-	if (sc->flags) {
-		error = EBUSY;
-		goto done;
-	}
-	MIDIBUF_INIT(&sc->inbuf);
-	MIDIBUF_INIT(&sc->outbuf);
-	sc->isbusy = 0;
-	sc->rchan = sc->wchan = 0;
-	sc->flags = flags;
-	error = sc->hw_if->open(sc->hw_hdl, flags, midi_iintr, midi_ointr, sc);
-	if (error)
-		sc->flags = 0;
-done:
-	device_unref(&sc->dev);
-	return error;
-}
-
-int
-midiclose(dev_t dev, int fflag, int devtype, struct proc *p)
-{
-	struct midi_softc *sc;
-	struct midi_buffer *mb;
-	int error;
-
-	sc = (struct midi_softc *)device_lookup(&midi_cd, minor(dev));
-	if (sc == NULL)
-		return ENXIO;
-
-	/* start draining output buffer */
-	error = 0;
-	mb = &sc->outbuf;
-	mtx_enter(&audio_lock);
-	if (!MIDIBUF_ISEMPTY(mb))
-		midi_out_start(sc);
-	while (sc->isbusy) {
-		sc->wchan = 1;
-		error = msleep_nsec(&sc->wchan, &audio_lock,
-		    PWAIT, "mid_dr", SEC_TO_NSEC(5));
-		if (!(sc->dev.dv_flags & DVF_ACTIVE))
-			error = EIO;
-		if (error)
-			break;
-	}
-	mtx_leave(&audio_lock);
-
-	/*
-	 * some hw_if->close() reset immediately the midi uart
-	 * which flushes the internal buffer of the uart device,
-	 * so we may lose some (important) data. To avoid this,
-	 * sleep 20ms (around 64 bytes) to give the time to the
-	 * uart to drain its internal buffers.
-	 */
-	tsleep_nsec(&sc->wchan, PWAIT, "mid_cl", MSEC_TO_NSEC(20));
-	sc->hw_if->close(sc->hw_hdl);
-	sc->flags = 0;
-	device_unref(&sc->dev);
-	return 0;
-}
-
-int
-midiprobe(struct device *parent, void *match, void *aux)
+midiprobe(parent, match, aux)
+	struct device *parent;
+	struct cfdata *match;
+	void *aux;
 {
 	struct audio_attach_args *sa = aux;
 
-	return (sa != NULL && (sa->type == AUDIODEV_TYPE_MIDI) ? 1 : 0);
+	DPRINTFN(6,("midiprobe: type=%d sa=%p hw=%p\n", 
+		 sa->type, sa, sa->hwif));
+	return (sa->type == AUDIODEV_TYPE_MIDI) ? 1 : 0;
 }
 
 void
-midiattach(struct device *parent, struct device *self, void *aux)
+midiattach(parent, self, aux)
+	struct device *parent, *self;
+	void *aux;
 {
-	struct midi_info	  mi;
-	struct midi_softc        *sc = (struct midi_softc *)self;
-	struct audio_attach_args *sa = (struct audio_attach_args *)aux;
-	struct midi_hw_if        *hwif = sa->hwif;
-	void  			 *hdl = sa->hdl;
+	struct midi_softc *sc = (void *)self;
+	struct audio_attach_args *sa = aux;
+	struct midi_hw_if *hwp = sa->hwif;
+	void *hdlp = sa->hdl;
+
+	DPRINTFN(6, ("MIDI attach\n"));
 
 #ifdef DIAGNOSTIC
-	if (hwif == 0 ||
-	    hwif->open == 0 ||
-	    hwif->close == 0 ||
-	    hwif->output == 0 ||
-	    hwif->getinfo == 0) {
+	if (hwp == 0 ||
+	    hwp->open == 0 ||
+	    hwp->close == 0 ||
+	    hwp->output == 0 ||
+	    hwp->getinfo == 0) {
 		printf("midi: missing method\n");
 		return;
 	}
 #endif
-	sc->hw_if = hwif;
-	sc->hw_hdl = hdl;
+	sc->hw_if = hwp;
+	sc->hw_hdl = hdlp;
+	midi_attach(sc, parent);
+}
+
+void
+midi_attach(sc, parent)
+	struct midi_softc *sc;
+	struct device *parent;
+{
+	struct midi_info mi;
+
+	sc->isopen = 0;
+
+	midi_wait = MIDI_WAIT * hz / 1000000;
+	if (midi_wait == 0)
+		midi_wait = 1;
+
+	sc->sc_dev = parent;
 	sc->hw_if->getinfo(sc->hw_hdl, &mi);
 	sc->props = mi.props;
-	sc->flags = 0;
-	timeout_set(&sc->timeo, midi_timeout, sc);
 	printf(": <%s>\n", mi.name);
 }
 
 int
-mididetach(struct device *self, int flags)
+midi_unit_count()
 {
-	struct midi_softc *sc = (struct midi_softc *)self;
-	int maj, mn;
+	return midi_cd.cd_ndevs;
+}
 
-	/* locate the major number */
-	for (maj = 0; maj < nchrdev; maj++) {
-		if (cdevsw[maj].d_open == midiopen) {
-			/* Nuke the vnodes for any open instances (calls close). */
-			mn = self->dv_unit;
-			vdevgone(maj, mn, mn, VCHR);
-		}
-	}
+void
+midi_initbuf(mb)
+	struct midi_buffer *mb;
+{
+	mb->used = 0;
+	mb->usedhigh = MIDI_BUFSIZE;
+	mb->end = mb->start + mb->usedhigh;
+	mb->inp = mb->outp = mb->start;
+}
 
-	/*
-	 * The close() method did nothing (device_lookup() returns
-	 * NULL), so quickly halt transfers (normally parent is already
-	 * gone, and code below is no-op), and wake-up user-land blocked
-	 * in read/write/ioctl, which return EIO.
-	 */
-	if (sc->flags) {
-		if (sc->flags & FREAD) {
-			sc->rchan = 0;
-			wakeup(&sc->rchan);
-			selwakeup(&sc->rsel);
-		}
-		if (sc->flags & FWRITE) {
-			sc->wchan = 0;
-			wakeup(&sc->wchan);
-			selwakeup(&sc->wsel);
-		}
-		sc->hw_if->close(sc->hw_hdl);
-		sc->flags = 0;
+int
+midi_sleep_timo(chan, label, timo)
+	int *chan;
+	char *label;
+	int timo;
+{
+	int st;
+
+	if (!label)
+		label = "midi";
+
+	DPRINTFN(5, ("midi_sleep_timo: %p %s %d\n", chan, label, timo));
+	*chan = 1;
+	st = tsleep(chan, PWAIT | PCATCH, label, timo);
+	*chan = 0;
+#ifdef MIDI_DEBUG
+	if (st != 0)
+		printf("midi_sleep: %d\n", st);
+#endif
+	return st;
+}
+
+int
+midi_sleep(chan, label)
+	int *chan;
+	char *label;
+{
+	return midi_sleep_timo(chan, label, 0);
+}
+
+void
+midi_wakeup(chan)
+	int *chan;
+{
+	if (*chan) {
+		DPRINTFN(5, ("midi_wakeup: %p\n", chan));
+		wakeup(chan);
+		*chan = 0;
 	}
+}
+
+static int midi_lengths[] = { 2,2,2,2,1,1,2,0 };
+/* Number of bytes in a MIDI command */
+#define MIDI_LENGTH(d) (midi_lengths[((d) >> 4) & 7])
+
+void
+midi_in(addr, data)
+	void *addr;
+	int data;
+{
+	struct midi_softc *sc = addr;
+	struct midi_buffer *mb = &sc->inbuf;
+	int i;
+
+	if (!sc->isopen)
+		return;
+	if (data == MIDI_ACK)
+		return;
+	DPRINTFN(3, ("midi_in: %p 0x%02x\n", sc, data));
+	if (!(sc->flags & FREAD))
+		return;		/* discard data if not reading */
+
+	switch(sc->in_state) {
+	case MIDI_IN_START:
+		if (MIDI_IS_STATUS(data)) {
+			switch(data) {
+			case 0xf0: /* Sysex */
+				sc->in_state = MIDI_IN_SYSEX;
+				break;
+			case 0xf1: /* MTC quarter frame */
+			case 0xf3: /* Song select */
+				sc->in_state = MIDI_IN_DATA;
+				sc->in_msg[0] = data;
+				sc->in_pos = 1;
+				sc->in_left = 1;
+				break;
+			case 0xf2: /* Song position pointer */
+				sc->in_state = MIDI_IN_DATA;
+				sc->in_msg[0] = data;
+				sc->in_pos = 1;
+				sc->in_left = 2;
+				break;
+			default:
+				if (MIDI_IS_COMMON(data)) {
+					sc->in_msg[0] = data;
+					sc->in_pos = 1;
+					goto deliver;
+				} else {
+					sc->in_state = MIDI_IN_DATA;
+					sc->in_msg[0] = sc->in_status = data;
+					sc->in_pos = 1;
+					sc->in_left = 
+						MIDI_LENGTH(sc->in_status);
+				}
+				break;
+			}
+		} else {
+			if (MIDI_IS_STATUS(sc->in_status)) {
+				sc->in_state = MIDI_IN_DATA;
+				sc->in_msg[0] = sc->in_status;
+				sc->in_msg[1] = data;
+				sc->in_pos = 2;
+				sc->in_left = MIDI_LENGTH(sc->in_status) - 1;
+			}
+		}
+		return;
+	case MIDI_IN_DATA:
+		sc->in_msg[sc->in_pos++] = data;
+		if (--sc->in_left <= 0)
+			break;	/* deliver data */
+		return;
+	case MIDI_IN_SYSEX:
+		if (data == MIDI_SYSEX_END)
+			sc->in_state = MIDI_IN_START;
+		return;
+	}
+deliver:
+	sc->in_state = MIDI_IN_START;
+#if NSEQUENCER > 0
+	if (sc->seqopen) {
+		extern void midiseq_in __P((struct midi_dev *,u_char *,int));
+		midiseq_in(sc->seq_md, sc->in_msg, sc->in_pos);
+		return;
+	}
+#endif
+
+	if (mb->used + sc->in_pos > mb->usedhigh) {
+		DPRINTF(("midi_in: buffer full, discard data=0x%02x\n", 
+			 sc->in_msg[0]));
+		return;
+	}
+	for (i = 0; i < sc->in_pos; i++) {
+		*mb->inp++ = sc->in_msg[i];
+		if (mb->inp >= mb->end)
+			mb->inp = mb->start;
+		mb->used++;
+	}
+	midi_wakeup(&sc->rchan);
+	selwakeup(&sc->rsel);
+	if (sc->async)
+		psignal(sc->async, SIGIO);
+}
+
+void
+midi_out(addr)
+	void *addr;
+{
+	struct midi_softc *sc = addr;
+
+	if (!sc->isopen)
+		return;
+	DPRINTFN(3, ("midi_out: %p\n", sc));
+	midi_start_output(sc, 1);
+}
+
+int
+midiopen(dev, flags, ifmt, p)
+	dev_t dev;
+	int flags, ifmt;
+	struct proc *p;
+{
+	int unit = MIDIUNIT(dev);
+	struct midi_softc *sc;
+	struct midi_hw_if *hw;
+	int error;
+
+	if (unit >= midi_cd.cd_ndevs ||
+	    (sc = midi_cd.cd_devs[unit]) == NULL)
+		return ENXIO;
+	DPRINTF(("midiopen %p\n", sc));
+
+	hw = sc->hw_if;
+	if (!hw)
+		return ENXIO;
+	if (sc->isopen)
+		return EBUSY;
+	sc->in_state = MIDI_IN_START;
+	sc->in_status = 0;
+	error = hw->open(sc->hw_hdl, flags, midi_in, midi_out, sc);
+	if (error)
+		return error;
+	sc->isopen++;
+	midi_initbuf(&sc->outbuf);
+	midi_initbuf(&sc->inbuf);
+	sc->flags = flags;
+	sc->rchan = 0;
+	sc->wchan = 0;
+	sc->pbus = 0;
+	sc->async = 0;
+
+#ifdef MIDI_SAVE
+	if (midicnt != 0) {
+		midisave.cnt = midicnt;
+		midicnt = 0;
+	}
+#endif
+
 	return 0;
 }
 
 int
-midiprint(void *aux, const char *pnp)
+midiclose(dev, flags, ifmt, p)
+	dev_t dev;
+	int flags, ifmt;
+	struct proc *p;
 {
-	if (pnp)
-		printf("midi at %s", pnp);
-	return (UNCONF);
+	int unit = MIDIUNIT(dev);
+	struct midi_softc *sc = midi_cd.cd_devs[unit];
+	struct midi_hw_if *hw = sc->hw_if;
+	int s, error;
+
+	DPRINTF(("midiclose %p\n", sc));
+
+	midi_start_output(sc, 0);
+	error = 0;
+	s = splaudio();
+	while (sc->outbuf.used > 0 && !error) {
+		DPRINTFN(2,("midiclose sleep used=%d\n", sc->outbuf.used));
+		error = midi_sleep_timo(&sc->wchan, "mid_dr", 30*hz);
+	}
+	splx(s);
+	sc->isopen = 0;
+	hw->close(sc->hw_hdl);
+#if NSEQUENCER > 0
+	sc->seqopen = 0;
+	sc->seq_md = 0;
+#endif
+	return 0;
 }
 
-struct device *
-midi_attach_mi(struct midi_hw_if *hwif, void *hdl, struct device *dev)
+int
+midiread(dev, uio, ioflag)
+	dev_t dev;
+	struct uio *uio;
+	int ioflag;
+{
+	int unit = MIDIUNIT(dev);
+	struct midi_softc *sc = midi_cd.cd_devs[unit];
+	struct midi_buffer *mb = &sc->inbuf;
+	int error;
+	u_char *outp;
+	int used, cc, n, resid;
+	int s;
+
+	DPRINTF(("midiread: %p, count=%lu\n", sc, 
+		 (unsigned long)uio->uio_resid));
+
+	error = 0;
+	resid = uio->uio_resid;
+	while (uio->uio_resid == resid && !error) {
+		s = splaudio();
+		while (mb->used <= 0) {
+			if (ioflag & IO_NDELAY) {
+				splx(s);
+				return EWOULDBLOCK;
+			}
+			error = midi_sleep(&sc->rchan, "mid rd");
+			if (error) {
+				splx(s);
+				return error;
+			}
+		}
+		used = mb->used;
+		outp = mb->outp;
+		splx(s);
+		cc = used;	/* maximum to read */
+		n = mb->end - outp;
+		if (n < cc)
+			cc = n;	/* don't read beyond end of buffer */
+		if (uio->uio_resid < cc)
+			cc = uio->uio_resid; /* and no more than we want */
+		DPRINTFN(3, ("midiread: uiomove cc=%d\n", cc));
+		error = uiomove(outp, cc, uio);
+		if (error)
+			break;
+		used -= cc;
+		outp += cc;
+		if (outp >= mb->end)
+			outp = mb->start;
+		s = splaudio();
+		mb->outp = outp;
+		mb->used = used;
+		splx(s);
+	}
+	return error;
+}
+
+void
+midi_timeout(arg)
+	void *arg;
+{
+	struct midi_softc *sc = arg;
+
+	DPRINTFN(3,("midi_timeout: %p\n", sc));
+	midi_start_output(sc, 1);
+}
+
+int
+midi_start_output(sc, intr)
+	struct midi_softc *sc;
+	int intr;
+{
+	struct midi_buffer *mb = &sc->outbuf;
+	u_char *outp;
+	int error;
+	int s;
+	int i, mmax;
+
+	error = 0;
+	mmax = sc->props & MIDI_PROP_OUT_INTR ? 1 : MIDI_MAX_WRITE;
+	s = splaudio();
+	if (sc->pbus && !intr) {
+		DPRINTFN(4, ("midi_start_output: busy\n"));
+		splx(s);
+		return 0;
+	}
+	sc->pbus = 1;
+	for (i = 0; i < mmax && mb->used > 0 && !error; i++) {
+		outp = mb->outp;
+		splx(s);
+		DPRINTFN(4, ("midi_start_output: %p i=%d, data=0x%02x\n", 
+			     sc, i, *outp));
+#ifdef MIDI_SAVE
+		midisave.buf[midicnt] = *outp;
+		midicnt = (midicnt + 1) % MIDI_SAVE_SIZE;
+#endif
+		error = sc->hw_if->output(sc->hw_hdl, *outp++);
+		if (outp >= mb->end)
+			outp = mb->start;
+		s = splaudio();
+		mb->outp = outp;
+		mb->used--;
+	}
+	midi_wakeup(&sc->wchan);
+	selwakeup(&sc->wsel);
+	if (sc->async)
+		psignal(sc->async, SIGIO);
+	if (mb->used > 0) {
+		if (!(sc->props & MIDI_PROP_OUT_INTR))
+			timeout(midi_timeout, sc, midi_wait);
+	} else
+		sc->pbus = 0;
+	splx(s);
+	return error;
+}
+
+int
+midiwrite(dev, uio, ioflag)
+	dev_t dev;
+	struct uio *uio;
+	int ioflag;
+{
+	int unit = MIDIUNIT(dev);
+	struct midi_softc *sc = midi_cd.cd_devs[unit];
+	struct midi_buffer *mb = &sc->outbuf;
+	int error;
+	u_char *inp;
+	int used, cc, n;
+	int s;
+
+	DPRINTFN(2, ("midiwrite: %p, unit=%d, count=%lu\n", sc, unit, 
+		     (unsigned long)uio->uio_resid));
+
+	error = 0;
+	while (uio->uio_resid > 0 && !error) {
+		s = splaudio();
+		if (mb->used >= mb->usedhigh) {
+			DPRINTFN(3,("midi_write: sleep used=%d hiwat=%d\n", 
+				 mb->used, mb->usedhigh));
+			if (ioflag & IO_NDELAY) {
+				splx(s);
+				return EWOULDBLOCK;
+			}
+			error = midi_sleep(&sc->wchan, "mid wr");
+			if (error) {
+				splx(s);
+				return error;
+			}
+		}			
+		used = mb->used;
+		inp = mb->inp;
+		splx(s);
+		cc = mb->usedhigh - used; 	/* maximum to write */
+		n = mb->end - inp;
+		if (n < cc)
+			cc = n;		/* don't write beyond end of buffer */
+		if (uio->uio_resid < cc)
+			cc = uio->uio_resid; 	/* and no more than we have */
+		error = uiomove(inp, cc, uio);
+#ifdef MIDI_DEBUG
+		if (error)
+		        printf("midi_write:(1) uiomove failed %d; "
+			       "cc=%d inp=%p\n",
+			       error, cc, inp);
+#endif
+		if (error)
+			break;
+		inp = mb->inp + cc;
+		if (inp >= mb->end)
+			inp = mb->start;
+		s = splaudio();
+		mb->inp = inp;
+		mb->used += cc;
+		splx(s);
+		error = midi_start_output(sc, 0);
+	}
+	return error;
+}
+
+/*
+ * This write routine is only called from sequencer code and expects
+ * a write that is smaller than the MIDI buffer.
+ */
+int
+midi_writebytes(unit, buf, cc)
+	int unit;
+	u_char *buf;
+	int cc;
+{
+	struct midi_softc *sc = midi_cd.cd_devs[unit];
+	struct midi_buffer *mb = &sc->outbuf;
+	int n, s;
+
+	DPRINTFN(2, ("midi_writebytes: %p, unit=%d, cc=%d\n", sc, unit, cc));
+	DPRINTFN(3, ("midi_writebytes: %x %x %x\n",buf[0],buf[1],buf[2]));
+
+	s = splaudio();
+	if (mb->used + cc >= mb->usedhigh) {
+		splx(s);
+		return (EWOULDBLOCK);
+	}
+	n = mb->end - mb->inp;
+	if (cc < n)
+		n = cc;
+	mb->used += cc;
+	memcpy(mb->inp, buf, n);
+	mb->inp += n;
+	if (mb->inp >= mb->end) {
+		mb->inp = mb->start;
+		cc -= n;
+		if (cc > 0) {
+			memcpy(mb->inp, buf + n, cc);
+			mb->inp += cc;
+		}
+	}
+	splx(s);
+	return (midi_start_output(sc, 0));
+}
+
+int
+midiioctl(dev, cmd, addr, flag, p)
+	dev_t dev;
+	u_long cmd;
+	caddr_t addr;
+	int flag;
+	struct proc *p;
+{
+	int unit = MIDIUNIT(dev);
+	struct midi_softc *sc = midi_cd.cd_devs[unit];
+	struct midi_hw_if *hw = sc->hw_if;
+	int error;
+
+	DPRINTF(("midiioctl: %p cmd=0x%08lx\n", sc, cmd));
+	error = 0;
+	switch (cmd) {
+	case FIONBIO:
+		/* All handled in the upper FS layer. */
+		break;
+
+	case FIOASYNC:
+		if (*(int *)addr) {
+			if (sc->async)
+				return EBUSY;
+			sc->async = p;
+			DPRINTF(("midi_ioctl: FIOASYNC %p\n", p));
+		} else
+			sc->async = 0;
+		break;
+
+#if 0
+	case MIDI_PRETIME:
+		/* XXX OSS
+		 * This should set up a read timeout, but that's
+		 * why we have poll(), so there's nothing yet. */
+		error = EINVAL;
+		break;
+#endif
+
+#ifdef MIDI_SAVE
+	case MIDI_GETSAVE:
+		error = copyout(&midisave, *(void **)addr, sizeof midisave);
+  		break;
+#endif
+
+	default:
+		if (hw->ioctl)
+			error = hw->ioctl(sc->hw_hdl, cmd, addr, flag, p);
+		else
+			error = EINVAL;
+		break;
+	}
+	return error;
+}
+
+int
+midipoll(dev, events, p)
+	dev_t dev;
+	int events;
+	struct proc *p;
+{
+	int unit = MIDIUNIT(dev);
+	struct midi_softc *sc = midi_cd.cd_devs[unit];
+	int revents = 0;
+	int s = splaudio();
+
+	DPRINTF(("midipoll: %p events=0x%x\n", sc, events));
+
+	if (events & (POLLIN | POLLRDNORM))
+		if (sc->inbuf.used > 0)
+			revents |= events & (POLLIN | POLLRDNORM);
+
+	if (events & (POLLOUT | POLLWRNORM))
+		if (sc->outbuf.used < sc->outbuf.usedhigh)
+			revents |= events & (POLLOUT | POLLWRNORM);
+
+	if (revents == 0) {
+		if (events & (POLLIN | POLLRDNORM))
+			selrecord(p, &sc->rsel);
+
+		if (events & (POLLOUT | POLLWRNORM))
+			selrecord(p, &sc->wsel);
+	}
+
+	splx(s);
+	return revents;
+}
+
+void
+midi_getinfo(dev, mi)
+	dev_t dev;
+	struct midi_info *mi;
+{
+	int unit = MIDIUNIT(dev);
+	struct midi_softc *sc;
+
+	if (unit >= midi_cd.cd_ndevs ||
+	    (sc = midi_cd.cd_devs[unit]) == NULL)
+		return;
+	sc->hw_if->getinfo(sc->hw_hdl, mi);
+}
+
+#endif /* NMIDI > 0 */
+
+#if NMIDI > 0 || NMIDIBUS > 0
+
+int	audioprint __P((void *, const char *));
+
+void
+midi_attach_mi(mhwp, hdlp, dev)
+	struct midi_hw_if *mhwp;
+	void *hdlp;
+	struct device *dev;
 {
 	struct audio_attach_args arg;
 
+#ifdef DIAGNOSTIC
+	if (mhwp == NULL) {
+		printf("midi_attach_mi: NULL\n");
+		return;
+	}
+#endif
 	arg.type = AUDIODEV_TYPE_MIDI;
-	arg.hwif = hwif;
-	arg.hdl = hdl;
-	return config_found(dev, &arg, midiprint);
+	arg.hwif = mhwp;
+	arg.hdl = hdlp;
+	(void)config_found(dev, &arg, audioprint);
 }
+
+#endif /* NMIDI > 0 || NMIDIBUS > 0 */

@@ -32,7 +32,7 @@
 #include <sys/user.h>
 
 /* Machine-independent dev configuration.
- * Should be execute in autoconf.c/conf.c per machine architecture
+ * Runs machine/autoconf.c
  */
 
 /* Initializes all dev config drivers */
@@ -53,8 +53,9 @@ static void
 audio_init(devsw)
 	struct devswtable *devsw;
 {
-	DEVSWIO_CONFIG_INIT(devsw, NAUDIO, NULL, &audio_cdevsw, NULL);		/* generic audio I/O */
-	DEVSWIO_CONFIG_INIT(devsw, NMIDI, NULL, &midi_cdevsw, NULL);		/* MIDI I/O */
+	DEVSWIO_CONFIG_INIT(devsw, NAUDIO, NULL, &audio_cdevsw, NULL);			/* generic audio I/O */
+	DEVSWIO_CONFIG_INIT(devsw, NMIDI, NULL, &midi_cdevsw, NULL);			/* MIDI I/O */
+	DEVSWIO_CONFIG_INIT(devsw, NSEQUENCER, NULL, &sequencer_cdevsw, NULL);	/* MIDI Sequencer I/O */
 }
 
 /* Add console driver configuration */

@@ -96,9 +96,6 @@ malloc(size, type, flags)
     int copysize;
     char *savedtype;
 #endif
-#ifdef DEBUG
-    extern int simplelockrecurse;
-#endif
 #ifdef KMEMSTATS
 	register struct kmemstats *ksp = &kmemstats[type];
 	if (((unsigned long)type) > M_LAST)
@@ -146,7 +143,6 @@ malloc(size, type, flags)
         	splx(s);
 #ifdef DEBUG
         	if (flags & (M_NOWAIT|M_CANFAIL))
-        		simplelockrecurse--;
         		panic("malloc: out of space in kmem_map");
 #endif
         	return ((void *) NULL);
@@ -240,10 +236,6 @@ out:
 out:
 #endif
 	splx(s);
-#ifdef DEBUG
-	if (flags & M_NOWAIT)
-		simplelockrecurse--;
-#endif
 	if ((flags & M_ZERO) && va != NULL)
 		memset(va, 0, size);
 	return ((void *) va);

@@ -1,4 +1,4 @@
-/*	$NetBSD: midi_if.h,v 1.4 1999/03/22 07:57:15 mycroft Exp $	*/
+/*	$NetBSD: sequencervar.h,v 1.5 1998/11/25 22:17:07 augustss Exp $	*/
 
 /*
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
@@ -36,36 +36,75 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_DEV_MIDI_IF_H_
-#define _SYS_DEV_MIDI_IF_H_
-
-struct midi_info {
-	char	*name;		/* Name of MIDI hardware */
-	int		props;
-};
-#define MIDI_PROP_OUT_INTR  1
-#define MIDI_PROP_CAN_INPUT 2
-
 struct midi_softc;
 
-struct midi_hw_if {
-	int		(*open)(void *, int, void (*)(void *, int), void (*)(void *), void *);
-	void	(*close)(void *);			/* close hardware */
-	int		(*output)(void *, int);	/* output a byte */
-	void	(*getinfo)(void *, struct midi_info *);
-	int		(*ioctl)(void *, u_long, caddr_t, int, struct proc *);
+struct syn_timer {
+	struct	timeval start, stop;
+	int				tempo, timebase;
+	u_long			last;
+	u_long			tick;
+	int				running;
 };
 
-void	midi_attach (struct midi_softc *, struct device *);
-void	midi_attach_mi (struct midi_hw_if *, void *, struct device *);
+#define SEQ_MAXQ 256
+struct sequencer_queue {
+	seq_event_rec 	buf[SEQ_MAXQ];
+	u_int			in;			/* input index in buf */
+	u_int			out;		/* output index in buf */
+	u_int			count;		/* filled slots in buf */
+};
+#define SEQ_QINIT(q) 	((q)->in = (q)->out = (q)->count = 0)
+#define SEQ_QEMPTY(q) 	((q)->count == 0)
+#define SEQ_QFULL(q) 	((q)->count >= SEQ_MAXQ)
+#define SEQ_QPUT(q, e) 	((q)->buf[(q)->in++] = (e), (q)->in %= SEQ_MAXQ, (q)->count++)
+#define SEQ_QGET(q, e) 	((e) = (q)->buf[(q)->out++], (q)->out %= SEQ_MAXQ, (q)->count--)
+#define SEQ_QLEN(q) 	((q)->count)
 
-int		midi_unit_count (void);
-void	midi_getinfo (dev_t, struct midi_info *);
-int		midi_writebytes (int, u_char *, int);
+struct sequencer_softc;
 
-#if !defined(__i386__) && !defined(__arm32__)
-#define splaudio splbio		/* XXX */
-#define IPL_AUDIO IPL_BIO	/* XXX */
-#endif
+#define MAXCHAN 16
+struct midi_dev {
+	char					*name;
+	int						subtype;
+	int						capabilities;
+	int						nr_voices;
+	int						instr_bank_size;
+	int						unit;
+	u_char					last_cmd;
+	struct	sequencer_softc *seq;
+	struct	midi_softc 		*msc;
+};
 
-#endif /* _SYS_DEV_MIDI_IF_H_ */
+struct sequencer_softc {
+	struct	device 			dev;
+	struct	device 			*sc_dev;	/* Hardware device struct */
+	int						isopen;		/* Open indicator */
+	int						flags;		/* Open flags */
+	int						mode;
+#define SEQ_OLD 0
+#define SEQ_NEW 1
+	int						rchan, wchan;
+	int						pbus;
+	struct	selinfo 		wsel;		/* write selector */
+	struct	selinfo 		rsel;		/* read selector */
+	struct	proc 			*async;		/* process who wants audio SIGIO */
+
+	char					doingsysex;	/* doing a SEQ_SYSEX */
+
+	int						nmidi;		/* number of MIDI devices */
+	struct	midi_dev 		**devs;
+	struct	syn_timer 		timer;
+
+	struct	sequencer_queue outq; 		/* output event queue */
+	u_int					lowat;		/* output queue low water mark */
+	char					timeout;	/* timeout has been set */
+
+	struct	sequencer_queue inq; 		/* input event queue */
+	u_long					input_stamp;
+};
+
+void seq_event_intr (void *, seq_event_rec *);
+
+#define SEQUENCERUNIT(d) 	((d) & 0x7f)
+#define SEQ_IS_OLD(d) 		((d) & 0x80)
+

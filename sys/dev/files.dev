@@ -14,11 +14,11 @@
 # sub-directory configuration files
 #
 
-#include	"dev/audio/files.audio"
+include		"dev/audio/files.audio"
 include		"dev/core/files.core"
 include		"dev/disk/files.disk"
 include		"dev/usb/files.usb"
-#include	"dev/video/files.video"
+include		"dev/video/files.video"
 
 # Misc configuration files 
 file		dev/cons.c			cons
