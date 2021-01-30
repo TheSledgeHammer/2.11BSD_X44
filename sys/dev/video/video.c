@@ -42,40 +42,32 @@
 #endif
 
 struct video_softc {
-	struct device		 dev;
-	void			*hw_hdl;	/* hardware driver handle */
-	struct device		*sc_dev;	/* hardware device struct */
-	struct video_hw_if	*hw_if;		/* hardware interface */
-	char			 sc_dying;	/* device detached */
-#define VIDEO_OPEN	0x01
-	char			 sc_open;
+	struct device			dev;
+	void					*hw_hdl;	/* hardware driver handle */
+	struct device			*sc_dev;	/* hardware device struct */
+	struct video_hw_if		*hw_if;		/* hardware interface */
+	char			 		sc_dying;	/* device detached */
+#define VIDEO_OPEN			0x01
+	char					sc_open;
 
-	int			 sc_fsize;
-	uint8_t			*sc_fbuffer;
-	size_t			 sc_fbufferlen;
-	int			 sc_vidmode;	/* access mode */
+	int			 			sc_fsize;
+	uint8_t					*sc_fbuffer;
+	size_t				 	sc_fbufferlen;
+	int			 			sc_vidmode;	/* access mode */
 #define		VIDMODE_NONE	0
 #define		VIDMODE_MMAP	1
 #define		VIDMODE_READ	2
 	int			 			sc_frames_ready;
 
-	struct selinfo		 sc_rsel;	/* read selector */
+	struct selinfo		 	sc_rsel;	/* read selector */
 };
 
-int	videoprobe(struct device *, void *, void *);
-void	videoattach(struct device *, struct device *, void *);
-int	videodetach(struct device *, int);
-int	videoactivate(struct device *, int);
-int	videoprint(void *, const char *);
-
-void	video_intr(void *);
-
-static int	video_print(void *, const char *);
-
-static int	video_match(device_t, cfdata_t, void *);
-static void	video_attach(device_t, device_t, void *);
-static int	video_detach(device_t, int);
-static int	video_activate(device_t, enum devact);
+int			videoprobe(struct device *, struct cfdata *, void *);
+void 		videoattach(struct device *, struct device *, void *);
+int			videodetach(struct device *, int);
+int			videoactivate(struct device *, int);
+int			videoprint(void *, const char *);
+void		video_intr(void *);
 
 dev_type_open(videoopen);
 dev_type_close(videoclose);
@@ -99,17 +91,12 @@ const struct cdevsw video_cdevsw = {
 	.d_type = D_OTHER
 };
 
-struct cfattach video_ca = {
-	sizeof(struct video_softc), videoprobe, videoattach,
-	videodetach, videoactivate
-};
-
 struct cfdriver video_cd = {
 	NULL, "video", videoprobe, videoattach, DV_DULL, sizeof(struct video_softc)
 };
 
 int
-videoprobe(struct device *parent, void *match, void *aux)
+videoprobe(struct device *parent, struct cfdata *match, void *aux)
 {
 	return (1);
 }

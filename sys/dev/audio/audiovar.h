@@ -1,4 +1,4 @@
-/*	$NetBSD: audiovar.h,v 1.17 1997/10/19 07:42:01 augustss Exp $	*/
+/*	$NetBSD: audiovar.h,v 1.19 1999/02/17 02:37:39 mycroft Exp $	*/
 
 /*
  * Copyright (c) 1991-1993 Regents of the University of California.
@@ -46,11 +46,11 @@
 #define AU_RING_SIZE		65536
 #endif
 
-#define AUMINBUF 			512
-#define AUMINBLK 			32
-#define AUMINNOBLK 			3
+#define AUMINBUF 	512
+#define AUMINBLK 	32
+#define AUMINNOBLK 	3
 struct audio_ringbuffer {
-	int		bufsize;	/* allocated memory */
+	size_t	bufsize;	/* allocated memory */
 	int		blksize;	/* I/O block size */
 	int		maxblks;	/* no of blocks in ring */
 	u_char	*start;		/* start of buffer area */
@@ -88,16 +88,16 @@ struct au_mixer_ports {
  */
 struct audio_softc {
 	struct	device 			dev;
-	void					*hw_hdl;	/* Hardware driver handle */
-	struct	audio_hw_if 	*hw_if; 	/* Hardware interface */
-	struct	device 			*sc_dev;	/* Hardware device struct */
-	u_char					sc_open;	/* single use device */
-#define AUOPEN_READ			0x01
-#define AUOPEN_WRITE		0x02
-	u_char					sc_mode;	/* bitmask for RECORD/PLAY */
+	void					*hw_hdl;			/* Hardware driver handle */
+	struct	audio_hw_if 	*hw_if; 			/* Hardware interface */
+	struct	device 			*sc_dev;			/* Hardware device struct */
+	u_char					sc_open;			/* single use device */
+#define AUOPEN_READ		0x01
+#define AUOPEN_WRITE	0x02
+	u_char					sc_mode;			/* bitmask for RECORD/PLAY */
 
-	struct	selinfo 		sc_wsel; 	/* write selector */
-	struct	selinfo 		sc_rsel; 	/* read selector */
+	struct	selinfo 		sc_wsel; 			/* write selector */
+	struct	selinfo 		sc_rsel; 			/* read selector */
 	struct	proc 			*sc_async_audio;	/* process who wants audio SIGIO */
 	struct	mixer_asyncs {
 		struct mixer_asyncs *next;
@@ -109,37 +109,37 @@ struct audio_softc {
 	int						sc_wchan;
 
 	/* Ring buffers, separate for record and play. */
-	struct	audio_ringbuffer sc_rr; /* Record ring */
-	struct	audio_ringbuffer sc_pr; /* Play ring */
+	struct	audio_ringbuffer sc_rr; 			/* Record ring */
+	struct	audio_ringbuffer sc_pr; 			/* Play ring */
 
-	u_char					sc_blkset;		/* Blocksize has been set */
+	u_char					sc_blkset;			/* Blocksize has been set */
 
-	u_char					*sc_sil_start;	/* start of silence in buffer */
-	int						sc_sil_count;	/* # of silence bytes */
+	u_char					*sc_sil_start;		/* start of silence in buffer */
+	int						sc_sil_count;		/* # of silence bytes */
 
-	u_char					sc_rbus;		/* input dma in progress */
-	u_char					sc_pbus;		/* output dma in progress */
+	u_char					sc_rbus;			/* input dma in progress */
+	u_char					sc_pbus;			/* output dma in progress */
 
-	struct	audio_params 	sc_pparams;	/* play encoding parameters */
-	struct	audio_params 	sc_rparams;	/* record encoding parameters */
+	struct	audio_params 	sc_pparams;			/* play encoding parameters */
+	struct	audio_params 	sc_rparams;			/* record encoding parameters */
 
-	int						sc_eof;			/* EOF, i.e. zero sixed write, counter */
+	int						sc_eof;				/* EOF, i.e. zero sized write, counter */
 	u_long					sc_wstamp;
 	u_long					sc_playdrop;
 
-	int						sc_full_duplex;	/* device in full duplex mode */
+	int						sc_full_duplex;		/* device in full duplex mode */
 
 	struct	au_mixer_ports 	sc_inports, sc_outports;
 	int						sc_monitor_port;
 
 #ifdef AUDIO_INTR_TIME
-	u_long	sc_pfirstintr;	/* first time we saw a xmit interrupt */
+	u_long	sc_pfirstintr;	/* first time we saw a play interrupt */
 	int		sc_pnintr;		/* number of interrupts */
-	u_long	sc_plastintr;	/* last time we saw a xmit interrupt */
+	u_long	sc_plastintr;	/* last time we saw a play interrupt */
 	long	sc_pblktime;	/* nominal time between interrupts */
 	u_long	sc_rfirstintr;	/* first time we saw a rec interrupt */
 	int		sc_rnintr;		/* number of interrupts */
-	u_long	sc_rlastintr;	/* last time we saw a xrec interrupt */
+	u_long	sc_rlastintr;	/* last time we saw a rec interrupt */
 	long	sc_rblktime;	/* nominal time between interrupts */
 #endif
 };

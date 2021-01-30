@@ -66,7 +66,7 @@ SIMPLEQ_HEAD(, keyboard_driver) keyboard_drivers = SIMPLEQ_HEAD_INITIALIZER(keyb
 	static struct keyboard_driver name##_kbd_driver = { \
 		{ NULL }, #name, &sw, config					\
 	};													\
-	SIMPLEQ_INSERT_HEAD(keyboard_drivers, name##_kbd_driver, link);
+
 
 /* local arrays */
 

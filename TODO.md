@@ -5,9 +5,6 @@ A General todo list. Don't hesitate to add to this list. :)
 - Compiler
 - Makefiles
 - Bug Fixes &/or missing critical content
-- Cross-Compatability with 4.4BSD: Following routines are used:
-	- e.g. groupmember & suser
-	- kern_prot.c ???
 
 # usr/ (User & OS Libraries):
 ## lib:
@@ -19,7 +16,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## conf:
 
 ## kern:
-- kern_prot/2.c: credentials- ucred & pcred structs
+-
 	
 ## arch:
 - i386/x86: (Merged under i386)
@@ -47,23 +44,6 @@ A General todo list. Don't hesitate to add to this list. :)
 		- Journalling & Logs:
 			- integrate later
 			- Merge struct htbc_hi_fs & htbc_hc_header
-
-- dev/kbd: current implementation: ((WILL NOT WORK AS IS!!!) Would require the entire device layout to be re-implemented around FreeBSD)
-	- no virtual keyboard in kernel (deprecated)
-	- resource maps: change from FreeBSD/ DragonflyBSD's to NetBSD style
-	- keyboard drivers & config driver (cfdriver) are not correct. example: genkbd.c
-		- current cfdriver/data structure: 
-			- cannot manage multiple config drivers through a single driver interface as implemented
-			by FreeBSD/ DragonflyBSD keyboard.
-		- each cfdriver/data structure:
-			- Needs a device reference and the following information
-				- devs (if applicable), name, match, attach, flags, and size
-	- kbd changes:
-		- remove need for the in-kernel virtual keyboard driver (used with FreeBSD's sysinit)
-		- provide a generic keyboard layer with routines that can manage multiple.
-		OR
-		- At minimum a machine-independent keyboard driver with PS/2 compatability
-		- cfdriver is only used with the driver not the generic keyboard layer
 	
 ## dev:
 - Essential Driver Support:
@@ -72,9 +52,25 @@ A General todo list. Don't hesitate to add to this list. :)
 	- mouse/keyboard:						Work in progress
 - Add: Common Speaker code from i386
 - Fix:
-	- video & audio
+	- video (kqfilter)
 	- eisa: Missing tidbits.
 	- pci: Missing tidbits.
+	- kbd: 
+		- current implementation ((WILL NOT WORK AS IS!!!) Would require the entire device 	layout 			to be re-implemented around FreeBSD)
+		- no virtual keyboard in kernel (deprecated)
+		- resource maps: change from FreeBSD/ DragonflyBSD's to NetBSD style
+		- keyboard drivers & config driver (cfdriver) are not correct. example: genkbd.c
+			- current cfdriver/data structure: 
+				- cannot manage multiple config drivers through a single driver interface as 					implemented by FreeBSD/ DragonflyBSD keyboard.
+			- each cfdriver/data structure:
+				- Needs a device reference and the following information
+					- devs (if applicable), name, match, attach, flags, and size
+		- kbd changes:
+			- remove need for the in-kernel virtual keyboard driver (used with FreeBSD's sysinit)
+			- provide a generic keyboard layer with routines that can manage multiple.
+			OR
+			- At minimum a machine-independent keyboard driver with PS/2 compatability
+			- cfdriver is only used with the driver not the generic keyboard layer
 
 ## lib:
 	

@@ -1,4 +1,4 @@
-/*	$NetBSD: audio_if.h,v 1.22.2.1 1997/11/05 02:48:18 mellon Exp $	*/
+/*	$NetBSD: audio_if.h,v 1.31 1999/02/17 02:37:39 mycroft Exp $	*/
 
 /*
  * Copyright (c) 1994 Havard Eidnes.
@@ -34,6 +34,9 @@
  *
  */
 
+#ifndef _SYS_DEV_AUDIO_IF_H_
+#define _SYS_DEV_AUDIO_IF_H_
+
 /*
  * Generic interface to hardware driver.
  */
@@ -41,13 +44,13 @@
 struct audio_softc;
 
 struct audio_params {
-	u_long	sample_rate;		/* sample rate */
-	u_int	encoding;			/* e.g. ulaw, linear, etc */
-	u_int	precision;			/* bits/sample */
-	u_int	channels;			/* mono(1), stereo(2) */
+	u_long	sample_rate;			/* sample rate */
+	u_int	encoding;				/* e.g. ulaw, linear, etc */
+	u_int	precision;				/* bits/sample */
+	u_int	channels;				/* mono(1), stereo(2) */
 	/* Software en/decode functions, set if SW coding required by HW */
 	void	(*sw_code)(void *, u_char *, int);
-	int		factor;				/* coding space change */
+	int		factor;					/* coding space change */
 };
 
 /* The default audio mode: 8 kHz mono ulaw */
@@ -68,7 +71,7 @@ struct audio_hw_if {
 	 * The values in the params struct may be changed (e.g. rounding
 	 * to the nearest sample rate.)
 	 */
-     int	(*set_params)(void *, int, int, struct audio_params *, struct audio_params *);
+    int		(*set_params)(void *, int, int, struct audio_params *, struct audio_params *);
   
 	/* Hardware may have some say in the blocksize to choose */
 	int		(*round_blocksize)(void *, int);
@@ -86,7 +89,7 @@ struct audio_hw_if {
 	/* Start input/output routines. These usually control DMA. */
 	int		(*init_output)(void *, void *, int);
 	int		(*init_input)(void *, void *, int);
-	int		(*start_output)(void *, void *, int,void (*)(void *), void *);
+	int		(*start_output)(void *, void *, int, void (*)(void *), void *);
 	int		(*start_input)(void *, void *, int, void (*)(void *), void *);
 	int		(*halt_output)(void *);
 	int		(*halt_input)(void *);
@@ -105,29 +108,15 @@ struct audio_hw_if {
 	int		(*query_devinfo)(void *, mixer_devinfo_t *);
 	
 	/* Allocate/free memory for the ring buffer. Usually malloc/free. */
-	void	*(*alloc)(void *, unsigned long, int, int);
-	void	(*free)(void *, void *, int);
-	unsigned long (*round_buffersize)(void *, unsigned long);
+	void	*(*allocm)(void *, int, size_t, int, int);
+	void	(*freem)(void *, void *, int);
+	size_t	(*round_buffersize)(void *, int, size_t);
 	int		(*mappage)(void *, void *, int, int);
 
 	int 	(*get_props)(void *); /* device properties */
-};
 
-struct midi_info {
-	char	*name;		/* Name of MIDI hardware */
-	int		props;
-};
-#define MIDI_PROP_OUT_INTR 1
-
-struct midi_hw_if {
-	int	(*open)(void *, int, 	/* open hardware */
-			    void (*)(void *, int),
-			    void (*)(void *),
-			    void *);
-	void (*close)(void *);		/* close hardware */
-	int	(*output)(void *, int);	/* output a byte */
-	void (*getinfo)(void *, struct midi_info *);
-	int	(*ioctl)(u_long, caddr_t, int, struct proc *);
+	int		(*trigger_output)(void *, void *, void *, int, void (*)(void *), void *, struct audio_params *);
+	int		(*trigger_input)(void *, void *, void *, int, void (*)(void *), void *, struct audio_params *);
 };
 
 struct audio_attach_args {
@@ -137,9 +126,12 @@ struct audio_attach_args {
 };
 #define	AUDIODEV_TYPE_AUDIO	0
 #define	AUDIODEV_TYPE_MIDI	1
+#define AUDIODEV_TYPE_OPL	2
+#define AUDIODEV_TYPE_MPU	3
 
 /* Attach the MI driver(s) to the MD driver. */
-extern void	audio_attach_mi (struct audio_hw_if *, struct midi_hw_if *, void *, struct device *);
+void	audio_attach_mi (struct audio_hw_if *, void *, struct device *);
+int		audioprint (void *, const char *);
 
 /* Device identity flags */
 #define SOUND_DEVICE		0
@@ -150,13 +142,15 @@ extern void	audio_attach_mi (struct audio_hw_if *, struct midi_hw_if *, void *, 
 #define AUDIOUNIT(x)		(minor(x)&0x0f)
 #define AUDIODEV(x)			(minor(x)&0xf0)
 
-#define ISDEVSOUND(x)		(AUDIODEV(minor(x)) == SOUND_DEVICE)
-#define ISDEVAUDIO(x)		(AUDIODEV(minor(x)) == AUDIO_DEVICE)
-#define ISDEVAUDIOCTL(x)	(AUDIODEV(minor(x)) == AUDIOCTL_DEVICE)
-#define ISDEVMIXER(x)		(AUDIODEV(minor(x)) == MIXER_DEVICE)
+#define ISDEVSOUND(x)		(AUDIODEV((x)) == SOUND_DEVICE)
+#define ISDEVAUDIO(x)		(AUDIODEV((x)) == AUDIO_DEVICE)
+#define ISDEVAUDIOCTL(x)	(AUDIODEV((x)) == AUDIOCTL_DEVICE)
+#define ISDEVMIXER(x)		(AUDIODEV((x)) == MIXER_DEVICE)
 
-#ifndef __i386__
-#define splaudio splbio		/* XXX */
-#define IPL_AUDIO IPL_BIO	/* XXX */
+#if !defined(__i386__) && !defined(__arm32__)
+#define splaudio 			splbio		/* XXX */
+#define IPL_AUDIO 			IPL_BIO		/* XXX */
 #endif
+
+#endif /* _SYS_DEV_AUDIO_IF_H_ */
 

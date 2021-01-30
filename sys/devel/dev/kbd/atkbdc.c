@@ -47,7 +47,7 @@
 #include "kbdreg.h"
 
 #include <dev/core/isa/isareg.h>
-#include "../kbd/atkbdcreg.h"
+#include <devel/dev/kbd/atkbdcreg.h>
 
 /* constants */
 

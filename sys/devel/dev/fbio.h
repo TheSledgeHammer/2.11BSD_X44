@@ -166,13 +166,12 @@ struct fbcursor {
 	caddr_t				image;		/* cursor image bits */
 	caddr_t				mask;		/* cursor mask bits */
 };
-#define	FB_CUR_SETCUR	0x01	/* set on/off (i.e., obey fbcursor.enable) */
-#define	FB_CUR_SETPOS	0x02	/* set position */
-#define	FB_CUR_SETHOT	0x04	/* set hot-spot */
-#define	FB_CUR_SETCMAP	0x08	/* set cursor color map */
-#define	FB_CUR_SETSHAPE	0x10	/* set size & bits */
-#define	FB_CUR_SETALL	(FB_CUR_SETCUR | FB_CUR_SETPOS | FB_CUR_SETHOT | \
-			 FB_CUR_SETCMAP | FB_CUR_SETSHAPE)
+#define	FB_CUR_SETCUR	0x01		/* set on/off (i.e., obey fbcursor.enable) */
+#define	FB_CUR_SETPOS	0x02		/* set position */
+#define	FB_CUR_SETHOT	0x04		/* set hot-spot */
+#define	FB_CUR_SETCMAP	0x08		/* set cursor color map */
+#define	FB_CUR_SETSHAPE	0x10		/* set size & bits */
+#define	FB_CUR_SETALL	(FB_CUR_SETCUR | FB_CUR_SETPOS | FB_CUR_SETHOT | FB_CUR_SETCMAP | FB_CUR_SETSHAPE)
 
 /* controls for cursor attributes & shape (including position) */
 #define	FBIOSCURSOR	_IOW('F', 24, struct fbcursor)
