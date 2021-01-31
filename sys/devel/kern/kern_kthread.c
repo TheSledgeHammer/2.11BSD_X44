@@ -88,6 +88,7 @@ kthread_create(kt)
 	if(newkthread(0)) {
 		panic("kthread creation");
 	}
+
 	if(rval[1]) {
 		newthread = kt;
 		newthread->kt_flag |= KT_INMEM | KT_SYSTEM;
@@ -109,8 +110,47 @@ kthread_cancel(kthread_t kt)
 }
 
 int
-kthread_exit(kthread_t kt)
+kthread_exit(rv)
+	int rv;
 {
+	register struct kthread *kt;
+	register struct proc 	*p;
+	register struct vmspace *vm;
+
+	if(kt->kt_tid == 1) {
+		panic("init died (signal %d, exit %d)", WTERMSIG(rv), WEXITSTATUS(rv));
+	}
+
+	MALLOC(kt->kt_ru, struct rusage *, sizeof(struct rusage), M_ZOMBIE, M_WAITOK);
+	kt = p->p_kthreado;
+	kt->kt_flag &= ~(KT_TRACED | KT_PPWAIT | KT_SULOCK);
+	kt->kt_sigignore = ~0;
+	kt->kt_sigacts = 0;
+	untimeout(realitexpire, (caddr_t)kt);
+
+	fdfree(kt->kt_procp);
+
+	vm = kt->kt_vmspace;
+	if (vm->vm_refcnt == 1) {
+		(void) vm_map_remove(&vm->vm_map, VM_MIN_ADDRESS, VM_MAXUSER_ADDRESS);
+	}
+
+	if (kt->kt_tid == 1)
+		panic("init died");
+	if (*kt->kt_prev == kt->kt_nxt)		/* off allkthread queue */
+		kt->kt_nxt->kt_prev = kt->kt_prev;
+	if (kt->kt_nxt == zombkthread)		/* onto zombkthread */
+		kt->kt_nxt->kt_prev = &kt->kt_nxt;
+	kt->kt_prev = &zombkthread;
+	zombkthread = kt;
+	kt->kt_stat = KT_SZOMB;
+
+	LIST_REMOVE(kt->kt_procp, p_hash);
+
+	//calcru(p, &p->p_ru->ru_utime, &p->p_ru->ru_stime, NULL);
+	ruadd(&kt->kt_procp->p_ru, &u->u_cru);
+
+	curkthread = NULL;
 	return (0);
 }
 

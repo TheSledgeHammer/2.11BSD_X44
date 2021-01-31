@@ -126,14 +126,16 @@ struct kthread {
 #define KT_SSTART			8			/* start */
 
 /* flag codes */
-#define	KT_PPWAIT			0x00010		/* Parent is waiting for child to exec/exit. */
-#define	KT_SYSTEM			0x00200		/* System proc: no sigs, stats or swapping. */
-#define	KT_INMEM			0x00004		/* Loaded into memory. */
-#define KT_INEXEC			0x100000	/* Process is exec'ing and cannot be traced */
+#define	KT_INMEM			0x00000004		/* Loaded into memory. */
+#define	KT_PPWAIT			0x00000010		/* Parent is waiting for child to exec/exit. */
+#define KT_SULOCK			0x00000040		/* user settable lock in core */
 
-#define	KT_NOSWAP			0x08000		/* Another flag to prevent swap out. */
+#define	KT_SYSTEM			0x00000200		/* System proc: no sigs, stats or swapping. */
+#define KT_TRACED			0x00000800		/* Debugged process being traced. */
+#define	KT_NOSWAP			0x00008000		/* Another flag to prevent swap out. */
+#define KT_INEXEC			0x00100000		/* Process is exec'ing and cannot be traced */
 
-#define	KT_BOUND			0x80000000 	/* Bound to a CPU */
+#define	KT_BOUND			0x80000000 		/* Bound to a CPU */
 
 /* Kernel thread handling. */
 #define	KTHREAD_IDLE		0x01		/* Do not run on creation */

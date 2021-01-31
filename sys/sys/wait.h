@@ -62,17 +62,17 @@ union wait	{
 #define WNOHANG		1	/* dont hang in wait */
 #define WUNTRACED	2	/* tell about stopped, untraced children */
 
-#define WIFSTOPPED(x)	((x).w_stopval == WSTOPPED)
-#define WIFSIGNALED(x)	((x).w_stopval != WSTOPPED && (x).w_termsig != 0)
-#define WTERMSIG(x)		((x).w_stopval)
-#define WIFEXITED(x)	((x).w_stopval != WSTOPPED && (x).w_termsig == 0)
-#define	WEXITSTATUS(x)	((x).w_retcode)
+#define WIFSTOPPED(x)		((x).w_stopval == WSTOPPED)
+#define WIFSIGNALED(x)		((x).w_stopval != WSTOPPED && (x).w_termsig != 0)
+#define WTERMSIG(x)			((x).w_stopval)
+#define WIFEXITED(x)		((x).w_stopval != WSTOPPED && (x).w_termsig == 0)
+#define	WEXITSTATUS(x)		((x).w_retcode)
 
 #define	W_STOPCODE(sig)		((sig << 8) | WSTOPPED)
 #define	W_EXITCODE(ret,sig)	((ret << 8) | (sig))
 
-#define	WAIT_ANY	(-1)
-#define	WAIT_MYPGRP	0
+#define	WAIT_ANY			(-1)
+#define	WAIT_MYPGRP			0
 
 #ifndef KERNEL
 #include <sys/types.h>

@@ -31,13 +31,6 @@
 #ifndef _SYS_KENV_H_
 #define _SYS_KENV_H_
 
-struct kenv_args {
-	int 		what;
-	const char 	*name;
-	char 		*value;
-	int 		len;
-};
-
 /*
  * Constants for the kenv(2) syscall
  */

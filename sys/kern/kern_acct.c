@@ -1,14 +1,12 @@
-/*
- * Copyright (c) 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1982, 1986, 1989 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)kern_acct.c	3.1 (2.11BSD) 1999/4/29
- *	@(#)kern_acct.c	8.1 (Berkeley) 6/14/93
- *	$Id: kern_acct.c,v 1.5 1994/09/26 21:09:00 davidg Exp $
+ * This module is believed to contain source code proprietary to AT&T.
+ * Use and redistribution is subject to the Berkeley Software License
+ * Agreement and your Software Agreement with AT&T (Western Electric).
  *
- *	A modified kern_acct from FreeBSD 2.0.
- *	The acct_process includes syncing 2.11BSD's user acct with the system.
+ *	@(#)kern_acct.c	7.25 (Berkeley) 7/10/92
  */
 
 #include <sys/param.h>
@@ -51,62 +49,71 @@ int	acctchkfreq = 15;	/* frequency (in seconds) to check space */
  * Accounting system call.  Written based on the specification and
  * previous implementation done by Mark Tinguely.
  */
-struct acct_args {
-	char	*path;
-};
 
 int
-acct(p, uap, retval)
-	struct proc *p;
-	struct acct_args *uap;
-	int *retval;
+acct()
 {
-		struct nameidata nd;
-		int error;
+	register struct a {
+		char	*path;
+		int		pid;
+	} *uap = (struct a *)u->u_ap;
 
-		/* Make sure that the caller is root. */
-		error = suser(p->p_ucred, &p->p_acflag);
+	struct proc *p;
+	struct nameidata nd;
+	int error;
+
+	if(uap->pid == 0) {
+		uap->pid = u->u_procp->p_pid;
+	}
+	p = pfind(uap->pid);
+	if(p == 0) {
+		return (u->u_error = ESRCH);
+	}
+
+	/* Make sure that the caller is root. */
+	error = suser(p->p_ucred, &p->p_acflag);
+	if (error) {
+		return (error);
+	}
+
+	/*
+	 * If accounting is to be started to a file, open that file for
+	 * writing and make sure it's a 'normal'.
+	 */
+	if (uap->path != NULL) {
+		NDINIT(&nd, LOOKUP, NOFOLLOW, UIO_USERSPACE, uap->path, p);
+		error = vn_open(&nd, FWRITE, 0);
 		if (error) {
 			return (error);
 		}
-
-		/*
-		 * If accounting is to be started to a file, open that file for
-		 * writing and make sure it's a 'normal'.
-		 */
-		if (uap->path != NULL) {
-			NDINIT(&nd, LOOKUP, NOFOLLOW, UIO_USERSPACE, uap->path, p);
-			error = vn_open(&nd, FWRITE, 0);
-			if (error) {
-				return (error);
-			}
-			VOP_UNLOCK(nd.ni_vp, 0, p);
-			if (nd.ni_vp->v_type != VREG) {
-				vn_close(nd.ni_vp, FWRITE, p->p_ucred, p);
-				return (EACCES);
-			}
+		VOP_UNLOCK(nd.ni_vp, 0, p);
+		if (nd.ni_vp->v_type != VREG) {
+			vn_close(nd.ni_vp, FWRITE, p->p_ucred, p);
+			return (EACCES);
 		}
+	}
 
-		/*
-		 * If accounting was previously enabled, kill the old space-watcher,
-		 * close the file, and (if no new file was specified, leave).
-		 */
-		if (acctp != NULLVP || savacctp != NULLVP) {
-			untimeout(acctwatch, NULL);
-			error = vn_close((acctp != NULLVP ? acctp : savacctp), FWRITE, p->p_ucred, p);
-			acctp = savacctp = NULLVP;
-		}
-		if (uap->path == NULL) {
-			return (error);
-		}
-
-		/*
-		 * Save the new accounting file vnode, and schedule the new
-		 * free space watcher.
-		 */
-		acctp = nd.ni_vp;
-		acctwatch(NULL);
+	/*
+	 * If accounting was previously enabled, kill the old space-watcher,
+	 * close the file, and (if no new file was specified, leave).
+	 */
+	if (acctp != NULLVP || savacctp != NULLVP) {
+		untimeout(acctwatch, NULL);
+		error = vn_close((acctp != NULLVP ? acctp : savacctp), FWRITE, p->p_ucred, p);
+		acctp = savacctp = NULLVP;
+	}
+	if (uap->path == NULL) {
 		return (error);
+	}
+
+	/*
+	 * Save the new accounting file vnode, and schedule the new
+	 * free space watcher.
+	 */
+	acctp = nd.ni_vp;
+	acctwatch(NULL);
+
+	return (error);
 }
 
 /*
@@ -182,9 +189,8 @@ acct_process(p)
 	 * Now, just write the accounting information to the file.
 	 */
 	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
-	return (vn_rdwr(UIO_WRITE, vp, (caddr_t)&acct, sizeof (acct),
-	    (off_t)0, UIO_SYSSPACE, IO_APPEND|IO_UNIT, p->p_ucred,
-	    (int *)0, p));
+	return (vn_rdwr(UIO_WRITE, vp, (caddr_t) &acct, sizeof(acct), (off_t) 0,
+			UIO_SYSSPACE, IO_APPEND | IO_UNIT, p->p_ucred, (int*) 0, p));
 }
 
 #define	MANTSIZE	13			/* 13 bit mantissa. */
@@ -229,7 +235,7 @@ encode_comp_t(s, us)
 /* ARGSUSED */
 void
 acctwatch(a)
-void *a;
+	void *a;
 {
 	struct statfs sb;
 	if (savacctp != NULLVP) {

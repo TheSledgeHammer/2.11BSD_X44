@@ -56,8 +56,8 @@ struct timezone {
  * NB: timercmp does not work for >= or <=.
  */
 #define	timerisset(tvp)		((tvp)->tv_sec || (tvp)->tv_usec)
-#define	timercmp(tvp, uvp, cmp)	\
-	((tvp)->tv_sec cmp (uvp)->tv_sec || \
+#define	timercmp(tvp, uvp, cmp)						\
+	((tvp)->tv_sec cmp (uvp)->tv_sec || 			\
 	 (tvp)->tv_sec == (uvp)->tv_sec && (tvp)->tv_usec cmp (uvp)->tv_usec)
 #define	timerclear(tvp)		((tvp)->tv_sec = (tvp)->tv_usec = 0)
 
@@ -70,8 +70,8 @@ struct timezone {
 #define	ITIMER_PROF		2
 
 struct	k_itimerval {
-	long	it_interval;			/* timer interval */
-	long	it_value;				/* current value */
+	long			it_interval;	/* timer interval */
+	long			it_value;		/* current value */
 };
 
 struct	itimerval {
@@ -84,7 +84,7 @@ struct	itimerval {
  * Getkerninfo clock information structure
  */
 struct clockinfo {
-	int	hz;		/* clock frequency */
+	int	hz;			/* clock frequency */
 	int	tick;		/* micro-seconds per hz tick */
 	int	stathz;		/* statistics clock frequency */
 	int	profhz;		/* profiling clock frequency */

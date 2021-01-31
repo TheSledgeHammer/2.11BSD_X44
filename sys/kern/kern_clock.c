@@ -13,10 +13,11 @@
 #include <sys/dk.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
-//#include <sys/resourcevar.h>
-//#include <sys/signalvar.h>
+#include <sys/resourcevar.h>
+#include <sys/signalvar.h>
 #include <sys/time.h>
 #include <sys/signal.h>
+#include <sys/types.h>
 
 #include <machine/cpu.h>
 #include <machine/clock.h>
@@ -236,7 +237,6 @@ gatherstats(pc, ps)
 		if (dk_busy & (1 << s))
 			dk_time[s]++;
 }
-
 
 /*
  * Software priority level clock interrupt.

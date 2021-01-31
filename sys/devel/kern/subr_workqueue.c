@@ -36,6 +36,7 @@
 #include <sys/proc.h>
 #include <sys/user.h>
 
+#include <devel/sys/malloctypes.h>
 #include <devel/sys/workqueue.h>
 
 SIMPLEQ_HEAD(workqhead, work);
@@ -115,7 +116,6 @@ workqueue_run(struct workqueue *wq)
 		/*
 		 * we violate abstraction of SIMPLEQ.
 		 */
-
 #if defined(DIAGNOSTIC)
 		tmp.sqh_last = (void *)POISON;
 #endif /* defined(DIAGNOSTIC) */
@@ -144,9 +144,7 @@ workqueue_worker(void *arg)
 }
 
 static void
-workqueue_init(struct workqueue *wq, const char *name,
-    void (*callback_func)(struct work *, void *), void *callback_arg,
-    int prio, int ipl)
+workqueue_init(struct workqueue *wq, const char *name, void (*callback_func)(struct work *, void *), void *callback_arg, int prio, int ipl)
 {
 
 	wq->wq_ipl = ipl;
@@ -164,7 +162,7 @@ workqueue_initqueue(struct workqueue *wq)
 
 	simple_lock_init(&q->q_lock);
 	SIMPLEQ_INIT(&q->q_queue);
-	error = kthread_create1(workqueue_worker, wq, &q->q_worker, wq->wq_name);
+	error = kthread_create(workqueue_worker, wq, &q->q_worker, wq->wq_name);
 
 	return error;
 }
@@ -216,9 +214,7 @@ workqueue_finiqueue(struct workqueue *wq)
 /* --- */
 
 int
-workqueue_create(struct workqueue **wqp, const char *name,
-    void (*callback_func)(struct work *, void *), void *callback_arg,
-    int prio, int ipl, int flags)
+workqueue_create(struct workqueue **wqp, const char *name,  void (*callback_func)(struct work *, void *), void *callback_arg, int prio, int ipl, int flags)
 {
 	struct workqueue *wq;
 	int error;
@@ -232,7 +228,7 @@ workqueue_create(struct workqueue **wqp, const char *name,
 
 	error = workqueue_initqueue(wq);
 	if (error) {
-		kmem_free(wq, sizeof(*wq));
+		free(wq, M_WORKQUEUE);
 		return error;
 	}
 

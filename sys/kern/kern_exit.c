@@ -5,6 +5,7 @@
  *
  *	@(#)kern_exit.c	2.6 (2.11BSD) 2000/2/20
  */
+#include <sys/cdefs.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -47,7 +48,6 @@ exit(rv)
 	register struct proc *q, *nq;
 	register struct	proc **pp;
 	register struct vmspace *vm;
-
 
 	if (p->p_pid == 1)
 		panic("init died (signal %d, exit %d)", WTERMSIG(rv), WEXITSTATUS(rv));
@@ -160,7 +160,7 @@ exit(rv)
 	 */
 	p->p_xstat = rv;
 	p->p_ru = u->u_ru;
-	calcru(p, &p->p_ru->ru_utime, &p->p_ru->ru_stime, NULL);
+	calcru(p, &p->p_ru->ru_utime, &p->p_ru->ru_stime, NULL); /* missing fix */
 	ruadd(&p->p_ru, &u->u_cru);
 	{
 		register struct proc *q;
@@ -199,20 +199,18 @@ again:
 	/* NOTREACHED */
 }
 
-struct args
-{
-	int pid;
-	int *status;
-	int options;
-	struct rusage *rusage;
-	int compat;
-};
-
 void
 wait4()
 {
+	register struct a {
+		int 			pid;
+		int 			*status;
+		int 			options;
+		struct rusage 	*rusage;
+		int 			compat;
+	} *uap = (struct a *)u->u_ap;
+
 	int retval[2];
-	register struct	args *uap = (struct args *)u->u_ap;
 
 	uap->compat = 0;
 	u->u_error = wait1(u->u_procp, uap, retval);
@@ -408,4 +406,3 @@ proc_reparent(child, parent)
 	parent->p_cptr = child;
 	child->p_pptr = parent;
 }
-

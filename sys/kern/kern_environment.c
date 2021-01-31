@@ -57,28 +57,34 @@
 static int	kenv_mvallen = 	KENV_MVALLEN;
 
 /* pointer to the config-generated static environment */
-char				*kern_envp;
+char						*kern_envp;
 
 /* pointer to the md-static environment */
-char				*md_envp;
-static int			md_env_len;
-static int			md_env_pos;
+char						*md_envp;
+static int					md_env_len;
+static int					md_env_pos;
 
 
 /* dynamic environment variables */
-char				**kenvp;
-struct lock 		*kenv_lock;
+char						**kenvp;
+struct lock 				*kenv_lock;
 
-bool				dynamic_kenv;
+bool						dynamic_kenv;
 
 
 #define KENV_CHECK	if (!dynamic_kenv) \
 			    panic("%s: called before KMEM", __func__)
 
 int
-kenv(uap)
-	struct kenv_args *uap;
+kenv()
 {
+	register struct a {
+		int 		what;
+		const char 	*name;
+		char 		*value;
+		int 		len;
+	} *uap = (struct a*)u->u_ap;
+
 	char *name, *value, *buffer = NULL;
 	size_t len, done, needed, buflen;
 	int error, i;
