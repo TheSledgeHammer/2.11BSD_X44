@@ -559,14 +559,14 @@ lfs_vget(mp, ino, vpp)
 		*vpp = NULL;
 		return (error);
 	}
-	ip->i_din = *lfs_ifind(fs, ino, (struct dinode *)bp->b_data);
+	ip->i_din = *lfs_ifind(fs, ino, (union dinode *)bp->b_data);
 	brelse(bp);
 
 	/*
 	 * Initialize the vnode from the inode, check for aliases.  In all
 	 * cases re-init ip, the underlying vnode/inode may have changed.
 	 */
-	if (error == ufs_vinit(mp, lfs_specop_p, LFS_FIFOOPS, &vp)) {
+	if (error == ufs_vinit(mp, lfs_specops, LFS_FIFOOPS, &vp)) {
 		vput(vp);
 		*vpp = NULL;
 		return (error);

@@ -90,6 +90,7 @@ struct inode {
 	 */
 	u_int16_t 				i_mode;				/* IFMT, permissions; see below. */
 	int16_t   				i_nlink;			/* File link count. */
+	u_int64_t 				i_size;				/* File byte count. */
 	u_int32_t 				i_flags;			/* Status flags (chflags). */
 	int32_t   				i_gen;				/* Generation number. */
 	u_int32_t 				i_uid;				/* File owner. */
@@ -98,33 +99,11 @@ struct inode {
 	/*
 	 * The on-disk dinode itself.
 	 */
-	//struct dinode 		i_din;				/* 128 bytes of the on-disk dinode. */
-
-	union {
-		struct dinode 		*ffs1_din;			/* 128 bytes of the on-disk dinode. */
+	union dinode {
+		struct ufs1_dinode 	*ffs1_din;			/* 128 bytes of the on-disk dinode. */
 		struct ufs2_dinode 	*ffs2_din;			/* 128 bytes of the on-disk dinode. */
 	} i_din;
 };
-/*
-#define	i_atime				i_din.di_atime
-#define	i_atimensec			i_din.di_atimensec
-#define	i_blocks			i_din.di_blocks
-#define	i_ctime				i_din.di_ctime
-#define	i_ctimensec			i_din.di_ctimensec
-#define	i_db				i_din.di_db
-#define	i_flags				i_din.di_flags
-#define	i_gen				i_din.di_gen
-#define	i_gid				i_din.di_gid
-#define	i_ib				i_din.di_ib
-#define	i_mode				i_din.di_mode
-#define	i_mtime				i_din.di_mtime
-#define	i_mtimensec			i_din.di_mtimensec
-#define	i_nlink				i_din.di_nlink
-#define	i_rdev				i_din.di_rdev
-#define	i_shortlink			i_din.di_shortlink
-#define	i_size				i_din.di_size
-#define	i_uid				i_din.di_uid
-*/
 
 #define	i_ffs1_atime		i_din.ffs1_din->di_atime
 #define	i_ffs1_atimensec	i_din.ffs1_din->di_atimensec
@@ -136,10 +115,10 @@ struct inode {
 //#define	i_ffs1_gen			i_din.ffs1_din->di_gen
 //#define	i_ffs1_gid			i_din.ffs1_din->di_gid
 #define	i_ffs1_ib			i_din.ffs1_din->di_ib
-//#define	i_ffs1_mode			i_din.ffs1_din->di_mode
+#define	i_ffs1_mode			i_din.ffs1_din->di_mode
 #define	i_ffs1_mtime		i_din.ffs1_din->di_mtime
 #define	i_ffs1_mtimensec	i_din.ffs1_din->di_mtimensec
-//#define	i_ffs1_nlink		i_din.ffs1_din->di_nlink
+#define	i_ffs1_nlink		i_din.ffs1_din->di_nlink
 #define	i_ffs1_rdev			i_din.ffs1_din->di_rdev
 #define	i_ffs1_shortlink	i_din.ffs1_din->di_shortlink
 #define	i_ffs1_size			i_din.ffs1_din->di_size
@@ -158,10 +137,10 @@ struct inode {
 //#define	i_ffs2_gen			i_din.ffs2_din->di_gen
 //#define	i_ffs2_gid			i_din.ffs2_din->di_gid
 #define	i_ffs2_ib			i_din.ffs2_din->di_ib
-//#define	i_ffs2_mode			i_din.ffs2_din->di_mode
+#define	i_ffs2_mode			i_din.ffs2_din->di_mode
 #define	i_ffs2_mtime		i_din.ffs2_din->di_mtime
 #define	i_ffs2_mtimensec	i_din.ffs2_din->di_mtimensec
-//#define	i_ffs2_nlink		i_din.ffs2_din->di_nlink
+#define	i_ffs2_nlink		i_din.ffs2_din->di_nlink
 #define	i_ffs2_rdev			i_din.ffs2_din->di_rdev
 #define	i_ffs2_size			i_din.ffs2_din->di_size
 //#define	i_ffs2_uid			i_din.ffs2_din->di_uid
@@ -189,23 +168,6 @@ struct inode {
 #define DIP(ip, field) 											\
 	(((ip)->i_ump->um_fstype == UFS1) ? 						\
 	(ip)->i_ffs1_##field : (ip)->i_ffs2_##field)
-/*
-#define DIP_ASSIGN(ip, field, value) do {						\
-	if ((ip)->i_ump->um_fstype == UFS1) {						\
-		(ip)->i_ffs1_##field = (value);							\
-	} else {													\
-		(ip)->i_ffs2_##field = (value);							\
-	}															\
-} while(0);
-
-#define DIP_ADD(ip, field, value) do {							\
-	if ((ip)->i_ump->um_fstype == UFS1)	{						\
-		(ip)->i_ffs1_##field += (value);						\
-	} else {													\
-		(ip)->i_ffs2_##field += (value);						\
-	}															\
-} while(0);
-*/
 
 #define	SHORTLINK(ip) 											\
 	(((ip)->i_ump->um_fstype == UFS1) ? 						\
@@ -216,7 +178,7 @@ struct inode {
  * ufs_getlbns and used by truncate and bmap code.
  */
 struct indir {
-	ufs_daddr_t in_lbn;		/* Logical block number. */
+	int32_t		in_lbn;		/* Logical block number. */
 	int			in_off;		/* Offset in buffer. */
 	int			in_exists;	/* Flag if the block exists. */
 };
@@ -229,13 +191,13 @@ struct indir {
 	if ((ip)->i_flag & (IN_ACCESS | IN_CHANGE | IN_UPDATE)) {	\
 		(ip)->i_flag |= IN_MODIFIED;							\
 		if ((ip)->i_flag & IN_ACCESS)							\
-			(ip)->i_atime = (t1)->tv_sec;						\
+			DIP((ip), atime) = (t1)->tv_sec;					\
 		if ((ip)->i_flag & IN_UPDATE) {							\
-			(ip)->i_mtime = (t2)->tv_sec;						\
-			(ip)->i_modrev++;									\
+			DIP((ip), mtime) = (t2)->tv_sec;					\
+			DIP((ip), modrev++);								\
 		}														\
 		if ((ip)->i_flag & IN_CHANGE)							\
-			(ip)->i_ctime = time.tv_sec;						\
+			DIP((ip), ctime) = time.tv_sec;						\
 		(ip)->i_flag &= ~(IN_ACCESS | IN_CHANGE | IN_UPDATE);	\
 	}															\
 }

@@ -1445,7 +1445,7 @@ ufs_symlink(ap)
 	len = strlen(ap->a_target);
 	if (len < vp->v_mount->mnt_maxsymlinklen) {
 		ip = VTOI(vp);
-		bcopy(ap->a_target, (char *)ip->i_shortlink, len);
+		bcopy(ap->a_target, (char *)SHORTLINK(ip), len);
 		ip->i_size = len;
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 	} else
@@ -1587,7 +1587,7 @@ ufs_readlink(ap)
 
 	isize = ip->i_size;
 	if (isize < vp->v_mount->mnt_maxsymlinklen) {
-		uiomove((char *)ip->i_shortlink, isize, ap->a_uio);
+		uiomove((char *)SHORTLINK(ip), isize, ap->a_uio);
 		return (0);
 	}
 	return (VOP_READ(vp, ap->a_uio, 0, ap->a_cred));

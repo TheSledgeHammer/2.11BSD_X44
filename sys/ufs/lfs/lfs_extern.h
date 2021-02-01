@@ -55,8 +55,7 @@ int	 lfs_fhtovp (struct mount *, struct fid *, struct mbuf *,
 	    struct vnode **, int *, struct ucred **);
 int	 lfs_fsync (struct vop_fsync_args *);
 int	 lfs_getattr (struct vop_getattr_args *);
-struct dinode *
-	 lfs_ifind (struct lfs *, ino_t, struct dinode *);
+union dinode *lfs_ifind (struct lfs *, ino_t, union dinode *);
 int	 lfs_inactive (struct vop_inactive_args *);
 int	 lfs_init (struct vfsconf *);
 int	 lfs_initseg (struct lfs *);

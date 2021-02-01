@@ -64,20 +64,13 @@ ffs_blkatoff(ap)
 	struct inode *ip;
 	register struct fs *fs;
 	struct buf *bp;
-	ufs_daddr_t lbn;
-	ufs2_daddr_t lbn2;
+	ufs_lbn_t  lbn;
 	int bsize, error;
 
 	ip = VTOI(ap->a_vp);
 	fs = ip->i_fs;
-
-	if (fs->fs_magic == FS_UFS2_MAGIC) {
-		lbn2 = lblkno(fs, ap->a_offset);
-		bsize = blksize3(fs, ip, lbn2);
-	} else {
-		lbn = lblkno(fs, ap->a_offset);
-		bsize = blksize2(fs, ip, lbn);
-	}
+	lbn = lblkno(fs, ap->a_offset);
+	bsize = blksize(fs, ip, lbn);
 
 	*ap->a_bpp = NULL;
 	if (error == bread(ap->a_vp, lbn, bsize, NOCRED, &bp)) {

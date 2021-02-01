@@ -460,7 +460,7 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 	ino_t ino;
 	ufs_daddr_t daddr;
 	struct vnode **vpp;
-	struct dinode *dinp;
+	union dinode *dinp;
 {
 	register struct inode *ip;
 	struct vnode *vp;
@@ -514,7 +514,7 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 
 	/* Read in the disk contents for the inode, copy into the inode. */
 	if (dinp)
-		if (error == copyin(dinp, &ip->i_din, sizeof(struct dinode)))
+		if (error == copyin(dinp, &ip->i_din, sizeof(union dinode)))
 			return (error);
 	else {
 		if (error == bread(ump->um_devvp, daddr,
@@ -533,7 +533,7 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 			return (error);
 		}
 		ip->i_din =
-		    *lfs_ifind(ump->um_lfs, ino, (struct dinode *)bp->b_data);
+		    *lfs_ifind(ump->um_lfs, ino, (union dinode *)bp->b_data);
 		brelse(bp);
 	}
 
@@ -541,7 +541,7 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 	 * Initialize the vnode from the inode, check for aliases.  In all
 	 * cases re-init ip, the underlying vnode/inode may have changed.
 	 */
-	if (error == ufs_vinit(mp, lfs_specop_p, LFS_FIFOOPS, &vp)) {
+	if (error == ufs_vinit(mp, lfs_specops, LFS_FIFOOPS, &vp)) {
 		lfs_vunref(vp);
 		*vpp = NULL;
 		return (error);

@@ -53,7 +53,7 @@ struct mfs_args {
 };
 #endif /* MFS */
 
-//#ifdef KERNEL
+#ifdef KERNEL
 
 //#include <ufs/ufs/extattr.h>
 

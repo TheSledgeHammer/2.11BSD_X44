@@ -295,8 +295,7 @@ ffs_reload(mountp, cred, p)
 			== bread(devvp, (ufs_daddr_t) (SBOFF / size), SBSIZE, NOCRED, &bp))
 		return (error);
 	newfs = (struct fs*) bp->b_data;
-	if (newfs->fs_magic != FS_MAGIC || newfs->fs_bsize > MAXBSIZE
-			|| newfs->fs_bsize < sizeof(struct fs)) {
+	if (newfs->fs_magic != FS_MAGIC || newfs->fs_bsize > MAXBSIZE || newfs->fs_bsize < sizeof(struct fs)) {
 		brelse(bp);
 		return (EIO); /* XXX needs translation */
 	}

@@ -420,24 +420,6 @@ ufs211_setattr(ap)
 	return(0);
 }
 
-/* copied, for supervisory networking, to sys_net.c */
-/*
- * Test if the current user is the
- * super user.
- */
-int
-ufs211_suser()
-{
-	if (u->u_uid == 0) {
-		u->u_acflag |= ASU;
-		crset(u->u_ucred);
-		return (1);
-	}
-	u->u_error = EPERM;
-	crset(u->u_ucred);
-	return (0);
-}
-
 int
 ufs211_read(ap)
 	struct vop_read_args *ap;

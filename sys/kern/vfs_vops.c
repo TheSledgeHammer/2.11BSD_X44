@@ -479,10 +479,10 @@ vop_mmap(vp, fflags, cred, p)
 }
 
 int
-vop_fsync(vp, cred, waitfor, p)
+vop_fsync(vp, cred, waitfor, flag, p)
 	struct vnode *vp;
 	struct ucred *cred;
-	int waitfor;
+	int waitfor, flag;
 	struct proc *p;
 {
 	struct vop_fsync_args a;
@@ -492,13 +492,14 @@ vop_fsync(vp, cred, waitfor, p)
 	a.a_vp = vp;
 	a.a_cred = cred;
 	a.a_waitfor = waitfor;
+	a.a_flags = flag;
 	a.a_p = p;
 
 	if(vops.vop_fsync == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = vops.vop_fsync(vp, cred, waitfor, p);
+	error = vops.vop_fsync(vp, cred, waitfor, flag, p);
 
 	return (error);
 }

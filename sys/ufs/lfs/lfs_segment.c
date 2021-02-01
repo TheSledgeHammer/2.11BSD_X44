@@ -411,7 +411,7 @@ lfs_writeinode(fs, sp, ip)
 		    fs->lfs_bsize);
 		/* Zero out inode numbers */
 		for (i = 0; i < INOPB(fs); ++i)
-			((struct dinode *)sp->ibp->b_data)[i].di_inumber = 0;
+			((struct ufs1_dinode *)sp->ibp->b_data)[i].di_inumber = 0;
 		++sp->start_bpp;
 		fs->lfs_avail -= fsbtodb(fs, 1);
 		/* Set remaining space counters. */
@@ -618,10 +618,10 @@ lfs_updatemeta(sp)
 		ip = VTOI(vp);
 		switch (num) {
 		case 0:
-			ip->i_db[lbn] = off;
+			DIP(ip, db[lbn]) = off;
 			break;
 		case 1:
-			ip->i_ib[a[0].in_off] = off;
+			DIP(ip, ib[a[0].in_off]) = off;
 			break;
 		default:
 			ap = &a[num - 1];
@@ -633,7 +633,7 @@ lfs_updatemeta(sp)
 			 * to get counted for the inode.
 			 */
 			if (bp->b_blkno == -1 && !(bp->b_flags & B_CACHE)) {
-				ip->i_blocks += fsbtodb(fs, 1);
+				DIP(ip, blocks) += fsbtodb(fs, 1);
 				fs->lfs_bfree -= fragstodb(fs, fs->lfs_frag);
 			}
 			((ufs_daddr_t *)bp->b_data)[ap->in_off] = off;

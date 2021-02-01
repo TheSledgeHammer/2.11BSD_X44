@@ -141,31 +141,18 @@ ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 
 	num = *nump;
 	if (num == 0) {
-		if(ump->um_fstype == UFS1) {
-			*bnp = blkptrtodb(ump, ip->i_ffs1_db[bn]);
-		} else {
-			*bnp = blkptrtodb(ump, ip->i_ffs2_db[bn]);
-		}
+		*bnp = blkptrtodb(ump, DIP(ip, db[bn]));
 		if (*bnp == 0)
 			*bnp = -1;
 		else if (runp)
-			if(ump->um_fstype == UFS1) {
-				is_seq = is_sequential(ump, ip->i_ffs1_db[bn - 1], ip->i_ffs1_db[bn]);
-			} else {
-				is_seq = is_sequential(ump, ip->i_ffs2_db[bn - 1], ip->i_ffs2_db[bn]);
-			}
-
+			is_seq = is_sequential(ump, DIP(ip, db[bn - 1]), DIP(ip, db[bn]));
 			for (++bn; bn < NDADDR && *runp < maxrun && is_seq; ++bn, ++*runp);
 		return (0);
 	}
 
 
 	/* Get disk address out of indirect block array */
-	if(ump->um_fstype == UFS1) {
-		daddr = ip->i_ffs1_ib[xap->in_off];
-	} else {
-		daddr = ip->i_ffs2_ib[xap->in_off];
-	}
+	daddr = DIP(ip, ib[xap->in_off]);
 
 	devvp = VFSTOUFS(vp->v_mount)->um_devvp;
 	for (bp = NULL, ++xap; --num; ++xap) {
@@ -198,6 +185,7 @@ ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 			trace(TR_BREADMISS, pack(vp, size), metalbn);
 			bp->b_blkno = blkptrtodb(ump, daddr);
 			bp->b_flags |= B_READ;
+			bp->b_flags &= ~B_INVAL;
 			VOP_STRATEGY(bp);
 			curproc->p_stats->p_ru.ru_inblock++;	/* XXX */
 			if (error == biowait(bp)) {
@@ -205,16 +193,46 @@ ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 				return (error);
 			}
 		}
-
-		daddr = ((ufs_daddr_t *)bp->b_data)[xap->in_off];
-		if (num == 1 && daddr && runp)
-			for (bn = xap->in_off + 1;
+		if (ip->i_ump->um_fstype == UFS1) {
+			daddr = ((ufs1_daddr_t *)bp->b_data)[ap->in_off];
+			if (num == 1 && daddr && runp) {
+				for (bn = ap->in_off + 1;
+				    bn < MNINDIR(ump) && *runp < maxrun &&
+				    is_sequential(ump,
+				    ((ufs1_daddr_t *)bp->b_data)[bn - 1],
+				    ((ufs1_daddr_t *)bp->b_data)[bn]);
+				    ++bn, ++*runp);
+				bn = ap->in_off;
+				if (runp && bn) {
+					for (--bn; bn >= 0 && *runp < maxrun &&
+					    is_sequential(ump,
+					    ((ufs1_daddr_t *)bp->b_data)[bn],
+					    ((ufs1_daddr_t *)bp->b_data)[bn+1]);
+					    --bn, ++*runp);
+				}
+			}
+			continue;
+		}
+		daddr = ((ufs2_daddr_t *)bp->b_data)[ap->in_off];
+		if (num == 1 && daddr && runp) {
+			for (bn = ap->in_off + 1;
 			    bn < MNINDIR(ump) && *runp < maxrun &&
 			    is_sequential(ump,
-			    ((ufs_daddr_t *)bp->b_data)[bn - 1],
-			    ((ufs_daddr_t *)bp->b_data)[bn]);
+			    ((ufs2_daddr_t *)bp->b_data)[bn - 1],
+			    ((ufs2_daddr_t *)bp->b_data)[bn]);
 			    ++bn, ++*runp);
+			bn = ap->in_off;
+			if (runp && bn) {
+				for (--bn; bn >= 0 && *runp < maxrun &&
+				    is_sequential(ump,
+				    ((ufs2_daddr_t *)bp->b_data)[bn],
+				    ((ufs2_daddr_t *)bp->b_data)[bn + 1]);
+				    --bn, ++*runp);
+			}
+		}
 	}
+
+
 	if (bp)
 		brelse(bp);
 

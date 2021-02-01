@@ -60,8 +60,9 @@
  * this structure describes an on-disk structure, all its fields
  * are defined by types with precise widths.
  */
-
+typedef uint32_t 	ufs_ino_t;
 typedef	int32_t		ufs_daddr_t;
+typedef	int32_t		ufs1_daddr_t;
 typedef	int64_t		ufs2_daddr_t;
 typedef int64_t 	ufs_lbn_t;
 typedef int64_t 	ufs_time_t;
@@ -70,12 +71,12 @@ typedef int64_t 	ufs_time_t;
 #define	NDADDR		12				/* Direct addresses in inode. */
 #define	NIADDR		3				/* Indirect addresses in inode. */
 
-struct dinode {
+struct ufs1_dinode {
 	u_int16_t		di_mode;		/*   0: IFMT, permissions; see below. */
 	int16_t			di_nlink;		/*   2: File link count. */
 	union {
 		u_int16_t 	oldids[2];		/*   4: FFS: old user and group ids. */
-		int32_t	  	inumber;		/*   4: LFS: inode number. */
+		int32_t	  	inumber;		/*   4: LFS: inode number. 32-Bit */
 	} di_u;
 	u_int64_t		di_size;		/*   8: File byte count. */
 	int32_t			di_atime;		/*  16: Last access time. */
@@ -84,8 +85,8 @@ struct dinode {
 	int32_t			di_mtimensec;	/*  28: Last modified time. */
 	int32_t			di_ctime;		/*  32: Last inode change time. */
 	int32_t			di_ctimensec;	/*  36: Last inode change time. */
-	ufs_daddr_t		di_db[NDADDR];	/*  40: Direct disk blocks. */
-	ufs_daddr_t		di_ib[NIADDR];	/*  88: Indirect disk blocks. */
+	int32_t			di_db[NDADDR];	/*  40: Direct disk blocks. */
+	int32_t			di_ib[NIADDR];	/*  88: Indirect disk blocks. */
 	u_int32_t		di_flags;		/* 100: Status flags (chflags). */
 	u_int32_t		di_blocks;		/* 104: Blocks actually held. */
 	int32_t			di_gen;			/* 108: Generation number. */
@@ -97,6 +98,9 @@ struct dinode {
 struct ufs2_dinode {
 	uint16_t	    di_mode;	    /*   0: IFMT, permissions; see below. */
 	int16_t		    di_nlink;	    /*   2: File link count. */
+	union {
+		int64_t	  	inumber;		/*   4: LFS: inode number. 64-Bit */
+	} di_u;
 	uint32_t	    di_uid;		    /*   4: File owner. */
 	uint32_t	    di_gid;		    /*   8: File group. */
 	uint32_t	    di_blksize;	    /*  12: Inode blocksize. */
@@ -136,11 +140,8 @@ struct ufs2_dinode {
 #define UFS1_MAXSYMLINKLEN	((NDADDR + NIADDR) * sizeof(ufs_daddr_t))
 #define UFS2_MAXSYMLINKLEN	((NDADDR + NIADDR) * sizeof(ufs2_daddr_t))
 
-//#define	MAXSYMLINKLEN		UFS1_MAXSYMLINKLEN
-
 #define MAXSYMLINKLEN(ip) 		\
 	((ip)->i_ump->um_fstype == UFS1) ? UFS1_MAXSYMLINKLEN : UFS2_MAXSYMLINKLEN
-
 
 /* File permissions. */
 #define	IEXEC		0000100		/* Executable. */

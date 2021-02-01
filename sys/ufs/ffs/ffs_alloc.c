@@ -119,7 +119,7 @@ ffs_alloc(ip, lbn, bpref, size, cred, bnp)
 	bno = (ufs_daddr_t)ffs_hashalloc(ip, cg, (long)bpref, size,
 	    (u_int32_t (*)())ffs_alloccg);
 	if (bno > 0) {
-		ip->i_blocks += btodb(size);
+		DIP(ip, blocks) += btodb(size);
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 		*bnp = bno;
 		return (0);
@@ -172,7 +172,9 @@ ffs_realloccg(ip, lbprev, bpref, osize, nsize, cred, bpp)
 #endif /* DIAGNOSTIC */
 	if (cred->cr_uid != 0 && freespace(fs, fs->fs_minfree) <= 0)
 		goto nospace;
-	if ((bprev = ip->i_db[lbprev]) == 0) {
+
+	bprev = DIP(ip, db[lbprev]);
+	if (bprev == 0) {
 		printf("dev = 0x%x, bsize = %d, bprev = %d, fs = %s\n",
 		    ip->i_dev, fs->fs_bsize, bprev, fs->fs_fsmnt);
 		panic("ffs_realloccg: bad bprev");
@@ -197,7 +199,8 @@ ffs_realloccg(ip, lbprev, bpref, osize, nsize, cred, bpp)
 	if (bno == ffs_fragextend(ip, cg, (long)bprev, osize, nsize)) {
 		if (bp->b_blkno != fsbtodb(fs, bno))
 			panic("bad blockno");
-		ip->i_blocks += btodb(nsize - osize);
+
+		DIP(ip, blocks) += btodb(nsize - osize);
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 		allocbuf(bp, nsize);
 		bp->b_flags |= B_DONE;
@@ -262,7 +265,7 @@ ffs_realloccg(ip, lbprev, bpref, osize, nsize, cred, bpp)
 		if (nsize < request)
 			ffs_blkfree(ip, bno + numfrags(fs, nsize),
 			    (long)(request - nsize));
-		ip->i_blocks += btodb(nsize - osize);
+		DIP(ip, blocks) += btodb(nsize - osize);
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 		allocbuf(bp, nsize);
 		bp->b_flags |= B_DONE;
@@ -361,7 +364,7 @@ ffs_reallocblks(ap)
 	 * Get the starting offset and block map for the first block.
 	 */
 	if (start_lvl == 0) {
-		sbap = &ip->i_db[0];
+		sbap = DIP(ip, db[0]);
 		soff = start_lbn;
 	} else {
 		idp = &start_ap[start_lvl - 1];
@@ -440,7 +443,7 @@ ffs_reallocblks(ap)
 	 * We can then check below to see if it is set, and do the
 	 * synchronous write only when it has been cleared.
 	 */
-	if (sbap != &ip->i_db[0]) {
+	if (sbap != DIP(ip, db[0])) {
 		if (doasyncfree)
 			bdwrite(sbp);
 		else
@@ -485,7 +488,7 @@ ffs_reallocblks(ap)
 fail:
 	if (ssize < len)
 		brelse(ebp);
-	if (sbap != &ip->i_db[0])
+	if (sbap != DIP(ip, db[0]))
 		brelse(sbp);
 	return (ENOSPC);
 }
@@ -548,10 +551,9 @@ ffs_valloc(ap)
 		    ip->i_mode, ip->i_number, fs->fs_fsmnt);
 		panic("ffs_valloc: dup alloc");
 	}
-	if (ip->i_blocks) {				/* XXX */
-		printf("free inode %s/%d had %d blocks\n",
-		    fs->fs_fsmnt, ino, ip->i_blocks);
-		ip->i_blocks = 0;
+	if (DIP(ip, blocks)) {				/* XXX */
+		printf("free inode %s/%d had %d blocks\n", fs->fs_fsmnt, ino, DIP(ip, blocks));
+		DIP(ip, blocks) = 0;
 	}
 	ip->i_flags = 0;
 	/*
@@ -619,7 +621,7 @@ ffs_dirpref(fs)
  * schedule another I/O transfer.
  */
 ufs_daddr_t
-ffs_blkpref(ip, lbn, indx, bap)
+ffs_blkpref_ufs2(ip, lbn, indx, bap)
 	struct inode *ip;
 	ufs_daddr_t lbn;
 	int indx;
@@ -1373,7 +1375,7 @@ ffs_blkfree(ip, bno, size)
 	bdwrite(bp);
 }
 
-//#ifdef DIAGNOSTIC
+#ifdef DIAGNOSTIC
 /*
  * Verify allocation of a block or fragment. Returns true if block or
  * fragment is allocated, false if it is free.

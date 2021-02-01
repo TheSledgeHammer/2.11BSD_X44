@@ -80,13 +80,9 @@ ufs_inactive(ap)
 	if (prtactive && vp->v_usecount != 0)
 		vprint("ffs_inactive: pushing active", vp);
 
-	if(ump->um_fstype == UFS1) {
-		imode = ip->i_ffs1_mode;
-		inlink = ip->i_ffs1_nlink;
-	} else {
-		imode = ip->i_ffs2_mode;
-		inlink = ip->i_ffs2_nlink;
-	}
+	imode = DIP(ip, mode);
+	inlink = DIP(ip, nlink);
+
 	/*
 	 * Ignore inodes related to stale file handles.
 	 */
@@ -98,11 +94,7 @@ ufs_inactive(ap)
 			(void)chkiq(ip, -1, NOCRED, 0);
 #endif
 		error = VOP_TRUNCATE(vp, (off_t)0, 0, NOCRED, p);
-		if(ump->um_fstype == UFS1) {
-			ip->i_ffs1_rdev = 0;
-		} else {
-			ip->i_ffs2_rdev = 0;
-		}
+		DIP(ip, rdev) = 0;
 		mode = imode;
 		imode = 0;
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;

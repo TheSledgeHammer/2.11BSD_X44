@@ -33,8 +33,10 @@
 #include <sys/user.h>
 #include <sys/disklabel.h>
 #include <sys/dirent.h>
+
 #include <machine/bootinfo.h>
 #include <machine/elf_machdep.h>
+
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
 
@@ -45,14 +47,6 @@
 #undef 	cgbase
 #define cgbase(fs, c)   ((ufs_daddr_t)((fs)->fs_fpg * (c)))
 #endif
-
-#define	FS_UFS1_MAGIC		FS_MAGIC		/* UFS1 fast filesystem magic number */
-#define SBLOCK_FLOPPY	    0
-#define SBLOCK_UFS1	  		SBSIZE
-#define SBLOCK_PIGGY		262144
-#define SBLOCKSIZE	  		8192
-#define SBLOCKSEARCH \
-	{ SBLOCK_UFS1, SBLOCK_FLOPPY, SBLOCK_PIGGY, -1 }
 
 /*
  * We use 4k `virtual' blocks for filesystem data, whatever the actual
@@ -80,9 +74,9 @@ struct ufs_dmadat {
 #else
 	char secbuf[DEV_BSIZE*4];	/* for MBR/disklabel */
 #endif
-	char blkbuf[VBLKSIZE];	/* filesystem blocks */
-	char indbuf[VBLKSIZE];	/* indir blocks */
-	char sbbuf[SBSIZE];		/* superblock */
+	char blkbuf[VBLKSIZE];		/* filesystem blocks */
+	char indbuf[VBLKSIZE];		/* indir blocks */
+	char sbbuf[SBSIZE];			/* superblock */
 };
 
 #define fsdmadat	((struct ufs_dmadat *)boot2_dmadat)
@@ -168,11 +162,18 @@ boot2_ufs_lookup(const char *path)
  */
 static int sblock_try[] = SBLOCKSEARCH;
 
+
+#if defined(UFS2_ONLY)
+#define DIP(field) dp2.field
+#elif defined(UFS1_ONLY)
 #define DIP(field) dp1.field
+#else
+#define DIP(field) fs->fs_magic == FS_UFS1_MAGIC ? dp1.field : dp2.field
+#endif
 
 
 static ufs_ino_t inomap;
-static ufs_daddr_t blkmap, indmap;
+static ufs2_daddr_t blkmap, indmap;
 
 static int
 boot2_ufs_init(void)
@@ -185,13 +186,26 @@ boot2_ufs_init(void)
 
 	for (n = 0; sblock_try[n] != -1; n++) {
 		if (dskread(fs, sblock_try[n] / DEV_BSIZE,
-		SBLOCKSIZE / DEV_BSIZE)) {
+		SBSIZE / DEV_BSIZE)) {
 			return -1;
 		}
-		if ((fs->fs_magic == FS_UFS1_MAGIC) && fs->fs_bsize <= MAXBSIZE
-				&& fs->fs_bsize >= (int) sizeof(struct fs)) {
-			break;
+		if ((fs->fs_magic == FS_UFS1_MAGIC)) {
+
 		}
+		if ((
+#if defined(UFS1_ONLY)
+				fs->fs_magic == FS_UFS1_MAGIC
+#elif defined(UFS2_ONLY)
+				(fs->fs_magic == FS_UFS2_MAGIC &&
+						fs->fs_sblockloc == sblock_try[n])
+#else
+				fs->fs_magic == FS_UFS1_MAGIC
+				|| (fs->fs_magic == FS_UFS2_MAGIC
+						&& fs->fs_sblockloc == sblock_try[n])
+#endif
+		) && fs->fs_bsize <= MAXBSIZE
+		&& fs->fs_bsize >= (int) sizeof(struct fs))
+			break;
 	}
 	if (sblock_try[n] == -1)
 		return -1;
@@ -205,7 +219,12 @@ int dsk_meta = 0;
 static ssize_t
 boot2_ufs_read_size(boot2_ino_t boot2_inode, void *buf, size_t nbyte, size_t *fsizep)
 {
-	static struct ufs_dinode dp1;
+#ifndef UFS2_ONLY
+	static struct ufs1_dinode dp1;
+#endif
+#ifndef UFS1_ONLY
+	static struct ufs2_dinode dp2;
+#endif
 	ufs_ino_t ufs_inode = (ufs_ino_t)boot2_inode;
 	char *blkbuf;
 	void *indbuf;
@@ -213,7 +232,7 @@ boot2_ufs_read_size(boot2_ino_t boot2_inode, void *buf, size_t nbyte, size_t *fs
 	char *s;
 	size_t n, nb, size, off, vboff;
 	ufs_lbn_t lbn;
-	ufs_daddr_t addr, vbaddr;
+	ufs2_daddr_t addr, vbaddr;
 	u_int u;
 
 	blkbuf = fsdmadat->blkbuf;
@@ -245,7 +264,16 @@ boot2_ufs_read_size(boot2_ino_t boot2_inode, void *buf, size_t nbyte, size_t *fs
 		if (dskread(blkbuf, INO_TO_VBA(fs, n, ufs_inode), DBPERVBLK))
 			return -1;
 		n = INO_TO_VBO(n, ufs_inode);
+#if defined(UFS1_ONLY)
 		dp1 = ((struct ufs1_dinode *)blkbuf)[n];
+#elif defined(UFS2_ONLY)
+		dp2 = ((struct ufs2_dinode *)blkbuf)[n];
+#else
+		if (fs->fs_magic == FS_UFS1_MAGIC)
+			dp1 = ((struct ufs1_dinode *)blkbuf)[n];
+		else
+			dp2 = ((struct ufs2_dinode *)blkbuf)[n];
+#endif
 		inomap = ufs_inode;
 		fs_off = 0;
 		blkmap = indmap = 0;
@@ -272,7 +300,16 @@ boot2_ufs_read_size(boot2_ino_t boot2_inode, void *buf, size_t nbyte, size_t *fs
 				indmap = vbaddr;
 			}
 			n = (lbn - NDADDR) & (n - 1);
-			addr = ((ufs_daddr_t *)indbuf)[n];
+#if defined(UFS1_ONLY)
+			addr = ((ufs1_daddr_t *)indbuf)[n];
+#elif defined(UFS2_ONLY)
+			addr = ((ufs2_daddr_t *)indbuf)[n];
+#else
+			if (fs->fs_magic == FS_UFS1_MAGIC)
+				addr = ((ufs1_daddr_t *)indbuf)[n];
+			else
+				addr = ((ufs2_daddr_t *)indbuf)[n];
+#endif
 		} else {
 			return -1;
 		}

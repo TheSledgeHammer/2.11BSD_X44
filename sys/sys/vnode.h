@@ -273,7 +273,7 @@ struct vnodeops {
 	int	(*vop_poll)			(struct vnode *vp, int fflags, int events, struct proc *p);
 	int (*vop_revoke)		(struct vnode *vp, int flags);
 	int	(*vop_mmap)	    	(struct vnode *vp, int fflags, struct ucred *cred, struct proc *p);
-	int	(*vop_fsync)		(struct vnode *vp, int fflags, struct ucred *cred, int waitfor, struct proc *p);
+	int	(*vop_fsync)		(struct vnode *vp, int fflags, struct ucred *cred, int waitfor, int flag, struct proc *p);
 	int	(*vop_seek)	    	(struct vnode *vp, off_t oldoff, off_t newoff, struct ucred *cred);
 	int	(*vop_remove)		(struct vnode *dvp, struct vnode *vp, struct componentname *cnp);
 	int	(*vop_link)	    	(struct vnode *vp, struct vnode *tdvp, struct componentname *cnp);
@@ -321,7 +321,7 @@ struct vnodeops {
 #define VOP_POLL(vp, fflag, events, p)							(*((vp)->v_op->vop_poll))(vp, fflag, events, p)
 #define VOP_REVOKE(vp, flags)									(*((vp)->v_op->vop_revoke))(vp, flags)
 #define	VOP_MMAP(vp, fflags, cred, p)		    				(*((vp)->v_op->vop_mmap))(vp, fflags, cred, p)
-#define	VOP_FSYNC(vp, cred, waitfor, p)							(*((vp)->v_op->vop_fsync))(vp, cred, waitfor, p)
+#define	VOP_FSYNC(vp, cred, waitfor, flag, p)					(*((vp)->v_op->vop_fsync))(vp, cred, waitfor, flag, p)
 #define	VOP_SEEK(vp, oldoff, newoff, cred)	    				(*((vp)->v_op->vop_seek))(vp, oldoff, newoff, cred)
 #define	VOP_REMOVE(dvp, vp, cnp)		    					(*((dvp)->v_op->vop_remove))(dvp, vp, cnp)
 #define	VOP_LINK(vp, tdvp, cnp)		    						(*((vp)->v_op->vop_link))(vp, tdvp, cnp)
@@ -499,7 +499,7 @@ struct vop_fsync_args {
 	struct vnode 			*a_vp;
 	struct ucred 			*a_cred;
 	int 					a_waitfor;
-	//int						a_flags;
+	int						a_flags;
 	struct proc 			*a_p;
 };
 

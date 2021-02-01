@@ -65,13 +65,20 @@
 #define	SBOFF			((off_t)(BBOFF + BBSIZE))
 #define	BBLOCK			BBLOCK_UFS1
 #define	SBLOCK			SBLOCK_UFS1
-
+#define SBLOCK_FLOPPY	0
 #define	BBLOCK_UFS1		((ufs_daddr_t)(0))
 #define	SBLOCK_UFS1     ((ufs_daddr_t)(BBLOCK_UFS1 + BBSIZE / DEV_BSIZE))
 
 #define	BBLOCK_UFS2		((ufs2_daddr_t)(0))
 #define	SBLOCK_UFS2 	((ufs2_daddr_t)(BBLOCK_UFS2 + BBSIZE / DEV_BSIZE))
 #define	SBLOCK_PIGGY  	262144
+#define SBLOCKSEARCH 	\
+	{ SBLOCK_UFS2, SBLOCK_UFS1, SBLOCK_FLOPPY, SBLOCK_PIGGY, -1 }
+
+/*
+ * Max number of fragments per block. This value is NOT tweakable.
+ */
+#define MAXFRAG 		8
 
 /*
  * Addresses stored in inodes are capable of addressing fragments
@@ -165,10 +172,10 @@ struct csum {
 struct fs {
 	int32_t	 		fs_firstfield;		/* historic file system linked list, */
 	int32_t	 		fs_unused_1;		/* used for incore super blocks */
-	ufs_daddr_t 	fs_sblkno;			/* addr of super-block in filesys */
-	ufs_daddr_t 	fs_cblkno;			/* offset of cyl-block in filesys */
-	ufs_daddr_t 	fs_iblkno;			/* offset of inode-blocks in filesys */
-	ufs_daddr_t 	fs_dblkno;			/* offset of first data after cg */
+	ufs1_daddr_t 	fs_sblkno;			/* addr of super-block in filesys */
+	ufs1_daddr_t 	fs_cblkno;			/* offset of cyl-block in filesys */
+	ufs1_daddr_t 	fs_iblkno;			/* offset of inode-blocks in filesys */
+	ufs1_daddr_t 	fs_dblkno;			/* offset of first data after cg */
 	int32_t	 		fs_cgoffset;		/* cylinder group offset in cylinder */
 	int32_t	 		fs_cgmask;			/* used to calc mod fs_ntrak */
 	time_t 	 		fs_time;			/* last time written */
@@ -208,7 +215,7 @@ struct fs {
 	int32_t	 		fs_headswitch;		/* head switch time, usec */
 	int32_t	 		fs_trkseek;			/* track-to-track seek, usec */
 /* sizes determined by number of cylinder groups and their sizes */
-	ufs_daddr_t 	fs_csaddr;			/* blk addr of cyl grp summary area */
+	ufs1_daddr_t 	fs_csaddr;			/* blk addr of cyl grp summary area */
 	int32_t	 		fs_cssize;			/* size of cyl grp summary area */
 	int32_t	 		fs_cgsize;			/* cylinder group size */
 /* these fields are derived from the hardware */
@@ -490,18 +497,6 @@ struct ocg {
 	(((lbn) >= NDADDR || (dip)->di_size >= ((lbn) + 1) << (fs)->fs_bshift) 			\
 	    ? (fs)->fs_bsize 															\
 	    : (fragroundup(fs, blkoff(fs, (dip)->di_size))))
-
-/* ufs1 blksize Temp solution */
-#define blksize2(fs, ip, lbn) 														\
-	(((lbn) >= NDADDR || (ip)->i_ffs1_size >= ((lbn) + 1) << (fs)->fs_bshift) 		\
-	    ? (fs)->fs_bsize 															\
-	    : (fragroundup(fs, blkoff(fs, (ip)->i_ffs1_size))))
-
-/* ufs2 blksize Temp solution */
-#define blksize3(fs, ip, lbn) 														\
-	(((lbn) >= NDADDR || (ip)->i_ffs2_size >= ((lbn) + 1) << (fs)->fs_bshift) 		\
-	    ? (fs)->fs_bsize 															\
-	    : (fragroundup(fs, blkoff(fs, (ip)->i_ffs2_size))))
 
 /*
  * Number of disk sectors per block/fragment; assumes DEV_BSIZE byte
