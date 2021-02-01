@@ -174,145 +174,50 @@ setsid(pid)
 	}
 }
 
-int
-setpgid()
-{
-	register struct a {
-			pid_t 	pid;
-			pid_t	pgid;
-	}*uap = (struct a *) u->u_ap;
-
-	register struct proc *targp;		/* target process */
-	register struct pgrp *pgrp;			/* target pgrp */
-
-	if(uap->pid != 0 && uap->pid != u->u_procp->p_pid) {
-		if((targp = pfind(uap->pid)) == 0 || !inferior(targp)) {
-			return (u->u_error = ESRCH);
-		}
-		if(targp->p_session != u->u_procp->p_session) {
-			return (u->u_error = EPERM);
-		}
-		if (targp->p_flag & P_EXEC) {
-
-			return (u->u_error = EACCES);
-		}
-	} else {
-		targp = u->u_procp;
-	}
-	if(SESS_LEADER(targp)) {
-		return (u->u_error = EPERM);
-	}
-	if(uap->pgid == 0) {
-		uap->pgid = targp->p_pid;
-	} else if(uap->pgid != targp->p_pid) {
-		if((pgrp = pgfind(uap->pgid)) == 0 || pgrp->pg_session != u->u_procp->p_session) {
-			return (u->u_error = EPERM);
-		}
-	}
-	return (u->u_error = enterpgrp(targp, uap->pgid, 0));
-}
-
-void
-setreuid()
-{
-	struct a {
-		int	ruid;
-		int	euid;
-	} *uap = (struct a *)u.u_ap;
-
-	register int ruid, euid;
-	ruid = uap->ruid;
-
-	if (ruid == -1) {
-		ruid = u->u_pcred->p_ruid;
-	}
-	if (u->u_pcred->p_ruid != ruid && u->u_ucred->cr_uid != ruid && !suser()) {
-		return;
-	}
-	euid = uap->euid;
-	if (euid == -1) {
-		euid = u->u_ucred->cr_uid;
-	}
-	if (u->u_pcred->p_ruid != euid && u->u_ucred->cr_uid != euid && !suser()) {
-		return;
-	}
-
-	u->u_procp->p_uid = ruid;
-	u->u_pcred->p_ruid = ruid;
-	u->u_ucred->cr_uid = euid;
-}
-
-void
-setregid()
-{
-	register struct a {
-		int rgid;
-		int egid;
-	} *uap = (struct a*) u->u_ap;
-	register int rgid, egid;
-
-	rgid = uap->rgid;
-	if (rgid == -1) {
-		rgid = u->u_pcred->p_rgid;
-	}
-	if (u->u_pcred->p_rgid != rgid && u->u_ucred->cr_gid != rgid && !suser()) {
-		return;
-	}
-	egid = uap->egid;
-	if (egid == -1) {
-		egid = u->u_ucred->cr_gid;
-	}
-	if (u->u_pcred->p_rgid != egid && u->u_ucred->cr_gid != egid && !suser()) {
-		return;
-	}
-	if (u->u_pcred->p_rgid != rgid) {
-		leavegroup(u->u_pcred->p_rgid);
-		(void) entergroup(rgid);
-		u->u_pcred->p_rgid = rgid;
-	}
-	u->u_ucred->cr_gid = egid;
-}
-
 /*
- * Delete gid from the group set.
- */
-void
-leavegroup(gid)
-	gid_t gid;
-{
-	register gid_t *gp;
-
-	for (gp = u->u_ucred->cr_groups; gp < &u->u_ucred->cr_groups[NGROUPS]; gp++) {
-		if (*gp == gid) {
-			goto found;
-		}
-	}
-	return;
-
-found:
-	for (; gp < &u->u_ucred->cr_groups[NGROUPS - 1]; gp++) {
-		*gp = *(gp + 1);
-	}
-	*gp = NOGROUP;
-}
-
-/*
- * Add gid to the group set.
+ * Check if gid is a member of the group set.
  */
 int
-entergroup(gid)
+groupmember(gid)
 	gid_t gid;
 {
-	register gid_t *gp;
+	return (_groupmember(gid, u->u_ucred));
+}
 
-	for (gp = u->u_ucred->cr_groups; gp < &u->u_ucred->cr_groups[NGROUPS]; gp++) {
-		if (*gp == gid) {
-			return (0);
-		}
-		if (*gp == NOGROUP) {
-			*gp = gid;
-			return (0);
-		}
+int
+_groupmember(gid, cred)
+	gid_t 			gid;
+	struct ucred 	*cred;
+{
+	register gid_t *gp;
+	gid_t *egp;
+
+	egp = &(cred->cr_groups[cred->cr_ngroups]);
+	for (gp = cred->cr_groups; gp < egp; gp++)
+		if (*gp == gid)
+			return (1);
+	return (0);
+}
+
+int
+suser()
+{
+	if(_suser(u->u_ucred, u->u_acflag) == EPERM) {
+		u->u_error = EPERM;
 	}
-	return (-1);
+	return (_suser(u->u_ucred, u->u_acflag));
+}
+
+int
+_suser(cred, acflag)
+	register struct ucred 	*cred;
+	short 				*acflag;
+{
+	if (cred->cr_uid == 0) {
+		if (acflag) {
+			acflag |= ASU;
+		}
+		return (0);
+	}
+	return (EPERM);
 }

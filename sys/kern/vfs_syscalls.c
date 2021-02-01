@@ -119,7 +119,7 @@ mount(p, uap, retval)
 		 * permitted to update it.
 		 */
 		if (mp->mnt_stat.f_owner != p->p_ucred->cr_uid &&
-		    (error = suser(p->p_ucred, &p->p_acflag))) {
+		    (error = suser1(p->p_ucred, &p->p_acflag))) {
 			vput(vp);
 			return (error);
 		}
@@ -147,7 +147,7 @@ mount(p, uap, retval)
 	 */
 	if ((error = VOP_GETATTR(vp, &va, p->p_ucred, p)) ||
 	    (va.va_uid != p->p_ucred->cr_uid &&
-	     (error = suser(p->p_ucred, &p->p_acflag)))) {
+	     (error = suser1(p->p_ucred, &p->p_acflag)))) {
 		vput(vp);
 		return (error);
 	}
@@ -339,7 +339,7 @@ unmount(p, uap, retval)
 	 * permitted to unmount this filesystem.
 	 */
 	if ((mp->mnt_stat.f_owner != p->p_ucred->cr_uid) &&
-	    (error = suser(p->p_ucred, &p->p_acflag))) {
+	    (error = suser1(p->p_ucred, &p->p_acflag))) {
 		vput(vp);
 		return (error);
 	}
@@ -683,7 +683,7 @@ chroot(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	if (error == suser(p->p_ucred, &p->p_acflag))
+	if (error == suser1(p->p_ucred, &p->p_acflag))
 		return (error);
 	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE,
 	    SCARG(uap, path), p);
@@ -843,7 +843,7 @@ mknod(p, uap, retval)
 	int whiteout;
 	struct nameidata nd;
 
-	if (error == suser(p->p_ucred, &p->p_acflag))
+	if (error == suser1(p->p_ucred, &p->p_acflag))
 		return (error);
 	NDINIT(&nd, CREATE, LOCKPARENT, UIO_USERSPACE, SCARG(uap, path), p);
 	if (error == namei(&nd))
@@ -960,7 +960,7 @@ link(p, uap, retval)
 		return (error);
 	vp = nd.ni_vp;
 	if (vp->v_type != VDIR ||
-	    (error = suser(p->p_ucred, &p->p_acflag)) == 0) {
+	    (error = suser1(p->p_ucred, &p->p_acflag)) == 0) {
 		nd.ni_cnd.cn_nameiop = CREATE;
 		nd.ni_cnd.cn_flags = LOCKPARENT;
 		nd.ni_dirp = SCARG(uap, link);
@@ -1093,7 +1093,7 @@ unlink(p, uap, retval)
 	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 
 	if (vp->v_type != VDIR ||
-	    (error = suser(p->p_ucred, &p->p_acflag)) == 0) {
+	    (error = suser1(p->p_ucred, &p->p_acflag)) == 0) {
 		/*
 		 * The root of a mounted filesystem cannot be deleted.
 		 */
@@ -2386,7 +2386,7 @@ revoke(p, uap, retval)
 	if (error == VOP_GETATTR(vp, &vattr, p->p_ucred, p))
 		goto out;
 	if (p->p_ucred->cr_uid != vattr.va_uid &&
-	    (error = suser(p->p_ucred, &p->p_acflag)))
+	    (error = suser1(p->p_ucred, &p->p_acflag)))
 		goto out;
 	if (vp->v_usecount > 1 || (vp->v_flag & VALIASED))
 		VOP_REVOKE(vp, REVOKEALL);

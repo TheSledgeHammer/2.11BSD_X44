@@ -22,8 +22,7 @@ reboot()
 	register struct a {
 		int	opt;
 	};
-	register struct proc *p = u->u_procp;
 
-	if (suser(p->p_cred, p->p_acflag))
+	if (suser())
 		boot(rootdev, ((struct a *)u->u_ap)->opt);
 }

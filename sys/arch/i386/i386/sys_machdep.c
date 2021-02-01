@@ -337,7 +337,7 @@ i386_iopl(p, args, retval)
 	if (securelevel > 1)
 		return EPERM;
 
-	if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
+	if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0)
 		return error;
 
 	if ((error = copyin(args, &ua, sizeof(ua))) != 0)
@@ -380,7 +380,7 @@ i386_set_ioperm(p, args, retval)
 	if (securelevel > 1)
 		return EPERM;
 
-	if ((error = suser(p->p_ucred, &p->p_acflag)) != 0)
+	if ((error = suser1(p->p_ucred, &p->p_acflag)) != 0)
 		return error;
 
 	if ((error = copyin(args, &ua, sizeof(ua))) != 0)

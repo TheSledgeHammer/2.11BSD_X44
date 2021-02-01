@@ -24,7 +24,7 @@ MFILES=	float.h frame.h stdarg.h varargs.h
 LFILES=	endian.h errno.h fcntl.h syslog.h termios.h
 
 DIRS=	arpa protocols rpc
-LDIRS=	ddb dev miscfs net netimp netinet netns sys ufs vfs vm
+LDIRS=	ddb dev fs miscfs net netimp netinet netns sys ufs vm
 
 NOOBJ=	noobj
 

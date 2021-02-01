@@ -147,6 +147,105 @@ setpgrp()
 	p->p_pgrp = uap->pgrp;
 }
 
+int
+setpgid()
+{
+	register struct a {
+			pid_t 	pid;
+			pid_t	pgid;
+	}*uap = (struct a *) u->u_ap;
+
+	register struct proc *targp;		/* target process */
+	register struct pgrp *pgrp;			/* target pgrp */
+
+	if(uap->pid != 0 && uap->pid != u->u_procp->p_pid) {
+		if((targp = pfind(uap->pid)) == 0 || !inferior(targp)) {
+			return (u->u_error = ESRCH);
+		}
+		if(targp->p_session != u->u_procp->p_session) {
+			return (u->u_error = EPERM);
+		}
+		if (targp->p_flag & P_EXEC) {
+
+			return (u->u_error = EACCES);
+		}
+	} else {
+		targp = u->u_procp;
+	}
+	if(SESS_LEADER(targp)) {
+		return (u->u_error = EPERM);
+	}
+	if(uap->pgid == 0) {
+		uap->pgid = targp->p_pid;
+	} else if(uap->pgid != targp->p_pid) {
+		if((pgrp = pgfind(uap->pgid)) == 0 || pgrp->pg_session != u->u_procp->p_session) {
+			return (u->u_error = EPERM);
+		}
+	}
+	return (u->u_error = enterpgrp(targp, uap->pgid, 0));
+}
+
+void
+setreuid()
+{
+	struct a {
+		int	ruid;
+		int	euid;
+	} *uap = (struct a *)u.u_ap;
+
+	register int ruid, euid;
+	ruid = uap->ruid;
+
+	if (ruid == -1) {
+		ruid = u->u_pcred->p_ruid;
+	}
+	if (u->u_pcred->p_ruid != ruid && u->u_ucred->cr_uid != ruid && !suser()) {
+		return;
+	}
+	euid = uap->euid;
+	if (euid == -1) {
+		euid = u->u_ucred->cr_uid;
+	}
+	if (u->u_pcred->p_ruid != euid && u->u_ucred->cr_uid != euid && !suser()) {
+		return;
+	}
+
+	u->u_procp->p_uid = ruid;
+	u->u_pcred->p_ruid = ruid;
+	u->u_ucred->cr_uid = euid;
+}
+
+void
+setregid()
+{
+	register struct a {
+		int rgid;
+		int egid;
+	} *uap = (struct a*) u->u_ap;
+	register int rgid, egid;
+
+	rgid = uap->rgid;
+	if (rgid == -1) {
+		rgid = u->u_pcred->p_rgid;
+	}
+	if (u->u_pcred->p_rgid != rgid && u->u_ucred->cr_gid != rgid && !suser()) {
+		return;
+	}
+	egid = uap->egid;
+	if (egid == -1) {
+		egid = u->u_ucred->cr_gid;
+	}
+	if (u->u_pcred->p_rgid != egid && u->u_ucred->cr_gid != egid && !suser()) {
+		return;
+	}
+	if (u->u_pcred->p_rgid != rgid) {
+		leavegroup(u->u_pcred->p_rgid);
+		(void) entergroup(rgid);
+		u->u_pcred->p_rgid = rgid;
+	}
+	u->u_ucred->cr_gid = egid;
+}
+
 void
 setgroups()
 {
@@ -172,74 +271,47 @@ setgroups()
 }
 
 /*
- * Check if gid is a member of the group set.
+ * Delete gid from the group set.
  */
-int
-groupmember(gid)
+void
+leavegroup(gid)
 	gid_t gid;
 {
-	/*
 	register gid_t *gp;
-	gid_t *egp;
 
-	egp = &(u->u_ucred->cr_groups[u->u_ucred->cr_ngroups]);
-	for (gp = u->u_ucred->cr_groups; gp < egp; gp++) {
+	for (gp = u->u_ucred->cr_groups; gp < &u->u_ucred->cr_groups[NGROUPS]; gp++) {
 		if (*gp == gid) {
-			return (1);
+			goto found;
 		}
 	}
-	return (0);
-	*/
+	return;
 
-	return (_groupmember(gid, u->u_ucred));
+found:
+	for (; gp < &u->u_ucred->cr_groups[NGROUPS - 1]; gp++) {
+		*gp = *(gp + 1);
+	}
+	*gp = NOGROUP;
 }
 
+/*
+ * Add gid to the group set.
+ */
 int
-_groupmember(gid, cred)
-	gid_t 			gid;
-	struct ucred 	*cred;
+entergroup(gid)
+	gid_t gid;
 {
 	register gid_t *gp;
-	gid_t *egp;
 
-	egp = &(cred->cr_groups[cred->cr_ngroups]);
-	for (gp = cred->cr_groups; gp < egp; gp++)
-		if (*gp == gid)
-			return (1);
-	return (0);
-}
-
-int
-suser()
-{
-	/*
-	if (u->u_ucred->cr_uid == 0) {
-		if(u->u_acflag) {
-			u->u_acflag |= ASU;
+	for (gp = u->u_ucred->cr_groups; gp < &u->u_ucred->cr_groups[NGROUPS]; gp++) {
+		if (*gp == gid) {
+			return (0);
 		}
-		return (0);
-	}
-	u->u_error = EPERM;
-	return (u->u_error);
-	*/
-	if(_suser(u->u_ucred, u->u_acflag) == EPERM) {
-		u->u_error = EPERM;
-	}
-	return (_suser(u->u_ucred, u->u_acflag));
-}
-
-int
-_suser(cred, acflag)
-	register struct ucred 	*cred;
-	short 				*acflag;
-{
-	if (cred->cr_uid == 0) {
-		if (acflag) {
-			acflag |= ASU;
+		if (*gp == NOGROUP) {
+			*gp = gid;
+			return (0);
 		}
-		return (0);
 	}
-	return (EPERM);
+	return (-1);
 }
 
 /*
@@ -354,33 +426,4 @@ crdup(cr)
 	*newcr = *cr;
 	newcr->cr_ref = 1;
 	return (newcr);
-}
-
-/* Fill in a struct uucred based on a struct ucred. */
-void
-crtoup(cr, ucr)
-	struct ucred *cr;
-	struct uucred *ucr;
-{
-	bzero(ucr, sizeof(*ucr));
-
-	ucr->ur_uid = cr->cr_uid;
-	ucr->ur_gid = cr->cr_gid;
-	ucr->ur_ngroups = cr->cr_ngroups;
-	bcopy(cr->cr_groups, ucr->ur_groups, sizeof(cr->cr_groups));
-}
-
-/* Fill in a struct upcred based on a struct pcred. */
-void
-pcrtoupcr(pcr, upcr)
-	struct pcred *pcr;
-	struct upcred *upcr;
-{
-	bzero(upcr, sizeof(*upcr));
-
-	upcr->u_svuid = pcr->p_svuid;
-	upcr->u_ruid = pcr->p_ruid;
-	upcr->u_svgid = pcr->p_svgid;
-	upcr->u_rgid = pcr->p_rgid;
-	bcopy(pcr, upcr, sizeof(*pcr));
 }

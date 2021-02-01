@@ -8,6 +8,7 @@ ARCHDIR?=		${SYSDIR}/arch
 CONFDIR?=		${SYSDIR}/conf
 DDBDIR/=		${SYSDIR}/ddb
 DEVDIR?=		${SYSDIR}/dev
+FSDIR?=			${SYSDIR}/fs
 KERNDIR?=		${SYSDIR}/kern
 LIBDIR?=		${SYSDIR}/lib
 MISCFSDIR?=		${SYSDIR}/miscfs
@@ -17,7 +18,6 @@ NETINETDIR?=	${SYSDIR}/netinet
 NETNSDIR?=		${SYSDIR}/netns
 STANDDIR?=		${SYSDIR}/stand
 UFSDIR?=		${SYSDIR}/ufs
-VFSDIR?=		${SYSDIR}/vfs
 VMDIR?=			${SYSDIR}/vm
 
 # lib & stand sub-directories

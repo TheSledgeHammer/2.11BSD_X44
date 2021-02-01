@@ -281,7 +281,7 @@ swapon(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	if (error == suser(p->p_ucred, &p->p_acflag))
+	if (error == suser1(p->p_ucred, &p->p_acflag))
 		return (error);
 	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->name, p);
 	if (error == namei(&nd))

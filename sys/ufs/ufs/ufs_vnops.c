@@ -372,7 +372,7 @@ ufs_setattr(ap)
 		if (vp->v_mount->mnt_flag & MNT_RDONLY)
 			return (EROFS);
 		if (cred->cr_uid != ip->i_uid &&
-		    (error = suser(cred, &p->p_acflag)))
+		    (error = suser1(cred, &p->p_acflag)))
 			return (error);
 		if (cred->cr_uid == 0) {
 			if ((ip->i_flags & (SF_IMMUTABLE | SF_APPEND)) &&
@@ -424,7 +424,7 @@ ufs_setattr(ap)
 		if (vp->v_mount->mnt_flag & MNT_RDONLY)
 			return (EROFS);
 		if (cred->cr_uid != ip->i_uid &&
-		    (error = suser(cred, &p->p_acflag)) &&
+		    (error = suser1(cred, &p->p_acflag)) &&
 		    ((vap->va_vaflags & VA_UTIMES_NULL) == 0 || 
 		    (error = VOP_ACCESS(vp, VWRITE, cred, p))))
 			return (error);
@@ -464,12 +464,12 @@ ufs_chmod(vp, mode, cred, p)
 	int error;
 
 	if (cred->cr_uid != ip->i_uid &&
-	    (error = suser(cred, &p->p_acflag)))
+	    (error = suser1(cred, &p->p_acflag)))
 		return (error);
 	if (cred->cr_uid) {
 		if (vp->v_type != VDIR && (mode & S_ISTXT))
 			return (EFTYPE);
-		if (!groupmember(ip->i_gid, cred) && (mode & ISGID))
+		if (!groupmember1(ip->i_gid, cred) && (mode & ISGID))
 			return (EPERM);
 	}
 	ip->i_mode &= ~ALLPERMS;
@@ -514,8 +514,8 @@ ufs_chown(vp, uid, gid, cred, p)
 	 * the caller must be superuser or the call fails.
 	 */
 	if ((cred->cr_uid != ip->i_uid || uid != ip->i_uid ||
-	    (gid != ip->i_gid && !groupmember((gid_t)gid, cred))) &&
-	    (error = suser(cred, &p->p_acflag)))
+	    (gid != ip->i_gid && !groupmember1((gid_t)gid, cred))) &&
+	    (error = suser1(cred, &p->p_acflag)))
 		return (error);
 	ogid = ip->i_gid;
 	ouid = ip->i_uid;
@@ -2012,8 +2012,7 @@ ufs_makeinode(mode, dvp, vpp, cnp)
 	ip->i_mode = mode;
 	tvp->v_type = IFTOVT(mode);	/* Rest init'd in getnewvnode(). */
 	ip->i_nlink = 1;
-	if ((ip->i_mode & ISGID) && !groupmember(ip->i_gid, cnp->cn_cred) &&
-	    suser(cnp->cn_cred, NULL))
+	if ((ip->i_mode & ISGID) && !groupmember1(ip->i_gid, cnp->cn_cred) && suser1(cnp->cn_cred, NULL))
 		ip->i_mode &= ~ISGID;
 
 	if (cnp->cn_flags & ISWHITEOUT)

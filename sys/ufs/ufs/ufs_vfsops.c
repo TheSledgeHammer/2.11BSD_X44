@@ -115,7 +115,7 @@ ufs_quotactl(mp, cmds, uid, arg, p)
 		break;
 		/* fall through */
 	default:
-		if (error == suser(p->p_ucred, &p->p_acflag))
+		if (error == suser1(p->p_ucred, &p->p_acflag))
 			return (error);
 	}
 	type = cmds & SUBCMDMASK;

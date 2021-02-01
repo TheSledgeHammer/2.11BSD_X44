@@ -8,7 +8,7 @@ SUBDIR+= arch/${MACHINE}
 LFILES=	errno.h fcntl.h syslog.h termios.h
 MFILES=	float.h frame.h stdarg.h varargs.h
 LDIRS=	dev net netimp netinet netns miscfs sys ufs \ 
-		vfs vfs/isofs vfs/msdosfs \ 
+		fs fs/isofs fs/msdosfs \ 
 		vm
 
 # Change SYS_INCLUDE in bsd.own.mk or /etc/mk.conf to "symlinks" if you

@@ -141,7 +141,7 @@ tbtree_left(ktp, size)
     long indx = BUCKETINDX(size);
     u_long bsize = BUCKETSIZE(indx);
     ktp->tb_bindx = indx;
-    ktp->tb_bindx = bsize;
+    ktp->tb_bsize = bsize;
 
     u_long left;
     u_long diff = 0;

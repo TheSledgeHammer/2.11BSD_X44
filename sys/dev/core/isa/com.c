@@ -1023,7 +1023,7 @@ comioctl(dev, cmd, data, flag, p)
 		break;
 
 	case TIOCSFLAGS:
-		error = suser(p->p_ucred, &p->p_acflag);
+		error = suser1(p->p_ucred, &p->p_acflag);
 		if (error)
 			break;
 		sc->sc_swflags = *(int*) data;

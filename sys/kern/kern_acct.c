@@ -71,7 +71,7 @@ acct()
 	}
 
 	/* Make sure that the caller is root. */
-	error = suser(p->p_ucred, &p->p_acflag);
+	error = suser();
 	if (error) {
 		return (error);
 	}

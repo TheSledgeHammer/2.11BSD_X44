@@ -932,7 +932,7 @@ ufs211_makeinode(mode, dvp, vpp, cnp)
 	ip->i_mode = mode;
 	tvp->v_type = IFTOVT(mode);	/* Rest init'd in getnewvnode(). */
 	ip->i_nlink = 1;
-	if ((ip->i_mode & UFS211_ISGID) && !groupmember(ip->i_gid, cnp->cn_cred) && suser())
+	if ((ip->i_mode & UFS211_ISGID) && !groupmember(ip->i_gid) && suser())
 		ip->i_mode &= ~UFS211_ISGID;
 
 	if (cnp->cn_flags & ISWHITEOUT)

@@ -543,7 +543,7 @@ mlock(p, uap, retval)
 	    p->p_rlimit[RLIMIT_MEMLOCK].rlim_cur)
 		return (EAGAIN);
 #else
-	if (error == suser(p->p_ucred, &p->p_acflag))
+	if (error == suser1(p->p_ucred, &p->p_acflag))
 		return (error);
 #endif
 
@@ -573,7 +573,7 @@ munlock(p, uap, retval)
 	if ((addr & PAGE_MASK) || SCARG(uap, addr) + SCARG(uap, len) < SCARG(uap, addr))
 		return (EINVAL);
 #ifndef pmap_wired_count
-	if (error == suser(p->p_ucred, &p->p_acflag))
+	if (error == suser1(p->p_ucred, &p->p_acflag))
 		return (error);
 #endif
 	size = round_page((vm_size_t)SCARG(uap, len));

@@ -553,7 +553,7 @@ vndioctl(dev, cmd, data, flag, p)
 		printf("vndioctl(%x, %lx, %p, %x, %p): unit %d\n",
 		    dev, cmd, data, flag, p, unit);
 #endif
-	error = suser(p->p_ucred, &p->p_acflag);
+	error = suser1(p->p_ucred, &p->p_acflag);
 	if (error)
 		return (error);
 	if (unit >= numvnd)

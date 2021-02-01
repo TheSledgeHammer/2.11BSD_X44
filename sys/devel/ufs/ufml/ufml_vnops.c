@@ -199,7 +199,7 @@
 { 										\
 	struct { struct vnode *vnp; } v; 	\
 	v.vnp = (nd); 						\
-	(nd) = LOFSVP(v.vnp)
+	(nd) = UFMLVPTOLOWERVP(v.vnp)
 
 /*
  * Undo the PUSHREF

@@ -59,5 +59,14 @@ struct ucred 		*crdup(struct ucred *);
 extern void 		crfree(struct ucred *);
 int 				suser();
 int 				_suser(struct ucred *, short *);
+int					groupmember(gid_t);
+int					_groupmember(gid, struct ucred *);
+
+/* 4.4BSD compat */
+#define suser1(cred, acflag) 	\
+	_suser(cred, acflag)
+
+#define groupmember1(gid, cred) \
+	_groupmember(gid, cred)
 #endif /* KERNEL */
 #endif /* !_SYS_UCRED_H_ */

@@ -60,10 +60,11 @@
  * Before committing to add something to a segment summary, make sure there
  * is enough room.  S is the bytes added to the summary.
  */
-#define	CHECK_SEG(s)			\
+#define	CHECK_SEG(s)				\
 if (sp->sum_bytes_left < (s)) {		\
 	(void) lfs_writeseg(fs, sp);	\
 }
+
 struct buf *lfs_fakebuf (struct vnode *, int, size_t, caddr_t);
 
 int debug_cleaner = 0;
@@ -109,7 +110,7 @@ lfs_markv(p, uap, retval)
 	u_long bsize;
 	int cnt, error;
 
-	if (error == suser(p->p_ucred, &p->p_acflag))
+	if (error == suser1(p->p_ucred, &p->p_acflag))
 		return (error);
 
 	if (error == copyin(uap->fsidp, &fsid, sizeof(fsid_t)))
@@ -281,7 +282,7 @@ lfs_bmapv(p, uap, retval)
 	ufs_daddr_t daddr;
 	int cnt, error, step;
 
-	if (error == suser(p->p_ucred, &p->p_acflag))
+	if (error == suser1(p->p_ucred, &p->p_acflag))
 		return (error);
 
 	if (error == copyin(uap->fsidp, &fsid, sizeof(fsid_t)))
@@ -348,7 +349,7 @@ lfs_segclean(p, uap, retval)
 	fsid_t fsid;
 	int error;
 
-	if (error == suser(p->p_ucred, &p->p_acflag))
+	if (error == suser1(p->p_ucred, &p->p_acflag))
 		return (error);
 
 	if (error == copyin(uap->fsidp, &fsid, sizeof(fsid_t)))
@@ -409,7 +410,7 @@ lfs_segwait(p, uap, retval)
 	u_long timeout;
 	int error, s;
 
-	if (error == suser(p->p_ucred, &p->p_acflag)) {
+	if (error == suser1(p->p_ucred, &p->p_acflag)) {
 		return (error);
 }
 #ifdef WHEN_QUADS_WORK

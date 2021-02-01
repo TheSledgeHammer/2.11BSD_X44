@@ -357,7 +357,7 @@ msdosfs_setattr(v)
 	}
 	if (vap->va_atime.tv_sec != VNOVAL || vap->va_mtime.tv_sec != VNOVAL) {
 		if (cred->cr_uid != dep->de_pmp->pm_uid &&
-		    (error = suser(cred, &ap->a_p->p_acflag)) &&
+		    (error = suser1(cred, &ap->a_p->p_acflag)) &&
 		    ((vap->va_vaflags & VA_UTIMES_NULL) == 0 ||
 		    (error = VOP_ACCESS(ap->a_vp, VWRITE, cred, ap->a_p))))
 			return (error);
@@ -376,7 +376,7 @@ msdosfs_setattr(v)
 	 */
 	if (vap->va_mode != (mode_t)VNOVAL) {
 		if (cred->cr_uid != dep->de_pmp->pm_uid &&
-		    (error = suser(cred, &ap->a_p->p_acflag)))
+		    (error = suser1(cred, &ap->a_p->p_acflag)))
 			return (error);
 		/* We ignore the read and execute bits. */
 		if (vap->va_mode & VWRITE)
@@ -390,7 +390,7 @@ msdosfs_setattr(v)
 	 */
 	if (vap->va_flags != VNOVAL) {
 		if (cred->cr_uid != dep->de_pmp->pm_uid &&
-		    (error = suser(cred, &ap->a_p->p_acflag)))
+		    (error = suser1(cred, &ap->a_p->p_acflag)))
 			return (error);
 		if (vap->va_flags & SF_ARCHIVED)
 			dep->de_Attributes &= ~ATTR_ARCHIVE;

@@ -220,7 +220,7 @@ execve(p, uap, retval)
 
 	/* Turn off kernel tracing for set-id programs, except for root. */
 	if (p->p_tracep && (attr.va_mode & (VSUID | VSGID))
-			&& suser(p->p_ucred, &p->p_acflag)) {
+			&& suser1(p->p_ucred, &p->p_acflag)) {
 		p->p_traceflag = 0;
 		vrele(p->p_tracep);
 		p->p_tracep = 0;
