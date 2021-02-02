@@ -53,6 +53,13 @@
 
 #include <dev/kbd/kbdreg.h>
 
+void
+genkbd_init(devsw)
+	struct devswtable *devsw;
+{
+	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &genkbd_cdevsw, NULL);
+}
+
 int
 genkbd_match(struct device *parent, struct cfdata *cf, void *aux)
 {
@@ -74,7 +81,7 @@ genkbd_attach(struct device *parent, struct device *self, void *aux)
 	keyboard_t *kbd = (keyboard_t *) aux;
 	int error;
 
-	error = genkbd_attach(kbd);
+	error = vkbd_attach(kbd);
 	if(error) {
 		/* check keyboard has been registered & configured */
 		if(KBD_IS_REGISTERED(kbd)) {
@@ -91,15 +98,15 @@ genkbd_attach(struct device *parent, struct device *self, void *aux)
 	}
 
 nokbd:
-	error = genkbd_detach(kbd);
-	panic("kbd_attach: no keyboard to attach");
+	error = vkbd_detach(kbd);
+	panic("kbd_attach: no keyboard attached");
 
 noregister:
-	error = genkbd_detach(kbd);
+	error = vkbd_detach(kbd);
 	panic("kbd_attach: keyboard is not registered");
 
 noconfig:
-	error = genkbd_detach(kbd);
+	error = vkbd_detach(kbd);
 	panic("kbd_attach: keyboard is not configured");
 }
 

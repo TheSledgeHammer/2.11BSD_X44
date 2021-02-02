@@ -250,8 +250,8 @@ void				kbd_ev_event(keyboard_t *kbd, uint16_t type, uint16_t code, int32_t valu
 #ifdef KBD_INSTALL_CDEV
 
 /* virtual keyboard cdev driver functions */
-int					kbd_attach(keyboard_t *kbd);
-int					kbd_detach(keyboard_t *kbd);
+int					vkbd_attach(keyboard_t *kbd);
+int					vkbd_detach(keyboard_t *kbd);
 
 #endif /* KBD_INSTALL_CDEV */
 
@@ -296,7 +296,6 @@ extern SIMPLEQ_HEAD(, keyboard_driver) 	keyboard_drivers;
 extern keyboard_switch_t 				*kbdsw[KBD_MAXKEYBOARDS];
 
 /* Initialization for the kbd layer, performed by cninit. */
-void	kbdinit(void);
 
 int 	genkbd_commonioctl(keyboard_t *kbd, u_long cmd, caddr_t arg);
 int 	genkbd_keyaction(keyboard_t *kbd, int keycode, int up, int *shiftstate, int *accents);

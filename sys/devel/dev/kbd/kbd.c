@@ -81,6 +81,8 @@ static keyboard_t *keyboard[KBD_MAXKEYBOARDS];
 
 keyboard_switch_t *kbdsw[KBD_MAXKEYBOARDS];
 
+static genkbd_softc_t *kbdsoftc[KBD_MAXKEYBOARDS];
+
 static int keymap_restrict_change;
 
 #define ARRAY_DELTA			4
@@ -401,7 +403,7 @@ const struct cdevsw genkbd_cdevsw = {
 };
 
 int
-genkbd_attach(keyboard_t *kbd)
+vkbd_attach(keyboard_t *kbd)
 {
 	if (kbd->kb_index >= KBD_MAXKEYBOARDS) {
 		return (EINVAL);
@@ -410,21 +412,24 @@ genkbd_attach(keyboard_t *kbd)
 		return (EINVAL);
 	}
 
-	kbd->kb_data = malloc(sizeof(genkbd_softc_t), M_DEVBUF, M_WAITOK | M_ZERO);
+	kbdsoftc[kbd->kb_index] = malloc(sizeof(genkbd_softc_t), M_DEVBUF, M_WAITOK | M_ZERO);
+	bzero(kbdsoftc[kbd->kb_index], sizeof(genkbd_softc_t));
+
 	printf("kbd%d at %s%d\n", kbd->kb_index, kbd->kb_name, kbd->kb_unit);
 
 	return (0);
 }
 
 int
-genkbd_detach(keyboard_t *kbd)
+vkbd_detach(keyboard_t *kbd)
 {
 	if (kbd->kb_index >= KBD_MAXKEYBOARDS)
 		return (EINVAL);
 	if (keyboard[kbd->kb_index] != kbd)
 		return (EINVAL);
 
-	free(kbd->kb_data, M_DEVBUF);
+	free(kbdsoftc[kbd->kb_index], M_DEVBUF);
+	kbdsoftc[kbd->kb_index] = NULL;
 	return (0);
 }
 
@@ -467,18 +472,6 @@ genkbd_getc(genkbd_softc_t *sc, char *buf, size_t len)
 	return (len);
 }
 
-static genkbd_softc_t
-genkbd_find(keyboard_t *kbd, struct cfdata *cf, dev_t dev)
-{
-	genkbd_softc_t *sc;
-	if(strcmp(kbd->kb_name, cf->cf_driver->cd_name)) {
-		struct cfdriver *driver = cf->cf_driver;
-		sc = driver->cd_devs[dev];
-		return (sc);
-	}
-	return (NULL);
-}
-
 static kbd_callback_func_t genkbd_event;
 
 static int
@@ -491,9 +484,8 @@ genkbdopen(dev_t dev, int oflags, int devtype, struct proc *p)
 	int i;
 
 	s = spltty();
-	//sc = genkbd_cd.cd_devs[KBD_INDEX(dev)];
+	sc = kbdsoftc[KBD_INDEX(dev)];
 	kbd = kbd_get_keyboard(KBD_INDEX(dev));
-	sc = genkbd_find();
 	if ((sc == NULL) || (kbd == NULL) || !KBD_IS_VALID(kbd)) {
 		splx(s);
 		return (ENXIO);
@@ -529,7 +521,7 @@ genkbdclose(dev_t dev, int fflag, int devtype, struct proc *p)
 	 * kbd == NULL || !KBD_IS_VALID(kbd)
 	 */
 	s = spltty();
-	//sc = genkbd_cd.cd_devs[KBD_INDEX(dev)];
+	sc = kbdsoftc[KBD_INDEX(dev)];
 	kbd = kbd_get_keyboard(KBD_INDEX(dev));
 	if ((sc == NULL) || (kbd == NULL) || !KBD_IS_VALID(kbd)) {
 		/* XXX: we shall be forgiving and don't report error... */
@@ -552,7 +544,7 @@ genkbdread(dev_t dev, struct uio *uio, int ioflag)
 
 	/* wait for input */
 	s = spltty();
-	//sc = genkbd_cd.cd_devs[KBD_INDEX(dev)];
+	sc = kbdsoftc[KBD_INDEX(dev)];
 	kbd = kbd_get_keyboard(KBD_INDEX(dev));
 	if ((sc == NULL) || (kbd == NULL) || !KBD_IS_VALID(kbd)) {
 		splx(s);
@@ -629,9 +621,8 @@ genkbdpoll(dev_t dev, int events, struct proc *p)
 
 	revents = 0;
 	s = spltty();
-	//sc = genkbd_cd.cd_devs[KBD_INDEX(dev)];
+	sc = kbdsoftc[KBD_INDEX(dev)];
 	kbd = kbd_get_keyboard(KBD_INDEX(dev));
-	sc = kbd->kb_dev->dv_cfdata->cf_driver
 	if ((sc == NULL) || (kbd == NULL) || !KBD_IS_VALID(kbd)) {
 		revents =  POLLHUP;	/* the keyboard has gone */
 	} else if (events & (POLLIN | POLLRDNORM)) {
@@ -1432,11 +1423,9 @@ kbd_ev_event(keyboard_t *kbd, uint16_t type, uint16_t code, int32_t value)
 void
 kbdinit(void)
 {
-	keyboard_driver_t *drv, **list;
+	keyboard_driver_t *drv;//, **list;
 
-	SET_FOREACH(list, kbddriver_set) {
-		drv = *list;
-
+	SIMPLEQ_FOREACH(drv, &keyboard_drivers, link) {
 		/*
 		 * The following printfs will almost universally get dropped,
 		 * with exception to kernel configs with EARLY_PRINTF and
@@ -1444,11 +1433,10 @@ kbdinit(void)
 		 * static buffer to capture output occurring before the dynamic
 		 * message buffer is mapped.
 		 */
-		if (kbd_add_driver(drv) != 0)
-			printf("kbd: failed to register driver '%s'\n",
-			    drv->name);
-		else if (bootverbose)
-			printf("kbd: registered driver '%s'\n",
-			    drv->name);
+		if (kbd_add_driver(drv) != 0) {
+			printf("kbd: failed to register driver '%s'\n", drv->name);
+		} else if (bootverbose) {
+			printf("kbd: registered driver '%s'\n", drv->name);
+		}
 	}
 }
