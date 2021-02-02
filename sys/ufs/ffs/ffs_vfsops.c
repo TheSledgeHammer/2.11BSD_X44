@@ -291,11 +291,11 @@ ffs_reload(mountp, cred, p)
 		size = DEV_BSIZE;
 	else
 		size = dpart.disklab->d_secsize;
-	if (error
-			== bread(devvp, (ufs_daddr_t) (SBOFF / size), SBSIZE, NOCRED, &bp))
+	if (error == bread(devvp, btodb(fs->fs_sblockloc), SBSIZE, NOCRED, &bp))
 		return (error);
 	newfs = (struct fs*) bp->b_data;
-	if (newfs->fs_magic != FS_MAGIC || newfs->fs_bsize > MAXBSIZE || newfs->fs_bsize < sizeof(struct fs)) {
+	if (newfs->fs_magic != FS_MAGIC || newfs->fs_bsize > MAXBSIZE
+			|| newfs->fs_bsize < sizeof(struct fs)) {
 		brelse(bp);
 		return (EIO); /* XXX needs translation */
 	}

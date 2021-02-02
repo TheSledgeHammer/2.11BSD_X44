@@ -89,13 +89,13 @@ ffs_balloc_ufs1(ip, lbn, size, cred, bpp, flags)
 	int flags;
 {
 	register struct fs *fs;
-	register ufs_daddr_t nb;
+	register ufs1_daddr_t nb;
 	struct buf *bp, *nbp;
 	struct vnode *vp = ITOV(ip);
 	struct indir indirs[NIADDR + 2];
-	ufs_daddr_t newb, *bap, pref;
+	ufs1_daddr_t newb, *bap, pref;
 	int deallocated, osize, nsize, num, i, error;
-	ufs_daddr_t *allocib, *blkp, *allocblk, allociblk[NIADDR + 1];
+	ufs1_daddr_t *allocib, *blkp, *allocblk, allociblk[NIADDR + 1];
 
 	*bpp = NULL;
 	if (lbn < 0)
@@ -112,7 +112,7 @@ ffs_balloc_ufs1(ip, lbn, size, cred, bpp, flags)
 		osize = blksize(fs, ip, nb);
 		if (osize < fs->fs_bsize && osize > 0) {
 			error = ffs_realloccg(ip, nb,
-					ffs_blkpref(ip, nb, (int) nb, &ip->i_ffs1_db[0]), osize,
+					ffs_blkpref_ufs1(ip, nb, (int) nb, &ip->i_ffs1_db[0]), osize,
 					(int) fs->fs_bsize, cred, &bp);
 			if (error)
 				return (error);
@@ -154,7 +154,7 @@ ffs_balloc_ufs1(ip, lbn, size, cred, bpp, flags)
 				}
 			} else {
 				error = ffs_realloccg(ip, lbn,
-						ffs_blkpref(ip, lbn, (int) lbn, &ip->i_ffs1_db[0]), osize,
+						ffs_blkpref_ufs1(ip, lbn, (int) lbn, &ip->i_ffs1_db[0]), osize,
 						nsize, cred, &bp);
 				if (error)
 					return (error);
@@ -165,7 +165,7 @@ ffs_balloc_ufs1(ip, lbn, size, cred, bpp, flags)
 			else
 				nsize = fs->fs_bsize;
 			error = ffs_alloc(ip, lbn,
-					ffs_blkpref(ip, lbn, (int) lbn, &ip->i_ffs1_db[0]), nsize, cred,
+					ffs_blkpref_ufs1(ip, lbn, (int) lbn, &ip->i_ffs1_db[0]), nsize, cred,
 					&newb);
 			if (error)
 				return (error);
@@ -197,7 +197,7 @@ ffs_balloc_ufs1(ip, lbn, size, cred, bpp, flags)
 	allocib = NULL;
 	allocblk = allociblk;
 	if (nb == 0) {
-		pref = ffs_blkpref(ip, lbn, 0, (ufs_daddr_t*) 0);
+		pref = ffs_blkpref_ufs1(ip, lbn, 0, (ufs1_daddr_t*) 0);
 		if (error == ffs_alloc(ip, lbn, pref, (int) fs->fs_bsize, cred, &newb))
 			return (error);
 		nb = newb;
@@ -234,7 +234,7 @@ ffs_balloc_ufs1(ip, lbn, size, cred, bpp, flags)
 			continue;
 		}
 		if (pref == 0)
-			pref = ffs_blkpref(ip, lbn, 0, (ufs_daddr_t*) 0);
+			pref = ffs_blkpref_ufs1(ip, lbn, 0, (ufs1_daddr_t*) 0);
 		if (error
 				== ffs_alloc(ip, lbn, pref, (int) fs->fs_bsize, cred, &newb)) {
 			brelse(bp);
@@ -268,7 +268,7 @@ ffs_balloc_ufs1(ip, lbn, size, cred, bpp, flags)
 	 * Get the data block, allocating if necessary.
 	 */
 	if (nb == 0) {
-		pref = ffs_blkpref(ip, lbn, indirs[i].in_off, &bap[0]);
+		pref = ffs_blkpref_ufs1(ip, lbn, indirs[i].in_off, &bap[0]);
 		if (error
 				== ffs_alloc(ip, lbn, pref, (int) fs->fs_bsize, cred, &newb)) {
 			brelse(bp);
@@ -327,6 +327,7 @@ ffs_balloc_ufs1(ip, lbn, size, cred, bpp, flags)
 		ip->i_ffs1_blocks -= btodb(deallocated);
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 	}
+	(void) VOP_FSYNC(vp, cred, MNT_WAIT, flags, vp->v_proc);
 	return (error);
 }
 
@@ -363,7 +364,7 @@ ffs_balloc_ufs2(ip, lbn, size, cred, bpp, flags)
 		osize = blksize(fs, ip, nb);
 		if (osize < fs->fs_bsize && osize > 0) {
 			error = ffs_realloccg(ip, nb,
-					ffs_blkpref(ip, nb, (int) nb, &ip->i_ffs2_db[0]), osize,
+					ffs_blkpref_ufs2(ip, nb, (int) nb, &ip->i_ffs2_db[0]), osize,
 					(int) fs->fs_bsize, cred, &bp);
 			if (error)
 				return (error);
@@ -405,7 +406,7 @@ ffs_balloc_ufs2(ip, lbn, size, cred, bpp, flags)
 				}
 			} else {
 				error = ffs_realloccg(ip, lbn,
-						ffs_blkpref(ip, lbn, (int) lbn, &ip->i_ffs2_db[0]),
+						ffs_blkpref_ufs2(ip, lbn, (int) lbn, &ip->i_ffs2_db[0]),
 						osize, nsize, cred, &bp);
 				if (error)
 					return (error);
@@ -416,7 +417,7 @@ ffs_balloc_ufs2(ip, lbn, size, cred, bpp, flags)
 			else
 				nsize = fs->fs_bsize;
 			error = ffs_alloc(ip, lbn,
-					ffs_blkpref(ip, lbn, (int) lbn, &ip->i_ffs2_db[0]), nsize,
+					ffs_blkpref_ufs2(ip, lbn, (int) lbn, &ip->i_ffs2_db[0]), nsize,
 					cred, &newb);
 			if (error)
 				return (error);
@@ -448,7 +449,7 @@ ffs_balloc_ufs2(ip, lbn, size, cred, bpp, flags)
 	allocib = NULL;
 	allocblk = allociblk;
 	if (nb == 0) {
-		pref = ffs_blkpref(ip, lbn, 0, (ufs_daddr_t*) 0);
+		pref = ffs_blkpref_ufs2(ip, lbn, 0, (ufs2_daddr_t*) 0);
 		if (error == ffs_alloc(ip, lbn, pref, (int) fs->fs_bsize, cred, &newb))
 			return (error);
 		nb = newb;
@@ -475,7 +476,7 @@ ffs_balloc_ufs2(ip, lbn, size, cred, bpp, flags)
 			brelse(bp);
 			goto fail;
 		}
-		bap = (ufs_daddr_t*) bp->b_data;
+		bap = (ufs2_daddr_t*) bp->b_data;
 		nb = bap[indirs[i].in_off];
 		if (i == num)
 			break;
@@ -485,7 +486,7 @@ ffs_balloc_ufs2(ip, lbn, size, cred, bpp, flags)
 			continue;
 		}
 		if (pref == 0)
-			pref = ffs_blkpref(ip, lbn, 0, (ufs_daddr_t*) 0);
+			pref = ffs_blkpref_ufs2(ip, lbn, 0, (ufs2_daddr_t*) 0);
 		if (error
 				== ffs_alloc(ip, lbn, pref, (int) fs->fs_bsize, cred, &newb)) {
 			brelse(bp);
@@ -519,7 +520,7 @@ ffs_balloc_ufs2(ip, lbn, size, cred, bpp, flags)
 	 * Get the data block, allocating if necessary.
 	 */
 	if (nb == 0) {
-		pref = ffs_blkpref(ip, lbn, indirs[i].in_off, &bap[0]);
+		pref = ffs_blkpref_ufs2(ip, lbn, indirs[i].in_off, &bap[0]);
 		if (error
 				== ffs_alloc(ip, lbn, pref, (int) fs->fs_bsize, cred, &newb)) {
 			brelse(bp);
@@ -578,5 +579,6 @@ ffs_balloc_ufs2(ip, lbn, size, cred, bpp, flags)
 		ip->i_ffs2_blocks -= btodb(deallocated);
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 	}
+	(void) VOP_FSYNC(vp, cred, MNT_WAIT, flags, vp->v_proc);
 	return (error);
 }

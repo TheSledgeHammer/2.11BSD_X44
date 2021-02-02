@@ -126,7 +126,7 @@ ffs_checkoverlap(bp, ip)
 	struct inode *ip;
 {
 	register struct buf *ebp, *ep;
-	register ufs_daddr_t start, last;
+	register ufs1_daddr_t start, last;
 	struct vnode *vp;
 
 	ebp = &buf[nbuf];
@@ -135,7 +135,7 @@ ffs_checkoverlap(bp, ip)
 	for (ep = buf; ep < ebp; ep++) {
 		if (ep == bp || (ep->b_flags & B_INVAL) || ep->b_vp == NULLVP)
 			continue;
-		if (VOP_BMAP(ep->b_vp, (ufs_daddr_t) 0, &vp, (ufs_daddr_t) 0,
+		if (VOP_BMAP(ep->b_vp, (ufs1_daddr_t) 0, &vp, (ufs1_daddr_t) 0,
 		NULL))
 			continue;
 		if (vp != ip->i_devvp)
@@ -161,7 +161,7 @@ int
 ffs_isblock(fs, cp, h)
 	struct fs *fs;
 	unsigned char *cp;
-	ufs_daddr_t h;
+	ufs1_daddr_t h;
 {
 	unsigned char mask;
 
@@ -189,7 +189,7 @@ void
 ffs_clrblock(fs, cp, h)
 	struct fs *fs;
 	u_char *cp;
-	ufs_daddr_t h;
+	ufs1_daddr_t h;
 {
 
 	switch ((int)fs->fs_frag) {
@@ -217,7 +217,7 @@ void
 ffs_setblock(fs, cp, h)
 	struct fs *fs;
 	unsigned char *cp;
-	ufs_daddr_t h;
+	ufs1_daddr_t h;
 {
 
 	switch ((int)fs->fs_frag) {

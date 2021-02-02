@@ -152,10 +152,10 @@ ffs_truncate(ap)
 	} */ *ap;
 {
 	register struct vnode *ovp = ap->a_vp;
-	ufs_daddr_t lastblock;
+	ufs2_daddr_t lastblock;
 	register struct inode *oip;
-	ufs_daddr_t bn, lbn, lastiblock[NIADDR], indir_lbn[NIADDR];
-	ufs_daddr_t oldblks[NDADDR + NIADDR], newblks[NDADDR + NIADDR];
+	ufs2_daddr_t bn, lbn, lastiblock[NIADDR], indir_lbn[NIADDR];
+	ufs2_daddr_t oldblks[NDADDR + NIADDR], newblks[NDADDR + NIADDR];
 	off_t length = ap->a_length;
 	register struct fs *fs;
 	struct buf *bp;
@@ -393,20 +393,23 @@ done:
 static int
 ffs_indirtrunc(ip, lbn, dbn, lastbn, level, countp)
 	register struct inode *ip;
-	ufs_daddr_t lbn, lastbn;
-	ufs_daddr_t dbn;
+	ufs2_daddr_t lbn, lastbn;
+	ufs2_daddr_t dbn;
 	int level;
 	long *countp;
 {
 	register int i;
 	struct buf *bp;
 	register struct fs *fs = ip->i_fs;
-	register ufs_daddr_t *bap;
+	ufs1_daddr_t *bap1 = NULL;
+	ufs2_daddr_t *bap2 = NULL;
 	struct vnode *vp;
-	ufs_daddr_t *copy, nb, nlbn, last;
+	caddr_t copy = NULL;
+	ufs2_daddr_t nb, nlbn, last;
 	long blkcount, factor;
 	int nblocks, blocksreleased = 0;
 	int error = 0, allerror = 0;
+#define BAP(ip, i) (((ip)->i_ump->um_fstype == UFS1) ? bap1[i] : bap2[i])
 
 	/*
 	 * Calculate index in current block of last
@@ -449,29 +452,42 @@ ffs_indirtrunc(ip, lbn, dbn, lastbn, level, countp)
 		return (error);
 	}
 
-	bap = (ufs_daddr_t *)bp->b_data;
-	MALLOC(copy, ufs_daddr_t *, fs->fs_bsize, M_TEMP, M_WAITOK);
-	bcopy((caddr_t)bap, (caddr_t)copy, (u_int)fs->fs_bsize);
-	bzero((caddr_t)&bap[last + 1],
-	  (u_int)(NINDIR(fs) - (last + 1)) * sizeof (ufs_daddr_t));
-	if (last == -1)
+	if (ip->i_ump->um_fstype == UFS1) {
+		bap1 = (ufs1_daddr_t *)bp->b_data;
+	} else {
+		bap2 = (ufs2_daddr_t *)bp->b_data;
+	}
+
+	if (lastbn != -1) {
+		MALLOC(copy, caddr_t, fs->fs_bsize, M_TEMP, M_WAITOK);
+		bcopy((caddr_t)bp->b_data, copy, (u_int)fs->fs_bsize);
+		for (i = last + 1; i < NINDIR(fs); i++) {
+			BAP(ip, i) = 0;
+		}
+		error = bwrite(bp);
+		if (error) {
+			allerror = error;
+		}
+		if (ip->i_ump->um_fstype == UFS1) {
+			bap1 = (ufs1_daddr_t *)bp->b_data;
+		} else {
+			bap2 = (ufs2_daddr_t *)bp->b_data;
+		}
+	} else {
 		bp->b_flags |= B_INVAL;
-	error = bwrite(bp);
-	if (error)
-		allerror = error;
-	bap = copy;
+	}
 
 	/*
 	 * Recursively free totally unused blocks.
 	 */
 	for (i = NINDIR(fs) - 1, nlbn = lbn + 1 - i * factor; i > last;
 	    i--, nlbn += factor) {
-		nb = bap[i];
+		nb = BAP(ip, i);
 		if (nb == 0)
 			continue;
 		if (level > SINGLE) {
 			if (error == ffs_indirtrunc(ip, nlbn, fsbtodb(fs, nb),
-			    (ufs_daddr_t)-1, level - 1, &blkcount))
+			    (ufs2_daddr_t)-1, level - 1, &blkcount))
 				allerror = error;
 			blocksreleased += blkcount;
 		}
@@ -484,7 +500,7 @@ ffs_indirtrunc(ip, lbn, dbn, lastbn, level, countp)
 	 */
 	if (level > SINGLE && lastbn >= 0) {
 		last = lastbn % factor;
-		nb = bap[i];
+		nb = BAP(ip, i);
 		if (nb != 0) {
 			if (error == ffs_indirtrunc(ip, nlbn, fsbtodb(fs, nb),
 			    last, level - 1, &blkcount))
@@ -492,7 +508,12 @@ ffs_indirtrunc(ip, lbn, dbn, lastbn, level, countp)
 			blocksreleased += blkcount;
 		}
 	}
-	FREE(copy, M_TEMP);
+	if (copy != NULL) {
+		FREE(copy, M_TEMP);
+	} else {
+		bp->b_flags |= B_INVAL | B_NOCACHE;
+		brelse(bp);
+	}
 	*countp = blocksreleased;
 	return (allerror);
 }

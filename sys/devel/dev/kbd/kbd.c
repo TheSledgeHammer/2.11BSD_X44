@@ -58,6 +58,8 @@ struct genkbd_softc {
 	char			gkb_q[KB_QSIZE];		/* input queue */
 	unsigned int	gkb_q_start;
 	unsigned int	gkb_q_length;
+
+	keyboard_t		gkb_genkbd;
 };
 
 SIMPLEQ_HEAD(, keyboard_driver) keyboard_drivers = SIMPLEQ_HEAD_INITIALIZER(keyboard_drivers);
@@ -398,9 +400,6 @@ const struct cdevsw genkbd_cdevsw = {
 		.d_type = 	D_OTHER
 };
 
-/* generic keyboard rountine driver */
-extern struct cfdriver genkbd_cd;
-
 int
 genkbd_attach(keyboard_t *kbd)
 {
@@ -468,6 +467,18 @@ genkbd_getc(genkbd_softc_t *sc, char *buf, size_t len)
 	return (len);
 }
 
+static genkbd_softc_t
+genkbd_find(keyboard_t *kbd, struct cfdata *cf, dev_t dev)
+{
+	genkbd_softc_t *sc;
+	if(strcmp(kbd->kb_name, cf->cf_driver->cd_name)) {
+		struct cfdriver *driver = cf->cf_driver;
+		sc = driver->cd_devs[dev];
+		return (sc);
+	}
+	return (NULL);
+}
+
 static kbd_callback_func_t genkbd_event;
 
 static int
@@ -480,8 +491,9 @@ genkbdopen(dev_t dev, int oflags, int devtype, struct proc *p)
 	int i;
 
 	s = spltty();
-	sc = genkbd_cd.cd_devs[KBD_INDEX(dev)];
+	//sc = genkbd_cd.cd_devs[KBD_INDEX(dev)];
 	kbd = kbd_get_keyboard(KBD_INDEX(dev));
+	sc = genkbd_find();
 	if ((sc == NULL) || (kbd == NULL) || !KBD_IS_VALID(kbd)) {
 		splx(s);
 		return (ENXIO);
@@ -517,7 +529,7 @@ genkbdclose(dev_t dev, int fflag, int devtype, struct proc *p)
 	 * kbd == NULL || !KBD_IS_VALID(kbd)
 	 */
 	s = spltty();
-	sc = genkbd_cd.cd_devs[KBD_INDEX(dev)];
+	//sc = genkbd_cd.cd_devs[KBD_INDEX(dev)];
 	kbd = kbd_get_keyboard(KBD_INDEX(dev));
 	if ((sc == NULL) || (kbd == NULL) || !KBD_IS_VALID(kbd)) {
 		/* XXX: we shall be forgiving and don't report error... */
@@ -540,7 +552,7 @@ genkbdread(dev_t dev, struct uio *uio, int ioflag)
 
 	/* wait for input */
 	s = spltty();
-	sc = genkbd_cd.cd_devs[KBD_INDEX(dev)];
+	//sc = genkbd_cd.cd_devs[KBD_INDEX(dev)];
 	kbd = kbd_get_keyboard(KBD_INDEX(dev));
 	if ((sc == NULL) || (kbd == NULL) || !KBD_IS_VALID(kbd)) {
 		splx(s);
@@ -617,8 +629,9 @@ genkbdpoll(dev_t dev, int events, struct proc *p)
 
 	revents = 0;
 	s = spltty();
-	sc = genkbd_cd.cd_devs[KBD_INDEX(dev)];
+	//sc = genkbd_cd.cd_devs[KBD_INDEX(dev)];
 	kbd = kbd_get_keyboard(KBD_INDEX(dev));
+	sc = kbd->kb_dev->dv_cfdata->cf_driver
 	if ((sc == NULL) || (kbd == NULL) || !KBD_IS_VALID(kbd)) {
 		revents =  POLLHUP;	/* the keyboard has gone */
 	} else if (events & (POLLIN | POLLRDNORM)) {

@@ -38,16 +38,16 @@
 #include <sys/malloc.h>
 #include <sys/syslog.h>
 #include <sys/user.h>
-#include <devel/dev/kbio.h>
 
 #include <vm/include/vm_param.h>
 
 #include <machine/clock.h>
 
-#include "kbdreg.h"
+#include <devel/dev/kbd/kbdreg.h>
 
 #include <dev/core/isa/isareg.h>
 #include <devel/dev/kbd/atkbdcreg.h>
+#include <devel/dev/kbio.h>
 
 /* constants */
 

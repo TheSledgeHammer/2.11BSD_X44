@@ -53,8 +53,8 @@ A General todo list. Don't hesitate to add to this list. :)
 - Add: Common Speaker code from i386
 - Fix:
 	- video (kqfilter)
-	- eisa: Missing tidbits.
-	- pci: Missing tidbits.
+	- eisa: Missing tidbits: EISACF_SLOT & EISACF_SLOT_DEFAULT
+	- pci: Missing tidbits: PCIBUSCF_BUS, PCICF_DEV & PCICF_FUNCTION (includes DEFAULTS)
 	- kbd: 
 		- current implementation ((WILL NOT WORK AS IS!!!) Would require the entire device 	layout 			to be re-implemented around FreeBSD)
 		- no virtual keyboard in kernel (deprecated)

@@ -88,8 +88,7 @@ pcimatch(parent, cf, aux)
 		return (0);
 
 	/* Check the locators */
-	if (cf->pcibuscf_bus != PCIBUS_UNK_BUS &&
-	    cf->pcibuscf_bus != pba->pba_bus)
+	if ((cf->cf_loc[PCIBUSCF_BUS] != PCIBUS_UNK_BUS) && (cf->cf_loc[PCIBUSCF_BUS] != pba->pba_bus))
 		return (0);
 
 	/* sanity */
@@ -237,11 +236,10 @@ pcisubmatch(parent, cf, aux)
 #endif
 	struct pci_attach_args *pa = aux;
 
-	if (cf->pcicf_dev != PCI_UNK_DEV &&
-	    cf->pcicf_dev != pa->pa_device)
+	if ((cf->cf_loc[PCICF_DEV] != PCI_UNK_DEV) && (cf->cf_loc[PCICF_DEV] != pa->pa_device))
 		return 0;
-	if (cf->pcicf_function != PCI_UNK_FUNCTION &&
-	    cf->pcicf_function != pa->pa_function)
+	if ((cf->cf_loc[PCICF_FUNCTION] != PCI_UNK_FUNCTION) &&
+	    (cf->cf_loc[PCICF_FUNCTION] != pa->pa_function))
 		return 0;
 	return ((*cf->cf_driver->cd_match)(parent, cf, aux));
 }

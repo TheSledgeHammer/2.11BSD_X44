@@ -44,7 +44,7 @@
  * "Concatenated" disk driver.
  */
 #include "cd.h"
-#if NCD > 0
+#if NCCD > 0
 
 #include <sys/param.h>
 #include <sys/systm.h>

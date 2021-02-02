@@ -81,7 +81,7 @@ syselect(dev, flag)
 		u->u_error = ENXIO;
 		return (0);
 	}
-	return (cttypoll(u->u_ttyd, flag, u->u_procp));
+	return (cttyselect(u->u_ttyd, flag, u->u_procp));
 }
 
 int
@@ -94,5 +94,5 @@ sypoll(dev, events)
 		u->u_error = ENXIO;
 		return (0);
 	}
-	return (cttyselect(u->u_ttyd, events, u->u_procp));
+	return (cttypoll(u->u_ttyd, events, u->u_procp));
 }

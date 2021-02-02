@@ -98,7 +98,8 @@ struct eisa_attach_args {
 /*
  * Locators for EISA devices, as specified to config.
  */
-#define	eisacf_slot			cf_loc[EISACF_SLOT]
-#define	EISA_UNKNOWN_SLOT	EISACF_SLOT_DEFAULT	/* wildcarded 'slot' */
+#define	EISACF_SLOT				0
+#define EISACF_SLOT_DEFAULT 	-1
+#define	EISA_UNKNOWN_SLOT		EISACF_SLOT_DEFAULT	/* wildcarded 'slot' */
 
 #endif /* _DEV_EISA_EISAVAR_H_ */

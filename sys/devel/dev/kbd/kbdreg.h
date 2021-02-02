@@ -36,8 +36,6 @@
 
 #define KBD_MAXKEYBOARDS		16
 
-
-
 /* forward declarations */
 typedef struct keyboard keyboard_t;
 typedef struct genkbd_softc genkbd_softc_t;
@@ -296,7 +294,6 @@ int					kbd_detach(keyboard_t *kbd);
 /* global variables */
 extern SIMPLEQ_HEAD(, keyboard_driver) 	keyboard_drivers;
 extern keyboard_switch_t 				*kbdsw[KBD_MAXKEYBOARDS];
-extern struct cfdriver 					genkbd_cd;
 
 /* Initialization for the kbd layer, performed by cninit. */
 void	kbdinit(void);

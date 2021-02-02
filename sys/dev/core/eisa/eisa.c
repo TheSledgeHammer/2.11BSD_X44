@@ -100,8 +100,8 @@ eisasubmatch(parent, cf, aux)
 {
 	struct eisa_attach_args *ea = aux;
 
-	if (cf->eisacf_slot != EISA_UNKNOWN_SLOT &&
-	    cf->eisacf_slot != ea->ea_slot)
+	if ((cf->cf_loc[EISACF_SLOT] != EISA_UNKNOWN_SLOT) &&
+	    (cf->cf_loc[EISACF_SLOT] != ea->ea_slot))
 		return 0;
 	return ((*cf->cf_driver->cd_match)(parent, cf, aux));
 }

@@ -90,7 +90,7 @@ misc_init(devsw)
 {
 	DEVSWIO_CONFIG_INIT(devsw, NCOM, NULL, &com_cdevsw, NULL);			/* Serial port */
 	DEVSWIO_CONFIG_INIT(devsw, NVND, &vnd_bdevsw, &vnd_cdevsw, NULL);	/* vnode disk driver */
-	DEVSWIO_CONFIG_INIT(devsw, NCD, &ccd_bdevsw, &ccd_cdevsw, NULL);	/* "Concatenated" disk driver */
+	DEVSWIO_CONFIG_INIT(devsw, NCCD, &ccd_bdevsw, &ccd_cdevsw, NULL);	/* "Concatenated" disk driver */
 	DEVSWIO_CONFIG_INIT(devsw, NKSYMS, NULL, &ksyms_cdevsw, NULL);		/* Kernel symbols device */
 }
 

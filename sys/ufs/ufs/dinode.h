@@ -61,7 +61,6 @@
  * are defined by types with precise widths.
  */
 typedef uint32_t 	ufs_ino_t;
-typedef	int32_t		ufs_daddr_t;
 typedef	int32_t		ufs1_daddr_t;
 typedef	int64_t		ufs2_daddr_t;
 typedef int64_t 	ufs_lbn_t;
