@@ -72,7 +72,7 @@ int		ufs_direnter (struct inode *, struct vnode *,struct componentname *);
 int		ufs_dirremove (struct vnode *, struct componentname*);
 int		ufs_dirrewrite (struct inode *, struct inode *, struct componentname *);
 int		ufs_getattr (struct vop_getattr_args *);
-int	 	ufs_getlbns (struct vnode *, ufs_daddr_t, struct indir *, int *);
+int	 	ufs_getlbns (struct vnode *, ufs2_daddr_t, struct indir *, int *);
 struct vnode *ufs_ihashget (dev_t, ino_t);
 void	ufs_ihashinit (void);
 void	ufs_ihashins (struct inode *);

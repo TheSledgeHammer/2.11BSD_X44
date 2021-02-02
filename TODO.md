@@ -11,6 +11,9 @@ A General todo list. Don't hesitate to add to this list. :)
 - libkvm
 		
 ## libexec:
+
+## sbin:
+- fsck: replace references to ufs_daddr_t
 		
 # usr/sys/ (Kernel):
 ## conf:
@@ -72,6 +75,8 @@ A General todo list. Don't hesitate to add to this list. :)
 			- At minimum a machine-independent keyboard driver with PS/2 compatability
 			- cfdriver is only used with the driver not the generic keyboard layer
 
+## fs:
+
 ## lib:
 	
 ## net / netimp / netinet / netns:
@@ -93,13 +98,8 @@ Of Interest Todo:
 
 ## ufs:
 - ufs/ffs:
+	- ufs_vnops: upto ufs_strategy
 	- dirhash
-	- ufs2/ffs2 support: Work in Progress
-		- Fix ffs/fs.h: To account for ufs1 & ufs2
-			- #define blksize(fs, ip, lbn) 
-	- journaling
-	
-## vfs:
 
 ## vm:
 

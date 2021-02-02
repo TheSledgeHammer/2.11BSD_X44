@@ -55,60 +55,23 @@
 #include <ufs/lfs/lfs_extern.h>
 
 /* Search a block for a specific dinode. */
-union dinode *
-lfs_ifind(fs, ino, dip)
+
+struct ufs1_dinode *
+lfs_ifind(fs, ino, bp)
 	struct lfs *fs;
 	ino_t ino;
-	union dinode *dip;
+	struct buf *bp;
 {
-	if(lfs_ifind_ufs1(fs, ino, dip->ffs1_din)) { 			/* XXX: Needs better checking for dinode */
-		return (lfs_ifind_ufs1(fs, ino, dip->ffs1_din));
-	} else {
-		return (lfs_ifind_ufs2(fs, ino, dip->ffs2_din));
-	}
-	panic("lfs_ifind: dinode %u not found", ino);
-	/* NOTREACHED */
-}
+	struct ufs1_dinode *dip = (struct ufs1_dinode *)bp->b_data;
+	struct ufs1_dinode *ldip, *fin;
 
-/* Search a block for a specific ufs1_dinode. */
-static struct ufs1_dinode *
-lfs_ifind_ufs1(fs, ino, dip)
-	struct lfs *fs;
-	ino_t ino;
-	register struct ufs1_dinode *dip;
-{
-	register int cnt;
-	register struct ufs1_dinode *ldip;
-
-	for (cnt = INOPB(fs), ldip = dip + (cnt - 1); cnt--; --ldip) {
+	fin = dip + INOPB(fs);
+	for (ldip = fin - 1; ldip >= dip; --ldip) {
 		if (ldip->di_inumber == ino) {
 			return (ldip);
 		}
 	}
-
-	panic("lfs_ifind_ufs1: ufs1_dinode %u not found", ino);
-	/* NOTREACHED */
-	return (NULL);
-}
-
-/* Search a block for a specific ufs2_dinode. */
-static struct ufs2_dinode *
-lfs_ifind_ufs2(fs, ino, dip)
-	struct lfs *fs;
-	ino_t ino;
-	register struct ufs2_dinode *dip;
-{
-	register int cnt;
-	register struct ufs2_dinode *ldip;
-
-	for (cnt = INOPB(fs), ldip = dip + (cnt - 1); cnt--; --ldip) {
-		if (ldip->di_inumber == ino) {
-			return (ldip);
-		}
-	}
-
-	panic("lfs_ifind_ufs2: ufs2_dinode %u not found", ino);
-	/* NOTREACHED */
+	panic("lfs_ifind: ufs1_dinode %u not found", ino);
 	return (NULL);
 }
 
@@ -131,16 +94,13 @@ lfs_update(ap)
 	    (IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE)) == 0)
 		return (0);
 	if (ip->i_flag & IN_ACCESS)
-		DIP(ip, atime) = ap->a_access->tv_sec;
-		//ip->i_atime = ap->a_access->tv_sec;
+		ip->i_ffs1_atime = ap->a_access->tv_sec;
 	if (ip->i_flag & IN_UPDATE) {
-		DIP(ip, mtime) = ap->a_modify->tv_sec;
-		//ip->i_mtime = ap->a_modify->tv_sec;
+		ip->i_ffs1_mtime = ap->a_modify->tv_sec;
 		(ip)->i_modrev++;
 	}
 	if (ip->i_flag & IN_CHANGE)
-		DIP(ip, ctime) = time.tv_sec;
-		//ip->i_ctime = time.tv_sec;
+		ip->i_ffs1_ctime = time.tv_sec;
 	ip->i_flag &= ~(IN_ACCESS | IN_CHANGE | IN_UPDATE);
 
 	if (!(ip->i_flag & IN_MODIFIED))
@@ -191,7 +151,7 @@ lfs_truncate(ap)
 {
 	register struct indir *inp;
 	register int i;
-	register ufs_daddr_t *daddrp;
+	register ufs1_daddr_t *daddrp;
 	register struct vnode *vp = ap->a_vp;
 	off_t length = ap->a_length;
 	struct buf *bp, *sup_bp;
@@ -201,8 +161,8 @@ lfs_truncate(ap)
 	struct lfs *fs;
 	struct indir a[NIADDR + 2], a_end[NIADDR + 2];
 	SEGUSE *sup;
-  	ufs_daddr_t daddr, lastblock, lbn, olastblock;
-	ufs_daddr_t oldsize_lastblock, oldsize_newlast, newsize;
+  	ufs1_daddr_t daddr, lastblock, lbn, olastblock;
+	ufs1_daddr_t oldsize_lastblock, oldsize_newlast, newsize;
 	long off, a_released, fragsreleased, i_released;
 	int e1, e2, depth, lastseg, num, offset, seg, freesize;
 
@@ -286,9 +246,9 @@ lfs_truncate(ap)
 
 		switch (depth) {
 		case 0:				/* Direct block. */
-			daddr = DIP(ip, db[lbn]);
+			daddr = ip->i_ffs1_db[lbn];
 			SEGDEC(freesize);
-			DIP(ip, db[lbn]) = 0;
+			ip->i_ffs1_db[lbn] = 0;
 			--lbn;
 			break;
 #ifdef DIAGNOSTIC
@@ -309,7 +269,7 @@ lfs_truncate(ap)
 				    inp->in_lbn, fs->lfs_bsize, NOCRED, &bp))
 					panic("lfs_truncate: bread bno %d",
 					    inp->in_lbn);
-				daddrp = (ufs_daddr_t *)bp->b_data +
+				daddrp = (ufs1_daddr_t *)bp->b_data +
 				    inp->in_off;
 				for (i = inp->in_off;
 				    i++ <= a_end[depth].in_off;) {
@@ -320,18 +280,18 @@ lfs_truncate(ap)
 				if (inp->in_off == 0)
 					brelse (bp);
 				else {
-					bzero((ufs_daddr_t *)bp->b_data +
+					bzero((ufs1_daddr_t *)bp->b_data +
 					    inp->in_off, fs->lfs_bsize - 
-					    inp->in_off * sizeof(ufs_daddr_t));
+					    inp->in_off * sizeof(ufs1_daddr_t));
 					if (e1 == VOP_BWRITE(bp))
 						return (e1);
 				}
 			}
 			if (depth == 0 && a[1].in_off == 0) {
 				off = a[0].in_off;
-				daddr = DIP(ip, ib[off]);
+				daddr = ip->i_ffs1_ib[off];
 				SEGDEC(freesize);
-				DIP(ip, ib[off]) = 0;
+				ip->i_ffs1_ib[off] = 0;
 			}
 			if (lbn == lastblock || lbn <= NDADDR)
 				--lbn;
@@ -358,7 +318,7 @@ lfs_truncate(ap)
 		panic("lfs_truncate: frag count < 0\n");
 	}
 #endif
-	DIP(ip, blocks) -= fragstodb(fs, fragsreleased);
+	ip->i_ffs1_blocks -= fragstodb(fs, fragsreleased);
 	fs->lfs_bfree +=  fragstodb(fs, fragsreleased);
 	ip->i_flag |= IN_CHANGE | IN_UPDATE;
 	/*
@@ -387,19 +347,19 @@ lfs_truncate(ap)
 		}
 	fragsreleased = i_released;
 #ifdef DIAGNOSTIC
-	if (fragsreleased > dbtofrags(fs, DIP(ip, blocks))) {
+	if (fragsreleased > dbtofrags(fs, ip->i_ffs1_blocks)) {
 		printf("lfs_inode: Warning! %s\n",
 		    "more frags released from inode than are in inode");
-		fragsreleased = dbtofrags(fs, DIP(ip, blocks));
+		fragsreleased = dbtofrags(fs, ip->i_ffs1_blocks);
 		panic("lfs_inode: Warning.  More frags released\n");
 	}
 #endif
 	fs->lfs_bfree += fragstodb(fs, fragsreleased);
-	DIP(ip, blocks) -= fragstodb(fs, fragsreleased);
+	ip->i_ffs1_blocks -= fragstodb(fs, fragsreleased);
 #ifdef DIAGNOSTIC
-	if (length == 0 && DIP(ip, blocks) != 0) {
+	if (length == 0 && ip->i_ffs1_blocks != 0) {
 		printf("lfs_inode: Warning! %s%d%s\n",
-		    "Truncation to zero, but ", DIP(ip, blocks),
+		    "Truncation to zero, but ", ip->i_ffs1_blocks,
 		    " blocks left on inode");
 		panic("lfs_inode");
 	}

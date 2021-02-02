@@ -62,9 +62,9 @@ int
 ufs_bmap(ap)
 	struct vop_bmap_args /* {
 		struct vnode *a_vp;
-		ufs_daddr_t a_bn;
+		daddr_t a_bn;
 		struct vnode **a_vpp;
-		ufs_daddr_t *a_bnp;
+		daddr_t *a_bnp;
 		int *a_runp;
 	} */ *ap;
 {
@@ -97,8 +97,8 @@ ufs_bmap(ap)
 int
 ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 	struct vnode *vp;
-	ufs_daddr_t bn;
-	ufs_daddr_t *bnp;
+	ufs2_daddr_t bn;
+	ufs2_daddr_t *bnp;
 	struct indir *ap;
 	int *nump;
 	int *runp;
@@ -109,8 +109,8 @@ ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 	struct mount *mp;
 	struct vnode *devvp;
 	struct indir a[NIADDR], *xap;
-	ufs_daddr_t daddr;
-	long metalbn;
+	ufs2_daddr_t daddr;
+	ufs_lbn_t  metalbn;
 	int error, maxrun, num;
 	u_long is_seq;
 
@@ -146,7 +146,8 @@ ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 			*bnp = -1;
 		else if (runp)
 			is_seq = is_sequential(ump, DIP(ip, db[bn - 1]), DIP(ip, db[bn]));
-			for (++bn; bn < NDADDR && *runp < maxrun && is_seq; ++bn, ++*runp);
+		for (++bn; bn < NDADDR && *runp < maxrun && is_seq; ++bn, ++*runp)
+			;
 		return (0);
 	}
 
@@ -253,13 +254,14 @@ ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 int
 ufs_getlbns(vp, bn, ap, nump)
 	struct vnode *vp;
-	ufs_daddr_t bn;
+	ufs2_daddr_t bn;
 	struct indir *ap;
 	int *nump;
 {
-	long metalbn, realbn;
+	ufs2_daddr_t blockcnt;
+	ufs_lbn_t  metalbn, realbn;
 	struct ufsmount *ump;
-	int blockcnt, i, numlevels, off;
+	int i, numlevels, off;
 
 	ump = VFSTOUFS(vp->v_mount);
 	if (nump)

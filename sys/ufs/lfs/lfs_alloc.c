@@ -69,7 +69,7 @@ lfs_valloc(ap)
 	struct ifile *ifp;
 	struct inode *ip;
 	struct vnode *vp;
-	ufs_daddr_t blkno;
+	ufs1_daddr_t blkno;
 	ino_t new_ino;
 	u_long i, max;
 	int error;
@@ -189,7 +189,7 @@ lfs_vcreate(mp, ino, vpp)
 	ip->i_diroff = 0;
 	ip->i_mode = 0;
 	ip->i_size = 0;
-	DIP(ip, blocks) = 0;
+	ip->i_ffs1_blocks = 0;
 	++ump->um_lfs->lfs_uinodes;
 	return (0);
 }
@@ -209,7 +209,7 @@ lfs_vfree(ap)
 	struct ifile *ifp;
 	struct inode *ip;
 	struct lfs *fs;
-	ufs_daddr_t old_iaddr;
+	ufs1_daddr_t old_iaddr;
 	ino_t ino;
 
 	/* Get the inode number and file system. */
@@ -236,11 +236,11 @@ lfs_vfree(ap)
 	if (old_iaddr != LFS_UNUSED_DADDR) {
 		LFS_SEGENTRY(sup, fs, datosn(fs, old_iaddr), bp);
 #ifdef DIAGNOSTIC
-		if (sup->su_nbytes < sizeof(struct dinode))
+		if (sup->su_nbytes < sizeof(struct ufs1_dinode))
 			panic("lfs_vfree: negative byte count (segment %d)\n",
 			    datosn(fs, old_iaddr));
 #endif
-		sup->su_nbytes -= sizeof(struct dinode);
+		sup->su_nbytes -= sizeof(struct ufs1_dinode);
 		(void) VOP_BWRITE(bp);
 	}
 

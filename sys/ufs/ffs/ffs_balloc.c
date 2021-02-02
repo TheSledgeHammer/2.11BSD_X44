@@ -224,7 +224,7 @@ ffs_balloc_ufs1(ip, lbn, size, cred, bpp, flags)
 			brelse(bp);
 			goto fail;
 		}
-		bap = (ufs_daddr_t*) bp->b_data;
+		bap = (ufs1_daddr_t*) bp->b_data;
 		nb = bap[indirs[i].in_off];
 		if (i == num)
 			break;

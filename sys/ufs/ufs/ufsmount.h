@@ -53,9 +53,7 @@ struct mfs_args {
 };
 #endif /* MFS */
 
-#ifdef KERNEL
-
-//#include <ufs/ufs/extattr.h>
+//#ifdef KERNEL
 
 struct buf;
 struct inode;

@@ -113,7 +113,7 @@ lfs_dump_super(lfsp)
 
 void
 lfs_dump_dinode(dip)
-	struct dinode *dip;
+	struct ufs1_dinode *dip;
 {
 	int i;
 

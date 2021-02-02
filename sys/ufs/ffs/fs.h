@@ -63,11 +63,9 @@
 #define SBSIZE			8192
 #define	BBOFF			((off_t)(0))
 #define	SBOFF			((off_t)(BBOFF + BBSIZE))
-#define	BBLOCK			BBLOCK_UFS1
-#define	SBLOCK			SBLOCK_UFS1
 #define SBLOCK_FLOPPY	0
-#define	BBLOCK_UFS1		((ufs_daddr_t)(0))
-#define	SBLOCK_UFS1     ((ufs_daddr_t)(BBLOCK_UFS1 + BBSIZE / DEV_BSIZE))
+#define	BBLOCK_UFS1		((ufs1_daddr_t)(0))
+#define	SBLOCK_UFS1     ((ufs1_daddr_t)(BBLOCK_UFS1 + BBSIZE / DEV_BSIZE))
 
 #define	BBLOCK_UFS2		((ufs2_daddr_t)(0))
 #define	SBLOCK_UFS2 	((ufs2_daddr_t)(BBLOCK_UFS2 + BBSIZE / DEV_BSIZE))

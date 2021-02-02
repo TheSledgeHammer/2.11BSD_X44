@@ -136,7 +136,7 @@ struct ufs2_dinode {
 #define	di_ouid				di_u.oldids[0]
 #define	di_rdev				di_db[0]
 #define	di_shortlink		di_db
-#define UFS1_MAXSYMLINKLEN	((NDADDR + NIADDR) * sizeof(ufs_daddr_t))
+#define UFS1_MAXSYMLINKLEN	((NDADDR + NIADDR) * sizeof(ufs1_daddr_t))
 #define UFS2_MAXSYMLINKLEN	((NDADDR + NIADDR) * sizeof(ufs2_daddr_t))
 
 #define MAXSYMLINKLEN(ip) 		\

@@ -100,7 +100,8 @@ ufs_lookup(ap)
 	 struct vnode *a_dvp;
 	 struct vnode **a_vpp;
 	 struct componentname *a_cnp;
-	 } */*ap; {
+	 } */*ap;
+{
 	register struct vnode *vdp; /* vnode for directory being searched */
 	register struct inode *dp; 	/* inode for directory being searched */
 	struct buf *bp; 			/* a buffer of directory entries */
@@ -573,9 +574,12 @@ ufs_lookup(ap)
 	return (0);
 }
 
-void ufs_dirbad(ip, offset, how)
+void
+ufs_dirbad(ip, offset, how)
 	struct inode *ip;
-	doff_t offset;char *how; {
+	doff_t offset;
+	char *how;
+{
 	struct mount *mp;
 
 	mp = ITOV(ip)->v_mount;
@@ -593,8 +597,12 @@ void ufs_dirbad(ip, offset, how)
  *	name is not longer than MAXNAMLEN
  *	name must be as long as advertised, and null terminated
  */
-int ufs_dirbadentry(dp, ep, entryoffsetinblock)
-	struct vnode *dp;register struct direct *ep;int entryoffsetinblock; {
+int
+ufs_dirbadentry(dp, ep, entryoffsetinblock)
+	struct vnode *dp;
+	register struct direct *ep;
+	int entryoffsetinblock;
+{
 	register int i;
 	int namlen;
 
@@ -635,8 +643,12 @@ int ufs_dirbadentry(dp, ep, entryoffsetinblock)
  * (dp->i_offset, dp->i_count) indicate how the space for the new
  * entry is to be obtained.
  */
-int ufs_direnter(ip, dvp, cnp)
-	struct inode *ip;struct vnode *dvp;register struct componentname *cnp; {
+int
+ufs_direnter(ip, dvp, cnp)
+	struct inode *ip;
+	struct vnode *dvp;
+	register struct componentname *cnp;
+{
 	register struct inode *dp;
 	struct direct newdir;
 
@@ -667,8 +679,13 @@ int ufs_direnter(ip, dvp, cnp)
  * Common entry point for directory entry removal used by ufs_direnter
  * and ufs_whiteout
  */
+int
 ufs_direnter2(dvp, dirp, cr, p)
-	struct vnode *dvp;struct direct *dirp;struct ucred *cr;struct proc *p; {
+	struct vnode *dvp;
+	struct direct *dirp;
+	struct ucred *cr;
+	struct proc *p;
+{
 	int newentrysize;
 	struct inode *dp;
 	struct buf *bp;
@@ -798,7 +815,9 @@ ufs_direnter2(dvp, dirp, cr, p)
  * to the size of the previous entry.
  */
 int ufs_dirremove(dvp, cnp)
-	struct vnode *dvp;struct componentname *cnp; {
+	struct vnode *dvp;
+	struct componentname *cnp;
+{
 	register struct inode *dp;
 	struct direct *ep;
 	struct buf *bp;
@@ -848,8 +867,11 @@ int ufs_dirremove(dvp, cnp)
  * supplied.  The parameters describing the directory entry are
  * set up by a call to namei.
  */
-int ufs_dirrewrite(dp, ip, cnp)
-	struct inode *dp, *ip;struct componentname *cnp; {
+int
+ufs_dirrewrite(dp, ip, cnp)
+	struct inode *dp, *ip;
+	struct componentname *cnp;
+{
 	struct buf *bp;
 	struct direct *ep;
 	struct vnode *vdp = ITOV(dp);
@@ -874,8 +896,12 @@ int ufs_dirrewrite(dp, ip, cnp)
  *
  * NB: does not handle corrupted directories.
  */
-int ufs_dirempty(ip, parentino, cred)
-	register struct inode *ip;ino_t parentino;struct ucred *cred; {
+int
+ufs_dirempty(ip, parentino, cred)
+	register struct inode *ip;
+	ino_t parentino;
+	struct ucred *cred;
+{
 	register off_t off;
 	struct dirtemplate dbuf;
 	register struct direct *dp = (struct direct*) &dbuf;
@@ -930,7 +956,9 @@ int ufs_dirempty(ip, parentino, cred)
  * The target is always vput before returning.
  */
 int ufs_checkpath(source, target, cred)
-	struct inode *source, *target;struct ucred *cred; {
+	struct inode *source, *target;
+	struct ucred *cred;
+{
 	struct vnode *vp;
 	int error, rootino, namlen;
 	struct dirtemplate dirbuf;

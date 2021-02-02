@@ -240,10 +240,8 @@ ffs_mount(mp, path, data, ndp, p)
 	fs = ump->um_fs;
 	(void) copyinstr(path, fs->fs_fsmnt, sizeof(fs->fs_fsmnt) - 1, &size);
 	bzero(fs->fs_fsmnt + size, sizeof(fs->fs_fsmnt) - size);
-	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname,
-	    MNAMELEN);
-	(void) copyinstr(args.fspec, mp->mnt_stat.f_mntfromname, MNAMELEN - 1, 
-	    &size);
+	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname, MNAMELEN);
+	(void) copyinstr(args.fspec, mp->mnt_stat.f_mntfromname, MNAMELEN - 1, &size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
 	(void)ffs_statfs(mp, &mp->mnt_stat, p);
 	return (0);
@@ -425,7 +423,7 @@ ffs_mountfs(devvp, mp, p)
 
 	bp = NULL;
 	ump = NULL;
-	if (error == bread(devvp, (ufs_daddr_t) (SBOFF / size), SBSIZE, cred, &bp))
+	if (error == bread(devvp, (ufs2_daddr_t) (SBOFF / size), SBSIZE, cred, &bp))
 		goto out;
 	fs = (struct fs*) bp->b_data;
 	if (fs->fs_magic != FS_MAGIC || fs->fs_bsize > MAXBSIZE
@@ -498,7 +496,8 @@ ffs_mountfs(devvp, mp, p)
 		(void) ffs_sbupdate(ump, MNT_WAIT);
 	}
 	return (0);
-	out: if (bp)
+out:
+	if (bp)
 		brelse(bp);
 	(void) VOP_CLOSE(devvp, ronly ? FREAD : FREAD | FWRITE, cred, p);
 	if (ump) {
@@ -696,7 +695,7 @@ loop:
 				goto loop;
 			continue;
 		}
-		if (error == VOP_FSYNC(vp, cred, waitfor, p))
+		if (error == VOP_FSYNC(vp, cred, waitfor, 0, p))
 			allerror = error;
 		VOP_UNLOCK(vp, 0, p);
 		vrele(vp);
@@ -706,7 +705,7 @@ loop:
 	/*
 	 * Force stale file system control information to be flushed.
 	 */
-	if (error == VOP_FSYNC(ump->um_devvp, cred, waitfor, p))
+	if (error == VOP_FSYNC(ump->um_devvp, cred, waitfor, 0, p))
 		allerror = error;
 #ifdef QUOTA
 	qsync(mp);
@@ -789,7 +788,11 @@ ffs_vget(mp, ino, vpp)
 		*vpp = NULL;
 		return (error);
 	}
-	ip->i_din = *((struct dinode *)bp->b_data + ino_to_fsbo(fs, ino));
+	if (ip->i_ump->um_fstype == UFS1) {
+		ip->i_din.ffs1_din = *((struct ufs1_dinode *)bp->b_data + ino_to_fsbo(fs, ino));
+	} else {
+		ip->i_din.ffs2_din = *((struct ufs2_dinode *)bp->b_data + ino_to_fsbo(fs, ino));
+	}
 	brelse(bp);
 
 	/*
@@ -811,20 +814,23 @@ ffs_vget(mp, ino, vpp)
 	 * already have one. This should only happen on old filesystems.
 	 */
 	if (ip->i_gen == 0) {
-		if (++nextgennumber < (u_long)time.tv_sec)
+		if (++nextgennumber < (u_long) time.tv_sec) {
 			nextgennumber = time.tv_sec;
+		}
 		ip->i_gen = nextgennumber;
-		if ((vp->v_mount->mnt_flag & MNT_RDONLY) == 0)
+		if ((vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
 			ip->i_flag |= IN_MODIFIED;
+			DIP(ip, gen) = ip->i_gen;
+		}
 	}
 	/*
 	 * Ensure that uid and gid are correct. This is a temporary
 	 * fix until fsck has been changed to do the update.
 	 */
-	if (fs->fs_inodefmt < FS_44INODEFMT) {		/* XXX */
-		ip->i_uid = ip->i_din.di_ouid;		/* XXX */
-		ip->i_gid = ip->i_din.di_ogid;		/* XXX */
-	}						/* XXX */
+	if (fs->fs_magic == FS_UFS1_MAGIC && fs->fs_inodefmt < FS_44INODEFMT) {		/* XXX */
+		ip->i_uid = ip->i_din.ffs1_din->di_ouid;								/* XXX */
+		ip->i_gid = ip->i_din.ffs1_din->di_ogid;								/* XXX */
+	}																			/* XXX */
 
 	*vpp = vp;
 	return (0);
@@ -910,14 +916,11 @@ ffs_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 
 	switch (name[0]) {
 	case FFS_CLUSTERREAD:
-		return (sysctl_int(oldp, oldlenp, newp, newlen,
-		    &doclusterread));
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &doclusterread));
 	case FFS_CLUSTERWRITE:
-		return (sysctl_int(oldp, oldlenp, newp, newlen,
-		    &doclusterwrite));
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &doclusterwrite));
 	case FFS_REALLOCBLKS:
-		return (sysctl_int(oldp, oldlenp, newp, newlen,
-		    &doreallocblks));
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &doreallocblks));
 	case FFS_ASYNCFREE:
 		return (sysctl_int(oldp, oldlenp, newp, newlen, &doasyncfree));
 	default:
@@ -944,14 +947,13 @@ ffs_sbupdate(mp, waitfor)
 	 * First write back the summary information.
 	 */
 	blks = howmany(fs->fs_cssize, fs->fs_fsize);
-	space = (caddr_t)fs->fs_csp[0];
+	space = (caddr_t) fs->fs_csp[0];
 	for (i = 0; i < blks; i += fs->fs_frag) {
 		size = fs->fs_bsize;
 		if (i + fs->fs_frag > blks)
 			size = (blks - i) * fs->fs_fsize;
-		bp = getblk(mp->um_devvp, fsbtodb(fs, fs->fs_csaddr + i),
-		    size, 0, 0);
-		bcopy(space, bp->b_data, (u_int)size);
+		bp = getblk(mp->um_devvp, fsbtodb(fs, fs->fs_csaddr + i), size, 0, 0);
+		bcopy(space, bp->b_data, (u_int) size);
 		space += size;
 		if (waitfor != MNT_WAIT)
 			bawrite(bp);
@@ -965,22 +967,31 @@ ffs_sbupdate(mp, waitfor)
 	 */
 	if (allerror)
 		return (allerror);
-	bp = getblk(mp->um_devvp, SBLOCK, (int)fs->fs_sbsize, 0, 0);
-	bcopy((caddr_t)fs, bp->b_data, (u_int)fs->fs_sbsize);
-	/* Restore compatibility to old file systems.		   XXX */
-	dfs = (struct fs *)bp->b_data;				/* XXX */
-	if (fs->fs_postblformat == FS_42POSTBLFMT)		/* XXX */
-		dfs->fs_nrpos = -1;				/* XXX */
-	if (fs->fs_inodefmt < FS_44INODEFMT) {			/* XXX */
-		int32_t *lp, tmp;				/* XXX */
-								/* XXX */
-		lp = (int32_t *)&dfs->fs_qbmask;		/* XXX */
-		tmp = lp[4];					/* XXX */
-		for (i = 4; i > 0; i--)				/* XXX */
-			lp[i] = lp[i-1];			/* XXX */
-		lp[0] = tmp;					/* XXX */
-	}							/* XXX */
-	dfs->fs_maxfilesize = mp->um_savedmaxfilesize;		/* XXX */
+	if (fs->fs_magic == FS_UFS1_MAGIC && fs->fs_sblockloc != SBLOCK_UFS1 && (fs->fs_flags & FS_FLAGS_UPDATED) == 0) {
+		printf("%s: correcting fs_sblockloc from %jd to %d\n", fs->fs_fsmnt, fs->fs_sblockloc, SBLOCK_UFS1);
+				fs->fs_sblockloc = SBLOCK_UFS1;
+	}
+	if (fs->fs_magic == FS_UFS2_MAGIC && fs->fs_sblockloc != SBLOCK_UFS2 && (fs->fs_flags & FS_FLAGS_UPDATED) == 0) {
+		printf("%s: correcting fs_sblockloc from %jd to %d\n", fs->fs_fsmnt, fs->fs_sblockloc, SBLOCK_UFS2);
+		fs->fs_sblockloc = SBLOCK_UFS2;
+	}
+	bp = getblk(mp->um_devvp, btodb(fs->fs_sblockloc), (int) fs->fs_sbsize, 0, 0);
+	fs->fs_fmod = 0;
+	bcopy((caddr_t) fs, bp->b_data, (u_int) fs->fs_sbsize);
+	/* Restore compatibility to old file systems.	   XXX */
+	dfs = (struct fs*) bp->b_data; 					/* XXX */
+	if (fs->fs_postblformat == FS_42POSTBLFMT) 		/* XXX */
+		dfs->fs_nrpos = -1; /* XXX */
+	if (fs->fs_inodefmt < FS_44INODEFMT) { 			/* XXX */
+		int32_t *lp, tmp; /* XXX */
+		/* XXX */
+		lp = (int32_t*) &dfs->fs_qbmask; 			/* XXX */
+		tmp = lp[4]; /* XXX */
+		for (i = 4; i > 0; i--) 					/* XXX */
+			lp[i] = lp[i - 1]; 						/* XXX */
+		lp[0] = tmp; 								/* XXX */
+	} 												/* XXX */
+	dfs->fs_maxfilesize = mp->um_savedmaxfilesize; 	/* XXX */
 	if (waitfor != MNT_WAIT)
 		bawrite(bp);
 	else if (error == bwrite(bp))

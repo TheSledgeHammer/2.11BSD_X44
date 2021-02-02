@@ -106,7 +106,7 @@ lfs_markv(p, uap, retval)
 	fsid_t fsid;
 	void *start;
 	ino_t lastino;
-	ufs_daddr_t b_daddr, v_daddr;
+	ufs1_daddr_t b_daddr, v_daddr;
 	u_long bsize;
 	int cnt, error;
 
@@ -142,7 +142,7 @@ lfs_markv(p, uap, retval)
 				if (sp->fip->fi_nblocks == 0) {
 					DEC_FINFO(sp);
 					sp->sum_bytes_left +=
-					    sizeof(FINFO) - sizeof(ufs_daddr_t);
+					    sizeof(FINFO) - sizeof(ufs1_daddr_t);
 				} else {
 					lfs_updatemeta(sp);
 					BUMP_FIP(sp);
@@ -154,7 +154,7 @@ lfs_markv(p, uap, retval)
 
 			/* Start a new file */
 			CHECK_SEG(sizeof(FINFO));
-			sp->sum_bytes_left -= sizeof(FINFO) - sizeof(ufs_daddr_t);
+			sp->sum_bytes_left -= sizeof(FINFO) - sizeof(ufs1_daddr_t);
 			INC_FINFO(sp);
 			sp->start_lbp = &sp->fip->fi_blocks[0];
 			sp->vp = NULL;
@@ -221,7 +221,7 @@ lfs_markv(p, uap, retval)
 		if (sp->fip->fi_nblocks == 0) {
 			DEC_FINFO(sp);
 			sp->sum_bytes_left +=
-			    sizeof(FINFO) - sizeof(ufs_daddr_t);
+			    sizeof(FINFO) - sizeof(ufs1_daddr_t);
 		} else
 			lfs_updatemeta(sp);
 
@@ -279,7 +279,7 @@ lfs_bmapv(p, uap, retval)
 	struct vnode *vp;
 	fsid_t fsid;
 	void *start;
-	ufs_daddr_t daddr;
+	ufs1_daddr_t daddr;
 	int cnt, error, step;
 
 	if (error == suser1(p->p_ucred, &p->p_acflag))
@@ -393,8 +393,8 @@ lfs_segclean(p, uap, retval)
  * -1/errno is return on error.
  */
 struct lfs_segwait_args {
-	fsid_t *fsidp;		/* file system */
-	struct timeval *tv;	/* timeout */
+	fsid_t 			*fsidp;		/* file system */
+	struct timeval 	*tv;		/* timeout */
 };
 int
 lfs_segwait(p, uap, retval)
@@ -458,9 +458,9 @@ int
 lfs_fastvget(mp, ino, daddr, vpp, dinp)
 	struct mount *mp;
 	ino_t ino;
-	ufs_daddr_t daddr;
+	ufs1_daddr_t daddr;
 	struct vnode **vpp;
-	union dinode *dinp;
+	struct ufs1_dinode *dinp;
 {
 	register struct inode *ip;
 	struct vnode *vp;
@@ -514,7 +514,7 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 
 	/* Read in the disk contents for the inode, copy into the inode. */
 	if (dinp)
-		if (error == copyin(dinp, &ip->i_din, sizeof(union dinode)))
+		if (error == copyin(dinp, ip->i_din.ffs1_din, sizeof(struct ufs1_dinode)))
 			return (error);
 	else {
 		if (error == bread(ump->um_devvp, daddr,
@@ -532,8 +532,7 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 			*vpp = NULL;
 			return (error);
 		}
-		ip->i_din =
-		    *lfs_ifind(ump->um_lfs, ino, (union dinode *)bp->b_data);
+		ip->i_din.ffs1_din = *lfs_ifind(ump->um_lfs, ino, bp);
 		brelse(bp);
 	}
 
@@ -556,6 +555,7 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 	*vpp = vp;
 	return (0);
 }
+
 struct buf *
 lfs_fakebuf(vp, lbn, size, uaddr)
 	struct vnode *vp;

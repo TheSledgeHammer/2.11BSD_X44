@@ -45,17 +45,17 @@ struct mbuf;
 
 __BEGIN_DECLS
 u_long	 cksum (void *, size_t);				/* XXX */
-int	 lfs_balloc (struct vnode *, int, u_long, ufs_daddr_t, struct buf **);
+int	 lfs_balloc (struct vnode *, int, u_long, ufs1_daddr_t, struct buf **);
 int	 lfs_blkatoff (struct vop_blkatoff_args *);
 int	 lfs_bwrite (struct vop_bwrite_args *);
-int	 lfs_check (struct vnode *, ufs_daddr_t);
+int	 lfs_check (struct vnode *, ufs1_daddr_t);
 int	 lfs_close (struct vop_close_args *);
 int	 lfs_create (struct vop_create_args *);
 int	 lfs_fhtovp (struct mount *, struct fid *, struct mbuf *,
 	    struct vnode **, int *, struct ucred **);
 int	 lfs_fsync (struct vop_fsync_args *);
 int	 lfs_getattr (struct vop_getattr_args *);
-union dinode *lfs_ifind (struct lfs *, ino_t, union dinode *);
+struct ufs1_dinode *lfs_ifind (struct lfs *, ino_t, struct buf *);
 int	 lfs_inactive (struct vop_inactive_args *);
 int	 lfs_init (struct vfsconf *);
 int	 lfs_initseg (struct lfs *);
@@ -67,7 +67,7 @@ int	 lfs_mount (struct mount *,
 	    char *, caddr_t, struct nameidata *, struct proc *);
 int	 lfs_mountroot (void);
 struct buf *
-	 lfs_newbuf (struct vnode *, ufs_daddr_t, size_t);
+	 lfs_newbuf (struct vnode *, ufs1_daddr_t, size_t);
 int	 lfs_read (struct vop_read_args *);
 int	 lfs_reclaim (struct vop_reclaim_args *);
 int	 lfs_remove (struct vop_remove_args *);
@@ -94,15 +94,8 @@ int	 lfs_vref (struct vnode *);
 void lfs_vunref (struct vnode *);
 int	 lfs_write (struct vop_write_args *);
 
-/*
-int	lfs_snapblkfree(struct fs *, struct vnode *, ufs_daddr_t, long, ino_t);
-void lfs_snapremove(struct vnode *vp);
-int	lfs_snapshot(struct mount *mp, char *snapfile);
-void lfs_snapshot_mount(struct mount *mp);
-void lfs_snapshot_unmount(struct mount *mp);
-*/
 #ifdef DEBUG
-void	lfs_dump_dinode (struct dinode *);
+void	lfs_dump_dinode (struct ufs1_dinode *);
 void	lfs_dump_super (struct lfs *);
 #endif
 __END_DECLS

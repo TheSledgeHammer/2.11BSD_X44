@@ -80,13 +80,10 @@ ufs_inactive(ap)
 	if (prtactive && vp->v_usecount != 0)
 		vprint("ffs_inactive: pushing active", vp);
 
-	imode = DIP(ip, mode);
-	inlink = DIP(ip, nlink);
-
 	/*
 	 * Ignore inodes related to stale file handles.
 	 */
-	if (imode == 0)
+	if (ip->i_mode == 0)
 		goto out;
 	if (inlink <= 0 && (vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
 #ifdef QUOTA
@@ -95,8 +92,9 @@ ufs_inactive(ap)
 #endif
 		error = VOP_TRUNCATE(vp, (off_t)0, 0, NOCRED, p);
 		DIP(ip, rdev) = 0;
-		mode = imode;
-		imode = 0;
+		mode = ip->i_mode;
+		ip->i_mode = 0;
+		DIP(ip, mode) = 0;
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 		VOP_VFREE(vp, ip->i_number, mode);
 	}
@@ -150,5 +148,6 @@ ufs_reclaim(vp, p)
 		}
 	}
 #endif
+	vp->v_data = 0;
 	return (0);
 }

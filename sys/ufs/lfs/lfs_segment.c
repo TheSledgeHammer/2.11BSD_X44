@@ -66,20 +66,20 @@ extern int count_lock_queue (void);
  * Determine if it's OK to start a partial in this segment, or if we need
  * to go on to a new segment.
  */
-#define	LFS_PARTIAL_FITS(fs) \
+#define	LFS_PARTIAL_FITS(fs) 									\
 	((fs)->lfs_dbpseg - ((fs)->lfs_offset - (fs)->lfs_curseg) > \
 	1 << (fs)->lfs_fsbtodb)
 
 void	lfs_callback (struct buf *);
 void	lfs_gather (struct lfs *, struct segment *, struct vnode *, int (*) (struct lfs *, struct buf *));
 int	 	lfs_gatherblock (struct segment *, struct buf *, int *);
-void	lfs_iset (struct inode *, ufs_daddr_t, time_t);
+void	lfs_iset (struct inode *, ufs1_daddr_t, time_t);
 int	 	lfs_match_data (struct lfs *, struct buf *);
 int	 	lfs_match_dindir (struct lfs *, struct buf *);
 int	 	lfs_match_indir (struct lfs *, struct buf *);
 int	 	lfs_match_tindir (struct lfs *, struct buf *);
 void	lfs_newseg (struct lfs *);
-void	lfs_shellsort (struct buf **, ufs_daddr_t *, register int);
+void	lfs_shellsort (struct buf **, ufs1_daddr_t *, register int);
 void	lfs_supercallback (struct buf *);
 void	lfs_updatemeta (struct segment *);
 int	 	lfs_vref (struct vnode *);
@@ -157,8 +157,8 @@ lfs_writevnodes(fs, mp, sp, op)
 	struct vnode *vp;
 
 /* BEGIN HACK */
-#define	VN_OFFSET	(((void *)&vp->v_mntvnodes.le_next) - (void *)vp)
-#define	BACK_VP(VP)	((struct vnode *)(((void *)VP->v_mntvnodes.le_prev) - VN_OFFSET))
+#define	VN_OFFSET		(((void *)&vp->v_mntvnodes.le_next) - (void *)vp)
+#define	BACK_VP(VP)		((struct vnode *)(((void *)VP->v_mntvnodes.le_prev) - VN_OFFSET))
 #define	BEG_OF_VLIST	((struct vnode *)(((void *)&mp->mnt_vnodelist.lh_first) - VN_OFFSET))
 
 /* Find last vnode. */
@@ -225,7 +225,7 @@ lfs_segwrite(mp, flags)
 	struct segment *sp;
 	struct vnode *vp;
 	SEGUSE *segusep;
-	ufs_daddr_t ibno;
+	ufs1_daddr_t ibno;
 	CLEANERINFO *cip;
 	int clean, do_ckp, error, i;
 
@@ -345,7 +345,7 @@ lfs_writefile(fs, sp, vp)
 	    sp->sum_bytes_left < sizeof(struct finfo))
 		(void) lfs_writeseg(fs, sp);
 
-	sp->sum_bytes_left -= sizeof(struct finfo) - sizeof(ufs_daddr_t);
+	sp->sum_bytes_left -= sizeof(struct finfo) - sizeof(ufs1_daddr_t);
 	++((SEGSUM *)(sp->segsum))->ss_nfinfo;
 
 	fip = sp->fip;
@@ -371,10 +371,10 @@ lfs_writefile(fs, sp, vp)
 	if (fip->fi_nblocks != 0) {
 		sp->fip =
 		    (struct finfo *)((caddr_t)fip + sizeof(struct finfo) +
-		    sizeof(ufs_daddr_t) * (fip->fi_nblocks - 1));
+		    sizeof(ufs1_daddr_t) * (fip->fi_nblocks - 1));
 		sp->start_lbp = &sp->fip->fi_blocks[0];
 	} else {
-		sp->sum_bytes_left += sizeof(struct finfo) - sizeof(ufs_daddr_t);
+		sp->sum_bytes_left += sizeof(struct finfo) - sizeof(ufs1_daddr_t);
 		--((SEGSUM *)(sp->segsum))->ss_nfinfo;
 	}
 }
@@ -388,7 +388,7 @@ lfs_writeinode(fs, sp, ip)
 	struct buf *bp, *ibp;
 	IFILE *ifp;
 	SEGUSE *sup;
-	ufs_daddr_t daddr;
+	ufs1_daddr_t daddr;
 	ino_t ino;
 	int error, i, ndx;
 	int redo_ifile = 0;
@@ -400,7 +400,7 @@ lfs_writeinode(fs, sp, ip)
 	if (sp->ibp == NULL) {
 		/* Allocate a new segment if necessary. */
 		if (sp->seg_bytes_left < fs->lfs_bsize ||
-		    sp->sum_bytes_left < sizeof(ufs_daddr_t))
+		    sp->sum_bytes_left < sizeof(ufs1_daddr_t))
 			(void) lfs_writeseg(fs, sp);
 
 		/* Get next inode block. */
@@ -416,10 +416,10 @@ lfs_writeinode(fs, sp, ip)
 		fs->lfs_avail -= fsbtodb(fs, 1);
 		/* Set remaining space counters. */
 		sp->seg_bytes_left -= fs->lfs_bsize;
-		sp->sum_bytes_left -= sizeof(ufs_daddr_t);
-		ndx = LFS_SUMMARY_SIZE / sizeof(ufs_daddr_t) -
+		sp->sum_bytes_left -= sizeof(ufs1_daddr_t);
+		ndx = LFS_SUMMARY_SIZE / sizeof(ufs1_daddr_t) -
 		    sp->ninodes / INOPB(fs) - 1;
-		((ufs_daddr_t *)(sp->segsum))[ndx] = daddr;
+		((ufs1_daddr_t *)(sp->segsum))[ndx] = daddr;
 	}
 
 	/* Update the inode times and copy the inode onto the inode page. */
@@ -428,7 +428,7 @@ lfs_writeinode(fs, sp, ip)
 	ITIMES(ip, &time, &time);
 	ip->i_flag &= ~(IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE);
 	bp = sp->ibp;
-	((struct dinode *)bp->b_data)[sp->ninodes % INOPB(fs)] = ip->i_din;
+	((struct ufs1_dinode *)bp->b_data)[sp->ninodes % INOPB(fs)] = ip->i_din;
 	/* Increment inode count in segment summary block. */
 	++((SEGSUM *)(sp->segsum))->ss_ninos;
 
@@ -459,14 +459,14 @@ lfs_writeinode(fs, sp, ip)
 	    !(daddr >= fs->lfs_lastpseg && daddr <= bp->b_blkno)) {
 		LFS_SEGENTRY(sup, fs, datosn(fs, daddr), bp);
 #ifdef DIAGNOSTIC
-		if (sup->su_nbytes < sizeof(struct dinode)) {
+		if (sup->su_nbytes < sizeof(struct ufs1_dinode)) {
 			/* XXX -- Change to a panic. */
 			printf("lfs: negative bytes (segment %d)\n",
 			    datosn(fs, daddr));
 			panic("negative bytes");
 		}
 #endif
-		sup->su_nbytes -= sizeof(struct dinode);
+		sup->su_nbytes -= sizeof(struct ufs1_dinode);
 		redo_ifile =
 		    (ino == LFS_IFILE_INUM && !(bp->b_flags & B_GATHERED));
 		error = VOP_BWRITE(bp);
@@ -492,7 +492,7 @@ lfs_gatherblock(sp, bp, sptr)
 		panic ("lfs_gatherblock: Null vp in segment");
 #endif
 	fs = sp->fs;
-	if (sp->sum_bytes_left < sizeof(ufs_daddr_t) ||
+	if (sp->sum_bytes_left < sizeof(ufs1_daddr_t) ||
 	    sp->seg_bytes_left < bp->b_bcount) {
 		if (sptr)
 			splx(*sptr);
@@ -506,7 +506,7 @@ lfs_gatherblock(sp, bp, sptr)
 		/* Add the current file to the segment summary. */
 		++((SEGSUM *)(sp->segsum))->ss_nfinfo;
 		sp->sum_bytes_left -= 
-		    sizeof(struct finfo) - sizeof(ufs_daddr_t);
+		    sizeof(struct finfo) - sizeof(ufs1_daddr_t);
 
 		if (sptr)
 			*sptr = splbio();
@@ -518,7 +518,7 @@ lfs_gatherblock(sp, bp, sptr)
 	*sp->cbpp++ = bp;
 	sp->fip->fi_blocks[sp->fip->fi_nblocks++] = bp->b_lblkno;
 
-	sp->sum_bytes_left -= sizeof(ufs_daddr_t);
+	sp->sum_bytes_left -= sizeof(ufs1_daddr_t);
 	sp->seg_bytes_left -= bp->b_bcount;
 	return(0);
 }
@@ -537,9 +537,9 @@ lfs_gather(fs, sp, vp, match)
 	s = splbio();
 /* This is a hack to see if ordering the blocks in LFS makes a difference. */
 /* BEGIN HACK */
-#define	BUF_OFFSET	(((void *)&bp->b_vnbufs.le_next) - (void *)bp)
+#define	BUF_OFFSET		(((void *)&bp->b_vnbufs.le_next) - (void *)bp)
 #define	BACK_BUF(BP)	((struct buf *)(((void *)BP->b_vnbufs.le_prev) - BUF_OFFSET))
-#define	BEG_OF_LIST	((struct buf *)(((void *)&vp->v_dirtyblkhd.lh_first) - BUF_OFFSET))
+#define	BEG_OF_LIST		((struct buf *)(((void *)&vp->v_dirtyblkhd.lh_first) - BUF_OFFSET))
 
 
 /*loop:	for (bp = vp->v_dirtyblkhd.lh_first; bp; bp = bp->b_vnbufs.le_next) {*/
@@ -580,7 +580,7 @@ lfs_updatemeta(sp)
 	struct vnode *vp;
 	struct indir a[NIADDR + 2], *ap;
 	struct inode *ip;
-	ufs_daddr_t daddr, lbn, off;
+	ufs1_daddr_t daddr, lbn, off;
 	int error, i, nblocks, num;
 
 	vp = sp->vp;
@@ -618,10 +618,10 @@ lfs_updatemeta(sp)
 		ip = VTOI(vp);
 		switch (num) {
 		case 0:
-			DIP(ip, db[lbn]) = off;
+			ip->i_ffs1_db[lbn] = off;
 			break;
 		case 1:
-			DIP(ip, ib[a[0].in_off]) = off;
+			ip->i_ffs1_ib[a[0].in_off] = off;
 			break;
 		default:
 			ap = &a[num - 1];
@@ -633,10 +633,10 @@ lfs_updatemeta(sp)
 			 * to get counted for the inode.
 			 */
 			if (bp->b_blkno == -1 && !(bp->b_flags & B_CACHE)) {
-				DIP(ip, blocks) += fsbtodb(fs, 1);
+				ip->i_ffs1_blocks += fsbtodb(fs, 1);
 				fs->lfs_bfree -= fragstodb(fs, fs->lfs_frag);
 			}
-			((ufs_daddr_t *)bp->b_data)[ap->in_off] = off;
+			((ufs1_daddr_t *)bp->b_data)[ap->in_off] = off;
 			VOP_BWRITE(bp);
 		}
 
@@ -815,7 +815,7 @@ lfs_writeseg(fs, sp)
 	ssp = (SEGSUM *)sp->segsum;
 
 	ninos = (ssp->ss_ninos + INOPB(fs) - 1) / INOPB(fs);
-	sup->su_nbytes += ssp->ss_ninos * sizeof(struct dinode);
+	sup->su_nbytes += ssp->ss_ninos * sizeof(struct ufs1_dinode);
 	sup->su_nbytes += LFS_SUMMARY_SIZE;
 	sup->su_lastmod = time.tv_sec;
 	sup->su_ninos += ninos;
@@ -1033,7 +1033,7 @@ lfs_match_tindir(fs, bp)
 struct buf *
 lfs_newbuf(vp, daddr, size)
 	struct vnode *vp;
-	ufs_daddr_t daddr;
+	ufs1_daddr_t daddr;
 	size_t size;
 {
 	struct buf *bp;
@@ -1100,7 +1100,7 @@ lfs_supercallback(bp)
 void
 lfs_shellsort(bp_array, lb_array, nmemb)
 	struct buf **bp_array;
-	ufs_daddr_t *lb_array;
+	ufs1_daddr_t *lb_array;
 	register int nmemb;
 {
 	static int __rsshell_increments[] = { 4, 1, 0 };
@@ -1145,7 +1145,7 @@ lfs_vunref(vp)
 	register struct vnode *vp;
 {
 	struct proc *p = curproc;				/* XXX */
-	extern struct simplelock vnode_free_list_slock;		/* XXX */
+	extern struct lock_object vnode_free_list_slock;		/* XXX */
 	extern TAILQ_HEAD(freelst, vnode) vnode_free_list;	/* XXX */
 
 	simple_lock(&vp->v_interlock);

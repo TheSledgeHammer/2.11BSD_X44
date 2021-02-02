@@ -224,3 +224,34 @@ ufs_check_export(mp, ufhp, nam, vpp, exflagsp, credanonp)
 	*credanonp = &np->netc_anon;
 	return (0);
 }
+
+/*
+ * This is the generic part of fhtovp called after the underlying
+ * filesystem has validated the file handle.
+ *
+ * Call the VFS_CHECKEXP beforehand to verify access.
+ */
+int
+ufs_fhtovp(mp, ufhp, vpp)
+	struct mount *mp;
+	struct ufid *ufhp;
+	struct vnode **vpp;
+{
+	struct inode *ip;
+	struct vnode *nvp;
+	int error;
+
+	error = VFS_VGET(mp, ufhp->ufid_ino, LK_EXCLUSIVE, &nvp);
+	if (error) {
+		*vpp = NULLVP;
+		return (error);
+	}
+	ip = VTOI(nvp);
+	if (ip->i_mode == 0 || ip->i_gen != ufhp->ufid_gen || ip->i_effnlink <= 0) {
+		vput(nvp);
+		*vpp = NULLVP;
+		return (ESTALE);
+	}
+	*vpp = nvp;
+	return (0);
+}

@@ -72,7 +72,7 @@ READ(ap)
 	register struct uio *uio;
 	register FS *fs;
 	struct buf *bp;
-	ufs_daddr_t lbn, nextlbn;
+	ufs2_daddr_t lbn, nextlbn;
 	off_t bytesinfile;
 	long size, xfersize, blkoffset;
 	int error;
@@ -175,7 +175,7 @@ WRITE(ap)
 	register FS *fs;
 	struct buf *bp;
 	struct proc *p;
-	ufs_daddr_t lbn;
+	ufs2_daddr_t lbn;
 	off_t osize;
 	int blkoffset, error, flags, ioflag, resid, size, xfersize;
 

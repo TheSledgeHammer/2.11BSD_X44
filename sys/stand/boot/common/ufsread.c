@@ -45,7 +45,7 @@
    (see sys/ufs/ffs/fs.h rev 1.39) so that i386 boot loader (boot2) can
    support both UFS1 and UFS2 again. */
 #undef 	cgbase
-#define cgbase(fs, c)   ((ufs_daddr_t)((fs)->fs_fpg * (c)))
+#define cgbase(fs, c)   ((ufs2_daddr_t)((fs)->fs_fpg * (c)))
 #endif
 
 /*

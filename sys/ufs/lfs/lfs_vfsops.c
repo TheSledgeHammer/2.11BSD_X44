@@ -501,7 +501,7 @@ lfs_vget(mp, ino, vpp)
 	struct ifile *ifp;
 	struct vnode *vp;
 	struct ufsmount *ump;
-	ufs_daddr_t daddr;
+	ufs1_daddr_t daddr;
 	dev_t dev;
 	int error;
 
@@ -559,7 +559,7 @@ lfs_vget(mp, ino, vpp)
 		*vpp = NULL;
 		return (error);
 	}
-	ip->i_din = *lfs_ifind(fs, ino, (union dinode *)bp->b_data);
+	ip->i_din.ffs1_din = *lfs_ifind(fs, ino, bp);
 	brelse(bp);
 
 	/*

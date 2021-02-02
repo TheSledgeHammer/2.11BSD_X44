@@ -47,10 +47,10 @@
 /*
  * Structures associated with inode cacheing.
  */
-LIST_HEAD(ihashhead, inode) *ihashtbl;
-u_long	ihash;		/* size of hash table - 1 */
+LIST_HEAD(ihashhead, inode) 	*ihashtbl;
+u_long							ihash;		/* size of hash table - 1 */
 #define	INOHASH(device, inum)	(&ihashtbl[((device) + (inum)) & ihash])
-struct simplelock ufs_ihash_slock;
+struct simplelock 				ufs_ihash_slock;
 
 /*
  * Initialize inode hash table.
