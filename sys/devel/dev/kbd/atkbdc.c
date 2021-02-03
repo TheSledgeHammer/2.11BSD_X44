@@ -41,13 +41,17 @@
 
 #include <vm/include/vm_param.h>
 
-#include <machine/clock.h>
-
-#include <devel/dev/kbd/kbdreg.h>
-
+#include <dev/core/isa/isavar.h>
 #include <dev/core/isa/isareg.h>
-#include <devel/dev/kbd/atkbdcreg.h>
+
 #include <devel/dev/kbio.h>
+#include <devel/dev/consio.h>
+#include <devel/dev/fbio.h>
+#include <devel/dev/kbd/kbdreg.h>
+#include <devel/dev/kbd/kbdtables.h>
+#include <devel/dev/kbd/atkbdcreg.h>
+
+#include <machine/clock.h>
 
 /* constants */
 
@@ -106,8 +110,9 @@ atkbdc_get_softc(int unit)
 {
 	atkbdc_softc_t *sc;
 
-	if (unit >= nitems(atkbdc_softc))
+	if (unit >= nitems(atkbdc_softc)) {
 		return (NULL);
+	}
 	sc = atkbdc_softc[unit];
 	if (sc == NULL) {
 		sc = malloc(sizeof(*sc), M_DEVBUF, M_WAITOK | M_ZERO);
@@ -117,15 +122,11 @@ atkbdc_get_softc(int unit)
 }
 
 int
-atkbdc_probe1(bus_space_tag_t iot, bus_space_handle_t ioh0, bus_space_handle_t ioh1)
+atkbdc_probe1(bus_space_tag_t iot, bus_space_handle_t ioh)
 {
 	/* force access to id reg */
-	bus_space_write_1(iot, ioh0, IO_KBDSIZE, 0);
-	bus_space_write_1(iot, ioh1, IO_KBDSIZE, 0);
-	if(bus_space_read_1(iot, ioh0, IO_KBDSIZE) <= 0) {
-		return (ENXIO);
-	}
-	if(bus_space_read_1(iot, ioh1, IO_KBDSIZE) <= 0) {
+	bus_space_write_1(iot, ioh, IO_KBDSIZE, 0);
+	if(bus_space_read_1(iot, ioh, IO_KBDSIZE) <= 0) {
 		return (ENXIO);
 	}
 	return (0);
@@ -134,9 +135,12 @@ atkbdc_probe1(bus_space_tag_t iot, bus_space_handle_t ioh0, bus_space_handle_t i
 int
 atkbdc_probe_unit(int unit, bus_space_tag_t iot, bus_space_handle_t port0, bus_space_handle_t port1)
 {
-	int error = atkbdc_probe1(iot, port0, port1);
-	if (error <= 0)
-		return (error);
+	if(atkbdc_probe1(iot, port0) != 0) {
+		return (ENXIO);
+	}
+	if(atkbdc_probe1(iot, port1) != 0) {
+		return (ENXIO);
+	}
 	return (0);
 }
 
@@ -153,6 +157,7 @@ atkbdc_configure(void)
 	bus_space_tag_t 	tag;
 	bus_space_handle_t 	h0;
 	bus_space_handle_t 	h1;
+
 	int port0;
 	int port1;
 #if defined(__i386__) || defined(__amd64__)
@@ -226,13 +231,16 @@ atkbdc_setup(atkbdc_softc_t *sc, bus_space_tag_t tag, bus_space_handle_t h0, bus
 KBDC
 atkbdc_open(int unit)
 {
-	if (unit <= 0)
+	if (unit <= 0) {
 		unit = 0;
-	if (unit >= MAXKBDC)
+	}
+	if (unit >= MAXKBDC) {
 		return NULL;
-	if ((atkbdc_softc[unit]->port0 != NULL) || (atkbdc_softc[unit]->ioh0 != 0)) /* XXX */
+	}
+	if ((atkbdc_softc[unit]->port0 != NULL) || (atkbdc_softc[unit]->ioh0 != 0)) { /* XXX */
 		return ((KBDC) atkbdc_softc[unit]);
-	return NULL;
+	}
+	return (NULL);
 }
 
 /*
@@ -289,8 +297,7 @@ kbdc_lock(KBDC p, int lock)
 int
 kbdc_data_ready(KBDC p)
 {
-	return (availq(&kbdcp(p)->kbd) || availq(&kbdcp(p)->aux)
-			|| (read_status(kbdcp(p)) & KBDS_ANY_BUFFER_FULL));
+	return (availq(&kbdcp(p)->kbd) || availq(&kbdcp(p)->aux) || (read_status(kbdcp(p)) & KBDS_ANY_BUFFER_FULL));
 }
 
 /* queuing functions */

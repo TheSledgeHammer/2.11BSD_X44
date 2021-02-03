@@ -165,8 +165,8 @@
 123 STD     	{ int fchown(); }
 124 STD     	{ int fchmod(); }
 125 STD     	{ int recvfrom(); }
-126 OBSOL   	old setreuid
-127 OBSOL   	old setregid
+126 STD   	    { int setreuid(); }
+127 STD   	    { int setregid(); }
 128 STD     	{ int rename(); }
 129	STD			{ int truncate(); }
 130	STD			{ int ftruncate(); }

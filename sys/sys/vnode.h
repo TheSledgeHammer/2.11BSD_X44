@@ -689,6 +689,18 @@ struct vop_update_args {
 	int 					a_waitfor;
 };
 
+struct vop_pageread {
+	struct vop_generic_args	a_head;
+
+	vm_page_t				a_page;
+};
+
+struct vop_pagewrite {
+	struct vop_generic_args	a_head;
+
+	vm_page_t				a_page;
+};
+
 /* Special cases: */
 struct vop_strategy_args {
 	struct vop_generic_args	a_head;
@@ -704,17 +716,16 @@ struct vop_bwrite_args {
 #ifdef _KERNEL
 
 #define VARGVOPS(ap) 		((ap)->a_head.a_ops)
-
-#define VOPTEST(vops, ap, vop_field) { 							\
-	if(VARGVOPS(ap)->vop_field == (vops).vop_field) {			\
-		(vops).vop_field;										\
-	} else {													\
-		VARGVOPS(ap)->vop_field;								\
-	}															\
-}																\
-
 #define VOPARGS(ap, vop_field) 									\
 	VARGVOPS(ap)->vop_field
+
+#define VOPTEST(vops, ap, vop_field) { 							\
+	if(VOPARGS(ap, vop_field) == (vops).vop_field) {			\
+		VOPARGS(ap, vop_field);									\
+	} else {													\
+		(vops).vop_field;										\
+	}															\
+}																\
 
 #define VOCALL(vops, ap, vop_field)								\
 	VOPTEST(vops, ap, vop_field)
@@ -778,7 +789,8 @@ void 	vref (struct vnode *vp);
 void 	vrele (struct vnode *vp);
 
 /* vfs_vops.c */
-void 	vop_init(); 					/* init vops */
-void 	vop_alloc(struct vnodeops *); 	/* allocate vops */
+void 	vop_init(); 					/* initialize vnode vector operations (vops) */
+void 	vop_alloc(struct vnodeops *); 	/* allocate vnode vector operations (vops) */
+void	vop_free(struct vnodeops *);	/* free vnode vector operations (vops) */
 #endif /* KERNEL */
 #endif /* !_SYS_VNODE_H_ */

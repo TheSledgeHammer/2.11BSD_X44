@@ -194,8 +194,9 @@ gsignal(pgid, signum)
 {
 	struct pgrp *pgrp;
 
-	if (pgid && (pgrp = pgfind(pgid)))
+	if (pgid && (pgrp = pgfind(pgid))) {
 		pgsignal(pgrp, signum, 0);
+	}
 }
 
 /*
@@ -209,10 +210,13 @@ pgsignal(pgrp, signum, checkctty)
 {
 	register struct proc *p;
 
-	if (pgrp)
-		for (p = pgrp->pg_mem; p != NULL; p = p->p_pgrpnxt)
-			if (checkctty == 0 || (p->p_flag & P_CONTROLT))
+	if (pgrp) {
+		for (p = pgrp->pg_mem; p != NULL; p = p->p_pgrpnxt) {
+			if (checkctty == 0 || (p->p_flag & P_CONTROLT)) {
 				psignal(p, signum);
+			}
+		}
+	}
 }
 
 /*

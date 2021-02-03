@@ -136,7 +136,7 @@ struct fbgattr {
 						/* (-1 if unused) */
 };
 /*	FBIOSATTR	_IOW('F', 5, struct fbsattr) -- unsupported */
-#define	FBIOGATTR	_IOR('F', 6, struct fbgattr)
+#define	FBIOGATTR		_IOR('F', 6, struct fbgattr)
 
 /*
  * Video control.

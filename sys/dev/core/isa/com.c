@@ -299,8 +299,8 @@ comstatus(sc, str)
 
 int
 comprobe1(iot, ioh)
-	bus_space_tag_t iot;
-	bus_space_handle_t ioh;
+	bus_space_tag_t 	iot;
+	bus_space_handle_t 	ioh;
 {
 
 	/* force access to id reg */

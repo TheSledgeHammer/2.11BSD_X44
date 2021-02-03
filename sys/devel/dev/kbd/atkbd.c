@@ -40,8 +40,8 @@
 #include "kbdreg.h"
 
 #include <dev/core/isa/isareg.h>
-#include "../kbd/atkbdcreg.h"
-#include "../kbd/atkbdreg.h"
+#include <devel/dev/kbd/atkbdcreg.h>
+#include <devel/dev/kbd/atkbdreg.h>
 
 //static timeout_t	atkbd_timeout;
 
@@ -576,7 +576,7 @@ atkbd_read_char(keyboard_t *kbd, int wait)
 	++kbd->kb_count;
 
 #if KBDIO_DEBUG >= 10
-	kprintf("atkbd_read_char(): scancode:0x%x\n", scancode);
+	printf("atkbd_read_char(): scancode:0x%x\n", scancode);
 #endif
 
 	/* return the byte as is for the K_RAW mode */
@@ -1121,10 +1121,10 @@ init_keyboard(KBDC kbdc, int *type, int flags)
 
 #if 0
 	if (atkbd_setmuxmode(kbdc, 1, &mux_version)) {
-		kprintf("atkbd: no mux\n");
+		printf("atkbd: no mux\n");
 		mux_version = -1;
 	} else {
-		kprintf("atkbd: mux present version %d\n", mux_version);
+		printf("atkbd: mux present version %d\n", mux_version);
 	}
 #else
 	mux_version = -1;
@@ -1136,11 +1136,11 @@ init_keyboard(KBDC kbdc, int *type, int flags)
 	if (c == -1) {
 		/* CONTROLLER ERROR */
 		kbdc_lock(kbdc, FALSE);
-		kprintf("atkbd: unable to get the current command byte value.\n");
+		printf("atkbd: unable to get the current command byte value.\n");
 		return EIO;
 	}
 	if (bootverbose)
-		kprintf("atkbd: the current kbd controller command byte %04x\n", c);
+		printf("atkbd: the current kbd controller command byte %04x\n", c);
 #if 0
 	/* override the keyboard lock switch */
 	c |= KBD_OVERRIDE_KBD_LOCK;
@@ -1149,7 +1149,7 @@ init_keyboard(KBDC kbdc, int *type, int flags)
 	/* enable the keyboard port, but disable the keyboard intr. */
 	if (setup_kbd_port(kbdc, TRUE, FALSE)) {
 		/* CONTROLLER ERROR: there is very little we can do... */
-		kprintf("atkbd: unable to set the command byte.\n");
+		printf("atkbd: unable to set the command byte.\n");
 		kbdc_lock(kbdc, FALSE);
 		return EIO;
 	}
@@ -1181,7 +1181,7 @@ init_keyboard(KBDC kbdc, int *type, int flags)
 		set_controller_command_byte(kbdc, KBD_KBD_CONTROL_BITS, c);
 		kbdc_lock(kbdc, FALSE);
 		if (bootverbose)
-			kprintf("atkbd: failed to reset the keyboard.\n");
+			printf("atkbd: failed to reset the keyboard.\n");
 		return EIO;
 	}
 
@@ -1204,7 +1204,7 @@ init_keyboard(KBDC kbdc, int *type, int flags)
 	}
 #endif /* KBD_DETECT_XT_KEYBOARD */
 	if (bootverbose)
-		kprintf("atkbd: scancode set %d\n", codeset);
+		printf("atkbd: scancode set %d\n", codeset);
 
 	/*
 	 * Get the keyboard id.
@@ -1230,7 +1230,7 @@ init_keyboard(KBDC kbdc, int *type, int flags)
 		break;
 	}
 	if (bootverbose)
-		kprintf("atkbd: keyboard ID 0x%x (%d)\n", id, *type);
+		printf("atkbd: keyboard ID 0x%x (%d)\n", id, *type);
 
 	/*
 	 * Allow us to set the XT_KEYBD flag in UserConfig so that keyboards
@@ -1251,36 +1251,36 @@ init_keyboard(KBDC kbdc, int *type, int flags)
 			set_controller_command_byte(kbdc,
 			KBD_KBD_CONTROL_BITS, c);
 			kbdc_lock(kbdc, FALSE);
-			kprintf("atkbd: unable to set the XT keyboard mode.\n");
+			printf("atkbd: unable to set the XT keyboard mode.\n");
 			return EIO;
 		}
 	}
 
 #if 0
 	if (send_kbd_command_and_data(kbdc, ATKBD_CMD_EX_ENABLE, 0x71) != KBD_ACK)
-		kprintf("atkbd: can't CMD_EX_ENABLE\n");
+		printf("atkbd: can't CMD_EX_ENABLE\n");
 
 	if (send_kbd_command(kbdc, ATKBD_CMD_SETALL_MB) != KBD_ACK)
-		kprintf("atkbd: can't SETALL_MB\n");
+		printf("atkbd: can't SETALL_MB\n");
 	if (send_kbd_command(kbdc, ATKBD_CMD_SETALL_MBR) != KBD_ACK)
-		kprintf("atkbd: can't SETALL_MBR\n");
+		printf("atkbd: can't SETALL_MBR\n");
 #endif
 #if 0
 	if (send_kbd_command_and_data(kbdc, ATKBD_CMD_SSCANSET, 2) != KBD_ACK)
-		kprintf("atkbd: can't SSCANSET\n");
+		printf("atkbd: can't SSCANSET\n");
 	if (send_kbd_command_and_data(kbdc, ATKBD_CMD_GSCANSET, 0) != KBD_ACK)
-		kprintf("atkbd: can't SSCANSET\n");
+		printf("atkbd: can't SSCANSET\n");
 	else
-		kprintf("atkbd: scanset %d\n", read_kbd_data(kbdc));
+		printf("atkbd: scanset %d\n", read_kbd_data(kbdc));
 #endif
 #if 0
-	kprintf("atkbd: id %04x\n", get_kbd_id(kbdc, ATKBD_CMD_OK_GETID));
+	printf("atkbd: id %04x\n", get_kbd_id(kbdc, ATKBD_CMD_OK_GETID));
 	if (send_kbd_command_and_data(kbdc, ATKBD_CMD_SETLEDS, 0) != KBD_ACK)
-		kprintf("atkbd: setleds failed\n");
+		printf("atkbd: setleds failed\n");
 	if (send_kbd_command_and_data(kbdc, ATKBD_CMD_SETREP, 255) != KBD_ACK)
-		kprintf("atkbd: setrep failed\n");
+		printf("atkbd: setrep failed\n");
 	if (send_kbd_command(kbdc, ATKBD_CMD_RESEND) != KBD_ACK)
-		kprintf("atkbd: resend failed\n");
+		printf("atkbd: resend failed\n");
 #endif
 	/*
 	 * Some keyboards require a SETLEDS command to be sent after
@@ -1288,7 +1288,7 @@ init_keyboard(KBDC kbdc, int *type, int flags)
 	 * (Acer C720).
 	 */
 	if (send_kbd_command_and_data(kbdc, ATKBD_CMD_SETLEDS, 0) != KBD_ACK)
-		kprintf("atkbd: setleds failed\n");
+		printf("atkbd: setleds failed\n");
 	send_kbd_command(kbdc, ATKBD_CMD_ENABLE);
 
 #if 0
@@ -1296,13 +1296,13 @@ init_keyboard(KBDC kbdc, int *type, int flags)
 	{
 		int retry;
 		int c;
-		kprintf("atkbd: waiting for keypress");
+		printf("atkbd: waiting for keypress");
 		for (retry = 0; retry < 10; ++retry) {
 			c = read_kbd_data_no_wait(kbdc);
-			kprintf(" %d", c);
+			printf(" %d", c);
 			tsleep(&c, 0, "wait", hz);
 		}
-		kprintf("\n");
+		printf("\n");
 	}
 #endif
 
@@ -1312,7 +1312,7 @@ init_keyboard(KBDC kbdc, int *type, int flags)
 	} else {
 		mux_mask = KBD_AUX_CONTROL_BITS;
 		mux_val = 0;
-		kprintf("atkbd: setaux for multiplexer\n");
+		printf("atkbd: setaux for multiplexer\n");
 	}
 
 	/* enable the keyboard port and intr. */
@@ -1330,7 +1330,7 @@ init_keyboard(KBDC kbdc, int *type, int flags)
 		KBD_KBD_CONTROL_BITS | KBD_TRANSLATION |
 		KBD_OVERRIDE_KBD_LOCK | mux_mask, c);
 		kbdc_lock(kbdc, FALSE);
-		kprintf("atkbd: unable to enable the keyboard port and intr.\n");
+		printf("atkbd: unable to enable the keyboard port and intr.\n");
 		return EIO;
 	}
 
@@ -1352,22 +1352,22 @@ atkbd_setmuxmode(KBDC kbdc, int enable, int *mux_version)
 	empty_both_buffers(kbdc, 100);
 	val = 0xf0;
 	if ((param = write_controller_w1r1(kbdc, KBDC_AUX_LOOP, val)) != val) {
-		kprintf("setmuxmode: fail1\n");
+		printf("setmuxmode: fail1\n");
 		return(-1);
 	}
 	val = enable ? 0x56 : 0xf6;
 	if ((param = write_controller_w1r1(kbdc, KBDC_AUX_LOOP, val)) != val) {
-		kprintf("setmuxmode: fail2\n");
+		printf("setmuxmode: fail2\n");
 		return(-1);
 	}
 	val = enable ? 0xa4 : 0xa5;
 	if ((param = write_controller_w1r1(kbdc, KBDC_AUX_LOOP, val)) != val) {
-		kprintf("setmuxmode: fail3\n");
+		printf("setmuxmode: fail3\n");
 		return(-1);
 	}
-	kprintf("mux version %02x\n", param);
+	printf("mux version %02x\n", param);
 	if (param == 0xac) {
-		kprintf("setmuxmode: fail4\n");
+		printf("setmuxmode: fail4\n");
 		return(-1);
 	}
 

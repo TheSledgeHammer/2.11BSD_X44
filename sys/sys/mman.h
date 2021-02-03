@@ -76,6 +76,8 @@
 #define	MADV_SEQUENTIAL		2		/* expect sequential page references */
 #define	MADV_WILLNEED		3		/* will need these pages */
 #define	MADV_DONTNEED		4		/* dont need these pages */
+#define MADV_SPACEAVAIL		5		/* Insure that resources are reserved */
+#define MADV_FREE			6		/* Pages are empty, free them */
 
 /*
  * Error return from mmap()
@@ -94,6 +96,7 @@ int	munmap (caddr_t, size_t);
 int	msync (caddr_t, size_t);
 int	mlock (caddr_t, size_t);
 int	munlock (caddr_t, size_t);
+int madvise(caddr_t, size_t, int);
 __END_DECLS
 
 #endif /* !KERNEL */

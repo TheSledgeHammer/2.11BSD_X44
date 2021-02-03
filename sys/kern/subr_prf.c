@@ -173,7 +173,7 @@ addlog(fmt, va_alist)
 
 	s = splhigh();
 	va_start(ap, fmt);
-	kprintf(fmt, TOLOG, NULL, ap);
+	printf(fmt, TOLOG, NULL, ap);
 	splx(s);
 	va_end(ap);
 	if (!logisopen(logMSG)) {

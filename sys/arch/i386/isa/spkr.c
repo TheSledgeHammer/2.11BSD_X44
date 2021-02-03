@@ -29,20 +29,43 @@
 #include <machine/pio.h>
 #include <machine/spkr.h>
 
-#include <dev/isa/isareg.h>
-#include <dev/isa/isavar.h>
+#include <dev/core/isa/isareg.h>
+#include <dev/core/isa/isavar.h>
 #include <i386/isa/timerreg.h>
 #include <i386/isa/spkrreg.h>
 
-int spkrprobe (struct device *, void *, void *);
+DEVSWIO_CONFIG_INIT(NSPKR, NULL, &spkr_cdevsw, NULL);
+
+int spkrprobe (struct device *, struct cfdata *, void *);
 void spkrattach (struct device *, struct device *, void *);
 
 struct spkr_softc {
 	struct device sc_dev;
 };
 
+dev_type_open(spkropen);
+dev_type_close(spkrclose);
+dev_type_write(spkrwrite);
+dev_type_ioctl(spkrioctl);
+
+const struct cdevsw spkr_cdevsw = {
+		.d_open = spkropen,
+		.d_close = spkrclose,
+		.d_read = noread,
+		.d_write = spkrwrite,
+		.d_ioctl = spkrioctl,
+		.d_stop = nostop,
+		.d_tty = notty,
+		.d_select = noselect,
+		.d_poll = nopoll,
+		.d_mmap = nommap,
+		.d_strategy = nostrategy,
+		.d_discard = nodiscard,
+		.d_type = D_OTHER
+};
+
 struct cfdriver spkr_cd = {
-	NULL, "spkr", spkrprobe, spkrattach, DV_TTY, sizeof(struct spkr_softc)
+	NULL, "spkr", spkrprobe, spkrattach, DV_DULL, sizeof(struct spkr_softc)
 };
 
 /**************** MACHINE DEPENDENT PART STARTS HERE *************************
@@ -416,12 +439,11 @@ static int spkr_active;	/* exclusion flag */
 static void *spkr_inbuf;
 
 int
-spkrprobe (parent, match, aux)
+spkrprobe (parent, cf, aux)
 	struct device *parent;
-	void *match;
+	struct cfdata *cf;
 	void *aux;
 {
-	struct cfdata *cf = match;
 	/*
 	 * We only attach to the keyboard controller via
 	 * the console drivers. (We really wish we could be the

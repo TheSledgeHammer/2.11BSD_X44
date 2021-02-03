@@ -117,8 +117,8 @@ com_isa_probe(parent, match, aux)
 	struct cfdata *match;
 	void *aux;
 {
-	bus_space_tag_t iot;
-	bus_space_handle_t ioh;
+	bus_space_tag_t 	iot;
+	bus_space_handle_t 	ioh;
 	int iobase;
 	int rv = 1;
 	struct isa_attach_args *ia = aux;

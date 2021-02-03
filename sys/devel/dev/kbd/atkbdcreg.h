@@ -118,14 +118,14 @@
 #define PSMC_SET_SAMPLING_RATE	0x00f3
 
 /* PSMC_SET_RESOLUTION argument */
-#define PSMD_RES_LOW			0	/* typically 25ppi */
-#define PSMD_RES_MEDIUM_LOW		1	/* typically 50ppi */
-#define PSMD_RES_MEDIUM_HIGH	2	/* typically 100ppi (default) */
-#define PSMD_RES_HIGH			3	/* typically 200ppi */
+#define PSMD_RES_LOW			0		/* typically 25ppi */
+#define PSMD_RES_MEDIUM_LOW		1		/* typically 50ppi */
+#define PSMD_RES_MEDIUM_HIGH	2		/* typically 100ppi (default) */
+#define PSMD_RES_HIGH			3		/* typically 200ppi */
 #define PSMD_MAX_RESOLUTION		PSMD_RES_HIGH
 
 /* PSMC_SET_SAMPLING_RATE */
-#define PSMD_MAX_RATE			255	/* FIXME: not sure if it's possible */
+#define PSMD_MAX_RATE			255		/* FIXME: not sure if it's possible */
 
 /* status bits (KBD_STATUS_PORT) */
 #define KBDS_BUFFER_FULL		0x0021
@@ -206,36 +206,38 @@
 
 #define KBDQ_BUFSIZE			32
 
-typedef struct _kbdkqueue {
-    int 				head;
-    int 				tail;
-    unsigned char 		q[KBDQ_BUFSIZE];
+struct _kbdkqueue {
+    int 						head;
+    int 						tail;
+    unsigned char 				q[KBDQ_BUFSIZE];
 #if KBDIO_DEBUG >= 2
-    int 				call_count;
-    int 				qcount;
-    int 				max_qcount;
+    int 						call_count;
+    int 						qcount;
+    int 						max_qcount;
 #endif
-} kbdkqueue;
+};
+typedef struct _kbdkqueue 		kbdkqueue;
 
 #define ATKBDC_DATA_SLOT		0
 #define ATKBDC_STATUS_SLOT		1
 
-typedef struct atkbdc_softc {
-	bus_space_handle_t	port0;			/* data port */
-	bus_space_handle_t	port1;			/* status port */
+struct atkbdc_softc {
+	bus_space_handle_t			port0;			/* data port */
+	bus_space_handle_t			port1;			/* status port */
 
-    bus_space_tag_t 	iot;
-    bus_space_handle_t 	ioh0;
-    bus_space_handle_t 	ioh1;
+    bus_space_tag_t 			iot;
+    bus_space_handle_t 			ioh0;
+    bus_space_handle_t 			ioh1;
 
-    int 				command_byte;	/* current command byte value */
-    int 				command_mask;	/* command byte mask bits for kbd/aux devices */
-    int 				mux_active;		/* multiplexer is active */
-    int 				lock;			/* FIXME: XXX not quite a semaphore... */
-    kbdkqueue 			kbd;			/* keyboard data queue */
-    kbdkqueue 			aux;			/* auxiliary data queue */
-    int 				retry;
-} atkbdc_softc_t;
+    int 						command_byte;	/* current command byte value */
+    int 						command_mask;	/* command byte mask bits for kbd/aux devices */
+    int 						mux_active;		/* multiplexer is active */
+    int 						lock;			/* FIXME: XXX not quite a semaphore... */
+    kbdkqueue 					kbd;			/* keyboard data queue */
+    kbdkqueue 					aux;			/* auxiliary data queue */
+    int 						retry;
+};
+typedef struct atkbdc_softc 	atkbdc_softc_t;
 
 enum kbdc_device_ivar {
 	KBDC_IVAR_IRQ,
@@ -246,7 +248,7 @@ enum kbdc_device_ivar {
 	KBDC_IVAR_COMPATID,
 };
 
-typedef struct atkbdc_softc *KBDC;
+typedef struct atkbdc_softc 	*KBDC;
 
 /* function prototypes */
 

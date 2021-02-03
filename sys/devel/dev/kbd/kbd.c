@@ -40,11 +40,13 @@
 #include <sys/vnode.h>
 #include <sys/uio.h>
 
-#include <dev/kbio.h>
-
 #include <machine/console.h>
 
-#include <dev/kbd/kbdreg.h>
+#include <devel/dev/kbio.h>
+#include <devel/dev/consio.h>
+#include <devel/dev/fbio.h>
+#include <devel/dev/kbd/kbdreg.h>
+#include <devel/dev/kbd/kbdtables.h>
 
 #define KBD_INDEX(dev)	minor(dev)
 
@@ -58,17 +60,9 @@ struct genkbd_softc {
 	char			gkb_q[KB_QSIZE];		/* input queue */
 	unsigned int	gkb_q_start;
 	unsigned int	gkb_q_length;
-
-	keyboard_t		gkb_genkbd;
 };
 
 SIMPLEQ_HEAD(, keyboard_driver) keyboard_drivers = SIMPLEQ_HEAD_INITIALIZER(keyboard_drivers);
-
-#define KEYBOARD_DRIVER(name, sw, config)				\
-	static struct keyboard_driver name##_kbd_driver = { \
-		{ NULL }, #name, &sw, config					\
-	};													\
-
 
 /* local arrays */
 
@@ -77,15 +71,13 @@ SIMPLEQ_HEAD(, keyboard_driver) keyboard_drivers = SIMPLEQ_HEAD_INITIALIZER(keyb
  * for the kernel console.  The arrays will be increased dynamically
  * when necessary.
  */
-static keyboard_t *keyboard[KBD_MAXKEYBOARDS];
+static keyboard_t 		*keyboard[KBD_MAXKEYBOARDS];
 
-keyboard_switch_t *kbdsw[KBD_MAXKEYBOARDS];
+keyboard_switch_t 		*kbdsw[KBD_MAXKEYBOARDS];
 
-static genkbd_softc_t *kbdsoftc[KBD_MAXKEYBOARDS];
+static int 				keymap_restrict_change;
 
-static int keymap_restrict_change;
-
-#define ARRAY_DELTA			4
+#define ARRAY_DELTA		4
 
 /*
  * Low-level keyboard driver functions
@@ -181,7 +173,7 @@ kbd_register(keyboard_t *kbd)
 				strcpy(ki.kb_name, kbd->kb_name);
 				ki.kb_unit = kbd->kb_unit;
 
-				(void)kbdd_ioctl(mux, KBADDKBD, (caddr_t) &ki);
+				genkbd_ioctl(mux, KBADDKBD, (caddr_t) &ki);
 			}
 			return (index);
 		}
@@ -295,7 +287,7 @@ kbd_allocate(char *driver, int unit, void *id, kbd_callback_func_t *func, void *
 		KBD_BUSY(keyboard[index]);
 		keyboard[index]->kb_callback.kc_func = func;
 		keyboard[index]->kb_callback.kc_arg = arg;
-		(*kbdsw[index]->clear_state)(keyboard[index]);
+		genkbd_clear_state(keyboard[index]);
 	}
 	splx(s);
 	return (index);
@@ -317,7 +309,7 @@ kbd_release(keyboard_t *kbd, void *id)
 		KBD_UNBUSY(kbd);
 		kbd->kb_callback.kc_func = NULL;
 		kbd->kb_callback.kc_arg = NULL;
-		(*kbdsw[kbd->kb_index]->clear_state)(kbd);
+		genkbd_clear_state(kbd);
 		error = 0;
 	}
 	splx(s);
@@ -384,13 +376,17 @@ kbd_configure(int flags)
 	return (0);
 }
 
+#ifdef KBD_INSTALL_CDEV
+
 /*
  * Virtual keyboard cdev driver functions
  * The virtual keyboard driver dispatches driver functions to
  * appropriate subdrivers.
  */
 
-#define KBD_UNIT(dev) minor(dev)
+static genkbd_softc_t 	*kbdsoftc[KBD_MAXKEYBOARDS];
+
+#define KBD_UNIT(dev) 	minor(dev)
 
 const struct cdevsw genkbd_cdevsw = {
 		.d_open =	genkbdopen,
@@ -402,8 +398,21 @@ const struct cdevsw genkbd_cdevsw = {
 		.d_type = 	D_OTHER
 };
 
+void
+genkbd_init(devsw)
+	struct devswtable *devsw;
+{
+	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &genkbd_cdevsw, NULL);
+}
+
+/*
+ * Generic keyboard cdev driver functions
+ * Keyboard subdrivers may call these functions to implement common
+ * driver functions.
+ */
+
 int
-vkbd_attach(keyboard_t *kbd)
+genkbd_attach(keyboard_t *kbd)
 {
 	if (kbd->kb_index >= KBD_MAXKEYBOARDS) {
 		return (EINVAL);
@@ -421,7 +430,7 @@ vkbd_attach(keyboard_t *kbd)
 }
 
 int
-vkbd_detach(keyboard_t *kbd)
+genkbd_detach(keyboard_t *kbd)
 {
 	if (kbd->kb_index >= KBD_MAXKEYBOARDS)
 		return (EINVAL);
@@ -432,12 +441,6 @@ vkbd_detach(keyboard_t *kbd)
 	kbdsoftc[kbd->kb_index] = NULL;
 	return (0);
 }
-
-/*
- * Generic keyboard cdev driver functions
- * Keyboard subdrivers may call these functions to implement common
- * driver functions.
- */
 
 static void
 genkbd_putc(genkbd_softc_t *sc, char c)
@@ -605,7 +608,7 @@ genkbdioctl(dev_t dev, int cmd, caddr_t data, int fflag, struct proc *p)
 	kbd = kbd_get_keyboard(KBD_INDEX(dev));
 	if ((kbd == NULL) || !KBD_IS_VALID(kbd))
 		return (ENXIO);
-	error = kbdd_ioctl(kbd, cmd, data);
+	error = genkbd_ioctl(kbd, cmd, data);
 	if (error == ENOIOCTL)
 		error = ENODEV;
 	return (error);
@@ -664,12 +667,12 @@ genkbd_event(keyboard_t *kbd, int event, void *arg)
 	}
 
 	/* obtain the current key input mode */
-	if (kbdd_ioctl(kbd, KDGKBMODE, (caddr_t)&mode))
+	if (genkbd_ioctl(kbd, KDGKBMODE, (caddr_t)&mode))
 		mode = K_XLATE;
 
 	/* read all pending input */
-	while (kbdd_check_char(kbd)) {
-		c = kbdd_read_char(kbd, FALSE);
+	while (genkbd_check_char(kbd)) {
+		c = genkbd_read_char(kbd, FALSE);
 		if (c == NOKEY)
 			continue;
 		if (c == ERRKEY)	/* XXX: ring bell? */
@@ -712,7 +715,7 @@ genkbd_event(keyboard_t *kbd, int event, void *arg)
 			genkbd_putc(sc, KEYCHAR(c));
 			break;
 		case FKEY | SPCLKEY:	/* a function key, return string */
-			cp = kbdd_get_fkeystr(kbd, KEYCHAR(c), &len);
+			cp = genkbd_get_fkeystr(kbd, KEYCHAR(c), &len);
 			if (cp != NULL) {
 				while (len-- >  0)
 					genkbd_putc(sc, *cp++);
@@ -732,6 +735,7 @@ genkbd_event(keyboard_t *kbd, int event, void *arg)
 
 	return (0);
 }
+#endif /* KBD_INSTALL_CDEV */
 
 /*
  * Generic low-level keyboard functions
@@ -1082,7 +1086,7 @@ genkbd_diag(keyboard_t *kbd, int level)
 		(s) |= l ## DOWN;								\
 		(s) ^= l ## ED;									\
 		i = (s) & LOCK_MASK;							\
-		(void)kbdd_ioctl((k), KDSETLED, (caddr_t)&i);	\
+		(void)genkbd_ioctl((k), KDSETLED, (caddr_t)&i);	\
 	}
 
 static u_int
@@ -1407,16 +1411,16 @@ kbd_ev_event(keyboard_t *kbd, uint16_t type, uint16_t code, int32_t value)
 			leds &= ~led;
 
 		if (leds != oleds)
-			kbdd_ioctl(kbd, KDSETLED, (caddr_t)&leds);
+			genkbd_ioctl(kbd, KDSETLED, (caddr_t)&leds);
 
 	} else if (type == EV_REP && code == REP_DELAY) {
 		delay[0] = value;
 		delay[1] = kbd->kb_delay2;
-		kbdd_ioctl(kbd, KDSETREPEAT, (caddr_t)delay);
+		genkbd_ioctl(kbd, KDSETREPEAT, (caddr_t)delay);
 	} else if (type == EV_REP && code == REP_PERIOD) {
 		delay[0] = kbd->kb_delay1;
 		delay[1] = value;
-		kbdd_ioctl(kbd, KDSETREPEAT, (caddr_t)delay);
+		genkbd_ioctl(kbd, KDSETREPEAT, (caddr_t)delay);
 	}
 }
 

@@ -36,14 +36,14 @@
 #ifndef _DEV_SYSCONS_SYSCONS_H_
 #define	_DEV_SYSCONS_SYSCONS_H_
 
-#include <sys/kdb.h>		/* XXX */
+//#include <sys/kdb.h>		/* XXX */
 #include <sys/lock.h>
 #include <sys/queue.h>
 
 /* default values for configuration options */
 
 #ifndef MAXCONS
-#define MAXCONS		16
+#define MAXCONS			16		/* power of 2 */
 #endif
 
 #ifdef SC_NO_SYSMOUSE
@@ -95,19 +95,18 @@
 
 /* printable chars */
 #ifndef PRINTABLE
-#define PRINTABLE(ch)	((ch) > 0x1b || ((ch) > 0x0d && (ch) < 0x1b) \
-			 || (ch) < 0x07)
+#define PRINTABLE(ch)	((ch) > 0x1b || ((ch) > 0x0d && (ch) < 0x1b) || (ch) < 0x07)
 #endif
 
 /* macros for "intelligent" screen update */
-#define mark_for_update(scp, x)	{							\
-			  	    if ((x) < scp->start) scp->start = (x);	\
-				    else if ((x) > scp->end) scp->end = (x);\
-				}
-#define mark_all(scp)		{								\
-				    scp->start = 0;							\
-				    scp->end = scp->xsize * scp->ysize - 1;	\
-				}
+#define mark_for_update(scp, x)	{				\
+	if ((x) < scp->start) scp->start = (x);		\
+	else if ((x) > scp->end) scp->end = (x);	\
+}
+#define mark_all(scp) {							\
+	scp->start = 0;								\
+	scp->end = scp->xsize * scp->ysize - 1;		\
+}
 
 /* vty status flags (scp->status) */
 #define UNKNOWN_MODE	0x00010		/* unknown video mode */
@@ -145,30 +144,31 @@
 #endif
 
 /* virtual terminal buffer */
-typedef struct sc_vtb {
-	int			vtb_flags;
-#define VTB_VALID		(1 << 0)
-#define VTB_ALLOCED		(1 << 1)
-	int			vtb_type;
-#define VTB_INVALID		0
-#define VTB_MEMORY		1
-#define VTB_FRAMEBUFFER	2
-#define VTB_RINGBUFFER	3
-	int			vtb_cols;
-	int			vtb_rows;
-	int			vtb_size;
-	vm_offset_t	vtb_buffer;
-	int			vtb_tail;	/* valid for VTB_RINGBUFFER only */
-} sc_vtb_t;
+struct sc_vtb {
+	int						vtb_flags;
+#define VTB_VALID			(1 << 0)
+#define VTB_ALLOCED			(1 << 1)
+	int						vtb_type;
+#define VTB_INVALID			0
+#define VTB_MEMORY			1
+#define VTB_FRAMEBUFFER		2
+#define VTB_RINGBUFFER		3
+	int						vtb_cols;
+	int						vtb_rows;
+	int						vtb_size;
+	vm_offset_t				vtb_buffer;
+	int						vtb_tail;	/* valid for VTB_RINGBUFFER only */
+};
+typedef struct sc_vtb		sc_vtb_t;
 
 /* text and some mouse cursor attributes */
 struct cursor_attr {
-	u_char		flags;
-	u_char		base;
-	u_char		height;
-	u_char		bg[3];
-	u_char		mouse_ba;
-	u_char		mouse_ia;
+	u_char					flags;
+	u_char					base;
+	u_char					height;
+	u_char					bg[3];
+	u_char					mouse_ba;
+	u_char					mouse_ia;
 };
 
 /* softc */
@@ -179,41 +179,41 @@ struct scr_stat;
 struct tty;
 
 struct sc_cnstate {
-	u_char		kbd_locked;
-	u_char		kdb_locked;
-	u_char		mtx_locked;
-	u_char		kbd_opened;
-	u_char		scr_opened;
+	u_char					kbd_locked;
+	u_char					kdb_locked;
+	u_char					mtx_locked;
+	u_char					kbd_opened;
+	u_char					scr_opened;
 };
 
-typedef struct sc_softc {
-	int						unit;			/* unit # */
-	int						config;			/* configuration flags */
-#define SC_VESAMODE	(1 << 7)
-#define SC_AUTODETECT_KBD (1 << 8)
-#define SC_KERNEL_CONSOLE (1 << 9)
+struct sc_softc {
+	int						unit;				/* unit # */
+	int						config;				/* configuration flags */
+#define SC_VESAMODE			(1 << 7)
+#define SC_AUTODETECT_KBD 	(1 << 8)
+#define SC_KERNEL_CONSOLE 	(1 << 9)
 
-	int						flags;			/* status flags */
-#define SC_VISUAL_BELL	(1 << 0)
-#define SC_QUIET_BELL	(1 << 1)
+	int						flags;				/* status flags */
+#define SC_VISUAL_BELL		(1 << 0)
+#define SC_QUIET_BELL		(1 << 1)
 #if 0 /* not used anymore */
-#define SC_BLINK_CURSOR	(1 << 2)
-#define SC_CHAR_CURSOR	(1 << 3)
+#define SC_BLINK_CURSOR		(1 << 2)
+#define SC_CHAR_CURSOR		(1 << 3)
 #endif
-#define SC_MOUSE_ENABLED (1 << 4)
-#define	SC_SCRN_IDLE	(1 << 5)
-#define	SC_SCRN_BLANKED	(1 << 6)
-#define	SC_SAVER_FAILED	(1 << 7)
-#define	SC_SCRN_VTYLOCK	(1 << 8)
+#define SC_MOUSE_ENABLED	(1 << 4)
+#define	SC_SCRN_IDLE		(1 << 5)
+#define	SC_SCRN_BLANKED		(1 << 6)
+#define	SC_SAVER_FAILED		(1 << 7)
+#define	SC_SCRN_VTYLOCK		(1 << 8)
 
-#define	SC_INIT_DONE	(1 << 16)
-#define	SC_SPLASH_SCRN	(1 << 17)
+#define	SC_INIT_DONE		(1 << 16)
+#define	SC_SPLASH_SCRN		(1 << 17)
 
-	struct keyboard			*kbd;			/* NULL if unavailable. */
+	struct keyboard			*kbd;				/* NULL if unavailable. */
 
 	int						adapter;
 	struct video_adapter 	*adp;
-	int						initial_mode;	/* initial video mode */
+	int						initial_mode;		/* initial video mode */
 
 	int						first_vty;
 	int						vtys;
@@ -242,7 +242,7 @@ typedef struct sc_softc {
 	u_char      			scr_rmap[256];
 
 #ifdef _SC_MD_SOFTC_DECLARED_
-	sc_md_softc_t			md;			/* machine dependent vars */
+	sc_md_softc_t			md;					/* machine dependent vars */
 #endif
 
 #ifndef SC_NO_PALETTE_LOADING
@@ -272,84 +272,87 @@ typedef struct sc_softc {
 #endif
 	struct callout			ctimeout;
 	struct callout			cblink;
-} sc_softc_t;
+};
+typedef struct sc_softc 	sc_softc_t;
 
 /* virtual screen */
-typedef struct scr_stat {
-	int				index;				/* index of this vty */
-	struct sc_softc 	*sc;			/* pointer to softc */
-	struct sc_rndr_sw 	*rndr;			/* renderer */
-	sc_vtb_t		scr;
-	sc_vtb_t		vtb;
+struct scr_stat {
+	int						index;				/* index of this vty */
+	struct sc_softc 		*sc;				/* pointer to softc */
+	struct sc_rndr_sw 		*rndr;				/* renderer */
+	sc_vtb_t				scr;
+	sc_vtb_t				vtb;
 
-	int 			xpos;				/* current X position */
-	int 			ypos;				/* current Y position */
-	int 			xsize;				/* X text size */
-	int 			ysize;				/* Y text size */
-	int 			xpixel;				/* X graphics size */
-	int 			ypixel;				/* Y graphics size */
-	int				xoff;				/* X offset in pixel mode */
-	int				yoff;				/* Y offset in pixel mode */
+	int 					xpos;				/* current X position */
+	int 					ypos;				/* current Y position */
+	int 					xsize;				/* X text size */
+	int 					ysize;				/* Y text size */
+	int 					xpixel;				/* X graphics size */
+	int 					ypixel;				/* Y graphics size */
+	int						xoff;				/* X offset in pixel mode */
+	int						yoff;				/* Y offset in pixel mode */
 
-	u_char			*font;				/* current font */
-	int				font_size;			/* fontsize in Y direction */
-	int				font_width;			/* fontsize in X direction */
+	u_char					*font;				/* current font */
+	int						font_size;			/* fontsize in Y direction */
+	int						font_width;			/* fontsize in X direction */
 
-	int				start;				/* modified area start */
-	int				end;				/* modified area end */
+	int						start;				/* modified area start */
+	int						end;				/* modified area end */
 
-	struct sc_term_sw *tsw;
-	void			*ts;
+	struct sc_term_sw 		*tsw;
+	void					*ts;
 
-	int	 			status;				/* status (bitfield) */
-	int				kbd_mode;			/* keyboard I/O mode */
+	int	 					status;				/* status (bitfield) */
+	int						kbd_mode;			/* keyboard I/O mode */
 
-	int				cursor_pos;			/* cursor buffer position */
-	int				cursor_oldpos;		/* cursor old buffer position */
-	struct cursor_attr dflt_curs_attr;
-	struct cursor_attr base_curs_attr;
-	struct cursor_attr curs_attr;
+	int						cursor_pos;			/* cursor buffer position */
+	int						cursor_oldpos;		/* cursor old buffer position */
+	struct cursor_attr 		dflt_curs_attr;
+	struct cursor_attr 		base_curs_attr;
+	struct cursor_attr 		curs_attr;
 
-	int				mouse_pos;			/* mouse buffer position */
-	int				mouse_oldpos;		/* mouse old buffer position */
-	short			mouse_xpos;			/* mouse x coordinate */
-	short			mouse_ypos;			/* mouse y coordinate */
-	short			mouse_oldxpos;		/* mouse previous x coordinate */
-	short			mouse_oldypos;		/* mouse previous y coordinate */
-	short			mouse_buttons;		/* mouse buttons */
-	int				mouse_cut_start;	/* mouse cut start pos */
-	int				mouse_cut_end;		/* mouse cut end pos */
-	int				mouse_level;		/* xterm mouse protocol */
-	struct proc 	*mouse_proc;		/* proc* of controlling proc */
-	pid_t 			mouse_pid;			/* pid of controlling proc */
-	int				mouse_signal;		/* signal # to report with */
-	const void		*mouse_data;		/* renderer (pixmap) data */
+	int						mouse_pos;			/* mouse buffer position */
+	int						mouse_oldpos;		/* mouse old buffer position */
+	short					mouse_xpos;			/* mouse x coordinate */
+	short					mouse_ypos;			/* mouse y coordinate */
+	short					mouse_oldxpos;		/* mouse previous x coordinate */
+	short					mouse_oldypos;		/* mouse previous y coordinate */
+	short					mouse_buttons;		/* mouse buttons */
+	int						mouse_cut_start;	/* mouse cut start pos */
+	int						mouse_cut_end;		/* mouse cut end pos */
+	int						mouse_level;		/* xterm mouse protocol */
+	struct proc 			*mouse_proc;		/* proc* of controlling proc */
+	pid_t 					mouse_pid;			/* pid of controlling proc */
+	int						mouse_signal;		/* signal # to report with */
+	const void				*mouse_data;		/* renderer (pixmap) data */
 
-	u_short			bell_duration;
-	u_short			bell_pitch;
+	u_short					bell_duration;
+	u_short					bell_pitch;
 
-	u_char			border;				/* border color */
-	int	 			mode;				/* mode */
-	pid_t 			pid;				/* pid of controlling proc */
-	struct proc 	*proc;				/* proc* of controlling proc */
-	struct vt_mode 	smode;				/* switch mode */
+	u_char					border;				/* border color */
+	int	 					mode;				/* mode */
+	pid_t 					pid;				/* pid of controlling proc */
+	struct proc 			*proc;				/* proc* of controlling proc */
+	struct vt_mode 			smode;				/* switch mode */
 
-	sc_vtb_t		*history;			/* circular history buffer */
-	int				history_pos;		/* position shown on screen */
-	int				history_size;		/* size of history buffer */
+	sc_vtb_t				*history;			/* circular history buffer */
+	int						history_pos;		/* position shown on screen */
+	int						history_size;		/* size of history buffer */
 
-	int				splash_save_mode;	/* saved mode for splash screen */
-	int				splash_save_status;	/* saved status for splash screen */
+	int						splash_save_mode;	/* saved mode for splash screen */
+	int						splash_save_status;	/* saved status for splash screen */
 #ifdef _SCR_MD_STAT_DECLARED_
-	scr_md_stat_t	md;					/* machine dependent vars */
+	scr_md_stat_t			md;					/* machine dependent vars */
 #endif
-} scr_stat;
+};
+typedef struct scr_stat		scr_stat;
 
 /* TTY softc. */
-typedef struct sc_ttysoftc {
-	int			st_index;
-	scr_stat	*st_stat;
-} sc_ttysoftc;
+struct sc_ttysoftc {
+	int						st_index;
+	scr_stat				*st_stat;
+};
+typedef struct sc_ttysoftc 	sc_ttysoftc;
 
 #ifndef SC_NORM_ATTR
 #define SC_NORM_ATTR			(FG_LIGHTGREY | BG_BLACK)
@@ -367,28 +370,28 @@ typedef struct sc_ttysoftc {
 /* terminal emulator */
 
 #ifndef SC_DFLT_TERM
-#define SC_DFLT_TERM	"scteken"
+#define SC_DFLT_TERM	"*"						/* any */
 #endif
 
-typedef int	sc_term_init_t(scr_stat *scp, void **tcp, int code);
+typedef int			sc_term_init_t(scr_stat *scp, void **tcp, int code);
 #define SC_TE_COLD_INIT	0
 #define SC_TE_WARM_INIT	1
-typedef int	sc_term_term_t(scr_stat *scp, void **tcp);
-typedef void	sc_term_puts_t(scr_stat *scp, u_char *buf, int len);
-typedef int	sc_term_ioctl_t(scr_stat *scp, struct tty *tp, u_long cmd, caddr_t data, struct proc *p);
-typedef int	sc_term_reset_t(scr_stat *scp, int code);
+typedef int			sc_term_term_t(scr_stat *scp, void **tcp);
+typedef void		sc_term_puts_t(scr_stat *scp, u_char *buf, int len);
+typedef int			sc_term_ioctl_t(scr_stat *scp, struct tty *tp, u_long cmd, caddr_t data, struct proc *p);
+typedef int			sc_term_reset_t(scr_stat *scp, int code);
 #define SC_TE_HARD_RESET 0
 #define SC_TE_SOFT_RESET 1
-typedef void	sc_term_default_attr_t(scr_stat *scp, int norm, int rev);
-typedef void	sc_term_clear_t(scr_stat *scp);
-typedef void	sc_term_notify_t(scr_stat *scp, int event);
+typedef void		sc_term_default_attr_t(scr_stat *scp, int norm, int rev);
+typedef void		sc_term_clear_t(scr_stat *scp);
+typedef void		sc_term_notify_t(scr_stat *scp, int event);
 #define SC_TE_NOTIFY_VTSWITCH_IN	0
 #define SC_TE_NOTIFY_VTSWITCH_OUT	1
-typedef int	sc_term_input_t(scr_stat *scp, int c, struct tty *tp);
-typedef const char *sc_term_fkeystr_t(scr_stat *scp, int c);
-typedef void sc_term_sync_t(scr_stat *scp);
+typedef int			sc_term_input_t(scr_stat *scp, int c, struct tty *tp);
+typedef const char 	*sc_term_fkeystr_t(scr_stat *scp, int c);
+typedef void 		sc_term_sync_t(scr_stat *scp);
 
-typedef struct sc_term_sw {
+struct sc_term_sw {
 	LIST_ENTRY(sc_term_sw)	link;
 	char 					*te_name;		/* name of the emulator */
 	char 					*te_desc;		/* description */
@@ -406,33 +409,8 @@ typedef struct sc_term_sw {
 	sc_term_input_t			*te_input;
 	sc_term_fkeystr_t		*te_fkeystr;
 	sc_term_sync_t			*te_sync;
-} sc_term_sw_t;
-
-#define SCTERM_MODULE(name, sw)									\
-	DATA_SET(scterm_set, sw);									\
-	static int													\
-	scterm_##name##_event(module_t mod, int type, void *data) 	\
-	{															\
-		switch (type) {											\
-		case MOD_LOAD:											\
-			return sc_term_add(&sw);							\
-		case MOD_UNLOAD:										\
-			if (sw.te_refcount > 0)								\
-				return EBUSY;									\
-			return sc_term_remove(&sw);							\
-		default:												\
-			return EOPNOTSUPP;									\
-			break;												\
-		}														\
-		return 0;												\
-	}															\
-	static moduledata_t scterm_##name##_mod = {					\
-		"scterm-" #name,										\
-		scterm_##name##_event,									\
-		NULL,													\
-	};															\
-	DECLARE_MODULE(scterm_##name, scterm_##name##_mod,			\
-		       SI_SUB_DRIVERS, SI_ORDER_MIDDLE)
+};
+typedef struct sc_term_sw	sc_term_sw_t;
 
 /* renderer function table */
 typedef void	vr_init_t(scr_stat *scp);
@@ -445,24 +423,26 @@ typedef void	vr_blink_cursor_t(scr_stat *scp, int at, int flip);
 typedef void	vr_set_mouse_t(scr_stat *scp);
 typedef void	vr_draw_mouse_t(scr_stat *scp, int x, int y, int on);
 
-typedef struct sc_rndr_sw {
-	vr_init_t			*init;
-	vr_clear_t			*clear;
-	vr_draw_border_t	*draw_border;
-	vr_draw_t			*draw;
-	vr_set_cursor_t		*set_cursor;
-	vr_draw_cursor_t	*draw_cursor;
-	vr_blink_cursor_t	*blink_cursor;
-	vr_set_mouse_t		*set_mouse;
-	vr_draw_mouse_t		*draw_mouse;
-} sc_rndr_sw_t;
+struct sc_rndr_sw {
+	vr_init_t				*init;
+	vr_clear_t				*clear;
+	vr_draw_border_t		*draw_border;
+	vr_draw_t				*draw;
+	vr_set_cursor_t			*set_cursor;
+	vr_draw_cursor_t		*draw_cursor;
+	vr_blink_cursor_t		*blink_cursor;
+	vr_set_mouse_t			*set_mouse;
+	vr_draw_mouse_t			*draw_mouse;
+};
+typedef struct sc_rndr_sw 	sc_rndr_sw_t;
 
-typedef struct sc_renderer {
+struct sc_renderer {
 	char					*name;
 	int						mode;
 	sc_rndr_sw_t			*rndrsw;
 	LIST_ENTRY(sc_renderer)	link;
-} sc_renderer_t;
+};
+typedef struct sc_renderer 	sc_renderer_t;
 
 #define RENDERER(name, mode, sw, set)							\
 	static struct sc_renderer scrndr_##name##_##mode = {		\
@@ -508,8 +488,8 @@ typedef struct sc_renderer {
 		       SI_SUB_DRIVERS, SI_ORDER_MIDDLE)
 
 typedef struct {
-	int		shift_state;
-	int		bell_pitch;
+	int			shift_state;
+	int			bell_pitch;
 } bios_values_t;
 
 /* other macros */
@@ -542,7 +522,7 @@ typedef struct {
 		} while(0)
 
 /* syscons.c */
-extern int 	(*sc_user_ioctl)(struct tty *tp, u_long cmd, caddr_t data, struct thread *td);
+extern int 		(*sc_user_ioctl)(struct tty *tp, u_long cmd, caddr_t data, struct thread *td);
 
 int				sc_probe_unit(int unit, int flags);
 int				sc_attach_unit(int unit, int flags);

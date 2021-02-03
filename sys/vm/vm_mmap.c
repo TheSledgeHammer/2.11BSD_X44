@@ -492,9 +492,74 @@ madvise(p, uap, retval)
 	} */ *uap;
 	register_t *retval;
 {
+	caddr_t addr;
+	vm_size_t size;
+	int advice, error;
 
-	/* Not yet implemented */
-	return (EOPNOTSUPP);
+	addr = (caddr_t)SCARG(uap, addr);
+	size = (vm_size_t)SCARG(uap, len);
+	advice = SCARG(uap, behav);
+
+	switch (advice) {
+	case MADV_NORMAL:
+	case MADV_RANDOM:
+	case MADV_SEQUENTIAL:
+
+		error = vm_map_advice(&p->p_vmspace->vm_map, addr, addr + size, advice);
+		break;
+
+	case MADV_WILLNEED:
+
+		/*
+		 * Activate all these pages, pre-faulting them in if
+		 * necessary.
+		 */
+
+		error = vm_map_willneed(&p->p_vmspace->vm_map, addr, addr + size);
+		break;
+
+	case MADV_DONTNEED:
+
+		/*
+		 * Deactivate all these pages.  We don't need them
+		 * any more.  We don't, however, toss the data in
+		 * the pages.
+		 */
+
+		error = vm_map_clean(&p->p_vmspace->vm_map, addr, addr + size, TRUE, FALSE);
+		break;
+
+	case MADV_FREE:
+
+		/*
+		 * These pages contain no valid data, and may be
+		 * garbage-collected.  Toss all resources, including
+		 * any swap space in use.
+		 */
+
+		error = vm_map_clean(&p->p_vmspace->vm_map, addr, addr + size, TRUE, TRUE);
+		break;
+
+	case MADV_SPACEAVAIL:
+
+		/*
+		 * XXXMRG What is this?  I think it's:
+		 *
+		 *	Ensure that we have allocated backing-store
+		 *	for these pages.
+		 *
+		 * This is going to require changes to the page daemon,
+		 * as it will free swap space allocated to pages in core.
+		 * There's also what to do for device/file/anonymous memory.
+		 */
+
+		return (EINVAL);
+
+	default:
+		return (EINVAL);
+	}
+
+	return (error);
 }
 
 /* ARGSUSED */

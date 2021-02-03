@@ -125,12 +125,14 @@ struct tty {
 #define	TTYHOG		1024
 
 #ifdef KERNEL
-short	tthiwat[NSPEEDS], ttlowat[NSPEEDS];
+short						tthiwat[NSPEEDS], ttlowat[NSPEEDS];
 #define	TTHIWAT(tp)			tthiwat[(tp)->t_ospeed&TTMASK]
 #define	TTMLOWAT(tp)		ttlowat[(tp)->t_ospeed&TTMASK]
+#define	TTMAXHIWAT			roundup(2048, CBSIZE)
+#define	TTMINHIWAT			roundup(100, CBSIZE)
 #define TTMAXLOWAT 			256
 #define TTMINLOWAT 			32
-extern	struct ttychars ttydefaults;
+extern	struct ttychars 	ttydefaults;
 #endif
 
 /* internal state bits */
@@ -224,6 +226,7 @@ void ttsetwater (struct tty *tp));
 int	 ttspeedtab (int speed, struct speedtab *table));
 int	 ttstart (struct tty *tp));
 void ttwakeup (struct tty *tp));
+void ttwwakeup (struct tty *tp));
 int	 ttwrite (struct tty *tp, struct uio *uio, int flag));
 void ttychars (struct tty *tp));
 int	 ttycheckoutq (struct tty *tp, int wait));

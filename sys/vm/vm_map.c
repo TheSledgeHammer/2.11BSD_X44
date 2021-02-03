@@ -69,6 +69,7 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
+#include <sys/mman.h>
 
 #include <vm/include/vm_page.h>
 #include <vm/include/vm.h>
@@ -1364,7 +1365,7 @@ vm_map_protect(map, start, end, new_prot, set_max)
 	}
 
 	vm_map_unlock(map);
-	return(KERN_SUCCESS);
+	return (KERN_SUCCESS);
 }
 
 /*
@@ -1414,7 +1415,97 @@ vm_map_inherit(map, start, end, new_inheritance)
 	}
 
 	vm_map_unlock(map);
-	return(KERN_SUCCESS);
+	return (KERN_SUCCESS);
+}
+
+/*
+ * vm_map_advice: set advice code for range of addrs in map.
+ *
+ * => map must be unlocked
+ */
+int
+vm_map_advice(map, start, end, new_advice)
+	register vm_map_t		map;
+	register vm_offset_t	start;
+	register vm_offset_t	end;
+	int 					new_advice;
+{
+	register vm_map_entry_t	entry, temp_entry;
+
+	vm_map_lock(map);
+	VM_MAP_RANGE_CHECK(map, start, end);
+
+	if (vm_map_lookup_entry(map, start, &temp_entry)) {
+		entry = temp_entry;
+		VM_MAP_CLIP_START(map, entry, start);
+	} else {
+		entry = CIRCLEQ_NEXT(temp_entry, cl_entry);
+	}
+
+	while ((entry != &map->cl_header) && (entry->start < end)) {
+		VM_MAP_CLIP_END(map, entry, end);
+
+		switch (new_advice) {
+		case MADV_NORMAL:
+		case MADV_RANDOM:
+		case MADV_SEQUENTIAL:
+			/* nothing special here */
+			break;
+
+		default:
+			vm_map_unlock(map);
+			return EINVAL;
+		}
+		entry->advice = new_advice;
+		entry = CIRCLEQ_NEXT(entry, cl_entry);
+	}
+
+	vm_map_unlock(map);
+	return (KERN_SUCCESS);
+}
+
+/*
+ * vm_map_willneed: apply MADV_WILLNEED
+ */
+int
+vm_map_willneed(map, start, end)
+	register vm_map_t		map;
+	register vm_offset_t	start;
+	register vm_offset_t	end;
+{
+	register vm_map_entry_t	entry;
+
+	vm_map_lock_read(map);
+	VM_MAP_RANGE_CHECK(map, start, end);
+	if (!vm_map_lookup_entry(map, start, &entry)) {
+		entry = CIRCLEQ_NEXT(entry, cl_entry);
+	}
+	while(entry->start < end) {
+		vm_object_t obj = entry->object.vm_object;
+
+		/*
+		 * For now, we handle only the easy but commonly-requested case.
+		 * ie. start prefetching of backing obj pages.
+		 */
+
+		if(entry->is_a_map && obj != NULL) {
+			vm_offset_t offset;
+			vm_offset_t size;
+
+			offset = entry->offset;
+			if (start < entry->start) {
+				offset += entry->start - start;
+			}
+			size = entry->offset + (entry->end - entry->start);
+			if (entry->end < end) {
+				size -= end - entry->end;
+			}
+		}
+		entry = CIRCLEQ_NEXT(entry, cl_entry);
+	}
+
+	vm_map_unlock_read(map);
+	return (KERN_SUCCESS);
 }
 
 /*

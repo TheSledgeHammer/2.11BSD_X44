@@ -169,6 +169,7 @@ bus_space_vaddr(bus_space_tag_t, bus_space_handle_t)
  * Read a 1, 2, 4, or 8 byte quantity from bus space
  * described by tag/handle/offset.
  */
+u_int8_t
 bus_space_read_1(t, h, o)
 	bus_space_tag_t t;
 	bus_space_handle_t h;

@@ -1684,6 +1684,9 @@ ttyout(cp, tp)
 		(void) ttyoutput(c, tp);
 }
 
+/*
+ * Wake up any readers on a tty.
+ */
 void
 ttwakeup(tp)
 	register struct tty *tp;
@@ -1695,8 +1698,28 @@ ttwakeup(tp)
 		tp->t_rsel = 0;
 	}
 	if (tp->t_state & TS_ASYNC)
-		gsignal(tp->t_pgrp, SIGIO); 
+		//gsignal(tp->t_pgrp, SIGIO);
+		pgsignal(tp->t_pgrp, SIGIO, 1);
 	wakeup((caddr_t)&tp->t_rawq);
+}
+
+
+/*
+ * Wake up any writers on a tty.
+ */
+void
+ttwwakeup(tp)
+	register struct tty *tp;
+{
+	if (tp->t_wsel && tp->t_outq.c_cc <= tp->t_lowat) {
+		selwakeup(tp->t_wsel, tp->t_state&TS_WCOLL);
+		tp->t_state &= ~TS_WCOLL;
+		tp->t_wsel = 0;
+	}
+	if ((tp->t_state & TS_BUSY) && tp->t_outq.c_cc == 0) {
+		tp->t_state &= ~TS_BUSY;
+		wakeup(tp);
+	}
 }
 
 /*

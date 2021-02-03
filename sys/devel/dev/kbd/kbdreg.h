@@ -33,21 +33,26 @@
 
 #include <sys/queue.h>
 #include <sys/user.h>
+#include <devel/dev/kbio.h>
 
-#define KBD_MAXKEYBOARDS		16
+#define KBD_MAXKEYBOARDS			16
 
 /* forward declarations */
-typedef struct keyboard keyboard_t;
-typedef struct genkbd_softc genkbd_softc_t;
+typedef struct keyboard 			keyboard_t;
+typedef struct genkbd_softc 		genkbd_softc_t;
+typedef struct keyboard_callback 	keyboard_callback_t;
+typedef struct keyboard_switch 		keyboard_switch_t;
+typedef struct keyboard_driver 		keyboard_driver_t;
+
 struct keymap;
 struct accentmap;
 struct fkeytab;
 struct device;
 
 /* Locking functions */
-#define kbd_lock_init(k)		(simple_lock_init((k)->kb_lock->lk_lnterlock, "kbd_lock"))
-#define kbd_lock(k)	 			(simple_lock((k)->kb_lock->lk_lnterlock))
-#define kbd_unlock(k)			(simple_unlock((k)->kb_lock->lk_lnterlock))
+#define kbd_lock_init(k)			(simple_lock_init((k)->kb_lock->lk_lnterlock, "kbd_lock"))
+#define kbd_lock(k)	 				(simple_lock((k)->kb_lock->lk_lnterlock))
+#define kbd_unlock(k)				(simple_unlock((k)->kb_lock->lk_lnterlock))
 
 /* call back funcion */
 typedef int		kbd_callback_func_t(keyboard_t *kbd, int event, void *arg);
@@ -77,12 +82,12 @@ typedef void	kbd_diag_t(keyboard_t *kbd, int level);
 #define KBDIO_KEYINPUT	0
 #define KBDIO_UNLOADING	1
 
-typedef struct keyboard_callback {
+struct keyboard_callback {
 	kbd_callback_func_t *kc_func;
 	void				*kc_arg;
-} keyboard_callback_t;
+};
 
-typedef struct keyboard_switch {
+struct keyboard_switch {
 	kbd_probe_t			*probe;
 	kbd_init_t			*init;
 	kbd_term_t			*term;
@@ -102,10 +107,10 @@ typedef struct keyboard_switch {
 	kbd_get_fkeystr_t 	*get_fkeystr;
 	kbd_poll_mode_t 	*poll;
 	kbd_diag_t			*diag;
-} keyboard_switch_t;
+};
 
-int genkbd_probe(keyboard_switch_t *sw, int unit, void *arg, int flags);
-int genkbd_init(keyboard_switch_t *sw, int unit, keyboard_t **kbdpp, void *arg, int flags);
+int 				genkbd_probe(keyboard_switch_t *sw, int unit, void *arg, int flags);
+int 				genkbd_init(keyboard_switch_t *sw, int unit, keyboard_t **kbdpp, void *arg, int flags);
 
 kbd_term_t			genkbd_term;
 kbd_intr_t			genkbd_intr;
@@ -130,14 +135,14 @@ kbd_diag_t			genkbd_diag;
  * time, e.g. one shouldn't be able to rename a driver or use a different kbdsw
  * entirely, but patching individual methods is acceptable.
  */
-typedef struct keyboard_driver {
+struct keyboard_driver {
     SIMPLEQ_ENTRY(keyboard_driver) 	link;
     const char * const				name;
     keyboard_switch_t * const		kbdsw;
     /* backdoor for the console driver */
     int								(* const configure)(int);
     int								flags;
-} keyboard_driver_t;
+};
 
 #define	KBDF_REGISTERED		0x0001
 
@@ -184,10 +189,6 @@ struct keyboard {
 #define KB_DELAY2			100
 	unsigned long			kb_count;		/* # of processed key strokes */
 	u_char					kb_lastact[NUM_KEYS/2];
-
-	struct device			*kb_dev;
-
-	const keyboard_driver_t	*kb_drv;
 	struct lock				*kb_lock;
 };
 
@@ -217,12 +218,6 @@ struct keyboard {
  * Keyboard disciplines: call actual handlers via kbdsw[].
  */
 
-#define KEYBOARD_DRIVER(name, sw, config)				\
-	static struct keyboard_driver name##_kbd_driver = { \
-		{ NULL }, #name, &sw, config					\
-	};													\
-	DATA_SET(kbddriver_set, name##_kbd_driver);
-
 /* functions for the keyboard driver */
 int					kbd_add_driver(keyboard_driver_t *driver);
 int					kbd_delete_driver(keyboard_driver_t *driver);
@@ -241,8 +236,7 @@ int					kbd_find_keyboard2(char *driver, int unit, int index);
 keyboard_t 			*kbd_get_keyboard(int index);
 
 /* a back door for the console driver to tickle the keyboard driver XXX */
-int					kbd_configure(int flags);
-			/* see `kb_config' above for flag bit definitions */
+int					kbd_configure(int flags); /* see `kb_config' above for flag bit definitions */
 
 /* evdev2kbd mappings */
 void				kbd_ev_event(keyboard_t *kbd, uint16_t type, uint16_t code, int32_t value);
@@ -250,8 +244,8 @@ void				kbd_ev_event(keyboard_t *kbd, uint16_t type, uint16_t code, int32_t valu
 #ifdef KBD_INSTALL_CDEV
 
 /* virtual keyboard cdev driver functions */
-int					vkbd_attach(keyboard_t *kbd);
-int					vkbd_detach(keyboard_t *kbd);
+int					genkbd_attach(keyboard_t *kbd);
+int					genkbd_detach(keyboard_t *kbd);
 
 #endif /* KBD_INSTALL_CDEV */
 
@@ -296,7 +290,6 @@ extern SIMPLEQ_HEAD(, keyboard_driver) 	keyboard_drivers;
 extern keyboard_switch_t 				*kbdsw[KBD_MAXKEYBOARDS];
 
 /* Initialization for the kbd layer, performed by cninit. */
-
 int 	genkbd_commonioctl(keyboard_t *kbd, u_long cmd, caddr_t arg);
 int 	genkbd_keyaction(keyboard_t *kbd, int keycode, int up, int *shiftstate, int *accents);
 

@@ -55,6 +55,14 @@ vop_alloc(vops)
 	MALLOC(vops, struct vnodeops *, sizeof(struct vnodeops *), M_VNODE, M_WAITOK);
 }
 
+/* free vnodeops */
+void
+vop_free(vops)
+	struct vnodeops *vops;
+{
+	FREE(vops, M_VNODE);
+}
+
 int
 vop_lookup(dvp, vpp, cnp)
 	struct vnode *dvp;

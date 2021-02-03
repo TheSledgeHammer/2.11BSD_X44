@@ -359,7 +359,7 @@ exec_extract_strings(elp, dp)
 	int error, length;
 
 #ifdef DIAGNOSTIC
-		if (argp == (vaddr_t) 0)
+		if (argp == (u_long) 0)
 			panic("execve: argp == NULL");
 #endif
 	dp = argp;

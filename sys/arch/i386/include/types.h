@@ -40,6 +40,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
+
 #if !defined(_ANSI_SOURCE)
 typedef struct _physadr {
 	int r[1];
@@ -50,8 +51,8 @@ typedef struct label_t {
 } label_t;
 #endif
 
-typedef	unsigned long	vm_offset_t;
-typedef	unsigned long	vm_size_t;
+typedef	unsigned long		vm_offset_t;
+typedef	unsigned long		vm_size_t;
 
 /*
  * Basic integral types.  Omit the typedef if
@@ -116,7 +117,6 @@ typedef unsigned long		__vaddr_t;
 typedef unsigned long		__paddr_t;
 typedef unsigned long		__vsize_t;
 typedef unsigned long		__psize_t;
-
 
 /* 7.18.1.4 Integer types capable of holding object pointers */
 

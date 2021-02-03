@@ -41,11 +41,11 @@
 typedef struct usb_block_dma {
 	bus_dma_tag_t tag;
 	bus_dmamap_t map;
-        caddr_t kaddr;
-        bus_dma_segment_t segs[1];
-        int nsegs;
-        size_t size;
-        size_t align;
+    caddr_t kaddr;
+    bus_dma_segment_t segs[1];
+    int nsegs;
+    size_t size;
+    size_t align;
 	int fullblock;
 	LIST_ENTRY(usb_block_dma) next;
 } usb_dma_block_t;
@@ -55,8 +55,8 @@ typedef struct {
 	u_int offs;
 } usb_dma_t;
 
-#define DMAADDR(dma) ((dma)->block->segs[0].ds_addr + (dma)->offs)
-#define KERNADDR(dma) ((void *)((dma)->block->kaddr + (dma)->offs))
+#define DMAADDR(dma) 	((dma)->block->segs[0].ds_addr + (dma)->offs)
+#define KERNADDR(dma) 	((void *)((dma)->block->kaddr + (dma)->offs))
 
 usbd_status	usb_allocmem __P((bus_dma_tag_t, size_t, size_t, usb_dma_t *));
 void		usb_freemem  __P((bus_dma_tag_t, usb_dma_t *));
@@ -83,9 +83,9 @@ void		usb_freemem  __P((bus_dma_tag_t, usb_dma_t *));
 typedef void * usb_dma_t;
 
 #define		usb_allocmem(t,s,a,p)	(*(p) = malloc(s, M_USB, M_NOWAIT), (*(p) == NULL? USBD_NOMEM: USBD_NORMAL_COMPLETION))
-#define		usb_freemem(t,p)	(free(*(p), M_USB))
+#define		usb_freemem(t,p)		(free(*(p), M_USB))
 
-#define DMAADDR(dma)	(vtophys(*(dma)))
-#define KERNADDR(dma)	((void *) *(dma))
+#define DMAADDR(dma)				(vtophys(*(dma)))
+#define KERNADDR(dma)				((void *) *(dma))
 #endif
 

@@ -116,11 +116,12 @@ struct vm_map_entry {
 	vm_prot_t					max_protection;	/* maximum protection */
 	vm_inherit_t				inheritance;	/* inheritance */
 	int							wired_count;	/* can be paged if = 0 */
+	int							advice;			/* madvise advice */
 
 	/* etype is a bitmap that replaces the following 4 items */
 	//int							etype;			/* entry type */
 	//struct vm_aref				aref;			/* anonymous overlay */
-	//int							advice;			/* madvise advice */
+
 };
 
 /*
@@ -248,5 +249,7 @@ void		vm_map_simplify (vm_map_t, vm_offset_t);
 void		vm_map_simplify_entry (vm_map_t, vm_map_entry_t);
 void		vm_map_startup (void);
 int		 	vm_map_submap (vm_map_t, vm_offset_t, vm_offset_t, vm_map_t);
+int			vm_map_advice (vm_map_t, vm_offset_t, vm_offset_t, int);
+int			vm_map_willneed (vm_map_t, vm_offset_t, vm_offset_t);
 #endif
 #endif /* _VM_MAP_ */

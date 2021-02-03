@@ -56,18 +56,12 @@ A General todo list. Don't hesitate to add to this list. :)
 - Add: Common Speaker code from i386
 - Fix:
 	- video (kqfilter)
+	- com_multi: COMMULTICF_SLAVE & COMMULTICF_SLAVE_DEFAULT
 	- eisa: Missing tidbits: EISACF_SLOT & EISACF_SLOT_DEFAULT
 	- pci: Missing tidbits: PCIBUSCF_BUS, PCICF_DEV & PCICF_FUNCTION (includes DEFAULTS)
-	- kbd: 
-		- current implementation ((WILL NOT WORK AS IS!!!) Would require the entire device 	layout 			to be re-implemented around FreeBSD)
-		- no virtual keyboard in kernel (deprecated)
-		- resource maps: change from FreeBSD/ DragonflyBSD's to NetBSD style
-		- keyboard drivers & config driver (cfdriver) are not correct. example: genkbd.c
-			- current cfdriver/data structure: 
-				- cannot manage multiple config drivers through a single driver interface as 					implemented by FreeBSD/ DragonflyBSD keyboard.
-			- each cfdriver/data structure:
-				- Needs a device reference and the following information
-					- devs (if applicable), name, match, attach, flags, and size
+	
+- Syscons:	
+	- kbd:
 		- kbd changes:
 			- remove need for the in-kernel virtual keyboard driver (used with FreeBSD's sysinit)
 			- provide a generic keyboard layer with routines that can manage multiple.
@@ -89,7 +83,7 @@ Of Interest Todo:
 	- efi
 	- commands: needs work
 	- install: not present
-	### arch:
+### arch:
 	- i386:
 		- gptboot
 		- isoboot

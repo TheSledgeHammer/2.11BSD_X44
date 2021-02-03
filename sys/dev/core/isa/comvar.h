@@ -151,8 +151,8 @@ int 	com_detach (struct device *, int);
 #define	__NO_SOFT_SERIAL_INTERRUPT
 #endif
 #ifdef __NO_SOFT_SERIAL_INTERRUPT
-#define	IPL_SERIAL	IPL_TTY
-#define	splserial()	spltty()
+#define	IPL_SERIAL		IPL_TTY
+#define	splserial()		spltty()
 #define	IPL_SOFTSERIAL	IPL_TTY
 #define	splsoftserial()	spltty()
 #endif

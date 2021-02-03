@@ -103,7 +103,7 @@ struct bus_space_tag  {
 	void				*bst_ctx;
 };
 
-typedef	vaddr_t bus_space_handle_t;
+typedef	u_long bus_space_handle_t;
 
 extern bus_space_tag_t i386_bus_space_mem;
 extern bus_space_tag_t i386_bus_space_io;
