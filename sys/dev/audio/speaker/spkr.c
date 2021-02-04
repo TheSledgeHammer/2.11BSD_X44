@@ -1,4 +1,4 @@
-/*	$NetBSD: spkr.c,v 1.28.6.1 1997/12/07 16:07:21 thorpej Exp $	*/
+/*	$NetBSD: spkr.c,v 1.1 1998/04/15 20:26:18 drochner Exp $	*/
 
 /*
  * spkr.c -- device driver for console speaker on 80386
@@ -9,12 +9,8 @@
  *      use hz value from param.c
  */
 
-#include "spkr.h"
-#if NSPKR > 0
-#if NSPKR > 1
-/* #error only one speaker device per system */
-#endif
 
+#if NSPKR > 0
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
@@ -23,18 +19,14 @@
 #include <sys/malloc.h>
 #include <sys/uio.h>
 #include <sys/proc.h>
+#include <sys/ioctl.h>
+#include <sys/devsw.h>
+#include <sys/conf.h>
 #include <sys/user.h>
 
-#include <machine/cpu.h>
-#include <machine/pio.h>
-#include <machine/spkr.h>
+#include <dev/audio/speaker/pcppivar.h>
 
-#include <dev/core/isa/isareg.h>
-#include <dev/core/isa/isavar.h>
-#include <i386/isa/timerreg.h>
-#include <i386/isa/spkrreg.h>
-
-DEVSWIO_CONFIG_INIT(NSPKR, NULL, &spkr_cdevsw, NULL);
+#include <dev/audio/speaker/spkrio.h>
 
 int spkrprobe (struct device *, struct cfdata *, void *);
 void spkrattach (struct device *, struct device *, void *);
@@ -68,77 +60,22 @@ struct cfdriver spkr_cd = {
 	NULL, "spkr", spkrprobe, spkrattach, DV_DULL, sizeof(struct spkr_softc)
 };
 
-/**************** MACHINE DEPENDENT PART STARTS HERE *************************
- *
- * This section defines a function tone() which causes a tone of given
- * frequency and duration from the 80x86's console speaker.
- * Another function endtone() is defined to force sound off, and there is
- * also a rest() entry point to do pauses.
- *
- * Audible sound is generated using the Programmable Interval Timer (PIT) and
- * Programmable Peripheral Interface (PPI) attached to the 80x86's speaker. The
- * PPI controls whether sound is passed through at all; the PIT's channel 2 is
- * used to generate clicks (a square wave) of whatever frequency is desired.
- */
+static pcppi_tag_t ppicookie;
 
-/*
- * Magic numbers for timer control. 
- */
-#define PIT_MODE	(TIMER_SEL2|TIMER_16BIT|TIMER_SQWAVE)
+#define SPKRPRI (PZERO - 1)
 
-static void endtone (void *);
 static void tone (u_int, u_int);
-static void endrest (void *);
 static void rest (int);
 static void playinit (void);
 static void playtone (int, int, int);
 static void playstring (char *, int);
-
-static void
-endtone(v)
-    void *v;
-{
-    wakeup(endtone);
-    outb(PITAUX_PORT, inb(PITAUX_PORT) & ~PIT_SPKR);
-}
 
 static
 void tone(hz, ticks)
 /* emit tone of frequency hz for given number of ticks */
     u_int hz, ticks;
 {
-    u_int divisor = TIMER_DIV(hz);
-    int sps;
-
-#ifdef DEBUG
-    printf("tone: hz=%d ticks=%d\n", hz, ticks);
-#endif /* DEBUG */
-
-    /* set timer to generate clicks at given frequency in Hertz */
-    sps = spltty();
-    outb(TIMER_MODE, PIT_MODE);		/* prepare timer */
-    outb(TIMER_CNTR2, (unsigned char) divisor);  /* send lo byte */
-    outb(TIMER_CNTR2, (divisor >> 8));	/* send hi byte */
-    splx(sps);
-
-    /* turn the speaker on */
-    outb(PITAUX_PORT, inb(PITAUX_PORT) | PIT_SPKR);
-
-    /*
-     * Set timeout to endtone function, then give up the timeslice.
-     * This is so other processes can execute while the tone is being
-     * emitted.
-     */
-    timeout(endtone, NULL, ticks);
-    sleep(endtone, PZERO - 1);
-}
-
-static void
-endrest(v)
-/* end a rest */
-	void *v;
-{
-    wakeup(endrest);
+	pcppi_bell(ppicookie, hz, ticks, 1);
 }
 
 static void
@@ -151,11 +88,11 @@ rest(ticks)
      * This is so other processes can execute while the rest is being
      * waited out.
      */
-#ifdef DEBUG
+#ifdef SPKRDEBUG
     printf("rest: %d\n", ticks);
-#endif /* DEBUG */
-    timeout(endrest, NULL, ticks);
-    sleep(endrest, PZERO - 1);
+#endif /* SPKRDEBUG */
+    if (ticks > 0)
+	    tsleep(rest, SPKRPRI | PCATCH, "rest", ticks);
 }
 
 /**************** PLAY STRING INTERPRETER BEGINS HERE **********************
@@ -237,9 +174,9 @@ playtone(pitch, value, sustain)
 /* play tone of proper duration for current rhythm signature */
     int	pitch, value, sustain;
 {
-	register int sound, silence, snum = 1, sdenom = 1;
+    register int	sound, silence, snum = 1, sdenom = 1;
 
-	/* this weirdness avoids floating-point arithmetic */
+    /* this weirdness avoids floating-point arithmetic */
 	for (; sustain; sustain--) {
 		snum *= NUM_MULT;
 		sdenom *= DENOM_MULT;
@@ -253,10 +190,10 @@ playtone(pitch, value, sustain)
 		silence = whole * (FILLTIME - fill) * snum
 				/ (FILLTIME * value * sdenom);
 
-#ifdef DEBUG
+#ifdef SPKRDEBUG
 	printf("playtone: pitch %d for %d ticks, rest for %d ticks\n",
 	    pitch, sound, silence);
-#endif /* DEBUG */
+#endif /* SPKRDEBUG */
 
 		tone(pitchtab[pitch], sound);
 		if (fill != LEGATO)
@@ -270,17 +207,18 @@ playstring(cp, slen)
     char	*cp;
     int		slen;
 {
-	int pitch, lastpitch = OCTAVE_NOTES * DFLT_OCTAVE;
+    int		pitch, lastpitch = OCTAVE_NOTES * DFLT_OCTAVE;
 
 #define GETNUM(cp, v)	for(v=0; slen > 0 && isdigit(cp[1]); ) \
 				{v = v * 10 + (*++cp - '0'); slen--;}
-	for (; slen--; cp++) {
-		int sustain, timeval, tempo;
-		register char c = toupper(*cp);
+    for (; slen--; cp++)
+    {
+	int		sustain, timeval, tempo;
+	register char	c = toupper(*cp);
 
-#ifdef DEBUG
+#ifdef SPKRDEBUG
 	printf("playstring: %c (%x)\n", c, c);
-#endif /* DEBUG */
+#endif /* SPKRDEBUG */
 
 		switch (c) {
 		case 'A':
@@ -438,28 +376,16 @@ playstring(cp, slen)
 static int spkr_active;	/* exclusion flag */
 static void *spkr_inbuf;
 
+static int spkr_attached = 0;
+
 int
-spkrprobe (parent, cf, aux)
+spkrprobe (parent, match, aux)
 	struct device *parent;
-	struct cfdata *cf;
+	struct cfdata *match;
 	void *aux;
 {
-	/*
-	 * We only attach to the keyboard controller via
-	 * the console drivers. (We really wish we could be the
-	 * child of a real keyboard controller driver.)
-	 */
-	if ((parent == NULL)
-			|| ((strcmp(parent->dv_cfdata->cf_driver->cd_name, "pc") != 0)
-					&& (strcmp(parent->dv_cfdata->cf_driver->cd_name, "vt") != 0)))
-		return (0);
-	if (cf->cf_loc[PCKBDCF_PORT] != PITAUX_PORT)
-		return (0);
-
-	return (1);
+	return (!spkr_attached);
 }
-
-static int spkr_attached = 0;
 
 void
 spkrattach(parent, self, aux)
@@ -467,7 +393,8 @@ spkrattach(parent, self, aux)
 	struct device *self;
 	void *aux;
 {
-	printf(" port 0x%x\n", self->dv_cfdata->cf_loc[PCKBDCF_PORT]);
+	printf("\n");
+	ppicookie = ((struct pcppi_attach_args *)aux)->pa_cookie;
 	spkr_attached = 1;
 }
 
@@ -478,9 +405,9 @@ spkropen(dev, flags, mode, p)
     int mode;
     struct proc *p;
 {
-#ifdef DEBUG
+#ifdef SPKRDEBUG
     printf("spkropen: entering with dev = %x\n", dev);
-#endif /* DEBUG */
+#endif /* SPKRDEBUG */
 
 	if (minor(dev) != 0 || !spkr_attached)
 		return (ENXIO);
@@ -500,12 +427,12 @@ spkrwrite(dev, uio, flags)
     struct uio *uio;
     int flags;
 {
-	register int n;
-	int error;
-#ifdef DEBUG
+    register int n;
+    int error;
+#ifdef SPKRDEBUG
     printf("spkrwrite: entering with dev = %x, count = %d\n",
 		dev, uio->uio_resid);
-#endif /* DEBUG */
+#endif /* SPKRDEBUG */
 
 	if (minor(dev) != 0)
 		return (ENXIO);
@@ -518,38 +445,36 @@ spkrwrite(dev, uio, flags)
 	}
 }
 
-int
-spkrclose(dev, flags, mode, p)
+int spkrclose(dev, flags, mode, p)
     dev_t	dev;
     int flags;
     int mode;
     struct proc *p;
 {
-#ifdef DEBUG
+#ifdef SPKRDEBUG
     printf("spkrclose: entering with dev = %x\n", dev);
-#endif /* DEBUG */
+#endif /* SPKRDEBUG */
 
 	if (minor(dev) != 0)
 		return (ENXIO);
 	else {
-		endtone(NULL);
+		tone(0, 0);
 		free(spkr_inbuf, M_DEVBUF);
 		spkr_active = 0;
 	}
 	return (0);
 }
 
-int
-spkrioctl(dev, cmd, data, flag, p)
+int spkrioctl(dev, cmd, data, flag, p)
     dev_t dev;
     u_long cmd;
     caddr_t data;
     int	flag;
     struct proc *p;
 {
-#ifdef DEBUG
+#ifdef SPKRDEBUG
     printf("spkrioctl: entering with dev = %x, cmd = %lx\n", dev, cmd);
-#endif /* DEBUG */
+#endif /* SPKRDEBUG */
 
 	if (minor(dev) != 0)
 		return (ENXIO);
@@ -581,5 +506,5 @@ spkrioctl(dev, cmd, data, flag, p)
 	return (0);
 }
 
-#endif  /* NSPEAKER > 0 */
 /* spkr.c ends here */
+#endif /* NSPKR > 0 */

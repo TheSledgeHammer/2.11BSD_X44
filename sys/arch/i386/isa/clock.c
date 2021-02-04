@@ -94,7 +94,10 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <sys/kernel.h>
 #include <sys/device.h>
 
+#include <dev/audio/speaker/spkrio.h>
+#include <dev/audio/speaker/pcppireg.h>
 #include <dev/core/ic/mc146818reg.h>
+#include <dev/core/ic/i8253reg.h>
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
 #include <dev/core/isa/rtc.h>
@@ -103,9 +106,6 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <machine/intr.h>
 #include <machine/pio.h>
 #include <machine/cpufunc.h>
-
-#include <i386/isa/timerreg.h>
-#include <i386/isa/spkrreg.h>
 
 void		spinwait (int);
 void		findcpuspeed (void);

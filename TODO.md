@@ -23,7 +23,7 @@ A General todo list. Don't hesitate to add to this list. :)
 	
 ## arch:
 - i386/x86: (Merged under i386)
-	- Move common code to /dev in following: spkr.c, spkr.h, spkrreg.h, timerreg.h
+	- clock.c: missing: rtc_offset, initclock_func & i8254_initclocks
 
 ## devel: (planned)
 - Code planned for future integration

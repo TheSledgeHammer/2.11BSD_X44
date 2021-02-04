@@ -1,7 +1,7 @@
-/*	$NetBSD: spkrreg.h,v 1.2 1994/10/27 04:18:16 cgd Exp $	*/
+/* $NetBSD: pcppireg.h,v 1.1 1998/04/15 20:26:18 drochner Exp $ */
 
 /*
- * PIT port addresses and speaker control values
+ * PPI speaker control values
  */
 
 #define PITAUX_PORT		0x61	/* port of Programmable Peripheral Interface */

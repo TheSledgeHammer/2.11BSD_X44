@@ -1,14 +1,11 @@
-/*	$NetBSD: spkr.h,v 1.3 1994/10/27 04:16:27 cgd Exp $	*/
+/*	$NetBSD: spkrio.h,v 1.1 1998/04/15 20:26:19 drochner Exp $	*/
 
 /*
  * spkr.h -- interface definitions for speaker ioctl()
  */
 
-#ifndef _I386_SPKR_H_
-#define _I386_SPKR_H_
-
-#include <sys/ioccom.h>
-#include <sys/ioctl.h>
+#ifndef _DEV_ISA_SPKR_H_
+#define _DEV_ISA_SPKR_H_
 
 #define SPKRTONE        _IOW('S', 1, tone_t)    /* emit tone */
 #define SPKRTUNE        _IO('S', 2)             /* emit tone sequence */
@@ -18,4 +15,4 @@ typedef struct {
 	int	duration;	/* in 1/100ths of a second */
 } tone_t;
 
-#endif /* _I386_SPKR_H_ */
+#endif /* _DEV_ISA_SPKR_H_ */
