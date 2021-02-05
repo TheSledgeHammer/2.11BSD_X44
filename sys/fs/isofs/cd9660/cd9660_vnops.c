@@ -51,7 +51,6 @@
 #include <sys/mount.h>
 #include <sys/vnode.h>
 #include <sys/malloc.h>
-//#include <sys/dir.h>
 
 #include <miscfs/specfs/specdev.h>
 #include <miscfs/fifofs/fifo.h>
@@ -132,8 +131,8 @@ cd9660_setattr(ap)
 	struct vattr *vap = ap->a_vap;
 
   	if (vap->va_flags != VNOVAL || vap->va_uid != (uid_t)VNOVAL ||
-	    vap->va_gid != (gid_t)VNOVAL || vap->va_atime.ts_sec != VNOVAL ||
-	    vap->va_mtime.ts_sec != VNOVAL || vap->va_mode != (mode_t)VNOVAL)
+	    vap->va_gid != (gid_t)VNOVAL || vap->va_atime.tv_sec != VNOVAL ||
+	    vap->va_mtime.tv_sec != VNOVAL || vap->va_mode != (mode_t)VNOVAL)
 		return (EROFS);
 	if (vap->va_size != VNOVAL) {
  		switch (vp->v_type) {
@@ -922,17 +921,16 @@ cd9660_strategy(ap)
 	if (vp->v_type == VBLK || vp->v_type == VCHR)
 		panic("cd9660_strategy: spec");
 	if (bp->b_blkno == bp->b_lblkno) {
-		if (error ==
-		    VOP_BMAP(vp, bp->b_lblkno, NULL, &bp->b_blkno, NULL)) {
+		if (error == VOP_BMAP(vp, bp->b_lblkno, NULL, &bp->b_blkno, NULL)) {
 			bp->b_error = error;
 			bp->b_flags |= B_ERROR;
 			biodone(bp);
 			return (error);
 		}
-		if ((long)bp->b_blkno == -1)
+		if ((long) bp->b_blkno == -1)
 			clrbuf(bp);
 	}
-	if ((long)bp->b_blkno == -1) {
+	if ((long) bp->b_blkno == -1) {
 		biodone(bp);
 		return (0);
 	}
@@ -1008,44 +1006,6 @@ cd9660_pathconf(ap)
 	}
 	/* NOTREACHED */
 }
-
-/*
- * Global vfs data structures for isofs
- */
-#define cd9660_create \
-	((int (*) (struct  vop_create_args *))eopnotsupp)
-#define cd9660_mknod ((int (*) (struct  vop_mknod_args *))eopnotsupp)
-#define cd9660_write ((int (*) (struct  vop_write_args *))eopnotsupp)
-#ifdef NFS
-int	 lease_check (struct vop_lease_args *);
-#define	 cd9660_lease_check lease_check
-#else
-#define	 cd9660_lease_check ((int (*) (struct vop_lease_args *))nullop)
-#endif
-#define cd9660_fsync ((int (*) (struct  vop_fsync_args *))nullop)
-#define cd9660_remove \
-	((int (*) (struct  vop_remove_args *))eopnotsupp)
-#define cd9660_link ((int (*) (struct  vop_link_args *))eopnotsupp)
-#define cd9660_rename \
-	((int (*) (struct  vop_rename_args *))eopnotsupp)
-#define cd9660_mkdir ((int (*) (struct  vop_mkdir_args *)))eopnotsupp)
-#define cd9660_rmdir ((int (*) (struct  vop_rmdir_args *))eopnotsupp)
-#define cd9660_symlink \
-	((int (*) (struct vop_symlink_args *))eopnotsupp)
-#define cd9660_advlock \
-	((int (*) (struct vop_advlock_args *))eopnotsupp)
-#define cd9660_valloc ((int(*) ( \
-		struct vnode *pvp, \
-		int mode, \
-		struct ucred *cred, \
-		struct vnode **vpp)) eopnotsupp)
-#define cd9660_vfree ((int (*) (struct  vop_vfree_args *))eopnotsupp)
-#define cd9660_truncate \
-	((int (*) (struct  vop_truncate_args *))eopnotsupp)
-#define cd9660_update \
-	((int (*) (struct  vop_update_args *))eopnotsupp)
-#define cd9660_bwrite \
-	((int (*) (struct  vop_bwrite_args *))eopnotsupp)
 
 /*
  * Global vfs data structures for cd9660

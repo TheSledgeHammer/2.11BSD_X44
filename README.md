@@ -23,12 +23,15 @@
   	- IPv6
 - Filesystem Updates:
 	- UFS/FFS/LFS:
-  		- UFS2/FFS2 Support: Work in Progress
   		- UFS Journaling
   		- Dirhash
 - New Filesystems (In Kernel):
+	- Union (BSD's)
 	- EXT2/3/4
 	- NTFS
+	- HPFS
+	- HFS
+	- UDF
 	- NFS
 	- SMB/CIFS
 	- PUFFS or FUSE

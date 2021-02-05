@@ -1331,7 +1331,7 @@ msdosfs_rmdir(v)
 	 *  non-empty.)
 	 */
 	error = 0;
-	if (!dosdirempty(ip) || ip->de_flag & DE_RENAME) {
+	if (!dosdirempty(ip) || (ip->de_flag & DE_RENAME)) {
 		error = ENOTEMPTY;
 		goto out;
 	}

@@ -208,9 +208,9 @@ int
 mfs_bmap(ap)
 	struct vop_bmap_args /* {
 		struct vnode *a_vp;
-		ufs_daddr_t  a_bn;
+		ufs2_daddr_t  a_bn;
 		struct vnode **a_vpp;
-		ufs_daddr_t *a_bnp;
+		ufs2_daddr_t *a_bnp;
 		int *a_runp;
 	} */ *ap;
 {

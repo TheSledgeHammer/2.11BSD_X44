@@ -38,3 +38,6 @@ struct commulti_attach_args {
 	int					ca_iobase;
 	int					ca_noien;
 };
+
+#define COMMULTICF_SLAVE 			0
+#define COMMULTICF_SLAVE_DEFAULT 	-1

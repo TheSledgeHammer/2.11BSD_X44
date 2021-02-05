@@ -196,10 +196,11 @@ struct ifile {
  * Cleaner information structure.  This resides in the ifile and is used
  * to pass information between the cleaner and the kernel.
  */
-typedef struct _cleanerinfo {
+typedef struct _cleanerinfo CLEANERINFO;
+struct _cleanerinfo {
 	u_int32_t 		clean;			/* K: number of clean segments */
 	u_int32_t 		dirty;			/* K: number of dirty segments */
-} CLEANERINFO;
+};
 
 #define	CLEANSIZE_SU(fs)															\
 	((sizeof(CLEANERINFO) + (fs)->lfs_bsize - 1) >> (fs)->lfs_bshift)
@@ -321,7 +322,8 @@ struct segsum {
  * Structures used by lfs_bmapv and lfs_markv to communicate information
  * about inodes and data blocks.
  */
-typedef struct block_info {
+typedef struct block_info BLOCK_INFO;
+struct block_info {
 	ino_t			bi_inode;		/* inode # */
 	ufs1_daddr_t 	bi_lbn;			/* logical block w/in file */
 	ufs1_daddr_t 	bi_daddr;		/* disk address of block */
@@ -329,7 +331,7 @@ typedef struct block_info {
 	int				bi_version;		/* file version number */
 	void			*bi_bp;			/* data buffer */
 	int     		bi_size;        /* size of the block (if fragment) */
-} BLOCK_INFO;
+};
 
 /* In-memory description of a segment about to be written. */
 struct segment {

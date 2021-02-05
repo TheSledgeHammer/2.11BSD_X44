@@ -407,7 +407,7 @@ struct ocg {
  * Cylinder group macros to locate things in cylinder groups.
  * They calc file system addresses of cylinder group data structures.
  */
-#define	cgbase(fs, c)	((ufs_daddr_t)((fs)->fs_fpg * (c)))
+#define	cgbase(fs, c)	((ufs2_daddr_t)((fs)->fs_fpg * (c)))
 #define	cgdmin(fs, c)	(cgstart(fs, c) + (fs)->fs_dblkno)	/* 1st data */
 #define	cgimin(fs, c)	(cgstart(fs, c) + (fs)->fs_iblkno)	/* inode blk */
 #define	cgsblock(fs, c)	(cgstart(fs, c) + (fs)->fs_sblkno)	/* super blk */
@@ -422,7 +422,7 @@ struct ocg {
  */
 #define	ino_to_cg(fs, x)	((x) / (fs)->fs_ipg)
 #define	ino_to_fsba(fs, x)															\
-	((ufs_daddr_t)(cgimin(fs, ino_to_cg(fs, x)) +									\
+	((ufs2_daddr_t)(cgimin(fs, ino_to_cg(fs, x)) +									\
 	    (blkstofrags((fs), 	(((x) % (fs)->fs_ipg) / INOPB(fs))))))
 #define	ino_to_fsbo(fs, x)	((x) % INOPB(fs))
 
