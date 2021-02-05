@@ -15,7 +15,6 @@
 
 #ifndef KERNEL
 #include <sys/param.h>
-#include <sys/dir.h>
 #include <sys/errno.h>
 #include <sys/exec.h>
 #include <sys/exec_aout.h>
@@ -171,24 +170,6 @@ struct user {
 
 /* 1.8 User Threads */
 	//struct uthread		*u_uthread;			/* ptr to uthread */
-};
-
-/* User process identity */
-struct upcred {
-	uid_t				u_svuid;				/* saved user id */
-	uid_t				u_ruid;					/* real user id */
-	gid_t				u_svgid;				/* saved group id */
-	gid_t				u_rgid;					/* real group id */
-	int					u_refcnt;				/* Number of references. */
-};
-
-/* User struct credentials */
-struct uucred {
-	u_short				ur_ref;					/* reference count */
-	uid_t				ur_uid;					/* effective user id */
-	short				ur_ngroups;				/* number of groups */
-	gid_t				ur_groups[NGROUPS];		/* groups, 0 terminated */
-#define ur_gid			ur_groups[0]			/* effective group id */
 };
 
 //#ifdef KERNEL

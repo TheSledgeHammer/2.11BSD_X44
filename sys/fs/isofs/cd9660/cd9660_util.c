@@ -53,7 +53,6 @@
 #include <miscfs/specfs/specdev.h> /* XXX */
 #include <miscfs/fifofs/fifo.h> /* XXX */
 #include <sys/malloc.h>
-#include <sys/dir.h>
 
 #include <isofs/cd9660/iso.h>
 

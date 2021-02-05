@@ -98,9 +98,9 @@ extern	void closedir();
  * Should use struct direct's, but the name field
  * is MAXNAMLEN - 1, and this just won't do.
  */
-#define dotdot_ino	dtdt_ino
+#define dotdot_ino		dtdt_ino
 #define dotdot_reclen	dtdt_rec
-#define dotdot_name	dtdt_name
+#define dotdot_name		dtdt_name
 struct dirtemplate {
 	ino_t	dot_ino;
 	u_short	dot_reclen;

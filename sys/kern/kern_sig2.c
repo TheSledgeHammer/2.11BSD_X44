@@ -50,7 +50,6 @@
 #include <sys/param.h>
 #include <sys/signal.h>
 #include <sys/signalvar.h>
-#include <sys/dir.h>
 #include <sys/namei.h>
 #include <sys/time.h>
 #include <sys/resource.h>

@@ -51,7 +51,7 @@
 #include <sys/mount.h>
 #include <sys/vnode.h>
 #include <sys/malloc.h>
-#include <sys/dir.h>
+//#include <sys/dir.h>
 
 #include <miscfs/specfs/specdev.h>
 #include <miscfs/fifofs/fifo.h>
@@ -610,8 +610,7 @@ cd9660_readdir(ap)
 	 * XXX
 	 * Is it worth trying to figure out the type?
 	 */
-	idp->saveent.d_type = idp->assocent.d_type = idp->current.d_type =
-	    DT_UNKNOWN;
+	idp->saveent.d_type = idp->assocent.d_type = idp->current.d_type = DT_UNKNOWN;
 	idp->uio = uio;
 	if (ap->a_ncookies == NULL) {
 		idp->cookies = NULL;

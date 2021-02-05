@@ -1756,16 +1756,16 @@ ufs_strategy(ap)
 	register struct buf *bp = ap->a_bp;
 	register struct vnode *vp = bp->b_vp;
 	register struct inode *ip;
-	//ufs2_daddr_t blkno;
+	ufs2_daddr_t blkno;
 	int error;
 
 	ip = VTOI(vp);
 	if (vp->v_type == VBLK || vp->v_type == VCHR)
 		panic("ufs_strategy: spec");
 	if (bp->b_blkno == bp->b_lblkno) {
-		//error = ufs_bmaparray(vp, bp->b_lblkno, &blkno, bp, NULL, NULL);
-		if (error ==
-		    VOP_BMAP(vp, bp->b_lblkno, NULL, &bp->b_blkno, NULL)) {
+		error = ufs_bmaparray(vp, bp->b_lblkno, &blkno, bp, NULL, NULL);
+		bp->b_blkno = blkno;
+		if (error) {
 			bp->b_error = error;
 			bp->b_flags |= B_ERROR;
 			biodone(bp);
@@ -1780,7 +1780,6 @@ ufs_strategy(ap)
 	}
 	vp = ip->i_devvp;
 	bp->b_dev = vp->v_rdev;
-
 	VOPARGS(ap, vop_strategy);
 	return (0);
 }
@@ -1823,9 +1822,19 @@ ufsspec_read(ap)
 	/*
 	 * Set access flag.
 	 */
-	//if ((ap->a_vp->v_mount->mnt_flag & MNT_NODEVMTIME) == 0)
-		VTOI(ap->a_vp)->i_flag |= IN_ACCESS;
-	return (VOPARGS(ap, vop_read));
+	int error, resid;
+	struct inode *ip;
+	struct uio *uio;
+
+	uio = ap->a_uio;
+	resid = uio->uio_resid;
+	error = VOCALL(spec_vnodeops, vop_read, ap);
+
+	ip = VTOI(ap->a_vp);
+	if (ip != NULL && (uio->uio_resid != resid || (error == 0 && resid != 0))) {
+		ip->i_flag |= IN_ACCESS;
+	}
+	return (error);
 }
 
 /*
@@ -1843,9 +1852,19 @@ ufsspec_write(ap)
 	/*
 	 * Set update and change flags.
 	 */
-	//if ((ap->a_vp->v_mount->mnt_flag & MNT_NODEVMTIME) == 0)
-		VTOI(ap->a_vp)->i_flag |= IN_MODIFY;
-	return (VOPARGS(ap, vop_write));
+	int error, resid;
+	struct inode *ip;
+	struct uio *uio;
+
+	uio = ap->a_uio;
+	resid = uio->uio_resid;
+	error = VOCALL(spec_vnodeops, vop_write, ap);
+
+	ip = VTOI(ap->a_vp);
+	if (ip != NULL && (uio->uio_resid != resid || (error == 0 && resid != 0))) {
+		VTOI(ap->a_vp)->i_flag |= IN_CHANGE | IN_UPDATE;
+	}
+	return (error);
 }
 
 /*
@@ -1863,13 +1882,12 @@ ufsspec_close(ap)
 	} */ *ap;
 {
 	struct vnode *vp = ap->a_vp;
-	struct inode *ip = VTOI(vp);
 
 	simple_lock(&vp->v_interlock);
 	if (ap->a_vp->v_usecount > 1)
-		ITIMES(ip, &time, &time);
+		ufs_itimes(vp);
 	simple_unlock(&vp->v_interlock);
-	return (VOPARGS(ap, vop_close));
+	return (VOCALL(spec_vnodeops, ap, vop_close));
 }
 
 #ifdef FIFO
@@ -1885,13 +1903,23 @@ ufsfifo_read(ap)
 		struct ucred *a_cred;
 	} */ *ap;
 {
-	extern struct fifo_vnodeops;
-
 	/*
 	 * Set access flag.
 	 */
-	VTOI(ap->a_vp)->i_flag |= IN_ACCESS;
-	return (VOPARGS(ap, vop_read));
+	int error, resid;
+	struct inode *ip;
+	struct uio *uio;
+
+	uio = ap->a_uio;
+	resid = uio->uio_resid;
+	error = VOCALL(fifo_vnodeops, vop_read, ap);
+
+	ip = VTOI(ap->a_vp);
+	if ((ap->a_vp->v_mount->mnt_flag & MNT_NOATIME) == 0 && ip != NULL
+			&& (uio->uio_resid != resid || (error == 0 && resid != 0))) {
+		ip->i_flag |= IN_ACCESS;
+	}
+	return (error);
 }
 
 /*
@@ -1906,13 +1934,22 @@ ufsfifo_write(ap)
 		struct ucred *a_cred;
 	} */ *ap;
 {
-	extern struct fifo_vnodeops;
-
 	/*
 	 * Set update and change flags.
 	 */
-	VTOI(ap->a_vp)->i_flag |= IN_CHANGE | IN_UPDATE;
-	return (VOPARGS(ap, vop_write));
+	int error, resid;
+	struct inode *ip;
+	struct uio *uio;
+
+	uio = ap->a_uio;
+	resid = uio->uio_resid;
+	error = VOCALL(fifo_vnodeops, vop_write, ap);
+
+	ip = VTOI(ap->a_vp);
+	if (ip != NULL && (uio->uio_resid != resid || (error == 0 && resid != 0))) {
+			ip->i_flag |= IN_CHANGE | IN_UPDATE;
+	}
+	return (error);
 }
 
 /*
@@ -1934,9 +1971,9 @@ ufsfifo_close(ap)
 
 	simple_lock(&vp->v_interlock);
 	if (ap->a_vp->v_usecount > 1)
-		ITIMES(ip, &time, &time);
+		ufs_itimes(vp);
 	simple_unlock(&vp->v_interlock);
-	return (VOPARGS(ap, vop_close));
+	return (VOCALL(fifo_vnodeops, vop_close, ap));
 }
 #endif /* FIFO */
 
@@ -2011,11 +2048,11 @@ ufs_vinit(mntp, specops, fifoops, vpp)
 
 	vp = *vpp;
 	ip = VTOI(vp);
-	switch(vp->v_type = IFTOVT(ip->i_mode)) {
+	switch (vp->v_type = IFTOVT(ip->i_mode)) {
 	case VCHR:
 	case VBLK:
 		vp->v_op = specops;
-		if (nvp == checkalias(vp, ip->i_rdev, mntp)) {
+		if (nvp == checkalias(vp, DIP(ip, i_rdev), mntp)) {
 			/*
 			 * Discard unneeded vnode, but save its inode.
 			 * Note that the lock is carried over in the inode
@@ -2040,9 +2077,11 @@ ufs_vinit(mntp, specops, fifoops, vpp)
 #else
 		return (EOPNOTSUPP);
 #endif
+	default:
+		break;
 	}
 	if (ip->i_number == ROOTINO)
-                vp->v_flag |= VROOT;
+		vp->v_flag |= VROOT;
 	/*
 	 * Initialize modrev times
 	 */
@@ -2076,17 +2115,22 @@ ufs_makeinode(mode, dvp, vpp, cnp)
 	if ((mode & IFMT) == 0)
 		mode |= IFREG;
 
-	if (error == VOP_VALLOC(dvp, mode, cnp->cn_cred, &tvp)) {
+	error = VOP_VALLOC(dvp, mode, cnp->cn_cred, &tvp);
+	if (error) {
 		free(cnp->cn_pnbuf, M_NAMEI);
 		vput(dvp);
 		return (error);
 	}
 	ip = VTOI(tvp);
 	ip->i_gid = pdir->i_gid;
-	if ((mode & IFMT) == IFLNK)
+	DIP(ip, gid) = pdir->i_gid;
+	if ((mode & IFMT) == IFLNK) {
 		ip->i_uid = pdir->i_uid;
-	else
+		DIP(ip, uid) = ip->i_uid;
+	} else {
 		ip->i_uid = cnp->cn_cred->cr_uid;
+		DIP(ip, uid) = ip->i_uid;
+	}
 #ifdef QUOTA
 	if ((error = getinoquota(ip)) ||
 	    (error = chkiq(ip, 1, cnp->cn_cred, 0))) {
@@ -2101,11 +2145,15 @@ ufs_makeinode(mode, dvp, vpp, cnp)
 	ip->i_mode = mode;
 	tvp->v_type = IFTOVT(mode);	/* Rest init'd in getnewvnode(). */
 	ip->i_nlink = 1;
-	if ((ip->i_mode & ISGID) && !groupmember1(ip->i_gid, cnp->cn_cred) && suser1(cnp->cn_cred, NULL))
+	if ((ip->i_mode & ISGID) && !groupmember1(ip->i_gid, cnp->cn_cred) && suser1(cnp->cn_cred, NULL)) {
 		ip->i_mode &= ~ISGID;
+		DIP(ip, mode) = ip->i_mode;
+	}
 
-	if (cnp->cn_flags & ISWHITEOUT)
+	if (cnp->cn_flags & ISWHITEOUT) {
 		ip->i_flags |= UF_OPAQUE;
+		DIP(ip, flags) = ip->i_flags;
+	}
 
 	/*
 	 * Make sure inode goes to disk before directory entry.
