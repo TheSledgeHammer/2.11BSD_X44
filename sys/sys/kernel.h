@@ -11,9 +11,9 @@
  */
 
 /* 1.1 */
-extern long	hostid;
-extern char	hostname[MAXHOSTNAMELEN];
-extern int 	hostnamelen;
+extern long						hostid;
+extern char						hostname[MAXHOSTNAMELEN];
+extern int 						hostnamelen;
 
 /* 1.2 */
 extern volatile struct timeval 	mono_time;
@@ -23,6 +23,7 @@ extern volatile struct timeval 	time;
 extern struct timezone 			tz;			/* XXX */
 int								adjdelta;
 
+extern int 						rtc_offset;	/* offset of rtc from UTC in minutes */
 extern int 						tick;		/* usec per tick (1000000 / hz) */
 extern int						hz;			/* system clock's frequency */
 extern int						mshz;		/* # milliseconds per hz */
@@ -31,4 +32,3 @@ extern int 						profhz;		/* profiling clock's frequency */
 extern int						lbolt;		/* awoken once a second */
 extern int						psratio;	/* ratio: prof / stat */
 int 							avenrun[3];
-

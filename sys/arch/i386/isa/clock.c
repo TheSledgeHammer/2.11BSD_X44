@@ -169,8 +169,7 @@ startrtclock()
 	u_long tval;
 	u_long t, msb, lsb, quotient, remainder;
 
-	findcpuspeed();		/* use the clock (while it's free)
-					to find the cpu speed */
+	findcpuspeed();		/* use the clock (while it's free) to find the cpu speed */
 
 	/*
 	 * Compute timer_tick from hz.  We truncate this value (i.e.
@@ -261,9 +260,6 @@ clockintr(arg)
 	void *arg;
 {
 	struct clockframe *frame = arg;		/* not strictly necessary */
-	if (timecounter->tc_get_timecount == i8254_get_timecount) {
-
-	}
 
 	hardclock(frame);
 	return -1;
@@ -433,9 +429,8 @@ rtcinit()
 		return;
 	first_rtcopen_ever = 0;
 
-	mc146818_write(NULL, MC_REGA,			/* XXX softc */
-	    MC_BASE_32_KHz | MC_RATE_1024_Hz);
-	mc146818_write(NULL, MC_REGB, MC_REGB_24HR);	/* XXX softc */
+	mc146818_write(NULL, MC_REGA, MC_BASE_32_KHz | MC_RATE_1024_Hz);	/* XXX softc */
+	mc146818_write(NULL, MC_REGB, MC_REGB_24HR | MC_REGB_PIE);			/* XXX softc */
 }
 
 int
@@ -446,7 +441,7 @@ rtcget(regs)
 	rtcinit();
 	if ((mc146818_read(NULL, MC_REGD) & MC_REGD_VRT) == 0) /* XXX softc */
 		return (-1);
-	MC146818_GETTOD(NULL, regs);			/* XXX softc */
+	MC146818_GETTOD(NULL, regs);							/* XXX softc */
 	return (0);
 }	
 
@@ -660,12 +655,11 @@ void
 setstatclockrate(arg)
 	int arg;
 {
-	if (initclock_func == i8254_initclocks) {
-		if (arg == stathz)
-			mc146818_write(NULL, MC_REGA,
-			MC_BASE_32_KHz | MC_RATE_128_Hz);
-		else
-			mc146818_write(NULL, MC_REGA,
-			MC_BASE_32_KHz | MC_RATE_1024_Hz);
-	}
+	//if (cpu_ini == i8254_initclocks) {
+		if (arg == stathz) {
+			mc146818_write(NULL, MC_REGA, MC_BASE_32_KHz | MC_RATE_128_Hz);
+		} else {
+			mc146818_write(NULL, MC_REGA, MC_BASE_32_KHz | MC_RATE_1024_Hz);
+		}
+	//}
 }

@@ -66,7 +66,7 @@
  *	Resident memory system definitions.
  */
 
-#ifndef	_VM_PAGE_
+//#ifndef	_VM_PAGE_
 #define	_VM_PAGE_
 
 #include <devel/vm/include/vm.h>
@@ -140,8 +140,8 @@ struct vm_page {
 
 #define	PG_RELEASED		0x00000020	/* page to be freed when unbusied */
 
-#define PQ_ANON			0x10		/* page is part of an anon, rather than an uvm_object */
-#define PQ_AOBJ			0x20		/* page is part of an anonymous uvm_object */
+#define PQ_ANON			0x10		/* page is part of an anon, rather than an vm_object */
+#define PQ_AOBJ			0x20		/* page is part of an anonymous vm_object */
 
 #if	VM_PAGE_DEBUG
 #define	VM_PAGE_CHECK(mem) { 											\

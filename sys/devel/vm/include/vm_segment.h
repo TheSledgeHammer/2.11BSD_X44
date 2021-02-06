@@ -63,9 +63,9 @@ struct vm_segment {
 
 	union segment_register		sg_register;			/* pointer to pseudo segment register */
 
-#define sg_data 				sg_register.sp_data
-#define sg_stack 				sg_register.sp_stack
-#define sg_text 				sg_register.sp_text
+#define sg_data 				sg_register.sp_data		/* pseudo data segment */
+#define sg_stack 				sg_register.sp_stack	/* pseudo stack segment */
+#define sg_text 				sg_register.sp_text		/* pseudo text segment */
 
 	int							sg_type;				/* see below (segment register type) */
 };
@@ -112,12 +112,12 @@ union segment_register {
 #define sg_tsize			sp_text.sp_tsize
 };
 
-/* types */
+/* pseudo-segment types */
 #define SEG_DATA			1		/* data segment */
 #define SEG_STACK			2		/* stack segment */
 #define SEG_TEXT			3		/* text segment */
 
-/* macros */
+/* pseudo-segment macros */
 #define DATA_SEGMENT(data, dsize, daddr) {		\
 	(data)->sg_dsize = (dsize);					\
 	(data)->sg_daddr = (daddr);					\
@@ -126,6 +126,11 @@ union segment_register {
 #define DATA_EXPAND(data, dsize, daddr) {		\
 	(data)->sg_dsize += (dsize);				\
 	(data)->sg_daddr += (daddr);				\
+};
+
+#define DATA_SHRINK(data, dsize, daddr) {		\
+	(data)->sg_dsize -= (dsize);				\
+	(data)->sg_daddr -= (daddr);				\
 };
 
 #define STACK_SEGMENT(stack, ssize, saddr) {	\
@@ -138,6 +143,11 @@ union segment_register {
 	(stack)->sg_saddr += (ssize);				\
 };
 
+#define STACK_SHRINK(stack, ssize, saddr) {		\
+	(stack)->sg_ssize -= (ssize);				\
+	(stack)->sg_saddr -= (ssize);				\
+};
+
 #define TEXT_SEGMENT(text, tsize, taddr) {		\
 	(text)->sg_tsize = (tsize);					\
 	(text)->sg_taddr = (taddr);					\
@@ -146,6 +156,11 @@ union segment_register {
 #define TEXT_EXPAND(text, tsize, taddr) {		\
 	(text)->sg_tsize += (tsize);				\
 	(text)->sg_taddr += (taddr);				\
+};
+
+#define TEXT_SHRINK(text, tsize, taddr) {		\
+	(text)->sg_tsize -= (tsize);				\
+	(text)->sg_taddr -= (taddr);				\
 };
 
 extern

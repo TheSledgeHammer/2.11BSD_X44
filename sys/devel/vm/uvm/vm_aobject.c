@@ -55,6 +55,7 @@
 
 #include <devel/vm/uvm/uvm.h>
 #include <devel/vm/uvm/vm_aobject.h>
+#include <devel/sys/malloctypes.h>
 
 /*
  * an aobj manages anonymous-memory backed uvm_objects.   in addition
@@ -139,18 +140,12 @@ struct uao_swhash_elt {
 
 struct pagerops aobject_pager = {
 		uao_init,		/* init */
-		uao_reference,	/* reference */
-		uao_detach,		/* detach */
-		NULL,			/* fault */
-		uao_flush,		/* flush */
+		uao_alloc,		/* allocate */
+		uao_dealloc,	/* disassociate */
 		uao_get,		/* get */
-		NULL,			/* asyncget */
-		NULL,			/* put (done by pagedaemon) */
+		uao_put,		/* put */
+		uao_has,		/* has */
 		NULL,			/* cluster */
-		NULL,			/* mk_pcluster */
-		vm_shareprot,	/* shareprot */
-		NULL,			/* aiodone */
-		uao_releasepg	/* releasepg */
 };
 
 /*
@@ -203,7 +198,8 @@ uao_find_swhash_elt(aobj, pageidx, create)
 	/*
 	 * allocate a new entry for the bucket and init/insert it in
 	 */
-	//elt = (struct uao_swhash_elt *)rmalloc(elt, sizeof(struct uao_swhash_elt *));
+
+	elt = (struct uao_swhash_elt *)malloc(elt, sizeof(struct uao_swhash_elt *), M_VMAOBJ, M_NOWAIT);
 	LIST_INSERT_HEAD(swhash, elt, list);
 	elt->tag = page_tag;
 	elt->count = 0;
@@ -315,7 +311,6 @@ uao_set_swslot(uobj, pageidx, slot)
 
 			if (elt->count == 0) {
 				LIST_REMOVE(elt, list);
-				pool_put(&uao_swhash_elt_pool, elt);
 			}
 		}
 
@@ -372,7 +367,6 @@ uao_free(aobj)
 				}
 
 				next = elt->list.le_next;
-				pool_put(&uao_swhash_elt_pool, elt);
 			}
 		}
 		FREE(aobj->u_swhash, M_VMAOBJ);
@@ -398,11 +392,6 @@ uao_free(aobj)
 		}
 		FREE(aobj->u_swslots, M_VMAOBJ);
 	}
-
-	/*
-	 * finally free the aobj itself
-	 */
-	pool_put(&uvm_aobj_pool, aobj);
 }
 
 /*
@@ -410,7 +399,7 @@ uao_free(aobj)
  */
 
 /*
- * uao_create: create an aobj of the given size and return its uvm_object.
+ * uao_create: create an aobj of the given size and return its vm_object.
  *
  * => for normal use, flags are always zero
  * => for the kernel object, the flags are:
@@ -431,13 +420,10 @@ uao_create(size, flags)
  	* malloc a new aobj unless we are asked for the kernel object
  	*/
 	if (flags & UAO_FLAG_KERNOBJ) {		/* want kernel object? */
-		if (kobj_alloced)
+		if (kobj_alloced) {
 			panic("uao_create: kernel object already allocated");
+		}
 
-		/*
-		 * XXXTHORPEJ: Need to call this now, so the pool gets
-		 * initialized!
-		 */
 		uao_init();
 
 		aobj = &kernel_object_store;
@@ -448,13 +434,14 @@ uao_create(size, flags)
 		kobj_alloced = UAO_FLAG_KERNOBJ;
 	} else if (flags & UAO_FLAG_KERNSWAP) {
 		aobj = &kernel_object_store;
-		if (kobj_alloced != UAO_FLAG_KERNOBJ)
+		if (kobj_alloced != UAO_FLAG_KERNOBJ) {
 		    panic("uao_create: asked to enable swap on kernel object");
+		}
 		kobj_alloced = UAO_FLAG_KERNSWAP;
 	} else {	/* normal object */
-		aobj = pool_get(&uvm_aobj_pool, PR_WAITOK);
+		aobj = MALLOC(aobj, struct vm_aobject, sizeof(struct vm_aobject), M_VMAOBJ, flags);//pool_get(&uvm_aobj_pool, PR_WAITOK);
 		aobj->u_pages = pages;
-		aobj->u_flags = 0;		/* normal object */
+		aobj->u_flags = 0;			/* normal object */
 		aobj->u_obj.ref_count = 1;	/* start with 1 reference */
 	}
 
@@ -465,24 +452,25 @@ uao_create(size, flags)
  	 * we are still booting we should be the only thread around.
  	 */
 	if (flags == 0 || (flags & UAO_FLAG_KERNSWAP) != 0) {
-		int mflags = (flags & UAO_FLAG_KERNSWAP) != 0 ?
-		    M_NOWAIT : M_WAITOK;
+		int mflags = (flags & UAO_FLAG_KERNSWAP) != 0 ? M_NOWAIT : M_WAITOK;
 
 		/* allocate hash table or array depending on object size */
-			if (UAO_USES_SWHASH(aobj)) {
+		if (UAO_USES_SWHASH(aobj)) {
 			aobj->u_swhash = hashinit(UAO_SWHASH_BUCKETS(aobj), M_VMAOBJ, mflags, &aobj->u_swhashmask);
-			if (aobj->u_swhash == NULL)
+			if (aobj->u_swhash == NULL) {
 				panic("uao_create: hashinit swhash failed");
+			}
 		} else {
 			MALLOC(aobj->u_swslots, int *, pages * sizeof(int), M_VMAOBJ, mflags);
-			if (aobj->u_swslots == NULL)
+			if (aobj->u_swslots == NULL) {
 				panic("uao_create: malloc swslots failed");
+			}
 			memset(aobj->u_swslots, 0, pages * sizeof(int));
 		}
 
 		if (flags) {
 			aobj->u_flags &= ~UAO_FLAG_NOSWAP; /* clear noswap */
-			return(&aobj->u_obj);
+			return (&aobj->u_obj);
 			/* done! */
 		}
 	}
@@ -525,13 +513,10 @@ uao_init()
 	uao_initialized = TRUE;
 
 	LIST_INIT(&uao_list);
-	simple_lock_init(&uao_list_lock);
+	simple_lock_init(&uao_list_lock, "uao_list_lock");
 	struct uao_swhash_elt *elt;
-	 struct vm_aobject *aobj;
-	/*
-	 * NOTE: Pages fror this pool must not come from a pageable
-	 * kernel map!
-	 */
+	struct vm_aobject *aobj;
+
 	MALLOC(elt, struct uao_swhash_elt *, sizeof(struct uao_swhash_elt *), M_VMAOBJ, M_WAITOK);
 	MALLOC(aobj, struct vm_aobject *, sizeof(struct vm_aobject *), M_VMAOBJ, M_WAITOK);
 }
@@ -1008,6 +993,6 @@ uao_dropswap(uobj, pageidx)
 
 	slot = uao_set_swslot(uobj, pageidx, 0);
 	if (slot) {
-		uvm_swap_free(slot, 1);
+		vm_swap_free(slot, 1);
 	}
 }

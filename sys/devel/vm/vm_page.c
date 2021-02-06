@@ -91,15 +91,15 @@ simple_lock_data_t	vm_page_queue_lock;
 simple_lock_data_t	vm_page_queue_free_lock;
 
 /* has physical page allocation been initialized? */
-boolean_t 	vm_page_startup_initialized;
+boolean_t 			vm_page_startup_initialized;
 
-vm_page_t	vm_page_array;
-long		first_page;
-long		last_page;
-vm_offset_t	first_phys_addr;
-vm_offset_t	last_phys_addr;
-vm_size_t	page_mask;
-int			page_shift;
+vm_page_t			vm_page_array;
+long				first_page;
+long				last_page;
+vm_offset_t			first_phys_addr;
+vm_offset_t			last_phys_addr;
+vm_size_t			page_mask;
+int					page_shift;
 
 /*
  *	vm_set_page_size:
@@ -150,8 +150,8 @@ vm_page_startup(start, end)
 	 *	Initialize the locks
 	 */
 
-	simple_lock_init(&vm_page_queue_free_lock);
-	simple_lock_init(&vm_page_queue_lock);
+	simple_lock_init(&vm_page_queue_free_lock, "vm_page_queue_free_lock");
+	simple_lock_init(&vm_page_queue_lock, "vm_page_queue_lock");
 
 	/*
 	 *	Initialize the queue headers for the free queue,
@@ -192,7 +192,7 @@ vm_page_startup(start, end)
 		bucket++;
 	}
 
-	simple_lock_init(&page_bucket_lock);
+	simple_lock_init(&page_bucket_lock, "page_bucket_lock");
 
 	/*
 	 *	Truncate the remainder of physical memory to our page size.

@@ -59,6 +59,8 @@
 #include <devel/vm/uvm/uvm.h>
 #include <devel/vm/uvm/vm_amap.h>
 
+#include <devel/sys/malloctypes.h>
+
 static struct vm_amap *amap_alloc1(int, int, int);
 
 static struct simplelock amap_list_lock;

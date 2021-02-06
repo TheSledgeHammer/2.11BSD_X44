@@ -109,14 +109,14 @@ devices_configure(devsw)
 	struct devswtable *devsw;
 {
 	/* machine-independent */
-	tty_init(devsw);	/* TTY */
-	dev_init(devsw);	/* dev */
+	tty_init(devsw);													/* All tty-related interfaces */
+	dev_init(devsw);													/* All machine-independent devices */
 
 	/* machine-dependent */
-	DEVSWIO_CONFIG_INIT(devsw, NCMOS, NULL, &cmos_cdevsw, NULL);		/* CMOS Interface */
+	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cmos_cdevsw, NULL);			/* CMOS Interface */
 
 	/* TODO: Need to be configured or fix missing */
-	DEVSWIO_CONFIG_INIT(devsw, NBPFILTER, NULL, &bpf_cdevsw, NULL);		/* 23: Berkeley packet filter */
+	DEVSWIO_CONFIG_INIT(devsw, NBPFILTER, NULL, &bpf_cdevsw, NULL);		/* Berkeley packet filter */
 }
 
 /*

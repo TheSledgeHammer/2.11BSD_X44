@@ -408,7 +408,7 @@ loop1:
 	goto loop;
 }
 
-#define	swappable(p)							\
+#define	swappable(p) \
 	(((p)->p_flag &	(P_TRACED|P_NOSWAP|P_SYSTEM|P_INMEM|P_WEXIT|P_PHYSIO|P_SWAPPING)) == P_INMEM)
 
 /*

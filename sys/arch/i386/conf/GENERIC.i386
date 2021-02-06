@@ -27,15 +27,19 @@ options 		MATH_EMULATE	# floating point emulation
 options 		UCONSOLE		# users can use TIOCCONS (for xconsole)
 options 		INSECURE		# disable kernel security levels
 
-options			DIAGNOSTIC		# internal consistency checks
+options 		RTC_OFFSET=0	# hardware clock is this many mins. west of GMT
+
 options			KTRACE			# system call tracing, a la ktrace(1)
+
+# Diagnostic/debugging support options
+options			DIAGNOSTIC		# internal consistency checks
 options			ACCOUNTING		# acct(2) process accounting
 options			KMEMSTATS		# collect malloc(9) statistics
+options 		DDB				# in-kernel debugger
 options			PTRACE			# ptrace(2) system call
-options			INET
 
+# File systems
 options			FFS				# UFS
-options			QUOTA			# UFS quotas
 options    		LFS				# log-structured file system
 options			MFS				# memory file system
 options			CD9660			# ISO 9660 + Rock Ridge file system
@@ -43,8 +47,15 @@ options			MSDOSFS			# MS-DOS file system
 options			FDESC			# /dev/fd
 options			FIFO			# FIFOs; RECOMMENDED
 
+# File system options
+options			QUOTA			# UFS quotas
+
 # Compatibility options
 options 		COMPAT_43		# and 4.3BSD
+
+# Networking options
+options 		INET			# IP + ICMP + TCP + UDP
+options 		NS				# XNS
 
 # These options enable verbose messages for several subsystems.
 # Warning, these may compile large string tables into the kernel!

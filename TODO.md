@@ -23,7 +23,6 @@ A General todo list. Don't hesitate to add to this list. :)
 	
 ## arch:
 - i386/x86: (Merged under i386)
-	- clock.c: missing: rtc_offset, initclock_func & i8254_initclocks
 
 ## devel: (planned)
 - Code planned for future integration
@@ -53,7 +52,6 @@ A General todo list. Don't hesitate to add to this list. :)
 	- usb: 								Work in progress
 	- video:								Work in progress
 	- mouse/keyboard:						Work in progress
-- Add: Common Speaker code from i386
 - Fix:
 	- video (kqfilter)
 	
@@ -92,7 +90,6 @@ Of Interest Todo:
 ## vm:
 
 ## Other:
-- Memory Segmentation (Hardware): CPU Registers
 - Memory Segmentation (Software):
-- Seperate Process Segments: text, data, stack
-- Seperate Instruction & Data Spaces
+	- Seperate Process Segments: text, data, stack
+	- Seperate Instruction & Data Spaces
