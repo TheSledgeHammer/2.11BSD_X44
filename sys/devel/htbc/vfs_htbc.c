@@ -87,6 +87,7 @@
 #include <miscfs/specfs/specdev.h>
 
 #include <devel/htbc/htbc.h>
+#include <devel/htbc/blockchain.h>
 #include <devel/htbc/htbc_htree.h>
 #include <devel/sys/malloctypes.h>
 
@@ -113,6 +114,7 @@ struct htbc {
 	struct vnode 						*ht_devvp;			/* log on this device */
 	struct mount 						*ht_mount;			/* mountpoint ht is associated with */
 	struct htbc_inode					*ht_inode;			/* inode */
+	CIRCLEQ_HEAD(hashchain, ht_hchain)	ht_hashchain;		/* hashchain to store transactions */
 
 	daddr_t 							ht_logpbn;			/* Physical block number of start of log */
 	int 								ht_log_dev_bshift;	/* logarithm of device block size of log device */
@@ -248,6 +250,7 @@ htbc_start(htp, mp, vp, off, count, blksize)
 
 	LIST_INIT(&ht->ht_bufs);
 	CIRCLEQ_INIT(&ht->ht_entries);
+	CIRCLEQ_INIT(&ht->ht_hashchain);
 
 	ht->ht_inode->hi_vnode = vp;
 	ht->ht_devvp = devvp;
@@ -1260,8 +1263,6 @@ error:
 /****************************************************************/
 /* HTBC HTree */
 
-static int htree_find_leaf(struct htbc_inode *, const char *, int , uint32_t *, uint8_t *, struct htree_lookup_info *);
-
 static off_t
 htree_get_block(struct htree_entry *ep)
 {
@@ -1288,7 +1289,7 @@ static uint32_t
 htree_root_limit(struct htbc_inode *ip, int len)
 {
 	uint32_t space = ip->hi_mfs->hi_bsize - HTREE_DIR_REC_LEN(1) - HTREE_DIR_REC_LEN(2) - len;
-	return space / sizeof(struct htree_entry);
+	return (space / sizeof(struct htree_entry));
 }
 
 static uint16_t
@@ -1654,7 +1655,7 @@ out1:
  * Add an entry to the directory using htree index.
  */
 int
-htbc_htree_add_entry(struct vnode *dvp, struct htree_direct *entry, struct componentname *cnp, size_t newentrysize)
+htree_add_entry(struct vnode *dvp, struct htree_direct *entry, struct componentname *cnp, size_t newentrysize)
 {
 	struct htree_entry *entries, *leaf_node;
 	struct htree_lookup_info info;
@@ -1679,7 +1680,7 @@ htbc_htree_add_entry(struct vnode *dvp, struct htree_direct *entry, struct compo
 	blksize = mfs->hi_bsize;
 
 	if (ip->hi_count != 0)
-		return htree_add_entry(dvp, entry, &(ip), newentrysize);
+		return htbc_add_entry(dvp, entry, &(ip), newentrysize);
 
 	/* Target directory block is full, split it */
 	memset(&info, 0, sizeof(info));
@@ -1962,7 +1963,7 @@ error:
  * Try to lookup a directory entry in HTree index
  */
 int
-htree_lookup(struct htbc_inode *ip, const char *name, int namelen, struct buf **bpp, int *entryoffp, int32_t *offp, int32_t *prevoffp, int32_t *endusefulp, struct htbc_hi_searchslot *ss)
+htree_lookup(struct htbc_inode *ip, const char *name, int namelen, struct buf **bpp, int *entryoffp, int32_t *offp, int32_t *prevoffp, int32_t *endusefulp, struct htbc_searchslot *ss)
 {
 	struct vnode *vp;
 	struct htree_lookup_info info;
@@ -1982,8 +1983,7 @@ htree_lookup(struct htbc_inode *ip, const char *name, int namelen, struct buf **
 	/* TODO: print error msg because we don't lookup '.' and '..' */
 
 	memset(&info, 0, sizeof(info));
-	if (htree_find_leaf(ip, name, namelen, &dirhash,
-	    &hash_version, &info)) {
+	if (htree_find_leaf(ip, name, namelen, &dirhash, &hash_version, &info)) {
 		return (-1);
 	}
 
@@ -2028,7 +2028,7 @@ htree_lookup(struct htbc_inode *ip, const char *name, int namelen, struct buf **
 }
 
 int
-htree_add_entry(struct vnode* dvp, struct htree_direct *entry, const struct htree_lookup_results *hlr, size_t newentrysize)
+htbc_add_entry(struct vnode* dvp, struct htree_direct *entry, const struct htree_lookup_results *hlr, size_t newentrysize)
 {
 	struct htree_direct *ep, *nep;
 	struct htbc_inode *dp;

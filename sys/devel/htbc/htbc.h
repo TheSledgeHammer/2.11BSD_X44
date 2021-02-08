@@ -145,7 +145,7 @@ struct htbc_inode {
 	u_int32_t   				hi_flag;	    		/* flags, see below */
     u_int32_t   				hi_sflags;				/* Status flags (chflags) */
     int32_t	  					hi_count;				/* Size of free slot in directory. */
-    /* these are likely to move */
+
     uint32_t  					hi_hash_seed[4];		/* HTREE hash seed */
     char      					hi_def_hash_version;	/* Default hash version to use */
 
@@ -156,7 +156,6 @@ struct htbc_inode {
     uint32_t  					hi_bcount;				/* blocks count */
 	uint32_t  					hi_first_dblock;		/* first data block */
 	uint32_t  					hi_log_bsize;			/* block size = 1024*(2^e2fs_log_bsize) */
-	uint32_t  					hi_log_fsize;			/* fragment size */
 };
 
 struct htbc_inode_ext {
@@ -176,8 +175,8 @@ struct htbc_mfs {
     struct htbc_inode_ext 		hi_ext;
 };
 
-struct htbc_hi_searchslot {
-	enum htbc_hi_slotstatus		hi_slotstatus;
+struct htbc_searchslot {
+	enum htbc_slotstatus		hi_slotstatus;
 	int32_t 					hi_slotoffset;			/* offset of area with free space */
 	int 						hi_slotsize;			/* size of area at slotoffset */
 	int 						hi_slotfreespace;		/* amount of space free in slot */
@@ -185,15 +184,15 @@ struct htbc_hi_searchslot {
 	int32_t						hi_slotcount;			/* Size of free slot in directory. */
 };
 
-enum htbc_hi_slotstatus {
+enum htbc_slotstatus {
 	NONE,
 	COMPACT,
 	FOUND
 };
 
 /* Convert between inode pointers and vnode pointers. */
-#define VTOHTI(vp)	((struct htbc_inode *)(vp)->v_data)
-#define HTITOV(ip)	((ip)->hi_vnode)
+#define VTOHTI(vp)			((struct htbc_inode *)(vp)->v_data)
+#define HTITOV(ip)			((ip)->hi_vnode)
 
 /****************************************************************/
 /* HTBC Extents */
@@ -289,7 +288,6 @@ void 	htbc_unregister_inode(struct htbc *, ino_t, mode_t);
 /* Supply this to provide i/o support */
 int 	htbc_write(void *, size_t, struct vnode *, daddr_t);
 int 	htbc_read(void *, size_t, struct vnode *, daddr_t);
-
 
 #define	htbc_fsbtodb(fs, b)  		((daddr_t)(b) << (fs)->hi_fsbtodb)
 /* calculates (loc % fs->hi_bsize) */

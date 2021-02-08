@@ -37,6 +37,10 @@
  * 		- mapping block
  * - see ext2fs mapping of above
  *
+ * - map inodes & blocks inside hashchain: silly to map it with a secondary hashlist!
+ * 		- store within transaction structure
+ *
+ * - log_dev_bshift to fs_dev_bsize
  * - hashchain lock
  * - inode lock
  * - revise content marked XXX
@@ -48,13 +52,13 @@
 #include <sys/queue.h>
 #include <sys/lock.h>
 
-/* blockchain */
+/* blockchain entry */
 struct hashchain;
 CIRCLEQ_HEAD(hashchain, ht_hchain);
 struct ht_hchain {
 	CIRCLEQ_ENTRY(ht_hchain)	hc_entry;			/* a list of chain entries */
 	struct htree_root			*hc_hroot;			/* htree root per block */
-	struct ht_transaction		*hc_trans;			/* pointer to block transaction info */
+	struct ht_transaction		*hc_trans;			/* pointer to transaction info */
 
 	const char					*hc_name;			/* name of chain entry */
 	int							hc_len;
@@ -84,6 +88,41 @@ struct ht_htransaction {
 	uint32_t					ht_checksum;
 	uint32_t					ht_generation;
 	uint32_t					ht_version;
+
+	union ht_ino {
+		ino_t 					u_ino;
+		mode_t					u_imode;
+	} ht_ino;
+	int							ht_inocnt;
+
+	struct ht_hblocklist		*ht_blocklist;		/* blocks held by this transaction */
+	struct ht_hinodelist		*ht_inodelist;		/* inodes held by this transaction */
+
+	int							ht_dev_bshift;
+	int							ht_dev_bmask;
+
+};
+
+struct ht_hblocklist {
+	u_int32_t 					hc_type;
+	int32_t 					hc_len;
+	int32_t						hc_blkcount;
+	struct {
+		int64_t					hc_daddr;
+		int32_t					hc_unused;
+		int32_t					hc_dlen;
+	} hc_blocks[0];
+};
+
+struct ht_hinodelist {
+	uint32_t					hc_type;
+	int32_t						hc_len;
+	int32_t						hc_inocnt;
+	int32_t						hc_clear; 			/* set if previously listed inodes hould be ignored */
+	struct {
+		uint32_t 				hc_inumber;
+		uint32_t 				hc_imode;
+	} hc_inodes[0];
 };
 
 /* Macro's between FS's */

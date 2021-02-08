@@ -113,6 +113,15 @@ struct htree_sort_entry {
 #define HTREE_EXTENTS			0x00080000 				/* Inode uses extents */
 
 /*
+ * The EXT2FS_DIRSIZ macro gives the minimum record length which will hold
+ * the directory entryfor a name len "len" (without the terminating null byte).
+ * This requires the amount of space in struct direct
+ * without the d_name field, plus enough space for the name without a
+ * terminating null byte, rounded up to a 4 byte boundary.
+ */
+#define HTREE_DIRSIZ(len)			roundup2(8 + len, 4)
+
+/*
  * HTREE_DIR_PAD defines the directory entries boundaries
  *
  * NOTE: It must be a multiple of 4
@@ -151,6 +160,6 @@ int 			htree_create_index(struct vnode *vp, struct componentname *cnp, struct ht
 int 			htree_add_entry(struct vnode *dvp, struct htree_direct *entry, struct componentname *cnp, size_t newentrysize);
 static int 		htree_check_next(struct htbc_inode *ip, uint32_t hash, const char *name, struct htree_lookup_info *info);
 static int 		htree_find_leaf(struct htbc_inode *ip, const char *name, int namelen, uint32_t *hash, uint8_t *hash_ver, struct htree_lookup_info *info);
-int 			htree_lookup(struct htbc_inode *ip, const char *name, int namelen, struct buf **bpp, int *entryoffp, int32_t *offp, int32_t *prevoffp, int32_t *endusefulp, struct htbc_hi_searchslot *ss);
+int 			htree_lookup(struct htbc_inode *ip, const char *name, int namelen, struct buf **bpp, int *entryoffp, int32_t *offp, int32_t *prevoffp, int32_t *endusefulp, struct htbc_searchslot *ss);
 
 #endif /* HTBC_HTREE_H_ */
