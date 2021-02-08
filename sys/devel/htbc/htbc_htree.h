@@ -33,15 +33,15 @@
 #define	HTBC_HTREE_H_
 
 #define	HTREE_MAXNAMLEN				255
+#define	HTREE_EOF 					0x7FFFFFFF
 
+/* htree hash versions */
 #define	HTREE_LEGACY				0
 #define	HTREE_HALF_MD4				1
 #define	HTREE_TEA					2
 #define	HTREE_LEGACY_UNSIGNED		3
 #define	HTREE_HALF_MD4_UNSIGNED		4
 #define	HTREE_TEA_UNSIGNED			5
-
-#define	HTREE_EOF 					0x7FFFFFFF
 
 struct htree_direct {
 	uint32_t 					h_ino;						/* inode number of entry */
@@ -109,25 +109,24 @@ struct htree_sort_entry {
 };
 
 /* file flags */
-#define HTREE_INDEX		0x00001000 /* hash-indexed directory */
-#define HTREE_EXTENTS	0x00080000 /* Inode uses extents */
+#define HTREE_INDEX				0x00001000 				/* hash-indexed directory */
+#define HTREE_EXTENTS			0x00080000 				/* Inode uses extents */
 
 /*
  * HTREE_DIR_PAD defines the directory entries boundaries
  *
  * NOTE: It must be a multiple of 4
  */
-#define	HTREE_DIR_PAD	4
-#define	HTREE_DIR_ROUND	(HTREE_DIR_PAD - 1)
-#define	HTREE_DIR_REC_LEN(namelen) \
-    (((namelen) + 8 + HTREE_DIR_ROUND) & ~HTREE_DIR_ROUND)
+#define	HTREE_DIR_PAD				4
+#define	HTREE_DIR_ROUND				(HTREE_DIR_PAD - 1)
+#define	HTREE_DIR_REC_LEN(namelen) 	(((namelen) + 8 + HTREE_DIR_ROUND) & ~HTREE_DIR_ROUND)
 
 /* EXT2FS metadatas are stored in little-endian byte order. These macros
  * helps reading theses metadatas
  */
 #if BYTE_ORDER == LITTLE_ENDIAN
-#	define h2fs16(x) (x)
-#	define fs2h16(x) (x)
+#define h2fs16(x) (x)
+#define fs2h16(x) (x)
 #endif
 
 static off_t	htree_get_block(struct htree_entry *ep);

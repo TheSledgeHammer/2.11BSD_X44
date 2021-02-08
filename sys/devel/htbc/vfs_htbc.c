@@ -249,7 +249,7 @@ htbc_start(htp, mp, vp, off, count, blksize)
 	LIST_INIT(&ht->ht_bufs);
 	CIRCLEQ_INIT(&ht->ht_entries);
 
-	ht->ht_inode->hi_vp = vp;
+	ht->ht_inode->hi_vnode = vp;
 	ht->ht_devvp = devvp;
 	ht->ht_inode->hi_devvp = ht->ht_devvp;
 	ht->ht_mount = mp;
@@ -735,7 +735,7 @@ int
 htbc_blkatoff(struct vnode *vp, off_t offset, char **res, struct buf **bpp)
 {
 	struct htbc_inode 	*ip;
-	struct htbc_hi_mfs 	*fs;
+	struct htbc_mfs 	*fs;
 	struct buf *bp;
 	daddr_t lbn;
 	int error;
@@ -786,7 +786,7 @@ htbc_bmap(vp, bn, vpp, bnp, runp)
 int
 htbc_bmapext(struct vnode *vp, int32_t bn, int64_t *bnp, int *runp, int *runb)
 {
-	struct htbc_hi_mfs *fs;
+	struct htbc_mfs *fs;
 	struct htbc_inode *ip;
 	struct htbc_extent *ep;
 	struct htbc_extent_path path = { .ep_bp = NULL };
@@ -962,7 +962,7 @@ htbc_ext_put_cache(struct htbc_inode *ip, struct htbc_extent *ep, int type)
  * Find an extent.
  */
 struct htbc_extent_path *
-htbc_ext_find_extent(struct htbc_hi_mfs *fs, struct htbc_inode *ip, daddr_t lbn, struct htbc_extent_path *path)
+htbc_ext_find_extent(struct htbc_mfs *fs, struct htbc_inode *ip, daddr_t lbn, struct htbc_extent_path *path)
 {
 	struct htbc_extent_header *ehp;
 	uint16_t i;
@@ -993,7 +993,7 @@ htbc_ext_find_extent(struct htbc_hi_mfs *fs, struct htbc_inode *ip, daddr_t lbn,
 			brelse(path->ep_bp, 0);
 			path->ep_bp = NULL;
 		}
-		error = bread(ip->hi_vp, fsbtodb(fs, nblk), size, 0, &path->ep_bp);
+		error = bread(ip->hi_vnode, fsbtodb(fs, nblk), size, 0, &path->ep_bp);
 		if (error) {
 			brelse(path->ep_bp, 0);
 			path->ep_bp = NULL;
@@ -1183,9 +1183,7 @@ htbc_tea(uint32_t hash[4], uint32_t data[8])
 }
 
 int
-htbc_htree_hash(const char *name, int len,
-    uint32_t *hash_seed, int hash_version,
-    uint32_t *hash_major, uint32_t *hash_minor)
+htbc_htree_hash(const char *name, int len, uint32_t *hash_seed, int hash_version, uint32_t *hash_major, uint32_t *hash_minor)
 {
 	uint32_t hash[4];
 	uint32_t data[8];
@@ -1332,7 +1330,7 @@ htree_set_limit(struct htree_entry *ep, uint16_t limit)
 static uint32_t
 htree_node_limit(struct htbc_inode *ip)
 {
-	struct htbc_hi_mfs *fs;
+	struct htbc_mfs *fs;
 	uint32_t space;
 
 	fs = ip->hi_mfs;
@@ -1480,9 +1478,7 @@ htree_split_dirblock(char *block1, char *block2, uint32_t blksize, uint32_t *has
 			sort_info--;
 			sort_info->h_size = ep->h_reclen;
 			sort_info->h_offset = (char *)ep - block1;
-			htbc_htree_hash(ep->h_name, ep->h_namlen,
-			    hash_seed, hash_version,
-			    &sort_info->h_hash, NULL);
+			htbc_htree_hash(ep->h_name, ep->h_namlen, hash_seed, hash_version, &sort_info->h_hash, NULL);
 		}
 		ep = (struct htree_direct *)
 		    ((char *)ep + ep->h_reclen);
@@ -1568,8 +1564,7 @@ htree_create_index(struct vnode *vp, struct componentname *cnp, struct htree_dir
 {
 	struct buf *bp = NULL;
 	struct htbc_inode *dp;
-	struct htbc_hi_fs *fs;
-	struct htbc_hi_mfs 	*m_fs;
+	struct htbc_mfs 	*mfs;
 	struct htree_direct *ep, *dotdot;
 	struct htree_root *root;
 	struct htree_lookup_info info;
@@ -1580,9 +1575,8 @@ htree_create_index(struct vnode *vp, struct componentname *cnp, struct htree_dir
 	int error = 0;
 
 	dp = VTOHTI(vp);
-	fs = &(dp->hi_mfs->hi_fs);
-	m_fs = dp->hi_mfs;
-	blksize = m_fs->hi_bsize;
+	mfs = dp->hi_mfs;
+	blksize = mfs->hi_bsize;
 
 	buf1 = malloc(blksize, M_TEMP, M_WAITOK | M_ZERO);
 	buf2 = malloc(blksize, M_TEMP, M_WAITOK | M_ZERO);
@@ -1607,7 +1601,7 @@ htree_create_index(struct vnode *vp, struct componentname *cnp, struct htree_dir
 	 */
 	dotdot->h_reclen = blksize - HTREE_DIR_REC_LEN(1);
 	memset(&root->h_info, 0, sizeof(root->h_info));
-	root->h_info.h_hash_version = fs->hi_def_hash_version;
+	root->h_info.h_hash_version = dp->hi_def_hash_version;
 	root->h_info.h_info_len = sizeof(root->h_info);
 	htree_set_block(root->h_entries, 1);
 	htree_set_count(root->h_entries, 1);
@@ -1620,8 +1614,8 @@ htree_create_index(struct vnode *vp, struct componentname *cnp, struct htree_dir
 
 	hash_version = root->h_info.h_hash_version;
 	if (hash_version <= HTREE_TEA)
-		hash_version += m_fs->hi_uhash;
-	htree_split_dirblock(buf1, buf2, blksize, fs->hi_hash_seed,
+		hash_version += mfs->hi_uhash;
+	htree_split_dirblock(buf1, buf2, blksize, dp->hi_hash_seed,
 	    hash_version, &split_hash, new_entry);
 	htree_insert_entry(&info, split_hash, 2);
 
@@ -1665,8 +1659,7 @@ htbc_htree_add_entry(struct vnode *dvp, struct htree_direct *entry, struct compo
 	struct htree_entry *entries, *leaf_node;
 	struct htree_lookup_info info;
 	struct buf *bp = NULL;
-	struct htbc_fs *fs;
-	struct htbc_hi_mfs *m_fs;
+	struct htbc_mfs *mfs;
 	struct htbc_inode *ip;
 	uint16_t ent_num;
 	uint32_t dirhash, split_hash;
@@ -1682,9 +1675,8 @@ htbc_htree_add_entry(struct vnode *dvp, struct htree_direct *entry, struct compo
 	int error, write_bp = 0, write_dst_bp = 0, write_info = 0;
 
 	ip = VTOHTI(dvp);
-	m_fs = ip->hi_mfs;
-	fs = &(m_fs->hi_fs);
-	blksize = m_fs->hi_bsize;
+	mfs = ip->hi_mfs;
+	blksize = mfs->hi_bsize;
 
 	if (ip->hi_count != 0)
 		return htree_add_entry(dvp, entry, &(ip), newentrysize);
@@ -1796,8 +1788,7 @@ htbc_htree_add_entry(struct vnode *dvp, struct htree_direct *entry, struct compo
 
 	/* Split target directory block */
 	newdirblock = malloc(blksize, M_TEMP, M_WAITOK | M_ZERO);
-	htree_split_dirblock((char *)bp->b_data, newdirblock, blksize,
-	    fs->h_hash_seed, hash_version, &split_hash, entry);
+	htree_split_dirblock((char *)bp->b_data, newdirblock, blksize, ip->hi_hash_seed, hash_version, &split_hash, entry);
 	cursize = roundup(ip->hi_size, blksize);
 	dirsize = cursize + blksize;
 	blknum = dirsize / blksize - 1;
@@ -1885,8 +1876,7 @@ static int
 htree_find_leaf(struct htbc_inode *ip, const char *name, int namelen, uint32_t *hash, uint8_t *hash_ver, struct htree_lookup_info *info)
 {
 	struct vnode *vp;
-	struct htbc_fs *fs;
-	struct htbc_hi_mfs *m_fs; /* F, G, and H are MD4 functions */
+	struct htbc_mfs *mfs; /* F, G, and H are MD4 functions */
 	struct buf *bp = NULL;
 	struct htree_root *rootp;
 	struct htree_entry *entp, *start, *end, *middle, *found;
@@ -1899,8 +1889,7 @@ htree_find_leaf(struct htbc_inode *ip, const char *name, int namelen, uint32_t *
 		return (-1);
 
 	vp = HTITOV(ip);
-	fs = &(ip->hi_mfs->hi_fs);
-	m_fs = ip->hi_mfs;
+	mfs = ip->hi_mfs;
 
 	if (htbc_blkatoff(vp, 0, NULL, &bp) != 0)
 		return (-1);
@@ -1915,10 +1904,10 @@ htree_find_leaf(struct htbc_inode *ip, const char *name, int namelen, uint32_t *
 
 	hash_version = rootp->h_info.h_hash_version;
 	if (hash_version <= HTREE_TEA)
-		hash_version += m_fs->hi_uhash;
+		hash_version += mfs->hi_uhash;
 	*hash_ver = hash_version;
 
-	htbc_htree_hash(name, namelen, fs->h_hash_seed,
+	htbc_htree_hash(name, namelen, ip->hi_hash_seed,
 	    hash_version, &hash_major, &hash_minor);
 	*hash = hash_major;
 
@@ -1956,7 +1945,7 @@ htree_find_leaf(struct htbc_inode *ip, const char *name, int namelen, uint32_t *
 			return (0);
 		levels--;
 		if (htbc_blkatoff(vp,
-		    htree_get_block(found) * m_fs->hi_bsize,
+		    htree_get_block(found) * mfs->hi_bsize,
 		    NULL, &bp) != 0)
 			goto error;
 		entp = ((struct htree_node *)bp->b_data)->h_entries;
@@ -1978,7 +1967,7 @@ htree_lookup(struct htbc_inode *ip, const char *name, int namelen, struct buf **
 	struct vnode *vp;
 	struct htree_lookup_info info;
 	struct htree_entry *leaf_node;
-	struct htbc_hi_mfs *m_fs;
+	struct htbc_mfs *mfs;
 	struct buf *bp;
 	uint32_t blk;
 	uint32_t dirhash;
@@ -1986,8 +1975,8 @@ htree_lookup(struct htbc_inode *ip, const char *name, int namelen, struct buf **
 	uint8_t hash_version;
 	int search_next;
 
-	m_fs = ip->hi_mfs;
-	bsize = m_fs->hi_bsize;
+	mfs = ip->hi_mfs;
+	bsize = mfs->hi_bsize;
 	vp = HTITOV(ip);
 
 	/* TODO: print error msg because we don't lookup '.' and '..' */

@@ -135,26 +135,38 @@ struct htbc_entry {
 /****************************************************************/
 /* HTBC HTree Inode Layout */
 
+struct htbc_inode {
+    struct vnode 				*hi_vnode;				/* Vnode associated with this inode. */
+    struct vnode 				*hi_devvp;				/* Vnode for block I/O. */
+    struct htbc_mfs 			*hi_mfs;	    		/* in memory data */
+
+	u_int32_t					hi_blocks;				/* Blocks actually held. */
+	u_int64_t   				hi_size;				/* File byte count. */
+	u_int32_t   				hi_flag;	    		/* flags, see below */
+    u_int32_t   				hi_sflags;				/* Status flags (chflags) */
+    int32_t	  					hi_count;				/* Size of free slot in directory. */
+    /* these are likely to move */
+    uint32_t  					hi_hash_seed[4];		/* HTREE hash seed */
+    char      					hi_def_hash_version;	/* Default hash version to use */
+
+    /* XXX: */
+    ino_t	  					hi_number;				/* The identity of the inode. */
+    uint16_t					hi_mode;				/* IFMT, permissions; see below. */
+    uint32_t  					hi_icount;				/* Inode count */
+    uint32_t  					hi_bcount;				/* blocks count */
+	uint32_t  					hi_first_dblock;		/* first data block */
+	uint32_t  					hi_log_bsize;			/* block size = 1024*(2^e2fs_log_bsize) */
+	uint32_t  					hi_log_fsize;			/* fragment size */
+};
+
 struct htbc_inode_ext {
 	daddr_t 					hi_last_lblk;			/* last logical block allocated */
 	daddr_t 					hi_last_blk;			/* last block allocated on disk */
 	struct htbc_extent_cache 	hi_ext_cache; 			/* cache for htbc extent */
 };
 
-struct htbc_inode {
-	u_int32_t					hi_blocks;
-	u_int64_t   				hi_size;				/* File byte count. */
-	u_int32_t   				hi_flag;	    		/* flags, see below */
-    u_int32_t   				hi_sflags;				/* Status flags (chflags) */
-    struct htbc_hi_mfs 			*hi_mfs;	    		/* htbc_hi_mfs */
-    int32_t	  					hi_count;				/* Size of free slot in directory. */
-
-    struct vnode 				*hi_vp;
-    struct vnode 				*hi_devvp;				/* Vnode for block I/O. */
-};
-
-struct htbc_hi_mfs {
-	struct htbc_hi_fs   		hi_fs;
+struct htbc_mfs {
+	struct htbc_inode			hi_inode;
     int8_t	        			hi_uhash;				/* if hash should be signed, 0 if not */
 	int32_t	        			hi_bsize;				/* block size */
 	int32_t 					hi_bshift;				/* ``lblkno'' calc of logical blkno */
@@ -162,15 +174,6 @@ struct htbc_hi_mfs {
 	int64_t 					hi_qbmask;				/* ~fs_bmask - for use with quad size */
 	int32_t						hi_fsbtodb;				/* fsbtodb and dbtofsb shift constant */
     struct htbc_inode_ext 		hi_ext;
-};
-
-struct htbc_hi_fs {
-	uint32_t  					hi_hash_seed[4];		/* HTREE hash seed */
-    char      					hi_def_hash_version;	/* Default hash version to use */
-
-    char     					hi_journal_uuid[16];	/* uuid of journal superblock */
-    uint32_t  					hi_journal_inum;		/* inode number of journal file */
-    uint32_t  					hi_journal_dev;			/* device number of journal file */
 };
 
 struct htbc_hi_searchslot {
@@ -190,7 +193,7 @@ enum htbc_hi_slotstatus {
 
 /* Convert between inode pointers and vnode pointers. */
 #define VTOHTI(vp)	((struct htbc_inode *)(vp)->v_data)
-#define HTITOV(ip)	((ip)->hi_vp)
+#define HTITOV(ip)	((ip)->hi_vnode)
 
 /****************************************************************/
 /* HTBC Extents */
@@ -205,41 +208,41 @@ enum htbc_hi_slotstatus {
  * HTBC file system extent on disk.
  */
 struct htbc_extent {
-	uint32_t e_blk;			/* first logical block */
-	uint16_t e_len;			/* number of blocks */
-	uint16_t e_start_hi;	/* high 16 bits of physical block */
-	uint32_t e_start_lo;	/* low 32 bits of physical block */
+	uint32_t 					e_blk;			/* first logical block */
+	uint16_t 					e_len;			/* number of blocks */
+	uint16_t 					e_start_hi;		/* high 16 bits of physical block */
+	uint32_t 					e_start_lo;		/* low 32 bits of physical block */
 };
 
 /*
  * Extent index on disk.
  */
 struct htbc_extent_index {
-	uint32_t ei_blk;		/* indexes logical blocks */
-	uint32_t ei_leaf_lo;	/* points to physical block of the next level */
-	uint16_t ei_leaf_hi;	/* high 16 bits of physical block */
-	uint16_t ei_unused;
+	uint32_t 					ei_blk;			/* indexes logical blocks */
+	uint32_t 					ei_leaf_lo;		/* points to physical block of the next level */
+	uint16_t 					ei_leaf_hi;		/* high 16 bits of physical block */
+	uint16_t 					ei_unused;
 };
 
 /*
  * Extent tree header.
  */
 struct htbc_extent_header {
-	uint16_t eh_magic;		/* magic number: 0xf30a */
-	uint16_t eh_ecount;		/* number of valid entries */
-	uint16_t eh_max;		/* capacity of store in entries */
-	uint16_t eh_depth;		/* the depth of extent tree */
-	uint32_t eh_gen;		/* generation of extent tree */
+	uint16_t 					eh_magic;		/* magic number: 0xf30a */
+	uint16_t 					eh_ecount;		/* number of valid entries */
+	uint16_t 					eh_max;			/* capacity of store in entries */
+	uint16_t 					eh_depth;		/* the depth of extent tree */
+	uint32_t 					eh_gen;			/* generation of extent tree */
 };
 
 /*
  * Save cached extent.
  */
 struct htbc_extent_cache {
-	daddr_t	ec_start;		/* extent start */
-	uint32_t ec_blk;		/* logical block */
-	uint32_t ec_len;
-	uint32_t ec_type;
+	daddr_t						ec_start;		/* extent start */
+	uint32_t 					ec_blk;			/* logical block */
+	uint32_t 					ec_len;
+	uint32_t 					ec_type;
 };
 
 /*
@@ -259,7 +262,7 @@ struct htbc_extent_path {
 
 int						htbc_ext_in_cache(struct htbc_inode *, daddr_t, struct htbc_extent *);
 void					htbc_ext_put_cache(struct htbc_inode *, struct htbc_extent *, int);
-struct htbc_extent_path *htbc_ext_find_extent(struct htbc_hi_mfs *fs, struct htbc_inode *, daddr_t, struct htbc_extent_path *);
+struct htbc_extent_path *htbc_ext_find_extent(struct htbc_mfs *fs, struct htbc_inode *, daddr_t, struct htbc_extent_path *);
 
 /****************************************************************/
 /* HTBC htree Hash */
@@ -293,7 +296,7 @@ int 	htbc_read(void *, size_t, struct vnode *, daddr_t);
 #define htbc_blkoff(fs, loc)	 	((loc) & (fs)->hi_qbmask)
 /* calculates (loc / fs->hi_bsize) */
 #define htbc_lblkno(fs, loc)		((loc) >> (fs)->hi_bshift)
-#define	htbc_blksize(fs, ip, lbn) 	((fs)->hi_bsize)
+#define	htbc_blksize(fs, ip, lbn) 	((fs)->hi_bsize)			/* missing parts of equation */
 
 /* place in sys/buf.h */
 /*

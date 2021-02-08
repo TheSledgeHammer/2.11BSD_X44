@@ -53,5 +53,6 @@
 #define M_HTBC			83	/* HTree Blockchain structure */
 #define M_GSCHED		84	/* Global Scheduler */
 #define M_SA			85	/* Scheduler Activations */
+#define M_HTREE			86	/* vfs htree structure */
 
 #endif /* _SYS_MALLOCTYPES_H_ */
