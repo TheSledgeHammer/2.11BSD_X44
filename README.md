@@ -48,8 +48,8 @@ Or
 2.11BSD_X44 is entirely open to being ported to different architectures.
 Though due to limited access to hardware, testing of 2.11BSD_X44 on that architecture will be dependent on the individual/group (especially more exotic hardware).
 
-## Cross-Compiling:
-- There are 3 different toolchains present atm.
+## Cross-Compiling: (see: "/toolchains")
+- There are 3 different toolchain scripts:
 	- GNU GCC Toolchain
 	- Clang/LLVM Toolchain
 	- NetBSD's Toolchain (recommended)
