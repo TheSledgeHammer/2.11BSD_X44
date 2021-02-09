@@ -23,8 +23,12 @@
   	- IPv6
 - Filesystem Updates:
 	- UFS/FFS/LFS:
-  		- UFS Journaling
-  		- Dirhash
+		- LFS1/LFS2:
+			- LFS2: 64-bit support via UFS/FFS2
+			- LFS1: 32-bit support via UFS/FFS1
+  		- UFS1/UFS2:
+  			- Journaling
+  			- Dirhash
 - New Filesystems (In Kernel):
 	- Union (BSD's)
 	- EXT2/3/4

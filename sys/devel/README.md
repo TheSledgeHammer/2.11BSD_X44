@@ -14,10 +14,12 @@ an offical release is made.)
 	- A Volume Manager for BSD.
 	- Based on the ideas from Tru64 UNIX's AdvFS and incorporating concepts from Vinum and LVM2
 				
-- HTBC: A HTree Based Blockchain (NetBSD 5.2 WAPBL)
-	- Intended to augment BSD's LFS & other Log-Structured Filesystems 
-	- provide features of a blockchain to the VFS
-
+- HTBC: A HTree Based Blockchain (WAPBL from NetBSD 5.2)
+	- Provide a VFS-Layer Blockchain that can augment/improve existing filesystem/s
+		- Augment BSD's Filesystems & other Filesystems including:
+			- LFS: Augment the Log-Structure
+			- UFS: Augment Journaling
+			
 - Kern & Sys:
 	- Malloc: A Tertiary Buddy System Allocator (Needs a home!). (subr_tbree.c & tbtree.h)
 		- Designed to work with the existing kern_malloc.c
