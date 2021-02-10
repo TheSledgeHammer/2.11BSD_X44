@@ -59,7 +59,6 @@
  */
 
 /* Htree Blockchain*/
-/* Augmentation for Caching, Defrag, Read-Write, and Lookup in Log-Structured file systems. */
 
 #include <sys/cdefs.h>
 
@@ -83,11 +82,11 @@
 #include <sys/lockf.h>
 #include <sys/fnv_hash.h>
 #include <sys/signalvar.h>
+#include <sys/time.h>
 
 #include <miscfs/specfs/specdev.h>
 
 #include <devel/htbc/htbc.h>
-#include <devel/htbc/blockchain.h>
 #include <devel/htbc/htbc_htree.h>
 #include <devel/sys/malloctypes.h>
 
@@ -97,84 +96,56 @@
 #define	htbc_free(a, s) 		free(a)
 #define	htbc_calloc(n, s) 		calloc((n), (s))
 
-#define htbc_lockinit(htbc)	{						\
-	simple_lock_init((htbc)->ht_lock, "htbc_lock"); \
-	(htbc)->ht_lock_count = 0; 						\
-}
-#define htbc_lock(htbc)			simple_lock((htbc)->ht_lock)
-#define htbc_unlock(htbc) 		simple_unlock((htbc)->ht_lock)
+/* locks on htbc */
+#define htbc_lock(hc)			simple_lock((ht)->ht_lock)
+#define htbc_unlock(hc) 		simple_unlock((ht)->ht_lock)
+/* locks on hashchain */
+#define hashchain_lock(hc)		simple_lock((hc)->hc_lock)
+#define hashchain_unlock(hc) 	simple_unlock((hc)->hc_lock)
 
 struct htbc_dealloc {
-	TAILQ_ENTRY(htbc_dealloc) 			hd_entries;
-	daddr_t 							hd_blkno;			/* address of block */
-	int 								hd_len;				/* size of block */
+	TAILQ_ENTRY(htbc_dealloc) 					hd_entries;
+	daddr_t 									hd_blkno;			/* address of block */
+	int 										hd_len;				/* size of block */
 };
 
 struct htbc {
-	struct vnode 						*ht_devvp;			/* log on this device */
-	struct mount 						*ht_mount;			/* mountpoint ht is associated with */
-	struct htbc_inode					*ht_inode;			/* inode */
-	CIRCLEQ_HEAD(hashchain, ht_hchain)	ht_hashchain;		/* hashchain to store transactions */
+	struct vnode 								*ht_devvp;			/* this device */
+	struct mount 								*ht_mount;			/* mountpoint ht is associated with */
+	struct htbc_inode							*ht_inode;			/* inode */
+	CIRCLEQ_HEAD(htbc_hashchain, htbc_hchain)	ht_hashchain;		/* hashchain contains all data pertaining to entries */
 
-	daddr_t 							ht_logpbn;			/* Physical block number of start of log */
-	int 								ht_log_dev_bshift;	/* logarithm of device block size of log device */
-	int 								ht_fs_dev_bshift;	/* logarithm of device block size of filesystem device */
+	daddr_t 									ht_pbn;				/* Physical block number of start */
+	int 										ht_fs_dev_bshift;	/* logarithm of device block size of filesystem device */
+	int 										ht_fs_dev_bsize;	/* logarithm of device block size of filesystem device */
 
-	size_t 								ht_circ_size; 		/* Number of bytes in buffer of log */
-	size_t 								ht_circ_off;		/* Number of bytes reserved at start */
+	size_t 										ht_circ_size; 		/* Number of bytes in buffer of log */
+	size_t 										ht_circ_off;		/* Number of bytes reserved at start */
 
-	size_t 								ht_bufcount_max;	/* Number of buffers reserved for log */
-	size_t 								ht_bufbytes_max;	/* Number of buf bytes reserved for log */
+	size_t 										ht_bufcount_max;
+	size_t 										ht_bufbytes_max;
 
-	struct htbc_hc_header 				*ht_hc_header;
-	void 								*ht_hc_scratch;		/* scratch space (XXX: por que?!?) */
 
-	struct lock_object 					*ht_lock;			/* transaction lock */
-	unsigned int 						ht_lock_count;		/* Count of transactions in progress */
+	void 										*ht_hc_scratch;		/* scratch space (XXX: por que?!?) */
 
-	size_t 								ht_bufbytes;		/* Byte count of pages in ht_bufs */
-	size_t 								ht_bufcount;		/* Count of buffers in ht_bufs */
-	size_t 								ht_bcount;			/* Total bcount of ht_bufs */
+	struct lock_object 							*ht_lock;			/* transaction lock */
+	unsigned int 								ht_lock_count;		/* Count of transactions in progress */
 
-	LIST_HEAD(, buf) 					ht_bufs; 			/* Buffers in current transaction */
+	size_t 										ht_bufbytes;		/* Byte count of pages in ht_bufs */
+	size_t 										ht_bufcount;		/* Count of buffers in ht_bufs */
+	size_t 										ht_bcount;			/* Total bcount of ht_bufs */
 
-	TAILQ_HEAD(, htbc_dealloc) 			ht_dealloclist;		/* list head */
-	daddr_t 							*ht_deallocblks;	/* address of block */
-	int 								*ht_dealloclens;	/* size of block */
-	int 								ht_dealloccnt;		/* total count */
-	int 								ht_dealloclim;		/* max count */
+	LIST_HEAD(, buf) 							ht_bufs; 			/* Buffers in current transaction */
 
-	/* hashtable of inode numbers for allocated but unlinked inodes */
-	LIST_HEAD(htbc_ino_head, htbc_ino) 	*ht_inohash;
-	u_long 								ht_inohashmask;
-	int 								ht_inohashcnt;
-
-	CIRCLEQ_HEAD(, htbc_entry) 			ht_entries;			/* On disk transaction accounting */
-
-	/* hash chain */
-	CIRCLEQ_ENTRY(htbc) 				ht_hchain_entries;	/* hash chain entry */
-	uint32_t							ht_version;			/* hash chain version */
-	uint32_t							ht_timestamp;		/* hash chain timestamp */
-	uint32_t							ht_hash;			/* hash chain hash algorithm used */
+	TAILQ_HEAD(, htbc_dealloc) 					ht_dealloclist;		/* list head */
+	daddr_t 									*ht_deallocblks;	/* address of block */
+	int 										*ht_dealloclens;	/* size of block */
+	int 										ht_dealloccnt;		/* total count */
+	int 										ht_dealloclim;		/* max count */
 };
 
-CIRCLEQ_HEAD(htbc_hchain_head, htbc);
-struct htbc_hchain {
-	struct htbc_hchain_head		hc_header;		/* hash chain header */
-	uint32_t					hc_version;		/* version */
-	uint32_t					hc_timestamp;	/* timestamp */
-	uint32_t					hc_hash;		/* hash algorithm */
-};
-
-static struct htbc_dealloc 		*htbc_dealloc;
-static struct htbc_entry 		*htbc_entry;
-static struct htbc_hchain 		*htbc_hchain;
-
-struct htbc_ino {
-	LIST_ENTRY(htbc_ino) 		hti_hash;
-	ino_t 						hti_ino;
-	mode_t 						hti_mode;
-};
+static struct htbc_dealloc 			*htbc_dealloc;
+struct htbc_hashchain				*htbc_blockchain;				/* add to htbc structure */
 
 struct htbc_ops {
 	void	(*ho_htbc_discard)(struct htbc *);
@@ -199,17 +170,13 @@ struct htbc_ops htbc_ops = {
 void
 htbc_init()
 {
-	&htbc_entry = (struct htbc_entry *) malloc(sizeof(struct htbc_entry), M_HTBC, NULL);
 	&htbc_dealloc = (struct htbc_dealloc *) malloc(sizeof(struct htbc_dealloc), M_HTBC, NULL);
-	&htbc_hchain = (struct htbc_hchain *) malloc(sizeof(struct htbc_hchain), M_HTBC, NULL);
 }
 
 void
 htbc_fini()
 {
-	FREE(&htbc_entry, M_HTBC);
 	FREE(&htbc_dealloc, M_HTBC);
-	FREE(&htbc_hchain, M_HTBC);
 }
 
 int
@@ -221,8 +188,9 @@ htbc_start(htp, mp, vp, off, count, blksize)
 	size_t count, blksize;
 {
 	struct htbc *ht;
+	struct htbc_inode *htip;
 	struct vnode *devvp;
-	daddr_t logpbn;
+	daddr_t pbn;
 	int error;
 	int log_dev_bshift = DEV_BSHIFT;
 	int fs_dev_bshift = DEV_BSHIFT;
@@ -240,24 +208,24 @@ htbc_start(htp, mp, vp, off, count, blksize)
 	if (blksize % DEV_BSIZE)
 		return EINVAL;
 
-	error = htbc_bmap(vp, off, &devvp, &logpbn, &run);
+	error = htbc_bmap(vp, off, &devvp, &pbn, &run);
 	if (error != 0) {
 		return (error);
 	}
 
 	ht = htbc_calloc(1, sizeof(*ht));
-	htbc_lockinit(ht);
+	simple_lock_init(ht->ht_lock, "htbc_lock");
+	ht->ht_lock_count = 0;
 
 	LIST_INIT(&ht->ht_bufs);
-	CIRCLEQ_INIT(&ht->ht_entries);
 	CIRCLEQ_INIT(&ht->ht_hashchain);
 
-	ht->ht_inode->hi_vnode = vp;
-	ht->ht_devvp = devvp;
-	ht->ht_inode->hi_devvp = ht->ht_devvp;
+	htip = ht->ht_inode;
+	htip->hi_vnode = vp;
+	ht->ht_devvp = htip->hi_devvp = devvp;
 	ht->ht_mount = mp;
-	ht->ht_logpbn = logpbn;
-	ht->ht_log_dev_bshift = log_dev_bshift;
+	ht->ht_pbn = pbn;
+	//ht->ht_fs_dev_bsize = log_dev_bshift;
 	ht->ht_fs_dev_bshift = fs_dev_bshift;
 
 	/* XXX fix actual number of pages reserved per filesystem. */
@@ -266,8 +234,6 @@ htbc_start(htp, mp, vp, off, count, blksize)
 	/* Round wl_bufbytes_max to the largest power of two constraint */
 	ht->ht_bufbytes_max >>= PAGE_SHIFT;
 	ht->ht_bufbytes_max <<= PAGE_SHIFT;
-	ht->ht_bufbytes_max >>= ht->ht_log_dev_bshift;
-	ht->ht_bufbytes_max <<= ht->ht_log_dev_bshift;
 	ht->ht_bufbytes_max >>= ht->ht_fs_dev_bshift;
 	ht->ht_bufbytes_max <<= ht->ht_fs_dev_bshift;
 
@@ -326,10 +292,10 @@ htbc_begin(struct htbc *ht, const char *file, int line)
 void
 htbc_end(struct htbc *ht)
 {
-	simple_lock(ht->ht_lock);
+	htbc_lock(ht);
 	KASSERT(ht->ht_lock_count > 0);
 	ht->ht_lock_count--;
-	simple_unlock(ht->ht_lock);
+	htbc_unlock(ht);
 }
 
 void
@@ -474,217 +440,291 @@ htbc_read(data, len, devvp, pbn)
 }
 
 /****************************************************************/
-/* HTBC hash chain */
+/* HTBC Hashchain */
 
 void
-htbc_hchain_insert_head(hc, ht, hash, timestamp, version)
-	struct htbc_hchain *hc;
-	struct htbc *ht;
-	uint32_t hash, timestamp, version;
+random_hash_seed(hash_seed)
+	uint32_t* hash_seed;
 {
-	htbc_hchain_set_hash(hc, ht, hash);
-	htbc_hchain_set_timestamp(hc, ht, timestamp);
-	htbc_hchain_set_version(hc, ht, version);
+	u_long rand;
 
-	CIRCLEQ_INSERT_HEAD(hc->hc_header, ht, ht_hchain_entries);
+	for(int i = 0; i < 4; i++) {
+		rand = prospector32(random());
+		hash_seed[i] = rand;
+	}
 }
 
-void
-htbc_hchain_insert_tail(hc, ht, hash, timestamp, version)
-	struct htbc_hchain *hc;
-	struct htbc *ht;
-	uint32_t hash, timestamp, version;
+int
+htbc_chain_hash(const char *name, int len)
 {
-	htbc_hchain_set_hash(hc, hash);
-	htbc_hchain_set_timestamp(hc, timestamp);
-	htbc_hchain_set_version(hc, version);
+	register uint32_t *hash_seed;
 
-	CIRCLEQ_INSERT_TAIL(&hc->hc_header, ht, ht_hchain_entries);
+	HASH_SEED(hash_seed);
+	hash = htbc_htree_hash(name, len, hash_seed, HASH_VERSION, HASH_MAJOR, HASH_MINOR);
+	return (hash);
 }
 
-/* search next hchain entry by hash */
-struct htbc *
-htbc_hchain_search_next(hc)
-	struct htbc_hchain *hc;
+static void
+get_hash_seed(struct htbc_inode *hi, uint32_t *seed)
 {
-	register struct htbc *htbc;
-	for (htbc = CIRCLEQ_FIRST(&hc->hc_header); htbc != NULL; htbc =	CIRCLEQ_NEXT(htbc, ht_hchain_entries)) {
-		if (htbc->ht_hash == htbc_hchain_get_hash(hc)) {
-			return (htbc);
+	for (int i = 0; i < 4; i++) {
+		seed[i] = hi->hi_hash_seed[i];
+	}
+}
+
+struct htbc_hchain *
+htbc_chain_lookup(name, len)
+	const char 			*name;
+	int 				len;
+{
+	struct htbc_hashchain 			*bucket;
+	register struct htbc_hchain 	*entry;
+
+	bucket = &htbc_blockchain[htbc_chain_hash(name, len)];
+	hashchain_lock(entry);
+	for(entry = CIRCLEQ_FIRST(bucket); entry != NULL; entry = CIRCLEQ_NEXT(entry, hc_entry)) {
+		if(entry->hc_name == name && entry->hc_len == len) {
+			hashchain_unlock(entry);
+			return (entry);
 		}
 	}
-	return (NULL);
-}
-
-/* search previous hchain entry by hash  */
-struct htbc *
-htbc_hchain_search_prev(hc)
-	struct htbc_hchain *hc;
-{
-	register struct htbc *htbc;
-	for (htbc = CIRCLEQ_FIRST(&hc->hc_header); htbc != NULL; htbc =	CIRCLEQ_PREV(htbc, ht_hchain_entries)) {
-		if (htbc->ht_hash == htbc_hchain_get_hash(hc)) {
-			return (htbc);
-		}
-	}
+	hashchain_unlock(entry);
 	return (NULL);
 }
 
 void
-htbc_hchain_remove(hc)
-	struct htbc_hchain *hc;
+htbc_chain_insert(name, len)
+	const char 			*name;
+	int 				len;
 {
-	register struct htbc *htbc;
-	for (htbc = CIRCLEQ_FIRST(&hc->hc_header); htbc != NULL; htbc =	CIRCLEQ_NEXT(htbc, ht_hchain_entries)) {
-		if (htbc->ht_hash == htbc_hchain_get_hash(hc)) {
-			CIRCLEQ_REMOVE(&hc->hc_header, htbc, ht_hchain_entries);
+	struct htbc_hashchain 			*bucket;
+	register struct htbc_hchain 	*entry;
+
+	bucket = &htbc_blockchain[htbc_chain_hash(name, len)];
+	entry = (struct htbc_hchain *)malloc(sizeof(*entry), M_HTREE, M_WAITOK);
+	entry->hc_trans = (struct htbc_htransaction *)malloc(sizeof(struct htbc_htransaction *), M_HTREE, M_WAITOK);
+	entry->hc_hroot = (struct htree_root *)malloc(sizeof(struct htree_root *), M_HTREE, M_WAITOK);
+	entry->hc_name = name;
+	entry->hc_len = len;
+	htbc_add_transaction(entry);
+
+	hashchain_lock(entry);
+	CIRCLEQ_INSERT_HEAD(bucket, entry, hc_entry);
+	hashchain_unlock(entry);
+	entry->hc_refcnt++;
+}
+
+void
+htbc_chain_remove(name, len)
+	const char 			*name;
+	int 				len;
+{
+	struct htbc_hashchain 			*bucket;
+	register struct htbc_hchain 	*entry;
+
+	bucket = &htbc_blockchain[htbc_chain_hash(name, len)];
+	for(entry = CIRCLEQ_FIRST(bucket); entry != NULL; entry = CIRCLEQ_NEXT(entry, hc_entry)) {
+		if(entry->hc_name == name && entry->hc_len == len) {
+			CIRCLEQ_REMOVE(bucket, entry, hc_entry);
+			htbc_remove_transaction(entry);
+			entry->hc_refcnt--;
+			FREE(entry, M_HTREE);
+			break;
 		}
 	}
 }
 
-static uint32_t
-htbc_hchain_get_hash(hc)
-	struct htbc_hchain *hc;
+/****************************************************************/
+/* HTBC Transactions */
+
+struct htree_root *
+htbc_lookup_htree_root(struct htbc_hchain *chain)
 {
-	return (hc->hc_hash);
+	struct htbc_hchain *look;
+	struct htree_root *hroot;
+
+	look = htbc_chain_lookup(chain->hc_name, chain->hc_len);
+	if(look) {
+		hroot = look->hc_hroot;
+		return (hroot);
+	}
+
+	return (NULL);
 }
 
-static uint32_t
-htbc_hchain_get_timestamp(hc)
-	struct htbc_hchain *hc;
+struct htbc_htransaction *
+htbc_lookup_transaction(struct htbc_hchain *chain)
 {
-	return (hc->hc_timestamp);
+	struct htbc_hchain *look;
+	struct htbc_htransaction *trans;
+
+	look = htbc_chain_lookup(chain->hc_name, chain->hc_len);
+	if(look) {
+		trans = look->hc_trans;
+		return (trans);
+	}
+
+	return (NULL);
 }
 
-static uint32_t
-htbc_hchain_get_version(hc)
-	struct htbc_hchain *hc;
+void
+htbc_add_transaction(struct htbc_hchain *chain)
 {
-	return (hc->hc_version);
+	register struct htbc_htransaction *trans;
+	trans = chain->hc_trans;
+	htbc_add_timestamp_transaction(trans);
+	htbc_add_block_transaction(trans);
+	htbc_add_inode_transaction(trans);
+
+	trans->ht_reclen = (sizeof(*chain) + sizeof(*trans));
 }
 
-static void
-htbc_hchain_set_hash(hc, ht, hash)
-	struct htbc_hchain *hc;
-	struct htbc *ht;
-	uint32_t hash;
+void
+htbc_remove_transaction(struct htbc_hchain *chain)
 {
-	hc->hc_hash = hash;
-	ht->ht_hash = hc->hc_hash;
+	register struct htbc_htransaction *trans;
+
+	trans = htbc_lookup_transaction(chain);
+	if(trans != NULL) {
+		trans = NULL;
+	} else {
+		printf("this entry does not hold any transaction information");
+	}
 }
 
-static void
-htbc_hchain_set_timestamp(hc, ht, timestamp)
-	struct htbc_hchain *hc;
-	struct htbc *ht;
-	uint32_t timestamp;
+/* HTBC Transaction Timestamps */
+
+/*
+ * Knob to control the precision of file timestamps:
+ *
+ *   0 = seconds only; nanoseconds zeroed.
+ *   1 = seconds and nanoseconds, accurate within 1/HZ.
+ *   2 = seconds and nanoseconds, truncated to microseconds.
+ * >=3 = seconds and nanoseconds, maximum precision.
+ */
+enum { TSP_SEC, TSP_HZ, TSP_USEC, TSP_NSEC };
+static int timestamp_precision = TSP_USEC;
+
+void
+htbc_timestamp(struct timespec *tsp)
 {
-	hc->hc_timestamp = timestamp;
-	ht->ht_timestamp = hc->hc_timestamp;
+	struct timeval tv;
+	switch (timestamp_precision) {
+	case TSP_SEC:
+		tsp->tv_sec = time_second;
+		tsp->tv_nsec = 0;
+		break;
+	case TSP_HZ:
+	case TSP_USEC:
+		microtime(&tv);
+		TIMEVAL_TO_TIMESPEC(&tv, tsp);
+		break;
+	case TSP_NSEC:
+	default:
+		break;
+	}
 }
 
-static void
-htbc_hchain_set_version(hc, ht, version)
-	struct htbc_hchain *hc;
-	struct htbc *ht;
-	uint32_t version;
+void
+htbc_add_timestamp_transaction(struct htbc_htransaction *trans)
 {
-	hc->hc_version = version;
-	ht->ht_version = hc->hc_version;
+	struct timespec tsp;
+
+	tsp = trans->ht_timespec;
+
+	htbc_timestamp(&tsp);
+	if(trans->ht_flag & IN_ACCESS) {
+		trans->ht_atime = tsp.tv_sec;
+		trans->ht_atimesec = tsp.tv_nsec;
+	}
+	if (trans->ht_flag & IN_UPDATE) {
+		trans->ht_mtime = tsp.tv_sec;
+		trans->ht_mtimesec = tsp.tv_nsec;
+	}
+	if (trans->ht_flag & IN_CHANGE) {
+		trans->ht_ctime = tsp.tv_sec;
+		trans->ht_ctimesec = tsp.tv_nsec;
+	}
+	trans->ht_flag &= ~(IN_ACCESS | IN_CHANGE | IN_UPDATE);
+}
+
+void
+htbc_add_block_transaction(struct htbc_htransaction *trans)
+{
+
+}
+
+void
+htbc_add_inode_transaction(struct htbc_htransaction *trans)
+{
+
 }
 
 /****************************************************************/
 /* HTBC Inode */
 
-u_long
-htbc_inodetrk_hash(ino, hashmask)
-	ino_t ino;
-	u_long hashmask;
+void
+htbc_inodetrk_init(struct htbc_htransaction *trans, u_int size)
 {
-    Fnv32_t hash1 = fnv_32_buf(ino, sizeof(ino), FNV1_32_INIT) % hashmask;
-    Fnv32_t hash2 = (((unsigned long)ino)%hashmask);
-    return (hash1^hash2);
-}
-
-static void
-htbc_inodetrk_init(ht, size)
-	struct htbc *ht;
-	u_int size;
-{
-	int i;
-	for (i = 0; i < size; i++) {
-		LIST_INIT(ht->ht_inohash[i]);
+	register union ht_u_ino *hti;
+	hti = trans->ht_ino;
+	if(hti == NULL) {
+		hti = (union ht_ino *) malloc(size, M_HTBC, NULL);
 	}
-	u_long hash = htbc_inodetrk_hash();
-	htbc_hchain_insert_head(NULL, ht, hash, 0, 0);
 }
 
-static void
-htbc_inodetrk_free(ht, ino)
-	struct htbc *ht;
+union ht_ino *
+htbc_inodetrk_get(chain, ino)
+	struct htbc_hchain *chain;
 	ino_t ino;
 {
-	register struct htbc_ino_head *hih;
-	struct htbc_ino *hi;
-
-	hih = ht->ht_inohash[htbc_inodetrk_hash(ino, ht->ht_inohashmask)];
-	LIST_FOREACH(hi, hih, hti_hash) {
-		if(hi->hti_ino == ino) {
-			LIST_REMOVE(hi, hti_hash);
+	register struct htbc_htransaction *trans;
+	union ht_u_ino *hti;
+	trans = htbc_lookup_transaction(chain);
+	if(trans) {
+		hti = trans->ht_ino;
+		if(ino == hti->u_ino) {
+			return (hti);
 		}
 	}
-}
-
-struct htbc_ino *
-htbc_inodetrk_get(ht, ino)
-	struct htbc *ht;
-	ino_t ino;
-{
-	struct htbc_ino_head *hih;
-	struct htbc_ino *hi;
-
-	hih = &ht->ht_inohash[htbc_inodetrk_hash(ino, ht->ht_inohashmask)];
-	LIST_FOREACH(hi, hih, hti_hash) {
-		if (ino == hi->hti_ino) {
-			return (hi);
-		}
-	}
-	return (0);
+	return (NULL);
 }
 
 void
-htbc_register_inode(ht, ino, mode)
-	struct htbc *ht;
+htbc_register_inode(chain, ino, mode)
+	struct htbc_hchain *chain;
 	ino_t ino;
 	mode_t mode;
 {
-	struct htbc_ino_head 	*hih;
-	struct htbc_ino 		*hi;
+	register struct htbc_htransaction *trans;
+	union ht_ino *hti;
 
-	htbc_lock(ht);
-	if(htbc_inodetrk_get(ht, ino) == NULL) {
-		hi->hti_ino = ino;
-		hi->hti_mode = mode;
-		hih = &ht->ht_inohash[ino, ht->ht_inohashmask];
-		LIST_INSERT_HEAD(hih, hi, hti_hash);
-		ht->ht_inohashcnt++;
-		htbc_unlock(ht);
+	haschain_lock(chain);
+	trans = htbc_lookup_transaction(chain);
+	if(htbc_inode_get(chain, ino) == NULL) {
+		hti->u_ino = ino;
+		hti->u_imode = mode;
+		trans->ht_inocnt++;
+		haschain_unlock(chain);
 	}
 }
 
 void
-htbc_unregister_inode(ht, ino, mode)
-	struct htbc *ht;
+htbc_unregister_inode(chain, ino, mode)
+	struct htbc_hchain *chain;
 	ino_t ino;
 	mode_t mode;
 {
-	struct htbc_ino *hi;
-	htbc_lock(ht);
-	hi = htbc_inodetrk_get(ht, ino);
-	if(hi) {
-		ht->ht_inohashcnt--;
-		LIST_REMOVE(hi, hti_hash);
-		htbc_unlock(ht);
+	register struct htbc_htransaction *trans;
+	union ht_u_ino *hti;
+
+	haschain_lock(chain);
+	trans = htbc_lookup_transaction(chain);
+	hti = htbc_inode_get(ino, mode);
+	if(hti) {
+		KASSERT(hti == NULL);
+		trans->ht_inocnt--;
+		haschain_unlock(chain);
 	}
 }
 
@@ -692,7 +732,7 @@ static __inline size_t
 htbc_transaction_inodes_len(ht)
 	struct htbc *ht;
 {
-	int blocklen = 1 << ht->ht_log_dev_bshift;
+	int blocklen = 1 << ht->ht_dev_bshift;
 	int iph;
 
 	/* Calculate number of inodes described in a inodelist header */
@@ -724,6 +764,46 @@ htbc_transaction_len(ht)
 	len += htbc_transaction_inodes_len(ht);
 
 	return len;
+}
+
+/* Uses transaction instead of htbc struct */
+static __inline size_t
+htbc_transaction_inodes_len2(trans)
+	struct htbc_htransaction *trans;
+{
+	int blocklen = 1 << trans->ht_dev_bshift;
+	int iph;
+
+	/* Calculate number of inodes described in a inodelist header */
+	iph = (blocklen - offsetof(struct htbc_hc_inodelist, hc_inodes)) / sizeof(((struct htbc_hc_inodelist *)0)->hc_inodes[0]);
+
+	KASSERT(iph > 0);
+
+	return MAX(1, howmany(trans->ht_inocnt, iph))*blocklen;
+}
+
+/* Calculate amount of space a transaction will take on disk */
+static size_t
+htbc_transaction_len2(trans, bcount, bufcount, dealloccnt)
+	struct htbc_htransaction *trans;
+	size_t bcount, bufcount;
+	int dealloccnt;
+{
+	int blocklen = 1 << trans->ht_dev_bshift;
+	size_t len;
+	int bph;
+
+	/* Calculate number of blocks described in a blocklist header */
+	bph = (blocklen - offsetof(struct htbc_hc_blocklist, hc_blocks)) / sizeof(((struct htbc_hc_blocklist *)0)->hc_blocks[0]);
+
+	KASSERT(bph > 0);
+
+	len = bcount;
+	len += howmany(bufcount, bph)*blocklen;
+	len += howmany(dealloccnt, bph)*blocklen;
+	len += htbc_transaction_inodes_len2(trans);
+
+	return (len);
 }
 
 /****************************************************************/

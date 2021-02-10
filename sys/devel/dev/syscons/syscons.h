@@ -36,7 +36,7 @@
 #ifndef _DEV_SYSCONS_SYSCONS_H_
 #define	_DEV_SYSCONS_SYSCONS_H_
 
-//#include <sys/kdb.h>		/* XXX */
+//#include <sys/kdb.h>			/* XXX: kernel debugger */
 #include <sys/lock.h>
 #include <sys/queue.h>
 

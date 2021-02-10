@@ -71,65 +71,85 @@
 #include <sys/buf.h>
 
 /****************************************************************/
-/* HTBC layout */
+/* HTBC Blockchain Layout */
+
+struct htbc_hchain {
+	CIRCLEQ_ENTRY(htbc_hchain)	hc_entry;			/* a list of chain entries */
+	struct htree_root			*hc_hroot;			/* htree root per block */
+	struct ht_transaction		*hc_trans;			/* pointer to transaction info */
+
+	const char					*hc_name;			/* name of chain entry */
+	int							hc_len;
+
+	struct lock_object			hc_lock;			/* lock on chain */
+	int							hc_flags;			/* flags */
+	int							hc_refcnt;			/* number of entries in this chain */
+};
+
+struct htbc_htransaction {
+	int32_t						ht_hash;			/* size of hash for this transaction */
+	int32_t						ht_reclen;			/* length of this record */
+	uint32_t					ht_flag;			/* flags */
+	struct timespec				*ht_timespec;		/* timestamp */
+	uint32_t					ht_type;
+	int32_t						ht_len;
+	uint32_t					ht_checksum;
+	uint32_t					ht_generation;
+	uint32_t					ht_version;
+    int32_t						ht_atime;			/* Last access time. */
+    int32_t						ht_atimesec;		/* Last access time. */
+    int32_t						ht_mtime;			/* Last modified time. */
+    int32_t						ht_mtimesec;		/* Last modified time. */
+    int32_t						ht_ctime;			/* Last inode change time. */
+    int32_t						ht_ctimesec;		/* Last inode change time. */
+
+	union ht_u_ino {
+		ino_t 					u_ino;
+		mode_t					u_imode;
+	} ht_ino;
+	int							ht_inocnt;
+	int							ht_dev_bshift;
+	int							ht_dev_bmask;
+};
+
+#define HASH_VERSION			HTREE_HALF_MD4					/* make configurable */
+#define HASH_SEED(hash_seed) 	(random_hash_seed(hash_seed));
+#define HASH_MAJOR 				(prospector32(random()))
+#define HASH_MINOR 				(prospector32(random()))
+
+/****************************************************************/
+/* HTBC On Disk Layouts */
 
 /* null entry (on disk) */
 struct htbc_hc_null {
-	uint32_t	hc_type;
-	int32_t		hc_len;
-	uint8_t		hc_spare[0];
-};
-
-/* journal header (on-disk) */
-struct htbc_hc_header {
-	uint32_t	hc_type;
-	int32_t		hc_len;
-	uint32_t	hc_checksum;
-	uint32_t	hc_generation;
-	int32_t		hc_fsid[2];
-	uint64_t	hc_time;
-	uint32_t	hc_timensec;
-	uint32_t	hc_version;
-
-	uint32_t	hc_log_dev_bshift;
-	uint32_t	hc_fs_dev_bshift;
-
-	int64_t		hc_head;
-	int64_t		hc_tail;
+	uint32_t					hc_type;
+	int32_t						hc_len;
+	uint8_t						hc_spare[0];
 };
 
 /* list of blocks (on disk) */
 struct htbc_hc_blocklist {
-	u_int32_t 	hc_type;
-	int32_t 	hc_len;
-	int32_t		hc_blkcount;
+	u_int32_t 					hc_type;
+	int32_t 					hc_len;
+	int32_t						hc_blkcount;
 	struct {
-		int64_t	hc_daddr;
-		int32_t	hc_unused;
-		int32_t	hc_dlen;
+		int64_t					hc_daddr;
+		int32_t					hc_unused;
+		int32_t					hc_dlen;
 	} hc_blocks[0];
 };
 
 /* list of inodes (on disk) */
 struct htbc_hc_inodelist {
-	uint32_t	hc_type;
-	int32_t		hc_len;
-	int32_t		hc_inocnt;
-	int32_t		hc_clear; 								/* set if previously listed inodes hould be ignored */
+	uint32_t					hc_type;
+	int32_t						hc_len;
+	int32_t						hc_inocnt;
+	int32_t						hc_clear; 				/* set if previously listed inodes hould be ignored */
 
 	struct {
-		uint32_t hc_inumber;
-		uint32_t hc_imode;
+		uint32_t 				hc_inumber;
+		uint32_t 				hc_imode;
 	} hc_inodes[0];
-};
-
-/* Holds per transaction log information */
-struct htbc_entry {
-	struct htbc 				*he_htbc;
-	CIRCLEQ_ENTRY(htbc_entry) 	he_entries;
-	size_t 						he_bufcount;			/* Count of unsynced buffers */
-	size_t 						he_reclaimable_bytes;	/* Number on disk bytes for this transaction */
-	int							he_error;
 };
 
 /****************************************************************/
