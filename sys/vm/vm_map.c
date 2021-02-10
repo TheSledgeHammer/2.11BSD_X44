@@ -533,7 +533,7 @@ vm_map_entry_dispose(map, entry)
 {
 #ifdef DEBUG
 	extern vm_map_t		kernel_map, kmem_map, mb_map, pager_map;
-	boolean_t		isspecial;
+	boolean_t			isspecial;
 
 	isspecial = (map == kernel_map || map == kmem_map || map == mb_map || map == pager_map);
 	if (isspecial && map->entries_pageable || !isspecial && !map->entries_pageable)

@@ -344,5 +344,5 @@ vm_anon_lockloanpg(anon)
 	 * done!
 	 */
 
-	return(pg);
+	return (pg);
 }

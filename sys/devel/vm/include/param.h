@@ -40,12 +40,12 @@
 
 /* Machine params for segments */
 
-#define	NBSEG				4194304				/* bytes/segment (SEGMENT SIZE) */
+#define	NBSEG					4194304				/* bytes/segment (SEGMENT SIZE) */
 
-#define	SEGOFSET			(NBSEG-1)			/* byte offset into segment */
-#define	SEGSHIFT			22					/* LOG2(NBSEG) */
-#define	SEGSIZE				(1 << SEGSHIFT)		/* NBSEG */
-#define SEGMASK				(SEGSIZE - 1)		/* SEGOFSET */
+#define	SEGOFSET				(NBSEG-1)			/* byte offset into segment */
+#define	SEGSHIFT				22					/* LOG2(NBSEG) */
+#define	SEGSIZE					(1 << SEGSHIFT)		/* NBSEG */
+#define SEGMASK					(SEGSIZE - 1)		/* SEGOFSET */
 
 /*
  * Mach derived conversion macros

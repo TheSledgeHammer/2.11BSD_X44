@@ -294,7 +294,7 @@ vm_segment_page_insert(object, offset1, page, offset2)
 	register vm_segment_t segment;
 
 	segment = vm_segment_lookup(object, offset1);
-	if (segment != NULL) {
+	if (segment) {
 		vm_page_insert(page, segment, offset2);
 	}
 }
@@ -460,7 +460,7 @@ vm_segment_sanity_check(pgs, segs)
         nsegment = segs;
     }
 
-    /* get the difference between a single segment & the default npages per segment (default: 1024 pages) */
+    /* get the difference between a single segment & the default npages per segment (default pages: 1024) */
     vm_size_t diff = nsegment * npages_per_segment;
     vm_size_t emptyspace;
     if(pgs > npages_per_segment) {

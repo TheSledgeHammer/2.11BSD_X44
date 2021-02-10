@@ -74,11 +74,11 @@ struct vm_segment {
 #define SEG_ACTIVE		0x001	/* segment is active */
 #define SEG_INACTIVE	0x002	/* segment is inactive */
 #define SEG_RO			0x004	/* read-only */
-#define SEG_WO			0x006	/* write-only */
-#define SEG_RW			0x008	/* read-write */
-#define SEG_ALLOCATED	0x010	/* segment has been allocated */
-#define	SEG_BUSY		0x020	/* segment is in transit (O) */
-#define	SEG_CLEAN		0x040	/* segment has not been modified */
+#define SEG_WO			0x008	/* write-only */
+#define SEG_RW			0x010	/* read-write */
+#define SEG_ALLOCATED	0x020	/* segment has been allocated */
+#define	SEG_BUSY		0x040	/* segment is in transit (O) */
+#define	SEG_CLEAN		0x080	/* segment has not been modified */
 
 #define	VM_SEGMENT_CHECK(seg) { 											\
 	if ((((unsigned int) seg) < ((unsigned int) &vm_segment_array[0])) || 	\

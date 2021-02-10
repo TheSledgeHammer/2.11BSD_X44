@@ -107,10 +107,4 @@ extern struct uvmexp uvmexp;
 #define VM_ET_ISCOPYONWRITE(E)	(((E)->etype & VM_ET_COPYONWRITE) != 0)
 #define VM_ET_ISNEEDSCOPY(E)	(((E)->etype & VM_ET_NEEDSCOPY) != 0)
 
-/* vm_extern.h */
-/* vm_aobject.c */
-struct vm_object				*uao_create (vm_size_t, int);
-void							uao_detach (struct vm_object *);
-void							uao_reference (struct vm_object *);
-
 #endif /* SYS_DEVEL_VM_UVM_UVM_H_ */

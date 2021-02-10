@@ -252,7 +252,7 @@ struct vm_amap {
 
 #define PPREF_NONE ((int *) -1)	/* not using ppref */
 
-void		amap_pp_adjref (struct vm_amap *, int, vm_size_t, int, struct vm_anon **); /* adjust references */
+void		amap_pp_adjref (struct vm_amap *, int, vm_size_t, int, struct vm_anon **); 	/* adjust references */
 void		amap_pp_establish (struct vm_amap *, caddr_t); 								/* establish ppref */
 void		amap_wiperange (struct vm_amap *, int, int, struct vm_anon **); 			/* wipe part of an amap */
 #endif	/* VM_AMAP_PPREF */

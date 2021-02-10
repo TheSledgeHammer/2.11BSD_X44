@@ -100,6 +100,12 @@ struct vnode {
 	long				v_spare[5];		/* round to 128 bytes */
 	enum vtagtype 		v_tag;			/* type of underlying data */
 	void 				*v_data;		/* private data for fs */
+
+
+	/* VM system related items */
+	struct vm_object 	*v_object;
+	off_t				v_size;			/* i+u size of file */
+	off_t				v_writesize;	/* i+u new size after write */
 };
 
 #define	v_mountedhere	v_un.vu_mountedhere

@@ -71,7 +71,7 @@
 
 #include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_segment.h>
-#include <devel/vm/include/vm_pager.h>
+#include <vm/include/vm_pager.h>
 
 struct vm_object {
 	struct seglist					seglist;				/* memory segments */

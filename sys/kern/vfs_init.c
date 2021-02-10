@@ -75,10 +75,12 @@ vfsinit()
 	vattr_null(&va_null);
 	maxtypenum = 0;
 	for (vfsp = vfsconf, i = 1; i <= maxvfsconf; i++, vfsp++) {
-		if (i < maxvfsconf)
+		if (i < maxvfsconf) {
 			vfsp->vfc_next = vfsp + 1;
-		if (maxtypenum <= vfsp->vfc_typenum)
+		}
+		if (maxtypenum <= vfsp->vfc_typenum) {
 			maxtypenum = vfsp->vfc_typenum + 1;
+		}
 		(*vfsp->vfc_vfsops->vfs_init)(vfsp);
 	}
 	/* next vfc_typenum to be used */

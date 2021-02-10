@@ -122,26 +122,24 @@ struct vm_page {
  *
  * Note: PG_FILLED and PG_DIRTY are added for the filesystems.
  */
-#define	PG_INACTIVE		0x0001		/* page is in inactive list (P) */
-#define	PG_ACTIVE		0x0002		/* page is in active list (P) */
-#define	PG_LAUNDRY		0x0004		/* page is being cleaned now (P)*/
-#define	PG_CLEAN		0x0008		/* page has not been modified */
-#define	PG_BUSY			0x0010		/* page is in transit (O) */
-#define	PG_WANTED		0x0020		/* someone is waiting for page (O) */
-#define	PG_TABLED		0x0040		/* page is in VP table (O) */
-#define	PG_COPYONWRITE	0x0080		/* must copy page before changing (O) */
-#define	PG_FICTITIOUS	0x0100		/* physical page doesn't exist (O) */
-#define	PG_FAKE			0x0200		/* page is placeholder for pagein (O) */
-#define	PG_FILLED		0x0400		/* client flag to set when filled */
-#define	PG_DIRTY		0x0800		/* client flag to set when dirty */
-#define	PG_PAGEROWNED	0x4000		/* DEBUG: async paging op in progress */
+#define	PG_INACTIVE		0x00001		/* page is in inactive list (P) */
+#define	PG_ACTIVE		0x00002		/* page is in active list (P) */
+#define	PG_LAUNDRY		0x00004		/* page is being cleaned now (P)*/
+#define	PG_CLEAN		0x00008		/* page has not been modified */
+#define	PG_BUSY			0x00010		/* page is in transit (O) */
+#define	PG_WANTED		0x00020		/* someone is waiting for page (O) */
+#define	PG_TABLED		0x00040		/* page is in VP table (O) */
+#define	PG_COPYONWRITE	0x00080		/* must copy page before changing (O) */
+#define	PG_FICTITIOUS	0x00100		/* physical page doesn't exist (O) */
+#define	PG_FAKE			0x00200		/* page is placeholder for pagein (O) */
+#define	PG_FILLED		0x00400		/* client flag to set when filled */
+#define	PG_DIRTY		0x00800		/* client flag to set when dirty */
+#define	PG_PAGEROWNED	0x01000		/* DEBUG: async paging op in progress */
+#define	PG_SEGPAGE		0x02000		/* DEBUG: is a user segment page */
+#define	PG_RELEASED		0x04000		/* page to be freed when unbusied */
 
-#define	PG_SEGPAGE		0x8000		/* DEBUG: is a user segment page */
-
-#define	PG_RELEASED		0x00000020	/* page to be freed when unbusied */
-
-#define PQ_ANON			0x10		/* page is part of an anon, rather than an vm_object */
-#define PQ_AOBJ			0x20		/* page is part of an anonymous vm_object */
+#define PQ_ANON			0x08000		/* page is part of an anon, rather than an vm_object */
+#define PQ_AOBJ			0x10000		/* page is part of an anonymous vm_object */
 
 #if	VM_PAGE_DEBUG
 #define	VM_PAGE_CHECK(mem) { 											\
