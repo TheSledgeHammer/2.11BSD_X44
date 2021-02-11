@@ -26,7 +26,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 /* To setup correctly: pages may need to me remapped after segments have been initialized */
 
 #include <sys/tree.h>
