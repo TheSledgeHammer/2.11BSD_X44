@@ -39,14 +39,14 @@
  */
 
 struct consdev {
-	void	(*cn_probe)(struct consdev *);	/* probe hardware and fill in consdev info */
-	void	(*cn_init)(struct consdev *);	/* turn on as console */
-	int		(*cn_getc)(dev_t);				/* kernel getchar interface */
-	void	(*cn_putc)(dev_t, int);			/* kernel putchar interface */
-	void	(*cn_pollc)(dev_t, int); 		/* turn on and off polling */
-	struct	tty *cn_tp;						/* tty structure for console device */
-	dev_t	cn_dev;							/* major/minor of device */
-	int		cn_pri;							/* pecking order; the higher the better */
+	void		(*cn_probe)(struct consdev *);	/* probe hardware and fill in consdev info */
+	void		(*cn_init)(struct consdev *);	/* turn on as console */
+	int			(*cn_getc)(dev_t);				/* kernel getchar interface */
+	void		(*cn_putc)(dev_t, int);			/* kernel putchar interface */
+	void		(*cn_pollc)(dev_t, int); 		/* turn on and off polling */
+	struct	tty *cn_tp;							/* tty structure for console device */
+	dev_t		cn_dev;							/* major/minor of device */
+	int			cn_pri;							/* pecking order; the higher the better */
 };
 
 /* values for cn_pri - reflect our policy for console selection */

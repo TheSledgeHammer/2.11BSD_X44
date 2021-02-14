@@ -54,6 +54,24 @@
 
 #include <dev/cons.h>
 
+/*
+dev_type_cnprobe(cnprobe);
+dev_type_cninit(cninit);
+dev_type_cngetc(cngetc);
+dev_type_cnputc(cnputc);
+dev_type_cnpollc(cnpollc);
+
+const struct consdev cons = {
+		.cn_probe = cnprobe,
+		.cn_init = cninit,
+		.cn_getc = cngetc,
+		.cn_putc = cnputc,
+		.cn_pollc = cnpollc,
+		.cn_dev = CONSMAJOR,
+		.cn_pri= 0,
+};
+*/
+
 dev_type_open(cnopen);
 dev_type_close(cnclose);
 dev_type_read(cnread);
@@ -79,8 +97,48 @@ const struct cdevsw cons_cdevsw = {
 };
 
 struct tty *constty = NULL;			/* virtual console output device */
-struct consdev 	*cn_tab;
+struct consdev 	*cn_tab = NULL;
 struct vnode *cn_devvp = NULLVP;	/* vnode for underlying device. */
+
+void
+cnprobe(cp)
+	struct consdev *cp;
+{
+	/*
+	 * Collect information about all possible consoles
+	 * and find the one with highest priority.
+	 */
+	register struct consdev *cpp;
+	for (cpp = constab; cpp->cn_probe; cpp++) {
+		if (cp == cpp) {
+			(*cp->cn_probe)(cp);
+			if (cp->cn_pri != CN_DEAD && (cn_tab == NULL || cp->cn_pri > cn_tab->cn_pri)) {
+				cn_tab = cp;
+			}
+		}
+	}
+
+	/*
+	 * No console, we can handle it.
+	 */
+	if ((cp = cn_tab) == NULL) {
+		return;
+	}
+}
+
+void
+cninit(void)
+{
+	struct consdev *cp;
+
+	/* probe consdev */
+	cnprobe(cp);
+
+	/*
+	 * Turn on console.
+	 */
+	(*cp->cn_init)(cp);
+}
 
 int
 cnopen(dev, flag, mode, p)
@@ -189,7 +247,6 @@ cnstop(tp, flag)
 {
 	return (cdev_stop(tp, flag));
 }
-
 
 int
 cnioctl(dev, cmd, data, flag, p)

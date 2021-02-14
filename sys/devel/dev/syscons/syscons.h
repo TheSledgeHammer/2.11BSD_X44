@@ -125,22 +125,22 @@
 #define MOUSE_HIDDEN	0x100000	/* mouse cursor is temporarily hidden */
 
 /* misc defines */
-#define FALSE			0
-#define TRUE			1
+#define FALSE				0
+#define TRUE				1
 
 /*
    The following #defines are hard-coded for a maximum text
    resolution corresponding to a maximum framebuffer
    resolution of 1920x1200 with an 8x8 font...
 */
-#define	COL				240
-#define	ROW				150
+#define	COL					240
+#define	ROW					150
 
-#define PCBURST			128
+#define PCBURST				128
 
 #ifndef BELL_DURATION
-#define BELL_DURATION	((5 * hz + 99) / 100)
-#define BELL_PITCH		800
+#define BELL_DURATION		((5 * hz + 99) / 100)
+#define BELL_PITCH			800
 #endif
 
 /* virtual terminal buffer */
@@ -522,7 +522,7 @@ typedef struct {
 		} while(0)
 
 /* syscons.c */
-extern int 		(*sc_user_ioctl)(struct tty *tp, u_long cmd, caddr_t data, struct thread *td);
+extern int 		(*sc_user_ioctl)(struct tty *tp, u_long cmd, caddr_t data, struct proc *p);
 
 int				sc_probe_unit(int unit, int flags);
 int				sc_attach_unit(int unit, int flags);

@@ -206,7 +206,7 @@ int
 bi_load_stage1(struct bootinfo bi, struct preloaded_file *fp, char *args, vm_offset_t addr, int add_smap)
 {
 	int error = bi_load_stage0(bi, fp, args);
-	if(error) {
+	if(error != 0) {
 		return (error);
 	} else {
 		bi_load_legacy(bi, fp, args);

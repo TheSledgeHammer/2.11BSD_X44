@@ -221,7 +221,7 @@ typedef struct mousemode {
 #define MOUSE_RES_HIGH				(-5)
 
 typedef struct mousedata {
-	int 	len;		/* # of data in the buffer */
+	int 	len;			/* # of data in the buffer */
 	int 	buf[16];		/* data buffer */
 } mousedata_t;
 

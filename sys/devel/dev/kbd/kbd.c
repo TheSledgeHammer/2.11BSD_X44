@@ -122,8 +122,9 @@ kbd_set_maps(keyboard_t *kbd, keymap_t *keymap, accentmap_t *accmap, fkeytab_t *
 int
 kbd_add_driver(keyboard_driver_t *driver)
 {
-	if (SIMPLEQ_NEXT(driver, link))
+	if (SIMPLEQ_NEXT(driver, link)) {
 		return (EINVAL);
+	}
 	SIMPLEQ_INSERT_HEAD(&keyboard_drivers, driver, link);
 	return 0;
 }
