@@ -17,7 +17,10 @@ static char sccsid[] = "@(#)scandir.c	5.2 (Berkeley) 3/9/86";
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/dir.h>
+#include <stddef.h>
+#include <dirent.h>
+#include <stdlib.h>
+#include <string.h>
 
 scandir(dirname, namelist, select, dcomp)
 	char *dirname;

@@ -8,8 +8,10 @@
 static char sccsid[] = "@(#)closedir.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
-#include <sys/param.h>
-#include <sys/dir.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 /*
  * close a directory.

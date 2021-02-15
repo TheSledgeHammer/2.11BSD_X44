@@ -76,7 +76,7 @@ vm_segment_expand(segment, newsize)
 	}
 	a2 = rmalloc(coremap, newsize);
 	if (a2 == NULL) {
-		if (segment == SEG_DATA) {
+		if (segment->sg_type == SEG_DATA) {
 			//swapout(p);
 		} else {
 			//swapout(p);

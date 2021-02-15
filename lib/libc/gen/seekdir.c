@@ -9,7 +9,8 @@ static char sccsid[] = "@(#)seekdir.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
-#include <sys/dir.h>
+#include <dirent.h>
+#include <stddef.h>
 
 /*
  * seek to an entry in a directory.

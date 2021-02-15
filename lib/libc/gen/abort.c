@@ -34,9 +34,10 @@
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)abort.c	8.1.1 (2.11BSD) 1997/9/9";
 #endif /* LIBC_SCCS and not lint */
-
+#include <sys/signal.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <unistd.h>
 
 void

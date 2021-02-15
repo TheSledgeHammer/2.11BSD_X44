@@ -63,14 +63,14 @@
  * note that some functions (e.g. put) are handled elsewhere
  */
 
-struct pagerops aobject_pager = {
-		uao_init,		/* init */
-		uao_alloc,		/* allocate */
-		uao_dealloc,	/* disassociate */
-		uao_get,		/* get */
-		uao_put,		/* put */
-		uao_has,		/* has */
-		NULL,			/* cluster */
+struct pagerops aobjectpagerops = {
+		aobject_pager_init,
+		aobject_pager_alloc,
+		aobject_pager_dealloc,
+		aobject_pager_getpage,
+		aobject_pager_putpage,
+		aobject_pager_haspage,
+		aobject_pager_cluster
 };
 
 /*
@@ -83,13 +83,74 @@ struct pagerops aobject_pager = {
  * => called at boot time from uvm_pager_init()
  */
 static void
-uao_init()
+aobject_pager_init()
 {
 	static int uao_initialized;
 
 	if (uao_initialized)
 		return;
 	uao_initialized = TRUE;
+}
+
+/*
+ * Allocate a pager structure and associated resources.
+ * Note that if we are called from the pageout daemon (handle == NULL)
+ * we should not wait for memory as it could resulting in deadlock.
+ */
+static vm_pager_t
+aobject_pager_alloc(handle, size, prot, foff)
+	caddr_t handle;
+	register vm_size_t size;
+	vm_prot_t prot;
+	vm_offset_t foff;
+{
+
+}
+
+static void
+aobject_pager_dealloc(pager)
+	vm_pager_t pager;
+{
+
+}
+
+static int
+aobject_pager_getpage(pager, mlist, npages, sync)
+	vm_pager_t pager;
+	vm_page_t *mlist;
+	int npages;
+	boolean_t sync;
+{
+	struct vm_object *object;
+
+}
+
+static int
+aobject_pager_putpage(pager, mlist, npages, sync)
+	vm_pager_t pager;
+	vm_page_t *mlist;
+	int npages;
+	boolean_t sync;
+{
+
+}
+
+static boolean_t
+aobject_pager_haspage(pager, offset)
+	vm_pager_t pager;
+	vm_offset_t offset;
+{
+
+}
+
+static void
+aobject_pager_cluster(pager, offset, loffset, hoffset)
+	vm_pager_t	pager;
+	vm_offset_t	offset;
+	vm_offset_t	*loffset;
+	vm_offset_t	*hoffset;
+{
+
 }
 
 /*

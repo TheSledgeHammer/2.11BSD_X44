@@ -10,8 +10,13 @@ static char sccsid[] = "@(#)ttyname.c	5.2 (Berkeley) 3/9/86";
 
 #define	NULL	0
 #include <sys/param.h>
-#include <sys/dir.h>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <sgtty.h>
+#include <db.h>
+#include <string.h>
+#include <paths.h>
 
 static	char	dev[]	= "/dev/";
 char	*strcpy();

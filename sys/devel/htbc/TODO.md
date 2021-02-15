@@ -1,0 +1,17 @@
+# HTBC (HTree Blockchain):
+- Modify structures under htbc layout and htbc htree.
+	- htbc_transaction_len/htbc_transaction_inodes_len:
+		- use to compute the blockchain (i.e. number of blocks is length of blockchain)
+		- insert an inode/htree into each block
+		- htbc_ino (should be part of blockchain)
+	- Inodes & HTree:
+		- Specifically struct htbc_hc_blocklist, htbc_hc_inodelist
+		- These are double ups on structures present in htbc htree and should be merged
+		- htbc_inodetrk_init, htbc_inodetrk_free, htbc_inodetrk_get, 
+		- htbc_register_inode, htbc_unregister_inode
+	- Transactions/Blockchain:
+		- Merge htbc_entry & htbc_hchain
+		- Do the same thing. 
+	- Journalling & Logs:
+		- integrate later
+		- Merge struct htbc_hi_fs & htbc_hc_header

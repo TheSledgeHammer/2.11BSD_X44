@@ -25,7 +25,7 @@
 #endif
 #include <sys/inode.h>
 #include <sys/fs.h>
-#include <sys/dir.h>
+#include <sys/dirent.h>
 #include <sys/file.h>
 #include <protocols/dumprestor.h>
 

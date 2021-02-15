@@ -50,8 +50,10 @@
 /*
  * globals
  */
-
-extern struct pagerops 			aobject_pager;
+struct aobjectpager {
+	vm_aobject_t				vm_aobject;
+};
+typedef struct aobjectpager		*aobject_pager_t;
 
 /*
  * local functions

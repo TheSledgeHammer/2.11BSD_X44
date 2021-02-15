@@ -4,8 +4,13 @@
 ## VM:
 - vm_mmap.c:
 	- fill-in missing methods (sbrk, sstk & mincore)
-- uvm_aobject.c
-
+- aobject_pager.c:
+	- incomplete
+- vm_swap.c/.h:
+	- consider updating vm_swap with parts from uvm_swap for better anon & segment compatability
+- vm_pageout.c/.h:
+	- consider updating vm_pageout with parts from uvm_pageout
+	
 ## OVL:
 - Setup OVL Minium & Maximum Size.
 - OVL placement in memory stack

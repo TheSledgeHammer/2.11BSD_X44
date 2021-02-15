@@ -98,7 +98,7 @@ vm_aobject_allocate(size, object, flags)
 		aobject->u_flags = UAO_FLAG_NOSWAP;
 		aobject->u_ref_count = VM_OBJ_KERN;
 		object = (vm_object_t)&aobject;
-		_vm_object_allocate(size, object);
+		vm_object_allocate(sizeof(object));
 	} else {										/* normal object */
 		aobject = (struct vm_aobject *)malloc(sizeof(struct vm_aobject *), M_VMAOBJ, M_WAITOK);
 		aobject->u_flags = object->flags;
@@ -358,7 +358,7 @@ vm_aobject_free(aobj)
 			int slot = aobj->u_swslots[i];
 
 			if (slot) {
-				uvm_swap_free(slot, 1);
+				vm_swap_free(slot, 1);
 
 				/* this page is no longer only in swap. */
 				simple_lock(&uvm.swap_data_lock);

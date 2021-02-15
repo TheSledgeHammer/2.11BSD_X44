@@ -56,34 +56,34 @@
 /*	from r (0-indexed)				*/
 /*  SETBIT sets the n-th bit starting from r		*/
 
-#define	MAXCHAR		255
-#define	MAXSHORT	32767
-#define MINSHORT	-32768
-#define MAXTABLE	32500
+#define	MAXCHAR			255
+#define	MAXSHORT		32767
+#define MINSHORT		-32768
+#define MAXTABLE		32500
 #define BITS_PER_WORD	32
-#define	WORDSIZE(n)	(((n)+(BITS_PER_WORD-1))/BITS_PER_WORD)
-#define	BIT(r, n)	((((r)[(n)>>5])>>((n)&31))&1)
+#define	WORDSIZE(n)		(((n)+(BITS_PER_WORD-1))/BITS_PER_WORD)
+#define	BIT(r, n)		((((r)[(n)>>5])>>((n)&31))&1)
 #define	SETBIT(r, n)	((r)[(n)>>5]|=((unsigned)1<<((n)&31)))
 
 
 /*  character names  */
 
-#define	NUL		'\0'    /*  the null character  */
-#define	NEWLINE		'\n'    /*  line feed  */
-#define	SP		' '     /*  space  */
-#define	BS		'\b'    /*  backspace  */
-#define	HT		'\t'    /*  horizontal tab  */
-#define	VT		'\013'  /*  vertical tab  */
-#define	CR		'\r'    /*  carriage return  */
-#define	FF		'\f'    /*  form feed  */
-#define	QUOTE		'\''    /*  single quote  */
+#define	NUL				'\0'    /*  the null character  */
+#define	NEWLINE			'\n'    /*  line feed  */
+#define	SP				' '     /*  space  */
+#define	BS				'\b'    /*  backspace  */
+#define	HT				'\t'    /*  horizontal tab  */
+#define	VT				'\013'  /*  vertical tab  */
+#define	CR				'\r'    /*  carriage return  */
+#define	FF				'\f'    /*  form feed  */
+#define	QUOTE			'\''    /*  single quote  */
 #define	DOUBLE_QUOTE	'\"'    /*  double quote  */
-#define	BACKSLASH	'\\'    /*  backslash  */
+#define	BACKSLASH		'\\'    /*  backslash  */
 
 
 /* defines for constructing filenames */
 
-#define CODE_SUFFIX	".code.c"
+#define CODE_SUFFIX		".code.c"
 #define	DEFINES_SUFFIX	".tab.h"
 #define	OUTPUT_SUFFIX	".tab.c"
 #define	VERBOSE_SUFFIX	".output"

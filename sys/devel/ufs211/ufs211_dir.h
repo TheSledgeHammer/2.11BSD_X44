@@ -72,7 +72,7 @@ struct ufs211_direct {
  * dp->d_ino set to 0.
  */
 
-//#undef DIRSIZ
+#undef DIRSIZ
 #define DIRSIZ(dp) \
     ((((sizeof (struct ufs211_direct) - (UFS211_MAXNAMLEN+1)) + (dp)->d_namlen+1) + 3) &~ 3)
 

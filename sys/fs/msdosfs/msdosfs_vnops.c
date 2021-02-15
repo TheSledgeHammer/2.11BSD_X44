@@ -97,15 +97,9 @@
  * only if the SAVESTART bit in cn_flags is clear on success.
  */
 int
-msdosfs_create(v)
-	void *v;
+msdosfs_create(ap)
+	struct vop_create_args *ap;
 {
-	struct vop_create_args /* {
-		struct vnode *a_dvp;
-		struct vnode **a_vpp;
-		struct componentname *a_cnp;
-		struct vattr *a_vap;
-	} */ *ap = v;
 	struct componentname *cnp = ap->a_cnp;
 	struct denode ndirent;
 	struct denode *dep;
@@ -165,16 +159,9 @@ bad:
 }
 
 int
-msdosfs_mknod(v)
-	void *v;
+msdosfs_mknod(ap)
+	struct vop_mknod_args *ap;
 {
-	struct vop_mknod_args /* {
-		struct vnode *a_dvp;
-		struct vnode **a_vpp;
-		struct componentname *a_cnp;
-		struct vattr *a_vap;
-	} */ *ap = v;
-
 	switch (ap->a_vap->va_type) {
 	case VDIR:
 		return (msdosfs_mkdir((struct vop_mkdir_args *)ap));
@@ -193,31 +180,17 @@ msdosfs_mknod(v)
 }
 
 int
-msdosfs_open(v)
-	void *v;
+msdosfs_open(ap)
+	struct vop_open_args *ap;
 {
-#if 0
-	struct vop_open_args /* {
-		struct vnode *a_vp;
-		int a_mode;
-		struct ucred *a_cred;
-		struct proc *a_p;
-	} */ *ap;
-#endif
 
 	return (0);
 }
 
 int
-msdosfs_close(v)
-	void *v;
+msdosfs_close(ap)
+	struct vop_close_args *ap;
 {
-	struct vop_close_args /* {
-		struct vnode *a_vp;
-		int a_fflag;
-		struct ucred *a_cred;
-		struct proc *a_p;
-	} */ *ap = v;
 	struct vnode *vp = ap->a_vp;
 	struct denode *dep = VTODE(vp);
 
@@ -227,15 +200,9 @@ msdosfs_close(v)
 }
 
 int
-msdosfs_access(v)
-	void *v;
+msdosfs_access(ap)
+	struct vop_access_args *ap;
 {
-	struct vop_access_args /* {
-		struct vnode *a_vp;
-		int a_mode;
-		struct ucred *a_cred;
-		struct proc *a_p;
-	} */ *ap = v;
 	struct denode *dep = VTODE(ap->a_vp);
 	struct msdosfsmount *pmp = dep->de_pmp;
 	mode_t dosmode;
@@ -250,15 +217,9 @@ msdosfs_access(v)
 }
 
 int
-msdosfs_getattr(v)
-	void *v;
+msdosfs_getattr(ap)
+	struct vop_getattr_args *ap;
 {
-	struct vop_getattr_args /* {
-		struct vnode *a_vp;
-		struct vattr *a_vap;
-		struct ucred *a_cred;
-		struct proc *a_p;
-	} */ *ap = v;
 	u_int cn;
 	struct denode *dep = VTODE(ap->a_vp);
 	struct vattr *vap = ap->a_vap;
@@ -310,15 +271,9 @@ msdosfs_getattr(v)
 }
 
 int
-msdosfs_setattr(v)
-	void *v;
+msdosfs_setattr(ap)
+	struct vop_setattr_args *ap;
 {
-	struct vop_setattr_args /* {
-		struct vnode *a_vp;
-		struct vattr *a_vap;
-		struct ucred *a_cred;
-		struct proc *a_p;
-	} */ *ap = v;
 	int error = 0;
 	struct denode *dep = VTODE(ap->a_vp);
 	struct vattr *vap = ap->a_vap;
@@ -402,15 +357,9 @@ msdosfs_setattr(v)
 }
 
 int
-msdosfs_read(v)
-	void *v;
+msdosfs_read(ap)
+	struct vop_read_args *ap;
 {
-	struct vop_read_args /* {
-		struct vnode *a_vp;
-		struct uio *a_uio;
-		int a_ioflag;
-		struct ucred *a_cred;
-	} */ *ap = v;
 	int error = 0;
 	int diff;
 	int blsize;
@@ -485,15 +434,9 @@ msdosfs_read(v)
  * Write data to a file or directory.
  */
 int
-msdosfs_write(v)
-	void *v;
+msdosfs_write(ap)
+	struct vop_write_args *ap;
 {
-	struct vop_write_args /* {
-		struct vnode *a_vp;
-		struct uio *a_uio;
-		int a_ioflag;
-		struct ucred *a_cred;
-	} */ *ap = v;
 	int n;
 	int croffset;
 	int resid;
@@ -677,52 +620,25 @@ errexit:
 }
 
 int
-msdosfs_ioctl(v)
-	void *v;
+msdosfs_ioctl(ap)
+	struct vop_ioctl_args *ap;
 {
-#if 0
-	struct vop_ioctl_args /* {
-		struct vnode *a_vp;
-		u_long a_command;
-		caddr_t a_data;
-		int a_fflag;
-		struct ucred *a_cred;
-		struct proc *a_p;
-	} */ *ap;
-#endif
 
 	return (ENOTTY);
 }
 
 int
-msdosfs_select(v)
-	void *v;
+msdosfs_select(ap)
+	struct vop_select_args *ap;
 {
-#if 0
-	struct vop_select_args /* {
-		struct vnode *a_vp;
-		int a_which;
-		int a_fflags;
-		struct ucred *a_cred;
-		struct proc *a_p;
-	} */ *ap;
-#endif
 
 	return (1);		/* DOS filesystems never block? */
 }
 
 int
-msdosfs_mmap(v)
-	void *v;
+msdosfs_mmap(ap)
+	struct vop_mmap_args *ap;
 {
-#if 0
-	struct vop_mmap_args /* {
-		struct vnode *a_vp;
-		int a_fflags;
-		struct ucred *a_cred;
-		struct proc *a_p;
-	} */ *ap;
-#endif
 
 	return (EINVAL);
 }
@@ -734,15 +650,9 @@ msdosfs_mmap(v)
  * could just do a sync if they try an fsync on a directory file.
  */
 int
-msdosfs_fsync(v)
-	void *v;
+msdosfs_fsync(ap)
+	struct vop_fsync_args *ap;
 {
-	struct vop_fsync_args /* {
-		struct vnode *a_vp;
-		struct ucred *a_cred;
-		int a_waitfor;
-		struct proc *a_p;
-	} */ *ap = v;
 	struct vnode *vp = ap->a_vp;
 
 	vflushbuf(vp, ap->a_waitfor == MNT_WAIT);
@@ -754,30 +664,16 @@ msdosfs_fsync(v)
  * So nothing to do here.
  */
 int
-msdosfs_seek(v)
-	void *v;
+msdosfs_seek(ap)
+	struct vop_seek_args *ap;
 {
-#if 0
-	struct vop_seek_args /* {
-		struct vnode *a_vp;
-		off_t a_oldoff;
-		off_t a_newoff;
-		struct ucred *a_cred;
-	} */ *ap = v;
-#endif
-
 	return (0);
 }
 
 int
-msdosfs_remove(v)
-	void *v;
+msdosfs_remove(ap)
+	struct vop_remove_args *ap;
 {
-	struct vop_remove_args /* {
-		struct vnode *a_dvp;
-		struct vnode *a_vp;
-		struct componentname *a_cnp;
-	} */ *ap = v;
 	struct denode *dep = VTODE(ap->a_vp);
 	struct denode *ddep = VTODE(ap->a_dvp);
 	int error;
@@ -801,17 +697,11 @@ msdosfs_remove(v)
  * have to free it before we return the error.
  */
 int
-msdosfs_link(v)
-	void *v;
+msdosfs_link(ap)
+	struct vop_link_args *ap;
 {
-	struct vop_link_args /* {
-		struct vnode *a_dvp;
-		struct vnode *a_vp;
-		struct componentname *a_cnp;
-	} */ *ap = v;
-
-	VOP_ABORTOP(ap->a_dvp, ap->a_cnp);
-	vput(ap->a_dvp);
+	VOP_ABORTOP(ap->a_vp, ap->a_cnp);
+	vput(ap->a_vp);
 	return (EOPNOTSUPP);
 }
 
@@ -869,17 +759,9 @@ msdosfs_link(v)
  * for each rename done.
  */
 int
-msdosfs_rename(v)
-	void *v;
+msdosfs_rename(ap)
+	struct vop_rename_args *ap;
 {
-	struct vop_rename_args /* {
-		struct vnode *a_fdvp;
-		struct vnode *a_fvp;
-		struct componentname *a_fcnp;
-		struct vnode *a_tdvp;
-		struct vnode *a_tvp;
-		struct componentname *a_tcnp;
-	} */ *ap = v;
 	struct vnode *tvp = ap->a_tvp;
 	register struct vnode *tdvp = ap->a_tdvp;
 	struct vnode *fvp = ap->a_fvp;
@@ -944,7 +826,7 @@ abortit:
 		if ((fcnp->cn_namelen == 1 && fcnp->cn_nameptr[0] == '.') ||
 		    dp == ip || (fcnp->cn_flags & ISDOTDOT) ||
 		    (ip->de_flag & DE_RENAME)) {
-			VOP_UNLOCK(fvp);
+			VOP_UNLOCK(fvp, 0, fvp->v_proc);
 			error = EINVAL;
 			goto abortit;
 		}
@@ -975,7 +857,7 @@ abortit:
 	 * call to doscheckpath().
 	 */
 	error = VOP_ACCESS(fvp, VWRITE, tcnp->cn_cred, tcnp->cn_proc);
-	VOP_UNLOCK(fvp);
+	VOP_UNLOCK(fvp, 0, fvp->v_proc);
 	if (VTODE(fdvp)->de_StartCluster != VTODE(tdvp)->de_StartCluster)
 		newparent = 1;
 	vrele(fdvp);
@@ -1041,7 +923,7 @@ abortit:
 	if ((fcnp->cn_flags & SAVESTART) == 0)
 		panic("msdosfs_rename: lost from startdir");
 	if (!newparent)
-		VOP_UNLOCK(tdvp);
+		VOP_UNLOCK(tdvp, 0, tdvp->v_proc);
 	(void) relookup(fdvp, &fvp, fcnp);
 	if (fvp == NULL) {
 		/*
@@ -1051,7 +933,7 @@ abortit:
 			panic("rename: lost dir entry");
 		vrele(ap->a_fvp);
 		if (newparent)
-			VOP_UNLOCK(tdvp);
+			VOP_UNLOCK(tdvp, 0, tdvp->v_proc);
 		vrele(tdvp);
 		return 0;
 	}
@@ -1071,9 +953,9 @@ abortit:
 		if (doingdirectory)
 			panic("rename: lost dir entry");
 		vrele(ap->a_fvp);
-		VOP_UNLOCK(fvp);
+		VOP_UNLOCK(fvp, 0, fvp->v_proc);
 		if (newparent)
-			VOP_UNLOCK(fdvp);
+			VOP_UNLOCK(fdvp, 0, fdvp->v_proc);
 		xp = NULL;
 	} else {
 		vrele(fvp);
@@ -1095,8 +977,8 @@ abortit:
 		if (error) {
 			bcopy(oldname, ip->de_Name, 11);
 			if (newparent)
-				VOP_UNLOCK(fdvp);
-			VOP_UNLOCK(fvp);
+				VOP_UNLOCK(fdvp, 0, fdvp->v_proc);
+			VOP_UNLOCK(fvp, 0, fvp->v_proc);
 			goto bad;
 		}
 		ip->de_refcnt++;
@@ -1104,8 +986,8 @@ abortit:
 		if ((error = removede(zp, ip)) != 0) {
 			/* XXX should really panic here, fs is corrupt */
 			if (newparent)
-				VOP_UNLOCK(fdvp);
-			VOP_UNLOCK(fvp);
+				VOP_UNLOCK(fdvp, 0, fdvp->v_proc);
+			VOP_UNLOCK(fvp, 0, fvp->v_proc);
 			goto bad;
 		}
 		if (!doingdirectory) {
@@ -1114,8 +996,8 @@ abortit:
 			if (error) {
 				/* XXX should really panic here, fs is corrupt */
 				if (newparent)
-					VOP_UNLOCK(fdvp);
-				VOP_UNLOCK(fvp);
+					VOP_UNLOCK(fdvp, 0, fdvp->v_proc);
+				VOP_UNLOCK(fvp, 0, fvp->v_proc);
 				goto bad;
 			}
 			if (ip->de_dirclust != MSDOSFSROOT)
@@ -1123,7 +1005,7 @@ abortit:
 		}
 		reinsert(ip);
 		if (newparent)
-			VOP_UNLOCK(fdvp);
+			VOP_UNLOCK(fdvp, 0, fdvp->v_proc);
 	}
 
 	/*
@@ -1142,19 +1024,19 @@ abortit:
 		if (error) {
 			/* XXX should really panic here, fs is corrupt */
 			brelse(bp);
-			VOP_UNLOCK(fvp);
+			VOP_UNLOCK(fvp, 0, fvp->v_proc);
 			goto bad;
 		}
 		dotdotp = (struct direntry *)bp->b_data + 1;
 		putushort(dotdotp->deStartCluster, dp->de_StartCluster);
 		if ((error = bwrite(bp)) != 0) {
 			/* XXX should really panic here, fs is corrupt */
-			VOP_UNLOCK(fvp);
+			VOP_UNLOCK(fvp, 0, fvp->v_proc);
 			goto bad;
 		}
 	}
 
-	VOP_UNLOCK(fvp);
+	VOP_UNLOCK(fvp, 0, fvp->v_proc);
 bad:
 	if (xp)
 		vput(tvp);
@@ -1173,34 +1055,28 @@ struct {
 } dosdirtemplate = {
 	{	".       ", "   ",			/* the . entry */
 		ATTR_DIRECTORY,				/* file attribute */
-		{ 0, 0 }, 				/* reserved */
+		{ 0, 0 }, 					/* reserved */
 		{ 0, 0 }, { 0, 0 },			/* create time & date */
 		{ 0, 0 }, { 0, 0 },			/* access time & date */
-		{ 210, 4 }, { 210, 4 },			/* modify time & date */
-		{ 0, 0 },				/* startcluster */
+		{ 210, 4 }, { 210, 4 },		/* modify time & date */
+		{ 0, 0 },					/* startcluster */
 		{ 0, 0, 0, 0 } 				/* filesize */
 	},
 	{	"..      ", "   ",			/* the .. entry */
 		ATTR_DIRECTORY,				/* file attribute */
-		{ 0, 0 }, 				/* reserved */
+		{ 0, 0 }, 					/* reserved */
 		{ 0, 0 }, { 0, 0 },			/* create time & date */
 		{ 0, 0 }, { 0, 0 },			/* access time & date */
-		{ 210, 4 }, { 210, 4 },			/* modify time & date */
-		{ 0, 0 },				/* startcluster */
+		{ 210, 4 }, { 210, 4 },		/* modify time & date */
+		{ 0, 0 },					/* startcluster */
 		{ 0, 0, 0, 0 }				/* filesize */
 	}
 };
 
 int
-msdosfs_mkdir(v)
-	void *v;
+msdosfs_mkdir(ap)
+	struct vop_mkdir_args *ap;
 {
-	struct vop_mkdir_args /* {
-		struct vnode *a_dvp;
-		struvt vnode **a_vpp;
-		struvt componentname *a_cnp;
-		struct vattr *a_vap;
-	} */ *ap = v;
 	struct componentname *cnp = ap->a_cnp;
 	struct denode ndirent;
 	struct denode *dep;
@@ -1299,14 +1175,9 @@ bad2:
 }
 
 int
-msdosfs_rmdir(v)
-	void *v;
+msdosfs_rmdir(ap)
+	struct vop_rmdir_args *ap;
 {
-	struct vop_rmdir_args /* {
-		struct vnode *a_dvp;
-		struct vnode *a_vp;
-		struct componentname *a_cnp;
-	} */ *ap = v;
 	register struct vnode *vp = ap->a_vp;
 	register struct vnode *dvp = ap->a_dvp;
 	register struct componentname *cnp = ap->a_cnp;
@@ -1369,34 +1240,18 @@ out:
  * DOS filesystems don't know what symlinks are.
  */
 int
-msdosfs_symlink(v)
-	void *v;
+msdosfs_symlink(ap)
+	struct vop_symlink_args *ap;
 {
-	struct vop_symlink_args /* {
-		struct vnode *a_dvp;
-		struct vnode **a_vpp;
-		struct componentname *a_cnp;
-		struct vattr *a_vap;
-		char *a_target;
-	} */ *ap = v;
-
 	VOP_ABORTOP(ap->a_dvp, ap->a_cnp);
 	vput(ap->a_dvp);
 	return (EOPNOTSUPP);
 }
 
 int
-msdosfs_readdir(v)
-	void *v;
+msdosfs_readdir(ap)
+	struct vop_readdir_args *ap;
 {
-	struct vop_readdir_args /* {
-		struct vnode *a_vp;
-		struct uio *a_uio;
-		struct ucred *a_cred;
-		int *a_eofflag;
-		u_long *a_cookies;
-		int a_ncookies;
-	} */ *ap = v;
 	int error = 0;
 	int diff;
 	long n;
@@ -1625,41 +1480,26 @@ out:
  * DOS filesystems don't know what symlinks are.
  */
 int
-msdosfs_readlink(v)
-	void *v;
+msdosfs_readlink(ap)
+	struct vop_readlink_args *ap;
 {
-#if 0
-	struct vop_readlink_args /* {
-		struct vnode *a_vp;
-		struct uio *a_uio;
-		struct ucred *a_cred;
-	} */ *ap;
-#endif
 
 	return (EINVAL);
 }
 
 int
-msdosfs_abortop(v)
-	void *v;
+msdosfs_abortop(ap)
+	struct vop_abortop_args *ap;
 {
-	struct vop_abortop_args /* {
-		struct vnode *a_dvp;
-		struct componentname *a_cnp;
-	} */ *ap = v;
-
 	if ((ap->a_cnp->cn_flags & (HASBUF | SAVESTART)) == HASBUF)
 		FREE(ap->a_cnp->cn_pnbuf, M_NAMEI);
 	return (0);
 }
 
 int
-msdosfs_lock(v)
-	void *v;
+msdosfs_lock(ap)
+	struct vop_lock_args *ap;
 {
-	struct vop_lock_args /* {
-		struct vnode *a_vp;
-	} */ *ap = v;
 	register struct vnode *vp = ap->a_vp;
 	register struct denode *dep;
 #ifdef DIAGNOSTIC
@@ -1703,12 +1543,9 @@ start:
 }
 
 int
-msdosfs_unlock(v)
-	void *v;
+msdosfs_unlock(ap)
+	struct vop_unlock_args *ap;
 {
-	struct vop_unlock_args /* {
-		struct vnode *vp;
-	} */ *ap = v;
 	register struct denode *dep = VTODE(ap->a_vp);
 #ifdef DIAGNOSTIC
 	struct proc *p = curproc;	/* XXX */
@@ -1734,13 +1571,9 @@ msdosfs_unlock(v)
 }
 
 int
-msdosfs_islocked(v)
-	void *v;
+msdosfs_islocked(ap)
+	struct vop_islocked_args *ap;
 {
-	struct vop_islocked_args /* {
-		struct vnode *a_vp;
-	} */ *ap = v;
-
 	if (VTODE(ap->a_vp)->de_flag & DE_LOCKED)
 		return (1);
 	return (0);
@@ -1754,16 +1587,9 @@ msdosfs_islocked(v)
  * bnp - address of where to return the filesystem relative block number
  */
 int
-msdosfs_bmap(v)
-	void *v;
+msdosfs_bmap(ap)
+	struct vop_bmap_args *ap;
 {
-	struct vop_bmap_args /* {
-		struct vnode *a_vp;
-		daddr_t a_bn;
-		struct vnode **a_vpp;
-		daddr_t *a_bnp;
-		int *a_runp;
-	} */ *ap = v;
 	struct denode *dep = VTODE(ap->a_vp);
 	struct msdosfsmount *pmp = dep->de_pmp;
 
@@ -1781,27 +1607,17 @@ msdosfs_bmap(v)
 }
 
 int
-msdosfs_reallocblks(v)
-	void *v;
+msdosfs_reallocblks(ap)
+	struct vop_reallocblks_args *ap;
 {
-#if 0
-	struct vop_reallocblks_args /* {
-		struct vnode *a_vp;
-		struct cluster_save *a_buflist;
-	} */ *ap = v;
-#endif
-
 	/* Currently no support for clustering */		/* XXX */
 	return (ENOSPC);
 }
 
 int
-msdosfs_strategy(v)
-	void *v;
+msdosfs_strategy(ap)
+	struct vop_strategy_args *ap;
 {
-	struct vop_strategy_args /* {
-		struct buf *a_bp;
-	} */ *ap = v;
 	struct buf *bp = ap->a_bp;
 	struct denode *dep = VTODE(bp->b_vp);
 	struct vnode *vp;
@@ -1840,12 +1656,9 @@ msdosfs_strategy(v)
 }
 
 int
-msdosfs_print(v)
-	void *v;
+msdosfs_print(ap)
+	struct vop_print_args *ap;
 {
-	struct vop_print_args /* {
-		struct vnode *vp;
-	} */ *ap = v;
 	struct denode *dep = VTODE(ap->a_vp);
 
 	printf(
@@ -1866,16 +1679,9 @@ msdosfs_print(v)
 }
 
 int
-msdosfs_advlock(v)
-	void *v;
+msdosfs_advlock(ap)
+	struct vop_advlock_args *ap;
 {
-	struct vop_advlock_args /* {
-		struct vnode *a_vp;
-		caddr_t a_id;
-		int a_op;
-		struct flock *a_fl;
-		int a_flags;
-	} */ *ap = v;
 	register struct denode *dep = VTODE(ap->a_vp);
 
 	return (lf_advlock(&dep->de_lockf, dep->de_FileSize, ap->a_id, ap->a_op,
@@ -1883,14 +1689,9 @@ msdosfs_advlock(v)
 }
 
 int
-msdosfs_pathconf(v)
-	void *v;
+msdosfs_pathconf(ap)
+	struct vop_pathconf_args *ap;
 {
-	struct vop_pathconf_args /* {
-		struct vnode *a_vp;
-		int a_name;
-		register_t *a_retval;
-	} */ *ap = v;
 	struct msdosfsmount *pmp = VTODE(ap->a_vp)->de_pmp;
 
 	switch (ap->a_name) {

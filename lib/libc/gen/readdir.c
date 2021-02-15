@@ -9,21 +9,21 @@ static char sccsid[] = "@(#)readdir.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
-#include <sys/dir.h>
+#include <stddef.h>
+#include <dirent.h>
 
 /*
  * get next entry in a directory.
  */
-struct direct *
+struct dirent *
 readdir(dirp)
 	register DIR *dirp;
 {
-	register struct direct *dp;
+	register struct dirent *dp;
 
 	for (;;) {
 		if (dirp->dd_loc == 0) {
-			dirp->dd_size = read(dirp->dd_fd, dirp->dd_buf, 
-			    DIRBLKSIZ);
+			dirp->dd_size = read(dirp->dd_fd, dirp->dd_buf, DIRBLKSIZ);
 			if (dirp->dd_size <= 0)
 				return NULL;
 		}
@@ -40,4 +40,5 @@ readdir(dirp)
 			continue;
 		return (dp);
 	}
+	return (NULL);
 }

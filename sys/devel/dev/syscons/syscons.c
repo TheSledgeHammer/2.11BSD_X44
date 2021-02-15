@@ -1,8 +1,31 @@
-/*
- * syscons.c
+/*-
+ * Copyright (c) 1992-1997 Søren Schmidt
+ * All rights reserved.
  *
- *  Created on: 31 Dec 2020
- *      Author: marti
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer
+ *    in this position and unchanged.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software withough specific prior written permission
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * $FreeBSD$
  */
 
 #include <sys/param.h>
@@ -27,7 +50,6 @@
 #include <devel/dev/mouse.h>
 #include <devel/dev/syscons/syscons.h>
 
-/*
 dev_type_open(scopen);
 dev_type_close(scclose);
 dev_type_read(scread);
@@ -51,7 +73,7 @@ const struct cdevsw syscons_cdevsw = {
 		.d_discard = nodiscard,
 		.d_type = D_TTY
 };
-*/
+
 
 #if !defined(SC_MAX_HISTORY_SIZE)
 #define SC_MAX_HISTORY_SIZE	(1000 * MAXCONS)
@@ -220,6 +242,54 @@ scwrite(dev, uio, flag)
 		return (ENXIO);
 	}
 	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
+}
+
+
+void
+scintr(int unit)
+{
+    static struct tty *cur_tty;
+    int c, len;
+    u_char *cp;
+
+	/*
+	 * Loop while there is still input to get from the keyboard.
+	 * I don't think this is nessesary, and it doesn't fix
+	 * the Xaccel-2.1 keyboard hang, but it can't hurt.		XXX
+	 */
+	while ((c = scgetc(SCGETC_NONBLOCK)) != NOKEY) {
+
+		cur_tty = VIRTUAL_TTY(get_scr_num());
+		if (!(cur_tty->t_state & TS_ISOPEN))
+			if (!((cur_tty = CONSOLE_TTY)->t_state & TS_ISOPEN))
+				continue;
+
+		switch (c & 0xff00) {
+		case 0x0000: /* normal key */
+			(*linesw[cur_tty->t_line].l_rint)(c & 0xFF, cur_tty);
+			break;
+		case FKEY: /* function key, return string */
+			if (cp == get_fstr((u_int) c, (u_int*) &len)) {
+				while (len-- > 0)
+					(*linesw[cur_tty->t_line].l_rint)(*cp++ & 0xFF, cur_tty);
+			}
+			break;
+		case MKEY: /* meta is active, prepend ESC */
+			(*linesw[cur_tty->t_line].l_rint)(0x1b, cur_tty);
+			(*linesw[cur_tty->t_line].l_rint)(c & 0xFF, cur_tty);
+			break;
+		case BKEY: /* backtab fixed sequence (esc [ Z) */
+			(*linesw[cur_tty->t_line].l_rint)(0x1b, cur_tty);
+			(*linesw[cur_tty->t_line].l_rint)('[', cur_tty);
+			(*linesw[cur_tty->t_line].l_rint)('Z', cur_tty);
+			break;
+		}
+	}
+
+	if (cur_console->status & MOUSE_ENABLED) {
+		cur_console->status &= ~MOUSE_VISIBLE;
+		remove_mouse_image(cur_console);
+	}
 }
 
 int
@@ -394,459 +464,6 @@ scioctl(dev, cmd, data, flag, p)
 		} else
 			return EINVAL;
 
-	case CONS_MOUSECTL: /* control mouse arrow */
-	case OLD_CONS_MOUSECTL: {
-		/* MOUSE_BUTTON?DOWN -> MOUSE_MSC_BUTTON?UP */
-		static int butmap[8] = { MOUSE_MSC_BUTTON1UP | MOUSE_MSC_BUTTON2UP
-				| MOUSE_MSC_BUTTON3UP, MOUSE_MSC_BUTTON2UP
-				| MOUSE_MSC_BUTTON3UP, MOUSE_MSC_BUTTON1UP
-				| MOUSE_MSC_BUTTON3UP, MOUSE_MSC_BUTTON3UP, MOUSE_MSC_BUTTON1UP
-				| MOUSE_MSC_BUTTON2UP, MOUSE_MSC_BUTTON2UP, MOUSE_MSC_BUTTON1UP,
-				0, };
-		mouse_info_t *mouse = (mouse_info_t*) data;
-		mouse_info_t buf;
-		int f;
-
-		/* FIXME: */
-		if (!ISMOUSEAVAIL(scp->adp->va_flags))
-			return ENODEV;
-
-		if (cmd == OLD_CONS_MOUSECTL) {
-			static u_char swapb[] = { 0, 4, 2, 6, 1, 5, 3, 7 };
-			old_mouse_info_t *old_mouse = (old_mouse_info_t*) data;
-
-			mouse = &buf;
-			mouse->operation = old_mouse->operation;
-			switch (mouse->operation) {
-			case MOUSE_MODE:
-				mouse->u.mode = old_mouse->u.mode;
-				break;
-			case MOUSE_SHOW:
-			case MOUSE_HIDE:
-				break;
-			case MOUSE_MOVEABS:
-			case MOUSE_MOVEREL:
-			case MOUSE_ACTION:
-				mouse->u.data.x = old_mouse->u.data.x;
-				mouse->u.data.y = old_mouse->u.data.y;
-				mouse->u.data.z = 0;
-				mouse->u.data.buttons = swapb[old_mouse->u.data.buttons & 0x7];
-				break;
-			case MOUSE_GETINFO:
-				old_mouse->u.data.x = scp->mouse_xpos;
-				old_mouse->u.data.y = scp->mouse_ypos;
-				old_mouse->u.data.buttons = swapb[scp->mouse_buttons & 0x7];
-				break;
-			default:
-				return EINVAL;
-			}
-		}
-
-		switch (mouse->operation) {
-		case MOUSE_MODE:
-			if (ISSIGVALID(mouse->u.mode.signal)) {
-				scp->mouse_signal = mouse->u.mode.signal;
-				scp->mouse_proc = p;
-				scp->mouse_pid = p->p_pid;
-			} else {
-				scp->mouse_signal = 0;
-				scp->mouse_proc = NULL;
-				scp->mouse_pid = 0;
-			}
-			return 0;
-
-		case MOUSE_SHOW:
-			if (ISTEXTSC(scp) && !(scp->status & MOUSE_ENABLED)) {
-				scp->status |= (MOUSE_ENABLED | MOUSE_VISIBLE);
-				scp->mouse_oldpos = scp->mouse_pos;
-				mark_all(scp);
-				return 0;
-			} else
-				return EINVAL;
-			break;
-
-		case MOUSE_HIDE:
-			if (ISTEXTSC(scp) && (scp->status & MOUSE_ENABLED)) {
-				scp->status &= ~(MOUSE_ENABLED | MOUSE_VISIBLE);
-				mark_all(scp);
-				return 0;
-			} else
-				return EINVAL;
-			break;
-
-		case MOUSE_MOVEABS:
-			scp->mouse_xpos = mouse->u.data.x;
-			scp->mouse_ypos = mouse->u.data.y;
-			set_mouse_pos(scp);
-			break;
-
-		case MOUSE_MOVEREL:
-			scp->mouse_xpos += mouse->u.data.x;
-			scp->mouse_ypos += mouse->u.data.y;
-			set_mouse_pos(scp);
-			break;
-
-		case MOUSE_GETINFO:
-			mouse->u.data.x = scp->mouse_xpos;
-			mouse->u.data.y = scp->mouse_ypos;
-			mouse->u.data.z = 0;
-			mouse->u.data.buttons = scp->mouse_buttons;
-			return 0;
-
-		case MOUSE_ACTION:
-		case MOUSE_MOTION_EVENT:
-			/* this should maybe only be settable from /dev/consolectl SOS */
-			/* send out mouse event on /dev/sysmouse */
-
-			s = spltty();
-			if (mouse->u.data.x != 0 || mouse->u.data.y != 0) {
-				cur_console->mouse_xpos += mouse->u.data.x;
-				cur_console->mouse_ypos += mouse->u.data.y;
-				set_mouse_pos(cur_console);
-			}
-			f = 0;
-			if (mouse->operation == MOUSE_ACTION) {
-				f = cur_console->mouse_buttons ^ mouse->u.data.buttons;
-				cur_console->mouse_buttons = mouse->u.data.buttons;
-			}
-			splx(s);
-
-			mouse_status.dx += mouse->u.data.x;
-			mouse_status.dy += mouse->u.data.y;
-			mouse_status.dz += mouse->u.data.z;
-			if (mouse->operation == MOUSE_ACTION)
-				mouse_status.button = mouse->u.data.buttons;
-			mouse_status.flags |= (
-					(mouse->u.data.x || mouse->u.data.y || mouse->u.data.z) ?
-							MOUSE_POSCHANGED : 0)
-					| (mouse_status.obutton ^ mouse_status.button);
-			if (mouse_status.flags == 0)
-				return 0;
-
-			if (ISTEXTSC(cur_console) && (cur_console->status & MOUSE_ENABLED))
-				cur_console->status |= MOUSE_VISIBLE;
-
-			if ((MOUSE_TTY)->t_state & TS_ISOPEN) {
-				u_char buf[MOUSE_SYS_PACKETSIZE];
-				int j;
-
-				/* the first five bytes are compatible with MouseSystems' */
-				buf[0] = MOUSE_MSC_SYNC
-						| butmap[mouse_status.button & MOUSE_STDBUTTONS];
-				j = imax(imin(mouse->u.data.x, 255), -256);
-				buf[1] = j >> 1;
-				buf[3] = j - buf[1];
-				j = -imax(imin(mouse->u.data.y, 255), -256);
-				buf[2] = j >> 1;
-				buf[4] = j - buf[2];
-				for (j = 0; j < MOUSE_MSC_PACKETSIZE; j++)
-					(*linesw[(MOUSE_TTY)->t_line].l_rint)(buf[j], MOUSE_TTY);
-				if (mouse_level >= 1) { /* extended part */
-					j = imax(imin(mouse->u.data.z, 127), -128);
-					buf[5] = (j >> 1) & 0x7f;
-					buf[6] = (j - (j >> 1)) & 0x7f;
-					/* buttons 4-10 */
-					buf[7] = (~mouse_status.button >> 3) & 0x7f;
-					for (j = MOUSE_MSC_PACKETSIZE; j < MOUSE_SYS_PACKETSIZE;
-							j++)
-						(*linesw[(MOUSE_TTY)->t_line].l_rint)(buf[j],
-								MOUSE_TTY);
-				}
-			}
-
-			if (cur_console->mouse_signal) {
-				/* has controlling process died? */
-				if (cur_console->mouse_proc
-						&& (cur_console->mouse_proc
-								!= pfind(cur_console->mouse_pid))) {
-					cur_console->mouse_signal = 0;
-					cur_console->mouse_proc = NULL;
-					cur_console->mouse_pid = 0;
-				} else
-					psignal(cur_console->mouse_proc, cur_console->mouse_signal);
-			} else if ((mouse->operation == MOUSE_ACTION) && f) {
-				/* process button presses */
-				if (cut_buffer && ISTEXTSC(cur_console)) {
-					if (cur_console->mouse_buttons & MOUSE_BUTTON1DOWN)
-						mouse_cut_start(cur_console);
-					else
-						mouse_cut_end(cur_console);
-					if ((cur_console->mouse_buttons & MOUSE_BUTTON2DOWN)
-							|| (cur_console->mouse_buttons & MOUSE_BUTTON3DOWN))
-						mouse_paste(cur_console);
-				}
-			}
-
-			break;
-
-		case MOUSE_BUTTON_EVENT:
-			if ((mouse->u.event.id & MOUSE_BUTTONS) == 0)
-				return EINVAL;
-			if (mouse->u.event.value < 0)
-				return EINVAL;
-
-			if (mouse->u.event.value > 0) {
-				cur_console->mouse_buttons |= mouse->u.event.id;
-				mouse_status.button |= mouse->u.event.id;
-			} else {
-				cur_console->mouse_buttons &= ~mouse->u.event.id;
-				mouse_status.button &= ~mouse->u.event.id;
-			}
-			mouse_status.flags |= mouse_status.obutton ^ mouse_status.button;
-			if (mouse_status.flags == 0)
-				return 0;
-
-			if (ISTEXTSC(cur_console) && (cur_console->status & MOUSE_ENABLED))
-				cur_console->status |= MOUSE_VISIBLE;
-
-			if ((MOUSE_TTY)->t_state & TS_ISOPEN) {
-				u_char buf[8];
-				int i;
-
-				buf[0] = MOUSE_MSC_SYNC
-						| butmap[mouse_status.button & MOUSE_STDBUTTONS];
-				buf[7] = (~mouse_status.button >> 3) & 0x7f;
-				buf[1] = buf[2] = buf[3] = buf[4] = buf[5] = buf[6] = 0;
-				for (i = 0;
-						i
-								< ((mouse_level >= 1) ?
-										MOUSE_SYS_PACKETSIZE :
-										MOUSE_MSC_PACKETSIZE); i++)
-					(*linesw[(MOUSE_TTY)->t_line].l_rint)(buf[i], MOUSE_TTY);
-			}
-
-			if (cur_console->mouse_signal) {
-				if (cur_console->mouse_proc
-						&& (cur_console->mouse_proc
-								!= pfind(cur_console->mouse_pid))) {
-					cur_console->mouse_signal = 0;
-					cur_console->mouse_proc = NULL;
-					cur_console->mouse_pid = 0;
-				} else
-					psignal(cur_console->mouse_proc, cur_console->mouse_signal);
-				break;
-			}
-
-			if (!ISTEXTSC(cur_console) || (cut_buffer == NULL))
-				break;
-
-			switch (mouse->u.event.id) {
-			case MOUSE_BUTTON1DOWN:
-				switch (mouse->u.event.value % 4) {
-				case 0: /* up */
-					mouse_cut_end(cur_console);
-					break;
-				case 1:
-					mouse_cut_start(cur_console);
-					break;
-				case 2:
-					mouse_cut_word(cur_console);
-					break;
-				case 3:
-					mouse_cut_line(cur_console);
-					break;
-				}
-				break;
-			case MOUSE_BUTTON2DOWN:
-				switch (mouse->u.event.value) {
-				case 0: /* up */
-					break;
-				default:
-					mouse_paste(cur_console);
-					break;
-				}
-				break;
-			case MOUSE_BUTTON3DOWN:
-				switch (mouse->u.event.value) {
-				case 0: /* up */
-					if (!(cur_console->mouse_buttons & MOUSE_BUTTON1DOWN))
-						mouse_cut_end(cur_console);
-					break;
-				default:
-					mouse_cut_extend(cur_console);
-					break;
-				}
-				break;
-			}
-			break;
-
-		case MOUSE_MOUSECHAR:
-			if (mouse->u.mouse_char < 0) {
-				mouse->u.mouse_char = sc_mouse_char;
-			} else {
-				char *font = NULL;
-
-				if (mouse->u.mouse_char >= UCHAR_MAX - 4)
-					return EINVAL;
-
-				/*
-				 * The base character for drawing the mouse pointer has changed.
-				 * Clear the pointer, restore the original font definitions,
-				 * and the redraw the pointer - mangling the new characters.
-				 */
-				s = spltty();
-				remove_mouse_image(cur_console);
-
-				if (ISTEXTSC(cur_console) && (cur_console->font_size != 0)) {
-					if (scp->font_size < 14) {
-						if (fonts_loaded & FONT_8)
-							font = font_8;
-					} else if (scp->font_size >= 16) {
-						if (fonts_loaded & FONT_16)
-							font = font_16;
-					} else {
-						if (fonts_loaded & FONT_14)
-							font = font_8;
-					}
-
-					if (font != NULL) {
-						font_loading_in_progress = TRUE;
-						(*vidsw[scp->ad]->load_font)(scp->adp, 0,
-								cur_console->font_size,
-								font + (sc_mouse_char * cur_console->font_size),
-								sc_mouse_char, 4);
-						font_loading_in_progress = FALSE;
-						(*vidsw[scp->ad]->show_font)(scp->adp, 0);
-					}
-				}
-
-				sc_mouse_char = mouse->u.mouse_char;
-				splx(s);
-			}
-			break;
-
-		default:
-			return EINVAL;
-		}
-		/* make screensaver happy */
-		sc_touch_scrn_saver();
-		return 0;
-	}
-
-		/* MOUSE_XXX: /dev/sysmouse ioctls */
-	case MOUSE_GETHWINFO: /* get device information */
-	{
-		mousehw_t *hw = (mousehw_t*) data;
-
-		if (tp != MOUSE_TTY)
-			return ENOTTY;
-		hw->buttons = 10; /* XXX unknown */
-		hw->iftype = MOUSE_IF_SYSMOUSE;
-		hw->type = MOUSE_MOUSE;
-		hw->model = MOUSE_MODEL_GENERIC;
-		hw->hwid = 0;
-		return 0;
-	}
-
-	case MOUSE_GETMODE: /* get protocol/mode */
-	{
-		mousemode_t *mode = (mousemode_t*) data;
-
-		if (tp != MOUSE_TTY)
-			return ENOTTY;
-		mode->level = mouse_level;
-		switch (mode->level) {
-		case 0:
-			/* at this level, sysmouse emulates MouseSystems protocol */
-			mode->protocol = MOUSE_PROTO_MSC;
-			mode->rate = -1; /* unknown */
-			mode->resolution = -1; /* unknown */
-			mode->accelfactor = 0; /* disabled */
-			mode->packetsize = MOUSE_MSC_PACKETSIZE;
-			mode->syncmask[0] = MOUSE_MSC_SYNCMASK;
-			mode->syncmask[1] = MOUSE_MSC_SYNC;
-			break;
-
-		case 1:
-			/* at this level, sysmouse uses its own protocol */
-			mode->protocol = MOUSE_PROTO_SYSMOUSE;
-			mode->rate = -1;
-			mode->resolution = -1;
-			mode->accelfactor = 0;
-			mode->packetsize = MOUSE_SYS_PACKETSIZE;
-			mode->syncmask[0] = MOUSE_SYS_SYNCMASK;
-			mode->syncmask[1] = MOUSE_SYS_SYNC;
-			break;
-		}
-		return 0;
-	}
-
-	case MOUSE_SETMODE: /* set protocol/mode */
-	{
-		mousemode_t *mode = (mousemode_t*) data;
-
-		if (tp != MOUSE_TTY)
-			return ENOTTY;
-		if ((mode->level < 0) || (mode->level > 1))
-			return EINVAL;
-		mouse_level = mode->level;
-		return 0;
-	}
-
-	case MOUSE_GETLEVEL: /* get operation level */
-		if (tp != MOUSE_TTY)
-			return ENOTTY;
-		*(int*) data = mouse_level;
-		return 0;
-
-	case MOUSE_SETLEVEL: /* set operation level */
-		if (tp != MOUSE_TTY)
-			return ENOTTY;
-		if ((*(int*) data < 0) || (*(int*) data > 1))
-			return EINVAL;
-		mouse_level = *(int*) data;
-		return 0;
-
-	case MOUSE_GETSTATUS: /* get accumulated mouse events */
-		if (tp != MOUSE_TTY)
-			return ENOTTY;
-		s = spltty();
-		*(mousestatus_t*) data = mouse_status;
-		mouse_status.flags = 0;
-		mouse_status.obutton = mouse_status.button;
-		mouse_status.dx = 0;
-		mouse_status.dy = 0;
-		mouse_status.dz = 0;
-		splx(s);
-		return 0;
-
-#if notyet
-		    case MOUSE_GETVARS:		/* get internal mouse variables */
-		    case MOUSE_SETVARS:		/* set internal mouse variables */
-			if (tp != MOUSE_TTY)
-			    return ENOTTY;
-			return ENODEV;
-		#endif
-
-	case MOUSE_READSTATE: /* read status from the device */
-	case MOUSE_READDATA: /* read data from the device */
-		if (tp != MOUSE_TTY)
-			return ENOTTY;
-		return ENODEV;
-
-	case CONS_GETINFO: /* get current (virtual) console info */
-	{
-		vid_info_t *ptr = (vid_info_t*) data;
-		if (ptr->size == sizeof(struct vid_info)) {
-			ptr->m_num = get_scr_num();
-			ptr->mv_col = scp->xpos;
-			ptr->mv_row = scp->ypos;
-			ptr->mv_csz = scp->xsize;
-			ptr->mv_rsz = scp->ysize;
-			ptr->mv_norm.fore = (scp->term.std_color & 0x0f00) >> 8;
-			ptr->mv_norm.back = (scp->term.std_color & 0xf000) >> 12;
-			ptr->mv_rev.fore = (scp->term.rev_color & 0x0f00) >> 8;
-			ptr->mv_rev.back = (scp->term.rev_color & 0xf000) >> 12;
-			ptr->mv_grfc.fore = 0; /* not supported */
-			ptr->mv_grfc.back = 0; /* not supported */
-			ptr->mv_ovscan = scp->border;
-			if (scp == cur_console)
-				save_kbd_state(scp);
-			ptr->mk_keylock = scp->status & LOCK_MASK;
-			return 0;
-		}
-		return EINVAL;
-	}
 
 	case CONS_GETVERS: /* get version number */
 		*(int*) data = 0x200; /* version 2.0 */
@@ -1328,6 +945,71 @@ scmousestart(struct tty *tp)
 		ttwwakeup(tp);
 	}
 	splx(s);
+}
+
+void
+sccnputc(dev_t dev, int c)
+{
+    u_char buf[1];
+    int s;
+    scr_stat *scp = console[0];
+    term_stat save = scp->term;
+
+    scp->term = kernel_console;
+    current_default = &kernel_default;
+    if (scp == cur_console && !(scp->status & UNKNOWN_MODE))
+	remove_cursor_image(scp);
+    buf[0] = c;
+    ansi_put(scp, buf, 1);
+    kernel_console = scp->term;
+    current_default = &user_default;
+    scp->term = save;
+
+    s = spltty();	/* block scintr and scrn_timer */
+    sccnupdate(scp);
+    splx(s);
+}
+
+
+int
+sccngetc(dev_t dev)
+{
+    int s = spltty();	/* block scintr and scrn_timer while we poll */
+    int c;
+
+	/*
+	 * Stop the screen saver and update the screen if necessary.
+	 * What if we have been running in the screen saver code... XXX
+	 */
+	sccnupdate(cur_console);
+
+	c = scgetc(SCGETC_CN);
+	splx(s);
+	return (c);
+}
+
+int
+sccncheckc(dev_t dev)
+{
+    int s = spltty();	/* block scintr and scrn_timer while we poll */
+    int c;
+
+	sccnupdate(cur_console);
+	c = scgetc(SCGETC_CN | SCGETC_NONBLOCK);
+	splx(s);
+	return (c == NOKEY ? -1 : c); /* c == -1 can't happen */
+}
+
+static void
+sccnupdate(scr_stat *scp)
+{
+	if (scp == cur_console && !font_loading_in_progress) {
+		if (scrn_blanked > 0)
+			stop_scrn_saver(current_saver);
+		if (!(scp->status & UNKNOWN_MODE) && scrn_blanked <= 0
+				&& !blink_in_progress && !switch_in_progress)
+			scrn_update(scp, TRUE);
+	}
 }
 
 static scr_stat

@@ -14,7 +14,7 @@ static char sccsid[] = "@(#)getwd.c	5.2 (Berkeley) 3/9/86";
  */
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/dir.h>
+#include <sys/user.h>
 
 #define GETWDERR(s)	strcpy(pathname, (s));
 

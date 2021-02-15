@@ -9,7 +9,15 @@ static char sccsid[] = "@(#)opendir.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
-#include <sys/dir.h>
+#include <sys/mount.h>
+#include <stddef.h>
+#include <sys/stat.h>
+
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 /*
  * open a directory.
