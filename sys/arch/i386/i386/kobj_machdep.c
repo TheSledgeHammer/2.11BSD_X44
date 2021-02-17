@@ -65,8 +65,8 @@
 #include <sys/exec.h>
 #include <sys/exec_linker.h>
 #include <sys/exec_elf.h>
-#include <dev/kobj/kobj.h>
-#include <dev/kobj/kobj_impl.h>
+#include <dev/misc/kobj/kobj.h>
+#include <dev/misc/kobj/kobj_impl.h>
 
 int
 kobj_reloc(kobj_t ko, uintptr_t relocbase, const void *data, bool isrela, bool local)

@@ -52,10 +52,14 @@
 #include <devel/dev/kbd/atkbdcreg.h>
 
 #include <machine/clock.h>
+#include <machine/bus_space.h>
+#include <machine/bus_dma.h>
 
 /* constants */
 
 #define MAXKBDC			1		/* XXX */
+#define ATKBDC_PORT0	IO_KBD
+#define ATKBDC_PORT1	(IO_KBD + KBD_STATUS_PORT)
 
 /* macros */
 
@@ -160,29 +164,22 @@ atkbdc_configure(void)
 
 	int port0;
 	int port1;
-#if defined(__i386__) || defined(__amd64__)
+
+#if defined(__amd64__) || defined(__i386__)
 	volatile int i;
 	register_t flags;
-#endif
-
-	/* XXX: tag should be passed from the caller */
-#if defined(__amd64__) || defined(__i386__)
 	tag = I386_BUS_SPACE_IO;
-#else
-#error "define tag!"
 #endif
 
-	port0 = IO_KBD;
+	port0 = ATKBDC_PORT0;
 	//resource_int_value("atkbdc", 0, "port", &port0); /* XXX: search for resource integer value */
-	port1 = IO_KBD + KBD_STATUS_PORT;
-#ifdef notyet
-	bus_space_map(tag, port0, IO_KBDSIZE, 0, &h0);
-	bus_space_map(tag, port1, IO_KBDSIZE, 0, &h1);
-#else
+	port1 = ATKBDC_PORT1;
+
+    bus_space_map(tag, port0, IO_KBDSIZE, 0, &h0);
+    bus_space_map(tag, port1, IO_KBDSIZE, 0, &h1);
+
 	h0 = (bus_space_handle_t) port0;
 	h1 = (bus_space_handle_t) port1;
-#endif
-
 #if defined(__i386__) || defined(__amd64__)
 	/*
 	 * Check if we really have AT keyboard controller. Poll status
@@ -194,12 +191,14 @@ atkbdc_configure(void)
 	 */
 	flags = intr_disable();
 	for (i = 0; i != 65535; i++) {
-		if ((bus_space_read_1(tag, h1, 0) & 0x2) == 0)
+		if ((bus_space_read_1(tag, h1, 0) & 0x2) == 0) {
 			break;
+		}
 	}
 	intr_restore(flags);
-	if (i == 65535)
+	if (i == 65535) {
 		return ENXIO;
+	}
 #endif
 
 	return (atkbdc_setup(atkbdc_softc[0], tag, h0, h1));

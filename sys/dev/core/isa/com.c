@@ -108,7 +108,7 @@
 #include <dev/ic/hayespreg.h>
 #endif
 #define	com_lcr	com_cfcr
-#include <dev/cons.h>
+#include <dev/misc/cons/cons.h>
 
 #include "com.h"
 

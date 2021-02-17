@@ -62,7 +62,7 @@
 
 #include <net/netisr.h>
 
-#include <dev/cons.h>
+#include <dev/misc/cons/cons.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_kern.h>

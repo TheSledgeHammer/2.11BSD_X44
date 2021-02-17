@@ -36,7 +36,7 @@
 #ifndef _DEV_SYSCONS_SYSCONS_H_
 #define	_DEV_SYSCONS_SYSCONS_H_
 
-//#include <sys/kdb.h>			/* XXX: kernel debugger */
+#include <sys/fbio.h>			/* XXX: kernel debugger */
 #include <sys/lock.h>
 #include <sys/queue.h>
 
@@ -508,17 +508,17 @@ typedef struct {
 
 #define ISSIGVALID(sig)		((sig) > 0 && (sig) < NSIG)
 
-#define SC_VIDEO_LOCKINIT(sc)						\
+#define SC_VIDEO_LOCKINIT(sc)									\
 		simple_lock_init(&(sc)->video_lock, "syscons video lock");
-#define SC_VIDEO_LOCK(sc)							\
-		do {										\
-			if (!kdb_active)						\
-			simple_lock(&(sc)->video_lock);			\
+#define SC_VIDEO_LOCK(sc)										\
+		do {													\
+			if (!kdb_active)									\
+			simple_lock(&(sc)->video_lock);						\
 		} while(0)
-#define SC_VIDEO_UNLOCK(sc)							\
-		do {										\
-			if (!kdb_active)						\
-			simple_unlock(&(sc)->video_lock);		\
+#define SC_VIDEO_UNLOCK(sc)										\
+		do {													\
+			if (!kdb_active)									\
+			simple_unlock(&(sc)->video_lock);					\
 		} while(0)
 
 /* syscons.c */

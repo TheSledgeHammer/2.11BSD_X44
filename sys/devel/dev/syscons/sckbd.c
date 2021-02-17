@@ -18,7 +18,7 @@
 #include <sys/poll.h>
 #include <sys/malloc.h>
 
-#include <dev/cons.h>
+#include <dev/misc/cons/cons.h>
 
 #include <devel/dev/consio.h>
 #include <devel/dev/fbio.h>
@@ -50,14 +50,14 @@ keyboard_ioctl(dev, cmd, data, flag, p)
 		if (securelevel > 0)
 			return EPERM;
 #ifdef __i386__
-					p->p_md.md_regs->tf_eflags |= PSL_IOPL;
+		p->p_md.md_regs->tf_eflags |= PSL_IOPL;
 #endif
 		return 0;
 
 	case KDDISABIO:
 		/* disallow io operations (default) */
 #ifdef __i386__
-					p->p_md.md_regs->tf_eflags &= ~PSL_IOPL;
+		p->p_md.md_regs->tf_eflags &= ~PSL_IOPL;
 #endif
 		return 0;
 

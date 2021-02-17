@@ -19,7 +19,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## conf:
 
 ## kern:
--
+- sys_generic.c: fileops: fo_rw
 	
 ## arch:
 - i386/x86: (Merged under i386)

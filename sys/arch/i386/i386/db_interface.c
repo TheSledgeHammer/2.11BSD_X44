@@ -38,7 +38,7 @@
 
 #include <vm/include/vm.h>
 
-#include <dev/cons.h>
+#include <dev/misc/cons/cons.h>
 
 #include <machine/db_machdep.h>
 

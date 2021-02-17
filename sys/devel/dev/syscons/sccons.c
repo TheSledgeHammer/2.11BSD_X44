@@ -16,7 +16,7 @@
 #include <sys/devsw.h>
 #include <sys/vnode.h>
 #include <sys/poll.h>
-#include <dev/cons.h>
+#include <dev/misc/cons/cons.h>
 
 #include <devel/dev/kbio.h>
 #include <devel/dev/syscons/syscons.h>

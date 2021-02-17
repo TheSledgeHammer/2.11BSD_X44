@@ -39,7 +39,7 @@
 #include <ddb/db_sym.h>
 #include <ddb/db_extern.h>
 
-#include <dev/cons.h>
+#include <dev/misc/cons/cons.h>
 
 /*
  * Character input and editing.

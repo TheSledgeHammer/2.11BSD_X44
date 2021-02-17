@@ -56,7 +56,6 @@ audio_init(devsw)
 	DEVSWIO_CONFIG_INIT(devsw, NAUDIO, NULL, &audio_cdevsw, NULL);			/* generic audio I/O */
 	DEVSWIO_CONFIG_INIT(devsw, NMIDI, NULL, &midi_cdevsw, NULL);			/* MIDI I/O */
 	DEVSWIO_CONFIG_INIT(devsw, NSEQUENCER, NULL, &sequencer_cdevsw, NULL);	/* MIDI Sequencer I/O */
-
 	DEVSWIO_CONFIG_INIT(devsw, NSPKR, NULL, &spkr_cdevsw, NULL);			/* PC Speaker */
 }
 

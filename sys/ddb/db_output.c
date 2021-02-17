@@ -36,7 +36,7 @@
 
 #include <machine/stdarg.h>
 
-#include <dev/cons.h>
+#include <dev/misc/cons/cons.h>
 
 #include <machine/db_machdep.h>
 

@@ -52,7 +52,7 @@
 #include <sys/vnode.h>
 #include <sys/poll.h>
 
-#include <dev/cons.h>
+#include <dev/misc/cons/cons.h>
 
 /*
 dev_type_cnprobe(cnprobe);

@@ -51,20 +51,20 @@
  * should be selected to be the biggest multiple of OFILESIZE (see below)
  * that will fit in a power-of-two sized piece of memory.
  */
-#define NDFILE		20
-#define NDEXTENT	50		/* 250 bytes in 256-byte alloc. */ 
+#define NDFILE			20
+#define NDEXTENT		50		/* 250 bytes in 256-byte alloc. */
 
 struct filedesc {
-	struct	file **fd_ofiles;	/* file structures for open files */
-	char	*fd_ofileflags;		/* per-process open file flags */
-	struct	vnode *fd_cdir;		/* current directory */
-	struct	vnode *fd_rdir;		/* root directory */
-	int		fd_nfiles;			/* number of open files allocated */
-	u_short	fd_lastfile;		/* high-water mark of fd_ofiles */
-	u_short	fd_freefile;		/* approx. next free file */
-	u_short	fd_cmask;			/* mask for file creation */
-	u_short	fd_refcnt;			/* reference count */
-	struct simplelock fd_slock;
+	struct	file 		**fd_ofiles;		/* file structures for open files */
+	char				*fd_ofileflags;		/* per-process open file flags */
+	struct	vnode 		*fd_cdir;			/* current directory */
+	struct	vnode 		*fd_rdir;			/* root directory */
+	int					fd_nfiles;			/* number of open files allocated */
+	u_short				fd_lastfile;		/* high-water mark of fd_ofiles */
+	u_short				fd_freefile;		/* approx. next free file */
+	u_short				fd_cmask;			/* mask for file creation */
+	u_short				fd_refcnt;			/* reference count */
+	struct lock_object 	fd_slock;
 };
 
 /*
@@ -72,20 +72,20 @@ struct filedesc {
  * one of the above, plus arrays for NDFILE descriptors.
  */
 struct filedesc0 {
-	struct	filedesc fd_fd;
+	struct	filedesc 	fd_fd;
 	/*
 	 * These arrays are used when the number of open files is
 	 * <= NDFILE, and are then pointed to by the pointers above.
 	 */
-	struct	file *fd_dfiles[NDFILE];
-	char	fd_dfileflags[NDFILE];
+	struct	file 		*fd_dfiles[NDFILE];
+	char				fd_dfileflags[NDFILE];
 };
 
 /*
  * Per-process open flags.
  */
-#define	UF_EXCLOSE 	0x01		/* auto-close on exec */
-#define	UF_MAPPED 	0x02		/* mapped from device */
+#define	UF_EXCLOSE 		0x01				/* auto-close on exec */
+#define	UF_MAPPED 		0x02				/* mapped from device */
 
 /*
  * Storage required per open file descriptor.

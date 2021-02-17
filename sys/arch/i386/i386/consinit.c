@@ -37,8 +37,8 @@
 #include "com.h"
 #if (NCOM > 0)
 #include <sys/termios.h>
-#include <dev/isa/comreg.h>
-#include <dev/isa/comvar.h>
+#include <dev/core/isa/comreg.h>
+#include <dev/core/isa/comvar.h>
 #endif
 
 #ifndef CONSDEVNAME

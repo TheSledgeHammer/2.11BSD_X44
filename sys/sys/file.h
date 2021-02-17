@@ -18,7 +18,7 @@ struct uio;
  * Descriptor table entry.
  * One for each kernel object.
  */
-struct	file {
+struct file {
 	struct				file *f_filef;	/* list of active files */
 	struct				file **f_fileb;	/* list of active files */
 	int					f_flag;			/* see below */
@@ -33,13 +33,16 @@ struct	file {
 	off_t				f_offset;
 	struct ucred 		*f_cred;		/* credentials associated with descriptor */
 	struct fileops 		*f_ops;
-	struct simplelock 	f_slock;
+	struct lock_object 	f_slock;
 };
 
 struct fileops {
 	int	(*fo_rw)		(struct file *fp, struct uio *uio, struct ucred *cred);
+	int (*fo_read)		(struct file *fp, struct uio *uio, struct ucred *cred);
+	int (*fo_write)		(struct file *fp, struct uio *uio, struct ucred *cred);
 	int	(*fo_ioctl)		(struct file *fp, int com, caddr_t data, struct proc *p);
 	int	(*fo_select) 	(struct file *fp, int which, struct proc *p);
+	int	(*fo_poll)		(struct file *fp, int event, struct proc *p);
 	int	(*fo_close)		(struct file *fp, struct proc *p);
 } *f_ops;
 
@@ -50,8 +53,8 @@ extern struct file 	*filehead;	/* head of list of open files */
 extern int 			maxfiles;	/* kernel limit on number of open files */
 extern int 			nfiles;		/* actual number of open files */
 
-struct	file *getf();
-struct	file *falloc();
+struct	file 		*getf();
+struct	file 		*falloc();
 
 /*
  * Access call.

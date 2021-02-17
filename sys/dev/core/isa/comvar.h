@@ -127,8 +127,8 @@ struct com_softc {
 	u_char				sc_ppsmask;			/* pps signal mask */
 	u_char				sc_ppsassert;		/* pps leading edge */
 	u_char				sc_ppsclear;		/* pps trailing edge */
-	pps_info_t 			ppsinfo;
-	pps_params_t 		ppsparam;
+	//pps_info_t 		ppsinfo;
+	//pps_params_t 		ppsparam;
 
 	//u_char 				*sc_ibuf, *sc_ibufp, *sc_ibufhigh, *sc_ibufend;
 	//u_char 				sc_ibufs[2][COM_IBUFSIZE];
