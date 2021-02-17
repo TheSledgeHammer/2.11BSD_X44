@@ -121,7 +121,7 @@ malloc(size, type, flags)
 #endif
 #ifdef DEBUG
 	if (flags & M_NOWAIT)
-		simplelockrecurse++;
+		/* do nothing */
 #endif
     if (kbp->kb_next == NULL) {
     	kbp->kb_last = NULL;
@@ -142,8 +142,8 @@ malloc(size, type, flags)
         if (va == NULL) {
         	splx(s);
 #ifdef DEBUG
-        	if (flags & (M_NOWAIT|M_CANFAIL))
-        		panic("malloc: out of space in kmem_map");
+        if (flags & (M_NOWAIT | M_CANFAIL))
+        	panic("malloc: out of space in kmem_map");
 #endif
         	return ((void *) NULL);
         }
@@ -188,8 +188,7 @@ malloc(size, type, flags)
     kbp->kb_next = ((struct freelist *)va)->next;
 #ifdef DIAGNOSTIC
     freep = (struct freelist *)va;
-    savedtype = (unsigned)freep->type < M_LAST ?
-    		memname[freep->type] : "???";
+    savedtype = (unsigned)freep->type < M_LAST ? memname[freep->type] : "???";
     if (kbp->kb_next && !kernacc(kbp->kb_next, sizeof(struct freelist), 0)) {
     	printf("%s of object 0x%x size %d %s %s (invalid addr 0x%x)\n",
     				"Data modified on freelist: word 2.5", va, size,

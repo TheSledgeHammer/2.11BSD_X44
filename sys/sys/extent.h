@@ -49,7 +49,7 @@ struct extent_region {
 };
 
 /* er_flags */
-#define ER_ALLOC	0x01		/* region descriptor dynamically allocated */
+#define ER_ALLOC				0x01			/* region descriptor dynamically allocated */
 
 struct extent {
 	char						*ex_name;		/* name of extent */
@@ -68,35 +68,35 @@ struct extent_fixed {
 };
 
 /* ex_flags; for internal use only */
-#define EXF_FIXED		0x01		/* extent uses fixed storage */
-#define EXF_NOCOALESCE	0x02		/* coalescing of regions not allowed */
-#define EXF_WANTED		0x04		/* someone asleep on extent */
-#define EXF_FLWANTED	0x08		/* someone asleep on freelist */
+#define EXF_FIXED				0x01			/* extent uses fixed storage */
+#define EXF_NOCOALESCE			0x02			/* coalescing of regions not allowed */
+#define EXF_WANTED				0x04			/* someone asleep on extent */
+#define EXF_FLWANTED			0x08			/* someone asleep on freelist */
 
-#define EXF_BITS		"\20\4FLWANTED\3WANTED\2NOCOALESCE\1FIXED"
+#define EXF_BITS				"\20\4FLWANTED\3WANTED\2NOCOALESCE\1FIXED"
 
 /* misc. flags passed to extent functions */
-#define EX_NOWAIT		0x00		/* not safe to sleep */
-#define EX_WAITOK		0x01		/* safe to sleep */
-#define EX_FAST			0x02		/* take first fit in extent_alloc() */
-#define EX_CATCH		0x04		/* catch signals while sleeping */
-#define EX_NOCOALESCE	0x08		/* create a non-coalescing extent */
-#define EX_MALLOCOK		0x10		/* safe to call malloc() */
-#define EX_WAITSPACE	0x20		/* wait for space to become free */
-#define EX_BOUNDZERO	0x40		/* boundary lines start at 0 */
+#define EX_NOWAIT				0x00			/* not safe to sleep */
+#define EX_WAITOK				0x01			/* safe to sleep */
+#define EX_FAST					0x02			/* take first fit in extent_alloc() */
+#define EX_CATCH				0x04			/* catch signals while sleeping */
+#define EX_NOCOALESCE			0x08			/* create a non-coalescing extent */
+#define EX_MALLOCOK				0x10			/* safe to call malloc() */
+#define EX_WAITSPACE			0x20			/* wait for space to become free */
+#define EX_BOUNDZERO			0x40			/* boundary lines start at 0 */
 
 /*
  * Special place holders for "alignment" and "boundary" arguments,
  * in the event the caller doesn't wish to use those features.
  */
-#define EX_NOALIGN		1			/* don't do alignment */
-#define EX_NOBOUNDARY	0			/* don't do boundary checking */
+#define EX_NOALIGN				1				/* don't do alignment */
+#define EX_NOBOUNDARY			0				/* don't do boundary checking */
 
-#if defined(_KERNEL) || defined(_EXTENT_TESTING)
+#if defined(_KERNEL)
 #define EXTENT_FIXED_STORAGE_SIZE(_nregions)		\
 	(ALIGN(sizeof(struct extent_fixed)) +			\
 	((ALIGN(sizeof(struct extent_region))) *		\
-	 (_nregions)))
+			(_nregions)))
 
 struct	extent *extent_create (char *, u_long, u_long, int, caddr_t, size_t, int);
 void	extent_destroy (struct extent *);

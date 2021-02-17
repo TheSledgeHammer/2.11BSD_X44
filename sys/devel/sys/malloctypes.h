@@ -54,5 +54,6 @@
 #define M_GSCHED		84	/* Global Scheduler */
 #define M_SA			85	/* Scheduler Activations */
 #define M_HTREE			86	/* vfs htree structure */
+#define M_RMAN 			87	/* rman structure */
 
 #endif /* _SYS_MALLOCTYPES_H_ */

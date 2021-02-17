@@ -27,7 +27,6 @@
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 
-extern size_t physmem;
 extern struct mapent _coremap[];
 extern struct mapent _swapmap[];
 
@@ -58,8 +57,6 @@ struct map coremap[1] = {
 				{ .m_name = "omem_map",   	.m_ovlmap = (ovl_map_t) &omem_map },
 		},*/
 };
-
-
 
 struct map swapmap[1] = {
 		.m_map 		= _swapmap,
@@ -110,14 +107,24 @@ rminit(mp, size, addr, name, mapsize)
 	char *name;
 	int mapsize;
 {
-	register struct mapent *ep = (struct mapent *)(mp+1);
+	struct mapent *ep;
 
+	/* mapsize had better be at least 2 */
+	if (mapsize < 2 || addr <= 0 || size < 0) {
+		panic("rminit %s", name);
+	}
 	mp->m_name = name;
-	mp->m_limit = (struct mapent *)&mp[mapsize];
+	mp->m_limit = (struct mapent *)mp[mapsize];
+
+	/* initially the first entry describes all free space */
+	ep = (struct mapent *)(mp + 1);
 	ep->m_size = size;
 	ep->m_addr = addr;
-	(++ep)->m_size = 0;
-	ep->m_addr = 0;
+
+	/* the remaining slots are unused (indicated by m_addr == 0) */
+	while (++ep < mp->m_limit) {
+		ep->m_addr = 0;
+	}
 }
 
 memaddr
@@ -131,8 +138,13 @@ rmalloc(mp, size)
 	int retry;
 	swblk_t first, rest;
 
-	if (!size)
+	if (!size) {
 		panic("rmalloc: size = 0");
+	}
+	if(mp == swapmap && size > dmmax) {
+		panic("rmalloc");
+	}
+
 	/*
 	 * Search for a piece of the resource map which has enough
 	 * free space to accomodate the request.
@@ -159,7 +171,7 @@ again:
 		}
 	/* no entries big enough */
 	if (!retry++) {
-		if (mp == swapmap && nswdev > 1 && (first = dmmax - bp->m_addr%dmmax) < size) {
+		if (mp == swapmap && nswdev > 1 && (first = dmmax - bp->m_addr % dmmax) < size) {
 			if (bp->m_size - first < size) {
 				continue;
 			}
@@ -315,7 +327,7 @@ again:
 			madd[next]->m_size += sizes[next];
 	if (!retry++)
 		for (next = 0; next < 3; ++next) {
-			if (mp == swapmap && nswdev > 1 && (first = dmmax - bp->m_addr%dmmax) < sizes[next]) {
+			if (mp == swapmap && nswdev > 1 && (first = dmmax - bp->m_addr % dmmax) < sizes[next]) {
 				if (bp->m_size - first < madd[next] && sizes[next]) {
 					continue;
 				}
@@ -377,3 +389,18 @@ kmemmapinit()
 	printf("user mem  = %D\n", ctob((long)MAXMEM));
 }
 
+/*
+ * Allocate a new map array after coremap & swapmap are initialized
+ */
+void
+rmap_allocate(rmap, mapent, limit, name, type)
+	struct map *rmap;
+	struct mapent *mapent, *limit;
+	char *name;
+	int type;
+{
+	rmap->m_map = mapent;
+	rmap->m_limit = limit;
+	rmap->m_name = name;
+	rmap->m_type = type;
+}

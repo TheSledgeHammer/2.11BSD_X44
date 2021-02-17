@@ -28,9 +28,9 @@ struct map {
 	struct mapent		*m_limit;	/* address of last slot in map */
 	char   				*m_name;	/* name of resource */
 	int					m_type;		/* kern_malloc type */
-	//int 				m_flags;	/* kern_malloc flags */
 	struct vmmapent		*m_vmmap;	/* vm kernel memory management */
 	//struct ovlmapent 	*m_ovlmap;	/* ovl kernel memory management */
+
 /* we use m_name when the map overflows, in warning messages */
 };
 
