@@ -304,30 +304,37 @@ rmalloc3(mp, d_size, s_size, u_size, a)
 
 	sizes[0] = d_size; sizes[1] = s_size; sizes[2] = u_size;
 	retry = 0;
+
 again:
 	/*
 	 * note, this has to work for d_size and s_size of zero,
 	 * since init() comes in that way.
 	 */
 	madd[0] = madd[1] = madd[2] = remap = NULL;
-	for (found = 0, bp = mp->m_map; bp->m_size; ++bp)
-		for (next = 0; next < 3; ++next)
+	for (found = 0, bp = mp->m_map; bp->m_size; ++bp) {
+		for (next = 0; next < 3; ++next) {
 			if (!madd[next] && sizes[next] <= bp->m_size) {
 				madd[next] = bp;
 				bp->m_size -= sizes[next];
-				if (!bp->m_size && !remap)
+				if (!bp->m_size && !remap) {
 					remap = bp;
-				if (++found == 3)
+				}
+				if (++found == 3) {
 					goto resolve;
+				}
 			}
+		}
+	}
 
 	/* couldn't get it all; restore the old sizes, try again */
-	for (next = 0; next < 3; ++next)
-		if (madd[next])
+	for (next = 0; next < 3; ++next) {
+		if (madd[next]) {
 			madd[next]->m_size += sizes[next];
-	if (!retry++)
+		}
+	}
+	if (!retry++) {
 		for (next = 0; next < 3; ++next) {
-			if (mp == swapmap && nswdev > 1 && (first = dmmax - bp->m_addr % dmmax) < sizes[next]) {
+			if (mp == swapmap && nswdev > 1	&& (first = dmmax - bp->m_addr % dmmax) < sizes[next]) {
 				if (bp->m_size - first < madd[next] && sizes[next]) {
 					continue;
 				}
@@ -339,13 +346,16 @@ again:
 					rmfree(swapmap, rest, addr + sizes[next]);
 				}
 				goto again;
+
+			} else if (mp == coremap) {
+				rmfree(mp, sizes[2], addr); /* smallest to largest; */
+				rmfree(mp, sizes[1], addr); /* free up minimum space */
+				rmfree(mp, sizes[0], addr);
+				goto again;
 			}
-		} else if (mp == coremap) {
-			rmfree(mp, sizes[2], addr);			/* smallest to largest; */
-			rmfree(mp, sizes[1], addr);			/* free up minimum space */
-			rmfree(mp, sizes[0], addr);
-			goto again;
 		}
+	}
+
 	return (0);
 
 resolve:
@@ -357,13 +367,16 @@ resolve:
 	}
 
 	/* remove any entries of size 0; addr of 0 terminates */
-	if (remap)
-		for (bp = remap + 1;; ++bp)
+	if (remap) {
+		for (bp = remap + 1;; ++bp) {
 			if (bp->m_size || !bp->m_addr) {
 				*remap++ = *bp;
-				if (!bp->m_addr)
+				if (!bp->m_addr) {
 					break;
+				}
 			}
+		}
+	}
 	return(a[2]);
 }
 

@@ -268,6 +268,7 @@ swstrategy(bp)
 struct swapon_args {
 	char	*name;
 };
+
 /* ARGSUSED */
 int
 swapon(p, uap, retval)
@@ -357,9 +358,9 @@ swfree(p, index)
 		int perdev;
 		dev_t dev = sp->sw_dev;
 
-		if (bdevsw[major(dev)].d_psize == 0 ||
-		    (nblks = (*bdevsw[major(dev)].d_psize)(dev)) == -1) {
-			(void) VOP_CLOSE(vp, FREAD|FWRITE, p->p_ucred, p);
+		if (bdevsw[major(dev)].d_psize == 0
+				|| (nblks = (*bdevsw[major(dev)].d_psize)(dev)) == -1) {
+			(void) VOP_CLOSE(vp, FREAD | FWRITE, p->p_ucred, p);
 			sp->sw_flags &= ~SW_FREED;
 			return (ENXIO);
 		}

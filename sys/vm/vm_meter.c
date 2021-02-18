@@ -54,10 +54,12 @@ vmmeter()
 	register u_short *cp, *rp;
 	register long *sp;
 
-	if (time.tv_sec % 5 == 0)
+	if (time.tv_sec % 5 == 0) {
 		loadav(&averunnable);
-	if (proc0.p_slptime > maxslp/2)
+	}
+	if (proc0.p_slptime > maxslp/2) {
 		wakeup((caddr_t)&proc0);
+	}
 }
 
 /*

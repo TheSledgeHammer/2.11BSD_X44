@@ -55,11 +55,16 @@ extern struct uvm uvm;
  * other than the vm system.
  * TODO: place missing in vmmeter.h
  */
-struct uvmexp {
+struct vmexp {
 	/* swap */
+	int	 						nswapdev;	/* number of configured swap devices in system */
+	int 						swpages;	/* number of PAGE_SIZE'ed swap pages */
+	int 						swpgavail;	/* number of swap pages currently available */
+	int 						swpginuse;	/* number of swap pages in use */
 	int 						swpgonly;	/* number of swap pages in use, not also in RAM */
+	int 						nswget;		/* number of times fault calls uvm_swap_get() */
 };
-extern struct uvmexp uvmexp;
+extern struct vmexp vmexp;
 
 /* vm_page.h */
 #define PQ_FREE					0x0001		/* page is on free list */

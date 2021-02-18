@@ -278,7 +278,7 @@ hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	void *newp;
 	size_t newlen;
 {
-	extern char machine[], cpu_model[];
+	extern char machine, cpu_model;
 	extern	size_t physmem;			/* machdep2.c */
 
 	/* all sysctl names at this level are terminal */

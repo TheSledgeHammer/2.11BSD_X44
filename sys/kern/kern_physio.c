@@ -75,8 +75,7 @@ physio(strategy, bp, dev, flags, minphys, uio)
 	 */
 	if (uio->uio_segflg == UIO_USERSPACE)
 		for (i = 0; i < uio->uio_iovcnt; i++)
-			if (!useracc(uio->uio_iov[i].iov_base, uio->uio_iov[i].iov_len,
-					(flags == B_READ) ? B_WRITE : B_READ))
+			if (!useracc(uio->uio_iov[i].iov_base, uio->uio_iov[i].iov_len, (flags == B_READ) ? B_WRITE : B_READ))
 				return (EFAULT);
 
 	/* Make sure we have a buffer, creating one if necessary. */
@@ -250,7 +249,6 @@ void
 minphys(bp)
 	struct buf *bp;
 {
-
 	if (bp->b_bcount > MAXPHYS)
 		bp->b_bcount = MAXPHYS;
 }
@@ -263,8 +261,7 @@ rawread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	return (physio(cdevsw[major(dev)].d_strategy, (struct buf *)NULL,
-	    dev, B_READ, minphys, uio));
+	return (physio(cdevsw[major(dev)].d_strategy, (struct buf *)NULL, dev, B_READ, minphys, uio));
 }
 
 /*
@@ -275,6 +272,5 @@ rawwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	return (physio(cdevsw[major(dev)].d_strategy, (struct buf *)NULL,
-	    dev, B_WRITE, minphys, uio));
+	return (physio(cdevsw[major(dev)].d_strategy, (struct buf *)NULL, dev, B_WRITE, minphys, uio));
 }

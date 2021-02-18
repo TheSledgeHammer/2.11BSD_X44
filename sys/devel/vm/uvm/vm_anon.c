@@ -65,8 +65,8 @@ vm_anon_init()
 	 */
 	anon = (struct vm_anon *)kmem_alloc(kernel_map, sizeof(*anon) * nanon);
 	if (anon == NULL) {
-		printf("uvm_anon_init: can not allocate %d anons\n", nanon);
-		panic("uvm_anon_init");
+		printf("vm_anon_init: can not allocate %d anons\n", nanon);
+		panic("vm_anon_init");
 	}
 
 	memset(anon, 0, sizeof(*anon) * nanon);
@@ -94,8 +94,8 @@ vm_anon_add(pages)
 
 	/* XXX Should wait for VM to free up. */
 	if (anon == NULL) {
-		printf("uvm_anon_add: can not allocate %d anons\n", pages);
-		panic("uvm_anon_add");
+		printf("vm_anon_add: can not allocate %d anons\n", pages);
+		panic("vm_anon_add");
 	}
 
 	simple_lock(&anon->u.an_freelock);
@@ -178,7 +178,7 @@ vm_anfree(anon)
 			vm_page_lock_queues();
 #ifdef DIAGNOSTIC
 			if (pg->loan_count < 1)
-				panic("uvm_anfree: obj owned page "
+				panic("vm_anfree: obj owned page "
 				      "with no loan count");
 #endif
 			pg->loan_count--;
@@ -245,7 +245,7 @@ vm_anon_dropswap(anon)
 	if (anon->u.an_page == NULL) {
 		/* this page is no longer only in swap. */
 		simple_lock(&uvm.swap_data_lock);
-		uvmexp.swpgonly--;
+		vmexp.swpgonly--;
 		simple_unlock(&uvm.swap_data_lock);
 	}
 }

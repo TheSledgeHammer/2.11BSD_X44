@@ -89,7 +89,7 @@ struct vmsum {
 	long		v_swpin;			/* swapins */
 	long		v_swpout;			/* swapouts */
 };
-#ifdef KERNEL
+//#ifdef KERNEL
 struct vmrate	cnt, rate;
 struct vmsum	sum;
 #endif

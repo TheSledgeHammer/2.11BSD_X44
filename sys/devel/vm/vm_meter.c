@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1987, 1993
+ * Copyright (c) 1982, 1986, 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,31 +30,49 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)malloc.h	8.5 (Berkeley) 5/3/95
+ *	@(#)vm_meter.c	8.7 (Berkeley) 5/10/95
  */
 
-#ifndef _SYS_MALLOCTYPES_H_
-#define _SYS_MALLOCTYPES_H_
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/sysctl.h>
+#include <vm/include/vm.h>
+#include <sys/vmmeter.h>
 
-#include <sys/malloc.h>
+#define	MINFINITY	-32767			/* minus infinity */
 
-/* XXX: Below are Still In Development */
+struct loadavg 		averunnable;		/* load average, of runnable procs */
 
-#define M_VMAMAP 		73	/* VM amap structures */
-#define M_VMAOBJ 		74	/* VM aobject structure */
-#define M_OVLMAP		75	/* OVL map structures */
-#define	M_OVLMAPENT		76	/* OVL map entry structures */
-#define M_OVLOBJ		77	/* OVL object structure */
-#define M_OVLOBJHASH	78	/* OVL object hash structure */
-#define M_KTPOOLTHREAD  79	/* kernel threadpool */
-#define M_UTPOOLTHREAD  80	/* user threadpool */
-#define M_ITPC			81	/* inter-threadpool communication */
-#define M_WORKQUEUE		82	/* workqueue */
-#define M_HTBC			83	/* HTree Blockchain structure */
-#define M_GSCHED		84	/* Global Scheduler */
-#define M_SA			85	/* Scheduler Activations */
-#define M_HTREE			86	/* vfs htree structure */
-#define M_RMAN 			87	/* rman structures */
-#define M_VMSWAP		88 	/* VM swap structures */
+int	maxslp = 		MAXSLP;
+int	saferss = 		SAFERSS;
 
-#endif /* _SYS_MALLOCTYPES_H_ */
+void
+vmmeter()
+{
+	register u_short *cp, *rp;
+	register long *sp;
+
+	ave(avefree, freemem, 5);
+	ave(avefree30, freemem, 30);
+	cp = &cnt.v_first; rp = &rate.v_first; sp = &sum.v_first;
+	while (cp <= &cnt.v_last) {
+		ave(*rp, *cp, 5);
+		*sp += *cp;
+		*cp = 0;
+		rp++, cp++, sp++;
+	}
+	if (time.tv_sec % 5 == 0) {
+		loadav(&averunnable);
+		rate.v_swpin = cnt.v_swpin;
+		sum.v_swpin += cnt.v_swpin;
+		cnt.v_swpin = 0;
+		rate.v_swpout = cnt.v_swpout;
+		sum.v_swpout += cnt.v_swpout;
+		cnt.v_swpout = 0;
+	}
+	if (proc0.p_slptime > maxslp/2) {
+		wakeup((caddr_t)&proc0);
+	}
+}

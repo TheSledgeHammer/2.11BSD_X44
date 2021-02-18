@@ -83,7 +83,7 @@ vm_vsexpand(vssize, dmp, canshrink)
 		if (ip - dmp->dm_map >= NDMAP)
 			panic("vmdrum NDMAP");
 		if (vsbase >= oldalloc) {
-			*ip = rmalloc(swapmap, blk); 	/* replace with vm_segment_alloc ?? */
+			*ip = rmalloc(swapmap, blk);
 			if (*ip == 0) {
 				dmp->dm_size = vsbase;
 				if (vm_vsexpand(dtoc(oldsize), dmp, 1) == 0)
@@ -92,7 +92,7 @@ vm_vsexpand(vssize, dmp, canshrink)
 			}
 			dmp->dm_alloc += blk;
 		} else if (vssize == 0 || (vsbase >= vssize && canshrink)) {
-			rmfree(swapmap, blk, *ip); 		/* replace with vm_segment_free ?? */
+			rmfree(swapmap, blk, *ip);
 			*ip = 0;
 			dmp->dm_alloc -= blk;
 		}
@@ -192,7 +192,7 @@ vtod(p, v, dmap, smap)
 
 	if (isatsv(p, v)) {
 		tp = ctod(vtotp(p, v));
-		return (p->p_text->x_daddr[tp / dmtext] + tp % dmtext);
+		return (p->p_taddr[tp / dmtext] + tp % dmtext);		/* XXX */
 	}
 	if (isassv(p, v))
 		vstodb(ctod(vtosp(p, v)), ctod(1), smap, &db, 1);
