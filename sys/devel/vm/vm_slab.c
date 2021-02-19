@@ -34,13 +34,16 @@
  * All slot data and other misc information is held within slab_metadata.
  *
  * Slab allows for small and large objects by splitting kmembuckets into two.
- * Any objects with a bucket index less than 10 are flagged as small, whille objects
+ * Any objects with a bucket index less than 10 are flagged as small, while objects
  * greater than or equal to 10 are flagged as large.
  */
 
+#include <sys/malloc.h>
+#include <devel/sys/malloctypes.h>
 #include <devel/vm/include/vm_slab.h>
 
-struct slab_head *slab_buckets;
+struct slablist 	*slab_buckets;
+simple_lock_data_t	slab_bucket_lock;
 
 /*
  * TODO:
@@ -50,126 +53,150 @@ struct slab_head *slab_buckets;
  *    - dynamic to each segment/page
  */
 void
-slab_create(kbp, slabs)
-    struct kmembuckets *kbp;
-    struct slab_head *slabs;
+slab_create()
 {
-    register int    i;
-
     CIRCLEQ_INIT(&slab_cache_list);
     CIRCLEQ_INIT(&slab_list);
     slab_count = 0;
-
-    for (i = 0; i <  MINBUCKET + 16; i++) {
-    	CIRCLEQ_INIT(&slab_buckets[i]);
-    	/*  Change to:
-    	 *  CIRCLEQ_INIT(bucket[i].kb_slabs);
-    	 *  slab_buckets[i] = bucket[i].kb_slabs;
-    	*/
-    }
+    simple_lock_init(&slab_bucket_lock, "slab_bucket_lock");
 }
 
-/* setup slab metadata information */
+/*
+ * TODO:
+ * - Improve on allocation & freeing of slabs
+ * - Take in account slabs that are EMPTY, PARTIAL or FULL
+ * - Allocating to neighboring slab if designated slab is full or doesn't
+ * have enough space.
+ */
+void
+slab_malloc(size, type, flags)
+	u_long  size;
+	int		type, flags;
+{
+	slab_t slab;
+	slab_metadata_t meta;
+
+	if(slab == NULL) {
+		meta = slab->s_meta;
+		/* test if free bucket slots is between 25% to 75% */
+		if(meta->sm_freeslots >= (meta->sm_bslots * 0.25) || meta->sm_freeslots <= (meta->sm_bslots * 0.75)) {
+			slab->s_flags = SLAB_PARTIAL;
+		/* test if free bucket slots is greater than 75% */
+		} else if(meta->sm_freeslots > (meta->sm_bslots * 0.75)) {
+			slab->s_flags = SLAB_FULL;
+		} else {
+			slab->s_flags = SLAB_EMPTY;
+		}
+
+		slab = (slab_t) malloc(sizof(*slab), type, flags);
+	} else {
+		slab_insert(slab, size);
+	}
+}
+
+void
+slab_free(addr, type)
+	void *addr;
+	int	type;
+{
+	slab_t slab;
+
+	slab = slab_lookup(addr);
+	if(slab) {
+		slab_remove(addr);
+		free(addr, type);
+	}
+}
+
+/* slab metadata information */
 void
 slabmeta(meta, size)
 	slab_metadata_t meta;
-    vm_size_t   size;
+	u_long   		size;
 {
-    meta->sm_slots = SLOTS(size);
-    meta->sm_freeslots = SLOTSFREE(size);
-    if(LARGE_OBJECT(size) != 0) {
+	u_long indx = BUCKETINDX(size);
+	u_long bsize = BUCKETSIZE(indx);
+
+    meta->sm_bslots = BUCKET_SLOTS(bsize);
+    meta->sm_aslots = ALLOCATED_SLOTS(size);
+    meta->sm_freeslots = SLOTSFREE(meta->sm_bslots, meta->sm_aslots);
+    if(meta->sm_freeslots < 0) {
+    	meta->sm_freeslots = 0;
+    }
+    if(index < 10) {
         meta->sm_type = SLAB_SMALL;
     } else {
-        meta->sm_type = SLAB_LARGE;
+    	if(index >= 10) {
+    		meta->sm_type = SLAB_LARGE;
+    	}
     }
 }
 
-/* TODO:
- * - slabs: using malloc seems silly.
- *      - Could make sense in the vm. Like FreeBSD.
- *      - slab uses malloc -> vm uses slab -> malloc relies on vm
- */
 void
 slab_insert(slab, size)
     slab_t  slab;
     long    size;
 {
-    struct slab_head       *slabs;
-    register slab_entry_t  entry;
+    register struct slablist  *slabs;
 
     if(slab == NULL) {
         return;
     }
+
     slab->s_size = size;
     slab->s_flags = flags;
     slabmeta(slab->s_meta, size);
 
     slabs = &slab_buckets[BUCKETINDX(size)];
-    entry = (slab_entry_t) malloc(sizeof(*entry), M_VMSLAB, NULL);
-    entry->se_slab = slab;
-
+    simple_lock(&slab_bucket_lock);
     if(slab->s_meta->sm_type == SLAB_SMALL) {
-        CIRCLEQ_INSERT_HEAD(slabs, entry, se_link);
+        CIRCLEQ_INSERT_HEAD(slabs, slab, s_list);
     } else {
-        CIRCLEQ_INSERT_TAIL(slabs, entry, se_link);
+        CIRCLEQ_INSERT_TAIL(slabs, slab, s_list);
     }
+    simple_unlock(&slab_bucket_lock);
+    slab_count++;
 }
 
 void
 slab_remove(size)
 	long    size;
 {
-	struct slab_head        *slabs;
-    register slab_entry_t   entry;
-    register slab_t         slab;
+	struct 	 slab_head  *slabs;
+    register slab_t     slab;
 
     slabs = &slab_buckets[BUCKETINDX(size)];
-    if(slab->s_meta == SLAB_SMALL) {
-    	for(entry = CIRCLEQ_FIRST(slabs); entry != NULL; entry = CIRCLEQ_NEXT(entry, se_link)) {
-    		slab = entry->se_slab;
-    		if(slab->s_size == size) {
-    			goto remove;
-    		}
-    	}
-    }
-    if(slab->s_meta == SLAB_LARGE) {
-    	for(entry = CIRCLEQ_LAST(slabs); entry != NULL; entry = CIRCLEQ_NEXT(entry, se_link)) {
-    		slab = entry->se_slab;
-    		if(slab->s_size == size) {
-    			goto remove;
-    		}
-    	}
-    }
-
-remove:
-	CIRCLEQ_REMOVE(slabs, entry, se_link);
-	FREE(slab, M_VMSLAB);
+    simple_lock(&slab_bucket_lock);
+	CIRCLEQ_REMOVE(slabs, slab, s_list);
+	simple_unlock(&slab_bucket_lock);
+	slab_count--;
 }
 
 slab_t
 slab_lookup(size)
 	long    size;
 {
-	struct slab_head        *slabs;
-    register slab_entry_t   entry;
-    register slab_t         slab;
+	register struct slab_head   *slabs;
+    register slab_t         	slab;
 
     slabs = &slab_buckets[BUCKETINDX(size)];
+    simple_lock(&slab_bucket_lock);
     if(slab->s_meta == SLAB_SMALL) {
-    	for(entry = CIRCLEQ_FIRST(slabs); entry != NULL; entry = CIRCLEQ_NEXT(entry, se_link)) {
-    		slab = entry->se_slab;
+    	for(slab = CIRCLEQ_FIRST(slabs); slab != NULL; slab = CIRCLEQ_NEXT(slab, s_list)) {
     		if(slab->s_size == size) {
+    			simple_unlock(&slab_bucket_lock);
     			return (slab);
     		}
     	}
     }
     if(slab->s_meta == SLAB_LARGE) {
-    	for(entry = CIRCLEQ_LAST(slabs); entry != NULL; entry = CIRCLEQ_NEXT(entry, se_link)) {
-    		slab = entry->se_slab;
+    	for(slab = CIRCLEQ_LAST(slabs); slab != NULL; slab = CIRCLEQ_NEXT(slab, s_list)) {
     		if(slab->s_size == size) {
+    			simple_unlock(&slab_bucket_lock);
     			return (slab);
     		}
     	}
     }
+    simple_unlock(&slab_bucket_lock);
     return (NULL);
 }

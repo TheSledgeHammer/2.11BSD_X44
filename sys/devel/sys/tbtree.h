@@ -78,7 +78,9 @@ struct asl {
 };
 #endif /* DIAGNOSTIC */
 
-#define BUCKETSIZE(indx)		(isPowerOfTwo(indx))
+#define powertwo(x) 			(1 << (x))	/* returns 2 ^ x */
+
+#define BUCKETSIZE(indx)		(powertwo(indx))
 
 #define SplitLeft(n)    		(n / 2)
 #define SplitMiddle(n)  		(((SplitLeft(n)) * 2) / 3)

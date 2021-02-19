@@ -228,7 +228,9 @@ struct kmemusage {
 
 /* Set of buckets for each size of memory block that is retained */
 struct kmembuckets {
-	//struct tbtree 		*kb_tbtree;		/* tertiary buddy tree pointer */
+	struct slablist		*kb_slablist;	/* slab alloctor */
+	struct tbtree 		*kb_tbtree;		/* tertiary buddy allocator*/
+
 	caddr_t 			kb_next;		/* list of free blocks */
 	caddr_t 			kb_last;		/* last free block */
 
@@ -240,7 +242,7 @@ struct kmembuckets {
 	long				kb_couldfree;	/* over high water mark and could free */
 };
 
-//#ifdef KERNEL
+#ifdef KERNEL
 #define	MINALLOCSIZE		(1 << MINBUCKET)
 #define BUCKETINDX(size) 							\
 	((size) <= (MINALLOCSIZE * 128) 				\

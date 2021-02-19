@@ -55,6 +55,6 @@
 #define M_SA			85	/* Scheduler Activations */
 #define M_HTREE			86	/* vfs htree structure */
 #define M_RMAN 			87	/* rman structures */
-#define M_VMSWAP		88 	/* VM swap structures */
+#define M_VMSLAB		88 	/* VM slab structures */
 
 #endif /* _SYS_MALLOCTYPES_H_ */

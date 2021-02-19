@@ -44,8 +44,6 @@
 #include <devel/vm/ovl/ovl_extern.h>
 #include <devel/vm/ovl/ovl_overlay.h>
 
-static int isPowerOfTwo(long n); 	/* 0 = true, 1 = false */
-
 /* Allocate Tertiary Buddy Tree */
 void
 tbtree_allocate(kbp, ktp)
@@ -285,29 +283,29 @@ tbtree_malloc(ktp, size, type, flags)
 	/* determines if npg has a log base of 2 */
 	u_long tmp = LOG2((long) size);
 
-    if(isPowerOfTwo(size)) {
+    if(powerof2(size)) {
         left = tbtree_left(ktp, size);
         ktp->tb_addr = (caddr_t) oorkmalloc(right->tb_size, type, flags);
 
-	} else if(isPowerOfTwo(size - 2)) {
+	} else if(powerof2(size - 2)) {
 		middle = tbtree_middle(ktp, size);
         ktp->tb_addr = (caddr_t) oorkmalloc(middle->tb_size, type, flags);
 
-	} else if (isPowerOfTwo(size - 3)) {
+	} else if (powerof2(size - 3)) {
 		right = tbtree_right(ktp, size);
         ktp->tb_addr = (caddr_t) oorkmalloc(right->tb_size, type, flags);
 
 	} else {
 		/* allocates size (tmp) if it has a log base of 2 */
-		if(isPowerOfTwo(tmp)) {
+		if(powerof2(tmp)) {
 			left = tbtree_left(ktp, size);
             ktp->tb_addr = (caddr_t) oorkmalloc(left->tb_size, type, flags);
 
-		} else if(isPowerOfTwo(tmp - 2)) {
+		} else if(powerof2(tmp - 2)) {
 			middle = tbtree_middle(ktp, size);
             ktp->tb_addr = (caddr_t) oorkmalloc(middle->tb_size, type, flags);
 
-		} else if (isPowerOfTwo(tmp - 3)) {
+		} else if (powerof2(tmp - 3)) {
 			right = tbtree_right(ktp, size);
             ktp->tb_addr = (caddr_t) oorkmalloc(right->tb_size, type, flags);
 		}
@@ -390,21 +388,6 @@ asl_search(free, size)
     }
     printf("empty");
     return (NULL);
-}
-
-/* Function to check if x is a power of 2 (Internal use only) */
-static int
-isPowerOfTwo(n)
-	long n;
-{
-	if (n == 0)
-        return 0;
-    while (n != 1) {
-    	if (n%2 != 0)
-            return 0;
-        n = n/2;
-    }
-    return (1);
 }
 
 /* [Internal use only] allocate to kernel or overlay */

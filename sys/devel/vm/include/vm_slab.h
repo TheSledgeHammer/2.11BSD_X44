@@ -27,7 +27,10 @@
  */
 
 /* TODO:
- *	- slab locks
+ *	- slab caching
+ *	- use of vm_pages and vm_segments
+ *	- provide ability to use extents?
+ *	- size: may need to change to a void *addr/size
  */
 #ifndef _VM_SLAB_H_
 #define _VM_SLAB_H_
@@ -35,21 +38,25 @@
 #include <sys/malloc.h>
 #include <devel/vm/include/vm.h>
 
-/* Hold metadata on slabs */
+/* Hold metadata on a slab */
 struct slab_metadata {
-    u_long                      sm_size;           		 	/* size of address to be allocated */
-    int                         sm_slots;           		/* slots available */
-    u_long                      sm_freeslots;       		/* slots free */
+    int                         sm_bslots;           							/* bucket slots available */
+    int							sm_aslots;										/* slots to be allocated */
+    int                      	sm_freeslots;       							/* slots free */
+    int							sm_btotal;										/* total number of slots */
 
-    int                         sm_type;            		/* slab type: see below */
-    /*
+    int                         sm_type;            							/* slab type: see below */
+
+
+/*
+  	u_long						sm_pool;
     long                        sm_min;
     long                        sm_max;
     caddr_t                     sm_addr;
 
     vm_segment_t                sm_segment;
     vm_page_t                   sm_page;
-     */
+*/
 };
 typedef struct slab_metadata    *slab_metadata_t;
 
@@ -60,21 +67,12 @@ struct slab {
     CIRCLEQ_ENTRY(slab)         s_cache;
 
     slab_metadata_t             s_meta;
-    long                        s_size;
+    u_long                      s_size;
 
-    int                         s_offset;
     int							s_flags;
     int                         s_refcount;
 };
 typedef struct slab             *slab_t;
-
-struct slab_head;
-CIRCLEQ_HEAD(slab_head, slab_entry);						/* XXX: Is placed in malloc.h struct kmembuckets */
-struct slab_entry {
-    CIRCLEQ_ENTRY(slab_entry)   se_link;
-    slab_t                      se_slab;
-};
-typedef struct slab_entry       *slab_entry_t;
 
 struct slablist			        slab_cache_list;
 int			                    slab_cache_count;
@@ -82,21 +80,23 @@ int			                    slab_cache_count;
 struct slablist			        slab_list;
 int			                    slab_count;
 
-/* slots: should be managed by a freelist */
-#define SLAB_FULL               0x01        				/* slab full */
-#define SLAB_EMPTY              0x02        				/* slab empty */
-#define SLAB_PARTIAL            0x04        				/* slab partially full */
+/* slab flags */
+#define SLAB_FULL               0x01        									/* slab full */
+#define SLAB_EMPTY              0x02        									/* slab empty */
+#define SLAB_PARTIAL            0x04        									/* slab partially full */
 
-/* slab object flags */
-#define SLAB_SMALL              0x08        				/* slab contains small objects */
-#define SLAB_LARGE              0x16        				/* slab contains large objects */
+/* slab object types */
+#define SLAB_SMALL              0x08        									/* slab contains small objects */
+#define SLAB_LARGE              0x16        									/* slab contains large objects */
 
 /* slab object macros */
-#define SMALL_OBJECT(s)        (BUCKETINDX((s)) < 10)
-#define LARGE_OBJECT(s)        (BUCKETINDX((s)) >= 10)
+#define SMALL_OBJECT(s)        	(BUCKETINDX((s)) < 10)
+#define LARGE_OBJECT(s)        	(BUCKETINDX((s)) >= 10)
 
-/* pool macros */
-#define SLOTS(s)                ((s)/(BUCKETINDX(s)))       /* 4kb blocks */
-#define SLOTSFREE(s)            (BUCKETINDX(s) - SLOTS(s))  /* free slots in bucket (s = size) */
+/* slot macros */
+#define BUCKET_SLOTS(bsize)     ((bsize)/(BUCKETINDX(bsize)))       			/* Number of slots in a bucket */
+#define ALLOCATED_SLOTS(size)	(BUCKET_SLOTS(size))							/* Number slots taken by space to be allocated */
+#define SLOTSFREE(bsize, size)  (BUCKET_SLOTS(bsize) - ALLOCATED_SLOTS(size)) 	/* free slots in bucket (s = size) */
 
+#define SLAB_SLOTS(bsize, size) (ALLOCATED_SLOTS(bsize)/BUCKET_SLOTS(bsize, size))
 #endif /* _VM_SLAB_H_ */

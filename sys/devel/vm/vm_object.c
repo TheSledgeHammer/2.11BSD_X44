@@ -105,13 +105,15 @@
 /* New VM Object Structure:
  * Layout: (Assuming n Segments per Object (architecture dependent)
  *
- * 			----> Segment 1 -------> Pages 1 to (n-1)
- * 			|
- * Object ------> Segment 2 -------> Pages 1 to (n-1)
- * 			|
- * 			----> Segment 3 -------> Pages 1 to (n-1)
- * 			|
- * 			----> Segment (n-1) ---> Pages 1 to (n-1)
+ * 			 |----> Segment 1 -------> Pages 1 to (n-1)
+ * 			 |
+ * 			 |----> Segment 2 -------> Pages 1 to (n-1)
+ * 			 |
+ * Object ---|----> Segment 3 -------> Pages 1 to (n-1)
+ * 			 |
+ * 			 |----> Segment 4 -------> Pages 1 to (n-1)
+ * 			 |
+ * 			 |----> Segment (n-1) ---> Pages 1 to (n-1)
  *
  */
 
@@ -171,7 +173,6 @@ vm_object_allocate(size)
 
 	_vm_object_allocate(size, result);
 
-
 	return(result);
 }
 
@@ -191,7 +192,6 @@ _vm_object_allocate(size, object)
 	/*
 	 *	Object starts out read-write, with no pager.
 	 */
-
 	object->pager = NULL;
 	object->paging_offset = 0;
 	object->shadow = NULL;
