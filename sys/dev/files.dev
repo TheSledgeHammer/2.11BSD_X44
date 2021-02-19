@@ -9,7 +9,7 @@
 #		- Consists of all machine-independent devices using the following categories:
 #			- Currently: Audio, Disk, Misc(kobj, ksym, etc), USB, Video
 #
-# 	XXX: Needs to be included in devices.archtype (Follow i386 for an example)
+# XXX: Needs to be included in devices.archtype (Follow i386 for an example)
 # 
 # sub-directory configuration files
 #
@@ -17,11 +17,7 @@
 include		"dev/audio/files.audio"
 include		"dev/core/files.core"
 include		"dev/disk/files.disk"
+include 	"dev/misc/files.misc"
 include		"dev/usb/files.usb"
 include		"dev/video/files.video"
-
-# Misc configuration files 
-file		dev/cons.c			cons
-file		dev/kobj/kobj.c
-file		dev/ksym/ksyms.c	ksyms		needs-flag
 

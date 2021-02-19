@@ -84,7 +84,7 @@
 #endif
 
 #ifdef USB_DEBUG
-#define DPRINTF(x)	if (ukbddebug) printf x
+#define DPRINTF(x)		if (ukbddebug) printf x
 #define DPRINTFN(n,x)	if (ukbddebug>(n)) printf x
 int	ukbddebug = 0;
 #else
@@ -101,22 +101,22 @@ int	ukbddebug = 0;
 #define SCROLL_LOCK 0x04
 
 struct ukbd_data {
-	u_int8_t	modifiers;
+	u_int8_t			modifiers;
 #define MOD_CONTROL_L	0x01
 #define MOD_CONTROL_R	0x10
-#define MOD_SHIFT_L	0x02
-#define MOD_SHIFT_R	0x20
-#define MOD_ALT_L	0x04
-#define MOD_ALT_R	0x40
-#define MOD_WIN_L	0x08
-#define MOD_WIN_R	0x80
-	u_int8_t	reserved;
-	u_int8_t	keycode[NKEYCODE];
+#define MOD_SHIFT_L		0x02
+#define MOD_SHIFT_R		0x20
+#define MOD_ALT_L		0x04
+#define MOD_ALT_R		0x40
+#define MOD_WIN_L		0x08
+#define MOD_WIN_R		0x80
+	u_int8_t			reserved;
+	u_int8_t			keycode[NKEYCODE];
 };
 
-#define PRESS    0x000
-#define RELEASE  0x100
-#define CODEMASK 0x0ff
+#define PRESS    		0x000
+#define RELEASE  		0x100
+#define CODEMASK 		0x0ff
 
 /* Translate USB bitmap to USB keycode. */
 #define NMOD 8
@@ -180,13 +180,13 @@ static u_int8_t ukbd_trtab[256] = {
 #define MAXKEYS (NMOD+2*NKEYCODE)
 
 struct ukbd_softc {
-	bdevice		sc_dev;		/* base device */
-	usbd_interface_handle sc_iface;	/* interface */
-	usbd_pipe_handle sc_intrpipe;	/* interrupt pipe */
-	int sc_ep_addr;
+	bdevice					sc_dev;		/* base device */
+	usbd_interface_handle 	sc_iface;	/* interface */
+	usbd_pipe_handle 		sc_intrpipe;	/* interrupt pipe */
+	int 					sc_ep_addr;
 
-	struct ukbd_data sc_ndata;
-	struct ukbd_data sc_odata;
+	struct ukbd_data 		sc_ndata;
+	struct ukbd_data 		sc_odata;
 
 	char sc_enabled;
 	char sc_disconnected;		/* device is gone */
@@ -216,8 +216,8 @@ struct ukbd_softc {
 
 int	ukbd_is_console;
 
-void	ukbd_cngetc __P((void *, u_int *, int *));
-void	ukbd_cnpollc __P((void *, int));
+void	ukbd_cngetc (void *, u_int *, int *);
+void	ukbd_cnpollc (void *, int);
 
 #if defined(__NetBSD__)
 const struct wskbd_consops ukbd_consops = {
@@ -226,15 +226,15 @@ const struct wskbd_consops ukbd_consops = {
 };
 #endif
 
-void	ukbd_intr __P((usbd_request_handle, usbd_private_handle, usbd_status));
-void	ukbd_disco __P((void *));
+void	ukbd_intr (usbd_request_handle, usbd_private_handle, usbd_status);
+void	ukbd_disco (void *);
 
-int	ukbd_enable __P((void *, int));
-void	ukbd_set_leds __P((void *, int));
+int		ukbd_enable (void *, int);
+void	ukbd_set_leds (void *, int);
 
 #if defined(__NetBSD__)
-int	ukbd_ioctl __P((void *, u_long, caddr_t, int, struct proc *));
-void	ukbd_rawrepeat __P((void *v));
+int	ukbd_ioctl (void *, u_long, caddr_t, int, struct proc *);
+void	ukbd_rawrepeat (void *v);
 
 const struct wskbd_accessops ukbd_accessops = {
 	ukbd_enable,

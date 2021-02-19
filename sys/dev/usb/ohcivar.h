@@ -105,7 +105,7 @@ typedef struct ohci_softc {
 } ohci_softc_t;
 
 usbd_status	ohci_init (ohci_softc_t *);
-int		ohci_intr (void *);
+int			ohci_intr (void *);
 
 #define MS_TO_TICKS(ms) ((ms) * hz / 1000)
 

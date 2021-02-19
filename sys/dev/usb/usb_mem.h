@@ -58,8 +58,8 @@ typedef struct {
 #define DMAADDR(dma) 	((dma)->block->segs[0].ds_addr + (dma)->offs)
 #define KERNADDR(dma) 	((void *)((dma)->block->kaddr + (dma)->offs))
 
-usbd_status	usb_allocmem __P((bus_dma_tag_t, size_t, size_t, usb_dma_t *));
-void		usb_freemem  __P((bus_dma_tag_t, usb_dma_t *));
+usbd_status	usb_allocmem (bus_dma_tag_t, size_t, size_t, usb_dma_t *);
+void		usb_freemem  (bus_dma_tag_t, usb_dma_t *));
 
 #elif defined(__FreeBSD__)
 

@@ -71,7 +71,7 @@
 #include <dev/usb/usb_quirks.h>
 
 #ifdef USB_DEBUG
-#define DPRINTF(x)	if (uhiddebug) printf x
+#define DPRINTF(x)		if (uhiddebug) printf x
 #define DPRINTFN(n,x)	if (uhiddebug>(n)) printf x
 int	uhiddebug = 0;
 #else
@@ -101,25 +101,25 @@ struct uhid_softc {
 	struct clist sc_q;
 	struct selinfo sc_rsel;
 	u_char sc_state;	/* driver state */
-#define	UHID_OPEN	0x01	/* device is open */
-#define	UHID_ASLP	0x02	/* waiting for device data */
+#define	UHID_OPEN		0x01	/* device is open */
+#define	UHID_ASLP		0x02	/* waiting for device data */
 #define UHID_NEEDCLEAR	0x04	/* needs clearing endpoint stall */
-#define UHID_IMMED	0x08	/* return read data immediately */
+#define UHID_IMMED		0x08	/* return read data immediately */
 	int sc_disconnected;	/* device is gone */
 };
 
 #define	UHIDUNIT(dev)	(minor(dev))
-#define	UHID_CHUNK	128	/* chunk size for read */
-#define	UHID_BSIZE	1020	/* buffer size */
+#define	UHID_CHUNK		128	/* chunk size for read */
+#define	UHID_BSIZE		1020	/* buffer size */
 
-int uhidopen __P((dev_t, int, int, struct proc *));
-int uhidclose __P((dev_t, int, int, struct proc *p));
-int uhidread __P((dev_t, struct uio *uio, int));
-int uhidwrite __P((dev_t, struct uio *uio, int));
-int uhidioctl __P((dev_t, u_long, caddr_t, int, struct proc *));
-int uhidpoll __P((dev_t, int, struct proc *));
-void uhid_intr __P((usbd_request_handle, usbd_private_handle, usbd_status));
-void uhid_disco __P((void *));
+int uhidopen (dev_t, int, int, struct proc *);
+int uhidclose (dev_t, int, int, struct proc *p);
+int uhidread (dev_t, struct uio *uio, int);
+int uhidwrite (dev_t, struct uio *uio, int);
+int uhidioctl (dev_t, u_long, caddr_t, int, struct proc *);
+int uhidpoll (dev_t, int, struct proc *);
+void uhid_intr (usbd_request_handle, usbd_private_handle, usbd_status);
+void uhid_disco (void *);
 
 USB_DECLARE_DRIVER(uhid);
 
@@ -466,28 +466,28 @@ uhidioctl(dev, cmd, addr, flag, p)
 		/* All handled in the upper FS layer. */
 		break;
 
-	case USB_GET_REPORT_DESC:
+		case USB_GET_REPORT_DESC:
 		rd = (struct usb_ctl_report_desc *)addr;
 		size = min(sc->sc_repdesc_size, sizeof rd->data);
 		rd->size = size;
 		memcpy(rd->data, sc->sc_repdesc, size);
 		break;
 
-	case USB_SET_IMMED:
+		case USB_SET_IMMED:
 		if (*(int *)addr) {
 			/* XXX should read into ibuf, but does it matter */
 			r = usbd_get_report(sc->sc_iface, UHID_INPUT_REPORT,
-					    sc->sc_iid, sc->sc_ibuf, 
-					    sc->sc_isize);
+					sc->sc_iid, sc->sc_ibuf,
+					sc->sc_isize);
 			if (r != USBD_NORMAL_COMPLETION)
-				return (EOPNOTSUPP);
+			return (EOPNOTSUPP);
 
-			sc->sc_state |=  UHID_IMMED;
+			sc->sc_state |= UHID_IMMED;
 		} else
-			sc->sc_state &= ~UHID_IMMED;
+		sc->sc_state &= ~UHID_IMMED;
 		break;
 
-	case USB_GET_REPORT:
+		case USB_GET_REPORT:
 		re = (struct usb_ctl_report *)addr;
 		switch (re->report) {
 		case UHID_INPUT_REPORT:
@@ -505,8 +505,7 @@ uhidioctl(dev, cmd, addr, flag, p)
 		default:
 			return (EINVAL);
 		}
-		r = usbd_get_report(sc->sc_iface, re->report, id, 
-				    re->data, size);
+		r = usbd_get_report(sc->sc_iface, re->report, id, re->data, size);
 		if (r != USBD_NORMAL_COMPLETION)
 			return (EIO);
 		break;

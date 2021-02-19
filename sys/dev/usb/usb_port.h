@@ -57,8 +57,8 @@ typedef struct device bdevice;			/* base device */
 #define usb_untimeout(f, d, h) untimeout((f), (d))
 
 #define USB_DECLARE_DRIVER_NAME_INIT(_1, dname, _2)  							\
-int __CONCAT(dname,_match) __P((struct device *, struct cfdata *, void *));	 	\
-void __CONCAT(dname,_attach) __P((struct device *, struct device *, void *)); 	\
+int __CONCAT(dname,_match) (struct device *, struct cfdata *, void *);	 		\
+void __CONCAT(dname,_attach) (struct device *, struct device *, void *); 		\
 																				\
 extern struct cfdriver __CONCAT(dname,_cd); 									\
 																				\

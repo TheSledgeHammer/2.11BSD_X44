@@ -70,17 +70,17 @@ extern char 	*usbd_error_strs[];
 #endif
 
 struct uhub_softc {
-	bdevice			sc_dev;		/* base device */
-	usbd_device_handle	sc_hub;		/* USB device */
-	usbd_pipe_handle	sc_ipipe;	/* interrupt pipe */
-	u_int8_t		sc_status[1];	/* XXX more ports */
-	u_char			sc_running;
+	bdevice				sc_dev;			/* base device */
+	usbd_device_handle	sc_hub;			/* USB device */
+	usbd_pipe_handle	sc_ipipe;		/* interrupt pipe */
+	u_int8_t			sc_status[1];	/* XXX more ports */
+	u_char				sc_running;
 };
 
-usbd_status uhub_init_port __P((struct usbd_port *));
-void uhub_disconnect __P((struct usbd_port *up));
-usbd_status uhub_explore __P((usbd_device_handle hub));
-void uhub_intr __P((usbd_request_handle, usbd_private_handle, usbd_status));
+usbd_status uhub_init_port (struct usbd_port *);
+void uhub_disconnect (struct usbd_port *up);
+usbd_status uhub_explore (usbd_device_handle hub);
+void uhub_intr (usbd_request_handle, usbd_private_handle, usbd_status);
 
 /*void uhub_disco __P((void *));*/
 

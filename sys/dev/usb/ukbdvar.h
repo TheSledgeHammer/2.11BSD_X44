@@ -40,6 +40,6 @@
 #ifndef _DEV_USB_UKBDVAR_H_
 #define	_DEV_USB_UKBDVAR_H_
 
-int	ukbd_cnattach __P((void));
+int	ukbd_cnattach (void);
 
 #endif /* _DEV_USB_UKBDVAR_H_ */

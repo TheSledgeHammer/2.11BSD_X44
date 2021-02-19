@@ -29,7 +29,7 @@
 #include <sys/malloc.h>
 #include <sys/conf.h>
 #include <sys/user.h>
-#include <sys/videoio.h>
+#include <devel/dev/videoio.h>
 
 #include <dev/video/video_if.h>
 

@@ -43,11 +43,8 @@ struct slab_metadata {
     int                         sm_bslots;           							/* bucket slots available */
     int							sm_aslots;										/* slots to be allocated */
     int                      	sm_freeslots;       							/* slots free */
-    int							sm_btotal;										/* total number of slots */
 
     int                         sm_type;            							/* slab type: see below */
-
-
 /*
   	u_long						sm_pool;
     long                        sm_min;
@@ -68,6 +65,7 @@ struct slab {
 
     slab_metadata_t             s_meta;
     u_long                      s_size;
+    int							s_mtype;
 
     int							s_flags;
     int                         s_refcount;
@@ -98,5 +96,12 @@ int			                    slab_count;
 #define ALLOCATED_SLOTS(size)	(BUCKET_SLOTS(size))							/* Number slots taken by space to be allocated */
 #define SLOTSFREE(bsize, size)  (BUCKET_SLOTS(bsize) - ALLOCATED_SLOTS(size)) 	/* free slots in bucket (s = size) */
 
-#define SLAB_SLOTS(bsize, size) (ALLOCATED_SLOTS(bsize)/BUCKET_SLOTS(bsize, size))
+/* proto types */
+void	slab_create();
+void 	slab_malloc(u_long, int, int);
+void 	slab_free(void *, int);
+
+slab_t  slab_lookup(u_long, int);
+void	slab_insert(slab_t, u_long, int, int);
+void	slab_remove(u_long);
 #endif /* _VM_SLAB_H_ */

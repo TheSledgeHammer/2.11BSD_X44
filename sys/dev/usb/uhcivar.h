@@ -162,14 +162,14 @@ typedef struct uhci_softc {
 	char sc_vendor[16];
 } uhci_softc_t;
 
-usbd_status	uhci_init __P((uhci_softc_t *));
-int		uhci_intr __P((void *));
+usbd_status	uhci_init (uhci_softc_t *);
+int			uhci_intr (void *);
 #if 0
-void		uhci_reset __P((void *));
+void		uhci_reset (void *);
 #endif
 
 #ifdef USB_DEBUG
-#define DPRINTF(x)	if (uhcidebug) printf x
+#define DPRINTF(x)		if (uhcidebug) printf x
 #define DPRINTFN(n,x)	if (uhcidebug>(n)) printf x
 extern int uhcidebug;
 #else

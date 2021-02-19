@@ -37,36 +37,42 @@
 
 #include <sys/queue.h>
 
+struct io_driversw {
+
+};
 
 struct io_driver {
-	char					*io_name;
-	struct  device 			*io_dev;		/* back pointer */
+	LIST_HEAD( , io_controller)	io_head;
+	struct  device 				*io_dev;		/* back pointer */
+	char						*io_name;
 };
 
 struct io_controller {
-	char					*ioc_name;
-	int						ioc_index;
+	LIST_ENTRY(io_controller) 	ioc_entry;
+	char						*ioc_name;
+	int							ioc_index;
+	dev_t						ioc_dev;
 };
 
 struct io_device {
-	char					*iod_name;
-	int						iod_flags;
-	int						iod_unit;
-	//iod_minor;
+	char						*iod_name;
+	int							iod_flags;
+	int							iod_unit;
+	int							iod_minor;
 
-	int 					iod_iobase;
-	int						iod_iosize;		/* span of ports used */
-	int						iod_irq;		/* interrupt request */
-	int						iod_drq;		/* DMA request */
-	int						iod_drq2;		/* second DMA request */
-	int						iod_maddr;		/* physical i/o mem addr */
-	u_int					iod_msize;		/* size of i/o memory */
+	int 						iod_iobase;
+	int							iod_iosize;		/* span of ports used */
+	int							iod_irq;		/* interrupt request */
+	int							iod_drq;		/* DMA request */
+	int							iod_drq2;		/* second DMA request */
+	int							iod_maddr;		/* physical i/o mem addr */
+	u_int						iod_msize;		/* size of i/o memory */
 
-	bus_space_tag_t			iod_iot;		/* device space tag */
-	bus_space_handle_t 		iod_ioh;		/* device mem space tag */
-	bus_dma_tag_t 			iod_dmat;		/* DMA tag */
+	bus_space_tag_t				iod_iot;		/* device space tag */
+	bus_space_handle_t 			iod_ioh;		/* device mem space tag */
+	bus_dma_tag_t 				iod_dmat;		/* DMA tag */
 
-	void					*iod_aux;		/* driver specific */
+	void						*iod_aux;		/* driver specific */
 };
 
 #endif /* SYS_DEVEL_DEV_IODEVICE_H_ */

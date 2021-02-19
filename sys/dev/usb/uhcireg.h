@@ -42,18 +42,18 @@
 
 /*** PCI config registers ***/
 
-#define PCI_USBREV		0x60	/* USB protocol revision */
+#define PCI_USBREV			0x60	/* USB protocol revision */
 #define  PCI_USBREV_MASK	0xff
 #define  PCI_USBREV_PRE_1_0	0x00
 #define  PCI_USBREV_1_0		0x10
 
-#define PCI_CBIO		0x20	/* configuration base IO */
+#define PCI_CBIO			0x20	/* configuration base IO */
 
 #define PCI_INTERFACE_UHCI	0x00
 
 /*** UHCI registers ***/
 
-#define UHCI_CMD		0x00
+#define UHCI_CMD			0x00
 #define  UHCI_CMD_RS		0x0001
 #define  UHCI_CMD_HCRESET	0x0002
 #define  UHCI_CMD_GRESET	0x0004
@@ -63,7 +63,7 @@
 #define  UHCI_CMD_CF		0x0040
 #define  UHCI_CMD_MAXP		0x0080
 
-#define UHCI_STS		0x02
+#define UHCI_STS			0x02
 #define  UHCI_STS_USBINT	0x0001
 #define  UHCI_STS_USBEI		0x0002
 #define  UHCI_STS_RD		0x0004
@@ -71,19 +71,19 @@
 #define  UHCI_STS_HCPE		0x0010
 #define  UHCI_STS_HCH		0x0020
 
-#define UHCI_INTR		0x04
+#define UHCI_INTR			0x04
 #define  UHCI_INTR_TOCRCIE	0x0001
 #define  UHCI_INTR_RIE		0x0002
 #define  UHCI_INTR_IOCE		0x0004
 #define  UHCI_INTR_SPIE		0x0008
 
-#define UHCI_FRNUM		0x06
+#define UHCI_FRNUM			0x06
 #define  UHCI_FRNUM_MASK	0x03ff
  
 
 #define UHCI_FLBASEADDR		0x08
 
-#define UHCI_SOF		0x0c
+#define UHCI_SOF			0x0c
 #define  UHCI_SOF_MASK		0x7f
 
 #define UHCI_PORTSC1      	0x010
@@ -134,33 +134,33 @@ typedef struct {
 	u_int32_t td_status;
 #define UHCI_TD_GET_ACTLEN(s)	(((s) + 1) & 0x3ff)
 #define UHCI_TD_ZERO_ACTLEN(t)	((t) | 0x3ff)
-#define UHCI_TD_BITSTUFF	0x00020000
-#define UHCI_TD_CRCTO		0x00040000
-#define UHCI_TD_NAK		0x00080000
-#define UHCI_TD_BABBLE		0x00100000
-#define UHCI_TD_DBUFFER		0x00200000
-#define UHCI_TD_STALLED		0x00400000
-#define UHCI_TD_ACTIVE		0x00800000
-#define UHCI_TD_IOC		0x01000000
-#define UHCI_TD_IOS		0x02000000
-#define UHCI_TD_LS		0x04000000
+#define UHCI_TD_BITSTUFF		0x00020000
+#define UHCI_TD_CRCTO			0x00040000
+#define UHCI_TD_NAK				0x00080000
+#define UHCI_TD_BABBLE			0x00100000
+#define UHCI_TD_DBUFFER			0x00200000
+#define UHCI_TD_STALLED			0x00400000
+#define UHCI_TD_ACTIVE			0x00800000
+#define UHCI_TD_IOC				0x01000000
+#define UHCI_TD_IOS				0x02000000
+#define UHCI_TD_LS				0x04000000
 #define UHCI_TD_GET_ERRCNT(s)	(((s) >> 27) & 3)
 #define UHCI_TD_SET_ERRCNT(n)	((n) << 27)
-#define UHCI_TD_SPD		0x20000000
+#define UHCI_TD_SPD				0x20000000
 	u_int32_t td_token;
-#define UHCI_TD_PID_IN		0x00000069
-#define UHCI_TD_PID_OUT		0x000000e1
-#define UHCI_TD_PID_SETUP	0x0000002d
-#define UHCI_TD_GET_PID(s)	((s) & 0xff)
+#define UHCI_TD_PID_IN			0x00000069
+#define UHCI_TD_PID_OUT			0x000000e1
+#define UHCI_TD_PID_SETUP		0x0000002d
+#define UHCI_TD_GET_PID(s)		((s) & 0xff)
 #define UHCI_TD_SET_DEVADDR(a)	((a) << 8)
 #define UHCI_TD_GET_DEVADDR(s)	(((s) >> 8) & 0x7f)
 #define UHCI_TD_SET_ENDPT(e)	(((e)&0xf) << 15)
 #define UHCI_TD_GET_ENDPT(s)	(((s) >> 15) & 0xf)
-#define UHCI_TD_SET_DT(t)	((t) << 19)
-#define UHCI_TD_GET_DT(s)	(((s) >> 19) & 1)
+#define UHCI_TD_SET_DT(t)		((t) << 19)
+#define UHCI_TD_GET_DT(s)		(((s) >> 19) & 1)
 #define UHCI_TD_SET_MAXLEN(l)	(((l)-1) << 21)
 #define UHCI_TD_GET_MAXLEN(s)	((((s) >> 21) + 1) & 0x7ff)
-#define UHCI_TD_MAXLEN_MASK	0xffe00000
+#define UHCI_TD_MAXLEN_MASK		0xffe00000
 	u_int32_t td_buffer;
 	uhci_soft_td_qh_t link; /* soft version of the td_link field */
 	/* padding to 32 bytes */

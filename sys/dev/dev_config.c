@@ -64,7 +64,11 @@ static void
 console_init(devsw)
 	struct devswtable *devsw;
 {
-	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cons_cdevsw, NULL);				/* virtual console */
+	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cons_cdevsw, NULL);					/* virtual console */
+
+	DEVSWIO_CONFIG_INIT(devsw, NWSDISPLAY, NULL, &wsdisplay_cdevsw, NULL);		/* Wscons Display */
+	DEVSWIO_CONFIG_INIT(devsw, NWSKBD, NULL, &wskbd_cdevsw, NULL);				/* Wscons Keyboard */
+	DEVSWIO_CONFIG_INIT(devsw, NWSMOUSE, NULL, &wsmouse_cdevsw, NULL);			/* Wscons Mouse */
 }
 
 /* Add disk driver configuration */
@@ -108,5 +112,5 @@ static void
 video_init(devsw)
 	struct devswtable *devsw;
 {
-	DEVSWIO_CONFIG_INIT(devsw, NVIDEO , NULL, &video_cdevsw, NULL);			/* generic video I/O */
+//	DEVSWIO_CONFIG_INIT(devsw, NVIDEO , NULL, &video_cdevsw, NULL);			/* generic video I/O */
 }

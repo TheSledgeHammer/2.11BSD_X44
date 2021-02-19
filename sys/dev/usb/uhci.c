@@ -111,8 +111,8 @@ struct uhci_pipe {
 		struct iso {
 			u_int bufsize;
 			u_int nbuf;
-			usb_dma_t *bufs;
-			uhci_soft_td_t **stds;
+			usb_dma_t 		*bufs;
+			uhci_soft_td_t 	**stds;
 		} iso;
 	} u;
 };
