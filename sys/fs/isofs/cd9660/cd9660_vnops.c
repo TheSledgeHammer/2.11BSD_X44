@@ -50,6 +50,7 @@
 #include <sys/conf.h>
 #include <sys/mount.h>
 #include <sys/vnode.h>
+#include <sys/dirent.h>
 #include <sys/malloc.h>
 
 #include <miscfs/specfs/specdev.h>
@@ -412,8 +413,17 @@ cd9660_ioctl(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
-	printf("You did ioctl for isofs !!\n");
-	return (ENOTTY);
+	struct vnode *vp = ap->a_vp;
+	struct iso_node *ip = VTOI(vp);
+
+	switch (ap->a_command) {
+
+	case FIOGETLBA:
+		*(int*) (ap->a_data) = ip->iso_start;
+		return 0;
+	default:
+		return (ENOTTY);
+	}
 }
 
 /* ARGSUSED */
@@ -475,9 +485,9 @@ cd9660_seek(ap)
  * Structure for reading directories
  */
 struct isoreaddir {
-	struct dirent saveent;
-	struct dirent assocent;
-	struct dirent current;
+	struct direct saveent;
+	struct direct assocent;
+	struct direct current;
 	off_t saveoff;
 	off_t assocoff;
 	off_t curroff;
@@ -819,10 +829,11 @@ cd9660_readlink(ap)
 	 * Now get a buffer
 	 * Abuse a namei buffer for now.
 	 */
-	if (uio->uio_segflg == UIO_SYSSPACE)
+	if (uio->uio_segflg == UIO_SYSSPACE) {
 		symname = uio->uio_iov->iov_base;
-	else
+	} else {
 		MALLOC(symname, char *, MAXPATHLEN, M_NAMEI, M_WAITOK);
+	}
 	
 	/*
 	 * Ok, we just gathering a symbolic name in SL record.
@@ -898,8 +909,7 @@ cd9660_unlock(ap)
 {
 	struct vnode *vp = ap->a_vp;
 
-	return (lockmgr(&VTOI(vp)->i_lock, ap->a_flags | LK_RELEASE,
-		&vp->v_interlock, ap->a_p->p_pid));
+	return (lockmgr(&VTOI(vp)->i_lock, ap->a_flags | LK_RELEASE, &vp->v_interlock, ap->a_p->p_pid));
 }
 
 /*
@@ -936,7 +946,7 @@ cd9660_strategy(ap)
 	}
 	vp = ip->i_devvp;
 	bp->b_dev = vp->v_rdev;
-	VOPARGS(ap, vop_strategy);
+	VOP_STRATEGY(bp);
 	return (0);
 }
 

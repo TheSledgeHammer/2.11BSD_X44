@@ -48,14 +48,14 @@
 #define doff_t	long
 
 typedef	struct	{
-	struct timespec	iso_atime;	/* time of last access */
-	struct timespec	iso_mtime;	/* time of last modification */
-	struct timespec	iso_ctime;	/* time file changed */
-	u_short			iso_mode;	/* files access mode and type */
-	uid_t			iso_uid;	/* owner user id */
-	gid_t			iso_gid;	/* owner group id */
-	short			iso_links;	/* links of file */
-	dev_t			iso_rdev;	/* Major/Minor number for special */
+	struct timespec		iso_atime;	/* time of last access */
+	struct timespec		iso_mtime;	/* time of last modification */
+	struct timespec		iso_ctime;	/* time file changed */
+	u_short				iso_mode;	/* files access mode and type */
+	uid_t				iso_uid;	/* owner user id */
+	gid_t				iso_gid;	/* owner group id */
+	short				iso_links;	/* links of file */
+	dev_t				iso_rdev;	/* Major/Minor number for special */
 } ISO_RRIP_INODE;
 
 #ifdef ISODEVMAP

@@ -389,7 +389,7 @@ cd9660_unmount(mp, mntflags, p)
 	if (mntinvalbuf(mp))
 		return EBUSY;
 #endif
-	if (error = vflush(mp, NULLVP, flags))
+	if (error == vflush(mp, NULLVP, flags))
 		return (error);
 
 	isomp = VFSTOISOFS(mp);
@@ -599,8 +599,7 @@ cd9660_vget_internal(mp, ino, vpp, relocated, isodir)
 		*vpp = NULLVP;
 		return (error);
 	}
-	MALLOC(ip, struct iso_node *, sizeof(struct iso_node), M_ISOFSNODE,
-	    M_WAITOK);
+	MALLOC(ip, struct iso_node *, sizeof(struct iso_node), M_ISOFSNODE, M_WAITOK);
 	bzero((caddr_t)ip, sizeof(struct iso_node));
 	lockinit(&ip->i_lock, PINOD, "isonode", 0, 0);
 	vp->v_data = ip;

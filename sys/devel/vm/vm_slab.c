@@ -92,7 +92,7 @@ slab_free(addr, mtype)
 	if(slab) {
 		slab_remove(addr, mtype);
 	} else {
-		free(addr, type);
+		free(addr, mtype);
 	}
 }
 
@@ -130,7 +130,7 @@ slabmeta(slab, size, mtype, flags)
     }
 
 	/* test if free bucket slots is between 25% to 75% */
-	if(meta->sm_freeslots >= (meta->sm_bslots * 0.25) || meta->sm_freeslots <= (meta->sm_bslots * 0.75)) {
+	if((meta->sm_freeslots >= (meta->sm_bslots * 0.25)) && (meta->sm_freeslots <= (meta->sm_bslots * 0.75))) {
 		slab->s_flags |= SLAB_PARTIAL;
 	/* test if free bucket slots is greater than 75% */
 	} else if(meta->sm_freeslots > (meta->sm_bslots * 0.75)) {
@@ -182,7 +182,7 @@ slab_insert(slab, size, mtype, flags)
         return;
     }
 
-    slabmeta(slab->s_meta, size, mtype, flags);
+    slabmeta(slab, size, mtype, flags);
 
     slabs = &slab_buckets[BUCKETINDX(size)];
     simple_lock(&slab_bucket_lock);

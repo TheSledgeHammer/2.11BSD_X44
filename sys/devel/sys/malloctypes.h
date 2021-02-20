@@ -56,5 +56,6 @@
 #define M_HTREE			86	/* vfs htree structure */
 #define M_RMAN 			87	/* rman structures */
 #define M_VMSLAB		88 	/* VM slab structures */
+#define M_ADVVM			89 	/* AdvVM structures structures */
 
 #endif /* _SYS_MALLOCTYPES_H_ */
