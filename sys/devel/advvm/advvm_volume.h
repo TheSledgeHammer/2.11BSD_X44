@@ -45,6 +45,9 @@ struct advvm_volume {
     uint32_t 						vol_id;						/* volume id */
     int                             vol_flags;                  /* volume flags */
 
+
+    advvm_storage_t					*vol_storage;				/* volume allocation */
+
     /* device or drive fields */
     struct advvm_label              *vol_label;                 /* label information */
     struct advvm_block             	*vol_block;                 /* block information */
@@ -54,7 +57,7 @@ struct advvm_volume {
 #define vol_domain_name             vol_domain->dom_name        /* domain name */
 #define vol_domain_id               vol_domain->dom_id          /* domain id */
     int                             vol_domain_allocated;       /* number of entries in a domain */
-    int                             vol_domain_used;            /* and the number used */
+    int                             vol_domain_used;            /* the number used */
 };
 typedef struct advvm_volume         advvm_volume_t;
 

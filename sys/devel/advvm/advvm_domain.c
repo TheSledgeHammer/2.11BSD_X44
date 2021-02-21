@@ -57,13 +57,12 @@ advvm_domain_create(adom, name, id, start, end, flags)
 	u_long start, end;
 	int flags;
 {
+	advvm_malloc((advvm_domain_t *) adom, sizeof(advvm_domain_t *));
 	adom->dom_name = name;
 	adom->dom_id = id;		/* generate a random uuid */
 	adom->dom_start = start;
 	adom->dom_end = end;
 	adom->dom_flags = flags;
-
-	advvm_malloc((advvm_domain_t *) adom, sizeof(advvm_domain_t *));
 	advvm_storage_create(adom->dom_storage, adom->dom_name, adom->dom_start, adom->dom_end, NULL, NULL, adom->dom_flags);
 }
 

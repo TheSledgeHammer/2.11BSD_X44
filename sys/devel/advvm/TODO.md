@@ -11,8 +11,16 @@
 	- i.e. create, destroy, add, delete... etc
 
 ## Volumes:
+- Volume list:
+	- currently head of volume list is in domains
+	- insertion, deletion & travesal of volumes: incomplete (lack of functionality/integration between a domain & volume)
 
 ## Domains:
+- Volume & Fileset interaction
+	- retrieve respective lists
 
 ## Filesets:
 - Bitmaps/Hashmaps for Tag Directory & File Directory
+- Fileset list:
+	- Same issue as for Volumes. 
+		- A solution for volumes should work with Filesets too.
