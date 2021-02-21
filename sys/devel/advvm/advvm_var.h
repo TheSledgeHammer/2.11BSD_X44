@@ -122,6 +122,7 @@ struct advvm_block {
     uint64_t            ablk_start;
     uint64_t            ablk_end;
     uint32_t            ablk_size;
+    caddr_t				ablk_addr;
     int					ablk_flags;
 };
 

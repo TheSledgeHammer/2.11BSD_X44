@@ -38,8 +38,8 @@
 
 #include <advvm_var.h>
 
-struct volume {
-    TAILQ_ENTRY(volume)             vol_entries;                /* list of volume entries per domain */
+struct advvm_volume {
+    TAILQ_ENTRY(advvm_volume)       vol_entries;                /* list of volume entries per domain */
 
     char							vol_name[MAXVOLUMENAME];	/* volume name */
     uint32_t 						vol_id;						/* volume id */
@@ -50,12 +50,12 @@ struct volume {
     struct advvm_block             	*vol_block;                 /* block information */
 
     /* domain-related fields */
-    struct domain                   *vol_domain;                /* domain this volume belongs too */
+    advvm_domain_t             		*vol_domain;                /* domain this volume belongs too */
 #define vol_domain_name             vol_domain->dom_name        /* domain name */
 #define vol_domain_id               vol_domain->dom_id          /* domain id */
     int                             vol_domain_allocated;       /* number of entries in a domain */
     int                             vol_domain_used;            /* and the number used */
 };
-typedef struct volume               *volume_t;
+typedef struct advvm_volume         advvm_volume_t;
 
 #endif /* _DEV_ADVVM_VOLUME_H_ */

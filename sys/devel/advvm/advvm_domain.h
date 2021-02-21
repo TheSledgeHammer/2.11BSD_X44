@@ -38,17 +38,29 @@
 
 #include <advvm_volume.h>
 
-TAILQ_HEAD(domain_list, domain);
-struct domain {
-    TAILQ_ENTRY(domain)             	dom_entries;                /* list of domains */
-    char                            	dom_name[MAXDOMAINNAME];    /* domain name */
-    uint32_t                        	dom_id;                     /* domain id */
+TAILQ_HEAD(advdomain_list, advvm_domain);
+struct advvm_domain {
+    TAILQ_ENTRY(advvm_domain)           		dom_entries;                /* list of domains */
+    char                            			dom_name[MAXDOMAINNAME];    /* domain name */
+    uint32_t                        			dom_id;                     /* domain id */
+    int											dom_flags;
+    int											dom_refcnt;
 
-    TAILQ_HEAD(volume_list, volume) 	dom_volumes;                /* head list of volumes */
-    TAILQ_HEAD(fileset_list, fileset)   dom_filesets;               /* head list of filesets */
+    TAILQ_HEAD(advvolume_list, advvm_volume) 	dom_volumes;                /* head list of volumes */
+    TAILQ_HEAD(advfileset_list, advvm_fileset)  dom_filesets;               /* head list of filesets */
+
+    /* domain allocation */
+    advvm_storage_t								*dom_storage;
+    u_long										dom_start;
+    u_long										dom_end;
 };
-typedef struct domain               	*domain_t;
+typedef struct advvm_domain               		advvm_domain_t;
 
-extern struct domain_list              	domains;
+//extern struct advdomain_list              		domains;
 
+void			advvm_domain_create(advvm_domain_t, char *, uint32_t, u_long, u_long, int);
+advvm_domain_t 	*advvm_domain_find(char *, uint32_t);
+void			advvm_domain_insert(advvm_domain_t);
+void			advvm_domain_remove(char *, uint32_t);
+void			advvm_domain_destroy(advvm_domain_t);
 #endif /* _DEV_ADVVM_DOMAIN_H_ */

@@ -25,85 +25,42 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	@(#)advvm_pool.c 1.0 	20/02/21
+ *	@(#)advvm_extent.c 1.0 	20/02/21
  */
 
 /*
- * AdvVM Pool Memory Allocation. Using an extent allocator.
+ * AdvVM Extent Memory Allocation. Using an extent allocator.
  */
 
-#include <sys/extent.h>
-#include <sys/tree.h>
 #include <sys/user.h>
+
 #include <devel/sys/malloctypes.h>
+#include <devel/advvm/advvm_extent.h>
 #include <devel/advvm/advvm_var.h>
 #include <devel/advvm/advvm_domain.h>
 
-static u_long *advvm_pool;		/* resulting pool from pool_allocate_subregion (should not be 0) */
-
-struct advvm_pool {
-	struct extent 				*adp_extent;
-	u_long						adp_start;
-	u_long						adp_end;
-	caddr_t 					adp_storage;
-	size_t						adp_storagesize;
-	int 						adp_flags;
-	SPLAY_HEAD(,advvm_pool) 	adp_root;
-};
-
-struct advvm_region {
-	SPLAY_ENTRY(advvm_region) 	adr_entry;
-};
-
-#define ADVVM_FIXED 			0x01
-
-boolean_t
-advvm_extent_check(pool)
-	struct advvm_pool *pool;
-{
-	if(pool->adp_extent) {
-		return (TRUE);
-	}
-	panic("advvm_allocate_pool: no extent created");
-	return (FALSE);
-}
-
-struct advvm_pool *
-advvm_create(name, start, end, mtype, storage, storagesize, flags)
+void
+advvm_storage_create(pool, name, start, end, storage, storagesize, flags)
+	advvm_storage_t *pool;
 	char *name;
 	u_long start, end;
-	int mtype;
 	caddr_t storage;
 	size_t storagesize;
 	int flags;
 {
-	struct advvm_pool *pool;
+	advvm_malloc((advvm_storage_t *) pool, sizeof(advvm_storage_t *));
+	pool->adp_start = start;
+	pool->adp_end = end;
+	pool->adp_flags = flags;
+	pool->adp_storage = storage;
+	pool->adp_storagesize = storagesize;
 
-	if (pool == NULL) {
-		pool = (struct advvm_pool*) malloc(pool, sizeof(struct advvm_pool*), M_ADVVM, M_WAITOK);
-		memset(pool, sizeof(struct advvm_pool*));
-	} else {
-		SPLAY_INIT(pool->adp_root);
-		pool->adp_start = start;
-		pool->adp_end = end;
-		if(flags == ADVVM_FIXED) {
-			pool->adp_storage = storage;
-			pool->adp_storagesize = storagesize;
-			pool->adp_flags = flags | ADVVM_FIXED;
-		}
-		pool->adp_storage = NULL;
-		pool->adp_storagesize = NULL;
-		pool->adp_flags = flags;
-	}
-
-	pool->adp_extent = extent_create(name, pool->adp_start, pool->adp_end, M_ADVVM, pool->adp_storage, pool->adp_storagesize, flags);
-
-	return (pool);
+	pool->adp_extent = extent_create(name, pool->adp_start, pool->adp_end, M_ADVVM, pool->adp_storage, pool->adp_storagesize, pool->adp_flags);
 }
 
 int
 advvm_allocate_region(pool, start, size, flags)
-	struct advvm_pool 	*pool;
+	advvm_storage_t		*pool;
 	u_long 				start, size;
 	int 				flags;
 {
@@ -116,32 +73,88 @@ advvm_allocate_region(pool, start, size, flags)
 			} else {
 				panic("advvm_allocate_pool: extent region size too big");
 			}
-		} else {
-			error = extent_alloc_region(pool->adp_extent, pool->adp_start, size, flags);
 		}
+	} else {
+		return (ADVVM_NOEXTENT);
 	}
-
-	if(error != 0) {
-		return (error);
-	}
-	return (0);
+	return (error);
 }
 
 int
 advvm_allocate_subregion(pool, size, alignment, boundary, flags)
-	struct advvm_pool 	*pool;
+	advvm_storage_t 	*pool;
 	u_long 				size, alignment, boundary;
 	int 				flags;
 {
 	int error;
 
 	if(advvm_extent_check(pool)) {
-		error = extent_alloc(pool->adp_extent, size, alignment, boundary, flags, &advvm_pool);
+		error = extent_alloc(pool->adp_extent, size, alignment, boundary, flags, pool->adp_pool);
+	} else {
+		return (ADVVM_NOEXTENT);
 	}
+	return (error);
+}
 
-	if(error != 0) {
-		&advvm_pool = 0;
-		return (error);
+/* free's advvm extent only */
+int
+advvm_free(pool, start, size, flags)
+	advvm_storage_t *pool;
+	u_long 			start, size;
+	int 			flags;
+{
+	int error;
+	if(advvm_extent_check(pool)) {
+		error = extent_free(pool->adp_extent, start, size, flags);
+	} else {
+		return (ADVVM_NOEXTENT);
 	}
-	return (0);
+	return (error);
+}
+
+/* destroys advvm extent and free's advvm storage */
+void
+advvm_destroy(pool)
+	advvm_storage_t *pool;
+{
+	if(advvm_extent_check(pool)) {
+		extent_destroy(pool->adp_extent);
+		advvm_free((advvm_storage_t *) pool);
+	} else {
+		printf("advvm_destroy: no extent to destroy");
+	}
+}
+
+u_long *
+advvm_get_storage_pool(pool)
+	advvm_storage_t *pool;
+{
+	return (pool->adp_pool);
+}
+
+/* internal use only */
+boolean_t
+advvm_extent_check(pool)
+	advvm_storage_t *pool;
+{
+	if(pool->adp_extent) {
+		return (TRUE);
+	}
+	return (FALSE);
+}
+
+/* a generic malloc for advvm with kern_malloc */
+void
+advvm_malloc(addr, size)
+	void 	*addr;
+	u_long 	size;
+{
+	addr = malloc(addr, size, M_ADVVM, M_WAITOK);
+}
+
+void
+advvm_free(addr)
+	void 	*addr;
+{
+	free(addr, M_ADVVM);
 }

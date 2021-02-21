@@ -25,47 +25,46 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	@(#)advvm_fileset.h 1.0 	7/01/21
+ *	@(#)advvm_extent.h 1.0 	20/02/21
  */
 
-/* filesets is a pool of advvm_domains */
+#ifndef _ADVVM_EXTENT_H_
+#define _ADVVM_EXTENT_H_
 
-#ifndef _DEV_ADVVM_FILESET_H_
-#define _DEV_ADVVM_FILESET_H_
+#include <sys/extent.h>
+#include <sys/tree.h>
 
-#include <sys/queue.h>
-#include <sys/types.h>
+struct advvm_storage {
+	struct extent 				*adp_extent;
+	u_long						adp_start;				/* start of extent */
+	u_long						adp_end;				/* end of extent */
+	caddr_t 					adp_storage;			/* fixed storage */
+	size_t						adp_storagesize;		/* fixed storage size */
+	int 						adp_flags;				/* see below */
 
-#include <advvm_volume.h>
+	u_long						adp_pool;				/* sub-region resulting pool */
 
-struct advvm_tag_directory {
-    const char                      *tag_name;
-    uint32_t                        tag_id;
+	SPLAY_HEAD(,advvm_pool) 	adp_root;
 };
-typedef struct advvm_tag_directory  advvm_tag_dir_t;
+typedef struct advvm_storage 	advvm_storage_t;
 
-/* should be filedirectory structure within bsd "system" */
-struct advvm_file_directory {
-	advvm_tag_dir_t                 fdr_tag;
-    const char                      *fdr_name;
-    struct device                   *fdr_dev;
+struct advvm_region {
+	SPLAY_ENTRY(advvm_region) 	adr_entry;
 };
-typedef struct advvm_file_directory advvm_file_dir_t;
 
-struct advvm_fileset {
-    TAILQ_ENTRY(advvm_volume)       fst_entries;                    /* list of fileset entries per domain */
-    char                            fst_name[MAXFILESETNAME];       /* fileset name */
-    uint32_t                        fst_id;                         /* fileset id */
+/* advvm flags */
+#define ADVVM_NOEXTENT			0x01
 
+/* prototypes */
 
-    /* fileset tag information */
-    advvm_tag_dir_t                 fst_tags;
+void 			advvm_storage_create(char *, u_long, u_long, caddr_t, size_t, int);
+int				advvm_allocate_region(advvm_storage_t *, u_long, u_long, int);
+int				advvm_allocate_subregion(advvm_storage_t *, u_long, u_long, u_long, int);
+int				advvm_free(advvm_storage_t *, u_long, u_long, int);
+void			advvm_destroy(advvm_storage_t *);
+u_long 			*advvm_get_storage_pool(advvm_storage_t *);
+/* generic malloc & free */
+void			advvm_malloc(void *, u_long);
+void			advvm_free(void *);
 
-    /* domain-related fields */
-    advvm_domain_t             		*fst_domain;                    /* domain this fileset belongs too */
-#define fst_domain_name             fst_domain->dom_name            /* domain name */
-#define fst_domain_id               fst_domain->dom_id              /* domain id */
-};
-typedef struct advvm_fileset        advvm_fileset_t;
-
-#endif /* _DEV_ADVVM_FILESET_H_ */
+#endif /* _ADVVM_EXTENT_H_ */
