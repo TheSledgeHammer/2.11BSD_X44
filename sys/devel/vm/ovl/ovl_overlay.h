@@ -67,45 +67,4 @@ ovl_map_t 						overlay_map;
 #define	NOVL					(32)				/* number of kernel overlay entries */
 #endif
 
-/* memory management */
-struct ovlstats {
-	long			os_inuse;			/* # of packets of this type currently in use */
-	long			os_calls;			/* total packets of this type ever allocated */
-	long 			os_memuse;			/* total memory held in bytes */
-	u_short			os_limblocks;		/* number of times blocked for hitting limit */
-	u_short			os_mapblocks;		/* number of times blocked for kernel map */
-	long			os_maxused;			/* maximum number ever used */
-	long			os_limit;			/* most that are allowed to exist */
-	long			os_size;			/* sizes of this thing that are allocated */
-	long			os_spare;
-
-	int 			slotsfilled;
-	int 			slotsfree;
-	int 			nslots;
-};
-
-struct ovlusage {
-	short 			ou_indx;			/* bucket index */
-	u_short			ou_bucketcnt;		/* buckets alloced */
-};
-
-struct ovlbuckets {
-	caddr_t 		ob_next;			/* list of free blocks */
-	caddr_t 		ob_last;			/* last free block */
-
-	struct tbtree	*ob_tbtree;			/* tertiary buddy tree allocation */
-};
-
-#define ovlmemxtob(base, alloc)	((base) + (alloc) * NBPG)
-#define btoovlmemx(addr, base)	(((char)(addr) - (base)) / NBPG)
-#define btooup(addr, base)		(&ovlusage[((char)(addr) - (base)) >> CLSHIFT])
-
-/* Overlay Flags */
-#define OVL_ALLOCATED  		(1 < 0) 	/* overlay region allocated */
-
-extern struct ovlstats 		ovlstats[];
-extern struct ovlusage 		*ovlusage;
-extern char 				*ovlbase;
-extern struct ovlbuckets 	ovl_bucket[];
-
 #endif /* _OVL_IO_H_ */
