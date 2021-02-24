@@ -51,12 +51,12 @@ advvm_volume_init(advol)
 	advol->vol_domain_used = 0;
 }
 
-struct advvm_label *
+void
 advvm_volume_set_label(label, sysname, name, creation, update, dsize)
-	struct advvm_label *label;
-	char *sysname, *name;
-	struct timeval creation, update;
-	off_t dsize;
+	struct advvm_label 	*label;
+	char 			*sysname, *name;
+	struct timeval 		creation, update;
+	off_t 			dsize;
 {
 	if (label == NULL) {
 		advvm_malloc((struct advvm_label*) label, sizeof(struct advvm_label*));
@@ -66,17 +66,15 @@ advvm_volume_set_label(label, sysname, name, creation, update, dsize)
 	label->alb_creation_date = creation;
 	label->alb_last_update = update;
 	label->alb_drive_size = dsize;
-
-	return (label);
 }
 
-struct advvm_block *
+void
 advvm_volume_set_block(block, start, end, size, addr, flags)
-	struct advvm_block *block;
-	uint64_t start, end;
-	uint32_t size;
-	caddr_t addr;
-	int flags;
+	struct advvm_block 	*block;
+	uint64_t 		start, end;
+	uint32_t 		size;
+	caddr_t 		addr;
+	int 			flags;
 {
 	if (block == NULL) {
 		advvm_malloc((struct advvm_block*) block, sizeof(struct advvm_block*));
@@ -86,8 +84,6 @@ advvm_volume_set_block(block, start, end, size, addr, flags)
 	block->ablk_size = size;
 	block->ablk_addr = addr;
 	block->ablk_flags = flags;
-
-	return (block);
 }
 
 void
@@ -104,9 +100,9 @@ void
 advvm_volume_create(advol, block, name, id, flags)
 	advvm_volume_t 		*advol;
 	struct advvm_block 	*block;
-	char *name;
-	uint32_t id;
-	int flags;
+	char 			*name;
+	uint32_t 		id;
+	int 			flags;
 {
 	advvm_malloc((advvm_volume_t *)advol, sizeof(advvm_volume_t *));
 	advol->vol_name = name;
@@ -118,15 +114,15 @@ advvm_volume_create(advol, block, name, id, flags)
 
 advvm_volume_t *
 advvm_volume_find(adom, name, id)
-	advvm_domain_t *adom;
-	char *name;
-	uint32_t id;
+	advvm_domain_t 	*adom;
+	char 		*name;
+	uint32_t 	id;
 {
 	struct advdomain_list 	*bucket;
 	advvm_volume_t 		*advol;
 	
 	bucket = &domain_list[advvm_hash(adom)];
-	TAILQ_FOREACH(advol, bucket, vol_entries) {
+	TAILQ_FOREACH(advol, bucket, dom_volumes) {
 		if (advol->vol_domain == adom) {
 			if (advol->vol_name == name && advol->vol_id == id) {
 				return (advol);
@@ -137,28 +133,55 @@ advvm_volume_find(adom, name, id)
 }
 
 void
-advvm_volume_insert(advol, name, id)
-	
+advvm_volume_insert(adom, advol, name, id, flags)
+	advvm_domain_t *adom;
+	advvm_volume_t 	*advol;
+	char 		*name;
+	uint32_t 	id;
+	int 		flags;
 {
 	struct advdomain_list 	*bucket;
 	
+	if(adom == NULL) {
+		return;
+	}
+	if(advol == NULL) {
+		return;
+	}
+	if(
+	if(advol->vol_block == NULL) {
+		panic("advvm_volume_insert: no volume block set");
+		return;
+	} else if(advol->vol_label == NULL) {
+		panic("advvm_volume_insert: no volume label set");
+		return;
+	} else {
+		advvm_volume_create(advol, advol->vol_block, name, id, flags);
+	}
+	advvm_volume_set_domain(adom, advol);
+	
 	bucket = &domain_list[advvm_hash(adom)];
 
-	TAILQ_INSERT_HEAD(bucket, advol, vol_entries);
+	TAILQ_INSERT_HEAD(bucket, advol, dom_volumes);
+	advol->vol_domain_used++;
 }
 
 void
-advvm_volume_remove(name, id)
-	char *name;
-	uint32_t id;
+advvm_volume_remove(adom, name, id)
+	advvm_domain_t *adom;
+	char 		*name;
+	uint32_t 	id;
 {
-	struct advvolume_list 	*bucket;
-	advvm_volume_t 			*advol;
-
-	TAILQ_FOREACH(advol, bucket, vol_entries){
-		if (advol->vol_name == name && advol->vol_id == id) {
-			TAILQ_REMOVE(bucket, advol, vol_entries);
-			advvm_volume_destroy(advol);
+	struct advdomain_list 	*bucket;
+	advvm_volume_t 		*advol;
+	
+	bucket = &domain_list[advvm_hash(adom)];
+	TAILQ_FOREACH(advol, bucket, dom_volumes) {
+		if (advol->vol_domain == adom) {
+			if (advol->vol_name == name && advol->vol_id == id) {
+				TAILQ_REMOVE(bucket, advol, dom_volumes);
+				advol->vol_domain_used--;
+			}
 		}
 	}
 }
