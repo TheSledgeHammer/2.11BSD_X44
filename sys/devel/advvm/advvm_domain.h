@@ -56,7 +56,7 @@ struct advvm_domain {
 };
 typedef struct advvm_domain               		advvm_domain_t;
 
-//extern struct advdomain_list              		domains;
+extern struct advdomain_list              		domain_list;
 
 void			advvm_domain_create(advvm_domain_t, char *, uint32_t, u_long, u_long, int);
 advvm_domain_t 	*advvm_domain_find(char *, uint32_t);
