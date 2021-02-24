@@ -158,7 +158,7 @@ advvm_volume_insert(adom, advol, name, id, flags)
 	} else {
 		advvm_volume_create(advol, advol->vol_block, name, id, flags);
 	}
-	advvm_volume_set_domain(adom, advol);
+	advvm_volume_set_domain(advol, adfst);
 	
 	bucket = &domain_list[advvm_hash(adom)];
 
