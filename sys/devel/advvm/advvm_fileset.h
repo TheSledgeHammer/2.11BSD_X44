@@ -46,7 +46,7 @@ typedef struct advvm_tag_directory  advvm_tag_dir_t;
 
 /* should be filedirectory structure within bsd "system" */
 struct advvm_file_directory {
-	advvm_tag_dir_t                 fdr_tag;
+    advvm_tag_dir_t                 fdr_tag;
     const char                      *fdr_name;
     struct device                   *fdr_dev;
 };
@@ -56,15 +56,16 @@ struct advvm_fileset {
     TAILQ_ENTRY(advvm_volume)       fst_entries;                    /* list of fileset entries per domain */
     char                            fst_name[MAXFILESETNAME];       /* fileset name */
     uint32_t                        fst_id;                         /* fileset id */
-
-
     /* fileset tag information */
     advvm_tag_dir_t                 fst_tags;
+    advvm_file_dir_t		    fst_file_directory;
 
     /* domain-related fields */
-    advvm_domain_t             		*fst_domain;                    /* domain this fileset belongs too */
+    advvm_domain_t             	    *fst_domain;                    /* domain this fileset belongs too */
 #define fst_domain_name             fst_domain->dom_name            /* domain name */
 #define fst_domain_id               fst_domain->dom_id              /* domain id */
+	
+    advvm_storage_t 		    *fst_storage;
 };
 typedef struct advvm_fileset        advvm_fileset_t;
 
