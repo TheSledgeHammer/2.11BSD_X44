@@ -122,7 +122,7 @@ advvm_volume_find(adom, name, id)
 	advvm_volume_t 		*advol;
 	
 	bucket = &domain_list[advvm_hash(adom)];
-	TAILQ_FOREACH(advol, bucket, dom_volumes) {
+	TAILQ_FOREACH(advol, bucket, vol_entries) {
 		if (advol->vol_domain == adom) {
 			if (advol->vol_name == name && advol->vol_id == id) {
 				return (advol);
@@ -162,7 +162,7 @@ advvm_volume_insert(adom, advol, name, id, flags)
 	
 	bucket = &domain_list[advvm_hash(adom)];
 
-	TAILQ_INSERT_HEAD(bucket, advol, dom_volumes);
+	TAILQ_INSERT_HEAD(bucket, advol, vol_entries);
 	advol->vol_domain_used++;
 }
 
@@ -176,7 +176,7 @@ advvm_volume_remove(adom, name, id)
 	advvm_volume_t 		*advol;
 	
 	bucket = &domain_list[advvm_hash(adom)];
-	TAILQ_FOREACH(advol, bucket, dom_volumes) {
+	TAILQ_FOREACH(advol, bucket, vol_entries) {
 		if (advol->vol_domain == adom) {
 			if (advol->vol_name == name && advol->vol_id == id) {
 				TAILQ_REMOVE(bucket, advol, dom_volumes);
