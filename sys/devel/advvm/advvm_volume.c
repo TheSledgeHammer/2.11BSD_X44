@@ -36,7 +36,7 @@
 #include <devel/advvm/advvm_var.h>
 #include <devel/advvm/advvm_volume.h>
 
-struct advvolume_list 	*volume_list;
+struct advdomain_list 	domain_list[MAXDOMAIN];
 
 void
 advvm_volume_init(advol)
@@ -117,28 +117,32 @@ advvm_volume_create(advol, block, name, id, flags)
 }
 
 advvm_volume_t *
-advvm_volume_find(name, id)
+advvm_volume_find(adom, name, id)
+	advvm_domain_t *adom;
 	char *name;
 	uint32_t id;
 {
-	struct advvolume_list 	*bucket;
-	advvm_volume_t 			*advol;
-
+	struct advdomain_list 	*bucket;
+	advvm_volume_t 		*advol;
+	
+	bucket = &domain_list[advvm_hash(adom)];
 	TAILQ_FOREACH(advol, bucket, vol_entries) {
-		if (advol->vol_name == name && advol->vol_id == id) {
-			return (advol);
+		if (advol->vol_domain == adom) {
+			if (advol->vol_name == name && advol->vol_id == id) {
+				return (advol);
+			}
 		}
 	}
 	return (NULL);
 }
 
 void
-advvm_volume_insert(advol)
-	advvm_volume_t 		*advol;
+advvm_volume_insert(advol, name, id)
+	
 {
-	struct advvolume_list 	*bucket;
-
-	bucket = &domain_list;
+	struct advdomain_list 	*bucket;
+	
+	bucket = &domain_list[advvm_hash(adom)];
 
 	TAILQ_INSERT_HEAD(bucket, advol, vol_entries);
 }
