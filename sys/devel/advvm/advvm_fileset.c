@@ -114,7 +114,7 @@ advvm_filset_find(adom, name, id)
 	advvm_fileset_t         *adfst;
 	
 	bucket = &domain_list[advvm_hash(adom)];
-	TAILQ_FOREACH(adfst, bucket, dom_filesets) {
+	TAILQ_FOREACH(adfst, bucket, fst_entries) {
 		if (adfst->fst_domain == adom) {
 			if (adfst->fst_name == name && adfst->fst_id == id) {
         return (adfst);
@@ -153,7 +153,7 @@ advvm_filset_insert(adom, adfst, name, id)
 	
 	bucket = &domain_list[advvm_hash(adom)];
 
-	TAILQ_INSERT_HEAD(bucket, adfst, dom_filesets);
+	TAILQ_INSERT_HEAD(bucket, adfst, fst_entries);
 }
 
 void
@@ -166,7 +166,7 @@ advvm_filset_remove(adom, name, id)
 	advvm_fileset_t 		    *adfst;
 	
 	bucket = &domain_list[advvm_hash(adom)];
-	TAILQ_FOREACH(adfst, bucket, dom_volumes) {
+	TAILQ_FOREACH(adfst, bucket, fst_entries) {
 		if (adfst->fst_domain == adom) {
 			if (adfst->fst_name == name && adfst->fst_id == id) {
 				TAILQ_REMOVE(bucket, adfst, dom_filesets);
