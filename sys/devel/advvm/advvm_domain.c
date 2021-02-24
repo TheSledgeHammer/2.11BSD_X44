@@ -67,7 +67,7 @@ advvm_domain_create(adom, name, id, start, end, flags)
 }
 
 uint32_t
-advvm_domain_hash(adom)
+advvm_hash(adom)
 	advvm_domain_t *adom;
 {
 	uint32_t hash1 = triple32(sizeof(adom)) % MAXDOMAIN;
