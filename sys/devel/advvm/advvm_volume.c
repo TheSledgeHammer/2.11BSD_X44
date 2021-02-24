@@ -52,6 +52,16 @@ advvm_volume_init(advol)
 }
 
 void
+advvm_volume_set_domain(advol, adom)
+	advvm_volume_t *advol;
+	advvm_domain_t *adom;
+{
+	advol->vol_domain = adom;
+	advol->vol_domain_name = adom->dom_name;
+	advol->vol_domain_id = adom->dom_id;
+}
+
+void
 advvm_volume_set_label(label, sysname, name, creation, update, dsize)
 	struct advvm_label 	*label;
 	char 			*sysname, *name;
@@ -84,16 +94,6 @@ advvm_volume_set_block(block, start, end, size, addr, flags)
 	block->ablk_size = size;
 	block->ablk_addr = addr;
 	block->ablk_flags = flags;
-}
-
-void
-advvm_volume_set_domain(advol, adom)
-	advvm_volume_t *advol;
-	advvm_domain_t *adom;
-{
-	advol->vol_domain = adom;
-	advol->vol_domain_name = adom->dom_name;
-	advol->vol_domain_id = adom->dom_id;
 }
 
 void
@@ -158,7 +158,7 @@ advvm_volume_insert(adom, advol, name, id, flags)
 	} else {
 		advvm_volume_create(advol, advol->vol_block, name, id, flags);
 	}
-	advvm_volume_set_domain(advol, adfst);
+	advvm_volume_set_domain(advol, adom);
 	
 	bucket = &domain_list[advvm_hash(adom)];
 
