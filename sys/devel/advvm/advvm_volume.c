@@ -148,7 +148,7 @@ advvm_volume_insert(adom, advol, name, id, flags)
 	if(advol == NULL) {
 		return;
 	}
-	if(
+
 	if(advol->vol_block == NULL) {
 		panic("advvm_volume_insert: no volume block set");
 		return;
