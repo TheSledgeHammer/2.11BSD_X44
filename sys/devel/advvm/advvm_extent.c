@@ -71,7 +71,7 @@ advvm_allocate_region(pool, start, size, flags)
 			if(size <= (pool->adp_end - pool->adp_start)) {
 				error = extent_alloc_region(pool->adp_extent, start, size, flags);
 			} else {
-				panic("advvm_allocate_pool: extent region size too big");
+				panic("advvm_allocate_region: extent region size too big");
 			}
 		}
 	} else {
