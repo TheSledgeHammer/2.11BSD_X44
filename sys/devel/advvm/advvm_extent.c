@@ -67,7 +67,7 @@ advvm_allocate_region(pool, start, size, flags)
 	int error;
 
 	if(advvm_extent_check(pool)) {
-		if(start >= pool->adp_start && start <= pool->adp_end) {
+		if((start >= pool->adp_start) && (start <= pool->adp_end) && (start >= end)) {
 			if(size <= (pool->adp_end - pool->adp_start)) {
 				error = extent_alloc_region(pool->adp_extent, start, size, flags);
 			} else {
