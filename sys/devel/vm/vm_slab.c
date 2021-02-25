@@ -43,8 +43,8 @@
 #include <devel/sys/malloctypes.h>
 #include <devel/vm/include/vm_slab.h>
 
-struct slablist 	*slab_buckets;
-simple_lock_data_t	slab_bucket_lock;
+struct slablist 	*slab_list;
+simple_lock_data_t	slab_list_lock;
 
 /*
  * TODO:
@@ -58,7 +58,7 @@ slab_create()
     CIRCLEQ_INIT(&slab_cache_list);
     CIRCLEQ_INIT(&slab_list);
     slab_count = 0;
-    simple_lock_init(&slab_bucket_lock, "slab_bucket_lock");
+    simple_lock_init(&slab_list_lock, "slab_list_lock");
 }
 
 /*
@@ -75,10 +75,10 @@ slab_malloc(size, mtype, flags)
 {
 	slab_t slab;
 
-	if(slab == NULL) {
-		slab = (slab_t) malloc(sizof(*slab), mtype, flags);
-	}
 	slab_insert(slab, size, mtype, flags);
+	if(slab->s_size == size) {
+		malloc(slab->s_size, type, flags);
+	}
 }
 
 void
@@ -89,8 +89,8 @@ slab_free(addr, mtype)
 	slab_t slab;
 
 	slab = slab_lookup(addr, mtype);
-	if(slab) {
-		slab_remove(addr, mtype);
+	if (slab) {
+		slab_remove(addr);
 	} else {
 		free(addr, mtype);
 	}
@@ -115,25 +115,23 @@ slabmeta(slab, size, mtype, flags)
 
 	/* slab metadata */
 	meta = slab->s_meta;
-    meta->sm_bslots = BUCKET_SLOTS(bsize);
-    meta->sm_aslots = ALLOCATED_SLOTS(size);
-    meta->sm_freeslots = SLOTSFREE(meta->sm_bslots, meta->sm_aslots);
-    if(meta->sm_freeslots < 0) {
-    	meta->sm_freeslots = 0;
-    }
-    if(indx < 10) {
-        meta->sm_type = SLAB_SMALL;
-    } else {
-    	if(indx >= 10) {
-    		meta->sm_type = SLAB_LARGE;
+    	meta->sm_bslots = BUCKET_SLOTS(bsize);
+    	meta->sm_aslots = ALLOCATED_SLOTS(size);
+    	meta->sm_freeslots = SLOTSFREE(meta->sm_bslots, meta->sm_aslots);
+    	if(meta->sm_freeslots < 0) {
+    		meta->sm_freeslots = 0;
     	}
-    }
+    	if(indx < 10) {
+        	meta->sm_type = SLAB_SMALL;
+    	} else {
+		meta->sm_type = SLAB_LARGE;
+    	}
 
-	/* test if free bucket slots is between 25% to 75% */
-	if((meta->sm_freeslots >= (meta->sm_bslots * 0.25)) && (meta->sm_freeslots <= (meta->sm_bslots * 0.75))) {
+	/* test if free bucket slots is between 5% to 95% */
+	if((meta->sm_freeslots >= (meta->sm_bslots * 0.05)) && (meta->sm_freeslots <= (meta->sm_bslots * 0.95))) {
 		slab->s_flags |= SLAB_PARTIAL;
-	/* test if free bucket slots is greater than 75% */
-	} else if(meta->sm_freeslots > (meta->sm_bslots * 0.75)) {
+	/* test if free bucket slots is greater than 95% */
+	} else if(meta->sm_freeslots > (meta->sm_bslots * 0.95)) {
 		slab->s_flags |= SLAB_FULL;
 	} else {
 		slab->s_flags |= SLAB_EMPTY;
@@ -145,15 +143,15 @@ slab_lookup(size, mtype)
 	long    size;
 	int 	mtype;
 {
-	struct slablist   *slabs;
+    struct slablist   *slabs;
     register slab_t   slab;
 
-    slabs = &slab_buckets[BUCKETINDX(size)];
-    simple_lock(&slab_bucket_lock);
+    slabs = &slab_list[BUCKETINDX(size)];
+    simple_lock(&slab_list_lock);
     if(slab->s_meta == SLAB_SMALL) {
     	for(slab = CIRCLEQ_FIRST(slabs); slab != NULL; slab = CIRCLEQ_NEXT(slab, s_list)) {
     		if(slab->s_size == size && slab->s_mtype == mtype) {
-    			simple_unlock(&slab_bucket_lock);
+    			simple_unlock(&slab_list_lock);
     			return (slab);
     		}
     	}
@@ -161,7 +159,7 @@ slab_lookup(size, mtype)
     if(slab->s_meta == SLAB_LARGE) {
     	for(slab = CIRCLEQ_LAST(slabs); slab != NULL; slab = CIRCLEQ_NEXT(slab, s_list)) {
     		if(slab->s_size == size && slab->s_mtype == mtype) {
-    			simple_unlock(&slab_bucket_lock);
+    			simple_unlock(&slab_list_lock);
     			return (slab);
     		}
     	}
@@ -173,8 +171,8 @@ slab_lookup(size, mtype)
 void
 slab_insert(slab, size, mtype, flags)
     slab_t  slab;
-	u_long  size;
-	int		mtype, flags;
+    u_long  size;
+    int	    mtype, flags;
 {
     register struct slablist  *slabs;
 
@@ -184,27 +182,27 @@ slab_insert(slab, size, mtype, flags)
 
     slabmeta(slab, size, mtype, flags);
 
-    slabs = &slab_buckets[BUCKETINDX(size)];
-    simple_lock(&slab_bucket_lock);
+    slabs = &slab_list[BUCKETINDX(size)];
+    simple_lock(&slab_list_lock);
     if(slab->s_meta->sm_type == SLAB_SMALL) {
         CIRCLEQ_INSERT_HEAD(slabs, slab, s_list);
     } else {
         CIRCLEQ_INSERT_TAIL(slabs, slab, s_list);
     }
-    simple_unlock(&slab_bucket_lock);
+    simple_unlock(&slab_list_lock);
     slab_count++;
 }
 
 void
 slab_remove(size)
-	long    size;
+    long    size;
 {
-	struct 	 slablist  *slabs;
+    struct slablist  *slabs;
     register slab_t     slab;
 
-    slabs = &slab_buckets[BUCKETINDX(size)];
-    simple_lock(&slab_bucket_lock);
+    slabs = &slab_list[BUCKETINDX(size)];
+    simple_lock(&slab_list_lock);
     CIRCLEQ_REMOVE(slabs, slab, s_list);
-	simple_unlock(&slab_bucket_lock);
-	slab_count--;
+    simple_unlock(&slab_list_lock);
+    slab_count--;
 }
