@@ -60,23 +60,24 @@ typedef struct slab_metadata    *slab_metadata_t;
 struct slablist;
 CIRCLEQ_HEAD(slablist, slab);
 struct slab {
-    CIRCLEQ_ENTRY(slab)         s_list;
-    CIRCLEQ_ENTRY(slab)         s_cache;
+    CIRCLEQ_ENTRY(slab)         s_list;                                         /* slab list entry */
+    CIRCLEQ_ENTRY(slab)         s_cache;                                        /* cache list entry */
 
-    slab_metadata_t             s_meta;
-    u_long                      s_size;
-    int							s_mtype;
+    slab_metadata_t             s_meta;                                         /* slab metadata */
+    u_long                      s_size;     
+    int							s_mtype;                                        /* malloc type */
 
     int							s_flags;
     int                         s_refcount;
+    int                         s_usecount;                                     /* usage counter for slab caching */
 };
 typedef struct slab             *slab_t;
 
 struct slablist			        slab_cache_list;
-int			                    slab_cache_count;
+int			                    slab_cache_count;                               /* number of items in cache */
 
 struct slablist			        slab_list;
-int			                    slab_count;
+int			                    slab_count;                                     /* number of items in slablist */
 
 /* slab flags */
 #define SLAB_FULL               0x01        									/* slab full */
