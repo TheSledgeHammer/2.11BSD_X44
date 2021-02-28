@@ -44,8 +44,8 @@ advvm_fileset_init(adfst)
 {
 	adfst->fst_name = NULL;
 	adfst->fst_id = 0;
-	adfst->fst_tag = NULL;
-  adfst->fst_file_directory = NULL;
+	adfst->fst_tags = NULL;
+	adfst->fst_file_directory = NULL;
 }
 
 void
@@ -90,16 +90,16 @@ advvm_filset_set_file_directory(fdir, tag, name, dev)
 
 void
 advvm_fileset_create(adfst, tag, fdir, name, id)
-  advvm_fileset_t *adfst;
-  advvm_tag_dir_t *tag;
-  advvm_file_dir_t *fdir;
-	char 			      *name;
-	uint32_t 		    id;
+  advvm_fileset_t 	*adfst;
+  advvm_tag_dir_t 	*tag;
+  advvm_file_dir_t 	*fdir;
+  char 				*name;
+  uint32_t 			id;
 {
   advvm_malloc((advvm_fileset_t *)adfst, sizeof(advvm_fileset_t *));
   adfst->fst_name = name;
-	adfst->fst_id = id;
-  adfst->fst_tag = tag;
+  adfst->fst_id = id;
+  adfst->fst_tags = tag;
   adfst->fst_file_directory = fdir;
   advvm_storage_create(adfst->fst_storage, start, end, size, addr, flags); /* XXX to complete */
 }
@@ -126,9 +126,9 @@ advvm_filset_find(adom, name, id)
 
 void
 advvm_filset_insert(adom, adfst, name, id)
-	advvm_domain_t    *adom;
+	advvm_domain_t    	*adom;
 	advvm_fileset_t 	*adfst;
-	char 		          *name;
+	char 		        *name;
 	uint32_t 	        id;
 {
 	struct advdomain_list 	*bucket;
@@ -140,7 +140,7 @@ advvm_filset_insert(adom, adfst, name, id)
 		return;
 	}
 
-	if(adfst->fst_tag == NULL) {
+	if(adfst->fst_tags == NULL) {
 		panic("advvm_fileset_insert: no tag directory set");
 		return;
 	} else if(adfst->fst_file_directory == NULL) {
@@ -163,13 +163,13 @@ advvm_filset_remove(adom, name, id)
 	uint32_t 	id;
 {
 	struct advdomain_list 	*bucket;
-	advvm_fileset_t 		    *adfst;
+	advvm_fileset_t 		*adfst;
 	
 	bucket = &domain_list[advvm_hash(adom)];
 	TAILQ_FOREACH(adfst, bucket, fst_entries) {
 		if (adfst->fst_domain == adom) {
 			if (adfst->fst_name == name && adfst->fst_id == id) {
-				TAILQ_REMOVE(bucket, adfst, dom_filesets);
+				TAILQ_REMOVE(bucket, adfst, fst_entries);
 			}
 		}
 	}

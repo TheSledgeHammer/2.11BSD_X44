@@ -57,6 +57,7 @@
 #include <sys/proc.h>
 #include <sys/queue.h>
 #include <sys/select.h>
+#include <sys/user.h>
 
 #include <machine/bus.h>
 #include <machine/endian.h>
