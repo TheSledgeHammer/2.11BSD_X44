@@ -228,13 +228,12 @@ cfs_schedcpu(p)
 	/* check base scheduling period */
 	if(EBSCHEDULE(cfs)) {
 		tmp_bsched = cfs->cfs_bsched;
-		new_bsched = (cfs->cfs_tasks * cfs->cfs_bmg);
+		new_bsched = (cfs->cfs_cpu * cfs->cfs_bmg);
 		cfs->cfs_bsched = new_bsched;
 	}
 
 	/* run-through red-black tree */
 	struct proc *nxt;
-	struct proc *tmp;
 	struct proc *left;
 	for(p = RB_FIRST(gsched_cfs_rbtree, cfs)->cfs_proc; p != NULL; p = nxt) {
 		nxt = RB_NEXT(gsched_cfs_rbtree, cfs, p)->cfs_proc;

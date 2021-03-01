@@ -41,9 +41,6 @@
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
-#if defined(__FreeBSD__)
-#include <sys/bus.h>
-#endif
  
 #include <dev/usb/usb.h>
 #include <dev/usb/usbhid.h>
@@ -226,6 +223,7 @@ ret:
 					s->minset = 0;
 					return (1);
 				}
+				break;
 			case 9: /* Output */
 				if (!(s->kindset & (1 << hid_output)))
 					continue;

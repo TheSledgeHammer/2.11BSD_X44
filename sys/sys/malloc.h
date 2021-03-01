@@ -122,8 +122,9 @@
 #define M_DEVSW			70	/* device switch table */
 #define M_DEVSWHASH		71	/* device switch table hash structure */
 #define M_OVERLAY		72	/* Use Overlay Space Memory */
-#define	M_TEMP			73	/* misc temporary data buffers */
-#define	M_LAST			74	/* Must be last type + 1 */
+#define M_USB			73	/* USB general */
+#define	M_TEMP			74	/* misc temporary data buffers */
+#define	M_LAST			75	/* Must be last type + 1 */
 
 #define INITKMEMNAMES {						\
 	"free",			/* 0 M_FREE */ 			\
@@ -199,7 +200,8 @@
 	"devsw",		/* 70 M_DEVSW */		\
 	"devswhash",	/* 71 M_DEVSWHASH */	\
 	"overlay space",/* 72 M_OVERLAY */		\
-	"temp",			/* 73 M_TEMP */ 		\
+	"usb",			/* 73 M_USB */			\
+	"temp",			/* 74 M_TEMP */ 		\
 }
 
 struct kmemstats {

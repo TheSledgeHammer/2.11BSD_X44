@@ -49,6 +49,7 @@
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 #include <sys/queue.h>
+#include <sys/user.h>
 
 #ifdef DIAGNOSTIC
 #include <sys/proc.h>
@@ -69,15 +70,15 @@ extern int usbdebug;
 #define DPRINTFN(n,x)
 #endif
 
-#define USB_MEM_SMALL 64
-#define USB_MEM_CHUNKS 64
-#define USB_MEM_BLOCK (USB_MEM_SMALL * USB_MEM_CHUNKS)
+#define USB_MEM_SMALL 	64
+#define USB_MEM_CHUNKS 	64
+#define USB_MEM_BLOCK 	(USB_MEM_SMALL * USB_MEM_CHUNKS)
 
 /* This struct is overlayed on free fragments. */
 struct usb_frag_dma {
-	usb_dma_block_t *block;
-	u_int offs;
-	LIST_ENTRY(usb_frag_dma) next;
+	usb_dma_block_t 			*block;
+	u_int 						offs;
+	LIST_ENTRY(usb_frag_dma) 	next;
 };
 
 usbd_status	usb_block_allocmem (bus_dma_tag_t, size_t, size_t, usb_dma_block_t **);
@@ -132,23 +133,19 @@ usb_block_allocmem(tag, size, align, dmap)
 	p->size = size;
 	p->align = align;
 	error = bus_dmamem_alloc(tag, p->size, align, 0,
-				 p->segs, sizeof(p->segs)/sizeof(p->segs[0]),
-				 &p->nsegs, BUS_DMA_NOWAIT);
+				 p->segs, sizeof(p->segs)/sizeof(p->segs[0]), &p->nsegs, BUS_DMA_NOWAIT);
 	if (error)
 		return (USBD_NOMEM);
 
-	error = bus_dmamem_map(tag, p->segs, p->nsegs, p->size, 
-			       &p->kaddr, BUS_DMA_NOWAIT|BUS_DMA_COHERENT);
+	error = bus_dmamem_map(tag, p->segs, p->nsegs, p->size, &p->kaddr, BUS_DMA_NOWAIT|BUS_DMA_COHERENT);
 	if (error)
 		goto free;
 
-	error = bus_dmamap_create(tag, p->size, 1, p->size,
-				  0, BUS_DMA_NOWAIT, &p->map);
+	error = bus_dmamap_create(tag, p->size, 1, p->size, 0, BUS_DMA_NOWAIT, &p->map);
 	if (error)
 		goto unmap;
 
-	error = bus_dmamap_load(tag, p->map, p->kaddr,p->size, NULL, 
-				BUS_DMA_NOWAIT);
+	error = bus_dmamap_load(tag, p->map, p->kaddr,p->size, NULL, BUS_DMA_NOWAIT);
 	if (error)
 		goto destroy;
 	return 0;

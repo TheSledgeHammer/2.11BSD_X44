@@ -66,8 +66,6 @@ struct gsched_cfs {
     u_char 						cfs_bmg;					/* base minimum granularity */
     u_char 						cfs_bsched;					/* base scheduling period */
 
-    int							cfs_tasks;					/* counter for number of tasks XXX: Temporary */
-
     u_char  					cfs_priweight;				/* priority weighting (calculated from various scheduling factors) */
 };
 

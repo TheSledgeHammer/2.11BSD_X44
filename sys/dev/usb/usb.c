@@ -54,10 +54,13 @@
 #include <sys/user.h>
 
 #include <dev/usb/usb.h>
-
 #include <dev/usb/usbdi.h>
+#include <dev/usb/usbdi_util.h>
+
+#include <machine/bus.h>
+
 #include <dev/usb/usbdivar.h>
-#include <dev/usb/usb_port.h>
+#include <dev/usb/usb_quirks.h>
 
 #ifdef USB_DEBUG
 #define DPRINTF(x)		if (usbdebug) printf x
@@ -79,23 +82,16 @@ extern int	ohcidebug;
 extern int	ehcidebug;
 #endif
 
-/*
- * 0  - do usual exploration
- * 1  - do not use timeout exploration
- * >1 - do no exploration
- */
-int	usb_noexplore = 0;
-#define USBUNIT(dev) (minor(dev))
-const char *usbrev_str[] = USBREV_STR;
-
 struct usb_softc {
 	struct device		sc_dev;			/* base device */
 	usbd_bus_handle 	sc_bus;			/* USB controller */
 	struct usbd_port 	sc_port;		/* dummy port for root hub */
+
 	int		 			sc_speed;
 	char 				sc_running;
-	char 				sc_exploring;
 	struct selinfo 		sc_consel;		/* waiting for connect change */
+
+	//struct proc			*sc_event_thread;
 };
 
 TAILQ_HEAD(, usb_task) usb_all_tasks;
@@ -119,11 +115,18 @@ struct cdevsw usb_cdevsw = {
 		.d_strategy = nostrategy,
 };
 
-struct cfdriver usb_cd = {
-	NULL, "usb", DV_DULL, usb_match, usb_attach, sizeof(struct usb_softc)
-};
+/*
+ * 0  - do usual exploration
+ * 1  - do not use timeout exploration
+ * >1 - do no exploration
+ */
+int	usb_noexplore = 0;
+#define USBUNIT(dev) 	(minor(dev))
+const char *usbrev_str[] = USBREV_STR;
 
-usbd_status usb_discover (struct usb_softc *);
+struct cfdriver usb_cd = {
+	NULL, "usb", usb_match, usb_attach, DV_DULL, sizeof(struct usb_softc)
+};
 
 int
 usb_match(struct device *parent, struct cfdata *match, void *aux)
@@ -137,17 +140,18 @@ usb_attach(struct device *parent, struct device *self, void *aux)
 {
 	struct usb_softc *sc = (struct usb_softc *)self;
 	usbd_device_handle dev;
-	usbd_status r;
+	usbd_status err;
 	int usbrev;
 
 	DPRINTF(("usbd_attach\n"));
+
 	usbd_init();
 	sc->sc_bus = aux;
 	sc->sc_bus->usbctl = sc;
 	sc->sc_running = 1;
-	sc->sc_bus->use_polling = 1;
+	sc->sc_bus->use_polling = 0;
 	sc->sc_port.power = USB_MAX_POWER;
-	r = usbd_new_device(&sc->sc_dev, sc->sc_bus, 0, 0, 0, &sc->sc_port);
+	err = usbd_new_device(&sc->sc_dev, sc->sc_bus, 0, sc->sc_speed, 0, &sc->sc_port);
 	usbrev = sc->sc_bus->usbrev;
 	printf(": USB revision %s", usbrev_str[usbrev]);
 	switch (usbrev) {
@@ -168,7 +172,7 @@ usb_attach(struct device *parent, struct device *self, void *aux)
 	}
 	printf("\n");
 
-	if (r == USBD_NORMAL_COMPLETION) {
+	if (err == USBD_NORMAL_COMPLETION) {
 		dev = sc->sc_port.device;
 		if (!dev->hub) {
 			sc->sc_running = 0;
@@ -178,7 +182,7 @@ usb_attach(struct device *parent, struct device *self, void *aux)
 		sc->sc_bus->root_hub = dev;
 		dev->hub->explore(sc->sc_bus->root_hub);
 	} else {
-		printf("%s: root hub problem, error=%d\n", USBDEVNAME(sc->sc_dev), r);
+		printf("%s: root hub problem, error=%d\n", USBDEVNAME(sc->sc_dev), err);
 		sc->sc_running = 0;
 	}
 	sc->sc_bus->use_polling = 0;
@@ -238,11 +242,6 @@ usbioctl(dev, cmd, data, flag, p)
 	if (sc->sc_bus->dying)
 		return (EIO);
 
-	if (sc == 0 || !sc->sc_running) {
-		return (ENXIO);
-	}
-
-	error = 0;
 	switch (cmd) {
 #ifdef USB_DEBUG
 	case USB_SETDEBUG:
@@ -258,9 +257,6 @@ usbioctl(dev, cmd, data, flag, p)
 #endif
 		break;
 #endif
-	case USB_DISCOVER:
-		usb_discover(sc);
-		break;
 
 	case USB_REQUEST:
 	{
@@ -339,7 +335,7 @@ usbioctl(dev, cmd, data, flag, p)
 		break;
 
 	default:
-		return (ENXIO);
+		return (EINVAL);
 	}
 	return (0);
 }
@@ -353,15 +349,17 @@ usbpoll(dev, events, p)
 	int unit = USBUNIT(dev);
 	struct usb_softc *sc;
 	int revents, s;
-
 	sc = usb_cd.cd_devs[unit];
+
 
 	DPRINTFN(2, ("usbpoll: sc=%p events=0x%x\n", sc, events));
 	s = splusb();
 	revents = 0;
-	if (events & (POLLOUT | POLLWRNORM))
-		if (sc->sc_bus->needs_explore)
+	if (events & (POLLOUT | POLLWRNORM)) {
+		if (sc->sc_bus->needs_explore) {
 			revents |= events & (POLLOUT | POLLWRNORM);
+		}
+	}
 	DPRINTFN(2, ("usbpoll: revents=0x%x\n", revents));
 	if (revents == 0) {
 		if (events & (POLLOUT | POLLWRNORM)) {
@@ -403,35 +401,31 @@ usb_get_bus_handle(n, h)
 }
 #endif
 
-usbd_status
+void
 usb_discover(sc)
 	struct usb_softc *sc;
 {
-	int s;
-
-	/* Explore device tree from the root */
-	/* We need mutual exclusion while traversing the device tree. */
-	s = splusb();
-	while (sc->sc_exploring)
-		tsleep(&sc->sc_exploring, PRIBIO, "usbdis", 0);
-	sc->sc_exploring = 1;
-	sc->sc_bus->needs_explore = 0;
-	splx(s);
-
-	sc->sc_bus->root_hub->hub->explore(sc->sc_bus->root_hub);
-
-	s = splusb();
-	sc->sc_exploring = 0;
-	wakeup(&sc->sc_exploring);
-	splx(s);
-	/* XXX should we start over if sc_needsexplore is set again? */
-	return (0);
+	DPRINTFN(2,("usb_discover\n"));
+#ifdef USB_DEBUG
+	if (usb_noexplore > 1)
+		return;
+#endif
+	/*
+	 * We need mutual exclusion while traversing the device tree,
+	 * but this is guaranteed since this function is only called
+	 * from the event thread for the controller.
+	 */
+	while (sc->sc_bus->needs_explore && !sc->sc_bus->dying) {
+			sc->sc_bus->needs_explore = 0;
+			sc->sc_bus->root_hub->hub->explore(sc->sc_bus->root_hub);
+	}
 }
 
 void
 usb_needs_explore(bus)
 	usbd_bus_handle bus;
 {
+	DPRINTFN(2,("usb_needs_explore\n"));
 	bus->needs_explore = 1;
 	selwakeup(&bus->usbctl->sc_consel);
 }

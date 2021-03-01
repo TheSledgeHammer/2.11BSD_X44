@@ -63,9 +63,3 @@ file	dev/usb/umodem.c		umodem		needs-flag
 device	ums: wsmousedev
 attach	ums at uhub
 file	dev/usb/ums.c			ums			needs-flag
-
-#
-# Inside Out Networks, Edgeport/4, 4 serial ports
-#device	uep
-#attach	uep at uhub
-#file	dev/usb/uep.c			uep

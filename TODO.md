@@ -32,15 +32,12 @@ A General todo list. Don't hesitate to add to this list. :)
 ## dev:
 - Essential Driver Support:
 	- usb: 								Work in progress
-	- video:								Work in progress
-	- mouse/keyboard:						Work in progress (see: syscons "devel/dev")
-- Fix:
-	- video (kqfilter)
+		- add: vhci, kbd, mouse
+		- fix: ehci, ohci & uhci
+	- mouse/keyboard:						Work in progress
 
 ## fs:
-- ISO & MSDOSFS:
-	- both need touching up.
-	- methods and functions are out-of-date with those in the rest of kernel
+
 
 ## lib:
 	
@@ -54,7 +51,7 @@ Of Interest Todo:
 	- efi
 	- commands: needs work
 	- install: not present
-### arch:
+- boot/arch:
 	- i386:
 		- gptboot
 		- isoboot

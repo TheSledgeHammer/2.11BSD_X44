@@ -39,6 +39,7 @@
 #ifndef _I386_MCONTEXT_H_
 #define _I386_MCONTEXT_H_
 
+
 /*
  * mcontext extensions to handle signal delivery.
  */
@@ -51,66 +52,79 @@
  * Intel386(tm) Architecture Processor Supplement, Fourth Edition.
  */
 
-//#ifdef __i386__
-/* Keep _MC_* values similar to amd64 */
-#define	_MC_HASSEGS		0x1
-#define	_MC_HASBASES	0x2
-#define	_MC_HASFPXSTATE	0x4
-#define	_MC_FLAG_MASK	(_MC_HASSEGS | _MC_HASBASES | _MC_HASFPXSTATE)
+/*
+ * General register state
+ */
+#define _NGREG		19
+typedef	int			__greg_t;
+typedef	__greg_t	__gregset_t[_NGREG];
 
-struct mcontext {
-	/*
-	 * The definition of mcontext_t must match the layout of
-	 * struct sigcontext after the sc_mask member.  This is so
-	 * that we can support sigcontext and ucontext_t at the same
-	 * time.
-	 */
-	__register_t	mc_onstack;	/* XXX - sigcontext compat. */
-	__register_t	mc_gs;		/* machine state (struct trapframe) */
-	__register_t	mc_fs;
-	__register_t	mc_es;
-	__register_t	mc_ds;
-	__register_t	mc_edi;
-	__register_t	mc_esi;
-	__register_t	mc_ebp;
-	__register_t	mc_isp;
-	__register_t	mc_ebx;
-	__register_t	mc_edx;
-	__register_t	mc_ecx;
-	__register_t	mc_eax;
-	__register_t	mc_trapno;
-	__register_t	mc_err;
-	__register_t	mc_eip;
-	__register_t	mc_cs;
-	__register_t	mc_eflags;
-	__register_t	mc_esp;
-	__register_t	mc_ss;
+#define _REG_GS		0
+#define _REG_FS		1
+#define _REG_ES		2
+#define _REG_DS		3
+#define _REG_EDI	4
+#define _REG_ESI	5
+#define _REG_EBP	6
+#define _REG_ESP	7
+#define _REG_EBX	8
+#define _REG_EDX	9
+#define _REG_ECX	10
+#define _REG_EAX	11
+#define _REG_TRAPNO	12
+#define _REG_ERR	13
+#define _REG_EIP	14
+#define _REG_CS		15
+#define _REG_EFL	16
+#define _REG_UESP	17
+#define _REG_SS		18
 
-	int				mc_len;			/* sizeof(mcontext_t) */
-#define	_MC_FPFMT_NODEV		0x10000	/* device not present or configured */
-#define	_MC_FPFMT_387		0x10001
-#define	_MC_FPFMT_XMM		0x10002
-	int				mc_fpformat;
-#define	_MC_FPOWNED_NONE	0x20000	/* FP state not used */
-#define	_MC_FPOWNED_FPU		0x20001	/* FP state came from FPU */
-#define	_MC_FPOWNED_PCB		0x20002	/* FP state came from PCB */
-	int				mc_ownedfp;
-	__register_t 	mc_flags;
-	/*
-	 * See <machine/npx.h> for the internals of mc_fpstate[].
-	 */
-	int				mc_fpstate[128];// __aligned(16);
+/*
+ * Floating point register state
+ */
+typedef struct {
+	union {
+		struct {
+			int		__fp_state[27];		/* Environment and registers */
+			int		__fp_status;		/* Software status word */
+		} __fpchip_state;
+		struct {
+			char	__fp_emul[246];
+			char	__fp_epad[2];
+		} __fp_emul_space;
+		struct {
+			char	__fp_xmm[512];
+		} __fp_xmm_state;
+		int			__fp_fpregs[128];
+	} __fp_reg_set;
+	long			__fp_wregs[33];		/* Weitek? */
+} __fpregset_t;
 
-	__register_t 	mc_fsbase;
-	__register_t 	mc_gsbase;
+typedef struct {
+	__gregset_t		__gregs;
+	__fpregset_t	__fpregs;
+} mcontext_t;
 
-	__register_t 	mc_xfpustate;
-	__register_t 	mc_xfpustate_len;
+#define _UC_FXSAVE			0x20	/* FP state is in FXSAVE format in XMM space */
 
-	int				mc_spare2[4];
-};
-typedef struct mcontext mcontext_t;
+#define _UC_MACHINE_PAD		5		/* Padding appended to ucontext_t */
 
-//#endif /* __i386__ */
+#define _UC_UCONTEXT_ALIGN	(~0xf)
+
+#ifdef VM86
+/*#include <machine/psl.h>*/
+#define PSL_VM 0x00020000
+#define _UC_MACHINE_SP(uc) ((uc)->uc_mcontext.__gregs[_REG_UESP] + 	\
+		((uc)->uc_mcontext.__gregs[_REG_EFL] & PSL_VM ? 			\
+				((uc)->uc_mcontext.__gregs[_REG_SS] << 4) : 0))
+#endif /* VM86 */
+
+#ifndef _UC_MACHINE_SP
+#define _UC_MACHINE_SP(uc)			((uc)->uc_mcontext.__gregs[_REG_UESP])
+#endif
+#define _UC_MACHINE_PC(uc)			((uc)->uc_mcontext.__gregs[_REG_EIP])
+#define _UC_MACHINE_INTRV(uc)		((uc)->uc_mcontext.__gregs[_REG_EAX])
+
+#define	_UC_MACHINE_SET_PC(uc, pc)	_UC_MACHINE_PC(uc) = (pc)
 
 #endif	/* !_I386_MCONTEXT_H_ */

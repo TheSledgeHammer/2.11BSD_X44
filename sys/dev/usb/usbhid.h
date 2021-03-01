@@ -54,14 +54,14 @@
 #define UR_SET_PROTOCOL			0x0b
 
 typedef struct usb_hid_descriptor {
-	uByte		bLength;
-	uByte		bDescriptorType;
-	uWord		bcdHID;
-	uByte		bCountryCode;
-	uByte		bNumDescriptors;
+	uByte						bLength;
+	uByte						bDescriptorType;
+	uWord						bcdHID;
+	uByte						bCountryCode;
+	uByte						bNumDescriptors;
 	struct {
-		uByte	bDescriptorType;
-		uWord	wDescriptorLength;
+		uByte					bDescriptorType;
+		uWord					wDescriptorLength;
 	} descrs[1];
 } usb_hid_descriptor_t;
 #define USB_HID_DESCRIPTOR_SIZE(n) (9+(n)*3)

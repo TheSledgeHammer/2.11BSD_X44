@@ -48,7 +48,6 @@ typedef struct {
 	int				ss_flags;		/* SS_DISABLE and/or SS_ONSTACK */
 } stack_t;
 
-typedef struct __ucontext	ucontext_t;
 
 struct __ucontext {
 	unsigned int	uc_flags;		/* properties */
@@ -60,6 +59,7 @@ struct __ucontext {
 	long			__uc_pad[_UC_MACHINE_PAD];
 #endif
 };
+typedef struct __ucontext	ucontext_t;
 
 #ifndef _UC_UCONTEXT_ALIGN
 #define _UC_UCONTEXT_ALIGN (~0)
