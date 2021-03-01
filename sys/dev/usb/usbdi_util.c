@@ -42,9 +42,6 @@
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 #include <sys/proc.h>
-#if defined(__FreeBSD__)
-#include <sys/bus.h>
-#endif
 
 #include <dev/usb/usb.h>
 #include <dev/usb/usbhid.h>
@@ -53,7 +50,7 @@
 #include <dev/usb/usbdi_util.h>
 
 #ifdef USB_DEBUG
-#define DPRINTF(x)	if (usbdebug) printf x
+#define DPRINTF(x)		if (usbdebug) printf x
 #define DPRINTFN(n,x)	if (usbdebug>(n)) printf x
 extern int usbdebug;
 #else
@@ -116,8 +113,7 @@ usbd_get_device_desc(dev, d)
 	usb_device_descriptor_t *d;
 {
 	DPRINTFN(3,("usbd_get_device_desc:\n"));
-	return (usbd_get_desc(dev, UDESC_DEVICE, 
-			     0, USB_DEVICE_DESCRIPTOR_SIZE, d));
+	return (usbd_get_desc(dev, UDESC_DEVICE, 0, USB_DEVICE_DESCRIPTOR_SIZE, d));
 }
 
 usbd_status
@@ -407,12 +403,7 @@ usbd_alloc_report_desc(ifc, descp, sizep, mem)
 	usbd_interface_handle ifc;
 	void **descp;
 	int *sizep;
-#if defined(__NetBSD__)
 	int mem;
-#elif defined(__FreeBSD__)
-	struct malloc_type *mem;
-#endif
-	
 {
 	usb_interface_descriptor_t *id;
 	usb_hid_descriptor_t *hid;
@@ -457,8 +448,8 @@ usbd_get_config(dev, conf)
 	return (usbd_do_request(dev, &req, conf));
 }
 
-static void usbd_bulk_transfer_cb __P((usbd_request_handle reqh, 
-		usbd_private_handle priv, usbd_status status));
+static void usbd_bulk_transfer_cb (usbd_request_handle reqh, usbd_private_handle priv, usbd_status status);
+
 static void
 usbd_bulk_transfer_cb(reqh, priv, status)
 	usbd_request_handle reqh;
@@ -482,8 +473,7 @@ usbd_bulk_transfer(reqh, pipe, flags, buf, size, lbl)
 	usbd_status r;
 	int s, error;
 
-	r = usbd_setup_request(reqh, pipe, 0, buf, *size,
-			       flags, USBD_NO_TIMEOUT, usbd_bulk_transfer_cb);
+	r = usbd_setup_request(reqh, pipe, 0, buf, *size, flags, USBD_NO_TIMEOUT, usbd_bulk_transfer_cb);
 	if (r != USBD_NORMAL_COMPLETION)
 		return (r);
 	DPRINTFN(1, ("usbd_bulk_transfer: start transfer %d bytes\n", *size));

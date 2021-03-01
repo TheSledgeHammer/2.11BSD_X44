@@ -37,6 +37,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _USBDI_H_
+#define _USBDI_H_
+
 typedef struct usbd_bus			*usbd_bus_handle;
 typedef struct usbd_device		*usbd_device_handle;
 typedef struct usbd_interface	*usbd_interface_handle;
@@ -143,10 +146,8 @@ usbd_status usbd_device_address (usbd_device_handle dev, u_int8_t *address);
 usbd_status usbd_endpoint_address (usbd_pipe_handle dev, u_int8_t *address);
 usbd_status usbd_endpoint_count (usbd_interface_handle dev, u_int8_t *count);
 usbd_status usbd_interface_count (usbd_device_handle dev, u_int8_t *count);
-#if 0
 u_int8_t usbd_bus_count (void);
 usbd_status usbd_get_bus_handle (u_int8_t index, usbd_bus_handle *bus);
-#endif
 usbd_status usbd_get_root_hub (usbd_bus_handle bus, usbd_device_handle *dev);
 usbd_status usbd_port_count (usbd_device_handle hub, u_int8_t *nports);
 usbd_status usbd_hub2device_handle (usbd_device_handle hub, u_int8_t port, usbd_device_handle *dev);
@@ -184,6 +185,33 @@ usb_endpoint_descriptor_t *usbd_find_edesc (usb_config_descriptor_t *cd, int ifa
 void usbd_dopoll (usbd_interface_handle);
 void usbd_set_polling (usbd_interface_handle iface, int on);
 
+/*
+ * The usb_task structs form a queue of things to run in the USB event
+ * thread.  Normally this is just device discovery when a connect/disconnect
+ * has been detected.  But it may also be used by drivers that need to
+ * perform (short) tasks that must have a process context.
+ */
+struct usb_task {
+	TAILQ_ENTRY(usb_task) next;
+	void (*fun)(void *);
+	void *arg;
+	char onqueue;
+};
+
+void usb_add_task(usbd_device_handle dev, struct usb_task *task);
+void usb_rem_task(usbd_device_handle dev, struct usb_task *task);
+#define usb_init_task(t, f, a) ((t)->fun = (f), (t)->arg = (a), (t)->onqueue = 0)
+
+struct usb_devno {
+	u_int16_t ud_vendor;
+	u_int16_t ud_product;
+};
+const struct usb_devno *usb_match_device(const struct usb_devno *tbl, u_int nentries, u_int sz, u_int16_t vendor, u_int16_t product);
+#define usb_lookup(tbl, vendor, product) \
+	usb_match_device((const struct usb_devno *)(tbl), sizeof (tbl) / sizeof ((tbl)[0]), sizeof ((tbl)[0]), (vendor), (product))
+#define	USB_PRODUCT_ANY		0xffff
+
+
 /* NetBSD attachment information */
 
 /* Attach data */
@@ -191,6 +219,10 @@ struct usb_attach_arg {
 	int						port;
 	int						configno;
 	int						ifaceno;
+	int						vendor;
+	int						product;
+	int						release;
+	int						matchlvl;
 	usbd_device_handle		device;	/* current device */
 	usbd_interface_handle	iface; /* current interface */
 	int						usegeneric;
@@ -198,7 +230,6 @@ struct usb_attach_arg {
 	int						nifaces; /* number of interfaces */
 };
 
-#if defined(__NetBSD__)
 /* Match codes. */
 /* First five codes is for a whole device. */
 #define UMATCH_VENDOR_PRODUCT_REV					14
@@ -220,61 +251,17 @@ struct usb_attach_arg {
 /* No match */
 #define UMATCH_NONE					 				0
 
-#elif defined(__FreeBSD__)
-/* FreeBSD needs values less than zero */
-/* for the moment disabled
-#define UMATCH_VENDOR_PRODUCT_REV					-14
-#define UMATCH_VENDOR_PRODUCT						-13
-#define UMATCH_VENDOR_DEVCLASS_DEVPROTO				-12
-#define UMATCH_DEVCLASS_DEVSUBCLASS_DEVPROTO		-11
-#define UMATCH_DEVCLASS_DEVSUBCLASS					-10
-#define UMATCH_VENDOR_PRODUCT_REV_CONF_IFACE		-9
-#define UMATCH_VENDOR_PRODUCT_CONF_IFACE		 	-8
-#define UMATCH_VENDOR_IFACESUBCLASS_IFACEPROTO		-7
-#define UMATCH_VENDOR_IFACESUBCLASS			 		-6
-#define UMATCH_IFACECLASS_IFACESUBCLASS_IFACEPROTO	-5
-#define UMATCH_IFACECLASS_IFACESUBCLASS				-4
-#define UMATCH_IFACECLASS				 			-3
-#define UMATCH_IFACECLASS_GENERIC			 		-2
-#define UMATCH_GENERIC							 	-1
-#define UMATCH_NONE				      				ENXIO
+/* XXX Perhaps USB should have its own levels? */
+#ifdef USB_USE_SOFTINTR
+#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
+#define splusb 		splsoftnet
+#else
+#define	splusb 		splsoftclock
+#endif /* __HAVE_GENERIC_SOFT_INTERRUPTS */
+#else
+#define splusb 		splbio
+#endif /* USB_USE_SOFTINTR */
+#define splhardusb 	splbio
+#define IPL_USB 	IPL_BIO
 
-* For the moment we use Yes/No answers with appropriate
-* sorting in the config file
-*/
-#define UMATCH_VENDOR_PRODUCT_REV					0
-#define UMATCH_VENDOR_PRODUCT						0
-#define UMATCH_VENDOR_DEVCLASS_DEVPROTO				0
-#define UMATCH_DEVCLASS_DEVSUBCLASS_DEVPROTO		0
-#define UMATCH_DEVCLASS_DEVSUBCLASS					0
-#define UMATCH_VENDOR_PRODUCT_REV_CONF_IFACE		0
-#define UMATCH_VENDOR_PRODUCT_CONF_IFACE			0
-#define UMATCH_VENDOR_IFACESUBCLASS_IFACEPROTO		0
-#define UMATCH_VENDOR_IFACESUBCLASS					0
-#define UMATCH_IFACECLASS_IFACESUBCLASS_IFACEPROTO	0
-#define UMATCH_IFACECLASS_IFACESUBCLASS				0
-#define UMATCH_IFACECLASS							0
-#define UMATCH_IFACECLASS_GENERIC					0
-#define UMATCH_GENERIC								0
-#define UMATCH_NONE				      				ENXIO
-
-
-#endif
-
-void usbd_devinfo (usbd_device_handle, int, char *);
-struct usbd_quirks *usbd_get_quirks (usbd_device_handle);
-void usbd_set_disco (usbd_pipe_handle, void (*)(void *), void *);
-usb_endpoint_descriptor_t *usbd_get_endpoint_descriptor (usbd_interface_handle iface, u_int8_t address);
-
-#if defined(__FreeBSD__)
-int usbd_driver_load   (module_t mod, int what, void *arg);
-void usbd_device_set_desc (device_t device, char *devinfo);
-char *usbd_devname(bdevice *bdev);
-bus_print_child_t usbd_print_child;
-#endif
-
-/* XXX */
-#define splusb splbio
-#define IPL_USB IPL_BIO
-/* XXX */
-
+#endif /* _USBDI_H_ */

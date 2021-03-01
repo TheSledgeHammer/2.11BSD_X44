@@ -9,7 +9,7 @@ defopt	USBVERBOSE
 device	usb { }
 attach	usb at usbus
 file	dev/usb/hid.c			usb
-file	dev/usb/usb.c			usb		needs-flag
+file	dev/usb/usb.c			usb			needs-flag
 file	dev/usb/usbdi.c			usb
 file	dev/usb/usbdi_util.c	usb
 file	dev/usb/usb_mem.c		usb
@@ -62,12 +62,10 @@ file	dev/usb/umodem.c		umodem		needs-flag
 # Mice
 device	ums: wsmousedev
 attach	ums at uhub
-file	dev/usb/ums.c			ums		needs-flag
-
+file	dev/usb/ums.c			ums			needs-flag
 
 #
 # Inside Out Networks, Edgeport/4, 4 serial ports
 #device	uep
 #attach	uep at uhub
 #file	dev/usb/uep.c			uep
-

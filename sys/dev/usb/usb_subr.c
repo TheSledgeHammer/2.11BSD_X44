@@ -41,14 +41,10 @@
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
-#if defined(__NetBSD__)
 #include <sys/device.h>
-#elif defined(__FreeBSD__)
-#include <sys/module.h>
-#include <sys/bus.h>
-#endif
 #include <sys/proc.h>
 #include <sys/select.h>
+#include <sys/user.h>
 
 #include <dev/usb/usb.h>
 
@@ -58,13 +54,8 @@
 #include <dev/usb/usbdevs.h>
 #include <dev/usb/usb_quirks.h>
 
-#if defined(__FreeBSD__)
-#include <machine/clock.h>
-#define delay(d)         DELAY(d)
-#endif
-
 #ifdef USB_DEBUG
-#define DPRINTF(x)	if (usbdebug) printf x
+#define DPRINTF(x)		if (usbdebug) printf x
 #define DPRINTFN(n,x)	if (usbdebug>(n)) printf x
 extern int usbdebug;
 #else
@@ -75,13 +66,12 @@ extern int usbdebug;
 static usbd_status	usbd_set_config (usbd_device_handle, int);
 char *usbd_get_string (usbd_device_handle, int, char *);
 int usbd_getnewaddr (usbd_bus_handle bus);
-#if defined(__NetBSD__)
+
 int usbd_print (void *aux, const char *pnp);
-int usbd_submatch (bdevice *, struct cfdata *cf, void *);
-#endif
+int usbd_submatch (struct device *, struct cfdata *cf, void *);
 void usbd_free_iface_data (usbd_device_handle dev, int ifcno);
 void usbd_kill_pipe (usbd_pipe_handle);
-usbd_status usbd_probe_and_attach (bdevice *parent, usbd_device_handle dev, int port, int addr);
+usbd_status usbd_probe_and_attach (struct device *parent, usbd_device_handle dev, int port, int addr);
 
 
 #ifdef USBVERBOSE
@@ -94,8 +84,8 @@ typedef u_int16_t usb_product_id_t;
 struct usb_knowndev {
 	usb_vendor_id_t		vendor;
 	usb_product_id_t	product;
-	int			flags;
-	char			*vendorname, *productname;
+	int					flags;
+	char				*vendorname, *productname;
 };
 #define	USB_KNOWNDEV_NOPROD	0x01		/* match on vendor only */
 
@@ -311,7 +301,7 @@ usbd_reset_port(dev, port, ps)
 	USETW(req.wLength, 0);
 	r = usbd_do_request(dev, &req, 0);
 	DPRINTFN(1,("usbd_reset_port: port %d reset done, error=%d(%s)\n",
-		    port, r, usbd_error_strs[r]));
+					port, r, usbd_error_strs[r]));
 	if (r != USBD_NORMAL_COMPLETION)
 		return (r);
 	n = 10;
@@ -430,8 +420,7 @@ usbd_fill_iface_data(dev, ifaceidx, altidx)
 	nendpt = ifc->idesc->bNumEndpoints;
 	DPRINTFN(10,("usbd_fill_iface_data: found idesc n=%d\n", nendpt));
 	if (nendpt != 0) {
-		ifc->endpoints = malloc(nendpt * sizeof(struct usbd_endpoint),
-					M_USB, M_NOWAIT);
+		ifc->endpoints = malloc(nendpt * sizeof(struct usbd_endpoint), M_USB, M_NOWAIT);
 		if (ifc->endpoints == 0)
 			return (USBD_NOMEM);
 	} else
@@ -627,8 +616,7 @@ usbd_set_config_index(dev, index, msg)
 	DPRINTF(("usbd_set_config_index: setting new config %d\n",
 		 cdp->bConfigurationValue));
 	nifc = cdp->bNumInterface;
-	dev->ifaces = malloc(nifc * sizeof(struct usbd_interface), 
-			     M_USB, M_NOWAIT);
+	dev->ifaces = malloc(nifc * sizeof(struct usbd_interface), M_USB, M_NOWAIT);
 	if (dev->ifaces == 0) {
 		r = USBD_NOMEM;
 		goto bad;
@@ -718,7 +706,7 @@ usbd_getnewaddr(bus)
 
 usbd_status
 usbd_probe_and_attach(parent, dev, port, addr)
-	bdevice *parent;
+	struct device *parent;
 	usbd_device_handle dev;
 	int port;
 	int addr;
@@ -835,7 +823,7 @@ usbd_probe_and_attach(parent, dev, port, addr)
  */
 usbd_status
 usbd_new_device(parent, bus, depth, lowspeed, port, up)
-	bdevice *parent;
+	struct device *parent;
 	usbd_bus_handle bus;
 	int depth;
 	int lowspeed;
@@ -983,7 +971,6 @@ usbd_remove_device(dev, up)
 	free(dev, M_USB);
 }
 
-#if defined(__NetBSD__)  
 int
 usbd_print(aux, pnp)
 	void *aux;
@@ -1017,26 +1004,17 @@ usbd_submatch(parent, cf, aux)
 	struct usb_attach_arg *uaa = aux;
 
 	if ((uaa->port != 0 &&
-	     cf->uhubcf_port != UHUB_UNK_PORT &&
-	     cf->uhubcf_port != uaa->port) ||
+	     cf->cf_loc[uhubcf_port] != UHUB_UNK_PORT &&
+	     cf->cf_loc[uhubcf_port] != uaa->port) ||
 	    (uaa->configno != UHUB_UNK_CONFIGURATION &&
-	     cf->uhubcf_configuration != UHUB_UNK_CONFIGURATION &&
-	     cf->uhubcf_configuration != uaa->configno) ||
+	     cf->cf_loc[uhubcf_configuration] != UHUB_UNK_CONFIGURATION &&
+	     cf->cf_loc[uhubcf_configuration] != uaa->configno) ||
 	    (uaa->ifaceno != UHUB_UNK_INTERFACE &&
-	     cf->uhubcf_interface != UHUB_UNK_INTERFACE &&
-	     cf->uhubcf_interface != uaa->ifaceno))
+	     cf->cf_loc[uhubcf_interface] != UHUB_UNK_INTERFACE &&
+	     cf->cf_loc[uhubcf_interface] != uaa->ifaceno))
 		return 0;
-	return ((*cf->cf_attach->ca_match)(parent, cf, aux));
+	return ((*cf->cf_driver->cd_match)(parent, cf, aux));
 }
-
-#elif defined(__FreeBSD__)
-static void
-usbd_bus_print_child(device_t bus, device_t dev)
-{
-	/* FIXME print the device address and the configuration used
-	 */
-}
-#endif
 
 usbd_status
 usb_insert_transfer(reqh)
@@ -1073,7 +1051,7 @@ usb_start_next(pipe)
 #endif
 
 	/* First remove remove old */
-	SIMPLEQ_REMOVE_HEAD(&pipe->queue, SIMPLEQ_FIRST(&pipe->queue), next);
+	SIMPLEQ_REMOVE_HEAD(&pipe->queue, next);
 	if (pipe->state != USBD_PIPE_ACTIVE) {
 		pipe->running = 0;
 		return;

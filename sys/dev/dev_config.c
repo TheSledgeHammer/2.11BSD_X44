@@ -64,11 +64,11 @@ static void
 console_init(devsw)
 	struct devswtable *devsw;
 {
-	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cons_cdevsw, NULL);					/* virtual console */
+	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cons_cdevsw, NULL);				/* virtual console */
 
-	DEVSWIO_CONFIG_INIT(devsw, NWSDISPLAY, NULL, &wsdisplay_cdevsw, NULL);		/* Wscons Display */
-	DEVSWIO_CONFIG_INIT(devsw, NWSKBD, NULL, &wskbd_cdevsw, NULL);				/* Wscons Keyboard */
-	DEVSWIO_CONFIG_INIT(devsw, NWSMOUSE, NULL, &wsmouse_cdevsw, NULL);			/* Wscons Mouse */
+	DEVSWIO_CONFIG_INIT(devsw, NWSDISPLAY, NULL, &wsdisplay_cdevsw, NULL);	/* Wscons Display */
+	DEVSWIO_CONFIG_INIT(devsw, NWSKBD, NULL, &wskbd_cdevsw, NULL);			/* Wscons Keyboard */
+	DEVSWIO_CONFIG_INIT(devsw, NWSMOUSE, NULL, &wsmouse_cdevsw, NULL);		/* Wscons Mouse */
 }
 
 /* Add disk driver configuration */
@@ -86,6 +86,10 @@ disk_init(devsw)
 	DEVSWIO_CONFIG_INIT(devsw, NCH, NULL, &ch_cdevsw, NULL);				/* SCSI autochanger */
 	DEVSWIO_CONFIG_INIT(devsw, NUK, NULL, &uk_cdevsw, NULL);				/* SCSI unknown  */
 	DEVSWIO_CONFIG_INIT(devsw, NSS, NULL, &ss_cdevsw, NULL);				/* SCSI scanner */
+
+	/* Pseudo Devices */
+	DEVSWIO_CONFIG_INIT(devsw, NVND, &vnd_bdevsw, &vnd_cdevsw, NULL);		/* vnode disk driver */
+	DEVSWIO_CONFIG_INIT(devsw, NCCD, &ccd_bdevsw, &ccd_cdevsw, NULL);		/* "Concatenated" disk driver */
 }
 
 /* Add miscellaneous driver configuration */
@@ -94,8 +98,6 @@ misc_init(devsw)
 	struct devswtable *devsw;
 {
 	DEVSWIO_CONFIG_INIT(devsw, NCOM, NULL, &com_cdevsw, NULL);				/* Serial port */
-	DEVSWIO_CONFIG_INIT(devsw, NVND, &vnd_bdevsw, &vnd_cdevsw, NULL);		/* vnode disk driver */
-	DEVSWIO_CONFIG_INIT(devsw, NCCD, &ccd_bdevsw, &ccd_cdevsw, NULL);		/* "Concatenated" disk driver */
 	DEVSWIO_CONFIG_INIT(devsw, NKSYMS, NULL, &ksyms_cdevsw, NULL);			/* Kernel symbols device */
 }
 
@@ -104,7 +106,7 @@ static void
 usb_init(devsw)
 	struct devswtable *devsw;
 {
-	//DEVSWIO_CONFIG_INIT(devsw, NUSB, NULL, &usb_cdevsw, NULL);			/* USB controller */
+	DEVSWIO_CONFIG_INIT(devsw, NUSB, NULL, &usb_cdevsw, NULL);				/* Generic USB */
 }
 
 /* Add video driver configuration */
@@ -112,5 +114,5 @@ static void
 video_init(devsw)
 	struct devswtable *devsw;
 {
-//	DEVSWIO_CONFIG_INIT(devsw, NVIDEO , NULL, &video_cdevsw, NULL);			/* generic video I/O */
+	DEVSWIO_CONFIG_INIT(devsw, NVIDEO , NULL, &video_cdevsw, NULL);			/* generic video I/O */
 }

@@ -70,7 +70,7 @@ struct hid_item {
 	int32_t set_delimiter;
 	/* Misc */
 	int32_t collection;
-	int collevel;
+	int 	collevel;
 	enum hid_kind kind;
 	u_int32_t flags;
 	/* Location */

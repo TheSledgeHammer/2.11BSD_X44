@@ -29,8 +29,7 @@
 #include <sys/malloc.h>
 #include <sys/conf.h>
 #include <sys/user.h>
-#include <devel/dev/videoio.h>
-
+#include <sys/videoio.h>
 #include <dev/video/video_if.h>
 
 #include <vm/include/vm_extern.h>
@@ -147,8 +146,7 @@ videoopen(dev_t dev, int flags, int fmt, struct proc *p)
 	sc->sc_frames_ready = 0;
 
 	if (sc->hw_if->open != NULL)
-		return (sc->hw_if->open(sc->hw_hdl, flags, &sc->sc_fsize,
-		    sc->sc_fbuffer, video_intr, sc));
+		return (sc->hw_if->open(sc->hw_hdl, flags, &sc->sc_fsize, sc->sc_fbuffer, video_intr, sc));
 	else
 		return (0);
 }
@@ -216,6 +214,13 @@ videoread(dev_t dev, struct uio *uio, int ioflag)
 	DPRINTF(("uiomove successfully done (%zu bytes)\n", size));
 
 	return (0);
+}
+
+
+int
+videowrite(dev_t dev, struct uio *uio, int ioflag)
+{
+	return (ENXIO);
 }
 
 int
@@ -398,13 +403,13 @@ videopoll(dev_t dev, int events, struct proc *p)
 	return (revents);
 }
 
-paddr_t
+caddr_t
 videommap(dev_t dev, off_t off, int prot)
 {
 	struct video_softc *sc;
 	int unit;
 	caddr_t p;
-	paddr_t pa;
+	caddr_t pa;
 
 	DPRINTF(("%s: off=%lld, prot=%d\n", __func__, off, prot));
 
@@ -427,76 +432,6 @@ videommap(dev_t dev, off_t off, int prot)
 	sc->sc_vidmode = VIDMODE_MMAP;
 
 	return (pa);
-}
-
-void
-filt_videodetach(struct knote *kn)
-{
-	struct video_softc *sc = kn->kn_hook;
-	int s;
-
-	s = splhigh();
-	klist_remove(&sc->sc_rsel.si_note, kn);
-	splx(s);
-}
-
-int
-filt_videoread(struct knote *kn, long hint)
-{
-	struct video_softc *sc = kn->kn_hook;
-
-	if (sc->sc_frames_ready > 0)
-		return (1);
-
-	return (0);
-}
-
-const struct filterops video_filtops = {
-	.f_flags	= FILTEROP_ISFD,
-	.f_attach	= NULL,
-	.f_detach	= filt_videodetach,
-	.f_event	= filt_videoread,
-};
-
-int
-videokqfilter(dev_t dev, struct knote *kn)
-{
-	int unit = VIDEOUNIT(dev);
-	struct video_softc *sc;
-	int s;
-
-	if (unit >= video_cd.cd_ndevs ||
-	    (sc = video_cd.cd_devs[unit]) == NULL)
-		return (ENXIO);
-
-	if (sc->sc_dying)
-		return (ENXIO);
-
-	switch (kn->kn_filter) {
-	case EVFILT_READ:
-		kn->kn_fop = &video_filtops;
-		kn->kn_hook = sc;
-		break;
-	default:
-		return (EINVAL);
-	}
-
-	/*
-	 * Start the stream in read() mode if not already started.  If
-	 * the user wanted mmap() mode, he should have called mmap()
-	 * before now.
-	 */
-	if (sc->sc_vidmode == VIDMODE_NONE && sc->hw_if->start_read) {
-		if (sc->hw_if->start_read(sc->hw_hdl))
-			return (ENXIO);
-		sc->sc_vidmode = VIDMODE_READ;
-	}
-
-	s = splhigh();
-	klist_insert(&sc->sc_rsel.si_note, kn);
-	splx(s);
-
-	return (0);
 }
 
 int
@@ -557,10 +492,6 @@ videodetach(struct device *self, int flags)
 	mn = self->dv_unit;
 	vdevgone(maj, mn, mn, VCHR);
 
-	s = splhigh();
-	klist_invalidate(&sc->sc_rsel.si_note);
-	splx(s);
-
 	free(sc->sc_fbuffer, M_DEVBUF, sc->sc_fbufferlen);
 
 	return (0);
@@ -571,10 +502,12 @@ videoactivate(struct device *self, int act)
 {
 	struct video_softc *sc = (struct video_softc *)self;
 
+
 	switch (act) {
 	case DVACT_DEACTIVATE:
 		sc->sc_dying = 1;
 		break;
 	}
+
 	return (0);
 }

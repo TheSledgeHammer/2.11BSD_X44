@@ -61,7 +61,7 @@
 #include <dev/usb/usb_mem.h>
 
 #ifdef USB_DEBUG
-#define DPRINTF(x)	if (usbdebug) printf x
+#define DPRINTF(x)		if (usbdebug) printf x
 #define DPRINTFN(n,x)	if (usbdebug>(n)) printf x
 extern int usbdebug;
 #else
@@ -80,16 +80,13 @@ struct usb_frag_dma {
 	LIST_ENTRY(usb_frag_dma) next;
 };
 
-usbd_status	usb_block_allocmem 
-	__P((bus_dma_tag_t, size_t, size_t, usb_dma_block_t **));
-void		usb_block_real_freemem  __P((usb_dma_block_t *));
-void		usb_block_freemem  __P((usb_dma_block_t *));
+usbd_status	usb_block_allocmem (bus_dma_tag_t, size_t, size_t, usb_dma_block_t **);
+void		usb_block_real_freemem  (usb_dma_block_t *);
+void		usb_block_freemem  (usb_dma_block_t *);
 
-LIST_HEAD(, usb_block_dma) usb_blk_freelist = 
-	LIST_HEAD_INITIALIZER(usb_blk_freelist);
+LIST_HEAD(, usb_block_dma) usb_blk_freelist = LIST_HEAD_INITIALIZER(usb_blk_freelist);
 /* XXX should have different free list for different tags */
-LIST_HEAD(, usb_frag_dma) usb_frag_freelist =
-	LIST_HEAD_INITIALIZER(usb_frag_freelist);
+LIST_HEAD(, usb_frag_dma) usb_frag_freelist = LIST_HEAD_INITIALIZER(usb_frag_freelist);
 
 usbd_status
 usb_block_allocmem(tag, size, align, dmap)

@@ -54,15 +54,10 @@ usbd_status	usbd_set_report (usbd_interface_handle iface,int type,int id,void *d
 usbd_status	usbd_set_report_async (usbd_interface_handle iface,int type,int id,void *data,int len);
 usbd_status	usbd_get_report (usbd_interface_handle iface,int type,int id,void *data,int len);
 usbd_status	usbd_set_idle (usbd_interface_handle iface, int duration, int id);
-#if defined(__NetBSD__)
 usbd_status	usbd_alloc_report_desc (usbd_interface_handle ifc, void **descp, int *sizep, int mem);
-#elif defined(__FreeBSD__)
-usbd_status	usbd_alloc_report_desc (usbd_interface_handle ifc, void **descp, int *sizep, struct malloc_type * mem);
-#endif
 usbd_status	usbd_get_config	(usbd_device_handle dev, u_int8_t *conf);
 usbd_status	usbd_get_string_desc (usbd_device_handle dev, int sindex, int langid, usb_string_descriptor_t *sdesc);
 void		usbd_delay_ms (usbd_device_handle, u_int);
-
 
 usbd_status usbd_set_config_no (usbd_device_handle dev, int no, int msg);
 usbd_status usbd_set_config_index (usbd_device_handle dev, int index, int msg);

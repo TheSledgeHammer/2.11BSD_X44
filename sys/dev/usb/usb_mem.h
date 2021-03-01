@@ -37,22 +37,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if defined(__NetBSD__)
 typedef struct usb_block_dma {
-	bus_dma_tag_t tag;
-	bus_dmamap_t map;
-    caddr_t kaddr;
-    bus_dma_segment_t segs[1];
-    int nsegs;
-    size_t size;
-    size_t align;
-	int fullblock;
-	LIST_ENTRY(usb_block_dma) next;
+	bus_dma_tag_t 				tag;
+	bus_dmamap_t 				map;
+    caddr_t 					kaddr;
+    bus_dma_segment_t 			segs[1];
+    int 						nsegs;
+    size_t 						size;
+    size_t 						align;
+	int 						fullblock;
+	LIST_ENTRY(usb_block_dma) 	next;
 } usb_dma_block_t;
 
 typedef struct {
 	usb_dma_block_t *block;
-	u_int offs;
+	u_int 			offs;
 } usb_dma_t;
 
 #define DMAADDR(dma) 	((dma)->block->segs[0].ds_addr + (dma)->offs)
@@ -61,7 +60,6 @@ typedef struct {
 usbd_status	usb_allocmem (bus_dma_tag_t, size_t, size_t, usb_dma_t *);
 void		usb_freemem  (bus_dma_tag_t, usb_dma_t *));
 
-#elif defined(__FreeBSD__)
 
 /* 
  * FreeBSD does not have special functions for dma memory, so let's keep it
@@ -75,8 +73,8 @@ void		usb_freemem  (bus_dma_tag_t, usb_dma_t *));
 #include <sys/buf.h>
 #include <sys/malloc.h>
 #include <sys/kernel.h>
-#include <vm/vm.h>
-#include <vm/pmap.h>
+#include <vm/include/vm.h>
+#include <vm/include/pmap.h>
 
 #include <machine/pmap.h>       /* for vtophys */
 
@@ -87,5 +85,3 @@ typedef void * usb_dma_t;
 
 #define DMAADDR(dma)				(vtophys(*(dma)))
 #define KERNADDR(dma)				((void *) *(dma))
-#endif
-

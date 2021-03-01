@@ -27,39 +27,38 @@
 
 struct video_hw_if {
 	/* open hardware */
-	int	(*open)(void *, int, int *, uint8_t *, void (*)(void *),
-		    void *);
+	int		(*open)(void *, int, int *, uint8_t *, void (*)(void *), void *);
 
 	/* close hardware */
-	int	(*close)(void *);
+	int		(*close)(void *);
 
 	/* ioctl's */
-	int	(*querycap)(void *, struct v4l2_capability *);
-	int	(*enum_fmt)(void *, struct v4l2_fmtdesc *);
-	int	(*enum_fsizes)(void *, struct v4l2_frmsizeenum *);
-	int	(*enum_fivals)(void *, struct v4l2_frmivalenum *);
-	int	(*s_fmt)(void *, struct v4l2_format *);
-	int	(*g_fmt)(void *, struct v4l2_format *);
-	int	(*s_parm)(void *, struct v4l2_streamparm *);
-	int	(*g_parm)(void *, struct v4l2_streamparm *);
-	int	(*enum_input)(void *, struct v4l2_input *);
-	int	(*s_input)(void *, int);
-	int	(*g_input)(void *, int *);
-	int	(*reqbufs)(void *, struct v4l2_requestbuffers *);
-	int	(*querybuf)(void *, struct v4l2_buffer *);
-	int	(*qbuf)(void *, struct v4l2_buffer *);
-	int	(*dqbuf)(void *, struct v4l2_buffer *);
-	int	(*streamon)(void *, int);
-	int	(*streamoff)(void *, int);
-	int	(*try_fmt)(void *, struct v4l2_format *);
-	int	(*queryctrl)(void *, struct v4l2_queryctrl *);
-	int	(*g_ctrl)(void *, struct v4l2_control *);
-	int	(*s_ctrl)(void *, struct v4l2_control *);
+	int		(*querycap)(void *, struct v4l2_capability *);
+	int		(*enum_fmt)(void *, struct v4l2_fmtdesc *);
+	int		(*enum_fsizes)(void *, struct v4l2_frmsizeenum *);
+	int		(*enum_fivals)(void *, struct v4l2_frmivalenum *);
+	int		(*s_fmt)(void *, struct v4l2_format *);
+	int		(*g_fmt)(void *, struct v4l2_format *);
+	int		(*s_parm)(void *, struct v4l2_streamparm *);
+	int		(*g_parm)(void *, struct v4l2_streamparm *);
+	int		(*enum_input)(void *, struct v4l2_input *);
+	int		(*s_input)(void *, int);
+	int		(*g_input)(void *, int *);
+	int		(*reqbufs)(void *, struct v4l2_requestbuffers *);
+	int		(*querybuf)(void *, struct v4l2_buffer *);
+	int		(*qbuf)(void *, struct v4l2_buffer *);
+	int		(*dqbuf)(void *, struct v4l2_buffer *);
+	int		(*streamon)(void *, int);
+	int		(*streamoff)(void *, int);
+	int		(*try_fmt)(void *, struct v4l2_format *);
+	int		(*queryctrl)(void *, struct v4l2_queryctrl *);
+	int		(*g_ctrl)(void *, struct v4l2_control *);
+	int		(*s_ctrl)(void *, struct v4l2_control *);
 	caddr_t	(*mappage)(void *, off_t, int);
 
 	/* other functions */
-	int	(*get_bufsize)(void *);
-	int	(*start_read)(void *);
+	int		(*get_bufsize)(void *);
+	int		(*start_read)(void *);
 };
 
 struct video_attach_args {

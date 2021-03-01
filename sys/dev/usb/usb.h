@@ -79,31 +79,36 @@ MALLOC_DECLARE(M_USBDEV);
  */
 typedef u_int8_t uByte;
 typedef u_int8_t uWord[2];
-#define UGETW(w) ((w)[0] | ((w)[1] << 8))
-#define USETW(w,v) ((w)[0] = (u_int8_t)(v), (w)[1] = (u_int8_t)((v) >> 8))
-#define USETW2(w,h,l) ((w)[0] = (u_int8_t)(l), (w)[1] = (u_int8_t)(h))
 typedef u_int8_t uDWord[4];
-#define UGETDW(w) ((w)[0] | ((w)[1] << 8) | ((w)[2] << 16) | ((w)[3] << 24))
-#define USETDW(w,v) ((w)[0] = (u_int8_t)(v), 	\
-		     (w)[1] = (u_int8_t)((v) >> 8), 	\
-		     (w)[2] = (u_int8_t)((v) >> 16), 	\
+
+#define UGETW(w) 		((w)[0] | ((w)[1] << 8))
+#define USETW(w,v) 		((w)[0] = (u_int8_t)(v), (w)[1] = (u_int8_t)((v) >> 8))
+#define USETW2(w,h,l) 	((w)[0] = (u_int8_t)(l), (w)[1] = (u_int8_t)(h))
+#define UGETDW(w) 		((w)[0] | ((w)[1] << 8) | ((w)[2] << 16) | ((w)[3] << 24))
+#define USETDW(w,v) 	((w)[0] = (u_int8_t)(v), 	\
+		     (w)[1] = (u_int8_t)((v) >> 8), 		\
+		     (w)[2] = (u_int8_t)((v) >> 16), 		\
 		     (w)[3] = (u_int8_t)((v) >> 24))
 /* 
  * On little-endian machines that can handle unanliged accesses
  * (e.g. i386) these macros can be replaced by the following.
  */
 #if 0
-#define UGETW(w) (*(u_int16_t *)(w))
-#define USETW(w,v) (*(u_int16_t *)(w) = (v))
+#define UGETW(w) 	(*(u_int16_t *)(w))
+#define USETW(w,v) 	(*(u_int16_t *)(w) = (v))
+#define UGETDW(w) 	(*(u_int32_t *)(w))
+#define USETDW(w,v) (*(u_int32_t *)(w) = (v))
 #endif
 
-typedef struct {
+
+struct usb_device_request {
 	uByte		bmRequestType;
 	uByte		bRequest;
 	uWord		wValue;
 	uWord		wIndex;
 	uWord		wLength;
-} usb_device_request_t;
+} __packed;
+typedef struct usb_device_request usb_device_request_t;
 
 #define UT_WRITE		0x00
 #define UT_READ			0x80
@@ -115,24 +120,24 @@ typedef struct {
 #define UT_ENDPOINT		0x02
 #define UT_OTHER		0x03
 
-#define UT_READ_DEVICE			(UT_READ  | UT_STANDARD | UT_DEVICE)
-#define UT_READ_INTERFACE		(UT_READ  | UT_STANDARD | UT_INTERFACE)
-#define UT_READ_ENDPOINT		(UT_READ  | UT_STANDARD | UT_ENDPOINT)
-#define UT_WRITE_DEVICE			(UT_WRITE | UT_STANDARD | UT_DEVICE)
-#define UT_WRITE_INTERFACE		(UT_WRITE | UT_STANDARD | UT_INTERFACE)
-#define UT_WRITE_ENDPOINT		(UT_WRITE | UT_STANDARD | UT_ENDPOINT)
-#define UT_READ_CLASS_DEVICE	(UT_READ  | UT_CLASS | UT_DEVICE)
-#define UT_READ_CLASS_INTERFACE	(UT_READ  | UT_CLASS | UT_INTERFACE)
-#define UT_READ_CLASS_OTHER		(UT_READ  | UT_CLASS | UT_OTHER)
-#define UT_WRITE_CLASS_DEVICE	(UT_WRITE | UT_CLASS | UT_DEVICE)
-#define UT_WRITE_CLASS_INTERFACE (UT_WRITE | UT_CLASS | UT_INTERFACE)
-#define UT_WRITE_CLASS_OTHER	(UT_WRITE | UT_CLASS | UT_OTHER)
-#define UT_READ_VENDOR_DEVICE	(UT_READ  | UT_VENDOR | UT_DEVICE)
-#define UT_READ_VENDOR_INTERFACE (UT_READ  | UT_VENDOR | UT_INTERFACE)
-#define UT_READ_VENDOR_OTHER	(UT_READ  | UT_VENDOR | UT_OTHER)
-#define UT_WRITE_VENDOR_DEVICE	(UT_WRITE | UT_VENDOR | UT_DEVICE)
-#define UT_WRITE_VENDOR_INTERFACE (UT_WRITE | UT_VENDOR | UT_INTERFACE)
-#define UT_WRITE_VENDOR_OTHER	(UT_WRITE | UT_VENDOR | UT_OTHER)
+#define UT_READ_DEVICE				(UT_READ  | UT_STANDARD | UT_DEVICE)
+#define UT_READ_INTERFACE			(UT_READ  | UT_STANDARD | UT_INTERFACE)
+#define UT_READ_ENDPOINT			(UT_READ  | UT_STANDARD | UT_ENDPOINT)
+#define UT_WRITE_DEVICE				(UT_WRITE | UT_STANDARD | UT_DEVICE)
+#define UT_WRITE_INTERFACE			(UT_WRITE | UT_STANDARD | UT_INTERFACE)
+#define UT_WRITE_ENDPOINT			(UT_WRITE | UT_STANDARD | UT_ENDPOINT)
+#define UT_READ_CLASS_DEVICE		(UT_READ  | UT_CLASS | UT_DEVICE)
+#define UT_READ_CLASS_INTERFACE		(UT_READ  | UT_CLASS | UT_INTERFACE)
+#define UT_READ_CLASS_OTHER			(UT_READ  | UT_CLASS | UT_OTHER)
+#define UT_WRITE_CLASS_DEVICE		(UT_WRITE | UT_CLASS | UT_DEVICE)
+#define UT_WRITE_CLASS_INTERFACE 	(UT_WRITE | UT_CLASS | UT_INTERFACE)
+#define UT_WRITE_CLASS_OTHER		(UT_WRITE | UT_CLASS | UT_OTHER)
+#define UT_READ_VENDOR_DEVICE		(UT_READ  | UT_VENDOR | UT_DEVICE)
+#define UT_READ_VENDOR_INTERFACE	(UT_READ  | UT_VENDOR | UT_INTERFACE)
+#define UT_READ_VENDOR_OTHER		(UT_READ  | UT_VENDOR | UT_OTHER)
+#define UT_WRITE_VENDOR_DEVICE		(UT_WRITE | UT_VENDOR | UT_DEVICE)
+#define UT_WRITE_VENDOR_INTERFACE 	(UT_WRITE | UT_VENDOR | UT_INTERFACE)
+#define UT_WRITE_VENDOR_OTHER		(UT_WRITE | UT_VENDOR | UT_OTHER)
 
 /* Requests */
 #define UR_GET_STATUS		0x00
@@ -153,10 +158,13 @@ typedef struct {
 #define UR_SYNCH_FRAME		0x0c
 
 /* Feature numbers */
-#define UF_ENDPOINT_HALT	0
+#define UF_ENDPOINT_HALT		0
 #define UF_DEVICE_REMOTE_WAKEUP	1
 
-#define USB_MAX_IPACKET		8 /* maximum size of the initial packet */
+#define USB_MAX_IPACKET			8 /* maximum size of the initial packet */
+
+#define USB_2_MAX_CTRL_PACKET  	64
+#define USB_2_MAX_BULK_PACKET  	512
 
 typedef struct {
 	uByte		bLength;
@@ -222,15 +230,15 @@ typedef struct {
 #define UE_GET_ADDR(a)	((a) & UE_ADDR)
 #define UE_GET_IN(a)	(((a) >> 7) & 1)
 	uByte		bmAttributes;
-#define UE_XFERTYPE	0x03
-#define  UE_CONTROL	0x00
-#define  UE_ISOCHRONOUS	0x01
-#define  UE_BULK	0x02
-#define  UE_INTERRUPT	0x03
-#define UE_ISO_TYPE	0x0c
-#define  UE_ISO_ASYNC	0x04
-#define  UE_ISO_ADAPT	0x08
-#define  UE_ISO_SYNC	0x0c
+#define UE_XFERTYPE		0x03
+#define UE_CONTROL		0x00
+#define UE_ISOCHRONOUS	0x01
+#define UE_BULK			0x02
+#define UE_INTERRUPT	0x03
+#define UE_ISO_TYPE		0x0c
+#define UE_ISO_ASYNC	0x04
+#define UE_ISO_ADAPT	0x08
+#define UE_ISO_SYNC		0x0c
 	uWord		wMaxPacketSize;
 	uByte		bInterval;
 } usb_endpoint_descriptor_t;
@@ -306,18 +314,18 @@ typedef struct {
 typedef struct {
 	uWord		wPortStatus;
 #define UPS_CURRENT_CONNECT_STATUS	0x0001
-#define UPS_PORT_ENABLED		0x0002
-#define UPS_SUSPEND			0x0004
+#define UPS_PORT_ENABLED			0x0002
+#define UPS_SUSPEND					0x0004
 #define UPS_OVERCURRENT_INDICATOR	0x0008
-#define UPS_RESET			0x0010
-#define UPS_PORT_POWER			0x0100
-#define UPS_LOW_SPEED			0x0200
+#define UPS_RESET					0x0010
+#define UPS_PORT_POWER				0x0100
+#define UPS_LOW_SPEED				0x0200
 	uWord		wPortChange;
 #define UPS_C_CONNECT_STATUS		0x0001
-#define UPS_C_PORT_ENABLED		0x0002
-#define UPS_C_SUSPEND			0x0004
+#define UPS_C_PORT_ENABLED			0x0002
+#define UPS_C_SUSPEND				0x0004
 #define UPS_C_OVERCURRENT_INDICATOR	0x0008
-#define UPS_C_PORT_RESET		0x0010
+#define UPS_C_PORT_RESET			0x0010
 } usb_port_status_t;
 
 #define UDESC_CS_DEVICE		0x21
@@ -326,26 +334,26 @@ typedef struct {
 #define UDESC_CS_INTERFACE	0x24
 #define UDESC_CS_ENDPOINT	0x25
 
-#define UDESC_HUB		0x29
+#define UDESC_HUB			0x29
 
-#define UCLASS_UNSPEC		0
-#define UCLASS_AUDIO		1
+#define UCLASS_UNSPEC			0
+#define UCLASS_AUDIO			1
 #define  USUBCLASS_AUDIOCONTROL	1
 #define  USUBCLASS_AUDIOSTREAM	2
-#define UCLASS_CDC		2 /* communication */
+#define UCLASS_CDC				2 /* communication */
 #define  USUBCLASS_ABSTRACT_CONTROL_MODEL	2
 #define   UPROTO_CDC_AT		1
-#define UCLASS_HID		3
+#define UCLASS_HID			3
 #define  USUBCLASS_BOOT	 	1
 #define UCLASS_PRINTER		7
 #define  USUBCLASS_PRINTER	1
 #define  UPROTO_PRINTER_UNI	1
 #define  UPROTO_PRINTER_BI	2
-#define UCLASS_HUB		9
+#define UCLASS_HUB			9
 #define  USUBCLASS_HUB		0
-#define UCLASS_DATA		10
+#define UCLASS_DATA			10
 
-#define USB_HUB_MAX_DEPTH 5
+#define USB_HUB_MAX_DEPTH 	5
 
 /* 
  * Minimum time a device needs to be powered down to go through 
@@ -440,20 +448,26 @@ struct usb_device_info {
 	char		revision[8];
 	u_int16_t	productNo;
 	u_int16_t	vendorNo;
+	u_int16_t	releaseNo;
 	u_int8_t	class;
 	u_int8_t	config;
 	u_int8_t	lowspeed;
 	int			power;	/* power consumption in mA, 0 if selfpowered */
 	int			nports;
 	u_int8_t	ports[16];/* hub only: addresses of devices on ports */
-#define USB_PORT_ENABLED 0xff
-#define USB_PORT_SUSPENDED 0xfe
-#define USB_PORT_POWERED 0xfd
-#define USB_PORT_DISABLED 0xfc
+#define USB_PORT_ENABLED 	0xff
+#define USB_PORT_SUSPENDED 	0xfe
+#define USB_PORT_POWERED 	0xfd
+#define USB_PORT_DISABLED 	0xfc
+
+#define USB_SPEED_LOW		1
+#define USB_SPEED_FULL		2
+#define USB_SPEED_HIGH		3
+#define USB_SPEED_SUPER		4
 };
 
 struct usb_ctl_report {
-	int report;
+	int 	report;
 	u_char	data[1024];	/* filled data size will vary */
 };
 
@@ -463,7 +477,7 @@ struct usb_device_stats {
 
 /* USB controller */
 #define USB_REQUEST				_IOWR('U', 1, struct usb_ctl_request)
-#define USB_SETDEBUG			_IOW ('U', 2, int)
+#define USB_SETDEBUG			_IOW ('U', 2, unsigned int)
 #define USB_DISCOVER			_IO  ('U', 3)
 #define USB_DEVICEINFO			_IOWR('U', 4, struct usb_device_info)
 #define USB_DEVICESTATS			_IOR ('U', 5, struct usb_device_stats)
