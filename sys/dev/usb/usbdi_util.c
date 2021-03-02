@@ -448,48 +448,47 @@ usbd_get_config(dev, conf)
 	return (usbd_do_request(dev, &req, conf));
 }
 
-static void usbd_bulk_transfer_cb (usbd_request_handle reqh, usbd_private_handle priv, usbd_status status);
+static void usbd_bulk_transfer_cb (usbd_xfer_handle xfer, usbd_private_handle priv, usbd_status status);
 
 static void
-usbd_bulk_transfer_cb(reqh, priv, status)
-	usbd_request_handle reqh;
+usbd_bulk_transfer_cb(xfer, priv, status)
+	usbd_xfer_handle xfer;
 	usbd_private_handle priv;
 	usbd_status status;
 {
-	wakeup(reqh);
+	wakeup(xfer);
 }
 
 usbd_status
-usbd_bulk_transfer(reqh, pipe, flags, buf, size, lbl)
-	usbd_request_handle reqh;
+usbd_bulk_transfer(xfer, pipe, flags, timeout, buf, size, lbl)
+	usbd_xfer_handle xfer;
 	usbd_pipe_handle pipe;
 	u_int16_t flags;
+	u_int32_t timeout;
 	void *buf;
 	u_int32_t *size;
 	char *lbl;
 {
-	usbd_private_handle priv;
-	void *buffer;
 	usbd_status r;
 	int s, error;
 
-	r = usbd_setup_request(reqh, pipe, 0, buf, *size, flags, USBD_NO_TIMEOUT, usbd_bulk_transfer_cb);
+	usbd_setup_xfer(xfer, pipe, 0, buf, *size, flags, timeout, usbd_bulk_transfer_cb);
 	if (r != USBD_NORMAL_COMPLETION)
 		return (r);
 	DPRINTFN(1, ("usbd_bulk_transfer: start transfer %d bytes\n", *size));
 	s = splusb();		/* don't want callback until tsleep() */
-	r = usbd_transfer(reqh);
+	r = usbd_transfer(xfer);
 	if (r != USBD_IN_PROGRESS) {
 		splx(s);
 		return (r);
 	}
-	error = tsleep((caddr_t)reqh, PZERO | PCATCH, lbl, 0);
+	error = tsleep((caddr_t)xfer, PZERO | PCATCH, lbl, 0);
 	splx(s);
 	if (error) {
 		usbd_abort_pipe(pipe);
 		return (USBD_INTERRUPTED);
 	}
-	usbd_get_request_status(reqh, &priv, &buffer, size, &r);
+	usbd_get_xfer_status(xfer, NULL, NULL, size, &r);
 	DPRINTFN(1,("usbd_bulk_transfer: transferred %d\n", *size));
 	if (r != USBD_NORMAL_COMPLETION) {
 		DPRINTF(("usbd_bulk_transfer: error=%d\n", r));
@@ -498,3 +497,40 @@ usbd_bulk_transfer(reqh, pipe, flags, buf, size, lbl)
 	return (r);
 }
 
+void
+usb_detach_wait(dv)
+	struct device dv;
+{
+	DPRINTF(("usb_detach_wait: waiting for %s\n", dv->d_name));
+	if (tsleep(dv, PZERO, "usbdet", hz * 60))
+		printf("usb_detach_wait: %s didn't detach\n", dv->d_name);
+	DPRINTF(("usb_detach_wait: %s done\n", dv->d_name));
+}
+
+void
+usb_detach_wakeup(dv)
+	struct device *dv;
+{
+	DPRINTF(("usb_detach_wakeup: for %s\n", dv->d_name));
+	wakeup(dv);
+}
+
+usb_descriptor_t *
+usb_find_desc(dev, type)
+	usbd_device_handle dev;
+	int type;
+{
+	usb_descriptor_t *desc;
+	usb_config_descriptor_t *cd = usbd_get_config_descriptor(dev);
+        uByte *p = (uByte *)cd;
+        uByte *end = p + UGETW(cd->wTotalLength);
+
+	while (p < end) {
+		desc = (usb_descriptor_t *)p;
+		if (desc->bDescriptorType == type)
+			return (desc);
+		p += desc->bLength;
+	}
+
+	return (NULL);
+}

@@ -1,11 +1,12 @@
-/*	$NetBSD: usb_mem.h,v 1.4 1999/01/09 12:16:54 augustss Exp $	*/
+/*	$NetBSD: usb_mem.h,v 1.20.8.1 2005/05/13 17:09:05 riz Exp $	*/
+/*	$FreeBSD: src/sys/dev/usb/usb_mem.h,v 1.9 1999/11/17 22:33:47 n_hibma Exp $	*/
 
 /*
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by Lennart Augustsson (augustss@carlstedt.se) at
+ * by Lennart Augustsson (lennart@augustsson.net) at
  * Carlstedt Research & Technology.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,9 +38,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _USB_MEM_H_
+#define _USB_MEM_H_
+
 #include <sys/queue.h>
 
-struct usb_block_dma {
+struct usb_dma_block  {
 	bus_dma_tag_t 				tag;
 	bus_dmamap_t 				map;
     caddr_t 					kaddr;
@@ -47,21 +51,43 @@ struct usb_block_dma {
     int 						nsegs;
     size_t 						size;
     size_t 						align;
-	int 						fullblock;
-	LIST_ENTRY(usb_block_dma) 	next;
+    int 						flags;
+#define USB_DMA_FULLBLOCK		0x0001
+#define USB_DMA_RESERVE			0x0002
+	LIST_ENTRY(usb_dma_block) 	next;
 };
-
-typedef struct usb_block_dma	usb_dma_block_t;
+typedef struct usb_dma_block 	usb_dma_block_t;
 
 struct usb_dma {
 	usb_dma_block_t 			*block;
 	u_int 						offs;
 };
-
 typedef struct usb_dma			usb_dma_t;
 
-#define DMAADDR(dma) 	((dma)->block->segs[0].ds_addr + (dma)->offs)
-#define KERNADDR(dma) 	((void *)((dma)->block->kaddr + (dma)->offs))
+#define DMAADDR(dma, o) 		((dma)->block->map->dm_segs[0].ds_addr + (dma)->offs + (o))
+#define KERNADDR(dma, o) 		((void *)((char *)((dma)->block->kaddr + (dma)->offs) + (o)))
 
-usbd_status	usb_allocmem (bus_dma_tag_t, size_t, size_t, usb_dma_t *);
-void		usb_freemem  (bus_dma_tag_t, usb_dma_t *);
+usbd_status	usb_allocmem(usbd_bus_handle,size_t,size_t, usb_dma_t *);
+void		usb_freemem(usbd_bus_handle, usb_dma_t *);
+
+struct extent;
+
+struct usb_dma_reserve {
+	bus_dma_tag_t 				dtag;
+	bus_dmamap_t 				map;
+	caddr_t 					vaddr;
+	bus_addr_t 					paddr;
+	size_t 						size;
+	struct extent 				*extent;
+	void 						*softc;
+};
+
+#ifndef USB_MEM_RESERVE
+#define USB_MEM_RESERVE 		(256 * 1024)
+#endif
+
+usbd_status usb_reserve_allocm(struct usb_dma_reserve *, usb_dma_t *, u_int32_t);
+int usb_setup_reserve(void *, struct usb_dma_reserve *, bus_dma_tag_t, size_t);
+void usb_reserve_freem(struct usb_dma_reserve *, usb_dma_t *);
+
+#endif /* _USB_MEM_H_ */

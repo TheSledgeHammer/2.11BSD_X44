@@ -256,7 +256,7 @@ void		usb_schedsoftintr(struct usbd_bus *);
 /*
  * XXX This check is extremely bogus. Bad Bad Bad.
  */
-//#if defined(DIAGNOSTIC) && 0
+#if defined(DIAGNOSTIC) && 0
 #define SPLUSBCHECK 																	\
 	do { int _s = splusb(), _su = splusb(); 											\
              if (!cold && _s != _su) printf("SPLUSBCHECK failed 0x%x!=0x%x, %s:%d\n", 	\
@@ -266,11 +266,6 @@ void		usb_schedsoftintr(struct usbd_bus *);
 #else
 #define SPLUSBCHECK
 #endif
-
-/* Locator stuff. */
-
-#define USBTAP_DIR_OUT					0
-#define USBTAP_DIR_IN					1
 
 #define UHUBCF_PORT_DEFAULT 			-1
 #define UHUBCF_CONFIGURATION_DEFAULT 	-1
@@ -292,3 +287,5 @@ void		usb_schedsoftintr(struct usbd_bus *);
 #define	UHUB_UNK_VENDOR					UHUBCF_VENDOR_DEFAULT 			/* wildcarded 'vendor' */
 #define	UHUB_UNK_PRODUCT				UHUBCF_PRODUCT_DEFAULT 			/* wildcarded 'product' */
 #define	UHUB_UNK_RELEASE				UHUBCF_RELEASE_DEFAULT 			/* wildcarded 'release' */
+
+#endif /* _USBDIVAR_H_ */

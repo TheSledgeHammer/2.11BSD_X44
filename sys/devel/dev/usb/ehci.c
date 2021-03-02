@@ -1037,7 +1037,7 @@ ehci_freex(struct usbd_bus *bus, usbd_xfer_handle xfer)
 	SIMPLEQ_INSERT_HEAD(&sc->sc_free_xfers, xfer, next);
 }
 
-Static void
+void
 ehci_device_clear_toggle(usbd_pipe_handle pipe)
 {
 	struct ehci_pipe *epipe = (struct ehci_pipe *)pipe;
@@ -1051,7 +1051,7 @@ ehci_device_clear_toggle(usbd_pipe_handle pipe)
 	epipe->nexttoggle = 0;
 }
 
-Static void
+void
 ehci_noop(usbd_pipe_handle pipe)
 {
 }
@@ -1224,7 +1224,7 @@ ehci_open(usbd_pipe_handle pipe)
 	}
 
 	/* XXX All this stuff is only valid for async. */
-	switch (dev->speed) {
+	switch (dev->lowspeed) {
 	case USB_SPEED_LOW:  speed = EHCI_QH_SPEED_LOW;  break;
 	case USB_SPEED_FULL: speed = EHCI_QH_SPEED_FULL; break;
 	case USB_SPEED_HIGH: speed = EHCI_QH_SPEED_HIGH; break;
@@ -1388,7 +1388,7 @@ ehci_sync_hc(ehci_softc_t *sc)
 /*
  * Data structures and routines to emulate the root hub.
  */
-Static usb_device_descriptor_t ehci_devd = {
+usb_device_descriptor_t ehci_devd = {
 	USB_DEVICE_DESCRIPTOR_SIZE,
 	UDESC_DEVICE,		/* type */
 	{0x00, 0x02},		/* USB version */
@@ -1401,7 +1401,7 @@ Static usb_device_descriptor_t ehci_devd = {
 	1			/* # of configurations */
 };
 
-Static usb_device_qualifier_t ehci_odevd = {
+usb_device_qualifier_t ehci_odevd = {
 	USB_DEVICE_DESCRIPTOR_SIZE,
 	UDESC_DEVICE_QUALIFIER,	/* type */
 	{0x00, 0x02},		/* USB version */
@@ -1413,7 +1413,7 @@ Static usb_device_qualifier_t ehci_odevd = {
 	0
 };
 
-Static usb_config_descriptor_t ehci_confd = {
+usb_config_descriptor_t ehci_confd = {
 	USB_CONFIG_DESCRIPTOR_SIZE,
 	UDESC_CONFIG,
 	{USB_CONFIG_DESCRIPTOR_SIZE +
@@ -1426,7 +1426,7 @@ Static usb_config_descriptor_t ehci_confd = {
 	0			/* max power */
 };
 
-Static usb_interface_descriptor_t ehci_ifcd = {
+usb_interface_descriptor_t ehci_ifcd = {
 	USB_INTERFACE_DESCRIPTOR_SIZE,
 	UDESC_INTERFACE,
 	0,
@@ -1438,7 +1438,7 @@ Static usb_interface_descriptor_t ehci_ifcd = {
 	0
 };
 
-Static usb_endpoint_descriptor_t ehci_endpd = {
+usb_endpoint_descriptor_t ehci_endpd = {
 	USB_ENDPOINT_DESCRIPTOR_SIZE,
 	UDESC_ENDPOINT,
 	UE_DIR_IN | EHCI_INTR_ENDPT,
@@ -1447,7 +1447,7 @@ Static usb_endpoint_descriptor_t ehci_endpd = {
 	255
 };
 
-Static usb_hub_descriptor_t ehci_hubd = {
+usb_hub_descriptor_t ehci_hubd = {
 	USB_HUB_DESCRIPTOR_SIZE,
 	UDESC_HUB,
 	0,
@@ -1457,7 +1457,7 @@ Static usb_hub_descriptor_t ehci_hubd = {
 	{0},
 };
 
-Static int
+int
 ehci_str(p, l, s)
 	usb_string_descriptor_t *p;
 	int l;
@@ -1480,7 +1480,7 @@ ehci_str(p, l, s)
 /*
  * Simulate a hardware hub by handling all the necessary requests.
  */
-Static usbd_status
+usbd_status
 ehci_root_ctrl_transfer(usbd_xfer_handle xfer)
 {
 	usbd_status err;
@@ -1494,7 +1494,7 @@ ehci_root_ctrl_transfer(usbd_xfer_handle xfer)
 	return (ehci_root_ctrl_start(SIMPLEQ_FIRST(&xfer->pipe->queue)));
 }
 
-Static usbd_status
+usbd_status
 ehci_root_ctrl_start(usbd_xfer_handle xfer)
 {
 	ehci_softc_t *sc = (ehci_softc_t *)xfer->pipe->device->bus;
@@ -1528,7 +1528,7 @@ ehci_root_ctrl_start(usbd_xfer_handle xfer)
 		buf = KERNADDR(&xfer->dmabuf, 0);
 
 #define C(x,y) ((x) | ((y) << 8))
-	switch(C(req->bRequest, req->bmRequestType)) {
+	switch (C(req->bRequest, req->bmRequestType)) {
 	case C(UR_CLEAR_FEATURE, UT_WRITE_DEVICE):
 	case C(UR_CLEAR_FEATURE, UT_WRITE_INTERFACE):
 	case C(UR_CLEAR_FEATURE, UT_WRITE_ENDPOINT):
@@ -1539,13 +1539,13 @@ ehci_root_ctrl_start(usbd_xfer_handle xfer)
 		break;
 	case C(UR_GET_CONFIG, UT_READ_DEVICE):
 		if (len > 0) {
-			*(u_int8_t *)buf = sc->sc_conf;
+			*(u_int8_t*) buf = sc->sc_conf;
 			totlen = 1;
 		}
 		break;
 	case C(UR_GET_DESCRIPTOR, UT_READ_DEVICE):
 		DPRINTFN(8,("ehci_root_ctrl_control wValue=0x%04x\n", value));
-		switch(value >> 8) {
+		switch (value >> 8) {
 		case UDESC_DEVICE:
 			if ((value & 0xff) != 0) {
 				err = USBD_IOERROR;
@@ -1555,10 +1555,10 @@ ehci_root_ctrl_start(usbd_xfer_handle xfer)
 			USETW(ehci_devd.idVendor, sc->sc_id_vendor);
 			memcpy(buf, &ehci_devd, l);
 			break;
-		/*
-		 * We can't really operate at another speed, but the spec says
-		 * we need this descriptor.
-		 */
+			/*
+			 * We can't really operate at another speed, but the spec says
+			 * we need this descriptor.
+			 */
 		case UDESC_DEVICE_QUALIFIER:
 			if ((value & 0xff) != 0) {
 				err = USBD_IOERROR;
@@ -1567,10 +1567,10 @@ ehci_root_ctrl_start(usbd_xfer_handle xfer)
 			totlen = l = min(len, USB_DEVICE_DESCRIPTOR_SIZE);
 			memcpy(buf, &ehci_odevd, l);
 			break;
-		/*
-		 * We can't really operate at another speed, but the spec says
-		 * we need this descriptor.
-		 */
+			/*
+			 * We can't really operate at another speed, but the spec says
+			 * we need this descriptor.
+			 */
 		case UDESC_OTHER_SPEED_CONFIGURATION:
 		case UDESC_CONFIG:
 			if ((value & 0xff) != 0) {
@@ -1579,14 +1579,13 @@ ehci_root_ctrl_start(usbd_xfer_handle xfer)
 			}
 			totlen = l = min(len, USB_CONFIG_DESCRIPTOR_SIZE);
 			memcpy(buf, &ehci_confd, l);
-			((usb_config_descriptor_t *)buf)->bDescriptorType =
-				value >> 8;
-			buf = (char *)buf + l;
+			((usb_config_descriptor_t*) buf)->bDescriptorType = value >> 8;
+			buf = (char*) buf + l;
 			len -= l;
 			l = min(len, USB_INTERFACE_DESCRIPTOR_SIZE);
 			totlen += l;
 			memcpy(buf, &ehci_ifcd, l);
-			buf = (char *)buf + l;
+			buf = (char*) buf + l;
 			len -= l;
 			l = min(len, USB_ENDPOINT_DESCRIPTOR_SIZE);
 			totlen += l;
@@ -1595,7 +1594,7 @@ ehci_root_ctrl_start(usbd_xfer_handle xfer)
 		case UDESC_STRING:
 			if (len == 0)
 				break;
-			*(u_int8_t *)buf = 0;
+			*(u_int8_t*) buf = 0;
 			totlen = 1;
 			switch (value & 0xff) {
 			case 1: /* Vendor */
@@ -1613,20 +1612,20 @@ ehci_root_ctrl_start(usbd_xfer_handle xfer)
 		break;
 	case C(UR_GET_INTERFACE, UT_READ_INTERFACE):
 		if (len > 0) {
-			*(u_int8_t *)buf = 0;
+			*(u_int8_t*) buf = 0;
 			totlen = 1;
 		}
 		break;
 	case C(UR_GET_STATUS, UT_READ_DEVICE):
 		if (len > 1) {
-			USETW(((usb_status_t *)buf)->wStatus,UDS_SELF_POWERED);
+			USETW(((usb_status_t* )buf)->wStatus, UDS_SELF_POWERED);
 			totlen = 2;
 		}
 		break;
 	case C(UR_GET_STATUS, UT_READ_INTERFACE):
 	case C(UR_GET_STATUS, UT_READ_ENDPOINT):
 		if (len > 1) {
-			USETW(((usb_status_t *)buf)->wStatus, 0);
+			USETW(((usb_status_t* )buf)->wStatus, 0);
 			totlen = 2;
 		}
 		break;
@@ -1655,20 +1654,20 @@ ehci_root_ctrl_start(usbd_xfer_handle xfer)
 		break;
 	case C(UR_SYNCH_FRAME, UT_WRITE_ENDPOINT):
 		break;
-	/* Hub requests */
+		/* Hub requests */
 	case C(UR_CLEAR_FEATURE, UT_WRITE_CLASS_DEVICE):
 		break;
 	case C(UR_CLEAR_FEATURE, UT_WRITE_CLASS_OTHER):
 		DPRINTFN(8, ("ehci_root_ctrl_control: UR_CLEAR_PORT_FEATURE "
-			     "port=%d feature=%d\n",
-			     index, value));
+						"port=%d feature=%d\n",
+						index, value));
 		if (index < 1 || index > sc->sc_noport) {
 			err = USBD_IOERROR;
 			goto ret;
 		}
 		port = EHCI_PORTSC(index);
-		v = EOREAD4(sc, port) &~ EHCI_PS_CLEAR;
-		switch(value) {
+		v = EOREAD4(sc, port) & ~ EHCI_PS_CLEAR;
+		switch (value) {
 		case UHF_PORT_ENABLE:
 			EOWRITE4(sc, port, v &~ EHCI_PS_PE);
 			break;
@@ -1680,11 +1679,11 @@ ehci_root_ctrl_start(usbd_xfer_handle xfer)
 			break;
 		case UHF_PORT_TEST:
 			DPRINTFN(2,("ehci_root_ctrl_transfer: clear port test "
-				    "%d\n", index));
+							"%d\n", index));
 			break;
 		case UHF_PORT_INDICATOR:
 			DPRINTFN(2,("ehci_root_ctrl_transfer: clear port ind "
-				    "%d\n", index));
+							"%d\n", index));
 			EOWRITE4(sc, port, v &~ EHCI_PS_PIC);
 			break;
 		case UHF_C_PORT_CONNECTION:
@@ -1731,9 +1730,7 @@ ehci_root_ctrl_start(usbd_xfer_handle xfer)
 		hubd.bNbrPorts = sc->sc_noport;
 		v = EOREAD4(sc, EHCI_HCSPARAMS);
 		USETW(hubd.wHubCharacteristics,
-		    EHCI_HCS_PPC(v) ? UHD_PWR_INDIVIDUAL : UHD_PWR_NO_SWITCH |
-		    EHCI_HCS_P_INCICATOR(EREAD4(sc, EHCI_HCSPARAMS))
-		        ? UHD_PORT_IND : 0);
+				EHCI_HCS_PPC(v) ? UHD_PWR_INDIVIDUAL : UHD_PWR_NO_SWITCH | EHCI_HCS_P_INCICATOR(EREAD4(sc, EHCI_HCSPARAMS)) ? UHD_PORT_IND : 0);
 		hubd.bPwrOn2PwrGood = 200; /* XXX can't find out? */
 		for (i = 0, l = sc->sc_noport; l > 0; i++, l -= 8, v >>= 8)
 			hubd.DeviceRemovable[i++] = 0; /* XXX can't find out? */
@@ -1752,7 +1749,7 @@ ehci_root_ctrl_start(usbd_xfer_handle xfer)
 		break;
 	case C(UR_GET_STATUS, UT_READ_CLASS_OTHER):
 		DPRINTFN(8,("ehci_root_ctrl_transfer: get port status i=%d\n",
-			    index));
+						index));
 		if (index < 1 || index > sc->sc_noport) {
 			err = USBD_IOERROR;
 			goto ret;
@@ -1763,20 +1760,30 @@ ehci_root_ctrl_start(usbd_xfer_handle xfer)
 		}
 		v = EOREAD4(sc, EHCI_PORTSC(index));
 		DPRINTFN(8,("ehci_root_ctrl_transfer: port status=0x%04x\n",
-			    v));
+						v));
 		i = UPS_HIGH_SPEED;
-		if (v & EHCI_PS_CS)	i |= UPS_CURRENT_CONNECT_STATUS;
-		if (v & EHCI_PS_PE)	i |= UPS_PORT_ENABLED;
-		if (v & EHCI_PS_SUSP)	i |= UPS_SUSPEND;
-		if (v & EHCI_PS_OCA)	i |= UPS_OVERCURRENT_INDICATOR;
-		if (v & EHCI_PS_PR)	i |= UPS_RESET;
-		if (v & EHCI_PS_PP)	i |= UPS_PORT_POWER;
+		if (v & EHCI_PS_CS)
+			i |= UPS_CURRENT_CONNECT_STATUS;
+		if (v & EHCI_PS_PE)
+			i |= UPS_PORT_ENABLED;
+		if (v & EHCI_PS_SUSP)
+			i |= UPS_SUSPEND;
+		if (v & EHCI_PS_OCA)
+			i |= UPS_OVERCURRENT_INDICATOR;
+		if (v & EHCI_PS_PR)
+			i |= UPS_RESET;
+		if (v & EHCI_PS_PP)
+			i |= UPS_PORT_POWER;
 		USETW(ps.wPortStatus, i);
 		i = 0;
-		if (v & EHCI_PS_CSC)	i |= UPS_C_CONNECT_STATUS;
-		if (v & EHCI_PS_PEC)	i |= UPS_C_PORT_ENABLED;
-		if (v & EHCI_PS_OCC)	i |= UPS_C_OVERCURRENT_INDICATOR;
-		if (sc->sc_isreset)	i |= UPS_C_PORT_RESET;
+		if (v & EHCI_PS_CSC)
+			i |= UPS_C_CONNECT_STATUS;
+		if (v & EHCI_PS_PEC)
+			i |= UPS_C_PORT_ENABLED;
+		if (v & EHCI_PS_OCC)
+			i |= UPS_C_OVERCURRENT_INDICATOR;
+		if (sc->sc_isreset)
+			i |= UPS_C_PORT_RESET;
 		USETW(ps.wPortChange, i);
 		l = min(len, sizeof ps);
 		memcpy(buf, &ps, l);
@@ -1793,8 +1800,8 @@ ehci_root_ctrl_start(usbd_xfer_handle xfer)
 			goto ret;
 		}
 		port = EHCI_PORTSC(index);
-		v = EOREAD4(sc, port) &~ EHCI_PS_CLEAR;
-		switch(value) {
+		v = EOREAD4(sc, port) & ~ EHCI_PS_CLEAR;
+		switch (value) {
 		case UHF_PORT_ENABLE:
 			EOWRITE4(sc, port, v | EHCI_PS_PE);
 			break;
@@ -1803,14 +1810,14 @@ ehci_root_ctrl_start(usbd_xfer_handle xfer)
 			break;
 		case UHF_PORT_RESET:
 			DPRINTFN(5,("ehci_root_ctrl_transfer: reset port %d\n",
-				    index));
+							index));
 			if (EHCI_PS_IS_LOWSPEED(v)) {
 				/* Low speed device, give up ownership. */
 				ehci_disown(sc, index, 1);
 				break;
 			}
 			/* Start reset sequence. */
-			v &= ~ (EHCI_PS_PE | EHCI_PS_PR);
+			v &= ~(EHCI_PS_PE | EHCI_PS_PR);
 			EOWRITE4(sc, port, v | EHCI_PS_PR);
 			/* Wait for reset to complete. */
 			usb_delay_ms(&sc->sc_bus, USB_PORT_ROOT_RESET_DELAY);
@@ -1829,8 +1836,7 @@ ehci_root_ctrl_start(usbd_xfer_handle xfer)
 			v = EOREAD4(sc, port);
 			DPRINTF(("ehci after reset, status=0x%08x\n", v));
 			if (v & EHCI_PS_PR) {
-				printf("%s: port reset timeout\n",
-				       USBDEVNAME(sc->sc_bus.bdev));
+				printf("%s: port reset timeout\n", USBDEVNAME(sc->sc_bus.bdev));
 				return (USBD_TIMEOUT);
 			}
 			if (!(v & EHCI_PS_PE)) {
@@ -1840,20 +1846,20 @@ ehci_root_ctrl_start(usbd_xfer_handle xfer)
 			}
 			sc->sc_isreset = 1;
 			DPRINTF(("ehci port %d reset, status = 0x%08x\n",
-				 index, v));
+							index, v));
 			break;
 		case UHF_PORT_POWER:
 			DPRINTFN(2,("ehci_root_ctrl_transfer: set port power "
-				    "%d\n", index));
+							"%d\n", index));
 			EOWRITE4(sc, port, v | EHCI_PS_PP);
 			break;
 		case UHF_PORT_TEST:
 			DPRINTFN(2,("ehci_root_ctrl_transfer: set port test "
-				    "%d\n", index));
+							"%d\n", index));
 			break;
 		case UHF_PORT_INDICATOR:
 			DPRINTFN(2,("ehci_root_ctrl_transfer: set port ind "
-				    "%d\n", index));
+							"%d\n", index));
 			EOWRITE4(sc, port, v | EHCI_PS_PIC);
 			break;
 		default:
@@ -1909,14 +1915,14 @@ ehci_disown(ehci_softc_t *sc, int index, int lowspeed)
 }
 
 /* Abort a root control request. */
-Static void
+void
 ehci_root_ctrl_abort(usbd_xfer_handle xfer)
 {
 	/* Nothing to do, all transfers are synchronous. */
 }
 
 /* Close the root pipe. */
-Static void
+void
 ehci_root_ctrl_close(usbd_pipe_handle pipe)
 {
 	DPRINTF(("ehci_root_ctrl_close\n"));
@@ -1929,7 +1935,7 @@ ehci_root_intr_done(usbd_xfer_handle xfer)
 	xfer->hcpriv = NULL;
 }
 
-Static usbd_status
+usbd_status
 ehci_root_intr_transfer(usbd_xfer_handle xfer)
 {
 	usbd_status err;
@@ -1943,7 +1949,7 @@ ehci_root_intr_transfer(usbd_xfer_handle xfer)
 	return (ehci_root_intr_start(SIMPLEQ_FIRST(&xfer->pipe->queue)));
 }
 
-Static usbd_status
+usbd_status
 ehci_root_intr_start(usbd_xfer_handle xfer)
 {
 	usbd_pipe_handle pipe = xfer->pipe;
@@ -1958,7 +1964,7 @@ ehci_root_intr_start(usbd_xfer_handle xfer)
 }
 
 /* Abort a root interrupt request. */
-Static void
+void
 ehci_root_intr_abort(usbd_xfer_handle xfer)
 {
 	int s;
@@ -1974,7 +1980,7 @@ ehci_root_intr_abort(usbd_xfer_handle xfer)
 }
 
 /* Close the root pipe. */
-Static void
+void
 ehci_root_intr_close(usbd_pipe_handle pipe)
 {
 	ehci_softc_t *sc = (ehci_softc_t *)pipe->device->bus;
@@ -2214,7 +2220,7 @@ printf("status=%08x toggle=%d\n", epipe->sqh->qh.qh_qtd.qtd_status,
 	return (USBD_NOMEM);
 }
 
-Static void
+void
 ehci_free_sqtd_chain(ehci_softc_t *sc, ehci_soft_qtd_t *sqtd,
 		    ehci_soft_qtd_t *sqtdend)
 {
@@ -2391,7 +2397,7 @@ ehci_timeout_task(void *addr)
 
 /************************/
 
-Static usbd_status
+usbd_status
 ehci_device_ctrl_transfer(usbd_xfer_handle xfer)
 {
 	usbd_status err;
@@ -2405,7 +2411,7 @@ ehci_device_ctrl_transfer(usbd_xfer_handle xfer)
 	return (ehci_device_ctrl_start(SIMPLEQ_FIRST(&xfer->pipe->queue)));
 }
 
-Static usbd_status
+usbd_status
 ehci_device_ctrl_start(usbd_xfer_handle xfer)
 {
 	ehci_softc_t *sc = (ehci_softc_t *)xfer->pipe->device->bus;
@@ -2455,7 +2461,7 @@ ehci_device_ctrl_done(usbd_xfer_handle xfer)
 }
 
 /* Abort a device control request. */
-Static void
+void
 ehci_device_ctrl_abort(usbd_xfer_handle xfer)
 {
 	DPRINTF(("ehci_device_ctrl_abort: xfer=%p\n", xfer));
@@ -2463,7 +2469,7 @@ ehci_device_ctrl_abort(usbd_xfer_handle xfer)
 }
 
 /* Close a device control pipe. */
-Static void
+void
 ehci_device_ctrl_close(usbd_pipe_handle pipe)
 {
 	ehci_softc_t *sc = (ehci_softc_t *)pipe->device->bus;
@@ -2627,7 +2633,7 @@ ehci_device_request(usbd_xfer_handle xfer)
 
 /************************/
 
-Static usbd_status
+usbd_status
 ehci_device_bulk_transfer(usbd_xfer_handle xfer)
 {
 	usbd_status err;
@@ -2732,7 +2738,7 @@ ehci_device_bulk_start(usbd_xfer_handle xfer)
 #undef exfer
 }
 
-Static void
+void
 ehci_device_bulk_abort(usbd_xfer_handle xfer)
 {
 	DPRINTF(("ehci_device_bulk_abort: xfer=%p\n", xfer));
@@ -2742,7 +2748,7 @@ ehci_device_bulk_abort(usbd_xfer_handle xfer)
 /*
  * Close a device bulk pipe.
  */
-Static void
+void
 ehci_device_bulk_close(usbd_pipe_handle pipe)
 {
 	ehci_softc_t *sc = (ehci_softc_t *)pipe->device->bus;
@@ -2771,16 +2777,16 @@ ehci_device_bulk_done(usbd_xfer_handle xfer)
 
 /************************/
 
-Static usbd_status	ehci_device_intr_transfer(usbd_xfer_handle xfer) { return USBD_IOERROR; }
-Static usbd_status	ehci_device_intr_start(usbd_xfer_handle xfer) { return USBD_IOERROR; }
-Static void		ehci_device_intr_abort(usbd_xfer_handle xfer) { }
-Static void		ehci_device_intr_close(usbd_pipe_handle pipe) { }
-Static void		ehci_device_intr_done(usbd_xfer_handle xfer) { }
+usbd_status	ehci_device_intr_transfer(usbd_xfer_handle xfer) { return USBD_IOERROR; }
+usbd_status	ehci_device_intr_start(usbd_xfer_handle xfer) { return USBD_IOERROR; }
+void		ehci_device_intr_abort(usbd_xfer_handle xfer) { }
+void		ehci_device_intr_close(usbd_pipe_handle pipe) { }
+void		ehci_device_intr_done(usbd_xfer_handle xfer) { }
 
 /************************/
 
-Static usbd_status	ehci_device_isoc_transfer(usbd_xfer_handle xfer) { return USBD_IOERROR; }
-Static usbd_status	ehci_device_isoc_start(usbd_xfer_handle xfer) { return USBD_IOERROR; }
-Static void		ehci_device_isoc_abort(usbd_xfer_handle xfer) { }
-Static void		ehci_device_isoc_close(usbd_pipe_handle pipe) { }
-Static void		ehci_device_isoc_done(usbd_xfer_handle xfer) { }
+usbd_status	ehci_device_isoc_transfer(usbd_xfer_handle xfer) { return USBD_IOERROR; }
+usbd_status	ehci_device_isoc_start(usbd_xfer_handle xfer) { return USBD_IOERROR; }
+void		ehci_device_isoc_abort(usbd_xfer_handle xfer) { }
+void		ehci_device_isoc_close(usbd_pipe_handle pipe) { }
+void		ehci_device_isoc_done(usbd_xfer_handle xfer) { }

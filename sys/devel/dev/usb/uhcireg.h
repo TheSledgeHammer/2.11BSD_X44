@@ -1,11 +1,12 @@
-/*	$NetBSD: uhcireg.h,v 1.5 1998/12/27 23:40:52 augustss Exp $	*/
+/*	$NetBSD: uhcireg.h,v 1.16 2002/07/11 21:14:29 augustss Exp $	*/
+/*	$FreeBSD: src/sys/dev/usb/uhcireg.h,v 1.12 1999/11/17 22:33:42 n_hibma Exp $ */
 
 /*
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by Lennart Augustsson (augustss@carlstedt.se) at
+ * by Lennart Augustsson (lennart@augustsson.net) at
  * Carlstedt Research & Technology.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -101,21 +102,26 @@
 #define UHCI_PORTSC_OCIC		0x0800
 #define UHCI_PORTSC_SUSP		0x1000
 
+#define URWMASK(x) \
+  ((x) & (UHCI_PORTSC_SUSP | UHCI_PORTSC_PR | UHCI_PORTSC_RD | UHCI_PORTSC_PE))
+
 #define UHCI_FRAMELIST_COUNT	1024
 #define UHCI_FRAMELIST_ALIGN	4096
 
 #define UHCI_TD_ALIGN			16
 #define UHCI_QH_ALIGN			16
 
-typedef u_int32_t uhci_physaddr_t;
+typedef u_int32_t 				uhci_physaddr_t;
 #define UHCI_PTR_T				0x00000001
-#define UHCI_PTR_Q				0x00000002
+#define UHCI_PTR_TD				0x00000000
+#define UHCI_PTR_QH				0x00000002
 #define UHCI_PTR_VF				0x00000004
 
-typedef union {
-	struct uhci_soft_qh 		*sqh;
-	struct uhci_soft_td 		*std;
-} uhci_soft_td_qh_t;
+ /*
+  * Wait this long after a QH has been removed.  This gives that HC a
+  * chance to stop looking at it before it's recycled.
+  */
+ #define UHCI_QH_REMOVE_DELAY	5
 
 /*
  * The Queue Heads and Transfer Descriptors and accessed
@@ -162,10 +168,7 @@ typedef struct {
 #define UHCI_TD_GET_MAXLEN(s)	((((s) >> 21) + 1) & 0x7ff)
 #define UHCI_TD_MAXLEN_MASK		0xffe00000
 	u_int32_t 					td_buffer;
-	uhci_soft_td_qh_t 			link; /* soft version of the td_link field */
-	/* padding to 32 bytes */
 } uhci_td_t;
-#define UHCI_TD_SIZE 			32
 
 #define UHCI_TD_ERROR 					(UHCI_TD_BITSTUFF|UHCI_TD_CRCTO|UHCI_TD_BABBLE|UHCI_TD_DBUFFER|UHCI_TD_STALLED)
 
@@ -176,10 +179,6 @@ typedef struct {
 typedef struct {
 	uhci_physaddr_t 			qh_hlink;
 	uhci_physaddr_t 			qh_elink;
-	struct uhci_soft_qh 		*hlink; /* soft version of qh_hlink */
-	struct uhci_soft_td 		*elink; /* soft version of qh_elink */
-	/* padding to 32 bytes */
 } uhci_qh_t;
-#define UHCI_QH_SIZE 			32
 
 #endif /* _DEV_PCI_UHCIREG_H_ */

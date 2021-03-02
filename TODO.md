@@ -32,7 +32,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## dev:
 - Essential Driver Support:
 	- usb: 								Work in progress
-		- add: vhci, kbd, mouse
+		- add: vhci, xhci, usb_callout
 		- fix: ehci, ohci & uhci
 	- mouse/keyboard:						Work in progress
 

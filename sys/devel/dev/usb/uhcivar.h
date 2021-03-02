@@ -1,11 +1,12 @@
-/*	$NetBSD: uhcivar.h,v 1.5 1998/12/26 12:53:02 augustss Exp $	*/
+/*	$NetBSD: uhcivar.h,v 1.36.8.1 2005/05/13 17:09:02 riz Exp $	*/
+/*	$FreeBSD: src/sys/dev/usb/uhcivar.h,v 1.14 1999/11/17 22:33:42 n_hibma Exp $	*/
 
 /*
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by Lennart Augustsson (augustss@carlstedt.se) at
+ * by Lennart Augustsson (lennart@augustsson.net) at
  * Carlstedt Research & Technology.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,6 +56,11 @@
 typedef struct uhci_soft_qh 	uhci_soft_qh_t;
 typedef struct uhci_soft_td 	uhci_soft_td_t;
 
+typedef union {
+	struct uhci_soft_qh 		*sqh;
+	struct uhci_soft_td 		*std;
+} uhci_soft_td_qh_t;
+
 /*
  * An interrupt info struct contains the information needed to
  * execute a requested routine when the controller generates an
@@ -64,7 +70,7 @@ typedef struct uhci_soft_td 	uhci_soft_td_t;
  */
 typedef struct uhci_intr_info {
 	struct uhci_softc 			*sc;
-	usbd_request_handle 		reqh;
+	usbd_xfer_handle 			xfer;
 	uhci_soft_td_t 				*stdstart;
 	uhci_soft_td_t 				*stdend;
 	LIST_ENTRY(uhci_intr_info) 	list;
@@ -73,25 +79,45 @@ typedef struct uhci_intr_info {
 #endif
 } uhci_intr_info_t;
 
+struct uhci_xfer {
+	struct usbd_xfer 			xfer;
+	uhci_intr_info_t 			iinfo;
+	struct usb_task				abort_task;
+	int 						curframe;
+};
+
+#define UXFER(xfer) 			((struct uhci_xfer *)(xfer))
+
 /*
  * Extra information that we need for a TD.
  */
 struct uhci_soft_td {
-	uhci_td_t 					*td;			/* The real TD */
+	uhci_td_t 					td;				/* The real TD */
+	uhci_soft_td_qh_t 			link; 			/* soft version of the td_link field */
 	uhci_physaddr_t 			physaddr;		/* and its physical address. */
 };
-#define UHCI_TD_CHUNK 			128 			/*(PAGE_SIZE / UHCI_TD_SIZE)*/
+/*
+ * Make the size such that it is a multiple of UHCI_TD_ALIGN.  This way
+ * we can pack a number of soft TD together and have the real TD well
+ * aligned.
+ * NOTE: Minimum size is 32 bytes.
+ */
+#define UHCI_STD_SIZE 			((sizeof (struct uhci_soft_td) + UHCI_TD_ALIGN - 1) / UHCI_TD_ALIGN * UHCI_TD_ALIGN)
+#define UHCI_STD_CHUNK 			128 			/*(PAGE_SIZE / UHCI_TD_SIZE)*/
 
 /*
  * Extra information that we need for a QH.
  */
 struct uhci_soft_qh {
-	uhci_qh_t 					*qh;			/* The real QH */
+	uhci_qh_t 					qh;				/* The real QH */
+	uhci_soft_qh_t 				*hlink;			/* soft version of qh_hlink */
+	uhci_soft_td_t 				*elink;			/* soft version of qh_elink */
 	uhci_physaddr_t 			physaddr;		/* and its physical address. */
 	int 						pos;			/* Timeslot position */
-	uhci_intr_info_t 			*intr_info;		/* Who to call on completion. */
 };
-#define UHCI_QH_CHUNK 			128 			/*(PAGE_SIZE / UHCI_QH_SIZE)*/
+/* See comment about UHCI_STD_SIZE. */
+#define UHCI_SQH_SIZE 			((sizeof (struct uhci_soft_qh) + UHCI_QH_ALIGN - 1) / UHCI_QH_ALIGN * UHCI_QH_ALIGN)
+#define UHCI_SQH_CHUNK 			128 			/*(PAGE_SIZE / UHCI_QH_SIZE)*/
 
 /* Only used for buffer free list. */
 struct uhci_buffer {
@@ -113,43 +139,56 @@ struct uhci_vframe {
 
 typedef struct uhci_softc {
 	struct usbd_bus 			sc_bus;			/* base device */
-	void 						*sc_ih;			/* interrupt vectoring */
 	bus_space_tag_t 			iot;
 	bus_space_handle_t 			ioh;
-
-	bus_dma_tag_t 				sc_dmatag;		/* DMA tag */
-	/* XXX should keep track of all DMA memory */
+	bus_size_t 					sc_size;
 
 	uhci_physaddr_t 			*sc_pframes;
+	usb_dma_t 					sc_dma;
 	struct uhci_vframe 			sc_vframes[UHCI_VFRAMELIST_COUNT];
 
-	uhci_soft_qh_t 				*sc_ctl_start;	/* dummy QH for control */
-	uhci_soft_qh_t 				*sc_ctl_end;	/* last control QH */
+	uhci_soft_qh_t 				*sc_lctl_start;	/* dummy QH for low speed control */
+	uhci_soft_qh_t 				*sc_lctl_end;	/* last control QH */
+	uhci_soft_qh_t 				*sc_hctl_start;	/* dummy QH for high speed control */
+	uhci_soft_qh_t 				*sc_hctl_end;	/* last control QH */
 	uhci_soft_qh_t 				*sc_bulk_start;	/* dummy QH for bulk */
 	uhci_soft_qh_t 				*sc_bulk_end;	/* last bulk transfer */
+	uhci_soft_qh_t 				*sc_last_qh;	/* dummy QH at the end */
+	u_int32_t 					sc_loops;		/* number of QHs that wants looping */
 
-	uhci_soft_td_t 				*sc_freetds;
-	uhci_soft_qh_t 				*sc_freeqhs;
-	struct uhci_buffer 			*sc_freebuffers;
+	uhci_soft_td_t 				*sc_freetds;	/* TD free list */
+	uhci_soft_qh_t 				*sc_freeqhs;	/* QH free list */
+
+	SIMPLEQ_HEAD(, usbd_xfer) 	sc_free_xfers; /* free xfers */
 
 	u_int8_t 					sc_addr;		/* device address */
 	u_int8_t 					sc_conf;		/* device configuration */
 
+	u_int8_t 					sc_saved_sof;
+	u_int16_t 					sc_saved_frnum;
+
 	char 						sc_isreset;
+	char 						sc_suspend;
+	char 						sc_dying;
 
 	int 						sc_intrs;
+
 	LIST_HEAD(, uhci_intr_info) sc_intrhead;
 
 	/* Info for the root hub interrupt channel. */
 	int 						sc_ival;
+	usbd_xfer_handle 			sc_intr_xfer;	/* root hub interrupt transfer */
+	usb_callout_t 				sc_poll_handle;
 
-	char 						sc_vflock;
-#define UHCI_HAS_LOCK 			1
-#define UHCI_WANT_LOCK 			2
+	char 						sc_vendor[32];	/* vendor string for root hub */
+	int 						sc_id_vendor;	/* vendor ID for root hub */
 
-	usb_dma_t 					*sc_mallocs;
+	void 						*sc_powerhook;	/* cookie from power hook */
+	void 						*sc_shutdownhook;	/* cookie from shutdown hook */
 
-	char 						sc_vendor[16];
+	struct device 				*sc_child;		/* /dev/usb# device */
+
+	struct usb_dma_reserve 		sc_dma_reserve;
 } uhci_softc_t;
 
 usbd_status	uhci_init (uhci_softc_t *);
@@ -157,13 +196,3 @@ int			uhci_intr (void *);
 #if 0
 void		uhci_reset (void *);
 #endif
-
-#ifdef USB_DEBUG
-#define DPRINTF(x)		if (uhcidebug) printf x
-#define DPRINTFN(n,x)	if (uhcidebug>(n)) printf x
-extern int uhcidebug;
-#else
-#define DPRINTF(x)
-#define DPRINTFN(n,x)
-#endif
-
