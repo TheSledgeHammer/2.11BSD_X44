@@ -54,8 +54,12 @@ void
 ptrace()
 {
 	register struct proc *p;
-
-	struct ptrace_args *uap;
+	register struct a {
+		int		req;
+		pid_t	pid;
+		caddr_t addr;
+		int		data;
+	} *uap;
 
 	uap = (struct a *)u->u_ap;
 	if (uap->req <= 0) {
@@ -85,8 +89,8 @@ ptrace()
 	wakeup((caddr_t)&ipc);
 }
 
-#define	PHYSOFF(p, o) ((caddr_t)(p) + (o))
-#define PHYSALIGNED(a) (((int)(a) & (sizeof(int) - 1)) == 0)
+#define	PHYSOFF(p, o) 	((caddr_t)(p) + (o))
+#define PHYSALIGNED(a) 	(((int)(a) & (sizeof(int) - 1)) == 0)
 
 int
 procxmt(p)
@@ -105,70 +109,74 @@ procxmt(p)
 	/* read user I */
 	case PT_READ_I:
 		useracc();
-		if (fuibyte((caddr_t)ipc.ip_addr) == -1 || !useracc((caddr_t)ipc.ip_addr, 4, B_READ))
+		if (fuibyte((caddr_t) ipc.ip_addr) == -1
+				|| !useracc((caddr_t) ipc.ip_addr, 4, B_READ))
 			goto error;
-		ipc.ip_data = fuiword((caddr_t)ipc.ip_addr);
+		ipc.ip_data = fuiword((caddr_t) ipc.ip_addr);
 		break;
 
-	/* read user D */
+		/* read user D */
 	case PT_READ_D:
-		if (fubyte((caddr_t)ipc.ip_addr) == -1 || !useracc((caddr_t)ipc.ip_addr, 4, B_READ))
+		if (fubyte((caddr_t) ipc.ip_addr) == -1
+				|| !useracc((caddr_t) ipc.ip_addr, 4, B_READ))
 			goto error;
-		ipc.ip_data = fuword((caddr_t)ipc.ip_addr);
+		ipc.ip_data = fuword((caddr_t) ipc.ip_addr);
 		break;
 
-	/* read u */
+		/* read u */
 	case PT_READ_U:
-		i = (int)ipc.ip_addr;
-		if (i < 0 || i > ctob(USIZE)-sizeof(int) || !PHYSALIGNED(i))
+		i = (int) ipc.ip_addr;
+		if (i < 0 || i > ctob(USIZE) - sizeof(int) || !PHYSALIGNED(i))
 			goto error;
-		ipc.ip_data = *(int *)PHYSOFF(p->p_addr, i);
+		ipc.ip_data = *(int*) PHYSOFF(p->p_addr, i);
 		break;
 
-	/* write user I */
-	/* Must set up to allow writing */
+		/* write user I */
+		/* Must set up to allow writing */
 	case PT_WRITE_I:
-		if ((i = suiword((caddr_t)ipc.ip_addr, ipc.ip_data)) < 0) {
+		if ((i = suiword((caddr_t) ipc.ip_addr, ipc.ip_data)) < 0) {
 			vm_offset_t sa, ea;
 			int rv;
 
-			sa = trunc_page((vm_offset_t)ipc.ip_addr);
-			ea = round_page((vm_offset_t)ipc.ip_addr+sizeof(int));
-			rv = vm_map_protect(&p->p_vmspace->vm_map, sa, ea, VM_PROT_DEFAULT, FALSE);
+			sa = trunc_page((vm_offset_t )ipc.ip_addr);
+			ea = round_page((vm_offset_t )ipc.ip_addr + sizeof(int));
+			rv = vm_map_protect(&p->p_vmspace->vm_map, sa, ea, VM_PROT_DEFAULT,
+					FALSE);
 
 			if (rv == KERN_SUCCESS) {
 				//estabur(u->u_tsize, u->u_dsize, u->u_ssize, u->u_sep, RW);
-				i = suiword((caddr_t)ipc.ip_addr, 0);
-				suiword((caddr_t)ipc.ip_addr, ipc.ip_data);
-				(void) vm_map_protect(&p->p_vmspace->vm_map, sa, ea, VM_PROT_READ|VM_PROT_EXECUTE, FALSE);
+				i = suiword((caddr_t) ipc.ip_addr, 0);
+				suiword((caddr_t) ipc.ip_addr, ipc.ip_data);
+				(void) vm_map_protect(&p->p_vmspace->vm_map, sa, ea,
+						VM_PROT_READ | VM_PROT_EXECUTE, FALSE);
 				//estabur(u->u_tsize, u->u_dsize, u->u_ssize, u->u_sep, RO);
 			}
 		}
-		if (i<0)
+		if (i < 0)
 			goto error;
 		break;
 
-	/* write user D */
+		/* write user D */
 	case PT_WRITE_D:
-		if (suword((caddr_t)ipc.ip_addr, 0) < 0)
+		if (suword((caddr_t) ipc.ip_addr, 0) < 0)
 			goto error;
-		(void)  suword((caddr_t)ipc.ip_addr, ipc.ip_data);
+		(void) suword((caddr_t) ipc.ip_addr, ipc.ip_data);
 		break;
 
 	case PT_WRITE_U:
-		i = (int)ipc.ip_addr;
-		poff = (int *)PHYSOFF(kstack, i);
-		paln = (int *)PHYSALIGNED(i);
-		if(paln >= (int *)&u->u_fps && paln < (int *)&u->u_fps.u_fpregs[6])
+		i = (int) ipc.ip_addr;
+		poff = (int*) PHYSOFF(kstack, i);
+		paln = (int*) PHYSALIGNED(i);
+		if (paln >= (int*) &u->u_fps && paln < (int*) &u->u_fps.u_fpregs[6])
 			goto ok;
-		for (i=0; i < NIPCREG; i++)
+		for (i = 0; i < NIPCREG; i++)
 			if (poff == &u->u_ar0[ipcreg[i]])
 				goto ok;
 
 		if (poff == &u->u_ar0[PS]) {
-			ipc.ip_data |= PSL_USERSET;		/* user space */
-			ipc.ip_data &= ~PSL_USERCLR;	/* priority 0 */
-/* overlay was here */
+			ipc.ip_data |= PSL_USERSET; /* user space */
+			ipc.ip_data &= ~PSL_USERCLR; /* priority 0 */
+			/* overlay was here */
 
 #ifdef PSL_CM_CLR
 			if (ipc.ip_data & PSL_CM)
@@ -189,42 +197,42 @@ procxmt(p)
 		/* FALL THROUGH TO ... */
 
 	case PT_CONTINUE:
-		if ((int)ipc.ip_addr != 1)
-			u->u_ar0[PC] = (int)ipc.ip_addr;
+		if ((int) ipc.ip_addr != 1)
+			u->u_ar0[PC] = (int) ipc.ip_addr;
 		if (ipc.ip_data > NSIG)
 			goto error;
-		u->u_procp->p_ptracesig = ipc.ip_data; 		/* see issignal */
+		u->u_procp->p_ptracesig = ipc.ip_data; /* see issignal */
 
-		wakeup((caddr_t)&ipc);
-		return(1);
+		wakeup((caddr_t) &ipc);
+		return (1);
 
-	/* force exit */
+		/* force exit */
 	case PT_KILL:
-		wakeup((caddr_t)&ipc);
+		wakeup((caddr_t) &ipc);
 		exit(u->u_procp->p_ptracesig);
 		/*NOTREACHED*/
 
-	case PT_DETACH:									/* stop tracing the child */
-		u->u_ar0 = (int *)((short *)u->u_ar0 + 1);
-		if ((unsigned)ipc.ip_data >= NSIG)
+	case PT_DETACH: /* stop tracing the child */
+		u->u_ar0 = (int*) ((short*) u->u_ar0 + 1);
+		if ((unsigned) ipc.ip_data >= NSIG)
 			goto error;
-		if ((int)ipc.ip_addr != 1)
-			u->u_ar0[PC] = (int)ipc.ip_addr;
-		u->u_procp->p_ptracesig = ipc.ip_data;		/* see issignal */
+		if ((int) ipc.ip_addr != 1)
+			u->u_ar0[PC] = (int) ipc.ip_addr;
+		u->u_procp->p_ptracesig = ipc.ip_data; /* see issignal */
 		p->p_flag &= ~P_TRACED;
 		if (p->p_oppid != p->p_pptr->p_pid) {
 			register struct proc *pp = pfind(p->p_oppid);
-			 if (pp)
-				 proc_reparent(p, pp);
+			if (pp)
+				proc_reparent(p, pp);
 		}
 		p->p_oppid = 0;
-		wakeup((caddr_t)&ipc);
+		wakeup((caddr_t) &ipc);
 		return (1);
 
 	default:
 	error:
-			ipc.ip_req = -1;
+		ipc.ip_req = -1;
 	}
-	wakeup((caddr_t)&ipc);
+	wakeup((caddr_t) &ipc);
 	return (0);
 }

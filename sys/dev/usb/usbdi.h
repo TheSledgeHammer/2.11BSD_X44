@@ -48,7 +48,7 @@ typedef struct usbd_pipe		*usbd_pipe_handle;
 typedef struct usbd_xfer		*usbd_xfer_handle;
 typedef void					*usbd_private_handle;
 
-
+/* states needed by usb_subr.c */
 typedef enum {
 	USBD_ENDPOINT_ACTIVE,
 	USBD_ENDPOINT_STALLED,
@@ -99,11 +99,8 @@ typedef enum {
 	USBD_STALLED,
 	USBD_INTERRUPTED,
 
-	USBD_XXX,
 	USBD_ERROR_MAX
 } usbd_status;
-
-typedef int usbd_lock_token;
 
 typedef void (*usbd_callback) (usbd_xfer_handle, usbd_private_handle, usbd_status);
 

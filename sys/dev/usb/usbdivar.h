@@ -44,9 +44,7 @@
 #include <sys/callout.h>
 #include <sys/lock.h>
 #include <sys/bus.h>
-//#include <dev/usb/usbdi.h>
 
-struct usbd_request;
 struct usbd_xfer;
 struct usbd_pipe;
 
@@ -100,10 +98,8 @@ struct usb_softc;
 struct usbd_bus {
 	/* Filled by HC driver */
 	struct device					bdev; /* base device, host adapter */
-	usbd_status	      				(*open_pipe)(struct usbd_pipe *pipe);
 	struct usbd_bus_methods			*methods;
 	u_int32_t						pipe_size; /* size of a pipe struct */
-	void		      				(*do_poll)(struct usbd_bus *);
 	int								has_console; /* console input on this bus */
 	/* Filled by usb driver */
 	struct usbd_device     			*root_hub;

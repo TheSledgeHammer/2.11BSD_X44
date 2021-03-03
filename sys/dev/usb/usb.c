@@ -1,4 +1,4 @@
-/*	$NetBSD: usb.c,v 1.12 1999/01/10 19:13:16 augustss Exp $	*/
+/*	$NetBSD: usb.c,v 1.80 2003/11/07 17:03:25 wiz Exp $	*/
 
 /*
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
@@ -42,7 +42,7 @@
  * http://www.usb.org/developers/data/ and
  * http://www.usb.org/developers/index.html .
  */
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
@@ -51,16 +51,18 @@
 #include <sys/poll.h>
 #include <sys/proc.h>
 #include <sys/select.h>
+#include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/user.h>
 
 #include <dev/usb/usb.h>
 #include <dev/usb/usbdi.h>
 #include <dev/usb/usbdi_util.h>
-
-#include <machine/bus.h>
-
 #include <dev/usb/usbdivar.h>
 #include <dev/usb/usb_quirks.h>
+
+#include <machine/bus_space.h>
+#include <machine/bus_dma.h>
 
 #ifdef USB_DEBUG
 #define DPRINTF(x)		if (usbdebug) printf x
@@ -113,6 +115,8 @@ struct cdevsw usb_cdevsw = {
 		.d_poll = usbpoll,
 		.d_mmap = nommap,
 		.d_strategy = nostrategy,
+		.d_discard = nodiscard,
+		.d_type = D_OTHER
 };
 
 /*
@@ -177,7 +181,7 @@ usb_attach(struct device *parent, struct device *self, void *aux)
 		if (!dev->hub) {
 			sc->sc_running = 0;
 			printf("%s: root device is not a hub\n", USBDEVNAME(sc->sc_dev));
-			USB_ATTACH_ERROR_RETURN;
+			return;
 		}
 		sc->sc_bus->root_hub = dev;
 		dev->hub->explore(sc->sc_bus->root_hub);
@@ -187,7 +191,7 @@ usb_attach(struct device *parent, struct device *self, void *aux)
 	}
 	sc->sc_bus->use_polling = 0;
 
-	USB_ATTACH_SUCCESS_RETURN;
+	return;
 }
 
 int

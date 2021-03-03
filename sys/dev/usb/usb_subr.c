@@ -1,11 +1,12 @@
-/*	$NetBSD: usb_subr.c,v 1.29 1999/03/18 12:08:43 augustss Exp $	*/
+/*	$NetBSD: usb_subr.c,v 1.111.2.1 2004/07/02 17:23:33 he Exp $	*/
+/*	$FreeBSD: src/sys/dev/usb/usb_subr.c,v 1.18 1999/11/17 22:33:47 n_hibma Exp $	*/
 
 /*
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by Lennart Augustsson (augustss@carlstedt.se) at
+ * by Lennart Augustsson (lennart@augustsson.net) at
  * Carlstedt Research & Technology.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +37,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
+#include <sys/cdefs.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -731,13 +734,13 @@ usbd_setup_pipe(dev, iface, ep, ival, pipe)
 	p->endpoint = ep;
 	ep->refcnt++;
 	p->refcnt = 1;
-	p->intrxfer = 0;
+	p->intrxfer = NULL;
 	p->running = 0;
 	p->aborting = 0;
 	p->repeat = 0;
 	p->interval = ival;
 	SIMPLEQ_INIT(&p->queue);
-	r = dev->bus->open_pipe(p);
+	r = dev->bus->methods->open_pipe(p);
 	if (r != USBD_NORMAL_COMPLETION) {
 		DPRINTFN(-1,("usbd_setup_pipe: endpoint=0x%x failed, error=%d (%s)\n", ep->edesc->bEndpointAddress, r, usbd_error_strs[r]));
 		free(p, M_USB);

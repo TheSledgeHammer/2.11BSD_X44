@@ -66,9 +66,6 @@
 
 #include <sys/cdefs.h>
 
-#include "ohci.h"
-#include "uhci.h"
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
@@ -79,8 +76,9 @@
 #include <sys/queue.h>
 #include <sys/user.h>
 
-#include <machine/bus.h>
-#include <machine/endian.h>
+#include <machine/bus_space.h>
+#include <machine/bus_dma.h>
+#include <machine/endian_machdep.h>
 
 #include <dev/usb/usb.h>
 #include <dev/usb/usbdi.h>
@@ -228,11 +226,11 @@ void		ehci_dump_exfer(struct ehci_xfer *);
 
 #define EHCI_INTR_ENDPT 1
 
-#define ehci_add_intr_list(sc, ex) \
+#define ehci_add_intr_list(sc, ex) 	\
 	LIST_INSERT_HEAD(&(sc)->sc_intrhead, (ex), inext);
-#define ehci_del_intr_list(ex) \
-	do { \
-		LIST_REMOVE((ex), inext); \
+#define ehci_del_intr_list(ex) 		\
+	do { 							\
+		LIST_REMOVE((ex), inext); 	\
 		(ex)->inext.le_prev = NULL; \
 	} while (0)
 #define ehci_active_intr_list(ex) ((ex)->inext.le_prev != NULL)
@@ -833,51 +831,6 @@ ehci_poll(struct usbd_bus *bus)
 
 	if (EOREAD4(sc, EHCI_USBSTS) & sc->sc_eintrs)
 		ehci_intr1(sc);
-}
-
-int
-ehci_detach(struct ehci_softc *sc, int flags)
-{
-	int rv = 0;
-
-	if (sc->sc_child != NULL)
-		rv = config_detach(sc->sc_child, flags);
-
-	if (rv != 0)
-		return (rv);
-
-	usb_uncallout(sc->sc_tmo_pcd, ehci_pcd_enable, sc);
-
-	if (sc->sc_powerhook != NULL)
-		powerhook_disestablish(sc->sc_powerhook);
-	if (sc->sc_shutdownhook != NULL)
-		shutdownhook_disestablish(sc->sc_shutdownhook);
-
-	usb_delay_ms(&sc->sc_bus, 300); /* XXX let stray task complete */
-
-	/* XXX free other data structures XXX */
-
-	return (rv);
-}
-
-
-int
-ehci_activate(device_ptr_t self, enum devact act)
-{
-	struct ehci_softc *sc = (struct ehci_softc *)self;
-	int rv = 0;
-
-	switch (act) {
-	case DVACT_ACTIVATE:
-		return (EOPNOTSUPP);
-
-	case DVACT_DEACTIVATE:
-		if (sc->sc_child != NULL)
-			rv = config_deactivate(sc->sc_child);
-		sc->sc_dying = 1;
-		break;
-	}
-	return (rv);
 }
 
 /*

@@ -1,11 +1,12 @@
-/*	$NetBSD: usbdi.c,v 1.21 1999/01/10 19:13:16 augustss Exp $	*/
+/*	$NetBSD: usbdi.c,v 1.103.8.1 2004/07/23 15:46:53 tron Exp $	*/
+/*	$FreeBSD: src/sys/dev/usb/usbdi.c,v 1.28 1999/11/17 22:33:49 n_hibma Exp $	*/
 
 /*
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by Lennart Augustsson (augustss@carlstedt.se) at
+ * by Lennart Augustsson (lennart@augustsson.net) at
  * Carlstedt Research & Technology.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +37,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
+#include <sys/cdefs.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>

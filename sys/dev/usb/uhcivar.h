@@ -1,4 +1,4 @@
-/*	$NetBSD: uhcivar.h,v 1.36.8.1 2005/05/13 17:09:02 riz Exp $	*/
+/*	$NetBSD: uhcivar.h,v 1.36 2002/12/31 00:39:11 augustss Exp $	*/
 /*	$FreeBSD: src/sys/dev/usb/uhcivar.h,v 1.14 1999/11/17 22:33:42 n_hibma Exp $	*/
 
 /*
@@ -41,20 +41,21 @@
 /*
  * To avoid having 1024 TDs for each isochronous transfer we introduce
  * a virtual frame list.  Every UHCI_VFRAMELIST_COUNT entries in the real
- * frame list points to a non-active TD.  These, in turn, which form the 
- * starts of the virtual frame list.  This also has the advantage that it 
- * simplifies linking in/out TD/QH in the schedule.
+ * frame list points to a non-active TD.  These, in turn, form the
+ * starts of the virtual frame list.  This also has the advantage that it
+ * simplifies linking in/out of TDs/QHs in the schedule.
  * Furthermore, initially each of the inactive TDs point to an inactive
  * QH that forms the start of the interrupt traffic for that slot.
  * Each of these QHs point to the same QH that is the start of control
- * traffic.
+ * traffic.  This QH points at another QH which is the start of the
+ * bulk traffic.
  *
  * UHCI_VFRAMELIST_COUNT should be a power of 2 and <= UHCI_FRAMELIST_COUNT.
  */
-#define UHCI_VFRAMELIST_COUNT 	128
+#define UHCI_VFRAMELIST_COUNT 128
 
-typedef struct uhci_soft_qh 	uhci_soft_qh_t;
-typedef struct uhci_soft_td 	uhci_soft_td_t;
+typedef struct uhci_soft_qh uhci_soft_qh_t;
+typedef struct uhci_soft_td uhci_soft_td_t;
 
 typedef union {
 	struct uhci_soft_qh 		*sqh;
@@ -92,9 +93,9 @@ struct uhci_xfer {
  * Extra information that we need for a TD.
  */
 struct uhci_soft_td {
-	uhci_td_t 					td;				/* The real TD */
-	uhci_soft_td_qh_t 			link; 			/* soft version of the td_link field */
-	uhci_physaddr_t 			physaddr;		/* and its physical address. */
+	uhci_td_t 					td;			/* The real TD, must be first */
+	uhci_soft_td_qh_t	 		link; 		/* soft version of the td_link field */
+	uhci_physaddr_t 			physaddr;	/* TD's physical address. */
 };
 /*
  * Make the size such that it is a multiple of UHCI_TD_ALIGN.  This way
@@ -103,42 +104,35 @@ struct uhci_soft_td {
  * NOTE: Minimum size is 32 bytes.
  */
 #define UHCI_STD_SIZE 			((sizeof (struct uhci_soft_td) + UHCI_TD_ALIGN - 1) / UHCI_TD_ALIGN * UHCI_TD_ALIGN)
-#define UHCI_STD_CHUNK 			128 			/*(PAGE_SIZE / UHCI_TD_SIZE)*/
+#define UHCI_STD_CHUNK 			128 /*(PAGE_SIZE / UHCI_TD_SIZE)*/
 
 /*
  * Extra information that we need for a QH.
  */
 struct uhci_soft_qh {
-	uhci_qh_t 					qh;				/* The real QH */
-	uhci_soft_qh_t 				*hlink;			/* soft version of qh_hlink */
-	uhci_soft_td_t 				*elink;			/* soft version of qh_elink */
-	uhci_physaddr_t 			physaddr;		/* and its physical address. */
-	int 						pos;			/* Timeslot position */
+	uhci_qh_t 					qh;			/* The real QH, must be first */
+	uhci_soft_qh_t 				*hlink;		/* soft version of qh_hlink */
+	uhci_soft_td_t 				*elink;		/* soft version of qh_elink */
+	uhci_physaddr_t 			physaddr;	/* QH's physical address. */
+	int 						pos;		/* Timeslot position */
 };
 /* See comment about UHCI_STD_SIZE. */
 #define UHCI_SQH_SIZE 			((sizeof (struct uhci_soft_qh) + UHCI_QH_ALIGN - 1) / UHCI_QH_ALIGN * UHCI_QH_ALIGN)
-#define UHCI_SQH_CHUNK 			128 			/*(PAGE_SIZE / UHCI_QH_SIZE)*/
-
-/* Only used for buffer free list. */
-struct uhci_buffer {
-	struct uhci_buffer 			*next;
-};
-#define UHCI_BUFFER_SIZE 		64
-#define UHCI_BUFFER_CHUNK 		64 				/*(PAGE_SIZE / UHCI_BUFFER_SIZE)*/
+#define UHCI_SQH_CHUNK 			128 /*(PAGE_SIZE / UHCI_QH_SIZE)*/
 
 /*
- * Information about an entry in the virtial frame list.
+ * Information about an entry in the virtual frame list.
  */
 struct uhci_vframe {
-	uhci_soft_td_t 				*htd;			/* pointer to dummy TD */
-	uhci_soft_td_t 				*etd;			/* pointer to last TD */
-	uhci_soft_qh_t 				*hqh;			/* pointer to dummy QH */
-	uhci_soft_qh_t 				*eqh;			/* pointer to last QH */
-	u_int 						bandwidth;		/* max bandwidth used by this frame */
+	uhci_soft_td_t 				*htd;		/* pointer to dummy TD */
+	uhci_soft_td_t 				*etd;		/* pointer to last TD */
+	uhci_soft_qh_t 				*hqh;		/* pointer to dummy QH */
+	uhci_soft_qh_t 				*eqh;		/* pointer to last QH */
+	u_int 						bandwidth;	/* max bandwidth used by this frame */
 };
 
 typedef struct uhci_softc {
-	struct usbd_bus 			sc_bus;			/* base device */
+	struct usbd_bus 			sc_bus;		/* base device */
 	bus_space_tag_t 			iot;
 	bus_space_handle_t 			ioh;
 	bus_size_t 					sc_size;
@@ -167,16 +161,18 @@ typedef struct uhci_softc {
 	u_int8_t 					sc_saved_sof;
 	u_int16_t 					sc_saved_frnum;
 
+#ifdef USB_USE_SOFTINTR
+	char 						sc_softwake;
+#endif /* USB_USE_SOFTINTR */
+
 	char 						sc_isreset;
 	char 						sc_suspend;
 	char 						sc_dying;
 
-	int 						sc_intrs;
-
 	LIST_HEAD(, uhci_intr_info) sc_intrhead;
 
-	/* Info for the root hub interrupt channel. */
-	int 						sc_ival;
+	/* Info for the root hub interrupt "pipe". */
+	int 						sc_ival;		/* time between root hub intrs */
 	usbd_xfer_handle 			sc_intr_xfer;	/* root hub interrupt transfer */
 	usb_callout_t 				sc_poll_handle;
 
@@ -186,13 +182,13 @@ typedef struct uhci_softc {
 	void 						*sc_powerhook;	/* cookie from power hook */
 	void 						*sc_shutdownhook;	/* cookie from shutdown hook */
 
-	struct device 				*sc_child;		/* /dev/usb# device */
-
-	struct usb_dma_reserve 		sc_dma_reserve;
+	struct device 				sc_child;		/* /dev/usb# device */
 } uhci_softc_t;
 
-usbd_status	uhci_init (uhci_softc_t *);
-int			uhci_intr (void *);
-#if 0
-void		uhci_reset (void *);
+usbd_status	uhci_init(uhci_softc_t *);
+int			uhci_intr(void *);
+#if defined(__NetBSD__) || defined(__OpenBSD__)
+int		uhci_detach(uhci_softc_t *, int);
+int		uhci_activate(device_ptr_t, enum devact);
 #endif
+

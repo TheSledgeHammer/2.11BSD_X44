@@ -1,11 +1,11 @@
-/*	$NetBSD: usb_mem.c,v 1.5 1998/12/14 23:44:04 augustss Exp $	*/
+/*	$NetBSD: usb_mem.c,v 1.27.6.1 2005/05/13 17:09:07 riz Exp $	*/
 
 /*
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by Lennart Augustsson (augustss@carlstedt.se) at
+ * by Lennart Augustsson (lennart@augustsson.net) at
  * Carlstedt Research & Technology.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,14 +36,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
  * USB DMA memory allocation.
  * We need to allocate a lot of small (many 8 byte, some larger)
  * memory blocks that can be used for DMA.  Using the bus_dma
  * routines directly would incur large overheads in space and time.
  */
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
@@ -55,7 +54,8 @@
 #include <sys/proc.h>
 #endif
 
-#include <machine/bus.h>
+#include <machine/bus_space.h>
+#include <machine/bus_dma.h>
 
 #include <sys/extent.h>
 #include <vm/include/vm_extern.h>

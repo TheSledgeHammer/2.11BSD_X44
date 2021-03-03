@@ -40,8 +40,8 @@ static const char _rcsid[] __attribute__ ((unused)) =
 #include <sys/device.h>
 #include <sys/null.h>
 
-#include <dev/wscons/wsksymvar.h>
-#include <dev/wscons/wscons_callbacks.h>
+#include <dev/misc/wscons/wsksymvar.h>
+#include <dev/misc/wscons/wscons_callbacks.h>
 
 #include "wskbd.h"
 #include "wsdisplay.h"

@@ -36,8 +36,21 @@
 #ifndef _ENDIAN_H_
 #define	_ENDIAN_H_
 
+
+#include <sys/cdefs.h>
+#include <sys/types.h>
+
 #include <sys/endian.h>
 
-#define _BYTE_ORDER _LITTLE_ENDIAN
+#define _BYTE_ORDER 	_LITTLE_ENDIAN
+
+#define	__bswap16(x)	__builtin_bswap16(x)
+#define	__bswap32(x)	__builtin_bswap32(x)
+#define	__bswap64(x)	__builtin_bswap64(x)
+
+#define	__htonl(x)		__bswap32(x)
+#define	__htons(x)		__bswap16(x)
+#define	__ntohl(x)		__bswap32(x)
+#define	__ntohs(x)		__bswap16(x)
 
 #endif /* !_ENDIAN_H_ */
