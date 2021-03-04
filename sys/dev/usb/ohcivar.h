@@ -136,7 +136,7 @@ typedef struct ohci_softc {
 
 	usb_callout_t 				sc_tmo_rhsc;
 
-	struct device 				sc_child;
+	struct device 				*sc_child;
 
 	char 						sc_dying;
 } ohci_softc_t;
@@ -149,6 +149,6 @@ struct ohci_xfer {
 usbd_status	ohci_init(ohci_softc_t *);
 int			ohci_intr(void *);
 #if defined(__NetBSD__) || defined(__OpenBSD__)
-int		ohci_detach(ohci_softc_t *, int);
-int		ohci_activate(device_ptr_t, enum devact);
+int			ohci_detach(ohci_softc_t *, int);
+int			ohci_activate(struct device *, enum devact);
 #endif

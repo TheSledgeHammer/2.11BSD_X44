@@ -31,9 +31,10 @@ A General todo list. Don't hesitate to add to this list. :)
 	
 ## dev:
 - Essential Driver Support:
-	- usb: 								Work in progress
+	- usb: 							Work in progress
 		- add: vhci, xhci, usb_callout, other generic usb drivers
 	- mouse/keyboard:					Work in progress
+		- wscons
 
 ## fs:
 

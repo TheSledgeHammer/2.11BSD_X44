@@ -36,8 +36,8 @@
 
 #include <sys/types.h>
 #include <sys/audioio.h>
-#include <dev/audio/auconv.h>
-#include <machine/endian.h>
+#include <dev/audio/auconv/auconv.h>
+#include <machine/endian_machdep.h>
 
 #if BYTE_ORDER == LITTLE_ENDIAN
 #define LO 0

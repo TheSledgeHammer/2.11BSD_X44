@@ -641,15 +641,14 @@ ohci_init(ohci_softc_t *sc)
 #if defined(__OpenBSD__)
 	printf(",");
 #else
-	printf("%s:", USBDEVNAME(sc->sc_bus.bdev));
+	printf("%s:", sc->sc_bus.bdev.dv_xname);
 #endif
 	rev = OREAD4(sc, OHCI_REVISION);
 	printf(" OHCI version %d.%d%s\n", OHCI_REV_HI(rev), OHCI_REV_LO(rev),
 	       OHCI_REV_LEGACY(rev) ? ", legacy support" : "");
 
 	if (OHCI_REV_HI(rev) != 1 || OHCI_REV_LO(rev) != 0) {
-		printf("%s: unsupported OHCI revision\n",
-		       USBDEVNAME(sc->sc_bus.bdev));
+		printf("%s: unsupported OHCI revision\n", sc->sc_bus.bdev.dv_xname);
 		sc->sc_bus.usbrev = USBREV_UNKNOWN;
 		return (USBD_INVAL);
 	}
@@ -747,8 +746,7 @@ ohci_init(ohci_softc_t *sc)
 			ctl = OREAD4(sc, OHCI_CONTROL);
 		}
 		if ((ctl & OHCI_IR) == 0) {
-			printf("%s: SMM does not respond, resetting\n",
-			       USBDEVNAME(sc->sc_bus.bdev));
+			printf("%s: SMM does not respond, resetting\n", sc->sc_bus.bdev.dv_xname);
 			OWRITE4(sc, OHCI_CONTROL, OHCI_HCFS_RESET);
 			goto reset;
 		}
@@ -773,7 +771,7 @@ ohci_init(ohci_softc_t *sc)
 	 * This reset should not be necessary according to the OHCI spec, but
 	 * without it some controllers do not start.
 	 */
-	DPRINTF(("%s: resetting\n", USBDEVNAME(sc->sc_bus.bdev)));
+	DPRINTF(("%s: resetting\n", sc->sc_bus.bdev.dv_xname));
 	OWRITE4(sc, OHCI_CONTROL, OHCI_HCFS_RESET);
 	usb_delay_ms(&sc->sc_bus, USB_BUS_RESET_DELAY);
 
@@ -789,7 +787,7 @@ ohci_init(ohci_softc_t *sc)
 			break;
 	}
 	if (hcr) {
-		printf("%s: reset timeout\n", USBDEVNAME(sc->sc_bus.bdev));
+		printf("%s: reset timeout\n", sc->sc_bus.bdev.dv_xname);
 		err = USBD_IOERROR;
 		goto bad5;
 	}
@@ -879,9 +877,7 @@ ohci_init(ohci_softc_t *sc)
 usbd_status
 ohci_allocm(struct usbd_bus *bus, usb_dma_t *dma, u_int32_t size)
 {
-#if defined(__NetBSD__) || defined(__OpenBSD__)
 	struct ohci_softc *sc = (struct ohci_softc *)bus;
-#endif
 
 	return (usb_allocmem(&sc->sc_bus, size, 0, dma));
 }
@@ -889,9 +885,7 @@ ohci_allocm(struct usbd_bus *bus, usb_dma_t *dma, u_int32_t size)
 void
 ohci_freem(struct usbd_bus *bus, usb_dma_t *dma)
 {
-#if defined(__NetBSD__) || defined(__OpenBSD__)
 	struct ohci_softc *sc = (struct ohci_softc *)bus;
-#endif
 
 	usb_freemem(&sc->sc_bus, dma);
 }
@@ -1127,7 +1121,7 @@ ohci_intr1(ohci_softc_t *sc)
 		sc->sc_overrun_cnt++;
 		if (usbd_ratecheck(&sc->sc_overrun_ntc)) {
 			printf("%s: %u scheduling overruns\n",
-			    USBDEVNAME(sc->sc_bus.bdev), sc->sc_overrun_cnt);
+			    sc->sc_bus.bdev.dv_xname, sc->sc_overrun_cnt);
 			sc->sc_overrun_cnt = 0;
 		}
 		/* XXX do what */
@@ -1139,12 +1133,12 @@ ohci_intr1(ohci_softc_t *sc)
 		eintrs &= ~OHCI_WDH;
 	}
 	if (eintrs & OHCI_RD) {
-		printf("%s: resume detect\n", USBDEVNAME(sc->sc_bus.bdev));
+		printf("%s: resume detect\n", sc->sc_bus.bdev.dv_xname);
 		/* XXX process resume detect */
 	}
 	if (eintrs & OHCI_UE) {
 		printf("%s: unrecoverable error, controller halted\n",
-		       USBDEVNAME(sc->sc_bus.bdev));
+		       sc->sc_bus.bdev.dv_xname);
 		OWRITE4(sc, OHCI_CONTROL, OHCI_HCFS_RESET);
 		/* XXX what else */
 	}
@@ -1167,7 +1161,7 @@ ohci_intr1(ohci_softc_t *sc)
 		OWRITE4(sc, OHCI_INTERRUPT_DISABLE, eintrs);
 		sc->sc_eintrs &= ~eintrs;
 		printf("%s: blocking intrs 0x%x\n",
-		       USBDEVNAME(sc->sc_bus.bdev), eintrs);
+		       sc->sc_bus.bdev.dv_xname, eintrs);
 	}
 
 	return (1);
@@ -2032,7 +2026,7 @@ ohci_open(usbd_pipe_handle pipe)
 		sed->ed.ed_flags = htole32(
 			OHCI_ED_SET_FA(addr) |
 			OHCI_ED_SET_EN(UE_GET_ADDR(ed->bEndpointAddress)) |
-			(dev->speed == USB_SPEED_LOW ? OHCI_ED_SPEED : 0) |
+			(dev->lowspeed == USB_SPEED_LOW ? OHCI_ED_SPEED : 0) |
 			fmt |
 			OHCI_ED_SET_MAXP(UGETW(ed->wMaxPacketSize)));
 		sed->ed.ed_headp = sed->ed.ed_tailp = htole32(tdphys);
@@ -3193,7 +3187,7 @@ ohci_device_isoc_enter(usbd_xfer_handle xfer)
 			if (nsitd == NULL) {
 				/* XXX what now? */
 				printf("%s: isoc TD alloc failed\n",
-				       USBDEVNAME(sc->sc_bus.bdev));
+				       sc->sc_bus.bdev.dv_xname);
 				return;
 			}
 
@@ -3222,7 +3216,7 @@ ohci_device_isoc_enter(usbd_xfer_handle xfer)
 	if (nsitd == NULL) {
 		/* XXX what now? */
 		printf("%s: isoc TD alloc failed\n",
-		       USBDEVNAME(sc->sc_bus.bdev));
+		       sc->sc_bus.bdev.dv_xname);
 		return;
 	}
 	/* Fixup last used ITD */

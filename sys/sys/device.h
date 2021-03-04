@@ -44,7 +44,6 @@
 
 #ifndef _SYS_DEVICE_H_
 #define	_SYS_DEVICE_H_
-//#include <sys/queue.h>
 
 /*
  * Minimal device structures.
@@ -67,10 +66,7 @@ struct device {
 	char				dv_xname[16];			/* external name (name + unit) */
 	struct	device 		*dv_parent;				/* pointer to parent device */
 	int					dv_flags;				/* misc. flags; see below */
-
-//	TAILQ_ENTRY(device)	dv_list;	/* entry on list of all devices */
 };
-//TAILQ_HEAD(devicelist, device);
 
 /* `event' counters (use zero or more per device instance, as needed) */
 struct evcnt {
@@ -92,12 +88,12 @@ struct cfdata {
 	short				*cf_parents;			/* potential parents */
 	void				(**cf_ivstubs)();		/* config-generated vectors, if any */
 };
-#define FSTATE_NOTFOUND	0	/* has not been found */
-#define	FSTATE_FOUND	1	/* has been found */
-#define	FSTATE_STAR		2	/* duplicable */
+#define FSTATE_NOTFOUND	0						/* has not been found */
+#define	FSTATE_FOUND	1						/* has been found */
+#define	FSTATE_STAR		2						/* duplicable */
 
-typedef int 	(*cfmatch_t)(struct device *, struct cfdata *, void *);
-typedef void 	(*cfattach_t)(struct device *, struct device *, void *);
+typedef int 			(*cfmatch_t)(struct device *, struct cfdata *, void *);
+typedef void 			(*cfattach_t)(struct device *, struct device *, void *);
 
 /*
  * `configuration' driver (what the machine-independent autoconf uses).
@@ -112,7 +108,7 @@ struct cfdriver {
 	char				*cd_name;				/* device name */
 	int 				(*cd_match)(struct device *, struct cfdata *, void *);
 	void				(*cd_attach)(struct device *, struct device *, void *);
-	enum	devclass 	cd_class;				/* device classification */
+	enum devclass 		cd_class;				/* device classification */
 	size_t				cd_devsize;				/* size of dev data (for malloc) */
 	void				*cd_aux;				/* additional driver, if any */
 	int					cd_ndevs;				/* size of cd_devs array */
@@ -124,10 +120,10 @@ struct cfdriver {
  * of the parent device.  The return value is ignored if the device was
  * configured, so most functions can return UNCONF unconditionally.
  */
-typedef int 	(*cfprint_t) (void *, char *);
-#define	QUIET	0		/* print nothing */
-#define	UNCONF	1		/* print " not configured\n" */
-#define	UNSUPP	2		/* print " not supported\n" */
+typedef int 			(*cfprint_t) (void *, char *);
+#define	QUIET			0		/* print nothing */
+#define	UNCONF			1		/* print " not configured\n" */
+#define	UNSUPP			2		/* print " not supported\n" */
 
 /*
  * Pseudo-device attach information (function + number of pseudo-devs).

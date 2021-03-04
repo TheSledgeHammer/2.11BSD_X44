@@ -47,7 +47,6 @@
  *	Deal with async writes in a better fashion
  */
 
-
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>

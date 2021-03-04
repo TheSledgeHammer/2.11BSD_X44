@@ -42,41 +42,41 @@ enum hid_kind {
 };
 
 struct hid_location {
-	u_int32_t size;
-	u_int32_t count;
-	u_int32_t pos;
+	u_int32_t 			size;
+	u_int32_t 			count;
+	u_int32_t 			pos;
 };
 
 struct hid_item {
 	/* Global */
-	int32_t _usage_page;
-	int32_t logical_minimum;
-	int32_t logical_maximum;
-	int32_t physical_minimum;
-	int32_t physical_maximum;
-	int32_t unit_exponent;
-	int32_t unit;
-	int32_t report_ID;
+	int32_t 			_usage_page;
+	int32_t 			logical_minimum;
+	int32_t 			logical_maximum;
+	int32_t 			physical_minimum;
+	int32_t 			physical_maximum;
+	int32_t 			unit_exponent;
+	int32_t 			unit;
+	int32_t 			report_ID;
 	/* Local */
-	int32_t usage;
-	int32_t usage_minimum;
-	int32_t usage_maximum;
-	int32_t designator_index;
-	int32_t designator_minimum;
-	int32_t designator_maximum;
-	int32_t string_index;
-	int32_t string_minimum;
-	int32_t string_maximum;
-	int32_t set_delimiter;
+	int32_t 			usage;
+	int32_t 			usage_minimum;
+	int32_t 			usage_maximum;
+	int32_t 			designator_index;
+	int32_t 			designator_minimum;
+	int32_t 			designator_maximum;
+	int32_t 			string_index;
+	int32_t 			string_minimum;
+	int32_t 			string_maximum;
+	int32_t 			set_delimiter;
 	/* Misc */
-	int32_t collection;
-	int 	collevel;
-	enum hid_kind kind;
-	u_int32_t flags;
+	int32_t 			collection;
+	int 				collevel;
+	enum hid_kind 		kind;
+	u_int32_t 			flags;
 	/* Location */
 	struct hid_location loc;
 	/* */
-	struct hid_item *next;
+	struct hid_item 	*next;
 };
 
 struct hid_data *hid_start_parse (void *d, int len, int kindset);

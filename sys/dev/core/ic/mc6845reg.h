@@ -36,5 +36,6 @@ struct reg_mc6845 { /* indexed via port 0x3d4 (mono 0x3b4) */
 	char uloc, vbstart, vbend, mode;
 	char splitl;
 };
+#define MC6845_NREGS	25
 #define MC6845_INDEX 	4
 #define MC6845_DATA 	5

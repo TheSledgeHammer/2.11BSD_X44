@@ -97,14 +97,14 @@ struct usb_softc;
 
 struct usbd_bus {
 	/* Filled by HC driver */
-	struct device					bdev; /* base device, host adapter */
+	struct device					bdev; 			/* base device, host adapter */
 	struct usbd_bus_methods			*methods;
-	u_int32_t						pipe_size; /* size of a pipe struct */
-	int								has_console; /* console input on this bus */
+	u_int32_t						pipe_size; 		/* size of a pipe struct */
+	int								has_console; 	/* console input on this bus */
 	/* Filled by usb driver */
 	struct usbd_device     			*root_hub;
 	usbd_device_handle				devices[USB_MAX_DEVICES];
-	char							needs_explore;/* a hub a signalled a change */
+	char							needs_explore;	/* a hub a signalled a change */
 	char							use_polling;
 	char							dying;
 	struct usb_softc       			*usbctl;

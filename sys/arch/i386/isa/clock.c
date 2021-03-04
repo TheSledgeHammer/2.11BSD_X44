@@ -94,8 +94,8 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <sys/kernel.h>
 #include <sys/device.h>
 
-#include <dev/audio/speaker/spkrio.h>
-#include <dev/audio/speaker/pcppireg.h>
+#include <dev/audio/pcspeaker/spkrio.h>
+#include <dev/audio/pcspeaker/pcppireg.h>
 #include <dev/core/ic/mc146818reg.h>
 #include <dev/core/ic/i8253reg.h>
 #include <dev/core/isa/isareg.h>

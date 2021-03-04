@@ -51,7 +51,8 @@
 #include <vm/include/vm.h>
 
 #include <machine/intr.h>
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 
 #ifndef __BUS_SPACE_HAS_STREAM_METHODS
 #define    bus_space_write_multi_stream_2   	bus_space_write_multi_2

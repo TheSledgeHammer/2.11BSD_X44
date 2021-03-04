@@ -11,8 +11,8 @@
 #define SPKRTUNE        _IO('S', 2)             /* emit tone sequence */
 
 typedef struct {
-	int	frequency;	/* in hertz */
-	int	duration;	/* in 1/100ths of a second */
+	int					frequency;				/* in hertz */
+	int					duration;				/* in 1/100ths of a second */
 } tone_t;
 
 #endif /* _DEV_ISA_SPKR_H_ */

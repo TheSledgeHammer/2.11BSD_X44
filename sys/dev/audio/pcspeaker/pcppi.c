@@ -35,13 +35,14 @@
 #include <sys/errno.h>
 #include <sys/user.h>
 
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 
 #include <dev/core/ic/i8253reg.h>
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
-#include <dev/audio/speaker/pcppireg.h>
-#include <dev/audio/speaker/pcppivar.h>
+#include <dev/audio/pcspeaker/pcppireg.h>
+#include <dev/audio/pcspeaker/pcppivar.h>
 
 struct pcppi_softc {
 	struct device 		sc_dv;

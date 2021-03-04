@@ -82,7 +82,7 @@
 #include <vm/include/vm.h>
 #include <vm/include/vm_prot.h>
 
-#include <machine/endian.h>
+#include <machine/endian_machdep.h>
 #include <dev/audio/audio_if.h>
 #include <dev/audio/audiovar.h>
 
@@ -217,8 +217,7 @@ audioprobe(parent, match, aux)
 {
 	struct audio_attach_args *sa = aux;
 
-	DPRINTF(("audioprobe: type=%d sa=%p hw=%p\n", 
-                  sa->type, sa, sa->hwif));
+	DPRINTF(("audioprobe: type=%d sa=%p hw=%p\n", sa->type, sa, sa->hwif));
 	return (sa->type == AUDIODEV_TYPE_AUDIO) ? 1 : 0;
 }
 

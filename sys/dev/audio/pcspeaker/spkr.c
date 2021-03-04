@@ -24,9 +24,9 @@
 #include <sys/conf.h>
 #include <sys/user.h>
 
-#include <dev/audio/speaker/pcppivar.h>
+#include <dev/audio/pcspeaker/pcppivar.h>
 
-#include <dev/audio/speaker/spkrio.h>
+#include <dev/audio/pcspeaker/spkrio.h>
 
 int spkrprobe (struct device *, struct cfdata *, void *);
 void spkrattach (struct device *, struct device *, void *);

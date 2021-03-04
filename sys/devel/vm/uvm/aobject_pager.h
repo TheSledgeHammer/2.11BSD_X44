@@ -50,10 +50,10 @@
 /*
  * globals
  */
-struct aobjectpager {
+struct aobjpager {
 	vm_aobject_t				vm_aobject;
 };
-typedef struct aobjectpager		*aobject_pager_t;
+typedef struct aobjpager		*aobj_pager_t;
 
 /*
  * local functions

@@ -665,7 +665,7 @@ usbd_set_config_index(dev, index, msg)
 		if (msg)
 			printf("%s: device addr %d (config %d) exceeds power "
 				 "budget, %d mA > %d mA\n",
-			       USBDEVNAME(dev->bus->bdev), dev->address, 
+			       dev->bus->bdev.dv_xname, dev->address,
 			       cdp->bConfigurationValue, 
 			       power, dev->powersrc->power);
 		r = USBD_NO_POWER;
@@ -831,11 +831,10 @@ usbd_probe_and_attach(parent, dev, port, addr)
 		if (r != USBD_NORMAL_COMPLETION) {
 #ifdef USB_DEBUG
 			DPRINTF(("%s: port %d, set config at addr %d failed, "
-				 "error=%d(%s)\n", USBDEVNAME(*parent), port,
+				 "error=%d(%s)\n", *parent->dv_xname, port,
 				 addr, r, usbd_error_strs[r]));
 #else
-			printf("%s: port %d, set config at addr %d failed\n",
-			       USBDEVNAME(*parent), port, addr);
+			printf("%s: port %d, set config at addr %d failed\n", *parent->dv_xname, port, addr);
 #endif
  			return (r);
 		}
@@ -915,6 +914,7 @@ usbd_new_device(parent, bus, depth, lowspeed, port, up)
 	struct usbd_device *hub;
 	usbd_device_handle dev;
 	usb_device_descriptor_t *dd;
+	usb_port_status_t ps;
 	usbd_status r;
 	int addr;
 	int i;
@@ -922,7 +922,7 @@ usbd_new_device(parent, bus, depth, lowspeed, port, up)
 	DPRINTF(("usbd_new_device bus=%p depth=%d lowspeed=%d\n", bus, depth, lowspeed));
 	addr = usbd_getnewaddr(bus);
 	if (addr < 0) {
-		printf("%s: No free USB addresses, new device ignored.\n", USBDEVNAME(bus->bdev));
+		printf("%s: No free USB addresses, new device ignored.\n", bus->bdev.dv_xname);
 		return (USBD_NO_ADDR);
 	}
 

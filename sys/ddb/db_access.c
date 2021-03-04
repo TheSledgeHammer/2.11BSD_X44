@@ -33,7 +33,7 @@
 #include <sys/proc.h>
 
 #include <machine/db_machdep.h>		/* type definitions */
-#include <machine/endian.h>
+#include <machine/endian_machdep.h>
 
 #include <ddb/db_access.h>
 

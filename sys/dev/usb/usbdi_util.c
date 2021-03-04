@@ -499,7 +499,7 @@ usbd_bulk_transfer(xfer, pipe, flags, timeout, buf, size, lbl)
 
 void
 usb_detach_wait(dv)
-	struct device dv;
+	struct device *dv;
 {
 	DPRINTF(("usb_detach_wait: waiting for %s\n", dv->d_name));
 	if (tsleep(dv, PZERO, "usbdet", hz * 60))

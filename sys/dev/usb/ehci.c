@@ -315,7 +315,7 @@ ehci_init(ehci_softc_t *sc)
 	sc->sc_offs = EREAD1(sc, EHCI_CAPLENGTH);
 
 	version = EREAD2(sc, EHCI_HCIVERSION);
-	aprint_normal("%s: EHCI version %x.%x\n", USBDEVNAME(sc->sc_bus.bdev),
+	aprint_normal("%s: EHCI version %x.%x\n", sc->sc_bus.bdev.dv_xname,
 	       version >> 8, version & 0xff);
 
 	sparams = EREAD4(sc, EHCI_HCSPARAMS);
@@ -323,21 +323,21 @@ ehci_init(ehci_softc_t *sc)
 	sc->sc_npcomp = EHCI_HCS_N_PCC(sparams);
 	if (EHCI_HCS_N_CC(sparams) != sc->sc_ncomp) {
 		aprint_error("%s: wrong number of companions (%d != %d)\n",
-		       USBDEVNAME(sc->sc_bus.bdev),
+		       sc->sc_bus.bdev.dv_xname,
 		       EHCI_HCS_N_CC(sparams), sc->sc_ncomp);
 #if NOHCI == 0 || NUHCI == 0
 		aprint_error("%s: ohci or uhci probably not configured\n",
-			     USBDEVNAME(sc->sc_bus.bdev));
+			     sc->sc_bus.bdev.dv_xname);
 #endif
 		return (USBD_IOERROR);
 	}
 	if (sc->sc_ncomp > 0) {
 		aprint_normal("%s: companion controller%s, %d port%s each:",
-		    USBDEVNAME(sc->sc_bus.bdev), sc->sc_ncomp!=1 ? "s" : "",
+		    sc->sc_bus.bdev.dv_xname, sc->sc_ncomp!=1 ? "s" : "",
 		    EHCI_HCS_N_PCC(sparams),
 		    EHCI_HCS_N_PCC(sparams)!=1 ? "s" : "");
 		for (i = 0; i < sc->sc_ncomp; i++)
-			aprint_normal(" %s", USBDEVNAME(sc->sc_comps[i]->bdev));
+			aprint_normal(" %s", sc->sc_comps[i]->bdev.dv_xname);
 		aprint_normal("\n");
 	}
 	sc->sc_noport = EHCI_HCS_N_PORTS(sparams);
@@ -352,7 +352,7 @@ ehci_init(ehci_softc_t *sc)
 	sc->sc_bus.usbrev = USBREV_2_0;
 
 	/* Reset the controller */
-	DPRINTF(("%s: resetting\n", USBDEVNAME(sc->sc_bus.bdev)));
+	DPRINTF(("%s: resetting\n", sc->sc_bus.bdev.dv_xname));
 	EOWRITE4(sc, EHCI_USBCMD, 0);	/* Halt controller */
 	usb_delay_ms(&sc->sc_bus, 1);
 	EOWRITE4(sc, EHCI_USBCMD, EHCI_CMD_HCRESET);
@@ -364,7 +364,7 @@ ehci_init(ehci_softc_t *sc)
 	}
 	if (hcr) {
 		aprint_error("%s: reset timeout\n",
-		    USBDEVNAME(sc->sc_bus.bdev));
+		    sc->sc_bus.bdev.dv_xname);
 		return (USBD_IOERROR);
 	}
 
@@ -379,7 +379,7 @@ ehci_init(ehci_softc_t *sc)
 			   EHCI_FLALIGN_ALIGN, &sc->sc_fldma);
 	if (err)
 		return (err);
-	DPRINTF(("%s: flsize=%d\n", USBDEVNAME(sc->sc_bus.bdev),sc->sc_flsize));
+	DPRINTF(("%s: flsize=%d\n", sc->sc_bus.bdev.dv_xname,sc->sc_flsize));
 
 	/* Set up the bus struct. */
 	sc->sc_bus.methods = &ehci_bus_methods;
@@ -443,7 +443,7 @@ ehci_init(ehci_softc_t *sc)
 			break;
 	}
 	if (hcr) {
-		aprint_error("%s: run timeout\n", USBDEVNAME(sc->sc_bus.bdev));
+		aprint_error("%s: run timeout\n", sc->sc_bus.bdev.dv_xname);
 		return (USBD_IOERROR);
 	}
 
@@ -521,7 +521,7 @@ ehci_intr1(ehci_softc_t *sc)
 	}
 	if (eintrs & EHCI_STS_HSE) {
 		printf("%s: unrecoverable error, controller halted\n",
-		       USBDEVNAME(sc->sc_bus.bdev));
+		       sc->sc_bus.bdev.dv_xname);
 		/* XXX what else */
 	}
 	if (eintrs & EHCI_STS_PCD) {
@@ -543,7 +543,7 @@ ehci_intr1(ehci_softc_t *sc)
 		sc->sc_eintrs &= ~eintrs;
 		EOWRITE4(sc, EHCI_USBINTR, sc->sc_eintrs);
 		printf("%s: blocking intrs 0x%x\n",
-		       USBDEVNAME(sc->sc_bus.bdev), eintrs);
+		       sc->sc_bus.bdev.dv_xname, eintrs);
 	}
 
 	return (1);
@@ -603,7 +603,7 @@ ehci_softintr(void *v)
 	ehci_softc_t *sc = v;
 	struct ehci_xfer *ex, *nextex;
 
-	DPRINTFN(10,("%s: ehci_softintr (%d)\n", USBDEVNAME(sc->sc_bus.bdev),
+	DPRINTFN(10,("%s: ehci_softintr (%d)\n", sc->sc_bus.bdev.dv_xname,
 		     sc->sc_bus.intr_context));
 
 	sc->sc_bus.intr_context++;
@@ -1181,7 +1181,7 @@ ehci_open(usbd_pipe_handle pipe)
 	case USB_SPEED_LOW:  speed = EHCI_QH_SPEED_LOW;  break;
 	case USB_SPEED_FULL: speed = EHCI_QH_SPEED_FULL; break;
 	case USB_SPEED_HIGH: speed = EHCI_QH_SPEED_HIGH; break;
-	default: panic("ehci_open: bad device speed %d", dev->speed);
+	default: panic("ehci_open: bad device speed %d", dev->lowspeed);
 	}
 	naks = 8;		/* XXX */
 	sqh = ehci_alloc_sqh(sc);
@@ -1343,26 +1343,26 @@ ehci_sync_hc(ehci_softc_t *sc)
  */
 usb_device_descriptor_t ehci_devd = {
 	USB_DEVICE_DESCRIPTOR_SIZE,
-	UDESC_DEVICE,		/* type */
-	{0x00, 0x02},		/* USB version */
-	UDCLASS_HUB,		/* class */
-	UDSUBCLASS_HUB,		/* subclass */
-	UDPROTO_HSHUBSTT,	/* protocol */
-	64,			/* max packet */
+	UDESC_DEVICE,			/* type */
+	{0x00, 0x02},			/* USB version */
+	UDCLASS_HUB,			/* class */
+	UDSUBCLASS_HUB,			/* subclass */
+	UDPROTO_HSHUBSTT,		/* protocol */
+	64,						/* max packet */
 	{0},{0},{0x00,0x01},	/* device id */
-	1,2,0,			/* string indicies */
-	1			/* # of configurations */
+	1,2,0,					/* string indicies */
+	1						/* # of configurations */
 };
 
 usb_device_qualifier_t ehci_odevd = {
 	USB_DEVICE_DESCRIPTOR_SIZE,
 	UDESC_DEVICE_QUALIFIER,	/* type */
-	{0x00, 0x02},		/* USB version */
-	UDCLASS_HUB,		/* class */
-	UDSUBCLASS_HUB,		/* subclass */
-	UDPROTO_FSHUB,		/* protocol */
-	64,			/* max packet */
-	1,			/* # of configurations */
+	{0x00, 0x02},			/* USB version */
+	UDCLASS_HUB,			/* class */
+	UDSUBCLASS_HUB,			/* subclass */
+	UDPROTO_FSHUB,			/* protocol */
+	64,						/* max packet */
+	1,						/* # of configurations */
 	0
 };
 
@@ -1376,7 +1376,7 @@ usb_config_descriptor_t ehci_confd = {
 	1,
 	0,
 	UC_SELF_POWERED,
-	0			/* max power */
+	0						/* max power */
 };
 
 usb_interface_descriptor_t ehci_ifcd = {
@@ -1396,7 +1396,7 @@ usb_endpoint_descriptor_t ehci_endpd = {
 	UDESC_ENDPOINT,
 	UE_DIR_IN | EHCI_INTR_ENDPT,
 	UE_INTERRUPT,
-	{8, 0},			/* max packet */
+	{8, 0},					/* max packet */
 	255
 };
 
@@ -1789,7 +1789,7 @@ ehci_root_ctrl_start(usbd_xfer_handle xfer)
 			v = EOREAD4(sc, port);
 			DPRINTF(("ehci after reset, status=0x%08x\n", v));
 			if (v & EHCI_PS_PR) {
-				printf("%s: port reset timeout\n", USBDEVNAME(sc->sc_bus.bdev));
+				printf("%s: port reset timeout\n", sc->sc_bus.bdev.dv_xname);
 				return (USBD_TIMEOUT);
 			}
 			if (!(v & EHCI_PS_PE)) {
@@ -1851,15 +1851,15 @@ ehci_disown(ehci_softc_t *sc, int index, int lowspeed)
 		int i = (index-1) / sc->sc_npcomp;
 		if (i >= sc->sc_ncomp)
 			printf("%s: strange port\n",
-			       USBDEVNAME(sc->sc_bus.bdev));
+			       sc->sc_bus.bdev.dv_xname);
 		else
 			printf("%s: handing over %s speed device on "
 			       "port %d to %s\n",
-			       USBDEVNAME(sc->sc_bus.bdev),
+			       sc->sc_bus.bdev.dv_xname,
 			       lowspeed ? "low" : "full",
-			       index, USBDEVNAME(sc->sc_comps[i]->bdev));
+			       index, sc->sc_comps[i]->bdev.dv_xname);
 	} else {
-		printf("%s: npcomp == 0\n", USBDEVNAME(sc->sc_bus.bdev));
+		printf("%s: npcomp == 0\n", sc->sc_bus.bdev.dv_xname);
 	}
 #endif
 	port = EHCI_PORTSC(index);

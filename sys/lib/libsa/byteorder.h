@@ -50,7 +50,7 @@ uint16_t	sa_be16toh(uint16_t);
 uint16_t	sa_le16toh(uint16_t);
 
 uint32_t	sa_htobe32(uint32_t);
-uint32_t	htole32(uint32_t);
+uint32_t	sa_htole32(uint32_t);
 uint32_t	sa_be32toh(uint32_t);
 uint32_t	sa_le32toh(uint32_t);
 

@@ -1,0 +1,24 @@
+# $NetBSD: files.pckbport,v 1.1 2004/03/13 17:31:33 bjh21 Exp $
+# devices attached at pckbport, for use with wscons
+# and generic pc devices
+
+file	dev/misc/pccons/pckbport.c			pckbport | pckbport_machdep_cnattach			needs-flag
+
+device	pckbd: wskbddev
+attach	pckbd at pckbport
+file	dev/misc/pccons/pckbd.c				pckbd											needs-flag
+file	dev/misc/pccons/wskbdmap_mfii.c		pckbd
+defparam PCKBD_LAYOUT
+
+device	pms: wsmousedev
+attach	pms at pckbport
+file	dev/misc/pccons/pms.c				pms
+
+# ISA PC keyboard controller
+attach	pckbc at isa with pckbc_isa
+file	dev/misc/pccons/pckbc_isa.c			pckbc_isa
+
+# generic PC graphics adapter (MGA, CGA, ...)
+device	pcdisplay: wsemuldisplaydev, pcdisplayops
+attach	pcdisplay at isa
+file	dev/misc/pccons/pcdisplay.c			pcdisplay										needs-flag

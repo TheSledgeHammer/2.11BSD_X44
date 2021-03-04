@@ -750,13 +750,13 @@ uhci_power(int why, void *v)
 	splx(s);
 }
 
-#ifdef UHCI_DEBUG
+//#ifdef UHCI_DEBUG
 void
 uhci_dumpregs(uhci_softc_t *sc)
 {
 	DPRINTFN(-1,("%s regs: cmd=%04x, sts=%04x, intr=%04x, frnum=%04x, "
 		     "flbase=%08x, sof=%04x, portsc1=%04x, portsc2=%04x\n",
-		     USBDEVNAME(sc->sc_bus.bdev),
+			 sc->sc_bus.bdev.dv_xname,
 		     UREAD2(sc, UHCI_CMD),
 		     UREAD2(sc, UHCI_STS),
 		     UREAD2(sc, UHCI_INTR),
@@ -1178,7 +1178,7 @@ uhci_intr1(uhci_softc_t *sc)
 
 #ifdef UHCI_DEBUG
 	if (uhcidebug > 15) {
-		DPRINTF(("%s: uhci_intr1\n", USBDEVNAME(sc->sc_bus.bdev)));
+		DPRINTF(("%s: uhci_intr1\n", sc->sc_bus.bdev.dv_xname));
 		uhci_dumpregs(sc);
 	}
 #endif
@@ -1188,8 +1188,7 @@ uhci_intr1(uhci_softc_t *sc)
 		return (0);
 
 	if (sc->sc_suspend != PWR_RESUME) {
-		printf("%s: interrupt while not operating ignored\n",
-		       USBDEVNAME(sc->sc_bus.bdev));
+		printf("%s: interrupt while not operating ignored\n", sc->sc_bus.bdev.dv_xname);
 		UWRITE2(sc, UHCI_STS, status); /* acknowledge the ints */
 		return (0);
 	}
@@ -1202,23 +1201,21 @@ uhci_intr1(uhci_softc_t *sc)
 	if (status & UHCI_STS_RD) {
 		ack |= UHCI_STS_RD;
 #ifdef UHCI_DEBUG
-		printf("%s: resume detect\n", USBDEVNAME(sc->sc_bus.bdev));
+		printf("%s: resume detect\n", sc->sc_bus.bdev.dv_xname);
 #endif
 	}
 	if (status & UHCI_STS_HSE) {
 		ack |= UHCI_STS_HSE;
-		printf("%s: host system error\n", USBDEVNAME(sc->sc_bus.bdev));
+		printf("%s: host system error\n", sc->sc_bus.bdev.dv_xname);
 	}
 	if (status & UHCI_STS_HCPE) {
 		ack |= UHCI_STS_HCPE;
-		printf("%s: host controller process error\n",
-		       USBDEVNAME(sc->sc_bus.bdev));
+		printf("%s: host controller process error\n", sc->sc_bus.bdev.dv_xname);
 	}
 	if (status & UHCI_STS_HCH) {
 		/* no acknowledge needed */
 		if (!sc->sc_dying) {
-			printf("%s: host controller halted\n",
-			    USBDEVNAME(sc->sc_bus.bdev));
+			printf("%s: host controller halted\n", sc->sc_bus.bdev.dv_xname);
 #ifdef UHCI_DEBUG
 			uhci_dump_all(sc);
 #endif
@@ -1233,7 +1230,7 @@ uhci_intr1(uhci_softc_t *sc)
 	sc->sc_bus.no_intrs++;
 	usb_schedsoftintr(&sc->sc_bus);
 
-	DPRINTFN(15, ("%s: uhci_intr: exit\n", USBDEVNAME(sc->sc_bus.bdev)));
+	DPRINTFN(15, ("%s: uhci_intr: exit\n", sc->sc_bus.bdev.dv_xname));
 
 	return (1);
 }
@@ -1244,8 +1241,7 @@ uhci_softintr(void *v)
 	uhci_softc_t *sc = v;
 	uhci_intr_info_t *ii, *nextii;
 
-	DPRINTFN(10,("%s: uhci_softintr (%d)\n", USBDEVNAME(sc->sc_bus.bdev),
-		     sc->sc_bus.intr_context));
+	DPRINTFN(10,("%s: uhci_softintr (%d)\n", sc->sc_bus.bdev.dv_xname, sc->sc_bus.intr_context));
 
 	sc->sc_bus.intr_context++;
 
@@ -1555,8 +1551,7 @@ uhci_reset(uhci_softc_t *sc)
 		    (UREAD2(sc, UHCI_CMD) & UHCI_CMD_HCRESET); n++)
 		usb_delay_ms(&sc->sc_bus, 1);
 	if (n >= UHCI_RESET_TIMEOUT)
-		printf("%s: controller did not reset\n",
-		       USBDEVNAME(sc->sc_bus.bdev));
+		printf("%s: controller did not reset\n", sc->sc_bus.bdev.dv_xname);
 }
 
 usbd_status
@@ -1586,8 +1581,7 @@ uhci_run(uhci_softc_t *sc, int run)
 		usb_delay_ms(&sc->sc_bus, 1);
 	}
 	splx(s);
-	printf("%s: cannot %s\n", USBDEVNAME(sc->sc_bus.bdev),
-	       run ? "start" : "stop");
+	printf("%s: cannot %s\n", sc->sc_bus.bdev.dv_xname, run ? "start" : "stop");
 	return (USBD_IOERROR);
 }
 
@@ -1728,7 +1722,7 @@ uhci_alloc_std_chain(struct uhci_pipe *upipe, uhci_softc_t *sc, int len,
 	lastlink = UHCI_PTR_T;
 	ntd--;
 	status = UHCI_TD_ZERO_ACTLEN(UHCI_TD_SET_ERRCNT(3) | UHCI_TD_ACTIVE);
-	if (upipe->pipe.device->speed == USB_SPEED_LOW)
+	if (upipe->pipe.device->lowspeed == USB_SPEED_LOW)
 		status |= UHCI_TD_LS;
 	if (flags & USBD_SHORT_XFER_OK)
 		status |= UHCI_TD_SPD;
@@ -2176,7 +2170,7 @@ uhci_device_request(usbd_xfer_handle xfer)
 		    UGETW(req->wIndex), UGETW(req->wLength),
 		    addr, endpt));
 
-	ls = dev->speed == USB_SPEED_LOW ? UHCI_TD_LS : 0;
+	ls = dev->lowspeed == USB_SPEED_LOW ? UHCI_TD_LS : 0;
 	isread = req->bmRequestType & UT_READ;
 	len = UGETW(req->wLength);
 
@@ -2239,7 +2233,7 @@ uhci_device_request(usbd_xfer_handle xfer)
 	sqh->qh.qh_elink = htole32(setup->physaddr | UHCI_PTR_TD);
 
 	s = splusb();
-	if (dev->speed == USB_SPEED_LOW)
+	if (dev->lowspeed == USB_SPEED_LOW)
 		uhci_add_ls_ctrl(sc, sqh);
 	else
 		uhci_add_hs_ctrl(sc, sqh);
@@ -2532,8 +2526,7 @@ uhci_setup_isoc(usbd_pipe_handle pipe)
 	int i, s;
 
 	iso = &upipe->u.iso;
-	iso->stds = malloc(UHCI_VFRAMELIST_COUNT * sizeof (uhci_soft_td_t *),
-			   M_USBHC, M_WAITOK);
+	iso->stds = malloc(UHCI_VFRAMELIST_COUNT * sizeof (uhci_soft_td_t *), M_USBHC, M_WAITOK);
 
 	token = rd ? UHCI_TD_IN (0, endpt, addr, 0) :
 		     UHCI_TD_OUT(0, endpt, addr, 0);
@@ -2686,7 +2679,7 @@ uhci_device_ctrl_done(usbd_xfer_handle xfer)
 
 	uhci_del_intr_info(ii);	/* remove from active list */
 
-	if (upipe->pipe.device->speed == USB_SPEED_LOW)
+	if (upipe->pipe.device->lowspeed == USB_SPEED_LOW)
 		uhci_remove_ls_ctrl(sc, upipe->u.ctl.sqh);
 	else
 		uhci_remove_hs_ctrl(sc, upipe->u.ctl.sqh);
@@ -2901,15 +2894,15 @@ uhci_open(usbd_pipe_handle pipe)
  */
 usb_device_descriptor_t uhci_devd = {
 	USB_DEVICE_DESCRIPTOR_SIZE,
-	UDESC_DEVICE,		/* type */
-	{0x00, 0x01},		/* USB version */
-	UDCLASS_HUB,		/* class */
-	UDSUBCLASS_HUB,		/* subclass */
-	UDPROTO_FSHUB,		/* protocol */
-	64,			/* max packet */
+	UDESC_DEVICE,			/* type */
+	{0x00, 0x01},			/* USB version */
+	UDCLASS_HUB,			/* class */
+	UDSUBCLASS_HUB,			/* subclass */
+	UDPROTO_FSHUB,			/* protocol */
+	64,						/* max packet */
 	{0},{0},{0x00,0x01},	/* device id */
-	1,2,0,			/* string indicies */
-	1			/* # of configurations */
+	1,2,0,					/* string indicies */
+	1						/* # of configurations */
 };
 
 usb_config_descriptor_t uhci_confd = {
@@ -2922,7 +2915,7 @@ usb_config_descriptor_t uhci_confd = {
 	1,
 	0,
 	UC_SELF_POWERED,
-	0			/* max power */
+	0						/* max power */
 };
 
 usb_interface_descriptor_t uhci_ifcd = {
@@ -2951,9 +2944,9 @@ usb_hub_descriptor_t uhci_hubd_piix = {
 	UDESC_HUB,
 	2,
 	{ UHD_PWR_NO_SWITCH | UHD_OC_INDIVIDUAL, 0 },
-	50,			/* power on to power good */
+	50,					/* power on to power good */
 	0,
-	{ 0x00 },		/* both ports are removable */
+	{ 0x00 },			/* both ports are removable */
 };
 
 int

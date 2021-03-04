@@ -2,6 +2,7 @@
 #
 # Misc Configuration Files
 
+include 	"dev/misc/pccons/files.pccons"
 include 	"dev/misc/wscons/files.wscons"
 
 file		dev/misc/cons.c				cons

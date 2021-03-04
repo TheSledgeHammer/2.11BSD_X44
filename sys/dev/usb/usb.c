@@ -180,13 +180,13 @@ usb_attach(struct device *parent, struct device *self, void *aux)
 		dev = sc->sc_port.device;
 		if (!dev->hub) {
 			sc->sc_running = 0;
-			printf("%s: root device is not a hub\n", USBDEVNAME(sc->sc_dev));
+			printf("%s: root device is not a hub\n", sc->sc_dev.dv_xname);
 			return;
 		}
 		sc->sc_bus->root_hub = dev;
 		dev->hub->explore(sc->sc_bus->root_hub);
 	} else {
-		printf("%s: root hub problem, error=%d\n", USBDEVNAME(sc->sc_dev), err);
+		printf("%s: root hub problem, error=%d\n", sc->sc_dev.dv_xname, err);
 		sc->sc_running = 0;
 	}
 	sc->sc_bus->use_polling = 0;
