@@ -32,9 +32,10 @@ A General todo list. Don't hesitate to add to this list. :)
 ## dev:
 - Essential Driver Support:
 	- usb: 							Work in progress
-		- add: vhci, xhci, usb_callout, other generic usb drivers
-	- mouse/keyboard:					Work in progress
-		- wscons
+		- add: vhci, xhci, other generic usb drivers
+	- pccons:							Work in progress
+		- fix: pckbc_isa.c, pckbd.c, pckbdc.c, pckbport.c
+		- fix: pms.c: uses threading
 
 ## fs:
 

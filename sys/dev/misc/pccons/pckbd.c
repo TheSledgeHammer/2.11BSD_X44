@@ -75,31 +75,34 @@
  */
 
 #include <sys/cdefs.h>
-__KERNEL_RCSID(0, "$NetBSD: pckbd.c,v 1.2 2004/03/18 21:05:19 bjh21 Exp $");
+/* __KERNEL_RCSID(0, "$NetBSD: pckbd.c,v 1.2 2004/03/18 21:05:19 bjh21 Exp $"); */
 
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>
 #include <sys/malloc.h>
 #include <sys/ioctl.h>
+#include <sys/user.h>
 
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 
-#include <dev/pckbport/pckbportvar.h>
+#include <dev/misc/pccons/pckbportvar.h>
 
-#include <dev/pckbport/pckbdreg.h>
-#include <dev/pckbport/pckbdvar.h>
-#include <dev/pckbport/wskbdmap_mfii.h>
+#include <dev/misc/pccons/pckbdreg.h>
+#include <dev/misc/pccons/pckbdvar.h>
+#include <dev/misc/pccons/wskbdmap_mfii.h>
 
-#include <dev/wscons/wsconsio.h>
-#include <dev/wscons/wskbdvar.h>
-#include <dev/wscons/wsksymdef.h>
-#include <dev/wscons/wsksymvar.h>
-
+#include <dev/misc/wscons/wsconsio.h>
+#include <dev/misc/wscons/wskbdvar.h>
+#include <dev/misc/wscons/wsksymdef.h>
+#include <dev/misc/wscons/wsksymvar.h>
+/*
 #include "locators.h"
 
 #include "opt_pckbd_layout.h"
 #include "opt_wsdisplay_compat.h"
+*/
 
 struct pckbd_internal {
 	int t_isconsole;
@@ -132,12 +135,13 @@ static int pckbd_is_console(pckbport_tag_t, pckbport_slot_t);
 int pckbdprobe(struct device *, struct cfdata *, void *);
 void pckbdattach(struct device *, struct device *, void *);
 
-CFATTACH_DECL(pckbd, sizeof(struct pckbd_softc),
-    pckbdprobe, pckbdattach, NULL, NULL);
+struct cfdriver pckbd_cd = {
+		NULL, "pckbd", pckbdprobe, pckbdattach, DV_DULL, sizeof(struct pckbd_softc)
+};
 
-int	pckbd_enable(void *, int);
+int		pckbd_enable(void *, int);
 void	pckbd_set_leds(void *, int);
-int	pckbd_ioctl(void *, u_long, caddr_t, int, struct proc *);
+int		pckbd_ioctl(void *, u_long, caddr_t, int, struct proc *);
 
 const struct wskbd_accessops pckbd_accessops = {
 	pckbd_enable,

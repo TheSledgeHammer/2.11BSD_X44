@@ -29,31 +29,30 @@
 #include "opt_pcdisplay.h"
 
 struct pcdisplayscreen {
-	struct pcdisplay_handle *hdl;
+	struct pcdisplay_handle 	*hdl;
 
 	const struct wsscreen_descr *type;
 
-	int active;		/* currently displayed */
-	u_int16_t *mem;		/* backing store for contents */
+	int 						active;		/* currently displayed */
+	u_int16_t 					*mem;		/* backing store for contents */
 
-	int cursoron;		/* cursor displayed? */
+	int 						cursoron;		/* cursor displayed? */
 #ifdef PCDISPLAY_SOFTCURSOR
-	int cursortmp;		/* glyph & attribute behind software cursor */
+	int 						cursortmp;		/* glyph & attribute behind software cursor */
 #endif
-	int cursorcol, cursorrow;	/* current cursor position */
+	int 						cursorcol, cursorrow;	/* current cursor position */
 
-	int dispoffset; 	/* offset of displayed area in video mem */
-	int visibleoffset;
+	int 						dispoffset; 	/* offset of displayed area in video mem */
+	int 						visibleoffset;
 };
 
 struct pcdisplay_handle {
-	bus_space_tag_t	ph_iot, ph_memt;
-	bus_space_handle_t ph_ioh_6845, ph_memh;
+	bus_space_tag_t				ph_iot, ph_memt;
+	bus_space_handle_t 			ph_ioh_6845, ph_memh;
 };
 
 static inline u_int8_t _pcdisplay_6845_read(struct pcdisplay_handle *, int);
-static inline void _pcdisplay_6845_write(struct pcdisplay_handle *, int,
-					 u_int8_t);
+static inline void _pcdisplay_6845_write(struct pcdisplay_handle *, int, u_int8_t);
 
 static inline u_int8_t _pcdisplay_6845_read(ph, reg)
 	struct pcdisplay_handle *ph;
@@ -82,12 +81,12 @@ void	pcdisplay_cursor(void *, int, int, int);
 #if 0
 unsigned int pcdisplay_mapchar_simple(void *, int);
 #endif
-int	pcdisplay_mapchar(void *, int, unsigned int *);
+int		pcdisplay_mapchar(void *, int, unsigned int *);
 void	pcdisplay_putchar(void *, int, int, u_int, long);
 void	pcdisplay_copycols(void *, int, int, int,int);
 void	pcdisplay_erasecols(void *, int, int, int, long);
 void	pcdisplay_copyrows(void *, int, int, int);
 void	pcdisplay_eraserows(void *, int, int, long);
 struct wsdisplay_char;
-int	pcdisplay_getwschar(void *, struct wsdisplay_char *);
-int	pcdisplay_putwschar(void *, struct wsdisplay_char *);
+int		pcdisplay_getwschar(void *, struct wsdisplay_char *);
+int		pcdisplay_putwschar(void *, struct wsdisplay_char *);

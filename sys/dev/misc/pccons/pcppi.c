@@ -41,8 +41,8 @@
 #include <dev/core/ic/i8253reg.h>
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
-#include <dev/audio/pcspeaker/pcppireg.h>
-#include <dev/audio/pcspeaker/pcppivar.h>
+#include <dev/misc/pccons/pcppireg.h>
+#include <dev/misc/pccons/pcppivar.h>
 
 struct pcppi_softc {
 	struct device 		sc_dv;

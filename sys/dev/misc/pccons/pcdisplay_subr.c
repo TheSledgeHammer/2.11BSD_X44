@@ -28,20 +28,21 @@
  */
 
 #include <sys/cdefs.h>
-__KERNEL_RCSID(0, "$NetBSD: pcdisplay_subr.c,v 1.25.8.2 2007/08/12 19:52:27 bouyer Exp $");
+/* __KERNEL_RCSID(0, "$NetBSD: pcdisplay_subr.c,v 1.25.8.2 2007/08/12 19:52:27 bouyer Exp $"); */
 
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 
-#include <dev/ic/mc6845reg.h>
-#include <dev/ic/pcdisplayvar.h>
-#include <dev/wscons/wsconsio.h>
+#include <dev/core/ic/mc6845reg.h>
+#include <dev/misc/pccons/pcdisplayvar.h>
+#include <dev/misc/wscons/wsconsio.h>
 
-#include <dev/wscons/wsdisplayvar.h>
+#include <dev/misc/wscons/wsdisplayvar.h>
 
-#include "opt_wsdisplay_compat.h" /* for WSDISPLAY_CHARFUNCS */
+//#include "opt_wsdisplay_compat.h" /* for WSDISPLAY_CHARFUNCS */
 
 void
 pcdisplay_cursor_init(scr, existing)

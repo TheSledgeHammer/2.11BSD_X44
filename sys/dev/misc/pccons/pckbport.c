@@ -27,7 +27,7 @@
  */
 
 #include <sys/cdefs.h>
-__KERNEL_RCSID(0, "$NetBSD: pckbport.c,v 1.3 2004/03/24 17:26:53 drochner Exp $");
+/* __KERNEL_RCSID(0, "$NetBSD: pckbport.c,v 1.3 2004/03/24 17:26:53 drochner Exp $"); */
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -39,10 +39,11 @@ __KERNEL_RCSID(0, "$NetBSD: pckbport.c,v 1.3 2004/03/24 17:26:53 drochner Exp $"
 #include <sys/errno.h>
 #include <sys/queue.h>
 #include <sys/lock.h>
+#include <sys/user.h>
 
-#include <dev/pckbport/pckbportvar.h>
+#include <dev/misc/pccons/pckbportvar.h>
 
-#include "locators.h"
+//#include "locators.h"
 
 #ifdef __HAVE_NWSCONS /* XXX: this port uses sys/dev/pckbport */
 #include "pckbd.h"
@@ -50,7 +51,7 @@ __KERNEL_RCSID(0, "$NetBSD: pckbport.c,v 1.3 2004/03/24 17:26:53 drochner Exp $"
 #define NPCKBD 0
 #endif
 #if (NPCKBD > 0)
-#include <dev/pckbport/pckbdvar.h>
+#include <dev/misc/pccons/pckbdvar.h>
 #endif
 
 /* descriptor for one device command */
@@ -67,11 +68,11 @@ struct pckbport_devcmd {
 
 /* data per slave device */
 struct pckbport_slotdata {
-	int polling;	/* don't process data in interrupt handler */
-	TAILQ_HEAD(, pckbport_devcmd) cmdqueue; /* active commands */
-	TAILQ_HEAD(, pckbport_devcmd) freequeue; /* free commands */
+	int 							polling;	/* don't process data in interrupt handler */
+	TAILQ_HEAD(, pckbport_devcmd) 	cmdqueue; 	/* active commands */
+	TAILQ_HEAD(, pckbport_devcmd) 	freequeue; 	/* free commands */
 #define NCMD 5
-	struct pckbport_devcmd cmds[NCMD];
+	struct pckbport_devcmd 			cmds[NCMD];
 };
 
 #define CMD_IN_QUEUE(q) (TAILQ_FIRST(&(q)->cmdqueue) != NULL)
@@ -83,15 +84,12 @@ static int pckbportprint(void *, const char *);
 static struct pckbport_slotdata pckbport_cons_slotdata;
 
 static int pckbport_poll_data1(pckbport_tag_t, pckbport_slot_t);
-static int pckbport_send_devcmd(struct pckbport_tag *, pckbport_slot_t,
-				  u_char);
-static void pckbport_poll_cmd1(struct pckbport_tag *, pckbport_slot_t,
-				 struct pckbport_devcmd *);
+static int pckbport_send_devcmd(struct pckbport_tag *, pckbport_slot_t, u_char);
+static void pckbport_poll_cmd1(struct pckbport_tag *, pckbport_slot_t, struct pckbport_devcmd *);
 
 static void pckbport_cleanqueue(struct pckbport_slotdata *);
 static void pckbport_cleanup(void *);
-static int pckbport_cmdresponse(struct pckbport_tag *, pckbport_slot_t,
-					u_char);
+static int pckbport_cmdresponse(struct pckbport_tag *, pckbport_slot_t, u_char);
 static void pckbport_start(struct pckbport_tag *, pckbport_slot_t);
 
 static const char * const pckbport_slot_names[] = { "kbd", "aux" };

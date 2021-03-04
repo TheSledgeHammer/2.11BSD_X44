@@ -27,20 +27,21 @@
  */
 
 #include <sys/cdefs.h>
-__KERNEL_RCSID(0, "$NetBSD: pcdisplay_chars.c,v 1.9 2004/03/24 17:26:53 drochner Exp $");
+/* __KERNEL_RCSID(0, "$NetBSD: pcdisplay_chars.c,v 1.9 2004/03/24 17:26:53 drochner Exp $"); */
 
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 
-#include <dev/ic/mc6845reg.h>
-#include <dev/ic/pcdisplayvar.h>
+#include <dev/core/ic/mc6845reg.h>
+#include <dev/misc/pccons/pcdisplayvar.h>
 
-#include <dev/wscons/unicode.h>
+#include <dev/misc/wscons/unicode.h>
 
-#define CONTROL 1 /* XXX smiley */
-#define NOTPRINTABLE 4 /* diamond XXX watch out - not in ISO part! */
+#define CONTROL 		1 /* XXX smiley */
+#define NOTPRINTABLE 	4 /* diamond XXX watch out - not in ISO part! */
 
 static const u_char isomappings[128] = {
 	CONTROL, CONTROL, CONTROL, CONTROL, CONTROL, CONTROL, CONTROL, CONTROL,

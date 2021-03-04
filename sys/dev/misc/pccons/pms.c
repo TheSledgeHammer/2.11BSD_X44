@@ -24,23 +24,24 @@
  */
 
 #include <sys/cdefs.h>
-__KERNEL_RCSID(0, "$NetBSD: pms.c,v 1.2 2004/03/18 21:05:19 bjh21 Exp $");
+/* __KERNEL_RCSID(0, "$NetBSD: pms.c,v 1.2 2004/03/18 21:05:19 bjh21 Exp $"); */
 
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>
 #include <sys/ioctl.h>
 #include <sys/kernel.h>
-#include <sys/kthread.h>
+#include <sys/user.h>
 
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 
-#include <dev/pckbport/pckbportvar.h>
+#include <dev/misc/pccons/pckbportvar.h>
 
-#include <dev/pckbport/pmsreg.h>
+#include <dev/misc/pccons/pmsreg.h>
 
-#include <dev/wscons/wsconsio.h>
-#include <dev/wscons/wsmousevar.h>
+#include <dev/misc/wscons/wsconsio.h>
+#include <dev/misc/wscons/wsmousevar.h>
 
 #ifdef PMSDEBUG
 int pmsdebug = 1;
@@ -67,43 +68,44 @@ enum pms_type tries[] = {
 };
 
 struct pms_softc {		/* driver status information */
-	struct device sc_dev;
+	struct device 	sc_dev;
 
-	pckbport_tag_t sc_kbctag;
-	int sc_kbcslot;
+	pckbport_tag_t 	sc_kbctag;
+	int 			sc_kbcslot;
 
-	int sc_enabled;		/* input enabled? */
+	int 			sc_enabled;		/* input enabled? */
 #ifndef PMS_DISABLE_POWERHOOK
-	void *sc_powerhook;	/* cookie from power hook */
-	int sc_suspended;	/* suspended? */
+	void 			*sc_powerhook;	/* cookie from power hook */
+	int 			sc_suspended;	/* suspended? */
 #endif /* !PMS_DISABLE_POWERHOOK */
-	int inputstate;		/* number of bytes received for this packet */
-	u_int buttons;		/* mouse button status */
-	enum pms_type protocol;
-	unsigned char packet[4];
-	struct timeval last, current;
+	int 			inputstate;		/* number of bytes received for this packet */
+	u_int 			buttons;		/* mouse button status */
+	enum pms_type 	protocol;
+	unsigned char 	packet[4];
+	struct timeval 	last, current;
 
-	struct device *sc_wsmousedev;
-	struct proc *sc_event_thread;
+	struct device 	*sc_wsmousedev;
+	struct proc 	*sc_event_thread;
 };
 
 int pmsprobe(struct device *, struct cfdata *, void *);
 void pmsattach(struct device *, struct device *, void *);
 void pmsinput(void *, int);
 
-CFATTACH_DECL(pms, sizeof(struct pms_softc),
-    pmsprobe, pmsattach, NULL, NULL);
+struct cfdriver pms_cd = {
+		NULL, "pms", pmsprobe, pmsattach, DV_DULL, sizeof(struct pms_softc)
+};
 
 static int	pms_protocol(pckbport_tag_t, pckbport_slot_t);
 static void	do_enable(struct pms_softc *);
 static void	do_disable(struct pms_softc *);
 static void	pms_reset_thread(void*);
 static void	pms_spawn_reset_thread(void*);
-int	pms_enable(void *);
-int	pms_ioctl(void *, u_long, caddr_t, int, struct proc *);
-void	pms_disable(void *);
+int			pms_enable(void *);
+int			pms_ioctl(void *, u_long, caddr_t, int, struct proc *);
+void		pms_disable(void *);
 #ifndef PMS_DISABLE_POWERHOOK
-void	pms_power(int, void *);
+void		pms_power(int, void *);
 #endif /* !PMS_DISABLE_POWERHOOK */
 
 const struct wsmouse_accessops pms_accessops = {
@@ -404,8 +406,7 @@ pms_spawn_reset_thread(void *arg)
 {
 	struct pms_softc *sc = arg;
 
-	kthread_create1(pms_reset_thread, sc, &sc->sc_event_thread,
-	    sc->sc_dev.dv_xname);
+	kthread_create1(pms_reset_thread, sc, &sc->sc_event_thread, sc->sc_dev.dv_xname);
 }
 
 static void
@@ -624,9 +625,7 @@ pmsinput(void *vsc, int data)
 			DPRINTF(("pms: x %+03d y %+03d z %+03d "
 			    "buttons 0x%02x\n",	dx, dy, dz, sc->buttons));
 #endif
-			wsmouse_input(sc->sc_wsmousedev,
-			    sc->buttons, dx, dy, dz,
-			    WSMOUSE_INPUT_DELTA);
+			wsmouse_input(sc->sc_wsmousedev, sc->buttons, dx, dy, dz, WSMOUSE_INPUT_DELTA);
 		}
 		memset(sc->packet, 0, 4);
 		break;

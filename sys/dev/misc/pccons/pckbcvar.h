@@ -33,63 +33,58 @@
 
 #include <dev/misc/pccons/pckbportvar.h>
 
-#include "rnd.h"
-#if NRND > 0
-#include <sys/rnd.h>
-#endif
-
 typedef void *pckbc_tag_t;
 typedef int pckbc_slot_t;
-#define	PCKBC_KBD_SLOT	0
-#define	PCKBC_AUX_SLOT	1
-#define	PCKBC_NSLOTS	2
+#define	PCKBC_KBD_SLOT		0
+#define	PCKBC_AUX_SLOT		1
+#define	PCKBC_NSLOTS		2
 
 /* Simple cmd/slot ringbuffer structure */
 struct pckbc_rbuf_item {
-	int data;
-	int slot;
+	int 					data;
+	int 					slot;
 };
 
-#define	PCKBC_RBUF_SIZE	32	/* number of rbuf entries */
+#define	PCKBC_RBUF_SIZE		32	/* number of rbuf entries */
 
 /*
  * external representation (pckbc_tag_t),
  * needed early for console operation
  */
 struct pckbc_internal { 
-	pckbport_tag_t t_pt;
-	bus_space_tag_t t_iot;
-	bus_space_handle_t t_ioh_d, t_ioh_c; /* data port, cmd port */
-	bus_addr_t t_addr;
-	u_char t_cmdbyte; /* shadow */
+	pckbport_tag_t 			t_pt;
+	bus_space_tag_t 		t_iot;
+	bus_space_handle_t 		t_ioh_d, t_ioh_c; /* data port, cmd port */
+	bus_addr_t 				t_addr;
+	u_char 					t_cmdbyte; /* shadow */
 
-	int t_haveaux; /* controller has an aux port */
-	struct pckbc_slotdata *t_slotdata[PCKBC_NSLOTS];
+	int 					t_haveaux; /* controller has an aux port */
+	struct pckbc_slotdata 	*t_slotdata[PCKBC_NSLOTS];
 
-	struct pckbc_softc *t_sc; /* back pointer */
+	struct pckbc_softc 		*t_sc; /* back pointer */
 
-	struct callout t_cleanup;
+	struct callout 			t_cleanup;
 
-	struct pckbc_rbuf_item rbuf[PCKBC_RBUF_SIZE];
-	int rbuf_read;
-	int rbuf_write;
+	struct pckbc_rbuf_item 	rbuf[PCKBC_RBUF_SIZE];
+	int 					rbuf_read;
+	int 					rbuf_write;
 };
 
-typedef void (*pckbc_inputfcn) __P((void *, int));
+typedef void (*pckbc_inputfcn) (void *, int);
 
 /*
  * State per device.
  */
 struct pckbc_softc {
-	struct device sc_dv;
-	struct pckbc_internal *id;
+	struct device 			sc_dv;
+	struct pckbc_internal 	*id;
 
-	void (*intr_establish) __P((struct pckbc_softc *, pckbc_slot_t));
+	void 					(*intr_establish) (struct pckbc_softc *, pckbc_slot_t);
 };
 
 struct pckbc_attach_args {
-	pckbc_tag_t pa_tag;
-	pckbc_slot_t pa_slot;
+	pckbc_tag_t 			pa_tag;
+	pckbc_slot_t 			pa_slot;
 };
 
 extern const char * const pckbc_slot_names[];
@@ -97,18 +92,18 @@ extern struct pckbc_internal pckbc_consdata;
 extern int pckbc_console_attached;
 
 /* These functions are sometimes called by match routines */
-int pckbc_send_cmd __P((bus_space_tag_t, bus_space_handle_t, u_char));
-int pckbc_poll_data1 __P((void *, pckbc_slot_t));
+int pckbc_send_cmd (bus_space_tag_t, bus_space_handle_t, u_char);
+int pckbc_poll_data1 (void *, pckbc_slot_t);
 
 /* More normal calls from attach routines */
-void pckbc_attach __P((struct pckbc_softc *));
-int pckbc_cnattach __P((bus_space_tag_t, bus_addr_t, bus_size_t, pckbc_slot_t));
-int pckbc_is_console __P((bus_space_tag_t, bus_addr_t));
-int pckbcintr __P((void *));
-int pckbcintr_hard __P((void *));
-void pckbcintr_soft __P((void *));
+void pckbc_attach (struct pckbc_softc *);
+int pckbc_cnattach (bus_space_tag_t, bus_addr_t, bus_size_t, pckbc_slot_t);
+int pckbc_is_console (bus_space_tag_t, bus_addr_t);
+int pckbcintr (void *);
+int pckbcintr_hard (void *);
+void pckbcintr_soft (void *);
 
 /* md hook for use without mi wscons */
-int pckbc_machdep_cnattach __P((pckbc_tag_t, pckbc_slot_t));
+int pckbc_machdep_cnattach (pckbc_tag_t, pckbc_slot_t);
 
 #endif /* _DEV_IC_PCKBCVAR_H_ */

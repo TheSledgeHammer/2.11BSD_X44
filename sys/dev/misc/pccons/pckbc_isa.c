@@ -26,7 +26,7 @@
  */
 
 #include <sys/cdefs.h>
-__KERNEL_RCSID(0, "$NetBSD: pckbc_isa.c,v 1.13 2004/03/24 17:26:53 drochner Exp $");
+/* __KERNEL_RCSID(0, "$NetBSD: pckbc_isa.c,v 1.13 2004/03/24 17:26:53 drochner Exp $"); */
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -37,29 +37,32 @@ __KERNEL_RCSID(0, "$NetBSD: pckbc_isa.c,v 1.13 2004/03/24 17:26:53 drochner Exp 
 #include <sys/errno.h>
 #include <sys/queue.h>
 #include <sys/lock.h>
+#include <sys/user.h>
 
-#include <machine/bus.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 
-#include <dev/isa/isareg.h>  
-#include <dev/isa/isavar.h>
+#include <dev/core/isa/isareg.h>
+#include <dev/core/isa/isavar.h>
 
-#include <dev/ic/i8042reg.h>
-#include <dev/ic/pckbcvar.h>
+#include <dev/core/ic/i8042reg.h>
+#include <dev/misc/pccons/pckbcvar.h>
 
-int	pckbc_isa_match __P((struct device *, struct cfdata *, void *));
-void	pckbc_isa_attach __P((struct device *, struct device *, void *));
+int		pckbc_isa_match (struct device *, struct cfdata *, void *);
+void	pckbc_isa_attach (struct device *, struct device *, void *);
 
 struct pckbc_isa_softc {
-	struct pckbc_softc sc_pckbc;
+	struct pckbc_softc 	sc_pckbc;
 
-	isa_chipset_tag_t sc_ic;
-	int sc_irq[PCKBC_NSLOTS];
+	isa_chipset_tag_t 	sc_ic;
+	int 				sc_irq[PCKBC_NSLOTS];
 };
 
-CFATTACH_DECL(pckbc_isa, sizeof(struct pckbc_isa_softc),
-    pckbc_isa_match, pckbc_isa_attach, NULL, NULL);
+struct cf_driver pckbc_cd = {
+		NULL, "pckbc_isa", pckbc_isa_match, pckbc_isa_attach, DV_DULL, sizeof(struct pckbc_isa_softc)
+};
 
-void	pckbc_isa_intr_establish __P((struct pckbc_softc *, pckbc_slot_t));
+void	pckbc_isa_intr_establish (struct pckbc_softc *, pckbc_slot_t);
 
 int
 pckbc_isa_match(parent, match, aux)
@@ -189,8 +192,7 @@ pckbc_isa_attach(parent, self, aux)
 		    bus_space_map(iot, IO_KBD + KBCMDP, 1, 0, &ioh_c))
 			panic("pckbc_attach: couldn't map");
 
-		t = malloc(sizeof(struct pckbc_internal), M_DEVBUF,
-		    M_WAITOK|M_ZERO);
+		t = malloc(sizeof(struct pckbc_internal), M_DEVBUF, M_WAITOK|M_ZERO);
 		t->t_iot = iot;
 		t->t_ioh_d = ioh_d;
 		t->t_ioh_c = ioh_c;
@@ -216,13 +218,11 @@ pckbc_isa_intr_establish(sc, slot)
 	struct pckbc_isa_softc *isc = (void *) sc;
 	void *rv;
 
-	rv = isa_intr_establish(isc->sc_ic, isc->sc_irq[slot], IST_EDGE,
-	    IPL_TTY, pckbcintr, sc);
+	rv = isa_intr_establish(isc->sc_ic, isc->sc_irq[slot], IST_EDGE, IPL_TTY, pckbcintr, sc);
 	if (rv == NULL) {
 		printf("%s: unable to establish interrupt for %s slot\n",
 		    sc->sc_dv.dv_xname, pckbc_slot_names[slot]);
 	} else {
-		printf("%s: using irq %d for %s slot\n", sc->sc_dv.dv_xname,
-		    isc->sc_irq[slot], pckbc_slot_names[slot]);
+		printf("%s: using irq %d for %s slot\n", sc->sc_dv.dv_xname, isc->sc_irq[slot], pckbc_slot_names[slot]);
 	}
 }
