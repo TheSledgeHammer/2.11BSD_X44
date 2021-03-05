@@ -41,10 +41,10 @@ static const char _rcsid[] __attribute__ ((unused)) =
 #include <sys/malloc.h>
 #include <sys/fcntl.h>
 
-#include <dev/wscons/wsconsio.h>
-#include <dev/wscons/wsdisplayvar.h>
-#include <dev/wscons/wsemulvar.h>
-#include <dev/wscons/ascii.h>
+#include <dev/misc/wscons/wsconsio.h>
+#include <dev/misc/wscons/wsdisplayvar.h>
+#include <dev/misc/wscons/wsemulvar.h>
+#include <dev/misc/wscons/ascii.h>
 
 void	*wsemul_dumb_cnattach (const struct wsscreen_descr *, void *, int, int, long);
 void	*wsemul_dumb_attach (int console, const struct wsscreen_descr *, void *, int, int, void *, long);

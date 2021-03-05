@@ -42,7 +42,7 @@
 #include <sys/poll.h>
 #include <sys/malloc.h>
 
-#include <dev/cons.h>
+#include <dev/misc/cons/cons.h>
 
 #include <devel/dev/consio.h>
 #include <devel/dev/fbio.h>

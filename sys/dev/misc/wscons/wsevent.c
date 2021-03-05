@@ -93,8 +93,8 @@ static const char _rcsid[] __attribute__ ((unused)) =
 #include <sys/errno.h>
 #include <sys/poll.h>
 
-#include <dev/wscons/wsconsio.h>
-#include <dev/wscons/wseventvar.h>
+#include <dev/misc/wscons/wsconsio.h>
+#include <dev/misc/wscons/wseventvar.h>
 
 /*
  * Initialize a wscons_event queue.

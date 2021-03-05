@@ -95,9 +95,9 @@ static const char _rcsid[] __attribute__ ((unused)) =
 #include <sys/signalvar.h>
 #include <sys/device.h>
 
-#include <dev/wscons/wsconsio.h>
-#include <dev/wscons/wsmousevar.h>
-#include <dev/wscons/wseventvar.h>
+#include <dev/misc/wscons/wsconsio.h>
+#include <dev/misc/wscons/wsmousevar.h>
+#include <dev/misc/wscons/wseventvar.h>
 
 #include "wsmouse.h"
 

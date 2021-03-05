@@ -51,12 +51,12 @@ static const char _rcsid[] __attribute__ ((unused)) =
 #include <sys/vnode.h>
 #include <sys/null.h>
 
-#include <dev/wscons/wsconsio.h>
-#include <dev/wscons/wsdisplayvar.h>
-#include <dev/wscons/wsksymvar.h>
-#include <dev/wscons/wsksymdef.h>
-#include <dev/wscons/wsemulvar.h>
-#include <dev/wscons/wscons_callbacks.h>
+#include <dev/misc/wscons/wsconsio.h>
+#include <dev/misc/wscons/wsdisplayvar.h>
+#include <dev/misc/wscons/wsksymvar.h>
+#include <dev/misc/wscons/wsksymdef.h>
+#include <dev/misc/wscons/wsemulvar.h>
+#include <dev/misc/wscons/wscons_callbacks.h>
 #include <dev/misc/cons/cons.h>
 
 //#include "opt_wsdisplay_compat.h"

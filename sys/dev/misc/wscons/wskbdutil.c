@@ -42,8 +42,8 @@
 #include <sys/errno.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
-#include <dev/wscons/wsksymdef.h>
-#include <dev/wscons/wsksymvar.h>
+#include <dev/misc/wscons/wsksymdef.h>
+#include <dev/misc/wscons/wsksymvar.h>
 
 static struct compose_tab_s {
 	keysym_t elem[2];

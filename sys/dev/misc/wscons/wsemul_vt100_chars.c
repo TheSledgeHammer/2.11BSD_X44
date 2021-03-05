@@ -34,11 +34,11 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <dev/wscons/wsdisplayvar.h>
-#include <dev/wscons/wsksymvar.h>
-#include <dev/wscons/wsemulvar.h>
-#include <dev/wscons/wsemul_vt100var.h>
-#include <dev/wscons/unicode.h>
+#include <dev/misc/wscons/wsdisplayvar.h>
+#include <dev/misc/wscons/wsksymvar.h>
+#include <dev/misc/wscons/wsemulvar.h>
+#include <dev/misc/wscons/wsemul_vt100var.h>
+#include <dev/misc/wscons/unicode.h>
 
 static u_int16_t decspcgr2uni[128] = {
 	0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,

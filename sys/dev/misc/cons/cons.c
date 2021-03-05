@@ -54,24 +54,6 @@
 
 #include <dev/misc/cons/cons.h>
 
-/*
-dev_type_cnprobe(cnprobe);
-dev_type_cninit(cninit);
-dev_type_cngetc(cngetc);
-dev_type_cnputc(cnputc);
-dev_type_cnpollc(cnpollc);
-
-const struct consdev cons = {
-		.cn_probe = cnprobe,
-		.cn_init = cninit,
-		.cn_getc = cngetc,
-		.cn_putc = cnputc,
-		.cn_pollc = cnpollc,
-		.cn_dev = CONSMAJOR,
-		.cn_pri= 0,
-};
-*/
-
 dev_type_open(cnopen);
 dev_type_close(cnclose);
 dev_type_read(cnread);

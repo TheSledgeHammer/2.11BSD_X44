@@ -35,10 +35,10 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 
-#include <dev/wscons/wsksymvar.h>
-#include <dev/wscons/wsdisplayvar.h>
-#include <dev/wscons/wsemulvar.h>
-#include <dev/wscons/wsemul_vt100var.h>
+#include <dev/misc/wscons/wsksymvar.h>
+#include <dev/misc/wscons/wsdisplayvar.h>
+#include <dev/misc/wscons/wsemulvar.h>
+#include <dev/misc/wscons/wsemul_vt100var.h>
 
 static int vt100_selectattribute (struct wsemul_vt100_emuldata *, int, int, int, long *);
 static int vt100_ansimode (struct wsemul_vt100_emuldata *, int, int);

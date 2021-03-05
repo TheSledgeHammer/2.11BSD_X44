@@ -35,6 +35,7 @@ A General todo list. Don't hesitate to add to this list. :)
 		- add: vhci, xhci, other generic usb drivers
 	- wscons/pccons:					Work in progress
 		- double check wscons for errors/mistakes
+		- fix: pcdisplay.c
 
 ## fs:
 

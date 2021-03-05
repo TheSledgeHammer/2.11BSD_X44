@@ -39,10 +39,10 @@ static const char _rcsid[] __attribute__ ((unused)) =
 #include <sys/systm.h>
 #include <sys/null.h>
 
-#include <dev/wscons/wsdisplayvar.h>
-#include <dev/wscons/wsksymvar.h>
-#include <dev/wscons/wsemulvar.h>		/* pulls in opt_wsemul.h */
-#include <dev/wscons/wscons_callbacks.h>
+#include <dev/misc/wscons/wsdisplayvar.h>
+#include <dev/misc/wscons/wsksymvar.h>
+#include <dev/misc/wscons/wsemulvar.h>		/* pulls in opt_wsemul.h */
+#include <dev/misc/wscons/wscons_callbacks.h>
 
 static const struct wsemul_ops *wsemul_conf[] = {
 #ifdef WSEMUL_SUN

@@ -48,10 +48,10 @@
 #include <machine/segments.h>
 #include <machine/support.s>
 
-extern int 			vm86pa;
-extern struct pcb 	*vm86pcb;
+extern int 					vm86pa;
+extern struct pcb 			*vm86pcb;
 
-static struct lock 	vm86_lock;
+static struct lock_object 	vm86_lock;
 
 extern int vm86_bioscall(struct vm86frame *);
 extern void vm86_biosret(struct vm86frame *);

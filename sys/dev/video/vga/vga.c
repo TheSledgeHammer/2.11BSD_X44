@@ -55,7 +55,7 @@
 #include <dev/misc/pccons/pcdisplay.h>
 
 /* for WSCONS_SUPPORT_PCVTFONTS and WSDISPLAY_CHARFUNCS */
-#include "opt_wsdisplay_compat.h"
+//#include "opt_wsdisplay_compat.h"
 
 int vga_no_builtinfont = 0;
 

@@ -44,10 +44,10 @@
 #include <sys/malloc.h>
 #include <sys/errno.h>
 
-#include <dev/wscons/wsconsio.h>
-#include <dev/wscons/wsdisplayvar.h>
-#include <dev/wscons/wscons_callbacks.h>
-#include <dev/wscons/wsdisplay_usl_io.h>
+#include <dev/misc/wscons/wsconsio.h>
+#include <dev/misc/wscons/wsdisplayvar.h>
+#include <dev/misc/wscons/wscons_callbacks.h>
+#include <dev/misc/wscons/wsdisplay_usl_io.h>
 
 #include "opt_wsdisplay_compat.h"
 
