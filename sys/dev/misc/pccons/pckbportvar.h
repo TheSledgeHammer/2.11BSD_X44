@@ -32,6 +32,9 @@
 
 #include <sys/callout.h>
 
+#define PCKBPORTCF_SLOT            0
+#define PCKBPORTCF_SLOT_DEFAULT    -1
+
 typedef struct pckbport_tag *pckbport_tag_t;
 typedef int pckbport_slot_t;
 

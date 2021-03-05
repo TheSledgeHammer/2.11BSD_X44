@@ -53,8 +53,8 @@
 #include <sys/malloc.h>
 #include <sys/dirent.h>
 #include <sys/endian.h>
+#include <sys/lockf.h>
 
-#include <ufs/ufs/lockf.h>
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
 #include <ufs/ufs/dir.h>
@@ -178,7 +178,7 @@ ufs_mknod(ap)
 	(*vpp)->v_type = VNON;
 	ino = ip->i_number;	/* Save this before vgone() invalidates ip. */
 	vgone(*vpp);
-	error = VFS_VGET(ap->a_dvp->v_mount, ino, LK_EXCLUSIVE, vpp);
+	error = VFS_VGET(ap->a_dvp->v_mount, ino, vpp);
 	if (error) {
 		*vpp = NULL;
 		return (error);

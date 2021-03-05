@@ -74,10 +74,6 @@ struct pms_softc {		/* driver status information */
 	int 			sc_kbcslot;
 
 	int 			sc_enabled;		/* input enabled? */
-#ifndef PMS_DISABLE_POWERHOOK
-	void 			*sc_powerhook;	/* cookie from power hook */
-	int 			sc_suspended;	/* suspended? */
-#endif /* !PMS_DISABLE_POWERHOOK */
 	int 			inputstate;		/* number of bytes received for this packet */
 	u_int 			buttons;		/* mouse button status */
 	enum pms_type 	protocol;
@@ -85,7 +81,6 @@ struct pms_softc {		/* driver status information */
 	struct timeval 	last, current;
 
 	struct device 	*sc_wsmousedev;
-	struct proc 	*sc_event_thread;
 };
 
 int pmsprobe(struct device *, struct cfdata *, void *);
@@ -99,14 +94,9 @@ struct cfdriver pms_cd = {
 static int	pms_protocol(pckbport_tag_t, pckbport_slot_t);
 static void	do_enable(struct pms_softc *);
 static void	do_disable(struct pms_softc *);
-static void	pms_reset_thread(void*);
-static void	pms_spawn_reset_thread(void*);
 int			pms_enable(void *);
 int			pms_ioctl(void *, u_long, caddr_t, int, struct proc *);
 void		pms_disable(void *);
-#ifndef PMS_DISABLE_POWERHOOK
-void		pms_power(int, void *);
-#endif /* !PMS_DISABLE_POWERHOOK */
 
 const struct wsmouse_accessops pms_accessops = {
 	pms_enable,
@@ -215,8 +205,7 @@ pmsattach(struct device *parent, struct device *self, void *aux)
 	sc->buttons = 0;
 	sc->protocol = PMS_UNKNOWN;
 
-	pckbport_set_inputhandler(sc->sc_kbctag, sc->sc_kbcslot,
-			       pmsinput, sc, sc->sc_dev.dv_xname);
+	pckbport_set_inputhandler(sc->sc_kbctag, sc->sc_kbcslot, pmsinput, sc, sc->sc_dev.dv_xname);
 
 	a.accessops = &pms_accessops;
 	a.accesscookie = sc;
@@ -235,13 +224,6 @@ pmsattach(struct device *parent, struct device *self, void *aux)
 	if (res)
 		printf("pmsattach: disable error\n");
 	pckbport_slot_enable(sc->sc_kbctag, sc->sc_kbcslot, 0);
-
-	kthread_create(pms_spawn_reset_thread, sc);
-
-#ifndef PMS_DISABLE_POWERHOOK
-	sc->sc_powerhook = powerhook_establish(pms_power, sc);
-	sc->sc_suspended = 0;
-#endif /* !PMS_DISABLE_POWERHOOK */
 }
 
 static void
@@ -336,35 +318,6 @@ pms_disable(void *v)
 	splx(s);
 }
 
-#ifndef PMS_DISABLE_POWERHOOK
-void
-pms_power(int why, void *v)
-{
-	struct pms_softc *sc = v;
-
-	switch (why) {
-	case PWR_STANDBY:
-		break;
-	case PWR_SUSPEND:
-		if (sc->sc_enabled) {
-			do_disable(sc);
-			sc->sc_suspended = 1;
-		}
-		break;
-	case PWR_RESUME:
-		if (sc->sc_enabled && sc->sc_suspended) {
-			sc->protocol = PMS_UNKNOWN;	/* recheck protocol & init mouse */
-			sc->sc_suspended = 0;
-			do_enable(sc); /* only if we were suspended */
-		}
-	case PWR_SOFTSUSPEND:
-	case PWR_SOFTSTANDBY:
-	case PWR_SOFTRESUME:
-		break;
-	}
-}
-#endif /* !PMS_DISABLE_POWERHOOK */
-
 int
 pms_ioctl(void *v, u_long cmd, caddr_t data, int flag, struct proc *p)
 {
@@ -399,72 +352,6 @@ pms_ioctl(void *v, u_long cmd, caddr_t data, int flag, struct proc *p)
 		return EPASSTHROUGH;
 	}
 	return 0;
-}
-
-static void
-pms_spawn_reset_thread(void *arg)
-{
-	struct pms_softc *sc = arg;
-
-	kthread_create1(pms_reset_thread, sc, &sc->sc_event_thread, sc->sc_dev.dv_xname);
-}
-
-static void
-pms_reset_thread(void *arg)
-{
-	struct pms_softc *sc = arg;
-	u_char cmd[1], resp[2];
-	int res;
-	int save_protocol;
-
-	for (;;) {
-		tsleep(&sc->sc_enabled, PWAIT, "pmsreset", 0);
-#ifdef PMSDEBUG
-		if (pmsdebug)
-#endif
-#if defined(PMSDEBUG) || defined(DIAGNOSTIC)
-			printf("%s: resetting mouse interface\n", 
-			    sc->sc_dev.dv_xname);
-#endif
-		save_protocol = sc->protocol;
-		pms_disable(sc);
-		cmd[0] = PMS_RESET;
-		res = pckbport_enqueue_cmd(sc->sc_kbctag, sc->sc_kbcslot, cmd, 1,
-		    2, 1, resp);
-		if (res)
-			DPRINTF(("%s: reset error %d\n", sc->sc_dev.dv_xname, 
-			    res));
-		sc->protocol = PMS_UNKNOWN;
-		pms_enable(sc);
-		if (sc->protocol != save_protocol) {
-#if defined(PMSDEBUG) || defined(DIAGNOSTIC)
-			printf("%s: protocol change, sleeping and retrying\n",
-			    sc->sc_dev.dv_xname);
-#endif
-			pms_disable(sc);
-			cmd[0] = PMS_RESET;
-			res = pckbport_enqueue_cmd(sc->sc_kbctag,
-			    sc->sc_kbcslot, cmd, 1, 2, 1, resp);
-			if (res)
-				DPRINTF(("%s: reset error %d\n",
-				    sc->sc_dev.dv_xname, res));
-			tsleep(pms_reset_thread, PWAIT, "pmsreset", hz);
-			cmd[0] = PMS_RESET;
-			res = pckbport_enqueue_cmd(sc->sc_kbctag,
-			    sc->sc_kbcslot, cmd, 1, 2, 1, resp);
-			if (res)
-				DPRINTF(("%s: reset error %d\n",
-				    sc->sc_dev.dv_xname, res));
-			sc->protocol = PMS_UNKNOWN;	/* reprobe protocol */
-			pms_enable(sc);
-#if defined(PMSDEBUG) || defined(DIAGNOSTIC)
-			if (sc->protocol != save_protocol) {
-				printf("%s: protocol changed.\n",
-				    sc->sc_dev.dv_xname);
-			}
-#endif
-		}
-	}
 }
 
 /* Masks for the first byte of a packet */

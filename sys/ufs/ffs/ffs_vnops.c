@@ -45,8 +45,8 @@
 #include <sys/mount.h>
 #include <sys/vnode.h>
 #include <sys/malloc.h>
+#include <sys/lockf.h>
 
-#include <ufs/ufs/lockf.h>
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
 #include <ufs/ufs/dir.h>

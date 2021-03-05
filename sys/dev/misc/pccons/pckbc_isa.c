@@ -79,22 +79,16 @@ pckbc_isa_match(parent, match, aux)
 		return (0);
 
 	/* If values are hardwired to something that they can't be, punt. */
-	if (ia->ia_nio < 1 ||
-	    (ia->ia_io[0].ir_addr != ISACF_PORT_DEFAULT &&
-	     ia->ia_io[0].ir_addr != IO_KBD))
+	if (ia->ia_nio < 1 || (ia->ia_iobase != IOBASEUNK && ia->ia_iobase != IO_KBD))
 		return (0);
 
-	if (ia->ia_niomem > 0 &&
-	    (ia->ia_iomem[0].ir_addr != ISACF_IOMEM_DEFAULT))
+	if (ia->ia_niomem > 0 && (ia->ia_maddr != MADDRUNK))
 		return (0);
 
-	if (ia->ia_nirq < 1 ||
-	    (ia->ia_irq[0].ir_irq != ISACF_IRQ_DEFAULT &&
-	     ia->ia_irq[0].ir_irq != 1 /*XXX*/))
+	if (ia->ia_nirq < 1 || (ia->ia_irq != IRQUNK && ia->ia_irq != 1 /*XXX*/))
 		return (0);
 
-	if (ia->ia_ndrq > 0 &&
-	    (ia->ia_drq[0].ir_drq != ISACF_DRQ_DEFAULT))
+	if (ia->ia_ndrq > 0 && (ia->ia_drq != DRQUNK))
 		return (0);
 
 	if (pckbc_is_console(iot, IO_KBD) == 0) {
@@ -133,8 +127,8 @@ pckbc_isa_match(parent, match, aux)
 	}
 
 	if (ok) {
-		ia->ia_io[0].ir_addr = IO_KBD;
-		ia->ia_io[0].ir_size = 5;
+		ia->ia_iobase = IO_KBD;
+		ia->ia_iosize = 5;
 		ia->ia_nio = 1;
 
 		ia->ia_niomem = 0;
@@ -162,14 +156,13 @@ pckbc_isa_attach(parent, self, aux)
 	switch (ia->ia_nirq) {
 	case 1:
 		/* Both channels use the same IRQ. */
-		isc->sc_irq[PCKBC_KBD_SLOT] =
-		    isc->sc_irq[PCKBC_AUX_SLOT] = ia->ia_irq[0].ir_irq;
+		isc->sc_irq[PCKBC_KBD_SLOT] = isc->sc_irq[PCKBC_AUX_SLOT] = ia->ia_irq[0];
 		break;
 
 	case 2:
 		/* First IRQ is kbd, second IRQ is aux port. */
-		isc->sc_irq[PCKBC_KBD_SLOT] = ia->ia_irq[0].ir_irq;
-		isc->sc_irq[PCKBC_AUX_SLOT] = ia->ia_irq[1].ir_irq;
+		isc->sc_irq[PCKBC_KBD_SLOT] = ia->ia_irq[0];
+		isc->sc_irq[PCKBC_AUX_SLOT] = ia->ia_irq[1];
 		break;
 
 	default:

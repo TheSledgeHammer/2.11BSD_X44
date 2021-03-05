@@ -144,8 +144,7 @@ wscons_setup_glue(v)
 		wskbd_set_display(kbddevice, displaydevice);
 		wsdisplay_set_kbd(displaydevice, kbddevice);
 
-		printf("wscons: %s glued to %s\n", kbddevice->dv_xname,
-				displaydevice->dv_xname);
+		printf("wscons: %s glued to %s\n", kbddevice->dv_xname, displaydevice->dv_xname);
 	}
 
 	/* Now wasn't that simple? */

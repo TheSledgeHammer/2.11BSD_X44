@@ -26,8 +26,6 @@
  *
  */
 
-#include "opt_pcdisplay.h"
-
 struct pcdisplayscreen {
 	struct pcdisplay_handle 	*hdl;
 

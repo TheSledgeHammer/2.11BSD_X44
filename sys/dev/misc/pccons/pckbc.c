@@ -50,7 +50,7 @@
 #include <dev/misc/pccons/pckbportvar.h>
 
 //#include "rnd.h"
-#include "locators.h"
+//#include "locators.h"
 
 #if NRND > 0
 #include <sys/rnd.h>

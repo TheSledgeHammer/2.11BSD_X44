@@ -33,9 +33,8 @@ A General todo list. Don't hesitate to add to this list. :)
 - Essential Driver Support:
 	- usb: 							Work in progress
 		- add: vhci, xhci, other generic usb drivers
-	- pccons:							Work in progress
-		- fix: pckbc_isa.c, pckbd.c, pckbdc.c, pckbport.c
-		- fix: pms.c: uses threading
+	- wscons/pccons:					Work in progress
+		- double check wscons for errors/mistakes
 
 ## fs:
 
