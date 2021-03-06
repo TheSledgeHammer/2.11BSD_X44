@@ -21,3 +21,4 @@ include 	"dev/misc/files.misc"
 include		"dev/usb/files.usb"
 include		"dev/video/files.video"
 
+file		dev/dev_config.c

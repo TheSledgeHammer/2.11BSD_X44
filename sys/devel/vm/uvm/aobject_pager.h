@@ -52,6 +52,7 @@
  */
 struct aobjpager {
 	vm_aobject_t				vm_aobject;
+	vm_object_t					vm_object;
 };
 typedef struct aobjpager		*aobj_pager_t;
 

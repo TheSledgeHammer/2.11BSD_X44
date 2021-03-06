@@ -59,6 +59,10 @@ struct pagerops segmentpagerops = {
 static void
 segment_pager_init()
 {
+#ifdef DEBUG
+	if (dpagerdebug & DDB_FOLLOW)
+		printf("segment_pager_init()\n");
+#endif
 	TAILQ_INIT(&segment_pager_list);
 }
 
@@ -96,7 +100,26 @@ segment_pager_alloc(handle, size, prot, foff)
 			free((caddr_t)pager, M_VMPAGER);
 			return (NULL);
 		}
+
+		object = vm_object_allocate(size);
+	} else {
+		object = vm_object_lookup(pager);
 	}
+
+	if (object) {
+
+		TAILQ_INSERT_TAIL(&segment_pager_list, pager, pg_list);
+
+		vm_object_enter(object, pager);
+		vm_object_setpager(object, pager, 0, FALSE);
+	}
+
+	pager->pg_handle = handle;
+	pager->pg_type = PG_SEGMENT;
+	pager->pg_flags = 0;
+	pager->pg_ops = &segmentpagerops;
+	pager->pg_data = seg;
+
 	return (pager);
 }
 
@@ -104,7 +127,12 @@ static void
 segment_pager_dealloc(pager)
 	vm_pager_t pager;
 {
+	register seg_pager_t seg = (seg_pager_t)pager->pg_data;
 
+	TAILQ_REMOVE(&segment_pager_list, pager, pg_list);
+
+	free((caddr_t)seg, M_VMPGDATA);
+	free((caddr_t)pager, M_VMPAGER);
 }
 
 static int
@@ -146,13 +174,22 @@ segment_pager_cluster(pager, offset, loffset, hoffset)
 
 }
 
-segment_pager_cluster_read()
+static int
+segment_pager_cluster_get(pager, mlist, nsegments, sync)
+	vm_pager_t pager;
+	vm_segment_t *mlist;
+	int nsegments;
+	boolean_t sync;
 {
 
 }
 
-
-segment_pager_cluster_write()
+static int
+segment_pager_cluster_put(pager, mlist, nsegments, sync)
+	vm_pager_t pager;
+	vm_segment_t *mlist;
+	int nsegments;
+	boolean_t sync;
 {
 
 }

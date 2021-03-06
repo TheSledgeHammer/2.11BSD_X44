@@ -55,7 +55,7 @@ file	arch/i386/isa/clock.c		    	isa
 # Numeric Processing Extension; Math Co-processor
 device	npx
 attach	npx at isa
-file	arch/i386/isa/npx.c		        	npx 					needs-flag
+file	arch/i386/isa/npx.c		        	npx 					  needs-flag
 
 # EISA-only drivers
 file	arch/i386/eisa/eisa_machdep.c	    eisa
@@ -87,3 +87,9 @@ file	dev/core/isa/i82365_isa.c		   pcic_isa
 # PCIC pcmcia contoller on PCI bus.
 attach	pcic at pci with pcic_pci
 file	dev/core/pci/i82365_pci.c		   pcic_pci
+
+# miscellaneous pseudo-devices
+# cmos(4) pseudo-device
+pseudo-device							   cmos
+
+pseudo-device							   ksyms

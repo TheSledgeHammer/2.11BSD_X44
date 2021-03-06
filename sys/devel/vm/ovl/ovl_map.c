@@ -160,6 +160,7 @@ ovlspace_alloc(min, max, segmented)
 		RMALLOC3(ovl, struct ovlspace *, ovl->ovl_dsize, ovl->ovl_ssize, ovl->ovl_tsize, sizeof(struct ovlspace *));
 	} else {
 		RMALLOC(ovl, struct ovlspace *, sizeof(struct ovlspace *));
+		//MALLOC(ovl, struct ovlspace *, sizeof(struct ovlspace *), M_OVLMAP | M_OVERLAY, M_OVERLAY);
 	}
 	memset(ovl, 0, sizeof(struct ovlspace *));
 	ovl_map_init(&ovl->ovl_map, min, max);

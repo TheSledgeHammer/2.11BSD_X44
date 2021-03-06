@@ -104,14 +104,26 @@ aobject_pager_alloc(handle, size, prot, foff)
 	vm_prot_t prot;
 	vm_offset_t foff;
 {
+	register vm_pager_t pager;
+	register aobj_pager_t aobj;
 
+	pager->pg_handle = handle;
+	pager->pg_type = PG_AOBJECT;
+	pager->pg_flags = 0;
+	pager->pg_ops = &aobjectpagerops;
+	pager->pg_data = aobj;
+
+	return (pager);
 }
 
 static void
 aobject_pager_dealloc(pager)
 	vm_pager_t pager;
 {
+	register aobj_pager_t aobj = (aobj_pager_t)pager->pg_data;
 
+	free((caddr_t)aobj, M_VMPGDATA);
+	free((caddr_t)pager, M_VMPAGER);
 }
 
 static int
@@ -170,7 +182,7 @@ uao_reference(uobj)
 		return;
 
 	simple_lock(&uobj->Lock);
-	uobj->ref_count++;		/* bump! */
+	uobj->ref_count++;				/* bump! */
 	simple_unlock(&uobj->Lock);
 }
 
@@ -213,8 +225,7 @@ uao_detach(uobj)
  	 */
 
 	busybody = FALSE;
-	for (pg = uobj->memq.tqh_first ; pg != NULL ; pg = pg->listq.tqe_next) {
-
+	for (pg = TAILQ_FIRST(uobj->memq); pg != NULL ; pg = TAILQ_NEXT(pg, listq)) {
 		if (pg->flags & PG_BUSY) {
 			pg->flags |= PG_RELEASED;
 			busybody = TRUE;

@@ -49,16 +49,6 @@ attach	ukbd at uhub
 file	dev/usb/ukbd.c			ukbd		needs-flag
 file	dev/usb/ukbdmap.c		ukbd
 
-# Printers
-device	ulpt
-attach	ulpt at uhub
-file	dev/usb/ulpt.c			ulpt		needs-flag
-
-# Modems
-device	umodem
-attach	umodem at uhub
-file	dev/usb/umodem.c		umodem		needs-flag
-
 # Mice
 device	ums: wsmousedev
 attach	ums at uhub

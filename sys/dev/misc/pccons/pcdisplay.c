@@ -368,7 +368,7 @@ pcdisplay_ioctl(v, cmd, data, flag, p)
 	/*
 	 * XXX "do something!"
 	 */
-	return (EPASSTHROUGH);
+	return (ENOIOCTL);
 }
 
 static caddr_t

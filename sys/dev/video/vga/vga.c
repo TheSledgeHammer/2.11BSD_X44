@@ -739,7 +739,7 @@ vga_ioctl(void *v, u_long cmd, caddr_t data, int flag, struct proc *p)
 
 	case WSDISPLAYIO_GINFO:
 		/* XXX should get detailed hardware information here */
-		return EPASSTHROUGH;
+		return ENOIOCTL;
 
 	case WSDISPLAYIO_GVIDEO:
 		*(int *)data = (vga_get_video(vc) ?
@@ -758,14 +758,14 @@ vga_ioctl(void *v, u_long cmd, caddr_t data, int flag, struct proc *p)
 	case WSDISPLAYIO_GCURSOR:
 	case WSDISPLAYIO_SCURSOR:
 		/* NONE of these operations are by the generic VGA driver. */
-		return EPASSTHROUGH;
+		return ENOIOCTL;
 	}
 
 	if (vc->vc_funcs == NULL)
-		return (EPASSTHROUGH);
+		return (ENOIOCTL);
 
 	if (vf->vf_ioctl == NULL)
-		return (EPASSTHROUGH);
+		return (ENOIOCTL);
 
 	return ((*vf->vf_ioctl)(v, cmd, data, flag, p));
 }

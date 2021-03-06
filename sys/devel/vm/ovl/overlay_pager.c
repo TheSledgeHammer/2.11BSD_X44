@@ -112,12 +112,16 @@ struct pagerops overlaypagerops = {
 		overlay_pager_getpage,
 		overlay_pager_putpage,
 		overlay_pager_haspage,
-		overlay_pager_cluster
+		vm_pager_clusternull
 };
 
 static void
 overlay_pager_init()
 {
+#ifdef DEBUG
+	if (dpagerdebug & DDB_FOLLOW)
+		printf("overlay_pager_init()\n");
+#endif
 	TAILQ_INIT(&overlay_pager_list);
 }
 
@@ -184,11 +188,11 @@ overlay_pager_dealloc(pager)
 	ovl_object_t		  ovl_object;
 	vm_object_t 		  fake_vm_object;
 
-	TAILQ_REMOVE(&overlay_pager_list, pager, pg_list);
-
 	ovl = (ovl_pager_t) pager->pg_data;
 	ovl_object = ovl->ovl_object;
 	fake_vm_object = ovl_object->ovo_vm_object;
+
+	TAILQ_REMOVE(&overlay_pager_list, pager, pg_list);
 
 	free((caddr_t)ovl, M_VMPGDATA);
 	free((caddr_t)pager, M_VMPAGER);
@@ -230,16 +234,6 @@ overlay_pager_haspage(pager, offset)
 	}
 
 	return (TRUE);
-}
-
-static void
-overlay_pager_cluster(pager, offset, loffset, hoffset)
-	vm_pager_t	pager;
-	vm_offset_t	offset;
-	vm_offset_t	*loffset;
-	vm_offset_t	*hoffset;
-{
-	panic("overlay_pager_cluster is yet to be implemented");
 }
 
 static int
@@ -291,11 +285,11 @@ overlay_pager_io(ovl, vm_page, npages, flags)
 				return (VM_PAGER_OK);
 			}
 			if(flags == OVL_PGR_PUT) {
-				return (VM_PAGER_ERR);
+				return (VM_PAGER_ERROR);
 			}
 		} else {
 			if(flags == OVL_PGR_GET){
-				return (VM_PAGER_ERR);
+				return (VM_PAGER_ERROR);
 			}
 			if(flags == OVL_PGR_PUT) {
 				return (VM_PAGER_OK);

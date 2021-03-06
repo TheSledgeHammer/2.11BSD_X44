@@ -5,6 +5,5 @@
 include 	"dev/misc/pccons/files.pccons"
 include 	"dev/misc/wscons/files.wscons"
 
-file		dev/misc/cons.c				cons
 file		dev/misc/kobj/kobj.c
 file		dev/misc/ksym/ksyms.c		ksyms		needs-flag

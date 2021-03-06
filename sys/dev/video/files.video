@@ -5,4 +5,9 @@
 
 # generic ISA VGA
 attach	vga at isa with vga_isa
-file	dev/video/vga/vga_isa.c			vga_isa			needs-flag
+file	dev/video/vga/vga_isa.c				vga_isa			needs-flag
+
+# generic EGA
+device	ega: wsemuldisplaydev, pcdisplayops
+attach	ega at isa
+file	dev/video/ega/ega.c					ega				needs-flag

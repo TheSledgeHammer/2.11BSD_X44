@@ -172,7 +172,6 @@ file	ufs/ufs/ufs_disksubr.c				ffs | lfs | mfs
 file	ufs/ufs/ufs_extern.c				ffs | lfs | mfs
 file	ufs/ufs/ufs_ihash.c					ffs | lfs | mfs
 file	ufs/ufs/ufs_inode.c					ffs | lfs | mfs
-file	ufs/ufs/ufs_lockf.c					ffs | lfs | mfs
 file	ufs/ufs/ufs_lookup.c				ffs | lfs | mfs
 file	ufs/ufs/ufs_quota.c					quota & (ffs | lfs | mfs)
 file	ufs/ufs/ufs_vfsops.c				ffs | lfs | mfs

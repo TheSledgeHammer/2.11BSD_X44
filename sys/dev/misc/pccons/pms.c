@@ -349,7 +349,7 @@ pms_ioctl(void *v, u_long cmd, caddr_t data, int flag, struct proc *p)
 		break;
 		
 	default:
-		return EPASSTHROUGH;
+		return ENOIOCTL;
 	}
 	return 0;
 }

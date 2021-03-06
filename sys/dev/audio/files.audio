@@ -2,3 +2,11 @@
 #
 # Audio Configuration Files
 #
+
+# PC PPI + TIMER 1 (speaker interface)
+device	pcppi {}
+attach	pcppi at isa
+file	dev/audio/speaker/pcppi.c					pcppi
+device	spkr
+attach	spkr at pcppi
+file	dev/audio/speaker/spkr.c					spkr					needs-flag

@@ -79,6 +79,9 @@ extern struct vmexp vmexp;
 #define VM_OBJ_KERN				(-2)
 
 /* vm_pager.h */
+#define PG_SEGMENT		3
+#define PG_AOBJECT		4
+
 #define PGO_ALLPAGES			0x010	/* flush whole object/get all pages */
 #define PGO_CLEANIT				0x001	/* write dirty pages to backing store */
 #define PGO_SYNCIO				0x002	/* if PGO_CLEAN: use sync I/O? */

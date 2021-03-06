@@ -577,7 +577,7 @@ pckbd_ioctl(void *v, u_long cmd, caddr_t data, int flag, struct proc *p)
 		return 0;
 #endif
 	}
-	return EPASSTHROUGH;
+	return ENOIOCTL;
 }
 
 void
