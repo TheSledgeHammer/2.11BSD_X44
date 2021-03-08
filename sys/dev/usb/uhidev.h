@@ -37,10 +37,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "locators.h"
-#define UHIDBUSCF_REPORTID 1
-//#define uhidevcf_reportid cf_loc[UHIDBUSCF_REPORTID]
-#define UHIDEV_UNK_REPORTID UHIDBUSCF_REPORTID_DEFAULT
+#define UHIDBUSCF_REPORTID 			0
+#define UHIDBUSCF_REPORTID_DEFAULT	-1
+#define UHIDEV_UNK_REPORTID 		UHIDBUSCF_REPORTID_DEFAULT
 
 struct uhidev_softc {
 	struct device 			sc_dev;		/* base device */

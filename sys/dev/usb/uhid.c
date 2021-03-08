@@ -69,7 +69,7 @@
 #include <dev/usb/hid.h>
 #include <dev/usb/usb_quirks.h>
 
-#include <devel/dev/usb/uhidev.h>
+#include <dev/usb/uhidev.h>
 
 #ifdef UHID_DEBUG
 #define DPRINTF(x)	if (uhiddebug) logprintf x
@@ -226,9 +226,7 @@ uhid_detach(struct device *self, int flags)
 	vdevgone(maj, mn, mn, VCHR);
 
 #if 0
-	usbd_add_drv_event(USB_EVENT_DRIVER_DETACH,
-			   sc->sc_hdev.sc_parent->sc_udev,
-			   USBDEV(sc->sc_hdev.sc_dev));
+	usbd_add_drv_event(USB_EVENT_DRIVER_DETACH, sc->sc_hdev.sc_parent->sc_udev, USBDEV(sc->sc_hdev.sc_dev));
 #endif
 
 	return (0);

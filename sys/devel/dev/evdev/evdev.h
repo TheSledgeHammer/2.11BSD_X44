@@ -32,6 +32,7 @@
 #include <sys/types.h>
 //#include <sys/epoch.h>
 #include <devel/dev/kbio.h>
+#include <devel/dev/evdev/input_event_codes.h>
 #include <devel/dev/evdev/input.h>
 #include <devel/dev/kbd/kbdreg.h>
 

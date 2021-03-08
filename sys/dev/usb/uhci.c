@@ -149,16 +149,16 @@ struct uhci_pipe {
 	} u;
 };
 
-void		uhci_globalreset(uhci_softc_t *);
-usbd_status	uhci_portreset(uhci_softc_t*, int);
-void		uhci_reset(uhci_softc_t *);
-void		uhci_shutdown(void *v);
-void		uhci_power(int, void *);
-usbd_status	uhci_run(uhci_softc_t *, int run);
-uhci_soft_td_t  *uhci_alloc_std(uhci_softc_t *);
-void		uhci_free_std(uhci_softc_t *, uhci_soft_td_t *);
-uhci_soft_qh_t  *uhci_alloc_sqh(uhci_softc_t *);
-void		uhci_free_sqh(uhci_softc_t *, uhci_soft_qh_t *);
+static void		uhci_globalreset(uhci_softc_t *);
+static usbd_status	uhci_portreset(uhci_softc_t*, int);
+static void		uhci_reset(uhci_softc_t *);
+static void		uhci_shutdown(void *v);
+static void		uhci_power(int, void *);
+static usbd_status	uhci_run(uhci_softc_t *, int run);
+static uhci_soft_td_t  *uhci_alloc_std(uhci_softc_t *);
+static void		uhci_free_std(uhci_softc_t *, uhci_soft_td_t *);
+static uhci_soft_qh_t  *uhci_alloc_sqh(uhci_softc_t *);
+static void		uhci_free_sqh(uhci_softc_t *, uhci_soft_qh_t *);
 #if 0
 void		uhci_enter_ctl_q(uhci_softc_t *, uhci_soft_qh_t *, uhci_intr_info_t *);
 void		uhci_exit_ctl_q(uhci_softc_t *, uhci_soft_qh_t *);
@@ -344,12 +344,12 @@ struct usbd_pipe_methods uhci_device_isoc_methods = {
 	uhci_device_isoc_done,
 };
 
-#define uhci_add_intr_info(sc, ii) \
+#define uhci_add_intr_info(sc, ii) 		\
 	LIST_INSERT_HEAD(&(sc)->sc_intrhead, (ii), list)
-#define uhci_del_intr_info(ii) \
-	do { \
-		LIST_REMOVE((ii), list); \
-		(ii)->list.le_prev = NULL; \
+#define uhci_del_intr_info(ii) 			\
+	do { 								\
+		LIST_REMOVE((ii), list); 		\
+		(ii)->list.le_prev = NULL; 		\
 	} while (0)
 #define uhci_active_intr_info(ii) ((ii)->list.le_prev != NULL)
 
@@ -518,7 +518,7 @@ uhci_init(uhci_softc_t *sc)
 
 #if defined(__NetBSD__) || defined(__OpenBSD__)
 int
-uhci_activate(device_ptr_t self, enum devact act)
+uhci_activate(struct device *self, enum devact act)
 {
 	struct uhci_softc *sc = (struct uhci_softc *)self;
 	int rv = 0;

@@ -85,23 +85,6 @@ struct cfdriver uhub_cd = {
 static usbd_status uhub_explore(usbd_device_handle hub);
 static void uhub_intr(usbd_xfer_handle, usbd_private_handle,usbd_status);
 
-/* Create the driver instance for the hub connected to usb case. */
-devclass_t uhubroot_devclass;
-
-static device_method_t uhubroot_methods[] = {
-	DEVMETHOD(device_match, uhub_match),
-	DEVMETHOD(device_attach, uhub_attach),
-
-	/* detach is not allowed for a root hub */
-	{0,0}
-};
-
-static driver_t uhubroot_driver = {
-	"uhub",
-	uhubroot_methods,
-	sizeof(struct uhub_softc)
-};
-
 int
 uhub_match(struct device *parent, struct cfdata *match, void *aux)
 {

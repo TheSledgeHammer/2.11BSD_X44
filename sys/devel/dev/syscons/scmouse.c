@@ -28,10 +28,10 @@
 #include <devel/dev/mouse.h>
 #include <devel/dev/syscons/syscons.h>
 
-#define MOUSE_ENABLED	0x00800
-#define MOUSE_MOVED		0x01000
-#define MOUSE_CUTTING	0x02000
-#define MOUSE_VISIBLE	0x04000
+#define MOUSE_ENABLED		0x00800
+#define MOUSE_MOVED			0x01000
+#define MOUSE_CUTTING		0x02000
+#define MOUSE_VISIBLE		0x04000
 
 #if !defined(SC_MOUSE_CHAR)
 #define SC_MOUSE_CHAR		(0xd0)
@@ -50,7 +50,7 @@ struct old_mouse_data {
 };
 
 struct old_mouse_info {
-	int operation;
+	int 						operation;
 	union {
 		struct old_mouse_data 	data;
 		struct mouse_mode 		mode;
@@ -221,8 +221,7 @@ mouse_ioctl(dev, cmd, data, flag, p)
 			if (mouse->operation == MOUSE_ACTION)
 				mouse_status.button = mouse->u.data.buttons;
 			mouse_status.flags |= (
-					(mouse->u.data.x || mouse->u.data.y || mouse->u.data.z) ?
-							MOUSE_POSCHANGED : 0)
+					(mouse->u.data.x || mouse->u.data.y || mouse->u.data.z) ? MOUSE_POSCHANGED : 0)
 					| (mouse_status.obutton ^ mouse_status.button);
 
 			if (mouse_status.flags == 0)
@@ -245,7 +244,7 @@ mouse_ioctl(dev, cmd, data, flag, p)
 				buf[2] = j >> 1;
 				buf[4] = j - buf[2];
 				for (j = 0; j < MOUSE_MSC_PACKETSIZE; j++)
-					(*linesw[(MOUSE_TTY)->t_line].l_rint)(buf[j], MOUSE_TTY);
+					(*linesw[MOUSE_TTY->t_line].l_rint)(buf[j], MOUSE_TTY);
 				if (mouse_level >= 1) { /* extended part */
 					j = imax(imin(mouse->u.data.z, 127), -128);
 					buf[5] = (j >> 1) & 0x7f;
@@ -254,7 +253,7 @@ mouse_ioctl(dev, cmd, data, flag, p)
 					buf[7] = (~mouse_status.button >> 3) & 0x7f;
 					for (j = MOUSE_MSC_PACKETSIZE; j < MOUSE_SYS_PACKETSIZE;
 							j++)
-						(*linesw[(MOUSE_TTY)->t_line].l_rint)(buf[j],
+						(*linesw[MOUSE_TTY->t_line].l_rint)(buf[j],
 						MOUSE_TTY);
 				}
 			}

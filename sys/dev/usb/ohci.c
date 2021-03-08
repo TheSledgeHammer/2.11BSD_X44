@@ -552,7 +552,7 @@ ohci_alloc_std_chain(struct ohci_pipe *opipe, ohci_softc_t *sc,
 }
 
 #if 0
-Static void
+static void
 ohci_free_std_chain(ohci_softc_t *sc, ohci_soft_td_t *std,
 		    ohci_soft_td_t *stdend)
 {

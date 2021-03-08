@@ -87,8 +87,6 @@ static const char _rcsid[] __attribute__ ((unused)) =
  * to `wscons_events' and passes them up to the appropriate reader.
  */
 
-#include "opt_ddb.h"
-
 #include <sys/param.h>
 #include <sys/conf.h>
 #include <sys/device.h>
@@ -111,50 +109,48 @@ static const char _rcsid[] __attribute__ ((unused)) =
 #include <dev/misc/wscons/wseventvar.h>
 #include <dev/misc/wscons/wscons_callbacks.h>
 
-#include "opt_wsdisplay_compat.h"
-
 #include "wskbd.h"
 
 struct wskbd_internal {
-	const struct wskbd_mapdata 	*t_keymap;
+	const struct wskbd_mapdata 		*t_keymap;
 
-	const struct wskbd_consops 	*t_consops;
-	void						*t_consaccesscookie;
+	const struct wskbd_consops 		*t_consops;
+	void							*t_consaccesscookie;
 
-	int							t_modifiers;
-	int							t_composelen;		/* remaining entries in t_composebuf */
-	keysym_t 					t_composebuf[2];
+	int								t_modifiers;
+	int								t_composelen;		/* remaining entries in t_composebuf */
+	keysym_t 						t_composebuf[2];
 
-	struct wskbd_softc 			*t_sc;	/* back pointer */
+	struct wskbd_softc 				*t_sc;				/* back pointer */
 };
 
 struct wskbd_softc {
-	struct device				sc_dv;
+	struct device					sc_dv;
 
 	struct wskbd_internal 			*id;
 
 	const struct wskbd_accessops 	*sc_accessops;
-	void *sc_accesscookie;
+	void 							*sc_accesscookie;
 
-	int	sc_ledstate;
+	int								sc_ledstate;
 
-	int	sc_ready;		/* accepting events */
-	struct wseventvar sc_events;	/* event queue state */
+	int								sc_ready;			/* accepting events */
+	struct wseventvar 				sc_events;			/* event queue state */
 
-	int	sc_isconsole;
-	struct device	*sc_displaydv;
+	int								sc_isconsole;
+	struct device					*sc_displaydv;
 
-	struct wskbd_bell_data sc_bell_data;
-	struct wskbd_keyrepeat_data sc_keyrepeat_data;
+	struct wskbd_bell_data 			sc_bell_data;
+	struct wskbd_keyrepeat_data 	sc_keyrepeat_data;
 
-	int	sc_repeating;		/* we've called timeout() */
-	keysym_t sc_repeatsym;		/* repeated symbol */
+	int								sc_repeating;		/* we've called timeout() */
+	keysym_t 						sc_repeatsym;		/* repeated symbol */
 
-	int	sc_translating;		/* xlate to chars for emulation */
+	int								sc_translating;		/* xlate to chars for emulation */
 
-	int	sc_maplen;		/* number of entries in sc_map */
-	struct wscons_keymap *sc_map;	/* current translation map */
-	kbd_t sc_layout; /* current layout */
+	int								sc_maplen;			/* number of entries in sc_map */
+	struct wscons_keymap 			*sc_map;			/* current translation map */
+	kbd_t 							sc_layout; 			/* current layout */
 };
 
 #define MOD_SHIFT_L				(1 << 0)
@@ -279,12 +275,12 @@ wskbd_match(parent, match, aux)
 {
 	struct wskbddev_attach_args *ap = aux;
 
-	if (match->wskbddevcf_console != WSKBDDEVCF_CONSOLE_UNK) {
+	if (match->cf_loc[WSKBDDEVCF_CONSOLE] != WSKBDDEVCF_CONSOLE_UNK) {
 		/*
 		 * If console-ness of device specified, either match
 		 * exactly (at high priority), or fail.
 		 */
-		if (match->wskbddevcf_console != 0 && ap->console != 0)
+		if (match->cf_loc[WSKBDDEVCF_CONSOLE] != 0 && ap->console != 0)
 			return (10);
 		else
 			return (0);
@@ -349,7 +345,6 @@ wskbd_cnattach(consops, conscookie, mapdata)
 	void *conscookie;
 	const struct wskbd_mapdata *mapdata;
 {
-
 	KASSERT(!wskbd_console_initted);
 
 	wskbd_console_data.t_keymap = mapdata;

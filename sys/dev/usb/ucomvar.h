@@ -43,9 +43,8 @@
 #define CLR(t, f)       (t) &= ~(f)
 #define ISSET(t, f)     ((t) & (f))
 
-#include "locators.h"
-#define UCOMBUSCF_PORTNO_DEFAULT	-1
 #define UCOMBUSCF_PORTNO 			0
+#define UCOMBUSCF_PORTNO_DEFAULT	-1
 #define UCOM_UNK_PORTNO 			UCOMBUSCF_PORTNO_DEFAULT
 
 struct	ucom_softc;

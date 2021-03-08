@@ -232,49 +232,36 @@ pcdisplay_match(parent, match, aux)
 		return (0);
 
 	/* If values are hardwired to something that they can't be, punt. */
-	if (ia->ia_nio < 1 ||
-	    (ia->ia_io[0].ir_addr != ISACF_PORT_DEFAULT &&
-	     ia->ia_io[0].ir_addr != 0x3d0 &&
-	     ia->ia_io[0].ir_addr != 0x3b0))
+	if (ia->ia_nio < 1 || (ia->ia_iobase  != IOBASEUNK  && ia->ia_iobase  != 0x3d0 && ia->ia_iobase  != 0x3b0))
 		return (0);
 
-	if (ia->ia_niomem < 1 ||
-	    (ia->ia_iomem[0].ir_addr != ISACF_IOMEM_DEFAULT &&
-	     ia->ia_iomem[0].ir_addr != 0xb8000 &&
-	     ia->ia_iomem[0].ir_addr != 0xb0000))
+	if (ia->ia_niomem < 1 || (ia->ia_maddr != MADDRUNK && ia->ia_maddr != 0xb8000 && ia->ia_maddr != 0xb0000))
 		return (0);
-	if (ia->ia_iomem[0].ir_size != 0 &&
-	    ia->ia_iomem[0].ir_size != 0x8000)
+	if (ia->ia_msize != 0 && ia->ia_msize != 0x8000)
 		return (0);
 
-	if (ia->ia_nirq > 0 &&
-	    ia->ia_irq[0].ir_irq != ISACF_IRQ_DEFAULT)
+	if (ia->ia_nirq > 0 && ia->ia_irq != IRQUNK)
 		return (0);
 
-	if (ia->ia_ndrq > 0 &&
-	    ia->ia_drq[0].ir_drq != ISACF_DRQ_DEFAULT)
+	if (ia->ia_ndrq > 0 && ia->ia_drq != DRQUNK)
 		return (0);
 
 	if (pcdisplay_is_console(ia->ia_iot))
 		mono = pcdisplay_console_dc.mono;
-	else if (ia->ia_io[0].ir_addr != 0x3b0 &&
-		 ia->ia_iomem[0].ir_addr != 0xb0000 &&
-		 pcdisplay_probe_col(ia->ia_iot, ia->ia_memt))
+	else if (ia->ia_iobase != 0x3b0 && ia->ia_maddr != 0xb0000 && pcdisplay_probe_col(ia->ia_iot, ia->ia_memt))
 		mono = 0;
-	else if (ia->ia_io[0].ir_addr != 0x3d0 &&
-		 ia->ia_iomem[0].ir_addr != 0xb8000 &&
-		 pcdisplay_probe_mono(ia->ia_iot, ia->ia_memt))
+	else if (ia->ia_iobase != 0x3d0 && ia->ia_maddr != 0xb8000 && pcdisplay_probe_mono(ia->ia_iot, ia->ia_memt))
 		mono = 1;
 	else
 		return (0);
 
 	ia->ia_nio = 1;
-	ia->ia_io[0].ir_addr = mono ? 0x3b0 : 0x3d0;
-	ia->ia_io[0].ir_size = 0x10;
+	ia->ia_iobase = mono ? 0x3b0 : 0x3d0;
+	ia->ia_iosize = 0x10;
 
 	ia->ia_niomem = 1;
-	ia->ia_iomem[0].ir_size = mono ? 0xb0000 : 0xb8000;
-	ia->ia_iomem[0].ir_size = 0x8000;
+	ia->ia_maddr = mono ? 0xb0000 : 0xb8000;
+	ia->ia_msize = 0x8000;
 
 	ia->ia_nirq = 0;
 	ia->ia_ndrq = 0;
@@ -303,10 +290,9 @@ pcdisplay_attach(parent, self, aux)
 		pcdisplay_console_attached = 1;
 	} else {
 		dc = malloc(sizeof(struct pcdisplay_config), M_DEVBUF, M_WAITOK);
-		if (ia->ia_io[0].ir_addr != 0x3b0 && ia->ia_iomem[0].ir_addr != 0xb0000
-				&& pcdisplay_probe_col(ia->ia_iot, ia->ia_memt))
+		if (ia->ia_iobase != 0x3b0 && ia->ia_maddr != 0xb0000 && pcdisplay_probe_col(ia->ia_iot, ia->ia_memt))
 			pcdisplay_init(dc, ia->ia_iot, ia->ia_memt, 0);
-		else if (ia->ia_io[0].ir_addr != 0x3d0 && ia->ia_iomem[0].ir_addr != 0xb8000 && pcdisplay_probe_mono(ia->ia_iot, ia->ia_memt))
+		else if (ia->ia_iobase != 0x3d0 && ia->ia_maddr != 0xb8000 && pcdisplay_probe_mono(ia->ia_iot, ia->ia_memt))
 			pcdisplay_init(dc, ia->ia_iot, ia->ia_memt, 1);
 		else
 			panic("pcdisplay_attach: display disappeared");
@@ -320,7 +306,6 @@ pcdisplay_attach(parent, self, aux)
 
 	config_found(self, &aa, wsemuldisplaydevprint);
 }
-
 
 int
 pcdisplay_cnattach(iot, memt)

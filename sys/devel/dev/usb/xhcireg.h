@@ -193,17 +193,17 @@
 #define	 XHCI_PS_PLS_GET(x)	__SHIFTOUT((x), XHCI_PS_PLS_MASK)	/* RW - port link state */
 #define	 XHCI_PS_PLS_SET(x)	__SHIFTIN((x), XHCI_PS_PLS_MASK)	/* RW - port link state */
 
-#define  XHCI_PS_PLS_SETU0	0
-#define  XHCI_PS_PLS_SETU2	2
-#define  XHCI_PS_PLS_SETU3	3
+#define  XHCI_PS_PLS_SETU0		0
+#define  XHCI_PS_PLS_SETU2		2
+#define  XHCI_PS_PLS_SETU3		3
 #define  XHCI_PS_PLS_SETDISC	5
 #define  XHCI_PS_PLS_SETCOMP	10
 #define  XHCI_PS_PLS_SETRESUME	15
 
-#define  XHCI_PS_PLS_U0		0
-#define  XHCI_PS_PLS_U1		1
-#define  XHCI_PS_PLS_U2		2
-#define  XHCI_PS_PLS_U3		3
+#define  XHCI_PS_PLS_U0			0
+#define  XHCI_PS_PLS_U1			1
+#define  XHCI_PS_PLS_U2			2
+#define  XHCI_PS_PLS_U3			3
 #define  XHCI_PS_PLS_DISABLED	4
 #define  XHCI_PS_PLS_RXDETECT	5
 #define  XHCI_PS_PLS_INACTIVE	6
@@ -211,76 +211,76 @@
 #define  XHCI_PS_PLS_RECOVERY	8
 #define  XHCI_PS_PLS_HOTRESET	9
 #define  XHCI_PS_PLS_COMPLIANCE	10
-#define  XHCI_PS_PLS_TEST	11
-#define  XHCI_PS_PLS_RESUME	15
+#define  XHCI_PS_PLS_TEST		11
+#define  XHCI_PS_PLS_RESUME		15
 
-#define	 XHCI_PS_PP		__BIT(9)	/* RW - port power */
-#define	 XHCI_PS_SPEED_MASK	__BITS(13, 10)	/* RO - port speed */
-#define	 XHCI_PS_SPEED_GET(x)	__SHIFTOUT((x), XHCI_PS_SPEED_MASK)
-#define	 XHCI_PS_SPEED_FS	1
-#define	 XHCI_PS_SPEED_LS	2
-#define	 XHCI_PS_SPEED_HS	3
-#define	 XHCI_PS_SPEED_SS	4
-#define	 XHCI_PS_PIC_MASK	__BITS(15, 14)	/* RW - port indicator */
-#define	 XHCI_PS_PIC_GET(x)	__SHIFTOUT((x), XHCI_PS_PIC_MASK)
-#define	 XHCI_PS_PIC_SET(x)	__SHIFTIN((x), XHCI_PS_PIC_MASK)
-#define	 XHCI_PS_LWS		__BIT(16)	/* RW - port link state write strobe */
-#define	 XHCI_PS_CSC		__BIT(17)	/* RW - connect status change */
-#define	 XHCI_PS_PEC		__BIT(18)	/* RW - port enable/disable change */
-#define	 XHCI_PS_WRC		__BIT(19)	/* RW - warm port reset change */
-#define	 XHCI_PS_OCC		__BIT(20)	/* RW - over-current change */
-#define	 XHCI_PS_PRC		__BIT(21)	/* RW - port reset change */
-#define	 XHCI_PS_PLC		__BIT(22)	/* RW - port link state change */
-#define	 XHCI_PS_CEC		__BIT(23)	/* RW - config error change */
-#define	 XHCI_PS_CAS		__BIT(24)	/* RO - cold attach status */
-#define	 XHCI_PS_WCE		__BIT(25)	/* RW - wake on connect enable */
-#define	 XHCI_PS_WDE		__BIT(26)	/* RW - wake on disconnect enable */
-#define	 XHCI_PS_WOE		__BIT(27)	/* RW - wake on over-current enable */
-#define	 XHCI_PS_DR		__BIT(30)	/* RO - device removable */
-#define	 XHCI_PS_WPR		__BIT(31)	/* RW - warm port reset */
-#define	 XHCI_PS_CLEAR		0x80FF01FFU	/* command bits */
+#define	 XHCI_PS_PP								__BIT(9)	/* RW - port power */
+#define	 XHCI_PS_SPEED_MASK						__BITS(13, 10)	/* RO - port speed */
+#define	 XHCI_PS_SPEED_GET(x)					__SHIFTOUT((x), XHCI_PS_SPEED_MASK)
+#define	 XHCI_PS_SPEED_FS						1
+#define	 XHCI_PS_SPEED_LS						2
+#define	 XHCI_PS_SPEED_HS						3
+#define	 XHCI_PS_SPEED_SS						4
+#define	 XHCI_PS_PIC_MASK						__BITS(15, 14)	/* RW - port indicator */
+#define	 XHCI_PS_PIC_GET(x)						__SHIFTOUT((x), XHCI_PS_PIC_MASK)
+#define	 XHCI_PS_PIC_SET(x)						__SHIFTIN((x), XHCI_PS_PIC_MASK)
+#define	 XHCI_PS_LWS							__BIT(16)	/* RW - port link state write strobe */
+#define	 XHCI_PS_CSC							__BIT(17)	/* RW - connect status change */
+#define	 XHCI_PS_PEC							__BIT(18)	/* RW - port enable/disable change */
+#define	 XHCI_PS_WRC							__BIT(19)	/* RW - warm port reset change */
+#define	 XHCI_PS_OCC							__BIT(20)	/* RW - over-current change */
+#define	 XHCI_PS_PRC							__BIT(21)	/* RW - port reset change */
+#define	 XHCI_PS_PLC							__BIT(22)	/* RW - port link state change */
+#define	 XHCI_PS_CEC							__BIT(23)	/* RW - config error change */
+#define	 XHCI_PS_CAS							__BIT(24)	/* RO - cold attach status */
+#define	 XHCI_PS_WCE							__BIT(25)	/* RW - wake on connect enable */
+#define	 XHCI_PS_WDE							__BIT(26)	/* RW - wake on disconnect enable */
+#define	 XHCI_PS_WOE							__BIT(27)	/* RW - wake on over-current enable */
+#define	 XHCI_PS_DR								__BIT(30)	/* RO - device removable */
+#define	 XHCI_PS_WPR							__BIT(31)	/* RW - warm port reset */
+#define	 XHCI_PS_CLEAR							0x80FF01FFU	/* command bits */
 
 /* 5.4.9 Port PM Status and Control Register */
-#define	XHCI_PORTPMSC(n)	(0x3f4 + (0x10 * (n)))	/* XHCI status and control */
+#define	XHCI_PORTPMSC(n)						(0x3f4 + (0x10 * (n)))	/* XHCI status and control */
 /* 5.4.9.1 */
-#define	 XHCI_PM3_U1TO_MASK	__BITS(7, 0)	/* RW - U1 timeout */
-#define	 XHCI_PM3_U1TO_GET(x)	__SHIFTOUT((x), XHCI_PM3_U1TO_MASK)
-#define	 XHCI_PM3_U1TO_SET(x)	__SHIFTIN((x), XHCI_PM3_U1TO_MASK)
-#define	 XHCI_PM3_U2TO_MASK	__BITS(15, 8)	/* RW - U2 timeout */
-#define	 XHCI_PM3_U2TO_GET(x)	__SHIFTOUT((x), XHCI_PM3_U2TO_MASK)
-#define	 XHCI_PM3_U2TO_SET(x)	__SHIFTIN((x), XHCI_PM3_U2TO_MASK)
-#define	 XHCI_PM3_FLA		__BIT(16)	/* RW - Force Link PM Accept */
+#define	 XHCI_PM3_U1TO_MASK						__BITS(7, 0)	/* RW - U1 timeout */
+#define	 XHCI_PM3_U1TO_GET(x)					__SHIFTOUT((x), XHCI_PM3_U1TO_MASK)
+#define	 XHCI_PM3_U1TO_SET(x)					__SHIFTIN((x), XHCI_PM3_U1TO_MASK)
+#define	 XHCI_PM3_U2TO_MASK						__BITS(15, 8)	/* RW - U2 timeout */
+#define	 XHCI_PM3_U2TO_GET(x)					__SHIFTOUT((x), XHCI_PM3_U2TO_MASK)
+#define	 XHCI_PM3_U2TO_SET(x)					__SHIFTIN((x), XHCI_PM3_U2TO_MASK)
+#define	 XHCI_PM3_FLA							__BIT(16)	/* RW - Force Link PM Accept */
 
 /* 5.4.9.2 */
-#define	 XHCI_PM2_L1S_MASK	__BITS(2, 0)	/* RO - L1 status */
-#define	 XHCI_PM2_L1S_GET(x)	__SHIFTOUT((x), XHCI_PM2_L1S_MASK)
-#define	 XHCI_PM2_RWE		__BIT(3)	/* RW - remote wakup enable */
-#define	 XHCI_PM2_BESL_MASK	__BITS(7, 4)	/* RW - Best Effort Service Latency */
-#define	 XHCI_PM2_BESL_GET(x)	__SHIFTOUT((x), XHCI_PM2_BESL_MASK)
-#define	 XHCI_PM2_BESL_SET(x)	__SHIFTIN((x), XHCI_PM2_BESL_MASK)
-#define	 XHCI_PM2_L1SLOT_MASK	__BITS(15, 8)	/* RW - L1 device slot */
-#define	 XHCI_PM2_L1SLOT_GET(x)	__SHIFTOUT((x), XHCI_PM2_L1SLOT_MASK)
-#define	 XHCI_PM2_L1SLOT_SET(x)	__SHIFTIN((x), XHCI_PM2_L1SLOT_MASK)
-#define	 XHCI_PM2_HLE		__BIT(16)	/* RW - hardware LPM enable */
-#define	 XHCI_PM2_PTC_MASK	__BITS(31, 28)	/* RW - port test control */
-#define	 XHCI_PM2_PTC_GET(x)	__SHIFTOUT((x), XHCI_PM2_PTC_MASK)
-#define	 XHCI_PM2_PTC_SET(x)	__SHIFTOUT((x), XHCI_PM2_PTC_MASK)
+#define	 XHCI_PM2_L1S_MASK						__BITS(2, 0)	/* RO - L1 status */
+#define	 XHCI_PM2_L1S_GET(x)					__SHIFTOUT((x), XHCI_PM2_L1S_MASK)
+#define	 XHCI_PM2_RWE							__BIT(3)	/* RW - remote wakup enable */
+#define	 XHCI_PM2_BESL_MASK						__BITS(7, 4)	/* RW - Best Effort Service Latency */
+#define	 XHCI_PM2_BESL_GET(x)					__SHIFTOUT((x), XHCI_PM2_BESL_MASK)
+#define	 XHCI_PM2_BESL_SET(x)					__SHIFTIN((x), XHCI_PM2_BESL_MASK)
+#define	 XHCI_PM2_L1SLOT_MASK					__BITS(15, 8)	/* RW - L1 device slot */
+#define	 XHCI_PM2_L1SLOT_GET(x)					__SHIFTOUT((x), XHCI_PM2_L1SLOT_MASK)
+#define	 XHCI_PM2_L1SLOT_SET(x)					__SHIFTIN((x), XHCI_PM2_L1SLOT_MASK)
+#define	 XHCI_PM2_HLE							__BIT(16)	/* RW - hardware LPM enable */
+#define	 XHCI_PM2_PTC_MASK						__BITS(31, 28)	/* RW - port test control */
+#define	 XHCI_PM2_PTC_GET(x)					__SHIFTOUT((x), XHCI_PM2_PTC_MASK)
+#define	 XHCI_PM2_PTC_SET(x)					__SHIFTOUT((x), XHCI_PM2_PTC_MASK)
 
 /* 5.4.10 Port Link Info Register */
-#define	XHCI_PORTLI(n)		(0x3f8 + (0x10 * (n)))	/* XHCI port link info */
+#define	XHCI_PORTLI(n)							(0x3f8 + (0x10 * (n)))	/* XHCI port link info */
 /* 5.4.10.1 */
-#define	 XHCI_PLI3_ERR_MASK	__BITS(15, 0)	/* RW - port link errors */
-#define	 XHCI_PLI3_ERR_GET(x)	__SHIFTOUT((x), XHCI_PLI3_ERR_MASK)
-#define	 XHCI_PLI3_RLC_MASK	__BITS(19, 16)	/* RO - Rx Lane Count */
-#define	 XHCI_PLI3_RLC_GET	__SHIFTOUT((x), XHCI_PLI3_RLC_MASK)
-#define	 XHCI_PLI3_TLC_MASK	__BITS(23, 20)	/* RO - Tx Lane Count */
-#define	 XHCI_PLI3_TLC_GET	__SHIFTOUT((x), XHCI_PLI3_TLC_MASK)
+#define	 XHCI_PLI3_ERR_MASK						__BITS(15, 0)	/* RW - port link errors */
+#define	 XHCI_PLI3_ERR_GET(x)					__SHIFTOUT((x), XHCI_PLI3_ERR_MASK)
+#define	 XHCI_PLI3_RLC_MASK						__BITS(19, 16)	/* RO - Rx Lane Count */
+#define	 XHCI_PLI3_RLC_GET						__SHIFTOUT((x), XHCI_PLI3_RLC_MASK)
+#define	 XHCI_PLI3_TLC_MASK						__BITS(23, 20)	/* RO - Tx Lane Count */
+#define	 XHCI_PLI3_TLC_GET						__SHIFTOUT((x), XHCI_PLI3_TLC_MASK)
 
 /* 5.4.11 */
-#define	XHCI_PORTHLPMC(n)	(0x3fc + (0x10 * (n)))	/* XHCI port hardware LPM control */
+#define	XHCI_PORTHLPMC(n)						(0x3fc + (0x10 * (n)))	/* XHCI port hardware LPM control */
 /* 5.4.11.1 */
-#define	XHCI_PLMC3_LSEC_MASK	__BITS(15, 0)	/* RW - Link Soft Error Count */
-#define	XHCI_PLMC3_LSEC_GET(x)	__SHIFTOUT((x), XHCI_PLMC3_LSEC_MASK)
+#define	XHCI_PLMC3_LSEC_MASK					__BITS(15, 0)	/* RW - Link Soft Error Count */
+#define	XHCI_PLMC3_LSEC_GET(x)					__SHIFTOUT((x), XHCI_PLMC3_LSEC_MASK)
 
 /* 5.5.1 */
 /* XHCI runtime registers.  Offset given by XHCI_CAPLENGTH + XHCI_RTSOFF registers */

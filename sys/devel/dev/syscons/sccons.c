@@ -33,24 +33,6 @@ static cn_term_t	sccnterm;
 static	int			sc_console_unit = -1;
 static  scr_stat    *sc_console;
 
-/*
-dev_type_cnprobe(sccnprobe);
-dev_type_cninit(sccninit);
-dev_type_cngetc(sccngetc);
-dev_type_cnputc(sccnputc);
-dev_type_cnpollc(sccnpollc);
-
-struct consdev sccons = {
-		.cn_probe = sccnprobe,
-		.cn_init = sccninit,
-		.cn_getc = sccngetc,
-		.cn_putc = sccnputc,
-		.cn_pollc = sccnpollc,
-		.cn_dev = 0,
-		.cn_pri= 0,
-};
-*/
-
 dev_type_open(sccnopen);
 dev_type_close(sccnclose);
 dev_type_read(sccnread);

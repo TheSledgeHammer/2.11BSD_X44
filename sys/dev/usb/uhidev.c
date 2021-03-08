@@ -41,8 +41,6 @@
  * HID spec: http://www.usb.org/developers/devclass_docs/HID1_11.pdf
  */
 
-#include "../../devel/dev/usb/uhidev.h"
-
 #include <sys/cdefs.h>
 /* __KERNEL_RCSID(0, "$NetBSD: uhidev.c,v 1.20 2004/01/04 11:11:56 augustss Exp $"); */
 
@@ -54,6 +52,8 @@
 #include <sys/device.h>
 #include <sys/ioctl.h>
 #include <sys/conf.h>
+#include <sys/errno.h>
+#include <sys/user.h>
 
 #include <dev/usb/usb.h>
 #include <dev/usb/usbhid.h>
@@ -63,6 +63,7 @@
 #include <dev/usb/usbdi_util.h>
 #include <dev/usb/hid.h>
 #include <dev/usb/usb_quirks.h>
+#include <dev/usb/uhidev.h>
 
 #include <dev/usb/ugraphire_rdesc.h>
 
@@ -81,11 +82,13 @@ static int uhidev_maxrepid(void *buf, int len);
 static int uhidevprint(void *aux, const char *pnp);
 static int uhidevsubmatch(struct device *parent, struct cfdata *cf, void *aux);
 
-USB_DECLARE_DRIVER(uhidev);
+const struct cfdriver uhidev_cd = {
+	NULL, "uhidev", uhidev_match, uhidev_attach, DV_DULL, sizeof(struct uhidev_softc)
+};
 
-USB_MATCH(uhidev)
+uhidev_match(struct device *parent, struct cfdata *match, void *aux)
 {
-	USB_MATCH_START(uhidev, uaa);
+	struct usb_attach_arg *uaa = aux;
 	usb_interface_descriptor_t *id;
 
 	if (uaa->iface == NULL)
@@ -98,9 +101,11 @@ USB_MATCH(uhidev)
 	return (UMATCH_IFACECLASS_GENERIC);
 }
 
-USB_ATTACH(uhidev)
+void
+uhidev_attach(struct device *parent, struct device *self, void *aux)
 {
-	USB_ATTACH_START(uhidev, sc, uaa);
+	struct uhidev_softc *sc = (struct uhidev_softc *)self;
+	struct usb_attach_arg *uaa = aux;
 	usbd_interface_handle iface = uaa->iface;
 	usb_interface_descriptor_t *id;
 	usb_endpoint_descriptor_t *ed;
@@ -117,16 +122,14 @@ USB_ATTACH(uhidev)
 	sc->sc_iface = iface;
 	id = usbd_get_interface_descriptor(iface);
 	usbd_devinfo(uaa->device, 0, devinfo);
-	USB_ATTACH_SETUP;
-	printf("%s: %s, iclass %d/%d\n", USBDEVNAME(sc->sc_dev),
-	       devinfo, id->bInterfaceClass, id->bInterfaceSubClass);
+
+	printf("%s: %s, iclass %d/%d\n", sc->sc_dev.dv_xname, devinfo, id->bInterfaceClass, id->bInterfaceSubClass);
 
 	(void)usbd_set_idle(iface, 0, 0);
 #if 0
 
 	qflags = usbd_get_quirks(sc->sc_udev)->uq_flags;
-	if ((qflags & UQ_NO_SET_PROTO) == 0 &&
-	    id->bInterfaceSubClass != UISUBCLASS_BOOT)
+	if ((qflags & UQ_NO_SET_PROTO) == 0 && id->bInterfaceSubClass != UISUBCLASS_BOOT)
 		(void)usbd_set_protocol(iface, 1);
 #endif
 
@@ -135,7 +138,7 @@ USB_ATTACH(uhidev)
 		printf("%s: could not read endpoint descriptor\n",
 		       USBDEVNAME(sc->sc_dev));
 		sc->sc_dying = 1;
-		USB_ATTACH_ERROR_RETURN;
+		return;
 	}
 
 	DPRINTFN(10,("uhidev_attach: bLength=%d bDescriptorType=%d "
@@ -151,7 +154,7 @@ USB_ATTACH(uhidev)
 	    (ed->bmAttributes & UE_XFERTYPE) != UE_INTERRUPT) {
 		printf("%s: unexpected endpoint\n", USBDEVNAME(sc->sc_dev));
 		sc->sc_dying = 1;
-		USB_ATTACH_ERROR_RETURN;
+		return;
 	}
 
 	sc->sc_ep_addr = ed->bEndpointAddress;
@@ -174,8 +177,7 @@ USB_ATTACH(uhidev)
 			 * feature report ID 2 before it'll start
 			 * returning digitizer data.
 			 */
-			usbd_set_report(uaa->iface, UHID_FEATURE_REPORT, 2,
-			    &reportbuf, sizeof reportbuf);
+			usbd_set_report(uaa->iface, UHID_FEATURE_REPORT, 2, &reportbuf, sizeof reportbuf);
 
 			size = sizeof uhid_graphire3_4x5_report_descr;
 			descptr = uhid_graphire3_4x5_report_descr;
@@ -187,7 +189,7 @@ USB_ATTACH(uhidev)
 	}
 
 	if (descptr) {
-		desc = malloc(size, M_USBDEV, M_NOWAIT);
+		desc = malloc(size, M_USB, M_NOWAIT);
 		if (desc == NULL)
 			err = USBD_NOMEM;
 		else {
@@ -197,12 +199,12 @@ USB_ATTACH(uhidev)
 	} else {
 		desc = NULL;
 		err = usbd_read_report_desc(uaa->iface, &desc, &size,
-		    M_USBDEV);
+		    M_USB);
 	}
 	if (err) {
 		printf("%s: no report descriptor\n", USBDEVNAME(sc->sc_dev));
 		sc->sc_dying = 1;
-		USB_ATTACH_ERROR_RETURN;
+		return;
 	}
 
 	sc->sc_repdesc = desc;
@@ -211,15 +213,14 @@ USB_ATTACH(uhidev)
 	uha.uaa = uaa;
 	nrepid = uhidev_maxrepid(desc, size);
 	if (nrepid < 0)
-		USB_ATTACH_SUCCESS_RETURN;
+		return;
 	if (nrepid > 0)
 		printf("%s: %d report ids\n", USBDEVNAME(sc->sc_dev), nrepid);
 	nrepid++;
-	sc->sc_subdevs = malloc(nrepid * sizeof(device_ptr_t),
-				M_USBDEV, M_NOWAIT | M_ZERO);
+	sc->sc_subdevs = malloc(nrepid * sizeof(struct device *), M_USB, M_NOWAIT | M_ZERO);
 	if (sc->sc_subdevs == NULL) {
 		printf("%s: no memory\n", USBDEVNAME(sc->sc_dev));
-		USB_ATTACH_ERROR_RETURN;
+		return;
 	}
 	sc->sc_nrepid = nrepid;
 	sc->sc_isize = 0;
@@ -247,30 +248,22 @@ USB_ATTACH(uhidev)
 			;	/* already NULL in sc->sc_subdevs[repid] */
 		} else {
 			uha.reportid = repid;
-			dev = (struct uhidev *)config_found_sm(self, &uha,
-			                           uhidevprint, uhidevsubmatch);
+			dev = (struct uhidev *)config_found_sm(self, &uha, uhidevprint, uhidevsubmatch);
 			sc->sc_subdevs[repid] = dev;
 			if (dev != NULL) {
 				dev->sc_in_rep_size = repsizes[repid];
 #ifdef DIAGNOSTIC
-				DPRINTF(("uhidev_match: repid=%d dev=%p\n",
-					 repid, dev));
+				DPRINTF(("uhidev_match: repid=%d dev=%p\n", repid, dev));
 				if (dev->sc_intr == NULL) {
-					printf("%s: sc_intr == NULL\n",
-					       USBDEVNAME(sc->sc_dev));
-					USB_ATTACH_ERROR_RETURN;
+					printf("%s: sc_intr == NULL\n", USBDEVNAME(sc->sc_dev));
+					return;
 				}
-#endif
-#if NRND > 0
-				rnd_attach_source(&dev->rnd_source, 
-						  USBDEVNAME(dev->sc_dev), 
-						  RND_TYPE_TTY, 0);
 #endif
 			}
 		}
 	}
 
-	USB_ATTACH_SUCCESS_RETURN;
+	return;
 }
 
 int
@@ -306,10 +299,10 @@ uhidevsubmatch(struct device *parent, struct cfdata *cf, void *aux)
 {
 	struct uhidev_attach_arg *uha = aux;
 
-	if (cf->uhidevcf_reportid != UHIDEV_UNK_REPORTID &&
-	    cf->uhidevcf_reportid != uha->reportid)
+	if (cf->cf_loc[UHIDBUSCF_REPORTID] != UHIDEV_UNK_REPORTID &&
+	    cf->cf_loc[UHIDBUSCF_REPORTID] != uha->reportid)
 		return (0);
-	if (cf->uhidevcf_reportid == uha->reportid)
+	if (cf->cf_loc[UHIDBUSCF_REPORTID] == uha->reportid)
 		uha->matchlvl = UMATCH_VENDOR_PRODUCT;
 	else
 		uha->matchlvl = 0;
@@ -317,7 +310,7 @@ uhidevsubmatch(struct device *parent, struct cfdata *cf, void *aux)
 }
 
 int
-uhidev_activate(device_ptr_t self, enum devact act)
+uhidev_activate(struct device *self, enum devact act)
 {
 	struct uhidev_softc *sc = (struct uhidev_softc *)self;
 	int i, rv;
@@ -341,9 +334,10 @@ uhidev_activate(device_ptr_t self, enum devact act)
 	return (rv);
 }
 
-USB_DETACH(uhidev)
+int
+uhidev_detach(struct device *self, int flags)
 {
-	USB_DETACH_START(uhidev, sc);
+	struct uhidev_softc *sc = (struct uhidev_softc *)self;
 	int i, rv;
 
 	DPRINTF(("uhidev_detach: sc=%p flags=%d\n", sc, flags));
@@ -353,21 +347,17 @@ USB_DETACH(uhidev)
 		usbd_abort_pipe(sc->sc_intrpipe);
 
 	if (sc->sc_repdesc != NULL)
-		free(sc->sc_repdesc, M_USBDEV);
+		free(sc->sc_repdesc, M_USB);
 
 	rv = 0;
 	for (i = 0; i < sc->sc_nrepid; i++) {
 		if (sc->sc_subdevs[i] != NULL) {
-#if NRND > 0
-			rnd_detach_source(&sc->sc_subdevs[i]->rnd_source);
-#endif
 			rv |= config_detach(&sc->sc_subdevs[i]->sc_dev, flags);
 			sc->sc_subdevs[i] = NULL;
 		}
 	}
 
-	usbd_add_drv_event(USB_EVENT_DRIVER_DETACH, sc->sc_udev,
-			   USBDEV(sc->sc_dev));
+	usbd_add_drv_event(USB_EVENT_DRIVER_DETACH, sc->sc_udev, USBDEV(sc->sc_dev));
 
 	return (rv);
 }
@@ -421,11 +411,7 @@ uhidev_intr(usbd_xfer_handle xfer, usbd_private_handle addr, usbd_status status)
 		return;
 #ifdef DIAGNOSTIC
 	if (scd->sc_in_rep_size != cc)
-		printf("%s: bad input length %d != %d\n",USBDEVNAME(sc->sc_dev),
-		       scd->sc_in_rep_size, cc);
-#endif
-#if NRND > 0
-	rnd_add_uint32(&scd->rnd_source, (uintptr_t)(sc->sc_ibuf));
+		printf("%s: bad input length %d != %d\n", sc->sc_dev.dv_xname, scd->sc_in_rep_size, cc);
 #endif
 	scd->sc_intr(scd, p, cc);
 }
@@ -443,8 +429,7 @@ uhidev_open(struct uhidev *scd)
 	struct uhidev_softc *sc = scd->sc_parent;
 	usbd_status err;
 
-	DPRINTF(("uhidev_open: open pipe, state=%d refcnt=%d\n",
-		 scd->sc_state, sc->sc_refcnt));
+	DPRINTF(("uhidev_open: open pipe, state=%d refcnt=%d\n", scd->sc_state, sc->sc_refcnt));
 
 	if (scd->sc_state & UHIDEV_OPEN)
 		return (EBUSY);
@@ -455,7 +440,7 @@ uhidev_open(struct uhidev *scd)
 	if (sc->sc_isize == 0)
 		return (0);
 
-	sc->sc_ibuf = malloc(sc->sc_isize, M_USBDEV, M_WAITOK);
+	sc->sc_ibuf = malloc(sc->sc_isize, M_USB, M_WAITOK);
 
 	/* Set up interrupt pipe. */
 	DPRINTF(("uhidev_open: isize=%d, ep=0x%02x\n", sc->sc_isize,
@@ -466,7 +451,7 @@ uhidev_open(struct uhidev *scd)
 	if (err) {
 		DPRINTF(("uhidopen: usbd_open_pipe_intr failed, "
 			 "error=%d\n",err));
-		free(sc->sc_ibuf, M_USBDEV);
+		free(sc->sc_ibuf, M_USB);
 		scd->sc_state &= ~UHIDEV_OPEN;
 		sc->sc_refcnt = 0;
 		sc->sc_intrpipe = NULL;
@@ -495,7 +480,7 @@ uhidev_close(struct uhidev *scd)
 	}
 
 	if (sc->sc_ibuf != NULL) {
-		free(sc->sc_ibuf, M_USBDEV);
+		free(sc->sc_ibuf, M_USB);
 		sc->sc_ibuf = NULL;
 	}
 }
@@ -507,15 +492,13 @@ uhidev_set_report(struct uhidev *scd, int type, void *data, int len)
 	usbd_status retstat;
 
 	if (scd->sc_report_id == 0)
-		return usbd_set_report(scd->sc_parent->sc_iface, type,
-				       scd->sc_report_id, data, len);
+		return usbd_set_report(scd->sc_parent->sc_iface, type, scd->sc_report_id, data, len);
 
 	buf = malloc(len + 1, M_TEMP, M_WAITOK);
 	buf[0] = scd->sc_report_id;
 	memcpy(buf+1, data, len);
 
-	retstat = usbd_set_report(scd->sc_parent->sc_iface, type,
-				  scd->sc_report_id, buf, len + 1);
+	retstat = usbd_set_report(scd->sc_parent->sc_iface, type, scd->sc_report_id, buf, len + 1);
 
 	free(buf, M_TEMP);
 
@@ -541,6 +524,5 @@ uhidev_set_report_async(struct uhidev *scd, int type, void *data, int len)
 usbd_status
 uhidev_get_report(struct uhidev *scd, int type, void *data, int len)
 {
-	return usbd_get_report(scd->sc_parent->sc_iface, type,
-			       scd->sc_report_id, data, len);
+	return usbd_get_report(scd->sc_parent->sc_iface, type, scd->sc_report_id, data, len);
 }
