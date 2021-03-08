@@ -201,7 +201,10 @@ extern	struct ttychars ttydefaults;
 /* Symbolic sleep message strings. */
 extern	 char ttyin[], ttyout[], ttopen[], ttclos[], ttybg[], ttybuf[];
 
-void tty_init(struct devswtable *);			/* tty.c */
+extern void	ctty_init(struct devswtable *);
+extern void pty_init(struct devswtable *);
+extern void tty_init(struct devswtable *);
+extern void tty_conf_init(struct devswtable *);
 
 void cblock_alloc_cblocks (int);
 void cblock_free_cblocks (int);

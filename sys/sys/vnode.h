@@ -725,16 +725,13 @@ struct vop_bwrite_args {
 #define VOPARGS(ap, vop_field) 									\
 	VARGVOPS(ap)->vop_field
 
-#define VOPTEST(vops, ap, vop_field) { 							\
+#define VOCALL(vops, ap, vop_field) { 							\
 	if(VOPARGS(ap, vop_field) == (vops).vop_field) {			\
 		VOPARGS(ap, vop_field);									\
 	} else {													\
 		(vops).vop_field;										\
 	}															\
 }																\
-
-#define VOCALL(vops, ap, vop_field)								\
-	VOPTEST(vops, ap, vop_field)
 
 /*
  * Interlock for scanning list of vnodes attached to a mountpoint

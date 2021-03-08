@@ -32,7 +32,9 @@ A General todo list. Don't hesitate to add to this list. :)
 ## dev:
 - Essential Driver Support:
 	- usb: 							Work in progress
-		- add: vhci, xhci, other generic usb drivers
+		- fix: ucom, uhid, ugen, uhub, 
+		- re-add static to required methods
+		- add: vhci, xhci
 	- wscons/pccons:					Work in progress
 		- double check wscons for errors/mistakes
 		- fix: pcdisplay.c

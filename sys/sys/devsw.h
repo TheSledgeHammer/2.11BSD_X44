@@ -123,6 +123,15 @@ struct vnode;
 #define	D_OTHER	4
 
 #ifdef _KERNEL
+/* dev: dev_config.c */
+extern void audio_init(struct devswtable *);
+extern void console_init(struct devswtable *);
+extern void disk_init(struct devswtable *);
+extern void misc_init(struct devswtable *);
+extern void usb_init(struct devswtable *);
+extern void video_init(struct devswtable *);
+extern void wscons_init(struct devswtable *);
+
 /* devswtable & devsw_io */
 extern struct devswtable 		sys_devsw;
 

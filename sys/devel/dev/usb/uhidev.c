@@ -67,7 +67,7 @@
 #include <dev/usb/ugraphire_rdesc.h>
 
 #ifdef UHIDEV_DEBUG
-#define DPRINTF(x)	if (uhidevdebug) logprintf x
+#define DPRINTF(x)		if (uhidevdebug) logprintf x
 #define DPRINTFN(n,x)	if (uhidevdebug>(n)) logprintf x
 int	uhidevdebug = 0;
 #else
