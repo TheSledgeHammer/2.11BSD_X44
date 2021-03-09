@@ -394,12 +394,10 @@ ucomopen(dev_t dev, int flag, int mode, struct proc *p)
 		/* XXX CLR(sc->sc_rx_flags, RX_ANY_BLOCK);*/
 		ucom_hwiflow(sc);
 
-		DPRINTF(("ucomopen: open pipes in=%d out=%d\n",
-			 sc->sc_bulkin_no, sc->sc_bulkout_no));
+		DPRINTF(("ucomopen: open pipes in=%d out=%d\n", sc->sc_bulkin_no, sc->sc_bulkout_no));
 
 		/* Open the bulk pipes */
-		err = usbd_open_pipe(sc->sc_iface, sc->sc_bulkin_no, 0,
-				     &sc->sc_bulkin_pipe);
+		err = usbd_open_pipe(sc->sc_iface, sc->sc_bulkin_no, 0, &sc->sc_bulkin_pipe);
 		if (err) {
 			DPRINTF(("%s: open bulk in error (addr %d), err=%s\n", sc->sc_dev.dv_xname, sc->sc_bulkin_no, usbd_errstr(err)));
 			error = EIO;

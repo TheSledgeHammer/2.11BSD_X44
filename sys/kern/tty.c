@@ -15,6 +15,8 @@
 #undef	TTYDEFCHARS
 #include <sys/file.h>
 #include <sys/conf.h>
+#include <sys/fcntl.h>
+#include <sys/devsw.h>
 #include <sys/dk.h>
 #include <sys/uio.h>
 #include <sys/kernel.h>
@@ -24,8 +26,16 @@
 #include <sys/signalvar.h>
 #include <sys/resourcevar.h>
 #include <sys/map.h>
+#include <dev/misc/cons/cons.h>
 
 #include <vm/include/vm.h>
+
+/* Symbolic sleep message strings. */
+char ttclos[]	= "ttycls";
+char ttopen[]	= "ttyopn";
+char ttybg[]	= "ttybg";
+char ttyin[]	= "ttyin";
+char ttyout[]	= "ttyout";
 
 /*
  * These were moved here from tty.h so that they could be easily modified
@@ -43,8 +53,8 @@
  * clist handling.
 */
 
-int	TTYBLOCK = 128;
-int	TTYUNBLOCK = 64;
+int	TTYBLOCK = 			128;
+int	TTYUNBLOCK = 		64;
 
 #define	E				0x00	/* Even parity. */
 #define	O				0x80	/* Odd parity. */
@@ -56,14 +66,14 @@ int	TTYUNBLOCK = 64;
 #define	CCLASSMASK		0x3f
 #define	CCLASS(c)		(char_type[c] & CCLASSMASK)
 
-#define	BS	BACKSPACE
-#define	CC	CONTROL
-#define	CR	RETURN
-#define	NA	ORDINARY | ALPHA
-#define	NL	NEWLINE
-#define	NO	ORDINARY
-#define	TB	TAB
-#define	VT	VTAB
+#define	BS				BACKSPACE
+#define	CC				CONTROL
+#define	CR				RETURN
+#define	NA				ORDINARY | ALPHA
+#define	NL				NEWLINE
+#define	NO				ORDINARY
+#define	TB				TAB
+#define	VT				VTAB
 
 char const char_type[] = {
 	E|CC, O|CC, O|CC, E|CC, O|CC, E|CC, E|CC, O|CC,	/* nul - bel */
@@ -180,7 +190,6 @@ void
 ttywflush(tp)
 	register struct tty *tp;
 {
-
 	ttywait(tp);
 	ttyflush(tp, FREAD);
 }
@@ -362,7 +371,7 @@ ttioctl(tp, com, data, flag)
 	case TIOCSTI:
 	case TIOCSWINSZ:
 		while (tp->t_line == NTTYDISC && u->u_procp->p_pgrp != tp->t_pgrp
-				&& tp == u->u_ttyp && (u->u_procp->p_flag & SVFORK) == 0
+				&& tp == u->u_ttyp && (u->u_procp->p_flag & P_SVFORK) == 0
 				&& !(u->u_procp->p_sigignore & sigmask(SIGTTOU))
 				&& !(u->u_procp->p_sigmask & sigmask(SIGTTOU))) {
 			gsignal(u->u_procp->p_pgrp, SIGTTOU);
@@ -704,7 +713,7 @@ ttyopen(dev, tp)
 /*
  * "close" a line discipline
  */
-
+void
 ttylclose(tp, flag)
 	register struct tty *tp;
 	int flag;
@@ -716,7 +725,7 @@ ttylclose(tp, flag)
  * printf here - the F* flags are received rather than the IO_* flags!
 */
 
-	if (flag & FNDELAY)
+	if (flag & IO_NDELAY)
 		ttyflush(tp, FREAD|FWRITE);
 	else
 		ttywflush(tp);
@@ -826,6 +835,7 @@ ttypend(tp)
  * The arguments are the character and the
  * appropriate tty structure.
  */
+void
 ttyinput(c, tp)
 	register int c;
 	register struct tty *tp;
@@ -1029,7 +1039,7 @@ ttyinput(c, tp)
 	 */
 	if (tp->t_rawq.c_cc+tp->t_canq.c_cc >= TTYHOG) {
 		if (tp->t_line == NTTYDISC)
-			(void) ttyoutput(CTRL(g), tp);
+			(void) ttyoutput(CTRL('g'), tp);
 		goto endcase;
 	}
 
@@ -1081,6 +1091,7 @@ startoutput:
  * The arguments are the character and the tty structure.
  * Returns < 0 if putc succeeds, otherwise returns char to resend
  */
+int
 ttyoutput(c, tp)
 	register int c;
 	register struct tty *tp;
@@ -1166,6 +1177,7 @@ int
 ttread(tp, uio, flag)
 	register struct tty *tp;
 	struct uio *uio;
+	int flag;
 {
 	register struct clist *qp;
 	register int c;
@@ -1187,7 +1199,7 @@ loop:
 	if (tp == u->u_ttyp && u->u_procp->p_pgrp != tp->t_pgrp) {
 		if ((u->u_procp->p_sigignore & sigmask(SIGTTIN)) ||
 		   (u->u_procp->p_sigmask & sigmask(SIGTTIN)) ||
-		    (u->u_procp->p_flag&SVFORK))
+		    (u->u_procp->p_flag&P_SVFORK))
 			return (EIO);
 		gsignal(u->u_procp->p_pgrp, SIGTTIN);
 		sleep((caddr_t)&lbolt, TTIPRI);
@@ -1314,6 +1326,7 @@ checktandem:
  * Sleeps here are not interruptible, but we return prematurely
  * if new signals come in.
  */
+int
 ttycheckoutq(tp, wait)
 	register struct tty *tp;
 	int wait;
@@ -1342,9 +1355,11 @@ ttycheckoutq(tp, wait)
  * Called from the device's write routine after it has
  * calculated the tty-structure given as argument.
  */
+int
 ttwrite(tp, uio, flag)
 	register struct tty *tp;
 	register struct uio *uio;
+	int flag;
 {
 	char *cp;
 	register int cc, ce, c;
@@ -1376,7 +1391,7 @@ loop:
 	 * Hang the process if it's in the background.
 	 */
 	if (u->u_procp->p_pgrp != tp->t_pgrp && tp == u->u_ttyp &&
-	    (tp->t_flags&TOSTOP) && (u->u_procp->p_flag&SVFORK)==0 &&
+	    (tp->t_flags&TOSTOP) && (u->u_procp->p_flag&P_SVFORK)==0 &&
 	    !(u->u_procp->p_sigignore & sigmask(SIGTTOU)) &&
 	    !(u->u_procp->p_sigmask & sigmask(SIGTTOU))) {
 		gsignal(u->u_procp->p_pgrp, SIGTTOU);

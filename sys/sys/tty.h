@@ -20,13 +20,13 @@
  * The routines in tty_subr.c manipulate these structures.
  */
 struct clist {
-	int		c_cc;		/* character count */
-	char	*c_cf;		/* pointer to first char */
-	char	*c_cl;		/* pointer to last char */
-	u_char	*c_cs;		/* start of ring buffer */
-	u_char	*c_ce;		/* c_ce + c_len */
-	u_char	*c_cq;		/* N bits/bytes long, see tty_subr.c */
-	int		c_cn;		/* total ring buffer length */
+	int						c_cc;		/* character count */
+	char					*c_cf;		/* pointer to first char */
+	char					*c_cl;		/* pointer to last char */
+	u_char					*c_cs;		/* start of ring buffer */
+	u_char					*c_ce;		/* c_ce + c_len */
+	u_char					*c_cq;		/* N bits/bytes long, see tty_subr.c */
+	int						c_cn;		/* total ring buffer length */
 };
 
 /*
@@ -39,12 +39,12 @@ struct clist {
 struct tty {
 	union {
 		struct {
-			struct	clist 	T_rawq;	/* Device raw input queue. */
-			struct	clist 	T_canq;	/* Device canonical queue. */
+			struct	clist 	T_rawq;											/* Device raw input queue. */
+			struct	clist 	T_canq;											/* Device canonical queue. */
 		} t_t;
 
-#define	t_rawq				t_nu.t_t.T_rawq		/* raw characters or partial line */
-#define	t_canq				t_nu.t_t.T_canq		/* raw characters or partial line */
+#define	t_rawq				t_nu.t_t.T_rawq									/* raw characters or partial line */
+#define	t_canq				t_nu.t_t.T_canq									/* raw characters or partial line */
 		struct {
 			struct	buf 	*T_bufp;
 			char			*T_cp;
@@ -52,10 +52,10 @@ struct tty {
 			int				T_rec;
 		} t_n;
 
-#define	t_bufp				t_nu.t_n.T_bufp		/* buffer allocated to protocol */
-#define	t_cp				t_nu.t_n.T_cp		/* pointer into the ripped off buffer */
-#define	t_inbuf				t_nu.t_n.T_inbuf	/* number chars in the buffer */
-#define	t_rec				t_nu.t_n.T_rec		/* have a complete record */
+#define	t_bufp				t_nu.t_n.T_bufp									/* buffer allocated to protocol */
+#define	t_cp				t_nu.t_n.T_cp									/* pointer into the ripped off buffer */
+#define	t_inbuf				t_nu.t_n.T_inbuf								/* number chars in the buffer */
+#define	t_rec				t_nu.t_n.T_rec									/* have a complete record */
 	} t_nu;
 
 	struct	pgrp 			*t_pgrp;										/* Foreground process group. */
@@ -65,6 +65,7 @@ struct tty {
 	int						t_lowat;										/* Low water mark. */
 	int						t_gen;											/* Generation number. */
 	struct	clist 			t_outq;											/* Device output queue. */
+	long					t_outcc;										/* Output queue statistics. */
 	struct	proc 			*t_rsel;										/* Tty read/oob select. */
 	struct	proc 			*t_wsel;										/* Tty write select. */
 	caddr_t					T_LINEP;										/* ### */
@@ -185,7 +186,6 @@ struct speedtab {
 #define	TTY_ERRORMASK	0xff000000	/* Error mask */
 #define	TTY_FE			0x01000000	/* Framing error or BREAK condition */
 #define	TTY_PE			0x02000000	/* Parity error */
-
 
 /* Is tp controlling terminal for p? */
 #define	isctty(p, tp)							\

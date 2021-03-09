@@ -110,13 +110,13 @@ struct wsdisplay_accessops {
  * wsdisplay units.
  */
 struct wsdisplaydev_attach_args {
-	const struct wsdisplay_accessops *accessops;	/* access ops */
-	void	*accesscookie;				/* access cookie */
+	const struct wsdisplay_accessops 	*accessops;		/* access ops */
+	void								*accesscookie;	/* access cookie */
 };
 
 /* passed to wscons by the video driver to tell about its capabilities */
 struct wsscreen_list {
-	int nscreens;
+	int 						nscreens;
 	const struct wsscreen_descr **screens;
 };
 
@@ -125,16 +125,15 @@ struct wsscreen_list {
  * wsdisplay units.
  */
 struct wsemuldisplaydev_attach_args {
-	int	console;				/* is it console? */
-	const struct wsscreen_list *scrdata;		/* screen cfg info */
-	const struct wsdisplay_accessops *accessops;	/* access ops */
-	void	*accesscookie;				/* access cookie */
+	int									console;		/* is it console? */
+	const struct wsscreen_list 			*scrdata;		/* screen cfg info */
+	const struct wsdisplay_accessops 	*accessops;		/* access ops */
+	void								*accesscookie;	/* access cookie */
 };
 
-#include "locators.h"
-
-#define	wsemuldisplaydevcf_console	cf_loc[WSEMULDISPLAYDEVCF_CONSOLE]	/* spec'd as console? */
-#define	WSEMULDISPLAYDEVCF_CONSOLE_UNK	(WSEMULDISPLAYDEVCF_CONSOLE_DEFAULT)
+#define WSEMULDISPLAYDEVCF_CONSOLE				0
+#define WSEMULDISPLAYDEVCF_CONSOLE_DEFAULT		-1	/* spec'd as console? */
+#define	WSEMULDISPLAYDEVCF_CONSOLE_UNK			(WSEMULDISPLAYDEVCF_CONSOLE_DEFAULT)
 
 struct wscons_syncops {
 	int 	(*detach) (void *, int, void (*)(void *, int, int), void *);

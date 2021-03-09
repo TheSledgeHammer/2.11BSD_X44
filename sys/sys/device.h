@@ -147,6 +147,7 @@ struct	evcnt 	*allevents;	/* head of list of all events */
 struct cfdata 	*config_search (cfmatch_t, struct device *, void *);
 struct cfdata 	*config_rootsearch (cfmatch_t, char *, void *);
 int 			config_found (struct device *, void *, cfprint_t);
+struct device 	*config_found_sm(struct device *, void *, cfprint_t, cfmatch_t);
 int 			config_rootfound (char *, void *);
 void 			config_attach (struct device *, struct cfdata *, void *, cfprint_t);
 void 			evcnt_attach (struct device *, const char *, struct evcnt *);

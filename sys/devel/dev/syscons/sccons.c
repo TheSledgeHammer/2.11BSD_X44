@@ -57,6 +57,46 @@ const struct cdevsw sccons_cdevsw = {
 		.d_type = D_TTY
 };
 
+struct cfdriver sccons_cd = {
+		NULL, "sccons", match, probe,
+};
+
+int
+sc_get_cons_priority(int *unit, int *flags)
+{
+	const char *at;
+	int f, u;
+
+	*unit = -1;
+	for (u = 0; u < 16; u++) {
+		if (resource_disabled(SC_DRIVER_NAME, u))
+			continue;
+		if (resource_string_value(SC_DRIVER_NAME, u, "at", &at) != 0)
+			continue;
+		if (resource_int_value(SC_DRIVER_NAME, u, "flags", &f) != 0)
+			f = 0;
+		if (f & SC_KERNEL_CONSOLE) {
+			/* the user designates this unit to be the console */
+			*unit = u;
+			*flags = f;
+			break;
+		}
+		if (*unit < 0) {
+			/* ...otherwise remember the first found unit */
+			*unit = u;
+			*flags = f;
+		}
+	}
+	if (*unit < 0) {
+		*unit = 0;
+		*flags = 0;
+	}
+#if 0
+	return ((*flags & SC_KERNEL_CONSOLE) != 0 ? CN_INTERNAL : CN_NORMAL);
+#endif
+	return (CN_INTERNAL);
+}
+
 static void
 sccnprobe(struct consdev *cp)
 {

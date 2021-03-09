@@ -166,7 +166,6 @@ dev_type_tty(wsdisplaytty);
 dev_type_poll(wsdisplaypoll);
 dev_type_mmap(wsdisplaymmap);
 
-
 const struct cdevsw wsdisplay_cdevsw = {
 	.d_open = wsdisplayopen,
 	.d_close = wsdisplayclose,
@@ -214,8 +213,13 @@ static int wsdisplay_getc_dummy (dev_t);
 static void wsdisplay_pollc_dummy (dev_t, int);
 
 static struct consdev wsdisplay_cons = {
-	NULL, NULL, wsdisplay_getc_dummy, wsdisplay_cnputc,
-	wsdisplay_pollc_dummy, NODEV, CN_NORMAL
+		.cn_probe = NULL,
+		.cn_init = NULL,
+		.cn_getc = wsdisplay_getc_dummy,
+		.cn_putc = wsdisplay_cnputc,
+		.cn_pollc = wsdisplay_pollc_dummy,
+		.cn_dev = NODEV,
+		.cn_pri = CN_NORMAL
 };
 
 int wsdisplay_switch1 (void *, int, int);
@@ -474,14 +478,12 @@ wsdisplay_emul_match(parent, match, aux)
 {
 	struct wsemuldisplaydev_attach_args *ap = aux;
 
-	if (match->wsemuldisplaydevcf_console !=
-	    WSEMULDISPLAYDEVCF_CONSOLE_UNK) {
+	if (match->cf_loc[WSEMULDISPLAYDEVCF_CONSOLE] != WSEMULDISPLAYDEVCF_CONSOLE_UNK) {
 		/*
 		 * If console-ness of device specified, either match
 		 * exactly (at high priority), or fail.
 		 */
-		if (match->wsemuldisplaydevcf_console != 0 &&
-		    ap->console != 0)
+		if (match->cf_loc[WSEMULDISPLAYDEVCF_CONSOLE] != 0 && ap->console != 0)
 			return (10);
 		else
 			return (0);
@@ -1239,8 +1241,7 @@ wsdisplay_emulbell(v)
 	if (scr->scr_flags & SCR_GRAPHICS) /* can this happen? */
 		return;
 
-	(void) wsdisplay_internal_ioctl(scr->sc, scr, WSKBDIO_BELL, NULL,
-					FWRITE, NULL);
+	(void) wsdisplay_internal_ioctl(scr->sc, scr, WSKBDIO_BELL, NULL, FWRITE, NULL);
 }
 
 void
