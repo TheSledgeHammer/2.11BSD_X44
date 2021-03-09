@@ -189,6 +189,6 @@ usbd_status	uhci_init(uhci_softc_t *);
 int			uhci_intr(void *);
 #if defined(__NetBSD__) || defined(__OpenBSD__)
 int			uhci_detach(uhci_softc_t *, int);
-int			uhci_activate(device_ptr_t, enum devact);
+int			uhci_activate(struct device *, enum devact);
 #endif
 

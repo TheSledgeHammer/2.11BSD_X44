@@ -51,7 +51,7 @@
 extern int usbdebug;
 #endif
 
-struct usbd_quirk_entry {
+static const struct usbd_quirk_entry {
 	u_int16_t 			idVendor;
 	u_int16_t 			idProduct;
 	u_int16_t 			bcdDevice;
@@ -67,9 +67,9 @@ struct usbd_quirk_entry {
  { 0, 0, 0, { 0 } }
 };
 
-struct usbd_quirks usbd_no_quirk = { 0 };
+const struct usbd_quirks usbd_no_quirk = { 0 };
 
-struct usbd_quirks *
+const struct usbd_quirks *
 usbd_find_quirk(d)
 	usb_device_descriptor_t *d;
 {

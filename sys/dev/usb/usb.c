@@ -70,6 +70,12 @@
 int	usbdebug = 0;
 int	uhcidebug;
 int	ohcidebug;
+/*
+ * 0  - do usual exploration
+ * 1  - do not use timeout exploration
+ * >1 - do no exploration
+ */
+int	usb_noexplore = 0;
 #else
 #define DPRINTF(x)
 #define DPRINTFN(n,x)
@@ -98,6 +104,8 @@ struct usb_softc {
 
 TAILQ_HEAD(, usb_task) usb_all_tasks;
 
+static void	usb_discover(struct usb_softc *);
+
 int usbopen (dev_t, int, int, struct proc *);
 int usbclose (dev_t, int, int, struct proc *);
 int usbioctl (dev_t, u_long, caddr_t, int, struct proc *);
@@ -119,14 +127,8 @@ struct cdevsw usb_cdevsw = {
 		.d_type = D_OTHER
 };
 
-/*
- * 0  - do usual exploration
- * 1  - do not use timeout exploration
- * >1 - do no exploration
- */
-int	usb_noexplore = 0;
 #define USBUNIT(dev) 	(minor(dev))
-const char *usbrev_str[] = USBREV_STR;
+static const char *usbrev_str[] = USBREV_STR;
 
 struct cfdriver usb_cd = {
 	NULL, "usb", usb_match, usb_attach, DV_DULL, sizeof(struct usb_softc)
@@ -405,7 +407,7 @@ usb_get_bus_handle(n, h)
 }
 #endif
 
-void
+static void
 usb_discover(sc)
 	struct usb_softc *sc;
 {

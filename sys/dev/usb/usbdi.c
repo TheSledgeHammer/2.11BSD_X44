@@ -66,11 +66,11 @@ extern int usbdebug;
 #define DPRINTFN(n,x)
 #endif
 
-usbd_status usbd_ar_pipe(usbd_pipe_handle pipe);
-void usbd_do_request_async_cb(usbd_xfer_handle, usbd_private_handle, usbd_status);
-void usbd_start_next(usbd_pipe_handle pipe);
-usbd_status usbd_open_pipe_ival(usbd_interface_handle, u_int8_t, u_int8_t, usbd_pipe_handle *, int);
-int usbd_nbuses = 0;
+static usbd_status usbd_ar_pipe(usbd_pipe_handle pipe);
+static void usbd_do_request_async_cb(usbd_xfer_handle, usbd_private_handle, usbd_status);
+static void usbd_start_next(usbd_pipe_handle pipe);
+static usbd_status usbd_open_pipe_ival(usbd_interface_handle, u_int8_t, u_int8_t, usbd_pipe_handle *, int);
+static int usbd_nbuses = 0;
 
 void
 usbd_init(void)

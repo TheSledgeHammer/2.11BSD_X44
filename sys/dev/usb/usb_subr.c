@@ -67,14 +67,14 @@ extern int usbdebug;
 #endif
 
 static usbd_status	usbd_set_config (usbd_device_handle, int);
-char *usbd_get_string (usbd_device_handle, int, char *);
-int usbd_getnewaddr (usbd_bus_handle bus);
+static char *usbd_get_string (usbd_device_handle, int, char *);
+static int usbd_getnewaddr (usbd_bus_handle bus);
 
-int usbd_print (void *aux, const char *pnp);
-int usbd_submatch (struct device *, struct cfdata *cf, void *);
-void usbd_free_iface_data (usbd_device_handle dev, int ifcno);
-void usbd_kill_pipe (usbd_pipe_handle);
-usbd_status usbd_probe_and_attach (struct device *parent, usbd_device_handle dev, int port, int addr);
+static int usbd_print (void *aux, const char *pnp);
+static int usbd_submatch (struct device *, struct cfdata *cf, void *);
+static void usbd_free_iface_data (usbd_device_handle dev, int ifcno);
+static void usbd_kill_pipe (usbd_pipe_handle);
+static usbd_status usbd_probe_and_attach (struct device *parent, usbd_device_handle dev, int port, int addr);
 
 
 #ifdef USBVERBOSE
@@ -96,7 +96,7 @@ struct usb_knowndev {
 #endif /* USBVERBOSE */
 
 #ifdef USB_DEBUG
-char *usbd_error_strs[] = {
+static char *usbd_error_strs[] = {
 	"NORMAL_COMPLETION",
 	"IN_PROGRESS",
 	"PENDING_REQUESTS",
@@ -810,7 +810,7 @@ usbd_probe_and_attach(parent, dev, port, addr)
 
 	/* First try with device specific drivers. */
 	DPRINTF(("usbd_probe_and_attach: trying device specific drivers\n"));
-	dv = USB_DO_ATTACH(dev, bdev, parent, &uaa, usbd_print, usbd_submatch);
+	dv = config_found_sm(parent, &uaa, usbd_print, usbd_submatch);
 	if (dv) {
 		dev->subdevs = malloc(2 * sizeof dv, M_USB, M_NOWAIT);
 		if (dev->subdevs == NULL)
@@ -851,7 +851,7 @@ usbd_probe_and_attach(parent, dev, port, addr)
 				continue; /* interface already claimed */
 			uaa.iface = ifaces[i];
 			uaa.ifaceno = ifaces[i]->idesc->bInterfaceNumber;
-			dv = USB_DO_ATTACH(dev, bdev, parent, &uaa, usbd_print, usbd_submatch);
+			dv = config_found_sm(parent, &uaa, usbd_print, usbd_submatch);
 			if (dv != NULL) {
 				dev->subdevs[found++] = dv;
 				dev->subdevs[found] = 0;
@@ -875,7 +875,7 @@ usbd_probe_and_attach(parent, dev, port, addr)
 	uaa.usegeneric = 1;
 	uaa.configno = UHUB_UNK_CONFIGURATION;
 	uaa.ifaceno = UHUB_UNK_INTERFACE;
-	dv = USB_DO_ATTACH(dev, bdev, parent, &uaa, usbd_print, usbd_submatch);
+	dv = config_found_sm(parent, &uaa, usbd_print, usbd_submatch);
 	if (dv != NULL) {
 		dev->subdevs = malloc(2 * sizeof dv, M_USB, M_NOWAIT);
 		if (dev->subdevs == 0)
@@ -1177,7 +1177,7 @@ usbd_fill_deviceinfo(dev, di, usedev)
 	struct usbd_port *p;
 	int i, r, s;
 
-	di->bus = USBDEVUNIT(dev->bus->bdev);
+	di->bus = dev->bus->bdev.dv_unit;
 	di->addr = dev->address;
 	di->config = dev->config;
 	usbd_devinfo_vp(dev, di->vendor, di->product, usedev);
@@ -1194,7 +1194,7 @@ usbd_fill_deviceinfo(dev, di, usedev)
 
 	if (dev->subdevs != NULL) {
 		for (i = 0; dev->subdevs[i] && i < USB_MAX_DEVNAMES; i++) {
-			strncpy(di->devnames[i], USBDEVPTRNAME(dev->subdevs[i]), USB_MAX_DEVNAMELEN);
+			strncpy(di->devnames[i], dev->subdevs[i].dv_xname, USB_MAX_DEVNAMELEN);
 			di->devnames[i][USB_MAX_DEVNAMELEN - 1] = '\0';
 		}
 	} else {

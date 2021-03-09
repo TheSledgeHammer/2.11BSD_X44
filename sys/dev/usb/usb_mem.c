@@ -85,16 +85,16 @@ struct usb_frag_dma {
 	LIST_ENTRY(usb_frag_dma) 	next;
 };
 
-usbd_status	usb_block_allocmem (bus_dma_tag_t, size_t, size_t, usb_dma_block_t **);
-void		usb_block_real_freemem  (usb_dma_block_t *);
-void		usb_block_freemem  (usb_dma_block_t *);
+static usbd_status	usb_block_allocmem (bus_dma_tag_t, size_t, size_t, usb_dma_block_t **);
+static void		usb_block_real_freemem  (usb_dma_block_t *);
+static void		usb_block_freemem  (usb_dma_block_t *);
 
-LIST_HEAD(, usb_dma_block) usb_blk_freelist = LIST_HEAD_INITIALIZER(usb_blk_freelist);
-int usb_blk_nfree = 0;
+static LIST_HEAD(, usb_dma_block) usb_blk_freelist = LIST_HEAD_INITIALIZER(usb_blk_freelist);
+static int usb_blk_nfree = 0;
 /* XXX should have different free list for different tags */
-LIST_HEAD(, usb_frag_dma) usb_frag_freelist = LIST_HEAD_INITIALIZER(usb_frag_freelist);
+static LIST_HEAD(, usb_frag_dma) usb_frag_freelist = LIST_HEAD_INITIALIZER(usb_frag_freelist);
 
-usbd_status
+static usbd_status
 usb_block_allocmem(tag, size, align, dmap)
 	bus_dma_tag_t tag;
 	size_t size;
@@ -186,7 +186,7 @@ usb_block_real_freemem(p)
  * from an interrupt context and that is BAD.
  * XXX when should we really free?
  */
-void
+static void
 usb_block_freemem(p)
         usb_dma_block_t *p;
 {

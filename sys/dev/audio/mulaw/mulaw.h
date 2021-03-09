@@ -40,16 +40,19 @@
 extern void mulaw_to_ulinear16 (void *, u_char *buf, int cnt);
 /* Convert 8-bit mu-law to 16 bit signed linear. */
 extern void mulaw_to_slinear16 (void *, u_char *buf, int cnt);
+extern void slinear16_to_mulaw(void *, u_char *buf, int cnt);
 /* Convert 8-bit mu-law to/from 8 bit unsigned linear. */
 extern void mulaw_to_ulinear8 (void *, u_char *buf, int cnt);
 extern void ulinear8_to_mulaw (void *, u_char *buf, int cnt);
 /* Convert 8-bit mu-law to/from 8 bit signed linear. */
 extern void mulaw_to_slinear8 (void *, u_char *buf, int cnt);
 extern void slinear8_to_mulaw (void *, u_char *buf, int cnt);
+
 /* Convert 8-bit a-law to 16 bit unsigned linear. */
 extern void alaw_to_ulinear16 (void *, u_char *buf, int cnt);
 /* Convert 8-bit a-law to 16 bit signed linear. */
 extern void alaw_to_slinear16 (void *, u_char *buf, int cnt);
+extern void slinear16_to_alaw(void *, u_char *buf, int cnt);
 /* Convert 8-bit a-law to/from 8 bit unsigned linear. */
 extern void alaw_to_ulinear8 (void *, u_char *buf, int cnt);
 extern void ulinear8_to_alaw (void *, u_char *buf, int cnt);

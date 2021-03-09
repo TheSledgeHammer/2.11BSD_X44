@@ -211,6 +211,7 @@ ucom_attach(struct device *parent, struct device *self, void *aux)
 	return;
 }
 
+int
 ucom_detach(struct device *parent, struct device *self, void *aux)
 {
 	struct ucom_softc *sc = (struct ucom_softc *)self;
@@ -237,7 +238,7 @@ ucom_detach(struct device *parent, struct device *self, void *aux)
 			ttyflush(tp, FREAD|FWRITE);
 		}
 		/* Wait for processes to go away. */
-		usb_detach_wait(USBDEV(sc->sc_dev));
+		usb_detach_wait(sc->sc_dev);
 	}
 	splx(s);
 
@@ -515,7 +516,7 @@ ucomclose(dev_t dev, int flag, int mode, struct proc *p)
 		sc->sc_methods->ucom_close(sc->sc_parent, sc->sc_portno);
 
 	if (--sc->sc_refcnt < 0)
-		usb_detach_wakeup(USBDEV(sc->sc_dev));
+		usb_detach_wakeup(sc->sc_dev);
 
 	return (0);
 }
@@ -533,7 +534,7 @@ ucomread(dev_t dev, struct uio *uio, int flag)
 	sc->sc_refcnt++;
 	error = ((*tp->t_linesw->l_read)(tp, uio, flag));
 	if (--sc->sc_refcnt < 0)
-		usb_detach_wakeup(USBDEV(sc->sc_dev));
+		usb_detach_wakeup(sc->sc_dev);
 	return (error);
 }
 
@@ -550,7 +551,7 @@ ucomwrite(dev_t dev, struct uio *uio, int flag)
 	sc->sc_refcnt++;
 	error = ((*tp->t_linesw->l_write)(tp, uio, flag));
 	if (--sc->sc_refcnt < 0)
-		usb_detach_wakeup(USBDEV(sc->sc_dev));
+		usb_detach_wakeup(sc->sc_dev);
 	return (error);
 }
 
@@ -567,7 +568,7 @@ ucompoll(dev_t dev, int events, struct proc *p)
 	sc->sc_refcnt++;
 	error = ((*tp->t_linesw->l_poll)(tp, events, p));
 	if (--sc->sc_refcnt < 0)
-		usb_detach_wakeup(USBDEV(sc->sc_dev));
+		usb_detach_wakeup(sc->sc_dev);
 	return (error);
 }
 
@@ -589,7 +590,7 @@ ucomioctl(dev_t dev, u_long cmd, caddr_t data, int flag, struct proc *p)
 	sc->sc_refcnt++;
 	error = ucom_do_ioctl(sc, cmd, data, flag, p);
 	if (--sc->sc_refcnt < 0)
-		usb_detach_wakeup(USBDEV(sc->sc_dev));
+		usb_detach_wakeup(sc->sc_dev);
 	return (error);
 }
 
@@ -1072,8 +1073,7 @@ ucomreadcb(usbd_xfer_handle xfer, usbd_private_handle p, usbd_status status)
 		DPRINTFN(7,("ucomreadcb: char=0x%02x\n", *cp));
 		if ((*rint)(*cp++, tp) == -1) {
 			/* XXX what should we do? */
-			printf("%s: lost %d chars\n", USBDEVNAME(sc->sc_dev),
-			       cc);
+			printf("%s: lost %d chars\n", sc->sc_dev.dv_xname, cc);
 			break;
 		}
 	}
@@ -1081,7 +1081,7 @@ ucomreadcb(usbd_xfer_handle xfer, usbd_private_handle p, usbd_status status)
 
 	err = ucomstartread(sc);
 	if (err) {
-		printf("%s: read start failed\n", USBDEVNAME(sc->sc_dev));
+		printf("%s: read start failed\n", sc->sc_dev.dv_xname);
 		/* XXX what should we dow now? */
 	}
 }

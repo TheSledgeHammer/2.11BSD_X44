@@ -69,11 +69,8 @@
 #include <dev/misc/wscons/wskbdvar.h>
 #include <dev/misc/wscons/wsksymdef.h>
 #include <dev/misc/wscons/wsksymvar.h>
-#include "../../devel/dev/usb/uhidev.h"
-#include "../../devel/dev/usb/ukbdvar.h"
-
-#include "opt_wsdisplay_compat.h"
-#include "opt_ddb.h"
+#include <dev/usb/uhidev.h>
+#include <dev/usb/ukbdvar.h>
 
 #ifdef UKBD_DEBUG
 #define DPRINTF(x)		if (ukbddebug) logprintf x
@@ -96,7 +93,7 @@ struct ukbd_data {
 #define RELEASE  0x100
 #define CODEMASK 0x0ff
 
-#if defined(__NetBSD__) && defined(WSDISPLAY_COMPAT_RAWKBD)
+#if defined(WSDISPLAY_COMPAT_RAWKBD)
 #define NN 0			/* no translation */
 /*
  * Translate USB keycodes to US keyboard XT scancodes.
@@ -138,66 +135,65 @@ Static const u_int8_t ukbd_trtab[256] = {
       NN,   NN,   NN,   NN,   NN,   NN,   NN,   NN, /* f0 - f7 */
       NN,   NN,   NN,   NN,   NN,   NN,   NN,   NN, /* f8 - ff */
 };
-#endif /* defined(__NetBSD__) && defined(WSDISPLAY_COMPAT_RAWKBD) */
+#endif /* defined(WSDISPLAY_COMPAT_RAWKBD) */
 
 #define KEY_ERROR 0x01
 
 #define MAXKEYS (MAXMOD+2*MAXKEYCODE)
 
 struct ukbd_softc {
-	struct uhidev sc_hdev;
+	struct uhidev 		sc_hdev;
 
-	struct ukbd_data sc_ndata;
-	struct ukbd_data sc_odata;
+	struct ukbd_data 	sc_ndata;
+	struct ukbd_data 	sc_odata;
 	struct hid_location sc_modloc[MAXMOD];
-	u_int sc_nmod;
+	u_int 				sc_nmod;
 	struct {
-		u_int32_t mask;
-		u_int8_t key;
+		u_int32_t 		mask;
+		u_int8_t 		key;
 	} sc_mods[MAXMOD];
 
 	struct hid_location sc_keycodeloc;
-	u_int sc_nkeycode;
+	u_int 				sc_nkeycode;
 
-	char sc_enabled;
+	char 				sc_enabled;
 
-	int sc_console_keyboard;	/* we are the console keyboard */
+	int 				sc_console_keyboard;	/* we are the console keyboard */
 
-	char sc_debounce;		/* for quirk handling */
-	usb_callout_t sc_delay;		/* for quirk handling */
-	struct ukbd_data sc_data;	/* for quirk handling */
+	char 				sc_debounce;		/* for quirk handling */
+	usb_callout_t 		sc_delay;		/* for quirk handling */
+	struct ukbd_data 	sc_data;	/* for quirk handling */
 
 	struct hid_location sc_numloc;
 	struct hid_location sc_capsloc;
 	struct hid_location sc_scroloc;
-	int sc_leds;
-#if defined(__NetBSD__)
-	usb_callout_t sc_rawrepeat_ch;
+	int				 	sc_leds;
 
-	struct device *sc_wskbddev;
+	usb_callout_t 		sc_rawrepeat_ch;
+
+	struct device 		*sc_wskbddev;
 #if defined(WSDISPLAY_COMPAT_RAWKBD)
-#define REP_DELAY1 400
-#define REP_DELAYN 100
-	int 		sc_rawkbd;
-	int 		sc_nrep;
-	char 		sc_rep[MAXKEYS];
+#define REP_DELAY1 		400
+#define REP_DELAYN 		100
+	int 				sc_rawkbd;
+	int 				sc_nrep;
+	char 				sc_rep[MAXKEYS];
 #endif /* defined(WSDISPLAY_COMPAT_RAWKBD) */
 
-	int 		sc_spl;
-	int 		sc_polling;
-	int 		sc_npollchar;
-	u_int16_t 	sc_pollchars[MAXKEYS];
-#endif /* defined(__NetBSD__) */
+	int 				sc_spl;
+	int 				sc_polling;
+	int 				sc_npollchar;
+	u_int16_t 			sc_pollchars[MAXKEYS];
 
-	u_char sc_dying;
+	u_char 				sc_dying;
 };
 
 #ifdef UKBD_DEBUG
 #define UKBDTRACESIZE 64
 struct ukbdtraceinfo {
-	int unit;
-	struct timeval tv;
-	struct ukbd_data ud;
+	int 				unit;
+	struct timeval 		tv;
+	struct ukbd_data 	ud;
 };
 struct ukbdtraceinfo ukbdtracedata[UKBDTRACESIZE];
 int ukbdtraceindex = 0;
@@ -220,20 +216,18 @@ ukbdtracedump(void)
 #endif
 
 #define	UKBDUNIT(dev)	(minor(dev))
-#define	UKBD_CHUNK	128	/* chunk size for read */
-#define	UKBD_BSIZE	1020	/* buffer size */
+#define	UKBD_CHUNK		128	/* chunk size for read */
+#define	UKBD_BSIZE		1020	/* buffer size */
 
 static int	ukbd_is_console;
 
 static void	ukbd_cngetc(void *, u_int *, int *);
 static void	ukbd_cnpollc(void *, int);
 
-#if defined(__NetBSD__)
 const struct wskbd_consops ukbd_consops = {
 	ukbd_cngetc,
 	ukbd_cnpollc,
 };
-#endif
 
 static const char *ukbd_parse_desc(struct ukbd_softc *sc);
 
@@ -244,8 +238,8 @@ static void	ukbd_delayed_decode(void *addr);
 static int	ukbd_enable(void *, int);
 static void	ukbd_set_leds(void *, int);
 
-#if defined(__NetBSD__)
-static int	ukbd_ioctl(void *, u_long, caddr_t, int, usb_proc_ptr );
+
+static int	ukbd_ioctl(void *, u_long, caddr_t, int, struct proc *);
 #ifdef WSDISPLAY_COMPAT_RAWKBD
 static void	ukbd_rawrepeat(void *v);
 #endif
@@ -266,9 +260,10 @@ const struct wskbd_mapdata ukbd_keymapdata = {
 	KB_US,
 #endif
 };
-#endif
 
-USB_DECLARE_DRIVER(ukbd);
+struct cfdriver ukbd_cd = {
+		NULL, "ukbd", ukbd_match, ukbd_attach, DV_DULL, sizeof(struct ukbd_softc)
+};
 
 int
 ukbd_match(struct device *parent, struct cfdata *match, void *aux)
@@ -278,8 +273,7 @@ ukbd_match(struct device *parent, struct cfdata *match, void *aux)
 	void *desc;
 
 	uhidev_get_report_desc(uha->parent, &desc, &size);
-	if (!hid_is_collection(desc, size, uha->reportid,
-			       HID_USAGE2(HUP_GENERIC_DESKTOP, HUG_KEYBOARD)))
+	if (!hid_is_collection(desc, size, uha->reportid, HID_USAGE2(HUP_GENERIC_DESKTOP, HUG_KEYBOARD)))
 		return (UMATCH_NONE);
 
 	return (UMATCH_IFACECLASS);
@@ -292,11 +286,8 @@ ukbd_attach(struct device *parent, struct device *self, void *aux)
 	struct uhidev_attach_arg *uha = aux;
 	u_int32_t qflags;
 	const char *parseerr;
-#if defined(__NetBSD__)
 	struct wskbddev_attach_args a;
-#else
 	int i;
-#endif
 
 	sc->sc_hdev.sc_intr = ukbd_intr;
 	sc->sc_hdev.sc_parent = uha->parent;
@@ -306,12 +297,11 @@ ukbd_attach(struct device *parent, struct device *self, void *aux)
 	if (parseerr != NULL) {
 		printf("\n%s: attach failed, %s\n",
 		       sc->sc_hdev.sc_dev.dv_xname, parseerr);
-		USB_ATTACH_ERROR_RETURN;
+		return;
 	}
 
 #ifdef DIAGNOSTIC
-	printf(": %d modifier keys, %d key codes", sc->sc_nmod,
-	       sc->sc_nkeycode);
+	printf(": %d modifier keys, %d key codes", sc->sc_nmod, sc->sc_nkeycode);
 #endif
 	printf("\n");
 
@@ -354,7 +344,7 @@ ukbd_attach(struct device *parent, struct device *self, void *aux)
 
 	sc->sc_wskbddev = config_found(self, &a, wskbddevprint);
 
-	USB_ATTACH_SUCCESS_RETURN;
+	return;
 }
 
 int
@@ -369,7 +359,7 @@ ukbd_enable(void *v, int on)
 	if (sc->sc_enabled == on) {
 #ifdef DIAGNOSTIC
 		printf("ukbd_enable: %s: bad call on=%d\n",
-		       USBDEVNAME(sc->sc_hdev.sc_dev), on);
+		       sc->sc_hdev.sc_dev.dv_xname, on);
 #endif
 		return (EBUSY);
 	}
@@ -385,7 +375,7 @@ ukbd_enable(void *v, int on)
 }
 
 int
-ukbd_activate(device_ptr_t self, enum devact act)
+ukbd_activate(struct device *self, enum devact act)
 {
 	struct ukbd_softc *sc = (struct ukbd_softc *)self;
 	int rv = 0;
@@ -431,7 +421,7 @@ ukbd_detach(struct device *self, int flags)
 		 * XXX console, if there are any other keyboards.
 		 */
 		printf("%s: was console keyboard\n",
-		       USBDEVNAME(sc->sc_hdev.sc_dev));
+		       sc->sc_hdev.sc_dev.dv_xname);
 		wskbd_cndetach();
 		ukbd_is_console = 1;
 #endif
@@ -634,9 +624,7 @@ ukbd_decode(struct ukbd_softc *sc, struct ukbd_data *ud)
 	s = spltty();
 	for (i = 0; i < nkeys; i++) {
 		key = ibuf[i];
-		wskbd_input(sc->sc_wskbddev,
-		    key&RELEASE ? WSCONS_EVENT_KEY_UP : WSCONS_EVENT_KEY_DOWN,
-		    key&CODEMASK);
+		wskbd_input(sc->sc_wskbddev, key&RELEASE ? WSCONS_EVENT_KEY_UP : WSCONS_EVENT_KEY_DOWN, key&CODEMASK);
 	}
 	splx(s);
 }
@@ -683,7 +671,7 @@ ukbd_rawrepeat(void *v)
 #endif
 
 int
-ukbd_ioctl(void *v, u_long cmd, caddr_t data, int flag, usb_proc_ptr p)
+ukbd_ioctl(void *v, u_long cmd, caddr_t data, int flag, struct proc *p)
 {
 	struct ukbd_softc *sc = v;
 
@@ -833,12 +821,9 @@ ukbd_parse_desc(struct ukbd_softc *sc)
 	sc->sc_nmod = imod;
 	hid_end_parse(d);
 
-	hid_locate(desc, size, HID_USAGE2(HUP_LEDS, HUD_LED_NUM_LOCK),
-		   sc->sc_hdev.sc_report_id, hid_output, &sc->sc_numloc, NULL);
-	hid_locate(desc, size, HID_USAGE2(HUP_LEDS, HUD_LED_CAPS_LOCK),
-		   sc->sc_hdev.sc_report_id, hid_output, &sc->sc_capsloc, NULL);
-	hid_locate(desc, size, HID_USAGE2(HUP_LEDS, HUD_LED_SCROLL_LOCK),
-		   sc->sc_hdev.sc_report_id, hid_output, &sc->sc_scroloc, NULL);
+	hid_locate(desc, size, HID_USAGE2(HUP_LEDS, HUD_LED_NUM_LOCK), sc->sc_hdev.sc_report_id, hid_output, &sc->sc_numloc, NULL);
+	hid_locate(desc, size, HID_USAGE2(HUP_LEDS, HUD_LED_CAPS_LOCK), sc->sc_hdev.sc_report_id, hid_output, &sc->sc_capsloc, NULL);
+	hid_locate(desc, size, HID_USAGE2(HUP_LEDS, HUD_LED_SCROLL_LOCK), sc->sc_hdev.sc_report_id, hid_output, &sc->sc_scroloc, NULL);
 
 	return (NULL);
 }

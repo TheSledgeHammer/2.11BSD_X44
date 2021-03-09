@@ -38,7 +38,12 @@
  */
 
 enum hid_kind { 
-	hid_input, hid_output, hid_feature, hid_collection, hid_endcollection
+	hid_input,
+	hid_output,
+	hid_feature,
+	hid_collection,
+	hid_endcollection,
+	hid_none
 };
 
 struct hid_location {

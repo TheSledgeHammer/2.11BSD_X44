@@ -352,7 +352,7 @@ uhub_explore(usbd_device_handle dev)
 			/* Disconnected */
 			DPRINTF(("uhub_explore: device addr=%d disappeared "
 							"on port %d\n", up->device->address, port));
-			usb_disconnect_port(up, USBDEV(sc->sc_dev));
+			usb_disconnect_port(up, sc->sc_dev);
 			usbd_clear_port_feature(dev, port, UHF_C_PORT_CONNECTION);
 		}
 		if (!(status & UPS_CURRENT_CONNECT_STATUS)) {
@@ -401,7 +401,7 @@ uhub_explore(usbd_device_handle dev)
 		else
 			speed = USB_SPEED_FULL;
 		/* Get device info and set its address. */
-		err = usbd_new_device(USBDEV(sc->sc_dev), dev->bus, dev->depth + 1,
+		err = usbd_new_device(sc->sc_dev, dev->bus, dev->depth + 1,
 				speed, port, up);
 		/* XXX retry a few times? */
 		if (err) {

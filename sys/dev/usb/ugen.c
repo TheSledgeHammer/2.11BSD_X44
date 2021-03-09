@@ -205,7 +205,7 @@ ugen_attach(struct device *parent, struct device *self, void *aux)
 		return;
 	}
 
-	usbd_add_drv_event(USB_EVENT_DRIVER_ATTACH, sc->sc_udev, USBDEV(sc->sc_dev));
+	usbd_add_drv_event(USB_EVENT_DRIVER_ATTACH, sc->sc_udev, sc->sc_dev);
 
 	return;
 }
@@ -285,7 +285,13 @@ ugenopen(dev_t dev, int flag, int mode, struct proc * p)
 	void *buf;
 	int i, j;
 
-	USB_GET_SC_OPEN(ugen, unit, sc);
+	if(unit >= ugen_cd.cd_ndevs)
+		return (ENXIO);
+
+	sc = ugen_cd.cd_devs[unit];
+
+	if(sc == NULL)
+		return (ENXIO);
 
 	DPRINTFN(5, ("ugenopen: flag=%d, mode=%d, unit=%d endpt=%d\n",
 		     flag, mode, unit, endpt));
@@ -413,7 +419,7 @@ ugenclose(dev_t dev, int flag, int mode, struct proc * p)
 	int dir;
 	int i;
 
-	USB_GET_SC(ugen, UGENUNIT(dev), sc);
+	sc = ugen_cd.cd_devs[UGENUNIT(dev)];
 
 	DPRINTFN(5, ("ugenclose: flag=%d, mode=%d, unit=%d, endpt=%d\n",
 		     flag, mode, UGENUNIT(dev), endpt));
@@ -617,12 +623,12 @@ ugenread(dev_t dev, struct uio *uio, int flag)
 	struct ugen_softc *sc;
 	int error;
 
-	USB_GET_SC(ugen, UGENUNIT(dev), sc);
+	sc = ugen_cd.cd_devs[UGENUNIT(dev)];
 
 	sc->sc_refcnt++;
 	error = ugen_do_read(sc, endpt, uio, flag);
 	if (--sc->sc_refcnt < 0)
-		usb_detach_wakeup(USBDEV(sc->sc_dev));
+		usb_detach_wakeup(sc->sc_dev);
 	return (error);
 }
 
@@ -692,18 +698,18 @@ ugenwrite(dev_t dev, struct uio *uio, int flag)
 	struct ugen_softc *sc;
 	int error;
 
-	USB_GET_SC(ugen, UGENUNIT(dev), sc);
+	sc = ugen_cd.cd_devs[UGENUNIT(dev)];
 
 	sc->sc_refcnt++;
 	error = ugen_do_write(sc, endpt, uio, flag);
 	if (--sc->sc_refcnt < 0)
-		usb_detach_wakeup(USBDEV(sc->sc_dev));
+		usb_detach_wakeup(sc->sc_dev);
 	return (error);
 }
 
 #if defined(__NetBSD__) || defined(__OpenBSD__)
 int
-ugen_activate(device_ptr_t self, enum devact act)
+ugen_activate(struct device *self, enum devact act)
 {
 	struct ugen_softc *sc = (struct ugen_softc *)self;
 
@@ -747,7 +753,7 @@ ugen_detach(struct device *self, int flags)
 		for (i = 0; i < USB_MAX_ENDPOINTS; i++)
 			wakeup(&sc->sc_endpoints[i][IN]);
 		/* Wait for processes to go away. */
-		usb_detach_wait(USBDEV(sc->sc_dev));
+		usb_detach_wait(sc->sc_dev);
 	}
 	splx(s);
 
@@ -764,7 +770,7 @@ ugen_detach(struct device *self, int flags)
 	mn = self->dv_unit * USB_MAX_ENDPOINTS;
 	vdevgone(maj, mn, mn + USB_MAX_ENDPOINTS - 1, VCHR);
 
-	usbd_add_drv_event(USB_EVENT_DRIVER_DETACH, sc->sc_udev, USBDEV(sc->sc_dev));
+	usbd_add_drv_event(USB_EVENT_DRIVER_DETACH, sc->sc_udev, sc->sc_dev);
 
 	return (0);
 }
@@ -1233,12 +1239,12 @@ ugenioctl(dev_t dev, u_long cmd, caddr_t addr, int flag, struct proc * p)
 	struct ugen_softc *sc;
 	int error;
 
-	USB_GET_SC(ugen, UGENUNIT(dev), sc);
+	sc = ugen_cd.cd_devs[UGENUNIT(dev)];
 
 	sc->sc_refcnt++;
 	error = ugen_do_ioctl(sc, endpt, cmd, addr, flag, p);
 	if (--sc->sc_refcnt < 0)
-		usb_detach_wakeup(USBDEV(sc->sc_dev));
+		usb_detach_wakeup(sc->sc_dev);
 	return (error);
 }
 
@@ -1250,7 +1256,7 @@ ugenpoll(dev_t dev, int events, struct proc * p)
 	int revents = 0;
 	int s;
 
-	USB_GET_SC(ugen, UGENUNIT(dev), sc);
+	sc = ugen_cd.cd_devs[UGENUNIT(dev)];
 
 	if (sc->sc_dying)
 		return (EIO);
@@ -1357,7 +1363,7 @@ ugenkqfilter(dev_t dev, struct knote *kn)
 	struct klist *klist;
 	int s;
 
-	USB_GET_SC(ugen, UGENUNIT(dev), sc);
+	sc = ugen_cd.cd_devs[UGENUNIT(dev)];
 
 	if (sc->sc_dying)
 		return (1);

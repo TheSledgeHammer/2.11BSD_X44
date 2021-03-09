@@ -69,10 +69,10 @@
 
 #include <dev/misc/wscons/wsconsio.h>
 #include <dev/misc/wscons/wsmousevar.h>
-#include "../../devel/dev/usb/uhidev.h"
+#include <dev/usb/uhidev.h>
 
 #ifdef USB_DEBUG
-#define DPRINTF(x)	if (umsdebug) logprintf x
+#define DPRINTF(x)		if (umsdebug) logprintf x
 #define DPRINTFN(n,x)	if (umsdebug>(n)) logprintf x
 int	umsdebug = 0;
 #else
@@ -92,24 +92,24 @@ int	umsdebug = 0;
 #define MAX_BUTTONS	7	/* must not exceed size of sc_buttons */
 
 struct ums_softc {
-	struct uhidev 	sc_hdev;
+	struct uhidev 		sc_hdev;
 
 	struct hid_location sc_loc_x, sc_loc_y, sc_loc_z;
 	struct hid_location sc_loc_btn[MAX_BUTTONS];
 
-	int 			sc_enabled;
+	int 				sc_enabled;
 
-	int 			flags;		/* device configuration */
+	int 				flags;		/* device configuration */
 #define UMS_Z			0x01	/* z direction available */
 #define UMS_SPUR_BUT_UP	0x02	/* spurious button up events */
 #define UMS_REVZ		0x04	/* Z-axis is reversed */
 
-	int 			nbuttons;
+	int 				nbuttons;
 
-	u_int32_t 		sc_buttons;	/* mouse button status */
-	struct device 	*sc_wsmousedev;
+	u_int32_t 			sc_buttons;	/* mouse button status */
+	struct device 		*sc_wsmousedev;
 
-	char			sc_dying;
+	char				sc_dying;
 };
 
 #define MOUSE_FLAGS_MASK 	(HIO_CONST|HIO_RELATIVE)
@@ -119,7 +119,7 @@ static void ums_intr(struct uhidev *addr, void *ibuf, u_int len);
 
 static int	ums_enable(void *);
 static void	ums_disable(void *);
-static int	ums_ioctl(void *, u_long, caddr_t, int, usb_proc_ptr );
+static int	ums_ioctl(void *, u_long, caddr_t, int, struct proc *);
 
 const struct wsmouse_accessops ums_accessops = {
 	ums_enable,
@@ -127,7 +127,9 @@ const struct wsmouse_accessops ums_accessops = {
 	ums_disable,
 };
 
-USB_DECLARE_DRIVER(ums);
+struct cfdriver ums_cd = {
+		NULL, "ums", ums_match, ums_attach, DV_DULL, sizeof(struct ums_softc)
+};
 
 int
 ums_match(struct device *parent, struct cfdata *match, void *aux)
@@ -171,24 +173,24 @@ ums_attach(struct device *parent, struct device *self, void *aux)
 	if (!hid_locate(desc, size, HID_USAGE2(HUP_GENERIC_DESKTOP, HUG_X),
 	       uha->reportid, hid_input, &sc->sc_loc_x, &flags)) {
 		printf("\n%s: mouse has no X report\n",
-		       USBDEVNAME(sc->sc_hdev.sc_dev));
+		       sc->sc_hdev.sc_dev.dv_xname);
 		return;
 	}
 	if ((flags & MOUSE_FLAGS_MASK) != MOUSE_FLAGS) {
 		printf("\n%s: X report 0x%04x not supported\n",
-		       USBDEVNAME(sc->sc_hdev.sc_dev), flags);
+		       sc->sc_hdev.sc_dev.dv_xname, flags);
 		return;
 	}
 
 	if (!hid_locate(desc, size, HID_USAGE2(HUP_GENERIC_DESKTOP, HUG_Y),
 	       uha->reportid, hid_input, &sc->sc_loc_y, &flags)) {
 		printf("\n%s: mouse has no Y report\n",
-		       USBDEVNAME(sc->sc_hdev.sc_dev));
+		       sc->sc_hdev.sc_dev.dv_xname);
 		return;
 	}
 	if ((flags & MOUSE_FLAGS_MASK) != MOUSE_FLAGS) {
 		printf("\n%s: Y report 0x%04x not supported\n",
-		       USBDEVNAME(sc->sc_hdev.sc_dev), flags);
+		       sc->sc_hdev.sc_dev.dv_xname, flags);
 		return;
 	}
 
@@ -245,7 +247,7 @@ ums_attach(struct device *parent, struct device *self, void *aux)
 
 	sc->sc_wsmousedev = config_found(self, &a, wsmousedevprint);
 
-	USB_ATTACH_SUCCESS_RETURN;
+	return;
 }
 
 int

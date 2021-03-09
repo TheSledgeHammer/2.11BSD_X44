@@ -77,9 +77,6 @@
 #define UDSBR_DEBUG 	1
 #define UBT_DEBUG 		1
 #define UAX_DEBUG 		1
-#define Static
-#else
-#define Static 			static
 #endif
 
 typedef char usb_callout_t;

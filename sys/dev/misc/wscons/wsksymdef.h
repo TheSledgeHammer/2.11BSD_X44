@@ -453,12 +453,13 @@
 			    	(((k) & 0xf800) == 0xf000 ? ((k) & 0x00ff) : (k)))
 
 /*
- * Keyboard types: 8bit encoding, 8bit variant
+ * Keyboard types: 8bit encoding, 24bit variant
  */
 
-#define KB_ENCODING(e)		((e) & 0xff00)
-#define KB_VARIANT(e)		((e) & 0x00ff)
+#define KB_ENCODING(e)		((e) & 0x0000ff00)
+#define KB_VARIANT(e)		((e) & 0xffff00ff)
 
+#define	KB_NONE				0x0000
 #define KB_USER				0x0100
 #define KB_US				0x0200
 #define KB_DE				0x0300
@@ -468,12 +469,38 @@
 #define KB_UK				0x0700
 #define KB_JP				0x0800
 #define KB_SV				0x0900
+#define KB_NO				0x0a00
+#define KB_ES				0x0b00
+#define KB_HU				0x0c00
+#define KB_BE				0x0d00
+#define KB_RU				0x0e00
+#define KB_SG				0x0f00
+#define KB_SF				0x1000
+#define KB_PT				0x1100
+#define KB_UA				0x1200
+#define KB_LT				0x1300
+#define KB_LA				0x1400
+#define KB_BR				0x1500
+#define KB_NL				0x1600
+#define KB_TR				0x1700
+#define KB_PL				0x1800
+#define KB_SI				0x1900
+#define KB_CF				0x1a00
+#define KB_LV				0x1b00
+#define KB_IS				0x1c00
+#define KB_EE				0x1d00
 
-#define KB_NODEAD			0x0001
-#define KB_DECLK			0x0002	/* DEC LKnnn layout */
-#define KB_LK401			0x0004	/* DEC LK401 instead LK201 */
-#define KB_SWAPCTRLCAPS		0x0008	/* Swap Control-L and Caps-Lock */
-#define KB_DVORAK			0x0010	/* Dvorak layout */
+#define KB_NODEAD			0x00000001 /* disable dead accents */
+#define KB_DECLK			0x00000002 /* DEC LKnnn layout */
+#define KB_LK401			0x00000004 /* DEC LK401 instead LK201 */
+#define KB_SWAPCTRLCAPS		0x00000008 /* swap Left-Control and Caps-Lock */
+#define KB_DVORAK			0x00000010 /* Dvorak layout */
+#define KB_METAESC			0x00000020 /* generate ESC prefix on ALT-key */
+#define KB_IOPENER			0x00000040 /* f1-f12 -> ESC,f1-f11 */
+#define KB_MACHDEP			0x00000080 /* machine dependent */
+#define KB_APPLE			0x00010000 /* Apple specific layout */
+#define KB_COLEMAK			0x02000000 /* Colemak layout */
+#define KB_DEFAULT			0x80000000 /* (attach-only) default layout */
 
 #define KB_NAMETAB \
 	{ KB_USER,	"user" }, \
@@ -485,10 +512,35 @@
 	{ KB_UK,	"uk" }, \
 	{ KB_JP,	"jp" }, \
 	{ KB_SV,	"sv" }, \
+	{ KB_NO,	"no" }, \
+	{ KB_ES,	"es" }, \
+	{ KB_HU,	"hu" }, \
+	{ KB_BE,	"be" }, \
+	{ KB_RU,	"ru" }, \
+	{ KB_UA,	"ua" }, \
+	{ KB_SG,	"sg" }, \
+	{ KB_SF,	"sf" }, \
+	{ KB_PT,	"pt" }, \
+	{ KB_LT,	"lt" }, \
+	{ KB_LA,	"la" }, \
+	{ KB_BR,	"br" },	\
+	{ KB_NL,	"nl" }, \
+	{ KB_TR,	"tr" }, \
+	{ KB_PL,	"pl" }, \
+	{ KB_SI,	"si" }, \
+	{ KB_CF,	"cf" }, \
+	{ KB_LV,	"lv" }, \
+	{ KB_IS,	"is" }, \
+	{ KB_EE,	"ee" }	\
 	{ KB_NODEAD,	"nodead" }, \
 	{ KB_DECLK,	"declk" }, \
 	{ KB_LK401,	"lk401" }, \
 	{ KB_SWAPCTRLCAPS, "swapctrlcaps" }, \
-	{ KB_DVORAK,	"dvorak" }
+	{ KB_DVORAK,	"dvorak" }, \
+	{ KB_METAESC,	"metaesc" }, \
+	{ KB_IOPENER,	"iopener" }, \
+	{ KB_MACHDEP,	"machdep" }, \
+	{ KB_APPLE,	"apple" }, \
+	{ KB_COLEMAK,	"colemak" }
 
 #endif /* !_DEV_WSCONS_WSKSYMDEF_H_ */

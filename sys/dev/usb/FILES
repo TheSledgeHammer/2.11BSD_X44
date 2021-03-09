@@ -1,0 +1,46 @@
+A small roadmap of the USB files:
+
+FILES				this file
+Makefile			to install .h files
+Makefile.usbdevs		to run devlist2h.awk
+devlist2h.awk			script to generate usbdevs*.h
+ehci.c				Host controller driver for EHCI (just a stub now)
+ehcireg.h			Hardware definitions for EHCI (just a stub now)
+ehcivar.h			API for ehci.c
+files.usb			config include file
+hid.c				subroutines to parse and access HID data
+hid.h				API for hid.c
+ohci.c				Host controller driver for OHCI
+ohcireg.h			Hardware definitions for OHCI
+ohcivar.h			API for ohci.c
+ucom.c				TTY emulation for two bulk pipes
+ucomvar.h			TTY emulation interface
+ugen.c				generic driver that can handle access to any USB device
+uhci.c				Host controller driver for UHCI
+uhcireg.h			Hardware definitions for UHCI
+uhcivar.h			API for uhci.c
+uhid.c				USB generic HID driver
+uhidev.c			USB HID class driver
+uhidev.h			  and definitions for it
+uhub.c				USB hub driver
+ukbd.c				USB keyboard driver
+ukbdmap.c			wscons key mapping for ukbd
+ukbdvar.h			API for ukbd.c
+ums.c				USB mouse driver
+usb.c				usb (bus) device driver
+usb.h				general USB defines
+usb_mem.c			memory allocation for DMAable memory
+usb_mem.h			API for usb_mem.c
+usb_port.h			compatibility defines for different OSs
+usb_quirks.c		table of non-conforming USB devices and their problems
+usb_quirks.h		API for usb_quirks.c
+usb_subr.c			various subroutines used by USB code
+usbdevs				data base of known device
+usbdevs.h			generated from usbdevs
+usbdevs_data.h		generated from usbdevs
+usbdi.c				implementation of the USBDI API, which all drivers use
+usbdi.h				API for usbdi.c
+usbdi_util.c		utilities built on top of usbdi.h
+usbdi_util.h		API for usbdi_util.c
+usbdivar.h			internal defines and structures for usbdi.c
+usbhid.h			USB HID class definitions

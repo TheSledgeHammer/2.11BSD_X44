@@ -188,6 +188,18 @@ config_found(parent, aux, print)
 	return (0);
 }
 
+struct device *
+config_found_sm(struct device *parent, void *aux, cfprint_t print, cfmatch_t submatch)
+{
+	struct cfdata *cf;
+
+	if ((cf = config_search(submatch, parent, aux)) != NULL) {
+		return (config_attach(parent, cf, aux, print));
+	}
+	printf("%s", msgs[(*print)(aux, parent->dv_xname)]);
+	return (NULL);
+}
+
 /*
  * As above, but for root devices.
  */

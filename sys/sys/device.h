@@ -46,6 +46,14 @@
 #define	_SYS_DEVICE_H_
 
 /*
+ * Actions for ca_activate.
+ */
+enum devact {
+	DVACT_ACTIVATE,		/* activate the device */
+	DVACT_DEACTIVATE	/* deactivate the device */
+};
+
+/*
  * Minimal device structures.
  * Note that all ``system'' device types are listed here.
  */

@@ -207,7 +207,7 @@ uhid_detach(struct device *self, int flags)
 			/* Wake everyone */
 			wakeup(&sc->sc_q);
 			/* Wait for processes to go away. */
-			usb_detach_wait(USBDEV(sc->sc_hdev.sc_dev));
+			usb_detach_wait(sc->sc_hdev.sc_dev);
 		}
 		splx(s);
 	}
@@ -226,7 +226,7 @@ uhid_detach(struct device *self, int flags)
 	vdevgone(maj, mn, mn, VCHR);
 
 #if 0
-	usbd_add_drv_event(USB_EVENT_DRIVER_DETACH, sc->sc_hdev.sc_parent->sc_udev, USBDEV(sc->sc_hdev.sc_dev));
+	usbd_add_drv_event(USB_EVENT_DRIVER_DETACH, sc->sc_hdev.sc_parent->sc_udev, sc->sc_hdev.sc_dev);
 #endif
 
 	return (0);
@@ -267,8 +267,14 @@ uhidopen(dev_t dev, int flag, int mode, struct proc * p)
 {
 	struct uhid_softc *sc;
 	int error;
+	int unit = UHIDUNIT(dev);
 
-	USB_GET_SC_OPEN(uhid, UHIDUNIT(dev), sc);
+	if(unit >= uhid_cd.cd_ndevs)
+		return (ENXIO);
+
+	sc = uhid_cd.cd_devs[unit];
+	if(sc == NULL)
+		return (ENXIO);
 
 	DPRINTF(("uhidopen: sc=%p\n", sc));
 
@@ -295,7 +301,7 @@ uhidclose(dev_t dev, int flag, int mode, struct proc * p)
 {
 	struct uhid_softc *sc;
 
-	USB_GET_SC(uhid, UHIDUNIT(dev), sc);
+	sc = uhid_cd.cd_devs[UHIDUNIT(dev)];
 
 	DPRINTF(("uhidclose: sc=%p\n", sc));
 
@@ -371,12 +377,12 @@ uhidread(dev_t dev, struct uio *uio, int flag)
 	struct uhid_softc *sc;
 	int error;
 
-	USB_GET_SC(uhid, UHIDUNIT(dev), sc);
+	sc = uhid_cd.cd_devs[UHIDUNIT(dev)];
 
 	sc->sc_refcnt++;
 	error = uhid_do_read(sc, uio, flag);
 	if (--sc->sc_refcnt < 0)
-		usb_detach_wakeup(USBDEV(sc->sc_hdev.sc_dev));
+		usb_detach_wakeup(sc->sc_hdev.sc_dev);
 	return (error);
 }
 
@@ -413,12 +419,12 @@ uhidwrite(dev_t dev, struct uio *uio, int flag)
 	struct uhid_softc *sc;
 	int error;
 
-	USB_GET_SC(uhid, UHIDUNIT(dev), sc);
+	sc = uhid_cd.cd_devs[UHIDUNIT(dev)];
 
 	sc->sc_refcnt++;
 	error = uhid_do_write(sc, uio, flag);
 	if (--sc->sc_refcnt < 0)
-		usb_detach_wakeup(USBDEV(sc->sc_hdev.sc_dev));
+		usb_detach_wakeup(sc->sc_hdev.sc_dev);
 	return (error);
 }
 
@@ -564,12 +570,12 @@ uhidioctl(dev_t dev, u_long cmd, caddr_t addr, int flag, struct proc * p)
 	struct uhid_softc *sc;
 	int error;
 
-	USB_GET_SC(uhid, UHIDUNIT(dev), sc);
+	sc = uhid_cd.cd_devs[UHIDUNIT(dev)];
 
 	sc->sc_refcnt++;
 	error = uhid_do_ioctl(sc, cmd, addr, flag, p);
 	if (--sc->sc_refcnt < 0)
-		usb_detach_wakeup(USBDEV(sc->sc_hdev.sc_dev));
+		usb_detach_wakeup(sc->sc_hdev.sc_dev);
 	return (error);
 }
 
@@ -580,7 +586,7 @@ uhidpoll(dev_t dev, int events, struct proc * p)
 	int revents = 0;
 	int s;
 
-	USB_GET_SC(uhid, UHIDUNIT(dev), sc);
+	sc = uhid_cd.cd_devs[UHIDUNIT(dev)];
 
 	if (sc->sc_dying)
 		return (EIO);
@@ -633,7 +639,7 @@ uhidkqfilter(dev_t dev, struct knote *kn)
 	struct klist *klist;
 	int s;
 
-	USB_GET_SC(uhid, UHIDUNIT(dev), sc);
+	sc = uhid_cd.cd_devs[UHIDUNIT(dev)];
 
 	if (sc->sc_dying)
 		return (EIO);

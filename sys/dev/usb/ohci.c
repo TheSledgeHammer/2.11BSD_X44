@@ -327,7 +327,7 @@ struct usbd_pipe_methods ohci_device_isoc_methods = {
 
 #if defined(__NetBSD__) || defined(__OpenBSD__)
 int
-ohci_activate(device_ptr_t self, enum devact act)
+ohci_activate(struct device *self, enum devact act)
 {
 	struct ohci_softc *sc = (struct ohci_softc *)self;
 	int rv = 0;

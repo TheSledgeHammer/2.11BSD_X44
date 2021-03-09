@@ -136,7 +136,7 @@ uhidev_attach(struct device *parent, struct device *self, void *aux)
 	ed = usbd_interface2endpoint_descriptor(iface, 0);
 	if (ed == NULL) {
 		printf("%s: could not read endpoint descriptor\n",
-		       USBDEVNAME(sc->sc_dev));
+		       sc->sc_dev.dv_xname);
 		sc->sc_dying = 1;
 		return;
 	}
@@ -152,7 +152,7 @@ uhidev_attach(struct device *parent, struct device *self, void *aux)
 
 	if (UE_GET_DIR(ed->bEndpointAddress) != UE_DIR_IN ||
 	    (ed->bmAttributes & UE_XFERTYPE) != UE_INTERRUPT) {
-		printf("%s: unexpected endpoint\n", USBDEVNAME(sc->sc_dev));
+		printf("%s: unexpected endpoint\n", sc->sc_dev.dv_xname);
 		sc->sc_dying = 1;
 		return;
 	}
@@ -202,7 +202,7 @@ uhidev_attach(struct device *parent, struct device *self, void *aux)
 		    M_USB);
 	}
 	if (err) {
-		printf("%s: no report descriptor\n", USBDEVNAME(sc->sc_dev));
+		printf("%s: no report descriptor\n", sc->sc_dev.dv_xname);
 		sc->sc_dying = 1;
 		return;
 	}
@@ -215,17 +215,17 @@ uhidev_attach(struct device *parent, struct device *self, void *aux)
 	if (nrepid < 0)
 		return;
 	if (nrepid > 0)
-		printf("%s: %d report ids\n", USBDEVNAME(sc->sc_dev), nrepid);
+		printf("%s: %d report ids\n", sc->sc_dev.dv_xname, nrepid);
 	nrepid++;
 	sc->sc_subdevs = malloc(nrepid * sizeof(struct device *), M_USB, M_NOWAIT | M_ZERO);
 	if (sc->sc_subdevs == NULL) {
-		printf("%s: no memory\n", USBDEVNAME(sc->sc_dev));
+		printf("%s: no memory\n", sc->sc_dev.dv_xname);
 		return;
 	}
 	sc->sc_nrepid = nrepid;
 	sc->sc_isize = 0;
 
-	usbd_add_drv_event(USB_EVENT_DRIVER_ATTACH, sc->sc_udev, USBDEV(sc->sc_dev));
+	usbd_add_drv_event(USB_EVENT_DRIVER_ATTACH, sc->sc_udev, sc->sc_dev);
 
 	for (repid = 0; repid < nrepid; repid++) {
 		repsz = hid_report_size(desc, size, hid_input, repid);
@@ -255,7 +255,7 @@ uhidev_attach(struct device *parent, struct device *self, void *aux)
 #ifdef DIAGNOSTIC
 				DPRINTF(("uhidev_match: repid=%d dev=%p\n", repid, dev));
 				if (dev->sc_intr == NULL) {
-					printf("%s: sc_intr == NULL\n", USBDEVNAME(sc->sc_dev));
+					printf("%s: sc_intr == NULL\n", sc->sc_dev.dv_xname);
 					return;
 				}
 #endif
@@ -357,7 +357,7 @@ uhidev_detach(struct device *self, int flags)
 		}
 	}
 
-	usbd_add_drv_event(USB_EVENT_DRIVER_DETACH, sc->sc_udev, USBDEV(sc->sc_dev));
+	usbd_add_drv_event(USB_EVENT_DRIVER_DETACH, sc->sc_udev, sc->sc_dev);
 
 	return (rv);
 }
@@ -389,7 +389,7 @@ uhidev_intr(usbd_xfer_handle xfer, usbd_private_handle addr, usbd_status status)
 		return;
 
 	if (status != USBD_NORMAL_COMPLETION) {
-		DPRINTF(("%s: interrupt status=%d\n", USBDEVNAME(sc->sc_dev),
+		DPRINTF(("%s: interrupt status=%d\n", sc->sc_dev.dv_xname,
 			 status));
 		usbd_clear_endpoint_stall_async(sc->sc_intrpipe);
 		return;

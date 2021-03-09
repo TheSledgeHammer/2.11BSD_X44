@@ -343,6 +343,22 @@ slinear8_to_mulaw(v, p, cc)
 }
 
 void
+slinear16_to_mulaw(v, p, cc)
+	void *v;
+	u_char *p;
+	int cc;
+{
+	u_char *q = p + 1;	/* q points higher byte. */
+
+	while (--cc >= 0) {
+		p[HI] = lintomulaw[*q[0] ^ 0x80];
+		p[LO] = lintomulaw[*q[1] ^ 0x80];
+		++p;
+		q +=2 ;
+	}
+}
+
+void
 alaw_to_ulinear8(v, p, cc)
 	void *v;
 	u_char *p;
@@ -425,5 +441,21 @@ slinear8_to_alaw(v, p, cc)
 	while (--cc >= 0) {
 		*p = lintoalaw[*p ^ 0x80];
 		++p;
+	}
+}
+
+void
+slinear16_to_alaw(v, p, cc)
+	void *v;
+	u_char *p;
+	int cc;
+{
+	u_char *q = p;
+
+	while (--cc >= 0) {
+		p[HI] = lintoalaw[q[0] ^ 0x80];
+		p[LO] = lintoalaw[q[1] ^ 0x80];
+		++p;
+		q += 2;
 	}
 }
