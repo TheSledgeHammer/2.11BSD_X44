@@ -59,8 +59,6 @@ static const char _rcsid[] __attribute__ ((unused)) =
 #include <dev/misc/wscons/wscons_callbacks.h>
 #include <dev/misc/cons/cons.h>
 
-//#include "opt_wsdisplay_compat.h"
-
 #include "wsdisplay.h"
 
 struct wsscreen_internal {
@@ -274,7 +272,7 @@ wsscreen_attach(sc, console, emul, type, cookie, ccol, crow, defattr)
 	scr->scr_dconf = dconf;
 
 	scr->scr_tty = ttymalloc();
-	tty_attach(scr->scr_tty);
+
 	scr->scr_hold_screen = 0;
 	if (WSSCREEN_HAS_EMULATOR(scr))
 		scr->scr_flags = 0;
@@ -296,7 +294,6 @@ wsscreen_detach(scr)
 	int ccol, crow; /* XXX */
 
 	if (WSSCREEN_HAS_TTY(scr)) {
-		tty_detach(scr->scr_tty);
 		ttyfree(scr->scr_tty);
 	}
 	if (WSSCREEN_HAS_EMULATOR(scr))

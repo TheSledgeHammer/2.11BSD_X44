@@ -205,9 +205,6 @@ ucom_attach(struct device *parent, struct device *self, void *aux)
 	tp->t_param = ucomparam;
 	sc->sc_tty = tp;
 
-	DPRINTF(("ucom_attach: tty_attach %p\n", tp));
-	tty_attach(tp);
-
 	return;
 }
 
@@ -254,7 +251,6 @@ ucom_detach(struct device *parent, struct device *self, void *aux)
 
 	/* Detach and free the tty. */
 	if (tp != NULL) {
-		tty_detach(tp);
 		ttyfree(tp);
 		sc->sc_tty = NULL;
 	}

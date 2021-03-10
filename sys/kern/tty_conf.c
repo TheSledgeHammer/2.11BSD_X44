@@ -48,7 +48,7 @@ struct linesw ttydisc = {
 	.l_meta = nulldev,
 	.l_start = ttstart,
 	.l_modem = ttymodem,
-	.l_poll = nopoll
+	.l_poll = ttpoll
 };
 
 /* 1- NTTYDISC */
@@ -63,7 +63,7 @@ struct linesw nttydisc = {
 	.l_meta = nulldev,
 	.l_start = ttstart,
 	.l_modem = ttymodem,
-	.l_poll = nopoll
+	.l_poll = ttpoll
 };
 
 /* 2- OTTYDISC */
@@ -78,7 +78,7 @@ struct linesw ottydisc = {
 	.l_meta = nulldev,
 	.l_start = ttstart,
 	.l_modem = ttymodem,
-	.l_poll = nopoll
+	.l_poll = ttpoll
 };
 
 /* 3- NETLDISC */
@@ -93,7 +93,7 @@ struct linesw netldisc = {
 	.l_meta = nulldev,
 	.l_start = ttstart,
 	.l_modem = nullmodem,
-	.l_poll = nopoll
+	.l_poll = ttpoll
 };
 
 /* 4- TABLDISC */
@@ -138,7 +138,7 @@ struct linesw pppdisc = {
 	.l_meta = nodev,
 	.l_start = nostart,
 	.l_modem = nomodem,
-	.l_poll = nopoll
+	.l_poll = ttpoll
 };
 
 /* initialize tty conf structures */

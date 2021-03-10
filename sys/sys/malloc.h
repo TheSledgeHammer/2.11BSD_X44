@@ -57,12 +57,12 @@
 #define	M_RTABLE		5	/* routing tables */
 #define	M_HTABLE		6	/* IMP host tables */							/* UN-USED */
 #define	M_FTABLE		7	/* fragment reassembly header */				/* UN-USED */
-#define	M_ZOMBIE		8	/* zombie proc status */						/* UN-USED */
+#define	M_ZOMBIE		8	/* zombie proc status */
 #define	M_IFADDR		9	/* interface address */							/* UN-USED */
 #define	M_SOOPTS		10	/* socket options */							/* UN-USED */
 #define	M_SONAME		11	/* socket name */								/* UN-USED */
-#define	M_NAMEI			12	/* namei path name buffer */					/* UN-USED */
-#define	M_GPROF			13	/* kernel profiling buffer */					/* UN-USED */
+#define	M_NAMEI			12	/* namei path name buffer */
+#define	M_GPROF			13	/* kernel profiling buffer */
 #define	M_IOCTLOPS		14	/* ioctl data buffer */							/* UN-USED */
 #define	M_MAPMEM		15	/* mapped memory descriptors */					/* UN-USED */
 #define	M_CRED			16	/* credentials */
@@ -105,7 +105,7 @@
 #define	M_IPMOPTS		53	/* internet multicast options */				/* UN-USED */
 #define	M_IPMADDR		54	/* internet multicast address */				/* UN-USED */
 #define	M_IFMADDR		55	/* link-level multicast address */				/* UN-USED */
-#define	M_MRTABLE		56	/* multicast routing tables */					/* UN-USED */
+#define	M_MRTABLE		56	/* multicast routing tables */
 #define M_ISOFSMNT		57	/* ISOFS mount structure */
 #define M_ISOFSNODE		58	/* ISOFS vnode private part */
 #define M_NFSRVDESC		59	/* NFS server socket descriptor */				/* UN-USED */
@@ -123,8 +123,9 @@
 #define M_DEVSWHASH		71	/* device switch table hash structure */
 #define M_OVERLAY		72	/* Use Overlay Space Memory */
 #define M_USB			73	/* USB general */
-#define	M_TEMP			74	/* misc temporary data buffers */
-#define	M_LAST			75	/* Must be last type + 1 */
+#define	M_TTY			74	/* allocated tty structures */
+#define	M_TEMP			75	/* misc temporary data buffers */
+#define	M_LAST			76	/* Must be last type + 1 */
 
 #define INITKMEMNAMES {						\
 	"free",			/* 0 M_FREE */ 			\
@@ -201,7 +202,8 @@
 	"devswhash",	/* 71 M_DEVSWHASH */	\
 	"overlay space",/* 72 M_OVERLAY */		\
 	"usb",			/* 73 M_USB */			\
-	"temp",			/* 74 M_TEMP */ 		\
+	"tty",			/* 74 M_TTY */			\
+	"temp",			/* 75 M_TEMP */ 		\
 }
 
 struct kmemstats {

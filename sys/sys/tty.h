@@ -20,13 +20,19 @@
  * The routines in tty_subr.c manipulate these structures.
  */
 struct clist {
-	int						c_cc;		/* character count */
-	char					*c_cf;		/* pointer to first char */
-	char					*c_cl;		/* pointer to last char */
-	u_char					*c_cs;		/* start of ring buffer */
-	u_char					*c_ce;		/* c_ce + c_len */
-	u_char					*c_cq;		/* N bits/bytes long, see tty_subr.c */
-	int						c_cn;		/* total ring buffer length */
+	int						c_cc;			/* character count */
+	char					*c_cf;			/* pointer to first char */
+	char					*c_cl;			/* pointer to last char */
+
+	u_char					*c_cs;			/* start of ring buffer */
+	u_char					*c_ce;			/* c_ce + c_len */
+	u_char					*c_cq;			/* N bits/bytes long, see tty_subr.c */
+	int						c_cn;			/* total ring buffer length */
+
+	/* clist allocation from cblock */
+	int						c_cbcount;		/* Number of cblocks. */
+	int						c_cbmax;		/* Max # cblocks allowed for this clist. */
+	int						c_cbreserved;	/* # cblocks reserved for this clist. */
 };
 
 /*
@@ -206,11 +212,11 @@ extern void pty_init(struct devswtable *);
 extern void tty_init(struct devswtable *);
 extern void tty_conf_init(struct devswtable *);
 
-void cblock_alloc_cblocks (int);
-void cblock_free_cblocks (int);
+void clist_alloc_cblocks (struct clist *q, int ccmax, int ccres);
+void clist_free_cblocks (struct clist *q);
+
 int	 b_to_q (char *cp, int cc, struct clist *q);
 void catq (struct clist *from, struct clist *to);
-/* void	 clist_init (void); */ /* defined in systm.h for main() */
 int	 getc (struct clist *q);
 void ndflush (struct clist *q, int cc);
 int	 ndqb (struct clist *q, int flag);
@@ -247,5 +253,26 @@ void ttyrub (int c, struct tty *tp));
 int	 ttysleep (struct tty *tp, void *chan, int pri, char *wmesg, int timeout);
 int	 ttywait (struct tty *tp);
 int	 ttywflush (struct tty *tp);
+struct tty *ttymalloc (void);
+void ttyfree (struct tty *tp);
+void tty_init_console(struct tty *tp, speed_t speed);
+
+/* From tty_ctty.c. */
+int	cttyioctl (dev_t dev, int cmd, caddr_t addr, int flag, struct proc *p);
+int	cttyopen (dev_t dev, int flag, int mode, struct proc *p);
+int	cttyread (dev_t dev, struct uio *uio, int flag);
+int cttywrite(dev_t dev, struct uio *uio, int flag);
+int cttypoll(dev_t dev, int events, struct proc *p);
+int	cttyselect (dev_t dev, int flag, struct proc *p);
+int	cttywrite (dev_t dev, struct uio *uio, int flag);
+
+/* From tty_tty.c. */
+int	syopen(dev_t dev, int flag, int type);
+int	syread(dev_t dev, struct uio *uio, int flag);
+int	sywrite(dev_t dev, struct uio *uio, int flag);
+int syioctl(dev_t dev, u_int cmd, caddr_t addr, int flag);
+int	sypoll(dev_t dev, int events);
+int	syselect(dev_t dev, int flag);
+
 #endif
 #endif

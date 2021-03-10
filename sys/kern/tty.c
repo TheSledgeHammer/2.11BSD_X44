@@ -25,10 +25,21 @@
 #include <sys/syslog.h>
 #include <sys/signalvar.h>
 #include <sys/resourcevar.h>
+#include <sys/sysctl.h>
+#include <sys/msgbuf.h>
+#include <sys/unistd.h>
+#include <sys/lock.h>
 #include <sys/map.h>
+#include <sys/malloc.h>
+#include <sys/poll.h>
 #include <dev/misc/cons/cons.h>
 
 #include <vm/include/vm.h>
+
+struct lock_object *tty_lock;
+#define tty_lock_init(lo)		(simple_lock_init(lo, "tty_lock"))
+#define tty_lock(lo)			(simple_lock(lo))
+#define tty_unlock(lo) 			(simple_unlock(lo))
 
 /* Symbolic sleep message strings. */
 char ttclos[]	= "ttycls";
@@ -142,6 +153,7 @@ struct	ttychars ttydefaults = {
 
 extern	char *nextc();
 extern	int	wakeup();
+
 
 /* new: tty global initialization via devsw */
 void
@@ -613,6 +625,41 @@ ttioctl(tp, com, data, flag)
 	return (0);
 }
 
+int
+ttpoll(tp, events, p)
+	struct tty *tp;
+	int events;
+	struct proc *p;
+{
+	int revents, s;
+
+	revents = 0;
+	s = spltty();
+
+	if (events & (POLLIN | POLLRDNORM))
+		if (ttnread(tp) > 0)
+			revents |= events & (POLLIN | POLLRDNORM);
+
+	if (events & (POLLOUT | POLLWRNORM))
+		if (tp->t_outq.c_cc <= tp->t_lowat)
+			revents |= events & (POLLOUT | POLLWRNORM);
+
+	if (events & POLLHUP)
+		if (!CONNECTED(tp))
+			revents |= POLLHUP;
+
+	if (revents == 0) {
+		if (events & (POLLIN | POLLHUP | POLLRDNORM))
+			selrecord(p, &tp->t_rsel);
+
+		if (events & (POLLOUT | POLLWRNORM))
+			selrecord(p, &tp->t_wsel);
+	}
+
+	splx(s);
+	return (revents);
+}
+
 static int
 ttnread(tp)
 	register struct tty *tp;
@@ -639,7 +686,7 @@ ttselect(dev, rw)
 	register dev_t dev;
 	int rw;
 {
-	struct tty *tp = &cdevsw[major(dev)].d_ttys[minor(dev)&0177];
+	struct tty *tp = &cdevsw[major(dev)].d_tty[minor(dev)&0177];
 
 	return (ttyselect(tp,rw));
 }
@@ -970,7 +1017,7 @@ ttyinput(c, tp)
 		if (tp->t_rawq.c_cc > TTYHOG) {
 			if (tp->t_outq.c_cc < TTHIWAT(tp) &&
 			    tp->t_line == NTTYDISC)
-				(void) ttyoutput(CTRL(g), tp);
+				(void) ttyoutput(CTRL('g'), tp);
 		} else if (putc(c, &tp->t_rawq) == 0) {
 			ttwakeup(tp);
 			ttyecho(c, tp);
@@ -1878,6 +1925,73 @@ ttysleep(tp, chan, pri, wmesg, timo)
 	return (tp->t_gen == gen ? 0 : ERESTART);
 }
 
+/*
+ * Allocate a tty struct.  Clists in the struct will be allocated by
+ * ttyopen().
+ */
+struct tty *
+ttymalloc()
+{
+	struct tty *tp;
+	tp = malloc(sizeof(*tp), M_TTY, M_WAITOK);
+	memset(tp, 0, sizeof(*tp));
+
+	/* XXX: default to 1024 chars for now */
+	clist_alloc_cblocks(&tp->t_rawq, 1024, 1);
+	clist_alloc_cblocks(&tp->t_canq, 1024, 1);
+	/* output queue doesn't need quoting */
+	clist_alloc_cblocks(&tp->t_outq, 1024, 1);
+
+	tty_init_termios(tp);
+
+	return (tp);
+}
+
+/*
+ * Free a tty struct.  Clists in the struct should have been freed by
+ * ttyclose().
+ */
+void
+ttyfree(tp)
+	struct tty *tp;
+{
+	clist_free_cblocks(&tp->t_rawq);
+	clist_free_cblocks(&tp->t_canq);
+	clist_free_cblocks(&tp->t_outq);
+	free(tp, M_TTY);
+}
+
+static void
+tty_init_termios(tp)
+	struct tty *tp;
+{
+	struct termios *t = &tp->t_termios;
+	t->c_cflag = TTYDEF_CFLAG;
+	t->c_iflag = TTYDEF_IFLAG;
+	t->c_lflag = TTYDEF_LFLAG;
+	t->c_oflag = TTYDEF_OFLAG;
+	t->c_ispeed = TTYDEF_SPEED;
+	t->c_ospeed = TTYDEF_SPEED;
+	memcpy(&t->c_cc, ttydefchars, sizeof(ttydefchars));
+	tp->t_termios = *t;
+}
+
+void
+tty_init_console(tp, s)
+	struct tty *tp;
+	speed_t 	s;
+{
+	struct termios *ti = &tp->t_termios;
+	struct termios *to = &tp->t_termios;
+
+	if (s != 0) {
+		ti->c_ispeed = ti->c_ospeed = s;
+		to->c_ispeed = to->c_ospeed = s;
+	}
+
+	ti->c_cflag |= CLOCAL;
+	to->c_cflag |= CLOCAL;
+}
 
 /*
  * Returns 1 if p2 is "better" than p1
@@ -1894,9 +2008,9 @@ ttysleep(tp, chan, pri, wmesg, timo)
  */
 #define ISRUN(p)		(((p)->p_stat == SRUN) || ((p)->p_stat == SIDL))
 #define TESTAB(a, b)    ((a)<<1 | (b))
-#define ONLYA   2
-#define ONLYB   1
-#define BOTH    3
+#define ONLYA   		2
+#define ONLYB   		1
+#define BOTH    		3
 
 static int
 proc_compare(p1, p2)

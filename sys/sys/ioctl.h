@@ -16,8 +16,7 @@
 #define	_IOCTL_
 
 #include <sys/ioccom.h>
-//#include <sys/ttychars.h>
-//#include <sys/ttydev.h>
+#include <sys/ttychars.h>
 
 struct tchars {
 	char	t_intrc;	/* interrupt */

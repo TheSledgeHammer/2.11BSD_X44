@@ -57,6 +57,7 @@
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 #include <sys/map.h>
+
 #include <ufs/ufs/quota.h>
 
 /*
@@ -75,19 +76,20 @@
 int	hz = 			HZ;
 int	tick = 			1000000 / HZ;
 int	tickadj = 		30000 / (60 * HZ);			/* can adjust 30ms in 60s */
-struct	timezone tz = {
-		TIMEZONE,
-		DST
-};
+struct	timezone tz = { TIMEZONE, DST };
 #define	NPROC 		(20 + 16 * MAXUSERS)
 int	maxproc = 		NPROC;
 int nproc = 		maxproc;
 #define	NTEXT 		(80 + NPROC / 8)			/* actually the object cache */
+int	ntext = 		NTEXT;
 #define	NVNODE 		(NPROC + NTEXT + 100)
 int	desiredvnodes = NVNODE;
-int	maxfiles = 		3 * (NPROC + MAXUSERS) + 80;
-int	ncallout = 		16 + NPROC;
-int	nclist = 		60 + 12 * MAXUSERS;
+#define NFILE		(3 * (NPROC + MAXUSERS) + 80)
+int	maxfiles = 		NFILE;
+#define NCALL 		(16 + NPROC)
+int	ncallout = 		NCALL;
+#define NCLIST 		(60 + 12 * MAXUSERS)
+int	nclist = 		NCLIST;
 int	nmbclusters = 	NMBCLUSTERS;
 int	fscale = 		FSCALE;						/* kernel uses `FSCALE', user uses `fscale' */
 
@@ -102,12 +104,12 @@ int	nbuf, nswbuf;
  * them here forces loader errors if this file is omitted
  * (if they've been externed everywhere else; hah!).
  */
-struct	proc *procNPROC;
-struct	file *fileNFILE;
-struct 	callout *callout;
-struct	cblock *cfree;
-struct	buf *buf, *swbuf;
-char	*buffers;
+struct	proc 		*procNPROC;
+struct	file 		*fileNFILE;
+struct 	callout 	*callout;
+struct  cblock		*cfree;
+struct	buf 		*buf, *swbuf;
+char				*buffers;
 
 #define CMAPSIZ		NPROC						/* size of core allocation map */
 #define SMAPSIZ		((9 * NPROC) / 10)			/* size of swap allocation map */

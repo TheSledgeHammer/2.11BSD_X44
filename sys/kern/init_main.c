@@ -441,26 +441,6 @@ start_init(p, framep)
 }
 
 /*
- * Initialize clist by freeing all character blocks, then count
- * number of character devices. (Once-only routine)
- */
-static void
-cinit()
-{
-	register int ccp;
-	register struct cblock *cp;
-
-	ccp = (int) cfree;
-	ccp = (ccp + CROUND) & ~CROUND;
-
-	for (cp = (struct cblock *)ccp; cp <= &cfree[nclist - 1]; cp++) {
-		cp->c_next = cfreelist;
-		cfreelist = cp;
-		cfreecount += CBSIZE;
-	}
-}
-
-/*
  * Initialize hash links for buffers.
  */
 static void

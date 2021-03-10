@@ -13,9 +13,135 @@
 #include <sys/systm.h>
 #include <sys/buf.h>
 #include <sys/map.h>
+#include <sys/malloc.h>
 #include <sys/user.h>
 
+struct cblock *cfreelist = 0;
+int cfreecount = 0;
+static int ctotcount;
 char	cwaiting;
+
+/*
+ * Initialize clist by freeing all character blocks, then count
+ * number of character devices. (Once-only routine)
+ */
+void
+cinit()
+{
+	register int ccp;
+	register struct cblock *cp;
+
+	ccp = (int) cfree;
+	ccp = (ccp + CROUND) & ~CROUND;
+
+	for (cp = (struct cblock *)ccp; cp <= &cfree[nclist - 1]; cp++) {
+		cp->c_next = cfreelist;
+		cfreelist = cp;
+		cfreecount += CBSIZE;
+	}
+}
+
+/*
+ * Remove a cblock from the cfreelist queue and return a pointer
+ * to it.
+ */
+struct cblock *
+cblock_alloc()
+{
+	struct cblock *cblockp;
+
+	cblockp = cfreelist;
+	if (cblockp == NULL)
+		panic("clist reservation botch");
+	cfreelist = cblockp->c_next;
+	cblockp->c_next = NULL;
+	cfreecount -= CBSIZE;
+	return (cblockp);
+}
+
+/*
+ * Add a cblock to the cfreelist queue.
+ */
+void
+cblock_free(cblockp)
+	struct cblock *cblockp;
+{
+	cblockp->c_next = cfreelist;
+	cfreelist = cblockp;
+	cfreecount += CBSIZE;
+}
+
+/*
+ * Allocate some cblocks for the cfreelist queue.
+ */
+static void
+cblock_alloc_cblocks(number)
+	int number;
+{
+	int i;
+	struct cblock *tmp;
+
+	for (i = 0; i < number; ++i) {
+		tmp = malloc(sizeof(struct cblock), M_TTY, M_WAITOK);
+		bzero((char *)tmp, sizeof(struct cblock));
+		cblock_free(tmp);
+	}
+	ctotcount += number;
+}
+
+/*
+ * Set the cblock allocation policy for a a clist.
+ * Must be called at spltty().
+ */
+void
+clist_alloc_cblocks(clistp, ccmax, ccreserved)
+	struct clist *clistp;
+	int ccmax;
+	int ccreserved;
+{
+	int dcbr;
+
+	clistp->c_cbmax = roundup(ccmax, CBSIZE) / CBSIZE;
+	dcbr = roundup(ccreserved, CBSIZE) / CBSIZE - clistp->c_cbreserved;
+	if (dcbr >= 0)
+		cblock_alloc_cblocks(dcbr);
+	else {
+		if (clistp->c_cbreserved + dcbr < clistp->c_cbcount)
+			dcbr = clistp->c_cbcount - clistp->c_cbreserved;
+		cblock_free_cblocks(-dcbr);
+	}
+	clistp->c_cbreserved += dcbr;
+}
+
+/*
+ * Free some cblocks from the cfreelist queue back to the
+ * system malloc pool.
+ */
+static void
+cblock_free_cblocks(number)
+	int number;
+{
+	int i;
+
+	for (i = 0; i < number; ++i)
+		free(cblock_alloc(), M_TTY);
+	ctotcount -= number;
+}
+
+/*
+ * Free the cblocks reserved for a clist.
+ * Must be called at spltty().
+ */
+void
+clist_free_cblocks(clistp)
+	struct clist *clistp;
+{
+	if (clistp->c_cbcount != 0)
+		panic("freeing active clist cblocks");
+	cblock_free_cblocks(clistp->c_cbreserved);
+	clistp->c_cbmax = 0;
+	clistp->c_cbreserved = 0;
+}
 
 /*
  * Character list get/put

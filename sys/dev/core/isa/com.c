@@ -514,7 +514,7 @@ com_attach_subr(sc)
 	}
 	sc->sc_ebuf = sc->sc_rbuf + (com_rbuf_size << 1);
 
-	tty_attach(tp);
+	tty_init_console(tp, 0);
 
 	if (!ISSET(sc->sc_hwflags, COM_HW_NOIEN))
 		SET(sc->sc_mcr, MCR_IENABLE);
@@ -547,11 +547,6 @@ com_attach_subr(sc)
 
 #ifdef __GENERIC_SOFT_INTERRUPTS
 	sc->sc_si = softintr_establish(IPL_SOFTSERIAL, comsoft, sc);
-#endif
-
-#if NRND > 0 && defined(RND_COM)
-	rnd_attach_source(&sc->rnd_source, sc->sc_dev.dv_xname,
-			  RND_TYPE_TTY, 0);
 #endif
 
 	/* if there are no enable/disable functions, assume the device
@@ -648,7 +643,6 @@ com_detach(self, flags)
 	free(sc->sc_rbuf, M_DEVBUF);
 
 	/* Detach and free the tty. */
-	tty_detach(sc->sc_tty);
 	ttyfree(sc->sc_tty);
 
 #ifdef __GENERIC_SOFT_INTERRUPTS
@@ -708,7 +702,7 @@ com_shutdown(sc)
 
 	/* Turn off PPS capture on last close. */
 	sc->sc_ppsmask = 0;
-	sc->ppsparam.mode = 0;
+	//sc->ppsparam.mode = 0;
 
 	/*
 	 * Hang up if necessary.  Wait a bit, so the other side has time to
@@ -757,10 +751,10 @@ comopen(dev, flag, mode, p)
 	sc = com_cd.cd_devs[unit];
 	if (sc == 0 || !ISSET(sc->sc_hwflags, COM_HW_DEV_OK) || sc->sc_rbuf == NULL)
 		return (ENXIO);
-
+/*
 	if (ISSET(sc->sc_dev.dv_flags, DVF_ACTIVE) == 0)
 		return (ENXIO);
-
+*/
 #ifdef KGDB
 	/*
 	 * If this is the kgdb port, no other use is permitted.
@@ -807,7 +801,7 @@ comopen(dev, flag, mode, p)
 
 		/* Clear PPS capture state on first open. */
 		sc->sc_ppsmask = 0;
-		sc->ppsparam.mode = 0;
+		//sc->ppsparam.mode = 0;
 
 		splx(s2);
 

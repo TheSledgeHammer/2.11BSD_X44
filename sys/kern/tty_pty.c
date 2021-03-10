@@ -100,7 +100,7 @@ const struct cdevsw pts_cdevsw = {
 		.d_type = D_TTY
 };
 
-/* initialize pty structures */
+/* initialize pty/pts structures */
 void
 pty_init(devsw)
 	struct devswtable *devsw;
@@ -471,7 +471,10 @@ ptcpoll(dev, events, p)
 {
 	struct pt_ioctl *pti = pt_ioctl[minor(dev)];
 	struct tty *tp = pti->pt_tty;
-	int revents = 0;
+	if (tp->t_oproc == NULL)
+			return POLLHUP;
+
+	return (*tp->t_linesw->l_poll)(tp, events, l);
 }
 
 int
