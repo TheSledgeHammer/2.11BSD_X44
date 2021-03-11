@@ -102,4 +102,15 @@ struct swdevt {
 #ifdef KERNEL
 extern struct swdevt swdevt[];
 #endif
+
+/* kern_conf.c */
+extern void	audio_init(struct devswtable *devsw);
+extern void	console_init(struct devswtable *devsw);
+extern void	disk_init(struct devswtable *devsw);
+extern void	misc_init(struct devswtable *devsw);
+extern void	network_init(struct devswtable *devsw);
+extern void	tty_init(struct devswtable *devsw);
+extern void	usb_init(struct devswtable *devsw);
+extern void	video_init(struct devswtable *devsw);
+extern void	wscons_init(struct devswtable *devsw);
 #endif

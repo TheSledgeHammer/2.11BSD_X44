@@ -309,6 +309,7 @@ uhidevsubmatch(struct device *parent, struct cfdata *cf, void *aux)
 	return (config_match(parent, cf, aux));
 }
 
+#if defined(__NetBSD__) || defined(__OpenBSD__)
 int
 uhidev_activate(struct device *self, enum devact act)
 {
@@ -361,6 +362,7 @@ uhidev_detach(struct device *self, int flags)
 
 	return (rv);
 }
+#endif
 
 void
 uhidev_intr(usbd_xfer_handle xfer, usbd_private_handle addr, usbd_status status)

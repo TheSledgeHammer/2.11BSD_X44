@@ -250,6 +250,7 @@ ums_attach(struct device *parent, struct device *self, void *aux)
 	return;
 }
 
+#if defined(__NetBSD__) || defined(__OpenBSD__)
 int
 ums_activate(struct device *self, enum devact act)
 {
@@ -283,6 +284,7 @@ ums_detach(struct device *self, int flags)
 
 	return (rv);
 }
+#endif
 
 void
 ums_intr(struct uhidev *addr, void *ibuf, u_int len)

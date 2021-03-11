@@ -21,6 +21,7 @@ file	kern/exec_xcoff64.c					exec_xcoff64
 file	kern/init_main.c
 file	kern/init_sysent.c
 file	kern/kern_acct.c
+file	kern/kern_conf.c
 file	kern/kern_clock.c
 file	kern/kern_descrip.c
 file	kern/kern_environment.c

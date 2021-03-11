@@ -619,6 +619,7 @@ com_config(sc)
 #endif
 }
 
+#if defined(__NetBSD__) || defined(__OpenBSD__)
 int
 com_detach(self, flags)
 	struct device *self;
@@ -652,7 +653,7 @@ com_detach(self, flags)
 	return (0);
 }
 
-/*
+
 int
 com_activate(self, act)
 	struct device *self;
@@ -682,7 +683,7 @@ com_activate(self, act)
 	splx(s);
 	return (rv);
 }
-*/
+#endif
 
 void
 com_shutdown(sc)
@@ -751,10 +752,10 @@ comopen(dev, flag, mode, p)
 	sc = com_cd.cd_devs[unit];
 	if (sc == 0 || !ISSET(sc->sc_hwflags, COM_HW_DEV_OK) || sc->sc_rbuf == NULL)
 		return (ENXIO);
-/*
+
 	if (ISSET(sc->sc_dev.dv_flags, DVF_ACTIVE) == 0)
 		return (ENXIO);
-*/
+
 #ifdef KGDB
 	/*
 	 * If this is the kgdb port, no other use is permitted.

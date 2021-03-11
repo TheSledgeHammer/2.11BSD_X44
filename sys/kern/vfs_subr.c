@@ -1336,6 +1336,21 @@ vfinddev(dev, type, vpp)
 }
 
 /*
+ * Revoke all the vnodes corresponding to the specified minor number
+ * range (endpoints inclusive) of the specified major.
+ */
+void
+vdevgone(int maj, int minl, int minh, enum vtype type)
+{
+	struct vnode *vp;
+	int mn;
+
+	for (mn = minl; mn <= minh; mn++)
+		if (vfinddev(makedev(maj, mn), type, &vp))
+			VOP_REVOKE(vp, REVOKEALL);
+}
+
+/*
  * Calculate the total number of references to a special device.
  */
 int

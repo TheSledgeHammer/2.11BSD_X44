@@ -45,13 +45,7 @@
 #ifndef _SYS_DEVICE_H_
 #define	_SYS_DEVICE_H_
 
-/*
- * Actions for ca_activate.
- */
-enum devact {
-	DVACT_ACTIVATE,		/* activate the device */
-	DVACT_DEACTIVATE	/* deactivate the device */
-};
+
 
 /*
  * Minimal device structures.
@@ -75,6 +69,9 @@ struct device {
 	struct	device 		*dv_parent;				/* pointer to parent device */
 	int					dv_flags;				/* misc. flags; see below */
 };
+
+/* dv_flags */
+#define	DVF_ACTIVE		0x0001					/* device is activated */
 
 /* `event' counters (use zero or more per device instance, as needed) */
 struct evcnt {
@@ -102,6 +99,7 @@ struct cfdata {
 
 typedef int 			(*cfmatch_t)(struct device *, struct cfdata *, void *);
 typedef void 			(*cfattach_t)(struct device *, struct device *, void *);
+//typedef int				(*cfdetach)(struct device *, int);
 
 /*
  * `configuration' driver (what the machine-independent autoconf uses).
@@ -116,6 +114,7 @@ struct cfdriver {
 	char				*cd_name;				/* device name */
 	int 				(*cd_match)(struct device *, struct cfdata *, void *);
 	void				(*cd_attach)(struct device *, struct device *, void *);
+	//int 				(*cd_detach)(struct device *, int);
 	enum devclass 		cd_class;				/* device classification */
 	size_t				cd_devsize;				/* size of dev data (for malloc) */
 	void				*cd_aux;				/* additional driver, if any */
@@ -139,6 +138,14 @@ typedef int 			(*cfprint_t) (void *, char *);
 struct pdevinit {
 	void				(*pdev_attach) (int);
 	int					pdev_count;
+};
+
+/*
+ * Actions for ca_activate.
+ */
+enum devact {
+	DVACT_ACTIVATE,		/* activate the device */
+	DVACT_DEACTIVATE	/* deactivate the device */
 };
 
 struct	device 	*alldevs;	/* head of list of all devices */

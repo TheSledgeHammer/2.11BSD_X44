@@ -73,12 +73,12 @@
 #if NUCOM > 0
 
 #ifdef UCOM_DEBUG
-#define DPRINTFN(n, x)	if (ucomdebug > (n)) logprintf x
+#define DPRINTFN(n, x)		if (ucomdebug > (n)) logprintf x
 int ucomdebug = 0;
 #else
 #define DPRINTFN(n, x)
 #endif
-#define DPRINTF(x) DPRINTFN(0, x)
+#define DPRINTF(x) 			DPRINTFN(0, x)
 
 #define	UCOMUNIT_MASK		0x3ffff
 #define	UCOMDIALOUT_MASK	0x80000
@@ -208,8 +208,9 @@ ucom_attach(struct device *parent, struct device *self, void *aux)
 	return;
 }
 
+#if defined(__NetBSD__) || defined(__OpenBSD__)
 int
-ucom_detach(struct device *parent, struct device *self, void *aux)
+ucom_detach(struct device *self, int flags)
 {
 	struct ucom_softc *sc = (struct ucom_softc *)self;
 	struct tty *tp = sc->sc_tty;
@@ -275,6 +276,7 @@ ucom_activate(struct device *self, enum devact act)
 	}
 	return (0);
 }
+#endif
 
 void
 ucom_shutdown(struct ucom_softc *sc)
@@ -399,12 +401,10 @@ ucomopen(dev_t dev, int flag, int mode, struct proc *p)
 			error = EIO;
 			goto fail_0;
 		}
-		err = usbd_open_pipe(sc->sc_iface, sc->sc_bulkout_no,
-				     USBD_EXCLUSIVE_USE, &sc->sc_bulkout_pipe);
+		err = usbd_open_pipe(sc->sc_iface, sc->sc_bulkout_no, USBD_EXCLUSIVE_USE, &sc->sc_bulkout_pipe);
 		if (err) {
 			DPRINTF(("%s: open bulk out error (addr %d), err=%s\n",
-					sc->sc_dev.dv_xname, sc->sc_bulkout_no,
-				 usbd_errstr(err)));
+					sc->sc_dev.dv_xname, sc->sc_bulkout_no, usbd_errstr(err)));
 			error = EIO;
 			goto fail_1;
 		}
@@ -416,8 +416,7 @@ ucomopen(dev_t dev, int flag, int mode, struct proc *p)
 			goto fail_2;
 		}
 
-		sc->sc_ibuf = usbd_alloc_buffer(sc->sc_ixfer,
-						sc->sc_ibufsizepad);
+		sc->sc_ibuf = usbd_alloc_buffer(sc->sc_ixfer, sc->sc_ibufsizepad);
 		if (sc->sc_ibuf == NULL) {
 			error = ENOMEM;
 			goto fail_3;
@@ -429,9 +428,7 @@ ucomopen(dev_t dev, int flag, int mode, struct proc *p)
 			goto fail_3;
 		}
 
-		sc->sc_obuf = usbd_alloc_buffer(sc->sc_oxfer,
-						sc->sc_obufsize +
-						sc->sc_opkthdrlen);
+		sc->sc_obuf = usbd_alloc_buffer(sc->sc_oxfer, sc->sc_obufsize + sc->sc_opkthdrlen);
 		if (sc->sc_obuf == NULL) {
 			error = ENOMEM;
 			goto fail_4;
@@ -446,7 +443,7 @@ ucomopen(dev_t dev, int flag, int mode, struct proc *p)
 	error = ttyopen(tp, UCOMDIALOUT(dev), ISSET(flag, O_NONBLOCK));
 	if (error)
 		goto bad;
-	error = (*tp->t_linesw->l_open)(dev, tp);
+	error = (linesw[tp->t_line].l_open)(dev, tp);
 	if (error)
 		goto bad;
 
@@ -494,7 +491,7 @@ ucomclose(dev_t dev, int flag, int mode, struct proc *p)
 
 	sc->sc_refcnt++;
 
-	(*tp->t_linesw->l_close)(tp, flag);
+	(linesw[tp->t_line].l_close)(tp, flag);
 	ttyclose(tp);
 
 	if (!ISSET(tp->t_state, TS_ISOPEN) && tp->t_wopen == 0) {
@@ -526,7 +523,7 @@ ucomread(dev_t dev, struct uio *uio, int flag)
 		return (EIO);
 
 	sc->sc_refcnt++;
-	error = ((*tp->t_linesw->l_read)(tp, uio, flag));
+	error = ((linesw[tp->t_line].l_read)(tp, uio, flag));
 	if (--sc->sc_refcnt < 0)
 		usb_detach_wakeup(sc->sc_dev);
 	return (error);
@@ -543,7 +540,7 @@ ucomwrite(dev_t dev, struct uio *uio, int flag)
 		return (EIO);
 
 	sc->sc_refcnt++;
-	error = ((*tp->t_linesw->l_write)(tp, uio, flag));
+	error = ((linesw[tp->t_line].l_write)(tp, uio, flag));
 	if (--sc->sc_refcnt < 0)
 		usb_detach_wakeup(sc->sc_dev);
 	return (error);
@@ -560,7 +557,7 @@ ucompoll(dev_t dev, int events, struct proc *p)
 		return (EIO);
 
 	sc->sc_refcnt++;
-	error = ((*tp->t_linesw->l_poll)(tp, events, p));
+	error = ((linesw[tp->t_line].l_poll)(tp, events, p));
 	if (--sc->sc_refcnt < 0)
 		usb_detach_wakeup(sc->sc_dev);
 	return (error);
@@ -600,7 +597,7 @@ ucom_do_ioctl(struct ucom_softc *sc, u_long cmd, caddr_t data, int flag, struct 
 
 	DPRINTF(("ucomioctl: cmd=0x%08lx\n", cmd));
 
-	error = (*tp->t_linesw->l_ioctl)(tp, cmd, data, flag, p);
+	error = (linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag, p);
 	if (error != ENOIOCTL)
 		return (error);
 
@@ -774,8 +771,7 @@ ucom_status_change(struct ucom_softc *sc)
 		sc->sc_methods->ucom_get_status(sc->sc_parent, sc->sc_portno,
 		    &sc->sc_lsr, &sc->sc_msr);
 		if (ISSET((sc->sc_msr ^ old_msr), UMSR_DCD))
-			(*tp->t_linesw->l_modem)(tp,
-			    ISSET(sc->sc_msr, UMSR_DCD));
+			(linesw[tp->t_line].l_modem)(tp, ISSET(sc->sc_msr, UMSR_DCD));
 	} else {
 		sc->sc_lsr = 0;
 		sc->sc_msr = 0;
@@ -835,7 +831,7 @@ ucomparam(struct tty *tp, struct termios *t)
 	 * explicit request.
 	 */
 	DPRINTF(("ucomparam: l_modem\n"));
-	(void) (*tp->t_linesw->l_modem)(tp, 1 /* XXX carrier */ );
+	(void) (linesw[tp->t_line].l_modem)(tp, 1 /* XXX carrier */ );
 
 #if 0
 XXX what if the hardware is not open
@@ -922,15 +918,12 @@ ucomstart(struct tty *tp)
 		cnt = sc->sc_obufsize;
 	}
 	if (sc->sc_methods->ucom_write != NULL)
-		sc->sc_methods->ucom_write(sc->sc_parent, sc->sc_portno,
-					   sc->sc_obuf, data, &cnt);
+		sc->sc_methods->ucom_write(sc->sc_parent, sc->sc_portno, sc->sc_obuf, data, &cnt);
 	else
 		memcpy(sc->sc_obuf, data, cnt);
 
 	DPRINTFN(4,("ucomstart: %d chars\n", cnt));
-	usbd_setup_xfer(sc->sc_oxfer, sc->sc_bulkout_pipe,
-			(usbd_private_handle)sc, sc->sc_obuf, cnt,
-			USBD_NO_COPY, USBD_NO_TIMEOUT, ucomwritecb);
+	usbd_setup_xfer(sc->sc_oxfer, sc->sc_bulkout_pipe, (usbd_private_handle)sc, sc->sc_obuf, cnt, USBD_NO_COPY, USBD_NO_TIMEOUT, ucomwritecb);
 	/* What can we do on error? */
 	err = usbd_transfer(sc->sc_oxfer);
 #ifdef DIAGNOSTIC
@@ -982,9 +975,7 @@ ucomwritecb(usbd_xfer_handle xfer, usbd_private_handle p, usbd_status status)
 	}
 
 	usbd_get_xfer_status(xfer, NULL, NULL, &cc, NULL);
-#if defined(__NetBSD__) && NRND > 0
-	rnd_add_uint32(&sc->sc_rndsource, cc);
-#endif
+
 	DPRINTFN(5,("ucomwritecb: cc=%d\n", cc));
 	/* convert from USB bytes to tty bytes */
 	cc -= sc->sc_opkthdrlen;
@@ -995,7 +986,7 @@ ucomwritecb(usbd_xfer_handle xfer, usbd_private_handle p, usbd_status status)
 		CLR(tp->t_state, TS_FLUSH);
 	else
 		ndflush(&tp->t_outq, cc);
-	(*tp->t_linesw->l_start)(tp);
+	(linesw[tp->t_line].l_start)(tp);
 	splx(s);
 	return;
 
@@ -1029,7 +1020,7 @@ ucomreadcb(usbd_xfer_handle xfer, usbd_private_handle p, usbd_status status)
 {
 	struct ucom_softc *sc = (struct ucom_softc *)p;
 	struct tty *tp = sc->sc_tty;
-	int (*rint)(int c, struct tty *tp) = tp->t_linesw->l_rint;
+	int (*rint)(int c, struct tty *tp) = linesw[tp->t_line].l_rint;
 	usbd_status err;
 	u_int32_t cc;
 	u_char *cp;

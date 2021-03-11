@@ -709,23 +709,6 @@ ugenwrite(dev_t dev, struct uio *uio, int flag)
 
 #if defined(__NetBSD__) || defined(__OpenBSD__)
 int
-ugen_activate(struct device *self, enum devact act)
-{
-	struct ugen_softc *sc = (struct ugen_softc *)self;
-
-	switch (act) {
-	case DVACT_ACTIVATE:
-		return (EOPNOTSUPP);
-
-	case DVACT_DEACTIVATE:
-		sc->sc_dying = 1;
-		break;
-	}
-	return (0);
-}
-#endif
-
-int
 ugen_detach(struct device *self, int flags)
 {
 
@@ -774,6 +757,23 @@ ugen_detach(struct device *self, int flags)
 
 	return (0);
 }
+
+int
+ugen_activate(struct device *self, enum devact act)
+{
+	struct ugen_softc *sc = (struct ugen_softc *)self;
+
+	switch (act) {
+	case DVACT_ACTIVATE:
+		return (EOPNOTSUPP);
+
+	case DVACT_DEACTIVATE:
+		sc->sc_dying = 1;
+		break;
+	}
+	return (0);
+}
+#endif
 
 static void
 ugenintr(usbd_xfer_handle xfer, usbd_private_handle addr, usbd_status status)

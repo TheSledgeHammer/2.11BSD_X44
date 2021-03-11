@@ -30,10 +30,10 @@ A General todo list. Don't hesitate to add to this list. :)
 - See devel folder: README.md
 	
 ## dev:
+- com: ppi
 - Essential Driver Support:
 	- usb: 							Work in progress
 		- fix power: ehci, uhci & ohci
-		- fix: ucom tty functions
 		- add: vhci, xhci
 	- wscons/pccons:					Work in progress
 		- double check wscons for errors/mistakes

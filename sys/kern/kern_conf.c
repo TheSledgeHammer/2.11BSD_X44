@@ -25,32 +25,24 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include <sys/cdefs.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/conf.h>
 #include <sys/devsw.h>
+#include <sys/tty.h>
 #include <sys/user.h>
 
-/* Machine-independent dev configuration.
- * Runs machine/autoconf.c
+#include <dev/audio/audio_if.h>
+
+/*
+ * Machine-independent device driver configuration.
+ * Runs "machine/autoconf.c"
  */
 
-/* Initializes all dev config drivers */
-void
-dev_init(devsw)
-	struct devswtable *devsw;
-{
-	audio_init(devsw);
-	console_init(devsw);
-	disk_init(devsw);
-	misc_init(devsw);
-	usb_init(devsw);
-	video_init(devsw);
-	wscons_init(devsw);
-}
-
 /* Add audio driver configuration */
-static void
+void
 audio_init(devsw)
 	struct devswtable *devsw;
 {
@@ -62,7 +54,7 @@ audio_init(devsw)
 }
 
 /* Add console driver configuration */
-static void
+void
 console_init(devsw)
 	struct devswtable *devsw;
 {
@@ -70,7 +62,7 @@ console_init(devsw)
 }
 
 /* Add disk driver configuration */
-static void
+void
 disk_init(devsw)
 	struct devswtable *devsw;
 {
@@ -91,7 +83,7 @@ disk_init(devsw)
 }
 
 /* Add miscellaneous driver configuration */
-static void
+void
 misc_init(devsw)
 	struct devswtable *devsw;
 {
@@ -99,8 +91,27 @@ misc_init(devsw)
 	DEVSWIO_CONFIG_INIT(devsw, NKSYMS, NULL, &ksyms_cdevsw, NULL);			/* Kernel symbols device */
 }
 
+/* Add network driver configuration */
+void
+network_init(devsw)
+	struct devswtable *devsw;
+{
+	/* TODO: Need to be configured or fix missing */
+	DEVSWIO_CONFIG_INIT(devsw, NBPFILTER, NULL, &bpf_cdevsw, NULL);			/* Berkeley packet filter */
+}
+
+/* tty global driver configuration */
+void
+tty_init(devsw)
+	struct devswtable *devsw;
+{
+	ctty_init(&sys_devsw); 													/* tty_ctty.c: controlling terminal */
+	pty_init(&sys_devsw);													/* tty_pty.c: pseudo-tty slave, pseudo-tty master */
+	tty_conf_init(&sys_devsw);												/* tty_conf.c: pseudo-tty ptm device */
+}
+
 /* Add usb driver configuration */
-static void
+void
 usb_init(devsw)
 	struct devswtable *devsw;
 {
@@ -111,7 +122,7 @@ usb_init(devsw)
 }
 
 /* Add video driver configuration */
-static void
+void
 video_init(devsw)
 	struct devswtable *devsw;
 {
@@ -119,7 +130,7 @@ video_init(devsw)
 }
 
 /* Add wscon driver configuration */
-static void
+void
 wscons_init(devsw)
 	struct devswtable *devsw;
 {

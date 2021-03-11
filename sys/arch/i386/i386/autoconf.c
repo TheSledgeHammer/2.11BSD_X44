@@ -90,7 +90,7 @@ configure()
 	/*
 	 * Configure & Initialize device structures
 	 */
-	devices_configure(&sys_devsw);
+	device_init(&sys_devsw);
 
 	/*
 	 * Configure swap area and related system
@@ -103,20 +103,24 @@ configure()
 	cold = 0;
 }
 
-/* Configure Machine-Dependent Devices */
+/* Configure Devices */
 void
-devices_configure(devsw)
+device_init(devsw)
 	struct devswtable *devsw;
 {
 	/* machine-independent */
-	tty_init(devsw);													/* All tty-related interfaces */
-	dev_init(devsw);													/* All machine-independent devices */
+	console_init(devsw);		/* console interfaces */
+	tty_init(devsw);			/* tty interfaces */
+	wscons_init(devsw);			/* wscons & pccons interfaces */
+	video_init(devsw);			/* video interfaces */
+	misc_init(devsw);			/* misc (ksyms) interfaces */
+	disk_init(devsw);			/* disk interfaces */
+	audio_init(devsw);			/* audio interfaces */
+	usb_init(devsw);			/* usb interfaces */
+	network_init(devsw);		/* network interfaces */
 
 	/* machine-dependent */
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cmos_cdevsw, NULL);			/* CMOS Interface */
-
-	/* TODO: Need to be configured or fix missing */
-	DEVSWIO_CONFIG_INIT(devsw, NBPFILTER, NULL, &bpf_cdevsw, NULL);		/* Berkeley packet filter */
 }
 
 /*

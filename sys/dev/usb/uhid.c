@@ -174,6 +174,7 @@ uhid_attach(struct device *parent, struct device *self, void *aux)
 	return;
 }
 
+#if defined(__NetBSD__) || defined(__OpenBSD__)
 int
 uhid_activate(struct device *self, enum devact act)
 {
@@ -231,6 +232,7 @@ uhid_detach(struct device *self, int flags)
 
 	return (0);
 }
+#endif
 
 void
 uhid_intr(struct uhidev *addr, void *data, u_int len)

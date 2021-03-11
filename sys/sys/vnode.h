@@ -764,6 +764,7 @@ void	cvtstat (struct stat *st, struct ostat *ost);
 int 	getnewvnode (enum vtagtype tag, struct mount *mp, int (**vops)(), struct vnode **vpp);
 void	insmntque (struct vnode *vp, struct mount *mp);
 void 	vattr_null (struct vattr *vap);
+void	vdevgone(int, int, int, enum vtype);
 int 	vcount (struct vnode *vp);
 int		vflush (struct mount *mp, struct vnode *skipvp, int flags);
 int 	vget (struct vnode *vp, int lockflag, struct proc *p);

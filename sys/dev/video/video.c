@@ -477,6 +477,7 @@ videoprint(void *aux, const char *pnp)
 	return (UNCONF);
 }
 
+#if defined(__NetBSD__) || defined(__OpenBSD__)
 int
 videodetach(struct device *self, int flags)
 {
@@ -511,3 +512,4 @@ videoactivate(struct device *self, int act)
 
 	return (0);
 }
+#endif
