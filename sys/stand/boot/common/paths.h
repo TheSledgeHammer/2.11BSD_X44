@@ -28,11 +28,11 @@
 #ifndef _PATHS_H_
 #define	_PATHS_H_
 
-#define PATH_DOTCONFIG	"/boot.config"
-#define PATH_CONFIG	"/boot/config"
-#define PATH_LOADER	"/boot/loader"
+#define PATH_DOTCONFIG		"/boot.config"
+#define PATH_CONFIG			"/boot/config"
+#define PATH_LOADER			"/boot/loader"
 //#define PATH_LOADER_EFI	"/boot/loader.efi"
 //#define PATH_LOADER_ZFS	"/boot/zfsloader"
-#define PATH_LOADER_CONF "/boot/loader.conf"
+#define PATH_LOADER_CONF 	"/boot/loader.conf"
 
 #endif /* _PATHS_H_ */

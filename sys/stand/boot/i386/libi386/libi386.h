@@ -35,6 +35,8 @@ struct i386_devdesc {
 	{
 		struct
 		{
+			int		adaptor;
+			int		controller;
 			int		slice;
 			int		partition;
 			off_t	offset;
@@ -42,9 +44,11 @@ struct i386_devdesc {
     } d_kind;
 };
 
-#define d_slice		d_kind.biosdisk.slice
-#define d_partition d_kind.biosdisk.partition
-#define d_offset	d_kind.biosdisk.offset
+#define d_adaptor		d_kind.biosdisk.adaptor
+#define d_controller	d_kind.biosdisk.controller
+#define d_slice			d_kind.biosdisk.slice
+#define d_partition 	d_kind.biosdisk.partition
+#define d_offset		d_kind.biosdisk.offset
 
 /*
  * relocater trampoline support.

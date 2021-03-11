@@ -26,6 +26,7 @@
 #include <sys/cdefs.h>
 
 #include <machine/cpufunc.h>
+#include <dev/core/isa/comreg.h>
 #include <dev/core/ic/ns16550reg.h>
 #include <dev/core/pci/pcireg.h>
 
@@ -39,11 +40,13 @@
 #define COMC_DIV2BPS(x)	(115200 / (x))	/* DLAB divisor to speed */
 
 #ifndef	COMPORT
-#define COMPORT		0x3f8
+#define COMPORT			0x3f8
 #endif
 #ifndef	COMSPEED
-#define COMSPEED	9600
+#define COMSPEED		9600
 #endif
+
+#define	PCIM_BAR_IO_BASE  PCI_MAPREG_IO_ADDR_MASK
 
 static void		comc_probe(struct console *cp);
 static int		comc_init(int arg);

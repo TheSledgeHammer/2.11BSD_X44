@@ -103,9 +103,9 @@ void
 tty_init(devsw)
 	struct devswtable *devsw;
 {
-	ctty_init(&sys_devsw); 													/* tty_ctty.c: controlling terminal */
-	pty_init(&sys_devsw);													/* tty_pty.c: pseudo-tty slave, pseudo-tty master */
-	tty_conf_init(&sys_devsw);												/* tty_conf.c: pseudo-tty ptm device */
+	ctty_init(devsw); 														/* tty_ctty.c: controlling terminal */
+	pty_init(devsw);														/* tty_pty.c: pseudo-tty slave, pseudo-tty master */
+	tty_conf_init(devsw);													/* tty_conf.c: pseudo-tty ptm device */
 }
 
 /* Add usb driver configuration */

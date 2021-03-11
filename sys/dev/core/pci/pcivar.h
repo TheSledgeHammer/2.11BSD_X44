@@ -127,8 +127,6 @@ struct pci_attach_args {
 #define	PCI_FLAGS_IO_ENABLED	0x01		/* I/O space is enabled */
 #define	PCI_FLAGS_MEM_ENABLED	0x02		/* memory space is enabled */
 
-#include "locators.h"
-
 /*
  * Locators devices that attach to 'pcibus', as specified to config.
  */

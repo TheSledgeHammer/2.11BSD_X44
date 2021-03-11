@@ -43,7 +43,7 @@ v=`cat version` u=${USER-root} d=`pwd` h=`hostname` t=`date`
 id=`basename ${d}`
 osrelcmd=`dirname $0`/osrelease.sh
 
-ost="2.11BSD_RenoX44"
+ost="2.11BSD_X44"
 osr=`sh $osrelcmd`
 
 echo "char ostype[] = \"${ost}\";" > vers.c

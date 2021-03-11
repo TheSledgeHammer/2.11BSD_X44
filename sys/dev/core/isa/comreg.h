@@ -99,6 +99,8 @@
 #define	LCR_6BITS		0x01	/* 6 bits */
 #define	LCR_5BITS		0x00	/* 5 bits */
 
+#define	CFCR_DLAB		LCR_DLAB
+
 /* modem control register */
 #define MCR_PRESCALE	0x80	/* 16650/16950: Baud rate prescaler select */
 #define MCR_MDCE		0x80	/* Ingenic: modem control enable */

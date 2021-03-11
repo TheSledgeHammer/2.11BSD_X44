@@ -50,6 +50,9 @@ Of Interest Todo:
 
 ## stand:
 - boot:
+	- configurable
+		- boot format: FreeBSD Slices & NetBSD Adaptor & Controller
+			- failsafe: Cannot boot if both are true or both are false
 	- efi
 	- commands: needs work
 	- install: not present
