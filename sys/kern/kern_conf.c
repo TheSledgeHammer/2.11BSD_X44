@@ -34,8 +34,6 @@
 #include <sys/tty.h>
 #include <sys/user.h>
 
-#include <dev/audio/audio_if.h>
-
 /*
  * Machine-independent device driver configuration.
  * Runs "machine/autoconf.c"
