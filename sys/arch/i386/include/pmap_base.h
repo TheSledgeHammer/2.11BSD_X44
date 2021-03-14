@@ -85,8 +85,13 @@ struct pmap_args {
 	void (*pads)(pmap_t pm);
 	u_int (*pmap_get_kcr3)(void);
 	u_int (*pmap_get_cr3)(pmap_t pmap);
+	caddr_t (*pmap_cmap3)(caddr_t pa, u_int pte_flags);
 	void *(*pmap_bios16_enter)(void);
 	void (*pmap_bios16_leave)(void *handle);
 };
+
+void	pmap_cold(void);
+void	pmap_pae_cold(void);
+void	pmap_nopae_cold(void);
 
 #endif /* _MACHINE_PMAP_BASE_H_ */

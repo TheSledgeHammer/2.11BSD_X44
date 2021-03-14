@@ -185,9 +185,6 @@
  */
 #define	LOTSOFMEM	2
 
-//#define	mapin(pte, v, pfnum, prot) \
-	{(*(int *)(pte) = ((pfnum)<<PGSHIFT) | (prot)) ; }
-
 /*
  * Mach derived constants
  */

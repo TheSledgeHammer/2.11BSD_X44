@@ -485,8 +485,7 @@ fdcopy(p)
 	register struct file **fpp;
 	register int i;
 
-	MALLOC(newfdp, struct filedesc *, sizeof(struct filedesc0),
-	    M_FILEDESC, M_WAITOK);
+	MALLOC(newfdp, struct filedesc *, sizeof(struct filedesc0), M_FILEDESC, M_WAITOK);
 	bcopy(fdp, newfdp, sizeof(struct filedesc));
 	VREF(newfdp->fd_cdir);
 	if (newfdp->fd_rdir)

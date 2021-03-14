@@ -131,7 +131,7 @@ struct pmap {
 typedef struct pmap			*pmap_t;
 
 #ifdef KERNEL
-extern pmap_t	kernel_pmap_store;
+extern pmap_t		kernel_pmap_store;
 #define kernel_pmap (&kernel_pmap_store)
 #endif
 
@@ -158,7 +158,6 @@ typedef struct pv_entry {
 	struct pmap				*pv_pmap;		/* pmap where mapping lies */
 	vm_offset_t				pv_va;			/* virtual address for mapping */
 	int						pv_flags;		/* flags */
-
 } *pv_entry_t;
 
 #define	PT_ENTRY_NULL				((pt_entry_t) 0)

@@ -197,7 +197,7 @@ const struct cdevsw audio_cdevsw = {
 };
 
 const struct fileops audio_fileops = {
-	.fo_name = "audio",
+	//.fo_name = "audio",
 	.fo_read = audioread,
 	.fo_write = audiowrite,
 	.fo_ioctl = audioioctl,
@@ -205,7 +205,7 @@ const struct fileops audio_fileops = {
 	//.fo_stat = audiostat,
 	.fo_poll = audiopoll,
 	.fo_close = audioclose,
-	.fo_mmap = audiommap,
+	//.fo_mmap = audiommap,
 	//.fo_restart = fnullop_restart
 };
 

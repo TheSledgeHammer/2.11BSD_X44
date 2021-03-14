@@ -28,7 +28,7 @@
 //#include <net/route.h>
 
 struct fileops socketops =
-    { soo_read, soo_write, soo_ioctl, soo_select, soo_close };
+    { soo_read, soo_write, soo_ioctl, soo_select, soo_poll, soo_close };
 
 /*ARGSUSED*/
 int
@@ -117,6 +117,7 @@ soo_select(fp, which, p)
 			splx(s);
 			return (1);
 		}
+		sowriteable(so);
 		sbselqueue(&so->so_snd.sb_sel);
 		so->so_snd.sb_flags |= SB_SEL;
 		break;
@@ -132,6 +133,15 @@ soo_select(fp, which, p)
 	}
 	splx(s);
 	return (0);
+}
+
+int
+soo_poll(fp, events, p)
+	struct file *fp;
+	int events;
+	struct proc *p;
+{
+	return sopoll(fp->f_socket, events);
 }
 
 /*ARGSUSED*/

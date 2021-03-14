@@ -209,7 +209,6 @@ extern	 char ttyin[], ttyout[], ttopen[], ttclos[], ttybg[], ttybuf[];
 
 extern void	ctty_init(struct devswtable *);
 extern void pty_init(struct devswtable *);
-extern void tty_init(struct devswtable *);
 extern void tty_conf_init(struct devswtable *);
 
 void clist_alloc_cblocks (struct clist *q, int ccmax, int ccres);
@@ -264,7 +263,6 @@ int	cttyread (dev_t dev, struct uio *uio, int flag);
 int cttywrite(dev_t dev, struct uio *uio, int flag);
 int cttypoll(dev_t dev, int events, struct proc *p);
 int	cttyselect (dev_t dev, int flag, struct proc *p);
-int	cttywrite (dev_t dev, struct uio *uio, int flag);
 
 /* From tty_tty.c. */
 int	syopen(dev_t dev, int flag, int type);

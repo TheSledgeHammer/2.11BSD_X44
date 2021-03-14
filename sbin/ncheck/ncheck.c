@@ -20,7 +20,7 @@ static char sccsid[] = "@(#)ncheck.c	5.4 (Berkeley) 1/9/86";
 #define	HSIZE		1503
 
 #include <sys/param.h>
-#include <sys/inode.h>
+#include <sys/vnode.h>
 #include <sys/fs.h>
 #include <sys/dir.h>
 #include <stdio.h>

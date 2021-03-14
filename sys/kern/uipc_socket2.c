@@ -20,6 +20,7 @@
 #include <sys/buf.h>
 #include <sys/mbuf.h>
 #include <sys/protosw.h>
+#include <sys/poll.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 
@@ -56,7 +57,7 @@
  * the kernel, the wakeups done here will sometimes
  * cause software-interrupt process scheduling.
  */
-
+void
 soisconnecting(so)
 	register struct socket *so;
 {
@@ -66,6 +67,7 @@ soisconnecting(so)
 	WAKEUP((caddr_t)&so->so_timeo);
 }
 
+void
 soisconnected(so)
 	register struct socket *so;
 {
@@ -85,6 +87,7 @@ soisconnected(so)
 	sowwakeup(so);
 }
 
+void
 soisdisconnecting(so)
 	register struct socket *so;
 {
@@ -96,6 +99,7 @@ soisdisconnecting(so)
 	sorwakeup(so);
 }
 
+void
 soisdisconnected(so)
 	register struct socket *so;
 {
@@ -146,6 +150,7 @@ bad:
 	return ((struct socket *)0);
 }
 
+void
 soqinsque(head, so, q)
 	register struct socket *head, *so;
 	int q;
@@ -163,6 +168,7 @@ soqinsque(head, so, q)
 	}
 }
 
+int
 soqremque(so, q)
 	register struct socket *so;
 	int q;
@@ -200,7 +206,7 @@ soqremque(so, q)
  * protocol when it detects that the peer will send no more data.
  * Data queued for reading in the socket may yet be read.
  */
-
+void
 socantsendmore(so)
 	struct socket *so;
 {
@@ -209,6 +215,7 @@ socantsendmore(so)
 	sowwakeup(so);
 }
 
+void
 socantrcvmore(so)
 	struct socket *so;
 {
@@ -224,6 +231,7 @@ socantrcvmore(so)
 /*
  * Queue a process for a select on a socket buffer.
  */
+void
 sbselqueue(sb)
 	register struct sockbuf *sb;
 {
@@ -239,6 +247,7 @@ sbselqueue(sb)
 /*
  * Wait for data to arrive at/drain from a socket buffer.
  */
+void
 sbwait(sb)
 	register struct sockbuf *sb;
 {
@@ -250,6 +259,7 @@ sbwait(sb)
 /*
  * Wakeup processes waiting on a socket buffer.
  */
+void
 sbwakeup(sb)
 	register struct sockbuf *sb;
 {
@@ -270,6 +280,7 @@ sbwakeup(sb)
  * Do asynchronous notification via SIGIO
  * if the socket has the SS_ASYNC flag set.
  */
+void
 sowakeup(so, sb)
 	register struct socket *so;
 	struct sockbuf *sb;
@@ -318,6 +329,7 @@ sowakeup(so, sb)
  * should be released by calling sbrelease() when the socket is destroyed.
  */
 
+int
 soreserve(so, sndcc, rcvcc)
 	register struct socket *so;
 	int sndcc, rcvcc;
@@ -339,8 +351,10 @@ bad:
  * Attempt to scale cc so that mbcnt doesn't become limiting
  * if buffering efficiency is near the normal case.
  */
+int
 sbreserve(sb, cc)
 	struct sockbuf *sb;
+	u_long cc;
 {
 
 #ifdef FIX_43
@@ -358,6 +372,7 @@ sbreserve(sb, cc)
 /*
  * Free mbufs held by a socket, and reserved mbuf space.
  */
+void
 sbrelease(sb)
 	struct sockbuf *sb;
 {
@@ -397,6 +412,7 @@ sbrelease(sb)
  * the mbuf chain is recorded in sb.  Empty mbufs are
  * discarded and mbufs are compacted where possible.
  */
+void
 sbappend(sb, m)
 	struct sockbuf *sb;
 	struct mbuf *m;
@@ -418,6 +434,7 @@ sbappend(sb, m)
  * As above, except the mbuf chain
  * begins a new record.
  */
+void
 sbappendrecord(sb, m0)
 	register struct sockbuf *sb;
 	register struct mbuf *m0;
@@ -448,6 +465,7 @@ sbappendrecord(sb, m0)
  * to the receive queue of a socket.  Return 0 if
  * no space in sockbuf or insufficient mbufs.
  */
+int
 sbappendaddr(sb, asa, m0, rights0)
 	register struct sockbuf *sb;
 	struct sockaddr *asa;
@@ -489,6 +507,7 @@ sbappendaddr(sb, asa, m0, rights0)
 	return (1);
 }
 
+int
 sbappendrights(sb, m0, rights)
 	struct sockbuf *sb;
 	struct mbuf *rights, *m0;
@@ -523,6 +542,7 @@ sbappendrights(sb, m0, rights)
  * buffer sb following mbuf n.  If n
  * is null, the buffer is presumed empty.
  */
+void
 sbcompress(sb, m, n)
 	register struct sockbuf *sb;
 	register struct mbuf *m, *n;
@@ -558,6 +578,7 @@ sbcompress(sb, m, n)
  * Free all mbufs in a sockbuf.
  * Check that all resources are reclaimed.
  */
+void
 sbflush(sb)
 	register struct sockbuf *sb;
 {
@@ -573,6 +594,7 @@ sbflush(sb)
 /*
  * Drop data from (the front of) a sockbuf.
  */
+void
 sbdrop(sb, len)
 	register struct sockbuf *sb;
 	register int len;
@@ -616,6 +638,7 @@ sbdrop(sb, len)
  * Drop a record off the front of a sockbuf
  * and move the next record to the front.
  */
+void
 sbdroprecord(sb)
 	register struct sockbuf *sb;
 {
@@ -629,4 +652,58 @@ sbdroprecord(sb)
 			MFREE(m, mn);
 		} while (m == mn);
 	}
+}
+
+static int
+sodopoll(struct socket *so, int events)
+{
+	int revents;
+
+	revents = 0;
+
+	if (events & (POLLIN | POLLRDNORM))
+		if (soreadable(so))
+			revents |= events & (POLLIN | POLLRDNORM);
+
+	if (events & (POLLOUT | POLLWRNORM))
+		if (sowritable(so))
+			revents |= events & (POLLOUT | POLLWRNORM);
+
+	if (events & (POLLPRI | POLLRDBAND))
+		if (so->so_state & POLLRDBAND)
+			revents |= events & (POLLPRI | POLLRDBAND);
+
+	return revents;
+}
+
+int
+sopoll(struct socket *so, int events)
+{
+	int revents = 0;
+
+#ifndef DIAGNOSTIC
+	/*
+	 * Do a quick, unlocked check in expectation that the socket
+	 * will be ready for I/O.  Don't do this check if DIAGNOSTIC,
+	 * as the solocked() assertions will fail.
+	 */
+	if ((revents = sodopoll(so, events)) != 0)
+		return revents;
+#endif
+
+	//solock(so);
+	if ((revents = sodopoll(so, events)) == 0) {
+		if (events & (POLLIN | POLLPRI | POLLRDNORM | POLLRDBAND)) {
+			selrecord(curproc, &so->so_rcv.sb_sel);
+			so->so_rcv.sb_flags |= SB_NOTIFY;
+		}
+
+		if (events & (POLLOUT | POLLWRNORM)) {
+			selrecord(curproc, &so->so_snd.sb_sel);
+			so->so_snd.sb_flags |= SB_NOTIFY;
+		}
+	}
+	//sounlock(so);
+
+	return revents;
 }

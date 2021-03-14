@@ -56,6 +56,7 @@
 #include <machine/cputypes.h>
 #include <machine/vmparam.h>
 #include <machine/pmap_base.h>
+#include <machine/specialreg.h>
 
 vm_offset_t virtual_avail;	/* VA of first avail page (after kernel bss) */
 vm_offset_t virtual_end;	/* VA of last avail page (end of kernel AS) */
@@ -72,6 +73,8 @@ int i386_pmap_PDRSHIFT;
 
 struct pmap kernel_pmap_store;
 static struct pmap_args *pmap_args_ptr;
+extern struct pmap_args pmap_pae_args, pmap_nopae_args;
+int pae_mode;
 
 void
 pmap_cold_map(u_long pa, u_long va, u_long cnt)
@@ -98,8 +101,10 @@ pmap_cold(void)
 	pae_mode = (cpu_feature & CPUID_PAE) != 0;
 	if (pae_mode) {
 		pmap_args_ptr = &pmap_pae_args;
+		pmap_pae_cold();
 	} else {
 		pmap_args_ptr = &pmap_nopae_args;
+		pmap_nopae_cold();
 	}
 }
 
@@ -347,6 +352,12 @@ u_int
 pmap_get_cr3(pmap_t pmap)
 {
 	return (pmap_args_ptr->pmap_get_cr3(pmap));
+}
+
+caddr_t
+pmap_cmap3(caddr_t pa, u_int pte_flags)
+{
+	return (pmap_args_ptr->pmap_cmap3(pa, pte_flags));
 }
 
 void *

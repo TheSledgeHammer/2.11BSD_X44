@@ -183,13 +183,11 @@ execve(p, uap, retval)
 	stack = (char*) (vm->vm_minsaddr - len);
 	if (stack == stack_base) {
 		/* Now copy argc, args & environ to new stack */
-		if (!(*elp.el_emul->e_copyargs)(&elp, &arginfo, stack,
-				elp.el_uap->argp))
+		if (!(*elp.el_emul->e_copyargs)(&elp, &arginfo, stack, elp.el_uap->argp))
 			goto exec_abort;
 	} else {
 		/* Now copy argc, args & environ to stack_base */
-		if (!(*elp.el_emul->e_copyargs)(&elp, &arginfo, stack_base,
-				elp.el_uap->argp))
+		if (!(*elp.el_emul->e_copyargs)(&elp, &arginfo, stack_base, elp.el_uap->argp))
 			goto exec_abort;
 	}
 
@@ -248,9 +246,10 @@ execve(p, uap, retval)
 
 	/* setup new registers and do misc. setup. */
 	if (stack == stack_base) {
-
+		(*elp.el_emul->e_setregs)(p, &elp, (u_long) stack);
+	} else {
+		(*elp.el_emul->e_setregs)(p, &elp, (u_long) stack_base);
 	}
-	(*elp.el_emul->e_setregs)(p, &elp, (u_long) stack);
 
 	if (p->p_flag & P_TRACED)
 		psignal(p, SIGTRAP);

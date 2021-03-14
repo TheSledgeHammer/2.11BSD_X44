@@ -54,7 +54,7 @@
 #include <vm/include/vm.h>
 
 struct fileops vnops =
-	{ vn_read, vn_write, vn_ioctl, vn_select, vn_closefile };
+	{ vn_read, vn_write, vn_ioctl, vn_select, vn_poll, vn_closefile };
 
 /*
  * Common code for vnode open operations.
@@ -409,8 +409,16 @@ vn_select(fp, which, p)
 	int which;
 	struct proc *p;
 {
-
 	return (VOP_SELECT(((struct vnode *)fp->f_data), which, fp->f_flag, fp->f_cred, p));
+}
+
+int
+vn_poll(fp, events, p)
+	struct file *fp;
+	int events;
+	struct proc *p;
+{
+	return (VOP_POLL(((struct vnode *)fp->f_data), fp->f_flag, events, p));
 }
 
 /*

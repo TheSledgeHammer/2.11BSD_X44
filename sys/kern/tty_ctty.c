@@ -52,6 +52,29 @@
 /* XXXSMP */
 #define cttyvp(p) ((p)->p_flag & P_CONTROLT ? (p)->p_session->s_ttyvp : NULL)
 
+const struct cdevsw ctty_cdevsw = {
+		.d_open = cttyopen,
+		.d_close = nullclose,
+		.d_read = cttyread,
+		.d_write = cttywrite,
+		.d_ioctl = cttyioctl,
+		.d_stop = nullstop,
+		.d_tty = nulltty,
+		.d_select = cttyselect,
+		.d_poll = cttypoll,
+		.d_mmap = nullmmap,
+		.d_discard = nulldiscard,
+		.d_type = D_TTY
+};
+
+/* initialize ctty structures */
+void
+ctty_init(devsw)
+	struct devswtable *devsw;
+{
+	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &ctty_cdevsw, NULL);
+}
+
 /*ARGSUSED*/
 static int
 cttyopen(dev, flag, mode, p)
@@ -147,6 +170,19 @@ cttyioctl(dev, cmd, addr, flag, p)
 	return (VOP_IOCTL(ttyvp, cmd, addr, flag, NOCRED, p));
 }
 
+static int
+cttyselect(dev, flag, p)
+	dev_t dev;
+	int flag;
+	struct proc *p;
+{
+	struct vnode *ttyvp = cttyvp(p);
+
+	if (ttyvp == NULL)
+		return (1);	/* try operation to get EOF/failure */
+	return (VOP_SELECT(ttyvp, flag, FREAD|FWRITE, NOCRED, p));
+}
+
 /*ARGSUSED*/
 static int
 cttypoll(dev, events, p)
@@ -161,38 +197,3 @@ cttypoll(dev, events, p)
 	return (VOP_POLL(ttyvp, FREAD|FWRITE, events, p));
 }
 
-static int
-cttyselect(dev, flag, p)
-	dev_t dev;
-	int flag;
-	struct proc *p;
-{
-	struct vnode *ttyvp = cttyvp(p);
-
-	if (ttyvp == NULL)
-		return (1);	/* try operation to get EOF/failure */
-	return (VOP_SELECT(ttyvp, flag, FREAD|FWRITE, NOCRED, p));
-}
-
-const struct cdevsw ctty_cdevsw = {
-		.d_open = cttyopen,
-		.d_close = nullclose,
-		.d_read = cttyread,
-		.d_write = cttywrite,
-		.d_ioctl = cttyioctl,
-		.d_stop = nullstop,
-		.d_tty = nulltty,
-		.d_select = cttyselect,
-		.d_poll = cttypoll,
-		.d_mmap = nullmmap,
-		.d_discard = nulldiscard,
-		.d_type = D_TTY
-};
-
-/* initialize ctty structures */
-void
-ctty_init(devsw)
-	struct devswtable *devsw;
-{
-	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &ctty_cdevsw, NULL);
-}

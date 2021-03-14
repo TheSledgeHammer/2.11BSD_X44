@@ -30,8 +30,6 @@
 extern struct tty pt_tty[];
 extern int npty;
 
-extern void pty_init(struct devswtable *);	/* tty_pty.c */
-
 extern int ptsopen(dev_t dev, int flag, int mode);
 extern int ptsclose(dev_t dev, int flag, int mode);
 extern int ptsread(dev_t dev, register struct uio *uio, int flag);

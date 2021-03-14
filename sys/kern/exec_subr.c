@@ -115,6 +115,7 @@ vmcmd_map_pagedvn(elp)
 	struct vmspace *vmspace = elp->el_proc->p_vmspace;
 	struct exec_vmcmd *cmd = elp->el_vmcmds->evs_cmds;
 	struct vnode *vp = elp->el_vnodep;
+	struct vm_pager *vpgr;
 	struct vm_object *vobj;
 	int error;
 	vm_prot_t prot, maxprot;
@@ -133,10 +134,12 @@ vmcmd_map_pagedvn(elp)
 	if (cmd->ev_size & PAGE_MASK)
 		return (EINVAL);
 
-	vobj = vnode_pager_alloc(cmd->ev_vnodep, cmd->ev_size,
-	VM_PROT_READ | VM_PROT_EXECUTE, cmd->ev_offset);
-	if (vobj == NULL) {
-		return (ENOMEM);
+	vpgr = vnode_pager_alloc(cmd->ev_vnodep, cmd->ev_size, VM_PROT_READ | VM_PROT_EXECUTE, cmd->ev_offset);
+	if(vpgr) {
+		vobj = vm_object_lookup(vpgr);
+		if (vobj == NULL) {
+			return (ENOMEM);
+		}
 	}
 
 	VREF(vp);
@@ -155,10 +158,9 @@ vmcmd_map_pagedvn(elp)
 	/*
 	 * do the map
 	 */
-	error = vm_mmap(&vmspace->vm_map, cmd->ev_addr, cmd->ev_size, prot, maxprot,
-			cmd->ev_flags, cmd->ev_vnodep, cmd->ev_offset);
+	error = vm_mmap(&vmspace->vm_map, cmd->ev_addr, cmd->ev_size, prot, maxprot, cmd->ev_flags, cmd->ev_vnodep, cmd->ev_offset);
 	if (error) {
-		vobj->pager->pg_ops->pgo_dealloc(vobj);
+		vobj->pager->pg_ops->pgo_dealloc(vpgr);
 	}
 
 	return (error);

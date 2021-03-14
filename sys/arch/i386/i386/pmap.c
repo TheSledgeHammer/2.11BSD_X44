@@ -2044,6 +2044,19 @@ pmap_get_cr3(pmap)
 #endif
 }
 
+static caddr_t
+pmap_cmap3(pa, pte_bits)
+	caddr_t pa;
+	u_int pte_bits;
+{
+	pt_entry_t *pte;
+
+	pte = CMAP3;
+	*pte = pa | pte_bits;
+	//invltlb();
+	return (CADDR3);
+}
+
 struct bios16_pmap_handle {
 	pt_entry_t	*pte;
 	pd_entry_t	*ptd;
@@ -2129,6 +2142,7 @@ struct pmap_args pmap_arg = {
 		&pads,
 		&pmap_get_kcr3,
 		&pmap_get_cr3,
+		&pmap_cmap3,
 		&pmap_bios16_enter,
 		&pmap_bios16_leave,
 };

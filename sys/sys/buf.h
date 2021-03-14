@@ -88,10 +88,7 @@ struct buf
 	int					b_validoff;			/* Offset in buffer of valid region. */
 	int					b_validend;			/* Offset of end of valid region. */
 
-	/* HTBC Related */
-//	LIST_ENTRY(buf)		b_htbclist;			/* htree hashchain buffer list */
-//	u_int				b_cflags;			/* BC_* flags */
-//	u_int				b_oflags;			/* BO_* flags */
+	//void				*b_fsdata;			/* fs private data */
 };
 
 #define	b_active 		b_bcount			/* driver queue head: drive active */
@@ -137,7 +134,7 @@ extern struct bqueues bufqueues[];
 /*
  * number of buffer hash entries
  */
-#define	BUFHSZ		512	/* must be power of 2 */
+#define	BUFHSZ		512		/* must be power of 2 */
 
 /* These flags are kept in b_flags. */
 #define	B_WRITE			0x00000000		/* non-read pseudo-flag */

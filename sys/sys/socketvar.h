@@ -118,7 +118,7 @@ struct socket {
 
 /* can we write something to so? */
 #define	sowriteable(so) 										\
-    (sbspace(&(so)->so_snd) > 0 && 								\
+	(sbspace(&(so)->so_snd) > 0 && 								\
 	(((so)->so_state & SS_ISCONNECTED) || 						\
 	 ((so)->so_proto->pr_flags & PR_CONNREQUIRED)==0) || 		\
      ((so)->so_state & SS_CANTSENDMORE) ||						\
@@ -179,6 +179,7 @@ int	soo_stat (struct socket *, struct stat *);
 int	soo_read (struct file *fp, struct uio *uio, struct ucred *cred);
 int	soo_write (struct file *fp, struct uio *uio, struct ucred *cred);
 int soo_close (struct file *fp, struct proc *p);
+int	soo_poll(struct file *fp, int events, struct proc *p);
 
 /* From uipc_socket and friends */
 

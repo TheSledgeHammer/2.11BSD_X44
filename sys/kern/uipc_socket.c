@@ -37,6 +37,7 @@
  *	out-of-band is a kludge
  */
 /*ARGSUSED*/
+int
 socreate(dom, aso, type, proto)
 	struct socket **aso;
 	register int type;
@@ -75,6 +76,7 @@ socreate(dom, aso, type, proto)
 	return (0);
 }
 
+int
 sobind(so, nam)
 	struct socket *so;
 	struct mbuf *nam;
@@ -89,6 +91,7 @@ sobind(so, nam)
 	return (error);
 }
 
+int
 solisten(so, backlog)
 	register struct socket *so;
 	int backlog;
@@ -114,6 +117,7 @@ solisten(so, backlog)
 	return (0);
 }
 
+void
 sofree(so)
 	register struct socket *so;
 {
@@ -135,6 +139,7 @@ sofree(so)
  * Initiate disconnect if connected.
  * Free socket when disconnect complete.
  */
+int
 soclose(so)
 	register struct socket *so;
 {
@@ -183,6 +188,7 @@ discard:
 /*
  * Must be called at splnet...
  */
+int
 soabort(so)
 	struct socket *so;
 {
@@ -192,6 +198,7 @@ soabort(so)
 		(struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0));
 }
 
+int
 soaccept(so, nam)
 	register struct socket *so;
 	struct mbuf *nam;
@@ -208,6 +215,7 @@ soaccept(so, nam)
 	return (error);
 }
 
+int
 soconnect(so, nam)
 	register struct socket *so;
 	struct mbuf *nam;
@@ -253,6 +261,7 @@ soconnect(so, nam)
 	return (error);
 }
 
+int
 soconnect2(so1, so2)
 	register struct socket *so1;
 	struct socket *so2;
@@ -266,6 +275,7 @@ soconnect2(so1, so2)
 	return (error);
 }
 
+int
 sodisconnect(so)
 	register struct socket *so;
 {
@@ -296,6 +306,7 @@ bad:
  * inform user that this would block and do nothing.
  * Otherwise, if nonblocking, send as much as possible.
  */
+int
 sosend(so, nam, uio, flags, rights)
 	register struct socket *so;
 	struct mbuf *nam;
@@ -421,6 +432,7 @@ release:
  * Although the sockbuf is locked, new data may still be appended,
  * and thus we must maintain consistency of the sockbuf during that time.
  */
+int
 soreceive(so, aname, uio, flags, rightsp)
 	register struct socket *so;
 	struct mbuf **aname;
@@ -599,6 +611,7 @@ release:
 	return (error);
 }
 
+int
 soshutdown(so, how)
 	register struct socket *so;
 	register int how;
@@ -634,6 +647,7 @@ sorflush(so)
 	sbrelease(&asb);
 }
 
+int
 sosetopt(so, level, optname, m0)
 	register struct socket *so;
 	int level, optname;
@@ -728,6 +742,7 @@ bad:
 	return (error);
 }
 
+int
 sogetopt(so, level, optname, mp)
 	register struct socket *so;
 	int level, optname;
@@ -806,10 +821,11 @@ sogetopt(so, level, optname, mp)
 	}
 }
 
+void
 sohasoutofband(so)
 	register struct socket *so;
 {
-register struct proc *p;
+	register struct proc *p;
 
 	if (so->so_pgrp < 0)
 		GSIGNAL(-so->so_pgrp, SIGURG);
@@ -829,10 +845,10 @@ register struct proc *p;
  * do the initial accept processing in the supervisor rather than copying
  * the socket struct back and forth.
 */
-
+int
 soacc1(so)
-register struct	socket	*so;
-	{
+	register struct	socket	*so;
+{
 
 	if	((so->so_options & SO_ACCEPTCONN) == 0)
 		return(u->u_error = EINVAL);
@@ -854,7 +870,7 @@ register struct	socket	*so;
 		return(u->u_error);
 		}
 	return(0);
-	}
+}
 
 /*
  * used to dequeue a connection request.  the panic on nothing left is
@@ -865,46 +881,48 @@ struct socket *
 asoqremque(so, n)
 	struct	socket	*so;
 	int	n;
-	{
-register struct	socket	*aso;
+{
+	register struct	socket	*aso;
 
 	aso = so->so_q;
 	if	(soqremque(aso, n) == 0)
 		return(0);
 	return(aso);
-	}
+}
 
 /* 
  * this is the while loop from connect(), the setjmp has been done in
  * kernel, so we just wait for isconnecting to go away.
 */
-
+int
 connwhile(so)
-register struct	socket	*so;
-	{
+	register struct	socket	*so;
+{
 
-	while	((so->so_state & SS_ISCONNECTING) && so->so_error == 0)
+	while ((so->so_state & SS_ISCONNECTING) && so->so_error == 0)
 		SLEEP(&so->so_timeo, PZERO+1);
 	u->u_error = so->so_error;
 	so->so_error = 0;
 	so->so_state &= ~SS_ISCONNECTING;
 	return(u->u_error);
-	}
+}
 
+int
 sogetnam(so, m)
 	register struct	socket	*so;
 	struct	mbuf	*m;
-	{
+{
 	return(u->u_error=(*so->so_proto->pr_usrreq)(so, PRU_SOCKADDR, 0, m, 0));
-	}
+}
 
+int
 sogetpeer(so, m)
 	register struct socket *so;
 	struct	mbuf	*m;
-	{
+{
 
 	if	((so->so_state & SS_ISCONNECTED) == 0)
 		return(u->u_error = ENOTCONN);
 	return(u->u_error=(*so->so_proto->pr_usrreq)(so, PRU_PEERADDR, 0, m, 0));
-	}
+}
 #endif
