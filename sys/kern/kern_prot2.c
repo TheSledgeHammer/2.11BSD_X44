@@ -49,7 +49,7 @@ int
 setuid()
 {
 	struct a {
-		uid_t uid;
+		syscallarg(uid_t) uid;
 	} *uap = (struct a *)u->u_ap;
 
 	return(_setuid(uap->uid));
@@ -78,7 +78,7 @@ int
 seteuid()
 {
 	struct a {
-		uid_t euid;
+		syscallarg(uid_t) euid;
 	} *uap = (struct a *)u->u_ap;
 
 	return(_seteuid(uap->euid));
@@ -103,7 +103,7 @@ int
 setgid()
 {
 	struct a {
-		gid_t gid;
+		syscallarg(gid_t) gid;
 	} *uap = (struct a *)u->u_ap;
 	
 	return(_setgid(uap->gid));
@@ -126,7 +126,7 @@ int
 setegid()
 {
 	struct a {
-		gid_t egid;
+		syscallarg(gid_t) egid;
 	} *uap = (struct a *)u->u_ap;
 
 	return(_setegid(uap->egid));
@@ -147,7 +147,7 @@ int
 _setsid()
 {
 	register struct a {
-		pid_t 	pid;
+		syscallarg(pid_t) pid;
 	}*uap = (struct a *) u->u_ap;
 
 	return(_setsid(uap->pid));

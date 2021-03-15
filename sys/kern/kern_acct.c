@@ -25,7 +25,6 @@
 #include <sys/tty.h>
 #include <sys/user.h>
 
-
 /*
  * Internal accounting functions.
  * The former's operation is described in Leffler, et al., and the latter
@@ -54,8 +53,8 @@ int
 acct()
 {
 	register struct a {
-		char	*path;
-		int		pid;
+		syscallarg(char	*) path;
+		syscallarg(int)	pid;
 	} *uap = (struct a *)u->u_ap;
 
 	struct proc *p;

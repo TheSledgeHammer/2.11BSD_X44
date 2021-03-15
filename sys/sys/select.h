@@ -36,6 +36,10 @@
 #ifndef _SYS_SELECT_H_
 #define	_SYS_SELECT_H_
 
+#include <sys/types.h>
+
+#include "event.h"		/* for struct klist */
+
 /*
  * Select uses bit masks of file descriptors in longs.
  * These macros manipulate such bit fields (the filesystem macros use chars).
@@ -46,11 +50,11 @@
 #define	FD_SETSIZE	32
 #endif
 
-typedef long	fd_mask;
-#define NFDBITS	(sizeof(fd_mask) * NBBY)	/* bits per mask */
+typedef long			fd_mask;
+#define NFDBITS			(sizeof(fd_mask) * NBBY)	/* bits per mask */
 
 typedef	struct fd_set {
-	fd_mask	fds_bits[1];
+	fd_mask		fds_bits[1];
 } fd_set;
 
 #define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1L << ((n) % NFDBITS)))
@@ -63,10 +67,11 @@ typedef	struct fd_set {
  * notified when I/O becomes possible.
  */
 struct selinfo {
-	pid_t		si_pid;		/* process to be notified */
-	short		si_flags;	/* see below */
+	struct klist	si_klist;	/* knotes attached to this selinfo */
+	pid_t			si_pid;		/* process to be notified */
+	short			si_flags;	/* see below */
 };
-#define	SI_COLL	0x0001		/* collision occurred */
+#define	SI_COLL		0x0001		/* collision occurred */
 
 #ifndef KERNEL
 struct proc;
@@ -76,6 +81,14 @@ void	selwakeup (struct selinfo *);
 
 int		select();
 int		pselect();
+
+static __inline void
+selnotify(struct selinfo *sip, long knhint)
+{
+	if (sip->si_pid != 0)
+		selwakeup(sip);
+	KNOTE(&sip->si_klist, knhint);
+}
 #endif /* !KERNEL */
 
 #endif /* !_SYS_SELECT_H_ */

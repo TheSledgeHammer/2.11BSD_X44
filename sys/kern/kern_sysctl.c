@@ -76,12 +76,12 @@ static struct sysctl_lock {
 } memlock;
 
 struct sysctl_args {
-	int		*name;
-	u_int	namelen;
-	void	*old;
-	size_t	*oldlenp;
-	void	*new;
-	size_t	newlen;
+	syscallarg(int *) name;
+	syscallarg(u_int) namelen;
+	syscallarg(void	*) old;
+	syscallarg(size_t *) oldlenp;
+	syscallarg(void	*) new;
+	syscallarg(size_t) newlen;
 };
 
 int

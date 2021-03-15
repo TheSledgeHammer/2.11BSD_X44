@@ -72,17 +72,20 @@ struct lock 				*kenv_lock;
 bool						dynamic_kenv;
 
 
-#define KENV_CHECK	if (!dynamic_kenv) \
-			    panic("%s: called before KMEM", __func__)
+#define KENV_CHECK do { 							\
+	if (!dynamic_kenv) {							\
+		panic("%s: called before KMEM", __func__);	\
+	}												\
+} while(0)
 
 int
 kenv()
 {
 	register struct a {
-		int 		what;
-		const char 	*name;
-		char 		*value;
-		int 		len;
+		syscallarg(int) 		what;
+		syscallarg(const char *) name;
+		syscallarg(char *) 		value;
+		syscallarg(int) 		len;
 	} *uap = (struct a*)u->u_ap;
 
 	char *name, *value, *buffer = NULL;
@@ -515,8 +518,6 @@ init_dynamic_kenv(void *data)
 
 	//TUNABLE_INT_FETCH("kenv_mvallen", &kenv_mvallen);
 	size = KENV_MNAMELEN + 1 + kenv_mvallen + 1;
-
-	//kenv_zone = uma_zcreate("kenv", size, NULL, NULL, NULL, NULL, UMA_ALIGN_PTR, 0);
 
 	kenvp = malloc((KENV_SIZE + 1) * sizeof(char *), M_KENV, M_WAITOK | M_ZERO);
 

@@ -20,9 +20,9 @@ void
 reboot()
 {
 	register struct a {
-		int	opt;
-	};
+		syscallarg(int)	opt;
+	} *uap = (struct a *)u->u_ap;
 
 	if (suser())
-		boot(rootdev, ((struct a *)u->u_ap)->opt);
+		boot(rootdev, uap->opt);
 }

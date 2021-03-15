@@ -47,9 +47,9 @@ int
 socket()
 {
 	register struct a {
-		int	domain;
-		int	type;
-		int	protocol;
+		syscallarg(int)	domain;
+		syscallarg(int)	type;
+		syscallarg(int)	protocol;
 	} *uap = (struct a *)u->u_ap;
 	struct socket *so;
 	register struct file *fp;
@@ -75,9 +75,9 @@ int
 bind()
 {
 	register struct a {
-		int	s;
-		caddr_t	name;
-		u_int	namelen;
+		syscallarg(int)	s;
+		syscallarg(caddr_t)	name;
+		syscallarg(u_int) namelen;
 	} *uap = (struct a *)u->u_ap;
 	register struct file *fp;
 	register struct mbuf *nam;
@@ -103,8 +103,8 @@ int
 listen()
 {
 	register struct a {
-		int	s;
-		int	backlog;
+		syscallarg(int)	s;
+		syscallarg(int)	backlog;
 	} *uap = (struct a *)u->u_ap;
 	register struct file *fp;
 
@@ -121,9 +121,9 @@ int
 accept()
 {
 	register struct a {
-		int	s;
-		caddr_t	name;
-		int	*anamelen;
+		syscallarg(int)	s;
+		syscallarg(caddr_t)	name;
+		syscallarg(int	*) anamelen;
 	} *uap = (struct a *)u->u_ap;
 
 	register struct file *fp;
@@ -167,8 +167,9 @@ noname:
 		splx(s);
 		return (u->u_error);
 	}
-	if (!(so = (struct socket *)ASOQREMQUE(so, 1)))	/* deQ in super */
-		panic(>accept>);
+	if (!(so = (struct socket *)ASOQREMQUE(so, 1))) {/* deQ in super */
+		panic(">accept>");
+	}
 	fp->f_type = DTYPE_SOCKET;
 	fp->f_flag = FREAD|FWRITE;
 	fp->f_socket = so;
@@ -192,9 +193,9 @@ int
 connect()
 {
 	register struct a {
-		int	s;
-		caddr_t	name;
-		u_int	namelen;
+		syscallarg(int) s;
+		syscallarg(caddr_t)	name;
+		syscallarg(u_int) namelen;
 	} *uap = (struct a *)u->u_ap;
 	register struct file *fp;
 	register struct socket *so;
@@ -246,10 +247,10 @@ int
 socketpair()
 {
 	register struct a {
-		int	domain;
-		int	type;
-		int	protocol;
-		int	*rsv;
+		syscallarg(int)	domain;
+		syscallarg(int) type;
+		syscallarg(int) protocol;
+		syscallarg(int *) rsv;
 	} *uap = (struct a *)u->u_ap;
 	register struct file *fp1, *fp2;
 	struct socket *so1, *so2;
@@ -308,12 +309,12 @@ void
 sendto()
 {
 	register struct a {
-		int	s;
-		caddr_t	buf;
-		int	len;
-		int	flags;
-		caddr_t	to;
-		int	tolen;
+		syscallarg(int) s;
+		syscallarg(caddr_t) buf;
+		syscallarg(int) len;
+		syscallarg(int) flags;
+		syscallarg(caddr_t) to;
+		syscallarg(int) tolen;
 	} *uap = (struct a *)u->u_ap;
 	struct msghdr msg;
 	struct iovec aiov;
@@ -333,10 +334,10 @@ void
 send()
 {
 	register struct a {
-		int	s;
-		caddr_t	buf;
-		int	len;
-		int	flags;
+		syscallarg(int)	s;
+		syscallarg(caddr_t)	buf;
+		syscallarg(int) len;
+		syscallarg(int)	flags;
 	} *uap = (struct a *)u->u_ap;
 	struct msghdr msg;
 	struct iovec aiov;
@@ -356,9 +357,9 @@ void
 sendmsg()
 {
 	register struct a {
-		int	s;
-		caddr_t	msg;
-		int	flags;
+		syscallarg(int)	s;
+		syscallarg(caddr_t)	msg;
+		syscallarg(int)	flags;
 	} *uap = (struct a *)u->u_ap;
 	struct msghdr msg;
 	struct iovec aiov[MSG_MAXIOVLEN];
@@ -447,11 +448,11 @@ void
 recvfrom()
 {
 	register struct a {
-		int	s;
-		caddr_t	buf;
-		int	len;
-		int	flags;
-		caddr_t	from;
+		syscallarg(int)	s;
+		syscallarg(caddr_t)	buf;
+		syscallarg(int)	len;
+		syscallarg(int)	flags;
+		syscallarg(caddr_t)	from;
 		int	*fromlenaddr;
 	} *uap = (struct a *)u->u_ap;
 	struct msghdr msg;
@@ -477,10 +478,10 @@ void
 recv()
 {
 	register struct a {
-		int	s;
-		caddr_t	buf;
-		int	len;
-		int	flags;
+		syscallarg(int)	s;
+		syscallarg(caddr_t)	buf;
+		syscallarg(int)	len;
+		syscallarg(int)	flags;
 	} *uap = (struct a *)u->u_ap;
 	struct msghdr msg;
 	struct iovec aiov;
@@ -500,9 +501,9 @@ void
 recvmsg()
 {
 	register struct a {
-		int	s;
-		struct	msghdr *msg;
-		int	flags;
+		syscallarg(int)	s;
+		syscallarg(struct msghdr *) msg;
+		syscallarg(int)	flags;
 	} *uap = (struct a *)u->u_ap;
 	struct msghdr msg;
 	struct iovec aiov[MSG_MAXIOVLEN];
@@ -538,7 +539,7 @@ recvit(s, mp, flags, namelenp, rightslenp)
 	int len, m_freem();
 
 	if (netoff)
-		return(u->u_error = ENETDOWN);
+		return (u->u_error = ENETDOWN);
 	fp = gtsockf(s);
 	if (fp == 0)
 		return;
@@ -594,8 +595,8 @@ recvit(s, mp, flags, namelenp, rightslenp)
 shutdown()
 {
 	register struct a {
-		int	s;
-		int	how;
+		syscallarg(int)	s;
+		syscallarg(int)	how;
 	} *uap = (struct a *)u->u_ap;
 	register struct file *fp;
 
@@ -610,11 +611,11 @@ shutdown()
 setsockopt()
 {
 	register struct a {
-		int	s;
-		int	level;
-		int	name;
-		caddr_t	val;
-		u_int	valsize;
+		syscallarg(int)	s;
+		syscallarg(int)	level;
+		syscallarg(int)	name;
+		syscallarg(caddr_t)	val;
+		syscallarg(u_int) valsize;
 	} *uap = (struct a *)u->u_ap;
 	register struct file *fp;
 	register struct mbuf *m = NULL;
@@ -643,11 +644,11 @@ setsockopt()
 getsockopt()
 {
 	register struct a {
-		int	s;
-		int	level;
-		int	name;
-		caddr_t	val;
-		int	*avalsize;
+		syscallarg(int)	s;
+		syscallarg(int)	level;
+		syscallarg(int)	name;
+		syscallarg(caddr_t)	val;
+		syscallarg(int *) avalsize;
 	} *uap = (struct a *)u->u_ap;
 	register struct file *fp;
 	struct mbuf *m = NULL, *m_free();
@@ -688,9 +689,9 @@ void
 getsockname()
 {
 	register struct a {
-		int	fdes;
-		caddr_t	asa;
-		int	*alen;
+		syscallarg(int)	fdes;
+		syscallarg(caddr_t)	asa;
+		syscallarg(int *) alen;
 	} *uap = (struct a *)u->u_ap;
 	register struct file *fp;
 	struct mbuf *m;
@@ -722,13 +723,13 @@ getsockname()
 /*
  * Get name of peer for connected socket.
  */
-void
+
 getpeername()
 {
 	register struct a {
-		int	fdes;
-		caddr_t	asa;
-		int	*alen;
+		syscallarg(int) fdes;
+		syscallarg(caddr_t)	asa;
+		syscallarg(int *) alen;
 	} *uap = (struct a *)u->u_ap;
 	register struct file *fp;
 	struct mbuf *m;
@@ -736,7 +737,7 @@ getpeername()
 	char sabuf[MSIZE];
 
 	if (netoff)
-		return(u->u_error = ENETDOWN);
+		return (u->u_error = ENETDOWN);
 	fp = gtsockf(uap->fdes);
 	if (fp == 0)
 		return;

@@ -45,39 +45,43 @@
 
 #define	syscallarg(x)	union { x datum; register_t pad; }
 
-/* Unused */
+/* UN-USED */
 struct exit_args {
 	syscallarg(int) rval;
 };
 
-/* Unused */
+/* UN-USED */
 struct read_args {
 	syscallarg(int) fd;
 	syscallarg(char *) buf;
 	syscallarg(u_int) nbyte;
 };
 
+/* UN-USED */
 struct write_args {
 	syscallarg(int) fd;
 	syscallarg(char *) buf;
 	syscallarg(u_int) nbyte;
 };
 
+/* UN-USED */
 struct open_args {
 	syscallarg(char *) path;
 	syscallarg(int) flags;
 	syscallarg(int) mode;
 };
 
+/* UN-USED */
 struct close_args {
 	syscallarg(int) fd;
 };
 
 struct sysarch_args {
-	int  op;
-	void *parms;
+	syscallarg(int)    op;
+	syscallarg(void *) parms;
 };
 
+/* UN-USED */
 struct wait4_args {
 	syscallarg(int) pid;
 	syscallarg(int *) status;
@@ -152,10 +156,12 @@ struct unmount_args {
 	syscallarg(int) flags;
 };
 
+/* UN-USED */
 struct setuid_args {
 	syscallarg(uid_t) uid;
 };
 
+/* UN-USED */
 struct ptrace_args {
 	syscallarg(int) req;
 	syscallarg(pid_t) pid;
@@ -236,6 +242,7 @@ struct dup_args {
 	syscallarg(u_int) fd;
 };
 
+/* UN-USED */
 struct profil_args {
 	syscallarg(caddr_t) samples;
 	syscallarg(u_int) size;
@@ -250,34 +257,41 @@ struct ktrace_args {
 	syscallarg(int) pid;
 };
 
+/* UN-USED */
 struct sigaction_args {
 	syscallarg(int) signum;
 	syscallarg(struct sigaction *) nsa;
 	syscallarg(struct sigaction *) osa;
 };
 
+/* UN-USED */
 struct sigprocmask_args {
 	syscallarg(int) how;
 	syscallarg(sigset_t) mask;
 };
 
+/* UN-USED */
 struct getlogin_args {
 	syscallarg(char *) namebuf;
 	syscallarg(u_int) namelen;
 };
 
+/* UN-USED */
 struct setlogin_args {
 	syscallarg(char *) namebuf;
 };
 
+/* UN-USED */
 struct acct_args {
 	syscallarg(char *) path;
 };
 
+/* UN-USED */
 struct sigaltstack_args {
 	syscallarg(struct sigaltstack *) nss;
 	syscallarg(struct sigaltstack *) oss;
 };
+
 
 struct ioctl_args {
 	syscallarg(int) fd;
@@ -285,6 +299,7 @@ struct ioctl_args {
 	syscallarg(caddr_t) data;
 };
 
+/* UN-USED */
 struct reboot_args {
 	syscallarg(int) opt;
 };
@@ -558,6 +573,7 @@ struct getrusage_args {
 	syscallarg(struct rusage *) rusage;
 };
 
+
 struct getsockopt_args {
 	syscallarg(int) s;
 	syscallarg(int) level;
@@ -582,6 +598,7 @@ struct writev_args {
 	syscallarg(u_int) iovcnt;
 };
 
+/* UN-USED */
 struct settimeofday_args {
 	syscallarg(struct timeval *) tv;
 	syscallarg(struct timezone *) tzp;
@@ -651,11 +668,13 @@ struct sendto_args {
 	syscallarg(int) tolen;
 };
 
+/* UN-USED */
 struct shutdown_args {
 	syscallarg(int) s;
 	syscallarg(int) how;
 };
 
+/* UN-USED */
 struct socketpair_args {
 	syscallarg(int) domain;
 	syscallarg(int) type;
@@ -676,6 +695,7 @@ struct utimes_args {
 	syscallarg(char *) path;
 	syscallarg(struct timeval *) tptr;
 };
+
 
 struct adjtime_args {
 	syscallarg(struct timeval *) delta;
@@ -720,6 +740,7 @@ struct compat_43_getsockname_args {
 	syscallarg(int *) alen;
 };
 
+/* UN-USED */
 struct nfssvc_args {
 	syscallarg(int) flag;
 	syscallarg(caddr_t) argp;
@@ -747,14 +768,17 @@ struct getfh_args {
 	syscallarg(fhandle_t *) fhp;
 };
 
+/* UN-USED */
 struct setgid_args {
 	syscallarg(gid_t) gid;
 };
 
+/* UN-USED */
 struct setegid_args {
 	syscallarg(gid_t) egid;
 };
 
+/* UN-USED */
 struct seteuid_args {
 	syscallarg(uid_t) euid;
 };
@@ -806,15 +830,18 @@ struct fpathconf_args {
 	syscallarg(int) name;
 };
 
+/* UN-USED */
 struct getrlimit_args {
 	syscallarg(u_int) which;
 	syscallarg(struct rlimit *) rlp;
 };
 
+/* UN-USED */
 struct setrlimit_args {
 	syscallarg(u_int) which;
 	syscallarg(struct rlimit *) rlp;
 };
+
 
 struct getdirentries_args {
 	syscallarg(int) fd;

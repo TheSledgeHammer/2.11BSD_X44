@@ -16,7 +16,6 @@
 #include <sys/ptrace.h>
 
 #include <sys/mount.h>
-#include <sys/syscallargs.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_page.h>
@@ -55,10 +54,10 @@ ptrace()
 {
 	register struct proc *p;
 	register struct a {
-		int		req;
-		pid_t	pid;
-		caddr_t addr;
-		int		data;
+		syscallarg(int) req;
+		syscallarg(pid_t) pid;
+		syscallarg(caddr_t) addr;
+		syscallarg(int) data;
 	} *uap;
 
 	uap = (struct a *)u->u_ap;

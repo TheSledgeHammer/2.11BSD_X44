@@ -355,10 +355,10 @@ void
 profil()
 {
 	register struct a {
-		short	*bufbase;
-		unsigned bufsize;
-		unsigned pcoffset;
-		unsigned pcscale;
+		syscallarg(short *) bufbase;
+		syscallarg(unsigned) bufsize;
+		syscallarg(unsigned) pcoffset;
+		syscallarg(unsigned) pcscale;
 	} *uap = (struct a *)u->u_ap;
 	register struct uprof *upp = &u->u_prof;
 

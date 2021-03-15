@@ -63,10 +63,12 @@ extern char	runout;					/* scheduling flag */
 extern int	runrun;					/* scheduling flag */
 extern char	curpri;					/* more scheduling */
 
-#define	SCARG(p,k)	((p)->k.datum)	/* get arg from args pointer */
-
 extern int icode[];					/* user init code */
 extern int szicode;					/* its size */
+
+#define	SCARG(p,k)		((p)->k.datum)	/* get arg from args pointer */
+/* system call args */
+#define	syscallarg(x)	union { x datum; register_t pad; }
 
 /*
  * Structure of the system-entry table

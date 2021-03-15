@@ -53,6 +53,7 @@
 #include <sys/exec_linker.h>
 #include <sys/kernel.h>
 #include <sys/mount.h>
+#include <sys/malloc.h>
 #include <sys/map.h>
 #include <sys/proc.h>
 #include <sys/resourcevar.h>
@@ -243,6 +244,9 @@ main(framep)
 	/* Initialize the file systems. */
 	vfsinit();
 
+	/* Initialize kqueue. */
+	kqueue_init();
+
 	/* Start real time and statistics clocks. */
 	initclocks();
 
@@ -412,7 +416,7 @@ start_init(p, framep)
 		 * Move out the arg pointers.
 		 */
 		uap = (char**) ((long) ucp & ~ALIGNBYTES);
-		(void) suword((caddr_t) --uap, 0); /* terminator */
+		(void) suword((caddr_t) --uap, 0); 				/* terminator */
 		if (options != 0)
 			(void) suword((caddr_t) --uap, (long) arg1);
 		(void) suword((caddr_t) --uap, (long) arg0);
@@ -420,9 +424,9 @@ start_init(p, framep)
 		/*
 		 * Point at the arguments.
 		 */
-		SCARG(&args, fname) = arg0;
-		SCARG(&args, argp) = uap;
-		SCARG(&args, envp) = NULL;
+		&args->fname = arg0;
+		&args->argp = uap;
+		&args->envp = NULL;
 
 		/*
 		 * Now try to exec the program.  If can't for any reason

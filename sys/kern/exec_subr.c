@@ -43,6 +43,8 @@
 #include <sys/resourcevar.h>
 
 #include <vm/include/vm.h>
+#include <vm/include/vm_object.h>
+#include <vm/include/vm_pager.h>
 
 void
 new_vmcmd(struct exec_vmcmd_set *evsp, int (*proc)(struct proc * p, struct exec_vmcmd *),
@@ -115,7 +117,7 @@ vmcmd_map_pagedvn(elp)
 	struct vmspace *vmspace = elp->el_proc->p_vmspace;
 	struct exec_vmcmd *cmd = elp->el_vmcmds->evs_cmds;
 	struct vnode *vp = elp->el_vnodep;
-	struct vm_pager *vpgr;
+	struct pager_struct *vpgr;
 	struct vm_object *vobj;
 	int error;
 	vm_prot_t prot, maxprot;
@@ -135,11 +137,12 @@ vmcmd_map_pagedvn(elp)
 		return (EINVAL);
 
 	vpgr = vnode_pager_alloc(cmd->ev_vnodep, cmd->ev_size, VM_PROT_READ | VM_PROT_EXECUTE, cmd->ev_offset);
-	if(vpgr) {
-		vobj = vm_object_lookup(vpgr);
-		if (vobj == NULL) {
-			return (ENOMEM);
-		}
+	if(vpgr == NULL) {
+		return (ENOMEM);
+	}
+	vobj = vm_object_lookup(vpgr);
+	if (vobj == NULL) {
+		return (ENOMEM);
 	}
 
 	VREF(vp);
@@ -185,8 +188,6 @@ vmcmd_map_readvn(elp)
 	cmd->ev_size += diff;
 
 	error = vm_allocate(&vmspace->vm_map, &cmd->ev_addr, cmd->ev_size, 0);
-
-	//error = vm_mmap(&vmspace->vm_map, cmd->ev_addr, cmd->ev_size, VM_PROT_ALL, VM_PROT_ALL, cmd->ev_flags, NULL, cmd->ev_offset);
 
 	if (error)
 		return error;
@@ -254,8 +255,6 @@ vmcmd_map_zero(elp)
 	maxprot = VM_PROT_ALL;
 
 	error = vm_allocate(&vmspace->vm_map, &cmd->ev_addr, cmd->ev_size, 0);
-
-	//error = vm_mmap(&vmspace->vm_map, &cmd->ev_addr, round_page(cmd->ev_size), prot, maxprot, cmd->ev_flags, NULL, cmd->ev_offset);
 
 	return error;
 }

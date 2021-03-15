@@ -44,9 +44,9 @@ cansignal(q, signum)
 
 	fill_from_u(q, &ruid, NULL, NULL);	/* XXX */
 	if	(curp->p_uid == 0 ||		/* c effective root */
-		 u->u_ruid == ruid ||		/* c real = t real */
+		 u->u_pcred->p_ruid == ruid ||		/* c real = t real */
 		 curp->p_uid == ruid ||		/* c effective = t real */
-		 u->u_ruid == q->p_uid ||	/* c real = t effective */
+		 u->u_pcred->p_ruid == q->p_uid ||	/* c real = t effective */
 		 curp->p_uid == q->p_uid ||	/* c effective = t effective */
 		 (signum == SIGCONT && inferior(q)))
 		return(1);
@@ -60,8 +60,8 @@ void
 sigstack()
 {
 	register struct a {
-		struct sigstack *nss;
-		struct sigstack *oss;
+		syscallarg(struct sigstack *) nss;
+		syscallarg(struct sigstack *) oss;
 	} *uap = (struct a*) u->u_ap;
 	struct sigstack ss;
 	register int error = 0;
@@ -87,8 +87,8 @@ void
 kill()
 {
 	register struct a {
-		int	pid;
-		int	signo;
+		syscallarg(int)	pid;
+		syscallarg(int)	signo;
 	} *uap = (struct a *)u->u_ap;
 	register struct proc *p;
 	register int error = 0;
@@ -138,8 +138,8 @@ void
 killpg()
 {
 	register struct a {
-		int	pgrp;
-		int	signo;
+		syscallarg(int)	pgrp;
+		syscallarg(int)	signo;
 	} *uap = (struct a *)u->u_ap;
 	register int error = 0;
 

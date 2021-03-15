@@ -241,19 +241,19 @@ struct kinfo_proc {
 #define HW_DEVCONF		10		/* node: device configuration */
 #define	HW_MAXID		11		/* number of valid hw ids */
 
-#define CTL_HW_NAMES { \
-	{ 0, 0 }, \
-	{ "machine", CTLTYPE_STRING }, \
-	{ "model", CTLTYPE_STRING }, \
-	{ "ncpu", CTLTYPE_INT }, \
-	{ "byteorder", CTLTYPE_INT }, \
-	{ "physmem", CTLTYPE_LONG }, \
-	{ "usermem", CTLTYPE_LONG }, \
-	{ "pagesize", CTLTYPE_INT }, \
-	{ "disknames", CTLTYPE_STRUCT }, \
-	{ "diskstats", CTLTYPE_STRUCT }, \
-	{ "floatingpoint", CTLTYPE_INT }, \
-	{ "devconf", CTLTYPE_NODE }, \
+#define CTL_HW_NAMES { 					\
+	{ 0, 0 }, 							\
+	{ "machine", CTLTYPE_STRING }, 		\
+	{ "model", CTLTYPE_STRING }, 		\
+	{ "ncpu", CTLTYPE_INT }, 			\
+	{ "byteorder", CTLTYPE_INT }, 		\
+	{ "physmem", CTLTYPE_LONG }, 		\
+	{ "usermem", CTLTYPE_LONG }, 		\
+	{ "pagesize", CTLTYPE_INT }, 		\
+	{ "disknames", CTLTYPE_STRUCT }, 	\
+	{ "diskstats", CTLTYPE_STRUCT }, 	\
+	{ "floatingpoint", CTLTYPE_INT }, 	\
+	{ "devconf", CTLTYPE_NODE }, 		\
 }
 
 /*
@@ -281,28 +281,28 @@ struct kinfo_proc {
 #define	USER_TZNAME_MAX			20	/* int: POSIX2_TZNAME_MAX */
 #define	USER_MAXID				21	/* number of valid user ids */
 
-#define	CTL_USER_NAMES { \
-	{ 0, 0 }, \
-	{ "cs_path", CTLTYPE_STRING }, \
-	{ "bc_base_max", CTLTYPE_INT }, \
-	{ "bc_dim_max", CTLTYPE_INT }, \
-	{ "bc_scale_max", CTLTYPE_INT }, \
-	{ "bc_string_max", CTLTYPE_INT }, \
-	{ "coll_weights_max", CTLTYPE_INT }, \
-	{ "expr_nest_max", CTLTYPE_INT }, \
-	{ "line_max", CTLTYPE_INT }, \
-	{ "re_dup_max", CTLTYPE_INT }, \
-	{ "posix2_version", CTLTYPE_INT }, \
-	{ "posix2_c_bind", CTLTYPE_INT }, \
-	{ "posix2_c_dev", CTLTYPE_INT }, \
-	{ "posix2_char_term", CTLTYPE_INT }, \
-	{ "posix2_fort_dev", CTLTYPE_INT }, \
-	{ "posix2_fort_run", CTLTYPE_INT }, \
-	{ "posix2_localedef", CTLTYPE_INT }, \
-	{ "posix2_sw_dev", CTLTYPE_INT }, \
-	{ "posix2_upe", CTLTYPE_INT }, \
-	{ "stream_max", CTLTYPE_INT }, \
-	{ "tzname_max", CTLTYPE_INT }, \
+#define	CTL_USER_NAMES { 					\
+	{ 0, 0 }, 								\
+	{ "cs_path", CTLTYPE_STRING }, 			\
+	{ "bc_base_max", CTLTYPE_INT }, 		\
+	{ "bc_dim_max", CTLTYPE_INT }, 			\
+	{ "bc_scale_max", CTLTYPE_INT }, 		\
+	{ "bc_string_max", CTLTYPE_INT }, 		\
+	{ "coll_weights_max", CTLTYPE_INT }, 	\
+	{ "expr_nest_max", CTLTYPE_INT }, 		\
+	{ "line_max", CTLTYPE_INT }, 			\
+	{ "re_dup_max", CTLTYPE_INT }, 			\
+	{ "posix2_version", CTLTYPE_INT }, 		\
+	{ "posix2_c_bind", CTLTYPE_INT }, 		\
+	{ "posix2_c_dev", CTLTYPE_INT }, 		\
+	{ "posix2_char_term", CTLTYPE_INT }, 	\
+	{ "posix2_fort_dev", CTLTYPE_INT }, 	\
+	{ "posix2_fort_run", CTLTYPE_INT }, 	\
+	{ "posix2_localedef", CTLTYPE_INT }, 	\
+	{ "posix2_sw_dev", CTLTYPE_INT }, 		\
+	{ "posix2_upe", CTLTYPE_INT }, 			\
+	{ "stream_max", CTLTYPE_INT }, 			\
+	{ "tzname_max", CTLTYPE_INT }, 			\
 }
 
 /*
@@ -348,8 +348,7 @@ extern struct ctldebug debug15, debug16, debug17, debug18, debug19;
  * interpreted.  The namelen parameter is the number of integers in
  * the name.
  */
-typedef int (sysctlfn)
-    (int *, u_int, void *, size_t *, void *, size_t, struct proc *);
+typedef int (sysctlfn)(int *, u_int, void *, size_t *, void *, size_t, struct proc *);
 
 int sysctl_int (void *, size_t *, void *, size_t, int *);
 int sysctl_rdint (void *, size_t *, void *, int);
@@ -361,7 +360,6 @@ void fill_eproc (struct proc *, struct eproc *);
 #else	/* !KERNEL */
 #include <sys/cdefs.h>
 
-//int	sysctl();
 __BEGIN_DECLS
 int	sysctl (int *, u_int, void *, size_t *, void *, size_t);
 __END_DECLS

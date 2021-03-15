@@ -40,7 +40,7 @@
 #include <sys/kthread.h>
 
 struct kthreadpool_thread 				ktpool_thread;
-lock_t	 								kthreadpools_lock;
+struct lock	 							*kthreadpools_lock;
 
 struct kthreadpool_unbound {
 	struct kthreadpool					ktpu_pool;

@@ -201,15 +201,6 @@ static int					comconsattached;
 static int 					comconsrate;
 static tcflag_t 			comconscflag;
 
-static int ppscap =
-	PPS_TSFMT_TSPEC |
-	PPS_CAPTUREASSERT | 
-	PPS_CAPTURECLEAR |
-#ifdef  PPS_SYNC 
-	PPS_HARDPPSONASSERT | PPS_HARDPPSONCLEAR |
-#endif	/* PPS_SYNC */
-	PPS_OFFSETASSERT | PPS_OFFSETCLEAR;
-
 #ifndef __GENERIC_SOFT_INTERRUPTS
 #ifdef __NO_SOFT_SERIAL_INTERRUPT
 volatile int	com_softintr_scheduled;
@@ -1034,103 +1025,6 @@ comioctl(dev, cmd, data, flag, p)
 		*(int*) data = com_to_tiocm(sc);
 		break;
 
-	case PPS_IOC_CREATE:
-		break;
-
-	case PPS_IOC_DESTROY:
-		break;
-
-	case PPS_IOC_GETPARAMS: {
-		pps_params_t *pp;
-		pp = (pps_params_t*) data;
-		*pp = sc->ppsparam;
-		break;
-	}
-
-	case PPS_IOC_SETPARAMS: {
-		pps_params_t *pp;
-		int mode;
-		pp = (pps_params_t*) data;
-		if (pp->mode & ~ppscap) {
-			error = EINVAL;
-			break;
-		}
-		sc->ppsparam = *pp;
-		/*
-		 * Compute msr masks from user-specified timestamp state.
-		 */
-		mode = sc->ppsparam.mode;
-#ifdef	PPS_SYNC
-		if (mode & PPS_HARDPPSONASSERT) {
-			mode |= PPS_CAPTUREASSERT;
-			/* XXX revoke any previous HARDPPS source */
-		}
-		if (mode & PPS_HARDPPSONCLEAR) {
-			mode |= PPS_CAPTURECLEAR;
-			/* XXX revoke any previous HARDPPS source */
-		}
-#endif	/* PPS_SYNC */
-		switch (mode & PPS_CAPTUREBOTH) {
-		case 0:
-			sc->sc_ppsmask = 0;
-			break;
-
-		case PPS_CAPTUREASSERT:
-			sc->sc_ppsmask = MSR_DCD;
-			sc->sc_ppsassert = MSR_DCD;
-			sc->sc_ppsclear = -1;
-			break;
-
-		case PPS_CAPTURECLEAR:
-			sc->sc_ppsmask = MSR_DCD;
-			sc->sc_ppsassert = -1;
-			sc->sc_ppsclear = 0;
-			break;
-
-		case PPS_CAPTUREBOTH:
-			sc->sc_ppsmask = MSR_DCD;
-			sc->sc_ppsassert = MSR_DCD;
-			sc->sc_ppsclear = 0;
-			break;
-
-		default:
-			error = EINVAL;
-			break;
-		}
-		break;
-	}
-
-	case PPS_IOC_GETCAP:
-		*(int*) data = ppscap;
-		break;
-
-	case PPS_IOC_FETCH: {
-		pps_info_t *pi;
-		pi = (pps_info_t*) data;
-		*pi = sc->ppsinfo;
-		break;
-	}
-
-	case TIOCDCDTIMESTAMP: /* XXX old, overloaded  API used by xntpd v3 */
-		/*
-		 * Some GPS clocks models use the falling rather than
-		 * rising edge as the on-the-second signal. 
-		 * The old API has no way to specify PPS polarity.
-		 */
-		sc->sc_ppsmask = MSR_DCD;
-#ifndef PPS_TRAILING_EDGE
-		sc->sc_ppsassert = MSR_DCD;
-		sc->sc_ppsclear = -1;
-		TIMESPEC_TO_TIMEVAL((struct timeval*) data,
-				&sc->ppsinfo.assert_timestamp);
-#else
-		sc->sc_ppsassert = -1
-		sc->sc_ppsclear = 0;
-		TIMESPEC_TO_TIMEVAL((struct timeval *)data, 
-		    &sc->ppsinfo.clear_timestamp);
-#endif
-		break;
-
 	default:
 		error = ENOTTY;
 		break;
@@ -1146,7 +1040,7 @@ comioctl(dev, cmd, data, flag, p)
 	return (error);
 }
 
-integrate void
+static inline void
 com_schedrx(sc)
 	struct com_softc *sc;
 {
@@ -2020,47 +1914,6 @@ comintr(arg)
 		msr = bus_space_read_1(iot, ioh, com_msr);
 		delta = msr ^ sc->sc_msr;
 		sc->sc_msr = msr;
-		/*
-		 * Pulse-per-second (PSS) signals on edge of DCD?
-		 * Process these even if line discipline is ignoring DCD.
-		 */
-		if (delta & sc->sc_ppsmask) {
-			struct timeval tv;
-			if ((msr & sc->sc_ppsmask) == sc->sc_ppsassert) {
-				/* XXX nanotime() */
-				microtime(&tv);
-				TIMEVAL_TO_TIMESPEC(&tv, &sc->ppsinfo.assert_timestamp);
-				if (sc->ppsparam.mode & PPS_OFFSETASSERT) {
-					timespecadd(&sc->ppsinfo.assert_timestamp,
-							&sc->ppsparam.assert_offset,
-							&sc->ppsinfo.assert_timestamp);
-				}
-
-#ifdef PPS_SYNC
-				if (sc->ppsparam.mode & PPS_HARDPPSONASSERT)
-					hardpps(&tv, tv.tv_usec);
-#endif
-				sc->ppsinfo.assert_sequence++;
-				sc->ppsinfo.current_mode = sc->ppsparam.mode;
-
-			} else if ((msr & sc->sc_ppsmask) == sc->sc_ppsclear) {
-				/* XXX nanotime() */
-				microtime(&tv);
-				TIMEVAL_TO_TIMESPEC(&tv, &sc->ppsinfo.clear_timestamp);
-				if (sc->ppsparam.mode & PPS_OFFSETCLEAR) {
-					timespecadd(&sc->ppsinfo.clear_timestamp,
-							&sc->ppsparam.clear_offset,
-							&sc->ppsinfo.clear_timestamp);
-				}
-
-#ifdef PPS_SYNC
-				if (sc->ppsparam.mode & PPS_HARDPPSONCLEAR)
-					hardpps(&tv, tv.tv_usec);
-#endif
-				sc->ppsinfo.clear_sequence++;
-				sc->ppsinfo.current_mode = sc->ppsparam.mode;
-			}
-		}
 
 		/*
 		 * Process normal status changes

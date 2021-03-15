@@ -124,8 +124,9 @@
 #define M_OVERLAY		72	/* Use Overlay Space Memory */
 #define M_USB			73	/* USB general */
 #define	M_TTY			74	/* allocated tty structures */
-#define	M_TEMP			75	/* misc temporary data buffers */
-#define	M_LAST			76	/* Must be last type + 1 */
+#define M_KEVENT 		75	/* kevents/knotes */
+#define	M_TEMP			76	/* misc temporary data buffers */
+#define	M_LAST			77	/* Must be last type + 1 */
 
 #define INITKMEMNAMES {						\
 	"free",			/* 0 M_FREE */ 			\
@@ -203,6 +204,7 @@
 	"overlay space",/* 72 M_OVERLAY */		\
 	"usb",			/* 73 M_USB */			\
 	"tty",			/* 74 M_TTY */			\
+	"kevent",		/* 75 M_KEVENT */		\
 	"temp",			/* 75 M_TEMP */ 		\
 }
 

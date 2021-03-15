@@ -46,6 +46,7 @@
 #include <sys/user.h>
 #include <sys/kernel.h>
 #include <sys/proc.h>
+
 #include <sys/file.h>
 #include <sys/systm.h>
 #include <sys/vnode.h>
@@ -55,12 +56,9 @@
 #include <sys/fcntl.h>
 #include <sys/malloc.h>
 #include <sys/filedesc.h>
-
 #include <sys/unistd.h>
 #include <sys/resourcevar.h>
-
 #include <sys/mount.h>
-
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/syslog.h>
@@ -82,7 +80,7 @@ void
 dup()
 {
 	register struct a {
-		int	i;
+		syscallarg(int)	i;
 	} *uap = (struct a *) u->u_ap;
 	register struct file *fp;
 	register int j, fd, error;
@@ -105,7 +103,7 @@ void
 dup2()
 {
 	register struct a {
-		int	i, j;
+		syscallarg(int)	i, j;
 	} *uap = (struct a *) u->u_ap;
 	register struct file *fp;
 
@@ -147,9 +145,9 @@ fcntl()
 {
 	register struct file *fp;
 	register struct a {
-		int	fdes;
-		int	cmd;
-		int	arg;
+		syscallarg(int)	fdes;
+		syscallarg(int)	cmd;
+		syscallarg(int)	arg;
 	} *uap;
 	register i;
 	register char *pop;
@@ -211,7 +209,6 @@ fset(fp, bit, value)
 	register struct file *fp;
 	int bit, value;
 {
-
 	if (value)
 		fp->f_flag |= bit;
 	else
@@ -268,7 +265,7 @@ void
 close()
 {
 	register struct a {
-		int	i;
+		syscallarg(int)	i;
 	} *uap = (struct a *)u->u_ap;
 	register struct file *fp;
 
@@ -285,8 +282,8 @@ fstat()
 {
 	register struct file *fp;
 	register struct a {
-		int	fdes;
-		struct	stat *sb;
+		syscallarg(int)	fdes;
+		syscallarg(struct stat *) sb;
 	} *uap;
 	struct stat ub;
 
@@ -319,7 +316,6 @@ static int
 ufalloc(i)
 	register int i;
 {
-
 	for (; i < NOFILE; i++)
 		if (u->u_ofile[i] == NULL) {
 			u->u_r.r_val1 = i;
@@ -419,8 +415,8 @@ void
 flock()
 {
 	register struct a {
-		int	fd;
-		int	how;
+		syscallarg(int)	fd;
+		syscallarg(int)	how;
 	} *uap = (struct a *)u->u_ap;
 
 	register struct file *fp;

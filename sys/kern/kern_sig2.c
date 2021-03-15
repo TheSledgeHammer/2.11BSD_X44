@@ -57,15 +57,17 @@
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/user.h>		/* for coredump */
+#include <sys/event.h>
+#include <sys/eventvar.h>
 
 int
 sigaction()
 {
 	register struct a {
-		int	(*sigtramp)();
-		int	signum;
-		struct	sigaction *nsa;
-		struct	sigaction *osa;
+		syscallarg(int)					(*sigtramp)();
+		syscallarg(int)					signum;
+		syscallarg(struct sigaction *) 	nsa;
+		syscallarg(struct sigaction *)	osa;
 	} *uap = (struct a *)u->u_ap;
 
 	struct sigaction vec;
@@ -209,9 +211,9 @@ int
 sigprocmask()
 {
 	register struct a {
-		int how;
-		sigset_t *set;
-		sigset_t *oset;
+		syscallarg(int) how;
+		syscallarg(sigset_t *) set;
+		syscallarg(sigset_t *) oset;
 	} *uap = (struct a *)u->u_ap;
 
 	int error = 0;
@@ -255,7 +257,7 @@ int
 sigpending()
 {
 	register struct a {
-		struct sigset_t *set;
+		syscallarg(struct sigset_t *) set;
 	} *uap = (struct a*) u->u_ap;
 
 	register int error = 0;
@@ -278,7 +280,7 @@ int
 sigsuspend()
 {
 	register struct a {
-		struct sigset_t *set;
+		syscallarg(struct sigset_t *) set;
 	} *uap = (struct a *)u->u_ap;
 
 	sigset_t nmask;
@@ -305,8 +307,8 @@ int
 sigaltstack()
 {
 	register struct a {
-		struct sigaltstack * nss;
-		struct sigaltstack * oss;
+		syscallarg(struct sigaltstack *) nss;
+		syscallarg(struct sigaltstack *) oss;
 	} *uap = (struct a *)u->u_ap;
 
 	struct sigaltstack ss;
@@ -345,9 +347,10 @@ out:
 int
 sigwait()
 {
+	struct sigset s;
 	register struct a {
-		sigset_t *set;
-		int *sig;
+		syscallarg(sigset_t *) set;
+		syscallarg(int *) sig;
 	} *uap = (struct a *)u->u_ap;
 
 	sigset_t wanted, sigsavail;
@@ -386,7 +389,7 @@ out:
 fetchi()
 {
 	struct a {
-		caddr_t iaddr;
+		syscallarg(caddr_t) iaddr;
 	} *uap = (struct a *)u->u_ap;
 
 #ifdef NONSEPARATE
@@ -409,3 +412,50 @@ fperr()
 	u->u_r.r_val2 = (int)u->u_fperr.f_fea;
 //	return (u->u_error);
 }
+
+static int
+filt_sigattach(struct knote *kn)
+{
+	struct proc *p = curproc;
+
+	kn->kn_obj = p;
+	kn->kn_flags |= EV_CLEAR;	/* automatically set */
+
+	SIMPLEQ_INSERT_HEAD(&p->p_klist, kn, kn_selnext);
+
+	return 0;
+}
+
+static void
+filt_sigdetach(struct knote *kn)
+{
+	struct proc *p = kn->kn_obj;
+
+	SIMPLEQ_REMOVE(&p->p_klist, kn, knote, kn_selnext);
+}
+
+/*
+ * Signal knotes are shared with proc knotes, so we apply a mask to
+ * the hint in order to differentiate them from process hints.  This
+ * could be avoided by using a signal-specific knote list, but probably
+ * isn't worth the trouble.
+ */
+static int
+filt_signal(struct knote *kn, long hint)
+{
+
+	if (hint & NOTE_SIGNAL) {
+		hint &= ~NOTE_SIGNAL;
+
+		if (kn->kn_id == hint)
+			kn->kn_data++;
+	}
+	return (kn->kn_data != 0);
+}
+
+const struct filterops sig_filtops = {
+	.f_isfd = 0,
+	.f_attach = filt_sigattach,
+	.f_detach = filt_sigdetach,
+	.f_event = filt_signal,
+};

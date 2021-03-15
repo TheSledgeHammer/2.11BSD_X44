@@ -65,6 +65,11 @@ struct filedesc {
 	u_short				fd_cmask;			/* mask for file creation */
 	u_short				fd_refcnt;			/* reference count */
 	struct lock_object 	fd_slock;
+
+	int					fd_knlistsize;		/* size of fd_knlist */
+	struct klist		*fd_knlist;			/* list of attached fd knotes, indexed by fd number */
+	u_long				fd_knhashmask;		/* size of fd_knhash */
+	struct klist		*fd_knhash;			/* hash table for attached non-fd knotes */
 };
 
 /*

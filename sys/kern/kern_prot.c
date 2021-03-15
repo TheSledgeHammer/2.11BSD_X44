@@ -37,7 +37,7 @@ void
 getpgrp()
 {
 	register struct a {
-		int	pid;
+		syscallarg(int)	pid;
 	} *uap = (struct a *)u->u_ap;
 	register struct proc *p;
 
@@ -101,8 +101,8 @@ void
 getgroups()
 {
 	register struct a {
-		u_int 	gidsetsize;
-		int 	*gidset;
+		syscallarg(u_int) gidsetsize;
+		syscallarg(int *) gidset;
 	} *uap = (struct a*) u->u_ap;
 	register gid_t *gp;
 
@@ -128,8 +128,8 @@ setpgrp()
 {
 	register struct proc *p;
 	register struct a {
-		int	pid;
-		int	pgrp;
+		syscallarg(int)	pid;
+		syscallarg(int)	pgrp;
 	} *uap = (struct a *)u->u_ap;
 
 	if (uap->pid == 0)		/* silly... */
@@ -151,8 +151,8 @@ int
 setpgid()
 {
 	register struct a {
-			pid_t 	pid;
-			pid_t	pgid;
+		syscallarg(pid_t) pid;
+		syscallarg(pid_t) pgid;
 	}*uap = (struct a *) u->u_ap;
 
 	register struct proc *targp;		/* target process */
@@ -189,8 +189,8 @@ void
 setreuid()
 {
 	struct a {
-		int	ruid;
-		int	euid;
+		syscallarg(int)	ruid;
+		syscallarg(int)	euid;
 	} *uap = (struct a *)u.u_ap;
 
 	register int ruid, euid;
@@ -219,8 +219,8 @@ void
 setregid()
 {
 	register struct a {
-		int rgid;
-		int egid;
+		syscallarg(int) rgid;
+		syscallarg(int) egid;
 	} *uap = (struct a*) u->u_ap;
 	register int rgid, egid;
 
@@ -250,8 +250,8 @@ void
 setgroups()
 {
 	register struct	a {
-		u_int	gidsetsize;
-		int		*gidset;
+		syscallarg(u_int) gidsetsize;
+		syscallarg(int)	  *gidset;
 	} *uap = (struct a *)u->u_ap;
 
 	register gid_t *gp;
@@ -321,8 +321,8 @@ int
 getlogin()
 {
 	register struct a {
-		char *namebuf;
-		u_int namelen;
+		syscallarg(char *) namebuf;
+		syscallarg(u_int) namelen;
 	} *uap = (struct a *)u->u_ap;
 
 	register int error;
@@ -344,7 +344,7 @@ int
 setlogin()
 {
 	register struct a {
-		char *namebuf;
+		syscallarg(char *) namebuf;
 	} *uap = (struct a *)u->u_ap;
 
 	register int error;

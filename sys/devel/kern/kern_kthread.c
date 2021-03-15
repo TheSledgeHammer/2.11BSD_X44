@@ -47,7 +47,10 @@ kthread_init(p, kt)
 	register_t rval[2];
 	int error;
 
-	/* initialize current kthread 0 */
+	/* initialize current kthread0 from proc overseer */
+	&kthread0 = &proc0->p_kthreado;
+
+	/* initialize current kthread from kthread0 */
     kt = &kthread0;
     curkthread = kt;
 
@@ -154,28 +157,8 @@ kthread_exit(rv)
 	return (0);
 }
 
-int
-kthread_detach(kthread_t kt)
-{
-	return (0);
-}
 
-int
-kthread_equal(kthread_t kt1, kthread_t kt2)
-{
-	if(kt1 > kt2) {
-		return (1);
-	} else if(kt1 < kt2) {
-		return (-1);
-	}
-	return (0);
-}
 
-int
-kthread_kill(kthread_t kt)
-{
-	return (0);
-}
 
 /* Threadpool's FIFO Queue (IPC) */
 void

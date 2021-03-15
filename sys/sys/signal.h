@@ -52,13 +52,15 @@
 int	(*signal())();
 #endif
 
+typedef u_long 		sigset_t;
+
 /*
  * Signal vector "template" used in sigaction call.
  */
 struct	sigaction {
-	int			(*sa_handler)();/* signal handler */
-	sigset_t 	sa_mask;		/* signal mask to apply */
-	int			sa_flags;		/* see signal options below */
+	int				(*sa_handler)();/* signal handler */
+	sigset_t 		sa_mask;		/* signal mask to apply */
+	int				sa_flags;		/* see signal options below */
 };
 
 #define SA_ONSTACK		0x0001	/* take signal on signal stack */
@@ -91,9 +93,9 @@ struct	sigaltstack {
  * Signal vector "template" used in sigvec call.
  */
 struct	sigvec {
-	int		(*sv_handler)();	/* signal handler */
-	long 	sv_mask;			/* signal mask to apply */
-	int		sv_flags;			/* see signal options below */
+	int				(*sv_handler)();	/* signal handler */
+	long 			sv_mask;			/* signal mask to apply */
+	int				sv_flags;			/* see signal options below */
 };
 #define SV_ONSTACK		SA_ONSTACK	/* take signal on signal stack */
 #define SV_INTERRUPT	SA_RESTART	/* same bit, opposite sense */
@@ -104,8 +106,8 @@ struct	sigvec {
  * Structure used in sigstack call.
  */
 struct	sigstack {
-	char	*ss_sp;			/* signal stack pointer */
-	int		ss_onstack;		/* current status */
+	char			*ss_sp;			/* signal stack pointer */
+	int				ss_onstack;		/* current status */
 };
 #define SS_ONSTACK	0x0001	/* take signals on alternate stack */
 #define SS_DISABLE	0x0004	/* disable taking signals on alternate stack */
@@ -143,7 +145,7 @@ struct sigcontext {
 #ifndef KERNEL
 #include <sys/cdefs.h>
 extern long	sigblock(), sigsetmask();
-#define	BADSIG	SIG_ERR
+#define	BADSIG		SIG_ERR
 #endif
 
 #endif /* NSIG */

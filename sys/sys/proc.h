@@ -82,6 +82,7 @@ struct	proc {
 
     struct	emul		*p_emul;		/* Emulation information */
     const struct execsw *p_execsw;		/* Exec package information */
+    struct klist		p_klist;		/* Knotes attached to this process */
 
 /* End area that is zeroed on creation. */
 #define	p_endzero	    p_startcopy
@@ -134,7 +135,7 @@ struct	proc {
 	struct  k_rusage    p_kru;			/* exit information kernel */
 
 	//struct gsched		*p_gsched;		/* global scheduler */
-	//struct kthread	*p_kthreado;	/* kthread overseer (original kthread)  */
+	//struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
 	//char				*p_name;		/* (: name, optional */
 };
 #define	p_session		p_pgrp->pg_session

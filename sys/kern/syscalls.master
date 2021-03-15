@@ -201,6 +201,8 @@
 157	STD			{ int lfs_markv(); }
 158	STD			{ int lfs_segclean(); }
 159	STD			{ int lfs_segwait(); }
-; Machine Related Syscalls
+; New Syscalls
 160 STD         { int sysarch(); }
 161 STD			{ int kenv(); }
+162 STD         { int kevent(); }
+163 STD         { int kqueue(); }

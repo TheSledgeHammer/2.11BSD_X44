@@ -91,8 +91,7 @@ mount(p, uap, retval)
 	/*
 	 * Get vnode to be covered
 	 */
-	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE,
-	    SCARG(uap, path), p);
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, SCARG(uap, path), p);
 	if (error == namei(&nd))
 		return (error);
 	vp = nd.ni_vp;
@@ -327,8 +326,7 @@ unmount(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE,
-	    SCARG(uap, path), p);
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, SCARG(uap, path), p);
 	if (error == namei(&nd))
 		return (error);
 	vp = nd.ni_vp;

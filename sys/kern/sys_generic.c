@@ -35,9 +35,9 @@ void
 read()
 {
 	register struct a {
-		int	fdes;
-		char	*cbuf;
-		unsigned count;
+		syscallarg(int)	fdes;
+		syscallarg(char	*) cbuf;
+		syscallarg(unsigned) count;
 	} *uap = (struct a *)u->u_ap;
 	struct uio auio;
 	struct iovec aiov;
@@ -54,9 +54,9 @@ void
 readv()
 {
 	register struct a {
-		int	fdes;
-		struct	iovec *iovp;
-		unsigned iovcnt;
+		syscallarg(int) fdes;
+		syscallarg(struct iovec *) iovp;
+		syscallarg(unsigned) iovcnt;
 	} *uap = (struct a *)u->u_ap;
 	struct uio auio;
 	struct iovec aiov[16];		/* XXX */
@@ -82,9 +82,9 @@ void
 write()
 {
 	register struct a {
-		int		fdes;
-		char	*cbuf;
-		unsigned count;
+		syscallarg(int) fdes;
+		syscallarg(char	*) cbuf;
+		syscallarg(unsigned) count;
 	} *uap = (struct a *)u->u_ap;
 	struct uio auio;
 	struct iovec aiov;
@@ -101,9 +101,9 @@ void
 writev()
 {
 	register struct a {
-		int	fdes;
-		struct	iovec *iovp;
-		unsigned iovcnt;
+		syscallarg(int)	fdes;
+		syscallarg(struct iovec *) iovp;
+		syscallarg(unsigned) iovcnt;
 	} *uap = (struct a *)u->u_ap;
 	struct uio auio;
 	struct iovec aiov[16];		/* XXX */
@@ -127,7 +127,7 @@ rwuio(uio)
 	register struct uio *uio;
 {
 	struct a {
-		int	fdes;
+		syscallarg(int)	fdes;
 	};
 	register struct file *fp;
 	register struct iovec *iov;
@@ -177,9 +177,9 @@ ioctl()
 {
 	register struct file *fp;
 	register struct a {
-		int	fdes;
-		long	cmd;
-		caddr_t	cmarg;
+		syscallarg(int)	fdes;
+		syscallarg(long) cmd;
+		syscallarg(caddr_t)	cmarg;
 	} *uap;
 	long com;
 	u_int k_com;
@@ -271,12 +271,12 @@ ioctl()
 int	nselcoll;
 
 struct pselect_args {
-	int					nd;
-	fd_set				*in;
-	fd_set				*ou;
-	fd_set				*ex;
-	struct	timespec 	*ts;
-	sigset_t			*maskp;
+	syscallarg(int)					nd;
+	syscallarg(fd_set *) 			in;
+	syscallarg(fd_set *) 			ou;
+	syscallarg(fd_set *) 			ex;
+	syscallarg(struct timespec *) 	ts;
+	syscallarg(sigset_t *) 			maskp;
 };
 
 /*
@@ -286,9 +286,11 @@ int
 select()
 {
 	struct uap {
-		int	nd;
-		fd_set	*in, *ou, *ex;
-		struct timeval *tv;
+		syscallarg(int)	nd;
+		syscallarg(fd_set *) in;
+		syscallarg(fd_set *) ou;
+		syscallarg(fd_set *) ex;
+		syscallarg(struct timeval *) tv;
 	} *uap = (struct uap *)u->u_ap;
 
 	register struct pselect_args *pselargs = (struct pselect_args *)uap;
@@ -333,125 +335,116 @@ select1(uap, is_pselect)
 	int ncoll, s;
 
 	bzero((caddr_t)ibits, sizeof(ibits));
-	bzero((caddr_t)obits, sizeof(obits));
+	bzero((caddr_t) obits, sizeof(obits));
 	if (uap->nd > NOFILE)
-		uap->nd = NOFILE;	/* forgiving, if slightly wrong */
+		uap->nd = NOFILE; /* forgiving, if slightly wrong */
 	ni = howmany(uap->nd, NFDBITS);
 
-#define	getbits(name, x) \
-	if (uap->name) { \
-		error = copyin((caddr_t)uap->name, (caddr_t)&ibits[x], \
-		    (unsigned)(ni * sizeof(fd_mask))); \
-		if (error) \
-			goto done; \
+#define	getbits(name, x) 										\
+	if (uap->name) { 											\
+		error = copyin((caddr_t)uap->name, (caddr_t)&ibits[x], 	\
+		    (unsigned)(ni * sizeof(fd_mask))); 					\
+		if (error) 												\
+			goto done; 											\
 	}
 	getbits(in, 0);
 	getbits(ou, 1);
 	getbits(ex, 2);
 #undef	getbits
 
-	if	(uap->maskp)
-		{
+	if (uap->maskp) {
 		error = copyin(uap->maskp, &sigmsk, sizeof(sigmsk));
 		sigmsk &= ~sigcantmask;
-		if	(error)
+		if (error)
 			goto done;
-		}
-	if	(uap->ts)
-		{
-		error = copyin((caddr_t)uap->ts, (caddr_t)&atv, sizeof (atv));
-		if	(error)
+	}
+	if (uap->ts) {
+		error = copyin((caddr_t) uap->ts, (caddr_t) &atv, sizeof(atv));
+		if (error)
 			goto done;
-/*
- * nanoseconds ('struct timespec') on a PDP-11 are stupid since a 50 or 60 hz
- * clock is all we have.   Keeping the names and logic made porting easier
- * though.
-*/
-		if	(is_pselect)
-			{
-			struct	timespec *ts = (struct timespec *)&atv;
+		/*
+		 * nanoseconds ('struct timespec') on a PDP-11 are stupid since a 50 or 60 hz
+		 * clock is all we have.   Keeping the names and logic made porting easier
+		 * though.
+		 */
+		if (is_pselect) {
+			struct timespec *ts = (struct timespec*) &atv;
 
-			if	(ts->tv_sec == 0 && ts->tv_nsec < 1000)
-					atv.tv_usec = 1;
-				else
-					atv.tv_usec = ts->tv_nsec / 1000;
-			}
-		if	(itimerfix(&atv))
-			{
+			if (ts->tv_sec == 0 && ts->tv_nsec < 1000)
+				atv.tv_usec = 1;
+			else
+				atv.tv_usec = ts->tv_nsec / 1000;
+		}
+		if (itimerfix(&atv)) {
 			error = EINVAL;
 			goto done;
-			}
+		}
 		s = splhigh();
 		time.tv_usec = lbolt * mshz;
 		timevaladd(&atv, &time);
 		splx(s);
-		}
+	}
 retry:
 	ncoll = nselcoll;
 	u->u_procp->p_flag |= P_SELECT;
 	error = selscan(ibits, obits, uap->nd, &u->u_r.r_val1);
-	if	(error || u->u_r.r_val1)
+	if (error || u->u_r.r_val1)
 		goto done;
 	s = splhigh();
-	if	(uap->ts)
-		{
+	if (uap->ts) {
 		/* this should be timercmp(&time, &atv, >=) */
-		if	((time.tv_sec > atv.tv_sec || (time.tv_sec == atv.tv_sec
-	    			&& lbolt * mshz >= atv.tv_usec)))
-			{
+		if ((time.tv_sec > atv.tv_sec
+				|| (time.tv_sec == atv.tv_sec && lbolt * mshz >= atv.tv_usec))) {
 			splx(s);
 			goto done;
-			}
-		timo = hzto(&atv);
-		if	(timo == 0)
-			timo = 1;
 		}
-	if	((u->u_procp->p_flag & P_SELECT) == 0 || nselcoll != ncoll)
-		{
+		timo = hzto(&atv);
+		if (timo == 0)
+			timo = 1;
+	}
+	if ((u->u_procp->p_flag & P_SELECT) == 0 || nselcoll != ncoll) {
 		u->u_procp->p_flag &= ~P_SELECT;
 		splx(s);
 		goto retry;
-		}
+	}
 	u->u_procp->p_flag &= ~P_SELECT;
-/*
- * If doing a pselect() need to set a temporary mask while in tsleep.  
- * Returning from pselect after catching a signal the old mask has to be
- * restored.  Save it here and set the appropriate flag.
-*/
-	if	(uap->maskp)
-		{
+	/*
+	 * If doing a pselect() need to set a temporary mask while in tsleep.
+	 * Returning from pselect after catching a signal the old mask has to be
+	 * restored.  Save it here and set the appropriate flag.
+	 */
+	if (uap->maskp) {
 		u->u_oldmask = u->u_procp->p_sigmask;
 		u->u_psflags |= SAS_OLDMASK;
 		u->u_procp->p_sigmask = sigmsk;
-		}
+	}
 	error = tsleep(&selwait, PSOCK | PCATCH, timo);
-	if	(uap->maskp)
+	if (uap->maskp)
 		u->u_procp->p_sigmask = u->u_oldmask;
 	splx(s);
-	if	(error == 0)
+	if (error == 0)
 		goto retry;
 done:
 	u->u_procp->p_flag &= ~P_SELECT;
 	/* select is not restarted after signals... */
-	if	(error == ERESTART)
+	if (error == ERESTART)
 		error = EINTR;
-	if	(error == EWOULDBLOCK)
+	if (error == EWOULDBLOCK)
 		error = 0;
 #define	putbits(name, x) \
 	if (uap->name && \
 		(error2 = copyout(&obits[x],uap->name,(ni*sizeof(fd_mask))))) \
 			error = error2;
 
-	if	(error == 0)
-		{
+	if (error == 0) {
 		int error2;
 
 		putbits(in, 0);
 		putbits(ou, 1);
 		putbits(ex, 2);
 #undef putbits
-		}
-	return(error);
+	}
+	return (error);
 }
 
 int
@@ -476,16 +469,17 @@ selscan(ibits, obits, nfd, retval)
 			break;
 
 		case 2:
-			flag = 0; break;
+			flag = 0;
+			break;
 		}
 		for (i = 0; i < nfd; i += NFDBITS) {
-			bits = ibits[which].fds_bits[i/NFDBITS];
+			bits = ibits[which].fds_bits[i / NFDBITS];
 			while ((j = ffs(bits)) && i + --j < nfd) {
 				bits &= ~(1L << j);
 				fp = u->u_ofile[i + j];
 				if (fp == NULL)
-					return(EBADF);
-				if((*fp->f_ops->fo_select)(fp, flag)) {
+					return (EBADF);
+				if ((*fp->f_ops->fo_select)(fp, flag)) {
 					FD_SET(i + j, &obits[which]);
 					n++;
 				}
@@ -493,7 +487,7 @@ selscan(ibits, obits, nfd, retval)
 		}
 	}
 	*retval = n;
-	return(0);
+	return (0);
 }
 
 /*ARGSUSED*/

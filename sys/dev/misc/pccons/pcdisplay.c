@@ -57,15 +57,15 @@
 #endif
 
 struct pcdisplay_config {
-	struct pcdisplayscreen pcs;
+	struct pcdisplayscreen 	pcs;
 	struct pcdisplay_handle dc_ph;
-	int mono;
+	int 					mono;
 };
 
 struct pcdisplay_softc {
-	struct device sc_dev;
+	struct device 			sc_dev;
 	struct pcdisplay_config *sc_dc;
-	int nscreens;
+	int 					nscreens;
 #if NPCWEASEL > 0
 	struct weasel_handle sc_weasel;
 #endif
