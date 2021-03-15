@@ -22,10 +22,7 @@
  * timer as a timeout like 4.3BSD.
  */
 
-struct callout_circq;
-CIRCLEQ_HEAD(callout_circq, callout);
 struct callout {
-	CIRCLEQ_ENTRY(callout) 	c_list;
 	int						c_time;				/* incremental time */
 	caddr_t					c_arg;				/* argument to routine */
 	int						(*c_func)(void *);	/* routine */
@@ -33,10 +30,6 @@ struct callout {
 
 	struct	callout 		*c_next;
 };
-
-#define	CALLOUT_PENDING		0x0002	/* callout is on the queue */
-#define	CALLOUT_FIRED		0x0004	/* callout has fired */
-#define	CALLOUT_INVOKING	0x0008	/* callout function is being invoked */
 
 #ifdef KERNEL
 struct	callout *callfree, callout[], calltodo;

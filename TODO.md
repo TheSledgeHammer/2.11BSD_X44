@@ -22,10 +22,11 @@ A General todo list. Don't hesitate to add to this list. :)
 - sys_generic.c: fileops: fo_rw
 - fileops: update fileop structures to make use of kqfilter
 - kern_clock.c:
-	- update: some methods are using deprecated functions
+	- clockframe?
 	
 ## arch:
 - i386/x86: (Merged under i386)
+	- clockframe usage (machine/cpu.h)
 
 ## devel: (planned)
 - Code planned for future integration
@@ -33,7 +34,6 @@ A General todo list. Don't hesitate to add to this list. :)
 - See devel folder: README.md
 	
 ## dev:
-- com: ppi
 - Essential Driver Support:
 	- usb: 							Work in progress
 		- fix power: ehci, uhci & ohci

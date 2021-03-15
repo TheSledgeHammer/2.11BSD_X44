@@ -9,7 +9,7 @@
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/proc.h>
-#include <sys/callout.h>
+#include <devel/sys/callout2.h>
 #include <sys/dk.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
@@ -26,8 +26,11 @@
 #include <sys/gmon.h>
 #endif
 
+#define	USERMODE(ps)	CLKF_USERMODE(ps)
+#define	BASEPRI(ps)		CLKF_BASEPRI(ps)
+
 int noproc;
-struct callout *callfree, calltodo;
+struct  callout *callfree, *calltodo;
 
 int	profprocs;
 static int psdiv, pscnt;	/* prof => stat divider */
@@ -35,39 +38,6 @@ static int psdiv, pscnt;	/* prof => stat divider */
 volatile struct timeval time;
 volatile struct	timeval mono_time;
 
-/*
- * Initialize clock frequencies and start both clocks running.
- */
-void
-initclocks()
-{
-	register int i;
-
-	/*
-	 * Set divisors to 1 (normal case) and let the machine-specific
-	 * code do its bit.
-	 */
-	psdiv = pscnt = 1;
-	cpu_initclocks();
-
-	i = stathz ? stathz : hz;
-	if (profhz == 0)
-		profhz = i;
-	psratio = profhz / i;
-
-}
-/*
- * The hz hardware interval timer.
- * We update the events relating to real time.
- * Also gather statistics.
- *
- *	reprime clock
- *	implement callouts
- *	maintain user/system times
- *	maintain date
- *	profile
- */
-/*ARGSUSED*/
 void
 hardclock(dev, sp, r1, ov, nps, r0, pc, ps)
 	dev_t dev;
@@ -88,14 +58,14 @@ hardclock(dev, sp, r1, ov, nps, r0, pc, ps)
 	 * Decrementing just the first of these serves to decrement the time
 	 * to all events.
 	 */
-	p1 = calltodo.c_next;
+	p1 = CIRCQ_NEXT(calltodo->c_list);
 	while (p1) {
 		if (--p1->c_time > 0)
 			break;
 		needsoft = 1;
 		if (p1->c_time == 0)
 			break;
-		p1 = p1->c_next;
+		p1 = CIRCQ_NEXT(p1->c_list);
 	}
 
 	/*
@@ -110,7 +80,7 @@ hardclock(dev, sp, r1, ov, nps, r0, pc, ps)
 		/*
 		 * CPU was in user state.  Increment
 		 * user time counter, and process process-virtual time
-		 * interval timer. 
+		 * interval timer.
 		 */
 		u->u_ru.ru_utime++;
 		if (u->u_timer[ITIMER_VIRTUAL - 1].it_value &&
@@ -154,7 +124,6 @@ hardclock(dev, sp, r1, ov, nps, r0, pc, ps)
 		}
 	}
 
-
 	gatherstats(pc,ps);
 
 	/*
@@ -162,7 +131,7 @@ hardclock(dev, sp, r1, ov, nps, r0, pc, ps)
 	 * low cpu priority, so we don't keep the relatively  high
 	 * clock interrupt priority any longer than necessary.
 	 */
-	if (adjdelta) 
+	if (adjdelta)
 		if (adjdelta > 0) {
 			++lbolt;
 			--adjdelta;
@@ -179,6 +148,8 @@ hardclock(dev, sp, r1, ov, nps, r0, pc, ps)
 		(void) splsoftclock();
 		softclock(pc,ps);
 	}
+	/* can combine above if with callout_hardclock */
+	callout_hardclock();
 }
 
 int	dk_ndrive = DK_NDRIVE;
@@ -244,30 +215,32 @@ gatherstats(pc, ps)
 void
 softclock(pc, ps)
 	caddr_t pc;
-	int ps;
+	int 	ps;
 {
 	for (;;) {
 		register struct callout *p1;
-		register caddr_t arg;
-		register int (*func)();
+		register void *arg;
+		register void (*func)(void *);
 		register int a, s;
 
 		s = splhigh();
-		if ((p1 = calltodo.c_next) == 0 || p1->c_time > 0) {
+		if ((p1 = CIRCQ_NEXT(calltodo->c_list)) == 0 || p1->c_time > 0) {
 			splx(s);
 			break;
 		}
-		arg = p1->c_arg; func = p1->c_func; a = p1->c_time;
-		calltodo.c_next = p1->c_next;
-		p1->c_next = callfree;
+		arg = p1->c_arg;
+		func = p1->c_func;
+		a = p1->c_time;
+		CIRCQ_NEXT(calltodo->c_list) = CIRCQ_NEXT(p1->c_list);
+		CIRCQ_NEXT(p1->c_list) = callfree;
 		callfree = p1;
 		splx(s);
 #ifdef INET
 		if (ISSUPERADD(func))
-			KScall(KERNELADD(func), sizeof(arg) + sizeof(a),
-			    arg, a);
+			KScall(KERNELADD(func), sizeof(arg) + sizeof(a), arg, a);
 		else
 #endif
+
 		(*func)(arg, a);
 	}
 	/*
@@ -285,10 +258,9 @@ softclock(pc, ps)
 		 * reduce priority to give others a chance.
 		 */
 
-		if (p->p_uid && p->p_nice == NZERO &&
-		    u->u_ru.ru_utime > 10L * 60L * hz) {
-			p->p_nice = NZERO+4;
-				(void) setpri(p);
+		if (p->p_uid && p->p_nice == NZERO && u->u_ru.ru_utime > 10L * 60L * hz) {
+			p->p_nice = NZERO + 4;
+			(void) setpri(p);
 		}
 	}
 }
@@ -298,8 +270,8 @@ softclock(pc, ps)
  */
 void
 timeout(fun, arg, t)
-	int (*fun)();
-	caddr_t arg;
+	void (*fun)(void *);
+	void *arg;
 	register int t;
 {
 	register struct callout *p1, *p2, *pnew;
@@ -308,16 +280,19 @@ timeout(fun, arg, t)
 	if (t <= 0)
 		t = 1;
 	pnew = callfree;
-	if (pnew == NULL)
+	if (pnew == NULL) {
 		panic("timeout table overflow");
-	callfree = pnew->c_next;
+	}
+	callfree = CIRCQ_NEXT(pnew->c_list);
 	pnew->c_arg = arg;
 	pnew->c_func = fun;
-	for (p1 = &calltodo; (p2 = p1->c_next) && p2->c_time < t; p1 = p2)
-		if (p2->c_time > 0)
+	for (p1 = &calltodo; (p2 = CIRCQ_NEXT(p1->c_list)) && p2->c_time < t; p1 = p2) {
+		if (p2->c_time > 0) {
 			t -= p2->c_time;
-	p1->c_next = pnew;
-	pnew->c_next = p2;
+		}
+	}
+	CIRCQ_NEXT(p1->c_list) = pnew;
+	CIRCQ_NEXT(pnew->c_list) = p2;
 	pnew->c_time = t;
 	if (p2)
 		p2->c_time -= t;
@@ -330,19 +305,20 @@ timeout(fun, arg, t)
  */
 void
 untimeout(fun, arg)
-	int (*fun)();
-	caddr_t arg;
+	void (*fun)(void *);
+	void *arg;
 {
 	register struct callout *p1, *p2;
 	register int s;
 
 	s = splclock();
-	for (p1 = &calltodo; (p2 = p1->c_next) != 0; p1 = p2) {
+	for (p1 = &calltodo; (p2 = CIRCQ_NEXT(p1->c_list)) != 0; p1 = p2) {
 		if (p2->c_func == fun && p2->c_arg == arg) {
-			if (p2->c_next && p2->c_time > 0)
-				p2->c_next->c_time += p2->c_time;
-			p1->c_next = p2->c_next;
-			p2->c_next = callfree;
+			if (CIRCQ_NEXT(p2->c_list) && p2->c_time > 0) {
+				CIRCQ_NEXT(p2->c_list)->c_time += p2->c_time;
+			}
+			CIRCQ_NEXT(p1->c_list) = CIRCQ_NEXT(p2->c_list);
+			CIRCQ_NEXT(p2->c_list) = callfree;
 			callfree = p2;
 			break;
 		}

@@ -24,6 +24,8 @@ extern struct timezone 			tz;			/* XXX */
 int								adjdelta;
 
 extern int 						rtc_offset;	/* offset of rtc from UTC in minutes */
+
+extern int						hard_ticks;	/* # of hardclock ticks */
 extern int 						tick;		/* usec per tick (1000000 / hz) */
 extern int						hz;			/* system clock's frequency */
 extern int						mshz;		/* # milliseconds per hz */
