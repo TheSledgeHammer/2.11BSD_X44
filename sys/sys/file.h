@@ -6,7 +6,6 @@
  *	@(#)file.h	1.3 (2.11BSD GTE) 1/19/95
  */
 
-
 #ifndef	_SYS_FILE_H_
 #define	_SYS_FILE_H_
 

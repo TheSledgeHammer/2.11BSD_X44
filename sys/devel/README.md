@@ -23,7 +23,7 @@ an offical release is made.)
 - Kern & Sys:
 	- Malloc: A Tertiary Buddy System Allocator (Needs a home!). (subr_tbree.c & tbtree.h)
 		- Designed to work with the existing kern_malloc.c
-		- Example of potential implementation in "/devel/vm/ovl/kern_overlay.c"
+		- Example of potential implementation in "/devel/kern/kern_malloc2.c"
 	- Scheduler: A Stackable Scheduler that sits atop 2.11BSD's existing scheduler (kern_synch.c).
 		- Global Scheduler: Interface/API for other schedulers
 		- Hybrid EDF/CFS Scheduler

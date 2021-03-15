@@ -15,6 +15,7 @@
 #include <sys/buf.h>
 #include <sys/systm.h>
 #include <sys/syslog.h>
+
 #include "ufs211/ufs211_fs.h"
 #include "ufs211/ufs211_quota.h"
 #include "ufs211/ufs211_inode.h"
@@ -79,7 +80,7 @@ ufs211_updat(ip, ta, tm, waitfor)
 		tip->i_ctime = time.tv_sec;
 #endif
 	tip->i_flag &= ~(UFS211_IUPD|UFS211_IACC|UFS211_ICHG|UFS211_IMOD);
-	dp = (struct dinode *)mapin(bp) + itoo(tip->i_number);
+	dp = (struct dinode *)(bp->b_data + itoo(tip->i_number));
 	dp->di_ic1 = tip->i_ic1;
 	dp->di_flag = tip->i_flags;
 #ifdef EXTERNALITIMES
@@ -181,7 +182,7 @@ ufs211_trunc(oip,length, ioflags)
 			brelse(bp);
 			return;
 		}
-		bzero(mapin(bp) + offset, (u_int)(DEV_BSIZE - offset));
+		bzero(bp + offset, (u_int)(DEV_BSIZE - offset));
 		mapout(bp);
 		bdwrite(bp);
 	}
@@ -382,11 +383,11 @@ ufs211_trsingle(ip, bp,last, aflags)
 	register ufs211_daddr_t *bstart, *bstop;
 	ufs211_daddr_t blarray[NINDIR];
 
-	bcopy(mapin(bp),blarray,NINDIR * sizeof(ufs211_daddr_t));
+	bcopy(mapin(bp), blarray, NINDIR * sizeof(ufs211_daddr_t));
 	mapout(bp);
 	bstart = &blarray[NINDIR - 1];
 	bstop = &blarray[last];
-	for (;bstart > bstop;--bstart)
+	for (; bstart > bstop; --bstart)
 		if (*bstart)
 			free(ip, *bstart);
 }

@@ -91,6 +91,8 @@ int	setpgrp();
 int	setitimer();
 int	pathconf();
 int	getitimer();
+int	setsid();
+int	setpgid();
 int	getdtablesize();
 int	dup2();
 int	fcntl();
@@ -122,6 +124,8 @@ int	settimeofday();
 int	fchown();
 int	fchmod();
 int	recvfrom();
+int	setreuid();
+int	setregid();
 int	rename();
 int	truncate();
 int	ftruncate();
@@ -145,6 +149,9 @@ int	lfs_markv();
 int	lfs_segclean();
 int	lfs_segwait();
 int	sysarch();
+int	kenv();
+int	kevent();
+int	kqueue();
 
 #ifdef COMPAT_43
 #define COMPAT_43(func) __CONCAT(COMPAT_43_,func)
@@ -337,9 +344,9 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    getitimer },			/* 86 = getitimer */
 	{ 0, 0,
-	    nosys },				/* 87 = obsolete old gethostname */
+	    setsid },				/* 87 = setsid */
 	{ 0, 0,
-	    nosys },				/* 88 = obsolete old sethostname */
+	    setpgid },				/* 88 = setpgid */
 	{ 0, 0,
 	    getdtablesize },			/* 89 = getdtablesize */
 	{ 0, 0,
@@ -415,9 +422,9 @@ struct sysent sysent[] = {
 	{ 0, 0,
 	    recvfrom },				/* 125 = recvfrom */
 	{ 0, 0,
-	    nosys },				/* 126 = obsolete old setreuid */
+	    setreuid },				/* 126 = setreuid */
 	{ 0, 0,
-	    nosys },				/* 127 = obsolete old setregid */
+	    setregid },				/* 127 = setregid */
 	{ 0, 0,
 	    rename },				/* 128 = rename */
 	{ 0, 0,
@@ -484,6 +491,12 @@ struct sysent sysent[] = {
 	    lfs_segwait },			/* 159 = lfs_segwait */
 	{ 0, 0,
 	    sysarch },				/* 160 = sysarch */
+	{ 0, 0,
+	    kenv },				/* 161 = kenv */
+	{ 0, 0,
+	    kevent },				/* 162 = kevent */
+	{ 0, 0,
+	    kqueue },				/* 163 = kqueue */
 };
 
 int	nsysent= sizeof(sysent) / sizeof(sysent[0]);

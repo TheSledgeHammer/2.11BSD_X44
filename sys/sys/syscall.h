@@ -92,8 +92,8 @@
 				/* 84 is COMPAT_43 lstat */
 #define	SYS_pathconf	85
 #define	SYS_getitimer	86
-				/* 87 is obsolete old gethostname */
-				/* 88 is obsolete old sethostname */
+#define	SYS_setsid	87
+#define	SYS_setpgid	88
 #define	SYS_getdtablesize	89
 #define	SYS_dup2	90
 				/* 91 is COMPAT_43 stat */
@@ -131,8 +131,8 @@
 #define	SYS_fchown	123
 #define	SYS_fchmod	124
 #define	SYS_recvfrom	125
-				/* 126 is obsolete old setreuid */
-				/* 127 is obsolete old setregid */
+#define	SYS_setreuid	126
+#define	SYS_setregid	127
 #define	SYS_rename	128
 #define	SYS_truncate	129
 #define	SYS_ftruncate	130
@@ -166,3 +166,6 @@
 #define	SYS_lfs_segclean	158
 #define	SYS_lfs_segwait	159
 #define	SYS_sysarch	160
+#define	SYS_kenv	161
+#define	SYS_kevent	162
+#define	SYS_kqueue	163

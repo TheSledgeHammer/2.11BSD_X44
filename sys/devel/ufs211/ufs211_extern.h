@@ -44,10 +44,8 @@ struct ufs211_args {
 	struct vnode 	    *ufs211_rootvp;	    /* block device mounted vnode */
 };
 
-#define	DEV_BSIZE		1024
 #define	DEV_BSHIFT		10			/* log2(DEV_BSIZE) */
-#define	DEV_BMASK		0x3ffL		/* DEV_BSIZE - 1 */
-#define	MAXBSIZE		1024
+#define	DEV_BMASK		(DEV_BSIZE - 1)
 
 struct buf;
 struct ufs211_direct;

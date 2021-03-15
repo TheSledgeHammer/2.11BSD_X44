@@ -20,6 +20,9 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## kern:
 - sys_generic.c: fileops: fo_rw
+- fileops: update fileop structures to make use of kqfilter
+- kern_clock.c:
+	- update: some methods are using deprecated functions
 	
 ## arch:
 - i386/x86: (Merged under i386)

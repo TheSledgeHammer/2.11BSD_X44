@@ -6,17 +6,25 @@
  *	@(#)msgbuf.h	1.2 (2.11BSD) 1998/12/5
  */
 
+#ifndef _SYS_MSGBUF_H_
+#define _SYS_MSGBUF_H_
+
 #define	MSG_MAGIC	0x063061
 #define	MSG_BSIZE	4096
 
 struct	msgbuf {
 	long	msg_magic;
-	int		msg_bufx;
-	int		msg_bufr;
-	u_short	msg_click;
-	char	*msg_bufc;
+	long	msg_bufx;	/* write pointer */
+	long	msg_bufr;	/* read pointer */
+	long	msg_click;	/* real msg_bufc size (bytes) */
+	char	*msg_bufc;	/* buffer */
 };
 
 #define	logMSG	0		/* /dev/klog */
 #define	logDEV	1		/* /dev/erlg */
 #define	logACCT	2		/* /dev/acct */
+
+#ifdef _KERNEL
+void	loginit(void);
+#endif
+#endif /* !_SYS_MSGBUF_H_ */

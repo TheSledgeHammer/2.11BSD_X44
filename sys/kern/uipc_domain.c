@@ -27,6 +27,7 @@
 	domains = &x/**/domain; 			\
 }
 
+void
 domaininit()
 {
 	register struct domain *dp;

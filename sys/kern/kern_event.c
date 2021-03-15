@@ -739,7 +739,6 @@ kevent()
 done:
 	FILE_UNUSE(fp, p);
 	return (error);
-
 }
 
 /*
@@ -1263,7 +1262,7 @@ knote_remove(struct proc *p, struct klist *list)
 {
 	struct knote *kn;
 
-	while ((kn = SLIST_FIRST(list)) != NULL) {
+	while ((kn = SIMPLEQ_FIRST(list)) != NULL) {
 		kn->kn_fop->f_detach(kn);
 		knote_drop(kn, p, p->p_fd);
 	}
@@ -1317,7 +1316,7 @@ knote_attach(struct knote *kn, struct filedesc *fdp)
 			memcpy((caddr_t) list, (caddr_t) fdp->fd_knlist, fdp->fd_knlistsize * sizeof(struct klist*));
 		}
 		/*
-		 * Zero new memory. Stylistically, SLIST_INIT() should be
+		 * Zero new memory. Stylistically, SIMPLEQ_INIT() should be
 		 * used here, but that does same thing as the memset() anyway.
 		 */
 		memset(&list[fdp->fd_knlistsize], 0, (size - fdp->fd_knlistsize) * sizeof(struct klist*));

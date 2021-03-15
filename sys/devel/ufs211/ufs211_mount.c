@@ -211,7 +211,7 @@ found:
 	mp->m_inodp = ip;	/* reserve slot */
 	mp->m_dev = dev;
 	fs = &mp->m_filsys;
-	bcopy(mapin(tp), (caddr_t)fs, sizeof(struct ufs211_fs));
+	bcopy(tp, (caddr_t)fs, sizeof(struct ufs211_fs));
 	mapout(tp);
 	brelse(tp);
 	tp = 0;

@@ -258,6 +258,9 @@ main(framep)
 	//bhinit();
 	//binit();
 
+	/* Initialize the log device. */
+	loginit();
+
 	/* Attach pseudo-devices. */
 	for (pdev = pdevinit; pdev->pdev_attach != NULL; pdev++)
 		(*pdev->pdev_attach)(pdev->pdev_count);

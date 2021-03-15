@@ -30,6 +30,7 @@
 #include <sys/vnode.h>
 #include <sys/uio.h>
 #include <sys/map.h>
+#include <sys/stddef.h>
 
 #define	NLOG	3
 int	nlog = NLOG;
@@ -47,12 +48,11 @@ int	nlog = NLOG;
 */
 int	Acctopen;
 struct	msgbuf	msgbuf[NLOG];
-static	struct logsoftc
-{
-	int	sc_state;			/* see above for possibilities */
-	struct	proc *sc_selp;	/* process waiting on select call */
-	int	sc_pgid;			/* process/group for async I/O */
-	int	sc_overrun;			/* full buffer count */
+static struct logsoftc {
+	int				sc_state;			/* see above for possibilities */
+	struct	proc 	*sc_selp;			/* process waiting on select call */
+	int				sc_pgid;			/* process/group for async I/O */
+	int				sc_overrun;			/* full buffer count */
 } logsoftc[NLOG];
 
 /*ARGSUSED*/
@@ -184,7 +184,7 @@ logselect(dev, rw)
 	int	unit = minor(dev);
 
 	switch	(rw) {
-	case	FREAD:
+	case FREAD:
 		if	(msgbuf[unit].msg_bufr != msgbuf[unit].msg_bufx) {
 			splx(s);
 			return(1);
@@ -295,7 +295,8 @@ logwrt(buf,len,log)
 */
 	s = splhigh();
 	while	(len) {
-		again:		infront = MSG_BSIZE - mp->msg_bufx;
+again:
+	infront = MSG_BSIZE - mp->msg_bufx;
 		if	(infront <= 0) {
 			mp->msg_bufx = 0;
 			infront = MSG_BSIZE - mp->msg_bufr;
@@ -330,4 +331,27 @@ logwrt(buf,len,log)
 	}
 out:	splx(s);
 	return(err);
+}
+
+void
+loginit()
+{
+	register struct msgbuf *mp;
+	long new_bufs;
+
+	/* Sanity-check the given size. */
+	if (MSG_BSIZE < sizeof(struct msgbuf)) {
+		return;
+	}
+
+	new_bufs = MSG_BSIZE - offsetof(struct msgbuf, msg_bufc);
+	for	(mp = &msgbuf[0]; mp < &msgbuf[NLOG]; mp++) {
+		mp->msg_click = rmalloc(coremap, btoc(MSG_BSIZE));
+		if (!mp->msg_click) {
+			return;
+		}
+		mp->msg_magic = MSG_MAGIC;
+		mp->msg_bufc = new_bufs;
+		mp->msg_bufx = mp->msg_bufr = 0;
+	}
 }

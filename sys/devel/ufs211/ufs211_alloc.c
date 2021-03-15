@@ -16,7 +16,7 @@
 #include "ufs211/ufs211_inode.h"
 #include "ufs211/ufs211_quota.h"
 
-typedef	struct fblk *FBLKP;
+typedef	struct ufs211_fblk *FBLKP;
 
 /*
  * Allocate a block in the file system.
@@ -33,14 +33,14 @@ balloc(ip, flags)
 {
 	register struct ufs211_fs *fs;
 	register struct buf *bp;
-	int	async;
+	int async;
 	ufs211_daddr_t bno;
 
 	fs = ip->i_fs;
 	async = fs->fs_flags & MNT_ASYNC;
 
 	while (fs->fs_flock)
-		sleep((caddr_t)&fs->fs_flock, PINOD);
+		sleep((caddr_t) &fs->fs_flock, PINOD);
 	do {
 		if (fs->fs_nfree <= 0)
 			goto nospace;
@@ -55,12 +55,13 @@ balloc(ip, flags)
 	if (fs->fs_nfree <= 0) {
 		fs->fs_flock++;
 		bp = bread(ip->i_dev, bno);
-		if (((bp->b_flags&B_ERROR) == 0) && (bp->b_resid==0)) {
-			register struct fblk *fbp;
-
-			fbp = (FBLKP) mapin(bp);
-			*((FBLKP)&fs->fs_nfree) = *fbp;
+		if (((bp->b_flags & B_ERROR) == 0) && (bp->b_resid == 0)) {
+			/*
+			register struct ufs211_fblk *fbp;
+			fbp = (FBLKP) mapin(bp); bzero(bp, sizeof(struct buf*));
+			*((FBLKP) &fs->fs_nfree) = *fbp;
 			mapout(bp);
+			*/
 		}
 		brelse(bp);
 		/*
@@ -76,17 +77,18 @@ balloc(ip, flags)
 		{
 			register struct fs *fps;
 
-			fps = (struct fs *)mapin(bp);
+			fps = (struct fs*) bzero(bp, sizeof(struct buf*));
 			*fps = *fs;
 		}
-		mapout(bp);
+
+		//mapout(bp);
 		if (!async)
 			bwrite(bp);
 		else
 			bdwrite(bp);
 		fs->fs_flock = 0;
-		wakeup((caddr_t)&fs->fs_flock);
-		if (fs->fs_nfree <=0)
+		wakeup((caddr_t) &fs->fs_flock);
+		if (fs->fs_nfree <= 0)
 			goto nospace;
 	}
 	bp = getblk(ip->i_dev, bno);
@@ -95,7 +97,7 @@ balloc(ip, flags)
 		clrbuf(bp);
 	fs->fs_fmod = 1;
 	fs->fs_tfree--;
-	return(bp);
+	return (bp);
 
 nospace:
 	fs->fs_nfree = 0;
@@ -111,10 +113,10 @@ nospace:
 		register int i;
 
 		for (i = 0; i < 5; i++)
-			sleep((caddr_t)&lbolt, PRIBIO);
+			sleep((caddr_t) &lbolt, PRIBIO);
 	}
 	u->u_error = ENOSPC;
-	return(NULL);
+	return (NULL);
 }
 
 /*
@@ -186,10 +188,10 @@ loop:
 fromtop:
 		first = 0;
 		ino = 1;
-		adr = UFS211_SUPERB+1;
+		adr = UFS211_SUPERB + 1;
 		fs->fs_nbehind = 0;
 	}
-	for (;adr < fs->fs_isize;adr++) {
+	for (; adr < fs->fs_isize; adr++) {
 		inobas = ino;
 		bp = bread(pip->i_dev, adr);
 		if ((bp->b_flags & B_ERROR) || bp->b_resid) {
@@ -197,8 +199,8 @@ fromtop:
 			ino += INOPB;
 			continue;
 		}
-		dp = (struct ufs211_dinode *)mapin(bp);
-		for (i = 0;i < INOPB;i++) {
+		dp = (struct ufs211_dinode *)bzero(bp, sizeof(struct buf*));
+		for (i = 0; i < INOPB; i++) {
 			if (dp->di_mode != 0)
 				goto cont;
 			if (ifind(pip->i_dev, ino))
@@ -206,11 +208,10 @@ fromtop:
 			fs->fs_inode[fs->fs_ninode++] = ino;
 			if (fs->fs_ninode >= UFS211_NICINOD)
 				break;
-		cont:
-			ino++;
+			cont: ino++;
 			dp++;
 		}
-		mapout(bp);
+		//mapout(bp);
 		brelse(bp);
 		if (fs->fs_ninode >= UFS211_NICINOD)
 			break;
@@ -219,13 +220,13 @@ fromtop:
 		goto fromtop;
 	fs->fs_lasti = inobas;
 	fs->fs_ilock = 0;
-	wakeup((caddr_t)&fs->fs_ilock);
+	wakeup((caddr_t) &fs->fs_ilock);
 	if (fs->fs_ninode > 0)
 		goto loop;
 	fserr(fs, emsg);
 	uprintf("\n%s: %s\n", fs->fs_fsmnt, emsg);
 	u->u_error = ENOSPC;
-	return(NULL);
+	return (NULL);
 }
 
 /*
@@ -240,7 +241,7 @@ free(ip, bno)
 {
 	register struct ufs211_fs *fs;
 	register struct buf *bp;
-	struct ufs211_fblk *fbp;
+	//struct ufs211_fblk *fbp;
 
 	fs = ip->i_fs;
 	if (badblock(fs, bno)) {
@@ -256,9 +257,11 @@ free(ip, bno)
 	if (fs->fs_nfree >= UFS211_NICFREE) {
 		fs->fs_flock++;
 		bp = getblk(ip->i_dev, bno);
-		fbp = (FBLKP)mapin(bp);
+		/*
+		fbp = (FBLKP)mapin(bp);bzero(bp, sizeof(struct buf*);
 		*fbp = *((FBLKP)&fs->fs_nfree);
 		mapout(bp);
+		*/
 		fs->fs_nfree = 0;
 		if (fs->fs_flags & MNT_ASYNC)
 			bdwrite(bp);

@@ -43,35 +43,35 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 
 	if (bn < 0) {
 		u->u_error = EFBIG;
-		return((daddr_t)0);
+		return ((daddr_t) 0);
 	}
 	ra = rablock = 0;
 
 	/*
 	 * blocks 0..NADDR-4 are direct blocks
 	 */
-	if (bn < NADDR-3) {
+	if (bn < NADDR - 3) {
 		i = bn;
 		nb = ip->i_addr[i];
 		if (nb == 0) {
 			if (rwflg == B_READ || (bp = balloc(ip, flags)) == NULL)
-				return((daddr_t)-1);
+				return ((daddr_t) -1);
 			nb = dbtofsb(bp->b_blkno);
-/*
- * directory blocks are usually the only thing written synchronously at this
- * point (so they never appear with garbage in them on the disk).  This is
- * overridden if the filesystem was mounted 'async'.
-*/
+			/*
+			 * directory blocks are usually the only thing written synchronously at this
+			 * point (so they never appear with garbage in them on the disk).  This is
+			 * overridden if the filesystem was mounted 'async'.
+			 */
 			if (flags & B_SYNC)
 				bwrite(bp);
 			else
 				bdwrite(bp);
 			ip->i_addr[i] = nb;
-			ip->i_flag |= UFS211_IUPD|UFS211_ICHG;
+			ip->i_flag |= UFS211_IUPD | UFS211_ICHG;
 		}
-		if (i < NADDR-4)
-			rablock = ip->i_addr[i+1];
-		return(nb);
+		if (i < NADDR - 4)
+			rablock = ip->i_addr[i + 1];
+		return (nb);
 	}
 
 	/*
@@ -82,8 +82,8 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 	 */
 	sh = 0;
 	nb = 1;
-	bn -= NADDR-3;
-	for (j = 3;j > 0;j--) {
+	bn -= NADDR - 3;
+	for (j = 3; j > 0; j--) {
 		sh += NSHIFT;
 		nb <<= NSHIFT;
 		if (bn < nb)
@@ -92,16 +92,16 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 	}
 	if (j == 0) {
 		u->u_error = EFBIG;
-		return((daddr_t)0);
+		return ((daddr_t) 0);
 	}
 
 	/*
 	 * fetch the first indirect block
 	 */
-	nb = ip->i_addr[NADDR-j];
+	nb = ip->i_addr[NADDR - j];
 	if (nb == 0) {
 		if (rwflg == B_READ || (bp = balloc(ip, flags | B_CLRBUF)) == NULL)
-			return((daddr_t) -1);
+			return ((daddr_t) -1);
 		nb = dbtofsb(bp->b_blkno);
 		/*
 		 * Write synchronously if requested so that indirect blocks
@@ -111,46 +111,46 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 			bdwrite(bp);
 		else
 			bwrite(bp);
-		ip->i_addr[NADDR-j] = nb;
-		ip->i_flag |= UFS211_IUPD|UFS211_ICHG;
+		ip->i_addr[NADDR - j] = nb;
+		ip->i_flag |= UFS211_IUPD | UFS211_ICHG;
 	}
 
 	/*
 	 * fetch through the indirect blocks
 	 */
-	for(;j <= 3;j++) {
+	for (; j <= 3; j++) {
 		bp = bread(ip->i_dev, nb);
 		if ((bp->b_flags & B_ERROR) || bp->b_resid) {
 			brelse(bp);
-			return((daddr_t)0);
+			return ((daddr_t) 0);
 		}
-		bap = (daddr_t *) mapin(bp);
+		bap = (daddr_t*) mapin(bp);
 		sh -= NSHIFT;
-		i = (bn>>sh) & NMASK;
+		i = (bn >> sh) & NMASK;
 		nb = bap[i];
 		/*
 		 * calculate read-ahead
 		 */
-		if (i < NINDIR-1)
-			ra = bap[i+1];
+		if (i < NINDIR - 1)
+			ra = bap[i + 1];
 		mapout(bp);
 		if (nb == 0) {
 			if (rwflg == B_READ || (nbp = balloc(ip, flags | B_CLRBUF)) == NULL) {
 				brelse(bp);
-				return((daddr_t) -1);
+				return ((daddr_t) -1);
 			}
 			nb = dbtofsb(nbp->b_blkno);
-/*
- * Write synchronously so indirect blocks never point at garbage and blocks
- * in directories never contain garbage.  This check used to be based on the
- * type of inode, if it was a directory then 'sync' writes were done.  See the
- * comments earlier about filesystems being mounted 'async'.
-*/
+			/*
+			 * Write synchronously so indirect blocks never point at garbage and blocks
+			 * in directories never contain garbage.  This check used to be based on the
+			 * type of inode, if it was a directory then 'sync' writes were done.  See the
+			 * comments earlier about filesystems being mounted 'async'.
+			 */
 			if (!async && (j < 3 || (flags & B_SYNC)))
 				bwrite(nbp);
 			else
 				bdwrite(nbp);
-			bap = (daddr_t *) mapin(bp);
+			bap = (daddr_t*) mapin(bp);
 			bap[i] = nb;
 			mapout(bp);
 			bdwrite(bp);

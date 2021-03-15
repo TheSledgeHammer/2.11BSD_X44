@@ -36,7 +36,7 @@
  * in fs_fsmnt. MAXMNTLEN defines the amount of space allocated in 
  * the super block for this name.
  */
-#define UFS211_MAXMNTLEN 12
+#define UFS211_MAXMNTLEN 		12
 
 struct ufs211_fs {
 	u_short			fs_isize;				/* first block after i-list */
@@ -65,6 +65,9 @@ struct ufs211_fblk {
 	short			df_nfree;				/* number of addresses in df_free */
 	ufs211_daddr_t	df_free[UFS211_NICFREE];/* free block list */
 };
+
+//#define mapin(bp, save)	((bp)->b_fsdata = (save))
+//#define mapout(bp)		((bp)->b_fsdata = NULL)
 
 /*
  * Turn file system block numbers into disk block addresses.
@@ -121,5 +124,6 @@ struct ufs211_fblk {
  * probably not good.
  */
 #define	MAXPIPSIZ	(NDADDR * MAXBSIZE)
+
 
 #endif /* _UFS211_FS_H_ */

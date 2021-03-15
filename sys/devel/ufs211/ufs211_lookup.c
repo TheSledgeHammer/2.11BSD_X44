@@ -825,7 +825,7 @@ ufs211_blkatoff(ip, offset, res)
 		brelse(bp);
 		return (0);
 	}
-	junk = (caddr_t)mapin(bp);
+	junk = (caddr_t)bp->b_data;
 	if (res)
 		*res = junk + (u_int)blkoff(offset);
 	return (bp);

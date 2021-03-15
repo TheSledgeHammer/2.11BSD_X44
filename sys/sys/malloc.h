@@ -205,7 +205,7 @@
 	"usb",			/* 73 M_USB */			\
 	"tty",			/* 74 M_TTY */			\
 	"kevent",		/* 75 M_KEVENT */		\
-	"temp",			/* 75 M_TEMP */ 		\
+	"temp",			/* 76 M_TEMP */ 		\
 }
 
 struct kmemstats {

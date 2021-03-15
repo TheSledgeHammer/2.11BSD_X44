@@ -126,8 +126,10 @@
 84	COMPAT_43	{ int lstat(); }
 85	STD		    { int pathconf(); }
 86  STD     	{ int getitimer(); }
-87  STD   	    { int setsid(); }           ;old gethostname
-88  STD   	    { int setpgid(); }          ;old sethostname
+; 87 old gethostname
+87  STD   	    { int setsid(); } 
+; 88 old sethostname
+88  STD   	    { int setpgid(); }
 89  STD     	{ int getdtablesize(); }
 90  STD     	{ int dup2(); }
 91	COMPAT_43	{ int stat(); }

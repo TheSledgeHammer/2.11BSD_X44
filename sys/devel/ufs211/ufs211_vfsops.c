@@ -270,7 +270,7 @@ ufs211_sync(mp)
 		bp = getblk(mp->m_dev, UFS211_SUPERB);
 		fs->fs_fmod = 0;
 		fs->fs_time = time.tv_sec;
-		bcopy(fs, mapin(bp), sizeof(struct ufs211_fs));
+		bcopy(fs, bp, sizeof(struct ufs211_fs));
 		mapout(bp);
 		bwrite(bp);
 		error = geterror(bp);
