@@ -124,7 +124,8 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 			brelse(bp);
 			return ((daddr_t) 0);
 		}
-		bap = (daddr_t*) mapin(bp);
+		ufs211_mapin(bp);
+		bap = (daddr_t*) bp;
 		sh -= NSHIFT;
 		i = (bn >> sh) & NMASK;
 		nb = bap[i];
@@ -133,7 +134,7 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 		 */
 		if (i < NINDIR - 1)
 			ra = bap[i + 1];
-		mapout(bp);
+		ufs211_mapout(bp);
 		if (nb == 0) {
 			if (rwflg == B_READ || (nbp = balloc(ip, flags | B_CLRBUF)) == NULL) {
 				brelse(bp);
@@ -150,9 +151,10 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 				bwrite(nbp);
 			else
 				bdwrite(nbp);
-			bap = (daddr_t*) mapin(bp);
+			ufs211_mapin(bp);
+			bap = (daddr_t *) bp;
 			bap[i] = nb;
-			mapout(bp);
+			ufs211_mapout(bp);
 			bdwrite(bp);
 		} else
 			brelse(bp);

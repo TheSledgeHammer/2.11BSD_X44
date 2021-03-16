@@ -90,11 +90,11 @@ struct ufs211_inode {
 		} i_fr;
 	} i_un3;
 	struct ufs211_icommon1 {
-		u_short			ic_mode;					/* mode and type of file */
-		u_short			ic_nlink;					/* number of links to file */
-		uid_t			ic_uid;						/* owner's user id */
-		gid_t			ic_gid;						/* owner's group id */
-		ufs211_off_t	ic_size;					/* number of bytes in file */
+		u_short				ic_mode;				/* mode and type of file */
+		u_short				ic_nlink;				/* number of links to file */
+		uid_t				ic_uid;					/* owner's user id */
+		gid_t				ic_gid;					/* owner's group id */
+		ufs211_off_t		ic_size;				/* number of bytes in file */
 	} i_ic1;
 /*
  * Can't afford another 4 bytes and mapping the flags out would be prohibitively

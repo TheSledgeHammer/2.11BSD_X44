@@ -84,7 +84,8 @@ ufs211_readdisklabel(dev, strat, lp)
 	if (u->u_error)
 		msg = "I/O error";
 	else {
-		dlp = (struct disklabel*) mapin(bp);
+		ufs211_mapin(bp);
+		dlp = (struct disklabel *) bp;
 		if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC) {
 			if (msg == NULL)
 				msg = "no disk label";
@@ -166,24 +167,25 @@ ufs211_writedisklabel(dev, strat, lp)
 	bp = geteblk();
 	bp->b_dev = makedev(major(dev), dkminor(dkunit(dev), labelpart));
 	bp->b_blkno = LABELSECTOR;
-	bp->b_bcount = lp->d_secsize;	/* probably should wire to 512 */
+	bp->b_bcount = lp->d_secsize; /* probably should wire to 512 */
 	bp->b_flags = B_READ;
 	(*strat)(bp);
 	biowait(bp);
 	if (u->u_error)
 		goto done;
-	dlp = (struct disklabel *)mapin(bp);
-	if (dlp->d_magic == DISKMAGIC && dlp->d_magic2 == DISKMAGIC &&
-	    dkcksum(dlp) == 0) {
-		bcopy(lp, dlp, sizeof (struct disklabel));
-		mapout(bp);
+	ufs211_mapin(bp);
+	dlp = (struct disklabel*) bp;
+	if (dlp->d_magic == DISKMAGIC && dlp->d_magic2 == DISKMAGIC
+			&& dkcksum(dlp) == 0) {
+		bcopy(lp, dlp, sizeof(struct disklabel));
+		ufs211_mapout(bp);
 		bp->b_flags = B_WRITE;
 		(*strat)(bp);
 		biowait(bp);
 		error = u->u_error;
 	} else {
 		error = ESRCH;
-		mapout(bp);
+		ufs211_mapout(bp);
 	}
 done:
 	brelse(bp);
@@ -249,7 +251,6 @@ dkoverlapchk(lp, openmask, dev, label, name)
 	}
 	return (0);
 }
-
 
 /*
  * It was noticed that the ioctl processing of disklabels was the same
@@ -340,7 +341,6 @@ ioctldisklabel(dev, cmd, data, flag, disk, strat)
 	}
 	return (EINVAL);
 }
-
 
 /*
  * This was extracted from the MSCP driver so it could be shared between

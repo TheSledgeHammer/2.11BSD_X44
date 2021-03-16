@@ -56,12 +56,11 @@ balloc(ip, flags)
 		fs->fs_flock++;
 		bp = bread(ip->i_dev, bno);
 		if (((bp->b_flags & B_ERROR) == 0) && (bp->b_resid == 0)) {
-			/*
 			register struct ufs211_fblk *fbp;
-			fbp = (FBLKP) mapin(bp); bzero(bp, sizeof(struct buf*));
+			ufs211_mapin(bp);
+			fbp = (FBLKP) bp;
 			*((FBLKP) &fs->fs_nfree) = *fbp;
-			mapout(bp);
-			*/
+			ufs211_mapout(bp);
 		}
 		brelse(bp);
 		/*
@@ -77,11 +76,11 @@ balloc(ip, flags)
 		{
 			register struct fs *fps;
 
-			fps = (struct fs*) bzero(bp, sizeof(struct buf*));
+			ufs211_mapin(bp);
+			fps = (struct fs *)bp;
 			*fps = *fs;
 		}
-
-		//mapout(bp);
+		ufs211_mapout(bp);
 		if (!async)
 			bwrite(bp);
 		else
@@ -141,14 +140,16 @@ ialloc(pip)
 	ufs211_ino_t inobas;
 	int first;
 	struct ufs211_inode *ifind();
+	struct vnode *vp;
 	char	*emsg = "no inodes free";
 
+	vp = UFS211_ITOV(ip);
 	fs = pip->i_fs;
 	while (fs->fs_ilock)
 		sleep((caddr_t)&fs->fs_ilock, PINOD);
 #ifdef QUOTA
 	QUOTAMAP();
-	u.u_error = chkiq(pip->i_dev, NULL, u->u_uid, 0);
+	u->u_error = chkiq(pip->i_dev, NULL, u->u_uid, 0);
 	QUOTAUNMAP();
 	if (u->u_error)
 		return(NULL);
@@ -172,7 +173,7 @@ loop:
 		 * Inode was allocated after all.
 		 * Look some more.
 		 */
-		iput(ip);
+		vput(vp);
 		goto loop;
 	}
 	fs->fs_ilock++;
@@ -199,7 +200,8 @@ fromtop:
 			ino += INOPB;
 			continue;
 		}
-		dp = (struct ufs211_dinode *)bzero(bp, sizeof(struct buf*));
+		ufs211_mapin(bp);
+		dp = (struct ufs211_dinode *) bp;
 		for (i = 0; i < INOPB; i++) {
 			if (dp->di_mode != 0)
 				goto cont;
@@ -211,7 +213,7 @@ fromtop:
 			cont: ino++;
 			dp++;
 		}
-		//mapout(bp);
+		ufs211_mapout(bp);
 		brelse(bp);
 		if (fs->fs_ninode >= UFS211_NICINOD)
 			break;
@@ -241,7 +243,7 @@ free(ip, bno)
 {
 	register struct ufs211_fs *fs;
 	register struct buf *bp;
-	//struct ufs211_fblk *fbp;
+	struct ufs211_fblk *fbp;
 
 	fs = ip->i_fs;
 	if (badblock(fs, bno)) {
@@ -257,11 +259,10 @@ free(ip, bno)
 	if (fs->fs_nfree >= UFS211_NICFREE) {
 		fs->fs_flock++;
 		bp = getblk(ip->i_dev, bno);
-		/*
-		fbp = (FBLKP)mapin(bp);bzero(bp, sizeof(struct buf*);
+		ufs211_mapin(bp);
+		fbp = (FBLKP) bp;
 		*fbp = *((FBLKP)&fs->fs_nfree);
-		mapout(bp);
-		*/
+		ufs211_mapout(bp);
 		fs->fs_nfree = 0;
 		if (fs->fs_flags & MNT_ASYNC)
 			bdwrite(bp);

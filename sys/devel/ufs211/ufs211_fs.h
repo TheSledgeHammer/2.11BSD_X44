@@ -66,8 +66,11 @@ struct ufs211_fblk {
 	ufs211_daddr_t	df_free[UFS211_NICFREE];/* free block list */
 };
 
-//#define mapin(bp, save)	((bp)->b_fsdata = (save))
-//#define mapout(bp)		((bp)->b_fsdata = NULL)
+/* see ufs211_bufmap.c */
+struct ufs211_bufmap {
+	void 			*bm_data;				/* data */
+	long			bm_size;				/* sizeof data */
+};
 
 /*
  * Turn file system block numbers into disk block addresses.
@@ -124,6 +127,5 @@ struct ufs211_fblk {
  * probably not good.
  */
 #define	MAXPIPSIZ	(NDADDR * MAXBSIZE)
-
 
 #endif /* _UFS211_FS_H_ */

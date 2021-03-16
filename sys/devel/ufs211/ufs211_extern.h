@@ -95,6 +95,9 @@ void blkflush(struct vnode *, daddr_t);
 
 int ufs211_init(struct vfsconf *);
 
+void ufs211_mapin(struct buf *);
+void ufs211_mapout(struct buf *);
+
 int ufs211_lookup (struct vop_lookup_args *);
 int ufs211_create (struct vop_create_args *);
 int ufs211_open (struct vop_open_args *);

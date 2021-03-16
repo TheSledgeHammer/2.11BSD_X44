@@ -234,7 +234,7 @@ ufs211_statfs(mp, sbp, p)
 	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path);
 
 	ump = (struct ufs211_mount *)((int)ip->i_fs - offsetof(struct ufs211_mount, m_filsys));
-	u->u_error = statfs1(mp, uap->buf);
+	u->u_error = statfs1(mp, uap->m_buf);
 }
 
 /*
@@ -271,7 +271,7 @@ ufs211_sync(mp)
 		fs->fs_fmod = 0;
 		fs->fs_time = time.tv_sec;
 		bcopy(fs, bp, sizeof(struct ufs211_fs));
-		mapout(bp);
+		ufs211_mapout(bp);
 		bwrite(bp);
 		error = geterror(bp);
 	}
@@ -304,7 +304,7 @@ ufs211_vget(mp, ino, vpp)
 	type = ump->m_devvp->v_tag == VT_UFS211; /* XXX */
 	MALLOC(ip, struct ufs211_inode *, sizeof(struct ufs211_inode), UFS211, M_WAITOK);
 	bzero((caddr_t)ip, sizeof(struct ufs211_inode));
-	lockinit(&ip->i_lock, PINOD, "inode", 0, 0);
+	lockinit(&ip->i_lock, PINOD, "ufs211 inode", 0, 0);
 	vp->v_data = ip;
 	ip->i_vnode = vp;
 	ip->i_fs = fs = ump->m_filsys;
@@ -360,6 +360,8 @@ ufs211_init(vfsp)
 	if (done)
 		return (0);
 	done = 1;
+
+	bufmap_init();
 	//ihinit();
 #ifdef QUOTA
 //	dqinit();

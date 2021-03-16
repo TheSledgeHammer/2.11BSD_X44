@@ -211,8 +211,9 @@ found:
 	mp->m_inodp = ip;	/* reserve slot */
 	mp->m_dev = dev;
 	fs = &mp->m_filsys;
+	ufs211_mapin(tp);
 	bcopy(tp, (caddr_t)fs, sizeof(struct ufs211_fs));
-	mapout(tp);
+	ufs211_mapout(tp);
 	brelse(tp);
 	tp = 0;
 	fs->fs_ronly = (ronly != 0);
@@ -247,6 +248,7 @@ out:
 	return (0);
 }
 
+void
 umount()
 {
 	struct a {
@@ -256,6 +258,7 @@ umount()
 	u->u_error = unmount1(uap->fspec);
 }
 
+int
 unmount1(fname)
 	caddr_t fname;
 {

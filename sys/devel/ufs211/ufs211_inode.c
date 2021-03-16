@@ -24,6 +24,61 @@
 #define	INOHSZ				16			/* must be power of two */
 #define	INOHASH(dev,ino)	(((dev)+(ino))&(INOHSZ-1))
 
+union ufs211_ihead {				/* inode LRU cache, stolen */
+	union  ufs211_ihead *ih_head[2];
+	struct ufs211_inode *ih_chain[2];
+} ihead[INOHSZ];
+
+struct ufs211_inode *ifreeh, **ifreet;
+
+/*
+ * Initialize hash links for inodes
+ * and build inode free list.
+ */
+ihinit()
+{
+	register int i;
+	register struct ufs211_inode *ip = inode;
+	register union  ufs211_ihead *ih = ihead;
+
+	for (i = INOHSZ; --i >= 0; ih++) {
+		ih->ih_head[0] = ih;
+		ih->ih_head[1] = ih;
+	}
+	ifreeh = ip;
+	ifreet = &ip->i_freef;
+	ip->i_freeb = &ifreeh;
+	ip->i_forw = ip;
+	ip->i_back = ip;
+	for (i = ninode; --i > 0; ) {
+		++ip;
+		ip->i_forw = ip;
+		ip->i_back = ip;
+		*ifreet = ip;
+		ip->i_freeb = ifreet;
+		ifreet = &ip->i_freef;
+	}
+	ip->i_freef = NULL;
+}
+
+/*
+ * Find an inode if it is incore.
+ */
+struct ufs211_inode *
+ifind(dev, ino)
+	register dev_t dev;
+	register ufs211_ino_t ino;
+{
+	register struct ufs211_inode *ip;
+	union ufs211_ihead *ih;
+
+	ih = &ihead[INOHASH(dev, ino)];
+	for (ip = ih->ih_chain[0]; ip != (struct ufs211_inode *)ih; ip = ip->i_forw)
+		if (ino == ip->i_number && dev == ip->i_dev)
+			return(ip);
+	return((struct ufs211_inode *)NULL);
+}
+
 #define	SINGLE				0	/* index of single indirect block */
 #define	DOUBLE				1	/* index of double indirect block */
 #define	TRIPLE				2	/* index of triple indirect block */
@@ -61,7 +116,6 @@ ufs211_updat(ip, ta, tm, waitfor)
 		return;
 	}
 #ifdef EXTERNALITIMES
-	mapseg5(xitimes, xitdesc);
 	xicp2 = &((struct icommon2 *)SEG5)[ip - inode];
 	if (tip->i_flag & IACC)
 		xicp2->ic_atime = ta->tv_sec;
@@ -70,7 +124,6 @@ ufs211_updat(ip, ta, tm, waitfor)
 	if (tip->i_flag & ICHG)
 		xicp2->ic_ctime = time.tv_sec;
 	xic2 = *xicp2;
-	normalseg5();
 #else
 	if (tip->i_flag&UFS211_IACC)
 		tip->i_atime = ta->tv_sec;
@@ -80,7 +133,8 @@ ufs211_updat(ip, ta, tm, waitfor)
 		tip->i_ctime = time.tv_sec;
 #endif
 	tip->i_flag &= ~(UFS211_IUPD|UFS211_IACC|UFS211_ICHG|UFS211_IMOD);
-	dp = (struct dinode *)(bp->b_data + itoo(tip->i_number));
+	ufs211_mapin(bp);
+	dp = (struct dinode *) bp + itoo(tip->i_number);
 	dp->di_ic1 = tip->i_ic1;
 	dp->di_flag = tip->i_flags;
 #ifdef EXTERNALITIMES
@@ -89,7 +143,7 @@ ufs211_updat(ip, ta, tm, waitfor)
 	dp->di_ic2 = tip->i_ic2;
 #endif
 	bcopy(ip->i_addr, dp->di_addr, NADDR * sizeof (ufs211_daddr_t));
-	mapout(bp);
+	ufs211_mapout(bp);
 	if (waitfor && ((ip->i_fs->fs_flags & MNT_ASYNC) == 0))
 		bwrite(bp);
 	else
@@ -182,8 +236,9 @@ ufs211_trunc(oip,length, ioflags)
 			brelse(bp);
 			return;
 		}
+		ufs211_mapin(bp);
 		bzero(bp + offset, (u_int)(DEV_BSIZE - offset));
-		mapout(bp);
+		ufs211_mapout(bp);
 		bdwrite(bp);
 	}
 	/*
@@ -316,10 +371,10 @@ ufs211_indirtrunc(ip, bn, lastbn, level, aflags)
 		}
 		cpy = geteblk();
 		copy(bftopaddr(bp), bftopaddr(cpy), btoc(DEV_BSIZE));
-		bap = (ufs211_daddr_t *)mapin(bp);
-		bzero((caddr_t)&bap[last + 1],
-		    (u_int)(NINDIR - (last + 1)) * sizeof(ufs211_daddr_t));
-		mapout(bp);
+		ufs211_mapin(bp);
+		bap = (ufs211_daddr_t *) bp;
+		bzero((caddr_t)&bap[last + 1], (u_int)(NINDIR - (last + 1)) * sizeof(ufs211_daddr_t));
+		ufs211_mapout(bp);
 		if (aflags & B_SYNC)
 			bwrite(bp);
 		else
@@ -336,11 +391,12 @@ ufs211_indirtrunc(ip, bn, lastbn, level, aflags)
 	 * and that doesn't work well with recursion.
 	 */
 	if (level == SINGLE)
-		trsingle(ip, bp, last, aflags);
+		ufs211_trsingle(ip, bp, last, aflags);
 	else {
 		register ufs211_daddr_t *bstart, *bstop;
 
-		bstart = (ufs211_daddr_t *)mapin(bp);
+		ufs211_mapin(bp);
+		bstart = (ufs211_daddr_t *) bp;
 		bstop = &bstart[last];
 		bstart += NINDIR - 1;
 		/*
@@ -349,22 +405,22 @@ ufs211_indirtrunc(ip, bn, lastbn, level, aflags)
 		for (;bstart > bstop;--bstart) {
 			nb = *bstart;
 			if (nb) {
-				mapout(bp);
+				ufs211_mapout(bp);
 				ufs211_indirtrunc(ip,nb,(ufs211_daddr_t)-1, level-1, aflags);
 				free(ip, nb);
-				mapin(bp);
+				ufs211_mapin(bp);
 			}
 		}
-		mapout(bp);
+		ufs211_mapout(bp);
 
 		/*
 		 * Recursively free last partial block.
 		 */
 		if (lastbn >= 0) {
 
-			mapin(bp);
+			ufs211_mapin(bp);
 			nb = *bstop;
-			mapout(bp);
+			ufs211_mapout(bp);
 			last = lastbn % factor;
 			if (nb != 0)
 				ufs211_indirtrunc(ip, nb, last, level - 1, aflags);
@@ -383,8 +439,9 @@ ufs211_trsingle(ip, bp,last, aflags)
 	register ufs211_daddr_t *bstart, *bstop;
 	ufs211_daddr_t blarray[NINDIR];
 
-	bcopy(mapin(bp), blarray, NINDIR * sizeof(ufs211_daddr_t));
-	mapout(bp);
+	ufs211_mapin(bp);
+	bcopy(bp, blarray, NINDIR * sizeof(ufs211_daddr_t));
+	ufs211_mapout(bp);
 	bstart = &blarray[NINDIR - 1];
 	bstop = &blarray[last];
 	for (; bstart > bstop; --bstart)
