@@ -87,8 +87,7 @@ struct plimit {
 int	 	addupc (int pc, struct uprof *up, int ticks);
 //void	addupc_intr (struct proc *p, u_long pc, u_int ticks);
 //void	addupc_task (struct proc *p, u_long pc, u_int ticks);
-void	calcru (struct proc *p, struct timeval *up, struct timeval *sp,
-		     struct timeval *ip);
+void	calcru (struct proc *p, struct timeval *up, struct timeval *sp, struct timeval *ip);
 int	 	fuswintr (void *base);
 struct plimit *limcopy (struct plimit *lim);
 void	ruadd (struct rusage *ru, struct rusage *ru2);

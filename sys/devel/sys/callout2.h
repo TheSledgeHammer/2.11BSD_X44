@@ -166,7 +166,7 @@ void	callout_setfunc(struct callout *, void (*)(void *), void *);
 void	callout_reset(struct callout *, int, void (*)(void *), void *);
 void	callout_schedule(struct callout *, int);
 void	callout_stop(struct callout *);
-void	callout_hardclock(void);
+int		callout_hardclock(int);
 
 #define	callout_setfunc(c, f, a) do {							\
 	(c)->c_func = (f);											\
@@ -178,6 +178,6 @@ void	callout_hardclock(void);
 #define	callout_invoking(c)	((c)->c_flags & CALLOUT_INVOKING)
 #define	callout_ack(c)		((c)->c_flags &= ~CALLOUT_INVOKING)
 
-struct	callout *callfree, callout, *calltodo;
+struct	callout *callfree, *callout, *calltodo;
 int		ncallout;
 #endif

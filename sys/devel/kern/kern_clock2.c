@@ -26,9 +26,6 @@
 #include <sys/gmon.h>
 #endif
 
-#define	USERMODE(ps)	CLKF_USERMODE(ps)
-#define	BASEPRI(ps)		CLKF_BASEPRI(ps)
-
 int noproc;
 struct  callout *callfree, *calltodo;
 
@@ -39,10 +36,9 @@ volatile struct timeval time;
 volatile struct	timeval mono_time;
 
 void
-hardclock(dev, sp, r1, ov, nps, r0, pc, ps)
-	dev_t dev;
-	caddr_t sp, pc;
-	int r1, ov, nps, r0, ps;
+hardclock(frame, pc)
+	struct clockframe *frame;
+	caddr_t pc;
 {
 	register struct callout *p1;
 	register struct proc *p;
@@ -74,7 +70,7 @@ hardclock(dev, sp, r1, ov, nps, r0, pc, ps)
 	 * assuming that the current state has been around at least
 	 * one tick.
 	 */
-	if (USERMODE(ps)) {
+	if (CLKF_USERMODE(frame)) {
 		if (u->u_prof.pr_scale)
 			needsoft = 1;
 		/*
@@ -124,7 +120,7 @@ hardclock(dev, sp, r1, ov, nps, r0, pc, ps)
 		}
 	}
 
-	gatherstats(pc,ps);
+	gatherstats(frame);
 
 	/*
 	 * Increment the time-of-day, process callouts at a very
@@ -144,12 +140,10 @@ hardclock(dev, sp, r1, ov, nps, r0, pc, ps)
 		++time.tv_sec;
 	}
 
-	if (needsoft && BASEPRI(ps)) {	/* if ps is high, just return */
+	if(callout_hardclock(needsoft) && CLKF_BASEPRI(frame)) {
 		(void) splsoftclock();
-		softclock(pc,ps);
+		softclock(frame, pc);
 	}
-	/* can combine above if with callout_hardclock */
-	callout_hardclock();
 }
 
 int	dk_ndrive = DK_NDRIVE;
@@ -164,16 +158,15 @@ int	dk_ndrive = DK_NDRIVE;
  */
 /*ARGSUSED*/
 void
-gatherstats(pc, ps)
-	caddr_t pc;
-	int ps;
+gatherstats(frame)
+	struct clockframe *frame;
 {
 	register int cpstate, s;
 
 	/*
 	 * Determine what state the cpu is in.
 	 */
-	if (USERMODE(ps)) {
+	if (CLKF_USERMODE(frame)) {
 		/*
 		 * CPU was in user state.
 		 */
@@ -194,7 +187,7 @@ gatherstats(pc, ps)
 		 * timers makes doing anything else difficult.
 		 */
 		cpstate = CP_SYS;
-		if (noproc && BASEPRI(ps))
+		if (noproc && CLKF_BASEPRI(frame))
 			cpstate = CP_IDLE;
 	}
 	/*
@@ -213,9 +206,9 @@ gatherstats(pc, ps)
  * Run periodic events from timeout queue.
  */
 void
-softclock(pc, ps)
+softclock(frame, pc)
+	struct clockframe *frame;
 	caddr_t pc;
-	int 	ps;
 {
 	for (;;) {
 		register struct callout *p1;
@@ -247,7 +240,7 @@ softclock(pc, ps)
 	 * If trapped user-mode and profiling, give it
 	 * a profiling tick.
 	 */
-	if (USERMODE(ps)) {
+	if (CLKF_USERMODE(frame)) {
 		register struct proc *p = u->u_procp;
 
 		if (u->u_prof.pr_scale)

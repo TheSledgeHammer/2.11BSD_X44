@@ -265,11 +265,10 @@ callout_stop(struct callout *c)
  * This is called from hardclock() once every tick.
  * We return !0 if we need to schedule a softclock.
  */
-void
-callout_hardclock(void)
+int
+callout_hardclock(int needsoftclock)
 {
 	int s;
-	int needsoftclock;
 
 	CALLOUT_LOCK(s);
 
@@ -286,9 +285,7 @@ callout_hardclock(void)
 	needsoftclock = !CIRCQ_EMPTY(&timeout_todo);
 	CALLOUT_UNLOCK(s);
 
-	if (needsoftclock) {
-		splsoftclock();
-	}
+	return (needsoftclock);
 }
 
 /* ARGSUSED */
