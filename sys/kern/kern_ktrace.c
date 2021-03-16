@@ -33,6 +33,7 @@
  *	@(#)kern_ktrace.c	8.5 (Berkeley) 5/14/95
  */
 
+#include <sys/cdefs.h>
 #ifdef KTRACE
 
 #include <sys/param.h>

@@ -107,8 +107,7 @@ static const struct filterops timer_filtops = {
 		.f_event = filt_timer,
 };
 
-#define	KNOTE_ACTIVATE(kn)										\
-do {															\
+#define	KNOTE_ACTIVATE(kn) do {									\
 	kn->kn_status |= KN_ACTIVE;									\
 	if ((kn->kn_status & (KN_QUEUED | KN_DISABLED)) == 0)		\
 		knote_enqueue(kn);										\

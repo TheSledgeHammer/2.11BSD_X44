@@ -38,6 +38,7 @@
  *	@(#)vfs_init.c	8.5 (Berkeley) 5/11/95
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/vnode.h>

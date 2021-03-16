@@ -8,7 +8,6 @@ all:
 		@echo "make tags, links, init_sysent.c"
 	
 
-
 SYSCALLSRC = makesyscalls.sh syscalls.conf syscalls.master
 init_sysent.c syscalls.c ../sys/syscall.h: ${SYSCALLSRC}
 	-mv -f init_sysent.c init_sysent.c.bak
@@ -29,15 +28,12 @@ init_sysent.c syscalls.c ../sys/syscall.h: ${SYSCALLSRC}
 SYSTAGS=/var/db/sys_tags
 SYSDIR=/sys
 
+.ifmake links
 # Directories in which to place tags links (other than machine-dependent)
-DGEN=	conf \
-		dev dev/scsi \
-		kern libkern \
-		miscfs miscfs/deadfs miscfs/fdesc \
-		miscfs/fifofs miscfs/specfs miscfs/nullfs \
-		net netimp netinet netns sys \
-		ufs ufs/ffs ufs/lfs ufs/mfs ufs/ufs \
-		vm
+DGEN=	(cd ${SYSDIR};							\
+	    find -H . -name arch -prune -o -name "*.[chs]" -print |	\
+	    sed -e 's@^\./@@' -e 's@/[^/]*\..*@@' | sort -t / -u )
+.endif
 
 tags::
 	-for i in ${ARCH}; do \

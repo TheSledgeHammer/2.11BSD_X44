@@ -5,6 +5,7 @@
  *
  *	@(#)kern_exit.c	2.6 (2.11BSD) 2000/2/20
  */
+
 #include <sys/cdefs.h>
 
 #include <sys/param.h>

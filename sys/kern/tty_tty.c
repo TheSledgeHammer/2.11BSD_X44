@@ -9,6 +9,8 @@
 /*
  * Indirect driver for controlling tty compatibility. Pass through to ctty
  */
+
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/proc.h>

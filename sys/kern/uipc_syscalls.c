@@ -6,6 +6,7 @@
  *	@(#)uipc_syscalls.c	7.1.3 (2.11BSD) 1999/9/13
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/filedesc.h>

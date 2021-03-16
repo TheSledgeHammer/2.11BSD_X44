@@ -6,6 +6,7 @@
  *	@(#)kern_resource.c	1.4 (2.11BSD GTE) 1997/2/14
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/proc.h>

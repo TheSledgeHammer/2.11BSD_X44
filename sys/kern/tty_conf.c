@@ -6,6 +6,7 @@
  *	@(#)tty_conf.c	1.2 (2.11BSD GTE) 11/30/94
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 
 #include <sys/file.h>

@@ -6,6 +6,7 @@
  *	@(#)sys_generic.c	1.8 (2.11BSD) 2000/2/28
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 
 #include <sys/user.h>

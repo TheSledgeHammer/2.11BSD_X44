@@ -6,6 +6,7 @@
  *	@(#)kern_fork.c	1.6 (2.11BSD) 1999/8/11
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/map.h>

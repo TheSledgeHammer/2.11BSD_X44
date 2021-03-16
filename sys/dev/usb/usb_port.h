@@ -80,8 +80,8 @@
 #endif
 
 typedef char usb_callout_t;
-#define usb_callout_init(h)
-#define usb_callout(h, t, f, d) timeout((f), (d), (t))
-#define usb_uncallout(h, f, d) 	untimeout((f), (d))
+#define usb_callout_init(h)		callout_init(&(h))
+#define usb_callout(h, t, f, d) callout_reset(&(h), (t), (f), (d))
+#define usb_uncallout(h, f, d) 	callout_stop(&(h))
 
 #endif /* _USB_PORT_H */

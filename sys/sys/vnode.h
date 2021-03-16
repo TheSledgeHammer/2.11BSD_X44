@@ -277,6 +277,7 @@ struct vnodeops {
 	int	(*vop_ioctl)		(struct vnode *vp, u_long command, caddr_t data, int fflag, struct ucred *cred, struct proc *p);
 	int	(*vop_select)		(struct vnode *vp, int which, int fflags, struct ucred *cred, struct proc *p);
 	int	(*vop_poll)			(struct vnode *vp, int fflags, int events, struct proc *p);
+	int (*vop_kqfilter)		(struct vnode *vp, struct knote *kn);
 	int (*vop_revoke)		(struct vnode *vp, int flags);
 	int	(*vop_mmap)	    	(struct vnode *vp, int fflags, struct ucred *cred, struct proc *p);
 	int	(*vop_fsync)		(struct vnode *vp, int fflags, struct ucred *cred, int waitfor, int flag, struct proc *p);
@@ -325,6 +326,7 @@ struct vnodeops {
 #define	VOP_IOCTL(vp, command, data, fflag, cred, p)			(*((vp)->v_op->vop_ioctl))(vp, command, data, fflag, cred, p)
 #define	VOP_SELECT(vp, which, fflags, cred, p)					(*((vp)->v_op->vop_select))(vp, which, fflags, cred, p)
 #define VOP_POLL(vp, fflag, events, p)							(*((vp)->v_op->vop_poll))(vp, fflag, events, p)
+#define VOP_KQFILTER(vp, kn)									(*((vp)->v_op->vop_kqfilter))(vp, kn)
 #define VOP_REVOKE(vp, flags)									(*((vp)->v_op->vop_revoke))(vp, flags)
 #define	VOP_MMAP(vp, fflags, cred, p)		    				(*((vp)->v_op->vop_mmap))(vp, fflags, cred, p)
 #define	VOP_FSYNC(vp, cred, waitfor, flag, p)					(*((vp)->v_op->vop_fsync))(vp, cred, waitfor, flag, p)
@@ -484,6 +486,12 @@ struct vop_poll_args {
 	int 					a_fflags;
 	int 					a_events;
 	struct proc 			*a_p;
+};
+
+struct vop_kqfilter_args {
+	struct vop_generic_args a_head;
+	struct vnode 			*a_vp;
+	struct knote			*a_kn;
 };
 
 struct vop_revoke_args {

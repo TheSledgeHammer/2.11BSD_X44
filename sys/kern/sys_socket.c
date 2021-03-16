@@ -12,6 +12,7 @@
  *	@(#)sys_socket.c	7.2 (Berkeley) 3/31/88
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>

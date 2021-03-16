@@ -6,6 +6,7 @@
  *	@(#)kern_xxx.c	1.2 (2.11BSD) 2000/2/20
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/signal.h>

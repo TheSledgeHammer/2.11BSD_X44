@@ -45,7 +45,7 @@
  *	@(#)init_main.c	8.16 (Berkeley) 5/14/95
  */
 
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/filedesc.h>
 #include <sys/errno.h>
@@ -138,7 +138,7 @@ main(framep)
 	 * Attempt to find console and initialize
 	 * in case of early panic or other messages.
 	 */
-	//consinit();
+	consinit();
 	printf(copyright);
 
 	vm_mem_init();
@@ -146,9 +146,12 @@ main(framep)
 
 	startup();
 
-	kmemmapinit();
+	kmem_rmapinit();
 
 	ksyms_init();
+
+	/* Initialize callouts, part 1. */
+	callout_startup();
 
 	/*
 	 * Initialize process and pgrp structures.
@@ -196,7 +199,6 @@ main(framep)
 	fdp->fd_fd.fd_ofiles = fdp->fd_dfiles;
 	fdp->fd_fd.fd_ofileflags = fdp->fd_dfileflags;
 	fdp->fd_fd.fd_nfiles = NDFILE;
-
 
 	/* Create the limits structures. */
 	p->p_limit = &limit0;

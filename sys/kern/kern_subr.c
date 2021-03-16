@@ -6,6 +6,7 @@
  *	@(#)kern_subr.c	1.2 (2.11BSD GTE) 11/26/94
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/user.h>

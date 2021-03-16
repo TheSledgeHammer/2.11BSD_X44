@@ -38,6 +38,7 @@
  *	@(#)vfs_cache.c	8.5 (Berkeley) 3/22/95
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/time.h>

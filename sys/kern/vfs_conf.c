@@ -33,6 +33,7 @@
  *	@(#)vfs_conf.c	8.11 (Berkeley) 5/10/95
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/vnode.h>

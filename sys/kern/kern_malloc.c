@@ -33,6 +33,7 @@
  *	@(#)kern_malloc.c	8.4 (Berkeley) 5/20/95
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/map.h>

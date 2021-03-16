@@ -9,6 +9,7 @@
  *	@(#)kern_acct.c	7.25 (Berkeley) 7/10/92
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>

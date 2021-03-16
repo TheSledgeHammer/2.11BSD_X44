@@ -38,6 +38,7 @@
  *	from: @(#)vfs_bio.c	8.6 (Berkeley) 1/11/94
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>

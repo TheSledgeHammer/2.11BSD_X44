@@ -12,6 +12,7 @@
  *	@(#)uipc_socket2.c	7.3 (Berkeley) 1/28/88
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/user.h>

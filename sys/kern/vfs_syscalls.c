@@ -37,6 +37,7 @@
  *
  *	@(#)vfs_syscalls.c	8.41 (Berkeley) 6/15/95
  */
+#include <sys/cdefs.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>

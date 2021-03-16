@@ -42,6 +42,7 @@
  *	@(#)kern_descrip.c	8.8 (Berkeley) 2/14/95
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/kernel.h>

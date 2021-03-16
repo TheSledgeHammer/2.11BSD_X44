@@ -6,6 +6,7 @@
  *	@(#)uipc_mbuf.c	2.0 (2.11BSD) 12/24/92
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #ifdef INET
 #include <sys/user.h>

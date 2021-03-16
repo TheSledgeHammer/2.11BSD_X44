@@ -225,7 +225,7 @@ startup(firstaddr)
 	    (name) = (type *)v; v = (caddr_t)((lim) = ((name)+(num)))
 
 	valloc(cfree, struct cblock, nclist);
-	valloc(callout, struct callout, ncallout);
+//	valloc(callout, struct callout, ncallout); /* see kern_timeout.c: callout_startup */
 	valloc(swapmap, struct map, nswapmap = maxproc * 2);
 
 #ifdef SYSVSHM
@@ -319,11 +319,15 @@ startup(firstaddr)
 	mb_map = kmem_suballoc(kernel_map, (vm_offset_t) &mbutl, &maxaddr, VM_MBUF_SIZE, FALSE);
 	/*
 	 * Initialize callouts
+	 * See kern_timeout.c: callout_startup();
 	 */
+
+	/*
 	callfree = callout;
 	for (i = 1; i < ncallout; i++)
 		callout[i - 1].c_next = &callout[i];
 	callout[i - 1].c_next = NULL;
+	*/
 
 	/*printf("avail mem = %d\n", ptoa(vm_page_free_count));*/
 	printf("using %d buffers containing %d bytes of memory\n", nbuf, bufpages * CLBYTES);
@@ -558,7 +562,7 @@ sigreturn(p, uap, retval)
 	 * It is unsafe to keep track of it ourselves, in the event that a
 	 * program jumps out of a signal handler.
 	 */
-	scp = SCARG(uap, sigcntxp);
+	scp = uap->sigcntxp;
 	if (copyin((caddr_t)scp, &context, sizeof(*scp)) != 0)
 		return (EFAULT);
 

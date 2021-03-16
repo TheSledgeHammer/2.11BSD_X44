@@ -6,6 +6,7 @@
  *	@(#)uipc_usrreq.c	7.1.2 (2.11BSD GTE) 1997/1/18
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/mbuf.h>

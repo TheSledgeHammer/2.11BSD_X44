@@ -44,6 +44,7 @@
  * from: $Header: subr_autoconf.c,v 1.12 93/02/01 19:31:48 torek Exp $ (LBL)
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/device.h>
 #include <sys/user.h>

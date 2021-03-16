@@ -37,6 +37,7 @@
  *
  *	@(#)vfs_lookup.c	8.10 (Berkeley) 5/27/95
  */
+#include <sys/cdefs.h>
 
 #include <sys/param.h>
 #include <sys/syslimits.h>

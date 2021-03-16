@@ -37,6 +37,7 @@
  *
  *	@(#)vfs_vnops.c	8.14 (Berkeley) 6/15/95
  */
+#include <sys/cdefs.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -54,7 +55,7 @@
 #include <vm/include/vm.h>
 
 struct fileops vnops =
-	{ vn_read, vn_write, vn_ioctl, vn_select, vn_poll, vn_closefile };
+	{ vn_read, vn_write, vn_ioctl, vn_select, vn_poll, vn_closefile, vn_kqfilter };
 
 /*
  * Common code for vnode open operations.
@@ -412,6 +413,9 @@ vn_select(fp, which, p)
 	return (VOP_SELECT(((struct vnode *)fp->f_data), which, fp->f_flag, fp->f_cred, p));
 }
 
+/*
+ * File table vnode poll routine.
+ */
 int
 vn_poll(fp, events, p)
 	struct file *fp;
@@ -419,6 +423,17 @@ vn_poll(fp, events, p)
 	struct proc *p;
 {
 	return (VOP_POLL(((struct vnode *)fp->f_data), fp->f_flag, events, p));
+}
+
+/*
+ * File table vnode kqfilter routine.
+ */
+int
+vn_kqfilter(fp, kn)
+	struct file *fp;
+	struct knote *kn;
+{
+	return (VOP_KQFILTER((struct vnode *)fp->f_data, kn));
 }
 
 /*

@@ -6,6 +6,8 @@
  *	@(#)tty_tb.c	1.2 (2.11BSD GTE) 11/29/94
  */
 
+#include <sys/cdefs.h>
+
 #include "tb.h"
 #if NTB > 0
 

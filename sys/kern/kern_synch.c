@@ -6,6 +6,7 @@
  *	@(#)kern_synch.c	1.5 (2.11BSD) 1999/9/13
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>

@@ -7,6 +7,7 @@
  */
 
 #define IPCREG
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
@@ -22,7 +23,7 @@
 
 #include <machine/reg.h>
 #include <machine/psl.h>
-#include <machine/seg.h>
+#include <machine/segments.h>
 
 /*
  * Priority for tracing

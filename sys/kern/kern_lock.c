@@ -37,6 +37,7 @@
  *	@(#)kern_lock.c	8.18 (Berkeley) 5/21/95
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/atomic.h>

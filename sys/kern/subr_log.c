@@ -21,6 +21,7 @@
  * 'acctd'.
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/proc.h>

@@ -86,8 +86,8 @@ int	ntext = 		NTEXT;
 int	desiredvnodes = NVNODE;
 #define NFILE		(3 * (NPROC + MAXUSERS) + 80)
 int	maxfiles = 		NFILE;
-#define NCALL 		(16 + NPROC)
-int	ncallout = 		NCALL;
+//#define NCALL 		(16 + NPROC)
+//int	ncallout = 		NCALL;
 #define NCLIST 		(60 + 12 * MAXUSERS)
 int	nclist = 		NCLIST;
 int	nmbclusters = 	NMBCLUSTERS;

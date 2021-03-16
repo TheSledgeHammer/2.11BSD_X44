@@ -6,6 +6,7 @@
  *	@(#)tty_subr.c	1.1 (2.10BSD Berkeley) 12/1/86
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/clist.h>
 #include <sys/ioctl.h>

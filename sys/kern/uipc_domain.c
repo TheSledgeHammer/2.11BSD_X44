@@ -12,6 +12,7 @@
  *	@(#)uipc_domain.c	7.2.1 (2.11BSD) 1995/10/09
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #ifdef INET
 #include <sys/socket.h>

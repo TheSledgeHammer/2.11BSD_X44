@@ -6,6 +6,7 @@
  *	@(#)tty.c	1.5 (2.11BSD GTE) 1997/5/4
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/ioctl.h>

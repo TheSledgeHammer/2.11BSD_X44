@@ -45,6 +45,7 @@
  *	@(#)kern_proc.c	8.10 (Berkeley) 2/23/95
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/proc.h>

@@ -12,6 +12,7 @@
  *	@(#)uipc_proto.c	7.2 (Berkeley) 12/30/87
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/protosw.h>
@@ -27,21 +28,23 @@ int	raw_init(),raw_usrreq(),raw_input(),raw_ctlinput();
 extern	struct domain unixdomain;		/* or at least forward */
 
 struct protosw unixsw[] = {
-{ SOCK_STREAM,	&unixdomain,	0,	PR_CONNREQUIRED|PR_WANTRCVD|PR_RIGHTS,
-  0,		0,		0,		0,
-  uipc_usrreq,
-  0,		0,		0,		0,
-},
-{ SOCK_DGRAM,	&unixdomain,	0,		PR_ATOMIC|PR_ADDR|PR_RIGHTS,
-  0,		0,		0,		0,
-  uipc_usrreq,
-  0,		0,		0,		0,
-},
-{ 0,		0,		0,		0,
-  raw_input,	0,		raw_ctlinput,	0,
-  raw_usrreq,
-  raw_init,	0,		0,		0,
-}
+		{ SOCK_STREAM,	&unixdomain,	0,	PR_CONNREQUIRED|PR_WANTRCVD|PR_RIGHTS,
+				0,		0,		0,		0,
+				uipc_usrreq,
+				0,		0,		0,		0,
+		},
+
+		{ SOCK_DGRAM,	&unixdomain,	0,		PR_ATOMIC|PR_ADDR|PR_RIGHTS,
+				0,		0,		0,		0,
+				uipc_usrreq,
+				0,		0,		0,		0,
+		},
+
+		{ 0,		0,		0,		0,
+				raw_input,	0,		raw_ctlinput,	0,
+				raw_usrreq,
+				raw_init,	0,		0,		0,
+		}
 };
 
 int	unp_externalize(), unp_dispose();

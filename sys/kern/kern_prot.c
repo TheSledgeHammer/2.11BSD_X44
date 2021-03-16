@@ -10,6 +10,7 @@
  * System calls related to processes and protection
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/systm.h>

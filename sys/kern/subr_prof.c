@@ -33,6 +33,7 @@
  *	@(#)subr_prof.c	8.4 (Berkeley) 2/14/95
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
@@ -40,7 +41,6 @@
 #include <sys/user.h>
 
 #include <sys/mount.h>
-#include <sys/syscallargs.h>
 
 #include <machine/cpu.h>
 

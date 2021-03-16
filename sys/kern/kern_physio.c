@@ -38,6 +38,7 @@
  *	from: @(#)kern_physio.c	8.1 (Berkeley) 6/10/93
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/buf.h>

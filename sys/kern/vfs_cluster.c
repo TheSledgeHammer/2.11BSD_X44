@@ -33,6 +33,7 @@
  *	@(#)vfs_cluster.c	8.10 (Berkeley) 3/28/95
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/user.h>

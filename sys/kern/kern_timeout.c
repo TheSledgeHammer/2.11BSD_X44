@@ -77,7 +77,7 @@
 #include <sys/kernel.h>
 #include <sys/lock.h>
 #include <sys/queue.h>
-#include <devel/sys/callout2.h>
+#include <sys/callout.h>
 
 #include <machine/intr.h>
 
@@ -145,9 +145,11 @@ callout_startup(void)
 {
 	int b;
 	CIRCQ_INIT(&timeout_todo);
+	callfree = CIRCQ_FIRST(&timeout_todo);
 	for (b = 0; b < BUCKETS; b++) {
 		CIRCQ_INIT(&timeout_wheel[b]);
 	}
+	calltodo = CIRCQ_FIRST(&timeout_todo);
 	simple_lock_init(&callout_slock, "callout lock");
 }
 

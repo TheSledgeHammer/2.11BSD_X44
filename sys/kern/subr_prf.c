@@ -6,6 +6,7 @@
  *	@(#)subr_prf.c	1.2 (2.11BSD) 1998/12/5
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/buf.h>
@@ -16,6 +17,7 @@
 #include <sys/reboot.h>
 #include <sys/systm.h>
 #include <sys/syslog.h>
+#include <sys/types.h>
 
 #define TOCONS	0x1
 #define TOTTY	0x2

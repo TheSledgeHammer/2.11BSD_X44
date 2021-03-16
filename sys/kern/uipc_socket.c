@@ -12,6 +12,7 @@
  *	@(#)uipc_socket.c	7.8.1 (2.11BSD GTE) 11/26/94
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #ifdef INET
 #include <sys/user.h>

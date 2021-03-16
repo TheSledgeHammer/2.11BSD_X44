@@ -441,6 +441,27 @@ vop_poll(vp, fflags, events, p)
 }
 
 int
+vop_kqfilter(vp, kn)
+	struct vnode *vp;
+	struct knote *kn;
+{
+	struct vop_kqfilter_args a;
+	int error;
+
+	a.a_head.a_ops = &vops;
+	a.a_vp = vp;
+	a.a_kn = kn;
+
+	if(vops.vop_kqfilter == NULL) {
+		return (EOPNOTSUPP);
+	}
+
+	error = vops.vop_kqfilter(vp, kn);
+
+	return (error);
+}
+
+int
 vop_revoke(vp, flags)
 	struct vnode *vp;
 	int flags;

@@ -40,6 +40,7 @@
  *	@(#)subr_xxx.c	8.3 (Berkeley) 3/29/95
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/user.h>

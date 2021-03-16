@@ -17,7 +17,7 @@
  *	@(#)subr_rmap.c	8.2 (Berkeley) 01/21/94
  */
 
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/user.h>
@@ -380,11 +380,11 @@ resolve:
 	return(a[2]);
 }
 
-/* 2.11BSD kmem map fail-safe initialization:
+/* 2.11BSD kmem rmap fail-safe initialization:
  * Allocates coremap & swapmap in the event one or both were not allocated properly during startup.
  */
 void
-kmemmapinit()
+kmem_rmapinit()
 {
 	struct mapent __coremap[0] = &_coremap[0];
 	struct mapent __swapmap[0] = &_swapmap[0];
@@ -400,20 +400,4 @@ kmemmapinit()
 	printf("avail mem in coremap = %D\n", ctob((long)__coremap[0].m_size));
 	maxmem = MAXMEM;
 	printf("user mem  = %D\n", ctob((long)MAXMEM));
-}
-
-/*
- * Allocate a new map array after coremap & swapmap are initialized
- */
-void
-rmap_allocate(rmap, mapent, limit, name, type)
-	struct map *rmap;
-	struct mapent *mapent, *limit;
-	char *name;
-	int type;
-{
-	rmap->m_map = mapent;
-	rmap->m_limit = limit;
-	rmap->m_name = name;
-	rmap->m_type = type;
 }

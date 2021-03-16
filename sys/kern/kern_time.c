@@ -6,6 +6,7 @@
  *	@(#)kern_time.c	1.5 (2.11BSD) 2000/4/9
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/proc.h>

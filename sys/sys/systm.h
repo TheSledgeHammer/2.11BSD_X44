@@ -138,8 +138,8 @@ void 	timeout (void (*func)(void *), void *arg, int ticks);
 void 	untimeout (void (*func)(void *), void *arg);
 void	realitexpire (void *);
 
-void 	hardclock (dev_t dev, caddr_t sp, int r1, int ov, int nps, int r0, caddr_t pc, int ps);
-void 	softclock (caddr_t pc, int ps);
+void 	hardclock (struct clockframe *frame, caddr_t pc);
+void 	softclock (struct clockframe *frame, caddr_t pc);
 void	initclocks (void);
 
 /* kern_environment.c / kenv.h */

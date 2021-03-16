@@ -47,6 +47,7 @@
 */
 
 #define	SIGPROP			/* include signal properties table */
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/signal.h>
 #include <sys/signalvar.h>

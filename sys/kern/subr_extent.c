@@ -40,6 +40,7 @@
  * General purpose extent manager.
  */
 
+#include <sys/cdefs.h>
 #ifdef _KERNEL
 #include <sys/param.h>
 #include <sys/user.h>
@@ -52,6 +53,7 @@
 /*
  * user-land definitions, so it can fit into a testing harness.
  */
+
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/extent.h>

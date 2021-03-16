@@ -10,13 +10,14 @@
  * Pseudo-teletype Driver
  * (Actually two drivers, requiring two entries in 'cdevsw')
  */
-#include <sys/pty.h>
+#include <sys/cdefs.h>
 
 #if NPTY > 0
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
+#include <sys/pty.h>
 #include <sys/user.h>
 #include <sys/conf.h>
 #include <sys/file.h>
