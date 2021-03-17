@@ -260,7 +260,7 @@ softclock(frame, pc)
 		register struct proc *p = u->u_procp;
 
 		if (u->u_prof.pr_scale)
-			addupc(p, &u->u_prof, 1);
+			addupc(pc, &u->u_prof, 1);
 		/*
 		 * Check to see if process has accumulated
 		 * more than 10 minutes of user time.  If so

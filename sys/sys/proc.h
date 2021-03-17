@@ -98,6 +98,7 @@ struct	proc {
     u_char				p_pri;			/* Process  priority, negative is high */
     u_char				p_cpu;			/* cpu usage for scheduling */
     u_char				p_time;			/* resident time for scheduling */
+    u_char				p_usrpri;		/* User-priority based on p_cpu and p_nice. */
     char				p_nice;			/* nice for cpu usage */
     char				p_slptime;		/* Time since last blocked. secs sleeping */
     char				p_comm[MAXCOMLEN+1];/* p: basename of last exec file */

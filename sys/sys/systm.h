@@ -62,6 +62,7 @@ extern char	runin;					/* scheduling flag */
 extern char	runout;					/* scheduling flag */
 extern int	runrun;					/* scheduling flag */
 extern char	curpri;					/* more scheduling */
+extern u_char curpriority;			/* priority of current process */
 
 extern int icode[];					/* user init code */
 extern int szicode;					/* its size */

@@ -24,7 +24,10 @@
 #define	SCHMAG	8/10
 #define	PPQ		(128 / NQS)				/* priorities per queue */
 
-struct proc *slpque[SQSIZE];
+struct proc 	*slpque[SQSIZE];
+
+u_char			curpriority;			/* usrpri of curproc */
+int				lbolt;					/* once a second sleep address */
 
 /*
  * Force switch among equal priority processes every 100ms.
@@ -46,7 +49,6 @@ schedcpu(arg)
 {
 	register struct proc *p;
 	register int a;
-	register u_char	currpri;
 
 	wakeup((caddr_t)&lbolt);
 	for (p = allproc; p != NULL; p = p->p_nxt) {
@@ -78,13 +80,13 @@ schedcpu(arg)
 		//p->p_estcpu = min(p->p_cpu, UCHAR_MAX);
 		//resetpri(p);
 		if (p->p_pri >= PUSER) {
-			currpri = setpri(p);
+			setpri(p);
 			if((p != curproc) &&
 					p->p_stat == SRUN &&
 					(p->p_flag & P_INMEM) &&
-					(p->p_pri / PPQ) != (currpri / PPQ)) {
+					(p->p_pri / PPQ) != (p->p_usrpri / PPQ)) {
 				remrq(p);
-				p->p_pri = currpri;
+				p->p_pri = p->p_usrpri;
 				setpri(p);
 			} else {
 				setpri(p);
@@ -96,8 +98,11 @@ schedcpu(arg)
 		runin = 0;
 		wakeup((caddr_t)&runin);
 	}
-	++runrun;			/* swtch at least once a second */
-	timeout(schedcpu, (caddr_t)0, hz);
+	++runrun;					/* swtch at least once a second */
+	if (bclnlist != NULL) {
+		wakeup((caddr_t)pageproc);
+	}
+	timeout(schedcpu, (void *)0, hz);
 }
 
 /*
@@ -147,6 +152,10 @@ tsleep(ident, priority, timo)
 	int	sig, catch = priority & PCATCH;
 	void	endtsleep();
 
+#ifdef KTRACE
+	if (KTRPOINT(p, KTR_CSW))
+		ktrcsw(p->p_tracep, 1, 0);
+#endif
 	s = splhigh();
 	if (panicstr) {
 /*
@@ -181,43 +190,51 @@ tsleep(ident, priority, timo)
  * If the wakeup happens while we're stopped p->p_wchan will be 0 upon
  * return from CURSIG.
 */
-	if	(catch)
-		{
+	if	(catch)	{
 		p->p_flag |= P_SINTR;
-		if	(sig == CURSIG(p))
-			{
+		if	(sig == CURSIG(p)) {
 			if	(p->p_wchan)
 				unsleep(p);
 			p->p_stat = SRUN;
 			goto resume;
-			}
-		if	(p->p_wchan == 0)
-			{
+		}
+		if	(p->p_wchan == 0) {
 			catch = 0;
 			goto resume;
-			}
 		}
-	else
+	} else
 		sig = 0;
 	p->p_stat = SSLEEP;
 	u->u_ru.ru_nvcsw++;
 	swtch();
 resume:
+	curpriority = p->p_usrpri;
 	splx(s);
 	p->p_flag &= ~P_SINTR;
-	if	(p->p_flag & P_TIMEOUT)
-		{
+	if	(p->p_flag & P_TIMEOUT) {
 		p->p_flag &= ~P_TIMEOUT;
-		if	(sig == 0)
+		if	(sig == 0) {
+#ifdef KTRACE
+			if (KTRPOINT(p, KTR_CSW))
+				ktrcsw(p->p_tracep, 0, 0);
+#endif
 			return(EWOULDBLOCK);
 		}
-	else if (timo)
+	} else if (timo)
 		untimeout(endtsleep, (caddr_t)p);
 	if	(catch && (sig != 0 || (sig = CURSIG(p)))) {
+#ifdef KTRACE
+		if (KTRPOINT(p, KTR_CSW))
+			ktrcsw(p->p_tracep, 0, 0);
+#endif
 		if	(u->u_sigintr & sigmask(sig))
 			return(EINTR);
 		return(ERESTART);
-		}
+	}
+#ifdef KTRACE
+	if (KTRPOINT(p, KTR_CSW))
+		ktrcsw(p->p_tracep, 0, 0);
+#endif
 	return(0);
 }
 
@@ -231,17 +248,16 @@ void
 endtsleep(p)
 	register struct proc *p;
 {
-	register int	s;
+	register int s;
 
 	s = splhigh();
-	if	(p->p_wchan)
-		{
+	if	(p->p_wchan) {
 		if	(p->p_stat == SSLEEP)
 			setrun(p);
 		else
 			unsleep(p);
 		p->p_flag |= P_TIMEOUT;
-		}
+	}
 	splx(s);
 }
 
@@ -264,16 +280,18 @@ sleep(chan, pri)
 {
 	register int priority = pri;
 
-	if (pri > PZERO)
+	if (pri > PZERO) {
 		priority |= PCATCH;
+	}
 
 	u->u_error = tsleep(chan, priority, 0);
 /*
  * sleep does not return anything.  If it was a non-interruptible sleep _or_
  * a successful/normal sleep (one for which a wakeup was done) then return.
 */
-	if	((priority & PCATCH) == 0 || (u->u_error == 0))
+	if	((priority & PCATCH) == 0 || (u->u_error == 0)) {
 		return;
+	}
 /*
  * XXX - compatibility uglyness.
  *
@@ -398,10 +416,12 @@ setrun(p)
 	splx(s);
 	if (p->p_pri < curpri)
 		runrun++;
-	if ((p->p_flag&P_SLOAD) == 0) {
+	if ((p->p_flag & P_SLOAD) == 0) {
 		if (runout != 0) {
 			runout = 0;
 			wakeup((caddr_t)&runout);
+		} else {
+			wakeup((caddr_t)&proc0);
 		}
 	}
 }
@@ -622,11 +642,11 @@ resetpri(p)
 	register struct proc *p;
 {
 	register unsigned int newpri;
-	int curpri = setpri(p);
+
 	newpri = PUSER + p->p_estcpu / 4 + 2 * p->p_nice;
 	newpri = min(newpri, MAXPRI);
-	p->p_cpu = newpri;
-	if (newpri < curpri) {
+	p->p_usrpri = newpri;
+	if (newpri < curpriority) {
 		updatepri(p);
 		//need_resched();
 	}

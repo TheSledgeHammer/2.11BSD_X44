@@ -43,7 +43,6 @@ schedcpu(arg)
 {
 	register struct proc *p;
 	register int a;
-	register u_char	currpri;
 
 	wakeup((caddr_t)&lbolt);
 	for (p = allproc; p != NULL; p = p->p_nxt) {
@@ -79,11 +78,11 @@ schedcpu(arg)
 			setpri(p);
 		}
 		if(edf_schedcpu(p)) {
-			if((p != curproc) && p->p_stat == SRUN && (p->p_flag & P_INMEM) && (p->p_pri / PPQ) != (currpri / PPQ)) {
+			if((p != curproc) && p->p_stat == SRUN && (p->p_flag & P_INMEM) && (p->p_pri / PPQ) != (p->p_usrpri / PPQ)) {
 				if(cfs_schedcpu(p)) {
 					continue;
 				}
-				p->p_pri = currpri;
+				p->p_pri = p->p_usrpri;
 				setpri(p);
 			} else {
 				setpri(p);
@@ -97,10 +96,12 @@ schedcpu(arg)
 	if (runin != 0) {
 		runin = 0;
 		wakeup((caddr_t)&runin);
+	}
+	++runrun;					/* swtch at least once a second */
+	if(bclnlist != NULL) {
 		wakeup((caddr_t)pageproc);
 	}
-	++runrun;			/* swtch at least once a second */
-	timeout(schedcpu, (caddr_t)0, hz);
+	timeout(schedcpu, (void *)0, hz);
 }
 
 /*
