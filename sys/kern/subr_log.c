@@ -31,7 +31,6 @@
 #include <sys/vnode.h>
 #include <sys/uio.h>
 #include <sys/map.h>
-#include <sys/stddef.h>
 
 #define	NLOG	3
 int	nlog = NLOG;

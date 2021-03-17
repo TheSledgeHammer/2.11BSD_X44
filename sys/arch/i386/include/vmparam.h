@@ -59,18 +59,18 @@
 /*
  * Virtual memory related constants, all in bytes
  */
-#define	MAXTSIZ					(6*1024*1024)		/* max text size */
+#define	MAXTSIZ					(6*1024*1024)	/* max text size */
 #ifndef DFLDSIZ
-#define	DFLDSIZ					(6*1024*1024)		/* initial data size limit */
+#define	DFLDSIZ					(6*1024*1024)	/* initial data size limit */
 #endif
 #ifndef MAXDSIZ
-#define	MAXDSIZ					(32*1024*1024)		/* max data size */
+#define	MAXDSIZ					(32*1024*1024)	/* max data size */
 #endif
 #ifndef	DFLSSIZ
-#define	DFLSSIZ					(512*1024)			/* initial stack size limit */
+#define	DFLSSIZ					(512*1024)		/* initial stack size limit */
 #endif
 #ifndef	MAXSSIZ
-#define	MAXSSIZ					MAXDSIZ				/* max stack size */
+#define	MAXSSIZ					MAXDSIZ			/* max stack size */
 #endif
 
 /*
@@ -78,9 +78,9 @@
  * The actual values may be changed in vminit() based on MAXDSIZ.
  * With MAXDSIZ of 16Mb and NDMAP of 38, dmmax will be 1024.
  */
-#define	DMMIN					32			/* smallest swap allocation */
-#define	DMMAX					4096		/* largest potential swap allocation */
-#define	DMTEXT					1024		/* swap allocation for text */
+#define	DMMIN					32				/* smallest swap allocation */
+#define	DMMAX					4096			/* largest potential swap allocation */
+#define	DMTEXT					1024			/* swap allocation for text */
 
 /*
  * Sizes of the system and user portions of the system page table.
@@ -91,12 +91,12 @@
 /*
  * Size of User Raw I/O map
  */
-#define	USRIOSIZE 	300
+#define	USRIOSIZE 				300
 
 /*
  * The size of the clock loop.
  */
-#define	LOOPPAGES	(maxfree - firstfree)
+#define	LOOPPAGES				(maxfree - firstfree)
 
 /*
  * The time for a process to be blocked before being very swappable.
@@ -107,7 +107,7 @@
  * It is related to human patience and other factors which don't really
  * change over time.
  */
-#define	MAXSLP 		20
+#define	MAXSLP 					20
 
 /*
  * A swapped in process is given a small amount of core without being bothered
@@ -124,13 +124,13 @@
  * { wfj 6/16/89: Retail AT memory expansion $800/megabyte, loan of $17
  *   on disk costing $7/mb or $0.18 (in memory still 100:1 in cost!) }
  */
-#define	SAFERSS		8		/* nominal ``small'' resident set size protected against replacement */
+#define	SAFERSS					8		/* nominal ``small'' resident set size protected against replacement */
 
 /*
  * DISKRPM is used to estimate the number of paging i/o operations
  * which one can expect from a single disk controller.
  */
-#define	DISKRPM		60
+#define	DISKRPM					60
 
 /*
  * Klustering constants.  Klustering is the gathering
@@ -142,17 +142,17 @@
  * units.  Note that KLMAX*CLSIZE must be <= DMMIN in dmap.h.
  */
 
-#define	KLMAX		(4/CLSIZE)
-#define	KLSEQL		(2/CLSIZE)		/* in klust if vadvise(VA_SEQL) */
-#define	KLIN		(4/CLSIZE)		/* default data/stack in klust */
-#define	KLTXT		(4/CLSIZE)		/* default text in klust */
-#define	KLOUT		(4/CLSIZE)
+#define	KLMAX					(4/CLSIZE)
+#define	KLSEQL					(2/CLSIZE)		/* in klust if vadvise(VA_SEQL) */
+#define	KLIN					(4/CLSIZE)		/* default data/stack in klust */
+#define	KLTXT					(4/CLSIZE)		/* default text in klust */
+#define	KLOUT					(4/CLSIZE)
 
 /*
  * KLSDIST is the advance or retard of the fifo reclaim for sequential
  * processes data space.
  */
-#define	KLSDIST		3		/* klusters advance/retard for seq. fifo */
+#define	KLSDIST					3		/* klusters advance/retard for seq. fifo */
 
 /*
  * Paging thresholds (see vm_sched.c).
@@ -160,10 +160,10 @@
  *	lotsfree is 512k bytes, but at most 1/4 of memory
  *	desfree is 200k bytes, but at most 1/8 of memory
  */
-#define	LOTSFREE		(512 * 1024)
-#define	LOTSFREEFRACT	4
-#define	DESFREE			(200 * 1024)
-#define	DESFREEFRACT	8
+#define	LOTSFREE				(512 * 1024)
+#define	LOTSFREEFRACT			4
+#define	DESFREE					(200 * 1024)
+#define	DESFREEFRACT			8
 
 /*
  * There are two clock hands, initially separated by HANDSPREAD bytes
@@ -171,19 +171,19 @@
  * a page once the pageout process examines it increases with this
  * distance and decreases as the scan rate rises.
  */
-#define	HANDSPREAD	(2 * 1024 * 1024)
+#define	HANDSPREAD				(2 * 1024 * 1024)
 
 /*
  * The number of times per second to recompute the desired paging rate
  * and poke the pagedaemon.
  */
-#define	RATETOSCHEDPAGING	4
+#define	RATETOSCHEDPAGING		4
 
 /*
  * Believed threshold (in megabytes) for which interleaved
  * swapping area is desirable.
  */
-#define	LOTSOFMEM	2
+#define	LOTSOFMEM				2
 
 /*
  * Mach derived constants

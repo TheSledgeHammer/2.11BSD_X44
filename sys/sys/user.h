@@ -138,10 +138,12 @@ struct user {
 	char				u_dupfd;				/* XXX - see kern_descrip.c/fdopen */
 
 	struct uprof {								/* profile arguments */
-		short			*pr_base;				/* buffer base */
-		unsigned 		pr_size;				/* buffer size */
-		unsigned 		pr_off;					/* pc offset */
-		unsigned 		pr_scale;				/* pc scaling */
+		caddr_t			pr_base;				/* buffer base */
+		u_long			pr_size;				/* buffer size */
+		u_long			pr_off;					/* pc offset */
+		u_long			pr_scale;				/* pc scaling */
+		u_long			pr_addr;				/* temp storage for addr until AST */
+		u_long			pr_ticks;				/* temp storage for ticks until AST */
 	} u_prof;
 
 /* 1.6 - resource controls */
@@ -172,6 +174,8 @@ struct user {
 	//struct uthread		*u_uthread;			/* ptr to uthread */
 };
 
-//#ifdef KERNEL
+#ifdef KERNEL
 extern struct user 		u;
+//#else
+//extern struct user 		u;
 #endif

@@ -164,7 +164,6 @@ CODE facilitynames[] = {
 #define	LOG_NOWAIT	0x10	/* don't wait for console forks: DEPRECATED */
 #define	LOG_PERROR	0x20	/* log to stderr as well */
 
-
 #ifdef KERNEL
 
 #else /* not KERNEL */

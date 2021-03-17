@@ -107,7 +107,6 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <machine/pio.h>
 #include <machine/cpufunc.h>
 
-void		spinwait (int);
 void		findcpuspeed (void);
 int			clockintr (void *);
 int			gettick (void);
@@ -459,7 +458,6 @@ static int
 yeartoday(year)
 	int year;
 {
-
 	return ((year % 4) ? 365 : 366);
 }
 
@@ -467,7 +465,6 @@ int
 bcdtobin(n)
 	int n;
 {
-
 	return (((n >> 4) & 0x0f) * 10 + (n & 0x0f));
 }
 
@@ -475,7 +472,6 @@ int
 bintobcd(n)
 	int n;
 {
-
 	return ((u_char)(((n / 10) << 4) & 0xf0) | ((n % 10) & 0x0f));
 }
 
@@ -655,11 +651,9 @@ void
 setstatclockrate(arg)
 	int arg;
 {
-	//if (cpu_ini == i8254_initclocks) {
-		if (arg == stathz) {
-			mc146818_write(NULL, MC_REGA, MC_BASE_32_KHz | MC_RATE_128_Hz);
-		} else {
-			mc146818_write(NULL, MC_REGA, MC_BASE_32_KHz | MC_RATE_1024_Hz);
-		}
-	//}
+	if (arg == stathz) {
+		mc146818_write(NULL, MC_REGA, MC_BASE_32_KHz | MC_RATE_128_Hz);
+	} else {
+		mc146818_write(NULL, MC_REGA, MC_BASE_32_KHz | MC_RATE_1024_Hz);
+	}
 }

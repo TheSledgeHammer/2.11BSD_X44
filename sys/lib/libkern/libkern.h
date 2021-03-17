@@ -36,6 +36,7 @@
  */
 
 #include <sys/types.h>
+#include <sys/null.h>
 
 static __inline int 	imax (int, int) __attribute__ ((unused));
 static __inline int 	imin (int, int) __attribute__ ((unused));
@@ -232,7 +233,6 @@ char		*strncpy (char *, const char *, size_t);
 int	 		strncmp (const char *, const char *, size_t);
 char		*strchr (const char *, int);
 char		*strrchr (const char *, int);
-
 char		*strstr (const char *, const char *);
 
 /*
@@ -275,10 +275,10 @@ u_long	 	strtoul (const char *, char **, int);
 		kern_assert(__KASSERTSTR, "", #e, __FILE__, __LINE__))
 #ifdef __STDC__
 #define	assert(e)	(__predict_true((e)) ? (void)0 :		   		\
-			    __assert("", __FILE__, __LINE__, #e))
+		__assert("", __FILE__, __LINE__, #e))
 #else
 #define	assert(e)	(__predict_true((e)) ? (void)0 :		    	\
-			    __assert("", __FILE__, __LINE__, "e"))
+		__assert("", __FILE__, __LINE__, "e"))
 #endif
 #endif
 
@@ -340,4 +340,12 @@ u_long	 	strtoul (const char *, char **, int);
 #endif
 #ifndef	CTASSERT_UNSIGNED
 #define	CTASSERT_UNSIGNED(x)	__CTASSERT(((typeof(x))-1) >= 0)
+#endif
+
+#ifndef offsetof
+#if __GNUC_PREREQ__(4, 0)
+#define offsetof(type, member)	__builtin_offsetof(type, member)
+#else
+#define	offsetof(type, member) ((size_t)(unsigned long)(&(((type *)0)->member)))
+#endif
 #endif

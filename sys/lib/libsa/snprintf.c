@@ -33,11 +33,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
-#ifdef __STDC__
-#include <machine/stdarg.h>
-#else
-#include <machine/varargs.h>
-#endif
+#include <sys/stdarg.h>
 
 #include "stand.h"
 

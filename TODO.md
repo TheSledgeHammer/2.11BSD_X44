@@ -21,8 +21,8 @@ A General todo list. Don't hesitate to add to this list. :)
 ## kern:
 - sys_generic.c: fileops: fo_rw
 - fileops: update fileop structures to make use of kqfilter
-- kern_clock.c:
-	- clockframe?
+- kern_resource.c:
+	- missing methods
 	
 ## arch:
 - i386/x86: (Merged under i386)
@@ -45,6 +45,9 @@ A General todo list. Don't hesitate to add to this list. :)
 
 
 ## lib:
+- libsa:
+	- stand.h
+		- add relavent libsa methods
 	
 ## net / netimp / netinet / netns:
 Of Interest Todo:
@@ -60,6 +63,7 @@ Of Interest Todo:
 	- commands: needs work
 	- install: not present
 - boot/arch:
+	- loader/main.c: PSL_RESERVED_DEFAULT = PSL_MBO??
 	- i386:
 		- gptboot
 		- isoboot

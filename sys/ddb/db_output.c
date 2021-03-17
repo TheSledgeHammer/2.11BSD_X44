@@ -33,8 +33,7 @@
 #include <sys/systm.h>
 #include <sys/user.h>
 #include <sys/types.h>
-
-#include <machine/stdarg.h>
+#include <sys/stdarg.h>
 
 #include <dev/misc/cons/cons.h>
 

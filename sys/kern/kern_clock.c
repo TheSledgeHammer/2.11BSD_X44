@@ -21,7 +21,6 @@
 #include <sys/types.h>
 
 #include <machine/cpu.h>
-#include <machine/clock.h>
 
 #ifdef GPROF
 #include <sys/gmon.h>
@@ -250,7 +249,7 @@ softclock(frame, pc)
 		CIRCQ_NEXT(p1->c_list) = callfree;
 		callfree = p1;
 		splx(s);
-
+		CLKF_PC(frame)
 		(*func)(arg, a);
 	}
 	/*
@@ -261,7 +260,7 @@ softclock(frame, pc)
 		register struct proc *p = u->u_procp;
 
 		if (u->u_prof.pr_scale)
-			addupc(pc, &u->u_prof, 1);
+			addupc(p, &u->u_prof, 1);
 		/*
 		 * Check to see if process has accumulated
 		 * more than 10 minutes of user time.  If so

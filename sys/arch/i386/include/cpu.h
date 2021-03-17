@@ -59,8 +59,6 @@ struct pmap;
 #define cpu_setstack(p, ap)			(p)->p_md.md_regs[SP] = ap
 #define cpu_set_init_frame(p, fp)	(p)->p_md.md_regs = fp
 
-#define	BACKTRACE(p)				/* not implemented */
-
 #define cpu_number					NCPUS
 /*
  * Arguments to hardclock, softclock and gatherstats
@@ -75,42 +73,57 @@ struct clockframe {
 #define	CLKF_BASEPRI(framep)		((framep)->cf_if.if_ppl == 0)
 #define	CLKF_PC(framep)				((framep)->cf_if.if_eip)
 
-#define	resettodr()	/* no todr to set */
-
 /*
  * Preempt the current process if in interrupt from user mode,
  * or after the current trap/syscall if in system mode.
  */
-#define	need_resched()				{ want_resched++; aston(); }
+#define	need_resched(p)				{ want_resched++; aston(p); }
 
 /*
  * Give a profiling tick to the current process from the softclock
  * interrupt.  On tahoe, request an ast to send us through trap(),
  * marking the proc as needing a profiling tick.
  */
-#define	profile_tick(p, framep)		{ (p)->p_flag |= P_OWEUPC; aston(); }
+extern void	cpu_need_proftick(struct proc *p);
 
 /*
  * Notify the current process (p) that it has a signal pending,
  * process as soon as possible.
  */
-#define	signotify(p)				aston()
+#define cpu_signotify(p)			(aston(p))
 
-#define aston() 					(astpending++)
+#define aston(p) 					((p)->p_md.md_astpending = 1)
 
 int	astpending;			/* need to trap before returning to user mode */
 int	want_resched;		/* resched() was called */
 
 #ifdef _KERNEL
-extern char	btext[];
-extern char	etext[];
+extern char		btext[];
+extern char		etext[];
 
 /* locore.s */
 struct 	pcb;
 void	savectx (struct pcb *);
 
 /* clock.c */
-void	startrtclock (void);
+extern u_int	tsc_freq;
+void	startrtclock(void);
+int		clockintr(void *);
+int		gettick();
+void	delay(int);
+void	sysbeepstop(void);
+int		sysbeep(int, int);
+void	findcpuspeed(void);
+void	cpu_initclocks(void);
+void	rtcinit(void);
+int		rtcget(mc_todregs *);
+void	rtcput(mc_todregs *);
+int 	yeartoday (int);
+int		bcdtobin(int);
+int		bintobcd(int);
+void 	inittodr(time_t);
+void	resettodr(void);
+void	setstatclockrate(int);
 
 /* autoconf.c */
 void	configure (void);

@@ -79,10 +79,10 @@ settimeofday()
 static void
 setthetime(tv)
 	register struct timeval *tv;
-	{
+{
 	int	s;
 
-	if	(!suser())
+	if (!suser())
 		return;
 #ifdef	NOTNOW
 /*
@@ -96,11 +96,10 @@ setthetime(tv)
  *	  will fail if the next 'if' is enabled - all that does is fill up the
  *	  logfiles with "can't set time" messages and the time keeps drifting.
 */
-	if	(securelevel > 0 && timercmp(tv, &time, <))
-		{
+	if	(securelevel > 0 && timercmp(tv, &time, <))	{
 		u.u_error = EPERM;	/* XXX */
 		return;
-		}
+	}
 #endif
 /* WHAT DO WE DO ABOUT PENDING REAL-TIME TIMEOUTS??? */
 	boottime.tv_sec += tv->tv_sec - time->tv_sec;
@@ -113,7 +112,7 @@ setthetime(tv)
 	 */
 	resettodr();
 #endif
-	}
+}
 
 void
 adjtime()

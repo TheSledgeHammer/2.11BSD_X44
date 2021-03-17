@@ -127,7 +127,6 @@ donice(p, n)
 	register struct proc *p;
 	register int n;
 {
-
 	if (u->u_uid && u->u_pcred->p_ruid &&
 	    u->u_uid != p->p_uid && u->u_pcred->p_ruid != p->p_uid) {
 		u->u_error = EPERM;
@@ -188,7 +187,7 @@ void
 getrlimit()
 {
 	register struct a {
-		syscallarg(u_int) which;
+		syscallarg(u_int) 			which;
 		syscallarg(struct rlimit *) rlp;
 	} *uap = (struct a *)u->u_ap;
 

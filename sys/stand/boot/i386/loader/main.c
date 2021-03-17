@@ -33,7 +33,6 @@
  * commands.
  */
 #include <sys/user.h>
-#include <sys/stddef.h>
 #include <sys/reboot.h>
 
 #include <lib/libsa/stand.h>

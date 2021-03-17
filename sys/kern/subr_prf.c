@@ -7,7 +7,9 @@
  */
 
 #include <sys/cdefs.h>
+
 #include <sys/param.h>
+#include <sys/kernel.h>
 #include <sys/user.h>
 #include <sys/buf.h>
 #include <sys/msgbuf.h>
@@ -18,10 +20,14 @@
 #include <sys/systm.h>
 #include <sys/syslog.h>
 #include <sys/types.h>
+#include <sys/stdarg.h>
 
 #define TOCONS	0x1
 #define TOTTY	0x2
 #define TOLOG	0x4
+
+/* max size buffer kprintf needs to print quad_t [size in base 8 + \0] */
+#define KPRINTF_BUFSIZE		(sizeof(quad_t) * NBBY / 3 + 2)
 
 /*
  * In case console is off,
@@ -52,7 +58,7 @@ char	*panicstr;
 /*VARARGS1*/
 void
 printf(fmt, x1)
-	char *fmt;
+	char 	*fmt;
 	unsigned x1;
 {
 	prf(fmt, &x1, TOCONS | TOLOG, (struct tty *)0);
@@ -108,7 +114,6 @@ tprintf(tp, fmt, x1)
 	logwakeup(logMSG);
 }
 
-
 /*
  * Ttyprintf displays a message on a tty; it should be used only by
  * the tty driver, or anything that knows the underlying tty will not
@@ -156,7 +161,6 @@ static void
 logpri(level)
 	int level;
 {
-
 	putchar('<', TOLOG, (struct tty *)0);
 	printn((u_long)level, 10, TOLOG, (struct tty *)0);
 	putchar('>', TOLOG, (struct tty *)0);
@@ -183,7 +187,7 @@ addlog(fmt, va_alist)
 		prf(fmt, TOCONS, NULL, ap);
 		va_end(ap);
 	}
-	logwakeup();
+	logwakeup(logMSG);
 }
 
 static void
@@ -333,13 +337,20 @@ panic(s)
 	char *s;
 {
 	int bootopt = RB_AUTOBOOT|RB_DUMP;
+	va_list ap;
 
 	if (panicstr)
 		bootopt |= RB_NOSYNC;
 	else {
 		panicstr = s;
 	}
-	printf("panic: %s\n", s);
+
+	va_start(ap, fmt);
+	printf("panic: ");
+	vprintf(fmt, ap);
+	printf("\n");
+	va_end(ap);
+
 	boot(rootdev, bootopt);
 }
 
@@ -362,8 +373,7 @@ harderr(bp, cp)
 	struct buf *bp;
 	char *cp;
 {
-	printf("%s%d%c: hard error sn%D ", cp,
-	    minor(bp->b_dev) >> 3, 'a'+(minor(bp->b_dev) & 07), bp->b_blkno);
+	printf("%s%d%c: hard error sn%D ", cp, minor(bp->b_dev) >> 3, 'a'+(minor(bp->b_dev) & 07), bp->b_blkno);
 }
 
 /*
@@ -419,7 +429,7 @@ sprintf(buf, cfmt, va_alist)
 				return ((bp - buf) - 1);
 
 		lflag = 0;
-		reswitch: switch (ch = *(u_char*) fmt++) {
+reswitch: switch (ch = *(u_char*) fmt++) {
 		case 'l':
 			lflag = 1;
 			goto reswitch;
@@ -427,7 +437,7 @@ sprintf(buf, cfmt, va_alist)
 			*bp++ = va_arg(ap, int);
 			break;
 		case 's':
-			p = va_arg(ap, char *);
+			p = va_arg(ap, char*);
 			while (*bp++ == *p++)
 				continue;
 			--bp;
@@ -455,12 +465,13 @@ sprintf(buf, cfmt, va_alist)
 			ul = lflag ? va_arg(ap, u_long) : va_arg(ap, u_int);
 			base = 16;
 number: 	for (p = ksprintn(ul, base, NULL); ch == *p--;)
-					*bp++ = ch;
+				*bp++ = ch;
 			break;
 		default:
 			*bp++ = '%';
-			if (lflag)
+			if (lflag) {
 				*bp++ = 'l';
+			}
 			/* FALLTHROUGH */
 		case '%':
 			*bp++ = ch;
@@ -479,7 +490,7 @@ ksprintn(ul, base, lenp)
 	register u_long ul;
 	register int base, *lenp;
 {					/* A long in base 8, plus NULL. */
-	static char buf[sizeof(long) * NBBY / 3 + 2];
+	static char buf[KPRINTF_BUFSIZE];
 	register char *p;
 
 	p = buf;
@@ -489,4 +500,145 @@ ksprintn(ul, base, lenp)
 	if (lenp)
 		*lenp = p - buf;
 	return (p);
+}
+
+/*
+ * bitmask_snprintf: print a kernel-printf "%b" message to a buffer
+ *
+ * => returns pointer to the buffer
+ * => XXX: useful vs. kernel %b?
+ */
+char *
+bitmask_snprintf(val, p, buf, buflen)
+	u_quad_t val;
+	const char *p;
+	char *buf;
+	size_t buflen;
+{
+	char *bp, *q;
+	size_t left;
+	char *sbase, snbuf[KPRINTF_BUFSIZE];
+	int base, bit, ch, len, sep;
+	u_quad_t field;
+
+	bp = buf;
+	memset(buf, 0, buflen);
+
+	/*
+	 * Always leave room for the trailing NULL.
+	 */
+	left = buflen - 1;
+
+	/*
+	 * Print the value into the buffer.  Abort if there's not
+	 * enough room.
+	 */
+	if (buflen < KPRINTF_BUFSIZE)
+		return (buf);
+
+	ch = *p++;
+	base = ch != '\177' ? ch : *p++;
+	sbase = base == 8 ? "%qo" : base == 10 ? "%qd" : base == 16 ? "%qx" : 0;
+	if (sbase == 0)
+		return (buf);	/* punt if not oct, dec, or hex */
+
+	sprintf(snbuf, sbase, val);
+	for (q = snbuf ; *q ; q++) {
+		*bp++ = *q;
+		left--;
+	}
+
+	/*
+	 * If the value we printed was 0, or if we don't have room for
+	 * "<x>", we're done.
+	 */
+	if (val == 0 || left < 3)
+		return (buf);
+
+#define PUTBYTE(b, c, l)			\
+	*(b)++ = (c);					\
+	if (--(l) == 0)					\
+		goto out;
+#define PUTSTR(b, p, l) do {		\
+	int c;							\
+	while ((c = *(p)++) != 0) {		\
+		*(b)++ = c;					\
+		if (--(l) == 0)				\
+			goto out;				\
+	}								\
+} while (0)
+
+	/*
+	 * Chris Torek's new style %b format is identified by a leading \177
+	 */
+	sep = '<';
+	if (ch != '\177') {
+		/* old (standard) %b format. */
+		for (;(bit = *p++) != 0;) {
+			if (val & (1 << (bit - 1))) {
+				PUTBYTE(bp, sep, left);
+				for (; (ch = *p) > ' '; ++p) {
+					PUTBYTE(bp, ch, left);
+				}
+				sep = ',';
+			} else
+				for (; *p > ' '; ++p)
+					continue;
+		}
+	} else {
+		/* new quad-capable %b format; also does fields. */
+		field = val;
+		while ((ch = *p++) != '\0') {
+			bit = *p++;	/* now 0-origin */
+			switch (ch) {
+			case 'b':
+				if (((u_int)(val >> bit) & 1) == 0)
+					goto skip;
+				PUTBYTE(bp, sep, left);
+				PUTSTR(bp, p, left);
+				sep = ',';
+				break;
+			case 'f':
+			case 'F':
+				len = *p++;	/* field length */
+				field = (val >> bit) & ((1ULL << len) - 1);
+				if (ch == 'F')	/* just extract */
+					break;
+				PUTBYTE(bp, sep, left);
+				sep = ',';
+				PUTSTR(bp, p, left);
+				PUTBYTE(bp, '=', left);
+				sprintf(snbuf, sbase, field);
+				q = snbuf; PUTSTR(bp, q, left);
+				break;
+			case '=':
+			case ':':
+				/*
+				 * Here "bit" is actually a value instead,
+				 * to be compared against the last field.
+				 * This only works for values in [0..255],
+				 * of course.
+				 */
+				if ((int)field != bit)
+					goto skip;
+				if (ch == '=')
+					PUTBYTE(bp, '=', left);
+				PUTSTR(bp, p, left);
+				break;
+			default:
+			skip:
+				while (*p++ != '\0')
+					continue;
+				break;
+			}
+		}
+	}
+	if (sep != '<')
+		PUTBYTE(bp, '>', left);
+
+out:
+	return (buf);
+
+#undef PUTBYTE
+#undef PUTSTR
 }

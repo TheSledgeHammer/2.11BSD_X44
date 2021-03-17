@@ -58,14 +58,14 @@
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
+#include <sys/stdarg.h>
+
+#include "stand.h"
 
 /*
  * Note that stdarg.h and the ANSI style va_start macro is used for both
  * ANSI and traditional C compilers.
  */
-#define KERNEL
-#include <machine/stdarg.h>
-#undef KERNEL
 
 static void kprintn (u_long, int);
 

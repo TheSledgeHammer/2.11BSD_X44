@@ -40,6 +40,8 @@ struct mdproc {
 	struct	trapframe 	*md_regs;		/* registers on current frame */
 	int					md_flags;		/* machine-dependent flags */
 	int					md_tss_sel;		/* TSS selector */
+	volatile int 		md_astpending;	/* AST pending for this process */
+	//int					md_want_resched;/* process wants a resched */
 
 	void				(*md_syscall)(struct trapframe *);/* Syscall handling function */
 };
@@ -47,6 +49,7 @@ struct mdproc {
 /* md_flags */
 //#define	MDP_AST		0x0001	/* async trap pending */
 #define	MDP_USEDFPU		0x0001	/* has used the FPU */
+#define	MDP_OWEUPC		0x0002	/* Owe process an addupc() call at next ast. */
 
 extern struct user *proc0paddr;
 extern vm_offset_t proc0kstack;

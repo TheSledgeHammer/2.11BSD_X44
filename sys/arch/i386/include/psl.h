@@ -48,7 +48,6 @@
 #define	PSL_AF		0x00000010	/* bcd carry bit */
 #define	PSL_Z		0x00000040	/* zero bit */
 #define	PSL_N		0x00000080	/* negative bit */
-#define	PSL_ALLCC	0x000000d5	/* all cc bits - unlikely */
 #define	PSL_T		0x00000100	/* trace enable bit */
 #define	PSL_I		0x00000200	/* interrupt enable bit */
 #define	PSL_D		0x00000400	/* string instruction direction bit */
@@ -62,8 +61,16 @@
 #define	PSL_VIP		0x00100000	/* virtual interrupt pending */
 #define	PSL_ID		0x00200000	/* identification bit */
 
+#define	PSL_ALLCC	0x000000d5	/* all cc bits - unlikely */
 #define	PSL_MBZ		0xfffc7fb7	/* must be zero bits */
 #define	PSL_MBO		0x00000002	/* must be one bits */
+
+/*
+ * The i486 manual says that we are not supposed to change reserved flags,
+ * but this is too much trouble since the reserved flags depend on the cpu
+ * and setting them to their historical values works in practice.
+ */
+#define	PSL_RESERVED_DEFAULT	0x00000002
 
 /*
  * Initial flags for kernel and user mode.  The kernel later inherits

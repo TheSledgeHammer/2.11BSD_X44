@@ -1125,6 +1125,14 @@ f00f_hack(void *unused) {
 }
 #endif /* defined(I586_CPU) && !NO_F00F_HACK */
 
+void
+cpu_need_proftick(p)
+	struct proc *p;
+{
+	p->p_pflag |= MDP_OWEUPC;
+	aston(p);
+}
+
 /*
  * Provide inb() and outb() as functions.  They are normally only available as
  * inline functions, thus cannot be called from the debugger.

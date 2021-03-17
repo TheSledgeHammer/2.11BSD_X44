@@ -59,6 +59,7 @@ struct pstats {
 		u_long			pr_addr;	/* temp storage for addr until AST */
 		u_long			pr_ticks;	/* temp storage for ticks until AST */
 	} p_prof;
+
 #define	pstat_endcopy	p_start
 	struct	timeval 	p_start;	/* starting time */
 };
@@ -84,14 +85,13 @@ struct plimit {
 	    (p)->p_stats->p_prof.pr_addr, (p)->p_stats->p_prof.pr_ticks)
 
 #ifdef KERNEL
-int	 	addupc (int pc, struct uprof *up, int ticks);
-//void	addupc_intr (struct proc *p, u_long pc, u_int ticks);
-//void	addupc_task (struct proc *p, u_long pc, u_int ticks);
+void	addupc_intr (struct proc *p, u_long pc, u_int ticks);
+void	addupc_task (struct proc *p, u_long pc, u_int ticks);
+void	addupc_intru (u_long pc, struct uprof *up, u_int ticks);
+void	addupc_tasku (u_long pc, struct uprof *up, u_int ticks);
 void	calcru (struct proc *p, struct timeval *up, struct timeval *sp, struct timeval *ip);
-int	 	fuswintr (void *base);
 struct plimit *limcopy (struct plimit *lim);
 void	ruadd (struct rusage *ru, struct rusage *ru2);
-int	 	suswintr (void *base, int word);
 #endif
 
 #endif	/* !_SYS_RESOURCEVAR_H_ */

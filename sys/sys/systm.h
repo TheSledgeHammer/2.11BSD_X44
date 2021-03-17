@@ -66,9 +66,10 @@ extern char	curpri;					/* more scheduling */
 extern int icode[];					/* user init code */
 extern int szicode;					/* its size */
 
-#define	SCARG(p,k)		((p)->k.datum)	/* get arg from args pointer */
 /* system call args */
 #define	syscallarg(x)	union { x datum; register_t pad; }
+
+#define	SCARG(p,k)		((p)->k.datum)	/* get arg from args pointer */
 
 /*
  * Structure of the system-entry table
@@ -108,9 +109,14 @@ void 	panic (const char *, ...);
 void	tablefull (const char *);
 void	addlog (const char *, ...);
 void	log (int, const char *, ...);
+
+/* subr_prf.c */
+typedef struct session *tpr_t;
 void	printf (const char *, ...);
 int		sprintf (char *buf, const char *, ...);
 void	ttyprintf (struct tty *, const char *, ...);
+void	tprintf (tpr_t, const char *fmt, ...);
+char 	*bitmask_snprintf(u_quad_t, const char *, char *, size_t);
 
 void 	bcopy (const void *from, void *to, u_int len);
 void 	ovbcopy (const void *from, void *to, u_int len);

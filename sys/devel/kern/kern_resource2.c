@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1990, 1993
+ * Copyright (c) 1982, 1986, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  * (c) UNIX System Laboratories, Inc.
  * All or some portions of this file are derived from material licensed
@@ -35,28 +35,70 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)varargs.h	8.2 (Berkeley) 3/22/94
+ *	@(#)kern_resource.c	8.8 (Berkeley) 2/14/95
  */
 
-#ifndef _VARARGS_H_
-#define	_VARARGS_H_
+#include <sys/cdefs.h>
+#include <sys/param.h>
+#include <sys/user.h>
+#include <sys/proc.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <vm/include/vm.h>
 
-typedef char *va_list;
+/*
+ * Transform the running time and tick information in proc p into user,
+ * system, and interrupt time usage.
+ */
+void
+calcru(p, up, sp, ip)
+	register struct proc *p;
+	register struct timeval *up;
+	register struct timeval *sp;
+	register struct timeval *ip;
+{
+	register u_quad_t u, st, ut, it, tot;
+	register u_long sec, usec;
+	register int s;
+	struct timeval tv;
 
-#define	va_dcl	int va_alist;
+	s = splstatclock();
+	st = p->p_sticks;
+	ut = p->p_uticks;
+	it = p->p_iticks;
+	splx(s);
 
-#define	va_start(ap) \
-	ap = (char *)&va_alist
+	tot = st + ut + it;
+	if (tot == 0) {
+		up->tv_sec = up->tv_usec = 0;
+		sp->tv_sec = sp->tv_usec = 0;
+		if (ip != NULL)
+			ip->tv_sec = ip->tv_usec = 0;
+		return;
+	}
 
-#ifdef KERNEL
-#define	va_arg(ap, type) \
-	((type *)(ap += sizeof(type)))[-1]
-#else
-#define	va_arg(ap, type) \
-	((type *)(ap += sizeof(type) < sizeof(int) ? \
-		(abort(), 0) : sizeof(type)))[-1]
-#endif
-
-#define	va_end(ap)
-
-#endif /* !_VARARGS_H_ */
+	sec = p->p_rtime.tv_sec;
+	usec = p->p_rtime.tv_usec;
+	if (p == curproc) {
+		/*
+		 * Adjust for the current time slice.  This is actually fairly
+		 * important since the error here is on the order of a time
+		 * quantum, which is much greater than the sampling error.
+		 */
+		microtime(&tv);
+		sec += tv.tv_sec - runtime.tv_sec;
+		usec += tv.tv_usec - runtime.tv_usec;
+	}
+	u = sec * 1000000 + usec;
+	st = (u * st) / tot;
+	sp->tv_sec = st / 1000000;
+	sp->tv_usec = st % 1000000;
+	ut = (u * ut) / tot;
+	up->tv_sec = ut / 1000000;
+	up->tv_usec = ut % 1000000;
+	if (ip != NULL) {
+		it = (u * it) / tot;
+		ip->tv_sec = it / 1000000;
+		ip->tv_usec = it % 1000000;
+	}
+}

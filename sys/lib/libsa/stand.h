@@ -43,6 +43,9 @@
 #include <sys/stat.h>
 #include <sys/user.h>
 
+#include "saioctl.h"
+#include "saerrno.h"
+
 #include <lib/libsa/saioctl.h>
 #include <lib/libsa/environment.h>
 #include <lib/libkern/libkern.h>
@@ -90,8 +93,6 @@ extern struct fs_ops file_system[];
 extern struct fs_ops ufs_fsops;
 extern struct fs_ops cd9660_fsops;
 extern struct fs_ops dosfs_fsops;
-
-
 
 /* where values for lseek(2) */
 #define	SEEK_SET	0	/* set file offset to offset */
@@ -188,5 +189,9 @@ void			twiddle(void);
 void			setheap(void *base, void *top);
 char 			*getheap(size_t *sizep);
 char 			*sbrk(intptr_t incr);
+
+void			printf(const char *, ...);
+int				snprintf(char *, size_t, const char *, ...);
+void			vprintf(const char *, __va_list);
 
 #endif	/* _LIBSA_STAND_H */
