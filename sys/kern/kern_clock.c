@@ -252,6 +252,7 @@ softclock(frame, pc)
 		CLKF_PC(frame)
 		(*func)(arg, a);
 	}
+
 	/*
 	 * If trapped user-mode and profiling, give it
 	 * a profiling tick.
@@ -260,7 +261,7 @@ softclock(frame, pc)
 		register struct proc *p = u->u_procp;
 
 		if (u->u_prof.pr_scale)
-			addupc(pc, &u->u_prof, 1);
+			addupc_intru(pc, &u->u_prof, 1);
 		/*
 		 * Check to see if process has accumulated
 		 * more than 10 minutes of user time.  If so

@@ -64,9 +64,9 @@
 struct in_addr	bp_server_addr;	/* net order */
 n_short			bp_server_port;	/* net order */
 
-int		hostnamelen;
-char	domainname[FNAME_SIZE]; /* our DNS domain */
-int		domainnamelen;
+int				hostnamelen;
+char			domainname[FNAME_SIZE]; /* our DNS domain */
+int				domainnamelen;
 
 /*
  * RPC definitions for bootparamd

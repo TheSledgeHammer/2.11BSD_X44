@@ -64,6 +64,7 @@
 
 #include <libsa/stand.h>
 
+int
 close(fd)
 	int fd;
 {

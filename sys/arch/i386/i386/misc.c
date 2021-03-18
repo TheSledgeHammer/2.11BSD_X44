@@ -84,14 +84,6 @@ physcopyseg(frm, to)
 	bcopy(CADDR1, CADDR2, NBPG);
 }
 
-/*aston() {
-	schednetisr(NETISR_AST);
-}*/
-
-setsoftclock() {
-	//schednetisr(NETISR_SCLK);
-}
-
 /*
  * insert an element into a queue
  */

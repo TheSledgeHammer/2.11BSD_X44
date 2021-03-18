@@ -62,8 +62,8 @@
  * rights to redistribute these changes.
  */
 
-#include <stand/stand.h>
-#include <stand/ufs.h>
+#include <libsa/stand.h>
+#include <libsa/ufs.h>
 
 /*
  *	File primitives proper
@@ -76,6 +76,7 @@ struct fs_ops file_system[] = {
 
 struct open_file files[SOPEN_MAX];
 
+int
 open(fname, mode)
 	char *fname;
 	int mode;

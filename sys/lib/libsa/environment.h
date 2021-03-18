@@ -63,7 +63,7 @@
 
 #include <lib/libsa/stand.h>
 
-/* environment.c */
+/* stand/boot/common/environment.c */
 #define EV_DYNAMIC		(1<<0)		/* value was dynamically allocated, free if changed/unset */
 #define EV_VOLATILE		(1<<1)		/* value is volatile, make a copy of it */
 #define EV_NOHOOK		(1<<2)		/* don't call hook when setting */

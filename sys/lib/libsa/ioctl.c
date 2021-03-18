@@ -64,6 +64,7 @@
 
 #include <libsa/stand.h>
 
+int
 ioctl(fd, cmd, arg)
 	int fd;
 	int cmd;

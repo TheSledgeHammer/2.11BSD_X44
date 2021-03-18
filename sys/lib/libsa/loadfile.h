@@ -68,6 +68,11 @@
 int	loadfile(const char *, u_long *, int);
 int	fdloadfile(int fd, u_long *, int);
 
+#ifdef BOOT_AOUT
+#include <sys/exec_aout.h>
+int	loadfile_aout(int, struct exec *, u_long *, int);
+#endif
+
 #ifdef BOOT_ECOFF
 #include <sys/exec_ecoff.h>
 int	loadfile_coff(int, struct ecoff_exechdr *, u_long *, int);
@@ -83,9 +88,14 @@ int	loadfile_elf64(int, Elf64_Ehdr *, u_long *, int);
 #endif
 #endif /* BOOT_ELF32 || BOOT_ELF64 */
 
-#ifdef BOOT_AOUT
-#include <sys/exec_aout.h>
-int	loadfile_aout(int, struct exec *, u_long *, int);
+#if defined(BOOT_XCOFF32) || defined(BOOT_XCOFF64)
+#include <sys/exec_xcoff.h>
+#ifdef BOOT_XCOFF32
+int	loadfile_xcoff32(int, struct xcoff32_exechdr *, u_long *, int);
 #endif
+#ifdef BOOT_XCOFF64
+int	loadfile_xcoff64(int, struct xcoff64_exechdr *, u_long *, int);
+#endif
+#endif /* BOOT_XCOFF32 || BOOT_XCOFF64 */
 
 #include <machine/loadfile_machdep.h>

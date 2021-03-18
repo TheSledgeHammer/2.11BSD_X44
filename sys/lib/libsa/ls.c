@@ -42,8 +42,8 @@ static char sccsid[] = "@(#)ls.c	8.1 (Berkeley) 6/11/93";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <ufs/ufs/dir.h>
 #include <sys/ttychars.h>
+#include <libsa/ufs.h>
 #include <libsa/stand.h>
 
 main()
@@ -69,6 +69,7 @@ main()
 
 #define CTRL(x)	(x&037)
 
+int
 getfile(prompt, mode)
 	char *prompt;
 	int mode;
@@ -86,7 +87,7 @@ getfile(prompt, mode)
 }
 
 typedef struct direct	DP;
-static
+static void
 ls(fd)
 	register int fd;
 {

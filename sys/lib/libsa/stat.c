@@ -56,6 +56,7 @@ fstat(fd, sb)
 	return (0);
 }
 
+int
 stat(str, sb)
 	const char *str;
 	struct stat *sb;

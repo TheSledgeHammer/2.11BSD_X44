@@ -64,62 +64,63 @@ extern int errno;
 struct open_file;
 
 /* special stand error codes */
-#define	EADAPT	(ELAST+1)	/* bad adaptor */
-#define	ECTLR	(ELAST+2)	/* bad controller */
-#define	EUNIT	(ELAST+3)	/* bad unit */
-#define ESLICE	(ELAST+4)	/* bad slice */
-#define	EPART	(ELAST+5)	/* bad partition */
-#define	ERDLAB	(ELAST+6)	/* can't read disk label */
-#define	EUNLAB	(ELAST+7)	/* unlabeled disk */
-#define	EOFFSET	(ELAST+8)	/* relative seek not supported */
-#define	ESALAST	(ELAST+8)	/* */
+#define	EADAPT			(ELAST+1)	/* bad adaptor */
+#define	ECTLR			(ELAST+2)	/* bad controller */
+#define	EUNIT			(ELAST+3)	/* bad unit */
+#define ESLICE			(ELAST+4)	/* bad slice */
+#define	EPART			(ELAST+5)	/* bad partition */
+#define	ERDLAB			(ELAST+6)	/* can't read disk label */
+#define	EUNLAB			(ELAST+7)	/* unlabeled disk */
+#define	EOFFSET			(ELAST+8)	/* relative seek not supported */
+#define	ESALAST			(ELAST+8)	/* */
 
 /*
  * This structure is used to define file system operations in a file system
  * independent way.
  */
 struct fs_ops {
-	int		(*open) (char *path, struct open_file *f);
-	int		(*close) (struct open_file *f);
-	int		(*read) (struct open_file *f, char *buf, u_int size, u_int *resid);
-	int		(*write) (struct open_file *f, char *buf, u_int size, u_int *resid);
-	off_t	(*seek) (struct open_file *f, off_t offset, int where);
-	int		(*stat) (struct open_file *f, struct stat *sb);
+	int					(*open) (char *, struct open_file *);
+	int					(*close) (struct open_file *);
+	int					(*read) (struct open_file *, char *, u_int, u_int *);
+	int					(*write) (struct open_file *, char *, u_int, u_int *);
+	off_t				(*seek) (struct open_file *, off_t, int);
+	int					(*stat) (struct open_file *, struct stat *);
 };
-extern struct fs_ops file_system[];
+extern struct fs_ops 	file_system[];
+
 /*
  * libstand-supplied filesystems
  */
-extern struct fs_ops ufs_fsops;
-extern struct fs_ops cd9660_fsops;
-extern struct fs_ops dosfs_fsops;
+extern struct fs_ops 	ufs_fsops;
+extern struct fs_ops 	cd9660_fsops;
+extern struct fs_ops 	dosfs_fsops;
 
 /* where values for lseek(2) */
-#define	SEEK_SET	0	/* set file offset to offset */
-#define	SEEK_CUR	1	/* set file offset to current plus offset */
-#define	SEEK_END	2	/* set file offset to EOF plus offset */
+#define	SEEK_SET		0	/* set file offset to offset */
+#define	SEEK_CUR		1	/* set file offset to current plus offset */
+#define	SEEK_END		2	/* set file offset to EOF plus offset */
 
 /* Device switch */
 struct devsw {
-	const char	dv_name[8];
-	int			dv_type;							/* opaque type constant, arch-dependant */
-    int			(*dv_init)(void);					/* early probe call */
-	int			(*dv_strategy)(void *devdata, int rw, daddr_t blk, u_int size, char *buf, u_int *rsize);
-	int			(*dv_open)(struct open_file *f, ...);
-	int			(*dv_close)(struct open_file *f);
-	int			(*dv_ioctl)(struct open_file *f, int cmd, void *data);
-    int			(*dv_print)(int verbose);			/* print device information */
-	void		(*dv_cleanup)(void);
+	const char			dv_name[8];
+	int					dv_type;							/* opaque type constant, arch-dependant */
+    int					(*dv_init)(void);					/* early probe call */
+	int					(*dv_strategy)(void *, int, daddr_t, u_int, char *, u_int *);
+	int					(*dv_open)(struct open_file *, ...);
+	int					(*dv_close)(struct open_file *);
+	int					(*dv_ioctl)(struct open_file *, int, void *);
+    int					(*dv_print)(int);			/* print device information */
+	void				(*dv_cleanup)(void);
 };
-#define DEVT_NONE	0
-#define DEVT_DISK	1
-#define DEVT_NET	2
-#define DEVT_CD		3
-#define DEVT_ZFS	4
-#define DEVT_FD		5
+#define DEVT_NONE		0
+#define DEVT_DISK		1
+#define DEVT_NET		2
+#define DEVT_CD			3
+#define DEVT_ZFS		4
+#define DEVT_FD			5
 
-extern struct devsw devsw[];		/* device array */
-extern int 			ndevs;			/* number of elements in devsw[] */
+extern struct devsw 	devsw[];		/* device array */
+extern int 				ndevs;			/* number of elements in devsw[] */
 
 /*
  * Generic device specifier; architecture-dependent
@@ -145,53 +146,109 @@ struct open_file {
 extern struct open_file files[SOPEN_MAX];
 
 /* f_flags values */
-#define	F_READ		0x0001			/* file opened for reading */
-#define	F_WRITE		0x0002			/* file opened for writing */
-#define	F_RAW		0x0004			/* raw device open - no file system */
-#define F_NODEV		0x0008			/* network open - no device */
-#define	F_MASK		0xFFFF
+#define	F_READ			0x0001			/* file opened for reading */
+#define	F_WRITE			0x0002			/* file opened for writing */
+#define	F_RAW			0x0004			/* raw device open - no file system */
+#define F_NODEV			0x0008			/* network open - no device */
+#define	F_MASK			0xFFFF
 /* Mode modifier for strategy() */
-#define	F_NORA		(0x01 << 16)	/* Disable Read-Ahead */
+#define	F_NORA			(0x01 << 16)	/* Disable Read-Ahead */
 
 /* sbrk emulation */
-#define	O_RDONLY	0x0
-#define O_WRONLY	0x1
-#define O_RDWR		0x2
-#define O_ACCMODE	0x3
+#define	O_RDONLY		0x0
+#define O_WRONLY		0x1
+#define O_RDWR			0x2
+#define O_ACCMODE		0x3
 
-extern int		fgetstr(char *buf, int size, int fd);
-extern void		ngets(char *, int);
-extern struct dirent *readdirfd(int);
+struct					disklabel;
+
+/* alloc.c */
+void    				*alloc(size_t);
+void    				free(void *, size_t);
+void    				*calloc(size_t, size_t);
+
+/* bzero.c */
+void    				bzero(void *, size_t);
+
+/* close.c */
+int     				close(int);
+
+/* dev.c */
+int     				nodev(struct iob *);
+int    	 				noioctl(struct iob *, int, caddr_t);
+
+/* disklabel.c */
+char    				*getdisklabel(const char *, struct disklabel *);
+u_short 				dkcksum(struct disklabel *);
+
+/* getfile.c */
+int     				getfile(char *, int);
+
+/* gets.c */
+void    				gets(char *);
+
+/* ioctl.c */
+int     				ioctl(int, int, char *);
+
+/* ls.c */
+void    				ls(int);
+
+/* lseek.c */
+off_t   				lseek(int, off_t, int);
+
+/* open.c */
+int     				open(char *, int);
+
+/* printf.c */
+void    				printf(const char *, ...);
+void    				kprintn(u_long, int);
+
+/* read.c */
+int     				read(int, char *, u_int);
+
+/* sbrk.c */
+void    				setheap(void *, void *);
+char    				*getheap(size_t *);
+char    				*sbrk(intptr_t);
+
+/* snprintf.c */
+int     				snprintf(char *, size_t, const char *, ...);
+
+/* stat.c */
+int     				fstat(int, struct stat *);
+int     				stat(const char *, struct stat *);
+
+/* twiddle.c */
+void    				twiddle(void);
+
+/* write.c */
+int     				write(int, char *, u_int);
+
+/* "stand/boot/common" routines: */
+extern int				fgetstr(char *buf, int size, int fd);
+extern void				ngets(char *, int);
+
+/* getopt.c */
+extern char				*optarg;			/* getopt(3) external variables */
+extern int				optind, opterr, optopt, optreset;
+extern int				getopt(int, char * const [], const char *);
 
 /* pager.c */
-extern void		pager_open(void);
-extern void		pager_close(void);
-extern int		pager_output(const char *lines);
-extern int		pager_file(const char *fname);
+extern void				pager_open(void);
+extern void				pager_close(void);
+extern int				pager_output(const char *lines);
+extern int				pager_file(const char *fname);
 
-/* stdlib.h routines */
-/* imports from stdlib, locally modified */
-extern char		*optarg;			/* getopt(3) external variables */
-extern int		optind, opterr, optopt, optreset;
-extern int		getopt(int, char * const [], const char *);
+/* readdir.c */
+extern struct dirent 	*readdirfd(int);
 
-extern char 	*strdup(const char *);
-extern size_t 	strspn(const char *, const char *);
-extern long		strtol(const char *, char **, int);
+/* strdup.c */
+extern char 			*strdup(const char *);
 
-int				devopen (struct open_file *f, char *fname, char **file);
-void			*alloc (unsigned size);
-void			free (void *ptr, unsigned size);
-void    		*calloc(unsigned int size1, unsigned int size2);
-struct	disklabel;
-char			*getdisklabel (const char *buf, struct disklabel *lp);
-void			twiddle(void);
-void			setheap(void *base, void *top);
-char 			*getheap(size_t *sizep);
-char 			*sbrk(intptr_t incr);
+/* strspn.c */
+extern size_t 			strspn(const char *, const char *);
 
-void			printf(const char *, ...);
-int				snprintf(char *, size_t, const char *, ...);
-void			vprintf(const char *, __va_list);
+/* strtol.c */
+extern long				strtol(const char *, char **, int);
 
 #endif	/* _LIBSA_STAND_H */

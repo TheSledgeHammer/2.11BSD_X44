@@ -73,7 +73,7 @@
  */
 struct fl {
 	struct fl	*next;
-	unsigned	size;
+	size_t		size;
 } *freelist = (struct fl *)0;
 
 extern char end[];
@@ -81,7 +81,7 @@ static char *top = end;
 
 void *
 alloc(size)
-	unsigned size;
+	size_t size;
 {
 	register struct fl *f = freelist, **prev;
 
@@ -101,7 +101,7 @@ alloc(size)
 void
 free(ptr, size)
 	void *ptr;
-	unsigned size;
+	size_t size;
 {
 	register struct fl *f = (struct fl *)ptr;
 
@@ -111,9 +111,10 @@ free(ptr, size)
 }
 
 void *
-calloc(u_int size1, u_int size2)
+calloc(size1, size2)
+	size_t size1, size2;
 {
-	u_int total_size = size1 * size2;
+	size_t total_size = size1 * size2;
 	void *ptr;
 
 	if(( (ptr = alloc(total_size)) != NULL)) {

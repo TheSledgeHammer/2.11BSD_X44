@@ -33,6 +33,7 @@
  *	@(#)getfile.c	8.1 (Berkeley) 6/11/93
  */
 
+int
 getfile(prompt, mode)
 	char *prompt;
 	int mode;

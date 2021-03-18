@@ -38,10 +38,9 @@
 #include <sys/kernel.h>
 #include <sys/user.h>
 
-#include <machine/clock.h>
+#include <machine/cpu.h>
 #include <machine/cputypes.h>
 #include <machine/specialreg.h>
-
 
 uint64_t	tsc_freq;
 int			tsc_is_invariant;
@@ -722,7 +721,6 @@ tsc_get_timecount_low_lfence(struct timecounter *tc)
 static u_int
 tsc_get_timecount_mfence(struct timecounter *tc /*__unused */)
 {
-
 	mfence();
 	return (rdtsc32());
 }
@@ -730,7 +728,6 @@ tsc_get_timecount_mfence(struct timecounter *tc /*__unused */)
 static u_int
 tsc_get_timecount_low_mfence(struct timecounter *tc)
 {
-
 	mfence();
 	return (tsc_get_timecount_low(tc));
 }
@@ -738,7 +735,6 @@ tsc_get_timecount_low_mfence(struct timecounter *tc)
 static uint32_t
 x86_tsc_vdso_timehands(struct vdso_timehands *vdso_th, struct timecounter *tc)
 {
-
 	vdso_th->th_algo = VDSO_TH_ALGO_X86_TSC;
 	vdso_th->th_x86_shift = (int)(intptr_t)tc->tc_priv;
 	vdso_th->th_x86_hpet_idx = 0xffffffff;
@@ -748,10 +744,8 @@ x86_tsc_vdso_timehands(struct vdso_timehands *vdso_th, struct timecounter *tc)
 
 #ifdef COMPAT_FREEBSD32
 static uint32_t
-x86_tsc_vdso_timehands32(struct vdso_timehands32 *vdso_th32,
-    struct timecounter *tc)
+x86_tsc_vdso_timehands32(struct vdso_timehands32 *vdso_th32, struct timecounter *tc)
 {
-
 	vdso_th32->th_algo = VDSO_TH_ALGO_X86_TSC;
 	vdso_th32->th_x86_shift = (int)(intptr_t)tc->tc_priv;
 	vdso_th32->th_x86_hpet_idx = 0xffffffff;

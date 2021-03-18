@@ -66,6 +66,7 @@ getdisklabel(buf, lp)
 /*
  * Compute checksum for disk label.
  */
+u_short
 dkcksum(lp)
 	register struct disklabel *lp;
 {

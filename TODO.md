@@ -26,7 +26,10 @@ A General todo list. Don't hesitate to add to this list. :)
 	
 ## arch:
 - i386/x86: (Merged under i386)
-	- clockframe usage (machine/cpu.h)
+	- geode.c: to add
+	- trap.c: update, vm86 support (work in progress)
+	- want_resched: rescheduling
+	- astpending
 
 ## devel: (planned)
 - Code planned for future integration
@@ -46,8 +49,8 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## lib:
 - libsa:
-	- stand.h
-		- add relavent libsa methods
+- libkern:
+- x86emu:
 	
 ## net / netimp / netinet / netns:
 Of Interest Todo:
