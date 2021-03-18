@@ -81,8 +81,7 @@ struct plimit {
 
 /* add user profiling from AST */
 #define	ADDUPROF(p)							\
-	addupc_task(p,							\
-	    (p)->p_stats->p_prof.pr_addr, (p)->p_stats->p_prof.pr_ticks)
+	addupc_task((p), (p)->p_stats->p_prof.pr_addr, (p)->p_stats->p_prof.pr_ticks)
 
 #ifdef KERNEL
 void	addupc_intr (struct proc *p, u_long pc, u_int ticks);

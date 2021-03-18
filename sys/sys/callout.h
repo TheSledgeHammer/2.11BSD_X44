@@ -88,6 +88,9 @@
  * timer as a timeout like 4.3BSD.
  */
 
+#ifndef _SYS_CALLOUT_H_
+#define	_SYS_CALLOUT_H_
+
 struct callout;
 struct callout_circq {
 	/* next element */
@@ -167,6 +170,7 @@ void	callout_reset(struct callout *, int, void (*)(void *), void *);
 void	callout_schedule(struct callout *, int);
 void	callout_stop(struct callout *);
 int		callout_hardclock(int);
+void	callout_softclock(void);
 
 #define	callout_setfunc(c, f, a) do {							\
 	(c)->c_func = (f);											\
@@ -181,3 +185,4 @@ int		callout_hardclock(int);
 /* kern_clock.c */
 extern struct callout *callfree, *calltodo;
 #endif
+#endif /* _SYS_CALLOUT_H_ */

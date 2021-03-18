@@ -8,12 +8,13 @@
 
 #ifndef _SYS_USER_H_
 #define _SYS_USER_H_
+
 #include <sys/cdefs.h>
 
 #include <machine/pcb.h>
 #include <machine/param.h>
 
-#ifndef KERNEL
+
 #include <sys/param.h>
 #include <sys/errno.h>
 #include <sys/exec.h>
@@ -29,7 +30,7 @@
 #include <sys/types.h>
 #include <sys/ucred.h>
 #include <vm/include/vm.h>			/* XXX */
-#endif
+//#endif
 /*
  * data that doesn't need to be referenced while the process is swapped.
  * The user block is USIZE*64 bytes long; resides at virtual kernel loc
@@ -114,7 +115,6 @@ struct user {
 	struct sigaltstack 	u_sigstk;				/* signal stack info */
 	struct sigstack 	u_sigstk2;				/* signal stack info */
 	struct sigacts 		u_sigacts;				/* p_sigacts points here (use it!) */
-	struct pstats 		u_stats;				/* p_stats points here (use it!) */
 
 /* 1.4 - descriptor management */
 	struct file 		*u_ofile[NOFILE];		/* file structures for open files */
@@ -137,14 +137,8 @@ struct user {
 	char				u_acflag;
 	char				u_dupfd;				/* XXX - see kern_descrip.c/fdopen */
 
-	struct uprof {								/* profile arguments */
-		caddr_t			pr_base;				/* buffer base */
-		u_long			pr_size;				/* buffer size */
-		u_long			pr_off;					/* pc offset */
-		u_long			pr_scale;				/* pc scaling */
-		u_long			pr_addr;				/* temp storage for addr until AST */
-		u_long			pr_ticks;				/* temp storage for ticks until AST */
-	} u_prof;
+	struct pstats 		u_stats;				/* p_stats points here (use it!) */
+#define u_prof			u_stats->p_prof			/* profile arguments */
 
 /* 1.6 - resource controls */
 	struct	rlimit 		u_rlimit[RLIM_NLIMITS];
@@ -176,6 +170,4 @@ struct user {
 
 #ifdef KERNEL
 extern struct user 		u;
-//#else
-//extern struct user 		u;
 #endif

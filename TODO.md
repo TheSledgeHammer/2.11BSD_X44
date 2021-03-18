@@ -26,6 +26,8 @@ A General todo list. Don't hesitate to add to this list. :)
 	
 ## arch:
 - i386/x86: (Merged under i386)
+	- lapic, ioapic: 
+		- requires changing machine-dependent soft interrupts
 	- geode.c: to add
 	- trap.c: update, vm86 support (work in progress)
 	- want_resched: rescheduling

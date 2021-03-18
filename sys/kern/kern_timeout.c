@@ -292,7 +292,7 @@ callout_hardclock(int needsoftclock)
 
 /* ARGSUSED */
 void
-softclock(void *v)
+callout_softclock(void)
 {
 	struct callout *c;
 	void (*func)(void *);
@@ -317,7 +317,7 @@ softclock(void *v)
 
 			func = c->c_func;
 			arg = c->c_arg;
-
+			calltodo = c;
 			CALLOUT_UNLOCK(s);
 			(*func)(arg);
 			CALLOUT_LOCK(s);

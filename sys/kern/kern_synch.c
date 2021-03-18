@@ -98,10 +98,10 @@ schedcpu(arg)
 		runin = 0;
 		wakeup((caddr_t)&runin);
 	}
-	++runrun;					/* swtch at least once a second */
 	if (bclnlist != NULL) {
 		wakeup((caddr_t)pageproc);
 	}
+	++runrun;					/* swtch at least once a second */
 	timeout(schedcpu, (void *)0, hz);
 }
 
@@ -615,7 +615,7 @@ getrq(p)
 done:
 	panic("getrq");
 	splx(s);
-	return NULL;
+	return (NULL);
 }
 
 /*

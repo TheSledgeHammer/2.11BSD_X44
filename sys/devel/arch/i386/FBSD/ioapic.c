@@ -27,6 +27,10 @@
 
 #include <sys/lock.h>
 #include <sys/user.h>
+#include <sys/malloc.h>
+
+#include <devel/sys/malloctypes.h>
+#include <devel/arch/i386/include/cpu.h>
 
 #include <devel/arch/i386/FBSD/apicreg.h>
 #include <devel/arch/i386/FBSD/apicvar.h>
@@ -377,7 +381,6 @@ ioapic_program_intpin(struct ioapic_intsrc *intpin)
 static void
 ioapic_reprogram_intpin(struct intsrc *isrc)
 {
-
 	mtx_lock_spin(&icu_lock);
 	ioapic_program_intpin((struct ioapic_intsrc *)isrc);
 	mtx_unlock_spin(&icu_lock);

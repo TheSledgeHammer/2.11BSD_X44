@@ -38,23 +38,31 @@
 #include <sys/kernel.h>
 #include <sys/user.h>
 
-#include <machine/cpu.h>
-#include <machine/cputypes.h>
-#include <machine/specialreg.h>
+#include <devel/arch/i386/include/cpu.h>
+#include <devel/arch/i386/include/timetc.h>
+
+#include <arch/i386/include/cpu.h>
+#include <arch/i386/include/cpufunc.h>
+#include <arch/i386/include/cputypes.h>
+#include <arch/i386/include/specialreg.h>
 
 uint64_t	tsc_freq;
 int			tsc_is_invariant;
 int			tsc_perf_stat;
+
+#ifdef SMP
+int	smp_tsc;
+int	smp_tsc_adjust = 0;
+#endif
+static int	tsc_shift = 1;
+static int	tsc_disabled;
+static int	tsc_skip_calibration;
 
 static struct timecounter tsc_timecounter = {
 		.tc_get_timecount =			tsc_get_timecount,
 		.tc_counter_mask =			~0u,
 		.tc_name =					"TSC",
 		.tc_quality =				800,	/* adjusted in code */
-		.tc_fill_vdso_timehands = 	x86_tsc_vdso_timehands,
-#ifdef COMPAT_FREEBSD32
-		.tc_fill_vdso_timehands32 = x86_tsc_vdso_timehands32,
-#endif
 };
 
 /*
@@ -163,43 +171,39 @@ probe_tsc_freq(void)
 		 */
 		wrmsr(MSR_MPERF, 0);
 		wrmsr(MSR_APERF, 0);
-		DELAY(10);
+		delay(10);
 		if (rdmsr(MSR_MPERF) > 0 && rdmsr(MSR_APERF) > 0)
 			tsc_perf_stat = 1;
 	}
-
+/*
 	if (vm_guest == VM_GUEST_VMWARE) {
 		tsc_freq_vmware();
 		return;
 	}
-
+*/
 	switch (cpu_vendor_id) {
 	case CPUVENDOR_AMD:
 	case CPUVENDOR_HYGON:
-		if ((amd_pminfo & AMDPM_TSC_INVARIANT) != 0
-				|| (vm_guest == VM_GUEST_NO && CPUID_TO_FAMILY(cpu_id) >= 0x10))
+		if ((amd_pminfo & AMDPM_TSC_INVARIANT) != 0	|| (/*vm_guest == VM_GUEST_NO && */CPUID_TO_FAMILY(cpu_id) >= 0x10)) {
 			tsc_is_invariant = 1;
+		}
 		if (cpu_feature & CPUID_SSE2) {
 			tsc_timecounter.tc_get_timecount = tsc_get_timecount_mfence;
 		}
 		break;
 	case CPUVENDOR_INTEL:
-		if ((amd_pminfo & AMDPM_TSC_INVARIANT) != 0
-				|| (vm_guest == VM_GUEST_NO
-						&& ((CPUID_TO_FAMILY(cpu_id) == 0x6
-								&& CPUID_TO_MODEL(cpu_id) >= 0xe)
-								|| (CPUID_TO_FAMILY(cpu_id) == 0xf
-										&& CPUID_TO_MODEL(cpu_id) >= 0x3))))
+		if ((amd_pminfo & AMDPM_TSC_INVARIANT) != 0	|| (/*vm_guest == VM_GUEST_NO && */((CPUID_TO_FAMILY(cpu_id) == 0x6 &&
+				CPUID_TO_MODEL(cpu_id) >= 0xe) || (CPUID_TO_FAMILY(cpu_id) == 0xf && CPUID_TO_MODEL(cpu_id) >= 0x3)))) {
 			tsc_is_invariant = 1;
+		}
 		if (cpu_feature & CPUID_SSE2) {
 			tsc_timecounter.tc_get_timecount = tsc_get_timecount_lfence;
 		}
 		break;
 	case CPUVENDOR_CENTAUR:
-		if (vm_guest == VM_GUEST_NO && CPUID_TO_FAMILY(cpu_id) == 0x6
-				&& CPUID_TO_MODEL(cpu_id) >= 0xf
-				&& (rdmsr(0x1203) & 0x100000000ULL) == 0)
+		if (/* vm_guest == VM_GUEST_NO && */CPUID_TO_FAMILY(cpu_id) == 0x6 && CPUID_TO_MODEL(cpu_id) >= 0xf && (rdmsr(0x1203) & 0x100000000ULL) == 0) {
 			tsc_is_invariant = 1;
+		}
 		if (cpu_feature & CPUID_SSE2) {
 			tsc_timecounter.tc_get_timecount = tsc_get_timecount_lfence;
 		}
@@ -207,17 +211,20 @@ probe_tsc_freq(void)
 	}
 
 	if (tsc_skip_calibration) {
-		if (tsc_freq_cpuid(&tmp_freq))
+		if (tsc_freq_cpuid(&tmp_freq)) {
 			tsc_freq = tmp_freq;
-		else if (cpu_vendor_id == CPUVENDOR_INTEL)
+		} else if (cpu_vendor_id == CPUVENDOR_INTEL) {
 			tsc_freq_intel();
-		if (tsc_freq == 0)
+		}
+		if (tsc_freq == 0) {
 			tsc_disabled = 1;
+		}
 	} else {
-		if (bootverbose)
+		if (bootverbose) {
 			printf("Calibrating TSC clock ... ");
+		}
 		tsc1 = rdtsc();
-		DELAY(1000000);
+		delay(1000000);
 		tsc2 = rdtsc();
 		tsc_freq = tsc2 - tsc1;
 
@@ -230,24 +237,20 @@ probe_tsc_freq(void)
 		 * reports it in FADT boot flags, so just compare the
 		 * frequencies directly.
 		 */
-		if (tsc_freq_cpuid(&tmp_freq)
-				&& qabs(tsc_freq - tmp_freq) > uqmin(tsc_freq, tmp_freq)) {
+		if (tsc_freq_cpuid(&tmp_freq) && qabs(tsc_freq - tmp_freq) > uqmin(tsc_freq, tmp_freq)) {
 			no_cpuid_override = 0;
-			TUNABLE_INT_FETCH("machdep.disable_tsc_cpuid_override",
-					&no_cpuid_override);
+		//	TUNABLE_INT_FETCH("machdep.disable_tsc_cpuid_override", &no_cpuid_override);
 			if (!no_cpuid_override) {
 				if (bootverbose) {
-					printf(
-							"TSC clock: calibration freq %ju Hz, CPUID freq %ju Hz%s\n",
-							(uintmax_t) tsc_freq, (uintmax_t) tmp_freq,
-							no_cpuid_override ? "" : ", doing CPUID override");
+					printf("TSC clock: calibration freq %ju Hz, CPUID freq %ju Hz%s\n", (uintmax_t) tsc_freq, (uintmax_t) tmp_freq, no_cpuid_override ? "" : ", doing CPUID override");
 				}
 				tsc_freq = tmp_freq;
 			}
 		}
 	}
-	if (bootverbose)
+	if (bootverbose) {
 		printf("TSC clock: %ju Hz\n", (intmax_t) tsc_freq);
+	}
 }
 
 void
@@ -297,16 +300,18 @@ init_TSC(void)
 	 * be updated if someone loads a cpufreq driver after boot that
 	 * discovers a new max frequency.
 	 */
-	if (tsc_freq != 0)
+	if (tsc_freq != 0) {
 		set_cputicker(rdtsc, tsc_freq, !tsc_is_invariant);
+	}
 
-	if (tsc_is_invariant)
+	if (tsc_is_invariant) {
 		return;
+	}
 
 	/* Register to find out about changes in CPU frequency. */
-	tsc_pre_tag = EVENTHANDLER_REGISTER(cpufreq_pre_change, tsc_freq_changing, NULL, EVENTHANDLER_PRI_FIRST);
-	tsc_post_tag = EVENTHANDLER_REGISTER(cpufreq_post_change, tsc_freq_changed, NULL, EVENTHANDLER_PRI_FIRST);
-	tsc_levels_tag = EVENTHANDLER_REGISTER(cpufreq_levels_changed, tsc_levels_changed, NULL, EVENTHANDLER_PRI_ANY);
+//	tsc_pre_tag = EVENTHANDLER_REGISTER(cpufreq_pre_change, tsc_freq_changing, NULL, EVENTHANDLER_PRI_FIRST);
+//	tsc_post_tag = EVENTHANDLER_REGISTER(cpufreq_post_change, tsc_freq_changed, NULL, EVENTHANDLER_PRI_FIRST);
+//	tsc_levels_tag = EVENTHANDLER_REGISTER(cpufreq_levels_changed, tsc_levels_changed, NULL, EVENTHANDLER_PRI_ANY);
 }
 
 #ifdef SMP
@@ -423,23 +428,19 @@ retry:
 	for (i = 0, tsc = data; i < N; i++, tsc += size)
 		smp_rendezvous(tsc_read_0, tsc_read_1, tsc_read_2, tsc);
 	smp_tsc = 1;	/* XXX */
-	smp_rendezvous(smp_no_rendezvous_barrier, comp_smp_tsc,
-	    smp_no_rendezvous_barrier, data);
+	smp_rendezvous(smp_no_rendezvous_barrier, comp_smp_tsc, smp_no_rendezvous_barrier, data);
 	if (!smp_tsc && adj < adj_max_count) {
 		adj++;
-		smp_rendezvous(smp_no_rendezvous_barrier, adj_smp_tsc,
-		    smp_no_rendezvous_barrier, data);
+		smp_rendezvous(smp_no_rendezvous_barrier, adj_smp_tsc, smp_no_rendezvous_barrier, data);
 		goto retry;
 	}
 	free(data, M_TEMP);
 	if (bootverbose)
-		printf("SMP: %sed TSC synchronization test%s\n",
-		    smp_tsc ? "pass" : "fail",
-		    adj > 0 ? " after adjustment" : "");
+		printf("SMP: %sed TSC synchronization test%s\n", smp_tsc ? "pass" : "fail", adj > 0 ? " after adjustment" : "");
 	if (smp_tsc && tsc_is_invariant) {
 		switch (cpu_vendor_id) {
-		case CPU_VENDOR_AMD:
-		case CPU_VENDOR_HYGON:
+		case CPUVENDOR_AMD:
+		case CPUVENDOR_HYGON:
 			/*
 			 * Processor Programming Reference (PPR) for AMD
 			 * Family 17h states that the TSC uses a common
@@ -453,12 +454,10 @@ retry:
 			 * we have a single-socket/multi-core platform.
 			 * XXX Need more work for complex cases.
 			 */
-			if (CPUID_TO_FAMILY(cpu_id) < 0x15 ||
-			    (amd_feature2 & AMDID2_CMP) == 0 ||
-			    smp_cpus > (cpu_procinfo2 & AMDID_CMP_CORES) + 1)
+			if (CPUID_TO_FAMILY(cpu_id) < 0x15 || (amd_feature2 & AMDID2_CMP) == 0 || smp_cpus > (cpu_procinfo2 & AMDID_CMP_CORES) + 1)
 				break;
 			return (1000);
-		case CPU_VENDOR_INTEL:
+		case CPUVENDOR_INTEL:
 			/*
 			 * XXX Assume Intel platforms have synchronized TSCs.
 			 */
@@ -517,7 +516,7 @@ init_TSC_tc(void)
 	 * result incorrect runtimes for kernel idle threads (but not
 	 * for any non-idle threads).
 	 */
-	if (cpu_vendor_id == CPU_VENDOR_INTEL &&
+	if (cpu_vendor_id == CPUVENDOR_INTEL &&
 	    (amd_pminfo & AMDPM_TSC_INVARIANT) == 0) {
 		tsc_timecounter.tc_flags |= TC_FLAGS_C2STOP;
 		if (bootverbose)
@@ -544,8 +543,8 @@ init:
 	for (shift = 0; shift <= 31 && (tsc_freq >> shift) > max_freq; shift++)
 		;
 	if ((cpu_feature & CPUID_SSE2) != 0 && mp_ncpus > 1) {
-		if (cpu_vendor_id == CPU_VENDOR_AMD ||
-		    cpu_vendor_id == CPU_VENDOR_HYGON) {
+		if (cpu_vendor_id == CPUVENDOR_AMD ||
+		    cpu_vendor_id == CPUVENDOR_HYGON) {
 			tsc_timecounter.tc_get_timecount = shift > 0 ?
 			    tsc_get_timecount_low_mfence :
 			    tsc_get_timecount_mfence;
@@ -641,12 +640,10 @@ tsc_levels_changed(void *arg, int unit)
 static void
 tsc_freq_changing(void *arg, const struct cf_level *level, int *status)
 {
-
 	if (*status != 0 || timecounter != &tsc_timecounter)
 		return;
 
-	printf("timecounter TSC must not be in use when "
-	    "changing frequencies; change denied\n");
+	printf("timecounter TSC must not be in use when changing frequencies; change denied\n");
 	*status = EBUSY;
 }
 
@@ -663,8 +660,7 @@ tsc_freq_changed(void *arg, const struct cf_level *level, int status)
 	/* Total setting for this level gives the new frequency in MHz. */
 	freq = (uint64_t)level->total_set.freq * 1000000;
 	atomic_store_rel_64(&tsc_freq, freq);
-	tsc_timecounter.tc_frequency =
-	    freq >> (int)(intptr_t)tsc_timecounter.tc_priv;
+	tsc_timecounter.tc_frequency =  freq >> (int)(intptr_t)tsc_timecounter.tc_priv;
 }
 
 static int
@@ -679,8 +675,7 @@ sysctl_machdep_tsc_freq(SYSCTL_HANDLER_ARGS)
 	error = sysctl_handle_64(oidp, &freq, 0, req);
 	if (error == 0 && req->newptr != NULL) {
 		atomic_store_rel_64(&tsc_freq, freq);
-		atomic_store_rel_64(&tsc_timecounter.tc_frequency,
-		    freq >> (int)(intptr_t)tsc_timecounter.tc_priv);
+		atomic_store_rel_64(&tsc_timecounter.tc_frequency, freq >> (int)(intptr_t)tsc_timecounter.tc_priv);
 	}
 	return (error);
 }
@@ -688,7 +683,6 @@ sysctl_machdep_tsc_freq(SYSCTL_HANDLER_ARGS)
 static u_int
 tsc_get_timecount(struct timecounter *tc /*__unused */)
 {
-
 	return (rdtsc32());
 }
 
@@ -731,25 +725,3 @@ tsc_get_timecount_low_mfence(struct timecounter *tc)
 	mfence();
 	return (tsc_get_timecount_low(tc));
 }
-
-static uint32_t
-x86_tsc_vdso_timehands(struct vdso_timehands *vdso_th, struct timecounter *tc)
-{
-	vdso_th->th_algo = VDSO_TH_ALGO_X86_TSC;
-	vdso_th->th_x86_shift = (int)(intptr_t)tc->tc_priv;
-	vdso_th->th_x86_hpet_idx = 0xffffffff;
-	bzero(vdso_th->th_res, sizeof(vdso_th->th_res));
-	return (1);
-}
-
-#ifdef COMPAT_FREEBSD32
-static uint32_t
-x86_tsc_vdso_timehands32(struct vdso_timehands32 *vdso_th32, struct timecounter *tc)
-{
-	vdso_th32->th_algo = VDSO_TH_ALGO_X86_TSC;
-	vdso_th32->th_x86_shift = (int)(intptr_t)tc->tc_priv;
-	vdso_th32->th_x86_hpet_idx = 0xffffffff;
-	bzero(vdso_th32->th_res, sizeof(vdso_th32->th_res));
-	return (1);
-}
-#endif

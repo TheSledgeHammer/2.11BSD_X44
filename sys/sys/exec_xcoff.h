@@ -300,6 +300,58 @@ enum strclass {
 	scC_DWARF
 };
 
+/* XCOFF loader header */
+struct xcoff32_ldrhdr {
+	int32_t 	l_version;		/* loader section version number */
+	int32_t		l_nsyms;		/* # of symbol table entries */
+	int32_t		l_nreloc;		/* # of relocation table entries */
+	uint32_t	l_istlen;		/* length of import file ID string table */
+	int32_t		l_nimpid;		/* # of import file IDs */
+	uint32_t	l_impoff;		/* offset to start of import file IDs */
+	uint32_t	l_stlen;		/* length of string table */
+	uint32_t 	l_stoff;		/* offset to start of string table */
+	uint32_t	l_symoff;		/* offset to start of symbol table */
+	uint16_t 	l_rldoff;		/* offset to start of relocation entries */
+};
+
+struct xcoff64_ldrhdr {
+	int32_t 	l_version;		/* loader section version number */
+	int32_t		l_nsyms;		/* # of symbol table entries */
+	int32_t		l_nreloc;		/* # of relocation table entries */
+	uint32_t	l_istlen;		/* length of import file ID string table */
+	int32_t		l_nimpid;		/* # of import file IDs */
+	uint32_t	l_impoff;		/* offset to start of import file IDs */
+	uint32_t	l_stlen;		/* length of string table */
+	uint64_t 	l_stoff;		/* offset to start of string table */
+	uint64_t	l_symoff;		/* offset to start of symbol table */
+	uint16_t 	l_rldoff;		/* offset to start of relocation entries */
+};
+
+/* XCOFF loader symbol */
+struct xcoff32_ldrsyms {
+	char		l_name[8];		/* symbol name or byte offset into string table */
+	int32_t		l_zeroes;		/* zero indicates symbol name is referenced from l_offset */
+	int32_t		l_offset;		/* byte offset into string table of symbol name */
+	int32_t 	l_value;		/* address field */
+	int16_t 	l_scnum;		/* section number containing symbol */
+	int8_t		l_smtype;		/* symbol type, export, import flags */
+	int8_t 		l_smclas;		/* symbol storage class */
+	int32_t 	l_ifile;		/* import file ID; ordinal of import file IDs */
+	int32_t 	l_parm;			/* parameter type-check field */
+};
+
+struct xcoff64_ldrsyms {
+	char		l_name[8];		/* symbol name or byte offset into string table */
+	int32_t		l_zeroes;		/* zero indicates symbol name is referenced from l_offset */
+	int32_t		l_offset;		/* byte offset into string table of symbol name */
+	int64_t 	l_value;		/* address field */
+	int16_t 	l_scnum;		/* section number containing symbol */
+	int8_t		l_smtype;		/* symbol type, export, import flags */
+	int8_t 		l_smclas;		/* symbol storage class */
+	int32_t 	l_ifile;		/* import file ID; ordinal of import file IDs */
+	int32_t 	l_parm;			/* parameter type-check field */
+};
+
 #define XCOFF32_HDR_SIZE (sizeof(struct xcoff32_exechdr))
 #define XCOFF64_HDR_SIZE (sizeof(struct xcoff64_exechdr))
 
@@ -317,6 +369,8 @@ enum strclass {
 #define xcoff_scnhdr		xcoff32_scnhdr
 #define xcoff_reloc			xcoff32_reloc
 #define xcoff_syms			xcoff32_syms
+#define xcoff_ldrhdr		xcoff32_ldrhdr
+#define xcoff_ldrsyms		xcoff32_ldrsyms
 
 #define xcoff_exechdr		xcoff32_exechdr
 #define XCOFF_HDR_SIZE		XCOFF32_HDR_SIZE
@@ -327,6 +381,8 @@ enum strclass {
 #define xcoff_scnhdr		xcoff64_scnhdr
 #define xcoff_reloc			xcoff64_reloc
 #define xcoff_syms			xcoff64_syms
+#define xcoff_ldrhdr		xcoff64_ldrhdr
+#define xcoff_ldrsyms		xcoff64_ldrsyms
 
 #define xcoff_exechdr		xcoff64_exechdr
 #define XCOFF_HDR_SIZE		XCOFF64_HDR_SIZE

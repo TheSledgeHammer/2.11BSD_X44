@@ -26,7 +26,12 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "sys/gsched.h"
+/* The Global Scheduler Interface:
+ * For interfacing different scheduling algorithms into the 2.11BSD Kernel
+ * Should Primarily contain functions used in both the kernel & the various scheduler/s
+ */
+
+#include <sys/cdefs.h>
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -36,15 +41,13 @@
 #include <sys/lock.h>
 #include <sys/queue.h>
 
-/* The Global Scheduler Interface:
- * For interfacing different scheduling algorithms into the 2.11BSD Kernel
- * Should Primarily contain functions used in both the kernel & the various scheduler/s
- */
+#include "sys/gsched.h"
+#include "sys/malloctypes.h"
 
-/* Notes:
- * - The scheduling algorithm should run in kern_synch.c: schedcpu() (may change if gains more schedulers)
- * - edf & cfs only to need calculate from current schedcpu result (without priorities per queue: assumes single queue)
- */
+static struct gsched *gsched_setup(struct proc *);
+static void	gsched_edf_setup(struct gsched *, struct proc *);
+static void	gsched_cfs_setup(struct gsched *, struct proc *);
+static int gsched_compare(struct proc *, struct proc *);
 
 void
 gsched_init(p)
@@ -55,7 +58,7 @@ gsched_init(p)
 	gsched_cfs_setup(gsd, p);
 }
 
-struct gsched *
+static struct gsched *
 gsched_setup(p)
 	struct proc *p;
 {
@@ -69,7 +72,7 @@ gsched_setup(p)
 	return (gsd);
 }
 
-void
+static void
 gsched_edf_setup(gsd, p)
 	struct gsched *gsd;
 	struct proc *p;
@@ -87,7 +90,7 @@ gsched_edf_setup(gsd, p)
 	edf->edf_slptime = p->p_slptime;
 }
 
-void
+static void
 gsched_cfs_setup(gsd, p)
 	struct gsched *gsd;
 	struct proc *p;
@@ -138,7 +141,7 @@ gsched_timediff(time, estcpu)
 }
 
 /* compare cpu ticks (deadline) of cur proc and the next proc in run-queue */
-int
+static int
 gsched_compare(p1, p2)
     struct proc *p1, *p2;
 {

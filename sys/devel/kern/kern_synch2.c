@@ -1,7 +1,7 @@
 
 /* Source here is to eventually be merged with kern_synch.c */
 
-#include "sys/gsched.h"
+#include "devel/sys/gsched.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -97,10 +97,10 @@ schedcpu(arg)
 		runin = 0;
 		wakeup((caddr_t)&runin);
 	}
-	++runrun;					/* swtch at least once a second */
 	if(bclnlist != NULL) {
 		wakeup((caddr_t)pageproc);
 	}
+	++runrun;					/* swtch at least once a second */
 	timeout(schedcpu, (void *)0, hz);
 }
 

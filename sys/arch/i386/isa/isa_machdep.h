@@ -82,7 +82,9 @@
 
 #ifndef _I386_ISA_MACHDEP_H_			/* XXX */
 #define _I386_ISA_MACHDEP_H_			/* XXX */
+
 #include <sys/queue.h>
+
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
 
@@ -167,7 +169,6 @@ struct i386_isa_dma_cookie {
 #define	CGA_BUF					0xB8000
 #define	IOPHYSMEM				0xA0000
 
-
 /*
  * Methods that a PIC provides to mask/unmask a given interrupt source,
  * "turn on" the interrupt on the CPU side by setting up an IDT entry, and
@@ -178,6 +179,13 @@ struct pic {
     TAILQ_ENTRY(pic)    pics;
 };
 static TAILQ_HEAD(pics_head, pic) pics;
+
+/* Flags for pic_disable_source() */
+enum {
+	PIC_EOI,
+	PIC_NO_EOI,
+};
+u_int num_io_irqs;
 
 /*
  * An interrupt source.  The upper-layer code uses the PIC methods to
@@ -240,10 +248,5 @@ extern struct lock_object *icu_lock;
  * return a kernel virtual address.
  */
 #define ISA_HOLE_VADDR(p)  ((void *) ((u_long)(p) - ISA_HOLE_START))
-
-/*
- * Miscellanous functions.
- */
-void sysbeep (int, int);		/* beep with the system speaker */
 
 #endif /* _I386_ISA_MACHDEP_H_ XXX */

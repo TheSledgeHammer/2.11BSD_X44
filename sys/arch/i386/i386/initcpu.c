@@ -41,8 +41,6 @@
 #include <machine/cpuvar.h>
 #include <machine/specialreg.h>
 
-//#include <cpuid.h>
-
 #ifdef I486_CPU
 static void init_5x86(void);
 static void init_bluelightning(void);

@@ -231,26 +231,29 @@ softclock(frame, pc)
 	struct clockframe *frame;
 	caddr_t pc;
 {
-	for (;;) {
-		register struct callout *p1;
-		register void *arg;
-		register void (*func)(void *);
-		register int a, s;
+	if(calltodo == NULL) {
+		callout_softclock();
+	} else {
+		for (;;) {
+			register struct callout *p1;
+			register void *arg;
+			register void (*func)(void*);
+			register int a, s;
 
-		s = splhigh();
-		if ((p1 = CIRCQ_NEXT(calltodo->c_list)) == 0 || p1->c_time > 0) {
+			s = splhigh();
+			if ((p1 = CIRCQ_NEXT(calltodo->c_list)) == 0 || p1->c_time > 0) {
+				splx(s);
+				break;
+			}
+			arg = p1->c_arg;
+			func = p1->c_func;
+			a = p1->c_time;
+			CIRCQ_NEXT(calltodo->c_list) = CIRCQ_NEXT(p1->c_list);
+			CIRCQ_NEXT(p1->c_list) = callfree;
+			callfree = p1;
 			splx(s);
-			break;
+			CLKF_PC(frame)(*func)(arg, a);
 		}
-		arg = p1->c_arg;
-		func = p1->c_func;
-		a = p1->c_time;
-		CIRCQ_NEXT(calltodo->c_list) = CIRCQ_NEXT(p1->c_list);
-		CIRCQ_NEXT(p1->c_list) = callfree;
-		callfree = p1;
-		splx(s);
-		CLKF_PC(frame)
-		(*func)(arg, a);
 	}
 
 	/*

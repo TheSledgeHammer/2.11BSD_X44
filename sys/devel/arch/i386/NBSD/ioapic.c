@@ -79,10 +79,10 @@
 
 #include <arch/i386/isa/isa_machdep.h> 			/* XXX intrhand */
 
-#include <devel/arch/i386/include/pic.h>
-#include <devel/arch/i386/include/apicvar.h>
-#include <devel/arch/i386/include/i82093reg.h>
-#include <devel/arch/i386/include/i82093var.h>
+#include <devel/arch/i386/NBSD/pic.h>
+#include <devel/arch/i386/NBSD/apicvar.h>
+#include <devel/arch/i386/NBSD/i82093reg.h>
+#include <devel/arch/i386/NBSD/i82093var.h>
 
 #include <arch/i386/include/pio.h>
 #include <arch/i386/include/pmap.h>

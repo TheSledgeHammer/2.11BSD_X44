@@ -507,40 +507,40 @@ typedef struct IOAPIC ioapic_t;
 /*
  * fields in the IO APIC's redirection table entries
  */
-#define IOART_DEST		APIC_ID_MASK	/* broadcast addr: all APICs */
+#define IOART_DEST				APIC_ID_MASK	/* broadcast addr: all APICs */
 
-#define IOART_RESV		0x00fe0000	/* reserved */
+#define IOART_RESV				0x00fe0000	/* reserved */
 
-#define IOART_INTMASK	0x00010000	/* R/W: INTerrupt mask */
-# define IOART_INTMCLR	0x00000000	/*       clear, allow INTs */
-# define IOART_INTMSET	0x00010000	/*       set, inhibit INTs */
+#define IOART_INTMASK			0x00010000	/* R/W: INTerrupt mask */
+# define IOART_INTMCLR			0x00000000	/*       clear, allow INTs */
+# define IOART_INTMSET			0x00010000	/*       set, inhibit INTs */
 
-#define IOART_TRGRMOD	0x00008000	/* R/W: trigger mode */
-# define IOART_TRGREDG	0x00000000	/*       edge */
-# define IOART_TRGRLVL	0x00008000	/*       level */
+#define IOART_TRGRMOD			0x00008000	/* R/W: trigger mode */
+# define IOART_TRGREDG			0x00000000	/*       edge */
+# define IOART_TRGRLVL			0x00008000	/*       level */
 
-#define IOART_REM_IRR	0x00004000	/* RO: remote IRR */
+#define IOART_REM_IRR			0x00004000	/* RO: remote IRR */
 
-#define IOART_INTPOL	0x00002000	/* R/W: INT input pin polarity */
-# define IOART_INTAHI	0x00000000	/*      active high */
-# define IOART_INTALO	0x00002000	/*      active low */
+#define IOART_INTPOL			0x00002000	/* R/W: INT input pin polarity */
+# define IOART_INTAHI			0x00000000	/*      active high */
+# define IOART_INTALO			0x00002000	/*      active low */
 
-#define IOART_DELIVS	0x00001000	/* RO: delivery status */
+#define IOART_DELIVS			0x00001000	/* RO: delivery status */
 
-#define IOART_DESTMOD	0x00000800	/* R/W: destination mode */
-# define IOART_DESTPHY	0x00000000	/*      physical */
-# define IOART_DESTLOG	0x00000800	/*      logical */
+#define IOART_DESTMOD			0x00000800	/* R/W: destination mode */
+# define IOART_DESTPHY			0x00000000	/*      physical */
+# define IOART_DESTLOG			0x00000800	/*      logical */
 
-#define IOART_DELMOD	0x00000700	/* R/W: delivery mode */
-# define IOART_DELFIXED	0x00000000	/*       fixed */
-# define IOART_DELLOPRI	0x00000100	/*       lowest priority */
-# define IOART_DELSMI	0x00000200	/*       System Management INT */
-# define IOART_DELRSV1	0x00000300	/*       reserved */
-# define IOART_DELNMI	0x00000400	/*       NMI signal */
-# define IOART_DELINIT	0x00000500	/*       INIT signal */
-# define IOART_DELRSV2	0x00000600	/*       reserved */
-# define IOART_DELEXINT	0x00000700	/*       External INTerrupt */
+#define IOART_DELMOD			0x00000700	/* R/W: delivery mode */
+# define IOART_DELFIXED			0x00000000	/*       fixed */
+# define IOART_DELLOPRI			0x00000100	/*       lowest priority */
+# define IOART_DELSMI			0x00000200	/*       System Management INT */
+# define IOART_DELRSV1			0x00000300	/*       reserved */
+# define IOART_DELNMI			0x00000400	/*       NMI signal */
+# define IOART_DELINIT			0x00000500	/*       INIT signal */
+# define IOART_DELRSV2			0x00000600	/*       reserved */
+# define IOART_DELEXINT			0x00000700	/*       External INTerrupt */
 
-#define IOART_INTVEC	0x000000ff	/* R/W: INTerrupt vector field */
+#define IOART_INTVEC			0x000000ff	/* R/W: INTerrupt vector field */
 
 #endif /* _I386_APICREG_H_ */

@@ -36,10 +36,10 @@
 #include <sys/user.h>
 #include <arch/i386/include/specialreg.h>
 
-#include <devel/arch/i386/include/apicvar.h>
-#include <devel/arch/i386/include/i82489reg.h>
-#include <devel/arch/i386/include/i82489var.h>
-#include <devel/arch/i386/include/i82093var.h>
+#include <devel/arch/i386/NBSD/apicvar.h>
+#include <devel/arch/i386/NBSD/i82489reg.h>
+#include <devel/arch/i386/NBSD/i82489var.h>
+#include <devel/arch/i386/NBSD/i82093var.h>
 
 /* Referenced from vector.S */
 void			lapic_clockintr(void *, struct intrframe *);
@@ -215,8 +215,7 @@ lapic_map(caddr_t lapic_base)
 	invlpg(va);
 
 	pmap_enter_special(va, lapic_base, PROT_READ | PROT_WRITE, PG_N);
-	DPRINTF("%s: entered lapic page va 0x%08lx pa 0x%08lx\n", __func__,
-	    va, lapic_base);
+	DPRINTF("%s: entered lapic page va 0x%08lx pa 0x%08lx\n", __func__, va, lapic_base);
 
 #ifdef MULTIPROCESSOR
 	cpu_init_first();

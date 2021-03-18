@@ -39,6 +39,17 @@
 #include <sys/queue.h>
 #include <sys/resource.h>
 
+#define	DPCPU_SETNAME		"set_pcpu"
+#define	DPCPU_SYMPREFIX		"pcpu_entry_"
+
+/*
+ * Define a set for pcpu data.
+ */
+extern uintptr_t *__start_set_pcpu;
+__GLOBL(__start_set_pcpu);
+extern uintptr_t *__stop_set_pcpu;
+__GLOBL(__stop_set_pcpu);
+
 /*
  * Array of dynamic percpu base offsets.  Indexed by id.
  */
@@ -53,6 +64,12 @@ extern uintptr_t 		dpcpu_off[];
 #define	DPCPU_MODMIN	2048
 #define	DPCPU_SIZE		roundup2(DPCPU_BYTES, PAGE_SIZE)
 #define	DPCPU_MODSIZE	(DPCPU_SIZE - (DPCPU_BYTES - DPCPU_MODMIN))
+
+/*
+ * Declaration and definition.
+ */
+#define	DPCPU_NAME(n)	pcpu_entry_##n
+#define	DPCPU_DECLARE(t, n)	extern t DPCPU_NAME(n)
 
 struct cpuhead;
 LIST_HEAD(cpuhead, percpu);

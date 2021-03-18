@@ -61,10 +61,10 @@
  * Please look at the following:
  *  - devel/sys/gsched_cfs.h
  *  - devel/sys/gsched_edf.h
- *  - devel/kern/sys_gsched_cfs.c
- *  - devel/kern/sys_gsched_edf.c
- *  - devel/kern/sys_gsched.c
- *  - devel/kern/sched.c
+ *  - devel/kern/kern_gsched.c
+ *  - devel/kern/kern_synch2.c
+ *  - devel/kern/gsched_cfs.c
+ *  - devel/kern/gsched_edf.c
  *
  * Scheduler Decision Tree:
  * 																						 --> Process Complete --> Process Exits
@@ -103,14 +103,15 @@ struct gsched {
 };
 
 /* Linux Concept: Scheduler Domains: Hyperthreading, multi-cpu */
+/* Not Implemented */
 union gsched_group {
 	CIRCLEQ_ENTRY(gsd_group) gsg_entry;
 };
 
+/* Not Implemented */
 struct gsched_grphead;
 CIRCLEQ_HEAD(gsched_grphead, gsched_group);
 struct gsched_domain {
-	/* Not Implemented */
 	struct gsched_grphead	 *gsd_header;
 	int 					 gsd_nentries;
 	int 					 gsd_refcnt;
@@ -138,12 +139,11 @@ enum priw {
 };
 
 void 				gsched_init(struct proc *);
-void				gsched_edf_setup(struct gsched *, struct proc *);
-void				gsched_cfs_setup(struct gsched *, struct proc *);
 struct proc			*gsched_proc(struct gsched *);
 struct gsched_edf 	*gsched_edf(struct gsched *);
 struct gsched_cfs 	*gsched_cfs(struct gsched *);
 u_char				gsched_timediff(u_char, u_int);
+int					gsched_compare(struct proc *, struct proc *);
 void				gsched_sort(struct proc *, struct proc *);
 
 #endif /* _SYS_GSCHED_H */

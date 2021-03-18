@@ -1118,7 +1118,9 @@ static	volatile u_int trap_by_rdmsr;
  * I don't like this method that handles fault, but I couldn't get
  * information for any other methods.  Does blue giant know?
  */
-static int identblue(void) {
+static int
+identblue(void)
+{
 
 	trap_by_rdmsr = 0;
 
@@ -1155,7 +1157,9 @@ static int identblue(void) {
  * |    (DIR 1)    |    (DIR 0)    |
  * +-------+-------+---------------+
  */
-static void identifycyrix(void) {
+static void
+identifycyrix(void)
+{
 	register_t saveintr;
 	int ccr2_test = 0, dir_test = 0;
 	u_char ccr2, ccr3;
@@ -1274,7 +1278,7 @@ identify_cpu2(void)
 		 * bit in CR4, and which VM monitors do not support.
 		 */
 		cpu_stdext_disable = 0;
-		TUNABLE_INT_FETCH("hw.cpu_stdext_disable", &cpu_stdext_disable);
+		//TUNABLE_INT_FETCH("hw.cpu_stdext_disable", &cpu_stdext_disable);
 		cpu_stdext_feature &= ~cpu_stdext_disable;
 
 		cpu_stdext_feature2 = regs[2];
@@ -1451,7 +1455,8 @@ finishidentcpu(void)
 #endif
 }
 
-int pti_get_default(void) {
+int
+pti_get_default(void) {
 
 	if (strcmp(cpu_vendor, AMD_VENDOR_ID) == 0 || strcmp(cpu_vendor, HYGON_VENDOR_ID) == 0)
 		return (0);
@@ -1617,7 +1622,9 @@ print_AMD_info(void)
 				"hardware bugs which may cause random instability\n");
 }
 
-static void print_INTEL_info(void) {
+static void
+print_INTEL_info(void)
+{
 	u_int regs[4];
 	u_int rounds, regnum;
 	u_int nwaycode, nway;
@@ -1653,7 +1660,9 @@ static void print_INTEL_info(void) {
 	}
 }
 
-static void print_INTEL_TLB(u_int data) {
+static void
+print_INTEL_TLB(u_int data)
+{
 	switch (data) {
 	case 0x0:
 	case 0x40:
