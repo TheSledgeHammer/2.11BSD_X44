@@ -64,9 +64,6 @@ extern int	runrun;					/* scheduling flag */
 extern char	curpri;					/* more scheduling */
 extern u_char curpriority;			/* priority of current process */
 
-extern int icode[];					/* user init code */
-extern int szicode;					/* its size */
-
 /* system call args */
 #define	syscallarg(x)	union { x datum; register_t pad; }
 
@@ -76,9 +73,11 @@ extern int szicode;					/* its size */
  * Structure of the system-entry table
  */
 extern struct sysent {
-	char	sy_narg;			/* total number of arguments */
-	int		(*sy_call)();		/* handler */
+	char	sy_narg;				/* total number of arguments */
+	short	sy_argsize;				/* total size of arguments */
+	int		(*sy_call)();			/* handler */
 } sysent[];
+extern int nsysent;
 
 int	noproc;							/* no one is running just now */
 

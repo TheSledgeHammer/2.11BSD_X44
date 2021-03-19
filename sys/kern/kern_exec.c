@@ -48,6 +48,7 @@
 #include <sys/acct.h>
 #include <sys/mount.h>
 #include <vm/include/vm.h>
+#include <sys/syscall.h>
 
 #include <machine/cpu.h>
 #include <machine/reg.h>
@@ -55,8 +56,10 @@
 extern char	sigcode[], esigcode[];
 
 const struct emul emul_211bsd = {
-		.e_name 		= "emul_211bsd",
+		.e_name 		= "211bsd",
 		.e_path 		= NULL,				/* emulation path */
+		.e_sendsig		= sendsig,
+		.e_nsysent		= SYS_MAXSYSCALL,
 		.e_sysent 		= sysent,
 #ifdef SYSCALL_DEBUG
 		.e_syscallnames = syscallnames,

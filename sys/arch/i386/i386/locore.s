@@ -47,12 +47,14 @@
 #include "assym.h"
 
 #include <sys/errno.h>
+
 #include <machine/asm.h>
 #include <machine/psl.h>
 #include <machine/pmap_new.h>
 #include <machine/pte_new.h>
 #include <machine/trap.h>
 #include <machine/specialreg.h>
+#include <machine/cpu.h>
 
 #ifdef cgd_notdef
 #include <machine/cputypes.h>
@@ -230,7 +232,7 @@ start:	movw	$0x1234,0x472							# warm boot
 		xorl	%ebp,%ebp							/* mark end of frames */
 
 		pushl	physfree							/* value of first for init386(first) */
-		call	_init386							/* wire 386 chip for unix operation */
+		call	init386								/* wire 386 chip for unix operation */
 		
 		/*
 		 * Clean up the stack in a way that db_numargs() understands, so
@@ -742,7 +744,7 @@ swfnd:
 		movl	%edi,_whichqs						# update q status
 
 		movl	$0,%eax
-		movl	%eax,_want_resched
+		call	want_resched
 
 #ifdef	DIAGNOSTIC
 		cmpl	%eax,P_WCHAN(%ecx)

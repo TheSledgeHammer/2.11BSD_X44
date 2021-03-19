@@ -281,7 +281,7 @@ $2 == "STD" {
 	syscall++
 	next
 }
-$2 == "NODEF" || $2 == "NOARGS" {
+$2 == "NODEF" || $2 == "NOARGS" || $2 == "INDIR" {
 	parseline()
 	putent($2, sysdcl, "")
 	syscall++
@@ -317,9 +317,9 @@ $2 == "OBSOL" || $2 == "UNIMPL" {
 }
 END {
 	printf("};\n\n") > sysent
-	printf("int\tn%s= sizeof(%s) / sizeof(%s[0]);\n", switchname,
-	    switchname, switchname) > sysent
+	printf("int\tn%s= sizeof(%s) / sizeof(%s[0]);\n", switchname, switchname, switchname) > sysent
 	printf("};\n") > sysnames
+	printf("#define\t%sMAXSYSCALL\t%d\n", constprefix, syscall) > sysnumhdr
 } '
 
 cat $sysdcl $syscompat_files $sysent > $syssw

@@ -95,8 +95,6 @@ extern struct proc *npxproc;
 char machine[] = "i386";			/* cpu "architecture" */
 char machine_arch[] = "i386";		/* machine == machine_arch */
 
-int want_resched;					/* resched() was called */
-
 /*
  * Declare these as initialized data so we can patch them.
  */
@@ -1131,6 +1129,28 @@ cpu_need_proftick(p)
 {
 	p->p_pflag |= MDP_OWEUPC;
 	aston(p);
+}
+
+/*
+ * Shutdown the CPU as much as possible
+ */
+void
+cpu_halt(void)
+{
+	for (;;) {
+		__asm__ ("hlt");
+	}
+}
+
+void
+need_resched(p)
+	struct proc *p;
+{
+	want_resched(p);
+
+	if(p) {
+		aston(p);
+	}
 }
 
 /*

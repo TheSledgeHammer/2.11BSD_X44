@@ -41,7 +41,7 @@ struct mdproc {
 	int					md_flags;		/* machine-dependent flags */
 	int					md_tss_sel;		/* TSS selector */
 	volatile int 		md_astpending;	/* AST pending for this process */
-	//int					md_want_resched;/* process wants a resched */
+	int					md_want_resched;/* process wants a resched */
 
 	void				(*md_syscall)(struct trapframe *);/* Syscall handling function */
 };

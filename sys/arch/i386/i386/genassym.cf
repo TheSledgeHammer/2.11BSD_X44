@@ -53,12 +53,6 @@ include <machine/psl.h>
 include <machine/reg.h>
 include <machine/vmparam.h>
 
-include "apm.h"
-if NAPM > 0
-include <machine/bioscall.h>
-include <machine/apmvar.h>
-endif
-
 include "isa.h"
 if NISA > 0
 include <i386/isa/isa_machdep.h>

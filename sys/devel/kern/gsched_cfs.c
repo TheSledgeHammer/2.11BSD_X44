@@ -36,6 +36,8 @@
 #include <sys/proc.h>
 #include <sys/user.h>
 
+#include <machine/cpu.h>
+
 #include <sys/gsched_cfs.h>
 
 /*
@@ -247,6 +249,8 @@ cfs_schedcpu(p)
 				cpticks++;
 				/* Test if deadline was reached before end of scheduling period */
 				if(cfs->cfs_cpticks == cpticks) {
+					/* deadline reached before completion, wants rescheduling */
+					want_resched(p);
 					/* test if time doesn't equal the base scheduling period */
 					if(cfs->cfs_time != cfs->cfs_bsched) {
 						goto runout;
@@ -271,7 +275,6 @@ cfs_schedcpu(p)
 runout:
 	/* update cfs variables */
 	cfs_update(p, cfs->cfs_priweight);
-
 	/* remove from cfs queue */
 	RB_REMOVE(gsched_cfs_rbtree, cfs->cfs_parent, p);
 	/* remove from run-queue */

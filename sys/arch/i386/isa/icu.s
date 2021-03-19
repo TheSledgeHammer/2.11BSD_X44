@@ -111,7 +111,7 @@ return_to_user_mode: /* entry point from trap and syscall return */
 	/* if (returning to user mode && astpending), go back to trap
 	 * (check astpending first since it is more likely to be false)
 	 */
-	cmpl	$0,_astpending
+	call	aston
 	je		just_return
 
 	testl	%esi, %esi

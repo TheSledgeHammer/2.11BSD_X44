@@ -38,13 +38,70 @@
  */
 
 #include <sys/errno.h>
+#include <vm/include/vm_param.h>
 
+#include <machine/vmparam.h>
 #include <machine/param.h>
 #include <machine/pmap.h>
 #include <machine/pte.h>
 
 extern pt_entry_t		*CMAP1, *CMAP2;
 extern caddr_t			CADDR1, CADDR2;
+
+int
+copyout (from, to, len)
+	void *from;
+	void *to;
+	u_int len;
+{
+	int *pte, *pde;
+	int rest_of_page;
+	int thistime;
+	int err;
+
+	/* be very careful not to overflow doing this check */
+	if (to >= (void *)USRSTACK || (void *)USRSTACK - to < len) {
+		return (EFAULT);
+	}
+
+	pte = (int *)vtopte (to);
+	pde = (int *)vtopte (pte);
+
+	rest_of_page = PAGE_SIZE - ((int)to & (PAGE_SIZE - 1));
+
+	while (1) {
+		thistime = len;
+		if (thistime > rest_of_page) {
+			thistime = rest_of_page;
+		}
+
+		if ((*pde & PG_V) == 0 || (*pte & (PG_V | PG_UW)) != (PG_V | PG_UW)) {
+			if (err == user_write_fault (to)) {
+				return (err);
+			}
+		}
+
+		bcopy (from, to, thistime);
+
+		len -= thistime;
+
+		/*
+		 * Break out as soon as possible in the common case
+		 * that the whole transfer is containted in one page.
+		 */
+		if (len == 0) {
+			break;
+		}
+
+		from += thistime;
+		to += thistime;
+		pte++;
+		pde = (u_int *)vtopte (pte);
+		rest_of_page = PAGE_SIZE;
+	}
+
+	return (0);
+}
 
 /*
  * zero out physical memory

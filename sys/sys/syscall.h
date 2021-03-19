@@ -169,3 +169,4 @@
 #define	SYS_kenv	161
 #define	SYS_kevent	162
 #define	SYS_kqueue	163
+#define	SYS_MAXSYSCALL	164

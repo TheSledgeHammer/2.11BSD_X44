@@ -75,6 +75,7 @@
 #include <sys/user.h>
 #include <sys/acct.h>
 #include <sys/kernel.h>
+#include <sys/endian.h>
 #ifdef KTRACE
 #include <sys/ktrace.h>
 #endif
@@ -94,6 +95,7 @@
 #include <machine/proc.h>
 #include <machine/reg.h>
 
+
 #ifdef DEBUG
 int	trapdebug = 0;
 #endif
@@ -105,6 +107,7 @@ extern int cpl;
 
 void trap(struct trapframe *);
 void trap_tss(struct i386tss *, int, int);
+static __inline void userret(struct proc *, int, u_quad_t);
 
 const char * const trap_type[] = {
 	"privileged instruction fault",		/*  0 T_PRIVINFLT */
@@ -203,6 +206,48 @@ trap_print(frame, p)
 	printf("cr2 %x cpl %x\n", rcr2(), cpl);
 }
 
+static __inline void
+userret(p, pc, oticks)
+	register struct proc *p;
+	int pc;
+	u_quad_t oticks;
+{
+	int sig, s;
+
+	/* take pending signals */
+	while ((sig = CURSIG(p)) != 0) {
+		postsig(sig);
+	}
+	p->p_pri = setpri(p);
+	if (want_resched(p)) {
+		/*
+		 * Since we are curproc, clock will normally just change
+		 * our priority without moving us from one queue to another
+		 * (since the running process is not on a queue.)
+		 * If that happened after we put ourselves on the run queue
+		 * but before we switched, we might not be on the queue
+		 * indicated by our priority.
+		 */
+		s = splstatclock();
+		setrq(p);
+		p->p_stats->p_ru.ru_nivcsw++;
+		mi_switch();
+		splx(s);
+		while ((sig = CURSIG(p)) != 0) {
+			postsig(sig);
+		}
+	}
+
+	/*
+	 * If profiling, charge recent system time to the trapped pc.
+	 */
+	if (p->p_flag & P_PROFIL) {
+		extern int psratio;
+		addupc_task(p, pc, (int)(p->p_sticks - oticks) * psratio);
+	}
+	curpri = p->p_pri;
+}
+
 /*
  * trap(frame):
  *	Exception, fault, and trap interface to BSD kernel. This
@@ -237,7 +282,7 @@ trap(frame)
 		trap_print(frame, p);
 	}
 #endif
-	if (type != T_NMI && !ISPL(frame->tf_cs)) {
+	if ((type != T_NMI && ISPL(frame->tf_cs) == SEL_UPL) || ((frame->tf_eflags & PSL_VM) && (!pcb->pcb_flags & PCB_VM86CALL))) {
 		type |= T_USER;
 		p->p_md.md_regs = frame;
 		pcb->pcb_cr2 = 0;
@@ -259,11 +304,25 @@ trap(frame)
 		panic("trap");
 		/*NOTREACHED*/
 
-	case T_PROTFLT:
+	case T_PROTFLT:				/* general protection fault */
 	case T_SEGNPFLT:
 	case T_ALIGNFLT:
-	case T_STKFLT:
-	case T_TSSFLT:
+	case T_STKFLT:				/* stack fault */
+		if (frame->tf_eflags & PSL_VM) {
+			i = vm86_emulate((struct vm86frame *)&frame);
+			if (i != 0) {
+				/*
+				 * returns to original process
+				 */
+				vm86_trap((struct vm86frame *)&frame);
+				goto out;
+			}
+			break;
+		}
+		break;
+		/* FALLTHROUGH */
+
+	case T_TSSFLT:						/* invalid TSS fault */
 		if (p == NULL) {
 			goto we_re_toast;
 		}
@@ -277,6 +336,11 @@ copyfault:
 			frame->tf_eax = error;
 			return;
 		}
+		break;
+
+	case T_DOUBLEFLT:				/* double fault */
+		ucode = frame->tf_err + BUS_SEGM_FAULT;
+		i = SIGBUS;
 		break;
 
 	case T_SEGNPFLT|T_USER:
@@ -325,9 +389,25 @@ copyfault:
 
 	case T_PAGEFLT:
 		/* allow page faults in kernel mode */
+#if defined(I586_CPU) && !defined(NO_F00F_HACK)
+		if (i == -2) {
+			/*
+			 * The f00f hack workaround has triggered, so
+			 * treat the fault as an illegal instruction
+			 * (T_PRIVINFLT) instead of a page fault.
+			 */
+			type = frame->tf_trapno = T_PRIVINFLT;
+
+			/* Proceed as in that case. */
+			ucode = type;
+			i = SIGILL;
+			break;
+		}
+#endif
 		if (__predict_false(p == NULL)) {
 			goto we_re_toast;
 		}
+
 		cr2 = rcr2();
 
 		if (frame->tf_err & PGEX_I) {
@@ -459,39 +539,9 @@ faultcommon:
 	}
 
 out:
-	while (i == CURSIG(p)) {
-		postsig(i);
-	}
-	p->p_pri = setpri(p);
-	if (want_resched) {
-		int pl;
-		/*
-		 * Since we are curproc, clock will normally just change
-		 * our priority without moving us from one queue to another
-		 * (since the running process is not on a queue.)
-		 * If that happened after we put ourselves on the run queue
-		 * but before we switched, we might not be on the queue
-		 * indicated by our priority.
-		 */
-		pl = splclock();
-		setrunqueue(p);
-		p->p_stats->p_ru.ru_nivcsw++;
-		mi_switch();
-		splx(pl);
-	}
-	if (p->p_stats->p_prof.pr_scale) {
-		u_quad_t ticks = p->p_sticks - sticks;
-		if (ticks) {
-#ifdef PROFTIMER
-			extern int profscale;
-			addupc(frame->tf_eip, &p->p_stats->p_prof, ticks * profscale);
-#else
-			addupc(frame->tf_eip, &p->p_stats->p_prof, ticks);
-#endif
-		}
-	}
 	curpri = p->p_pri;
-	curpcb->pcb_flags &= ~FM_TRAP;	/* used by sendsig */
+	userret(p, frame->tf_eip, sticks);
+	curpcb->pcb_flags &= ~FM_TRAP;			/* used by sendsig */
 }
 
 /*
@@ -502,116 +552,83 @@ out:
 /*ARGSUSED*/
 void
 syscall(frame)
-	volatile struct syscframe frame;
+    struct trapframe *frame;
 {
-	register int *locr0 = ((int *)&frame);
-	register caddr_t params;
+    register caddr_t params;
 	register int i;
-	register struct sysent *callp;
-	register struct proc *p = curproc;
-	u_quad_t sticks;
-	int error, opc;
-	int args[8], rval[2];
-	unsigned int code;
+    register struct sysent *callp;
+    register struct proc *p;
+    u_quad_t sticks;
+    int error, nsys, opc;
+    register_t code;
+    int args[8], rval[2];
+    short argsize;
 
-#ifdef lint
-	r0 = 0; r0 = r0; r1 = 0; r1 = r1;
-#endif
-	sticks = p->p_sticks;
-	if (ISPL(frame.sf_cs) != SEL_UPL) {
+    sticks = p->p_sticks;
+	if (ISPL(frame->tf_cs) != SEL_UPL) {
 		panic("syscall");
 	}
 
-	code = frame.sf_eax;
-	p->p_md.md_regs = (int *)&frame;
-	curpcb->pcb_flags &= ~FM_TRAP;	/* used by sendsig */
-	params = (caddr_t)frame.sf_esp + sizeof (int) ;
+    p = curproc;
+    p->p_md.md_regs = frame;
+    opc = frame->tf_eip;
+    code = frame->tf_eax;
 
-	/*
-	 * Reconstruct pc, assuming lcall $X,y is 7 bytes, as it is always.
-	 */
-	opc = frame.sf_eip - 7;
-	callp = (code >= nsysent) ? &sysent[63] : &sysent[code];
-	if (callp == sysent) {
-		code = fuword(params);
-		params += sizeof (int);
-		callp = (code >= nsysent) ? &sysent[63] : &sysent[code];
-	}
+    nsys =  p->p_emul->e_nsysent;
+    callp = p->p_emul->e_sysent;
 
-	if ((i = callp->sy_narg * sizeof (int)) &&
-	    (error = copyin(params, (caddr_t)args, (u_int)i))) {
-		frame.sf_eax = error;
-		frame.sf_eflags |= PSL_C;	/* carry bit */
+    curpcb->pcb_flags &= ~FM_TRAP;	                /* used by sendsig */
+	params = (caddr_t)frame->tf_esp + sizeof (int);
+
+    if (callp == sysent) {
+    	code = fuword(params + _QUAD_LOWWORD * sizeof(int));
+    	params += sizeof(quad_t);
+		break;
+    }
+    if (code < 0 || code >= nsys) {
+        callp += p->p_emul->e_nosys;
+    } else {
+        callp += code;
+    }
+    argsize = callp->sy_argsize;
+    if(argsize && (error = copyin(params, args, argsize))) {
+        frame->tf_eax = error;
+		frame->tf_eflags |= PSL_C;	/* carry bit */
 #ifdef KTRACE
 		if (KTRPOINT(p, KTR_SYSCALL))
 			ktrsyscall(p->p_tracep, code, callp->sy_narg, &args);
 #endif
-		goto done;
-	}
+        goto done;
+    }
+
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_SYSCALL))
 		ktrsyscall(p->p_tracep, code, callp->sy_narg, &args);
 #endif
-	rval[0] = 0;
-	rval[1] = frame.sf_edx;
-	error = (*callp->sy_call)(p, args, rval);
-	if (error == ERESTART)
-		frame.sf_eip = opc;
-	else if (error != EJUSTRETURN) {
+    rval[0] = 0;
+	rval[1] = frame->tf_edx;
+
+    error = (*callp->sy_call)(p, args, rval);
+    if (error == ERESTART) {
+		frame->tf_eip = opc;
+    } else if (error != EJUSTRETURN) {
 		if (error) {
-			frame.sf_eax = error;
-			frame.sf_eflags |= PSL_C;	/* carry bit */
+			frame->tf_eax = error;
+			frame->tf_eflags |= PSL_C;	/* carry bit */
 		} else {
-			frame.sf_eax = rval[0];
-			frame.sf_edx = rval[1];
-			frame.sf_eflags &= ~PSL_C;	/* carry bit */
+			frame->tf_eax = rval[0];
+			frame->tf_edx = rval[1];
+			frame->tf_eflags &= ~PSL_C;	/* carry bit */
 		}
 	}
-	/* else if (error == EJUSTRETURN) */
-		/* nothing to do */
+
 done:
 	/*
 	 * Reinitialize proc pointer `p' as it may be different
 	 * if this is a child returning from fork syscall.
 	 */
 	p = curproc;
-	while (i == CURSIG(p)) {
-		postsig(i);
-	}
-	p->p_pri = setpri(p);
-	if (want_resched) {
-		int pl;
-
-		/*
-		 * Since we are curproc, clock will normally just change
-		 * our priority without moving us from one queue to another
-		 * (since the running process is not on a queue.)
-		 * If that happened after we put ourselves on the run queue
-		 * but before we switched, we might not be on the queue
-		 * indicated by our priority.
-		 */
-		pl = splclock();
-		setrunqueue(p);
-		p->p_stats->p_ru.ru_nivcsw++;
-		mi_switch();
-		splx(pl);
-		while (i == CURSIG(p)) {
-			postsig(i);
-		}
-	}
-	if (p->p_stats->p_prof.pr_scale) {
-		u_quad_t ticks = p->p_sticks - sticks;
-
-		if (ticks) {
-#ifdef PROFTIMER
-			extern int profscale;
-			addupc(frame.sf_eip, &p->p_stats->p_prof, ticks * profscale);
-#else
-			addupc(frame.sf_eip, &p->p_stats->p_prof, ticks);
-#endif
-		}
-	}
-	curpri = p->p_pri;
+	userret(p, frame->tf_eip, sticks);
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_SYSRET)) {
 		ktrsysret(p->p_tracep, code, error, rval[0]);
@@ -689,57 +706,18 @@ user_write_fault (addr)
 	}
 }
 
-int
-copyout (from, to, len)
-	void *from;
-	void *to;
-	u_int len;
+void
+child_return(arg)
+	void *arg;
 {
-	int *pte, *pde;
-	int rest_of_page;
-	int thistime;
-	int err;
+    struct proc *p = (struct proc *)arg;
+	struct trapframe *tf = p->p_md.md_regs;
 
-	/* be very careful not to overflow doing this check */
-	if (to >= (void *)USRSTACK || (void *)USRSTACK - to < len) {
-		return (EFAULT);
-	}
-
-	pte = (int *)vtopte (to);
-	pde = (int *)vtopte (pte);
-
-	rest_of_page = PAGE_SIZE - ((int)to & (PAGE_SIZE - 1));
-
-	while (1) {
-		thistime = len;
-		if (thistime > rest_of_page) {
-			thistime = rest_of_page;
-		}
-
-		if ((*pde & PG_V) == 0 || (*pte & (PG_V | PG_UW)) != (PG_V | PG_UW)) {
-			if (err == user_write_fault (to)) {
-				return (err);
-			}
-		}
-
-		bcopy (from, to, thistime);
-
-		len -= thistime;
-
-		/*
-		 * Break out as soon as possible in the common case
-		 * that the whole transfer is containted in one page.
-		 */
-		if (len == 0) {
-			break;
-		}
-
-		from += thistime;
-		to += thistime;
-		pte++;
-		pde = (u_int *)vtopte (pte);
-		rest_of_page = PAGE_SIZE;
-	}
-
-	return (0);
+	tf->tf_eax = 0;
+	tf->tf_eflags &= ~PSL_C;
+	userret(p, tf->tf_eip, 0);
+#ifdef KTRACE
+	if (KTRPOINT(p, KTR_SYSRET))
+		ktrsysret(p->p_tracep, SYS_fork, 0, 0);
+#endif
 }

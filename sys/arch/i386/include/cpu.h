@@ -59,7 +59,8 @@ struct pmap;
 #define cpu_setstack(p, ap)			(p)->p_md.md_regs[SP] = ap
 #define cpu_set_init_frame(p, fp)	(p)->p_md.md_regs = fp
 
-#define cpu_number					NCPUS
+#define cpu_number					NCPUS	/* number of cpus available */
+
 /*
  * Arguments to hardclock, softclock and gatherstats
  * encapsulate the previous machine state in an opaque
@@ -77,7 +78,7 @@ struct clockframe {
  * Preempt the current process if in interrupt from user mode,
  * or after the current trap/syscall if in system mode.
  */
-#define	need_resched(p)				{ want_resched++; aston(p); }
+extern void	need_resched(struct proc *p);
 
 /*
  * Give a profiling tick to the current process from the softclock
@@ -94,12 +95,14 @@ extern void	cpu_need_proftick(struct proc *p);
 
 #define aston(p) 					((p)->p_md.md_astpending = 1)
 
-int	astpending;			/* need to trap before returning to user mode */
-int	want_resched;		/* resched() was called */
+#define	want_resched(p)				((p)->p_md.md_want_resched = 1) /* resched() was called */
 
 #ifdef _KERNEL
 extern char		btext[];
 extern char		etext[];
+
+/* machdep.c */
+void	cpu_halt(void);
 
 /* locore.s */
 struct 	pcb;

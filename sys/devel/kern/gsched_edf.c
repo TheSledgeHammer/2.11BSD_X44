@@ -34,6 +34,8 @@
 #include <sys/proc.h>
 #include <sys/user.h>
 
+#include <machine/cpu.h>
+
 #include "sys/gsched_edf.h"
 
 /* return slack/laxity time */
@@ -155,6 +157,7 @@ edf_schedcpu(p)
 		return (0);
 	} else {
 		panic("edf_test failed");
+		want_resched(p);
 		error = P_EDFFAIL;
 	}
 	return (error);

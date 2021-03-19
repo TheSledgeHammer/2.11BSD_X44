@@ -60,7 +60,7 @@
 
 #ifndef _LOCORE
 
-volatile int cpl, ipending, astpending;
+volatile int cpl, ipending;
 int imask[NIPL];
 
 extern void Xspllower (void);
@@ -152,7 +152,7 @@ softintr(mask)
 	__asm __volatile("orl %0,_ipending" : : "ir" (1 << mask));
 }
 
-#define	setsoftast()	(astpending = 1)
+#define	setsoftast(p)	aston(p)
 #define	setsoftclock()	softintr(SIR_CLOCK)
 #define	setsoftnet()	softintr(SIR_NET)
 #define	setsoftserial()	softintr(SIR_SERIAL)

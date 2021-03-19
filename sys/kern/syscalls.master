@@ -13,6 +13,8 @@
 ;	UNIMPL	unimplemented, not included in system
 ;	NODEF	included, but don't define the syscall number
 ;	NOARGS	included, but don't define the syscall args structure
+;	INDIR	included, but don't define the syscall args structure,
+;		    and allow it to be "really" varargs.
 ;
 ; The compat options are defined in the syscalls.conf file, and the
 ; compat option name is prefixed to the syscall name.  Other than
@@ -39,6 +41,8 @@
 ; redistributions should be placed in the reserved range at the end
 ; of the current calls.
 
+
+;0	INDIR		{ int syscall(); }
 0   STD     	{ int indir(); }
 1   STD     	{ int exit(); }
 2   STD     	{ int fork(); }
