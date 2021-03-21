@@ -258,8 +258,7 @@ isa_dmastart(isadev, chan, addr, nbytes, p, flags, busdmaflags)
 	if (dmam == NULL)
 		panic("isa_dmastart: no DMA map for chan %d\n", chan);
 
-	error = bus_dmamap_load(sc->sc_dmat, dmam, addr, nbytes,
-	    p, busdmaflags);
+	error = bus_dmamap_load(sc->sc_dmat, dmam, addr, nbytes,p, busdmaflags);
 	if (error)
 		return (error);
 

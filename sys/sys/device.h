@@ -45,8 +45,6 @@
 #ifndef _SYS_DEVICE_H_
 #define	_SYS_DEVICE_H_
 
-
-
 /*
  * Minimal device structures.
  * Note that all ``system'' device types are listed here.
@@ -72,6 +70,7 @@ struct device {
 
 /* dv_flags */
 #define	DVF_ACTIVE		0x0001					/* device is activated */
+//#define DVF_ENABLED		0x0002					/* device is enabled */
 
 /* `event' counters (use zero or more per device instance, as needed) */
 struct evcnt {
@@ -99,7 +98,7 @@ struct cfdata {
 
 typedef int 			(*cfmatch_t)(struct device *, struct cfdata *, void *);
 typedef void 			(*cfattach_t)(struct device *, struct device *, void *);
-//typedef int				(*cfdetach)(struct device *, int);
+typedef int				(*cfdetach)(struct device *, int);
 
 /*
  * `configuration' driver (what the machine-independent autoconf uses).
@@ -114,7 +113,7 @@ struct cfdriver {
 	char				*cd_name;				/* device name */
 	int 				(*cd_match)(struct device *, struct cfdata *, void *);
 	void				(*cd_attach)(struct device *, struct device *, void *);
-	//int 				(*cd_detach)(struct device *, int);
+	int 				(*cd_detach)(struct device *, int);
 	enum devclass 		cd_class;				/* device classification */
 	size_t				cd_devsize;				/* size of dev data (for malloc) */
 	void				*cd_aux;				/* additional driver, if any */
@@ -141,7 +140,7 @@ struct pdevinit {
 };
 
 /*
- * Actions for ca_activate.
+ * Actions for cd_activate.
  */
 enum devact {
 	DVACT_ACTIVATE,		/* activate the device */
@@ -151,11 +150,13 @@ enum devact {
 struct	device 	*alldevs;	/* head of list of all devices */
 struct	evcnt 	*allevents;	/* head of list of all events */
 
+int				config_match(struct device *, struct cfdata *, void *);
 struct cfdata 	*config_search (cfmatch_t, struct device *, void *);
 struct cfdata 	*config_rootsearch (cfmatch_t, char *, void *);
 int 			config_found (struct device *, void *, cfprint_t);
 struct device 	*config_found_sm(struct device *, void *, cfprint_t, cfmatch_t);
 int 			config_rootfound (char *, void *);
 void 			config_attach (struct device *, struct cfdata *, void *, cfprint_t);
+int				config_detach(struct device *, int);
 void 			evcnt_attach (struct device *, const char *, struct evcnt *);
 #endif /* !_SYS_DEVICE_H_ */

@@ -61,7 +61,7 @@ static void isapnp_configure (struct isapnp_softc *, const struct isapnp_attach_
 static void isapnp_print_pin (const char *, struct isapnp_pin *, size_t);
 static int isapnp_print (void *, const char *);
 #ifdef _KERNEL
-static int isapnp_submatch (struct device *, void *, void *);
+static int isapnp_submatch (struct device *, struct cfdata *, void *);
 #endif
 static int isapnp_find (struct isapnp_softc *, int);
 static int isapnp_match (struct device *, struct cfdata *, void *);
@@ -575,7 +575,7 @@ isapnp_com_submatch(parent, match, aux)
 static int
 isapnp_submatch(parent, match, aux)
 	struct device *parent;
-	void *match, *aux;
+	struct cfdata *match, *aux;
 {
 	struct cfdata *cf = match;
 	return ((*cf->cf_driver->cd_match)(parent, match, aux));

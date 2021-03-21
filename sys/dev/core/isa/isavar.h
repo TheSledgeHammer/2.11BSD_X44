@@ -160,9 +160,28 @@ struct isa_attach_args {
 /*
  * Per-device ISA variables
  */
-struct isadev {
+struct isa_subdev {
 	struct  device 			*id_dev;		/* back pointer to generic */
-	TAILQ_ENTRY(isadev) 	id_bchain;		/* bus chain */
+	TAILQ_ENTRY(isa_subdev) id_bchain;		/* bus chain */
+
+	int						id_iobase;		/* base i/o address */
+	int						id_iosize;		/* span of ports used */
+	int						id_irq;			/* interrupt request */
+	int						id_drq;			/* DMA request */
+	int						id_drq2;		/* second DMA request */
+	int						id_maddr;		/* physical i/o mem addr */
+	u_int					id_msize;		/* size of i/o memory */
+	void					*id_aux;		/* driver specific */
+
+	bus_space_handle_t 		id_delaybah; 	/* i/o handle for `delay port' */
+
+	char 					*id_pnpname;
+	struct isa_pnpname 		*id_pnpcompatnames;
+
+	int 					id_nio;
+	int 					id_niomem;
+	int 					id_nirq;
+	int 					id_ndrq;
 };
 
 /*
@@ -170,7 +189,7 @@ struct isadev {
  */
 struct isa_softc {
 	struct	device 			sc_dev;			/* base device */
-	TAILQ_HEAD(, isadev) 	sc_subdevs;		/* list of all children */
+	TAILQ_HEAD(, isa_subdev) sc_subdevs;	/* list of all children */
 
 	bus_space_tag_t 		sc_iot;			/* isa io space tag */
 	bus_space_tag_t 		sc_memt;		/* isa mem space tag */

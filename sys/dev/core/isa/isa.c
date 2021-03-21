@@ -48,6 +48,11 @@ void 	isaattach (struct device *, struct device *, void *);
 int 	isaprint (void *, const char *);
 int		isasearch (struct device *, struct cfdata *, void *);
 
+void	isa_attach_subdevs(struct isa_softc *);
+void	isa_free_subdevs(struct isa_softc *);
+
+int		isasubmatch(struct device *, struct cfdata *, void *);
+
 struct cfdriver isa_cd = {
 	NULL, "isa", isamatch, isaattach, DV_DULL, sizeof(struct isa_softc)
 };
@@ -76,6 +81,8 @@ isaattach(parent, self, aux)
 	struct isa_softc *sc = (struct isa_softc *)self;
 	struct isabus_attach_args *iba = aux;
 
+	TAILQ_INIT(&sc->sc_subdevs);
+
 	isa_attach_hook(parent, self, iba);
 	printf("\n");
 
@@ -91,12 +98,15 @@ isaattach(parent, self, aux)
 	/*
 	 * Map the registers used by the ISA DMA controller.
 	 */
-	if (bus_space_map(sc->sc_iot, IO_DMA1, DMA1_IOSIZE, 0, &sc->sc_dma1h))
+	if (bus_space_map(sc->sc_iot, IO_DMA1, DMA1_IOSIZE, 0, &sc->sc_dma1h)) {
 		panic("isaattach: can't map DMA controller #1");
-	if (bus_space_map(sc->sc_iot, IO_DMA2, DMA2_IOSIZE, 0, &sc->sc_dma2h))
+	}
+	if (bus_space_map(sc->sc_iot, IO_DMA2, DMA2_IOSIZE, 0, &sc->sc_dma2h)) {
 		panic("isaattach: can't map DMA controller #2");
-	if (bus_space_map(sc->sc_iot, IO_DMAPG, 0xf, 0, &sc->sc_dmapgh))
+	}
+	if (bus_space_map(sc->sc_iot, IO_DMAPG, 0xf, 0, &sc->sc_dmapgh)) {
 		panic("isaattach: can't map DMA page registers");
+	}
 
 	/*
 	 * Map port 0x84, which causes a 1.25us delay when read.
@@ -108,8 +118,125 @@ isaattach(parent, self, aux)
 #endif /* NISADMA > 0 */
 		panic("isaattach: can't map `delay port'"); /* XXX */
 
-	TAILQ_INIT(&sc->sc_subdevs);
+	/* Attach all direct-config children. */
+	isa_attach_subdevs(sc);
+
 	config_search(isasearch, self, NULL);
+}
+
+void
+isa_attach_subdevs(sc)
+	struct isa_softc *sc;
+{
+	struct isa_attach_args ia;
+	struct isa_subdev *is;
+	if (TAILQ_EMPTY(&sc->sc_subdevs)) {
+		return;
+	}
+	TAILQ_FOREACH(is, &sc->sc_subdevs, id_bchain) {
+		ia.ia_iot = sc->sc_iot;
+		ia.ia_memt = sc->sc_memt;
+		ia.ia_dmat = sc->sc_dmat;
+		ia.ia_ic = sc->sc_ic;
+
+		ia.ia_iobase = is->id_iobase;
+		ia.ia_iosize = is->id_iosize;
+		ia.ia_maddr = is->id_maddr;
+		ia.ia_msize = is->id_msize;
+		ia.ia_irq = is->id_irq;
+		ia.ia_drq = is->id_drq;
+		ia.ia_drq2 = is->id_drq2;
+		ia.ia_aux = NULL;
+
+		ia.ia_delaybah = is->id_delaybah;
+
+		ia.ia_pnpname = is->id_pnpname;
+		ia.ia_pnpcompatnames = is->id_pnpcompatnames;
+
+		ia.ia_nio = is->id_nio;
+		ia.ia_niomem = is->id_niomem;
+		ia.ia_nirq = is->id_nirq;
+		ia.ia_ndrq = is->id_ndrq;
+
+		is->id_dev = config_found_sm(&sc->sc_dev, &ia, isaprint, isasubmatch);
+	}
+}
+
+void
+isa_free_subdevs(struct isa_softc *sc)
+{
+	struct isa_subdev *is;
+	struct isa_pnpname *ipn;
+
+#define	FREEIT(x)	if (x != NULL) free(x, M_DEVBUF)
+
+	while ((is = TAILQ_FIRST(&sc->sc_subdevs)) != NULL) {
+		TAILQ_REMOVE(&sc->sc_subdevs, is, id_bchain);
+		FREEIT(is->id_pnpname);
+		while ((ipn = is->id_pnpcompatnames) != NULL) {
+			is->id_pnpcompatnames = ipn->ipn_next;
+			free(ipn->ipn_name, M_DEVBUF);
+			free(ipn, M_DEVBUF);
+		}
+		FREEIT(is->id_iobase);
+		FREEIT(is->id_iosize);
+		FREEIT(is->id_irq);
+		FREEIT(is->id_drq);
+		free(is, M_DEVBUF);
+	}
+
+#undef FREEIT
+}
+
+int
+isasubmatch(struct device *parent, struct cfdata *cf, void *aux)
+{
+	struct isa_attach_args *ia = aux;
+	int i;
+
+	if (ia->ia_nio == 0) {
+		if (cf->cf_loc[ISACF_IOBASE] != IOBASEUNK)
+			return (0);
+	} else {
+		if (cf->cf_loc[ISACF_IOBASE] != IOBASEUNK && cf->cf_loc[ISACF_IOBASE] != ia->ia_iobase)
+			return (0);
+	}
+
+	if (ia->ia_niomem == 0) {
+		if (cf->cf_loc[ISACF_IOBASE] != MADDRUNK)
+			return (0);
+	} else {
+		if (cf->cf_loc[ISACF_MADDR] != MADDRUNK && cf->cf_loc[ISACF_MADDR] != ia->ia_iosize)
+			return (0);
+	}
+
+	if (ia->ia_nirq == 0) {
+		if (cf->cf_loc[ISACF_IRQ] != IRQUNK)
+			return (0);
+	} else {
+		if (cf->cf_loc[ISACF_IRQ] != IRQUNK && cf->cf_loc[ISACF_IRQ] != ia->ia_irq)
+			return (0);
+	}
+
+	if (ia->ia_ndrq == 0) {
+		if (cf->cf_loc[ISACF_DRQ] != DRQUNK)
+			return (0);
+		if (cf->cf_loc[ISACF_DRQ2] != DRQUNK)
+			return (0);
+	} else {
+		for (i = 0; i < 2; i++) {
+			if (i == ia->ia_ndrq)
+				break;
+			if (cf->cf_loc[ISACF_DRQ + i] != DRQUNK && cf->cf_loc[ISACF_DRQ + i] != ia->ia_drq)
+				return (0);
+		}
+		for (; i < 2; i++) {
+			if (cf->cf_loc[ISACF_DRQ + i] != DRQUNK)
+				return (0);
+		}
+	}
+
+	return (config_match(parent, cf, aux));
 }
 
 int
@@ -161,8 +288,7 @@ isasearch(parent, cf, aux)
 		ia.ia_delaybah = sc->sc_delaybah;
 
 		tryagain = 0;
-
-		if ((*cf->cf_driver->cd_match)(parent, cf, &ia) > 0) {
+		if (config_match(parent, cf, &ia) > 0) {
 			config_attach(parent, cf, &ia, isaprint);
 			tryagain = (cf->cf_fstate == FSTATE_STAR);
 		}
@@ -170,7 +296,6 @@ isasearch(parent, cf, aux)
 
 	return (0);
 }
-
 
 char *
 isa_intr_typename(type)

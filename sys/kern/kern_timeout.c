@@ -294,7 +294,6 @@ callout_hardclock(int needsoftclock)
 void
 callout_softclock(void)
 {
-	struct callout *c;
 	void (*func)(void *);
 	void *arg;
 	int s;
@@ -302,22 +301,21 @@ callout_softclock(void)
 	CALLOUT_LOCK(s);
 
 	while (!CIRCQ_EMPTY(&timeout_todo)) {
-		c = CIRCQ_FIRST(&timeout_todo);
-		CIRCQ_REMOVE(&c->c_list);
+		calltodo = CIRCQ_FIRST(&timeout_todo);
+		CIRCQ_REMOVE(&calltodo->c_list);
 
 		/* If due run it, otherwise insert it into the right bucket. */
-		if (c->c_time - hard_ticks > 0) {
-			CIRCQ_INSERT(&c->c_list, BUCKET((c->c_time - hard_ticks), c->c_time));
+		if (calltodo->c_time - hard_ticks > 0) {
+			CIRCQ_INSERT(&calltodo->c_list, BUCKET((calltodo->c_time - hard_ticks), calltodo->c_time));
 		} else {
 #ifdef CALLOUT_EVENT_COUNTERS
-			if (c->c_time - hard_ticks < 0)
+			if (calltodo->c_time - hard_ticks < 0)
 				callout_ev_late.ev_count++;
 #endif
-			c->c_flags = (c->c_flags  & ~CALLOUT_PENDING) | (CALLOUT_FIRED|CALLOUT_INVOKING);
+			calltodo->c_flags = (calltodo->c_flags  & ~CALLOUT_PENDING) | (CALLOUT_FIRED|CALLOUT_INVOKING);
 
-			func = c->c_func;
-			arg = c->c_arg;
-			calltodo = c;
+			func = calltodo->c_func;
+			arg = calltodo->c_arg;
 			CALLOUT_UNLOCK(s);
 			(*func)(arg);
 			CALLOUT_LOCK(s);
