@@ -47,10 +47,21 @@
 
 int	 mainbus_match (struct device *, void *, void *);
 void mainbus_attach (struct device *, struct device *, void *);
+/*
+struct cfops mainbus_cops = {
+		.cops_match = mainbus_match,
+		.cops_attach = mainbus_attach,
+		.cops_detach = NULL,
+		.cops_activate = NULL
+};
 
 struct cfdriver mainbus_cd = {
-	NULL, "mainbus", mainbus_match, mainbus_attach, DV_DULL, sizeof(struct device)
+	NULL, "mainbus", &mainbus_cops, DV_DULL, sizeof(struct device)
 };
+*/
+
+CFOPS_DECL(mainbus, mainbus_match, mainbus_attach, NULL, NULL);
+CFDRIVER_DECL(NULL, mainbus, mainbus_cops, DV_DULL, sizeof(struct device));
 
 int	mainbus_print (void *, const char *);
 
@@ -75,7 +86,6 @@ mainbus_match(parent, match, aux)
 	struct device *parent;
 	void *match, *aux;
 {
-
 	return 1;
 }
 

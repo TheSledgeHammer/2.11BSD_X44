@@ -63,8 +63,8 @@ struct nvlist {
  */
 struct config {
 	struct	config *cf_next;	/* linked list */
-	const char *cf_name;		/* "vmunix" */
-	int	cf_lineno;		/* source line */
+	const char 		*cf_name;		/* "vmunix" */
+	int				cf_lineno;		/* source line */
 	struct	nvlist *cf_root;	/* "root on ra0a" */
 	struct	nvlist *cf_swap;	/* "swap on ra0b and ra1b" */
 	struct	nvlist *cf_dump;	/* "dumps on ra0b" */

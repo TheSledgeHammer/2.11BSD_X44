@@ -80,12 +80,16 @@ mapply(m, cf)
 	register struct matchinfo *m;
 	register struct cfdata *cf;
 {
+	register struct cfdriver *cd;
+	register struct cfops *cops;
 	register int pri;
 
+	cd = cf->cf_driver;
+	cops = cd->cd_ops;
 	if (m->fn != NULL)
 		pri = (*m->fn)(m->parent, cf, m->aux);
 	else
-		pri = (*cf->cf_driver->cd_match)(m->parent, cf, m->aux);
+		pri = (*cops->cops_match)(m->parent, cf, m->aux);
 	if (pri > m->pri) {
 		m->match = cf;
 		m->pri = pri;
@@ -103,12 +107,14 @@ config_match(parent, cf, aux)
 	void *aux;
 {
 	struct cfdriver *cd;
+	struct cfops *cops;
 
 	cd = cf->cf_driver;
+	cops = cd->cd_ops;
 	if(cd == NULL) {
 		return (0);
 	}
-	return ((*cd->cd_match)(parent, cf, aux));
+	return ((*cops->cops_match)(parent, cf, aux));
 }
 
 /*
@@ -266,6 +272,7 @@ config_attach(parent, cf, aux, print)
 {
 	register struct device *dev;
 	register struct cfdriver *cd;
+	register struct cfops *cops;
 	register size_t lname, lunit;
 	register char *xunit;
 	int myunit;
@@ -273,6 +280,7 @@ config_attach(parent, cf, aux, print)
 	static struct device **nextp = &alldevs;
 
 	cd = cf->cf_driver;
+	cops = cd->cd_ops;
 	if (cd->cd_devsize < sizeof(struct device))
 		panic("config_attach");
 	myunit = cf->cf_unit;
@@ -292,8 +300,9 @@ config_attach(parent, cf, aux, print)
 	dev = (struct device *)malloc(cd->cd_devsize, M_DEVBUF, M_WAITOK);
 					/* XXX cannot wait! */
 	bzero(dev, cd->cd_devsize);
-	*nextp = dev;			/* link up */
-	nextp = &dev->dv_next;
+	dev_insert(dev, *nextp);	/* link up */
+	//*nextp = dev;				/* link up */
+	//nextp = &dev->dv_next;
 	dev->dv_class = cd->cd_class;
 	dev->dv_cfdata = cf;
 	dev->dv_unit = myunit;
@@ -316,8 +325,7 @@ config_attach(parent, cf, aux, print)
 		void **nsp;
 
 		if (old == 0) {
-			new = max(MINALLOCSIZE / sizeof(void *),
-			    dev->dv_unit + 1);
+			new = max(MINALLOCSIZE / sizeof(void *), dev->dv_unit + 1);
 			newbytes = new * sizeof(void *);
 			nsp = malloc(newbytes, M_DEVBUF, M_WAITOK);	/*XXX*/
 			bzero(nsp, newbytes);
@@ -348,7 +356,7 @@ config_attach(parent, cf, aux, print)
 		if (cf->cf_driver == cd && cf->cf_unit == dev->dv_unit &&
 		    cf->cf_fstate == FSTATE_NOTFOUND)
 			cf->cf_fstate = FSTATE_FOUND;
-	(*cd->cd_attach)(parent, dev, aux);
+	(*cops->cops_attach)(parent, dev, aux);
 }
 
 /*
@@ -362,11 +370,12 @@ config_attach(parent, cf, aux, print)
  */
 int
 config_detach(dev, flags)
-	register struct device *dev;
+	struct device *dev;
 	int flags;
 {
 	struct cfdata *cf;
 	struct cfdriver *cd;
+	struct cfops	*cops;
 #ifdef DIAGNOSTIC
 	struct device *d;
 #endif
@@ -378,6 +387,7 @@ config_detach(dev, flags)
 		panic("config_detach: bad device fstate");
 #endif
 	cd = cf->cf_driver;
+	cops = cd->cd_ops;
 
 	/*
 	 * Try to detach the device.  If that's not possible, then
@@ -385,8 +395,8 @@ config_detach(dev, flags)
 	 * return an error.
 	 */
 	if (rv == 0) {
-		if (cd->cd_detach != NULL)
-			rv = (*cd->cd_detach)(dev, flags);
+		if (cops->cops_detach != NULL)
+			rv = (*cops->cops_detach)(dev, flags);
 		else
 			rv = EOPNOTSUPP;
 	}
@@ -429,9 +439,9 @@ config_detach(dev, flags)
 	}
 
 	/*
-	 * Unlink from device list. (TODO)
+	 * Unlink from device list.
 	 */
-	//TAILQ_REMOVE(&alldevs, dev, dv_list);
+	dev_remove(dev);
 
 	/*
 	 * Remove from cfdriver's array, tell the world, and free softc.
@@ -464,15 +474,16 @@ int
 config_activate(dev)
 	struct device *dev;
 {
-	struct cfattach *ca = dev->dv_cfdata->cf_attach;
+	struct cfdriver *cd = dev->dv_cfdata->cf_driver;
+	struct cfops *cops	= cd->cd_ops;
 	int rv = 0, oflags = dev->dv_flags;
 
-	if (ca->ca_activate == NULL)
+	if (cops->cops_activate == NULL)
 		return (EOPNOTSUPP);
 
 	if ((dev->dv_flags & DVF_ACTIVE) == 0) {
 		dev->dv_flags |= DVF_ACTIVE;
-		rv = (*ca->ca_activate)(dev, DVACT_ACTIVATE);
+		rv = (*cops->cops_activate)(dev, DVACT_ACTIVATE);
 		if (rv)
 			dev->dv_flags = oflags;
 	}
@@ -484,18 +495,20 @@ int
 config_deactivate(dev)
 	struct device *dev;
 {
-	struct cfattach *ca = dev->dv_cfdata->cf_attach;
+	struct cfdriver *cd = dev->dv_cfdata->cf_driver;
+	struct cfops *cops	= cd->cd_ops;
 	int rv = 0, oflags = dev->dv_flags;
 
-	if (ca->ca_activate == NULL)
+	if (cops->cops_activate == NULL)
 		return (EOPNOTSUPP);
 
 	if (dev->dv_flags & DVF_ACTIVE) {
 		dev->dv_flags &= ~DVF_ACTIVE;
-		rv = (*ca->ca_activate)(dev, DVACT_DEACTIVATE);
+		rv = (*cops->cops_activate)(dev, DVACT_DEACTIVATE);
 		if (rv)
 			dev->dv_flags = oflags;
 	}
+
 	return (rv);
 }
 

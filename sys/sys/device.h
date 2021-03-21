@@ -45,6 +45,7 @@
 #ifndef _SYS_DEVICE_H_
 #define	_SYS_DEVICE_H_
 
+#include <sys/queue.h>
 /*
  * Minimal device structures.
  * Note that all ``system'' device types are listed here.
@@ -61,6 +62,7 @@ enum devclass {
 struct device {
 	enum devclass		dv_class;				/* this device's classification */
 	struct	device 		*dv_next;				/* next in list of all */
+	struct	device 		*dv_prev;				/* prev in list of all */
 	struct	cfdata		*dv_cfdata;				/* config data that found us */
 	int					dv_unit;				/* device unit number */
 	char				dv_xname[16];			/* external name (name + unit) */
@@ -98,7 +100,8 @@ struct cfdata {
 
 typedef int 			(*cfmatch_t)(struct device *, struct cfdata *, void *);
 typedef void 			(*cfattach_t)(struct device *, struct device *, void *);
-typedef int				(*cfdetach)(struct device *, int);
+typedef int				(*cfdetach_t)(struct device *, int);
+typedef int				(*cfactivate_t)(struct device *, enum devact);
 
 /*
  * `configuration' driver (what the machine-independent autoconf uses).
@@ -111,13 +114,31 @@ typedef int				(*cfdetach)(struct device *, int);
 struct cfdriver {
 	void				**cd_devs;				/* devices found */
 	char				*cd_name;				/* device name */
-	int 				(*cd_match)(struct device *, struct cfdata *, void *);
-	void				(*cd_attach)(struct device *, struct device *, void *);
-	int 				(*cd_detach)(struct device *, int);
+	struct cfops		*cd_ops;				/* config driver operations: see below */
 	enum devclass 		cd_class;				/* device classification */
 	size_t				cd_devsize;				/* size of dev data (for malloc) */
 	void				*cd_aux;				/* additional driver, if any */
 	int					cd_ndevs;				/* size of cd_devs array */
+};
+
+/* config driver operations */
+struct cfops {
+	int 			(*cops_match)(struct device *, struct cfdata *, void *);
+	void 			(*cops_attach)(struct device *, struct device *, void *);
+	int 			(*cops_detach)(struct device *, int);
+	int 			(*cops_activate)(struct device *, enum devact);
+};
+
+/* Flags given to config_detach(), and the ca_detach function. */
+#define	DETACH_FORCE	0x01					/* force detachment; hardware gone */
+#define	DETACH_QUIET	0x02					/* don't print a notice */
+
+/*
+ * Actions for cd_activate.
+ */
+enum devact {
+	DVACT_ACTIVATE,		/* activate the device */
+	DVACT_DEACTIVATE	/* deactivate the device */
 };
 
 /*
@@ -139,14 +160,6 @@ struct pdevinit {
 	int					pdev_count;
 };
 
-/*
- * Actions for cd_activate.
- */
-enum devact {
-	DVACT_ACTIVATE,		/* activate the device */
-	DVACT_DEACTIVATE	/* deactivate the device */
-};
-
 struct	device 	*alldevs;	/* head of list of all devices */
 struct	evcnt 	*allevents;	/* head of list of all events */
 
@@ -158,5 +171,28 @@ struct device 	*config_found_sm(struct device *, void *, cfprint_t, cfmatch_t);
 int 			config_rootfound (char *, void *);
 void 			config_attach (struct device *, struct cfdata *, void *, cfprint_t);
 int				config_detach(struct device *, int);
+int 			config_activate (struct device *);
+int 			config_deactivate (struct device *);
 void 			evcnt_attach (struct device *, const char *, struct evcnt *);
+
+/*device macros */
+/* Insq/Remq for device lists */
+#define dev_insert(dev, dv) {							\
+	(dev)->dv_next = (dv)->dv_next; 					\
+	(dev)->dv_prev = (dv);								\
+	(dv)->dv_next->dv_prev = (dev);						\
+	(dv)->dv_next = (dev);								\
+}
+
+#define dev_remove(dev) {								\
+	(dev)->dv_prev->dv_next = (dev)->dv_next;			\
+	(dev)->dv_next->dv_prev = (dev)->dv_prev;			\
+}
+
+/* device driver and cfops declarations */
+#define CFDRIVER_DECL(devs, name, cops, class, size) 	\
+	struct cfdriver (name##_cd) = { (devs), (#name), &(cops), (class), (size) }
+
+#define CFOPS_DECL(name, matfn, attfn, detfn, actfn) 	\
+	struct cfops (name##_cops) = { (#name), (matfn), (attfn), (detfn), (actfn) }
 #endif /* !_SYS_DEVICE_H_ */
