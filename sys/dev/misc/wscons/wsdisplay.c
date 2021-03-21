@@ -134,7 +134,7 @@ static int wsdisplay_emul_match (struct device *, struct cfdata *, void *);
 static void wsdisplay_emul_attach (struct device *, struct device *, void *);
 static int wsdisplay_noemul_match (struct device *, struct cfdata *, void *);
 static void wsdisplay_noemul_attach (struct device *, struct device *, void *);
-
+/*
 struct cfdriver wsdisplay_emul_cd = {
 		NULL,
 		"wsdisplay_emul",
@@ -152,6 +152,12 @@ struct cfdriver wsdisplay_emul_cd = {
 		DV_DULL,
 		sizeof (struct wsdisplay_softc),
 };
+*/
+CFDRIVER_DECL(NULL, wsdisplay_emul, &wsdisplay_emul_cops, DV_DULL, sizeof(struct wsdisplay_softc));
+CFOPS_DECL(wsdisplay_emul, wsdisplay_emul_match, wsdisplay_emul_attach, NULL, NULL);
+
+CFDRIVER_DECL(NULL, wsdisplay_noemul, &wsdisplay_noemul_cops, DV_DULL, sizeof(struct wsdisplay_softc));
+CFOPS_DECL(wsdisplay_noemul, wsdisplay_noemul_match, wsdisplay_noemul_attach, NULL, NULL);
 
 /* Exported tty- and cdevsw-related functions. */
 dev_type_open(wsdisplayopen);

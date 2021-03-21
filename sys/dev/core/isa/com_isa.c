@@ -106,10 +106,13 @@ struct com_isa_softc {
 int com_isa_probe(struct device *, void *, void *);
 void com_isa_attach(struct device *, struct device *, void *);
 void com_isa_cleanup (void *);
-
+/*
 struct cfdriver com_isa_ca = {
 	NULL, "com_isa", com_isa_probe, com_isa_attach, DV_DULL, sizeof(struct com_isa_softc)
 };
+*/
+CFDRIVER_DECL(NULL, com_isa, &com_isa_cops, DV_DULL, sizeof(struct com_isa_softc));
+CFOPS_DECL(com_isa, com_isa_probe, com_isa_attach, NULL, NULL);
 
 int
 com_isa_probe(parent, match, aux)

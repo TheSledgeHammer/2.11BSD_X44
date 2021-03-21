@@ -185,9 +185,13 @@ static keysym_t wskbd_translate (struct wskbd_internal *, u_int, int);
 static void wskbd_holdscreen (struct wskbd_softc *, int);
 
 #if NWSKBD > 0
+/*
 extern struct cfdriver wskbd_cd = {
 		NULL, "wskbd", wskbd_match, wskbd_attach, DV_DULL, sizeof (struct wskbd_softc)
 };
+*/
+CFDRIVER_DECL(NULL, wskbd, &pms_cops, DV_DULL, sizeof(struct wskbd_softc));
+CFOPS_DECL(wskbd, wskbd_match, wskbd_attach, NULL, NULL);
 #endif
 
 dev_type_open(wskbdopen);

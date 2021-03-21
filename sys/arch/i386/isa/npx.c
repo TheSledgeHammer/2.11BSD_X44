@@ -136,9 +136,17 @@ struct npx_softc {
 	void                *sc_ih;
 };
 
+/*
 struct cfdriver npx_cd = {
-	NULL, "npx", npx_probe, npx_attach, DV_DULL, sizeof(struct npx_softc)
+		NULL, "npx", &npx_cops, DV_DULL, sizeof(struct npx_softc)
 };
+
+struct cfops npx_cops = {
+		npx_probe, npx_attach, NULL, NULL
+};
+*/
+CFDRIVER_DECL(NULL, npx, &npx_cops, DV_DULL, sizeof(struct npx_softc));
+CFOPS_DECL(npx, npx_probe, npx_attach, NULL, NULL);
 
 /*
  * Special interrupt handlers.  Someday intr0-intr15 will be used to count

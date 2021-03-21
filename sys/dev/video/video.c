@@ -89,10 +89,13 @@ const struct cdevsw video_cdevsw = {
 	.d_discard = nodiscard,
 	.d_type = D_OTHER
 };
-
+/*
 struct cfdriver video_cd = {
 	NULL, "video", videoprobe, videoattach, DV_DULL, sizeof(struct video_softc)
 };
+*/
+CFDRIVER_DECL(NULL, video, &video_cops, DV_DULL, sizeof(struct video_softc));
+CFOPS_DECL(video, videoprobe, videoattach, NULL, NULL);
 
 int
 videoprobe(struct device *parent, struct cfdata *match, void *aux)

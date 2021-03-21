@@ -39,15 +39,12 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
-#include <sys/kmem.h>
+#include <sys/malloc.h>
 #include <sys/device.h>
 #include <sys/select.h>
 #include <sys/proc.h>
 #include <sys/queue.h>
-#include <sys/mutex.h>
-#include <sys/condvar.h>
 #include <sys/bus.h>
-#include <sys/cpu.h>
 #include <sys/sysctl.h>
 
 #include <machine/endian_machdep.h>

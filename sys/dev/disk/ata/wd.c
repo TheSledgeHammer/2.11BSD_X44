@@ -167,10 +167,13 @@ struct wd_softc {
 int		wdprobe	(struct device *, struct cfdata *, void *);
 void	wdattach (struct device *, struct device *, void *);
 int		wdprint	(void *, char *);
-
+/*
 struct cfdriver wd_cd = {
 		NULL, "wd", wdprobe, wdattach, DV_DISK, sizeof(struct wd_softc)
 };
+*/
+CFDRIVER_DECL(NULL, wd, &wd_cops, DV_DISK, sizeof(struct wd_softc));
+CFOPS_DECL(wd, wdprobe, wdattach, NULL, NULL);
 
 static dev_type_open(wdopen);
 static dev_type_close(wdclose);

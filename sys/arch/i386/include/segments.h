@@ -231,8 +231,8 @@ struct region_descriptor {
 /*
  * Entries in the Interrupt Descriptor Table (IDT)
  */
-#define	NIDT	256
-#define	NRSVIDT	32		/* reserved entries for cpu exceptions */
+#define	NIDT			256
+#define	NRSVIDT			32		/* reserved entries for cpu exceptions */
 
 extern ssdtosd(struct soft_segment_descriptor *ssd, struct segment_descriptor *sd) ;	/* to decode a ssd */
 extern sdtossd(struct segment_descriptor *sd, struct segment_descriptor *ssd) ;			/* to encode a sd */

@@ -72,10 +72,13 @@
 
 int		sd_scsibus_match (struct device *, struct cfdata *, void *);
 void	sd_scsibus_attach (struct device *, struct device *, void *);
-
+/*
 struct cfdriver sd_scsibus_cd = {
 	NULL, "sd_scsibus", sd_scsibus_match, sd_scsibus_attach, DV_DULL, sizeof(struct sd_softc)
 };
+*/
+CFDRIVER_DECL(NULL, sd_scsibus, &sd_scsibus_cops, DV_DULL, sizeof(struct sd_softc));
+CFOPS_DECL(sd_scsibus, sd_scsibus_match, sd_scsibus_attach, NULL, NULL);
 
 struct scsipi_inquiry_pattern sd_scsibus_patterns[] = {
 	{T_DIRECT, T_FIXED,

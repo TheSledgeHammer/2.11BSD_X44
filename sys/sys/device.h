@@ -45,7 +45,6 @@
 #ifndef _SYS_DEVICE_H_
 #define	_SYS_DEVICE_H_
 
-#include <sys/queue.h>
 /*
  * Minimal device structures.
  * Note that all ``system'' device types are listed here.
@@ -123,10 +122,10 @@ struct cfdriver {
 
 /* config driver operations */
 struct cfops {
-	int 			(*cops_match)(struct device *, struct cfdata *, void *);
-	void 			(*cops_attach)(struct device *, struct device *, void *);
-	int 			(*cops_detach)(struct device *, int);
-	int 			(*cops_activate)(struct device *, enum devact);
+	int 				(*cops_match)(struct device *, struct cfdata *, void *);
+	void 				(*cops_attach)(struct device *, struct device *, void *);
+	int 				(*cops_detach)(struct device *, int);
+	int 				(*cops_activate)(struct device *, enum devact);
 };
 
 /* Flags given to config_detach(), and the ca_detach function. */
@@ -160,6 +159,13 @@ struct pdevinit {
 	int					pdev_count;
 };
 
+/* device driver and cfops declarations */
+#define CFDRIVER_DECL(devs, name, cops, class, size) 	\
+	struct cfdriver (name##_cd) = { (devs), (#name), (cops), (class), (size) }
+
+#define CFOPS_DECL(name, matfn, attfn, detfn, actfn) 	\
+	struct cfops (name##_cops) = { (#name), (matfn), (attfn), (detfn), (actfn) }
+
 struct	device 	*alldevs;	/* head of list of all devices */
 struct	evcnt 	*allevents;	/* head of list of all events */
 
@@ -174,25 +180,4 @@ int				config_detach(struct device *, int);
 int 			config_activate (struct device *);
 int 			config_deactivate (struct device *);
 void 			evcnt_attach (struct device *, const char *, struct evcnt *);
-
-/*device macros */
-/* Insq/Remq for device lists */
-#define dev_insert(dev, dv) {							\
-	(dev)->dv_next = (dv)->dv_next; 					\
-	(dev)->dv_prev = (dv);								\
-	(dv)->dv_next->dv_prev = (dev);						\
-	(dv)->dv_next = (dev);								\
-}
-
-#define dev_remove(dev) {								\
-	(dev)->dv_prev->dv_next = (dev)->dv_next;			\
-	(dev)->dv_next->dv_prev = (dev)->dv_prev;			\
-}
-
-/* device driver and cfops declarations */
-#define CFDRIVER_DECL(devs, name, cops, class, size) 	\
-	struct cfdriver (name##_cd) = { (devs), (#name), &(cops), (class), (size) }
-
-#define CFOPS_DECL(name, matfn, attfn, detfn, actfn) 	\
-	struct cfops (name##_cops) = { (#name), (matfn), (attfn), (detfn), (actfn) }
 #endif /* !_SYS_DEVICE_H_ */

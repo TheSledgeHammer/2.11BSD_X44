@@ -161,6 +161,8 @@ integrate void com_schedrx (struct com_softc *);
 void	comdiag	(void *);
 
 extern struct cfdriver com_cd;
+CFDRIVER_DECL(NULL, com, &com_cops, DV_DULL, sizeof(struct com_softc));
+CFOPS_DECL(com, comprobe, comattach, NULL, NULL);
 
 dev_type_open(comopen);
 dev_type_close(comclose);

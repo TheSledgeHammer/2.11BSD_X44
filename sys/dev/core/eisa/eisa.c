@@ -55,10 +55,13 @@ void	eisaattach (struct device *, struct device *, void *);
 int		eisasubmatch (struct device *, struct cfdata *, void *);
 int	 	eisaprint (void *, const char *);
 void 	eisa_devinfo (const char *, char *);
-
+/*
 struct cfdriver eisa_cd = {
 	NULL, "eisa", eisamatch, eisaattach, DV_DULL, sizeof(struct device)
 };
+*/
+CFDRIVER_DECL(NULL, eisa, &eisa_cops, DV_DULL, sizeof(struct device));
+CFOPS_DECL(eisa, eisamatch, eisaattach, NULL, NULL);
 
 int
 eisamatch(parent, cf, aux)
@@ -103,7 +106,7 @@ eisasubmatch(parent, cf, aux)
 	if ((cf->cf_loc[EISACF_SLOT] != EISA_UNKNOWN_SLOT) &&
 	    (cf->cf_loc[EISACF_SLOT] != ea->ea_slot))
 		return 0;
-	return ((*cf->cf_driver->cd_match)(parent, cf, aux));
+	return (config_match(parent, cf, aux));
 }
 
 void

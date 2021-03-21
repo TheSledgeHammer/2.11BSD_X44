@@ -66,10 +66,13 @@ static int isapnp_submatch (struct device *, struct cfdata *, void *);
 static int isapnp_find (struct isapnp_softc *, int);
 static int isapnp_match (struct device *, struct cfdata *, void *);
 static void isapnp_attach (struct device *, struct device *, void *);
-
+/*
 struct cfdriver isapnp_cd = {
 	NULL, "isapnp", isapnp_match, isapnp_attach, DV_DULL, sizeof(struct isapnp_softc)
 };
+*/
+CFDRIVER_DECL(NULL, isapnp, &isapnp_cops, DV_DULL, sizeof(struct isapnp_softc));
+CFOPS_DECL(isapnp, isapnp_attach, isapnp_attach, NULL, NULL);
 
 /* isapnp_init():
  *	Write the PNP initiation key to wake up the cards...
@@ -564,7 +567,7 @@ isapnp_com_submatch(parent, match, aux)
 			printf("%s: error in region allocation\n", cf->cf_driver->cd_name);
 			return (0);
 		}
-		return ((*cf->cf_driver->cd_match)(parent, match, ipa));
+		return (config_match(parent, match, ipa));
 	}
 	return (0);
 }
@@ -578,7 +581,7 @@ isapnp_submatch(parent, match, aux)
 	struct cfdata *match, *aux;
 {
 	struct cfdata *cf = match;
-	return ((*cf->cf_driver->cd_match)(parent, match, aux));
+	return (config_match(parent, match, aux));
 }
 
 /* isapnp_find():

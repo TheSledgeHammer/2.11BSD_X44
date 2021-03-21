@@ -122,9 +122,13 @@ void	wsmouse_attach (struct device *, struct device *, void *);
 
 
 #if NWSMOUSE > 0
+/*
 struct cfdriver wsmouse_cd = {
 		NULL, "wsmouse",  wsmouse_match, wsmouse_attach, DV_DULL, sizeof (struct wsmouse_softc)
 };
+*/
+CFDRIVER_DECL(NULL, wsmouse, &wsmouse_cops, DV_DULL, sizeof(struct wsmouse_softc));
+CFOPS_DECL(wsmouse, wsmouse_match, wsmouse_attach, NULL, NULL);
 #endif /* NWSMOUSE > 0 */
 
 dev_type_open(wsmouseopen);

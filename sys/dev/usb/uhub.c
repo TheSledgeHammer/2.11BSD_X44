@@ -77,10 +77,13 @@ struct uhub_softc {
 	u_int8_t			sc_status[1];	/* XXX more ports */
 	u_char				sc_running;
 };
-
+/*
 struct cfdriver uhub_cd = {
 	NULL, "uhub", uhub_match, uhub_attach, DV_DULL, sizeof(struct uhub_softc)
 };
+*/
+CFDRIVER_DECL(NULL, uhub, &uhub_cops, DV_DULL, sizeof(struct uhub_softc));
+CFOPS_DECL(uhub, uhub_match, uhub_attach, uhub_detach, uhub_activate);
 
 static usbd_status uhub_explore(usbd_device_handle hub);
 static void uhub_intr(usbd_xfer_handle, usbd_private_handle,usbd_status);

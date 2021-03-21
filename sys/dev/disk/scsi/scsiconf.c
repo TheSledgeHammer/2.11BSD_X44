@@ -90,10 +90,13 @@ struct scsi_device probe_switch = {
 int scsibusmatch (struct device *, struct cfdata *, void *);
 void scsibusattach (struct device *, struct device *, void *);
 int scsibussubmatch (struct device *, struct cfdata *, void *);
-
+/*
 struct cfdriver scsibus_cd = {
 	NULL, "scsibus", scsibusmatch, scsibusattach, DV_DULL, sizeof(struct scsibus_softc)
 };
+*/
+CFDRIVER_DECL(NULL, scsibus, &scsibus_cops, DV_DULL, sizeof(struct scsibus_softc));
+CFOPS_DECL(scsibus, scsibusmatch, scsibusattach, NULL, NULL);
 
 int scsibusprint (void *, char *);
 int
@@ -203,7 +206,7 @@ scsibussubmatch(parent, cf, aux)
 	if (cf->cf_loc[SCSIBUSCF_LUN] != SCSIBUSCF_LUN_DEFAULT && cf->cf_loc[SCSIBUSCF_LUN] != sc_link->scsi_scsi.lun) {
 			return (0);
 	}
-	return ((*cf->cf_driver->cd_match)(parent, cf, aux));
+	return (config_match(parent, cf, aux));
 }
 
 /*

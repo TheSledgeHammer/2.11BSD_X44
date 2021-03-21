@@ -81,10 +81,13 @@ static void uhidev_intr(usbd_xfer_handle, usbd_private_handle, usbd_status);
 static int uhidev_maxrepid(void *buf, int len);
 static int uhidevprint(void *aux, const char *pnp);
 static int uhidevsubmatch(struct device *parent, struct cfdata *cf, void *aux);
-
+/*
 const struct cfdriver uhidev_cd = {
 	NULL, "uhidev", uhidev_match, uhidev_attach, DV_DULL, sizeof(struct uhidev_softc)
 };
+*/
+CFDRIVER_DECL(NULL, uhidev, &uhidev_cops, DV_DULL, sizeof(struct uhidev_softc));
+CFOPS_DECL(uhidev, uhidev_match, uhidev_attach, uhidev_detach, uhidev_activate);
 
 uhidev_match(struct device *parent, struct cfdata *match, void *aux)
 {

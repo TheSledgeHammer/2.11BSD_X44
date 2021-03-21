@@ -46,8 +46,6 @@
 #include <dev/disk/scsi/scsi_all.h>
 #include <dev/disk/scsi/scsiconf.h>
 
-#include "locators.h"
-
 #define SILENT_PRINTF(flags,string) if (!(flags & A_SILENT)) printf string
 
 struct atapibus_softc {
@@ -64,10 +62,13 @@ int		atapiprint (void *, const char *);
 
 int		atapi_probe_bus (int, int);
 void	atapi_probedev (struct atapibus_softc *, int );
-
+/*
 extern struct cfdriver atapibus_cd = {
 		NULL, "atapi_cd", atapibusmatch, atapibusattach, DV_DISK, sizeof(struct atapibus_softc)
 };
+*/
+CFDRIVER_DECL(NULL, atapibus, &atapibus_cops, DV_DISK, sizeof(struct atapibus_softc));
+CFOPS_DECL(atapibus, atapibusattach, atapibusattach, NULL, NULL);
 
 int atapibusprint (void *, const char *);
 
@@ -140,7 +141,7 @@ atapibussubmatch(parent, cf, aux)
 	if (cf->cf_loc[ATAPIBUSCF_DRIVE] != ATAPIBUSCF_DRIVE_DEFAULT &&
 	    cf->cf_loc[ATAPIBUSCF_DRIVE] != sc_link->scsipi_atapi.drive)
 		return (0);
-	return ((*cf->cf_driver->cd_match)(parent, cf, aux));
+	return (config_match(parent, cf, aux));
 }
 
 #if 0

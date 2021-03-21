@@ -65,10 +65,13 @@
 
 int ssmatch (struct device *, void *, void *);
 void ssattach (struct device *, struct device *, void *);
-
+/*
 struct cfdriver ss_cd = {
 	NULL, "ss", ssmatch, ssattach, DV_DULL, sizeof(struct ss_softc)
 };
+*/
+CFDRIVER_DECL(NULL, ss, &ss_cops, DV_DULL, sizeof(struct ss_softc));
+CFOPS_DECL(ss, ssmatch, ssattach, NULL, NULL);
 
 static dev_type_open(ssopen);
 static dev_type_close(ssclose);

@@ -88,10 +88,13 @@ void	pcic_detach_card (struct pcic_handle *);
 
 void	pcic_chip_do_mem_map (struct pcic_handle *, int);
 void	pcic_chip_do_io_map (struct pcic_handle *, int);
-
+/*
 struct cfdriver pcic_cd = {
 	NULL, "pcic", DV_DULL
 };
+*/
+//CFDRIVER_DECL(NULL, pcic, &pcic_cops, DV_DULL, sizeof(struct pcic_softc));
+//CFOPS_DECL(pcic, pcic_match, pcic_attach, NULL, NULL);
 
 int
 pcic_ident_ok(ident)
@@ -417,7 +420,7 @@ pcic_submatch(parent, cf, aux)
 		panic("unknown pcic socket");
 	}
 
-	return ((*cf->cf_driver->cd_match)(parent, cf, aux));
+	return (config_match(parent, cf, aux));
 }
 
 int

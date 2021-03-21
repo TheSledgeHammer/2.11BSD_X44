@@ -51,6 +51,20 @@
 #include <sys/malloc.h>
 #include <lib/libkern/libkern.h>
 
+/* device macros */
+/* Insq/Remq for device lists */
+#define dev_insert(dev, dv) {							\
+	(dev)->dv_next = (dv)->dv_next; 					\
+	(dev)->dv_prev = (dv);								\
+	(dv)->dv_next->dv_prev = (dev);						\
+	(dv)->dv_next = (dev);								\
+}
+
+#define dev_remove(dev) {								\
+	(dev)->dv_prev->dv_next = (dev)->dv_next;			\
+	(dev)->dv_next->dv_prev = (dev)->dv_prev;			\
+}
+
 /*
  * Autoconfiguration subroutines.
  */

@@ -45,7 +45,10 @@ A General todo list. Don't hesitate to add to this list. :)
 		- add: vhci, xhci
 	- wscons/pccons:					Work in progress
 		- double check wscons for errors/mistakes
-
+- cfops update:
+	- double check com.c needs cfdriver declaration
+	- to use detach & activate routines
+	
 ## fs:
 
 

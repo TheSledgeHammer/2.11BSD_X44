@@ -75,10 +75,13 @@ int		cd_scsibus_match (struct device *, struct cfdata *, void *);
 void	cd_scsibus_attach (struct device *, struct device *, void *);
 int		cd_scsibus_get_mode (struct cd_softc *, struct scsi_cd_mode_data *, int, int, int);
 int		cd_scsibus_set_mode (struct cd_softc *, struct scsi_cd_mode_data *, int, int);
-
+/*
 struct cfdriver cd_scsibus_cd = {
 	NULL, "cd_scsibus", cd_scsibus_match, cd_scsibus_attach, DV_DULL, sizeof(struct cd_softc)
 };
+*/
+CFDRIVER_DECL(NULL, cd_scsibus, &cd_scsibus_cops, DV_DULL, sizeof(struct cd_softc));
+CFOPS_DECL(cd_scsibus, cd_scsibus_match, cd_scsibus_attach, NULL, NULL);
 
 struct scsipi_inquiry_pattern cd_scsibus_patterns[] = {
 	{T_CDROM, T_REMOV,

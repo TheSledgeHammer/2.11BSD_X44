@@ -70,10 +70,13 @@ void	pcmcia_attach (struct device *, struct device *, void *);
 int		pcmcia_print (void *, const char *);
 
 int		pcmcia_card_intr (void *);
-
+/*
 struct cfdriver pcmcia_cd = {
 	NULL, "pcmcia", pcmcia_match, pcmcia_attach, DV_DULL, sizeof(struct pcmcia_softc)
 };
+*/
+CFDRIVER_DECL(NULL, pcmcia, &pcmcia_cops, DV_DULL, sizeof(struct pcmcia_softc));
+CFOPS_DECL(pcmcia, pcmcia_match, pcmcia_attach, NULL, NULL);
 
 int
 pcmcia_ccr_read(pf, ccr)
@@ -233,7 +236,7 @@ pcmcia_submatch(parent, cf, aux)
 	if (cf->cf_loc[PCMCIACF_FUNCTION] != PCMCIACF_FUNCTION_DEFAULT &&
 	    cf->cf_loc[PCMCIACF_FUNCTION] != paa->pf->number)
 		return (0);
-	return ((*cf->cf_attach->ca_match)(parent, cf, aux));
+	return (config_match(parent, cf, aux));
 }
 
 int
