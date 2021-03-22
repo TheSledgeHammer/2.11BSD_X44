@@ -59,4 +59,5 @@
 #define M_UFS211		89	/* UFS211 bufmap structure */
 
 #define M_IOAPIC		90
+#define M_PERCPU		91
 #endif /* _SYS_MALLOCTYPES_H_ */

@@ -204,8 +204,7 @@ i386_memio_map(t, bpa, size, flags, bshp)
 	 * Before we go any further, let's make sure that this
 	 * region is available.
 	 */
-	error = extent_alloc_region(ex, bpa, size,
-	    EX_NOWAIT | (ioport_malloc_safe ? EX_MALLOCOK : 0));
+	error = extent_alloc_region(ex, bpa, size, EX_NOWAIT | (ioport_malloc_safe ? EX_MALLOCOK : 0));
 	if (error)
 		return (error);
 

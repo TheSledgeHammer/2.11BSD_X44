@@ -58,12 +58,8 @@ extern uintptr_t 		dpcpu_off[];
 /*
  * Convenience defines.
  */
-#define	DPCPU_START		((uintptr_t)&__start_set_percpu)
-#define	DPCPU_STOP		((uintptr_t)&__stop_set_percpu)
-#define	DPCPU_BYTES		(DPCPU_STOP - DPCPU_START)
-#define	DPCPU_MODMIN	2048
-#define	DPCPU_SIZE		roundup2(DPCPU_BYTES, PAGE_SIZE)
-#define	DPCPU_MODSIZE	(DPCPU_SIZE - (DPCPU_BYTES - DPCPU_MODMIN))
+#define	DPCPU_QUANTUM_SIZE	(ALIGNBYTES + 1)
+#define	DPCPU_SIZE			2048
 
 /*
  * Declaration and definition.
@@ -77,6 +73,7 @@ struct percpu {
 	u_int				pc_cpuid;		/* This cpu number */
 	LIST_ENTRY(percpu) 	pc_entry;
 
+	struct extent		*pc_extent;		/* Dynamic storage alloctor */
 	uintptr_t			pc_dynamic;		/* Dynamic per-cpu data area */
 };
 

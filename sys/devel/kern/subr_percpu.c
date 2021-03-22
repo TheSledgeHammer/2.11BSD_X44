@@ -54,13 +54,16 @@
 #include <sys/systm.h>
 #include <sys/malloc.h>
 #include <sys/user.h>
+#include <sys/extent.h>
 
 #include <devel/sys/percpu.h>
+#include <devel/sys/malloctypes.h>
 
 struct dpcpuhead;
 TAILQ_HEAD(dpcpuhead, dpcpu_free);
 struct dpcpu_free {
 	uintptr_t				df_start;
+	uintptr_t				df_end;
 	int						df_len;
 	TAILQ_ENTRY(dpcpu_free) df_link;
 };
@@ -118,8 +121,8 @@ dpcpu_startup(void *dummy)
 	struct dpcpu_free *df;
 
 	df = malloc(sizeof(*df), M_PERCPU, M_WAITOK | M_ZERO);
-	//df->df_start = (uintptr_t)&DPCPU_NAME(modspace);
-	//df->df_len = DPCPU_MODMIN;
+	df->df_start =  DPCPU_START;
+	df->df_len = DPCPU_MODMIN;
 	TAILQ_INSERT_HEAD(&dpcpu_head, df, df_link);
 	simple_lock_init(&dpcpu_lock, "dpcpu_lock");
 }
@@ -253,14 +256,4 @@ percpu_find(cpuid)
 	int cpuid;
 {
 	return (cpuid_to_percpu[cpuid]);
-}
-
-/* i386 machdep.c */
-void
-cpu_percpu_init(pcpu, cpuid, size)
-	struct percpu *pcpu;
-	int cpuid;
-	size_t size;
-{
-	pcpu->pc_acpi_id = 0xffffffff;
 }
