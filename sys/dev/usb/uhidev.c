@@ -312,7 +312,6 @@ uhidevsubmatch(struct device *parent, struct cfdata *cf, void *aux)
 	return (config_match(parent, cf, aux));
 }
 
-#if defined(__NetBSD__) || defined(__OpenBSD__)
 int
 uhidev_activate(struct device *self, enum devact act)
 {
@@ -360,12 +359,11 @@ uhidev_detach(struct device *self, int flags)
 			sc->sc_subdevs[i] = NULL;
 		}
 	}
-
+#if 0
 	usbd_add_drv_event(USB_EVENT_DRIVER_DETACH, sc->sc_udev, sc->sc_dev);
-
+#endif
 	return (rv);
 }
-#endif
 
 void
 uhidev_intr(usbd_xfer_handle xfer, usbd_private_handle addr, usbd_status status)

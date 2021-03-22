@@ -47,7 +47,7 @@ threadpool_job_init(struct threadpool_job *job, threadpool_job_fn_t func, lock_t
 {
 	va_list ap;
 	va_start(ap, fmt);
-	(void) vsnprintf(job->job_name, sizeof(job->job_name), fmt, ap);
+	(void) snprintf(job->job_name, sizeof(job->job_name), fmt, ap);
 	va_end(ap);
 
 	job->job_lock = lock;

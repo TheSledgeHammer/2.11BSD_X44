@@ -177,7 +177,6 @@ uhid_attach(struct device *parent, struct device *self, void *aux)
 	return;
 }
 
-#if defined(__NetBSD__) || defined(__OpenBSD__)
 int
 uhid_activate(struct device *self, enum devact act)
 {
@@ -217,13 +216,7 @@ uhid_detach(struct device *self, int flags)
 	}
 
 	/* locate the major number */
-#if defined(__NetBSD__)
 	maj = cdevsw_lookup_major(&uhid_cdevsw);
-#elif defined(__OpenBSD__)
-	for (maj = 0; maj < nchrdev; maj++)
-		if (cdevsw[maj].d_open == uhidopen)
-			break;
-#endif
 
 	/* Nuke the vnodes for any open instances (calls close). */
 	mn = self->dv_unit;
@@ -235,7 +228,6 @@ uhid_detach(struct device *self, int flags)
 
 	return (0);
 }
-#endif
 
 void
 uhid_intr(struct uhidev *addr, void *data, u_int len)

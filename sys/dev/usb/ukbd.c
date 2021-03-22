@@ -377,7 +377,6 @@ ukbd_enable(void *v, int on)
 	}
 }
 
-#if defined(__NetBSD__) || defined(__OpenBSD__)
 int
 ukbd_activate(struct device *self, enum devact act)
 {
@@ -439,7 +438,6 @@ ukbd_detach(struct device *self, int flags)
 
 	return (rv);
 }
-#endif
 
 void
 ukbd_intr(struct uhidev *addr, void *ibuf, u_int len)

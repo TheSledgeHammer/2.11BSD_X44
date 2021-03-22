@@ -51,7 +51,7 @@
 #if ((XCOFFSIZE == 32) && defined(BOOT_XCOFF32)) || \
     ((XCOFFSIZE == 64) && defined(BOOT_XCOFF64))
 int
-loadfile_coff(fd, coff, marks, flags)
+XCOFFNAMEEND(loadfile)(fd, coff, marks, flags)
 	int fd;
 	struct xcoff_exechdr *coff;
 	u_long *marks;
@@ -64,7 +64,7 @@ loadfile_coff(fd, coff, marks, flags)
 	offset = offset;
 
 	/* Read in text. */
-	if (lseek(fd, ECOFF_TXTOFF(coff), SEEK_SET) == -1)  {
+	if (lseek(fd, XCOFF_TXTOFF(coff), SEEK_SET) == -1)  {
 		WARN(("lseek text"));
 		return 1;
 	}

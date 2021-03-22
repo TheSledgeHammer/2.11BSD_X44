@@ -516,7 +516,6 @@ uhci_init(uhci_softc_t *sc)
 	return (uhci_run(sc, 1));		/* and here we go... */
 }
 
-#if defined(__NetBSD__) || defined(__OpenBSD__)
 int
 uhci_activate(struct device *self, enum devact act)
 {
@@ -565,7 +564,6 @@ uhci_detach(struct uhci_softc *sc, int flags)
 
 	return (rv);
 }
-#endif
 
 usbd_status
 uhci_allocm(struct usbd_bus *bus, usb_dma_t *dma, u_int32_t size)

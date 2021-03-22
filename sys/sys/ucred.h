@@ -51,11 +51,10 @@ struct ucred {
 #define FSCRED 		((struct ucred *)-2)	/* filesystem credential */
 
 #ifdef KERNEL
-
-#define	crhold(cr)	(cr)->cr_ref++
 struct ucred 		*crget(void);
 struct ucred 		*crcopy(struct ucred *);
 struct ucred 		*crdup(struct ucred *);
+struct ucred 		*crhold(struct ucred *);
 extern void 		crfree(struct ucred *);
 int 				suser();
 int 				_suser(struct ucred *, short *);

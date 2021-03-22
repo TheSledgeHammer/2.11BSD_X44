@@ -93,6 +93,7 @@ struct kthread {
 	u_char				kt_cpu;			/* cpu usage for scheduling */
 	char				kt_nice;		/* nice for cpu usage */
 	char				kt_slptime;		/* Time since last blocked. secs sleeping */
+	char				kt_comm[MAXCOMLEN+1];/* p: basename of last exec file */
 
 	struct pgrp 	    *kt_pgrp;       /* Pointer to proc group. */
 	struct sysentvec	*kt_sysent;		/* System call dispatch information. */
@@ -203,35 +204,30 @@ extern struct kthread 					kthread0;
 extern struct kthreadpool_thread 		ktpool_thread;
 extern lock_t 							kthreadpool_lock;
 
-
-
 void			threadinit (void);
 struct pgrp 	*tgfind (pid_t);
 void			tgdelete (struct pgrp *);
 
 /* KThread */
-void kthread_init (struct proc *, kthread_t);
-int kthread_create (kthread_t kt);
-int kthread_join(kthread_t kt);
-int kthread_cancel (kthread_t kt);
-int kthread_exit (kthread_t kt);
-int kthread_detach (kthread_t kt);
-int kthread_equal (kthread_t kt1, kthread_t kt2);
-int kthread_kill (kthread_t kt);
+void 			kthread_init (struct proc *, struct kthread *);
+int	 			kthread_create(void (*)(void *), void *, struct proc **, const char *);
+int 			kthread_exit (int);
+void			kthread_create_deferred(void (*)(void *), void *);
+void			kthread_run_deferred_queue(void);
 
 struct kthread *ktfind (pid_t);				/* Find kthread by id. */
 int				leavektgrp (kthread_t);
 
 /* KThread ITPC */
-extern void kthreadpool_itc_send (struct threadpool_itpc *, struct kthreadpool *);
-extern void kthreadpool_itc_receive (struct threadpool_itpc *, struct kthreadpool *);
-extern void	itpc_add_kthreadpool (struct threadpool_itpc *, struct kthreadpool *);
-extern void	itpc_remove_kthreadpool (struct threadpool_itpc *, struct kthreadpool *);
+extern void 	kthreadpool_itc_send (struct threadpool_itpc *, struct kthreadpool *);
+extern void 	kthreadpool_itc_receive (struct threadpool_itpc *, struct kthreadpool *);
+extern void		itpc_add_kthreadpool (struct threadpool_itpc *, struct kthreadpool *);
+extern void		itpc_remove_kthreadpool (struct threadpool_itpc *, struct kthreadpool *);
 
 /* KThread Lock */
-int kthread_lock_init (lock_t, kthread_t);
-int kthread_lockmgr (lock_t, u_int, kthread_t);
-int kthread_rwlock_init (rwlock_t, kthread_t);
-int kthread_rwlockmgr (rwlock_t, u_int, kthread_t);
+int 			kthread_lock_init (lock_t, kthread_t);
+int 			kthread_lockmgr (lock_t, u_int, kthread_t);
+int 			kthread_rwlock_init (rwlock_t, kthread_t);
+int 			kthread_rwlockmgr (rwlock_t, u_int, kthread_t);
 
 #endif /* SYS_KTHREADS_H_ */

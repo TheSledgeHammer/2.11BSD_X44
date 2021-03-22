@@ -1165,7 +1165,7 @@ usbd_submatch(parent, cf, aux)
 		 )
 		return 0;
 
-	return ((*cf->cf_driver->cd_match)(parent, cf, aux));
+	return (config_match(parent, cf, aux));
 }
 
 void
@@ -1247,4 +1247,43 @@ usb_free_device(usbd_device_handle dev)
 	if (dev->subdevs != NULL)
 		free(dev->subdevs, M_USB);
 	free(dev, M_USB);
+}
+
+/*
+ * Called from process context when we discover that a port has
+ * been disconnected.
+ */
+void
+usb_disconnect_port(struct usbd_port *up, struct device *parent)
+{
+	usbd_device_handle dev = up->device;
+	char *hubname = USBDEVPTRNAME(parent);
+	int i;
+
+	DPRINTFN(3,("uhub_disconnect: up=%p dev=%p port=%d\n", up, dev, up->portno));
+
+#ifdef DIAGNOSTIC
+	if (dev == NULL) {
+		printf("usb_disconnect_port: no device\n");
+		return;
+	}
+#endif
+
+	if (dev->subdevs != NULL) {
+		DPRINTFN(3,("usb_disconnect_port: disconnect subdevs\n"));
+		for (i = 0; dev->subdevs[i]; i++) {
+			printf("%s: at %s", USBDEVPTRNAME(dev->subdevs[i]),
+			       hubname);
+			if (up->portno != 0)
+				printf(" port %d", up->portno);
+			printf(" (addr %d) disconnected\n", dev->address);
+			config_detach(dev->subdevs[i], DETACH_FORCE);
+			dev->subdevs[i] = 0;
+		}
+	}
+
+	//usbd_add_dev_event(USB_EVENT_DEVICE_DETACH, dev);
+	dev->bus->devices[dev->address] = NULL;
+	up->device = NULL;
+	usb_free_device(dev);
 }

@@ -63,7 +63,7 @@ struct workqueue_exitargs {
 	struct workqueue_queue 	*wqe_q;
 };
 
-#define	POISON	0xaabbccdd
+#define	POISON				0xaabbccdd
 
 static void
 workqueue_lock(struct workqueue *wq, struct workqueue_queue *q)

@@ -80,8 +80,8 @@
 struct xhci_pipe {
 	struct usbd_pipe 	xp_pipe;
 	struct usb_task 	xp_async_task;
-	int16_t 			xp_isoc_next; /* next frame */
-	uint8_t 			xp_maxb; /* max burst */
+	int16_t 			xp_isoc_next; 	/* next frame */
+	uint8_t 			xp_maxb; 		/* max burst */
 	uint8_t 			xp_mult;
 };
 

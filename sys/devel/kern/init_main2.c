@@ -101,6 +101,7 @@ int	bootverbose = 	BOOTVERBOSE;
 extern const struct emul emul_211bsd; 					/* defined in kern_exec.c */
 
 static void start_init (struct proc *p, void *framep);
+
 /*
  * Initialization code.
  * Called from cold start routine as
@@ -119,6 +120,7 @@ main(framep)
 	void *framep;
 {
 	register struct proc *p;
+	register struct kthread *kt;
 	register struct filedesc0 *fdp;
 	register struct pdevinit *pdev;
 	register int i;
@@ -134,6 +136,7 @@ main(framep)
 	 */
 	p = &proc0;
 	curproc = p;
+
 	/*
 	 * Attempt to find console and initialize
 	 * in case of early panic or other messages.
@@ -171,8 +174,8 @@ main(framep)
 	/*
 	 * set up system process 0 (swapper)
 	 */
-	allproc = (struct proc *)p;
-	p->p_prev = (struct proc **)&allproc;
+	allproc = (struct proc*) p;
+	p->p_prev = (struct proc**) &allproc;
 	p->p_pgrp = &pgrp0;
 	pgrphash[0] = &pgrp0;
 
@@ -219,8 +222,11 @@ main(framep)
 
 	bcopy("root", u->u_login, sizeof ("root"));
 
+	/* initialize kthread0 & kthreadpool system */
+	kthread_init(p, kt);
+
 	/* Allocate a prototype map so we have something to fork. */
-	p->p_vmspace = &vmspace0;
+	p->p_vmspace = kt->kt_vmspace = &vmspace0;
 	vmspace0.vm_refcnt = 1;
 	pmap_pinit(&vmspace0.vm_pmap);
 	vm_map_init(&vmspace0.vm_map, round_page(VM_MIN_ADDRESS), trunc_page(VM_MAX_ADDRESS), TRUE);
@@ -230,7 +236,7 @@ main(framep)
 	/*
 	 * We continue to place resource usage info and signal
 	 * actions in the user struct so they're pageable.
-	*/
+	 */
 	p->p_stats = &u->u_stats;
 	p->p_sigacts = &u->u_sigacts;
 
@@ -238,7 +244,7 @@ main(framep)
 	 * Initialize per uid information structure and charge
 	 * root for one process.
 	 */
-	(void)chgproccnt(0, 1);
+	(void) chgproccnt(0, 1);
 
 	rqinit();
 
@@ -266,8 +272,9 @@ main(framep)
 	loginit();
 
 	/* Attach pseudo-devices. */
-	for (pdev = pdevinit; pdev->pdev_attach != NULL; pdev++)
+	for (pdev = pdevinit; pdev->pdev_attach != NULL; pdev++) {
 		(*pdev->pdev_attach)(pdev->pdev_count);
+	}
 
 	/*
 	 * Initialize protocols.  Block reception of incoming packets
@@ -282,6 +289,9 @@ main(framep)
 	/* Initialize kernel profiling. */
 	kmstartup();
 #endif
+
+	/* Initialize Global Scheduler */
+//	gsched_init(p);
 
 	/* Kick off timeout driven events by calling first time. */
 	roundrobin(NULL);
@@ -301,7 +311,7 @@ main(framep)
 	fdp->fd_fd.fd_rdir = NULL;
 	swapinit();
 
-	p->p_stats->p_start = runtime = mono_time = boottime = time;
+	p->p_stats->p_start = runtime = mono_time = boottime = &time;
 	p->p_rtime.tv_sec = p->p_rtime.tv_usec = 0;
 
 	/* Initialize signal state for process 0 */
@@ -315,15 +325,15 @@ main(framep)
 		return;
 	}
 
-	/* Create process 2 (the pageout daemon). */
-	if (newproc(0))
+	/*
+	 * Create any kernel threads whose creation was deferred because
+	 * initprocess had not yet been created.
+	 */
+	kthread_run_deferred_queue();
+
+	/* Create kthread 1 (the pageout daemon). */
+	if (kthread_create(vm_pageout, NULL, NULL, "pagedaemon")) {
 		panic("fork pager");
-	if (rval[1]) {
-		p = curproc;
-		pageproc = p;
-		p->p_flag |= P_INMEM | P_SYSTEM;	/* XXX */
-		bcopy("pagedaemon", curproc->p_comm, sizeof ("pagedaemon"));
-		vm_pageout();
 	}
 
 	/* Initialize exec structures */

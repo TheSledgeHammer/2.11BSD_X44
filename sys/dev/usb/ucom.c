@@ -211,7 +211,6 @@ ucom_attach(struct device *parent, struct device *self, void *aux)
 	return;
 }
 
-#if defined(__NetBSD__) || defined(__OpenBSD__)
 int
 ucom_detach(struct device *self, int flags)
 {
@@ -279,7 +278,6 @@ ucom_activate(struct device *self, enum devact act)
 	}
 	return (0);
 }
-#endif
 
 void
 ucom_shutdown(struct ucom_softc *sc)

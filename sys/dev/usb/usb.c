@@ -200,6 +200,71 @@ usb_attach(struct device *parent, struct device *self, void *aux)
 }
 
 int
+usb_activate(struct device *self, enum devact act)
+{
+	struct usb_softc *sc = (struct usb_softc *)self;
+	usbd_device_handle dev = sc->sc_port.device;
+	int i, rv = 0;
+
+	switch (act) {
+	case DVACT_ACTIVATE:
+		return (EOPNOTSUPP);
+
+	case DVACT_DEACTIVATE:
+		sc->sc_bus->dying = 1;
+		if (dev != NULL && dev->cdesc != NULL && dev->subdevs != NULL) {
+			for (i = 0; dev->subdevs[i]; i++)
+				rv |= config_deactivate(dev->subdevs[i]);
+		}
+		break;
+	}
+	return (rv);
+}
+
+int
+usb_detach(struct device *self, int flags)
+{
+	struct usb_softc *sc = (struct usb_softc *)self;
+	struct usb_event ue;
+
+	DPRINTF(("usb_detach: start\n"));
+
+	sc->sc_bus->dying = 1;
+
+	/* Make all devices disconnect. */
+	if (sc->sc_port.device != NULL)
+		usb_disconnect_port(&sc->sc_port, self);
+
+	/* Kill off event thread. */
+	/*
+	if (sc->sc_event_thread != NULL) {
+		wakeup(&sc->sc_bus->needs_explore);
+		if (tsleep(sc, PWAIT, "usbdet", hz * 60))
+			printf("%s: event thread didn't die\n", USBDEVNAME(sc->sc_dev));
+		DPRINTF(("usb_detach: event thread dead\n"));
+	}
+	*/
+
+	usbd_finish();
+
+#ifdef USB_USE_SOFTINTR
+#ifdef __HAVE_GENERIC_SOFT_INTERRUPTS
+	if (sc->sc_bus->soft != NULL) {
+		softintr_disestablish(sc->sc_bus->soft);
+		sc->sc_bus->soft = NULL;
+	}
+#else
+	callout_stop(&sc->sc_bus->softi);
+#endif
+#endif
+
+//	ue.u.ue_ctrlr.ue_bus = USBDEVUNIT(sc->sc_dev);
+//	usb_add_event(USB_EVENT_CTRLR_DETACH, &ue);
+
+	return (0);
+}
+
+int
 usbopen(dev, flag, mode, p)
 	dev_t dev;
 	int flag, mode;

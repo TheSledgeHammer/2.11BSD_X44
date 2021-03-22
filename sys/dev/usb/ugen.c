@@ -710,7 +710,6 @@ ugenwrite(dev_t dev, struct uio *uio, int flag)
 	return (error);
 }
 
-#if defined(__NetBSD__) || defined(__OpenBSD__)
 int
 ugen_detach(struct device *self, int flags)
 {
@@ -744,19 +743,13 @@ ugen_detach(struct device *self, int flags)
 	splx(s);
 
 	/* locate the major number */
-#if defined(__NetBSD__)
 	maj = cdevsw_lookup_major(&ugen_cdevsw);
-#elif defined(__OpenBSD__)
-	for (maj = 0; maj < nchrdev; maj++)
-		if (cdevsw[maj].d_open == ugenopen)
-			break;
-#endif
 
 	/* Nuke the vnodes for any open instances (calls close). */
 	mn = self->dv_unit * USB_MAX_ENDPOINTS;
 	vdevgone(maj, mn, mn + USB_MAX_ENDPOINTS - 1, VCHR);
 
-	usbd_add_drv_event(USB_EVENT_DRIVER_DETACH, sc->sc_udev, sc->sc_dev);
+//	usbd_add_drv_event(USB_EVENT_DRIVER_DETACH, sc->sc_udev, sc->sc_dev);
 
 	return (0);
 }
@@ -776,7 +769,6 @@ ugen_activate(struct device *self, enum devact act)
 	}
 	return (0);
 }
-#endif
 
 static void
 ugenintr(usbd_xfer_handle xfer, usbd_private_handle addr, usbd_status status)

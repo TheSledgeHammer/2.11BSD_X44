@@ -32,20 +32,23 @@
 #include <sys/malloc.h>
 #include <sys/lock.h>
 #include <sys/rwlock.h>
+#include <sys/wait.h>
+#include <sys/queue.h>
 #include "devel/sys/kthread.h"
 
 #include <vm/include/vm_param.h>
 
-extern struct kthread 			kthread0;
-struct kthread *curkthread = 	&kthread0;
+extern struct kthread 		 kthread0;
+struct kthread *curkthread = &kthread0;
+int	kthread_create_now;
 
 void
 kthread_init(p, kt)
-	register struct proc  *p;
+	register struct proc  	*p;
 	register struct kthread *kt;
 {
-	register_t rval[2];
-	int error;
+	register_t 	rval[2];
+	int 		error;
 
 	/* initialize current kthread0 from proc overseer */
 	&kthread0 = &proc0->p_kthreado;
@@ -61,104 +64,119 @@ kthread_init(p, kt)
     allkthread = (struct kthread *) kt;
     kt->kt_prev = (struct kthread **)&allkthread;
 	tgrphash[0] = &pgrp0;
+	p->p_kthreado = kt;
 
-    /* Set kthread to idle & waiting */
-    kt->kt_stat |= KT_SIDL | KT_SWAIT | KT_SREADY;
+	/* give the kthread the same creds as the initial thread */
+	kt->kt_ucred = p->p_ucred;
+	crhold(kt->kt_ucred);
 
     /* setup kthread locks */
     kthread_lock_init(kthread_lkp, kt);
     kthread_rwlock_init(kthread_rwl, kt);
 
-	/* kthread overseer */
-	if(newproc(0))
-		panic("kthread overseer creation");
-	if(rval[1])
-		kt = p->p_kthreado;
-		kt->kt_flag |= KT_INMEM | KT_SYSTEM;
-
-		/* initialize kthreadpools */
-		kthreadpools_init();
+    /* initialize kthreadpools */
+    kthreadpools_init();
 }
 
-/* create new kthread */
+/*
+ * Fork a kernel thread.  Any process can request this to be done.
+ * The VM space and limits, etc. will be shared with proc0.
+ */
 int
-kthread_create(kt)
-	struct kthread *kt;
+kthread_create(func, arg, newpp, name)
+	void (*func)(void *);
+	void *arg;
+	struct proc **newpp;
+	const char *name;
 {
-	struct kthread *newthread;
-	register_t rval[2];
+	struct proc *p;
+	register_t 	rval[2];
+	int 		error;
 
-	if(newkthread(0)) {
-		panic("kthread creation");
+	/* First, create the new process. */
+	error = newproc(0);
+	if(__predict_false(error != 0)) {
+		panic("kthread_create");
+		return (error);
 	}
 
 	if(rval[1]) {
-		newthread = kt;
-		newthread->kt_flag |= KT_INMEM | KT_SYSTEM;
+		p->p_flag |= P_SYSTEM | P_NOCLDWAIT;
+		p->p_kthreado->kt_flag |= KT_INMEM | KT_SYSTEM;
 	}
 
+	/* Name it as specified. */
+	bcopy(p->p_kthreado->kt_comm, name, MAXCOMLEN);
+
+	if (newpp != NULL) {
+		*newpp = p;
+	}
 	return (0);
 }
 
-int
-kthread_join(kthread_t kt)
+/*
+ * Cause a kernel thread to exit.  Assumes the exiting thread is the
+ * current context.
+ */
+void
+kthread_exit(ecode)
+	int ecode;
 {
-	return (0);
+	/*
+	 * XXX What do we do with the exit code?  Should we even bother
+	 * XXX with it?  The parent (proc0) isn't going to do much with
+	 * XXX it.
+	 */
+	if (ecode != 0) {
+		printf("WARNING: thread `%s' (%d) exits with status %d\n", curproc->p_comm, curproc->p_pid, ecode);
+	}
+	exit(W_EXITCODE(ecode, 0));
+
+	for (;;);
 }
 
-int
-kthread_cancel(kthread_t kt)
-{
-	return (0);
-}
+struct kthread_queue {
+	SIMPLEQ_ENTRY(kthread_queue) 	kq_q;
+	void 							(*kq_func)(void *);
+	void 							*kq_arg;
+};
 
-int
-kthread_exit(rv)
-	int rv;
-{
-	register struct kthread *kt;
-	register struct proc 	*p;
-	register struct vmspace *vm;
+SIMPLEQ_HEAD(, kthread_queue) kthread_queue = SIMPLEQ_HEAD_INITIALIZER(kthread_queue);
 
-	if(kt->kt_tid == 1) {
-		panic("init died (signal %d, exit %d)", WTERMSIG(rv), WEXITSTATUS(rv));
+void
+kthread_create_deferred(void (*func)(void *), void *arg)
+{
+	struct kthread_queue *kq;
+	if (kthread_create_now) {
+		(*func)(arg);
+		return;
 	}
 
-	MALLOC(kt->kt_ru, struct rusage *, sizeof(struct rusage), M_ZOMBIE, M_WAITOK);
-	kt = p->p_kthreado;
-	kt->kt_flag &= ~(KT_TRACED | KT_PPWAIT | KT_SULOCK);
-	kt->kt_sigignore = ~0;
-	kt->kt_sigacts = 0;
-	untimeout(realitexpire, (caddr_t)kt);
-
-	fdfree(kt->kt_procp);
-
-	vm = kt->kt_vmspace;
-	if (vm->vm_refcnt == 1) {
-		(void) vm_map_remove(&vm->vm_map, VM_MIN_ADDRESS, VM_MAXUSER_ADDRESS);
+	kq = malloc(sizeof *kq, M_TEMP, M_NOWAIT | M_ZERO);
+	if (kq == NULL) {
+		panic("unable to allocate kthread_queue");
 	}
 
-	if (kt->kt_tid == 1)
-		panic("init died");
-	if (*kt->kt_prev == kt->kt_nxt)		/* off allkthread queue */
-		kt->kt_nxt->kt_prev = kt->kt_prev;
-	if (kt->kt_nxt == zombkthread)		/* onto zombkthread */
-		kt->kt_nxt->kt_prev = &kt->kt_nxt;
-	kt->kt_prev = &zombkthread;
-	zombkthread = kt;
-	kt->kt_stat = KT_SZOMB;
+	kq->kq_func = func;
+	kq->kq_arg = arg;
 
-	LIST_REMOVE(kt->kt_procp, p_hash);
-
-	//calcru(p, &p->p_ru->ru_utime, &p->p_ru->ru_stime, NULL);
-	ruadd(&kt->kt_procp->p_ru, &u->u_cru);
-
-	curkthread = NULL;
-	return (0);
+	SIMPLEQ_INSERT_TAIL(&kthread_queue, kq, kq_q);
 }
 
+void
+kthread_run_deferred_queue(void)
+{
+	struct kthread_queue *kq;
 
+	/* No longer need to defer kthread creation. */
+	kthread_create_now = 1;
 
+	while ((kq = SIMPLEQ_FIRST(&kthread_queue)) != NULL) {
+		SIMPLEQ_REMOVE_HEAD(&kthread_queue, kq_q);
+		(*kq->kq_func)(kq->kq_arg);
+		free(kq, M_TEMP, sizeof(*kq));
+	}
+}
 
 /* Threadpool's FIFO Queue (IPC) */
 void

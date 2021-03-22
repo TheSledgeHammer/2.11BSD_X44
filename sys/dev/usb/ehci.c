@@ -833,7 +833,6 @@ ehci_poll(struct usbd_bus *bus)
 		ehci_intr1(sc);
 }
 
-#if defined(__NetBSD__) || defined(__OpenBSD__)
 int
 ehci_detach(struct ehci_softc *sc, int flags)
 {
@@ -847,10 +846,12 @@ ehci_detach(struct ehci_softc *sc, int flags)
 
 	usb_uncallout(sc->sc_tmo_pcd, ehci_pcd_enable, sc);
 
+#if defined(__NetBSD__) || defined(__OpenBSD__)
 	if (sc->sc_powerhook != NULL)
 		powerhook_disestablish(sc->sc_powerhook);
 	if (sc->sc_shutdownhook != NULL)
 		shutdownhook_disestablish(sc->sc_shutdownhook);
+#endif
 
 	usb_delay_ms(&sc->sc_bus, 300); /* XXX let stray task complete */
 
@@ -878,7 +879,6 @@ ehci_activate(struct device *self, enum devact act)
 	}
 	return (rv);
 }
-#endif
 
 /*
  * Handle suspend/resume.

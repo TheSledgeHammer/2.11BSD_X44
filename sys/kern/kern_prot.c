@@ -428,3 +428,15 @@ crdup(cr)
 	newcr->cr_ref = 1;
 	return (newcr);
 }
+
+/*
+ * Increment the reference count of a cred structure.
+ * Returns the passed structure.
+ */
+struct ucred *
+crhold(cr)
+	struct ucred *cr;
+{
+	cr->cr_ref++;
+	return (cr);
+}

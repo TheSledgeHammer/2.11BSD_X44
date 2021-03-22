@@ -222,22 +222,11 @@ pciprint(aux, pnp)
 }
 
 int
-#ifdef __BROKEN_INDIRECT_CONFIG
-pcisubmatch(parent, match, aux)
-#else
 pcisubmatch(parent, cf, aux)
-#endif
 	struct device *parent;
-#ifdef __BROKEN_INDIRECT_CONFIG
-	void *match;
-#else
 	struct cfdata *cf;
-#endif
 	void *aux;
 {
-#ifdef __BROKEN_INDIRECT_CONFIG
-	struct cfdata *cf = match;
-#endif
 	struct pci_attach_args *pa = aux;
 
 	if ((cf->cf_loc[PCICF_DEV] != PCI_UNK_DEV) && (cf->cf_loc[PCICF_DEV] != pa->pa_device))
@@ -245,7 +234,7 @@ pcisubmatch(parent, cf, aux)
 	if ((cf->cf_loc[PCICF_FUNCTION] != PCI_UNK_FUNCTION) &&
 	    (cf->cf_loc[PCICF_FUNCTION] != pa->pa_function))
 		return 0;
-	return ((*cf->cf_driver->cd_match)(parent, cf, aux));
+	return (config_match(parent, cf, aux));
 }
 
 void

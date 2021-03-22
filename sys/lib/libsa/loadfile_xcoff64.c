@@ -28,4 +28,4 @@
 
 #define	XCOFFSIZE 64
 
-#include "../lib/libsa/loadfile_xcoff32.c"
+#include "loadfile_xcoff32.c"

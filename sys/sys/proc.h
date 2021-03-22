@@ -68,6 +68,7 @@ struct	proc {
     caddr_t	            p_wchan;		/* event process is awaiting */
 	caddr_t	            p_wmesg;	 	/* Reason for sleep. */
 	u_int				p_swtime;	 	/* Time swapped in or out. */
+	struct callout 		p_tsleep_ch;	/* callout for tsleep */
 
     struct	itimerval   p_realtimer;	/* Alarm timer. */
     struct	timeval     p_rtime;	    /* Real time. */
@@ -137,8 +138,8 @@ struct	proc {
 	struct  k_rusage    p_kru;			/* exit information kernel */
 
 	//struct gsched		*p_gsched;		/* global scheduler */
-	//struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
-	//char				*p_name;		/* (: name, optional */
+	struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
+	char				*p_name;		/* (: name, optional */
 };
 #define	p_session		p_pgrp->pg_session
 #define	p_pgid			p_pgrp->pg_id
@@ -193,49 +194,45 @@ struct emul {
 };
 
 /* stat codes */
-#define	SSLEEP	1			/* awaiting an event */
-#define	SWAIT	2			/* (abandoned state) */
-#define	SRUN	3			/* running */
-#define	SIDL	4			/* intermediate state in process creation */
-#define	SZOMB	5			/* intermediate state in process termination */
-#define	SSTOP	6			/* process being traced */
+#define	SSLEEP		1			/* awaiting an event */
+#define	SWAIT		2			/* (abandoned state) */
+#define	SRUN		3			/* running */
+#define	SIDL		4			/* intermediate state in process creation */
+#define	SZOMB		5			/* intermediate state in process termination */
+#define	SSTOP		6			/* process being traced */
 
 /* flag codes */
-#define	P_CONTROLT	0x00002	/* Has a controlling terminal. */
-
-#define	P_SLOAD		0x0001	/* in core */
-#define	P_SSYS		0x0002	/* swapper or pager process */
-#define	P_SLOCK		0x0004	/* process being swapped out */
-#define	P_SSWAP		0x0008	/* save area flag */
-#define	P_TRACED	0x0010	/* process is being traced */
-#define	P_WAITED	0x0020	/* another tracing flag */
-#define	P_SULOCK	0x0040	/* user settable lock in core */
-#define	P_SINTR		0x0080	/* sleeping interruptibly */
-#define	P_SVFORK	0x0100	/* process resulted from vfork() */
-#define	P_SVFPRNT	0x0200	/* parent in vfork, waiting for child */
-#define	P_SVFDONE	0x0400	/* parent has released child in vfork */
-				/*  0x0800	/* unused */
-#define	P_TIMEOUT	0x1000	/* tsleep timeout expired */
-#define	P_NOCLDSTOP	0x2000	/* no SIGCHLD signal to parent */
-#define	P_SELECT	0x4000	/* selecting; wakeup/waiting danger */
-			 	/*  0x8000	/* unused */
-
-#define	P_PPWAIT	0x00010	/* Parent is waiting for child to exec/exit. */
-#define	P_PROFIL	0x00020	/* Has started profiling. */
-#define	P_SUGID		0x00100	/* Had set id privileges since last exec. */
-#define	P_TRACED	0x00800	/* Debugged process being traced. */
-#define P_EXEC		0x04000	/* Process called exec. */
-#define	P_SYSTEM	0x00200	/* System proc: no sigs, stats or swapping. */
-#define	P_INMEM		0x00004	/* Loaded into memory. */
-#define P_INEXEC	0x100000/* Process is exec'ing and cannot be traced */
+#define	P_SLOAD		0x0000001	/* in core */
+#define	P_SSYS		0x0000002	/* swapper or pager process */
+#define	P_SLOCK		0x0000004	/* process being swapped out */
+#define	P_SSWAP		0x0000008	/* save area flag */
+#define	P_TRACED	0x0000010	/* process is being traced */
+#define	P_WAITED	0x0000020	/* another tracing flag */
+#define	P_SULOCK	0x0000040	/* user settable lock in core */
+#define	P_SINTR		0x0000080	/* sleeping interruptibly */
+#define	P_SVFORK	0x0000100	/* process resulted from vfork() */
+#define	P_SVFPRNT	0x0000200	/* parent in vfork, waiting for child */
+#define	P_SVFDONE	0x0000400	/* parent has released child in vfork */
+#define	P_CONTROLT	0x0000800	/* Has a controlling terminal. */
+#define	P_TIMEOUT	0x0001000	/* tsleep timeout expired */
+#define	P_NOCLDWAIT	0x0002000	/* No zombies if child dies */
+#define	P_SELECT	0x0004000	/* selecting; wakeup/waiting danger */
+#define	P_PPWAIT	0x0008000	/* Parent is waiting for child to exec/exit. */
+#define	P_PROFIL	0x0010000	/* Has started profiling. */
+#define	P_SUGID		0x0020000	/* Had set id privileges since last exec. */
+#define	P_TRACED	0x0040000	/* Debugged process being traced. */
+#define P_EXEC		0x0080000	/* Process called exec. */
+#define	P_SYSTEM	0x0100000	/* System proc: no sigs, stats or swapping. */
+#define	P_INMEM		0x0200000	/* Loaded into memory. */
+#define P_INEXEC	0x0400000	/* Process is exec'ing and cannot be traced */
 
 /* Should probably be changed into a hold count (They have. -DG). */
-#define	P_NOSWAP	0x08000	/* Another flag to prevent swap out. */
-#define	P_PHYSIO	0x10000	/* Doing physical I/O. */
-#define	P_WEXIT		0x20000
-#define P_SWAPPING	0x40000
+#define	P_NOSWAP	0x0800000	/* Another flag to prevent swap out. */
+#define	P_PHYSIO	0x1000000	/* Doing physical I/O. */
+#define	P_WEXIT		0x2000000
+#define P_SWAPPING	0x4000000
 
-#define	S_DATA		0		/* specified segment */
+#define	S_DATA		0			/* specified segment */
 #define	S_STACK		1
 
 #ifdef KERNEL

@@ -363,6 +363,14 @@ struct xcoff64_ldrsyms {
 #endif
 #endif
 
+#if defined(XCOFFSIZE)
+#define	CONCAT(x,y)			__CONCAT(x,y)
+#define	XCOFFNAME(x)		CONCAT(xcoff,CONCAT(XCOFFSIZE,CONCAT(_,x)))
+#define	XCOFFNAME2(x,y)		CONCAT(x,CONCAT(_xcoff,CONCAT(XCOFFSIZE,CONCAT(_,y))))
+#define	XCOFFNAMEEND(x)		CONCAT(x,CONCAT(_xcoff,XCOFFSIZE))
+#define	XCOFFDEFNNAME(x)	CONCAT(XCOFF,CONCAT(XCOFFSIZE,CONCAT(_,x)))
+#endif
+
 #if defined(XCOFFSIZE) && (XCOFFSIZE == 32)
 #define xcoff_filehdr		xcoff32_filehdr
 #define xcoff_aouthdr		xcoff32_aouthdr

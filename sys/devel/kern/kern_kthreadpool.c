@@ -112,7 +112,7 @@ kthreadpool_create(struct kthreadpool *ktpool, u_char pri)
 
 	ktflags = 0;
 	if(pri) {
-		error = kthread_create(p);
+		error = kthread_create(&kthreadpool_overseer_thread, &ktpool->ktp_overseer, &p, "pooloverseer/%d@%d");
 	}
 	if(error) {
 		goto fail;
@@ -237,10 +237,6 @@ kthreadpool_overseer_thread(void *arg)
 	int ktflags;
 	int error;
 
-
-	KASSERT((ktpool->ktp_cpu == NULL) || (ktpool->ktp_cpu == curcpu));
-	KASSERT((ktpool->ktp_cpu == NULL) || (curproc->p_flag & KT_BOUND));
-
 	/* Wait until we're initialized.  */
 	simple_lock(&ktpool->ktp_lock);
 
@@ -266,7 +262,7 @@ kthreadpool_overseer_thread(void *arg)
 			ktflags |= KTHREAD_MPSAFE;
 			if (ktpool->ktp_pri < PUSER)
 				ktflags |= KTHREAD_TS;
-			error = kthread_create(ktpool->ktp_pri, ktflags, ktpool->ktp_cpu, &kthreadpool_thread, kthread, &p, "poolthread/%d@%d", (ktpool->ktp_cpu ? cpu_index(ktpool->ktp_cpu) : -1), (int)ktpool->ktp_pri);
+			error = kthread_create(&kthreadpool_thread, kthread, &p, "poolthread/%d@%d");
 
 			simple_lock(&ktpool->ktp_lock);
 			if (error) {
@@ -288,7 +284,6 @@ kthreadpool_overseer_thread(void *arg)
 		struct threadpool_job *const job = TAILQ_FIRST(&ktpool->ktp_jobs);
 
 		TAILQ_REMOVE(&ktpool->ktp_jobs, job, job_entry);
-
 
 		/*
 		 * Take an extra reference on the job temporarily so that
