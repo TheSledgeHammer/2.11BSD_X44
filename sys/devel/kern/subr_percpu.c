@@ -48,7 +48,6 @@
  */
 
 #include <sys/cdefs.h>
-/* __FBSDID("$FreeBSD$"); */
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -59,18 +58,8 @@
 #include <devel/sys/percpu.h>
 #include <devel/sys/malloctypes.h>
 
-struct dpcpuhead;
-TAILQ_HEAD(dpcpuhead, dpcpu_free);
-struct dpcpu_free {
-	uintptr_t				df_start;
-	uintptr_t				df_end;
-	int						df_len;
-	TAILQ_ENTRY(dpcpu_free) df_link;
-};
+#include <machine/cpu.h>
 
-static struct dpcpuhead dpcpu_head = TAILQ_HEAD_INITIALIZER(dpcpu_head);
-static struct lock_object dpcpu_lock;
-uintptr_t dpcpu_off[NCPUS];
 struct percpu *cpuid_to_percpu[NCPUS];
 struct cpuhead cpuhead = LIST_HEAD_INITIALIZER(cpuhead);
 
@@ -84,156 +73,29 @@ percpu_init(pcpu, cpuid, size)
 	int cpuid;
 	size_t size;
 {
+	percpu_malloc(pcpu, size);
 	bzero(pcpu, size);
 	KASSERT(cpuid >= 0 && cpuid < NCPUS ("percpu_init: invalid cpuid %d", cpuid));
+
 	pcpu->pc_cpuid = cpuid;
+	pcpu->pc_cpumask = 1 << cpuid;
+
 	cpuid_to_percpu[cpuid] = pcpu;
 	LIST_INSERT_HEAD(&cpuhead, pcpu, pc_entry);
-	cpu_percpu_init(pcpu, cpuid, size);
+	cpu_percpu_init(pcpu, cpuid, size);				/* TODO: no method */
 }
 
-/* runs in mp_machdep.c (init_secondary) */
+/* allocate percpu structure */
 void
-dpcpu_init(dpcpu, cpuid)
-	void *dpcpu;
-	int cpuid;
-{
+percpu_malloc(pcpu, size)
 	struct percpu *pcpu;
-
-	pcpu = percpu_find(cpuid);
-	pcpu->pc_dynamic = (uintptr_t)dpcpu - DPCPU_START;
-
-	/*
-	 * Initialize defaults from our linker section.
-	 */
-	memcpy(dpcpu, (void *)DPCPU_START, DPCPU_BYTES);
-
-	/*
-	 * Place it in the global percpu offset array.
-	 */
-	dpcpu_off[cpuid] = pcpu->pc_dynamic;
-}
-
-/* runs via sysinit */
-static void
-dpcpu_startup(void *dummy)
+	size_t size;
 {
-	struct dpcpu_free *df;
-
-	df = malloc(sizeof(*df), M_PERCPU, M_WAITOK | M_ZERO);
-	df->df_start =  DPCPU_START;
-	df->df_len = DPCPU_MODMIN;
-	TAILQ_INSERT_HEAD(&dpcpu_head, df, df_link);
-	simple_lock_init(&dpcpu_lock, "dpcpu_lock");
-}
-
-/*
- * First-fit extent based allocator for allocating space in the per-cpu
- * region reserved for modules.  This is only intended for use by the
- * kernel linkers to place module linker sets.
- */
-void *
-dpcpu_alloc(int size)
-{
-	struct dpcpu_free 	*df;
-	void 				*s;
-
-	s = NULL;
-	size = roundup2(size, sizeof(void*));
-	simple_lock(&dpcpu_lock);
-	TAILQ_FOREACH(df, &dpcpu_head, df_link)	{
-		if (df->df_len < size)
-			continue;
-		if (df->df_len == size) {
-			s = (void*) df->df_start;
-			TAILQ_REMOVE(&dpcpu_head, df, df_link);
-			free(df, M_PERCPU);
-			break;
-		}
-		s = (void*) df->df_start;
-		df->df_len -= size;
-		df->df_start = df->df_start + size;
-		break;
-	}
-	simple_unlock(&dpcpu_lock);
-
-	return (s);
-}
-
-/*
- * Free dynamic per-cpu space at module unload time.
- */
-void
-dpcpu_free(void *s, int size)
-{
-	struct dpcpu_free *df;
-	struct dpcpu_free *dn;
-	uintptr_t start;
-	uintptr_t end;
-
-	size = roundup2(size, sizeof(void *));
-	start = (uintptr_t)s;
-	end = start + size;
-	/*
-	 * Free a region of space and merge it with as many neighbors as
-	 * possible.  Keeping the list sorted simplifies this operation.
-	 */
-	simple_lock(&dpcpu_lock);
-	TAILQ_FOREACH(df, &dpcpu_head, df_link)	{
-		if (df->df_start > end)
-			break;
-		/*
-		 * If we expand at the end of an entry we may have to
-		 * merge it with the one following it as well.
-		 */
-		if (df->df_start + df->df_len == start) {
-			df->df_len += size;
-			dn = TAILQ_NEXT(df, df_link);
-			if (df->df_start + df->df_len == dn->df_start) {
-				df->df_len += dn->df_len;
-				TAILQ_REMOVE(&dpcpu_head, dn, df_link);
-				free(dn, M_PERCPU);
-			}
-			simple_unlock(&dpcpu_lock);
-			return;
-		}
-		if (df->df_start == end) {
-			df->df_start = start;
-			df->df_len += size;
-			simple_unlock(&dpcpu_lock);
-			return;
-		}
-	}
-	dn = malloc(sizeof(*df), M_PERCPU, M_WAITOK | M_ZERO);
-	dn->df_start = start;
-	dn->df_len = size;
-	if (df) {
-		TAILQ_INSERT_BEFORE(df, dn, df_link);
-	} else {
-		TAILQ_INSERT_TAIL(&dpcpu_head, dn, df_link);
-	}
-	simple_unlock(&dpcpu_lock);
-}
-
-/*
- * Initialize the per-cpu storage from an updated linker-set region.
- */
-void
-dpcpu_copy(void *s, int size)
-{
-#ifdef SMP
-	uintptr_t dpcpu;
-	int i;
-
-	CPU_FOREACH(i) {
-		dpcpu = dpcpu_off[i];
-		if (dpcpu == 0)
-			continue;
-		memcpy((void *)(dpcpu + (uintptr_t)s), s, size);
-	}
-#else
-	memcpy((void *)(dpcpu_off[0] + (uintptr_t)s), s, size);
-#endif
+	pcpu = malloc(sizeof(*pcpu), M_PERCPU, M_WAITOK | M_ZERO);
+	percpu_extent(pcpu, PERCPU_START, PERCPU_END);
+	percpu_extent_region(pcpu);
+	size = roundup(size, PERCPU_END);
+	percpu_extent_subregion(pcpu, size);
 }
 
 /*
@@ -245,7 +107,6 @@ percpu_destroy(pcpu)
 {
 	LIST_REMOVE(pcpu, pc_entry);
 	cpuid_to_percpu[pcpu->pc_cpuid] = NULL;
-	dpcpu_off[pcpu->pc_cpuid] = 0;
 }
 
 /*
@@ -256,4 +117,93 @@ percpu_find(cpuid)
 	int cpuid;
 {
 	return (cpuid_to_percpu[cpuid]);
+}
+
+/* allocate a percpu extent structure */
+void
+percpu_extent(pcpu, start, end)
+	struct percpu 		*pcpu;
+	u_long				start, end;
+{
+	pcpu->pc_start = start;
+	pcpu->pc_end = end;
+	pcpu->pc_extent = extent_create("percpu_extent_storage", start, end, M_PERCPU, NULL, NULL, EX_WAITOK | EX_FAST);
+}
+
+/* allocate a percpu extent region */
+void
+percpu_extent_region(pcpu)
+	struct percpu *pcpu;
+{
+	register struct extent *ext;
+	int error;
+
+	ext = pcpu->pc_extent;
+	if(ext == NULL) {
+		panic("percpu_extent_region: no extent");
+		return;
+	}
+	error = extent_alloc_region(ext, pcpu->pc_start, pcpu->pc_end, EX_WAITOK | EX_MALLOCOK | EX_FAST);
+	if (error != 0) {
+		percpu_extent_free(ext, pcpu->pc_start, pcpu->pc_end, EX_WAITOK | EX_MALLOCOK | EX_FAST);
+		panic("percpu_extent_region");
+	} else {
+		printf("percpu_extent_region: successful");
+	}
+}
+
+/* allocate a percpu extent subregion */
+void
+percpu_extent_subregion(pcpu, size)
+	struct percpu 	*pcpu;
+	size_t 			size;
+{
+	register struct extent *ext;
+	int error;
+
+	ext = pcpu->pc_extent;
+	if(ext == NULL) {
+		panic("percpu_extent_subregion: no extent");
+		return;
+	}
+	error = extent_alloc(ext, size, EX_NOALIGN, EX_NOBOUNDARY, EX_WAITOK | EX_MALLOCOK | EX_FAST, pcpu->pc_dynamic);
+	if (error != 0) {
+		percpu_extent_free(ext, pcpu->pc_start, pcpu->pc_end, EX_WAITOK | EX_MALLOCOK | EX_FAST);
+		panic("percpu_extent_subregion");
+	}  else {
+		printf("percpu_extent_subregion: successful");
+	}
+}
+
+/* free a percpu extent */
+void
+percpu_extent_free(pcpu, start, end, flags)
+	struct percpu *pcpu;
+	u_long	start, end;
+	int flags;
+{
+	register struct extent *ext;
+	int error;
+
+	ext = pcpu->pc_extent;
+	if(ext == NULL) {
+		printf("percpu_extent_free: no extent to free");
+	}
+	error = extent_free(ext, start, end, flags);
+	if (error != 0) {
+		panic("percpu_extent_free: failed to free extent region");
+	} else {
+		printf("percpu_extent_free: successfully freed");
+	}
+}
+
+/* free percpu and destroy all percpu extents */
+void
+percpu_free(pcpu)
+	struct percpu *pcpu;
+{
+	if(pcpu->pc_extent != NULL) {
+		extent_destroy(pcpu->pc_extent);
+	}
+	free(pcpu, M_PERCPU);
 }

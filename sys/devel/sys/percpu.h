@@ -39,42 +39,24 @@
 #include <sys/queue.h>
 #include <sys/resource.h>
 
-#define	DPCPU_SETNAME		"set_pcpu"
-#define	DPCPU_SYMPREFIX		"pcpu_entry_"
+#include <machine/param.h>
 
-/*
- * Define a set for pcpu data.
- */
-extern uintptr_t *__start_set_pcpu;
-__GLOBL(__start_set_pcpu);
-extern uintptr_t *__stop_set_pcpu;
-__GLOBL(__stop_set_pcpu);
-
-/*
- * Array of dynamic percpu base offsets.  Indexed by id.
- */
-extern uintptr_t 		dpcpu_off[];
-
-/*
- * Convenience defines.
- */
-#define	DPCPU_QUANTUM_SIZE	(ALIGNBYTES + 1)
-#define	DPCPU_SIZE			2048
-
-/*
- * Declaration and definition.
- */
-#define	DPCPU_NAME(n)	pcpu_entry_##n
-#define	DPCPU_DECLARE(t, n)	extern t DPCPU_NAME(n)
+#define PERCPU_START 	(ALIGNBYTES + 1)
+#define PERCPU_END 		2048
 
 struct cpuhead;
 LIST_HEAD(cpuhead, percpu);
 struct percpu {
 	u_int				pc_cpuid;		/* This cpu number */
+	u_int				pc_cpumask;		/* This cpu mask */
 	LIST_ENTRY(percpu) 	pc_entry;
 
-	struct extent		*pc_extent;		/* Dynamic storage alloctor */
 	uintptr_t			pc_dynamic;		/* Dynamic per-cpu data area */
+
+	struct extent		*pc_extent;		/* Dynamic storage alloctor */
+	u_long 				pc_start;		/* start of per-cpu extent region */
+	u_long 				pc_end;			/* end of per-cpu extent region */
+	size_t				pc_size;		/* size of per-cpu extent region */
 };
 
 extern struct cpuhead 	cpuhead;
@@ -86,12 +68,13 @@ extern struct percpu 	*cpuid_to_percpu[];
  */
 void			cpu_percpu_init(struct percpu *pcpu, int cpuid, size_t size);
 
-void			*dpcpu_alloc(int size);
-void			dpcpu_copy(void *s, int size);
-void			dpcpu_free(void *s, int size);
-void			dpcpu_init(void *dpcpu, int cpuid);
-void			percpu_destroy(struct percpu *pcpu);
-struct percpu 	*percpu_find(u_int cpuid);
-void			percpu_init(struct percpu *pcpu, int cpuid, size_t size);
-
+void			percpu_init(struct percpu *, int, size_t);
+void			percpu_malloc(struct percpu *, size_t);
+void			percpu_free(struct percpu *);
+void			percpu_destroy(struct percpu *);
+struct percpu 	*percpu_find(int);
+void			percpu_extent(struct percpu *, u_long, u_long);
+void			percpu_extent_region(struct percpu *);
+void			percpu_extent_subregion(struct percpu *, size_t);
+void			percpu_extent_free(struct percpu *, u_long, u_long, int);
 #endif /* _SYS_PERCPU_H_ */

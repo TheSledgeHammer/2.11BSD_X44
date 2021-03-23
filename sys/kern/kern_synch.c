@@ -26,7 +26,6 @@
 
 struct proc 	*slpque[SQSIZE];
 
-u_char			curpriority;			/* usrpri of curproc */
 int				lbolt;					/* once a second sleep address */
 
 /*
@@ -77,8 +76,6 @@ schedcpu(arg)
 		if (a > 255)
 			a = 255;
 		p->p_cpu = a;
-		//p->p_estcpu = min(p->p_cpu, UCHAR_MAX);
-		//resetpri(p);
 		if (p->p_pri >= PUSER) {
 			setpri(p);
 			if((p != curproc) &&
@@ -123,7 +120,6 @@ updatepri(p)
 		a = 255;
 	p->p_cpu = a;
 	(void) setpri(p);
-	//(void) resetpri(p);
 }
 
 /*
@@ -208,7 +204,7 @@ tsleep(ident, priority, timo)
 	u->u_ru.ru_nvcsw++;
 	swtch();
 resume:
-	curpriority = p->p_usrpri;
+	curpri = p->p_usrpri;
 	splx(s);
 	p->p_flag &= ~P_SINTR;
 	if	(p->p_flag & P_TIMEOUT) {
@@ -638,16 +634,13 @@ rqinit()
  * than that of the current process.
  */
 void
-resetpri(p)
+reschedule(p)
 	register struct proc *p;
 {
-	register unsigned int newpri;
-
-	newpri = PUSER + p->p_estcpu / 4 + 2 * p->p_nice;
-	newpri = min(newpri, MAXPRI);
+	register int newpri;
+	newpri = setpri(p);
 	p->p_usrpri = newpri;
-	if (newpri < curpriority) {
-		updatepri(p);
-		//need_resched();
+	if(newpri < curpri) {
+		need_resched();
 	}
 }

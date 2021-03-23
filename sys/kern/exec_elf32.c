@@ -66,7 +66,7 @@
 #include <sys/cdefs.h>
 
 #ifndef ELFSIZE
-#define	ELFSIZE		32
+#define	ELFSIZE 	32
 #endif
 
 #include <sys/param.h>

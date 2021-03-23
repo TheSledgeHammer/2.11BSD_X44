@@ -249,11 +249,12 @@ cfs_schedcpu(p)
 				cpticks++;
 				/* Test if deadline was reached before end of scheduling period */
 				if(cfs->cfs_cpticks == cpticks) {
-					/* deadline reached before completion, wants rescheduling */
-					want_resched(p);
 					/* test if time doesn't equal the base scheduling period */
 					if(cfs->cfs_time != cfs->cfs_bsched) {
 						goto runout;
+						break;
+					} else {
+						goto out;
 						break;
 					}
 				} else if(cfs->cfs_cpticks != cpticks) {
@@ -272,6 +273,18 @@ cfs_schedcpu(p)
 		}
 	}
 
+out:
+	/* update cfs variables */
+	cfs_update(p, cfs->cfs_priweight);
+	/* remove from cfs queue */
+	RB_REMOVE(gsched_cfs_rbtree, cfs->cfs_parent, p);
+	/* remove from run-queue */
+	remrq(p);
+	/* deadline reached before completion, reschedule */
+	reschedule(p);
+
+	return (0);
+
 runout:
 	/* update cfs variables */
 	cfs_update(p, cfs->cfs_priweight);
@@ -280,5 +293,5 @@ runout:
 	/* remove from run-queue */
 	remrq(p);
 
-	return (0);
+	return(0);
 }

@@ -62,7 +62,6 @@ extern char	runin;					/* scheduling flag */
 extern char	runout;					/* scheduling flag */
 extern int	runrun;					/* scheduling flag */
 extern char	curpri;					/* more scheduling */
-extern u_char curpriority;			/* priority of current process */
 
 /* system call args */
 #define	syscallarg(x)	union { x datum; register_t pad; }

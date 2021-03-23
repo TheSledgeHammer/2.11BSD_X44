@@ -40,11 +40,11 @@
 
 /* return slack/laxity time */
 u_char
-edf_slack(deadline, time, cost)
+edf_slack(deadline, timo, cost)
 	char deadline, cost;
-	u_char time;
+	u_char timo;
 {
-	return ((deadline - time) - cost);
+	return ((deadline - timo) - cost);
 }
 
 /* CPU Utilization per task (U <= 1) */
@@ -61,12 +61,12 @@ edf_utilization(release, cost)
 
 /* CPU Demand: total amount of cpu demand per task (H[t], t = time) */
 int
-edf_demand(time, deadline, release, cost)
-	char time, deadline, release, cost;
+edf_demand(timo, deadline, release, cost)
+	char timo, deadline, release, cost;
 {
-	u_char N = (time - deadline + release);
+	u_char N = (timo - deadline + release);
 	u_char H = (N * cost) / release;
-	if(H >= 0 && H <= time) {				/* test if can be scheduled */
+	if(H >= 0 && H <= timo) {				/* test if can be scheduled */
 		return (0);
 	}
 	return (1);
@@ -74,12 +74,12 @@ edf_demand(time, deadline, release, cost)
 
 /* CPU Workload: accumulative amount of cpu time for all tasks (W[t], t = time) */
 int
-edf_workload(time, release, cost)
-	char time, release, cost;
+edf_workload(timo, release, cost)
+	char timo, release, cost;
 {
-	u_char N = (time / release);
+	u_char N = (timo / release);
 	u_char W = (N * cost);
-	if(W >= 0 && W <= time) {				/* test if can be scheduled */
+	if(W >= 0 && W <= timo) {				/* test if can be scheduled */
 		return (0);
 	}
 	return (1);
@@ -157,7 +157,7 @@ edf_schedcpu(p)
 		return (0);
 	} else {
 		panic("edf_test failed");
-		want_resched(p);
+		reschedule(p);
 		error = P_EDFFAIL;
 	}
 	return (error);

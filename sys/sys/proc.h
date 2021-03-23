@@ -137,9 +137,10 @@ struct	proc {
 	struct  rusage    	p_ru;			/* exit information */
 	struct  k_rusage    p_kru;			/* exit information kernel */
 
-	//struct gsched		*p_gsched;		/* global scheduler */
 	struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
 	char				*p_name;		/* (: name, optional */
+
+	struct gsched		*p_gsched;		/* global scheduler */
 };
 #define	p_session		p_pgrp->pg_session
 #define	p_pgid			p_pgrp->pg_id
@@ -288,6 +289,7 @@ void		sleep (void *chan, int pri);
 int			tsleep (void *chan, int pri, char *wmesg, int timo);
 void		unsleep (struct proc *);
 void		wakeup (void *chan);
+void		reschedule(struct proc *);
 
 void		procinit (void);
 int 		chgproccnt (uid_t, int diff);

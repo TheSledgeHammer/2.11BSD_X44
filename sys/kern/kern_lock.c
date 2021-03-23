@@ -587,8 +587,6 @@ lock_object_try(lock)
 /*
  * Lock Holder:
  */
-//struct lock_holder *kernel_lockholder;
-
 static void
 lockholder_alloc(holder)
 	struct lock_holder *holder;
