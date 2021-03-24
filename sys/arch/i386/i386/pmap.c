@@ -148,26 +148,26 @@ int pmapvacflush = 0;
 #define	PVF_TOTAL	0x80
 #endif
 
-#define SYSTEM 		0xFE000000					/* virtual address of system start */
-#define SYSPDROFF 	0x3F8						/* Page dir index of System Base (i.e. KPTDI_FIRST) */
+#define SYSTEM 				0xFE000000					/* virtual address of system start */
+#define SYSPDROFF 			0x3F8						/* Page dir index of System Base (i.e. KPTDI_FIRST) */
 
 /*
  * PTmap is recursive pagemap at top of virtual address space.
  * Within PTmap, the page directory can be found (third indirection).
  */
-#define PDRPDROFF   0x3F7						/* Page dir index of Page dir */
-#define PTmap       ((pt_entry_t *)0xFDC00000)
-#define PTD         ((pd_entry_t *)0xFDFF7000)
-#define PTDpde      ((pt_entry_t *)0xFDFF7000+4*PDRPDROFF)
+#define PDRPDROFF   		0x3F7						/* Page dir index of Page dir */
+#define PTmap       		((pt_entry_t *)0xFDC00000)
+#define PTD         		((pd_entry_t *)0xFDFF7000)
+#define PTDpde      		((pt_entry_t *)0xFDFF7000+4*PDRPDROFF)
 
 /*
  * APTmap, APTD is the alternate recursive pagemap.
  * It's used when modifying another process's page tables.
  */
-#define APDRPDROFF  0x3FE						/* Page dir index of Page dir */
-#define APTmap      ((pt_entry_t *)0xFF800000)
-#define APTD        ((pd_entry_t *)0xFFBFE000)
-#define APTDpde     ((pt_entry_t *)0xFDFF7000+4*APDRPDROFF)
+#define APDRPDROFF  		0x3FE						/* Page dir index of Page dir */
+#define APTmap      		((pt_entry_t *)0xFF800000)
+#define APTD        		((pd_entry_t *)0xFFBFE000)
+#define APTDpde     		((pt_entry_t *)0xFDFF7000+4*APDRPDROFF)
 
 /*
  * Get PDEs and PTEs for user/kernel address space
@@ -482,18 +482,10 @@ pmap_bootstrap(firstaddr, loadaddr)
 	 * Count bootstrap data as being resident in case any of this data is
 	 * later unmapped (using pmap_remove()) and freed.
 	 */
-	if(kernel_pmap->pm_pdir != IdlePTD) {
-		kernel_pmap->pm_pdir = (SYSTEM + IdlePTD);
-	} else {
-		kernel_pmap->pm_pdir = IdlePTD;
-	}
+	kernel_pmap->pm_pdir = IdlePTD;
 
 #ifdef PMAP_PAE_COMP
-	if(kernel_pmap->pm_pdir != IdlePDPT) {
-		kernel_pmap->pm_pdir = (SYSTEM + IdlePDPT);
-	} else {
-		kernel_pmap->pm_pdir = IdlePDPT;
-	}
+	kernel_pmap->pm_pdir = IdlePDPT;
 #endif
 	simple_lock_init(&kernel_pmap->pm_lock, "kernel_pmap_lock");
 	kernel_pmap->pm_count = 1;

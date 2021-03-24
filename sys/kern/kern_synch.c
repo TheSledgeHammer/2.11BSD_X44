@@ -641,6 +641,6 @@ reschedule(p)
 	newpri = setpri(p);
 	p->p_usrpri = newpri;
 	if(newpri < curpri) {
-		need_resched();
+		need_resched(p);
 	}
 }

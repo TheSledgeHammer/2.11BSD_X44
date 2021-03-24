@@ -115,7 +115,6 @@
 #define KSTACK_PAGES 	4					/* Includes pcb! */
 #endif
 
-
 /*
  * Constants related to network buffer management.
  * MCLBYTES must be no larger than CLBYTES (the software page size), and,

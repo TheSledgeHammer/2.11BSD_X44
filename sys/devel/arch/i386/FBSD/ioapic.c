@@ -84,8 +84,8 @@ struct ioapic {
 	volatile ioapic_t 		*io_addr;			/* XXX: should use bus_space */
 	caddr_t 				io_paddr;
 	SIMPLEQ_ENTRY(ioapic) 	io_next;
-	struct device			*pci_dev;			/* matched pci device, if found */
-	struct resource 		*pci_wnd;			/* BAR 0, should be same or alias to io_paddr */
+	struct device			*io_dev;			/* matched pci device, if found */
+
 	struct ioapic_intsrc 	io_pins[0];
 };
 
@@ -181,8 +181,6 @@ _ioapic_eoi_source(struct intsrc *isrc, int locked)
 static u_int
 ioapic_read(volatile ioapic_t *apic, int reg)
 {
-
-	//mtx_assert(&icu_lock, MA_OWNED);
 	apic->ioregsel = reg;
 	return (apic->iowin);
 }
@@ -190,8 +188,6 @@ ioapic_read(volatile ioapic_t *apic, int reg)
 static void
 ioapic_write(volatile ioapic_t *apic, int reg, u_int val)
 {
-
-	//mtx_assert(&icu_lock, MA_OWNED);
 	apic->ioregsel = reg;
 	apic->iowin = val;
 }
@@ -242,8 +238,7 @@ ioapic_enable_source(struct intsrc *isrc)
 	ioapic_lock(&icu_lock);
 	if (intpin->io_masked) {
 		flags = intpin->io_lowreg & ~IOART_INTMASK;
-		ioapic_write(io->io_addr, IOAPIC_REDTBL_LO(intpin->io_intpin),
-		    flags);
+		ioapic_write(io->io_addr, IOAPIC_REDTBL_LO(intpin->io_intpin), flags);
 		intpin->io_masked = 0;
 	}
 	ioapic_unlock(&icu_lock);
@@ -259,8 +254,7 @@ ioapic_disable_source(struct intsrc *isrc, int eoi)
 	ioapic_lock(&icu_lock);
 	if (!intpin->io_masked && !intpin->io_edgetrigger) {
 		flags = intpin->io_lowreg | IOART_INTMSET;
-		ioapic_write(io->io_addr, IOAPIC_REDTBL_LO(intpin->io_intpin),
-		    flags);
+		ioapic_write(io->io_addr, IOAPIC_REDTBL_LO(intpin->io_intpin), flags);
 		intpin->io_masked = 1;
 	}
 
@@ -273,7 +267,6 @@ ioapic_disable_source(struct intsrc *isrc, int eoi)
 static void
 ioapic_eoi_source(struct intsrc *isrc)
 {
-
 	_ioapic_eoi_source(isrc, 0);
 }
 
@@ -300,13 +293,10 @@ ioapic_program_intpin(struct ioapic_intsrc *intpin)
 		low = ioapic_read(io->io_addr,
 		    IOAPIC_REDTBL_LO(intpin->io_intpin));
 		if ((low & IOART_INTMASK) == IOART_INTMCLR)
-			ioapic_write(io->io_addr,
-			    IOAPIC_REDTBL_LO(intpin->io_intpin),
-			    low | IOART_INTMSET);
+			ioapic_write(io->io_addr, IOAPIC_REDTBL_LO(intpin->io_intpin), low | IOART_INTMSET);
 #ifdef IOMMU
 		ioapic_unlock(&icu_lock);
-		iommu_unmap_ioapic_intr(io->io_apic_id,
-		    &intpin->io_remap_cookie);
+		iommu_unmap_ioapic_intr(io->io_apic_id, &intpin->io_remap_cookie);
 		ioapic_lock(&icu_lock);
 #endif
 		return;
@@ -381,9 +371,9 @@ ioapic_program_intpin(struct ioapic_intsrc *intpin)
 static void
 ioapic_reprogram_intpin(struct intsrc *isrc)
 {
-	mtx_lock_spin(&icu_lock);
+	ioapic_lock(&icu_lock);
 	ioapic_program_intpin((struct ioapic_intsrc *)isrc);
-	mtx_unlock_spin(&icu_lock);
+	ioapic_unlock(&icu_lock);
 }
 
 static int
@@ -582,8 +572,8 @@ ioapic_create(caddr_t addr, int32_t apic_id, int intbase)
 	numintr = ((value & IOART_VER_MAXREDIR) >> MAXREDIRSHIFT) + 1;
 	io = malloc(sizeof(struct ioapic) + numintr * sizeof(struct ioapic_intsrc), M_IOAPIC, M_WAITOK);
 	io->io_pic = ioapic_template;
-	io->pci_dev = NULL;
-	io->pci_wnd = NULL;
+	io->io_dev = NULL;
+	//io->io_wnd = NULL;
 	ioapic_lock(&icu_lock);
 	io->io_id = next_id++;
 	io->io_hw_apic_id = ioapic_read(apic, IOAPIC_ID) >> APIC_ID_SHIFT;

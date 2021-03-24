@@ -134,8 +134,7 @@ pcibattach(parent, self, aux)
 	 * callback.
 	 */
 	pci_devinfo(pa->pa_id, pa->pa_class, 0, devinfo);
-	printf("%s: %s (rev. 0x%02x)\n", self->dv_xname, devinfo,
-	    PCI_REVISION(pa->pa_class));
+	printf("%s: %s (rev. 0x%02x)\n", self->dv_xname, devinfo, PCI_REVISION(pa->pa_class));
 
 	set_pci_isa_bridge_callback(pcib_callback, self);
 }

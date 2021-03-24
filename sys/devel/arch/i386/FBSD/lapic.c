@@ -42,7 +42,7 @@
 #include <arch/i386/include/segments.h>
 #include <arch/i386/include/specialreg.h>
 
-#include <arch/i386/isa/isa_machdep.h>
+#include <devel/arch/i386/FBSD/pic.h>
 
 #include <devel/arch/i386/FBSD/apicreg.h>
 #include <devel/arch/i386/FBSD/apicvar.h>
@@ -848,4 +848,3 @@ lapic_timer_deadline(struct lapic *la)
 	}
 	wrmsr(MSR_TSC_DEADLINE, la->la_timer_period + rdtsc());
 }
-

@@ -565,17 +565,19 @@ isa_mem_free(t, bsh, size)
 }
 
 /**********************************************************************
- * bus.h dma interface entry points
+ * bus_dma.h dma interface entry points
  **********************************************************************/
 
 #ifdef ISA_DMA_STATS
 #define	STAT_INCR(v)	(v)++
-#define	STAT_DECR(v)	do { \
-		if ((v) == 0) \
-			printf("%s:%d -- Already 0!\n", __FILE__, __LINE__); \
-		else \
-			(v)--; \
-		} while (0)
+#define	STAT_DECR(v) do { 										\
+	if ((v) == 0) { 											\
+		printf("%s:%d -- Already 0!\n", __FILE__, __LINE__); 	\
+	} else {													\
+		(v)--; 													\
+	}															\
+} while (0)
+
 u_long	isa_dma_stats_loads;
 u_long	isa_dma_stats_bounces;
 u_long	isa_dma_stats_nbouncebufs;

@@ -38,6 +38,7 @@
 #include <sys/user.h>
 #include <sys/threadpool.h>
 #include <sys/kthread.h>
+#include <sys/malloctypes.h>
 
 struct kthreadpool_thread 				ktpool_thread;
 struct lock	 							*kthreadpools_lock;

@@ -1,11 +1,6 @@
-/*-
- * SPDX-License-Identifier: BSD-3-Clause
- *
- * Copyright (c) 2001 Wind River Systems, Inc.
- * All rights reserved.
- * Written by: John Baldwin <jhb@FreeBSD.org>
- *
- * Copyright (c) 2009 Jeffrey Roberson <jeff@freebsd.org>
+/*
+ * The 3-Clause BSD License:
+ * Copyright (c) 2020 Martin Kelly
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -16,21 +11,19 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the author nor the names of any co-contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 /*
@@ -57,8 +50,6 @@
 
 #include <devel/sys/percpu.h>
 #include <devel/sys/malloctypes.h>
-
-#include <machine/cpu.h>
 
 struct percpu *cpuid_to_percpu[NCPUS];
 struct cpuhead cpuhead = LIST_HEAD_INITIALIZER(cpuhead);
@@ -94,7 +85,7 @@ percpu_malloc(pcpu, size)
 	pcpu = malloc(sizeof(*pcpu), M_PERCPU, M_WAITOK | M_ZERO);
 	percpu_extent(pcpu, PERCPU_START, PERCPU_END);
 	percpu_extent_region(pcpu);
-	size = roundup(size, PERCPU_END);
+	size = roundup(size, PERCPU_SIZE);
 	percpu_extent_subregion(pcpu, size);
 }
 
@@ -166,7 +157,7 @@ percpu_extent_subregion(pcpu, size)
 		panic("percpu_extent_subregion: no extent");
 		return;
 	}
-	error = extent_alloc(ext, size, EX_NOALIGN, EX_NOBOUNDARY, EX_WAITOK | EX_MALLOCOK | EX_FAST, pcpu->pc_dynamic);
+	error = extent_alloc(ext, size, PERCPU_ALIGN, PERCPU_BOUNDARY, PERCPU_FLAGS, pcpu->pc_dynamic);
 	if (error != 0) {
 		percpu_extent_free(ext, pcpu->pc_start, pcpu->pc_end, EX_WAITOK | EX_MALLOCOK | EX_FAST);
 		panic("percpu_extent_subregion");

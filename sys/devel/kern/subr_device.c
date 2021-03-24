@@ -56,13 +56,6 @@ device_get_flags(dev)
 	return (dev->dv_flags);
 }
 
-void *
-device_get_softc(dev)
-	struct device *dev;
-{
-	return (dev->dv_softc);
-}
-
 void
 device_set_flags(dev, flags)
 	struct device *dev;
@@ -83,18 +76,4 @@ device_inactive(dev)
 	struct device *dev;
 {
 	dev->dv_flags &= ~DVF_ACTIVE;
-}
-
-void
-device_enable(dev)
-	struct device *dev;
-{
-	dev->dv_flags |= DVF_ENABLED;
-}
-
-void
-device_disable(dev)
-	struct device *dev;
-{
-	dev->dv_flags &= ~DVF_ENABLED;
 }

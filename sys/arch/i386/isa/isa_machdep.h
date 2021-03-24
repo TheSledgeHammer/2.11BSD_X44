@@ -170,57 +170,19 @@ struct i386_isa_dma_cookie {
 #define	IOPHYSMEM				0xA0000
 
 /*
- * Methods that a PIC provides to mask/unmask a given interrupt source,
- * "turn on" the interrupt on the CPU side by setting up an IDT entry, and
- * return the vector associated with this source.
- */
-/* FreeBSD x86 intr_machdep.c/.h */
-struct pic {
-    TAILQ_ENTRY(pic)    pics;
-};
-static TAILQ_HEAD(pics_head, pic) pics;
-
-/* Flags for pic_disable_source() */
-enum {
-	PIC_EOI,
-	PIC_NO_EOI,
-};
-u_int num_io_irqs;
-
-/*
- * An interrupt source.  The upper-layer code uses the PIC methods to
- * control a given source.  The lower-layer PIC drivers can store additional
- * private data in a given interrupt source such as an interrupt pin number
- * or an I/O APIC pointer.
- */
-struct intsrc {
-	struct pic 			*is_pic;
-    struct intrhand     *is_handlers;	/* handler chain */
-//	struct intr_event 	*is_event;
-	u_long 				*is_count;
-	u_long 				*is_straycount;
-	u_int 				is_index;
-	//u_int 				is_handlers;
-	u_int 				is_domain;
-	u_int 				is_cpu;
-};
-
-/*
  * Interrupt handler chains.  isa_intr_establish() inserts a handler into
  * the list.  The handler is called with its (single) argument.
  */
 struct intrhand {
-    struct pic          *ih_pic;
-	int					(*ih_fun)(void *);
-	void				*ih_arg;
-	u_long				ih_count;
-	struct intrhand 	*ih_next;
-    struct intrhand 	*ih_prev;
-	int					ih_level;
-	int					ih_irq;
+    //struct pic          	*ih_pic;
+	int						(*ih_fun)(void *);
+	void					*ih_arg;
+	u_long					ih_count;
+	struct intrhand 		*ih_next;
+    struct intrhand 		*ih_prev;
+	int						ih_level;
+	int						ih_irq;
 };
-
-extern struct lock_object *icu_lock;
  
 /*
  * ISA DMA bounce buffers.
@@ -234,7 +196,7 @@ extern struct lock_object *icu_lock;
  */
 
 #ifndef DMA_BOUNCE
-#define	DMA_BOUNCE      8		/* one buffer per channel */
+#define	DMA_BOUNCE      	8		/* one buffer per channel */
 #endif
 
 /*
