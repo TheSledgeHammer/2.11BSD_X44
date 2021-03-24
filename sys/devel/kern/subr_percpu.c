@@ -157,7 +157,7 @@ percpu_extent_subregion(pcpu, size)
 		panic("percpu_extent_subregion: no extent");
 		return;
 	}
-	error = extent_alloc(ext, size, PERCPU_ALIGN, PERCPU_BOUNDARY, PERCPU_FLAGS, pcpu->pc_dynamic);
+	error = extent_alloc(ext, size, PERCPU_ALIGN, PERCPU_BOUNDARY, EX_WAITOK | EX_MALLOCOK | EX_FAST, pcpu->pc_dynamic);
 	if (error != 0) {
 		percpu_extent_free(ext, pcpu->pc_start, pcpu->pc_end, EX_WAITOK | EX_MALLOCOK | EX_FAST);
 		panic("percpu_extent_subregion");

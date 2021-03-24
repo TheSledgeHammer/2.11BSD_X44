@@ -38,6 +38,7 @@
 
 #ifndef _KERNEL
 #include <sys/types.h>
+#include <sys/null.h>
 #endif
 
 #include <lib/libsa/diskbsd.h>
@@ -58,15 +59,15 @@
 
 /* XXX these should be defined per controller (or drive) elsewhere, not here! */
 
-#define LABELSECTOR	1						/* sector containing label */
-#define LABELOFFSET	0						/* offset of label in sector */
+#define LABELSECTOR		1					/* sector containing label */
+#define LABELOFFSET		0					/* offset of label in sector */
 
 #ifndef	LABELSECTOR
-#define LABELSECTOR	0						/* sector containing label */
+#define LABELSECTOR		0					/* sector containing label */
 #endif
 
 #ifndef	LABELOFFSET
-#define LABELOFFSET	64						/* offset of label in sector */
+#define LABELOFFSET		64					/* offset of label in sector */
 #endif
 
 #define DISKMAGIC		BSD_MAGIC			/* The disk magic number */
@@ -120,7 +121,7 @@ struct disklabel {
 	 * getdiskbyname(3) to retrieve the values from /etc/disktab.
 	 */
 #if defined(KERNEL) || defined(STANDALONE)
-	char		d_packname[16];			/* pack identifier */
+	char			d_packname[16];		/* pack identifier */
 #else
 	union {
 		char		un_d_packname[16];	/* pack identifier */
@@ -188,19 +189,19 @@ struct disklabel {
 	u_int16_t 		d_npartitions;		/* number of partitions in following */
 	u_int32_t 		d_bbsize;			/* size of boot area at sn0, bytes */
 	u_int32_t 		d_sbsize;			/* max size of fs superblock, bytes */
-	struct	partition {				/* the partition table */
-		u_int32_t 	p_size;			/* number of sectors in partition */
-		u_int32_t 	p_offset;		/* starting sector */
-		u_int32_t 	p_fsize;		/* filesystem basic fragment size */
-		u_int8_t 	p_fstype;		/* filesystem type, see below */
-		u_int8_t 	p_frag;			/* filesystem fragments per block */
+	struct	partition {					/* the partition table */
+		u_int32_t 	p_size;				/* number of sectors in partition */
+		u_int32_t 	p_offset;			/* starting sector */
+		u_int32_t 	p_fsize;			/* filesystem basic fragment size */
+		u_int8_t 	p_fstype;			/* filesystem type, see below */
+		u_int8_t 	p_frag;				/* filesystem fragments per block */
 		union {
-			u_int16_t cpg;			/* UFS: FS cylinders per group */
-			u_int16_t sgs;			/* LFS: FS segment shift */
+			u_int16_t cpg;				/* UFS: FS cylinders per group */
+			u_int16_t sgs;				/* LFS: FS segment shift */
 		}__partition_u1;
 #define	p_cpg	__partition_u1.cpg
 #define	p_sgs	__partition_u1.sgs
-	} d_partitions[MAXPARTITIONS];	/* actually may be more */
+	} d_partitions[MAXPARTITIONS];		/* actually may be more */
 };
 
 #else /* LOCORE */
@@ -217,17 +218,17 @@ struct disklabel {
 #endif /* LOCORE */
 
 /* d_type values: */
-#define	DTYPE_SMD		1		/* SMD, XSMD; VAX hp/up */
-#define	DTYPE_MSCP		2		/* MSCP */
-#define	DTYPE_DEC		3		/* other DEC (rk, rl) */
-#define	DTYPE_SCSI		4		/* SCSI */
-#define	DTYPE_ESDI		5		/* ESDI interface */
-#define	DTYPE_ST506		6		/* ST506 etc. */
-#define	DTYPE_HPIB		7		/* CS/80 on HP-IB */
-#define	DTYPE_HPFL		8		/* HP Fiber-link */
-#define	DTYPE_FLOPPY	10		/* floppy */
-#define	DTYPE_CCD		11		/* concatenated disk device */
-#define	DTYPE_VND		12		/* vnode pseudo-disk */
+#define	DTYPE_SMD			1		/* SMD, XSMD; VAX hp/up */
+#define	DTYPE_MSCP			2		/* MSCP */
+#define	DTYPE_DEC			3		/* other DEC (rk, rl) */
+#define	DTYPE_SCSI			4		/* SCSI */
+#define	DTYPE_ESDI			5		/* ESDI interface */
+#define	DTYPE_ST506			6		/* ST506 etc. */
+#define	DTYPE_HPIB			7		/* CS/80 on HP-IB */
+#define	DTYPE_HPFL			8		/* HP Fiber-link */
+#define	DTYPE_FLOPPY		10		/* floppy */
+#define	DTYPE_CCD			11		/* concatenated disk device */
+#define	DTYPE_VND			12		/* vnode pseudo-disk */
 
 /* d_subtype values: */
 #define DSTYPE_INDOSPART	0x8			/* is inside dos partition */
@@ -246,7 +247,7 @@ static char *dktypenames[] = {
 	"floppy",
 	"ccd",
 	"vnd",
-	NULL
+	NULL,
 };
 #define DKMAXTYPES	(sizeof(dktypenames) / sizeof(dktypenames[0]) - 1)
 #endif
@@ -335,10 +336,10 @@ static char *fstypenames[] = {
  * are device- and driver-dependent.
  */
 struct format_op {
-	char	*df_buf;
-	int		df_count;		/* value-result */
-	daddr_t	df_startblk;
-	int		df_reg[8];		/* result */
+	char				*df_buf;
+	int					df_count;		/* value-result */
+	daddr_t				df_startblk;
+	int					df_reg[8];		/* result */
 };
 
 /*
@@ -346,14 +347,26 @@ struct format_op {
  * information about a partition on a disk.
  */
 struct partinfo {
-	struct disklabel *disklab;
-	struct partition *part;
+	struct disklabel 	*disklab;
+	struct partition 	*part;
 };
 
 /*
  * Disk-specific ioctls.
  */
-		/* get and set disklabel; DIOCGPART used internally */
+#define	DIOCGSECTORSIZE	_IOR('d', 128, u_int)
+	/*
+	 * Get the sector size of the device in bytes.  The sector size is the
+	 * smallest unit of data which can be transferred from this device.
+	 * Usually this is a power of 2 but it might not be (i.e. CDROM audio).
+	 */
+
+#define	DIOCGMEDIASIZE	_IOR('d', 129, off_t)	/* Get media size in bytes */
+	/*
+	 * Get the size of the entire device in bytes.  This should be a
+	 * multiple of the sector size.
+	 */
+/* get and set disklabel; DIOCGPART used internally */
 #define DIOCGDINFO		_IOR(d, 101, struct disklabel)	/* get */
 #define DIOCSDINFO		_IOW(d, 102, struct disklabel)	/* set */
 #define DIOCWDINFO		_IOW(d, 103, struct disklabel)	/* set, update disk */
@@ -363,31 +376,31 @@ struct partinfo {
 #define DIOCRFORMAT		_IOWR(d, 105, struct format_op)
 #define DIOCWFORMAT		_IOWR(d, 106, struct format_op)
 
-#define DIOCSSTEP		_IOW(d, 107, int)			/* set step rate */
-#define DIOCSRETRIES	_IOW(d, 108, int)			/* set # of retries */
-#define DIOCKLABEL		_IOW(d, 119, int)			/* keep/drop label on close? */
-#define DIOCWLABEL		_IOW(d, 109, int)			/* write en/disable label */
+#define DIOCSSTEP		_IOW(d, 107, int)				/* set step rate */
+#define DIOCSRETRIES	_IOW(d, 108, int)				/* set # of retries */
+#define DIOCKLABEL		_IOW(d, 119, int)				/* keep/drop label on close? */
+#define DIOCWLABEL		_IOW(d, 109, int)				/* write en/disable label */
 
-#define DIOCSBAD		_IOW(d, 110, struct dkbad)	/* set kernel dkbad */
-#define DIOCEJECT		_IOW('d', 112, int)			/* eject removable disk */
-#define ODIOCEJECT		_IO('d', 112)				/* eject removable disk */
-#define DIOCLOCK		_IOW('d', 113, int)			/* lock/unlock pack */
+#define DIOCSBAD		_IOW(d, 110, struct dkbad)		/* set kernel dkbad */
+#define DIOCEJECT		_IOW('d', 112, int)				/* eject removable disk */
+#define ODIOCEJECT		_IO('d', 112)					/* eject removable disk */
+#define DIOCLOCK		_IOW('d', 113, int)				/* lock/unlock pack */
 
 /* get default label, clear label */
 #define	DIOCGDEFLABEL	_IOR('d', 114, struct disklabel)
 #define	DIOCCLRLABEL	_IO('d', 115)
 
 /* disk cache enable/disable */
-#define	DIOCGCACHE		_IOR('d', 116, int)			/* get cache enables */
-#define	DIOCSCACHE		_IOW('d', 117, int)			/* set cache enables */
+#define	DIOCGCACHE		_IOR('d', 116, int)				/* get cache enables */
+#define	DIOCSCACHE		_IOW('d', 117, int)				/* set cache enables */
 
-#define	DKCACHE_READ	0x000001 /* read cache enabled */
-#define	DKCACHE_WRITE	0x000002 /* write(back) cache enabled */
-#define	DKCACHE_RCHANGE	0x000100 /* read enable is changeable */
-#define	DKCACHE_WCHANGE	0x000200 /* write enable is changeable */
-#define	DKCACHE_SAVE	0x010000 /* cache parameters are savable/save them */
-#define	DKCACHE_FUA		0x020000 /* Force Unit Access supported */
-#define	DKCACHE_DPO		0x040000 /* Disable Page Out supported */
+#define	DKCACHE_READ	0x000001 						/* read cache enabled */
+#define	DKCACHE_WRITE	0x000002 						/* write(back) cache enabled */
+#define	DKCACHE_RCHANGE	0x000100 						/* read enable is changeable */
+#define	DKCACHE_WCHANGE	0x000200 						/* write enable is changeable */
+#define	DKCACHE_SAVE	0x010000 						/* cache parameters are savable/save them */
+#define	DKCACHE_FUA		0x020000 						/* Force Unit Access supported */
+#define	DKCACHE_DPO		0x040000 						/* Disable Page Out supported */
 
 #endif /* LOCORE */
 

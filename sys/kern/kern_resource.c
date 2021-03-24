@@ -296,3 +296,60 @@ limcopy(lim)
 	copy->p_refcnt = 1;
 	return (copy);
 }
+
+/*
+ * Transform the running time and tick information in proc p into user,
+ * system, and interrupt time usage.
+ */
+void
+calcru(p, up, sp, ip)
+	register struct proc *p;
+	register struct timeval *up;
+	register struct timeval *sp;
+	register struct timeval *ip;
+{
+	register u_quad_t u, st, ut, it, tot;
+	register u_long sec, usec;
+	register int s;
+	struct timeval tv;
+
+	s = splstatclock();
+	st = p->p_sticks;
+	ut = p->p_uticks;
+	it = p->p_iticks;
+	splx(s);
+
+	tot = st + ut + it;
+	if (tot == 0) {
+		up->tv_sec = up->tv_usec = 0;
+		sp->tv_sec = sp->tv_usec = 0;
+		if (ip != NULL)
+			ip->tv_sec = ip->tv_usec = 0;
+		return;
+	}
+
+	sec = p->p_rtime.tv_sec;
+	usec = p->p_rtime.tv_usec;
+	if (p == curproc) {
+		/*
+		 * Adjust for the current time slice.  This is actually fairly
+		 * important since the error here is on the order of a time
+		 * quantum, which is much greater than the sampling error.
+		 */
+		microtime(&tv);
+		sec += tv.tv_sec - runtime.tv_sec;
+		usec += tv.tv_usec - runtime.tv_usec;
+	}
+	u = sec * 1000000 + usec;
+	st = (u * st) / tot;
+	sp->tv_sec = st / 1000000;
+	sp->tv_usec = st % 1000000;
+	ut = (u * ut) / tot;
+	up->tv_sec = ut / 1000000;
+	up->tv_usec = ut % 1000000;
+	if (ip != NULL) {
+		it = (u * it) / tot;
+		ip->tv_sec = it / 1000000;
+		ip->tv_usec = it % 1000000;
+	}
+}

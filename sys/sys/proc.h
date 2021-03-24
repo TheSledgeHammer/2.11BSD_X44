@@ -232,6 +232,7 @@ struct emul {
 #define	P_PHYSIO	0x1000000	/* Doing physical I/O. */
 #define	P_WEXIT		0x2000000
 #define P_SWAPPING	0x4000000
+#define	P_ADVLOCK	0x8000000	/* Process may hold a POSIX advisory lock. */
 
 #define	S_DATA		0			/* specified segment */
 #define	S_STACK		1

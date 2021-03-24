@@ -47,6 +47,7 @@
 #ifndef	_SYS_DISK_H_
 #define	_SYS_DISK_H_
 
+#include <sys/queue.h>
 #include <sys/disklabel.h>
 #include <sys/ioctl.h>
 #include <sys/ioccom.h>
@@ -86,9 +87,11 @@ struct buf;
 struct disklabel;
 struct cpu_disklabel;
 
+struct disklist_head;
+TAILQ_HEAD(disklist_head, dkdevice);				/* the disklist is a TAILQ */
 struct dkdevice {
+	TAILQ_ENTRY(dkdevice)	dk_link;				/* link in global disklist */
 	struct	device 	 		dk_dev;					/* base device */
-	struct	dkdevice 		*dk_next;				/* list of disks; not yet used */
 	char					*dk_name;				/* disk name */
 	int						dk_bps;					/* xfer rate: bytes per second */
 	int						dk_bopenmask;			/* block devices open */
@@ -97,65 +100,58 @@ struct dkdevice {
 	int						dk_flags;				/* label state aka dk_state */
 	int						dk_blkshift;			/* shift to convert DEV_BSIZE to blks */
 	int						dk_byteshift;			/* shift to convert bytes to blks */
-	struct	dkdriver 		*dk_driver;				/* pointer to driver */
+	int						dk_busy;				/* busy counter */
+	u_int64_t				dk_seek;				/* total independent seek operations */
+	u_int64_t				dk_bytes;				/* total bytes transfered */
+	struct timeval			dk_attachtime;			/* time disk was attached */
+	struct timeval			dk_timestamp;			/* timestamp of last unbusy */
+	struct timeval			dk_time;				/* total time spent busy */
+	struct dkdriver 		*dk_driver;				/* pointer to driver */
 	daddr_t					dk_labelsector;			/* sector containing label */
-	struct 	disklabel 		dk_label;				/* label */
-	struct	partition 		dk_parts[MAXPARTITIONS];/* inkernel portion */
+	struct disklabel 		dk_label;				/* label */
+	struct partition 		dk_parts[MAXPARTITIONS];/* inkernel portion */
 	struct cpu_disklabel 	*dk_cpulabel;
 };
 
 struct dkdriver {
-	void	(*d_strategy)(struct buf *);
-	void	(*d_minphys)(struct buf *);
-	void 	(*d_strategy) (struct buf *);
-	int		(*d_open) (dev_t dev, int ifmt, int, struct proc *);
-	int		(*d_close) (dev_t dev, int, int ifmt, struct proc *);
-	int		(*d_ioctl) (dev_t dev, int cmd, caddr_t data, int fflag, struct proc *);
-	int		(*d_dump) (dev_t);
-	void	(*d_start) (struct buf *, daddr_t);
-	int		(*d_mklabel) (struct dkdevice *);
+	void					(*d_strategy)(struct buf *);
+	void					(*d_minphys)(struct buf *);
+	void 					(*d_strategy) (struct buf *);
+	int						(*d_open) (dev_t dev, int ifmt, int, struct proc *);
+	int						(*d_close) (dev_t dev, int, int ifmt, struct proc *);
+	int						(*d_ioctl) (dev_t dev, int cmd, caddr_t data, int fflag, struct proc *);
+	int						(*d_dump) (dev_t);
+	void					(*d_start) (struct buf *, daddr_t);
+	int						(*d_mklabel) (struct dkdevice *);
 };
 
 /* states */
-#define	DKF_CLOSING	0		/* drive is being closed */
-#define	DKF_OPENING	1		/* drive is being opened */
-#define	DKF_WANTED	2		/* drive is being waited for */
-#define DKF_RLABEL  3		/* label being read */
-#define	DKF_OPEN	4		/* label read, drive open */
-#define	DKF_OPENRAW	5		/* open without label */
-#define	DKF_WLABEL	6		/* label area is being written, */
-#define	DKF_ALIVE	7		/* drive is alive */
-#define	DKF_ONLINE	8		/* drive is online */
-#define	DKF_SEEK	9		/* drive is seeking */
-#define	DKF_SWAIT	10		/* waiting for seek to complete */
+#define	DKF_OPENING			0x0001				/* drive is being opened */
+#define	DKF_CLOSING			0x0002				/* drive is being closed */
+#define	DKF_WANTED			0x0004				/* drive is being waited for */
+#define	DKF_ALIVE			0x0008				/* drive is alive */
+#define	DKF_ONLINE			0x0010				/* drive is online */
+#define	DKF_WLABEL			0x0020				/* label area is being written */
+#define	DKF_SEEK			0x0040				/* drive is seeking */
+#define	DKF_SWAIT			0x0080				/* waiting for seek to complete */
+#define DKF_RLABEL  		0x0100				/* label being read */
+#define	DKF_OPEN			0x0200				/* label read, drive open */
+#define	DKF_OPENRAW			0x0400				/* open without label */
 
 #ifdef DISKSORT_STATS
 /*
  * Stats from disksort().
  */
 struct disksort_stats {
-	long	ds_newhead;			/* # new queue heads created */
-	long	ds_newtail;			/* # new queue tails created */
-	long	ds_midfirst;		/* # insertions into sort list */
-	long	ds_endfirst;		/* # insertions at end of sort list */
-	long	ds_newsecond;		/* # inversions (2nd lists) created */
-	long	ds_midsecond;		/* # insertions into 2nd list */
-	long	ds_endsecond;		/* # insertions at end of 2nd list */
+	long					ds_newhead;			/* # new queue heads created */
+	long					ds_newtail;			/* # new queue tails created */
+	long					ds_midfirst;		/* # insertions into sort list */
+	long					ds_endfirst;		/* # insertions at end of sort list */
+	long					ds_newsecond;		/* # inversions (2nd lists) created */
+	long					ds_midsecond;		/* # insertions into 2nd list */
+	long					ds_endsecond;		/* # insertions at end of 2nd list */
 };
 #endif
-
-#define	DIOCGSECTORSIZE	_IOR('d', 128, u_int)
-	/*
-	 * Get the sector size of the device in bytes.  The sector size is the
-	 * smallest unit of data which can be transferred from this device.
-	 * Usually this is a power of 2 but it might not be (i.e. CDROM audio).
-	 */
-
-#define	DIOCGMEDIASIZE	_IOR('d', 129, off_t)	/* Get media size in bytes */
-	/*
-	 * Get the size of the entire device in bytes.  This should be a
-	 * multiple of the sector size.
-	 */
 
 /* encoding of disk minor numbers, should be elsewhere... but better
  * here than in ufs_disksubr.c
@@ -182,11 +178,13 @@ struct	disk *disk_find (char *);
 
 struct device;
 void	dk_establish (struct dkdevice *, struct device *);
-
 void	disksort (struct buf *, struct buf *);
 char	*readdisklabel (struct dkdevice *, int);
 int		setdisklabel (struct dkdevice *, struct disklabel *);
 int		writedisklabel (struct dkdevice *, int);
+int		dkcksum(struct disklabel *);
 int		diskerr (struct dkdevice *, struct buf *, char *, int, int);
+int		partition_check(struct	buf *, struct	dkdevice *);
+int		dkoverlapchk(struct disklabel *, int, dev_t, size_t, char *);
 #endif
 #endif /* _SYS_DISK_H_ */
