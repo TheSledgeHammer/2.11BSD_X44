@@ -21,17 +21,12 @@ A General todo list. Don't hesitate to add to this list. :)
 ## kern:
 - sys_generic.c: fileops: fo_rw
 - fileops: update fileop structures to make use of kqfilter
-- kern_resource.c:
-	- missing methods
 	
 ## arch:
 - i386/x86: (Merged under i386)
 	- lapic, ioapic: 
 		- requires changing machine-dependent soft interrupts
 	- geode.c: to add
-	- trap.c: update, vm86 support (work in progress)
-	- want_resched: rescheduling
-	- astpending
 
 ## devel: (planned)
 - Code planned for future integration

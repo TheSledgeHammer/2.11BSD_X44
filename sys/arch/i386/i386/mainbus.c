@@ -29,36 +29,25 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>
 #include <sys/user.h>
+
+#include <dev/core/eisa/eisavar.h>
+#include <dev/core/isa/isareg.h>
+#include <dev/core/isa/isavar.h>
+#include <dev/core/pci/pcivar.h>
 
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
 
 #include <i386/isa/isa_machdep.h>
 #include <i386/eisa/eisa_machdep.h>
-#include <dev/core/eisa/eisavar.h>
-#include <dev/core/isa/isareg.h>
-#include <dev/core/isa/isavar.h>
-#include <dev/core/pci/pcivar.h>
 
 int	 mainbus_match (struct device *, void *, void *);
 void mainbus_attach (struct device *, struct device *, void *);
-/*
-struct cfops mainbus_cops = {
-		.cops_match = mainbus_match,
-		.cops_attach = mainbus_attach,
-		.cops_detach = NULL,
-		.cops_activate = NULL
-};
-
-struct cfdriver mainbus_cd = {
-	NULL, "mainbus", &mainbus_cops, DV_DULL, sizeof(struct device)
-};
-*/
 
 CFDRIVER_DECL(NULL, mainbus, &mainbus_cops, DV_DULL, sizeof(struct device));
 CFOPS_DECL(mainbus, mainbus_match, mainbus_attach, NULL, NULL);
@@ -77,6 +66,10 @@ union mainbus_attach_args {
  * time it's checked below, then mainbus attempts to attach an ISA.
  */
 int	isa_has_been_seen;
+/*
+ * Same as above, but for EISA.
+ */
+int eisa_has_been_seen;
 
 /*
  * Probe for the mainbus; always succeeds.

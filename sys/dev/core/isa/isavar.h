@@ -76,13 +76,13 @@
 #ifndef _DEV_ISA_ISAVAR_H_
 #define	_DEV_ISA_ISAVAR_H_
 
-/*
- * Definitions for ISA autoconfiguration.
- */
-
 #include <sys/queue.h>
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
+
+/*
+ * Definitions for ISA autoconfiguration.
+ */
 
 /* 
  * Structures and definitions needed by the machine-dependent header.

@@ -71,7 +71,6 @@ struct device {
 
 /* dv_flags */
 #define	DVF_ACTIVE		0x0001					/* device is activated */
-//#define DVF_ENABLED		0x0002					/* device is enabled */
 
 /* `event' counters (use zero or more per device instance, as needed) */
 struct evcnt {
@@ -159,7 +158,7 @@ struct pdevinit {
 	int					pdev_count;
 };
 
-/* device driver and cfops declarations */
+/* cfdriver and cfops declarations */
 #define CFDRIVER_DECL(devs, name, cops, class, size) 	\
 	struct cfdriver (name##_cd) = { (devs), (#name), (cops), (class), (size) }
 

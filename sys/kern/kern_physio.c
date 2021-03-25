@@ -267,11 +267,9 @@ rawrw(dev, uio, flag)
 	return(physio(cdevsw[major(dev)].d_strategy, (struct buf *)NULL, dev, (uio->uio_rw == UIO_READ ? B_READ : B_WRITE), minphys, uio));
 }
 
-
 /*
  * Do a read on a device for a user process.
  */
-/*
 int
 rawread(dev, uio)
 	dev_t dev;
@@ -279,11 +277,10 @@ rawread(dev, uio)
 {
 	return (physio(cdevsw[major(dev)].d_strategy, (struct buf *)NULL, dev, B_READ, minphys, uio));
 }
-*/
+
 /*
  * Do a write on a device for a user process.
  */
-/*
 int
 rawwrite(dev, uio)
 	dev_t dev;
@@ -291,4 +288,3 @@ rawwrite(dev, uio)
 {
 	return (physio(cdevsw[major(dev)].d_strategy, (struct buf *)NULL, dev, B_WRITE, minphys, uio));
 }
-*/

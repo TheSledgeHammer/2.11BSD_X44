@@ -48,7 +48,7 @@
  * Disk description table, see disktab(5)
  */
 #define	_PATH_DISKTAB	"/etc/disktab"
-#define	DISKTAB			"/etc/disktab"		/* deprecated */
+#define	DISKTAB			_PATH_DISKTAB
 
 /*
  * Each disk has a label which includes information about the hardware

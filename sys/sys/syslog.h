@@ -48,17 +48,17 @@
  *
  * priorities (these are ordered)
  */
-#define	LOG_EMERG	0	/* system is unusable */
-#define	LOG_ALERT	1	/* action must be taken immediately */
-#define	LOG_CRIT	2	/* critical conditions */
-#define	LOG_ERR		3	/* error conditions */
-#define	LOG_WARNING	4	/* warning conditions */
-#define	LOG_NOTICE	5	/* normal but significant condition */
-#define	LOG_INFO	6	/* informational */
-#define	LOG_DEBUG	7	/* debug-level messages */
+#define	LOG_EMERG	0		/* system is unusable */
+#define	LOG_ALERT	1		/* action must be taken immediately */
+#define	LOG_CRIT	2		/* critical conditions */
+#define	LOG_ERR		3		/* error conditions */
+#define	LOG_WARNING	4		/* warning conditions */
+#define	LOG_NOTICE	5		/* normal but significant condition */
+#define	LOG_INFO	6		/* informational */
+#define	LOG_DEBUG	7		/* debug-level messages */
 
 #define	LOG_PRIMASK	0x07	/* mask to extract priority part (internal) */
-				/* extract priority */
+							/* extract priority */
 #define	LOG_PRI(p)	((p) & LOG_PRIMASK)
 #define	LOG_MAKEPRI(fac, pri)	(((fac) << 3) | (pri))
 
@@ -68,7 +68,7 @@
 #define	INTERNAL_MARK	LOG_MAKEPRI(LOG_NFACILITIES, 0)
 typedef struct _code {
 	char	*c_name;
-	int	c_val;
+	int		c_val;
 } CODE;
 
 CODE prioritynames[] = {

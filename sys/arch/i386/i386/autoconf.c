@@ -80,13 +80,10 @@ configure()
 	bios32_init();
 	k6_mem_drvinit();
 
-#if GENERICxxx
-	if ((boothowto & RB_ASKNAME) == 0)
-		setroot();
-	setconf();
-#else
-	setroot();
-#endif
+	if(config_rootfound("mainbus", NULL) == NULL) {
+		panic("cpu_configure: mainbus not configured");
+	}
+
 	/*
 	 * Configure & Initialize device structures
 	 */

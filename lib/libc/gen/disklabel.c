@@ -37,7 +37,6 @@ static char sccsid[] = "@(#)disklabel.c	5.17.1 (2.11BSD) 4/10/95";
 
 #include <sys/param.h>
 #include <sys/errno.h>
-#include <sys/fs.h>
 #include <sys/file.h>
 #include <sys/uio.h>
 
