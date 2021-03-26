@@ -33,7 +33,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
+#include <sys/systm.h>
 #include <sys/map.h>
 #include <devel/vm/include/vm_segment.h>
 
@@ -62,9 +62,9 @@ vmspace_alloc_vm_segment_register(vm, segment, flags)
 	int 			flags;
 {
 	RMALLOC3(segment->sg_register, union segment_register *, segment->sg_data, segment->sg_stack, segment->sg_text, sizeof(union segment_register *)); /* XXX */
-	DATA_SEGMENT(segment->sg_register, vm->vm_dsize, vm->vm_daddr);
-	STACK_SEGMENT(segment->sg_register, vm->vm_ssize, vm->vm_saddr);
-	TEXT_SEGMENT(segment->sg_register, vm->vm_tsize, vm->vm_taddr);
+	DATA_SEGMENT(segment->sg_register, vm->vm_dsize, vm->vm_daddr, flags);
+	STACK_SEGMENT(segment->sg_register, vm->vm_ssize, vm->vm_saddr, flags);
+	TEXT_SEGMENT(segment->sg_register, vm->vm_tsize, vm->vm_taddr, flags);
 	segment->sg_flags = flags;
 }
 
@@ -81,19 +81,20 @@ vmspace_free_vm_segment_register(vm, segment)
 
 /* set vm_segment register regions */
 void
-vm_segment_set_segment_register(segment, size, addr)
+vm_segment_set_segment_register(segment, size, addr, flag)
 	vm_segment_t 	segment;
 	segsz_t			size;
 	caddr_t			addr;
+	int 			flag;
 {
 	if(segment->sg_type == SEG_DATA) {
-		DATA_SEGMENT(segment->sg_register, size, addr);
+		DATA_SEGMENT(segment->sg_register, size, addr, flag);
 	}
 	if(segment->sg_type == SEG_STACK) {
-		STACK_SEGMENT(segment->sg_register, size, addr);
+		STACK_SEGMENT(segment->sg_register, size, addr, flag);
 	}
 	if(segment->sg_type == SEG_TEXT) {
-		TEXT_SEGMENT(segment->sg_register, size, addr);
+		TEXT_SEGMENT(segment->sg_register, size, addr, flag);
 	}
 }
 
@@ -170,33 +171,38 @@ vm_segment_register_shrink(segment, newsize, newaddr)
 int
 sbrk(p, uap, retval)
 	struct proc *p;
-	struct sbrk_args /* {
-		syscallarg(int) incr;
-	} */ *uap;
+	struct sbrk_args  {
+		syscallarg(int) 	type;
+		syscallarg(segsz_t) size;
+		syscallarg(caddr_t) addr;
+		syscallarg(int) 	sep;
+		syscallarg(int) 	flags;
+		syscallarg(int) 	incr;
+	} *uap;
 	register_t *retval;
 {
-	register int n, d;
+	register segsz_t n, d;
 
-	n = btoc(uap->incr);
-	if (!u->u_sep) {
+	n = btoc(uap->size);
+	if (!uap->sep) {
 
 	} else {
-		n -= ctos(u.u_tsize) * stoc(1);
+		n -= ctos(p->p_tsize) * stoc(1);
 	}
 	if (n < 0) {
 		n = 0;
 	}
 	p->p_tsize;
-	if (estabur(n, u.u_ssize, u.u_tsize, u.u_sep, SEG_RO)) {
+	if (estabur(n, p->p_ssize, p->p_tsize, uap->sep, SEG_RO)) {
 		return (0);
 	}
 	expand(n, S_DATA);
 	/* set d to (new - old) */
-	d = n - u.u_dsize;
+	d = n - p->p_dsize;
 	if (d > 0) {
-		clear(u.u_procp->p_daddr + u.u_dsize, d);
+		clear(p->p_daddr + p->p_dsize, d);
 	}
-	u.u_dsize = n;
+	p->p_dsize = n;
 	/* Not yet implemented */
 	return (EOPNOTSUPP);
 }
@@ -209,10 +215,34 @@ sbrk(p, uap, retval)
  * read-write or read-only.
  */
 int
-estabur(data, stack, text, sep, flags)
-	u_int data, stack, text;
-	int sep, flags;
+estabur(seg, data, stack, text, sep, flags)
+	vm_segment_t seg;
+	segr_data_t *data;
+	segr_stack_t *stack;
+	segr_text_t *text;
+	int 		sep, flags;
 {
+	if(seg == NULL || data == NULL || stack == NULL || text == NULL) {
+		return (1);
+	}
+	if(!sep && (seg->sg_type = SEG_DATA | SEG_STACK | SEG_TEXT)) {
+		if(flags == SEG_RO && seg->sg_flags == flags) {
+			vm_segment_set_segment_register(seg, text->sp_tsize, text->sp_taddr, SEG_RO);
+		} else {
+			vm_segment_set_segment_register(seg, text->sp_tsize, text->sp_taddr, SEG_RW);
+		}
+		vm_segment_set_segment_register(seg, data->sp_dsize, data->sp_daddr, SEG_RW);
+		vm_segment_set_segment_register(seg, stack->sp_ssize, stack->sp_saddr, SEG_RW);
+	}
+	if(sep && (seg->sg_type == SEG_DATA | SEG_STACK)) {
+		if (flags == SEG_RO && seg->sg_flags == flags) {
+			vm_segment_set_segment_register(seg, text->sp_tsize, text->sp_taddr, SEG_RO);
+		} else {
+			vm_segment_set_segment_register(seg, text->sp_tsize, text->sp_taddr, SEG_RW);
+		}
+		vm_segment_set_segment_register(seg, data->sp_dsize, data->sp_daddr, SEG_RW);
+		vm_segment_set_segment_register(seg, stack->sp_ssize, stack->sp_saddr, SEG_RW);
+	}
 	return (0);
 }
 

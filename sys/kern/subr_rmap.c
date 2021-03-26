@@ -167,7 +167,7 @@ again:
 					break;
 				}
 			}
-			return(addr);
+			return (addr);
 		}
 	/* no entries big enough */
 	if (!retry++) {

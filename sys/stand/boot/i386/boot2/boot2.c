@@ -21,8 +21,8 @@
 #include <sys/reboot.h>
 
 #include <sys/disklabel.h>
-#include <lib/libsa/diskmbr.h>
 #include <sys/dirent.h>
+#include <lib/libsa/diskmbr.h>
 #include <machine/bootinfo.h>
 #include <machine/psl.h>
 #include <machine/elf_machdep.h>
@@ -391,9 +391,7 @@ load(void)
 	bootinfo.bi_envp.bi_esymtab = VTOP(p);
 	bootinfo.bi_kernelname = VTOP(kname);
 	bootinfo.bi_bios.bi_bios_dev = dsk.drive;
-	__exec((caddr_t) addr, opts & RBX_MASK,
-			MAKEBOOTDEV(dev_maj[dsk.type], 0, dsk.slice, dsk.unit, dsk.part), 0,
-			0, 0, VTOP(&bootinfo));
+	__exec((caddr_t) addr, opts & RBX_MASK, MAKEBOOTDEV1(dev_maj[dsk.type], 0, dsk.slice, dsk.unit, dsk.part), 0, 0, 0, VTOP(&bootinfo));
 }
 
 static int

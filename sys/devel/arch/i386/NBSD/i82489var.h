@@ -37,7 +37,7 @@
  * Software definitions belonging to Local APIC driver.
  */
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 extern volatile vaddr_t local_apic_va;
 extern bool x2apic_mode;
 #endif

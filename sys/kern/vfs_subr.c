@@ -277,6 +277,41 @@ static u_short xxxfs_mntid;
 }
 
 /*
+ * Knob to control the precision of file timestamps:
+ *
+ *   0 = seconds only; nanoseconds zeroed.
+ *   1 = seconds and nanoseconds, accurate within 1/HZ.
+ *   2 = seconds and nanoseconds, truncated to microseconds.
+ * >=3 = seconds and nanoseconds, maximum precision.
+ */
+enum { TSP_SEC, TSP_HZ, TSP_USEC, TSP_NSEC };
+static int timestamp_precision = TSP_USEC;
+
+/*
+ * Get a current timestamp.
+ */
+void
+vfs_timestamp(tsp)
+	struct timespec *tsp;
+{
+	struct timeval tv;
+	switch (timestamp_precision) {
+	case TSP_SEC:
+		tsp->tv_sec = time_second;
+		tsp->tv_nsec = 0;
+		break;
+	case TSP_HZ:
+	case TSP_USEC:
+		microtime(&tv);
+		TIMEVAL_TO_TIMESPEC(&tv, tsp);
+		break;
+	case TSP_NSEC:
+	default:
+		break;
+	}
+}
+
+/*
  * Set vnode attributes to VNOVAL
  */
 void

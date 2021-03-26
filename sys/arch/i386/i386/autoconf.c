@@ -173,12 +173,13 @@ setroot()
 	dev_t temp, orootdev;
 	struct swdevt *swp;
 
-	if ((boothowto & RB_DFLTROOT)
-			|| (bootdev & B_MAGICMASK) != (u_long) B_DEVMAGIC)
+	if ((boothowto & RB_DFLTROOT) || (bootdev & B_MAGICMASK) != (u_long) B_DEVMAGIC) {
 		return;
+	}
 	majdev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
-	if (majdev > sizeof(devname) / sizeof(devname[0]))
+	if (majdev > sizeof(devname) / sizeof(devname[0])) {
 		return;
+	}
 	adaptor = (bootdev >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
 	part = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
 	unit = (bootdev >> B_UNITSHIFT) & B_UNITMASK;
@@ -191,8 +192,7 @@ setroot()
 	 */
 	if (rootdev == orootdev)
 		return;
-	printf("changing root device to %c%c%d%c\n", devname[majdev][0],
-			devname[majdev][1], mindev >> PARTITIONSHIFT, part + 'a');
+	printf("changing root device to %c%c%d%c\n", devname[majdev][0], devname[majdev][1], mindev >> PARTITIONSHIFT, part + 'a');
 #ifdef DOSWAP
 	mindev &= ~PARTITIONMASK;
 	for (swp = swdevt; swp->sw_dev != NODEV; swp++) {

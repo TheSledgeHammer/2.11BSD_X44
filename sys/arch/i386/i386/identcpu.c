@@ -64,6 +64,7 @@ static void identifycyrix(void);
 static void print_transmeta_info(void);
 #endif
 static u_int find_cpu_vendor_id(void);
+static int	find_cpu_class(void);
 
 #ifdef __i386__
 int			cpu;					/* Are we 386, 386sx, 486, etc? */
@@ -1470,9 +1471,23 @@ static u_int
 find_cpu_vendor_id(void)
 {
 	int	i;
-	for (i = 0; i < nitems(cpu_vendors); i++)
-		if (strcmp(cpu_vendor, cpu_vendors[i].vendor) == 0)
+	for (i = 0; i < nitems(cpu_vendors); i++) {
+		if (strcmp(cpu_vendor, cpu_vendors[i].vendor) == 0) {
 			return (cpu_vendors[i].vendor_id);
+		}
+	}
+	return (0);
+}
+
+static int
+find_cpu_class(void)
+{
+	int	i;
+	for (i = 0; i < nitems(cpus); i++) {
+		if (strcmp(cpu_model, cpus[i].cpu_name) == 0) {
+			return (cpus[i].cpu_class);
+		}
+	}
 	return (0);
 }
 

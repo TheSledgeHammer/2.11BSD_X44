@@ -29,10 +29,7 @@
 #ifndef	_SYS_DISKSLICE_H_
 #define	_SYS_DISKSLICE_H_
 
-#define	BASE_SLICE			2
-#define	COMPATIBILITY_SLICE	0
-#define	MAX_SLICES			32
-#define	WHOLE_DISK_SLICE	1
+#include <sys/reboot.h>
 
 struct diskslice2 {
 	u_long					ds_offset;				/* starting sector */

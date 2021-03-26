@@ -26,7 +26,9 @@ A General todo list. Don't hesitate to add to this list. :)
 - i386/x86: (Merged under i386)
 	- lapic, ioapic: 
 		- requires changing machine-dependent soft interrupts
-	- geode.c: to add
+	- geode.c: to add (optional extra)
+	- smp/multi-cpu:
+		- todo before: lapic, ioapic & updates to intr
 
 ## devel: (planned)
 - Code planned for future integration

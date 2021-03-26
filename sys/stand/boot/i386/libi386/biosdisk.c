@@ -39,9 +39,10 @@
 
 #include <sys/disk.h>
 #include <sys/queue.h>
+#include <sys/reboot.h>
+
 #include <machine/bootinfo.h>
-//#include <stdarg.h>
-//#include <stdbool.h>
+
 
 #include <bootstrap.h>
 #include <btxv86.h>
@@ -1371,7 +1372,7 @@ bd_getdev(struct i386_devdesc *d)
 			unit = i;
 	}
 
-	rootdev = MAKEBOOTDEV(major, slice, unit, partition);
+	rootdev = MAKEBOOTDEV2(major, slice, unit, partition);
 	DPRINTF("dev is 0x%x\n", rootdev);
 	return (rootdev);
 }

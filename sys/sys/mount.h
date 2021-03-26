@@ -281,6 +281,7 @@ void	vfs_unbusy (struct mount *);       												/* mark a vfs not busy */
 int		vfs_rootmountalloc (char *, char *, struct mount **);
 int		vfs_mountroot (void);
 void	vfs_getnewfsid (struct mount *);
+void	vfs_timestamp(struct timespec *tsp);
 void	vfs_unmountall (void);
 extern	CIRCLEQ_HEAD(mntlist, mount) mountlist;											/* mounted filesystem list */
 extern	struct lock_object mountlist_slock;

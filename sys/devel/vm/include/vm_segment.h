@@ -62,7 +62,7 @@ struct vm_segment {
 	caddr_t						sg_laddr;				/* segment logical address */
 
 	union segment_register		sg_register;			/* pointer to pseudo segment register */
-
+	int 						sg_rflags;				/* segment register flags see below */
 #define sg_data 				sg_register.sp_data		/* pseudo data segment */
 #define sg_stack 				sg_register.sp_stack	/* pseudo stack segment */
 #define sg_text 				sg_register.sp_text		/* pseudo text segment */
@@ -91,26 +91,35 @@ struct vm_segment {
 
 /* pseudo segment registers */
 union segment_register {
-	struct {
+	struct segr_data {
 		segsz_t 			sp_dsize;
 		caddr_t				sp_daddr;
+		int 				sp_dflag;
 	} sp_data;
-	struct {
+	struct segr_stack {
 		segsz_t 			sp_ssize;
 		caddr_t				sp_saddr;
+		int 				sp_sflag;
 	} sp_stack;
-	struct {
+	struct segr_text {
 		segsz_t 			sp_tsize;
 		caddr_t				sp_taddr;
+		int 				sp_tflag;
 	} sp_text;
 
 #define sg_daddr			sp_data.sp_daddr
 #define sg_dsize			sp_data.sp_dsize
+#define sg_dflag			sp_data.sp_dflag
 #define sg_saddr			sp_stack.sp_saddr
 #define sg_ssize			sp_stack.sp_ssize
+#define sg_sflag			sp_stack.sp_sflag
 #define sg_taddr			sp_text.sp_taddr
 #define sg_tsize			sp_text.sp_tsize
+#define sg_tflag			sp_text.sp_tflag
 };
+typedef struct segr_data  	segr_data_t;
+typedef struct segr_stack  	segr_stack_t;
+typedef struct segr_text  	segr_text_t;
 
 /* pseudo-segment types */
 #define SEG_DATA			1		/* data segment */
@@ -118,49 +127,52 @@ union segment_register {
 #define SEG_TEXT			3		/* text segment */
 
 /* pseudo-segment macros */
-#define DATA_SEGMENT(data, dsize, daddr) {		\
-	(data)->sg_dsize = (dsize);					\
-	(data)->sg_daddr = (daddr);					\
+#define DATA_SEGMENT(data, dsize, daddr, dflag) {		\
+	(data)->sg_dsize = (dsize);							\
+	(data)->sg_daddr = (daddr);							\
+	(data)->sg_dflag = (dflag);							\
 };
 
-#define DATA_EXPAND(data, dsize, daddr) {		\
-	(data)->sg_dsize += (dsize);				\
-	(data)->sg_daddr += (daddr);				\
+#define DATA_EXPAND(data, dsize, daddr) {				\
+	(data)->sg_dsize += (dsize);						\
+	(data)->sg_daddr += (daddr);						\
 };
 
-#define DATA_SHRINK(data, dsize, daddr) {		\
-	(data)->sg_dsize -= (dsize);				\
-	(data)->sg_daddr -= (daddr);				\
+#define DATA_SHRINK(data, dsize, daddr) {				\
+	(data)->sg_dsize -= (dsize);						\
+	(data)->sg_daddr -= (daddr);						\
 };
 
-#define STACK_SEGMENT(stack, ssize, saddr) {	\
-	(stack)->sg_ssize = (ssize);				\
-	(stack)->sg_saddr = (saddr);				\
+#define STACK_SEGMENT(stack, ssize, saddr, sflag) {		\
+	(stack)->sg_ssize = (ssize);						\
+	(stack)->sg_saddr = (saddr);						\
+	(stack)->sg_sflag = (sflag);						\
 };
 
-#define STACK_EXPAND(stack, ssize, saddr) {		\
-	(stack)->sg_ssize += (ssize);				\
-	(stack)->sg_saddr += (ssize);				\
+#define STACK_EXPAND(stack, ssize, saddr) {				\
+	(stack)->sg_ssize += (ssize);						\
+	(stack)->sg_saddr += (ssize);						\
 };
 
-#define STACK_SHRINK(stack, ssize, saddr) {		\
-	(stack)->sg_ssize -= (ssize);				\
-	(stack)->sg_saddr -= (ssize);				\
+#define STACK_SHRINK(stack, ssize, saddr) {				\
+	(stack)->sg_ssize -= (ssize);						\
+	(stack)->sg_saddr -= (ssize);						\
 };
 
-#define TEXT_SEGMENT(text, tsize, taddr) {		\
-	(text)->sg_tsize = (tsize);					\
-	(text)->sg_taddr = (taddr);					\
+#define TEXT_SEGMENT(text, tsize, taddr, tflag) {		\
+	(text)->sg_tsize = (tsize);							\
+	(text)->sg_taddr = (taddr);							\
+	(text)->sg_tflag = (tflag);							\
 };
 
-#define TEXT_EXPAND(text, tsize, taddr) {		\
-	(text)->sg_tsize += (tsize);				\
-	(text)->sg_taddr += (taddr);				\
+#define TEXT_EXPAND(text, tsize, taddr) {				\
+	(text)->sg_tsize += (tsize);						\
+	(text)->sg_taddr += (taddr);						\
 };
 
-#define TEXT_SHRINK(text, tsize, taddr) {		\
-	(text)->sg_tsize -= (tsize);				\
-	(text)->sg_taddr -= (taddr);				\
+#define TEXT_SHRINK(text, tsize, taddr) {				\
+	(text)->sg_tsize -= (tsize);						\
+	(text)->sg_taddr -= (taddr);						\
 };
 
 extern

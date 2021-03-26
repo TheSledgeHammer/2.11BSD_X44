@@ -87,16 +87,19 @@
 #define	B_MAGICMASK			((u_long)0xf0000000)
 #define	B_DEVMAGIC			((u_long)0xa0000000)
 
-#define	MAKEBOOTDEV(type, slice, unit, partition) 					\
-	(((type) << B_TYPESHIFT) | ((slice) << B_SLICESHIFT) | 			\
-	((unit) << B_UNITSHIFT) | ((partition) << B_PARTITIONSHIFT) | 	\
-	B_DEVMAGIC)
-
-#define MAKEBOOTDEV(type, adaptor, controller, unit, partition) 	\
+/* Traditional boot style (without slices) */
+#define MAKEBOOTDEV1(type, adaptor, controller, unit, partition) 	\
 	(((type) << B_TYPESHIFT) | ((adaptor) << B_ADAPTORSHIFT) | 		\
 	((controller) << B_CONTROLLERSHIFT) | ((unit) << B_UNITSHIFT) | \
 	((partition) << B_PARTITIONSHIFT) | B_DEVMAGIC)
 
+/* New FreeBSD's boot style (with slices) */
+#define	MAKEBOOTDEV2(type, slice, unit, partition) 					\
+	(((type) << B_TYPESHIFT) | ((slice) << B_SLICESHIFT) | 			\
+	((unit) << B_UNITSHIFT) | ((partition) << B_PARTITIONSHIFT) | 	\
+	B_DEVMAGIC)
+
+/* Slice information */
 #define	BASE_SLICE			2
 #define	COMPATIBILITY_SLICE	0
 #define	MAX_SLICES			32

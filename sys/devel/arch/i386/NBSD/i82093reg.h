@@ -60,7 +60,7 @@
 
 /* Version, and maximum interrupt pin number. */
 
-#define IOAPIC_VER		0x01
+#define IOAPIC_VER					0x01
 
 #define		IOAPIC_VER_SHIFT		0
 #define		IOAPIC_VER_MASK			0x000000ff

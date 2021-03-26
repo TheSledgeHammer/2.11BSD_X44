@@ -79,20 +79,20 @@ struct ioapic_pin {
 };
 
 struct ioapic_softc {
-	struct pic			sc_pic;
-	struct ioapic_softc	*sc_next;
-	int					sc_apicid;
-	int					sc_apic_vers;
-	int					sc_apic_vecbase; 	/* global int base if ACPI */
-	int					sc_apic_sz;			/* apic size*/
-	int					sc_flags;
-	caddr_t				sc_pa;				/* PA of ioapic */
-	volatile u_int32_t	*sc_reg;			/* KVA of ioapic addr */
-	volatile u_int32_t	*sc_data;			/* KVA of ioapic data */
-	struct ioapic_pin	*sc_pins;			/* sc_apic_sz entries */
+	struct pic				sc_pic;
+	struct ioapic_softc		*sc_next;
+	int						sc_apicid;
+	int						sc_apic_vers;
+	int						sc_apic_vecbase; 	/* global int base if ACPI */
+	int						sc_apic_sz;			/* apic size*/
+	int						sc_flags;
+	caddr_t					sc_pa;				/* PA of ioapic */
+	volatile u_int32_t		*sc_reg;			/* KVA of ioapic addr */
+	volatile u_int32_t		*sc_data;			/* KVA of ioapic data */
+	struct ioapic_pin		*sc_pins;			/* sc_apic_sz entries */
 
-	lock_t				sc_lock;
-	struct device		*sc_dev;
+	lock_t					sc_lock;
+	struct device			*sc_dev;
 };
 
 /*
@@ -111,8 +111,8 @@ struct ioapic_softc {
 #define APIC_INT_PIN_SHIFT	8
 #define APIC_INT_LINE_MASK	0x000000ff
 
-#define APIC_IRQ_APIC(x) ((x & APIC_INT_APIC_MASK) >> APIC_INT_APIC_SHIFT)
-#define APIC_IRQ_PIN(x) ((x & APIC_INT_PIN_MASK) >> APIC_INT_PIN_SHIFT)
+#define APIC_IRQ_APIC(x) 	((x & APIC_INT_APIC_MASK) >> APIC_INT_APIC_SHIFT)
+#define APIC_IRQ_PIN(x) 	((x & APIC_INT_PIN_MASK) >> APIC_INT_PIN_SHIFT)
 
 void   						*apic_intr_establish(int, int, int, int (*)(void *), void *, const char *);
 void						apic_intr_disestablish(void *);

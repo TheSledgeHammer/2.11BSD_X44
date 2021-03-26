@@ -592,39 +592,6 @@ htbc_remove_transaction(struct htbc_hchain *chain)
 	}
 }
 
-/* HTBC Transaction Timestamps */
-
-/*
- * Knob to control the precision of file timestamps:
- *
- *   0 = seconds only; nanoseconds zeroed.
- *   1 = seconds and nanoseconds, accurate within 1/HZ.
- *   2 = seconds and nanoseconds, truncated to microseconds.
- * >=3 = seconds and nanoseconds, maximum precision.
- */
-enum { TSP_SEC, TSP_HZ, TSP_USEC, TSP_NSEC };
-static int timestamp_precision = TSP_USEC;
-
-void
-htbc_timestamp(struct timespec *tsp)
-{
-	struct timeval tv;
-	switch (timestamp_precision) {
-	case TSP_SEC:
-		tsp->tv_sec = time_second;
-		tsp->tv_nsec = 0;
-		break;
-	case TSP_HZ:
-	case TSP_USEC:
-		microtime(&tv);
-		TIMEVAL_TO_TIMESPEC(&tv, tsp);
-		break;
-	case TSP_NSEC:
-	default:
-		break;
-	}
-}
-
 void
 htbc_add_timestamp_transaction(struct htbc_htransaction *trans)
 {
@@ -632,7 +599,7 @@ htbc_add_timestamp_transaction(struct htbc_htransaction *trans)
 
 	tsp = trans->ht_timespec;
 
-	htbc_timestamp(&tsp);
+	vfs_timestamp(&tsp);
 	if(trans->ht_flag & IN_ACCESS) {
 		trans->ht_atime = tsp.tv_sec;
 		trans->ht_atimesec = tsp.tv_nsec;

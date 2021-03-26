@@ -557,7 +557,7 @@ ioapic_create(caddr_t addr, int32_t apic_id, int intbase)
 	uint32_t value;
 
 	/* Map the register window so we can access the device. */
-	apic = pmap_mapdev(addr, IOAPIC_MEM_REGION);
+	apic =  pmap_mapdev(addr, IOAPIC_MEM_REGION);
 	ioapic_lock(&icu_lock);
 	value = ioapic_read(apic, IOAPIC_VER);
 	ioapic_unlock(&icu_lock);
@@ -573,23 +573,25 @@ ioapic_create(caddr_t addr, int32_t apic_id, int intbase)
 	io = malloc(sizeof(struct ioapic) + numintr * sizeof(struct ioapic_intsrc), M_IOAPIC, M_WAITOK);
 	io->io_pic = ioapic_template;
 	io->io_dev = NULL;
-	//io->io_wnd = NULL;
 	ioapic_lock(&icu_lock);
 	io->io_id = next_id++;
 	io->io_hw_apic_id = ioapic_read(apic, IOAPIC_ID) >> APIC_ID_SHIFT;
 	io->io_apic_id = apic_id == -1 ? io->io_hw_apic_id : apic_id;
 	ioapic_unlock(&icu_lock);
-	if (io->io_hw_apic_id != apic_id)
+	if (io->io_hw_apic_id != apic_id) {
 		printf("ioapic%u: MADT APIC ID %d != hw id %d\n", io->io_id, apic_id, io->io_hw_apic_id);
+	}
 	if (intbase == -1) {
 		intbase = next_ioapic_base;
 		printf("ioapic%u: Assuming intbase of %d\n", io->io_id, intbase);
-	} else if (intbase != next_ioapic_base && bootverbose)
+	} else if (intbase != next_ioapic_base && bootverbose) {
 		printf("ioapic%u: WARNING: intbase %d != expected base %d\n", io->io_id, intbase, next_ioapic_base);
+	}
 	io->io_intbase = intbase;
 	next_ioapic_base = intbase + numintr;
-	if (next_ioapic_base > num_io_irqs)
+	if (next_ioapic_base > num_io_irqs) {
 		num_io_irqs = next_ioapic_base;
+	}
 	io->io_numintr = numintr;
 	io->io_addr = apic;
 	io->io_paddr = addr;

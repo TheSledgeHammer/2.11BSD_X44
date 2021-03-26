@@ -35,7 +35,53 @@
 #include <sys/time.h>
 #include <sys/disklabel.h>
 #include <sys/disk.h>
+#include <sys/reboot.h>
 #include <sys/user.h>
+#include <sys/diskslice.h>
+
+void
+set_adaptor(boot)
+	u_long boot;
+{
+	int adaptor = (boot >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
+}
+
+void
+set_controller(boot)
+	u_long boot;
+{
+	int controller = (boot >> B_CONTROLLERSHIFT) & B_CONTROLLERMASK;
+}
+
+void
+set_slice(boot)
+	u_long boot;
+{
+	int slice = (boot >> B_SLICESHIFT) & B_SLICEMASK;
+}
+
+void
+set_partition(boot)
+	u_long boot;
+{
+	int part = (boot >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
+}
+
+void
+set_unit(boot)
+	u_long boot;
+{
+	int unit = (bootdev >> B_UNITSHIFT) & B_UNITMASK;
+}
+
+
+dev_t
+makediskslice(dev, unit, slice, part)
+	dev_t dev;
+	int unit, slice, part;
+{
+	return (makedev(major(dev), dkmakeminor(unit, slice, part)));
+}
 
 char *
 readdiskslice(dev, strat, sp)

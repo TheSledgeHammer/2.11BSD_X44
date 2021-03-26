@@ -264,7 +264,7 @@ rawrw(dev, uio, flag)
 	struct uio *uio;
 	int flag;
 {
-	return(physio(cdevsw[major(dev)].d_strategy, (struct buf *)NULL, dev, (uio->uio_rw == UIO_READ ? B_READ : B_WRITE), minphys, uio));
+	return (physio(cdevsw[major(dev)].d_strategy, (struct buf *)NULL, dev, (uio->uio_rw == UIO_READ ? B_READ : B_WRITE), minphys, uio));
 }
 
 /*
@@ -275,7 +275,8 @@ rawread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	return (physio(cdevsw[major(dev)].d_strategy, (struct buf *)NULL, dev, B_READ, minphys, uio));
+	return (rawrw(dev, uio, B_READ));
+	//return (physio(cdevsw[major(dev)].d_strategy, (struct buf *)NULL, dev, B_READ, minphys, uio));
 }
 
 /*
@@ -286,5 +287,6 @@ rawwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	return (physio(cdevsw[major(dev)].d_strategy, (struct buf *)NULL, dev, B_WRITE, minphys, uio));
+	return (rawrw(dev, uio, B_WRITE));
+	//return (physio(cdevsw[major(dev)].d_strategy, (struct buf *)NULL, dev, B_WRITE, minphys, uio));
 }

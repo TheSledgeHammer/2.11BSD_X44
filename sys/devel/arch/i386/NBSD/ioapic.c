@@ -232,18 +232,6 @@ ioapic_print_redir(struct ioapic_softc *sc, const char *why, int pin)
 	apic_format_redir(device_xname(sc->sc_dev), why, pin, APIC_VECTYPE_IOAPIC, redirhi, redirlo);
 }
 
-
-int
-ioapic_match(struct device *parent, struct cfdata *match, void *aux)
-{
-	struct apic_attach_args *aaa = (struct apic_attach_args *)aux;
-
-	if (strcmp(aaa->aaa_name, match->cf_driver->cd_name) == 0) {
-		return (1);
-	}
-	return (0);
-}
-
 /* Reprogram the APIC ID, and check that it actually got set. */
 void
 ioapic_set_id(struct ioapic_softc *sc)
@@ -258,6 +246,20 @@ ioapic_set_id(struct ioapic_softc *sc)
 		printf(", can't remap");
 	else
 		printf(", remapped");
+}
+
+CFDRIVER_DECL(NULL, ioapic, &ioapic_cops, DV_DULL, sizeof(struct ioapic_softc));
+CFOPS_DECL(ioapic, ioapic_match, ioapic_attach, NULL, NULL);
+
+int
+ioapic_match(struct device *parent, struct cfdata *match, void *aux)
+{
+	struct apic_attach_args *aaa = (struct apic_attach_args *)aux;
+
+	if (strcmp(aaa->aaa_name, match->cf_driver->cd_name) == 0) {
+		return (1);
+	}
+	return (0);
 }
 
 /*
@@ -324,9 +326,9 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 	sc->sc_apic_sz = (ver_sz & IOAPIC_MAX_MASK) >> IOAPIC_MAX_SHIFT;
 	sc->sc_apic_sz++;
 
-	if (aaa->apic_vecbase != -1)
+	if (aaa->apic_vecbase != -1) {
 		sc->sc_pic.pic_vecbase = aaa->apic_vecbase;
-	else {
+	} else {
 		/*
 		 * XXX this assumes ordering of ioapics in the table.
 		 * Only needed for broken BIOS workaround (see mpbios.c)
@@ -475,7 +477,7 @@ ioapic_reenable(void)
 		}
 
 		for (p = 0; p < sc->sc_apic_sz; p++)
-			apic_set_redir(sc, p, sc->sc_pins[p].ip_vector, sc->sc_pins[p].ip_cpu);
+			apic_set_redir(sc, p, sc->sc_pins[p].ip_vector, sc->sc_pins[p]);
 	}
 
 	ioapic_enable();
