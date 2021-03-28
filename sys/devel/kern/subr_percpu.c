@@ -51,6 +51,8 @@
 #include <devel/sys/percpu.h>
 #include <devel/sys/malloctypes.h>
 
+#include <devel/arch/i386/include/cpu.h>
+
 struct percpu *cpuid_to_percpu[NCPUS];
 struct cpuhead cpuhead = LIST_HEAD_INITIALIZER(cpuhead);
 
@@ -73,7 +75,7 @@ percpu_init(pcpu, cpuid, size)
 
 	cpuid_to_percpu[cpuid] = pcpu;
 	LIST_INSERT_HEAD(&cpuhead, pcpu, pc_entry);
-	cpu_percpu_init(pcpu, cpuid, size);				/* TODO: no method */
+	cpu_percpu_init(pcpu, cpuid, size);
 }
 
 /* allocate percpu structure */
@@ -197,4 +199,13 @@ percpu_free(pcpu)
 		extent_destroy(pcpu->pc_extent);
 	}
 	free(pcpu, M_PERCPU);
+}
+
+void
+cpu_percpu_init(pcpu, cpuid, size)
+	struct percpu *pcpu;
+	int cpuid;
+	size_t size;
+{
+	pcpu->pc_acpi_id = 0xffffffff;
 }

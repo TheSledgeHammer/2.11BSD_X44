@@ -38,13 +38,47 @@
  * Any objects with a bucket index less than 10 are flagged as small, while objects
  * greater than or equal to 10 are flagged as large.
  */
-
+#include <sys/extent.h>
 #include <sys/malloc.h>
 #include <devel/sys/malloctypes.h>
 #include <devel/vm/include/vm_slab.h>
 
-struct slablist 	*slab_list;
+struct slablist 	slab_list;
 simple_lock_data_t	slab_list_lock;
+
+void
+slab_startup(start, end)
+	vm_offset_t	*start;
+	vm_offset_t	*end;
+{
+	slab_t 			slab;
+	int				error;
+	u_long 			indx;
+	size_t 			size;
+	u_long			bsize;
+
+    CIRCLEQ_INIT(&slab_cache_list);
+    CIRCLEQ_INIT(slab_list);
+
+    simple_lock_init(&slab_list_lock, "slab_list_lock");
+
+    slab_count = 0;
+
+    size = end - start;
+
+	for(indx = 0; indx < MINBUCKET + 16; indx++) {
+		bsize = BUCKETSIZE(indx);
+		slab_insert(slab, bsize, M_VMSLAB, M_WAITOK);
+	}
+	slab->s_extent = slab_create("slab extent", start, end, slab->s_size, slab->s_mtype, NULL, NULL, EX_WAITOK | EX_MALLOCOK);
+	error = extent_alloc_region(slab->s_extent->se_extent, start, bsize, EX_WAITOK | EX_MALLOCOK);
+	if (error) {
+		printf("slab_startup: slab allocator initialized successful");
+	} else {
+		panic("slab_startup: slab allocator couldn't be initialized");
+		extent_destroy(slab->s_extent);
+	}
+}
 
 /*
  * TODO:
@@ -52,13 +86,27 @@ simple_lock_data_t	slab_list_lock;
  * - slab caching & a slab freelist?
  * - add dynamic allocation according segments &/or pages
  */
-void
-slab_create()
+static slab_extents_t
+slab_create(name, start, end, size, mtype, storage, storagesize, flags)
+	const char *name;
+	size_t start, end, size, storagesize;
+	caddr_t storage;
+	int mtype, flags;
 {
-    CIRCLEQ_INIT(&slab_cache_list);
-    CIRCLEQ_INIT(&slab_list);
-    slab_count = 0;
-    simple_lock_init(&slab_list_lock, "slab_list_lock");
+	slab_extents_t 	slext;
+
+	slext->se_name = name;
+	slext->se_start = start;
+	slext->se_end = end;
+	slext->se_size = size;
+	slext->se_mtype = mtype;
+	slext->se_storage = storage;
+	slext->se_storagesize = storagesize;
+	slext->se_flags = flags;
+
+	slext->se_extent = extent_create(name, start, end, mtype, storage, storagesize, flags);
+
+	return (slext);
 }
 
 /*
@@ -69,30 +117,43 @@ slab_create()
  * have enough space.
  */
 void
-slab_malloc(size, mtype, flags)
-	u_long  size;
+slab_malloc(size, alignment, boundary, mtype, flags)
+	u_long 	size;
+	u_long	alignment, boundary;
 	int		mtype, flags;
 {
-	slab_t slab;
+	slab_t 			slab;
+	slab_extents_t 	slext;
+	int 			error;
 
-	slab_insert(slab, size, mtype, flags);
-	if(slab->s_size == size) {
-		malloc(slab->s_size, type, flags);
+	slab = slab_lookup(size, mtype);
+	slext = slab->s_extent;
+	slext->se_mtype = mtype;
+
+	error = extent_alloc(slext->se_extent, size, alignment, boundary, flags, slab->s_slext);
+	if(error) {
+		printf("slab_malloc: successful");
+	} else {
+		printf("slab_malloc: unsuccessful");
 	}
 }
 
 void
 slab_free(addr, mtype)
-	void *addr;
-	int	mtype;
+	void 	*addr;
+	int		mtype;
 {
 	slab_t slab;
+	slab_extents_t 	slext;
+	int 			error;
 
 	slab = slab_lookup(addr, mtype);
 	if (slab) {
+		slext = slab->s_extent;
+		if(slext->se_mtype == mtype) {
+			error = extent_free(slext->se_extent, slext->se_start, addr, flags);
+		}
 		slab_remove(addr);
-	} else {
-		free(addr, mtype);
 	}
 }
 
@@ -164,7 +225,7 @@ slab_lookup(size, mtype)
     		}
     	}
     }
-    simple_unlock(&slab_bucket_lock);
+    simple_unlock(&slab_list_lock);
     return (NULL);
 }
 
@@ -195,7 +256,7 @@ slab_insert(slab, size, mtype, flags)
 
 void
 slab_remove(size)
-    long    size;
+	u_long    size;
 {
     struct slablist  *slabs;
     register slab_t     slab;

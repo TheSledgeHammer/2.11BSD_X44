@@ -40,6 +40,7 @@
 #include <sys/resource.h>
 #include <machine/cpu.h>
 #include <machine/param.h>
+#include <devel/arch/i386/include/cpu.h>
 
 struct cpuhead;
 LIST_HEAD(cpuhead, percpu);
@@ -53,6 +54,8 @@ struct percpu {
 	struct extent			*pc_extent;		/* Dynamic storage alloctor */
 	u_long 					pc_start;		/* start of per-cpu extent region */
 	u_long 					pc_end;			/* end of per-cpu extent region */
+
+	PERCPU_MD_FIELDS;
 };
 
 extern struct cpuhead 		cpuhead;
@@ -69,15 +72,15 @@ extern struct percpu 		*cpuid_to_percpu[];
  * Machine dependent callouts.  cpu_percpu_init() is responsible for
  * initializing machine dependent fields of struct percpu.
  */
-void				cpu_percpu_init(struct percpu *pcpu, int cpuid, size_t size);
+void					cpu_percpu_init(struct percpu *pcpu, int cpuid, size_t size);
 
-void				percpu_init(struct percpu *, int, size_t);
-void				percpu_malloc(struct percpu *, size_t);
-void				percpu_free(struct percpu *);
-void				percpu_destroy(struct percpu *);
-struct percpu 		*percpu_find(int);
-void				percpu_extent(struct percpu *, u_long, u_long);
-void				percpu_extent_region(struct percpu *);
-void				percpu_extent_subregion(struct percpu *, size_t);
-void				percpu_extent_free(struct percpu *, u_long, u_long, int);
+void					percpu_init(struct percpu *, int, size_t);
+void					percpu_malloc(struct percpu *, size_t);
+void					percpu_free(struct percpu *);
+void					percpu_destroy(struct percpu *);
+struct percpu 			*percpu_find(int);
+void					percpu_extent(struct percpu *, u_long, u_long);
+void					percpu_extent_region(struct percpu *);
+void					percpu_extent_subregion(struct percpu *, size_t);
+void					percpu_extent_free(struct percpu *, u_long, u_long, int);
 #endif /* _SYS_PERCPU_H_ */

@@ -58,11 +58,6 @@ int	niswdev;		/* number of interleaved swap devices */
 int	niswap;			/* size of interleaved swap area */
 #endif
 
-struct cdevsw swap_cdevsw = {
-		.d_read = rawread,
-		.d_write = rawwrite,
-};
-
 /*
  * Set up swap devices.
  * Initialize linked list of free swap

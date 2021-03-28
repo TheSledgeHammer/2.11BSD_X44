@@ -38,7 +38,24 @@ struct cpu_info {
 	int 				ci_cpu_class;		/* CPU class */
 
 	u_int 				ci_apicid;			/* our APIC ID */
+
+	struct percpu		*ci_percpu;
 };
+
+struct cpu_ops {
+	void 				(*cpu_init)(void);
+	void 				(*cpu_resume)(void);
+};
+extern struct cpu_ops cpu_ops;
+
+#define	PERCPU_MD_FIELDS									\
+	struct	percpu 	*pc_prvspace;	/* Self-reference */	\
+	u_int   		pc_acpi_id;		/* ACPI CPU id */		\
+
+
+#define percpu_offset(pcpc, name) 		offsetof(struct percpu, name)
+
+#define	percpu_type(name)				__typeof(((struct percpu *)0)->name)
 
 static inline void
 cpu_info_cpu(ci)

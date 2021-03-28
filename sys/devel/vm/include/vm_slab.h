@@ -57,6 +57,21 @@ struct slab_metadata {
 };
 typedef struct slab_metadata    *slab_metadata_t;
 
+struct slab_extents {
+	struct extent				*se_extent;
+	const char 					*se_name;
+	size_t 						se_start;
+	size_t 						se_end;
+	size_t                      se_size;
+	int 						se_mtype;
+	caddr_t						se_storage;
+	size_t						se_storagesize;
+	int 						se_align;
+	int							se_boundary;
+	int							se_flags;
+};
+typedef struct slab_extents    	*slab_extents_t;
+
 struct slablist;
 CIRCLEQ_HEAD(slablist, slab);
 struct slab {
@@ -64,12 +79,16 @@ struct slab {
     CIRCLEQ_ENTRY(slab)         s_cache;                                        /* cache list entry */
 
     slab_metadata_t             s_meta;                                         /* slab metadata */
-    u_long                      s_size;     
+    u_long                      s_size;											/* slab size */
     int							s_mtype;                                        /* malloc type */
 
     int							s_flags;
     int                         s_refcount;
     int                         s_usecount;                                     /* usage counter for slab caching */
+
+    slab_extents_t				s_extent;
+
+    size_t						s_slext;										/* extent region result */
 };
 typedef struct slab             *slab_t;
 
