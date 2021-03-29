@@ -28,7 +28,7 @@ A General todo list. Don't hesitate to add to this list. :)
 		- requires changing machine-dependent soft interrupts
 	- geode.c: to add (optional extra)
 	- smp/multi-cpu:
-		- todo before: lapic, ioapic & updates to intr
+		- todo before (lapic, ioapic & updates to intr)
 
 ## devel: (planned)
 - Code planned for future integration
@@ -37,8 +37,7 @@ A General todo list. Don't hesitate to add to this list. :)
 	
 ## dev:
 - Essential Driver Support:
-	- usb: 							Work in progress
-		- fix power: ehci, uhci & ohci
+	- usb: 								Work in progress
 		- add: vhci, xhci
 	- wscons/pccons:					Work in progress
 		- double check wscons for errors/mistakes
