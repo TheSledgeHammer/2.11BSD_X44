@@ -73,11 +73,7 @@
 #include <dev/usb/ohcireg.h>
 #include <dev/usb/ohcivar.h>
 
-#if defined(__OpenBSD__)
-struct cfdriver ohci_cd = {
-	NULL, "ohci", DV_DULL
-};
-#endif
+#include <dev/misc/apm/power.h>
 
 #ifdef OHCI_DEBUG
 #define DPRINTF(x)		if (ohcidebug) logprintf x

@@ -38,6 +38,7 @@
 #include <sys/user.h>
 #include <sys/buf.h>
 #include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/proc.h>
 #include <sys/namei.h>
 #include <sys/dmap.h>		/* XXX */
@@ -51,6 +52,32 @@
 /*
  * Indirect driver for multi-controller paging.
  */
+
+const struct bdevsw swap_bdevsw = {
+		.d_open = nullopen,
+		.d_close = nullclose,
+		.d_strategy = swstrategy,
+		.d_ioctl = noioctl,
+		.d_dump = nodump,
+		.d_psize = nosize,
+		.d_discard = nodiscard,
+		.d_type = D_OTHER
+};
+
+const struct cdevsw swap_cdevsw = {
+		.d_open = nullopen,
+		.d_close = nullclose,
+		.d_read = swread,
+		.d_write = swwrite,
+		.d_ioctl = noioctl,
+		.d_stop = nostop,
+		.d_tty = notty,
+		.d_poll = nopoll,
+		.d_mmap = nommap,
+		//.d_kqfilter = nokqfilter,
+		.d_discard = nodiscard,
+		.d_type = D_OTHER,
+};
 
 int	nswap, nswdev;
 #ifdef SEQSWAP
@@ -203,9 +230,7 @@ swstrategy(bp)
 			register struct swdevt *swp;
 
 			bp->b_blkno -= niswap;
-			for (index = niswdev, swp = &swdevt[niswdev];
-			     swp->sw_dev != NODEV;
-			     swp++, index++) {
+			for (index = niswdev, swp = &swdevt[niswdev]; swp->sw_dev != NODEV; swp++, index++) {
 				if (bp->b_blkno < swp->sw_nblks)
 					break;
 				bp->b_blkno -= swp->sw_nblks;
@@ -282,11 +307,13 @@ swapon(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	if (error == suser1(p->p_ucred, &p->p_acflag))
+	if (error == suser1(p->p_ucred, &p->p_acflag)) {
 		return (error);
+	}
 	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->name, p);
-	if (error == namei(&nd))
+	if (error == namei(&nd)) {
 		return (error);
+	}
 	vp = nd.ni_vp;
 	if (vp->v_type != VBLK) {
 		vrele(vp);
@@ -346,8 +373,9 @@ swfree(p, index)
 
 	sp = &swdevt[index];
 	vp = sp->sw_vp;
-	if (error == VOP_OPEN(vp, FREAD|FWRITE, p->p_ucred, p))
+	if (error == VOP_OPEN(vp, FREAD|FWRITE, p->p_ucred, p)) {
 		return (error);
+	}
 	sp->sw_flags |= SW_FREED;
 	nblks = sp->sw_nblks;
 	/*
@@ -358,8 +386,7 @@ swfree(p, index)
 		int perdev;
 		dev_t dev = sp->sw_dev;
 
-		if (bdevsw[major(dev)].d_psize == 0
-				|| (nblks = (*bdevsw[major(dev)].d_psize)(dev)) == -1) {
+		if (bdevsw[major(dev)].d_psize == 0 || (nblks = (*bdevsw[major(dev)].d_psize)(dev)) == -1) {
 			(void) VOP_CLOSE(vp, FREAD | FWRITE, p->p_ucred, p);
 			sp->sw_flags &= ~SW_FREED;
 			return (ENXIO);
@@ -367,17 +394,20 @@ swfree(p, index)
 #ifdef SEQSWAP
 		if (index < niswdev) {
 			perdev = niswap / niswdev;
-			if (nblks > perdev)
+			if (nblks > perdev) {
 				nblks = perdev;
+			}
 		} else {
-			if (nblks % dmmax)
+			if (nblks % dmmax) {
 				nblks -= (nblks % dmmax);
+			}
 			nswap += nblks;
 		}
 #else
 		perdev = nswap / nswdev;
-		if (nblks > perdev)
+		if (nblks > perdev) {
 			nblks = perdev;
+		}
 #endif
 		sp->sw_nblks = nblks;
 	}
@@ -391,8 +421,9 @@ swfree(p, index)
 		register struct swdevt *swp;
 
 		blk = niswap;
-		for (swp = &swdevt[niswdev]; swp != sp; swp++)
+		for (swp = &swdevt[niswdev]; swp != sp; swp++) {
 			blk += swp->sw_nblks;
+		}
 		rmfree(swapmap, nblks, blk);
 		return (0);
 	}
@@ -420,10 +451,27 @@ swfree(p, index)
 			 * Don't use the first cluster of the device
 			 * in case it starts with a label or boot block.
 			 */
-			rmfree(swapmap, blk - ctod(CLSIZE),
-			    vsbase + ctod(CLSIZE));
+			rmfree(swapmap, blk - ctod(CLSIZE), vsbase + ctod(CLSIZE));
 		} else
 			rmfree(swapmap, blk, vsbase);
 	}
 	return (0);
+}
+
+int
+swread(dev, uio, ioflag)
+	dev_t dev;
+	struct uio *uio;
+	int ioflag;
+{
+	return (physio(swstrategy, NULL, dev, B_READ, minphys, uio));
+}
+
+int
+swwrite(dev, uio, ioflag)
+	dev_t dev;
+	struct uio *uio;
+	int ioflag;
+{
+	return (physio(swstrategy, NULL, dev, B_WRITE, minphys, uio));
 }

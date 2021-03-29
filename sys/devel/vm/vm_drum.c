@@ -123,9 +123,7 @@ vschunk(p, base, size, type, dmp)
 			db.db_size = dmtext - base % dmtext;
 			if (db.db_size > size)
 				db.db_size = size;
-			(void) swap(p, p->p_textp->x_daddr[base / dmtext] + base % dmtext,
-					ptob(tptov(p, dtoc(base))), (int) dtob(db.db_size), B_WRITE,
-					0, swapdev_vp, 0);
+			(void) swap(p, p->p_textp->x_daddr[base / dmtext] + base % dmtext, ptob(tptov(p, dtoc(base))), (int) dtob(db.db_size), B_WRITE, 0, swapdev_vp, 0);
 			pte = tptopte(p, dtoc(base));
 			p->p_textp->x_rssize -= vmemfree(pte, (int) dtoc(db.db_size));
 			base += db.db_size;

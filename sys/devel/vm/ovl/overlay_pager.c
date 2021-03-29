@@ -93,11 +93,12 @@
 #include <sys/uio.h>
 #include <sys/mount.h>
 
-#include <devel/vm/ovl/ovl.h>
-#include <devel/vm/ovl/ovl_page.h>
-#include <devel/vm/ovl/overlay_pager.h>
 #include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_page.h>
+
+#include <devel/vm/ovl/include/ovl.h>
+#include <devel/vm/ovl/include/ovl_page.h>
+#include <devel/vm/ovl/include/overlay_pager.h>
 
 struct pagerlst 	overlay_pager_list;
 

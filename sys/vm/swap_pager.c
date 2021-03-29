@@ -186,13 +186,15 @@ swap_pager_init()
 	/*
 	 * Calculate the swap allocation constants.
 	 */
-        if (dmmin == 0) {
-                dmmin = DMMIN;
-		if (dmmin < CLBYTES/DEV_BSIZE)
-			dmmin = CLBYTES/DEV_BSIZE;
+	if (dmmin == 0) {
+		dmmin = DMMIN;
+		if (dmmin < CLBYTES / DEV_BSIZE) {
+			dmmin = CLBYTES / DEV_BSIZE;
+		}
 	}
-        if (dmmax == 0)
-                dmmax = DMMAX;
+	if (dmmax == 0) {
+		dmmax = DMMAX;
+	}
 
 	/*
 	 * Fill in our table of object size vs. allocation size

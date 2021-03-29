@@ -8,6 +8,9 @@
 	- incomplete
 - vm_swap.c/.h:
 	- consider updating vm_swap with parts from uvm_swap for better anon & segment compatability
+	- improve swdevt interop with swapdev
+- vm_pager.c/.h:
+	- keeping segment_pager seperate or as new pgops
 - vm_pageout.c/.h:
 	- consider updating vm_pageout with parts from uvm_pageout
 	

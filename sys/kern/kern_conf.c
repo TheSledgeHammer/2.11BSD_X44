@@ -99,7 +99,15 @@ network_init(devsw)
 	DEVSWIO_CONFIG_INIT(devsw, NBPFILTER, NULL, &bpf_cdevsw, NULL);			/* Berkeley packet filter */
 }
 
-/* tty global driver configuration */
+/* add swap driver configuration */
+void
+swap_init(devsw)
+	struct devswtable *devsw;
+{
+	DEVSWIO_CONFIG_INIT(devsw, 1, &swap_bdevsw, &swap_cdevsw, NULL);		/* swap pseudo-device */
+}
+
+/* add tty global driver configuration */
 void
 tty_init(devsw)
 	struct devswtable *devsw;

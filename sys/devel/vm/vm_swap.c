@@ -34,7 +34,6 @@
 #include <sys/systm.h>
 #include <sys/user.h>
 #include <sys/buf.h>
-#include <sys/conf.h>
 #include <sys/proc.h>
 #include <sys/namei.h>
 #include <sys/dmap.h>		/* XXX */
@@ -47,48 +46,147 @@
 
 #include <devel/vm/include/vm_swap.h>
 
-/*
- * We keep a of pool vndbuf's and vndxfer structures.
- */
-static struct vndxfer 			vndxfer_pool;
-static struct vndbuf 			vndbuf_pool;
+#define swdevt_member(swp, member)				(swp->sw_ ## member)
+#define swdevt_find_by_index(member, val)	 	(&swdevt[member].sw_ ## val)
+#define swdevt_find_by_dev(dev, member)			(swdevt_find_by_index(dev, member))
 
-/*
- * local variables
- */
-static struct extent 			*swapextent;		/* controls the mapping of /dev/drum */
-
-dev_type_read(swread);
-dev_type_write(swwrite);
-
-const struct cdevsw swap_cdevsw = {
-		.d_open = noopen,
-		.d_close = noclose,
-		.d_read = swread,
-		.d_write = swwrite,
-		.d_ioctl = noioctl,
-		.d_stop = nostop,
-		.d_tty = notty,
-		.d_poll = nopoll,
-		.d_mmap = nomap,
-		.d_discard = nodiscard,
-		.d_type = D_OTHER
+const struct swdevsw swap_swdevsw = {
+		.s_allocate = swallocate,
+		.s_free = swfree,
+		.s_create = swcreate,
+		.s_destroy = swdestroy,
+		.s_read = swread,
+		.s_write = swwrite,
+		.s_strategy = swstrategy
 };
 
-const struct swapdevsw swap_devsw = {
-		.sw_allocate = swallocate,
-		.sw_free = swfree,
-		.sw_create = swcreate,
-		.sw_destroy = swdestroy,
-		.sw_read = swread,
-		.sw_write = swwrite,
-		.sw_strategy = swstrategy
-};
+int	nswap, nswdev;
+#ifdef SEQSWAP
+int	niswdev;		/* number of interleaved swap devices */
+int	niswap;			/* size of interleaved swap area */
+#endif
 
 void
 swapinit()
 {
+	register int i;
+	register struct buf *sp = swbuf;
+	register struct proc *p = &proc0;	/* XXX */
+	struct swdevt *swp;
+	int error;
 
+	/*
+	 * Count swap devices, and adjust total swap space available.
+	 * Some of the space will not be countable until later (dynamically
+	 * configurable devices) and some of the counted space will not be
+	 * available until a swapon() system call is issued, both usually
+	 * happen when the system goes multi-user.
+	 *
+	 * If using NFS for swap, swdevt[0] will already be bdevvp'd.	XXX
+	 */
+#ifdef SEQSWAP
+	nswdev = niswdev = 0;
+	nswap = niswap = 0;
+	swap_sequential(swp, niswdev, niswap);
+
+#else
+	nswdev = 0;
+	nswap = 0;
+	swap_interleaved(swp, nswdev, nswap);
+#endif
+	if (nswap == 0) {
+		printf("WARNING: no swap space found\n");
+	} else if (error == swfree(p, 0)) {
+		printf("swfree errno %d\n", error); /* XXX */
+		panic("swapinit swfree 0");
+	}
+
+	/*
+	 * Now set up swapdev
+	 */
+	swp->sw_swapdev = (struct swapdev)rmalloc(&swapmap, sizeof(struct swapdev));
+	swapdrum_init(swp);
+
+	/*
+	 * Now set up swap buffer headers.
+	 */
+	bswlist.b_actf = sp;
+	for (i = 0; i < nswbuf - 1; i++, sp++) {
+		sp->b_actf = sp + 1;
+		sp->b_rcred = sp->b_wcred = p->p_ucred;
+		LIST_NEXT(sp, b_vnbufs) = NOLIST;
+	}
+	sp->b_rcred = sp->b_wcred = p->p_ucred;
+	LIST_NEXT(sp, b_vnbufs) = NOLIST;
+	sp->b_actf = NULL;
+}
+
+static void
+swap_sequential(swp, niswdev, niswap)
+	struct swdevt *swp;
+	int	niswdev, niswap;
+{
+	/*
+	 * All interleaved devices must come first
+	 */
+	for (swp = swdevt; swp->sw_dev != NODEV || swp->sw_vp != NULL; swp++) {
+		if (swp->sw_flags & SW_SEQUENTIAL) {
+			break;
+		}
+		niswdev++;
+		if (swp->sw_nblks > niswap) {
+			niswap = swp->sw_nblks;
+		}
+	}
+	niswap = roundup(niswap, dmmax);
+	niswap *= niswdev;
+	if (swdevt[0].sw_vp == NULL &&
+	    bdevvp(swdevt[0].sw_dev, &swdevt[0].sw_vp)) {
+		panic("swapvp");
+	}
+	/*
+	 * The remainder must be sequential
+	 */
+	for ( ; swp->sw_dev != NODEV; swp++) {
+		if ((swp->sw_flags & SW_SEQUENTIAL) == 0) {
+			panic("binit: mis-ordered swap devices");
+		}
+		nswdev++;
+		if (swp->sw_nblks > 0) {
+			if (swp->sw_nblks % dmmax) {
+				swp->sw_nblks -= (swp->sw_nblks % dmmax);
+			}
+			nswap += swp->sw_nblks;
+		}
+	}
+	nswdev += niswdev;
+	if (nswdev == 0) {
+		panic("swapinit");
+	}
+	nswap += niswap;
+}
+
+static void
+swap_interleaved(swp, nswdev, nswap)
+	struct swdevt *swp;
+	int	nswdev, nswap;
+{
+	for (swp = swdevt; swp->sw_dev != NODEV || swp->sw_vp != NULL; swp++) {
+		nswdev++;
+		if (swp->sw_nblks > nswap) {
+			nswap = swp->sw_nblks;
+		}
+	}
+	if (nswdev == 0) {
+		panic("swapinit");
+	}
+	if (nswdev > 1) {
+		nswap = ((nswap + dmmax - 1) / dmmax) * dmmax;
+	}
+	nswap *= nswdev;
+	if (swdevt[0].sw_vp == NULL && bdevvp(swdevt[0].sw_dev, &swdevt[0].sw_vp)) {
+		panic("swapvp");
+	}
 }
 
 /*
@@ -107,6 +205,7 @@ swapon(p, uap, retval)
 	struct swapon_args *uap;
 	int *retval;
 {
+
 	return (0);
 }
 
@@ -133,6 +232,7 @@ swallocate(p, index)
 	struct proc *p;
 	int index;
 {
+
 	return (0);
 }
 
@@ -145,8 +245,11 @@ swfree(p, index)
 }
 
 int
-swcreate()
+swcreate(p, index)
+	struct proc *p;
+	int index;
 {
+
 	return (0);
 }
 
@@ -177,4 +280,24 @@ swstrategy(bp)
 	register struct buf *bp;
 {
 
+}
+
+int
+vm_swap_put(swslot, ppsp, npages, flags)
+	struct vm_page **ppsp;
+	int swslot, npages, flags;
+{
+	int error;
+	error = vm_swap_io();
+
+	return (error);
+}
+
+int
+vm_swap_get(page, swslot, flags)
+	struct vm_page *page;
+	int swslot, flags;
+{
+	int error;
+	return (error);
 }

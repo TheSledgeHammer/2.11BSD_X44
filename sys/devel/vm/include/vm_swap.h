@@ -29,23 +29,34 @@
 #ifndef _VM_SWAP_H_
 #define _VM_SWAP_H_
 
-#include <sys/conf.h>
 #include <sys/queue.h>
+
+/*
+ * Swap device table
+ */
+struct swdevt1 {
+	dev_t			sw_dev;
+	int				sw_flags;
+	int				sw_nblks;
+	struct vnode 	*sw_vp;
+
+	struct swapdev *sw_swapdev;
+};
 
 /*
  * Swap device switch (WIP)
  */
-struct swapdevsw {
-	int 		(*sw_allocate)();
-	int 		(*sw_free)();
-	int			(*sw_create)(struct swapdev *swdev);
-	int			(*sw_destroy)(struct swapdev *swdev);
-	int 		(*sw_read)(dev_t dev, struct uio *uio, int ioflag);
-	int 		(*sw_write)(dev_t dev, struct uio *uio, int ioflag);
-	void 		(*sw_strategy)(struct buf *bp);
+struct swdevsw {
+	int 		(*s_allocate)();
+	int 		(*s_free)();
+	int			(*s_create)(struct swapdev *swdev);
+	int			(*s_destroy)(struct swapdev *swdev);
+	int 		(*s_read)(dev_t dev, struct uio *uio, int ioflag);
+	int 		(*s_write)(dev_t dev, struct uio *uio, int ioflag);
+	void 		(*s_strategy)(struct buf *bp);
 };
 
-#define	SWSLOT_BAD	(-1)
+#define	SWSLOT_BAD						(-1)
 
 /*
  * swapdev: describes a single swap partition/file
@@ -57,7 +68,6 @@ struct swapdevsw {
 struct swapdev {
 	struct swdevt						*swd_swdevt;	/* Swap device table */
 	int									swd_priority;	/* our priority */
-	int									swd_nblks;		/* blocks in this device */
 	char								*swd_path;		/* saved pathname of device */
 	int									swd_pathlen;	/* length of pathname */
 	int									swd_npages;		/* #pages we can use */
@@ -67,7 +77,7 @@ struct swapdev {
 	int									swd_drumsize;	/* #pages in drum */
 	struct extent						*swd_ex;		/* extent for this swapdev */
 	char								swd_exname[12];	/* name of extent above */
-	TAILQ_ENTRY(swapdev)				swd_next;		/* priority tailq */
+	CIRCLEQ_ENTRY(swapdev)				swd_next;		/* priority circleq */
 
 	int									swd_bsize;		/* blocksize (bytes) */
 	int									swd_maxactive;	/* max active i/o reqs */
@@ -81,7 +91,7 @@ struct swapdev {
  */
 struct swappri {
 	int									spi_priority;   /* priority */
-	TAILQ_HEAD(spi_swapdev, swapdev)	spi_swapdev; 	/* tailq of swapdevs at this priority */
+	CIRCLEQ_HEAD(spi_swapdev, swapdev)	spi_swapdev; 	/* tailq of swapdevs at this priority */
 	LIST_ENTRY(swappri)					spi_swappri;    /* global list of pri's */
 };
 
@@ -106,4 +116,16 @@ struct vndbuf {
 	struct vndxfer						*vb_xfer;
 };
 
-#endif /* SYS_DEVEL_VM_UVM_VM_SWAP_H_ */
+struct vm_page;
+
+#define	SW_FREED		0x01
+#define	SW_SEQUENTIAL	0x02
+#define SW_INUSE		0x04		/* in use: we have swapped here */
+#define SW_ENABLE		0x08		/* enabled: we can swap here */
+#define SW_BUSY			0x10		/* busy: I/O happening here */
+#define SW_FAKE			0x20		/* fake: still being built */
+#define sw_freed		sw_flags	/* XXX compat */
+
+extern struct swdevt1 	swdevt[];
+
+#endif /* _VM_SWAP_H_ */

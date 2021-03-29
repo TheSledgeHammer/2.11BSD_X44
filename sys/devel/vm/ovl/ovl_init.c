@@ -95,9 +95,9 @@
 
 #include <sys/param.h>
 
-#include <vm/ovl/ovl_overlay.h>
-#include <vm/ovl/ovl_page.h>
-#include <vm/ovl/ovl.h>
+#include <vm/ovl/include/ovl_overlay.h>
+#include <vm/ovl/include/ovl_page.h>
+#include <vm/ovl/include/ovl.h>
 
 void
 ovl_mem_init()

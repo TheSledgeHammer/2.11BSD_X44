@@ -71,8 +71,7 @@
 #include <sys/fnv_hash.h>
 
 #include <devel/vm/include/vm_page.h>
-#include <devel/vm/ovl/ovl_object.h>
-//#include <devel/vm/ovl/overlay.h>
+#include <devel/vm/ovl/include/ovl_object.h>
 
 struct ovl_object	overlay_object_store;
 struct ovl_object	omem_object_store;

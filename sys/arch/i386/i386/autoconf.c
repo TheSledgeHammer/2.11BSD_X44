@@ -107,6 +107,7 @@ device_init(devsw)
 {
 	/* machine-independent */
 	console_init(devsw);		/* console interfaces */
+	swap_init(devsw);			/* swap interfaces */
 	tty_init(devsw);			/* tty interfaces */
 	wscons_init(devsw);			/* wscons & pccons interfaces */
 	video_init(devsw);			/* video interfaces */
@@ -129,22 +130,24 @@ swapconf()
 	register int nblks;
 	extern int Maxmem;
 
-	for (swp = swdevt; swp->sw_dev != NODEV; swp++)
-	{
-		if ( (u_int)swp->sw_dev >= nblkdev ) break;	/* XXX */
+	for (swp = swdevt; swp->sw_dev != NODEV; swp++)	{
+		if ( (u_int)swp->sw_dev >= nblkdev ){
+			break;	/* XXX */
+		}
 		if (bdevsw[major(swp->sw_dev)].d_psize) {
-			nblks =
-			  (*bdevsw[major(swp->sw_dev)].d_psize)(swp->sw_dev);
-			if (nblks != -1 &&
-			    (swp->sw_nblks == 0 || swp->sw_nblks > nblks))
+			nblks = (*bdevsw[major(swp->sw_dev)].d_psize)(swp->sw_dev);
+			if (nblks != -1 && (swp->sw_nblks == 0 || swp->sw_nblks > nblks)) {
 				swp->sw_nblks = nblks;
+			}
 		}
 	}
-	if (dumplo == 0 && bdevsw[major(dumpdev)].d_psize)
+	if (dumplo == 0 && bdevsw[major(dumpdev)].d_psize) {
 	/*dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - physmem;*/
 		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - Maxmem*NBPG/512;
-	if (dumplo < 0)
+	}
+	if (dumplo < 0) {
 		dumplo = 0;
+	}
 }
 
 #define	DOSWAP				/* change swdevt and dumpdev */

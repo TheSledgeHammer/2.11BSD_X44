@@ -96,7 +96,7 @@
 
 #include <vm/include/vm.h>
 
-#include <vm/ovl/ovl.h>
+#include <vm/ovl/include/ovl.h>
 
 #undef RB_AUGMENT
 #define	RB_AUGMENT(x)	ovl_rb_augment(x)

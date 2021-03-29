@@ -93,6 +93,8 @@ struct swdevt {
 	int				sw_flags;
 	int				sw_nblks;
 	struct vnode 	*sw_vp;
+
+	struct swapdev *sw_swapdev;
 };
 
 #define	SW_FREED		0x01
@@ -109,6 +111,7 @@ extern void	console_init(struct devswtable *devsw);
 extern void	disk_init(struct devswtable *devsw);
 extern void	misc_init(struct devswtable *devsw);
 extern void	network_init(struct devswtable *devsw);
+extern void	swap_init(struct devswtable *devsw);
 extern void	tty_init(struct devswtable *devsw);
 extern void	usb_init(struct devswtable *devsw);
 extern void	video_init(struct devswtable *devsw);

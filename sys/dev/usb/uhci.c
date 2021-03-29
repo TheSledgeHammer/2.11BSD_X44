@@ -77,6 +77,8 @@
 #include <dev/usb/uhcireg.h>
 #include <dev/usb/uhcivar.h>
 
+#include <dev/misc/apm/power.h>
+
 /* Use bandwidth reclamation for control transfers. Some devices choke on it. */
 /*#define UHCI_CTL_LOOP */
 

@@ -93,8 +93,8 @@
 #include <sys/systm.h>
 #include <sys/fnv_hash.h>
 
-#include <devel/vm/ovl/ovl.h>
-#include <devel/vm/ovl/ovl_page.h>
+#include <devel/vm/ovl/include/ovl.h>
+#include <devel/vm/ovl/include/ovl_page.h>
 
 struct ovpglist			*ovl_page_buckets;			/* Array of buckets */
 int						ovl_page_bucket_count = 0;	/* How big is array? */
@@ -105,7 +105,6 @@ struct ovpglist			ovl_page_list;
 simple_lock_data_t		ovl_page_list_lock;
 
 struct vpage_hash_head 	*ovl_vpage_hashtable;
-
 
 void
 ovl_page_init(start, end)

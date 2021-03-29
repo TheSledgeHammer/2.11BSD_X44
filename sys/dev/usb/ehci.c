@@ -89,6 +89,8 @@
 #include <dev/usb/ehcireg.h>
 #include <dev/usb/ehcivar.h>
 
+#include <dev/misc/apm/power.h>
+
 #ifdef EHCI_DEBUG
 #define DPRINTF(x)					if (ehcidebug) printf x
 #define DPRINTFN(n,x)				if (ehcidebug>(n)) printf x

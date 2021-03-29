@@ -71,7 +71,7 @@
 #include <sys/proc.h>
 #include <sys/user.h>
 
-#include <devel/vm/ovl/ovl.h>
+#include <devel/vm/ovl/include/ovl.h>
 
 int
 ovl_allocate(map, addr, size, anywhere)
