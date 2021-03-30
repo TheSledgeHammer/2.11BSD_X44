@@ -72,6 +72,8 @@ typedef struct pager_struct *vm_pager_t;
 
 #include <vm/include/vm_param.h>
 #include <vm/include/vm_prot.h>
+#include <vm/include/vm_mac.h>
+#include <vm/include/vm_systm.h>
 #include <vm/include/vm_inherit.h>
 #include <vm/include/vm_map.h>
 #include <vm/include/vm_object.h>

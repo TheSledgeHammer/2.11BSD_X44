@@ -133,11 +133,12 @@ static void _vm_object_allocate (vm_size_t, vm_object_t);
 /*
  *	vm_object_init:
  *
- *	Initialize the VM objects module.
+ *	Initialize the VM objects module, and VM aobjects module.
  */
 void
-vm_object_init(size)
+vm_object_init(size, flags)
 	vm_size_t	size;
+	int 		flags;
 {
 	register int	i;
 
@@ -147,14 +148,17 @@ vm_object_init(size)
 	simple_lock_init(&vm_cache_lock);
 	simple_lock_init(&vm_object_tree_lock);
 
-	for (i = 0; i < VM_OBJECT_HASH_COUNT; i++)
+	for (i = 0; i < VM_OBJECT_HASH_COUNT; i++) {
 		RB_INIT(&vm_object_hashtable[i]);
+	}
 
 	kernel_object = &kernel_object_store;
 	_vm_object_allocate(size, kernel_object);
 
 	kmem_object = &kmem_object_store;
 	_vm_object_allocate(VM_KMEM_SIZE + VM_MBUF_SIZE, kmem_object);
+
+	vm_aobject_init(size, kernel_object, flags);
 }
 
 /*

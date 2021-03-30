@@ -95,9 +95,15 @@ void vm_mem_init()
 	/*
 	 * Initialize other VM packages
 	 */
-	vm_object_init(virtual_end - VM_MIN_KERNEL_ADDRESS);
+	vm_object_init(virtual_end - VM_MIN_KERNEL_ADDRESS, NULL);
 	vm_map_startup();
+	amap_init(); 	/* init the amap */
 	kmem_init(virtual_avail, virtual_end);
 	pmap_init(avail_start, avail_end);
 	vm_pager_init();
+
+	/*
+	 * Init anonymous memory systems.
+	 */
+	vm_anon_init();
 }

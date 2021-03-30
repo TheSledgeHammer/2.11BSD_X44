@@ -38,15 +38,15 @@
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/sysctl.h>
-#include <vm/include/vm.h>
 #include <sys/vmmeter.h>
+#include <vm/include/vm.h>
 
 #define	MINFINITY	-32767			/* minus infinity */
 
-struct	loadavg averunnable;		/* load average, of runnable procs */
+struct loadavg 		averunnable;		/* load average, of runnable procs */
 
-int	maxslp = 	MAXSLP;
-int	saferss = 	SAFERSS;
+int	maxslp = 		MAXSLP;
+int	saferss = 		SAFERSS;
 
 void
 vmmeter()
@@ -54,8 +54,26 @@ vmmeter()
 	register u_short *cp, *rp;
 	register long *sp;
 
+	ave(avefree, freemem, 5);
+	ave(avefree30, freemem, 30);
+	cp = &cnt.v_first;
+	rp = &rate.v_first;
+	sp = &sum.v_first;
+
+	while (cp <= &cnt.v_last) {
+		ave(*rp, *cp, 5);
+		*sp += *cp;
+		*cp = 0;
+		rp++, cp++, sp++;
+	}
 	if (time.tv_sec % 5 == 0) {
 		loadav(&averunnable);
+		rate.v_swpin = cnt.v_swpin;
+		sum.v_swpin += cnt.v_swpin;
+		cnt.v_swpin = 0;
+		rate.v_swpout = cnt.v_swpout;
+		sum.v_swpout += cnt.v_swpout;
+		cnt.v_swpout = 0;
 	}
 	if (proc0.p_slptime > maxslp/2) {
 		wakeup((caddr_t)&proc0);
@@ -95,9 +113,10 @@ loadav(avg)
 			nrun++;
 		}
 	}
-	for (i = 0; i < 3; i++)
+	for (i = 0; i < 3; i++) {
 		avg->ldavg[i] = (cexp[i] * avg->ldavg[i] +
 			nrun * FSCALE * (FSCALE - cexp[i])) >> FSHIFT;
+	}
 }
 
 /*
@@ -173,13 +192,22 @@ vmtotal(totalp)
 	register vm_map_t map;
 	int paging;
 
+	totalp->t_vm = 0;
+	totalp->t_avm = 0;
+	totalp->t_rm = 0;
+	totalp->t_arm = 0;
+	totalp->t_rq = 0;
+	totalp->t_dw = 0;
+	totalp->t_sl = 0;
+	totalp->t_sw = 0;
 	bzero(totalp, sizeof *totalp);
 	/*
 	 * Mark all objects as inactive.
 	 */
 	simple_lock(&vm_object_list_lock);
-	for (object = RB_FIRST(object_t, &vm_object_list); object != NULL; object = RB_NEXT(object_t, &vm_object_list, object))
+	for (object = RB_FIRST(object_t, &vm_object_list); object != NULL; object = RB_NEXT(object_t, &vm_object_list, object)) {
 		object->flags &= ~OBJ_ACTIVE;
+	}
 	simple_unlock(&vm_object_list_lock);
 	/*
 	 * Calculate process statistics.
@@ -247,18 +275,20 @@ active:
 		paging = 0;
 		for (map = &p->p_vmspace->vm_map, entry = CIRCLEQ_FIRST(&map->cl_header)->cl_entry.cqe_next; entry != CIRCLEQ_FIRST(&map->cl_header); entry = CIRCLEQ_NEXT(entry, cl_entry)) {
 			if (entry->is_a_map || entry->is_sub_map ||
-			    (object = entry->object.vm_object) == NULL)
+			    (object = entry->object.vm_object) == NULL) {
 				continue;
+			}
 			while (object->shadow &&
 			       object->resident_page_count == 0 &&
 			       object->shadow_offset == 0 &&
-			       object->size == object->shadow->size)
+			       object->size == object->shadow->size) {
 				object = object->shadow;
 			object->flags |= OBJ_ACTIVE;
 			paging |= object->paging_in_progress;
 		}
-		if (paging)
+		if (paging) {
 			totalp->t_pw++;
+		}
 	}
 	/*
 	 * Calculate object memory usage statistics.
@@ -282,5 +312,5 @@ active:
 		}
 	}
 	simple_unlock(&vm_object_list_lock);
-	totalp->t_free = cnt.v_free_count;
+	totalp->t_free = freemem;
 }

@@ -50,37 +50,12 @@ struct uvm {
 };
 extern struct uvm uvm;
 
-/* XXX: Temporary
- * uvmexp: global data structures that are exported to parts of the kernel
- * other than the vm system.
- * TODO: place missing in vmmeter.h
- */
-struct vmexp {
-	/* swap */
-	int	 						nswapdev;	/* number of configured swap devices in system */
-	int 						swpages;	/* number of PAGE_SIZE'ed swap pages */
-	int 						swpgavail;	/* number of swap pages currently available */
-	int 						swpginuse;	/* number of swap pages in use */
-	int 						swpgonly;	/* number of swap pages in use, not also in RAM */
-	int 						nswget;		/* number of times fault calls uvm_swap_get() */
-};
-extern struct vmexp vmexp;
-
-/* vm_page.h */
-#define PQ_FREE					0x0001		/* page is on free list */
-#define PQ_INACTIVE				0x0002		/* page is in inactive list */
-#define PQ_ACTIVE				0x0004		/* page is in active list */
-#define PQ_LAUNDRY				0x0008		/* page is being cleaned now */
-#define PQ_ANON					0x0010		/* page is part of an anon, rather than an vm_object */
-#define PQ_AOBJ					0x0020		/* page is part of an anonymous vm_object */
-#define PQ_SWAPBACKED			(PQ_ANON|PQ_AOBJ)
-
 /* vm_object.h */
 #define VM_OBJ_KERN				(-2)
 
 /* vm_pager.h */
-#define PG_SEGMENT		3
-#define PG_AOBJECT		4
+#define PG_SEGMENT				3
+#define PG_AOBJECT				4
 
 #define PGO_ALLPAGES			0x010	/* flush whole object/get all pages */
 #define PGO_CLEANIT				0x001	/* write dirty pages to backing store */

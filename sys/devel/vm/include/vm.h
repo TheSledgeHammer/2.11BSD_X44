@@ -90,14 +90,15 @@ typedef struct vm_aref 			*vm_aref_t;
 #include <vm/include/vm_extern.h>
 #include <vm/include/vm_inherit.h>
 #include <vm/include/vm_prot.h>
+#include <vm/include/vm_mac.h>
+#include <vm/include/vm_systm.h>
 
 #include <devel/vm/include/vm_page.h>
-#include <devel/vm/include/vm_mac.h>
-#include <devel/vm/include/vm_systm.h>
+
 #include <devel/vm/include/vm_object.h>
 #include <devel/vm/include/vm_param.h>
 #include <devel/vm/include/vm_segment.h>		/* Work in Progress */
-#include <devel/vm/ovl/ovl.h>					/* Work in Progress */
+#include <devel/vm/ovl/include/ovl.h>			/* Work in Progress */
 
 #include <devel/vm/uvm/vm_aobject.h>			/* Work in Progress */
 #include <devel/vm/uvm/vm_amap.h>				/* Work in Progress */

@@ -71,7 +71,7 @@ vm_anon_init()
 
 	memset(anon, 0, sizeof(*anon) * nanon);
 	anon->u.an_free = NULL;
-	cnt.v_free_count = cnt.v_anon_free_count = nanon;
+	cnt.v_free_count = cnt.v_anfree_count = nanon;
 	for (lcv = 0 ; lcv < nanon ; lcv++) {
 		anon[lcv].u.an_nxt = anon->u.an_free;
 		anon->u.an_free = &anon[lcv];
@@ -101,7 +101,7 @@ vm_anon_add(pages)
 	simple_lock(&anon->u.an_freelock);
 	memset(anon, 0, sizeof(*anon) * pages);
 	cnt.v_kernel_anons += pages;
-	cnt.v_anon_free_count += pages;
+	cnt.v_anfree_count += pages;
 	for (lcv = 0; lcv < pages; lcv++) {
 		simple_lock_init(&anon->an_lock);
 		anon[lcv].u.an_nxt = anon->u.an_free;
@@ -122,7 +122,7 @@ vm_analloc()
 	a = a->u.an_free;
 	if (a) {
 		a->u.an_free = a->u.an_nxt;
-		cnt.v_anon_free_count--;
+		cnt.v_anfree_count--;
 		a->an_ref = 1;
 		a->an_swslot = 0;
 		a->u.an_page = NULL;		/* so we can free quickly */
@@ -152,62 +152,21 @@ vm_anfree(anon)
 	pg = anon->u.an_page;
 
 	/*
-	 * if there is a resident page and it is loaned, then anon may not
-	 * own it.   call out to uvm_anon_lockpage() to ensure the real owner
- 	 * of the page has been identified and locked.
-	 */
-
-	if (pg && pg->loan_count)
-		pg = vm_anon_lockloanpg(anon);
-
-	/*
 	 * if we have a resident page, we must dispose of it before freeing
 	 * the anon.
 	 */
 
 	if (pg) {
-
-		/*
-		 * if the page is owned by a uobject (now locked), then we must
-		 * kill the loan on the page rather than free it.
-		 */
-
-		if (pg->object) {
-
-			/* kill loan */
-			vm_page_lock_queues();
-#ifdef DIAGNOSTIC
-			if (pg->loan_count < 1)
-				panic("vm_anfree: obj owned page "
-				      "with no loan count");
-#endif
-			pg->loan_count--;
-			pg->anon = NULL;
-			vm_page_unlock_queues();
-			simple_unlock(&pg->object->Lock);
-
-		} else {
-
-			/*
-			 * page has no uobject, so we must be the owner of it.
-			 *
-			 * if page is busy then we just mark it as released
-			 * (who ever has it busy must check for this when they
-			 * wake up).    if the page is not busy then we can
-			 * free it now.
-			 */
-
-			if ((pg->flags & PG_BUSY) != 0) {
-				/* tell them to dump it when done */
-				pg->flags |= PG_RELEASED;
-				return;
-			}
-
-			pmap_page_protect(PMAP_PGARG(pg), VM_PROT_NONE);
-			vm_page_lock_queues();		/* lock out pagedaemon */
-			vm_page_free(pg);			/* bye bye */
-			vm_page_unlock_queues();	/* free the daemon */
+		if ((pg->flags & PG_BUSY) != 0) {
+			/* tell them to dump it when done */
+			pg->flags |= PG_RELEASED;
+			return;
 		}
+
+		pmap_page_protect(VM_PAGE_TO_PHYS(pg), VM_PROT_NONE);
+		vm_page_lock_queues();		/* lock out pagedaemon */
+		vm_page_free(pg);			/* bye bye */
+		vm_page_unlock_queues();	/* free the daemon */
 	}
 
 	/*
@@ -222,7 +181,7 @@ vm_anfree(anon)
 	simple_lock(&anon->u.an_freelock);
 	anon->u.an_nxt = anon->u.an_free;
 	anon->u.an_free = anon;
-	cnt.v_anon_free_count++;
+	cnt.v_anfree_count++;
 	simple_unlock(&anon->u.an_freelock);
 }
 
@@ -245,104 +204,7 @@ vm_anon_dropswap(anon)
 	if (anon->u.an_page == NULL) {
 		/* this page is no longer only in swap. */
 		simple_lock(&uvm.swap_data_lock);
-		vmexp.swpgonly--;
+		cnt.v_swpgonly--;
 		simple_unlock(&uvm.swap_data_lock);
 	}
-}
-
-/*
- * vm_anon_lockloanpg: given a locked anon, lock its resident page
- *
- * => anon is locked by caller
- * => on return: anon is locked
- *		 if there is a resident page:
- *			if it has a uobject, it is locked by us
- *			if it is ownerless, we take over as owner
- *		 we return the resident page (it can change during
- *		 this function)
- * => note that the only time an anon has an ownerless resident page
- *	is if the page was loaned from a uvm_object and the uvm_object
- *	disowned it
- * => this only needs to be called when you want to do an operation
- *	on an anon's resident page and that page has a non-zero loan
- *	count.
- */
-struct vm_page *
-vm_anon_lockloanpg(anon)
-	struct vm_anon *anon;
-{
-	struct vm_page *pg;
-	boolean_t locked = FALSE;
-
-	/*
-	 * loop while we have a resident page that has a non-zero loan count.
-	 * if we successfully get our lock, we will "break" the loop.
-	 * note that the test for pg->loan_count is not protected -- this
-	 * may produce false positive results.   note that a false positive
-	 * result may cause us to do more work than we need to, but it will
-	 * not produce an incorrect result.
-	 */
-
-	while (((pg = anon->u.an_page) != NULL) && pg->loan_count != 0) {
-
-		/*
-		 * quickly check to see if the page has an object before
-		 * bothering to lock the page queues.   this may also produce
-		 * a false positive result, but that's ok because we do a real
-		 * check after that.
-		 *
-		 * XXX: quick check -- worth it?   need volatile?
-		 */
-
-		if (pg->object) {
-
-			vm_page_lock_queues();
-			if (pg->object) {	/* the "real" check */
-				locked =
-				    simple_lock_try(&pg->object->Lock);
-			} else {
-				/* object disowned before we got PQ lock */
-				locked = TRUE;
-			}
-			vm_page_unlock_queues();
-
-			/*
-			 * if we didn't get a lock (try lock failed), then we
-			 * toggle our anon lock and try again
-			 */
-
-			if (!locked) {
-				simple_unlock(&anon->an_lock);
-				/*
-				 * someone locking the object has a chance to
-				 * lock us right now
-				 */
-				simple_lock(&anon->an_lock);
-				continue;		/* start over */
-			}
-		}
-
-		/*
-		 * if page is un-owned [i.e. the object dropped its ownership],
-		 * then we can take over as owner!
-		 */
-
-		if (pg->object == NULL && (pg->pqflags & PQ_ANON) == 0) {
-			vm_page_lock_queues();
-			pg->pqflags |= PQ_ANON;		/* take ownership... */
-			pg->loan_count--;			/* ... and drop our loan */
-			vm_page_unlock_queues();
-		}
-
-		/*
-		 * we did it!   break the loop
-		 */
-		break;
-	}
-
-	/*
-	 * done!
-	 */
-
-	return (pg);
 }

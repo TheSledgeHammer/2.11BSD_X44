@@ -100,7 +100,6 @@ struct vm_anon 	*vm_analloc (void);
 void 			vm_anfree (struct vm_anon *);
 void 			vm_anon_init (void);
 void 			vm_anon_add (int);
-struct vm_page 	*vm_anon_lockloanpg (struct vm_anon *);
 void 			vm_anon_dropswap (struct vm_anon *);
 
 #endif /* _VM_ANON_H_ */

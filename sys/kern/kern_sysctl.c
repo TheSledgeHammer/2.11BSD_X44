@@ -56,7 +56,6 @@
 #include <sys/sysctl.h>
 #include <vm/include/vm.h>
 
-
 sysctlfn kern_sysctl;
 sysctlfn hw_sysctl;
 #ifdef DEBUG
@@ -298,7 +297,7 @@ hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	case HW_PHYSMEM:
 		return (sysctl_rdlong(oldp, oldlenp, newp, ctob((long)physmem)));
 	case HW_USERMEM:
-		return (sysctl_rdlong(oldp, oldlenp, newp, ctob((long)physmem - cnt.v_wire_count)));
+		return (sysctl_rdlong(oldp, oldlenp, newp, ctob((long)physmem - freemem)));
 	case HW_PAGESIZE:
 		return (sysctl_rdint(oldp, oldlenp, newp, PAGE_SIZE));
 	default:
@@ -315,6 +314,7 @@ struct ctldebug debug0, debug1, debug2, debug3, debug4;
 struct ctldebug debug5, debug6, debug7, debug8, debug9;
 struct ctldebug debug10, debug11, debug12, debug13, debug14;
 struct ctldebug debug15, debug16, debug17, debug18, debug19;
+
 static struct ctldebug *debugvars[CTL_DEBUG_MAXID] = {
 	&debug0, &debug1, &debug2, &debug3, &debug4,
 	&debug5, &debug6, &debug7, &debug8, &debug9,

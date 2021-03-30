@@ -49,7 +49,7 @@
 #include <sys/map.h>
 
 #include <vm/include/vm.h>
-#include <vm/include/vm_page.h>
+#include <devel/vm/include/vm_page.h>
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_pager.h>
 
@@ -166,97 +166,6 @@ aobject_pager_cluster(pager, offset, loffset, hoffset)
 }
 
 /*
- * uao_reference: add a ref to an aobj
- *
- * => aobj must be unlocked (we will lock it)
- */
-void
-uao_reference(uobj)
-	struct vm_object *uobj;
-{
-	/*
- 	 * kernel_object already has plenty of references, leave it alone.
- 	 */
-
-	if (uobj->ref_count == VM_OBJ_KERN)
-		return;
-
-	simple_lock(&uobj->Lock);
-	uobj->ref_count++;				/* bump! */
-	simple_unlock(&uobj->Lock);
-}
-
-/*
- * uao_detach: drop a reference to an aobj
- *
- * => aobj must be unlocked, we will lock it
- */
-void
-uao_detach(uobj)
-	struct vm_object *uobj;
-{
-	struct vm_aobject *aobj = (struct vm_aobject *)uobj;
-	struct vm_page *pg;
-	boolean_t busybody;
-
-	/*
- 	 * detaching from kernel_object is a noop.
- 	 */
-	if (uobj->ref_count == VM_OBJ_KERN)
-		return;
-
-	simple_lock(&uobj->Lock);
-
-	uobj->ref_count--;					/* drop ref! */
-	if (uobj->ref_count) {				/* still more refs? */
-		simple_unlock(&uobj->Lock);
-		return;
-	}
-
-	/*
- 	 * remove the aobj from the global list.
- 	 */
-	simple_lock(&aobject_list_lock);
-	LIST_REMOVE(aobj, u_list);
-	simple_unlock(&aobject_list_lock);
-
-	/*
- 	 * free all the pages that aren't PG_BUSY, mark for release any that are.
- 	 */
-
-	busybody = FALSE;
-	for (pg = TAILQ_FIRST(uobj->memq); pg != NULL ; pg = TAILQ_NEXT(pg, listq)) {
-		if (pg->flags & PG_BUSY) {
-			pg->flags |= PG_RELEASED;
-			busybody = TRUE;
-			continue;
-		}
-
-		/* zap the mappings, free the swap slot, free the page */
-		pmap_page_protect(PMAP_PGARG(pg), VM_PROT_NONE);
-		uao_dropswap(&aobj->u_obj, pg->offset >> PAGE_SHIFT);
-		vm_page_lock_queues();
-		vm_page_free(pg);
-		vm_page_unlock_queues();
-	}
-
-	/*
- 	 * if we found any busy pages, we're done for now.
- 	 * mark the aobj for death, releasepg will finish up for us.
- 	 */
-	if (busybody) {
-		aobj->u_flags |= UAO_FLAG_KILLME;
-		simple_unlock(&aobj->u_obj.Lock);
-		return;
-	}
-
-	/*
- 	 * finally, free the rest.
- 	 */
-	uao_free(aobj);
-}
-
-/*
  * uao_flush: uh, yea, sure it's flushed.  really!
  */
 boolean_t
@@ -350,7 +259,7 @@ uao_get(uobj, offset, pps, npagesp, centeridx, access_type, advice, flags)
 				if (ptmp) {
 					/* new page */
 					ptmp->flags &= ~(PG_BUSY|PG_FAKE);
-					ptmp->pqflags |= PQ_AOBJ;
+					ptmp->pqflags |= PG_AOBJ;
 					//UVM_PAGE_OWN(ptmp, NULL);
 					vm_pagezero(ptmp);
 				}
@@ -448,7 +357,7 @@ uao_get(uobj, offset, pps, npagesp, centeridx, access_type, advice, flags)
 				 * safe with PQ's unlocked: because we just
 				 * alloc'd the page
 				 */
-				ptmp->pqflags |= PQ_AOBJ;
+				ptmp->pqflags |= PG_AOBJ;
 
 				/*
 				 * got new page ready for I/O.  break pps while
@@ -488,7 +397,7 @@ uao_get(uobj, offset, pps, npagesp, centeridx, access_type, advice, flags)
  		 * we have a "fake/busy/clean" page that we just allocated.
  		 * do the needed "i/o", either reading from swap or zeroing.
  		 */
-		swslot = uao_find_swslot(aobj, current_offset >> PAGE_SHIFT);
+		swslot = vm_aobject_find_swslot(aobj, current_offset >> PAGE_SHIFT);
 
 		/*
  		 * just zero the page if there's nothing in swap.
@@ -537,7 +446,7 @@ uao_get(uobj, offset, pps, npagesp, centeridx, access_type, advice, flags)
  		 */
 
 		ptmp->flags &= ~PG_FAKE;		/* data is valid ... */
-		pmap_clear_modify(PMAP_PGARG(ptmp));	/* ... and clean */
+		pmap_clear_modify(VM_PAGE_TO_PHYS(ptmp));	/* ... and clean */
 		pps[lcv] = ptmp;
 
 	}	/* lcv loop */
@@ -582,11 +491,11 @@ uao_releasepg(pg, nextpgp)
 	/*
  	 * dispose of the page [caller handles PG_WANTED] and swap slot.
  	 */
-	pmap_page_protect(PMAP_PGARG(pg), VM_PROT_NONE);
+	pmap_page_protect(VM_PAGE_TO_PHYS(pg), VM_PROT_NONE);
 	uao_dropswap(&aobj->u_obj, pg->offset >> PAGE_SHIFT);
 	vm_page_lock_queues();
 	if (nextpgp)
-		*nextpgp = pg->pageq.tqe_next; /* next page for daemon */
+		*nextpgp = TAILQ_NEXT(pg, pageq); /* next page for daemon */
 	uvm_pagefree(pg);
 	if (!nextpgp)
 		vm_page_unlock_queues(); /* keep locked for daemon */
@@ -609,14 +518,14 @@ uao_releasepg(pg, nextpgp)
 		return TRUE;
 
 #ifdef DIAGNOSTIC
-	if (aobj->u_obj.memq.tqh_first)
+	if (TAILQ_FIRST(aobj->u_obj.memq))
 		panic("vn_releasepg: pages in object with npages == 0");
 #endif
 
 	/*
 	 * finally, free the rest.
 	 */
-	uao_free(aobj);
+	vm_aobject_free(aobj);
 
 	return FALSE;
 }
@@ -634,7 +543,7 @@ uao_dropswap(uobj, pageidx)
 {
 	int slot;
 
-	slot = uao_set_swslot(uobj, pageidx, 0);
+	slot = vm_aobject_set_swslot(uobj, pageidx, 0);
 	if (slot) {
 		vm_swap_free(slot, 1);
 	}

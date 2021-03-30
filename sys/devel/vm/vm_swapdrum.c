@@ -240,7 +240,7 @@ swaplist_trim(void)
 static void
 swapdrum_add(sdp, npages)
 	struct swapdev *sdp;
-	int	npages;
+	int				npages;
 {
 	u_long result;
 
@@ -284,7 +284,7 @@ swapdrum_on(p, sp)
 	struct swapdev *sdp;
 	static int count = 0;	/* static */
 	struct vnode *vp;
-	int error, npages, nblocks, size;
+	int error, npages, nblks, size;
 	long addr;
 #ifdef SWAP_TO_FILES
 	struct vattr va;
@@ -308,10 +308,8 @@ swapdrum_on(p, sp)
 	 * we skip the open/close for root on swap because the root
 	 * has already been opened when root was mounted (mountroot).
 	 */
-	if (vp != rootvp) {
-		if ((error = VOP_OPEN(vp, FREAD|FWRITE, p->p_ucred, p))) {
-			return (error);
-		}
+	if ((error = VOP_OPEN(vp, FREAD|FWRITE, p->p_ucred, p))) {
+		return (error);
 	}
 
 	/*
@@ -325,19 +323,21 @@ swapdrum_on(p, sp)
 	 */
 	switch (vp->v_type) {
 	case VBLK:
-		if (bdevsw[major(dev)].d_psize == 0 || (nblocks = (*bdevsw[major(dev)].d_psize)(dev)) == -1) {
-			error = ENXIO;
-			goto bad;
+		if (bdevsw[major(dev)].d_psize == 0 || (nblks = (*bdevsw[major(dev)].d_psize)(dev)) == -1) {
+			(void) VOP_CLOSE(vp, FREAD | FWRITE, p->p_ucred, p);
+			return (ENXIO);
 		}
 		break;
 #ifdef SWAP_TO_FILES
 	case VREG:
 		if ((error = VOP_GETATTR(vp, &va, p->p_ucred, p))) {
-			goto bad;
+			(void) VOP_CLOSE(vp, FREAD | FWRITE, p->p_ucred, p);
+			return (error);
 		}
-		nblocks = (int)btodb(va.va_size);
+		nblks = (int)btodb(va.va_size);
 		if ((error = VFS_STATFS(vp->v_mount, &vp->v_mount->mnt_stat, p)) != 0) {
-			goto bad;
+			(void) VOP_CLOSE(vp, FREAD | FWRITE, p->p_ucred, p);
+			return (error);
 		}
 		sdp->swd_bsize = vp->v_mount->mnt_stat.f_iosize;
 		/*
@@ -347,15 +347,15 @@ swapdrum_on(p, sp)
 		break;
 #endif
 	default:
-		error = ENXIO;
-		goto bad;
+		(void) VOP_CLOSE(vp, FREAD | FWRITE, p->p_ucred, p);
+		return (ENXIO);
 	}
 
 	/*
 	 * save nblocks in a safe place and convert to pages.
 	 */
-	sp->sw_nblks = nblocks;
-	npages = dbtob((u_int64_t)nblocks) >> PAGE_SHIFT;
+	sp->sw_nblks = nblks;
+	npages = dbtob((u_int64_t)nblks) >> PAGE_SHIFT;
 
 	/*
 	 * for block special files, we want to make sure that leave
@@ -379,8 +379,8 @@ swapdrum_on(p, sp)
 	 * area.   we want at least one page.
 	 */
 	if (size < 1) {
-		error = EINVAL;
-		goto bad;
+		(void) VOP_CLOSE(vp, FREAD | FWRITE, p->p_ucred, p);
+		return (EINVAL);
 	}
 
 	/*
@@ -400,6 +400,52 @@ swapdrum_on(p, sp)
 		cnt.swpginuse += addr;
 		cnt.swpgonly += addr;
 	}
+
+	/* check if vp == rootvp via swap_miniroot */
+	error = swap_miniroot(sp, sdp, vp, npages);
+	if(error != 0) {
+		return (error);
+	}
+
+	/*
+	 * now add the new swapdev to the drum and enable.
+	 */
+	sdp->swd_npages = npages;
+	sp->sw_flags &= ~SW_FAKE;	/* going live */
+	sp->sw_flags |= (SW_INUSE|SW_ENABLE);
+	cnt.swpages += npages;
+	return (0);
+}
+
+int
+swapdrum_off(p, sp)
+	struct proc 	*p;
+	struct swdevt 	*sp;
+{
+	struct swapdev 	*sdp;
+	char			*name;
+
+	sdp = sp->sw_swapdev;
+
+	extent_free(swapextent, sdp->swd_drumoffset, sdp->swd_drumsize, EX_WAITOK);
+	name = sdp->swd_ex->ex_name;
+	extent_destroy(sdp->swd_ex);
+	rmfree(&swapmap, sizeof(name), name);
+	rmfree(&swapmap, sizeof(sdp->swd_ex), (caddr_t)sdp->swd_ex);
+	if(sp->sw_vp != rootvp) {
+		(void) VOP_CLOSE(sp->sw_vp, FREAD|FWRITE, p->p_ucred, p);
+	}
+	rmfree(&swapmap, sizeof(sdp), (caddr_t)sdp);
+	return (0);
+}
+
+int
+swap_miniroot(sp, sdp, vp, npages)
+	struct swdevt 	*sp;
+	struct swapdev 	*sdp;
+	struct vnode 	*vp;
+	int npages;
+{
 	/*
 	 * if the vnode we are swapping to is the root vnode
 	 * (i.e. we are swapping to the miniroot) then we want
@@ -425,44 +471,9 @@ swapdrum_on(p, sp)
 		cnt.swpginuse += (rootpages - addr);
 		cnt.swpgonly += (rootpages - addr);
 	}
-
-	/*
-	 * now add the new swapdev to the drum and enable.
-	 */
-	sdp->swd_npages = npages;
-	sp->sw_flags &= ~SW_FAKE;	/* going live */
-	sp->sw_flags |= (SW_INUSE|SW_ENABLE);
-	cnt.swpages += npages;
-	return (0);
-
-bad:
-	/*
-	 * failure: close device if necessary and return error.
-	 */
 	if (vp != rootvp) {
-		(void) VOP_CLOSE(vp, FREAD | FWRITE, p->p_ucred, p);
+		(void)VOP_CLOSE(vp, FREAD|FWRITE, p->p_ucred, p);
+		return (ENXIO);
 	}
-	return (error);
-}
-
-int
-swapdrum_off(p, sp)
-	struct proc 	*p;
-	struct swdevt 	*sp;
-{
-	struct swapdev 	*sdp;
-	char			*name;
-
-	sdp = sp->sw_swapdev;
-
-	extent_free(swapextent, sdp->swd_drumoffset, sdp->swd_drumsize, EX_WAITOK);
-	name = sdp->swd_ex->ex_name;
-	extent_destroy(sdp->swd_ex);
-	rmfree(&swapmap, sizeof(name), name);
-	rmfree(&swapmap, sizeof(sdp->swd_ex), (caddr_t)sdp->swd_ex);
-	if(sp->sw_vp != rootvp) {
-		(void) VOP_CLOSE(sp->sw_vp, FREAD|FWRITE, p->p_ucred, p);
-	}
-	rmfree(&swapmap, sizeof(sdp), (caddr_t)sdp);
 	return (0);
 }

@@ -20,6 +20,8 @@
 #include <sys/acct.h>
 #include <sys/ktrace.h>
 
+#include <vm/include/vm_systm.h>
+
 /*
  * fork --
  *	fork system call
@@ -171,6 +173,13 @@ again:
 	rpp->p_sigcatch = rip->p_sigcatch;
 	rpp->p_sigignore = rip->p_sigignore;
 	/* take along any pending signals like stops? */
+	if (isvfork) {
+		forkstat.cntvfork++;
+		forkstat.sizvfork += rip->p_dsize + rip->p_ssize;
+	} else {
+		forkstat.cntfork++;
+		forkstat.sizfork += rip->p_dsize + rip->p_ssize;
+	}
 	rpp->p_wchan = 0;
 	rpp->p_slptime = 0;
 

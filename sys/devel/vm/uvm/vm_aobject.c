@@ -111,6 +111,142 @@ vm_aobject_allocate(size, object, flags)
 }
 
 /*
+ * uao_detach: drop a reference to an aobj
+ *
+ * => aobj must be unlocked, we will lock it
+ */
+void
+vm_aobject_detach(uobj)
+	struct vm_object *uobj;
+{
+	struct vm_aobject *aobj = (struct vm_aobject *)uobj;
+	struct vm_page *pg;
+	boolean_t busybody;
+
+	/*
+ 	 * detaching from kernel_object is a noop.
+ 	 */
+	if (uobj->ref_count == VM_OBJ_KERN)
+		return;
+
+	simple_lock(&uobj->Lock);
+
+	uobj->ref_count--;					/* drop ref! */
+	if (uobj->ref_count) {				/* still more refs? */
+		simple_unlock(&uobj->Lock);
+		return;
+	}
+
+	/*
+ 	 * remove the aobj from the global list.
+ 	 */
+	simple_lock(&aobject_list_lock);
+	LIST_REMOVE(aobj, u_list);
+	simple_unlock(&aobject_list_lock);
+
+	/*
+ 	 * free all the pages that aren't PG_BUSY, mark for release any that are.
+ 	 */
+
+	busybody = FALSE;
+	for (pg = TAILQ_FIRST(uobj->memq); pg != NULL ; pg = TAILQ_NEXT(pg, listq)) {
+		if (pg->flags & PG_BUSY) {
+			pg->flags |= PG_RELEASED;
+			busybody = TRUE;
+			continue;
+		}
+
+		/* zap the mappings, free the swap slot, free the page */
+		pmap_page_protect(VM_PAGE_TO_PHYS(pg), VM_PROT_NONE);
+		uao_dropswap(&aobj->u_obj, pg->offset >> PAGE_SHIFT);
+		vm_page_lock_queues();
+		vm_page_free(pg);
+		vm_page_unlock_queues();
+	}
+
+	/*
+ 	 * if we found any busy pages, we're done for now.
+ 	 * mark the aobj for death, releasepg will finish up for us.
+ 	 */
+	if (busybody) {
+		aobj->u_flags |= UAO_FLAG_KILLME;
+		simple_unlock(&aobj->u_obj.Lock);
+		return;
+	}
+
+	/*
+ 	 * finally, free the rest.
+ 	 */
+	vm_aobject_free(aobj);
+}
+
+/*
+ * uao_free: free all resources held by an aobj, and then free the aobj
+ *
+ * => the aobj should be dead
+ */
+static void
+vm_aobject_free(aobj)
+	vm_aobject_t aobj;
+{
+
+	if (UAO_USES_SWHASH(aobj)) {
+		int i, hashbuckets = aobj->u_swhashmask + 1;
+
+		/*
+		 * free the swslots from each hash bucket,
+		 * then the hash bucket, and finally the hash table itself.
+		 */
+		for (i = 0; i < hashbuckets; i++) {
+			struct uao_swhash_elt *elt, *next;
+
+			for (elt = LIST_FIRST(aobj->u_swhash[i]); elt != NULL; elt = next) {
+				int j;
+
+				for (j = 0; j < UAO_SWHASH_CLUSTER_SIZE; j++)
+				{
+					int slot = elt->slots[j];
+
+					if (slot) {
+						vm_swap_free(slot, 1);
+
+						/*
+						 * this page is no longer
+						 * only in swap.
+						 */
+						simple_lock(&uvm.swap_data_lock);
+						cnt.v_swpgonly--;
+						simple_unlock(&uvm.swap_data_lock);
+					}
+				}
+				next = LIST_NEXT(elt, list);
+			}
+		}
+		FREE(aobj->u_swhash, M_VMAOBJ);
+	} else {
+		int i;
+
+		/*
+		 * free the array
+		 */
+
+		for (i = 0; i < aobj->u_pages; i++) {
+			int slot = aobj->u_swslots[i];
+
+			if (slot) {
+				vm_swap_free(slot, 1);
+
+				/* this page is no longer only in swap. */
+				simple_lock(&uvm.swap_data_lock);
+				cnt.v_swpgonly--;
+				simple_unlock(&uvm.swap_data_lock);
+			}
+		}
+		FREE(aobj->u_swslots, M_VMAOBJ);
+	}
+}
+
+/*
  * functions
  */
 
@@ -162,7 +298,7 @@ vm_aobject_find_swhash_elt(aobject, pageidx, create)
 	/*
 	 * now search the bucket for the requested tag
 	 */
-	for (elt = swhash->lh_first; elt != NULL; elt = elt->list.le_next) {
+	for (elt = LIST_FIRST(swhash); elt != NULL; elt = LIST_NEXT(elt, list)) {
 		if (elt->tag == page_tag)
 			return (elt);
 	}
@@ -209,10 +345,11 @@ vm_aobject_find_swslot(aobj, pageidx)
 	if (UAO_USES_SWHASH(aobj)) {
 		struct uao_swhash_elt *elt = vm_aobject_find_swhash_elt(aobj, pageidx, FALSE);
 
-		if (elt)
+		if (elt) {
 			return (UAO_SWHASH_ELT_PAGESLOT(elt, pageidx));
-		else
+		} else {
 			return (NULL);
+		}
 	}
 
 	/*
@@ -259,8 +396,7 @@ vm_aobject_set_swslot(obj, pageidx, slot)
 		 * the page had not swap slot in the first place, and
 		 * we are freeing.
 		 */
-		struct uao_swhash_elt *elt = vm_aobject_find_swhash_elt(aobj, pageidx,
-				slot ? TRUE : FALSE);
+		struct uao_swhash_elt *elt = vm_aobject_find_swhash_elt(aobj, pageidx, slot ? TRUE : FALSE);
 		if (elt == NULL) {
 #ifdef DIAGNOSTIC
 			if (slot)
@@ -281,8 +417,8 @@ vm_aobject_set_swslot(obj, pageidx, slot)
 		if (slot) {
 			if (oldslot == 0)
 				elt->count++;
-		} else { /* freeing slot ... */
-			if (oldslot) /* to be safe */
+		} else { 			/* freeing slot ... */
+			if (oldslot) 	/* to be safe */
 				elt->count--;
 
 			if (elt->count == 0) {
@@ -301,71 +437,3 @@ vm_aobject_set_swslot(obj, pageidx, slot)
 /*
  * end of hash/array functions
  */
-
-/*
- * uao_free: free all resources held by an aobj, and then free the aobj
- *
- * => the aobj should be dead
- */
-static void
-vm_aobject_free(aobj)
-	vm_aobject_t aobj;
-{
-
-	if (UAO_USES_SWHASH(aobj)) {
-		int i, hashbuckets = aobj->u_swhashmask + 1;
-
-		/*
-		 * free the swslots from each hash bucket,
-		 * then the hash bucket, and finally the hash table itself.
-		 */
-		for (i = 0; i < hashbuckets; i++) {
-			struct uao_swhash_elt *elt, *next;
-
-			for (elt = aobj->u_swhash[i].lh_first; elt != NULL; elt = next) {
-				int j;
-
-				for (j = 0; j < UAO_SWHASH_CLUSTER_SIZE; j++)
-				{
-					int slot = elt->slots[j];
-
-					if (slot) {
-						vm_swap_free(slot, 1);
-
-						/*
-						 * this page is no longer
-						 * only in swap.
-						 */
-						simple_lock(&uvm.swap_data_lock);
-						uvmexp.swpgonly--;
-						simple_unlock(&uvm.swap_data_lock);
-					}
-				}
-
-				next = elt->list.le_next;
-			}
-		}
-		FREE(aobj->u_swhash, M_VMAOBJ);
-	} else {
-		int i;
-
-		/*
-		 * free the array
-		 */
-
-		for (i = 0; i < aobj->u_pages; i++)
-		{
-			int slot = aobj->u_swslots[i];
-
-			if (slot) {
-				vm_swap_free(slot, 1);
-
-				/* this page is no longer only in swap. */
-				simple_lock(&uvm.swap_data_lock);
-				uvmexp.swpgonly--;
-				simple_unlock(&uvm.swap_data_lock);
-			}
-		}
-		FREE(aobj->u_swslots, M_VMAOBJ);
-	}
-}

@@ -331,7 +331,7 @@ struct kinfo_proc {
  */
 struct ctldebug {
 	char	*debugname;	/* name of debugging variable */
-	int	*debugvar;	/* pointer to debugging variable */
+	int		*debugvar;	/* pointer to debugging variable */
 };
 extern struct ctldebug debug0, debug1, debug2, debug3, debug4;
 extern struct ctldebug debug5, debug6, debug7, debug8, debug9;

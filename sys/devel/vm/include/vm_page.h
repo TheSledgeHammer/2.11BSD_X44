@@ -137,9 +137,10 @@ struct vm_page {
 #define	PG_PAGEROWNED		0x01000		/* DEBUG: async paging op in progress */
 #define	PG_SEGPAGE			0x02000		/* DEBUG: is a user segment page */
 #define	PG_RELEASED			0x04000		/* page to be freed when unbusied */
-
-#define PQ_ANON				0x08000		/* page is part of an anon, rather than an vm_object */
-#define PQ_AOBJ				0x10000		/* page is part of an anonymous vm_object */
+#define PG_FREE				0x08000		/* page is on free list */
+#define PG_ANON				0x10000		/* page is part of an anon, rather than an vm_object */
+#define PG_AOBJ				0x20000		/* page is part of an anonymous vm_object */
+#define PG_SWAPBACKED		(PQ_ANON|PQ_AOBJ)
 
 #if	VM_PAGE_DEBUG
 #define	VM_PAGE_CHECK(mem) { 											\

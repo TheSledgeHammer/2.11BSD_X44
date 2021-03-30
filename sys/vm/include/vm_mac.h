@@ -9,7 +9,7 @@
 #define _VM_MAC_H_
 
 /* Average new into old with aging factor time */
-#define	ave(smooth, cnt, time) \
-	smooth = ((time - 1) * (smooth) + (cnt)) / (time)
+#define	ave(smooth, cnt, timo) \
+	(smooth) = (((timo - 1) * (smooth) + (cnt)) / (timo))
 
 #endif /* _VM_MAC_H_ */
