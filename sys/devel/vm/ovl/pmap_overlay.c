@@ -24,16 +24,67 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @(#)ovl_overlay.h	1.00
  */
 
-/* Overlay memory management definitions. */
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/map.h>
 
-ovl_map_t 						omem_map;
-ovl_map_t 						overlay_map;
+#include <vm/include/vm.h>
 
-/* OVL Space Address Layout (machine/vmparam.h) */
-#define OVL_MIN_ADDRESS 		((vm_offset_t)0)			/* put ovlspace before vmspace in memory stack */
-#define OVL_MAX_ADDRESS			((vm_offset_t)0x19665800)	/* Total Size of Overlay Address Space (10% of VM Address space size) */
-#define VM_MIN_ADDRESS			OVL_MAX_ADDRESS
+#include <vm/ovl/include/ovl.h>
+#include <vm/ovl/include/pmap_overlay.h>
+
+vm_offset_t						overlay_avail;
+vm_offset_t 					overlay_end;
+
+void
+pmap_overlay(firstaddr)
+{
+	overlay_avail = (vm_offset_t)firstaddr;
+	overlay_end = 	OVL_MAX_ADDRESS;
+	virtual_avail = (vm_offset_t)firstaddr;
+	virtual_end = VM_MAX_KERNEL_ADDRESS;
+
+	simple_lock_init(&overlay_pmap->pm_lock, "overlay_pmap_lock");
+}
+
+void *
+pmap_bootstrap_overlay_alloc(size)
+	u_long size;
+{
+	vm_offset_t val;
+	int i;
+	extern boolean_t vm_page_startup_initialized;
+	if (vm_page_startup_initialized) {
+		panic("pmap_bootstrap_overlay_alloc: called after startup initialized");
+	}
+	size = round_page(size);
+	val = overlay_avail;
+
+	for (i = 0; i < size; i += PAGE_SIZE) {
+		while (!pmap_isvalidphys(avail_start)) {
+			avail_start += PAGE_SIZE;
+		}
+		overlay_avail = pmap_map_overlay(overlay_avail, avail_start, avail_start + PAGE_SIZE, VM_PROT_READ|VM_PROT_WRITE);
+	}
+
+	bzero ((caddr_t) val, size);
+	return ((void *) val);
+}
+
+vm_offset_t
+pmap_map_overlay(virt, start, end, prot)
+	vm_offset_t	virt;
+	vm_offset_t	start;
+	vm_offset_t	end;
+	int			prot;
+{
+	while (start < end) {
+		pmap_enter(overlay_pmap, virt, start, prot, FALSE);
+		virt += PAGE_SIZE;
+		start += PAGE_SIZE;
+	}
+	return (virt);
+}

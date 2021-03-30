@@ -113,7 +113,7 @@ struct ovl_object_hash_entry {
 };
 typedef struct ovl_object_hash_entry	*ovl_object_hash_entry_t;
 
-//#ifdef KERNEL
+#ifdef KERNEL
 struct object_t				ovl_object_tree;				/* list of allocated objects */
 long						ovl_object_count;				/* count of all objects */
 simple_lock_data_t			ovl_object_tree_lock;			/* lock for object list and count */
@@ -126,13 +126,13 @@ struct vobject_hash_head 	ovl_vobject_hashtable;
 long						ovl_vobject_count;
 simple_lock_data_t			ovl_vobject_hash_lock;
 
-//#endif /* KERNEL */
+#endif /* KERNEL */
 
 #define	ovl_object_lock_init(object)	simple_lock_init(&(object)->ovo_lock)
 #define	ovl_object_lock(object)			simple_lock(&(object)->ovo_lock)
 #define	ovl_object_unlock(object)		simple_unlock(&(object)->ovo_lock)
 
-//#ifdef KERNEL
+#ifdef KERNEL
 ovl_object_t	ovl_object_allocate (vm_size_t);
 void		 	ovl_object_enter (ovl_object_t, vm_pager_t);
 void		 	ovl_object_init (vm_size_t);
@@ -144,5 +144,5 @@ void			ovl_object_enter_vm_object (ovl_object_t, vm_object_t);
 vm_object_t		ovl_object_lookup_vm_object (ovl_object_t, vm_object_t);
 void			ovl_object_remove_vm_object (ovl_object_t, vm_object_t);
 
-//#endif /* KERNEL */
+#endif /* KERNEL */
 #endif /* _OVL_OBJECT_H_ */

@@ -185,9 +185,9 @@ extern void	itpc_add_uthreadpool(struct threadpool_itpc *, struct uthreadpool *)
 extern void	itpc_remove_uthreadpool(struct threadpool_itpc *, struct uthreadpool *);
 
 /* UThread Lock */
-int uthread_lock_init(lock_t, uthread_t);
-int uthread_lockmgr(lock_t, u_int, uthread_t);
-int uthread_rwlock_init(rwlock_t, uthread_t);
-int uthread_rwlockmgr(rwlock_t, u_int, uthread_t);
+int 		uthread_lock_init(lock_t, uthread_t);
+int 		uthread_lockmgr(lock_t, u_int, uthread_t);
+int 		uthread_rwlock_init(rwlock_t, uthread_t);
+int 		uthread_rwlockmgr(rwlock_t, u_int, uthread_t);
 
 #endif /* SYS_UTHREADS_H_ */

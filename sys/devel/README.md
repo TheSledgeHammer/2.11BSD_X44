@@ -30,6 +30,7 @@ an offical release is made.)
 	- Threading (Hybrid N:M Model): kernel & user threads
 		- Implements a new concept: Inter-Threadpool Proccess Communication (ITPC)
 		- For User Threads, goto: (devel/libuthread)
+			- implement pthreads
 
 - UFML: A Fossil + Venti inspired filesystem layer 
 	- LOFS based, intended to support to UFS, FFS, MFS & LFS.
@@ -72,15 +73,15 @@ an offical release is made.)
 			- Optional support for seperate Instruction & Data space
 			- Optional support for psuedo-segments (stack, code, text)
 				
-	- Overlay Space: A re-implementation of Overlays from 2.11BSD (See: "/devel/vm/ovl")
-		- OVLSpace: A portion of physical memory with vm-like features 
-		- Supports vm objects, pages & segments.
-		- Planned:
-			- Optional:
-				- Support for seperate Instruction & Data space
-				- Support for psuedo-segments (stack, code, text)
-			- Configurable:
-				- Overlay Space Size: Current Default = 10% of VM Size
-				- Number of Overlays: Current Default = 64
-			- Swap support when OVL memory is full
-			- Support overlaying executeables
+- OVL: Overlay Space: A re-implementation of Overlays from 2.11BSD (See: "/devel/vm/ovl")
+	- OVLSpace: A portion of physical memory with vm-like features 
+	- Supports vm objects, pages & segments.
+	- Planned:
+		- Optional:
+			- Support for seperate Instruction & Data space
+			- Support for psuedo-segments (stack, code, text)
+		- Configurable:
+			- Overlay Space Size: Current Default = 10% of VM Size
+			- Number of Overlays: Current Default = 64
+		- Swap support when OVL memory is full
+		- Support overlaying executeables

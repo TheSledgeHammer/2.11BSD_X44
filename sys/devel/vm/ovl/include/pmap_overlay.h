@@ -24,16 +24,14 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @(#)ovl_overlay.h	1.00
  */
 
-/* Overlay memory management definitions. */
+#ifndef	_PMAP_OVERLAY_MACHINE_
+#define	_PMAP_OVERLAY_MACHINE_
 
-ovl_map_t 						omem_map;
-ovl_map_t 						overlay_map;
+/* pmap constants (machine/pmap.c/.h) */
 
-/* OVL Space Address Layout (machine/vmparam.h) */
-#define OVL_MIN_ADDRESS 		((vm_offset_t)0)			/* put ovlspace before vmspace in memory stack */
-#define OVL_MAX_ADDRESS			((vm_offset_t)0x19665800)	/* Total Size of Overlay Address Space (10% of VM Address space size) */
-#define VM_MIN_ADDRESS			OVL_MAX_ADDRESS
+extern struct pmap				overlay_pmap_store;
+#define overlay_pmap 			(&overlay_pmap_store)
+
+#endif /* _PMAP_OVERLAY_MACHINE_ */

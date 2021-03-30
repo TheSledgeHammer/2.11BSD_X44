@@ -106,21 +106,6 @@ vm_size_t				oentry_data_size;
 ovl_map_entry_t 		oentry_free;
 ovl_map_t 				omap_free;
 
-vm_offset_t
-pmap_map_overlay(virt, start, end, prot)
-	vm_offset_t	virt;
-	vm_offset_t	start;
-	vm_offset_t	end;
-	int			prot;
-{
-	while (start < end) {
-		pmap_enter(overlay_pmap, virt, start, prot, FALSE);
-		virt += OVL_SIZE;
-		start += OVL_SIZE;
-	}
-	return (virt);
-}
-
 void
 ovl_map_startup()
 {
@@ -160,7 +145,7 @@ ovlspace_alloc(min, max, segmented)
 		RMALLOC3(ovl, struct ovlspace *, ovl->ovl_dsize, ovl->ovl_ssize, ovl->ovl_tsize, sizeof(struct ovlspace *));
 	} else {
 		RMALLOC(ovl, struct ovlspace *, sizeof(struct ovlspace *));
-		//MALLOC(ovl, struct ovlspace *, sizeof(struct ovlspace *), M_OVLMAP | M_OVERLAY, M_OVERLAY);
+		//MALLOC(ovl, struct ovlspace *, sizeof(struct ovlspace *), M_OVLMAP, M_OVERLAY);
 	}
 	memset(ovl, 0, sizeof(struct ovlspace *));
 	ovl_map_init(&ovl->ovl_map, min, max);
@@ -309,17 +294,17 @@ _ovl_tree_sanity(map, name)
 	int n = 0, i = 1;
 
 	RB_FOREACH(tmp, ovl_map_rb_tree, &map->ovl_root) {
-		if (tmp->ovle_ownspace != vm_rb_space(map, tmp)) {
+		if (tmp->ovle_ownspace != ovl_rb_space(map, tmp)) {
 			printf("%s: %d/%d ownspace %lx != %lx %s\n",
-			    name, n + 1, map->ovl_nentries, (u_long)tmp->ovle_ownspace, (u_long)vm_rb_space(map, tmp),
+			    name, n + 1, map->ovl_nentries, (u_long)tmp->ovle_ownspace, (u_long)ovl_rb_space(map, tmp),
 				CIRCLEQ_NEXT(tmp, ovl_cl_entry) == CIRCLEQ_FIRST(&map->ovl_header) ? "(last)" : "");
 			goto error;
 		}
 	}
 	trtmp = NULL;
 	RB_FOREACH(tmp, ovl_map_rb_tree, &map->ovl_root) {
-		if (tmp->ovle_space != vm_rb_subtree_space(tmp)) {
-			printf("%s: space %lx != %lx\n", name, (u_long)tmp->ovle_space, (u_long)vm_rb_subtree_space(tmp));
+		if (tmp->ovle_space != ovl_rb_subtree_space(tmp)) {
+			printf("%s: space %lx != %lx\n", name, (u_long)tmp->ovle_space, (u_long)ovl_rb_subtree_space(tmp));
 			goto error;
 		}
 		if (trtmp != NULL && trtmp->ovle_start >= tmp->ovle_start) {
@@ -405,10 +390,10 @@ ovl_cl_remove(map, entry)
     head = CIRCLEQ_FIRST(&map->ovl_header);
     tail = CIRCLEQ_LAST(&map->ovl_header);
 
-    if(head && vm_cl_space(map, entry)) {
+    if(head && ovl_cl_space(map, entry)) {
         CIRCLEQ_REMOVE(&map->ovl_header, head, ovl_cl_entry);
     }
-    if(tail && vm_cl_space(map, entry)) {
+    if(tail && ovl_cl_space(map, entry)) {
         CIRCLEQ_REMOVE(&map->ovl_header, tail, ovl_cl_entry);
     }
 }

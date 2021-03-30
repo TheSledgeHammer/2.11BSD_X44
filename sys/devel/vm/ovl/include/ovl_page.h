@@ -116,18 +116,18 @@ struct ovl_page {
 };
 
 /* flags */
-#define OVL_PG_VM_PG		0x16	/* overlay page holds vm_page */
+#define OVL_PG_VM_PG			0x16	/* overlay page holds vm_page */
 
 extern
-struct ovpglist				ovl_page_list;
+struct ovpglist					ovl_page_list;
 extern
-simple_lock_data_t			ovl_page_list_lock;
+simple_lock_data_t				ovl_page_list_lock;
 
 extern
-struct vpage_hash_head     	ovl_vpage_hashtable;
-long				       	ovl_vpage_count;
+struct vpage_hash_head     		ovl_vpage_hashtable;
+long				       		ovl_vpage_count;
 extern
-simple_lock_data_t			ovl_vpage_hash_lock;
+simple_lock_data_t				ovl_vpage_hash_lock;
 
 #define	ovl_page_lock_lists()	simple_lock(&ovl_page_list_lock)
 #define	ovl_page_unlock_lists()	simple_unlock(&ovl_page_list_lock)

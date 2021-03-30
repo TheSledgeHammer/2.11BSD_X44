@@ -43,17 +43,12 @@
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm.h>
 
-/*
-#include <devel/vm/ovl/ovl_extern.h>
-#include <devel/vm/ovl/ovl_overlay.h>
-#include <devel/vm/ovl/ovl.h>
-*/
-
 struct kmembuckets bucket[MINBUCKET + 16];
 struct kmemstats kmemstats[M_LAST];
 struct kmemusage *kmemusage;
 char *kmembase, *kmemlimit;
 char *memname[] = INITKMEMNAMES;
+boolean_t 			overlaid;
 
 #ifdef DIAGNOSTIC
 
@@ -134,8 +129,9 @@ malloc(size, type, flags)
 		npg = clrnd(btoc(allocsize));
 
 		/* Allocates to Overlay Space */
-		if (flags | type == M_OVERLAY) {
-			//va = (caddr_t) ovlmem_malloc(omem_map, (vm_size_t)ctob(npg), !(flags & (M_NOWAIT | M_CANFAIL)));
+		if (flags & M_OVERLAY) {
+			//overlaid = TRUE;
+			//va = (caddr_t) omem_malloc(omem_map, (vm_size_t)ctob(npg), !(flags & (M_NOWAIT | M_CANFAIL)));
 		} else {
 			va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & (M_NOWAIT | M_CANFAIL)));
 		}
@@ -274,8 +270,9 @@ free(addr, type)
 #endif /* DIAGNOSTIC */
 	if (size > MAXALLOCSAVE) {
 		/* Free from Overlay Space */
-		if(type == M_OVERLAY) {
-			//ovlmem_free(omem_map, (vm_offset_t) addr, ctob(kup->ku_pagecnt));
+		if(overlaid) {
+			//omem_free(omem_map, (vm_offset_t) addr, ctob(kup->ku_ovlcnt));
+			//overlaid = FALSE;
 		} else {
 			kmem_free(kmem_map, (vm_offset_t) addr, ctob(kup->ku_pagecnt));
 		}

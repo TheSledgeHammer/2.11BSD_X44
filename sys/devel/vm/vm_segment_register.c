@@ -62,9 +62,9 @@ vmspace_alloc_vm_segment_register(vm, segment, flags)
 	int 			flags;
 {
 	RMALLOC3(segment->sg_register, union segment_register *, segment->sg_data, segment->sg_stack, segment->sg_text, sizeof(union segment_register *)); /* XXX */
-	DATA_SEGMENT(segment->sg_register, vm->vm_dsize, vm->vm_daddr, flags);
-	STACK_SEGMENT(segment->sg_register, vm->vm_ssize, vm->vm_saddr, flags);
-	TEXT_SEGMENT(segment->sg_register, vm->vm_tsize, vm->vm_taddr, flags);
+	DATA_SEGMENT(segment->sg_data, vm->vm_dsize, vm->vm_daddr, flags);
+	STACK_SEGMENT(segment->sg_stack, vm->vm_ssize, vm->vm_saddr, flags);
+	TEXT_SEGMENT(segment->sg_text, vm->vm_tsize, vm->vm_taddr, flags);
 	segment->sg_flags = flags;
 }
 
@@ -88,13 +88,13 @@ vm_segment_set_segment_register(segment, size, addr, flag)
 	int 			flag;
 {
 	if(segment->sg_type == SEG_DATA) {
-		DATA_SEGMENT(segment->sg_register, size, addr, flag);
+		DATA_SEGMENT(segment->sg_data, size, addr, flag);
 	}
 	if(segment->sg_type == SEG_STACK) {
-		STACK_SEGMENT(segment->sg_register, size, addr, flag);
+		STACK_SEGMENT(segment->sg_stack, size, addr, flag);
 	}
 	if(segment->sg_type == SEG_TEXT) {
-		TEXT_SEGMENT(segment->sg_register, size, addr, flag);
+		TEXT_SEGMENT(segment->sg_text, size, addr, flag);
 	}
 }
 
@@ -125,15 +125,15 @@ vm_segment_register_expand(segment, newsize, newaddr)
 {
 	if (segment != NULL && segment->sg_register != NULL) {
 		if (segment->sg_type == SEG_DATA) {
-			DATA_EXPAND(segment->sg_register, newsize, newaddr);
+			DATA_EXPAND(segment->sg_data, newsize, newaddr);
 			printf("vm_segment_register_expand: data segment expanded: newsize %l newaddr %s", newsize, newaddr);
 		}
 		if (segment->sg_type == SEG_STACK) {
-			STACK_EXPAND(segment->sg_register, newsize, newaddr);
+			STACK_EXPAND(segment->sg_stack, newsize, newaddr);
 			printf("vm_segment_register_expand: stack segment expanded: newsize %l newaddr %s", newsize, newaddr);
 		}
 		if (segment->sg_type == SEG_TEXT) {
-			TEXT_EXPAND(segment->sg_register, newsize, newaddr);
+			TEXT_EXPAND(segment->sg_text, newsize, newaddr);
 			printf("vm_segment_register_expand: text segment expanded: newsize %l newaddr %s", newsize, newaddr);
 		}
 	} else {
@@ -152,15 +152,15 @@ vm_segment_register_shrink(segment, newsize, newaddr)
 {
 	if (segment != NULL && segment->sg_register != NULL) {
 		if (segment->sg_type == SEG_DATA) {
-			DATA_SHRINK(segment->sg_register, newsize, newaddr);
+			DATA_SHRINK(segment->sg_data, newsize, newaddr);
 			printf("vm_segment_register_shrink: data segment shrunk: newsize %l newaddr %s", newsize, newaddr);
 		}
 		if (segment->sg_type == SEG_STACK) {
-			STACK_SHRINK(segment->sg_register, newsize, newaddr);
+			STACK_SHRINK(segment->sg_stack, newsize, newaddr);
 			printf("vm_segment_register_shrink: stack segment shrunk: newsize %l newaddr %s", newsize, newaddr);
 		}
 		if (segment->sg_type == SEG_TEXT) {
-			TEXT_SHRINK(segment->sg_register, newsize, newaddr);
+			TEXT_SHRINK(segment->sg_text, newsize, newaddr);
 			printf("vm_segment_register_shrink: text segment shrunk: newsize %l newaddr %s", newsize, newaddr);
 		}
 	} else {
@@ -219,9 +219,10 @@ estabur(seg, data, stack, text, sep, flags)
 	vm_segment_t seg;
 	segr_data_t *data;
 	segr_stack_t *stack;
-	segr_text_t *text;
-	int 		sep, flags;
+	segr_text_t 	*text;
+	int 			sep, flags;
 {
+
 	if(seg == NULL || data == NULL || stack == NULL || text == NULL) {
 		return (1);
 	}

@@ -145,7 +145,7 @@ extern int						page_shift;
 #define	KERN_NO_ACCESS			8
 
 #ifndef ASSEMBLER
-//#ifdef KERNEL
+#ifdef KERNEL
 
 /*
  *	Convert addresses to segments & pages and vice versa.

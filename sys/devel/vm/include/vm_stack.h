@@ -46,7 +46,7 @@ union segment_register {
 		caddr_t				sp_taddr;
 		int 				sp_tflag;
 	} sp_text;
-
+/*
 #define sg_daddr			sp_data.sp_daddr
 #define sg_dsize			sp_data.sp_dsize
 #define sg_dflag			sp_data.sp_dflag
@@ -56,6 +56,7 @@ union segment_register {
 #define sg_taddr			sp_text.sp_taddr
 #define sg_tsize			sp_text.sp_tsize
 #define sg_tflag			sp_text.sp_tflag
+	*/
 };
 
 typedef struct segr_data  	segr_data_t;
@@ -69,51 +70,51 @@ typedef struct segr_text  	segr_text_t;
 
 /* pseudo-segment macros */
 #define DATA_SEGMENT(data, dsize, daddr, dflag) {		\
-	(data)->sg_dsize = (dsize);							\
-	(data)->sg_daddr = (daddr);							\
-	(data)->sg_dflag = (dflag);							\
+	(data)->sp_dsize = (dsize);							\
+	(data)->sp_daddr = (daddr);							\
+	(data)->sp_dflag = (dflag);							\
 };
 
 #define DATA_EXPAND(data, dsize, daddr) {				\
-	(data)->sg_dsize += (dsize);						\
-	(data)->sg_daddr += (daddr);						\
+	(data)->sp_dsize += (dsize);						\
+	(data)->sp_daddr += (daddr);						\
 };
 
 #define DATA_SHRINK(data, dsize, daddr) {				\
-	(data)->sg_dsize -= (dsize);						\
-	(data)->sg_daddr -= (daddr);						\
+	(data)->sp_dsize -= (dsize);						\
+	(data)->sp_daddr -= (daddr);						\
 };
 
 #define STACK_SEGMENT(stack, ssize, saddr, sflag) {		\
-	(stack)->sg_ssize = (ssize);						\
-	(stack)->sg_saddr = (saddr);						\
-	(stack)->sg_sflag = (sflag);						\
+	(stack)->sp_ssize = (ssize);						\
+	(stack)->sp_saddr = (saddr);						\
+	(stack)->sp_sflag = (sflag);						\
 };
 
 #define STACK_EXPAND(stack, ssize, saddr) {				\
-	(stack)->sg_ssize += (ssize);						\
-	(stack)->sg_saddr += (ssize);						\
+	(stack)->sp_ssize += (ssize);						\
+	(stack)->sp_saddr += (ssize);						\
 };
 
 #define STACK_SHRINK(stack, ssize, saddr) {				\
-	(stack)->sg_ssize -= (ssize);						\
-	(stack)->sg_saddr -= (ssize);						\
+	(stack)->sp_ssize -= (ssize);						\
+	(stack)->sp_saddr -= (ssize);						\
 };
 
 #define TEXT_SEGMENT(text, tsize, taddr, tflag) {		\
-	(text)->sg_tsize = (tsize);							\
-	(text)->sg_taddr = (taddr);							\
-	(text)->sg_tflag = (tflag);							\
+	(text)->sp_tsize = (tsize);							\
+	(text)->sp_taddr = (taddr);							\
+	(text)->sp_tflag = (tflag);							\
 };
 
 #define TEXT_EXPAND(text, tsize, taddr) {				\
-	(text)->sg_tsize += (tsize);						\
-	(text)->sg_taddr += (taddr);						\
+	(text)->sp_tsize += (tsize);						\
+	(text)->sp_taddr += (taddr);						\
 };
 
 #define TEXT_SHRINK(text, tsize, taddr) {				\
-	(text)->sg_tsize -= (tsize);						\
-	(text)->sg_taddr -= (taddr);						\
+	(text)->sp_tsize -= (tsize);						\
+	(text)->sp_taddr -= (taddr);						\
 };
 
 #endif /* _VM_STACK_H_ */

@@ -40,9 +40,9 @@
 
 #include <devel/sys/tbtree.h>
 
-#include <devel/vm/ovl/ovl.h>
-#include <devel/vm/ovl/ovl_extern.h>
-#include <devel/vm/ovl/ovl_overlay.h>
+#include <devel/vm/ovl/include/ovl.h>
+#include <devel/vm/ovl/include/ovl_extern.h>
+#include <devel/vm/ovl/include/ovl_overlay.h>
 
 /* Allocate Tertiary Buddy Tree */
 void
@@ -337,7 +337,7 @@ tbtree_free(ktp, addr, size, type)
 		free = ktp->tb_freelist2;
 		if(free->asl_size == toFind->tb_size && toFind->tb_addr == addr) {
 			free = asl_remove(ktp->tb_freelist2, size);
-			ovlmem_free(omem_map, toFind->tb_addr, size);
+			omem_free(omem_map, toFind->tb_addr, size);
 			oorkfree(toFind->tb_addr, size, type);
 		}
 	}
@@ -399,7 +399,7 @@ oorkmalloc(size, type, flags)
 	caddr_t va;
 	/* Allocates to Overlay Space */
 	if (type == M_OVERLAY || flags == M_OVERLAY) {
-		va = (caddr_t) ovlmem_malloc(omem_map, size, flags);
+		va = (caddr_t) omem_malloc(omem_map, size, flags);
 	} else {
 		va = (caddr_t) kmem_malloc(kmem_map, size, flags);
 	}
@@ -415,7 +415,7 @@ oorkfree(addr, size, type)
 {
 	/* Free from Overlay Space */
 	if (type == M_OVERLAY) {
-		ovlmem_free(omem_map, addr, size);
+		omem_free(omem_map, addr, size);
 	} else {
 		kmem_free(kmem_map, addr, size);
 	}

@@ -82,7 +82,7 @@
 #define	KPTDI_FIRST			0x3f8									/* start of kernel virtual pde's */
 #define	KPTDI_LAST			0x3fA									/* last of kernel virtual pde's */
 
-//#define	KPTDI				0									/* start of kernel virtual pde's */
+//#define	KPTDI				0										/* start of kernel virtual pde's */
 
 /*
  * Input / Output Memory Physical Addresses

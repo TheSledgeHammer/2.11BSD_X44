@@ -30,13 +30,13 @@ struct ovlspace;
 
 //#ifdef KERNEL
 void			ovl_mem_init(void);
-vm_offset_t		ovlmem_alloc(ovl_map_t, vm_size_t);
-void			ovlmem_free(ovl_map_t, vm_offset_t, vm_size_t);
-void			ovlmem_init(vm_offset_t , vm_offset_t );
-ovl_map_t		ovlmem_suballoc(ovl_map_t, vm_offset_t, vm_offset_t, vm_size_t);
-vm_offset_t		ovlmem_malloc(ovl_map_t, vm_size_t, boolean_t);
-vm_offset_t		ovlmem_alloc_wait(ovl_map_t, vm_size_t);
-void			ovlmem_free_wakeup(ovl_map_t, vm_offset_t, vm_size_t);
+vm_offset_t		omem_alloc(ovl_map_t, vm_size_t);
+void			omem_free(ovl_map_t, vm_offset_t, vm_size_t);
+void			omem_init(vm_offset_t , vm_offset_t );
+ovl_map_t		omem_suballoc(ovl_map_t, vm_offset_t, vm_offset_t, vm_size_t);
+vm_offset_t		omem_malloc(ovl_map_t, vm_size_t, boolean_t);
+vm_offset_t		omem_alloc_wait(ovl_map_t, vm_size_t);
+void			omem_free_wakeup(ovl_map_t, vm_offset_t, vm_size_t);
 int 			ovl_allocate(ovl_map_t, vm_offset_t, vm_size_t, boolean_t);
 int 			ovl_deallocate(ovl_map_t, vm_offset_t, vm_size_t);
 int				ovl_allocate_with_pager(ovl_map_t, vm_offset_t *, vm_size_t, boolean_t, vm_pager_t, boolean_t);

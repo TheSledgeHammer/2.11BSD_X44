@@ -121,12 +121,11 @@
 #define M_MEMDESC		69	/* memory range descriptors */
 #define M_DEVSW			70	/* device switch table */
 #define M_DEVSWHASH		71	/* device switch table hash structure */
-#define M_OVERLAY		72	/* Use Overlay Space Memory */
-#define M_USB			73	/* USB general */
-#define	M_TTY			74	/* allocated tty structures */
-#define M_KEVENT 		75	/* kevents/knotes */
-#define	M_TEMP			76	/* misc temporary data buffers */
-#define	M_LAST			77	/* Must be last type + 1 */
+#define M_USB			72	/* USB general */
+#define	M_TTY			73	/* allocated tty structures */
+#define M_KEVENT 		74	/* kevents/knotes */
+#define	M_TEMP			75	/* misc temporary data buffers */
+#define	M_LAST			76	/* Must be last type + 1 */
 
 #define INITKMEMNAMES {						\
 	"free",			/* 0 M_FREE */ 			\
@@ -201,11 +200,10 @@
 	"memdesc",		/* 69 M_MEMDESC */		\
 	"devsw",		/* 70 M_DEVSW */		\
 	"devswhash",	/* 71 M_DEVSWHASH */	\
-	"overlay space",/* 72 M_OVERLAY */		\
-	"usb",			/* 73 M_USB */			\
-	"tty",			/* 74 M_TTY */			\
-	"kevent",		/* 75 M_KEVENT */		\
-	"temp",			/* 76 M_TEMP */ 		\
+	"usb",			/* 72 M_USB */			\
+	"tty",			/* 73 M_TTY */			\
+	"kevent",		/* 74 M_KEVENT */		\
+	"temp",			/* 75 M_TEMP */ 		\
 }
 
 struct kmemstats {
@@ -226,11 +224,12 @@ struct kmemusage {
 	union {
 		u_short 		freecnt;		/* for small allocations, free pieces in page */
 		u_short 		pagecnt;		/* for large allocations, pages alloced */
+		u_short			ovlcnt;			/* for allocations, overlays alloced */
 	} ku_un;
 };
 #define ku_freecnt 		ku_un.freecnt
 #define ku_pagecnt 		ku_un.pagecnt
-
+#define ku_ovlcnt 		ku_un.ovlcnt
 
 /* Set of buckets for each size of memory block that is retained */
 struct kmembuckets {

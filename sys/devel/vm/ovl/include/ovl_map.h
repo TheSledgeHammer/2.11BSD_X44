@@ -116,8 +116,8 @@ struct ovl_map {
 #define	ovl_map_pmap(map)	((map)->ovl_pmap)
 
 /* XXX: number of overlay maps and entries to statically allocate */
-#define MAX_OMAP	64
-#define	NOVLE		(32)			/* number of overlay entries */
+#define MAX_OMAP		64
+#define	MAX_NOVL		(32)			/* number of overlay entries */
 
 #ifdef _KERNEL
 struct pmap;

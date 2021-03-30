@@ -70,43 +70,14 @@ slab_startup(start, end)
 		bsize = BUCKETSIZE(indx);
 		slab_insert(slab, bsize, M_VMSLAB, M_WAITOK);
 	}
-	slab->s_extent = slab_create("slab extent", start, end, slab->s_size, slab->s_mtype, NULL, NULL, EX_WAITOK | EX_MALLOCOK);
-	error = extent_alloc_region(slab->s_extent->se_extent, start, bsize, EX_WAITOK | EX_MALLOCOK);
+	slab->s_extent = extent_create("slab extent", start, end, slab->s_size, slab->s_mtype, NULL, NULL, EX_WAITOK | EX_MALLOCOK);
+	error = extent_alloc_region(slab->s_extent, start, bsize, EX_WAITOK | EX_MALLOCOK);
 	if (error) {
 		printf("slab_startup: slab allocator initialized successful");
 	} else {
 		panic("slab_startup: slab allocator couldn't be initialized");
-		extent_destroy(slab->s_extent);
+		slab_destroy(slab);
 	}
-}
-
-/*
- * TODO:
- * - initialization of slab allocator: in kern_malloc.c?
- * - slab caching & a slab freelist?
- * - add dynamic allocation according segments &/or pages
- */
-static slab_extents_t
-slab_create(name, start, end, size, mtype, storage, storagesize, flags)
-	const char *name;
-	size_t start, end, size, storagesize;
-	caddr_t storage;
-	int mtype, flags;
-{
-	slab_extents_t 	slext;
-
-	slext->se_name = name;
-	slext->se_start = start;
-	slext->se_end = end;
-	slext->se_size = size;
-	slext->se_mtype = mtype;
-	slext->se_storage = storage;
-	slext->se_storagesize = storagesize;
-	slext->se_flags = flags;
-
-	slext->se_extent = extent_create(name, start, end, mtype, storage, storagesize, flags);
-
-	return (slext);
 }
 
 /*
@@ -118,19 +89,15 @@ slab_create(name, start, end, size, mtype, storage, storagesize, flags)
  */
 void
 slab_malloc(size, alignment, boundary, mtype, flags)
-	u_long 	size;
-	u_long	alignment, boundary;
+	u_long 	size, alignment, boundary;
 	int		mtype, flags;
 {
-	slab_t 			slab;
-	slab_extents_t 	slext;
-	int 			error;
+	slab_t 	slab;
+	int 	error;
 
 	slab = slab_lookup(size, mtype);
-	slext = slab->s_extent;
-	slext->se_mtype = mtype;
 
-	error = extent_alloc(slext->se_extent, size, alignment, boundary, flags, slab->s_slext);
+	error = extent_alloc(slab->s_extent, size, alignment, boundary, flags, slab->s_region);
 	if(error) {
 		printf("slab_malloc: successful");
 	} else {
@@ -144,16 +111,23 @@ slab_free(addr, mtype)
 	int		mtype;
 {
 	slab_t slab;
-	slab_extents_t 	slext;
-	int 			error;
+	size_t start;
+	int   error;
 
 	slab = slab_lookup(addr, mtype);
 	if (slab) {
-		slext = slab->s_extent;
-		if(slext->se_mtype == mtype) {
-			error = extent_free(slext->se_extent, slext->se_start, addr, flags);
-		}
+		start = slab->s_extent->ex_start;
+		error = extent_free(slab->s_extent, start, addr, flags);
 		slab_remove(addr);
+	}
+}
+
+void
+slab_destroy(slab)
+	slab_t slab;
+{
+	if(slab->s_extent != NULL) {
+		extent_destroy(slab->s_extent);
 	}
 }
 

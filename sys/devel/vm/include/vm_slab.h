@@ -45,32 +45,8 @@ struct slab_metadata {
     int                      	sm_freeslots;       							/* slots free */
 
     int                         sm_type;            							/* slab type: see below */
-/*
-  	u_long						sm_pool;
-    long                        sm_min;
-    long                        sm_max;
-    caddr_t                     sm_addr;
-
-    vm_segment_t                sm_segment;
-    vm_page_t                   sm_page;
-*/
 };
 typedef struct slab_metadata    *slab_metadata_t;
-
-struct slab_extents {
-	struct extent				*se_extent;
-	const char 					*se_name;
-	size_t 						se_start;
-	size_t 						se_end;
-	size_t                      se_size;
-	int 						se_mtype;
-	caddr_t						se_storage;
-	size_t						se_storagesize;
-	int 						se_align;
-	int							se_boundary;
-	int							se_flags;
-};
-typedef struct slab_extents    	*slab_extents_t;
 
 struct slablist;
 CIRCLEQ_HEAD(slablist, slab);
@@ -86,9 +62,8 @@ struct slab {
     int                         s_refcount;
     int                         s_usecount;                                     /* usage counter for slab caching */
 
-    slab_extents_t				s_extent;
-
-    size_t						s_slext;										/* extent region result */
+    struct extent				*s_extent;										/* slab extent */
+    size_t						s_region;										/* extent region result */
 };
 typedef struct slab             *slab_t;
 

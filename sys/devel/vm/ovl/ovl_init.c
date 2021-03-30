@@ -102,7 +102,7 @@
 void
 ovl_mem_init()
 {
-	extern vm_offset_t	overlay_avail, overlay_end;
+	extern vm_offset_t overlay_avail, overlay_end;
 
 	ovl_segment_init(&overlay_avail, &overlay_end);
 	ovl_page_init(&overlay_avail, &overlay_end);
@@ -112,6 +112,14 @@ ovl_mem_init()
 	 */
 	ovl_object_init(overlay_end - OVL_MIN_ADDRESS);
 	ovl_map_startup();
-	ovlmem_init(overlay_avail, overlay_end);
+	omem_init(overlay_avail, overlay_end);
 	overlay_pager_init();
 }
+
+/* Placeholder: Belongs in kern_malloc.c */
+ char *omembase, *omemlimit;
+ void
+ omeminit()
+ {
+	 omem_map = omem_suballoc(overlay_map, (vm_offset_t *)&omembase, (vm_offset_t *)&omemlimit, (vm_size_t)OVL_MAX_ADDRESS);
+ }

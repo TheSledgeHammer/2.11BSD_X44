@@ -42,6 +42,7 @@
 
 #define M_VMAMAP 		73	/* VM amap structures */
 #define M_VMAOBJ 		74	/* VM aobject structure */
+
 #define M_OVLMAP		75	/* OVL map structures */
 #define	M_OVLMAPENT		76	/* OVL map entry structures */
 #define M_OVLOBJ		77	/* OVL object structure */
@@ -57,7 +58,8 @@
 #define M_VMSLAB		87 	/* VM slab structures */
 #define M_ADVVM			88 	/* AdvVM structures structures */
 #define M_UFS211		89	/* UFS211 bufmap structure */
+#define M_PERCPU		90	/* percpu structure */
 
-#define M_IOAPIC		90
-#define M_PERCPU		91
+#define M_IOAPIC		91	/* FreeBSD's ioapic structure */
+
 #endif /* _SYS_MALLOCTYPES_H_ */

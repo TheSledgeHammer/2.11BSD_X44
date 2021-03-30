@@ -29,8 +29,8 @@
 #ifndef SYS_THREADPOOL_H_
 #define SYS_THREADPOOL_H_
 
-#include "../libuthread/uthread.h"
-#include "sys/kthread.h"
+#include <libuthread/uthread.h>
+#include <sys/kthread.h>
 
 /*
  * Two Threadpools:
@@ -50,11 +50,6 @@
  * 	- confirmation: to prevent thread pools requesting the same task
  * 	- Tasks added to work queue
  * 	- Only jobs flagged for sending
- *
- * 	NetBSD:
- * 	- Threadpool_Thread: threads as they relate to lwp
- * 	- Threadpool: Actual Pool of Threads
- * 	- Threadpool_Job: Jobs to be done by threads in threadpool
  *
  * 	Look at kthreads & uthreads for corresponding information
  */
@@ -109,8 +104,8 @@ struct threadpool_itpc {
 			struct job_head				itc_utjob;			/* UThread's Job */
 		} ut;
 	} info;
-#define itc_ktinfo		info.kt
-#define itc_utinfo		info.ut
+#define itc_ktinfo						info.kt
+#define itc_utinfo						info.ut
 };
 
 extern struct itc_threadpool itpc;
@@ -129,16 +124,16 @@ void	threadpool_cancel_job(struct kthreadpool *, struct threadpool_job *);
 bool	threadpool_cancel_job_async(struct kthreadpool *, struct threadpool_job *);
 
 /* General ITPC */
-void itpc_threadpool_init(void);
+void 	itpc_threadpool_init(void);
 
-void itpc_kthreadpool_enqueue(struct threadpool_itpc *, pid_t);
-void itpc_kthreadpool_dequeue(struct threadpool_itpc *, pid_t);
-void itpc_check_kthreadpool(struct threadpool_itpc *, pid_t);
-void itpc_verify_kthreadpool(struct threadpool_itpc *, pid_t);
+void 	itpc_kthreadpool_enqueue(struct threadpool_itpc *, pid_t);
+void 	itpc_kthreadpool_dequeue(struct threadpool_itpc *, pid_t);
+void 	itpc_check_kthreadpool(struct threadpool_itpc *, pid_t);
+void 	itpc_verify_kthreadpool(struct threadpool_itpc *, pid_t);
 
-void itpc_uthreadpool_enqueue(struct threadpool_itpc *, pid_t);
-void itpc_uthreadpool_dequeue(struct threadpool_itpc *, pid_t);
-void itpc_check_uthreadpool(struct threadpool_itpc *, pid_t);
-void itpc_verify_uthreadpool(struct threadpool_itpc *, pid_t);
+void 	itpc_uthreadpool_enqueue(struct threadpool_itpc *, pid_t);
+void 	itpc_uthreadpool_dequeue(struct threadpool_itpc *, pid_t);
+void 	itpc_check_uthreadpool(struct threadpool_itpc *, pid_t);
+void 	itpc_verify_uthreadpool(struct threadpool_itpc *, pid_t);
 
 #endif /* SYS_THREADPOOL_H_ */
