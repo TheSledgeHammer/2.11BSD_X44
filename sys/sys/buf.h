@@ -101,12 +101,12 @@ struct buf
 /*
  * Definitions for the buffer free lists.
  */
-#define	BQUEUES		4		/* number of free buffer queues */
+#define	BQUEUES			4		/* number of free buffer queues */
 
-#define	BQ_LOCKED	0		/* super-blocks &c */
-#define	BQ_LRU		1		/* lru, useful buffers */
-#define	BQ_AGE		2		/* rubbish */
-#define	BQ_EMPTY	3		/* buffer headers with no memory */
+#define	BQ_LOCKED		0		/* super-blocks &c */
+#define	BQ_LRU			1		/* lru, useful buffers */
+#define	BQ_AGE			2		/* rubbish */
+#define	BQ_EMPTY		3		/* buffer headers with no memory */
 
 struct bufhashhdr;
 LIST_HEAD(bufhashhdr, buf);
@@ -128,13 +128,13 @@ extern struct bqueues bufqueues[];
 }
 
 /* Flags to low-level allocation routines. */
-#define B_CLRBUF	0x01	/* Request allocated buffer be cleared. */
-#define B_SYNC		0x02	/* Do all allocations synchronously. */
+#define B_CLRBUF		0x01	/* Request allocated buffer be cleared. */
+#define B_SYNC			0x02	/* Do all allocations synchronously. */
 
 /*
  * number of buffer hash entries
  */
-#define	BUFHSZ		512		/* must be power of 2 */
+#define	BUFHSZ			512		/* must be power of 2 */
 
 /* These flags are kept in b_flags. */
 #define	B_WRITE			0x00000000		/* non-read pseudo-flag */

@@ -278,7 +278,7 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 	sc->sc_dev = self;
 	sc->sc_flags = aaa->flags;
 	sc->sc_pic.pic_apicid = aaa->apic_id;
-	sc->sc_pic.pic_name = device_xname(self);
+	sc->sc_pic.pic_name = self->dv_xname;
 	sc->sc_pic.pic_ioapic = sc;
 
 	aprint_naive("\n");

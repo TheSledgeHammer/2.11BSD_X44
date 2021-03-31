@@ -10,6 +10,8 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>
+#include <sys/conf.h>
+#include <sys/devsw.h>
 #include <sys/malloc.h>
 #include <sys/kernel.h>
 #include <sys/bus.h>
@@ -59,7 +61,7 @@ struct ioapic_softc {
 
 	struct ioapic_intsrc 	sc_pins;
 };
-static SIMPLEQ_HEAD(,ioapic) ioapics = SIMPLEQ_HEAD_INITIALIZER(ioapics);
+static SIMPLEQ_HEAD(,ioapic_softc) ioapics = SIMPLEQ_HEAD_INITIALIZER(ioapics);
 
 /*
  * Register read/write routines.
@@ -185,4 +187,51 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 	ioapic_write(sc, IOAPIC_ID,
 			(ioapic_read(sc, IOAPIC_ID) & ~APIC_ID_MASK)
 					| (sc->sc_apicid << APIC_ID_SHIFT));
+}
+
+int
+ioapic_activate(struct device *self, int act)
+{
+	struct ioapic_softc *sc = (struct ioapic_softc *)self;
+
+	switch (act) {
+	case DVACT_RESUME:
+		/* On resume, reset the APIC id, like we do on boot */
+		ioapic_write(sc, IOAPIC_ID, (ioapic_read(sc, IOAPIC_ID) & ~IOAPIC_ID_MASK) | (sc->sc_apicid << IOAPIC_ID_SHIFT));
+	}
+
+	return (0);
+}
+
+
+void
+ioapic_hwmask(struct pic *pic, int pin)
+{
+	u_int32_t redlo;
+	struct ioapic_softc *sc = (struct ioapic_softc *)pic;
+
+	if (ioapic_cold) {
+		return;
+	}
+	ioapic_lock(sc);
+	redlo = ioapic_read_ul(sc, IOAPIC_REDLO(pin));
+	redlo |= IOAPIC_REDLO_MASK;
+	ioapic_write_ul(sc, IOAPIC_REDLO(pin), redlo);
+	ioapic_unlock(sc);
+}
+
+void
+ioapic_hwunmask(struct pic *pic, int pin)
+{
+	u_int32_t redlo;
+	struct ioapic_softc *sc = (struct ioapic_softc *)pic;
+
+	if (ioapic_cold) {
+		return;
+	}
+	ioapic_lock(sc);
+	redlo = ioapic_read_ul(sc, IOAPIC_REDLO(pin));
+	redlo &= ~IOAPIC_REDLO_MASK;
+	ioapic_write_ul(sc, IOAPIC_REDLO(pin), redlo);
+	ioapic_unlock(sc);
 }

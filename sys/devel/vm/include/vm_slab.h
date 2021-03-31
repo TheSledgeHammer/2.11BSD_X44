@@ -45,6 +45,10 @@ struct slab_metadata {
     int                      	sm_freeslots;       							/* slots free */
 
     int                         sm_type;            							/* slab type: see below */
+
+    struct kmembuckets			*sm_bucket;
+    u_long 						sm_bsize;
+    long 						sm_bindx;
 };
 typedef struct slab_metadata    *slab_metadata_t;
 
@@ -58,12 +62,11 @@ struct slab {
     u_long                      s_size;											/* slab size */
     int							s_mtype;                                        /* malloc type */
 
-    int							s_flags;
+    int							s_flags;										/* slab flags */
     int                         s_refcount;
     int                         s_usecount;                                     /* usage counter for slab caching */
 
     struct extent				*s_extent;										/* slab extent */
-    size_t						s_region;										/* extent region result */
 };
 typedef struct slab             *slab_t;
 
@@ -92,11 +95,12 @@ int			                    slab_count;                                     /* num
 #define SLOTSFREE(bsize, size)  (BUCKET_SLOTS(bsize) - ALLOCATED_SLOTS(size)) 	/* free slots in bucket (s = size) */
 
 /* proto types */
-void	slab_create();
+void	slab_create(slab_t);
 void 	slab_malloc(u_long, int, int);
 void 	slab_free(void *, int);
 
-slab_t  slab_lookup(u_long, int);
+slab_t  slab_small_lookup(u_long, int);
+slab_t  slab_large_lookup(u_long, int);
 void	slab_insert(slab_t, u_long, int, int);
 void	slab_remove(u_long);
 #endif /* _VM_SLAB_H_ */

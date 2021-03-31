@@ -139,19 +139,19 @@ static void 		bd_io_workaround(bdinfo_t *);
 static int 			bd_io(struct i386_devdesc *, bdinfo_t *, daddr_t, int, caddr_t, int);
 static boolean_t 	bd_int13probe(bdinfo_t *);
 
-static int 	bd_init(void);
-static int 	cd_init(void);
-static int 	fd_init(void);
-static int 	bd_strategy(void *devdata, int flag, daddr_t dblk, size_t size, char *buf, size_t *rsize);
-static int 	bd_realstrategy(void *devdata, int flag, daddr_t dblk, size_t size, char *buf, size_t *rsize);
-static int 	bd_open(struct open_file *f, ...);
-static int 	bd_close(struct open_file *f);
-static int 	bd_ioctl(struct open_file *f, u_long cmd, void *data);
-static int 	bd_print(int verbose);
-static int 	cd_print(int verbose);
-static int 	fd_print(int verbose);
-static void bd_reset_disk(int);
-static int 	bd_get_diskinfo_std(struct bdinfo *);
+static int 			bd_init(void);
+static int 			cd_init(void);
+static int 			fd_init(void);
+static int 			bd_strategy(void *devdata, int flag, daddr_t dblk, size_t size, char *buf, size_t *rsize);
+static int 			bd_realstrategy(void *devdata, int flag, daddr_t dblk, size_t size, char *buf, size_t *rsize);
+static int 			bd_open(struct open_file *f, ...);
+static int 			bd_close(struct open_file *f);
+static int 			bd_ioctl(struct open_file *f, u_long cmd, void *data);
+static int 			bd_print(int verbose);
+static int 			cd_print(int verbose);
+static int 			fd_print(int verbose);
+static void 		bd_reset_disk(int);
+static int 			bd_get_diskinfo_std(struct bdinfo *);
 
 struct devsw biosfd = {
 	.dv_name = "fd",
@@ -320,8 +320,7 @@ fd_init(void)
 		if (bd->bd_sectors == 0)
 			bd->bd_flags |= BD_NO_MEDIA;
 
-		printf("BIOS drive %c: is %s%d\n", ('A' + unit),
-		    biosfd.dv_name, unit);
+		printf("BIOS drive %c: is %s%d\n", ('A' + unit), biosfd.dv_name, unit);
 
 		TAILQ_INSERT_TAIL(&fdinfo, bd, bd_link);
 	}
@@ -633,7 +632,7 @@ bd_int13probe(bdinfo_t *bd)
 		v86.edx = bd->bd_unit;
 		v86int();
 		if (V86_CY(v86.efl) || (v86.eax & 0x300) == 0)
-			return (false);
+			return (FALSE);
 	}
 
 	ret = 1;
@@ -670,7 +669,7 @@ bd_int13probe(bdinfo_t *bd)
 
 			printf("Can not get information about %s unit %#x\n",
 			    dv_name, bd->bd_unit);
-			return (false);
+			return (FALSE);
 		}
 	}
 
@@ -685,7 +684,7 @@ bd_int13probe(bdinfo_t *bd)
 	DPRINTF("unit 0x%x geometry %d/%d/%d\n", bd->bd_unit, bd->bd_cyl,
 	    bd->bd_hds, bd->bd_sec);
 
-	return (true);
+	return (TRUE);
 }
 
 static int
@@ -755,11 +754,8 @@ bd_print_common(struct devsw *dev, bdinfo_list_t *bdi, int verbose)
 		devd.dd.d_unit = i;
 		devd.d_slice = D_SLICENONE;
 		devd.d_partition = D_PARTNONE;
-		if (disk_open(&devd,
-		    bd->bd_sectorsize * bd->bd_sectors,
-		    bd->bd_sectorsize) == 0) {
-			snprintf(line, sizeof(line), "    %s%d",
-			    dev->dv_name, i);
+		if (disk_open(&devd, bd->bd_sectorsize * bd->bd_sectors, bd->bd_sectorsize) == 0) {
+			snprintf(line, sizeof(line), "    %s%d", dev->dv_name, i);
 			ret = disk_print(&devd, line, verbose);
 			disk_close(&devd);
 			if (ret != 0)
@@ -860,8 +856,7 @@ bd_open(struct open_file *f, ...)
 
 	rc = 0;
 	if (dev->dd.d_dev->dv_type == DEVT_DISK) {
-		rc = disk_open(dev, bd->bd_sectors * bd->bd_sectorsize,
-		    bd->bd_sectorsize);
+		rc = disk_open(dev, bd->bd_sectors * bd->bd_sectorsize, bd->bd_sectorsize);
 		if (rc != 0) {
 			bd->bd_open--;
 			if (bd->bd_open == 0) {
@@ -1198,8 +1193,7 @@ bd_io_workaround(bdinfo_t *bd)
 }
 
 static int
-bd_io(struct i386_devdesc *dev, bdinfo_t *bd, daddr_t dblk, int blks,
-    caddr_t dest, int dowrite)
+bd_io(struct i386_devdesc *dev, bdinfo_t *bd, daddr_t dblk, int blks, caddr_t dest, int dowrite)
 {
 	int result, retry;
 
@@ -1289,8 +1283,7 @@ bd_getbigeom(int bunit)
 	v86int();
 	if (V86_CY(v86.efl))
 		return (0x4f010f);
-	return (((v86.ecx & 0xc0) << 18) | ((v86.ecx & 0xff00) << 8) |
-	    (v86.edx & 0xff00) | (v86.ecx & 0x3f));
+	return (((v86.ecx & 0xc0) << 18) | ((v86.ecx & 0xff00) << 8) | (v86.edx & 0xff00) | (v86.ecx & 0x3f));
 }
 
 /*
@@ -1307,7 +1300,7 @@ bd_getdev(struct i386_devdesc *d)
 	int	biosdev;
 	int	major;
 	int	rootdev;
-	char	*nip, *cp;
+	char *nip, *cp;
 	int	i, unit, slice, partition;
 
 	/* XXX: Assume partition 'a'. */
@@ -1325,8 +1318,7 @@ bd_getdev(struct i386_devdesc *d)
 		return (-1);
 
 	if (dev->dd.d_dev->dv_type == DEVT_DISK) {
-		if (disk_open(dev, bd->bd_sectors * bd->bd_sectorsize,
-		    bd->bd_sectorsize) != 0)	/* oops, not a viable device */
+		if (disk_open(dev, bd->bd_sectors * bd->bd_sectorsize, bd->bd_sectorsize) != 0)	/* oops, not a viable device */
 			return (-1);
 		else
 			disk_close(dev);

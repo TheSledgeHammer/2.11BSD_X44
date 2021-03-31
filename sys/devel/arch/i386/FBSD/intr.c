@@ -261,8 +261,9 @@ intr_resume(bool suspend_cancelled)
 
 	simple_lock(&intrpic_lock);
 	TAILQ_FOREACH(pic, &pics, pics) {
-		if (pic->pic_resume != NULL)
+		if (pic->pic_resume != NULL) {
 			pic->pic_resume(pic, suspend_cancelled);
+		}
 	}
 	simple_unlock(&intrpic_lock);
 }
@@ -289,7 +290,6 @@ intrcnt_setname(const char *name, int index)
 static void
 intrcnt_updatename(struct intsrc *is)
 {
-
 	intrcnt_setname(is->is_event->ie_fullname, is->is_index);
 }
 

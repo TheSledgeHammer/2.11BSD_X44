@@ -577,8 +577,6 @@ done:
  * message will be erroneously issued in some valid situations.
 */
 
-#define	RAWPART		2	/* 'c' */  /* XXX */
-
 int
 dkoverlapchk(lp, openmask, dev, label, name)
 	struct disklabel *lp;
@@ -594,13 +592,13 @@ dkoverlapchk(lp, openmask, dev, label, name)
 	daddr_t start, end;
 	register struct partition *pp;
 
-	if ((openmask & partmask) == 0 && part != RAWPART) {
+	if ((openmask & partmask) == 0 && part != RAW_PART) {
 		pp = &lp->d_partitions[part];
 		start = pp->p_offset;
 		end = pp->p_offset + pp->p_size;
 		i = 0;
 		for (pp = lp->d_partitions; i < lp->d_npartitions; pp++, i++) {
-			if (pp->p_offset + pp->p_size <= start|| pp->p_offset >= end || i == RAWPART) {
+			if (pp->p_offset + pp->p_size <= start|| pp->p_offset >= end || i == RAW_PART) {
 				continue;
 			}
 			if (openmask & (1 << i)) {

@@ -31,10 +31,8 @@
  */
 struct i386_devdesc {
 	struct devdesc	dd;		/* Must be first. */
-    union
-	{
-		struct
-		{
+    union {
+		struct {
 			int		adaptor;
 			int		controller;
 			int		slice;

@@ -183,8 +183,9 @@ startup(firstaddr)
 	 */
 
 	/* avail_end was pre-decremented in pmap_bootstrap to compensate */
-	for (i = 0; i < btoc(sizeof(struct msgbuf)); i++)
+	for (i = 0; i < btoc(sizeof(struct msgbuf)); i++) {
 		pmap_enter(kernel_pmap, msgbufp, avail_end + i * NBPG, VM_PROT_ALL, TRUE);
+	}
 	msgbufmapped = 1;
 
 	/*
@@ -194,7 +195,7 @@ startup(firstaddr)
 	printf(version);
 	printcpuinfo();
 	panicifcpuunsupported();
-	identifycpu();
+
 	printf("real mem  = %d\n", ctob(physmem));
 
 	/*
@@ -214,7 +215,9 @@ startup(firstaddr)
 	 * addresses to the various data structures.
 	 */
 	firstaddr = 0;
-	again: v = (caddr_t) firstaddr;
+
+again:
+	v = (caddr_t) firstaddr;
 
 #define	valloc(name, type, num) \
 	    (name) = (type *)v; v = (caddr_t)((name)+(num))
@@ -223,7 +226,6 @@ startup(firstaddr)
 	    (name) = (type *)v; v = (caddr_t)((lim) = ((name)+(num)))
 
 	valloc(cfree, struct cblock, nclist);
-//	valloc(callout, struct callout, ncallout); /* see kern_timeout.c: callout_startup */
 	valloc(swapmap, struct map, nswapmap = maxproc * 2);
 
 #ifdef SYSVSHM
@@ -235,20 +237,24 @@ startup(firstaddr)
 	 * memory. Insure a minimum of 16 buffers.
 	 * We allocate 1/2 as many swap buffer headers as file i/o buffers.
 	 */
-	if (bufpages == 0)
-		if (physmem < (2 * 1024 * 1024))
+	if (bufpages == 0) {
+		if (physmem < (2 * 1024 * 1024)) {
 			bufpages = physmem / 10 / CLSIZE;
-		else
+		} else {
 			bufpages = ((2 * 1024 * 1024 + physmem) / 20) / CLSIZE;
+		}
+	}
 	if (nbuf == 0) {
 		nbuf = bufpages / 2;
-		if (nbuf < 16)
+		if (nbuf < 16) {
 			nbuf = 16;
+		}
 	}
 	if (nswbuf == 0) {
 		nswbuf = (nbuf / 2) & ~1; /* force even */
-		if (nswbuf > 256)
+		if (nswbuf > 256) {
 			nswbuf = 256; /* sanity */
+		}
 	}
 	valloc(swbuf, struct buf, nswbuf);
 	valloc(buf, struct buf, nbuf);
@@ -259,26 +265,27 @@ startup(firstaddr)
 	if (firstaddr == 0) {
 		size = (vm_size_t) (v - firstaddr);
 		firstaddr = (int) kmem_alloc(kernel_map, round_page(size));
-		if (firstaddr == 0)
+		if (firstaddr == 0) {
 			panic("startup: no room for tables");
+		}
 		goto again;
 	}
 	/*
 	 * End of second pass, addresses have been assigned
 	 */
-	if ((vm_size_t) (v - firstaddr) != size)
+	if ((vm_size_t) (v - firstaddr) != size) {
 		panic("startup: table size inconsistency");
+	}
 	/*
 	 * Now allocate buffers proper.  They are different than the above
 	 * in that they usually occupy more virtual memory than physical.
 	 */
 	size = MAXBSIZE * nbuf;
-	buffer_map = kmem_suballoc(kernel_map, (vm_offset_t) &buffers, &maxaddr,
-			size, TRUE);
+	buffer_map = kmem_suballoc(kernel_map, (vm_offset_t) &buffers, &maxaddr, size, TRUE);
 	minaddr = (vm_offset_t) buffers;
-	if (vm_map_find(buffer_map, vm_object_allocate(size), (vm_offset_t) 0,
-			&minaddr, size, FALSE) != KERN_SUCCESS)
+	if (vm_map_find(buffer_map, vm_object_allocate(size), (vm_offset_t) 0, &minaddr, size, FALSE) != KERN_SUCCESS) {
 		panic("startup: cannot allocate buffers");
+	}
 	base = bufpages / nbuf;
 	residual = bufpages % nbuf;
 	for (i = 0; i < nbuf; i++) {
@@ -315,17 +322,6 @@ startup(firstaddr)
 	M_MBUF, M_NOWAIT);
 	bzero(mclrefcnt, NMBCLUSTERS + CLBYTES / MCLBYTES);
 	mb_map = kmem_suballoc(kernel_map, (vm_offset_t) &mbutl, &maxaddr, VM_MBUF_SIZE, FALSE);
-	/*
-	 * Initialize callouts
-	 * See kern_timeout.c: callout_startup();
-	 */
-
-	/*
-	callfree = callout;
-	for (i = 1; i < ncallout; i++)
-		callout[i - 1].c_next = &callout[i];
-	callout[i - 1].c_next = NULL;
-	*/
 
 	/*printf("avail mem = %d\n", ptoa(vm_page_free_count));*/
 	printf("using %d buffers containing %d bytes of memory\n", nbuf, bufpages * CLBYTES);
@@ -365,8 +361,9 @@ i386_proc0_tss_ldt_init(void)
 
 	pcb->pcb_flags = 0;
 	pcb->pcb_tss.tss_ioopt = ((caddr_t)pcb->pcb_iomap - (caddr_t)&pcb->pcb_tss) << 16;
-	for (x = 0; x < sizeof(pcb->pcb_iomap) / 4; x++)
+	for (x = 0; x < sizeof(pcb->pcb_iomap) / 4; x++) {
 		pcb->pcb_iomap[x] = 0xffffffff;
+	}
 
 	cr0 = rcr0();
 #ifdef SMP

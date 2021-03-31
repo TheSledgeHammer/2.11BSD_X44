@@ -390,14 +390,3 @@ kmeminit()
 	}
 #endif
 }
-
-int ovl_flag = M_OVERLAY;
-void
-overlay_free(addr, type)
-	void *addr;
-	int type;
-{
-	if(type & M_OVERLAY) {
-		omem_free(omem_map, (vm_offset_t) addr, ctob(kup->ku_ovlcnt));
-	}
-}

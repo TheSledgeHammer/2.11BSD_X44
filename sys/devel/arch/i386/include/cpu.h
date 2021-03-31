@@ -34,13 +34,21 @@ struct cpu_info {
 
 	struct device 		*ci_dev;			/* pointer to our device */
 
+	struct cpu_data 	ci_data;			/* MI per-cpu data */
+
 	u_int 				ci_cpu_vendor_id;	/* CPU vendor ID */
 	int 				ci_cpu_class;		/* CPU class */
 
 	u_int 				ci_apicid;			/* our APIC ID */
 
 	struct percpu		*ci_percpu;
+
+	int					cpu_present:1;
+	int					cpu_bsp:1;
+	int					cpu_disabled:1;
+	int					cpu_hyperthread:1;
 };
+extern struct cpu_info *cpu_info;
 
 struct cpu_ops {
 	void 				(*cpu_init)(void);

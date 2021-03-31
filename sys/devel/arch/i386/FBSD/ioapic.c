@@ -539,8 +539,9 @@ ioapic_resume(struct pic *pic, bool suspend_cancelled)
 	int i;
 
 	ioapic_lock(&icu_lock);
-	for (i = 0; i < io->io_numintr; i++)
+	for (i = 0; i < io->io_numintr; i++) {
 		ioapic_program_intpin(&io->io_pins[i]);
+	}
 	ioapic_unlock(&icu_lock);
 }
 
@@ -627,9 +628,9 @@ ioapic_create(caddr_t addr, int32_t apic_id, int intbase)
 		 * Assume that pins 1-15 are ISA interrupts and that all
 		 * other pins are PCI interrupts.
 		 */
-		if (intpin->io_irq == 0)
+		if (intpin->io_irq == 0) {
 			ioapic_set_extint(io, i);
-		else if (intpin->io_irq < IOAPIC_ISA_INTS) {
+		} else if (intpin->io_irq < IOAPIC_ISA_INTS) {
 			intpin->io_bus = APIC_BUS_ISA;
 			intpin->io_activehi = 1;
 			intpin->io_edgetrigger = 1;
@@ -645,7 +646,7 @@ ioapic_create(caddr_t addr, int32_t apic_id, int intbase)
 		 * Route interrupts to the BSP by default.  Interrupts may
 		 * be routed to other CPUs later after they are enabled.
 		 */
-		intpin->io_cpu = PCPU_GET(apic_id);
+		intpin->io_cpu = PERCPU_GET(apic_id);
 		value = ioapic_read(apic, IOAPIC_REDTBL_LO(i));
 		ioapic_write(apic, IOAPIC_REDTBL_LO(i), value | IOART_INTMSET);
 #ifdef IOMMU
@@ -860,8 +861,9 @@ ioapic_register(void *cookie)
 	 * SMI) and disable normal pins until a handler is registered.
 	 */
 	intr_register_pic(&io->io_pic);
-	for (i = 0, pin = io->io_pins; i < io->io_numintr; i++, pin++)
+	for (i = 0, pin = io->io_pins; i < io->io_numintr; i++, pin++) {
 		ioapic_reprogram_intpin(&pin->io_intsrc);
+	}
 }
 
 /*
@@ -876,7 +878,70 @@ ioapic_register_sources(struct pic *pic)
 
 	io = (struct ioapic*) pic;
 	for (i = 0, pin = io->io_pins; i < io->io_numintr; i++, pin++) {
-		if (pin->io_irq >= 0)
+		if (pin->io_irq >= 0) {
 			intr_register_source(&pin->io_intsrc);
+		}
 	}
+}
+
+typedef struct INTENTRY {
+	uint8_t	type;
+	uint8_t	int_type;
+	uint16_t int_flags;
+	uint8_t	src_bus_id;
+	uint8_t	src_bus_irq;
+	uint8_t	dst_apic_id;
+	uint8_t	dst_apic_int;
+} *int_entry_ptr;
+
+static void
+mptable_parse_io_int(int_entry_ptr intr)
+{
+	void *ioapic;
+	u_int pin, apic_id;
+
+	apic_id = intr->dst_apic_id;
+	ioapic = ioapics[apic_id];
+	pin = intr->dst_apic_int;
+	switch (intr->int_type) {
+	case INTENTRY_TYPE_INT:
+		switch (busses[intr->src_bus_id].bus_type) {
+		case NOBUS:
+			panic("interrupt from missing bus");
+		case ISA:
+		case EISA:
+			if (busses[intr->src_bus_id].bus_type == ISA)
+				ioapic_set_bus(ioapic, pin, APIC_BUS_ISA);
+			else
+				ioapic_set_bus(ioapic, pin, APIC_BUS_EISA);
+			if (intr->src_bus_irq == pin)
+				break;
+			ioapic_remap_vector(ioapic, pin, intr->src_bus_irq);
+			if (ioapic_get_vector(ioapic, intr->src_bus_irq) == intr->src_bus_irq) {
+				ioapic_disable_pin(ioapic, intr->src_bus_irq);
+			}
+			break;
+		case PCI:
+			ioapic_set_bus(ioapic, pin, APIC_BUS_PCI);
+			break;
+		default:
+			ioapic_set_bus(ioapic, pin, APIC_BUS_UNKNOWN);
+			break;
+		}
+		break;
+	case INTENTRY_TYPE_NMI:
+		ioapic_set_nmi(ioapic, pin);
+		break;
+	case INTENTRY_TYPE_SMI:
+		ioapic_set_smi(ioapic, pin);
+		break;
+	case INTENTRY_TYPE_EXTINT:
+		ioapic_set_extint(ioapic, pin);
+		break;
+
+	}
+	if (intr->int_type == INTENTRY_TYPE_INT || (intr->int_flags & INTENTRY_FLAGS_TRIGGER) != INTENTRY_FLAGS_TRIGGER_CONFORM)
+		ioapic_set_triggermode(ioapic, pin, intentry_trigger(intr));
+	if (intr->int_type == INTENTRY_TYPE_INT || (intr->int_flags & INTENTRY_FLAGS_POLARITY) !=  INTENTRY_FLAGS_POLARITY_CONFORM)
+		ioapic_set_polarity(ioapic, pin, intentry_polarity(intr));
 }

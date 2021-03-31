@@ -46,6 +46,9 @@
 struct slablist 	slab_list;
 simple_lock_data_t	slab_list_lock;
 
+/*
+ * Start of Routines for Slab Allocator using extents
+ */
 void
 slab_startup(start, end)
 	vm_offset_t	*start;
@@ -80,13 +83,6 @@ slab_startup(start, end)
 	}
 }
 
-/*
- * TODO:
- * - Improve on allocation & freeing of slabs
- * - Take in account slabs that are EMPTY, PARTIAL or FULL
- * - Allocating to neighboring slab if designated slab is full or doesn't
- * have enough space.
- */
 void
 slab_malloc(size, alignment, boundary, mtype, flags)
 	u_long 	size, alignment, boundary;
@@ -94,10 +90,11 @@ slab_malloc(size, alignment, boundary, mtype, flags)
 {
 	slab_t 	slab;
 	int 	error;
+	u_long 	*result;
 
 	slab = slab_lookup(size, mtype);
 
-	error = extent_alloc(slab->s_extent, size, alignment, boundary, flags, slab->s_region);
+	error = extent_alloc(slab->s_extent, size, alignment, boundary, flags, &result);
 	if(error) {
 		printf("slab_malloc: successful");
 	} else {
@@ -130,6 +127,84 @@ slab_destroy(slab)
 		extent_destroy(slab->s_extent);
 	}
 }
+/* End of Routines for Slab Allocator using extents */
+
+/* Start of Routines for Slab Allocator using Kmembuckets */
+extern struct kmembuckets bucket[MINBUCKET + 16];
+
+struct slab *
+slab_create(slab)
+	struct slab *slab;
+{
+    if(slab == NULL) {
+        memset(slab, 0, sizeof(struct slab *));
+    }
+    return (slab);
+}
+
+void
+slab_malloc2(size, type, flags)
+	unsigned long size;
+	int type, flags;
+{
+	register struct slab *slab;
+	register slab_metadata_t meta;
+	register struct kmembuckets *kbp;
+	long indx;
+
+	indx = BUCKETINDX(size);
+	slab = slab_create(&bucket[indx].kb_slab);
+	kbp = &bucket[indx];
+	slab_insert(slab, size, type, flags);
+	meta = slab->s_meta;
+
+	if(slab->s_flags == (SLAB_PARTIAL | SLAB_EMPTY)) {
+		if(meta->sm_freeslots >= ALLOCATED_SLOTS(size)) {
+			if(kbp->kb_next == NULL) {
+				kbp->kb_last = NULL;
+				meta->sm_bucket = kbp;
+				meta->sm_bucket->kb_next = kbp->kb_next;
+				meta->sm_bucket->kb_last = kbp->kb_last;
+			}
+		}
+	}
+
+	if(slab->s_flags == SLAB_FULL) {
+		kbp = bucket_search();
+		/* update slab */
+		slab = slab_create(kbp->kb_slab);
+		/* update slab meta here from new bucket */
+		if (kbp->kb_next == NULL) {
+			kbp->kb_last = NULL;
+			meta->sm_bucket = kbp;
+			meta->sm_bucket->kb_next = kbp->kb_next;
+			meta->sm_bucket->kb_last = kbp->kb_last;
+		}
+	}
+}
+
+/*
+ * TODO:
+ * - determine space available: to utilize partial slabs
+ * - update slab metadata
+ *
+ * search array for an empty bucket
+ */
+struct kmembuckets *
+bucket_search()
+{
+	register struct kmembuckets *kbp;
+	register long indx;
+
+	for (indx = 0; indx < MINBUCKET + 16; indx++) {
+		if(bucket[index].kb_next == NULL) {
+			kbp = bucket[index];
+			return (kbp);
+		}
+	}
+	return (NULL);
+}
+/* End of Routines for Slab Allocator using Kmembuckets */
 
 /* slab metadata information */
 void
@@ -150,17 +225,17 @@ slabmeta(slab, size, mtype, flags)
 
 	/* slab metadata */
 	meta = slab->s_meta;
-    	meta->sm_bslots = BUCKET_SLOTS(bsize);
-    	meta->sm_aslots = ALLOCATED_SLOTS(size);
-    	meta->sm_freeslots = SLOTSFREE(meta->sm_bslots, meta->sm_aslots);
-    	if(meta->sm_freeslots < 0) {
-    		meta->sm_freeslots = 0;
-    	}
-    	if(indx < 10) {
-        	meta->sm_type = SLAB_SMALL;
-    	} else {
+	meta->sm_bslots = BUCKET_SLOTS(bsize);
+	meta->sm_aslots = ALLOCATED_SLOTS(size);
+	meta->sm_freeslots = SLOTSFREE(meta->sm_bslots, meta->sm_aslots);
+	if (meta->sm_freeslots < 0) {
+		meta->sm_freeslots = 0;
+	}
+	if (indx < 10) {
+		meta->sm_type = SLAB_SMALL;
+	} else {
 		meta->sm_type = SLAB_LARGE;
-    	}
+	}
 
 	/* test if free bucket slots is between 5% to 95% */
 	if((meta->sm_freeslots >= (meta->sm_bslots * 0.05)) && (meta->sm_freeslots <= (meta->sm_bslots * 0.95))) {
@@ -174,7 +249,7 @@ slabmeta(slab, size, mtype, flags)
 }
 
 slab_t
-slab_lookup(size, mtype)
+slab_small_lookup(size, mtype)
 	long    size;
 	int 	mtype;
 {
@@ -183,24 +258,33 @@ slab_lookup(size, mtype)
 
     slabs = &slab_list[BUCKETINDX(size)];
     simple_lock(&slab_list_lock);
-    if(slab->s_meta == SLAB_SMALL) {
-    	for(slab = CIRCLEQ_FIRST(slabs); slab != NULL; slab = CIRCLEQ_NEXT(slab, s_list)) {
-    		if(slab->s_size == size && slab->s_mtype == mtype) {
-    			simple_unlock(&slab_list_lock);
-    			return (slab);
-    		}
-    	}
-    }
-    if(slab->s_meta == SLAB_LARGE) {
-    	for(slab = CIRCLEQ_LAST(slabs); slab != NULL; slab = CIRCLEQ_NEXT(slab, s_list)) {
-    		if(slab->s_size == size && slab->s_mtype == mtype) {
-    			simple_unlock(&slab_list_lock);
-    			return (slab);
-    		}
-    	}
-    }
+	for(slab = CIRCLEQ_FIRST(slabs); slab != NULL; slab = CIRCLEQ_NEXT(slab, s_list)) {
+		if(slab->s_size == size && slab->s_mtype == mtype) {
+			simple_unlock(&slab_list_lock);
+			return (slab);
+		}
+	}
     simple_unlock(&slab_list_lock);
     return (NULL);
+}
+
+slab_t
+slab_large_lookup(size, mtype)
+	long    size;
+	int 	mtype;
+{
+	struct slablist *slabs;
+	register slab_t slab;
+	slabs = &slab_list[BUCKETINDX(size)];
+	simple_lock(&slab_list_lock);
+	for (slab = CIRCLEQ_LAST(slabs); slab != NULL; slab = CIRCLEQ_NEXT(slab, s_list)) {
+		if (slab->s_size == size && slab->s_mtype == mtype) {
+			simple_unlock(&slab_list_lock);
+			return (slab);
+		}
+	}
+	simple_unlock(&slab_list_lock);
+	return (NULL);
 }
 
 void
@@ -210,16 +294,18 @@ slab_insert(slab, size, mtype, flags)
     int	    mtype, flags;
 {
     register struct slablist  *slabs;
+	register slab_metadata_t meta;
 
     if(slab == NULL) {
         return;
     }
 
     slabmeta(slab, size, mtype, flags);
+    meta = slab->s_meta;
 
     slabs = &slab_list[BUCKETINDX(size)];
     simple_lock(&slab_list_lock);
-    if(slab->s_meta->sm_type == SLAB_SMALL) {
+    if(meta->sm_type == SLAB_SMALL) {
         CIRCLEQ_INSERT_HEAD(slabs, slab, s_list);
     } else {
         CIRCLEQ_INSERT_TAIL(slabs, slab, s_list);

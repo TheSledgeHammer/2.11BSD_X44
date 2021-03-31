@@ -41,7 +41,9 @@
 #include <sys/null.h>
 #endif
 
+#include <lib/libsa/diskapm.h>
 #include <lib/libsa/diskbsd.h>
+#include <lib/libsa/diskgpt.h>
 #include <lib/libsa/diskmbr.h>
 
 /*

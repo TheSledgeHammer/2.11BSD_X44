@@ -31,7 +31,7 @@
 
 #include <sys/reboot.h>
 
-struct diskslice2 {
+struct diskslice {
 	u_long					ds_offset;				/* starting sector */
 	u_long					ds_size;				/* number of sectors */
 	int						ds_type;				/* (foreign) slice type */
@@ -40,7 +40,7 @@ struct diskslice2 {
 	u_char					ds_wlabel;				/* nonzero if label is writable */
 };
 
-struct diskslices2 {
+struct diskslices {
 	int						dss_first_bsd_slice;	/* COMPATIBILITY_SLICE is mapped here */
 	u_int					dss_nslices;			/* actual dimension of dss_slices[] */
 	u_int					dss_oflags;				/* copy of flags for "first" open */
@@ -50,7 +50,7 @@ struct diskslices2 {
 	struct diskslice 		dss_slices[MAX_SLICES];	/* actually usually less */
 };
 
-struct diskslice {
+struct diskslice2 {
 	struct disklabel 		*ds_label;				/* BSD label, if any */
 	int						ds_secsize;				/* sector size */
 	u_int					ds_nslices;				/* actual dimension of ds_slices[] */

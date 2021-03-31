@@ -49,7 +49,7 @@
 #include "btxv86.h"
 
 /* Arguments passed in from the boot1/boot2 loader */
-static struct bootargs *kargs;
+static struct bootargs 		*kargs;
 
 static uint32_t				initial_howto;
 static uint32_t				initial_bootdev;

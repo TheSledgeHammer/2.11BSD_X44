@@ -29,8 +29,8 @@
  * $FreeBSD$
  */
 
-#ifndef _I386_VAR_H_
-#define	_I386_VAR_H_
+#ifndef _I386_CPUVAR_H_
+#define	_I386_CPUVAR_H_
 
 /*
  * Miscellaneous machine-dependent declarations.

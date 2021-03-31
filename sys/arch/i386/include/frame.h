@@ -126,29 +126,6 @@ struct intrframe {
 	int	if_ss;
 };
 
-/*
- * Call Gate/System Call Stack Frame
- */
-
-struct syscframe {
-	int	sf_edi;
-	int	sf_esi;
-	int	sf_ebp;
-	int	:32;			/* redundant save of isp */
-	int	sf_ebx;
-	int	sf_edx;
-	int	sf_ecx;
-	int	sf_eax;
-	int	sf_eflags;
-	/* below portion defined in 386 hardware */
-/*	int	sf_args[N]; 	/* if call gate copy args enabled!*/
-	int	sf_eip;
-	int	sf_cs;
-	/* below only when transitting rings (e.g. user to kernel) */
-	int	sf_esp;
-	int	sf_ss;
-};
-
 struct sigframe {
 	int					sf_signum;
 	int					sf_code;
