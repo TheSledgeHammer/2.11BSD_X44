@@ -64,28 +64,27 @@ advvm_filset_set_tag_directory(tag, name, id)
   char            *name;
   uint32_t        id;
 {
-  if (tag == NULL) {
-    advvm_malloc((struct advvm_tag_directory*) tag, sizeof(struct advvm_tag_directory*));
+	if (tag == NULL) {
+		advvm_malloc((struct advvm_tag_directory*) tag,
+				sizeof(struct advvm_tag_directory*));
 	}
-  
-  tag->tag_name = name;
-  tag->tag_id = id;
+	tag->tag_name = name;
+	tag->tag_id = id;
 }
 
 void
-advvm_filset_set_file_directory(fdir, tag, name, dev)
+advvm_filset_set_file_directory(fdir, tag, name, disk)
   advvm_file_dir_t  *fdir;
   advvm_tag_dir_t   *tag;
   char              *name;
-  struct device     *dev;
+  struct dkdevice   *disk;
 {
   if (fdir == NULL) {
     advvm_malloc((struct advvm_file_directory*) fdir, sizeof(struct advvm_file_directory*));
-	}
-  
+  }
   fdir->fdr_tag = tag;
   fdir->fdr_name = name;
-  fdir->fdr_dev = dev;
+  fdir->fdr_disk = disk;
 }
 
 void
@@ -96,19 +95,22 @@ advvm_fileset_create(adfst, tag, fdir, name, id)
   char 				*name;
   uint32_t 			id;
 {
-  advvm_malloc((advvm_fileset_t *)adfst, sizeof(advvm_fileset_t *));
-  adfst->fst_name = name;
-  adfst->fst_id = id;
-  adfst->fst_tags = tag;
-  adfst->fst_file_directory = fdir;
-  advvm_storage_create(adfst->fst_storage, start, end, size, addr, flags); /* XXX to complete */
+	register advvm_domain_t *adom;
+
+	advvm_malloc((advvm_fileset_t*) adfst, sizeof(advvm_fileset_t*));
+	adfst->fst_domain;
+	adfst->fst_name = name;
+	adfst->fst_id = id;
+	adfst->fst_tags = tag;
+	adfst->fst_file_directory = fdir;
+	advvm_storage_create(adfst->fst_storage, adom->dom_start, adom->dom_end, NULL, NULL, adom->dom_flags); /* XXX to complete */
 }
 
 advvm_volume_t *
 advvm_filset_find(adom, name, id)
 	advvm_domain_t 	*adom;
-	char 		        *name;
-	uint32_t 	      id;
+	char 		    *name;
+	uint32_t 	    id;
 {
 	struct advdomain_list 	*bucket;
 	advvm_fileset_t         *adfst;
@@ -132,6 +134,7 @@ advvm_filset_insert(adom, adfst, name, id)
 	uint32_t 	        id;
 {
 	struct advdomain_list 	*bucket;
+	register advvm_tag_dir_t *tags;
 	
 	if(adom == NULL) {
 		return;

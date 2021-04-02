@@ -939,6 +939,7 @@ ohci_shutdown(void *v)
 	OWRITE4(sc, OHCI_CONTROL, OHCI_HCFS_RESET);
 }
 
+#ifdef POWER_MANAGEMENT
 /*
  * Handle suspend/resume.
  *
@@ -1006,6 +1007,7 @@ ohci_power(int why, void *v)
 	}
 	splx(s);
 }
+#endif
 
 #ifdef OHCI_DEBUG
 void

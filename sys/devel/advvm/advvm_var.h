@@ -111,33 +111,29 @@ enum constants {
 };
 
 struct advvm_label {
-    char              	alb_sysname[ADVVMHOSTNAMELEN];
-    char              	alb_name[MAXDRIVENAME];
-    struct timeval    	alb_creation_date;
-    struct timeval    	alb_last_update;
-    off_t             	alb_drive_size;
+    char              		alb_sysname[ADVVMHOSTNAMELEN];
+    char              		alb_name[MAXDRIVENAME];
+    struct timeval    		alb_creation_date;
+    struct timeval    		alb_last_update;
+    off_t             		alb_drive_size;
 };
 
 struct advvm_block {
-    uint64_t            ablk_start;
-    uint64_t            ablk_end;
-    uint32_t            ablk_size;
-    caddr_t				ablk_addr;
-    int					ablk_flags;
+    uint64_t            	ablk_start;
+    uint64_t            	ablk_end;
+    uint32_t            	ablk_size;
+    caddr_t					ablk_addr;
+    int						ablk_flags;
 };
 
-struct advvm_hdr {
-	long				ahd_magic;
-	struct advvm_label	ahd_label;
-	struct advvm_block	ahd_block;
+struct advvm_header {
+	long					ahd_magic;
+	struct advvm_label		ahd_label;
+	struct advvm_block		ahd_block;
 };
 
-enum filesystem_format {
-    UFS1,       /* UFS version 1 */
-    UFS2,       /* UFS version 2 */
-    MFS,        /* BSD's MFS */
-    LFS,        /* BSD's LFS */
-    MSDOSFS     /* FAT */
-};
+/* see: advvm.c */
+extern struct advvm_label 	*advlab;
+extern struct advvm_block 	*advblk;
 
 #endif /* _DEV_ADVVM_VAR_H_ */

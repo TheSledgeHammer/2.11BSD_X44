@@ -41,14 +41,11 @@
 /* Hold metadata on a slab */
 struct slab_metadata {
     int                         sm_bslots;           							/* bucket slots available */
-    int							sm_aslots;										/* slots to be allocated */
-    int                      	sm_freeslots;       							/* slots free */
+    int							sm_aslots;										/* bucket slots to be allocated */
+    int                      	sm_fslots;       								/* bucket slots free */
 
-    int                         sm_type;            							/* slab type: see below */
-
-    struct kmembuckets			*sm_bucket;
-    u_long 						sm_bsize;
-    long 						sm_bindx;
+    u_long 						sm_bsize; 										/* bucket size */
+    u_long 						sm_bindx;	 									/* bucket index */
 };
 typedef struct slab_metadata    *slab_metadata_t;
 
@@ -58,15 +55,21 @@ struct slab {
     CIRCLEQ_ENTRY(slab)         s_list;                                         /* slab list entry */
     CIRCLEQ_ENTRY(slab)         s_cache;                                        /* cache list entry */
 
+    struct kmembuckets			*s_bucket;
+
     slab_metadata_t             s_meta;                                         /* slab metadata */
     u_long                      s_size;											/* slab size */
     int							s_mtype;                                        /* malloc type */
+    int                         s_stype;            							/* slab type: see below */
 
     int							s_flags;										/* slab flags */
     int                         s_refcount;
     int                         s_usecount;                                     /* usage counter for slab caching */
 
     struct extent				*s_extent;										/* slab extent */
+
+    struct slab					*s_next;
+    struct slab					*s_prev;
 };
 typedef struct slab             *slab_t;
 
@@ -78,8 +81,8 @@ int			                    slab_count;                                     /* num
 
 /* slab flags */
 #define SLAB_FULL               0x01        									/* slab full */
-#define SLAB_EMPTY              0x02        									/* slab empty */
-#define SLAB_PARTIAL            0x04        									/* slab partially full */
+#define SLAB_PARTIAL            0x02        									/* slab partially full */
+#define SLAB_EMPTY              0x04        									/* slab empty */
 
 /* slab object types */
 #define SLAB_SMALL              0x08        									/* slab contains small objects */

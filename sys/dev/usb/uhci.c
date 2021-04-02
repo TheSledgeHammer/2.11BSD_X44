@@ -665,6 +665,7 @@ uhci_shutdown(void *v)
 	uhci_run(sc, 0); /* stop the controller */
 }
 
+#ifdef POWER_MANAGEMENT
 /*
  * Handle suspend/resume.
  *
@@ -748,6 +749,7 @@ uhci_power(int why, void *v)
 	}
 	splx(s);
 }
+#endif
 
 #ifdef UHCI_DEBUG
 static void

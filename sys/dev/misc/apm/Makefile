@@ -3,4 +3,4 @@
 INCSDIR= /usr/include/dev/misc/apm
 
 # Only install includes which are used by userland
-INCS=	apmbios.h apmio.h power.h
+INCS=	apmbios.h apmio.h

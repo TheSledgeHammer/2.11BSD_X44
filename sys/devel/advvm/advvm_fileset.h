@@ -48,7 +48,7 @@ typedef struct advvm_tag_directory  advvm_tag_dir_t;
 struct advvm_file_directory {
     advvm_tag_dir_t                 fdr_tag;
     const char                      *fdr_name;
-    struct device                   *fdr_dev;
+    struct dkdevice	                *fdr_disk;
 };
 typedef struct advvm_file_directory advvm_file_dir_t;
 
@@ -56,6 +56,7 @@ struct advvm_fileset {
     TAILQ_ENTRY(advvm_fileset)      fst_entries;                    /* list of fileset entries per domain */
     char                            fst_name[MAXFILESETNAME];       /* fileset name */
     uint32_t                        fst_id;                         /* fileset id */
+
     /* fileset tag information */
     advvm_tag_dir_t                 fst_tags;
     advvm_file_dir_t		   		fst_file_directory;

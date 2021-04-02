@@ -116,7 +116,6 @@ struct dkdevice {
 struct dkdriver {
 	void					(*d_strategy)(struct buf *);
 	void					(*d_minphys)(struct buf *);
-	void 					(*d_strategy) (struct buf *);
 	int						(*d_open) (dev_t dev, int ifmt, int, struct proc *);
 	int						(*d_close) (dev_t dev, int, int ifmt, struct proc *);
 	int						(*d_ioctl) (dev_t dev, int cmd, caddr_t data, int fflag, struct proc *);

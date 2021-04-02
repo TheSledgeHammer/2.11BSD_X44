@@ -882,6 +882,7 @@ ehci_activate(struct device *self, enum devact act)
 	return (rv);
 }
 
+#ifdef POWER_MANAGEMENT
 /*
  * Handle suspend/resume.
  *
@@ -955,7 +956,7 @@ OOO
 	}
 	splx(s);
 }
-
+#endif
 /*
  * Shut down the controller when the system is going down.
  */

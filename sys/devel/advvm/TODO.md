@@ -9,6 +9,8 @@
 - Filesystem Mapping: (Implemented in Userspace?)
 - Generic Operations for each type (aka Volumes, Domains & Filesets):
 	- i.e. create, destroy, add, delete... etc
+	
+- Virtual Disk Structure
 
 ## Volumes:
 - Volume list:

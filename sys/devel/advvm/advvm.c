@@ -45,15 +45,19 @@
 #include <sys/conf.h>
 #include <sys/user.h>
 
-struct advvm_softc {
-	struct device	*sc_dev;		/* Self. */
-	struct disk 	sc_dkdev;		/* hook for generic disk handling */
-	//struct lock		sc_lock;
-	struct buf 		*sc_buflist;
+struct advvm_label 	*advlab;
+struct advvm_block 	*advblk;
 
-	struct volume 	*sc_volume;		/* advvm volumes */
-	struct domain 	*sc_domain;		/* advvm domains */
-	struct fileset 	*sc_fileset;	/* advvm filesets */
+struct advvm_softc {
+	struct device		*sc_dev;		/* Self. */
+	struct dkdevice		sc_dkdev;		/* hook for generic disk handling */
+	//struct lock		sc_lock;
+	struct buf 			*sc_buflist;
+
+	struct advvm_header *sc_header;		/* advvm header */
+	struct volume 		*sc_volume;		/* advvm volumes */
+	struct domain 		*sc_domain;		/* advvm domains */
+	struct fileset 		*sc_fileset;	/* advvm filesets */
 };
 
 static dev_type_open(advvm_open);
@@ -99,6 +103,23 @@ const struct cfdriver advvm_cd = {
 		NULL, "advvm", advvm_probe, advvm_attach, DV_DISK, sizeof(struct advvm_softc)
 };
 
+struct advvm_header *
+advvm_set_header(magic, label, block)
+	long magic;
+	struct advvm_label *label;
+	struct advvm_block *block;
+{
+	struct advvm_header *header;
+	if(header == NULL) {
+		advvm_malloc((struct advvm_header *) header, sizeof(struct advvm_header *));
+	}
+	header->ahd_magic = magic;
+	header->ahd_label = label;
+	header->ahd_block = block;
+
+	return (header);
+}
+
 int
 advvm_probe(struct device *parent, struct cfdata *match, void *aux)
 {
@@ -112,12 +133,12 @@ advvm_attach(struct device *parent, struct device *self, void *aux)
 
 	sc->sc_dev = self;
 
-	//bufq_alloc(&sc->sc_buflist, "fcfs", 0);
+	sc->sc_header = advvm_set_header(129, &advlab, &advblk); /* TODO: generate magic number */
+	self->dv_xname = sc->sc_header->ahd_label->alb_name;
 
 	/*
 	 * Initialize and attach the disk structure.
 	 */
-	//disk_init(&sc->sc_dkdev, device_xname(self), &advvm_driver);
 	disk_attach(&sc->sc_dkdev);
 }
 
@@ -160,7 +181,6 @@ advvm_ioctl(dev_t dev, int cmd, caddr_t data, int fflag, struct proc *p)
 int
 advvm_size(dev_t dev)
 {
-
 	int size;
 
 	return (size);
