@@ -39,7 +39,7 @@ SRCS+=	adddi3.c anddi3.c ashldi3.c ashrdi3.c cmpdi2.c divdi3.c iordi3.c \
 
 # Other stuff
 SRCS+=	inet_addr.c intoa.c pmatch.c
-SRCS+=	arc4random.c prospectorhash.c
+SRCS+=	arc4random.c murmur3_32.c prospectorhash.c
 
 SRCS+=	strstr.c strlcpy.c strlcat.c
 

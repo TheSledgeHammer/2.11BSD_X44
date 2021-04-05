@@ -107,7 +107,7 @@ enum constants {
 #define DEVTYPE(x) 				((minor (x) >> ADVVM_TYPE_SHIFT) & 3)
 
 
-	ADVVMHOSTNAMELEN = 32,					/* host name field in label */
+	ADVVMHOSTNAMELEN = 32,		/* host name field in label */
 };
 
 struct advvm_label {

@@ -89,13 +89,9 @@ const struct cdevsw video_cdevsw = {
 	.d_discard = nodiscard,
 	.d_type = D_OTHER
 };
-/*
-struct cfdriver video_cd = {
-	NULL, "video", videoprobe, videoattach, DV_DULL, sizeof(struct video_softc)
-};
-*/
+
 CFDRIVER_DECL(NULL, video, &video_cops, DV_DULL, sizeof(struct video_softc));
-CFOPS_DECL(video, videoprobe, videoattach, NULL, NULL);
+CFOPS_DECL(video, videoprobe, videoattach, videodetach, videoactivate);
 
 int
 videoprobe(struct device *parent, struct cfdata *match, void *aux)
@@ -480,7 +476,6 @@ videoprint(void *aux, const char *pnp)
 	return (UNCONF);
 }
 
-#if defined(__NetBSD__) || defined(__OpenBSD__)
 int
 videodetach(struct device *self, int flags)
 {
@@ -515,4 +510,4 @@ videoactivate(struct device *self, int act)
 
 	return (0);
 }
-#endif
+

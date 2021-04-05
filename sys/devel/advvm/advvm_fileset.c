@@ -58,6 +58,7 @@ advvm_fileset_set_domain(adfst, adom)
 	adfst->fst_domain_id = adom->dom_id;
 }
 
+/*
 void
 advvm_filset_set_tag_directory(tag, name, id)
   advvm_tag_dir_t *tag;
@@ -80,12 +81,14 @@ advvm_filset_set_file_directory(fdir, tag, name, disk)
   struct dkdevice   *disk;
 {
   if (fdir == NULL) {
-    advvm_malloc((struct advvm_file_directory*) fdir, sizeof(struct advvm_file_directory*));
+	  advvm_malloc((struct advvm_file_directory*) fdir, sizeof(struct advvm_file_directory*));
   }
+
   fdir->fdr_tag = tag;
   fdir->fdr_name = name;
   fdir->fdr_disk = disk;
 }
+*/
 
 void
 advvm_fileset_create(adfst, tag, fdir, name, id)
@@ -142,7 +145,7 @@ advvm_filset_insert(adom, adfst, name, id)
 	if(adfst == NULL) {
 		return;
 	}
-
+/*
 	if(adfst->fst_tags == NULL) {
 		panic("advvm_fileset_insert: no tag directory set");
 		return;
@@ -152,6 +155,8 @@ advvm_filset_insert(adom, adfst, name, id)
 	} else {
 		advvm_fileset_create(adfst, adfst->fst_tags, adfst->fst_file_directory, name, id);
 	}
+	*/
+	advvm_fileset_create(adfst, adfst->fst_tags, adfst->fst_file_directory, name, id);
 	advvm_fileset_set_domain(adfst, adom);
 	
 	bucket = &domain_list[advvm_hash(adom)];

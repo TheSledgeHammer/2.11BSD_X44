@@ -198,6 +198,9 @@ uint32_t 	triple32_r(uint32_t x);
 uint32_t 	hash32(uint32_t x);
 uint32_t 	murmurhash32_mix32(uint32_t x);
 
+uint32_t 	murmur3_32_hash(const void *, size_t, uint32_t);
+uint32_t 	murmur3_32_hash32(const uint32_t *, size_t, uint32_t);
+
 /* Prototypes for non-quad routines. */
 /* XXX notyet #ifdef _STANDALONE */
 int	 		bcmp (const void *, const void *, size_t);
