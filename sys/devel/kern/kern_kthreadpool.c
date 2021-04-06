@@ -38,6 +38,7 @@
 #include <sys/user.h>
 #include <sys/threadpool.h>
 #include <sys/kthread.h>
+#include <sys/percpu.h>
 #include <sys/malloctypes.h>
 
 struct kthreadpool_thread 				ktpool_thread;
@@ -51,6 +52,15 @@ struct kthreadpool_unbound {
 	uint64_t							ktpu_refcnt;
 };
 static LIST_HEAD(, kthreadpool_unbound) unbound_kthreadpools;
+
+struct kthreadpool_percpu {
+	struct percpu						*ktpp_percpu;
+	u_char								ktpp_pri;
+	/* protected by threadpools_lock */
+	LIST_ENTRY(kthreadpool_percpu)		ktpp_link;
+	uint64_t							ktpp_refcnt;
+};
+static LIST_HEAD(, kthreadpool_percpu) 	percpu_kthreadpools;
 
 static struct kthreadpool_unbound *
 kthreadpool_lookup_unbound(u_char pri)
@@ -77,12 +87,38 @@ kthreadpool_remove_unbound(struct kthreadpool_unbound *ktpu)
 	LIST_REMOVE(ktpu, ktpu_link);
 }
 
+static struct kthreadpool_percpu *
+kthreadpool_lookup_percpu(u_char pri)
+{
+	struct kthreadpool_percpu *ktpp;
+
+	LIST_FOREACH(ktpp, &percpu_kthreadpools, ktpp_link) {
+		if (ktpp->ktpp_pri == pri)
+			return ktpp;
+	}
+	return NULL;
+}
+
+static void
+kthreadpool_insert_percpu(struct kthreadpool_percpu *ktpp)
+{
+	KASSERT(kthreadpool_lookup_percpu(ktpp->ktpp_pri) == NULL);
+	LIST_INSERT_HEAD(&percpu_kthreadpools, ktpp, ktpp_link);
+}
+
+static void
+kthreadpool_remove_percpu(struct kthreadpool_percpu *ktpp)
+{
+	KASSERT(kthreadpool_lookup_percpu(ktpp->ktpp_pri) == ktpp);
+	LIST_REMOVE(ktpp, ktpp_link);
+}
+
 void
 kthreadpool_init(void)
 {
 	MALLOC(&ktpool_thread, struct kthreadpool_thread *, sizeof(struct kthreadpool_thread *), M_KTPOOLTHREAD, NULL);
 	LIST_INIT(&unbound_kthreadpools);
-//	LIST_INIT(&percpu_threadpools);
+	LIST_INIT(&percpu_kthreadpools);
 	kthread_lock_init(&kthreadpools_lock, &ktpool_thread->ktpt_kthread);
 	itpc_threadpool_init();
 }
@@ -383,4 +419,135 @@ kthreadpool_thread(void *arg)
 	simple_unlock(&ktpool->ktp_lock);
 
 	kthread_exit(0);
+}
+
+/* Per-CPU thread pools */
+int
+threadpool_percpu_get(struct kthreadpool_percpu **ktpool_percpup, u_char pri)
+{
+	struct kthreadpool_percpu *ktpool_percpu, *tmp = NULL;
+	int error;
+	ktpool_percpu = kthreadpool_lookup_percpu(pri);
+	simple_lock(&kthreadpools_lock);
+	if(ktpool_percpu == NULL) {
+		simple_unlock(&kthreadpools_lock);
+		error = kthreadpool_percpu_create(&tmp, pri);
+		if (error) {
+			return (error);
+		}
+		KASSERT(tmp != NULL);
+		simple_lock(&kthreadpools_lock);
+		ktpool_percpu = kthreadpool_lookup_percpu(pri);
+		if (ktpool_percpu == NULL) {
+			ktpool_percpu = tmp;
+			tmp = NULL;
+			kthreadpool_insert_percpu(ktpool_percpu);
+		}
+	}
+	KASSERT(ktpool_percpu != NULL);
+	ktpool_percpu->ktpp_refcnt++;
+	KASSERT(ktpool_percpu->ktpp_refcnt != 0);
+	simple_unlock(&kthreadpools_lock);
+
+	if (tmp != NULL) {
+		kthreadpool_percpu_destroy(tmp);
+	}
+	KASSERT(ktpool_percpu != NULL);
+	*ktpool_percpup = ktpool_percpu;
+	return (0);
+}
+
+void
+kthreadpool_percpu_put(struct kthreadpool_percpu *ktpool_percpu, u_char pri)
+{
+	KASSERT(kthreadpool_pri_is_valid(pri));
+
+	simple_lock(&kthreadpools_lock);
+	KASSERT(ktpool_percpu == kthreadpool_lookup_percpu(pri));
+	KASSERT(0 < ktpool_percpu->ktpp_refcnt);
+	if (--ktpool_percpu->ktpp_refcnt == 0) {
+		kthreadpool_remove_percpu(ktpool_percpu);
+	} else {
+		ktpool_percpu = NULL;
+	}
+	simple_unlock(&kthreadpools_lock);
+
+	if (ktpool_percpu) {
+		kthreadpool_percpu_destroy(ktpool_percpu);
+	}
+}
+
+static int
+kthreadpool_percpu_create(struct kthreadpool_percpu **ktpool_percpup, u_char pri)
+{
+	struct kthreadpool_percpu *ktpool_percpu;
+	bool ok = TRUE;
+
+	ktpool_percpu = (struct kthreadpool_percpu *) malloc(sizeof(struct kthreadpool_percpu *), M_KTPOOLTHREAD, M_WAITOK);
+	ktpool_percpu->ktpp_pri = pri;
+	ktpool_percpu->ktpp_percpu = percpu_create(sizeof(struct kthreadpool *), kthreadpool_percpu_init, kthreadpool_percpu_fini, (void *)(intptr_t)pri);
+	/*
+	 * Verify that all of the CPUs were initialized.
+	 *
+	 * XXX What to do if we add CPU hotplug?
+	 */
+	percpu_foreach(ktpool_percpu->ktpp_percpu, &kthreadpool_percpu_ok, &ok);
+	if (!ok) {
+		goto fail;
+	}
+
+	/* Success!  */
+	*ktpool_percpup = (struct kthreadpool_percpu *)ktpool_percpu;
+	return (0);
+
+fail:
+	percpu_extent_free(ktpool_percpu->ktpp_percpu, ktpool_percpu->ktpp_percpu->pc_start, ktpool_percpu->ktpp_percpu->pc_end);
+	free(ktpool_percpu, M_KTPOOLTHREAD);
+	return (ENOMEM);
+}
+
+static void
+kthreadpool_percpu_destroy(struct kthreadpool_percpu *ktpool_percpu)
+{
+	percpu_free(ktpool_percpu->ktpp_percpu, sizeof(struct kthreadpool *));
+	free(ktpool_percpu, M_KTPOOLTHREAD);
+}
+
+static void
+kthreadpool_percpu_init(void *vpoolp, void *vpri)
+{
+	struct kthreadpool **const ktpoolp = vpoolp;
+	u_char pri = (intptr_t)(void *)vpri;
+	int error;
+
+	*ktpoolp = (struct kthreadpool *) malloc(sizeof(struct kthreadpool *), M_KTPOOLTHREAD, M_WAITOK);
+	error = kthreadpool_create(*ktpoolp, pri);
+	if (error) {
+		KASSERT(error == ENOMEM);
+		free(*ktpoolp, M_KTPOOLTHREAD);
+		*ktpoolp = NULL;
+	}
+}
+
+static void
+kthreadpool_percpu_ok(void *vpoolp, void *vokp)
+{
+	struct kthreadpool **const ktpoolp = vpoolp;
+	bool *okp = vokp;
+
+	if (*ktpoolp == NULL) {
+		atomic_store_relaxed(okp, FALSE); /* XXX: doesn't exist */
+	}
+}
+
+static void
+kthreadpool_percpu_fini(void *vpoolp, void *vprip)
+{
+	struct ktthreadpool **const ktpoolp = vpoolp;
+
+	if (*ktpoolp == NULL) {	/* initialization failed */
+		return;
+	}
+	kthreadpool_destroy(*ktpoolp);
+	free(*ktpoolp, M_KTPOOLTHREAD);
 }

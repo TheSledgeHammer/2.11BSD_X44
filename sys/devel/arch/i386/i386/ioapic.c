@@ -203,7 +203,6 @@ ioapic_activate(struct device *self, int act)
 	return (0);
 }
 
-
 void
 ioapic_hwmask(struct pic *pic, int pin)
 {

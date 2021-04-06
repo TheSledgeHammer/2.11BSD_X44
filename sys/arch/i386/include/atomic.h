@@ -305,8 +305,8 @@ i386_atomic_clearbits_l(volatile u_int32_t *ptr, unsigned long bits)
 	__asm volatile(_LOCK " andl %1,%0" :  "=m" (*ptr) : "ir" (bits));
 }
 
-#define atomic_setbits_int i386_atomic_setbits_l
-#define atomic_clearbits_int i386_atomic_clearbits_l
+#define atomic_setbits_int 		i386_atomic_setbits_l
+#define atomic_clearbits_int 	i386_atomic_clearbits_l
 
 #endif /* _KERNEL */
 

@@ -95,7 +95,7 @@ threadpool_job_rele(struct threadpool_job *job)
 		refcnt = job->job_refcnt;
 		KASSERT(0 < refcnt);
 		if (refcnt == 1) {
-			refcnt = atomic_dec_uint_nv(&job->job_refcnt);
+			refcnt = atomic_dec_int_nv(&job->job_refcnt);
 			KASSERT(refcnt != UINT_MAX);
 			return;
 		}
@@ -125,7 +125,7 @@ threadpool_job_done(struct threadpool_job *job)
 	 * anyway.
 	 */
 	KASSERT(0 < job->job_refcnt);
-	unsigned int refcnt __diagused = atomic_dec_uint_nv(&job->job_refcnt);
+	unsigned int refcnt __diagused = atomic_dec_int_nv(&job->job_refcnt);
 	KASSERT(refcnt != UINT_MAX);
 	job->job_ktp_thread = NULL;
 }

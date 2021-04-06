@@ -32,7 +32,7 @@
 
 #ifndef _DEV_ADVVM_DOMAIN_H_
 #define _DEV_ADVVM_DOMAIN_H_
-
+#include <sys/lock.h>
 #include <sys/queue.h>
 #include <sys/types.h>
 
@@ -45,6 +45,8 @@ struct advvm_domain {
     uint32_t                        			dom_id;                     /* domain id */
     int											dom_flags;
     int											dom_refcnt;
+
+    struct lock_object							dom_lock;
 
     TAILQ_HEAD(advvolume_list, advvm_volume) 	dom_volumes;                /* head list of volumes */
     TAILQ_HEAD(advfileset_list, advvm_fileset)  dom_filesets;               /* head list of filesets */

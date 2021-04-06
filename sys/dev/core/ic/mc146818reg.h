@@ -80,7 +80,7 @@
 
 #define	MC_REGA_RSMASK	0x0f	/* Interrupt rate select mask (see below) */
 #define	MC_REGA_DVMASK	0x70	/* Divisor select mask (see below) */
-#define	MC_REGA_UIP	0x80	/* Update in progress; read only. */
+#define	MC_REGA_UIP		0x80	/* Update in progress; read only. */
 
 #define	MC_REGB			0xb		/* Control register B */
 
@@ -105,7 +105,6 @@
 
 /*	 MC_REGD_UNUSED	0x7f	UNUSED */
 #define	 MC_REGD_VRT	0x80	/* Valid RAM and Time bit */
-
 
 #define	MC_NREGS		0xe		/* 14 registers; CMOS follows */
 #define	MC_NTODREGS		0xa		/* 10 of those regs are for TOD and alarm */

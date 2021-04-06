@@ -36,7 +36,9 @@
 #include <devel/advvm/advvm_var.h>
 #include <devel/advvm/advvm_fileset.h>
 
+#define HASH_MASK 		32							/* hash mask */
 struct advdomain_list 	domain_list[MAXDOMAIN];
+struct dkdevice 		disktable[HASH_MASK]; 		/* fileset's disk hash lookup */
 
 void
 advvm_fileset_init(adfst)
@@ -59,6 +61,34 @@ advvm_fileset_set_domain(adfst, adom)
 }
 
 /*
+ * tag directory hash: from tag name & tag id pair
+ */
+uint32_t
+advvm_tag_hash(tag_name, tag_id)
+	const char  *tag_name;
+	uint32_t    tag_id;
+{
+	uint32_t hash1 = triple32(sizeof(tag_name)) % HASH_MASK;
+	uint32_t hash2 = triple32(tag_id) % HASH_MASK;
+	return (hash1 ^ hash2);
+}
+
+/*
+ * file directory hash: from tag & file directory name pair
+ */
+uint32_t
+advvm_fdr_hash(tag_dir, fdr_name)
+	advvm_tag_dir_t   *tag_dir;
+	const char        *fdr_name;
+{
+	uint32_t hash1 = advvm_tag_hash(tag_dir->tag_name, tag_dir->tag_id);
+	uint32_t hash2 = triple32(sizeof(fdr_name)) % HASH_MASK;
+	return (hash1 ^ hash2);
+}
+
+/*
+ * set fileset's tag directory name and id.
+ */
 void
 advvm_filset_set_tag_directory(tag, name, id)
   advvm_tag_dir_t *tag;
@@ -73,40 +103,57 @@ advvm_filset_set_tag_directory(tag, name, id)
 	tag->tag_id = id;
 }
 
+/*
+ * set fileset's file directory: from the fileset's tag directory and file directory
+ * name.
+ */
 void
-advvm_filset_set_file_directory(fdir, tag, name, disk)
-  advvm_file_dir_t  *fdir;
-  advvm_tag_dir_t   *tag;
-  char              *name;
-  struct dkdevice   *disk;
+advvm_filset_set_file_directory(fdir, tag, name)
+	advvm_file_dir_t  *fdir;
+	advvm_tag_dir_t   *tag;
+	char              *name;
 {
-  if (fdir == NULL) {
-	  advvm_malloc((struct advvm_file_directory*) fdir, sizeof(struct advvm_file_directory*));
-  }
+	if (fdir == NULL) {
+		advvm_malloc((struct advvm_file_directory*) fdir,
+				sizeof(struct advvm_file_directory*));
+	}
+	register struct dkdevice *disk;
 
-  fdir->fdr_tag = tag;
-  fdir->fdr_name = name;
-  fdir->fdr_disk = disk;
+	disk = &disktable[advvm_fdr_hash(tag, name)];
+
+	fdir->fdr_tag = tag;
+	fdir->fdr_name = name;
+	fdir->fdr_disk = disk;
 }
-*/
 
 void
-advvm_fileset_create(adfst, tag, fdir, name, id)
-  advvm_fileset_t 	*adfst;
-  advvm_tag_dir_t 	*tag;
-  advvm_file_dir_t 	*fdir;
-  char 				*name;
-  uint32_t 			id;
+advvm_fileset_create(adom, adfst, fst_name, fst_id, tag, tag_name, tag_id, fdir, fdr_name)
+	advvm_domain_t 		*adom;
+	advvm_fileset_t 	*adfst;
+	advvm_tag_dir_t 	*tag;
+	advvm_file_dir_t 	*fdir;
+	char 				*fst_name, *tag_name, *fdr_name;
+	uint32_t 			fst_id, tag_id;
 {
-	register advvm_domain_t *adom;
-
 	advvm_malloc((advvm_fileset_t*) adfst, sizeof(advvm_fileset_t*));
-	adfst->fst_domain;
+	advvm_filset_set_tag_directory(tag, tag_name, tag_id);
+	advvm_filset_set_file_directory(fdir, tag, fdr_name);
+
+	if(tag == NULL) {
+		panic("advvm_fileset_create: no tag directory set");
+		return;
+	}
+	if(fdir == NULL) {
+		panic("advvm_fileset_create: no file directory set");
+		return;
+	}
+
+	adfst->fst_domain = adom;
 	adfst->fst_name = name;
-	adfst->fst_id = id;
+	adfst->fst_id = fst_id;
 	adfst->fst_tags = tag;
 	adfst->fst_file_directory = fdir;
-	advvm_storage_create(adfst->fst_storage, adom->dom_start, adom->dom_end, NULL, NULL, adom->dom_flags); /* XXX to complete */
+	advvm_storage_create(adfst->fst_storage, adfst->fst_name, adom->dom_start, adom->dom_end, NULL, NULL, adom->dom_flags); /* XXX to complete */
 }
 
 advvm_volume_t *
@@ -136,29 +183,20 @@ advvm_filset_insert(adom, adfst, name, id)
 	char 		        *name;
 	uint32_t 	        id;
 {
-	struct advdomain_list 	*bucket;
-	register advvm_tag_dir_t *tags;
+	struct advdomain_list 		*bucket;
+	register advvm_tag_dir_t 	*tags;
+	register advvm_file_dir_t 	*fdir;
 	
-	if(adom == NULL) {
+	if(adom == NULL || adfst == NULL) {
 		return;
 	}
-	if(adfst == NULL) {
-		return;
-	}
-/*
-	if(adfst->fst_tags == NULL) {
-		panic("advvm_fileset_insert: no tag directory set");
-		return;
-	} else if(adfst->fst_file_directory == NULL) {
-		panic("advvm_fileset_insert: no file directory set");
-		return;
-	} else {
-		advvm_fileset_create(adfst, adfst->fst_tags, adfst->fst_file_directory, name, id);
-	}
-	*/
-	advvm_fileset_create(adfst, adfst->fst_tags, adfst->fst_file_directory, name, id);
+
+	tags = adfst->fst_tags;
+	fdir = adfst->fst_file_directory;
+
 	advvm_fileset_set_domain(adfst, adom);
-	
+	advvm_fileset_create(adom, adfst, name, id, tags, tags->tag_name, tags->tag_id, fdir, fdir->fdr_tag, fdir->fdr_name);
+
 	bucket = &domain_list[advvm_hash(adom)];
 
 	TAILQ_INSERT_HEAD(bucket, adfst, fst_entries);

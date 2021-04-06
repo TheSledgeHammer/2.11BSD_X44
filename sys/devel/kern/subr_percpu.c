@@ -161,7 +161,7 @@ percpu_extent_subregion(pcpu, size)
 	}
 	error = extent_alloc(ext, size, PERCPU_ALIGN, PERCPU_BOUNDARY, EX_WAITOK | EX_MALLOCOK | EX_FAST, pcpu->pc_dynamic);
 	if (error != 0) {
-		percpu_extent_free(ext, pcpu->pc_start, pcpu->pc_end, EX_WAITOK | EX_MALLOCOK | EX_FAST);
+		percpu_extent_free(ext, pcpu->pc_start, pcpu->pc_end);
 		panic("percpu_extent_subregion");
 	}  else {
 		printf("percpu_extent_subregion: successful");
@@ -170,10 +170,9 @@ percpu_extent_subregion(pcpu, size)
 
 /* free a percpu extent */
 void
-percpu_extent_free(pcpu, start, end, flags)
+percpu_extent_free(pcpu, start, end)
 	struct percpu *pcpu;
 	u_long	start, end;
-	int flags;
 {
 	register struct extent *ext;
 	int error;
@@ -182,7 +181,8 @@ percpu_extent_free(pcpu, start, end, flags)
 	if(ext == NULL) {
 		printf("percpu_extent_free: no extent to free");
 	}
-	error = extent_free(ext, start, end, flags);
+
+	error = extent_free(ext, start, end, NULL);
 	if (error != 0) {
 		panic("percpu_extent_free: failed to free extent region");
 	} else {
@@ -208,4 +208,55 @@ cpu_percpu_init(pcpu, cpuid, size)
 	size_t size;
 {
 	pcpu->pc_acpi_id = 0xffffffff;
+}
+
+struct percpu *
+percpu_create(size, ctor, dtor, cookie)
+	size_t size;
+	percpu_callback_t ctor, dtor;
+	void *cookie;
+{
+	struct percpu *pcpu;
+
+	percpu_malloc(pcpu, size);
+
+	pcpu->pc_size = size;
+	pcpu->pc_ctor = ctor;
+	pcpu->pc_dtor = dtor;
+	pcpu->pc_cookie = cookie;
+
+	if(ctor) {
+		void *buf;
+
+		LIST_FOREACH(pcpu, &cpuhead, pc_entry) {
+			memset(buf, 0, size);
+			(*ctor)(buf, cookie);
+			percpu_traverse_enter();
+			memcpy(percpu_getptr_remote(pcpu, ci), buf, size);
+			percpu_traverse_exit();
+		}
+	} else {
+		bzero(pcpu, size);
+	}
+
+	return (pcpu);
+}
+
+void *
+percpu_getptr_remote(pcpu)
+	struct percpu *pcpu;
+{
+	return (percpu_offset(pcpu, name));
+}
+
+percpu_foreach(pcpu, cb, arg)
+	struct percpu *pcpu;
+	percpu_callback_t cb;
+	void *arg;
+{
+	LIST_FOREACH(pcpu, &cpuhead, pc_entry) {
+		if(pcpu == percpu_find(pcpu->pc_cpuid)) {
+
+		}
+	}
 }

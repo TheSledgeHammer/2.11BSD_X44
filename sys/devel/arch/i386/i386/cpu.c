@@ -37,18 +37,6 @@
 
 #include <devel/arch/i386/include/cpu.h>
 
-
-static int pkg_id_shift;
-static int node_id_shift;
-static int core_id_shift;
-static int disabled_cpus;
-
-
-struct cache_info {
-	int	id_shift;
-	int	present;
-} static caches[MAX_CACHE_LEVELS];
-
 struct cpu_softc {
 	struct device 		*sc_dev;		/* device tree glue */
 	struct cpu_info 	*sc_info;		/* pointer to CPU info */
@@ -82,73 +70,5 @@ cpu_attach(parent, self, aux)
 	sc->sc_info = ci;
 	ci->ci_dev = self;
 
-	printcpuinfo();
-	panicifcpuunsupported();
-
 	return;
-}
-
-/*
- * Add a cache level to the cache topology description.
- */
-static int
-add_deterministic_cache(int type, int level, int share_count)
-{
-	if (type == 0)
-		return (0);
-	if (type > 3) {
-		printf("unexpected cache type %d\n", type);
-		return (1);
-	}
-	if (type == 2) /* ignore instruction cache */
-		return (1);
-	if (level == 0 || level > MAX_CACHE_LEVELS) {
-		printf("unexpected cache level %d\n", type);
-		return (1);
-	}
-
-	if (caches[level - 1].present) {
-		printf("WARNING: multiple entries for L%u data cache\n", level);
-		printf("%u => %u\n", caches[level - 1].id_shift,
-				mask_width(share_count));
-	}
-	caches[level - 1].id_shift = mask_width(share_count);
-	caches[level - 1].present = 1;
-
-	if (caches[level - 1].id_shift > pkg_id_shift) {
-		printf("WARNING: L%u data cache covers more "
-				"APIC IDs than a package (%u > %u)\n", level,
-				caches[level - 1].id_shift, pkg_id_shift);
-		caches[level - 1].id_shift = pkg_id_shift;
-	}
-	if (caches[level - 1].id_shift < core_id_shift) {
-		printf("WARNING: L%u data cache covers fewer "
-				"APIC IDs than a core (%u < %u)\n", level,
-				caches[level - 1].id_shift, core_id_shift);
-		caches[level - 1].id_shift = core_id_shift;
-	}
-
-	return (1);
-}
-
-/*
- * Add a logical CPU to the topology.
- */
-void
-cpu_add(u_int apic_id, char boot_cpu)
-{
-
-	if (apic_id > max_apic_id) {
-		panic("SMP: APIC ID %d too high", apic_id);
-		return;
-	}
-	KASSERT(cpu_info[apic_id].cpu_present == 0, ("CPU %u added twice", apic_id));
-	cpu_info[apic_id].cpu_present = 1;
-	if (boot_cpu) {
-		KASSERT(boot_cpu_id == -1, ("CPU %u claims to be BSP, but CPU %u already is", apic_id, boot_cpu_id));
-		boot_cpu_id = apic_id;
-		cpu_info[apic_id].cpu_bsp = 1;
-	}
-	if (bootverbose)
-		printf("SMP: Added CPU %u (%s)\n", apic_id, boot_cpu ? "BSP" : "AP");
 }

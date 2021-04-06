@@ -30,7 +30,8 @@
 
 #include <sys/extent.h>
 #include <sys/tree.h>
-#include <lib/libkern/libkern.h>
+
+//#include <lib/libkern/libkern.h>
 
 #include <devel/sys/malloctypes.h>
 #include <devel/advvm/advvm_var.h>
@@ -47,6 +48,8 @@ advvm_domain_init(adom)
 	adom->dom_refcnt = 0;
 	TAILQ_INIT(&adom->dom_volumes);
 	TAILQ_INIT(&adom->dom_filesets);
+
+	simple_lock_init(adom->dom_lock, "advvm_domain_lock");
 }
 
 void
@@ -84,11 +87,14 @@ advvm_domain_find(name, id)
 	register advvm_domain_t *adom;
 
 	bucket = &domain_list[advvm_hash(adom)];
+	simple_lock(adom->dom_lock);
 	TAILQ_FOREACH(adom, bucket, dom_entries) {
 		if(adom->dom_name == name && adom->dom_id == id) {
+			simple_unlock(adom->dom_lock);
 			return (adom);
 		}
 	}
+	simple_unlock(adom->dom_lock);
 	return (NULL);
 }
 
@@ -103,9 +109,9 @@ advvm_domain_insert(adom)
 	}
 
 	bucket = &domain_list[advvm_hash(adom)];
-
+	simple_lock(adom->dom_lock);
 	TAILQ_INSERT_HEAD(bucket, adom, dom_entries);
-
+	simple_unlock(adom->dom_lock);
 	adom->dom_refcnt++;
 }
 
@@ -118,13 +124,16 @@ advvm_domain_remove(name, id)
 	advvm_domain_t *adom;
 
 	bucket = &domain_list[advvm_hash(adom)];
+	simple_lock(adom->dom_lock);
 	TAILQ_FOREACH(adom, bucket, dom_entries) {
 		if(adom->dom_name == name && adom->dom_id == id) {
 			TAILQ_REMOVE(bucket, adom, dom_entries);
 			advvm_domain_destroy(adom);
+			simple_unlock(adom->dom_lock);
 			adom->dom_refcnt--;
 		}
 	}
+	simple_unlock(adom->dom_lock);
 }
 
 /* destroy and free an AdvVM domain */

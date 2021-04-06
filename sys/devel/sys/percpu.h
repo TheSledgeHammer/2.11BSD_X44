@@ -42,18 +42,28 @@
 #include <machine/param.h>
 #include <devel/arch/i386/include/cpu.h>
 
+typedef void (*percpu_callback_t)(void *, void *);
+
 struct cpuhead;
 LIST_HEAD(cpuhead, percpu);
 struct percpu {
 	u_int					pc_cpuid;		/* This cpu number */
 	u_int					pc_cpumask;		/* This cpu mask */
 	LIST_ENTRY(percpu) 		pc_entry;
+	struct kthread			*pc_curkthread;
 
 	size_t					pc_dynamic;		/* Dynamic per-cpu data area */
 
 	struct extent			*pc_extent;		/* Dynamic storage alloctor */
 	u_long 					pc_start;		/* start of per-cpu extent region */
 	u_long 					pc_end;			/* end of per-cpu extent region */
+
+	size_t					pc_size;
+	percpu_callback_t		pc_ctor;
+	percpu_callback_t		pc_dtor;
+	void					*pc_cookie;
+
+	u_int					pc_offset;
 
 	PERCPU_MD_FIELDS;
 };
