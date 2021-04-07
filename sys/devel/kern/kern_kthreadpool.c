@@ -423,7 +423,7 @@ kthreadpool_thread(void *arg)
 
 /* Per-CPU thread pools */
 int
-threadpool_percpu_get(struct kthreadpool_percpu **ktpool_percpup, u_char pri)
+kthreadpool_percpu_get(struct kthreadpool_percpu **ktpool_percpup, u_char pri)
 {
 	struct kthreadpool_percpu *ktpool_percpu, *tmp = NULL;
 	int error;

@@ -66,12 +66,11 @@ percpu_init(pcpu, cpuid, size)
 	int cpuid;
 	size_t size;
 {
-	percpu_malloc(pcpu, size);
 	bzero(pcpu, size);
 	KASSERT(cpuid >= 0 && cpuid < NCPUS ("percpu_init: invalid cpuid %d", cpuid));
 
-	pcpu->pc_cpuid = cpuid;
-	pcpu->pc_cpumask = 1 << cpuid;
+	//pcpu->pc_cpuid = cpuid;
+	//pcpu->pc_cpumask = 1 << cpuid;
 
 	cpuid_to_percpu[cpuid] = pcpu;
 	LIST_INSERT_HEAD(&cpuhead, pcpu, pc_entry);
@@ -201,15 +200,11 @@ percpu_free(pcpu)
 	free(pcpu, M_PERCPU);
 }
 
-void
-cpu_percpu_init(pcpu, cpuid, size)
-	struct percpu *pcpu;
-	int cpuid;
-	size_t size;
-{
-	pcpu->pc_acpi_id = 0xffffffff;
-}
-
+/*
+ * TODO:
+ * - Fix: ctors & dtors don't serve any purpose in percpu or cpu_info
+ * - Only used is in threadpools
+ */
 struct percpu *
 percpu_create(size, ctor, dtor, cookie)
 	size_t size;
@@ -235,28 +230,67 @@ percpu_create(size, ctor, dtor, cookie)
 			memcpy(percpu_getptr_remote(pcpu, ci), buf, size);
 			percpu_traverse_exit();
 		}
+		memset(buf, 0, size);
+		percpu_extent_free(pcpu, pcpu->pc_start, pcpu->pc_end);
 	} else {
 		bzero(pcpu, size);
 	}
-
 	return (pcpu);
 }
 
-void *
-percpu_getptr_remote(pcpu)
-	struct percpu *pcpu;
+struct percpu *
+percpu_alloc(size)
+	size_t size;
 {
-	return (percpu_offset(pcpu, name));
+	return (percpu_create(size, NULL, NULL, NULL));
 }
 
-percpu_foreach(pcpu, cb, arg)
-	struct percpu *pcpu;
-	percpu_callback_t cb;
-	void *arg;
+struct percpu *
+cpu_percpu(ci)
+	struct cpu_info *ci;
 {
-	LIST_FOREACH(pcpu, &cpuhead, pc_entry) {
-		if(pcpu == percpu_find(pcpu->pc_cpuid)) {
+	return (&ci->cpu_percpu);
+}
 
+void
+percpu_init2(ci)
+	struct cpu_info *ci;
+{
+	struct percpu *pcpu;
+
+	pcpu = cpu_percpu(ci);
+
+	bzero(pcpu, ci->cpu_size);
+	KASSERT(cpuid >= 0 && cpuid < NCPUS ("percpu_init: invalid cpuid %d", cpuid));
+
+	pcpu->pc_cpuid = cpu_cpuid(ci);
+	pcpu->pc_cpumask = cpu_cpumask(ci);
+
+	cpuid_to_percpu[ci->cpu_cpuid] = pcpu;
+	LIST_INSERT_HEAD(&cpuhead, pcpu, pc_entry);
+	pcpu->pc_acpi_id = cpu_acpi_id(ci);
+}
+
+struct percpu *
+percpu_lookup(ci)
+	struct cpu_info *ci;
+{
+	struct percpu *pcpu;
+	LIST_FOREACH(pcpu, &cpuhead, pc_entry) {
+		if(cpu_percpu(ci) == pcpu && cpu_cpuid(ci) == pcpu->pc_cpuid) {
+			return (pcpu);
 		}
 	}
+	return (NULL);
+}
+
+void
+percpu_remove(ci)
+	struct cpu_info *ci;
+{
+	struct percpu *pcpu;
+	pcpu = percpu_lookup(ci);
+
+	LIST_REMOVE(pcpu, pc_entry);
+	cpuid_to_percpu[ci->cpu_cpuid] = NULL;
 }

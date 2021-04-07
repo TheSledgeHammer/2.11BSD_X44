@@ -28,24 +28,26 @@
 #ifndef _MACHINE_CPU_H_
 #define _MACHINE_CPU_H_
 
-
+struct percpu;
 
 struct cpu_info {
-	struct cpu_info 	*ci_self;			/* self-pointer */
-	struct cpu_info 	*ci_next;			/* next cpu */
+	struct cpu_info 	*cpu_self;			/* self-pointer */
+	struct device 		*cpu_dev;			/* pointer to our device */
+	struct percpu		cpu_percpu;		/* pointer to percpu info, when NCPUS > 1 */
 
-	struct device 		*ci_dev;			/* pointer to our device */
+	u_int				cpu_cpuid;			/* This cpu number */
+	u_int				cpu_cpumask;		/* This cpu mask */
+	size_t				cpu_size;			/* This cpu's size */
 
-	struct cpu_data 	ci_data;			/* MI per-cpu data */
-
-	u_int 				ci_apicid;			/* our APIC ID */
+	u_int				cpu_acpi_id;		/* This cpu's ACPI id */
+	u_int				cpu_apic_id;		/* This cpu's APIC id */
 
 	int					cpu_present:1;
 	int					cpu_bsp:1;
 	int					cpu_disabled:1;
 	int					cpu_hyperthread:1;
 };
-extern struct cpu_info 	*cpu_info;
+extern struct cpu_info 	*cpu_info;			/* static allocation of cpu_info */
 
 struct cpu_ops {
 	void 				(*cpu_init)(void);
@@ -54,11 +56,11 @@ struct cpu_ops {
 extern struct cpu_ops 	cpu_ops;
 
 extern struct percpu 	__percpu[];
-#define	PERCPU_MD_FIELDS											\
+#define	PERCPU_MD_FIELDS 											\
 	struct	percpu 		*pc_prvspace;		/* Self-reference */	\
 	struct	i386tss 	*pc_common_tssp;							\
 	u_int   			pc_acpi_id;			/* ACPI CPU id */		\
-	u_int				pc_apic_id;									\
+	u_int				pc_apic_id;			/* APIC CPU id */		\
 
 #ifdef _KERNEL
 /*
@@ -177,4 +179,22 @@ __curkthread(void)
 
 #endif /* _KERNEL */
 
+__inline static struct cpu_info *
+curcpu(void)
+{
+	struct cpu_info *ci;
+
+	__asm volatile(
+			"movl %%fs:%1, %0" : "=r" (ci) : "m"
+			(*(struct cpu_info * const *)&((struct cpu_info *)0)->cpu_self)
+			);
+	return (ci);
+}
+#define cpu_number() 		(curcpu()->cpu_cpuid)
+
+/* cpu_info prototypes */
+u_int	cpu_cpuid(struct cpu_info *);
+u_int	cpu_cpumask(struct cpu_info *);
+u_int	cpu_acpi_id(struct cpu_info *);
+u_int	cpu_apic_id(struct cpu_info *);
 #endif /* !_MACHINE_CPU_H_ */

@@ -68,7 +68,48 @@ cpu_attach(parent, self, aux)
 	sc->sc_dev = self;
 
 	sc->sc_info = ci;
-	ci->ci_dev = self;
+	ci->cpu_dev = self;
 
 	return;
+}
+
+void
+cpu_init(ci, cpuid, size)
+	struct cpu_info *ci;
+	int cpuid;
+	size_t size;
+{
+	ci->cpu_cpuid = cpuid;
+	ci->cpu_cpumask = 1 << cpuid;
+	ci->cpu_size = size;
+
+	ci->cpu_acpi_id = 0xffffffff;
+}
+
+u_int
+cpu_cpuid(ci)
+	struct cpu_info *ci;
+{
+	return (ci->cpu_cpuid);
+}
+
+u_int
+cpu_cpumask(ci)
+	struct cpu_info *ci;
+{
+	return (ci->cpu_cpumask);
+}
+
+u_int
+cpu_acpi_id(ci)
+	struct cpu_info *ci;
+{
+	return (ci->cpu_acpi_id);
+}
+
+u_int
+cpu_apic_id(ci)
+	struct cpu_info *ci;
+{
+	return (ci->cpu_apic_id);
 }
