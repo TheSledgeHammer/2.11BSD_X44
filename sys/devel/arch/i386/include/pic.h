@@ -33,7 +33,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)isa.h	5.7 (Berkeley) 5/9/91
  */
 
 #ifndef _I386_PIC_H_
@@ -46,28 +45,22 @@
  * "turn on" the interrupt on the CPU side by setting up an IDT entry, and
  * return the vector associated with this source.
  */
-/* FreeBSD x86 intr_machdep.c/.h */
-
 struct pic {
-	void 					(*pic_register_sources)(struct pic *);
-	void 					(*pic_enable_source)(struct intsrc *);
-	void 					(*pic_disable_source)(struct intsrc *, int);
-	void 					(*pic_eoi_source)(struct intsrc *);
-	void 					(*pic_enable_intr)(struct intsrc *);
-	void 					(*pic_disable_intr)(struct intsrc *);
-	int 					(*pic_vector)(struct intsrc *);
-	int 					(*pic_source_pending)(struct intsrc *);
-	void 					(*pic_suspend)(struct pic *);
-	void					(*pic_resume)(struct pic *, bool suspend_cancelled);
-	int 					(*pic_config_intr)(struct intsrc *, enum intr_trigger, enum intr_polarity);
-	int 					(*pic_assign_cpu)(struct intsrc *, u_int);
-	void 					(*pic_reprogram_pin)(struct intsrc *);
+	int 					pic_type;
+	void					(*pic_hwmask)(struct ioapic_intsrc *, int);
+	void 					(*pic_hwunmask)(struct ioapic_intsrc *, int);
+	void 					(*pic_addroute)(struct ioapic_intsrc *, struct cpu_info *, int, int, int);
+	void 					(*pic_delroute)(struct ioapic_intsrc *, struct cpu_info *, int, int, int);
 	TAILQ_ENTRY(pic) 		pic_entry;
 };
 
-/* Flags for pic_disable_source() */
-#define PIC_EOI 			0
-#define PIC_NO_EOI 			1
+/*
+ * PIC types.
+ */
+#define PIC_I8259			0
+#define PIC_IOAPIC			1
+#define PIC_LAPIC			2
+#define PIC_SOFT			3
 
 /*
  * An interrupt source.  The upper-layer code uses the PIC methods to
@@ -99,5 +92,36 @@ struct intrhand {
 	int						ih_level;
 	int						ih_irq;
 };
-extern struct lock_object *icu_lock;
+
+/*
+ * Software definitions belonging to Local APIC driver.
+ */
+
+#ifdef _KERNEL
+extern volatile vaddr_t local_apic_va;
+extern boolean_t x2apic_mode;
+#endif
+/*
+ * 'pin numbers' for local APIC
+ */
+#define LAPIC_PIN_TIMER		0
+#define LAPIC_PIN_PCINT		2
+#define LAPIC_PIN_LVINT0	3
+#define LAPIC_PIN_LVINT1	4
+#define LAPIC_PIN_LVERR		5
+
+extern struct lock_object 	*icu_lock;
+
+extern void 			lapic_boot_init(paddr_t);
+extern void 			lapic_set_lvt(void);
+extern void 			lapic_enable(void);
+extern void 			lapic_calibrate_timer(boolean_t);
+extern void 			lapic_reset(void);
+
+extern uint32_t 		lapic_read(u_int);
+extern void 			lapic_write(u_int, uint32_t);
+extern void 			lapic_write_tpri(uint32_t);
+extern uint32_t 		lapic_cpu_number(void);
+extern boolean_t 		lapic_is_x2apic(void);
+
 #endif /* _I386_PIC_H_ */
