@@ -481,27 +481,39 @@ static int
 kthreadpool_percpu_create(struct kthreadpool_percpu **ktpool_percpup, u_char pri)
 {
 	struct kthreadpool_percpu *ktpool_percpu;
-	bool ok = TRUE;
+	int error, cpu;
 
-	ktpool_percpu = (struct kthreadpool_percpu *) malloc(sizeof(struct kthreadpool_percpu *), M_KTPOOLTHREAD, M_WAITOK);
-	ktpool_percpu->ktpp_pri = pri;
-	ktpool_percpu->ktpp_percpu = percpu_create(sizeof(struct kthreadpool *), kthreadpool_percpu_init, kthreadpool_percpu_fini, (void *)(intptr_t)pri);
-	/*
-	 * Verify that all of the CPUs were initialized.
-	 *
-	 * XXX What to do if we add CPU hotplug?
-	 */
-	percpu_foreach(ktpool_percpu->ktpp_percpu, &kthreadpool_percpu_ok, &ok);
-	if (!ok) {
-		goto fail;
+	for (cpu = 0; cpu < NCPUS; cpu++) {
+		error = kthreadpool_percpu_start(ktpool_percpu, pri, cpu);
 	}
 
-	/* Success!  */
 	*ktpool_percpup = (struct kthreadpool_percpu *)ktpool_percpu;
-	return (0);
+	return (error);
+}
 
-fail:
-	percpu_extent_free(ktpool_percpu->ktpp_percpu, ktpool_percpu->ktpp_percpu->pc_start, ktpool_percpu->ktpp_percpu->pc_end);
+int
+kthreadpool_percpu_start(struct kthreadpool_percpu *ktpool_percpu, u_char pri, int ncpus)
+{
+	if (count <= 0) {
+		return (EINVAL);
+	}
+
+	ktpool_percpu = (struct kthreadpool_percpu*) malloc(
+			sizeof(struct kthreadpool_percpu*), M_KTPOOLTHREAD, M_WAITOK);
+	ktpool_percpu->ktpp_pri = pri;
+	ktpool_percpu->ktpp_percpu = percpu_create(&cpu_info,
+			sizeof(struct kthreadpool*), 1, ncpus);
+
+	if (ktpool_percpu->ktpp_percpu) {
+		/* Success!  */
+		kthreadpool_percpu_init(pri);
+		return (0);
+	}
+
+	kthreadpool_percpu_fini();
+	percpu_extent_free(ktpool_percpu->ktpp_percpu,
+			ktpool_percpu->ktpp_percpu->pc_start,
+			ktpool_percpu->ktpp_percpu->pc_end);
 	free(ktpool_percpu, M_KTPOOLTHREAD);
 	return (ENOMEM);
 }
@@ -514,10 +526,10 @@ kthreadpool_percpu_destroy(struct kthreadpool_percpu *ktpool_percpu)
 }
 
 static void
-kthreadpool_percpu_init(void *vpoolp, void *vpri)
+kthreadpool_percpu_init(pri)
+	u_char pri;
 {
-	struct kthreadpool **const ktpoolp = vpoolp;
-	u_char pri = (intptr_t)(void *)vpri;
+	struct kthreadpool **const ktpoolp;
 	int error;
 
 	*ktpoolp = (struct kthreadpool *) malloc(sizeof(struct kthreadpool *), M_KTPOOLTHREAD, M_WAITOK);
@@ -530,20 +542,9 @@ kthreadpool_percpu_init(void *vpoolp, void *vpri)
 }
 
 static void
-kthreadpool_percpu_ok(void *vpoolp, void *vokp)
+kthreadpool_percpu_fini()
 {
-	struct kthreadpool **const ktpoolp = vpoolp;
-	bool *okp = vokp;
-
-	if (*ktpoolp == NULL) {
-		atomic_store_relaxed(okp, FALSE); /* XXX: doesn't exist */
-	}
-}
-
-static void
-kthreadpool_percpu_fini(void *vpoolp, void *vprip)
-{
-	struct ktthreadpool **const ktpoolp = vpoolp;
+	struct kthreadpool **const ktpoolp;
 
 	if (*ktpoolp == NULL) {	/* initialization failed */
 		return;

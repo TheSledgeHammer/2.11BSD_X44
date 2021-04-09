@@ -56,49 +56,79 @@
 struct percpu *cpuid_to_percpu[NCPUS];
 struct cpuhead cpuhead = LIST_HEAD_INITIALIZER(cpuhead);
 
-/*
- * Initialize the MI portions of a struct pcpu.
- * (NOTE: runs in mp_machdep.c (init_secondary))
- */
-void
-percpu_init(pcpu, cpuid, size)
-	struct percpu *pcpu;
-	int cpuid;
-	size_t size;
+/* returns percpu from cpu_info */
+struct percpu *
+cpu_percpu(ci)
+	struct cpu_info *ci;
 {
-	bzero(pcpu, size);
-	KASSERT(cpuid >= 0 && cpuid < NCPUS ("percpu_init: invalid cpuid %d", cpuid));
-
-	//pcpu->pc_cpuid = cpuid;
-	//pcpu->pc_cpumask = 1 << cpuid;
-
-	cpuid_to_percpu[cpuid] = pcpu;
-	LIST_INSERT_HEAD(&cpuhead, pcpu, pc_entry);
-	cpu_percpu_init(pcpu, cpuid, size);
+	return (&ci->cpu_percpu);
 }
 
-/* allocate percpu structure */
-void
-percpu_malloc(pcpu, size)
-	struct percpu *pcpu;
-	size_t size;
+/*
+ * Initialize the MI portions of a struct percpu.
+ *  (NOTE: runs in mp_machdep.c (init_secondary))
+ */
+struct percpu *
+percpu_init(ci, size)
+	struct cpu_info *ci;
+	size_t 			size;
 {
-	pcpu = malloc(sizeof(*pcpu), M_PERCPU, M_WAITOK | M_ZERO);
-	percpu_extent(pcpu, PERCPU_START, PERCPU_END);
-	percpu_extent_region(pcpu);
-	size = roundup(size, PERCPU_SIZE);
-	percpu_extent_subregion(pcpu, size);
+	struct percpu *pc;
+
+	pc = cpu_percpu(ci);
+	if(!pc) {
+		percpu_free(pc);
+	}
+
+	bzero(pc, size);
+	KASSERT(ci->cpu_cpuid >= 0 && ci->cpu_cpuid < NCPUS ("percpu_start: invalid cpuid %d", ci->cpu_cpuid));
+
+	pc->pc_cpuid = cpu_cpuid(ci);
+	pc->pc_cpumask = cpu_cpumask(ci);
+	pc->pc_size = size;
+
+	cpuid_to_percpu[ci->cpu_cpuid] = pc;
+	LIST_INSERT_HEAD(&cpuhead, pc, pc_entry);
+	pc->pc_acpi_id = cpu_acpi_id(ci);
+
+	return (pc);
+}
+
+/* lookup percpu from cpu_info */
+struct percpu *
+percpu_lookup(ci)
+	struct cpu_info *ci;
+{
+	struct percpu *pc;
+	LIST_FOREACH(pc, &cpuhead, pc_entry) {
+		if(cpu_percpu(ci) == pc) {
+			return (pc);
+		}
+	}
+	return (NULL);
+}
+
+/* Destroys a percpu struct if cpuid matches cpu_info's cpuid */
+void
+percpu_remove(ci)
+	struct cpu_info *ci;
+{
+	struct percpu *pc;
+	pc = percpu_lookup(ci);
+	if(pc->pc_cpuid == ci->cpu_cpuid) {
+		percpu_destroy(pc);
+	}
 }
 
 /*
  * Destroy a struct percpu.
  */
 void
-percpu_destroy(pcpu)
-	struct percpu *pcpu;
+percpu_destroy(pc)
+	struct percpu *pc;
 {
-	LIST_REMOVE(pcpu, pc_entry);
-	cpuid_to_percpu[pcpu->pc_cpuid] = NULL;
+	LIST_REMOVE(pc, pc_entry);
+	cpuid_to_percpu[pc->pc_cpuid] = NULL;
 }
 
 /*
@@ -111,33 +141,46 @@ percpu_find(cpuid)
 	return (cpuid_to_percpu[cpuid]);
 }
 
+/* allocate percpu structures */
+void
+percpu_malloc(pc, size)
+	struct percpu *pc;
+	size_t size;
+{
+	pc = malloc(sizeof(*pc), M_PERCPU, M_WAITOK | M_ZERO);
+	percpu_extent(pc, PERCPU_START, PERCPU_END);
+	percpu_extent_region(pc);
+	size = roundup(size, PERCPU_SIZE);
+	percpu_extent_subregion(pc, size);
+}
+
 /* allocate a percpu extent structure */
 void
-percpu_extent(pcpu, start, end)
-	struct percpu 		*pcpu;
+percpu_extent(pc, start, end)
+	struct percpu 		*pc;
 	u_long				start, end;
 {
-	pcpu->pc_start = start;
-	pcpu->pc_end = end;
-	pcpu->pc_extent = extent_create("percpu_extent_storage", start, end, M_PERCPU, NULL, NULL, EX_WAITOK | EX_FAST);
+	pc->pc_start = start;
+	pc->pc_end = end;
+	pc->pc_extent = extent_create("percpu_extent_storage", start, end, M_PERCPU, NULL, NULL, EX_WAITOK | EX_FAST);
 }
 
 /* allocate a percpu extent region */
 void
-percpu_extent_region(pcpu)
-	struct percpu *pcpu;
+percpu_extent_region(pc)
+	struct percpu *pc;
 {
 	register struct extent *ext;
 	int error;
 
-	ext = pcpu->pc_extent;
+	ext = pc->pc_extent;
 	if(ext == NULL) {
 		panic("percpu_extent_region: no extent");
 		return;
 	}
-	error = extent_alloc_region(ext, pcpu->pc_start, pcpu->pc_end, EX_WAITOK | EX_MALLOCOK | EX_FAST);
+	error = extent_alloc_region(ext, pc->pc_start, pc->pc_end, EX_WAITOK | EX_MALLOCOK | EX_FAST);
 	if (error != 0) {
-		percpu_extent_free(ext, pcpu->pc_start, pcpu->pc_end, EX_WAITOK | EX_MALLOCOK | EX_FAST);
+		percpu_extent_free(ext, pc->pc_start, pc->pc_end, EX_WAITOK | EX_MALLOCOK | EX_FAST);
 		panic("percpu_extent_region");
 	} else {
 		printf("percpu_extent_region: successful");
@@ -146,21 +189,21 @@ percpu_extent_region(pcpu)
 
 /* allocate a percpu extent subregion */
 void
-percpu_extent_subregion(pcpu, size)
-	struct percpu 	*pcpu;
+percpu_extent_subregion(pc, size)
+	struct percpu 	*pc;
 	size_t 			size;
 {
 	register struct extent *ext;
 	int error;
 
-	ext = pcpu->pc_extent;
+	ext = pc->pc_extent;
 	if(ext == NULL) {
 		panic("percpu_extent_subregion: no extent");
 		return;
 	}
-	error = extent_alloc(ext, size, PERCPU_ALIGN, PERCPU_BOUNDARY, EX_WAITOK | EX_MALLOCOK | EX_FAST, pcpu->pc_dynamic);
+	error = extent_alloc(ext, size, PERCPU_ALIGN, PERCPU_BOUNDARY, EX_WAITOK | EX_MALLOCOK | EX_FAST, pc->pc_dynamic);
 	if (error != 0) {
-		percpu_extent_free(ext, pcpu->pc_start, pcpu->pc_end);
+		percpu_extent_free(ext, pc->pc_start, pc->pc_end);
 		panic("percpu_extent_subregion");
 	}  else {
 		printf("percpu_extent_subregion: successful");
@@ -169,14 +212,14 @@ percpu_extent_subregion(pcpu, size)
 
 /* free a percpu extent */
 void
-percpu_extent_free(pcpu, start, end)
-	struct percpu *pcpu;
+percpu_extent_free(pc, start, end)
+	struct percpu *pc;
 	u_long	start, end;
 {
 	register struct extent *ext;
 	int error;
 
-	ext = pcpu->pc_extent;
+	ext = pc->pc_extent;
 	if(ext == NULL) {
 		printf("percpu_extent_free: no extent to free");
 	}
@@ -191,106 +234,37 @@ percpu_extent_free(pcpu, start, end)
 
 /* free percpu and destroy all percpu extents */
 void
-percpu_free(pcpu)
-	struct percpu *pcpu;
+percpu_free(pc)
+	struct percpu *pc;
 {
-	if(pcpu->pc_extent != NULL) {
-		extent_destroy(pcpu->pc_extent);
+	if(pc->pc_extent != NULL) {
+		extent_destroy(pc->pc_extent);
 	}
-	free(pcpu, M_PERCPU);
+	free(pc, M_PERCPU);
 }
 
-/*
- * TODO:
- * - Fix: ctors & dtors don't serve any purpose in percpu or cpu_info
- * - Only used is in threadpools
- */
 struct percpu *
-percpu_create(size, ctor, dtor, cookie)
+percpu_create(ci, size, count , ncpus)
+	struct cpu_info *ci;
 	size_t size;
-	percpu_callback_t ctor, dtor;
-	void *cookie;
+	int count, ncpus;
 {
-	struct percpu *pcpu;
+	struct percpu *pc;
+	int i, error, cpu;
 
-	percpu_malloc(pcpu, size);
+	percpu_malloc(pc, size);
 
-	pcpu->pc_size = size;
-	pcpu->pc_ctor = ctor;
-	pcpu->pc_dtor = dtor;
-	pcpu->pc_cookie = cookie;
+	cpu = ncpus;
 
-	if(ctor) {
-		void *buf;
-
-		LIST_FOREACH(pcpu, &cpuhead, pc_entry) {
-			memset(buf, 0, size);
-			(*ctor)(buf, cookie);
-			percpu_traverse_enter();
-			memcpy(percpu_getptr_remote(pcpu, ci), buf, size);
-			percpu_traverse_exit();
-		}
-		memset(buf, 0, size);
-		percpu_extent_free(pcpu, pcpu->pc_start, pcpu->pc_end);
-	} else {
-		bzero(pcpu, size);
-	}
-	return (pcpu);
-}
-
-struct percpu *
-percpu_alloc(size)
-	size_t size;
-{
-	return (percpu_create(size, NULL, NULL, NULL));
-}
-
-struct percpu *
-cpu_percpu(ci)
-	struct cpu_info *ci;
-{
-	return (&ci->cpu_percpu);
-}
-
-void
-percpu_init2(ci)
-	struct cpu_info *ci;
-{
-	struct percpu *pcpu;
-
-	pcpu = cpu_percpu(ci);
-
-	bzero(pcpu, ci->cpu_size);
-	KASSERT(cpuid >= 0 && cpuid < NCPUS ("percpu_init: invalid cpuid %d", cpuid));
-
-	pcpu->pc_cpuid = cpu_cpuid(ci);
-	pcpu->pc_cpumask = cpu_cpumask(ci);
-
-	cpuid_to_percpu[ci->cpu_cpuid] = pcpu;
-	LIST_INSERT_HEAD(&cpuhead, pcpu, pc_entry);
-	pcpu->pc_acpi_id = cpu_acpi_id(ci);
-}
-
-struct percpu *
-percpu_lookup(ci)
-	struct cpu_info *ci;
-{
-	struct percpu *pcpu;
-	LIST_FOREACH(pcpu, &cpuhead, pc_entry) {
-		if(cpu_percpu(ci) == pcpu && cpu_cpuid(ci) == pcpu->pc_cpuid) {
-			return (pcpu);
+	for (i = 0; i < count; i++) {
+		if ((ncpus <= -1) && (count > 1)) {
+			cpu = i%ncpus;
+			if (count == 1) {
+				pc = percpu_init(&ci[cpu], size);
+			} else {
+				pc = percpu_init(&ci[cpu], size);
+			}
 		}
 	}
-	return (NULL);
-}
-
-void
-percpu_remove(ci)
-	struct cpu_info *ci;
-{
-	struct percpu *pcpu;
-	pcpu = percpu_lookup(ci);
-
-	LIST_REMOVE(pcpu, pc_entry);
-	cpuid_to_percpu[ci->cpu_cpuid] = NULL;
+	return (pc);
 }

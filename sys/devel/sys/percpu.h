@@ -60,11 +60,13 @@ struct percpu {
 	u_long 					pc_end;				/* end of per-cpu extent region */
 
 	size_t					pc_size;
-	percpu_callback_t		pc_ctor;
-	percpu_callback_t		pc_dtor;
-	void					*pc_cookie;
 
 	u_int					pc_offset;
+
+	percpu_callback_t		pc_ctor;
+	percpu_callback_t		pc_dtor;
+	void 					*pc_buf;
+	void					*pc_cookie;
 
 	PERCPU_MD_FIELDS;
 };
@@ -83,9 +85,12 @@ extern struct percpu 		*cpuid_to_percpu[];
  * Machine dependent callouts.  cpu_percpu_init() is responsible for
  * initializing machine dependent fields of struct percpu.
  */
-void					cpu_percpu_init(struct percpu *pcpu, int cpuid, size_t size);
-
-void					percpu_init(struct percpu *, int, size_t);
+//void					cpu_percpu_init(struct percpu *pcpu, int cpuid, size_t size);
+struct percpu 			*cpu_percpu(struct cpu_info *);
+struct percpu 			*percpu_start(struct cpu_info *, size_t);
+void					percpu_remove(struct cpu_info *);
+struct percpu 			*percpu_lookup(struct cpu_info *);
+struct percpu 			*percpu_create(struct cpu_info *, size_t, int, int);
 void					percpu_malloc(struct percpu *, size_t);
 void					percpu_free(struct percpu *);
 void					percpu_destroy(struct percpu *);
@@ -94,4 +99,5 @@ void					percpu_extent(struct percpu *, u_long, u_long);
 void					percpu_extent_region(struct percpu *);
 void					percpu_extent_subregion(struct percpu *, size_t);
 void					percpu_extent_free(struct percpu *, u_long, u_long, int);
+
 #endif /* _SYS_PERCPU_H_ */
