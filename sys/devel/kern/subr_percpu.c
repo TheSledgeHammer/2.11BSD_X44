@@ -56,42 +56,25 @@
 struct percpu *cpuid_to_percpu[NCPUS];
 struct cpuhead cpuhead = LIST_HEAD_INITIALIZER(cpuhead);
 
-/* returns percpu from cpu_info */
-struct percpu *
-cpu_percpu(ci)
-	struct cpu_info *ci;
-{
-	return (&ci->cpu_percpu);
-}
-
 /*
  * Initialize the MI portions of a struct percpu.
  *  (NOTE: runs in mp_machdep.c (init_secondary))
  */
-struct percpu *
-percpu_init(ci, size)
-	struct cpu_info *ci;
-	size_t 			size;
+void
+percpu_init(pc, ci, size)
+	struct percpu 		*pc;
+	struct cpu_info 	*ci;
+	size_t 				size;
 {
-	struct percpu *pc;
-
-	pc = cpu_percpu(ci);
-	if(!pc) {
-		percpu_free(pc);
-	}
-
 	bzero(pc, size);
-	KASSERT(ci->cpu_cpuid >= 0 && ci->cpu_cpuid < NCPUS ("percpu_start: invalid cpuid %d", ci->cpu_cpuid));
+	KASSERT(ci->cpu_cpuid >= 0 && ci->cpu_cpuid < NCPUS ("percpu_init: invalid cpuid %d", ci->cpu_cpuid));
 
 	pc->pc_cpuid = cpu_cpuid(ci);
 	pc->pc_cpumask = cpu_cpumask(ci);
-	pc->pc_size = size;
-
 	cpuid_to_percpu[ci->cpu_cpuid] = pc;
 	LIST_INSERT_HEAD(&cpuhead, pc, pc_entry);
 	pc->pc_acpi_id = cpu_acpi_id(ci);
-
-	return (pc);
+	pc->pc_offset = percpu_offset_cpu(cpu_cpuid(ci));
 }
 
 /* lookup percpu from cpu_info */
@@ -243,6 +226,20 @@ percpu_free(pc)
 	free(pc, M_PERCPU);
 }
 
+/* start a percpu struct from valid cpu_info */
+struct percpu *
+percpu_start(ci, size)
+	struct cpu_info *ci;
+	size_t 			size;
+{
+	struct percpu *pc;
+
+	pc = cpu_percpu(ci);
+	pc->pc_size = size;
+
+	return (pc);
+}
+
 struct percpu *
 percpu_create(ci, size, count , ncpus)
 	struct cpu_info *ci;
@@ -260,9 +257,9 @@ percpu_create(ci, size, count , ncpus)
 		if ((ncpus <= -1) && (count > 1)) {
 			cpu = i%ncpus;
 			if (count == 1) {
-				pc = percpu_init(&ci[cpu], size);
+				pc = percpu_start(ci, size, cpu);
 			} else {
-				pc = percpu_init(&ci[cpu], size);
+				pc = percpu_start(ci, size, cpu);
 			}
 		}
 	}

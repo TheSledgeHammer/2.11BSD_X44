@@ -55,129 +55,13 @@ struct cpu_ops {
 };
 extern struct cpu_ops 	cpu_ops;
 
-extern struct percpu 	__percpu[];
-#define	PERCPU_MD_FIELDS 											\
-	struct	percpu 		*pc_prvspace;		/* Self-reference */	\
-	struct	i386tss 	*pc_common_tssp;							\
-	u_int   			pc_acpi_id;			/* ACPI CPU id */		\
-	u_int				pc_apic_id;			/* APIC CPU id */		\
-
-#ifdef _KERNEL
-/*
- * Evaluates to the byte offset of the per-cpu variable name.
- */
-#define __percpu_offset(name) 										\
-	__offsetof(struct percpu, name)
-
-/*
- * Evaluates to the type of the per-cpu variable name.
- */
-#define	__percpu_type(name)											\
-	__typeof(((struct percpu *)0)->name)
-
-/*
- * Evaluates to the address of the per-cpu variable name.
- */
-#define	__PERCPU_PTR(name) __extension__ ({							\
-	__percpu_type(name) *__p;										\
-																	\
-	__asm __volatile("movl %%fs:%1,%0; addl %2,%0"					\
-	    : "=r" (__p)												\
-	    : "m" (*(struct percpu *)(__percpu_offset(pc_prvspace))),	\
-	      "i" (__percpu_offset(name)));								\
-																	\
-	__p;															\
-})
-
-/*
- * Evaluates to the value of the per-cpu variable name.
- */
-#define	__PERCPU_GET(name) __extension__ ({							\
-	__percpu_type(name) __res;										\
-	struct __s {													\
-		u_char	__b[MIN(sizeof(__res), 4)];							\
-	} __s;															\
-																	\
-	if (sizeof(__res) == 1 || sizeof(__res) == 2 ||					\
-	    sizeof(__res) == 4) {										\
-		__asm __volatile("mov %%fs:%1,%0"							\
-		    : "=r" (__s)											\
-		    : "m" (*(struct __s *)(__percpu_offset(name))));		\
-		*(struct __s *)(void *)&__res = __s;						\
-	} else {														\
-		__res = *__PERCPU_PTR(name);								\
-	}																\
-	__res;															\
-})
-
-/*
- * Adds a value of the per-cpu counter name.  The implementation
- * must be atomic with respect to interrupts.
- */
-#define	__PERCPU_ADD(name, val) do {								\
-	__percpu_type(name) __val;										\
-	struct __s {													\
-		u_char	__b[MIN(sizeof(__val), 4)];							\
-	} __s;															\
-																	\
-	__val = (val);													\
-	if (sizeof(__val) == 1 || sizeof(__val) == 2 ||					\
-			sizeof(__val) == 4) {									\
-		__s = *(struct __s *)(void *)&__val;						\
-		__asm __volatile("add %1,%%fs:%0"							\
-		    : "=m" (*(struct __s *)(__percpu_offset(name)))			\
-		    : "r" (__s));											\
-	} else															\
-		*__PERCPU_PTR(name) += __val;								\
-} while (0)
-
-/*
- * Sets the value of the per-cpu variable name to value val.
- */
-#define	__PERCPU_SET(name, val) do {								\
-	__percpu_type(name) __val;										\
-	struct __s {													\
-		u_char	__b[MIN(sizeof(__val), 4)];							\
-	} __s;															\
-																	\
-	__val = (val);													\
-	if (sizeof(__val) == 1 || sizeof(__val) == 2 ||					\
-	    sizeof(__val) == 4) {										\
-		__s = *(struct __s *)(void *)&__val;						\
-		__asm __volatile("mov %1,%%fs:%0"							\
-		    : "=m" (*(struct __s *)(__percpu_offset(name)))			\
-		    : "r" (__s));											\
-	} else {														\
-		*__PERCPU_PTR(name) = __val;								\
-	}																\
-} while (0)
-
-#define	get_percpu() __extension__ ({								\
-	struct percpu *__pc;											\
-																	\
-	__asm __volatile("movl %%fs:%1,%0"								\
-	    : "=r" (__pc)												\
-	    : "m" (*(struct percpu *)(__percpu_offset(pc_prvspace))));	\
-	__pc;															\
-})
-
-#define	PERCPU_GET(member)		__PERCPU_GET(pc_ ## member)
-#define	PERCPU_ADD(member, val)	__PERCPU_ADD(pc_ ## member, val)
-#define	PERCPU_PTR(member)		__PERCPU_PTR(pc_ ## member)
-#define	PERCPU_SET(member, val)	__PERCPU_SET(pc_ ## member, val)
-
-#define	IS_BSP()				(PERCPU_GET(cpuid) == 0)
-
-struct kthread *
-__curkthread(void)
-{
-	struct kthread *kt;
-	__asm("movl %%fs:%1,%0" : "=r" (kt)
-			: "m" (*(char *)offsetof(struct percpu, pc_curkthread)));
-	return (kt);
-}
-
-#endif /* _KERNEL */
+/* cpu_info macros */
+#define cpu_cpuid(ci) 	((ci)->cpu_cpuid)
+#define cpu_cpumask(ci)	((ci)->cpu_cpumask)
+#define cpu_cpusize(ci)	((ci)->cpu_size)
+#define cpu_acpi_id(ci)	((ci)->cpu_acpi_id)
+#define cpu_apic_id(ci)	((ci)->cpu_apic_id)
+#define cpu_percpu(ci)	((ci)->cpu_percpu)
 
 __inline static struct cpu_info *
 curcpu(void)
@@ -190,11 +74,7 @@ curcpu(void)
 			);
 	return (ci);
 }
+
 #define cpu_number() 		(curcpu()->cpu_cpuid)
 
-/* cpu_info prototypes */
-u_int	cpu_cpuid(struct cpu_info *);
-u_int	cpu_cpumask(struct cpu_info *);
-u_int	cpu_acpi_id(struct cpu_info *);
-u_int	cpu_apic_id(struct cpu_info *);
 #endif /* !_MACHINE_CPU_H_ */

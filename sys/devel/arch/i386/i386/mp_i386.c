@@ -34,7 +34,7 @@
 /* lock region used by kernel profiling */
 int	mcount_lock;
 
-int	mp_naps;		/* # of Applications processors */
+int	mp_naps;			/* # of Applications processors */
 int	boot_cpu_id = -1;	/* designated BSP */
 
 /* AP uses this during bootstrap.  Do not staticize.  */

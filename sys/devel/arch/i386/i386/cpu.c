@@ -85,31 +85,3 @@ cpu_init(ci, cpuid, size)
 
 	ci->cpu_acpi_id = 0xffffffff;
 }
-
-u_int
-cpu_cpuid(ci)
-	struct cpu_info *ci;
-{
-	return (ci->cpu_cpuid);
-}
-
-u_int
-cpu_cpumask(ci)
-	struct cpu_info *ci;
-{
-	return (ci->cpu_cpumask);
-}
-
-u_int
-cpu_acpi_id(ci)
-	struct cpu_info *ci;
-{
-	return (ci->cpu_acpi_id);
-}
-
-u_int
-cpu_apic_id(ci)
-	struct cpu_info *ci;
-{
-	return (ci->cpu_apic_id);
-}

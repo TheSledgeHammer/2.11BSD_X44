@@ -40,10 +40,12 @@
 #include <sys/resource.h>
 #include <machine/cpu.h>
 #include <machine/param.h>
+
+
 #include <devel/arch/i386/include/cpu.h>
+#include <devel/arch/i386/include/percpu.h>
 
 struct cpu_info;
-typedef void (*percpu_callback_t)(void *, void *);
 
 struct cpuhead;
 LIST_HEAD(cpuhead, percpu);
@@ -54,39 +56,33 @@ struct percpu {
 	struct kthread			*pc_curkthread;
 
 	size_t					pc_dynamic;			/* Dynamic per-cpu data area */
+	size_t					pc_size;			/* Static per-cpu allocation */
 
 	struct extent			*pc_extent;			/* Dynamic storage alloctor */
 	u_long 					pc_start;			/* start of per-cpu extent region */
 	u_long 					pc_end;				/* end of per-cpu extent region */
 
-	size_t					pc_size;
 
 	u_int					pc_offset;
-
-	percpu_callback_t		pc_ctor;
-	percpu_callback_t		pc_dtor;
-	void 					*pc_buf;
-	void					*pc_cookie;
-
 	PERCPU_MD_FIELDS;
 };
 
-extern struct cpuhead 		cpuhead;
-extern struct percpu 		*cpuid_to_percpu[];
+extern struct cpuhead 			cpuhead;
+extern struct percpu 			*cpuid_to_percpu[];
 
 /* percpu definitions */
-#define PERCPU_START 		(ALIGNBYTES + 1)
-#define PERCPU_END 			2048
-#define PERCPU_SIZE			2048
-#define PERCPU_ALIGN		PAGE_SIZE
-#define PERCPU_BOUNDARY		EX_NOBOUNDARY
+#define PERCPU_START 			(ALIGNBYTES + 1)
+#define PERCPU_END 				2048
+#define PERCPU_SIZE				2048
+#define PERCPU_ALIGN			PAGE_SIZE
+#define PERCPU_BOUNDARY			EX_NOBOUNDARY
+#define percpu_offset_cpu(cpu)  (PERCPU_SIZE * cpu)
 
 /*
  * Machine dependent callouts.  cpu_percpu_init() is responsible for
  * initializing machine dependent fields of struct percpu.
  */
-//void					cpu_percpu_init(struct percpu *pcpu, int cpuid, size_t size);
-struct percpu 			*cpu_percpu(struct cpu_info *);
+void					percpu_init(struct percpu *, struct cpu_info *, size_t);
 struct percpu 			*percpu_start(struct cpu_info *, size_t);
 void					percpu_remove(struct cpu_info *);
 struct percpu 			*percpu_lookup(struct cpu_info *);

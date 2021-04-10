@@ -50,11 +50,8 @@ kthread_init(p, kt)
 	register_t 	rval[2];
 	int 		error;
 
-	/* initialize current kthread0 from proc overseer */
-	&kthread0 = &proc0->p_kthreado;
-
-	/* initialize current kthread from kthread0 */
-    kt = &kthread0;
+	/* initialize current kthread & proc overseer from kthread0 */
+	kt = &proc0->p_kthreado = &kthread0;
     curkthread = kt;
 
 	/* Initialize kthread and kthread group structures. */

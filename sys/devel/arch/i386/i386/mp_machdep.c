@@ -44,13 +44,16 @@
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_extern.h>
 
-#include <machine/cpu.h>
-#include <machine/cputypes.h>
-#include <machine/pcb.h>
-#include <machine/psl.h>
-#include <machine/param.h>
-#include <machine/specialreg.h>
+#include <arch/i386/include/cputypes.h>
+#include <arch/i386/include/pcb.h>
+#include <arch/i386/include/psl.h>
+#include <arch/i386/include/param.h>
+#include <arch/i386/include/specialreg.h>
+#include <arch/i386/include/vm86.h>
 
+#include <devel/arch/i386/include/i386_smp.h>
+#include <devel/arch/i386/include/cpu.h>
+//#include <devel/arch/i386/include/percpu.h>
 
 #define WARMBOOT_TARGET		0
 #define WARMBOOT_OFF		(PMAP_MAP_LOW + 0x0467)
@@ -83,7 +86,7 @@
 
 #define CHECK_PRINT(S);				\
 	printf("%s: %d, %d, %d, %d, %d, %d\n",	\
-	   (S),					\
+	   (S),							\
 	   CHECK_READ(0x34),			\
 	   CHECK_READ(0x35),			\
 	   CHECK_READ(0x36),			\
@@ -114,7 +117,8 @@ static char *ap_tramp_stack_base;
  * Initialize the IPI handlers and start up the AP's.
  */
 void
-cpu_mp_start(void)
+cpu_mp_start(pc)
+	struct percpu *pc;
 {
 	int i;
 	for (i = 0; i < NCPUS; i++) {
@@ -146,18 +150,16 @@ cpu_mp_start(void)
 
 	/* Set boot_cpu_id if needed. */
 	if (boot_cpu_id == -1) {
-		boot_cpu_id = PERCPU_GET(apic_id);
+		boot_cpu_id = PERCPU_GET(pc, apic_id);
 		cpu_info[boot_cpu_id].cpu_bsp = 1;
 	} else {
-		KASSERT(boot_cpu_id == PERCPU_GET(apic_id), ("BSP's APIC ID doesn't match boot_cpu_id"));
+		KASSERT(boot_cpu_id == PERCPU_GET(pc, apic_id)("BSP's APIC ID doesn't match boot_cpu_id"));
 	}
 }
 
-/*
- * AP CPU's call this to initialize themselves.
- */
 void
-init_secondary(void)
+init_secondary(ci)
+	struct cpu_info *ci;
 {
 	struct percpu *pc;
 	struct i386tss *common_tssp;
@@ -166,13 +168,14 @@ init_secondary(void)
 	u_int cr0;
 
 	/* Get per-cpu data */
-	pc = &__percpu[myid];
+	pc = ci->cpu_percpu = &__percpu[myid];
 
 	/* prime data page for it to use */
-	percpu_init(pc, myid, sizeof(struct percpu));
+	percpu_init(pc, ci, sizeof(struct percpu));
 	pc->pc_apic_id = cpu_apic_ids[myid];
-	pc->pc_prvspace = pc;
 	pc->pc_curkthread = 0;
+	pc->pc_cpuinfo = ci;
+	pc->pc_cpuinfo->cpu_percpu = ci->cpu_percpu;
 	pc->pc_common_tssp = common_tssp = &(__percpu[0].pc_common_tssp)[myid];
 
 	fix_cpuid();
@@ -194,21 +197,21 @@ init_secondary(void)
 	lidt(&r_idt);
 
 	lldt(_default_ldt);
-	PERCPU_SET(currentldt, _default_ldt);
+	PERCPU_SET(pc, currentldt, _default_ldt);
 
-	PERCPU_SET(trampstk, (uintptr_t)ap_tramp_stack_base + TRAMP_STACK_SZ - VM86_STACK_SPACE);
+	PERCPU_SET(pc, trampstk, (uintptr_t)ap_tramp_stack_base + TRAMP_STACK_SZ - VM86_STACK_SPACE);
 
 	gsel_tss = GSEL(GPROC0_SEL, SEL_KPL);
 	gdt[myid * NGDT + GPROC0_SEL].sd.sd_type = SDT_SYS386TSS;
-	common_tssp->tss_esp0 = PERCPU_GET(trampstk);
+	common_tssp->tss_esp0 = PERCPU_GET(pc, trampstk);
 	common_tssp->tss_ss0 = GSEL(GDATA_SEL, SEL_KPL);
 	common_tssp->tss_ioopt = sizeof(struct i386tss) << 16;
-	PERCPU_SET(tss_gdt, &gdt[myid * NGDT + GPROC0_SEL].sd);
-	PERCPU_SET(common_tssd, *PERCPU_GET(tss_gdt));
+	PERCPU_SET(pc, tss_gdt, &gdt[myid * NGDT + GPROC0_SEL].sd);
+	PERCPU_SET(pc, common_tssd, PERCPU_GET(pc, tss_gdt));
 	ltr(gsel_tss);
 
-	PERCPU_SET(fsgs_gdt, &gdt[myid * NGDT + GUFS_SEL].sd);
-	PERCPU_SET(copyout_buf, ap_copyout_buf);
+	PERCPU_SET(pc, fsgs_gdt, &gdt[myid * NGDT + GUFS_SEL].sd);
+	PERCPU_SET(pc, copyout_buf, ap_copyout_buf);
 
 	/*
 	 * Set to a known state:
@@ -237,4 +240,66 @@ init_secondary(void)
 #endif
 
 	init_secondary_tail();
+}
+
+/*
+ * start each AP in our list
+ */
+#define TMPMAP_START 1
+static int
+start_all_aps(void)
+{
+	u_char mpbiosreason;
+	u_int32_t mpbioswarmvec;
+	int apic_id, cpu;
+
+	pmap_remap_lower(TRUE);
+
+	/* install the AP 1st level boot code */
+	install_ap_tramp();
+
+	/* save the current value of the warm-start vector */
+	mpbioswarmvec = *((u_int32_t *) WARMBOOT_OFF);
+	outb(CMOS_REG, BIOS_RESET);
+	mpbiosreason = inb(CMOS_DATA);
+
+	/* take advantage of the P==V mapping for PTD[0] for AP boot */
+
+	/* start each AP */
+	for (cpu = 1; cpu < mp_ncpus; cpu++) {
+		apic_id = cpu_apic_ids[cpu];
+
+		/* allocate and set up a boot stack data page */
+		bootstacks[cpu] = (char *)malloc(kstack_pages * PAGE_SIZE);
+
+	}
+
+	pmap_remap_lower(FALSE);
+
+	/* restore the warmstart vector */
+	*(u_int32_t *) WARMBOOT_OFF = mpbioswarmvec;
+
+	outb(CMOS_REG, BIOS_RESET);
+	outb(CMOS_DATA, mpbiosreason);
+
+	/* number of APs actually started */
+	return (mp_naps);
+}
+
+/*
+ * load the 1st level AP boot code into base memory.
+ */
+
+/* targets for relocation */
+extern void bigJump(void);
+extern void bootCodeSeg(void);
+extern void bootDataSeg(void);
+extern void MPentry(void);
+extern u_int MP_GDT;
+extern u_int mp_gdtbase;
+
+static void
+install_ap_tramp(void)
+{
+
 }

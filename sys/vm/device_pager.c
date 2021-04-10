@@ -349,7 +349,7 @@ dev_pager_getfake(paddr)
 	m->flags = PG_BUSY | PG_CLEAN | PG_FAKE | PG_FICTITIOUS;
 	m->phys_addr = paddr;
 	m->wire_count = 1;
-	return(m);
+	return (m);
 }
 
 static void
