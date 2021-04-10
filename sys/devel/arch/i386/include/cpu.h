@@ -63,6 +63,8 @@ extern struct cpu_ops 	cpu_ops;
 #define cpu_apic_id(ci)	((ci)->cpu_apic_id)
 #define cpu_percpu(ci)	((ci)->cpu_percpu)
 
+#define cpu_number() 	(curcpu()->cpu_cpuid)
+
 __inline static struct cpu_info *
 curcpu(void)
 {
@@ -74,7 +76,5 @@ curcpu(void)
 			);
 	return (ci);
 }
-
-#define cpu_number() 		(curcpu()->cpu_cpuid)
 
 #endif /* !_MACHINE_CPU_H_ */

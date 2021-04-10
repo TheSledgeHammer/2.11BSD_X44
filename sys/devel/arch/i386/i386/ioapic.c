@@ -37,8 +37,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
-
 /*
  * Copyright (c) 1999 Stefan Grefen
  *
@@ -87,19 +85,18 @@
 #include <vm/include/vm_extern.h>
 
 #include <arch/i386/isa/isa_machdep.h> 			/* XXX intrhand */
+#include <arch/i386/include/pio.h>
+#include <arch/i386/include/pmap.h>
+#include <arch/i386/include/intr.h>
 
 #include <devel/arch/i386/include/apicreg.h>
 #include <devel/arch/i386/include/apicvar.h>
 #include <devel/arch/i386/include/cpu.h>
 #include <devel/arch/i386/include/pic.h>
-#include <arch/i386/include/pio.h>
-#include <arch/i386/include/pmap.h>
-#include <arch/i386/include/intr.h>
 
 #define ioapic_lock_init(lock) 	simple_lock_init(lock, "ioapic_lock")
 #define ioapic_lock(lock) 		simple_lock(lock)
 #define ioapic_unlock(lock) 	simple_unlock(lock)
-
 
 int     	ioapic_match(struct device *, struct cfdata *, void *);
 void    	ioapic_attach(struct device *, struct device *, void *);

@@ -19,9 +19,9 @@
 
 #include <i386/include/apicvar.h>
 
-#include <machine/frame.h>
-#include <machine/intr_machdep.h>
-#include <machine/pcb.h>
+#include <i386/include/frame.h>
+#include <i386/include/intr.h>
+#include <i386/include/pcb.h>
 
 struct pmap;
 
@@ -39,10 +39,24 @@ extern int cpu_cores;
 
 /* IPI handlers */
 #define	IDTVEC(name)	__CONCAT(X, name)
+
+extern	IDTVEC(invltlb),	/* TLB shootdowns - global */
+		IDTVEC(invlpg),		/* TLB shootdowns - 1 page */
+		IDTVEC(invlrng),	/* TLB shootdowns - page range */
+		IDTVEC(invlcache);	/* Write back and invalidate cache */
+
 extern	IDTVEC(ipi_intr_bitmap_handler), 	/* Bitmap based IPIs */
 		IDTVEC(ipi_swi),					/* Runs delayed SWI */
 		IDTVEC(cpustop),					/* CPU stops & waits to be restarted */
 		IDTVEC(cpususpend),					/* CPU suspends & waits to be resumed */
 		IDTVEC(rendezvous);					/* handle CPU rendezvous */
+
+/* functions in mpboot.s */
+void 	bootMP(void);
+
+void	invltlb_handler(void);
+void	invlpg_handler(void);
+void	invlrng_handler(void);
+void	invlcache_handler(void);
 
 #endif /* _I386_SMP_H_ */

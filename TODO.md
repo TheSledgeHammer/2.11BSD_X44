@@ -24,10 +24,16 @@ A General todo list. Don't hesitate to add to this list. :)
 	
 ## arch:
 - i386/x86: (Merged under i386)
-	- lapic, ioapic: 
-		- requires changing machine-dependent soft interrupts
 	- smp/multi-cpu:
-		- todo before (lapic, ioapic & updates to intr)
+		- machine-independent code: 90% complete
+			- cpu-topology
+			- smp-related methods for cpu
+		- machine-dependent code: 75% complete
+			- lapic: 90% complete
+			- boot sequence
+			- ipi
+			- intrs
+			- apic vectors/ IDTVEC's
 	- tsc
 
 ## devel: (planned)

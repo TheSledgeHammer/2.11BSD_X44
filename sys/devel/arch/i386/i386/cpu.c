@@ -37,6 +37,13 @@
 
 #include <devel/arch/i386/include/cpu.h>
 
+struct cpu_attach_args {
+	const char 			*caa_name;
+	struct cpu_ops		*cpu_ops;
+	u_int 				cpu_acpi_id;
+	u_int				cpu_apic_id;
+};
+
 struct cpu_softc {
 	struct device 		*sc_dev;		/* device tree glue */
 	struct cpu_info 	*sc_info;		/* pointer to CPU info */
@@ -47,6 +54,17 @@ static void cpu_attach(struct device *, struct device *, void *);
 
 CFDRIVER_DECL(NULL, cpu, &cpu_cops, DV_DULL, sizeof(struct cpu_softc));
 CFOPS_DECL(cpu, cpu_match, cpu_attach, NULL, NULL);
+
+void
+cpu_init_first()
+{
+	int cpunum = lapic_cpu_number();
+
+	if (cpunum != 0) {
+		cpu_info[0] = NULL;
+		cpu_info[cpunum] = &cpu_info;
+	}
+}
 
 static int
 cpu_match(parent, match, aux)
@@ -63,12 +81,21 @@ cpu_attach(parent, self, aux)
 	void *aux;
 {
 	struct cpu_softc *sc = (struct cpu_softc *)self;
+	struct cpu_attach_args *caa = (struct cpu_attach_args *)aux;
 	struct cpu_info *ci;
 
 	sc->sc_dev = self;
 
+	ci->cpu_self = ci;
 	sc->sc_info = ci;
 	ci->cpu_dev = self;
+	ci->cpu_apic_id = caa->cpu_apic_id;
+	ci->cpu_acpi_id = caa->cpu_acpi_id;
+#ifdef SMP
+	cpu_init(ci, cpunum, sizeof(struct cpu_info));
+#else
+	cpu_init(ci, 0, sizeof(struct cpu_info));
+#endif
 
 	return;
 }

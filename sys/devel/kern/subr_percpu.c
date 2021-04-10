@@ -257,9 +257,9 @@ percpu_create(ci, size, count , ncpus)
 		if ((ncpus <= -1) && (count > 1)) {
 			cpu = i%ncpus;
 			if (count == 1) {
-				pc = percpu_start(ci, size, cpu);
+				pc = percpu_start(ci, size);
 			} else {
-				pc = percpu_start(ci, size, cpu);
+				pc = percpu_start(ci, size);
 			}
 		}
 	}

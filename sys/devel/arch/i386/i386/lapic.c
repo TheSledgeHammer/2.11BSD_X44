@@ -226,7 +226,7 @@ lapic_hwmask(struct ioapic_intsrc *intpin, int pin)
 	int reg;
 	u_int32_t val;
 
-	reg = LAPIC_MASK(LAPIC_LVTT, pin);
+	reg = LAPIC_PIN_MASK(LAPIC_LVTT, pin);
 	val = lapic_read(reg);
 	val |= LAPIC_LVT_MASKED;
 	lapic_write(reg, val);
@@ -238,7 +238,7 @@ lapic_hwunmask(struct ioapic_intsrc *intpin, int pin)
 	int reg;
 	u_int32_t val;
 
-	reg = LAPIC_MASK(LAPIC_LVTT, pin);
+	reg = LAPIC_PIN_MASK(LAPIC_LVTT, pin);
 	val = lapic_read(reg);
 	val &= ~LAPIC_LVT_MASKED;
 	lapic_write(reg, val);

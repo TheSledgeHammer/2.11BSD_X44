@@ -230,6 +230,6 @@
 #define LAPIC_BASE					0xfee00000
 
 #define LAPIC_IRQ_MASK(i)			(1 << ((i) + 1))
-#define LAPIC_MASK(reg, pin)      	((reg) + ((pin) << 4))
+#define LAPIC_PIN_MASK(reg, pin)    ((reg) + ((pin) << 4))
 
 #endif /* _I386_APICREG_H_ */
