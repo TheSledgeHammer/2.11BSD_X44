@@ -107,15 +107,10 @@ devswtable_configure(devsw, major, bdev, cdev, line)
 {
 	int error;
 	error = devsw_io_attach(devsw, major, bdev, cdev, line);
-	if(error != 0) {
-		goto fail;
+	if(error == ENXIO) {
+		devsw_io_detach(devsw, major, bdev, cdev, line);
+		return (ENXIO);
 	}
-
-	return (error);
-
-fail:
-
-	error = devsw_io_detach(devsw, major, bdev, cdev, line);
 	return (error);
 }
 
@@ -650,7 +645,7 @@ devsw_io_attach(devsw, major, bdev, cdev, line)
 	return (0);
 }
 
-int
+void
 devsw_io_detach(major, bdev, cdev, line)
 	dev_t			major;
 	struct bdevsw 	*bdev;
@@ -662,26 +657,30 @@ devsw_io_detach(major, bdev, cdev, line)
 	if(bdev) {
 		devsw_io_remove(major, bdev, NULL, NULL);
 		error = bdevsw_detach(bdev, major);
-		if(error != 0) {
-			return (error);
+		if(error) {
+			printf("devsw_io_detach: block device detached");
+		}else {
+			printf("devsw_io_detach: block device not found");
 		}
 	}
 	if(cdev) {
 		devsw_io_remove(major, NULL, cdev, NULL);
 		error = cdevsw_detach(cdev, major);
-		if(error != 0) {
-			return (error);
+		if(error) {
+			printf("devsw_io_detach: character device detached");
+		} else {
+			printf("devsw_io_detach: character device not found");
 		}
 	}
 	if(line) {
 		devsw_io_remove(major, NULL, NULL, line);
 		error = linesw_detach(line, major);
-		if(error != 0) {
-			return (error);
+		if(error) {
+			printf("devsw_io_detach: line device detached");
+		} else {
+			printf("devsw_io_detach: line device not found");
 		}
 	}
-
-	return (0);
 }
 
 int

@@ -26,7 +26,6 @@ A General todo list. Don't hesitate to add to this list. :)
 - i386/x86: (Merged under i386)
 	- smp/multi-cpu:
 		- machine-independent code: 90% complete
-			- cpu-topology
 			- smp-related methods for cpu
 		- machine-dependent code: 75% complete
 			- lapic: 90% complete

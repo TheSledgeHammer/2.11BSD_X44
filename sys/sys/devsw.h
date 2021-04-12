@@ -142,7 +142,7 @@ dev_t							devsw_io_blktochr(dev_t);
 
 /* macro: machine autoconfiguration */
 #define DEVSWIO_CONFIG_INIT(devsw, major, bdev, cdev, line) 	\
-	(devswtable_configure(devsw, major, bdev, cdev, line) > 0)
+	(devswtable_configure(devsw, major, bdev, cdev, line))
 
 /* dev types */
 #define	dev_type_open(n)		int n(dev_t, int, int, struct proc *)

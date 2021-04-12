@@ -237,6 +237,6 @@ struct region_descriptor {
 extern ssdtosd(struct soft_segment_descriptor *ssd, struct segment_descriptor *sd) ;	/* to decode a ssd */
 extern sdtossd(struct segment_descriptor *sd, struct segment_descriptor *ssd) ;			/* to encode a sd */
 
-void lgdt(struct region_descriptor *rdp);
+void   lgdt(struct region_descriptor *rdp);
 
 #endif /* _I386_SEGMENTS_H_ */

@@ -29,6 +29,9 @@
  * $FreeBSD$
  */
 
+#ifndef _I386_CPUTYPES_H_
+#define	_I386_CPUTYPES_H_
+
 /*
  * Classes of processor.
  */
@@ -92,3 +95,10 @@
 #define CPU_DEFMODEL		16	/* Value for unknown model -> default  */
 #define CPU_MINFAMILY		4	/* Lowest that cpuid can return (486) */
 #define CPU_MAXFAMILY		6	/* Highest we know (686) */
+
+#ifndef LOCORE
+extern int	cpu;
+extern int	cpu_class;
+#endif
+
+#endif /* !_I386_CPUTYPES_H_ */

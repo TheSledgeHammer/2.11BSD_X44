@@ -1,44 +1,101 @@
 #	@(#)devices.newconf	8.10 (Berkeley) 5/1/94
-# 	machine-independent device conf
+# 	machine-independent device definitions & attributes
 
 # Attributes which machine-independent bus support can be attached to.
 # These should be defined here, because some of these busses can have
 # devices which provide these attributes, and we'd like to avoid hairy
 # ordering constraints on inclusion of the busses' "files" files.
 
-define										isabus {}				# ISA attachment
-define										eisabus {}				# EISA attachment
-define										pcibus {[bus = -1]}		# PCI attachment
+define										isabus { }									# ISA attachment
+define										eisabus { }									# EISA attachment
+define										pcibus {[bus = -1]}							# PCI attachment
+define										usbus { }									# USB attachment
+define										pcmciabus {[controller = -1],[socket = -1]}	# PCMCIA bus attachment
+define										pcmciaslot {[slot = -1]}					# PCMCIA slot itself
 
-# generic attributes
+#
+# Generic Attributes
+#
 define	 									disk
 define	 									tape
 define	 									ifnet
 define	 									tty
 define	 									audio { }
+define										midi { }
 define	 									scsi {[channel = -1]}
 define	 									atapi { }
+define 										pckbport {[slot = -1]}
+define										pckbport_machdep_cnattach
 
-
-# audio device attributes
+#
+# AUDIO Devices & Attributes
+#
 define										mulaw
 define										auconv
 
-# audio device, attaches to audio hardware driver
 device										audio
 attach										audio at audio
+device										midi
+attach										midi at midi
 
-# net device attributes - we have generic code for arc(net), ether(net),
-# fddi, and atm.
+#
+# NETWORK Devices & Attributes 
+# we have generic code for arc(net), ether(net), fddi, and atm.
+#
 define										arc
 define										atm
 define										ether
 define										fddi
+define										arp											# ARPing IPv4 pull this in:
 
-# devices ARPing IPv4 pull this in:
-define										arp
+#
+# WSCONS Devices & Attributes
+# device attributes: display, display with emulator, keyboard, and mouse
+#
+define	wsdisplaydev						{[kbdmux = 1]}
+define	wsemuldisplaydev					{[console = -1], [kbdmux = 1]}
+define	wskbddev							{[console = -1], [mux = 1]}
 
-# legitimate pseudo-devices
+#
+# PCCONS Devices & Attributes
+#
+define	pcdisplayops
+file	dev/misc/pccons/pcdisplay_subr.c	pcdisplayops
+file	dev/misc/pccons/pcdisplay_chars.c	pcdisplayops
+
+device	pckbc: pckbport
+file	dev/misc/pccons/pckbc.c				pckbc			needs-flag
+
+#
+# USB Devices & Attributes
+#
+defparam USB_MEM_RESERVE
+
+device	uhci: usbus
+file	dev/usb/uhci.c						uhci			needs-flag
+
+# OHCI USB controller
+device	ohci: usbus
+file	dev/usb/ohci.c						ohci			needs-flag
+
+# EHCI USB controller
+device	ehci: usbus
+file	dev/usb/ehci.c						ehci			needs-flag
+
+#
+# VGA Devices & Attributes
+#
+device	vga: wsemuldisplaydev, pcdisplayops
+file	dev/video/vga/vga.c					vga				needs-flag
+file	dev/video/vga/vga_subr.c			vga
+file	dev/video/vga/vga_common.c			vga
+
+#
+# PSEUDO-DEVICES legitimate
+#
+pseudo-device ksyms:
+pseudo-device sequencer:
+
 pseudo-device vnd: 							disk
 pseudo-device ccd: 							disk
 

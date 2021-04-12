@@ -39,11 +39,10 @@ extern int cpu_cores;
 
 /* IPI handlers */
 #define	IDTVEC(name)	__CONCAT(X, name)
-
-extern	IDTVEC(invltlb),	/* TLB shootdowns - global */
-		IDTVEC(invlpg),		/* TLB shootdowns - 1 page */
-		IDTVEC(invlrng),	/* TLB shootdowns - page range */
-		IDTVEC(invlcache);	/* Write back and invalidate cache */
+extern	IDTVEC(invltlb),					/* TLB shootdowns - global */
+		IDTVEC(invlpg),						/* TLB shootdowns - 1 page */
+		IDTVEC(invlrng),					/* TLB shootdowns - page range */
+		IDTVEC(invlcache);					/* Write back and invalidate cache */
 
 extern	IDTVEC(ipi_intr_bitmap_handler), 	/* Bitmap based IPIs */
 		IDTVEC(ipi_swi),					/* Runs delayed SWI */

@@ -103,8 +103,7 @@ ufmlfs_mount(mp, path, data, ndp, p)
 	vrele(ndp->ni_dvp);
 	ndp->ni_dvp = NULL;
 
-	xmp = (struct ufml_mount *) malloc(sizeof(struct ufml_mount),
-				M_UFSMNT, M_WAITOK);	/* XXX */
+	xmp = (struct ufml_mount *) malloc(sizeof(struct ufml_mount), M_UFSMNT, M_WAITOK);	/* XXX */
 
 	/*
 	 * Save reference to underlying FS
@@ -347,16 +346,16 @@ int ufmlfs_init (struct vfsconf *);
 #define ufmlfs_sysctl ((int (*) (int *, u_int, void *, size_t *, void *, size_t, struct proc *))eopnotsupp)
 
 struct vfsops ufml_vfsops = {
-		ufmlfs_mount,
-		ufmlfs_start,
-		ufmlfs_unmount,
-		ufmlfs_root,
-		ufmlfs_quotactl,
-		ufmlfs_statfs,
-		ufmlfs_sync,
-		ufmlfs_vget,
-		ufmlfs_fhtovp,
-		ufmlfs_vptofh,
-		ufmlfs_init,
-		ufmlfs_sysctl,
+		.vfs_mount = ufmlfs_mount,
+		.vfs_start = ufmlfs_start,
+		.vfs_unmount = ufmlfs_unmount,
+		.vfs_root = ufmlfs_root,
+		.vfs_quotactl = ufmlfs_quotactl,
+		.vfs_statfs = ufmlfs_statfs,
+		.vfs_sync = ufmlfs_sync,
+		.vfs_vget = ufmlfs_vget,
+		.vfs_fhtovp = ufmlfs_fhtovp,
+		.vfs_vptofh = ufmlfs_vptofh,
+		.vfs_init = ufmlfs_init,
+		.vfs_sysctl = ufmlfs_sysctl,
 };

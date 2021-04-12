@@ -42,40 +42,98 @@
 
 struct ufml_args {
 	char					*target;		/* Target of loopback  */
+	int						mntflags;		/* Options on the mount */
 };
+
+#define UNMNT_ABOVE			0x0001		/* Target appears below mount point */
+#define UNMNT_BELOW			0x0002		/* Target appears below mount point */
+#define UNMNT_REPLACE		0x0003		/* Target replaces mount point */
+#define UNMNT_OPMASK		0x0003
 
 struct ufml_mount {
+	struct vnode			*ufmlm_uppervp;
+	struct vnode			*ufmlm_lowervp;
+
 	struct mount			*ufmlm_vfs;
 	struct vnode			*ufmlm_rootvp;	/* Reference to root ufml_node */
+
+	struct ucred			*ufmlm_cred;	/* Credentials of user calling mount */
+	int						ufmlm_cmode;	/* cmask from mount process */
+	int						ufmlm_op;		/* Operation mode */
 };
 
-//#ifdef KERNEL
+/*
+ * DEFDIRMODE is the mode bits used to create a shadow directory.
+ */
+#define VRWXMODE 			(VREAD|VWRITE|VEXEC)
+#define VRWMODE 			(VREAD|VWRITE)
+#define UN_DIRMODE 			((VRWXMODE)|(VRWXMODE>>3)|(VRWXMODE>>6))
+#define UN_FILEMODE 		((VRWMODE)|(VRWMODE>>3)|(VRWMODE>>6))
+
+#ifdef KERNEL
 /*
  * A cache of vnode references
  */
 struct ufml_node {
-	LIST_ENTRY(ufml_node)	ufml_hash;		/* Hash list */
-	struct vnode	        *ufml_lowervp;	/* VREFed once */
+	LIST_ENTRY(ufml_node)	ufml_cache;		/* Hash list */
 	struct vnode			*ufml_vnode;	/* Back pointer */
+
+	struct vnode	        *ufml_uppervp;	/* overlaying object */
+	struct vnode	        *ufml_lowervp;	/* underlying object */
+	struct vnode			*ufml_dirvp;	/* Parent dir of uppervp */
+	struct vnode			*ufml_pvp;		/* Parent vnode */
+	char					*ufml_path;		/* saved component name */
+	int						ufml_hash;		/* saved un_path hash value */
+	int						ufml_openl;		/* # of opens on lowervp */
+	unsigned int			ufml_flags;
+	struct vnode			**ufml_dircache;/* cached union stack */
+	off_t					ufml_uppersz;	/* size of upper object */
+	off_t					ufml_lowersz;	/* size of lower object */
 
 	struct ufml_metadata	*ufml_meta;		/* Node metadata (from ufmlops) */
 	struct ufmlops			*ufml_op;		/* UFML operations vector */
+#ifdef DIAGNOSTIC
+	pid_t					ufml_pid;
+#endif
 };
 
-extern int ufml_node_create (struct mount *mp, struct vnode *target, struct vnode **vpp);
+#define UFML_WANT			0x01
+#define UFML_LOCKED			0x02
+#define UFML_ULOCK			0x04			/* Upper node is locked */
+#define UFML_KLOCK			0x08			/* Keep upper node locked on vput */
+#define UFML_CACHED			0x10			/* In union cache */
+
+extern int 			ufml_allocvp (struct vnode **, struct mount *, struct vnode *, struct vnode *, struct componentname *, struct vnode *, struct vnode *, int);
+extern int 			ufml_copyfile (struct vnode *, struct vnode *, struct ucred *, struct proc *);
+extern int 			ufml_copyup (struct ufml_node *, int, struct ucred *, struct proc *);
+extern int 			ufml_dowhiteout (struct ufml_node *, struct ucred *, struct proc *);
+extern int 			ufml_mkshadow (struct ufml_node *, struct vnode *, struct componentname *, struct vnode **);
+extern int 			ufml_mkwhiteout (struct ufml_node *, struct vnode *, struct componentname *, char *);
+extern int 			ufml_vn_create (struct vnode **, struct ufml_node *, struct proc *);
+extern int 			ufml_cn_close (struct vnode *, int, struct ucred *, struct proc *);
+extern void 		ufml_removed_upper (struct ufml_node *);
+extern struct vnode *ufml_lowervp (struct vnode *);
+extern void 		ufml_newlower (struct ufml_node *, struct vnode *);
+extern void 		ufml_newupper (struct ufml_node *, struct vnode *);
+extern void 		ufml_newsize (struct vnode *, off_t, off_t);
+
+extern int 			ufml_node_create (struct mount *mp, struct vnode *target, struct vnode **vpp);
 
 #define	MOUNTTOUFMLMOUNT(mp) 	((struct ufml_mount *)((mp)->mnt_data))
 #define	VTOUFML(vp) 			((struct ufml_node *)(vp)->v_data)
 #define	UFMLTOV(xp) 			((xp)->ufml_vnode)
-//#define UFMLTOMETA(mp)			((mp)->ufml_meta)
+#define	LOWERVP(vp) 			(VTOUFML(vp)->un_lowervp)
+#define	UPPERVP(vp) 			(VTOUFML(vp)->un_uppervp)
+#define OTHERVP(vp) 			(UPPERVP(vp) ? UPPERVP(vp) : LOWERVP(vp))
+
 #ifdef UFMLFS_DIAGNOSTIC
 extern struct vnode *ufml_checkvp (struct vnode *vp, char *fil, int lno);
 #define	UFMLVPTOLOWERVP(vp) 	ufml_checkvp((vp), __FILE__, __LINE__)
 #else
 #define	UFMLVPTOLOWERVP(vp) 	(VTOUFML(vp)->ufml_lowervp)
 #endif
-extern struct vnodeops ufml_vnodeops;
-extern struct vfsops ufml_vfsops;
+extern struct vnodeops 	ufml_vnodeops;
+extern struct vfsops 	ufml_vfsops;
 
 #endif /* KERNEL */
 

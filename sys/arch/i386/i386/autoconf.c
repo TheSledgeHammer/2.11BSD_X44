@@ -80,14 +80,17 @@ configure()
 	bios32_init();
 	k6_mem_drvinit();
 
+	i386_proc0_tss_ldt_init();
+
 	if(config_rootfound("mainbus", NULL) == NULL) {
 		panic("cpu_configure: mainbus not configured");
 	}
 
 	/*
-	 * Configure & Initialize device structures
+	 * Configure device structures
 	 */
-	device_init(&sys_devsw);
+	mi_device_init(&sys_devsw);
+	md_device_init(&sys_devsw);
 
 	/*
 	 * Configure swap area and related system
@@ -100,24 +103,13 @@ configure()
 	cold = 0;
 }
 
-/* Configure Devices */
+/*
+ * Configure MD (Machine-Dependent) Devices
+ */
 void
-device_init(devsw)
+md_device_init(devsw)
 	struct devswtable *devsw;
 {
-	/* machine-independent */
-	console_init(devsw);		/* console interfaces */
-	swap_init(devsw);			/* swap interfaces */
-	tty_init(devsw);			/* tty interfaces */
-	wscons_init(devsw);			/* wscons & pccons interfaces */
-	video_init(devsw);			/* video interfaces */
-	misc_init(devsw);			/* misc (ksyms) interfaces */
-	disk_init(devsw);			/* disk interfaces */
-	audio_init(devsw);			/* audio interfaces */
-	usb_init(devsw);			/* usb interfaces */
-	network_init(devsw);		/* network interfaces */
-
-	/* machine-dependent */
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cmos_cdevsw, NULL);			/* CMOS Interface */
 }
 
@@ -143,7 +135,7 @@ swapconf()
 	}
 	if (dumplo == 0 && bdevsw[major(dumpdev)].d_psize) {
 	/*dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - physmem;*/
-		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - Maxmem*NBPG/512;
+		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - (Maxmem * NBPG/512);
 	}
 	if (dumplo < 0) {
 		dumplo = 0;

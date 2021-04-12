@@ -126,27 +126,27 @@ cpu_mp_start(pc)
 	}
 
 	/* Install an inter-CPU IPI for TLB invalidation */
-	setidt(IPI_INVLTLB, &IDTVEC(invltlb), SDT_SYS386IGT, SEL_KPL);
-	setidt(IPI_INVLPG, &IDTVEC(invlpg), SDT_SYS386IGT, SEL_KPL);
-	setidt(IPI_INVLRNG, IDTVEC(invlrng), SDT_SYS386IGT, SEL_KPL);
+	setidt(IPI_INVLTLB, &IDTVEC(invltlb), 0, SDT_SYS386IGT, SEL_KPL);
+	setidt(IPI_INVLPG, &IDTVEC(invlpg), 0, SDT_SYS386IGT, SEL_KPL);
+	setidt(IPI_INVLRNG, IDTVEC(invlrng), 0, SDT_SYS386IGT, SEL_KPL);
 
 	/* Install an inter-CPU IPI for cache invalidation. */
-	setidt(IPI_INVLCACHE, IDTVEC(invlcache), SDT_SYS386IGT, SEL_KPL);
+	setidt(IPI_INVLCACHE, IDTVEC(invlcache), 0, SDT_SYS386IGT, SEL_KPL);
 
 	/* Install an inter-CPU IPI for all-CPU rendezvous */
-	setidt(IPI_RENDEZVOUS, IDTVEC(rendezvous), SDT_SYS386IGT, SEL_KPL);
+	setidt(IPI_RENDEZVOUS, IDTVEC(rendezvous), 0, SDT_SYS386IGT, SEL_KPL);
 
 	/* Install generic inter-CPU IPI handler */
-	setidt(IPI_BITMAP_VECTOR, IDTVEC(ipi_intr_bitmap_handler), SDT_SYS386IGT, SEL_KPL);
+	setidt(IPI_BITMAP_VECTOR, IDTVEC(ipi_intr_bitmap_handler), 0, SDT_SYS386IGT, SEL_KPL);
 
 	/* Install an inter-CPU IPI for CPU stop/restart */
-	setidt(IPI_STOP, IDTVEC(cpustop), SDT_SYS386IGT, SEL_KPL);
+	setidt(IPI_STOP, IDTVEC(cpustop), 0, SDT_SYS386IGT, SEL_KPL);
 
 	/* Install an inter-CPU IPI for CPU suspend/resume */
-	setidt(IPI_SUSPEND, IDTVEC(cpususpend), SDT_SYS386IGT, SEL_KPL);
+	setidt(IPI_SUSPEND, IDTVEC(cpususpend), 0, SDT_SYS386IGT, SEL_KPL);
 
 	/* Install an IPI for calling delayed SWI */
-	setidt(IPI_SWI, IDTVEC(ipi_swi), SDT_SYS386IGT, SEL_KPL);
+	setidt(IPI_SWI, IDTVEC(ipi_swi), 0, SDT_SYS386IGT, SEL_KPL);
 
 	/* Set boot_cpu_id if needed. */
 	if (boot_cpu_id == -1) {

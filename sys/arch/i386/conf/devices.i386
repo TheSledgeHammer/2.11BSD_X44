@@ -1,7 +1,9 @@
 #
 # $211BSD$
-# Machine-Independent Devices & Drivers
+# i386/x86 Devices & Drivers
 #
+
+# Machine-independent Devices & Drivers
 include "dev/files.dev"
 
 # vnode disk pseudo-device

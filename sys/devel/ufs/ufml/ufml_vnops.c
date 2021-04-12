@@ -989,7 +989,7 @@ ufml_reclaim(ap)
 	 */
 	/* After this assignment, this node will not be re-used. */
 	xp->ufml_lowervp = NULL;
-	LIST_REMOVE(xp, ufml_hash);
+	LIST_REMOVE(xp, ufml_cache);
 	FREE(vp->v_data, M_TEMP);
 	vp->v_data = NULL;
 	vrele (lowervp);

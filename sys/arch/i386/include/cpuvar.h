@@ -72,6 +72,8 @@ extern	u_int		cpu_power_ebx;
 extern	u_int		cpu_power_ecx;
 extern	u_int		cpu_power_edx;
 
+extern	u_int		max_apic_id;
+
 struct	pcb;
 struct	proc;
 struct  dbreg;

@@ -318,8 +318,7 @@ again:
 	 * Finally, allocate mbuf pool.  Since mclrefcnt is an off-size
 	 * we use the more space efficient malloc in place of kmem_alloc.
 	 */
-	mclrefcnt = (char*) malloc(NMBCLUSTERS + CLBYTES / MCLBYTES,
-	M_MBUF, M_NOWAIT);
+	mclrefcnt = (char*) malloc(NMBCLUSTERS + CLBYTES / MCLBYTES, M_MBUF, M_NOWAIT);
 	bzero(mclrefcnt, NMBCLUSTERS + CLBYTES / MCLBYTES);
 	mb_map = kmem_suballoc(kernel_map, (vm_offset_t) &mbutl, &maxaddr, VM_MBUF_SIZE, FALSE);
 
@@ -338,8 +337,6 @@ again:
 
 	/* Safe for i/o port / memory space allocation to use malloc now. */
 	i386_bus_space_mallocok();
-
-	i386_proc0_tss_ldt_init();
 }
 
 /*

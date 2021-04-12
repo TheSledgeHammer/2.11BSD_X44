@@ -85,7 +85,7 @@ ufmlfs_init()
  * Return a VREF'ed alias for lower vnode if already exists, else 0.
  */
 static struct vnode *
-null_node_find(mp, lowervp)
+ufml_node_find(mp, lowervp)
 	struct mount *mp;
 	struct vnode *lowervp;
 {
@@ -102,7 +102,7 @@ null_node_find(mp, lowervp)
 	 */
 	hd = UFML_NHASH(lowervp);
 loop:
-	for (a = hd->lh_first; a != 0; a = a->ufml_hash.le_next) {
+	for (a = LIST_FIRST(hd); a != 0; a = LIST_NEXT(a, ufml_cache)) {
 		if (a->ufml_lowervp == lowervp && UFMLTOV(a)->v_mount == mp) {
 			vp = UFMLTOV(a);
 			/*
@@ -120,7 +120,6 @@ loop:
 
 	return (NULL);
 }
-
 
 /*
  * Make a new null_node node.
@@ -161,7 +160,7 @@ ufml_node_alloc(mp, lowervp, vpp)
 	};
 	VREF(lowervp);   /* Extra VREF will be vrele'd in null_node_create */
 	hd = UFML_NHASH(lowervp);
-	LIST_INSERT_HEAD(hd, xp, ufml_hash);
+	LIST_INSERT_HEAD(hd, xp, ufml_cache);
 	return (0);
 }
 

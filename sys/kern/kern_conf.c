@@ -36,9 +36,23 @@
 #include <sys/user.h>
 
 /*
- * Machine-independent device driver configuration.
- * Runs "machine/autoconf.c"
+ * Configure MI (Machine-Independent) Devices
  */
+void
+mi_device_init(devsw)
+	struct devswtable *devsw;
+{
+	console_init(devsw);		/* console interfaces */
+	swap_init(devsw);			/* swap interfaces */
+	tty_init(devsw);			/* tty interfaces */
+	wscons_init(devsw);			/* wscons & pccons interfaces */
+	video_init(devsw);			/* video interfaces */
+	misc_init(devsw);			/* misc (ksyms) interfaces */
+	disk_init(devsw);			/* disk interfaces */
+	audio_init(devsw);			/* audio interfaces */
+	usb_init(devsw);			/* usb interfaces */
+	network_init(devsw);		/* network interfaces */
+}
 
 /* Add audio driver configuration */
 void

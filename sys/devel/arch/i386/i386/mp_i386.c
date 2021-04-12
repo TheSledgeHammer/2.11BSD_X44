@@ -36,6 +36,7 @@
 #include <arch/i386/include/param.h>
 #include <arch/i386/include/specialreg.h>
 
+#include <devel/sys/smp.h>
 #include <devel/arch/i386/include/cpu.h>
 
 /* lock region used by kernel profiling */
@@ -64,6 +65,8 @@ volatile int aps_ready = 0;
 struct cpu_info *cpu_info;
 int *apic_cpuids;
 int cpu_apic_ids[NCPUS];
+
+static struct topo_node topo_root;
 
 static int pkg_id_shift;
 static int node_id_shift;
@@ -171,8 +174,7 @@ topo_probe_amd(void)
 
 	/* For 0Fh family. */
 	if (pkg_id_shift == 0) {
-		pkg_id_shift =
-		    mask_width((cpu_procinfo2 & AMDID_CMP_CORES) + 1);
+		pkg_id_shift = mask_width((cpu_procinfo2 & AMDID_CMP_CORES) + 1);
 	}
 
 	/*
@@ -509,6 +511,69 @@ topo_probe(void)
 	}
 
 	cpu_topo_probed = 1;
+}
+
+/*
+ * Assign logical CPU IDs to local APICs.
+ */
+void
+assign_cpu_ids(void)
+{
+	struct topo_node *node;
+	u_int smt_mask;
+	int nhyper;
+
+	smt_mask = (1u << core_id_shift) - 1;
+
+	/*
+	 * Assign CPU IDs to local APIC IDs and disable any CPUs
+	 * beyond MAXCPU.  CPU 0 is always assigned to the BSP.
+	 */
+	mp_ncpus = 0;
+	nhyper = 0;
+	TOPO_FOREACH(node, &topo_root) {
+		if (node->type != TOPO_TYPE_PU)
+			continue;
+
+		if ((node->hwid & smt_mask) != (boot_cpu_id & smt_mask)) {
+			cpu_info[node->hwid].cpu_hyperthread = 1;
+		}
+
+		if (resource_disabled("lapic", node->hwid)) {
+			if (node->hwid != boot_cpu_id) {
+				cpu_info[node->hwid].cpu_disabled = 1;
+			} else {
+				printf("Cannot disable BSP, APIC ID = %d\n", node->hwid);
+			}
+		}
+
+		if (!hyperthreading_allowed && cpu_info[node->hwid].cpu_hyperthread) {
+			cpu_info[node->hwid].cpu_disabled = 1;
+		}
+
+		if (mp_ncpus >= NCPUS) {
+			cpu_info[node->hwid].cpu_disabled = 1;
+		}
+
+		if (cpu_info[node->hwid].cpu_disabled) {
+			disabled_cpus++;
+			continue;
+		}
+
+		if (cpu_info[node->hwid].cpu_hyperthread) {
+			nhyper++;
+		}
+
+		cpu_apic_ids[mp_ncpus] = node->hwid;
+		apic_cpuids[node->hwid] = mp_ncpus;
+		topo_set_pu_id(node, mp_ncpus);
+		mp_ncpus++;
+	}
+
+	KASSERT(mp_maxid >= mp_ncpus - 1 ("%s: counters out of sync: max %d, count %d", __func__, mp_maxid, mp_ncpus));
+
+	mp_ncores = mp_ncpus - nhyper;
+	smp_threads_per_core = mp_ncpus / mp_ncores;
 }
 
 static void

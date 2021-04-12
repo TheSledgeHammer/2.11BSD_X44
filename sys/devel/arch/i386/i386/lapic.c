@@ -204,10 +204,24 @@ lapic_map(caddr_t lapic_base)
 	intr_disable();
 
 	pte = kvtopte(va);
-	*pte = (lapic_base | PG_RW | PG_V | PG_N | PG_G | PG_NX | PG_W | PG_P | PG_NC_PCD); /* TODO: check what are valid pte's here */
+	*pte = (lapic_base | PG_RW | PG_V | PG_N | PG_G | PG_NX | PG_W | PG_NC_PCD);
+	//invlpg(va);
 
-	invlpg();
+#ifdef SMP
+	cpu_init_first();	/* catch up to changed cpu_number() */
+#endif
+
+	lapic_write_tpri(0);
 	enable_intr();
+}
+
+/*
+ * enable local apic
+ */
+void
+lapic_enable(void)
+{
+	lapic_write(LAPIC_SVR, LAPIC_SVR_ENABLE | LAPIC_SPURIOUS_VECTOR);
 }
 
 /*

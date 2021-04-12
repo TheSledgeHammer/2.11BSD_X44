@@ -106,6 +106,7 @@ extern struct swdevt swdevt[];
 #endif
 
 /* kern_conf.c */
+extern void mi_device_init(struct devswtable *devsw);
 extern void	audio_init(struct devswtable *devsw);
 extern void	console_init(struct devswtable *devsw);
 extern void	disk_init(struct devswtable *devsw);
