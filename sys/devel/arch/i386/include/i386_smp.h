@@ -37,7 +37,7 @@ extern unsigned int bootMP_size;
 extern int cpu_logical;
 extern int cpu_cores;
 
-/* IPI handlers */
+/* IPI handlers (FreeBSD) */
 #define	IDTVEC(name)	__CONCAT(X, name)
 extern	IDTVEC(invltlb),					/* TLB shootdowns - global */
 		IDTVEC(invlpg),						/* TLB shootdowns - 1 page */
@@ -49,6 +49,12 @@ extern	IDTVEC(ipi_intr_bitmap_handler), 	/* Bitmap based IPIs */
 		IDTVEC(cpustop),					/* CPU stops & waits to be restarted */
 		IDTVEC(cpususpend),					/* CPU suspends & waits to be resumed */
 		IDTVEC(rendezvous);					/* handle CPU rendezvous */
+
+
+#define	IDTVEC(name)	__CONCAT(X, name)
+extern 	IDTVEC(lapic_ipi), IDTVEC(lapic_tlb), IDTVEC(lapic_ltimer),
+		IDTVEC(x2apic_ipi), IDTVEC(x2apic_tlb), IDTVEC(x2apic_ltimer),
+		IDTVEC(spurious);
 
 /* functions in mpboot.s */
 void 	bootMP(void);

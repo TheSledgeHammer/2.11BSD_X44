@@ -89,8 +89,8 @@
 #include <arch/i386/include/pmap.h>
 #include <arch/i386/include/intr.h>
 
-#include <devel/arch/i386/include/apicreg.h>
-#include <devel/arch/i386/include/apicvar.h>
+#include <devel/arch/i386/apic/apicreg.h>
+#include <devel/arch/i386/apic/apicvar.h>
 #include <devel/arch/i386/include/cpu.h>
 #include <devel/arch/i386/include/pic.h>
 

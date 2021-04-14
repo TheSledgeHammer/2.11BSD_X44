@@ -80,6 +80,9 @@ struct lock_object  	*devswtable_lock;
 
 struct devswtable_head 	devsw_hashtable[MAXDEVSW]; /* hash table of devices in the device switch table (includes bdevsw, cdevsw & linesw) */
 
+/* check device major & switch (see: devswtable_configure for usage) */
+#define devswtable_io_init(major, sw)	((major) > 0 ? (sw) : ENXIO)
+
 void
 devswtable_init()
 {
@@ -105,12 +108,14 @@ devswtable_configure(devsw, major, bdev, cdev, line)
 	struct cdevsw 		*cdev;
 	struct linesw 		*line;
 {
-	int error;
-	error = devsw_io_attach(devsw, major, bdev, cdev, line);
+	int error, rv;
+	rv = devsw_io_attach(devsw, major, bdev, cdev, line);
+	error = devswtable_io_init(major, rv);
 	if(error == ENXIO) {
 		devsw_io_detach(devsw, major, bdev, cdev, line);
 		return (ENXIO);
 	}
+
 	return (error);
 }
 
@@ -170,7 +175,9 @@ devswtable_add(devsw, data, major)
 	entry = (devswtable_entry_t) malloc((u_long) sizeof(*entry), M_DEVSWHASH, M_WAITOK);
 	entry->dve_devswtable = devsw;
 
+	simple_lock(&devswtable_lock);
 	TAILQ_INSERT_HEAD(bucket, entry, dve_link);
+	simple_unlock(&devswtable_lock);
 }
 
 void
@@ -183,10 +190,12 @@ devswtable_remove(data, major)
 	struct devswtable 			*devsw;
 
 	bucket = &devsw_hashtable[devswtable_hash(data, major)];
+	simple_lock(&devswtable_lock);
 	for(entry = TAILQ_FIRST(bucket); entry != NULL; entry = TAILQ_NEXT(entry, dve_link)) {
 		devsw = entry->dve_devswtable;
 		if(devsw->dv_data == data && devsw->dv_major == major) {
 			TAILQ_REMOVE(bucket, entry, dve_link);
+			simple_unlock(&devswtable_lock);
 		}
 	}
 }
@@ -642,7 +651,7 @@ devsw_io_attach(devsw, major, bdev, cdev, line)
 		}
 	}
 
-	return (0);
+	return (error);
 }
 
 void

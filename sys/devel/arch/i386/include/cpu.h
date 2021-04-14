@@ -31,39 +31,64 @@
 struct percpu;
 
 struct cpu_info {
-	struct cpu_info 	*cpu_self;			/* self-pointer */
-	struct device 		*cpu_dev;			/* pointer to our device */
-	struct percpu		cpu_percpu;		/* pointer to percpu info, when NCPUS > 1 */
+	struct cpu_info 		*cpu_self;			/* self-pointer */
+	struct device 			*cpu_dev;			/* pointer to our device */
+	struct percpu			cpu_percpu;			/* pointer to percpu info, when NCPUS > 1 */
 
-	u_int				cpu_cpuid;			/* This cpu number */
-	u_int				cpu_cpumask;		/* This cpu mask */
-	size_t				cpu_size;			/* This cpu's size */
+	u_int					cpu_cpuid;			/* This cpu number */
+	u_int					cpu_cpumask;		/* This cpu mask */
+	size_t					cpu_size;			/* This cpu's size */
 
-	u_int				cpu_acpi_id;		/* This cpu's ACPI id */
-	u_int				cpu_apic_id;		/* This cpu's APIC id */
+	u_int					cpu_acpi_id;		/* This cpu's ACPI id */
+	u_int					cpu_apic_id;		/* This cpu's APIC id */
 
-	int					cpu_present:1;
-	int					cpu_bsp:1;
-	int					cpu_disabled:1;
-	int					cpu_hyperthread:1;
+	u_int32_t 				cpu_flags;			/* flags; see below */
+
+	int						cpu_present:1;
+	int						cpu_bsp:1;
+	int						cpu_disabled:1;
+	int						cpu_hyperthread:1;
 };
-extern struct cpu_info 	*cpu_info;			/* static allocation of cpu_info */
+extern struct cpu_info 		*cpu_info;			/* static allocation of cpu_info */
 
 struct cpu_ops {
-	void 				(*cpu_init)(void);
-	void 				(*cpu_resume)(void);
+	void 					(*cpu_init)(void);
+	void 					(*cpu_resume)(void);
 };
-extern struct cpu_ops 	cpu_ops;
+extern struct cpu_ops 		cpu_ops;
 
 /* cpu_info macros */
-#define cpu_cpuid(ci) 	((ci)->cpu_cpuid)
-#define cpu_cpumask(ci)	((ci)->cpu_cpumask)
-#define cpu_cpusize(ci)	((ci)->cpu_size)
-#define cpu_acpi_id(ci)	((ci)->cpu_acpi_id)
-#define cpu_apic_id(ci)	((ci)->cpu_apic_id)
-#define cpu_percpu(ci)	((ci)->cpu_percpu)
+#define cpu_is_primary(ci)	((ci)->cpu_flags & CPUF_PRIMARY)
+#define cpu_cpuid(ci) 		((ci)->cpu_cpuid)
+#define cpu_cpumask(ci)		((ci)->cpu_cpumask)
+#define cpu_cpusize(ci)		((ci)->cpu_size)
+#define cpu_acpi_id(ci)		((ci)->cpu_acpi_id)
+#define cpu_apic_id(ci)		((ci)->cpu_apic_id)
+#define cpu_percpu(ci)		((ci)->cpu_percpu)
 
-#define cpu_number() 	(curcpu()->cpu_cpuid)
+#define cpu_number() 		(curcpu()->cpu_cpuid)
+
+/*
+ * Processor flag notes: The "primary" CPU has certain MI-defined
+ * roles (mostly relating to hardclock handling); we distinguish
+ * betwen the processor which booted us, and the processor currently
+ * holding the "primary" role just to give us the flexibility later to
+ * change primaries should we be sufficiently twisted.
+ */
+#define	CPUF_BSP			0x0001		/* CPU is the original BSP */
+#define	CPUF_AP				0x0002		/* CPU is an AP */
+#define	CPUF_SP				0x0004		/* CPU is only processor */
+#define	CPUF_PRIMARY		0x0008		/* CPU is active primary processor */
+
+#define CPUF_APIC_CD    	0x0010		/* CPU has apic configured */
+
+#define	CPUF_PRESENT		0x1000		/* CPU is present */
+#define	CPUF_RUNNING		0x2000		/* CPU is running */
+#define	CPUF_PAUSE			0x4000		/* CPU is paused in DDB */
+#define	CPUF_GO				0x8000		/* CPU should start running */
+
+extern void (*delay_func)(int);
+extern void (*initclock_func)(void);
 
 __inline static struct cpu_info *
 curcpu(void)

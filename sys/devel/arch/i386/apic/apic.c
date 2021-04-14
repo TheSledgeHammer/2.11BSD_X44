@@ -35,8 +35,8 @@
 #include <sys/types.h>
 #include <sys/systm.h>
 
-#include <devel/arch/i386/include/apicreg.h>
-#include <devel/arch/i386/include/apicvar.h>
+#include <devel/arch/i386/apic/apicreg.h>
+#include <devel/arch/i386/apic/apicvar.h>
 
 void
 apic_format_redir(const char *where1, const char *where2, int idx, int type, u_int32_t redirhi, u_int32_t redirlo)

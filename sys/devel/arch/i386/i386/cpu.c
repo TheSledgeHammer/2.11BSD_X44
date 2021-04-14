@@ -29,20 +29,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/device.h>
+#include <sys/malloc.h>
 #include <sys/user.h>
 
 #include <devel/arch/i386/include/cpu.h>
 
+/* mpbios.c & mpacpi.c */
 struct cpu_attach_args {
 	const char 			*caa_name;
 	struct cpu_ops		*cpu_ops;
+	int 				cpu_role;
 	u_int 				cpu_acpi_id;
 	u_int				cpu_apic_id;
 };
+
+#define CPU_ROLE_SP		0
+#define CPU_ROLE_BP		1
+#define CPU_ROLE_AP		2
 
 struct cpu_softc {
 	struct device 		*sc_dev;		/* device tree glue */
@@ -83,6 +91,27 @@ cpu_attach(parent, self, aux)
 	struct cpu_softc *sc = (struct cpu_softc *)self;
 	struct cpu_attach_args *caa = (struct cpu_attach_args *)aux;
 	struct cpu_info *ci;
+#if defined(SMP)
+	int cpunum = caa->cpu_apic_id;
+#endif
+
+	if (caa->cpu_role == CPU_ROLE_AP) {
+		ci = malloc(sizeof(*ci), M_DEVBUF, M_WAITOK);
+		memset(ci, 0, sizeof(*ci));
+#if defined(SMP)
+		if (cpu_info[cpunum] != NULL) {
+			panic("cpu at apic id %d already attached?", cpunum);
+		}
+		cpu_info[cpunum] = ci;
+#endif
+	} else {
+		ci = &cpu_info;
+#if defined(SMP)
+		if(cpunum != lapic_cpu_number()) {
+			panic("%s: running CPU is at apic %d instead of at expected %d", sc->sc_dev->dv_xname, lapic_cpu_number(), cpunum);
+		}
+#endif
+	}
 
 	sc->sc_dev = self;
 
@@ -90,13 +119,48 @@ cpu_attach(parent, self, aux)
 	sc->sc_info = ci;
 	ci->cpu_dev = self;
 	ci->cpu_apic_id = caa->cpu_apic_id;
-	ci->cpu_acpi_id = caa->cpu_acpi_id;
+//	ci->cpu_acpi_id = caa->cpu_acpi_id;
 #ifdef SMP
-	cpu_init(ci, cpunum, sizeof(struct cpu_info));
+	cpu_init(ci, caa->cpu_apic_id, sizeof(struct cpu_info));
 #else
 	cpu_init(ci, 0, sizeof(struct cpu_info));
 #endif
 
+	printf(": ");
+	switch (caa->cpu_role) {
+	case CPU_ROLE_SP:
+		printf("(uniprocessor)\n");
+		ci->cpu_flags |= CPUF_PRESENT | CPUF_SP | CPUF_PRIMARY;
+
+		break;
+	case CPU_ROLE_BP:
+		printf("apid %d (boot processor)\n", caa->cpu_apic_id);
+		ci->cpu_flags |= CPUF_PRESENT | CPUF_BSP | CPUF_PRIMARY;
+#if NLAPIC > 0
+		/*
+		 * Enable local apic
+		 */
+		lapic_enable();
+		lapic_calibrate_timer(ci);
+#endif
+#if NIOAPIC > 0
+
+#endif
+		break;
+	case CPU_ROLE_AP:
+		/*
+		 * report on an AP
+		 */
+		printf("apid %d (application processor)\n", caa->cpu_apic_id);
+#if defined(SMP)
+		init_secondary(ci);
+#else
+		printf("%s: not started\n", sc->sc_dev->dv_xname);
+#endif
+		break;
+	default:
+		panic("unknown processor type??\n");
+	}
 	return;
 }
 
@@ -110,5 +174,14 @@ cpu_init(ci, cpuid, size)
 	ci->cpu_cpumask = 1 << cpuid;
 	ci->cpu_size = size;
 
-	ci->cpu_acpi_id = 0xffffffff;
+//	ci->cpu_acpi_id = 0xffffffff;
+}
+
+void
+cpu_hatch(void *v)
+{
+	struct cpu_info *ci = (struct cpu_info *)v;
+	int s;
+
+	lapic_enable();
 }

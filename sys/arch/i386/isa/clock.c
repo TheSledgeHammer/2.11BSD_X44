@@ -260,8 +260,8 @@ clockintr(arg)
 {
 	struct clockframe *frame = arg;		/* not strictly necessary */
 
-	hardclock(frame);
-	return -1;
+	hardclock(frame, arg);
+	return (-1);
 }
 
 int
@@ -430,6 +430,18 @@ rtcinit()
 
 	mc146818_write(NULL, MC_REGA, MC_BASE_32_KHz | MC_RATE_1024_Hz);	/* XXX softc */
 	mc146818_write(NULL, MC_REGB, MC_REGB_24HR | MC_REGB_PIE);			/* XXX softc */
+}
+
+void
+rtcdrain(void *v)
+{
+	struct timeout *to = (struct timeout *)v;
+	if (to != NULL) {
+		timeout_del(to);
+	}
+	while (mc146818_read(NULL, MC_REGC) & MC_REGC_PF) {
+		; /* Nothing. */
+	}
 }
 
 int

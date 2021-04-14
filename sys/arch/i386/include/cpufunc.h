@@ -267,6 +267,12 @@ do_cpuid(u_int ax, u_int *p)
 }
 #endif /* _KERNEL */
 
+static inline void
+cpu_pause(void)
+{
+	__asm volatile ("pause");
+}
+
 static __inline u_int
 read_eflags(void)
 {

@@ -91,6 +91,9 @@
 extern struct proc *npxproc;
 #endif
 
+//void (*delay_func)(unsigned int) = delay;
+//void (*initclock_func)(void) = cpu_initclocks;
+
 /* the following is used externally (sysctl_hw) */
 char machine[] = "i386";			/* cpu "architecture" */
 char machine_arch[] = "i386";		/* machine == machine_arch */

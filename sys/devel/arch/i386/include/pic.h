@@ -101,18 +101,52 @@ struct intrhand {
 extern volatile vaddr_t local_apic_va;
 extern boolean_t x2apic_mode;
 #endif
+
+/*
+ * "spurious interrupt vector"; vector used by interrupt which was
+ * aborted because the CPU masked it after it happened but before it
+ * was delivered.. "Oh, sorry, i caught you at a bad time".
+ * Low-order 4 bits must be all ones.
+ */
+extern void Xintrspurious(void);
+#define LAPIC_SPURIOUS_VECTOR		0xef
+
+/*
+ * Vectors used for inter-processor interrupts.
+ */
+extern void Xintr_lapic_ipi(void);
+extern void Xintr_x2apic_ipi(void);
+extern void Xrecurse_lapic_ipi(void);
+extern void Xresume_lapic_ipi(void);
+#define LAPIC_IPI_VECTOR			0xe0
+
+extern void Xintr_lapic_tlb(void);
+extern void Xintr_x2apic_tlb(void);
+#define LAPIC_TLB_VECTOR			0xe1
+
+/*
+ * Vector used for local apic timer interrupts.
+ */
+
+extern void Xintr_lapic_ltimer(void);
+extern void Xintr_x2apic_ltimer(void);
+extern void Xresume_lapic_ltimer(void);
+extern void Xrecurse_lapic_ltimer(void);
+#define LAPIC_TIMER_VECTOR			0xc0
+
 /*
  * 'pin numbers' for local APIC
  */
-#define LAPIC_PIN_TIMER		0
-#define LAPIC_PIN_PCINT		2
-#define LAPIC_PIN_LVINT0	3
-#define LAPIC_PIN_LVINT1	4
-#define LAPIC_PIN_LVERR		5
+#define LAPIC_PIN_TIMER				0
+#define LAPIC_PIN_PCINT				2
+#define LAPIC_PIN_LVINT0			3
+#define LAPIC_PIN_LVINT1			4
+#define LAPIC_PIN_LVERR				5
 
 extern struct lock_object 	*icu_lock;
+struct cpu_info;
 
-extern void 			lapic_boot_init(paddr_t);
+extern void 			lapic_boot_init(caddr_t);
 extern void 			lapic_set_lvt(void);
 extern void 			lapic_enable(void);
 extern void 			lapic_calibrate_timer(boolean_t);
