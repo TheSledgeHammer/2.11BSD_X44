@@ -17,7 +17,7 @@
 
 #include <sys/bus.h>
 
-#include <i386/include/apicvar.h>
+//#include <i386/include/apicvar.h>
 
 #include <i386/include/frame.h>
 #include <i386/include/intr.h>

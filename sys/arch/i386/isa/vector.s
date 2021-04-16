@@ -215,7 +215,7 @@ FAST(15, IO_ICU2, ENABLE_ICU1_AND_2)
  *
  * On exit, we jump to doreti, to process soft interrupts and ASTs.
  */
-#define	INTR(irq_num, icu, enable_icus) \
+#define	INTR(irq_num, icu, enable_icus) 								\
 IDTVEC(intr/**/irq_num)													;\
 		pushl	$0						/* dummy error code */			;\
 		pushl	$T_ASTFLT				/* trap # for doing ASTs */		;\
@@ -312,8 +312,8 @@ INTR(15, IO_ICU2, ENABLE_ICU1_AND_2)
  * to the resume point.  The code would be larger, though.
  */
 #define	RECURSE(irq_num) \
-IDTVEC(recurse/**/irq_num)											;\
-		int	$(ICU_OFFSET + irq_num)									;\
+IDTVEC(recurse/**/irq_num)						;\
+		int	$(ICU_OFFSET + irq_num)				;\
 		jmp	%esi
 
 RECURSE(0)
@@ -332,6 +332,11 @@ RECURSE(12)
 RECURSE(13)
 RECURSE(14)
 RECURSE(15)
+
+#define	RESUME(irq_num) \
+IDTVEC(resume/**/irq_num)					;\
+	
+
 
 /*
  * These tables are used by the ISA configuration code.

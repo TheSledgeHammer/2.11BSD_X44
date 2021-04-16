@@ -35,21 +35,10 @@
  *
  */
 
-#ifndef _I386_APICVAR_H_
-#define _I386_APICVAR_H_
+#ifndef _I386_IOAPICVAR_H_
+#define _I386_IOAPICVAR_H_
 
 #include <sys/queue.h>
-
-struct apic_attach_args {
-	const char 				*aaa_name;
-	int 					apic_id;
-	int 					apic_version;
-	int 					flags;
-#define IOAPIC_PICMODE		0x01
-#define IOAPIC_VWIRE		0x02
-	u_int32_t  				apic_address;
-	int 					apic_vecbase;
-};
 
 struct ioapic_intsrc {
 	/*
@@ -88,17 +77,7 @@ struct ioapic_softc {
 	volatile u_int32_t		*sc_data;			/* KVA of ioapic data */
 };
 
-/*
- * Dump function for both LAPIC and I/O APIC.
- * The 3rd argument is APIC_VECTYPE_*.
- */
-#define APIC_VECTYPE_LAPIC_LVT	1
-#define APIC_VECTYPE_LAPIC_ICR	2
-#define APIC_VECTYPE_IOAPIC		3
-
-void 				apic_format_redir(const char *, const char *, int, int, uint32_t, uint32_t);
-
 struct ioapic_softc *ioapic_find(int);
 struct ioapic_softc *ioapic_find_bybase(int);
 
-#endif /* _I386_APICVAR_H_ */
+#endif /* _I386_IOAPICVAR_H_ */

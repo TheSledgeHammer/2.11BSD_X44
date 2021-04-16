@@ -206,6 +206,25 @@ tlbflush(void)
 	__asm __volatile("movl %0,%%cr3" : : "r" (val));
 }
 
+/*
+ * Global TLB flush (except for thise for pages marked PG_G)
+ */
+static __inline void
+invltlb(void)
+{
+	lcr3(rcr3());
+}
+
+/*
+ * TLB flush for an individual page (even if it has PG_G).
+ * Only works on 486+ CPUs (i386 does not have PG_G).
+ */
+static __inline void
+invlpg(u_int addr)
+{
+	__asm __volatile("invlpg %0" : : "m" (*(char *)addr) : "memory");
+}
+
 #ifdef notyet
 static __inline void
 _cr3(void)

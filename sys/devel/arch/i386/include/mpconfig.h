@@ -9,8 +9,11 @@
 #define _I386_MPCONFIG_H
 
 #include <sys/queue.h>
-#include <machine/bus.h>
+
 #include <dev/core/pci/pcivar.h>
+
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
 #include <machine/pci_machdep.h>
 
 /*

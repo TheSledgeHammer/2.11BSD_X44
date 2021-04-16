@@ -54,17 +54,18 @@
 
 #include <arch/i386/isa/isa_machdep.h> 			/* XXX intrhand */
 
-#include <devel/arch/i386/apic/apicreg.h>
-#include <devel/arch/i386/apic/apicvar.h>
 #include <devel/arch/i386/include/cpu.h>
 #include <devel/arch/i386/include/pic.h>
-
 #include <arch/i386/include/intr.h>
 #include <arch/i386/include/pio.h>
 #include <arch/i386/include/pmap.h>
 #include <arch/i386/include/pte.h>
-
 #include <arch/i386/include/specialreg.h>
+#include <arch/i386/include/mpconfig.h>
+
+#include <devel/arch/i386/apic/apic.h>
+#include <devel/arch/i386/apic/lapicreg.h>
+#include <devel/arch/i386/apic/lapicvar.h>
 
 extern volatile vaddr_t local_apic_va;
 

@@ -24,15 +24,16 @@ A General todo list. Don't hesitate to add to this list. :)
 	
 ## arch:
 - i386/x86: (Merged under i386)
+	- update: vector.s & icu.s
 	- smp/multi-cpu:
 		- machine-independent code: 90% complete
 			- smp-related methods for cpu
 		- machine-dependent code: 75% complete
-			- lapic: 90% complete
-			- boot sequence
+			- boot sequence: cpu with lapic, ioapic & percpu
 			- ipi
-			- intrs
 			- apic vectors/ IDTVEC's
+				- apicvec.s: apicintr's 
+				- cpu_info: CPUVAR(idepth, ilevel & ipending)
 	- tsc
 
 ## devel: (planned)

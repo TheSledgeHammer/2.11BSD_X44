@@ -1034,7 +1034,7 @@ IDTVEC(osyscall)
 		pushfl
 		andb	$~((PSL_T|PSL_NT)>>8),1(%esp)
 		popfl
-		pushl	$7					# size of instruction for restart
+		pushl	$7						/* size of instruction for restart	*/
 		jmp		syscall1
 
 /*
@@ -1042,15 +1042,15 @@ IDTVEC(osyscall)
  */
 
 IDTVEC(syscall)
-		pushl	$2					# size of instruction for restart
+		pushl	$2										/* size of instruction for restart */
 syscall1:
-		pushfl						# only for stupid carry bit and more stupid wait3 cc kludge
-		pushal						# only need eax,ecx,edx - trap resaves others
+		pushfl											/* only for stupid carry bit and more stupid wait3 cc kludge */
+		pushal											/* only need eax,ecx,edx - trap resaves others */
 		nop
-		movl	$GSEL(GDATA_SEL, SEL_KPL),%eax			# switch to kernel segments
+		movl	$GSEL(GDATA_SEL, SEL_KPL),%eax			/* switch to kernel segments */
 		movl	%ax,%ds
 		movl	%ax,%es
-		incl	_cnt+V_SYSCALL  	# kml 3/25/93
+		incl	_cnt+V_SYSCALL  						/* kml 3/25/93 */
 		call	_syscall
 /*
  * Return through doreti to handle ASTs.  Have to change syscall frame

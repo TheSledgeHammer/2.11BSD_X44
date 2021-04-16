@@ -44,6 +44,7 @@ struct cpu_attach_args {
 	const char 			*caa_name;
 	struct cpu_ops		*cpu_ops;
 	int 				cpu_role;
+	int					cpu_number;
 	u_int 				cpu_acpi_id;
 	u_int				cpu_apic_id;
 };

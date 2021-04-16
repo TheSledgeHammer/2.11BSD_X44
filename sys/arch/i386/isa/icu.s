@@ -369,7 +369,6 @@ IDTVEC(intr6)
 IDTVEC(intr7)
 	INTR1(7, _highmask, 7) ; call	_isa_strayintr ; INTREXIT1
 
-
 IDTVEC(intr8)
 	INTR2(8, _highmask, 8) ; call	_isa_strayintr ; INTREXIT2
 

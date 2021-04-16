@@ -44,17 +44,18 @@
 /*
  * Interrupt "level" mechanism variables, masks, and macros
  */
-extern	unsigned short	imen;	/* interrupt mask enable */
-extern	unsigned short	cpl;	/* current priority level mask */
+extern	unsigned short		imen;		/* interrupt mask enable */
+extern	unsigned short		cpl;		/* current priority level mask */
 
-extern	unsigned short highmask; /* group of interrupts masked with splhigh() */
-extern	unsigned short ttymask; /* group of interrupts masked with spltty() */
-extern	unsigned short biomask; /* group of interrupts masked with splbio() */
-extern	unsigned short netmask; /* group of interrupts masked with splimp() */
+extern	unsigned short 		highmask;	/* group of interrupts masked with splhigh() */
+extern	unsigned short 		ttymask; 	/* group of interrupts masked with spltty() */
+extern	unsigned short 		biomask; 	/* group of interrupts masked with splbio() */
+extern	unsigned short 		netmask; 	/* group of interrupts masked with splimp() */
 
-#define	INTREN(s)		imen &= ~(s)
-#define	INTRDIS(s)		imen |= (s)
-#define	INTRMASK(msk,s)	msk |= (s)
+#define	INTREN(s)			imen &= ~(s)
+#define	INTRDIS(s)			imen |= (s)
+#define	INTRMASK(msk,s)		msk |= (s)
+#define INTRUNMASK(msk,s)	(msk &= ~(s))
 
 #else
 
@@ -136,7 +137,7 @@ extern	unsigned short netmask; /* group of interrupts masked with splimp() */
 /*
  * Interrupt Control offset into Interrupt descriptor table (IDT)
  */
-#define	ICU_OFFSET	32		/* 0-31 are processor exceptions */
-#define	ICU_LEN		16		/* 32-47 are ISA interrupts */
+#define	ICU_OFFSET	32			/* 0-31 are processor exceptions */
+#define	ICU_LEN		16			/* 32-47 are ISA interrupts */
 
 #endif	__ICU__

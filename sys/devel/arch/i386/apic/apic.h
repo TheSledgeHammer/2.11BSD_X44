@@ -1,5 +1,4 @@
-/*	$OpenBSD: apic.c,v 1.6 2009/08/13 13:24:48 kettenis Exp $	*/
-/* $NetBSD: apic.c,v 1.1.2.2 2000/02/21 18:51:00 sommerfeld Exp $ */
+/* 	$NetBSD: apicvar.h,v 1.8 2020/04/25 15:26:18 bouyer Exp $ */
 
 /*-
  * Copyright (c) 2000 The NetBSD Foundation, Inc.
@@ -32,19 +31,30 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/types.h>
-#include <sys/systm.h>
+#ifndef _I386_APIC_H_
+#define _I386_APIC_H_
 
-#include <devel/arch/i386/apic/apic.h>
-#include <devel/arch/i386/apic/lapicreg.h>
-void
-apic_format_redir(const char *where1, const char *where2, int idx, int type, u_int32_t redirhi, u_int32_t redirlo)
-{
-	printf("%s: %s%d 0x%x", where1, where2, idx, redirlo);
+struct apic_attach_args {
+	const char 				*aaa_name;
+	int 					apic_id;
+	int 					apic_version;
+	int 					flags;
+#define IOAPIC_PICMODE		0x01
+#define IOAPIC_VWIRE		0x02
+	u_int32_t  				apic_address;
+	int 					apic_vecbase;
+};
 
-	if ((redirlo & LAPIC_DEST_MASK) == 0) {
-		printf(" 0x%x", redirhi);
-	}
+/*
+ * Dump function for both LAPIC and I/O APIC.
+ * The 3rd argument is APIC_VECTYPE_*.
+ */
+#define APIC_VECTYPE_LAPIC_LVT	1
+#define APIC_VECTYPE_LAPIC_ICR	2
+#define APIC_VECTYPE_IOAPIC	3
+void 	apic_format_redir(const char *, const char *, int, int, uint32_t, uint32_t);
 
-	printf("\n");
-}
+/* For lapic.c */
+extern uint32_t lapic_per_second;
+
+#endif /* _I386_APIC_H_ */
