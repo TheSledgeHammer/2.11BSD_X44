@@ -39,7 +39,6 @@
 #include <sys/user.h>
 
 #include <devel/arch/i386/include/cpu.h>
-#include <devel/arch/i386/FBSD/timetc.h>
 
 #include <arch/i386/include/cpu.h>
 #include <arch/i386/include/cpufunc.h>

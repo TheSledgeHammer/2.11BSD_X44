@@ -163,6 +163,8 @@ cpu_mp_start(pc)
 
 	/* Start each Application Processor */
 	start_all_aps();
+
+	set_interrupt_apic_ids();
 }
 
 void
@@ -247,7 +249,7 @@ init_secondary(ci)
 	lidt(&r_idt);
 #endif
 
-	init_secondary_tail();
+	init_secondary_tail(pc);
 }
 
 /*
@@ -398,7 +400,7 @@ start_ap(int apic_id)
 	/* used as a watchpoint to signal AP startup */
 	cpus = mp_naps;
 
-	ipi_startup(apic_id, vector);
+	i386_ipi_startup(apic_id, vector);
 
 	/* Wait up to 5 seconds for it to start. */
 	for (ms = 0; ms < 5000; ms++) {
@@ -409,3 +411,4 @@ start_ap(int apic_id)
 	}
 	return 0; /* return FAILURE */
 }
+

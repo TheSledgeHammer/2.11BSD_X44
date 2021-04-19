@@ -122,6 +122,7 @@ struct pic ioapic_template = {
 		.pic_hwunmask = ioapic_hwunmask,
 		.pic_addroute = ioapic_addroute,
 		.pic_delroute = ioapic_delroute,
+		.pic_register = ioapic_register_pic
 };
 
 /*
@@ -481,3 +482,33 @@ ioapic_delroute(struct ioapic_intsrc *intpin, struct cpu_info *ci, int pin, int 
 	}
 	ioapic_hwmask(intpin, pin);
 }
+
+/*
+ * Register I/O APIC interrupt pins.
+ */
+static void
+ioapic_register_pic()
+{
+	intr_register_pic(&ioapic_template);
+}
+
+#ifdef DDB
+void ioapic_dump(void);
+void
+ioapic_dump(void)
+{
+	struct ioapic_softc *sc;
+	struct ioapic_intsrc *intpin;
+	int p;
+
+	SIMPLEQ_FOREACH(sc, ioapics, sc_next) {
+		for (p = 0; p < sc->sc_apic_sz; p++) {
+			intpin = &sc->sc_pins[p];
+			if (intpin->io_type != IST_NONE) {
+				ioapic_print_redir(sc, "dump", p);
+			}
+		}
+	}
+}
+
+#endif

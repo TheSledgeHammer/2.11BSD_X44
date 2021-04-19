@@ -108,12 +108,18 @@
 
 extern	vm_offset_t avail_end;
 
-#define	IDTVEC(name)	__CONCAT(X, name)
+#define	IDTVEC(name)	__CONCAT(X,name)
+/* default interrupt vector table */
+extern	IDTVEC(intr0), IDTVEC(intr1), IDTVEC(intr2), IDTVEC(intr3),
+		IDTVEC(intr4), IDTVEC(intr5), IDTVEC(intr6), IDTVEC(intr7),
+		IDTVEC(intr8), IDTVEC(intr9), IDTVEC(intr10), IDTVEC(intr11),
+		IDTVEC(intr12), IDTVEC(intr13), IDTVEC(intr14), IDTVEC(intr15);
 /* default interrupt vector table entries */
 
 void 	isa_strayintr (int);
 void	intr_calculatemasks (void);
 int 	fakeintr (void *);
+void	isa_icuvectors(void);
 
 int		_isa_bus_dmamap_create (bus_dma_tag_t, bus_size_t, int, bus_size_t, bus_size_t, int, bus_dmamap_t *);
 void	_isa_bus_dmamap_destroy (bus_dma_tag_t, bus_dmamap_t);
@@ -166,8 +172,7 @@ isa_defaultirq()
 	int i;
 
 	/* icu vectors */
-	for (i = 0; i < ICU_LEN; i++)
-		setidt(&idt[ICU_OFFSET + i], &IDTVEC(intr)[i], 0, SDT_SYS386IGT, SEL_KPL);
+	isa_icuvectors();
 
 	/* initialize 8259's */
 	outb(IO_ICU1, 0x11);				/* reset; program device, four bytes */
@@ -196,6 +201,30 @@ isa_defaultirq()
 	outb(IO_ICU2 + 1, 0xff);			/* leave interrupts masked */
 	outb(IO_ICU2, 0x68); 				/* special mask mode (if available) */
 	outb(IO_ICU2, 0x0a); 				/* Read IRR by default. */
+}
+
+void
+isa_icuvectors()
+{
+	/* first icu */
+	setidt(32, &IDTVEC(intr0), 0, SDT_SYS386IGT, SEL_KPL);
+	setidt(33, &IDTVEC(intr1), 0, SDT_SYS386IGT, SEL_KPL);
+	setidt(34, &IDTVEC(intr2), 0, SDT_SYS386IGT, SEL_KPL);
+	setidt(35, &IDTVEC(intr3), 0, SDT_SYS386IGT, SEL_KPL);
+	setidt(36, &IDTVEC(intr4), 0, SDT_SYS386IGT, SEL_KPL);
+	setidt(37, &IDTVEC(intr5), 0, SDT_SYS386IGT, SEL_KPL);
+	setidt(38, &IDTVEC(intr6), 0, SDT_SYS386IGT, SEL_KPL);
+	setidt(39, &IDTVEC(intr7), 0, SDT_SYS386IGT, SEL_KPL);
+
+	/* second icu */
+	setidt(40, &IDTVEC(intr8), 0, SDT_SYS386IGT, SEL_KPL);
+	setidt(41, &IDTVEC(intr9), 0, SDT_SYS386IGT, SEL_KPL);
+	setidt(42, &IDTVEC(intr10), 0, SDT_SYS386IGT, SEL_KPL);
+	setidt(43, &IDTVEC(intr11), 0, SDT_SYS386IGT, SEL_KPL);
+	setidt(44, &IDTVEC(intr12), 0, SDT_SYS386IGT, SEL_KPL);
+	setidt(45, &IDTVEC(intr13), 0, SDT_SYS386IGT, SEL_KPL);
+	setidt(46, &IDTVEC(intr14), 0, SDT_SYS386IGT, SEL_KPL);
+	setidt(47, &IDTVEC(intr15), 0, SDT_SYS386IGT, SEL_KPL);
 }
 
 /*
@@ -248,17 +277,20 @@ intr_calculatemasks()
 	/* First, figure out which levels each IRQ uses. */
 	for (irq = 0; irq < ICU_LEN; irq++) {
 		register int levels = 0;
-		for (q = intrhand[irq]; q; q = q->ih_next)
+		for (q = intrhand[irq]; q; q = q->ih_next) {
 			levels |= 1 << q->ih_level;
+		}
 		intrlevel[irq] = levels;
 	}
 
 	/* Then figure out which IRQs use each level. */
 	for (level = 0; level < NIPL; level++) {
 		register int irqs = 0;
-		for (irq = 0; irq < ICU_LEN; irq++)
-			if (intrlevel[irq] & (1 << level))
+		for (irq = 0; irq < ICU_LEN; irq++) {
+			if (intrlevel[irq] & (1 << level)) {
 				irqs |= 1 << irq;
+			}
+		}
 		imask[level] = irqs;
 	}
 
@@ -314,19 +346,23 @@ intr_calculatemasks()
 	/* And eventually calculate the complete masks. */
 	for (irq = 0; irq < ICU_LEN; irq++) {
 		register int irqs = 1 << irq;
-		for (q = intrhand[irq]; q; q = q->ih_next)
+		for (q = intrhand[irq]; q; q = q->ih_next) {
 			irqs |= imask[q->ih_level];
+		}
 		intrmask[irq] = irqs;
 	}
 
 	/* Lastly, determine which IRQs are actually in use. */
 	{
 		register int irqs = 0;
-		for (irq = 0; irq < ICU_LEN; irq++)
-			if (intrhand[irq])
+		for (irq = 0; irq < ICU_LEN; irq++) {
+			if (intrhand[irq]) {
 				irqs |= 1 << irq;
-		if (irqs >= 0x100) /* any IRQs >= 8 in use */
+			}
+		}
+		if (irqs >= 0x100) { /* any IRQs >= 8 in use */
 			irqs |= 1 << IRQ_SLAVE;
+		}
 		imen = ~irqs;
 		SET_ICUS();
 	}
@@ -425,11 +461,11 @@ isa_intr_establish(ic, irq, type, level, ih_fun, ih_arg)
 	int irq;
 	int type;
 	int level;
-	int (*ih_fun) __P((void *));
+	int (*ih_fun)(void *);
 	void *ih_arg;
 {
 	struct intrhand **p, *q, *ih;
-	static struct intrhand fakehand = {fakeintr};
+	static struct intrhand fakehand = { fakeintr };
 	extern int cold;
 
 	/* no point in sleeping unless someone can free memory. */

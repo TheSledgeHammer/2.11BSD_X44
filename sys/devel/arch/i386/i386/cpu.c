@@ -29,7 +29,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -42,11 +41,10 @@
 /* mpbios.c & mpacpi.c */
 struct cpu_attach_args {
 	const char 			*caa_name;
-	struct cpu_ops		*cpu_ops;
+	u_int 				cpu_apic_id;
+	u_int				cpu_acpi_id;
 	int 				cpu_role;
-	int					cpu_number;
-	u_int 				cpu_acpi_id;
-	u_int				cpu_apic_id;
+	struct cpu_ops		*cpu_ops;
 };
 
 #define CPU_ROLE_SP		0
@@ -81,6 +79,10 @@ cpu_match(parent, match, aux)
 	struct cfdata *match;
 	void *aux;
 {
+	struct cpu_attach_args *caa = aux;
+	if (strcmp(caa->caa_name, match->cf_driver->cd_name) != 0) {
+		return (0);
+	}
 	return (1);
 }
 
@@ -95,9 +97,10 @@ cpu_attach(parent, self, aux)
 #if defined(SMP)
 	int cpunum = caa->cpu_apic_id;
 #endif
+	caa->cpu_acpi_id = 0xffffffff;
 
 	if (caa->cpu_role == CPU_ROLE_AP) {
-		ci = malloc(sizeof(*ci), M_DEVBUF, M_WAITOK);
+		cpu_alloc(ci);
 		memset(ci, 0, sizeof(*ci));
 #if defined(SMP)
 		if (cpu_info[cpunum] != NULL) {
@@ -120,7 +123,7 @@ cpu_attach(parent, self, aux)
 	sc->sc_info = ci;
 	ci->cpu_dev = self;
 	ci->cpu_apic_id = caa->cpu_apic_id;
-//	ci->cpu_acpi_id = caa->cpu_acpi_id;
+	ci->cpu_acpi_id = caa->cpu_acpi_id;
 #ifdef SMP
 	cpu_init(ci, caa->cpu_apic_id, sizeof(struct cpu_info));
 #else
@@ -154,7 +157,8 @@ cpu_attach(parent, self, aux)
 		 */
 		printf("apid %d (application processor)\n", caa->cpu_apic_id);
 #if defined(SMP)
-		init_secondary(ci);
+		//init_secondary(ci);
+		ci->ci_flags |= CPUF_PRESENT | CPUF_AP;
 #else
 		printf("%s: not started\n", sc->sc_dev->dv_xname);
 #endif
@@ -174,8 +178,6 @@ cpu_init(ci, cpuid, size)
 	ci->cpu_cpuid = cpuid;
 	ci->cpu_cpumask = 1 << cpuid;
 	ci->cpu_size = size;
-
-//	ci->cpu_acpi_id = 0xffffffff;
 }
 
 void
@@ -185,4 +187,6 @@ cpu_hatch(void *v)
 	int s;
 
 	lapic_enable();
+	lapic_set_lvt();
+	lapic_write_tpri(0);
 }

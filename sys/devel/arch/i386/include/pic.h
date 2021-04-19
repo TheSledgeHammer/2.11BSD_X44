@@ -51,6 +51,7 @@ struct pic {
 	void 					(*pic_hwunmask)(struct ioapic_intsrc *, int);
 	void 					(*pic_addroute)(struct ioapic_intsrc *, struct cpu_info *, int, int, int);
 	void 					(*pic_delroute)(struct ioapic_intsrc *, struct cpu_info *, int, int, int);
+	void					(*pic_register)(void *);
 	TAILQ_ENTRY(pic) 		pic_entry;
 };
 
@@ -68,7 +69,7 @@ struct pic {
  * private data in a given interrupt source such as an interrupt pin number
  * or an I/O APIC pointer.
  */
-struct intsrc {
+struct intrsource {
 	struct pic 				*is_pic;
     struct intrhand     	*is_handlers;	/* handler chain */
 	u_long 					*is_count;
@@ -90,6 +91,7 @@ struct intrhand {
 	struct intrhand 		*ih_next;
     struct intrhand 		*ih_prev;
 	int						ih_level;
+	int						ih_flags;
 	int						ih_irq;
 };
 

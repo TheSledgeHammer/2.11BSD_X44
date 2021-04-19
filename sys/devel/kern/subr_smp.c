@@ -221,4 +221,26 @@ topo_next_nonchild_node(struct topo_node *top, struct topo_node *node)
 	return (NULL);
 }
 
+/*
+ * Assign the given ID to the given topology node that represents a logical
+ * processor.
+ */
+void
+topo_set_pu_id(struct topo_node *node, cpuid_t id)
+{
+
+	KASSERT(node->type == TOPO_TYPE_PU ("topo_set_pu_id: wrong node type: %u", node->type));
+	KASSERT(/*CPU_EMPTY(&node->cpuset) && */node->cpu_count == 0 ("topo_set_pu_id: cpuset already not empty"));
+	node->id = id;
+	//CPU_SET(id, &node->cpuset);
+	node->cpu_count = 1;
+	node->subtype = 1;
+
+	while ((node = node->parent) != NULL) {
+		//KASSERT(!CPU_ISSET(id, &node->cpuset)("logical ID %u is already set in node %p", id, node));
+		//CPU_SET(id, &node->cpuset);
+		node->cpu_count++;
+	}
+}
+
 #endif /* SMP */

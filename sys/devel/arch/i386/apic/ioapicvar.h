@@ -41,8 +41,8 @@
 #include <sys/queue.h>
 
 struct ioapic_intsrc {
-	/*
 	int 					io_irq;
+	/*
 	u_int 					io_intpin:8;
 	u_int 					io_cpu;
 	u_int 					io_activehi:1;
@@ -53,7 +53,7 @@ struct ioapic_intsrc {
 	u_int 					io_remap_cookie;
 	*/
 
-	struct intsrc 			io_intsrc;
+	struct intrsource		io_intsrc;
 	struct mp_intr_map 		*io_map;
 	u_int 					io_vector:8;
 	int						io_type;

@@ -80,6 +80,7 @@ struct pic lapic_template = {
 		.pic_hwunmask = lapic_hwunmask,
 		.pic_addroute = lapic_setup,
 		.pic_delroute = lapic_setup,
+		.pic_register = lapic_register_pic
 };
 
 static int i82489_ipi(int vec, int target, int dl);
@@ -211,7 +212,7 @@ lapic_map(caddr_t lapic_base)
 
 	pte = kvtopte(va);
 	*pte = (lapic_base | PG_RW | PG_V | PG_N | PG_G | PG_NX | PG_W | PG_NC_PCD);
-	//invlpg(va);
+	invlpg(va);
 
 #ifdef SMP
 	cpu_init_first();	/* catch up to changed cpu_number() */
@@ -526,6 +527,15 @@ static void
 lapic_setup(struct ioapic_intsrc *intpin, struct cpu_info *ci, int pin, int idtvec, int type)
 {
 
+}
+
+/*
+ * Register Local APIC interrupt pins.
+ */
+static void
+lapic_register_pic()
+{
+	intr_register_pic(&lapic_template);
 }
 
 static void

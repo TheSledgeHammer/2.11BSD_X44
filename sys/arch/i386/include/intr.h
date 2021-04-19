@@ -62,6 +62,7 @@
 
 volatile int cpl, ipending;
 int imask[NIPL];
+int iunmask[NIPL];
 
 extern void Xspllower (void);
 

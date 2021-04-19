@@ -32,12 +32,16 @@
 #include <sys/malloc.h>
 #include <sys/memrange.h>
 
+#include <vm/include/vm_param.h>
+
 #include <arch/i386/include/cputypes.h>
 #include <arch/i386/include/param.h>
 #include <arch/i386/include/specialreg.h>
+#include <arch/i386/include/vmparam.h>
 
 #include <devel/sys/smp.h>
 #include <devel/arch/i386/include/cpu.h>
+#include <devel/arch/i386/include/percpu.h>
 
 /* lock region used by kernel profiling */
 int	mcount_lock;
@@ -66,6 +70,8 @@ struct cpu_info *cpu_info;
 int *apic_cpuids;
 int cpu_apic_ids[NCPUS];
 
+static int hyperthreading_allowed = 1;
+static int hyperthreading_intr_allowed = 0;
 static struct topo_node topo_root;
 
 static int pkg_id_shift;
@@ -577,14 +583,15 @@ assign_cpu_ids(void)
 }
 
 static void
-cpu_alloc(void *dummy)
+cpu_alloc(ci)
+	struct cpu_info *ci;
 {
 	/*
 	 * Dynamically allocate the arrays that depend on the
 	 * maximum APIC ID.
 	 */
-	cpu_info = malloc(sizeof(*cpu_info) * (max_apic_id + 1), M_CPUS, M_WAITOK | M_ZERO);
-	apic_cpuids = malloc(sizeof(*apic_cpuids) * (max_apic_id + 1), M_CPUS, M_WAITOK | M_ZERO);
+	cpu_info = malloc(sizeof(*cpu_info) * (max_apic_id + 1), M_DEVBUF, M_WAITOK | M_ZERO);
+	apic_cpuids = malloc(sizeof(*apic_cpuids) * (max_apic_id + 1), M_DEVBUF, M_WAITOK | M_ZERO);
 }
 
 /*
@@ -625,7 +632,8 @@ cpu_mp_setmaxid(void)
  * AP CPU's call this to initialize themselves.
  */
 void
-init_secondary_tail(void)
+init_secondary_tail(pc)
+	struct percpu *pc;
 {
 	u_int cpuid;
 
@@ -642,5 +650,88 @@ init_secondary_tail(void)
 		cpu_ops.cpu_init();
 	}
 
+	/* A quick check from sanity claus */
+	cpuid = PERCPU_GET(pc, cpuid);
+	if (PERCPU_GET(pc, apic_id) != lapic_cpu_number()) {
+		printf("SMP: cpuid = %d\n", cpuid);
+		printf("SMP: actual apic_id = %d\n", lapic_cpu_number());
+		printf("SMP: correct apic_id = %d\n", PERCPU_GET(pc, apic_id));
+		panic("cpuid mismatch! boom!!");
+	}
+
+	/* Set memory range attributes for this CPU to match the BSP */
 	mem_range_AP_init();
+
+	smp_cpus++;
+
+	if (bootverbose)
+		printf("SMP: AP CPU #%d Launched!\n", cpuid);
+	else
+		printf("%s%d%s", smp_cpus == 2 ? "Launching APs: " : "", cpuid, smp_cpus == mp_ncpus ? "\n" : " ");
+
+	/* Determine if we are a logical CPU. */
+	if (cpu_info[PERCPU_GET(pc, apic_id)].cpu_hyperthread) {
+		CPU_SET(cpuid, &logical_cpus_mask);
+	}
+
+	if (bootverbose)
+		lapic_dump("AP");
+
+	if (smp_cpus == mp_ncpus) {
+		/* enable IPI's, tlb shootdown, freezes etc */
+		atomic_store_rel_int(&smp_started, 1);
+	}
+
+#ifdef __amd64__
+	/*
+	 * Enable global pages TLB extension
+	 * This also implicitly flushes the TLB
+	 */
+	/*
+	load_cr4(rcr4() | CR4_PGE);
+	if (pmap_pcid_enabled) {
+		lcr4(rcr4() | CR4_PCIDE);
+	}
+	load_ds(_udatasel);
+	load_es(_udatasel);
+	load_fs(_ufssel);
+	*/
+#endif
+
+	mtx_unlock_spin(&ap_boot_mtx);
+
+	/* Wait until all the AP's are up. */
+	while (atomic_load_acq_int(&smp_started) == 0) {
+		ia32_pause();
+	}
+}
+
+/*
+ * We tell the I/O APIC code about all the CPUs we want to receive
+ * interrupts.  If we don't want certain CPUs to receive IRQs we
+ * can simply not tell the I/O APIC code about them in this function.
+ * We also do not tell it about the BSP since it tells itself about
+ * the BSP internally to work with UP kernels and on UP machines.
+ */
+void
+set_interrupt_apic_ids(void)
+{
+	u_int i, apic_id;
+
+	for (i = 0; i < NCPUS; i++) {
+		apic_id = cpu_apic_ids[i];
+		if (apic_id == -1)
+			continue;
+		if (cpu_info[apic_id].cpu_bsp)
+			continue;
+		if (cpu_info[apic_id].cpu_disabled)
+			continue;
+
+		/* Don't let hyperthreads service interrupts. */
+		if (cpu_info[apic_id].cpu_hyperthread && !hyperthreading_intr_allowed) {
+			continue;
+		}
+
+		//intr_add_cpu(i);
+	}
 }

@@ -250,7 +250,7 @@ _Xresume/**/irq_num/**/:												;\
 		STRAY_TEST														;\
 5:		UNMASK(irq_num, icu)			/* unmask it in hardware */		;\
 		INTREXIT						/* lower spl and do ASTs */		;\
-IDTVEC(stray/**/irq_num)												;\
+IDTVEC(_Xstray/**/irq_num)												;\
 		pushl	$irq_num												;\
 		call	_isa_strayintr											;\
 		addl	$4,%esp													;\
@@ -332,11 +332,6 @@ RECURSE(12)
 RECURSE(13)
 RECURSE(14)
 RECURSE(15)
-
-#define	RESUME(irq_num) \
-IDTVEC(resume/**/irq_num)					;\
-	
-
 
 /*
  * These tables are used by the ISA configuration code.
