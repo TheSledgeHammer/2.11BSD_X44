@@ -43,7 +43,6 @@
 
 #include <machine/bootinfo.h>
 
-
 #include <bootstrap.h>
 #include <btxv86.h>
 #include <edd.h>
@@ -55,13 +54,13 @@
 #define	BIOSDISK_SECSIZE	512
 #define	BUFSIZE				(1 * BIOSDISK_SECSIZE)
 
-#define	DT_ATAPI	0x10	/* disk type for ATAPI floppies */
-#define	WDMAJOR		0		/* major numbers for devices we frontend for */
-#define	WFDMAJOR	1
-#define	FDMAJOR		2
-#define	DAMAJOR		4
-#define	ACDMAJOR	117
-#define	CDMAJOR		15
+#define	DT_ATAPI			0x10	/* disk type for ATAPI floppies */
+#define	WDMAJOR				0		/* major numbers for devices we frontend for */
+#define	WFDMAJOR			1
+#define	FDMAJOR				2
+#define	DAMAJOR				4
+#define	ACDMAJOR			117
+#define	CDMAJOR				15
 
 /*
  * INT13 commands
@@ -104,31 +103,30 @@ struct specification_packet {
  * List of BIOS devices, translation from disk unit number to
  * BIOS unit number.
  */
-typedef struct bdinfo
-{
+typedef struct bdinfo {
 	TAILQ_ENTRY(bdinfo)	bd_link;		/* link in device list */
-	int			bd_unit;				/* BIOS unit number */
-	int			bd_cyl;					/* BIOS geometry */
-	int			bd_hds;
-	int			bd_sec;
-	int			bd_flags;
+	int					bd_unit;		/* BIOS unit number */
+	int					bd_cyl;			/* BIOS geometry */
+	int					bd_hds;
+	int					bd_sec;
+	int					bd_flags;
 #define	BD_MODEINT13	0x0000
-#define	BD_MODEEDD1	0x0001
-#define	BD_MODEEDD3	0x0002
-#define	BD_MODEEDD	(BD_MODEEDD1 | BD_MODEEDD3)
-#define	BD_MODEMASK	0x0003
-#define	BD_FLOPPY	0x0004
-#define	BD_CDROM	0x0008
-#define	BD_NO_MEDIA	0x0010
-	int			bd_type;		/* BIOS 'drive type' (floppy only) */
-	uint16_t	bd_sectorsize;	/* Sector size */
-	uint64_t	bd_sectors;		/* Disk size */
-	int			bd_open;		/* reference counter */
-	void		*bd_bcache;		/* buffer cache data */
+#define	BD_MODEEDD1		0x0001
+#define	BD_MODEEDD3		0x0002
+#define	BD_MODEEDD		(BD_MODEEDD1 | BD_MODEEDD3)
+#define	BD_MODEMASK		0x0003
+#define	BD_FLOPPY		0x0004
+#define	BD_CDROM		0x0008
+#define	BD_NO_MEDIA		0x0010
+	int					bd_type;		/* BIOS 'drive type' (floppy only) */
+	uint16_t			bd_sectorsize;	/* Sector size */
+	uint64_t			bd_sectors;		/* Disk size */
+	int					bd_open;		/* reference counter */
+	void				*bd_bcache;		/* buffer cache data */
 } bdinfo_t;
 
-#define	BD_RD		0
-#define	BD_WR		1
+#define	BD_RD			0
+#define	BD_WR			1
 
 typedef TAILQ_HEAD(bdinfo_list, bdinfo) bdinfo_list_t;
 static bdinfo_list_t fdinfo = TAILQ_HEAD_INITIALIZER(fdinfo);
@@ -1300,10 +1298,12 @@ bd_getdev(struct i386_devdesc *d)
 	int	biosdev;
 	int	major;
 	int	rootdev;
-	char *nip, *cp;
-	int	i, unit, slice, partition;
+	char *nip, *cp, disktype;
+	int	i, unit, slice, partition, adaptor, controller;
 
 	/* XXX: Assume partition 'a'. */
+	adaptor = 0;
+	controller = 0;
 	slice = 0;
 	partition = 0;
 
@@ -1364,7 +1364,32 @@ bd_getdev(struct i386_devdesc *d)
 			unit = i;
 	}
 
-	rootdev = MAKEBOOTDEV2(major, slice, unit, partition);
+	if((disktype = getenv("disk_type_1")) != NULL) {
+		rootdev = bd_make_bootdisk_type1(major, adaptor, controller, unit, partition);
+	} else {
+		if((disktype = getenv("disk_type_2")) != NULL) {
+			rootdev = bd_make_bootdisk_type2(major, slice, unit, partition);
+		}
+	}
+
 	DPRINTF("dev is 0x%x\n", rootdev);
+	return (rootdev);
+}
+
+int
+bd_make_bootdisk_type1(major, adaptor, controller, unit, partition)
+	int	major, adaptor, controller, unit, partition;
+{
+	int rootdev;
+	rootdev = MAKEBOOTDEV1(major, adaptor, controller, unit, partition);
+	return (rootdev);
+}
+
+int
+bd_make_bootdisk_type2(major, slice, unit, partition)
+	int	major, slice, unit, partition;
+{
+	int rootdev;
+	rootdev = MAKEBOOTDEV2(major, slice, unit, partition);
 	return (rootdev);
 }

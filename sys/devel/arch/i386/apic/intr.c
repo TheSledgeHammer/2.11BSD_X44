@@ -141,15 +141,12 @@
 
 #define MAX_INTR_SOURCES 	ICU_OFFSET
 
-/* I/O Interrupts are used for external devices such as ISA, PCI, etc. */
-#define	APIC_IO_INTS		(ICU_OFFSET + ICU_LEN)
-#define	APIC_NUM_IOINTS		191
-
 #define SOFTINTR_MASK(ipl, sir)	((ipl) = (1 << (sir)))
 
 static TAILQ_HEAD(pics_head, pic) pics;
 struct intrsource 	*intrsrc[MAX_INTR_SOURCES];
 struct intrhand 	*intrhand[MAX_INTR_SOURCES];
+
 int intrtype[MAX_INTR_SOURCES];
 int intrmask[MAX_INTR_SOURCES];
 int intrlevel[MAX_INTR_SOURCES];
@@ -311,4 +308,16 @@ init_softintr()
 		}
 		intrmask[irq] = irqs;
 	}
+}
+
+void *
+intr_establish()
+{
+
+}
+
+void
+intr_disestablish()
+{
+
 }

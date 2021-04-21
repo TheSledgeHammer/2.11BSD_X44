@@ -90,7 +90,7 @@
 #define IOAPIC_REDHI(pin)			(0x11 + ((pin)<<1))
 #define IOAPIC_REDLO(pin)			(0x10 + ((pin)<<1))
 
-#define IOAPIC_REDHI_DEST_SHIFT		24	   /* destination. */
+#define IOAPIC_REDHI_DEST_SHIFT		24	   		/* destination. */
 #define IOAPIC_REDHI_DEST_MASK		0xff000000
 
 #define IOAPIC_REDLO_MASK			0x00010000 /* 0=enabled; 1=masked */

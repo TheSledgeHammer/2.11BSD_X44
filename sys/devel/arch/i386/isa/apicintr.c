@@ -71,13 +71,6 @@
 #include <pic.h>
 #include <icu.h>
 
-#define	IDTVEC(name)	__CONCAT(X,name)
-/* apic interrupt vector table */
-extern	IDTVEC(apic_intr0), IDTVEC(apic_intr1), IDTVEC(apic_intr2), IDTVEC(apic_intr3),
-		IDTVEC(apic_intr4), IDTVEC(apic_intr5), IDTVEC(apic_intr6), IDTVEC(apic_intr7),
-		IDTVEC(apic_intr8), IDTVEC(apic_intr9), IDTVEC(apic_intr10), IDTVEC(apic_intr11),
-		IDTVEC(apic_intr12), IDTVEC(apic_intr13), IDTVEC(apic_intr14), IDTVEC(apic_intr15);
-
 #define APIC_INT_VIA_APIC	0x10000000
 #define APIC_INT_VIA_MSG	0x20000000
 #define APIC_INT_APIC_MASK	0x00ff0000
@@ -88,6 +81,17 @@ extern	IDTVEC(apic_intr0), IDTVEC(apic_intr1), IDTVEC(apic_intr2), IDTVEC(apic_i
 
 #define APIC_IRQ_APIC(x) 	((x & APIC_INT_APIC_MASK) >> APIC_INT_APIC_SHIFT)
 #define APIC_IRQ_PIN(x) 	((x & APIC_INT_PIN_MASK) >> APIC_INT_PIN_SHIFT)
+
+/* I/O Interrupts are used for external devices such as ISA, PCI, etc. */
+#define	APIC_IO_INTS		(ICU_OFFSET + ICU_LEN)
+#define	APIC_NUM_IOINTS		191
+
+#define	IDTVEC(name)	__CONCAT(X,name)
+/* apic interrupt vector table */
+extern	IDTVEC(apic_intr0), IDTVEC(apic_intr1), IDTVEC(apic_intr2), IDTVEC(apic_intr3),
+		IDTVEC(apic_intr4), IDTVEC(apic_intr5), IDTVEC(apic_intr6), IDTVEC(apic_intr7),
+		IDTVEC(apic_intr8), IDTVEC(apic_intr9), IDTVEC(apic_intr10), IDTVEC(apic_intr11),
+		IDTVEC(apic_intr12), IDTVEC(apic_intr13), IDTVEC(apic_intr14), IDTVEC(apic_intr15);
 
 struct intrhand *apic_intrhand[256];
 int	apic_maxlevel[256];
@@ -116,6 +120,21 @@ apic_vectors()
 	setidt(47, &IDTVEC(apic_intr15), 0, SDT_SYS386IGT, SEL_KPL);
 }
 
+#define NAPICID  256
+#define APIC_MAX 255
+
+struct apic_irq *apic;
+
+int
+irq_to_apic(irq)
+{
+	int apic = irq * ICU_OFFSET;
+	if(apic >= NAPICID) {
+		apic = APIC_MAX;
+	}
+	return (apic);
+}
+
 /*
  * Caught a stray interrupt, notify
  */
@@ -125,18 +144,8 @@ apic_strayintr(irq)
 {
 	static u_long strays;
 	struct ioapic_softc *sc;
-
 	strays = APIC_IRQ_APIC(irq);
 	sc = ioapic_find(strays);
-
-        /*
-         * Stray interrupts on irq 7 occur when an interrupt line is raised
-         * and then lowered before the CPU acknowledges it.  This generally
-         * means either the device is screwed or something is cli'ing too
-         * long and it's timing out.
-         */
-	if (++strays <= 5)
-		log(LOG_ERR, "stray interrupt %d%s\n", irq, strays >= 5 ? "; stopped logging" : "");
 
 	if (sc == NULL) {
 			return;
@@ -151,10 +160,64 @@ apic_vectorset(struct ioapic_softc *sc, int pin, int minlevel, int maxlevel)
 	int nvector, ovector = intpin->io_vector;
 
 	if (maxlevel == 0) {
+		/* no vector needed. */
+		intpin->io_minlevel = 0xff; /* XXX magic */
+		intpin->io_maxlevel = 0; 	/* XXX magic */
 		intpin->io_vector = 0;
+	} else if (minlevel != intpin->io_minlevel) {
+#ifdef MPVERBOSE
+		if (minlevel != maxlevel)
+			printf("%s: pin %d shares different IPL interrupts "
+			    "(%x..%x)\n", sc->sc_pic.pic_name, pin,
+			    minlevel, maxlevel);
+#endif
+
+		/*
+		 * Allocate interrupt vector at the *lowest* priority level
+		 * of any of the handlers invoked by this pin.
+		 *
+		 * The interrupt handler will raise ipl higher than this
+		 * as appropriate.
+		 */
+		nvector = idt_vec_alloc(minlevel, minlevel + 15);
+		if (nvector == 0) {
+			/*
+			 * XXX XXX we should be able to deal here..
+			 * need to double-up an existing vector
+			 * and install a slightly different handler.
+			 */
+			panic("%s: can't alloc vector for pin %d at level %x",
+					sc->sc_pic.pic_name, pin, maxlevel);
+		}
+
+		idt_vec_set(nvector, apichandler[nvector & 0xf]);
+		intpin->io_minlevel = minlevel;
+		intpin->io_vector = nvector;
 	}
 
-	apic_intrhand[ovector] = NULL;
+	intpin->io_maxlevel = maxlevel;
+	apic_maxlevel[intpin->io_vector] = maxlevel;
+	apic_intrhand[intpin->io_vector] = intpin->io_handler;
+
+	if (ovector && ovector != intpin->io_vector) {
+		/*
+		 * XXX should defer this until we're sure the old vector
+		 * doesn't have a pending interrupt on any processor.
+		 * do this by setting a counter equal to the number of CPU's,
+		 * and firing off a low-priority broadcast IPI to all cpu's.
+		 * each cpu then decrements the counter; when it
+		 * goes to zero, free the vector..
+		 * i.e., defer until all processors have run with a CPL
+		 * less than the level of the interrupt..
+		 *
+		 * this is only an issue for dynamic interrupt configuration
+		 * (e.g., cardbus or pcmcia).
+		 */
+		apic_intrhand[ovector] = NULL;
+		idt_vec_free(ovector);
+	}
+
+	apic_set_redir(sc, pin);
 }
 
 /*
@@ -219,4 +282,21 @@ apic_intr_establish(int irq, int type, int level, int (*ih_fun)(void *), void *i
 	}
 
 	return (ih);
+}
+
+void
+apic_intr_disestablish(void *arg)
+{
+	struct intrhand *ih = arg;
+	int irq = ih->ih_irq;
+	unsigned int ioapic = APIC_IRQ_APIC(irq);
+	unsigned int intr = APIC_IRQ_PIN(irq);
+	struct ioapic_softc *sc = ioapic_find(ioapic);
+	struct ioapic_intsrc *pin;
+	struct intrhand **p, *q;
+	int minlevel, maxlevel;
+	extern void intr_calculatemasks(void); /* XXX */
+
+
+
 }

@@ -90,25 +90,23 @@ extern	unsigned short 		netmask; 	/* group of interrupts masked with splimp() */
 	outb	%al,$ IO_ICU2+1	; 		\
 	sti ;
 
-#define INTR1(unit,mask,offst) 	\
-	INTR_HEAD(unit,mask,offst) 	\
+#define INTR1(unit,mask,offst) 		\
+	INTR_HEAD(unit,mask,offst) 		\
 	INTR_TAIL(unit,mask,offst)
 
-#define INTR2(unit,mask,offst) 	\
-	INTR_HEAD(unit,mask,offst) 	\
-	outb	%al,$ IO_ICU2 ; 	\
+#define INTR2(unit,mask,offst) 		\
+	INTR_HEAD(unit,mask,offst) 		\
+	outb	%al,$ IO_ICU2 ; 		\
 	INTR_TAIL(unit,mask,offst)
-
-
 
 /* Interrupt vector exit macros */
 
 /* First eight interrupts (ICU1) */
-#define	INTREXIT1	\
+#define	INTREXIT1					\
 	jmp	doreti
 
 /* Second eight interrupts (ICU2) */
-#define	INTREXIT2	\
+#define	INTREXIT2					\
 	jmp	doreti
 
 #endif

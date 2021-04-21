@@ -29,6 +29,38 @@
 #include "devel/ufs/ufml/ufml.h"
 #include "devel/ufs/ufml/ufml_meta.h"
 #include "devel/ufs/ufml/ufml_extern.h"
+#include "devel/ufs/ufml/ufml_ops.h"
+
+/* Check archive types to see if the archive format is supported */
+int
+ufml_check_archive(vp, type)
+	struct vnode *vp;
+	enum ufml_archtype type;
+{
+	int error;
+	struct ufml_metadata *meta = VTOUFML(vp)->ufml_meta;
+
+	switch (type) {
+	case UFML_AR:
+		meta->ufml_archive = UFML_AR;
+		error = 0;
+		break;
+	case UFML_CPIO:
+		meta->ufml_archive = UFML_CPIO;
+		error = 0;
+		break;
+	default:
+		meta->ufml_archive = UFML_TAR;
+		error = 0;
+		break;
+	}
+
+	if (error != 0) {
+		return (1);
+	}
+
+	return (error);
+}
 
 int
 ufml_archive()

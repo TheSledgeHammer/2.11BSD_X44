@@ -36,9 +36,12 @@
  */
 
 #ifdef _KERNEL
-extern volatile vaddr_t local_apic_va;
+extern volatile u_int32_t  local_apic_va;
 extern boolean_t x2apic_mode;
 #endif
+
+#define ioapic_asm_ack(num) \
+	movl	$0,local_apic_va + LAPIC_EOI
 
 /*
  * "spurious interrupt vector"; vector used by interrupt which was
@@ -94,6 +97,5 @@ extern void 			lapic_write(u_int, uint32_t);
 extern void 			lapic_write_tpri(uint32_t);
 extern uint32_t 		lapic_cpu_number(void);
 extern boolean_t 		lapic_is_x2apic(void);
-
 
 #endif /* _I386_LAPICVAR_H_ */

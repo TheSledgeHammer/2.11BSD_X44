@@ -291,4 +291,4 @@ IDTVEC(intr_ioapic14)
 	INTR2(14, _highmask, 14) ; call	_apic_strayintr ; INTREXIT2
 
 IDTVEC(intr_ioapic15)
-	INTR2(15, _highmask, 15) ; call	_apic_strayintr ; INTREXIT2
+	INTR2(15, _highmask, 15) ; call	_apic_strayintr ; INTREXIT2	

@@ -56,6 +56,7 @@
 /*
  * Mount loopback copy of existing name space
  */
+int
 lofs_mount(mp, path, data, ndp, p)
 	struct mount *mp;
 	char *path;
@@ -168,6 +169,7 @@ lofs_mount(mp, path, data, ndp, p)
  * on the underlying filesystem will have been called
  * when that filesystem was mounted.
  */
+int
 lofs_start(mp, flags, p)
 	struct mount *mp;
 	int flags;
@@ -180,6 +182,7 @@ lofs_start(mp, flags, p)
 /*
  * Free reference to looped FS
  */
+int
 lofs_unmount(mp, mntflags, p)
 	struct mount *mp;
 	int mntflags;
@@ -234,9 +237,10 @@ lofs_unmount(mp, mntflags, p)
 	 */
 	free(mp->mnt_data, M_UFSMNT);	/* XXX */
 	mp->mnt_data = 0;
-	return 0;
+	return (0);
 }
 
+int
 lofs_root(mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
@@ -257,9 +261,10 @@ lofs_root(mp, vpp)
 	VREF(vp);
 	VOP_LOCK(vp, 0, vp->v_proc);
 	*vpp = vp;
-	return 0;
+	return (0);
 }
 
+int
 lofs_quotactl(mp, cmd, uid, arg, p)
 	struct mount *mp;
 	int cmd;
@@ -270,6 +275,7 @@ lofs_quotactl(mp, cmd, uid, arg, p)
 	return VFS_QUOTACTL(VFSTOLOFS(mp)->looped_vfs, cmd, uid, arg, p);
 }
 
+int
 lofs_statfs(mp, sbp, p)
 	struct mount *mp;
 	struct statfs *sbp;
@@ -309,6 +315,7 @@ lofs_statfs(mp, sbp, p)
 	return (0);
 }
 
+int
 lofs_sync(mp, waitfor)
 struct mount *mp;
 int waitfor;
@@ -320,15 +327,16 @@ int waitfor;
  * LOFS flat namespace lookup.
  * Currently unsupported.
  */
+int
 lofs_vget(mp, ino, vpp)
 	struct mount *mp;
 	ino_t ino;
 	struct vnode **vpp;
 {
-
 	return (EOPNOTSUPP);
 }
 
+int
 lofs_fhtovp(mp, fhp, nam, vpp, exflagsp, credanonp)
 	register struct mount *mp;
 	struct fid *fhp;
@@ -340,6 +348,7 @@ lofs_fhtovp(mp, fhp, nam, vpp, exflagsp, credanonp)
 	return VFS_FHTOVP(VFSTOLOFS(mp)->looped_vfs, fhp, nam, vpp, exflagsp, credanonp);
 }
 
+int
 lofs_vptofh(vp, fhp)
 	struct vnode *vp;
 	struct fid *fhp;

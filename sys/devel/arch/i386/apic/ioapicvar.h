@@ -41,8 +41,8 @@
 #include <sys/queue.h>
 
 struct ioapic_intsrc {
-	int 					io_irq;
 	/*
+	int 					io_irq;
 	u_int 					io_intpin:8;
 	u_int 					io_cpu;
 	u_int 					io_activehi:1;

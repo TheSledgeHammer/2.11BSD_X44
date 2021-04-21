@@ -951,8 +951,6 @@ ufs211fifo_close(ap)
  * Initialize the vnode associated with a new inode, handle aliased
  * vnodes.
  */
-
-
 int
 ufs211_vinit(mntp, specops, fifoops, vpp)
 	struct mount *mntp;

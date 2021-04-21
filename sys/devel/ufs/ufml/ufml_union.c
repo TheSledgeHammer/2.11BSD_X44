@@ -54,6 +54,7 @@
 #include <vm/include/vm.h>		/* for vnode_pager_setsize */
 
 #include <devel/ufs/ufml/ufml.h>
+#include <devel/ufs/ufml/ufml_union.h>
 
 /* must be power of two, otherwise change UFML_HASH() */
 #define NHASH 			32
@@ -80,7 +81,6 @@ static int
 ufml_list_lock(ix)
 	int ix;
 {
-
 	if (unvplock[ix] & UFML_LOCKED) {
 		unvplock[ix] |= UFML_WANT;
 		sleep((caddr_t) &unvplock[ix], PINOD);
@@ -96,7 +96,6 @@ static void
 ufml_list_unlock(ix)
 	int ix;
 {
-
 	unvplock[ix] &= ~UFML_LOCKED;
 
 	if (unvplock[ix] & UFML_WANT) {
@@ -111,7 +110,9 @@ ufml_updatevp(un, uppervp, lowervp)
 	struct vnode 		*uppervp;
 	struct vnode 		*lowervp;
 {
-	int ohash = UFML_HASH(un->ufml_uppervp, un->ufml_lowervp);
+	struct ufml_union_node *uun = UFML_UNION(un);
+
+	int ohash = UFML_HASH(uun->uun_uppervp, uun->uun_lowervp);
 	int nhash = UFML_HASH(uppervp, lowervp);
 	int docache = (lowervp != NULLVP || uppervp != NULLVP);
 	int lhash, hhash, uhash;
@@ -136,8 +137,8 @@ ufml_updatevp(un, uppervp, lowervp)
 		continue;
 
 	if (ohash != nhash || !docache) {
-		if (un->ufml_flags & UFML_CACHED) {
-			un->ufml_flags &= ~UFML_CACHED;
+		if (uun->uun_flags & UFML_CACHED) {
+			uun->uun_flags &= ~UFML_CACHED;
 			LIST_REMOVE(un, ufml_cache);
 		}
 	}
@@ -145,33 +146,33 @@ ufml_updatevp(un, uppervp, lowervp)
 	if (ohash != nhash)
 		ufml_list_unlock(ohash);
 
-	if (un->ufml_lowervp != lowervp) {
-		if (un->ufml_lowervp) {
-			vrele(un->ufml_lowervp);
-			if (un->ufml_path) {
-				free(un->ufml_path, M_TEMP);
-				un->ufml_path = 0;
+	if (uun->uun_lowervp != lowervp) {
+		if (uun->uun_lowervp) {
+			vrele(uun->uun_lowervp);
+			if (uun->uun_path) {
+				free(uun->uun_path, M_TEMP);
+				uun->uun_path = 0;
 			}
-			if (un->ufml_dirvp) {
-				vrele(un->ufml_dirvp);
-				un->ufml_dirvp = NULLVP;
+			if (uun->uun_dirvp) {
+				vrele(uun->uun_dirvp);
+				uun->uun_dirvp = NULLVP;
 			}
 		}
-		un->ufml_lowervp = lowervp;
-		un->ufml_lowersz = VNOVAL;
+		uun->uun_lowervp = lowervp;
+		uun->uun_lowersz = VNOVAL;
 	}
 
-	if (un->ufml_uppervp != uppervp) {
-		if (un->ufml_uppervp)
-			vrele(un->ufml_uppervp);
+	if (uun->uun_uppervp != uppervp) {
+		if (uun->uun_uppervp)
+			vrele(uun->uun_uppervp);
 
-		un->ufml_uppervp = uppervp;
-		un->ufml_uppersz = VNOVAL;
+		uun->uun_uppervp = uppervp;
+		uun->uun_uppersz = VNOVAL;
 	}
 
 	if (docache && (ohash != nhash)) {
 		LIST_INSERT_HEAD(&ufml_head[nhash], un, ufml_cache);
-		un->ufml_flags |= UFML_CACHED;
+		uun->uun_flags |= UFML_CACHED;
 	}
 
 	ufml_list_unlock(nhash);
@@ -182,8 +183,8 @@ ufml_newlower(un, lowervp)
 	struct ufml_node *un;
 	struct vnode *lowervp;
 {
-
-	ufml_updatevp(un, un->ufml_uppervp, lowervp);
+	struct ufml_union_node *uun = UFML_UNION(un);
+	ufml_updatevp(un, uun->uun_uppervp, lowervp);
 }
 
 void
@@ -191,8 +192,8 @@ ufml_newupper(un, uppervp)
 	struct ufml_node *un;
 	struct vnode *uppervp;
 {
-
-	ufml_updatevp(un, uppervp, un->ufml_lowervp);
+	struct ufml_union_node *uun = UFML_UNION(un);
+	ufml_updatevp(un, uppervp, uun->uun_lowervp);
 }
 
 /*
@@ -207,6 +208,7 @@ ufml_newsize(vp, uppersz, lowersz)
 {
 	struct ufml_node *un;
 	off_t sz;
+	struct ufml_union_node *uun = UFML_UNION(un);
 
 	/* only interested in regular files */
 	if (vp->v_type != VREG)
@@ -215,16 +217,16 @@ ufml_newsize(vp, uppersz, lowersz)
 	un = VTOUFML(vp);
 	sz = VNOVAL;
 
-	if ((uppersz != VNOVAL) && (un->ufml_uppersz != uppersz)) {
-		un->ufml_uppersz = uppersz;
+	if ((uppersz != VNOVAL) && (uun->uun_uppersz != uppersz)) {
+		uun->uun_uppersz = uppersz;
 		if (sz == VNOVAL)
-			sz = un->ufml_uppersz;
+			sz = uun->uun_uppersz;
 	}
 
-	if ((lowersz != VNOVAL) && (un->ufml_lowersz != lowersz)) {
-		un->ufml_lowersz = lowersz;
+	if ((lowersz != VNOVAL) && (uun->uun_lowersz != lowersz)) {
+		uun->uun_lowersz = lowersz;
 		if (sz == VNOVAL)
-			sz = un->ufml_lowersz;
+			sz = uun->uun_lowersz;
 	}
 
 	if (sz != VNOVAL) {
@@ -272,7 +274,7 @@ ufml_allocvp(vpp, mp, undvp, dvp, cnp, uppervp, lowervp, docache)
 	struct vnode **vpp;
 	struct mount *mp;
 	struct vnode *undvp;		/* parent union vnode */
-	struct vnode *dvp;		/* may be null */
+	struct vnode *dvp;			/* may be null */
 	struct componentname *cnp;	/* may be null */
 	struct vnode *uppervp;		/* may be null */
 	struct vnode *lowervp;		/* may be null */
@@ -287,6 +289,9 @@ ufml_allocvp(vpp, mp, undvp, dvp, cnp, uppervp, lowervp, docache)
 	int vflag;
 	int try;
 
+	struct ufml_union_node *uun = UFML_UNION(un);
+	struct ufml_union_mount *uum = UFML_UNIONMNT(um);
+
 	if (uppervp == NULLVP && lowervp == NULLVP)
 		panic("ufml: unidentifiable allocation");
 
@@ -297,10 +302,10 @@ ufml_allocvp(vpp, mp, undvp, dvp, cnp, uppervp, lowervp, docache)
 
 	/* detect the root vnode (and aliases) */
 	vflag = 0;
-	if ((uppervp == um->ufmlm_uppervp) &&
-	    ((lowervp == NULLVP) || lowervp == um->ufmlm_lowervp)) {
+	if ((uppervp == uum->uum_uppervp) &&
+	    ((lowervp == NULLVP) || lowervp == uum->uum_lowervp)) {
 		if (lowervp == NULLVP) {
-			lowervp = um->ufmlm_lowervp;
+			lowervp = uum->uum_lowervp;
 			if (lowervp != NULLVP)
 				VREF(lowervp);
 		}
@@ -335,10 +340,10 @@ loop:
 			continue;
 
 		for (un = LIST_FIRST(ufml_head[hash]); un != 0; un = LIST_NEXT(un, ufml_cache)) {
-			if ((un->ufml_lowervp == lowervp ||
-			     un->ufml_lowervp == NULLVP) &&
-			    (un->ufml_uppervp == uppervp ||
-			     un->ufml_uppervp == NULLVP) &&
+			if ((uun->uun_lowervp == lowervp ||
+			     uun->uun_lowervp == NULLVP) &&
+			    (uun->uun_uppervp == uppervp ||
+			     uun->uun_uppervp == NULLVP) &&
 			    (UFMLTOV(un)->v_mount == mp)) {
 				if (vget(UFMLTOV(un), 0,
 				    cnp ? cnp->cn_proc : NULL)) {
@@ -358,9 +363,9 @@ loop:
 	if (un) {
 		/*
 		 * Obtain a lock on the ufml_node.
-		 * uppervp is locked, though un->ufml_uppervp
+		 * uppervp is locked, though uun->uun_uppervp
 		 * may not be.  this doesn't break the locking
-		 * hierarchy since in the case that un->ufml_uppervp
+		 * hierarchy since in the case that uun->uun_uppervp
 		 * is not yet locked it will be vrele'd and replaced
 		 * with uppervp.
 		 */
@@ -373,47 +378,47 @@ loop:
 			 * process can hold the lock on (un).
 			 */
 #ifdef DIAGNOSTIC
-			if ((un->ufml_flags & UN_LOCKED) == 0)
+			if ((uun->uun_flags & UN_LOCKED) == 0)
 				panic("ufml: . not locked");
-			else if (curproc && un->ufml_pid != curproc->p_pid &&
-				    un->ufml_pid > -1 && curproc->p_pid > -1)
+			else if (curproc && uun->uun_pid != curproc->p_pid &&
+				    uun->uun_pid > -1 && curproc->p_pid > -1)
 				panic("ufml: allocvp not lock owner");
 #endif
 		} else {
-			if (un->ufml_flags & UFML_LOCKED) {
+			if (uun->uun_flags & UFML_LOCKED) {
 				vrele(UFMLTOV(un));
-				un->ufml_flags |= UFML_WANT;
-				sleep((caddr_t) &un->ufml_flags, PINOD);
+				uun->uun_flags |= UFML_WANT;
+				sleep((caddr_t) &uun->uun_flags, PINOD);
 				goto loop;
 			}
-			un->ufml_flags |= UFML_LOCKED;
+			uun->uun_flags |= UFML_LOCKED;
 
 #ifdef DIAGNOSTIC
 			if (curproc)
-				un->ufml_pid = curproc->p_pid;
+				uun->uun_pid = curproc->p_pid;
 			else
-				un->ufml_pid = -1;
+				uun->uun_pid = -1;
 #endif
 		}
 
 		/*
 		 * At this point, the ufml_node is locked,
-		 * un->ufml_uppervp may not be locked, and uppervp
+		 * uun->uun_uppervp may not be locked, and uppervp
 		 * is locked or nil.
 		 */
 
 		/*
 		 * Save information about the upper layer.
 		 */
-		if (uppervp != un->ufml_uppervp) {
+		if (uppervp != uun->uun_uppervp) {
 			ufml_dircache_r(un, uppervp);
 		} else if (uppervp) {
 			vrele(uppervp);
 		}
 
-		if (un->ufml_uppervp) {
-			un->ufml_flags |= UFML_ULOCK;
-			un->ufml_flags &= ~UFML_KLOCK;
+		if (uun->uun_uppervp) {
+			uun->uun_flags |= UFML_ULOCK;
+			uun->uun_flags &= ~UFML_KLOCK;
 		}
 
 		/*
@@ -422,16 +427,16 @@ loop:
 		 * and directory information which ufml_vn_create
 		 * might need.
 		 */
-		if (lowervp != un->ufml_lowervp) {
+		if (lowervp != uun->uun_lowervp) {
 			ufml_newlower(un, lowervp);
 			if (cnp && (lowervp != NULLVP)) {
 				un->ufml_cache = cnp->cn_hash;
-				un->ufml_path = malloc(cnp->cn_namelen+1, M_TEMP, M_WAITOK);
-				bcopy(cnp->cn_nameptr, un->ufml_path,
+				uun->uun_path = malloc(cnp->cn_namelen+1, M_TEMP, M_WAITOK);
+				bcopy(cnp->cn_nameptr, uun->uun_path,
 						cnp->cn_namelen);
-				un->ufml_path[cnp->cn_namelen] = '\0';
+				uun->uun_path[cnp->cn_namelen] = '\0';
 				VREF(dvp);
-				un->ufml_dirvp = dvp;
+				uun->uun_dirvp = dvp;
 			}
 		} else if (lowervp) {
 			vrele(lowervp);
@@ -474,40 +479,40 @@ loop:
 		(*vpp)->v_type = lowervp->v_type;
 	un = VTOUFML(*vpp);
 	un->ufml_vnode = *vpp;
-	un->ufml_uppervp = uppervp;
-	un->ufml_uppersz = VNOVAL;
-	un->ufml_lowervp = lowervp;
-	un->ufml_lowersz = VNOVAL;
-	un->ufml_pvp = undvp;
+	uun->uun_uppervp = uppervp;
+	uun->uun_uppersz = VNOVAL;
+	uun->uun_lowervp = lowervp;
+	uun->uun_lowersz = VNOVAL;
+	uun->uun_pvp = undvp;
 	if (undvp != NULLVP)
 		VREF(undvp);
-	un->ufml_dircache = 0;
-	un->ufml_openl = 0;
-	un->ufml_flags = UFML_LOCKED;
-	if (un->ufml_uppervp)
-		un->ufml_flags |= UFML_ULOCK;
+	uun->uun_dircache = 0;
+	uun->uun_openl = 0;
+	uun->uun_flags = UFML_LOCKED;
+	if (uun->uun_uppervp)
+		uun->uun_flags |= UFML_ULOCK;
 #ifdef DIAGNOSTIC
 	if (curproc)
-		un->ufml_pid = curproc->p_pid;
+		uun->uun_pid = curproc->p_pid;
 	else
-		un->ufml_pid = -1;
+		uun->uun_pid = -1;
 #endif
 	if (cnp && (lowervp != NULLVP)) {
-		un->ufml_hash = cnp->cn_hash;
-		un->ufml_path = malloc(cnp->cn_namelen+1, M_TEMP, M_WAITOK);
-		bcopy(cnp->cn_nameptr, un->ufml_path, cnp->cn_namelen);
-		un->ufml_path[cnp->cn_namelen] = '\0';
+		uun->uun_hash = cnp->cn_hash;
+		uun->uun_path = malloc(cnp->cn_namelen+1, M_TEMP, M_WAITOK);
+		bcopy(cnp->cn_nameptr, uun->uun_path, cnp->cn_namelen);
+		uun->uun_path[cnp->cn_namelen] = '\0';
 		VREF(dvp);
-		un->ufml_dirvp = dvp;
+		uun->uun_dirvp = dvp;
 	} else {
-		un->ufml_hash = 0;
-		un->ufml_path = 0;
-		un->ufml_dirvp = 0;
+		uun->uun_hash = 0;
+		uun->uun_path = 0;
+		uun->uun_dirvp = 0;
 	}
 
 	if (docache) {
 		LIST_INSERT_HEAD(&ufml_head[hash], un, ufml_cache);
-		un->ufml_flags |= UFML_CACHED;
+		uun->uun_flags |= UFML_CACHED;
 	}
 
 	if (xlowervp)
@@ -525,22 +530,23 @@ ufml_freevp(vp)
 	struct vnode *vp;
 {
 	struct ufml_node *un = VTOUFML(vp);
+	struct ufml_union_node *uun = UFML_UNION(un);
 
-	if (un->ufml_flags & UFML_CACHED) {
-		un->ufml_flags &= ~UFML_CACHED;
+	if (uun->uun_flags & UFML_CACHED) {
+		uun->uun_flags &= ~UFML_CACHED;
 		LIST_REMOVE(un, ufml_cache);
 	}
 
-	if (un->ufml_pvp != NULLVP)
-		vrele(un->ufml_pvp);
-	if (un->ufml_uppervp != NULLVP)
-		vrele(un->ufml_uppervp);
-	if (un->ufml_lowervp != NULLVP)
-		vrele(un->ufml_lowervp);
-	if (un->ufml_dirvp != NULLVP)
-		vrele(un->ufml_dirvp);
-	if (un->ufml_path)
-		free(un->ufml_path, M_TEMP);
+	if (uun->uun_pvp != NULLVP)
+		vrele(uun->uun_pvp);
+	if (uun->uun_uppervp != NULLVP)
+		vrele(uun->uun_uppervp);
+	if (uun->uun_lowervp != NULLVP)
+		vrele(uun->uun_lowervp);
+	if (uun->uun_dirvp != NULLVP)
+		vrele(uun->uun_dirvp);
+	if (uun->uun_path)
+		free(uun->uun_path, M_TEMP);
 
 	FREE(vp->v_data, M_TEMP);
 	vp->v_data = 0;
@@ -634,6 +640,7 @@ ufml_copyup(un, docopy, cred, p)
 {
 	int error;
 	struct vnode *lvp, *uvp;
+	struct ufml_union_node *uun = UFML_UNION(un);
 
 	error = ufml_vn_create(&uvp, un, p);
 	if (error)
@@ -641,9 +648,9 @@ ufml_copyup(un, docopy, cred, p)
 
 	/* at this point, uppervp is locked */
 	ufml_dircache_r(un, uvp);
-	un->ufml_flags |= UFML_ULOCK;
+	uun->uun_flags |= UFML_ULOCK;
 
-	lvp = un->ufml_lowervp;
+	lvp = uun->uun_lowervp;
 
 	if (docopy) {
 		/*
@@ -659,15 +666,15 @@ ufml_copyup(un, docopy, cred, p)
 		}
 #ifdef UNION_DIAGNOSTIC
 		if (error == 0)
-			uprintf("ufml: copied up %s\n", un->ufml_path);
+			uprintf("ufml: copied up %s\n", uun->uun_path);
 #endif
 
 	}
-	un->ufml_flags &= ~UFML_ULOCK;
+	uun->uun_flags &= ~UFML_ULOCK;
 	VOP_UNLOCK(uvp, 0, p);
 	ufml_vn_close(uvp, FWRITE, cred, p);
 	vn_lock(uvp, LK_EXCLUSIVE | LK_RETRY, p);
-	un->ufml_flags |= UFML_ULOCK;
+	uun->uun_flags |= UFML_ULOCK;
 
 	/*
 	 * Subsequent IOs will go to the top layer, so
@@ -680,11 +687,11 @@ ufml_copyup(un, docopy, cred, p)
 	if (error == 0) {
 		int i;
 
-		for (i = 0; i < un->ufml_openl; i++) {
+		for (i = 0; i < uun->uun_openl; i++) {
 			(void) VOP_CLOSE(lvp, FREAD, cred, p);
 			(void) VOP_OPEN(uvp, FREAD, cred, p);
 		}
-		un->ufml_openl = 0;
+		uun->uun_openl = 0;
 	}
 
 	return (error);
@@ -702,7 +709,7 @@ ufml_relookup(um, dvp, vpp, cnp, cn, path, pathlen)
 	int pathlen;
 {
 	int error;
-
+	struct ufml_union_mount *uum = UFML_UNIONMNT(um);
 	/*
 	 * A new componentname structure must be faked up because
 	 * there is no way to know where the upper level cnp came
@@ -722,10 +729,10 @@ ufml_relookup(um, dvp, vpp, cnp, cn, path, pathlen)
 	cn->cn_nameiop = CREATE;
 	cn->cn_flags = (LOCKPARENT|HASBUF|SAVENAME|SAVESTART|ISLASTCN);
 	cn->cn_proc = cnp->cn_proc;
-	if (um->ufmlm_op == UNMNT_ABOVE)
+	if (uum->uum_op == UNMNT_ABOVE)
 		cn->cn_cred = cnp->cn_cred;
 	else
-		cn->cn_cred = um->ufmlm_cred;
+		cn->cn_cred = uum->uum_cred;
 	cn->cn_nameptr = cn->cn_pnbuf;
 	cn->cn_hash = cnp->cn_hash;
 	cn->cn_consume = cnp->cn_consume;
@@ -762,6 +769,8 @@ ufml_mkshadow(um, dvp, cnp, vpp)
 	struct proc *p = cnp->cn_proc;
 	struct componentname cn;
 
+	struct ufml_union_mount *uum = UFML_UNIONMNT(um);
+
 	error = ufml_relookup(um, dvp, vpp, cnp, &cn,
 			cnp->cn_nameptr, cnp->cn_namelen);
 	if (error)
@@ -785,7 +794,7 @@ ufml_mkshadow(um, dvp, cnp, vpp)
 
 	VATTR_NULL(&va);
 	va.va_type = VDIR;
-	va.va_mode = um->ufmlm_cmode;
+	va.va_mode = uum->uum_cmode;
 
 	/* VOP_LEASE: dvp is locked */
 	VOP_LEASE(dvp, p, cn.cn_cred, LEASE_WRITE);
@@ -866,6 +875,8 @@ ufml_vn_create(vpp, un, p)
 	char *cp;
 	struct componentname cn;
 
+	struct ufml_union_node *uun = UFML_UNION(un);
+
 	*vpp = NULLVP;
 
 	/*
@@ -877,28 +888,28 @@ ufml_vn_create(vpp, un, p)
 	 * able to write the file (that's why it is being
 	 * copied in the first place).
 	 */
-	cn.cn_namelen = strlen(un->ufml_path);
+	cn.cn_namelen = strlen(uun->uun_path);
 	cn.cn_pnbuf = (caddr_t) malloc(cn.cn_namelen, M_NAMEI, M_WAITOK);
-	bcopy(un->ufml_path, cn.cn_pnbuf, cn.cn_namelen+1);
+	bcopy(uun->uun_path, cn.cn_pnbuf, cn.cn_namelen+1);
 	cn.cn_nameiop = CREATE;
 	cn.cn_flags = (LOCKPARENT|HASBUF|SAVENAME|SAVESTART|ISLASTCN);
 	cn.cn_proc = p;
 	cn.cn_cred = p->p_ucred;
 	cn.cn_nameptr = cn.cn_pnbuf;
-	cn.cn_hash = un->ufml_hash;
+	cn.cn_hash = uun->uun_hash;
 	cn.cn_consume = 0;
 
-	VREF(un->ufml_dirvp);
-	if (error == relookup(un->ufml_dirvp, &vp, &cn))
+	VREF(uun->uun_dirvp);
+	if (error == relookup(uun->uun_dirvp, &vp, &cn))
 		return (error);
-	vrele(un->ufml_dirvp);
+	vrele(uun->uun_dirvp);
 
 	if (vp) {
-		VOP_ABORTOP(un->ufml_dirvp, &cn);
-		if (un->ufml_dirvp == vp)
-			vrele(un->ufml_dirvp);
+		VOP_ABORTOP(uun->uun_dirvp, &cn);
+		if (uun->uun_dirvp == vp)
+			vrele(uun->uun_dirvp);
 		else
-			vput(un->ufml_dirvp);
+			vput(uun->uun_dirvp);
 		vrele(vp);
 		return (EEXIST);
 	}
@@ -916,8 +927,8 @@ ufml_vn_create(vpp, un, p)
 	VATTR_NULL(vap);
 	vap->va_type = VREG;
 	vap->va_mode = cmode;
-	VOP_LEASE(un->ufml_dirvp, p, cred, LEASE_WRITE);
-	if (error == VOP_CREATE(un->ufml_dirvp, &vp, &cn, vap))
+	VOP_LEASE(uun->uun_dirvp, p, cred, LEASE_WRITE);
+	if (error == VOP_CREATE(uun->uun_dirvp, &vp, &cn, vap))
 		return (error);
 
 	if (error == VOP_OPEN(vp, fmode, cred, p)) {
@@ -937,7 +948,6 @@ ufml_vn_close(vp, fmode, cred, p)
 	struct ucred *cred;
 	struct proc *p;
 {
-
 	if (fmode & FWRITE)
 		--vp->v_writecount;
 	return (VOP_CLOSE(vp, fmode, cred, p));
@@ -948,16 +958,17 @@ ufml_removed_upper(un)
 	struct ufml_node *un;
 {
 	struct proc *p = curproc;	/* XXX */
+	struct ufml_union_node *uun = UFML_UNION(un);
 
 	ufml_dircache_r(un, NULLVP);
-	if (un->ufml_flags & UFML_CACHED) {
-		un->ufml_flags &= ~UFML_CACHED;
+	if (uun->uun_flags & UFML_CACHED) {
+		uun->uun_flags &= ~UFML_CACHED;
 		LIST_REMOVE(un, ufml_cache);
 	}
 
-	if (un->ufml_flags & UFML_ULOCK) {
-		un->ufml_flags &= ~UFML_ULOCK;
-		VOP_UNLOCK(un->ufml_uppervp, 0, p);
+	if (uun->uun_flags & UFML_ULOCK) {
+		uun->uun_flags &= ~UFML_ULOCK;
+		VOP_UNLOCK(uun->uun_uppervp, 0, p);
 	}
 }
 
@@ -967,11 +978,12 @@ ufml_lowervp(vp)
 	struct vnode *vp;
 {
 	struct ufml_node *un = VTOUFML(vp);
+	struct ufml_union_node *uun = UFML_UNION(un);
 
-	if ((un->ufml_lowervp != NULLVP) &&
-	    (vp->v_type == un->ufml_lowervp->v_type)) {
-		if (vget(un->ufml_lowervp, 0) == 0)
-			return (un->ufml_lowervp);
+	if ((uun->uun_lowervp != NULLVP) &&
+	    (vp->v_type == uun->uun_lowervp->v_type)) {
+		if (vget(uun->uun_lowervp, 0) == 0)
+			return (uun->uun_lowervp);
 	}
 
 	return (NULLVP);
@@ -989,11 +1001,12 @@ ufml_dowhiteout(un, cred, p)
 	struct proc *p;
 {
 	struct vattr va;
+	struct ufml_union_node *uun = UFML_UNION(un);
 
-	if (un->ufml_lowervp != NULLVP)
+	if (uun->uun_lowervp != NULLVP)
 		return (1);
 
-	if (VOP_GETATTR(un->ufml_uppervp, &va, cred, p) == 0 &&
+	if (VOP_GETATTR(uun->uun_uppervp, &va, cred, p) == 0 &&
 	    (va.va_flags & OPAQUE))
 		return (1);
 
@@ -1007,6 +1020,7 @@ ufml_dircache_r(vp, vppp, cntp)
 	int *cntp;
 {
 	struct ufml_node *un;
+	struct ufml_union_node *uun = UFML_UNION(un);
 
 	if (vp->v_op != ufml_vnodeops) {
 		if (vppp) {
@@ -1022,10 +1036,10 @@ ufml_dircache_r(vp, vppp, cntp)
 	}
 
 	un = VTOUFML(vp);
-	if (un->ufml_uppervp != NULLVP)
-		ufml_dircache_r(un->ufml_uppervp, vppp, cntp);
-	if (un->ufml_lowervp != NULLVP)
-		ufml_dircache_r(un->ufml_lowervp, vppp, cntp);
+	if (uun->uun_uppervp != NULLVP)
+		ufml_dircache_r(uun->uun_uppervp, vppp, cntp);
+	if (uun->uun_lowervp != NULLVP)
+		ufml_dircache_r(uun->uun_lowervp, vppp, cntp);
 }
 
 struct vnode *
@@ -1040,8 +1054,10 @@ ufml_dircache(vp, p)
 	struct ufml_node *un;
 	int error;
 
+	struct ufml_union_node *uun = UFML_UNION(un);
+
 	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
-	dircache = VTOUFML(vp)->ufml_dircache;
+	dircache = VTOUFML(vp)->ufml_union->uun_dircache;
 
 	nvp = NULLVP;
 
@@ -1059,7 +1075,7 @@ ufml_dircache(vp, p)
 	} else {
 		vpp = dircache;
 		do {
-			if (*vpp++ == VTOUFML(vp)->ufml_uppervp)
+			if (*vpp++ == VTOUFML(vp)->ufml_union->uun_uppervp)
 				break;
 		} while (*vpp != NULLVP);
 	}
@@ -1073,9 +1089,9 @@ ufml_dircache(vp, p)
 	if (error)
 		goto out;
 
-	VTOUFML(vp)->ufml_dircache = 0;
+	VTOUFML(vp)->ufml_union->uun_dircache = 0;
 	un = VTOUFML(nvp);
-	un->ufml_dircache = dircache;
+	uun->uun_dircache = dircache;
 
 out:
 	VOP_UNLOCK(vp, 0, p);

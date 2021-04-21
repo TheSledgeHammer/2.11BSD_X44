@@ -74,6 +74,7 @@ static struct lofscache lofscache[NLOFSCACHE];
 /*
  * Initialise cache headers
  */
+void
 lofs_init()
 {
 	struct lofscache *ac;
@@ -267,6 +268,7 @@ lofs_alias(mp, targetvp, newvpp)
  * to it, otherwise make a new lofsnode vnode which
  * contains a reference to the target vnode.
  */
+int
 make_lofs(mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
