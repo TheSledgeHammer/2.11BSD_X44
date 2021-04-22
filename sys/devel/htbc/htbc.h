@@ -117,6 +117,8 @@ struct htbc_htransaction {
 #define HASH_MAJOR 				(prospector32(random()))
 #define HASH_MINOR 				(prospector32(random()))
 
+#define NOTRANSACTION			0x01
+
 /****************************************************************/
 /* HTBC On Disk Layouts */
 

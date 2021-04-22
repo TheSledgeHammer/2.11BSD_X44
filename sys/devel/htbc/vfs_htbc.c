@@ -144,8 +144,8 @@ struct htbc {
 	int 										ht_dealloclim;		/* max count */
 };
 
-static struct htbc_dealloc 			*htbc_dealloc;
-struct htbc_hashchain				*htbc_blockchain;				/* add to htbc structure */
+static struct htbc_dealloc 						*htbc_dealloc;
+struct htbc_hashchain							*htbc_blockchain;				/* add to htbc structure */
 
 struct htbc_ops {
 	void	(*ho_htbc_discard)(struct htbc *);
@@ -225,7 +225,7 @@ htbc_start(htp, mp, vp, off, count, blksize)
 	ht->ht_devvp = htip->hi_devvp = devvp;
 	ht->ht_mount = mp;
 	ht->ht_pbn = pbn;
-	//ht->ht_fs_dev_bsize = log_dev_bshift;
+	ht->ht_fs_dev_bsize = log_dev_bshift;
 	ht->ht_fs_dev_bshift = fs_dev_bshift;
 
 	/* XXX fix actual number of pages reserved per filesystem. */
@@ -464,7 +464,7 @@ htbc_chain_hash(const char *name, int len)
 	return (hash);
 }
 
-static void
+void
 get_hash_seed(struct htbc_inode *hi, uint32_t *seed)
 {
 	for (int i = 0; i < 4; i++) {
@@ -699,47 +699,16 @@ static __inline size_t
 htbc_transaction_inodes_len(ht)
 	struct htbc *ht;
 {
-	int blocklen = 1 << ht->ht_dev_bshift;
-	int iph;
-
-	/* Calculate number of inodes described in a inodelist header */
-	iph = (blocklen - offsetof(struct htbc_hc_inodelist, hc_inodes)) / sizeof(((struct htbc_hc_inodelist *)0)->hc_inodes[0]);
-
-	KASSERT(iph > 0);
-
-	return MAX(1, howmany(ht->ht_inohashcnt, iph))*blocklen;
-}
-
-/* Calculate amount of space a transaction will take on disk */
-static size_t
-htbc_transaction_len(ht)
-	struct htbc *ht;
-{
-	int blocklen = 1<<ht->ht_log_dev_bshift;
-	size_t len;
-	int bph;
-
-	/* Calculate number of blocks described in a blocklist header */
-	bph = (blocklen - offsetof(struct htbc_hc_blocklist, hc_blocks)) /
-	    sizeof(((struct htbc_hc_blocklist *)0)->hc_blocks[0]);
-
-	KASSERT(bph > 0);
-
-	len = ht->ht_bcount;
-	len += howmany(ht->ht_bufcount, bph)*blocklen;
-	len += howmany(ht->ht_dealloccnt, bph)*blocklen;
-	len += htbc_transaction_inodes_len(ht);
-
-	return len;
-}
-
-/* Uses transaction instead of htbc struct */
-static __inline size_t
-htbc_transaction_inodes_len2(trans)
 	struct htbc_htransaction *trans;
-{
-	int blocklen = 1 << trans->ht_dev_bshift;
+	int blocklen;
 	int iph;
+
+	trans = htbc_lookup_transaction(ht->ht_hashchain);
+	if (trans == NULL) {
+		return (NOTRANSACTION);
+	}
+
+	blocklen = 1 << trans->ht_dev_bshift;
 
 	/* Calculate number of inodes described in a inodelist header */
 	iph = (blocklen - offsetof(struct htbc_hc_inodelist, hc_inodes)) / sizeof(((struct htbc_hc_inodelist *)0)->hc_inodes[0]);
@@ -751,25 +720,30 @@ htbc_transaction_inodes_len2(trans)
 
 /* Calculate amount of space a transaction will take on disk */
 static size_t
-htbc_transaction_len2(trans, bcount, bufcount, dealloccnt)
-	struct htbc_htransaction *trans;
-	size_t bcount, bufcount;
-	int dealloccnt;
+htbc_transaction_len(ht)
+	struct htbc *ht;
 {
-	int blocklen = 1 << trans->ht_dev_bshift;
+	struct htbc_htransaction *trans;
+	int blocklen;
 	size_t len;
 	int bph;
 
+	trans = htbc_lookup_transaction(ht->ht_hashchain);
+	if (trans == NULL) {
+		return (NOTRANSACTION);
+	}
+
+	blocklen = 1 << trans->ht_dev_bshift;
+
 	/* Calculate number of blocks described in a blocklist header */
-	bph = (blocklen - offsetof(struct htbc_hc_blocklist, hc_blocks)) / sizeof(((struct htbc_hc_blocklist *)0)->hc_blocks[0]);
+	bph = (blocklen - offsetof(struct htbc_hc_blocklist, hc_blocks)) / sizeof(((struct htbc_hc_blocklist*) 0)->hc_blocks[0]);
 
 	KASSERT(bph > 0);
 
-	len = bcount;
-	len += howmany(bufcount, bph)*blocklen;
-	len += howmany(dealloccnt, bph)*blocklen;
-	len += htbc_transaction_inodes_len2(trans);
-
+	len = ht->ht_bcount;
+	len += howmany(ht->ht_bufcount, bph)*blocklen;
+	len += howmany(ht->ht_dealloccnt, bph)*blocklen;
+	len += htbc_transaction_inodes_len(ht);
 	return (len);
 }
 
