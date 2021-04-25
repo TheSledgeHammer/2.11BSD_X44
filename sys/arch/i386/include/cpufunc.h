@@ -170,6 +170,12 @@ rcr4(void)
 	__asm __volatile("movl %%cr4,%0" : "=r" (data));
 	return (data);
 }
+static __inline void
+lcr8(u_int val)
+{
+	u_int64_t val64 = val;
+	__asm __volatile("movq %0,%%cr8" : : "r" (val64));
+}
 
 static __inline uint64_t
 rxcr(u_int reg)

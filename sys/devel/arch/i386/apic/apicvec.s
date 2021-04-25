@@ -38,7 +38,7 @@
 #include <devel/arch/i386/apic/apicvar.h>
 
 #define	RECURSE(name)			\
-IDTVEC(recurse_/**/name			;\
+IDTVEC(recurse_/**/name)		;\
 		pushfl					;\
 		pushl	%cs				;\
 		pushl	%esi			;\
@@ -242,53 +242,3 @@ IDTVEC(intr_/**/name/**/num)												\
 		late_ack(num)														;\
 		
 
-/* Derived from icu.s */
-		.globl	_apic_strayintr
-
-IDTVEC(intr_ioapic0)
-	INTR1(0, _highmask, 0) ; call	_apic_strayintr ; INTREXIT1
-	
-IDTVEC(intr_ioapic1)
-	INTR1(1, _highmask, 1) ; call	_apic_strayintr ; INTREXIT1
-
-IDTVEC(intr_ioapic2)
-	INTR1(2, _highmask, 2) ; call	_apic_strayintr ; INTREXIT1
-	
-IDTVEC(intr_ioapic3)
-	INTR1(3, _highmask, 3) ; call	_apic_strayintr ; INTREXIT1
-
-IDTVEC(intr_ioapic4)
-	INTR1(4, _highmask, 4) ; call	_apic_strayintr ; INTREXIT1
-
-IDTVEC(intr_ioapic5)
-	INTR1(5, _highmask, 5) ; call	_apic_strayintr ; INTREXIT1
-
-IDTVEC(intr_ioapic6)
-	INTR1(6, _highmask, 6) ; call	_apic_strayintr ; INTREXIT1
-
-IDTVEC(intr_ioapic7)
-	INTR1(7, _highmask, 7) ; call	_apic_strayintr ; INTREXIT1
-
-IDTVEC(intr_ioapic8)
-	INTR2(8, _highmask, 8) ; call	_apic_strayintr ; INTREXIT2
-
-IDTVEC(intr_ioapic9)
-	INTR2(9, _highmask, 9) ; call	_apic_strayintr ; INTREXIT2
-
-IDTVEC(intr_ioapic10)
-	INTR2(10, _highmask, 10) ; call	_apic_strayintr ; INTREXIT2
-
-IDTVEC(intr_ioapic11)
-	INTR2(11, _highmask, 11) ; call	_apic_strayintr ; INTREXIT2
-
-IDTVEC(intr_ioapic12)
-	INTR2(12, _highmask, 12) ; call	_apic_strayintr ; INTREXIT2
-
-IDTVEC(intr_ioapic13)
-	INTR2(13, _highmask, 13) ; call	_apic_strayintr ; INTREXIT2
-
-IDTVEC(intr_ioapic14)
-	INTR2(14, _highmask, 14) ; call	_apic_strayintr ; INTREXIT2
-
-IDTVEC(intr_ioapic15)
-	INTR2(15, _highmask, 15) ; call	_apic_strayintr ; INTREXIT2	

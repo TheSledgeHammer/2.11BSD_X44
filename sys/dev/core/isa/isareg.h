@@ -150,4 +150,5 @@
 #define	IO_NPXSIZE	16	/* 80387/80487 NPX registers */
 #define	IO_VGASIZE	16	/* VGA controllers */
 #define	IO_PMPSIZE	2	/* 82347 Power Management Peripheral */
+
 #endif /* !IO_ISASIZES */

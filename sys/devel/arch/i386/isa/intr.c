@@ -132,14 +132,22 @@
  *	@(#)isa.c	7.2 (Berkeley) 5/13/91
  */
 
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/syslog.h>
+#include <sys/device.h>
+#include <sys/malloc.h>
+#include <sys/proc.h>
 #include <sys/queue.h>
 #include <sys/user.h>
 
-#include <intr.h>
-#include <pic.h>
-#include <icu.h>
+#include <arch/i386/isa/icu.h>
+#include <arch/i386/include/intr.h>
+#include <arch/i386/include/pic.h>
+#include <dev/core/isa/isareg.h>
+#include <dev/core/isa/isavar.h>
 
-#define MAX_INTR_SOURCES 	ICU_OFFSET
+#define MAX_INTR_SOURCES 		ICU_OFFSET
 
 #define SOFTINTR_MASK(ipl, sir)	((ipl) = (1 << (sir)))
 
@@ -150,6 +158,8 @@ struct intrhand 	*intrhand[MAX_INTR_SOURCES];
 int intrtype[MAX_INTR_SOURCES];
 int intrmask[MAX_INTR_SOURCES];
 int intrlevel[MAX_INTR_SOURCES];
+
+//struct ioapic_softc *sc = ioapic_find(intrtype[irq]);
 
 static int
 intr_pic_registered(struct pic *pic)
@@ -199,6 +209,7 @@ intr_calculatemasks()
 			intrlevel[irq] = 0;
 			continue;
 		}
+
 		for (p = intrhand[irq]; (q = *p) != NULL; p = &q->ih_next) {
 			levels |= 1U << q->ih_level;
 		}
@@ -219,18 +230,29 @@ intr_calculatemasks()
 		imask[level] = irqs | unusedirqs;
 	}
 
+	/* Initialize soft interrupt masks */
+	init_intrmask();
+
+	/*
+	 * Enforce a hierarchy that gives slow devices a better chance at not
+	 * dropping data.
+	 */
 	for (level = 0; level < (NIPL-1); level++) {
 		imask[level+1] |= imask[level];
 	}
 
+	/* And eventually calculate the complete masks. */
 	for (irq = 0; irq < MAX_INTR_SOURCES; irq++) {
+		int irqs = 1 << irq;
 		int maxlevel = IPL_NONE;
 		int minlevel = IPL_HIGH;
 
-		if(intrsrc[irq] == NULL) {
+		if(intrsrc[irq] != NULL) {
 			continue;
-		}
+		};
+
 		for (q = intrsrc[irq]->is_handlers; q; q = q->ih_next) {
+			irqs |= imask[q->ih_level];
 			if (q->ih_level < minlevel) {
 				minlevel = q->ih_level;
 			}
@@ -238,19 +260,37 @@ intr_calculatemasks()
 				maxlevel = q->ih_level;
 			}
 		}
+		intrmask[irq] = irqs;
+		intrsrc[irq]->is_maxlevel =  maxlevel;
+		intrsrc[irq]->is_minlevel = minlevel;
 	}
+
+	/* Lastly, determine which IRQs are actually in use. */
+	{
+		int irqs = 0;
+		for (irq = 0; irq < ICU_LEN; irq++) {
+			if (intrhand[irq]) {
+				irqs |= 1 << irq;
+			}
+		}
+		if (irqs >= 0x100) { /* any IRQs >= 8 in use */
+			irqs |= 1 << IRQ_SLAVE;
+		}
+		imen = ~irqs;
+		SET_ICUS();
+	}
+
 	for (level = 0; level < NIPL; level++) {
 		iunmask[level] = ~imask[level];
 	}
 }
 
-/* WIP: 4.4BSD Based: Soft-Interrupt Mask for i386 & x86 */
+/*
+ * soft interrupt masks
+ */
 void
-init_softintr()
+init_intrmask()
 {
-	int irq;
-	struct intrhand *q;
-
 	/*
 	 * Initialize soft interrupt masks to block themselves.
 	 */
@@ -299,21 +339,54 @@ init_softintr()
 	 * avoid overruns, so serial > high.
 	 */
 	imask[IPL_SERIAL] |= imask[IPL_HIGH];
-
-	/* And eventually calculate the complete masks. */
-	for (irq = 0; irq < MAX_INTR_SOURCES; irq++) {
-		int irqs = 1 << irq;
-		for (q = intrhand[irq]; q; q = q->ih_next) {
-			irqs |= imask[q->ih_level];
-		}
-		intrmask[irq] = irqs;
-	}
 }
 
 void *
-intr_establish()
+intr_establish(irq, type, level, ih_fun, ih_arg)
+	int irq;
+	int type;
+	int level;
+	int (*ih_fun)(void *);
+	void *ih_arg;
 {
+	struct intrhand **p, *q, *ih;
 
+	switch (intrtype[irq]) {
+	case IST_NONE:
+		intrtype[irq] = type;
+		break;
+	case IST_EDGE:
+	case IST_LEVEL:
+		if (type == intrtype[irq]) {
+			break;
+		}
+		break;
+	case IST_PULSE:
+		if (type != IST_NONE) {
+			panic("intr_establish: can't share %s with %s",
+					isa_intr_typename(intrtype[irq]), isa_intr_typename(type));
+		}
+		break;
+	}
+
+	intr_calculatemasks();
+
+	if (!cold) {
+
+	}
+
+	/*
+	 * Poke the real handler in now.
+	 */
+	ih->ih_fun = ih_fun;
+	ih->ih_arg = ih_arg;
+	ih->ih_count = 0;
+	ih->ih_next = NULL;
+	ih->ih_level = level;
+	ih->ih_irq = irq;
+	*p = ih;
+
+	return (ih);
 }
 
 void

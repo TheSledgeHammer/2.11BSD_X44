@@ -119,7 +119,7 @@ extern	IDTVEC(intr0), IDTVEC(intr1), IDTVEC(intr2), IDTVEC(intr3),
 void 	isa_strayintr (int);
 void	intr_calculatemasks (void);
 int 	fakeintr (void *);
-void	isa_icuvectors(void);
+void	isa_vectors(void);
 
 int		_isa_bus_dmamap_create (bus_dma_tag_t, bus_size_t, int, bus_size_t, bus_size_t, int, bus_dmamap_t *);
 void	_isa_bus_dmamap_destroy (bus_dma_tag_t, bus_dmamap_t);
@@ -172,7 +172,7 @@ isa_defaultirq()
 	int i;
 
 	/* icu vectors */
-	isa_icuvectors();
+	isa_vectors();
 
 	/* initialize 8259's */
 	outb(IO_ICU1, 0x11);				/* reset; program device, four bytes */
@@ -204,7 +204,7 @@ isa_defaultirq()
 }
 
 void
-isa_icuvectors()
+isa_vectors()
 {
 	/* first icu */
 	setidt(32, &IDTVEC(intr0), 0, SDT_SYS386IGT, SEL_KPL);
@@ -428,9 +428,9 @@ isa_intr_alloc(ic, mask, type, irq)
 			 * interrupt level and stick IPL_TTY with other
 			 * IPL_TTY, etc.
 			 */
-			for (p = &intrhand[i], tmp = 0; (q = *p) != NULL;
-			     p = &q->ih_next, tmp++)
+			for (p = &intrhand[i], tmp = 0; (q = *p) != NULL; p = &q->ih_next, tmp++) {
 				;
+			}
 			if ((bestirq == -1) || (count > tmp)) {
 				bestirq = i;
 				count = tmp;
@@ -544,18 +544,21 @@ isa_intr_disestablish(ic, arg)
 	 * Remove the handler from the chain.
 	 * This is O(n^2), too.
 	 */
-	for (p = &intrhand[irq]; (q = *p) != NULL && q != ih; p = &q->ih_next)
+	for (p = &intrhand[irq]; (q = *p) != NULL && q != ih; p = &q->ih_next) {
 		;
-	if (q)
+	}
+	if (q) {
 		*p = q->ih_next;
-	else
+	} else {
 		panic("intr_disestablish: handler not registered");
+	}
 	free(ih, M_DEVBUF);
 
 	intr_calculatemasks();
 
-	if (intrhand[irq] == NULL)
+	if (intrhand[irq] == NULL) {
 		intrtype[irq] = IST_NONE;
+	}
 }
 
 void
@@ -569,8 +572,9 @@ isa_attach_hook(parent, self, iba)
 	 * Notify others that might need to know that the ISA bus
 	 * has now been attached.
 	 */
-	if (isa_has_been_seen)
+	if (isa_has_been_seen) {
 		panic("isaattach: ISA bus already seen!");
+	}
 	isa_has_been_seen = 1;
 }
 
@@ -583,7 +587,6 @@ isa_mem_alloc(t, size, align, boundary, flags, addrp, bshp)
 	bus_addr_t *addrp;
 	bus_space_handle_t *bshp;
 {
-
 	/*
 	 * Allocate physical address space in the ISA hole.
 	 */
@@ -596,7 +599,6 @@ isa_mem_free(t, bsh, size)
 	bus_space_handle_t bsh;
 	bus_size_t size;
 {
-
 	bus_space_free(t, bsh, size);
 }
 

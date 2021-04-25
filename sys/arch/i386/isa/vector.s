@@ -81,7 +81,7 @@
 #ifndef AUTO_EOI_2
 #define	ENABLE_ICU1_AND_2(irq_num) \
 		movb	$(0x60|(irq_num%8)),%al			/* specific EOI */			;\
-		outb	%al,$IO_ICU2				/* do the second ICU first */	;\
+		outb	%al,$IO_ICU2					/* do the second ICU first */	;\
 		movb	$(0x60|2),%al					/* specific EOI for IRQ2 */	;\
 		outb	%al,$IO_ICU1
 #else

@@ -51,10 +51,10 @@ struct apic_attach_args {
  */
 #define APIC_VECTYPE_LAPIC_LVT	1
 #define APIC_VECTYPE_LAPIC_ICR	2
-#define APIC_VECTYPE_IOAPIC	3
+#define APIC_VECTYPE_IOAPIC		3
 void 	apic_format_redir(const char *, const char *, int, int, uint32_t, uint32_t);
 
 /* For lapic.c */
-extern uint32_t lapic_per_second;
+extern uint32_t 			lapic_per_second;
 
 #endif /* _I386_APIC_H_ */

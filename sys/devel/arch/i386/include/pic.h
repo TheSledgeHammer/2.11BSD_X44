@@ -77,6 +77,8 @@ struct intrsource {
 	u_int 					is_index;
 	u_int 					is_domain;
 	u_int 					is_cpu;
+	int  					is_minlevel;
+	int 					is_maxlevel;
 };
 
 /*

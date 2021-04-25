@@ -96,6 +96,9 @@ extern	IDTVEC(apic_intr0), IDTVEC(apic_intr1), IDTVEC(apic_intr2), IDTVEC(apic_i
 struct intrhand *apic_intrhand[256];
 int	apic_maxlevel[256];
 
+#define NAPICID  256
+#define APIC_MAX 255
+
 void
 apic_vectors()
 {
@@ -119,9 +122,6 @@ apic_vectors()
 	setidt(46, &IDTVEC(apic_intr14), 0, SDT_SYS386IGT, SEL_KPL);
 	setidt(47, &IDTVEC(apic_intr15), 0, SDT_SYS386IGT, SEL_KPL);
 }
-
-#define NAPICID  256
-#define APIC_MAX 255
 
 struct apic_irq *apic;
 
@@ -228,6 +228,7 @@ apic_intr_establish(int irq, int type, int level, int (*ih_fun)(void *), void *i
 {
 	unsigned int ioapic = APIC_IRQ_APIC(irq);
 	unsigned int intr = APIC_IRQ_PIN(irq);
+
 	struct ioapic_softc *sc = ioapic_find(ioapic);
 	struct ioapic_intsrc *intpin;
 	struct intrhand **p, *q, *ih;
@@ -297,6 +298,30 @@ apic_intr_disestablish(void *arg)
 	int minlevel, maxlevel;
 	extern void intr_calculatemasks(void); /* XXX */
 
+}
+
+ioapic_establish(intpin, pin)
+	struct ioapic_intsrc *intpin;
+	int pin;
+{
+	struct intrhand *ih;
+	struct pic *pic;
+	extern int cold;
+
+	switch (intpin->io_type) {
+	case IST_NONE:
+	case IST_EDGE:
+	case IST_LEVEL:
+	case IST_PULSE:
+	}
+
+	if (!cold) {
+		pic->pic_hwmask(intpin, pin);
+	}
 
 
+
+	if (!cold) {
+		pic->pic_hwunmask(intpin, pin);
+	}
 }

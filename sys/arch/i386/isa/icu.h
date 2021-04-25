@@ -57,6 +57,8 @@ extern	unsigned short 		netmask; 	/* group of interrupts masked with splimp() */
 #define	INTRMASK(msk,s)		msk |= (s)
 #define INTRUNMASK(msk,s)	(msk &= ~(s))
 
+#define SET_ICUS()			(outb(IO_ICU1 + 1, imen), outb(IO_ICU2 + 1, imen >> 8))
+
 #else
 
 /*
