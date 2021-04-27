@@ -77,6 +77,8 @@ struct intrsource {
 	u_int 					is_index;
 	u_int 					is_domain;
 	u_int 					is_cpu;
+	int						is_type;
+	int 					is_pin;
 	int  					is_minlevel;
 	int 					is_maxlevel;
 };
@@ -99,4 +101,12 @@ struct intrhand {
 
 extern struct lock_object 	*icu_lock;
 
+void			intr_pic_init(void *);
+int				intr_register_pic(struct pic *);
+struct pic 		*intr_handle_pic(int);
+
+void			intr_pic_hwmask(int, struct ioapic_intsrc *, int);
+void			intr_pic_hwunmask(int, struct ioapic_intsrc *, int);
+void			intr_pic_addroute(int, struct ioapic_intsrc *, struct cpu_info *, int, int, int);
+void			intr_pic_delroute(int, struct ioapic_intsrc *, struct cpu_info *, int, int, int);
 #endif /* _I386_PIC_H_ */

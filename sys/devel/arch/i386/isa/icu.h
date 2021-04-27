@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
@@ -33,50 +33,61 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ *	@(#)icu.h	8.1 (Berkeley) 6/11/93
  */
 
-#ifndef _I386_IOAPICVAR_H_
-#define _I386_IOAPICVAR_H_
+#ifndef	__ICU__
+#define	__ICU__
 
-#include <sys/queue.h>
+#ifndef	LOCORE
 
-struct ioapic_intsrc {
-	struct intrsource		io_intsrc;
-	struct mp_intr_map 		*io_map;
-	u_int 					io_vector:8;
-	int						io_type;
-	struct cpu_info			*io_cpuinfo;
-};
+/*
+ * Interrupt "level" mechanism variables, masks, and macros
+ */
+extern unsigned short			imen;			/* interrupt mask enable */
+extern unsigned short			cpl;			/* current priority level mask */
+extern int 						intrtype[];
+extern int 						intrmask[];
+extern int 						intrlevel[];
 
-struct ioapic_head;
-SIMPLEQ_HEAD(ioapic_head, ioapic_softc);
-struct ioapic_softc {
-	SIMPLEQ_ENTRY(ioapic) 	sc_next;
-	struct ioapic_intsrc 	sc_pins;
-	struct pic 				sc_pic;
-	struct device			sc_dev;
-	int						sc_apicid;
-	int						sc_apic_vers;
-	int						sc_apic_vecbase; 	/* global int base if ACPI */
-	int						sc_apic_sz;			/* apic size*/
-	int						sc_flags;
-	caddr_t					sc_pa;				/* PA of ioapic */
-	volatile u_int32_t		*sc_reg;			/* KVA of ioapic addr */
-	volatile u_int32_t		*sc_data;			/* KVA of ioapic data */
-};
+#define	INTREN(s)				imen &= ~(s)
+#define	INTRDIS(s)				imen |= (s)
+#define	INTRMASK(msk,s)			msk |= (s)
+#define INTRUNMASK(msk,s)		(msk &= ~(s))
 
-#define APIC_INT_VIA_APIC	0x10000000
-#define APIC_INT_VIA_MSG	0x20000000
-#define APIC_INT_APIC_MASK	0x00ff0000
-#define APIC_INT_APIC_SHIFT	16
-#define APIC_INT_PIN_MASK	0x0000ff00
-#define APIC_INT_PIN_SHIFT	8
-#define APIC_INT_LINE_MASK	0x000000ff
+#endif
 
-#define APIC_IRQ_APIC(x) 	((x & APIC_INT_APIC_MASK) >> APIC_INT_APIC_SHIFT)
-#define APIC_IRQ_PIN(x) 	((x & APIC_INT_PIN_MASK) >> APIC_INT_PIN_SHIFT)
+#define SET_ICUS()				(outb(IO_ICU1 + 1, imen), outb(IO_ICU2 + 1, imen >> 8))
+#define SOFTINTR_MASK(ipl, sir)	((ipl) = (1 << (sir)))
 
-struct ioapic_softc *ioapic_find(int);
-struct ioapic_softc *ioapic_find_bybase(int);
+/*
+ * Interrupt enable bits -- in order of priority
+ */
+#define	IRQ0					0x0001		/* highest priority - timer */
+#define	IRQ1					0x0002
+#define	IRQ_SLAVE				0x0004
+#define	IRQ8					0x0100
+#define	IRQ9					0x0200
+#define	IRQ2					IRQ9
+#define	IRQ10					0x0400
+#define	IRQ11					0x0800
+#define	IRQ12					0x1000
+#define	IRQ13					0x2000
+#define	IRQ14					0x4000
+#define	IRQ15					0x8000
+#define	IRQ3					0x0008
+#define	IRQ4					0x0010
+#define	IRQ5					0x0020
+#define	IRQ6					0x0040
+#define	IRQ7					0x0080		/* lowest - parallel printer */
 
-#endif /* _I386_IOAPICVAR_H_ */
+/*
+ * Interrupt Control offset into Interrupt descriptor table (IDT)
+ */
+#define	ICU_OFFSET				32			/* 0-31 are processor exceptions */
+#define	ICU_LEN					16			/* 32-47 are ISA interrupts */
+
+#define MAX_INTR_SOURCES 		ICU_OFFSET
+#define NUM_LEGACY_IRQS			ICU_LEN
+
+#endif	__ICU__

@@ -1,5 +1,38 @@
+/* $OpenBSD: apicvec.s,v 1.35 2018/06/18 23:15:05 bluhm Exp $ */
+/* $NetBSD: apicvec.s,v 1.1.2.2 2000/02/21 21:54:01 sommerfeld Exp $ */
 
-#include <devel/i386/isa/icu.h>
+/*-
+ * Copyright (c) 2000 The NetBSD Foundation, Inc.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to The NetBSD Foundation
+ * by RedBack Networks Inc.
+ *
+ * Author: Bill Sommerfeld
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+ 
+#include <devel/arch/i386/isa/icu.h>
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>
 
@@ -52,8 +85,8 @@ IDTVEC(resume_/**/num)													;\
 		movl	IS_MAXLEVEL(%ebp),%ebx									;\
 		jmp		1f														;\
 
-#define	APICINTR(irq_num, icu, enable_icus)                         	\
-IDTVEC(apic_intr/**/irq_num)                                        	;\
+#define	APICINTR(name, irq_num, icu, enable_icus)                        \
+IDTVEC(name ## _intr/**/irq_num)                                        ;\
     	pushl	$0					    /* dummy error code */			;\
 		pushl	$T_ASTFLT			    /* trap # for doing ASTs */		;\
 		INTRENTRY													    ;\
@@ -96,19 +129,36 @@ IDTVEC(apic_intr/**/irq_num)                                        	;\
 		jz		APIC_STRAY(irq_num)		/* nobody claimed it */
 
 
-APICINTR(0, IO_ICU1, ENABLE_ICU1)
-APICINTR(1, IO_ICU1, ENABLE_ICU1)
-APICINTR(2, IO_ICU1, ENABLE_ICU1)
-APICINTR(3, IO_ICU1, ENABLE_ICU1)
-APICINTR(4, IO_ICU1, ENABLE_ICU1)
-APICINTR(5, IO_ICU1, ENABLE_ICU1)
-APICINTR(6, IO_ICU1, ENABLE_ICU1)
-APICINTR(7, IO_ICU1, ENABLE_ICU1)
-APICINTR(8, IO_ICU2, ENABLE_ICU1_AND_2)
-APICINTR(9, IO_ICU2, ENABLE_ICU1_AND_2)
-APICINTR(10, IO_ICU2, ENABLE_ICU1_AND_2)
-APICINTR(11, IO_ICU2, ENABLE_ICU1_AND_2)
-APICINTR(12, IO_ICU2, ENABLE_ICU1_AND_2)
-APICINTR(13, IO_ICU2, ENABLE_ICU1_AND_2)
-APICINTR(14, IO_ICU2, ENABLE_ICU1_AND_2)
-APICINTR(15, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(apic, 0, IO_ICU1, ENABLE_ICU1)
+APICINTR(apic, 1, IO_ICU1, ENABLE_ICU1)
+APICINTR(apic, 2, IO_ICU1, ENABLE_ICU1)
+APICINTR(apic, 3, IO_ICU1, ENABLE_ICU1)
+APICINTR(apic, 4, IO_ICU1, ENABLE_ICU1)
+APICINTR(apic, 5, IO_ICU1, ENABLE_ICU1)
+APICINTR(apic, 6, IO_ICU1, ENABLE_ICU1)
+APICINTR(apic, 7, IO_ICU1, ENABLE_ICU1)
+APICINTR(apic, 8, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(apic, 9, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(apic, 10, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(apic, 11, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(apic, 12, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(apic, 13, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(apic, 14, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(apic, 15, IO_ICU2, ENABLE_ICU1_AND_2)
+
+APICINTR(x2apic, 0, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 1, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 2, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 3, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 4, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 5, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 6, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 7, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 8, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 9, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 10, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 11, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 12, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 13, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 14, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 15, IO_ICU2, ENABLE_ICU1_AND_2)

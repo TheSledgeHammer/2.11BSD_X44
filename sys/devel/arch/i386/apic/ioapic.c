@@ -108,6 +108,7 @@ void 		ioapic_hwmask(struct ioapic_intsrc *, int);
 void 		ioapic_hwunmask(struct ioapic_intsrc *, int);
 static void ioapic_addroute(struct ioapic_intsrc *, struct cpu_info *, int, int, int);
 static void ioapic_delroute(struct ioapic_intsrc *, struct cpu_info *, int, int, int);
+void		ioapic_register_pic();
 
 int ioapic_cold = 1;
 
@@ -330,7 +331,6 @@ ioapic_init_intpins(struct ioapic_softc *sc)
 		intpin->io_map = NULL;
 		intpin->io_vector = 0;
 		intpin->io_type = IST_NONE;
-	}
 }
 
 static void

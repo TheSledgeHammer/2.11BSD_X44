@@ -1,6 +1,7 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (C) 1989, 1990 W. Jolitz
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
@@ -33,50 +34,21 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ *	@(#)icu.s	8.1 (Berkeley) 6/11/93
  */
+ 		.data
+ENTRY(imem)
+imem:	.long	0xffff
+ENTRY(cpl)
+cpl:	.long	0xffff
 
-#ifndef _I386_IOAPICVAR_H_
-#define _I386_IOAPICVAR_H_
-
-#include <sys/queue.h>
-
-struct ioapic_intsrc {
-	struct intrsource		io_intsrc;
-	struct mp_intr_map 		*io_map;
-	u_int 					io_vector:8;
-	int						io_type;
-	struct cpu_info			*io_cpuinfo;
-};
-
-struct ioapic_head;
-SIMPLEQ_HEAD(ioapic_head, ioapic_softc);
-struct ioapic_softc {
-	SIMPLEQ_ENTRY(ioapic) 	sc_next;
-	struct ioapic_intsrc 	sc_pins;
-	struct pic 				sc_pic;
-	struct device			sc_dev;
-	int						sc_apicid;
-	int						sc_apic_vers;
-	int						sc_apic_vecbase; 	/* global int base if ACPI */
-	int						sc_apic_sz;			/* apic size*/
-	int						sc_flags;
-	caddr_t					sc_pa;				/* PA of ioapic */
-	volatile u_int32_t		*sc_reg;			/* KVA of ioapic addr */
-	volatile u_int32_t		*sc_data;			/* KVA of ioapic data */
-};
-
-#define APIC_INT_VIA_APIC	0x10000000
-#define APIC_INT_VIA_MSG	0x20000000
-#define APIC_INT_APIC_MASK	0x00ff0000
-#define APIC_INT_APIC_SHIFT	16
-#define APIC_INT_PIN_MASK	0x0000ff00
-#define APIC_INT_PIN_SHIFT	8
-#define APIC_INT_LINE_MASK	0x000000ff
-
-#define APIC_IRQ_APIC(x) 	((x & APIC_INT_APIC_MASK) >> APIC_INT_APIC_SHIFT)
-#define APIC_IRQ_PIN(x) 	((x & APIC_INT_PIN_MASK) >> APIC_INT_PIN_SHIFT)
-
-struct ioapic_softc *ioapic_find(int);
-struct ioapic_softc *ioapic_find_bybase(int);
-
-#endif /* _I386_IOAPICVAR_H_ */
+ENTRY(_splhigh)
+ENTRY(_splclock)
+ENTRY(_spltty)
+ENTRY(_splimp)
+ENTRY(_splnet)
+ENTRY(_splbio)
+ENTRY(_splsoftclock)
+ENTRY(_splnone)
+ENTRY(_spl0)
+ENTRY(_splx)

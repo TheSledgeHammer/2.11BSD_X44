@@ -39,15 +39,30 @@
 
 #include <sys/cdefs.h>
 
-#ifdef __ELF__
-# define _C_LABEL(x)	x
+#ifdef PIC
+#define	PIC_PROLOGUE								\
+	pushl	%ebx;									\
+	call	1f;										\
+1:													\
+	popl	%ebx;									\
+	addl	$_GLOBAL_OFFSET_TABLE_+[.-1b],%ebx
+#define	PIC_EPILOGUE								\
+	popl	%ebx
+#define	PIC_PLT(x)		x@PLT
+#define	PIC_GOT(x)		x@GOT(%ebx)
+#define	PIC_GOTOFF(x)	x@GOTOFF(%ebx)
 #else
+#define	PIC_PROLOGUE
+#define	PIC_EPILOGUE
+#define	PIC_PLT(x)		x
+#define	PIC_GOTOFF(x)	x
+#endif
+
 # ifdef __STDC__
 #  define _C_LABEL(x)	_ ## x
 # else
 #  define _C_LABEL(x)	_/**/x
 # endif
-#endif
 #define	_ASM_LABEL(x)	x
 
 #ifdef __STDC__
@@ -58,64 +73,61 @@
 # define __STRING(x)	"x"
 #endif
 
+/*
+ * STRONG_ALIAS, WEAK_ALIAS
+ *	Create a strong or weak alias.
+ */
+#define STRONG_ALIAS(alias,sym) 					\
+	.global alias; 									\
+	alias = sym
+#define WEAK_ALIAS(alias,sym) 						\
+	.weak alias; 									\
+	alias = sym
+
 /* let kernels and others override entrypoint alignment */
 #ifndef _ALIGN_TEXT
-# ifdef __ELF__
-#  define _ALIGN_TEXT .align 4
-# else
-#  define _ALIGN_TEXT .align 2
-# endif
+#define _ALIGN_TEXT 								\
+	.align 2,0x90
 #endif
 
+#define _START_ENTRY								\
+	.text; .p2align 2,0x90
+
+#ifdef __STDC__
 #define	ENTRY(name) 								\
-	.globl _/**/name; _/**/name:
+	_START_ENTRY;									\
+	.globl _ ## name; _ ## name:					\
+	.type x,@function; x:
 
 #define	ALTENTRY(name) 								\
-	.globl _/**/name; _/**/name:
+	.globl _ ## name; _ ## name:					\
 
-/* XXX Can't use __CONCAT() here, as it would be evaluated incorrectly. */
-#ifdef __ELF__
-#ifdef __STDC__
 #define	IDTVEC(name) 								\
-	ALIGN_TEXT; .globl X ## name; .type X ## name,@function; X ## name:
-#define	IDTVEC_END(name) 							\
-	.size X ## name, . - X ## name
-#else
-#define	IDTVEC(name) 								\
-	ALIGN_TEXT; .globl X/**/name; .type X/**/name,@function; X/**/name:
-#define	IDTVEC_END(name) 							\
-	.size X/**/name, . - X/**/name
-#endif /* __STDC__ */
-#else
-#ifdef __STDC__
-#define	IDTVEC(name) 								\
-	ALIGN_TEXT; .globl _X ## name; .type _X ## name,@function; _X ## name:
+	ALIGN_TEXT; .globl _X ## name; 					\
+	.type _X ## name,@function; _X ## name:
+
 #define	IDTVEC_END(name) 							\
 	.size _X ## name, . - _X ## name
-#else
-#define	IDTVEC(name) 								\
-	ALIGN_TEXT; .globl _X/**/name; .type _X/**/name,@function; _X/**/name:
-#define	IDTVEC_END(name) 							\
-	.size _X/**/name, . - _X/**/name
-#endif /* __STDC__ */
-#endif /* __ELF__ */
 
-
-#ifdef __ELF__
-#define	WEAK_ALIAS(alias,sym)						\
-	.weak alias;									\
-	alias = sym
-#endif
-
-#ifdef __STDC__
 #define	WARN_REFERENCES(sym,msg)					\
 	.stabs msg ## ,30,0,0,0 ;						\
 	.stabs __STRING(_C_LABEL(sym)) ## ,1,0,0,0
-#elif defined(__ELF__)
-#define	WARN_REFERENCES(sym,msg)					\
-	.stabs msg,30,0,0,0 ;							\
-	.stabs __STRING(sym),1,0,0,0
 #else
+#define	ENTRY(name) 								\
+	_START_ENTRY;									\
+	.globl _/**/name; _/**/name:					\
+	.type x,@function; x:
+
+#define	ALTENTRY(name) 								\
+	.globl _/**/name; _/**/name:					\
+
+#define	IDTVEC(name) 								\
+	ALIGN_TEXT; .globl X/**/name; 					\
+	.type X/**/name,@function; X/**/name:
+
+#define	IDTVEC_END(name) 							\
+	.size X/**/name, . - X/**/name
+
 #define	WARN_REFERENCES(sym,msg)					\
 	.stabs msg,30,0,0,0 ;							\
 	.stabs __STRING(_/**/sym),1,0,0,0

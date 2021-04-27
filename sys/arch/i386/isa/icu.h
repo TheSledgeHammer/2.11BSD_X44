@@ -137,7 +137,6 @@ extern	unsigned short 		netmask; 	/* group of interrupts masked with splimp() */
 /*
  * Interrupt Control offset into Interrupt descriptor table (IDT)
  */
-#define	ICU_OFFSET	32			/* 0-31 are processor exceptions *//* MAX_INTR_SOURCES */
-#define	ICU_LEN		16			/* 32-47 are ISA interrupts *//* NUM_LEGACY_IRQS */
-
+#define	ICU_OFFSET				32			/* 0-31 are processor exceptions */
+#define	ICU_LEN					16			/* 32-47 are ISA interrupts */
 #endif	__ICU__

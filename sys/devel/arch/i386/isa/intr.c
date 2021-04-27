@@ -132,6 +132,8 @@
  *	@(#)isa.c	7.2 (Berkeley) 5/13/91
  */
 
+#include <sys/cdefs.h>
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/syslog.h>
@@ -141,58 +143,42 @@
 #include <sys/queue.h>
 #include <sys/user.h>
 
-#include <arch/i386/isa/icu.h>
+#include <devel/arch/i386/isa/icu.h>
 #include <arch/i386/include/intr.h>
 #include <arch/i386/include/pic.h>
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
 
-#define MAX_INTR_SOURCES 		ICU_OFFSET
-
-#define SOFTINTR_MASK(ipl, sir)	((ipl) = (1 << (sir)))
-
-static TAILQ_HEAD(pics_head, pic) pics;
 struct intrsource 	*intrsrc[MAX_INTR_SOURCES];
 struct intrhand 	*intrhand[MAX_INTR_SOURCES];
 
-int intrtype[MAX_INTR_SOURCES];
-int intrmask[MAX_INTR_SOURCES];
-int intrlevel[MAX_INTR_SOURCES];
+int 				intrtype[MAX_INTR_SOURCES];
+int 				intrmask[MAX_INTR_SOURCES];
+int 				intrlevel[MAX_INTR_SOURCES];
+int 				intr_shared_edge;
 
-//struct ioapic_softc *sc = ioapic_find(intrtype[irq]);
-
-static int
-intr_pic_registered(struct pic *pic)
+struct intrsource *
+intrsource_create(struct pic *pic, int pin)
 {
-	struct pic *p;
+	struct intrsource *isrc;
 
-	TAILQ_FOREACH(p, &pics, pic_entry) {
-		if (p == pic) {
-			return (1);
-		}
-	}
-	return (0);
+	isrc = &intrsrc[pin];
+	isrc->is_pic = pic;
+	isrc->is_pin = pin;
+
+	return (isrc);
 }
 
-int
-intr_register_pic(struct pic *pic)
+struct intrhand *
+intrhand_create(struct pic *pic, int irq)
 {
-	int error;
+	struct intrhand *ihnd;
 
-	if (intr_pic_registered(pic)) {
-		error = EBUSY;
-	} else {
-		TAILQ_INSERT_TAIL(&pics, pic, pic_entry);
-		error = 0;
-	}
+	ihnd = &intrhand[irq];
+	ihnd->ih_pic = pic;
+	ihnd->ih_irq = irq;
 
-	return (error);
-}
-
-static void
-intr_init(void *dummy)
-{
-	TAILQ_INIT(&pics);
+	return (ihnd);
 }
 
 void
@@ -277,7 +263,8 @@ intr_calculatemasks()
 			irqs |= 1 << IRQ_SLAVE;
 		}
 		imen = ~irqs;
-		SET_ICUS();
+		outb(IO_ICU1 + 1, imen);
+		outb(IO_ICU2 + 1, imen >> 8);
 	}
 
 	for (level = 0; level < NIPL; level++) {
@@ -341,6 +328,14 @@ init_intrmask()
 	imask[IPL_SERIAL] |= imask[IPL_HIGH];
 }
 
+int
+fakeintr(arg)
+	void *arg;
+{
+
+	return 0;
+}
+
 void *
 intr_establish(irq, type, level, ih_fun, ih_arg)
 	int irq;
@@ -350,30 +345,54 @@ intr_establish(irq, type, level, ih_fun, ih_arg)
 	void *ih_arg;
 {
 	struct intrhand **p, *q, *ih;
+	static struct intrhand fakehand = { fakeintr };
+	extern int cold;
+
+	/* no point in sleeping unless someone can free memory. */
+	ih = malloc(sizeof *ih, M_DEVBUF, cold ? M_NOWAIT : M_WAITOK);
+	if (ih == NULL) {
+		panic("intr_establish: can't malloc handler info");
+	}
+	if (!LEGAL_IRQ(irq) || type == IST_NONE) {
+		panic("intr_establish: bogus irq or type");
+	}
 
 	switch (intrtype[irq]) {
 	case IST_NONE:
 		intrtype[irq] = type;
 		break;
 	case IST_EDGE:
+		intr_shared_edge = 1;
+		/* FALLTHROUGH */
 	case IST_LEVEL:
-		if (type == intrtype[irq]) {
+		if (intrtype[irq] == type) {
 			break;
 		}
-		break;
+		/* FALLTHROUGH */
 	case IST_PULSE:
 		if (type != IST_NONE) {
 			panic("intr_establish: can't share %s with %s",
-					isa_intr_typename(intrtype[irq]), isa_intr_typename(type));
+			    intr_typename(intrtype[irq]),
+			    intr_typename(type));
+			free(ih, M_DEVBUF, sizeof(*ih));
+			return (NULL);
 		}
 		break;
 	}
 
-	intr_calculatemasks();
-
-	if (!cold) {
-
+	/*
+	 * Figure out where to put the handler.
+	 * This is O(N^2), but we want to preserve the order, and N is
+	 * generally small.
+	 */
+	for (p = &intrhand[irq]; (q = *p) != NULL; p = &q->ih_next) {
+		;
 	}
+
+	fakehand.ih_level = level;
+	*p = &fakehand;
+
+	intr_calculatemasks();
 
 	/*
 	 * Poke the real handler in now.
@@ -390,7 +409,51 @@ intr_establish(irq, type, level, ih_fun, ih_arg)
 }
 
 void
-intr_disestablish()
+intr_disestablish(ih)
+	struct intrhand *ih;
 {
+	int irq = ih->ih_irq;
+	struct intrhand **p, *q;
 
+	if (!LEGAL_IRQ(irq)) {
+		panic("intr_disestablish: bogus irq");
+	}
+	/*
+	 * Remove the handler from the chain.
+	 * This is O(n^2), too.
+	 */
+	for (p = &intrhand[irq]; (q = *p) != NULL && q != ih; p = &q->ih_next) {
+		;
+	}
+
+	if (q) {
+		*p = q->ih_next;
+	} else {
+		panic("intr_disestablish: handler not registered");
+	}
+	free(ih, M_DEVBUF);
+
+	intr_calculatemasks();
+
+	if (intrhand[irq] == NULL) {
+		intrtype[irq] = IST_NONE;
+	}
+}
+
+char *
+intr_typename(type)
+	int type;
+{
+	switch (type) {
+	case IST_NONE:
+		return ("none");
+	case IST_PULSE:
+		return ("pulsed");
+	case IST_EDGE:
+		return ("edge-triggered");
+	case IST_LEVEL:
+		return ("level-triggered");
+	default:
+		panic("intr_typename: invalid type %d", type);
+	}
 }

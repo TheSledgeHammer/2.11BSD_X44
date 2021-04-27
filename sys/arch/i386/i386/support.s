@@ -49,7 +49,6 @@
 /*
  * Support routines for GCC
  */
-
 ENTRY(udivsi3)
 		movl 	4(%esp),%eax
 		xorl 	%edx,%edx

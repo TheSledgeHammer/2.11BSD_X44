@@ -929,19 +929,21 @@ init386(first)
 
 	/* make gdt memory segments */
 	gdt_segs[GCODE_SEL].ssd_limit = btoc((int) &etext + NBPG);
-	for (x=0; x < NGDT; x++)
+	for (x=0; x < NGDT; x++) {
 		ssdtosd(gdt_segs+x, gdt+x);
+	}
 
 	/* make ldt memory segments */
 	ldt_segs[LUCODE_SEL].ssd_limit = btoc(UPT_MIN_ADDRESS);
 	ldt_segs[LUDATA_SEL].ssd_limit = btoc(UPT_MIN_ADDRESS);
 	/* Note. eventually want private ldts per process */
-	for (x=0; x < 5; x++)
+	for (x=0; x < 5; x++) {
 		ssdtosd(ldt_segs+x, ldt+x);
+	}
 
 	/* exceptions */
 	for(x = 0; x < NIDT; x++) {
-		setidt(x, &IDTVEC(rsvd), SDT_SYS386TGT, SEL_KPL);
+		setidt(x, &IDTVEC(rsvd), 0, SDT_SYS386TGT, SEL_KPL);
 	}
 	setidt(0, &IDTVEC(div), 0, SDT_SYS386TGT, SEL_KPL);
 	setidt(1, &IDTVEC(dbg), 0, SDT_SYS386TGT, SEL_KPL);
