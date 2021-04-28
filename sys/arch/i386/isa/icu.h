@@ -57,8 +57,6 @@ extern	unsigned short 		netmask; 	/* group of interrupts masked with splimp() */
 #define	INTRMASK(msk,s)		msk |= (s)
 #define INTRUNMASK(msk,s)	(msk &= ~(s))
 
-#define SET_ICUS()			(outb(IO_ICU1 + 1, imen), outb(IO_ICU2 + 1, imen >> 8))
-
 #else
 
 /*
@@ -116,27 +114,28 @@ extern	unsigned short 		netmask; 	/* group of interrupts masked with splimp() */
 /*
  * Interrupt enable bits -- in order of priority
  */
-#define	IRQ0		0x0001		/* highest priority - timer */
-#define	IRQ1		0x0002
-#define	IRQ_SLAVE	0x0004
-#define	IRQ8		0x0100
-#define	IRQ9		0x0200
-#define	IRQ2		IRQ9
-#define	IRQ10		0x0400
-#define	IRQ11		0x0800
-#define	IRQ12		0x1000
-#define	IRQ13		0x2000
-#define	IRQ14		0x4000
-#define	IRQ15		0x8000
-#define	IRQ3		0x0008
-#define	IRQ4		0x0010
-#define	IRQ5		0x0020
-#define	IRQ6		0x0040
-#define	IRQ7		0x0080		/* lowest - parallel printer */
+#define	IRQ0					0x0001		/* highest priority - timer */
+#define	IRQ1					0x0002
+#define	IRQ_SLAVE				0x0004
+#define	IRQ8					0x0100
+#define	IRQ9					0x0200
+#define	IRQ2					IRQ9
+#define	IRQ10					0x0400
+#define	IRQ11					0x0800
+#define	IRQ12					0x1000
+#define	IRQ13					0x2000
+#define	IRQ14					0x4000
+#define	IRQ15					0x8000
+#define	IRQ3					0x0008
+#define	IRQ4					0x0010
+#define	IRQ5					0x0020
+#define	IRQ6					0x0040
+#define	IRQ7					0x0080		/* lowest - parallel printer */
 
 /*
  * Interrupt Control offset into Interrupt descriptor table (IDT)
  */
 #define	ICU_OFFSET				32			/* 0-31 are processor exceptions */
 #define	ICU_LEN					16			/* 32-47 are ISA interrupts */
+
 #endif	__ICU__

@@ -42,19 +42,18 @@ extern int cpu_cores;
 extern	IDTVEC(invltlb),					/* TLB shootdowns - global */
 		IDTVEC(invlpg),						/* TLB shootdowns - 1 page */
 		IDTVEC(invlrng),					/* TLB shootdowns - page range */
-		IDTVEC(invlcache);					/* Write back and invalidate cache */
+		IDTVEC(invlcache),					/* Write back and invalidate cache */
 
-extern	IDTVEC(ipi_intr_bitmap_handler), 	/* Bitmap based IPIs */
+		IDTVEC(ipi_intr_bitmap_handler), 	/* Bitmap based IPIs */
 		IDTVEC(ipi_swi),					/* Runs delayed SWI */
 		IDTVEC(cpustop),					/* CPU stops & waits to be restarted */
 		IDTVEC(cpususpend),					/* CPU suspends & waits to be resumed */
 		IDTVEC(rendezvous);					/* handle CPU rendezvous */
 
 
-#define	IDTVEC(name)	__CONCAT(X, name)
 extern 	IDTVEC(lapic_ipi), IDTVEC(lapic_tlb), IDTVEC(lapic_ltimer),
 		IDTVEC(x2apic_ipi), IDTVEC(x2apic_tlb), IDTVEC(x2apic_ltimer),
-		IDTVEC(spurious);
+		IDTVEC(spurious), IDTVEC(apic), IDTVEC(x2apic);
 
 /* functions in mpboot.s */
 void 	bootMP(void);

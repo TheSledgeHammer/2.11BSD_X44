@@ -67,6 +67,10 @@
 #include <devel/arch/i386/apic/lapicreg.h>
 #include <devel/arch/i386/apic/lapicvar.h>
 
+#define lapic_lock_init(lock) 	simple_lock_init(lock, "lapic_lock")
+#define lapic_lock(lock) 		simple_lock(lock)
+#define lapic_unlock(lock) 		simple_unlock(lock)
+
 extern volatile vaddr_t local_apic_va;
 
 void			lapic_map(caddr_t);
@@ -601,8 +605,9 @@ i82489_ipi_startup(int target, int vec)
 	}
 
 	esr = i82489_read32(LAPIC_ESR);
-	if (esr != 0)
+	if (esr != 0) {
 		print("%s: ESR %08x\n", __func__, esr);
+	}
 
 	return 0;
 }

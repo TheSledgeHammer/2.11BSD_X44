@@ -37,7 +37,7 @@
 #include <dev/isa/isavar.h>
 
 #define	IRQ_BIT(irq_num)	    	(1 << ((irq_num) % 8))
-#define	IRQ_BYTE(irq_num)	    	((irq_num) / 8)
+#define	IRQ_BYTE(irq_num)	    	((irq_num) >> 3)
 
 #define INTR_ADDR(intr, irq_num) 	((intr)+(irq_num) * 4)
 

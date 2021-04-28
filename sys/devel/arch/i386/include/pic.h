@@ -63,6 +63,13 @@ struct pic {
 #define PIC_LAPIC			2
 #define PIC_SOFT			3
 
+struct softpic {
+	struct pic				*sp_pic;
+	int						sp_vector;
+	int						sp_type;
+	int						sp_template;
+};
+
 /*
  * An interrupt source.  The upper-layer code uses the PIC methods to
  * control a given source.  The lower-layer PIC drivers can store additional

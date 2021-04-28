@@ -37,307 +37,159 @@
  *	@(#)icu.s	8.1 (Berkeley) 6/11/93
  */
 
-	.data
-	.globl	_imen
-	.globl	_cpl
-_cpl:		.long	0xffff			# current priority level (all off)
-_imen:		.long	0xffff			# interrupt mask enable (all off)
-	.globl	_highmask
-_highmask:	.long	0xffff
-	.globl	_ttymask
-_ttymask:	.long	0
-	.globl	_biomask
-_biomask:	.long	0
-	.globl	_netmask
-_netmask:	.long	0
-	.globl	_isa_intr
-_isa_intr:	.space	16*4
-
-	.text
 #include <net/netisr.h>
 
-#define DONET(s, c)	; 		\
-	.globl	c ;  			\
-	btrl	$ s ,_netisr ;  \
-	jnb	1f ; 				\
-	call	c ; 			\
-1:
+		.data
+		.globl	_C_LABEL(imen),_C_LABEL(cpl),_C_LABEL(ipending)
+		.globl	_C_LABEL(astpending),_C_LABEL(netisr)
+_C_LABEL(cpl):
+		.long	0xffff			# current priority level (all off)
+_C_LABEL(imen):
+		.long	0xffff			# interrupt mask enable (all off)
+			
+#if defined(PROF) || defined(GPROF)
+		.globl	_C_LABEL(splhigh), _C_LABEL(splx)
+
+		ALIGN_TEXT
+_C_LABEL(splhigh):
+		movl	$-1,%eax
+		xchgl	%eax,_C_LABEL(cpl)
+		ret
+
+		ALIGN_TEXT
+_C_LABEL(splx):
+		movl	4(%esp),%eax
+		movl	%eax,_C_LABEL(cpl)
+		testl	%eax,%eax
+		jnz		_C_LABEL(Xspllower)
+		ret
+#endif /* PROF || GPROF */
 
 /*
- * Handle return from interrupt after device handler finishes
+ * Process pending interrupts.
  *
- * register usage:
- *
- * %ebx is cpl we are going back to
- * %esi is 0 if returning to kernel mode
- *
- * Note that these registers will be preserved though C calls,
- * such as the network interrupt routines.
+ * Important registers:
+ *   ebx - cpl
+ *   esi - address to resume loop at
+ *   edi - scratch for Xsoftnet
  */
-doreti:
-	cli
-	popl	%ebx			# flush unit number
-	popl	%ebx			# get previous priority
-	# now interrupt frame is a trap frame!
-
-	/* compensate for drivers that return with non-zero cpl */
-	movl	0x34(%esp), %esi /* cs */
-	andl	$3, %esi
-	jz		1f
-
-return_to_user_mode: /* entry point from trap and syscall return */
-
-	/* return cs is for user mode: force 0 cpl */
-	xorl	%ebx,%ebx
-1:
-
-	/* like splx(%ebx), except without special 0 handling */
-	cli
-	movl	%ebx, %eax
-	movw	%ax,_cpl
-	orw		_imen,%ax
-	outb	%al, $ IO_ICU1+1
-	movb	%ah, %al
-	outb	%al, $ IO_ICU2+1
-
-	/* return immediately if previous cpl was non-zero */
-	cmpw	$0, %bx
-	jnz		just_return
-
-	/* do network stuff, if requested, even if returning to kernel mode */
-	cmpl	$0,_netisr
-	jne		donet
-
-	/* if (returning to user mode && astpending), go back to trap
-	 * (check astpending first since it is more likely to be false)
-	 */
-	call	aston
-	je		just_return
-
-	testl	%esi, %esi
-	jz		just_return
-
-	/* we need to go back to trap */
-	popl	%es
-	popl	%ds
-	popal
-	addl	$8,%esp
-
-	pushl	$0
-	TRAP (T_ASTFLT)
-	/* this doesn't return here ... instead it goes though
-	 * calltrap in locore.s
-	 */
-
-donet:
-	/* like splnet(), except we know the current pri is 0 */
-	cli
-	movw 	_netmask, %ax
-	movw 	%ax,_cpl
-	orw 	_imen,%ax
-	outb	%al, $ IO_ICU1+1
-	movb 	%ah, %al
-	outb 	%al, $ IO_ICU2+1
-	sti
-
-	DONET(NETISR_RAW,_rawintr)
-#ifdef INET
-	DONET(NETISR_IP,_ipintr)
-	DONET(NETISR_ARP,_arpintr)
-#endif
-#ifdef IMP
-	DONET(NETISR_IMP,_impintr)
-#endif
-#ifdef NS
-	DONET(NETISR_NS,_nsintr)
-#endif
-#ifdef ISO
-	DONET(NETISR_ISO,_clnlintr)
-#endif
-#ifdef CCITT
-	DONET(NETISR_CCITT,_hdintr)
-#endif
-
-	btrl	$ NETISR_SCLK,_netisr
-	jnb		return_to_user_mode
-
-	/* like splsoftclock */
-	cli
-	movw 	$0x8000, %ax
-	movw 	%ax,_cpl
-	orw 	_imen,%ax
-	outb 	%al, $ IO_ICU1+1
-	movb 	%ah, %al
-	outb 	%al, $ IO_ICU2+1
-	sti
-
-	# back to an interrupt frame for a moment
-	pushl	%eax
-	pushl	$0xff	# dummy intr
-	call	_softclock
-	leal	8(%esp), %esp
-	jmp		return_to_user_mode
-
-just_return:
-	pop		%es
-	pop		%ds
-	popa
-	leal	8(%esp),%esp
-	iret
+IDTVEC(spllower)
+		pushl	%ebx
+		pushl	%esi
+		pushl	%edi
+		movl	_C_LABEL(cpl),%ebx		# save priority
+		movl	$1f,%esi				# address to resume loop at
+1:		movl	%ebx,%eax
+		notl	%eax
+		andl	_C_LABEL(ipending),%eax
+		jz	2f
+		bsfl	%eax,%eax
+		btrl	%eax,_C_LABEL(ipending)
+		jnc	1b
+		jmp		*_C_LABEL(Xrecurse)(,%eax,4)
+2:		popl	%edi
+		popl	%esi
+		popl	%ebx
+		ret
 
 /*
- * Interrupt priority mechanism
+ * Handle return from interrupt after device handler finishes.
  *
- * Two flavors	-- imlXX masks relative to ISA noemenclature (for PC compat sw)
- *		-- splXX masks with group mechanism for BSD purposes
+ * Important registers:
+ *   ebx - cpl to restore
+ *   esi - address to resume loop at
+ *   edi - scratch for Xsoftnet
+ */
+IDTVEC(doreti)
+		popl	%ebx					# get previous priority
+		movl	%ebx,_C_LABEL(cpl)
+		movl	$1f,%esi				# address to resume loop at
+1:		movl	%ebx,%eax
+		notl	%eax
+		andl	_C_LABEL(ipending),%eax
+		jz	2f
+		bsfl    %eax,%eax               # slow, but not worth optimizing
+		btrl    %eax,_C_LABEL(ipending)
+		jnc     1b						# some intr cleared the in-memory bit
+		jmp		*_C_LABEL(Xresume)(,%eax,4)
+2:		/* Check for ASTs on exit to user mode. */
+		cli
+		cmpb	$0,_C_LABEL(astpending)
+		je		3f
+		testb   $SEL_RPL,TF_CS(%esp)
+#ifdef VM86
+		jnz		4f
+		testl	$PSL_VM,TF_EFLAGS(%esp)
+#endif
+		jz		3f
+4:		movb	$0,_C_LABEL(astpending)
+		sti
+		/* Pushed T_ASTFLT into tf_trapno on entry. */
+		call	_C_LABEL(trap)
+		jmp		2b
+3:		INTRFASTEXIT
+
+/*
+ * Soft interrupt handlers
  */
 
-	.globl	_splhigh
-	.globl	_splclock
-_splhigh:
-_splclock:
-	cli							# disable interrupts
-	movw	$0xffff,%ax			# set new priority level
-	movw	%ax,%dx
-	# orw	_imen,%ax			# mask off those not enabled yet
-	movw	%ax,%cx
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	movb	%ah,%al
-	outb	%al,$ IO_ICU2+1
-	movzwl	_cpl,%eax			# return old priority
-	movw	%dx,_cpl			# set new priority level
-	sti							# enable interrupts
-	ret
+IDTVEC(softserial)
+		movl	_C_LABEL(imask) + IPL_SOFTSERIAL * 4,%eax
+		movl	%eax,_C_LABEL(cpl)
+#include "com.h"
+#if NCOM > 0
+		call	_C_LABEL(comsoft)
+#endif
+		movl	%ebx,_C_LABEL(cpl)
+		jmp		%esi
 
-	.globl	_spltty				# block clists
-_spltty:
-	cli							# disable interrupts
-	movw	_cpl,%ax
-	orw		_ttymask,%ax
-	movw	%ax,%dx
-	orw		_imen,%ax			# mask off those not enabled yet
-	movw	%ax,%cx
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	movb	%ah,%al
-	outb	%al,$ IO_ICU2+1
-	movzwl	_cpl,%eax			# return old priority
-	movw	%dx,_cpl			# set new priority level
-	sti							# enable interrupts
-	ret
+#define DONET(s, c) 		\
+	.globl  c				;\
+	testl	$(1 << s),%edi	;\
+	jz		1f				;\
+	call	c				;\
+1:
 
-	.globl	_splimp
-	.globl	_splnet
-_splimp:
-_splnet:
-	cli							# disable interrupts
-	movw	_cpl,%ax
-	orw		_netmask,%ax
-	movw	%ax,%dx
-	orw		_imen,%ax			# mask off those not enabled yet
-	movw	%ax,%cx
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	movb	%ah,%al
-	outb	%al,$ IO_ICU2+1
-	movzwl	_cpl,%eax			# return old priority
-	movw	%dx,_cpl			# set new priority level
-	sti							# enable interrupts
-	ret
-
-	.globl	_splbio	
-_splbio:
-	cli							# disable interrupts
-	movw	_cpl,%ax
-	orw		_biomask,%ax
-	movw	%ax,%dx
-	orw		_imen,%ax			# mask off those not enabled yet
-	movw	%ax,%cx
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	movb	%ah,%al
-	outb	%al,$ IO_ICU2+1
-	movzwl	_cpl,%eax			# return old priority
-	movw	%dx,_cpl			# set new priority level
-	sti							# enable interrupts
-	ret
-
-	.globl	_splsoftclock
-_splsoftclock:
-	cli							# disable interrupts
-	movw	_cpl,%ax
-	orw		$0x8000,%ax			# set new priority level
-	movw	%ax,%dx
-	orw		_imen,%ax			# mask off those not enabled yet
-	movw	%ax,%cx
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	movb	%ah,%al
-	outb	%al,$ IO_ICU2+1
-	movzwl	_cpl,%eax			# return old priority
-	movw	%dx,_cpl			# set new priority level
-	sti							# enable interrupts
-	ret
-
-	.globl _splnone
-	.globl _spl0
-_splnone:
-_spl0:
-	cli							# disable interrupts
-	pushl	_cpl				# save old priority
-	movw	_cpl,%ax
-	orw		_netmask,%ax		# mask off those network devices
-	movw	%ax,_cpl			# set new priority level
-	orw		_imen,%ax			# mask off those not enabled yet
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	movb	%ah,%al
-	outb	%al,$ IO_ICU2+1
-	sti							# enable interrupts
-
-	DONET(NETISR_RAW,_rawintr)
+IDTVEC(softnet)
+		movl	_C_LABEL(imask) + IPL_SOFTNET * 4,%eax
+		movl	%eax,_C_LABEL(cpl)
+		xorl	%edi,%edi
+		xchgl	_C_LABEL(netisr),%edi
 #ifdef INET
-	DONET(NETISR_IP,_ipintr)
-	DONET(NETISR_ARP,_arpintr)
+#include "arp.h"
+#if NARP > 0
+	DONET(NETISR_ARP, _C_LABEL(arpintr))
+#endif
+	DONET(NETISR_IP, _C_LABEL(ipintr))
 #endif
 #ifdef IMP
-	DONET(NETISR_IMP,_impintr)
+	DONET(NETISR_IMP, _C_LABEL(impintr))
 #endif
 #ifdef NS
-	DONET(NETISR_NS,_nsintr)
+	DONET(NETISR_NS, _C_LABEL(nsintr))
 #endif
 #ifdef ISO
-	DONET(NETISR_ISO,_clnlintr)
+	DONET(NETISR_ISO, _C_LABEL(clnlintr))
 #endif
 #ifdef CCITT
-	DONET(NETISR_CCITT,_hdintr)
+	DONET(NETISR_CCITT, _C_LABEL(ccittintr))
 #endif
-
-	cli						# disable interrupts
-	popl	_cpl			# save old priority
-	nop
-
-	movw	$0,%ax			# set new priority level
-	movw	%ax,%dx
-	orw		_imen,%ax		# mask off those not enabled yet
-	movw	%ax,%cx
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	movb	%ah,%al
-	outb	%al,$ IO_ICU2+1
-	movzwl	_cpl,%eax		# return old priority
-	movw	%dx,_cpl		# set new priority level
-	sti						# enable interrupts
-	ret
-
-	.globl _splx
-_splx:
-	cli						# disable interrupts
-	movw	4(%esp),%ax		# new priority level
-	movw	%ax,%dx
-	cmpw	$0,%dx
-	je		_spl0			# going to "zero level" is special
-
-	orw		_imen,%ax		# mask off those not enabled yet
-	movw	%ax,%cx
-	outb	%al,$ IO_ICU1+1		/* update icu's */
-	movb	%ah,%al
-	outb	%al,$ IO_ICU2+1
-	movzwl	_cpl,%eax		# return old priority
-	movw	%dx,_cpl		# set new priority level
-	sti						# enable interrupts
-	ret
+#ifdef NATM
+	DONET(NETISR_NATM, _C_LABEL(natmintr))
+#endif
+#ifdef NETATALK
+	DONET(NETISR_ATALK, _C_LABEL(atintr))
+#endif
+#include "ppp.h"
+#if NPPP > 0
+	DONET(NETISR_PPP, _C_LABEL(pppintr))
+#endif
+		movl	%ebx,_C_LABEL(cpl)
+		jmp		%esi
+	
+IDTVEC(softclock)
+		movl	_C_LABEL(imask) + IPL_SOFTCLOCK * 4,%eax
+		movl	%eax,_C_LABEL(cpl)
+		call	_C_LABEL(softclock)
+		movl	%ebx,_C_LABEL(cpl)
+		jmp		%esi

@@ -93,8 +93,9 @@ splx(ncpl)
 	register int ncpl;
 {
 	cpl = ncpl;
-	if (ipending & ~ncpl)
+	if (ipending & ~ncpl) {
 		Xspllower();
+	}
 }
 
 /*

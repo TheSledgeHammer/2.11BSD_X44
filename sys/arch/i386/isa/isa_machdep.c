@@ -364,7 +364,8 @@ intr_calculatemasks()
 			irqs |= 1 << IRQ_SLAVE;
 		}
 		imen = ~irqs;
-		SET_ICUS();
+		outb(IO_ICU1 + 1, imen);
+		outb(IO_ICU2 + 1, imen >> 8);
 	}
 }
 

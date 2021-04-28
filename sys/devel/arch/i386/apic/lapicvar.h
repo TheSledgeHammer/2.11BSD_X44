@@ -98,4 +98,8 @@ extern void 			lapic_write_tpri(uint32_t);
 extern uint32_t 		lapic_cpu_number(void);
 extern boolean_t 		lapic_is_x2apic(void);
 
+static int				i82489_ipi_init(int);
+static int				i82489_ipi_startup(int, int);
+static int				x2apic_ipi_init(int);
+static int				x2apic_ipi_startup(int, int);
 #endif /* _I386_LAPICVAR_H_ */

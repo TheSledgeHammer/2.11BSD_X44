@@ -39,10 +39,10 @@
 
 #include <arch/i386/include/pic.h>
 
-struct pic softpic_template = {
+struct pic softintr_template = {
 		.pic_type = PIC_SOFT,
 		.pic_hwmask = softpic_hwmask,
-		.pic_hwunmask = softpic_hwmask,
+		.pic_hwunmask = softpic_hwunmask,
 		.pic_addroute = softpic_addroute,
 		.pic_delroute = softpic_delroute,
 		.pic_register = softpic_register_pic
@@ -76,5 +76,5 @@ softpic_delroute(struct ioapic_intsrc *intpin, struct cpu_info *ci, int pin, int
 static void
 softpic_register_pic()
 {
-	intr_register_pic(&softpic_template);
+	intr_register_pic(&softintr_template);
 }

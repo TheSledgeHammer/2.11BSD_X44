@@ -157,6 +157,26 @@ int 				intrmask[MAX_INTR_SOURCES];
 int 				intrlevel[MAX_INTR_SOURCES];
 int 				intr_shared_edge;
 
+struct intr_softc {
+	struct intrsource 	*sc_isrc;
+	struct intrhand	 	*sc_ihand;
+	struct softpic		*sc_softpic;
+
+	int					sc_itype;
+	int					sc_imask;
+	int					sc_ilevel;
+};
+
+struct softpic {
+	TAILQ_HEAD(, pic)	pic_head;
+	int					pic_pin;
+};
+
+struct pic {
+	TAILQ_ENTRY(pic)	pic_entry;
+};
+
+
 struct intrsource *
 intrsource_create(struct pic *pic, int pin)
 {
@@ -179,6 +199,67 @@ intrhand_create(struct pic *pic, int irq)
 	ihnd->ih_irq = irq;
 
 	return (ihnd);
+}
+
+struct ioapic_intsrc *
+intr_pic_create(irq)
+	int irq;
+{
+	struct ioapic_softc  *sc;
+	struct ioapic_intsrc *intpin;
+	u_int apicid;
+	u_int pin;
+
+	apicid = APIC_IRQ_APIC(irq);
+	pin	= APIC_IRQ_PIN(irq);
+	sc = ioapic_find(apicid);
+
+	intpin = &sc->sc_pins[pin];
+	return (intpin);
+}
+
+void
+intr_io(pictemp, pin, irq)
+	int pictemp, pin, irq;
+{
+	struct pic 				*pic;
+	struct intrsource 		*isrc;
+	struct intrhand 		*ihnd;
+
+	pic = intr_handle_pic(pictemp);
+	if(pic) {
+		isrc = intrsource_create(pic, pin);
+		ihnd = intrhand_create(pic, irq);
+		isrc->is_handlers = ihnd;
+	}
+}
+
+void
+intr_legacy_vectors()
+{
+	int i;
+	for(i = 0; i < NUM_LEGACY_IRQS; i++) {
+		int idx = ICU_OFFSET + i;
+		setidt(idx, &IDTVEC(legacy), 0, SDT_SYS386IGT, SEL_KPL);
+	}
+}
+
+void
+intr_apic_vectors()
+{
+	int idx;
+	for(idx = 0; idx < MAX_INTR_SOURCES; idx++) {
+		setidt(idx, &IDTVEC(apic), 0, SDT_SYS386IGT, SEL_KPL);
+	}
+}
+
+void
+intr_x2apic_vectors()
+{
+	int idx;
+	for(idx = 0; idx < MAX_INTR_SOURCES; idx++) {
+		setidt(idx, &IDTVEC(x2apic), 0, SDT_SYS386IGT, SEL_KPL);
+	}
 }
 
 void
@@ -332,7 +413,6 @@ int
 fakeintr(arg)
 	void *arg;
 {
-
 	return 0;
 }
 
@@ -456,4 +536,70 @@ intr_typename(type)
 	default:
 		panic("intr_typename: invalid type %d", type);
 	}
+}
+
+int
+intr_allocate_slot(pic, irq, pin, level, cip, idx, idt_slot)
+	struct pic  *pic;
+	struct cpu_info *cip;
+	int irq, pin, level;
+	int *idx, *idt_slot;
+{
+	struct cpu_info *ci;
+	struct intrsource *isp;
+	int slot, idtvec, error;
+
+	if (irq != -1) {
+		ci = &cpu_info;
+		for (slot = 0 ; slot < MAX_INTR_SOURCES ; slot++) {
+			isp = &intrsrc[slot];
+			if (isp != NULL && isp->is_pic == pic && isp->is_pin == pin ) {
+				goto duplicate;
+			}
+		}
+		slot = irq;
+		isp = &intrsrc[slot];
+		if (isp == NULL) {
+			MALLOC(isp, struct intrsource *, sizeof(struct intrsource), M_DEVBUF, M_NOWAIT|M_ZERO);
+			if (isp == NULL) {
+				return ENOMEM;
+			}
+			&intrsrc[slot] = isp;
+		} else {
+			if (isp->is_pin != pin) {
+				if (pic == &i8259_template) {
+					return EINVAL;
+				}
+				goto other;
+			}
+		}
+duplicate:
+		if (pic == &i8259_template) {
+			idtvec = ICU_OFFSET + irq;
+		} else {
+			if (level > isp->is_maxlevel) {
+
+			}
+			if (isp->is_minlevel == 0 || level < isp->is_minlevel) {
+				idtvec = idt_vec_alloc(APIC_LEVEL(level), IDT_INTR_HIGH);
+				if (idtvec == 0) {
+					return (EBUSY);
+				}
+			} else {
+				idtvec = isp->is_idtvec;
+			}
+		}
+	} else {
+other:
+	ci = &cpu_info;
+	error = intr_allocate_slot_cpu(ci, pic, pin, &slot);
+	if (error == 0) {
+		goto found;
+	}
+
+
+	*idt_slot = idtvec;
+	*idx = slot;
+	*cip = ci;
+	return (0);
 }

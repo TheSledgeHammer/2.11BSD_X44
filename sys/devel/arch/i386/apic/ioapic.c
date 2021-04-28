@@ -331,6 +331,7 @@ ioapic_init_intpins(struct ioapic_softc *sc)
 		intpin->io_map = NULL;
 		intpin->io_vector = 0;
 		intpin->io_type = IST_NONE;
+	}
 }
 
 static void

@@ -76,7 +76,7 @@ struct ioapic_softc {
 #define APIC_IRQ_APIC(x) 	((x & APIC_INT_APIC_MASK) >> APIC_INT_APIC_SHIFT)
 #define APIC_IRQ_PIN(x) 	((x & APIC_INT_PIN_MASK) >> APIC_INT_PIN_SHIFT)
 
-struct ioapic_softc *ioapic_find(int);
-struct ioapic_softc *ioapic_find_bybase(int);
+struct ioapic_softc 		*ioapic_find(int);
+struct ioapic_softc 		*ioapic_find_bybase(int);
 
 #endif /* _I386_IOAPICVAR_H_ */
