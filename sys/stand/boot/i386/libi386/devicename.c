@@ -85,103 +85,146 @@ static int
 i386_parsedev(struct i386_devdesc **dev, const char *devspec, const char **path)
 {
     struct i386_devdesc *idev;
-    struct devsw	*dv;
-    int			i, unit, err;
-    char		*cp;
-    const char		*np;
+    struct devsw		*dv;
+    int					i, unit, slice, partition, err;
+    char				*cp;
+    const char			*np;
 
-    /* minimum length check */
-    if (strlen(devspec) < 2)
-	return(EINVAL);
+	/* minimum length check */
+	if (strlen(devspec) < 2)
+		return (EINVAL);
 
-    /* look for a device that matches */
-    for (i = 0, dv = NULL; devsw[i] != NULL; i++) {
-    	if (!strncmp(devspec, devsw[i]->dv_name, strlen(devsw[i]->dv_name))) {
-    		dv = devsw[i];
-    		break;
-    	}
-    }
-    if (dv == NULL)
-    	return(ENOENT);
+	/* look for a device that matches */
+	for (i = 0, dv = NULL; devsw[i] != NULL; i++) {
+		if (!strncmp(devspec, devsw[i]->dv_name, strlen(devsw[i]->dv_name))) {
+			dv = devsw[i];
+			break;
+		}
+	}
+	if (dv == NULL)
+		return (ENOENT);
+	idev = malloc(sizeof(struct i386_devdesc));
+	err = 0;
+	np = (devspec + strlen(dv->dv_name));
 
-    np = (devspec + strlen(dv->dv_name));
-    idev = NULL;
-    err = 0;
-        
-    switch(dv->dv_type) {
-    case DEVT_NONE:
-    	break;
+	switch (dv->dv_type) {
+	case DEVT_NONE: /* XXX what to do here?  Do we care? */
+		break;
 
-    case DEVT_DISK:
-    	idev = malloc(sizeof(struct i386_devdesc));
-    	if (idev == NULL)
-    		return (ENOMEM);
-    	err = disk_parsedev((struct disk_devdesc *)idev, np, path);
-    	if (err != 0)
-    		goto fail;
-    	break;
+	case DEVT_DISK:
+		unit = -1;
+		slice = -1;
+		partition = -1;
+		if (*np && (*np != ':')) {
+			unit = strtol(np, &cp, 10); /* next comes the unit number */
+			if (cp == np) {
+				err = EUNIT;
+				goto fail;
+			}
+			if (*cp == 's') { /* got a slice number */
+				np = cp + 1;
+				slice = strtol(np, &cp, 10);
+				if (cp == np) {
+					err = ESLICE;
+					goto fail;
+				}
+			}
+			if (*cp && (*cp != ':')) {
+				partition = *cp - 'a'; /* get a partition number */
+				if ((partition < 0) || (partition >= MAXPARTITIONS)) {
+					err = EPART;
+					goto fail;
+				}
+				cp++;
+			}
+		}
+		if (*cp && (*cp != ':')) {
+			err = EINVAL;
+			goto fail;
+		}
 
-    default:
-    	idev = malloc(sizeof (struct devdesc));
-    	if (idev == NULL)
-    		return (ENOMEM);
+		idev->d_kind.biosdisk.unit = unit;
+		idev->d_kind.biosdisk.slice = slice;
+		idev->d_kind.biosdisk.partition = partition;
+		if (path != NULL)
+			*path = (*cp == 0) ? cp : cp + 1;
+		break;
 
-    	unit = 0;
-    	cp = (char *)np;
+	case DEVT_CD:
+	case DEVT_NET:
+		unit = 0;
 
-    	if (*np && (*np != ':')) {
-    		unit = strtol(np, &cp, 0);	/* get unit number if present */
-    		if (cp == np) {
-    			err = EUNIT;
-    			goto fail;
-    		}
-    	}
+		if (*np && (*np != ':')) {
+			unit = strtol(np, &cp, 0); /* get unit number if present */
+			if (cp == np) {
+				err = EUNIT;
+				goto fail;
+			}
+		}
+		if (*cp && (*cp != ':')) {
+			err = EINVAL;
+			goto fail;
+		}
 
-    	if (*cp && (*cp != ':')) {
-    		err = EINVAL;
-    		goto fail;
-    	}
+		if (dv->dv_type == DEVT_NET)
+			idev->d_kind.netif.unit = unit;
+		else
+			idev->d_kind.bioscd.unit = unit;
+		if (path != NULL)
+			*path = (*cp == 0) ? cp : cp + 1;
+		break;
 
+	default:
+		err = EINVAL;
+		goto fail;
+	}
+	idev->dd.d_dev = dv;
+	idev->d_type = dv->dv_type;
+	if (dev == NULL) {
+		free(idev);
+	} else {
+		*dev = idev;
+	}
+	return (0);
 
-    	idev->dd.d_unit = unit;
-    	if (path != NULL)
-    		*path = (*cp == 0) ? cp : cp + 1;
-    	break;
-    }
-    idev->dd.d_dev = dv;
-    if (dev != NULL)
-    	*dev = idev;
-    else
-    	free(idev);
-
-    return(0);
-
- fail:
-    free(idev);
-    return(err);
+fail:
+	free(idev);
+	return (err);
 }
+
 
 char *
 i386_fmtdev(void *vdev)
 {
     struct i386_devdesc	*dev = (struct i386_devdesc *)vdev;
     static char		buf[128];	/* XXX device length constant? */
+    char		*cp;
 
-    switch(dev->dd.d_dev->dv_type) {
-    case DEVT_NONE:
-    	strcpy(buf, "(no device)");
-    	break;
+    switch (dev->d_type) {
+	case DEVT_NONE:
+		strcpy(buf, "(no device)");
+		break;
 
-    case DEVT_CD:
-    case DEVT_NET:
-    	sprintf(buf, "%s%d:", dev->dd.d_dev->dv_name, dev->dd.d_unit);
-    	break;
+	case DEVT_CD:
+		sprintf(buf, "%s%d:", dev->dd.d_dev->dv_name, dev->d_kind.bioscd.unit);
+		break;
 
-    case DEVT_DISK:
-	return (disk_fmtdev(vdev));
+	case DEVT_DISK:
+		cp = buf;
+		cp += sprintf(cp, "%s%d", dev->dd.d_dev->dv_name,
+				dev->d_kind.biosdisk.unit);
+		if (dev->d_kind.biosdisk.slice > 0)
+			cp += sprintf(cp, "s%d", dev->d_kind.biosdisk.slice);
+		if (dev->d_kind.biosdisk.partition >= 0)
+			cp += sprintf(cp, "%c", dev->d_kind.biosdisk.partition + 'a');
+		strcat(cp, ":");
+		break;
 
-    }
-    return(buf);
+	case DEVT_NET:
+		sprintf(buf, "%s%d:", dev->dd.d_dev->dv_name, dev->d_kind.netif.unit);
+		break;
+	}
+	return (buf);
 }
 
 
@@ -194,9 +237,9 @@ i386_setcurrdev(struct env_var *ev, int flags, void *value)
     struct i386_devdesc	*ncurr;
     int			rv;
 
-    if ((rv = i386_parsedev(&ncurr, value, NULL)) != 0)
-	return(rv);
-    free(ncurr);
-    env_setenv(ev->ev_name, flags | EV_NOHOOK, value, NULL, NULL);
-    return(0);
+	if ((rv = i386_parsedev(&ncurr, value, NULL)) != 0)
+		return (rv);
+	free(ncurr);
+	env_setenv(ev->ev_name, flags | EV_NOHOOK, value, NULL, NULL);
+	return (0);
 }

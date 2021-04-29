@@ -41,8 +41,9 @@
 #include <sys/null.h>
 #endif
 
+#include <sys/disktype.h>
+
 #include <lib/libsa/diskapm.h>
-#include <lib/libsa/diskbsd.h>
 #include <lib/libsa/diskgpt.h>
 #include <lib/libsa/diskmbr.h>
 
@@ -134,7 +135,7 @@ struct disklabel {
 #define d_boot0		d_un.un_d_boot0
 #define d_boot1		d_un.un_d_boot1
 #endif	/* ! KERNEL or STANDALONE */
-			/* disk geometry: */
+		/* disk geometry: */
 	u_int32_t 		d_secsize;			/* # of bytes per sector */
 	u_int32_t 		d_nsectors;			/* # of data sectors per track */
 	u_int32_t 		d_ntracks;			/* # of tracks per cylinder */
@@ -180,9 +181,9 @@ struct disklabel {
 	u_int32_t 		d_headswitch;		/* head swith time, usec */
 	u_int32_t 		d_trkseek;			/* track-to-track seek, msec */
 	u_int32_t 		d_flags;			/* generic flags */
-#define NDDATA 5
+#define NDDATA 		BSD_NDRIVEDATA
 	u_int32_t 		d_drivedata[NDDATA];/* drive-type specific information */
-#define NSPARE 5
+#define NSPARE 		BSD_NSPARE
 	u_int32_t 		d_spare[NSPARE];	/* reserved for future use */
 	u_int32_t 		d_magic2;			/* the magic number (again) */
 	u_int16_t 		d_checksum;			/* xor of data incl. partitions */
@@ -219,101 +220,11 @@ struct disklabel {
 .set	d_end_,276			/* size of disk label */
 #endif /* LOCORE */
 
-/* d_type values: */
-#define	DTYPE_SMD			1		/* SMD, XSMD; VAX hp/up */
-#define	DTYPE_MSCP			2		/* MSCP */
-#define	DTYPE_DEC			3		/* other DEC (rk, rl) */
-#define	DTYPE_SCSI			4		/* SCSI */
-#define	DTYPE_ESDI			5		/* ESDI interface */
-#define	DTYPE_ST506			6		/* ST506 etc. */
-#define	DTYPE_HPIB			7		/* CS/80 on HP-IB */
-#define	DTYPE_HPFL			8		/* HP Fiber-link */
-#define	DTYPE_FLOPPY		10		/* floppy */
-#define	DTYPE_CCD			11		/* concatenated disk device */
-#define	DTYPE_VND			12		/* vnode pseudo-disk */
-
-/* d_subtype values: */
-#define DSTYPE_INDOSPART	0x8			/* is inside dos partition */
-#define DSTYPE_DOSPART(s)	((s) & 3)	/* dos partition number */
-#define DSTYPE_GEOMETRY		0x10		/* drive params in label */
-
-#ifdef DKTYPENAMES
-static char *dktypenames[] = {
-	"unknown",
-	"SMD",
-	"MSCP",
-	"old DEC",
-	"SCSI",
-	"ESDI",
-	"ST506",
-	"floppy",
-	"ccd",
-	"vnd",
-	NULL,
-};
-#define DKMAXTYPES	(sizeof(dktypenames) / sizeof(dktypenames[0]) - 1)
-#endif
-
-/*
- * Filesystem type and version.
- * Used to interpret other filesystem-specific
- * per-partition information.
- */
-/*
- * 2.11BSD uses type 5 filesystems even though block numbers are 4 bytes
- * (rather than the packed 3 byte format) and the directory structure is
- * that of 4.3BSD (long filenames).
-*/
-#define	FS_UNUSED	0		/* unused */
-#define	FS_SWAP		1		/* swap */
-#define	FS_V6		2		/* Sixth Edition */
-#define	FS_V7		3		/* Seventh Edition */
-#define	FS_SYSV		4		/* System V */
-#define	FS_V71K		5		/* V7 with 1K blocks (4.1, 2.9, 2.11) */
-#define	FS_V8		6		/* Eighth Edition, 4K blocks */
-#define	FS_BSDFFS	7		/* 4.2BSD fast file system */
-#define	FS_MSDOS	8		/* MSDOS file system */
-#define	FS_BSDLFS	9		/* 4.4BSD log-structured file system */
-#define	FS_OTHER	10		/* in use, but unknown/unsupported */
-#define	FS_HPFS		11		/* OS/2 high-performance file system */
-#define	FS_ISO9660	12		/* ISO 9660, normally CD-ROM */
-#define	FS_BOOT		13		/* partition contains bootstrap */
-
-#ifdef	DKTYPENAMES
-static char *fstypenames[] = {
-	"unused",
-	"swap",
-	"Version 6",
-	"Version 7",
-	"System V",
-	"2.11BSD",
-	"Eighth Edition",
-	"4.2BSD",
-	"MSDOS",
-	"4.4LFS",
-	"unknown",
-	"HPFS",
-	"ISO9660",
-	"boot",
-	NULL
-};
-#define FSMAXTYPES	(sizeof(fstypenames) / sizeof(fstypenames[0]) - 1)
-#endif
-
-/*
- * flags shared by various drives:
- */
-#define		D_REMOVABLE	0x01				/* removable media */
-#define		D_ECC		0x02				/* supports ECC */
-#define		D_BADSECT	0x04				/* supports bad sector forw. */
-#define		D_RAMDISK	0x08				/* disk emulator */
-#define		D_CHAIN		0x10				/* can do back-back transfers */
-
 /*
  * Drive data for SMD.
  */
 #define	d_smdflags		d_drivedata[0]
-#define	D_SSE			0x1				/* supports skip sectoring */
+#define	D_SSE			0x1					/* supports skip sectoring */
 #define	d_mindist		d_drivedata[1]
 #define	d_maxdist		d_drivedata[2]
 #define	d_sdist			d_drivedata[3]

@@ -184,20 +184,20 @@ static void
 extract_currdev(void)
 {
 	struct i386_devdesc	currdev;	/* our current device */
-	int					biosdev = -1;
+	int					major, biosdev = -1;
 
-	currdev.dd.d_dev = &bioshd;
+	currdev.dd.d_dev = &biosdisk;
 
 	 /* new-style boot loaders such as pxeldr and cdldr */
 	if (kargs->bootinfo == 0) {
 		if ((kargs->bootflags & KARGS_FLAGS_CD) != 0) {
 			/* we are booting from a CD with cdboot */
 			currdev.dd.d_dev = &bioscd;
-			currdev.dd.d_unit = bd_bios2unit(initial_bootdev);
+			currdev.d_kind.bioscd.unit = bc_bios2unit(initial_bootdev);
 		} else if ((kargs->bootflags & KARGS_FLAGS_PXE) != 0) {
 			 /* we are booting from pxeldr */
 			currdev.dd.d_dev = &pxedisk;
-			currdev.dd.d_unit = 0;
+			currdev.d_kind.netif.unit = 0;
 		} else {
 		    /* we don't know what our boot device is */
 		    currdev.d_kind.biosdisk.slice = -1;
@@ -211,10 +211,11 @@ extract_currdev(void)
 	    currdev.d_kind.biosdisk.partition = 0;
 		biosdev = -1;
 	} else {
-	    currdev.d_kind.biosdisk.slice = B_SLICE(initial_bootdev) - 1;
+	    //currdev.d_kind.biosdisk.slice = B_SLICE(initial_bootdev) - 1;
+		currdev.d_kind.biosdisk.slice = (B_ADAPTOR(initial_bootdev) << 4) + B_CONTROLLER(initial_bootdev) - 1;
 	    currdev.d_kind.biosdisk.partition = B_PARTITION(initial_bootdev);
 		biosdev = initial_bootinfo->bi_bios.bi_bios_dev;
-
+		major = B_TYPE(initial_bootdev);
 
 		/*
 		 * If we are booted by an old bootstrap, we have to guess at the BIOS
@@ -222,19 +223,21 @@ extract_currdev(void)
 		 * and we are not booting from the lowest-numbered disk type
 		 * (ie. SCSI when IDE also exists).
 		 */
-		if ((biosdev == 0) && (B_TYPE(initial_bootdev) != 2))	/* biosdev doesn't match major */
+		if ((biosdev == 0) && (B_TYPE(initial_bootdev) != 2)) {	/* biosdev doesn't match major */
 			biosdev = 0x80 + B_UNIT(initial_bootdev);			/* assume harddisk */
+		}
 	}
+	currdev.d_type = currdev.dd.d_dev->dv_type;
 
 	/*
 	 * If we are booting off of a BIOS disk and we didn't succeed in determining
 	 * which one we booted off of, just use disk0: as a reasonable default.
 	 */
-	if ((currdev.dd.d_dev->dv_type == bioshd.dv_type) &&
-		((currdev.dd.d_unit = bd_bios2unit(biosdev)) == -1)) {
+	if ((currdev.d_type == biosdisk.dv_type) &&
+		((currdev.d_kind.biosdisk.unit = bd_bios2unit(biosdev)) == -1)) {
 		printf("Can't work out which disk we are booting from.\n"
 		       "Guessed BIOS device 0x%x not found by probes, defaulting to disk0:\n", biosdev);
-		currdev.dd.d_unit = 0;
+		currdev.d_kind.biosdisk.unit = 0;
 	}
 
 	env_setenv("currdev", EV_VOLATILE, i386_fmtdev(&currdev), (ev_sethook_t *) i386_setcurrdev, env_nounset);

@@ -30,59 +30,26 @@
  * i386 fully-qualified device descriptor.
  */
 struct i386_devdesc {
-	struct devdesc	dd;		/* Must be first. */
+	struct devdesc	dd;				/* Must be first. */
+	int				d_type;
     union {
 		struct {
+			 int	unit;
 			int		adaptor;
 			int		controller;
 			int		slice;
 			int		partition;
-			off_t	offset;
+			void	*data;
 		} biosdisk;
+		struct {
+		    int		unit;
+		    void	*data;
+		} bioscd;
+		struct {
+		    int		unit;			/* XXX net layer lives over these? */
+		} netif;
     } d_kind;
 };
-
-#define d_adaptor		d_kind.biosdisk.adaptor
-#define d_controller	d_kind.biosdisk.controller
-#define d_slice			d_kind.biosdisk.slice
-#define d_partition 	d_kind.biosdisk.partition
-#define d_offset		d_kind.biosdisk.offset
-
-/*
- * relocater trampoline support.
- */
-struct relocate_data {
-	uint32_t	src;
-	uint32_t	dest;
-	uint32_t	size;
-};
-
-extern void relocater(void);
-
-/*
- * The relocater_data[] is fixed size array allocated in relocater_tramp.S
- */
-extern struct relocate_data relocater_data[];
-extern uint32_t relocater_size;
-
-extern uint16_t relocator_ip;
-extern uint16_t relocator_cs;
-extern uint16_t relocator_ds;
-extern uint16_t relocator_es;
-extern uint16_t relocator_fs;
-extern uint16_t relocator_gs;
-extern uint16_t relocator_ss;
-extern uint16_t relocator_sp;
-extern uint32_t relocator_esi;
-extern uint32_t relocator_eax;
-extern uint32_t relocator_ebx;
-extern uint32_t relocator_edx;
-extern uint32_t relocator_ebp;
-extern uint16_t relocator_a20_enabled;
-
-int			i386_getdev(void **vdev, const char *devspec, const char **path);
-char		*i386_fmtdev(void *vdev);
-int			i386_setcurrdev(struct env_var *ev, int flags, const void *value);
 
 extern struct devdesc	currdev;	/* our current device */
 
@@ -90,16 +57,18 @@ extern struct devdesc	currdev;	/* our current device */
 #define MAXBDDEV		MAXDEV
 
 /* exported devices XXX rename? */
-extern struct devsw bioscd;
-extern struct devsw biosfd;
-extern struct devsw bioshd;
-extern struct devsw pxedisk;
-extern struct fs_ops pxe_fsops;
+extern struct devsw 	bioscd;
+extern struct devsw 	biosdisk;
+extern struct devsw 	pxedisk;
+extern struct fs_ops 	pxe_fsops;
 
 int			bc_add(int biosdev);					/* Register CD booted from. */
-uint32_t 	bd_getbigeom(int bunit);				/* return geometry in bootinfo format */
+int			bc_getdev(struct i386_devdesc *dev);	/* return dev_t for (dev) */
+int			bc_bios2unit(int biosdev);				/* xlate BIOS device -> bioscd unit */
+int			bc_unit2bios(int unit);					/* xlate bioscd unit -> BIOS device */
+u_int32_t	bd_getbigeom(int bunit);				/* return geometry in bootinfo format */
 int			bd_bios2unit(int biosdev);				/* xlate BIOS device -> biosdisk unit */
-int			bd_unit2bios(struct i386_devdesc *); 	/* xlate biosdisk -> BIOS device */
+int			bd_unit2bios(int unit);					/* xlate biosdisk unit -> BIOS device */
 int			bd_getdev(struct i386_devdesc *dev);	/* return dev_t for (dev) */
 
 ssize_t		i386_copyin(const void *src, vm_offset_t dest, const size_t len);
@@ -148,3 +117,39 @@ void 		bi_init(void);
 void 		bi_alloc(struct bootinfo *);
 int 		bi_load_stage0(struct bootinfo *, struct preloaded_file *, char *);
 int 		bi_load_stage1(struct preloaded_file *, char *, vm_offset_t, int);
+
+/*
+ * relocater trampoline support.
+ */
+struct relocate_data {
+	uint32_t	src;
+	uint32_t	dest;
+	uint32_t	size;
+};
+
+extern void relocater(void);
+
+/*
+ * The relocater_data[] is fixed size array allocated in relocater_tramp.S
+ */
+extern struct relocate_data relocater_data[];
+extern uint32_t relocater_size;
+
+extern uint16_t relocator_ip;
+extern uint16_t relocator_cs;
+extern uint16_t relocator_ds;
+extern uint16_t relocator_es;
+extern uint16_t relocator_fs;
+extern uint16_t relocator_gs;
+extern uint16_t relocator_ss;
+extern uint16_t relocator_sp;
+extern uint32_t relocator_esi;
+extern uint32_t relocator_eax;
+extern uint32_t relocator_ebx;
+extern uint32_t relocator_edx;
+extern uint32_t relocator_ebp;
+extern uint16_t relocator_a20_enabled;
+
+int			i386_getdev(void **vdev, const char *devspec, const char **path);
+char		*i386_fmtdev(void *vdev);
+int			i386_setcurrdev(struct env_var *ev, int flags, const void *value);

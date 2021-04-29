@@ -54,9 +54,6 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## lib:
 - libsa:
-	- disk.c:
-		- disk_open: missing routines for reading different disk formats
-	- Port FreeBSD's part table?
 - libkern:
 - x86emu:
 	
@@ -75,8 +72,6 @@ Of Interest Todo:
 	- install: not present
 - boot/arch:
 	- i386:
-		- biosdisk:
-			- seperate disk, floppy & cd routines
 (DragonflyBSD)
 		- biospci: missing bcd2bin
 		- gptboot

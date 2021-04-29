@@ -256,8 +256,7 @@ isa_strayintr(irq)
          * long and it's timing out.
          */
 	if (++strays <= 5)
-		log(LOG_ERR, "stray interrupt %d%s\n", irq,
-		    strays >= 5 ? "; stopped logging" : "");
+		log(LOG_ERR, "stray interrupt %d%s\n", irq, strays >= 5 ? "; stopped logging" : "");
 }
 
 int intrtype[ICU_LEN], intrmask[ICU_LEN], intrlevel[ICU_LEN];
@@ -374,7 +373,6 @@ int
 fakeintr(arg)
 	void *arg;
 {
-
 	return 0;
 }
 
