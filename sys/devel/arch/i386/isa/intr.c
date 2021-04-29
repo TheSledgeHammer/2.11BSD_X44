@@ -157,26 +157,6 @@ int 				intrmask[MAX_INTR_SOURCES];
 int 				intrlevel[MAX_INTR_SOURCES];
 int 				intr_shared_edge;
 
-struct intr_softc {
-	struct intrsource 	*sc_isrc;
-	struct intrhand	 	*sc_ihand;
-	struct softpic		*sc_softpic;
-
-	int					sc_itype;
-	int					sc_imask;
-	int					sc_ilevel;
-};
-
-struct softpic {
-	TAILQ_HEAD(, pic)	pic_head;
-	int					pic_pin;
-};
-
-struct pic {
-	TAILQ_ENTRY(pic)	pic_entry;
-};
-
-
 struct intrsource *
 intrsource_create(struct pic *pic, int pin)
 {

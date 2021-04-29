@@ -136,9 +136,9 @@ struct i386_isa_dma_cookie {
 };
 
 /* id_flags */
-#define	ID_MIGHT_NEED_BOUNCE	0x01	/* map could need bounce buffers */
-#define	ID_HAS_BOUNCE			0x02	/* map currently has bounce buffers */
-#define	ID_IS_BOUNCING			0x04	/* map is bouncing current xfer */
+#define	ID_MIGHT_NEED_BOUNCE	0x01			/* map could need bounce buffers */
+#define	ID_HAS_BOUNCE			0x02			/* map currently has bounce buffers */
+#define	ID_IS_BOUNCING			0x04			/* map is bouncing current xfer */
 
 /*
  * XXX Various seemingly PC-specific constants, some of which may be
@@ -155,10 +155,10 @@ struct i386_isa_dma_cookie {
 /*
  * Oddball Physical Memory Addresses
  */
-#define	COMPAQ_RAMRELOC			0x80c00000	/* Compaq RAM relocation/diag */
-#define	COMPAQ_RAMSETUP			0x80c00002	/* Compaq RAM setup */
-#define	WEITEK_FPU				0xC0000000	/* WTL 2167 */
-#define	CYRIX_EMC				0xC0000000	/* Cyrix EMC */
+#define	COMPAQ_RAMRELOC			0x80c00000		/* Compaq RAM relocation/diag */
+#define	COMPAQ_RAMSETUP			0x80c00002		/* Compaq RAM setup */
+#define	WEITEK_FPU				0xC0000000		/* WTL 2167 */
+#define	CYRIX_EMC				0xC0000000		/* Cyrix EMC */
 
 /*
  * stuff that used to be in pccons.c
@@ -169,21 +169,6 @@ struct i386_isa_dma_cookie {
 #define	CGA_BUF					0xB8000
 #define	IOPHYSMEM				0xA0000
 
-/*
- * Interrupt handler chains.  isa_intr_establish() inserts a handler into
- * the list.  The handler is called with its (single) argument.
- */
-struct intrhand {
-    //struct pic          	*ih_pic;
-	int						(*ih_fun)(void *);
-	void					*ih_arg;
-	u_long					ih_count;
-	struct intrhand 		*ih_next;
-    struct intrhand 		*ih_prev;
-	int						ih_level;
-	int						ih_irq;
-};
- 
 /*
  * ISA DMA bounce buffers.
  * XXX should be made partially machine- and bus-mapping-independent.
@@ -196,7 +181,7 @@ struct intrhand {
  */
 
 #ifndef DMA_BOUNCE
-#define	DMA_BOUNCE      	8		/* one buffer per channel */
+#define	DMA_BOUNCE      		8		/* one buffer per channel */
 #endif
 
 /*

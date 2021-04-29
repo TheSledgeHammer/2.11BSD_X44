@@ -173,7 +173,6 @@ startup(firstaddr)
 {
 	register int unixsize;
 	register unsigned i;
-	register struct pte *pte;
 	int mapaddr, j;
 	register caddr_t v;
 	int maxbufs, base, residual;
@@ -908,7 +907,7 @@ init_descriptors()
 extern 	IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
 		IDTVEC(bnd), IDTVEC(ill), IDTVEC(dna), IDTVEC(dble), IDTVEC(fpusegm),
 		IDTVEC(tss), IDTVEC(missing), IDTVEC(stk), IDTVEC(prot), IDTVEC(page),
-		IDTVEC(rsvd), IDTVEC(fpu), IDTVEC(align), IDTVEC(syscall), IDTVEC(osyscall);
+		IDTVEC(fpu), IDTVEC(align), IDTVEC(rsvd), IDTVEC(syscall), IDTVEC(osyscall);
 
 void
 init386(first)

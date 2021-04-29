@@ -540,8 +540,8 @@ static int
 bd_get_diskinfo_ext(struct bdinfo *bd)
 {
 	struct disk_params {
-		struct edd_params head;
-		struct edd_device_path_v3 device_path;
+		struct edd_params 			head;
+		struct edd_device_path_v3 	device_path;
 		uint8_t dummy[16];
 	} dparams;
 	struct edd_params *params;
@@ -832,7 +832,7 @@ bd_open(struct open_file *f, ...)
 	int rc;
 
 	va_start(ap, f);
-	dev = va_arg(ap, struct i386_devdesc *);
+	dev = va_arg(ap, dev);
 	va_end(ap);
 
 	bd = bd_get_bdinfo(&dev->dd);
@@ -943,8 +943,7 @@ bd_strategy(void *devdata, int rw, daddr_t dblk, size_t size,
 		offset = dev->d_offset * bd->bd_sectorsize;
 		offset /= BIOSDISK_SECSIZE;
 	}
-	return (bcache_strategy(&bcd, rw, dblk + offset, size,
-	    buf, rsize));
+	return (bcache_strategy(&bcd, rw, dblk + offset, size,  buf, rsize));
 }
 
 static int
@@ -1153,10 +1152,10 @@ bd_chs_io(bdinfo_t *bd, daddr_t dblk, int blks, caddr_t dest,
 
 	bpc = bd->bd_sec * bd->bd_hds;	/* blocks per cylinder */
 	x = dblk;
-	cyl = x / bpc;			/* block # / blocks per cylinder */
-	x %= bpc;				/* block offset into cylinder */
-	hd = x / bd->bd_sec;		/* offset / blocks per track */
-	sec = x % bd->bd_sec;		/* offset into track */
+	cyl = x / bpc;					/* block # / blocks per cylinder */
+	x %= bpc;						/* block offset into cylinder */
+	hd = x / bd->bd_sec;			/* offset / blocks per track */
+	sec = x % bd->bd_sec;			/* offset into track */
 
 	/* correct sector number for 1-based BIOS numbering */
 	sec++;

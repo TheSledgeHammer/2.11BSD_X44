@@ -19,12 +19,10 @@ A General todo list. Don't hesitate to add to this list. :)
 ## conf:
 
 ## kern:
-- sys_generic.c: fileops: fo_rw
-- fileops: update fileop structures to make use of kqfilter
+- kqfilter: implemented but unused.
 	
 ## arch:
 - i386/x86: (Merged under i386)
-	- update: vector.s & icu.s
 	- smp/multi-cpu:
 		- machine-independent code: 90% complete
 			- smp-related methods for cpu
@@ -34,7 +32,7 @@ A General todo list. Don't hesitate to add to this list. :)
 			- apic vectors/ IDTVEC's
 				- apicvec.s: apicintr's 
 				- cpu_info: CPUVAR(idepth, ilevel & ipending)
-	- tsc
+			- tsc
 
 ## devel: (planned)
 - Code planned for future integration
@@ -45,7 +43,7 @@ A General todo list. Don't hesitate to add to this list. :)
 - Essential Driver Support:
 	- usb: 								Work in progress
 		- add: vhci, xhci
-	- wscons/pccons:					Work in progress
+	- wscons/pccons:						Work in progress
 		- double check wscons for errors/mistakes
 - cfops update:
 	- double check com.c needs cfdriver declaration
@@ -56,6 +54,9 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## lib:
 - libsa:
+	- disk.c:
+		- disk_open: missing routines for reading different disk formats
+	- Port FreeBSD's part table?
 - libkern:
 - x86emu:
 	
@@ -73,9 +74,10 @@ Of Interest Todo:
 	- commands: needs work
 	- install: not present
 - boot/arch:
-	- loader/main.c: PSL_RESERVED_DEFAULT = PSL_MBO??
 	- i386:
-		- biosdisk: missing routines for disk(open, close, read, write, etc..) (DragonflyBSD)
+		- biosdisk:
+			- seperate disk, floppy & cd routines
+(DragonflyBSD)
 		- biospci: missing bcd2bin
 		- gptboot
 		- isoboot

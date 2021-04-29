@@ -50,15 +50,12 @@
 
 #include <machine/asm.h>
 #include <machine/psl.h>
-#include <machine/pmap_new.h>
-#include <machine/pte_new.h>
+#include <machine/pmap.h>
+#include <machine/pte.h>
 #include <machine/trap.h>
 #include <machine/specialreg.h>
 #include <machine/cpu.h>
-
-#ifdef cgd_notdef
 #include <machine/cputypes.h>
-#endif
 
 /**********************************************************************/
 /* Some Handy Macros */
@@ -133,49 +130,29 @@
  * Globals
  */
  		.data
-		.globl	_bootinfo,_boothowto,_bootdev,_cyloffset
-bootinfo:		.space	BOOTINFO_SIZE	/* bootinfo that we can handle */
+ 		ALIGN_DATA
+ 		.globl	tmpstk
+				.space	0x2000						/* space for tmpstk - temporary stack */
+tmpstk:	
+
+		.globl	bootinfo
+bootinfo:		.space	BOOTINFO_SIZE				/* bootinfo that we can handle */
+		
 		.text
 		
-		.globl	_IdlePTD
-		.set	_IdlePTD,IdlePTD
-		.globl 	_KPTphys
-		.set	_KPTphys,KPTphys
-
 /**********************************************************************/
 /* Initialization */
 
-		.globl	tmpstk
-		.space	0x2000									/* space for tmpstk - temporary stack */
-tmpstk:
-		.text
-		.globl	start
-start:	movw	$0x1234,0x472							# warm boot
+ENTRY(start)
+		movw	$0x1234,0x472							# warm boot
 		jmp		1f
 		.space	0x500									# skip over warm boot shit
 
-		/*
-		 * pass parameters on stack (howto, bootdev, unit, cyloffset)
-		 * note: 0(%esp) is return address of boot
-		 * ( if we want to hold onto /boot, it's physical %esp up to _end)
-		 */
-
- 1:		movl	4(%esp),%eax
-		movl	%eax,RELOC(_boothowto)
-		movl	8(%esp),%eax
-		movl	%eax,RELOC(_bootdev)
-		movl	12(%esp),%eax
-		movl	%eax,RELOC(_cyloffset)
-		movl	16(%esp),%eax
-		testl	%eax,%eax
-		jz		2f
-		addl	$KERNBASE,%eax
-2:		movl	%eax,RELOC(_esym)
+1:		movl	%eax,RELOC(_esym)
 		movl	20(%esp),%eax
 		movl	%eax,RELOC(_biosextmem)
 		movl	24(%esp),%eax
 		movl	%eax,RELOC(_biosbasemem)
-
 
 		/* First, reset the PSL. */
 		pushl	$PSL_MBO
@@ -252,7 +229,6 @@ start:	movw	$0x1234,0x472							# warm boot
 		movzwl	__udatasel,%ecx
 		
 		# build outer stack frame
-
 		pushl	%ecx								# user ss
 		pushl	$ USRSTACK							# user esp
 		pushl	%eax								# user cs
@@ -264,7 +240,7 @@ start:	movw	$0x1234,0x472							# warm boot
 		lret										# goto user!
 
 		pushl	$lretmsg1							/* "should never get here!" */
-		call	_panic
+		call	_C_LABEL(panic)
 lretmsg1:
 		.asciz	"lret: toinit\n"
 
@@ -453,16 +429,16 @@ ENTRY(identify_cpu)
 		divl	%ecx
 		jz		trynexgen
 		popfl
-		movl	$CPU_386,cpu
+		movl	$CPU_386,_C_LABEL(cpu)
 		jmp		3f
 
 trynexgen:
 		popfl
-		movl	$CPU_NX586,cpu
-		movl	$0x4778654e,cpu_vendor					# store vendor string
-		movl	$0x72446e65,cpu_vendor+4
-		movl	$0x6e657669,cpu_vendor+8
-		movl	$0,cpu_vendor+12
+		movl	$CPU_NX586,_C_LABEL(cpu)
+		movl	$0x4778654e,_C_LABEL(cpu_vendor)	# store vendor string
+		movl	$0x72446e65,_C_LABEL(cpu_vendor)+4
+		movl	$0x6e657669,_C_LABEL(cpu_vendor)+8
+		movl	$0,_C_LABEL(cpu_vendor)+12
 		jmp		3f
 
 try486:	/* Try to toggle identification flag; does not exist on early 486s. */
@@ -481,7 +457,7 @@ try486:	/* Try to toggle identification flag; does not exist on early 486s. */
 
 		testl	%eax,%eax
 		jnz		trycpuid
-		movl	$CPU_486,cpu
+		movl	$CPU_486,_C_LABEL(cpu)
 
 		/*
 		 * Check Cyrix CPU
@@ -508,43 +484,43 @@ trycyrix:
 		 * CPU, we couldn't distinguish it from Cyrix's (including IBM
 		 * brand of Cyrix CPUs).
 		 */
-		movl	$0x69727943,cpu_vendor				# store vendor string
-		movl	$0x736e4978,cpu_vendor+4
-		movl	$0x64616574,cpu_vendor+8
+		movl	$0x69727943,_C_LABEL(cpu_vendor)	# store vendor string
+		movl	$0x736e4978,_C_LABEL(cpu_vendor)+4
+		movl	$0x64616574,_C_LABEL(cpu_vendor)+8
 		jmp		3f
 
 trycpuid:	/* Use the `cpuid' instruction. */
 		xorl	%eax,%eax
 		cpuid										# cpuid 0
-		movl	%eax,cpu_high						# highest capability
-		movl	%ebx,cpu_vendor						# store vendor string
-		movl	%edx,cpu_vendor+4
-		movl	%ecx,cpu_vendor+8
-		movb	$0,cpu_vendor+12
+		movl	%eax,_C_LABEL(cpu_high)				# highest capability
+		movl	%ebx,_C_LABEL(cpu_vendor)			# store vendor string
+		movl	%edx,_C_LABEL(cpu_vendor)+4
+		movl	%ecx,_C_LABEL(cpu_vendor)+8
+		movb	$0,_C_LABEL(cpu_vendor)+12
 
 		movl	$1,%eax
 		cpuid										# cpuid 1
-		movl	%eax,cpu_id							# store cpu_id
-		movl	%ebx,cpu_procinfo					# store cpu_procinfo
-		movl	%edx,cpu_feature					# store cpu_feature
-		movl	%ecx,cpu_feature2					# store cpu_feature2
+		movl	%eax,_C_LABEL(cpu_id)				# store cpu_id
+		movl	%ebx,_C_LABEL(cpu_procinfo)			# store cpu_procinfo
+		movl	%edx,_C_LABEL(cpu_feature)			# store cpu_feature
+		movl	%ecx,_C_LABEL(cpu_feature2)			# store cpu_feature2
 		rorl	$8,%eax								# extract family type
 		andl	$15,%eax
 		cmpl	$5,%eax
 		jae		1f
 
 		/* less than Pentium; must be 486 */
-		movl	$CPU_486,cpu
+		movl	$CPU_486,_C_LABEL(cpu)
 		jmp		3f
 1:
 		/* a Pentium? */
 		cmpl	$5,%eax
 		jne		2f
-		movl	$CPU_586,cpu
+		movl	$CPU_586,_C_LABEL(cpu)
 		jmp		3f
 2:
 		/* Greater than Pentium...call it a Pentium Pro */
-		movl	$CPU_686,cpu
+		movl	$CPU_686,_C_LABEL(cpu)
 3:
 		popl	%ebx
 		ret
@@ -578,10 +554,10 @@ szsigcode:
  * no queue, other processes are on a queue related to p->p_priority, divided
  * by 4 actually to shrink the 0-127 range of priorities into the 32 available
  * queues.
- */
-		.globl	_whichqs,_qs,_cnt,_panic
-		.comm	_noproc,4
-		.comm	_runrun,4
+ */ 
+		.globl	_C_LABEL(whichqs),_C_LABEL(qs),_C_LABEL(cnt),_C_LABEL(panic)
+		.comm	_C_LABEL(noproc),4
+		.comm	_C_LABEL(runrun),4
 
 /*
  * Setrq(p)
@@ -593,11 +569,11 @@ ENTRY(setrq)
 		cmpl	$0,P_BACK(%eax)						# should not be on q already
 		je		set1
 		pushl	$set2
-		call	_panic
+		call	_C_LABEL(panic)
 set1:
 		movzbl	P_PRIORITY(%eax),%edx
 		shrl	$2,%edx
-		btsl	%edx,_whichqs						# set q full bit
+		btsl	%edx,_C_LABEL(whichqs)				# set q full bit
 		shll	$3,%edx
 		addl	$_qs,%edx							# locate q hdr
 		movl	%edx,P_FORW(%eax)					# link process on tail of q
@@ -618,10 +594,10 @@ ENTRY(remrq)
 		movl	4(%esp),%eax
 		movzbl	P_PRIORITY(%eax),%edx
 		shrl	$2,%edx
-		btrl	%edx,_whichqs						# clear full bit, panic if clear already
+		btrl	%edx,_C_LABEL(whichqs)				# clear full bit, panic if clear already
 		jb		rem1
 		pushl	$rem3
-		call	_panic
+		call	_C_LABEL(panic)
 rem1:
 		pushl	%edx
 		movl	P_FORW(%eax),%ecx					# unlink process
@@ -631,27 +607,27 @@ rem1:
 		movl	P_FORW(%eax),%edx
 		movl	%edx,P_FORW(%ecx)
 		popl	%edx
-		movl	$_qs,%ecx
+		movl	$_C_LABEL(qs),%ecx
 		shll	$3,%edx
 		addl	%edx,%ecx
 		cmpl	P_FORW(%ecx),%ecx					# q still has something?
 		je		rem2
 		shrl	$3,%edx								# yes, set bit as still full
-		btsl	%edx,_whichqs
+		btsl	%edx,_C_LABEL(whichqs)
 rem2:
 		movl	$0,P_BACK(%eax)						# zap reverse link to indicate off list
 		ret
 
 rem3:	.asciz	"remrq"
-sw0:	.asciz	"Xswitch"
+sw0:	.asciz	"swtch"
 
 /*
  * When no processes are on the runq, Swtch branches to idle
  * to wait for something to come ready.
  */
 ENTRY(Idle)
-		call	_spl0
-		cmpl	$0,_whichqs
+		call	_C_LABEL(spl0)
+		cmpl	$0,_C_LABEL(whichqs)
 		jne		sw1
 		hlt		# wait for interrupt
 		jmp		idle
@@ -659,19 +635,19 @@ ENTRY(Idle)
 		.align 	4 									/* ..so that profiling doesn't lump Idle with Xswitch().. */
 badsw:
 		pushl	$sw0
-		call	_panic
+		call	_C_LABEL(panic)
 		/*NOTREACHED*/
 
 /*
  * Swtch()
  */
-ENTRY(Xswitch)
+ENTRY(swtch)
 
-		incl	_cnt+V_SWTCH
+		incl	MY_COUNT+V_SWTCH
 
 /* switch to new process. first, save context as needed */
 
-		movl	_curproc,%ecx
+		movl	_C_LABEL(curproc),%ecx
 
 /* if no process to save, don't bother */
 		cmpl	$0,%ecx
@@ -690,28 +666,28 @@ ENTRY(Xswitch)
 
 #ifdef NPX
 /* have we used fp, and need a save? */
-		mov		_curproc,%eax
-		cmp		%eax,_npxproc
+		mov		_C_LABEL(curproc),%eax
+		cmp		%eax,_C_LABEL(npxproc)
 		jne		1f
 		pushl	%ecx								/* h/w bugs make saving complicated */
 		leal	PCB_SAVEFPU(%ecx),%eax
 		pushl	%eax
-		call	_npxsave							/* do it in a big C function */
+		call	_C_LABEL(npxsave)					/* do it in a big C function */
 		popl	%eax
 		popl	%ecx
 1:
 #endif
 
-		movl	_CMAP2,%eax							# save temporary map PTE
+		movl	CMAP2,%eax							# save temporary map PTE
 		movl	%eax,PCB_CMAP2(%ecx)				# in our context
-		movl	$0,_curproc							# out of process
+		movl	$0,_C_LABEL(curproc)				# out of process
 
 		# movw	_cpl, %ax
 		# movw	%ax, PCB_IML(%ecx)	# save ipl
 
 /* save is done, now choose a new process or idle */
 sw1:
-		movl	_whichqs,%edi
+		movl	_C_LABEL(whichqs),%edi
 2:
 		cli
 		bsfl	%edi,%eax							# find a full q
@@ -723,7 +699,7 @@ swfnd:
 		movl	%eax,%ebx							# save which one we are using
 
 		shll	$3,%eax
-		addl	$_qs,%eax							# select q
+		addl	$_C_LABEL(qs),%eax					# select q
 		movl	%eax,%esi
 
 #ifdef	DIAGNOSTIC
@@ -741,10 +717,10 @@ swfnd:
 		je		3f
 		btsl	%ebx,%edi							# nope, set to indicate full
 3:
-		movl	%edi,_whichqs						# update q status
+		movl	%edi,_C_LABEL(whichqs)				# update q status
 
 		movl	$0,%eax
-		call	want_resched
+		call	_C_LABEL(want_resched)
 
 #ifdef	DIAGNOSTIC
 		cmpl	%eax,P_WCHAN(%ecx)
@@ -770,10 +746,10 @@ swfnd:
 		movl	%eax, (%esp)
 
 		movl	PCB_CMAP2(%edx),%eax				# get temporary map
-		movl	%eax,_CMAP2							# reload temporary map PTE
+		movl	%eax,CMAP2							# reload temporary map PTE
 
-		movl	%ecx,_curproc						# into next process
-		movl	%edx,_curpcb
+		movl	%ecx,_C_LABEL(curproc)				# into next process
+		movl	%edx,_C_LABEL(curpcb)
 
 		/* pushl	PCB_IML(%edx)
 		call	_splx
@@ -812,7 +788,7 @@ ENTRY(switch_to_inactive)
  */
 ENTRY(savectx)
 		movl	4(%esp), %ecx
-		movw	_cpl, %ax
+		movw	_C_LABEL(cpl), %ax
 		movw	%ax,  PCB_IML(%ecx)
 		movl	(%esp), %eax
 		movl	%eax, PCB_EIP(%ecx)
@@ -835,7 +811,7 @@ ENTRY(savectx)
  * have to handle h/w bugs for reloading.  We used to lose the
  * parent's npx state for forks by forgetting to reload.
  */
-		mov		_npxproc,%eax
+		mov		_C_LABEL(npxproc),%eax
 		testl	%eax,%eax
   		je		1f
 
@@ -844,7 +820,7 @@ ENTRY(savectx)
 		leal	PCB_SAVEFPU(%eax),%eax
 		pushl	%eax
 		pushl	%eax
-		call	_npxsave
+		call	_C_LABEL(npxsave)
 		popl	%eax
 		popl	%eax
 		popl	%ecx
@@ -854,7 +830,7 @@ ENTRY(savectx)
 		leal	PCB_SAVEFPU(%ecx),%ecx
 		pushl	%ecx
 		pushl	%eax
-		call	_bcopy
+		call	_C_LABEL(bcopy)
 		addl	$12,%esp
 		popl	%ecx
 1:
@@ -866,7 +842,7 @@ ENTRY(savectx)
 		cmpl	$0, 8(%esp)
 		je		1f
 		movl	%esp, %edx						# relocate current sp relative to pcb
-		subl	$_kstack, %edx					# (sp is relative to kstack):
+		subl	$_C_LABEL(kstack), %edx			# (sp is relative to kstack):
 		addl	%edx, %ecx						# pcb += sp - kstack;
 		movl	%eax, (%ecx)					# write return pc at (relocated) sp@
 		# this mess deals with replicating register state gcc hides
@@ -908,8 +884,8 @@ ENTRY(addupc)
 		addl 	PR_BASE(%edx),%eax				/* praddr += up-> pr_base */
 		movl 	16(%ebp),%ecx					/* ticks */
 
-		movl 	_curpcb,%edx
-		movl 	$proffault,PCB_ONFAULT(%edx)
+		movl 	_C_LABEL(curpcb),%edx
+		movl 	$_C_LABEL(proffault),PCB_ONFAULT(%edx)
 		addl 	%ecx,(%eax)						/* storage location += ticks */
 		movl 	$0,PCB_ONFAULT(%edx)
 L1:
@@ -924,7 +900,7 @@ proffault:
 		leave
 		ret
 
-LF:		.asciz "Xswitch %x"
+LF:		.asciz "swtch %x"
 
 .text
  # To be done:
@@ -969,8 +945,6 @@ IDTVEC(prot)
 		TRAP(T_PROTFLT)
 IDTVEC(page)
 		TRAP(T_PAGEFLT)
-IDTVEC(rsvd)
-		ZTRAP(T_RESERVED)
 IDTVEC(fpu)
 #ifdef NPX
 /*
@@ -989,39 +963,40 @@ IDTVEC(fpu)
 		movl	$GSEL(GDATA_SEL, SEL_KPL),%eax
 		movl	%ax,%ds
 		movl	%ax,%es
-		pushl	_cpl
+		pushl	_C_LABEL(cpl)
 		pushl	$0						/* dummy unit to finish building intr frame */
-		incl	_cnt+V_TRAP
-		call	_npxintr
-		jmp		doreti
+		incl	_C_LABEL(cnt)+V_TRAP
+		call	_C_LABEL(npxintr)
+		jmp		_C_LABEL(Xdoreti)
 #else
 		ZTRAP(T_ARITHTRAP)
 #endif
 IDTVEC(align)
 		ZTRAP(T_ALIGNFLT)
+		
 /* 18 - 31 reserved for future exp */
-
+IDTVEC(rsvd)	/* rvsd 18 */
+		ZTRAP(T_RESERVED)
 
 ENTRY(alltraps)
 		pushal
 		nop
 		push 	%ds
 		push 	%es
-		# movw	$KDSEL,%ax
 		movw	$0x10,%ax
 		movw	%ax,%ds
 		movw	%ax,%es
 calltrap:
-		incl	_cnt+V_TRAP
-		call	_trap
+		incl	_C_LABEL(cnt)+V_TRAP
+		call	_C_LABEL(trap)
 /*
  * Return through doreti to handle ASTs.  Have to change trap frame
  * to interrupt frame.
  */
 		movl	$T_ASTFLT,4+4+32(%esp)	/* new trap type (err code not used) */
-		pushl	_cpl
+		pushl	_C_LABEL(cpl)
 		pushl	$0						/* dummy unit */
-		jmp		doreti
+		jmp		_C_LABEL(Xdoreti)
 
 /*
  * Old call gate entry for syscall
@@ -1042,16 +1017,16 @@ IDTVEC(osyscall)
  */
 
 IDTVEC(syscall)
-		pushl	$2										/* size of instruction for restart */
+		pushl	$2									/* size of instruction for restart */
 syscall1:
-		pushfl											/* only for stupid carry bit and more stupid wait3 cc kludge */
-		pushal											/* only need eax,ecx,edx - trap resaves others */
+		pushfl										/* only for stupid carry bit and more stupid wait3 cc kludge */
+		pushal										/* only need eax,ecx,edx - trap resaves others */
 		nop
-		movl	$GSEL(GDATA_SEL, SEL_KPL),%eax			/* switch to kernel segments */
+		movl	$GSEL(GDATA_SEL, SEL_KPL),%eax		/* switch to kernel segments */
 		movl	%ax,%ds
 		movl	%ax,%es
-		incl	_cnt+V_SYSCALL  						/* kml 3/25/93 */
-		call	_syscall
+		incl	_C_LABEL(cnt)+V_SYSCALL  			/* kml 3/25/93 */
+		call	_C_LABEL(syscall)
 /*
  * Return through doreti to handle ASTs.  Have to change syscall frame
  * to interrupt frame.
@@ -1060,24 +1035,24 @@ syscall1:
  * following popal/pushal (not much can be done to avoid shuffling
  * the flags).  Consistent frames would simplify things all over.
  */
-		movl	32+0(%esp),%eax		/* old flags, shuffle to above cs:eip */
-		movl	32+4(%esp),%ebx		/* `int' frame should have been ef, eip, cs */
+		movl	32+0(%esp),%eax						/* old flags, shuffle to above cs:eip */
+		movl	32+4(%esp),%ebx						/* `int' frame should have been ef, eip, cs */
 		movl	32+8(%esp),%ecx
 		movl	%ebx,32+0(%esp)
 		movl	%ecx,32+4(%esp)
 		movl	%eax,32+8(%esp)
 		popal
 		nop
-		pushl	$0					/* dummy error code */
+		pushl	$0									/* dummy error code */
 		pushl	$T_ASTFLT
 		pushal
 		nop
-		movl	__udatasel,%eax		/* switch back to user segments */
-		push	%eax				/* XXX - better to preserve originals? */
+		movl	__udatasel,%eax						/* switch back to user segments */
+		push	%eax								/* XXX - better to preserve originals? */
 		push	%eax
-		pushl	_cpl
+		pushl	_C_LABEL(cpl)
 		pushl	$0
-		jmp		doreti
+		jmp		_C_LABEL(Xdoreti)
 /**********************************************************************/
 
 #include <i386/isa/vector.s>

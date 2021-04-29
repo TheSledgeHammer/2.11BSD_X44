@@ -90,6 +90,7 @@
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
 
+#include <machine/pic.h>
 #include <machine/pio.h>
 #include <machine/cpufunc.h>
 #include <machine/segments.h>

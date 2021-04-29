@@ -41,54 +41,12 @@
 #include <sys/queue.h>
 
 /*
- * Methods that a PIC provides to mask/unmask a given interrupt source,
- * "turn on" the interrupt on the CPU side by setting up an IDT entry, and
- * return the vector associated with this source.
- */
-struct pic {
-	int 					pic_type;
-	void					(*pic_hwmask)(struct ioapic_intsrc *, int);
-	void 					(*pic_hwunmask)(struct ioapic_intsrc *, int);
-	void 					(*pic_addroute)(struct ioapic_intsrc *, struct cpu_info *, int, int, int);
-	void 					(*pic_delroute)(struct ioapic_intsrc *, struct cpu_info *, int, int, int);
-	void					(*pic_register)(void *);
-	TAILQ_ENTRY(pic) 		pic_entry;
-};
-
-/*
- * PIC types.
- */
-#define PIC_I8259			0
-#define PIC_IOAPIC			1
-#define PIC_LAPIC			2
-#define PIC_SOFT			3
-
-/*
- * An interrupt source.  The upper-layer code uses the PIC methods to
- * control a given source.  The lower-layer PIC drivers can store additional
- * private data in a given interrupt source such as an interrupt pin number
- * or an I/O APIC pointer.
- */
-struct intrsource {
-	struct pic 				*is_pic;
-    struct intrhand     	*is_handlers;	/* handler chain */
-	u_long 					*is_count;
-	u_long 					*is_straycount;
-	u_int 					is_index;
-	u_int 					is_domain;
-	u_int 					is_cpu;
-	int						is_type;
-	int 					is_pin;
-	int  					is_minlevel;
-	int 					is_maxlevel;
-};
-
-/*
- * Interrupt handler chains.  isa_intr_establish() inserts a handler into
+ * Interrupt handler chains.  intr_establish() inserts a handler into
  * the list.  The handler is called with its (single) argument.
  */
+
 struct intrhand {
-    struct pic          	*ih_pic;
+    //struct pic          	*ih_pic;
 	int						(*ih_fun)(void *);
 	void					*ih_arg;
 	u_long					ih_count;
@@ -99,14 +57,4 @@ struct intrhand {
 	int						ih_irq;
 };
 
-extern struct lock_object 	*icu_lock;
-
-void			intr_pic_init(void *);
-int				intr_register_pic(struct pic *);
-struct pic 		*intr_handle_pic(int);
-
-void			intr_pic_hwmask(int, struct ioapic_intsrc *, int);
-void			intr_pic_hwunmask(int, struct ioapic_intsrc *, int);
-void			intr_pic_addroute(int, struct ioapic_intsrc *, struct cpu_info *, int, int, int);
-void			intr_pic_delroute(int, struct ioapic_intsrc *, struct cpu_info *, int, int, int);
 #endif /* _I386_PIC_H_ */

@@ -151,41 +151,41 @@ CTASSERT(sizeof(struct disklabel) == 148 + BSD_NPARTS_MIN * 16);
  * Used to interpret other filesystem-specific
  * per-partition information.
  */
-#define	FS_UNUSED	0		/* unused */
-#define	FS_SWAP		1		/* swap */
-#define	FS_V6		2		/* Sixth Edition */
-#define	FS_V7		3		/* Seventh Edition */
-#define	FS_SYSV		4		/* System V */
-#define	FS_V71K		5		/* V7 with 1K blocks (4.1, 2.9) */
-#define	FS_V8		6		/* Eighth Edition, 4K blocks */
-#define	FS_BSDFFS	7		/* 4.2BSD fast filesystem */
-#define	FS_MSDOS	8		/* MSDOS filesystem */
-#define	FS_BSDLFS	9		/* 4.4BSD log-structured filesystem */
-#define	FS_OTHER	10		/* in use, but unknown/unsupported */
-#define	FS_HPFS		11		/* OS/2 high-performance filesystem */
-#define	FS_ISO9660	12		/* ISO 9660, normally CD-ROM */
-#define	FS_BOOT		13		/* partition contains bootstrap */
-#define	FS_VINUM	14		/* Vinum drive */
-#define	FS_RAID		15		/* RAIDFrame drive */
-#define	FS_FILECORE	16		/* Acorn Filecore Filing System */
-#define	FS_EXT2FS	17		/* ext2fs */
-#define	FS_NTFS		18		/* Windows/NT file system */
-#define	FS_CCD		20		/* concatenated disk component */
-#define	FS_JFS2		21		/* IBM JFS2 */
-#define	FS_HAMMER	22		/* DragonFlyBSD Hammer FS */
-#define	FS_HAMMER2	23		/* DragonFlyBSD Hammer2 FS */
-#define	FS_UDF		24		/* UDF */
-#define	FS_EFS		26		/* SGI's Extent File system */
-#define	FS_ZFS		27		/* Sun's ZFS */
-#define	FS_NANDFS	30		/* FreeBSD nandfs (NiLFS derived) */
+#define	FS_UNUSED		0		/* unused */
+#define	FS_SWAP			1		/* swap */
+#define	FS_V6			2		/* Sixth Edition */
+#define	FS_V7			3		/* Seventh Edition */
+#define	FS_SYSV			4		/* System V */
+#define	FS_V71K			5		/* V7 with 1K blocks (4.1, 2.9) */
+#define	FS_V8			6		/* Eighth Edition, 4K blocks */
+#define	FS_BSDFFS		7		/* 4.2BSD fast filesystem */
+#define	FS_MSDOS		8		/* MSDOS filesystem */
+#define	FS_BSDLFS		9		/* 4.4BSD log-structured filesystem */
+#define	FS_OTHER		10		/* in use, but unknown/unsupported */
+#define	FS_HPFS			11		/* OS/2 high-performance filesystem */
+#define	FS_ISO9660		12		/* ISO 9660, normally CD-ROM */
+#define	FS_BOOT			13		/* partition contains bootstrap */
+#define	FS_VINUM		14		/* Vinum drive */
+#define	FS_RAID			15		/* RAIDFrame drive */
+#define	FS_FILECORE		16		/* Acorn Filecore Filing System */
+#define	FS_EXT2FS		17		/* ext2fs */
+#define	FS_NTFS			18		/* Windows/NT file system */
+#define	FS_CCD			20		/* concatenated disk component */
+#define	FS_JFS2			21		/* IBM JFS2 */
+#define	FS_HAMMER		22		/* DragonFlyBSD Hammer FS */
+#define	FS_HAMMER2		23		/* DragonFlyBSD Hammer2 FS */
+#define	FS_UDF			24		/* UDF */
+#define	FS_EFS			26		/* SGI's Extent File system */
+#define	FS_ZFS			27		/* Sun's ZFS */
+#define	FS_NANDFS		30		/* FreeBSD nandfs (NiLFS derived) */
 
 /*
  * flags shared by various drives:
  */
-#define	D_REMOVABLE	0x01		/* removable media */
-#define	D_ECC		0x02		/* supports ECC */
-#define	D_BADSECT	0x04		/* supports bad sector forw. */
-#define	D_RAMDISK	0x08		/* disk emulator */
-#define	D_CHAIN		0x10		/* can do back-back transfers */
+#define	D_REMOVABLE		0x01	/* removable media */
+#define	D_ECC			0x02	/* supports ECC */
+#define	D_BADSECT		0x04	/* supports bad sector forw. */
+#define	D_RAMDISK		0x08	/* disk emulator */
+#define	D_CHAIN			0x10	/* can do back-back transfers */
 
 #endif /* !_LIBSA_DISKBSD_H_ */
