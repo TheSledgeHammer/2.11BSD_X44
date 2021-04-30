@@ -38,6 +38,15 @@
 #include <sys/types.h>
 #include <sys/null.h>
 
+/* BCD conversions. */
+extern u_char const		bcd2bin_data[];
+extern u_char const		bin2bcd_data[];
+extern char const		hex2ascii_data[];
+
+#define	bcd2bin(bcd)	(bcd2bin_data[bcd])
+#define	bin2bcd(bin)	(bin2bcd_data[bin])
+#define	hex2ascii(hex)	(hex2ascii_data[hex])
+
 static __inline int 	imax (int, int) __attribute__ ((unused));
 static __inline int 	imin (int, int) __attribute__ ((unused));
 static __inline u_int 	max (u_int, u_int) __attribute__ ((unused));

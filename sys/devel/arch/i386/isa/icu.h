@@ -36,8 +36,8 @@
  *	@(#)icu.h	8.1 (Berkeley) 6/11/93
  */
 
-#ifndef	__ICU__
-#define	__ICU__
+#ifndef	__I386_ICU__
+#define	__I386_ICU__
 
 #ifndef	LOCORE
 
@@ -90,4 +90,4 @@ extern int 						intrlevel[];
 #define MAX_INTR_SOURCES 		ICU_OFFSET
 #define NUM_LEGACY_IRQS			ICU_LEN
 
-#endif	__ICU__
+#endif	__I386_ICU__

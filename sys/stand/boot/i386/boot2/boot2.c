@@ -58,11 +58,11 @@
 /* 0x1f is reserved for the historical RB_BOOTINFO option */
 
 /* pass: -a, -s, -r, -d, -c, -v, -h, -C, -g, -m, -p, -D */
-#define RBX_MASK	0x2005ffff
+#define RBX_MASK		0x2005ffff
 
-#define PATH_CONFIG	"/boot.config"
-#define PATH_BOOT3	"/boot/loader"
-#define PATH_KERNEL	"/kernel"
+#define PATH_CONFIG		"/boot.config"
+#define PATH_BOOT3		"/boot/loader"
+#define PATH_KERNEL		"/kernel"
 
 #define PATH_CONFIG		"/boot.config"
 #define PATH_BOOT3		"/loader"			/* /boot is dedicated */
@@ -109,13 +109,13 @@ static const char *const dev_nm[NDEV] = {"ad", "da", "fd"};
 static const unsigned char dev_maj[NDEV] = {30, 4, 2};
 
 static struct dsk {
-    unsigned drive;
-    unsigned type;
-    unsigned unit;
-    unsigned slice;
-    unsigned part;
-    unsigned start;
-    int init;
+    unsigned 	drive;
+    unsigned 	type;
+    unsigned 	unit;
+    unsigned 	slice;
+    unsigned 	part;
+    unsigned 	start;
+    int 		init;
 } dsk;
 
 static char cmd[512];

@@ -37,8 +37,24 @@
 #include <sys/user.h>
 
 #include <arch/i386/include/pic.h>
+#include <devel/arch/i386/isa/icu.h>
 
-static TAILQ_HEAD(pics_head, pic) 	pics;
+struct softpic {
+    struct pic_list             *sp_pichead;
+    struct cpu_info             *sp_cpu;
+    struct device               *sp_dev;
+    struct intrsource           sp_intsrc;
+    struct intrhand             sp_inthnd;
+    int                         sp_template;
+    unsigned int 				sp_vector:8;
+    int                         sp_irq;
+    int                         sp_pin;
+    int                         sp_apicid;
+    int						    sp_type;
+    int                         sp_isapic;
+};
+
+static TAILQ_HEAD(pic_list, pic) pichead;
 
 static int
 intr_pic_registered(pic)
@@ -46,7 +62,7 @@ intr_pic_registered(pic)
 {
 	struct pic *p;
 
-	TAILQ_FOREACH(p, &pics, pic_entry) {
+	TAILQ_FOREACH(p, &pichead, pic_entry) {
 		if (p == pic) {
 			return (1);
 		}
@@ -63,56 +79,90 @@ intr_register_pic(pic)
 	if (intr_pic_registered(pic)) {
 		error = EBUSY;
 	} else {
-		TAILQ_INSERT_TAIL(&pics, pic, pic_entry);
+		TAILQ_INSERT_TAIL(&pichead, pic, pic_entry);
 		error = 0;
 	}
 
 	return (error);
 }
 
-static struct pic *
-intr_lookup_pic_template(pictemplate)
-	int pictemplate;
+void
+softpic_init()
 {
-	struct pic *pic, *template;
-	TAILQ_FOREACH(pic, &pics, pic_entry) {
-		if(pic->pic_type == pictemplate) {
-			template = pic;
-			return (template);
+	struct softpic *spic;
+	spic = (stuct softpic *)malloc(sizeof(*spic), M_DEVBUF, M_WAITOK);
+
+	TAILQ_INIT(&pichead);
+
+	spic->sp_intsrc = &intrsrc[MAX_INTR_SOURCES];
+	spic->sp_inthnd = &intrhand[MAX_INTR_SOURCES];
+}
+
+void
+softpic_check(spic, irq, isapic)
+    struct softpic  *spic;
+    int             irq;
+    int             isapic;
+{
+    int apicid = APIC_IRQ_APIC(irq);
+    int pin = APIC_IRQ_PIN(irq);
+
+    if (isapic == 0) {
+        spic->sp_isapic = 0;
+        spic->sp_apicid = apicid;
+        spic->sp_irq = pin;
+        spic->sp_pin = pin;
+    } else {
+        spic->sp_isapic = 1;
+        spic->sp_irq = irq;
+        spic->sp_pin = irq;
+    }
+}
+
+static struct pic *
+softpic_lookup_pic(spic, template)
+	struct softpic *spic;
+	int template;
+{
+	struct pic *pic;
+	TAILQ_FOREACH(pic, &pichead, pic_entry) {
+		if(pic->pic_type == template) {
+			spic->sp_template = template;
+			return (pic);
 		}
 	}
 	return (NULL);
 }
 
 struct pic *
-intr_handle_pic(pictemplate)
-	int pictemplate;
+softpic_handle_pic(spic)
+	struct softpic *spic;
 {
-	struct pic *ptemplate;
+	struct pic *pic;
 
-	switch(pictemplate) {
+	switch(spic->sp_template) {
 	case PIC_I8259:
-		ptemplate = intr_lookup_pic_template(PIC_I8259);
-		if(ptemplate == i8259_template) {
-			return (ptemplate);
+		pic = softpic_lookup_pic(spic, PIC_I8259);
+		if(pic == i8259_template && spic->sp_template == pic->pic_type) {
+			return (pic);
 		}
 		break;
 	case PIC_IOAPIC:
-		ptemplate = intr_lookup_pic_template(PIC_IOAPIC);
-		if(ptemplate == ioapic_template) {
-			return (ptemplate);
+		pic = softpic_lookup_pic(spic, PIC_IOAPIC);
+		if(pic == ioapic_template && spic->sp_template == pic->pic_type) {
+			return (pic);
 		}
 		break;
 	case PIC_LAPIC:
-		ptemplate = intr_lookup_pic_template(PIC_LAPIC);
-		if(ptemplate == lapic_template) {
-			return (ptemplate);
+		pic = softpic_lookup_pic(spic, PIC_LAPIC);
+		if(pic == lapic_template && spic->sp_template == pic->pic_type) {
+			return (pic);
 		}
 		break;
 	case PIC_SOFT:
-		ptemplate = intr_lookup_pic_template(PIC_SOFT);
-		if(ptemplate == lapic_template) {
-			return (ptemplate);
+		pic = softpic_lookup_pic(spic, PIC_SOFT);
+		if(pic == softintr_template && spic->sp_template == pic->pic_type) {
+			return (pic);
 		}
 		break;
 	}
@@ -120,60 +170,53 @@ intr_handle_pic(pictemplate)
 }
 
 void
-intr_pic_init(dummy)
-	void *dummy;
-{
-	TAILQ_INIT(&pics);
-}
-
-void
-intr_pic_hwmask(pictemplate, intpin, pin)
-	struct ioapic_intsrc *intpin;
-	int pin, pictemplate;
+softpic_pic_hwmask(spic, pin)
+	struct softpic *spic;
+	int pin;
 {
 	register struct pic *pic;
 	extern int cold;
-	pic = intr_handle_pic(pictemplate);
+	pic = softpic_handle_pic(spic);
 	if (!cold && pic != NULL) {
-		(*pic->pic_hwmask)(intpin, pin);
+		(*pic->pic_hwmask)(spic, pin);
 	}
 }
 
 void
-intr_pic_hwunmask(pictemplate, intpin, pin)
-	struct ioapic_intsrc *intpin;
-	int pin, pictemplate;
+softpic_pic_hwunmask(spic, pin)
+	struct softpic *spic;
+	int pin;
 {
 	register struct pic *pic;
 	extern int cold;
-	pic = intr_handle_pic(pictemplate);
+	pic = softpic_handle_pic(spic);
 	if (!cold && pic != NULL) {
-		(*pic->pic_hwunmask)(intpin, pin);
+		(*pic->pic_hwunmask)(spic, pin);
 	}
 }
 
 void
-intr_pic_addroute(pictemplate, intpin, ci, pin, idtvec, type)
-	struct ioapic_intsrc *intpin;
+softpic_pic_addroute(spic, ci, pin, idtvec, type)
+	struct softpic *spic;
 	struct cpu_info *ci;
-	int pin, idtvec, type, pictemplate;
+	int pin, idtvec, type;
 {
 	register struct pic *pic;
-	pic = intr_handle_pic(pictemplate);
+	pic = softpic_handle_pic(spic);
 	if (pic != NULL) {
-		(*pic->pic_addroute)(intpin, pin, idtvec, type);
+		(*pic->pic_addroute)(spic, pin, idtvec, type);
 	}
 }
 
 void
-intr_pic_delroute(pictemplate, intpin, ci, pin, idtvec, type)
-	struct ioapic_intsrc *intpin;
+softpic_pic_delroute(spic, ci, pin, idtvec, type)
+	struct softpic *spic;
 	struct cpu_info *ci;
-	int pin, idtvec, type, pictemplate;
+	int pin, idtvec, type;
 {
 	register struct pic *pic;
-	pic = intr_handle_pic(pictemplate);
+	pic = softpic_handle_pic(spic);
 	if (pic != NULL) {
-		(*pic->pic_delroute)(intpin, ci, pin, idtvec, type);
+		(*pic->pic_delroute)(spic, ci, pin, idtvec, type);
 	}
 }

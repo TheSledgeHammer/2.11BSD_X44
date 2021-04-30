@@ -1,3 +1,4 @@
+/*
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -842,7 +843,7 @@ ENTRY(savectx)
 		cmpl	$0, 8(%esp)
 		je		1f
 		movl	%esp, %edx						# relocate current sp relative to pcb
-		subl	$_C_LABEL(kstack), %edx			# (sp is relative to kstack):
+		subl	$_C_LABEL(proc0kstack), %edx	# (sp is relative to kstack):
 		addl	%edx, %ecx						# pcb += sp - kstack;
 		movl	%eax, (%ecx)					# write return pc at (relocated) sp@
 		# this mess deals with replicating register state gcc hides

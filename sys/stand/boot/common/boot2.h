@@ -39,7 +39,6 @@
 #ifndef _BOOT_COMMON_BOOT2_H_
 #define _BOOT_COMMON_BOOT2_H_
 
-
 #include <sys/param.h>
 #include <sys/disklabel.h>
 #include <sys/dirent.h>

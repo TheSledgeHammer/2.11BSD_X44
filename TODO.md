@@ -72,10 +72,6 @@ Of Interest Todo:
 	- install: not present
 - boot/arch:
 	- i386:
-(DragonflyBSD)
-		- biospci: missing bcd2bin
-		- gptboot
-		- isoboot
 		- pmbr
 		- pxeldr
 
