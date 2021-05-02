@@ -40,20 +40,27 @@
 
 #include <sys/queue.h>
 
-struct ioapic_intsrc {
-	struct intrsource		io_intsrc;
-	struct mp_intr_map 		*io_map;
-	u_int 					io_vector:8;
-	int						io_type;
-	struct cpu_info			*io_cpuinfo;
+/* Softpic, acts as a selector for which PIC/APIC to use: see pic_machdep.c */
+struct softpic {
+    struct cpu_info         *sp_cpu;
+    struct intrsource       sp_intsrc;
+    struct intrhand         sp_inthnd;
+    int                     sp_template;
+    unsigned int 			sp_vector:8;
+    int                     sp_irq;
+    int                     sp_pin;
+    int                     sp_apicid;
+    int						sp_type;
+    boolean_t               sp_isapic;
+
+    struct mp_intr_map 		*sp_map;
 };
 
 struct ioapic_head;
 SIMPLEQ_HEAD(ioapic_head, ioapic_softc);
 struct ioapic_softc {
 	SIMPLEQ_ENTRY(ioapic) 	sc_next;
-	struct ioapic_intsrc 	sc_pins;
-	//struct softpic		sc_pins;
+	struct softpic			sc_pins;
 	struct pic 				sc_pic;
 	struct device			sc_dev;
 	int						sc_apicid;

@@ -41,40 +41,40 @@
 
 struct pic softintr_template = {
 		.pic_type = PIC_SOFT,
-		.pic_hwmask = softpic_hwmask,
-		.pic_hwunmask = softpic_hwunmask,
-		.pic_addroute = softpic_addroute,
-		.pic_delroute = softpic_delroute,
-		.pic_register = softpic_register_pic
+		.pic_hwmask = softintr_hwmask,
+		.pic_hwunmask = softintr_hwunmask,
+		.pic_addroute = softintr_addroute,
+		.pic_delroute = softintr_delroute,
+		.pic_register = softintr_register_pic
 };
 
 void
-softpic_hwmask(struct ioapic_intsrc *intpin, int pin)
+softintr_hwmask(struct softpic *spic, int pin)
 {
 	/* Do Nothing */
 }
 
 void
-softpic_hwunmask(struct ioapic_intsrc *intpin, int pin)
+softintr_hwunmask(struct softpic *spic, int pin)
 {
 	/* Do Nothing */
 }
 
 static void
-softpic_addroute(struct ioapic_intsrc *intpin, struct cpu_info *ci, int pin, int idtvec, int type)
+softintr_addroute(struct softpic *spic, struct cpu_info *ci, int pin, int idtvec, int type)
 {
 	/* Do Nothing */
 }
 
 
 static void
-softpic_delroute(struct ioapic_intsrc *intpin, struct cpu_info *ci, int pin, int idtvec, int type)
+softintr_delroute(struct softpic *spic, struct cpu_info *ci, int pin, int idtvec, int type)
 {
 	/* Do Nothing */
 }
 
 static void
-softpic_register_pic()
+softintr_register_pic()
 {
-	intr_register_pic(&softintr_template);
+	softpic_register_pic(&softintr_template);
 }

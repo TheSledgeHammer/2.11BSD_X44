@@ -47,10 +47,10 @@
  */
 struct pic {
 	int 					pic_type;
-	void					(*pic_hwmask)(struct ioapic_intsrc *, int);
-	void 					(*pic_hwunmask)(struct ioapic_intsrc *, int);
-	void 					(*pic_addroute)(struct ioapic_intsrc *, struct cpu_info *, int, int, int);
-	void 					(*pic_delroute)(struct ioapic_intsrc *, struct cpu_info *, int, int, int);
+	void					(*pic_hwmask)(struct softpic *, int);
+	void 					(*pic_hwunmask)(struct softpic *, int);
+	void 					(*pic_addroute)(struct softpic *, struct cpu_info *, int, int, int);
+	void 					(*pic_delroute)(struct softpic *, struct cpu_info *, int, int, int);
 	void					(*pic_register)(void *);
 	TAILQ_ENTRY(pic) 		pic_entry;
 };
@@ -101,12 +101,11 @@ struct intrhand {
 
 extern struct lock_object 	*icu_lock;
 
-void			intr_pic_init(void *);
-int				intr_register_pic(struct pic *);
-struct pic 		*intr_handle_pic(int);
-
-void			intr_pic_hwmask(int, struct ioapic_intsrc *, int);
-void			intr_pic_hwunmask(int, struct ioapic_intsrc *, int);
-void			intr_pic_addroute(int, struct ioapic_intsrc *, struct cpu_info *, int, int, int);
-void			intr_pic_delroute(int, struct ioapic_intsrc *, struct cpu_info *, int, int, int);
+void			softpic_pic_init(void *);
+int				softpic_register_pic(struct pic *);
+struct pic 		*softpic_handle_pic(struct softpic *);
+void			softpic_pic_hwmask(struct softpic *, int, boolean_t, int);
+void			softpic_pic_hwunmask(struct softpic *, int, boolean_t, int);
+void			softpic_pic_addroute(struct softpic *, struct cpu_info *, int, int, int, boolean_t, int);
+void			softpic_pic_delroute(struct softpic *, struct cpu_info *, int, int, int, boolean_t, int);
 #endif /* _I386_PIC_H_ */

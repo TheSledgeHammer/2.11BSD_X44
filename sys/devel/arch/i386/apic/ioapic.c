@@ -104,10 +104,10 @@ void    	ioapic_attach(struct device *, struct device *, void *);
 
 extern int 	i386_mem_add_mapping(bus_addr_t, bus_size_t, int, bus_space_handle_t *);
 
-void 		ioapic_hwmask(struct ioapic_intsrc *, int);
-void 		ioapic_hwunmask(struct ioapic_intsrc *, int);
-static void ioapic_addroute(struct ioapic_intsrc *, struct cpu_info *, int, int, int);
-static void ioapic_delroute(struct ioapic_intsrc *, struct cpu_info *, int, int, int);
+void 		ioapic_hwmask(struct softpic *, int);
+void 		ioapic_hwunmask(struct softpic *, int);
+static void ioapic_addroute(struct softpic *, struct cpu_info *, int, int, int);
+static void ioapic_delroute(struct softpic *, struct cpu_info *, int, int, int);
 void		ioapic_register_pic();
 
 int ioapic_cold = 1;
@@ -321,16 +321,16 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 static void
 ioapic_init_intpins(struct ioapic_softc *sc)
 {
-	struct ioapic_intsrc *intpin;
+	struct softpic *softpic;
 
-	sc->sc_pins = malloc(sizeof(struct ioapic_intsrc) * sc->sc_apic_sz, M_DEVBUF, M_WAITOK);
+	sc->sc_pins = malloc(sizeof(struct softpic) * sc->sc_apic_sz, M_DEVBUF, M_WAITOK);
 
 	int i;
-	for (i = 0, intpin = sc->sc_pins; i < sc->sc_apic_sz; i++, intpin++) {
-		intpin->io_intsrc.is_pic = (struct pic *)sc;
-		intpin->io_map = NULL;
-		intpin->io_vector = 0;
-		intpin->io_type = IST_NONE;
+	for (i = 0, softpic = sc->sc_pins; i < sc->sc_apic_sz; i++, softpic++) {
+		softpic->sp_intsrc.is_pic = (struct pic *)sc;
+		softpic->sp_map = NULL;
+		softpic->sp_vector = 0;
+		softpic->sp_type = IST_NONE;
 	}
 }
 
@@ -341,18 +341,18 @@ apic_set_redir(struct ioapic_softc *sc, int pin, int idt_vec, struct cpu_info *c
 	u_int32_t redhi = 0;
 	int delmode;
 
-	struct ioapic_intsrc *pp;
+	struct softpic *pp;
 	struct mp_intr_map *map;
 
 	pp = &sc->sc_pins[pin];
-	map = pp->io_map;
+	map = pp->sp_map;
 	redlo = map == NULL ? IOAPIC_REDLO_MASK : map->redir;
 	delmode = (redlo & IOAPIC_REDLO_DEL_MASK) >> IOAPIC_REDLO_DEL_SHIFT;
 
 	/* XXX magic numbers */
 	if ((delmode != 0) && (delmode != 1)) {
 		;
-	} else if (pp->io_type == IST_NONE) {
+	} else if (pp->sp_type == IST_NONE) {
 		redlo |= IOAPIC_REDLO_MASK;
 	} else {
 		redlo |= (idt_vec & 0xff);
@@ -371,13 +371,13 @@ apic_set_redir(struct ioapic_softc *sc, int pin, int idt_vec, struct cpu_info *c
 		redhi |= (ci->cpu_apic_id << IOAPIC_REDHI_DEST_SHIFT);
 
 		/* XXX derive this bit from BIOS info */
-		if (pp->io_type == IST_LEVEL) {
+		if (pp->sp_type == IST_LEVEL) {
 			redlo |= IOAPIC_REDLO_LEVEL;
 		} else {
 			redlo &= ~IOAPIC_REDLO_LEVEL;
 		}
 		if (map != NULL && ((map->flags & 3) == MPS_INTPO_DEF)) {
-			if (pp->io_type == IST_LEVEL) {
+			if (pp->sp_type == IST_LEVEL) {
 				redlo |= IOAPIC_REDLO_ACTLO;
 			} else {
 				redlo &= ~IOAPIC_REDLO_ACTLO;
@@ -399,7 +399,7 @@ ioapic_enable(void)
 {
 	int p;
 	struct ioapic_softc *sc;
-	struct ioapic_intsrc *ip;
+	struct softpic *spic;
 
 	ioapic_cold = 0;
 
@@ -416,19 +416,22 @@ ioapic_enable(void)
 		printf("%s: enabling\n", sc->sc_dev.dv_xname);
 
 		for (p = 0; p < sc->sc_apic_sz; p++) {
-			ip = &sc->sc_pins[p];
-			if (ip->io_type != IST_NONE) {
-				apic_set_redir(sc, p, ip->io_vector, ip->io_cpuinfo);
+			spic = &sc->sc_pins[p];
+			if (spic->sp_type != IST_NONE) {
+				apic_set_redir(sc, p, spic->sp_vector, spic->sp_cpu);
 			}
 		}
 	}
 }
 
 void
-ioapic_hwmask(struct ioapic_intsrc *intpin, int pin)
+ioapic_hwmask(spic, pin)
+	struct softpic *spic;
+	int pin;
 {
 	u_int32_t redlo;
-	struct ioapic_softc *sc = (struct ioapic_softc *)intpin->io_intsrc.is_pic;
+	struct ioapic_softc *sc = (struct ioapic_softc *)spic->sp_intsrc.is_pic;
+	softpic_pic_hwmask(spic, pin, TRUE, PIC_IOAPIC);
 
 	if (ioapic_cold) {
 		return;
@@ -441,10 +444,13 @@ ioapic_hwmask(struct ioapic_intsrc *intpin, int pin)
 }
 
 void
-ioapic_hwunmask(struct ioapic_intsrc *intpin, int pin)
+ioapic_hwunmask(spic, pin)
+	struct softpic *spic;
+	int pin;
 {
 	u_int32_t redlo;
-	struct ioapic_softc *sc = (struct ioapic_softc *)intpin->io_intsrc.is_pic;
+	struct ioapic_softc *sc = (struct ioapic_softc *)spic->sp_intsrc.is_pic;
+	softpic_pic_hwunmask(spic, pin, TRUE, PIC_IOAPIC);
 
 	if (ioapic_cold) {
 		return;
@@ -457,31 +463,39 @@ ioapic_hwunmask(struct ioapic_intsrc *intpin, int pin)
 }
 
 static void
-ioapic_addroute(struct ioapic_intsrc *intpin, struct cpu_info *ci, int pin, int idtvec, int type)
+ioapic_addroute(spic, ci, pin, idtvec, type)
+	struct softpic *spic;
+	struct cpu_info *ci;
+	int pin, idtvec, type;
 {
-	struct ioapic_softc *sc = (struct ioapic_softc *)intpin->io_intsrc.is_pic;
+	struct ioapic_softc *sc = (struct ioapic_softc *)spic->sp_intsrc.is_pic;
+	softpic_pic_addroute(spic, ci, pin, idtvec, type, TRUE, PIC_IOAPIC);
 
 	if (ioapic_cold) {
-		intpin = &sc->sc_pins[pin];
-		intpin->io_type = type;
-		intpin->io_vector = idtvec;
-		intpin->io_cpuinfo = ci;
+		spic = &sc->sc_pins[pin];
+		spic->sp_type = type;
+		spic->sp_vector = idtvec;
+		spic->sp_cpu = ci;
 		return;
 	}
 	apic_set_redir(sc, pin, idtvec, ci);
 }
 
 static void
-ioapic_delroute(struct ioapic_intsrc *intpin, struct cpu_info *ci, int pin, int idtvec, int type)
+ioapic_delroute(spic, ci, pin, idtvec, type)
+	struct softpic *spic;
+	struct cpu_info *ci;
+	int pin, idtvec, type;
 {
-	struct ioapic_softc *sc = (struct ioapic_softc *)intpin->io_intsrc.is_pic;
+	struct ioapic_softc *sc = (struct ioapic_softc *)spic->sp_intsrc.is_pic;
+	softpic_pic_delroute(spic, ci, pin, idtvec, type, TRUE, PIC_IOAPIC);
 
 	if (ioapic_cold) {
-		intpin = &sc->sc_pins[pin];
-		intpin->io_type = IST_NONE;
+		spic = &sc->sc_pins[pin];
+		spic->sp_type = IST_NONE;
 		return;
 	}
-	ioapic_hwmask(intpin, pin);
+	ioapic_hwmask(spic, pin);
 }
 
 /*
@@ -490,7 +504,7 @@ ioapic_delroute(struct ioapic_intsrc *intpin, struct cpu_info *ci, int pin, int 
 static void
 ioapic_register_pic()
 {
-	intr_register_pic(&ioapic_template);
+	softpic_register_pic(&ioapic_template);
 }
 
 #ifdef DDB
@@ -499,13 +513,13 @@ void
 ioapic_dump(void)
 {
 	struct ioapic_softc *sc;
-	struct ioapic_intsrc *intpin;
+	struct softpic *spic;
 	int p;
 
 	SIMPLEQ_FOREACH(sc, ioapics, sc_next) {
 		for (p = 0; p < sc->sc_apic_sz; p++) {
-			intpin = &sc->sc_pins[p];
-			if (intpin->io_type != IST_NONE) {
+			spic = &sc->sc_pins[p];
+			if (spic->sp_type != IST_NONE) {
 				ioapic_print_redir(sc, "dump", p);
 			}
 		}

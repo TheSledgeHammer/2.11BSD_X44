@@ -181,39 +181,6 @@ intrhand_create(struct pic *pic, int irq)
 	return (ihnd);
 }
 
-struct ioapic_intsrc *
-intr_pic_create(irq)
-	int irq;
-{
-	struct ioapic_softc  *sc;
-	struct ioapic_intsrc *intpin;
-	u_int apicid;
-	u_int pin;
-
-	apicid = APIC_IRQ_APIC(irq);
-	pin	= APIC_IRQ_PIN(irq);
-	sc = ioapic_find(apicid);
-
-	intpin = &sc->sc_pins[pin];
-	return (intpin);
-}
-
-void
-intr_io(pictemp, pin, irq)
-	int pictemp, pin, irq;
-{
-	struct pic 				*pic;
-	struct intrsource 		*isrc;
-	struct intrhand 		*ihnd;
-
-	pic = intr_handle_pic(pictemp);
-	if(pic) {
-		isrc = intrsource_create(pic, pin);
-		ihnd = intrhand_create(pic, irq);
-		isrc->is_handlers = ihnd;
-	}
-}
-
 void
 intr_legacy_vectors()
 {

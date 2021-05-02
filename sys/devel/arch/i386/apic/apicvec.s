@@ -161,6 +161,13 @@ RESUME(lapic_ltimer)
 IDTVEC(spurious)
 
 
+#define	IRQ_BIT(irq_num)	    	(1 << ((irq_num) % 8))
+#define	IRQ_BYTE(irq_num)	    	((irq_num) >> 3)
+
+#define MY_COUNT 					_C_LABEL(cnt)
+#define INTR_ADDR(intr, irq_num) 	((intr)+(irq_num) * 4)
+
+
 #define voidop(num)
 
 	/*
@@ -181,14 +188,14 @@ IDTVEC(recurse_/**/name/**/num)												;\
 IDTVEC(resume_/**/name/**/num)												\
 		movl	$IREENT_MAGIC,TF_ERR(%esp)									;\
 		movl	%ebx,%esi													;\
-		movl	CPUVAR(ISOURCES) + (num) * 4, %ebp							;\
+		movl	INTR_ADDR(intrsource, irq_num), %ebp						;\
 		movl	IS_MAXLEVEL(%ebp),%ebx										;\
 		jmp		1f															;\
 IDTVEC(intr_/**/name/**/num)												\
 		pushl	$0					/* dummy error code */					;\
 		pushl	$T_ASTFLT			/* trap # for doing ASTs */				;\
 		INTRENTRY															;\
-		movl	CPUVAR(ISOURCES) + (num) * 4, %ebp							;\
+		movl	INTR_ADDR(intrsource, irq_num), %ebp						;\
 		mask(num)					/* mask it in hardware */				;\
 		early_ack(num)				/* and allow other intrs */				;\
 		testl	%ebp,%ebp													;\
@@ -241,4 +248,76 @@ IDTVEC(intr_/**/name/**/num)												\
 		unmask(num)															;\
 		late_ack(num)														;\
 		
+#define	APIC_STRAY_INITIALIZE 	                                        	\
+		xorl	%esi,%esi				/* nobody claimed it yet */
+#define	APIC_STRAY_INTEGRATE 	                                       	 	\
+		orl		%eax,%esi				/* maybe he claimed it */	
+#define	APIC_STRAY_TEST 			                                    	\
+		testl	%esi,%esi				/* no more handlers */				;\
+		jz		APIC_STRAY(irq_num)		/* nobody claimed it */
+		
+APICINTR(apic, 0, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 1, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 2, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 3, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 4, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 5, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 6, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 7, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 8, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 9, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 10, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 11, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 12, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 13, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 14, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 15, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 16, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 17, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 18, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 19, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 20, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 21, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 22, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 23, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 24, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 25, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 26, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 27, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 28, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 29, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 30, voidop, ioapic_asm_ack, voidop, voidop, voidop)
+APICINTR(apic, 31, voidop, ioapic_asm_ack, voidop, voidop, voidop)
 
+APICINTR(x2apic, 0, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 1, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 2, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 3, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 4, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 5, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 6, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 7, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 8, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 9, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 10, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 11, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 12, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 13, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 14, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 15, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 16, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 17, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 18, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 19, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 20, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 21, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 22, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 23, IO_ICU1, ENABLE_ICU1)
+APICINTR(x2apic, 24, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 25, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 26, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 27, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 28, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 29, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 30, IO_ICU2, ENABLE_ICU1_AND_2)
+APICINTR(x2apic, 31, IO_ICU2, ENABLE_ICU1_AND_2)

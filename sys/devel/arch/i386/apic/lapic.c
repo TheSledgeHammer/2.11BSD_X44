@@ -74,9 +74,9 @@
 extern volatile vaddr_t local_apic_va;
 
 void			lapic_map(caddr_t);
-static void 	lapic_hwmask(struct ioapic_intsrc *, int);
-static void 	lapic_hwunmask(struct ioapic_intsrc *, int);
-static void 	lapic_setup(struct ioapic_intsrc *, struct cpu_info *, int, int, int);
+static void 	lapic_hwmask(struct softpic *, int);
+static void 	lapic_hwunmask(struct softpic *, int);
+static void 	lapic_setup(struct softpic *, struct cpu_info *, int, int, int);
 
 struct pic lapic_template = {
 		.pic_type = PIC_LAPIC,
@@ -504,10 +504,13 @@ void lapic_delay(usec)
  * 5 - LVERR
  */
 static void
-lapic_hwmask(struct ioapic_intsrc *intpin, int pin)
+lapic_hwmask(spic, pin)
+	struct softpic *spic;
+	int pin;
 {
 	int reg;
 	u_int32_t val;
+	softpic_pic_hwmask(spic, pin, TRUE, PIC_LAPIC);
 
 	reg = LAPIC_PIN_MASK(LAPIC_LVTT, pin);
 	val = lapic_read(reg);
@@ -516,10 +519,13 @@ lapic_hwmask(struct ioapic_intsrc *intpin, int pin)
 }
 
 static void
-lapic_hwunmask(struct ioapic_intsrc *intpin, int pin)
+lapic_hwunmask(spic, pin)
+	struct softpic *spic;
+	int pin;
 {
 	int reg;
 	u_int32_t val;
+	softpic_pic_hwunmask(spic, pin, TRUE, PIC_LAPIC);
 
 	reg = LAPIC_PIN_MASK(LAPIC_LVTT, pin);
 	val = lapic_read(reg);
@@ -528,7 +534,10 @@ lapic_hwunmask(struct ioapic_intsrc *intpin, int pin)
 }
 
 static void
-lapic_setup(struct ioapic_intsrc *intpin, struct cpu_info *ci, int pin, int idtvec, int type)
+lapic_setup(spic, ci, pin, idtvec, type)
+	struct softpic *spic;
+	struct cpu_info *ci;
+	int pin, idtvec, type;
 {
 
 }
@@ -539,7 +548,7 @@ lapic_setup(struct ioapic_intsrc *intpin, struct cpu_info *ci, int pin, int idtv
 static void
 lapic_register_pic()
 {
-	intr_register_pic(&lapic_template);
+	softpic_register_pic(&lapic_template);
 }
 
 static void

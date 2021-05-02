@@ -86,9 +86,9 @@
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
 
-static void 	i8259_hwmask(struct ioapic_intsrc *, int);
-static void 	i8259_hwunmask(struct ioapic_intsrc *, int);
-static void 	i8259_setup(struct ioapic_intsrc *, struct cpu_info *, int, int, int);
+static void 	i8259_hwmask(struct softpic *, int);
+static void 	i8259_hwunmask(struct softpic *, int);
+static void 	i8259_setup(struct softpic *, struct cpu_info *, int, int, int);
 static void		i8259_reinit_irqs(void);
 
 unsigned short 	i8259_imen = imen;
@@ -135,10 +135,11 @@ i8259_default_setup()
 }
 
 static void
-i8259_hwmask(struct ioapic_intsrc *intpin, int pin)
+i8259_hwmask(struct softpic *spic, int pin)
 {
 	unsigned port;
 	u_int8_t byte;
+	softpic_pic_hwmask(spic, pin, FALSE, PIC_I8259);
 
 	if (pin > 7) {
 		port = IO_ICU2 + 1;
@@ -151,10 +152,11 @@ i8259_hwmask(struct ioapic_intsrc *intpin, int pin)
 }
 
 static void
-i8259_hwunmask(struct ioapic_intsrc *intpin, int pin)
+i8259_hwunmask(struct softpic *spic, int pin)
 {
 	unsigned port;
 	u_int8_t byte;
+	softpic_pic_hwunmask(spic, pin, FALSE, PIC_I8259);
 
 	disable_intr();
 	i8259_imen &= ~(1 << pin);
@@ -173,9 +175,10 @@ i8259_hwunmask(struct ioapic_intsrc *intpin, int pin)
 }
 
 static void
-i8259_setup(struct ioapic_intsrc *intpin, struct cpu_info *ci, int pin, int idtvec, int type)
+i8259_setup(struct softpic *spic, struct cpu_info *ci, int pin, int idtvec, int type)
 {
 	if(cpu_is_primary(ci)) {
+		softpic_pic_addroute(spic, pin, ci, pin, idtvec, type, FALSE, PIC_I8259);
 		i8259_reinit_irqs();
 	}
 }
@@ -186,7 +189,7 @@ i8259_setup(struct ioapic_intsrc *intpin, struct cpu_info *ci, int pin, int idtv
 static void
 i8259_register_pic()
 {
-	intr_register_pic(&i8259_template);
+	softpic_register_pic(&i8259_template);
 }
 
 static void

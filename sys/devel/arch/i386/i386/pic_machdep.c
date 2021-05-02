@@ -39,25 +39,10 @@
 #include <arch/i386/include/pic.h>
 #include <devel/arch/i386/isa/icu.h>
 
-struct softpic {
-    struct pic_list             *sp_pichead;
-    struct cpu_info             *sp_cpu;
-    struct device               *sp_dev;
-    struct intrsource           sp_intsrc;
-    struct intrhand             sp_inthnd;
-    int                         sp_template;
-    unsigned int 				sp_vector:8;
-    int                         sp_irq;
-    int                         sp_pin;
-    int                         sp_apicid;
-    int						    sp_type;
-    int                         sp_isapic;
-};
-
 static TAILQ_HEAD(pic_list, pic) pichead;
 
 static int
-intr_pic_registered(pic)
+softpic_pic_registered(pic)
 	struct pic *pic;
 {
 	struct pic *p;
@@ -71,12 +56,12 @@ intr_pic_registered(pic)
 }
 
 int
-intr_register_pic(pic)
+softpic_register_pic(pic)
 	struct pic *pic;
 {
 	int error;
 
-	if (intr_pic_registered(pic)) {
+	if (softpic_pic_registered(pic)) {
 		error = EBUSY;
 	} else {
 		TAILQ_INSERT_TAIL(&pichead, pic, pic_entry);
@@ -99,35 +84,35 @@ softpic_init()
 }
 
 void
-softpic_check(spic, irq, isapic)
+softpic_check(spic, irq, isapic, pictemplate)
     struct softpic  *spic;
-    int             irq;
-    int             isapic;
+    int             irq, pictemplate;
+    boolean_t 		isapic;
 {
     int apicid = APIC_IRQ_APIC(irq);
     int pin = APIC_IRQ_PIN(irq);
 
-    if (isapic == 0) {
-        spic->sp_isapic = 0;
+    if (isapic == TRUE) {
+        spic->sp_isapic = TRUE;
         spic->sp_apicid = apicid;
         spic->sp_irq = pin;
         spic->sp_pin = pin;
     } else {
-        spic->sp_isapic = 1;
+        spic->sp_isapic = FALSE;
         spic->sp_irq = irq;
         spic->sp_pin = irq;
     }
+    spic->sp_template = pictemplate;
 }
 
 static struct pic *
-softpic_lookup_pic(spic, template)
+softpic_lookup_pic(spic, pictemplate)
 	struct softpic *spic;
-	int template;
+	int pictemplate;
 {
 	struct pic *pic;
 	TAILQ_FOREACH(pic, &pichead, pic_entry) {
-		if(pic->pic_type == template) {
-			spic->sp_template = template;
+		if(pic->pic_type == pictemplate) {
 			return (pic);
 		}
 	}
@@ -170,52 +155,64 @@ softpic_handle_pic(spic)
 }
 
 void
-softpic_pic_hwmask(spic, pin)
+softpic_pic_hwmask(spic, pin, isapic, pictemplate)
 	struct softpic *spic;
-	int pin;
+	int pin, pictemplate;
+	boolean_t isapic;
 {
 	register struct pic *pic;
 	extern int cold;
-	pic = softpic_handle_pic(spic);
+	softpic_check(spic, pin, isapic, pictemplate);
+	spic->sp_intsrc.is_pic = softpic_handle_pic(spic);
+	pic = spic->sp_intsrc.is_pic;
 	if (!cold && pic != NULL) {
 		(*pic->pic_hwmask)(spic, pin);
 	}
 }
 
 void
-softpic_pic_hwunmask(spic, pin)
+softpic_pic_hwunmask(spic, pin, isapic, pictemplate)
 	struct softpic *spic;
-	int pin;
+	int pin, pictemplate;
+	boolean_t 	isapic;
 {
 	register struct pic *pic;
 	extern int cold;
-	pic = softpic_handle_pic(spic);
+	softpic_check(spic, pin, isapic, pictemplate);
+	spic->sp_intsrc.is_pic = softpic_handle_pic(spic);
+	pic = spic->sp_intsrc.is_pic;
 	if (!cold && pic != NULL) {
 		(*pic->pic_hwunmask)(spic, pin);
 	}
 }
 
 void
-softpic_pic_addroute(spic, ci, pin, idtvec, type)
+softpic_pic_addroute(spic, ci, pin, idtvec, type, isapic, pictemplate)
 	struct softpic *spic;
 	struct cpu_info *ci;
-	int pin, idtvec, type;
+	int pin, idtvec, type, pictemplate;
+	boolean_t  isapic;
 {
 	register struct pic *pic;
-	pic = softpic_handle_pic(spic);
+	softpic_check(spic, pin, isapic, pictemplate);
+	spic->sp_intsrc.is_pic = softpic_handle_pic(spic);
+	pic = spic->sp_intsrc.is_pic;
 	if (pic != NULL) {
 		(*pic->pic_addroute)(spic, pin, idtvec, type);
 	}
 }
 
 void
-softpic_pic_delroute(spic, ci, pin, idtvec, type)
+softpic_pic_delroute(spic, ci, pin, idtvec, type, isapic, pictemplate)
 	struct softpic *spic;
 	struct cpu_info *ci;
-	int pin, idtvec, type;
+	int pin, idtvec, type, pictemplate;
+	boolean_t isapic;
 {
 	register struct pic *pic;
-	pic = softpic_handle_pic(spic);
+	softpic_check(spic, pin, isapic, pictemplate);
+	spic->sp_intsrc.is_pic = softpic_handle_pic(spic);
+	pic = spic->sp_intsrc.is_pic;
 	if (pic != NULL) {
 		(*pic->pic_delroute)(spic, ci, pin, idtvec, type);
 	}

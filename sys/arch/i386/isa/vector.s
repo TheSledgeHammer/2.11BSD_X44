@@ -246,7 +246,7 @@ IDTVEC(hold/**/irq_num)													;\
 #endif /* DEBUG */
 
 #ifdef DDB
-#define	MAKE_FRAME 			\
+#define	MAKE_FRAME 														\
 		leal	-8(%esp),%ebp
 #else /* !DDB */
 #define	MAKE_FRAME
