@@ -40,12 +40,14 @@
 #include <net/netisr.h>
 
 		.data
-		.globl	_C_LABEL(imen),_C_LABEL(cpl),_C_LABEL(ipending)
+		.globl	_C_LABEL(imen),_C_LABEL(cpl),_C_LABEL(ipending),_C_LABEL(ilevel),_C_LABEL(idepth)
 		.globl	_C_LABEL(astpending),_C_LABEL(netisr)
 _C_LABEL(cpl):
 		.long	0xffff			# current priority level (all off)
 _C_LABEL(imen):
 		.long	0xffff			# interrupt mask enable (all off)
+_C_LABEL(idepth):
+		.long	0xffff
 			
 #if defined(PROF) || defined(GPROF)
 		.globl	_C_LABEL(splhigh), _C_LABEL(splx)

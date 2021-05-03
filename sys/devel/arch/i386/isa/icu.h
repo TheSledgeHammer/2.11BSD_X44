@@ -46,6 +46,10 @@
  */
 extern unsigned short			imen;			/* interrupt mask enable */
 extern unsigned short			cpl;			/* current priority level mask */
+extern unsigned short			ipending;
+extern unsigned short			ilevel;
+extern unsigned short			idepth;
+
 extern int 						intrtype[];
 extern int 						intrmask[];
 extern int 						intrlevel[];
@@ -57,7 +61,6 @@ extern int 						intrlevel[];
 
 #endif
 
-#define SET_ICUS()				(outb(IO_ICU1 + 1, imen), outb(IO_ICU2 + 1, imen >> 8))
 #define SOFTINTR_MASK(ipl, sir)	((ipl) = (1 << (sir)))
 
 /*

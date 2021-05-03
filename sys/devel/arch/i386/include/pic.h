@@ -40,6 +40,22 @@
 
 #include <sys/queue.h>
 
+/* Softpic, acts as a selector for which PIC/APIC to use: see pic_machdep.c */
+struct softpic {
+    struct cpu_info         *sp_cpu;
+    struct intrsource       sp_intsrc;
+    struct intrhand         sp_inthnd;
+    int                     sp_template;
+    unsigned int 			sp_vector:8;
+    int                     sp_irq;
+    int                     sp_pin;
+    int                     sp_apicid;
+    int						sp_type;
+    boolean_t               sp_isapic;
+
+    struct mp_intr_map 		*sp_map;
+};
+
 /*
  * Methods that a PIC provides to mask/unmask a given interrupt source,
  * "turn on" the interrupt on the CPU side by setting up an IDT entry, and
@@ -100,12 +116,14 @@ struct intrhand {
 };
 
 extern struct lock_object 	*icu_lock;
+extern int 					intr_shared_edge;		/* This system has shared edge interrupts */
 
-void			softpic_pic_init(void *);
-int				softpic_register_pic(struct pic *);
-struct pic 		*softpic_handle_pic(struct softpic *);
-void			softpic_pic_hwmask(struct softpic *, int, boolean_t, int);
-void			softpic_pic_hwunmask(struct softpic *, int, boolean_t, int);
-void			softpic_pic_addroute(struct softpic *, struct cpu_info *, int, int, int, boolean_t, int);
-void			softpic_pic_delroute(struct softpic *, struct cpu_info *, int, int, int, boolean_t, int);
+void						softpic_pic_init(void *);
+int							softpic_register_pic(struct pic *);
+struct pic 					*softpic_handle_pic(struct softpic *);
+void						softpic_pic_hwmask(struct softpic *, int, boolean_t, int);
+void						softpic_pic_hwunmask(struct softpic *, int, boolean_t, int);
+void						softpic_pic_addroute(struct softpic *, struct cpu_info *, int, int, int, boolean_t, int);
+void						softpic_pic_delroute(struct softpic *, struct cpu_info *, int, int, int, boolean_t, int);
+struct softpic 				*softpic_intr_handler(struct softpic *, int, int, boolean_t, int);
 #endif /* _I386_PIC_H_ */

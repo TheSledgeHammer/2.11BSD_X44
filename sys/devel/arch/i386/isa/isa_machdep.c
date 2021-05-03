@@ -97,7 +97,10 @@
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
 #include <i386/isa/isa_machdep.h>
+
+#include <arch/i386/include/intr.h>
 #include <devel/arch/i386/isa/icu.h>
+#include <devel/arch/i386/include/pic.h>
 
 #include <vm/include/vm.h>
 
@@ -195,7 +198,75 @@ isa_intr_establish(ic, irq, type, level, ih_fun, ih_arg)
 	int (*ih_fun)(void *);
 	void *ih_arg;
 {
-	return (intr_establish(irq, type, level, ih_fun, ih_arg));
+	struct intrhand **p, *q, *ih;
+	static struct intrhand fakehand = { fakeintr };
+	extern int cold;
+
+	ih = intr_establish(FALSE, PIC_I8259, irq, type, level, ih_fun, ih_arg);
+
+#if NIOAPIC > 0
+	if (mp_busses != NULL) {
+		int airq;
+
+		return (apic_intr_establish(airq, type, level, ih_fun, ih_arg));
+	}
+#endif
+
+	switch (intrtype[irq]) {
+	case IST_NONE:
+		intrtype[irq] = type;
+		break;
+	case IST_EDGE:
+	case IST_LEVEL:
+		if (intrtype[irq] == type) {
+			break;
+		}
+		/* FALLTHROUGH */
+	case IST_PULSE:
+		if (type != IST_NONE) {
+			panic("intr_establish: irq %d can't share %s with %s",
+			      irq,
+			      isa_intr_typename(intrtype[irq]),
+			      isa_intr_typename(type));
+			return (NULL);
+		}
+		break;
+	}
+
+	/*
+	 * Figure out where to put the handler.
+	 * This is O(N^2), but we want to preserve the order, and N is
+	 * generally small.
+	 */
+	for (p = &intrhand[irq]; (q = *p) != NULL; p = &q->ih_next) {
+		;
+	}
+
+	if(!cold) {
+		softpic_pic_hwmask(&intrspic, irq, FALSE, PIC_I8259);
+	}
+
+	fakehand.ih_level = level;
+	*p = &fakehand;
+
+	intr_calculatemasks();
+
+	/*
+	 * Poke the real handler in now.
+	 */
+	ih->ih_fun = ih_fun;
+	ih->ih_arg = ih_arg;
+	ih->ih_next = NULL;
+	ih->ih_level = level;
+	ih->ih_flags = flags;
+	ih->ih_irq = irq;
+	*p = ih;
+
+	if(!cold) {
+		softpic_pic_hwunmask(&intrspic, irq, FALSE, PIC_I8259);
+	}
+
+	return (ih);
 }
 
 /*
@@ -207,6 +278,13 @@ isa_intr_disestablish(ic, arg)
 	void *arg;
 {
 	struct intrhand *ih = arg;
+
+#if NIOAPIC > 0
+	if (irq & APIC_INT_VIA_APIC) {
+		apic_intr_disestablish(arg);
+		return;
+	}
+#endif
 
 	intr_disestablish(ih);
 }

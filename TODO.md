@@ -19,7 +19,7 @@ A General todo list. Don't hesitate to add to this list. :)
 ## conf:
 
 ## kern:
-- kqfilter: implemented but unused.
+- event/kqfilter: implemented but unused.
 	
 ## arch:
 - i386/x86: (Merged under i386)

@@ -58,9 +58,11 @@
 #define	SIR_NET			30
 #define	SIR_SERIAL		29
 
+#define IREENT_MAGIC	0x18041969
+
 #ifndef _LOCORE
 
-volatile int cpl, ipending;
+volatile int cpl, ipending, ilevel, idepth;
 int imask[NIPL];
 int iunmask[NIPL];
 

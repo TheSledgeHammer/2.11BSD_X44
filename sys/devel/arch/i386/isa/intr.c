@@ -155,7 +155,6 @@ struct intrhand 	*intrhand[MAX_INTR_SOURCES];
 int 				intrtype[MAX_INTR_SOURCES];
 int 				intrmask[MAX_INTR_SOURCES];
 int 				intrlevel[MAX_INTR_SOURCES];
-int 				intr_shared_edge;
 
 struct intrsource *
 intrsource_create(struct pic *pic, int pin)
@@ -187,25 +186,7 @@ intr_legacy_vectors()
 	int i;
 	for(i = 0; i < NUM_LEGACY_IRQS; i++) {
 		int idx = ICU_OFFSET + i;
-		setidt(idx, &IDTVEC(legacy), 0, SDT_SYS386IGT, SEL_KPL);
-	}
-}
-
-void
-intr_apic_vectors()
-{
-	int idx;
-	for(idx = 0; idx < MAX_INTR_SOURCES; idx++) {
-		setidt(idx, &IDTVEC(apic), 0, SDT_SYS386IGT, SEL_KPL);
-	}
-}
-
-void
-intr_x2apic_vectors()
-{
-	int idx;
-	for(idx = 0; idx < MAX_INTR_SOURCES; idx++) {
-		setidt(idx, &IDTVEC(x2apic), 0, SDT_SYS386IGT, SEL_KPL);
+		setidt(idx, &IDTVEC(legacy_intr), 0, SDT_SYS386IGT, SEL_KPL);
 	}
 }
 
@@ -364,73 +345,21 @@ fakeintr(arg)
 }
 
 void *
-intr_establish(irq, type, level, ih_fun, ih_arg)
-	int irq;
-	int type;
-	int level;
+intr_establish(isapic, pictemplate, irq, type, level, ih_fun, ih_arg)
+	boolean_t isapic;
+	int irq, type, level, pictemplate;
 	int (*ih_fun)(void *);
 	void *ih_arg;
 {
-	struct intrhand **p, *q, *ih;
-	static struct intrhand fakehand = { fakeintr };
-	extern int cold;
+	register struct softpic *spic;
+	register struct intrhand *ih;
 
-	/* no point in sleeping unless someone can free memory. */
-	ih = malloc(sizeof *ih, M_DEVBUF, cold ? M_NOWAIT : M_WAITOK);
-	if (ih == NULL) {
-		panic("intr_establish: can't malloc handler info");
+	spic = softpic_intr_handler(&intrspic, irq, type, isapic, pictemplate);
+
+	ih = spic->sp_inthnd;
+	if(isapic) {
+		ih->ih_irq = spic->sp_irq;
 	}
-	if (!LEGAL_IRQ(irq) || type == IST_NONE) {
-		panic("intr_establish: bogus irq or type");
-	}
-
-	switch (intrtype[irq]) {
-	case IST_NONE:
-		intrtype[irq] = type;
-		break;
-	case IST_EDGE:
-		intr_shared_edge = 1;
-		/* FALLTHROUGH */
-	case IST_LEVEL:
-		if (intrtype[irq] == type) {
-			break;
-		}
-		/* FALLTHROUGH */
-	case IST_PULSE:
-		if (type != IST_NONE) {
-			panic("intr_establish: can't share %s with %s",
-			    intr_typename(intrtype[irq]),
-			    intr_typename(type));
-			free(ih, M_DEVBUF, sizeof(*ih));
-			return (NULL);
-		}
-		break;
-	}
-
-	/*
-	 * Figure out where to put the handler.
-	 * This is O(N^2), but we want to preserve the order, and N is
-	 * generally small.
-	 */
-	for (p = &intrhand[irq]; (q = *p) != NULL; p = &q->ih_next) {
-		;
-	}
-
-	fakehand.ih_level = level;
-	*p = &fakehand;
-
-	intr_calculatemasks();
-
-	/*
-	 * Poke the real handler in now.
-	 */
-	ih->ih_fun = ih_fun;
-	ih->ih_arg = ih_arg;
-	ih->ih_count = 0;
-	ih->ih_next = NULL;
-	ih->ih_level = level;
-	ih->ih_irq = irq;
-	*p = ih;
 
 	return (ih);
 }
@@ -458,30 +387,13 @@ intr_disestablish(ih)
 	} else {
 		panic("intr_disestablish: handler not registered");
 	}
+
 	free(ih, M_DEVBUF);
 
 	intr_calculatemasks();
 
 	if (intrhand[irq] == NULL) {
 		intrtype[irq] = IST_NONE;
-	}
-}
-
-char *
-intr_typename(type)
-	int type;
-{
-	switch (type) {
-	case IST_NONE:
-		return ("none");
-	case IST_PULSE:
-		return ("pulsed");
-	case IST_EDGE:
-		return ("edge-triggered");
-	case IST_LEVEL:
-		return ("level-triggered");
-	default:
-		panic("intr_typename: invalid type %d", type);
 	}
 }
 

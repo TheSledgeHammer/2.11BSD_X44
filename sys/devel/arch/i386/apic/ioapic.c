@@ -88,9 +88,9 @@
 #include <arch/i386/include/pio.h>
 #include <arch/i386/include/pmap.h>
 #include <arch/i386/include/intr.h>
+
 #include <devel/arch/i386/include/cpu.h>
 #include <devel/arch/i386/include/pic.h>
-
 #include <devel/arch/i386/apic/apic.h>
 #include <devel/arch/i386/apic/ioapicreg.h>
 #include <devel/arch/i386/apic/ioapicvar.h>

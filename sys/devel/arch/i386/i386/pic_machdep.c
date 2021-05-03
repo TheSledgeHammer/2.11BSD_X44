@@ -37,8 +37,10 @@
 #include <sys/user.h>
 
 #include <arch/i386/include/pic.h>
+#include <arch/i386/include/intr.h>
 #include <devel/arch/i386/isa/icu.h>
 
+struct softpic 					 *intrspic;
 static TAILQ_HEAD(pic_list, pic) pichead;
 
 static int
@@ -75,7 +77,7 @@ void
 softpic_init()
 {
 	struct softpic *spic;
-	spic = (stuct softpic *)malloc(sizeof(*spic), M_DEVBUF, M_WAITOK);
+	spic = &intrspic = (struct softpic *)malloc(sizeof(struct softpic *), M_DEVBUF, M_WAITOK);
 
 	TAILQ_INIT(&pichead);
 
@@ -92,17 +94,21 @@ softpic_check(spic, irq, isapic, pictemplate)
     int apicid = APIC_IRQ_APIC(irq);
     int pin = APIC_IRQ_PIN(irq);
 
-    if (isapic == TRUE) {
-        spic->sp_isapic = TRUE;
-        spic->sp_apicid = apicid;
-        spic->sp_irq = pin;
-        spic->sp_pin = pin;
-    } else {
-        spic->sp_isapic = FALSE;
-        spic->sp_irq = irq;
-        spic->sp_pin = irq;
-    }
-    spic->sp_template = pictemplate;
+	if (spic == &intrspic) {
+		spic->sp_template = pictemplate;
+		if (isapic == TRUE) {
+			spic->sp_isapic = TRUE;
+			spic->sp_apicid = apicid;
+			spic->sp_irq = pin;
+			spic->sp_pin = pin;
+		} else {
+			spic->sp_isapic = FALSE;
+			spic->sp_irq = irq;
+			spic->sp_pin = irq;
+		}
+	} else {
+		return;
+	}
 }
 
 static struct pic *
@@ -161,11 +167,10 @@ softpic_pic_hwmask(spic, pin, isapic, pictemplate)
 	boolean_t isapic;
 {
 	register struct pic *pic;
-	extern int cold;
 	softpic_check(spic, pin, isapic, pictemplate);
 	spic->sp_intsrc.is_pic = softpic_handle_pic(spic);
 	pic = spic->sp_intsrc.is_pic;
-	if (!cold && pic != NULL) {
+	if (pic != NULL) {
 		(*pic->pic_hwmask)(spic, pin);
 	}
 }
@@ -177,11 +182,10 @@ softpic_pic_hwunmask(spic, pin, isapic, pictemplate)
 	boolean_t 	isapic;
 {
 	register struct pic *pic;
-	extern int cold;
 	softpic_check(spic, pin, isapic, pictemplate);
 	spic->sp_intsrc.is_pic = softpic_handle_pic(spic);
 	pic = spic->sp_intsrc.is_pic;
-	if (!cold && pic != NULL) {
+	if (pic != NULL) {
 		(*pic->pic_hwunmask)(spic, pin);
 	}
 }
@@ -216,4 +220,29 @@ softpic_pic_delroute(spic, ci, pin, idtvec, type, isapic, pictemplate)
 	if (pic != NULL) {
 		(*pic->pic_delroute)(spic, ci, pin, idtvec, type);
 	}
+}
+
+struct softpic *
+softpic_intr_handler(spic, irq, type, isapic, pictemplate)
+	struct softpic *spic;
+	boolean_t isapic;
+	int irq, type, pictemplate;
+{
+	struct intrhand *ih;
+	extern int cold;
+
+	softpic_check(spic, irq, isapic, pictemplate);
+
+	/* no point in sleeping unless someone can free memory. */
+	ih = malloc(sizeof *ih, M_DEVBUF, cold ? M_NOWAIT : M_WAITOK);
+	if (ih == NULL) {
+		panic("softpic_intr_handler: can't malloc handler info");
+	}
+	if (!LEGAL_IRQ(irq) || type == IST_NONE) {
+		panic("softpic_intr_handler: bogus irq or type");
+	}
+
+	spic->sp_inthnd = ih;
+
+	return (spic);
 }

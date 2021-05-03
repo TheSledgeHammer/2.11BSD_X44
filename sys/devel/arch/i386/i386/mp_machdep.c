@@ -412,3 +412,40 @@ start_ap(int apic_id)
 	return 0; /* return FAILURE */
 }
 
+/*
+ * Handlers for TLB related IPIs
+ */
+static void
+invltlb_handler(pmap_t smp_tlb_pmap)
+{
+	if (smp_tlb_pmap == kernel_pmap) {
+		invltlb_glob();
+	} else {
+		invltlb();
+	}
+}
+
+static void
+invlpg_handler(vm_offset_t smp_tlb_addr1)
+{
+	invlpg(smp_tlb_addr1);
+}
+
+static void
+invlrng_handler(vm_offset_t smp_tlb_addr1, vm_offset_t smp_tlb_addr2)
+{
+	vm_offset_t addr, addr2;
+
+	addr = smp_tlb_addr1;
+	addr2 = smp_tlb_addr2;
+	do {
+		invlpg(addr);
+		addr += PAGE_SIZE;
+	} while (addr < addr2);
+}
+
+static void
+invlcache_handler(void)
+{
+	wbinvd();
+}
