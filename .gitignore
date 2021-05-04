@@ -11,7 +11,7 @@
 *.idea
 *.dist
 *.vscode
+*.cproject
+*.project
 *.code-workspace
-cmake-build-debug
-cmake-build-debug-mingw
 toolchains/

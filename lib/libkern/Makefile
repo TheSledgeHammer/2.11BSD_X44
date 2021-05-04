@@ -12,7 +12,7 @@
 
 DEFS=	-DKERNEL
 CFLAGS=	 -O ${DEFS} -I../libc/arch/${MACHINE}/gen
-CPP=	/lib/cpp -P ${DEFS} -I../libc/arch/${MACHINE}/gen
+CPP=		/lib/cpp -P ${DEFS} -I../libc/arch/${MACHINE}/gen
 AS=		/bin/as -u
 PREFIX=	/usr/src/lib/libc/arch/${MACHINE}
 
