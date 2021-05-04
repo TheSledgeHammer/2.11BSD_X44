@@ -1,14 +1,18 @@
 # $FreeBSD: src/sys/boot/Makefile,v 1.18 2003/08/16 02:48:20 obrien Exp $
 
+BOOTSRC?=		/sys/stand/boot
+LIBKERN?= 		/sys/lib/libkern
+LIBSA?=		/sys/lib/libsa
+
 #EFISRC=		${BOOTSRC}/efi
 #EFIINC=		${EFISRC}/include
 #EFIINCMD=		${EFIINC}/${MACHINE}
 DLOADER=		${BOOTSRC}/dloader
-LDRSRC=			${BOOTSRC}/common
+LDRSRC=		${BOOTSRC}/common
 #UBOOTSRC=		${BOOTSRC}/uboot
-LIBCSRC=		${SRCTOP}/lib/libc
+LIBCSRC=		/lib/libc
 
-BOOTOBJ=		${STANDDIR}
+BOOTOBJ=		/sys/stand
 
 # BINDIR is where we install
 BINDIR?=		/boot

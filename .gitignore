@@ -1,5 +1,4 @@
 *.git
-
 *.class
 *.log
 *.lock
@@ -15,5 +14,4 @@
 *.code-workspace
 cmake-build-debug
 cmake-build-debug-mingw
-
-/sys/devel/ufs/freebsd5
+toolchains/

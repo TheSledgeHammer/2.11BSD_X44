@@ -1,13 +1,11 @@
 #./bin/sh
 
-# retrieve llvm & clang
+# create directories
 mkdir cross_llvm
 cd cross_llvm
-git clone http://llvm.org/git/llvm.git
-cd llvm/tools
-git clone http://llvm.org/git/clang.git
-cd ../projects
-git clone http://llvm.org/git/compiler-rt.git
+# retrieve llvm & clang
+git clone https://github.com/llvm/llvm-project.git
+cd llvm-project
 
 # compile llvm & clang
 cd ..

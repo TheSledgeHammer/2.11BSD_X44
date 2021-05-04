@@ -3,10 +3,10 @@
 
 .include <bsd.own.mk>
 
-ELFTCDIR=	${SRCTOP}/contrib/elftoolchain
-SRCDIR=		${ELFTCDIR}/libdwarf
+ELFTCDIR=	/contrib/elftoolchain
+SRCDIR=	${ELFTCDIR}/libdwarf
 
-.PATH:		${SRCDIR}
+.PATH:	${SRCDIR}
 
 LIB=		dwarf
 

@@ -3,10 +3,10 @@
 
 .include <bsd.own.mk>
 
-ELFTCDIR=	${SRCTOP}/contrib/elftoolchain
-SRCDIR=		${ELFTCDIR}/libelf
+ELFTCDIR=	/contrib/elftoolchain
+SRCDIR=	${ELFTCDIR}/libelf
 
-.PATH:		${SRCDIR}
+.PATH:	${SRCDIR}
 
 LIB=		elf
 

@@ -12,7 +12,7 @@ WARNINGS?=		no
 # Defining `SKEY' causes support for S/key authentication to be compiled in.
 SKEY=			yes
 
-CLANG_ARCH=		i386
+CLANG_ARCH=	i386
 LLD_ARCH=		i386 
 
 PIE_ARCH=		i386 
@@ -69,43 +69,43 @@ PIE_DEFAULT?=
 BSDSRCDIR?=		/usr/src
 BSDOBJDIR?=		/usr/obj
 
-BINGRP?=		bin
-BINOWN?=		root
-BINMODE?=		555
-NONBINMODE?=	444
-DIRMODE?=		755
+BINGRP?=			bin
+BINOWN?=			root
+BINMODE?=			555
+NONBINMODE?=		444
+DIRMODE?=			755
 
-SHAREDIR?=		/usr/share
-SHAREGRP?=		bin
-SHAREOWN?=		root
+SHAREDIR?=			/usr/share
+SHAREGRP?=			bin
+SHAREOWN?=			root
 SHAREMODE?=		${NONBINMODE}
 
-MANDIR?=		/usr/share/man
-MANGRP?=		bin
-MANOWN?=		root
-MANMODE?=		${NONBINMODE}
-MANINSTALL?=	maninstall catinstall
+MANDIR?=			/usr/share/man
+MANGRP?=			bin
+MANOWN?=			root
+MANMODE?=			${NONBINMODE}
+MANINSTALL?=		maninstall catinstall
 
-LIBDIR?=		/usr/lib
-LINTLIBDIR?=	/usr/libdata/lint
-LIBGRP?=		${BINGRP}
-LIBOWN?=		${BINOWN}
-LIBMODE?=		${NONBINMODE}
+LIBDIR?=			/usr/lib
+LINTLIBDIR?=		/usr/libdata/lint
+LIBGRP?=			${BINGRP}
+LIBOWN?=			${BINOWN}
+LIBMODE?=			${NONBINMODE}
 
-DOCDIR?=    	/usr/share/doc
-DOCGRP?=		bin
-DOCOWN?=		root
-DOCMODE?=   	${NONBINMODE}
+DOCDIR?=    		/usr/share/doc
+DOCGRP?=			bin
+DOCOWN?=			root
+DOCMODE?=   		${NONBINMODE}
 
-NLSDIR?=		/usr/share/nls
-NLSGRP?=		bin
-NLSOWN?=		root
-NLSMODE?=		${NONBINMODE}
+NLSDIR?=			/usr/share/nls
+NLSGRP?=			bin
+NLSOWN?=			root
+NLSMODE?=			${NONBINMODE}
 
 LOCALEDIR?=		/usr/share/locale
 LOCALEGRP?=		wheel
 LOCALEOWN?=		root
-LOCALEMODE?=	${NONBINMODE}
+LOCALEMODE?=		${NONBINMODE}
 
 .if !defined(CDIAGFLAGS)
 CDIAGFLAGS=		-Wall -Wpointer-arith -Wuninitialized -Wstrict-prototypes
