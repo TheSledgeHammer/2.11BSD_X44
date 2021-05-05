@@ -163,8 +163,7 @@ const char bootprog_interp[] = "$Interpreter:" interpstr
  * Metadata are allocated on our heap, and copied into kernel space
  * before executing the kernel.
  */
-struct file_metadata
-{
+struct file_metadata {
     size_t					md_size;
     uint16_t				md_type;
     struct file_metadata	*md_next;
@@ -182,8 +181,7 @@ struct preloaded_file;
  *
  * String fields (m_name, m_type) should be dynamically allocated.
  */
-struct preloaded_file
-{
+struct preloaded_file {
 	struct preloaded_file	*f_next;			/* next file */
     char					*f_name;			/* file name */
     char					*f_type;			/* verbose file type, eg 'ELF kernel', 'pnptable', etc. */
@@ -203,8 +201,7 @@ struct preloaded_file
 	uint32_t				f_elfshdr_shndx;
 };
 
-struct file_format
-{
+struct file_format {
     /* Load function must return EFTYPE if it can't handle the module supplied */
     int		(* l_load)(char *filename, uint64_t dest, struct preloaded_file **result);
     /* Only a loader that will load a kernel (first module) should have an exec handler */
@@ -225,8 +222,7 @@ void 					file_discard(struct preloaded_file *fp);
  * MD code may selectively populate the switch at runtime based on the
  * actual configuration of the target system.
  */
-struct arch_switch
-{
+struct arch_switch {
     /* Automatically load modules as required by detected hardware */
     int		(*arch_autoload)(void);
 

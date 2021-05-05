@@ -50,9 +50,9 @@ extern unsigned short			ipending;
 extern unsigned short			ilevel;
 extern unsigned short			idepth;
 
-extern int 						intrtype[];
-extern int 						intrmask[];
-extern int 						intrlevel[];
+//extern int 						intrtype[];
+//extern int 						intrmask[];
+//extern int 						intrlevel[];
 
 #define	INTREN(s)				imen &= ~(s)
 #define	INTRDIS(s)				imen |= (s)

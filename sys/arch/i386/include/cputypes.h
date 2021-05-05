@@ -97,8 +97,8 @@
 #define CPU_MAXFAMILY		6	/* Highest we know (686) */
 
 #ifndef LOCORE
-extern int	cpu;
-extern int	cpu_class;
+extern int					cpu;
+extern int					cpu_class;
 #endif
 
 #endif /* !_I386_CPUTYPES_H_ */

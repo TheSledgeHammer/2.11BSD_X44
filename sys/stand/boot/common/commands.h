@@ -46,8 +46,7 @@ typedef int	(bootblk_cmd_t)(int argc, char *argv[]);
 /*
  * Support for commands
  */
-struct bootblk_command
-{
+struct bootblk_command {
     const char			*c_name;
     const char			*c_desc;
     bootblk_cmd_t		*c_fn;

@@ -242,10 +242,6 @@ isa_intr_establish(ic, irq, type, level, ih_fun, ih_arg)
 		;
 	}
 
-	if(!cold) {
-		softpic_pic_hwmask(&intrspic, irq, FALSE, PIC_I8259);
-	}
-
 	fakehand.ih_level = level;
 	*p = &fakehand;
 
@@ -261,10 +257,6 @@ isa_intr_establish(ic, irq, type, level, ih_fun, ih_arg)
 	ih->ih_flags = flags;
 	ih->ih_irq = irq;
 	*p = ih;
-
-	if(!cold) {
-		softpic_pic_hwunmask(&intrspic, irq, FALSE, PIC_I8259);
-	}
 
 	return (ih);
 }

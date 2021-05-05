@@ -341,7 +341,7 @@ int
 fakeintr(arg)
 	void *arg;
 {
-	return 0;
+	return (0);
 }
 
 void *
@@ -397,68 +397,3 @@ intr_disestablish(ih)
 	}
 }
 
-int
-intr_allocate_slot(pic, irq, pin, level, cip, idx, idt_slot)
-	struct pic  *pic;
-	struct cpu_info *cip;
-	int irq, pin, level;
-	int *idx, *idt_slot;
-{
-	struct cpu_info *ci;
-	struct intrsource *isp;
-	int slot, idtvec, error;
-
-	if (irq != -1) {
-		ci = &cpu_info;
-		for (slot = 0 ; slot < MAX_INTR_SOURCES ; slot++) {
-			isp = &intrsrc[slot];
-			if (isp != NULL && isp->is_pic == pic && isp->is_pin == pin ) {
-				goto duplicate;
-			}
-		}
-		slot = irq;
-		isp = &intrsrc[slot];
-		if (isp == NULL) {
-			MALLOC(isp, struct intrsource *, sizeof(struct intrsource), M_DEVBUF, M_NOWAIT|M_ZERO);
-			if (isp == NULL) {
-				return ENOMEM;
-			}
-			&intrsrc[slot] = isp;
-		} else {
-			if (isp->is_pin != pin) {
-				if (pic == &i8259_template) {
-					return EINVAL;
-				}
-				goto other;
-			}
-		}
-duplicate:
-		if (pic == &i8259_template) {
-			idtvec = ICU_OFFSET + irq;
-		} else {
-			if (level > isp->is_maxlevel) {
-
-			}
-			if (isp->is_minlevel == 0 || level < isp->is_minlevel) {
-				idtvec = idt_vec_alloc(APIC_LEVEL(level), IDT_INTR_HIGH);
-				if (idtvec == 0) {
-					return (EBUSY);
-				}
-			} else {
-				idtvec = isp->is_idtvec;
-			}
-		}
-	} else {
-other:
-	ci = &cpu_info;
-	error = intr_allocate_slot_cpu(ci, pic, pin, &slot);
-	if (error == 0) {
-		goto found;
-	}
-
-
-	*idt_slot = idtvec;
-	*idx = slot;
-	*cip = ci;
-	return (0);
-}

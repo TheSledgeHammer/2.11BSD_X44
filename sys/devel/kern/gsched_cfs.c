@@ -200,7 +200,9 @@ cfs_schedcpu(p)
 	u_char tmp_bsched; 			/* temp base schedule period */
 	u_char new_bsched;			/* new base schedule period */
 	int cpticks = 0;			/* p_cpticks counter (deadline) */
+	char slack;					/* slack/laxity time */
 
+	slack = p->p_gsched->gsc_slack;
 	if(p->p_gsched->gsc_priweight != 0) {
 		cfs->cfs_priweight = p->p_gsched->gsc_priweight;
 	}
@@ -227,10 +229,12 @@ cfs_schedcpu(p)
 	/* calculate cfs variables */
 	cfs_compute(cfs);
 
-	/* check base scheduling period */
-	if(EBSCHEDULE(cfs)) {
+	/* check base scheduling period:
+	 * This is calculated from slack/ laxity time.
+	 */
+	if(EBSCHEDULE(slack, cfs)) {
 		tmp_bsched = cfs->cfs_bsched;
-		new_bsched = (cfs->cfs_cpu * cfs->cfs_bmg);
+		new_bsched = (slack * cfs->cfs_bmg);
 		cfs->cfs_bsched = new_bsched;
 	}
 
@@ -266,7 +270,7 @@ cfs_schedcpu(p)
 				} else {
 					/* SHOULD NEVER REACH THIS POINT!! */
 					/* panic?? */
-					goto runout;
+					goto out;
 					break;
 				}
 			}

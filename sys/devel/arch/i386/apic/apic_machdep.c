@@ -60,9 +60,21 @@ intr_x2apic_vectors()
 	}
 }
 
-apic_strayintr()
+void
+apic_strayintr(irq)
+	int irq;
 {
+	struct softpic *spic;
+	int apicid;
 
+	spic = &intrspic;
+	apicid = APIC_IRQ_APIC(irq);
+
+	if(spic->sp_apicid != apicid || spic == NULL) {
+		return;
+	}
+
+	printf("%s: stray interrupt %d\n", spic->sp_template, irq);
 }
 
 void *
@@ -126,7 +138,7 @@ apic_intr_establish(irq, type, level, ih_fun, ih_arg)
 	ih->ih_next = NULL;
 	ih->ih_level = level;
 	ih->ih_flags = flags;
-	ih->ih_irq = irq;
+	//ih->ih_irq = irq;
 	*p = ih;
 
 	if(!cold) {

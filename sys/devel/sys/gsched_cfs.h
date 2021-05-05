@@ -26,6 +26,19 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * CFS Scheduler Differences:
+ * A New Scheduling Period is calculated on the slack/laxity time, over the number of tasks.
+ *
+ * Reasons For Change:
+ * - Linux uses the number of tasks to help calculate priority weightings and time-slices.
+ * - BSD's existing scheduler can already calculate time-slices and priorities/ priority weightings.
+ *
+ * Effects:
+ * 1. A greater slack/laxity time equals a longer scheduling period.
+ * 2. A longer scheduling period reduces the slack/laxity time between each task
+ */
+
 #ifndef _SYS_GSCHED_CFS_H
 #define _SYS_GSCHED_CFS_H
 
@@ -33,22 +46,22 @@
 #include <sys/tree.h>
 
 /* Generic Base stats for CFS */
-#define BTL             20                      			/* base target latency */
-#define BMG             4                       			/* base minimum granularity  */
-#define BSCHEDULE     	(BTL / BMG)            				/* base scheduling period */
+#define BTL             		20                      			/* base target latency */
+#define BMG            	 		4                       			/* base minimum granularity  */
+#define BSCHEDULE     			(BTL / BMG)            				/* base scheduling period */
 
 /* Error Checking */
-#define EBSCHEDULE(p)   ((p)->cfs_tasks > (p)->cfs_bsched)  /* new scheduling period if number tasks exceeds base scheduling period (BTL/BMG) */
+#define EBSCHEDULE(slack, p)   	(slack > (p)->cfs_bsched)  			/* new scheduling period if slack/laxity time exceeds base scheduling period (BTL/BMG) */
 
 struct gsched_cfs_rbtree;
 RB_HEAD(gsched_cfs_rbtree, gsched_cfs);
 struct gsched_cfs {
-	struct gsched 				*cfs_gsched;				/* pointer to global scheduler */
+	struct gsched 				*cfs_gsched;						/* pointer to global scheduler */
 
-	struct gsched_cfs_rbtree	cfs_parent;					/* rbtree cfs parent/root */
-    RB_ENTRY(gsched_cfs) 		cfs_entry;					/* rbtree cfs entries */
+	struct gsched_cfs_rbtree	cfs_parent;							/* rbtree cfs parent/root */
+    RB_ENTRY(gsched_cfs) 		cfs_entry;							/* rbtree cfs entries */
 
-	struct proc 				*cfs_rqlink;				/* pointer to linked list of running processes */
+	struct proc 				*cfs_rqlink;						/* pointer to linked list of running processes */
 	struct proc 				*cfs_proc;
 
     int	    					cfs_flag;
@@ -62,11 +75,11 @@ struct gsched_cfs {
     u_char  					cfs_time;
     char    					cfs_slptime;
 
-    u_char 						cfs_btl;					/* base target latency */
-    u_char 						cfs_bmg;					/* base minimum granularity */
-    u_char 						cfs_bsched;					/* base scheduling period */
+    u_char 						cfs_btl;							/* base target latency */
+    u_char 						cfs_bmg;							/* base minimum granularity */
+    u_char 						cfs_bsched;							/* base scheduling period */
 
-    u_char  					cfs_priweight;				/* priority weighting (calculated from various scheduling factors) */
+    u_char  					cfs_priweight;						/* priority weighting (calculated from various scheduling factors) */
 };
 
 unsigned int 	cfs_decay(struct proc *, u_char);
@@ -74,9 +87,9 @@ unsigned int 	cfs_update(struct proc *, u_char);
 int				cfs_schedcpu(struct proc *);
 
 /* Not implemented */
-#define NCFSQS 	        8 					    			/* 8 CFS Queues */
-#define CFQS 	        (NQS/NCFSQS)		    			/* Number of CFS Queues to Number of Run Queues (32/8 = 4) */
-extern struct sched_cfs cfs_runq[CFQS];  					/* cfs run-queues */
+#define NCFSQS 	        8 					    					/* 8 CFS Queues */
+#define CFQS 	        (NQS/NCFSQS)		    					/* Number of CFS Queues to Number of Run Queues (32/8 = 4) */
+extern struct sched_cfs cfs_runq[CFQS];  							/* cfs run-queues */
 
 #endif /* _SYS_GSCHED_CFS_H */
 

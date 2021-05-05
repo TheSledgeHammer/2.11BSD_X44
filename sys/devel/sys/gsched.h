@@ -39,6 +39,7 @@
  * Hierarchy:
  * - 2.11BSD Scheduler: (aka kernel_synch.c)
  * 		- Same responsibilities as before
+ * 		- Priorities, Run-Queues, etc
  * - EDF:
  * 		- Executes within schedcpu in kernel_synch.c
  * 		- Runs on a per run-queue basis (i.e. single run-queue)
@@ -96,6 +97,7 @@ struct gsched {
 	struct proc 			*gsc_proc;		/* pointer to proc */
 
     u_char  				gsc_priweight;	/* priority weighting: see below. */
+    char					gsc_slack;		/* slack / laxity time */
 
     /* pointer to schedulers */
     struct gsched_edf		*gsc_edf;		/* earliest deadline first scheduler */

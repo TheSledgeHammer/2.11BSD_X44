@@ -62,7 +62,6 @@ IDTVEC(resume_/**/name)			;\
 
 /* Interrupt from the local APIC IPI */
 RECURSE(lapic_ipi)
-
 IDTVEC(lapic_ipi)
 		pushl	$0		
 		pushl	$T_ASTFLT
@@ -165,6 +164,7 @@ RESUME(lapic_ltimer)
 #endif /* NLAPIC > 0 */
 
 IDTVEC(spurious)
+		ret
 
 
 #define IOAPIC_ICU(irq_num)												 \
@@ -209,6 +209,8 @@ IDTVEC(spurious)
 		movl	IS_PIC(%ebp),%edi										;\
 79:
 
+
+		.globl	_C_LABEL(apic_strayintr)
 
 #define MY_COUNT 					_C_LABEL(cnt)
 #define INTR_ADDR(intr, irq_num) 	(_C_LABEL(intr)+(irq_num) * 4)
@@ -482,10 +484,65 @@ IDTVEC(x2apic_recurse)
 		.long	_C_LABEL(Xx2apic_recurse28), _C_LABEL(Xx2apic_recurse29)
 		.long	_C_LABEL(Xx2apic_recurse30), _C_LABEL(Xx2apic_recurse31)
 
+/* Some bogus data, to keep vmstat happy, for now. */
+		.globl	_C_LABEL(apicintrnames), _C_LABEL(x2apicintrnames)
+		.globl	_C_LABEL(apicintrcnt), _C_LABEL(x2apicintrcnt)
+		
+		/* Names */
+_C_LABEL(apicintrnames):
+		.asciz	"apic0", "apic1", "apic2", "apic3"
+		.asciz	"apic4", "apic5", "apic6", "apic7"
+		.asciz	"apic8", "apic9", "apic10", "apic11"
+		.asciz	"apic12", "apic13", "apic14", "apic15"
+		.asciz	"apic16", "apic17", "apic18", "apic19"
+		.asciz	"apic20", "apic21", "apic22", "apic23"
+		.asciz	"apic24", "apic25", "apic26", "apic27"
+		.asciz	"apic28", "apic29", "apic30", "apic31"
+_C_LABEL(apicstrayintrnames):
+		.asciz	"apicstray0", "apicstray1", "apicstray2", "apicstray3"
+		.asciz	"apicstray4", "apicstray5", "apicstray6", "apicstray7"
+		.asciz	"apicstray8", "apicstray9", "apicstray10", "apicstray11"
+		.asciz	"apicstray12", "apicstray13", "apicstray14", "apicstray15"
+		.asciz	"apicstray16", "apicstray17", "apicstray18", "apicstray19"
+		.asciz	"apicstray20", "apicstray21", "apicstray22", "apicstray23"
+		.asciz	"apicstray24", "apicstray25", "apicstray26", "apicstray27"
+		.asciz	"apicstray28", "apicstray29", "apicstray30", "apicstray31"
+_C_LABEL(x2apicintrnames):
+		.asciz	"x2apic0", "x2apic1", "x2apic2", "x2apic3"
+		.asciz	"x2apic4", "x2apic5", "x2apic6", "x2apic7"
+		.asciz	"x2apic8", "x2apic9", "x2apic10", "x2apic11"
+		.asciz	"x2apic12", "x2apic13", "x2apic14", "x2apic15"
+		.asciz	"x2apic16", "x2apic17", "x2apic18", "x2apic19"
+		.asciz	"x2apic20", "x2apic21", "x2apic22", "x2apic23"
+		.asciz	"x2apic24", "x2apic25", "x2apic26", "x2apic27"
+		.asciz	"x2apic28", "x2apic29", "x2apic30", "x2apic31"
+_C_LABEL(x2apicstrayintrnames):
+		.asciz	"x2apicstray0", "x2apicstray1", "x2apicstray2", "x2apicstray3"
+		.asciz	"x2apicstray4", "x2apicstray5", "x2apicstray6", "x2apicstray7"
+		.asciz	"x2apicstray8", "x2apicstray9", "x2apicstray10", "x2apicstray11"
+		.asciz	"x2apicstray12", "x2apicstray13", "x2apicstray14", "x2apicstray15"
+		.asciz	"x2apicstray16", "x2apicstray17", "x2apicstray18", "x2apicstray19"
+		.asciz	"x2apicstray20", "x2apicstray21", "x2apicstray22", "x2apicstray23"
+		.asciz	"x2apicstray24", "x2apicstray25", "x2apicstray26", "x2apicstray27"
+		.asciz	"x2apicstray28", "x2apicstray29", "x2apicstray30", "x2apicstray31"
+		
+		/* And counters */
+		.data
+		.align 4
+_C_LABEL(apicintrcnt):
+		.long	0, 0, 0, 0, 0, 0, 0, 0
+		.long	0, 0, 0, 0, 0, 0, 0, 0
+		.long	0, 0, 0, 0, 0, 0, 0, 0
+		.long	0, 0, 0, 0, 0, 0, 0, 0
+_C_LABEL(x2apicintrcnt):
+		.long	0, 0, 0, 0, 0, 0, 0, 0
+		.long	0, 0, 0, 0, 0, 0, 0, 0
+		.long	0, 0, 0, 0, 0, 0, 0, 0
+		.long	0, 0, 0, 0, 0, 0, 0, 0
 #endif
 
 ENTRY(lapic_eoi)
-		cmpl	$0,x2apic_mode											
+		cmpl	$0,_C_LABEL(x2apic_mode)											
 		jne		1f														
 		movl	_C_LABEL(local_apic_va),%eax							
 		movl	$0,LAPIC_EOI(%eax)										

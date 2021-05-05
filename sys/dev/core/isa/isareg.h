@@ -150,5 +150,20 @@
 #define	IO_NPXSIZE	16	/* 80387/80487 NPX registers */
 #define	IO_VGASIZE	16	/* VGA controllers */
 #define	IO_PMPSIZE	2	/* 82347 Power Management Peripheral */
-
 #endif /* !IO_ISASIZES */
+
+/*
+ * Input / Output Memory Physical Addresses
+ */
+
+#ifndef	IOM_BEGIN
+#define	IOM_BEGIN	0x0a0000		/* Start of I/O Memory "hole" */
+#define	IOM_END		0x100000		/* End of I/O Memory "hole" */
+#define	IOM_SIZE	(IOM_END - IOM_BEGIN)
+
+/*
+ * ISA DMA works < 16M (24 address lines).
+ */
+#define ISA_DMA_BOUNCE_THRESHOLD	(16 * 1024 * 1024)
+
+#endif /* !IOM_BEGIN */

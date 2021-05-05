@@ -593,7 +593,7 @@ i82489_ipi_init(int target)
 		print("%s: ESR %08x\n", __func__, esr);
 	}
 
-	return 0;
+	return (0);
 }
 
 static int
@@ -618,7 +618,7 @@ i82489_ipi_startup(int target, int vec)
 		print("%s: ESR %08x\n", __func__, esr);
 	}
 
-	return 0;
+	return (0);
 }
 
 static int
@@ -645,7 +645,7 @@ i82489_ipi(int vec, int target, int dl)
 #endif
 	splx(s);
 
-	return result;
+	return (result);
 }
 
 static int
@@ -687,16 +687,16 @@ int
 i386_ipi_init(int target)
 {
 	if (x2apic_mode) {
-		return x2apic_ipi_init(target);
+		return (x2apic_ipi_init(target));
 	}
-	return i82489_ipi_init(target);
+	return (i82489_ipi_init(target));
 }
 
 int
 i386_ipi_startup(int target, int vec)
 {
 	if (x2apic_mode) {
-		return x2apic_ipi_startup(target, vec);
+		return (x2apic_ipi_startup(target, vec));
 	}
-	return i82489_ipi_startup(target, vec);
+	return (i82489_ipi_startup(target, vec));
 }

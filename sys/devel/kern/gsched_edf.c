@@ -152,6 +152,7 @@ edf_schedcpu(p)
 
 	edf_compute(edf);
 	p->p_gsched->gsc_priweight = edf->edf_priweight;
+	p->p_gsched->gsc_slack = edf->edf_slack;
 
 	if(edf_test(edf)) {
 		return (0);

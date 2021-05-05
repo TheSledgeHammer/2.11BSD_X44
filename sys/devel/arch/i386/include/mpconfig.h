@@ -53,6 +53,7 @@ struct mp_intrs_list;
 LIST_HEAD(mp_intrs_list, mp_intr_map);
 struct mp_intr_map {
 	LIST_ENTRY(mp_intr_map) entry;
+	struct mp_intr_map		*next;
 	struct mp_bus 			*bus;
 	struct ioapic_softc 	*ioapic;
 	int 					bus_pin;
@@ -66,7 +67,7 @@ struct mp_intr_map {
 	int 					sflags;					/* other, software flags (see below) */
 };
 
-#define MPI_OVR				0x0001	/* Was overridden by an ACPI OVR */
+#define MPI_OVR				0x0001					/* Was overridden by an ACPI OVR */
 
 #if defined(_KERNEL)
 extern int 					mp_verbose;
