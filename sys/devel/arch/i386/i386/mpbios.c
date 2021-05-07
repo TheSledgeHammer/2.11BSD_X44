@@ -727,7 +727,8 @@ mpbios_cpus(struct device *self)
  *
  * Fill in: trigger mode, polarity, and possibly delivery mode.
  */
-static void mp_cfg_special_intr (entry, redir)
+static void
+mp_cfg_special_intr (entry, redir)
 	const struct mpbios_int *entry;
 	u_int32_t *redir;
 {
@@ -764,7 +765,8 @@ static void mp_cfg_special_intr (entry, redir)
 
 /* XXX too much duplicated code here. */
 
-static void mp_cfg_pci_intr (entry, redir)
+static void
+mp_cfg_pci_intr (entry, redir)
 	const struct mpbios_int *entry;
 	u_int32_t *redir;
 {
@@ -804,7 +806,8 @@ static void mp_cfg_pci_intr (entry, redir)
 }
 
 #ifdef I386_MPBIOS_SUPPORT_EISA
-static void mp_cfg_eisa_intr (entry, redir)
+static void
+mp_cfg_eisa_intr (entry, redir)
 	const struct mpbios_int *entry;
 	u_int32_t *redir;
 {
@@ -855,7 +858,8 @@ static void mp_cfg_eisa_intr (entry, redir)
 #endif
 
 
-static void mp_cfg_isa_intr (entry, redir)
+static void
+mp_cfg_isa_intr (entry, redir)
 	const struct mpbios_int *entry;
 	u_int32_t *redir;
 {
@@ -895,32 +899,34 @@ static void mp_cfg_isa_intr (entry, redir)
 }
 
 
-static void mp_print_special_intr (intr)
+static void
+mp_print_special_intr (intr)
 	int intr;
 {
 }
 
-static void mp_print_pci_intr (intr)
+static void
+mp_print_pci_intr (intr)
 	int intr;
 {
 	printf(" device %d INT_%c", (intr>>2)&0x1f, 'A' + (intr & 0x3));
 }
 
-static void mp_print_isa_intr (intr)
+static void
+mp_print_isa_intr (intr)
 	int intr;
 {
 	printf(" irq %d", intr);
 }
 
 #ifdef I386_MPBIOS_SUPPORT_EISA
-static void mp_print_eisa_intr (intr)
+static void
+mp_print_eisa_intr (intr)
 	int intr;
 {
 	printf(" EISA irq %d", intr);
 }
 #endif
-
-
 
 #define TAB_UNIT		4
 #define TAB_ROUND(a)	_TAB_ROUND(a, TAB_UNIT)

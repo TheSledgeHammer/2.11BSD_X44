@@ -40,8 +40,8 @@ extern volatile u_int32_t  local_apic_va;
 extern boolean_t x2apic_mode;
 #endif
 
-#define ioapic_asm_ack(num) \
-	movl	$0,local_apic_va + LAPIC_EOI
+#define ioapic_asm_ack(num) 	\
+	movl	$0,_C_LABEL_(local_apic_va) + LAPIC_EOI
 
 /*
  * "spurious interrupt vector"; vector used by interrupt which was

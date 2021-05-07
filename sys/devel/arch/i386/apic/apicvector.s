@@ -40,39 +40,35 @@
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>
 
-#define	IRQ_BIT(irq_num)	    	(1 << ((irq_num) % 8))
-#define	IRQ_BYTE(irq_num)	    	((irq_num) >> 3)
+/* belongs in icu.s when ready */
+		.globl _C_LABEL(idepth)
+_C_LABEL(idepth):
+		.long	0xffff
 
-#define	RECURSE(name)			\
-IDTVEC(recurse_/**/name)		;\
-		pushfl					;\
-		pushl	%cs				;\
-		pushl	%esi			;\
-		pushl	$0				;\
-		pushl	$T_ASTFLT		;\
-		INTRENTRY				;\
-
-#define	RESUME(name)			\
-IDTVEC(resume_/**/name)			;\
-		cli						;\
-		jmp		1f				;\
-
-#ifdef SMP
+IDTVEC(spurious)
+		ret
+		
+#ifdef SMP	
 #if NLAPIC > 0
-
 /* Interrupt from the local APIC IPI */
-RECURSE(lapic_ipi)
-IDTVEC(lapic_ipi)
+IDTVEC(lapic_recurse_ipi)		
+		pushfl					
+		pushl	%cs				
+		pushl	%esi			
+		pushl	$0				
+		pushl	$T_ASTFLT		
+		INTRENTRY				
+IDTVEC(lapic_intr_ipi)
 		pushl	$0		
 		pushl	$T_ASTFLT
 		INTRENTRY		
 		movl	$0,local_apic+LAPIC_EOI
-		movl	_C_LABEL(ilevel),%ebx
+		movl	_C_LABEL(cpl),%ebx
 		cmpl	$IPL_IPI,%ebx
 		jae		2f
 1:
 		incl	_C_LABEL(idepth)
-		movl	$IPL_IPI,_C_LABEL(ilevel)
+		movl	$IPL_IPI,_C_LABEL(cpl)
         sti
 		pushl	%ebx
 		call	_C_LABEL(i386_ipi_handler)
@@ -81,8 +77,7 @@ IDTVEC(lapic_ipi)
 		orl		$(1 << LIR_IPI),_C_LABEL(ipending)
 		sti
 		INTRFASTEXIT
-		
-IDTVEC(x2apic_ipi)
+IDTVEC(x2apic_intr_ipi)
 		pushl	$0
 		pushl	$T_ASTFLT
 		INTRENTRY
@@ -90,15 +85,16 @@ IDTVEC(x2apic_ipi)
 		xorl	%eax,%eax
 		xorl	%edx,%edx
 		wrmsr
-		movl	_C_LABEL(ilevel),%ebx
+		movl	_C_LABEL(cpl),%ebx
 		cmpl	$IPL_HIGH,%ebx
 		jae		2f
 		jmp		1f
-
-RESUME(lapic_ipi)
+IDTVEC(lapic_resume_ipi)			
+		cli						
+		jmp		1f
 
 /* Interrupt from the local APIC TLB */
-IDTVEC(lapic_tlb)
+IDTVEC(lapic_intr_tlb)
 		pushl	$0
 		pushl	$T_ASTFLT
 		INTRENTRY
@@ -107,7 +103,7 @@ IDTVEC(lapic_tlb)
 		movl	$0,LAPIC_EOI(%eax)
 		INTRFASTEXIT
 		
-IDTVEC(x2apic_tlb)
+IDTVEC(x2apic_intr_tlb)
 		pushl	$0
 		pushl	$T_ASTFLT
 		INTRENTRY
@@ -118,23 +114,28 @@ IDTVEC(x2apic_tlb)
 		wrmsr
 		INTRFASTEXIT
 
-#endif
+#endif /* SMP */
 
 /* Interrupt from the local APIC timer. */
-RECURSE(lapic_ltimer)
-
-IDTVEC(lapic_ltimer)
+IDTVEC(lapic_recurse_ltimer)		
+		pushfl					
+		pushl	%cs				
+		pushl	%esi			
+		pushl	$0				
+		pushl	$T_ASTFLT		
+		INTRENTRY	
+IDTVEC(lapic_intr_ltimer)
 		pushl	$0
 		pushl	$T_ASTFLT
 		INTRENTRY
 		movl	_C_LABEL(local_apic_va),%ebx
 		movl	$0,LAPIC_EOI(%ebx)
-		movl	_C_LABEL(ilevel),%ebx
+		movl	_C_LABEL(cpl),%ebx
 		cmpl	$IPL_CLOCK,%ebx
 		jae		2f
 1:
 		incl	_C_LABEL(idepth)
-		movl	$IPL_CLOCK, _C_LABEL(ilevel)
+		movl	$IPL_CLOCK, _C_LABEL(cpl)
 		sti
 		pushl	%ebx
 		pushl	$0
@@ -142,11 +143,10 @@ IDTVEC(lapic_ltimer)
 		addl	$4,%esp		
 		jmp		_C_LABEL(Xdoreti)
 2:
-		orl	$(1 << LIR_TIMER),_C_LABEL(ipending)
+		orl		$(1 << LIR_TIMER),_C_LABEL(ipending)
 		sti
 		INTRFASTEXIT
-		
-IDTVEC(x2apic_ltimer)
+IDTVEC(x2apic_intr_ltimer)
 		pushl	$0
 		pushl	$T_ASTFLT
 		INTRENTRY
@@ -154,19 +154,16 @@ IDTVEC(x2apic_ltimer)
 		xorl	%eax,%eax
 		xorl	%edx,%edx
 		wrmsr
-		movl	_C_LABEL(ilevel),%ebx
+		movl	_C_LABEL(cpl),%ebx
 		cmpl	$IPL_CLOCK,%ebx
 		jae		2f
 		jmp		1f
-				
-RESUME(lapic_ltimer)
+IDTVEC(lapic_resume_ltimer)			
+		cli						
+		jmp		1f
 
 #endif /* NLAPIC > 0 */
-
-IDTVEC(spurious)
-		ret
-
-
+		
 #define IOAPIC_ICU(irq_num)												 \
 		movl	_C_LABEL(local_apic_va),%eax							;\
 		movl	$0,LAPIC_EOI(%eax)
@@ -209,13 +206,8 @@ IDTVEC(spurious)
 		movl	IS_PIC(%ebp),%edi										;\
 79:
 
-
-		.globl	_C_LABEL(apic_strayintr)
-
 #define MY_COUNT 					_C_LABEL(cnt)
 #define INTR_ADDR(intr, irq_num) 	(_C_LABEL(intr)+(irq_num) * 4)
-
-#define	XAPICSTRAY(irq_num)			_Xapic_stray/**/irq_num
 
 	/*
 	 * I/O APIC interrupt.
@@ -247,14 +239,14 @@ IDTVEC(name_/**/intr/**/irq_num)                                        ;\
 		testl	%ebp,%ebp												;\
 		jz		9f						/* stray */						;\
 		movl	IS_MAXLEVEL(%ebp),%ebx									;\
-		movl	_C_LABEL(ilevel),%esi									;\
+		movl	_C_LABEL(cpl),%esi										;\
 		cmpl	%ebx,%esi												;\
 		jae		10f						/* currently masked; hold it */	;\
 		incl	MY_COUNT+V_INTR			/* statistical info */			;\
 		sti																;\
 1:																		;\
 		pushl	%esi													;\
-		movl	%ebx,_C_LABEL(ilevel)									;\
+		movl	%ebx,_C_LABEL(cpl)										;\
 		sti																;\
 		incl	_C_LABEL(idepth)										;\
 		movl	IS_HANDLERS(%ebp),%ebx									;\
@@ -264,7 +256,7 @@ IDTVEC(name_/**/intr/**/irq_num)                                        ;\
 		jle		7f														;\
 		pushl	IH_ARG(%ebx)											;\
 		movl	IH_FUN(%ebx),%eax										;\
-		movl	%edi,_C_LABEL(ilevel)									;\
+		movl	%edi,_C_LABEL(cpl)										;\
 		movl	IH_NEXT(%ebx),%ebx		/* next handler in chain */		;\
 		call	*%eax					/* call it */					;\
 		addl	$4,%esp					/* toss the arg */				;\
@@ -293,20 +285,6 @@ IDTVEC(name_/**/intr/**/irq_num)                                        ;\
 9:																		;\
 		IOAPIC_UNMASK(irq_num)											;\
 		late_icu(irq_num)												;\
-		
-IDTVEC(name_/**/stray/**/irq_num)										;\
-		pushl	$num													;\
-		call	_C_LABEL(apic_stray)									;\
-		addl	$4,%esp													;\
-		jmp		8b														;\		
-
-#define	APIC_STRAY_INITIALIZE 	                                        \
-		xorl	%esi,%esi				/* nobody claimed it yet */
-#define	APIC_STRAY_INTEGRATE 	                                        \
-		orl		%eax,%esi				/* maybe he claimed it */	
-#define	APIC_STRAY_TEST 			                                    \
-		testl	%esi,%esi				/* no more handlers */			;\
-		jz		XAPICSTRAY(irq_num)		/* nobody claimed it */
 
 #if NIOAPIC > 0
 
@@ -376,242 +354,216 @@ APICINTR(x2apic, 29, X2APIC_ICU)
 APICINTR(x2apic, 30, X2APIC_ICU)
 APICINTR(x2apic, 31, X2APIC_ICU)
 
-IDTVEC(apic_intr)
-		.long	_C_LABEL(Xapic_intr0), _C_LABEL(Xapic_intr1)
-		.long	_C_LABEL(Xapic_intr2), _C_LABEL(Xapic_intr3)
-		.long	_C_LABEL(Xapic_intr4), _C_LABEL(Xapic_intr5)
-		.long	_C_LABEL(Xapic_intr6), _C_LABEL(Xapic_intr7)
-		.long	_C_LABEL(Xapic_intr8), _C_LABEL(Xapic_intr9)
-		.long	_C_LABEL(Xapic_intr10), _C_LABEL(Xapic_intr11)
-		.long	_C_LABEL(Xapic_intr12), _C_LABEL(Xapic_intr13)
-		.long	_C_LABEL(Xapic_intr14), _C_LABEL(Xapic_intr15)
-		.long	_C_LABEL(Xapic_intr16), _C_LABEL(Xapic_intr17)
-		.long	_C_LABEL(Xapic_intr18), _C_LABEL(Xapic_intr19)
-		.long	_C_LABEL(Xapic_intr20), _C_LABEL(Xapic_intr21)
-		.long	_C_LABEL(Xapic_intr22), _C_LABEL(Xapic_intr23)
-		.long	_C_LABEL(Xapic_intr24), _C_LABEL(Xapic_intr25)
-		.long	_C_LABEL(Xapic_intr26), _C_LABEL(Xapic_intr27)
-		.long	_C_LABEL(Xapic_intr28), _C_LABEL(Xapic_intr29)
-		.long	_C_LABEL(Xapic_intr30), _C_LABEL(Xapic_intr31)
-
-IDTVEC(apic_resume)
-		.long	_C_LABEL(Xapic_resume0), _C_LABEL(Xapic_resume1)
-		.long	_C_LABEL(Xapic_resume2), _C_LABEL(Xapic_resume3)
-		.long	_C_LABEL(Xapic_resume4), _C_LABEL(Xapic_resume5)
-		.long	_C_LABEL(Xapic_resume6), _C_LABEL(Xapic_resume7)
-		.long	_C_LABEL(Xapic_resume8), _C_LABEL(Xapic_resume9)
-		.long	_C_LABEL(Xapic_resume10), _C_LABEL(Xapic_resume11)
-		.long	_C_LABEL(Xapic_resume12), _C_LABEL(Xapic_resume13)
-		.long	_C_LABEL(Xapic_resume14), _C_LABEL(Xapic_resume15)
-		.long	_C_LABEL(Xapic_resume16), _C_LABEL(Xapic_resume17)
-		.long	_C_LABEL(Xapic_resume18), _C_LABEL(Xapic_resume19)
-		.long	_C_LABEL(Xapic_resume20), _C_LABEL(Xapic_resume21)
-		.long	_C_LABEL(Xapic_resume22), _C_LABEL(Xapic_resume23)
-		.long	_C_LABEL(Xapic_resume24), _C_LABEL(Xapic_resume25)
-		.long	_C_LABEL(Xapic_resume26), _C_LABEL(Xapic_resume27)
-		.long	_C_LABEL(Xapic_resume28), _C_LABEL(Xapic_resume29)
-		.long	_C_LABEL(Xapic_resume30), _C_LABEL(Xapic_resume31)
-
-IDTVEC(apic_recurse)
-		.long	_C_LABEL(Xapic_recurse0), _C_LABEL(Xapic_recurse1)
-		.long	_C_LABEL(Xapic_recurse2), _C_LABEL(Xapic_recurse3)
-		.long	_C_LABEL(Xapic_recurse4), _C_LABEL(Xapic_recurse5)
-		.long	_C_LABEL(Xapic_recurse6), _C_LABEL(Xapic_recurse7)
-		.long	_C_LABEL(Xapic_recurse8), _C_LABEL(Xapic_recurse9)
-		.long	_C_LABEL(Xapic_recurse10), _C_LABEL(Xapic_recurse11)
-		.long	_C_LABEL(Xapic_recurse12), _C_LABEL(Xapic_recurse13)
-		.long	_C_LABEL(Xapic_recurse14), _C_LABEL(Xapic_recurse15)
-		.long	_C_LABEL(Xapic_recurse16), _C_LABEL(Xapic_recurse17)
-		.long	_C_LABEL(Xapic_recurse18), _C_LABEL(Xapic_recurse19)
-		.long	_C_LABEL(Xapic_recurse20), _C_LABEL(Xapic_recurse21)
-		.long	_C_LABEL(Xapic_recurse22), _C_LABEL(Xapic_recurse23)
-		.long	_C_LABEL(Xapic_recurse24), _C_LABEL(Xapic_recurse25)
-		.long	_C_LABEL(Xapic_recurse26), _C_LABEL(Xapic_recurse27)
-		.long	_C_LABEL(Xapic_recurse28), _C_LABEL(Xapic_recurse29)
-		.long	_C_LABEL(Xapic_recurse30), _C_LABEL(Xapic_recurse31)
-
-IDTVEC(x2apic_intr)
-		.long	_C_LABEL(Xx2apic_intr0), _C_LABEL(Xx2apic_intr1)
-		.long	_C_LABEL(Xx2apic_intr2), _C_LABEL(Xx2apic_intr3)
-		.long	_C_LABEL(Xx2apic_intr4), _C_LABEL(Xx2apic_intr5)
-		.long	_C_LABEL(Xx2apic_intr6), _C_LABEL(Xx2apic_intr7)
-		.long	_C_LABEL(Xx2apic_intr8), _C_LABEL(Xx2apic_intr9)
-		.long	_C_LABEL(Xx2apic_intr10), _C_LABEL(Xx2apic_intr11)
-		.long	_C_LABEL(Xx2apic_intr12), _C_LABEL(Xx2apic_intr13)
-		.long	_C_LABEL(Xx2apic_intr14), _C_LABEL(Xx2apic_intr15)
-		.long	_C_LABEL(Xx2apic_intr16), _C_LABEL(Xx2apic_intr17)
-		.long	_C_LABEL(Xx2apic_intr18), _C_LABEL(Xx2apic_intr19)
-		.long	_C_LABEL(Xx2apic_intr20), _C_LABEL(Xx2apic_intr21)
-		.long	_C_LABEL(Xx2apic_intr22), _C_LABEL(Xx2apic_intr23)
-		.long	_C_LABEL(Xx2apic_intr24), _C_LABEL(Xx2apic_intr25)
-		.long	_C_LABEL(Xx2apic_intr26), _C_LABEL(Xx2apic_intr27)
-		.long	_C_LABEL(Xx2apic_intr28), _C_LABEL(Xx2apic_intr29)
-		.long	_C_LABEL(Xx2apic_intr30), _C_LABEL(Xx2apic_intr31)
-
-IDTVEC(x2apic_resume)
-		.long	_C_LABEL(Xx2apic_resume0), _C_LABEL(Xx2apic_resume1)
-		.long	_C_LABEL(Xx2apic_resume2), _C_LABEL(Xx2apic_resume3)
-		.long	_C_LABEL(Xx2apic_resume4), _C_LABEL(Xx2apic_resume5)
-		.long	_C_LABEL(Xx2apic_resume6), _C_LABEL(Xx2apic_resume7)
-		.long	_C_LABEL(Xx2apic_resume8), _C_LABEL(Xx2apic_resume9)
-		.long	_C_LABEL(Xx2apic_resume10), _C_LABEL(Xx2apic_resume11)
-		.long	_C_LABEL(Xx2apic_resume12), _C_LABEL(Xx2apic_resume13)
-		.long	_C_LABEL(Xx2apic_resume14), _C_LABEL(Xx2apic_resume15)
-		.long	_C_LABEL(Xx2apic_resume16), _C_LABEL(Xx2apic_resume17)
-		.long	_C_LABEL(Xx2apic_resume18), _C_LABEL(Xx2apic_resume19)
-		.long	_C_LABEL(Xx2apic_resume20), _C_LABEL(Xx2apic_resume21)
-		.long	_C_LABEL(Xx2apic_resume22), _C_LABEL(Xx2apic_resume23)
-		.long	_C_LABEL(Xx2apic_resume24), _C_LABEL(Xx2apic_resume25)
-		.long	_C_LABEL(Xx2apic_resume26), _C_LABEL(Xx2apic_resume27)
-		.long	_C_LABEL(Xx2apic_resume28), _C_LABEL(Xx2apic_resume29)
-		.long	_C_LABEL(Xx2apic_resume30), _C_LABEL(Xx2apic_resume31)
-
-IDTVEC(x2apic_recurse)
-		.long	_C_LABEL(Xx2apic_recurse0), _C_LABEL(Xx2apic_recurse1)
-		.long	_C_LABEL(Xx2apic_recurse2), _C_LABEL(Xx2apic_recurse3)
-		.long	_C_LABEL(Xx2apic_recurse4), _C_LABEL(Xx2apic_recurse5)
-		.long	_C_LABEL(Xx2apic_recurse6), _C_LABEL(Xx2apic_recurse7)
-		.long	_C_LABEL(Xx2apic_recurse8), _C_LABEL(Xx2apic_recurse9)
-		.long	_C_LABEL(Xx2apic_recurse10), _C_LABEL(Xx2apic_recurse11)
-		.long	_C_LABEL(Xx2apic_recurse12), _C_LABEL(Xx2apic_recurse13)
-		.long	_C_LABEL(Xx2apic_recurse14), _C_LABEL(Xx2apic_recurse15)
-		.long	_C_LABEL(Xx2apic_recurse16), _C_LABEL(Xx2apic_recurse17)
-		.long	_C_LABEL(Xx2apic_recurse18), _C_LABEL(Xx2apic_recurse19)
-		.long	_C_LABEL(Xx2apic_recurse20), _C_LABEL(Xx2apic_recurse21)
-		.long	_C_LABEL(Xx2apic_recurse22), _C_LABEL(Xx2apic_recurse23)
-		.long	_C_LABEL(Xx2apic_recurse24), _C_LABEL(Xx2apic_recurse25)
-		.long	_C_LABEL(Xx2apic_recurse26), _C_LABEL(Xx2apic_recurse27)
-		.long	_C_LABEL(Xx2apic_recurse28), _C_LABEL(Xx2apic_recurse29)
-		.long	_C_LABEL(Xx2apic_recurse30), _C_LABEL(Xx2apic_recurse31)
-
-/* Some bogus data, to keep vmstat happy, for now. */
-		.globl	_C_LABEL(apicintrnames), _C_LABEL(x2apicintrnames)
-		.globl	_C_LABEL(apicintrcnt), _C_LABEL(x2apicintrcnt)
+#if NIOAPIC > 0
+		.globl _C_LABEL(apic_level_stubs)
+_C_LABEL(apic_level_stubs):
+		.long	_C_LABEL(Xapic_level_intr0), _C_LABEL(Xapic_level_intr1)
+		.long	_C_LABEL(Xapic_level_intr2), _C_LABEL(Xapic_level_intr3)
+		.long	_C_LABEL(Xapic_level_intr4), _C_LABEL(Xapic_level_intr5)
+		.long	_C_LABEL(Xapic_level_intr6), _C_LABEL(Xapic_level_intr7)
+		.long	_C_LABEL(Xapic_level_intr8), _C_LABEL(Xapic_level_intr9)
+		.long	_C_LABEL(Xapic_level_intr10), _C_LABEL(Xapic_level_intr11)
+		.long	_C_LABEL(Xapic_level_intr12), _C_LABEL(Xapic_level_intr13)
+		.long	_C_LABEL(Xapic_level_intr14), _C_LABEL(Xapic_level_intr15)
+		.long	_C_LABEL(Xapic_level_intr16), _C_LABEL(Xapic_level_intr17)
+		.long	_C_LABEL(Xapic_level_intr18), _C_LABEL(Xapic_level_intr19)
+		.long	_C_LABEL(Xapic_level_intr20), _C_LABEL(Xapic_level_intr21)
+		.long	_C_LABEL(Xapic_level_intr22), _C_LABEL(Xapic_level_intr23)
+		.long	_C_LABEL(Xapic_level_intr24), _C_LABEL(Xapic_level_intr25)
+		.long	_C_LABEL(Xapic_level_intr26), _C_LABEL(Xapic_level_intr27)
+		.long	_C_LABEL(Xapic_level_intr28), _C_LABEL(Xapic_level_intr29)
+		.long	_C_LABEL(Xapic_level_intr30), _C_LABEL(Xapic_level_intr31)
+		/* resume interrupts */
+		.long	_C_LABEL(Xapic_level_resume0), _C_LABEL(Xapic_level_resume1)
+		.long	_C_LABEL(Xapic_level_resume2), _C_LABEL(Xapic_level_resume3)
+		.long	_C_LABEL(Xapic_level_resume4), _C_LABEL(Xapic_level_resume5)
+		.long	_C_LABEL(Xapic_level_resume6), _C_LABEL(Xapic_level_resume7)
+		.long	_C_LABEL(Xapic_level_resume8), _C_LABEL(Xapic_level_resume9)
+		.long	_C_LABEL(Xapic_level_resume10), _C_LABEL(Xapic_level_resume11)
+		.long	_C_LABEL(Xapic_level_resume12), _C_LABEL(Xapic_level_resume13)
+		.long	_C_LABEL(Xapic_level_resume14), _C_LABEL(Xapic_level_resume15)
+		.long	_C_LABEL(Xapic_level_resume16), _C_LABEL(Xapic_level_resume17)
+		.long	_C_LABEL(Xapic_level_resume18), _C_LABEL(Xapic_level_resume19)
+		.long	_C_LABEL(Xapic_level_resume20), _C_LABEL(Xapic_level_resume21)
+		.long	_C_LABEL(Xapic_level_resume22), _C_LABEL(Xapic_level_resume23)
+		.long	_C_LABEL(Xapic_level_resume24), _C_LABEL(Xapic_level_resume25)
+		.long	_C_LABEL(Xapic_level_resume26), _C_LABEL(Xapic_level_resume27)
+		.long	_C_LABEL(Xapic_level_resume28), _C_LABEL(Xapic_level_resume29)
+		.long	_C_LABEL(Xapic_level_resume30), _C_LABEL(Xapic_level_resume31)
+		/* recurse interrupts */
+		.long	_C_LABEL(Xapic_level_recurse0), _C_LABEL(Xapic_level_recurse1)
+		.long	_C_LABEL(Xapic_level_recurse2), _C_LABEL(Xapic_level_recurse3)
+		.long	_C_LABEL(Xapic_level_recurse4), _C_LABEL(Xapic_level_recurse5)
+		.long	_C_LABEL(Xapic_level_recurse6), _C_LABEL(Xapic_level_recurse7)
+		.long	_C_LABEL(Xapic_level_recurse8), _C_LABEL(Xapic_level_recurse9)
+		.long	_C_LABEL(Xapic_level_recurse10), _C_LABEL(Xapic_level_recurse11)
+		.long	_C_LABEL(Xapic_level_recurse12), _C_LABEL(Xapic_level_recurse13)
+		.long	_C_LABEL(Xapic_level_recurse14), _C_LABEL(Xapic_level_recurse15)
+		.long	_C_LABEL(Xapic_level_recurse16), _C_LABEL(Xapic_level_recurse17)
+		.long	_C_LABEL(Xapic_level_recurse18), _C_LABEL(Xapic_level_recurse19)
+		.long	_C_LABEL(Xapic_level_recurse20), _C_LABEL(Xapic_level_recurse21)
+		.long	_C_LABEL(Xapic_level_recurse22), _C_LABEL(Xapic_level_recurse23)
+		.long	_C_LABEL(Xapic_level_recurse24), _C_LABEL(Xapic_level_recurse25)
+		.long	_C_LABEL(Xapic_level_recurse26), _C_LABEL(Xapic_level_recurse27)
+		.long	_C_LABEL(Xapic_level_recurse28), _C_LABEL(Xapic_level_recurse29)
+		.long	_C_LABEL(Xapic_level_recurse30), _C_LABEL(Xapic_level_recurse31)
 		
-		/* Names */
-_C_LABEL(apicintrnames):
-		.asciz	"apic0", "apic1", "apic2", "apic3"
-		.asciz	"apic4", "apic5", "apic6", "apic7"
-		.asciz	"apic8", "apic9", "apic10", "apic11"
-		.asciz	"apic12", "apic13", "apic14", "apic15"
-		.asciz	"apic16", "apic17", "apic18", "apic19"
-		.asciz	"apic20", "apic21", "apic22", "apic23"
-		.asciz	"apic24", "apic25", "apic26", "apic27"
-		.asciz	"apic28", "apic29", "apic30", "apic31"
-_C_LABEL(apicstrayintrnames):
-		.asciz	"apicstray0", "apicstray1", "apicstray2", "apicstray3"
-		.asciz	"apicstray4", "apicstray5", "apicstray6", "apicstray7"
-		.asciz	"apicstray8", "apicstray9", "apicstray10", "apicstray11"
-		.asciz	"apicstray12", "apicstray13", "apicstray14", "apicstray15"
-		.asciz	"apicstray16", "apicstray17", "apicstray18", "apicstray19"
-		.asciz	"apicstray20", "apicstray21", "apicstray22", "apicstray23"
-		.asciz	"apicstray24", "apicstray25", "apicstray26", "apicstray27"
-		.asciz	"apicstray28", "apicstray29", "apicstray30", "apicstray31"
-_C_LABEL(x2apicintrnames):
-		.asciz	"x2apic0", "x2apic1", "x2apic2", "x2apic3"
-		.asciz	"x2apic4", "x2apic5", "x2apic6", "x2apic7"
-		.asciz	"x2apic8", "x2apic9", "x2apic10", "x2apic11"
-		.asciz	"x2apic12", "x2apic13", "x2apic14", "x2apic15"
-		.asciz	"x2apic16", "x2apic17", "x2apic18", "x2apic19"
-		.asciz	"x2apic20", "x2apic21", "x2apic22", "x2apic23"
-		.asciz	"x2apic24", "x2apic25", "x2apic26", "x2apic27"
-		.asciz	"x2apic28", "x2apic29", "x2apic30", "x2apic31"
-_C_LABEL(x2apicstrayintrnames):
-		.asciz	"x2apicstray0", "x2apicstray1", "x2apicstray2", "x2apicstray3"
-		.asciz	"x2apicstray4", "x2apicstray5", "x2apicstray6", "x2apicstray7"
-		.asciz	"x2apicstray8", "x2apicstray9", "x2apicstray10", "x2apicstray11"
-		.asciz	"x2apicstray12", "x2apicstray13", "x2apicstray14", "x2apicstray15"
-		.asciz	"x2apicstray16", "x2apicstray17", "x2apicstray18", "x2apicstray19"
-		.asciz	"x2apicstray20", "x2apicstray21", "x2apicstray22", "x2apicstray23"
-		.asciz	"x2apicstray24", "x2apicstray25", "x2apicstray26", "x2apicstray27"
-		.asciz	"x2apicstray28", "x2apicstray29", "x2apicstray30", "x2apicstray31"
-		
-		/* And counters */
-		.data
-		.align 4
-_C_LABEL(apicintrcnt):
-		.long	0, 0, 0, 0, 0, 0, 0, 0
-		.long	0, 0, 0, 0, 0, 0, 0, 0
-		.long	0, 0, 0, 0, 0, 0, 0, 0
-		.long	0, 0, 0, 0, 0, 0, 0, 0
-_C_LABEL(x2apicintrcnt):
-		.long	0, 0, 0, 0, 0, 0, 0, 0
-		.long	0, 0, 0, 0, 0, 0, 0, 0
-		.long	0, 0, 0, 0, 0, 0, 0, 0
-		.long	0, 0, 0, 0, 0, 0, 0, 0
+		.globl _C_LABEL(apic_edge_stubs)
+_C_LABEL(apic_edge_stubs):
+		.long	_C_LABEL(Xapic_edge_intr0), _C_LABEL(Xapic_edge_intr1)
+		.long	_C_LABEL(Xapic_edge_intr2), _C_LABEL(Xapic_edge_intr3)
+		.long	_C_LABEL(Xapic_edge_intr4), _C_LABEL(Xapic_edge_intr5)
+		.long	_C_LABEL(Xapic_edge_intr6), _C_LABEL(Xapic_edge_intr7)
+		.long	_C_LABEL(Xapic_edge_intr8), _C_LABEL(Xapic_edge_intr9)
+		.long	_C_LABEL(Xapic_edge_intr10), _C_LABEL(Xapic_edge_intr11)
+		.long	_C_LABEL(Xapic_edge_intr12), _C_LABEL(Xapic_edge_intr13)
+		.long	_C_LABEL(Xapic_edge_intr14), _C_LABEL(Xapic_edge_intr15)
+		.long	_C_LABEL(Xapic_edge_intr16), _C_LABEL(Xapic_edge_intr17)
+		.long	_C_LABEL(Xapic_edge_intr18), _C_LABEL(Xapic_edge_intr19)
+		.long	_C_LABEL(Xapic_edge_intr20), _C_LABEL(Xapic_edge_intr21)
+		.long	_C_LABEL(Xapic_edge_intr22), _C_LABEL(Xapic_edge_intr23)
+		.long	_C_LABEL(Xapic_edge_intr24), _C_LABEL(Xapic_edge_intr25)
+		.long	_C_LABEL(Xapic_edge_intr26), _C_LABEL(Xapic_edge_intr27)
+		.long	_C_LABEL(Xapic_edge_intr28), _C_LABEL(Xapic_edge_intr29)
+		.long	_C_LABEL(Xapic_edge_intr30), _C_LABEL(Xapic_edge_intr31)
+		/* resume interrupts */
+		.long	_C_LABEL(Xapic_edge_resume0), _C_LABEL(Xapic_edge_resume1)
+		.long	_C_LABEL(Xapic_edge_resume2), _C_LABEL(Xapic_edge_resume3)
+		.long	_C_LABEL(Xapic_edge_resume4), _C_LABEL(Xapic_edge_resume5)
+		.long	_C_LABEL(Xapic_edge_resume6), _C_LABEL(Xapic_edge_resume7)
+		.long	_C_LABEL(Xapic_edge_resume8), _C_LABEL(Xapic_edge_resume9)
+		.long	_C_LABEL(Xapic_edge_resume10), _C_LABEL(Xapic_edge_resume11)
+		.long	_C_LABEL(Xapic_edge_resume12), _C_LABEL(Xapic_edge_resume13)
+		.long	_C_LABEL(Xapic_edge_resume14), _C_LABEL(Xapic_edge_resume15)
+		.long	_C_LABEL(Xapic_edge_resume16), _C_LABEL(Xapic_edge_resume17)
+		.long	_C_LABEL(Xapic_edge_resume18), _C_LABEL(Xapic_edge_resume19)
+		.long	_C_LABEL(Xapic_edge_resume20), _C_LABEL(Xapic_edge_resume21)
+		.long	_C_LABEL(Xapic_edge_resume22), _C_LABEL(Xapic_edge_resume23)
+		.long	_C_LABEL(Xapic_edge_resume24), _C_LABEL(Xapic_edge_resume25)
+		.long	_C_LABEL(Xapic_edge_resume26), _C_LABEL(Xapic_edge_resume27)
+		.long	_C_LABEL(Xapic_edge_resume28), _C_LABEL(Xapic_edge_resume29)
+		.long	_C_LABEL(Xapic_edge_resume30), _C_LABEL(Xapic_edge_resume31)
+		/* recurse interrupts */
+		.long	_C_LABEL(Xapic_edge_recurse0), _C_LABEL(Xapic_edge_recurse1)
+		.long	_C_LABEL(Xapic_edge_recurse2), _C_LABEL(Xapic_edge_recurse3)
+		.long	_C_LABEL(Xapic_edge_recurse4), _C_LABEL(Xapic_edge_recurse5)
+		.long	_C_LABEL(Xapic_edge_recurse6), _C_LABEL(Xapic_edge_recurse7)
+		.long	_C_LABEL(Xapic_edge_recurse8), _C_LABEL(Xapic_edge_recurse9)
+		.long	_C_LABEL(Xapic_edge_recurse10), _C_LABEL(Xapic_edge_recurse11)
+		.long	_C_LABEL(Xapic_edge_recurse12), _C_LABEL(Xapic_edge_recurse13)
+		.long	_C_LABEL(Xapic_edge_recurse14), _C_LABEL(Xapic_edge_recurse15)
+		.long	_C_LABEL(Xapic_edge_recurse16), _C_LABEL(Xapic_edge_recurse17)
+		.long	_C_LABEL(Xapic_edge_recurse18), _C_LABEL(Xapic_edge_recurse19)
+		.long	_C_LABEL(Xapic_edge_recurse20), _C_LABEL(Xapic_edge_recurse21)
+		.long	_C_LABEL(Xapic_edge_recurse22), _C_LABEL(Xapic_edge_recurse23)
+		.long	_C_LABEL(Xapic_edge_recurse24), _C_LABEL(Xapic_edge_recurse25)
+		.long	_C_LABEL(Xapic_edge_recurse26), _C_LABEL(Xapic_edge_recurse27)
+		.long	_C_LABEL(Xapic_edge_recurse28), _C_LABEL(Xapic_edge_recurse29)
+		.long	_C_LABEL(Xapic_edge_recurse30), _C_LABEL(Xapic_edge_recurse31)
+
+		.globl _C_LABEL(x2apic_level_stubs)
+_C_LABEL(x2apic_level_stubs):
+		.long	_C_LABEL(Xx2apic_level_intr0), _C_LABEL(Xx2apic_level_intr1)
+		.long	_C_LABEL(Xx2apic_level_intr2), _C_LABEL(Xx2apic_level_intr3)
+		.long	_C_LABEL(Xx2apic_level_intr4), _C_LABEL(Xx2apic_level_intr5)
+		.long	_C_LABEL(Xx2apic_level_intr6), _C_LABEL(Xx2apic_level_intr7)
+		.long	_C_LABEL(Xx2apic_level_intr8), _C_LABEL(Xx2apic_level_intr9)
+		.long	_C_LABEL(Xx2apic_level_intr10), _C_LABEL(Xx2apic_level_intr11)
+		.long	_C_LABEL(Xx2apic_level_intr12), _C_LABEL(Xx2apic_level_intr13)
+		.long	_C_LABEL(Xx2apic_level_intr14), _C_LABEL(Xx2apic_level_intr15)
+		.long	_C_LABEL(Xx2apic_level_intr16), _C_LABEL(Xx2apic_level_intr17)
+		.long	_C_LABEL(Xx2apic_level_intr18), _C_LABEL(Xx2apic_level_intr19)
+		.long	_C_LABEL(Xx2apic_level_intr20), _C_LABEL(Xx2apic_level_intr21)
+		.long	_C_LABEL(Xx2apic_level_intr22), _C_LABEL(Xx2apic_level_intr23)
+		.long	_C_LABEL(Xx2apic_level_intr24), _C_LABEL(Xx2apic_level_intr25)
+		.long	_C_LABEL(Xx2apic_level_intr26), _C_LABEL(Xx2apic_level_intr27)
+		.long	_C_LABEL(Xx2apic_level_intr28), _C_LABEL(Xx2apic_level_intr29)
+		.long	_C_LABEL(Xx2apic_level_intr30), _C_LABEL(Xx2apic_level_intr31)
+		/* resume interrupts */
+		.long	_C_LABEL(Xx2apic_level_resume0), _C_LABEL(Xx2apic_level_resume1)
+		.long	_C_LABEL(Xx2apic_level_resume2), _C_LABEL(Xx2apic_level_resume3)
+		.long	_C_LABEL(Xx2apic_level_resume4), _C_LABEL(Xx2apic_level_resume5)
+		.long	_C_LABEL(Xx2apic_level_resume6), _C_LABEL(Xx2apic_level_resume7)
+		.long	_C_LABEL(Xx2apic_level_resume8), _C_LABEL(Xx2apic_level_resume9)
+		.long	_C_LABEL(Xx2apic_level_resume10), _C_LABEL(Xx2apic_level_resume11)
+		.long	_C_LABEL(Xx2apic_level_resume12), _C_LABEL(Xx2apic_level_resume13)
+		.long	_C_LABEL(Xx2apic_level_resume14), _C_LABEL(Xx2apic_level_resume15)
+		.long	_C_LABEL(Xx2apic_level_resume16), _C_LABEL(Xx2apic_level_resume17)
+		.long	_C_LABEL(Xx2apic_level_resume18), _C_LABEL(Xx2apic_level_resume19)
+		.long	_C_LABEL(Xx2apic_level_resume20), _C_LABEL(Xx2apic_level_resume21)
+		.long	_C_LABEL(Xx2apic_level_resume22), _C_LABEL(Xx2apic_level_resume23)
+		.long	_C_LABEL(Xx2apic_level_resume24), _C_LABEL(Xx2apic_level_resume25)
+		.long	_C_LABEL(Xx2apic_level_resume26), _C_LABEL(Xx2apic_level_resume27)
+		.long	_C_LABEL(Xx2apic_level_resume28), _C_LABEL(Xx2apic_level_resume29)
+		.long	_C_LABEL(Xx2apic_level_resume30), _C_LABEL(Xx2apic_level_resume31)
+		/* recurse interrupts */
+		.long	_C_LABEL(Xx2apic_level_recurse0), _C_LABEL(Xx2apic_level_recurse1)
+		.long	_C_LABEL(Xx2apic_level_recurse2), _C_LABEL(Xx2apic_level_recurse3)
+		.long	_C_LABEL(Xx2apic_level_recurse4), _C_LABEL(Xx2apic_level_recurse5)
+		.long	_C_LABEL(Xx2apic_level_recurse6), _C_LABEL(Xx2apic_level_recurse7)
+		.long	_C_LABEL(Xx2apic_level_recurse8), _C_LABEL(Xx2apic_level_recurse9)
+		.long	_C_LABEL(Xx2apic_level_recurse10), _C_LABEL(Xx2apic_level_recurse11)
+		.long	_C_LABEL(Xx2apic_level_recurse12), _C_LABEL(Xx2apic_level_recurse13)
+		.long	_C_LABEL(Xx2apic_level_recurse14), _C_LABEL(Xx2apic_level_recurse15)
+		.long	_C_LABEL(Xx2apic_level_recurse16), _C_LABEL(Xx2apic_level_recurse17)
+		.long	_C_LABEL(Xx2apic_level_recurse18), _C_LABEL(Xx2apic_level_recurse19)
+		.long	_C_LABEL(Xx2apic_level_recurse20), _C_LABEL(Xx2apic_level_recurse21)
+		.long	_C_LABEL(Xx2apic_level_recurse22), _C_LABEL(Xx2apic_level_recurse23)
+		.long	_C_LABEL(Xx2apic_level_recurse24), _C_LABEL(Xx2apic_level_recurse25)
+		.long	_C_LABEL(Xx2apic_level_recurse26), _C_LABEL(Xx2apic_level_recurse27)
+		.long	_C_LABEL(Xx2apic_level_recurse28), _C_LABEL(Xx2apic_level_recurse29)
+		.long	_C_LABEL(Xx2apic_level_recurse30), _C_LABEL(Xx2apic_level_recurse31)
+
+		.globl _C_LABEL(x2apic_edge_stubs)
+_C_LABEL(x2apic_edge_stubs):
+		.long	_C_LABEL(Xx2apic_edge_intr0), _C_LABEL(Xx2apic_edge_intr1)
+		.long	_C_LABEL(Xx2apic_edge_intr2), _C_LABEL(Xx2apic_edge_intr3)
+		.long	_C_LABEL(Xx2apic_edge_intr4), _C_LABEL(Xx2apic_edge_intr5)
+		.long	_C_LABEL(Xx2apic_edge_intr6), _C_LABEL(Xx2apic_edge_intr7)
+		.long	_C_LABEL(Xx2apic_edge_intr8), _C_LABEL(Xx2apic_edge_intr9)
+		.long	_C_LABEL(Xx2apic_edge_intr10), _C_LABEL(Xx2apic_edge_intr11)
+		.long	_C_LABEL(Xx2apic_edge_intr12), _C_LABEL(Xx2apic_edge_intr13)
+		.long	_C_LABEL(Xx2apic_edge_intr14), _C_LABEL(Xx2apic_edge_intr15)
+		.long	_C_LABEL(Xx2apic_edge_intr16), _C_LABEL(Xx2apic_edge_intr17)
+		.long	_C_LABEL(Xx2apic_edge_intr18), _C_LABEL(Xx2apic_edge_intr19)
+		.long	_C_LABEL(Xx2apic_edge_intr20), _C_LABEL(Xx2apic_edge_intr21)
+		.long	_C_LABEL(Xx2apic_edge_intr22), _C_LABEL(Xx2apic_edge_intr23)
+		.long	_C_LABEL(Xx2apic_edge_intr24), _C_LABEL(Xx2apic_edge_intr25)
+		.long	_C_LABEL(Xx2apic_edge_intr26), _C_LABEL(Xx2apic_edge_intr27)
+		.long	_C_LABEL(Xx2apic_edge_intr28), _C_LABEL(Xx2apic_edge_intr29)
+		.long	_C_LABEL(Xx2apic_edge_intr30), _C_LABEL(Xx2apic_edge_intr31)
+		/* resume interrupts */
+		.long	_C_LABEL(Xx2apic_edge_resume0), _C_LABEL(Xx2apic_edge_resume1)
+		.long	_C_LABEL(Xx2apic_edge_resume2), _C_LABEL(Xx2apic_edge_resume3)
+		.long	_C_LABEL(Xx2apic_edge_resume4), _C_LABEL(Xx2apic_edge_resume5)
+		.long	_C_LABEL(Xx2apic_edge_resume6), _C_LABEL(Xx2apic_edge_resume7)
+		.long	_C_LABEL(Xx2apic_edge_resume8), _C_LABEL(Xx2apic_edge_resume9)
+		.long	_C_LABEL(Xx2apic_edge_resume10), _C_LABEL(Xx2apic_edge_resume11)
+		.long	_C_LABEL(Xx2apic_edge_resume12), _C_LABEL(Xx2apic_edge_resume13)
+		.long	_C_LABEL(Xx2apic_edge_resume14), _C_LABEL(Xx2apic_edge_resume15)
+		.long	_C_LABEL(Xx2apic_edge_resume16), _C_LABEL(Xx2apic_edge_resume17)
+		.long	_C_LABEL(Xx2apic_edge_resume18), _C_LABEL(Xx2apic_edge_resume19)
+		.long	_C_LABEL(Xx2apic_edge_resume20), _C_LABEL(Xx2apic_edge_resume21)
+		.long	_C_LABEL(Xx2apic_edge_resume22), _C_LABEL(Xx2apic_edge_resume23)
+		.long	_C_LABEL(Xx2apic_edge_resume24), _C_LABEL(Xx2apic_edge_resume25)
+		.long	_C_LABEL(Xx2apic_edge_resume26), _C_LABEL(Xx2apic_edge_resume27)
+		.long	_C_LABEL(Xx2apic_edge_resume28), _C_LABEL(Xx2apic_edge_resume29)
+		.long	_C_LABEL(Xx2apic_edge_resume30), _C_LABEL(Xx2apic_edge_resume31)
+		/* recurse interrupts */
+		.long	_C_LABEL(Xx2apic_edge_recurse0), _C_LABEL(Xx2apic_edge_recurse1)
+		.long	_C_LABEL(Xx2apic_edge_recurse2), _C_LABEL(Xx2apic_edge_recurse3)
+		.long	_C_LABEL(Xx2apic_edge_recurse4), _C_LABEL(Xx2apic_edge_recurse5)
+		.long	_C_LABEL(Xx2apic_edge_recurse6), _C_LABEL(Xx2apic_edge_recurse7)
+		.long	_C_LABEL(Xx2apic_edge_recurse8), _C_LABEL(Xx2apic_edge_recurse9)
+		.long	_C_LABEL(Xx2apic_edge_recurse10), _C_LABEL(Xx2apic_edge_recurse11)
+		.long	_C_LABEL(Xx2apic_edge_recurse12), _C_LABEL(Xx2apic_edge_recurse13)
+		.long	_C_LABEL(Xx2apic_edge_recurse14), _C_LABEL(Xx2apic_edge_recurse15)
+		.long	_C_LABEL(Xx2apic_edge_recurse16), _C_LABEL(Xx2apic_edge_recurse17)
+		.long	_C_LABEL(Xx2apic_edge_recurse18), _C_LABEL(Xx2apic_edge_recurse19)
+		.long	_C_LABEL(Xx2apic_edge_recurse20), _C_LABEL(Xx2apic_edge_recurse21)
+		.long	_C_LABEL(Xx2apic_edge_recurse22), _C_LABEL(Xx2apic_edge_recurse23)
+		.long	_C_LABEL(Xx2apic_edge_recurse24), _C_LABEL(Xx2apic_edge_recurse25)
+		.long	_C_LABEL(Xx2apic_edge_recurse26), _C_LABEL(Xx2apic_edge_recurse27)
+		.long	_C_LABEL(Xx2apic_edge_recurse28), _C_LABEL(Xx2apic_edge_recurse29)
+		.long	_C_LABEL(Xx2apic_edge_recurse30), _C_LABEL(Xx2apic_edge_recurse31)
 #endif
-
-ENTRY(lapic_eoi)
-		cmpl	$0,_C_LABEL(x2apic_mode)											
-		jne		1f														
-		movl	_C_LABEL(local_apic_va),%eax							
-		movl	$0,LAPIC_EOI(%eax)										
-1:																		
-		movl	$(MSR_X2APIC_BASE + MSR_X2APIC_EOI),%ecx 				
-		xorl	%eax,%eax												
-		xorl	%edx,%edx												
-		wrmsr
-		ret
-		
-#ifdef SMP
-
-/*
- * Global address space TLB shootdown.
- */
-		.text
-invltlb_ret:
-		call	lapic_eoi
-		jmp		_C_LABEL(Xdoreti)
-		
-IDTVEC(invltlb)
-		PUSH_FRAME
-		SET_KERNEL_SREGS
-		cld
-		KENTER
-		movl	$invltlb_handler, %eax
-		call	*%eax
-		jmp		invltlb_ret
-		
-/*
- * Single page TLB shootdown
- */
-		.text
-		SUPERALIGN_TEXT
-IDTVEC(invlpg)
-		PUSH_FRAME
-		SET_KERNEL_SREGS
-		cld
-		KENTER
-		movl	$invlpg_handler, %eax
-		call	*%eax
-		jmp		invltlb_ret
-
-/*
- * Page range TLB shootdown.
- */
-		.text
-		SUPERALIGN_TEXT
-IDTVEC(invlrng)
-		PUSH_FRAME
-		SET_KERNEL_SREGS
-		cld
-		KENTER
-		movl	$invlrng_handler, %eax
-		call	*%eax
-		jmp		invltlb_ret
-
-/*
- * Invalidate cache.
- */
-		.text
-		SUPERALIGN_TEXT
-IDTVEC(invlcache)
-		PUSH_FRAME
-		SET_KERNEL_SREGS
-		cld
-		KENTER
-		movl	$invlcache_handler, %eax
-		call	*%eax
-		jmp		invltlb_ret
-		
-#endif /* SMP */

@@ -74,6 +74,12 @@
 
 #include <sys/cdefs.h>
 
+void
+invltlb_glob(void)
+{
+	invltlb();
+}
+
 #ifdef I386_CPU
 /*
  * i386 only has "invalidate everything" and no SMP to worry about.
@@ -136,8 +142,8 @@ pmap_invalidate_page(pmap, va)
 		invlpg(va);
 		smp_invlpg(va);
 	} else {
-		cpumask = PCPU_GET(cpumask);
-		other_cpus = PCPU_GET(other_cpus);
+		cpumask = PERCPU_GET(cpumask);
+		other_cpus = PERCPU_GET(other_cpus);
 		if (pmap->pm_active & cpumask)
 			invlpg(va);
 		if (pmap->pm_active & other_cpus)
@@ -176,8 +182,8 @@ pmap_invalidate_range(pmap, sva, eva)
 			invlpg(addr);
 		smp_invlpg_range(sva, eva);
 	} else {
-		cpumask = PCPU_GET(cpumask);
-		other_cpus = PCPU_GET(other_cpus);
+		cpumask = PERCPU_GET(cpumask);
+		other_cpus = PERCPU_GET(other_cpus);
 		if (pmap->pm_active & cpumask)
 			for (addr = sva; addr < eva; addr += PAGE_SIZE)
 				invlpg(addr);
@@ -262,6 +268,5 @@ pmap_invalidate_all(pmap)
 		invltlb();
 	}
 }
-
 #endif /* !SMP */
 #endif /* !I386_CPU */

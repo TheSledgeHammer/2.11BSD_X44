@@ -47,12 +47,7 @@
 extern unsigned short			imen;			/* interrupt mask enable */
 extern unsigned short			cpl;			/* current priority level mask */
 extern unsigned short			ipending;
-extern unsigned short			ilevel;
-extern unsigned short			idepth;
-
-//extern int 						intrtype[];
-//extern int 						intrmask[];
-//extern int 						intrlevel[];
+//extern unsigned short			idepth;
 
 #define	INTREN(s)				imen &= ~(s)
 #define	INTRDIS(s)				imen |= (s)

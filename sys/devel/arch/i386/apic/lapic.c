@@ -78,6 +78,8 @@ static void 	lapic_hwmask(struct softpic *, int);
 static void 	lapic_hwunmask(struct softpic *, int);
 static void 	lapic_setup(struct softpic *, struct cpu_info *, int, int, int);
 
+static void		x2apic_write_icr(uint32_t hi, uint32_t lo);
+
 struct pic lapic_template = {
 		.pic_type = PIC_LAPIC,
 		.pic_hwmask = lapic_hwmask,
@@ -90,6 +92,12 @@ struct pic lapic_template = {
 static int i82489_ipi(int vec, int target, int dl);
 static int x2apic_ipi(int vec, int target, int dl);
 int (*i386_ipi)(int, int, int) = i82489_ipi;
+
+#ifdef LAPIC_ENABLE_X2APIC
+bool x2apic_enable = true;
+#else
+bool x2apic_enable = false;
+#endif
 
 /* i82489_readreg */
 static uint32_t
@@ -218,6 +226,7 @@ lapic_map(caddr_t lapic_base)
 	*pte = (lapic_base | PG_RW | PG_V | PG_N | PG_G | PG_NX | PG_W | PG_NC_PCD);
 	invlpg(va);
 
+	lapic_enable_x2apic();
 #ifdef SMP
 	cpu_init_first();	/* catch up to changed cpu_number() */
 #endif
@@ -585,7 +594,7 @@ i82489_ipi_init(int target)
 	i82489_icr_wait();
 
 	if ((i82489_read32(LAPIC_ICRLO) & LAPIC_DLSTAT_BUSY) != 0) {
-		return EBUSY;
+		return (EBUSY);
 	}
 
 	esr = i82489_read32(LAPIC_ESR);
@@ -610,7 +619,7 @@ i82489_ipi_startup(int target, int vec)
 	i82489_icr_wait();
 
 	if ((i82489_read32(LAPIC_ICRLO) & LAPIC_DLSTAT_BUSY) != 0) {
-		return EBUSY;
+		return (EBUSY);
 	}
 
 	esr = i82489_read32(LAPIC_ESR);

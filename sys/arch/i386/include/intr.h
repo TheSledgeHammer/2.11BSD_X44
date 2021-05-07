@@ -62,7 +62,7 @@
 
 #ifndef _LOCORE
 
-volatile int cpl, ipending, ilevel, idepth;
+volatile int cpl, ipending/*, idepth*/;
 int imask[NIPL];
 int iunmask[NIPL];
 
