@@ -313,16 +313,16 @@ lapic_boot_init(caddr_t lapic_base)
 
 	if(x2apic_mode) {
 #ifdef SMP
-		setidt(LAPIC_IPI_VECTOR, &IDTVEC(x2apic_ipi), 0, SDT_SYS386IGT, SEL_KPL);
-		setidt(LAPIC_TLB_VECTOR, &IDTVEC(x2apic_tlb), 0, SDT_SYS386IGT, SEL_KPL);
+		setidt(LAPIC_IPI_VECTOR, &IDTVEC(x2apic_intr_ipi), 0, SDT_SYS386IGT, SEL_KPL);
+		setidt(LAPIC_TLB_VECTOR, &IDTVEC(x2apic_intr_tlb), 0, SDT_SYS386IGT, SEL_KPL);
 #endif
-		setidt(LAPIC_TIMER_VECTOR, &IDTVEC(x2apic_ltimer), 0, SDT_SYS386IGT, SEL_KPL);
+		setidt(LAPIC_TIMER_VECTOR, &IDTVEC(x2apic_intr_ltimer), 0, SDT_SYS386IGT, SEL_KPL);
 	} else {
 #ifdef SMP
-		setidt(LAPIC_IPI_VECTOR, &IDTVEC(lapic_ipi), 0, SDT_SYS386IGT, SEL_KPL);
-		setidt(LAPIC_TLB_VECTOR, &IDTVEC(lapic_tlb), 0, SDT_SYS386IGT, SEL_KPL);
+		setidt(LAPIC_IPI_VECTOR, &IDTVEC(lapic_intr_ipi), 0, SDT_SYS386IGT, SEL_KPL);
+		setidt(LAPIC_TLB_VECTOR, &IDTVEC(lapic_intr_tlb), 0, SDT_SYS386IGT, SEL_KPL);
 #endif
-		setidt(LAPIC_TIMER_VECTOR, &IDTVEC(lapic_ltimer), 0, SDT_SYS386IGT, SEL_KPL);
+		setidt(LAPIC_TIMER_VECTOR, &IDTVEC(lapic_intr_ltimer), 0, SDT_SYS386IGT, SEL_KPL);
 	}
 	setidt(LAPIC_SPURIOUS_VECTOR, &IDTVEC(spurious), 0, SDT_SYS386IGT, SEL_KPL);
 }

@@ -199,7 +199,7 @@ ENTRY(start)
 		call	pmap_cold
 		
 		/* set up bootstrap stack */
-		movl	proc0kstack,%eax					/* location of in-kernel stack */
+		movl	_C_LABEL(proc0kstack),%eax			/* location of in-kernel stack */
 	
 		/*
 		 * Only use bottom page for init386().  init386() calculates the
@@ -644,7 +644,7 @@ badsw:
  */
 ENTRY(swtch)
 
-		incl	MY_COUNT+V_SWTCH
+		incl	_C_LABEL(cnt)+V_SWTCH
 
 /* switch to new process. first, save context as needed */
 
@@ -974,7 +974,6 @@ IDTVEC(fpu)
 #endif
 IDTVEC(align)
 		ZTRAP(T_ALIGNFLT)
-		
 /* 18 - 31 reserved for future exp */
 IDTVEC(rsvd)	/* rvsd 18 */
 		ZTRAP(T_RESERVED)

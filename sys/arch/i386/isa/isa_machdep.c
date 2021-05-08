@@ -111,10 +111,7 @@ extern	vm_offset_t avail_end;
 
 #define	IDTVEC(name)	__CONCAT(X,name)
 /* default interrupt vector table */
-extern	IDTVEC(intr0), IDTVEC(intr1), IDTVEC(intr2), IDTVEC(intr3),
-		IDTVEC(intr4), IDTVEC(intr5), IDTVEC(intr6), IDTVEC(intr7),
-		IDTVEC(intr8), IDTVEC(intr9), IDTVEC(intr10), IDTVEC(intr11),
-		IDTVEC(intr12), IDTVEC(intr13), IDTVEC(intr14), IDTVEC(intr15);
+extern	IDTVEC(intr);
 /* default interrupt vector table entries */
 
 void 	isa_strayintr (int);
@@ -207,25 +204,11 @@ isa_defaultirq()
 void
 isa_vectors()
 {
-	/* first icu */
-	setidt(32, &IDTVEC(intr0), 0, SDT_SYS386IGT, SEL_KPL);
-	setidt(33, &IDTVEC(intr1), 0, SDT_SYS386IGT, SEL_KPL);
-	setidt(34, &IDTVEC(intr2), 0, SDT_SYS386IGT, SEL_KPL);
-	setidt(35, &IDTVEC(intr3), 0, SDT_SYS386IGT, SEL_KPL);
-	setidt(36, &IDTVEC(intr4), 0, SDT_SYS386IGT, SEL_KPL);
-	setidt(37, &IDTVEC(intr5), 0, SDT_SYS386IGT, SEL_KPL);
-	setidt(38, &IDTVEC(intr6), 0, SDT_SYS386IGT, SEL_KPL);
-	setidt(39, &IDTVEC(intr7), 0, SDT_SYS386IGT, SEL_KPL);
-
-	/* second icu */
-	setidt(40, &IDTVEC(intr8), 0, SDT_SYS386IGT, SEL_KPL);
-	setidt(41, &IDTVEC(intr9), 0, SDT_SYS386IGT, SEL_KPL);
-	setidt(42, &IDTVEC(intr10), 0, SDT_SYS386IGT, SEL_KPL);
-	setidt(43, &IDTVEC(intr11), 0, SDT_SYS386IGT, SEL_KPL);
-	setidt(44, &IDTVEC(intr12), 0, SDT_SYS386IGT, SEL_KPL);
-	setidt(45, &IDTVEC(intr13), 0, SDT_SYS386IGT, SEL_KPL);
-	setidt(46, &IDTVEC(intr14), 0, SDT_SYS386IGT, SEL_KPL);
-	setidt(47, &IDTVEC(intr15), 0, SDT_SYS386IGT, SEL_KPL);
+	int i;
+	for(i = 0; i < ICU_LEN; i++) {
+		int idx = ICU_OFFSET + i;
+		setidt(idx, &IDTVEC(intr), 0, SDT_SYS386IGT, SEL_KPL);
+	}
 }
 
 /*
@@ -237,7 +220,7 @@ isa_nmi()
 {
 
 	log(LOG_CRIT, "NMI port 61 %x, port 70 %x\n", inb(0x61), inb(0x70));
-	return(0);
+	return (0);
 }
 
 /*

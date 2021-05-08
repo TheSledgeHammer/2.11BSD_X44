@@ -40,8 +40,8 @@
 #include <arch/i386/include/intr.h>
 #include <devel/arch/i386/isa/icu.h>
 
-struct softpic 					 *intrspic;
-static TAILQ_HEAD(pic_list, pic) pichead;
+struct softpic 					 	*intrspic;
+static TAILQ_HEAD(pic_list, pic) 	pichead;
 
 static int
 softpic_pic_registered(pic)

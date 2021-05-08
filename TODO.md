@@ -27,12 +27,9 @@ A General todo list. Don't hesitate to add to this list. :)
 		- machine-independent code: 90% complete
 			- smp-related methods for cpu
 		- machine-dependent code: 75% complete
-			- boot sequence: cpu with lapic, ioapic & percpu
-			- ipi
-			- apic vectors/ IDTVEC's
-				- apicvec.s: apicintr's 
-				- cpu_info: CPUVAR(idepth, ilevel & ipending)
-			- tsc
+			- boot: considering FreeBSD's mpboot.s
+			- smp: alloction to assign interrupts to CPUs
+			- tsc: missing struct timecounter
 
 ## devel: (planned)
 - Code planned for future integration

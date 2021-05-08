@@ -121,7 +121,7 @@ apic_intr_establish(irq, type, level, ih_fun, ih_arg)
 	ih->ih_next = NULL;
 	ih->ih_level = level;
 	ih->ih_flags = flags;
-	//ih->ih_irq = irq;
+	ih->ih_irq = irq;
 	*p = ih;
 
 	if(!cold) {

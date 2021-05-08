@@ -56,7 +56,9 @@ extern unsigned short			ipending;
 
 #endif
 
-#define SOFTINTR_MASK(ipl, sir)	((ipl) = (1 << (sir)))
+#define MY_COUNT 					_C_LABEL(cnt)
+#define INTR_ADDR(intr, irq_num) 	(_C_LABEL(intr)+(irq_num) * 4)
+#define SOFTINTR_MASK(ipl, sir)		((ipl) = (1 << (sir)))
 
 /*
  * Interrupt enable bits -- in order of priority
@@ -88,4 +90,4 @@ extern unsigned short			ipending;
 #define MAX_INTR_SOURCES 		ICU_OFFSET
 #define NUM_LEGACY_IRQS			ICU_LEN
 
-#endif	__I386_ICU__
+#endif	/* __I386_ICU__ */

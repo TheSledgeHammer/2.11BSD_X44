@@ -66,7 +66,7 @@ struct topo_node {
 /*
  * Convenience routines for building and traversing topologies.
  */
-#ifdef SMP
+//#ifdef SMP
 void 				topo_init_node(struct topo_node *node);
 void 				topo_init_root(struct topo_node *root);
 struct topo_node 	*topo_add_node_by_hwid(struct topo_node *parent, int hwid, topo_node_type type, uintptr_t subtype);
@@ -75,6 +75,20 @@ void 				topo_promote_child(struct topo_node *child);
 struct topo_node 	*topo_next_node(struct topo_node *top, struct topo_node *node);
 struct topo_node 	*topo_next_nonchild_node(struct topo_node *top, struct topo_node *node);
 void 				topo_set_pu_id(struct topo_node *node, cpuid_t id);
+
+enum topo_level {
+	TOPO_LEVEL_PKG = 0,
+	/*
+	 * Some systems have useful sub-package core organizations.  On these,
+	 * a package has one or more subgroups.  Each subgroup contains one or
+	 * more cache groups (cores that share a last level cache).
+	 */
+	TOPO_LEVEL_GROUP,
+	TOPO_LEVEL_CACHEGROUP,
+	TOPO_LEVEL_CORE,
+	TOPO_LEVEL_THREAD,
+	TOPO_LEVEL_COUNT	/* Must be last */
+};
 
 #define	TOPO_FOREACH(i, root)	\
 	for (i = root; i != NULL; i = topo_next_node(root, i))

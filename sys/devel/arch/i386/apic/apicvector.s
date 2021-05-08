@@ -44,9 +44,6 @@
 		.globl _C_LABEL(idepth)
 _C_LABEL(idepth):
 		.long	0xffff
-
-IDTVEC(spurious)
-		ret
 		
 #ifdef SMP	
 #if NLAPIC > 0
@@ -206,9 +203,6 @@ IDTVEC(lapic_resume_ltimer)
 		movl	IS_PIC(%ebp),%edi										;\
 79:
 
-#define MY_COUNT 					_C_LABEL(cnt)
-#define INTR_ADDR(intr, irq_num) 	(_C_LABEL(intr)+(irq_num) * 4)
-
 	/*
 	 * I/O APIC interrupt.
 	 * We sort out which one is which based on the value of
@@ -354,7 +348,6 @@ APICINTR(x2apic, 29, X2APIC_ICU)
 APICINTR(x2apic, 30, X2APIC_ICU)
 APICINTR(x2apic, 31, X2APIC_ICU)
 
-#if NIOAPIC > 0
 		.globl _C_LABEL(apic_level_stubs)
 _C_LABEL(apic_level_stubs):
 		.long	_C_LABEL(Xapic_level_intr0), _C_LABEL(Xapic_level_intr1)

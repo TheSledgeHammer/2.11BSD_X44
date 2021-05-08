@@ -38,8 +38,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _I386_APICREG_H_
-#define _I386_APICREG_H_
+#ifndef _I386_IOAPICREG_H_
+#define _I386_IOAPICREG_H_
 
 /*
  * Typically, the first apic lives here.
@@ -119,3 +119,5 @@
 #define IMCR_REGISTER				0x70
 #define	IMCR_PIC					0x00
 #define IMCR_APIC					0x01
+
+#endif /* _I386_IOAPICREG_H_ */

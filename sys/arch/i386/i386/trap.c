@@ -545,6 +545,70 @@ out:
 }
 
 /*
+ * Compensate for 386 brain damage (missing URKR).
+ * This is a little simpler than the pagefault handler in trap() because
+ * it the page tables have already been faulted in and high addresses
+ * are thrown out early for other reasons.
+ */
+int
+trapwrite(addr)
+	unsigned addr;
+{
+	struct proc *p;
+	vm_offset_t va, v;
+	struct vmspace *vm;
+	int rv;
+
+	va = trunc_page((vm_offset_t)addr);
+	/*
+	 * XXX - MAX is END.  Changed > to >= for temp. fix.
+	 */
+	if (va >= VM_MAXUSER_ADDRESS)
+		return (1);
+
+	p = curproc;
+	vm = p->p_vmspace;
+
+	++p->p_lock;
+
+	if ((caddr_t) va >= vm->vm_maxsaddr && (caddr_t) va < (caddr_t) USRSTACK) {
+		if (!grow(p, va)) {
+			--p->p_lock;
+			return (1);
+		}
+	}
+
+	v = trunc_page(vtopte(va));
+
+	/*
+	 * wire the pte page
+	 */
+	if (va < USRSTACK) {
+		vm_map_pageable(&vm->vm_map, v, round_page(v + 1), FALSE);
+	}
+
+	/*
+	 * fault the data page
+	 */
+	rv = vm_fault(&vm->vm_map, va, VM_PROT_READ | VM_PROT_WRITE, FALSE);
+
+	/*
+	 * unwire the pte page
+	 */
+	if (va < USRSTACK) {
+		vm_map_pageable(&vm->vm_map, v, round_page(v + 1), TRUE);
+	}
+
+	--p->p_lock;
+
+	if (rv != KERN_SUCCESS) {
+		return 1;
+	}
+
+	return (0);
+}
+
+/*
  * syscall(frame):
  *	System call request from POSIX system call gate interface to kernel.
  * Like trap(), argument is call by reference.

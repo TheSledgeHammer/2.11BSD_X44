@@ -17,7 +17,7 @@
 
 #include <sys/bus.h>
 
-//#include <i386/include/apicvar.h>
+#include <devel/arch/i386/isa/icu.h>
 
 #include <i386/include/frame.h>
 #include <i386/include/intr.h>
@@ -25,7 +25,7 @@
 
 struct pmap;
 
-/* global data in mp_i386.c */
+/* global data in mp.c */
 extern int mp_naps;
 extern int boot_cpu_id;
 extern int cpu_apic_ids[];
@@ -49,11 +49,6 @@ extern	IDTVEC(invltlb),					/* TLB shootdowns - global */
 		IDTVEC(cpustop),					/* CPU stops & waits to be restarted */
 		IDTVEC(cpususpend),					/* CPU suspends & waits to be resumed */
 		IDTVEC(rendezvous);					/* handle CPU rendezvous */
-
-
-extern 	IDTVEC(lapic_ipi), IDTVEC(lapic_tlb), IDTVEC(lapic_ltimer),
-		IDTVEC(x2apic_ipi), IDTVEC(x2apic_tlb), IDTVEC(x2apic_ltimer),
-		IDTVEC(spurious), IDTVEC(apic), IDTVEC(x2apic);
 
 /* functions in mpboot.s */
 void 	bootMP(void);

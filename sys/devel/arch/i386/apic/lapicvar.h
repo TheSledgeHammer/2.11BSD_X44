@@ -36,12 +36,9 @@
  */
 
 #ifdef _KERNEL
-extern volatile u_int32_t  local_apic_va;
-extern boolean_t x2apic_mode;
+extern volatile u_int32_t  	local_apic_va;
+extern boolean_t 			x2apic_mode;
 #endif
-
-#define ioapic_asm_ack(num) 	\
-	movl	$0,_C_LABEL_(local_apic_va) + LAPIC_EOI
 
 /*
  * "spurious interrupt vector"; vector used by interrupt which was
@@ -83,6 +80,13 @@ extern void Xrecurse_lapic_ltimer(void);
 #define LAPIC_PIN_LVINT0			3
 #define LAPIC_PIN_LVINT1			4
 #define LAPIC_PIN_LVERR				5
+
+/* IDT Vectors for APIC, X2APIC & i8259(legacy) */
+#define	IDTVEC(name)	__CONCAT(X, name)
+extern 	IDTVEC(lapic_intr_ipi), IDTVEC(lapic_intr_tlb), IDTVEC(lapic_intr_ltimer),
+		IDTVEC(x2apic_intr_ipi), IDTVEC(x2apic_intr_tlb), IDTVEC(x2apic_intr_ltimer),
+		IDTVEC(apic_level_stubs), IDTVEC(apic_edge_stubs), IDTVEC(x2apic_level_stubs),
+		IDTVEC(x2apic_edge_stubs), IDTVEC(i8259_stubs), IDTVEC(spurious);
 
 struct cpu_info;
 

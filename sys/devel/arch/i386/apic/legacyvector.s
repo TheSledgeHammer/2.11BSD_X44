@@ -118,8 +118,6 @@
 #endif /* ICU_HARDWARE_MASK */
 #endif /* ICU_SPECIAL_MASK_MODE */
 
-#define MY_COUNT 					_C_LABEL(cnt)
-#define INTR_ADDR(intr, irq_num) 	(_C_LABEL(intr)+(irq_num) * 4)
 #define	XINTR(name, irq_num)		_Xname_/**/intr/**/irq_num
 #define	XHOLD(name, irq_num)		_Xname_/**/hold/**/irq_num
 #define	XSTRAY(name, irq_num)		_Xname_/**/stray/**/irq_num

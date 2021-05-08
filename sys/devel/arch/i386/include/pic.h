@@ -117,6 +117,7 @@ struct intrhand {
 	int						ih_irq;
 };
 
+extern struct softpic		*intrspic;
 extern struct lock_object 	*icu_lock;
 extern int 					intr_shared_edge;		/* This system has shared edge interrupts */
 

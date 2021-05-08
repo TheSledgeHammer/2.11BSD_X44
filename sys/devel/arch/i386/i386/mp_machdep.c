@@ -52,7 +52,7 @@
 #include <arch/i386/include/vmparam.h>
 #include <arch/i386/include/vm86.h>
 
-#include <devel/arch/i386/include/i386_smp.h>
+#include <devel/arch/i386/include/smp.h>
 #include <devel/arch/i386/include/cpu.h>
 #include <devel/arch/i386/include/percpu.h>
 
@@ -412,6 +412,16 @@ start_ap(int apic_id)
 	}
 	return 0; /* return FAILURE */
 }
+
+
+/*
+ * Flush the TLB on other CPU's
+ */
+
+/* Variables needed for SMP tlb shootdown. */
+vm_offset_t smp_tlb_addr1, smp_tlb_addr2;
+pmap_t smp_tlb_pmap;
+volatile uint32_t smp_tlb_generation;
 
 /*
  * Handlers for TLB related IPIs

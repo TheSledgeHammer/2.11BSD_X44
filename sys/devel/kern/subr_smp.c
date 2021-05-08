@@ -66,7 +66,8 @@ mp_setmaxid(void *dummy)
  * Call the MD SMP initialization code.
  */
 static void
-mp_start(void *dummy)
+mp_start(pc)
+	struct percpu *pc;
 {
 	if (smp_disabled != 0 || cpu_mp_probe() == 0) {
 		mp_ncores = 1;

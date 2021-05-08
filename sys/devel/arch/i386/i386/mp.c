@@ -545,12 +545,10 @@ assign_cpu_ids(void)
 			cpu_info[node->hwid].cpu_hyperthread = 1;
 		}
 
-		if (resource_disabled("lapic", node->hwid)) {
-			if (node->hwid != boot_cpu_id) {
-				cpu_info[node->hwid].cpu_disabled = 1;
-			} else {
-				printf("Cannot disable BSP, APIC ID = %d\n", node->hwid);
-			}
+		if (node->hwid != boot_cpu_id) {
+			cpu_info[node->hwid].cpu_disabled = 1;
+		} else {
+			printf("Cannot disable BSP, APIC ID = %d\n", node->hwid);
 		}
 
 		if (!hyperthreading_allowed && cpu_info[node->hwid].cpu_hyperthread) {
@@ -580,6 +578,87 @@ assign_cpu_ids(void)
 
 	mp_ncores = mp_ncpus - nhyper;
 	smp_threads_per_core = mp_ncpus / mp_ncores;
+}
+
+/*
+ * Print various information about the SMP system hardware and setup.
+ */
+void
+cpu_mp_announce(void)
+{
+	struct topo_node *node;
+	const char *hyperthread;
+	struct topo_analysis topology;
+
+	printf("FreeBSD/SMP: ");
+	if (topo_analyze(&topo_root, 1, &topology)) {
+		printf("%d package(s)", topology.entities[TOPO_LEVEL_PKG]);
+		if (topology.entities[TOPO_LEVEL_GROUP] > 1)
+			printf(" x %d groups", topology.entities[TOPO_LEVEL_GROUP]);
+		if (topology.entities[TOPO_LEVEL_CACHEGROUP] > 1)
+			printf(" x %d cache groups",
+					topology.entities[TOPO_LEVEL_CACHEGROUP]);
+		if (topology.entities[TOPO_LEVEL_CORE] > 0)
+			printf(" x %d core(s)", topology.entities[TOPO_LEVEL_CORE]);
+		if (topology.entities[TOPO_LEVEL_THREAD] > 1)
+			printf(" x %d hardware threads",
+					topology.entities[TOPO_LEVEL_THREAD]);
+	} else {
+		printf("Non-uniform topology");
+	}
+	printf("\n");
+
+	if (disabled_cpus) {
+		printf("FreeBSD/SMP Online: ");
+		if (topo_analyze(&topo_root, 0, &topology)) {
+			printf("%d package(s)", topology.entities[TOPO_LEVEL_PKG]);
+			if (topology.entities[TOPO_LEVEL_GROUP] > 1)
+				printf(" x %d groups", topology.entities[TOPO_LEVEL_GROUP]);
+			if (topology.entities[TOPO_LEVEL_CACHEGROUP] > 1)
+				printf(" x %d cache groups",
+						topology.entities[TOPO_LEVEL_CACHEGROUP]);
+			if (topology.entities[TOPO_LEVEL_CORE] > 0)
+				printf(" x %d core(s)", topology.entities[TOPO_LEVEL_CORE]);
+			if (topology.entities[TOPO_LEVEL_THREAD] > 1)
+				printf(" x %d hardware threads",
+						topology.entities[TOPO_LEVEL_THREAD]);
+		} else {
+			printf("Non-uniform topology");
+		}
+		printf("\n");
+	}
+
+	if (!bootverbose)
+		return;
+
+	TOPO_FOREACH(node, &topo_root) {
+		switch (node->type) {
+		case TOPO_TYPE_PKG:
+			printf("Package HW ID = %u\n", node->hwid);
+			break;
+		case TOPO_TYPE_CORE:
+			printf("\tCore HW ID = %u\n", node->hwid);
+			break;
+		case TOPO_TYPE_PU:
+			if (cpu_info[node->hwid].cpu_hyperthread)
+				hyperthread = "/HT";
+			else
+				hyperthread = "";
+
+			if (node->subtype == 0)
+				printf("\t\tCPU (AP%s): APIC ID: %u"
+						"(disabled)\n", hyperthread, node->hwid);
+			else if (node->id == 0)
+				printf("\t\tCPU0 (BSP): APIC ID: %u\n", node->hwid);
+			else
+				printf("\t\tCPU%u (AP%s): APIC ID: %u\n", node->id, hyperthread,
+						node->hwid);
+			break;
+		default:
+			/* ignored */
+			break;
+		}
+	}
 }
 
 static void
@@ -626,6 +705,66 @@ cpu_mp_setmaxid(void)
 	 */
 	if (mp_ncpus == 0)
 		mp_ncpus = 1;
+}
+
+int
+cpu_mp_probe(void)
+{
+
+	/*
+	 * Always record BSP in CPU map so that the mbuf init code works
+	 * correctly.
+	 */
+	CPU_SETOF(0, &all_cpus);
+	return (mp_ncpus > 1);
+}
+
+/* Allocate memory for the AP trampoline. */
+void
+alloc_ap_trampoline(caddr_t *physmap, unsigned int *physmap_idx)
+{
+	unsigned int i;
+	bool allocated;
+
+	allocated = TRUE;
+	for (i = *physmap_idx; i <= *physmap_idx; i -= 2) {
+		/*
+		 * Find a memory region big enough and below the 1MB boundary
+		 * for the trampoline code.
+		 * NB: needs to be page aligned.
+		 */
+		if (physmap[i] >= MiB(1)
+				|| (trunc_page(physmap[i + 1]) - round_page(physmap[i]))
+						< round_page(bootMP_size))
+			continue;
+
+		allocated = TRUE;
+		/*
+		 * Try to steal from the end of the region to mimic previous
+		 * behaviour, else fallback to steal from the start.
+		 */
+		if (physmap[i + 1] < MiB(1)) {
+			boot_address = trunc_page(physmap[i + 1]);
+			if ((physmap[i + 1] - boot_address) < bootMP_size)
+				boot_address -= round_page(bootMP_size);
+			physmap[i + 1] = boot_address;
+		} else {
+			boot_address = round_page(physmap[i]);
+			physmap[i] = boot_address + round_page(bootMP_size);
+		}
+		if (physmap[i] == physmap[i + 1] && *physmap_idx != 0) {
+			memmove(&physmap[i], &physmap[i + 2],
+					sizeof(*physmap) * (*physmap_idx - i + 2));
+			*physmap_idx -= 2;
+		}
+		break;
+	}
+
+	if (!allocated) {
+		boot_address = basemem * 1024 - bootMP_size;
+		if (bootverbose)
+			printf("Cannot find enough space for the boot trampoline, placing it at %#x", boot_address);
+	}
 }
 
 /*
