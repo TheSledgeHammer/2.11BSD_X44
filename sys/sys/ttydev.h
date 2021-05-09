@@ -48,4 +48,4 @@
 #define	DMBIC		2
 #define	DMGET		3
 #endif
-#endif
+#endif /* !_TTYDEV_ */

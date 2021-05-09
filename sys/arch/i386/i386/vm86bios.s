@@ -37,6 +37,17 @@
 #define SCR_TSS0		PCB_VM86
 #define SCR_TSS1		(PCB_VM86+4)
 
+/*
+ * FreeBSD: see FreeBSD's i386/asmacros.h
+ * Access per-CPU data. 
+ */
+#define	PCPU(member)	%fs:PC_ ## member
+
+#define	PCPU_ADDR(member, reg)						\
+		movl %fs:PC_PRVSPACE, reg ;					\
+		addl $PC_ ## member, reg
+
+
 		.data
 		ALIGN_DATA
 

@@ -40,8 +40,8 @@
  * 	@(#)exec.h	1.2 (2.11BSD GTE) 10/31/93:
  * 	a_out contents from this file were moved to exec_aout.h
  */
-#ifndef _EXEC_
-#define _EXEC_
+#ifndef _SYS_EXEC_H_
+#define _SYS_EXEC_H_
 
 /*
  * The following structure is found at the top of the user stack of each
@@ -105,4 +105,4 @@ extern int					nexecs;
 #endif
 
 #include <machine/exec.h>
-#endif
+#endif /* _SYS_EXEC_H_ */

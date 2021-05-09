@@ -6,6 +6,9 @@
  *	@(#)param.h	1.6 (2.11BSD) 1999/9/5
  */
 
+#ifndef	_SYS_PARAM_H_
+#define	_SYS_PARAM_H_
+
 /*
  * Historic BSD #defines -- probably will remain untouched for all time.
  */
@@ -226,3 +229,5 @@
 #ifndef ALIGNED_POINTER
 #define	ALIGNED_POINTER(p,t)	((((uintptr_t)(p)) & ((sizeof(t)) - 1)) == 0)
 #endif
+
+#endif /* _SYS_PARAM_H_ */

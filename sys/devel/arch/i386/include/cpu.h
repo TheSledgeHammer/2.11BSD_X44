@@ -25,8 +25,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _MACHINE_CPU_H_
-#define _MACHINE_CPU_H_
+#ifndef _I386_CPU_H_
+#define _I386_CPU_H_
 
 struct percpu;
 
@@ -50,6 +50,18 @@ struct cpu_info {
 	int						cpu_hyperthread:1;
 };
 extern struct cpu_info 		*cpu_info;			/* static allocation of cpu_info */
+
+struct cpu_attach_args {
+	const char 				*caa_name;
+	u_int 					cpu_apic_id;
+	u_int					cpu_acpi_id;
+	int 					cpu_role;
+	struct cpu_ops			*cpu_ops;
+};
+
+#define CPU_ROLE_SP			0
+#define CPU_ROLE_BP			1
+#define CPU_ROLE_AP			2
 
 struct cpu_ops {
 	void 					(*cpu_init)(void);
@@ -102,4 +114,4 @@ curcpu(void)
 	return (ci);
 }
 
-#endif /* !_MACHINE_CPU_H_ */
+#endif /* !_I386_CPU_H_ */

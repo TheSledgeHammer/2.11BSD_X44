@@ -42,4 +42,4 @@
 #define		LTILDE		((int)TILDE>>16)) /* (obsolete) place holder */
 
 #define		L001000		0x0
-#endif
+#endif /* _TTY_COMPAT_OBSOLETE */

@@ -273,4 +273,4 @@ int	sypoll(dev_t dev, int events);
 int	syselect(dev_t dev, int flag);
 
 #endif
-#endif
+#endif /* !_SYS_TTY_H_ */

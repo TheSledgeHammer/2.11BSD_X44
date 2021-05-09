@@ -6,8 +6,8 @@
  *	@(#)tablet.h	7.1 (Berkeley) 6/4/86
  */
 
-#ifndef _TABLET_
-#define	_TABLET_
+#ifndef _SYS_TABLET_H_
+#define	_SYS_TABLET_H_
 /*
  * Tablet line discipline.
  */
@@ -22,44 +22,44 @@
  * where the tablet does not directly provide the information.
  */
 struct	tbpos {
-	int	xpos, ypos;				/* raw x-y coordinates */
-	short	status;				/* buttons/pen down */
-#define	TBINPROX	0100000		/* pen in proximity of tablet */
-	short	scount;				/* sample count */
+	int		xpos, ypos;				/* raw x-y coordinates */
+	short	status;					/* buttons/pen down */
+#define	TBINPROX	0100000			/* pen in proximity of tablet */
+	short	scount;					/* sample count */
 };
 
 struct	gtcopos {
-	int		xpos, ypos;		/* raw x-y coordinates */
-	short	status;			/* as above */
-	short	scount;			/* sample count */
-	short	xtilt, ytilt;	/* raw tilt */
+	int		xpos, ypos;				/* raw x-y coordinates */
+	short	status;					/* as above */
+	short	scount;					/* sample count */
+	short	xtilt, ytilt;			/* raw tilt */
 	short	pressure;
-	short	pad;			/* pad to longword boundary */
+	short	pad;					/* pad to longword boundary */
 };
 
 struct	polpos {
-	short	p_x, p_y, p_z;	/* raw 3-space coordinates */
+	short	p_x, p_y, p_z;			/* raw 3-space coordinates */
 	short	p_azi, p_pit, p_rol;	/* azimuth, pitch, and roll */
-	short	p_stat;			/* status, as above */
-	char	p_key;			/* calculator input keyboard */
+	short	p_stat;					/* status, as above */
+	char	p_key;					/* calculator input keyboard */
 };
 
 #define BIOSMODE	_IOW(b, 1, int)		/* set mode bit(s) */
 #define BIOGMODE	_IOR(b, 2, int)		/* get mode bit(s) */
-#define	TBMODE		0xfff0		/* mode bits: */
-#define		TBPOINT		0x0010		/* single point */
-#define		TBRUN		0x0000		/* runs contin. */
-#define		TBSTOP		0x0020		/* shut-up */
-#define		TBGO		0x0000		/* ~TBSTOP */
-#define	TBTYPE		0x000f		/* tablet type: */
-#define		TBUNUSED	0x0000
-#define		TBHITACHI	0x0001		/* hitachi tablet */
-#define		TBTIGER		0x0002		/* hitachi tiger */
-#define		TBGTCO		0x0003		/* gtco */
-#define		TBPOL		0x0004		/* polhemus 3space */
-#define		TBHDG		0x0005		/* hdg-1111b, low res */
-#define		TBHDGHIRES	0x0006		/* hdg-1111b, high res */
+#define	TBMODE		0xfff0				/* mode bits: */
+#define	TBPOINT		0x0010				/* single point */
+#define	TBRUN		0x0000				/* runs contin. */
+#define	TBSTOP		0x0020				/* shut-up */
+#define	TBGO		0x0000				/* ~TBSTOP */
+#define	TBTYPE		0x000f				/* tablet type: */
+#define	TBUNUSED	0x0000
+#define	TBHITACHI	0x0001				/* hitachi tablet */
+#define	TBTIGER		0x0002				/* hitachi tiger */
+#define	TBGTCO		0x0003				/* gtco */
+#define	TBPOL		0x0004				/* polhemus 3space */
+#define	TBHDG		0x0005				/* hdg-1111b, low res */
+#define	TBHDGHIRES	0x0006				/* hdg-1111b, high res */
 #define BIOSTYPE	_IOW(b, 3, int)		/* set tablet type */
 #define BIOGTYPE	_IOR(b, 4, int)		/* get tablet type*/
 
-#endif
+#endif /* _SYS_TABLET_H_ */

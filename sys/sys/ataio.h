@@ -17,21 +17,21 @@ typedef struct	atareq {
 
 	caddr_t	databuf;	/* Pointer to I/O data buffer */
 	u_long	datalen;	/* length of data buffer */
-	int	timeout;	/* Command timeout */
+	int		timeout;	/* Command timeout */
 	u_char	retsts;		/* the return status for the command */
 	u_char	error;		/* error bits */
 } atareq_t;
 
 /* bit defintions for flags */
 #define ATACMD_READ		0x00000001
-#define ATACMD_WRITE		0x00000002
-#define ATACMD_READREG		0x00000004
+#define ATACMD_WRITE	0x00000002
+#define ATACMD_READREG	0x00000004
 
 /* definitions for the return status (retsts) */
-#define ATACMD_OK	0x00
+#define ATACMD_OK		0x00
 #define ATACMD_TIMEOUT	0x01
 #define ATACMD_ERROR	0x02
-#define ATACMD_DF	0x03
+#define ATACMD_DF		0x03
 
 #define ATAIOCCOMMAND	_IOWR('Q', 8, atareq_t)
 

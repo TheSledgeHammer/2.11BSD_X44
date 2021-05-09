@@ -5,7 +5,8 @@
  *
  *	@(#)kernel.h	1.3 (2.11BSD GTE) 1997/2/14
  */
-
+#ifndef _SYS_KERNEL_H_
+#define _SYS_KERNEL_H_
 /*
  * Global variables for the kernel
  */
@@ -34,3 +35,5 @@ extern int 						profhz;		/* profiling clock's frequency */
 extern int						lbolt;		/* awoken once a second */
 extern int						psratio;	/* ratio: prof / stat */
 int 							avenrun[3];
+
+#endif /* _SYS_KERNEL_H_ */

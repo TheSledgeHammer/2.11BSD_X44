@@ -72,19 +72,19 @@ struct audio_prinfo {
 typedef struct audio_prinfo audio_prinfo_t;
 
 struct audio_info {
-	struct	audio_prinfo play;	/* Info for play (output) side */
-	struct	audio_prinfo record;	/* Info for record (input) side */
+	struct	audio_prinfo 	play;			/* Info for play (output) side */
+	struct	audio_prinfo 	record;			/* Info for record (input) side */
 
-	u_int	monitor_gain;	/* input to output mix */
+	u_int					monitor_gain;	/* input to output mix */
 	/* BSD extensions */
-	u_int	blocksize;	/* H/W read/write block size */
-	u_int	hiwat;		/* output high water mark */
-	u_int	lowat;		/* output low water mark */
-	u_int	_ispare1;
-	u_int	mode;		/* current device mode */
+	u_int					blocksize;		/* H/W read/write block size */
+	u_int					hiwat;			/* output high water mark */
+	u_int					lowat;			/* output low water mark */
+	u_int					_ispare1;
+	u_int					mode;			/* current device mode */
 #define AUMODE_PLAY		0x01
 #define AUMODE_RECORD	0x02
-#define AUMODE_PLAY_ALL	0x04	/* don't do real-time correction */
+#define AUMODE_PLAY_ALL	0x04				/* don't do real-time correction */
 };
 typedef struct audio_info audio_info_t;
 

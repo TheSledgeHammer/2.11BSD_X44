@@ -6,8 +6,8 @@
  *	@(#)namei.h	1.3 (2.11BSD) 1997/1/18
  */
 
-#ifndef _NAMEI_
-#define	_NAMEI_
+#ifndef _SYS_NAMEI_H_
+#define	_SYS_NAMEI_H_
 
 #include <sys/queue.h>
 
@@ -152,4 +152,4 @@ struct	nchstats {
 	long	ncs_pass2;			/* names found with passes == 2 */
 	long	ncs_2passes;		/* number of times we attempt it */
 };
-#endif
+#endif /* _SYS_NAMEI_H_ */

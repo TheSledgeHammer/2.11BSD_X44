@@ -6,6 +6,8 @@
  *	@(#)times.h	7.1 (Berkeley) 6/4/86
  */
 
+#ifndef	_SYS_TIMES_H_
+#define	_SYS_TIMES_H_
 /*
  * Structure returned by times()
  */
@@ -15,3 +17,4 @@ struct tms {
 	time_t	tms_cutime;		/* user time, children */
 	time_t	tms_cstime;		/* system time, children */
 };
+#endif /* _SYS_TIMES_H_ */

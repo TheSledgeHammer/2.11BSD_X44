@@ -6,8 +6,8 @@
  *	@(#)stat.h	7.1.5 (2.11BSD) 1996/09/20
  */
 
-#ifndef	_STAT_H_
-#define	_STAT_H_
+#ifndef	_SYS_STAT_H_
+#define	_SYS_STAT_H_
 
 #include <sys/time.h>
 
@@ -147,4 +147,4 @@ int		lstat (const char *, struct stat *);
 #endif
 __END_DECLS
 #endif
-#endif /* !_STAT_H_ */
+#endif /* !_SYS_STAT_H_ */

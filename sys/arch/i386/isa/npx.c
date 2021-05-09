@@ -234,7 +234,8 @@ npxprobe1(bus_space_tag_t iot, bus_space_handle_t ioh, int irq)
 	setidt(&idt[16], probetrap, 0, SDT_SYS386TGT, SEL_KPL);
 	save_imen = imen;
 	imen = ~((1 << IRQ_SLAVE) | (1 << irq));
-	SET_ICUS();
+	outb(IO_ICU1 + 1, imen);
+	outb(IO_ICU2 + 1, imen >> 8);
 
 	/*
 	 * Partially reset the coprocessor, if any.  Some BIOS's don't reset
@@ -306,7 +307,8 @@ npxprobe1(bus_space_tag_t iot, bus_space_handle_t ioh, int irq)
 	lcr0(rcr0() | (CR0_EM | CR0_TS));
 
 	imen = save_imen;
-	SET_ICUS();
+	outb(IO_ICU1 + 1, imen);
+	outb(IO_ICU2 + 1, imen >> 8);
 	idt[NRSVIDT + irq] = save_idt_npxintr;
 	idt[16] = save_idt_npxtrap;
 	intr_restore(save_eflags);

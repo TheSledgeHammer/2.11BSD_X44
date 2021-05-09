@@ -347,6 +347,12 @@ sfence(void)
 	__asm __volatile("sfence" : : : "memory");
 }
 
+static __inline void
+ia32_pause(void)
+{
+	__asm __volatile("pause");
+}
+
 static __inline u_char
 read_cyrix_reg(u_char reg)
 {

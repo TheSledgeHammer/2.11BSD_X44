@@ -142,7 +142,6 @@ int			sa_upcall(struct proc *, int, struct proc *, struct proc *, size_t, void *
 void		sa_putcachelwp(struct proc *, struct proc *);
 struct proc *sa_getcachelwp(struct sadata_vp *);
 
-
 void		sa_unblock_userret(struct proc *);
 void		sa_upcall_userret(struct proc *);
 void		cpu_upcall(struct proc *, int, int, int, void *, void *, void *, sa_upcall_t);

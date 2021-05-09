@@ -47,4 +47,4 @@ int     unp_internalize (struct mbuf *, struct proc *);
 	(sizeof(*(su)) - sizeof((su)->sun_path) + strlen((su)->sun_path))
 #endif
 
-#endif
+#endif /* !_SYS_UN_H_ */

@@ -191,14 +191,14 @@ define IH_COUNT				offsetof(struct intrhand, ih_count)
 define IH_NEXT				offsetof(struct intrhand, ih_next)
 endif
 
-define IS_HANDLERS			offsetof(struct intrsource, is_handlers)
-define IS_PIC				offsetof(struct intrsource, is_pic)
-define IS_FLAGS				offsetof(struct intrsource, is_flags)
-define IS_PIN				offsetof(struct intrsource, is_pin)
-define IS_TYPE				offsetof(struct intrsource, is_type)
-define IS_MAXLEVEL			offsetof(struct intrsource, is_maxlevel)
+#define IS_HANDLERS			offsetof(struct intrsource, is_handlers)
+#define IS_PIC				offsetof(struct intrsource, is_pic)
+#define IS_FLAGS				offsetof(struct intrsource, is_flags)
+#define IS_PIN				offsetof(struct intrsource, is_pin)
+#define IS_TYPE				offsetof(struct intrsource, is_type)
+#define IS_MAXLEVEL			offsetof(struct intrsource, is_maxlevel)
 
-define IREENT_MAGIC			IREENT_MAGIC
+#define IREENT_MAGIC			IREENT_MAGIC
 
 if NIOAPIC > 0
 define IOAPIC_SC_REG		offsetof(struct ioapic_softc, sc_reg)

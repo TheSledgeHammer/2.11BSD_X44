@@ -29,8 +29,6 @@
  * $FreeBSD$
  */
 
-#include "opt_pmap.h"
-
 #include <machine/asm.h>					/* miscellaneous asm macros */
 #include <devel/arch/i386/apic/ioapicreg.h>
 #include <devel/arch/i386/apic/lapicreg.h>
@@ -67,7 +65,7 @@
 /*
  * the APs enter here from their trampoline code (bootMP, below)
  */
-	.p2align 4
+		.p2align 4
 
 ENTRY(MPentry)
 		CHECKPOINT(0x36, 3)
@@ -205,8 +203,8 @@ bigJump:
 	/* this will be modified by mpInstallTramp() */
 	ljmp	$0x08, $0			/* far jmp to MPentry() */
 	
-dead:	hlt 		/* We should never get here */
-	jmp	dead
+dead:		hlt 		/* We should never get here */
+	jmp		dead
 
 /*
  * MP boot strap Global Descriptor Table

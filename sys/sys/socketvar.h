@@ -185,4 +185,4 @@ int	soo_poll(struct file *fp, int events, struct proc *p);
 
 #endif
 
-#endif
+#endif /* _SYS_SOCKETVAR_H_ */

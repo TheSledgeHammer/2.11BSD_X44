@@ -6,6 +6,9 @@
  *	@(#)clist.h	1.1 (2.10BSD Berkeley) 12/1/86
  */
 
+#ifndef	_SYS_CLIST_H_
+#define	_SYS_CLIST_H_
+
 /*
  * Raw structures for the character list routines.
  */
@@ -19,3 +22,4 @@ struct cblock {
 extern struct cblock *cfree, *cfreelist;
 extern int cfreecount, nclist;
 #endif
+#endif /* _SYS_CLIST_H_ */

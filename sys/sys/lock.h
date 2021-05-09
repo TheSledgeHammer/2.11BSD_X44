@@ -37,8 +37,8 @@
  *	@(#)lock.h	8.12 (Berkeley) 5/19/95
  */
 
-#ifndef	_LOCK_H_
-#define	_LOCK_H_
+#ifndef	_SYS_LOCK_H_
+#define	_SYS_LOCK_H_
 
 #include <machine/param.h>
 
@@ -159,9 +159,9 @@ typedef struct lock       	*lock_t;
 #define LK_KERNPROC 	((pid_t) -2)
 #define LK_NOPROC 		((pid_t) -1)
 
-/* Not so Simple_Lock */
+/* A Not so Simple_Lock */
 
-/* lock object: array_based queuing lock */
+/* lock object: array_based queuing lock (ABQL) */
 struct lock_object_cpu {
 	volatile u_int				loc_my_ticket;
 };
@@ -223,4 +223,4 @@ struct kthread 	*get_kthread_lockholder(struct lock_holder *);
 void 			set_uthread_lockholder(struct lock_holder *, struct uthread *);
 struct uthread 	*get_uthread_lockholder(struct lock_holder *);
 */
-#endif /* !_LOCK_H_ */
+#endif /* !_SYS_LOCK_H_ */

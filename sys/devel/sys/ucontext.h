@@ -48,7 +48,6 @@ typedef struct {
 	int				ss_flags;		/* SS_DISABLE and/or SS_ONSTACK */
 } stack_t;
 
-
 struct __ucontext {
 	unsigned int	uc_flags;		/* properties */
 	ucontext_t * 	uc_link;		/* context to resume */

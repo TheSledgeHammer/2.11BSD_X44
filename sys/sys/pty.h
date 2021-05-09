@@ -6,8 +6,8 @@
  *	@(#)pty.h	1.3 (2.11BSD GTE) 1997/5/2
  */
 
-#ifndef _PTY_H
-#define _PTY_H
+#ifndef _SYS_PTY_H_
+#define _SYS_PTY_H_
 
 #define PF_RCOLL    0x01
 #define PF_WCOLL    0x02
@@ -46,4 +46,4 @@ extern int ptyioctl(dev_t dev, u_int cmd, caddr_t data, int flag);
 
 #endif
 
-#endif
+#endif /* _SYS_PTY_H_ */
