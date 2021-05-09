@@ -81,41 +81,41 @@ _TOOL_PREFIX?=	nb
 # If an external toolchain base is specified, use it.
 #
 .if defined(EXTERNAL_TOOLCHAIN)						# {
-AR=			${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-ar
-AS=			${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-as
-LD=			${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-ld
-NM=			${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-nm
-OBJCOPY=	${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-objcopy
-OBJDUMP=	${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-objdump
-RANLIB=		${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-ranlib
-SIZE=		${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-size
-STRIP=		${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-strip
+AR=						${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-ar
+AS=						${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-as
+LD=						${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-ld
+NM=						${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-nm
+OBJCOPY=				${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-objcopy
+OBJDUMP=				${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-objdump
+RANLIB=					${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-ranlib
+SIZE=					${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-size
+STRIP=					${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-strip
 
-CC=			${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-gcc
-CPP=		${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-cpp
-CXX=		${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-c++
-FC=			${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-g77
-OBJC=		${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-gcc
+CC=						${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-gcc
+CPP=					${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-cpp
+CXX=					${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-c++
+FC=						${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-g77
+OBJC=					${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-gcc
 .else									# } {
 # Define default locations for common tools.
 .if ${USETOOLS_BINUTILS:Uyes} == "yes"					#  {
-AR=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-ar
-AS=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-as
-LD=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-ld
-NM=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-nm
-OBJCOPY=	${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-objcopy
-OBJDUMP=	${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-objdump
-RANLIB=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-ranlib
-SIZE=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-size
-STRIP=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-strip
+AR=						${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-ar
+AS=						${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-as
+LD=						${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-ld
+NM=						${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-nm
+OBJCOPY=				${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-objcopy
+OBJDUMP=				${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-objdump
+RANLIB=					${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-ranlib
+SIZE=					${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-size
+STRIP=					${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-strip
 .endif									#  }
 
 .if ${USETOOLS_GCC:Uyes} == "yes"					#  {
-CC=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-gcc
-CPP=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-cpp
-CXX=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-c++
-FC=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-g77
-OBJC=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-gcc
+CC=						${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-gcc
+CPP=					${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-cpp
+CXX=					${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-c++
+FC=						${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-g77
+OBJC=					${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-gcc
 .endif									#  }
 .endif	# EXTERNAL_TOOLCHAIN						# }
 
@@ -239,52 +239,52 @@ MKDYNAMICROOT?=	yes
 # Where the system object and source trees are kept; can be configurable
 # by the user in case they want them in ~/foosrc and ~/fooobj (for example).
 #
-BSDSRCDIR?=	/usr/src
-BSDOBJDIR?=	/usr/obj
+BSDSRCDIR?=		/usr/src
+BSDOBJDIR?=		/usr/obj
 NETBSDSRCDIR?=	${BSDSRCDIR}
 
-BINGRP?=	wheel
-BINOWN?=	root
-BINMODE?=	555
+BINGRP?=		wheel
+BINOWN?=		root
+BINMODE?=		555
 NONBINMODE?=	444
 
-MANDIR?=	/usr/share/man
-MANGRP?=	wheel
-MANOWN?=	root
-MANMODE?=	${NONBINMODE}
+MANDIR?=		/usr/share/man
+MANGRP?=		wheel
+MANOWN?=		root
+MANMODE?=		${NONBINMODE}
 MANINSTALL?=	maninstall catinstall
 
-INFODIR?=	/usr/share/info
-INFOGRP?=	wheel
-INFOOWN?=	root
-INFOMODE?=	${NONBINMODE}
+INFODIR?=		/usr/share/info
+INFOGRP?=		wheel
+INFOOWN?=		root
+INFOMODE?=		${NONBINMODE}
 
-LIBDIR?=	/usr/lib
+LIBDIR?=		/usr/lib
 
 LINTLIBDIR?=	/usr/libdata/lint
-LIBGRP?=	${BINGRP}
-LIBOWN?=	${BINOWN}
-LIBMODE?=	${NONBINMODE}
+LIBGRP?=		${BINGRP}
+LIBOWN?=		${BINOWN}
+LIBMODE?=		${NONBINMODE}
 
-DOCDIR?=	/usr/share/doc
+DOCDIR?=		/usr/share/doc
 HTMLDOCDIR?=	/usr/share/doc/html
-DOCGRP?=	wheel
-DOCOWN?=	root
-DOCMODE?=	${NONBINMODE}
+DOCGRP?=		wheel
+DOCOWN?=		root
+DOCMODE?=		${NONBINMODE}
 
-NLSDIR?=	/usr/share/nls
-NLSGRP?=	wheel
-NLSOWN?=	root
-NLSMODE?=	${NONBINMODE}
+NLSDIR?=		/usr/share/nls
+NLSGRP?=		wheel
+NLSOWN?=		root
+NLSMODE?=		${NONBINMODE}
 
-KMODDIR?=	/usr/lkm
-KMODGRP?=	wheel
-KMODOWN?=	root
-KMODMODE?=	${NONBINMODE}
+KMODDIR?=		/usr/lkm
+KMODGRP?=		wheel
+KMODOWN?=		root
+KMODMODE?=		${NONBINMODE}
 
-LOCALEDIR?=	/usr/share/locale
-LOCALEGRP?=	wheel
-LOCALEOWN?=	root
+LOCALEDIR?=		/usr/share/locale
+LOCALEGRP?=		wheel
+LOCALEOWN?=		root
 LOCALEMODE?=	${NONBINMODE}
 
 #
@@ -614,15 +614,15 @@ USE_XF86_4?=	yes
 #
 # Where X11R6 sources are and where it is installed to
 #
-X11SRCDIR?=		/usr/xsrc
+X11SRCDIR?=			/usr/xsrc
 X11SRCDIR.xc?=		${X11SRCDIR}/xfree/xc
 X11SRCDIR.local?=	${X11SRCDIR}/local
 X11ROOTDIR?=		/usr/X11R6
-X11BINDIR?=		${X11ROOTDIR}/bin
+X11BINDIR?=			${X11ROOTDIR}/bin
 X11FONTDIR?=		${X11ROOTDIR}/lib/X11/fonts
-X11INCDIR?=		${X11ROOTDIR}/include
-X11LIBDIR?=		${X11ROOTDIR}/lib/X11
-X11MANDIR?=		${X11ROOTDIR}/man
+X11INCDIR?=			${X11ROOTDIR}/include
+X11LIBDIR?=			${X11ROOTDIR}/lib/X11
+X11MANDIR?=			${X11ROOTDIR}/man
 X11USRLIBDIR?=		${X11ROOTDIR}/lib
 X11DRI?=			no
 

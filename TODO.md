@@ -6,6 +6,22 @@ A General todo list. Don't hesitate to add to this list. :)
 - Makefiles
 - Bug Fixes &/or missing critical content
 
+## Share/mk & mkhost:
+- 
+
+## Tools (NetBSD):
+- Only import required for current successful compilation
+	- Can add more as needed
+- Changes to NetBSD's Toolchain:
+	- Support: Clang and GCC
+	- Have all compiler components under a single directory.
+		-  E.g. Compiler Folder:
+			- GCC: binutils, flex(optional) gcc, gdb, gmake, groff, m4, mpc, mpfr
+			- Clang: clang, llvm, compiler-rt
+- add Makefiles
+- Long-Term Goal: 
+	- Convert this to a gradle, cmake or meson build toolchain/cross-compiler
+
 # usr/ (User & OS Libraries):
 ## lib:
 - libkvm
