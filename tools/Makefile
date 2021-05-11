@@ -22,7 +22,7 @@
 # for building rump kernels and the hypervisor.  It is typically used
 # when building rump kernels targeted for non-NetBSD systems (via
 # buildrump.sh), and should not be set for a regular "make build".
-TOOLS_BUILDRUMP?=no
+#TOOLS_BUILDRUMP?=no
 
 .if ${TOOLCHAIN_MISSING} == "no"
 . if (defined(HAVE_GCC) && ${HAVE_GCC} > 0) || \
@@ -56,15 +56,15 @@ TOOLCHAIN_BITS+= pcc
 TOOLCHAIN_BITS+= dbsym mdsetimage
 .endif
 
-DTRACE_BITS=
-.if ${MKDTRACE} != "no" || ${MKCTF} != "no"
-DTRACE_BITS+= .WAIT libelf
-DTRACE_BITS+= .WAIT libdwarf
-DTRACE_BITS+= .WAIT libctf
-.endif
-.if ${MKCTF} != "no"
-DTRACE_BITS+= .WAIT ctfconvert ctfmerge
-.endif
+#DTRACE_BITS=
+#.if ${MKDTRACE} != "no" || ${MKCTF} != "no"
+#DTRACE_BITS+= .WAIT libelf
+#DTRACE_BITS+= .WAIT libdwarf
+#DTRACE_BITS+= .WAIT libctf
+#.endif
+#.if ${MKCTF} != "no"
+#DTRACE_BITS+= .WAIT ctfconvert ctfmerge
+#.endif
 
 LINT_BITS=
 .if ${MKLINT} != "no"
@@ -91,36 +91,22 @@ dependall-binstall: dependall-compat
 # Dependencies in SUBDIR below ordered to maximize parallel ability.
 # See above for special treatment for host-mkdep, compat, and binstall.
 #
-SUBDIR=	host-mkdep compat binstall \
-	.WAIT mktemp .WAIT sed .WAIT genassym
-.if ${TOOLS_BUILDRUMP} == "no"
-SUBDIR+= cap_mkdb crunchgen ctags gencat hexdump \
+
+SUBDIR=	host-mkdep compat binstall	\
+		.WAIT mktemp .WAIT sed .WAIT genassym cap_mkdb crunchgen ctags gencat hexdump \ 
 		${LINT_BITS} \
-		makewhatis mtree nbperf .WAIT uudecode
-.endif
-
-SUBDIR+= cat rpcgen join lorder m4 mkdep tsort .WAIT yacc .WAIT awk .WAIT lex
-.if ${TOOLS_BUILDRUMP} == "no"
-SUBDIR+= xz-include .WAIT grep xz-lib pax .WAIT libprop
-
-SUBDIR += .WAIT texinfo \
-	.WAIT tic \
-	.WAIT ${TOOLCHAIN_BITS} \
-	${DTRACE_BITS} \
-		asn1_compile cksum compile_et db \
-		file lint1 slc \
+		makewhatis mtree nbperf .WAIT uudecode \
+		cat join lorder m4 mkdep tsort .WAIT yacc .WAIT awk .WAIT lex \
+		${TOOLCHAIN_BITS} \
+		asn1_compile atf-compile cat cksum compile_et config db \
+		file lint1 \
 		makefs sortinfo \
 		.WAIT menuc mkcsmapper mkesdb mklocale mknod msgc \
 		.WAIT disklabel gpt \
 		.WAIT paxctl \
 		.WAIT fdisk \
 		.WAIT installboot \
-		pwd_mkdb strfile sunlabel vgrind zic
-.endif
-SUBDIR+= stat .WAIT config
-.if ${TOOLS_BUILDRUMP} == "no"
-SUBDIR+= xz-bin
-.endif
+		pwd_mkdb stat strfile sunlabel zic
 
 .if ${MKLLVM} != "no" || ${MKLLVMRT} != "no"
 SUBDIR+= \
@@ -146,91 +132,18 @@ SUBDIR+=	groff
 SUBDIR+=	mandoc
 .endif
 
-.if ${TOOLS_BUILDRUMP} == "no"
-
 .if ${MKMAINTAINERTOOLS:Uno} != "no"
 SUBDIR+=	autoconf .WAIT gettext
 .endif
 
-.if ${USE_PIGZGZIP} != "no"
-SUBDIR+=	pigz
-.endif
+#.if ${USE_PIGZGZIP} != "no"
+#SUBDIR+=	pigz
+#.endif
 
-.if ${MACHINE} == "hppa"
-SUBDIR+=	hppa-mkboot
-.endif
-
-.if ${MACHINE} == "ibmnws"
-SUBDIR+=	ibmnws-ncdcs
-.endif
-
-.if ${MACHINE} == "macppc"
-SUBDIR+=	macppc-fixcoff
-.endif
-
-.if (${MACHINE} == "prep" || ${MACHINE} == "rs6000" || ${MACHINE} == "bebox")
-SUBDIR+=	powerpc-mkbootimage
-.endif
-
-.if ${MACHINE_CPU} == "arm"
-SUBDIR+=	arm-elf2aout
-.endif
-
-.if ${MACHINE_CPU} == "m68k"
-SUBDIR+=	m68k-elf2aout
-.endif
-
-.if !empty(MACHINE_ARCH:Mmips*)
-SUBDIR+=	mips-elf2ecoff
-.endif
-
-.if (${MACHINE} == "sgimips")
-SUBDIR+=	sgivol
-.endif
-
-.if ${MACHINE} == "acorn32"
-SUBDIR+=	sparkcrc
-.endif
-
-.if (${MACHINE_ARCH} == "sparc" || ${MACHINE_ARCH} == "sparc64")
-SUBDIR+=	fgen
-.endif
-
-.if ${MACHINE} == "amiga"
-SUBDIR+=	amiga-elf2bb
-SUBDIR+=	amiga-txlt
-.endif
-
-.if ${MACHINE} == "hp300"
-SUBDIR+=	hp300-mkboot
-.endif
-
-.if ${MACHINE} == "evbarm" \
-    && ${MACHINE_CPU} == "arm" \
-    && ${TARGET_ENDIANNESS} == "1234"
-SUBDIR+=	elftosb
-.endif
-
-.if ${MACHINE} == "evbarm" || ${MACHINE} == "evbmips" || \
-    ${MACHINE} == "evbppc" || ${MACHINE} == "evbsh3" || \
-    ${MACHINE} == "sandpoint"
-SUBDIR+=	mkubootimage
-SUBDIR+=	libfdt .WAIT
-SUBDIR+=	dtc
-.endif
-
-.if ${MACHINE} == "mvme68k"
-SUBDIR+=	mvme68k-wrtvid
-.endif
-
-.if ${MKX11} != "no"
-SUBDIR+=	makestrs
-SUBDIR+=	makekeys
-.endif
-
-SUBDIR+= cvslatest
-
-.endif # TOOLS_BUILDRUMP != no
+#.if ${MKX11} != "no"
+#SUBDIR+=	makestrs
+#SUBDIR+=	makekeys
+#.endif
 
 check_MKTOOLS: .PHONY .NOTMAIN
 .if ${MKTOOLS:Uyes} == "no"

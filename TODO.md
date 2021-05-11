@@ -7,7 +7,18 @@ A General todo list. Don't hesitate to add to this list. :)
 - Bug Fixes &/or missing critical content
 
 ## Share/mk & mkhost:
-- 
+- Seperate Host & Target (2.11BSD_X44) mk files
+- Host Environment:
+	- 1:1 format.
+	- Target provides necessary defitions
+- Forseeable Issues: (with above layout)
+	- Compilation order & variables
+		- #1 Simple Solution: 
+			- A definitions file Of static/dynamic variables
+				- For Example:
+					- HOSTSRCDIR = TARGETSRCDIR 	/* targets source files needed by host */
+					- HOSTCC = TARGETCC 				/* target c compiler */
+					- HOSTCPP = TARGETCPP 			/* target cpp compiler */ 
 
 ## Tools (NetBSD):
 - Only import required for current successful compilation
