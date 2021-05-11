@@ -692,7 +692,7 @@ twoelevenbsd_elf_signature(elp, eh)
 
 		if (ephp->p_type != PT_NOTE ||
 		    ephp->p_filesz > 1024 ||
-		    ephp->p_filesz < sizeof(Elf_Nhdr) + ELF_NOTE_NETBSD_NAMESZ)
+		    ephp->p_filesz < sizeof(Elf_Nhdr) + ELF_NOTE_211BSD_NAMESZ)
 			continue;
 
 		np = (Elf_Nhdr *)malloc(ephp->p_filesz, M_TEMP, M_WAITOK);
@@ -703,10 +703,10 @@ twoelevenbsd_elf_signature(elp, eh)
 
 		ndata = (char *)(np + 1);
 		switch (np->n_type) {
-		case ELF_NOTE_TYPE_NETBSD_TAG:
-			if (np->n_namesz != ELF_NOTE_NETBSD_NAMESZ ||
-					np->n_descsz != ELF_NOTE_NETBSD_DESCSZ ||
-					memcmp(ndata, ELF_NOTE_NETBSD_NAME, ELF_NOTE_NETBSD_NAMESZ))
+		case ELF_NOTE_TYPE_211BSD_TAG:
+			if (np->n_namesz != ELF_NOTE_211BSD_NAMESZ ||
+					np->n_descsz != ELF_NOTE_211BSD_DESCSZ ||
+					memcmp(ndata, ELF_NOTE_211BSD_NAME, ELF_NOTE_211BSD_NAMESZ))
 				goto next;
 			isnetbsd = 1;
 			break;

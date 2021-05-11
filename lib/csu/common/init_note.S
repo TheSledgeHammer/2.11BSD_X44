@@ -60,8 +60,8 @@
 		.section ".note.netbsd.ident", "a"
 		.p2align 2
 
-		.long	ELF_NOTE_NETBSD_NAMESZ
-		.long	ELF_NOTE_NETBSD_DESCSZ
-		.long	ELF_NOTE_TYPE_NETBSD_TAG
+		.long	ELF_NOTE_211BSD_NAMESZ
+		.long	ELF_NOTE_211BSD_DESCSZ
+		.long	ELF_NOTE_TYPE_211BSD_TAG
 		.ascii	"211BSD\0\0"				/* ELF_NOTE_211BSD_NAME */
 		.long	__211BSD_Version__

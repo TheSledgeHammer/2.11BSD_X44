@@ -284,4 +284,30 @@ struct wsdisplay_usefontdata {
 /* XXX NOT YET DEFINED */
 /* Mapping information retrieval. */
 
+/*
+ * Mux ioctls (96 - 127)
+ */
+
+#define	WSMUXIO_INJECTEVENT				_IOW('W', 96, struct wscons_event)
+#define	WSMUX_INJECTEVENT				WSMUXIO_INJECTEVENT /* XXX compat */
+
+struct wsmux_device {
+	int 			type;
+#define	WSMUX_MOUSE	1
+#define	WSMUX_KBD	2
+#define	WSMUX_MUX	3
+	int 			idx;
+};
+#define	WSMUXIO_ADD_DEVICE				_IOW('W', 97, struct wsmux_device)
+#define	WSMUX_ADD_DEVICE				WSMUXIO_ADD_DEVICE /* XXX compat */
+#define	WSMUXIO_REMOVE_DEVICE			_IOW('W', 98, struct wsmux_device)
+#define	WSMUX_REMOVE_DEVICE				WSMUXIO_REMOVE_DEVICE /* XXX compat */
+
+#define	WSMUX_MAXDEV 32
+struct wsmux_device_list {
+	int 				ndevices;
+	struct wsmux_device devices[WSMUX_MAXDEV];
+};
+#define	WSMUXIO_LIST_DEVICES			_IOWR('W', 99, struct wsmux_device_list)
+#define	WSMUX_LIST_DEVICES				WSMUXIO_LIST_DEVICES /* XXX compat */
 #endif /* _DEV_WSCONS_WSCONSIO_H_ */

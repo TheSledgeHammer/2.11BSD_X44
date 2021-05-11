@@ -61,14 +61,18 @@
 #include <sys/queue.h>
 #include <sys/syslog.h>
 #include <sys/systm.h>
+#include <sys/errno.h>
+#include <sys/fcntl.h>
 #include <sys/tty.h>
 #include <sys/signalvar.h>
 #include <sys/device.h>
 
 #include <dev/misc/wscons/wsconsio.h>
+#include <dev/misc/wscons/wsdisplayvar.h>
 #include <dev/misc/wscons/wseventvar.h>
 #include <dev/misc/wscons/wscons_callbacks.h>
-#include "../../../devel/dev/wsmuxvar.h"
+#include <dev/misc/wscons/wskbdvar.h>
+#include <dev/misc/wscons/wsmuxvar.h>
 
 #ifdef WSMUX_DEBUG
 #define DPRINTF(x)		if (wsmuxdebug) printf x

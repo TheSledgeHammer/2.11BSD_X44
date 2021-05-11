@@ -1,29 +1,39 @@
-#	$NetBSD: bsd.subdir.mk,v 1.47 2004/01/29 01:48:45 lukem Exp $
+#	$NetBSD: bsd.subdir.mk,v 1.54 2018/06/10 17:55:11 christos Exp $
 #	@(#)bsd.subdir.mk	8.1 (Berkeley) 6/8/93
 
 .include <bsd.init.mk>
 
+.if !defined(NOSUBDIR)					# {
+
 .for dir in ${SUBDIR}
+.if "${dir}" == ".WAIT"
+# Don't play with .WAIT
+__REALSUBDIR+=${dir}
+.else
+.if "${dir:H}" != ""
+# It is a relative path; make it absolute so exists can't search the path.
+.if exists(${.CURDIR}/${dir}.${MACHINE})
+__REALSUBDIR+=${dir}.${MACHINE}
+.else
+__REALSUBDIR+=${dir}
+.endif
+.else
+# It is an absolute path; leave it alone
 .if exists(${dir}.${MACHINE})
 __REALSUBDIR+=${dir}.${MACHINE}
 .else
 __REALSUBDIR+=${dir}
 .endif
+.endif
+.endif
 .endfor
 
+.if ${MKGROFF} == "yes"
+__REALSUBDIR+=${SUBDIR.roff}
+.endif
+
 __recurse: .USE
-	@targ=${.TARGET:C/-.*$//};dir=${.TARGET:C/^[^-]*-//};		\
-	case "$$dir" in /*)											\
-		echo "$$targ ===> $$dir";								\
-		cd "$$dir";												\
-		${MAKE} "_THISDIR_=$$dir/" $$targ;						\
-		;;														\
-	*)															\
-		echo "$$targ ===> ${_THISDIR_}$$dir";					\
-		cd "${.CURDIR}/$$dir";									\
-		${MAKE} "_THISDIR_=${_THISDIR_}$$dir/" $$targ;			\
-		;;														\
-	esac
+	@${MAKEDIRTARGET} ${.TARGET:C/^[^-]*-//} ${.TARGET:C/-.*$//}
 
 .if make(cleandir)
 __RECURSETARG=	${TARGETS:Nclean}
@@ -44,10 +54,10 @@ ${targ}-${dir}: .PHONY .MAKE __recurse
 SUBDIR_${targ} += ${targ}-${dir}
 .endif
 .endfor
-.if defined(__REALSUBDIR)
 subdir-${targ}: .PHONY ${SUBDIR_${targ}}
 ${targ}: subdir-${targ}
-.endif
 .endfor
+
+.endif	# ! NOSUBDIR					# }
 
 ${TARGETS}:	# ensure existence

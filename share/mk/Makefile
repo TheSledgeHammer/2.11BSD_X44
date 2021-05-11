@@ -1,12 +1,20 @@
-#	$NetBSD: Makefile,v 1.19.2.1 1998/05/05 22:22:36 mycroft Exp $
+#	$NetBSD: Makefile,v 1.52 2020/05/18 21:19:35 jmcneill Exp $
 #	@(#)Makefile	8.1 (Berkeley) 6/8/93
 
-FILES=	bsd.README bsd.doc.mk bsd.dep.mk bsd.files.mk  \
-		bsd.inc.mk bsd.lib.mk bsd.man.mk bsd.nls.mk bsd.obj.mk  \
-		bsd.own.mk bsd.prog.mk bsd.subdir.mk bsd.sys.mk sys.mk
-FILESDIR=	/usr/share/mk
-NOOBJ=	 	noobj
+NOOBJ=	# defined
 
-BINMODE=	444
+.include <bsd.own.mk>
+
+.if ${MKSHARE} != "no"
+FILES=		bsd.README bsd.clean.mk bsd.dep.mk bsd.doc.mk bsd.endian.mk 	\ 
+			bsd.files.mk bsd.inc.mk bsd.init.mk bsd.kernobj.mk bsd.kinc.mk 	\
+			bsd.lib.mk bsd.links.mk bsd.man.mk bsd.nls.mk bsd.obj.mk  		\
+			bsd.own.mk bsd.prog.mk bsd.shlib.mk bsd.subdir.mk bsd.sys.mk	\ 
+			sys.mk
+			
+FILESDIR=	/usr/share/mk
+.endif
+
+FILESMODE=	444
 
 .include <bsd.prog.mk>

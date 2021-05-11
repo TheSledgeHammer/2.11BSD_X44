@@ -55,6 +55,8 @@ struct wsmousedev_attach_args {
 	void							*accesscookie;	/* access cookie */
 };
 
+#define WSMOUSEDEVCF_MUX 	0
+
 /*
  * Autoconfiugration helper functions.
  */

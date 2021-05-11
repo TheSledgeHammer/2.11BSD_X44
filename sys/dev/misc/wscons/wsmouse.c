@@ -98,10 +98,13 @@ static const char _rcsid[] __attribute__ ((unused)) =
 #include <dev/misc/wscons/wsconsio.h>
 #include <dev/misc/wscons/wsmousevar.h>
 #include <dev/misc/wscons/wseventvar.h>
+#include <dev/misc/wscons/wsmuxvar.h>
 
 #include "wsmouse.h"
 
 struct wsmouse_softc {
+	struct wsevsrc					sc_base;
+
 	struct device					sc_dv;
 
 	const struct wsmouse_accessops 	*sc_accessops;
@@ -115,20 +118,22 @@ struct wsmouse_softc {
 	int								sc_dx;		/* delta-x */
 	int								sc_dy;		/* delta-y */
 	int								sc_dz;		/* delta-z */
+
+	int								sc_refcnt;
+	u_char							sc_dying;	/* device is being detached */
 };
 
-int		wsmouse_match (struct device *, struct cfdata *, void *);
-void	wsmouse_attach (struct device *, struct device *, void *);
+int			wsmouse_match (struct device *, struct cfdata *, void *);
+void		wsmouse_attach (struct device *, struct device *, void *);
+int  		wsmouse_detach(struct device *, int);
+int  		wsmouse_activate(struct device *, enum devact);
 
+static int  wsmouse_do_ioctl(struct wsmouse_softc *, u_long, caddr_t, int, struct proc *);
 
 #if NWSMOUSE > 0
-/*
-struct cfdriver wsmouse_cd = {
-		NULL, "wsmouse",  wsmouse_match, wsmouse_attach, DV_DULL, sizeof (struct wsmouse_softc)
-};
-*/
+
 CFDRIVER_DECL(NULL, wsmouse, &wsmouse_cops, DV_DULL, sizeof(struct wsmouse_softc));
-CFOPS_DECL(wsmouse, wsmouse_match, wsmouse_attach, NULL, NULL);
+CFOPS_DECL(wsmouse, wsmouse_match, wsmouse_attach, wsmouse_detach, wsmouse_activate);
 #endif /* NWSMOUSE > 0 */
 
 dev_type_open(wsmouseopen);
@@ -150,6 +155,13 @@ const struct cdevsw wsmouse_cdevsw = {
 	.d_discard = nodiscard,
 	.d_type = D_OTHER
 };
+
+#if NWSMUX > 0
+struct wssrcops wsmouse_srcops = {
+	WSMUX_MOUSE,
+	wsmouse_mux_open, wsmouse_mux_close, wsmousedoioctl, NULL, NULL
+};
+#endif
 
 /*
  * Print function (for parent devices).
@@ -180,14 +192,94 @@ wsmouse_attach(parent, self, aux)
     struct device *parent, *self;
 	void *aux;
 {
-        struct wsmouse_softc *sc = (struct wsmouse_softc *)self;
+    struct wsmouse_softc *sc = (struct wsmouse_softc *)self;
 	struct wsmousedev_attach_args *ap = aux;
+#if NWSMUX > 0
+	int mux, error;
+#endif
 
 	printf("\n");
 
 	sc->sc_accessops = ap->accessops;
 	sc->sc_accesscookie = ap->accesscookie;
 	sc->sc_ready = 0;				/* sanity */
+
+#if NWSMUX > 0
+	sc->sc_base.me_ops = &wsmouse_srcops;
+	mux = sc->sc_base.me_dv.dv_cfdata->cf_loc[WSMOUSEDEVCF_MUX];
+	if (mux >= 0) {
+		error = wsmux_attach_sc(wsmux_getmux(mux), &sc->sc_base);
+		if (error)
+			printf(" attach error=%d", error);
+		else
+			printf(" mux %d", mux);
+	}
+#else
+	if (sc->sc_base.me_dv.dv_cfdata->cf_loc[WSMOUSEDEVCF_MUX] >= 0)
+		printf(" (mux ignored)");
+#endif
+}
+
+int
+wsmouse_activate(struct device *self, enum devact act)
+{
+	struct wsmouse_softc *sc = (struct wsmouse_softc *)self;
+
+	if (act == DVACT_DEACTIVATE) {
+		sc->sc_dying = 1;
+	}
+	return (0);
+}
+
+/*
+ * Detach a mouse.  To keep track of users of the softc we keep
+ * a reference count that's incremented while inside, e.g., read.
+ * If the mouse is active and the reference count is > 0 (0 is the
+ * normal state) we post an event and then wait for the process
+ * that had the reference to wake us up again.  Then we blow away the
+ * vnode and return (which will deallocate the softc).
+ */
+int
+wsmouse_detach(struct device  *self, int flags)
+{
+	struct wsmouse_softc *sc = (struct wsmouse_softc *)self;
+	struct wseventvar *evar;
+	int maj, mn;
+	int s;
+
+#if NWSMUX > 0
+	/* Tell parent mux we're leaving. */
+	if (sc->sc_base.me_parent != NULL) {
+		DPRINTF(("wsmouse_detach:\n"));
+		wsmux_detach_sc(&sc->sc_base);
+	}
+#endif
+
+	/* If we're open ... */
+	evar = sc->sc_base.me_evp;
+	if (evar != NULL && evar->io != NULL) {
+		s = spltty();
+		if (--sc->sc_refcnt >= 0) {
+			/* Wake everyone by generating a dummy event. */
+			if (++evar->put >= WSEVENT_QSIZE)
+				evar->put = 0;
+			WSEVENT_WAKEUP(evar);
+			/* Wait for processes to go away. */
+			if (tsleep(sc, PZERO, "wsmdet", hz * 60))
+				printf("wsmouse_detach: %s didn't detach\n",
+				       sc->sc_base.me_dv.dv_xname);
+		}
+		splx(s);
+	}
+
+	/* locate the major number */
+	maj = cdevsw_lookup_major(&wsmouse_cdevsw);
+
+	/* Nuke the vnodes for any open instances (calls close). */
+	mn = self->dv_unit;
+	vdevgone(maj, mn, mn, VCHR);
+
+	return (0);
 }
 
 /* NEXT prepares to put the next event, backing off if necessary */
@@ -223,11 +315,16 @@ wsmouse_input(wsmousedev, btns, dx, dy, dz)
 	struct wscons_event *ev;
 	int mb, ub, d, get, put, any;
 
-        /*
-         * Discard input if not ready.
-         */
-	if (sc->sc_ready == 0)
+	/*
+	 * Discard input if not ready.
+	 */
+	if (sc->sc_ready == 0) {
 		return;
+	}
+
+#if NWSMUX > 0
+	DPRINTFN(5,("wsmouse_input: %s mux=%p, evar=%p\n", sc->sc_base.me_dv.dv_xname, sc->sc_base.me_parent, evar));
+#endif
 
 	sc->sc_mb = btns;
 	sc->sc_dx += dx;
@@ -432,3 +529,48 @@ wsmousepoll(dev, events, p)
 	return (0);
 #endif /* NWSMOUSE > 0 */
 }
+
+#if NWSMUX > 0
+int
+wsmouse_mux_open(me, evp)
+	struct wsevsrc *me;
+	struct wseventvar *evp;
+{
+	struct wsmouse_softc *sc = (struct wsmouse_softc *)me;
+
+	if (sc->sc_base.me_evp != NULL) {
+		return (EBUSY);
+	}
+
+	return wsmousedoopen(sc, evp);
+}
+
+int
+wsmouse_mux_close(me)
+	struct wsevsrc *me;
+{
+	struct wsmouse_softc *sc = (struct wsmouse_softc *)me;
+
+	sc->sc_base.me_evp = NULL;
+	(*sc->sc_accessops->disable)(sc->sc_accesscookie);
+
+	return (0);
+}
+
+int
+wsmouse_add_mux(unit, muxsc)
+	int unit;
+	struct wsmux_softc *muxsc;
+{
+	struct wsmouse_softc *sc;
+
+	if (unit < 0 || unit >= wsmouse_cd.cd_ndevs ||
+	    (sc = wsmouse_cd.cd_devs[unit]) == NULL)
+		return (ENXIO);
+
+	if (sc->sc_base.me_parent != NULL || sc->sc_base.me_evp != NULL)
+		return (EBUSY);
+
+	return (wsmux_attach_sc(muxsc, &sc->sc_base));
+}
+#endif /* NWSMUX > 0 */

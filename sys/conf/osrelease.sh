@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#	$NetBSD: osrelease.sh,v 1.4.2.7 1998/12/05 08:08:16 cgd Exp $
+#	$NetBSD: osrelease.sh,v 1.122 2012/02/16 23:56:57 christos Exp $
 #
 # Copyright (c) 1997 The NetBSD Foundation, Inc.
 # All rights reserved.
@@ -16,13 +16,6 @@
 # 2. Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in the
 #    documentation and/or other materials provided with the distribution.
-# 3. All advertising materials mentioning features or use of this software
-#    must display the following acknowledgement:
-#        This product includes software developed by the NetBSD
-#        Foundation, Inc. and its contributors.
-# 4. Neither the name of The NetBSD Foundation nor the names of its
-#    contributors may be used to endorse or promote products derived
-#    from this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
 # ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -37,15 +30,80 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-# Release number to use
-release=1.0.0
+# We use the number specified in <sys/param.h>
 
+# We use the number specified in <sys/param.h>
 
-case $1 in
+path="$0"
+[ "${path#/*}" = "$path" ] && path="./$path"
+exec < ${path%/*}/../sys/param.h
+
+# Search for line
+# #define __211BSD_Version__ <ver_num> /* 211BSD <ver_text> */
+#
+# <ver_num> and <ver_text> should match!
+
+# Search for line
+# #define __211BSD_Version__ <ver_num> /* 211BSD <ver_text> */
+#
+# <ver_num> and <ver_text> should match!
+
+while
+	read define ver_tag rel_num comment_start 211BSD rel_text rest || exit 1
+do
+	[ "$define" = "#define" ] || continue;
+	[ "$ver_tag" = "__211BSD_Version__" ] || continue
+	break
+done
+
+# default: return MM.mm.pp
+# -m: return MM, representing only the major number; however, for -current,
+#     return the next major number (e.g. for 5.99.nn, return 6)
+# -n: return MM.mm
+# -s: return MMmmpp (no dots)
+# -k: return MM.mm on release branch, MM.mm.pp on current.
+
+option="$1"
+
+# ${rel_num} is [M]Mmm00pp00
+rel_num=${rel_num%??}
+rel_MMmm=${rel_num%????}
+rel_MM=${rel_MMmm%??}
+rel_mm=${rel_MMmm#${rel_MM}}
+# rel_pp=${rel_num#${rel_MMmm}00}
+
+# Get patch from text version
+IFS=.
+set -- - $rel_text
+beta=${3#[0-9]}
+beta=${beta#[0-9]}
+shift 3
+IFS=' '
+set -- $rel_MM ${rel_mm#0}$beta $*
+
+case "$option" in
+-k)
+	if [ ${rel_mm#0} = 99 ]
+	then
+		IFS=.
+		echo "$*"
+	else
+		echo "${rel_MM}.${rel_mm#0}"
+	fi
+	;;
+	     
+-m)
+	echo "$(((${rel_MMmm}+1)/100))"
+	;;
+-n)
+	echo "${rel_MM}.${rel_mm#0}"
+	;;
 -s)
-	echo $release | sed -e 's,\.,,g'
+	IFS=
+	echo "$*"
 	;;
 *)
-	echo $release
+	IFS=.
+	echo "$*"
 	;;
 esac

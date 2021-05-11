@@ -158,4 +158,5 @@ wscons_init(devsw)
 	DEVSWIO_CONFIG_INIT(devsw, NWSDISPLAY, NULL, &wsdisplay_cdevsw, NULL);	/* Wscons Display */
 	DEVSWIO_CONFIG_INIT(devsw, NWSKBD, NULL, &wskbd_cdevsw, NULL);			/* Wscons Keyboard */
 	DEVSWIO_CONFIG_INIT(devsw, NWSMOUSE, NULL, &wsmouse_cdevsw, NULL);		/* Wscons Mouse */
+	DEVSWIO_CONFIG_INIT(devsw, NWSMUX, NULL, &wsmux_cdevsw, NULL);			/* Wscons Multiplexor */
 }

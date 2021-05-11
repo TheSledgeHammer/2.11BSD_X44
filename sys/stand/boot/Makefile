@@ -2,13 +2,13 @@
 
 BOOTSRC?=		/sys/stand/boot
 LIBKERN?= 		/sys/lib/libkern
-LIBSA?=		/sys/lib/libsa
+LIBSA?=			/sys/lib/libsa
 
 #EFISRC=		${BOOTSRC}/efi
 #EFIINC=		${EFISRC}/include
 #EFIINCMD=		${EFIINC}/${MACHINE}
 DLOADER=		${BOOTSRC}/dloader
-LDRSRC=		${BOOTSRC}/common
+LDRSRC=			${BOOTSRC}/common
 #UBOOTSRC=		${BOOTSRC}/uboot
 LIBCSRC=		/lib/libc
 

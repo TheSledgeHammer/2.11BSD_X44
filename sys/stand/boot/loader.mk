@@ -35,7 +35,7 @@ SRCS+=	pnp.c
 .if ${LOADER_CD9660_SUPPORT:Uno} == "yes"
 CFLAGS+=		-DLOADER_CD9660_SUPPORT
 .endif
-.if ${LOADER_EXT2FS_SUPPORT:Uno} == "yes"
+.if ${LOADER_EXT2FS_SUPPORT:Uno} == "no"
 CFLAGS+=		-DLOADER_EXT2FS_SUPPORT
 .endif
 .if ${LOADER_MSDOS_SUPPORT:Uno} == "yes"

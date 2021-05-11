@@ -8,6 +8,10 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## Share/mk & mkhost:
 - Seperate Host & Target (2.11BSD_X44) mk files
+	
+- Todo:
+	- lib, obj, own, prog, bsd.sys, sys
+	
 - Host Environment:
 	- 1:1 format.
 	- Target provides necessary defitions

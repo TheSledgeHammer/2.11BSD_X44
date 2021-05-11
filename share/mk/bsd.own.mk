@@ -22,10 +22,37 @@ SKEY=			yes
 # compiled in.
 #KERBEROS5=		yes
 
+# For each ${MACHINE_CPU}, list the ports that use it.
+MACHINES.i386=		i386
+
+#
+# Targets to check if DESTDIR or RELEASEDIR is provided
+#
+.if !target(check_DESTDIR)
+check_DESTDIR: .PHONY .NOTMAIN
+.if !defined(DESTDIR)
+	@echo "setenv DESTDIR before doing that!"
+	@false
+.else
+	@true
+.endif
+.endif
+
+.if !target(check_RELEASEDIR)
+check_RELEASEDIR: .PHONY .NOTMAIN
+.if !defined(RELEASEDIR)
+	@echo "setenv RELEASEDIR before doing that!"
+	@false
+.else
+	@true
+.endif
+.endif
+
 # where the system object and source trees are kept; can be configurable
 # by the user in case they want them in ~/foosrc and ~/fooobj, for example
 BSDSRCDIR?=			/usr/src
 BSDOBJDIR?=			/usr/obj
+NETBSDSRCDIR?=		${BSDSRCDIR}
 
 BINGRP?=			bin
 BINOWN?=			root
@@ -123,6 +150,13 @@ afterinstall:	.NOTMAIN subdir-install realinstall
 #
 
 MKCATPAGES?=yes
+
+#
+# Make the bootloader on supported arches
+#
+.if ${MACHINE_ARCH} == "i386"
+MKBOOT= yes
+.endif
 
 .if defined(NODOC)
 MKDOC=		no

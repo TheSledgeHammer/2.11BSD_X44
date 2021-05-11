@@ -72,7 +72,7 @@ struct wskbddev_attach_args {
 #define WSKBDDEVCF_CONSOLE			1
 #define WSKBDDEVCF_CONSOLE_DEFAULT	-1					/* spec'd as console? */
 #define	WSKBDDEVCF_CONSOLE_UNK		(WSKBDDEVCF_CONSOLE_DEFAULT)
-
+#define WSKBDDEVCF_MUX				1
 /*
  * Autoconfiguration helper functions.
  */

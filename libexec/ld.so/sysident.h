@@ -57,13 +57,13 @@
 
 #define	__S(x)	__STRING(x)
 __asm(
-	".pushsection\t\".note.netbsd.ident\", \"a\"\n"
+	".pushsection\t\".note.211bsd.ident\", \"a\"\n"
 	"\t.p2align\t2\n\n"
 
-	"\t.long\t" __S(ELF_NOTE_NETBSD_NAMESZ) "\n"
-	"\t.long\t" __S(ELF_NOTE_NETBSD_DESCSZ) "\n"
-	"\t.long\t" __S(ELF_NOTE_TYPE_NETBSD_TAG) "\n"
-	"\t.ascii\t" __S(ELF_NOTE_NETBSD_NAME) "\n"
+	"\t.long\t" __S(ELF_NOTE_211BSD_NAMESZ) "\n"
+	"\t.long\t" __S(ELF_NOTE_211BSD_DESCSZ) "\n"
+	"\t.long\t" __S(ELF_NOTE_TYPE_211BSD_TAG) "\n"
+	"\t.ascii\t" __S(ELF_NOTE_211BSD_NAME) "\n"
 	"\t.long\t" __S(__211BSD_Version__) "\n\n"
 
 	"\t.popsection\n"

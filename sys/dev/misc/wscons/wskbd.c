@@ -108,6 +108,7 @@ static const char _rcsid[] __attribute__ ((unused)) =
 #include <dev/misc/wscons/wsksymvar.h>
 #include <dev/misc/wscons/wseventvar.h>
 #include <dev/misc/wscons/wscons_callbacks.h>
+#include <dev/misc/wscons/wsmuxvar.h>
 
 #include "wskbd.h"
 
@@ -125,6 +126,7 @@ struct wskbd_internal {
 };
 
 struct wskbd_softc {
+	struct wsevsrc 					sc_base;
 	struct device					sc_dv;
 
 	struct wskbd_internal 			*id;
@@ -151,6 +153,9 @@ struct wskbd_softc {
 	int								sc_maplen;			/* number of entries in sc_map */
 	struct wscons_keymap 			*sc_map;			/* current translation map */
 	kbd_t 							sc_layout; 			/* current layout */
+
+	int								sc_refcnt;
+	u_char							sc_dying;			/* device is being detached */
 };
 
 #define MOD_SHIFT_L				(1 << 0)
@@ -178,20 +183,17 @@ struct wskbd_softc {
 
 int		wskbd_match (struct device *, struct cfdata *, void *);
 void	wskbd_attach (struct device *, struct device *, void *);
+int  	wskbd_detach(struct device *, int);
+int  	wskbd_activate(struct device *, enum devact);
 static inline void update_leds (struct wskbd_internal *);
 static inline void update_modifier (struct wskbd_internal *, u_int, int, int);
 static int internal_command (struct wskbd_softc *, u_int *, keysym_t);
 static keysym_t wskbd_translate (struct wskbd_internal *, u_int, int);
-static void wskbd_holdscreen (struct wskbd_softc *, int);
+static void 	wskbd_holdscreen (struct wskbd_softc *, int);
 
 #if NWSKBD > 0
-/*
-extern struct cfdriver wskbd_cd = {
-		NULL, "wskbd", wskbd_match, wskbd_attach, DV_DULL, sizeof (struct wskbd_softc)
-};
-*/
 CFDRIVER_DECL(NULL, wskbd, &pms_cops, DV_DULL, sizeof(struct wskbd_softc));
-CFOPS_DECL(wskbd, wskbd_match, wskbd_attach, NULL, NULL);
+CFOPS_DECL(wskbd, wskbd_match, wskbd_attach, wskbd_detach, wskbd_activate);
 #endif
 
 dev_type_open(wskbdopen);
@@ -213,6 +215,14 @@ const struct cdevsw wskbd_cdevsw = {
 	.d_discard = nodiscard,
 	.d_type = D_OTHER
 };
+
+#if NWSMUX > 0
+static int wskbd_mux_open(struct wsevsrc *, struct wseventvar *);
+static int wskbd_mux_close(struct wsevsrc *);
+#else
+#define wskbd_mux_open NULL
+#define wskbd_mux_close NULL
+#endif
 
 #ifndef WSKBD_DEFAULT_BELL_PITCH
 #define	WSKBD_DEFAULT_BELL_PITCH		1500	/* 1500Hz */
@@ -243,6 +253,14 @@ struct wskbd_keyrepeat_data wskbd_default_keyrepeat_data = {
 	WSKBD_DEFAULT_KEYREPEAT_DEL1,
 	WSKBD_DEFAULT_KEYREPEAT_DELN,
 };
+
+#if NWSDISPLAY > 0 || NWSMUX > 0
+struct wssrcops wskbd_srcops = {
+	WSMUX_KBD,
+	wskbd_mux_open, wskbd_mux_close, wskbd_do_ioctl,
+	wskbd_displayioctl, wskbd_set_display
+};
+#endif
 
 static void wskbd_repeat (void *v);
 
@@ -382,6 +400,75 @@ wskbd_repeat(v)
 		(hz * sc->sc_keyrepeat_data.delN) / 1000);
 	splx(s);
 }
+
+int
+wskbd_activate(self, act)
+	struct device *self;
+	enum devact act;
+{
+	struct wskbd_softc *sc = (struct wskbd_softc *)self;
+
+	if (act == DVACT_DEACTIVATE)
+		sc->sc_dying = 1;
+	return (0);
+}
+
+/*
+ * Detach a keyboard.  To keep track of users of the softc we keep
+ * a reference count that's incremented while inside, e.g., read.
+ * If the keyboard is active and the reference count is > 0 (0 is the
+ * normal state) we post an event and then wait for the process
+ * that had the reference to wake us up again.  Then we blow away the
+ * vnode and return (which will deallocate the softc).
+ */
+int
+wskbd_detach(self, flags)
+	struct device  *self;
+	int flags;
+{
+	struct wskbd_softc *sc = (struct wskbd_softc *)self;
+	struct wseventvar *evar;
+	int maj, mn;
+	int s;
+
+#if NWSMUX > 0
+	/* Tell parent mux we're leaving. */
+	if (sc->sc_base.me_parent != NULL) {
+		wsmux_detach_sc(&sc->sc_base);
+	}
+#endif
+
+	if (sc->sc_isconsole) {
+		KASSERT(wskbd_console_device == sc);
+		wskbd_console_device = NULL;
+	}
+
+	evar = sc->sc_base.me_evp;
+	if (evar != NULL && evar->io != NULL) {
+		s = spltty();
+		if (--sc->sc_refcnt >= 0) {
+			/* Wake everyone by generating a dummy event. */
+			if (++evar->put >= WSEVENT_QSIZE)
+				evar->put = 0;
+			WSEVENT_WAKEUP(evar);
+			/* Wait for processes to go away. */
+			if (tsleep(sc, PZERO, "wskdet", hz * 60))
+				printf("wskbd_detach: %s didn't detach\n",
+				       sc->sc_base.me_dv.dv_xname);
+		}
+		splx(s);
+	}
+
+	/* locate the major number */
+	maj = cdevsw_lookup_major(&wskbd_cdevsw);
+
+	/* Nuke the vnodes for any open instances. */
+	mn = self->dv_unit;
+	vdevgone(maj, mn, mn, VCHR);
+
+	return (0);
+}
+
 
 void
 wskbd_input(dev, type, value)
@@ -828,6 +915,23 @@ wskbd_set_display(dv, displaydv)
 	KASSERT(sc != NULL);
 	sc->sc_displaydv = displaydv;
 }
+
+#if NWSMUX > 0
+int
+wskbd_add_mux(int unit, struct wsmux_softc *muxsc)
+{
+	struct wskbd_softc *sc;
+
+	if (unit < 0 || unit >= wskbd_cd.cd_ndevs ||
+	    (sc = wskbd_cd.cd_devs[unit]) == NULL)
+		return (ENXIO);
+
+	if (sc->sc_base.me_parent != NULL || sc->sc_base.me_evp != NULL)
+		return (EBUSY);
+
+	return (wsmux_attach_sc(muxsc, &sc->sc_base));
+}
+#endif
 
 /*
  * Console interface.
