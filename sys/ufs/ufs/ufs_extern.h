@@ -33,6 +33,9 @@
  *	@(#)ufs_extern.h	8.10 (Berkeley) 5/14/95
  */
 
+#ifndef _UFS_UFS_EXTERN_H_
+#define	_UFS_UFS_EXTERN_H_
+
 struct buf;
 struct direct;
 struct disklabel;
@@ -125,3 +128,4 @@ int		ufsfifo_write (struct vop_write_args *);
 int		ufsfifo_close (struct vop_close_args *);
 #endif
 __END_DECLS
+#endif /* _UFS_UFS_EXTERN_H_ */

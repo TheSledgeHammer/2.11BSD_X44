@@ -11,13 +11,22 @@
 
 ## Architecture Support:
 - i386/x86 (In Development)
+	- 95% Complete: without SMP, Threads & limited PAE
+	- 60-80% Complete: with SMP, PAE & limited Threads
 - AMD64 (Planned)
 - Arm (32-Bit/64-Bit) (Planned)
 
 ## Current Project Aims:
 - Improve 2.11BSD's Dual Control (Proc & User)
-- Threading: Work in Progress
-- Scheduler: Work in Progress
+- Threading (Hybrid N/M):  
+	- Kernel Threads: (85% Complete)
+		- Machine-Dependent Code
+		- Bug Testing
+	- User Threads/Fibres: Work in Progress (50-75% Complete)
+		- PThreads Support
+		- IPC Improvements
+- Scheduler: (95% Complete) 
+	- Bug Testing
 - Networking:
   	- Firewall/ Packet Filter: NPF or PF & IPFW
   	- IPv6
@@ -27,8 +36,8 @@
 			- LFS2: 64-bit support via UFS/FFS2
 			- LFS1: 32-bit support via UFS/FFS1
   		- UFS1/UFS2:
-  			- Journaling
-  			- Dirhash
+  			- Journaling:
+  			- Dirhash: Work in Progress
 - New Filesystems (In Kernel):
 	- Union (BSD's)
 	- EXT2/3/4

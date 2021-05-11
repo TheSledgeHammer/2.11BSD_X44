@@ -57,7 +57,10 @@ A General todo list. Don't hesitate to add to this list. :)
 ## net / netimp / netinet / netns:
 Of Interest Todo:
 - 2.11BSD's networking stack
-	- No Support for ipv6, firewall/packet filter plus much more
+	- To Support:
+		- ipv6
+		- firewall/packet filter
+		- plus much more
 
 ## stand:
 - boot:

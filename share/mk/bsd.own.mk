@@ -12,7 +12,7 @@ WARNINGS?=		no
 # Defining `SKEY' causes support for S/key authentication to be compiled in.
 SKEY=			yes
 
-CLANG_ARCH=	i386
+CLANG_ARCH=		i386
 LLD_ARCH=		i386 
 
 PIE_ARCH=		i386 
@@ -66,8 +66,8 @@ PIE_DEFAULT?=
 
 # where the system object and source trees are kept; can be configurable
 # by the user in case they want them in ~/foosrc and ~/fooobj, for example
-BSDSRCDIR?=		/usr/src
-BSDOBJDIR?=		/usr/obj
+BSDSRCDIR?=			/usr/src
+BSDOBJDIR?=			/usr/obj
 
 BINGRP?=			bin
 BINOWN?=			root
@@ -78,7 +78,7 @@ DIRMODE?=			755
 SHAREDIR?=			/usr/share
 SHAREGRP?=			bin
 SHAREOWN?=			root
-SHAREMODE?=		${NONBINMODE}
+SHAREMODE?=			${NONBINMODE}
 
 MANDIR?=			/usr/share/man
 MANGRP?=			bin
@@ -102,9 +102,9 @@ NLSGRP?=			bin
 NLSOWN?=			root
 NLSMODE?=			${NONBINMODE}
 
-LOCALEDIR?=		/usr/share/locale
-LOCALEGRP?=		wheel
-LOCALEOWN?=		root
+LOCALEDIR?=			/usr/share/locale
+LOCALEGRP?=			wheel
+LOCALEOWN?=			root
 LOCALEMODE?=		${NONBINMODE}
 
 .if !defined(CDIAGFLAGS)
