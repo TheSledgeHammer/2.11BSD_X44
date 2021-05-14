@@ -192,7 +192,7 @@ rwlock_read_held(rwl)
 	__volatile rwlock_t rwl;
 {
 	register struct lock_object *lock = rwl->rwl_lnterlock;
-	register struct lock_object_cpu *cpu = lock->lo_cpus[cpu_number];
+	register struct lock_object_cpu *cpu = lock->lo_cpus[cpu_number()];
 	if (rwl == NULL)
 		return 0;
 	return (cpu->loc_my_ticket & RW_HAVE_WRITE) == 0 && (cpu->loc_my_ticket & RW_THREAD) != 0;
@@ -210,7 +210,7 @@ rwlock_write_held(rwl)
 	__volatile rwlock_t rwl;
 {
 	register struct lock_object *lock = &rwl->rwl_lnterlock;
-	register struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number];
+	register struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
 	if (rwl == NULL)
 		return (0);
 	return (cpu->loc_my_ticket & (RW_HAVE_WRITE | RW_THREAD)) == (RW_HAVE_WRITE | curproc);
@@ -228,7 +228,7 @@ rwlock_lock_held(rwl)
 	__volatile rwlock_t rwl;
 {
 	register struct lock_object *lock = &rwl->rwl_lnterlock;
-	register struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number];
+	register struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
 	if (rwl == NULL)
 		return 0;
 	return (cpu->loc_my_ticket & RW_THREAD) != 0;

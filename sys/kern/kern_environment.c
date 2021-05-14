@@ -68,7 +68,7 @@ char						**kenvp;
 struct lock					*kenv_lock;
 
 bool						dynamic_kenv;
-
+static void	init_dynamic_kenv(void *data);
 
 #define KENV_CHECK do { 							\
 	if (!dynamic_kenv) {							\

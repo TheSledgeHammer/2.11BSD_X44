@@ -158,6 +158,34 @@ struct pdevinit {
 	int					pdev_count;
 };
 
+/* configure hints */
+struct cfhint {
+	char				*ch_name;		/* device name */
+	int					ch_unit;		/**< current unit number */
+	char*				ch_nameunit;	/**< name+unit e.g. foodev0 */
+	int					ch_rescount;
+	struct cfresource	*ch_resources;
+
+
+	struct cfdriver		ch_driver;
+	struct device		ch_device;
+
+};
+
+typedef enum {
+	RES_INT, RES_STRING, RES_LONG
+} resource_type;
+
+struct cfresource {
+	char 				*cr_name;
+	resource_type		cr_type;
+	union {
+		long			longval;
+		int				intval;
+		char*			stringval;
+	} cr_u;
+};
+
 /* cfdriver and cfops declarations */
 #define CFDRIVER_DECL(devs, name, cops, class, size) 	\
 	struct cfdriver (name##_cd) = { (devs), (#name), (cops), (class), (size) }
@@ -167,6 +195,8 @@ struct pdevinit {
 
 struct	device 	*alldevs;	/* head of list of all devices */
 struct	evcnt 	*allevents;	/* head of list of all events */
+struct cfhint 	*allhints;	/* head of list of device hints */
+int 			cfhint_count; /* hint count */
 
 int				config_match(struct device *, struct cfdata *, void *);
 struct cfdata 	*config_search (cfmatch_t, struct device *, void *);

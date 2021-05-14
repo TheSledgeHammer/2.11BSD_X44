@@ -14,7 +14,6 @@
 #include <machine/pcb.h>
 #include <machine/param.h>
 
-
 #include <sys/param.h>
 #include <sys/errno.h>
 #include <sys/exec.h>

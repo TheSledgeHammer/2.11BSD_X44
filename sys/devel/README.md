@@ -19,7 +19,14 @@ an offical release is made.)
 		- Augment BSD's Filesystems & other Filesystems including:
 			- LFS: Augment the Log-Structure
 			- UFS: Augment Journaling
-			
+
+- MPX: A reimplementation of the Multiplexor.
+	Changes from Original:
+	- Replaces the pipe equivalent in FreeBSD, NetBSD, OpenBSD & DragonflyBSD
+	- Does not implement or use the line output.
+	- Interacts with the vfs layer rather than the filesystem.
+	- Meant to be interoperate with sockets
+
 - Kern & Sys:
 	- Malloc: A Tertiary Buddy System Allocator (Needs a home!). (subr_tbree.c & tbtree.h)
 		- Designed to work with the existing kern_malloc.c

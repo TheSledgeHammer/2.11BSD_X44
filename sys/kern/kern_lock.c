@@ -528,7 +528,7 @@ lock_object_init(lock, type, name, flags)
     memset(lock->lo_cpus, 0, sizeof(lock->lo_cpus));
 
     lock->lo_nxt_ticket = 0;
-    for (int i = 1; i < cpu_number; i++) {
+    for (int i = 1; i < cpu_number(); i++) {
     	lock->lo_can_serve[i] = 0;
     }
     lock->lo_can_serve[0] = 1;
@@ -545,7 +545,7 @@ void
 lock_object_acquire(lock)
 	struct lock_object 	*lock;
 {
-	struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number];
+	struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
 	unsigned long s;
 
 	s = intr_disable();
@@ -562,7 +562,7 @@ void
 lock_object_release(lock)
 	struct lock_object 	*lock;
 {
-	struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number];
+	struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
 	unsigned long s;
 
 	s = intr_disable();
@@ -579,7 +579,7 @@ int
 lock_object_try(lock)
 	struct lock_object 	*lock;
 {
-	struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number];
+	struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
 
 	return (!lock->lo_can_serve[&cpu->loc_my_ticket]);
 }
