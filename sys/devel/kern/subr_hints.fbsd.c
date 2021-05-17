@@ -503,5 +503,3 @@ resource_unset_value(const char *name, int unit, const char *resname)
 	varname[len] = '\0';
 	return (kern_unsetenv(varname));
 }
-
-

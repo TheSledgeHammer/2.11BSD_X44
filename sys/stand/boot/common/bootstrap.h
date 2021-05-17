@@ -191,6 +191,8 @@ struct preloaded_file {
     size_t					f_size;				/* file size */
     u_long                  f_marks[MARK_MAX];	/* filled by loadfile() */
 
+    struct file_metadata	*f_metadata;		/* file metadata (smap only) */
+
     /* ELF Symbols */
 	uint32_t				f_flags;
 	uint32_t 				f_mem_lower;

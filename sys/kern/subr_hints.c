@@ -49,6 +49,12 @@ extern struct cfhint allhints[];
 /* Runtime version */
 struct cfhint *hint = allhints;
 
+void
+resource_init()
+{
+	resource_cfgload();
+}
+
 static int
 resource_new_name(const char *name, int unit)
 {
@@ -88,7 +94,7 @@ resource_new_resname(int j, const char *resname, resource_type type)
 	}
 	new[i].cr_name = malloc(strlen(resname) + 1, M_TEMP, M_WAITOK);
 	if (new[i].cr_name == NULL) {
-		kfree(new, M_TEMP);
+		free(new, M_TEMP);
 		return (-1);
 	}
 	strcpy(new[i].cr_name, resname);
@@ -387,7 +393,7 @@ resource_set_string(const char *name, int unit, const char *resname, const char 
 	if (res->cr_type != RES_STRING)
 		return (EFTYPE);
 	if (res->cr_u.stringval)
-		kfree(res->cr_u.stringval, M_TEMP);
+		free(res->cr_u.stringval, M_TEMP);
 	res->cr_u.stringval = malloc(strlen(value) + 1, M_TEMP, M_WAITOK);
 	if (res->cr_u.stringval == NULL)
 		return (ENOMEM);
@@ -451,4 +457,28 @@ resource_cfgload(void *dummy /*__unused*/)
 			}
 		}
 	}
+}
+
+/*
+ * Check to see if a device is enabled via a disabled hint.
+ */
+int
+resource_enabled(const char *name, int unit)
+{
+	return (!resource_disabled(name, unit));
+}
+
+/*
+ * Check to see if a device is disabled via a disabled hint.
+ */
+int
+resource_disabled(const char *name, int unit)
+{
+	int error, value;
+
+	error = resource_int_value(name, unit, "disabled", &value);
+	if (error) {
+		return (0);
+	}
+	return (value);
 }

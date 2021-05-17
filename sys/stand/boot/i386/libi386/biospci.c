@@ -33,9 +33,9 @@
  */
 
 #include <machine/stdarg.h>
-#include <btxv86.h>
+
 #include <lib/libsa/stand.h>
-#include "bootstrap.h"
+#include <btxv86.h>
 #include "libi386.h"
 
 /*

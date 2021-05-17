@@ -34,7 +34,7 @@
 #include <lib/libsa/stand.h>
 
 static size_t	maxheap, heapsize = 0;
-static void	*sbrkbase;
+static void		*sbrkbase;
 
 void
 setheap(void *base, void *top)

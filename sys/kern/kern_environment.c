@@ -51,6 +51,7 @@
 #include <sys/systm.h>
 #include <lib/libkern/libkern.h>
 #include <sys/kenv.h>
+#include <sys/device.h>
 
 #define KENV_SIZE			512	/* Maximum number of environment strings */
 static int	kenv_mvallen = 	KENV_MVALLEN;
@@ -68,13 +69,19 @@ char						**kenvp;
 struct lock					*kenv_lock;
 
 bool						dynamic_kenv;
-static void	init_dynamic_kenv(void *data);
 
 #define KENV_CHECK do { 							\
 	if (!dynamic_kenv) {							\
 		panic("%s: called before KMEM", __func__);	\
 	}												\
 } while(0)
+
+
+void
+kenv_init()
+{
+	init_dynamic_kenv();
+}
 
 int
 kenv()
