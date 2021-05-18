@@ -92,6 +92,7 @@ slab_malloc(size, alignment, boundary, mtype, flags)
 	int 	error;
 	u_long 	*result;
 
+	slab = slab_create(CIRCLEQ_FIRST(&slab_list));
 	slab = slab_lookup(size, mtype);
 
 	error = extent_alloc(slab->s_extent, size, alignment, boundary, flags, &result);

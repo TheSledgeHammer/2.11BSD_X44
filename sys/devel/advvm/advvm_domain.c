@@ -60,7 +60,7 @@ advvm_domain_create(adom, name, id, start, end, flags)
 	u_long start, end;
 	int flags;
 {
-	advvm_malloc((advvm_domain_t *) adom, sizeof(advvm_domain_t *));
+	//advvm_malloc((advvm_domain_t *) adom, sizeof(advvm_domain_t *)); /* setup in advvm_attach */
 	adom->dom_name = name;
 	adom->dom_id = id;		/* generate a random uuid */
 	adom->dom_start = start;

@@ -68,6 +68,7 @@ struct slab {
 
     struct extent				*s_extent;										/* slab extent */
 
+    /* alt list: see end of vm_slab.c */
     struct slab					*s_next;
     struct slab					*s_prev;
 };

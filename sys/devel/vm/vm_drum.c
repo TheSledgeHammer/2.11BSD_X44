@@ -133,11 +133,9 @@ vschunk(p, base, size, type, dmp)
 	}
 	do {
 		vstodb(base, size, dmp, &db, type == CSTACK);
-		v = type == CSTACK ?
-				sptov(p, dtoc(base+db.db_size) - 1) : dptov(p, dtoc(base));
+		v = type == CSTACK ? sptov(p, dtoc(base+db.db_size) - 1) : dptov(p, dtoc(base));
 		(void) swap(p, db.db_base, ptob(v), (int) dtob(db.db_size), B_WRITE, 0, swapdev_vp, 0);
-		pte = type == CSTACK ?
-				sptopte(p, dtoc(base+db.db_size) - 1) : dptopte(p, dtoc(base));
+		pte = type == CSTACK ? sptopte(p, dtoc(base+db.db_size) - 1) : dptopte(p, dtoc(base));
 		p->p_rssize -= vmemfree(pte, (int) dtoc(db.db_size));
 		base += db.db_size;
 		size -= db.db_size;

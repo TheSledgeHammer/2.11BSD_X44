@@ -49,13 +49,13 @@ advvm_storage_create(pool, name, start, end, storage, storagesize, flags)
 	int flags;
 {
 	advvm_malloc((advvm_storage_t *) pool, sizeof(advvm_storage_t *));
-	pool->adp_start = start;
-	pool->adp_end = end;
-	pool->adp_flags = flags;
-	pool->adp_storage = storage;
-	pool->adp_storagesize = storagesize;
+	pool->ads_start = start;
+	pool->ads_end = end;
+	pool->ads_flags = flags;
+	pool->ads_storage = storage;
+	pool->ads_storagesize = storagesize;
 
-	pool->adp_extent = extent_create(name, pool->adp_start, pool->adp_end, M_ADVVM, pool->adp_storage, pool->adp_storagesize, pool->adp_flags);
+	pool->ads_extent = extent_create(name, pool->ads_start, pool->ads_end, M_ADVVM, pool->ads_storage, pool->ads_storagesize, pool->ads_flags);
 }
 
 int
@@ -67,9 +67,9 @@ advvm_allocate_region(pool, start, size, flags)
 	int error;
 
 	if(advvm_extent_check(pool)) {
-		if((start >= pool->adp_start) && (start <= pool->adp_end) && (start >= end)) {
-			if(size <= (pool->adp_end - pool->adp_start)) {
-				error = extent_alloc_region(pool->adp_extent, start, size, flags);
+		if((start >= pool->ads_start) && (start <= pool->ads_end) && (start >= end)) {
+			if(size <= (pool->ads_end - pool->ads_start)) {
+				error = extent_alloc_region(pool->ads_extent, start, size, flags);
 			} else {
 				panic("advvm_allocate_region: extent region size too big");
 			}
@@ -89,7 +89,7 @@ advvm_allocate_subregion(pool, size, alignment, boundary, flags)
 	int error;
 
 	if(advvm_extent_check(pool)) {
-		error = extent_alloc(pool->adp_extent, size, alignment, boundary, flags, pool->adp_pool);
+		error = extent_alloc(pool->ads_extent, size, alignment, boundary, flags, pool->ads_pool);
 	} else {
 		return (ADVVM_NOEXTENT);
 	}
@@ -105,7 +105,7 @@ advvm_free(pool, start, size, flags)
 {
 	int error;
 	if(advvm_extent_check(pool)) {
-		error = extent_free(pool->adp_extent, start, size, flags);
+		error = extent_free(pool->ads_extent, start, size, flags);
 	} else {
 		return (ADVVM_NOEXTENT);
 	}
@@ -118,7 +118,7 @@ advvm_destroy(pool)
 	advvm_storage_t *pool;
 {
 	if(advvm_extent_check(pool)) {
-		extent_destroy(pool->adp_extent);
+		extent_destroy(pool->ads_extent);
 		advvm_free((advvm_storage_t *) pool);
 	} else {
 		printf("advvm_destroy: no extent to destroy");
@@ -129,7 +129,7 @@ u_long *
 advvm_get_storage_pool(pool)
 	advvm_storage_t *pool;
 {
-	return (pool->adp_pool);
+	return (pool->ads_pool);
 }
 
 /* internal use only */
@@ -137,7 +137,7 @@ boolean_t
 advvm_extent_check(pool)
 	advvm_storage_t *pool;
 {
-	if(pool->adp_extent) {
+	if(pool->ads_extent) {
 		return (TRUE);
 	}
 	return (FALSE);

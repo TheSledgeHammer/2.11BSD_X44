@@ -35,16 +35,16 @@
 #include <sys/tree.h>
 
 struct advvm_storage {
-	struct extent 				*adp_extent;
-	u_long						adp_start;				/* start of extent */
-	u_long						adp_end;				/* end of extent */
-	caddr_t 					adp_storage;			/* fixed storage */
-	size_t						adp_storagesize;		/* fixed storage size */
-	int 						adp_flags;				/* see below */
+	struct extent 				*ads_extent;
+	u_long						ads_start;				/* start of extent */
+	u_long						ads_end;				/* end of extent */
+	caddr_t 					ads_storage;			/* fixed storage */
+	size_t						ads_storagesize;		/* fixed storage size */
+	int 						ads_flags;				/* see below */
 
-	u_long						adp_pool;				/* sub-region resulting pool */
+	u_long						ads_pool;				/* sub-region resulting pool */
 
-	SPLAY_HEAD(,advvm_pool) 	adp_root;
+	SPLAY_HEAD(,advvm_pool) 	ads_root;
 };
 typedef struct advvm_storage 	advvm_storage_t;
 

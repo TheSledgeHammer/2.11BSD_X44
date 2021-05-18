@@ -216,9 +216,9 @@ sbrk(p, uap, retval)
  */
 int
 estabur(seg, data, stack, text, sep, flags)
-	vm_segment_t seg;
-	segr_data_t *data;
-	segr_stack_t *stack;
+	vm_segment_t 	seg;
+	segr_data_t 	*data;
+	segr_stack_t 	*stack;
 	segr_text_t 	*text;
 	int 			sep, flags;
 {
