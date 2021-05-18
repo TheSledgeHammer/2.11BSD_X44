@@ -427,22 +427,22 @@ TARGETS+=	all clean cleandir depend dependall includes \
 
 .if ${NEED_OWN_INSTALL_TARGET} != "no"
 .if !target(install)
-install:	.NOTMAIN beforeinstall subdir-install realinstall afterinstall
+install:		.NOTMAIN beforeinstall subdir-install realinstall afterinstall
 beforeinstall:	.NOTMAIN
 subdir-install:	.NOTMAIN beforeinstall
 realinstall:	.NOTMAIN beforeinstall
 afterinstall:	.NOTMAIN subdir-install realinstall
 .endif
-all:		.NOTMAIN realall subdir-all
-subdir-all:	.NOTMAIN
-realall:	.NOTMAIN
-depend:		.NOTMAIN realdepend subdir-depend
+all:			.NOTMAIN realall subdir-all
+subdir-all:		.NOTMAIN
+realall:		.NOTMAIN
+depend:			.NOTMAIN realdepend subdir-depend
 subdir-depend:	.NOTMAIN
-realdepend:	.NOTMAIN
-distclean:	.NOTMAIN cleandir
-cleandir:	.NOTMAIN clean
+realdepend:		.NOTMAIN
+distclean:		.NOTMAIN cleandir
+cleandir:		.NOTMAIN clean
 
-dependall:	.NOTMAIN realdepend .MAKE
+dependall:		.NOTMAIN realdepend .MAKE
 	@cd ${.CURDIR}; ${MAKE} realall
 .endif
 

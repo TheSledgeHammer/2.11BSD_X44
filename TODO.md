@@ -8,9 +8,10 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## Share/mk & mkhost:
 - Seperate Host & Target (2.11BSD_X44) mk files
-	
 - Todo:
-	- lib, obj, own, prog, bsd.sys, sys
+	- obj, own, bsd.sys, sys
+	- bsd.prog.mk:
+		- __bsd_prog_mk_system_libs: remove unnecessary libs
 	
 - Host Environment:
 	- 1:1 format.
@@ -31,7 +32,7 @@ A General todo list. Don't hesitate to add to this list. :)
 	- Support: Clang and GCC
 	- Have all compiler components under a single directory.
 		-  E.g. Compiler Folder:
-			- GCC: binutils, flex(optional) gcc, gdb, gmake, groff, m4, mpc, mpfr
+			- GCC: binutils, flex(optional), gcc, gdb, gmake, groff, m4, mpc, mpfr
 			- Clang: clang, llvm, compiler-rt
 - add Makefiles
 - Long-Term Goal: 

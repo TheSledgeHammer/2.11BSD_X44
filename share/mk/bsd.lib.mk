@@ -8,12 +8,12 @@
 .include <bsd.sys.mk>
 
 ##### Basic targets
-.PHONY:		checkver libinstall
+.PHONY:			checkver libinstall
 realinstall:	checkver libinstall
-clean:		cleanlib
+clean:			cleanlib
 
 ##### LIB specific flags.
-COPTS+=    ${COPTS.lib${LIB}}
+COPTS+=    	${COPTS.lib${LIB}}
 CPPFLAGS+=  ${CPPFLAGS.lib${LIB}}
 CXXFLAGS+=  ${CXXFLAGS.lib${LIB}}
 LDADD+=     ${LDADD.lib${LIB}}
@@ -82,13 +82,14 @@ SHLIB_FULLVERSION=${SHLIB_MAJOR}
 # .so is used for PIC object files.
 .SUFFIXES: .out .a .ln .so .po .o .s .S .c .cc .cpp .cxx .C .m .F .f .r .y .l .cl .p .h
 .SUFFIXES: .sh .m4 .m
+
+
 # Set PICFLAGS to cc flags for producing position-independent code,
-# if not already set.
+# if not already set.  Includes -DPIC, if required.
 
 # Data-driven table using make variables to control how shared libraries
 # are built for different platforms and object formats.
-# SHLIB_MAJOR, SHLIB_MINOR, SHLIB_TEENY: Major, minor, and teeny version
-#			numbers of shared library
+# OBJECT_FMT:		currently either "ELF" or "a.out", from <bsd.own.mk>
 # SHLIB_SOVERSION:	version number to be compiled into a shared library
 #			via -soname. Usualy ${SHLIB_MAJOR} on ELF.
 #			NetBSD/pmax used to use ${SHLIB_MAJOR}[.${SHLIB_MINOR}
@@ -97,11 +98,26 @@ SHLIB_FULLVERSION=${SHLIB_MAJOR}
 #			with ELF, also set shared-lib version for ld.so.
 # SHLIB_LDSTARTFILE:	support .o file, call C++ file-level constructors
 # SHLIB_LDENDFILE:	support .o file, call C++ file-level destructors
+# FPICFLAGS:		flags for ${FC} to compile .[fF] files to .so objects.
+# CPPICFLAGS:		flags for ${CPP} to preprocess .[sS] files for ${AS}
+# CPICFLAGS:		flags for ${CC} to compile .[cC] files to pic objects.
+# CSHLIBFLAGS:		flags for ${CC} to compile .[cC] files to .so objects.
+#			(usually includes ${CPICFLAGS})
+# CAPICFLAGS:		flags for ${CC} to compiling .[Ss] files
+#		 	(usually just ${CPPPICFLAGS} ${CPICFLAGS})
+# APICFLAGS:		flags for ${AS} to assemble .[sS] to .so objects.
 
-PICFLAGS ?= -fPIC
+# Platform-independent flags for NetBSD shared libraries
+SHLIB_SOVERSION=${SHLIB_FULLVERSION}
+SHLIB_SHFLAGS=
+FPICFLAGS ?= 	-fPIC
+CPICFLAGS?= 	-fPIC -DPIC
+CPPPICFLAGS?= 	-DPIC
+CAPICFLAGS?= 	${CPPPICFLAGS} ${CPICFLAGS}
+APICFLAGS?= 	-k
 
 .if ${MKPICLIB} != "no"
-CSHLIBFLAGS+= ${PICFLAGS} ${SANITIZERFLAGS} ${LIBCSANITIZERFLAGS}
+CSHLIBFLAGS+= ${CPICFLAGS}
 .endif
 
 .if defined(CSHLIBFLAGS) && !empty(CSHLIBFLAGS)
@@ -110,48 +126,16 @@ MKSHLIBOBJS= yes
 MKSHLIBOBJS= no
 .endif
 
-.if (${MKDEBUG:Uno} != "no" && !defined(NODEBUG)) || \
-    (defined(CFLAGS) && !empty(CFLAGS:M*-g*))
-# We only add -g to the shared library objects
-# because we don't currently split .a archives.
-CSHLIBFLAGS+=	-g
-.if ${LIBISPRIVATE} != "no"
-CFLAGS+=	-g
-.endif
-.endif
-
 # Platform-independent linker flags for ELF shared libraries
+.if ${OBJECT_FMT} == "ELF"
 SHLIB_SOVERSION=	${SHLIB_MAJOR}
-SHLIB_SHFLAGS=		-Wl,-soname,${_LIB}.so.${SHLIB_SOVERSION}
-SHLIB_SHFLAGS+=		${SANITIZERFLAGS}
-.if !defined(SHLIB_WARNTEXTREL) || ${SHLIB_WARNTEXTREL} != "no"
-SHLIB_SHFLAGS+=		-Wl,--warn-shared-textrel
+SHLIB_SHFLAGS=		-Wl,-soname,lib${LIB}.so.${SHLIB_SOVERSION}
+SHLIB_LDSTARTFILE?=	${DESTDIR}/usr/lib/crti.o ${_GCC_CRTBEGINS}
+SHLIB_LDENDFILE?=	${_GCC_CRTENDS} ${DESTDIR}/usr/lib/crtn.o
 .endif
-.if !defined(SHLIB_MKMAP) || ${SHLIB_MKMAP} != "no"
-SHLIB_SHFLAGS+=		-Wl,-Map=${_LIB}.so.${SHLIB_SOVERSION}.map
-.endif
-CLEANFILES+=		${_LIB}.so.${SHLIB_SOVERSION}.map
-SHLIB_LDSTARTFILE?=	${_GCC_CRTI} ${_GCC_CRTBEGINS}
-SHLIB_LDENDFILE?=	${_GCC_CRTENDS} ${_GCC_CRTN}
 
 CFLAGS+=	${COPTS}
-OBJCFLAGS+=	${OBJCOPTS}
-AFLAGS+=	${COPTS}
 FFLAGS+=	${FOPTS}
-
-LIBSTRIPAOBJS=	yes
-.if !defined(CFLAGS) || empty(CFLAGS:M*-g*)
-LIBSTRIPCOBJS=		yes
-.endif
-.if !defined(OBJCFLAGS) || empty(OBJCFLAGS:M*-g*)
-LIBSTRIPOBJCOBJS=	yes
-.endif
-.if !defined(FFLAGS) || empty(FFLAGS:M*-g*)
-LIBSTRIPFOBJS=		yes
-.endif
-.if !defined(CSHLIBFLAGS) || empty(CSHLIBFLAGS:M*-g*) 
-LIBSTRIPSHLIBOBJS=	yes
-.endif
 
 .c.o:
 	${_MKTARGET_COMPILE}
