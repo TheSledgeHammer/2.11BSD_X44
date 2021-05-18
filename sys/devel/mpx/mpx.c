@@ -37,6 +37,8 @@
 #include <sys/errno.h>
 #include <sys/malloc.h>
 #include <sys/user.h>
+
+#include <devel/sys/malloctypes.h>
 #include <devel/mpx/mpx.h>
 
 struct fileops mpxops = {
@@ -55,6 +57,15 @@ dev_t 				mpxdev;
 
 char				mcdebugs[NDEBUGS];
 
+#define	MIN(a,b)	((a<b)?a:b)
+short	cmask[16]	={
+	01,	02,	04,
+	010,	020,	040,
+	0100,	0200,	0400,
+	01000,	02000,	04000,
+	010000,	020000,	040000, 0100000
+};
+
 #define	HIQ			100
 #define	LOQ			20
 #define	FP			((struct file *)cp)
@@ -65,6 +76,7 @@ mpx_read(fp, uio, cred)
     struct uio *uio;
     struct ucred *cred;
 {
+    vn_read(fp, uio, cred);
     return (0);
 }
 
@@ -74,6 +86,9 @@ mpx_write(fp, uio, cred)
     struct uio *uio;
     struct ucred *cred;
 {
+    struct mpx *mpx = (struct mpx *)fp->f_data;
+
+    vn_write(fp, uio, cred);
     return (0);
 }
 
@@ -84,15 +99,33 @@ mpx_ioctl(fp, cmd, data, p)
 	register caddr_t data;
 	struct proc *p;
 {
-	fp = f_Mpx;
-	struct mpx *mpx = fp->f_mpx;
+	struct mpx *mpx = fp->f_data;
+	MPX_LOCK(mpx);
+
 	switch (cmd) {
+	case FIONBIO:
+		break;
+	case FIOASYNC:
+	case FIONREAD:
+		if (!(fp->f_flag & FREAD)) {
+			*(int *)data = 0;
+			MPX_UNLOCK(mpx);
+			return (0);
+		}
+		break;
 	case FIOSETOWN:
-		return fsetown(&mpx->mpx_pgid, cmd, data);
+		MPX_UNLOCK(mpx);
+		error = fsetown(&mpx->mpx_pgid, (*(int *)data));
+		goto out_unlocked;
+
 	case FIOGETOWN:
-		return fgetown(mpx->mpx_pgid, cmd, data);
+		return fgetown(mpx->mpx_pgid, data);
 	}
-	return (0);
+
+	MPX_UNLOCK(mpx);
+
+out_unlocked:
+	return (error);
 }
 
 int
@@ -120,6 +153,7 @@ mpx_init()
 	LIST_INIT(mpx->mpx_head);
 }
 
+
 struct mpx_group *
 mpx_get_group(dev)
 	dev_t dev;
@@ -140,12 +174,24 @@ mpx_create_channel(index, isport)
 	register int i;
 	register struct mpx_chan *cp;
 	for(i = 0; i < ((isport)?NPORTS:NCHANS); i++) {
-		cp = (isport)?(struct mpx_chan *)schans+i : chans+i;
+		cp = (isport)?(struct mpx_chan *)schans[i] : chans[i];
 		if(cp->mpc_group == NULL) {
 			cp->mpc_index = index;
 			cp->mpc_flags = 0;
 			return (cp);
 		}
+	}
+	return (NULL);
+}
+
+struct mpx_group *
+mpx_create_group()
+{
+	struct mpx_group *gp;
+	int i;
+	for(i = 0; i < NGROUPS; i++) {
+		gp = &groups[i];
+		return (gp);
 	}
 	return (NULL);
 }
@@ -196,6 +242,7 @@ void
 mpxchan()
 {
 	struct	vnode		*vp, *gvp;
+	struct	vattr		*vap;
 	struct	tty			*tp;
 	struct	file		*fp, *chfp, *gfp;
 	struct	mpx_chan	*cp;
@@ -216,6 +263,7 @@ mpxchan()
 	gp = NULL;
 	gfp = NULL;
 	cp = NULL;
+	vap = (struct vattr *)vp->v_data;
 
 	switch (uap->cmd) {
 
@@ -267,13 +315,13 @@ mpxchan()
 		if (uap->cmd == MPXN) {
 			if ((vp = valloc(pipedev)) == NULL)
 				return;
-			vp->i_mode = ((vec.m_arg[1] & 0777) + IFMPC) & ~u.u_cmask;
-			vp->i_flag = IACC | IUPD | ICHG;
+			vap->va_mode = ((vec.m_arg[1] & 0777) + IFMPC) & ~u.u_cmask;
+			vp->v_flag = IACC | IUPD | ICHG;
 		} else {
 			u->u_dirp = vec.m_name;
 			vp = namei(uchar, 1);
 			if (vp != NULL) {
-				i = ip->i_mode & IFMT;
+				i = vap->va_mode & IFMT;
 				u.u_error = EEXIST;
 				if (i == IFMPC || i == IFMPB) {
 					i = minor(ip->i_un.i_rdev);
@@ -300,7 +348,7 @@ mpxchan()
 			return;
 		}
 		ip->i_un.i_rdev = (daddr_t) (mpxdev + i);
-		ip->i_count++;
+		vp->vu_count++;
 		vrele(vp);
 
 		gp = &vp->v_mpxgroup;
@@ -317,7 +365,7 @@ mpxchan()
 			gp->mpg_chans[i++] = NULL;
 
 		fp->f_flag = FREAD | FWRITE | FMP;
-		fp->f_inode = vp;
+		fp->f_vnode = vp;
 		fp->f_un.f_chan = NULL;
 		return;
 
@@ -906,15 +954,16 @@ mxwcontrol(cp)
 /*ARGSUSED*/
 void
 mxioctl(dev, cmd, addr, flag)
-caddr_t addr;
+	dev_t 	dev;
+	caddr_t addr;
 {
 	struct mpx_group *gp;
 	int fmp;
 	struct file *fp;
 	struct {
-		short c_ctl;
-		short c_cmd;
-		struct ttiocb c_vec;
+		short 			c_ctl;
+		short 			c_cmd;
+		struct ttiocb 	c_vec;
 	} ctlbuf;
 
 	if ((gp = getmpx(dev)) == NULL || (fp = getf(u.u_arg[0])) == NULL) {
@@ -1051,8 +1100,8 @@ scontrol(cp, event, value)
 	s = spl6();
 	if (sdata(cp) == NULL)
 		return;
-	putw( event, q);
-	putw( value, q);
+	putw(event, q);
+	putw(value, q);
 	splx(s);
 }
 

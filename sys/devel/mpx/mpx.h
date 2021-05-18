@@ -43,16 +43,21 @@
 #ifndef SYS_DEVEL_SYS_MPX_H_
 #define SYS_DEVEL_SYS_MPX_H_
 
+#include <sys/file.h>
+#include <sys/vnode.h>
 #include <sys/fcntl.h>
 #include <sys/queue.h>
+#include <sys/user.h>
 
 /* belongs in vnode.h */
-struct mpx_group 					*vu_mpxgroup;	/* mpx group */
-#define v_mpxgroup					v_un.vu_mpxgroup
+//struct mpx_group 					*vu_mpxgroup;	/* mpx group */
+//#define v_mpxgroup					v_un.vu_mpxgroup
 
 /* belongs in file.h */
+/*
 struct mpx							*f_Mpx;
 #define f_mpx						f_un.f_Mpx
+*/
 
 struct mpx_chan {
 	char 							mpc_index;
@@ -117,6 +122,7 @@ struct mpx_group {
 struct mpxpair {
 	struct mpx						mpp_rmpx;
 	struct mpx						mpp_wmpx;
+
 	struct lock_object				mpp_lock;
 };
 
@@ -128,6 +134,16 @@ struct mpx_args {
 
 #define FMPX	FREAD | FWRITE
 #define FMPY 	FREAD | FWRITE
+
+#define MPX_LOCK(mpx)				simple_lock((mpx)->mpp_lock)
+#define MPX_UNLOCK(mpx)				simple_unlock((mpx)->mpp_lock)
+
+struct mpx_object {
+	struct pgrp 					*mo_pgrp; 	/* proc group */
+	pid_t							mo_pid;		/* proc id */
+};
+typedef struct mpx_object 			*mpx_object_t;
+
 
 /*
  * flags

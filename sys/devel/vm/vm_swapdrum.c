@@ -414,6 +414,7 @@ swapdrum_on(p, sp)
 	sp->sw_flags &= ~SW_FAKE;	/* going live */
 	sp->sw_flags |= (SW_INUSE|SW_ENABLE);
 	cnt.swpages += npages;
+
 	return (0);
 }
 

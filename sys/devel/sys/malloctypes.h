@@ -59,6 +59,6 @@
 #define M_UFS211		89	/* UFS211 bufmap structure */
 #define M_PERCPU		90	/* percpu structure */
 
-#define M_IOAPIC		91	/* FreeBSD's ioapic structure */
+#define M_MPX			91	/* multiplexor structure */
 
 #endif /* _SYS_MALLOCTYPES_H_ */
