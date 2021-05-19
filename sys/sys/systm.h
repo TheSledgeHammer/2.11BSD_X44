@@ -5,6 +5,8 @@
  *
  *	@(#)systm.h	1.3 (2.11BSD GTE) 1996/5/9
  */
+#ifndef	_SYS_SYSTEM_H_
+#define	_SYS_SYSTEM_H_
 /*
  * The `securelevel' variable controls the security level of the system.
  * It can only be decreased by process 1 (/sbin/init).
@@ -173,3 +175,4 @@ int		getenv_array(const char *name, void *data, int size, int *psize, int type_s
 #define	insque(q,p)	_insque((caddr_t)q,(caddr_t)p)
 #define	remque(q)	_remque((caddr_t)q)
 #endif
+#endif /* !_SYS_SYSTEM_H_ */

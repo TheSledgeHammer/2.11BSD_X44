@@ -166,5 +166,4 @@ void	i386_bus_space_check (vm_offset_t, int, int);
 	{ "biosbasemem", CTLTYPE_INT }, 		\
 	{ "biosextmem", CTLTYPE_INT }, 			\
 }
-
 #endif /* !_I386_CPU_H_ */

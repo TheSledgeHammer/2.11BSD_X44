@@ -90,7 +90,7 @@
 #define	ELF_ROUND(a, b)		(((a) + (b) - 1) & ~((b) - 1))
 #define	ELF_TRUNC(a, b)		((a) & ~((b) - 1))
 
-#define MAXPHNUM	50
+#define MAXPHNUM			50
 
 /*
  * Copy arguments onto the stack in the normal way, but add some
@@ -448,7 +448,7 @@ elf_load_file(elp, path, vcset, entryoff, ap, last)
 				flags = VMCMD_BASE;
 				if (addr == ELF_LINK_ADDR)
 					addr = ph0->p_vaddr;
-				if (p->p_vmspace->vm_map.flags & VM_MAP_TOPDOWN)
+				if (addr > ELF_TRUNC(addr, ph0->p_align))
 					addr = ELF_TRUNC(addr, ph0->p_align);
 				else
 					addr = ELF_ROUND(addr, ph0->p_align);

@@ -1,4 +1,6 @@
-#	@(#)Make.tags.inc	8.1 (Berkeley) 6/11/93
+#	$NetBSD: Make.tags.inc,v 1.10 2001/04/18 11:21:24 lukem Exp $
+#
+#	from: @(#)Make.tags.inc	8.1 (Berkeley) 6/11/93
 
 # Common files for "make tags".
 # Included by the Makefile for each architecture.
@@ -7,12 +9,13 @@
 # there is a struct tag with the same name (eg., vmmeter).  The real
 # solution would probably be for ctags to generate "struct vmmeter" tags.
 
-COMM=	/sys/conf/*.[ch] \
-		/sys/dev/*.[ch] /sys/scsi/*.[ch] \
-		/sys/kern/*.[ch] /sys/lib/libkern/*.[ch] \
-		/sys/miscfs/*/*.[ch] \
-		/sys/net/*.[ch] /sys/netimp/*.[ch]  \
-		/sys/netinet/*.[ch] /sys/netns/*.[ch] \
-		/sys/nfs/*.[ch] /sys/sys/*.[ch] \
-		/sys/ufs/*/*.[ch] \
-		/sys/vm/*.[ch]
+.ifmake tags
+# The invocation below returns every directory that contains sources, excluding
+# the arch directories. Traditionally, COMM would have been an explicit list.
+# This promises to be easier to maintain, considering how often the directory
+# structure of the kernel sources has been changing recently.
+
+SYSDIR?= ${.CURDIR:H:H}
+COMM!=	find -H ${SYSDIR} -name arch -prune -o -name "*.[ch]" -print | \
+		sed 's@\(.*/\).*\..*@\1*.\[ch\]@' | sort -t / -u
+.endif

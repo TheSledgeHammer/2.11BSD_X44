@@ -37,6 +37,9 @@
  *
  *	@(#)inode.h	8.9 (Berkeley) 5/14/95
  */
+#ifndef _UFS_UFS_INODE_H_
+#define	_UFS_UFS_INODE_H_
+
 #include <sys/queue.h>
 
 #include <ufs/ufs/dir.h>
@@ -215,3 +218,4 @@ struct ufid {
 	int32_t	  ufid_gen;	/* Generation number. */
 };
 #endif /* KERNEL */
+#endif /* !_UFS_UFS_INODE_H_ */

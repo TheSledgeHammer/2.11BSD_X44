@@ -45,14 +45,15 @@
 #include <sys/conf.h>
 #include <sys/user.h>
 
-struct advvm_label 	*advlab;
-struct advvm_block 	*advblk;
+struct advvm_label 		*advlab;
+struct advvm_block 		*advblk;
 
 struct advvm_softc {
 	struct device		*sc_dev;		/* Self. */
 	struct dkdevice		sc_dkdev;		/* hook for generic disk handling */
 	//struct lock		sc_lock;
 	struct buf 			*sc_buflist;
+	char			 	sc_dying;		/* device detached */
 
 	struct advvm_header *sc_header;		/* advvm header */
 	struct volume 		*sc_volume;		/* advvm volumes */
@@ -99,9 +100,8 @@ static const struct dkdriver advvm_driver = {
 
 };
 
-const struct cfdriver advvm_cd = {
-		NULL, "advvm", advvm_probe, advvm_attach, DV_DISK, sizeof(struct advvm_softc)
-};
+CFDRIVER_DECL(NULL, advvm, &advvm_cops, DV_DISK, sizeof(struct advvm_softc));
+CFOPS_DECL(advvm, advvm_match, advvm_attach, advvm_detach, advvm_activate);
 
 struct advvm_header *
 advvm_set_header(magic, label, block)
@@ -121,25 +121,84 @@ advvm_set_header(magic, label, block)
 }
 
 int
-advvm_probe(struct device *parent, struct cfdata *match, void *aux)
+advvm_match(struct device *parent, struct cfdata *match, void *aux)
 {
-	return (0);
+	struct advvm_attach_args *adv = (struct advvm_attach_args *)aux;
+
+	if (strcmp(adv->ada_name, match->cf_driver->cd_name)) {
+		return (0);
+	}
+	return (1);
 }
 
 void
 advvm_attach(struct device *parent, struct device *self, void *aux)
 {
-	struct advvm_softc *sc = (void *)(self);
+	struct advvm_softc *sc = (struct advvm_softc *)(self);
+	struct advvm_attach_args *adv = (struct advvm_attach_args *)aux;
 
 	sc->sc_dev = self;
 
 	sc->sc_header = advvm_set_header(129, &advlab, &advblk); /* TODO: generate magic number */
-	self->dv_xname = sc->sc_header->ahd_label->alb_name;
+	adv->ada_name = sc->sc_header->ahd_label->alb_name;
+	self->dv_xname = adv->ada_name;
+
+	/* allocate domains, volumes & filesets */
+	advvm_malloc((advvm_domain_t *) sc->sc_domain, sizeof(advvm_domain_t *));
+	advvm_malloc((advvm_volume_t *) sc->sc_volume, sizeof(advvm_volume_t *));
+	advvm_malloc((advvm_fileset_t *) sc->sc_fileset, sizeof(advvm_fileset_t *));
+
+	/* initialize domains, volumes & filesets */
+	advvm_domain_init(sc->sc_domain);
+	advvm_volume_init(sc->sc_volume);
+	advvm_fileset_init(sc->sc_fileset);
 
 	/*
 	 * Initialize and attach the disk structure.
 	 */
 	disk_attach(&sc->sc_dkdev);
+}
+
+int
+advvm_detach(struct device *self, int flags)
+{
+	struct advvm_softc *sc = (struct advvm_softc *)self;
+	int s, maj, mn;
+
+	/* locate the major number */
+	/* character devices */
+	for (maj = 0; maj < nchrdev; maj++) {
+		if (cdevsw[maj].d_open == advvm_open) {
+			break;
+		}
+	}
+	/* block devices */
+	for (maj = 0; maj < nblkdev; maj++) {
+		if(bdevsw[maj].d_open == advvm_open) {
+			break;
+		}
+	}
+
+	/* Nuke the vnodes for any open instances (calls close). */
+	mn = self->dv_unit;
+	vdevgone(maj, mn, mn, VCHR);
+	vdevgone(maj, mn, mn, VBLK);
+
+	free(sc->sc_buflist, M_DEVBUF);
+}
+
+int
+advvm_activate(struct device *self, int act)
+{
+	struct advvm_softc *sc = (struct advvm_softc *)self;
+
+	switch (act) {
+	case DVACT_DEACTIVATE:
+		sc->sc_dying = 1;
+		break;
+	}
+
+	return (0);
 }
 
 int

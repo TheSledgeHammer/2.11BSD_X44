@@ -189,6 +189,20 @@ swap_interleaved(swp, nswdev, nswap)
 	}
 }
 
+/* returns a swapdev from swdevt array if not null */
+struct swapdev *
+sw_swapdrum(index)
+	int index;
+{
+	struct swapdev *sdp;
+
+	sdp = &swdevt[index].sw_swapdev;
+	if(sdp != NULL) {
+		return (sdp);
+	}
+	return (NULL);
+}
+
 /*
  * System call swapon(name) enables swapping on device name,
  * which must be in the swdevsw.  Return EBUSY
@@ -205,8 +219,46 @@ swapon(p, uap, retval)
 	struct swapon_args *uap;
 	int *retval;
 {
+	register struct vnode *vp;
+	register struct swdevt *sp;
+	dev_t 	dev;
+	int 	error;
+	struct nameidata nd;
 
-	return (0);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->name, p);
+	if (error == namei(&nd)) {
+		return (error);
+	}
+	vp = nd.ni_vp;
+	if (vp->v_type != VBLK) {
+		vrele(vp);
+		return (ENOTBLK);
+	}
+	dev = (dev_t)vp->v_rdev;
+	if (major(dev) >= nblkdev) {
+		vrele(vp);
+		return (ENXIO);
+	}
+	for (sp = &swdevt[0]; sp->sw_dev != NODEV; sp++) {
+		if (sp->sw_dev == dev) {
+			if (sp->sw_flags & SW_FREED) {
+				vrele(vp);
+				return (EBUSY);
+			}
+			sp->sw_vp = vp;
+			if (error == swfree(p, sp - swdevt)) {
+				vrele(vp);
+				return (error);
+			}
+			if(error == swapdrum_on(p, sp)) {
+				vrele(vp);
+				return (error);
+			}
+			return (0);
+		}
+	}
+	vrele(vp);
+	return (EINVAL);
 }
 
 /*
@@ -224,6 +276,14 @@ swapoff(p, uap, retval)
 	struct swapoff_args *uap;
 	int *retval;
 {
+	register struct vnode *vp;
+	register struct swdevt *sp;
+	dev_t 	dev;
+	int 	error;
+
+	if(error == swapdrum_off(p, sp)) {
+		return (error);
+	}
 	return (0);
 }
 
@@ -289,6 +349,7 @@ vm_swap_put(swslot, ppsp, npages, flags)
 {
 	int error;
 	error = vm_swap_io();
+
 
 	return (error);
 }

@@ -46,7 +46,7 @@
  *	string		OS name
  *
  * OSVERSION notes also have:
- *	long		OS version (__NetBSD_Version__ constant from param.h)
+ *	long		OS version (__211BSD_Version__ constant from param.h)
  *
  * The DATUM fields should be padded out such that their actual (not
  * declared) sizes % 4 == 0.
@@ -57,11 +57,11 @@
 
 #include "note.h"
 
-		.section ".note.netbsd.ident", "a"
+		.section ".note.211bsd.ident", "a"
 		.p2align 2
 
 		.long	ELF_NOTE_211BSD_NAMESZ
-		.long	ELF_NOTE_211BSD_DESCSZ
+		.long	ELF_NOTE_211BSD_NAMESZ
 		.long	ELF_NOTE_TYPE_211BSD_TAG
 		.ascii	"211BSD\0\0"				/* ELF_NOTE_211BSD_NAME */
 		.long	__211BSD_Version__

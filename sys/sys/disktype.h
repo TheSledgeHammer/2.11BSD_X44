@@ -186,5 +186,4 @@ static char *fstypenames[] = {
 #define	D_RAMDISK		0x08	/* disk emulator */
 #define	D_CHAIN			0x10	/* can do back-back transfers */
 
-
 #endif /* _SYS_DISKTYPE_H_ */

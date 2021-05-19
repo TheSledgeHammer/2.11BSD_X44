@@ -803,10 +803,11 @@ init_secondary_tail(pc)
 
 	smp_cpus++;
 
-	if (bootverbose)
+	if (bootverbose) {
 		printf("SMP: AP CPU #%d Launched!\n", cpuid);
-	else
+	} else {
 		printf("%s%d%s", smp_cpus == 2 ? "Launching APs: " : "", cpuid, smp_cpus == mp_ncpus ? "\n" : " ");
+	}
 
 	/* Determine if we are a logical CPU. */
 	if (cpu_info[PERCPU_GET(pc, apic_id)].cpu_hyperthread) {
@@ -818,7 +819,7 @@ init_secondary_tail(pc)
 
 	if (smp_cpus == mp_ncpus) {
 		/* enable IPI's, tlb shootdown, freezes etc */
-		atomic_store_rel_int(&smp_started, 1);
+		&smp_started = 1;
 	}
 
 #ifdef __amd64__
@@ -837,10 +838,8 @@ init_secondary_tail(pc)
 	*/
 #endif
 
-	mtx_unlock_spin(&ap_boot_mtx);
-
 	/* Wait until all the AP's are up. */
-	while (atomic_load_acq_int(&smp_started) == 0) {
+	while (&smp_started == 0) {
 		ia32_pause();
 	}
 }

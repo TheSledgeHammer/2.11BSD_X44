@@ -6,6 +6,9 @@
  *	@(#)errno.h	7.1.3 (2.11BSD) 1999/9/6
  */
 
+#ifndef	_SYS_ERRNO_H_
+#define	_SYS_ERRNO_H_
+
 #ifndef	KERNEL
 extern	int	errno;				/* global error number */
 #endif
@@ -122,3 +125,5 @@ extern	int	errno;				/* global error number */
 #define	EJUSTRETURN		-2		/* don't modify regs, just return */
 #define	ENOIOCTL		-3		/* ioctl not handled by this layer (aka EPASSTHROUGH) */
 #endif
+
+#endif /* _SYS_ERRNO_H_ */

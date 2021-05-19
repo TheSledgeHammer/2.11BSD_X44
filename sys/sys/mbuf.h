@@ -12,6 +12,9 @@
  *	@(#)mbuf.h	7.8.2 (2.11BSD GTE) 12/31/93
  */
 
+#ifndef	_SYS_MBUF_H_
+#define	_SYS_MBUF_H_
+
 /*
  * The default values for NMBUFS and NMBCLUSTERS (160 and 12 respectively)
  * result in approximately 32K bytes of buffer memory being allocated to
@@ -264,3 +267,5 @@ struct	mbuf *m_get(),*m_getclr(),*m_free(),*m_more(),*m_copy(),*m_pullup();
 #ifndef	pdp11
 caddr_t	m_clalloc();
 #endif
+
+#endif /* _SYS_MBUF_H_ */

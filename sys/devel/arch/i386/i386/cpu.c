@@ -38,19 +38,6 @@
 
 #include <devel/arch/i386/include/cpu.h>
 
-/* mpbios.c & mpacpi.c */
-struct cpu_attach_args {
-	const char 			*caa_name;
-	u_int 				cpu_apic_id;
-	u_int				cpu_acpi_id;
-	int 				cpu_role;
-	struct cpu_ops		*cpu_ops;
-};
-
-#define CPU_ROLE_SP		0
-#define CPU_ROLE_BP		1
-#define CPU_ROLE_AP		2
-
 struct cpu_softc {
 	struct device 		*sc_dev;		/* device tree glue */
 	struct cpu_info 	*sc_info;		/* pointer to CPU info */
@@ -157,7 +144,7 @@ cpu_attach(parent, self, aux)
 		 */
 		printf("apid %d (application processor)\n", caa->cpu_apic_id);
 #if defined(SMP)
-		//init_secondary(ci);
+		init_secondary(ci);
 		ci->ci_flags |= CPUF_PRESENT | CPUF_AP;
 #else
 		printf("%s: not started\n", sc->sc_dev->dv_xname);

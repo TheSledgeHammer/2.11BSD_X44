@@ -35,8 +35,8 @@
 
 /* bitfile tag */
 struct advvm_bittag {
-	uint32_t						abt_number;		 /* tag number, 1 based */
-	uint32_t						abt_sequence;	 /* sequence number */
+	uint32_t						abt_number;			/* tag number, 1 based */
+	uint32_t						abt_sequence;	 	/* sequence number */
 };
 typedef struct advvm_bittag			advvm_bittag_t;
 
@@ -51,8 +51,8 @@ typedef struct advvm_bittag			advvm_bittag_t;
 
 /* bitfile set id */
 struct advvm_bfsid {
-	struct advvm_bittag				*abd_dirtag;	/* tag of bitfile-set's tag directory */
-	uint32_t						abd_domid;		/* bitfile-set's domain's ID */
+	struct advvm_bittag				*abd_dirtag;		/* tag of bitfile-set's tag directory */
+	uint32_t						abd_domid;			/* bitfile-set's domain's ID */
 };
 typedef struct advvm_bfsid			advvm_bfsid_t;
 
@@ -66,14 +66,50 @@ typedef struct advvm_global_bitag	advvm_global_bitag_t;
 struct bfs_head;
 TAILQ_HEAD(bfs_head, advvm_bfs);
 struct advvm_bfs {
-	struct bfs_head					*abs_head;		/* bitfile set list */
-	TAILQ_ENTRY(advvm_bfs)			abs_entry;		/* bitfile set list entry */
-	struct advvm_bfsid  			abs_bfsid; 		/* bitfile-set's ID */
-	u_int 							abs_magic;		/* magic number: structure validation */
-	advvm_domain_t					*abs_domain;	/* pointer to set's domain structure */
-	dev_t							abs_dev;		/* set's dev_t */
-	struct advvm_bittag				abs_bftag;		/* tag of bitfile-set's tag directory */
+	struct bfs_head					*abs_head;			/* bitfile set list */
+	TAILQ_ENTRY(advvm_bfs)			abs_entry;			/* bitfile set list entry */
+	struct advvm_bfsid  			abs_bfsid; 			/* bitfile-set's ID */
+	u_int 							abs_magic;			/* magic number: structure validation */
+	advvm_domain_t					*abs_domain;		/* pointer to set's domain structure */
+	dev_t							abs_dev;			/* set's dev_t */
+	struct advvm_bittag				abs_bftag;			/* tag of bitfile-set's tag directory */
 };
 typedef struct advvm_bfs			advvm_bfs_t;
+
+/* Virtual Disks */
+
+/*
+ * stgDescT - Describes a contiguous set of available (free) vd blocks.
+ * These structures are used to maintain a list of free disk space.  There
+ * is a free list in each vd structure.  The list is ordered by virtual
+ * disk block (it could also be ordered by the size of each contiguous
+ * set of blocks in the future).
+ */
+struct advvm_stgdesc {
+	uint32_t						avd_startcluster;	/* vd cluster number of first free cluster */
+	uint32_t						avd_numcluster;		/* number of free clusters */
+
+	struct advvm_stgdesc 			*avd_prev;
+	struct advvm_stgdesc 			*avd_next;
+};
+
+/*
+ * vd - this structure describes a virtual disk, including accessed
+ * bitfile references, its size, i/o queues, name, id, and an
+ * access handle for the metadata.
+ */
+struct advvm_vdisk {
+	struct advvm_domain 			*avd_domain;		/* domain pointer for ds */
+	struct vnode					*avd_vp;			/* device access (temp vnode *) */
+	u_int 							avd_magic;			/* magic number: structure validation */
+	uint32_t						avd_vdindex;		/* 1-based virtual disk index */
+
+	uint32_t						avd_vdsize;			/* count of vdSectorSize blocks in vd */
+	int 							avd_vdsector; 		/* Sector size, in bytes, normally 512 */
+	uint32_t						avd_vdcluster;		/* num clusters in vd */
+
+	uint32_t						avd_numcluster;		/* num blks each stg bitmap bit */
+	struct advvm_stgdesc			*avd_freelist;		/* ptr to list of free storage descriptors */
+};
 
 #endif /* _ADVVM_BITFILE_H_ */

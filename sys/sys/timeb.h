@@ -20,4 +20,4 @@ struct timeb
 	short	timezone;			/* minutes west of CUT */
 	short	dstflag;			/* DST == non-zero */
 };
-#endif
+#endif /* _SYS_TIMEB_H_ */

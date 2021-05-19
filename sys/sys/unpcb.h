@@ -11,7 +11,8 @@
  *
  *	@(#)unpcb.h	7.2 (Berkeley) 1/7/88
  */
-
+#ifndef _SYS_UNPCB_H_
+#define _SYS_UNPCB_H_
 /*
  * Protocol control block for an active
  * instance of a UNIX internal protocol.
@@ -50,3 +51,4 @@ struct	unpcb {
 };
 
 #define	sotounpcb(so)	((struct unpcb *)((so)->so_pcb))
+#endif /* _SYS_UNPCB_H_ */

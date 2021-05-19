@@ -34,6 +34,9 @@
  * $Id: dirent.h,v 1.2 1994/08/02 07:52:47 davidg Exp $
  */
 
+#ifndef _SYS_DIRENT_H_
+#define _SYS_DIRENT_H_
+
 /*
  * The dirent structure defines the format of directory entries returned by 
  * the getdirentries(2) system call.
@@ -77,3 +80,5 @@ struct dirent {
  */
 #define	IFTODT(mode)	(((mode) & 0170000) >> 12)
 #define	DTTOIF(dirtype)	((dirtype) << 12)
+
+#endif /* _SYS_DIRENT_H_ */

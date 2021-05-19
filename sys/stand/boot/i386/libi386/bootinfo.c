@@ -79,7 +79,7 @@ bi_getboothowto(char *kargs)
 
     free(string);
 
-    return(howto);
+	return (howto);
 }
 
 void
@@ -113,5 +113,5 @@ bi_copyenv(vm_offset_t addr)
     }
     i386_copyin("", addr, 1);
     addr++;
-    return(addr);
+	return (addr);
 }

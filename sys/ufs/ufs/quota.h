@@ -36,8 +36,8 @@
  *	@(#)quota.h	8.3 (Berkeley) 8/19/94
  */
 
-#ifndef _QUOTA_
-#define _QUOTA_
+#ifndef _UFS_UFS_QUOTA_
+#define _UFS_UFS_QUOTA_
 
 /*
  * Definitions for disk quotas imposed on the average user
@@ -203,4 +203,4 @@ void chkdquot (struct inode *);
 __END_DECLS
 #endif
 
-#endif /* _QUOTA_ */
+#endif /* _UFS_UFS_QUOTA_ */

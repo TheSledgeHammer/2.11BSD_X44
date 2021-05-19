@@ -47,7 +47,7 @@
 #define	__END_DECLS
 #endif
 
-#include <machine/cdefs.h>
+#include <sys/cdefs.h>
 
 #ifdef __ELF__
 #include <sys/cdefs_elf.h>

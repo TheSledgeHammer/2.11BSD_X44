@@ -47,6 +47,7 @@
 #include <arch/i386/include/cputypes.h>
 #include <arch/i386/include/pcb.h>
 #include <arch/i386/include/psl.h>
+#include <arch/i386/include/pte.h>
 #include <arch/i386/include/param.h>
 #include <arch/i386/include/specialreg.h>
 #include <arch/i386/include/vmparam.h>
@@ -111,8 +112,8 @@ static void	install_ap_tramp(void);
 static int	start_all_aps(void);
 static int	start_ap(int apic_id);
 
-static char *ap_copyout_buf;
-static char *ap_tramp_stack_base;
+/* Set to 1 once we're ready to let the APs out of the pen. */
+static volatile int aps_ready = 0;
 
 /*
  * Initialize the IPI handlers and start up the AP's.
@@ -210,8 +211,6 @@ init_secondary(ci)
 	lldt(_default_ldt);
 	PERCPU_SET(pc, currentldt, _default_ldt);
 
-	PERCPU_SET(pc, trampstk, (uintptr_t)ap_tramp_stack_base + TRAMP_STACK_SZ - VM86_STACK_SPACE);
-
 	gsel_tss = GSEL(GPROC0_SEL, SEL_KPL);
 	gdt[myid * NGDT + GPROC0_SEL].sd.sd_type = SDT_SYS386TSS;
 	common_tssp->tss_esp0 = PERCPU_GET(pc, trampstk);
@@ -222,7 +221,6 @@ init_secondary(ci)
 	ltr(gsel_tss);
 
 	PERCPU_SET(pc, fsgs_gdt, &gdt[myid * NGDT + GUFS_SEL].sd);
-	PERCPU_SET(pc, copyout_buf, ap_copyout_buf);
 
 	/*
 	 * Set to a known state:
@@ -239,12 +237,13 @@ init_secondary(ci)
 	CHECK_WRITE(0x39, 6);
 
 	/* Spin until the BSP releases the AP's. */
-	while (atomic_load_acq_int(&aps_ready) == 0) { 			/* XXX: doesn't exist */
+	while (!aps_ready) {
 		ia32_pause();
 	}
 
 	/* BSP may have changed PTD while we were waiting */
 	invltlb();
+	pmap_invalidate_range(kernel_pmap, 0, NKPT * NBPDR - 1);
 
 #if defined(I586_CPU) && !defined(NO_F00F_HACK)
 	lidt(&r_idt);
@@ -260,9 +259,10 @@ init_secondary(ci)
 static int
 start_all_aps(void)
 {
+	uintptr_t kptbase;
 	u_char mpbiosreason;
 	u_int32_t mpbioswarmvec;
-	int apic_id, cpu;
+	int apic_id, cpu, i;
 
 	pmap_remap_lower(TRUE);
 
@@ -290,9 +290,6 @@ start_all_aps(void)
 
 		bootSTK = (char*) bootstacks[cpu] + KSTACK_PAGES * PAGE_SIZE - 4;
 		bootAP = cpu;
-
-		ap_tramp_stack_base = pmap_trm_alloc(TRAMP_STACK_SZ, M_NOWAIT);
-		ap_copyout_buf = pmap_trm_alloc(TRAMP_COPYOUT_SZ, M_NOWAIT);
 
 		/* attempt to start the Application Processor */
 		CHECK_INIT(99); /* setup checkpoints */
@@ -413,7 +410,6 @@ start_ap(int apic_id)
 	return 0; /* return FAILURE */
 }
 
-
 /*
  * Flush the TLB on other CPU's
  */
@@ -423,23 +419,49 @@ vm_offset_t smp_tlb_addr1, smp_tlb_addr2;
 pmap_t smp_tlb_pmap;
 volatile uint32_t smp_tlb_generation;
 
+static void
+smp_targeted_tlb_shootdown(cpuset_t mask, u_int vector, pmap_t pmap,
+    vm_offset_t addr1, vm_offset_t addr2, smp_invl_cb_t curcpu_cb)
+{
+	volatile uint32_t *p_cpudone;
+	uint32_t generation;
+	int cpu;
+
+	smp_tlb_addr1 = addr1;
+	smp_tlb_addr2 = addr2;
+	smp_tlb_pmap = pmap;
+
+	generation = ++smp_tlb_generation;
+}
 /*
  * Handlers for TLB related IPIs
  */
 static void
 invltlb_handler(pmap_t smp_tlb_pmap)
 {
+	uint32_t generation;
+
+	generation = smp_tlb_generation;
 	if (smp_tlb_pmap == kernel_pmap) {
 		invltlb_glob();
 	} else {
 		invltlb();
 	}
+	PERCPU_SET(smp_tlb_done, generation);
 }
 
 static void
 invlpg_handler(vm_offset_t smp_tlb_addr1)
 {
+	uint32_t generation;
+
+	generation = smp_tlb_generation;	/* Overlap with serialization */
+	if (smp_tlb_pmap == kernel_pmap) {
+
+	}
 	invlpg(smp_tlb_addr1);
+
+	PERCPU_SET(smp_tlb_done, generation);
 }
 
 static void

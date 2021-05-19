@@ -11,7 +11,7 @@ SRCS+=  smbios.c strdup.c strspn.c strtol.c ufsread.c
 SRCS+= 	load_exec.c load_ksyms.c
 .endif
 
-.if ${LOADER_NET_SUPPORT:Uno} == "yes"
+.if ${LOADER_NET_SUPPORT:Uno} == "no"
 SRCS+= 	dev_net.c
 .endif
 
@@ -51,7 +51,7 @@ CFLAGS+=		-DLOADER_NET_SUPPORT
 .endif
 
 # Partition support
-.if ${LOADER_GPT_SUPPORT:Uyes} == "yes"
+.if ${LOADER_GPT_SUPPORT:Uyes} == "no"
 CFLAGS+= 		-DLOADER_GPT_SUPPORT
 .endif
 .if ${LOADER_MBR_SUPPORT:Uyes} == "yes"

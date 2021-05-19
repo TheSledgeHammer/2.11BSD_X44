@@ -492,14 +492,20 @@ config_activate(dev)
 	struct cfops *cops	= cd->cd_ops;
 	int rv = 0, oflags = dev->dv_flags;
 
-	if (cops->cops_activate == NULL)
+	if (cops->cops_activate == NULL) {
 		return (EOPNOTSUPP);
+	}
+
+	if(config_hint_enabled(dev)) {
+		continue;
+	}
 
 	if ((dev->dv_flags & DVF_ACTIVE) == 0) {
 		dev->dv_flags |= DVF_ACTIVE;
 		rv = (*cops->cops_activate)(dev, DVACT_ACTIVATE);
-		if (rv)
+		if (rv) {
 			dev->dv_flags = oflags;
+		}
 	}
 
 	return (rv);
@@ -516,14 +522,32 @@ config_deactivate(dev)
 	if (cops->cops_activate == NULL)
 		return (EOPNOTSUPP);
 
-	if (dev->dv_flags & DVF_ACTIVE) {
-		dev->dv_flags &= ~DVF_ACTIVE;
-		rv = (*cops->cops_activate)(dev, DVACT_DEACTIVATE);
-		if (rv)
-			dev->dv_flags = oflags;
+	if (config_hint_disabled(dev)) {
+		continue;
 	}
 
+	if ((dev->dv_flags & DVF_ACTIVE)) {
+		dev->dv_flags &= ~DVF_ACTIVE;
+		rv = (*cops->cops_activate)(dev, DVACT_DEACTIVATE);
+		if (rv) {
+			dev->dv_flags = oflags;
+		}
+	}
 	return (rv);
+}
+
+int
+config_hint_enabled(dev)
+	struct device *dev;
+{
+	return (resource_enabled(dev->dv_xname, dev->dv_unit));
+}
+
+int
+config_hint_disabled(dev)
+	struct device *dev;
+{
+	return (resource_disabled(dev->dv_xname, dev->dv_unit));
 }
 
 /*

@@ -96,8 +96,7 @@ advvm_filset_set_tag_directory(tag, name, id)
   uint32_t        id;
 {
 	if (tag == NULL) {
-		advvm_malloc((struct advvm_tag_directory*) tag,
-				sizeof(struct advvm_tag_directory*));
+		advvm_malloc((struct advvm_tag_directory*) tag,	sizeof(struct advvm_tag_directory*));
 	}
 	tag->tag_name = name;
 	tag->tag_id = id;
@@ -135,7 +134,7 @@ advvm_fileset_create(adom, adfst, fst_name, fst_id, tag, tag_name, tag_id, fdir,
 	char 				*fst_name, *tag_name, *fdr_name;
 	uint32_t 			fst_id, tag_id;
 {
-	advvm_malloc((advvm_fileset_t*) adfst, sizeof(advvm_fileset_t*));
+	//advvm_malloc((advvm_fileset_t*) adfst, sizeof(advvm_fileset_t*)); /* setup in advvm_attach */
 	advvm_filset_set_tag_directory(tag, tag_name, tag_id);
 	advvm_filset_set_file_directory(fdir, tag, fdr_name);
 

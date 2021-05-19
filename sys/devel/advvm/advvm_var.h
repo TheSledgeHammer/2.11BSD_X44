@@ -132,6 +132,10 @@ struct advvm_header {
 	struct advvm_block		ahd_block;
 };
 
+struct advvm_attach_args {
+	char					*ada_name;
+};
+
 /* see: advvm.c */
 extern struct advvm_label 	*advlab;
 extern struct advvm_block 	*advblk;

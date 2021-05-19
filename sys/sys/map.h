@@ -5,7 +5,8 @@
  *
  *	@(#)map.h	1.1 (2.10BSD Berkeley) 12/1/86
  */
-
+#ifndef	 _SYS_MAP_H_
+#define	 _SYS_MAP_H_
 /*
  * Resource Allocation Maps.
  *
@@ -76,3 +77,4 @@ void 	rmfree (struct map *mp, long size, long addr); 									/* Free the previo
 long 	rmalloc3 (struct map *mp, long d_size, long s_size, long u_size, long a[3]);	/* Allocate resources for the three segments of a process.*/
 void	rminit (struct map *mp, long size, long addr, char *name, int mapsize);			/* Initialized resource malloc */
 #endif
+#endif /* _SYS_MAP_H_ */

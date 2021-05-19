@@ -6,6 +6,9 @@
  *	@(#)mtio.h	7.1.2 (2.11BSD) 1998/3/7
  */
 
+#ifndef	_SYS_MTIO_H_
+#define	_SYS_MTIO_H_
+
 /*
  * Structures and definitions for mag tape io control commands
  */
@@ -89,3 +92,4 @@ struct	mtget	{
 #define	DEFTAPE	"/dev/rmt8"
 #define	MT_DEF	"/dev/nrmt8"
 #endif
+#endif /* _SYS_MTIO_H_ */

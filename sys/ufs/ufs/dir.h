@@ -38,8 +38,8 @@
  *	@(#)dir.h	8.5 (Berkeley) 4/27/95
  */
 
-#ifndef _DIR_H_
-#define	_DIR_H_
+#ifndef _UFS_UFS_DIR_H_
+#define	_UFS_UFS_DIR_H_
 
 /*
  * Theoretically, directories can be more than 2Gb in length, however, in
@@ -74,6 +74,7 @@
  * Entries other than the first in a directory do not normally have
  * dp->d_ino set to 0.
  */
+
 #define DIRBLKSIZ	DEV_BSIZE
 #define	MAXNAMLEN	255
 
@@ -111,11 +112,10 @@ struct	direct {
  * null byte (dp->d_namlen+1), rounded up to a 4 byte boundary.
  */
 
-
 #if (BYTE_ORDER == LITTLE_ENDIAN)
-#define DIRSIZ(oldfmt, dp) \
-    ((oldfmt) ? \
-    ((sizeof(struct direct) - (MAXNAMLEN+1)) + (((dp)->d_type+1 + 3) &~ 3)) : \
+#define DIRSIZ(oldfmt, dp) 														\
+    ((oldfmt) ? 																\
+    ((sizeof(struct direct) - (MAXNAMLEN+1)) + (((dp)->d_type+1 + 3) &~ 3)) : 	\
     ((sizeof(struct direct) - (MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3)))
 #else
 #define DIRSIZ(oldfmt, dp) \
@@ -154,4 +154,4 @@ struct odirtemplate {
 	u_int16_t	dotdot_namlen;
 	char		dotdot_name[4];	/* ditto */
 };
-#endif /* !_DIR_H_ */
+#endif /* !_UFS_UFS_DIR_H_ */

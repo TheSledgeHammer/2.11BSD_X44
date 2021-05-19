@@ -41,7 +41,7 @@ const struct elfh elfhdr = {
 	{
 	    ELFMAG0, ELFMAG1, ELFMAG2, ELFMAG3,     /* e_ident */
 	    ELFCLASS32, ELFDATA2LSB, EV_CURRENT, 0,
-	    'F', 'r', 'e', 'e', 'B', 'S', 'D', 0
+	    '2', '1', '1', 'B', 'S', 'D', 0
 	},
 	ET_EXEC,				    			/* e_type */
 	EM_386, 				    			/* e_machine */

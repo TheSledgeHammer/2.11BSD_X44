@@ -36,11 +36,9 @@ extern struct percpu 				__percpu[];
 	struct	segment_descriptor 		*pc_tss_gdt;								\
 	struct	segment_descriptor 		*pc_fsgs_gdt;								\
 	struct	i386tss 				*pc_common_tssp;							\
-	u_int							pc_trampstk;								\
 	int								pc_currentldt;								\
 	u_int   						pc_acpi_id;			/* ACPI CPU id */		\
 	u_int							pc_apic_id;			/* APIC CPU id */		\
-	char							*pc_copyout_buf;							\
 
 #ifdef _KERNEL
 #define	PERCPU_PTR(pc, name)		((pc)->pc_##name)
@@ -48,7 +46,7 @@ extern struct percpu 				__percpu[];
 #define PERCPU_GET(pc, name)        (PERCPU_PTR(pc, name))
 #define PERCPU_ADD(pc, name, val)   (PERCPU_PTR(pc, name) += (val))
 
-#define	IS_BSP(pc)					(PCPU_GET(pc, cpuid) == 0)
+#define	IS_BSP(pc)					(PERCPU_GET(pc, cpuid) == 0)
 
 struct kthread *
 __curkthread(void)

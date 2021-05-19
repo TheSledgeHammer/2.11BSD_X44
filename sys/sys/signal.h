@@ -6,6 +6,9 @@
  *	@(#)signal.h	1.2 (2.11BSD) 1997/8/28
  */
 
+#ifndef	_SYS_SIGNAL_H_
+#define _SYS_SIGNAL_H_
+
 #ifndef	NSIG
 #define NSIG		32
 
@@ -149,3 +152,4 @@ extern long	sigblock(), sigsetmask();
 #endif
 
 #endif /* NSIG */
+#endif /* _SYS_SIGNAL_H_ */

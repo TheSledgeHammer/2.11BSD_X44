@@ -50,13 +50,13 @@
 #include <machine/pc/bios.h>
 
 #ifdef DEV_ISA
-#include <dev/isa/isavar.h>
-#include <dev/isapnp/isapnpreg.h>
-#include <dev/isapnp/isapnpvar.h>
+#include <dev/core/isa/isavar.h>
+#include <dev/core/isapnp/isapnpreg.h>
+#include <dev/core/isapnp/isapnpvar.h>
 #endif
 
-#define BIOS_START	0xe0000
-#define BIOS_SIZE	0x20000
+#define BIOS_START			0xe0000
+#define BIOS_SIZE			0x20000
 
 /* exported lookup results */
 struct bios32_SDentry		PCIbios;

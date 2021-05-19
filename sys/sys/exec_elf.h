@@ -698,18 +698,17 @@ typedef struct {
 
 #define	ELF_NOTE_TYPE_OSVERSION			1
 
-/* 211BSD-specific note type: OS Version.  desc is 4-byte 211BSD integer. */
+/* NetBSD-specific note type: OS Version.  desc is 4-byte NetBSD integer. */
 #define	ELF_NOTE_211BSD_TYPE_OSVERSION	ELF_NOTE_TYPE_OSVERSION
 
-
-/* 211BSD-specific note type: Emulation name.  desc is emul name string. */
+/* NetBSD-specific note type: Emulation name.  desc is emul name string. */
 #define	ELF_NOTE_211BSD_TYPE_EMULNAME	2
 
-/* 211BSD-specific note name and description sizes */
+/* NetBSD-specific note name and description sizes */
 #define ELF_NOTE_TYPE_211BSD_TAG		1
 #define	ELF_NOTE_211BSD_NAMESZ			7
 #define	ELF_NOTE_211BSD_DESCSZ			4
-/* 211BSD-specific note name */
+/* NetBSD-specific note name */
 #define	ELF_NOTE_211BSD_NAME			"211BSD\0\0"
 
 /* GNU-specific note name and description sizes */

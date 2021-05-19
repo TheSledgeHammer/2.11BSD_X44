@@ -164,9 +164,15 @@ main(framep)
 	lockholder_init(p);
 
 	/*
-	 * Initialize device switch tables
+	 * Initialize device switch tables & kernel environment
 	 */
 	devswtable_init();
+
+	/*
+	 * Initialize kernel environment & resource structures
+	 */
+	kenv_init();
+	resource_init();
 
 	/*
 	 * set up system process 0 (swapper)

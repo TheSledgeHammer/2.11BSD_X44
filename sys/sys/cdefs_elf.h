@@ -141,7 +141,7 @@
 	      ".popsection")
 #else
 #define	__SECTIONSTRING(_sec, _str)					\
-	__asm(".pushsection _sec\n"					\
+	__asm(".pushsection _sec\n"						\
 	      ".asciz \"" _str "\"\n"					\
 	      ".popsection")
 #endif
@@ -158,23 +158,23 @@
 #define	__KERNEL_COPYRIGHT(_n, _s)	__COPYRIGHT(_s)
 
 #ifndef __lint__
-#define	__link_set_make_entry(set, sym)					\
-	static void const * const __link_set_##set##_sym_##sym		\
+#define	__link_set_make_entry(set, sym)								\
+	static void const * const __link_set_##set##_sym_##sym			\
 	    __section("link_set_" #set) __used = (const void *)&sym
-#define	__link_set_make_entry2(set, sym, n)				\
+#define	__link_set_make_entry2(set, sym, n)							\
 	static void const * const __link_set_##set##_sym_##sym##_##n	\
 	    __section("link_set_" #set) __used = (const void *)&sym[n]
 #else
-#define	__link_set_make_entry(set, sym)					\
+#define	__link_set_make_entry(set, sym)								\
 	extern void const * const __link_set_##set##_sym_##sym
-#define	__link_set_make_entry2(set, sym, n)				\
+#define	__link_set_make_entry2(set, sym, n)							\
 	extern void const * const __link_set_##set##_sym_##sym##_##n
 #endif /* __lint__ */
 
-#define	__link_set_add_text(set, sym)	__link_set_make_entry(set, sym)
-#define	__link_set_add_rodata(set, sym)	__link_set_make_entry(set, sym)
-#define	__link_set_add_data(set, sym)	__link_set_make_entry(set, sym)
-#define	__link_set_add_bss(set, sym)	__link_set_make_entry(set, sym)
+#define	__link_set_add_text(set, sym)		__link_set_make_entry(set, sym)
+#define	__link_set_add_rodata(set, sym)		__link_set_make_entry(set, sym)
+#define	__link_set_add_data(set, sym)		__link_set_make_entry(set, sym)
+#define	__link_set_add_bss(set, sym)		__link_set_make_entry(set, sym)
 #define	__link_set_add_text2(set, sym, n)   __link_set_make_entry2(set, sym, n)
 #define	__link_set_add_rodata2(set, sym, n) __link_set_make_entry2(set, sym, n)
 #define	__link_set_add_data2(set, sym, n)   __link_set_make_entry2(set, sym, n)
@@ -183,12 +183,12 @@
 #define	__link_set_start(set)	(__start_link_set_##set)
 #define	__link_set_end(set)	(__stop_link_set_##set)
 
-#define	__link_set_decl(set, ptype)					\
-	extern ptype * const __link_set_start(set)[] __dso_hidden;	\
-	__asm__(".hidden " __STRING(__stop_link_set_##set)); \
+#define	__link_set_decl(set, ptype)									\
+	extern ptype * const __link_set_start(set)[] __dso_hidden;		\
+	__asm__(".hidden " __STRING(__stop_link_set_##set)); 			\
 	extern ptype * const __link_set_end(set)[] __weak __dso_hidden
 
-#define	__link_set_count(set)						\
+#define	__link_set_count(set)										\
 	(__link_set_end(set) - __link_set_start(set))
 
 
@@ -221,11 +221,11 @@
  *	Any variables annotated with __cacheline_aligned will be
  *	placed into the .data.cacheline_aligned ELF section.
  */
-#define	__read_mostly						\
+#define	__read_mostly											\
     __attribute__((__section__(".data.read_mostly")))
 
-#define	__cacheline_aligned					\
-    __attribute__((__aligned__(COHERENCY_UNIT),			\
+#define	__cacheline_aligned										\
+    __attribute__((__aligned__(COHERENCY_UNIT),					\
 		 __section__(".data.cacheline_aligned")))
 
 #endif /* _KERNEL */

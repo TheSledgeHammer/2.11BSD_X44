@@ -81,10 +81,10 @@ advvm_volume_set_label(label, sysname, name, creation, update, dsize)
 void
 advvm_volume_set_block(block, start, end, size, addr, flags)
 	struct advvm_block 	*block;
-	uint64_t 		start, end;
-	uint32_t 		size;
-	caddr_t 		addr;
-	int 			flags;
+	uint64_t 			start, end;
+	uint32_t 			size;
+	caddr_t 			addr;
+	int 				flags;
 {
 	if (block == NULL) {
 		advvm_malloc((struct advvm_block*) block, sizeof(struct advvm_block*));
@@ -104,7 +104,7 @@ advvm_volume_create(advol, block, name, id, flags)
 	uint32_t 			id;
 	int 				flags;
 {
-	advvm_malloc((advvm_volume_t *)advol, sizeof(advvm_volume_t *));
+	//advvm_malloc((advvm_volume_t *)advol, sizeof(advvm_volume_t *)); /* setup in advvm_attach */
 	advol->vol_name = name;
 	advol->vol_id = id;				/* generate a random uuid */
 	advol->vol_flags = flags;
@@ -136,16 +136,13 @@ void
 advvm_volume_insert(adom, advol, name, id, flags)
 	advvm_domain_t *adom;
 	advvm_volume_t 	*advol;
-	char 		*name;
-	uint32_t 	id;
-	int 		flags;
+	char 			*name;
+	uint32_t 		id;
+	int 			flags;
 {
 	struct advdomain_list 	*bucket;
 	
-	if(adom == NULL) {
-		return;
-	}
-	if(advol == NULL) {
+	if(adom == NULL || advol == NULL) {
 		return;
 	}
 
