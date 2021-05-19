@@ -2,7 +2,7 @@
 
 .include <bsd.own.mk>
 
-SUBDIR=	arch compat dev fs miscfs 	\
+SUBDIR=	arch dev fs miscfs 			\
 		net netimp netinet netns 	\
 		sys ufs vm
 
