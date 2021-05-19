@@ -1,4 +1,4 @@
-#	$NetBSD: bsd.obj.mk,v 1.46 2003/12/04 12:15:20 lukem Exp $
+#	$NetBSD: bsd.obj.mk,v 1.52 2018/05/19 14:11:30 christos Exp $
 
 .if !defined(_BSD_OBJ_MK_)
 _BSD_OBJ_MK_=1
@@ -55,7 +55,55 @@ __need_objdir_target=yes
 .if defined(OBJHOSTMACHINE) && (${MKHOSTOBJ:Uno} != "no")
 # In case .CURDIR has been twiddled by a .mk file and is now relative,
 # make it absolute again.
+.if ${__curdir:M/*} == ""
+__curdir!=	cd "${__curdir}" && ${PAWD}
+.endif
 
+__objdir:=	${__objdir}.${HOST_OSTYPE}
+__usrobjdirpf:=	${__usrobjdirpf}.${HOST_OSTYPE}
+__need_objdir_target=yes
+.endif
+
+.if defined(__need_objdir_target)
+# Get make to change its internal definition of .OBJDIR
+.OBJDIR:	${__objdir}
+.endif
+
+obj:
+	@cd "${__curdir}"; \
+	here=`${PAWD}`/; subdir=$${here#${BSDSRCDIR}/}; \
+	if [ "$$here" != "$$subdir" ]; then \
+		if [ ! -d ${__usrobjdir} ]; then \
+			echo "BSDOBJDIR ${__usrobjdir} does not exist, bailing..."; \
+			exit 1; \
+		fi; \
+		subdir=$${subdir%/}; \
+		dest=${__usrobjdir}/$$subdir${__usrobjdirpf}; \
+		if  [ -x ${TOOL_STAT} ] && \
+		    ttarg=`${TOOL_STAT} -qf '%Y' $${here}${__objdir}` && \
+		    [ "$$dest" = "$$ttarg" ]; then \
+			: ; \
+		else \
+			${_MKSHMSG} " objdir  $$dest"; \
+			rm -rf ${__objdir}; \
+			ln -s $$dest ${__objdir}; \
+		fi; \
+		if [ ! -d $$dest ]; then \
+			mkdir -p $$dest; \
+		else \
+			true; \
+		fi; \
+	else \
+		true ; \
+		dest=$${here}${__objdir} ; \
+		if [ ! -d ${__objdir} ] || [ -h ${__objdir} ]; then \
+			${_MKSHMSG} " objdir  $$dest"; \
+			rm -f ${__objdir}; \
+			mkdir $$dest; \
+		fi ; \
+	fi;
+.endif
+.endif
 
 print-objdir:
 	@echo ${.OBJDIR}

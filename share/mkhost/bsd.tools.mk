@@ -3,94 +3,6 @@
 .include <bsd.own.mk>
 
 #
-# CPU model, derived from MACHINE_ARCH
-#
-MACHINE?=
-MACHINE_CPU?=
-MACHINE_ARCH?=		
-
-#
-# Subdirectory or path component used for the following paths:
-#   distrib/${RELEASEMACHINE}
-#   distrib/notes/${RELEASEMACHINE}
-#   etc/etc.${RELEASEMACHINE}
-# Used when building a release.
-#
-RELEASEMACHINE?=	${MACHINE}
-
-#
-# NEED_OWN_INSTALL_TARGET is set to "no" by pkgsrc/mk/bsd.pkg.mk to
-# ensure that things defined by <bsd.own.mk> (default targets,
-# INSTALL_FILE, etc.) are not conflicting with bsd.pkg.mk.
-#
-NEED_OWN_INSTALL_TARGET?=	yes
-
-#
-# This lists the platforms which do not have working in-tree toolchains.  For
-# the in-tree gcc toolchain, this list is empty.
-#
-# If some future port is not supported by the in-tree toolchain, this should
-# be set to "yes" for that port only.
-#
-# .if ${MACHINE} == "playstation2"
-# TOOLCHAIN_MISSING?=	yes
-# .endif
-
-TOOLCHAIN_MISSING?=	no
-
-#
-# GCC Using platforms.
-#
-.if ${MKGCC:Uyes} != "no"
-
-#
-# What GCC is used?
-#
-.if ${MACHINE} == "alpha" || \
-    ${MACHINE} == "hppa" || \
-    ${MACHINE} == "ia64" || \
-    ${MACHINE} == "sparc" || \
-    ${MACHINE} == "sparc64" || \
-    ${MACHINE} == "vax" || \
-    ${MACHINE_ARCH} == "x86_64" || \
-    ${MACHINE_CPU} == "aarch64" || \
-    ${MACHINE_CPU} == "powerpc" || \
-    ${MACHINE_CPU} == "riscv"
-HAVE_GCC?=	10
-.else
-HAVE_GCC?=	9
-.endif
-
-.if ${HAVE_GCC} == 			10
-EXTERNAL_GCC_SUBDIR?=		gcc
-.else
-EXTERNAL_GCC_SUBDIR?=		/does/not/exist
-.endif
-.else
-MKGCCCMDS?=	no
-.endif
-
-#
-# What binutils is used?
-#
-HAVE_BINUTILS?=				234
-
-.if ${HAVE_BINUTILS} == 	234
-EXTERNAL_BINUTILS_SUBDIR=	binutils
-.else
-EXTERNAL_BINUTILS_SUBDIR=	/does/not/exist
-.endif
-
-#
-# What GDB is used?
-#
-HAVE_GDB?=					1100
-
-.if ${HAVE_GDB} == 			1100
-EXTERNAL_GDB_SUBDIR=		gdb
-
-
-#
 # Determine if running in the NetBSD source tree by checking for the
 # existence of build.sh and tools/ in the current or a parent directory,
 # and setting _SRC_TOP_ to the result.
@@ -237,7 +149,6 @@ TOOL_CXX.pcc=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-p++
 #
 DESTDIR?=
 
-
 # Don't append another copy of sysroot (coming from COMPATCPPFLAGS etc.)
 # because it confuses Coverity. Still we need to cov-configure specially
 # for each specific sysroot argument.
@@ -256,7 +167,113 @@ LDFLAGS+=	--sysroot=/
 .  endif
 .endif
 
-# Missing below TOOLDIR from NetBSD's bsd.own.mk
+INSTALL=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-install
+LEX=				${TOOLDIR}/bin/${_TOOL_PREFIX}lex
+LINT=				CC=${CC:Q} ${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-lint
+LORDER=				NM=${NM:Q} MKTEMP=${TOOL_MKTEMP:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}lorder
+MKDEP=				CC=${CC:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}mkdep
+MKDEPCXX=			CC=${CXX:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}mkdep
+#PAXCTL=				${TOOLDIR}/bin/${_TOOL_PREFIX}paxctl
+TSORT=				${TOOLDIR}/bin/${_TOOL_PREFIX}tsort -q
+YACC=				${TOOLDIR}/bin/${_TOOL_PREFIX}yacc
+
+TOOL_AWK=			${TOOLDIR}/bin/${_TOOL_PREFIX}awk
+TOOL_CAP_MKDB=		${TOOLDIR}/bin/${_TOOL_PREFIX}cap_mkdb
+TOOL_CAT=			${TOOLDIR}/bin/${_TOOL_PREFIX}cat
+TOOL_CKSUM=			${TOOLDIR}/bin/${_TOOL_PREFIX}cksum
+TOOL_CLANG_TBLGEN=	${TOOLDIR}/bin/${_TOOL_PREFIX}clang-tblgen
+TOOL_COMPILE_ET=	${TOOLDIR}/bin/${_TOOL_PREFIX}compile_et
+TOOL_CONFIG=		${TOOLDIR}/bin/${_TOOL_PREFIX}config
+TOOL_CRUNCHGEN=		MAKE=${.MAKE:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}crunchgen
+TOOL_CTAGS=			${TOOLDIR}/bin/${_TOOL_PREFIX}ctags
+TOOL_CTFCONVERT=	${TOOLDIR}/bin/${_TOOL_PREFIX}ctfconvert
+TOOL_CTFMERGE=		${TOOLDIR}/bin/${_TOOL_PREFIX}ctfmerge
+TOOL_CVSLATEST=		${TOOLDIR}/bin/${_TOOL_PREFIX}cvslatest
+TOOL_DB=			${TOOLDIR}/bin/${_TOOL_PREFIX}db
+TOOL_DISKLABEL=		${TOOLDIR}/bin/${_TOOL_PREFIX}disklabel
+TOOL_DTC=			${TOOLDIR}/bin/${_TOOL_PREFIX}dtc
+TOOL_EQN=			${TOOLDIR}/bin/${_TOOL_PREFIX}eqn
+TOOL_FDISK=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-fdisk
+TOOL_FGEN=			${TOOLDIR}/bin/${_TOOL_PREFIX}fgen
+TOOL_GENASSYM=		${TOOLDIR}/bin/${_TOOL_PREFIX}genassym
+TOOL_GENCAT=		${TOOLDIR}/bin/${_TOOL_PREFIX}gencat
+TOOL_GMAKE=			${TOOLDIR}/bin/${_TOOL_PREFIX}gmake
+TOOL_GPT=			${TOOLDIR}/bin/${_TOOL_PREFIX}gpt
+TOOL_GREP=			${TOOLDIR}/bin/${_TOOL_PREFIX}grep
+GROFF_SHARE_PATH=	${TOOLDIR}/share/groff
+TOOL_GROFF_ENV= \
+    GROFF_ENCODING= \
+    GROFF_BIN_PATH=${TOOLDIR}/lib/groff \
+    GROFF_FONT_PATH=${GROFF_SHARE_PATH}/site-font:${GROFF_SHARE_PATH}/font \
+    GROFF_TMAC_PATH=${GROFF_SHARE_PATH}/site-tmac:${GROFF_SHARE_PATH}/tmac
+TOOL_GROFF=			${TOOL_GROFF_ENV} ${TOOLDIR}/bin/${_TOOL_PREFIX}groff ${GROFF_FLAGS}
+
+TOOL_HEXDUMP=		${TOOLDIR}/bin/${_TOOL_PREFIX}hexdump
+TOOL_HP300MKBOOT=	${TOOLDIR}/bin/${_TOOL_PREFIX}hp300-mkboot
+TOOL_HPPAMKBOOT=	${TOOLDIR}/bin/${_TOOL_PREFIX}hppa-mkboot
+TOOL_INDXBIB=		${TOOLDIR}/bin/${_TOOL_PREFIX}indxbib
+TOOL_INSTALLBOOT=	${TOOLDIR}/bin/${_TOOL_PREFIX}installboot
+TOOL_INSTALL_INFO=	${TOOLDIR}/bin/${_TOOL_PREFIX}install-info
+TOOL_JOIN=			${TOOLDIR}/bin/${_TOOL_PREFIX}join
+TOOL_LLVM_TBLGEN=	${TOOLDIR}/bin/${_TOOL_PREFIX}llvm-tblgen
+TOOL_M4=			${TOOLDIR}/bin/${_TOOL_PREFIX}m4
+TOOL_MACPPCFIXCOFF=	${TOOLDIR}/bin/${_TOOL_PREFIX}macppc-fixcoff
+TOOL_MAKEFS=		${TOOLDIR}/bin/${_TOOL_PREFIX}makefs
+TOOL_MAKEINFO=		${TOOLDIR}/bin/${_TOOL_PREFIX}makeinfo
+TOOL_MAKEKEYS=		${TOOLDIR}/bin/${_TOOL_PREFIX}makekeys
+TOOL_MAKESTRS=		${TOOLDIR}/bin/${_TOOL_PREFIX}makestrs
+TOOL_MAKEWHATIS=	${TOOLDIR}/bin/${_TOOL_PREFIX}makewhatis
+TOOL_MANDOC_ASCII=	${TOOLDIR}/bin/${_TOOL_PREFIX}mandoc -Tascii
+TOOL_MANDOC_HTML=	${TOOLDIR}/bin/${_TOOL_PREFIX}mandoc -Thtml
+TOOL_MANDOC_LINT=	${TOOLDIR}/bin/${_TOOL_PREFIX}mandoc -Tlint
+TOOL_MDSETIMAGE=	${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-mdsetimage
+TOOL_MENUC=			MENUDEF=${TOOLDIR}/share/misc ${TOOLDIR}/bin/${_TOOL_PREFIX}menuc
+TOOL_ARMELF2AOUT=	${TOOLDIR}/bin/${_TOOL_PREFIX}arm-elf2aout
+TOOL_M68KELF2AOUT=	${TOOLDIR}/bin/${_TOOL_PREFIX}m68k-elf2aout
+TOOL_MIPSELF2ECOFF=	${TOOLDIR}/bin/${_TOOL_PREFIX}mips-elf2ecoff
+TOOL_MKCSMAPPER=	${TOOLDIR}/bin/${_TOOL_PREFIX}mkcsmapper
+TOOL_MKESDB=		${TOOLDIR}/bin/${_TOOL_PREFIX}mkesdb
+TOOL_MKLOCALE=		${TOOLDIR}/bin/${_TOOL_PREFIX}mklocale
+TOOL_MKMAGIC=		${TOOLDIR}/bin/${_TOOL_PREFIX}file
+TOOL_MKNOD=			${TOOLDIR}/bin/${_TOOL_PREFIX}mknod
+TOOL_MKTEMP=		${TOOLDIR}/bin/${_TOOL_PREFIX}mktemp
+TOOL_MKUBOOTIMAGE=	${TOOLDIR}/bin/${_TOOL_PREFIX}mkubootimage
+TOOL_ELFTOSB=		${TOOLDIR}/bin/${_TOOL_PREFIX}elftosb
+TOOL_MSGC=			MSGDEF=${TOOLDIR}/share/misc ${TOOLDIR}/bin/${_TOOL_PREFIX}msgc
+TOOL_MTREE=			${TOOLDIR}/bin/${_TOOL_PREFIX}mtree
+TOOL_MVME68KWRTVID=	${TOOLDIR}/bin/${_TOOL_PREFIX}mvme68k-wrtvid
+TOOL_NBPERF=		${TOOLDIR}/bin/${_TOOL_PREFIX}perf
+TOOL_NCDCS=			${TOOLDIR}/bin/${_TOOL_PREFIX}ibmnws-ncdcs
+TOOL_PAX=			${TOOLDIR}/bin/${_TOOL_PREFIX}pax
+TOOL_PIC=			${TOOLDIR}/bin/${_TOOL_PREFIX}pic
+TOOL_PIGZ=			${TOOLDIR}/bin/${_TOOL_PREFIX}pigz
+TOOL_XZ=			${TOOLDIR}/bin/${_TOOL_PREFIX}xz
+TOOL_PKG_CREATE=	${TOOLDIR}/bin/${_TOOL_PREFIX}pkg_create
+TOOL_POWERPCMKBOOTIMAGE=${TOOLDIR}/bin/${_TOOL_PREFIX}powerpc-mkbootimage
+TOOL_PWD_MKDB=		${TOOLDIR}/bin/${_TOOL_PREFIX}pwd_mkdb
+TOOL_REFER=			${TOOLDIR}/bin/${_TOOL_PREFIX}refer
+TOOL_ROFF_ASCII=	${TOOL_GROFF_ENV} ${TOOLDIR}/bin/${_TOOL_PREFIX}nroff
+TOOL_ROFF_DOCASCII=	${TOOL_GROFF} -Tascii
+TOOL_ROFF_DOCHTML=	${TOOL_GROFF} -Thtml
+TOOL_ROFF_DVI=		${TOOL_GROFF} -Tdvi ${ROFF_PAGESIZE}
+TOOL_ROFF_HTML=		${TOOL_GROFF} -Tlatin1 -mdoc2html
+TOOL_ROFF_PS=		${TOOL_GROFF} -Tps ${ROFF_PAGESIZE}
+TOOL_ROFF_RAW=		${TOOL_GROFF} -Z
+TOOL_RPCGEN=		RPCGEN_CPP=${CPP:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}rpcgen
+TOOL_SED=			${TOOLDIR}/bin/${_TOOL_PREFIX}sed
+TOOL_SLC=			${TOOLDIR}/bin/${_TOOL_PREFIX}slc
+TOOL_SOELIM=		${TOOLDIR}/bin/${_TOOL_PREFIX}soelim
+TOOL_SORTINFO=		${TOOLDIR}/bin/${_TOOL_PREFIX}sortinfo
+TOOL_SPARKCRC=		${TOOLDIR}/bin/${_TOOL_PREFIX}sparkcrc
+TOOL_STAT=			${TOOLDIR}/bin/${_TOOL_PREFIX}stat
+TOOL_STRFILE=		${TOOLDIR}/bin/${_TOOL_PREFIX}strfile
+TOOL_SUNLABEL=		${TOOLDIR}/bin/${_TOOL_PREFIX}sunlabel
+TOOL_TBL=			${TOOLDIR}/bin/${_TOOL_PREFIX}tbl
+TOOL_TIC=			${TOOLDIR}/bin/${_TOOL_PREFIX}tic
+TOOL_UUDECODE=		${TOOLDIR}/bin/${_TOOL_PREFIX}uudecode
+TOOL_VGRIND=		${TOOLDIR}/bin/${_TOOL_PREFIX}vgrind -f
+TOOL_VFONTEDPR=		${TOOLDIR}/libexec/${_TOOL_PREFIX}vfontedpr
+TOOL_ZIC=			${TOOLDIR}/bin/${_TOOL_PREFIX}zic
 
 .else	# USETOOLS != yes						# } {
 
@@ -310,62 +327,3 @@ CPP=	${TOOL_CPP.${ACTIVE_CPP}}
 CXX=	${TOOL_CXX.${ACTIVE_CXX}}
 FC=		${TOOL_FC.${ACTIVE_FC}}
 OBJC=	${TOOL_OBJC.${ACTIVE_OBJC}}
-
-# For each ${MACHINE_CPU}, list the ports that use it.
-MACHINES.i386=		i386
-
-#
-# Targets to check if DESTDIR or RELEASEDIR is provided
-#
-.if !target(check_DESTDIR)
-check_DESTDIR: .PHONY .NOTMAIN
-.if !defined(DESTDIR)
-	@echo "setenv DESTDIR before doing that!"
-	@false
-.else
-	@true
-.endif
-.endif
-
-.if !target(check_RELEASEDIR)
-check_RELEASEDIR: .PHONY .NOTMAIN
-.if !defined(RELEASEDIR)
-	@echo "setenv RELEASEDIR before doing that!"
-	@false
-.else
-	@true
-.endif
-.endif
-
-#
-# Location of the file that contains the major and minor numbers of the
-# version of a shared library.  If this file exists a shared library
-# will be built by <bsd.lib.mk>.
-#
-SHLIB_VERSION_FILE?= ${.CURDIR}/shlib_version
-
-#
-# GNU sources and packages sometimes see architecture names differently.
-#
-GNU_ARCH.i386=i486
-GCC_CONFIG_ARCH.i386=i486
-GCC_CONFIG_TUNE.i386=nocona
-
-#
-# In order to identify NetBSD to GNU packages, we sometimes need
-# an "elf" tag for historically a.out platforms.
-#
-.if (!empty(MACHINE_ARCH:Mearm*))
-MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsdelf-${MACHINE_ARCH:C/eb//:C/v[4-7]//:S/earm/eabi/}
-.elif (${MACHINE_GNU_ARCH} == "arm" || \
-     ${MACHINE_GNU_ARCH} == "armeb" || \
-     ${MACHINE_ARCH} == "i386" || \
-     ${MACHINE_CPU} == "m68k" || \
-     ${MACHINE_GNU_ARCH} == "sh" || \
-     ${MACHINE_GNU_ARCH} == "shle" || \
-     ${MACHINE_ARCH} == "sparc" || \
-     ${MACHINE_ARCH} == "vax")
-MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsdelf
-.else
-MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsd
-.endif
