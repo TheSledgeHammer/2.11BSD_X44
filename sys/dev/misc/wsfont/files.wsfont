@@ -1,0 +1,4 @@
+# 	$NetBSD: files.wsfont,v 1.13 2003/07/14 18:30:41 uwe Exp $
+
+file	dev/wsfont/wsfont.c		wsdisplay | wsfont
+file	dev/wsfont/wsfontdev.c	wsfont 								needs-flag

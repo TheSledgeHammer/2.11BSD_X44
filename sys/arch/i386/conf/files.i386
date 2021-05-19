@@ -8,7 +8,7 @@ maxpartitions 16
 
 maxusers 2 16 64
 
-file	arch/i386/i386/aout_machdep.c	 exec_aout 
+file	arch/i386/i386/aout_machdep.c	 exec_aout
 file    arch/i386/i386/autoconf.c
 file    arch/i386/i386/bios.c
 file    arch/i386/i386/bus_dma.c
@@ -25,6 +25,7 @@ file    arch/i386/i386/initcpu.c
 file    arch/i386/i386/k6_mem.c
 file    arch/i386/i386/kobj_machdep.c
 file    arch/i386/i386/machdep.c
+file	arch/i386/i386/macho_machdep.c	 exec_macho
 file	arch/i386/i386/math_emulate.c	 math_emulate
 file    arch/i386/i386/mem.c
 file    arch/i386/i386/misc.c

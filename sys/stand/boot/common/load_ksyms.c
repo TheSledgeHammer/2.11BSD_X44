@@ -209,7 +209,7 @@ preload_ksyms(struct bootinfo *bi, struct preloaded_file *fp)
 		boot_ksyms_addr_set(&ehdr, shbuf, (void*) (KERNBASE + fp->f_marks[MARK_SYM]));
 		bcopy(shbuf, (void*) shaddr, shlen);
 
-		dealloc(shbuf, shlen);
+		free(shbuf, shlen);
 
 		fp->f_elfshdr_num = ehdr.e_shnum;
 		fp->f_elfshdr_size = ehdr.e_shentsize;

@@ -465,10 +465,10 @@ static void
 ksyms_fill_note(void)
 {
 	int32_t *note = ksyms_hdr.kh_note;
-	note[0] = ELF_NOTE_NETBSD_NAMESZ;
-	note[1] = ELF_NOTE_NETBSD_DESCSZ;
-	note[2] = ELF_NOTE_TYPE_NETBSD_TAG;
-	memcpy(&note[3],  "NetBSD\0", 8);
+	note[0] = ELF_NOTE_211BSD_NAMESZ;
+	note[1] = ELF_NOTE_211BSD_DESCSZ;
+	note[2] = ELF_NOTE_TYPE_211BSD_TAG;
+	memcpy(&note[3],  "211BSD\0", 8);
 	note[5] = __211BSD_Version__;
 }
 

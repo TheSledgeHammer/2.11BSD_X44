@@ -9,11 +9,11 @@ all:
 	
 
 SYSCALLSRC = makesyscalls.sh syscalls.conf syscalls.master
-init_sysent.c syscalls.c ../sys/syscall.h: ${SYSCALLSRC}
-	-mv -f init_sysent.c init_sysent.c.bak
-	-mv -f syscalls.c syscalls.c.bak
-	-mv -f ../sys/syscall.h ../sys/syscall.h.bak	
-	sh makesyscalls.sh syscalls.conf syscalls.master
+			init_sysent.c syscalls.c ../sys/syscall.h: ${SYSCALLSRC}
+			-mv -f init_sysent.c init_sysent.c.bak
+			-mv -f syscalls.c syscalls.c.bak
+			-mv -f ../sys/syscall.h ../sys/syscall.h.bak	
+			sh makesyscalls.sh syscalls.conf syscalls.master
 
 
 # Kernel tags:

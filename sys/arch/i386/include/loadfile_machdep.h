@@ -31,53 +31,40 @@
 
 #define BOOT_AOUT
 #define BOOT_ELF32
-#define ELFSIZE 32
+#define BOOT_ELF64
+
+/* Keep a default ELFSIZE */
+#define ELFSIZE 		32
 
 #define LOAD_KERNEL		(LOAD_ALL & ~LOAD_TEXTA)
 #define COUNT_KERNEL	(COUNT_ALL & ~COUNT_TEXTA)
 
 #ifdef _STANDALONE
 
-#include "bootstrap.h"
-
 #define LOADADDR(a)		((((u_long)(a)) & 0x07ffffff) + offset)
 #define ALIGNENTRY(a)	((u_long)(a) & 0x00100000)
 #define READ(f, b, c)	pread((f), (void *)LOADADDR(b), (c))
 #define BCOPY(s, d, c)	vpbcopy((s), (void *)LOADADDR(d), (c))
 #define BZERO(d, c)		pbzero((void *)LOADADDR(d), (c))
-#define	WARN(a)			do { \
-							(void)printf a; \
-							if (errno) \
-								(void)printf(": %s\n", \
-						             strerror(errno)); \
-						    else \
-								(void)printf("\n"); \
-						} while(/* CONSTCOND */0)
-#define PROGRESS(a)		x86_progress a
+#define	WARN(a)			(void)(printf a, 						\
+							printf((errno ? ": %s\n" : "\n"), 	\
+							strerror(errno)))
+#define PROGRESS(a)		(void) printf a
 #define ALLOC(a)		alloc(a)
-#define DEALLOC(a, b)	dealloc(a, b)
+#define DEALLOC(a, b)	free(a, b)
 #define OKMAGIC(a)		((a) == ZMAGIC)
 
-//void 	x86_progress(const char *, ...) __printflike(1, 2);
 void 	vpbcopy(const void *, void *, size_t);
 void 	pbzero(void *, size_t);
 ssize_t pread(int, void *, size_t);
 
+#else
 
-#else
-#ifdef TEST
-#define LOADADDR(a)		offset
-#define READ(f, b, c)	c
-#define BCOPY(s, d, c)
-#define BZERO(d, c)
-#define PROGRESS(a)		(void) printf a
-#else
 #define LOADADDR(a)		(((u_long)(a)) + offset)
 #define READ(f, b, c)	read((f), (void *)LOADADDR(b), (c))
 #define BCOPY(s, d, c)	memcpy((void *)LOADADDR(d), (void *)(s), (c))
 #define BZERO(d, c)		memset((void *)LOADADDR(d), 0, (c))
 #define PROGRESS(a)		/* nothing */
-#endif
 #define WARN(a)			warn a
 #define ALIGNENTRY(a)	((u_long)(a))
 #define ALLOC(a)		malloc(a)

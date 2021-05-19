@@ -251,14 +251,21 @@ struct wsdisplay_cursor {
  * XXX to be changed without care about backwards compatibility!
  */
 struct wsdisplay_font {
-	char *name;
-	int firstchar, numchars;
-	int encoding;
+	char 								*name;
+	int 								firstchar, numchars;
+	int 								encoding;
 #define WSDISPLAY_FONTENC_ISO 			0
 #define WSDISPLAY_FONTENC_IBM 			1
 #define WSDISPLAY_FONTENC_PCVT 			2
+#define	WSDISPLAY_FONTENC_ISO7 			3 /* greek */
+#define	WSDISPLAY_FONTENC_ISO2 			4 /* east european */
 	int 								fontwidth, fontheight, stride; /* XXX endianness??? */
+	int 								bitorder, byteorder;
 	void 								*data;
+#define	WSDISPLAY_MAXFONTSZ				(512*1024)
+#define	WSDISPLAY_FONTORDER_KNOWN 		0			/* i.e, no need to convert */
+#define	WSDISPLAY_FONTORDER_L2R 		1
+#define	WSDISPLAY_FONTORDER_R2L 		2
 };
 #define WSDISPLAYIO_LDFONT				_IOW('W', 77, struct wsdisplay_font)
 

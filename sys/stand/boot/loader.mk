@@ -11,7 +11,7 @@ SRCS+=  smbios.c strdup.c strspn.c strtol.c ufsread.c
 SRCS+= 	load_exec.c load_ksyms.c
 .endif
 
-.if ${LOADER_NET_SUPPORT:Uno} == "yes"
+.if ${LOADER_NET_SUPPORT:Uno} == "no"
 SRCS+= 	dev_net.c
 .endif
 
@@ -35,7 +35,7 @@ SRCS+=	pnp.c
 .if ${LOADER_CD9660_SUPPORT:Uno} == "yes"
 CFLAGS+=		-DLOADER_CD9660_SUPPORT
 .endif
-.if ${LOADER_EXT2FS_SUPPORT:Uno} == "yes"
+.if ${LOADER_EXT2FS_SUPPORT:Uno} == "no"
 CFLAGS+=		-DLOADER_EXT2FS_SUPPORT
 .endif
 .if ${LOADER_MSDOS_SUPPORT:Uno} == "yes"
@@ -51,7 +51,7 @@ CFLAGS+=		-DLOADER_NET_SUPPORT
 .endif
 
 # Partition support
-.if ${LOADER_GPT_SUPPORT:Uyes} == "yes"
+.if ${LOADER_GPT_SUPPORT:Uyes} == "no"
 CFLAGS+= 		-DLOADER_GPT_SUPPORT
 .endif
 .if ${LOADER_MBR_SUPPORT:Uyes} == "yes"
