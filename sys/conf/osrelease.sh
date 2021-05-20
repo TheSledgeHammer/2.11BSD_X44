@@ -37,9 +37,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-# Release number to use
+#Release number to use
 release=1.0.0
-
 
 case $1 in
 -s)

@@ -14,7 +14,23 @@
  */
 #define	BSD	211		/* 2.11 * 10, as cpp doesn't do floats */
 
-/* Derived from NetBSD */
+/*
+ *	#define __211BSD_Version__ MMmmrrpp00
+ *
+ *	M = major version
+ *	m = minor version; a minor number of 99 indicates current.
+ *	r = 0 (*)
+ *	p = patchlevel
+ *
+ * When new releases are made, src/gnu/usr.bin/groff/tmac/mdoc.local
+ * needs to be updated and the changes sent back to the groff maintainers.
+ *
+ * (*)	Up to 2.0I "release" used to be "",A-Z,Z[A-Z] but numeric
+ *	    	e.g. 211BSD-1.2D  = 102040000 ('D' == 4)
+ *	211BSD-2.0H 	(200080000) was changed on 20041001 to:
+ *	2.99.9		(299000900)
+ */
+
 #define	__211BSD_Version__	0000000100			/* 211BSD 0.00.01 */
 
 #define __211BSD_Prereq__(M,m,p) (((((M) * 100000000) + \

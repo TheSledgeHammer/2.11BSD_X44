@@ -49,10 +49,9 @@ osr=`sh $osrelcmd`
 echo "char ostype[] = \"${ost}\";" > vers.c
 echo "char osrelease[] = \"${osr}\";" >> vers.c
 # note: pad `sccs' with spaces, so its size becomes 8
-echo "char sccs[8] = { ' ', ' ', ' ', ' ', '@', '(', '#', ')' };" >> vers.c
+#echo "char sccs[8] = { ' ', ' ', ' ', ' ', '@', '(', '#', ')' };" >> vers.c
 echo \
-  "char version[] = \
-    \"${ost} ${osr} (${id}) #${v}: ${t}\\n    ${u}@${h}:${d}\\n\";" \
+  "char version[] = \"${ost} ${osr} (${id}) #${v}: ${t}\\n\";" \
   >> vers.c
 
 echo `expr ${v} + 1` > version
