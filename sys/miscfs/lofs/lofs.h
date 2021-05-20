@@ -74,6 +74,6 @@ extern struct vnode 	*lofs_checkvp (struct vnode *vp, char *fil, int lno);
 #define	LOFSVP(vp) 		(LOFSP(vp)->a_lofsvp)
 #endif
 
-extern struct lofs_vnodeops;
-extern struct vfsops lofs_vfsops;
+extern struct vnodeops 	lofs_vnodeops;
+extern struct vfsops 	lofs_vfsops;
 #endif /* KERNEL */
