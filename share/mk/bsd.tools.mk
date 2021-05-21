@@ -1,65 +1,7 @@
 #	$NetBSD: bsd.own.mk,v 1.1247 2021/05/06 13:23:36 rin Exp $
+#
 
 .include <bsd.own.mk>
-
-#
-# Determine if running in the NetBSD source tree by checking for the
-# existence of build.sh and tools/ in the current or a parent directory,
-# and setting _SRC_TOP_ to the result.
-#
-.if !defined(_SRC_TOP_)			# {
-_SRC_TOP_!= cd "${.CURDIR}"; while :; do \
-		here=`pwd`; \
-		[ -f build.sh  ] && [ -d tools ] && { echo $$here; break; }; \
-		case $$here in /) echo ""; break;; esac; \
-		cd ..; done
-
-.MAKEOVERRIDES+=	_SRC_TOP_
-
-.endif					# }
-
-#
-# If _SRC_TOP_ != "", we're within the NetBSD source tree.
-# * Set defaults for NETBSDSRCDIR and _SRC_TOP_OBJ_.
-# * Define _NETBSD_VERSION_DEPENDS.  Targets that depend on the
-#   NetBSD version, or on variables defined at build time, can
-#   declare a dependency on ${_NETBSD_VERSION_DEPENDS}.
-#
-.if (${_SRC_TOP_} != "")		# {
-
-NETBSDSRCDIR?=	${_SRC_TOP_}
-
-.if !defined(_SRC_TOP_OBJ_)
-_SRC_TOP_OBJ_!=		cd "${_SRC_TOP_}" && ${PRINTOBJDIR}
-.MAKEOVERRIDES+=	_SRC_TOP_OBJ_
-.endif
-
-_NETBSD_VERSION_DEPENDS=	${_SRC_TOP_OBJ_}/params
-_NETBSD_VERSION_DEPENDS+=	${NETBSDSRCDIR}/sys/sys/param.h
-_NETBSD_VERSION_DEPENDS+=	${NETBSDSRCDIR}/sys/conf/newvers.sh
-_NETBSD_VERSION_DEPENDS+=	${NETBSDSRCDIR}/sys/conf/osrelease.sh
-${_SRC_TOP_OBJ_}/params: .NOTMAIN .OPTIONAL # created by top level "make build"
-
-.endif	# _SRC_TOP_ != ""		# }
-
-.if (${_SRC_TOP_} != "") && \
-    (${TOOLCHAIN_MISSING} == "no" || defined(EXTERNAL_TOOLCHAIN))
-USETOOLS?=	yes
-.endif
-USETOOLS?=	no
-
-.if ${MACHINE_ARCH} == "mips" || ${MACHINE_ARCH} == "mips64" || \
-    ${MACHINE_ARCH} == "sh3"
-.BEGIN:
-	@echo "Must set MACHINE_ARCH to one of ${MACHINE_ARCH}eb or ${MACHINE_ARCH}el"
-	@false
-.elif defined(REQUIRETOOLS) && \
-      (${TOOLCHAIN_MISSING} == "no" || defined(EXTERNAL_TOOLCHAIN)) && \
-      ${USETOOLS} == "no"
-.BEGIN:
-	@echo "USETOOLS=no, but this component requires a version-specific host toolchain"
-	@false
-.endif
 
 #
 # Host platform information; may be overridden
@@ -107,7 +49,7 @@ TOOL_CC.clang=		${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-clang
 TOOL_CPP.clang=		${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-clang-cpp
 TOOL_CXX.clang=		${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-clang++
 TOOL_OBJC.clang=	${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-clang
-else									# } {
+.else									# } {
 # Define default locations for common tools.
 .if ${USETOOLS_BINUTILS:Uyes} == "yes"					#  {
 AR=					${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-ar
@@ -140,7 +82,7 @@ TOOL_OBJC.clang=	${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-clang
 TOOL_CC.pcc=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-pcc
 TOOL_CPP.pcc=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-pcpp
 TOOL_CXX.pcc=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-p++
-.endif	# EXTERNAL_TOOLCHAIN						# }
+.endif	# EXTERNAL_TOOLCHAIN		
 
 #
 # Make sure DESTDIR is set, so that builds with these tools always
@@ -167,13 +109,14 @@ LDFLAGS+=	--sysroot=/
 .  endif
 .endif
 
+DBSYM=				${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-dbsym
 INSTALL=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-install
 LEX=				${TOOLDIR}/bin/${_TOOL_PREFIX}lex
 LINT=				CC=${CC:Q} ${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-lint
 LORDER=				NM=${NM:Q} MKTEMP=${TOOL_MKTEMP:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}lorder
 MKDEP=				CC=${CC:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}mkdep
 MKDEPCXX=			CC=${CXX:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}mkdep
-#PAXCTL=				${TOOLDIR}/bin/${_TOOL_PREFIX}paxctl
+#PAXCTL=			${TOOLDIR}/bin/${_TOOL_PREFIX}paxctl
 TSORT=				${TOOLDIR}/bin/${_TOOL_PREFIX}tsort -q
 YACC=				${TOOLDIR}/bin/${_TOOL_PREFIX}yacc
 
@@ -209,8 +152,6 @@ TOOL_GROFF_ENV= \
 TOOL_GROFF=			${TOOL_GROFF_ENV} ${TOOLDIR}/bin/${_TOOL_PREFIX}groff ${GROFF_FLAGS}
 
 TOOL_HEXDUMP=		${TOOLDIR}/bin/${_TOOL_PREFIX}hexdump
-TOOL_HP300MKBOOT=	${TOOLDIR}/bin/${_TOOL_PREFIX}hp300-mkboot
-TOOL_HPPAMKBOOT=	${TOOLDIR}/bin/${_TOOL_PREFIX}hppa-mkboot
 TOOL_INDXBIB=		${TOOLDIR}/bin/${_TOOL_PREFIX}indxbib
 TOOL_INSTALLBOOT=	${TOOLDIR}/bin/${_TOOL_PREFIX}installboot
 TOOL_INSTALL_INFO=	${TOOLDIR}/bin/${_TOOL_PREFIX}install-info
@@ -228,9 +169,6 @@ TOOL_MANDOC_HTML=	${TOOLDIR}/bin/${_TOOL_PREFIX}mandoc -Thtml
 TOOL_MANDOC_LINT=	${TOOLDIR}/bin/${_TOOL_PREFIX}mandoc -Tlint
 TOOL_MDSETIMAGE=	${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-mdsetimage
 TOOL_MENUC=			MENUDEF=${TOOLDIR}/share/misc ${TOOLDIR}/bin/${_TOOL_PREFIX}menuc
-TOOL_ARMELF2AOUT=	${TOOLDIR}/bin/${_TOOL_PREFIX}arm-elf2aout
-TOOL_M68KELF2AOUT=	${TOOLDIR}/bin/${_TOOL_PREFIX}m68k-elf2aout
-TOOL_MIPSELF2ECOFF=	${TOOLDIR}/bin/${_TOOL_PREFIX}mips-elf2ecoff
 TOOL_MKCSMAPPER=	${TOOLDIR}/bin/${_TOOL_PREFIX}mkcsmapper
 TOOL_MKESDB=		${TOOLDIR}/bin/${_TOOL_PREFIX}mkesdb
 TOOL_MKLOCALE=		${TOOLDIR}/bin/${_TOOL_PREFIX}mklocale
@@ -241,7 +179,6 @@ TOOL_MKUBOOTIMAGE=	${TOOLDIR}/bin/${_TOOL_PREFIX}mkubootimage
 TOOL_ELFTOSB=		${TOOLDIR}/bin/${_TOOL_PREFIX}elftosb
 TOOL_MSGC=			MSGDEF=${TOOLDIR}/share/misc ${TOOLDIR}/bin/${_TOOL_PREFIX}msgc
 TOOL_MTREE=			${TOOLDIR}/bin/${_TOOL_PREFIX}mtree
-TOOL_MVME68KWRTVID=	${TOOLDIR}/bin/${_TOOL_PREFIX}mvme68k-wrtvid
 TOOL_NBPERF=		${TOOLDIR}/bin/${_TOOL_PREFIX}perf
 TOOL_NCDCS=			${TOOLDIR}/bin/${_TOOL_PREFIX}ibmnws-ncdcs
 TOOL_PAX=			${TOOLDIR}/bin/${_TOOL_PREFIX}pax
@@ -249,7 +186,6 @@ TOOL_PIC=			${TOOLDIR}/bin/${_TOOL_PREFIX}pic
 TOOL_PIGZ=			${TOOLDIR}/bin/${_TOOL_PREFIX}pigz
 TOOL_XZ=			${TOOLDIR}/bin/${_TOOL_PREFIX}xz
 TOOL_PKG_CREATE=	${TOOLDIR}/bin/${_TOOL_PREFIX}pkg_create
-TOOL_POWERPCMKBOOTIMAGE=${TOOLDIR}/bin/${_TOOL_PREFIX}powerpc-mkbootimage
 TOOL_PWD_MKDB=		${TOOLDIR}/bin/${_TOOL_PREFIX}pwd_mkdb
 TOOL_REFER=			${TOOLDIR}/bin/${_TOOL_PREFIX}refer
 TOOL_ROFF_ASCII=	${TOOL_GROFF_ENV} ${TOOLDIR}/bin/${_TOOL_PREFIX}nroff

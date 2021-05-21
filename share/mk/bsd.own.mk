@@ -111,49 +111,63 @@ EXTERNAL_GDB_SUBDIR=		gdb
 EXTERNAL_GDB_SUBDIR=		/does/not/exist
 .endif
 
-
-#
-# Targets to check if DESTDIR or RELEASEDIR is provided
-#
-.if !target(check_DESTDIR)
-check_DESTDIR: .PHONY .NOTMAIN
-.if !defined(DESTDIR)
-	@echo "setenv DESTDIR before doing that!"
-	@false
+.if empty(.MAKEFLAGS:tW:M*-V .OBJDIR*)
+.if defined(MAKEOBJDIRPREFIX) || defined(MAKEOBJDIR)
+PRINTOBJDIR=	${MAKE} -r -V .OBJDIR -f /dev/null xxx
 .else
-	@true
+PRINTOBJDIR=	${MAKE} -V .OBJDIR
 .endif
-.endif
-
-.if !target(check_RELEASEDIR)
-check_RELEASEDIR: .PHONY .NOTMAIN
-.if !defined(RELEASEDIR)
-	@echo "setenv RELEASEDIR before doing that!"
-	@false
 .else
-	@true
-.endif
+PRINTOBJDIR=	echo /error/bsd.own.mk/PRINTOBJDIR # avoid infinite recursion
 .endif
 
-.if ${USETOOLS} == "yes"						# {
 #
-# Make sure DESTDIR is set, so that builds with these tools always
-# get appropriate -nostdinc, -nostdlib, etc. handling.  The default is
-# <empty string>, meaning start from /, the root directory.
+# Determine if running in the NetBSD source tree by checking for the
+# existence of build.sh and tools/ in the current or a parent directory,
+# and setting _SRC_TOP_ to the result.
 #
-DESTDIR?=
-.endif											# }
+.if !defined(_SRC_TOP_)			# {
+_SRC_TOP_!= cd "${.CURDIR}"; while :; do \
+		here=`pwd`; \
+		[ -f build.sh  ] && [ -d tools ] && { echo $$here; break; }; \
+		case $$here in /) echo ""; break;; esac; \
+		cd ..; done
+
+.MAKEOVERRIDES+=	_SRC_TOP_
+
+.endif					# }
 
 #
-# Build a dynamically linked /bin and /sbin, with the necessary shared
-# libraries moved from /usr/lib to /lib and the shared linker moved
-# from /usr/libexec to /lib
+# If _SRC_TOP_ != "", we're within the NetBSD source tree.
+# * Set defaults for NETBSDSRCDIR and _SRC_TOP_OBJ_.
+# * Define _NETBSD_VERSION_DEPENDS.  Targets that depend on the
+#   NetBSD version, or on variables defined at build time, can
+#   declare a dependency on ${_NETBSD_VERSION_DEPENDS}.
 #
-# Note that if the BINDIR is not /bin or /sbin, then we always use the
-# non-DYNAMICROOT behavior (i.e. it is only enabled for programs in /bin
-# and /sbin).  See <bsd.shlib.mk>.
-#
-MKDYNAMICROOT?=		yes
+.if (${_SRC_TOP_} != "")		# {
+
+NETBSDSRCDIR?=	${_SRC_TOP_}
+
+.if !defined(_SRC_TOP_OBJ_)
+_SRC_TOP_OBJ_!=		cd "${_SRC_TOP_}" && ${PRINTOBJDIR}
+.MAKEOVERRIDES+=	_SRC_TOP_OBJ_
+.endif
+
+_NETBSD_VERSION_DEPENDS=	${_SRC_TOP_OBJ_}/params
+_NETBSD_VERSION_DEPENDS+=	${NETBSDSRCDIR}/sys/sys/param.h
+_NETBSD_VERSION_DEPENDS+=	${NETBSDSRCDIR}/sys/conf/newvers.sh
+_NETBSD_VERSION_DEPENDS+=	${NETBSDSRCDIR}/sys/conf/osrelease.sh
+${_SRC_TOP_OBJ_}/params: .NOTMAIN .OPTIONAL # created by top level "make build"
+
+.endif	# _SRC_TOP_ != ""		# }
+
+.if (${_SRC_TOP_} != "") && \
+    (${TOOLCHAIN_MISSING} == "no" || defined(EXTERNAL_TOOLCHAIN))
+USETOOLS?=	yes
+.endif
+USETOOLS?=	no
+
+.include <bsd.tools.mk>
 
 # where the system object and source trees are kept; can be configurable
 # by the user in case they want them in ~/foosrc and ~/fooobj, for example
@@ -238,11 +252,11 @@ SHLIB_VERSION_FILE?= ${.CURDIR}/shlib_version
 # In order to identify NetBSD to GNU packages, we sometimes need
 # an "elf" tag for historically a.out platforms.
 #
-.if ${OBJECT_FMT} == ${OBJECT_FMT_ELF} && (${MACHINE_ARCH} == "i386")
+.if ${OBJECT_FMT} == ${ELF} && (${MACHINE_ARCH} == "i386")
 MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsdelf
 .endif
 
-.if ${OBJECT_FMT} == "OBJECT_FMT_AOUT" && (${MACHINE_ARCH} == "i386")
+.if ${OBJECT_FMT} == "a.out" && (${MACHINE_ARCH} == "i386")
 MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsd
 .endif
 
