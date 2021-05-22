@@ -11,7 +11,7 @@ FILES=		bsd.README bsd.buildinstall.mk bsd.clean.mk bsd.dep.mk bsd.doc.mk 		\
 			bsd.hostlib.mk bsd.hostprog.mk bsd.inc.mk bsd.init.mk bsd.kernobj.mk 	\
 			bsd.kinc.mk bsd.lib.mk bsd.links.mk bsd.man.mk bsd.nls.mk 				\
 			bsd.obj.mk bsd.own.mk bsd.prog.mk bsd.shlib.mk bsd.subdir.mk 			\
-			bsd.sys.mk bsd.tools.mk	sys.mk
+			bsd.sys.mk sys.mk
 			
 FILESDIR=	/usr/share/mk
 .endif

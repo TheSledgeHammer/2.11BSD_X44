@@ -1856,8 +1856,8 @@ createmakewrapper()
 
 	eval cat <<EOF ${makewrapout}
 #! ${HOST_SH}
-# Set proper variables to allow easy "make" building of a NetBSD subtree.
-# Generated from:  \$NetBSD: build.sh,v 1.350 2021/05/17 17:12:12 christos Exp $
+# Set proper variables to allow easy "make" building of a 211BSD subtree.
+# Generated from:  \$211BSD: build.sh,v 1.350 2021/05/17 17:12:12 christos Exp $
 # with these arguments: ${_args}
 #
 EOF
@@ -1957,7 +1957,7 @@ diskimage()
 	[ -f "${DESTDIR}/etc/mtree/set.base" ] ||
 	    bomb "The release binaries must be built first"
 	kerneldir="${RELEASEDIR}/${RELEASEMACHINEDIR}/binary/kernel"
-	kernel="${kerneldir}/netbsd-${ARG}.gz"
+	kernel="${kerneldir}/211bsd-${ARG}.gz"
 	[ -f "${kernel}" ] ||
 	    bomb "The kernel ${kernel} must be built first"
 	make_in_dir "${NETBSDSRCDIR}/etc" "smp_${1}"
@@ -1996,7 +1996,7 @@ buildkernel()
 	if [ "${runcmd}" != "echo" ]; then
 		statusmsg "Kernels built from ${kernelconf}:"
 		kernlist=$(awk '$1 == "config" { print $2 }' ${kernelconfpath})
-		for kern in ${kernlist:-netbsd}; do
+		for kern in ${kernlist:-211bsd}; do
 			[ -f "${kernelbuildpath}/${kern}" ] && \
 			    echo "  ${kernelbuildpath}/${kern}"
 		done | tee -a "${results}"
@@ -2009,7 +2009,7 @@ releasekernel()
 	kernelreldir="${RELEASEDIR}/${RELEASEMACHINEDIR}/binary/kernel"
 	${runcmd} mkdir -p "${kernelreldir}"
 	kernlist=$(awk '$1 == "config" { print $2 }' ${kernelconfpath})
-	for kern in ${kernlist:-netbsd}; do
+	for kern in ${kernlist:-211bsd}; do
 		builtkern="${kernelbuildpath}/${kern}"
 		[ -f "${builtkern}" ] || continue
 		releasekern="${kernelreldir}/${kern}-${kernelconfname}.gz"
@@ -2260,7 +2260,7 @@ main()
 		installmodules=*)
 			arg=${op#*=}
 			if [ "${arg}" = "/" ] && \
-			    (	[ "${uname_s}" != "NetBSD" ] || \
+			    (	[ "${uname_s}" != "211BSD" ] || \
 				[ "${uname_m}" != "${MACHINE}" ] ); then
 				bomb "'${op}' must != / for cross builds."
 			fi
@@ -2270,7 +2270,7 @@ main()
 		install=*)
 			arg=${op#*=}
 			if [ "${arg}" = "/" ] && \
-			    (	[ "${uname_s}" != "NetBSD" ] || \
+			    (	[ "${uname_s}" != "211BSD" ] || \
 				[ "${uname_m}" != "${MACHINE}" ] ); then
 				bomb "'${op}' must != / for cross builds."
 			fi
