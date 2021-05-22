@@ -38,15 +38,6 @@ GCC_CONFIG_ARCH.i386=i486
 GCC_CONFIG_TUNE.i386=nocona
 GCC_CONFIG_TUNE.x86_64=nocona
 MACHINE_GNU_ARCH=${GNU_ARCH.${MACHINE_ARCH}:U${MACHINE_ARCH}}
-#
-# Subdirectory used below ${RELEASEDIR} when building a release
-#
-.if !empty(MACHINE:Mevbarm) || !empty(MACHINE:Mevbmips) \
-	|| !empty(MACHINE:Mevbsh3)
-RELEASEMACHINEDIR?=	${MACHINE}-${MACHINE_ARCH}
-.else
-RELEASEMACHINEDIR?=	${MACHINE}
-.endif
 
 #
 # Subdirectory or path component used for the following paths:
@@ -169,6 +160,17 @@ USETOOLS?=	no
 
 .include <bsd.tools.mk>
 
+#
+# Build a dynamically linked /bin and /sbin, with the necessary shared
+# libraries moved from /usr/lib to /lib and the shared linker moved
+# from /usr/libexec to /lib
+#
+# Note that if the BINDIR is not /bin or /sbin, then we always use the
+# non-DYNAMICROOT behavior (i.e. it is only enabled for programs in /bin
+# and /sbin).  See <bsd.shlib.mk>.
+#
+MKDYNAMICROOT?=		yes
+
 # where the system object and source trees are kept; can be configurable
 # by the user in case they want them in ~/foosrc and ~/fooobj, for example
 BSDSRCDIR?=			/usr/src
@@ -252,11 +254,9 @@ SHLIB_VERSION_FILE?= ${.CURDIR}/shlib_version
 # In order to identify NetBSD to GNU packages, we sometimes need
 # an "elf" tag for historically a.out platforms.
 #
-.if ${OBJECT_FMT} == ${ELF} && (${MACHINE_ARCH} == "i386")
+.if ${MACHINE_ARCH} == "i386"
 MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsdelf
-.endif
-
-.if ${OBJECT_FMT} == "a.out" && (${MACHINE_ARCH} == "i386")
+.else
 MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsd
 .endif
 

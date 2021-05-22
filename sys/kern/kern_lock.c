@@ -592,7 +592,7 @@ lockholder_alloc(holder)
 	struct lock_holder *holder;
 {
 	memset(holder, 0, sizeof(struct lock_holder));
-	//rmalloc(holder, sizeof(struct lock_holder));
+	//holder = rmalloc(holder, sizeof(struct lock_holder));
 }
 
 void

@@ -38,7 +38,7 @@
 #
 
 #Release number to use
-release=1.0.0
+release=1.0
 
 case $1 in
 -s)
