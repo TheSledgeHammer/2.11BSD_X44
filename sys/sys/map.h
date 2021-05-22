@@ -31,8 +31,7 @@ struct map {
 	int					m_type;		/* kern_malloc type */
 	struct vmmapent		*m_vmmap;	/* vm kernel memory management */
 	//struct ovlmapent 	*m_ovlmap;	/* ovl kernel memory management */
-
-/* we use m_name when the map overflows, in warning messages */
+	/* we use m_name when the map overflows, in warning messages */
 };
 
 struct mapent {

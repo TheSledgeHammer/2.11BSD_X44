@@ -60,7 +60,6 @@ slab_startup(start, end)
 	size_t 			size;
 	u_long			bsize;
 
-    CIRCLEQ_INIT(&slab_cache_list);
     CIRCLEQ_INIT(slab_list);
 
     simple_lock_init(&slab_list_lock, "slab_list_lock");
@@ -73,7 +72,7 @@ slab_startup(start, end)
 		bsize = BUCKETSIZE(indx);
 		slab_insert(slab, bsize, M_VMSLAB, M_WAITOK);
 	}
-	slab->s_extent = extent_create("slab extent", start, end, slab->s_size, slab->s_mtype, NULL, NULL, EX_WAITOK | EX_MALLOCOK);
+	slab->s_extent = extent_create("slab extent", start, end, slab->s_mtype, NULL, NULL, EX_WAITOK | EX_MALLOCOK);
 	error = extent_alloc_region(slab->s_extent, start, bsize, EX_WAITOK | EX_MALLOCOK);
 	if (error) {
 		printf("slab_startup: slab allocator initialized successful");
@@ -245,7 +244,21 @@ slabmeta(slab, size, mtype, flags)
 }
 
 slab_t
-slab_small_lookup(size, mtype)
+slab_object(slabs, size)
+	struct slablist   *slabs;
+	long    size;
+{
+	register slab_t   slab;
+	if(LARGE_OBJECT(size)) {
+		slab = CIRCLEQ_LAST(slabs);
+	} else {
+		slab = CIRCLEQ_FIRST(slabs);
+	}
+	return (slab);
+}
+
+slab_t
+slab_lookup(size, mtype)
 	long    size;
 	int 	mtype;
 {
@@ -254,7 +267,7 @@ slab_small_lookup(size, mtype)
 
     slabs = &slab_list[BUCKETINDX(size)];
     simple_lock(&slab_list_lock);
-	for(slab = CIRCLEQ_FIRST(slabs); slab != NULL; slab = CIRCLEQ_NEXT(slab, s_list)) {
+	for(slab = slab_object(slabs, size); slab != NULL; slab = CIRCLEQ_NEXT(slab, s_list)) {
 		if(slab->s_size == size && slab->s_mtype == mtype) {
 			simple_unlock(&slab_list_lock);
 			return (slab);
@@ -262,25 +275,6 @@ slab_small_lookup(size, mtype)
 	}
     simple_unlock(&slab_list_lock);
     return (NULL);
-}
-
-slab_t
-slab_large_lookup(size, mtype)
-	long    size;
-	int 	mtype;
-{
-	struct slablist *slabs;
-	register slab_t slab;
-	slabs = &slab_list[BUCKETINDX(size)];
-	simple_lock(&slab_list_lock);
-	for (slab = CIRCLEQ_LAST(slabs); slab != NULL; slab = CIRCLEQ_NEXT(slab, s_list)) {
-		if (slab->s_size == size && slab->s_mtype == mtype) {
-			simple_unlock(&slab_list_lock);
-			return (slab);
-		}
-	}
-	simple_unlock(&slab_list_lock);
-	return (NULL);
 }
 
 void
@@ -312,50 +306,4 @@ slab_insert(slab, size, mtype, flags)
 	}
     simple_unlock(&slab_list_lock);
     slab_count++;
-}
-
-void
-slab_remove(size)
-	u_long    size;
-{
-    struct slablist  *slabs;
-    register slab_t     slab;
-
-    slabs = &slab_list[BUCKETINDX(size)];
-    simple_lock(&slab_list_lock);
-    CIRCLEQ_REMOVE(slabs, slab, s_list);
-    simple_unlock(&slab_list_lock);
-    slab_count--;
-}
-
-/* alternative queue */
-struct slab		slab_bucket[MINBUCKET + 16];
-/* Insq/Remq for slab lists */
-#define slab_insq(slab, s) {						\
-	(slab)->s_next = (s)->s_next; 					\
-	(slab)->s_prev = (s);							\
-	(s)->s_next->s_prev = (slab);					\
-	(s)->s_next = (slab);							\
-}
-
-#define slab_remq(slab) {							\
-	(slab)->s_prev->s_next = (slab)->s_next;		\
-	(slab)->s_next->s_prev = (slab)->s_prev;		\
-}
-
-void
-slab_insert1(size, mtype, flags)
-	u_long  size;
-	int	    mtype, flags;
-{
-	register slab_t  slab;
-    register u_long indx;
-
-	indx = BUCKETINDX(size);
-
-	slab = &slab_bucket[BUCKETINDX(size)];
-	simple_lock(&slab_list_lock);
-	slab_insq(slab, &slab_bucket[BUCKETINDX(size)]);
-	simple_lock(&slab_list_lock);
-	slab_count++;
 }

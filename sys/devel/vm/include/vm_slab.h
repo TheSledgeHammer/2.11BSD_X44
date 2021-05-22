@@ -67,10 +67,6 @@ struct slab {
     int                         s_usecount;                                     /* usage counter for slab caching */
 
     struct extent				*s_extent;										/* slab extent */
-
-    /* alt list: see end of vm_slab.c */
-    struct slab					*s_next;
-    struct slab					*s_prev;
 };
 typedef struct slab             *slab_t;
 
@@ -103,7 +99,7 @@ void	slab_create(slab_t);
 void 	slab_malloc(u_long, int, int);
 void 	slab_free(void *, int);
 
-slab_t  slab_small_lookup(u_long, int);
+slab_t  slab_lookup(u_long, int);
 slab_t  slab_large_lookup(u_long, int);
 void	slab_insert(slab_t, u_long, int, int);
 void	slab_remove(u_long);

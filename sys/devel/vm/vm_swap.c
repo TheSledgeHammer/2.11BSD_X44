@@ -309,7 +309,6 @@ swcreate(p, index)
 	struct proc *p;
 	int index;
 {
-
 	return (0);
 }
 
