@@ -4,7 +4,7 @@
 .include <bsd.own.mk>
 
 ELFTCDIR=	/contrib/elftoolchain
-SRCDIR=	${ELFTCDIR}/libelf
+SRCDIR=		${ELFTCDIR}/libelf
 
 .PATH:	${SRCDIR}
 

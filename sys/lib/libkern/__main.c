@@ -1,7 +1,8 @@
-/* $NetBSD: wsmousevar.h,v 1.2 1998/07/27 22:33:22 drochner Exp $ */
+/*	$NetBSD: __main.c,v 1.4 1996/03/14 18:52:03 christos Exp $	*/
 
 /*
- * Copyright (c) 1996, 1997 Christopher G. Demetriou.  All rights reserved.
+ * Copyright (c) 1993 Christopher G. Demetriou
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -13,8 +14,7 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *      This product includes software developed by Christopher G. Demetriou
- *	for the NetBSD Project.
+ *      This product includes software developed by Christopher G. Demetriou.
  * 4. The name of the author may not be used to endorse or promote products
  *    derived from this software without specific prior written permission
  *
@@ -30,39 +30,11 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * WSMOUSE interfaces.
- */
+#include <sys/types.h>
 
-/*
- * Mouse access functions (must be provided by all mice).
- *
- * There is a "void *" cookie provided by the mouse driver associated
- * with these functions, which is passed to them when they are invoked.
- */
-struct wsmouse_accessops {
-	int		(*enable) (void *);
-	int		(*ioctl) (void *v, u_long cmd, caddr_t data, int flag, struct proc *p);
-	void	(*disable) (void *);
-};
+void __main (void);
 
-/*
- * Attachment information provided by wsmousedev devices when attaching
- * wsmouse units.
- */
-struct wsmousedev_attach_args {
-	const struct wsmouse_accessops 	*accessops;		/* access ops */
-	void							*accesscookie;	/* access cookie */
-};
-
-#define WSMOUSEDEVCF_MUX 	0
-
-/*
- * Autoconfiugration helper functions.
- */
-int	wsmousedevprint (void *, const char *);
-
-/*
- * Callbacks from the mouse driver to the wsmouse interface driver.
- */
-void wsmouse_input (struct device *kbddev, u_int btns, int dx, int dy, int dz);
+void
+__main()
+{
+}

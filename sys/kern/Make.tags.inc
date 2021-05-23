@@ -14,7 +14,6 @@
 # the arch directories. Traditionally, COMM would have been an explicit list.
 # This promises to be easier to maintain, considering how often the directory
 # structure of the kernel sources has been changing recently.
-
 SYSDIR?= ${.CURDIR:H:H}
 COMM!=	find -H ${SYSDIR} -name arch -prune -o -name "*.[ch]" -print | \
 		sed 's@\(.*/\).*\..*@\1*.\[ch\]@' | sort -t / -u
