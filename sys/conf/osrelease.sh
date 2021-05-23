@@ -38,7 +38,12 @@
 #
 
 #Release number to use
-release=1.0
+# We use the number specified in <sys/param.h>
+
+AWK=${AWK:-awk}
+GREP=${GREP:-grep}
+PARAMH="`dirname $0`"/../sys/param.h
+release=`$AWK '/^#define[ 	]*__211BSD_Version__/ { print $6 }' $PARAMH`
 
 case $1 in
 -s)

@@ -9,8 +9,9 @@ SI386=	${SYSDIR}/arch/i386/eisa/*.[ch] \
 		${SYSDIR}/arch/i386/i386/*.[ch] \
 		${SYSDIR}/arch/i386/include/*.h \
 		${SYSDIR}/arch/i386/isa/*.[ch] 	\
-		${SYSDIR}/arch/i386/pci/*.[ch] \
-AI386=	${SYSDIR}/arch/i386/i386/*.s 	\
+		${SYSDIR}/arch/i386/pci/*.[ch] 	\
+AI386=	${SYSDIR}/arch/i386/i386/*.S	\
+		${SYSDIR}/arch/i386/isa/*.S		\
 		
 
 # Directories in which to place tags links
