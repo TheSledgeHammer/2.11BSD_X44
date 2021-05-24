@@ -56,16 +56,6 @@ TOOLCHAIN_BITS+= pcc
 TOOLCHAIN_BITS+= dbsym mdsetimage
 .endif
 
-#DTRACE_BITS=
-#.if ${MKDTRACE} != "no" || ${MKCTF} != "no"
-#DTRACE_BITS+= .WAIT libelf
-#DTRACE_BITS+= .WAIT libdwarf
-#DTRACE_BITS+= .WAIT libctf
-#.endif
-#.if ${MKCTF} != "no"
-#DTRACE_BITS+= .WAIT ctfconvert ctfmerge
-#.endif
-
 LINT_BITS=
 .if ${MKLINT} != "no"
 LINT_BITS= lint lint2
@@ -92,38 +82,33 @@ dependall-binstall: dependall-compat
 # See above for special treatment for host-mkdep, compat, and binstall.
 #
 
-SUBDIR=	host-mkdep compat binstall	\
-		.WAIT mktemp .WAIT sed .WAIT genassym cap_mkdb crunchgen ctags gencat hexdump \ 
-		${LINT_BITS} \
-		makewhatis mtree nbperf .WAIT uudecode \
-		cat join lorder m4 mkdep tsort .WAIT yacc .WAIT awk .WAIT lex \
-		${TOOLCHAIN_BITS} \
-		asn1_compile atf-compile cat cksum compile_et config db \
-		file lint1 \
-		makefs sortinfo \
-		.WAIT menuc mkcsmapper mkesdb mklocale mknod msgc \
-		.WAIT disklabel gpt \
-		.WAIT paxctl \
-		.WAIT fdisk \
-		.WAIT installboot \
-		pwd_mkdb stat strfile sunlabel zic
+SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 	\
+		cap_mkdb crunchgen ctags gencat hexdump ${LINT_BITS} 				\
+		makewhatis mtree nbperf .WAIT uudecode 								\
+		cat join lorder m4 mkdep tsort 										\
+		.WAIT yacc .WAIT awk .WAIT lex pax .WAIT libprop					\
+		.WAIT texinfo tic .WAIT ${TOOLCHAIN_BITS} asn1_compile 				\
+		cksum compile_et db file lint1 slc									\
+		makefs sortinfo .WAIT menuc mkcsmapper mkesdb mklocale 				\ 
+		mknod msgc .WAIT disklabel gpt .WAIT paxctl .WAIT fdisk 			\
+		.WAIT installboot pwd_mkdb strfile sunlabel vgrind zic
 
-.if ${MKLLVM} != "no" || ${MKLLVMRT} != "no"
-SUBDIR+= \
-	llvm .WAIT \
-	llvm-lib/libLLVMDemangle llvm-lib/libLLVMSupport llvm-lib/libLLVMTableGen .WAIT \
-	llvm-tblgen
-.endif
-.if ${MKLLVM} != "no"
-SUBDIR+= \
-	llvm-clang-tblgen
-.endif
-.if ${MKLLVM} != "no" && !defined(EXTERNAL_TOOLCHAIN)
-SUBDIR+= \
-	.WAIT llvm-include .WAIT \
-	llvm-lib .WAIT \
-	llvm-clang
-.endif
+#.if ${MKLLVM} != "no" || ${MKLLVMRT} != "no"
+#SUBDIR+= \
+#	llvm .WAIT \
+#	llvm-lib/libLLVMDemangle llvm-lib/libLLVMSupport llvm-lib/libLLVMTableGen .WAIT \
+#	llvm-tblgen
+#.endif
+#.if ${MKLLVM} != "no"
+#SUBDIR+= \
+#	llvm-clang-tblgen
+#.endif
+#.if ${MKLLVM} != "no" && !defined(EXTERNAL_TOOLCHAIN)
+#SUBDIR+= \
+#	.WAIT llvm-include .WAIT \
+#	llvm-lib .WAIT \
+#	llvm-clang
+#.endif
 
 .if ${MKMAN} != "no" || ${MKDOC} != "no" || ${MKHTML} != "no"
 . if ${MKGROFF} != "no"

@@ -618,7 +618,7 @@ ffs_statfs(mp, sbp, p)
 
 	ump = VFSTOUFS(mp);
 	fs = ump->um_fs;
-	if (fs->fs_magic != FS_MAGIC)
+	if (fs->fs_magic != FS_UFS1_MAGIC && fs->fs_magic != FS_UFS2_MAGIC)
 		panic("ffs_statfs");
 	sbp->f_bsize = fs->fs_fsize;
 	sbp->f_iosize = fs->fs_bsize;

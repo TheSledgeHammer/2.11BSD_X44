@@ -7,16 +7,7 @@ A General todo list. Don't hesitate to add to this list. :)
 - Bug Fixes &/or missing critical content
 
 ## Share/mk & mkhost:
-- Seperate Host & Target (2.11BSD_X44) mk files
-- build.sh:
-	- Allow the following parameters to set
-	- Compiler (GCC or Clang)
-	- Object Format (ELF, a.out)
-		- Restrict object formats that won't run on a given arch(i.e. x86_64 with a.out)
 - Todo:
-	- bsd.sys, sys
-	- bsd.prog.mk:
-		- __bsd_prog_mk_system_libs: remove unnecessary libs
 	
 - Host Environment:
 	- 1:1 format.

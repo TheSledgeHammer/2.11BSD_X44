@@ -55,22 +55,35 @@ LIBCRT0=	${DESTDIR}/usr/lib/crt0.o
 #     E.g. LIBC?=${DESTDIR}/usr/lib/libc.a
 #     etc..
 #
-__bsd_prog_mk_system_libs?= 												\
-	BZ2 C C_PIC CDK COM_ERR COMPAT CRYPT CRYPTO CRYPTO_IDEA CRYPTO_MDC2 	\
-	CRYPTO_RC5 																\	
-	CURSES DBM DES EDIT EVENT FORM GCC GNUMALLOC GSSAPI HDB INTL IPSEC 		\
-	KADM KADM5CLNT KADM5SRV KAFS KDB KRB KRB5 KSTREAM KVM L M MAGIC MENU 	\
-	OBJC OSSAUDIO PCAP PCI PMC POSIX PTHREAD PTHREAD_DBG RESOLV RMT 		\
-	ROKEN RPCSVC RT SKEY SL SS SSL TERMCAP USBHID UTIL WRAP Y Z
-
-.for _n in ${__bsd_prog_mk_system_libs}
-.ifndef LIB${_n}
-LIB${_n}= ${DESTDIR}/usr/lib/lib${_n:tl}.a
-# Note: ${DESTDIR} will be expanded in the following rule
-.MADE: ${LIB${_n}}
-.endif
-.endfor
-.undef __bsd_prog_mk_system_libs
+LIBC?=			${DESTDIR}/usr/lib/libc.a
+LIBCOMPAT?=		${DESTDIR}/usr/lib/libcompat.a
+LIBCRYPT?=		${DESTDIR}/usr/lib/libcrypt.a
+LIBCURSES?=		${DESTDIR}/usr/lib/libcurses.a
+LIBDBM?=		${DESTDIR}/usr/lib/libdbm.a
+LIBDES?=		${DESTDIR}/usr/lib/libdes.a
+LIBEDIT?=		${DESTDIR}/usr/lib/libedit.a
+LIBGCC?=		${DESTDIR}/usr/lib/libgcc.a
+LIBKDB?=		${DESTDIR}/usr/lib/libkdb.a
+LIBKRB?=		${DESTDIR}/usr/lib/libkrb.a
+LIBKVM?=		${DESTDIR}/usr/lib/libkvm.a
+LIBL?=			${DESTDIR}/usr/lib/libl.a
+LIBM?=			${DESTDIR}/usr/lib/libm.a
+LIBMP?=			${DESTDIR}/usr/lib/libmp.a
+LIBNTP?=		${DESTDIR}/usr/lib/libntp.a
+LIBOBJC?=		${DESTDIR}/usr/lib/libobjc.a
+LIBPC?=			${DESTDIR}/usr/lib/libpc.a
+LIBPCAP?=		${DESTDIR}/usr/lib/libpcap.a
+LIBPLOT?=		${DESTDIR}/usr/lib/libplot.a
+LIBPOSIX?=		${DESTDIR}/usr/lib/libposix.a
+LIBRESOLV?=		${DESTDIR}/usr/lib/libresolv.a
+LIBRPCSVC?=		${DESTDIR}/usr/lib/librpcsvc.a
+LIBSKEY?=		${DESTDIR}/usr/lib/libskey.a
+LIBTERMCAP?=	${DESTDIR}/usr/lib/libtermcap.a
+LIBTELNET?=		${DESTDIR}/usr/lib/libtelnet.a
+LIBUTIL?=		${DESTDIR}/usr/lib/libutil.a
+LIBWRAP?=		${DESTDIR}/usr/lib/libwrap.a
+LIBY?=			${DESTDIR}/usr/lib/liby.a
+LIBZ?=			${DESTDIR}/usr/lib/libz.a
 
 .ifndef LIBSTDCXX
 LIBSTDCXX=	${DESTDIR}/usr/lib/libstdc++.a

@@ -62,6 +62,49 @@ struct vfsops ufs211_vfsops = {
 		ufs211_sysctl,
 };
 
+
+/*
+ * Called by main() when ufs is going to be mounted as root.
+ */
+void
+ufs211_mountroot()
+{
+	extern struct vnode *rootvp;
+	struct fs *fs;
+	struct mount *mp;
+	struct proc *p = curproc;	/* XXX */
+	struct ufs211_mount *ump;
+	u_int size;
+	int error;
+
+	/*
+	 * Get vnodes for swapdev and rootdev.
+	 */
+	if ((error = bdevvp(swapdev, &swapdev_vp))
+			|| (error = bdevvp(rootdev, &rootvp))) {
+		printf("ufs211_mountroot: can't setup bdevvp's");
+		return (error);
+	}
+	if (error == vfs_rootmountalloc("ufs211", "root_device", &mp))
+		return (error);
+	if (error == ufs211_mountfs(rootvp, mp, p)) {
+		mp->mnt_vfc->vfc_refcount--;
+		vfs_unbusy(mp, p);
+		free(mp, M_MOUNT);
+		return (error);
+	}
+	simple_lock(&mountlist_slock);
+	CIRCLEQ_INSERT_TAIL(&mountlist, mp, mnt_list);
+	simple_unlock(&mountlist_slock);
+	ump = VFSTOUFS(mp);
+	fs = ump->m_filsys;
+	(void) copystr(mp->mnt_stat.f_mntonname, fs->fs_fsmnt, MNAMELEN - 1, 0);
+	(void) ufs211_statfs(mp, &mp->mnt_stat, p);
+	vfs_unbusy(mp, p);
+	inittodr(fs->fs_time);
+	return (0);
+}
+
 /*
  * VFS Operations.
  *
@@ -83,7 +126,174 @@ ufs211_mount(mp, path, data, ndp, p)
 	int error, flags;
 	mode_t accessmode;
 
+	if (error == copyin(data, (caddr_t) &args, sizeof(struct ufs211_args))) {
+		return (error);
+	}
+	/*
+	 * If updating, check whether changing from read-only to
+	 * read/write; if there is no device name, that's all we do.
+	 */
+	if (mp->mnt_flag & MNT_UPDATE) {
+		ump = VFSTOUFS211(mp);
+		fs = ump->m_filsys;
+		if (fs->fs_ronly == 0 && (mp->mnt_flag & MNT_RDONLY)) {
+			flags = WRITECLOSE;
+			if (mp->mnt_flag & MNT_FORCE)
+				flags |= FORCECLOSE;
+			if (error == ufs211_flushfiles(mp, flags, p))
+				return (error);
+			fs->fs_clean = 1;
+			fs->fs_ronly = 1;
+			if (error == ffs_sbupdate(ump, MNT_WAIT)) {
+				fs->fs_clean = 0;
+				fs->fs_ronly = 0;
+				return (error);
+			}
+		}
+		if ((mp->mnt_flag & MNT_RELOAD)
+				&& (error = ffs_reload(mp, ndp->ni_cnd.cn_cred, p)))
+			return (error);
+		if (fs->fs_ronly && (mp->mnt_flag & MNT_WANTRDWR)) {
+			/*
+			 * If upgrade to read-write by non-root, then verify
+			 * that user has necessary permissions on the device.
+			 */
+			if (p->p_ucred->cr_uid != 0) {
+				devvp = ump->m_devvp;
+				vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY, p);
+				if (error == VOP_ACCESS(devvp, VREAD | VWRITE, p->p_ucred, p)) {
+					VOP_UNLOCK(devvp, 0, p);
+					return (error);
+				}
+				VOP_UNLOCK(devvp, 0, p);
+			}
+			fs->fs_ronly = 0;
+			fs->fs_clean = 0;
+			(void) ffs_sbupdate(ump, MNT_WAIT);
+		}
+		if (args.fspec == 0) {
+			/*
+			 * Process export requests.
+			 */
+			return (vfs_export(mp, &ump->um_export, &args.export));
+		}
+	}
+	/*
+	 * Not an update, or updating the name: look up the name
+	 * and verify that it refers to a sensible block device.
+	 */
+	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, args.fspec, p);
+	if (error == namei(ndp))
+		return (error);
+	devvp = ndp->ni_vp;
+
+	if (devvp->v_type != VBLK) {
+		vrele(devvp);
+		return (ENOTBLK);
+	}
+	if (major(devvp->v_rdev) >= nblkdev) {
+		vrele(devvp);
+		return (ENXIO);
+	}
+	/*
+	 * If mount by non-root, then verify that user has necessary
+	 * permissions on the device.
+	 */
+	if (p->p_ucred->cr_uid != 0) {
+		accessmode = VREAD;
+		if ((mp->mnt_flag & MNT_RDONLY) == 0) {
+			accessmode |= VWRITE;
+		}
+		vn_lock(devvp, LK_EXCLUSIVE | LK_RETRY, p);
+		if (error == VOP_ACCESS(devvp, accessmode, p->p_ucred, p)) {
+			vput(devvp);
+			return (error);
+		}
+		VOP_UNLOCK(devvp, 0, p);
+	}
+	if ((mp->mnt_flag & MNT_UPDATE) == 0) {
+		error = ufs211_mountfs(devvp, mp, p);
+	} else {
+		if (devvp != ump->m_devvp) {
+			error = EINVAL; /* needs translation */
+		} else {
+			vrele(devvp);
+	}
+	if (error) {
+		vrele(devvp);
+		return (error);
+	}
 	ump = VFSTOUFS211(mp);
+	fs = ump->m_filsys;
+	(void) copyinstr(path, fs->fs_fsmnt, sizeof(fs->fs_fsmnt) - 1, &size);
+	bzero(fs->fs_fsmnt + size, sizeof(fs->fs_fsmnt) - size);
+	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname, MNAMELEN);
+	(void) copyinstr(args.fspec, mp->mnt_stat.f_mntfromname, MNAMELEN - 1, &size);
+	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
+	(void)ufs211_statfs(mp, &mp->mnt_stat, p);
+	return (0);
+}
+
+int
+ufs211_unmount(mp, mntflags, p)
+	struct mount *mp;
+	int mntflags;
+	struct proc *p;
+{
+	register struct ufs211_mount *ump;
+	register struct ufs211_fs *fs;
+	int error, flags;
+
+	ump = VFSTOUFS211(mp);
+	flags = 0;
+	if (mntflags & MNT_FORCE) {
+		flags |= FORCECLOSE;
+	}
+	if (error == ufs211_flushfiles(mp, flags, p)) {
+		return (error);
+	}
+	ump = VFSTOUFS211(mp);
+	fs = ump->m_filsys;
+	ump->m_devvp->v_specflags &= ~SI_MOUNTEDON;
+	error = VOP_CLOSE(ump->m_devvp, fs->fs_ronly ? FREAD : FREAD | FWRITE, NOCRED, p);
+	vrele(ump->m_devvp);
+	//free(fs->fs_csp[0], M_UFSMNT);
+	free(fs, M_UFSMNT);
+	free(ump, M_UFSMNT);
+	mp->mnt_data = (qaddr_t) 0;
+	return (error);
+}
+
+/*
+ * Flush out all the files in a filesystem.
+ */
+int
+ufs211_flushfiles(mp, flags, p)
+	register struct mount *mp;
+	int flags;
+	struct proc *p;
+{
+	register struct ufs211_mount *ump;
+	int i, error;
+
+	ump = VFSTOUFS211(mp);
+#ifdef QUOTA
+	if (mp->mnt_flag & MNT_QUOTA) {
+		if (error == vflush(mp, NULLVP, SKIPSYSTEM|flags))
+			return (error);
+		for (i = 0; i < MAXQUOTAS; i++) {
+			if (ump->m_quotas[i] == NULLVP)
+				continue;
+			quotaoff(p, mp, i);
+		}
+		/*
+		 * Here we fall through to vflush again to ensure
+		 * that we have gotten rid of all the system vnodes.
+		 */
+	}
+#endif
+	error = vflush(mp, NULLVP, flags);
+	return (error);
 }
 
 /*
@@ -99,22 +309,8 @@ ufs211_start(mp, flags, p)
 {
 	struct ufs211_mount *ump;
 	ump = VFSTOUFS211(mp);
+
 	return (0);
-}
-
-
-int
-ufs211_unmount(mp, mntflags, p)
-	struct mount *mp;
-	int mntflags;
-	struct proc *p;
-{
-	register struct ufs211_mount *ump;
-	register struct ufs211_fs *fs;
-	int error, flags;
-
-	ump = VFSTOUFS211(mp);
-
 }
 
 /*
@@ -135,8 +331,9 @@ ufs211_root(mp, vpp)
 		ump = VFSTOUFS211(mp);
 	}
 
-	if (error == VFS_VGET(ump, UFS211_ROOTINO, &nvp))
+	if (error == VFS_VGET(mp, (ino_t) UFS211_ROOTINO, &nvp)) {
 		return (error);
+	}
 	*vpp = nvp;
 	return (0);
 }
@@ -231,10 +428,24 @@ ufs211_statfs(mp, sbp, p)
 	register struct nameidata *ndp = &nd;
 
 	ump = VFSTOUFS211(mp);
-	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path);
+	fs = ump->m_filsys;
 
-	ump = (struct ufs211_mount *)((int)ip->i_fs - offsetof(struct ufs211_mount, m_filsys));
-	u->u_error = statfs1(mp, uap->m_buf);
+	if (fs->fs_magic != FS_UFS211_MAGIC) {
+		panic("ufs211_statfs");
+	}
+	sbp->f_bsize = fs->fs_fsize;
+	sbp->f_iosize = MAXBSIZE;
+	sbp->f_blocks = fs->fs_fsize - fs->fs_isize;
+	sbp->f_bfree = fs->fs_tfree;
+	sbp->f_bavail = fs->fs_tfree;
+	sbp->f_files = (fs->fs_isize - 2) * INOPB;
+	sbp->f_ffree = fs->fs_tinode;
+	if (sbp != &mp->mnt_stat) {
+		sbp->f_type = mp->mnt_vfc->vfc_typenum;
+		bcopy((caddr_t)mp->mnt_stat.f_mntonname, (caddr_t)&sbp->f_mntonname[0], MNAMELEN);
+		bcopy((caddr_t)mp->mnt_stat.f_mntfromname, (caddr_t)&sbp->f_mntfromname[0], MNAMELEN);
+	}
+	return (0);
 }
 
 /*
@@ -243,20 +454,66 @@ ufs211_statfs(mp, sbp, p)
  * sync _every_ filesystem when unmounting just one filesystem.
 */
 int
-ufs211_sync(mp)
-	register struct ufs211_mount *mp;
+ufs211_sync(mp, waitfor, cred, p)
+	struct mount *mp;
+	int waitfor;
+	struct ucred *cred;
+	struct proc *p;
 {
+	register struct ufs211_mount *ump;
 	register struct ufs211_fs *fs;
+	register struct	ufs211_inode *ip;
+	struct vnode *nvp, *vp;
 	struct buf *bp;
-	int error = 0;
+	int error, allerror = 0;
 
-	fs = &mp->m_filsys;
-	if (fs->fs_fmod && (mp->m_flags & MNT_RDONLY)) {
+	ump = VFSTOUFS211(mp);
+	fs = ump->m_filsys;
+	if (fs->fs_fmod != 0 && fs->fs_ronly != 0) {
 		printf("fs = %s\n", fs->fs_fsmnt);
 		panic("sync: rofs");
 	}
-	syncinodes(fs); 		/* sync the inodes for this filesystem */
-	bflush(mp->m_dev); 		/* flush dirty data blocks */
+
+	/*
+	 * Write back each (modified) inode.
+	 */
+	simple_lock(&mntvnode_slock);
+loop:
+	for (vp = LIST_FIRST(mp->mnt_vnodelist); vp != NULL; vp = nvp) {
+		/*
+		 * If the vnode that we are about to sync is no longer
+		 * associated with this mount point, start over.
+		 */
+		if (vp->v_mount != mp) {
+			goto loop;
+		}
+		simple_lock(&vp->v_interlock);
+		nvp = vp->v_mntvnodes.le_next;
+		ip = UFS211_VTOI(vp);
+		if ((ip->i_flag & (IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE)) == 0 && vp->v_dirtyblkhd.lh_first == NULL) {
+			simple_unlock(&vp->v_interlock);
+			continue;
+		}
+		error = vget(vp, LK_EXCLUSIVE | LK_NOWAIT | LK_INTERLOCK, p);
+		if (error) {
+			simple_lock(&mntvnode_slock);
+			if (error == ENOENT) {
+				goto loop;
+			}
+			continue;
+		}
+		if (error == VOP_FSYNC(vp, cred, waitfor, 0, p)) {
+			allerror = error;
+		}
+		VOP_UNLOCK(vp, 0, vp->v_proc);
+		vrele(vp);
+		simple_lock(&mntvnode_slock);
+	}
+	simple_unlock(&mntvnode_slock);
+	bflush(ump->m_dev); 		/* flush dirty data blocks */
+	if (error == VOP_FSYNC(ump->m_devvp, cred, waitfor, 0, p)) {
+		allerror = error;
+	}
 #ifdef	QUOTA
 	qsync(mp->m_dev);		/* sync the quotas */
 #endif
@@ -266,10 +523,11 @@ ufs211_sync(mp)
 	 * Write back modified superblocks. Consistency check that the superblock
 	 * of each file system is still in the buffer cache.
 	 */
-	if (fs->fs_fmod) {
-		bp = getblk(mp->m_dev, UFS211_SUPERB);
+	if (fs->fs_fmod != 0) {
+		bp = getblk(vp, ump->m_dev, UFS211_SUPERB);
 		fs->fs_fmod = 0;
 		fs->fs_time = time.tv_sec;
+		ufs211_mapin(bp);
 		bcopy(fs, bp, sizeof(struct ufs211_fs));
 		ufs211_mapout(bp);
 		bwrite(bp);
@@ -281,7 +539,7 @@ ufs211_sync(mp)
 int
 ufs211_vget(mp, ino, vpp)
 	struct mount *mp;
-	ufs211_ino_t ino;
+	ino_t 		ino;
 	struct vnode **vpp;
 {
 	struct proc *p = curproc; /* XXX */
@@ -311,6 +569,38 @@ ufs211_vget(mp, ino, vpp)
 	ip->i_dev = dev;
 	ip->i_number = ino;
 
+	/* Read in the disk contents for the inode, copy into the inode. */
+	if (error == bread(ump->m_devvp, fsbtodb(ino), fs->fs_fsize, NOCRED, &bp)) {
+		/*
+		 * The inode does not contain anything useful, so it would
+		 * be misleading to leave it on its hash chain. With mode
+		 * still zero, it will be unlinked and returned to the free
+		 * list by vput().
+		 */
+		vput(vp);
+		brelse(bp);
+		*vpp = NULL;
+		return (error);
+	}
+	ip->i_din = *((struct ufs211_dinode *)bp->b_data + itod(ino));
+	brelse(bp);
+
+	/*
+	 * Initialize the vnode from the inode, check for aliases.
+	 * Note that the underlying vnode may have changed.
+	 */
+	if (error == ufs211_vinit(mp, ufs211_specops, ufs211_fifoops, &vp)) {
+		vput(vp);
+		*vpp = NULL;
+		return (error);
+	}
+
+	/*
+	 * Finish inode initialization now that aliasing has been resolved.
+	 */
+	ip->i_devvp = ump->m_devvp;
+	VREF(ip->i_devvp);
+
 	*vpp = vp;
 	return (0);
 }
@@ -328,8 +618,10 @@ ufs211_fhtovp(mp, fhp, nam, vpp, exflagsp, credanonp)
 	struct ufs211_fs *fs;
 
 	fs = VFSTOUFS211(mp)->m_filsys;
-	if (ufhp->ufid_ino < UFS211_ROOTINO || ufhp->ufid_ino >= fs->fs_ncg * fs->fs_ipg)
+	if (ufhp->ufid_ino < UFS211_ROOTINO || ufhp->ufid_ino >= fs->fs_ninode) {
 		return (ESTALE);
+	}
+	return (ufs_check_export(mp, ufhp, nam, vpp, exflagsp, credanonp));
 }
 
 int
@@ -362,7 +654,7 @@ ufs211_init(vfsp)
 	done = 1;
 
 	bufmap_init();
-	//ihinit();
+	ihinit();
 #ifdef QUOTA
 //	dqinit();
 #endif
@@ -382,5 +674,13 @@ ufs211_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	size_t newlen;
 	struct proc *p;
 {
+	if (namelen != 1) {
+		return (ENOTDIR);		/* overloaded */
+	}
+	switch (name[0]) {
+
+	default:
+		return (EOPNOTSUPP);
+	}
 	return (0);
 }

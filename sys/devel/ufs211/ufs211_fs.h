@@ -58,6 +58,7 @@ struct ufs211_fs {
 	ufs211_ino_t	fs_lasti;				/* start place for circular search */
 	ufs211_ino_t	fs_nbehind;				/* est # free inodes before s_lasti */
 	u_short			fs_flags;				/* mount time flags */
+	int	 			fs_magic;				/* magic number */
 /* actually longer */
 };
 
@@ -71,6 +72,8 @@ struct ufs211_bufmap {
 	void 			*bm_data;				/* data */
 	long			bm_size;				/* sizeof data */
 };
+
+#define FS_UFS211_MAGIC 0x90335 			/* magic number identical to UFS1 */
 
 /*
  * Turn file system block numbers into disk block addresses.

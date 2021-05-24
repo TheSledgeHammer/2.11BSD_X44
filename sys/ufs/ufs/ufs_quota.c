@@ -678,7 +678,6 @@ long numdquot, desireddquot = DQUOTINC;
 void
 dqinit()
 {
-
 	dqhashtbl = hashinit(desiredvnodes, M_DQUOT, &dqhash);
 	TAILQ_INIT(&dqfreelist);
 }
