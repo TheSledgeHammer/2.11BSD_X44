@@ -47,7 +47,7 @@
 #include <machine/segments.h>
 #include <machine/stdarg.h>
 #include <machine/vmparam.h>
-#include <machine/pc/bios.h>
+#include <machine/bios.h>
 
 #ifdef DEV_ISA
 #include <dev/core/isa/isavar.h>

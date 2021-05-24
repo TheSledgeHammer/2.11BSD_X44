@@ -1,0 +1,94 @@
+#	$NetBSD: Makefile.libkern,v 1.51 2021/05/17 08:50:36 mrg Exp $
+
+#
+# Variable definitions for libkern.
+#
+# Before including this, you _must_ set
+#   KERNDIR: location of sys/lib/libkern
+#
+# You *may* set:
+#   LIBKERN_ARCH: architecture subdir to be used
+#   KERNCPPFLAGS: see Makefile.inc
+#   KERNMISCCPPFLAGS: see Makefile.inc
+#
+
+.include <bsd.own.mk>
+
+.if defined(LIBKERN_ARCH) && !empty(LIBKERN_ARCH) && \
+    exists(${KERNDIR}/arch/${LIBKERN_ARCH})
+ARCHSUBDIR=     ${LIBKERN_ARCH}
+.elif defined(MACHINE_ARCH) && !empty(MACHINE_ARCH) && \
+    exists(${KERNDIR}/arch/${MACHINE_ARCH})
+ARCHSUBDIR=     ${MACHINE_ARCH}
+.elif defined(MACHINE_CPU) && !empty(MACHINE_CPU) && \
+    exists(${KERNDIR}/arch/${MACHINE_CPU})
+ARCHSUBDIR=     ${MACHINE_CPU}
+.endif
+
+M= ${KERNDIR}/arch/${ARCHSUBDIR}
+
+CPPFLAGS+=	-I$M ${KERNCPPFLAGS} ${KERNMISCCPPFLAGS}
+
+.include "${.PARSEDIR}/../../../common/lib/libc/Makefile.inc"
+.include "${.PARSEDIR}/../../../common/lib/libutil/Makefile.inc"
+
+.PATH.c: ${KERNDIR}
+.if exists ($M/Makefile.inc)
+.PATH.c: $M
+.PATH.S: $M
+.include "$M/Makefile.inc"
+.endif
+
+.if (${MACHINE_ARCH} != "alpha")
+# Quad support
+SRCS+=	adddi3.c anddi3.c ashldi3.c ashrdi3.c cmpdi2.c divdi3.c iordi3.c 	\
+		lshldi3.c lshrdi3.c moddi3.c muldi3.c negdi2.c notdi2.c qdivrem.c 	\
+		subdi3.c  ucmpdi2.c udivdi3.c umoddi3.c xordi3.c
+.endif
+
+# Other stuff
+SRCS+=	__assert.c __main.c
+SRCS+=	inet_addr.c intoa.c
+SRCS+=	bswap16.c bswap32.c bswap64.c
+SRCS+=	arc4random.c murmur3_32.c prospectorhash.c
+SRCS+=	pmatch.c mcount.c bcd.c ffs.c 
+
+SRCS+=	strstr.c strlcpy.c strlcat.c
+
+SRCS+=	bcmp.c bcopy.c max.c min.c locc.c
+SRCS+=	imax.c imin.c lmax.c lmin.c uimax.c uimin.c ulmax.c ulmin.c
+SRCS+=	memmove.c
+SRCS+=	memcmp.c memmem.c
+
+SRCS+=	memcpy.c
+.if empty(SRCS:Mmemset2.*)
+SRCS+=	memset.c
+.endif
+
+SRCS+=	strtoul.c 
+
+SRCS+=	scanc.c skpc.c
+SRCS+=	random.c
+
+SRCS+=	memchr.c
+SRCS+=	strcat.c strchr.c strcmp.c strcpy.c strcspn.c strlen.c strnlen.c
+SRCS+=	strncat.c strrchr.c strncmp.c strncpy.c strpbrk.c strspn.c
+SRCS+=	strcasecmp.c strncasecmp.c
+
+SRCS+=	qsort.c rindex.c
+
+SRCS+=	hexdump.c
+
+# Files to clean up
+CLEANFILES+= lib${LIB}.o lib${LIB}.po
+
+# Remove from SRCS the .c files for any .S files added by the MD makefiles,
+# also remove from SRCS the .c files for the .c files in NO_SRCS.
+# (Unlike libc, we don't worry about lint)
+
+.for check_file in ${SRCS:M*.S} ${NO_SRCS}
+unwanted_file := ${SRCS:M${check_file:.S=.c}}
+.if "${unwanted_file}" != ""
+SRCS := ${SRCS:N${unwanted_file}}
+.endif
+.endfor

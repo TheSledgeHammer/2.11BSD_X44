@@ -5,10 +5,9 @@ A General todo list. Don't hesitate to add to this list. :)
 - Compiler
 - Makefiles
 - Bug Fixes &/or missing critical content
+- Update sys/dev & sys/stand/boot Makefiles
 
 ## Share/mk & mkhost:
-- Todo:
-	
 - Host Environment:
 	- 1:1 format.
 	- Target provides necessary defitions
@@ -22,6 +21,7 @@ A General todo list. Don't hesitate to add to this list. :)
 					- HOSTCPP = TARGETCPP 			/* target cpp compiler */ 
 
 ## Tools (NetBSD):
+- Add other missing tools: Mainly GNU's
 - Only import required for current successful compilation
 	- Can add more as needed
 - Changes to NetBSD's Toolchain:

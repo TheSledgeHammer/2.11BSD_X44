@@ -53,7 +53,7 @@ TOOLCHAIN_BITS+= pcc
 .endif
 
 .if ${TOOLCHAIN_MISSING} == "no" || defined(EXTERNAL_TOOLCHAIN)
-TOOLCHAIN_BITS+= dbsym mdsetimage
+TOOLCHAIN_BITS+= dbsym
 .endif
 
 LINT_BITS=
@@ -81,17 +81,25 @@ dependall-binstall: dependall-compat
 # Dependencies in SUBDIR below ordered to maximize parallel ability.
 # See above for special treatment for host-mkdep, compat, and binstall.
 #
+SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
+		cap_mkdb crunchgen ctags gencat hexdump 								\
+		${LINT_BITS} 															\
+		makewhatis .WAIT uudecode 												\
+		cat rpcgen join lorder m4 mkdep tsort .WAIT yacc .WAIT awk .WAIT lex 	\
+		pax .WAIT libprop														\
+		.WAIT texinfo 															\
+		.WAIT tic 																\
+		.WAIT ${TOOLCHAIN_BITS} 												\
+		asn1_compile compile_et db 												\
+		file lint1 																\
+		sortinfo 																\
+		.WAIT menuc mklocale mknod msgc 										\
+		.WAIT disklabel 														\
+		.WAIT paxctl 															\
+		.WAIT fdisk 															\
+		pwd_mkdb vgrind															\
+		stat .WAIT config
 
-SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 	\
-		cap_mkdb crunchgen ctags gencat hexdump ${LINT_BITS} 				\
-		makewhatis mtree nbperf .WAIT uudecode 								\
-		cat join lorder m4 mkdep tsort 										\
-		.WAIT yacc .WAIT awk .WAIT lex pax .WAIT libprop					\
-		.WAIT texinfo tic .WAIT ${TOOLCHAIN_BITS} asn1_compile 				\
-		cksum compile_et db file lint1 slc									\
-		makefs sortinfo .WAIT menuc mkcsmapper mkesdb mklocale 				\ 
-		mknod msgc .WAIT disklabel gpt .WAIT paxctl .WAIT fdisk 			\
-		.WAIT installboot pwd_mkdb strfile sunlabel vgrind zic
 
 #.if ${MKLLVM} != "no" || ${MKLLVMRT} != "no"
 #SUBDIR+= \
