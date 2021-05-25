@@ -98,7 +98,7 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		.WAIT paxctl 															\
 		.WAIT fdisk 															\
 		pwd_mkdb vgrind															\
-		stat .WAIT config
+		stat .WAIT config														
 
 
 #.if ${MKLLVM} != "no" || ${MKLLVMRT} != "no"

@@ -27,8 +27,8 @@ HOST_CFLAGS+=-O2 -no-cpp-precomp
 MAKE_PROGRAM?=	${MAKE}
 
 .for i in 3 2
-.if exists(${.CURDIR}/../../external/gpl${i}/${MODULE}/dist)
-GNUHOSTDIST?=	${.CURDIR}/../../external/gpl${i}/${MODULE}/dist
+.if exists(${.CURDIR}/../../contrib/gnu/${MODULE}/dist)
+GNUHOSTDIST?=	${.CURDIR}/../../contrib/gnu/${MODULE}/dist
 .endif
 .endfor
 
