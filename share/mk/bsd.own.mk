@@ -51,12 +51,16 @@ TOOLCHAIN_MISSING?=	no
 .if ${MKGCC:Uyes} != "no"
 
 #
-# What GCC is used?
+# We import the old gcc as "gcc.old" when upgrading.  EXTERNAL_GCC_SUBDIR is
+# set to the relevant subdirectory in src/external/gpl3 for his HAVE_GCC.
 #
-.if ${MACHINE_ARCH} == "x86_64"
 HAVE_GCC?=	10
+EXTERNAL_GCC_SUBDIR?=	gcc
 .else
-HAVE_GCC?=	9
+EXTERNAL_GCC_SUBDIR?=	/does/not/exist
+.endif
+.else
+MKGCCCMDS?=	no
 .endif
 
 #
@@ -248,7 +252,7 @@ LINT=				CC=${CC:Q} ${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-lint
 LORDER=				NM=${NM:Q} MKTEMP=${TOOL_MKTEMP:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}lorder
 MKDEP=				CC=${CC:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}mkdep
 MKDEPCXX=			CC=${CXX:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}mkdep
-#PAXCTL=			${TOOLDIR}/bin/${_TOOL_PREFIX}paxctl
+PAXCTL=			${TOOLDIR}/bin/${_TOOL_PREFIX}paxctl
 TSORT=				${TOOLDIR}/bin/${_TOOL_PREFIX}tsort -q
 YACC=				${TOOLDIR}/bin/${_TOOL_PREFIX}yacc
 
@@ -256,7 +260,7 @@ TOOL_AWK=			${TOOLDIR}/bin/${_TOOL_PREFIX}awk
 TOOL_CAP_MKDB=		${TOOLDIR}/bin/${_TOOL_PREFIX}cap_mkdb
 TOOL_CAT=			${TOOLDIR}/bin/${_TOOL_PREFIX}cat
 TOOL_CKSUM=			${TOOLDIR}/bin/${_TOOL_PREFIX}cksum
-TOOL_CLANG_TBLGEN=	${TOOLDIR}/bin/${_TOOL_PREFIX}clang-tblgen
+
 TOOL_COMPILE_ET=	${TOOLDIR}/bin/${_TOOL_PREFIX}compile_et
 TOOL_CONFIG=		${TOOLDIR}/bin/${_TOOL_PREFIX}config
 TOOL_CRUNCHGEN=		MAKE=${.MAKE:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}crunchgen
@@ -329,14 +333,9 @@ TOOL_ROFF_PS=		${TOOL_GROFF} -Tps ${ROFF_PAGESIZE}
 TOOL_ROFF_RAW=		${TOOL_GROFF} -Z
 TOOL_RPCGEN=		RPCGEN_CPP=${CPP:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}rpcgen
 TOOL_SED=			${TOOLDIR}/bin/${_TOOL_PREFIX}sed
-TOOL_SLC=			${TOOLDIR}/bin/${_TOOL_PREFIX}slc
 TOOL_SOELIM=		${TOOLDIR}/bin/${_TOOL_PREFIX}soelim
 TOOL_SORTINFO=		${TOOLDIR}/bin/${_TOOL_PREFIX}sortinfo
-TOOL_SPARKCRC=		${TOOLDIR}/bin/${_TOOL_PREFIX}sparkcrc
 TOOL_STAT=			${TOOLDIR}/bin/${_TOOL_PREFIX}stat
-TOOL_STRFILE=		${TOOLDIR}/bin/${_TOOL_PREFIX}strfile
-TOOL_SUNLABEL=		${TOOLDIR}/bin/${_TOOL_PREFIX}sunlabel
-TOOL_TBL=			${TOOLDIR}/bin/${_TOOL_PREFIX}tbl
 TOOL_TIC=			${TOOLDIR}/bin/${_TOOL_PREFIX}tic
 TOOL_UUDECODE=		${TOOLDIR}/bin/${_TOOL_PREFIX}uudecode
 TOOL_VGRIND=		${TOOLDIR}/bin/${_TOOL_PREFIX}vgrind -f
@@ -363,9 +362,100 @@ TOOL_CC.pcc=		pcc
 TOOL_CPP.pcc=		pcpp
 TOOL_CXX.pcc=		p++
 
-# Missing below TOOLDIR from NetBSD's bsd.own.mk
+TOOL_ASN1_COMPILE=	asn1_compile
+TOOL_AWK=			awk
+TOOL_CAP_MKDB=		cap_mkdb
+TOOL_CAT=			cat
+TOOL_CKSUM=			cksum
+TOOL_CLANG_TBLGEN=	clang-tblgen
+TOOL_COMPILE_ET=	compile_et
+TOOL_CONFIG=		config
+TOOL_CRUNCHGEN=		crunchgen
+TOOL_CTAGS=			ctags
+TOOL_CTFCONVERT=	ctfconvert
+TOOL_CTFMERGE=		ctfmerge
+TOOL_CVSLATEST=		cvslatest
+TOOL_DATE=			date
+TOOL_DB=			db
+TOOL_DISKLABEL=		disklabel
+TOOL_DTC=			dtc
+TOOL_EQN=			eqn
+TOOL_FDISK=			fdisk
+TOOL_FGEN=			fgen
+TOOL_GENASSYM=		genassym
+TOOL_GENCAT=		gencat
+TOOL_GMAKE=			gmake
+TOOL_GPT=			gpt
+TOOL_GREP=			grep
+TOOL_GROFF=			groff
+TOOL_HEXDUMP=		hexdump
+TOOL_HP300MKBOOT=	hp300-mkboot
+TOOL_HPPAMKBOOT=	hppa-mkboot
+TOOL_INDXBIB=		indxbib
+TOOL_INSTALLBOOT=	installboot
+TOOL_INSTALL_INFO=	install-info
+TOOL_JOIN=			join
+TOOL_LLVM_TBLGEN=	llvm-tblgen
+TOOL_M4=			m4
+TOOL_MACPPCFIXCOFF=	macppc-fixcoff
+TOOL_MAKEFS=		makefs
+TOOL_MAKEINFO=		makeinfo
+TOOL_MAKEKEYS=		makekeys
+TOOL_MAKESTRS=		makestrs
+TOOL_MAKEWHATIS=	/usr/libexec/makewhatis
+TOOL_MANDOC_ASCII=	mandoc -Tascii
+TOOL_MANDOC_HTML=	mandoc -Thtml
+TOOL_MANDOC_LINT=	mandoc -Tlint
+TOOL_MDSETIMAGE=	mdsetimage
+TOOL_MENUC=			menuc
+TOOL_ARMELF2AOUT=	arm-elf2aout
+TOOL_M68KELF2AOUT=	m68k-elf2aout
+TOOL_MIPSELF2ECOFF=	mips-elf2ecoff
+TOOL_MKCSMAPPER=	mkcsmapper
+TOOL_MKESDB=		mkesdb
+TOOL_MKLOCALE=		mklocale
+TOOL_MKMAGIC=		file
+TOOL_MKNOD=			mknod
+TOOL_MKTEMP=		mktemp
+TOOL_MKUBOOTIMAGE=	mkubootimage
+TOOL_ELFTOSB=		elftosb
+TOOL_MSGC=			msgc
+TOOL_MTREE=			mtree
+TOOL_MVME68KWRTVID=	wrtvid
+TOOL_NBPERF=		nbperf
+TOOL_NCDCS=			ncdcs
+TOOL_PAX=			pax
+TOOL_PIC=			pic
+TOOL_PIGZ=			pigz
+TOOL_XZ=			xz
+TOOL_PKG_CREATE=	pkg_create
+TOOL_POWERPCMKBOOTIMAGE=	powerpc-mkbootimage
+TOOL_PWD_MKDB=		pwd_mkdb
+TOOL_REFER=			refer
+TOOL_ROFF_ASCII=	nroff
+TOOL_ROFF_DOCASCII=	${TOOL_GROFF} -Tascii
+TOOL_ROFF_DOCHTML=	${TOOL_GROFF} -Thtml
+TOOL_ROFF_DVI=		${TOOL_GROFF} -Tdvi ${ROFF_PAGESIZE}
+TOOL_ROFF_HTML=		${TOOL_GROFF} -Tlatin1 -mdoc2html
+TOOL_ROFF_PS=		${TOOL_GROFF} -Tps ${ROFF_PAGESIZE}
+TOOL_ROFF_RAW=		${TOOL_GROFF} -Z
+TOOL_RPCGEN=		rpcgen
+TOOL_SED=			sed
+TOOL_SOELIM=		soelim
+TOOL_SORTINFO=		sortinfo
+TOOL_SPARKCRC=		sparkcrc
+TOOL_STAT=			stat
+TOOL_STRFILE=		strfile
+TOOL_SUNLABEL=		sunlabel
+TOOL_TBL=			tbl
+TOOL_TIC=			tic
+TOOL_UUDECODE=		uudecode
+TOOL_VGRIND=		vgrind -f
+TOOL_VFONTEDPR=		/usr/libexec/vfontedpr
+TOOL_ZIC=			zic
 
 .endif	# USETOOLS != yes						# }
+
 
 # Standalone code should not be compiled with PIE or CTF
 # Should create a better test
@@ -450,7 +540,7 @@ BSDSRCDIR?=			/usr/src
 BSDOBJDIR?=			/usr/obj
 NETBSDSRCDIR?=		${BSDSRCDIR}
 
-BINGRP?=			bin
+BINGRP?=			wheel
 BINOWN?=			root
 BINMODE?=			555
 NONBINMODE?=		444
@@ -500,7 +590,7 @@ OBJECT_FMT=	ELF
 # If this platform's toolchain is missing, we obviously cannot build it.
 #
 .if ${TOOLCHAIN_MISSING} != "no"
-MKBFD:= no
+MKBINUTILS:= no
 MKGDB:= no
 MKGCC:= no
 .endif
@@ -513,6 +603,20 @@ MKGCC:= no
 .if defined(EXTERNAL_TOOLCHAIN)
 MKGCC:= no
 .endif
+
+#
+# GCC warnings with simple disables.  Use these with eg
+# COPTS.foo.c+= ${GCC_NO_STRINGOP_TRUNCATION}.
+#
+GCC_NO_FORMAT_TRUNCATION=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 7:? -Wno-format-truncation :}
+GCC_NO_FORMAT_OVERFLOW=		${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 7:? -Wno-format-overflow :}
+GCC_NO_STRINGOP_OVERFLOW=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 7:? -Wno-stringop-overflow :}
+GCC_NO_IMPLICIT_FALLTHRU=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 7:? -Wno-implicit-fallthrough :}         
+GCC_NO_STRINGOP_TRUNCATION=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 8:? -Wno-stringop-truncation :}
+GCC_NO_CAST_FUNCTION_TYPE=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 8:? -Wno-cast-function-type :}
+GCC_NO_ADDR_OF_PACKED_MEMBER=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 9:? -Wno-address-of-packed-member :}
+GCC_NO_MAYBE_UNINITIALIZED=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 10:? -Wno-maybe-uninitialized :}
+GCC_NO_RETURN_LOCAL_ADDR=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 10:? -Wno-return-local-addr :}
 
 #
 # Location of the file that contains the major and minor numbers of the
@@ -542,30 +646,32 @@ MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsd
 
 TARGETS+=	all clean cleandir depend dependall includes \
 			install lint obj regress tags
-.PHONY:		all clean cleandir depend dependall distclean includes \
+PHONY_NOTMAIN =	all clean cleandir depend dependall distclean includes \
 			install lint obj regress tags beforedepend afterdepend \
 			beforeinstall afterinstall realinstall realdepend realall \
 			subdir-all subdir-install subdir-depend
-			
+.PHONY:		${PHONY_NOTMAIN}
+.NOTMAIN:	${PHONY_NOTMAIN}
+		
 .if ${NEED_OWN_INSTALL_TARGET} != "no"
 .if !target(install)
-install:		.NOTMAIN beforeinstall subdir-install realinstall afterinstall
-beforeinstall:	.NOTMAIN
-subdir-install:	.NOTMAIN beforeinstall
-realinstall:	.NOTMAIN beforeinstall
-afterinstall:	.NOTMAIN subdir-install realinstall
+install:	beforeinstall .WAIT subdir-install realinstall .WAIT afterinstall
+beforeinstall:
+subdir-install:
+realinstall:
+afterinstall:
 .endif
-all:			.NOTMAIN realall subdir-all
-subdir-all:		.NOTMAIN
-realall:		.NOTMAIN
-depend:			.NOTMAIN realdepend subdir-depend
-subdir-depend:	.NOTMAIN
-realdepend:		.NOTMAIN
-distclean:		.NOTMAIN cleandir
-cleandir:		.NOTMAIN clean
+all:		realall subdir-all
+subdir-all:
+realall:
+depend:		realdepend subdir-depend
+subdir-depend:
+realdepend:
+distclean:	cleandir
+cleandir:	clean
 
-dependall:		.NOTMAIN realdepend .MAKE
-	@cd ${.CURDIR}; ${MAKE} realall
+dependall:	.NOTMAIN realdepend .MAKE
+	@cd "${.CURDIR}"; ${MAKE} realall
 .endif
 
 # Define MKxxx variables (which are either yes or no) for users
@@ -660,6 +766,14 @@ MKINFO=		no
 MKMAN=		no
 MKNLS=		no
 .endif
+
+
+.if ${MACHINE_ARCH} == "x86_64" || ${MACHINE_ARCH} == "i386"
+MKSTATICPIE?=	yes
+.else
+MKSTATICPIE?=	no
+.endif
+
 
 #
 # install(1) parameters.
@@ -775,5 +889,12 @@ _MKTARGET_LINK?=	${_MKMSG_LINK} ${.CURDIR:T}/${.TARGET}
 _MKTARGET_LEX?=		${_MKMSG_LEX} ${.CURDIR:T}/${.TARGET}
 _MKTARGET_REMOVE?=	${_MKMSG_REMOVE} ${.TARGET}
 _MKTARGET_YACC?=	${_MKMSG_YACC} ${.CURDIR:T}/${.TARGET}
+
+
+.if ${MKMANDOC} == "yes"
+TARGETS+=	lintmanpages
+.endif
+
+TESTSBASE=	/usr/tests${MLIBDIR:D/${MLIBDIR}}
 
 .endif	# !defined(_BSD_OWN_MK_)

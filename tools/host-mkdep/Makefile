@@ -32,7 +32,7 @@ host-mkdep: configure host-mkdep.in
 
 # Use uninstalled copy of the install program
 INSTALL_OBJ!=	cd ${NETBSDSRCDIR}/tools/binstall && ${PRINTOBJDIR}
-INSTALL=	${INSTALL_OBJ}/xinstall
+INSTALL=		${INSTALL_OBJ}/xinstall
 
 # Install rule, copied from src/tools/Makefile.host.
 # We can't include Makefile.host because there is no HOST_SRCDIR

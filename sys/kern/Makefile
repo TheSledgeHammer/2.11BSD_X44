@@ -46,4 +46,3 @@ links::
 	    (cd ../$$i && { rm -f tags; ln -s ${SYSTAGS} tags; }) done
 	-for i in ${ARCH}; do \
 	    (cd ../$$i && make ${MFLAGS} SYSTAGS=${SYSTAGS} links); done
-

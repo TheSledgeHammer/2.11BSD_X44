@@ -7,7 +7,7 @@ SUBDIR=	arch dev fs miscfs 			\
 		sys ufs vm
 
 .if make(obj) || make(cleandir) || ${MKBOOT} != "no"
-SUBDIR+= stand/boot
+SUBDIR+= stand
 .endif
 
 .include <bsd.kinc.mk>

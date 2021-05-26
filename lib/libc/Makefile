@@ -1,4 +1,5 @@
 #	$NetBSD: Makefile,v 1.173 2020/05/16 18:31:47 christos Exp $
+#	@(#)Makefile	4.19.2 (2.11BSD) 1997/8/28
 #	@(#)Makefile	8.2 (Berkeley) 2/3/94
 #
 # All library objects contain sccsid strings by default; they may be
@@ -20,8 +21,6 @@
 # Copyright (c) 1980 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
-#
-#	@(#)Makefile	4.19.2 (2.11BSD) 1997/8/28
 #
 # The system has two monitoring schemes, utilizing either ``prof''
 # or ``gprof''. DFLMON determines the default profiler; mon.o

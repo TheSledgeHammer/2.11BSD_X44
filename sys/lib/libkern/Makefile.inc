@@ -97,4 +97,4 @@ __always_make_kernlib:	.NOTMAIN
 .PHONY: __always_make_kernlib
 .PHONY: cleankernlib cleandirkernlib dependkernlib
 
-.include "${.PARSEDIR}/../../../common/lib/libc/Makefile.inc"
+//.include "${.PARSEDIR}/../../../common/lib/libc/Makefile.inc"

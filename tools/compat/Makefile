@@ -4,27 +4,27 @@ HOSTLIB=	nbcompat
 
 .include <bsd.hostinit.mk>
 
-SRCS=		atoll.c basename.c cdbr.c cdbw.c dirname.c \
-			dprintf.c fgetln.c flock.c fparseln.c fpurge.c \
-			getcap.c getline.c getmode.c getopt_long.c gettemp.c \
-			heapsort.c getsubopt.c \
-			issetugid.c lchflags.c lchmod.c lchown.c libyywrap.c \
-			md2.c md2hl.c md4c.c md4hl.c md5c.c md5hl.c \
-			mi_vector_hash.c mkdtemp.c \
-			mkstemp.c pread.c putc_unlocked.c pwcache.c pwrite.c \
-			pw_scan.c \
-			raise_default_signal.c rb.c reallocarr.c reallocarray.c \
-			rmd160.c rmd160hl.c \
-			regcomp.c regerror.c regexec.c regfree.c \
-			setenv.c setgroupent.c \
-			setpassent.c setprogname.c sha1.c sha1hl.c sha2.c \
-			sha256hl.c sha384hl.c sha512hl.c snprintb.c snprintf.c \
-			stat_flags.c strlcat.c strlcpy.c strmode.c \
-			strcasecmp.c strncasecmp.c strndup.c strnlen.c \
-			strsep.c strsuftoll.c strtoll.c \
-			strtoi.c strtou.c \
-			unvis.c vis.c err.c errx.c errc.c verr.c verrx.c verrc.c \
-			vwarn.c vwarnx.c vwarnc.c warn.c warnx.c warnc.c \
+SRCS=		atoll.c basename.c cdbr.c cdbw.c dirname.c 					\
+			dprintf.c fgetln.c flock.c fparseln.c fpurge.c 				\
+			getcap.c getline.c getmode.c getopt_long.c gettemp.c 		\
+			heapsort.c getsubopt.c 										\
+			issetugid.c lchflags.c lchmod.c lchown.c libyywrap.c 		\
+			md2.c md2hl.c md4c.c md4hl.c md5c.c md5hl.c 				\
+			mi_vector_hash.c mkdtemp.c 									\
+			mkstemp.c pread.c putc_unlocked.c pwcache.c pwrite.c 		\
+			pw_scan.c 													\
+			raise_default_signal.c rb.c reallocarr.c reallocarray.c 	\
+			rmd160.c rmd160hl.c 										\
+			regcomp.c regerror.c regexec.c regfree.c 					\
+			setenv.c setgroupent.c 										\
+			setpassent.c setprogname.c sha1.c sha1hl.c sha2.c 			\
+			sha256hl.c sha384hl.c sha512hl.c snprintb.c snprintf.c 		\
+			stat_flags.c strlcat.c strlcpy.c strmode.c 					\
+			strcasecmp.c strncasecmp.c strndup.c strnlen.c 				\
+			strsep.c strsuftoll.c strtoll.c 							\
+			strtoi.c strtou.c 											\
+			unvis.c vis.c err.c errx.c errc.c verr.c verrx.c verrc.c 	\
+			vwarn.c vwarnx.c vwarnc.c warn.c warnx.c warnc.c 			\
 			fts.c glob.c efun.c
 
 BUILD_OSTYPE!=  uname -s
@@ -40,32 +40,32 @@ CPPFLAGS+=	-no-cpp-precomp
 CPPFLAGS+=	-I. -I./include -I${.CURDIR} -I${.CURDIR}/sys \
 		-DHAVE_NBTOOL_CONFIG_H=1 -D_FILE_OFFSET_BITS=64
 
-.PATH:		${.CURDIR}/../../lib/libc/cdb \
-			${.CURDIR}/../../lib/libc/gen \
-			${.CURDIR}/../../lib/libc/hash \
-			${.CURDIR}/../../lib/libc/hash/md2 \
-			${.CURDIR}/../../lib/libc/hash/md5 \
-			${.CURDIR}/../../lib/libc/hash/rmd160 \
-			${.CURDIR}/../../lib/libc/hash/sha1 \
-			${.CURDIR}/../../lib/libc/hash/sha2 \
-			${.CURDIR}/../../lib/libc/md \
-			${.CURDIR}/../../lib/libc/regex \
-			${.CURDIR}/../../lib/libc/stdio \
-			${.CURDIR}/../../lib/libc/stdlib \
-			${.CURDIR}/../../lib/libc/string \
-			${.CURDIR}/../../lib/libutil \
-			${.CURDIR}/../../common/lib/libc/cdb \
-			${.CURDIR}/../../common/lib/libc/gen \
-			${.CURDIR}/../../common/lib/libc/string \
-			${.CURDIR}/../../common/lib/libc/hash/rmd160 \
-			${.CURDIR}/../../common/lib/libc/hash/sha1 \
-			${.CURDIR}/../../common/lib/libc/hash/sha2 \
-			${.CURDIR}/../../common/lib/libc/md \
-			${.CURDIR}/../../common/lib/libc/stdlib \
-			${.CURDIR}/../../common/lib/libutil \
-			${.CURDIR}/../../external/bsd/flex/dist/src
+.PATH:		${.CURDIR}/../../lib/libc/cdb 							\
+			${.CURDIR}/../../lib/libc/gen 							\
+			${.CURDIR}/../../lib/libc/hash 							\
+			${.CURDIR}/../../lib/libc/hash/md2 						\
+			${.CURDIR}/../../lib/libc/hash/md5 						\
+			${.CURDIR}/../../lib/libc/hash/rmd160 					\
+			${.CURDIR}/../../lib/libc/hash/sha1 					\
+			${.CURDIR}/../../lib/libc/hash/sha2 					\
+			${.CURDIR}/../../lib/libc/md 							\
+			${.CURDIR}/../../lib/libc/regex 						\
+			${.CURDIR}/../../lib/libc/stdio 						\
+			${.CURDIR}/../../lib/libc/stdlib 						\
+			${.CURDIR}/../../lib/libc/string 						\
+			${.CURDIR}/../../lib/libutil 							\
+			${.CURDIR}/../../common/lib/libc/cdb 					\
+			${.CURDIR}/../../common/lib/libc/gen 					\
+			${.CURDIR}/../../common/lib/libc/string 				\
+			${.CURDIR}/../../common/lib/libc/hash/rmd160 			\
+			${.CURDIR}/../../common/lib/libc/hash/sha1 				\
+			${.CURDIR}/../../common/lib/libc/hash/sha2 				\
+			${.CURDIR}/../../common/lib/libc/md 					\
+			${.CURDIR}/../../common/lib/libc/stdlib 				\
+			${.CURDIR}/../../common/lib/libutil 					\
+			${.CURDIR}/../../contrib/external/gnu/flex/dist/src
 
-DPSRCS+=	defs.mk
+DPSRCS+=		defs.mk
 CLEANFILES+=	config.log config.status configure.lineno *.stamp
 CLEANDIRFILES+=	defs.mk config.cache confdefs.h
 
@@ -107,7 +107,7 @@ include/.stamp:
 
 HOST_LIBDIR=	${TOOLDIR}/lib
 HOST_INCSDIR=	${TOOLDIR}/include
-HOST_SHAREDIR= ${TOOLDIR}/share
+HOST_SHAREDIR= 	${TOOLDIR}/share
 
 install:	.PHONY install.lib includes install.defs.mk
 
@@ -161,7 +161,7 @@ MKDEP=		${HOST_MKDEP}
 
 # Use uninstalled copy of the install program
 INSTALL_OBJ!=	cd ${NETBSDSRCDIR}/tools/binstall && ${PRINTOBJDIR}
-INSTALL=	${INSTALL_OBJ}/xinstall
+INSTALL=		${INSTALL_OBJ}/xinstall
 
 # Run "${TOOLDIR}/bin/nbmake-${MACHINE} regen" by hand after editing
 # configure.ac.  See more detailed instructions in configure.ac.
