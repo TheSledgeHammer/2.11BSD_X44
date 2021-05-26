@@ -4,7 +4,7 @@
 
 MODULE=		binutils
 
-GNUHOSTDIST=	${.CURDIR}/../../contrib/gnu/binutils/${EXTERNAL_BINUTILS_SUBDIR}/dist
+GNUHOSTDIST=	${.CURDIR}/../../external/gpl3/${EXTERNAL_BINUTILS_SUBDIR}/dist
 
 BRANDING?=	\
 	--with-pkgversion="NetBSD Binutils nb1" \
@@ -34,9 +34,9 @@ INSTALL_TARGET+=install-gprof
 
 .include "${.CURDIR}/../Makefile.gnuhost"
 
-CCADDFLAGS=		-I${GNUHOSTDIST}/include  -I${DESTDIR}/usr/include
+CCADDFLAGS=	-I${GNUHOSTDIST}/include  -I${DESTDIR}/usr/include
 CCADDFLAGS+=	-B${DESTDIR}/usr/lib/
-LDADDFLAGS=		-L${DESTDIR}/lib -L${DESTDIR}/usr/lib
+LDADDFLAGS=	-L${DESTDIR}/lib -L${DESTDIR}/usr/lib
 
 # Force avoiding possibly non-executable install-sh.
 CONFIGURE_ENV+= ac_cv_path_mkdir="${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-install -d"

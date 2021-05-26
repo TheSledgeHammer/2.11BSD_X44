@@ -32,7 +32,7 @@ SUBDIR+=	libarch libcompat
 SUBDIR+=	libkern
 .endif
 
-SUBDIR+=	../contrib/elftoolchain/lib
+SUBDIR+=	../contrib/external/elftoolchain/lib
 
 .include <bsd.buildinstall.mk>
 .include <bsd.subdir.mk>

@@ -542,15 +542,15 @@ level of source directory"
 	#do_releasekernel=false
 	do_kernels=false
 	#do_modules=false
-	do_installmodules=false
+	#do_installmodules=false
 	#do_install=false
 	#do_sets=false
 	#do_sourcesets=false
 	#do_syspkgs=false
-	do_iso_image=false
-	do_iso_image_source=false
-	do_live_image=false
-	do_install_image=false
+	#do_iso_image=false
+	#do_iso_image_source=false
+	#do_live_image=false
+	#do_install_image=false
 	#do_disk_image=false
 	do_params=false
 

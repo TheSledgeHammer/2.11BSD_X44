@@ -1,5 +1,9 @@
 # $FreeBSD: src/sys/boot/Makefile,v 1.18 2003/08/16 02:48:20 obrien Exp $
 
+SUBDIR= 		common dloader i386
+
+INCSDIR= 		/usr/include/stand/boot
+
 BOOTSRC?=		/sys/stand/boot
 LIBKERN?= 		/sys/lib/libkern
 LIBSA?=			/sys/lib/libsa
@@ -33,5 +37,5 @@ SA_AS=			library
 SAMISCMAKEFLAGS+="SA_USE_LOADFILE=yes"
 .include 		"${LIBSA}/Makefile.inc"
 
-.include <bsd.subdir.mk>
+.include <bsd.kinc.mk>
 		
