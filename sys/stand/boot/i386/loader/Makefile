@@ -1,10 +1,10 @@
 # $FreeBSD$
 
-BOOT_DLOADER?=			yes
+BOOT_DLOADER?=				yes
 LOADER_NET_SUPPORT?=		no
-LOADER_CD9660_SUPPORT?=	no
-LOADER_EXT2FS_SUPPORT?=	no
-LOADER_MSDOS_SUPPORT?=	no
+LOADER_CD9660_SUPPORT?=		yes
+LOADER_EXT2FS_SUPPORT?=		no
+LOADER_MSDOS_SUPPORT?=		yes
 LOADER_UFS_SUPPORT?=		yes
 
 .include <bsd.init.mk>
@@ -14,7 +14,7 @@ PROG=			${LOADER}.sym
 NEWVERSWHAT?=	"bootstrap loader" i386
 #VERSION_FILE=	${.CURDIR}/../loader/version
 
-.PATH:		${BOOTSRC}/i386/loader
+.PATH:			${BOOTSRC}/i386/loader
 
 # architecture-specific loader code
 SRCS=			main.c conf.c
