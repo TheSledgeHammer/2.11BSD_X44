@@ -4,7 +4,15 @@ NO_OBJ=t
 
 .include <bsd.init.mk>
 
-SUBDIR=			mbr boot0 btx boot2 cdboot libi386 loader
+SUBDIR=		boot0 btx boot2 cdboot libi386 loader
+
+.if ${LOADER_GPT_SUPPORT} == "yes"
+SUBDIR+= gptboot
+.endif
+
+.if ${LOADER_MBR_SUPPORT} == "yes"
+SUBDIR+= mbr
+.endif		
 
 INCSDIR= 		/usr/include/stand/boot/i386
 

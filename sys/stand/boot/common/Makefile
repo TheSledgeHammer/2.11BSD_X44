@@ -9,18 +9,24 @@ SRCS+=		boot.c commands.c console.c devopen.c environment.c 					\
 			load_exec.c load_ksyms.c ls.c misc.c pager.c							\
 			panic.c readdir.c smbios.c strdup.c strspn.c strtol.c ufsread.c
 
-INCS=		boot2.h bootstrap.h commands.h dev_net.h isapnp.h paths.h				\
-			rbx.h smbios.h
+INCS=		boot2.h bootstrap.h commands.h paths.h rbx.h smbios.h
 
-.if defined(HAVE_BCACHE)
+.if ${LOADER_NET_SUPPORT} == "yes"
+SRCS+= 	dev_net.c
+INCS+=	dev_net.h
+.endif
+
+.if ${HAVE_BCACHE} == "yes"
 SRCS+=  bcache.c
 .endif
 
 # Machine-independant ISA PnP
-.if defined(HAVE_ISABUS)
+.if ${HAVE_ISABUS} == "yes"
 SRCS+=	isapnp.c
+INCS+= 	isapnp.h
 .endif
-.if defined(HAVE_PNP)
+
+.if ${HAVE_PNP} == "yes"
 SRCS+=	pnp.c
 .endif
 

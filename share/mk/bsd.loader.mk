@@ -7,10 +7,10 @@ _BSD_LOADER_MK_=1
 .include <bsd.own.mk>
 
 # Directories
-BOOTSTAND?=					${KERNSRCDIR}/sys/stand
-BOOTSRC?=					${KERNSRCDIR}/sys/stand/boot
-LIBKERN?= 					${KERNSRCDIR}/sys/lib/libkern
-LIBSA?=						${KERNSRCDIR}/sys/lib/libsa
+BOOTSTAND?=					${KERNSRCDIR}/stand
+BOOTSRC?=					${KERNSRCDIR}/stand/boot
+LIBKERN?= 					${KERNSRCDIR}/lib/libkern
+LIBSA?=						${KERNSRCDIR}/lib/libsa
 
 #EFISRC=					${BOOTSRC}/efi
 #EFIINC=					${EFISRC}/include
@@ -41,6 +41,11 @@ LOADER_MBR_SUPPORT?=		yes
 
 # Network support
 LOADER_NET_SUPPORT?=		no
+
+# Enable following
+HAVE_BCACHE?=				yes
+HAVE_PNP?=					yes
+HAVE_ISABUS?=				yes
 
 # Standard options:
 # Options used when building standalone components
