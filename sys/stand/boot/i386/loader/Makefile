@@ -1,13 +1,6 @@
 # $FreeBSD$
 
-BOOT_DLOADER?=				yes
-LOADER_NET_SUPPORT?=		no
-LOADER_CD9660_SUPPORT?=		yes
-LOADER_EXT2FS_SUPPORT?=		no
-LOADER_MSDOS_SUPPORT?=		yes
-LOADER_UFS_SUPPORT?=		yes
-
-.include <bsd.init.mk>
+.include <bsd.loader.mk>
 
 LOADER?=		loader
 PROG=			${LOADER}.sym
@@ -30,9 +23,7 @@ HAVE_ISABUS=	yes
 HELP_FILES=		${.CURDIR}/help.i386
 .endif
 
-
 # Always add MI sources
-.include		"${BOOTSRC}/loader.mk"
 
 CLEANFILES+=	${LOADER} ${LOADER}.bin
 
@@ -70,8 +61,6 @@ LDFLAGS_BIN+=	-Wl,--build-id=none
 .endif
 LD_FLAGS_BIN=	-static -N --gc-sections
 
-#.include "../Makefile.inc"
-
 # Debug me!
 #CFLAGS+=		-g
 #LDFLAGS+=		-g
@@ -90,3 +79,4 @@ FILESMODE_${LOADER}= ${BINMODE} -b
 OBJS=	${BTXCRT}
 
 .include <bsd.prog.mk>
+.include <bsd.kinc.mk>

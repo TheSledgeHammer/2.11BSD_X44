@@ -252,7 +252,7 @@ LINT=				CC=${CC:Q} ${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-lint
 LORDER=				NM=${NM:Q} MKTEMP=${TOOL_MKTEMP:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}lorder
 MKDEP=				CC=${CC:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}mkdep
 MKDEPCXX=			CC=${CXX:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}mkdep
-PAXCTL=			${TOOLDIR}/bin/${_TOOL_PREFIX}paxctl
+PAXCTL=				${TOOLDIR}/bin/${_TOOL_PREFIX}paxctl
 TSORT=				${TOOLDIR}/bin/${_TOOL_PREFIX}tsort -q
 YACC=				${TOOLDIR}/bin/${_TOOL_PREFIX}yacc
 
@@ -685,9 +685,7 @@ MKCATPAGES?=yes
 #
 # Make the bootloader on supported arches
 #
-.if ${MACHINE_ARCH} == "i386"
 MKBOOT= 	yes
-.endif
 
 .if defined(NODOC)
 MKDOC=		no
@@ -773,7 +771,6 @@ MKSTATICPIE?=	yes
 .else
 MKSTATICPIE?=	no
 .endif
-
 
 #
 # install(1) parameters.
