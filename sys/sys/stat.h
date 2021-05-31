@@ -53,9 +53,9 @@ struct	stat {
 	quad_t				st_spare4[3];
 };
 
-#define st_atime st_atime.ts_sec
-#define st_mtime st_mtime.ts_sec
-#define st_ctime st_ctime.ts_sec
+#define st_atim 		st_atime.tv_sec
+#define st_mtim 		st_mtime.tv_sec
+#define st_ctim 		st_ctime.tv_sec
 
 #define	S_IFMT	 0170000		/* type of file */
 #define	S_IFDIR	 0040000		/* directory */

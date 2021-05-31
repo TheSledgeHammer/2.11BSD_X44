@@ -644,6 +644,8 @@ MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsdelf
 MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsd
 .endif
 
+GENASSYM_CPPFLAGS+=	${${ACTIVE_CC} == "clang":? -no-integrated-as :}
+
 TARGETS+=	all clean cleandir depend dependall includes \
 			install lint obj regress tags
 PHONY_NOTMAIN =	all clean cleandir depend dependall distclean includes \
@@ -680,96 +682,165 @@ dependall:	.NOTMAIN realdepend .MAKE
 # The NOxxx variables should only be used by Makefiles.
 #
 
-MKCATPAGES?=yes
+
+#
+# Supported NO* options (if defined, MK* will be forced to "no",
+# regardless of user's mk.conf setting).
+#
+# Source makefiles should set NO*, and not MK*, and must do so before
+# including bsd.own.mk.
+#
+.for var in \
+	NOCOMPAT NOCRYPTO NODOC NOHTML NOINFO NOLIBCSANITIZER NOLINKLIB \
+	NOLINT NOMAN NONLS NOOBJ NOPIC NOPICINSTALL NOPROFILE NOSHARE \
+	NOSTATICLIB NODEBUGLIB NOSANITIZER NORELRO
+.if defined(${var})
+MK${var:S/^NO//}:=	no
+.endif
+.endfor
+
+#
+# Older-style variables that enabled behaviour when set.
+#
+.for var in MANZ UNPRIVED UPDATE
+.if defined(${var})
+MK${var}:=	yes
+.endif
+.endfor
+
+#
+# MK* options which have variable defaults.
+#
+.if ${MACHINE_ARCH} == "x86_64" || !empty(MACHINE_ARCH:Mearm*)
+MKCOMPAT?=	yes
+.else
+# Don't let this build where it really isn't supported.
+MKCOMPAT:=	no
+.endif
+
+.if ${MACHINE_ARCH} == "x86_64" || ${MACHINE_ARCH} == "i386"
+MKSTATICPIE?=	yes
+.else
+MKSTATICPIE?=	no
+.endif
 
 #
 # Make the bootloader on supported arches
 #
 MKBOOT= 	yes
 
-.if defined(NODOC)
-MKDOC=		no
-#.elif !defined(MKDOC)
-#MKDOC=yes
-.else
-MKDOC?=		yes
+#
+# MK* options which default to "yes".
+#
+_MKVARS.yes= \
+	MKATF \
+	MKBINUTILS \
+	MKBSDTAR \
+	MKCOMPLEX MKCVS MKCXX \
+	MKDOC MKDTC \
+	MKDYNAMICROOT \
+	MKGCC MKGDB MKGROFF \
+	MKHESIOD MKHTML \
+	MKIEEEFP MKINET6 MKINFO MKIPFILTER MKISCSI \
+	MKKERBEROS \
+	MKKMOD \
+	MKLDAP MKLIBSTDCXX MKLINKLIB MKLVM \
+	MKMAN MKMANDOC \
+	MKMDNS \
+	MKMAKEMANDB \
+	MKNLS \
+	MKNPF \
+	MKOBJ \
+	MKPAM MKPERFUSE 						\
+	MKPF MKPIC MKPICLIB MKPOSTFIX MKPROFILE \
+	MKRUMP 									\
+	MKSHARE MKSKEY MKSTATICLIB 				\
+	MKUNBOUND 								\
+	MKX11FONTS 								\
+	MKYP
+.for var in ${_MKVARS.yes}
+${var}?=	${${var}.${MACHINE_ARCH}:Uyes}
+.endfor
+
+#
+# MKGCCCMDS is only valid if we are building GCC so make it dependent on that.
+#
+_MKVARS.yes += MKGCCCMDS
+MKGCCCMDS?=	${MKGCC}
+
+#
+# Sanitizers, only "address" and "undefined" are supported by gcc
+#
+MKSANITIZER?=	no
+USE_SANITIZER?=	address
+
+#
+# Sanitizers implemented in libc, only "undefined" is supported
+#
+MKLIBCSANITIZER?=	no
+USE_LIBCSANITIZER?=	undefined
+
+#MKDOC=
+#MKINFO=
+#MKLINKLIB=
+#MKPICINSTALL=	no
+#MKPROFILE=
+#MKLINT=	
+#MKMAN=
+#MKCATPAGES=
+#MKNLS=
+#MKOBJ=
+#MKPIC=
+#MKPICINSTALL=
+#MKPROFILE=
+#MKSHARE=
+
+#
+# Force some options off if their dependencies are off.
+#
+
+.if ${MKCXX} == "no"
+MKATF:=		no
+MKGCCCMDS:=	no
+MKGDB:=		no
+MKGROFF:=	no
+#MKKYUA:=	no
 .endif
 
-MKINFO?=	yes
-
-.if defined(NOLINKLIB)
-MKLINKLIB=	no
-.else
-MKLINKLIB?=	yes
-.endif
-.if ${MKLINKLIB} == "no"
-MKPICINSTALL=	no
-MKPROFILE=	no
-.endif
-
-.if defined(NOLINT)
-MKLINT=		no
-.else
-MKLINT?=	yes
-.endif
-
-.if defined(NOMAN)
-MKMAN=		no
-.else
-MKMAN?=		yes
-.endif
 .if ${MKMAN} == "no"
-MKCATPAGES=	no
+MKCATPAGES:=	no
+MKHTML:=		no
 .endif
 
-.if defined(NONLS)
-MKNLS=		no
-.else
-MKNLS?=		yes
+_MANINSTALL=	maninstall
+.if ${MKCATPAGES} != "no"
+_MANINSTALL+=	catinstall
+.endif
+.if ${MKHTML} != "no"
+_MANINSTALL+=	htmlinstall
 .endif
 
-.if defined(NOOBJ)
-MKOBJ=		no
-.else
-MKOBJ?=		yes
+.if ${MKLINKLIB} == "no"
+MKLINT:=		no
+MKPICINSTALL:=	no
+MKPROFILE:=		no
 .endif
 
-.if defined(NOPIC)
-MKPIC=		no
-.else
-MKPIC?=		yes
+.if ${MKPIC} == "no"
+MKPICLIB:=		no
 .endif
 
-.if defined(NOPICINSTALL)
-MKPICINSTALL=	no
-.else
-MKPICINSTALL?=	yes
+.if ${MKOBJ} == "no"
+MKOBJDIRS:=		no
 .endif
 
-.if defined(NOPROFILE)
-MKPROFILE=	no
-.else
-MKPROFILE?=	yes
-.endif
-
-.if defined(NOSHARE)
-MKSHARE=	no
-.else
-MKSHARE?=	yes
-.endif
 .if ${MKSHARE} == "no"
-MKCATPAGES=	no
-MKDOC=		no
-MKINFO=		no
-MKMAN=		no
-MKNLS=		no
-.endif
-
-
-.if ${MACHINE_ARCH} == "x86_64" || ${MACHINE_ARCH} == "i386"
-MKSTATICPIE?=	yes
-.else
-MKSTATICPIE?=	no
+MKCATPAGES:=	no
+MKDOC:=			no
+MKINFO:=		no
+MKHTML:=		no
+MKMAN:=			no
+MKNLS:=			no
 .endif
 
 #

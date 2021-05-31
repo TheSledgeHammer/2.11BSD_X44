@@ -11,32 +11,17 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## Share/mk & mkhost
 
-- Host Environment:
-  - 1:1 format.
-  - Target provides necessary defitions
-- Forseeable Issues: (with above layout)
-  - Compilation order & variables
-    - #1 Simple Solution:
-      - A definitions file Of static/dynamic variables
-        - For Example:
-          - HOSTSRCDIR = TARGETSRCDIR  /*targets source files needed by host*/
-          - HOSTCC = TARGETCC     /*target c compiler*/
-          - HOSTCPP = TARGETCPP    /*target cpp compiler*/
 
 ## Tools (NetBSD)
+- compat (nbcompat): 
+  - can be simplified using the compat_xx.h as a rough guide for what it requires from lib
 
-- Add other missing tools: Mainly GNU's
-- Only import required for current successful compilation
-  - Can add more as needed
-- Changes to NetBSD's Toolchain:
-  - Support: Clang and GCC
+- Long-Term Goal:
+  - Support: Clang, GCC & PCC
   - Have all compiler components under a single directory.
-    - E.g. Compiler Folder:
+   	- E.g. Compiler Folder:
       - GCC: binutils, flex(optional), gcc, gdb, gmake, groff, m4, mpc, mpfr
       - Clang: clang, llvm, compiler-rt
-- add Makefiles
-- Long-Term Goal:
-  - Convert this to a gradle, cmake or meson build toolchain/cross-compiler
 
 # usr/ (User & OS Libraries)
 
