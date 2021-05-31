@@ -37,5 +37,6 @@ SA_AS=			library
 SAMISCMAKEFLAGS+="SA_USE_LOADFILE=yes"
 .include 		"${LIBSA}/Makefile.inc"
 
+.include <bsd.own.mk>
 .include <bsd.kinc.mk>
 		

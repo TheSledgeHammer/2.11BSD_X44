@@ -1,16 +1,5 @@
 # $FreeBSD$
 
-CFLAGS+= -I${LDRSRC}
-
-SRCS+=	boot.c commands.c console.c devopen.c environment.c
-SRCS+=	fileload.c getopts.c interp_backslash.c interp_parse.c interp.c
-SRCS+=	ls.c misc.c pager.c panic.c readdir.c
-SRCS+=  smbios.c strdup.c strspn.c strtol.c ufsread.c
-
-.if ${MACHINE} == "i386"
-SRCS+= 	load_exec.c load_ksyms.c
-.endif
-
 .if ${LOADER_NET_SUPPORT:Uno} == "no"
 SRCS+= 	dev_net.c
 .endif

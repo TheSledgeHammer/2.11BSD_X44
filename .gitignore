@@ -11,9 +11,6 @@
 *.iws
 *.idea
 *.dist
-*.vscode
-*.cproject
-*.project
 *.code-workspace
 *.metadata
 *.dist
