@@ -37,6 +37,8 @@
  *	@(#)cclass.h	8.3 (Berkeley) 3/20/94
  */
 
+#include <stddef.h>
+
 /* character-class table */
 static struct cclass {
 	char *name;

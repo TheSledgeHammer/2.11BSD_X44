@@ -34,7 +34,8 @@
 #include "nbtool_config.h"
 
 #if !HAVE_SETENV
-int setenv(const char *name, const char *value, int overwrite) {
+int
+setenv(const char *name, const char *value, int overwrite) {
 	char *buf;
 
 	if (!overwrite && getenv(name))

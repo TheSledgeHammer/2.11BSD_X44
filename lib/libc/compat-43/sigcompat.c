@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)sigcompat.c	8.1.1 (2.11BSD) 1997/8/28";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
-#include <signal.h>
+#include <sys/signal.h>
 
 sigvec(signo, sv, osv)
 	int signo;

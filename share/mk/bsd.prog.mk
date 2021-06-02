@@ -289,6 +289,7 @@ LINKSMODE?= ${BINMODE}
 .include <bsd.links.mk>
 .include <bsd.sys.mk>
 .include <bsd.dep.mk>
+.include <bsd.clang-analyze.mk>
 .include <bsd.clean.mk>
 
 ${TARGETS}:	# ensure existence

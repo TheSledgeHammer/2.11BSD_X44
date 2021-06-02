@@ -40,7 +40,6 @@
 int
 putc_unlocked(int c, FILE *stream)
 {
-
 	putc(c, stream);
 }
 #endif /* putc_unlocked */

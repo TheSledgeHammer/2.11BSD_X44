@@ -95,7 +95,7 @@ union uu {
 #define	LHALF(x)	((x) & ((1 << HALF_BITS) - 1))
 #define	LHUP(x)		((x) << HALF_BITS)
 
-extern u_quad_t __qdivrem __P((u_quad_t u, u_quad_t v, u_quad_t *rem));
+extern u_quad_t __qdivrem (u_quad_t u, u_quad_t v, u_quad_t *rem);
 
 /*
  * XXX

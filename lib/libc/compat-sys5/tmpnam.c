@@ -21,6 +21,7 @@ static char sccsid[] = "@(#)tmpnam.c	4.6 (Berkeley) 7/23/88";
 
 #include <sys/param.h>
 #include <stdio.h>
+#include <stddef.h>
 
 #define	P_tmpdir	"/usr/tmp"
 

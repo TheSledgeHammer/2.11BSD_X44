@@ -142,7 +142,7 @@ typedef long longest;
 static int
 use_alternative (int flags, u_longest num, unsigned base)
 {
-  return flags & alternate_flag && (base == 16 || base == 8) && num != 0;
+  return (flags & alternate_flag) && (base == 16 || base == 8) && num != 0;
 }
 
 static int

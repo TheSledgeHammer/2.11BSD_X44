@@ -13,13 +13,14 @@ static char sccsid[] = "@(#)times.c	5.2 (Berkeley) 3/9/86";
 #include <sys/types.h>
 #include <sys/times.h>
 
+long scale60(struct timeval *tvp);
+
 int
 times(tmsp)
 	register struct tms *tmsp;
 {
 	struct rusage ru;
 	struct timeval t;
-	long scale60();
 
 	if (getrusage(RUSAGE_SELF, &ru) < 0)
 		return (-1);

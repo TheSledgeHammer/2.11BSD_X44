@@ -33,6 +33,7 @@
 
 #if !HAVE_SETPROGNAME
 #include <string.h>
+#include <stddef.h>
 
 static const char *__progname = "command line";
 

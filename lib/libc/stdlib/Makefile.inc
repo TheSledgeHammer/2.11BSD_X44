@@ -9,6 +9,8 @@
 # stdlib sources
 .PATH: ${ARCHDIR}/stdlib ${.CURDIR}/stdlib
 
-SRCS+=	getopt.c getsubopt.c strtol.c strtoul.c
+SRCS+=	atoll.c getopt_long.c getopt.c getsubopt.c heapsort.c 		\
+		reallocarr.c reallocarray.c strsuftoll.c strtol.c strtoll.c	\
+		strtoul.c
 
 .include "${ARCHDIR}/stdlib/Makefile.inc"
