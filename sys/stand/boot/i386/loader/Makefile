@@ -35,15 +35,15 @@ LDFLAGS+=	    	-nostdlib
 LDFLAGS.lld+=		-Wl,--no-rosegment
 MK_PIE:=	    	no
 
-BTXDIR=				${BOOTOBJ}/i386/btx
-BTXLDR=				${BTXDIR}/btxldr/btxldr
-BTXKERN=			${BTXDIR}/btx/btx
-BTXCRT=				${BTXDIR}/lib/crt0.o
+BTXDIR=			${BOOTOBJ}/i386/btx
+BTXLDR=			${BTXDIR}/btxldr/btxldr
+BTXKERN=		${BTXDIR}/btx/btx
+BTXCRT=			${BTXDIR}/lib/crt0.o
 
-BTXSRC=				${BOOTSRC}/i386/btx
-BTXLIB=				${BTXSRC}/lib
+BTXSRC=			${BOOTSRC}/i386/btx
+BTXLIB=			${BTXSRC}/lib
 
-CFLAGS+=			-I${BTXLIB}
+CFLAGS+=		-I${BTXLIB}
 
 # compact binary with no padding between text, data, bss
 LDSCRIPT=	    	${BOOTSRC}/i386/boot.ldscript
