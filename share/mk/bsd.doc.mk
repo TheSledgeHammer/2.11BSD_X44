@@ -4,7 +4,7 @@
 .include <bsd.init.mk>
 
 ##### Basic targets
-clean:			cleandoc
+clean:		cleandoc
 realinstall:	docinstall
 
 ##### Build rules
@@ -23,7 +23,6 @@ docinstall::	# ensure existence
 .PHONY:		docinstall
 
 .if ${MKDOC} != "no"
-
 __docinstall: .USE
 	${_MKTARGET_INSTALL}
 	${INSTALL_FILE} -o ${DOCOWN} -g ${DOCGRP} -m ${DOCMODE} ${SYSPKGTAG} \
@@ -35,19 +34,19 @@ FILES?=		${SRCS}
 _F:=		${DESTDIR}${DOCDIR}/${DIR}/${F}		# installed path
 
 .if ${MKUPDATE} == "no"
-${_F}!		${F} __docinstall					# install rule
+${_F}!		${F} __docinstall			# install rule
 .if !defined(BUILD) && !make(all) && !make(${F})
-${_F}!		.MADE								# no build at install
+${_F}!		.MADE					# no build at install
 .endif
 .else
-${_F}:		${F} __docinstall					# install rule
+${_F}:		${F} __docinstall			# install rule
 .if !defined(BUILD) && !make(all) && !make(${F})
-${_F}:		.MADE								# no build at install
+${_F}:		.MADE					# no build at install
 .endif
 .endif
 
 docinstall::	${_F}
-.PRECIOUS:		${_F}							# keep if install fails
+.PRECIOUS:	${_F}					# keep if install fails
 .endfor
 
 .undef _F

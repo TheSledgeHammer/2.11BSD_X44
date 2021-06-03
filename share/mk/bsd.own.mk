@@ -5,25 +5,12 @@
 #
 
 # This needs to be before bsd.init.mk
-.if defined(BSD_MK_COMPAT_FILE)
-.include <${BSD_MK_COMPAT_FILE}>
-.endif
 
 .if !defined(_BSD_OWN_MK_)
 _BSD_OWN_MK_=1
 
 MAKECONF?=	/etc/mk.conf
 .-include "${MAKECONF}"
-
-
-#
-# Subdirectory or path component used for the following paths:
-#   distrib/${RELEASEMACHINE}
-#   distrib/notes/${RELEASEMACHINE}
-#   etc/etc.${RELEASEMACHINE}
-# Used when building a release.
-#
-RELEASEMACHINE?=	${MACHINE}
 
 #
 # NEED_OWN_INSTALL_TARGET is set to "no" by pkgsrc/mk/bsd.pkg.mk to
@@ -51,23 +38,40 @@ TOOLCHAIN_MISSING?=	no
 .if ${MKGCC:Uyes} != "no"
 
 #
+# What GCC is used?
+#
+.if ${MACHINE} == "alpha" || \
+    ${MACHINE} == "hppa" || \
+    ${MACHINE} == "ia64" || \
+    ${MACHINE} == "sparc" || \
+    ${MACHINE} == "sparc64" || \
+    ${MACHINE} == "vax" || \
+    ${MACHINE_ARCH} == "i386" || \
+    ${MACHINE_ARCH} == "x86_64" || \
+    ${MACHINE_CPU} == "aarch64" || \
+    ${MACHINE_CPU} == "mips" || \
+    ${MACHINE_CPU} == "powerpc" || \
+    ${MACHINE_CPU} == "riscv"
+HAVE_GCC?=	10
+.else
+HAVE_GCC?=	9
+.endif
+
+#
 # We import the old gcc as "gcc.old" when upgrading.  EXTERNAL_GCC_SUBDIR is
 # set to the relevant subdirectory in src/external/gpl3 for his HAVE_GCC.
 #
-HAVE_GCC?=	10
-EXTERNAL_GCC_SUBDIR?=	gcc
+HAVE_GCC?=			10
+EXTERNAL_GCC_SUBDIR?=		gcc
 .else
-EXTERNAL_GCC_SUBDIR?=	/does/not/exist
-.endif
-.else
-MKGCCCMDS?=	no
+EXTERNAL_GCC_SUBDIR?=		/does/not/exist
 .endif
 
 #
 # What binutils is used?
 #
-HAVE_BINUTILS?=	234
-.if ${HAVE_BINUTILS} == 234
+HAVE_BINUTILS?=			234
+.if ${HAVE_BINUTILS} == 	234
 EXTERNAL_BINUTILS_SUBDIR=	binutils
 .else
 EXTERNAL_BINUTILS_SUBDIR=	/does/not/exist
@@ -76,21 +80,17 @@ EXTERNAL_BINUTILS_SUBDIR=	/does/not/exist
 #
 # What GDB is used?
 #
-HAVE_GDB?=	1100
-.if ${HAVE_GDB} == 1100
+HAVE_GDB?=			1100
+.if ${HAVE_GDB} == 		1100
 EXTERNAL_GDB_SUBDIR=		gdb
 .else
 EXTERNAL_GDB_SUBDIR=		/does/not/exist
 .endif
 
-.if empty(.MAKEFLAGS:tW:M*-V .OBJDIR*)
-.if defined(MAKEOBJDIRPREFIX) || defined(MAKEOBJDIR)
-PRINTOBJDIR=	${MAKE} -r -V .OBJDIR -f /dev/null xxx
-.else
+.if empty(.MAKEFLAGS:M-V*)
 PRINTOBJDIR=	${MAKE} -V .OBJDIR
-.endif
 .else
-PRINTOBJDIR=	echo /error/bsd.own.mk/PRINTOBJDIR # avoid infinite recursion
+PRINTOBJDIR=	echo # prevent infinite recursion
 .endif
 
 #
@@ -123,6 +123,7 @@ _SRC_TOP_OBJ_!=		cd ${_SRC_TOP_} && ${PRINTOBJDIR}
 .endif
 
 .endif	# _SRC_TOP_ != ""		# }
+
 
 .if (${_SRC_TOP_} != "") && \
     (${TOOLCHAIN_MISSING} == "no" || defined(EXTERNAL_TOOLCHAIN))
@@ -432,55 +433,21 @@ TOOL_ROFF_HTML=		${TOOL_GROFF} -Tlatin1 -mdoc2html
 TOOL_ROFF_PS=		${TOOL_GROFF} -Tps ${ROFF_PAGESIZE}
 TOOL_ROFF_RAW=		${TOOL_GROFF} -Z
 TOOL_RPCGEN=		rpcgen
-TOOL_SED=			sed
+TOOL_SED=		sed
 TOOL_SOELIM=		soelim
 TOOL_SORTINFO=		sortinfo
 TOOL_SPARKCRC=		sparkcrc
-TOOL_STAT=			stat
+TOOL_STAT=		stat
 TOOL_STRFILE=		strfile
 TOOL_SUNLABEL=		sunlabel
-TOOL_TBL=			tbl
-TOOL_TIC=			tic
+TOOL_TBL=		tbl
+TOOL_TIC=		tic
 TOOL_UUDECODE=		uudecode
 TOOL_VGRIND=		vgrind -f
 TOOL_VFONTEDPR=		/usr/libexec/vfontedpr
-TOOL_ZIC=			zic
+TOOL_ZIC=		zic
 
 .endif	# USETOOLS != yes						# }
-
-
-# Standalone code should not be compiled with PIE or CTF
-# Should create a better test
-.if defined(BINDIR) && ${BINDIR} == "/usr/mdec"
-NOPIE=			# defined
-NOCTF=			# defined
-.elif ${MACHINE} == "sun2"
-NOPIE=			# we don't have PIC, so no PIE
-.endif
-
-# Fallback to ensure that all variables are defined to something
-TOOL_CC.false=		false
-TOOL_CPP.false=		false
-TOOL_CXX.false=		false
-TOOL_FC.false=		false
-TOOL_OBJC.false=	false
-
-AVAILABLE_COMPILER?=	${HAVE_PCC:Dpcc} ${HAVE_LLVM:Dclang} ${HAVE_GCC:Dgcc} false
-
-.for _t in CC CPP CXX FC OBJC
-ACTIVE_${_t}=	${AVAILABLE_COMPILER:@.c.@ ${ !defined(UNSUPPORTED_COMPILER.${.c.}) && defined(TOOL_${_t}.${.c.}) :? ${.c.} : }@:[1]}
-SUPPORTED_${_t}=${AVAILABLE_COMPILER:Nfalse:@.c.@ ${ !defined(UNSUPPORTED_COMPILER.${.c.}) && defined(TOOL_${_t}.${.c.}) :? ${.c.} : }@}
-.endfor
-# make bugs prevent moving this into the .for loop
-CC=		${TOOL_CC.${ACTIVE_CC}}
-CPP=	${TOOL_CPP.${ACTIVE_CPP}}
-CXX=	${TOOL_CXX.${ACTIVE_CXX}}
-FC=		${TOOL_FC.${ACTIVE_FC}}
-OBJC=	${TOOL_OBJC.${ACTIVE_OBJC}}
-
-# For each ${MACHINE_CPU}, list the ports that use it.
-MACHINES.i386=		i386
-MACHINES.x86_64=	amd64
 
 #
 # Targets to check if DESTDIR or RELEASEDIR is provided
@@ -528,46 +495,46 @@ MKDYNAMICROOT?=	yes
 
 # where the system object and source trees are kept; can be configurable
 # by the user in case they want them in ~/foosrc and ~/fooobj, for example
-BSDSRCDIR?=			/usr/src
-BSDOBJDIR?=			/usr/obj
+BSDSRCDIR?=		/usr/src
+BSDOBJDIR?=		/usr/obj
 NETBSDSRCDIR?=		${BSDSRCDIR}
 
-BINGRP?=			wheel
-BINOWN?=			root
-BINMODE?=			555
+BINGRP?=		wheel
+BINOWN?=		root
+BINMODE?=		555
 NONBINMODE?=		444
-DIRMODE?=			755
+DIRMODE?=		755
 
-SHAREDIR?=			/usr/share
-SHAREGRP?=			bin
-SHAREOWN?=			root
-SHAREMODE?=			${NONBINMODE}
+SHAREDIR?=		/usr/share
+SHAREGRP?=		wheel
+SHAREOWN?=		root
+SHAREMODE?=		${NONBINMODE}
 
-MANDIR?=			/usr/share/man
-MANGRP?=			bin
-MANOWN?=			root
-MANMODE?=			${NONBINMODE}
+MANDIR?=		/usr/share/man
+MANGRP?=		wheel
+MANOWN?=		root
+MANMODE?=		${NONBINMODE}
 MANINSTALL?=		maninstall catinstall
 
-LIBDIR?=			/usr/lib
+LIBDIR?=		/usr/lib
 LINTLIBDIR?=		/usr/libdata/lint
-LIBGRP?=			${BINGRP}
-LIBOWN?=			${BINOWN}
-LIBMODE?=			${NONBINMODE}
+LIBGRP?=		${BINGRP}
+LIBOWN?=		${BINOWN}
+LIBMODE?=		${NONBINMODE}
 
 DOCDIR?=    		/usr/share/doc
-DOCGRP?=			bin
-DOCOWN?=			root
+DOCGRP?=		wheel
+DOCOWN?=		root
 DOCMODE?=   		${NONBINMODE}
 
-NLSDIR?=			/usr/share/nls
-NLSGRP?=			bin
-NLSOWN?=			root
-NLSMODE?=			${NONBINMODE}
+NLSDIR?=		/usr/share/nls
+NLSGRP?=		wheel
+NLSOWN?=		root
+NLSMODE?=		${NONBINMODE}
 
-LOCALEDIR?=			/usr/share/locale
-LOCALEGRP?=			wheel
-LOCALEOWN?=			root
+LOCALEDIR?=		/usr/share/locale
+LOCALEGRP?=		wheel
+LOCALEOWN?=		root
 LOCALEMODE?=		${NONBINMODE}
 
 # Data-driven table using make variables to control how 
@@ -597,20 +564,6 @@ MKGCC:= no
 .endif
 
 #
-# GCC warnings with simple disables.  Use these with eg
-# COPTS.foo.c+= ${GCC_NO_STRINGOP_TRUNCATION}.
-#
-GCC_NO_FORMAT_TRUNCATION=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 7:? -Wno-format-truncation :}
-GCC_NO_FORMAT_OVERFLOW=		${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 7:? -Wno-format-overflow :}
-GCC_NO_STRINGOP_OVERFLOW=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 7:? -Wno-stringop-overflow :}
-GCC_NO_IMPLICIT_FALLTHRU=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 7:? -Wno-implicit-fallthrough :}         
-GCC_NO_STRINGOP_TRUNCATION=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 8:? -Wno-stringop-truncation :}
-GCC_NO_CAST_FUNCTION_TYPE=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 8:? -Wno-cast-function-type :}
-GCC_NO_ADDR_OF_PACKED_MEMBER=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 9:? -Wno-address-of-packed-member :}
-GCC_NO_MAYBE_UNINITIALIZED=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 10:? -Wno-maybe-uninitialized :}
-GCC_NO_RETURN_LOCAL_ADDR=	${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 10:? -Wno-return-local-addr :}
-
-#
 # Location of the file that contains the major and minor numbers of the
 # version of a shared library.  If this file exists a shared library
 # will be built by <bsd.lib.mk>.
@@ -630,23 +583,23 @@ MACHINE_GNU_ARCH=${GNU_ARCH.${MACHINE_ARCH}:U${MACHINE_ARCH}}
 # In order to identify NetBSD to GNU packages, we sometimes need
 # an "elf" tag for historically a.out platforms.
 #
-.if ${MACHINE_ARCH} == "i386"
+.if ${OBJECT_FMT} == "ELF" && (${MACHINE_ARCH} == "i386")
 MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsdelf
 .else
 MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsd
 .endif
 
-GENASSYM_CPPFLAGS+=	${${ACTIVE_CC} == "clang":? -no-integrated-as :}
-
 TARGETS+=	all clean cleandir depend dependall includes \
-			install lint obj regress tags
+		install lint obj regress tags html analyze describe \
+		rumpdescribe
 PHONY_NOTMAIN =	all clean cleandir depend dependall distclean includes \
-			install lint obj regress tags beforedepend afterdepend \
-			beforeinstall afterinstall realinstall realdepend realall \
-			subdir-all subdir-install subdir-depend
+		install lint obj regress beforedepend afterdepend \
+		beforeinstall afterinstall realinstall realdepend realall \
+		html subdir-all subdir-install subdir-depend analyze describe \
+		rumpdescribe
 .PHONY:		${PHONY_NOTMAIN}
 .NOTMAIN:	${PHONY_NOTMAIN}
-		
+
 .if ${NEED_OWN_INSTALL_TARGET} != "no"
 .if !target(install)
 install:	beforeinstall .WAIT subdir-install realinstall .WAIT afterinstall
@@ -674,20 +627,15 @@ dependall:	.NOTMAIN realdepend .MAKE
 # The NOxxx variables should only be used by Makefiles.
 #
 
-
 #
 # Supported NO* options (if defined, MK* will be forced to "no",
 # regardless of user's mk.conf setting).
 #
-# Source makefiles should set NO*, and not MK*, and must do so before
-# including bsd.own.mk.
-#
 .for var in \
-	NOCOMPAT NOCRYPTO NODOC NOHTML NOINFO NOLIBCSANITIZER NOLINKLIB \
-	NOLINT NOMAN NONLS NOOBJ NOPIC NOPICINSTALL NOPROFILE NOSHARE \
-	NOSTATICLIB NODEBUGLIB NOSANITIZER NORELRO
-.if defined(${var})
-MK${var:S/^NO//}:=	no
+	CRYPTO DOC HTML LIBCSANITIZER LINKLIB LINT MAN NLS OBJ PIC PICINSTALL PROFILE \
+	SHARE STATICLIB DEBUGLIB SANITIZER RELRO
+.if defined(NO${var})
+MK${var}:=	no
 .endif
 .endfor
 
@@ -701,91 +649,45 @@ MK${var}:=	yes
 .endfor
 
 #
-# MK* options which have variable defaults.
-#
-.if ${MACHINE_ARCH} == "x86_64" || !empty(MACHINE_ARCH:Mearm*)
-MKCOMPAT?=	yes
-.else
-# Don't let this build where it really isn't supported.
-MKCOMPAT:=	no
-.endif
-
-.if ${MACHINE_ARCH} == "x86_64" || ${MACHINE_ARCH} == "i386"
-MKSTATICPIE?=	yes
-.else
-MKSTATICPIE?=	no
-.endif
-
-#
-# Make the bootloader on supported arches
-#
-MKBOOT= 	yes
-
-#
 # MK* options which default to "yes".
 #
-_MKVARS.yes= \
-	MKATF \
-	MKBINUTILS \
-	MKBSDTAR \
-	MKCOMPLEX MKCVS MKCXX \
-	MKDOC MKDTC \
-	MKDYNAMICROOT \
-	MKGCC MKGDB MKGROFF \
-	MKHESIOD MKHTML \
-	MKIEEEFP MKINET6 MKINFO MKIPFILTER MKISCSI \
-	MKKERBEROS \
-	MKKMOD \
-	MKLDAP MKLIBSTDCXX MKLINKLIB MKLVM \
-	MKMAN MKMANDOC \
-	MKMDNS \
-	MKMAKEMANDB \
-	MKNLS \
-	MKNPF \
-	MKOBJ \
-	MKPAM MKPERFUSE 						\
-	MKPF MKPIC MKPICLIB MKPOSTFIX MKPROFILE \
-	MKRUMP 									\
-	MKSHARE MKSKEY MKSTATICLIB 				\
-	MKUNBOUND 								\
-	MKX11FONTS 								\
-	MKYP
-.for var in ${_MKVARS.yes}
-${var}?=	${${var}.${MACHINE_ARCH}:Uyes}
+.for var in 					\
+	BINUTILS BSDTAR				\
+	CATPAGES CXX 				\
+	DOC 					\
+	GCC GDB GROFF 				\
+	HTML 					\
+	IEEEFP INET6 INFO 			\
+	KERBEROS KERBEROS4 			\
+	LIBSTDCXX LINKLIB LINT 			\
+	MAN MANDOC 				\
+	NLS NPF 				\
+	OBJ 					\
+	PIC PICINSTALL PICLIB POSTFIX PROFILE 	\
+	SENDMAIL SHARE STATICLIB 		\
+	UNBOUND  				\
+	YP
+MK${var}?=	yes
 .endfor
 
 #
-# MKGCCCMDS is only valid if we are building GCC so make it dependent on that.
+# MK* options which default to "no".
 #
-_MKVARS.yes += MKGCCCMDS
-MKGCCCMDS?=	${MKGCC}
-
-#
-# Sanitizers, only "address" and "undefined" are supported by gcc
-#
-MKSANITIZER?=	no
-USE_SANITIZER?=	address
-
-#
-# Sanitizers implemented in libc, only "undefined" is supported
-#
-MKLIBCSANITIZER?=	no
-USE_LIBCSANITIZER?=	undefined
-
-#MKDOC=
-#MKINFO=
-#MKLINKLIB=
-#MKPICINSTALL=	no
-#MKPROFILE=
-#MKLINT=	
-#MKMAN=
-#MKCATPAGES=
-#MKNLS=
-#MKOBJ=
-#MKPIC=
-#MKPICINSTALL=
-#MKPROFILE=
-#MKSHARE=
+.for var in 					\
+	ARZERO					\
+	BSDGREP					\
+	CATPAGES				\
+	DEBUG DEBUGLIB 				\
+	KYUA					\
+	LIBCXX LLD LLDB LLVM LLVMRT LINT 	\
+	MANZ 					\
+	OBJDIRS 				\
+	PCC PICINSTALL				\
+	REPRO					\
+	SOFTFLOAT STRIPIDENT 			\
+	UNPRIVED UPDATE
+MK${var}?=	no
+.endfor
 
 #
 # Force some options off if their dependencies are off.
@@ -796,43 +698,41 @@ MKATF:=		no
 MKGCCCMDS:=	no
 MKGDB:=		no
 MKGROFF:=	no
-#MKKYUA:=	no
+MKKYUA:=	no
 .endif
 
 .if ${MKMAN} == "no"
 MKCATPAGES:=	no
-MKHTML:=		no
-.endif
-
-_MANINSTALL=	maninstall
-.if ${MKCATPAGES} != "no"
-_MANINSTALL+=	catinstall
-.endif
-.if ${MKHTML} != "no"
-_MANINSTALL+=	htmlinstall
+MKHTML:=	no
 .endif
 
 .if ${MKLINKLIB} == "no"
-MKLINT:=		no
+MKLINT:=	no
 MKPICINSTALL:=	no
-MKPROFILE:=		no
+MKPROFILE:=	no
 .endif
 
 .if ${MKPIC} == "no"
-MKPICLIB:=		no
+MKPICLIB:=	no
 .endif
 
 .if ${MKOBJ} == "no"
-MKOBJDIRS:=		no
+MKOBJDIRS:=	no
 .endif
 
 .if ${MKSHARE} == "no"
 MKCATPAGES:=	no
-MKDOC:=			no
-MKINFO:=		no
-MKHTML:=		no
-MKMAN:=			no
-MKNLS:=			no
+MKDOC:=		no
+MKINFO:=	no
+MKHTML:=	no
+MKMAN:=		no
+MKNLS:=		no
+.endif
+
+_NEEDS_LIBCXX.i386=		yes
+
+.if ${MKLLVM} == "yes" && ${_NEEDS_LIBCXX.${MACHINE_ARCH}:Uno} == "yes"
+MKLIBCXX:=	yes
 .endif
 
 #
@@ -859,7 +759,7 @@ INSTPRIV.unpriv=
 INSTPRIV?=		${INSTPRIV.unpriv} -N ${NETBSDSRCDIR}/etc
 .endif
 SYSPKGTAG?=		${SYSPKG:D-T ${SYSPKG}_pkg}
-SYSPKGDOCTAG?=	${SYSPKG:D-T ${SYSPKG}-doc_pkg}
+SYSPKGDOCTAG?=		${SYSPKG:D-T ${SYSPKG}-doc_pkg}
 STRIPFLAG?=	
 
 .if ${NEED_OWN_INSTALL_TARGET} != "no"
@@ -903,6 +803,8 @@ MAKEDIRTARGET=\
 #	4	Trace shell commands using the shell's -x flag
 #		
 MAKEVERBOSE?=		2
+		
+MAKEVERBOSE?=		2
 
 .if ${MAKEVERBOSE} == 0
 _MKMSG?=	@\#
@@ -914,7 +816,7 @@ _MKMSG?=	@echo '   '
 _MKSHMSG?=	echo '   '
 _MKSHECHO?=	: echo
 .SILENT:
-.else	# MAKEVERBOSE >= 2
+.else	# MAKEVERBOSE == 2 ?
 _MKMSG?=	@echo '\#  '
 _MKSHMSG?=	echo '\#  '
 _MKSHECHO?=	echo
@@ -949,12 +851,5 @@ _MKTARGET_LINK?=	${_MKMSG_LINK} ${.CURDIR:T}/${.TARGET}
 _MKTARGET_LEX?=		${_MKMSG_LEX} ${.CURDIR:T}/${.TARGET}
 _MKTARGET_REMOVE?=	${_MKMSG_REMOVE} ${.TARGET}
 _MKTARGET_YACC?=	${_MKMSG_YACC} ${.CURDIR:T}/${.TARGET}
-
-
-.if ${MKMANDOC} == "yes"
-TARGETS+=	lintmanpages
-.endif
-
-TESTSBASE=	/usr/tests${MLIBDIR:D/${MLIBDIR}}
 
 .endif	# !defined(_BSD_OWN_MK_)

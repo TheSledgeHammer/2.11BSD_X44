@@ -4,7 +4,7 @@
 .include <bsd.init.mk>
 
 ##### Basic targets
-.PHONY:			catinstall maninstall catpages manpages
+.PHONY:		catinstall maninstall catpages manpages
 realinstall:	${MANINSTALL}
 
 ##### Default values
@@ -14,20 +14,20 @@ TMACDEPDIR?=	${TOOLDIR}/share/groff/tmac
 TMACDEPDIR?=	${DESTDIR}/usr/share/tmac
 .endif
 
-HTMLDIR?=		${DESTDIR}/usr/share/man
-CATDEPS?=		${TMACDEPDIR}/andoc.tmac 		\
-				${TMACDEPDIR}/doc.tmac 			\
-				${TMACDEPDIR}/mdoc/doc-common 	\
-				${TMACDEPDIR}/mdoc/doc-ditroff 	\
-				${TMACDEPDIR}/mdoc/doc-nroff 	\
-				${TMACDEPDIR}/mdoc/doc-syms
-HTMLDEPS?=		${TMACDEPDIR}/doc2html.tmac
-MANTARGET?=		cat
+HTMLDIR?=	${DESTDIR}/usr/share/man
+CATDEPS?=	${TMACDEPDIR}/andoc.tmac \
+		${TMACDEPDIR}/doc.tmac \
+		${TMACDEPDIR}/mdoc/doc-common \
+		${TMACDEPDIR}/mdoc/doc-ditroff \
+		${TMACDEPDIR}/mdoc/doc-nroff \
+		${TMACDEPDIR}/mdoc/doc-syms
+HTMLDEPS?=	${TMACDEPDIR}/doc2html.tmac
+MANTARGET?=	cat
 
 MAN?=
 MLINKS?=
-_MNUMBERS=		1 2 3 3f 4 5 6 7 8 9
-.SUFFIXES:		${_MNUMBERS:@N@.$N@}
+_MNUMBERS=	1 2 3 4 5 6 7 8 9
+.SUFFIXES:	${_MNUMBERS:@N@.$N@}
 
 .if ${MKMANZ} == "no"
 MANCOMPRESS?=
@@ -72,20 +72,20 @@ _F:=		${DESTDIR}${MANDIR}/man${F:T:E}${MANSUBDIR}/${F}${MANSUFFIX}
 .if ${MKUPDATE} == "no"
 ${_F}!		${F}${MANSUFFIX} __installpage		# install rule
 .if !defined(BUILD) && !make(all) && !make(${F})
-${_F}!		.MADE								# no build at install
+${_F}!		.MADE					# no build at install
 .endif
 .else
 ${_F}:		${F}${MANSUFFIX} __installpage		# install rule
 .if !defined(BUILD) && !make(all) && !make(${F})
-${_F}:		.MADE								# no build at install
+${_F}:		.MADE					# no build at install
 .endif
 .endif
 
 manpages::	${_F}
-.PRECIOUS:	${_F}								# keep if install fails
+.PRECIOUS:	${_F}					# keep if install fails
 .endfor
 
-manlinks: .PHONY manpages						# symlink install
+manlinks: .PHONY manpages				# symlink install
 .if !empty(MLINKS)
 	@set ${MLINKS}; \
 	while test $$# -ge 2; do \
@@ -133,20 +133,20 @@ _F:=		${DESTDIR}${MANDIR}/${F:T:E}${MANSUBDIR}/${F:R}.0${MANSUFFIX}
 .if ${MKUPDATE} == "no"
 ${_F}!		${F}${MANSUFFIX} __installpage		# install rule
 .if !defined(BUILD) && !make(all) && !make(${F})
-${_F}!		.MADE								# no build at install
+${_F}!		.MADE					# no build at install
 .endif
 .else
 ${_F}:		${F}${MANSUFFIX} __installpage		# install rule
 .if !defined(BUILD) && !make(all) && !make(${F})
-${_F}:		.MADE								# no build at install
+${_F}:		.MADE					# no build at install
 .endif
 .endif
 
 catpages::	${_F}
-.PRECIOUS:	${_F}								# keep if install fails
+.PRECIOUS:	${_F}					# keep if install fails
 .endfor
 
-catlinks: .PHONY catpages						# symlink install
+catlinks: .PHONY catpages				# symlink install
 .if !empty(MLINKS)
 	@set ${MLINKS}; \
 	while test $$# -ge 2; do \
@@ -224,5 +224,6 @@ cleanman: .PHONY
 .include <bsd.obj.mk>
 .include <bsd.files.mk>
 .include <bsd.sys.mk>
+.include <bsd.clean.mk>
 
 ${TARGETS} catinstall maninstall: # ensure existence
