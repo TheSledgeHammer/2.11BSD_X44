@@ -2,32 +2,32 @@
 
 .include <bsd.loader.mk>
 
-LOADER?=			loader
-PROG=				${LOADER}.sym
+LOADER?=		loader
+PROG=			${LOADER}.sym
 NEWVERSWHAT?=		"bootstrap loader" i386
 #VERSION_FILE=	${.CURDIR}/../loader/version
 
-.PATH:				${BOOTSRC}/i386/loader
+.PATH:			${BOOTSRC}/i386/loader
 
 # architecture-specific loader code
-SRCS=				main.c conf.c
+SRCS=			main.c conf.c
 
 .if exists(${.CURDIR}/help.i386)
-HELP_FILES=			${.CURDIR}/help.i386
+HELP_FILES=		${.CURDIR}/help.i386
 .endif
 
 # Always add MI sources
 
 CLEANFILES+=		${LOADER} ${LOADER}.bin
 
-ORG=				0x0
+ORG=			0x0
 
-CFLAGS+=			-Wall
-LDFLAGS+=			-static ${LDFLAGS_ORG} -Wl,--gc-sections
+CFLAGS+=		-Wall
+LDFLAGS+=		-static ${LDFLAGS_ORG} -Wl,--gc-sections
 
 # i386 standalone support library
-LIBI386=			${BOOTOBJ}/i386/libi386/libi386.a
-CFLAGS+=			-I${BOOTSRC}/i386
+LIBI386=		${BOOTOBJ}/i386/libi386/libi386.a
+CFLAGS+=		-I${BOOTSRC}/i386
 
 # BTX components
 LOADER_ADDRESS?=	0x200000
