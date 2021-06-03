@@ -155,17 +155,17 @@ _TOOL_PREFIX?=	nb
 # If an external toolchain base is specified, use it.
 #
 .if defined(EXTERNAL_TOOLCHAIN)						# {
-AR=					${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-ar
-AS=					${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-as
-LD=					${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-ld
-NM=					${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-nm
-OBJCOPY=			${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-objcopy
-OBJDUMP=			${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-objdump
-RANLIB=				${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-ranlib
-READELF=			${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-readelf
-SIZE=				${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-size
-STRINGS=			${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-strings
-STRIP=				${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-strip
+AR=			${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-ar
+AS=			${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-as
+LD=			${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-ld
+NM=			${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-nm
+OBJCOPY=		${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-objcopy
+OBJDUMP=		${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-objdump
+RANLIB=			${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-ranlib
+READELF=		${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-readelf
+SIZE=			${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-size
+STRINGS=		${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-strings
+STRIP=			${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-strip
 
 TOOL_CC.gcc=		${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-gcc
 TOOL_CPP.gcc=		${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-cpp
@@ -181,17 +181,17 @@ TOOL_OBJC.clang=	${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-clang
 .else									# } {
 # Define default locations for common tools.
 .if ${USETOOLS_BINUTILS:Uyes} == "yes"					#  {
-AR=					${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-ar
-AS=					${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-as
-LD=					${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-ld
-NM=					${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-nm
-OBJCOPY=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-objcopy
-OBJDUMP=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-objdump
-RANLIB=				${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-ranlib
-READELF=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-readelf
-SIZE=				${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-size
-STRINGS=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-strings
-STRIP=				${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-strip
+AR=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-ar
+AS=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-as
+LD=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-ld
+NM=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-nm
+OBJCOPY=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-objcopy
+OBJDUMP=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-objdump
+RANLIB=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-ranlib
+READELF=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-readelf
+SIZE=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-size
+STRINGS=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-strings
+STRIP=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-strip
 
 # GCC supports C, C++, Fortran and Objective C
 TOOL_CC.gcc=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-gcc
@@ -238,55 +238,55 @@ LDFLAGS+=	--sysroot=/
 .  endif
 .endif
 
-DBSYM=				${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-dbsym
-INSTALL=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-install
-LEX=				${TOOLDIR}/bin/${_TOOL_PREFIX}lex
-LINT=				CC=${CC:Q} ${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-lint
-LORDER=				NM=${NM:Q} MKTEMP=${TOOL_MKTEMP:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}lorder
-MKDEP=				CC=${CC:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}mkdep
-MKDEPCXX=			CC=${CXX:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}mkdep
-PAXCTL=				${TOOLDIR}/bin/${_TOOL_PREFIX}paxctl
-TSORT=				${TOOLDIR}/bin/${_TOOL_PREFIX}tsort -q
-YACC=				${TOOLDIR}/bin/${_TOOL_PREFIX}yacc
+DBSYM=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-dbsym
+INSTALL=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-install
+LEX=			${TOOLDIR}/bin/${_TOOL_PREFIX}lex
+LINT=			CC=${CC:Q} ${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-lint
+LORDER=			NM=${NM:Q} MKTEMP=${TOOL_MKTEMP:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}lorder
+MKDEP=			CC=${CC:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}mkdep
+MKDEPCXX=		CC=${CXX:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}mkdep
+PAXCTL=			${TOOLDIR}/bin/${_TOOL_PREFIX}paxctl
+TSORT=			${TOOLDIR}/bin/${_TOOL_PREFIX}tsort -q
+YACC=			${TOOLDIR}/bin/${_TOOL_PREFIX}yacc
 
-TOOL_AWK=			${TOOLDIR}/bin/${_TOOL_PREFIX}awk
+TOOL_AWK=		${TOOLDIR}/bin/${_TOOL_PREFIX}awk
 TOOL_CAP_MKDB=		${TOOLDIR}/bin/${_TOOL_PREFIX}cap_mkdb
-TOOL_CAT=			${TOOLDIR}/bin/${_TOOL_PREFIX}cat
-TOOL_CKSUM=			${TOOLDIR}/bin/${_TOOL_PREFIX}cksum
+TOOL_CAT=		${TOOLDIR}/bin/${_TOOL_PREFIX}cat
+TOOL_CKSUM=		${TOOLDIR}/bin/${_TOOL_PREFIX}cksum
 
 TOOL_COMPILE_ET=	${TOOLDIR}/bin/${_TOOL_PREFIX}compile_et
 TOOL_CONFIG=		${TOOLDIR}/bin/${_TOOL_PREFIX}config
 TOOL_CRUNCHGEN=		MAKE=${.MAKE:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}crunchgen
-TOOL_CTAGS=			${TOOLDIR}/bin/${_TOOL_PREFIX}ctags
+TOOL_CTAGS=		${TOOLDIR}/bin/${_TOOL_PREFIX}ctags
 TOOL_CTFCONVERT=	${TOOLDIR}/bin/${_TOOL_PREFIX}ctfconvert
 TOOL_CTFMERGE=		${TOOLDIR}/bin/${_TOOL_PREFIX}ctfmerge
 TOOL_CVSLATEST=		${TOOLDIR}/bin/${_TOOL_PREFIX}cvslatest
-TOOL_DB=			${TOOLDIR}/bin/${_TOOL_PREFIX}db
+TOOL_DB=		${TOOLDIR}/bin/${_TOOL_PREFIX}db
 TOOL_DISKLABEL=		${TOOLDIR}/bin/${_TOOL_PREFIX}disklabel
-TOOL_DTC=			${TOOLDIR}/bin/${_TOOL_PREFIX}dtc
-TOOL_EQN=			${TOOLDIR}/bin/${_TOOL_PREFIX}eqn
-TOOL_FDISK=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-fdisk
-TOOL_FGEN=			${TOOLDIR}/bin/${_TOOL_PREFIX}fgen
+TOOL_DTC=		${TOOLDIR}/bin/${_TOOL_PREFIX}dtc
+TOOL_EQN=		${TOOLDIR}/bin/${_TOOL_PREFIX}eqn
+TOOL_FDISK=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-fdisk
+TOOL_FGEN=		${TOOLDIR}/bin/${_TOOL_PREFIX}fgen
 TOOL_GENASSYM=		${TOOLDIR}/bin/${_TOOL_PREFIX}genassym
 TOOL_GENCAT=		${TOOLDIR}/bin/${_TOOL_PREFIX}gencat
-TOOL_GMAKE=			${TOOLDIR}/bin/${_TOOL_PREFIX}gmake
-TOOL_GPT=			${TOOLDIR}/bin/${_TOOL_PREFIX}gpt
-TOOL_GREP=			${TOOLDIR}/bin/${_TOOL_PREFIX}grep
+TOOL_GMAKE=		${TOOLDIR}/bin/${_TOOL_PREFIX}gmake
+TOOL_GPT=		${TOOLDIR}/bin/${_TOOL_PREFIX}gpt
+TOOL_GREP=		${TOOLDIR}/bin/${_TOOL_PREFIX}grep
 GROFF_SHARE_PATH=	${TOOLDIR}/share/groff
 TOOL_GROFF_ENV= 															\
     GROFF_ENCODING= 														\
     GROFF_BIN_PATH=${TOOLDIR}/lib/groff 									\
     GROFF_FONT_PATH=${GROFF_SHARE_PATH}/site-font:${GROFF_SHARE_PATH}/font 	\
     GROFF_TMAC_PATH=${GROFF_SHARE_PATH}/site-tmac:${GROFF_SHARE_PATH}/tmac
-TOOL_GROFF=			${TOOL_GROFF_ENV} ${TOOLDIR}/bin/${_TOOL_PREFIX}groff ${GROFF_FLAGS}
+TOOL_GROFF=		${TOOL_GROFF_ENV} ${TOOLDIR}/bin/${_TOOL_PREFIX}groff ${GROFF_FLAGS}
 
 TOOL_HEXDUMP=		${TOOLDIR}/bin/${_TOOL_PREFIX}hexdump
 TOOL_INDXBIB=		${TOOLDIR}/bin/${_TOOL_PREFIX}indxbib
 TOOL_INSTALLBOOT=	${TOOLDIR}/bin/${_TOOL_PREFIX}installboot
 TOOL_INSTALL_INFO=	${TOOLDIR}/bin/${_TOOL_PREFIX}install-info
-TOOL_JOIN=			${TOOLDIR}/bin/${_TOOL_PREFIX}join
+TOOL_JOIN=		${TOOLDIR}/bin/${_TOOL_PREFIX}join
 TOOL_LLVM_TBLGEN=	${TOOLDIR}/bin/${_TOOL_PREFIX}llvm-tblgen
-TOOL_M4=			${TOOLDIR}/bin/${_TOOL_PREFIX}m4
+TOOL_M4=		${TOOLDIR}/bin/${_TOOL_PREFIX}m4
 TOOL_MACPPCFIXCOFF=	${TOOLDIR}/bin/${_TOOL_PREFIX}macppc-fixcoff
 TOOL_MAKEFS=		${TOOLDIR}/bin/${_TOOL_PREFIX}makefs
 TOOL_MAKEINFO=		${TOOLDIR}/bin/${_TOOL_PREFIX}makeinfo
@@ -297,26 +297,26 @@ TOOL_MANDOC_ASCII=	${TOOLDIR}/bin/${_TOOL_PREFIX}mandoc -Tascii
 TOOL_MANDOC_HTML=	${TOOLDIR}/bin/${_TOOL_PREFIX}mandoc -Thtml
 TOOL_MANDOC_LINT=	${TOOLDIR}/bin/${_TOOL_PREFIX}mandoc -Tlint
 TOOL_MDSETIMAGE=	${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-mdsetimage
-TOOL_MENUC=			MENUDEF=${TOOLDIR}/share/misc ${TOOLDIR}/bin/${_TOOL_PREFIX}menuc
+TOOL_MENUC=		MENUDEF=${TOOLDIR}/share/misc ${TOOLDIR}/bin/${_TOOL_PREFIX}menuc
 TOOL_MKCSMAPPER=	${TOOLDIR}/bin/${_TOOL_PREFIX}mkcsmapper
 TOOL_MKESDB=		${TOOLDIR}/bin/${_TOOL_PREFIX}mkesdb
 TOOL_MKLOCALE=		${TOOLDIR}/bin/${_TOOL_PREFIX}mklocale
 TOOL_MKMAGIC=		${TOOLDIR}/bin/${_TOOL_PREFIX}file
-TOOL_MKNOD=			${TOOLDIR}/bin/${_TOOL_PREFIX}mknod
+TOOL_MKNOD=		${TOOLDIR}/bin/${_TOOL_PREFIX}mknod
 TOOL_MKTEMP=		${TOOLDIR}/bin/${_TOOL_PREFIX}mktemp
 TOOL_MKUBOOTIMAGE=	${TOOLDIR}/bin/${_TOOL_PREFIX}mkubootimage
 TOOL_ELFTOSB=		${TOOLDIR}/bin/${_TOOL_PREFIX}elftosb
-TOOL_MSGC=			MSGDEF=${TOOLDIR}/share/misc ${TOOLDIR}/bin/${_TOOL_PREFIX}msgc
-TOOL_MTREE=			${TOOLDIR}/bin/${_TOOL_PREFIX}mtree
+TOOL_MSGC=		MSGDEF=${TOOLDIR}/share/misc ${TOOLDIR}/bin/${_TOOL_PREFIX}msgc
+TOOL_MTREE=		${TOOLDIR}/bin/${_TOOL_PREFIX}mtree
 TOOL_NBPERF=		${TOOLDIR}/bin/${_TOOL_PREFIX}perf
-TOOL_NCDCS=			${TOOLDIR}/bin/${_TOOL_PREFIX}ibmnws-ncdcs
-TOOL_PAX=			${TOOLDIR}/bin/${_TOOL_PREFIX}pax
-TOOL_PIC=			${TOOLDIR}/bin/${_TOOL_PREFIX}pic
-TOOL_PIGZ=			${TOOLDIR}/bin/${_TOOL_PREFIX}pigz
-TOOL_XZ=			${TOOLDIR}/bin/${_TOOL_PREFIX}xz
+TOOL_NCDCS=		${TOOLDIR}/bin/${_TOOL_PREFIX}ibmnws-ncdcs
+TOOL_PAX=		${TOOLDIR}/bin/${_TOOL_PREFIX}pax
+TOOL_PIC=		${TOOLDIR}/bin/${_TOOL_PREFIX}pic
+TOOL_PIGZ=		${TOOLDIR}/bin/${_TOOL_PREFIX}pigz
+TOOL_XZ=		${TOOLDIR}/bin/${_TOOL_PREFIX}xz
 TOOL_PKG_CREATE=	${TOOLDIR}/bin/${_TOOL_PREFIX}pkg_create
 TOOL_PWD_MKDB=		${TOOLDIR}/bin/${_TOOL_PREFIX}pwd_mkdb
-TOOL_REFER=			${TOOLDIR}/bin/${_TOOL_PREFIX}refer
+TOOL_REFER=		${TOOLDIR}/bin/${_TOOL_PREFIX}refer
 TOOL_ROFF_ASCII=	${TOOL_GROFF_ENV} ${TOOLDIR}/bin/${_TOOL_PREFIX}nroff
 TOOL_ROFF_DOCASCII=	${TOOL_GROFF} -Tascii
 TOOL_ROFF_DOCHTML=	${TOOL_GROFF} -Thtml
@@ -325,15 +325,15 @@ TOOL_ROFF_HTML=		${TOOL_GROFF} -Tlatin1 -mdoc2html
 TOOL_ROFF_PS=		${TOOL_GROFF} -Tps ${ROFF_PAGESIZE}
 TOOL_ROFF_RAW=		${TOOL_GROFF} -Z
 TOOL_RPCGEN=		RPCGEN_CPP=${CPP:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}rpcgen
-TOOL_SED=			${TOOLDIR}/bin/${_TOOL_PREFIX}sed
+TOOL_SED=		${TOOLDIR}/bin/${_TOOL_PREFIX}sed
 TOOL_SOELIM=		${TOOLDIR}/bin/${_TOOL_PREFIX}soelim
 TOOL_SORTINFO=		${TOOLDIR}/bin/${_TOOL_PREFIX}sortinfo
-TOOL_STAT=			${TOOLDIR}/bin/${_TOOL_PREFIX}stat
-TOOL_TIC=			${TOOLDIR}/bin/${_TOOL_PREFIX}tic
+TOOL_STAT=		${TOOLDIR}/bin/${_TOOL_PREFIX}stat
+TOOL_TIC=		${TOOLDIR}/bin/${_TOOL_PREFIX}tic
 TOOL_UUDECODE=		${TOOLDIR}/bin/${_TOOL_PREFIX}uudecode
 TOOL_VGRIND=		${TOOLDIR}/bin/${_TOOL_PREFIX}vgrind -f
 TOOL_VFONTEDPR=		${TOOLDIR}/libexec/${_TOOL_PREFIX}vfontedpr
-TOOL_ZIC=			${TOOLDIR}/bin/${_TOOL_PREFIX}zic
+TOOL_ZIC=		${TOOLDIR}/bin/${_TOOL_PREFIX}zic
 
 .else	# USETOOLS != yes						# } {
 
@@ -356,40 +356,40 @@ TOOL_CPP.pcc=		pcpp
 TOOL_CXX.pcc=		p++
 
 TOOL_ASN1_COMPILE=	asn1_compile
-TOOL_AWK=			awk
+TOOL_AWK=		awk
 TOOL_CAP_MKDB=		cap_mkdb
-TOOL_CAT=			cat
-TOOL_CKSUM=			cksum
+TOOL_CAT=		cat
+TOOL_CKSUM=		cksum
 TOOL_CLANG_TBLGEN=	clang-tblgen
 TOOL_COMPILE_ET=	compile_et
 TOOL_CONFIG=		config
 TOOL_CRUNCHGEN=		crunchgen
-TOOL_CTAGS=			ctags
+TOOL_CTAGS=		ctags
 TOOL_CTFCONVERT=	ctfconvert
 TOOL_CTFMERGE=		ctfmerge
 TOOL_CVSLATEST=		cvslatest
-TOOL_DATE=			date
-TOOL_DB=			db
+TOOL_DATE=		date
+TOOL_DB=		db
 TOOL_DISKLABEL=		disklabel
-TOOL_DTC=			dtc
-TOOL_EQN=			eqn
-TOOL_FDISK=			fdisk
-TOOL_FGEN=			fgen
+TOOL_DTC=		dtc
+TOOL_EQN=		eqn
+TOOL_FDISK=		fdisk
+TOOL_FGEN=		fgen
 TOOL_GENASSYM=		genassym
 TOOL_GENCAT=		gencat
-TOOL_GMAKE=			gmake
-TOOL_GPT=			gpt
-TOOL_GREP=			grep
-TOOL_GROFF=			groff
+TOOL_GMAKE=		gmake
+TOOL_GPT=		gpt
+TOOL_GREP=		grep
+TOOL_GROFF=		groff
 TOOL_HEXDUMP=		hexdump
 TOOL_HP300MKBOOT=	hp300-mkboot
 TOOL_HPPAMKBOOT=	hppa-mkboot
 TOOL_INDXBIB=		indxbib
 TOOL_INSTALLBOOT=	installboot
 TOOL_INSTALL_INFO=	install-info
-TOOL_JOIN=			join
+TOOL_JOIN=		join
 TOOL_LLVM_TBLGEN=	llvm-tblgen
-TOOL_M4=			m4
+TOOL_M4=		m4
 TOOL_MACPPCFIXCOFF=	macppc-fixcoff
 TOOL_MAKEFS=		makefs
 TOOL_MAKEINFO=		makeinfo
@@ -400,7 +400,7 @@ TOOL_MANDOC_ASCII=	mandoc -Tascii
 TOOL_MANDOC_HTML=	mandoc -Thtml
 TOOL_MANDOC_LINT=	mandoc -Tlint
 TOOL_MDSETIMAGE=	mdsetimage
-TOOL_MENUC=			menuc
+TOOL_MENUC=		menuc
 TOOL_ARMELF2AOUT=	arm-elf2aout
 TOOL_M68KELF2AOUT=	m68k-elf2aout
 TOOL_MIPSELF2ECOFF=	mips-elf2ecoff
@@ -408,23 +408,23 @@ TOOL_MKCSMAPPER=	mkcsmapper
 TOOL_MKESDB=		mkesdb
 TOOL_MKLOCALE=		mklocale
 TOOL_MKMAGIC=		file
-TOOL_MKNOD=			mknod
+TOOL_MKNOD=		mknod
 TOOL_MKTEMP=		mktemp
 TOOL_MKUBOOTIMAGE=	mkubootimage
 TOOL_ELFTOSB=		elftosb
-TOOL_MSGC=			msgc
-TOOL_MTREE=			mtree
+TOOL_MSGC=		msgc
+TOOL_MTREE=		mtree
 TOOL_MVME68KWRTVID=	wrtvid
 TOOL_NBPERF=		nbperf
-TOOL_NCDCS=			ncdcs
-TOOL_PAX=			pax
-TOOL_PIC=			pic
-TOOL_PIGZ=			pigz
-TOOL_XZ=			xz
+TOOL_NCDCS=		ncdcs
+TOOL_PAX=		pax
+TOOL_PIC=		pic
+TOOL_PIGZ=		pigz
+TOOL_XZ=		xz
 TOOL_PKG_CREATE=	pkg_create
-TOOL_POWERPCMKBOOTIMAGE=	powerpc-mkbootimage
+TOOL_POWERPCMKBOOTIMAGE=powerpc-mkbootimage
 TOOL_PWD_MKDB=		pwd_mkdb
-TOOL_REFER=			refer
+TOOL_REFER=		refer
 TOOL_ROFF_ASCII=	nroff
 TOOL_ROFF_DOCASCII=	${TOOL_GROFF} -Tascii
 TOOL_ROFF_DOCHTML=	${TOOL_GROFF} -Thtml
@@ -589,13 +589,13 @@ MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsdelf
 MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsd
 .endif
 
-TARGETS+=	all clean cleandir depend dependall includes \
-		install lint obj regress tags html analyze describe \
+TARGETS+=	all clean cleandir depend dependall includes 			\
+		install lint obj regress tags html analyze describe 		\
 		rumpdescribe
-PHONY_NOTMAIN =	all clean cleandir depend dependall distclean includes \
-		install lint obj regress beforedepend afterdepend \
-		beforeinstall afterinstall realinstall realdepend realall \
-		html subdir-all subdir-install subdir-depend analyze describe \
+PHONY_NOTMAIN =	all clean cleandir depend dependall distclean includes 		\
+		install lint obj regress beforedepend afterdepend 		\
+		beforeinstall afterinstall realinstall realdepend realall 	\
+		html subdir-all subdir-install subdir-depend analyze describe 	\
 		rumpdescribe
 .PHONY:		${PHONY_NOTMAIN}
 .NOTMAIN:	${PHONY_NOTMAIN}
@@ -631,8 +631,8 @@ dependall:	.NOTMAIN realdepend .MAKE
 # Supported NO* options (if defined, MK* will be forced to "no",
 # regardless of user's mk.conf setting).
 #
-.for var in \
-	CRYPTO DOC HTML LIBCSANITIZER LINKLIB LINT MAN NLS OBJ PIC PICINSTALL PROFILE \
+.for var in 										\
+	CRYPTO DOC HTML LIBCSANITIZER LINKLIB LINT MAN NLS OBJ PIC PICINSTALL PROFILE 	\
 	SHARE STATICLIB DEBUGLIB SANITIZER RELRO
 .if defined(NO${var})
 MK${var}:=	no
@@ -802,8 +802,6 @@ MAKEDIRTARGET=\
 #	3	Ignore the effect of the "@" prefix in make commands
 #	4	Trace shell commands using the shell's -x flag
 #		
-MAKEVERBOSE?=		2
-		
 MAKEVERBOSE?=		2
 
 .if ${MAKEVERBOSE} == 0
