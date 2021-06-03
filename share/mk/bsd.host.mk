@@ -9,11 +9,6 @@ HOST_DBG?= -g
 HOST_DBG?= -O
 .endif
 
-.if ${MKDTRACE:Uno} != "no"
-# disable compiler options that interfere with dtrace
-HOST_DTRACE_OPTS?=	-fno-omit-frame-pointer -fno-optimize-sibling-calls -fno-ipa-sra
-.endif
-
 # Helpers for cross-compiling
 HOST_CC?=			cc
 HOST_CFLAGS?=		${HOST_DBG}

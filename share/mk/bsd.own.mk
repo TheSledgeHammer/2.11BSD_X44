@@ -99,7 +99,7 @@ PRINTOBJDIR=	echo /error/bsd.own.mk/PRINTOBJDIR # avoid infinite recursion
 # and setting _SRC_TOP_ to the result.
 #
 .if !defined(_SRC_TOP_)			# {
-_SRC_TOP_!= cd "${.CURDIR}"; while :; do \
+_SRC_TOP_!= cd ${.CURDIR}; while :; do \
 		here=`pwd`; \
 		[ -f build.sh  ] && [ -d tools ] && { echo $$here; break; }; \
 		case $$here in /) echo ""; break;; esac; \
@@ -110,26 +110,17 @@ _SRC_TOP_!= cd "${.CURDIR}"; while :; do \
 .endif					# }
 
 #
-# If _SRC_TOP_ != "", we're within the NetBSD source tree.
-# * Set defaults for NETBSDSRCDIR and _SRC_TOP_OBJ_.
-# * Define _NETBSD_VERSION_DEPENDS.  Targets that depend on the
-#   NetBSD version, or on variables defined at build time, can
-#   declare a dependency on ${_NETBSD_VERSION_DEPENDS}.
+# If _SRC_TOP_ != "", we're within the NetBSD source tree, so set
+# defaults for NETBSDSRCDIR and _SRC_TOP_OBJ_.
 #
 .if (${_SRC_TOP_} != "")		# {
 
 NETBSDSRCDIR?=	${_SRC_TOP_}
 
 .if !defined(_SRC_TOP_OBJ_)
-_SRC_TOP_OBJ_!=		cd "${_SRC_TOP_}" && ${PRINTOBJDIR}
+_SRC_TOP_OBJ_!=		cd ${_SRC_TOP_} && ${PRINTOBJDIR}
 .MAKEOVERRIDES+=	_SRC_TOP_OBJ_
 .endif
-
-_NETBSD_VERSION_DEPENDS=	${_SRC_TOP_OBJ_}/params
-_NETBSD_VERSION_DEPENDS+=	${NETBSDSRCDIR}/sys/sys/param.h
-_NETBSD_VERSION_DEPENDS+=	${NETBSDSRCDIR}/sys/conf/newvers.sh
-_NETBSD_VERSION_DEPENDS+=	${NETBSDSRCDIR}/sys/conf/osrelease.sh
-${_SRC_TOP_OBJ_}/params: .NOTMAIN .OPTIONAL # created by top level "make build"
 
 .endif	# _SRC_TOP_ != ""		# }
 
@@ -185,6 +176,7 @@ TOOL_CC.clang=		${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-clang
 TOOL_CPP.clang=		${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-clang-cpp
 TOOL_CXX.clang=		${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-clang++
 TOOL_OBJC.clang=	${EXTERNAL_TOOLCHAIN}/bin/${MACHINE_GNU_PLATFORM}-clang
+
 .else									# } {
 # Define default locations for common tools.
 .if ${USETOOLS_BINUTILS:Uyes} == "yes"					#  {
