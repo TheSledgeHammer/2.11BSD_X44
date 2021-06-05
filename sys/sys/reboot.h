@@ -48,7 +48,7 @@
  * number", each mask applies to the shifted value.
  * Format:
  *
- * 	FreeBSD
+ * 	FreeBSD:
  *	 (4)   (8)   (4)  (8)     (8)
  *	--------------------------------
  *	|MA | SLICE | UN| PART  | TYPE |
