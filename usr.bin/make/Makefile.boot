@@ -8,11 +8,11 @@
 # See config.h and the various #ifdef directives for further configuration.
 #
 
-PROG=		bmake
-MACHINE=	i386
+PROG=			bmake
+MACHINE=		i386
 MACHINE_ARCH=	i386
-CC=		gcc
-CFLAGS=		-O -g
+CC=				gcc
+CFLAGS=			-O -g
 EXTRA_CFLAGS=
 EXTRA_LIBS=
 
