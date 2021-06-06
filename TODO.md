@@ -20,6 +20,8 @@ A General todo list. Don't hesitate to add to this list. :)
 
 ## kern:
 - event/kqfilter: implemented but unused.
+- diskslice:
+	- devsw: lines 525, 567, 643, 725 & 728
 	
 ## arch:
 - i386/x86: (Merged under i386)

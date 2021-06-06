@@ -37,42 +37,8 @@
 #include <sys/disk.h>
 #include <sys/reboot.h>
 #include <sys/user.h>
+#include <sys/stat.h>
 #include <sys/diskslice.h>
-
-void
-set_adaptor(boot)
-	u_long boot;
-{
-	int adaptor = (boot >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
-}
-
-void
-set_controller(boot)
-	u_long boot;
-{
-	int controller = (boot >> B_CONTROLLERSHIFT) & B_CONTROLLERMASK;
-}
-
-void
-set_slice(boot)
-	u_long boot;
-{
-	int slice = (boot >> B_SLICESHIFT) & B_SLICEMASK;
-}
-
-void
-set_partition(boot)
-	u_long boot;
-{
-	int part = (boot >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
-}
-
-void
-set_unit(boot)
-	u_long boot;
-{
-	int unit = (boot >> B_UNITSHIFT) & B_UNITMASK;
-}
 
 dev_t
 makediskslice(dev, unit, slice, part)
@@ -145,14 +111,14 @@ dscheck(bp, ssp)
 #if LABELSECTOR != 0
 			slicerel_secno + nsec > LABELSECTOR + labelsect &&
 #endif
-			(bp->bio_cmd == BIO_WRITE) && sp->ds_wlabel == 0) {
+			(bp->b_flags == B_READ) && sp->ds_wlabel == 0) {
 		bp->b_error = EROFS;
 		goto bad;
 	}
 
 #if defined(DOSBBSECTOR) && defined(notyet)
 	/* overwriting master boot record? */
-	if (slicerel_secno <= DOSBBSECTOR && (bp->bio_cmd == BIO_WRITE)
+	if (slicerel_secno <= DOSBBSECTOR && (bp->b_flags == B_WRITE)
 			&& sp->ds_wlabel == 0) {
 		bp->b_error = EROFS;
 		goto bad;
@@ -190,14 +156,14 @@ dscheck(bp, ssp)
 
 		ic = malloc(sizeof *ic, M_DEVBUF, M_WAITOK);
 		ic->ic_prev_flags = bp->b_flags;
-		ic->ic_prev_iodone = bp->b_done;
-		ic->ic_prev_iodone_chain = bp->bio_done_chain;
+		ic->ic_prev_iodone = bp->b_iodone;
+		ic->ic_prev_iodone_chain = bp->b_iodone_chain;
 		ic->ic_args[0].ia_long = (LABELSECTOR + labelsect - slicerel_secno)
 				* ssp->dss_secsize;
 		ic->ic_args[1].ia_ptr = sp;
-		bp->bio_done = dsiodone;
-		bp->bio_done_chain = ic;
-		if (!(bp->bio_cmd == BIO_READ)) {
+		bp->b_iodone = dsiodone;
+		bp->b_iodone_chain = ic;
+		if (!(bp->b_flags == B_READ)) {
 			/*
 			 * XXX even disklabel(8) writes directly so we need
 			 * to adjust writes.  Perhaps we should drop support
@@ -234,7 +200,7 @@ bad_blkno:
 
 bad:
 	bp->b_resid = bp->b_bcount;
-	bp->b_flags |= BIO_ERROR;
+	bp->b_flags |= B_ERROR;
 	return (-1);
 }
 
@@ -440,21 +406,23 @@ dsioctl(dev, cmd, data, flags, sspp)
 
 static void
 dsiodone(bp)
-	struct bio *bp;
+	struct buf *bp;
 {
 	struct iodone_chain *ic;
 	char *msg;
 
-	ic = bp->bio_done_chain;
-	bp->bio_done = ic->ic_prev_iodone;
-	bp->bio_done_chain = ic->ic_prev_iodone_chain;
-	if (!(bp->bio_cmd == BIO_READ)
-			|| (!(bp->bio_flags & BIO_ERROR) && bp->bio_error == 0)) {
+	ic = bp->b_iodone_chain;
+	bp->b_flags = (ic->ic_prev_flags & B_CALL) | (bp->b_flags & ~(B_CALL | B_DONE));
+	bp->b_iodone = ic->ic_prev_iodone;
+	bp->b_iodone_chain = ic->ic_prev_iodone_chain;
+	if (!(bp->b_flags & B_READ)
+			|| (!(bp->b_flags & B_ERROR) && bp->b_error == 0)) {
 		msg = fixlabel((char*) NULL, ic->ic_args[1].ia_ptr,
-				(struct disklabel*) (bp->bio_data + ic->ic_args[0].ia_long),
+				(struct disklabel*) (bp->b_data + ic->ic_args[0].ia_long),
 				FALSE);
-		if (msg != NULL)
+		if (msg != NULL) {
 			printf("%s\n", msg);
+		}
 	}
 	free(ic, M_DEVBUF);
 	biodone(bp);
@@ -466,11 +434,14 @@ dsisopen(ssp)
 {
 	int	slice;
 
-	if (ssp == NULL)
+	if (ssp == NULL) {
 		return (0);
-	for (slice = 0; slice < ssp->dss_nslices; slice++)
-		if (ssp->dss_slices[slice].ds_openmask)
+	}
+	for (slice = 0; slice < ssp->dss_nslices; slice++) {
+		if (ssp->dss_slices[slice].ds_openmask) {
 			return (1);
+		}
+	}
 	return (0);
 }
 
@@ -517,8 +488,9 @@ dsname(dev, unit, slice, part, partname)
 	const char *dname;
 
 	dname = devsw(dev)->d_name;
-	if (strlen(dname) > 16)
+	if (strlen(dname) > 16) {
 		dname = "nametoolong";
+	}
 	snprintf(name, sizeof(name), "%s%d", dname, unit);
 	partname[0] = '\0';
 	if (slice != WHOLE_DISK_SLICE || part != RAW_PART) {
@@ -539,7 +511,7 @@ dsname(dev, unit, slice, part, partname)
 int
 dsopen(dev, mode, flags, sspp, lp)
 	dev_t	dev;
-	int	mode;
+	int		mode;
 	u_int	flags;
 	struct diskslices **sspp;
 	struct disklabel *lp;
@@ -715,14 +687,16 @@ dssize(dev, sspp)
 	part = dkpart(dev);
 	ssp = *sspp;
 	if (ssp == NULL || slice >= ssp->dss_nslices || !(ssp->dss_slices[slice].ds_openmask & (1 << part))) {
-		if (devsw(dev)->d_open(dev, FREAD, S_IFCHR, (struct thread*) NULL) != 0)
+		if (cdev_open(dev, FREAD, S_IFCHR, (struct proc*) NULL) != 0) {
 			return (-1);
-		devsw(dev)->d_close(dev, FREAD, S_IFCHR, (struct thread*) NULL);
+		}
+		devsw(dev)->d_close(dev, FREAD, S_IFCHR, (struct proc*) NULL);
 		ssp = *sspp;
 	}
 	lp = ssp->dss_slices[slice].ds_label;
-	if (lp == NULL)
+	if (lp == NULL) {
 		return (-1);
+	}
 	return ((int) lp->d_partitions[part].p_size);
 }
 
@@ -880,116 +854,4 @@ set_ds_wlabel(ssp, slice, wlabel)
 		ssp->dss_slices[ssp->dss_first_bsd_slice].ds_wlabel = wlabel;
 	else if (slice == ssp->dss_first_bsd_slice)
 		ssp->dss_slices[COMPATIBILITY_SLICE].ds_wlabel = wlabel;
-}
-
-char *
-readdiskslice(dev, strat, sp)
-	dev_t dev;
-	int (*strat)();
-	register struct diskslice *sp;
-{
-	char *msg = NULL;
-
-	return (msg);
-}
-
-int
-setdiskslice(osp, nsp, openmask)
-	register struct diskslice *osp, *nsp;
-	u_long openmask;
-{
-	register i;
-	register struct partition *opp, *npp;
-	struct disklabel *lp;
-
-	lp = nsp->ds_label;
-	if (lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC || dkcksum(lp) || dscksum(nsp) != 0) {
-		return (EINVAL);
-	}
-	while ((i = ffs((long)openmask)) != 0) {
-		i--;
-		openmask &= ~(1 << i);
-		if (nsp->ds_nslices <= i) {
-			return (EBUSY);
-		}
-		opp = &osp->ds_slices[i];
-		npp = &nsp->ds_slices[i];
-		if (npp->p_offset != opp->p_offset || npp->p_size < opp->p_size) {
-			return (EBUSY);
-		}
-		/*
-		 * Copy internally-set partition information
-		 * if new label doesn't include it.		XXX
-		 */
-		if (npp->p_fstype == FS_UNUSED && opp->p_fstype != FS_UNUSED) {
-			npp->p_fstype = opp->p_fstype;
-			npp->p_fsize = opp->p_fsize;
-			npp->p_frag = opp->p_frag;
-			npp->p_cpg = opp->p_cpg;
-		}
-	}
- 	nsp->ds_checksum = 0;
- 	nsp->ds_checksum = dscksum(nsp);
-	*osp = *nsp;
-
-	return (0);
-}
-
-int
-writediskslice(dev, strat, sp)
-	dev_t dev;
-	int (*strat)();
-	register struct diskslice *sp;
-{
-	struct buf *bp;
-	struct diskslice *slp;
-	struct disklabel *dlp;
-	int slice;
-	int error = 0;
-
-	slice = dkslice(dev);
-	if(sp->ds_slices[slice].dss_offset != 0) {
-		if(sp->ds_slices[0].dss_offset != 0) {
-			return (EXDEV); /* not quite right */
-		}
-		slice = 0;
-	}
-
-	bp = geteblk((int) sp->ds_secsize);
-	bp->b_dev = makedev(major(dev), dkmakeminor(dkunit(dev), slice, dkpart(dev)));
-	bp->b_blkno = LABELSECTOR;
-	bp->b_bcount = sp->ds_secsize;
-	bp->b_flags = B_READ;
-	(*strat)(bp);
-	if (error == biowait(bp)) {
-		goto done;
-	}
-	for (slp = (struct diskslice*) bp->b_data; slp <= (struct diskslice*) ((char*) bp->b_data + sp->ds_secsize - sizeof(*slp)); slp = (struct diskslice*) ((char*) slp + sizeof(long))) {
-		dlp = slp->ds_label;
-		if(dlp->d_magic == DISKMAGIC && dlp->d_magic2 == DISKMAGIC && dkcksum(dlp) && dscksum(slp) == 0) {
-			*slp = *sp;
-			bp->b_flags = B_WRITE;
-			(*strat)(bp);
-			error = biowait(bp);
-			goto done;
-		}
-	}
-done:
-	brelse(bp);
-	return (error);
-}
-
-int
-dscksum(sp)
-	struct diskslice *sp;
-{
-	register u_short *start, *end;
-	register u_short sum = 0;
-
-	start = (u_short *)sp;
-	end = (u_short *)&sp->ds_slices[sp->ds_nslices];
-	while (start < end) {
-		sum ^= *start++;
-	}
-	return (sum);
 }

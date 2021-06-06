@@ -36,6 +36,16 @@
 
 #define NOLIST ((struct buf *)0x87654321)
 
+struct iodone_chain {
+	long				ic_prev_flags;
+	void				(*ic_prev_iodone)(struct buf *);
+	void				*ic_prev_iodone_chain;
+	struct {
+		long			ia_long;
+		void			*ia_ptr;
+	} ic_args[5];
+};
+
 /*
  * Bufhd structures used at the head of the hashed buffer queues.
  * We only need three words for these, so this abbreviated
@@ -77,8 +87,10 @@ struct buf
 	void				*b_saveaddr;		/* Original b_addr for physio. */
 	daddr_t				b_lblkno;			/* Logical block number. */
 	daddr_t				b_blkno;			/* Underlying physical block number. */
+	daddr_t				b_pblkno;           /* physical block number */
 
 	void				(*b_iodone)(struct buf *);
+	struct	iodone_chain *b_iodone_chain;
 	struct	vnode 		*b_vp;				/* Device vnode. */
 	int					b_pfcent;			/* Center page when swapping cluster. */
 	int					b_dirtyoff;			/* Offset in buffer of dirty region. */

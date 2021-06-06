@@ -50,20 +50,10 @@ struct diskslices {
 	struct diskslice 		dss_slices[MAX_SLICES];	/* actually usually less */
 };
 
-struct diskslice2 {
-	struct disklabel 		*ds_label;				/* BSD label, if any */
-	int						ds_secsize;				/* sector size */
-	u_int					ds_nslices;				/* actual dimension of ds_slices[] */
-	u_int16_t 				ds_checksum;			/* xor of data incl. slices */
-	struct slice {
-		u_long				dss_offset;				/* starting sector */
-	} ds_slices[MAX_SLICES];
-};
-
 #define	DIOCGSLICEINFO		_IOR('d', 111, struct diskslices)
 #define	DIOCSYNCSLICEINFO	_IOW('d', 112, int)
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 
 /* Flags for dsopen(). */
 #define	DSO_NOLABELS		1
@@ -79,6 +69,16 @@ struct diskslice2 {
 struct bio;
 struct disklabel;
 
-
+dev_t makediskslice(dev_t, int, int, int);
+int	dscheck (struct buf *, struct diskslices *);
+void dsclose (dev_t, int, struct diskslices *);
+void dsgone (struct diskslices **);
+int	dsinit (dev_t, struct disklabel *, struct diskslices **);
+int	dsioctl (dev_t, u_long, caddr_t, int, struct diskslices **);
+int	dsisopen(struct diskslices *);
+struct diskslices *dsmakeslicestruct (int, struct disklabel *);
+char *dsname (dev_t, int, int, int, char *);
+int	dsopen (dev_t, int, u_int, struct diskslices **, struct disklabel *);
+int	dssize (dev_t, struct diskslices **);
 #endif /* _KERNEL */
 #endif /* _SYS_DISKSLICE_H_ */

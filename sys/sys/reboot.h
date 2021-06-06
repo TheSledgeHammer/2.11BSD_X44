@@ -48,7 +48,7 @@
  * number", each mask applies to the shifted value.
  * Format:
  *
- * 	FreeBSD
+ * 	FreeBSD:
  *	 (4)   (8)   (4)  (8)     (8)
  *	--------------------------------
  *	|MA | SLICE | UN| PART  | TYPE |
@@ -104,5 +104,41 @@
 #define	COMPATIBILITY_SLICE	0
 #define	MAX_SLICES			32
 #define	WHOLE_DISK_SLICE	1
+
+/* setters for disks */
+static inline void
+set_adaptor(num)
+	u_long num;
+{
+	int adaptor = (num >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
+}
+
+static inline void
+set_controller(num)
+	u_long num;
+{
+	int controller = (num >> B_CONTROLLERSHIFT) & B_CONTROLLERMASK;
+}
+
+static inline void
+set_slice(num)
+	u_long num;
+{
+	int slice = (num >> B_SLICESHIFT) & B_SLICEMASK;
+}
+
+static inline void
+set_partition(num)
+	u_long num;
+{
+	int part = (num >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
+}
+
+static inline void
+set_unit(num)
+	u_long num;
+{
+	int unit = (num >> B_UNITSHIFT) & B_UNITMASK;
+}
 
 #endif
