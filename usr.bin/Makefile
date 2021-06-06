@@ -3,6 +3,8 @@
 
 .include <bsd.own.mk>
 
-SUBDIR= lex make xinstall yacc
+SUBDIR= cap_mkdb crunch ctags genassym gencat hexdump join lex m4 	\
+	make mktemp rpcgen sed tic tsort uudecode xinstall 		\
+	xlint yacc							\
 
 .include <bsd.subdir.mk>
