@@ -3,6 +3,7 @@
 .include <bsd.own.mk>
 
 PROG=	xinstall
+SRCS=	xinstall.c getid.c
 MAN=	install.1
 
 .PATH:		${NETBSDSRCDIR}/usr.sbin/mtree

@@ -30,6 +30,8 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+
 #include <sys/param.h>	/* MAXBSIZE */
 #include <sys/wait.h>
 #include <sys/mman.h>
@@ -42,23 +44,25 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <grp.h>
+#include <libgen.h>
 #include <paths.h>
 #include <pwd.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stddef.h>
 #include <unistd.h>
-#include <limits.h>
-#include <libgen.h>
+#include <vis.h>
 
 #include "pathnames.h"
+#include "stat_flags.h"
+#include "mtree.h"
 
 #define MINIMUM(a, b)	(((a) < (b)) ? (a) : (b))
 
-#define	DIRECTORY	0x01		/* Tell install it's a directory. */
-#define	SETFLAGS	0x02		/* Tell install to set flags. */
-#define	USEFSYNC	0x04		/* Tell install to use fsync(2). */
+#define	DIRECTORY		0x01		/* Tell install it's a directory. */
+#define	SETFLAGS		0x02		/* Tell install to set flags. */
+#define	USEFSYNC		0x04		/* Tell install to use fsync(2). */
 #define NOCHANGEBITS	(UF_IMMUTABLE | UF_APPEND | SF_IMMUTABLE | SF_APPEND)
 #define BACKUP_SUFFIX	".old"
 
@@ -400,8 +404,7 @@ install(char *from_name, char *to_name, u_long fset, u_int flags)
  *	copy from one file to another
  */
 void
-copy(int from_fd, char *from_name, int to_fd, char *to_name, off_t size,
-    int sparse)
+copy(int from_fd, char *from_name, int to_fd, char *to_name, off_t size, int sparse)
 {
 	ssize_t nr, nw;
 	int serrno;
@@ -480,8 +483,7 @@ copy(int from_fd, char *from_name, int to_fd, char *to_name, off_t size,
  *	compare two files; non-zero means files differ
  */
 int
-compare(int from_fd, const char *from_name, off_t from_len, int to_fd,
-    const char *to_name, off_t to_len)
+compare(int from_fd, const char *from_name, off_t from_len, int to_fd, const char *to_name, off_t to_len)
 {
 	caddr_t p1, p2;
 	size_t length;

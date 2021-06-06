@@ -50,20 +50,10 @@ struct diskslices {
 	struct diskslice 		dss_slices[MAX_SLICES];	/* actually usually less */
 };
 
-struct diskslice2 {
-	struct disklabel 		*ds_label;				/* BSD label, if any */
-	int						ds_secsize;				/* sector size */
-	u_int					ds_nslices;				/* actual dimension of ds_slices[] */
-	u_int16_t 				ds_checksum;			/* xor of data incl. slices */
-	struct slice {
-		u_long				dss_offset;				/* starting sector */
-	} ds_slices[MAX_SLICES];
-};
-
 #define	DIOCGSLICEINFO		_IOR('d', 111, struct diskslices)
 #define	DIOCSYNCSLICEINFO	_IOW('d', 112, int)
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 
 /* Flags for dsopen(). */
 #define	DSO_NOLABELS		1

@@ -84,7 +84,7 @@ dependall-binstall: dependall-compat
 SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		cap_mkdb crunchgen ctags gencat hexdump 								\
 		${LINT_BITS} 															\
-		makewhatis .WAIT uudecode 												\
+		makewhatis mtree .WAIT uudecode 										\
 		cat rpcgen join lorder m4 mkdep tsort .WAIT yacc .WAIT awk .WAIT lex 	\
 		pax .WAIT libprop														\
 		.WAIT texinfo 															\
