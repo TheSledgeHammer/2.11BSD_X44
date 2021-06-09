@@ -16,7 +16,10 @@
 #include <vmf.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stddef.h>
+
 #include <sys/file.h>
+#include <sys/unistd.h>
 
 /*
  * Choose ONE and only one of the following swap policies
@@ -42,11 +45,11 @@ static void debugseg();
 
 #define NOSEGNO (-1)            /* can never match a segment number */
 
-	static	struct dlink seghead[1];
-	long	nswaps, nmapsegs;      /* statistics */
-	extern	int	read(), write(), errno;
-	static	int	swap();
-	static	void	promote(), vmerror();
+static	struct dlink seghead[1];
+long	nswaps, nmapsegs;      /* statistics */
+extern	int	read(), write(), errno;
+static	int	swap();
+static	void	promote(), vmerror();
 
 /*
  * vminit --- initialize virtual memory system with 'n' in-memory segments
@@ -55,30 +58,28 @@ static void debugseg();
 int
 vminit(n)
 	int	n;
-	{
+{
 	register struct vseg *s;
-        static struct vseg *segs;
+	static struct vseg *segs;
 
-	segs = (struct vseg *)calloc(n, sizeof (struct vseg));
-	if	(!segs)
-		{
+	segs = (struct vseg*) calloc(n, sizeof(struct vseg));
+	if (!segs) {
 		errno = ENOMEM;
-		return(-1);
-		}
-        seghead[0].fwd = seghead[0].back = seghead; /* selfpoint */
+		return (-1);
+	}
+	seghead[0].fwd = seghead[0].back = seghead; /* selfpoint */
 
-	for     (s = segs; s < &segs[n] ; s++)
-		{
+	for (s = segs; s < &segs[n]; s++) {
 		s->s_link.fwd = seghead;
 		s->s_link.back = seghead[0].back;
-		s->s_link.back->fwd = s->s_link.fwd->back = (struct dlink *)s;
+		s->s_link.back->fwd = s->s_link.fwd->back = (struct dlink*) s;
 		s->s_segno = NOSEGNO;
 		s->s_vspace = NULL;
-		s->s_lock_count = 0;            /* vmunlocked */
-		s->s_flags = 0;                 /* not DIRTY */
-		}
-	return(0);
+		s->s_lock_count = 0; /* vmunlocked */
+		s->s_flags = 0; /* not DIRTY */
 	}
+	return (0);
+}
 
 /*
  * vmmapseg --- convert segment number to real memory address
@@ -88,85 +89,75 @@ struct vseg *
 vmmapseg(vspace, segno)
 	struct 	vspace *vspace;
 	u_short segno;
-	{
+{
 	register struct vseg *s;
 
 	nmapsegs++;
 
-	if	(segno >= vspace->v_maxsegno || segno < 0)
-		{
+	if (segno >= vspace->v_maxsegno || segno < 0) {
 #ifdef DEBUG
 		fprintf(stderr,"vmmapseg vspace0%o segno%d\n", vspace, segno);
 #endif
 		vmerror("vmmapseg: bad segno");
-		}
+	}
 
 	/* look for segment in memory */
-	for	(s = (struct vseg *)seghead[0].fwd;
-		 s->s_segno != segno || s->s_vspace != vspace;
-	    	 s = (struct vseg *)s->s_link.fwd)
-		{
-		if	(s == (struct vseg *)seghead)
-			{     /* not in memory */
+	for (s = (struct vseg*) seghead[0].fwd;
+			s->s_segno != segno || s->s_vspace != vspace;
+			s = (struct vseg*) s->s_link.fwd) {
+		if (s == (struct vseg*) seghead) { /* not in memory */
 			int status;
 
-			for (s = (struct vseg *)s->s_link.back; s->s_lock_count != 0; 
-					s = (struct vseg *)s->s_link.back)
-				{
-				if (s == (struct vseg *)seghead)
+			for (s = (struct vseg*) s->s_link.back; s->s_lock_count != 0; s =
+					(struct vseg*) s->s_link.back) {
+				if (s == (struct vseg*) seghead)
 					vmerror("Too many locked segs!");
 				debugseg(s, "back skip");
-				}
-			debugseg(s, "dump on");
-			if	(s->s_flags & S_DIRTY)
-				if	(swap(s, write) != 0)
-					{
-					fprintf(stderr,
-						"write swap, v=%d fd=%d\n",
-						s->s_vspace,s->s_vspace->v_fd);
+			} debugseg(s, "dump on");
+			if (s->s_flags & S_DIRTY)
+				if (swap(s, write) != 0) {
+					fprintf(stderr, "write swap, v=%d fd=%d\n", s->s_vspace,
+							s->s_vspace->v_fd);
 					exit(-2);
-					}
+				}
 			s->s_vspace = vspace;
 			s->s_segno = segno;
 			s->s_flags &= ~S_DIRTY;
 			status = swap(s, read);
-			if	(status == -2)
-				{
+			if (status == -2) {
 				fprintf(stderr, "can't read swap file");
 				exit(-2);
-				}
-			else if (status == -1)
-				(void)vmclrseg(s);
+			} else if (status == -1)
+				(void) vmclrseg(s);
 #ifdef LRS                              /* Least Recently Swapped */
 			promote(s);
 #endif
 			break;
-			}
-		debugseg(s, "forward skip");
-		}
+		} debugseg(s, "forward skip");
+	}
 #ifdef PERC
-	{       /* percolate just-referenced segment up list */
-	register struct dlink *neighbor, *target;
-	int count;
+	{ /* percolate just-referenced segment up list */
+		register struct dlink *neighbor, *target;
+		int count;
 
-	s->fwd->back = s->back;         /* delete */
-	s->back->fwd = s->fwd;
+		s->s_link->fwd->back = s->s_link->back; /* delete */
+		s->s_link->back->fwd = s->s_link->fwd;
 
-	count = PERC;                   /* upward mobility */
-	for	(target = s; target != seghead && count-- > 0; )
-		target = target->back;
-	neighbor = target->fwd;
-	s->back = target;               /* reinsert */
-	s->fwd = neighbor;
-	target->fwd = neighbor->back = s;
+		count = PERC; /* upward mobility */
+		for (target = s; target != seghead && count-- > 0;)
+			target = target->back;
+		neighbor = target->fwd;
+		s->s_link->back = target; /* reinsert */
+		s->s_link->fwd = neighbor;
+		target->fwd = neighbor->back = s;
 	}
 #endif
 #ifdef LRU                              /* Least Recently Used */
 	promote(s);
 #endif
 	debugseg(s, "vmmapseg returns");
-	return(s);
-	}
+	return (s);
+}
 
 /*
  * swap --- swap a segment in or out
@@ -177,7 +168,7 @@ static int
 swap(seg, iofunc)           /* used only from this file */
 	register struct vseg *seg;
 	int (*iofunc)();
-	{
+{
 	off_t file_address;
 	register struct vspace *v;
 
@@ -188,30 +179,29 @@ swap(seg, iofunc)           /* used only from this file */
 	file_address += v->v_foffset;
 #ifdef SWAPTRACE
 	printf("fd%d blk%d\tswap %s\n", v->v_fd, file_address,
-		iofunc == read ? "in" : "out");
+			iofunc == read ? "in" : "out");
 #endif
-	if	(lseek(v->v_fd, file_address, L_SET) == -1L)
-		return(-2);
+	if (lseek(v->v_fd, file_address, L_SET) == -1L)
+		return (-2);
 
-	switch	((*iofunc)(v->v_fd, seg->s_cinfo, BYTESPERSEG)) 
-		{
-		case BYTESPERSEG:
-			return(0);
-		case 0:
-			return(-1);
-		default:
-			return(-2);
-		}
+	switch ((*iofunc)(v->v_fd, seg->s_cinfo, BYTESPERSEG)) {
+	case BYTESPERSEG:
+		return (0);
+	case 0:
+		return (-1);
+	default:
+		return (-2);
 	}
+}
 
 void
 vmclrseg(seg)
 	register struct vseg *seg;
-	{
+{
 
-	(void)bzero(seg->s_cinfo, BYTESPERSEG);
+	(void) bzero(seg->s_cinfo, BYTESPERSEG);
 	vmmodify(seg);
-	}
+}
 
 /*
  * vmlock --- vmlock a segment into real memory
@@ -220,12 +210,12 @@ vmclrseg(seg)
 void
 vmlock(seg)
 	register struct vseg *seg;
-	{
+{
 
 	seg->s_lock_count++;
-	if	(seg->s_lock_count < 0)
+	if (seg->s_lock_count < 0)
 		vmerror("vmlock: overflow");
-	}
+}
 
 /*
  * vmunlock --- unlock a segment
@@ -234,12 +224,12 @@ vmlock(seg)
 void
 vmunlock(seg)
 	register struct vseg *seg;
-	{
+{
 
-        --seg->s_lock_count;
-	if	(seg->s_lock_count < 0)
+	--seg->s_lock_count;
+	if (seg->s_lock_count < 0)
 		vmerror("vmlock: underflow");
-	}
+}
 
 /*
  * vmmodify --- declare a segment to have been modified
@@ -247,12 +237,11 @@ vmunlock(seg)
 
 void
 vmmodify(seg)
-register struct vseg *seg;
-	{
+	register struct vseg *seg;
+{
 
-	VMMODIFY(seg);
-	debugseg(seg, "vmmodify");
-	}
+	VMMODIFY(seg); debugseg(seg, "vmmodify");
+}
 
 /*
  * vmflush --- flush out virtual space buffers
@@ -260,14 +249,14 @@ register struct vseg *seg;
 
 void
 vmflush()
-	{
+{
 	register struct vseg *s;
 
-	for	(s = (struct vseg *)seghead[0].fwd; s != (struct vseg *)seghead;
-		 s = (struct vseg *)s->s_link.fwd)
-		if	(s->s_flags & S_DIRTY)
+	for (s = (struct vseg*) seghead[0].fwd; s != (struct vseg*) seghead; s =
+			(struct vseg*) s->s_link.fwd)
+		if (s->s_flags & S_DIRTY)
 			swap(s, write);
-	}
+}
 
 /*
  * debugseg --- output debugging information about a seg in mem
@@ -277,10 +266,9 @@ static void
 debugseg(s, msg)
 	char 	*msg;
 	register struct	vseg *s;
-	{
-	fprintf(stderr, "seg%o vspace%o segno%d flags%o vmlock%d %s\r\n",
-		s, s->s_vspace, s->s_segno, s->s_flags, s->s_lock_count, msg);
-	}
+{
+	fprintf(stderr, "seg%o vspace%o segno%d flags%o vmlock%d %s\r\n", s, s->s_vspace, s->s_segno, s->s_flags, s->s_lock_count, msg);
+}
 #endif
 
 /*
@@ -291,27 +279,24 @@ int
 vmopen(vs, filename)
 	register struct vspace *vs;
 	char *filename;
-	{
+{
 	register int	fd;
 	char	junk[32];
 
-	if	(!filename)
-		{
+	if (!filename) {
 		strcpy(junk, "/tmp/vmXXXXXX");
 		fd = mkstemp(junk);
 		unlink(junk);
-		}
-	else
-		fd = open(filename, O_RDWR|O_CREAT, 0664);
+	} else
+		fd = open(filename, O_RDWR | O_CREAT, 0664);
 
-	if	(fd != -1)
-		{
+	if (fd != -1) {
 		vs->v_fd = fd;
 		vs->v_foffset = 0;
 		vs->v_maxsegno = MAXSEGNO;
-		}
-	return(fd);
 	}
+	return (fd);
+}
 
 /*
  * vmclose --- closes a virtual space associated with a file
@@ -321,24 +306,22 @@ vmopen(vs, filename)
 void
 vmclose(vs)
 	register struct vspace *vs;
-	{
+{
 	register struct vseg *s;
 
 	vmflush();
 	/* invalidate all segments associated with that file */
-	for	(s = (struct vseg *)seghead[0].fwd; s != (struct vseg *)seghead;
-		 s = (struct vseg *)s->s_link.fwd) 
-		{
-		if	(s->s_vspace == vs) 
-			{
+	for (s = (struct vseg*) seghead[0].fwd; s != (struct vseg*) seghead; s =
+			(struct vseg*) s->s_link.fwd) {
+		if (s->s_vspace == vs) {
 			s->s_segno = NOSEGNO;
 			s->s_vspace = NULL;
-			s->s_lock_count = 0;            /* vmunlocked */
+			s->s_lock_count = 0; /* vmunlocked */
 			s->s_flags &= ~S_DIRTY;
-			}
 		}
-	close(vs->v_fd);
 	}
+	close(vs->v_fd);
+}
 
 /*
  * promote --- put a segment at the top of the list
@@ -347,7 +330,7 @@ vmclose(vs)
 static void
 promote(s)
 	register struct vseg *s;
-	{
+{
 
         s->s_link.fwd->back = s->s_link.back;         /* delete */
 	s->s_link.back->fwd = s->s_link.fwd;
@@ -355,7 +338,7 @@ promote(s)
 	s->s_link.fwd = seghead[0].fwd;   /* insert at top of totem pole */
 	s->s_link.back = seghead;
 	seghead[0].fwd = s->s_link.fwd->back = (struct dlink *)s;
-	}
+}
 
 /*
  * vmerror --- print error message and commit suicide
@@ -366,7 +349,7 @@ promote(s)
 static void
 vmerror(msg)
 	char *msg;
-	{
+{
 	fprintf(stderr, "%s\n", msg);
 	abort();	/* terminate process with core dump */
-	}
+}

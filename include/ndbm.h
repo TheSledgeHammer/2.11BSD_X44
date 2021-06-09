@@ -42,8 +42,8 @@ typedef struct {
 #define dbm_clearerr(db)	((db)->dbm_flags &= ~_DBM_IOERR)
 
 /* for flock(2) and fstat(2) */
-#define dbm_dirfno(db)	((db)->dbm_dirf)
-#define dbm_pagfno(db)	((db)->dbm_pagf)
+#define dbm_dirfno(db)		((db)->dbm_dirf)
+#define dbm_pagfno(db)		((db)->dbm_pagf)
 
 typedef struct {
 	char	*dptr;

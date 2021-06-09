@@ -8,7 +8,7 @@ libcurses/		4.3  (some long/int fixes to tstp.c)
 libdbm/			4.3
 libg/				UNIMPLEMENTED (4.3 should be ported)
 libln/			4.3
-libm/				4.3  (no attempt made to convert yet - won't run on a PDP11)
+libm/			4.3  (no attempt made to convert yet - won't run on a PDP11)
 libmp/			4.3
 libpc/			4.3
 libom/			4.3  (used for both libom.a and libm.a)

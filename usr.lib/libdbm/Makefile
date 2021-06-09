@@ -5,30 +5,15 @@
 #
 #	@(#)Makefile	5.3 (Berkeley) 4/30/86
 #
-DEFS= -DNOSCCS
-CFLAGS=-O $(DEFS)
-TAGSFILE=tags
+.include <bsd.own.mk>
 
-all: libdbm.a libdbm_p.a
+LIB=		dbm
+WARNS?=		5
 
-libdbm.a: dbm.c
-	${CC} -c ${CFLAGS} dbm.c
-	ld -r -o libdbm.a -x dbm.o
-	rm -f dbm.o
+CPPFLAGS+=	-I${.CURDIR}
 
-libdbm_p.a: dbm.c
-	${CC} -p -c ${CFLAGS} dbm.c
-	ld -r -o libdbm_p.a -X dbm.o
-	rm -f dbm.o
+SRCS= 		dbm.c
+INCS= 		dbm.h
+INCSDIR=	/usr/include
 
-install: all
-	install -m 644 libdbm.a $(DESTDIR)/usr/lib
-	install -m 644 libdbm_p.a $(DESTDIR)/usr/lib
-	-cmp -s dbm.h $(DESTDIR)/usr/include/dbm.h || \
-		install -c -m 444 dbm.h $(DESTDIR)/usr/include
-
-tags:
-	ctags -a -f ${TAGSFILE} `pwd`/dbm.c
-
-clean:
-	rm -f *.o libdbm.a libdbm_p.a errs a.out core
+.include <bsd.lib.mk>
