@@ -180,82 +180,82 @@ CondGetArg (linePtr, argPtr, func, parens)
     int	    	  argLen;
     register Buffer buf;
 
-    cp = *linePtr;
-    if (parens) {
-	while (*cp != '(' && *cp != '\0') {
-	    cp++;
+	cp = *linePtr;
+	if (parens) {
+		while (*cp != '(' && *cp != '\0') {
+			cp++;
+		}
+		if (*cp == '(') {
+			cp++;
+		}
 	}
-	if (*cp == '(') {
-	    cp++;
-	}
-    }
 
-    if (*cp == '\0') {
+	if (*cp == '\0') {
+		/*
+		 * No arguments whatsoever. Because 'make' and 'defined' aren't really
+		 * "reserved words", we don't print a message. I think this is better
+		 * than hitting the user with a warning message every time s/he uses
+		 * the word 'make' or 'defined' at the beginning of a symbol...
+		 */
+		*argPtr = cp;
+		return (0);
+	}
+
+	while (*cp == ' ' || *cp == '\t') {
+		cp++;
+	}
+
 	/*
-	 * No arguments whatsoever. Because 'make' and 'defined' aren't really
-	 * "reserved words", we don't print a message. I think this is better
-	 * than hitting the user with a warning message every time s/he uses
-	 * the word 'make' or 'defined' at the beginning of a symbol...
+	 * Create a buffer for the argument and start it out at 16 characters
+	 * long. Why 16? Why not?
 	 */
-	*argPtr = cp;
-	return (0);
-    }
+	buf = Buf_Init(16);
 
-    while (*cp == ' ' || *cp == '\t') {
-	cp++;
-    }
+	while ((strchr(" \t)&|", *cp) == (char*) NULL) && (*cp != '\0')) {
+		if (*cp == '$') {
+			/*
+			 * Parse the variable spec and install it as part of the argument
+			 * if it's valid. We tell Var_Parse to complain on an undefined
+			 * variable, so we don't do it too. Nor do we return an error,
+			 * though perhaps we should...
+			 */
+			char *cp2;
+			int len;
+			Boolean doFree;
 
-    /*
-     * Create a buffer for the argument and start it out at 16 characters
-     * long. Why 16? Why not?
-     */
-    buf = Buf_Init(16);
-    
-    while ((strchr(" \t)&|", *cp) == (char *)NULL) && (*cp != '\0')) {
-	if (*cp == '$') {
-	    /*
-	     * Parse the variable spec and install it as part of the argument
-	     * if it's valid. We tell Var_Parse to complain on an undefined
-	     * variable, so we don't do it too. Nor do we return an error,
-	     * though perhaps we should...
-	     */
-	    char  	*cp2;
-	    int		len;
-	    Boolean	doFree;
+			cp2 = Var_Parse(cp, VAR_CMD, TRUE, &len, &doFree);
 
-	    cp2 = Var_Parse(cp, VAR_CMD, TRUE, &len, &doFree);
-
-	    Buf_AddBytes(buf, strlen(cp2), (Byte *)cp2);
-	    if (doFree) {
-		free(cp2);
-	    }
-	    cp += len;
-	} else {
-	    Buf_AddByte(buf, (Byte)*cp);
-	    cp++;
+			Buf_AddBytes(buf, strlen(cp2), (Byte*) cp2);
+			if (doFree) {
+				free(cp2);
+			}
+			cp += len;
+		} else {
+			Buf_AddByte(buf, (Byte )*cp);
+			cp++;
+		}
 	}
-    }
 
-    Buf_AddByte(buf, (Byte)'\0');
-    *argPtr = (char *)Buf_GetAll(buf, &argLen);
-    Buf_Destroy(buf, FALSE);
+	Buf_AddByte(buf, (Byte )'\0');
+	*argPtr = (char*) Buf_GetAll(buf, &argLen);
+	Buf_Destroy(buf, FALSE);
 
-    while (*cp == ' ' || *cp == '\t') {
-	cp++;
-    }
-    if (parens && *cp != ')') {
-	Parse_Error (PARSE_WARNING, "Missing closing parenthesis for %s()",
-		     func);
-	return (0);
-    } else if (parens) {
-	/*
-	 * Advance pointer past close parenthesis.
-	 */
-	cp++;
-    }
-    
-    *linePtr = cp;
-    return (argLen);
+	while (*cp == ' ' || *cp == '\t') {
+		cp++;
+	}
+	if (parens && *cp != ')') {
+		Parse_Error(PARSE_WARNING, "Missing closing parenthesis for %s()",
+				func);
+		return (0);
+	} else if (parens) {
+		/*
+		 * Advance pointer past close parenthesis.
+		 */
+		cp++;
+	}
+
+	*linePtr = cp;
+	return (argLen);
 }
 
 /*-
@@ -280,16 +280,16 @@ CondDoDefined (argLen, arg)
     char    *p1;
     Boolean result;
 
-    arg[argLen] = '\0';
-    if (Var_Value (arg, VAR_CMD, &p1) != (char *)NULL) {
-	result = TRUE;
-    } else {
-	result = FALSE;
-    }
-    if (p1)
-	free(p1);
-    arg[argLen] = savec;
-    return (result);
+	arg[argLen] = '\0';
+	if (Var_Value(arg, VAR_CMD, &p1) != (char*) NULL) {
+		result = TRUE;
+	} else {
+		result = FALSE;
+	}
+	if (p1)
+		free(p1);
+	arg[argLen] = savec;
+	return (result);
 }
 
 /*-
