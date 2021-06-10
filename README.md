@@ -67,6 +67,19 @@ Or
 2.11BSD_X44 is entirely open to being ported to different architectures.
 Though due to limited access to hardware, testing of 2.11BSD_X44 on that architecture will be dependent on the individual/group (especially more exotic hardware).
 
+## Building: (Work in Progress)
+You can cross-build 211BSD_X44 from most UNIX-like operating systems. To build for i386, in the src directory:
+
+./build.sh -U -u -j4 -m i386 -O ~/obj release
+
+NOTICE: The above build script will not produce a successful build. 
+It is only recommended at this stage for testing the cross-compiler or adding new tools.
+To build just the tools for i386, in the src directory:
+
+./build.sh -U -u -j4 -m i386 tools
+
+Please read the following for NetBSD guide: <https://www.netbsd.org/docs/guide/en/chap-build.html>
+
 ## Cross-Compiling: (see: "/toolchains")
 
 - There are 3 different toolchain scripts:
