@@ -984,6 +984,7 @@ Usage: ${progname} [-EhnoPRrUuxy] [-a arch] [-B buildid] [-C cdextras]
     -c compiler    Select compiler:
                        clang
                        gcc
+		       pcc
                    [Default: gcc]
     -D dest        Set DESTDIR to dest.  [Default: destdir.MACHINE]
     -E             Set "expert" mode; disables various safety checks.
@@ -1090,9 +1091,13 @@ parseoptions()
 			clang)	setmakeenv HAVE_LLVM yes
 				setmakeenv MKLLVM yes
 				setmakeenv MKGCC no
+				setmakeenv MKPCC no
 				;;
-			#pcc)	...
-			#	;;
+			pcc)	setmakeenv HAVE_PCC yes
+				setmakeenv MKLLVM no
+				setmakeenv MKGCC no
+				setmakeenv MKPCC yes
+				;;
 			*)	bomb "Unknown compiler: ${OPTARG}"
 			esac
 			;;
