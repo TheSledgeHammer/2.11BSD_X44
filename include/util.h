@@ -36,31 +36,39 @@
 #ifndef _UTIL_H_
 #define _UTIL_H_
 
-#include <pwd.h>
-#include <utmp.h>
-#include <termios.h>
+#include <sys/cdefs.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
-#include <sys/cdefs.h>
+#include <stdio.h>
+#include <pwd.h>
+#include <termios.h>
+#include <utmp.h>
 
 __BEGIN_DECLS
-void	login __P((struct utmp *));
-int		login_tty __P((int));
-int		logout __P((const char *));
-void	logwtmp __P((const char *, const char *, const char *));
-int		pw_lock __P((int retries));
-int		pw_mkdb __P((void));
-int		pw_abort __P((void));
-void	pw_init __P((void));
-void	pw_edit __P((int notsetuid, const char *filename));
-void	pw_prompt __P((void));
-void	pw_copy __P((int ffd, int tfd, struct passwd *pw));
-int		pw_scan __P((char *bp, struct passwd *pw, int *flags));
-void	pw_error __P((const char *name, int err, int eval));
-int		openpty __P((int *, int *, char *, struct termios *, struct winsize *));
-pid_t	forkpty __P((int *, char *, struct termios *, struct winsize *));
-int		getmaxpartitions __P((void));
-int		getrawpartition __P((void));
+struct disklabel;
+struct iovec;
+struct passwd;
+struct termios;
+struct utmp;
+struct winsize;
+
+void	login(struct utmp *);
+int		login_tty(int);
+int		logout(const char *);
+void	logwtmp(const char *, const char *, const char *);
+int		pw_lock(int retries);
+int		pw_mkdb(void);
+int		pw_abort(void);
+void	pw_init(void);
+void	pw_edit(int notsetuid, const char *filename);
+void	pw_prompt(void);
+void	pw_copy(int ffd, int tfd, struct passwd *pw);
+int		pw_scan(char *bp, struct passwd *pw, int *flags);
+void	pw_error(const char *name, int err, int eval);
+int		openpty(int *, int *, char *, struct termios *, struct winsize *);
+pid_t	forkpty(int *, char *, struct termios *, struct winsize *);
+int		getmaxpartitions(void);
+int		getrawpartition(void);
 __END_DECLS
 
 #endif /* !_UTIL_H_ */

@@ -52,7 +52,7 @@ struct	vseg {                    	/* structure of a segment in memory */
 long	nswaps;         			/* number of swaps */
 long	nmapsegs;       			/* number of mapseg calls */
 
-int	vminit(), vmopen();
+int		vminit(), vmopen();
 struct	vseg	*vmmapseg();
 void	vmlock(), vmunlock(), vmclrseg(), vmmodify();
 void	vmflush(), vmclose();

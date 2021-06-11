@@ -6,6 +6,10 @@
  *	@(#)ttyent.h	5.1 (Berkeley) 5/30/85
  */
 
+
+#ifndef	_TTYENT_H_
+#define	_TTYENT_H_
+
 #include <sys/cdefs.h>
 
 struct	ttyent { 			/* see getttyent(3) */
@@ -22,3 +26,5 @@ struct	ttyent { 			/* see getttyent(3) */
 
 extern struct ttyent *getttyent();
 extern struct ttyent *getttynam();
+
+#endif /* !_TTYENT_H_ */

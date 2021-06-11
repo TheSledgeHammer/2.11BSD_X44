@@ -46,6 +46,7 @@ __RCSID("$NetBSD: atoll.c,v 1.6 2012/06/25 22:32:45 abs Exp $");
 #include "namespace.h"
 #endif
 
+#include <stddef.h>
 #include <stdlib.h>
 
 #ifdef _LIBC

@@ -9,9 +9,6 @@ A General todo list. Don't hesitate to add to this list. :)
 - Bug Fixes &/or missing critical content
 - Update sys/dev & sys/stand/boot Makefiles
 
-## Share/mk & mkhost
-
-
 ## Tools (NetBSD)
 - compat (nbcompat): 
   - can be simplified using the compat_xx.h as a rough guide for what it requires from lib

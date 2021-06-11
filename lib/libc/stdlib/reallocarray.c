@@ -41,6 +41,7 @@ __RCSID("$NetBSD: reallocarray.c,v 1.11 2021/02/26 19:25:12 christos Exp $");
 
 #define _OPENBSD_SOURCE
 #include <errno.h>
+#include <stddef.h>
 #include <stdlib.h>
 
 void *

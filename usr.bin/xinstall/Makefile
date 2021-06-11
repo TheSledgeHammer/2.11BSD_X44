@@ -3,11 +3,12 @@
 .include <bsd.own.mk>
 
 PROG=	xinstall
-SRCS=	xinstall.c getid.c
+SRCS=	${HOSTPROG:D:Ustat_flags.c} xinstall.c getid.c
 MAN=	install.1
 
-.PATH:		${NETBSDSRCDIR}/usr.sbin/mtree
-CPPFLAGS+=	-I${NETBSDSRCDIR}/usr.sbin/mtree
+
+.PATH:		${NETBSDSRCDIR}/bin/ls ${NETBSDSRCDIR}/usr.sbin/mtree
+CPPFLAGS+=	-I${NETBSDSRCDIR}/bin/ls -I${NETBSDSRCDIR}/usr.sbin/mtree
 
 .if (${HOSTPROG:U} == "")
 CPPFLAGS+=	-DHAVE_POSIX_SPAWN

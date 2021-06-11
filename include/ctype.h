@@ -45,6 +45,8 @@
 #ifndef	_CTYPE_H_
 #define _CTYPE_H_
 
+#include <sys/cdefs.h>
+#include <sys/ansi.h>
 #include <runetype.h>
 /*
 #define	_U	01
@@ -106,9 +108,9 @@ extern	char	_ctype_[];
 
 /* See comments in <machine/ansi.h> about _BSD_RUNE_T_. */
 __BEGIN_DECLS
-unsigned long	___runetype __P((_BSD_RUNE_T_));
-_BSD_RUNE_T_	___tolower __P((_BSD_RUNE_T_));
-_BSD_RUNE_T_	___toupper __P((_BSD_RUNE_T_));
+unsigned long	___runetype(_BSD_RUNE_T_);
+_BSD_RUNE_T_	___tolower(_BSD_RUNE_T_);
+_BSD_RUNE_T_	___toupper(_BSD_RUNE_T_);
 __END_DECLS
 
 /*
@@ -131,8 +133,7 @@ __istype(_BSD_RUNE_T_ c, unsigned long f)
 static __inline int
 __isctype(_BSD_RUNE_T_ c, unsigned long f)
 {
-	return((((c & _CRMASK) ? 0 :
-	    _DefaultRuneLocale.runetype[c]) & f) ? 1 : 0);
+	return((((c & _CRMASK) ? 0 : _DefaultRuneLocale.runetype[c]) & f) ? 1 : 0);
 }
 
 /* _ANSI_LIBRARY is defined by lib/libc/gen/isctype.c. */
@@ -140,15 +141,13 @@ __isctype(_BSD_RUNE_T_ c, unsigned long f)
 static __inline _BSD_RUNE_T_
 toupper(_BSD_RUNE_T_ c)
 {
-	return((c & _CRMASK) ?
-	    ___toupper(c) : _CurrentRuneLocale->mapupper[c]);
+	return((c & _CRMASK) ? ___toupper(c) : _CurrentRuneLocale->mapupper[c]);
 }
 
 static __inline _BSD_RUNE_T_
 tolower(_BSD_RUNE_T_ c)
 {
-	return((c & _CRMASK) ?
-	    ___tolower(c) : _CurrentRuneLocale->maplower[c]);
+	return((c & _CRMASK) ? ___tolower(c) : _CurrentRuneLocale->maplower[c]);
 }
 #endif /* !_ANSI_LIBRARY */
 

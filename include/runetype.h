@@ -39,14 +39,52 @@
 #ifndef	_RUNETYPE_H_
 #define	_RUNETYPE_H_
 
-#include <machine/ansi.h>
+//#include <machine/ansi.h>
 #include <sys/cdefs.h>
+#include <machine/ansi.h>
+#include <sys/null.h>
+
+#include <stdio.h> /* for FILE* */
 
 #ifdef  _BSD_WCHAR_T_
 typedef _BSD_WCHAR_T_	rune_t;
 typedef _BSD_WCHAR_T_	wchar_t;
 #undef  _BSD_WCHAR_T_
 #endif
+
+#ifdef	_BSD_MBSTATE_T_
+typedef	_BSD_MBSTATE_T_	mbstate_t;
+#undef	_BSD_MBSTATE_T_
+#endif
+
+#ifdef	_BSD_WINT_T_
+typedef	_BSD_WINT_T_	wint_t;
+#undef	_BSD_WINT_T_
+#endif
+
+#ifdef	_BSD_WCTRANS_T_
+typedef	_BSD_WCTRANS_T_	wctrans_t;
+#undef	_BSD_WCTRANS_T_
+#endif
+
+#ifdef	_BSD_WCTYPE_T_
+typedef	_BSD_WCTYPE_T_	wctype_t;
+#undef	_BSD_WCTYPE_T_
+#endif
+
+#ifdef	_BSD_SIZE_T_
+typedef	_BSD_SIZE_T_	size_t;
+#undef	_BSD_SIZE_T_
+#endif
+
+#ifndef WEOF
+#define	WEOF 			((wint_t)-1)
+#endif
+
+#define getwc(f) 		fgetwc(f)
+#define getwchar() 		getwc(stdin)
+#define putwc(wc, f) 	fputwc((wc), (f))
+#define putwchar(wc) 	putwc((wc), stdout)
 
 #define	_CACHED_RUNES	(1 <<8 )	/* Must be a power of 2 */
 #define	_CRMASK			(~(_CACHED_RUNES - 1))
@@ -88,7 +126,7 @@ typedef struct {
 	_RuneRange	mapupper_ext;
 
 	void		*variable;	/* Data which depends on the encoding */
-	int		variable_len;	/* how long that data is */
+	int			variable_len;	/* how long that data is */
 } _RuneLocale;
 
 #define	_RUNE_MAGIC_1	"RuneMagi"	/* Indicates version 0 of RuneLocale */

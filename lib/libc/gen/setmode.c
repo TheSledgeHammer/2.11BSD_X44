@@ -44,7 +44,7 @@ static char sccsid[] = "@(#)setmode.c	8.2.1 (2.11BSD) 1996/2/20";
 #include <ctype.h>
 #include <errno.h>
 #include <signal.h>
-#include <sys/stddef.h>
+#include <stddef.h>
 #include <stdlib.h>
 
 #ifdef SETMODE_DEBUG

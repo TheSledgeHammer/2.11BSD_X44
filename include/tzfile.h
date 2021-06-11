@@ -2,6 +2,9 @@
  *	@(#)tzfile.h	5.2.1 (2.11BSD) 1996/11/29
  */
 
+#ifndef _TZFILE_H_
+#define	_TZFILE_H_
+
 /*
 ** Information about time zone files.
 */
@@ -99,3 +102,5 @@ struct tzhead {
 */
 
 #define	isleap(y) (((y) % 4) == 0 && ((y) % 100) != 0 || ((y) % 400) == 0)
+
+#endif /* !_TZFILE_H_ */

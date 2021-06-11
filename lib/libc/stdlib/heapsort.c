@@ -33,6 +33,7 @@
 
 #include <sys/types.h>
 #include <errno.h>
+#include <stddef.h>
 #include <stdlib.h>
 
 /*
