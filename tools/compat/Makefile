@@ -40,30 +40,17 @@ CPPFLAGS+=	-no-cpp-precomp
 CPPFLAGS+=	-I. -I./include -I${.CURDIR} -I${.CURDIR}/sys \
 		-DHAVE_NBTOOL_CONFIG_H=1 -D_FILE_OFFSET_BITS=64
 
-.PATH:		${.CURDIR}/../../lib/libc/cdb 							\
-			${.CURDIR}/../../lib/libc/gen 							\
-			${.CURDIR}/../../lib/libc/hash 							\
-			${.CURDIR}/../../lib/libc/hash/md2 						\
-			${.CURDIR}/../../lib/libc/hash/md5 						\
-			${.CURDIR}/../../lib/libc/hash/rmd160 					\
-			${.CURDIR}/../../lib/libc/hash/sha1 					\
-			${.CURDIR}/../../lib/libc/hash/sha2 					\
-			${.CURDIR}/../../lib/libc/md 							\
+.PATH:		${.CURDIR}/../../lib/libc/gen 							\
+			${.CURDIR}/../../lib/libc/compat-4.1					\
+			${.CURDIR}/../../lib/libc/compat-4.3					\
+			${.CURDIR}/../../lib/libc/compat-sys5					\
+			${.CURDIR}/../../lib/libc/quad 							\
 			${.CURDIR}/../../lib/libc/regex 						\
 			${.CURDIR}/../../lib/libc/stdio 						\
 			${.CURDIR}/../../lib/libc/stdlib 						\
 			${.CURDIR}/../../lib/libc/string 						\
-			${.CURDIR}/../../lib/libutil 							\
-			${.CURDIR}/../../common/lib/libc/cdb 					\
-			${.CURDIR}/../../common/lib/libc/gen 					\
-			${.CURDIR}/../../common/lib/libc/string 				\
-			${.CURDIR}/../../common/lib/libc/hash/rmd160 			\
-			${.CURDIR}/../../common/lib/libc/hash/sha1 				\
-			${.CURDIR}/../../common/lib/libc/hash/sha2 				\
-			${.CURDIR}/../../common/lib/libc/md 					\
-			${.CURDIR}/../../common/lib/libc/stdlib 				\
-			${.CURDIR}/../../common/lib/libutil 					\
-			${.CURDIR}/../../contrib/external/gnu/flex/dist/src
+			${.CURDIR}/../../usr.lib/libutil 						\
+			${.CURDIR}/../../usr.bin/lex
 
 DPSRCS+=		defs.mk
 CLEANFILES+=	config.log config.status configure.lineno *.stamp

@@ -1299,31 +1299,31 @@ __GEN_ENDIAN_DEC(64, le)
 /* <sys/time.h> */
 
 #ifndef timercmp
-#define	timercmp(tvp, uvp, cmp)						\
-	(((tvp)->tv_sec == (uvp)->tv_sec) ?				\
-	    ((tvp)->tv_usec cmp (uvp)->tv_usec) :			\
+#define	timercmp(tvp, uvp, cmp)								\
+	(((tvp)->tv_sec == (uvp)->tv_sec) ?						\
+	    ((tvp)->tv_usec cmp (uvp)->tv_usec) :				\
 	    ((tvp)->tv_sec cmp (uvp)->tv_sec))
 #endif
 #ifndef timeradd
-#define	timeradd(tvp, uvp, vvp)						\
-	do {								\
+#define	timeradd(tvp, uvp, vvp)								\
+	do {													\
 		(vvp)->tv_sec = (tvp)->tv_sec + (uvp)->tv_sec;		\
 		(vvp)->tv_usec = (tvp)->tv_usec + (uvp)->tv_usec;	\
-		if ((vvp)->tv_usec >= 1000000) {			\
-			(vvp)->tv_sec++;				\
-			(vvp)->tv_usec -= 1000000;			\
-		}							\
+		if ((vvp)->tv_usec >= 1000000) {					\
+			(vvp)->tv_sec++;								\
+			(vvp)->tv_usec -= 1000000;						\
+		}													\
 	} while (/* CONSTCOND */ 0)
 #endif
 #ifndef timersub
-#define	timersub(tvp, uvp, vvp)						\
-	do {								\
+#define	timersub(tvp, uvp, vvp)								\
+	do {													\
 		(vvp)->tv_sec = (tvp)->tv_sec - (uvp)->tv_sec;		\
 		(vvp)->tv_usec = (tvp)->tv_usec - (uvp)->tv_usec;	\
-		if ((vvp)->tv_usec < 0) {				\
-			(vvp)->tv_sec--;				\
-			(vvp)->tv_usec += 1000000;			\
-		}							\
+		if ((vvp)->tv_usec < 0) {							\
+			(vvp)->tv_sec--;								\
+			(vvp)->tv_usec += 1000000;						\
+		}													\
 	} while (/* CONSTCOND */ 0)
 #endif
 
@@ -1342,9 +1342,9 @@ __GEN_ENDIAN_DEC(64, le)
 #ifdef makedev
 #undef makedev
 #endif
-#define makedev(x,y)    ((dev_t)((((x) <<  8) & 0x000fff00) | \
-			(((y) << 12) & 0xfff00000) | \
-			(((y) <<  0) & 0x000000ff)))
+#define makedev(x,y)    ((dev_t)((((x) <<  8) & 0x000fff00) | 	\
+						(((y) << 12) & 0xfff00000) | 			\
+						(((y) <<  0) & 0x000000ff)))
 #ifndef NBBY
 #define NBBY 8
 #endif
