@@ -18,7 +18,3 @@ stdio/			2.11
 stdlib/			2.11
 string/			2.11
 termios/		NetBSD
-
-Notes
------
-Some Libc folders contain enhancements from NetBSD/OpenBSD.

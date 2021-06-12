@@ -8,9 +8,9 @@
 # string sources
 .PATH: ${ARCHDIR}/string ${.CURDIR}/string
 
-SRCS+=	strcspn.c strerror.c strlcat.c strlcpy.c strlen.c 	\
-		strmode.c strndup.c strnlen.c strpbrk.c				\
-		strsep.c strspn.c strstr.c strtok.c
+SRCS+=	strcspn.c strpbrk.c strerror.c strsep.c strspn.c strstr.c strtok.c
 
 .include "${ARCHDIR}/string/Makefile.inc"
+
+MAN+= 	strcspn.3 strpbrk.3 stsep.3 strspn.3 strstr.3 strtok.3
 

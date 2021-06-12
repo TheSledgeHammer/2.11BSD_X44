@@ -12,25 +12,22 @@ A General todo list. Don't hesitate to add to this list. :)
 ## Tools (NetBSD)
 - compat (nbcompat): 
   - can be simplified using the compat_xx.h as a rough guide for what it requires from lib
-
-- Long-Term Goal:
-  - Support: Clang, GCC & PCC
-  - Have all compiler components under a single directory.
-   	- E.g. Compiler Folder:
-      - GCC: binutils, flex(optional), gcc, gdb, gmake, groff, m4, mpc, mpfr
-      - Clang: clang, llvm, compiler-rt
+  - Fix to be relavent to 2.11BSD
 
 # usr/ (User & OS Libraries)
 
 ## lib
 
-- libkvm
-  
+- libc:
+	- Update Makefiles with manpage's MLINKS
+
 ## libexec
 
 ## sbin
 
 - fsck: replace references to ufs_daddr_t
+
+
   
 # usr/sys/ (Kernel)
 

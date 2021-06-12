@@ -52,10 +52,6 @@ TOOLCHAIN_BITS+= pcc
 . endif
 .endif
 
-.if defined(HAVE_PCC) && ${HAVE_PCC} > 0
-TOOLCHAIN_BITS+= pcc
-. endif
-
 .if ${TOOLCHAIN_MISSING} == "no" || defined(EXTERNAL_TOOLCHAIN)
 TOOLCHAIN_BITS+= dbsym
 .endif
