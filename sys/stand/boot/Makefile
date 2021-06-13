@@ -10,7 +10,7 @@ SUBDIR+= 	i386
 # Enable the following.
 HAVE_BCACHE=	yes
 HAVE_ISABUS=	yes
-HAVE_PNP=	yes
+HAVE_PNP=		yes
 .endif
 
 INCSDIR= 	/usr/include/stand/boot

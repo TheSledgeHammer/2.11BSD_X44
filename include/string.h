@@ -51,11 +51,11 @@ typedef	_BSD_SIZE_T_	size_t;
 #undef	_BSD_SIZE_T_
 #endif
 
-#ifndef	NULL
-#define	NULL	0
-#endif
+
+#include <sys/null.h>
 
 #include <sys/cdefs.h>
+
 #include <strings.h>
 
 /*
@@ -79,29 +79,29 @@ extern int 	strcspn();
 extern char *strtok();
 
 __BEGIN_DECLS
-void	*memchr __P((const void *, int, size_t));
-int	 	memcmp __P((const void *, const void *, size_t));
-void	*memcpy __P((void *, const void *, size_t));
-void	*memmove __P((void *, const void *, size_t));
-void	*memset __P((void *, int, size_t));
-char	*strcat __P((char *, const char *));
-char	*strchr __P((const char *, int));
-int	 	strcmp __P((const char *, const char *));
-int	 	strcoll __P((const char *, const char *));
-char	*strcpy __P((char *, const char *));
-size_t	 strcspn __P((const char *, const char *));
-char	*strerror __P((int));
-size_t	 strlen __P((const char *));
-char	*strncat __P((char *, const char *, size_t));
-int	 	strncmp __P((const char *, const char *, size_t));
-char	*strncpy __P((char *, const char *, size_t));
-char	*strpbrk __P((const char *, const char *));
-char	*strrchr __P((const char *, int));
-size_t	 strspn __P((const char *, const char *));
-char	*strstr __P((const char *, const char *));
-char	*strtok __P((char *, const char *));
-char	*strtok_r __P((char *, const char *, char **));
-size_t	 strxfrm __P((char *, const char *, size_t));
+void	*memchr (const void *, int, size_t);
+int	 	memcmp (const void *, const void *, size_t);
+void	*memcpy (void *, const void *, size_t);
+void	*memmove (void *, const void *, size_t);
+void	*memset (void *, int, size_t);
+char	*strcat (char *, const char *);
+char	*strchr (const char *, int);
+int	 	strcmp (const char *, const char *);
+int	 	strcoll (const char *, const char *);
+char	*strcpy (char *, const char *);
+size_t	 strcspn (const char *, const char *);
+char	*strerror (int);
+size_t	 strlen (const char *);
+char	*strncat (char *, const char *, size_t);
+int	 	strncmp (const char *, const char *, size_t);
+char	*strncpy (char *, const char *, size_t);
+char	*strpbrk (const char *, const char *);
+char	*strrchr (const char *, int);
+size_t	 strspn (const char *, const char *);
+char	*strstr (const char *, const char *);
+char	*strtok (char *, const char *);
+char	*strtok_r (char *, const char *, char **);
+size_t	 strxfrm (char *, const char *, size_t);
 
 /* Nonstandard routines */
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)

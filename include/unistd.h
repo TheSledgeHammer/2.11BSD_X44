@@ -51,9 +51,7 @@
 #define	STDOUT_FILENO	1	/* standard output file descriptor */
 #define	STDERR_FILENO	2	/* standard error file descriptor */
 
-#ifndef NULL
-#define	NULL			0	/* null pointer constant */
-#endif
+#include <sys/null.h>
 
 __BEGIN_DECLS
 void	 		_exit();

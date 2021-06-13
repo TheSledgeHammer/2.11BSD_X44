@@ -47,15 +47,15 @@
  * integers.  The names can be NULL, resulting in simple value lists.
  */
 struct nvlist {
-	struct	nvlist *nv_next;
-	const char *nv_name;
+	struct	nvlist 	*nv_next;
+	const char 		*nv_name;
 	union {
-		const char *un_str;
-		void *un_ptr;
+		const char 	*un_str;
+		void 		*un_ptr;
 	} nv_un;
-#define	nv_str	nv_un.un_str
-#define	nv_ptr	nv_un.un_ptr
-	int	nv_int;
+#define	nv_str		nv_un.un_str
+#define	nv_ptr		nv_un.un_ptr
+	int				nv_int;
 };
 
 /*
@@ -82,12 +82,12 @@ struct config {
  * SCSI host adapter drivers such as the SPARC "esp").
  */
 struct attr {
-	const char *a_name;		/* name of this attribute */
-	int	a_iattr;		/* true => allows children */
-	struct	nvlist *a_locs;		/* locators required */
-	int	a_loclen;		/* length of above list */
-	struct	nvlist *a_devs;		/* children */
-	struct	nvlist *a_refs;		/* parents */
+	const char 		*a_name;		/* name of this attribute */
+	int				a_iattr;		/* true => allows children */
+	struct	nvlist 	*a_locs;		/* locators required */
+	int				a_loclen;		/* length of above list */
+	struct	nvlist 	*a_devs;		/* children */
+	struct	nvlist 	*a_refs;		/* parents */
 };
 
 /*
@@ -106,17 +106,17 @@ struct attr {
  * themselves.
  */
 struct devbase {
-	const char *d_name;		/* e.g., "sd" */
-	struct	devbase *d_next;	/* linked list */
-	int	d_isdef;		/* set once properly defined */
-	int	d_ispseudo;		/* is a pseudo-device */
-	int	d_major;		/* used for "root on sd0", e.g. */
-	struct	nvlist *d_atlist;	/* e.g., "at tg" (attr list) */
-	struct	nvlist *d_vectors;	/* interrupt vectors, if any */
-	struct	nvlist *d_attrs;	/* attributes, if any */
-	struct	devi *d_ihead;		/* first instance, if any */
-	struct	devi **d_ipp;		/* used for tacking on more instances */
-	int	d_umax;			/* highest unit number + 1 */
+	const char 		*d_name;		/* e.g., "sd" */
+	struct	devbase *d_next;		/* linked list */
+	int				d_isdef;		/* set once properly defined */
+	int				d_ispseudo;		/* is a pseudo-device */
+	int				d_major;		/* used for "root on sd0", e.g. */
+	struct	nvlist 	*d_atlist;		/* e.g., "at tg" (attr list) */
+	struct	nvlist 	*d_vectors;		/* interrupt vectors, if any */
+	struct	nvlist 	*d_attrs;		/* attributes, if any */
+	struct	devi 	*d_ihead;		/* first instance, if any */
+	struct	devi 	**d_ipp;		/* used for tacking on more instances */
+	int				d_umax;			/* highest unit number + 1 */
 };
 
 /*
@@ -230,52 +230,52 @@ struct {			/* loc[] table for config */
 } locators;
 
 /* files.c */
-void	initfiles __P((void));
-void	checkfiles __P((void));
-int	fixfiles __P((void));	/* finalize */
-void	addfile __P((const char *, struct nvlist *, int, const char *));
+void	initfiles (void);
+void	checkfiles (void);
+int		fixfiles (void);	/* finalize */
+void	addfile (const char *, struct nvlist *, int, const char *);
 
 /* hash.c */
-struct	hashtab *ht_new __P((void));
-int	ht_insrep __P((struct hashtab *, const char *, void *, int));
+struct	hashtab *ht_new (void);
+int	ht_insrep (struct hashtab *, const char *, void *, int);
 #define	ht_insert(ht, nam, val) ht_insrep(ht, nam, val, 0)
 #define	ht_replace(ht, nam, val) ht_insrep(ht, nam, val, 1)
-void	*ht_lookup __P((struct hashtab *, const char *));
-void	initintern __P((void));
-const char *intern __P((const char *));
+void	*ht_lookup (struct hashtab *, const char *);
+void	initintern (void);
+const char *intern (const char *);
 
 /* main.c */
-void	addoption __P((const char *name, const char *value));
-void	addmkoption __P((const char *name, const char *value));
+void	addoption (const char *name, const char *value);
+void	addmkoption (const char *name, const char *value);
 
 /* mkheaders.c */
-int	mkheaders __P((void));
+int	mkheaders (void);
 
 /* mkioconf.c */
-int	mkioconf __P((void));
+int	mkioconf (void);
 
 /* mkmakefile.c */
-int	mkmakefile __P((void));
+int	mkmakefile (void);
 
 /* mkswap.c */
-int	mkswap __P((void));
+int	mkswap (void);
 
 /* pack.c */
-void	pack __P((void));
+void	pack (void);
 
 /* scan.l */
-int	currentline __P((void));
+int	currentline (void);
 
 /* sem.c, other than for yacc actions */
-void	initsem __P((void));
+void	initsem (void);
 
 /* util.c */
-void	*emalloc __P((size_t));
-void	*erealloc __P((void *, size_t));
-char	*path __P((const char *));
-void	error __P((const char *, ...));			/* immediate errs */
-void	xerror __P((const char *, int, const char *, ...)); /* delayed errs */
-__dead void panic __P((const char *, ...));
-struct nvlist *newnv __P((const char *, const char *, void *, int));
-void	nvfree __P((struct nvlist *));
-void	nvfreel __P((struct nvlist *));
+void	*emalloc (size_t);
+void	*erealloc (void *, size_t);
+char	*path (const char *);
+void	error (const char *, ...);			/* immediate errs */
+void	xerror (const char *, int, const char *, ...); /* delayed errs */
+__dead void panic (const char *, ...);
+struct nvlist *newnv (const char *, const char *, void *, int);
+void	nvfree (struct nvlist *);
+void	nvfreel (struct nvlist *);

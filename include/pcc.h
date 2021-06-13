@@ -6,6 +6,9 @@
  *	@(#)pcc.h	5.1 (Berkeley) 5/30/85
  */
 
+#ifndef	_PCC_H_
+#define	_PCC_H_
+
 /*
  * This file contains definitions for all the constants and structures
  *	needed to use the intermediate code files generated and read by
@@ -227,3 +230,5 @@
 # define	PCCM_ADDTYPE(t, m)						\
 	((((t) &~ PCCTM_BASETYPE) << PCCTM_TYPESHIFT) | \
 	(m) | ((t) & PCCTM_BASETYPE))
+
+#endif /* !_PCC_H_ */

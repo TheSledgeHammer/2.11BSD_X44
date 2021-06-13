@@ -5,7 +5,8 @@
  *
  *	@(#)mtab.h	5.1 (Berkeley) 5/30/85
  */
-
+#ifndef _MTAB_H_
+#define _MTAB_H_
 /*
  * Mounted device accounting file.
  */
@@ -14,3 +15,5 @@ struct mtab {
 	char	m_dname[32];	/* block device pathname */
 	char	m_type[4];		/* read-only, quotas */
 };
+
+#endif /* _MTAB_H_ */

@@ -75,9 +75,7 @@ typedef struct _dirdesc {
 #define DTF_REWIND		0x0004	/* rewind after reading union stack */
 #define __DTF_READALL	0x0008	/* everything has been read */
 
-#ifndef NULL
-#define	NULL	0
-#endif
+#include <sys/null.h>
 
 #endif /* _POSIX_SOURCE */
 

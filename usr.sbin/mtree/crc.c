@@ -1,5 +1,4 @@
-/*	$OpenBSD: crc.c,v 1.4 2019/06/28 13:32:49 deraadt Exp $	*/
-/*	$NetBSD: crc.c,v 1.7 1996/02/27 21:29:53 jtc Exp $	*/
+/*	$NetBSD: crc.c,v 1.10 2021/03/18 20:02:18 cheusov Exp $	*/
 
 /*-
  * Copyright (c) 1991, 1993
@@ -33,12 +32,28 @@
  * SUCH DAMAGE.
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
+#include <sys/cdefs.h>
+#if defined(__RCSID) && !defined(lint)
+#if 0
+static char sccsid[] = "@(#)crc.c	8.1 (Berkeley) 6/17/93";
+#else
+__RCSID("$NetBSD: crc.c,v 1.10 2021/03/18 20:02:18 cheusov Exp $");
+#endif
+#endif /* not lint */
+
 #include <sys/types.h>
+
+#include <stdio.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "extern.h"
 
-static const u_int32_t crctab[] = {
+static const uint32_t crctab[] = {
 	0x0,
 	0x04c11db7, 0x09823b6e, 0x0d4326d9, 0x130476dc, 0x17c56b6b,
 	0x1a864db2, 0x1e475005, 0x2608edb8, 0x22c9f00f, 0x2f8ad6d6,
@@ -99,37 +114,50 @@ static const u_int32_t crctab[] = {
  * locations to store the crc and the number of bytes read.  It returns 0 on
  * success and 1 on failure.  Errno is set on failure.
  */
-u_int32_t crc_total = ~0;		/* The crc over a number of files. */
+uint32_t crc_total = ~0;		/* The crc over a number of files. */
 
 int
-crc(int fd, u_int32_t *cval, u_int32_t *clen)
+crc(int fd, uint32_t *cval, uint32_t *clen)
 {
 	u_char *p;
 	int nr;
-	u_int32_t crc, len;
+	uint32_t thecrc, len;
+	uint32_t crctot;
 	u_char buf[16 * 1024];
 
 #define	COMPUTE(var, ch)	(var) = (var) << 8 ^ crctab[(var) >> 24 ^ (ch)]
 
-	crc = len = 0;
-	crc_total = ~crc_total;
+	thecrc = len = crctot = 0;
+	if (sflag)
+		crctot = ~crc_total;
 	while ((nr = read(fd, buf, sizeof(buf))) > 0)
-		for (len += nr, p = buf; nr--; ++p) {
-			COMPUTE(crc, *p);
-			COMPUTE(crc_total, *p);
+		if (sflag) {
+			for (len += nr, p = buf; nr--; ++p) {
+				COMPUTE(thecrc, *p);
+				COMPUTE(crctot, *p);
+			}
+		} else {
+			for (len += nr, p = buf; nr--; ++p)
+				COMPUTE(thecrc, *p);
 		}
-	if (nr == -1)
-		return (1);
+	if (nr < 0)
+		return 1;
 
 	*clen = len;
 
 	/* Include the length of the file. */
-	for (; len != 0; len >>= 8) {
-		COMPUTE(crc, len & 0xff);
-		COMPUTE(crc_total, len & 0xff);
+	if (sflag) {
+		for (; len != 0; len >>= 8) {
+			COMPUTE(thecrc, len & 0xff);
+			COMPUTE(crctot, len & 0xff);
+		}
+	} else {
+		for (; len != 0; len >>= 8)
+			COMPUTE(thecrc, len & 0xff);
 	}
 
-	*cval = ~crc;
-	crc_total = ~crc_total;
-	return (0);
+	*cval = ~thecrc;
+	if (sflag)
+		crc_total = ~crctot;
+	return 0;
 }

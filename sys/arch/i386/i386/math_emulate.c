@@ -50,7 +50,7 @@
 #include <machine/npx.h>
 
 #define __ALIGNED_TEMP_REAL 1
-#include <i386/i386/math_emu.h>
+#include <machine/math_emu.h>
 
 #define ST(x) (*__st((x)))
 #define PST(x) ((const temp_real *) __st((x)))
@@ -914,7 +914,7 @@ void fmul(const temp_real * src1, const temp_real * src2, temp_real * result)
  * temporary real division routine.
  */
 
-#include <i386/i386/math_emu.h>
+#include <machine/math_emu.h>
 
 static void shift_left(int * c)
 {

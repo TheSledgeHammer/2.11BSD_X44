@@ -36,13 +36,38 @@
 #ifndef _UTIL_H_
 #define _UTIL_H_
 
+
 #include <sys/cdefs.h>
-#include <sys/ioctl.h>
 #include <sys/types.h>
+#include <sys/ansi.h>
+#include <sys/ioctl.h>
 #include <stdio.h>
 #include <pwd.h>
 #include <termios.h>
 #include <utmp.h>
+
+#ifdef  _BSD_TIME_T_
+typedef _BSD_TIME_T_    time_t;
+#undef  _BSD_TIME_T_
+#endif
+#ifdef  _BSD_SIZE_T_
+typedef _BSD_SIZE_T_    size_t;
+#undef  _BSD_SIZE_T_
+#endif
+
+#if defined(_POSIX_C_SOURCE)
+#ifndef __VA_LIST_DECLARED
+typedef __va_list va_list;
+#define __VA_LIST_DECLARED
+#endif
+#endif
+
+#define	PIDLOCK_NONBLOCK	1
+#define	PIDLOCK_USEHOSTNAME	2
+
+#define	PW_POLICY_BYSTRING	0
+#define	PW_POLICY_BYPASSWD	1
+#define	PW_POLICY_BYGROUP	2
 
 __BEGIN_DECLS
 struct disklabel;

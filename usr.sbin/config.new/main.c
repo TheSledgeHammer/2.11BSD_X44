@@ -58,8 +58,8 @@ static char copyright[] =
 #include <unistd.h>
 #include "config.h"
 
-int	firstfile __P((const char *));
-int	yyparse __P((void));
+int	firstfile (const char *);
+int	yyparse (void);
 
 extern char *optarg;
 extern int optind;
@@ -69,15 +69,14 @@ static struct hashtab *mkopttab;
 static struct nvlist **nextopt;
 static struct nvlist **nextmkopt;
 
-static __dead void stop __P((void));
-static int do_option __P((struct hashtab *, struct nvlist ***,
-			const char *, const char *, const char *));
-static int crosscheck __P((void));
-static int badstar __P((void));
-static int mksymlinks __P((void));
-static int has_instances __P((struct devbase *, int));
-static int hasparent __P((struct devi *));
-static int cfcrosscheck __P((struct config *, const char *, struct nvlist *));
+static __dead void stop (void);
+static int do_option (struct hashtab *, struct nvlist ***, const char *, const char *, const char *);
+static int crosscheck (void);
+static int badstar (void);
+static int mksymlinks (void);
+static int has_instances (struct devbase *, int);
+static int hasparent (struct devi *);
+static int cfcrosscheck (struct config *, const char *, struct nvlist *);
 
 int
 main(argc, argv)

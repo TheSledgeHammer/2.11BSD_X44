@@ -12,6 +12,8 @@
  *				   Place into the public domain.
  *      --------------------------------------------------              
 */
+#ifndef	_VMF_H_
+#define	_VMF_H_
 
 #include <sys/types.h>
 
@@ -61,3 +63,5 @@ typedef	long	VADDR;
 #define	VMMODIFY(seg) 	(seg->s_flags |= S_DIRTY)
 #define	VSEG(va) 		((short)(va >> LOG2BPS))
 #define	VOFF(va) 		((u_short)va % BYTESPERSEG)
+
+#endif /* !_VMF_H_ */

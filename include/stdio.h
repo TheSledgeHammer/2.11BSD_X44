@@ -11,7 +11,6 @@
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
-#include <sys/null.h>
 
 #include <machine/ansi.h>
 
@@ -30,6 +29,8 @@ typedef __va_list va_list;
 #define __VA_LIST_DECLARED
 #endif
 #endif
+
+#include <sys/null.h>
 
 #ifndef FILE
 #define	BUFSIZ	1024

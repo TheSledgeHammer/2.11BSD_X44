@@ -1,4 +1,4 @@
-/*	$NetBSD: err.h,v 1.11 1994/10/26 00:55:52 cgd Exp $	*/
+/*	$NetBSD: err.h,v 1.17 2014/01/16 17:22:06 christos Exp $	*/
 
 /*-
  * Copyright (c) 1993
@@ -46,7 +46,7 @@
  * _BSD_VA_LIST_ from <machine/ansi.h> and use it.
  */
 #include <sys/cdefs.h>
-#include <machine/ansi.h>
+#include <stdarg.h>
 
 __BEGIN_DECLS
 __dead void	err (int, const char *, ...)
@@ -57,6 +57,10 @@ __dead void	errx (int, const char *, ...)
 			__attribute__((noreturn, format (printf, 2, 3)));
 __dead void	verrx (int, const char *, _BSD_VA_LIST_)
 			__attribute__((noreturn, format (printf, 2, 0)));
+__dead void	errc(int, int, const char *, ...)
+			__attribute__((noreturn, format (printf, 3, 4)));
+__dead void	verrc(int, int, const char *, _BSD_VA_LIST_)
+			__attribute__((noreturn, format (printf, 3, 0)));
 void		warn (const char *, ...)
 			__attribute__((format (printf, 1, 2)));
 void		vwarn (const char *, _BSD_VA_LIST_)
@@ -65,6 +69,8 @@ void		warnx (const char *, ...)
 			__attribute__((format (printf, 1, 2)));
 void		vwarnx (const char *, _BSD_VA_LIST_)
 			__attribute__((format (printf, 1, 0)));
+void		vwarnc(int, const char *, _BSD_VA_LIST_)
+			__attribute__((format (printf, 2, 0)));
 __END_DECLS
 
 #endif /* !_ERR_H_ */

@@ -50,9 +50,9 @@
 #include <string.h>
 #include "config.h"
 
-static int emitcnt __P((struct nvlist *));
-static int err __P((const char *, char *, FILE *));
-static char *cntname __P((const char *));
+static int emitcnt (struct nvlist *);
+static int err (const char *, char *, FILE *);
+static char *cntname (const char *);
 
 /*
  * Make headers containing counts, as needed.
@@ -65,7 +65,7 @@ mkheaders()
 	for (fi = allfiles; fi != NULL; fi = fi->fi_next) {
 		if (fi->fi_flags & FI_HIDDEN)
 			continue;
-		if (fi->fi_flags & (FI_NEEDSCOUNT | FI_NEEDSFLAG) &&
+		if ((fi->fi_flags & (FI_NEEDSCOUNT | FI_NEEDSFLAG)) &&
 		    emitcnt(fi->fi_opt))
 			return (1);
 	}

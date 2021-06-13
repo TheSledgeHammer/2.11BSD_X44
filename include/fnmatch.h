@@ -1,8 +1,8 @@
-/*	$NetBSD: utime.h,v 1.3 1994/10/26 00:56:39 cgd Exp $	*/
+/*	$NetBSD: fnmatch.h,v 1.11 2003/08/07 09:44:10 agc Exp $	*/
 
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -12,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -32,28 +28,29 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)utime.h	5.4 (Berkeley) 4/3/91
+ *	@(#)fnmatch.h	8.1 (Berkeley) 6/2/93
  */
 
-#ifndef	_UTIME_H_
-#define	_UTIME_H_
+#ifndef	_FNMATCH_H_
+#define	_FNMATCH_H_
 
-#include <machine/ansi.h>
+#define	FNM_NOMATCH		1		/* Match failed. */
+#define	FNM_NOSYS		2		/* Function not implemented. */
 
-#ifdef	_BSD_TIME_T_
-typedef	_BSD_TIME_T_	time_t;
-#undef	_BSD_TIME_T_
+#define	FNM_NOESCAPE	0x01	/* Disable backslash escaping. */
+#define	FNM_PATHNAME	0x02	/* Slash must be matched by slash. */
+#define	FNM_PERIOD		0x04	/* Period must be matched by period. */
+#if __BSD_VISIBLE
+#define	FNM_LEADING_DIR	0x08	/* Ignore /<tail> after Imatch. */
+#define	FNM_CASEFOLD	0x10	/* Case insensitive search. */
+#define	FNM_IGNORECASE	FNM_CASEFOLD
+#define	FNM_FILE_NAME	FNM_PATHNAME
 #endif
-
-struct utimbuf {
-	time_t actime;		/* Access time */
-	time_t modtime;		/* Modification time */
-};
 
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int utime(const char *, const struct utimbuf *);
+int	 fnmatch (const char *, const char *, int);
 __END_DECLS
 
-#endif /* !_UTIME_H_ */
+#endif /* !_FNMATCH_H_ */

@@ -16,9 +16,16 @@
  *
  *	@(#)pathnames.h	5.3.7 (2.11BSD) 1996/11/27
  */
+#ifndef _PATHS_H_
+#define	_PATHS_H_
 
 /* Default search path. */
-#define	_PATH_DEFPATH	"/usr/bin:/bin"
+#ifdef RESCUEDIR
+#define	_PATH_DEFPATH	RESCUEDIR ":/usr/bin:/bin:/usr/local/bin"
+#else
+#define	_PATH_DEFPATH	"/usr/bin:/bin:/usr/local/bin"
+#endif
+
 /* All standard utilities path. */
 #define	_PATH_STDPATH \
 	"/usr/bin:/bin:/usr/sbin:/sbin:/usr/contrib/bin:/usr/old/bin"
@@ -28,16 +35,55 @@
 #define	_PATH_CP		"/bin/cp"
 #define	_PATH_RSH		"/usr/ucb/rsh"
 #define	_PATH_VI		"/usr/ucb/vi"
+
+#define	_PATH_AUDIO		"/dev/audio"
+#define	_PATH_AUDIO0	"/dev/audio0"
+#define	_PATH_AUDIOCTL	"/dev/audioctl"
+#define	_PATH_AUDIOCTL0	"/dev/audioctl0"
 #define	_PATH_CONSOLE	"/dev/console"
-#define	_PATH_DEVNULL	"/dev/null"
-#define	_PATH_TTY		"/dev/tty"
-#define	_PATH_DEV		"/dev"
-#define	_PATH_NOLOGIN	"/etc/nologin"
-#define	_PATH_LASTLOG	"/usr/adm/lastlog"
-#define	_PATH_TMP		"/tmp/"
-#define	_PATH_VARTMP	"/usr/tmp/"
-#define	_PATH_SENDMAIL	"/usr/sbin/sendmail"
-#define	_PATH_DEVDB		"/var/run/dev"
-#define	_PATH_VARRUN	"/var/run/"
+#define	_PATH_CONSTTY	"/dev/constty"
 #define	_PATH_CTIMED	"/usr/libexec/ctimed"
+#define	_PATH_DEVDB		"/var/run/dev"
+#define	_PATH_DEVNULL	"/dev/null"
+//#define	_PATH_DEV		"/dev"
+#define	_PATH_LASTLOG	"/usr/adm/lastlog"
+#define	_PATH_NOLOGIN	"/etc/nologin"
+#define	_PATH_SENDMAIL	"/usr/sbin/sendmail"
 #define	_PATH_SHELLS	"/etc/shells"
+#define	_PATH_SOUND		"/dev/sound"
+#define	_PATH_SOUND0	"/dev/sound0"
+//#define	_PATH_TMP		"/tmp/"
+#define	_PATH_TTY		"/dev/tty"
+#define	_PATH_UNIX		"/211bsd"
+//#define	_PATH_VARRUN	"/var/run/"
+//#define	_PATH_VARTMP	"/usr/tmp/"
+#define	_PATH_VIDEO		"/dev/video"
+#define	_PATH_VIDEO0	"/dev/video0"
+
+/*
+ * Provide trailing slash, since mostly used for building pathnames.
+ * See the __CONCAT() macro from <sys/cdefs.h> for cpp examples.
+ */
+#define	_PATH_DEV		"/dev/"
+#define	_PATH_DEV_PTS	"/dev/pts/"
+#define	_PATH_EMUL_AOUT	"/emul/aout/"
+#define	_PATH_TMP		"/tmp/"
+#define	_PATH_VARDB		"/var/db/"
+#define	_PATH_VARRUN	"/var/run/"
+#define	_PATH_VARTMP	"/var/tmp/"
+
+/*
+ * Paths that may change if RESCUEDIR is defined.
+ * Used by tools in /rescue.
+ */
+#ifdef RESCUEDIR
+#define	_PATH_BSHELL	RESCUEDIR "/sh"
+#define	_PATH_CSHELL	RESCUEDIR "/csh"
+#define	_PATH_VI		RESCUEDIR "/vi"
+#else
+#define	_PATH_BSHELL	"/bin/sh"
+#define	_PATH_CSHELL	"/bin/csh"
+#define	_PATH_VI		"/usr/bin/vi"
+#endif
+
+#endif /* !_PATHS_H_ */

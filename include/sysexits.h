@@ -12,6 +12,9 @@
  *	@(#)sysexits.h	4.4.1 (2.11BSD) 1996/11/29
  */
 
+#ifndef	_SYSEXITS_H_
+#define	_SYSEXITS_H_
+
 /*
 **  SYSEXITS.H -- Exit status codes for system programs.
 **
@@ -95,3 +98,5 @@
 # define EX_PROTOCOL	76	/* remote error in protocol */
 # define EX_NOPERM		77	/* permission denied */
 # define EX_CONFIG		78	/* configuration error */
+
+#endif /* !_SYSEXITS_H_ */

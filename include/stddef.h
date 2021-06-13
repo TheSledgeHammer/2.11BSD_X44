@@ -40,8 +40,6 @@
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
-#include <sys/null.h>
-
 #include <machine/ansi.h>
 
 #ifdef	_BSD_PTRDIFF_T_
@@ -61,14 +59,12 @@ typedef	_BSD_SIZE_T_	size_t;
 #undef	_BSD_SIZE_T_
 #endif
 
-#ifdef	_BSD_WCHAR_T_
+#if defined(_BSD_WCHAR_T_) && !defined(__cplusplus)
 typedef	_BSD_WCHAR_T_	wchar_t;
 #undef	_BSD_WCHAR_T_
 #endif
 
-#ifndef	NULL
-#define	NULL			0
-#endif
+#include <sys/null.h>
 
 #define	offsetof(type, member)	((size_t)(&((type *)0)->member))
 

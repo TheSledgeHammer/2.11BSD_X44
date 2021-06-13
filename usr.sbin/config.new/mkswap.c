@@ -49,7 +49,7 @@
 #include <string.h>
 #include "config.h"
 
-static int mkoneswap __P((struct config *));
+static int mkoneswap (struct config *);
 
 /*
  * Make the various swap*.c files.  Nothing to do for generic swap.

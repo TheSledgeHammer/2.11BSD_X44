@@ -128,7 +128,7 @@ __RCSID("$NetBSD: pwd_mkdb.c,v 1.58 2017/05/04 16:26:09 sevan Exp $");
 #define	MIN_CACHESIZE	2*1024*1024
 
 #define	PERM_INSECURE	(S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
-#define	PERM_SECURE	(S_IRUSR | S_IWUSR)
+#define	PERM_SECURE		(S_IRUSR | S_IWUSR)
 
 #if HAVE_NBTOOL_CONFIG_H
 static const char __yp_token[] = "__YP!";
@@ -147,8 +147,8 @@ static HASHINFO openinfo = {
 };
 
 #define	FILE_INSECURE	0x01
-#define	FILE_SECURE	0x02
-#define	FILE_ORIG	0x04
+#define	FILE_SECURE		0x02
+#define	FILE_ORIG		0x04
 
 
 struct pwddb {
@@ -175,14 +175,14 @@ void	cp(const char *, const char *, mode_t);
 void	deldbent(struct pwddb *, int, void *);
 void	mkpw_error(const char *, ...) __dead;
 void	mkpw_warning(const char *, ...);
-int	getdbent(struct pwddb *, int, void *, struct passwd **);
+int		getdbent(struct pwddb *, int, void *, struct passwd **);
 void	inconsistency(void) __dead;
 void	install(const char *, const char *);
 void	putdbents(struct pwddb *, struct passwd *, const char *, int, int,
     u_int, u_int);
 void	putyptoken(struct pwddb *);
 void	rm(const char *);
-int	scan(FILE *, struct passwd *, int *, int *);
+int		scan(FILE *, struct passwd *, int *, int *);
 void	usage(void) __dead;
 void	wr_error(const char *) __dead;
 uint32_t getversion(const char *);

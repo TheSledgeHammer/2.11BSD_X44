@@ -38,6 +38,8 @@
 #ifndef	_DISKTAB_H_
 #define	_DISKTAB_H_
 
+#include <sys/cdefs.h>
+
 /*
  * Disk description table, see disktab(5)
  */
@@ -59,5 +61,10 @@ struct	disktab {
 		short	p_fsize;	/* frag size in bytes */
 	} d_partitions[8];
 };
+
+__BEGIN_DECLS
+int setdisktab(const char *);
+struct disklabel *getdiskbyname(const char *);
+__END_DECLS
 
 #endif /* !_DISKTAB_H_ */

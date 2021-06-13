@@ -1,3 +1,6 @@
+#ifndef _MP_H_
+#define _MP_H_
+
 #define	MINT	struct mint
 MINT
 {	int	len;
@@ -24,3 +27,5 @@ extern	xv_oid;
 #else
 #define	VOID
 #endif
+
+#endif /* _MP_H_ */

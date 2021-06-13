@@ -51,8 +51,8 @@ LIBKERN=		${KERNLIB_PROF}
 ##
 MD_OBJS=	locore.o support.o vector.o icu.o
 MD_CFILES=
-MD_SFILES=	${I386}/i386/locore.S ${I386}/i386/support.S ${I386}/i386/vector.S \
-			${I386}/i386/icu.S 
+MD_SFILES=	${I386}/i386/locore.S ${I386}/i386/support.S ${I386}/isa/vector.S \
+			${I386}/isa/icu.S 
 
 locore.o: ${I386}/i386/locore.S assym.h
 	${NORMAL_S}

@@ -7,26 +7,26 @@ _BSD_LOADER_MK_=1
 .include <bsd.own.mk>
 
 # Directories
-BOOTSTAND?=			${KERNSRCDIR}/stand
-BOOTSRC?=			${KERNSRCDIR}/stand/boot
-LIBKERN?= 			${KERNSRCDIR}/lib/libkern
-LIBSA?=				${KERNSRCDIR}/lib/libsa
+BOOTSTAND?=					${KERNSRCDIR}/stand
+BOOTSRC?=					${KERNSRCDIR}/stand/boot
+LIBKERN?= 					${KERNSRCDIR}/lib/libkern
+LIBSA?=						${KERNSRCDIR}/lib/libsa
 
-#EFISRC=			${BOOTSRC}/efi
-#EFIINC=			${EFISRC}/include
-#EFIINCMD=			${EFIINC}/${MACHINE}
-DLOADER=			${BOOTSRC}/dloader
-LDRSRC=				${BOOTSRC}/common
-#UBOOTSRC=			${BOOTSRC}/uboot
-LIBCSRC=			/lib/libc
+#EFISRC=					${BOOTSRC}/efi
+#EFIINC=					${EFISRC}/include
+#EFIINCMD=					${EFIINC}/${MACHINE}
+DLOADER=					${BOOTSRC}/dloader
+LDRSRC=						${BOOTSRC}/common
+#UBOOTSRC=					${BOOTSRC}/uboot
+LIBCSRC=					/lib/libc
 
-BOOTOBJ=			${BOOTSTAND}
+BOOTOBJ=					${BOOTSTAND}
 
 # BINDIR is where we install
-BINDIR?=			/boot
+BINDIR?=					/boot
 
 # Machine support
-LOADER_MACHINE?=		${MACHINE}
+LOADER_MACHINE?=			${MACHINE}
 LOADER_MACHINE_ARCH?=		${MACHINE_ARCH}
 
 # Filesystem support
@@ -41,11 +41,6 @@ LOADER_MBR_SUPPORT?=		yes
 
 # Network support
 LOADER_NET_SUPPORT?=		no
-
-# Enable following
-HAVE_BCACHE?=				yes
-HAVE_PNP?=					yes
-HAVE_ISABUS?=				yes
 
 # Standard options:
 # Options used when building standalone components

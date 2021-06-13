@@ -42,8 +42,17 @@
 #define	VRS_SYM		"_version"
 #define	VRS_KEY		"VERSION"
 
+/*
+ * Flag for kvm_open*() to disable opening of kernel files - used
+ * by programs that use only sysctl() function to access kernel
+ * information.
+ */
+#define KVM_NO_FILES	((int)0x80000000)
+
 #include <nlist.h>
 #include <sys/cdefs.h>
+#include <sys/types.h>
+#include <stdbool.h>
 #include <stdio.h>
 
 __BEGIN_DECLS

@@ -649,6 +649,39 @@ MK${var}:=	yes
 .endfor
 
 #
+# PIE is enabled on many platforms by default.
+#
+# Coverity does not like PIE
+.if !defined(COVERITY_TOP_CONFIG) && \
+    (${MACHINE_ARCH} == "i386" || \
+    ${MACHINE_ARCH} == "x86_64" || \
+    ${MACHINE_CPU} == "arm" || \
+    ${MACHINE_CPU} == "m68k" || \
+    ${MACHINE_CPU} == "mips" || \
+    ${MACHINE_CPU} == "sh3" || \
+    ${MACHINE} == "sparc64")
+MKPIE?=		yes
+.else
+MKPIE?=		no
+.endif
+
+#
+# RELRO is enabled on i386 and amd64 by default
+#
+.if ${MACHINE_ARCH} == "i386" || \
+    ${MACHINE_ARCH} == "x86_64"
+MKRELRO?=	partial
+.else
+MKRELRO?=	no
+.endif
+
+.if ${MACHINE_ARCH} == "x86_64" || ${MACHINE_ARCH} == "i386"
+MKSTATICPIE?=	yes
+.else
+MKSTATICPIE?=	no
+.endif
+
+#
 # MK* options which default to "yes".
 #
 .for var in 					\
@@ -659,8 +692,8 @@ MK${var}:=	yes
 	HTML 					\
 	IEEEFP INET6 INFO 			\
 	KERBEROS KERBEROS4 			\
-	LIBSTDCXX LINKLIB LINT 			\
-	MAN MANDOC 				\
+	LIBSTDCXX LINKLIB 			\
+	MAN MANDOC MAKEMANDB			\
 	NLS NPF 				\
 	OBJ 					\
 	PIC PICINSTALL PICLIB POSTFIX PROFILE 	\
@@ -683,11 +716,29 @@ MK${var}?=	yes
 	MANZ 					\
 	OBJDIRS 				\
 	PCC PICINSTALL				\
-	REPRO					\
+	REPRO							\
 	SOFTFLOAT STRIPIDENT 			\
 	UNPRIVED UPDATE
 MK${var}?=	no
 .endfor
+
+#
+# MKGCCCMDS is only valid if we are building GCC so make it dependent on that.
+#
+_MKVARS.yes += MKGCCCMDS
+MKGCCCMDS?=	${MKGCC}
+
+#
+# Sanitizers, only "address" and "undefined" are supported by gcc
+#
+MKSANITIZER?=		no
+USE_SANITIZER?=		address
+
+#
+# Sanitizers implemented in libc, only "undefined" is supported
+#
+MKLIBCSANITIZER?=	no
+USE_LIBCSANITIZER?=	undefined
 
 #
 # Force some options off if their dependencies are off.
@@ -730,6 +781,7 @@ MKNLS:=		no
 .endif
 
 _NEEDS_LIBCXX.i386=		yes
+_NEEDS_LIBCXX.x86_64=	yes
 
 .if ${MKLLVM} == "yes" && ${_NEEDS_LIBCXX.${MACHINE_ARCH}:Uno} == "yes"
 MKLIBCXX:=	yes

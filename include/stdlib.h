@@ -43,8 +43,10 @@
 #ifndef _STDLIB_H_
 #define _STDLIB_H_
 
-#include <machine/ansi.h>
 #include <sys/cdefs.h>
+#include <sys/types.h>
+
+#include <machine/ansi.h>
 
 #ifdef	_BSD_SIZE_T_
 typedef	_BSD_SIZE_T_	size_t;
@@ -56,7 +58,7 @@ typedef	_BSD_WCHAR_T_	wchar_t;
 #undef	_BSD_WCHAR_T_
 #endif
 
-#ifdef	notyet
+
 typedef struct {
 	int quot;		/* quotient */
 	int rem;		/* remainder */
@@ -66,16 +68,28 @@ typedef struct {
 	long quot;		/* quotient */
 	long rem;		/* remainder */
 } ldiv_t;
+
+#if !defined(_ANSI_SOURCE) && (defined(_ISOC99_SOURCE))
+typedef struct {
+	/* LONGLONG */
+	long long int quot;	/* quotient */
+	/* LONGLONG */
+	long long int rem;	/* remainder */
+} lldiv_t;
 #endif
 
-#ifndef NULL
-#define	NULL	0
-#endif
+#include <sys/null.h>
 
 #define	EXIT_FAILURE	1
 #define	EXIT_SUCCESS	0
 
-#define	RAND_MAX	0x7fff
+#define	RAND_MAX		0x7fff
+
+
+extern size_t 		__mb_cur_max;
+#define	MB_CUR_MAX	__mb_cur_max
+
+__BEGIN_DECLS
 
 void			abort();
 int				abs();
@@ -123,20 +137,19 @@ int		 		mergesort (void *, size_t, size_t, int (*)(const void *, const void *));
 int	 			radixsort (const unsigned char **, int, const unsigned char *, unsigned);
 int	 			sradixsort (const unsigned char **, int, const unsigned char *, unsigned);
 
-extern char *optarg;			/* getopt(3) external variables */
+extern char *optarg;					/* getopt(3) external variables */
 extern int opterr, optind, optopt;
-int				getopt();
+int					getopt();
 
-extern char *suboptarg;			/* getsubopt(3) external variable */
-int				getsubopt();
+extern char 		*suboptarg;			/* getsubopt(3) external variable */
+int					getsubopt();
 
-long			random();
-char			*setstate();
-void			srandom();
-void			unsetenv();
+long				random();
+char				*setstate();
+void				srandom();
+void				unsetenv();
 
-long long	 	strtoq (const char *, char **, int);
-unsigned long long
-				strtouq (const char *, char **, int);
-
+long long	 		strtoq (const char *, char **, int);
+unsigned long long 	strtouq (const char *, char **, int);
+__END_DECLS
 #endif /* _STDLIB_H_ */

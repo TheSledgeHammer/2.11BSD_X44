@@ -17,6 +17,10 @@
  *	@(#)pwd.h	4.3 (Berkeley) 2/22/89
  */
 
+#ifndef _PWD_H_
+#define	_PWD_H_
+
+#include <sys/cdefs.h>
 #include <sys/types.h>
 
 #define	_PATH_PASSWD		"/etc/passwd"
@@ -40,8 +44,9 @@ struct passwd {
 	long	pw_expire;			/* account expiration */
 };
 
-#include <sys/cdefs.h>
-
 struct passwd *getpwent(), *getpwuid(), *getpwnam();
 void endpwent(), setpwfile();
 int setpassent(), setpwent();
+
+
+#endif /* !_PWD_H_ */

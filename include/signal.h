@@ -6,8 +6,15 @@
  *	@(#)signal.h	1.1 (2.10BSD Berkeley) 12/1/86
  */
 
+#ifndef _SIGNAL_H_
+#define _SIGNAL_H_
+
+#include <sys/cdefs.h>
+#include <sys/types.h>
+#include <sys/signal.h>
+
 #ifndef	NSIG
-#define NSIG	32
+#define NSIG				32
 
 #define	SIGHUP				1	/* hangup */
 #define	SIGINT				2	/* interrupt */
@@ -124,3 +131,5 @@ struct	sigcontext {
 #ifndef KERNEL
 extern long	sigblock(), sigsetmask();
 #endif
+
+#endif	/* !_SIGNAL_H_ */

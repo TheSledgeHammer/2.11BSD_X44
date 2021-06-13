@@ -6,11 +6,19 @@
  *
  *	@(#)resolv.h	5.5 (Berkeley) 5/12/87
  */
+#ifndef _RESOLV_H_
+#define	_RESOLV_H_
+
+#include <sys/param.h>
+#include <sys/types.h>
+#include <sys/cdefs.h>
+#include <sys/socket.h>
+#include <stdio.h>
+#include <arpa/nameser.h>
 
 /*
  * Global defines and variables for resolver stub.
  */
-
 
 #define	MAXNS				3		/* max # name servers we'll track */
 #define	MAXDNSRCH			3		/* max # default domain levels to try */
@@ -48,3 +56,5 @@ struct state {
 
 extern struct state _res;
 extern char *p_cdname(), *p_rr(), *p_type(), *p_class();
+
+#endif /* !_RESOLV_H_ */
