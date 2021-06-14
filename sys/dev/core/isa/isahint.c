@@ -37,12 +37,6 @@
 #include <core/isa/isareg.h>
 #include <core/isa/isavar.h>
 
-int 	isahint_match (struct device *, struct cfdata *, void *);
-void 	isahint_attach (struct device *, struct device *, void *);
-
-CFDRIVER_DECL(NULL, isahint, &isahint_cops, DV_DULL, sizeof(struct isa_softc));
-CFOPS_DECL(isahint, isahint_match, isahint_attach, NULL, NULL);
-
 int
 isahint_match(parent, cf, aux)
 	struct device *parent;
@@ -70,16 +64,15 @@ isahint_attach(parent, self, aux)
 	struct isa_softc *sc = (struct isa_softc *)self;
 	struct isa_attach_args *ia = (struct isa_attach_args *)aux;
 
-	if (config_hint_enabled(sc->sc_dev)) {
-		if (TAILQ_EMPTY(&sc->sc_subdevs)) {
-			isahint_register_device(ia, sc->sc_dev->dv_xname, sc->sc_dev->dv_unit);
-		} else {
-			register struct isa_subdev *is;
-			TAILQ_FOREACH(is, &sc->sc_subdevs, id_bchain) {
-				isahint_register_device(ia, is->id_dev->dv_xname, is->id_dev->dv_unit);
-			}
+	if (TAILQ_EMPTY(&sc->sc_subdevs)) {
+		isahint_register_device(ia, sc->sc_dev->dv_xname, sc->sc_dev->dv_unit);
+	} else {
+		register struct isa_subdev *is;
+		TAILQ_FOREACH(is, &sc->sc_subdevs, id_bchain) {
+			isahint_register_device(ia, is->id_dev->dv_xname, is->id_dev->dv_unit);
 		}
 	}
+
 }
 
 static void

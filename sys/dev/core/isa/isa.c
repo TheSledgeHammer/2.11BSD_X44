@@ -68,8 +68,13 @@ isamatch(parent, cf, aux)
 {
 	struct isabus_attach_args *iba = aux;
 
-	if (strcmp(iba->iba_busname, cf->cf_driver->cd_name))
+	if (strcmp(iba->iba_busname, cf->cf_driver->cd_name)) {
 		return (0);
+	}
+
+	if (isahint_match(parent, cf, aux) == 0) {
+		return (0);
+	}
 
 	/* XXX check other indicators */
 
@@ -125,6 +130,10 @@ isaattach(parent, self, aux)
 	isa_attach_subdevs(sc);
 
 	config_search(isasearch, self, NULL);
+
+	if (config_hint_enabled(sc->sc_dev)) {
+		isahint_attach(parent, self, aux);
+	}
 }
 
 void
