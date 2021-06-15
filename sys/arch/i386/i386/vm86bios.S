@@ -41,8 +41,8 @@
  * FreeBSD: see FreeBSD's i386/asmacros.h
  * Access per-CPU data. 
  */
-#define	PCPU(member)	%fs:PC_ ## member
-
+//#define	PCPU(member)	%fs:PC_ ## member
+#define	PCPU(member)	member
 #define	PCPU_ADDR(member, reg)						\
 		movl %fs:PC_PRVSPACE, reg ;					\
 		addl $PC_ ## member, reg
