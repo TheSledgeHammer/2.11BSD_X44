@@ -40,11 +40,14 @@
  */
 #include <sys/extent.h>
 #include <sys/malloc.h>
+#include <sys/fnv_hash.h>
 #include <devel/sys/malloctypes.h>
 #include <devel/vm/include/vm_slab.h>
 
 struct slablist 	slab_list;
 simple_lock_data_t	slab_list_lock;
+
+struct kbucketlist 	slab_kbuckets[MINBUCKET + 16];
 
 /*
  * Start of Routines for Slab Allocator using extents
@@ -60,9 +63,9 @@ slab_startup(start, end)
 	size_t 			size;
 	u_long			bsize;
 
-    CIRCLEQ_INIT(slab_list);
-
     simple_lock_init(&slab_list_lock, "slab_list_lock");
+
+    CIRCLEQ_INIT(slab_list);
 
     slab_count = 0;
 
@@ -306,4 +309,26 @@ slab_insert(slab, size, mtype, flags)
 	}
     simple_unlock(&slab_list_lock);
     slab_count++;
+}
+
+#define SLAB_BUCKET_HASH_COUNT (MINBUCKET + 16)
+
+long
+bucket_hash(bucket, size)
+	struct kmembuckets *bucket;
+	long size;
+{
+	int indx = BUCKETINDX(size);
+	Fnv32_t hash1 = fnv_32_buf(&bucket[indx], sizeof(&bucket[indx]), FNV1_32_INIT) % SLAB_BUCKET_HASH_COUNT;
+	Fnv32_t hash2 = (((unsigned long)bucket[indx])%SLAB_BUCKET_HASH_COUNT);
+	return (hash1^hash2);
+}
+
+slab_bucket(kbp, size)
+	struct kmembuckets kbp;
+	long size;
+{
+	register struct slab_kbucketlist *slabucket;
+
+	slabucket = &slab_kbuckets[bucket_hash(kbp, size)];
 }

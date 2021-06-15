@@ -29,6 +29,8 @@
 /* TODO:
  *	- slab caching
  *	- use of vm_pages and vm_segments
+ *		- provide direct access to pseudo-segments:
+ *		can then allocate from vmspace without referencing vmspace in the pseudo-segments
  *	- provide ability to use extents?
  *	- size: may need to change to a void *addr/size
  */

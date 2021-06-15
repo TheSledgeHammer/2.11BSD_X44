@@ -8,12 +8,13 @@
 
 #include <sys/extent.h>
 #include <sys/malloc.h>
+#include <sys/queue.h>
 #include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_text.h>
 
 struct txtlist      vm_text_list;
 simple_lock_data_t	vm_text_list_lock;
-
+struct vm_xstats 	*xstats;			/* cache statistics */
 /*
  * initialize text table (from vm_segment.c)
  */
@@ -33,7 +34,6 @@ vm_text_init(vm, segment, start, end, flags)
     TAILQ_INIT(&vm_text_list);
 
     sreg = vm_region_create(vm, segment, "vm_text", start, end, M_COREMAP, EX_WAITOK);
-
 }
 
 /*
@@ -44,7 +44,7 @@ vm_text_init(vm, segment, start, end, flags)
  * not available from core, a swap has to be done to get it back.
  */
 void
-vm_xalloc(vp)
+vm_xalloc(vp, vap)
 	register struct vnode *vp;
 {
 	register vm_text_t xp;
@@ -68,6 +68,34 @@ void
 vm_xfree()
 {
 	register vm_text_t xp;
+	register struct vnode *vp;
+	struct vattr *vattr;
+
+	if ((xp = u->u_procp->p_textp) == NULL) {
+		return;
+	}
+
+	xstats->xs_free++;
+
+	xlock(&vm_text_list_lock);
+	if (xp->x_count-- == 0) {
+		if ((xp->x_flag & XTRC) || vattr->va_nlink == 0) {
+			xp->x_flag &= ~XLOCK;
+			vm_xuntext(xp);
+			TAILQ_REMOVE(&vm_text_list, xp, x_list);
+		} else {
+			if (xp->x_flag & XWRIT) {
+				xstats->xs_free_cacheswap++;
+				xp->x_flag |= XUNUSED;
+			}
+			xstats->xs_free_cache++;
+		}
+	} else {
+		xp->x_ccount--;
+		xstats->xs_free_inuse++;
+	}
+	xunlock(&vm_text_list_lock);
+	//u->u_procp->p_textp = NULL;
 }
 
 /*
@@ -91,7 +119,87 @@ vm_xexpand(xp)
 	}
 	//swapout(u->u_procp, X_FREECORE, X_OLDSIZE, X_OLDSIZE);
 	xunlock(&vm_text_list_lock);
-	u->u_procp->p_flag |= SSWAP;
+	//u->u_procp->p_flag |= SSWAP;
 	swtch();
 	/* NOTREACHED */
+}
+
+/*
+ * Decrement the in-core usage count of a shared text segment.
+ * When it drops to zero, free the core space.  Write the swap
+ * copy of the text if as yet unwritten.
+ */
+void
+vm_xccdec(xp)
+	register vm_text_t xp;
+{
+	if (!xp->x_ccount) {
+		return;
+	}
+	xlock(&vm_text_list_lock);
+	if (--xp->x_ccount == 0) {
+		if (xp->x_flag & XWRIT) {
+			//swap(xp->x_daddr, xp->x_caddr, xp->x_size, B_WRITE);
+			xp->x_flag &= ~XWRIT;
+		}
+		rmfree(coremap, xp->x_size, xp->x_caddr);
+		xp->x_caddr = NULL;
+	}
+	xunlock(&vm_text_list_lock);
+}
+
+/*
+ * Remove text image from the text table.
+ * the use count must be zero.
+ */
+void
+vm_xuntext(xp)
+	register vm_text_t xp;
+{
+	register struct vnode *vp;
+
+	xlock(&vm_text_list_lock);
+	if (xp->x_count == 0) {
+		vp = xp->x_vptr;
+		xp->x_vptr = NULL;
+		rmfree(swapmap, ctod(xp->x_size), xp->x_daddr);
+		if (xp->x_caddr) {
+			rmfree(coremap, xp->x_size, xp->x_caddr);
+		}
+		vp->v_flag &= ~VTEXT;
+		vp->v_text = NULL;
+		vrele(vp);
+	}
+	xunlock(&vm_text_list_lock);
+}
+
+/*
+ * Free up "size" core; if swap copy of text has not yet been written,
+ * do so.
+ */
+void
+vm_xuncore(size)
+	register size_t size;
+{
+	register vm_text_t xp;
+
+    TAILQ_FOREACH(xp, &vm_text_list, x_list) {
+    	if(!xp->x_vptr) {
+    		continue;
+    	}
+		xlock(&vm_text_list_lock);
+		if (!xp->x_ccount && xp->x_caddr) {
+			if (xp->x_flag & XWRIT) {
+			//	swap(xp->x_daddr, xp->x_caddr, xp->x_size, B_WRITE);
+				xp->x_flag &= ~XWRIT;
+			}
+			rmfree(coremap, xp->x_size, xp->x_caddr);
+			xp->x_caddr = NULL;
+			if (xp->x_size >= size) {
+				xunlock(&vm_text_list_lock);
+				return;
+			}
+		}
+		xunlock(&vm_text_list_lock);
+	}
 }

@@ -122,8 +122,9 @@ malloc(size, type, flags)
 #endif
 #ifdef KMEMSTATS
 	register struct kmemstats *ksp = &kmemstats[type];
-	if (((unsigned long) type) > M_LAST)
+	if (((unsigned long) type) > M_LAST) {
 		panic("malloc - bogus type");
+	}
 #endif
 	indx = BUCKETINDX(size);
 	kbp = &bucket[indx];

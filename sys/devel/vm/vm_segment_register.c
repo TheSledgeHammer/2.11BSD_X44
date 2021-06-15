@@ -40,6 +40,12 @@
 #include <devel/vm/include/vm_param.h>
 
 /*
+ * use a deferred startup of pseudo segments
+ * - setup pseudo segments during vmspace allocation (vm_map)
+ * - Initialize pseudo segments in vm_segment
+ */
+
+/*
  * Process Segmentation:
  * Order of Change:
  * Process/Kernel:

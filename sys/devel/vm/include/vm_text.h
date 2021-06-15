@@ -1,8 +1,9 @@
 /*
- * vm_text.h
+ * Copyright (c) 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  *
- *  Created on: 15 Jun 2021
- *      Author: marti
+ *	@(#)text.h	1.2 (2.11BSD GTE) 1/19/95
  */
 
 #ifndef _VM_TEXT_H_
@@ -28,23 +29,20 @@ struct vm_text {
     u_char	                x_ccount;	/* number of loaded references */
     u_char	                x_flag;		/* traced, written flags */
     char	                dummy;		/* room for one more */
-
-    segr_text_t             *x_segtxt;
-    struct extent           *x_extent;
 };
 
-#define	XTRC		0x01		/* Text may be written, exclusive use */
-#define	XWRIT		0x02		/* Text written into, must swap out */
-#define	XLOAD		0x04		/* Currently being read from file */
-#define	XLOCK		0x08		/* Being swapped in or out */
-#define	XWANT		0x10		/* Wanted for swapping */
-#define	XPAGI		0x20		/* Page in on demand from inode */
-#define	XUNUSED		0x40		/* unused since swapped out for cache */
+#define	XTRC				0x01		/* Text may be written, exclusive use */
+#define	XWRIT				0x02		/* Text written into, must swap out */
+#define	XLOAD				0x04		/* Currently being read from file */
+#define	XLOCK				0x08		/* Being swapped in or out */
+#define	XWANT				0x10		/* Wanted for swapping */
+#define	XPAGI				0x20		/* Page in on demand from inode */
+#define	XUNUSED				0x40		/* unused since swapped out for cache */
 
 /* arguments to xswap: */
-#define	X_OLDSIZE	(-1)		/* the old size is the same as current */
-#define	X_DONTFREE	0	    	/* save core image (for parent in newproc) */
-#define	X_FREECORE	1	    	/* free core space after swap */
+#define	X_OLDSIZE			(-1)		/* the old size is the same as current */
+#define	X_DONTFREE			0	    	/* save core image (for parent in newproc) */
+#define	X_FREECORE			1	    	/* free core space after swap */
 
 /*
  * Text table statistics
