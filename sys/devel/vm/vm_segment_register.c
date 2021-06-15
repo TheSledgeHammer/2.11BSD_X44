@@ -34,8 +34,10 @@
  */
 
 #include <sys/systm.h>
+#include <sys/extent.h>
 #include <sys/map.h>
 #include <devel/vm/include/vm_segment.h>
+#include <devel/vm/include/vm_param.h>
 
 /*
  * Process Segmentation:
@@ -270,4 +272,142 @@ choverlay(flags)
 	int flags;
 {
 
+}
+
+/*
+ * WORK IN PROGRESS:
+ * Design:
+ * Create a segment allocator using the above methods with the methods below,
+ * in conjunction with the revised vm_text methods. (see vm_text.c/.h)
+ * - The allocation structures are setup with rmap while each segment is backed by
+ * an extent allocator.
+ * - With each text segment being managed via vm_text
+ */
+
+vm_sregion_t *
+vm_region_create(vm, seg, name, start, end, mtype, flags)
+	struct vmspace *vm;
+	vm_segment_t seg;
+	vm_size_t start, end;
+	int mtype, flags;
+{
+	register vm_sregion_t *sregion;
+
+	vmspace_alloc_vm_segment_register(vm, seg, flags);
+
+	sregion = seg->sg_register;
+
+	sregion->sp_extent = extent_create(name, start, end, mtype, 0, 0, flags);
+
+	return (sregion);
+}
+
+void
+vm_region_alloc(sregion, start, size, segtype, flags)
+	vm_sregion_t 	*sregion;
+	vm_size_t 		start;
+	long 			size;
+	int segtype, flags;
+{
+	struct extent ex;
+	int error;
+
+	ex = sregion->sp_extent;
+
+	switch(segtype) {
+	case SEG_DATA:
+		segr_data_t *data = sregion->sp_data;
+		if (data != NULL && segtype == SEG_DATA) {
+			error = extent_alloc_region(ex, start, size, flags);
+			if(error == 0) {
+				printf("vm_region_alloc: data region allocated: start %l size %s", start, size);
+			} else {
+				goto out;
+			}
+		}
+		break;
+	case SEG_STACK:
+		segr_stack_t *stack = sregion->sp_stack;
+		if (stack != NULL && segtype == SEG_STACK) {
+			error = extent_alloc_region(ex, start, size, flags);
+			if(error == 0) {
+				printf("vm_region_alloc: stack region allocated: start %l size %s", start, size);
+			} else {
+				goto out;
+			}
+		}
+		break;
+	case SEG_TEXT:
+		segr_text_t *text = sregion->sp_text;
+		if (text != NULL && segtype == SEG_TEXT) {
+			error = extent_alloc_region(ex, start, size, flags);
+			if(error == 0) {
+				printf("vm_region_alloc: text region allocated: start %l size %s", start, size);
+			} else {
+				goto out;
+			}
+		}
+		break;
+	}
+
+out:
+	extent_free(ex, start, size, flags);
+	panic("vm_region_alloc: region unable to be allocated, extent freed");
+}
+
+void
+vm_region_suballoc(sregion, size, boundary, flags)
+	vm_sregion_t 	*sregion;
+	long 			size;
+	u_long 			boundary;
+	int 			flags;
+{
+	struct extent ex;
+	int error;
+
+	ex = sregion->sp_extent;
+
+	error = extent_alloc(ex, size, SEGMENT_SIZE, boundary, flags, sregion->sp_sregions);
+
+	if(error == 0) {
+		printf("vm_region_suballoc: sub_region allocated: size %l", size);
+	} else {
+		panic("vm_region_suballoc: sub_region unable to be allocated");
+	}
+}
+
+void
+vm_region_free(sregion, start, size, flags)
+	vm_sregion_t 	*sregion;
+	vm_size_t 		start;
+	long 			size;
+	int 			flags;
+{
+	struct extent ex;
+	int error;
+
+	if(sregion != NULL) {
+		ex = sregion->sp_extent;
+		error = extent_free(ex, start, size, flags);
+		if(error == 0) {
+			printf("vm_region_free: region freed: start %l size %s", start, size);
+		} else {
+			printf("vm_region_free: region could not be freed");
+		}
+	} else {
+		panic("vm_region_free: no segment regions found");
+	}
+}
+
+void
+vm_region_destroy(sregion)
+	vm_sregion_t 	*sregion;
+{
+	struct extent ex;
+
+	ex = sregion->sp_extent;
+	if(ex != NULL) {
+		extent_destroy(ex);
+	}
+	printf("vm_region_destroy: no extent to destroy");
 }

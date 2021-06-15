@@ -29,8 +29,14 @@
 #ifndef _VM_STACK_H_
 #define _VM_STACK_H_
 
+struct vm_segment_stack {
+
+};
+
 /* pseudo segment registers */
 union segment_register {
+	struct extent 			*sp_extent;
+	long					sp_sregions;
 	struct segr_data {
 		segsz_t 			sp_dsize;
 		caddr_t				sp_daddr;

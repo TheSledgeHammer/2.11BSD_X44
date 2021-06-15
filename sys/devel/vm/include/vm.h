@@ -60,6 +60,12 @@ typedef struct vm_object 		*vm_object_t;
 struct vm_segment;
 typedef struct vm_segment 		*vm_segment_t;
 
+struct vm_text;
+typedef struct vm_text 			*vm_text_t;
+
+union segment_register;
+typedef union segment_register	vm_sregion_t;
+
 struct vm_page;
 typedef struct vm_page  		*vm_page_t;
 
@@ -98,6 +104,7 @@ typedef struct vm_aref 			*vm_aref_t;
 #include <devel/vm/include/vm_object.h>
 #include <devel/vm/include/vm_param.h>
 #include <devel/vm/include/vm_segment.h>		/* Work in Progress */
+#include <devel/vm/include/vm_text.h>			/* Work in Progress */
 #include <devel/vm/ovl/include/ovl.h>			/* Work in Progress */
 
 #include <devel/vm/uvm/vm_aobject.h>			/* Work in Progress */
