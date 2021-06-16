@@ -62,10 +62,10 @@ struct vm_segment {
 
 	caddr_t						sg_laddr;				/* segment logical address */
 
-	union segment_register		sg_register;			/* pointer to pseudo segment register */
-#define sg_data 				sg_register.sp_data		/* pseudo data segment */
-#define sg_stack 				sg_register.sp_stack	/* pseudo stack segment */
-#define sg_text 				sg_register.sp_text		/* pseudo text segment */
+	vm_psegment_t				sg_register;			/* pointer to pseudo segment register */
+#define sg_data 				sg_register.ps_data		/* pseudo data segment */
+#define sg_stack 				sg_register.ps_stack	/* pseudo stack segment */
+#define sg_text 				sg_register.ps_text		/* pseudo text segment */
 
 	int							sg_type;				/* see below (segment register type) */
 };

@@ -39,10 +39,13 @@
 #include <lib/libsa/stand.h>
 
 #include "bootstrap.h"
-
+/*
 static int	file_load(char *filename, vaddr_t dest, struct preloaded_file **result);
 static int	file_havepath(const char *name);
 static void file_insert_tail(struct preloaded_file *mp);
+static void	file_remove(struct preloaded_file *fp);
+static char *file_lookup(const char *path, const char *name, int namelen, char **extlist);
+*/
 
 /* load address should be tweaked by first module loaded (kernel) */
 static vaddr_t	loadaddr = 0;
@@ -208,6 +211,97 @@ file_loadkernel(char *filename, int argc, char *argv[])
     return (err);
 }
 
+#define VECTX_HANDLE(fd) fd
+
+/*
+ * We've been asked to load (fname) as (type), so just suck it in,
+ * no arguments or anything.
+ */
+struct preloaded_file *
+file_loadraw(const char *fname, char *type, int insert)
+{
+	struct preloaded_file	*fp;
+	char					*name;
+	int						fd, got;
+	vm_offset_t				laddr;
+
+	/* We can't load first */
+	if ((file_findfile(NULL, NULL)) == NULL) {
+		command_errmsg = "can't load file before kernel";
+		return (NULL);
+	}
+
+	/* locate the file on the load path */
+	name = file_search(fname, NULL);
+	if (name == NULL) {
+		snprintf(command_errbuf, sizeof(command_errbuf), "can't find '%s'",
+				fname);
+		return (NULL);
+	}
+
+	if ((fd = open(name, O_RDONLY)) < 0) {
+		snprintf(command_errbuf, sizeof(command_errbuf), "can't open '%s': %s",
+				name, strerror(errno));
+		free(name);
+		return (NULL);
+	}
+	if (archsw.arch_loadaddr != NULL)
+		loadaddr = archsw.arch_loadaddr(LOAD_RAW, name, loadaddr);
+
+	printf("%s ", name);
+
+	laddr = loadaddr;
+	for (;;) {
+		/* read in 4k chunks; size is not really important */
+		got = archsw.arch_readin(VECTX_HANDLE(fd), laddr, 4096);
+		if (got == 0) /* end of file */
+			break;
+		if (got < 0) { /* error */
+			snprintf(command_errbuf, sizeof(command_errbuf),
+					"error reading '%s': %s", name, strerror(errno));
+			free(name);
+			close(fd);
+			return (NULL);
+		}
+		laddr += got;
+	}
+
+	printf("size=%#jx\n", (uintmax_t) (laddr - loadaddr));
+
+	/* Looks OK so far; create & populate control structure */
+	fp = file_alloc();
+	if (fp == NULL) {
+		snprintf(command_errbuf, sizeof(command_errbuf), "no memory to load %s",
+				name);
+		free(name);
+		close(fd);
+		return (NULL);
+	}
+	fp->f_name = name;
+	fp->f_type = strdup(type);
+	fp->f_args = NULL;
+	fp->f_metadata = NULL;
+	fp->f_loader = -1;
+	fp->f_addr = loadaddr;
+	fp->f_size = laddr - loadaddr;
+
+	if (fp->f_type == NULL) {
+		snprintf(command_errbuf, sizeof(command_errbuf), "no memory to load %s",
+				name);
+		free(name);
+		close(fd);
+		return (NULL);
+	}
+	/* recognise space consumption */
+	loadaddr = laddr;
+
+	/* Add to the list of loaded files */
+	if (insert != 0)
+		file_insert_tail(fp);
+	close(fd);
+	return (fp);
+}
+
 /*
  * Find a file matching (name) and (type).
  * NULL may be passed as a wildcard to either.
@@ -288,4 +382,65 @@ file_insert_tail(struct preloaded_file *fp)
     		;
     	cm->f_next = fp;
     }
+}
+
+/*
+ * Make a copy of (size) bytes of data from (p), and associate them as
+ * metadata of (type) to the module (mp).
+ */
+void
+file_addmetadata(struct preloaded_file *fp, int type, size_t size, void *p)
+{
+	struct file_metadata	*md;
+
+	md = malloc(sizeof(struct file_metadata) - sizeof(md->md_data) + size);
+	if (md != NULL) {
+		md->md_size = size;
+		md->md_type = type;
+		bcopy(p, md->md_data, size);
+		md->md_next = fp->f_metadata;
+	}
+	fp->f_metadata = md;
+}
+
+/*
+ * Find a metadata object of (type) associated with the file (fp)
+ */
+struct file_metadata*
+file_findmetadata(struct preloaded_file *fp, int type) {
+	struct file_metadata *md;
+
+	for (md = fp->f_metadata; md != NULL; md = md->md_next) {
+		if (md->md_type == type) {
+			break;
+		}
+	}
+	return (md);
+}
+
+/*
+ * Remove all metadata from the file.
+ */
+void file_removemetadata(struct preloaded_file *fp) {
+	struct file_metadata *md, *next;
+
+	for (md = fp->f_metadata; md != NULL; md = next) {
+		next = md->md_next;
+		free(md);
+	}
+	fp->f_metadata = NULL;
+}
+
+struct file_metadata*
+metadata_next(struct file_metadata *md, int type) {
+
+	if (md == NULL) {
+		return (NULL);
+	}
+	while ((md = md->md_next) != NULL) {
+		if (md->md_type == type) {
+			break;
+		}
+	}
+	return (md);
 }

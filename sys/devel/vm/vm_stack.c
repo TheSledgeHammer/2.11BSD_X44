@@ -36,7 +36,10 @@
 #include <sys/systm.h>
 #include <sys/extent.h>
 #include <sys/map.h>
+#include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_segment.h>
+#include <devel/vm/include/vm_stack.h>
+#include <devel/vm/include/vm_text.h>
 #include <devel/vm/include/vm_param.h>
 
 /*
@@ -64,27 +67,37 @@
 
 /* allocate segment registers according to vmspace */
 void
-vmspace_alloc_vm_segment_register(vm, segment, flags)
+vmspace_segmentation_alloc(vm, flags)
 	struct vmspace 	*vm;
-	vm_segment_t 	segment;
 	int 			flags;
 {
-	RMALLOC3(segment->sg_register, union segment_register *, segment->sg_data, segment->sg_stack, segment->sg_text, sizeof(union segment_register *)); /* XXX */
-	DATA_SEGMENT(segment->sg_data, vm->vm_dsize, vm->vm_daddr, flags);
-	STACK_SEGMENT(segment->sg_stack, vm->vm_ssize, vm->vm_saddr, flags);
-	TEXT_SEGMENT(segment->sg_text, vm->vm_tsize, vm->vm_taddr, flags);
-	segment->sg_flags = flags;
+	register vm_psegment_t *pseg;
+
+	pseg = vm->vm_psegment;
+
+	RMALLOC3(pseg, union vm_pseudo_segment *, pseg->ps_data, pseg->ps_stack, pseg->ps_text, sizeof(union vm_pseudo_segment *));
+	RMALLOC(pseg->ps_data, vm_data_t, vm->vm_data);
+	RMALLOC(pseg->ps_stack, vm_stack_t, vm->vm_stack);
+	RMALLOC(pseg->ps_text, vm_text_t, vm->vm_text);
+
+	DATA_SEGMENT(pseg->ps_data, vm->vm_dsize, vm->vm_daddr, flags);
+	STACK_SEGMENT(pseg->ps_stack, vm->vm_ssize, vm->vm_saddr, flags);
+	TEXT_SEGMENT(pseg->ps_text, vm->vm_tsize, vm->vm_taddr, flags);
+	pseg->ps_flags = flags;
 }
 
 /* free vm_segment registers from vmspace */
 void
-vmspace_free_vm_segment_register(vm, segment)
+vmspace_segmentation_free(vm)
 	struct vmspace 	*vm;
-	vm_segment_t 	segment;
 {
-	RMFREE(segment->sg_data, segment->sg_data.sp_dsize, segment->sg_data.sp_daddr);
-	RMFREE(segment->sg_stack, segment->sg_stack.sp_ssize, segment->sg_stack.sp_saddr);
-	RMFREE(segment->sg_text, segment->sg_text.sp_tsize, segment->sg_text.sp_taddr);
+	register vm_psegment_t *pseg;
+
+	pseg = vm->vm_psegment;
+
+	RMFREE(pseg->ps_data, pseg->ps_data.sp_dsize, pseg->ps_data.sp_daddr);
+	RMFREE(pseg->ps_stack, pseg->ps_stack.sp_ssize, pseg->ps_stack.sp_saddr);
+	RMFREE(pseg->ps_text, pseg->ps_text.sp_tsize, pseg->ps_text.sp_taddr);
 }
 
 /* set vm_segment register regions */
@@ -225,15 +238,16 @@ sbrk(p, uap, retval)
 int
 estabur(seg, data, stack, text, sep, flags)
 	vm_segment_t 	seg;
-	segr_data_t 	*data;
-	segr_stack_t 	*stack;
-	segr_text_t 	*text;
+	vm_data_t 		data;
+	vm_stack_t 		stack;
+	vm_text_t 		text;
 	int 			sep, flags;
 {
 
 	if(seg == NULL || data == NULL || stack == NULL || text == NULL) {
 		return (1);
 	}
+	data->sp_dsize;
 	if(!sep && (seg->sg_type = SEG_DATA | SEG_STACK | SEG_TEXT)) {
 		if(flags == SEG_RO && seg->sg_flags == flags) {
 			vm_segment_set_segment_register(seg, text->sp_tsize, text->sp_taddr, SEG_RO);
@@ -290,27 +304,27 @@ choverlay(flags)
  * - With each text segment being managed via vm_text
  */
 
-vm_sregion_t *
+vm_psegment_t *
 vm_region_create(vm, seg, name, start, end, mtype, flags)
 	struct vmspace *vm;
 	vm_segment_t seg;
 	vm_size_t start, end;
 	int mtype, flags;
 {
-	register vm_sregion_t *sregion;
+	register vm_psegment_t *sregion;
 
 	vmspace_alloc_vm_segment_register(vm, seg, flags);
 
 	sregion = seg->sg_register;
 
-	sregion->sp_extent = extent_create(name, start, end, mtype, 0, 0, flags);
+	sregion->ps_extent = extent_create(name, start, end, mtype, 0, 0, flags);
 
 	return (sregion);
 }
 
 void
 vm_region_alloc(sregion, start, size, segtype, flags)
-	vm_sregion_t 	*sregion;
+	vm_psegment_t 	*sregion;
 	vm_size_t 		start;
 	long 			size;
 	int segtype, flags;
@@ -318,11 +332,11 @@ vm_region_alloc(sregion, start, size, segtype, flags)
 	struct extent ex;
 	int error;
 
-	ex = sregion->sp_extent;
+	ex = sregion->ps_extent;
 
 	switch(segtype) {
 	case SEG_DATA:
-		segr_data_t *data = sregion->sp_data;
+		vm_data_t *data = sregion->ps_data;
 		if (data != NULL && segtype == SEG_DATA) {
 			error = extent_alloc_region(ex, start, size, flags);
 			if(error == 0) {
@@ -333,7 +347,7 @@ vm_region_alloc(sregion, start, size, segtype, flags)
 		}
 		break;
 	case SEG_STACK:
-		segr_stack_t *stack = sregion->sp_stack;
+		vm_stack_t *stack = sregion->ps_stack;
 		if (stack != NULL && segtype == SEG_STACK) {
 			error = extent_alloc_region(ex, start, size, flags);
 			if(error == 0) {
@@ -344,7 +358,7 @@ vm_region_alloc(sregion, start, size, segtype, flags)
 		}
 		break;
 	case SEG_TEXT:
-		segr_text_t *text = sregion->sp_text;
+		vm_text_t *text = sregion->ps_text;
 		if (text != NULL && segtype == SEG_TEXT) {
 			error = extent_alloc_region(ex, start, size, flags);
 			if(error == 0) {
@@ -363,7 +377,7 @@ out:
 
 void
 vm_region_suballoc(sregion, size, boundary, flags)
-	vm_sregion_t 	*sregion;
+	vm_psegment_t 	*sregion;
 	long 			size;
 	u_long 			boundary;
 	int 			flags;
@@ -371,9 +385,9 @@ vm_region_suballoc(sregion, size, boundary, flags)
 	struct extent ex;
 	int error;
 
-	ex = sregion->sp_extent;
+	ex = sregion->ps_extent;
 
-	error = extent_alloc(ex, size, SEGMENT_SIZE, boundary, flags, sregion->sp_sregions);
+	error = extent_alloc(ex, size, SEGMENT_SIZE, boundary, flags, sregion->ps_sregions);
 
 	if(error == 0) {
 		printf("vm_region_suballoc: sub_region allocated: size %l", size);
@@ -384,7 +398,7 @@ vm_region_suballoc(sregion, size, boundary, flags)
 
 void
 vm_region_free(sregion, start, size, flags)
-	vm_sregion_t 	*sregion;
+	vm_psegment_t 	*sregion;
 	vm_size_t 		start;
 	long 			size;
 	int 			flags;
@@ -393,7 +407,7 @@ vm_region_free(sregion, start, size, flags)
 	int error;
 
 	if(sregion != NULL) {
-		ex = sregion->sp_extent;
+		ex = sregion->ps_extent;
 		error = extent_free(ex, start, size, flags);
 		if(error == 0) {
 			printf("vm_region_free: region freed: start %l size %s", start, size);
@@ -407,11 +421,11 @@ vm_region_free(sregion, start, size, flags)
 
 void
 vm_region_destroy(sregion)
-	vm_sregion_t 	*sregion;
+	vm_psegment_t 	*sregion;
 {
 	struct extent ex;
 
-	ex = sregion->sp_extent;
+	ex = sregion->ps_extent;
 	if(ex != NULL) {
 		extent_destroy(ex);
 	}

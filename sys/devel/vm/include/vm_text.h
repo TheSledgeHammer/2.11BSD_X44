@@ -29,6 +29,13 @@ struct vm_text {
     u_char	                x_ccount;	/* number of loaded references */
     u_char	                x_flag;		/* traced, written flags */
     char	                dummy;		/* room for one more */
+
+
+    vm_offset_t         	*sp_tstart;
+    vm_offset_t         	*sp_tend;
+	segsz_t 				sp_tsize;
+	caddr_t					sp_taddr;
+    int 					sp_tflag;
 };
 
 #define	XTRC				0x01		/* Text may be written, exclusive use */

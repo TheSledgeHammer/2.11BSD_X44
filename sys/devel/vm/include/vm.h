@@ -60,11 +60,17 @@ typedef struct vm_object 		*vm_object_t;
 struct vm_segment;
 typedef struct vm_segment 		*vm_segment_t;
 
+union vm_pseudo_segment;
+typedef union vm_pseudo_segment	vm_psegment_t;
+
+struct vm_data;
+typedef struct vm_data  		*vm_data_t;
+
+struct vm_stack;
+typedef struct vm_stack  		*vm_stack_t;
+
 struct vm_text;
 typedef struct vm_text 			*vm_text_t;
-
-union segment_register;
-typedef union segment_register	vm_sregion_t;
 
 struct vm_page;
 typedef struct vm_page  		*vm_page_t;
@@ -105,6 +111,7 @@ typedef struct vm_aref 			*vm_aref_t;
 #include <devel/vm/include/vm_param.h>
 #include <devel/vm/include/vm_segment.h>		/* Work in Progress */
 #include <devel/vm/include/vm_text.h>			/* Work in Progress */
+#include <devel/vm/include/vm_stack.h>			/* Work in Progress */
 #include <devel/vm/ovl/include/ovl.h>			/* Work in Progress */
 
 #include <devel/vm/uvm/vm_aobject.h>			/* Work in Progress */
@@ -126,23 +133,28 @@ typedef struct lock			*lock_t;
  * Several fields are temporary (text, data stuff).
  */
 struct vmspace {
-	struct	vm_map 	 	vm_map;			/* VM address map */
-	struct	pmap 	 	vm_pmap;		/* private physical map */
+	struct	vm_map 	 		vm_map;				/* VM address map */
+	struct	pmap 	 		vm_pmap;			/* private physical map */
 
-	int				 	vm_refcnt;		/* number of references */
-	caddr_t			 	vm_shm;			/* SYS5 shared memory private data XXX */
+	int				 		vm_refcnt;			/* number of references */
+	caddr_t			 		vm_shm;				/* SYS5 shared memory private data XXX */
+
+	union vm_pseudo_segment	vm_psegment;			/* VM pseudo-segments */
+#define vm_data         	vm_psegment.ps_data		/* VM data segment */
+#define vm_stack        	vm_psegment.ps_stack 	/* VM stack segment */
+#define vm_text        		vm_psegment.ps_text 	/* VM text segment */
 
 /* we copy from vm_startcopy to the end of the structure on fork */
-#define vm_startcopy 	vm_rssize
-	segsz_t 		 	vm_rssize; 		/* current resident set size in pages */
-	segsz_t 		 	vm_swrss;		/* resident set size before last swap */
-	segsz_t 		 	vm_tsize;		/* text size (pages) XXX */
-	segsz_t 		 	vm_dsize;		/* data size (pages) XXX */
-	segsz_t 		 	vm_ssize;		/* stack size (pages) */
-	caddr_t			 	vm_taddr;		/* user virtual address of text XXX */
-	caddr_t			 	vm_daddr;		/* user virtual address of data XXX */
-	caddr_t			 	vm_saddr;		/* user virtual address of stack XXX */
-	caddr_t 		 	vm_minsaddr;	/* user VA at min stack growth */
-	caddr_t 		 	vm_maxsaddr;	/* user VA at max stack growth */
+#define vm_startcopy 		vm_rssize
+	segsz_t 		 		vm_rssize; 			/* current resident set size in pages */
+	segsz_t 		 		vm_swrss;			/* resident set size before last swap */
+#define vm_dsize			vm_data.sp_dsize	/* data size (pages) XXX */
+#define vm_ssize			vm_stack.sp_ssize	/* stack size (pages) */
+#define vm_tsize			vm_text.sp_tsize	/* text size (pages) XXX */
+#define vm_daddr			vm_data.sp_daddr	/* user virtual address of data XXX */
+#define vm_saddr			vm_stack.sp_saddr	/* user virtual address of stack XXX */
+#define vm_taddr			vm_text.sp_taddr	/* user virtual address of text XXX */
+	caddr_t 		 		vm_minsaddr;		/* user VA at min stack growth */
+	caddr_t 		 		vm_maxsaddr;		/* user VA at max stack growth */
 };
 #endif /* _VM_H */

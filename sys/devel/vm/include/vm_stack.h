@@ -29,45 +29,43 @@
 #ifndef _VM_STACK_H_
 #define _VM_STACK_H_
 
-struct vm_segment_stack {
+struct vm_extent {
+	struct extent 			*ve_extent;
+	long					ve_result;
+};
 
+/*
+ * Data structure
+ */
+struct vm_data {
+    vm_offset_t         *sp_dstart;
+    vm_offset_t         *sp_dend;
+    segsz_t 			sp_dsize;
+	caddr_t				sp_daddr;
+	int 				sp_dflag;
+};
+
+/*
+ * Stack structure
+ */
+struct vm_stack {
+    vm_offset_t         *sp_sstart;
+    vm_offset_t         *sp_send;
+	segsz_t 			sp_ssize;
+	caddr_t				sp_saddr;
+    int 				sp_sflag;
 };
 
 /* pseudo segment registers */
-union segment_register {
-	struct extent 			*sp_extent;
-	long					sp_sregions;
-	struct segr_data {
-		segsz_t 			sp_dsize;
-		caddr_t				sp_daddr;
-		int 				sp_dflag;
-	} sp_data;
-	struct segr_stack {
-		segsz_t 			sp_ssize;
-		caddr_t				sp_saddr;
-		int 				sp_sflag;
-	} sp_stack;
-	struct segr_text {
-		segsz_t 			sp_tsize;
-		caddr_t				sp_taddr;
-		int 				sp_tflag;
-	} sp_text;
-/*
-#define sg_daddr			sp_data.sp_daddr
-#define sg_dsize			sp_data.sp_dsize
-#define sg_dflag			sp_data.sp_dflag
-#define sg_saddr			sp_stack.sp_saddr
-#define sg_ssize			sp_stack.sp_ssize
-#define sg_sflag			sp_stack.sp_sflag
-#define sg_taddr			sp_text.sp_taddr
-#define sg_tsize			sp_text.sp_tsize
-#define sg_tflag			sp_text.sp_tflag
-	*/
-};
+union vm_pseudo_segment {
+    struct vm_data      ps_data;
+    struct vm_stack     ps_stack;
+    struct vm_text      ps_text;
+    int 				ps_flags;		/* flags */
 
-typedef struct segr_data  	segr_data_t;
-typedef struct segr_stack  	segr_stack_t;
-typedef struct segr_text  	segr_text_t;
+	struct extent 		*ps_extent;		/* segments extent allocator */
+	long				ps_sregions;	/* segments extent result */
+};
 
 /* pseudo-segment types */
 #define SEG_DATA			1		/* data segment */

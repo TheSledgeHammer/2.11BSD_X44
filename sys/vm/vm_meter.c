@@ -312,11 +312,10 @@ active:
 		}
 	}
 	simple_unlock(&vm_object_list_lock);
-	totalp->t_free = freemem;
 
 	totalp->t_vm += totalp->t_vmshr;
 	totalp->t_avm += totalp->t_avmshr;
 	totalp->t_rm += totalp->t_rmshr;
 	totalp->t_arm += totalp->t_armshr;
-	totalp->t_free = avefree;
+	totalp->t_free = freemem;
 }

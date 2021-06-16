@@ -217,7 +217,9 @@ struct preloaded_file 	*file_alloc(void);
 struct preloaded_file 	*file_findfile(char *name, char *type);
 struct preloaded_file 	*file_loadraw(const char *name, char *type, int insert);
 void 					file_discard(struct preloaded_file *fp);
-
+struct file_metadata	*file_findmetadata(struct preloaded_file *fp, int type);
+void 					file_addmetadata(struct preloaded_file *, int, size_t, void *);
+void 					file_removemetadata(struct preloaded_file *fp);
 /*
  * The intention of the architecture switch is to provide a convenient
  * encapsulation of the interface between the bootstrap MI and MD code.
