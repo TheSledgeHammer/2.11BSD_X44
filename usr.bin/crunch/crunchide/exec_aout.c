@@ -83,17 +83,17 @@ int check_aout(int inf, const char *filename)
      * check the header to make sure it's an a.out-format file.
      */
 
-    if(fstat(inf, &infstat) == -1)
-	return 0;
-    if(infstat.st_size < (ssize_t)sizeof eh)
-	return 0;
-    if(read(inf, &eh, sizeof eh) != sizeof eh)
-	return 0;
+	if (fstat(inf, &infstat) == -1)
+		return 0;
+	if (infstat.st_size < (ssize_t) sizeof eh)
+		return 0;
+	if (read(inf, &eh, sizeof eh) != sizeof eh)
+		return 0;
 
-    if(N_BADMAG(eh))
-	return 0;
+	if (N_BADMAG(eh))
+		return 0;
 
-    return 1;
+	return 1;
 }
 
 int hide_aout(int inf, const char *filename)
@@ -107,101 +107,101 @@ int hide_aout(int inf, const char *filename)
      * do some error checking.
      */
 
-    if(fstat(inf, &infstat) == -1) {
-	perror(filename);
-	return 1;
-    }
+	if (fstat(inf, &infstat) == -1) {
+		perror(filename);
+		return 1;
+	}
 
-    /*
-     * Read the entire file into memory.  XXX - Really, we only need to
-     * read the header and from TRELOFF to the end of the file.
-     */
+	/*
+	 * Read the entire file into memory.  XXX - Really, we only need to
+	 * read the header and from TRELOFF to the end of the file.
+	 */
 
-    if((aoutdata = (char *) malloc(infstat.st_size)) == NULL) {
-	fprintf(stderr, "%s: too big to read into memory\n", filename);
-	return 1;
-    }
+	if ((aoutdata = (char*) malloc(infstat.st_size)) == NULL) {
+		fprintf(stderr, "%s: too big to read into memory\n", filename);
+		return 1;
+	}
 
-    if((rc = read(inf, aoutdata, infstat.st_size)) < infstat.st_size) {
-	fprintf(stderr, "%s: read error: %s\n", filename,
-		rc == -1? strerror(errno) : "short read");
-	return 1;
-    }
+	if ((rc = read(inf, aoutdata, infstat.st_size)) < infstat.st_size) {
+		fprintf(stderr, "%s: read error: %s\n", filename,
+				rc == -1 ? strerror(errno) : "short read");
+		return 1;
+	}
 
-    /*
-     * Calculate offsets and sizes from the header.
-     */
+	/*
+	 * Calculate offsets and sizes from the header.
+	 */
 
-    hdrp = (struct exec *) aoutdata;
+	hdrp = (struct exec*) aoutdata;
 
 #ifdef __FreeBSD__
     textrel = (struct relocation_info *) (aoutdata + N_RELOFF(*hdrp));
     datarel = (struct relocation_info *) (aoutdata + N_RELOFF(*hdrp) +
 					  hdrp->a_trsize);
 #else
-    textrel = (struct relocation_info *) (aoutdata + N_TRELOFF(*hdrp));
-    datarel = (struct relocation_info *) (aoutdata + N_DRELOFF(*hdrp));
+	textrel = (struct relocation_info*) (aoutdata + N_TRELOFF(*hdrp));
+	datarel = (struct relocation_info*) (aoutdata + N_DRELOFF(*hdrp));
 #endif
-    symbase = (struct nlist *)		 (aoutdata + N_SYMOFF(*hdrp));
-    strbase = (char *) 			 (aoutdata + N_STROFF(*hdrp));
+	symbase = (struct nlist*) (aoutdata + N_SYMOFF(*hdrp));
+	strbase = (char*) (aoutdata + N_STROFF(*hdrp));
 
-    ntextrel = hdrp->a_trsize / sizeof(struct relocation_info);
-    ndatarel = hdrp->a_drsize / sizeof(struct relocation_info);
-    nsyms    = hdrp->a_syms   / sizeof(struct nlist);
+	ntextrel = hdrp->a_trsize / sizeof(struct relocation_info);
+	ndatarel = hdrp->a_drsize / sizeof(struct relocation_info);
+	nsyms = hdrp->a_syms / sizeof(struct nlist);
 
-    /*
-     * Zap the type field of all globally-defined symbols.  The linker will
-     * subsequently ignore these entries.  Don't zap any symbols in the
-     * keep list.
-     */
+	/*
+	 * Zap the type field of all globally-defined symbols.  The linker will
+	 * subsequently ignore these entries.  Don't zap any symbols in the
+	 * keep list.
+	 */
 
-    for(symp = symbase; symp < symbase + nsyms; symp++) {
-	if(!IS_GLOBAL_DEFINED(symp))		/* keep undefined syms */
-	    continue;
+	for (symp = symbase; symp < symbase + nsyms; symp++) {
+		if (!IS_GLOBAL_DEFINED(symp)) /* keep undefined syms */
+			continue;
 
-	/* keep (C) symbols which are on the keep list */
-	if(SYMSTR(symp)[0] == '_' && in_keep_list(SYMSTR(symp) + 1))
-	    continue;
+		/* keep (C) symbols which are on the keep list */
+		if (SYMSTR(symp)[0] == '_' && in_keep_list(SYMSTR(symp) + 1))
+			continue;
 
-	symp->n_type = 0;
-    }
+		symp->n_type = 0;
+	}
 
-    /*
-     * Check whether the relocation entries reference any symbols that we
-     * just zapped.  I don't know whether ld can handle this case, but I
-     * haven't encountered it yet.  These checks are here so that the program
-     * doesn't fail silently should such symbols be encountered.
-     */
+	/*
+	 * Check whether the relocation entries reference any symbols that we
+	 * just zapped.  I don't know whether ld can handle this case, but I
+	 * haven't encountered it yet.  These checks are here so that the program
+	 * doesn't fail silently should such symbols be encountered.
+	 */
 
-    for(relp = textrel; relp < textrel + ntextrel; relp++)
-	check_reloc(filename, relp);
-    for(relp = datarel; relp < datarel + ndatarel; relp++)
-	check_reloc(filename, relp);
+	for (relp = textrel; relp < textrel + ntextrel; relp++)
+		check_reloc(filename, relp);
+	for (relp = datarel; relp < datarel + ndatarel; relp++)
+		check_reloc(filename, relp);
 
-    /*
-     * Write the .o file back out to disk.  XXX - Really, we only need to
-     * write the symbol table entries back out.
-     */
-    lseek(inf, 0, SEEK_SET);
-    if((rc = write(inf, aoutdata, infstat.st_size)) < infstat.st_size) {
-	fprintf(stderr, "%s: write error: %s\n", filename,
-		rc == -1? strerror(errno) : "short write");
-	return 1;
-    }
+	/*
+	 * Write the .o file back out to disk.  XXX - Really, we only need to
+	 * write the symbol table entries back out.
+	 */
+	lseek(inf, 0, SEEK_SET);
+	if ((rc = write(inf, aoutdata, infstat.st_size)) < infstat.st_size) {
+		fprintf(stderr, "%s: write error: %s\n", filename,
+				rc == -1 ? strerror(errno) : "short write");
+		return 1;
+	}
 
-    return 0;
+	return 0;
 }
 
 
 static void check_reloc(const char *filename, struct relocation_info *relp)
 {
     /* bail out if we zapped a symbol that is needed */
-    if(IS_SYMBOL_RELOC(relp) && symbase[relp->r_symbolnum].n_type == 0) {
-	fprintf(stderr,
-		"%s: oops, have hanging relocation for %s: bailing out!\n",
-		filename, SYMSTR(&symbase[relp->r_symbolnum]));
-	exit(1);
-    }
+	if (IS_SYMBOL_RELOC(relp) && symbase[relp->r_symbolnum].n_type == 0) {
+		fprintf(stderr,
+				"%s: oops, have hanging relocation for %s: bailing out!\n",
+				filename, SYMSTR(&symbase[relp->r_symbolnum]));
+		exit(1);
+	}
 }
 
 #endif /* defined(NLIST_AOUT) */

@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #ifndef HAVE_NBTOOL_CONFIG_H
 /* These headers are required, but included from nbtool_config.h */
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -70,10 +71,9 @@ fgetln(FILE *fp, size_t *len)
 		if (c == '\n')
 			break;
 	}
-	return (*len = r) ? buf : NULL;
+	return (*len == r) ? buf : NULL;
 }
 #endif
-
 
 #ifdef TEST
 int

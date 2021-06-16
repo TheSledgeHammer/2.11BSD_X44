@@ -3,13 +3,17 @@ Folder			Version
 arch/i386/		4.4-Lite2
 compat-4.1/		2.11
 compat-4.3/		2.11
+compat-4.4/		4.4-Lite2
+compat-netbsd/	NetBSD
 compat-sys5/	2.11
 db/				4.4-Lite2
 dlfcn/			NetBSD
 gen/			2.11
 gmon/			4.4-Lite2
+hash/			NetBSD
 inet/			2.11
 locale/			4.4-Lite2
+md/				NetBSD
 net/			2.11
 ns/				2.11
 quad/			4.4-Lite2

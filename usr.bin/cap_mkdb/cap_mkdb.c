@@ -35,12 +35,12 @@
 
 #include <sys/cdefs.h>
 #if !defined(lint)
-__COPYRIGHT("@(#) Copyright (c) 1992, 1993\
- The Regents of the University of California.  All rights reserved.");
+/* __COPYRIGHT("@(#) Copyright (c) 1992, 1993\
+ The Regents of the University of California.  All rights reserved."); */
 #if 0
 static char sccsid[] = "@(#)cap_mkdb.c	8.2 (Berkeley) 4/27/95";
 #endif
-__RCSID("$NetBSD: cap_mkdb.c,v 1.29 2013/03/26 20:58:35 christos Exp $");
+//__RCSID("$NetBSD: cap_mkdb.c,v 1.29 2013/03/26 20:58:35 christos Exp $");
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -66,12 +66,12 @@ static int verbose;
 static char *capname, outfile[MAXPATHLEN];
 
 static HASHINFO openinfo = {
-	4096,		/* bsize */
-	16,		/* ffactor */
-	2048,		/* nelem */
+	4096,			/* bsize */
+	16,				/* ffactor */
+	2048,			/* nelem */
 	2048 * 1024,	/* cachesize */
-	NULL,		/* hash() */
-	0		/* lorder */
+	NULL,			/* hash() */
+	0				/* lorder */
 };
 
 /*
@@ -90,7 +90,7 @@ main(int argc, char *argv[])
 	capname = NULL;
 	byteorder = 0;
 	while ((c = getopt(argc, argv, "bf:lv")) != -1) {
-		switch(c) {
+		switch (c) {
 		case 'b':
 		case 'l':
 			if (byteorder != 0)
@@ -126,22 +126,22 @@ main(int argc, char *argv[])
 	 * The database file is the first argument if no name is specified.
 	 * Make arrangements to unlink it if exit badly.
 	 */
-	(void)snprintf(outfile, sizeof(outfile), "%s.db.tmp",
-	    capname ? capname : *argv);
+	(void) snprintf(outfile, sizeof(outfile), "%s.db.tmp",
+			capname ? capname : *argv);
 	if ((capname = strdup(outfile)) == NULL)
 		err(1, "strdup");
 	p = strrchr(outfile, '.');
 	assert(p != NULL);
 	*p = '\0';
-	(void)unlink(outfile);
-	if ((capdbp = dbopen(capname, O_CREAT | O_TRUNC | O_RDWR,
-	    DEFFILEMODE, DB_HASH, &openinfo)) == NULL)
+	(void) unlink(outfile);
+	if ((capdbp = dbopen(capname, O_CREAT | O_TRUNC | O_RDWR, DEFFILEMODE,
+			DB_HASH, &openinfo)) == NULL)
 		err(1, "%s", outfile);
 
 	if (atexit(dounlink))
 		err(1, "atexit");
 
-	db_build((void *)argv);
+	db_build((void*) argv);
 
 	if (capdbp->close(capdbp) < 0)
 		err(1, "%s", capname);
@@ -182,7 +182,7 @@ db_build(const char **ifiles)
 
 	data.data = NULL;
 	key.data = NULL;
-	for (reccnt = 0, bplen = 0; (st = cgetnext(&bp, ifiles)) > 0; free(bp)){
+	for (reccnt = 0, bplen = 0; (st = cgetnext(&bp, ifiles)) > 0; free(bp)) {
 
 		/*
 		 * Allocate enough memory to store record, terminating
@@ -190,8 +190,7 @@ db_build(const char **ifiles)
 		 */
 		len = strlen(bp);
 		if (bplen <= len + 2) {
-			if ((n = realloc(data.data,
-			    bplen + MAX(256, len + 2))) == NULL)
+			if ((n = realloc(data.data, bplen + MAX(256, len + 2))) == NULL)
 				err(1, "realloc");
 			data.data = n;
 			bplen += MAX(256, len + 2);
@@ -199,36 +198,35 @@ db_build(const char **ifiles)
 
 		/* Find the end of the name field. */
 		if ((p = strchr(bp, ':')) == NULL) {
-			warnx("no name field: %.*s", (int)(MIN(len, 20)), bp);
+			warnx("no name field: %.*s", (int) (MIN(len, 20)), bp);
 			continue;
 		}
 
 		/* First byte of stored record indicates status. */
-		switch(st) {
+		switch (st) {
 		case 1:
-			((char *)(data.data))[0] = RECOK;
+			((char*) (data.data))[0] = RECOK;
 			break;
 		case 2:
-			((char *)(data.data))[0] = TCERR;
-			warnx("Record not tc expanded: %.*s", (int)(p - bp),bp);
+			((char*) (data.data))[0] = TCERR;
+			warnx("Record not tc expanded: %.*s", (int) (p - bp), bp);
 			break;
 		}
 
 		/* Create the stored record. */
-		(void)memmove(&((u_char *)(data.data))[1], bp, len + 1);
+		(void) memmove(&((u_char*) (data.data))[1], bp, len + 1);
 		data.size = len + 2;
 
 		/* Store the record under the name field. */
 		key.data = bp;
 		key.size = p - bp;
 
-		switch(capdbp->put(capdbp, &key, &data, R_NOOVERWRITE)) {
+		switch (capdbp->put(capdbp, &key, &data, R_NOOVERWRITE)) {
 		case -1:
 			err(1, "put");
 			/* NOTREACHED */
 		case 1:
-			warnx("ignored duplicate: %.*s",
-			    (int)key.size, (char *)key.data);
+			warnx("ignored duplicate: %.*s", (int) key.size, (char*) key.data);
 			continue;
 		}
 		++reccnt;
@@ -238,8 +236,8 @@ db_build(const char **ifiles)
 			continue;
 
 		/* The rest of the names reference the entire name. */
-		((char *)(data.data))[0] = SHADOW;
-		(void)memmove(&((u_char *)(data.data))[1], key.data, key.size);
+		((char*) (data.data))[0] = SHADOW;
+		(void) memmove(&((u_char*) (data.data))[1], key.data, key.size);
 		data.size = key.size + 1;
 
 		/* Store references for other names. */
@@ -247,14 +245,13 @@ db_build(const char **ifiles)
 			if (p > t && (*p == ':' || *p == '|')) {
 				key.size = p - t;
 				key.data = t;
-				switch(capdbp->put(capdbp,
-				    &key, &data, R_NOOVERWRITE)) {
+				switch (capdbp->put(capdbp, &key, &data, R_NOOVERWRITE)) {
 				case -1:
 					err(1, "put");
 					/* NOTREACHED */
 				case 1:
-					warnx("ignored duplicate: %.*s",
-					    (int)key.size, (char *)key.data);
+					warnx("ignored duplicate: %.*s", (int) key.size,
+							(char*) key.data);
 				}
 				t = p + 1;
 			}
@@ -263,7 +260,7 @@ db_build(const char **ifiles)
 		}
 	}
 
-	switch(st) {
+	switch (st) {
 	case -1:
 		err(1, "file argument");
 		/* NOTREACHED */
@@ -273,7 +270,7 @@ db_build(const char **ifiles)
 	}
 
 	if (verbose)
-		(void)printf("cap_mkdb: %d capability records\n", reccnt);
+		(void) printf("cap_mkdb: %d capability records\n", reccnt);
 }
 
 static void
@@ -299,18 +296,18 @@ count_records(char **list)
 	int nelem, slash;
 
 	/* scan input files and count individual records */
-	for(nelem = 0, slash = 0; *list && (fp = fopen(*list++, "r")); ) {
-		while((line = fgetln(fp, &len)) != NULL) {
+	for (nelem = 0, slash = 0; *list && (fp = fopen(*list++, "r"));) {
+		while ((line = fgetln(fp, &len)) != NULL) {
 			if (len < 2)
 				continue;
-			if (!isspace((unsigned char) *line) && *line != ':'
-				&& *line != '#' && !slash)
+			if (!isspace((unsigned char) *line) && *line != ':' && *line != '#'
+					&& !slash)
 				nelem++;
 
 			slash = (line[len - 2] == '\\');
 		}
-		(void)fclose(fp);
-	} 
+		(void) fclose(fp);
+	}
 
 	if (nelem == 0) {
 		/* no records found; pass default size hint */
@@ -318,7 +315,8 @@ count_records(char **list)
 	} else if (!powerof2(nelem)) {
 		/* set nelem to nearest bigger power-of-two number */
 		int bt = 1;
-		while(bt < nelem) bt <<= 1;
+		while (bt < nelem)
+			bt <<= 1;
 		nelem = bt;
 	}
 

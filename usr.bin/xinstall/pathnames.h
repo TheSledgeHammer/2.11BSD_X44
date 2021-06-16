@@ -1,5 +1,4 @@
-/*	$OpenBSD: pathnames.h,v 1.3 2003/06/03 02:56:24 millert Exp $	*/
-/*	$NetBSD: pathnames.h,v 1.3 1994/11/14 04:57:18 jtc Exp $	*/
+/*	$NetBSD: pathnames.h,v 1.6 2003/08/07 11:17:50 agc Exp $	*/
 
 /*
  * Copyright (c) 1989, 1993
@@ -30,7 +29,8 @@
  * SUCH DAMAGE.
  *
  *	@(#)pathnames.h	8.1 (Berkeley) 6/6/93
- *	$NetBSD: pathnames.h,v 1.3 1994/11/14 04:57:18 jtc Exp $
  */
 
+#ifndef _PATH_STRIP
 #define	_PATH_STRIP	"/usr/bin/strip"
+#endif

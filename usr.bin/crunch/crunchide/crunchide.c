@@ -63,7 +63,7 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
-__RCSID("$NetBSD: crunchide.c,v 1.14 2011/08/30 23:15:14 joerg Exp $");
+//__RCSID("$NetBSD: crunchide.c,v 1.14 2011/08/30 23:15:14 joerg Exp $");
 #endif
 
 #include <unistd.h>

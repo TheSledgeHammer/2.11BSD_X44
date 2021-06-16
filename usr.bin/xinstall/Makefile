@@ -1,14 +1,14 @@
-#	$OpenBSD: Makefile,v 1.9 2019/02/24 12:57:14 kn Exp $
+#	$NetBSD: Makefile,v 1.29 2020/10/30 20:05:00 rillig Exp $
+#	@(#)Makefile	8.1 (Berkeley) 6/6/93
 
 .include <bsd.own.mk>
 
 PROG=	xinstall
-SRCS=	${HOSTPROG:D:Ustat_flags.c} xinstall.c getid.c
+SRCS=	xinstall.c getid.c
 MAN=	install.1
 
-
-.PATH:		${NETBSDSRCDIR}/bin/ls ${NETBSDSRCDIR}/usr.sbin/mtree
-CPPFLAGS+=	-I${NETBSDSRCDIR}/bin/ls -I${NETBSDSRCDIR}/usr.sbin/mtree
+.PATH:		${NETBSDSRCDIR}/usr.sbin/mtree
+CPPFLAGS+=	-I${NETBSDSRCDIR}/usr.sbin/mtree
 
 .if (${HOSTPROG:U} == "")
 CPPFLAGS+=	-DHAVE_POSIX_SPAWN

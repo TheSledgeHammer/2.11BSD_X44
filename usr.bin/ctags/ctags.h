@@ -51,22 +51,22 @@
 #define	begtoken(arg)	(_btk[(unsigned)arg])	/* T if char can start token */
 #define	intoken(arg)	(_itk[(unsigned)arg])	/* T if char can be in token */
 #define	endtoken(arg)	(_etk[(unsigned)arg])	/* T if char ends tokens */
-#define	isgood(arg)	(_gd[(unsigned)arg])	/* T if char can be after ')' */
+#define	isgood(arg)		(_gd[(unsigned)arg])	/* T if char can be after ')' */
 
-typedef struct nd_st {			/* sorting structure */
+typedef struct nd_st {				/* sorting structure */
 	struct nd_st	*left,
-			*right;		/* left and right sons */
-	char	*entry,			/* function or type name */
-		*file,			/* file name */
-		*pat;			/* search pattern */
-	int	lno;			/* for -x option */
-	bool	been_warned;		/* set if noticed dup */
+					*right;			/* left and right sons */
+	char			*entry,			/* function or type name */
+					*file,			/* file name */
+					*pat;			/* search pattern */
+	int				lno;			/* for -x option */
+	bool			been_warned;	/* set if noticed dup */
 } NODE;
 
 extern char	*curfile;		/* current input file name */
 extern NODE	*head;			/* head of the sorted binary tree */
-extern FILE    *inf;			/* ioptr for current input file */
-extern FILE    *outf;			/* ioptr for current output file */
+extern FILE *inf;			/* ioptr for current input file */
+extern FILE *outf;			/* ioptr for current output file */
 extern long	lineftell;		/* ftell after getc( inf ) == '\n' */
 extern int	lineno;			/* line number of current line */
 extern int	dflag;			/* -d: non-macro defines */

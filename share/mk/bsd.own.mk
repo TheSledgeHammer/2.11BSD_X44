@@ -40,17 +40,17 @@ TOOLCHAIN_MISSING?=	no
 #
 # What GCC is used?
 #
-.if ${MACHINE} == "alpha" || \
-    ${MACHINE} == "hppa" || \
-    ${MACHINE} == "ia64" || \
-    ${MACHINE} == "sparc" || \
-    ${MACHINE} == "sparc64" || \
-    ${MACHINE} == "vax" || \
-    ${MACHINE_ARCH} == "i386" || \
-    ${MACHINE_ARCH} == "x86_64" || \
-    ${MACHINE_CPU} == "aarch64" || \
-    ${MACHINE_CPU} == "mips" || \
-    ${MACHINE_CPU} == "powerpc" || \
+.if ${MACHINE} == "alpha" || 		\
+    ${MACHINE} == "hppa" || 		\
+    ${MACHINE} == "ia64" || 		\
+    ${MACHINE} == "sparc" || 		\
+    ${MACHINE} == "sparc64" || 		\
+    ${MACHINE} == "vax" || 			\
+    ${MACHINE_ARCH} == "i386" || 	\
+    ${MACHINE_ARCH} == "x86_64" || 	\
+    ${MACHINE_CPU} == "aarch64" || 	\
+    ${MACHINE_CPU} == "mips" || 	\
+    ${MACHINE_CPU} == "powerpc" || 	\
     ${MACHINE_CPU} == "riscv"
 HAVE_GCC?=	10
 .else
@@ -786,6 +786,11 @@ _NEEDS_LIBCXX.x86_64=	yes
 .if ${MKLLVM} == "yes" && ${_NEEDS_LIBCXX.${MACHINE_ARCH}:Uno} == "yes"
 MKLIBCXX:=	yes
 .endif
+
+#
+# Bootloader is supported
+#
+MKBOOT?= yes
 
 #
 # install(1) parameters.
