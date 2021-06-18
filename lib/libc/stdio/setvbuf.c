@@ -34,97 +34,132 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)setvbuf.c	8.2 (Berkeley) 11/16/93";
 static char sccsid[] = "@(#)setvbuf.c	8.1.1 (2.11BSD) 1997/7/27";
 #endif /* LIBC_SCCS and not lint */
+
+#include <sys/types.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
-#include <sys/types.h>
 
 /*
- * This has been slightly trimmed from the 4.4BSD version for use with 2.11BSD.
- * In particular 1) the flag names were changed back to the original ones 
- * since I didn't feel like porting all of 4.4's stdio package right now and 
- * 2) The constant BUFSIZ is used rather than importing the "optimum buffer
- * size selection" logic from 4.4 (besides, a PDP11 can't afford more than 1kb
- * most of the time anyhow).
- *
  * Set one of the three kinds of buffering, optionally including
  * a buffer.
  */
+int
 setvbuf(fp, buf, mode, size)
 	register FILE *fp;
 	char *buf;
 	register int mode;
-	size_t size;
+	register size_t size;
 {
-	int	ret;
-	register int flags;
+	register int ret, flags;
+	size_t iosize;
+	int ttyflag;
 
-/*
- * Verify arguments. Note, buf and size are ignored when setting _IONBF.
- */
+	/*
+	 * Verify arguments.  The `int' limit on `size' is due to this
+	 * particular implementation.  Note, buf and size are ignored
+	 * when setting _IONBF.
+	 */
 	if (mode != _IONBF)
 		if ((mode != _IOFBF && mode != _IOLBF) || (int)size < 0)
 			return (EOF);
 
 	/*
-	 * Write current buffer, if any.  Discard unread input, cancel
-	 * line buffering, and free old buffer if malloc()ed.
+	 * Write current buffer, if any.  Discard unread input (including
+	 * ungetc data), cancel line buffering, and free old buffer if
+	 * malloc()ed.  We also clear any eof condition, as if this were
+	 * a seek.
 	 */
-	(void)fflush(fp);
-	fp->_cnt = fp->_bufsiz = 0;
-	flags = fp->_flag;
-	if (flags & _IOMYBUF)
-		free((void *)fp->_base);
-	flags &= ~(_IOLBF | _IONBF | _IOMYBUF);
 	ret = 0;
+	(void)__sflush(fp);
+	if (HASUB(fp))
+		FREEUB(fp);
+	fp->_r = fp->_lbfsize = 0;
+	flags = fp->_flags;
+	if (flags & __SMBF)
+		free((void *)fp->_bf._base);
+	flags &= ~(__SLBF | __SNBF | __SMBF | __SOPT | __SNPT | __SEOF);
 
 	/* If setting unbuffered mode, skip all the hard work. */
 	if (mode == _IONBF)
 		goto nbf;
 
+	/*
+	 * Find optimal I/O size for seek optimization.  This also returns
+	 * a `tty flag' to suggest that we check isatty(fd), but we do not
+	 * care since our caller told us how to buffer.
+	 */
+	flags |= __swhatbuf(fp, &iosize, &ttyflag);
 	if (size == 0) {
 		buf = NULL;	/* force local allocation */
-		size = BUFSIZ;
+		size = iosize;
 	}
 
 	/* Allocate buffer if needed. */
 	if (buf == NULL) {
-		if ((buf = (char *)malloc(size)) == NULL) {
+		if ((buf = malloc(size)) == NULL) {
 			/*
 			 * Unable to honor user's request.  We will return
 			 * failure, but try again with file system size.
 			 */
 			ret = EOF;
-			if (size != BUFSIZ) {
-				size = BUFSIZ;
-				buf = (char *)malloc(size);
+			if (size != iosize) {
+				size = iosize;
+				buf = malloc(size);
 			}
 		}
 		if (buf == NULL) {
 			/* No luck; switch to unbuffered I/O. */
 nbf:
-			fp->_flag = flags | _IONBF;
-			fp->_base = fp->_ptr = NULL;
+			fp->_flags = flags | __SNBF;
+			fp->_w = 0;
+			fp->_bf._base = fp->_p = fp->_nbuf;
+			fp->_bf._size = 1;
 			return (ret);
 		}
-		flags |= _IOMYBUF;
+		flags |= __SMBF;
 	}
 
 	/*
-	 * Fix up the FILE fields.  If in r/w mode, go to the unknown state
-	 * so that the the first read performs its initial call to _filbuf and
-	 * the first write has an empty buffer to fill.
+	 * Kill any seek optimization if the buffer is not the
+	 * right size.
+	 *
+	 * SHOULD WE ALLOW MULTIPLES HERE (i.e., ok iff (size % iosize) == 0)?
+	 */
+	if (size != iosize)
+		flags |= __SNPT;
+
+	/*
+	 * Fix up the FILE fields, and set __cleanup for output flush on
+	 * exit (since we are buffered in some way).
 	 */
 	if (mode == _IOLBF)
-		flags |= _IOLBF;
-	if (flags & _IORW)
-		flags &= ~(_IOREAD | _IOWRT);
-	fp->_flag = flags;
-	fp->_base = fp->_ptr = (char *)buf;
-	fp->_bufsiz = size;
+		flags |= __SLBF;
+	fp->_flags = flags;
+	fp->_bf._base = fp->_p = (unsigned char *)buf;
+	fp->_bf._size = size;
+	/* fp->_lbfsize is still 0 */
+	if (flags & __SWR) {
+		/*
+		 * Begin or continue writing: see __swsetup().  Note
+		 * that __SNBF is impossible (it was handled earlier).
+		 */
+		if (flags & __SLBF) {
+			fp->_w = 0;
+			fp->_lbfsize = -fp->_bf._size;
+		} else
+			fp->_w = size;
+	} else {
+		/* begin/continue reading, or stay in intermediate state */
+		fp->_w = 0;
+	}
+	__cleanup = _cleanup;
+
 	return (ret);
 }

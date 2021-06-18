@@ -139,15 +139,15 @@ int	 			sradixsort (const unsigned char **, int, const unsigned char *, unsigned
 
 extern char *optarg;					/* getopt(3) external variables */
 extern int opterr, optind, optopt;
-int					getopt();
+int				getopt();
 
-extern char 		*suboptarg;			/* getsubopt(3) external variable */
-int					getsubopt();
+extern char 	*suboptarg;			/* getsubopt(3) external variable */
+int				getsubopt();
 
-long				random();
-char				*setstate();
-void				srandom();
-void				unsetenv();
+long			random();
+char			*setstate();
+void			srandom();
+void			unsetenv();
 
 long long	 		strtoq (const char *, char **, int);
 unsigned long long 	strtouq (const char *, char **, int);

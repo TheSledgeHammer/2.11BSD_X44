@@ -4,6 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)fdopen.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
@@ -30,7 +31,7 @@ static char sccsid[] = "@(#)fdopen.c	5.2 (Berkeley) 3/9/86";
 FILE *
 fdopen(fd, mode)
 	int fd;
-const  char *mode;
+	const  char *mode;
 {
 	extern FILE *_findiop();
 	static int nofile = -1;

@@ -1,3 +1,38 @@
+/*-
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Chris Torek.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
 /*
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
@@ -5,59 +40,52 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)fopen.c	8.1 (Berkeley) 6/4/93";
 static char sccsid[] = "@(#)fopen.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
-#include <sys/file.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stddef.h>
+#include <errno.h>
+#include "local.h"
 
 FILE *
 fopen(file, mode)
-	char *file;
-	register char *mode;
+	const char *file;
+	const char *mode;
 {
-	register FILE *iop;
-	register f, rw, oflags;
-	extern FILE *_findiop();
+	register FILE *fp;
+	register int f;
+	int flags, oflags;
 
-	iop = _findiop();
-	if (iop == NULL)
+	if ((flags = __sflags(mode, &oflags)) == 0)
 		return (NULL);
-
-	rw = (mode[1] == '+');
-
-	switch (*mode) {
-	case 'a':
-		oflags = O_CREAT | (rw ? O_RDWR : O_WRONLY);
-		break;
-	case 'r':
-		oflags = rw ? O_RDWR : O_RDONLY;
-		break;
-	case 'w':
-		oflags = O_TRUNC | O_CREAT | (rw ? O_RDWR : O_WRONLY);
-		break;
-	default:
+	if ((fp = __sfp()) == NULL)
+		return (NULL);
+	if ((f = open(file, oflags, DEFFILEMODE)) < 0) {
+		fp->_flags = 0;			/* release */
 		return (NULL);
 	}
+	fp->_file = f;
+	fp->_flags = flags;
+	fp->_cookie = fp;
+	fp->_read = __sread;
+	fp->_write = __swrite;
+	fp->_seek = __sseek;
+	fp->_close = __sclose;
 
-	f = open(file, oflags, 0666);
-	if (f < 0)
-		return (NULL);
-
-	if (*mode == 'a')
-		lseek(f, (off_t)0, L_XTND);
-
-	iop->_cnt = 0;
-	iop->_file = f;
-	iop->_bufsiz = 0;
-	if (rw)
-		iop->_flag = _IORW;
-	else if (*mode == 'r')
-		iop->_flag = _IOREAD;
-	else
-		iop->_flag = _IOWRT;
-	iop->_base = iop->_ptr = NULL;
-	return (iop);
+	/*
+	 * When opening in append mode, even though we use O_APPEND,
+	 * we need to seek to the end so that ftell() gets the right
+	 * answer.  If the user then alters the seek pointer, or
+	 * the file extends, this will fail, but there is not much
+	 * we can do about this.  (We could set __SAPP and check in
+	 * fseek and ftell.)
+	 */
+	if (oflags & O_APPEND)
+		(void) __sseek((void *)fp, (fpos_t)0, SEEK_END);
+	return (fp);
 }

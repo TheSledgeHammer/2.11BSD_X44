@@ -5,6 +5,7 @@ static char sccsid[] = "@(#)clrerr.c	5.2 (Berkeley) 3/9/86";
 #include <stdio.h>
 #undef	clearerr
 
+void
 clearerr(iop)
 	register FILE *iop;
 {

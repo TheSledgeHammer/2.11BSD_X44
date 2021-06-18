@@ -4,6 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)findiop.c	5.6 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
@@ -18,7 +19,7 @@ extern int errno;
 
 #define NSTATIC	20	/* stdin + stdout + stderr + the usual */
 
-FILE __iob[NSTATIC] = {
+FILE _iob[NSTATIC] = {
 		{ 0, NULL, NULL, 0, _IOREAD, 0 },		/* stdin  */
 		{ 0, NULL, NULL, 0, _IOWRT,	1 },		/* stdout */
 		{ 0, NULL, NULL, 0, _IOWRT|_IONBF, 2 },	/* stderr */
@@ -70,6 +71,7 @@ _findiop()
 	return (*iov);
 }
 
+int
 _f_morefiles()
 {
 	register FILE **iov;
@@ -92,6 +94,7 @@ _f_morefiles()
 	return (1);
 }
 
+void
 f_prealloc()
 {
 	register FILE **iov;
@@ -105,6 +108,7 @@ f_prealloc()
 			*iov = (FILE *)calloc(1, sizeof **iov);
 }
 
+void
 _fwalk(function)
 	register int (*function)();
 {
@@ -122,6 +126,7 @@ _fwalk(function)
 	}
 }
 
+void
 _cleanup()
 {
 	extern int fclose();

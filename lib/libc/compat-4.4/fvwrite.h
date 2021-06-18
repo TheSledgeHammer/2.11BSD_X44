@@ -32,20 +32,25 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ *	@(#)fvwrite.h	8.1 (Berkeley) 6/4/93
  */
 
-#include <sys/cdefs.h>
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setbuf.c	8.1.1 (2.11BSD) 1997/7/29";
-#endif /* LIBC_SCCS and not lint */
+/*
+ * I/O descriptors for __sfvwrite().
+ */
+struct __siov {
+	void			*iov_base;
+	size_t			iov_len;
+};
+struct __suio {
+	struct	__siov 	*uio_iov;
+	int				uio_iovcnt;
+	int				uio_resid;
+};
 
-#include <stdio.h>
-#include "local.h"
-
-void
-setbuf(fp, buf)
-	FILE *fp;
-	char *buf;
-{
-	(void) setvbuf(fp, buf, buf ? _IOFBF : _IONBF, BUFSIZ);
-}
+#if __STDC__ || c_plusplus
+extern int __sfvwrite(FILE *, struct __suio *);
+#else
+extern int __sfvwrite();
+#endif

@@ -34,18 +34,20 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setbuf.c	8.1.1 (2.11BSD) 1997/7/29";
+static char sccsid[] = "@(#)feof.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
-#include "local.h"
 
-void
-setbuf(fp, buf)
+/*
+ * A subroutine version of the macro feof.
+ */
+#undef feof
+
+int
+feof(fp)
 	FILE *fp;
-	char *buf;
 {
-	(void) setvbuf(fp, buf, buf ? _IOFBF : _IONBF, BUFSIZ);
+	return (__sfeof(fp));
 }

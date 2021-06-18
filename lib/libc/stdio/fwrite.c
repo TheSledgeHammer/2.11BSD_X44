@@ -4,46 +4,41 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)fwrite.c	8.1 (Berkeley) 6/4/93";
 static char sccsid[] = "@(#)fwrite.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
-#include	<stdio.h>
+#include <stdio.h>
+#include "local.h"
+#include "fvwrite.h"
 
-fwrite(ptr, size, count, iop)
-	register char *ptr;
-	unsigned size, count;
-	register FILE *iop;
+/*
+ * Write `count' objects (each size `size') from memory to the given file.
+ * Return the number of whole objects written.
+ */
+size_t
+fwrite(buf, size, count, fp)
+	const void *buf;
+	size_t size, count;
+	FILE *fp;
 {
-	register unsigned s;
+	size_t n;
+	struct __suio uio;
+	struct __siov iov;
 
-	s = size * count;
-	if (iop->_flag & _IOLBF)
-		while (s > 0) {
-			if (--iop->_cnt > -iop->_bufsiz && *ptr != '\n')
-				*iop->_ptr++ = *ptr++;
-			else if (_flsbuf(*(unsigned char *)ptr++, iop) == EOF)
-				break;
-			s--;
-		}
-	else while (s > 0) {
-		if (iop->_cnt < s) {
-			if (iop->_cnt > 0) {
-				bcopy(ptr, iop->_ptr, iop->_cnt);
-				ptr += iop->_cnt;
-				iop->_ptr += iop->_cnt;
-				s -= iop->_cnt;
-			}
-			if (_flsbuf(*(unsigned char *)ptr++, iop) == EOF)
-				break;
-			s--;
-		}
-		if (iop->_cnt >= s) {
-			bcopy(ptr, iop->_ptr, s);
-			iop->_ptr += s;
-			iop->_cnt -= s;
-			return (count);
-		}
-	}
-	return (size != 0 ? count - ((s + size - 1) / size) : 0);
+	iov.iov_base = (void *)buf;
+	uio.uio_resid = iov.iov_len = n = count * size;
+	uio.uio_iov = &iov;
+	uio.uio_iovcnt = 1;
+
+	/*
+	 * The usual case is success (__sfvwrite returns 0);
+	 * skip the divide if this happens, since divides are
+	 * generally slow and since this occurs whenever size==0.
+	 */
+	if (__sfvwrite(fp, &uio) == 0)
+		return (count);
+	return ((n - uio.uio_resid) / size);
 }

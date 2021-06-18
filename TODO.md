@@ -20,7 +20,7 @@ A General todo list. Don't hesitate to add to this list. :)
 
 - libc:
 	stdio:
-		- Finish updating files using the old stdio.h
+		- Incomplete: filbuf.c
 		- add missing manpages
 	- Update Makefiles with manpage's MLINKS
 
