@@ -29,6 +29,6 @@ vprintf(fmt, ap)
 {
 	int len;
 
-	len = _doprnt(fmt, ap, stdout);
+	len = doprnt(fmt, ap, stdout);
 	return (ferror(stdout) ? EOF : len);
 }

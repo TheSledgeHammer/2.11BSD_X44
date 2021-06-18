@@ -4,10 +4,11 @@ static char sccsid[] = "@(#)printf.c	5.2 (Berkeley) 3/9/86";
 
 #include	<stdio.h>
 
+int
 printf(fmt, args)
 	char *fmt;
 	register int args;
 {
-	_doprnt(fmt, &args, stdout);
+	doprnt(fmt, &args, stdout);
 	return(ferror(stdout)? EOF: 0);
 }

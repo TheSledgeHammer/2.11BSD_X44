@@ -28,6 +28,7 @@ static char _sctab[256] = {
 	0,0,0,0,0,0,0,0,
 };
 
+int
 _doscan(iop, fmt, argp)
 	FILE *iop;
 	register char *fmt;
@@ -98,6 +99,7 @@ _doscan(iop, fmt, argp)
 			}
 		}
 	}
+	return (nmatch);
 }
 
 static

@@ -25,13 +25,13 @@ INCS=		acct.h ansi.h ataio.h atomic.h audioio.h boot.h						\
 			vlimit.h vmmeter.h vnode.h wait.h
 
 INCSYMLINKS=\
-		sys/exec_elf.h /usr/include/elf.h 		\
-		sys/fcntl.h /usr/include/fcntl.h 		\
-		sys/poll.h /usr/include/poll.h 			\
-		sys/stdarg.h /usr/include/stdarg.h 		\
-		sys/stdbool.h /usr/include/stdbool.h 	\
-		sys/stdint.h /usr/include/stdint.h 		\
-		sys/syslog.h /usr/include/syslog.h 		\
-		sys/termios.h /usr/include/termios.h 	\
+		sys/exec_elf.h 	/usr/include/elf.h 		\
+		sys/fcntl.h 	/usr/include/fcntl.h 	\
+		sys/poll.h 		/usr/include/poll.h 	\
+		sys/stdarg.h 	/usr/include/stdarg.h 	\
+		sys/stdbool.h 	/usr/include/stdbool.h 	\
+		sys/stdint.h 	/usr/include/stdint.h 	\
+		sys/syslog.h 	/usr/include/syslog.h 	\
+		sys/termios.h 	/usr/include/termios.h 	\
 
 .include <bsd.kinc.mk>

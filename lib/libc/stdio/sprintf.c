@@ -15,11 +15,20 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)vsprintf.c	5.2.1 (2.11BSD) 1995/04/02";
 #endif /* LIBC_SCCS and not lint */
 
-#include	<stdio.h>
+#include <assert.h>
+#include <errno.h>
+#include <limits.h>
+#include <stddef.h>
+#include <stdarg.h>
+#include <stdio.h>
+
+//#include "reentrant.h"
+#include "local.h"
 
 int
 sprintf(str, fmt, args)
@@ -28,10 +37,10 @@ sprintf(str, fmt, args)
 {
 	FILE _strbuf;
 
-	_strbuf._flag = _IOWRT+_IOSTRG;
+	_strbuf._flags = _IOWRT+_IOSTRG;
 	_strbuf._ptr = str;
 	_strbuf._cnt = 32767;
-	_doprnt(fmt, &args, &_strbuf);
+	doprnt(fmt, &args, &_strbuf);
 	*_strbuf._ptr = 0;
 	return(_strbuf._ptr - str);
 }

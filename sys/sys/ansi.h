@@ -40,6 +40,7 @@
 #define	_SYS_ANSI_H_
 
 #include <sys/cdefs.h>
+#include <machine/ansi.h>
 
 typedef char *				__caddr_t;		/* core address */
 typedef u_int32_t			__gid_t;		/* group id */
@@ -53,6 +54,8 @@ typedef unsigned int		__socklen_t;	/* socket-related datum length */
 typedef u_int32_t			__uid_t;		/* user id */
 typedef	u_int64_t			__fsblkcnt_t;	/* fs block count (statvfs) */
 typedef	u_int64_t			__fsfilcnt_t;	/* fs file count */
+
+struct __tag_wctrans_t;
 
 /*
  * Types which are fundamental to the implementation and may appear in
@@ -89,8 +92,28 @@ typedef	u_int64_t			__fsfilcnt_t;	/* fs file count */
  * and rune_t are typedef'd, _WCHAR_T_ will be undef'd, but _RUNE_T remains
  * defined for ctype.h.
  */
+
+/*
+ * mbstate_t is an opaque object to keep conversion state, during multibyte
+ * stream conversions.  The content must not be referenced by user programs.
+ */
+typedef union {
+	__int64_t 	__mbstateL; 				/* for alignment */
+	char 		__mbstate8[128];
+} __mbstate_t;
+
 #define	_BSD_WCHAR_T_		int				/* wchar_t */
 #define _BSD_WINT_T_		int				/* wint_t */
 #define	_BSD_RUNE_T_		int				/* rune_t */
+
+#define _BSD_WCTRANS_T_		__wctrans_t		/* wctrans_t */
+#define _BSD_WCTYPE_T_		__wctype_t		/* wctype_t */
+#define _BSD_MBSTATE_T_		__mbstate_t		/* mbstate_t */
+
+#ifdef __lint__
+typedef char *__va_list;
+#else
+typedef __builtin_va_list __va_list;
+#endif
 
 #endif	/* !_SYS_ANSI_H_ */

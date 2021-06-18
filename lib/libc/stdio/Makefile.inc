@@ -16,7 +16,7 @@
 
 CPPFLAGS+=-DWIDE_DOUBLE
 
-SRCS+=	clrerr.c doscan.c exit.c fdopen.c filbuf.c findiop.c flsbuf.c fopen.c 	\
+SRCS+=	clrerr.c doprnt.c doscan.c exit.c fdopen.c filbuf.c findiop.c flsbuf.c fopen.c 	\
 		fprintf.c fread.c freopen.c fseek.c ftell.c fwrite.c getchar.c getw.c 	\
 		printf.c putchar.c putw.c rew.c scanf.c setbuf.c setbuffer.c setvbuf.c 	\
 		sprintf.c strout.c ungetc.c vfprintf.c vprintf.c vsprintf.c

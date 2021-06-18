@@ -20,7 +20,7 @@ static char sccsid[] = "@(#)vsprintf.c	5.2.1 (2.11BSD) 1995/04/02";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
-#include <varargs.h>
+#include <stdarg.h>
 
 int
 vsprintf(str, fmt, ap)
@@ -32,7 +32,7 @@ vsprintf(str, fmt, ap)
 	f._flag = _IOWRT+_IOSTRG;
 	f._ptr = str;
 	f._cnt = 32767;
-	_doprnt(fmt, ap, &f);
+	doprnt(fmt, ap, &f);
 	*f._ptr = 0;
 	return (f._ptr - str);
 }
