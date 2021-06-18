@@ -19,6 +19,9 @@ A General todo list. Don't hesitate to add to this list. :)
 ## lib
 
 - libc:
+	stdio:
+		- Finish updating files using the old stdio.h
+		- add missing manpages
 	- Update Makefiles with manpage's MLINKS
 
 ## libexec
@@ -27,8 +30,6 @@ A General todo list. Don't hesitate to add to this list. :)
 
 - fsck: replace references to ufs_daddr_t
 
-
-  
 # usr/sys/ (Kernel)
 
 ## conf

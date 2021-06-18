@@ -15,26 +15,13 @@ static char sccsid[] = "@(#)fprintf.c	5.2 (Berkeley) 3/9/86";
 #include <stddef.h>
 
 int
-fprintf(iop, fmt, args)
-	register FILE *iop;
-	char 	*fmt;
-	va_list args;
-
+fprintf(FILE *iop, const char *fmt, ...)
 {
-	char localbuf[BUFSIZ];
+	int ret;
+	va_list ap;
 
-	if (iop->_flags & _IONBF) {
-		iop->_flags &= ~_IONBF;
-		iop->_ptr = iop->_base = localbuf;
-		iop->_bufsiz = BUFSIZ;
-		doprnt(fmt, &args, iop);
-		fflush(iop);
-		iop->_flag |= _IONBF;
-		iop->_base = NULL;
-		iop->_bufsiz = NULL;
-		iop->_cnt = 0;
-	} else {
-		doprnt(fmt, &args, iop);
-	}
-	return(ferror(iop)? EOF: 0);
+	va_start(ap, fmt);
+	ret = vfprintf(iop, fmt, ap);
+	va_end(ap);
+	return (ret);
 }

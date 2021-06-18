@@ -1,5 +1,3 @@
-/*	$NetBSD: getchar.c,v 1.10 2012/03/15 18:22:30 christos Exp $	*/
-
 /*-
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -15,7 +13,11 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the University nor the names of its contributors
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -34,24 +36,33 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getchar.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
+static char sccsid[] = "@(#)putc.c	8.1 (Berkeley) 6/4/93";
+#endif /* LIBC_SCCS and not lint */
 
-/*
- * A subroutine version of the macro getchar.
- */
-#define	USE_STDIO_MACROS
+#include <assert.h>
+#include <errno.h>
 #include <stdio.h>
+
 #include "local.h"
 
-#undef getchar
-#undef getchar_unlocked
+/*
+ * A subroutine version of the macro putc.
+ */
+#undef putc
+#undef putc_unlocked
 
 int
-getchar()
+putc(c, fp)
+	int c;
+	register FILE *fp;
 {
-	int r;
+	return (__sputc(c, fp));
+}
 
-	r = __sgetc(stdin);
-	return (r);
+int
+putc_unlocked(c, fp)
+	int c;
+	register FILE *fp;
+{
+	return (__sputc(c, fp));
 }

@@ -55,10 +55,10 @@ typedef struct Hash_Entry {
     struct Hash_Entry *next;		/* Used to link together all the
     					 * entries associated with the same
 					 * bucket. */
-    ClientData	      clientData;	/* Arbitrary piece of data associated
+    ClientData	      	clientData;	/* Arbitrary piece of data associated
     					 * with key. */
-    unsigned	      namehash;		/* hash value of key */
-    char	      name[1];		/* key string */
+    unsigned	      	namehash;		/* hash value of key */
+    char	      		name[1];		/* key string */
 } Hash_Entry;
 
 typedef struct Hash_Table {

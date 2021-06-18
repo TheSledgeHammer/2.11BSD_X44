@@ -1121,628 +1121,653 @@ Var_Parse (str, ctxt, err, lengthPtr, freePtr)
 				 * result is just the invocation, unaltered */
     
     *freePtr = FALSE;
-	dynamic = FALSE;
-	start = str;
-
-	if (str[1] != '(' && str[1] != '{') {
-		/*
-		 * If it's not bounded by braces of some sort, life is much simpler.
-		 * We just need to check for the first character and return the
-		 * value if it exists.
-		 */
-		char name[2];
-
-		name[0] = str[1];
-		name[1] = '\0';
-
-		v = VarFind(name, ctxt, FIND_ENV | FIND_GLOBAL | FIND_CMD);
-		if (v == (Var*) NIL) {
-			*lengthPtr = 2;
-
-			if ((ctxt == VAR_CMD) || (ctxt == VAR_GLOBAL)) {
-				/*
-				 * If substituting a local variable in a non-local context,
-				 * assume it's for dynamic source stuff. We have to handle
-				 * this specially and return the longhand for the variable
-				 * with the dollar sign escaped so it makes it back to the
-				 * caller. Only four of the local variables are treated
-				 * specially as they are the only four that will be set
-				 * when dynamic sources are expanded.
-				 */
-				switch (str[1]) {
-				case '@':
-					return ("$(.TARGET)");
-				case '%':
-					return ("$(.ARCHIVE)");
-				case '*':
-					return ("$(.PREFIX)");
-				case '!':
-					return ("$(.MEMBER)");
-				}
-			}
-			/*
-			 * Error
-			 */
-			return (err ? var_Error : varNoError);
-		} else {
-			haveModifier = FALSE;
-			tstr = &str[1];
-			endc = str[1];
-		}
-	} else {
-		startc = str[1];
-		endc = startc == '(' ? ')' : '}';
-
-		/*
-		 * Skip to the end character or a colon, whichever comes first.
-		 */
-		for (tstr = str + 2; *tstr != '\0' && *tstr != endc && *tstr != ':';
-				tstr++) {
-			continue;
-		}
-		if (*tstr == ':') {
-			haveModifier = TRUE;
-		} else if (*tstr != '\0') {
-			haveModifier = FALSE;
-		} else {
-			/*
-			 * If we never did find the end character, return NULL
-			 * right now, setting the length to be the distance to
-			 * the end of the string, since that's what make does.
-			 */
-			*lengthPtr = tstr - str;
-			return (var_Error);
-		}
-		*tstr = '\0';
-
-		v = VarFind(str + 2, ctxt, FIND_ENV | FIND_GLOBAL | FIND_CMD);
-		if ((v == (Var*) NIL) && (ctxt != VAR_CMD) && (ctxt != VAR_GLOBAL)
-				&& ((tstr - str) == 4) && (str[3] == 'F' || str[3] == 'D')) {
-			/*
-			 * Check for bogus D and F forms of local variables since we're
-			 * in a local context and the name is the right length.
-			 */
-			switch (str[2]) {
-			case '@':
-			case '%':
-			case '*':
-			case '!':
-			case '>':
-			case '<': {
-				char vname[2];
-				char *val;
-
-				/*
-				 * Well, it's local -- go look for it.
-				 */
-				vname[0] = str[2];
-				vname[1] = '\0';
-				v = VarFind(vname, ctxt, 0);
-
-				if (v != (Var*) NIL) {
-					/*
-					 * No need for nested expansion or anything, as we're
-					 * the only one who sets these things and we sure don't
-					 * but nested invocations in them...
-					 */
-					val = (char*) Buf_GetAll(v->val, (int*) NULL);
-
-					if (str[3] == 'D') {
-						val = VarModify(val, VarHead, (ClientData) 0);
-					} else {
-						val = VarModify(val, VarTail, (ClientData) 0);
-					}
-					/*
-					 * Resulting string is dynamically allocated, so
-					 * tell caller to free it.
-					 */
-					*freePtr = TRUE;
-					*lengthPtr = tstr - start + 1;
-					*tstr = endc;
-					return (val);
-				}
-				break;
-			}
-			}
-		}
-
-		if (v == (Var*) NIL) {
-			if ((((tstr - str) == 3)
-					|| ((((tstr - str) == 4) && (str[3] == 'F' || str[3] == 'D'))))
-					&& ((ctxt == VAR_CMD) || (ctxt == VAR_GLOBAL))) {
-				/*
-				 * If substituting a local variable in a non-local context,
-				 * assume it's for dynamic source stuff. We have to handle
-				 * this specially and return the longhand for the variable
-				 * with the dollar sign escaped so it makes it back to the
-				 * caller. Only four of the local variables are treated
-				 * specially as they are the only four that will be set
-				 * when dynamic sources are expanded.
-				 */
-				switch (str[2]) {
-				case '@':
-				case '%':
-				case '*':
-				case '!':
-					dynamic = TRUE;
-					break;
-				}
-			} else if (((tstr - str) > 4) && (str[2] == '.')
-					&& isupper((unsigned char) str[3])
-					&& ((ctxt == VAR_CMD) || (ctxt == VAR_GLOBAL))) {
-				int len;
-
-				len = (tstr - str) - 3;
-				if ((strncmp(str + 2, ".TARGET", len) == 0)
-						|| (strncmp(str + 2, ".ARCHIVE", len) == 0)
-						|| (strncmp(str + 2, ".PREFIX", len) == 0)
-						|| (strncmp(str + 2, ".MEMBER", len) == 0)) {
-					dynamic = TRUE;
-				}
-			}
-
-			if (!haveModifier) {
-				/*
-				 * No modifiers -- have specification length so we can return
-				 * now.
-				 */
-				*lengthPtr = tstr - start + 1;
-				*tstr = endc;
-				if (dynamic) {
-					str = emalloc(*lengthPtr + 1);
-					strncpy(str, start, *lengthPtr);
-					str[*lengthPtr] = '\0';
-					*freePtr = TRUE;
-					return (str);
-				} else {
-					return (err ? var_Error : varNoError);
-				}
-			} else {
-				/*
-				 * Still need to get to the end of the variable specification,
-				 * so kludge up a Var structure for the modifications
-				 */
-				v = (Var*) emalloc(sizeof(Var));
-				v->name = &str[1];
-				v->val = Buf_Init(1);
-				v->flags = VAR_JUNK;
-			}
-		}
-	}
-
-	if (v->flags & VAR_IN_USE) {
-		Fatal("Variable %s is recursive.", v->name);
-		/*NOTREACHED*/
-	} else {
-		v->flags |= VAR_IN_USE;
-	}
+    dynamic = FALSE;
+    start = str;
+    
+    if (str[1] != '(' && str[1] != '{') {
 	/*
-	 * Before doing any modification, we have to make sure the value
-	 * has been fully expanded. If it looks like recursion might be
-	 * necessary (there's a dollar sign somewhere in the variable's value)
-	 * we just call Var_Subst to do any other substitutions that are
-	 * necessary. Note that the value returned by Var_Subst will have
-	 * been dynamically-allocated, so it will need freeing when we
-	 * return.
+	 * If it's not bounded by braces of some sort, life is much simpler.
+	 * We just need to check for the first character and return the
+	 * value if it exists.
 	 */
-	str = (char*) Buf_GetAll(v->val, (int*) NULL);
-	if (strchr(str, '$') != (char*) NULL) {
-		str = Var_Subst(NULL, str, ctxt, err);
-		*freePtr = TRUE;
-	}
+	char	  name[2];
 
-	v->flags &= ~VAR_IN_USE;
+	name[0] = str[1];
+	name[1] = '\0';
+
+	v = VarFind (name, ctxt, FIND_ENV | FIND_GLOBAL | FIND_CMD);
+	if (v == (Var *)NIL) {
+	    *lengthPtr = 2;
+	    
+	    if ((ctxt == VAR_CMD) || (ctxt == VAR_GLOBAL)) {
+		/*
+		 * If substituting a local variable in a non-local context,
+		 * assume it's for dynamic source stuff. We have to handle
+		 * this specially and return the longhand for the variable
+		 * with the dollar sign escaped so it makes it back to the
+		 * caller. Only four of the local variables are treated
+		 * specially as they are the only four that will be set
+		 * when dynamic sources are expanded.
+		 */
+		switch (str[1]) {
+		    case '@':
+			return("$(.TARGET)");
+		    case '%':
+			return("$(.ARCHIVE)");
+		    case '*':
+			return("$(.PREFIX)");
+		    case '!':
+			return("$(.MEMBER)");
+		}
+	    }
+	    /*
+	     * Error
+	     */
+	    return (err ? var_Error : varNoError);
+	} else {
+	    haveModifier = FALSE;
+	    tstr = &str[1];
+	    endc = str[1];
+	}
+    } else {
+	startc = str[1];
+	endc = startc == '(' ? ')' : '}';
 
 	/*
-	 * Now we need to apply any modifiers the user wants applied.
-	 * These are:
-	 *  	  :M<pattern>	words which match the given <pattern>.
-	 *  	  	    	<pattern> is of the standard file
-	 *  	  	    	wildcarding form.
-	 *  	  :S<d><pat1><d><pat2><d>[g]
-	 *  	  	    	Substitute <pat2> for <pat1> in the value
-	 *  	  :H	    	Substitute the head of each word
-	 *  	  :T	    	Substitute the tail of each word
-	 *  	  :E	    	Substitute the extension (minus '.') of
-	 *  	  	    	each word
-	 *  	  :R	    	Substitute the root of each word
-	 *  	  	    	(pathname minus the suffix).
-	 *	    	  :lhs=rhs  	Like :S, but the rhs goes to the end of
-	 *	    	    	    	the invocation.
+	 * Skip to the end character or a colon, whichever comes first.
 	 */
-	if ((str != (char*) NULL) && haveModifier) {
-		/*
-		 * Skip initial colon while putting it back.
-		 */
-		*tstr++ = ':';
-		while (*tstr != endc) {
-			char *newStr; /* New value to return */
-			char termc; /* Character which terminated scan */
-
-			if (DEBUG(VAR)) {
-				printf("Applying :%c to \"%s\"\n", *tstr, str);
-			}
-			switch (*tstr) {
-			case 'N':
-			case 'M': {
-				char *pattern;
-				char *cp2;
-				Boolean copy;
-
-				copy = FALSE;
-				for (cp = tstr + 1; *cp != '\0' && *cp != ':' && *cp != endc;
-						cp++) {
-					if (*cp == '\\' && (cp[1] == ':' || cp[1] == endc)) {
-						copy = TRUE;
-						cp++;
-					}
-				}
-				termc = *cp;
-				*cp = '\0';
-				if (copy) {
-					/*
-					 * Need to compress the \:'s out of the pattern, so
-					 * allocate enough room to hold the uncompressed
-					 * pattern (note that cp started at tstr+1, so
-					 * cp - tstr takes the null byte into account) and
-					 * compress the pattern into the space.
-					 */
-					pattern = emalloc(cp - tstr);
-					for (cp2 = pattern, cp = tstr + 1; *cp != '\0';
-							cp++, cp2++) {
-						if ((*cp == '\\') && (cp[1] == ':' || cp[1] == endc)) {
-							cp++;
-						}
-						*cp2 = *cp;
-					}
-					*cp2 = '\0';
-				} else {
-					pattern = &tstr[1];
-				}
-				if (*tstr == 'M' || *tstr == 'm') {
-					newStr = VarModify(str, VarMatch, (ClientData) pattern);
-				} else {
-					newStr = VarModify(str, VarNoMatch, (ClientData) pattern);
-				}
-				if (copy) {
-					free(pattern);
-				}
-				break;
-			}
-			case 'S': {
-				VarPattern pattern;
-				register char delim;
-				Buffer buf; /* Buffer for patterns */
-
-				pattern.flags = 0;
-				delim = tstr[1];
-				tstr += 2;
-				/*
-				 * If pattern begins with '^', it is anchored to the
-				 * start of the word -- skip over it and flag pattern.
-				 */
-				if (*tstr == '^') {
-					pattern.flags |= VAR_MATCH_START;
-					tstr += 1;
-				}
-
-				buf = Buf_Init(0);
-
-				/*
-				 * Pass through the lhs looking for 1) escaped delimiters,
-				 * '$'s and backslashes (place the escaped character in
-				 * uninterpreted) and 2) unescaped $'s that aren't before
-				 * the delimiter (expand the variable substitution).
-				 * The result is left in the Buffer buf.
-				 */
-				for (cp = tstr; *cp != '\0' && *cp != delim; cp++) {
-					if ((*cp == '\\')
-							&& ((cp[1] == delim) || (cp[1] == '$')
-									|| (cp[1] == '\\'))) {
-						Buf_AddByte(buf, (Byte )cp[1]);
-						cp++;
-					} else if (*cp == '$') {
-						if (cp[1] != delim) {
-							/*
-							 * If unescaped dollar sign not before the
-							 * delimiter, assume it's a variable
-							 * substitution and recurse.
-							 */
-							char *cp2;
-							int len;
-							Boolean freeIt;
-
-							cp2 = Var_Parse(cp, ctxt, err, &len, &freeIt);
-							Buf_AddBytes(buf, strlen(cp2), (Byte*) cp2);
-							if (freeIt) {
-								free(cp2);
-							}
-							cp += len - 1;
-						} else {
-							/*
-							 * Unescaped $ at end of pattern => anchor
-							 * pattern at end.
-							 */
-							pattern.flags |= VAR_MATCH_END;
-						}
-					} else {
-						Buf_AddByte(buf, (Byte )*cp);
-					}
-				}
-
-				Buf_AddByte(buf, (Byte )'\0');
-
-				/*
-				 * If lhs didn't end with the delimiter, complain and
-				 * return NULL
-				 */
-				if (*cp != delim) {
-					*lengthPtr = cp - start + 1;
-					if (*freePtr) {
-						free(str);
-					}
-					Buf_Destroy(buf, TRUE);
-					Error("Unclosed substitution for %s (%c missing)", v->name,
-							delim);
-					return (var_Error);
-				}
-
-				/*
-				 * Fetch pattern and destroy buffer, but preserve the data
-				 * in it, since that's our lhs. Note that Buf_GetAll
-				 * will return the actual number of bytes, which includes
-				 * the null byte, so we have to decrement the length by
-				 * one.
-				 */
-				pattern.lhs = (char*) Buf_GetAll(buf, &pattern.leftLen);
-				pattern.leftLen--;
-				Buf_Destroy(buf, FALSE);
-
-				/*
-				 * Now comes the replacement string. Three things need to
-				 * be done here: 1) need to compress escaped delimiters and
-				 * ampersands and 2) need to replace unescaped ampersands
-				 * with the l.h.s. (since this isn't regexp, we can do
-				 * it right here) and 3) expand any variable substitutions.
-				 */
-				buf = Buf_Init(0);
-
-				tstr = cp + 1;
-				for (cp = tstr; *cp != '\0' && *cp != delim; cp++) {
-					if ((*cp == '\\')
-							&& ((cp[1] == delim) || (cp[1] == '&')
-									|| (cp[1] == '\\') || (cp[1] == '$'))) {
-						Buf_AddByte(buf, (Byte )cp[1]);
-						cp++;
-					} else if ((*cp == '$') && (cp[1] != delim)) {
-						char *cp2;
-						int len;
-						Boolean freeIt;
-
-						cp2 = Var_Parse(cp, ctxt, err, &len, &freeIt);
-						Buf_AddBytes(buf, strlen(cp2), (Byte*) cp2);
-						cp += len - 1;
-						if (freeIt) {
-							free(cp2);
-						}
-					} else if (*cp == '&') {
-						Buf_AddBytes(buf, pattern.leftLen, (Byte*) pattern.lhs);
-					} else {
-						Buf_AddByte(buf, (Byte )*cp);
-					}
-				}
-
-				Buf_AddByte(buf, (Byte )'\0');
-
-				/*
-				 * If didn't end in delimiter character, complain
-				 */
-				if (*cp != delim) {
-					*lengthPtr = cp - start + 1;
-					if (*freePtr) {
-						free(str);
-					}
-					Buf_Destroy(buf, TRUE);
-					Error("Unclosed substitution for %s (%c missing)", v->name,
-							delim);
-					return (var_Error);
-				}
-
-				pattern.rhs = (char*) Buf_GetAll(buf, &pattern.rightLen);
-				pattern.rightLen--;
-				Buf_Destroy(buf, FALSE);
-
-				/*
-				 * Check for global substitution. If 'g' after the final
-				 * delimiter, substitution is global and is marked that
-				 * way.
-				 */
-				cp++;
-				if (*cp == 'g') {
-					pattern.flags |= VAR_SUB_GLOBAL;
-					cp++;
-				}
-
-				termc = *cp;
-				newStr = VarModify(str, VarSubstitute, (ClientData) &pattern);
-				/*
-				 * Free the two strings.
-				 */
-				free(pattern.lhs);
-				free(pattern.rhs);
-				break;
-			}
-			case 'T':
-				if (tstr[1] == endc || tstr[1] == ':') {
-					newStr = VarModify(str, VarTail, (ClientData) 0);
-					cp = tstr + 1;
-					termc = *cp;
-					break;
-				}
-				/*FALLTHRU*/
-			case 'H':
-				if (tstr[1] == endc || tstr[1] == ':') {
-					newStr = VarModify(str, VarHead, (ClientData) 0);
-					cp = tstr + 1;
-					termc = *cp;
-					break;
-				}
-				/*FALLTHRU*/
-			case 'E':
-				if (tstr[1] == endc || tstr[1] == ':') {
-					newStr = VarModify(str, VarSuffix, (ClientData) 0);
-					cp = tstr + 1;
-					termc = *cp;
-					break;
-				}
-				/*FALLTHRU*/
-			case 'R':
-				if (tstr[1] == endc || tstr[1] == ':') {
-					newStr = VarModify(str, VarRoot, (ClientData) 0);
-					cp = tstr + 1;
-					termc = *cp;
-					break;
-				}
-				/*FALLTHRU*/
-			default: {
-				/*
-				 * This can either be a bogus modifier or a System-V
-				 * substitution command.
-				 */
-				VarPattern pattern;
-				Boolean eqFound;
-
-				pattern.flags = 0;
-				eqFound = FALSE;
-				/*
-				 * First we make a pass through the string trying
-				 * to verify it is a SYSV-make-style translation:
-				 * it must be: <string1>=<string2>)
-				 */
-				cp = tstr;
-				cnt = 1;
-				while (*cp != '\0' && cnt) {
-					if (*cp == '=') {
-						eqFound = TRUE;
-						/* continue looking for endc */
-					} else if (*cp == endc)
-						cnt--;
-					else if (*cp == startc)
-						cnt++;
-					if (cnt)
-						cp++;
-				}
-				if (*cp == endc && eqFound) {
-
-					/*
-					 * Now we break this sucker into the lhs and
-					 * rhs. We must null terminate them of course.
-					 */
-					for (cp = tstr; *cp != '='; cp++)
-						continue;
-					pattern.lhs = tstr;
-					pattern.leftLen = cp - tstr;
-					*cp++ = '\0';
-
-					pattern.rhs = cp;
-					cnt = 1;
-					while (cnt) {
-						if (*cp == endc)
-							cnt--;
-						else if (*cp == startc)
-							cnt++;
-						if (cnt)
-							cp++;
-					}
-					pattern.rightLen = cp - pattern.rhs;
-					*cp = '\0';
-
-					/*
-					 * SYSV modifications happen through the whole
-					 * string. Note the pattern is anchored at the end.
-					 */
-					newStr = VarModify(str, VarSYSVMatch,
-							(ClientData) &pattern);
-
-					/*
-					 * Restore the nulled characters
-					 */
-					pattern.lhs[pattern.leftLen] = '=';
-					pattern.rhs[pattern.rightLen] = endc;
-					termc = endc;
-				} else {
-					Error("Unknown modifier '%c'\n", *tstr);
-					for (cp = tstr + 1;
-							*cp != ':' && *cp != endc && *cp != '\0'; cp++)
-						continue;
-					termc = *cp;
-					newStr = var_Error;
-				}
-			}
-			}
-			if (DEBUG(VAR)) {
-				printf("Result is \"%s\"\n", newStr);
-			}
-
-			if (*freePtr) {
-				free(str);
-			}
-			str = newStr;
-			if (str != var_Error) {
-				*freePtr = TRUE;
-			} else {
-				*freePtr = FALSE;
-			}
-			if (termc == '\0') {
-				Error("Unclosed variable specification for %s", v->name);
-			} else if (termc == ':') {
-				*cp++ = termc;
-			} else {
-				*cp = termc;
-			}
-			tstr = cp;
-		}
-		*lengthPtr = tstr - start + 1;
+	for (tstr = str + 2;
+	     *tstr != '\0' && *tstr != endc && *tstr != ':';
+	     tstr++)
+	{
+	    continue;
+	}
+	if (*tstr == ':') {
+	    haveModifier = TRUE;
+	} else if (*tstr != '\0') {
+	    haveModifier = FALSE;
 	} else {
+	    /*
+	     * If we never did find the end character, return NULL
+	     * right now, setting the length to be the distance to
+	     * the end of the string, since that's what make does.
+	     */
+	    *lengthPtr = tstr - str;
+	    return (var_Error);
+	}
+	*tstr = '\0';
+ 	
+	v = VarFind (str + 2, ctxt, FIND_ENV | FIND_GLOBAL | FIND_CMD);
+	if ((v == (Var *)NIL) && (ctxt != VAR_CMD) && (ctxt != VAR_GLOBAL) &&
+	    ((tstr-str) == 4) && (str[3] == 'F' || str[3] == 'D'))
+	{
+	    /*
+	     * Check for bogus D and F forms of local variables since we're
+	     * in a local context and the name is the right length.
+	     */
+	    switch(str[2]) {
+		case '@':
+		case '%':
+		case '*':
+		case '!':
+		case '>':
+		case '<':
+		{
+		    char    vname[2];
+		    char    *val;
+
+		    /*
+		     * Well, it's local -- go look for it.
+		     */
+		    vname[0] = str[2];
+		    vname[1] = '\0';
+		    v = VarFind(vname, ctxt, 0);
+		    
+		    if (v != (Var *)NIL) {
+			/*
+			 * No need for nested expansion or anything, as we're
+			 * the only one who sets these things and we sure don't
+			 * but nested invocations in them...
+			 */
+			val = (char *)Buf_GetAll(v->val, (int *)NULL);
+			
+			if (str[3] == 'D') {
+			    val = VarModify(val, VarHead, (ClientData)0);
+			} else {
+			    val = VarModify(val, VarTail, (ClientData)0);
+			}
+			/*
+			 * Resulting string is dynamically allocated, so
+			 * tell caller to free it.
+			 */
+			*freePtr = TRUE;
+			*lengthPtr = tstr-start+1;
+			*tstr = endc;
+			return(val);
+		    }
+		    break;
+		}
+	    }
+	}
+			    
+	if (v == (Var *)NIL) {
+	    if ((((tstr-str) == 3) ||
+		 ((((tstr-str) == 4) && (str[3] == 'F' ||
+					 str[3] == 'D')))) &&
+		((ctxt == VAR_CMD) || (ctxt == VAR_GLOBAL)))
+	    {
+		/*
+		 * If substituting a local variable in a non-local context,
+		 * assume it's for dynamic source stuff. We have to handle
+		 * this specially and return the longhand for the variable
+		 * with the dollar sign escaped so it makes it back to the
+		 * caller. Only four of the local variables are treated
+		 * specially as they are the only four that will be set
+		 * when dynamic sources are expanded.
+		 */
+		switch (str[2]) {
+		    case '@':
+		    case '%':
+		    case '*':
+		    case '!':
+			dynamic = TRUE;
+			break;
+		}
+	    } else if (((tstr-str) > 4) && (str[2] == '.') &&
+		       isupper((unsigned char) str[3]) &&
+		       ((ctxt == VAR_CMD) || (ctxt == VAR_GLOBAL)))
+	    {
+		int	len;
+		
+		len = (tstr-str) - 3;
+		if ((strncmp(str+2, ".TARGET", len) == 0) ||
+		    (strncmp(str+2, ".ARCHIVE", len) == 0) ||
+		    (strncmp(str+2, ".PREFIX", len) == 0) ||
+		    (strncmp(str+2, ".MEMBER", len) == 0))
+		{
+		    dynamic = TRUE;
+		}
+	    }
+	    
+	    if (!haveModifier) {
+		/*
+		 * No modifiers -- have specification length so we can return
+		 * now.
+		 */
 		*lengthPtr = tstr - start + 1;
 		*tstr = endc;
-	}
-
-	if (v->flags & VAR_FROM_ENV) {
-		Boolean destroy = FALSE;
-
-		if (str != (char*) Buf_GetAll(v->val, (int*) NULL)) {
-			destroy = TRUE;
-		} else {
-			/*
-			 * Returning the value unmodified, so tell the caller to free
-			 * the thing.
-			 */
-			*freePtr = TRUE;
-		}
-		Buf_Destroy(v->val, destroy);
-		free((Address) v);
-	} else if (v->flags & VAR_JUNK) {
-		/*
-		 * Perform any free'ing needed and set *freePtr to FALSE so the caller
-		 * doesn't try to free a static pointer.
-		 */
-		if (*freePtr) {
-			free(str);
-		}
-		*freePtr = FALSE;
-		Buf_Destroy(v->val, TRUE);
-		free((Address) v);
 		if (dynamic) {
-			str = emalloc(*lengthPtr + 1);
-			strncpy(str, start, *lengthPtr);
-			str[*lengthPtr] = '\0';
-			*freePtr = TRUE;
+		    str = emalloc(*lengthPtr + 1);
+		    strncpy(str, start, *lengthPtr);
+		    str[*lengthPtr] = '\0';
+		    *freePtr = TRUE;
+		    return(str);
 		} else {
-			str = var_Error;
+		    return (err ? var_Error : varNoError);
 		}
+	    } else {
+		/*
+		 * Still need to get to the end of the variable specification,
+		 * so kludge up a Var structure for the modifications
+		 */
+		v = (Var *) emalloc(sizeof(Var));
+		v->name = &str[1];
+		v->val = Buf_Init(1);
+		v->flags = VAR_JUNK;
+	    }
 	}
-	return (str);
+    }
+
+    if (v->flags & VAR_IN_USE) {
+	Fatal("Variable %s is recursive.", v->name);
+	/*NOTREACHED*/
+    } else {
+	v->flags |= VAR_IN_USE;
+    }
+    /*
+     * Before doing any modification, we have to make sure the value
+     * has been fully expanded. If it looks like recursion might be
+     * necessary (there's a dollar sign somewhere in the variable's value)
+     * we just call Var_Subst to do any other substitutions that are
+     * necessary. Note that the value returned by Var_Subst will have
+     * been dynamically-allocated, so it will need freeing when we
+     * return.
+     */
+    str = (char *)Buf_GetAll(v->val, (int *)NULL);
+    if (strchr (str, '$') != (char *)NULL) {
+	str = Var_Subst(NULL, str, ctxt, err);
+	*freePtr = TRUE;
+    }
+    
+    v->flags &= ~VAR_IN_USE;
+    
+    /*
+     * Now we need to apply any modifiers the user wants applied.
+     * These are:
+     *  	  :M<pattern>	words which match the given <pattern>.
+     *  	  	    	<pattern> is of the standard file
+     *  	  	    	wildcarding form.
+     *  	  :S<d><pat1><d><pat2><d>[g]
+     *  	  	    	Substitute <pat2> for <pat1> in the value
+     *  	  :H	    	Substitute the head of each word
+     *  	  :T	    	Substitute the tail of each word
+     *  	  :E	    	Substitute the extension (minus '.') of
+     *  	  	    	each word
+     *  	  :R	    	Substitute the root of each word
+     *  	  	    	(pathname minus the suffix).
+     *	    	  :lhs=rhs  	Like :S, but the rhs goes to the end of
+     *	    	    	    	the invocation.
+     */
+    if ((str != (char *)NULL) && haveModifier) {
+	/*
+	 * Skip initial colon while putting it back.
+	 */
+	*tstr++ = ':';
+	while (*tstr != endc) {
+	    char	*newStr;    /* New value to return */
+	    char	termc;	    /* Character which terminated scan */
+	    
+	    if (DEBUG(VAR)) {
+		printf("Applying :%c to \"%s\"\n", *tstr, str);
+	    }
+	    switch (*tstr) {
+		case 'N':
+		case 'M':
+		{
+		    char    *pattern;
+		    char    *cp2;
+		    Boolean copy;
+
+		    copy = FALSE;
+		    for (cp = tstr + 1;
+			 *cp != '\0' && *cp != ':' && *cp != endc;
+			 cp++)
+		    {
+			if (*cp == '\\' && (cp[1] == ':' || cp[1] == endc)){
+			    copy = TRUE;
+			    cp++;
+			}
+		    }
+		    termc = *cp;
+		    *cp = '\0';
+		    if (copy) {
+			/*
+			 * Need to compress the \:'s out of the pattern, so
+			 * allocate enough room to hold the uncompressed
+			 * pattern (note that cp started at tstr+1, so
+			 * cp - tstr takes the null byte into account) and
+			 * compress the pattern into the space.
+			 */
+			pattern = emalloc(cp - tstr);
+			for (cp2 = pattern, cp = tstr + 1;
+			     *cp != '\0';
+			     cp++, cp2++)
+			{
+			    if ((*cp == '\\') &&
+				(cp[1] == ':' || cp[1] == endc)) {
+				    cp++;
+			    }
+			    *cp2 = *cp;
+			}
+			*cp2 = '\0';
+		    } else {
+			pattern = &tstr[1];
+		    }
+		    if (*tstr == 'M' || *tstr == 'm') {
+			newStr = VarModify(str, VarMatch, (ClientData)pattern);
+		    } else {
+			newStr = VarModify(str, VarNoMatch,
+					   (ClientData)pattern);
+		    }
+		    if (copy) {
+			free(pattern);
+		    }
+		    break;
+		}
+		case 'S':
+		{
+		    VarPattern 	    pattern;
+		    register char   delim;
+		    Buffer  	    buf;    	/* Buffer for patterns */
+
+		    pattern.flags = 0;
+		    delim = tstr[1];
+		    tstr += 2;
+		    /*
+		     * If pattern begins with '^', it is anchored to the
+		     * start of the word -- skip over it and flag pattern.
+		     */
+		    if (*tstr == '^') {
+			pattern.flags |= VAR_MATCH_START;
+			tstr += 1;
+		    }
+
+		    buf = Buf_Init(0);
+		    
+		    /*
+		     * Pass through the lhs looking for 1) escaped delimiters,
+		     * '$'s and backslashes (place the escaped character in
+		     * uninterpreted) and 2) unescaped $'s that aren't before
+		     * the delimiter (expand the variable substitution).
+		     * The result is left in the Buffer buf.
+		     */
+		    for (cp = tstr; *cp != '\0' && *cp != delim; cp++) {
+			if ((*cp == '\\') &&
+			    ((cp[1] == delim) ||
+			     (cp[1] == '$') ||
+			     (cp[1] == '\\')))
+			{
+			    Buf_AddByte(buf, (Byte)cp[1]);
+			    cp++;
+			} else if (*cp == '$') {
+			    if (cp[1] != delim) {
+				/*
+				 * If unescaped dollar sign not before the
+				 * delimiter, assume it's a variable
+				 * substitution and recurse.
+				 */
+				char	    *cp2;
+				int	    len;
+				Boolean	    freeIt;
+				
+				cp2 = Var_Parse(cp, ctxt, err, &len, &freeIt);
+				Buf_AddBytes(buf, strlen(cp2), (Byte *)cp2);
+				if (freeIt) {
+				    free(cp2);
+				}
+				cp += len - 1;
+			    } else {
+				/*
+				 * Unescaped $ at end of pattern => anchor
+				 * pattern at end.
+				 */
+				pattern.flags |= VAR_MATCH_END;
+			    }
+			} else {
+			    Buf_AddByte(buf, (Byte)*cp);
+			}
+		    }
+
+		    Buf_AddByte(buf, (Byte)'\0');
+		    
+		    /*
+		     * If lhs didn't end with the delimiter, complain and
+		     * return NULL
+		     */
+		    if (*cp != delim) {
+			*lengthPtr = cp - start + 1;
+			if (*freePtr) {
+			    free(str);
+			}
+			Buf_Destroy(buf, TRUE);
+			Error("Unclosed substitution for %s (%c missing)",
+			      v->name, delim);
+			return (var_Error);
+		    }
+
+		    /*
+		     * Fetch pattern and destroy buffer, but preserve the data
+		     * in it, since that's our lhs. Note that Buf_GetAll
+		     * will return the actual number of bytes, which includes
+		     * the null byte, so we have to decrement the length by
+		     * one.
+		     */
+		    pattern.lhs = (char *)Buf_GetAll(buf, &pattern.leftLen);
+		    pattern.leftLen--;
+		    Buf_Destroy(buf, FALSE);
+
+		    /*
+		     * Now comes the replacement string. Three things need to
+		     * be done here: 1) need to compress escaped delimiters and
+		     * ampersands and 2) need to replace unescaped ampersands
+		     * with the l.h.s. (since this isn't regexp, we can do
+		     * it right here) and 3) expand any variable substitutions.
+		     */
+		    buf = Buf_Init(0);
+		    
+		    tstr = cp + 1;
+		    for (cp = tstr; *cp != '\0' && *cp != delim; cp++) {
+			if ((*cp == '\\') &&
+			    ((cp[1] == delim) ||
+			     (cp[1] == '&') ||
+			     (cp[1] == '\\') ||
+			     (cp[1] == '$')))
+			{
+			    Buf_AddByte(buf, (Byte)cp[1]);
+			    cp++;
+			} else if ((*cp == '$') && (cp[1] != delim)) {
+			    char    *cp2;
+			    int	    len;
+			    Boolean freeIt;
+
+			    cp2 = Var_Parse(cp, ctxt, err, &len, &freeIt);
+			    Buf_AddBytes(buf, strlen(cp2), (Byte *)cp2);
+			    cp += len - 1;
+			    if (freeIt) {
+				free(cp2);
+			    }
+			} else if (*cp == '&') {
+			    Buf_AddBytes(buf, pattern.leftLen,
+					 (Byte *)pattern.lhs);
+			} else {
+			    Buf_AddByte(buf, (Byte)*cp);
+			}
+		    }
+
+		    Buf_AddByte(buf, (Byte)'\0');
+		    
+		    /*
+		     * If didn't end in delimiter character, complain
+		     */
+		    if (*cp != delim) {
+			*lengthPtr = cp - start + 1;
+			if (*freePtr) {
+			    free(str);
+			}
+			Buf_Destroy(buf, TRUE);
+			Error("Unclosed substitution for %s (%c missing)",
+			      v->name, delim);
+			return (var_Error);
+		    }
+
+		    pattern.rhs = (char *)Buf_GetAll(buf, &pattern.rightLen);
+		    pattern.rightLen--;
+		    Buf_Destroy(buf, FALSE);
+
+		    /*
+		     * Check for global substitution. If 'g' after the final
+		     * delimiter, substitution is global and is marked that
+		     * way.
+		     */
+		    cp++;
+		    if (*cp == 'g') {
+			pattern.flags |= VAR_SUB_GLOBAL;
+			cp++;
+		    }
+
+		    termc = *cp;
+		    newStr = VarModify(str, VarSubstitute,
+				       (ClientData)&pattern);
+		    /*
+		     * Free the two strings.
+		     */
+		    free(pattern.lhs);
+		    free(pattern.rhs);
+		    break;
+		}
+		case 'T':
+		    if (tstr[1] == endc || tstr[1] == ':') {
+			newStr = VarModify (str, VarTail, (ClientData)0);
+			cp = tstr + 1;
+			termc = *cp;
+			break;
+		    }
+		    /*FALLTHRU*/
+		case 'H':
+		    if (tstr[1] == endc || tstr[1] == ':') {
+			newStr = VarModify (str, VarHead, (ClientData)0);
+			cp = tstr + 1;
+			termc = *cp;
+			break;
+		    }
+		    /*FALLTHRU*/
+		case 'E':
+		    if (tstr[1] == endc || tstr[1] == ':') {
+			newStr = VarModify (str, VarSuffix, (ClientData)0);
+			cp = tstr + 1;
+			termc = *cp;
+			break;
+		    }
+		    /*FALLTHRU*/
+		case 'R':
+		    if (tstr[1] == endc || tstr[1] == ':') {
+			newStr = VarModify (str, VarRoot, (ClientData)0);
+			cp = tstr + 1;
+			termc = *cp;
+			break;
+		    }
+		    /*FALLTHRU*/
+		default: {
+		    /*
+		     * This can either be a bogus modifier or a System-V
+		     * substitution command.
+		     */
+		    VarPattern      pattern;
+		    Boolean         eqFound;
+		    
+		    pattern.flags = 0;
+		    eqFound = FALSE;
+		    /*
+		     * First we make a pass through the string trying
+		     * to verify it is a SYSV-make-style translation:
+		     * it must be: <string1>=<string2>)
+		     */
+		    cp = tstr;
+		    cnt = 1;
+		    while (*cp != '\0' && cnt) {
+			if (*cp == '=') {
+			    eqFound = TRUE;
+			    /* continue looking for endc */
+			}
+			else if (*cp == endc)
+			    cnt--;
+			else if (*cp == startc)
+			    cnt++;
+			if (cnt)
+			    cp++;
+		    }
+		    if (*cp == endc && eqFound) {
+			
+			/*
+			 * Now we break this sucker into the lhs and
+			 * rhs. We must null terminate them of course.
+			 */
+			for (cp = tstr; *cp != '='; cp++)
+			    continue;
+			pattern.lhs = tstr;
+			pattern.leftLen = cp - tstr;
+			*cp++ = '\0';
+			
+			pattern.rhs = cp;
+			cnt = 1;
+			while (cnt) {
+			    if (*cp == endc)
+				cnt--;
+			    else if (*cp == startc)
+				cnt++;
+			    if (cnt)
+				cp++;
+			}
+			pattern.rightLen = cp - pattern.rhs;
+			*cp = '\0';
+			
+			/*
+			 * SYSV modifications happen through the whole
+			 * string. Note the pattern is anchored at the end.
+			 */
+			newStr = VarModify(str, VarSYSVMatch,
+					   (ClientData)&pattern);
+
+			/*
+			 * Restore the nulled characters
+			 */
+			pattern.lhs[pattern.leftLen] = '=';
+			pattern.rhs[pattern.rightLen] = endc;
+			termc = endc;
+		    } else {
+			Error ("Unknown modifier '%c'\n", *tstr);
+			for (cp = tstr+1;
+			     *cp != ':' && *cp != endc && *cp != '\0';
+			     cp++) 
+				 continue;
+			termc = *cp;
+			newStr = var_Error;
+		    }
+		}
+	    }
+	    if (DEBUG(VAR)) {
+		printf("Result is \"%s\"\n", newStr);
+	    }
+	    
+	    if (*freePtr) {
+		free (str);
+	    }
+	    str = newStr;
+	    if (str != var_Error) {
+		*freePtr = TRUE;
+	    } else {
+		*freePtr = FALSE;
+	    }
+	    if (termc == '\0') {
+		Error("Unclosed variable specification for %s", v->name);
+	    } else if (termc == ':') {
+		*cp++ = termc;
+	    } else {
+		*cp = termc;
+	    }
+	    tstr = cp;
+	}
+	*lengthPtr = tstr - start + 1;
+    } else {
+	*lengthPtr = tstr - start + 1;
+	*tstr = endc;
+    }
+    
+    if (v->flags & VAR_FROM_ENV) {
+	Boolean	  destroy = FALSE;
+	
+	if (str != (char *)Buf_GetAll(v->val, (int *)NULL)) {
+	    destroy = TRUE;
+	} else {
+	    /*
+	     * Returning the value unmodified, so tell the caller to free
+	     * the thing.
+	     */
+	    *freePtr = TRUE;
+	}
+	Buf_Destroy(v->val, destroy);
+	free((Address)v);
+    } else if (v->flags & VAR_JUNK) {
+	/*
+	 * Perform any free'ing needed and set *freePtr to FALSE so the caller
+	 * doesn't try to free a static pointer.
+	 */
+	if (*freePtr) {
+	    free(str);
+	}
+	*freePtr = FALSE;
+	Buf_Destroy(v->val, TRUE);
+	free((Address)v);
+	if (dynamic) {
+	    str = emalloc(*lengthPtr + 1);
+	    strncpy(str, start, *lengthPtr);
+	    str[*lengthPtr] = '\0';
+	    *freePtr = TRUE;
+	} else {
+	    str = var_Error;
+	}
+    }
+    return (str);
 }
 
 /*-

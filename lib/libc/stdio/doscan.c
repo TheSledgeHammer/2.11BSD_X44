@@ -1,10 +1,19 @@
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)doscan.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
-#include <stdio.h>
-#include <stddef.h>
+#include "namespace.h"
+#include <assert.h>
 #include <ctype.h>
+#include <inttypes.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdarg.h>
+#include <string.h>
+#include <wchar.h>
+#include <wctype.h>
 
 #define	SPC	01
 #define	STP	02

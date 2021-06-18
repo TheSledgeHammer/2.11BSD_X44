@@ -31,16 +31,19 @@ static char sccsid[] = "@(#)vsprintf.c	5.2.1 (2.11BSD) 1995/04/02";
 #include "local.h"
 
 int
-sprintf(str, fmt, args)
-	char *str, *fmt;
-	register int args;
+sprintf(char *str, char const *fmt, ...)
 {
+	int ret;
+	va_list ap;
 	FILE _strbuf;
 
-	_strbuf._flags = _IOWRT+_IOSTRG;
-	_strbuf._ptr = str;
-	_strbuf._cnt = 32767;
-	doprnt(fmt, &args, &_strbuf);
-	*_strbuf._ptr = 0;
-	return(_strbuf._ptr - str);
+	_strbuf._flags = _IOWRT | _IOSTRG;
+	_strbuf._flags = __SWR | __SSTR;
+	_strbuf._bf._base = _strbuf._p = (unsigned char *)str;
+	_strbuf._bf._size = _strbuf._w = INT_MAX;
+	va_start(ap, fmt);
+	ret = doprnt(&_strbuf, fmt, ap);
+	va_end(ap);
+	*_strbuf._p = 0;
+	return (ret);
 }

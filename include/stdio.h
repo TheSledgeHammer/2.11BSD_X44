@@ -118,6 +118,7 @@ struct __sbuf {
 
 struct _siobuf {
 	unsigned char 	*_p;		/* current position in (some) buffer */
+
 	int				_r;			/* read space left for getc() */
 	int				_w;			/* write space left for putc() */
 	unsigned short 	_flags;		/* flags, below; this FILE is free if 0 */
@@ -136,6 +137,7 @@ struct _siobuf {
 	struct	__sbuf 	_ext;
 
 	/* separate buffer for long sequences of ungetc() */
+	struct	__sbuf 	_ub;		/* ungetc buffer */
 	unsigned char 	*_up;		/* saved _p when _p is doing ungetc data */
 	int				_ur;		/* saved _r when _r is counting ungetc data */
 
@@ -145,7 +147,7 @@ struct _siobuf {
 
 	int				(*_flush)(void *);
 	/* separate buffer for fgetln() when line crosses buffer boundary */
-	struct	__sbuf 	_lb;	/* buffer for fgetln() */
+	struct	__sbuf 	_lb;		/* buffer for fgetln() */
 
 	/* Unix stdio files get aligned to block boundaries on fseek() */
 	int				_blksize;	/* stat.st_blksize (may be != _bf._size) */
@@ -249,51 +251,51 @@ char	*sprintf();		/* too painful to do right */
  * Functions defined in ANSI C standard.
  */
 __BEGIN_DECLS
-//void clearerr (FILE *);
-int	 fclose (FILE *);
-//int	 feof (FILE *);
-//int	 ferror (FILE *);
-int	 fflush (FILE *);
-int	 fgetc (FILE *);
-int	 fgetpos (FILE *, fpos_t *);
-char *fgets (char *, size_t, FILE *);
-FILE *fopen (const char *, const char *);
-int	 fprintf (FILE *, const char *, ...);
-int	 fputc (int, FILE *);
-int	 fputs (const char *, FILE *);
-size_t	 fread (void *, size_t, size_t, FILE *);
-FILE *freopen (const char *, const char *, FILE *);
-int	 fscanf (FILE *, const char *, ...);
-int	 fseek (FILE *, long, int);
-int	 fsetpos (FILE *, const fpos_t *);
-long ftell (FILE *);
-size_t	 fwrite (const void *, size_t, size_t, FILE *);
-//int	 getc (FILE *);
-//int	 getchar (void);
-char *gets (char *);
+void 	clearerr (FILE *);
+int	 	fclose (FILE *);
+int	 	feof (FILE *);
+int	 	ferror (FILE *);
+int	 	fflush (FILE *);
+int	 	fgetc (FILE *);
+int	 	fgetpos (FILE *, fpos_t *);
+char 	*fgets (char *, size_t, FILE *);
+FILE 	*fopen (const char *, const char *);
+int	 	fprintf (FILE *, const char *, ...);
+int	 	fputc (int, FILE *);
+int	 	fputs (const char *, FILE *);
+size_t	fread (void *, size_t, size_t, FILE *);
+FILE 	*freopen (const char *, const char *, FILE *);
+int	 	fscanf (FILE *, const char *, ...);
+int	 	fseek (FILE *, long, int);
+int	 	fsetpos (FILE *, const fpos_t *);
+long 	ftell (FILE *);
+size_t	fwrite (const void *, size_t, size_t, FILE *);
+int	 	getc (FILE *);
+int	 	getchar (void);
+char 	*gets (char *);
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
 extern int sys_nerr;			/* perror(3) external variables */
 extern __const char *__const sys_errlist[];
 #endif
-void perror (const char *);
-int	 printf (const char *, ...);
-//int	 putc (int, FILE *);
-//int	 putchar (int);
-int	 puts (const char *);
-int	 remove (const char *);
-int	 rename  (const char *, const char *);
-void rewind (FILE *);
-int	 scanf (const char *, ...);
-void setbuf (FILE *, char *);
-int	 setvbuf (FILE *, char *, int, size_t);
-int	 sprintf (char *, const char *, ...);
-int	 sscanf (const char *, const char *, ...);
-FILE *tmpfile (void);
-char *tmpnam (char *);
-int	 ungetc (int, FILE *);
-int	 vfprintf (FILE *, const char *, _BSD_VA_LIST_);
-int	 vprintf (const char *, _BSD_VA_LIST_);
-int	 vsprintf (char *, const char *, _BSD_VA_LIST_);
+void 	perror (const char *);
+int	 	printf (const char *, ...);
+int	 	putc (int, FILE *);
+int	 	putchar (int);
+int	 	puts (const char *);
+int	 	remove (const char *);
+int	 	rename  (const char *, const char *);
+void 	rewind (FILE *);
+int	 	scanf (const char *, ...);
+void 	setbuf (FILE *, char *);
+int	 	setvbuf (FILE *, char *, int, size_t);
+int	 	sprintf (char *, const char *, ...);
+int	 	sscanf (const char *, const char *, ...);
+FILE 	*tmpfile (void);
+char 	*tmpnam (char *);
+int	 	ungetc (int, FILE *);
+int	 	vfprintf (FILE *, const char *, _BSD_VA_LIST_);
+int	 	vprintf (const char *, _BSD_VA_LIST_);
+int	 	vsprintf (char *, const char *, _BSD_VA_LIST_);
 __END_DECLS
 
 /*
@@ -313,10 +315,10 @@ int	 	fileno (FILE *);
  * These are normally used through macros as defined below, but POSIX
  * requires functions as well.
  */
-int	 getc_unlocked(FILE *);
-int	 getchar_unlocked(void);
-int	 putc_unlocked(int, FILE *);
-int	 putchar_unlocked(int);
+int	 	getc_unlocked(FILE *);
+int	 	getchar_unlocked(void);
+int	 	putc_unlocked(int, FILE *);
+int	 	putchar_unlocked(int);
 __END_DECLS
 #endif /* not ANSI */
 

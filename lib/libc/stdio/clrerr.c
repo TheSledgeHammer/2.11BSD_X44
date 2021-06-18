@@ -8,5 +8,5 @@ static char sccsid[] = "@(#)clrerr.c	5.2 (Berkeley) 3/9/86";
 clearerr(iop)
 	register FILE *iop;
 {
-	iop->_flag &= ~(_IOERR|_IOEOF);
+	iop->_flags &= ~(_IOERR|_IOEOF);
 }

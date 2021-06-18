@@ -15,14 +15,22 @@ static char sccsid[] = "@(#)fdopen.c	5.2 (Berkeley) 3/9/86";
  */
 
 #include <sys/types.h>
-#include <sys/file.h>
+#include <sys/stat.h>
+
+#include <assert.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <stddef.h>
+#include <limits.h>
+
+#include "local.h"
 
 FILE *
 fdopen(fd, mode)
 	int fd;
-	register char *mode;
+const  char *mode;
 {
 	extern FILE *_findiop();
 	static int nofile = -1;
@@ -38,27 +46,29 @@ fdopen(fd, mode)
 	if (iop == NULL)
 		return (NULL);
 
-	iop->_cnt = 0;
 	iop->_file = fd;
-	iop->_bufsiz = 0;
-	iop->_base = iop->_ptr = NULL;
+	iop->_cookie = fp;
+	iop->_read = __sread;
+	iop->_write = __swrite;
+	iop->_seek = __sseek;
+	iop->_close = __sclose;
 
 	switch (*mode) {
 	case 'r':
-		iop->_flag = _IOREAD;
+		iop->_flags = _IOREAD;
 		break;
 	case 'a':
 		lseek(fd, (off_t)0, L_XTND);
 		/* fall into ... */
 	case 'w':
-		iop->_flag = _IOWRT;
+		iop->_flags = _IOWRT;
 		break;
 	default:
 		return (NULL);
 	}
 
 	if (mode[1] == '+')
-		iop->_flag = _IORW;
+		iop->_flags = _IORW;
 
 	return (iop);
 }

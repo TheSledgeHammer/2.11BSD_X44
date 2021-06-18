@@ -14,11 +14,11 @@ static char sccsid[] = "@(#)findiop.c	5.6 (Berkeley) 3/9/86";
 
 extern int errno;
 
-#define active(iop)	((iop)->_flag & (_IOREAD|_IOWRT|_IORW))
+#define active(iop)	((iop)->_flags & (_IOREAD|_IOWRT|_IORW))
 
 #define NSTATIC	20	/* stdin + stdout + stderr + the usual */
 
-FILE _iob[NSTATIC] = {
+FILE __iob[NSTATIC] = {
 		{ 0, NULL, NULL, 0, _IOREAD, 0 },		/* stdin  */
 		{ 0, NULL, NULL, 0, _IOWRT,	1 },		/* stdout */
 		{ 0, NULL, NULL, 0, _IOWRT|_IONBF, 2 },	/* stderr */

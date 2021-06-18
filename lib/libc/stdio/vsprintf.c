@@ -15,24 +15,33 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)vsprintf.c	5.2.1 (2.11BSD) 1995/04/02";
 #endif /* LIBC_SCCS and not lint */
 
+#include <sys/ansi.h>
+#include <assert.h>
+#include <errno.h>
+#include <limits.h>
 #include <stdio.h>
-#include <stdarg.h>
+
+#include "local.h"
 
 int
 vsprintf(str, fmt, ap)
-	char *str, *fmt;
-	va_list ap;
+	char *str;
+	const char *fmt;
+	_BSD_VA_LIST_ ap;
 {
+	int ret;
 	FILE f;
 
-	f._flag = _IOWRT+_IOSTRG;
-	f._ptr = str;
-	f._cnt = 32767;
-	doprnt(fmt, ap, &f);
-	*f._ptr = 0;
-	return (f._ptr - str);
+	f._flags = _IOWRT | _IOSTRG;
+	f._flags = __SWR | __SSTR;
+	f._bf._base = f._p = (unsigned char *)str;
+	f._bf._size = f._w = INT_MAX;
+	ret = doprnt(&f, fmt, ap);
+	*f._p = 0;
+	return (ret);
 }
