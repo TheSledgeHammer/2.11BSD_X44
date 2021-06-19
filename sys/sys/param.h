@@ -242,6 +242,7 @@
  *	}
  *
  */
+#define ALIGNBYTES				ALIGNBYTES
 #ifndef ALIGNED_POINTER
 #define	ALIGNED_POINTER(p,t)	((((uintptr_t)(p)) & ((sizeof(t)) - 1)) == 0)
 #endif

@@ -34,11 +34,13 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)heapsort.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
+#include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -142,7 +144,7 @@ int
 heapsort(vbase, nmemb, size, compar)
 	void *vbase;
 	size_t nmemb, size;
-	int (*compar) __P((const void *, const void *));
+	int (*compar)(const void *, const void *);
 {
 	register int cnt, i, j, l;
 	register char tmp, *tmp1, *tmp2;

@@ -34,6 +34,7 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)glob.c	8.3 (Berkeley) 10/13/93";
 #endif /* LIBC_SCCS and not lint */
@@ -71,6 +72,7 @@ static char sccsid[] = "@(#)glob.c	8.3 (Berkeley) 10/13/93";
 #include <errno.h>
 #include <glob.h>
 #include <pwd.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -578,7 +580,7 @@ glob3(pathbuf, pathend, pattern, restpattern, pglob)
 		if (pglob->gl_errfunc) {
 			g_Ctoc(pathbuf, buf);
 			if (pglob->gl_errfunc(buf, errno) ||
-			    pglob->gl_flags & GLOB_ERR)
+			    (pglob->gl_flags & GLOB_ERR))
 				return (GLOB_ABEND);
 		}
 		return(0);

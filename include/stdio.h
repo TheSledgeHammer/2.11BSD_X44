@@ -234,19 +234,6 @@ __END_DECLS
 #define	stdout		(&_iob[1])
 #define	stderr		(&_iob[2])
 
-
-
-FILE	*fopen();
-FILE	*fdopen();
-FILE	*freopen();
-FILE	*popen();
-long	ftell();
-char	*fgets();
-char	*gets();
-#ifdef vax
-char	*sprintf();		/* too painful to do right */
-#endif
-
 /*
  * Functions defined in ANSI C standard.
  */

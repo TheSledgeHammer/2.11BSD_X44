@@ -41,10 +41,10 @@
 #include <sys/types.h>
 
 struct	group { /* see getgrent(3) */
-	char	*gr_name;
-	char	*gr_passwd;
-	int		gr_gid;
-	char	**gr_mem;
+	char	*gr_name;			/* group name */
+	char	*gr_passwd;			/* group password */
+	int		gr_gid;				/* group id */
+	char	**gr_mem;			/* group members */
 };
 
 __BEGIN_DECLS

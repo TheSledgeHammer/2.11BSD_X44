@@ -160,3 +160,4 @@ _BSD_RUNE_T_	toupper (_BSD_RUNE_T_);
 _BSD_RUNE_T_	tolower (_BSD_RUNE_T_);
 __END_DECLS
 #endif /* _USE_CTYPE_INLINE_ */
+#endif

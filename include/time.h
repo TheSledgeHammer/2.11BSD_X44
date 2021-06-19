@@ -61,6 +61,13 @@ __BEGIN_DECLS
 
 extern	struct tm *gmtime(), *localtime();
 extern	char *asctime(), *ctime();
+/*
+ * CLK_TCK uses libc's internal __sysconf() to retrieve the machine's
+ * HZ. The value of _SC_CLK_TCK is 39 -- we hard code it so we do not
+ * need to include unistd.h
+ */
+long __sysconf(int);
+#define CLK_TCK		(__sysconf(39))
 
 __END_DECLS
 

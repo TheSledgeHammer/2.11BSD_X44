@@ -6,10 +6,15 @@
  *	@(#)errno.h	7.1 (Berkeley) 6/4/86
  */
 
+#ifndef _ERRNO_H_
+#define _ERRNO_H_
+
+#include <sys/cdefs.h>
+#include <sys/errno.h>
+
 /*
  * Error codes
  */
-
 #define	EPERM			1		/* Not owner */
 #define	ENOENT			2		/* No such file or directory */
 #define	ESRCH			3		/* No such process */
@@ -96,3 +101,15 @@
 #define	EPROCLIM		67		/* Too many processes */
 #define	EUSERS			68		/* Too many users */
 #define	EDQUOT			69		/* Disc quota exceeded */
+
+__BEGIN_DECLS
+#ifndef __errno
+int *__errno(void);
+#define __errno __errno
+#endif
+
+#ifndef errno
+#define errno (*__errno())
+#endif
+ __END_DECLS
+#endif /* !_ERRNO_H_ */

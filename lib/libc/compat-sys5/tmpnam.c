@@ -15,15 +15,19 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)tmpnam.c	4.6 (Berkeley) 7/23/88";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
+#include <sys/types.h>
 #include <stdio.h>
 #include <stddef.h>
+#include <unistd.h>
 
-#define	P_tmpdir	"/usr/tmp"
+#include "local.h"
+//#define	P_tmpdir	"/usr/tmp"
 
 FILE *
 tmpfile()
@@ -31,12 +35,12 @@ tmpfile()
 	FILE *fp;
 	char *f, *tmpnam();
 
-	if (!(f = tmpnam((char *)NULL)) || !(fp = fopen(f, "w+"))) {
+	if (!(f = tmpnam((char*) NULL)) || !(fp = fopen(f, "w+"))) {
 		fprintf(stderr, "tmpfile: cannot open %s.\n", f);
-		return(NULL);
+		return (NULL);
 	}
-	(void)unlink(f);
-	return(fp);
+	(void) unlink(f);
+	return (fp);
 }
 
 char *
@@ -45,10 +49,10 @@ tmpnam(s)
 {
 	char *malloc(), *mktemp();
 
-	if (!s && !(s = malloc((u_int)MAXPATHLEN)))
-		return(NULL);
-	(void)sprintf(s, "%s/XXXXXX", P_tmpdir);
-	return(mktemp(s));
+	if (!s && !(s = malloc((u_int) MAXPATHLEN)))
+		return (NULL);
+	(void) sprintf(s, "%s/XXXXXX", P_tmpdir);
+	return (mktemp(s));
 }
 
 char *
@@ -57,22 +61,22 @@ tempnam(dir, pfx)
 {
 	char *f, *name, *getenv(), *malloc(), *mktemp();
 
-	if (!(name = malloc((u_int)MAXPATHLEN)))
-		return(NULL);
+	if (!(name = malloc((u_int) MAXPATHLEN)))
+		return (NULL);
 
 	if (f == getenv("TMPDIR")) {
-		(void)sprintf(name, "%s/%sXXXXXX", f, pfx ? "" : pfx);
+		(void) sprintf(name, "%s/%sXXXXXX", f, pfx ? "" : pfx);
 		if (f == mktemp(name))
-			return(f);
+			return (f);
 	}
 	if (dir) {
-		(void)sprintf(name, "%s/%sXXXXXX", dir, pfx ? "" : pfx);
+		(void) sprintf(name, "%s/%sXXXXXX", dir, pfx ? "" : pfx);
 		if (f == mktemp(name))
-			return(f);
+			return (f);
 	}
-	(void)sprintf(name, "%s/%sXXXXXX", P_tmpdir, pfx ? "" : pfx);
+	(void) sprintf(name, "%s/%sXXXXXX", P_tmpdir, pfx ? "" : pfx);
 	if (f == mktemp(name))
-		return(f);
-	(void)sprintf(name, "/tmp/%sXXXXXX", pfx ? "" : pfx);
-	return(mktemp(name));
+		return (f);
+	(void) sprintf(name, "/tmp/%sXXXXXX", pfx ? "" : pfx);
+	return (mktemp(name));
 }

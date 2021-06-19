@@ -4,18 +4,23 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)times.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
+#include <sys/param.h>
 #include <sys/time.h>
-#include <sys/resource.h>
-#include <sys/types.h>
 #include <sys/times.h>
+#include <sys/resource.h>
+
+#include <assert.h>
+#include <errno.h>
+#include <time.h>
 
 long scale60(struct timeval *tvp);
 
-int
+clock_t
 times(tmsp)
 	register struct tms *tmsp;
 {

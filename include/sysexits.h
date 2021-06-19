@@ -99,4 +99,5 @@
 # define EX_NOPERM		77	/* permission denied */
 # define EX_CONFIG		78	/* configuration error */
 
+#define EX__MAX			78	/* maximum listed value */
 #endif /* !_SYSEXITS_H_ */

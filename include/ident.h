@@ -149,41 +149,30 @@ typedef struct {
 /* Low-level calls and macros */
 #define id_fileno(ID)	((ID)->fd)
 
-extern ident_t * id_open __P((__STRUCT_IN_ADDR_P laddr,
-			   __STRUCT_IN_ADDR_P faddr,
-			   __STRUCT_TIMEVAL_P timeout));
+extern ident_t * id_open (__STRUCT_IN_ADDR_P laddr, __STRUCT_IN_ADDR_P faddr, __STRUCT_TIMEVAL_P timeout);
   
-extern int    id_close __P((ident_t *id));
+extern int    id_close (ident_t *id);
   
-extern int    id_query __P((ident_t *id,
-			    int lport,
-			    int fport,
-			    __STRUCT_TIMEVAL_P timeout));
+extern int    id_query (ident_t *id, int lport, int fport, __STRUCT_TIMEVAL_P timeout);
   
-extern int    id_parse __P((ident_t *id,
-			    __STRUCT_TIMEVAL_P timeout,
-			    int *lport,
-			    int *fport,
-			    char **identifier,
-			    char **opsys,
-			    char **charset));
+extern int    id_parse (ident_t *id, __STRUCT_TIMEVAL_P timeout, int *lport, int *fport, char **identifier, char **opsys, char **charset);
   
 /* High-level calls */
 
-extern IDENT *ident_lookup __P((int fd, int timeout));
+extern IDENT *ident_lookup (int fd, int timeout);
 
-extern char  *ident_id __P((int fd, int timeout));
+extern char  *ident_id (int fd, int timeout);
 
-extern IDENT *ident_query __P(( __STRUCT_IN_ADDR_P laddr, __STRUCT_IN_ADDR_P raddr, int lport, int rport, int timeout));
+extern IDENT *ident_query ( __STRUCT_IN_ADDR_P laddr, __STRUCT_IN_ADDR_P raddr, int lport, int rport, int timeout);
 
-extern void   ident_free __P((IDENT *id));
+extern void   ident_free (IDENT *id);
 
 extern char  id_version[];
 
 #ifdef IN_LIBIDENT_SRC
 
-extern char *id_strdup __P((char *str));
-extern char *id_strtok __P((char *cp, char *cs, char *dc));
+extern char *id_strdup (char *str));
+extern char *id_strtok (char *cp, char *cs, char *dc);
 
 #endif
 

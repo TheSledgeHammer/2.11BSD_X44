@@ -6,6 +6,9 @@
  *	@(#)curses.h	5.1 (Berkeley) 6/7/85
  */
 
+
+#ifndef	_CURSES_H_
+#define _CURSES_H_
 # ifndef WINDOW
 
 # include	<stdio.h>
@@ -168,3 +171,4 @@ char	*longname(), *getcap();
 #define	unctrl(c)	_unctrl[(c) & 0177]
 extern char *_unctrl[];
 # endif
+#endif /* _CURSES_H_ */

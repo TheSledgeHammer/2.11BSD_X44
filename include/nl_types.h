@@ -31,6 +31,7 @@
 
 #ifndef _NL_TYPES_H_
 #define _NL_TYPES_H_
+
 #include <sys/cdefs.h>
 
 #ifdef _NLS_PRIVATE
@@ -87,11 +88,9 @@ char    *catgets(nl_catd, int, int, const char *) __format_arg(4);
 int	 	catclose(nl_catd);
 __END_DECLS
 
-#if defined(_NETBSD_SOURCE)
 #  ifndef __LOCALE_T_DECLARED
 typedef struct _locale		*locale_t;
 #  define __LOCALE_T_DECLARED
-#  endif
 __BEGIN_DECLS
 nl_catd  catopen_l(const char *, int, locale_t);
 __END_DECLS

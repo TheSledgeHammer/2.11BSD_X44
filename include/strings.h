@@ -43,5 +43,6 @@ int		memcmp(), strcspn(), strspn();
 /* Routines from ANSI X3J11 */
 char	*strerror();
 __END_DECLS
+
 #include <string.h>
 #endif /* !defined(_STRINGS_H_) */

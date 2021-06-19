@@ -13,10 +13,18 @@ static char sccsid[] = "@(#)mktemp.c	5.4 (Berkeley) 9/14/87";
 #include <sys/stat.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <ctype.h>
 
 #define	YES	1
 #define	NO	0
+
+char *
+mkdtemp(as)
+	char	*as;
+{
+	return (_gettemp(as, (int *)NULL) ? as : (char *)NULL);
+}
 
 mkstemp(as)
 	char	*as;
@@ -33,7 +41,7 @@ mktemp(as)
 	return(_gettemp(as, (int *)NULL) ? as : (char *)NULL);
 }
 
-static
+static int
 _gettemp(as, doopen)
 	char	*as;
 	register int	*doopen;

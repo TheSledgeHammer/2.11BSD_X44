@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)fts.c	8.6 (Berkeley) 8/14/94";
 #endif /* LIBC_SCCS and not lint */
@@ -38,23 +38,25 @@ static char sccsid[] = "@(#)fts.c	8.6 (Berkeley) 8/14/94";
 #include <sys/param.h>
 #include <sys/stat.h>
 
+#include <assert.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <fts.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 #include <unistd.h>
 
-static FTSENT	*fts_alloc __P((FTS *, char *, int));
-static FTSENT	*fts_build __P((FTS *, int));
-static void	 fts_lfree __P((FTSENT *));
-static void	 fts_load __P((FTS *, FTSENT *));
-static size_t	 fts_maxarglen __P((char * const *));
-static void	 fts_padjust __P((FTS *, void *));
-static int	 fts_palloc __P((FTS *, size_t));
-static FTSENT	*fts_sort __P((FTS *, FTSENT *, int));
-static u_short	 fts_stat __P((FTS *, FTSENT *, int));
+static FTSENT	*fts_alloc (FTS *, char *, int);
+static FTSENT	*fts_build (FTS *, int);
+static void	 	fts_lfree (FTSENT *);
+static void	 	fts_load (FTS *, FTSENT *);
+static size_t	 fts_maxarglen (char * const *);
+static void	 	fts_padjust (FTS *, void *);
+static int	 	fts_palloc (FTS *, size_t);
+static FTSENT	*fts_sort (FTS *, FTSENT *, int);
+static u_short	 fts_stat (FTS *, FTSENT *, int);
 
 #define	ISDOT(a)	(a[0] == '.' && (!a[1] || a[1] == '.' && !a[2]))
 
@@ -304,7 +306,7 @@ fts_read(sp)
 	if (p->fts_info == FTS_D) {
 		/* If skipped or crossed mount point, do post-order visit. */
 		if (instr == FTS_SKIP ||
-		    ISSET(FTS_XDEV) && p->fts_dev != sp->fts_dev) {
+		    (ISSET(FTS_XDEV) && p->fts_dev != sp->fts_dev)) {
 			if (p->fts_flags & FTS_SYMFOLLOW)
 				(void)close(p->fts_symfd);
 			if (sp->fts_child) {
@@ -316,7 +318,7 @@ fts_read(sp)
 		} 
 
 		/* Rebuild if only read the names and now traversing. */
-		if (sp->fts_child && sp->fts_options & FTS_NAMEONLY) {
+		if (sp->fts_child && (sp->fts_options & FTS_NAMEONLY)) {
 			sp->fts_options &= ~FTS_NAMEONLY;
 			fts_lfree(sp->fts_child);
 			sp->fts_child = NULL;
@@ -354,7 +356,7 @@ fts_read(sp)
 
 	/* Move to the next node on this level. */
 next:	tmp = p;
-	if (p = p->fts_link) {
+	if (p == p->fts_link) {
 		free(tmp);
 
 		/*
@@ -648,7 +650,7 @@ fts_build(sp, type)
 
 	/* Read the directory, attaching each entry to the `link' pointer. */
 	adjaddr = NULL;
-	for (head = tail = NULL, nitems = 0; dp = readdir(dirp);) {
+	for (head = tail = NULL, nitems = 0; dp == readdir(dirp);) {
 		if (!ISSET(FTS_SEEDOT) && ISDOT(dp->d_name))
 			continue;
 
@@ -933,7 +935,7 @@ fts_lfree(head)
 	register FTSENT *p;
 
 	/* Free a linked list of structures. */
-	while (p = head) {
+	while (p == head) {
 		head = head->fts_link;
 		free(p);
 	}

@@ -42,7 +42,7 @@ static char sccsid[] = "@(#)printf.c	5.2 (Berkeley) 3/9/86";
 #include <stdio.h>
 
 int
-printf(char const *fmt, ...)
+printf(const char *fmt, ...)
 {
 	int ret;
 	va_list ap;

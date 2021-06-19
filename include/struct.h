@@ -36,9 +36,11 @@
 /*
  * access to information relating to the fields of a structure
  */
-
+/* Offset of the field in the structure. */
 #define	fldoff(str, fld)		((int)&(((struct str *)0)->fld))
+/* Size of the field in the structure. */
 #define	fldsiz(str, fld)		(sizeof(((struct str *)0)->fld))
+/* Address of the structure from a field. */
 #define	strbase(str, ptr, fld)	((struct str *)((char *)(ptr)-fldoff(str, fld)))
 
 #endif /* !_STRUCT_H_ */

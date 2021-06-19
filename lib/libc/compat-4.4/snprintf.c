@@ -58,7 +58,7 @@ snprintf(char *str, size_t n, char const *fmt, ...)
 	_strbuf._flags = __SWR | __SSTR;
 	_strbuf._bf._base = _strbuf._p = (unsigned char *)str;
 	_strbuf._bf._size = _strbuf._w = n - 1;
-	ret = doprint(&_strbuf, fmt, ap);
+	ret = doprnt(&_strbuf, fmt, ap);
 	*_strbuf._p = 0;
 	va_end(ap);
 	return (ret);

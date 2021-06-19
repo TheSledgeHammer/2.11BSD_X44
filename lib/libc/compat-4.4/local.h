@@ -36,7 +36,9 @@
  *	@(#)local.h	8.3 (Berkeley) 7/3/94
  */
 
-#include <stdio.h>
+#include <limits.h>
+#include <stdarg.h>
+#include <stdbool.h>
 
 /*
  * Information local to this implementation of stdio,

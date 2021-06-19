@@ -52,6 +52,7 @@ static char sccsid[] = "@(#)fgetln.c	8.2 (Berkeley) 1/2/94";
  * so we add 1 here.
 #endif
  */
+int
 __slbexpand(fp, newsize)
 	FILE *fp;
 	size_t newsize;
@@ -157,6 +158,6 @@ fgetln(fp, lenp)
 	return ((char *)fp->_lb._base);
 
 error:
-	*lenp = 0;		/* ??? */
+	*lenp = 0;			/* ??? */
 	return (NULL);		/* ??? */
 }

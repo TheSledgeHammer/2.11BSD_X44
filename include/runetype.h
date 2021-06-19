@@ -39,8 +39,8 @@
 #ifndef	_RUNETYPE_H_
 #define	_RUNETYPE_H_
 
-//#include <machine/ansi.h>
 #include <sys/cdefs.h>
+#include <sys/ansi.h>
 #include <machine/ansi.h>
 #include <sys/null.h>
 
@@ -121,9 +121,9 @@ typedef struct {
 	 * Their data is actually contiguous with this structure so as to make
 	 * it easier to read/write from/to disk.
 	 */
-	_RuneRange	runetype_ext;
-	_RuneRange	maplower_ext;
-	_RuneRange	mapupper_ext;
+	_RuneRange		runetype_ext;
+	_RuneRange		maplower_ext;
+	_RuneRange		mapupper_ext;
 
 	void		*variable;	/* Data which depends on the encoding */
 	int			variable_len;	/* how long that data is */
