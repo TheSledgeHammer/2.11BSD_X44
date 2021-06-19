@@ -12,6 +12,13 @@
 static char sccsid[] = "@(#)memcmp.c	5.2 (Berkeley) 86/03/09";
 #endif
 
+#if !defined(_KERNEL) && !defined(_STANDALONE)
+#include <assert.h>
+#include <string.h>
+#else
+#include <lib/libkern/libkern.h>
+#endif
+
 int
 memcmp(s1, s2, n)
 	const void *s1, *s2;

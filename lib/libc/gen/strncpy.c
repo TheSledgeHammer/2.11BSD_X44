@@ -20,7 +20,7 @@ strncpy(s1, s2, n)
 		if ((*s1++ = *s2++) == '\0') {
 			while (++i < n)
 				*s1++ = '\0';
-			return(os1);
+			return (os1);
 		}
-	return(os1);
+	return (os1);
 }

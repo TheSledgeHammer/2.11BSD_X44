@@ -31,6 +31,7 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)strtok.c	8.1.1 (2.11BSD) 1996/1/11";
 #endif /* LIBC_SCCS and not lint */
@@ -42,9 +43,9 @@ static char sccsid[] = "@(#)strtok.c	8.1.1 (2.11BSD) 1996/1/11";
 char *
 strtok(s, delim)
 	register char *s;
-	register char *delim;
+	const  char *delim;
 {
-	register char *spanp;
+	const  char *spanp;
 	int c, sc;
 	char *tok;
 	static char *last;

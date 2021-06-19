@@ -46,7 +46,7 @@ typedef struct _stringlist {
 __BEGIN_DECLS
 StringList 	*sl_init(void);
 int		 	sl_add(StringList *, char *);
-void		 sl_free(StringList *, int);
+void		sl_free(StringList *, int);
 char 		*sl_find(StringList *, const char *);
 int		 	sl_delete(StringList *, const char *, int);
 __END_DECLS

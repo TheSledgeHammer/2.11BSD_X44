@@ -1,3 +1,4 @@
+/*	$NetBSD: fclose.c,v 1.16 2003/08/07 16:43:22 agc Exp $	*/
 /*-
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -13,11 +14,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -35,35 +32,37 @@
  */
 
 #include <sys/cdefs.h>
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strcspn.c	8.1.1 (2.11BSD) 1996/1/11";
-#endif /* LIBC_SCCS and not lint */
 
 #include <assert.h>
-#include <string.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <wchar.h>
+#include "local.h"
 
-/*
- * Span the complement of string s2.
- */
-size_t
-strcspn(s1, s2)
-	char *s1;
-	char *s2;
+int
+fclose(fp)
+	FILE *fp;
 {
-	register char *p, *spanp;
-	register char c, sc;
+	int r;
 
-	/*
-	 * Stop as soon as we find any character from s2.  Note that there
-	 * must be a NUL in s2; it suffices to stop when we find that, too.
-	 */
-	for (p = s1;;) {
-		c = *p++;
-		spanp = s2;
-		do {
-			if ((sc = *spanp++) == c)
-				return (p - 1 - s1);
-		} while (sc != 0);
+	if (fp->_flags == 0) { /* not open! */
+		errno = EBADF;
+		return (EOF);
 	}
-	/* NOTREACHED */
+	r = fp->_flags & __SWR ? __sflush(fp) : 0;
+	if (fp->_close != NULL && (*fp->_close)(fp->_cookie) < 0)
+		r = EOF;
+	if (fp->_flags & __SMBF)
+		free((char*) fp->_bf._base);
+
+	if (HASUB(fp))
+		FREEUB(fp);
+	if (HASLB(fp))
+		FREELB(fp);
+
+	fp->_file = -1;
+	fp->_flags = 0;			/* Release this FILE for reuse. */
+	fp->_r = fp->_w = 0;	/* Mess up if reaccessed. */
+	return (r);
 }

@@ -24,5 +24,5 @@ CPPFLAGS+=	${USER_CPPFLAGS}
 # For overriding -std=gnu99 or similar options.
 CFLAGS+=	${USER_CFLAGS}
 .if defined(LATE_CC)
-CC=		${LATE_CC}
+CC=			${LATE_CC}
 .endif

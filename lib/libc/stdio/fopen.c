@@ -39,6 +39,8 @@
  * specifies the terms and conditions for redistribution.
  */
 
+
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)fopen.c	8.1 (Berkeley) 6/4/93";
 static char sccsid[] = "@(#)fopen.c	5.2 (Berkeley) 3/9/86";

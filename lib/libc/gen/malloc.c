@@ -1,5 +1,6 @@
 /*	@(#)malloc.c	2.3	(2.11BSD) 1999/1/18 */
-
+#include <sys/cdefs.h>
+#include <stddef.h>
 #include <unistd.h>
 
 #ifdef debug
@@ -67,7 +68,7 @@ char *s;
  * Different implementations may need to redefine ALIGN, NALIGN, BLOCK,
  * BUSY, INT where INT is integer type to which a pointer can be cast.
  */
-#define	INT		int
+#define	INT			int
 #define	ALIGN		int
 #define	NALIGN		1
 #define	WORD		sizeof(union store)
@@ -82,7 +83,7 @@ char *s;
 union store {
 	union store	*ptr;
 	ALIGN		dummy[NALIGN];
-	int		calloc;	/* calloc clears an array of integers */
+	int			calloc;	/* calloc clears an array of integers */
 };
 
 static union store	allocs[2];	/* initial arena */
@@ -101,7 +102,7 @@ malloc(nbytes)
 	static int temp;	/* coroutines assume no auto */
 
 	if (nbytes == 0)
-		return(NULL);
+		return (NULL);
 	if (allocs[0].ptr == 0) {	/* first time */
 		allocs[0].ptr = setbusy(&allocs[1]);
 		allocs[1].ptr = setbusy(&allocs[0]);
@@ -127,7 +128,7 @@ malloc(nbytes)
 				ASSERT(p <= alloct);
 			else if (q != alloct || p != allocs) {
 				ASSERT(q == alloct && p == allocs);
-				return(NULL);
+				return (NULL);
 			} else if (++temp > 1)
 				break;
 		}
@@ -139,10 +140,10 @@ malloc(nbytes)
 		temp = ((((unsigned)q + WORD*nw + BLOCK-1)/BLOCK)*BLOCK
 			- (unsigned)q) / WORD;
 		if (q+temp+GRANULE < q)
-			return(NULL);
+			return (NULL);
 		q = (union store *)sbrk(temp*WORD);
 		if ((INT)q == -1)
-			return(NULL);
+			return (NULL);
 		ASSERT(q > alloct);
 		alloct->ptr = q;
 		if (q != alloct+1)
@@ -158,7 +159,7 @@ found:
 		allocp->ptr = p->ptr;
 	}
 	p->ptr = setbusy(allocp);
-	return((char *)(p+1));
+	return ((char*) (p + 1));
 }
 
 /*
@@ -169,8 +170,7 @@ free(ap)
 {
 	register union store *p = (union store *)ap;
 
-	ASSERT(p > clearbusy(allocs[1].ptr) && p <= alloct);
-	ASSERT(allock());
+	ASSERT(p > clearbusy(allocs[1].ptr) && p <= alloct); ASSERT(allock());
 	allocp = --p;
 	ASSERT(testbusy(p->ptr));
 	p->ptr = clearbusy(p->ptr);
@@ -193,21 +193,21 @@ realloc(p, nbytes)
 	unsigned onw;
 
 	if (testbusy(p[-1].ptr))
-		free((char *)p);
+		free((char*) p);
 	onw = p[-1].ptr - p;
-	q = (union store *)malloc(nbytes);
+	q = (union store*) malloc(nbytes);
 	if (q == NULL || q == p)
-		return((char *)q);
+		return ((char*) q);
 	s = p;
 	t = q;
-	nw = (nbytes+WORD-1)/WORD;
+	nw = (nbytes + WORD - 1) / WORD;
 	if (nw < onw)
 		onw = nw;
 	while (onw-- != 0)
 		*t++ = *s++;
-	if (q < p && q+nw >= p)
-		(q+(q+nw-p))->ptr = allocx;
-	return((char *)q);
+	if (q < p && q + nw >= p)
+		(q + (q + nw - p))->ptr = allocx;
+	return ((char*) q);
 }
 
 #ifdef	debug

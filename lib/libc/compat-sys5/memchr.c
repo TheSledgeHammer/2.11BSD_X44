@@ -12,6 +12,14 @@
 static char sccsid[] = "@(#)memchr.c	5.2 (Berkeley) 86/03/09";
 #endif
 
+#if !defined(_KERNEL) && !defined(_STANDALONE)
+#include <assert.h>
+#include <string.h>
+#else
+#include <lib/libkern/libkern.h>
+#define	NULL		((char *)0)
+#endif
+
 void *
 memchr(s, c, n)
 	const void *s;
