@@ -28,6 +28,9 @@
 
 #include <arch/i386/include/param.h>
 
+#include <devel/vm/include/vm_stack.h>
+#include <devel/vm/include/vm_text.h>
+
 /*
  * Expand the swap area for both the data and stack segments.
  * If space is not available for both, retract and return ENOMEM.
@@ -47,12 +50,14 @@ vm_swpexpand(ds, ss, dmp, smp)
 		smp = tmp; ss = ts;
 	}
 	ods = dtoc(dmp->dm_size);
-	if (vm_vsexpand(ds, dmp, 0) == 0)
+	if (vm_vsexpand(ds, dmp, 0) == 0) {
 		return (ENOMEM);
+	}
 	if (vm_vsexpand(ss, smp, 0) == 0) {
 		/* flush text cache and try again */
-		if (xpurge() && vm_vsexpand(ss, smp, 0))
+		if (xpurge() && vm_vsexpand(ss, smp, 0)) {
 			return (0);
+		}
 		(void) vm_vsexpand(ods, dmp, 1);
 		return (ENOMEM);
 	}
@@ -86,8 +91,9 @@ vm_vsexpand(vssize, dmp, canshrink)
 			*ip = rmalloc(swapmap, blk);
 			if (*ip == 0) {
 				dmp->dm_size = vsbase;
-				if (vm_vsexpand(dtoc(oldsize), dmp, 1) == 0)
+				if (vm_vsexpand(dtoc(oldsize), dmp, 1) == 0) {
 					panic("vsexpand");
+				}
 				return (0);
 			}
 			dmp->dm_alloc += blk;
@@ -105,41 +111,68 @@ vm_vsexpand(vssize, dmp, canshrink)
 	return (1);
 }
 
-void
-vschunk(p, base, size, type, dmp)
-	register struct proc *p;
-	register int base, size;
-	int type;
-	struct dmap *dmp;
+/*
+ * Allocate swap space for a text segment,
+ * in chunks of at most dmtext pages.
+ */
+int
+vm_vsxalloc(xp)
+	struct vm_text *xp;
 {
-	register struct pte *pte;
-	struct dblock db;
-	unsigned v;
-
-	base = ctod(base);
-	size = ctod(size);
-	if (type == CTEXT) {
-		while (size > 0) {
-			db.db_size = dmtext - base % dmtext;
-			if (db.db_size > size)
-				db.db_size = size;
-			(void) swap(p, p->p_textp->x_daddr[base / dmtext] + base % dmtext, ptob(tptov(p, dtoc(base))), (int) dtob(db.db_size), B_WRITE, 0, swapdev_vp, 0);
-			pte = tptopte(p, dtoc(base));
-			p->p_textp->x_rssize -= vmemfree(pte, (int) dtoc(db.db_size));
-			base += db.db_size;
-			size -= db.db_size;
-		}
-		return;
+	register long blk;
+	register swblk_t *dp;
+	swblk_t vsbase;
+	if (ctod(xp->x_size) > NXDAD * dmtext) {
+		return (0);
 	}
-	do {
-		vstodb(base, size, dmp, &db, type == CSTACK);
-		v = type == CSTACK ? sptov(p, dtoc(base+db.db_size) - 1) : dptov(p, dtoc(base));
-		(void) swap(p, db.db_base, ptob(v), (int) dtob(db.db_size), B_WRITE, 0, swapdev_vp, 0);
-		pte = type == CSTACK ? sptopte(p, dtoc(base+db.db_size) - 1) : dptopte(p, dtoc(base));
-		p->p_rssize -= vmemfree(pte, (int) dtoc(db.db_size));
-		base += db.db_size;
-		size -= db.db_size;
-	} while (size != 0);
+	dp = xp->x_daddr;
+	for (vsbase = 0; vsbase < ctod(xp->x_size); vsbase += dmtext) {
+		blk = ctod(xp->x_size) - vsbase;
+		if (blk > dmtext) {
+			blk = dmtext;
+		}
+		if ((*dp++ = rmalloc(swapmap, blk)) == 0) {
+			vm_vsxfree(xp, dtoc(vsbase));
+			return (0);
+		}
+	}
+	if (xp->x_flag & XPAGV) {
+		xp->x_ptdaddr = rmalloc(swapmap, (long)ctod(clrnd(ctopt(xp->x_size))));
+		if (xp->x_ptdaddr == 0) {
+			vm_vsxfree(xp, (long)xp->x_size);
+			return (0);
+		}
+	}
+	return (1);
+}
+
+/*
+ * Free the swap space of a text segment which
+ * has been allocated ts pages.
+ */
+void
+vm_vsxfree(xp, ts)
+	struct vm_text *xp;
+	long ts;
+{
+	register long blk;
+	register swblk_t *dp;
+	swblk_t 		vsbase;
+
+	ts = ctod(ts);
+	dp = xp->x_daddr;
+	for (vsbase = 0; vsbase < ts; vsbase += dmtext) {
+		blk = ts - vsbase;
+		if (blk > dmtext) {
+			blk = dmtext;
+		}
+		rmfree(swapmap, blk, *dp);
+		*dp++ = 0;
+	}
+	if ((xp->x_flag&XPAGV) && xp->x_ptdaddr) {
+		rmfree(swapmap, (long)ctod(clrnd(ctopt(xp->x_size))), xp->x_ptdaddr);
+		xp->x_ptdaddr = 0;
+	}
 }
 
 /*
@@ -148,7 +181,7 @@ vschunk(p, base, size, type, dmp)
  * (largest) initial, physically contiguous block.
  */
 void
-vstodb(vsbase, vssize, dmp, dbp, rev)
+vm_vstodb(vsbase, vssize, dmp, dbp, rev)
 	register int vsbase, vssize;
 	struct dmap *dmp;
 	register struct dblock *dbp;
@@ -156,16 +189,20 @@ vstodb(vsbase, vssize, dmp, dbp, rev)
 {
 	register int blk = dmmin;
 	register swblk_t *ip = dmp->dm_map;
-	if (vsbase < 0 || vssize < 0 || vsbase + vssize > dmp->dm_size)
+
+	if (vsbase < 0 || vssize < 0 || vsbase + vssize > dmp->dm_size) {
 		panic("vstodb");
+	}
 	while (vsbase >= blk) {
 		vsbase -= blk;
-		if (blk < dmmax)
+		if (blk < dmmax) {
 			blk *= 2;
+		}
 		ip++;
 	}
-	if (*ip + blk > nswap)
+	if (*ip + blk > nswap) {
 		panic("vstodb *ip");
+	}
 	dbp->db_size = imin(vssize, blk - vsbase);
 	dbp->db_base = *ip + (rev ? blk - (vsbase + dbp->db_size) : vsbase);
 }
@@ -178,7 +215,7 @@ vstodb(vsbase, vssize, dmp, dbp, rev)
  * i.e. a page cluster must be stored contiguously in the swap area.
  */
 swblk_t
-vtod(p, v, dmap, smap)
+vm_vtod(p, v, dmap, smap)
 	register struct proc *p;
 	unsigned v;
 	struct dmap *dmap, *smap;
@@ -190,9 +227,10 @@ vtod(p, v, dmap, smap)
 		tp = ctod(vtotp(p, v));
 		return (p->p_taddr[tp / dmtext] + tp % dmtext);		/* XXX */
 	}
-	if (isassv(p, v))
-		vstodb(ctod(vtosp(p, v)), ctod(1), smap, &db, 1);
-	else
-		vstodb(ctod(vtodp(p, v)), ctod(1), dmap, &db, 0);
+	if (isassv(p, v)) {
+		vm_vstodb(ctod(vtosp(p, v)), ctod(1), smap, &db, 1);
+	} else {
+		vm_vstodb(ctod(vtodp(p, v)), ctod(1), dmap, &db, 0);
+	}
 	return (db.db_base);
 }

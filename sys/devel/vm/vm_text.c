@@ -20,22 +20,19 @@ struct vm_xstats 	*xstats;			/* cache statistics */
  * initialize text table (from vm_segment.c)
  */
 void
-vm_text_init(vm, segment, start, end, flags)
-    vm_segment_t 	segment;
-    vm_size_t		start, end;
+vm_text_init(pseg, size, flags)
+	vm_psegment_t 	*pseg;
+    u_long			size;
     int 			flags;
 {
     register vm_text_t xp;
-    register vm_psegment_t *pseg;
     int ntexts;
 
     simple_lock_init(&vm_text_list_lock, "vm_text_list_lock");
 
     TAILQ_INIT(&vm_text_list);
 
-    if(start >= pseg->ps_start && size <= pseg->ps_size) {
-    	  vm_psegment_extent_alloc(pseg, start, size, M_COREMAP, PSEG_TEXT, EX_WAITOK);
-    }
+    vm_psegment_extent_suballoc(pseg, size, 0, PSEG_TEXT, flags);
 }
 
 /*

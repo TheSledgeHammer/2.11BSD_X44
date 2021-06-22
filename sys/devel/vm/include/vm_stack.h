@@ -33,24 +33,20 @@
  * Data structure
  */
 struct vm_data {
-    vm_offset_t         *sp_dstart;
-    vm_offset_t         *sp_dend;
     segsz_t 			sp_dsize;
 	caddr_t				sp_daddr;
 	int 				sp_dflag;
-	u_long				sp_dresult;
+	u_long				*sp_dresult;
 };
 
 /*
  * Stack structure
  */
 struct vm_stack {
-    vm_offset_t         *sp_sstart;
-    vm_offset_t         *sp_send;
 	segsz_t 			sp_ssize;
 	caddr_t				sp_saddr;
     int 				sp_sflag;
-    u_long				sp_sresult;
+    u_long				*sp_sresult;
 };
 
 /* pseudo segment registers */
@@ -134,6 +130,7 @@ void	vm_psegment_set(vm_psegment_t *, int, segsz_t, caddr_t, int);
 void	vm_psegment_unset(vm_psegment_t *, int);
 void	vm_psegment_expand(vm_psegment_t *, int, segsz_t, caddr_t);
 void	vm_psegment_shrink(vm_psegment_t *, int, segsz_t, caddr_t);
+void	vm_psegment_extent_create(vm_psegment_t *, char *, u_long, u_long, int, caddr_t, size_t, int);
 void	vm_psegment_extent_alloc(vm_psegment_t *, u_long, u_long, int, int);
 void	vm_psegment_extent_suballoc(vm_psegment_t *, u_long, u_long, int, u_long *);
 void	vm_psegment_extent_free(vm_psegment_t *, u_long, u_long, int);
