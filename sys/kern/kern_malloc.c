@@ -122,19 +122,15 @@ malloc(size, type, flags)
     if (kbp->kb_next == NULL) {
     	kbp->kb_last = NULL;
 
-		if (size > MAXALLOCSAVE)
+		if (size > MAXALLOCSAVE) {
 			allocsize = roundup(size, CLBYTES);
-		else
+		} else {
 			allocsize = 1 << indx;
+		}
 		npg = clrnd(btoc(allocsize));
 
 		/* Allocates to Overlay Space */
-		if (flags & M_OVERLAY) {
-			//overlaid = TRUE;
-			//va = (caddr_t) omem_malloc(omem_map, (vm_size_t)ctob(npg), !(flags & (M_NOWAIT | M_CANFAIL)));
-		} else {
-			va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & (M_NOWAIT | M_CANFAIL)));
-		}
+		va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & (M_NOWAIT | M_CANFAIL)));
 
         if (va == NULL) {
         	splx(s);
@@ -172,8 +168,9 @@ malloc(size, type, flags)
 				*lp = WEIRD_ADDR;
 			freep->type = M_FREE;
 #endif /* DIAGNOSTIC */
-			if (cp <= va)
+			if (cp <= va) {
 				break;
+			}
 			cp -= allocsize;
 			freep->next = cp;
 		}

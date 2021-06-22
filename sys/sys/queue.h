@@ -173,6 +173,7 @@ struct {																\
 #define	SIMPLEQ_END(head)			NULL
 #define	SIMPLEQ_EMPTY(head)			((head)->sqh_first == SIMPLEQ_END(head))
 #define	SIMPLEQ_NEXT(elm, field)	((elm)->field.sqe_next)
+#define SIMPLEQ_LAST(head)			((head)->sqh_last)
 
 #define	SIMPLEQ_FOREACH(var, head, field)								\
 	for ((var) = ((head)->sqh_first);									\

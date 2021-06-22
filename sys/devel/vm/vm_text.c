@@ -15,6 +15,12 @@
 struct txtlist      vm_text_list;
 simple_lock_data_t	vm_text_list_lock;
 struct vm_xstats 	*xstats;			/* cache statistics */
+
+vmspace_alloc()
+{
+	vmspace_segmentation_alloc();
+}
+
 /*
  * initialize text table (from vm_segment.c)
  */
@@ -26,14 +32,13 @@ vm_text_init(vm, segment, start, end, flags)
     int 			flags;
 {
     register vm_text_t xp;
-    register vm_sregion_t *sreg;
+    register vm_psegment_t *pseg;
     int ntexts;
 
     simple_lock_init(&vm_text_list_lock, "vm_text_list_lock");
 
     TAILQ_INIT(&vm_text_list);
-
-    sreg = vm_region_create(vm, segment, "vm_text", start, end, M_COREMAP, EX_WAITOK);
+    vm_region_create(vm, "vm_text", start, end, M_COREMAP, EX_WAITOK);
 }
 
 /*

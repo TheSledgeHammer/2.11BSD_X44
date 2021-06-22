@@ -29,11 +29,6 @@
 #ifndef _VM_STACK_H_
 #define _VM_STACK_H_
 
-struct vm_extent {
-	struct extent 			*ve_extent;
-	long					ve_result;
-};
-
 /*
  * Data structure
  */
@@ -61,16 +56,21 @@ union vm_pseudo_segment {
     struct vm_data      ps_data;
     struct vm_stack     ps_stack;
     struct vm_text      ps_text;
+    int					ps_type;		/* segment type */
+    int					ps_sep;			/* I & D Seperation */
     int 				ps_flags;		/* flags */
 
 	struct extent 		*ps_extent;		/* segments extent allocator */
 	long				ps_sregions;	/* segments extent result */
+
+	struct vmspace		*ps_vmspace;	/* vmspace back-pointer */
 };
 
 /* pseudo-segment types */
-#define SEG_DATA			1		/* data segment */
-#define SEG_STACK			2		/* stack segment */
-#define SEG_TEXT			3		/* text segment */
+#define PSEG_SEP			0
+#define PSEG_DATA			1		/* data segment */
+#define PSEG_STACK			2		/* stack segment */
+#define PSEG_TEXT			3		/* text segment */
 
 /* pseudo-segment macros */
 #define DATA_SEGMENT(data, dsize, daddr, dflag) {		\

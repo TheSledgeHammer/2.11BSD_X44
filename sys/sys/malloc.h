@@ -224,23 +224,16 @@ struct kmemusage {
 	union {
 		u_short 		freecnt;		/* for small allocations, free pieces in page */
 		u_short 		pagecnt;		/* for large allocations, pages alloced */
-		u_short			ovlcnt;			/* for allocations, overlays alloced */
+	//	u_short			ovlcnt;			/* for allocations, overlays alloced */
 	} ku_un;
 };
 #define ku_freecnt 		ku_un.freecnt
 #define ku_pagecnt 		ku_un.pagecnt
-#define ku_ovlcnt 		ku_un.ovlcnt
+//#define ku_ovlcnt 		ku_un.ovlcnt
 
-//#include <sys/queue.h>
-//struct kbucketlist;
-//CIRCLEQ_HEAD(kbucketlist, kmembuckets);
 /* Set of buckets for each size of memory block that is retained */
 struct kmembuckets {
 //	struct slab			*kb_slab;		/* slab alloctor */
-//	struct tbtree 		*kb_tbtree;		/* tertiary buddy allocator*/
-
-//	CIRCLEQ_ENTRY(kmembuckets)	kb_entry;
-//	caddr_t 					kb_blocks;
 
 	caddr_t 			kb_next;		/* list of free blocks */
 	caddr_t 			kb_last;		/* last free block */

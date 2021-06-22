@@ -57,8 +57,6 @@ struct slab {
     CIRCLEQ_ENTRY(slab)         s_list;                                         /* slab list entry */
     CIRCLEQ_ENTRY(slab)         s_cache;                                        /* cache list entry */
 
-    struct kmembuckets			*s_bucket;
-
     slab_metadata_t             s_meta;                                         /* slab metadata */
     u_long                      s_size;											/* slab size */
     int							s_mtype;                                        /* malloc type */
@@ -68,6 +66,7 @@ struct slab {
     int                         s_refcount;
     int                         s_usecount;                                     /* usage counter for slab caching */
 
+    struct kmembuckets			*s_bucket;										/* slab kmembucket */
     struct extent				*s_extent;										/* slab extent */
 };
 typedef struct slab             *slab_t;
@@ -100,9 +99,8 @@ int			                    slab_count;                                     /* num
 void	slab_create(slab_t);
 void 	slab_malloc(u_long, int, int);
 void 	slab_free(void *, int);
-
+slab_t	slab_object(struct slablist *, long);
 slab_t  slab_lookup(u_long, int);
-slab_t  slab_large_lookup(u_long, int);
 void	slab_insert(slab_t, u_long, int, int);
-void	slab_remove(u_long);
+void	slab_remove(slab_t);
 #endif /* _VM_SLAB_H_ */

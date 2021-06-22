@@ -50,10 +50,10 @@
 #include <sys/systm.h>
 #include <sys/proc.h>
 #else
+
 /*
  * user-land definitions, so it can fit into a testing harness.
  */
-
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/extent.h>
@@ -137,10 +137,10 @@ extent_create(name, start, end, mtype, storage, storagesize, flags)
 			LIST_INSERT_HEAD(&fex->fex_freelist, rp, er_link);
 		}
 	} else {
-		ex = (struct extent *)malloc(sizeof(struct extent),
-		    mtype, (flags & EX_WAITOK) ? M_WAITOK : M_NOWAIT);
-		if (ex == NULL)
+		ex = (struct extent *)malloc(sizeof(struct extent), mtype, (flags & EX_WAITOK) ? M_WAITOK : M_NOWAIT);
+		if (ex == NULL) {
 			return (NULL);
+		}
 	}
 
 	/* Fill in the extent descriptor and return it to the caller. */

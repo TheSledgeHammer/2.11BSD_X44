@@ -128,7 +128,6 @@ struct pmap {
 	int 					pm_flags;		/* see below */
 	int						pm_active;		/* active on cpus */
 };
-
 typedef struct pmap			*pmap_t;
 
 #ifdef KERNEL
@@ -154,12 +153,13 @@ extern pmap_t		kernel_pmap_store;
  * For each vm_page_t, there is a list of all currently valid virtual
  * mappings of that page.  An entry is a pv_entry_t, the list is pv_table.
  */
-typedef struct pv_entry {
+struct pv_entry {
 	struct pv_entry			*pv_next;		/* next pv_entry */
 	struct pmap				*pv_pmap;		/* pmap where mapping lies */
 	vm_offset_t				pv_va;			/* virtual address for mapping */
 	int						pv_flags;		/* flags */
-} *pv_entry_t;
+};
+typedef struct pv_entry		*pv_entry_t;
 
 #define	PT_ENTRY_NULL				((pt_entry_t) 0)
 #define	PD_ENTRY_NULL				((pd_entry_t) 0)

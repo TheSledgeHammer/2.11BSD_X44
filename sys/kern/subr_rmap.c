@@ -100,12 +100,12 @@ struct map swapmap[1] = {
  */
 
 void
-rminit(mp, size, addr, name, mapsize)
+rminit(mp, size, addr, name, mtype, mapsize)
 	register struct map *mp;
 	memaddr addr;
 	size_t size;
 	char *name;
-	int mapsize;
+	int mtype, mapsize;
 {
 	struct mapent *ep;
 
@@ -114,6 +114,7 @@ rminit(mp, size, addr, name, mapsize)
 		panic("rminit %s", name);
 	}
 	mp->m_name = name;
+	mp->m_type = mtype;
 	mp->m_limit = (struct mapent *)mp[mapsize];
 
 	/* initially the first entry describes all free space */

@@ -65,7 +65,10 @@
  * 3b. No (unsuccessful). vm_segments notifies ovlspace to copy original segments back and before removing from ovlspace
  */
 
-/* allocate segment registers according to vmspace */
+/*
+ * allocate pseudo-segments according to vmspace
+ * TODO: Deal with I & D seperation.
+ */
 void
 vmspace_segmentation_alloc(vm, flags)
 	struct vmspace 	*vm;
@@ -73,89 +76,112 @@ vmspace_segmentation_alloc(vm, flags)
 {
 	register vm_psegment_t *pseg;
 
+	/* allocate segments */
+	RMALLOC(vm->vm_data, vm_data_t, sizeof(vm->vm_data));
+	RMALLOC(vm->vm_stack, vm_stack_t, sizeof(vm->vm_stack));
+	RMALLOC(vm->vm_text, vm_text_t, sizeof(vm->vm_text));
+
+	/* setup pseudo-segments to vmspace */
+	DATA_SEGMENT(vm->vm_data, vm->vm_dsize, vm->vm_daddr, flags);
+	STACK_SEGMENT(vm->vm_stack, vm->vm_ssize, vm->vm_saddr, flags);
+	TEXT_SEGMENT(vm->vm_text, vm->vm_tsize, vm->vm_taddr, flags);
+
+	/* allocated pseudo-segment manager */
+	RMALLOC3(vm->vm_psegment, union vm_pseudo_segment *, sizeof(vm->vm_data), sizeof(vm->vm_stack), sizeof(vm->vm_text), sizeof(union vm_pseudo_segment *));
+
 	pseg = vm->vm_psegment;
-
-	RMALLOC3(pseg, union vm_pseudo_segment *, pseg->ps_data, pseg->ps_stack, pseg->ps_text, sizeof(union vm_pseudo_segment *));
-	RMALLOC(pseg->ps_data, vm_data_t, vm->vm_data);
-	RMALLOC(pseg->ps_stack, vm_stack_t, vm->vm_stack);
-	RMALLOC(pseg->ps_text, vm_text_t, vm->vm_text);
-
-	DATA_SEGMENT(pseg->ps_data, vm->vm_dsize, vm->vm_daddr, flags);
-	STACK_SEGMENT(pseg->ps_stack, vm->vm_ssize, vm->vm_saddr, flags);
-	TEXT_SEGMENT(pseg->ps_text, vm->vm_tsize, vm->vm_taddr, flags);
-	pseg->ps_flags = flags;
+	pseg->ps_vmspace = vm;
 }
 
-/* free vm_segment registers from vmspace */
+/*
+ * free pseudo-segments from vmspace.
+ * TODO: Deal with I & D seperation.
+ */
 void
 vmspace_segmentation_free(vm)
 	struct vmspace 	*vm;
 {
-	register vm_psegment_t *pseg;
-
-	pseg = vm->vm_psegment;
-
-	RMFREE(pseg->ps_data, pseg->ps_data.sp_dsize, pseg->ps_data.sp_daddr);
-	RMFREE(pseg->ps_stack, pseg->ps_stack.sp_ssize, pseg->ps_stack.sp_saddr);
-	RMFREE(pseg->ps_text, pseg->ps_text.sp_tsize, pseg->ps_text.sp_taddr);
+	RMFREE(vm->vm_data, vm->vm_dsize, vm->vm_daddr);
+	RMFREE(vm->vm_stack, vm->vm_ssize, vm->vm_saddr);
+	RMFREE(vm->vm_text, vm->vm_tsize, vm->vm_taddr);
 }
 
-/* set vm_segment register regions */
+/* set pseudo-segments */
 void
-vm_segment_set_segment_register(segment, size, addr, flag)
-	vm_segment_t 	segment;
+vm_psegment_set(pseg, type, size, addr, flag)
+	vm_psegment_t 	*pseg;
 	segsz_t			size;
 	caddr_t			addr;
-	int 			flag;
+	int 			type, flag;
 {
-	if(segment->sg_type == SEG_DATA) {
-		DATA_SEGMENT(segment->sg_data, size, addr, flag);
-	}
-	if(segment->sg_type == SEG_STACK) {
-		STACK_SEGMENT(segment->sg_stack, size, addr, flag);
-	}
-	if(segment->sg_type == SEG_TEXT) {
-		TEXT_SEGMENT(segment->sg_text, size, addr, flag);
+	switch(type) {
+	case PSEG_DATA:
+		DATA_SEGMENT(pseg->ps_data, size, addr, flag);
+		pseg->ps_type = PSEG_DATA;
+		break;
+	case PSEG_STACK:
+		STACK_SEGMENT(pseg->ps_stack, size, addr, flag);
+		pseg->ps_type = PSEG_STACK;
+		break;
+	case PSEG_TEXT:
+		TEXT_SEGMENT(pseg->ps_text, size, addr, flag);
+		pseg->ps_type = PSEG_TEXT;
+		break;
 	}
 }
 
-/* unset vm_segment register regions */
+/* unset pseudo-segments */
 void
-vm_segment_unset_segment_register(segment)
-	vm_segment_t 	segment;
+vm_psegment_unset(pseg, type)
+	vm_psegment_t 	*pseg;
+	int type;
 {
-	if (segment->sg_type == SEG_DATA) {
-		segment->sg_data = NULL;
-	}
-	if (segment->sg_type == SEG_STACK) {
-		segment->sg_stack = NULL;
-	}
-	if (segment->sg_type == SEG_TEXT) {
-		segment->sg_text = NULL;
+	switch(type) {
+	case PSEG_DATA:
+		pseg->ps_data = NULL;
+		break;
+	case PSEG_STACK:
+		pseg->ps_stack = NULL;
+		break;
+	case PSEG_TEXT:
+		pseg->ps_text = NULL;
+		break;
 	}
 }
 
 /*
- * Expands a vm_segment register region if not null.
+ * Expands a pseudo-segment if not null.
  */
 void
-vm_segment_register_expand(segment, newsize, newaddr)
-	vm_segment_t 	segment;
+vm_psegment_register_expand(pseg, type, newsize, newaddr)
+	vm_psegment_t 	*pseg;
+	int 			type;
 	segsz_t 		newsize;
 	caddr_t 		newaddr;
 {
-	if (segment != NULL && segment->sg_register != NULL) {
-		if (segment->sg_type == SEG_DATA) {
-			DATA_EXPAND(segment->sg_data, newsize, newaddr);
-			printf("vm_segment_register_expand: data segment expanded: newsize %l newaddr %s", newsize, newaddr);
-		}
-		if (segment->sg_type == SEG_STACK) {
-			STACK_EXPAND(segment->sg_stack, newsize, newaddr);
-			printf("vm_segment_register_expand: stack segment expanded: newsize %l newaddr %s", newsize, newaddr);
-		}
-		if (segment->sg_type == SEG_TEXT) {
-			TEXT_EXPAND(segment->sg_text, newsize, newaddr);
-			printf("vm_segment_register_expand: text segment expanded: newsize %l newaddr %s", newsize, newaddr);
+	if(pseg != NULL) {
+		switch (type) {
+		case PSEG_DATA:
+			DATA_EXPAND(pseg->ps_data, newsize, newaddr)
+			;
+			printf(
+					"vm_segment_register_expand: data segment expanded: newsize %l newaddr %s",
+					newsize, newaddr);
+			break;
+		case PSEG_STACK:
+			STACK_EXPAND(pseg->ps_stack, newsize, newaddr)
+			;
+			printf(
+					"vm_segment_register_expand: stack segment expanded: newsize %l newaddr %s",
+					newsize, newaddr);
+			break;
+		case PSEG_TEXT:
+			TEXT_EXPAND(pseg->ps_text, newsize, newaddr)
+			;
+			printf(
+					"vm_segment_register_expand: text segment expanded: newsize %l newaddr %s",
+					newsize, newaddr);
+			break;
 		}
 	} else {
 		panic("vm_segment_register_expand: segments could not be expanded, restoring original segments size");
@@ -163,30 +189,197 @@ vm_segment_register_expand(segment, newsize, newaddr)
 }
 
 /*
- * Shrinks a vm_segment register region if not null.
+ * Shrinks a pseudo-segment if not null.
  */
 void
-vm_segment_register_shrink(segment, newsize, newaddr)
-	vm_segment_t 	segment;
+vm_psegment_shrink(pseg, type, newsize, newaddr)
+	vm_psegment_t 	*pseg;
+	int	 			type;
 	segsz_t 		newsize;
 	caddr_t 		newaddr;
 {
-	if (segment != NULL && segment->sg_register != NULL) {
-		if (segment->sg_type == SEG_DATA) {
-			DATA_SHRINK(segment->sg_data, newsize, newaddr);
-			printf("vm_segment_register_shrink: data segment shrunk: newsize %l newaddr %s", newsize, newaddr);
-		}
-		if (segment->sg_type == SEG_STACK) {
-			STACK_SHRINK(segment->sg_stack, newsize, newaddr);
-			printf("vm_segment_register_shrink: stack segment shrunk: newsize %l newaddr %s", newsize, newaddr);
-		}
-		if (segment->sg_type == SEG_TEXT) {
-			TEXT_SHRINK(segment->sg_text, newsize, newaddr);
-			printf("vm_segment_register_shrink: text segment shrunk: newsize %l newaddr %s", newsize, newaddr);
+	if(pseg != NULL) {
+		switch (type) {
+		case PSEG_DATA:
+			DATA_SHRINK(pseg->ps_data, newsize, newaddr);
+			printf("vm_psegment_shrink: data segment shrunk: newsize %l newaddr %s", newsize, newaddr);
+			break;
+		case PSEG_STACK:
+			STACK_SHRINK(pseg->ps_stack, newsize, newaddr);
+			printf("vm_psegment_shrink: stack segment shrunk: newsize %l newaddr %s", newsize, newaddr);
+			break;
+		case PSEG_TEXT:
+			TEXT_SHRINK(pseg->ps_text, newsize, newaddr);
+			printf("vm_psegment_shrink: text segment shrunk: newsize %l newaddr %s", newsize, newaddr);
+			break;
 		}
 	} else {
-		panic("vm_segment_register_shrink: segments could not be shrunk, restoring original segments size");
+		panic("vm_psegment_shrink: segments could not be shrunk, restoring original segments size");
 	}
+}
+
+/*
+ * Set up software prototype segmentation registers to implement the 3
+ * pseudo text, data, stack segment sizes passed as arguments.  The
+ * argument sep specifies if the text and data+stack segments are to be
+ * separated.  The last argument determines whether the text segment is
+ * read-write or read-only.
+ */
+int
+estabur(pseg, data, stack, text, type, sep, flags)
+	vm_psegment_t 	*pseg;
+	vm_data_t 		data;
+	vm_stack_t 		stack;
+	vm_text_t 		text;
+	int 			sep, flags;
+{
+
+	if(pseg == NULL || data == NULL || stack == NULL || text == NULL) {
+		return (1);
+	}
+	if(!sep && (type = PSEG_DATA | PSEG_STACK | PSEG_TEXT)) {
+		if(flags == SEG_RO) {
+			vm_psegment_set(pseg, text->sp_tsize, text->sp_taddr, SEG_RO);
+		} else {
+			vm_psegment_set(pseg, text->sp_tsize, text->sp_taddr, SEG_RW);
+		}
+		vm_psegment_set(pseg, data->sp_dsize, data->sp_daddr, SEG_RW);
+		vm_psegment_set(pseg, stack->sp_ssize, stack->sp_saddr, SEG_RW);
+	}
+	if(sep && (type == PSEG_DATA | PSEG_STACK)) {
+		if (flags == SEG_RO) {
+			vm_psegment_set(pseg, text->sp_tsize, text->sp_taddr, SEG_RO);
+		} else {
+			vm_psegment_set(pseg, text->sp_tsize, text->sp_taddr, SEG_RW);
+		}
+		vm_psegment_set(pseg, data->sp_dsize, data->sp_daddr, SEG_RW);
+		vm_psegment_set(pseg, stack->sp_ssize, stack->sp_saddr, SEG_RW);
+	}
+	return (0);
+}
+
+void
+vm_psegment_create(pseg, name, start, end, mtype, flags)
+	vm_psegment_t *pseg;
+	vm_size_t start, end;
+	int mtype, flags;
+{
+	if(pseg == NULL) {
+		panic("vm_region_create: no pseudo-segment allocated");
+	}
+
+	pseg->ps_extent = extent_create(name, start, end, mtype, 0, 0, flags);
+	printf("vm_region_create: new pseudo-segment extent created");
+}
+
+void
+vm_psegment_alloc(pseg, start, size, segtype, flags)
+	vm_psegment_t 	*pseg;
+	vm_size_t 		start;
+	long 			size;
+	int 	segtype, flags;
+{
+	register struct extent ex;
+	int error;
+
+	ex = pseg->ps_extent;
+
+	switch(segtype) {
+	case PSEG_DATA:
+		vm_data_t *data = pseg->ps_data;
+		if (data != NULL && segtype == PSEG_DATA) {
+			error = extent_alloc_region(ex, start, size, flags);
+			if(error == 0) {
+				printf("vm_region_alloc: data region allocated: start %l size %s", start, size);
+			} else {
+				goto out;
+			}
+		}
+		break;
+	case PSEG_STACK:
+		vm_stack_t *stack = pseg->ps_stack;
+		if (stack != NULL && segtype == PSEG_STACK) {
+			error = extent_alloc_region(ex, start, size, flags);
+			if(error == 0) {
+				printf("vm_region_alloc: stack region allocated: start %l size %s", start, size);
+			} else {
+				goto out;
+			}
+		}
+		break;
+	case PSEG_TEXT:
+		vm_text_t *text = pseg->ps_text;
+		if (text != NULL && segtype == PSEG_TEXT) {
+			error = extent_alloc_region(ex, start, size, flags);
+			if(error == 0) {
+				printf("vm_region_alloc: text region allocated: start %l size %s", start, size);
+			} else {
+				goto out;
+			}
+		}
+		break;
+	}
+
+out:
+	extent_free(ex, start, size, flags);
+	panic("vm_region_alloc: region unable to be allocated, extent freed");
+}
+
+void
+vm_psegment_suballoc(pseg, size, boundary, flags)
+	vm_psegment_t 	*pseg;
+	long 			size;
+	u_long 			boundary;
+	int 			flags;
+{
+	register struct extent ex;
+	int error;
+
+	ex = pseg->ps_extent;
+
+	error = extent_alloc(ex, size, SEGMENT_SIZE, boundary, flags, pseg->ps_sregions);
+
+	if(error == 0) {
+		printf("vm_region_suballoc: sub_region allocated: size %l", size);
+	} else {
+		panic("vm_region_suballoc: sub_region unable to be allocated");
+	}
+}
+
+void
+vm_psegment_free(pseg, start, size, flags)
+	vm_psegment_t 	*pseg;
+	vm_size_t 		start;
+	long 			size;
+	int 			flags;
+{
+	register struct extent ex;
+	int error;
+
+	if(pseg != NULL) {
+		ex = pseg->ps_extent;
+		error = extent_free(ex, start, size, flags);
+		if(error == 0) {
+			printf("vm_region_free: region freed: start %l size %s", start, size);
+		} else {
+			printf("vm_region_free: region could not be freed");
+		}
+	} else {
+		panic("vm_region_free: no segment regions found");
+	}
+}
+
+void
+vm_psegment_destroy(pseg)
+	vm_psegment_t 	*pseg;
+{
+	register struct extent ex;
+
+	ex = pseg->ps_extent;
+	if(ex != NULL) {
+		extent_destroy(ex);
+	}
+	printf("vm_region_destroy: no extent to destroy");
 }
 
 int
@@ -229,47 +422,6 @@ sbrk(p, uap, retval)
 }
 
 /*
- * Set up software prototype segmentation registers to implement the 3
- * pseudo text, data, stack segment sizes passed as arguments.  The
- * argument sep specifies if the text and data+stack segments are to be
- * separated.  The last argument determines whether the text segment is
- * read-write or read-only.
- */
-int
-estabur(seg, data, stack, text, sep, flags)
-	vm_segment_t 	seg;
-	vm_data_t 		data;
-	vm_stack_t 		stack;
-	vm_text_t 		text;
-	int 			sep, flags;
-{
-
-	if(seg == NULL || data == NULL || stack == NULL || text == NULL) {
-		return (1);
-	}
-	data->sp_dsize;
-	if(!sep && (seg->sg_type = SEG_DATA | SEG_STACK | SEG_TEXT)) {
-		if(flags == SEG_RO && seg->sg_flags == flags) {
-			vm_segment_set_segment_register(seg, text->sp_tsize, text->sp_taddr, SEG_RO);
-		} else {
-			vm_segment_set_segment_register(seg, text->sp_tsize, text->sp_taddr, SEG_RW);
-		}
-		vm_segment_set_segment_register(seg, data->sp_dsize, data->sp_daddr, SEG_RW);
-		vm_segment_set_segment_register(seg, stack->sp_ssize, stack->sp_saddr, SEG_RW);
-	}
-	if(sep && (seg->sg_type == SEG_DATA | SEG_STACK)) {
-		if (flags == SEG_RO && seg->sg_flags == flags) {
-			vm_segment_set_segment_register(seg, text->sp_tsize, text->sp_taddr, SEG_RO);
-		} else {
-			vm_segment_set_segment_register(seg, text->sp_tsize, text->sp_taddr, SEG_RW);
-		}
-		vm_segment_set_segment_register(seg, data->sp_dsize, data->sp_daddr, SEG_RW);
-		vm_segment_set_segment_register(seg, stack->sp_ssize, stack->sp_saddr, SEG_RW);
-	}
-	return (0);
-}
-
-/*
  * Load the user hardware segmentation registers from the software
  * prototype.  The software registers must have been setup prior by
  * estabur.
@@ -292,142 +444,4 @@ choverlay(flags)
 	int flags;
 {
 
-}
-
-/*
- * WORK IN PROGRESS:
- * Design:
- * Create a segment allocator using the above methods with the methods below,
- * in conjunction with the revised vm_text methods. (see vm_text.c/.h)
- * - The allocation structures are setup with rmap while each segment is backed by
- * an extent allocator.
- * - With each text segment being managed via vm_text
- */
-
-vm_psegment_t *
-vm_region_create(vm, seg, name, start, end, mtype, flags)
-	struct vmspace *vm;
-	vm_segment_t seg;
-	vm_size_t start, end;
-	int mtype, flags;
-{
-	register vm_psegment_t *sregion;
-
-	vmspace_alloc_vm_segment_register(vm, seg, flags);
-
-	sregion = seg->sg_register;
-
-	sregion->ps_extent = extent_create(name, start, end, mtype, 0, 0, flags);
-
-	return (sregion);
-}
-
-void
-vm_region_alloc(sregion, start, size, segtype, flags)
-	vm_psegment_t 	*sregion;
-	vm_size_t 		start;
-	long 			size;
-	int segtype, flags;
-{
-	struct extent ex;
-	int error;
-
-	ex = sregion->ps_extent;
-
-	switch(segtype) {
-	case SEG_DATA:
-		vm_data_t *data = sregion->ps_data;
-		if (data != NULL && segtype == SEG_DATA) {
-			error = extent_alloc_region(ex, start, size, flags);
-			if(error == 0) {
-				printf("vm_region_alloc: data region allocated: start %l size %s", start, size);
-			} else {
-				goto out;
-			}
-		}
-		break;
-	case SEG_STACK:
-		vm_stack_t *stack = sregion->ps_stack;
-		if (stack != NULL && segtype == SEG_STACK) {
-			error = extent_alloc_region(ex, start, size, flags);
-			if(error == 0) {
-				printf("vm_region_alloc: stack region allocated: start %l size %s", start, size);
-			} else {
-				goto out;
-			}
-		}
-		break;
-	case SEG_TEXT:
-		vm_text_t *text = sregion->ps_text;
-		if (text != NULL && segtype == SEG_TEXT) {
-			error = extent_alloc_region(ex, start, size, flags);
-			if(error == 0) {
-				printf("vm_region_alloc: text region allocated: start %l size %s", start, size);
-			} else {
-				goto out;
-			}
-		}
-		break;
-	}
-
-out:
-	extent_free(ex, start, size, flags);
-	panic("vm_region_alloc: region unable to be allocated, extent freed");
-}
-
-void
-vm_region_suballoc(sregion, size, boundary, flags)
-	vm_psegment_t 	*sregion;
-	long 			size;
-	u_long 			boundary;
-	int 			flags;
-{
-	struct extent ex;
-	int error;
-
-	ex = sregion->ps_extent;
-
-	error = extent_alloc(ex, size, SEGMENT_SIZE, boundary, flags, sregion->ps_sregions);
-
-	if(error == 0) {
-		printf("vm_region_suballoc: sub_region allocated: size %l", size);
-	} else {
-		panic("vm_region_suballoc: sub_region unable to be allocated");
-	}
-}
-
-void
-vm_region_free(sregion, start, size, flags)
-	vm_psegment_t 	*sregion;
-	vm_size_t 		start;
-	long 			size;
-	int 			flags;
-{
-	struct extent ex;
-	int error;
-
-	if(sregion != NULL) {
-		ex = sregion->ps_extent;
-		error = extent_free(ex, start, size, flags);
-		if(error == 0) {
-			printf("vm_region_free: region freed: start %l size %s", start, size);
-		} else {
-			printf("vm_region_free: region could not be freed");
-		}
-	} else {
-		panic("vm_region_free: no segment regions found");
-	}
-}
-
-void
-vm_region_destroy(sregion)
-	vm_psegment_t 	*sregion;
-{
-	struct extent ex;
-
-	ex = sregion->ps_extent;
-	if(ex != NULL) {
-		extent_destroy(ex);
-	}
-	printf("vm_region_destroy: no extent to destroy");
 }
