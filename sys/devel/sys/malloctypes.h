@@ -60,5 +60,5 @@
 #define M_PERCPU		90	/* percpu structure */
 
 #define M_MPX			91	/* multiplexor structure */
-
+#define M_VMPSEG		92	/* pseudo-segment structure */
 #endif /* _SYS_MALLOCTYPES_H_ */

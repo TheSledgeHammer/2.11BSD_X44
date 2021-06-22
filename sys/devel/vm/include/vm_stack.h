@@ -38,6 +38,7 @@ struct vm_data {
     segsz_t 			sp_dsize;
 	caddr_t				sp_daddr;
 	int 				sp_dflag;
+	u_long				sp_dresult;
 };
 
 /*
@@ -49,6 +50,7 @@ struct vm_stack {
 	segsz_t 			sp_ssize;
 	caddr_t				sp_saddr;
     int 				sp_sflag;
+    u_long				sp_sresult;
 };
 
 /* pseudo segment registers */
@@ -56,18 +58,22 @@ union vm_pseudo_segment {
     struct vm_data      ps_data;
     struct vm_stack     ps_stack;
     struct vm_text      ps_text;
-    int					ps_type;		/* segment type */
+
+    struct extent 		*ps_extent;		/* segments extent allocator */
+    vm_offset_t         *ps_start;		/* start of space */
+    vm_offset_t         *ps_end;		/* end of space */
+    size_t				ps_size;		/* total size (data + stack + text) */
+
     int					ps_sep;			/* I & D Seperation */
     int 				ps_flags;		/* flags */
-
-	struct extent 		*ps_extent;		/* segments extent allocator */
-	long				ps_sregions;	/* segments extent result */
 
 	struct vmspace		*ps_vmspace;	/* vmspace back-pointer */
 };
 
+/* pseudo-segment flags */
+#define PSEG_SEP			0x4		/* I & D Seperation */
+
 /* pseudo-segment types */
-#define PSEG_SEP			0
 #define PSEG_DATA			1		/* data segment */
 #define PSEG_STACK			2		/* stack segment */
 #define PSEG_TEXT			3		/* text segment */
@@ -97,12 +103,12 @@ union vm_pseudo_segment {
 
 #define STACK_EXPAND(stack, ssize, saddr) {				\
 	(stack)->sp_ssize += (ssize);						\
-	(stack)->sp_saddr += (ssize);						\
+	(stack)->sp_saddr += (saddr);						\
 };
 
 #define STACK_SHRINK(stack, ssize, saddr) {				\
 	(stack)->sp_ssize -= (ssize);						\
-	(stack)->sp_saddr -= (ssize);						\
+	(stack)->sp_saddr -= (saddr);						\
 };
 
 #define TEXT_SEGMENT(text, tsize, taddr, tflag) {		\
@@ -120,5 +126,17 @@ union vm_pseudo_segment {
 	(text)->sp_tsize -= (tsize);						\
 	(text)->sp_taddr -= (taddr);						\
 };
+
+extern vm_psegment_t 	*psegment;
+
+void	vm_psegment_init(vm_offset_t *, vm_offset_t *);
+void	vm_psegment_set(vm_psegment_t *, int, segsz_t, caddr_t, int);
+void	vm_psegment_unset(vm_psegment_t *, int);
+void	vm_psegment_expand(vm_psegment_t *, int, segsz_t, caddr_t);
+void	vm_psegment_shrink(vm_psegment_t *, int, segsz_t, caddr_t);
+void	vm_psegment_extent_alloc(vm_psegment_t *, u_long, u_long, int, int);
+void	vm_psegment_extent_suballoc(vm_psegment_t *, u_long, u_long, int, u_long *);
+void	vm_psegment_extent_free(vm_psegment_t *, u_long, u_long, int);
+void	vm_psegment_extent_destroy(vm_psegment_t *);
 
 #endif /* _VM_STACK_H_ */

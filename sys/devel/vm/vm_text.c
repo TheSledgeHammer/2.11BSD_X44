@@ -16,17 +16,11 @@ struct txtlist      vm_text_list;
 simple_lock_data_t	vm_text_list_lock;
 struct vm_xstats 	*xstats;			/* cache statistics */
 
-vmspace_alloc()
-{
-	vmspace_segmentation_alloc();
-}
-
 /*
  * initialize text table (from vm_segment.c)
  */
 void
 vm_text_init(vm, segment, start, end, flags)
-	struct vmspace 	*vm;
     vm_segment_t 	segment;
     vm_size_t		start, end;
     int 			flags;
@@ -38,7 +32,10 @@ vm_text_init(vm, segment, start, end, flags)
     simple_lock_init(&vm_text_list_lock, "vm_text_list_lock");
 
     TAILQ_INIT(&vm_text_list);
-    vm_region_create(vm, "vm_text", start, end, M_COREMAP, EX_WAITOK);
+
+    if(start >= pseg->ps_start && size <= pseg->ps_size) {
+    	  vm_psegment_extent_alloc(pseg, start, size, M_COREMAP, PSEG_TEXT, EX_WAITOK);
+    }
 }
 
 /*

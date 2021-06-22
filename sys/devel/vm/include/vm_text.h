@@ -36,6 +36,7 @@ struct vm_text {
 	segsz_t 				sp_tsize;
 	caddr_t					sp_taddr;
     int 					sp_tflag;
+    u_long					sp_tresult;
 };
 
 #define	XTRC				0x01		/* Text may be written, exclusive use */
