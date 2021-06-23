@@ -10,9 +10,11 @@
 #include <sys/malloc.h>
 #include <sys/map.h>
 #include <sys/user.h>
+#include <sys/buf.h>
 
 #include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_segment.h>
+#include <devel/vm/include/vm_text.h>
 
 /*
  * Change the size of the data+stack regions of the process.
@@ -208,4 +210,108 @@ choverlay(flags)
 	int flags;
 {
 
+}
+
+/*
+ * swap I/O
+ */
+void
+swap(blkno, coreaddr, count, vp, rdflg)
+	swblk_t blkno;
+	caddr_t coreaddr;
+	struct vnode *vp;
+	int count, rdflg;
+{
+	register struct buf *bp;
+	register int tcount;
+
+	if (rdflg) {
+		cnt.v_pswpin += count;
+		cnt.v_pgin++;
+	} else {
+		cnt.v_pswpout += count;
+		cnt.v_pgout++;
+	}
+
+	while (count) {
+		bp->b_flags = B_BUSY | B_PHYS | B_INVAL | rdflg;
+		tcount = count;
+		if (tcount >= 01700) {				/* prevent byte-count wrap */
+			tcount = 01700;
+		}
+		bp->b_blkno = blkno;
+		if (bp->b_vp) {
+			brelvp(bp);
+		}
+		VHOLD(vp);
+		bp->b_vp = vp;
+		bp->b_dev = swapdev; 				/* TODO: add support for finding swapdrum */
+		bp->b_bcount = ctob(tcount);
+		bp->b_un.b_addr = (caddr_t)(coreaddr<<6);
+		bp->b_xmem = (coreaddr >> 10) & 077;
+		VOP_STRATEGY(bp);
+		while ((bp->b_flags & B_DONE) == 0) {
+			sleep((caddr_t)bp, PSWP);
+		}
+		if ((bp->b_flags & B_ERROR) || bp->b_resid) {
+			panic("hard err: swap");
+		}
+		count -= tcount;
+		coreaddr += tcount;
+		blkno += ctod(tcount);
+	}
+	brelse(bp);
+}
+
+/*
+ * Swap out process p if segmented.
+ * NOTE: Likely to be run within the current swapout method as needed
+ */
+void
+swapout_seg(p, freecore, odata, ostack)
+	struct proc *p;
+	int freecore;
+	register u_int odata, ostack;
+{
+	memaddr a[3];
+
+	if (odata == X_OLDSIZE) {
+		odata = p->p_dsize;
+	}
+	if (ostack == X_OLDSIZE) {
+		ostack = p->p_ssize;
+	}
+	if (rmalloc3(swapmap, ctod(p->p_dsize), ctod(p->p_ssize), ctod(USIZE), a) == NULL) {
+		panic("out of swap space");
+	}
+	if (p->p_textp) {
+		vm_xccdec(p->p_textp);
+	}
+	if (odata) {
+		swap(a[0], p->p_daddr, odata, p->p_textvp, B_WRITE);
+		if (freecore == X_FREECORE) {
+			rmfree(coremap, odata, p->p_daddr);
+		}
+	}
+	if (ostack) {
+		swap(a[1], p->p_saddr, ostack, p->p_textvp, B_WRITE);
+		if (freecore == X_FREECORE) {
+			rmfree(coremap, ostack, p->p_saddr);
+		}
+	}
+	swap(a[2], p->p_addr, USIZE, p->p_textvp, B_WRITE);
+	if (freecore == X_FREECORE) {
+		rmfree(coremap, USIZE, p->p_addr);
+	}
+	p->p_daddr 	= a[0];
+	p->p_saddr 	= a[1];
+	p->p_addr 	= a[2];
+	p->p_flag &= ~(P_SLOAD | P_SLOCK);
+	p->p_time = 0;
+
+//	cnt.v_swpout++;
+	if (runout) {
+		runout = 0;
+		wakeup((caddr_t) &runout);
+	}
 }

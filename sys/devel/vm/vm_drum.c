@@ -169,7 +169,7 @@ vm_vsxfree(xp, ts)
 		rmfree(swapmap, blk, *dp);
 		*dp++ = 0;
 	}
-	if ((xp->x_flag&XPAGV) && xp->x_ptdaddr) {
+	if ((xp->x_flag & XPAGV) && xp->x_ptdaddr) {
 		rmfree(swapmap, (long)ctod(clrnd(ctopt(xp->x_size))), xp->x_ptdaddr);
 		xp->x_ptdaddr = 0;
 	}

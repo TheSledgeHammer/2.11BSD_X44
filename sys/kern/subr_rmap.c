@@ -397,8 +397,8 @@ kmem_rmapinit()
 		MALLOC(__swapmap[0], struct mapent, sizeof(struct mapent), M_SWAPMAP, M_WAITOK);
 	}
 
+
 	printf("phys mem  = %D\n", ctob((long)physmem));
 	printf("avail mem in coremap = %D\n", ctob((long)__coremap[0].m_size));
-	maxmem = MAXMEM;
 	printf("user mem  = %D\n", ctob((long)MAXMEM));
 }

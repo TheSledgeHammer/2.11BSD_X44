@@ -9,12 +9,14 @@
 #include <sys/extent.h>
 #include <sys/malloc.h>
 #include <sys/queue.h>
+#include <sys/vnode.h>
 #include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_text.h>
 
 struct txtlist      vm_text_list;
 simple_lock_data_t	vm_text_list_lock;
 struct vm_xstats 	*xstats;			/* cache statistics */
+int					xcache;				/* number of "sticky" texts retained */
 
 /*
  * initialize text table (from vm_segment.c)
@@ -30,7 +32,7 @@ vm_text_init(pseg, size, flags)
 
     simple_lock_init(&vm_text_list_lock, "vm_text_list_lock");
 
-    TAILQ_INIT(&vm_text_list);
+    CIRCLEQ_INIT(&vm_text_list);
 
     vm_psegment_extent_suballoc(pseg, size, 0, PSEG_TEXT, flags);
 }
@@ -43,19 +45,72 @@ vm_text_init(pseg, size, flags)
  * not available from core, a swap has to be done to get it back.
  */
 void
-vm_xalloc(vp, vap)
+vm_xalloc(vp)
 	register struct vnode *vp;
 {
 	register vm_text_t xp;
-
+	register struct proc *p;
+	struct exec *ep;
+	while ((xp == vp->v_text) != NULL) {
+		if (xp->x_flag & XLOCK) {
+			xwait(xp);
+			continue;
+		}
+		xlock(&vm_text_list_lock);
+		if (CIRCLEQ_LAST(&vm_text_list)) {
+			CIRCLEQ_INSERT_HEAD(&vm_text_list, xp, x_list);
+			xstats->xs_alloc_cachehit++;
+			xp->x_flag &= ~XUNUSED;
+		} else {
+			xstats->xs_alloc_inuse++;
+		}
+		xp->x_count++;
+		p->p_textp = xp;
+		if (!xp->x_caddr && !xp->x_ccount) {
+			vm_xexpand(p, xp);
+		} else {
+			++xp->x_ccount;
+		}
+		xunlock(&vm_text_list_lock);
+		return;
+	}
+	xp = CIRCLEQ_FIRST(&vm_text_list);
+	if (xp == NULL) {
+		psignal(p, SIGKILL);
+		return;
+	}
+	CIRCLEQ_INSERT_HEAD(&vm_text_list, xp, x_list);
+	if (xp->x_vptr) {
+		if (xp->x_flag & XUNUSED) {
+			xstats->xs_alloc_unused++;
+		}
+		vm_xuntext(xp);
+	}
+	xp->x_flag = XLOAD | XLOCK;
+	if (p->p_flag & SPAGV) {
+		xp->x_flag |= XPAGV;
+	}
+	//xp->x_size = clrnd(btoc(ep->a_text));
+	if((xp->x_daddr = vm_vsxalloc(xp)) == NULL) {
+		/* flush text cache and try again */
+		if (vm_xpurge() == 0 || vm_vsxalloc(xp) == NULL) {
+			//swkill(p, "xalloc: no swap space");
+			return;
+		}
+	}
 	xp->x_count = 1;
 	xp->x_ccount = 0;
 	xp->x_vptr = vp;
 	vp->v_flag |= VTEXT;
 	vp->v_text = xp;
-
+	VREF(vp);
+	p->p_textp = xp;
+	vm_xexpand(p, xp);
+	//estabur();
+	p->p_flag &= ~P_SLOCK;
 	xp->x_flag |= XWRIT;
 	xp->x_flag &= ~XLOAD;
+	xunlock(&vm_text_list_lock);
 }
 
 /*
@@ -66,6 +121,7 @@ vm_xalloc(vp, vap)
 void
 vm_xfree()
 {
+	struct user u;
 	register vm_text_t xp;
 	register struct vnode *vp;
 	struct vattr *vattr;
@@ -73,28 +129,30 @@ vm_xfree()
 	if ((xp = u->u_procp->p_textp) == NULL) {
 		return;
 	}
-
 	xstats->xs_free++;
 
 	xlock(&vm_text_list_lock);
-	if (xp->x_count-- == 0) {
+	vp = xp->x_vptr;
+	if (xp->x_count-- == 0 && (VOP_GETATTR(vp, vattr, u->u_cred, u->u_procp) != 0 || (vattr->va_mode & VSVTX) == 0)) {
 		if ((xp->x_flag & XTRC) || vattr->va_nlink == 0) {
 			xp->x_flag &= ~XLOCK;
 			vm_xuntext(xp);
-			TAILQ_REMOVE(&vm_text_list, xp, x_list);
+			CIRCLEQ_REMOVE(&vm_text_list, xp, x_list);
 		} else {
 			if (xp->x_flag & XWRIT) {
 				xstats->xs_free_cacheswap++;
 				xp->x_flag |= XUNUSED;
 			}
 			xstats->xs_free_cache++;
+			xp->x_ccount--;
+			CIRCLEQ_REMOVE(&vm_text_list, xp, x_list);
 		}
 	} else {
 		xp->x_ccount--;
 		xstats->xs_free_inuse++;
 	}
 	xunlock(&vm_text_list_lock);
-	//u->u_procp->p_textp = NULL;
+	u->u_procp->p_textp = NULL;
 }
 
 /*
@@ -104,21 +162,22 @@ vm_xfree()
  * it's correct.
  */
 void
-vm_xexpand(xp)
-	register vm_text_t xp;
+vm_xexpand(p, xp)
+	struct proc *p;
+	vm_text_t xp;
 {
 	xlock(&vm_text_list_lock);
 	if ((xp->x_caddr = rmalloc(coremap, xp->x_size)) != NULL) {
 		if ((xp->x_flag & XLOAD) == 0) {
-			//swap();
+			swap(xp->x_daddr, xp->x_caddr, xp->x_size, xp->x_vptr, B_READ);
 		}
 		xunlock(&vm_text_list_lock);
 		xp->x_ccount++;
 		return;
 	}
-	//swapout(u->u_procp, X_FREECORE, X_OLDSIZE, X_OLDSIZE);
+	swapout(p, X_FREECORE, X_OLDSIZE, X_OLDSIZE);
 	xunlock(&vm_text_list_lock);
-	//u->u_procp->p_flag |= SSWAP;
+	p->p_flag |= SSWAP;
 	swtch();
 	/* NOTREACHED */
 }
@@ -138,7 +197,7 @@ vm_xccdec(xp)
 	xlock(&vm_text_list_lock);
 	if (--xp->x_ccount == 0) {
 		if (xp->x_flag & XWRIT) {
-			//swap(xp->x_daddr, xp->x_caddr, xp->x_size, B_WRITE);
+			swap(xp->x_daddr, xp->x_caddr, xp->x_size, &swapdev_vp, B_WRITE);
 			xp->x_flag &= ~XWRIT;
 		}
 		rmfree(coremap, xp->x_size, xp->x_caddr);
@@ -161,7 +220,8 @@ vm_xuntext(xp)
 	if (xp->x_count == 0) {
 		vp = xp->x_vptr;
 		xp->x_vptr = NULL;
-		rmfree(swapmap, ctod(xp->x_size), xp->x_daddr);
+		vm_vsxfree(xp, (long)xp->x_size);
+		//rmfree(swapmap, ctod(xp->x_size), xp->x_daddr);
 		if (xp->x_caddr) {
 			rmfree(coremap, xp->x_size, xp->x_caddr);
 		}
@@ -182,14 +242,14 @@ vm_xuncore(size)
 {
 	register vm_text_t xp;
 
-    TAILQ_FOREACH(xp, &vm_text_list, x_list) {
+	CIRCLEQ_FOREACH(xp, &vm_text_list, x_list) {
     	if(!xp->x_vptr) {
     		continue;
     	}
 		xlock(&vm_text_list_lock);
 		if (!xp->x_ccount && xp->x_caddr) {
 			if (xp->x_flag & XWRIT) {
-			//	swap(xp->x_daddr, xp->x_caddr, xp->x_size, B_WRITE);
+				swap(xp->x_daddr, xp->x_caddr, xp->x_size, xp->x_vptr, B_WRITE);
 				xp->x_flag &= ~XWRIT;
 			}
 			rmfree(coremap, xp->x_size, xp->x_caddr);
@@ -201,4 +261,75 @@ vm_xuncore(size)
 		}
 		xunlock(&vm_text_list_lock);
 	}
+}
+
+int
+vm_xpurge()
+{
+	register vm_text_t xp;
+	int found = 0;
+
+	xstats->xs_purge++;
+	CIRCLEQ_FOREACH(xp, &vm_text_list, x_list) {
+		if (xp->x_vptr && (xp->x_flag & (XLOCK|XCACHED)) == XCACHED) {
+			vm_xuntext(xp);
+			if (xp->x_vptr == NULL) {
+				found++;
+			}
+		}
+	}
+	return (found);
+}
+
+void
+vm_xrele(vp)
+	struct vnode *vp;
+{
+	if (vp->v_flag & VTEXT) {
+		vm_xuntext(vp->v_text);
+	}
+}
+
+/*
+ * Add a process to those sharing a text segment by
+ * getting the page tables and then linking to x_caddr.
+ */
+void
+vm_xlink(p)
+	register struct proc *p;
+{
+	register vm_text_t xp = p->p_textp;
+
+	if (xp == NULL) {
+		return;
+	}
+	//vinitpt(p);
+	p->p_xlink = xp->x_caddr;
+	xp->x_caddr = p;
+	xp->x_ccount++;
+}
+
+void
+vm_xunlink(p)
+	register struct proc *p;
+{
+	register vm_text_t xp = p->p_textp;
+	register struct proc *q;
+
+	if (xp == NULL) {
+		return;
+	}
+	if (xp->x_caddr == p) {
+		xp->x_caddr = p->p_xlink;
+		p->p_xlink = 0;
+		return;
+	}
+	for (q = xp->x_caddr; q->p_xlink; q = q->p_xlink) {
+		if (q->p_xlink == p) {
+			q->p_xlink = p->p_xlink;
+			p->p_xlink = 0;
+			return;
+		}
+	}
+	panic("lost text");
 }

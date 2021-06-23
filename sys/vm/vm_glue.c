@@ -221,8 +221,9 @@ vm_fork(p1, p2, isvfork)
 and pagetables, WITHOUT going thru vm_page_unwire! Why this appears to work is
 not yet clear, yet it does... */
 	addr = kmem_alloc(kernel_map, ctob(UPAGES));
-	if (addr == 0)
+	if (addr == 0) {
 		panic("vm_fork: no more kernel virtual memory");
+	}
 
 	up = (struct user *)addr;
 	p2->p_addr = up;

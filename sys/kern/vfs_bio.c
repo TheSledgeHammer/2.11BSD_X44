@@ -77,12 +77,16 @@ bremfree(bp)
 	 *
 	 * NB: This makes an assumption about how tailq's are implemented.
 	 */
-	if (bp->b_freelist.tqe_next == NULL) {
-		for (dp = bufqueues; dp < &bufqueues[BQUEUES]; dp++)
-			if (dp->tqh_last == &bp->b_freelist.tqe_next)
+	TAILQ_NEXT(bp, b_freelist);
+	if (TAILQ_NEXT(bp, b_freelist) == NULL) {
+		for (dp = bufqueues; dp < &bufqueues[BQUEUES]; dp++) {
+			if (TAILQ_LAST(dp, bqueues) == TAILQ_NEXT(bp, b_freelist)) {
 				break;
-		if (dp == &bufqueues[BQUEUES])
+			}
+		}
+		if (dp == &bufqueues[BQUEUES]) {
 			panic("bremfree: lost tail");
+		}
 	}
 	TAILQ_REMOVE(dp, bp, b_freelist);
 }
@@ -98,8 +102,9 @@ bufinit()
 	register int i;
 	int base, residual;
 
-	for (dp = bufqueues; dp < &bufqueues[BQUEUES]; dp++)
+	for (dp = bufqueues; dp < &bufqueues[BQUEUES]; dp++) {
 		TAILQ_INIT(dp);
+	}
 	bufhashtbl = hashinit(nbuf, M_CACHE, &bufhash);
 	base = bufpages / nbuf;
 	residual = bufpages % nbuf;
@@ -111,10 +116,11 @@ bufinit()
 		bp->b_wcred = NOCRED;
 		bp->b_vnbufs.le_next = NOLIST;
 		bp->b_data = buffers + i * MAXBSIZE;
-		if (i < residual)
+		if (i < residual) {
 			bp->b_bufsize = (base + 1) * CLBYTES;
-		else
+		} else {
 			bp->b_bufsize = base * CLBYTES;
+		}
 		bp->b_flags = B_INVAL;
 		dp = bp->b_bufsize ? &bufqueues[BQ_AGE] : &bufqueues[BQ_EMPTY];
 		binsheadfree(bp, dp);
@@ -538,12 +544,14 @@ incore(vp, blkno)
 {
 	struct buf *bp;
 
-	bp = BUFHASH(vp, blkno)->lh_first;
+	bp = LIST_FIRST(BUFHASH(vp, blkno));
 
 	/* Search hash chain */
-	for (; bp != NULL; bp = bp->b_hash.le_next) {
-		if (bp->b_lblkno == blkno && bp->b_vp == vp && !ISSET(bp->b_flags, B_INVAL))
-		return (bp);
+
+	for (; bp != NULL; bp = LIST_NEXT(bp, b_hash)) {
+		if (bp->b_lblkno == blkno && bp->b_vp == vp && !ISSET(bp->b_flags, B_INVAL)) {
+			return (bp);
+		}
 	}
 
 	return (0);
@@ -579,16 +587,15 @@ getblk(vp, blkno, size, slpflag, slptimeo)
 	 */
 	bh = BUFHASH(vp, blkno);
 start:
-        bp = bh->lh_first;
-        for (; bp != NULL; bp = bp->b_hash.le_next) {
-                if (bp->b_lblkno != blkno || bp->b_vp != vp)
+    bp = LIST_FIRST(bh);
+	for (; bp != NULL; bp = LIST_NEXT(bp, b_hash)) {
+		if (bp->b_lblkno != blkno || bp->b_vp != vp)
 			continue;
 
 		s = splbio();
 		if (ISSET(bp->b_flags, B_BUSY)) {
 			SET(bp->b_flags, B_WANTED);
-			err = tsleep(bp, slpflag | (PRIBIO + 1), "getblk",
-			    slptimeo);
+			err = tsleep(bp, slpflag | (PRIBIO + 1), "getblk", slptimeo);
 			splx(s);
 			if (err)
 				return (NULL);
@@ -607,7 +614,7 @@ start:
 			break;
 		}
 		splx(s);
-        }
+	}
 
 	if (bp == NULL) {
 		if ((bp = getnewbuf(slpflag, slptimeo)) == NULL)
@@ -705,7 +712,7 @@ allocbuf(bp, size)
 	 */
 	if (bp->b_bufsize > desired_size) {
 		s = splbio();
-		if ((nbp = bufqueues[BQ_EMPTY].tqh_first) == NULL) {
+		if ((nbp = TAILQ_FIRST(bufqueues[BQ_EMPTY])) == NULL) {
 			/* No free buffer head */
 			splx(s);
 			goto out;
@@ -744,8 +751,8 @@ getnewbuf(slpflag, slptimeo)
 
 start:
 	s = splbio();
-	if ((bp = bufqueues[BQ_AGE].tqh_first) != NULL ||
-	    (bp = bufqueues[BQ_LRU].tqh_first) != NULL) {
+	if ((bp = TAILQ_FIRST(bufqueues[BQ_AGE])) != NULL ||
+	    (bp = TAILQ_FIRST(bufqueues[BQ_LRU])) != NULL) {
 		bremfree(bp);
 	} else {
 		/* wait for a free buffer of any kind */
@@ -857,19 +864,21 @@ void
 biodone(bp)
 	struct buf *bp;
 {
-	if (ISSET(bp->b_flags, B_DONE))
+	if (ISSET(bp->b_flags, B_DONE)) {
 		panic("biodone already");
-	SET(bp->b_flags, B_DONE);		/* note that it's done */
+	}
+	SET(bp->b_flags, B_DONE);					/* note that it's done */
 
-	if (!ISSET(bp->b_flags, B_READ))	/* wake up reader */
+	if (!ISSET(bp->b_flags, B_READ)) {			/* wake up reader */
 		vwakeup(bp);
+	}
 
-	if (ISSET(bp->b_flags, B_CALL)) {	/* if necessary, call out */
-		CLR(bp->b_flags, B_CALL);	/* but note callout done */
+	if (ISSET(bp->b_flags, B_CALL)) {			/* if necessary, call out */
+		CLR(bp->b_flags, B_CALL);				/* but note callout done */
 		(*bp->b_iodone)(bp);
-	} else if (ISSET(bp->b_flags, B_ASYNC))	/* if async, release it */
+	} else if (ISSET(bp->b_flags, B_ASYNC)) {	/* if async, release it */
 		brelse(bp);
-	else {					/* or just wakeup the buffer */
+	} else {									/* or just wakeup the buffer */
 		CLR(bp->b_flags, B_WANTED);
 		wakeup(bp);
 	}
@@ -884,8 +893,8 @@ count_lock_queue()
 	register struct buf *bp;
 	register int n = 0;
 
-	for (bp = bufqueues[BQ_LOCKED].tqh_first; bp;
-	    bp = bp->b_freelist.tqe_next)
+	for (bp = TAILQ_FIRST(bufqueues[BQ_LOCKED]); bp;
+	    bp = TAILQ_NEXT(bp, b_freelist))
 		n++;
 	return (n);
 }
@@ -910,7 +919,7 @@ vfs_bufstats()
 		for (j = 0; j <= MAXBSIZE/CLBYTES; j++)
 			counts[j] = 0;
 		s = splbio();
-		for (bp = dp->tqh_first; bp; bp = bp->b_freelist.tqe_next) {
+		for (bp = TAILQ_FIRST(dp); bp; bp = TAILQ_NEXT(bp, b_freelist)) {
 			counts[bp->b_bufsize/CLBYTES]++;
 			count++;
 		}

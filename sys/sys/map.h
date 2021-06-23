@@ -65,8 +65,6 @@ struct ovlmapent {
 };
 
 #ifdef _KERNEL
-#define	ARGMAPSIZE	16
-struct map *kmemmap, *mbmap;
 struct map *coremap[1];																	/* space for core allocation */
 struct map *swapmap[1];																	/* space for swap allocation */
 int	nswapmap;

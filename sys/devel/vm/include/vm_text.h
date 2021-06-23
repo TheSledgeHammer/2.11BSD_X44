@@ -17,12 +17,12 @@
  * procedure on swap device.
  * Manipulated by text.c
  */
-#define	NXDAD	12		/* param.h:MAXTSIZ / vmparam.h:DMTEXT */
+#define	NXDAD				12		/* param.h:MAXTSIZ / vmparam.h:DMTEXT */
 
 struct txtlist;
-TAILQ_HEAD(txtlist, vm_text);
+CIRCLEQ_HEAD(txtlist, vm_text);
 struct vm_text {
-    TAILQ_ENTRY(vm_text)    x_list;					/* text freelist */
+    CIRCLEQ_ENTRY(vm_text)  x_list;					/* text freelist */
     caddr_t	                x_daddr;				/* segment's disk address */
     caddr_t                 x_caddr;				/* core address, if loaded */
     size_t	                x_size;					/* size (clicks) */
@@ -81,5 +81,15 @@ simple_lock_data_t			vm_text_list_lock;
 
 #define xlock(lock)			simple_lock(lock);
 #define xunlock(lock)		simple_unlock(lock);
+
+void	vm_text_init(vm_psegment_t, u_long, int);
+void	vm_xalloc(struct vnode *);
+void	vm_xfree();
+void	vm_xexpand(struct proc *, vm_text_t);
+void	vm_xccdec(vm_text_t);
+void	vm_xuntext(vm_text_t);
+void	vm_xuncore(size_t);
+int		vm_xpurge();
+void	vm_xrele(struct vnode *);
 
 #endif /* _VM_TEXT_H_ */
