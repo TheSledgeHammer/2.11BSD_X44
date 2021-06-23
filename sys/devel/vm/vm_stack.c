@@ -28,6 +28,7 @@
 
 #include <sys/systm.h>
 #include <sys/extent.h>
+#include <sys/malloc.h>
 #include <sys/map.h>
 #include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_segment.h>
@@ -36,24 +37,6 @@
 #include <devel/vm/include/vm_param.h>
 
 #include <devel/sys/malloctypes.h>
-
-/*
- * Process Segmentation:
- * Order of Change:
- * Process/Kernel:
- * 1. Process requests a change is size of segment regions
- * 2. Run X kernel call (vmcmd most likely)
- * 3. Runs through vmspace execution
- * 4. return result
- *
- * VMSpace execution:
- * 1. vm_segment copies old segments to ovlspace.
- * 2. vm_segment resizes segments, while retaining original segments in ovlspace
- * 3. Determine if segment resize was a success
- * 3a. Yes (successful). vm_segment notifies ovlspace to delete original segments.
- * 3b. No (unsuccessful). vm_segments notifies ovlspace to copy original segments back and before removing from ovlspace
- */
-vm_psegment_t 	psegment;
 
 void
 vmspace_psegment_init(vm, flags)
@@ -65,12 +48,13 @@ vmspace_psegment_init(vm, flags)
 	register vm_stack_t 	stack;
 	register vm_text_t 		text;
 
+	vmspace_segmentation_alloc(vm, flags);
+
 	/* allocated pseudo-segment manager */
-	memaddr psize = (sizeof(vm->vm_data) + sizeof(vm->vm_stack) + sizeof(vm->vm_text));
-	RMALLOC3(vm->vm_psegment, union vm_pseudo_segment *, sizeof(vm->vm_data), sizeof(vm->vm_stack), sizeof(vm->vm_text), sizeof(union vm_pseudo_segment *) + psize);
-	pseg = &psegment = vm->vm_psegment;
+	MALLOC(vm->vm_psegment, sizeof(union vm_pseudo_segment *), M_VMPSEG, M_WAITOK);
+	pseg = vm->vm_psegment;
 	pseg->ps_vmspace = vm;
-	pseg->ps_size = psize;
+	pseg->ps_size = (sizeof(vm->vm_data) + sizeof(vm->vm_stack) + sizeof(vm->vm_text));
 	pseg->ps_flags = flags;
 	pseg->ps_data = data = vm->vm_data;
 	pseg->ps_stack = stack = vm->vm_stack;
@@ -86,7 +70,15 @@ vmspace_segmentation_alloc(vm, flags)
 	struct vmspace 	*vm;
 	int 			flags;
 {
-	/* allocate segments */
+	register vm_data_t 		data;
+	register vm_stack_t 	stack;
+	register vm_text_t 		text;
+
+	/* allocate segments to coremap */
+	vm->vm_data = (struct vm_data) rmalloc(coremap, sizeof(vm->vm_data));
+	vm->vm_stack = (struct vm_stack) rmalloc(coremap, sizeof(vm->vm_stack));
+	vm->vm_text = (struct vm_text) rmalloc(coremap, sizeof(vm->vm_text));
+
 	RMALLOC(vm->vm_data, vm_data_t, sizeof(vm->vm_data));
 	RMALLOC(vm->vm_stack, vm_stack_t, sizeof(vm->vm_stack));
 	RMALLOC(vm->vm_text, vm_text_t, sizeof(vm->vm_text));
@@ -95,8 +87,6 @@ vmspace_segmentation_alloc(vm, flags)
 	DATA_SEGMENT(vm->vm_data, vm->vm_dsize, vm->vm_daddr, flags);
 	STACK_SEGMENT(vm->vm_stack, vm->vm_ssize, vm->vm_saddr, flags);
 	TEXT_SEGMENT(vm->vm_text, vm->vm_tsize, vm->vm_taddr, flags);
-
-	vmspace_psegment_init(vm, flags);
 }
 
 /*
@@ -110,6 +100,27 @@ vmspace_segmentation_free(vm)
 	RMFREE(vm->vm_data, vm->vm_dsize, vm->vm_daddr);
 	RMFREE(vm->vm_stack, vm->vm_ssize, vm->vm_saddr);
 	RMFREE(vm->vm_text, vm->vm_tsize, vm->vm_taddr);
+}
+
+void
+vm_psegment_init(pseg, start, end)
+	vm_psegment_t 	*pseg;
+	vm_offset_t 	*start, *end;
+{
+	if(pseg == NULL) {
+		MALLOC(pseg, sizeof(union vm_pseudo_segment *), M_VMPSEG, M_WAITOK);
+	}
+
+	pseg->ps_start = start;
+	pseg->ps_end = end;
+
+	vm_psegment_extent_create(pseg, "vm_psegment", start, end, M_VMPSEG, NULL, 0, EX_WAITOK | EX_MALLOCOK);
+	vm_psegment_extent_alloc(pseg, pseg->ps_start, pseg->ps_size + sizeof(union vm_pseudo_segment *), 0, EX_WAITOK | EX_MALLOCOK);
+
+
+	//vm_psegment_extent_suballoc(pseg, size, 0, PSEG_DATA, NULL); 	/* data extent region */
+	//vm_psegment_extent_suballoc(pseg, size, 0, PSEG_STACK, NULL);	/* stack extent region */
+	//vm_psegment_extent_suballoc(pseg, size, 0, PSEG_TEXT, NULL);	/* text extent region */
 }
 
 /* set pseudo-segments */
@@ -234,23 +245,6 @@ vm_psegment_shrink(pseg, type, newsize, newaddr)
 	} else {
 		panic("vm_psegment_shrink: segments could not be shrunk, restoring original segments size");
 	}
-}
-
-void
-vm_psegment_init(start, end)
-	vm_offset_t *start, *end;
-{
-	register vm_psegment_t *pseg;
-
-	pseg = &psegment;
-	if(pseg == NULL) {
-		RMALLOC(pseg, union vm_pseudo_segment *, sizeof(union vm_pseudo_segment *));
-	}
-
-	pseg->ps_start = start;
-	pseg->ps_end = end;
-	vm_psegment_extent_create(pseg, "vm_psegment", start, end, M_VMPSEG, NULL, 0, EX_WAITOK | EX_MALLOCOK);
-	vm_psegment_extent_alloc(pseg, pseg->ps_start, pseg->ps_size + sizeof(union vm_pseudo_segment *), 0, EX_WAITOK | EX_MALLOCOK);
 }
 
 void

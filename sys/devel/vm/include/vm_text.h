@@ -12,7 +12,7 @@
 #include <sys/queue.h>
 
 /*
- * Text structure.			XXX REF COUNT should be short
+ * Text structure
  * One allocated per pure
  * procedure on swap device.
  * Manipulated by text.c
@@ -22,6 +22,12 @@
 struct txtlist;
 CIRCLEQ_HEAD(txtlist, vm_text);
 struct vm_text {
+    /* text information */
+	segsz_t 				sp_tsize;				/* text size */
+	caddr_t					sp_taddr;				/* text addr */
+    int 					sp_tflag;				/* text flags */
+    u_long					sp_tresult;				/* text extent */
+
     CIRCLEQ_ENTRY(vm_text)  x_list;					/* text freelist */
     caddr_t	                x_daddr;				/* segment's disk address */
     caddr_t                 x_caddr;				/* core address, if loaded */
@@ -31,12 +37,6 @@ struct vm_text {
     u_char	                x_ccount;				/* number of loaded references */
     u_char	                x_flag;					/* traced, written flags */
     char	                dummy;					/* room for one more */
-
-    /* vm_stack.h */
-	segsz_t 				sp_tsize;				/* text size */
-	caddr_t					sp_taddr;				/* text addr */
-    int 					sp_tflag;				/* text flags */
-    u_long					sp_tresult;				/* text extent */
 
     /* 4.3BSD-Reno */
     swblk_t					x_psdaddr[NXDAD];		/* disk addresses of dmtext-page segments */

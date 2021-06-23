@@ -50,7 +50,7 @@ vm_xalloc(vp)
 {
 	register vm_text_t xp;
 	register struct proc *p;
-	struct exec *ep;
+
 	while ((xp == vp->v_text) != NULL) {
 		if (xp->x_flag & XLOCK) {
 			xwait(xp);
@@ -288,48 +288,4 @@ vm_xrele(vp)
 	if (vp->v_flag & VTEXT) {
 		vm_xuntext(vp->v_text);
 	}
-}
-
-/*
- * Add a process to those sharing a text segment by
- * getting the page tables and then linking to x_caddr.
- */
-void
-vm_xlink(p)
-	register struct proc *p;
-{
-	register vm_text_t xp = p->p_textp;
-
-	if (xp == NULL) {
-		return;
-	}
-	//vinitpt(p);
-	p->p_xlink = xp->x_caddr;
-	xp->x_caddr = p;
-	xp->x_ccount++;
-}
-
-void
-vm_xunlink(p)
-	register struct proc *p;
-{
-	register vm_text_t xp = p->p_textp;
-	register struct proc *q;
-
-	if (xp == NULL) {
-		return;
-	}
-	if (xp->x_caddr == p) {
-		xp->x_caddr = p->p_xlink;
-		p->p_xlink = 0;
-		return;
-	}
-	for (q = xp->x_caddr; q->p_xlink; q = q->p_xlink) {
-		if (q->p_xlink == p) {
-			q->p_xlink = p->p_xlink;
-			p->p_xlink = 0;
-			return;
-		}
-	}
-	panic("lost text");
 }

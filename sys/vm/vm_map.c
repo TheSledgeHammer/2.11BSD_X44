@@ -167,8 +167,6 @@ vm_map_startup()
     }
     CIRCLEQ_NEXT(mep, cl_entry) = NULL;
 }
-#include <sys/extent.h>
-struct extent *vmspacemap;
 
 /*
  * Allocate a vmspace structure, including a vm_map and pmap,

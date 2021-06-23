@@ -106,6 +106,7 @@ struct vmspace {
 	segsz_t 		vm_dsize;		/* data size (pages) XXX */
 	segsz_t 		vm_ssize;		/* stack size (pages) */
 	caddr_t			vm_taddr;		/* user virtual address of text XXX */
+	caddr_t			vm_saddr;		/* user virtual address of stack XXX */
 	caddr_t			vm_daddr;		/* user virtual address of data XXX */
 	caddr_t 		vm_minsaddr;	/* user VA at min stack growth */
 	caddr_t 		vm_maxsaddr;	/* user VA at max stack growth */

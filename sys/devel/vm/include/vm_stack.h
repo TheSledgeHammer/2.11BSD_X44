@@ -33,20 +33,30 @@
  * Data structure
  */
 struct vm_data {
-    segsz_t 			sp_dsize;
-	caddr_t				sp_daddr;
-	int 				sp_dflag;
-	u_long				*sp_dresult;
+    segsz_t 			sp_dsize;		/* data size */
+	caddr_t				sp_daddr;		/* data addr */
+	int 				sp_dflag;		/* data flags */
+	u_long				*sp_dresult;	/* data extent */
 };
 
 /*
  * Stack structure
  */
 struct vm_stack {
-	segsz_t 			sp_ssize;
-	caddr_t				sp_saddr;
-    int 				sp_sflag;
-    u_long				*sp_sresult;
+	segsz_t 			sp_ssize;		/* stack size */
+	caddr_t				sp_saddr;		/* stack addr */
+    int 				sp_sflag;		/* stack flags */
+    u_long				*sp_sresult;	/* stack extent */
+};
+
+/*
+ * Text structure
+ */
+struct vm_txt {
+	segsz_t 			sp_tsize;		/* text size */
+	caddr_t				sp_taddr;		/* text addr */
+    int 				sp_tflag;		/* text flags */
+    u_long				sp_tresult;		/* text extent */
 };
 
 /* pseudo segment registers */
@@ -59,20 +69,19 @@ union vm_pseudo_segment {
     vm_offset_t         *ps_start;		/* start of space */
     vm_offset_t         *ps_end;		/* end of space */
     size_t				ps_size;		/* total size (data + stack + text) */
-
-    int					ps_sep;			/* I & D Seperation */
     int 				ps_flags;		/* flags */
 
 	struct vmspace		*ps_vmspace;	/* vmspace back-pointer */
 };
 
-/* pseudo-segment flags */
-#define PSEG_SEP			0x4		/* I & D Seperation */
-
 /* pseudo-segment types */
-#define PSEG_DATA			1		/* data segment */
-#define PSEG_STACK			2		/* stack segment */
-#define PSEG_TEXT			3		/* text segment */
+#define PSEG_DATA			1			/* data segment */
+#define PSEG_STACK			2			/* stack segment */
+#define PSEG_TEXT			3			/* text segment */
+
+/* pseudo-segment flags */
+#define PSEG_SEP			(PSEG_DATA | PSEG_STACK)
+#define PSEG_NOSEP			(PSEG_DATA | PSEG_STACK | PSEG_TEXT)
 
 /* pseudo-segment macros */
 #define DATA_SEGMENT(data, dsize, daddr, dflag) {		\
@@ -122,8 +131,6 @@ union vm_pseudo_segment {
 	(text)->sp_tsize -= (tsize);						\
 	(text)->sp_taddr -= (taddr);						\
 };
-
-extern vm_psegment_t 	*psegment;
 
 void	vm_psegment_init(vm_offset_t *, vm_offset_t *);
 void	vm_psegment_set(vm_psegment_t *, int, segsz_t, caddr_t, int);

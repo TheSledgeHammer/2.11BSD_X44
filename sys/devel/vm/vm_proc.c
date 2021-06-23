@@ -162,11 +162,10 @@ estabur(pseg, data, stack, text, type, sep, flags)
 	vm_text_t 		text;
 	int 			sep, flags;
 {
-
 	if(pseg == NULL || data == NULL || stack == NULL || text == NULL) {
 		return (1);
 	}
-	if(!sep && (type = PSEG_DATA | PSEG_STACK | PSEG_TEXT)) {
+	if(!sep && (type = PSEG_NOSEP)) {
 		if(flags == SEG_RO) {
 			vm_psegment_set(pseg, text->sp_tsize, text->sp_taddr, SEG_RO);
 		} else {
@@ -175,7 +174,7 @@ estabur(pseg, data, stack, text, type, sep, flags)
 		vm_psegment_set(pseg, data->sp_dsize, data->sp_daddr, SEG_RW);
 		vm_psegment_set(pseg, stack->sp_ssize, stack->sp_saddr, SEG_RW);
 	}
-	if(sep && (type == PSEG_DATA | PSEG_STACK)) {
+	if(sep && (type == PSEG_SEP)) {
 		if (flags == SEG_RO) {
 			vm_psegment_set(pseg, text->sp_tsize, text->sp_taddr, SEG_RO);
 		} else {

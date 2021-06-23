@@ -42,4 +42,19 @@
 	- Memory Management:
 		- rmap backed by an extent allocator
 		
-		
+/*
+ * Process Segmentation:
+ * Order of Change:
+ * Process/Kernel:
+ * 1. Process requests a change is size of segment regions
+ * 2. Run X kernel call (vmcmd most likely)
+ * 3. Runs through vmspace execution
+ * 4. return result
+ *
+ * VMSpace execution:
+ * 1. vm_segment copies old segments to ovlspace.
+ * 2. vm_segment resizes segments, while retaining original segments in ovlspace
+ * 3. Determine if segment resize was a success
+ * 3a. Yes (successful). vm_segment notifies ovlspace to delete original segments.
+ * 3b. No (unsuccessful). vm_segments notifies ovlspace to copy original segments back and before removing from ovlspace
+ */

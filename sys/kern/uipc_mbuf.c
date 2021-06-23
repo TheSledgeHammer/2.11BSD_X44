@@ -8,7 +8,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/param.h>
-//#ifdef INET
+#ifdef INET
 #include <sys/user.h>
 #include <sys/mbuf.h>
 #include <sys/kernel.h>
