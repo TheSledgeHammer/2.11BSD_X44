@@ -39,70 +39,6 @@
 #include <devel/sys/malloctypes.h>
 
 void
-vmspace_psegment_init(vm, flags)
-	struct vmspace *vm;
-	int 			flags;
-{
-	register vm_psegment_t 	*pseg;
-	register vm_data_t 		data;
-	register vm_stack_t 	stack;
-	register vm_text_t 		text;
-
-	vmspace_segmentation_alloc(vm, flags);
-
-	/* allocated pseudo-segment manager */
-	MALLOC(vm->vm_psegment, sizeof(union vm_pseudo_segment *), M_VMPSEG, M_WAITOK);
-	pseg = vm->vm_psegment;
-	pseg->ps_vmspace = vm;
-	pseg->ps_size = (sizeof(vm->vm_data) + sizeof(vm->vm_stack) + sizeof(vm->vm_text));
-	pseg->ps_flags = flags;
-	pseg->ps_data = data = vm->vm_data;
-	pseg->ps_stack = stack = vm->vm_stack;
-	pseg->ps_text = text = vm->vm_text;
-}
-
-/*
- * allocate pseudo-segments according to vmspace
- * TODO: Deal with I & D seperation.
- */
-void
-vmspace_segmentation_alloc(vm, flags)
-	struct vmspace 	*vm;
-	int 			flags;
-{
-	register vm_data_t 		data;
-	register vm_stack_t 	stack;
-	register vm_text_t 		text;
-
-	/* allocate segments to coremap */
-	vm->vm_data = (struct vm_data) rmalloc(coremap, sizeof(vm->vm_data));
-	vm->vm_stack = (struct vm_stack) rmalloc(coremap, sizeof(vm->vm_stack));
-	vm->vm_text = (struct vm_text) rmalloc(coremap, sizeof(vm->vm_text));
-
-	RMALLOC(vm->vm_data, vm_data_t, sizeof(vm->vm_data));
-	RMALLOC(vm->vm_stack, vm_stack_t, sizeof(vm->vm_stack));
-	RMALLOC(vm->vm_text, vm_text_t, sizeof(vm->vm_text));
-
-	/* setup pseudo-segments to vmspace */
-	DATA_SEGMENT(vm->vm_data, vm->vm_dsize, vm->vm_daddr, flags);
-	STACK_SEGMENT(vm->vm_stack, vm->vm_ssize, vm->vm_saddr, flags);
-	TEXT_SEGMENT(vm->vm_text, vm->vm_tsize, vm->vm_taddr, flags);
-}
-
-/*
- * free pseudo-segments from vmspace.
- * TODO: Deal with I & D seperation.
- */
-void
-vmspace_segmentation_free(vm)
-	struct vmspace 	*vm;
-{
-	RMFREE(vm->vm_data, vm->vm_dsize, vm->vm_daddr);
-	RMFREE(vm->vm_stack, vm->vm_ssize, vm->vm_saddr);
-	RMFREE(vm->vm_text, vm->vm_tsize, vm->vm_taddr);
-}
-
-void
 vm_psegment_init(pseg, start, end)
 	vm_psegment_t 	*pseg;
 	vm_offset_t 	*start, *end;
@@ -113,14 +49,14 @@ vm_psegment_init(pseg, start, end)
 
 	pseg->ps_start = start;
 	pseg->ps_end = end;
+	pseg->ps_size = (sizeof(pseg->ps_data) + sizeof(pseg->ps_data) + sizeof(pseg->ps_data));
 
 	vm_psegment_extent_create(pseg, "vm_psegment", start, end, M_VMPSEG, NULL, 0, EX_WAITOK | EX_MALLOCOK);
 	vm_psegment_extent_alloc(pseg, pseg->ps_start, pseg->ps_size + sizeof(union vm_pseudo_segment *), 0, EX_WAITOK | EX_MALLOCOK);
 
-
-	//vm_psegment_extent_suballoc(pseg, size, 0, PSEG_DATA, NULL); 	/* data extent region */
-	//vm_psegment_extent_suballoc(pseg, size, 0, PSEG_STACK, NULL);	/* stack extent region */
-	//vm_psegment_extent_suballoc(pseg, size, 0, PSEG_TEXT, NULL);	/* text extent region */
+	vm_psegment_extent_suballoc(pseg, sizeof(pseg->ps_data), 0, PSEG_DATA, EX_WAITOK | EX_MALLOCOK); 	/* data extent region */
+	vm_psegment_extent_suballoc(pseg, sizeof(pseg->ps_data), 0, PSEG_STACK, EX_WAITOK | EX_MALLOCOK);	/* stack extent region */
+	vm_psegment_extent_suballoc(pseg, sizeof(pseg->ps_text), 0, PSEG_TEXT, EX_WAITOK | EX_MALLOCOK);	/* text extent region */
 }
 
 /* set pseudo-segments */
@@ -179,11 +115,11 @@ vm_psegment_unset(pseg, type)
  * Expands a pseudo-segment if not null.
  */
 void
-vm_psegment_expand(pseg, type, newsize, newaddr)
+vm_psegment_expand(pseg, newsize, newaddr, type)
 	vm_psegment_t 	*pseg;
-	int 			type;
 	segsz_t 		newsize;
 	caddr_t 		newaddr;
+	int 			type;
 {
 	if(pseg != NULL) {
 		switch (type) {
@@ -215,11 +151,11 @@ vm_psegment_expand(pseg, type, newsize, newaddr)
  * Shrinks a pseudo-segment if not null.
  */
 void
-vm_psegment_shrink(pseg, type, newsize, newaddr)
+vm_psegment_shrink(pseg, newsize, newaddr, type)
 	vm_psegment_t 	*pseg;
-	int	 			type;
 	segsz_t 		newsize;
 	caddr_t 		newaddr;
+	int	 			type;
 {
 	if(pseg != NULL) {
 		switch (type) {
@@ -285,25 +221,22 @@ out:
 void
 vm_psegment_extent_suballoc(pseg, size, boundary, type, flags)
 	vm_psegment_t 	*pseg;
-	u_long 			size;
+	u_long			size;
 	u_long 			boundary;
 	int 			type, flags;
 {
 	register struct extent ex;
 	int 	error;
-	u_long 	alignment;
 
 	ex = pseg->ps_extent;
-	alignment = SEGMENT_SIZE;
 
 	switch (type) {
 	case PSEG_DATA:
 		vm_data_t data = pseg->ps_data;
 		if (data != NULL) {
-			error = extent_alloc(ex, size, alignment, boundary, flags, data->sp_dresult);
-			if (error == 0) {
-				printf(
-						"vm_psegment_extent_suballoc: data extent allocated: size %s", size);
+			error = extent_alloc(ex, size, SEGMENT_SIZE, boundary, flags, data->sp_dresult);
+			if (error) {
+				printf("vm_psegment_extent_suballoc: data extent allocated: addr %s size %l", addr, size);
 			} else {
 				goto out;
 			}
@@ -312,9 +245,9 @@ vm_psegment_extent_suballoc(pseg, size, boundary, type, flags)
 	case PSEG_STACK:
 		vm_stack_t stack = pseg->ps_stack;
 		if (stack != NULL) {
-			error = extent_alloc(ex, size, alignment, boundary, flags, stack->sp_sresult);
-			if (error == 0) {
-				printf("vm_psegment_extent_suballoc: stack extent allocated: size %s", size);
+			error = extent_alloc(ex, size, SEGMENT_SIZE, boundary, flags, stack->sp_sresult);
+			if (error) {
+				printf("vm_psegment_extent_suballoc: stack extent allocated: addr %s size %l", addr, size);
 			} else {
 				goto out;
 			}
@@ -323,9 +256,9 @@ vm_psegment_extent_suballoc(pseg, size, boundary, type, flags)
 	case PSEG_TEXT:
 		vm_text_t text = pseg->ps_text;
 		if (text != NULL) {
-			error = extent_alloc(ex, size, alignment, boundary, flags, text->sp_tresult);
-			if (error == 0) {
-				printf("vm_psegment_extent_suballoc: text extent allocated: size %s", size);
+			error = extent_alloc(ex, size, SEGMENT_SIZE, boundary, flags, text->sp_tresult);
+			if (error) {
+				printf("vm_psegment_extent_suballoc: text extent allocated: addr %s size %l", addr, size);
 			} else {
 				goto out;
 			}
@@ -334,30 +267,60 @@ vm_psegment_extent_suballoc(pseg, size, boundary, type, flags)
 	}
 
 out:
-	extent_free(ex, ex->ex_start, size, flags);
+	extent_free(ex, addr, size, flags);
 	panic("vm_psegment_extent_suballoc: was unable to be allocated");
 }
 
 void
-vm_psegment_extent_free(pseg, start, size, flags)
+vm_psegment_extent_free(pseg, size, addr, type, flags)
 	vm_psegment_t 	*pseg;
-	u_long 			start, size;
-	int 			flags;
+	caddr_t addr;
+	u_long	size;
+	int type, flags;
 {
 	register struct extent ex;
 	int error;
 
-	if(pseg != NULL) {
-		ex = pseg->ps_extent;
-		error = extent_free(ex, start, size, flags);
-		if(error == 0) {
-			printf("vm_psegment_extent_free: extent freed: start %l size %s", start, size);
-		} else {
-			printf("vm_psegment_extent_free: extent could not be freed");
+	ex = pseg->ps_extent;
+
+	switch(type) {
+	case PSEG_DATA:
+		vm_data_t data = pseg->ps_data;
+		if (data != NULL && data->sp_daddr == addr && data->sp_dsize == size) {
+			error = extent_free(ex, ex->ex_start, size, flags);
+			if (error) {
+				printf("vm_psegment_extent_free: data extent freed: addr %s size %l", addr, size);
+			} else {
+				goto out;
+			}
 		}
-	} else {
-		panic("vm_psegment_extent_free: no segment extent found");
+		break;
+	case PSEG_STACK:
+		vm_stack_t stack = pseg->ps_stack;
+		if (stack != NULL && stack->sp_saddr == addr && stack->sp_ssize == size) {
+			error = extent_free(ex, ex->ex_start, size, flags);
+			if (error) {
+				printf("vm_psegment_extent_free: stack extent freed: addr %s size %l", addr, size);
+			} else {
+				goto out;
+			}
+		}
+		break;
+	case PSEG_TEXT:
+		vm_text_t text = pseg->ps_text;
+		if (text != NULL && text->sp_taddr == addr && text->sp_tsize == size) {
+			error = extent_free(ex, ex->ex_start, size, flags);
+			if (error) {
+				printf("vm_psegment_extent_free: text extent freed: addr %s size %l", addr, size);
+			} else {
+				goto out;
+			}
+		}
+		break;
 	}
+
+out:
+	panic("vm_psegment_extent_free: no segment extent found");
 }
 
 void

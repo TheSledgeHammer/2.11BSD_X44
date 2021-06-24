@@ -72,7 +72,7 @@
 #include <sys/file.h>
 
 #include <miscfs/specfs/specdev.h>
-
+#include <devel/vm/include/vm.h>
 #include <devel/vm/include/vm_swap.h>
 
 /*
@@ -441,7 +441,8 @@ swapdrum_off(p, sp)
 }
 
 int
-swap_miniroot(sp, sdp, vp, npages)
+swap_miniroot(p, sp, sdp, vp, npages)
+	struct proc 	*p;
 	struct swdevt 	*sp;
 	struct swapdev 	*sdp;
 	struct vnode 	*vp;
@@ -473,7 +474,7 @@ swap_miniroot(sp, sdp, vp, npages)
 		cnt.swpgonly += (rootpages - addr);
 	}
 	if (vp != rootvp) {
-		(void)VOP_CLOSE(vp, FREAD|FWRITE, p->p_ucred, p);
+		VOP_CLOSE(vp, FREAD|FWRITE, p->p_ucred, p);
 		return (ENXIO);
 	}
 	return (0);

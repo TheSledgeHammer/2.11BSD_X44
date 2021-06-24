@@ -67,21 +67,21 @@ struct	pager_struct {
 #define PG_CLUSTERGET	1
 #define PG_CLUSTERPUT	2
 
-struct	pagerops {
-	void		(*pgo_init)			/* Initialize pager. */
-			    	(void);
-	vm_pager_t	(*pgo_alloc)		/* Allocate pager. */
-			    	(caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
-	void		(*pgo_dealloc)		/* Disassociate. */
-			    	(vm_pager_t);
-	int			(*pgo_getpages)		/* Get (read) page. */
-			    	(vm_pager_t, vm_page_t *, int, boolean_t);
-	int			(*pgo_putpages)		/* Put (write) page. */
-			    	(vm_pager_t, vm_page_t *, int, boolean_t);
-	boolean_t  	(*pgo_haspage)		/* Does pager have page? */
-			    	(vm_pager_t, vm_offset_t);
-	void		(*pgo_cluster)		/* Return range of cluster. */
-			    	(vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
+struct pagerops {
+	/* Initialize pager. */
+	void		(*pgo_init)(void);
+	/* Allocate pager. */
+	vm_pager_t	(*pgo_alloc)(caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
+	/* Deallocate pager. */
+	void		(*pgo_dealloc)(vm_pager_t);
+	/* Get (read) page. */
+	int			(*pgo_getpages)(vm_pager_t, vm_page_t *, int, boolean_t);
+	/* Put (write) page. */
+	int			(*pgo_putpages)(vm_pager_t, vm_page_t *, int, boolean_t);
+	/* Does pager have page? */
+	boolean_t  	(*pgo_haspage)(vm_pager_t, vm_offset_t);
+	/* Return range of cluster. */
+	void		(*pgo_cluster)(vm_pager_t, vm_offset_t, vm_offset_t *, vm_offset_t *);
 };
 
 /*

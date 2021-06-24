@@ -49,6 +49,7 @@
 #include <sys/map.h>
 
 #include <vm/include/vm.h>
+#include <vm/include/vm_object.h>
 #include <vm/include/vm_page.h>
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_pager.h>
@@ -116,24 +117,25 @@ vm_aobject_allocate(size, object, flags)
  * => aobj must be unlocked, we will lock it
  */
 void
-vm_aobject_detach(uobj)
-	struct vm_object *uobj;
+vm_aobject_detach(obj)
+	vm_object_t obj;
 {
-	struct vm_aobject *aobj = (struct vm_aobject *)uobj;
-	struct vm_page *pg;
+	vm_aobject_t aobj = (struct vm_aobject *)obj;
+	vm_segment_t sg;
+	vm_page_t 	pg;
 	boolean_t busybody;
 
 	/*
  	 * detaching from kernel_object is a noop.
  	 */
-	if (uobj->ref_count == VM_OBJ_KERN)
+	if (obj->ref_count == VM_OBJ_KERN)
 		return;
 
-	simple_lock(&uobj->Lock);
+	simple_lock(&obj->Lock);
 
-	uobj->ref_count--;					/* drop ref! */
-	if (uobj->ref_count) {				/* still more refs? */
-		simple_unlock(&uobj->Lock);
+	obj->ref_count--;					/* drop ref! */
+	if (obj->ref_count) {				/* still more refs? */
+		simple_unlock(&obj->Lock);
 		return;
 	}
 
@@ -149,19 +151,27 @@ vm_aobject_detach(uobj)
  	 */
 
 	busybody = FALSE;
-	for (pg = TAILQ_FIRST(uobj->memq); pg != NULL ; pg = TAILQ_NEXT(pg, listq)) {
-		if (pg->flags & PG_BUSY) {
-			pg->flags |= PG_RELEASED;
+	for (sg = CIRCLEQ_FIRST(obj->seglist); sg != NULL; sg = CIRCLEQ_NEXT(sg, sg_list)) {
+		if(sg->sg_flags & SEG_BUSY) {
+			sg->sg_flags |= SEG_RELEASED;
 			busybody = TRUE;
 			continue;
 		}
-
-		/* zap the mappings, free the swap slot, free the page */
-		pmap_page_protect(VM_PAGE_TO_PHYS(pg), VM_PROT_NONE);
-		uao_dropswap(&aobj->u_obj, pg->offset >> PAGE_SHIFT);
-		vm_page_lock_queues();
-		vm_page_free(pg);
-		vm_page_unlock_queues();
+		for (pg = TAILQ_FIRST(sg->sg_memq); pg != NULL ; pg = TAILQ_NEXT(pg, listq)) {
+			if (pg->flags & PG_BUSY) {
+				pg->flags |= PG_RELEASED;
+				busybody = TRUE;
+				continue;
+			}
+			/* zap the mappings, free the swap slot, free the page */
+			pmap_page_protect(VM_PAGE_TO_PHYS(pg), VM_PROT_NONE);
+			vm_aobject_dropswap(&aobj->u_obj, pg->offset >> PAGE_SHIFT);
+			vm_segment_lock_lists();
+			vm_page_lock_queues();
+			vm_page_free(pg);
+			vm_page_unlock_queues();
+			vm_segment_unlock_lists();
+		}
 	}
 
 	/*
@@ -203,8 +213,7 @@ vm_aobject_free(aobj)
 			for (elt = LIST_FIRST(aobj->u_swhash[i]); elt != NULL; elt = next) {
 				int j;
 
-				for (j = 0; j < UAO_SWHASH_CLUSTER_SIZE; j++)
-				{
+				for (j = 0; j < UAO_SWHASH_CLUSTER_SIZE; j++) {
 					int slot = elt->slots[j];
 
 					if (slot) {
@@ -293,7 +302,7 @@ vm_aobject_find_swhash_elt(aobject, pageidx, create)
 	int page_tag;
 
 	swhash = UAO_SWHASH_HASH(aobject, pageidx); 	/* first hash to get bucket */
-	page_tag = UAO_SWHASH_ELT_TAG(pageidx); 	/* tag to search for */
+	page_tag = UAO_SWHASH_ELT_TAG(pageidx); 		/* tag to search for */
 
 	/*
 	 * now search the bucket for the requested tag
@@ -437,3 +446,42 @@ vm_aobject_set_swslot(obj, pageidx, slot)
 /*
  * end of hash/array functions
  */
+
+/*
+ * vm_aobject_flush (uao_flush): uh, yea, sure it's flushed.  really!
+ */
+boolean_t
+vm_aobject_flush(obj, start, end, flags)
+	vm_object_t obj;
+	vaddr_t start, end;
+	int flags;
+{
+
+	/*
+ 	 * anonymous memory doesn't "flush"
+ 	 */
+	/*
+ 	 * XXX
+ 	 * deal with PGO_DEACTIVATE (for madvise(MADV_SEQUENTIAL))
+ 	 * and PGO_FREE (for msync(MSINVALIDATE))
+ 	 */
+	return (TRUE);
+}
+
+/*
+ * vm_aobject_dropswap (uao_dropswap):  release any swap resources from this aobj page.
+ *
+ * => aobj must be locked or have a reference count of 0.
+ */
+void
+vm_aobject_dropswap(obj, pageidx)
+	vm_object_t obj;
+	int pageidx;
+{
+	int slot;
+
+	slot = vm_aobject_set_swslot(obj, pageidx, 0);
+	if (slot) {
+		vm_swap_free(slot, 1);
+	}
+}

@@ -102,6 +102,8 @@ struct vm_object {
 #define OBJ_COLLAPSE	0x0012	/* mark to collapse object */
 #define OBJ_OVERLAY		0x0014	/* mark to transfer object to overlay */
 
+#define VM_OBJ_KERN		(-2)
+
 RB_HEAD(vm_object_hash_head, vm_object_hash_entry);
 struct vm_object_hash_entry {
 	RB_ENTRY(vm_object_hash_entry)  hash_links;	/* hash chain links */

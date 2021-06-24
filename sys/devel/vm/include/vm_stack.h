@@ -57,6 +57,18 @@ struct vm_txt {
 	caddr_t				sp_taddr;		/* text addr */
     int 				sp_tflag;		/* text flags */
     u_long				sp_tresult;		/* text extent */
+
+    struct {
+    	caddr_t	        x_daddr;				/* segment's disk address */
+        caddr_t         x_caddr;				/* core address, if loaded */
+        size_t	        x_size;					/* size (clicks) */
+        struct vnode    *x_vptr;    			/* vnode pointer */
+        u_char	        x_count;				/* reference count */
+        u_char	        x_ccount;				/* number of loaded references */
+        u_char	        x_flag;					/* traced, written flags */
+        char	        dummy;					/* room for one more */
+    } sp_x;
+
 };
 
 /* pseudo segment registers */
@@ -70,8 +82,6 @@ union vm_pseudo_segment {
     vm_offset_t         *ps_end;		/* end of space */
     size_t				ps_size;		/* total size (data + stack + text) */
     int 				ps_flags;		/* flags */
-
-	struct vmspace		*ps_vmspace;	/* vmspace back-pointer */
 };
 
 /* pseudo-segment types */
@@ -140,7 +150,6 @@ void	vm_psegment_shrink(vm_psegment_t *, int, segsz_t, caddr_t);
 void	vm_psegment_extent_create(vm_psegment_t *, char *, u_long, u_long, int, caddr_t, size_t, int);
 void	vm_psegment_extent_alloc(vm_psegment_t *, u_long, u_long, int, int);
 void	vm_psegment_extent_suballoc(vm_psegment_t *, u_long, u_long, int, u_long *);
-void	vm_psegment_extent_free(vm_psegment_t *, u_long, u_long, int);
+void	vm_psegment_extent_free(vm_psegment_t *, caddr_t, u_long, int, int);
 void	vm_psegment_extent_destroy(vm_psegment_t *);
-
 #endif /* _VM_STACK_H_ */

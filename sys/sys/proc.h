@@ -115,6 +115,7 @@ struct	proc {
     struct	proc 	    *p_link;		/* linked list of running processes */
 
     struct user			*p_addr;		/* virtual address of u. area */
+
     caddr_t				p_daddr;		/* virtual address of data area */
     caddr_t				p_saddr;		/* virtual address of stack area */
     caddr_t				p_taddr;		/* virtual address of text area */

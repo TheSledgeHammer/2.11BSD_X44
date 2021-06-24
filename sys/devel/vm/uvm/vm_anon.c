@@ -55,7 +55,7 @@
 void
 vm_anon_init()
 {
-	struct vm_anon *anon;
+	vm_anon_t anon;
 
 	int nanon = cnt.v_free_count - (cnt.v_free_count / 16); /* XXXCDC ??? */
 	int lcv;
@@ -87,7 +87,7 @@ void
 vm_anon_add(pages)
 	int	pages;
 {
-	struct vm_anon *anon;
+	vm_anon_t anon;
 	int lcv;
 
 	anon = (struct vm_anon *)kmem_alloc(kernel_map, sizeof(*anon) * pages);
@@ -113,10 +113,10 @@ vm_anon_add(pages)
 /*
  * allocate an anon
  */
-struct vm_anon *
+vm_anon_t
 vm_analloc()
 {
-	struct vm_anon *a;
+	vm_anon_t a;
 
 	simple_lock(&a->u->an_freelock);
 	a = a->u.an_free;
@@ -141,9 +141,9 @@ vm_analloc()
  */
 void
 vm_anfree(anon)
-	struct vm_anon *anon;
+	vm_anon_t anon;
 {
-	struct vm_page *pg;
+	vm_page_t pg;
 
 	/*
 	 * get page
@@ -192,7 +192,7 @@ vm_anfree(anon)
  */
 void
 vm_anon_dropswap(anon)
-	struct vm_anon *anon;
+	vm_anon_t anon;
 {
 	if (anon->an_swslot == 0) {
 		return;

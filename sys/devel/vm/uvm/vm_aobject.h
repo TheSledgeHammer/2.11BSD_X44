@@ -125,26 +125,25 @@ struct uao_swhash_elt {
 	int 						slots[UAO_SWHASH_CLUSTER_SIZE];	/* the slots */
 };
 
-
 struct aobjectswhash;
 LIST_HEAD(aobjectswhash, uao_swhash_elt);
 struct aobjectlist;
 LIST_HEAD(aobjectlist, vm_aobject);
 
-struct aobjectswhash					*aobjectswhash;			/* aobject's swhash list */
-struct aobjectlist 						aobject_list;			/* list of aobject's */
-static simple_lock_data_t 				aobject_list_lock; 		/* lock for aobject lists */
+struct aobjectswhash			*aobjectswhash;			/* aobject's swhash list */
+struct aobjectlist 				aobject_list;			/* list of aobject's */
+static simple_lock_data_t 		aobject_list_lock; 		/* lock for aobject lists */
 
 /*
  * flags
  */
 /* flags for uao_create: can only be used one time (at bootup) */
-#define UAO_FLAG_KERNOBJ	0x1	/* create kernel object */
-#define UAO_FLAG_KERNSWAP	0x2	/* enable kernel swap */
+#define UAO_FLAG_KERNOBJ		0x1	/* create kernel object */
+#define UAO_FLAG_KERNSWAP		0x2	/* enable kernel swap */
 
 /* internal flags */
-#define UAO_FLAG_KILLME		0x4	/* aobj should die when last released page is no longer PG_BUSY ... */
-#define UAO_FLAG_NOSWAP		0x8	/* aobj can't swap (kernel obj only!) */
+#define UAO_FLAG_KILLME			0x4	/* aobj should die when last released page is no longer PG_BUSY ... */
+#define UAO_FLAG_NOSWAP			0x8	/* aobj can't swap (kernel obj only!) */
 
 
 void 							vm_aobject_init(vm_size_t, vm_object_t, int);
@@ -154,4 +153,5 @@ int 							vm_aobject_set_swslot (vm_object_t, int, int);
 static struct uao_swhash_elt	*vm_aobject_find_swhash_elt (vm_aobject_t, int, boolean_t);
 static int			 			vm_aobject_find_swslot (vm_aobject_t, int);
 static void	 					vm_aobject_free (vm_aobject_t);
+
 #endif /* _VM_AOBJECT_H_ */

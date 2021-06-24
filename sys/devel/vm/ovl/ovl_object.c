@@ -257,7 +257,7 @@ ovl_object_enter(object, pager)
 		return;
 
 	bucket = &ovl_object_hashtable[ovl_object_hash(pager)];
-	entry = (ovl_object_hash_entry_t)overlay_malloc((u_long)sizeof *entry, M_OVLOBJHASH, M_WAITOK);
+	entry = (ovl_object_hash_entry_t)malloc((u_long)sizeof *entry, M_OVLOBJHASH, M_WAITOK | M_OVERLAY);
 
 	entry->ovoe_object = object;
 	object->ovo_flags |= OBJ_CANPERSIST;

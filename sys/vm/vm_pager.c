@@ -157,8 +157,9 @@ vm_pager_allocate(type, handle, size, prot, off)
 	struct pagerops *ops;
 
 	ops = (type == PG_DFLT) ? dfltpagerops : pagertab[type];
-	if (ops)
+	if (ops) {
 		return ((*ops->pgo_alloc)(handle, size, prot, off));
+	}
 	return (NULL);
 }
 
@@ -183,12 +184,14 @@ vm_pager_get_pages(pager, mlist, npages, sync)
 
 	if (pager == NULL) {
 		rv = VM_PAGER_OK;
-		while (npages--)
+		while (npages--) {
 			if (!vm_page_zero_fill(*mlist)) {
 				rv = VM_PAGER_FAIL;
 				break;
-			} else
+			} else {
 				mlist++;
+			}
+		}
 		return (rv);
 	}
 	return ((*pager->pg_ops->pgo_getpages)(pager, mlist, npages, sync));
@@ -313,8 +316,7 @@ vm_pager_map_pages(mlist, npages, canwait)
 #ifdef DEBUG
 		m->flags |= PG_PAGEROWNED;
 #endif
-		pmap_enter(vm_map_pmap(pager_map), va, VM_PAGE_TO_PHYS(m),
-			   VM_PROT_DEFAULT, TRUE);
+		pmap_enter(vm_map_pmap(pager_map), va, VM_PAGE_TO_PHYS(m), VM_PROT_DEFAULT, TRUE);
 	}
 	return (kva);
 }
@@ -367,9 +369,11 @@ vm_pager_lookup(pglist, handle)
 {
 	register vm_pager_t pager;
 
-	for (pager = pglist->tqh_first; pager; pager = pager->pg_list.tqe_next)
-		if (pager->pg_handle == handle)
+	for (pager = TAILQ_FIRST(pglist); pager; pager = TAILQ_NEXT(pager, pg_list)) {
+		if (pager->pg_handle == handle) {
 			return (pager);
+		}
+	}
 	return (NULL);
 }
 

@@ -50,9 +50,6 @@ struct uvm {
 };
 extern struct uvm uvm;
 
-/* vm_object.h */
-#define VM_OBJ_KERN				(-2)
-
 /* vm_pager.h */
 #define PG_SEGMENT				3
 #define PG_AOBJECT				4
@@ -74,7 +71,7 @@ extern struct uvm uvm;
 #define PGO_REALLOCSWAP			0x100	/* reallocate swap area [pager_dropcluster] */
 
 /* page we are not interested in getting */
-#define PGO_DONTCARE 			((struct vm_page *) -1)	/* [get only] */
+//#define PGO_DONTCARE 			((struct vm_page *) -1)	/* [get only] */
 
 /* vm_map.h */
 /*

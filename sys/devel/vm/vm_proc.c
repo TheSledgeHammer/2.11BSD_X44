@@ -16,6 +16,79 @@
 #include <devel/vm/include/vm_segment.h>
 #include <devel/vm/include/vm_text.h>
 
+void
+segment_expand(p, segment, newsize, type)
+	struct proc 	*p;
+	vm_segment_t 	segment;
+	vm_size_t 	 	newsize;
+	int type;
+{
+	register vm_size_t i, n;
+	caddr_t a1, a2;
+
+	if (type == PSEG_DATA) {
+		n = segment->sg_data.sp_dsize;
+		segment->sg_data.sp_dsize = newsize;
+		p->p_dsize = segment->sg_data.sp_dsize;
+		a1 = segment->sg_data.sp_daddr;
+		vm_psegment_expand(segment->sg_psegment, newsize, a1, PSEG_DATA);
+		if (n >= newsize) {
+			n -= newsize;
+			vm_psegment_extent_free(segment->sg_psegment, n + newsize, a1, PSEG_DATA, 0);
+			return;
+		}
+	} else {
+		n = segment->sg_stack.sp_ssize;
+		segment->sg_stack.sp_ssize = newsize;
+		p->p_ssize = segment->sg_stack.sp_ssize;
+		a1 = segment->sg_stack.sp_saddr;
+		vm_psegment_expand(segment->sg_psegment, newsize, a1, PSEG_STACK);
+		if (n >= newsize) {
+			n -= newsize;
+			segment->sg_stack.sp_saddr += n;
+			p->p_saddr = segment->sg_stack.sp_saddr;
+			vm_psegment_extent_free(segment->sg_psegment, n, a1, PSEG_STACK, 0);
+			return;
+		}
+	}
+	if (type == PSEG_STACK) {
+		a1 = segment->sg_stack.sp_saddr;
+		i = newsize - n;
+		a2 = a1 + i;
+		/*
+		 * i is the amount of growth.  Copy i clicks
+		 * at a time, from the top; do the remainder
+		 * (n % i) separately.
+		 */
+		while (n >= i) {
+			n -= i;
+			bcopy(a1 + n, a2 + n, i);
+		}
+		bcopy(a1, a2, n);
+	}
+	a2 = rmalloc(coremap, newsize);
+	if (a2 == NULL) {
+		if (type == PSEG_DATA) {
+			//swapout(p);
+		} else {
+			//swapout(p);
+		}
+	}
+	if (type == PSEG_STACK) {
+		segment->sg_stack.sp_saddr = a2;
+		p->p_saddr = segment->sg_stack.sp_saddr;
+		/*
+		 * Make the copy put the stack at the top of the new area.
+		 */
+		a2 += newsize - n;
+	} else {
+		segment->sg_data.sp_daddr = a2;
+		p->p_daddr = segment->sg_data.sp_daddr;
+	}
+	bcopy(a1, a2, n);
+	rmfree(coremap, n, a1);
+}
+
 /*
  * Change the size of the data+stack regions of the process.
  * If the size is shrinking, it's easy -- just release the extra core.
@@ -167,21 +240,21 @@ estabur(pseg, data, stack, text, type, sep, flags)
 	}
 	if(!sep && (type = PSEG_NOSEP)) {
 		if(flags == SEG_RO) {
-			vm_psegment_set(pseg, text->sp_tsize, text->sp_taddr, SEG_RO);
+			vm_psegment_set(pseg, PSEG_TEXT, text->sp_tsize, text->sp_taddr, SEG_RO);
 		} else {
-			vm_psegment_set(pseg, text->sp_tsize, text->sp_taddr, SEG_RW);
+			vm_psegment_set(pseg, PSEG_TEXT, text->sp_tsize, text->sp_taddr, SEG_RW);
 		}
-		vm_psegment_set(pseg, data->sp_dsize, data->sp_daddr, SEG_RW);
-		vm_psegment_set(pseg, stack->sp_ssize, stack->sp_saddr, SEG_RW);
+		vm_psegment_set(pseg, PSEG_DATA, data->sp_dsize, data->sp_daddr, SEG_RW);
+		vm_psegment_set(pseg, PSEG_STACK, stack->sp_ssize, stack->sp_saddr, SEG_RW);
 	}
 	if(sep && (type == PSEG_SEP)) {
 		if (flags == SEG_RO) {
-			vm_psegment_set(pseg, text->sp_tsize, text->sp_taddr, SEG_RO);
+			vm_psegment_set(pseg, PSEG_TEXT, text->sp_tsize, text->sp_taddr, SEG_RO);
 		} else {
-			vm_psegment_set(pseg, text->sp_tsize, text->sp_taddr, SEG_RW);
+			vm_psegment_set(pseg, PSEG_TEXT, text->sp_tsize, text->sp_taddr, SEG_RW);
 		}
-		vm_psegment_set(pseg, data->sp_dsize, data->sp_daddr, SEG_RW);
-		vm_psegment_set(pseg, stack->sp_ssize, stack->sp_saddr, SEG_RW);
+		vm_psegment_set(pseg, PSEG_DATA, data->sp_dsize, data->sp_daddr, SEG_RW);
+		vm_psegment_set(pseg, PSEG_STACK, stack->sp_ssize, stack->sp_saddr, SEG_RW);
 	}
 	return (0);
 }

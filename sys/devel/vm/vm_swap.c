@@ -280,10 +280,21 @@ swapoff(p, uap, retval)
 	register struct swdevt *sp;
 	dev_t 	dev;
 	int 	error;
+	struct nameidata nd;
 
-	if(error == swapdrum_off(p, sp)) {
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->name, p);
+	if (error == namei(&nd)) {
 		return (error);
 	}
+	for (sp = &swdevt[0]; sp->sw_dev != NODEV; sp++) {
+		if (sp->sw_dev == dev) {
+			if(error == swapdrum_off(p, sp)) {
+				return (error);
+			}
+			return (0);
+		}
+	}
+
 	return (0);
 }
 

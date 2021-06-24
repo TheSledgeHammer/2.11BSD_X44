@@ -289,7 +289,7 @@ amap_extend(entry, addsize)
 	vm_map_entry_t entry;
 	vm_size_t addsize;
 {
-	struct vm_amap *amap = entry->aref.ar_amap;
+	vm_amap_t amap = entry->aref.ar_amap;
 	int slotoff = entry->aref.ar_pageoff;
 	int slotmapped, slotadd, slotneed;
 #ifdef VM_AMAP_PPREF
@@ -452,7 +452,7 @@ amap_share_protect(entry, prot)
 	vm_map_entry_t entry;
 	vm_prot_t prot;
 {
-	struct vm_amap *amap = entry->aref.ar_amap;
+	vm_amap_t amap = entry->aref.ar_amap;
 	int slots, lcv, slot, stop;
 
 	AMAP_B2SLOT(slots, (entry->end - entry->start));
@@ -490,10 +490,10 @@ amap_share_protect(entry, prot)
 
 void
 amap_wipeout(amap)
-	struct vm_amap *amap;
+	vm_amap_t amap;
 {
 	int lcv, slot;
-	struct vm_anon *anon;
+	vm_anon_t anon;
 
 	amap_list_remove(amap);
 	amap_unlock(amap);
@@ -550,7 +550,7 @@ amap_copy(map, entry, waitf, canchunk, startva, endva)
 	boolean_t canchunk;
 	vaddr_t startva, endva;
 {
-	struct vm_amap *amap, *srcamap;
+	vm_amap_t amap, srcamap;
 	int slots, lcv;
 	vaddr_t chunksize;
 
@@ -703,13 +703,13 @@ amap_copy(map, entry, waitf, canchunk, startva, endva)
 
 void
 amap_cow_now(map, entry)
-	struct vm_map *map;
-	struct vm_map_entry *entry;
+	vm_map_t  map;
+	vm_map_entry_t entry;
 {
-	struct vm_amap *amap = entry->aref.ar_amap;
+	vm_amap_t amap = entry->aref.ar_amap;
 	int lcv, slot;
-	struct vm_anon *anon, *nanon;
-	struct vm_page *pg, *npg;
+	vm_anon_t anon, nanon;
+	vm_page_t pg, npg;
 
 	/*
 	 * note that if we unlock the amap then we must ReStart the "lcv" for
@@ -823,7 +823,7 @@ ReStart:
  */
 void
 amap_splitref(origref, splitref, offset)
-	struct vm_aref *origref, *splitref;
+	vm_aref_t origref, splitref;
 	vaddr_t offset;
 {
 	int leftslots;
@@ -868,7 +868,7 @@ amap_splitref(origref, splitref, offset)
  */
 void
 amap_pp_establish(amap)
-	struct vm_amap *amap;
+	vm_amap_t amap;
 {
 
 	MALLOC(amap->am_ppref, int *, sizeof(int) * amap->am_maxslot, M_VMAMAP, M_NOWAIT);
@@ -898,7 +898,7 @@ amap_pp_establish(amap)
  */
 void
 amap_pp_adjref(amap, curslot, bytelen, adjval)
-	struct vm_amap *amap;
+	vm_amap_t amap;
 	int curslot;
 	vm_size_t bytelen;
 	int adjval;
@@ -961,11 +961,11 @@ amap_pp_adjref(amap, curslot, bytelen, adjval)
  */
 void
 amap_wiperange(amap, slotoff, slots)
-	struct vm_amap *amap;
+	vm_amap_t amap;
 	int slotoff, slots;
 {
 	int byanon, lcv, stop, curslot, ptr;
-	struct vm_anon *anon;
+	vm_anon_t anon;
 
 	/*
 	 * we can either traverse the amap by am_anon or by am_slots depending

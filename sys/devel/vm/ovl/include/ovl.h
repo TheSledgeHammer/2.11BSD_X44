@@ -85,9 +85,10 @@ struct ovlspace {
 
 	int		        	ovl_refcnt;	   		/* number of references */
 	segsz_t 			ovl_tsize;			/* text size */
-	segsz_t 			ovl_dsize;			/* data size */
 	segsz_t 			ovl_ssize;			/* stack size */
+	segsz_t 			ovl_dsize;			/* data size */
 	caddr_t	        	ovl_taddr;			/* user overlay address of text */
+	caddr_t	        	ovl_saddr;			/* user overlay address of stack */
 	caddr_t	        	ovl_daddr;			/* user overlay address of data */
 	caddr_t         	ovl_minsaddr;		/* user OVA at min stack growth */
 	caddr_t         	ovl_maxsaddr;		/* user OVA at max stack growth */
