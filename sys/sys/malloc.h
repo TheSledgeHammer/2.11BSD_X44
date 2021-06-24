@@ -46,7 +46,7 @@
 #define	M_NOWAIT		0x0001
 #define M_CANFAIL		0x0002
 #define M_ZERO			0x0004
-#define M_OVERLAY		0x0008	/* Allocate to Overlay Space (Note: Only use in tandem with Overlays) */
+#define M_OVERLAY		0x0008			/* Allocate to Overlay Space (Note: Only use in tandem with Overlays) */
 
 /* Types of memory to be allocated */
 #define	M_FREE			0	/* should be on free list */
@@ -288,7 +288,7 @@ struct kmembuckets {
 #if defined(KMEMSTATS) || defined(DIAGNOSTIC)
 #define	MALLOC(space, cast, size, type, flags) 						\
 	(space) = (cast)malloc((u_long)(size), type, flags)
-#define FREE(addr, type) free((caddr_t)(addr), type)
+#define FREE(addr, type) free((caddr_t)(addr), (type))
 
 #else /* do not collect statistics */
 #define	MALLOC(space, cast, size, type, flags) { 					\
@@ -328,6 +328,5 @@ extern char *kmembase;
 
 extern void *malloc (unsigned long size, int type, int flags);
 extern void free (void *addr, int type);
-
 #endif /* KERNEL */
 #endif /* !_SYS_MALLOC_H_ */

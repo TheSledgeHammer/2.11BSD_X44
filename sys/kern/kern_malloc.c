@@ -50,6 +50,12 @@ char *kmembase, *kmemlimit;
 char *memname[] = INITKMEMNAMES;
 boolean_t 			overlaid;
 
+/* [internal use only] */
+caddr_t	kmalloc(unsigned long, int);
+caddr_t	omalloc(unsigned long, int);
+void	kfree(void *, short);
+void	ofree(void *, short, int);
+
 #ifdef DIAGNOSTIC
 
 /* This structure provides a set of masks to catch unaligned frees. */
@@ -121,6 +127,13 @@ malloc(size, type, flags)
 #endif
     if (kbp->kb_next == NULL) {
     	kbp->kb_last = NULL;
+    	/*
+		if(flags & M_OVERLAY) {
+			va = omalloc(size, flags);
+		} else {
+			va = kmalloc(size, flags);
+		}
+		*/
 
 		if (size > MAXALLOCSAVE) {
 			allocsize = roundup(size, CLBYTES);
@@ -129,7 +142,6 @@ malloc(size, type, flags)
 		}
 		npg = clrnd(btoc(allocsize));
 
-		/* Allocates to Overlay Space */
 		va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & (M_NOWAIT | M_CANFAIL)));
 
         if (va == NULL) {
@@ -266,13 +278,14 @@ free(addr, type)
 		panic("free: unaligned addr 0x%x, size %d, type %s, mask %d\n", addr, size, memname[type], alloc);
 #endif /* DIAGNOSTIC */
 	if (size > MAXALLOCSAVE) {
-		/* Free from Overlay Space */
-		if(overlaid) {
-			//omem_free(omem_map, (vm_offset_t) addr, ctob(kup->ku_ovlcnt));
-			//overlaid = FALSE;
+		/*
+		if(type & M_OVERLAY) {
+			ofree(addr, ctob(kup->ku_pagecnt), (type & M_OVERLAY));
 		} else {
-			kmem_free(kmem_map, (vm_offset_t) addr, ctob(kup->ku_pagecnt));
+			kfree(addr, ctob(kup->ku_pagecnt));
 		}
+		*/
+		kfree(addr, ctob(kup->ku_pagecnt));
 #ifdef KMEMSTATS
 		size = kup->ku_pagecnt << PGSHIFT;
 		ksp->ks_memuse -= size;
@@ -358,4 +371,67 @@ kmeminit()
 			kmemstats[indx].ks_limit = npg * NBPG * 6 / 10;
 		}
 #endif
+}
+
+/* allocate memory to vm [internal use only] */
+caddr_t
+kmalloc(size, flags)
+	unsigned long size;
+	int flags;
+{
+	long indx, npg, allocsize;
+	caddr_t  va;
+
+	if (size > MAXALLOCSAVE) {
+		allocsize = roundup(size, CLBYTES);
+	} else {
+		allocsize = 1 << indx;
+	}
+	npg = clrnd(btoc(allocsize));
+	va = (caddr_t) kmem_malloc(kmem_map, (vm_size_t)ctob(npg), !(flags & (M_NOWAIT | M_CANFAIL)));
+
+	return (va);
+}
+
+
+/* allocate memory to ovl [internal use only] */
+caddr_t
+omalloc(size, flags)
+	unsigned long size;
+	int flags;
+{
+	long indx, npg, allocsize;
+	caddr_t  va;
+
+	if (size > MAXALLOCSAVE) {
+		allocsize = roundup(size, CLBYTES);
+	} else {
+		allocsize = 1 << indx;
+	}
+	npg = clrnd(btoc(allocsize));
+	if(!(flags & (M_NOWAIT | M_CANFAIL))) {
+		va = (caddr_t)omem_malloc(omem_map, (vm_size_t)ctob(npg), (flags & M_OVERLAY));
+	}
+	return (va);
+}
+
+/* free memory from vm [internal use only] */
+void
+kfree(addr, size)
+	void *addr;
+	short size;
+{
+	kmem_free(kmem_map, (vm_offset_t) addr, size);
+}
+
+/* free memory from ovl [internal use only] */
+void
+ofree(addr, size, type)
+	void *addr;
+	short size;
+	int type;
+{
+	if(type & M_OVERLAY) {
+		omem_free(omem_map, (vm_offset_t) addr, size);
+	}
 }

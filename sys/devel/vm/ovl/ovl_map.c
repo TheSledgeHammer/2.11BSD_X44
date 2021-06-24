@@ -95,6 +95,7 @@
 #include <vm/include/vm.h>
 
 #include <vm/ovl/include/ovl.h>
+#include <devel/sys/malloctypes.h>
 
 #undef RB_AUGMENT
 #define	RB_AUGMENT(x)	ovl_rb_augment(x)
@@ -138,7 +139,7 @@ ovlspace_alloc(min, max)
 {
 	register struct ovlspace *ovl;
 
-	MALLOC(ovl, struct ovlspace *, sizeof(struct ovlspace *), M_OVLMAP, M_WAITOK | M_OVERLAY);
+	OVERLAY_MALLOC(ovl, struct ovlspace *, sizeof(struct ovlspace *), M_OVLMAP, M_WAITOK);
 
 	memset(ovl, 0, sizeof(struct ovlspace *));
 	ovl_map_init(&ovl->ovl_map, min, max);
@@ -163,7 +164,7 @@ ovlspace_free(ovl)
 		ovl_map_lock(&ovl->ovl_map);
 		(void) ovl_map_delete(&ovl->ovl_map, ovl->ovl_map.min_offset, ovl->ovl_map.max_offset);
 		pmap_release(&ovl->ovl_pmap);
-		FREE(ovl, M_OVLMAP);
+		OVERLAY_FREE(ovl, M_OVLMAP);
 	}
 }
 
@@ -405,7 +406,7 @@ ovl_map_create(pmap, min, max)
 		}
 		omap_free = (ovl_map_t) CIRCLEQ_FIRST(&result->ovl_header)->ovl_cl_entry.cqe_next;
 	} else {
-		MALLOC(result, struct ovl_map, sizeof(struct ovl_map), M_OVLMAP, M_WAITOK | M_OVERLAY);
+		OVERLAY_MALLOC(result, struct ovl_map, sizeof(struct ovl_map), M_OVLMAP, M_WAITOK);
 	}
 
 	result->ovl_pmap = pmap;
@@ -444,7 +445,7 @@ ovl_map_entry_create(map)
 		panic("ovl_map_entry_create: bogus map");
 	}
 #endif
-	MALLOC(entry, struct ovl_map_entry, sizeof(struct ovl_map_entry), M_OVLMAPENT, M_WAITOK | M_OVERLAY);
+	OVERLAY_MALLOC(entry, struct ovl_map_entry, sizeof(struct ovl_map_entry), M_OVLMAPENT, M_WAITOK);
 	if(entry == oentry_free) {
 		oentry_free = CIRCLEQ_NEXT(oentry_free, ovl_cl_entry);
 	}
@@ -466,7 +467,7 @@ ovl_map_entry_dispose(map, entry)
 		panic("ovl_map_entry_dispose: bogus map");
 	}
 #endif
-	FREE(entry, M_OVLMAPENT);
+	OVERLAY_FREE(entry, M_OVLMAPENT);
 	CIRCLEQ_NEXT(entry, ovl_cl_entry) = oentry_free;
 	oentry_free = entry;
 }
@@ -529,7 +530,7 @@ ovl_map_deallocate(map)
 
 	ovl_map_unlock(map);
 
-	FREE(map, M_OVLMAP);
+	OVERLAY_FREE(map, M_OVLMAP);
 }
 
 int

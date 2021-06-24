@@ -61,4 +61,18 @@
 
 #define M_MPX			91	/* multiplexor structure */
 #define M_VMPSEG		92	/* pseudo-segment structure */
+
+/* Overlay Malloc */
+#define overlay_malloc(size, type, flags) 				\
+	malloc(size, type, flags | M_OVERLAY)
+
+#define overlay_free(addr, type)						\
+	free(addr, type | M_OVERLAY)
+
+#define OVERLAY_MALLOC(space, cast, size, type, flags)	\
+	(space) = (cast)overlay_malloc((u_long)(size), type, flags)
+
+#define OVERLAY_FREE(addr, type)						\
+	overlay_free((caddr_t)(addr), type)
+
 #endif /* _SYS_MALLOCTYPES_H_ */
