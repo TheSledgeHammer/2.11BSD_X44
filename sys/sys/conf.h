@@ -94,7 +94,7 @@ struct swdevt {
 	int				sw_nblks;
 	struct vnode 	*sw_vp;
 
-	struct swapdev *sw_swapdev;
+	//struct swapdev *sw_swapdev;
 };
 
 #define	SW_FREED		0x01

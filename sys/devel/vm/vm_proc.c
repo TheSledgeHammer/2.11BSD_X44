@@ -16,6 +16,58 @@
 #include <devel/vm/include/vm_segment.h>
 #include <devel/vm/include/vm_text.h>
 
+/* set pseudo-segments */
+void
+vm_psegment_set(pseg, type, size, addr, flag)
+	vm_psegment_t 	*pseg;
+	segsz_t			size;
+	caddr_t			addr;
+	int 			type, flag;
+{
+	switch(type) {
+	case PSEG_DATA:
+		vm_data_t data = pseg->ps_data;
+		DATA_SEGMENT(data, size, addr, flag);
+		pseg->ps_data = data;
+		break;
+	case PSEG_STACK:
+		vm_stack_t stack = pseg->ps_stack;
+		STACK_SEGMENT(stack, size, addr, flag);
+		pseg->ps_stack = stack;
+		break;
+	case PSEG_TEXT:
+		vm_text_t text = pseg->ps_text;
+		TEXT_SEGMENT(text, size, addr, flag);
+		pseg->ps_text = text;
+		break;
+	}
+}
+
+/* unset pseudo-segments */
+void
+vm_psegment_unset(pseg, type)
+	vm_psegment_t 	*pseg;
+	int type;
+{
+	switch(type) {
+	case PSEG_DATA:
+		vm_data_t data = pseg->ps_data;
+		data = NULL;
+		pseg->ps_data = data;
+		break;
+	case PSEG_STACK:
+		vm_stack_t stack = pseg->ps_stack;
+		stack = NULL;
+		pseg->ps_stack = stack;
+		break;
+	case PSEG_TEXT:
+		vm_text_t text = pseg->ps_text;
+		text = NULL;
+		pseg->ps_text = text;
+		break;
+	}
+}
+
 void
 segment_expand(p, segment, newsize, type)
 	struct proc 	*p;
@@ -228,33 +280,34 @@ sbrk(p, uap, retval)
  * read-write or read-only.
  */
 int
-estabur(pseg, data, stack, text, type, sep, flags)
+estabur(pseg, data, stack, text, dsize, ssize, tsize, sep, flags)
 	vm_psegment_t 	*pseg;
 	vm_data_t 		data;
 	vm_stack_t 		stack;
 	vm_text_t 		text;
+	segsz_t			dsize, ssize, tsize;
 	int 			sep, flags;
 {
 	if(pseg == NULL || data == NULL || stack == NULL || text == NULL) {
 		return (1);
 	}
-	if(!sep && (type = PSEG_NOSEP)) {
+	if((!sep || sep == PSEG_NOSEP)) {
 		if(flags == SEG_RO) {
-			vm_psegment_set(pseg, PSEG_TEXT, text->sp_tsize, text->sp_taddr, SEG_RO);
+			vm_psegment_set(pseg, PSEG_TEXT, tsize, text->sp_taddr, SEG_RO);
 		} else {
-			vm_psegment_set(pseg, PSEG_TEXT, text->sp_tsize, text->sp_taddr, SEG_RW);
+			vm_psegment_set(pseg, PSEG_TEXT, tsize, text->sp_taddr, SEG_RW);
 		}
-		vm_psegment_set(pseg, PSEG_DATA, data->sp_dsize, data->sp_daddr, SEG_RW);
-		vm_psegment_set(pseg, PSEG_STACK, stack->sp_ssize, stack->sp_saddr, SEG_RW);
+		vm_psegment_set(pseg, PSEG_DATA, dsize, data->sp_daddr, SEG_RW);
+		vm_psegment_set(pseg, PSEG_STACK, ssize, stack->sp_saddr, SEG_RW);
 	}
-	if(sep && (type == PSEG_SEP)) {
+	if((sep || sep == PSEG_SEP)) {
 		if (flags == SEG_RO) {
-			vm_psegment_set(pseg, PSEG_TEXT, text->sp_tsize, text->sp_taddr, SEG_RO);
+			vm_psegment_set(pseg, PSEG_TEXT, tsize, text->sp_taddr, SEG_RO);
 		} else {
-			vm_psegment_set(pseg, PSEG_TEXT, text->sp_tsize, text->sp_taddr, SEG_RW);
+			vm_psegment_set(pseg, PSEG_TEXT, tsize, text->sp_taddr, SEG_RW);
 		}
-		vm_psegment_set(pseg, PSEG_DATA, data->sp_dsize, data->sp_daddr, SEG_RW);
-		vm_psegment_set(pseg, PSEG_STACK, stack->sp_ssize, stack->sp_saddr, SEG_RW);
+		vm_psegment_set(pseg, PSEG_DATA, dsize, data->sp_daddr, SEG_RW);
+		vm_psegment_set(pseg, PSEG_STACK, ssize, stack->sp_saddr, SEG_RW);
 	}
 	return (0);
 }

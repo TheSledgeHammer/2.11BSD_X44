@@ -74,7 +74,6 @@ const struct cdevsw swap_cdevsw = {
 		.d_tty = notty,
 		.d_poll = nopoll,
 		.d_mmap = nommap,
-		//.d_kqfilter = nokqfilter,
 		.d_discard = nodiscard,
 		.d_type = D_OTHER,
 };

@@ -20,15 +20,16 @@
 #define	NXDAD				12		/* param.h:MAXTSIZ / vmparam.h:DMTEXT */
 
 struct txtlist;
-CIRCLEQ_HEAD(txtlist, vm_text);
+TAILQ_HEAD(txtlist, vm_text);
 struct vm_text {
-    /* text information */
+    /* text extent info */
 	segsz_t 				sp_tsize;				/* text size */
 	caddr_t					sp_taddr;				/* text addr */
     int 					sp_tflag;				/* text flags */
     u_long					sp_tresult;				/* text extent */
 
-    CIRCLEQ_ENTRY(vm_text)  x_list;					/* text freelist */
+    TAILQ_ENTRY(vm_text)  	x_list;					/* text freelist */
+    swblk_t					x_ptdaddr;				/* disk address of page table */
     caddr_t	                x_daddr;				/* segment's disk address */
     caddr_t                 x_caddr;				/* core address, if loaded */
     size_t	                x_size;					/* size (clicks) */
@@ -37,10 +38,6 @@ struct vm_text {
     u_char	                x_ccount;				/* number of loaded references */
     u_char	                x_flag;					/* traced, written flags */
     char	                dummy;					/* room for one more */
-
-    /* 4.3BSD-Reno */
-    swblk_t					x_psdaddr[NXDAD];		/* disk addresses of dmtext-page segments */
-    swblk_t					x_ptdaddr;				/* disk address of page table */
 };
 
 #define	XTRC				0x01					/* Text may be written, exclusive use */

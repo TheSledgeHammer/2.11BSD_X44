@@ -277,10 +277,9 @@ struct {																\
 #define	TAILQ_END(head)				(NULL)
 #define	TAILQ_NEXT(elm, field)		((elm)->field.tqe_next)
 //#define	TAILQ_PREV(elm, field)		((elm)->field.tqe_prev)
-#define	TAILQ_LAST(head, headname) \
+#define	TAILQ_LAST(head, headname) 										\
 		(*(((struct headname *)(void *)((head)->tqh_last))->tqh_last))
-
-#define	TAILQ_PREV(elm, headname, field) \
+#define	TAILQ_PREV(elm, headname, field) 								\
 		(*(((struct headname *)(void *)((elm)->field.tqe_prev))->tqh_last))
 #define	TAILQ_EMPTY(head)			(TAILQ_FIRST(head) == TAILQ_END(head))
 

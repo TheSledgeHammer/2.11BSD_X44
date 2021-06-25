@@ -25,6 +25,7 @@ A General todo list. Don't hesitate to add to this list. :)
 	
 ## arch:
 - i386/x86: (Merged under i386)
+	- swapgeneric.c: Update... Contains deprecated code.
 	- smp/multi-cpu:
 		- machine-independent code: 90% complete
 			- smp-related methods for cpu

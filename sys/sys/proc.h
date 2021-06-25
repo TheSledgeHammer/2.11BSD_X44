@@ -142,6 +142,9 @@ struct	proc {
 	char				*p_name;		/* (: name, optional */
 
 	struct gsched		*p_gsched;		/* global scheduler */
+
+	//union vm_pseudo_segment *p_psegp;
+	//struct vm_text		*p_textp;		/* text */
 };
 #define	p_session		p_pgrp->pg_session
 #define	p_pgid			p_pgrp->pg_id

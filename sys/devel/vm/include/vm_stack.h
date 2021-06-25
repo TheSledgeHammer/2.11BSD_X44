@@ -142,9 +142,7 @@ union vm_pseudo_segment {
 	(text)->sp_taddr -= (taddr);						\
 };
 
-void	vm_psegment_init(vm_offset_t *, vm_offset_t *);
-void	vm_psegment_set(vm_psegment_t *, int, segsz_t, caddr_t, int);
-void	vm_psegment_unset(vm_psegment_t *, int);
+void	vm_psegment_init(vm_segment_t, vm_offset_t *, vm_offset_t *);
 void	vm_psegment_expand(vm_psegment_t *, int, segsz_t, caddr_t);
 void	vm_psegment_shrink(vm_psegment_t *, int, segsz_t, caddr_t);
 void	vm_psegment_extent_create(vm_psegment_t *, char *, u_long, u_long, int, caddr_t, size_t, int);

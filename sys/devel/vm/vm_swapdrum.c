@@ -96,7 +96,8 @@ swapdrum_init(swp)
 {
 	register struct swapdev *sdp;
 
-	sdp = swp->sw_swapdev;
+	sdp = (struct swapdev *)rmalloc(&swapmap, sizeof(struct swapdev *));
+	swp->sw_swapdev = sdp;
 
 	/*
 	 * first, init the swap list, its counter, and its lock.
@@ -474,7 +475,7 @@ swap_miniroot(p, sp, sdp, vp, npages)
 		cnt.swpgonly += (rootpages - addr);
 	}
 	if (vp != rootvp) {
-		VOP_CLOSE(vp, FREAD|FWRITE, p->p_ucred, p);
+		(void) VOP_CLOSE(vp, FREAD|FWRITE, p->p_ucred, p);
 		return (ENXIO);
 	}
 	return (0);

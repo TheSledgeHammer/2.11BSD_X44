@@ -26,8 +26,6 @@
 #include <sys/map.h>
 #include <sys/user.h>
 
-#include <arch/i386/include/param.h>
-
 #include <devel/vm/include/vm_stack.h>
 #include <devel/vm/include/vm_text.h>
 
@@ -55,7 +53,7 @@ vm_swpexpand(ds, ss, dmp, smp)
 	}
 	if (vm_vsexpand(ss, smp, 0) == 0) {
 		/* flush text cache and try again */
-		if (xpurge() && vm_vsexpand(ss, smp, 0)) {
+		if (vm_xpurge() && vm_vsexpand(ss, smp, 0)) {
 			return (0);
 		}
 		(void) vm_vsexpand(ods, dmp, 1);

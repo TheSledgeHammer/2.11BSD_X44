@@ -31,10 +31,7 @@ vm_text_init(pseg, size, flags)
     int ntexts;
 
     simple_lock_init(&vm_text_list_lock, "vm_text_list_lock");
-
-    CIRCLEQ_INIT(&vm_text_list);
-
-    vm_psegment_extent_suballoc(pseg, size, 0, PSEG_TEXT, flags);
+    TAILQ_INIT(&vm_text_list);
 }
 
 /*
@@ -57,8 +54,8 @@ vm_xalloc(vp)
 			continue;
 		}
 		xlock(&vm_text_list_lock);
-		if (CIRCLEQ_LAST(&vm_text_list)) {
-			CIRCLEQ_INSERT_HEAD(&vm_text_list, xp, x_list);
+		if (TAILQ_LAST(&vm_text_list, txtlist)) {
+			TAILQ_INSERT_HEAD(&vm_text_list, xp, x_list);
 			xstats->xs_alloc_cachehit++;
 			xp->x_flag &= ~XUNUSED;
 		} else {
@@ -74,12 +71,12 @@ vm_xalloc(vp)
 		xunlock(&vm_text_list_lock);
 		return;
 	}
-	xp = CIRCLEQ_FIRST(&vm_text_list);
+	xp = TAILQ_FIRST(&vm_text_list);
 	if (xp == NULL) {
 		psignal(p, SIGKILL);
 		return;
 	}
-	CIRCLEQ_INSERT_HEAD(&vm_text_list, xp, x_list);
+	TAILQ_INSERT_HEAD(&vm_text_list, xp, x_list);
 	if (xp->x_vptr) {
 		if (xp->x_flag & XUNUSED) {
 			xstats->xs_alloc_unused++;
@@ -105,8 +102,9 @@ vm_xalloc(vp)
 	vp->v_text = xp;
 	VREF(vp);
 	p->p_textp = xp;
-	vm_xexpand(p, xp);
-	//estabur();
+	//vm_xexpand(p, xp);
+	//estabur
+	(void) vn_rdwr(UIO_READ, vp, base, len, offset, UIO_USERSPACE, ioflg, p->p_cred, aresid, p);
 	p->p_flag &= ~P_SLOCK;
 	xp->x_flag |= XWRIT;
 	xp->x_flag &= ~XLOAD;
@@ -137,7 +135,7 @@ vm_xfree()
 		if ((xp->x_flag & XTRC) || vattr->va_nlink == 0) {
 			xp->x_flag &= ~XLOCK;
 			vm_xuntext(xp);
-			CIRCLEQ_REMOVE(&vm_text_list, xp, x_list);
+			TAILQ_REMOVE(&vm_text_list, xp, x_list);
 		} else {
 			if (xp->x_flag & XWRIT) {
 				xstats->xs_free_cacheswap++;
@@ -145,7 +143,7 @@ vm_xfree()
 			}
 			xstats->xs_free_cache++;
 			xp->x_ccount--;
-			CIRCLEQ_REMOVE(&vm_text_list, xp, x_list);
+			TAILQ_REMOVE(&vm_text_list, xp, x_list);
 		}
 	} else {
 		xp->x_ccount--;
@@ -242,7 +240,7 @@ vm_xuncore(size)
 {
 	register vm_text_t xp;
 
-	CIRCLEQ_FOREACH(xp, &vm_text_list, x_list) {
+	TAILQ_FOREACH(xp, &vm_text_list, x_list) {
     	if(!xp->x_vptr) {
     		continue;
     	}
@@ -270,7 +268,7 @@ vm_xpurge()
 	int found = 0;
 
 	xstats->xs_purge++;
-	CIRCLEQ_FOREACH(xp, &vm_text_list, x_list) {
+	TAILQ_FOREACH(xp, &vm_text_list, x_list) {
 		if (xp->x_vptr && (xp->x_flag & (XLOCK|XCACHED)) == XCACHED) {
 			vm_xuntext(xp);
 			if (xp->x_vptr == NULL) {

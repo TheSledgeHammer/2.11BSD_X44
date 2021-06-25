@@ -39,76 +39,36 @@
 #include <devel/sys/malloctypes.h>
 
 void
-vm_psegment_init(pseg, start, end)
-	vm_psegment_t 	*pseg;
+vm_psegment_init(seg, start, end)
+	vm_segment_t 	seg;
 	vm_offset_t 	*start, *end;
 {
-	if(pseg == NULL) {
-		MALLOC(pseg, sizeof(union vm_pseudo_segment *), M_VMPSEG, M_WAITOK);
-	}
+	register vm_psegment_t 	*pseg;
+	register vm_data_t 		data;
+	register vm_stack_t 	stack;
+	register vm_text_t 		text;
+
+	MALLOC(pseg, sizeof(union vm_pseudo_segment *), M_VMPSEG, M_WAITOK);
 
 	pseg->ps_start = start;
 	pseg->ps_end = end;
-	pseg->ps_size = (sizeof(pseg->ps_data) + sizeof(pseg->ps_data) + sizeof(pseg->ps_data));
+	pseg->ps_size = end - start;
+
+	data = (struct vm_data *)rmalloc(&coremap, sizeof(struct vm_data *));
+	stack = (struct vm_stack *)rmalloc(&coremap, sizeof(struct vm_stack *));
+	text = (struct vm_text *)rmalloc(&coremap, sizeof(struct vm_text *));
 
 	vm_psegment_extent_create(pseg, "vm_psegment", start, end, M_VMPSEG, NULL, 0, EX_WAITOK | EX_MALLOCOK);
-	vm_psegment_extent_alloc(pseg, pseg->ps_start, pseg->ps_size + sizeof(union vm_pseudo_segment *), 0, EX_WAITOK | EX_MALLOCOK);
+	vm_psegment_extent_alloc(pseg, pseg->ps_start, pseg->ps_size, 0, EX_WAITOK | EX_MALLOCOK);
 
-	vm_psegment_extent_suballoc(pseg, sizeof(pseg->ps_data), 0, PSEG_DATA, EX_WAITOK | EX_MALLOCOK); 	/* data extent region */
-	vm_psegment_extent_suballoc(pseg, sizeof(pseg->ps_data), 0, PSEG_STACK, EX_WAITOK | EX_MALLOCOK);	/* stack extent region */
-	vm_psegment_extent_suballoc(pseg, sizeof(pseg->ps_text), 0, PSEG_TEXT, EX_WAITOK | EX_MALLOCOK);	/* text extent region */
-}
+	vm_psegment_extent_suballoc(pseg, sizeof(data), 0, PSEG_DATA, EX_WAITOK | EX_MALLOCOK); 	/* data extent region */
+	vm_psegment_extent_suballoc(pseg, sizeof(stack), 0, PSEG_STACK, EX_WAITOK | EX_MALLOCOK);	/* stack extent region */
+	vm_psegment_extent_suballoc(pseg, sizeof(text), 0, PSEG_TEXT, EX_WAITOK | EX_MALLOCOK);		/* text extent region */
 
-/* set pseudo-segments */
-void
-vm_psegment_set(pseg, type, size, addr, flag)
-	vm_psegment_t 	*pseg;
-	segsz_t			size;
-	caddr_t			addr;
-	int 			type, flag;
-{
-	switch(type) {
-	case PSEG_DATA:
-		vm_data_t data = pseg->ps_data;
-		DATA_SEGMENT(data, size, addr, flag);
-		pseg->ps_data = data;
-		break;
-	case PSEG_STACK:
-		vm_stack_t stack = pseg->ps_stack;
-		STACK_SEGMENT(stack, size, addr, flag);
-		pseg->ps_stack = stack;
-		break;
-	case PSEG_TEXT:
-		vm_text_t text = pseg->ps_text;
-		TEXT_SEGMENT(text, size, addr, flag);
-		pseg->ps_text = text;
-		break;
-	}
-}
-
-/* unset pseudo-segments */
-void
-vm_psegment_unset(pseg, type)
-	vm_psegment_t 	*pseg;
-	int type;
-{
-	switch(type) {
-	case PSEG_DATA:
-		vm_data_t data = pseg->ps_data;
-		data = NULL;
-		pseg->ps_data = data;
-		break;
-	case PSEG_STACK:
-		vm_stack_t stack = pseg->ps_stack;
-		stack = NULL;
-		pseg->ps_stack = stack;
-		break;
-	case PSEG_TEXT:
-		vm_text_t text = pseg->ps_text;
-		text = NULL;
-		pseg->ps_text = text;
-		break;
-	}
+	pseg->ps_data = data;
+	pseg->ps_stack = stack;
+	pseg->ps_text = text;
+	seg->sg_psegment = pseg;
 }
 
 /*

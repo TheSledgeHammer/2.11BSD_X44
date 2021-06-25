@@ -63,11 +63,6 @@ struct vm_segment {
 	caddr_t						sg_laddr;				/* segment logical address */
 
 	vm_psegment_t				sg_psegment;			/* pointer to pseudo segment register */
-#define sg_data 				sg_psegment.ps_data		/* pseudo data segment */
-#define sg_stack 				sg_psegment.ps_stack	/* pseudo stack segment */
-#define sg_text 				sg_psegment.ps_text		/* pseudo text segment */
-
-	int							sg_type;				/* see below (segment register type) */
 };
 
 /* flags */
@@ -119,10 +114,6 @@ simple_lock_data_t	vm_segment_list_activity_lock;
 	(seg)->sg_flags = SEG_BUSY | SEG_CLEAN | SEG_RW; 	\
 	vm_segment_insert((seg), (object), (offset)); 		\
 }
-
-/* Test... Does it point to the right physical address? */
-//#define VM_SEGMENT_TO_PHYS(seg) 						\
-//		vm_segment_lookup((seg)->sg_object, (seg)->sg_offset)->sg_laddr
 
 #define PHYS_TO_VM_SEGMENT(pa) 							\
 		(&vm_segment_array[atos(pa) - first_segment])

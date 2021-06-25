@@ -119,9 +119,8 @@ struct vm_map_entry {
 	int							advice;			/* madvise advice */
 
 	/* etype is a bitmap that replaces the following 4 items */
-	int							etype;			/* entry type */
-	struct vm_aref				aref;			/* anonymous overlay */
-
+	//int							etype;			/* entry type */
+	//struct vm_aref				aref;			/* anonymous overlay */
 };
 
 /*

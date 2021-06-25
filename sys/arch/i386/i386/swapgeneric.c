@@ -61,9 +61,9 @@ int	dmmin, dmmax, dmtext;
 extern struct driver wddriver;
 
 struct genericconf {
-	caddr_t gc_driver;
-	char 	*gc_name;
-	dev_t 	gc_root;
+	caddr_t 	gc_driver;
+	char 		*gc_name;
+	dev_t 		gc_root;
 } genericconf[] = { { (caddr_t) &wddriver, "wd", makedev(0, 0), }, { 0 }, };
 
 void

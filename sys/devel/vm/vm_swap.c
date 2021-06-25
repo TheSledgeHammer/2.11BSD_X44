@@ -102,9 +102,8 @@ swapinit()
 	}
 
 	/*
-	 * Now set up swapdev
+	 * Initialize swapdev drum
 	 */
-	swp->sw_swapdev = (struct swapdev)rmalloc(&swapmap, sizeof(struct swapdev));
 	swapdrum_init(swp);
 
 	/*
@@ -191,14 +190,18 @@ swap_interleaved(swp, nswdev, nswap)
 
 /* returns a swapdev from swdevt array if not null */
 struct swapdev *
-sw_swapdrum(index)
+sw_swapdev(index)
 	int index;
 {
-	struct swapdev *sdp;
+	register struct swapdev *sdp;
+	register struct swdevt 	*swp;
 
-	sdp = &swdevt[index].sw_swapdev;
-	if(sdp != NULL) {
-		return (sdp);
+	swp = &swdevt[index];
+	if(swp) {
+		sdp = swp->sw_swapdev;
+		if(sdp) {
+			return (sdp);
+		}
 	}
 	return (NULL);
 }
