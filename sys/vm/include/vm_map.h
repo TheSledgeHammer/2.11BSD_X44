@@ -134,7 +134,7 @@ RB_HEAD(vm_map_rb_tree, vm_map_entry);
 struct vm_map {
 	struct vm_map_clist         cl_header;          /* Circular List of entries */
 	struct vm_map_rb_tree 		rb_root;			/* Tree of entries */
-	struct pmap *				pmap;				/* Physical map */
+	struct pmap 				*pmap;				/* Physical map */
 	lock_data_t					lock;				/* Lock for map data */
 	int							nentries;			/* Number of entries */
 	vm_size_t					size;				/* virtual size */

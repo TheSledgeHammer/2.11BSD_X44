@@ -103,4 +103,5 @@ slab_t	slab_object(struct slablist *, long);
 slab_t  slab_lookup(u_long, int);
 void	slab_insert(slab_t, u_long, int, int);
 void	slab_remove(slab_t);
+
 #endif /* _VM_SLAB_H_ */

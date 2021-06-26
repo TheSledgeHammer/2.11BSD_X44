@@ -139,10 +139,10 @@ struct vmspace {
 	int				 		vm_refcnt;			/* number of references */
 	caddr_t			 		vm_shm;				/* SYS5 shared memory private data XXX */
 
-	union vm_pseudo_segment	vm_psegment;		/* VM pseudo-segments */
-	struct vm_data 			vm_data;			/* VM data segment */
-	struct vm_stack			vm_stack;			/* VM stack segment */
-	struct vm_text			vm_text;			/* VM text segment */
+//	union vm_pseudo_segment	vm_psegment;		/* VM pseudo-segments */
+//	struct vm_data 			vm_data;			/* VM data segment */
+//	struct vm_stack			vm_stack;			/* VM stack segment */
+//	struct vm_text			vm_text;			/* VM text segment */
 
 /* we copy from vm_startcopy to the end of the structure on fork */
 #define vm_startcopy 		vm_rssize

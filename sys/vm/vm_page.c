@@ -215,7 +215,7 @@ vm_page_startup(start, end)
 	 *	map (they should use their own maps).
 	 */
 
-	kentry_data_size = round_page(MAX_KMAP*sizeof(struct vm_map) +  MAX_KMAPENT*sizeof(struct vm_map_entry));
+	kentry_data_size = round_page(MAX_KMAP * sizeof(struct vm_map) +  MAX_KMAPENT * sizeof(struct vm_map_entry));
 	kentry_data = (vm_offset_t) pmap_bootstrap_alloc(kentry_data_size);
 
 	/*
