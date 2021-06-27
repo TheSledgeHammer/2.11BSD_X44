@@ -103,6 +103,7 @@ assym.h: ${ARCHDIR}/genassym.cf
 .include "${.CURDIR}/stdlib/Makefile.inc"
 .include "${.CURDIR}/string/Makefile.inc"
 .include "${.CURDIR}/termios/Makefile.inc"
+.include "${.CURDIR}/time/Makefile.inc"
 
 beforeinstall: tags
 	install -c -o bin -g bin -m 444 tags /var/db/libc.tags

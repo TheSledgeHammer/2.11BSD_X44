@@ -19,6 +19,8 @@ static char sccsid[] = "@(#)mktemp.c	5.4 (Berkeley) 9/14/87";
 #define	YES	1
 #define	NO	0
 
+int _gettemp(char *, int);
+
 char *
 mkdtemp(as)
 	char	*as;
