@@ -2,6 +2,6 @@
 
 HOSTPROGNAME=	${_TOOL_PREFIX}yacc
 #HOST_SRCDIR=	usr.bin/yacc
-HOST_SRCDIR=	external/byacc/bin
+HOST_SRCDIR=	contrib/byacc/bin
 
 .include "${.CURDIR}/../Makefile.host"
