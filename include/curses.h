@@ -6,7 +6,6 @@
  *	@(#)curses.h	5.1 (Berkeley) 6/7/85
  */
 
-
 #ifndef	_CURSES_H_
 #define _CURSES_H_
 # ifndef WINDOW

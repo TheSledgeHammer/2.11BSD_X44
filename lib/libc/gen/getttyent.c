@@ -19,6 +19,7 @@ static FILE *tf = NULL;
 static char line[LINE];
 static struct ttyent tty;
 
+void
 setttyent()
 {
 	if (tf == NULL)
@@ -27,6 +28,7 @@ setttyent()
 		rewind(tf);
 }
 
+void
 endttyent()
 {
 	if (tf != NULL) {

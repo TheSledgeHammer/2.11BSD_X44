@@ -12,10 +12,13 @@ static char sccsid[] = "@(#)psignal.c	5.2 (Berkeley) 3/9/86";
  * Print the name of the signal indicated
  * along with the supplied message.
  */
-#include <signal.h>
+#include <sys/signal.h>
+#include <string.h>
+#include <unistd.h>
 
 extern	char *sys_siglist[];
 
+void
 psignal(sig, s)
 	unsigned sig;
 	char *s;
@@ -26,6 +29,8 @@ psignal(sig, s)
 	c = "Unknown signal";
 	if (sig < NSIG)
 		c = sys_siglist[sig];
+	else
+		c = "Unknown signal";
 	n = strlen(s);
 	if (n) {
 		write(2, s, n);

@@ -47,8 +47,8 @@ extern	char	*__progname;
 static FILE *_fs_fp;
 static struct fstab _fs_fstab;
 
-static void error();
-static int fstabscan();
+static void error(int);
+static int fstabscan(void);
 
 static int
 fstabscan()
@@ -174,16 +174,17 @@ getfsfile(name)
 	return((struct fstab *)NULL);
 }
 
+int
 setfsent()
 {
 	if (_fs_fp) {
 		rewind(_fs_fp);
-		return(1);
+		return (1);
 	}
 	if (_fs_fp == fopen(_PATH_FSTAB, "r"))
-		return(1);
+		return (1);
 	error(errno);
-	return(0);
+	return (0);
 }
 
 void
@@ -199,10 +200,12 @@ static void
 error(err)
 	int err;
 {
-	register int saverrno;
+	char *p;
 
-	saverrno = errno;
-	errno = err;
-	warn("%s", _PATH_FSTAB);
-	errno = saverrno;
+	(void)write(STDERR_FILENO, "fstab: ", 7);
+	(void)write(STDERR_FILENO, _PATH_FSTAB, sizeof(_PATH_FSTAB) - 1);
+	(void)write(STDERR_FILENO, ": ", 1);
+	p = strerror(err);
+	(void)write(STDERR_FILENO, p, strlen(p));
+	(void)write(STDERR_FILENO, "\n", 1);
 }

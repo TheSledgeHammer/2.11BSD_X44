@@ -14,11 +14,9 @@ static char sccsid[] = "@(#)ttyslot.c	5.2 (Berkeley) 3/9/86";
  * Definition is the line number in the /etc/ttys file.
  */
 #include <ttyent.h>
-
-char	*ttyname();
-char	*rindex();
-
-#define	NULL	0
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
 ttyslot()
 {

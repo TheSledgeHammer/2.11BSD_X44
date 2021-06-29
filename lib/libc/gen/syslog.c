@@ -48,7 +48,7 @@ static char sccsid[] = "@(#)syslog.c	8.4.3 (2.11BSD) 1995/07/15";
 #include <string.h>
 #include <time.h>
 
-#include <varargs.h>
+#include <stdarg.h>
 
 #define	STDERR_FILENO	2
 
@@ -76,7 +76,7 @@ void
 syslog(pri, fmt, va_alist)
 	int pri;
 	char *fmt;
-	va_dcl
+	va_dcl;
 {
 	va_list ap;
 

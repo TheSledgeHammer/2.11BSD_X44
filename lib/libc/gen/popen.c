@@ -38,11 +38,19 @@
 static char sccsid[] = "@(#)popen.c	5.15.1 (2.11BSD) 1999/10/24";
 #endif /* LIBC_SCCS and not lint */
 
-#include <errno.h>
+
+#include <sys/param.h>
+#include <sys/wait.h>
+#include <sys/socket.h>
 #include <sys/signal.h>
 #include <sys/types.h>
-#include <sys/wait.h>
+
+#include <errno.h>
+#include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <paths.h>
 
 static int *pids;
 

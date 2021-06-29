@@ -50,7 +50,6 @@ CPPFLAGS+=	-I. -I./include -I${.CURDIR} -I${.CURDIR}/sys 			\
 			${.CURDIR}/../../lib/libc/md 							\
 			${.CURDIR}/../../lib/libc/compat-4.1					\
 			${.CURDIR}/../../lib/libc/compat-4.3					\
-			${.CURDIR}/../../lib/libc/compat-4.4					\
 			${.CURDIR}/../../lib/libc/compat-netbsd					\
 			${.CURDIR}/../../lib/libc/compat-sys5					\
 			${.CURDIR}/../../lib/libc/quad 							\

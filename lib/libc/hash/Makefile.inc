@@ -8,9 +8,8 @@ SRCS+= hmac.c
 MAN+= hmac.3
 
 .include "${.CURDIR}/hash/md2/Makefile.inc"
+.include "${.CURDIR}/hash/murmurhash/Makefile.inc"
 .include "${.CURDIR}/hash/rmd160/Makefile.inc"
 .include "${.CURDIR}/hash/sha1/Makefile.inc"
 .include "${.CURDIR}/hash/sha2/Makefile.inc"
 .include "${.CURDIR}/hash/sha3/Makefile.inc"
-
-//.include "${.CURDIR}/hash/murmurhash/Makefile.inc"

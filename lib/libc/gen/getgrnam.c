@@ -2,6 +2,9 @@
 static char sccsid[] = "@(#)getgrnam.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
+#include <sys/types.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <grp.h>
 
 struct group *
@@ -12,7 +15,8 @@ register char *name;
 	struct group *getgrent();
 
 	setgrent();
-	while( (p = getgrent()) && strcmp(p->gr_name,name) );
+	while ((p = getgrent()) && strcmp(p->gr_name, name))
+		;
 	endgrent();
-	return(p);
+	return (p);
 }

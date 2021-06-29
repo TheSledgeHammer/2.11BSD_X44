@@ -9,6 +9,7 @@ static char sccsid[] = "@(#)ualarm.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
 #include <sys/time.h>
+#include <unistd.h>
 
 #define	USPS	1000000		/* # of microseconds in a second */
 

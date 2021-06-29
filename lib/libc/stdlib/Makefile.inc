@@ -10,7 +10,8 @@
 .PATH: ${ARCHDIR}/stdlib ${.CURDIR}/stdlib
 
 SRCS+=	abort.c abs.c atoi.c atol.c calloc.c getenv.c getopt.c getsubopt.c 	\
-		malloc.c qsort.c random.c setenv.c strtol.c strtoul.c system.c
+		heapsort.c malloc.c qsort.c random.c setenv.c strtol.c strtoul.c 	\
+		system.c
 
 .include "${ARCHDIR}/stdlib/Makefile.inc"
 

@@ -36,6 +36,7 @@ static char sccsid[] = "@(#)getmntinfo.c	8.1.1 (2.11BSD) 1995/12/26";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
+#include <sys/ucred.h>
 #include <sys/mount.h>
 #include <stdlib.h>
 

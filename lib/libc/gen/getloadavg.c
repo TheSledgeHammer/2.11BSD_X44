@@ -36,9 +36,12 @@ static char sccsid[] = "@(#)getloadavg.c   8.1.1 (2.11BSD GTE) 1/15/95";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #include <sys/sysctl.h>
-#include <sys/vmparam.h>
+#include <vm/include/vm_param.h>
 
+#include <stdlib.h>
 /*
  * getloadavg() -- Get system load averages.
  *
