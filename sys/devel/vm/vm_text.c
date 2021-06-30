@@ -102,8 +102,7 @@ vm_xalloc(vp)
 	vp->v_text = xp;
 	VREF(vp);
 	p->p_textp = xp;
-	//vm_xexpand(p, xp);
-	//estabur
+
 	(void) vn_rdwr(UIO_READ, vp, base, len, offset, UIO_USERSPACE, ioflg, p->p_cred, aresid, p);
 	p->p_flag &= ~P_SLOCK;
 	xp->x_flag |= XWRIT;

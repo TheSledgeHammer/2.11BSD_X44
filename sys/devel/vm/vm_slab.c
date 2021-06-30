@@ -38,16 +38,29 @@
  * Any objects with a bucket index less than 10 are flagged as small, while objects
  * greater than or equal to 10 are flagged as large.
  */
+
+/*
+ * TODO:
+ * - allocate slab_cache
+ * - setup slab routines to use kmembuckets instead of BUCKETINDX(size)
+ * - Implement suitable hash algorithms
+ */
+
 #include <sys/extent.h>
 #include <sys/malloc.h>
 #include <sys/fnv_hash.h>
 #include <devel/sys/malloctypes.h>
 #include <devel/vm/include/vm_slab.h>
 
-struct slablist 	slab_list;
-simple_lock_data_t	slab_list_lock;
+#define SLAB_BUCKET_HASH_COUNT (MINBUCKET + 16)
 
-/* slab metadata information */
+struct slablist 					slab_list[MINBUCKET + 16];
+struct slab_cache_list 				slab_cache_list;
+
+simple_lock_data_t					slab_list_lock;
+simple_lock_data_t					slab_cache_list_lock;
+
+/* slab metadata */
 void
 slabmeta(slab, size, mtype, flags)
 	slab_t 	slab;
@@ -83,6 +96,90 @@ slabmeta(slab, size, mtype, flags)
 	}
 }
 
+/* slab cache routines */
+
+long
+slab_cache_hash(slab)
+	slab_t slab;
+{
+	Fnv32_t hash1 = fnv_32_buf(&slab, sizeof(&slab), FNV1_32_INIT) % SLAB_BUCKET_HASH_COUNT;
+	Fnv32_t hash2 = (((unsigned long)slab)%SLAB_BUCKET_HASH_COUNT);
+	return (hash1^hash2);
+}
+
+void
+slab_cache_insert(slab)
+	slab_t slab;
+{
+	struct slab_cache_list *cache;
+	slab_cache_t			entry;
+
+	if(slab == NULL) {
+		return;
+	}
+
+	cache = &slab_cache_list[cache_hash(slab)];
+	entry = malloc(sizeof(slab_cache_t));			/* TODO allocate */
+	entry->sc_slab = slab;
+
+	slab_cache_lock(&slab_cache_list_lock);
+	TAILQ_INSERT_HEAD(cache, entry, sc_cache_links);
+	slab_cache_unlock(&slab_cache_list_lock);
+	slab_cache_count++;
+}
+
+void
+slab_cache_remove(slab)
+	slab_t slab;
+{
+	struct slab_cache_list *cache;
+	slab_cache_t			entry;
+
+	cache = &slab_cache_list[cache_hash(slab)];
+	slab_cache_lock(&slab_cache_list_lock);
+	for(entry = TAILQ_FIRST(cache); entry != NULL; entry = TAILQ_NEXT(entry, sc_cache_links)) {
+		slab = entry->sc_slab;
+		if(slab) {
+			TAILQ_REMOVE(cache, entry, sc_cache_links);
+			slab_cache_count--;
+			slab_cache_unlock(&slab_cache_list_lock);
+		}
+	}
+}
+
+slab_cache_t
+slab_cache_lookup(slab)
+	slab_t slab;
+{
+	struct slab_cache_list *cache;
+	slab_cache_t			entry;
+
+	cache = &slab_cache_list[cache_hash(slab)];
+	slab_cache_lock(&slab_cache_list_lock);
+	for(entry = TAILQ_FIRST(cache); entry != NULL; entry = TAILQ_NEXT(entry, sc_cache_links)) {
+		slab = entry->sc_slab;
+		if(slab) {
+			TAILQ_REMOVE(cache, entry, sc_cache_links);
+			slab_cache_count--;
+			slab_cache_unlock(&slab_cache_list_lock);
+			return (cache);
+		}
+	}
+	slab_cache_unlock(&slab_cache_list_lock);
+	return (NULL);
+}
+
+/* slab routines */
+
+long
+slab_bucket_hash(bucket)
+	struct kmembuckets *bucket;
+{
+	Fnv32_t hash1 = fnv_32_buf(&bucket, sizeof(&bucket), FNV1_32_INIT) % SLAB_BUCKET_HASH_COUNT;
+	Fnv32_t hash2 = (((unsigned long)bucket)%SLAB_BUCKET_HASH_COUNT);
+	return (hash1^hash2);
+}
+
 slab_t
 slab_object(slabs, size)
 	struct slablist   *slabs;
@@ -106,14 +203,14 @@ slab_lookup(size, mtype)
     register slab_t   slab;
 
     slabs = &slab_list[BUCKETINDX(size)];
-    simple_lock(&slab_list_lock);
+    slab_lock(&slab_list_lock);
 	for(slab = slab_object(slabs, size); slab != NULL; slab = CIRCLEQ_NEXT(slab, s_list)) {
 		if(slab->s_size == size && slab->s_mtype == mtype) {
-			simple_unlock(&slab_list_lock);
+			slab_unlock(&slab_list_lock);
 			return (slab);
 		}
 	}
-    simple_unlock(&slab_list_lock);
+	slab_unlock(&slab_list_lock);
     return (NULL);
 }
 
@@ -136,7 +233,7 @@ slab_insert(slab, size, mtype, flags)
 	slab->s_flags = flags;
 
     slabs = &slab_list[BUCKETINDX(size)];
-    simple_lock(&slab_list_lock);
+    slab_lock(&slab_list_lock);
 	if (indx < 10) {
 		slab->s_stype = SLAB_SMALL;
 		  CIRCLEQ_INSERT_HEAD(slabs, slab, s_list);
@@ -144,7 +241,7 @@ slab_insert(slab, size, mtype, flags)
 		slab->s_stype = SLAB_LARGE;
 		CIRCLEQ_INSERT_TAIL(slabs, slab, s_list);
 	}
-    simple_unlock(&slab_list_lock);
+	slab_unlock(&slab_list_lock);
     slab_count++;
 }
 
@@ -155,8 +252,8 @@ slab_remove(slab)
 	struct slablist *slabs;
 
 	slabs = &slab_list[BUCKETINDX(slab->s_size)];
-	simple_lock(&slab_list_lock);
+	slab_lock(&slab_list_lock);
 	CIRCLEQ_REMOVE(slabs, slab, s_list);
-	simple_unlock(&slab_list_lock);
+	slab_unlock(&slab_list_lock);
 	slab_count--;
 }

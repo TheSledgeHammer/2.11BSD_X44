@@ -26,14 +26,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* TODO:
- *	- slab caching
- *	- use of vm_pages and vm_segments
- *		- provide direct access to pseudo-segments:
- *		can then allocate from vmspace without referencing vmspace in the pseudo-segments
- *	- provide ability to use extents?
- *	- size: may need to change to a void *addr/size
- */
 #ifndef _VM_SLAB_H_
 #define _VM_SLAB_H_
 
@@ -55,7 +47,6 @@ struct slablist;
 CIRCLEQ_HEAD(slablist, slab);
 struct slab {
     CIRCLEQ_ENTRY(slab)         s_list;                                         /* slab list entry */
-    CIRCLEQ_ENTRY(slab)         s_cache;                                        /* cache list entry */
 
     slab_metadata_t             s_meta;                                         /* slab metadata */
     u_long                      s_size;											/* slab size */
@@ -71,11 +62,24 @@ struct slab {
 };
 typedef struct slab             *slab_t;
 
-struct slablist			        slab_cache_list;
+struct slab_cache_list;
+TAILQ_HEAD(slab_cache_list, slab_cache);
+struct slab_cache {
+	TAILQ_ENTRY(slab_cache)		sc_cache_links;
+	slab_t						sc_slab;
+};
+typedef struct slab_cache      *slab_cache_t;
+
+struct slab_cache_list	        slab_cache_list;
 int			                    slab_cache_count;                               /* number of items in cache */
 
 struct slablist			        slab_list;
 int			                    slab_count;                                     /* number of items in slablist */
+
+#define slab_cache_lock(lock)	simple_lock(lock)
+#define slab_cache_unlock(lock)	simple_unlock(lock)
+#define slab_lock(lock)			simple_lock(lock)
+#define slab_unlock(lock)		simple_unlock(lock)
 
 /* slab flags */
 #define SLAB_FULL               0x01        									/* slab full */

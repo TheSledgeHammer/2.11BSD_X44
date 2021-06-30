@@ -16,95 +16,58 @@
 #include <devel/vm/include/vm_segment.h>
 #include <devel/vm/include/vm_text.h>
 
-/* set pseudo-segments */
+/*
+ * Change the size of the data+stack regions of the process.
+ * If the size is shrinking, it's easy -- just release the extra core.
+ * If it's growing, and there is core, just allocate it and copy the
+ * image, taking care to reset registers to account for the fact that
+ * the system's stack has moved.  If there is no core, arrange for the
+ * process to be swapped out after adjusting the size requirement -- when
+ * it comes in, enough core will be allocated.  After the expansion, the
+ * caller will take care of copying the user's stack towards or away from
+ * the data area.  The data and stack segments are separated from each
+ * other.  The second argument to expand specifies which to change.  The
+ * stack segment will not have to be copied again after expansion.
+ */
 void
-vm_psegment_set(pseg, type, size, addr, flag)
-	vm_psegment_t 	*pseg;
-	segsz_t			size;
-	caddr_t			addr;
-	int 			type, flag;
-{
-	switch(type) {
-	case PSEG_DATA:
-		vm_data_t data = pseg->ps_data;
-		DATA_SEGMENT(data, size, addr, flag);
-		pseg->ps_data = data;
-		break;
-	case PSEG_STACK:
-		vm_stack_t stack = pseg->ps_stack;
-		STACK_SEGMENT(stack, size, addr, flag);
-		pseg->ps_stack = stack;
-		break;
-	case PSEG_TEXT:
-		vm_text_t text = pseg->ps_text;
-		TEXT_SEGMENT(text, size, addr, flag);
-		pseg->ps_text = text;
-		break;
-	}
-}
-
-/* unset pseudo-segments */
-void
-vm_psegment_unset(pseg, type)
-	vm_psegment_t 	*pseg;
-	int type;
-{
-	switch(type) {
-	case PSEG_DATA:
-		vm_data_t data = pseg->ps_data;
-		data = NULL;
-		pseg->ps_data = data;
-		break;
-	case PSEG_STACK:
-		vm_stack_t stack = pseg->ps_stack;
-		stack = NULL;
-		pseg->ps_stack = stack;
-		break;
-	case PSEG_TEXT:
-		vm_text_t text = pseg->ps_text;
-		text = NULL;
-		pseg->ps_text = text;
-		break;
-	}
-}
-
-void
-segment_expand(p, segment, newsize, type)
+vm_segment_expand(p, pseg, newsize, type)
 	struct proc 	*p;
-	vm_segment_t 	segment;
+	vm_psegment_t 	pseg;
 	vm_size_t 	 	newsize;
-	int type;
+	int 			type;
 {
 	register vm_size_t i, n;
 	caddr_t a1, a2;
 
 	if (type == PSEG_DATA) {
-		n = segment->sg_data.sp_dsize;
-		segment->sg_data.sp_dsize = newsize;
-		p->p_dsize = segment->sg_data.sp_dsize;
-		a1 = segment->sg_data.sp_daddr;
-		vm_psegment_expand(segment->sg_psegment, newsize, a1, PSEG_DATA);
+		n = pseg->ps_data.sp_dsize;
+		pseg->ps_data.sp_dsize = newsize;
+		p->p_dsize = pseg->ps_data.sp_dsize;
+		a1 = pseg->ps_data.sp_daddr;
+		vm_psegment_expand(pseg, newsize, a1, PSEG_DATA);
 		if (n >= newsize) {
 			n -= newsize;
-			vm_psegment_extent_free(segment->sg_psegment, n + newsize, a1, PSEG_DATA, 0);
+			vm_psegment_extent_free(pseg, n + newsize, a1, PSEG_DATA, 0);
+			rmfree(coremap, n, a1 + newsize);
 			return;
 		}
 	} else {
-		n = segment->sg_stack.sp_ssize;
-		segment->sg_stack.sp_ssize = newsize;
-		p->p_ssize = segment->sg_stack.sp_ssize;
-		a1 = segment->sg_stack.sp_saddr;
-		vm_psegment_expand(segment->sg_psegment, newsize, a1, PSEG_STACK);
+		n = pseg->ps_stack.sp_ssize;
+		pseg->ps_stack.sp_ssize = newsize;
+		p->p_ssize = pseg->ps_stack.sp_ssize;
+		a1 = pseg->ps_stack.sp_saddr;
+		vm_psegment_expand(pseg, newsize, a1, PSEG_STACK);
 		if (n >= newsize) {
 			n -= newsize;
-			segment->sg_stack.sp_saddr += n;
-			p->p_saddr = segment->sg_stack.sp_saddr;
-			vm_psegment_extent_free(segment->sg_psegment, n, a1, PSEG_STACK, 0);
+			pseg->ps_stack.sp_saddr += n;
+			p->p_saddr = pseg->ps_stack.sp_saddr;
+			vm_psegment_extent_free(pseg, n, a1, PSEG_STACK, 0);
+			rmfree(coremap, n, a1);
 			return;
 		}
 	}
 	if (type == PSEG_STACK) {
-		a1 = segment->sg_stack.sp_saddr;
+		a1 = pseg->ps_stack.sp_saddr;
 		i = newsize - n;
 		a2 = a1 + i;
 		/*
@@ -121,105 +84,21 @@ segment_expand(p, segment, newsize, type)
 	a2 = rmalloc(coremap, newsize);
 	if (a2 == NULL) {
 		if (type == PSEG_DATA) {
-			//swapout(p);
+			swapout_seg(p, X_FREECORE, n, X_OLDSIZE);
 		} else {
-			//swapout(p);
+			swapout_seg(p, X_FREECORE, X_OLDSIZE, n);
 		}
 	}
 	if (type == PSEG_STACK) {
-		segment->sg_stack.sp_saddr = a2;
-		p->p_saddr = segment->sg_stack.sp_saddr;
+		pseg->ps_stack.sp_saddr = a2;
+		p->p_saddr = pseg->ps_stack.sp_saddr;
 		/*
 		 * Make the copy put the stack at the top of the new area.
 		 */
 		a2 += newsize - n;
 	} else {
-		segment->sg_data.sp_daddr = a2;
-		p->p_daddr = segment->sg_data.sp_daddr;
-	}
-	bcopy(a1, a2, n);
-	rmfree(coremap, n, a1);
-}
-
-/*
- * Change the size of the data+stack regions of the process.
- * If the size is shrinking, it's easy -- just release the extra core.
- * If it's growing, and there is core, just allocate it and copy the
- * image, taking care to reset registers to account for the fact that
- * the system's stack has moved.  If there is no core, arrange for the
- * process to be swapped out after adjusting the size requirement -- when
- * it comes in, enough core will be allocated.  After the expansion, the
- * caller will take care of copying the user's stack towards or away from
- * the data area.  The data and stack segments are separated from each
- * other.  The second argument to expand specifies which to change.  The
- * stack segment will not have to be copied again after expansion.
- */
-void
-vm_segment_expand(segment, newsize)
-	vm_segment_t 	segment;
-	vm_size_t 	 	newsize;
-{
-	register struct proc *p;
-	register vm_size_t i, n;
-	caddr_t a1, a2;
-
-	p = u->u_procp;
-	if (segment->sg_type == PSEG_DATA) {
-		n = segment->sg_data.sp_dsize;
-		segment->sg_data.sp_dsize = newsize;
-		p->p_dsize = segment->sg_data.sp_dsize;
-		a1 = segment->sg_data.sp_daddr;
-		if (n >= newsize) {
-			n -= newsize;
-			rmfree(coremap, n, a1 + newsize);
-			return;
-		}
-	} else {
-		n = segment->sg_stack.sp_ssize;
-		segment->sg_stack.sp_ssize = newsize;
-		p->p_ssize = segment->sg_stack.sp_ssize;
-		a1 = segment->sg_stack.sp_saddr;
-		if (n >= newsize) {
-			n -= newsize;
-			segment->sg_stack.sp_saddr += n;
-			p->p_saddr = segment->sg_stack.sp_saddr;
-			rmfree(coremap, n, a1);
-			return;
-		}
-	}
-	if (segment->sg_type == PSEG_STACK) {
-		a1 = segment->sg_stack.sp_saddr;
-		i = newsize - n;
-		a2 = a1 + i;
-		/*
-		 * i is the amount of growth.  Copy i clicks
-		 * at a time, from the top; do the remainder
-		 * (n % i) separately.
-		 */
-		while (n >= i) {
-			n -= i;
-			bcopy(a1 + n, a2 + n, i);
-		}
-		bcopy(a1, a2, n);
-	}
-	a2 = rmalloc(coremap, newsize);
-	if (a2 == NULL) {
-		if (segment->sg_type == PSEG_DATA) {
-			//swapout(p);
-		} else {
-			//swapout(p);
-		}
-	}
-	if (segment->sg_type == PSEG_STACK) {
-		segment->sg_stack.sp_saddr = a2;
-		p->p_saddr = segment->sg_stack.sp_saddr;
-		/*
-		 * Make the copy put the stack at the top of the new area.
-		 */
-		a2 += newsize - n;
-	} else {
-		segment->sg_data.sp_daddr = a2;
-		p->p_daddr = segment->sg_data.sp_daddr;
+		pseg->ps_data.sp_daddr = a2;
+		p->p_daddr = pseg->ps_data.sp_daddr;
 	}
 	bcopy(a1, a2, n);
 	rmfree(coremap, n, a1);

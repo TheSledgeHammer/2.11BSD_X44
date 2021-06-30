@@ -230,5 +230,5 @@ vm_vtod(p, v, dmap, smap)
 	} else {
 		vm_vstodb(ctod(vtodp(p, v)), ctod(1), dmap, &db, 0);
 	}
-	return (db.db_base);
+	return (db->db_base);
 }
