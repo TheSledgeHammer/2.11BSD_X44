@@ -99,11 +99,27 @@ struct ufs211_dirdesc {
 struct ufs211_dirtemplate {
 	ufs211_ino_t			dot_ino;
 	u_short					dot_reclen;
+	u_int8_t				dot_type;
 	u_short					dot_namlen;
 	char					dot_name[2];		/* must be multiple of 4 */
 	ufs211_ino_t			dotdot_ino;
 	u_short					dotdot_reclen;
+	u_int8_t				dotdot_type;
 	u_short					dotdot_namlen;
 	char					dotdot_name[6];		/* ditto */
+};
+
+/*
+ * This is the old format of directories, sanz type element.
+ */
+struct ufs211_odirtemplate {
+	ufs211_ino_t			dot_ino;
+	int16_t					dot_reclen;
+	u_int16_t				dot_namlen;
+	char					dot_name[4];	/* must be multiple of 4 */
+	ufs211_ino_t			dotdot_ino;
+	int16_t					dotdot_reclen;
+	u_int16_t				dotdot_namlen;
+	char					dotdot_name[4];	/* ditto */
 };
 #endif	_UFS211_DIR_

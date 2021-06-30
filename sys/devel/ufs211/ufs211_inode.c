@@ -35,6 +35,7 @@ struct ufs211_inode *ifreeh, **ifreet;
  * Initialize hash links for inodes
  * and build inode free list.
  */
+void
 ihinit()
 {
 	register int i;
@@ -134,20 +135,21 @@ ufs211_updat(ip, ta, tm, waitfor)
 #endif
 	tip->i_flag &= ~(UFS211_IUPD|UFS211_IACC|UFS211_ICHG|UFS211_IMOD);
 	ufs211_mapin(bp);
-	dp = (struct dinode *) bp + itoo(tip->i_number);
-	dp->di_ic1 = tip->i_ic1;
+	dp = (struct ufs211_dinode *) bp + itoo(tip->i_number);
+	dp->di_icom1 = tip->i_ic1;
 	dp->di_flag = tip->i_flags;
 #ifdef EXTERNALITIMES
 	dp->di_ic2 = xic2;
 #else
-	dp->di_ic2 = tip->i_ic2;
+	dp->di_icom2 = tip->i_ic2;
 #endif
 	bcopy(ip->i_addr, dp->di_addr, NADDR * sizeof (ufs211_daddr_t));
 	ufs211_mapout(bp);
-	if (waitfor && ((ip->i_fs->fs_flags & MNT_ASYNC) == 0))
+	if (waitfor && ((ip->i_fs->fs_flags & MNT_ASYNC) == 0)) {
 		bwrite(bp);
-	else
+	} else {
 		bdwrite(bp);
+	}
 }
 
 /*

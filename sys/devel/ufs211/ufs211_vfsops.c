@@ -362,7 +362,7 @@ ufs211_init(vfsp)
 	done = 1;
 
 	bufmap_init();
-	//ihinit();
+	ihinit();
 #ifdef QUOTA
 //	dqinit();
 #endif

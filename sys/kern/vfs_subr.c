@@ -1224,7 +1224,7 @@ vop_revoke(ap)
 int
 vrecycle(vp, inter_lkp, p)
 	struct vnode *vp;
-	struct simplelock *inter_lkp;
+	struct lock_object *inter_lkp;
 	struct proc *p;
 {
 

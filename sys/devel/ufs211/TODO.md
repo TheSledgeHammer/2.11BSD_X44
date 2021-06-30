@@ -20,9 +20,16 @@ Need Touching up:
 	- vnode equivalents of nchinval(dev) & nchinit()
 
 To Complete:
-- ufs211_vnops
 - ufs211_vfsops
 
 	
-
-
+Missing ufs211 vnops:
+- lease_check
+- fsync
+- seek
+- blkatoff
+- valloc
+- vfree
+- bwrite
+- update
+- truncate

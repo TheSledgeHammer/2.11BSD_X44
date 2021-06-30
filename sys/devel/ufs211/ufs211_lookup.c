@@ -566,7 +566,39 @@ ufs211_dirbadentry(ep, entryoffsetinblock)
  */
 
 int
-ufs211_direnter(ip, dirp, dvp, cnp)
+ufs211_direnter(ip, dvp, cnp)
+	struct ufs211_inode *ip;
+	struct vnode *dvp;
+	register struct componentname *cnp;
+{
+	register struct ufs211_inode *dp;
+	struct direct newdir;
+
+#ifdef DIAGNOSTIC
+	if ((cnp->cn_flags & SAVENAME) == 0)
+		panic("direnter: missing name");
+#endif
+	dp = VTOI(dvp);
+	newdir.d_ino = ip->i_number;
+	newdir.d_namlen = cnp->cn_namelen;
+	bcopy(cnp->cn_nameptr, newdir.d_name, (unsigned) cnp->cn_namelen + 1);
+	if (dvp->v_mount->mnt_maxsymlinklen > 0)
+		newdir.d_type = IFTODT(ip->i_mode);
+	else {
+		newdir.d_type = 0;
+#if (BYTE_ORDER == LITTLE_ENDIAN)
+		{
+			u_char tmp = newdir.d_namlen;
+			newdir.d_namlen = newdir.d_type;
+			newdir.d_type = tmp;
+		}
+#endif
+	}
+	return (ufs211_direnter2(dvp, &newdir, cnp->cn_cred, cnp->cn_proc));
+}
+
+int
+ufs211_direnter2(ip, dirp, dvp, cnp)
 	struct ufs211_inode *ip;
 	struct ufs211_direct *dirp;
 	struct vnode *dvp;

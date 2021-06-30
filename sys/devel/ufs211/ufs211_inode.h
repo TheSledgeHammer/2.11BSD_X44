@@ -152,8 +152,8 @@ struct ufs211_dinode {
 #define	di_flags		i_din.di_flag
 #define	di_blocks		i_din.di_blocks
 #define	di_gen			i_din.di_gen
-#define di_ic1			di_icom1
-#define di_ic2			di_icom2
+#define di_ic1			i_din.di_icom1
+#define di_ic2			i_din.di_icom2
 #define	di_mode			di_ic1.ic_mode
 #define	di_nlink		di_ic1.ic_nlink
 #define	di_uid			di_ic1.ic_uid

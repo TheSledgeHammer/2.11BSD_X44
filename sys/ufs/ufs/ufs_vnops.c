@@ -101,7 +101,7 @@ ufs_itimes(vp)
 		ip->i_flag |= IN_MODIFIED;
 	}
 	if ((vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
-		//vfs_timestamp(&ts);
+		vfs_timestamp(&ts);
 		if (ip->i_flag & IN_ACCESS) {
 			DIP(ip, atime) = ts.tv_sec;
 			DIP(ip, atimensec) = ts.tv_nsec;
