@@ -57,27 +57,7 @@ typedef	_BSD_SIZE_T_	size_t;
 
 #include <strings.h>
 
-/*
- * these next few are obsolete trash
- */
-/*
-extern char *strcpyn();
-extern char *strcatn();
-extern int 	strcmpn();
-*/
 
-/*
- * and the rest are Sys5 functions supported just so
- * Sys5 progs will compile easily.
- */
-/*
-extern char *strchr();
-extern char *strrchr();
-extern char *strpbrk();
-extern int 	strspn();
-extern int 	strcspn();
-extern char *strtok();
-*/
 __BEGIN_DECLS
 
 void	*memchr (const void *, int, size_t);
@@ -101,9 +81,8 @@ char	*strrchr (const char *, int);
 size_t	 strspn (const char *, const char *);
 char	*strstr (const char *, const char *);
 char	*strtok (char *, const char *);
-char	*strtok_r (char *, const char *, char **);
+//char	*strtok_r (char *, const char *, char **);
 size_t	 strxfrm (char *, const char *, size_t);
-
 
 /* Nonstandard routines */
 
@@ -115,9 +94,9 @@ int	 	ffs (int);
 char	*index (const char *, int);
 void	*memccpy (void *, const void *, int, size_t);
 char	*rindex (const char *, int);
-//int		strcasecmp (const char *, const char *);
+int		strcasecmp (const char *, const char *);
 char	*strdup (const char *);
-//int	 	strncasecmp (const char *, const char *, size_t);
+int	 	strncasecmp (const char *, const char *, size_t);
 char	*strsep (char **, const char *);
 void	swab (const void *, void *, size_t);
 #endif

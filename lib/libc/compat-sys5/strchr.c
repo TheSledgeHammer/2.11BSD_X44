@@ -1,6 +1,9 @@
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)strchr.c	5.2 (Berkeley) 86/03/09";
 #endif LIBC_SCCS and not lint
+
+#include <string.h>
 
 /*
  * Return the ptr in sp at which the character c appears;
@@ -8,8 +11,6 @@ static char sccsid[] = "@(#)strchr.c	5.2 (Berkeley) 86/03/09";
  *
  * this routine is just "index" renamed.
  */
-
-#define	NULL	0
 
 char *
 strchr(sp, c)
@@ -19,5 +20,5 @@ register char *sp, c;
 		if (*sp == c)
 			return(sp);
 	} while (*sp++);
-	return(NULL);
+	return (NULL);
 }

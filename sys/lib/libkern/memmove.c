@@ -30,6 +30,7 @@
  *
  *	@(#)bcopy.c	8.1 (Berkeley) 6/11/93
  */
+#include <sys/cdefs.h>
 
 #include <sys/types.h>
 #include "stand.h"

@@ -4,9 +4,13 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)qsort.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
+
+#include <sys/types.h>
+#include <stdlib.h>
 
 /*
  * qsort.c:
@@ -31,7 +35,7 @@ static  int		mthresh;		/* MTHRESHold in chars */
  * with qst(), and then a cleanup insertion sort ourselves.  Sound simple?
  * It's not...
  */
-
+void
 qsort(base, n, size, compar)
 	char	*base;
 	int	n;

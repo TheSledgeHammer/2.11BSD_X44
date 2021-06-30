@@ -7,10 +7,12 @@
 /*
  * Sys5 compat routine
  */
-
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)memcpy.c	5.2 (Berkeley) 86/03/09";
 #endif
+
+#include <string.h>
 
 char *
 memcpy(t, f, n)

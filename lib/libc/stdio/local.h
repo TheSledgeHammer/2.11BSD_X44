@@ -38,7 +38,7 @@
 
 #include <limits.h>
 #include <stdarg.h>
-#include <stdbool.h>
+//#include <stdbool.h>
 
 /*
  * Information local to this implementation of stdio,

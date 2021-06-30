@@ -4,13 +4,17 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)bcmp.c	1.1 (Berkeley) 1/19/87";
 #endif LIBC_SCCS and not lint
 
+#include <string.h>
+
 /*
  * bcmp -- vax cmpc3 instruction
  */
+int
 bcmp(b1, b2, length)
 	register char *b1, *b2;
 	register unsigned int length;

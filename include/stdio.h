@@ -270,7 +270,7 @@ int	 	putc (int, FILE *);
 int	 	putchar (int);
 int	 	puts (const char *);
 int	 	remove (const char *);
-int	 	rename  (const char *, const char *);
+//int	 	rename  (const char *, const char *);
 void 	rewind (FILE *);
 int	 	scanf (const char *, ...);
 void 	setbuf (FILE *, char *);
@@ -327,7 +327,7 @@ int	 	snprintf (char *, size_t, const char *, ...);
 int	 	vsnprintf (char *, size_t, const char *, _BSD_VA_LIST_);
 int	 	vscanf (const char *, _BSD_VA_LIST_);
 int	 	vsscanf (const char *, const char *, _BSD_VA_LIST_);
-FILE	*zopen (const char *, const char *, int);
+//FILE	*zopen (const char *, const char *, int);
 __END_DECLS
 
 /*
@@ -341,19 +341,24 @@ __END_DECLS
  * Stdio function-access interface.
  */
 __BEGIN_DECLS
-FILE	*funopen(const void *, int (*)(void *, char *, int), int (*)(void *, const char *, int), fpos_t (*)(void *, fpos_t, int), int (*)(void *));
+FILE		*funopen(const void *, int (*)(void *, char *, int), int (*)(void *, const char *, int), fpos_t (*)(void *, fpos_t, int), int (*)(void *));
 __END_DECLS
-#define	fropen(cookie, fn) funopen(cookie, fn, 0, 0, 0)
-#define	fwopen(cookie, fn) funopen(cookie, 0, fn, 0, 0)
+#define		fropen(cookie, fn) funopen(cookie, fn, 0, 0, 0)
+#define		fwopen(cookie, fn) funopen(cookie, 0, fn, 0, 0)
 #endif /* !_ANSI_SOURCE && !_POSIX_SOURCE */
 
 /*
  * Functions internal to the implementation.
  */
 __BEGIN_DECLS
-int	__srget(FILE *);
-int	__svfscanf(FILE *, const char *, _BSD_VA_LIST_);
-int	__swbuf(int, FILE *);
+int		__srget(FILE *);
+int		__svfscanf(FILE *, const char *, _BSD_VA_LIST_);
+int		__swbuf(int, FILE *);
+
+/* 2.11BSD Compatibility */
+__inline int _doscan(FILE * iop, char *fmt, _BSD_VA_LIST_ argp) {
+	return (__svfscanf(iop, fmt, argp));
+}
 __END_DECLS
 
 /*

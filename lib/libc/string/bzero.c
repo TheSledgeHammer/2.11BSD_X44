@@ -4,9 +4,12 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)bzero.c	1.1 (Berkeley) 1/19/87";
 #endif LIBC_SCCS and not lint
+
+#include <string.h>
 
 /*
  * bzero -- vax movc5 instruction

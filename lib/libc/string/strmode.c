@@ -37,7 +37,7 @@ static char sccsid[] = "@(#)strmode.c	8.3 (Berkeley) 8/15/94";
 
 #include <sys/types.h>
 #include <sys/stat.h>
-
+#include <string.h>
 #include <assert.h>
 #include <unistd.h>
 

@@ -1,9 +1,13 @@
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)atoi.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
+#include <stdlib.h>
+#include <stddef.h>
+
 atoi(p)
-register char *p;
+	register char *p;
 {
 	register int n;
 	register int f;

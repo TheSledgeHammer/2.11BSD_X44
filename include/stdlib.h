@@ -85,7 +85,6 @@ typedef struct {
 
 #define	RAND_MAX		0x7fff
 
-
 extern size_t 		__mb_cur_max;
 #define	MB_CUR_MAX	__mb_cur_max
 
@@ -93,7 +92,7 @@ __BEGIN_DECLS
 void 	 abort (void);
 int	 	 abs (int);
 int	 	 atexit (void (*)(void));
-double	 atof (const char *);
+//double	 atof (const char *);
 int	 	 atoi (const char *);
 long	 atol (const char *);
 void	 *bsearch (const void *, const void *, size_t, size_t, int (*)(const void *, const void *));
@@ -109,7 +108,7 @@ void	 qsort (void *, size_t, size_t, int (*)(const void *, const void *));
 int		 rand (void);
 void	 *realloc (void *, size_t);
 void	 srand (unsigned);
-double	 strtod (const char *, char **);
+//double	 strtod (const char *, char **);
 long	 strtol (const char *, char **, int);
 unsigned long
 	 	 strtoul (const char *, char **, int);
@@ -121,7 +120,6 @@ size_t	mbstowcs (wchar_t *, const char *, size_t);
 int	 	wctomb (char *, wchar_t);
 int	 	mbtowc (wchar_t *, const char *, size_t);
 size_t	wcstombs (char *, const wchar_t *, size_t);
-
 
 #ifndef _ANSI_SOURCE
 int		putenv (const char *);

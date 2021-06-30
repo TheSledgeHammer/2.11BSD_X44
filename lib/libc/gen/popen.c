@@ -33,11 +33,10 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)popen.c	5.15.1 (2.11BSD) 1999/10/24";
 #endif /* LIBC_SCCS and not lint */
-
 
 #include <sys/param.h>
 #include <sys/wait.h>
@@ -56,8 +55,8 @@ static int *pids;
 
 FILE *
 popen(program, type)
-	char *program;
-	register char *type;
+	const char *program;
+	const char *type;
 {
 	register FILE *iop;
 	int pdes[2], fds, pid;

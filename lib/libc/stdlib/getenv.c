@@ -4,11 +4,14 @@
  * notice remains attached.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)getenv.c	5.4 (Berkeley) 3/13/87";
 #endif LIBC_SCCS and not lint
 
 #include <stdio.h>
+#include <stddef.h>
+#include <stdlib.h>
 
 /*
  * getenv(name) --
@@ -21,7 +24,7 @@ getenv(name)
 	int	offset;
 	char	*_findenv();
 
-	return(_findenv(name,&offset));
+	return (_findenv(name,&offset));
 }
 
 /*
@@ -48,7 +51,7 @@ _findenv(name,offset)
 		if (!strncmp(*P,name,len))
 			if (*(C = *P + len) == '=') {
 				*offset = P - environ;
-				return(++C);
+				return (++C);
 			}
-	return(NULL);
+	return (NULL);
 }

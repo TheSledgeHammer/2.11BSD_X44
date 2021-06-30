@@ -2,8 +2,8 @@
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
-.\" the American National Standards Committee X3, on Information
-.\" Processing Systems.
+.\" Chris Torek and the American National Standards Committee X3,
+.\" on Information Processing Systems.
 .\"
 .\" Redistribution and use in source and binary forms, with or without
 .\" modification, are permitted provided that the following conditions
@@ -33,34 +33,46 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"     @(#)clock.3	8.1 (Berkeley) 6/4/93
+.\"     @(#)remove.3	8.1 (Berkeley) 6/4/93
 .\"
 .Dd June 4, 1993
-.Dt CLOCK 3
+.Dt REMOVE 3
 .Os
 .Sh NAME
-.Nm clock
-.Nd determine processor time used
+.Nm remove
+.Nd remove directory entry
 .Sh SYNOPSIS
-.Fd #include <sys/types.h>
-.Ft clock_t
-.Fn clock void
+.Fd #include <stdio.h>
+.Ft int
+.Fn remove "const char *path"
 .Sh DESCRIPTION
 The
-.Fn clock
+.Fn remove
 function
-determines the amount of processor time used since the invocation of the
-calling process, measured in
-.Dv CLK_TCK Ns s.
+is an alias for the 
+.Xr unlink 2
+system call.
+It deletes the file referenced by
+.Fa path .
 .Sh RETURN VALUES
+Upon successful completion, 
+.Fn remove
+returns 0.
+Otherwise, \-1 is returned and the global variable
+.Va errno
+is set to indicate the error.
+.Sh ERRORS
 The
-.Fn clock
-function returns the amount of time used unless an error occurs, in which
-case the return value is \-1.
+.Fn remove
+function
+may fail and set
+.Va errno
+for any of the errors specified for the routine
+.Xr unlink 2 .
 .Sh SEE ALSO
-.Xr getrusage 2
+.Xr unlink 2
 .Sh STANDARDS
 The
-.Fn clock
+.Fn remove
 function conforms to
 .St -ansiC .

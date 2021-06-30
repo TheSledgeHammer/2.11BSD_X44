@@ -1,5 +1,7 @@
 /*	@(#)malloc.c	2.3	(2.11BSD) 1999/1/18 */
 #include <sys/cdefs.h>
+
+#include <stdlib.h>
 #include <stddef.h>
 #include <unistd.h>
 
@@ -16,7 +18,7 @@
 */
 
 static botch(s)
-char *s;
+	char *s;
 {
 	struct	iovec	iov[3];
 	register struct iovec *v = iov;
@@ -76,8 +78,8 @@ char *s;
 
 #define	BUSY		1
 
-#define	testbusy(p)	((INT)(p)&BUSY)
-#define	setbusy(p)	(union store *)((INT)(p)|BUSY)
+#define	testbusy(p)		((INT)(p)&BUSY)
+#define	setbusy(p)		(union store *)((INT)(p)|BUSY)
 #define	clearbusy(p)	(union store *)((INT)(p)&~BUSY)
 
 union store {
@@ -95,7 +97,7 @@ extern char		*sbrk();
 
 char *
 malloc(nbytes)
-	unsigned nbytes;
+	size_t nbytes;
 {
 	register union store *p, *q;
 	register nw;
@@ -165,8 +167,9 @@ found:
 /*
  * Freeing strategy tuned for LIFO allocation.
  */
+void
 free(ap)
-	register char *ap;
+	void *ap;
 {
 	register union store *p = (union store *)ap;
 
@@ -185,7 +188,7 @@ free(ap)
 char *
 realloc(p, nbytes)
 	register union store *p;
-	unsigned nbytes;
+	size_t nbytes;
 {
 	register union store *q;
 	union store *s, *t;
@@ -211,7 +214,8 @@ realloc(p, nbytes)
 }
 
 #ifdef	debug
-static allock()
+static int
+allock()
 {
 #ifdef longdebug
 	register union store *p;

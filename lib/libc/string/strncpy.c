@@ -1,6 +1,9 @@
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)strncpy.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
+
+#include <string.h>
 
 /*
  * Copy s2 to s1, truncating or null-padding to always copy n bytes

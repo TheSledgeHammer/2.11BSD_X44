@@ -4,11 +4,13 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)random.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
-#include	<stdio.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 /*
  * random.c:
@@ -148,13 +150,13 @@ static  long		*rptr			= &randtbl[ 1 ];
  * the front and rear pointers have wrapped.
  */
 
-static  long		*state			= &randtbl[ 1 ];
+static  long	*state			= &randtbl[ 1 ];
 
 static  int		rand_type		= TYPE_3;
 static  int		rand_deg		= DEG_3;
 static  int		rand_sep		= SEP_3;
 
-static  long		*end_ptr		= &randtbl[ DEG_3 + 1 ];
+static  long	*end_ptr		= &randtbl[ DEG_3 + 1 ];
 
 
 
@@ -193,7 +195,6 @@ srandom( x )
 }
 
 
-
 /*
  * initstate:
  * Initialize the state information in the given array of n bytes for
@@ -225,9 +226,9 @@ initstate( seed, arg_state, n )
 		state[-1] = MAX_TYPES * (rptr - state) + rand_type;
 	if (n < BREAK_1) {
 		if (n < BREAK_0) {
-			fprintf( stderr,
+			fprintf(stderr,
 					"initstate: not enough state (%d bytes) with which to do jack; ignored.\n");
-			return;
+			return(0);
 		}
 		rand_type = TYPE_0;
 		rand_deg = DEG_0;

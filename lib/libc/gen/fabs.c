@@ -4,6 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)fabs.c	2.2 (Berkeley) 1/25/87";
 #endif LIBC_SCCS and not lint

@@ -31,15 +31,17 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)system.c	5.10.1 (2.11BSD) 1999/10/24";
 #endif /* LIBC_SCCS and not lint */
 
-#include <stdio.h>
-#include <stddef.h>
 #include <sys/types.h>
 #include <sys/signal.h>
 #include <sys/wait.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>
 
 system(command)
 	char *command;
