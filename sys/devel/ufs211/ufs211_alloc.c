@@ -11,10 +11,10 @@
 #include <sys/mount.h>
 #include <sys/kernel.h>
 #include <sys/buf.h>
-#include "ufs211/ufs211_dir.h"
-#include "ufs211/ufs211_fs.h"
-#include "ufs211/ufs211_inode.h"
-#include "ufs211/ufs211_quota.h"
+#include "devel/ufs211/ufs211_dir.h"
+#include "devel/ufs211/ufs211_fs.h"
+#include "devel/ufs211/ufs211_inode.h"
+#include "devel/ufs211/ufs211_quota.h"
 
 typedef	struct ufs211_fblk *FBLKP;
 
@@ -139,7 +139,6 @@ ialloc(pip)
 	ufs211_daddr_t adr;
 	ufs211_ino_t inobas;
 	int first;
-	struct ufs211_inode *ifind();
 	struct vnode *vp;
 	char	*emsg = "no inodes free";
 
@@ -203,7 +202,7 @@ fromtop:
 		ufs211_mapin(bp);
 		dp = (struct ufs211_dinode *) bp;
 		for (i = 0; i < INOPB; i++) {
-			if (dp->di_mode != 0)
+			if (dp->di_icom1.ic_mode != 0)
 				goto cont;
 			if (ifind(pip->i_dev, ino))
 				goto cont;

@@ -19,13 +19,13 @@
  * like a good idea to change the "real direct structure".  SMS
 */
 
-struct ufs211_direct {
-	ufs211_ino_t	d_ino;						/* inode number of entry */
-	u_short			d_reclen;					/* length of this record */
-	u_int8_t  		d_type; 					/* file type, see below */
-	u_short			d_namlen;					/* length of string in d_name */
-	char			d_name[UFS211_MAXNAMLEN+1];	/* name must be no longer than this */
-};
+//struct ufs211_direct {
+	//ufs211_ino_t	d_ino;						/* inode number of entry */
+	//u_short			d_reclen;					/* length of this record */
+	//u_int8_t  		d_type; 					/* file type, see below */
+	//u_short			d_namlen;					/* length of string in d_name */
+	//char			d_name[UFS211_MAXNAMLEN+1];	/* name must be no longer than this */
+//};
 
 /*
  * File types
@@ -74,7 +74,7 @@ struct ufs211_direct {
 
 #undef DIRSIZ
 #define DIRSIZ(dp) \
-    ((((sizeof (struct ufs211_direct) - (UFS211_MAXNAMLEN+1)) + (dp)->d_namlen+1) + 3) &~ 3)
+    ((((sizeof (struct direct) - (UFS211_MAXNAMLEN + 1)) + (dp)->d_namlen+1) + 3) &~ 3)
 
 /*
  * Definitions for library routines operating on directories.

@@ -1034,14 +1034,14 @@ abortit:
 				UIO_SYSSPACE, IO_NODELOCKED,
 				tcnp->cn_cred, (int *)0, (struct proc *)0);
 			if (error == 0) {
-#				if (BYTE_ORDER == LITTLE_ENDIAN)
+#if (BYTE_ORDER == LITTLE_ENDIAN)
 					if (fvp->v_mount->mnt_maxsymlinklen <= 0)
 						namlen = dirbuf.dotdot_type;
 					else
 						namlen = dirbuf.dotdot_namlen;
-#				else
+#else
 					namlen = dirbuf.dotdot_namlen;
-#				endif
+#endif
 				if (namlen != 2 ||
 				    dirbuf.dotdot_name[0] != '.' ||
 				    dirbuf.dotdot_name[1] != '.') {
@@ -1076,15 +1076,15 @@ abortit:
 
 bad:
 	if (xp)
-		vput(ITOV(xp));
-	vput(ITOV(dp));
+		vput(UFS211_ITOV(xp));
+	vput(UFS211_ITOV(dp));
 out:
 	if (doingdirectory)
 		ip->i_flag &= ~IN_RENAME;
 	if (vn_lock(fvp, LK_EXCLUSIVE, p) == 0) {
-		ip->i_effnlink--;
+		//ip->i_effnlink--;
 		ip->i_nlink--;
-		DIP(ip, nlink) = ip->i_nlink;
+		ip->di_nlink = ip->i_nlink;
 		ip->i_flag |= IN_CHANGE;
 		ip->i_flag &= ~IN_RENAME;
 		vput(fvp);
@@ -2093,7 +2093,7 @@ ufs211_makeinode(mode, dvp, vpp, cnp)
 	tv = time;
 	if (error == VOP_UPDATE(tvp, &tv, &tv, 1))
 		goto bad;
-	if (error == ufs_direnter(ip, dvp, cnp))
+	if (error == ufs211_direnter(ip, dvp, cnp))
 		goto bad;
 	if ((cnp->cn_flags & SAVESTART) == 0)
 		FREE(cnp->cn_pnbuf, M_NAMEI);

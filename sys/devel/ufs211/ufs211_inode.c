@@ -314,7 +314,7 @@ doquotaupd:
 #endif
 updret:
 	oip->i_flag |= UFS211_ICHG|UFS211_IUPD;
-	iupdat(oip, &time, &time, 1);
+	ufs211_updat(oip, &time, &time, 1);
 }
 
 /*
@@ -446,7 +446,10 @@ ufs211_trsingle(ip, bp,last, aflags)
 	ufs211_mapout(bp);
 	bstart = &blarray[NINDIR - 1];
 	bstop = &blarray[last];
-	for (; bstart > bstop; --bstart)
-		if (*bstart)
-			free(ip, *bstart);
+	for (; bstart > bstop; --bstart) {
+		if (*bstart) {
+			free(ip, *bstart); {
+			}
+		}
+	}
 }

@@ -207,8 +207,11 @@ binval(dev)
 	register struct bufhd *hp;
 #define dp ((struct buf *)hp)
 
-	for (hp = bufhash; hp < &bufhash[BUFHSZ]; hp++)
-		for (bp = dp->b_forw; bp != dp; bp = bp->b_forw)
-			if (bp->b_dev == dev)
+	for (hp = bufhash; hp < &bufhash[BUFHSZ]; hp++) {
+		for (bp = dp->b_forw; bp != dp; bp = bp->b_forw) {
+			if (bp->b_dev == dev) {
 				bp->b_flags |= B_INVAL;
+			}
+		}
+	}
 }

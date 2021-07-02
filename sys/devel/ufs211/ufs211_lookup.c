@@ -51,7 +51,7 @@ ufs211_lookup(ap)
 	register struct vnode *vdp; 		/* vnode for directory being searched */
 	register struct ufs211_inode *dp; 	/* inode for directory being searched */
 	struct buf *bp; 					/* a buffer of directory entries */
-	register struct ufs211_direct *ep; 	/* the current directory entry */
+	register struct direct *ep; 		/* the current directory entry */
 	int entryoffsetinblock; 			/* offset of ep in bp's buffer */
 	enum {NONE, COMPACT, FOUND} slotstatus;
 	ufs211_off_t slotoffset = -1;		/* offset of area with free space */
@@ -219,7 +219,7 @@ ufs211_lookup(ap)
 		 * directory. Complete checks can be run by patching
 		 * "dirchk" to be true.
 		 */
-		ep = (struct ufs211_direct*) ((char*) bp->b_data + entryoffsetinblock);
+		ep = (struct direct*) ((char*) bp->b_data + entryoffsetinblock);
 		if (ep->d_reclen == 0 || (dirchk && ufs_dirbadentry(vdp, ep, entryoffsetinblock))) {
 			int i;
 
@@ -540,7 +540,7 @@ ufs211_dirbad(ip, offset, how)
  */
 int
 ufs211_dirbadentry(ep, entryoffsetinblock)
-	register struct ufs211_direct *ep;
+	register struct direct *ep;
 	int entryoffsetinblock;
 {
 	register int i;
@@ -600,11 +600,11 @@ ufs211_direnter(ip, dvp, cnp)
 int
 ufs211_direnter2(ip, dirp, dvp, cnp)
 	struct ufs211_inode *ip;
-	struct ufs211_direct *dirp;
+	struct direct *dirp;
 	struct vnode *dvp;
 	register struct componentname *cnp;
 {
-	register struct ufs211_direct *ep, *nep;
+	register struct direct *ep, *nep;
 	register struct ufs211_inode *dp;
 	struct buf *bp;
 	struct ucred *cr;
@@ -699,15 +699,15 @@ ufs211_direnter2(ip, dirp, dvp, cnp)
 	 * ndp->ni_offset to ndp->ni_offset+ndp->ni_count would yield the space.
 	 */
 
-	ep = (struct ufs211_direct *)dirbuf;
+	ep = (struct direct *)dirbuf;
 	dsize = DIRSIZ(ep);
 	spacefree = ep->d_reclen - dsize;
 	for (loc = ep->d_reclen; loc < dp->i_count; ) {
-		nep = (struct ufs211_direct *)(dirbuf + loc);
+		nep = (struct direct *)(dirbuf + loc);
 		if (ep->d_ino) {
 			/* trim the existing slot */
 			ep->d_reclen = dsize;
-			ep = (struct ufs211_direct *)((char *)ep + dsize);
+			ep = (struct direct *)((char *)ep + dsize);
 		} else {
 			/* overwrite; nothing there; header is ours */
 			spacefree += dsize;	
@@ -730,7 +730,7 @@ ufs211_direnter2(ip, dirp, dvp, cnp)
 			panic("wdir: compact2");
 		dirp->d_reclen = spacefree;
 		ep->d_reclen = dsize;
-		ep = (struct ufs211_direct *)((char *)ep + dsize);
+		ep = (struct direct *)((char *)ep + dsize);
 	}
 	bcopy((caddr_t)&dirp, (caddr_t)ep, (u_int)newentrysize);
 	error = VOP_BWRITE(bp);
@@ -759,7 +759,7 @@ ufs211_dirremove(dvp, cnp)
 {
 	register struct ufs211_inode *dp;
 	register struct buf *bp;
-	struct ufs211_direct *ep;
+	struct direct *ep;
 
 	dp = UFS211_VTOI(dvp);
 
@@ -809,7 +809,7 @@ ufs211_dirrewrite(dp, ip, cnp)
 	struct componentname *cnp;
 {
 	struct buf *bp;
-	struct ufs211_direct *ep;
+	struct direct *ep;
 	struct vnode *vdp = UFS211_ITOV(dp);
 
 	if (u->u_error == VOP_BLKATOFF(vdp, (ufs211_off_t)dp->i_offset, (char **)&ep, &bp)) {
@@ -878,8 +878,8 @@ ufs211_dirempty(ip, parentino)
 	ufs211_ino_t parentino;
 {
 	register ufs211_off_t off;
-	struct dirtemplate dbuf;
-	register struct ufs211_direct *dp = (struct ufs211_direct *)&dbuf;
+	struct ufs211_dirtemplate dbuf;
+	register struct direct *dp = (struct direct *)&dbuf;
 	int error, count;
 #define	MINDIRSIZ (sizeof (struct dirtemplate) / 2)
 

@@ -48,7 +48,7 @@ struct ufs211_args {
 #define	DEV_BMASK		(DEV_BSIZE - 1)
 
 struct buf;
-struct ufs211_direct;
+//struct ufs211_direct;
 struct disklabel;
 struct ufid;
 struct flock;
@@ -82,8 +82,8 @@ void dk_alloc(int *, int, char *, long);
 void ufs211_trsingle(struct ufs211_inode *, caddr_t, ufs211_daddr_t, int);
 
 void ufs211_dirbad(struct ufs211_inode *, off_t, char *);
-int ufs211_dirbadentry(struct ufs211_direct *, int);
-int ufs211_direnter(struct ufs211_inode *, struct ufs211_direct *, struct vnode *, struct componentname *);
+int ufs211_dirbadentry(struct direct *, int);
+int ufs211_direnter(struct ufs211_inode *, struct direct *, struct vnode *, struct componentname *);
 int ufs211_dirremove(struct vnode *, struct componentname *);
 int ufs211_dirrewrite(struct ufs211_inode *, struct ufs211_inode *, struct componentname *);
 int ufs211_dirempty(struct ufs211_inode *, ufs211_ino_t);
