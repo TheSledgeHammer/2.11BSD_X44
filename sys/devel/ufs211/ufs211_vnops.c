@@ -48,12 +48,12 @@
 #include <vm/include/vm.h>
 #include <miscfs/specfs/specdev.h>
 
-#include "ufs211/ufs211_dir.h"
-#include "ufs211/ufs211_extern.h"
-#include "ufs211/ufs211_fs.h"
-#include "ufs211/ufs211_inode.h"
-#include "ufs211/ufs211_mount.h"
-#include "ufs211/ufs211_quota.h"
+#include <ufs211/ufs211_dir.h>
+#include <ufs211/ufs211_extern.h>
+#include <ufs211/ufs211_fs.h>
+#include <ufs211/ufs211_inode.h>
+#include <ufs211/ufs211_mount.h>
+#include <ufs211/ufs211_quota.h>
 
 struct vnodeops ufs211_vnodeops = {
 		.vop_lookup = ufs211_lookup,		/* lookup */
@@ -1971,7 +1971,7 @@ ufs211fifo_close(ap)
 
 	simple_lock(&vp->v_interlock);
 	if (ap->a_vp->v_usecount > 1)
-		ITIMES(ip, &time, &time);
+		ufs211_itimes(vp);
 	simple_unlock(&vp->v_interlock);
 	return (VOPARGS(ap, vop_close));
 }

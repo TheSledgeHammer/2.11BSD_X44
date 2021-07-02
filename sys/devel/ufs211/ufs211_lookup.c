@@ -642,11 +642,11 @@ ufs211_direnter2(ip, dirp, dvp, cnp)
 		 * block boundary and we will write the new entry into a fresh
 		 * block.
 		 */
-		if (dp->i_offset & (DIRBLKSIZ-1)) {
+		if (dp->i_offset & (UFS211_DIRBLKSIZ-1)) {
 			panic("wdir: newblk");
 		}
 		auio.uio_offset = dp->i_offset;
-		dirp->d_reclen = DIRBLKSIZ;
+		dirp->d_reclen = UFS211_DIRBLKSIZ;
 		auio.uio_resid = newentrysize;
 		aiov.iov_len = newentrysize;
 		aiov.iov_base = (caddr_t)dirp;
@@ -661,7 +661,7 @@ ufs211_direnter2(ip, dirp, dvp, cnp)
 			/* XXX should grow with balloc() */
 			panic("ufs_direnter: frag size");
 		else if (!error) {
-			dp->i_size = roundup(dp->i_size, DIRBLKSIZ);
+			dp->i_size = roundup(dp->i_size, UFS211_DIRBLKSIZ);
 			dp->i_flag |= IN_CHANGE;
 		}
 		return (error);
@@ -925,7 +925,7 @@ int
 ufs211_checkpath(source, target)
 	struct ufs211_inode *source, *target;
 {
-	struct dirtemplate dirbuf;
+	struct ufs211_dirtemplate dirbuf;
 	register struct ufs211_inode *ip;
 	register int error = 0;
 
@@ -1013,19 +1013,20 @@ void
 nchinval(dev)
 	register ufs211_dev_t dev;
 {
-
 	register struct namecache *ncp, *nxtcp;
 
 	for (ncp = nchhead; ncp; ncp = nxtcp) {
 		nxtcp = ncp->nc_nxt;
-		if (ncp->nc_vp == NULL || (ncp->nc_idev != dev && ncp->nc_dev != dev))
+		if (ncp->nc_vp == NULL)
 			continue;
 		/* free the resources we had */
-		ncp->nc_dvp
+		ncp->nc_dvp;
+		/*
 		ncp->nc_idev = NODEV;
 		ncp->nc_dev = NODEV;
 		ncp->nc_id = NULL;
 		ncp->nc_ino = 0;
+		*/
 		ncp->nc_vp = NULL;
 		remque(ncp);		/* remove entry from its hash chain */
 		ncp->nc_forw = ncp;	/* and make a dummy one */
@@ -1044,20 +1045,4 @@ nchinval(dev)
 		nxtcp->nc_prev = &ncp->nc_nxt;
 		nchhead = ncp;
 	}
-}
-
-/*
- * Name cache invalidation of all entries.
- */
-void
-cacheinvalall()
-{
-	register struct namecache *ncp, *encp = &namecache[nchsize];
-	segm	seg5;
-
-	//saveseg5(seg5);
-	//mapseg5(nmidesc.se_addr, nmidesc.se_desc);
-	for (ncp = namecache; ncp < encp; ncp++)
-		ncp->nc_id = 0;
-	//restorseg5(seg5);
 }

@@ -2,8 +2,6 @@
 Need Touching up:
 - update:
 	- buflists to be inline with other filesystems
-- ufs211_inode: 
-	- ihash
 - ufs211_quota: 
 	(original quota code was scattered throughout kernel)
 	- needs alot of work. 
@@ -15,9 +13,10 @@ Need Touching up:
 	- is it an old method that:
 		 A) can be reused elsewhere
 		 B) is deprecated
-	
 - ufs211_lookup: 
 	- vnode equivalents of nchinval(dev) & nchinit()
+	
+- replace iput & iget with vput & vget
 
 To Complete:
 - ufs211_vfsops
@@ -33,3 +32,7 @@ Missing ufs211 vnops:
 - bwrite
 - update
 - truncate
+
+Deprecated:
+- ihash
+- mount

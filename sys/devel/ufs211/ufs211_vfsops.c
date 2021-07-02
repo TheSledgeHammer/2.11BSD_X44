@@ -328,8 +328,9 @@ ufs211_fhtovp(mp, fhp, nam, vpp, exflagsp, credanonp)
 	struct ufs211_fs *fs;
 
 	fs = VFSTOUFS211(mp)->m_filsys;
-	if (ufhp->ufid_ino < UFS211_ROOTINO || ufhp->ufid_ino >= fs->fs_ncg * fs->fs_ipg)
+	if (ufhp->ufid_ino < UFS211_ROOTINO) {
 		return (ESTALE);
+	}
 }
 
 int
@@ -362,7 +363,7 @@ ufs211_init(vfsp)
 	done = 1;
 
 	bufmap_init();
-	ihinit();
+	ufs211_ihinit();
 #ifdef QUOTA
 //	dqinit();
 #endif

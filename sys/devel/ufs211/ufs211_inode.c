@@ -21,65 +21,6 @@
 #include "ufs211/ufs211_inode.h"
 #include "ufs211/ufs211_extern.h"
 
-#define	INOHSZ				16			/* must be power of two */
-#define	INOHASH(dev,ino)	(((dev)+(ino))&(INOHSZ-1))
-
-union ufs211_ihead {				/* inode LRU cache, stolen */
-	union  ufs211_ihead *ih_head[2];
-	struct ufs211_inode *ih_chain[2];
-} ihead[INOHSZ];
-
-struct ufs211_inode *ifreeh, **ifreet;
-
-/*
- * Initialize hash links for inodes
- * and build inode free list.
- */
-void
-ihinit()
-{
-	register int i;
-	register struct ufs211_inode *ip = inode;
-	register union  ufs211_ihead *ih = ihead;
-
-	for (i = INOHSZ; --i >= 0; ih++) {
-		ih->ih_head[0] = ih;
-		ih->ih_head[1] = ih;
-	}
-	ifreeh = ip;
-	ifreet = &ip->i_freef;
-	ip->i_freeb = &ifreeh;
-	ip->i_forw = ip;
-	ip->i_back = ip;
-	for (i = ninode; --i > 0; ) {
-		++ip;
-		ip->i_forw = ip;
-		ip->i_back = ip;
-		*ifreet = ip;
-		ip->i_freeb = ifreet;
-		ifreet = &ip->i_freef;
-	}
-	ip->i_freef = NULL;
-}
-
-/*
- * Find an inode if it is incore.
- */
-struct ufs211_inode *
-ifind(dev, ino)
-	register dev_t dev;
-	register ufs211_ino_t ino;
-{
-	register struct ufs211_inode *ip;
-	union ufs211_ihead *ih;
-
-	ih = &ihead[INOHASH(dev, ino)];
-	for (ip = ih->ih_chain[0]; ip != (struct ufs211_inode *)ih; ip = ip->i_forw)
-		if (ino == ip->i_number && dev == ip->i_dev)
-			return(ip);
-	return((struct ufs211_inode *)NULL);
-}
-
 #define	SINGLE				0	/* index of single indirect block */
 #define	DOUBLE				1	/* index of double indirect block */
 #define	TRIPLE				2	/* index of triple indirect block */

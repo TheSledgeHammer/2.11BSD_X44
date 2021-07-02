@@ -36,7 +36,7 @@ struct ufs211_icommon2 {
 };
 
 struct ufs211_inode {
-	struct	ufs211_inode 	*i_chain[2];			/* must be first */
+	LIST_ENTRY(ufs211_inode) i_chain;				/* Hash chain. must be first  */
 	struct	vnode 			*i_vnode;				/* Vnode associated with this inode. */
 	struct	vnode  			*i_devvp;				/* Vnode for block I/O. */
 	u_short					i_flag;
@@ -146,8 +146,8 @@ struct ufs211_dinode {
 #define	i_freeb			i_un3.i_fr.if_freeb
 #define	i_lastr			i_un3.if_lastr
 #define	i_socket		i_un3.is_socket
-#define	i_forw			i_chain[0]
-#define	i_back			i_chain[1]
+//#define	i_forw			i_chain[0]
+//#define	i_back			i_chain[1]
 
 #define	di_flags		i_din.di_flag
 #define	di_blocks		i_din.di_blocks
