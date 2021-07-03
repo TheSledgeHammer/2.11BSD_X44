@@ -35,7 +35,7 @@
 /* __FBSDID("$FreeBSD$"); */
 
 #include <sys/param.h>
-#include <sys/disk.h>
+//#include <sys/disk.h>
 #include <machine/stdarg.h>
 #include <lib/libsa/stand.h>
 
@@ -65,11 +65,11 @@ static struct {
 	u_int		bsize;	/* block size */
 } stor_info[UB_MAX_DEV];
 
-#define	SI(dev)		(stor_info[(dev)->dd.d_unit])
+//#define	SI(dev)		(stor_info[dev)->dd.d_unit])
 
 static int stor_info_no = 0;
-static int stor_opendev(struct disk_devdesc *);
-static int stor_readdev(struct disk_devdesc *, daddr_t, size_t, char *);
+static int stor_opendev(struct uboot_devdesc *);
+static int stor_readdev(struct uboot_devdesc *, daddr_t, size_t, char *);
 
 /* devsw I/F */
 static int stor_init(void);
@@ -91,6 +91,13 @@ struct devsw uboot_storage = {
 	stor_print,
 	stor_cleanup
 };
+
+static struct stor_info
+SI(dev)
+	struct uboot_devdesc *dev;
+{
+	return (stor_info[dev->dd.d_unit]);
+}
 
 static int
 stor_init(void)
@@ -114,10 +121,8 @@ stor_init(void)
 			stor_info[stor_info_no].handle = i;
 			stor_info[stor_info_no].opened = 0;
 			stor_info[stor_info_no].type = di->type;
-			stor_info[stor_info_no].blocks =
-			    di->di_stor.block_count;
-			stor_info[stor_info_no].bsize =
-			    di->di_stor.block_size;
+			stor_info[stor_info_no].blocks = di->di_stor.block_count;
+			stor_info[stor_info_no].bsize = di->di_stor.block_size;
 			stor_info_no++;
 		}
 	}
@@ -144,7 +149,7 @@ stor_cleanup(void)
 static int
 stor_strategy(void *devdata, int rw, daddr_t blk, size_t size, char *buf, size_t *rsize)
 {
-	struct devdesc *dev = (struct disk_devdesc *)devdata;
+	struct uboot_devdesc *dev = (struct uboot_devdesc *)devdata;
 	daddr_t bcount;
 	int err;
 
@@ -164,7 +169,7 @@ stor_strategy(void *devdata, int rw, daddr_t blk, size_t size, char *buf, size_t
 	if (rsize)
 		*rsize = 0;
 
-	err = stor_readdev(dev, blk + dev->d_offset, bcount, buf);
+	err = stor_readdev(dev, blk + dev->d_kind.d_stor.offset, bcount, buf);
 	if (!err && rsize)
 		*rsize = size;
 
@@ -175,10 +180,10 @@ static int
 stor_open(struct open_file *f, ...)
 {
 	va_list ap;
-	struct devdesc *dev;
+	struct uboot_devdesc *dev;
 
 	va_start(ap, f);
-	dev = va_arg(ap, struct devdesc *);
+	dev = va_arg(ap, dev);
 	va_end(ap);
 
 	return (stor_opendev(dev));
@@ -188,6 +193,7 @@ static int
 stor_opendev(struct uboot_devdesc *dev)
 {
 	int err;
+
 	if (dev->dd.d_unit < 0 || dev->dd.d_unit >= stor_info_no)
 		return (EIO);
 
@@ -200,21 +206,20 @@ stor_opendev(struct uboot_devdesc *dev)
 		}
 		SI(dev).opened++;
 	}
-	return (disk_open(dev, SI(dev).blocks * SI(dev).bsize,
-	    SI(dev).bsize));
+	return (disk_open(dev, SI(dev).blocks * SI(dev).bsize, SI(dev).bsize));
 }
 
 static int
 stor_close(struct open_file *f)
 {
-	struct disk_devdesc *dev;
+	struct uboot_devdesc *dev;
 
-	dev = (struct disk_devdesc *)(f->f_devdata);
+	dev = (struct uboot_devdesc *)(f->f_devdata);
 	return (disk_close(dev));
 }
 
 static int
-stor_readdev(struct disk_devdesc *dev, daddr_t blk, size_t size, char *buf)
+stor_readdev(struct uboot_devdesc *dev, daddr_t blk, size_t size, char *buf)
 {
 	lbasize_t real_size;
 	int err;
@@ -238,7 +243,7 @@ stor_readdev(struct disk_devdesc *dev, daddr_t blk, size_t size, char *buf)
 static int
 stor_print(int verbose)
 {
-	struct disk_devdesc dev;
+	struct uboot_devdesc dev;
 	static char line[80];
 	int i, ret = 0;
 
@@ -252,8 +257,8 @@ stor_print(int verbose)
 	for (i = 0; i < stor_info_no; i++) {
 		dev.dd.d_dev = &uboot_storage;
 		dev.dd.d_unit = i;
-		dev.d_slice = D_SLICENONE;
-		dev.d_partition = D_PARTNONE;
+		dev.d_kind.d_stor.slice = D_SLICENONE;
+		dev.d_kind.d_stor.partition = D_PARTNONE;
 		snprintf(line, sizeof(line), "\tdisk%d (%s)\n", i,
 		    ub_stor_type(SI(&dev).type));
 		if ((ret = pager_output(line)) != 0)
@@ -272,10 +277,10 @@ stor_print(int verbose)
 static int
 stor_ioctl(struct open_file *f, u_long cmd, void *data)
 {
-	struct disk_devdesc *dev;
+	struct uboot_devdesc *dev;
 	int rc;
 
-	dev = (struct disk_devdesc *)f->f_devdata;
+	dev = (struct uboot_devdesc *)f->f_devdata;
 	rc = disk_ioctl(dev, cmd, data);
 	if (rc != ENOTTY)
 		return (rc);
@@ -316,3 +321,209 @@ uboot_diskgetunit(int type, int type_unit)
 
 	return (-1);
 }
+
+int
+uboot_ioctl(struct uboot_devdesc *dev, u_long cmd, void *data)
+{
+	struct open_disk *od = dev->dd.d_opendata;
+
+	if (od == NULL)
+		return (ENOTTY);
+
+	switch (cmd) {
+	case DIOCGSECTORSIZE:
+		*(u_int *)data = od->sectorsize;
+		break;
+	case DIOCGMEDIASIZE:
+		if (dev->d_kind.d_stor.offset == 0)
+			*(uint64_t *)data = od->mediasize;
+		else
+			*(uint64_t *)data = od->entrysize * od->sectorsize;
+		break;
+	default:
+		return (ENOTTY);
+	}
+
+	return (0);
+}
+
+int
+disk_open(struct uboot_devdesc *dev, uint64_t mediasize, u_int sectorsize)
+{
+	struct uboot_devdesc partdev;
+	struct open_disk *od;
+	struct ptable *table;
+	struct ptable_entry part;
+	int rc, slice, partition;
+
+	if (sectorsize == 0) {
+		DPRINTF("unknown sector size");
+		return (ENXIO);
+	}
+	rc = 0;
+	od = (struct open_disk *)malloc(sizeof(struct open_disk));
+	if (od == NULL) {
+		DPRINTF("no memory");
+		return (ENOMEM);
+	}
+	dev->dd.d_opendata = od;
+	od->entrysize = 0;
+	od->mediasize = mediasize;
+	od->sectorsize = sectorsize;
+	/*
+	 * While we are reading disk metadata, make sure we do it relative
+	 * to the start of the disk
+	 */
+	memcpy(&partdev, dev, sizeof(partdev));
+	partdev.d_offset = 0;
+	partdev.d_slice = D_SLICENONE;
+	partdev.d_partition = D_PARTNONE;
+
+	dev->d_offset = 0;
+	table = NULL;
+	slice = dev->d_slice;
+	partition = dev->d_partition;
+
+	DPRINTF("%s unit %d, slice %d, partition %d => %p", disk_fmtdev(dev), dev->dd.d_unit, dev->d_slice, dev->d_partition, od);
+
+	/* Determine disk layout. */
+	od->table = ptable_open(&partdev, mediasize / sectorsize, sectorsize, ptblread);
+	if (od->table == NULL) {
+		DPRINTF("Can't read partition table");
+		rc = ENXIO;
+		goto out;
+	}
+
+	if (ptable_getsize(od->table, &mediasize) != 0) {
+		rc = ENXIO;
+		goto out;
+	}
+	od->mediasize = mediasize;
+
+	if (ptable_gettype(od->table) == PTABLE_BSD &&
+	    partition >= 0) {
+		/* It doesn't matter what value has d_slice */
+		rc = ptable_getpart(od->table, &part, partition);
+		if (rc == 0) {
+			dev->d_offset = part.start;
+			od->entrysize = part.end - part.start + 1;
+		}
+	} else if (ptable_gettype(od->table) == PTABLE_ISO9660) {
+		dev->d_offset = 0;
+		od->entrysize = mediasize;
+	} else if (slice >= 0) {
+		/* Try to get information about partition */
+		if (slice == 0)
+			rc = ptable_getbestpart(od->table, &part);
+		else
+			rc = ptable_getpart(od->table, &part, slice);
+		if (rc != 0) /* Partition doesn't exist */
+			goto out;
+		dev->d_offset = part.start;
+		od->entrysize = part.end - part.start + 1;
+		slice = part.index;
+		if (ptable_gettype(od->table) == PTABLE_GPT) {
+			partition = D_PARTISGPT;
+			goto out; /* Nothing more to do */
+		} else if (partition == D_PARTISGPT) {
+			/*
+			 * When we try to open GPT partition, but partition
+			 * table isn't GPT, reset partition value to
+			 * D_PARTWILD and try to autodetect appropriate value.
+			 */
+			partition = D_PARTWILD;
+		}
+
+		/*
+		 * If partition is D_PARTNONE, then disk_open() was called
+		 * to open raw MBR slice.
+		 */
+		if (partition == D_PARTNONE)
+			goto out;
+
+		/*
+		 * If partition is D_PARTWILD and we are looking at a BSD slice,
+		 * then try to read BSD label, otherwise return the
+		 * whole MBR slice.
+		 */
+		if (partition == D_PARTWILD &&
+		    part.type != PART_FREEBSD)
+			goto out;
+		/* Try to read BSD label */
+		table = ptable_open(dev, part.end - part.start + 1, od->sectorsize, ptblread);
+		if (table == NULL) {
+			DPRINTF("Can't read BSD label");
+			rc = ENXIO;
+			goto out;
+		}
+		/*
+		 * If slice contains BSD label and partition < 0, then
+		 * assume the 'a' partition. Otherwise just return the
+		 * whole MBR slice, because it can contain ZFS.
+		 */
+		if (partition < 0) {
+			if (ptable_gettype(table) != PTABLE_BSD)
+				goto out;
+			partition = 0;
+		}
+		rc = ptable_getpart(table, &part, partition);
+		if (rc != 0)
+			goto out;
+		dev->d_offset += part.start;
+		od->entrysize = part.end - part.start + 1;
+	}
+out:
+	if (table != NULL)
+		ptable_close(table);
+
+	if (rc != 0) {
+		if (od->table != NULL)
+			ptable_close(od->table);
+		free(od);
+		DPRINTF("%s could not open", disk_fmtdev(dev));
+	} else {
+		/* Save the slice and partition number to the dev */
+		dev->d_slice = slice;
+		dev->d_partition = partition;
+		DPRINTF("%s offset %lld => %p", disk_fmtdev(dev),
+		    (long long)dev->d_offset, od);
+	}
+	return (rc);
+}
+
+int
+disk_close(struct uboot_devdesc *dev)
+{
+	struct open_disk *od;
+
+	od = (struct open_disk *)dev->dd.d_opendata;
+	DPRINTF("%s closed => %p", disk_fmtdev(dev), od);
+	//ptable_close(od->table);
+	free(od);
+	return (0);
+}
+
+char*
+disk_fmtdev(struct uboot_devdesc *dev)
+{
+	static char buf[128];
+	char *cp;
+
+	cp = buf + sprintf(buf, "%s%d", dev->dd.d_dev->dv_name, dev->dd.d_unit);
+	if (dev->d_slice > D_SLICENONE) {
+#ifdef LOADER_GPT_SUPPORT
+		if (dev->d_partition == D_PARTISGPT) {
+			sprintf(cp, "p%d:", dev->d_slice);
+			return (buf);
+		} else
+#endif
+#ifdef LOADER_MBR_SUPPORT
+			cp += sprintf(cp, "s%d", dev->d_slice);
+#endif
+	}
+	if (dev->d_partition > D_PARTNONE)
+		cp += sprintf(cp, "%c", dev->d_partition + 'a');
+	strcat(cp, ":");
+	return (buf);
+}
+

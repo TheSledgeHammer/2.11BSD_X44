@@ -105,10 +105,8 @@ uboot_loadaddr(u_int type, void *data, uint64_t addr)
 		for (i = 0; i < si->mr_no; i++) {
 			if (si->mr[i].flags != MR_ATTR_DRAM)
 				continue;
-			sblock = roundup2((uint64_t)si->mr[i].start,
-			    KERN_ALIGN);
-			eblock = rounddown2((uint64_t)si->mr[i].start +
-			    si->mr[i].size, KERN_ALIGN);
+			sblock = roundup2((uint64_t)si->mr[i].start, KERN_ALIGN);
+			eblock = rounddown2((uint64_t)si->mr[i].start + si->mr[i].size, KERN_ALIGN);
 			if (biggest_size == 0)
 				sblock += KERN_MINADDR;
 			if (subldr >= sblock && subldr < eblock) {
@@ -159,8 +157,10 @@ uboot_copyout(const vm_offset_t src, void *dest, const size_t len)
 	return (len);
 }
 
+/*
 ssize_t
 uboot_readin(readin_handle_t fd, vm_offset_t dest, const size_t len)
 {
 	return (VECTX_READ(fd, (void *)dest, len));
 }
+*/

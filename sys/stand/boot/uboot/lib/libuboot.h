@@ -27,15 +27,27 @@
  * $FreeBSD$
  */
 
-//#include <disk.h>
+#include <lib/libsa/stand.h>
 //#include <readin.h>
+
+#define	D_SLICENONE		-1
+#define	D_SLICEWILD		 0
+#define	D_PARTNONE		-1
+#define	D_PARTWILD		-2
+#define	D_PARTISGPT		255
 
 struct uboot_devdesc {
 	struct devdesc      dd;
 	union {
-
-		struct disk_devdesc d_disk;
-	};
+		struct {
+			int			unit;
+			int			adaptor;
+			int			controller;
+			int			slice;
+			int			partition;
+			uint64_t	offset;
+		} d_stor;
+	} d_kind;
 };
 
 /*
@@ -64,7 +76,7 @@ extern uintptr_t uboot_heap_end;
 uint64_t 	uboot_loadaddr(u_int type, void *data, uint64_t addr);
 ssize_t		uboot_copyin(const void *src, vm_offset_t dest, const size_t len);
 ssize_t		uboot_copyout(const vm_offset_t src, void *dest, const size_t len);
-ssize_t		uboot_readin(readin_handle_t fd, vm_offset_t dest, const size_t len);
+//ssize_t		uboot_readin(readin_handle_t fd, vm_offset_t dest, const size_t len);
 extern int 	uboot_autoload(void);
 
 struct preloaded_file;

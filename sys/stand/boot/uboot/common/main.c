@@ -206,7 +206,7 @@ device_typename(int type)
 static void
 get_load_device(int *type, int *unit, int *slice, int *partition)
 {
-	struct disk_devdesc dev;
+	struct uboot_devdesc dev;
 	char *devstr;
 	const char *p;
 	char *endp;
@@ -239,8 +239,8 @@ get_load_device(int *type, int *unit, int *slice, int *partition)
 		if (strcspn(p, " .") == len && strcspn(p, ":") >= len - 1 &&
 		    disk_parsedev(&dev, p, NULL) == 0) {
 			*unit = dev.dd.d_unit;
-			*slice = dev.d_slice;
-			*partition = dev.d_partition;
+			*slice = dev.d_kind.d_stor.slice;
+			*partition = dev.d_kind.d_stor.partition;
 			return;
 		}
 	}
@@ -339,20 +339,20 @@ print_disk_probe_info()
 	char slice[32];
 	char partition[32];
 
-	if (currdev.d_disk.d_slice == D_SLICENONE)
+	if (currdev.d_kind.d_stor.slice == D_SLICENONE)
 		strlcpy(slice, "<none>", sizeof(slice));
-	else if (currdev.d_disk.d_slice == D_SLICEWILD)
+	else if (currdev.d_kind.d_stor.slice == D_SLICEWILD)
 		strlcpy(slice, "<auto>", sizeof(slice));
 	else
-		snprintf(slice, sizeof(slice), "%d", currdev.d_disk.d_slice);
+		snprintf(slice, sizeof(slice), "%d", currdev.d_kind.d_stor.slice);
 
-	if (currdev.d_disk.d_partition == D_PARTNONE)
+	if (currdev.d_kind.d_stor.partition == D_PARTNONE)
 		strlcpy(partition, "<none>", sizeof(partition));
-	else if (currdev.d_disk.d_partition == D_PARTWILD)
+	else if (currdev.d_kind.d_stor.partition == D_PARTWILD)
 		strlcpy(partition, "<auto>", sizeof(partition));
 	else
 		snprintf(partition, sizeof(partition), "%d",
-		    currdev.d_disk.d_partition);
+		    currdev.d_kind.d_stor.partition);
 
 	printf("  Checking unit=%d slice=%s partition=%s...",
 	    currdev.dd.d_unit, slice, partition);
@@ -360,14 +360,13 @@ print_disk_probe_info()
 }
 
 static int
-probe_disks(int devidx, int load_type, int load_unit, int load_slice, 
-    int load_partition)
+probe_disks(int devidx, int load_type, int load_unit, int load_slice, int load_partition)
 {
 	int open_result, unit;
 	struct open_file f;
 
-	currdev.d_disk.d_slice = load_slice;
-	currdev.d_disk.d_partition = load_partition;
+	currdev.d_kind.d_stor.slice = load_slice;
+	currdev.d_kind.d_stor.partition = load_partition;
 
 	f.f_devdata = &currdev;
 	open_result = -1;
@@ -535,12 +534,12 @@ do_interact:
 	setenv("usefdt", "1", 1);
 #endif
 
-	archsw.arch_loadaddr = uboot_loadaddr;
-	archsw.arch_getdev = uboot_getdev;
-	archsw.arch_copyin = uboot_copyin;
-	archsw.arch_copyout = uboot_copyout;
-	archsw.arch_readin = uboot_readin;
-	archsw.arch_autoload = uboot_autoload;
+	archsw.arch_loadaddr = 	uboot_loadaddr;
+	archsw.arch_getdev = 	uboot_getdev;
+	archsw.arch_copyin = 	uboot_copyin;
+	archsw.arch_copyout = 	uboot_copyout;
+	//archsw.arch_readin = 	uboot_readin;
+	archsw.arch_autoload = 	uboot_autoload;
 
 	interact();				/* doesn't return */
 

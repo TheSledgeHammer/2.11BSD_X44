@@ -363,8 +363,7 @@ bd_printslice(struct open_disk *od, struct dos_partition *dp, char *prefix,
  * For size calculations, we assume a 512 byte sector size.
  */
 static void
-bd_printbsdslice(struct open_disk *od, daddr_t offset, char *prefix,
-    int verbose)
+bd_printbsdslice(struct open_disk *od, daddr_t offset, char *prefix, int verbose)
 {
     char				line[80];
     char				buf[BIOSDISK_SECSIZE];
@@ -457,9 +456,9 @@ bd_opendisk(struct open_disk **odp, struct i386_devdesc *dev)
     struct dos_partition	*dptr;
     struct disklabel		*lp;
     struct open_disk		*od;
-    int				sector, slice, i;
-    int				error;
-    char			buf[BUFSIZE];
+    int						sector, slice, i;
+    int						error;
+    char					buf[BUFSIZE];
 
     if (dev->d_kind.biosdisk.unit >= nbdinfo) {
     	DEBUG("attempt to open nonexistent disk");
@@ -1043,10 +1042,10 @@ bd_write(struct open_disk *od, daddr_t dblk, int blks, caddr_t dest)
 
 	while (resid > 0) {
 		x = dblk;
-		cyl = x / bpc; /* block # / blocks per cylinder */
-		x %= bpc; /* block offset into cylinder */
-		hd = x / od->od_sec; /* offset / blocks per track */
-		sec = x % od->od_sec; /* offset into track */
+		cyl = x / bpc; 			/* block # / blocks per cylinder */
+		x %= bpc; 				/* block offset into cylinder */
+		hd = x / od->od_sec; 	/* offset / blocks per track */
+		sec = x % od->od_sec; 	/* offset into track */
 
 		/* play it safe and don't cross track boundaries (XXX this is probably unnecessary) */
 		x = min(od->od_sec - sec, resid);

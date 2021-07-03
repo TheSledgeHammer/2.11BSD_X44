@@ -39,8 +39,8 @@
 #include <netinet/ip.h>
 
 #include <lib/libsa/stand.h>
-#include <net.h>
-#include <netif.h>
+#include <lib/libsa/net.h>
+#include <lib/libsa/netif.h>
 
 #include "api_public.h"
 #include "glue.h"

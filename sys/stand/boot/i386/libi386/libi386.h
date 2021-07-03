@@ -34,7 +34,7 @@ struct i386_devdesc {
 	int				d_type;
     union {
 		struct {
-			 int	unit;
+			int		unit;
 			int		adaptor;
 			int		controller;
 			int		slice;

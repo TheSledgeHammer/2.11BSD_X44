@@ -71,6 +71,8 @@ struct bootinfo {
 		u_int32_t				bi_memmap_size;		/* size of EFI memory map */
 		u_int32_t				bi_memdesc_size;	/* sizeof EFI memory desc */
 		u_int32_t				bi_memdesc_version;	/* EFI memory desc version */
+		uint64_t				bi_hcdp;			/* DIG64 HCDP table */
+		//uint64_t				bi_fpswa;			/* FPSWA interface */
 	} bi_efi;
 
 	struct bootinfo_enivronment {/* ENVIRONMENT */

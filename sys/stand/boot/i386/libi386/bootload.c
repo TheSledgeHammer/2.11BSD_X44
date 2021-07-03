@@ -45,22 +45,6 @@
 #include <machine/psl.h>
 #include <machine/specialreg.h>
 
-struct bootinfo boot;
-
-void
-bi_init(void)
-{
-	bi_alloc(&boot);
-}
-
-void
-bi_alloc(bi)
-	struct bootinfo *bi;
-{
-	memset(bi, 0, sizeof(struct bootinfo *));
-	bi->bi_magic = BOOTINFO_MAGIC;
-}
-
 /*
  * Check to see if this CPU supports long mode.
  */

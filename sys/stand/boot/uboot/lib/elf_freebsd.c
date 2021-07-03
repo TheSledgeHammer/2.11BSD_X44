@@ -29,7 +29,7 @@
 /* __FBSDID("$FreeBSD$"); */
 
 #include <sys/param.h>
-#include <sys/linker.h>
+#include <sys/exec_linker.h>
 
 #ifdef __mips__
 #include <sys/proc.h>
@@ -37,7 +37,7 @@
 #endif
 #include <machine/md_var.h>
 #include <machine/metadata.h>
-#include <machine/elf.h>
+#include <machine/elf_machdep.h>
 
 #include <lib/libsa/stand.h>
 

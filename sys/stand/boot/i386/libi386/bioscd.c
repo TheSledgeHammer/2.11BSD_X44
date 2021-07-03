@@ -122,7 +122,7 @@ bc_bios2unit(int biosdev)
 		if (bcinfo[i].bc_unit == biosdev)
 			return(i);
 	}
-	return(-1);
+	return (-1);
 }
 
 int
@@ -130,7 +130,7 @@ bc_unit2bios(int unit)
 {
 	if ((unit >= 0) && (unit < nbcinfo))
 		return(bcinfo[unit].bc_unit);
-	return(-1);
+	return (-1);
 }
 
 /*
@@ -348,7 +348,7 @@ bc_getdev(struct i386_devdesc *dev)
 	unit = 0; /* XXX */
 
 	/* XXX: Assume partition 'a'. */
-	rootdev = MAKEBOOTDEV(major, 0, 0, unit, 0);
+	rootdev = MAKEBOOTDEV2(major, 0, unit, 0);
 	DEBUG("dev is 0x%x\n", rootdev);
 	return (rootdev);
 }
