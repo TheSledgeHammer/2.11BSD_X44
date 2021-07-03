@@ -44,6 +44,7 @@
 #include <lib/libsa/loadfile.h>
 #include <lib/libkern/libkern.h>
 #include <lib/libsa/stand.h>
+#include <uboot/lib/libuboot.h>
 #include "bootstrap.h"
 
 #define	MAXARGS	20			/* maximum number of arguments allowed */
@@ -115,9 +116,9 @@ interact(void)
     /*
      * XXX: Before interacting, we might want to autoboot.
      */
-	cmds_init();
-    dloader_init_cmds();
-
+	cmds_init();	/* comman cmds */
+	dcmds_init();	/* dloader cmds */
+	ubcmds_init();	/* uboot cmds */
 	/*
 	 * Not autobooting, go manual
 	 */

@@ -97,8 +97,8 @@ struct bootinfo {
 	struct bootinfo_netif {		/* NETWORK */
 		char 					bi_ifname[16];
 		int 					bi_bus;
-#define BI_BUS_ISA 0
-#define BI_BUS_PCI 1
+#define BI_BUS_ISA 				0
+#define BI_BUS_PCI 				1
 		union {
 			unsigned int 		iobase; 			/* ISA */
 			unsigned int 		tag; 				/* PCI, BIOS format */
@@ -135,9 +135,9 @@ struct bootinfo {
 };
 
 #ifdef _KERNEL
-extern struct bootinfo 	bootinfo;
-extern int				end;
-extern int 				*esym;
+extern struct bootinfo 			bootinfo;
+extern int						end;
+extern int 						*esym;
 #endif
 
 #endif /* _MACHINE_BOOTINFO_H_ */

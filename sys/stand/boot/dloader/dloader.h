@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  */
 
-void dloader_init_cmds(void);
+void dcmds_init(void);
 int dloader_run(int ac, char **av);
 
 extern char *DirBase;

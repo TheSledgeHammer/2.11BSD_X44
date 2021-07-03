@@ -77,6 +77,8 @@ Of Interest Todo:
 	- i386:
 		- pmbr
 		- pxeldr
+- boot/uboot:
+	- disks: struct disk_devdesc
 
 ## ufs:
 

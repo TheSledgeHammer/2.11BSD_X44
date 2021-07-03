@@ -68,14 +68,12 @@ int command_read(int argc, char *argv[]);
 int command_more(int argc, char *argv[]);
 int command_lsdev(int argc, char *argv[]);
 int command_quit(int argc, char *argv[]);
+int command_reboot(int argc, char *argv[]);
+int command_heap(int argc, char *argv[]);
 
 /*	boot.c		*/
 int command_boot(int argc, char *argv[]);
 int command_autoboot(int argc, char *argv[]);
-
-/* machine main.c */
-int command_reboot(int argc, char *argv[]);
-int command_heap(int argc, char *argv[]);
 
 /*	fileload.c	*/
 int command_load(int argc, char *argv[]);

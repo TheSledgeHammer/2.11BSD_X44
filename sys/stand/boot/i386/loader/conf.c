@@ -43,9 +43,8 @@
 
 /* Exported for libstand */
 struct devsw *devsw[] = {
-    &biosfd,
     &bioscd,
-    &bioshd,
+    &biosdisk,
     NULL
 };
 
@@ -60,6 +59,7 @@ struct fs_ops *file_system[] = {
  * rather than reading the file go first.
  */
 extern struct file_format	i386_aout;
+//extern struct file_format	i386_ecoff;
 extern struct file_format	i386_elf;
 
 struct file_format *file_formats[] = {

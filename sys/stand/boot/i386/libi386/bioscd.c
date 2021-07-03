@@ -97,15 +97,15 @@ static int	bc_close(struct open_file *f);
 static void	bc_print(int verbose);
 
 struct devsw bioscd = {
-	.dv_name = "cd",
-	.dv_type = DEVT_CD,
-	.dv_init = bc_init,
-	.dv_strategy = bc_strategy,
-	.dv_open = bc_open,
-	.dv_close = bc_close,
-	.dv_ioctl = noioctl,
-	.dv_print = bc_print,
-	.dv_cleanup = NULL
+	.dv_name = 		"cd",
+	.dv_type = 		DEVT_CD,
+	.dv_init = 		bc_init,
+	.dv_strategy = 	bc_strategy,
+	.dv_open = 		bc_open,
+	.dv_close = 	bc_close,
+	.dv_ioctl = 	noioctl,
+	.dv_print = 	bc_print,
+	.dv_cleanup = 	NULL
 };
 
 /*

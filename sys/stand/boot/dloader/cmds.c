@@ -46,7 +46,7 @@ static int menu_execute(int);
  * library modules into common during linking.
  */
 void
-dloader_init_cmds(void)
+dcmds_init(void)
 {
 	dcmds_alloc(&dcmds);
 }

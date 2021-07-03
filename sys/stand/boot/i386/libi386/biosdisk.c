@@ -115,15 +115,15 @@ static int 	bd_close(struct open_file *f);
 static int 	bd_print(int verbose);
 
 struct devsw biosdisk = {
-	.dv_name = "disk",
-	.dv_type = DEVT_DISK,
-	.dv_init = bd_init,
-	.dv_strategy = bd_strategy,
-	.dv_open = bd_open,
-	.dv_close = bd_close,
-	.dv_ioctl = noioctl,
-	.dv_print = bd_print,
-	.dv_cleanup = NULL
+	.dv_name = 		"disk",
+	.dv_type = 		DEVT_DISK,
+	.dv_init = 		bd_init,
+	.dv_strategy =	bd_strategy,
+	.dv_open = 		bd_open,
+	.dv_close = 	bd_close,
+	.dv_ioctl = 	noioctl,
+	.dv_print = 	bd_print,
+	.dv_cleanup = 	NULL
 };
 
 static int	bd_opendisk(struct open_disk **odp, struct i386_devdesc *dev);
@@ -366,10 +366,10 @@ static void
 bd_printbsdslice(struct open_disk *od, daddr_t offset, char *prefix,
     int verbose)
 {
-    char		line[80];
-    char		buf[BIOSDISK_SECSIZE];
+    char				line[80];
+    char				buf[BIOSDISK_SECSIZE];
     struct disklabel	*lp;
-    int			i;
+    int					i;
 
     /* read disklabel */
 	if (bd_read(od, offset + LABELSECTOR, 1, buf)) {
@@ -462,14 +462,14 @@ bd_opendisk(struct open_disk **odp, struct i386_devdesc *dev)
     char			buf[BUFSIZE];
 
     if (dev->d_kind.biosdisk.unit >= nbdinfo) {
-	DEBUG("attempt to open nonexistent disk");
-	return(ENXIO);
+    	DEBUG("attempt to open nonexistent disk");
+    	return(ENXIO);
     }
 
     od = (struct open_disk *)malloc(sizeof(struct open_disk));
     if (!od) {
-	DEBUG("no memory");
-	return (ENOMEM);
+    	DEBUG("no memory");
+    	return (ENOMEM);
     }
 
 	/* Look up BIOS unit number, intialise open_disk structure */

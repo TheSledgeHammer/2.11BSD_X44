@@ -32,7 +32,10 @@
 #ifndef _I386_MACHO_MACHDEP_H_
 #define	_I386_MACHO_MACHDEP_H_
 
-#define MACHO_I386_THREAD_STATE	-1
+#define MACHO_I386_THREAD_STATE			-1
+#define MACHO_I386_NEW_THREAD_STATE		1
+#define MACHO_I386_SAVED_ARGV_COUNT		7
+
 struct exec_macho_i386_thread_state {
 	unsigned int	eax;
 	unsigned int	ebx;
@@ -52,7 +55,6 @@ struct exec_macho_i386_thread_state {
 	unsigned int	gs;
 };
 
-#define MACHO_I386_NEW_THREAD_STATE	1
 struct exec_macho_i386_saved_state {
 	unsigned int	gs;
 	unsigned int	fs;
@@ -79,7 +81,7 @@ struct exec_macho_i386_saved_state {
 		unsigned int fs;
 		unsigned int gs;
 	} vm86_segs;
-#define MACHO_I386_SAVED_ARGV_COUNT	7
+
 	unsigned int	argv_status;
 	unsigned int	argv[MACHO_I386_SAVED_ARGV_COUNT];
 };
