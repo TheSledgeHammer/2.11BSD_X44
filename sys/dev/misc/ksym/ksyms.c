@@ -82,6 +82,11 @@ const struct cdevsw ksyms_cdevsw = {
 		.d_close = ksymsclose,
 		.d_read = ksymsread,
 		.d_write = ksymswrite,
+		.d_stop = nullstop,
+		.d_tty = notty,
+		.d_poll = nopoll,
+		.d_mmap = nommap,
+		.d_discard = nodiscard,
 		.d_type = D_OTHER
 };
 
@@ -94,8 +99,9 @@ ksymsattach(int num)
 int
 ksymsopen(dev_t dev, int flag, int mode, struct proc *p)
 {
-	if (minor(dev) != 0 || !ksyms_loaded)
-		return ENXIO;
+	if (minor(dev) != 0 || !ksyms_loaded) {
+		return (ENXIO);
+	}
 
 	/*
 	 * Create a "snapshot" of the kernel symbol table.  Setting
@@ -117,25 +123,8 @@ ksymsopen(dev_t dev, int flag, int mode, struct proc *p)
 int
 ksymsclose(dev_t dev, int flag, int mode, struct proc *p)
 {
-	struct ksyms_symtab *st, *next;
-	bool resize;
+	ksyms_delsymtab();
 
-	/* Discard references to symbol tables. */
-	simple_lock(&ksyms_lock);
-	ksyms_isopen = FALSE;
-	resize = FALSE;
-	for (st = TAILQ_FIRST(&ksyms_symtabs); st != NULL; st = next) {
-		next = TAILQ_NEXT(st, sd_queue);
-		if (st->sd_gone) {
-			TAILQ_REMOVE(&ksyms_symtabs, st, sd_queue);
-			kmem_free(st->sd_nmap, st->sd_nmapsize * sizeof(uint32_t));
-			kmem_free(st, sizeof(*st));
-			resize = TRUE;
-		}
-	}
-	if (resize)
-		ksyms_sizes_calc();
-	simple_unlock(&ksyms_lock);
 	return (0);
 }
 

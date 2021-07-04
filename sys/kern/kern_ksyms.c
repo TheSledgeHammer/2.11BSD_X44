@@ -344,6 +344,32 @@ addsymtab(const char *name, void *symstart, size_t symsize,
 	ksyms_loaded = TRUE;
 }
 
+void
+ksyms_delsymtab()
+{
+	struct ksyms_symtab *st, *next;
+	bool resize;
+
+	/* Discard references to symbol tables. */
+	simple_lock(&ksyms_lock);
+	ksyms_isopen = FALSE;
+	resize = FALSE;
+	for (st = TAILQ_FIRST(&ksyms_symtabs); st != NULL; st = next) {
+		next = TAILQ_NEXT(st, sd_queue);
+		if (st->sd_gone) {
+			TAILQ_REMOVE(&ksyms_symtabs, st, sd_queue);
+			free(st->sd_nmap, M_DEVBUF);
+			free(st->sd_nmapsize * sizeof(uint32_t), M_DEVBUF);
+			free(st, M_DEVBUF);
+			resize = TRUE;
+		}
+	}
+	if (resize) {
+		ksyms_sizes_calc();
+	}
+	simple_unlock(&ksyms_lock);
+}
+
 /*
  * Setup the kernel symbol table stuff.
  */
@@ -364,7 +390,7 @@ ksyms_addsyms_elf(int symsize, void *start, void *end)
 	}
 
 	/* Sanity check */
-	if (ALIGNED_POINTER(start, long) == 0) {
+	if (ALIGNED_POINTER(start, sizeof(long)) == 0) {
 		printf("[ Kernel symbol table has bad start address %p ]\n", start);
 		return;
 	}

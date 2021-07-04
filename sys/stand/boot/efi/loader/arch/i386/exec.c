@@ -25,7 +25,7 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+/* __FBSDID("$FreeBSD$"); */
 
 #include <stand.h>
 #include <machine/elf_machdep.h>
@@ -46,4 +46,5 @@ __v86int()
 void
 __exec(caddr_t addr, ...)
 {
+
 }

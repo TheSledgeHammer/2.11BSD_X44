@@ -70,11 +70,16 @@ Of Interest Todo:
 	- configurable
 		- boot format: FreeBSD Slices & NetBSD Adaptor & Controller
 			- failsafe: Cannot boot if both are true or both are false
-	- efi
+	- efi: For common efi code.
+		- Makfiles:
+			- Adjust makefiles. 
+			- For arch/efi: add boot_efi. To specify support on compilation.
+			and to use the efi ldscript instead of the normal boot.ldscript
 		- loader:
 			- efiserialio.c
+			- missing efi commands
 		- arch:
-			- fix
+			- Place into arch folder
 	- commands: needs work
 	- install: not present
 - boot/arch:

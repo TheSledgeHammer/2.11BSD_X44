@@ -15,16 +15,16 @@ WARNS?=		3
 
 # architecture-specific loader code
 SRCS=	autoload.c \
-	bootinfo.c \
-	conf.c \
-	copy.c \
-	efi_main.c \
-	framebuffer.c \
-	main.c \
-	self_reloc.c \
-	vers.c \
-	gfx_fb.c \
-	8x16.c
+		bootinfo.c \
+		conf.c \
+		copy.c \
+		efi_main.c \
+		framebuffer.c \
+		main.c \
+		self_reloc.c \
+		vers.c \
+		gfx_fb.c \
+		8x16.c
 
 CFLAGS+=	-I${.CURDIR}/../loader
 .if ${MK_LOADER_ZFS} != "no"
