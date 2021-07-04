@@ -71,7 +71,8 @@ efi_get_table(EFI_GUID *tbl)
 	return (NULL);
 }
 
-void exit(EFI_STATUS exit_code)
+void
+exit(EFI_STATUS exit_code)
 {
 
 	BS->FreePages(heap, EFI_SIZE_TO_PAGES(heapsize));
@@ -82,6 +83,8 @@ void
 efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table)
 {
 	static EFI_GUID image_protocol = LOADED_IMAGE_PROTOCOL;
+	static EFI_GUID console_control_protocol = EFI_CONSOLE_CONTROL_PROTOCOL_GUID;
+	EFI_CONSOLE_CONTROL_PROTOCOL *console_control = NULL;
 	EFI_LOADED_IMAGE *img;
 	CHAR16 *argp, *args, **argv;
 	EFI_STATUS status;
@@ -91,6 +94,11 @@ efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table)
 	ST = system_table;
 	BS = ST->BootServices;
 	RS = ST->RuntimeServices;
+
+	status = BS->LocateProtocol(&console_control_protocol, NULL, (VOID**) &console_control);
+	if (status == EFI_SUCCESS) {
+		(void) console_control->SetMode(console_control, EfiConsoleControlScreenText);
+	}
 
 	heapsize = 512 * 1024;
 	status = BS->AllocatePages(AllocateAnyPages, EfiLoaderData,

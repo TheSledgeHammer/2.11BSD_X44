@@ -30,13 +30,16 @@ Revision History
 #define EFI_FIRMWARE_VENDOR         L"INTEL"
 #define EFI_FIRMWARE_MAJOR_REVISION 12
 #define EFI_FIRMWARE_MINOR_REVISION 33
-#define EFI_FIRMWARE_REVISION ((EFI_FIRMWARE_MAJOR_REVISION <<16) | (EFI_FIRMWARE_MINOR_REVISION))
+#define EFI_FIRMWARE_REVISION 		((EFI_FIRMWARE_MAJOR_REVISION <<16) | (EFI_FIRMWARE_MINOR_REVISION))
+
+#define	EFIAPI	__attribute__((ms_abi))
 
 #include "efibind.h"
 #include "efidef.h"
 #include "efidevp.h"
 #include "efiprot.h"
 #include "eficon.h"
+#include "eficonsctl.h"
 #include "efiser.h"
 #include "efi_nii.h"
 #include "efipxebc.h"

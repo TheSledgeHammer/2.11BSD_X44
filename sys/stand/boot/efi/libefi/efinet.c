@@ -25,7 +25,7 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+/* __FBSDID("$FreeBSD$"); */
 
 #include <sys/param.h>
 #include <netinet/in.h>
@@ -37,6 +37,18 @@ __FBSDID("$FreeBSD$");
 
 #include <efi.h>
 #include <efilib.h>
+
+struct netif_driver efi_net = {
+		"net",			/* netif_bname */
+		efinet_match,	/* netif_match */
+		efinet_probe,	/* netif_probe */
+		efinet_init,	/* netif_init */
+		efinet_get,		/* netif_get */
+		efinet_put,		/* netif_put */
+		efinet_end,		/* netif_end */
+		0,				/* netif_ifs */
+		0				/* netif_nifs */
+};
 
 extern struct netif_driver efi_net;
 
@@ -115,7 +127,6 @@ efinet_put(struct iodesc *desc, void *pkt, size_t len)
 	/* XXX How do we deal with status != EFI_SUCCESS now? */
 	return (status == EFI_SUCCESS) ? len : -1;
 }
-
 
 int
 efinet_get(struct iodesc *desc, void *pkt, size_t len, time_t timeout)
@@ -253,16 +264,3 @@ efinet_end(struct netif *nif)
 
 	net->Shutdown(net);
 }
-
-struct netif_driver efi_net = {
-	"net",			/* netif_bname */
-	efinet_match,		/* netif_match */
-	efinet_probe,		/* netif_probe */
-	efinet_init,		/* netif_init */
-	efinet_get,		/* netif_get */
-	efinet_put,		/* netif_put */
-	efinet_end,		/* netif_end */
-	0,			/* netif_ifs */
-	0			/* netif_nifs */
-};
-

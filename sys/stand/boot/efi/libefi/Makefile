@@ -5,8 +5,8 @@
 LIB=	efi
 INTERNALLIB=
 
-SRCS=	bootinfo.c copy.c delay.c devicename.c efi_console.c efifs.c efinet.c \
-		libefi.c module.c time.c
+SRCS=	autoload.c bootinfo.c copy.c delay.c devicename.c efi_console.c efifs.c \
+		efinet.c libefi.c time.c
 
 CFLAGS+= -I${.CURDIR}/../include
 CFLAGS+= -I${.CURDIR}/../include/${MACHINE_ARCH}

@@ -528,6 +528,14 @@ EFI_STATUS
     VOID
     );
 
+typedef
+EFI_STATUS
+(EFIAPI *EFI_LOCATE_PROTOCOL) (
+	EFI_GUID  					*Protocol,
+    VOID      					*Registration, OPTIONAL
+    VOID      					**Interface
+  );
+
 /*
  * Standard EFI table header
  */
@@ -635,6 +643,11 @@ typedef struct _EFI_BOOT_SERVICES {
     EFI_GET_NEXT_MONOTONIC_COUNT    GetNextMonotonicCount;
     EFI_STALL                       Stall;
     EFI_SET_WATCHDOG_TIMER          SetWatchdogTimer;
+
+
+    /* Library Services to reduce size of drivers */
+
+    EFI_LOCATE_PROTOCOL             LocateProtocol;
 
 } EFI_BOOT_SERVICES;
 

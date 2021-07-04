@@ -36,6 +36,28 @@
 #include <efilib.h>
 #include "efiboot.h"
 
+struct fs_ops efi_fsops = {
+		"fs",
+		efifs_open,
+		efifs_close,
+		efifs_read,
+		efifs_write,
+		efifs_seek,
+		efifs_stat,
+		efifs_readdir
+};
+
+struct devsw efifs_dev = {
+		"fs",
+		DEVT_DISK,
+		efifs_dev_init,
+		efifs_dev_strategy,
+		efifs_dev_open,
+		efifs_dev_close,
+		noioctl,
+		efifs_dev_print
+};
+
 /* Perform I/O in blocks of size EFI_BLOCK_SIZE. */
 #define	EFI_BLOCK_SIZE	(1024 * 1024)
 
@@ -279,17 +301,6 @@ efifs_readdir(struct open_file *f, struct dirent *d)
 	return 0;
 }
 
-struct fs_ops efi_fsops = {
-	"fs",
-	efifs_open,
-	efifs_close,
-	efifs_read,
-	efifs_write,
-	efifs_seek,
-	efifs_stat,
-	efifs_readdir
-};
-
 static EFI_HANDLE *fs_handles;
 UINTN fs_handle_count;
 
@@ -388,14 +399,3 @@ efifs_dev_strategy(void *devdata, int rw, daddr_t dblk, size_t size, char *buf, 
 {
 	return 0;
 }
-
-struct devsw efifs_dev = {
-	"fs", 
-	DEVT_DISK, 
-	efifs_dev_init,
-	efifs_dev_strategy, 
-	efifs_dev_open, 
-	efifs_dev_close, 
-	noioctl,
-	efifs_dev_print
-};

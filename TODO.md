@@ -71,11 +71,14 @@ Of Interest Todo:
 		- boot format: FreeBSD Slices & NetBSD Adaptor & Controller
 			- failsafe: Cannot boot if both are true or both are false
 	- efi
+		- loader:
+			- efiserialio.c
+		- arch:
+			- fix
 	- commands: needs work
 	- install: not present
 - boot/arch:
 	- i386:
-		- pmbr
 		- pxeldr
 - boot/uboot:
 	- disks: struct disk_devdesc

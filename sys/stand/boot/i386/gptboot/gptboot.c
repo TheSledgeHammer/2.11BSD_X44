@@ -131,9 +131,9 @@ static struct dsk {
 
 static struct bootinfo 		bootinfo;
 static struct boot2_dmadat 	*dmadat;
-static char cmd[512], cmddup[512];
-static char kname[1024];
-static uint32_t opts;
+static char 				cmd[512], cmddup[512];
+static char 				kname[1024];
+static uint32_t 			opts;
 static int comspeed = SIOSPD;
 static uint8_t ioctrl = IO_KEYBOARD;
 
