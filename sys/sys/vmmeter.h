@@ -57,9 +57,9 @@ struct vmrate {
 	unsigned 	v_free_min;					/* minimum number of pages desired free */
 	unsigned 	v_free_count;				/* number of pages free */
 	unsigned 	v_wire_count;				/* number of pages wired down */
-	unsigned 	v_active_count;				/* number of pages active */
+	unsigned 	v_page_active_count;		/* number of pages active */
 	unsigned 	v_inactive_target; 			/* number of pages desired inactive */
-	unsigned 	v_inactive_count;  			/* number of pages inactive */
+	unsigned 	v_page_inactive_count;  	/* number of pages inactive */
 
 	/* Distribution of segment usages */
 //	unsigned 	v_segment_size;				/* segment size in bytes */

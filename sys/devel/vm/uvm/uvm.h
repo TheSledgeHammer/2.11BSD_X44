@@ -39,21 +39,6 @@
 
 #include <devel/vm/include/vm.h>
 
-/* XXX: Temporary
- * uvm structure (vm global state: collected in one structure for ease
- * of reference...)
- * TODO: place missing in relevant structures
- */
-struct uvm {
-	/* swap-related items */
-	simple_lock_data_t 			swap_data_lock;
-};
-extern struct uvm uvm;
-
-/* vm_pager.h */
-#define PG_SEGMENT				3
-#define PG_AOBJECT				4
-
 #define PGO_ALLPAGES			0x010	/* flush whole object/get all pages */
 #define PGO_CLEANIT				0x001	/* write dirty pages to backing store */
 #define PGO_SYNCIO				0x002	/* if PGO_CLEAN: use sync I/O? */

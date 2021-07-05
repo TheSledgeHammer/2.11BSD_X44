@@ -85,6 +85,8 @@ static struct vndbuf 			*vndbuf_pool;
  * local variables
  */
 static struct extent 			*swapextent;		/* controls the mapping of /dev/drum */
+SIMPLEQ_HEAD(swapbufhead, swapbuf);
+static struct swapbuf 			*swapbuf_pool;
 
 /* list of all active swap devices [by priority] */
 LIST_HEAD(swap_priority, swappri);
@@ -105,7 +107,8 @@ swapdrum_init(swp)
 	 * the its dev_t number ("swapdev", from MD conf.c).
 	 */
 	LIST_INIT(&swap_priority);
-	cnt.nswapdev = 0;
+	cnt.v_nswapdev = 0;
+	simple_lock_init(&swap_data_lock);
 
 	if (bdevvp(swapdev, &swapdev_vp)) {
 		panic("vm_swap_init: can't get vnode for swap device");
@@ -121,7 +124,7 @@ swapdrum_init(swp)
 	if (swapextent == 0) {
 		panic("swapinit: extent_create failed");
 	}
-
+	&swapbuf_pool = (struct swapbuf)rmalloc(&swapmap, sizeof(struct swapbuf));
 	&vndxfer_pool = (struct vndxfer)rmalloc(&swapmap, sizeof(struct vndxfer));
 	&vndbuf_pool = (struct vndbuf)rmalloc(&swapmap, sizeof(struct vndbuf));
 }
@@ -176,7 +179,7 @@ swaplist_insert(sdp, newspp, priority)
 	}
 	sdp->swd_priority = priority;
 	CIRCLEQ_INSERT_TAIL(&spp->spi_swapdev, sdp, swd_next);
-	cnt.nswapdev++;
+	cnt.v_nswapdev++;
 }
 
 /*
@@ -204,7 +207,7 @@ swaplist_find(vp, remove)
 			}
 			if (remove) {
 				CIRCLEQ_REMOVE(&spp->spi_swapdev, sdp, swd_next);
-				cnt.nswapdev--;
+				cnt.v_nswapdev--;
 			}
 			return (sdp);
 		}
@@ -287,6 +290,7 @@ swapdrum_on(p, sp)
 	struct vnode *vp;
 	int error, npages, nblks, size;
 	long addr;
+	u_long result;
 #ifdef SWAP_TO_FILES
 	struct vattr va;
 #endif
@@ -398,8 +402,10 @@ swapdrum_on(p, sp)
 			panic("disklabel region");
 		}
 		sdp->swd_npginuse += addr;
-		cnt.swpginuse += addr;
-		cnt.swpgonly += addr;
+		simple_lock(&swap_data_lock);
+		cnt.v_swpginuse += addr;
+		cnt.v_swpgonly += addr;
+		simple_unlock(&swap_data_lock);
 	}
 
 	/* check if vp == rootvp via swap_miniroot */
@@ -409,14 +415,35 @@ swapdrum_on(p, sp)
 	}
 
 	/*
+	 * add a ref to vp to reflect usage as a swap device.
+	 */
+	vref(vp);
+
+	/*
 	 * now add the new swapdev to the drum and enable.
 	 */
+	simple_lock(&swap_data_lock);
+	swapdrum_add(sdp, npages);
 	sdp->swd_npages = npages;
 	sp->sw_flags &= ~SW_FAKE;	/* going live */
 	sp->sw_flags |= (SW_INUSE|SW_ENABLE);
-	cnt.swpages += npages;
+	simple_unlock(&swap_data_lock);
+	cnt.v_swpages += npages;
+	/*
+	 * add anon's to reflect the swap space we added
+	 */
+	vm_anon_add(size);
 
 	return (0);
+
+bad:
+	if (sdp->swd_ex) {
+		extent_destroy(sdp->swd_ex);
+	}
+	if (vp != rootvp) {
+		(void)VOP_CLOSE(vp, FREAD|FWRITE, p->p_ucred, p);
+	}
+	return (error);
 }
 
 int
@@ -429,6 +456,12 @@ swapdrum_off(p, sp)
 
 	sdp = sp->sw_swapdev;
 
+	/* turn off the enable flag */
+	sp->sw_flags &= ~SW_ENABLE;
+
+	/*
+	 * free all resources!
+	 */
 	extent_free(swapextent, sdp->swd_drumoffset, sdp->swd_drumsize, EX_WAITOK);
 	name = sdp->swd_ex->ex_name;
 	extent_destroy(sdp->swd_ex);
@@ -436,6 +469,9 @@ swapdrum_off(p, sp)
 	rmfree(&swapmap, sizeof(sdp->swd_ex), (caddr_t)sdp->swd_ex);
 	if(sp->sw_vp != rootvp) {
 		(void) VOP_CLOSE(sp->sw_vp, FREAD|FWRITE, p->p_ucred, p);
+	}
+	if(sp->sw_vp) {
+		vrele(sp->sw_vp);
 	}
 	rmfree(&swapmap, sizeof(sdp), (caddr_t)sdp);
 	return (0);
@@ -470,9 +506,11 @@ swap_miniroot(p, sp, sdp, vp, npages)
 		if (extent_alloc_region(sdp->swd_ex, addr, rootpages, EX_WAITOK)) {
 			panic("swap_on: unable to preserve miniroot");
 		}
+		simple_lock(&swap_data_lock);
 		sdp->swd_npginuse += (rootpages - addr);
-		cnt.swpginuse += (rootpages - addr);
-		cnt.swpgonly += (rootpages - addr);
+		cnt.v_swpginuse += (rootpages - addr);
+		cnt.v_swpgonly += (rootpages - addr);
+		simple_unlock(&swap_data_lock);
 	}
 	if (vp != rootvp) {
 		(void) VOP_CLOSE(vp, FREAD|FWRITE, p->p_ucred, p);

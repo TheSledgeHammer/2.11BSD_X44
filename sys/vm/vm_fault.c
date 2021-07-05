@@ -271,14 +271,14 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 			if (m->flags & PG_INACTIVE) {
 				TAILQ_REMOVE(&vm_page_queue_inactive, m, pageq);
 				m->flags &= ~PG_INACTIVE;
-				cnt.v_inactive_count--;
+				cnt.v_page_inactive_count--;
 				cnt.v_reactivated++;
 			} 
 
 			if (m->flags & PG_ACTIVE) {
 				TAILQ_REMOVE(&vm_page_queue_active, m, pageq);
 				m->flags &= ~PG_ACTIVE;
-				cnt.v_active_count--;
+				cnt.v_page_active_count--;
 			}
 			vm_page_unlock_queues();
 
@@ -1033,5 +1033,4 @@ vm_fault_copy_entry(dst_map, src_map, dst_entry, src_entry)
 		PAGE_WAKEUP(dst_m);
 		vm_object_unlock(dst_object);
 	}
-
 }

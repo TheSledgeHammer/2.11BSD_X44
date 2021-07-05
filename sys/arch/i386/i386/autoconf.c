@@ -62,6 +62,34 @@
 #include <dev/core/isa/isavar.h>
 
 /*
+ * Generic configuration;  all in one
+ */
+dev_t	rootdev = makedev(0,0);
+dev_t	dumpdev = makedev(0,1);
+int		nswap;
+
+struct swdevt swdevt[] = {
+		{ 1, 0,	0 },
+		{ NODEV, 1,	0 },
+};
+long dumplo;
+int	dmmin, dmmax, dmtext;
+
+#define	DOSWAP				/* change swdevt and dumpdev */
+u_long	bootdev = 0;		/* should be dev_t, but not until 32 bits */
+
+static	char devname[][2] = {
+	'w','d',	/* 0 = wd */
+	's','w',	/* 1 = sw */
+	'f','d',	/* 2 = fd */
+	'w','t',	/* 3 = wt */
+	'x','d',	/* 4 = xd */
+};
+
+#define	PARTITIONMASK	0x7
+#define	PARTITIONSHIFT	3
+
+/*
  * The following several variables are related to
  * the configuration process, and are used in initializing
  * the machine.
@@ -116,6 +144,7 @@ md_device_init(devsw)
 /*
  * Configure swap space and related parameters.
  */
+void
 swapconf()
 {
 	register struct swdevt *swp;
@@ -134,27 +163,13 @@ swapconf()
 		}
 	}
 	if (dumplo == 0 && bdevsw[major(dumpdev)].d_psize) {
-	/*dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - physmem;*/
 		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - (Maxmem * NBPG/512);
+		/*dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - physmem;*/
 	}
 	if (dumplo < 0) {
 		dumplo = 0;
 	}
 }
-
-#define	DOSWAP				/* change swdevt and dumpdev */
-u_long	bootdev = 0;		/* should be dev_t, but not until 32 bits */
-
-static	char devname[][2] = {
-	'w','d',	/* 0 = wd */
-	's','w',	/* 1 = sw */
-	'f','d',	/* 2 = fd */
-	'w','t',	/* 3 = wt */
-	'x','d',	/* 4 = xd */
-};
-
-#define	PARTITIONMASK	0x7
-#define	PARTITIONSHIFT	3
 
 /*
  * Attempt to find the device from which we were booted.
@@ -181,6 +196,7 @@ setroot()
 	mindev = (unit << PARTITIONSHIFT) + part;
 	orootdev = rootdev;
 	rootdev = makedev(majdev, mindev);
+
 	/*
 	 * If the original rootdev is the same as the one
 	 * just calculated, don't need to adjust the swap configuration.
@@ -191,8 +207,7 @@ setroot()
 #ifdef DOSWAP
 	mindev &= ~PARTITIONMASK;
 	for (swp = swdevt; swp->sw_dev != NODEV; swp++) {
-		if (majdev == major(swp->sw_dev)
-				&& mindev == (minor(swp->sw_dev) & ~PARTITIONMASK)) {
+		if (majdev == major(swp->sw_dev) && mindev == (minor(swp->sw_dev) & ~PARTITIONMASK)) {
 			temp = swdevt[0].sw_dev;
 			swdevt[0].sw_dev = swp->sw_dev;
 			swp->sw_dev = temp;

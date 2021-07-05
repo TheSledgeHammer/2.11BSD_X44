@@ -462,12 +462,12 @@ vm_object_page_clean(object, start, end, syncio, de_queue)
 				if (page->flags & PG_ACTIVE) {
 					TAILQ_REMOVE(&vm_page_queue_active, page, pageq);
 					page->flags &= ~PG_ACTIVE;
-					cnt.v_active_count--;
+					cnt.v_page_active_count--;
 					onqueue = 1;
 				} else if (page->flags & PG_INACTIVE) {
 					TAILQ_REMOVE(&vm_page_queue_inactive, page, pageq);
 					page->flags &= ~PG_INACTIVE;
-					cnt.v_inactive_count--;
+					cnt.v_page_inactive_count--;
 					onqueue = -1;
 				} else
 					onqueue = 0;

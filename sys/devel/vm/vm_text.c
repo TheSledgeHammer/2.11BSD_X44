@@ -19,15 +19,12 @@ struct vm_xstats 	*xstats;			/* cache statistics */
 int					xcache;				/* number of "sticky" texts retained */
 
 /*
- * initialize text table (from vm_segment.c)
+ * initialize text table
  */
 void
-vm_text_init(pseg, size, flags)
-	vm_psegment_t 	*pseg;
-    u_long			size;
-    int 			flags;
+vm_text_init(xp)
+	vm_text_t 		xp;
 {
-    register vm_text_t xp;
     int ntexts;
 
     simple_lock_init(&vm_text_list_lock, "vm_text_list_lock");
@@ -172,7 +169,7 @@ vm_xexpand(p, xp)
 		xp->x_ccount++;
 		return;
 	}
-	swapout(p, X_FREECORE, X_OLDSIZE, X_OLDSIZE);
+	swapout_seg(p, X_FREECORE, X_OLDSIZE, X_OLDSIZE);
 	xunlock(&vm_text_list_lock);
 	p->p_flag |= SSWAP;
 	swtch();

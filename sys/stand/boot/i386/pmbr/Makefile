@@ -4,7 +4,7 @@ PROG=	pmbr
 STRIP=
 BINMODE=${NOBINMODE}
 NO_MAN=
-SRCS=	${PROG}.s
+SRCS=	${PROG}.S
 
 ORG=	0x600
 

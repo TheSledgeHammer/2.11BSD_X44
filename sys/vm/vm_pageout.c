@@ -219,7 +219,7 @@ vm_pageout_scan()
 	 *	to inactive.
 	 */
 
-	page_shortage = cnt.v_inactive_target - cnt.v_inactive_count;
+	page_shortage = cnt.v_inactive_target - cnt.v_page_inactive_count;
 	if (page_shortage <= 0 && pages_freed == 0)
 		page_shortage = 1;
 
@@ -552,7 +552,7 @@ vm_pageout()
 		 * inactive list to better simulate LRU behavior.
 		 */
 		cnt.v_inactive_target =
-			(cnt.v_active_count + cnt.v_inactive_count) / 3;
+			(cnt.v_page_active_count + cnt.v_page_inactive_count) / 3;
 		if (cnt.v_inactive_target <= cnt.v_free_target)
 			cnt.v_inactive_target = cnt.v_free_target + 1;
 
@@ -562,7 +562,7 @@ vm_pageout()
 		 * to clean up async pageouts.
 		 */
 		if (cnt.v_free_count < cnt.v_free_target ||
-		    cnt.v_inactive_count < cnt.v_inactive_target)
+		    cnt.v_page_inactive_count < cnt.v_inactive_target)
 			vm_pageout_scan();
 		vm_pager_sync();
 		simple_lock(&vm_pages_needed_lock);

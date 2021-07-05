@@ -512,7 +512,7 @@ vm_page_alloc(object, offset)
 
 	if (cnt.v_free_count < cnt.v_free_min ||
 	    (cnt.v_free_count < cnt.v_free_target &&
-	     cnt.v_inactive_count < cnt.v_inactive_target))
+	     cnt.v_page_inactive_count < cnt.v_inactive_target))
 		thread_wakeup(&vm_pages_needed);
 	return (mem);
 }
@@ -533,13 +533,13 @@ vm_page_free(mem)
 	if (mem->flags & PG_ACTIVE) {
 		TAILQ_REMOVE(&vm_page_queue_active, mem, pageq);
 		mem->flags &= ~PG_ACTIVE;
-		cnt.v_active_count--;
+		cnt.v_page_active_count--;
 	}
 
 	if (mem->flags & PG_INACTIVE) {
 		TAILQ_REMOVE(&vm_page_queue_inactive, mem, pageq);
 		mem->flags &= ~PG_INACTIVE;
-		cnt.v_inactive_count--;
+		cnt.v_page_inactive_count--;
 	}
 
 	if (!(mem->flags & PG_FICTITIOUS)) {
@@ -573,12 +573,12 @@ vm_page_wire(mem)
 	if (mem->wire_count == 0) {
 		if (mem->flags & PG_ACTIVE) {
 			TAILQ_REMOVE(&vm_page_queue_active, mem, pageq);
-			cnt.v_active_count--;
+			cnt.v_page_active_count--;
 			mem->flags &= ~PG_ACTIVE;
 		}
 		if (mem->flags & PG_INACTIVE) {
 			TAILQ_REMOVE(&vm_page_queue_inactive, mem, pageq);
-			cnt.v_inactive_count--;
+			cnt.v_page_inactive_count--;
 			mem->flags &= ~PG_INACTIVE;
 		}
 		cnt.v_wire_count++;
@@ -603,7 +603,7 @@ vm_page_unwire(mem)
 	mem->wire_count--;
 	if (mem->wire_count == 0) {
 		TAILQ_INSERT_TAIL(&vm_page_queue_active, mem, pageq);
-		cnt.v_active_count++;
+		cnt.v_page_active_count++;
 		mem->flags |= PG_ACTIVE;
 		cnt.v_wire_count--;
 	}
@@ -635,8 +635,8 @@ vm_page_deactivate(m)
 		TAILQ_INSERT_TAIL(&vm_page_queue_inactive, m, pageq);
 		m->flags &= ~PG_ACTIVE;
 		m->flags |= PG_INACTIVE;
-		cnt.v_active_count--;
-		cnt.v_inactive_count++;
+		cnt.v_page_active_count--;
+		cnt.v_page_inactive_count++;
 		if (pmap_is_modified(VM_PAGE_TO_PHYS(m)))
 			m->flags &= ~PG_CLEAN;
 		if (m->flags & PG_CLEAN)
@@ -662,7 +662,7 @@ vm_page_activate(m)
 
 	if (m->flags & PG_INACTIVE) {
 		TAILQ_REMOVE(&vm_page_queue_inactive, m, pageq);
-		cnt.v_inactive_count--;
+		cnt.v_page_inactive_count--;
 		m->flags &= ~PG_INACTIVE;
 	}
 	if (m->wire_count == 0) {
@@ -671,7 +671,7 @@ vm_page_activate(m)
 
 		TAILQ_INSERT_TAIL(&vm_page_queue_active, m, pageq);
 		m->flags |= PG_ACTIVE;
-		cnt.v_active_count++;
+		cnt.v_page_active_count++;
 	}
 }
 

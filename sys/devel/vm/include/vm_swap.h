@@ -78,12 +78,13 @@ struct swapdev {
 	struct extent						*swd_ex;		/* extent for this swapdev */
 	char								swd_exname[12];	/* name of extent above */
 	CIRCLEQ_ENTRY(swapdev)				swd_next;		/* priority circleq */
-
+//#ifdef SWAP_TO_FILES
 	int									swd_bsize;		/* blocksize (bytes) */
 	int									swd_maxactive;	/* max active i/o reqs */
 	int									swd_active;		/* # of active i/o reqs */
-	struct bufq							swd_bufq;
+	struct buf							swd_tab;		/* buffer list */
 	struct ucred						*swd_cred;		/* cred for file access */
+//#endif
 };
 
 /*
@@ -93,6 +94,14 @@ struct swappri {
 	int									spi_priority;   /* priority */
 	CIRCLEQ_HEAD(spi_swapdev, swapdev)	spi_swapdev; 	/* tailq of swapdevs at this priority */
 	LIST_ENTRY(swappri)					spi_swappri;    /* global list of pri's */
+};
+
+/*
+ * swapbuf, swapbuffer plus async i/o info
+ */
+struct swapbuf {
+	struct buf 							sw_buf;			/* a buffer structure */
+	SIMPLEQ_ENTRY(swapbuf) 				sw_sq;			/* free list pointer */
 };
 
 /*
@@ -118,14 +127,15 @@ struct vndbuf {
 
 struct vm_page;
 
-#define	SW_FREED		0x01
-#define	SW_SEQUENTIAL	0x02
-#define SW_INUSE		0x04		/* in use: we have swapped here */
-#define SW_ENABLE		0x08		/* enabled: we can swap here */
-#define SW_BUSY			0x10		/* busy: I/O happening here */
-#define SW_FAKE			0x20		/* fake: still being built */
-#define sw_freed		sw_flags	/* XXX compat */
+#define	SW_FREED			0x01
+#define	SW_SEQUENTIAL		0x02
+#define SW_INUSE			0x04		/* in use: we have swapped here */
+#define SW_ENABLE			0x08		/* enabled: we can swap here */
+#define SW_BUSY				0x10		/* busy: I/O happening here */
+#define SW_FAKE				0x20		/* fake: still being built */
+#define sw_freed			sw_flags	/* XXX compat */
 
-extern struct swdevt1 	swdevt[];
+simple_lock_data_t 			swap_data_lock;
+extern struct swdevt1 		swdevt[];
 
 #endif /* _VM_SWAP_H_ */

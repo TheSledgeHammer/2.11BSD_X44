@@ -654,6 +654,8 @@ vm_map_insert(map, object, offset, start, end)
 	register vm_map_entry_t		prev_entry;
 	vm_map_entry_t				temp_entry;
 
+	vm_tree_sanity(map, "map insert");
+
 	/*
 	 *	Check that the start and end points are not bogus.
 	 */
@@ -1121,6 +1123,8 @@ _vm_map_clip_start(map, entry, start)
 	 	vm_map_reference(new_entry->object.share_map);
 	else
 		vm_object_reference(new_entry->object.vm_object);
+
+	vm_tree_sanity(map, "clip_start leave");
 }
 
 /*
@@ -1176,6 +1180,8 @@ _vm_map_clip_end(map, entry, end)
 	 	vm_map_reference(new_entry->object.share_map);
 	else
 		vm_object_reference(new_entry->object.vm_object);
+
+	vm_tree_sanity(map, "clip_end leave");
 }
 
 /*

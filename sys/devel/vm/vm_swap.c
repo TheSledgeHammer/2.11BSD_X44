@@ -50,16 +50,6 @@
 #define swdevt_find_by_index(member, val)	 	(&swdevt[member].sw_ ## val)
 #define swdevt_find_by_dev(dev, member)			(swdevt_find_by_index(dev, member))
 
-const struct swdevsw swap_swdevsw = {
-		.s_allocate = swallocate,
-		.s_free = swfree,
-		.s_create = swcreate,
-		.s_destroy = swdestroy,
-		.s_read = swread,
-		.s_write = swwrite,
-		.s_strategy = swstrategy
-};
-
 int	nswap, nswdev;
 #ifdef SEQSWAP
 int	niswdev;		/* number of interleaved swap devices */

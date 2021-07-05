@@ -438,13 +438,13 @@ again:
 					TAILQ_REMOVE(&vm_page_queue_active,
 						     p, pageq);
 					p->flags &= ~PG_ACTIVE;
-					cnt.v_active_count--;
+					cnt.v_page_active_count--;
 					onqueue = 1;
 				} else if (p->flags & PG_INACTIVE) {
 					TAILQ_REMOVE(&vm_page_queue_inactive,
 						     p, pageq);
 					p->flags &= ~PG_INACTIVE;
-					cnt.v_inactive_count--;
+					cnt.v_page_inactive_count--;
 					onqueue = -1;
 				} else
 					onqueue = 0;
