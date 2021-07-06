@@ -118,7 +118,7 @@ interact(void)
      */
 	cmds_init();	/* comman cmds */
 	dcmds_init();	/* dloader cmds */
-	ubcmds_init();	/* uboot cmds */
+
 	/*
 	 * Not autobooting, go manual
 	 */

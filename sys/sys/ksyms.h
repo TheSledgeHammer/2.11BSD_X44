@@ -104,7 +104,7 @@ static void ksyms_sizes_calc(void);
  * Prototypes
  */
 int 	ksyms_addsymtab(const char *, void *, size_t, char *, size_t);
-void 	ksyms_delsymtab();
+void 	ksyms_delsymtab(void);
 void 	ksyms_init(void);
 void 	ksyms_addsyms_elf(int, void *, void *);
 void 	ksyms_addsyms_explicit(void *, void *, size_t, void *, size_t);

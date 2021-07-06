@@ -60,8 +60,6 @@
  * Kernel loader for ELF objects.
  */
 
-
-
 #include <sys/cdefs.h>
 
 #include <sys/param.h>
@@ -164,6 +162,29 @@ kobj_findbase(kobj_t ko, int sec)
 	return 0;
 }
 
+void
+kobj_self_reloc(ko)
+	kobj_t ko;
+{
+	int error;
+
+	error = kobj_relocate(ko, FALSE);
+	if (error != 0) {
+		error = kobj_relocate(ko, TRUE);
+		if (error != 0) {
+			kobj_error(ko, "self relocation error");
+		} else {
+			goto pass;
+		}
+	} else {
+		goto pass;
+	}
+
+pass:
+	printf("self relocation successful: %s", ko->ko_name);
+	printf("\n");
+}
+
 /*
  * kobj_relocate:
  *
@@ -205,7 +226,7 @@ kobj_relocate(kobj_t ko, bool local)
 			}
 			error = kobj_reloc(ko, base, rel, false, local);
 			if (error != 0) {
-				return ENOENT;
+				return (ENOENT);
 			}
 		}
 	}
@@ -234,12 +255,12 @@ kobj_relocate(kobj_t ko, bool local)
 			}
 			error = kobj_reloc(ko, base, rela, TRUE, local);
 			if (error != 0) {
-				return ENOENT;
+				return (ENOENT);
 			}
 		}
 	}
 
-	return 0;
+	return (0);
 }
 
 /*

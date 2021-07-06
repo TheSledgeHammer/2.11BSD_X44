@@ -29,6 +29,7 @@
 	.text
 
 #include <machine/asm.h>
+#include <dev/misc/kobj/kobj.h>
 
 #define EFI_SUCCESS		0
 
@@ -41,28 +42,28 @@
  */
 
 ENTRY(_start)
-	pushl	%ebp
-	movl	%esp, %ebp
+		pushl	%ebp
+		movl	%esp, %ebp
 
-	pushl	12(%ebp)	/* image_handle */
-	pushl	8(%ebp)		/* system_table */
-	call	0f
-0:	popl	%eax
-	movl	%eax, %ebx
-	addl	$ImageBase-0b, %eax
-	addl	$_DYNAMIC-0b, %ebx
-	pushl	%ebx		/* dynamic */
-	pushl	%eax		/* ImageBase */
-	call	self_reloc
-	popl	%ebx		/* remove ImageBase from the stack */
-	popl	%ebx		/* remove dynamic from the stack */
-	call	efi_main
-1:	leave
-	ret
+		pushl	12(%ebp)	/* image_handle */
+		pushl	8(%ebp)		/* system_table */
+		call	0f
+0:		popl	%eax
+		movl	%eax, %ebx
+		addl	$ImageBase-0b, %eax
+		addl	$_DYNAMIC-0b, %ebx
+		pushl	%ebx		/* dynamic */
+		pushl	%eax		/* ImageBase */
+		call	kobj_self_reloc
+		popl	%ebx		/* remove ImageBase from the stack */
+		popl	%ebx		/* remove dynamic from the stack */
+		call	efi_main
+1:		leave
+		ret
 END(_start)
 
-	.data
-	.section .reloc, "a"
-	.long	0
-	.long	10
-	.word	0
+		.data
+		.section .reloc, "a"
+		.long	0
+		.long	10
+		.word	0

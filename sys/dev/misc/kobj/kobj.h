@@ -71,18 +71,20 @@
 typedef struct kobj *kobj_t;
 
 /* External interface. */
+/*
 int		kobj_load_vfs(kobj_t *, const char *, const bool);
 int		kobj_load_mem(kobj_t *, const char *, void *, ssize_t);
 int		kobj_affix(kobj_t, const char *);
 void	kobj_unload(kobj_t);
 int		kobj_stat(kobj_t, caddr_t *, size_t *);
 int		kobj_find_section(kobj_t, const char *, void **, size_t *);
-
+*/
 /* MI-MD interface. */
 int		kobj_sym_lookup(kobj_t, uintptr_t, Elf_Addr *);
 int		kobj_reloc(kobj_t, uintptr_t, const void *, bool, bool);
-int		kobj_machdep(kobj_t, void *, size_t, bool);
+int		kobj_self_reloc(kobj_t);
+//int		kobj_machdep(kobj_t, void *, size_t, bool);
 
 /* implementation interface. */
-int		kobj_renamespace(Elf_Sym *, size_t, char **, size_t *);
+//int		kobj_renamespace(Elf_Sym *, size_t, char **, size_t *);
 #endif	/* _SYS_KOBJ_H_ */

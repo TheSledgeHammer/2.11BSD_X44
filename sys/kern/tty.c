@@ -350,6 +350,7 @@ ttioctl(tp, com, data, flag)
 	caddr_t data;
 	int flag;
 {
+
 	int dev = tp->t_dev;
 	int s;
 	long newflags;
@@ -359,7 +360,9 @@ ttioctl(tp, com, data, flag)
 	 * hang if in the background.
 	 */
 	switch (com) {
-
+	case TIOCSETA:
+    case TIOCSETAF:
+    case TIOCSETAW:
 	case TIOCSETD:
 	case TIOCSETP:
 	case TIOCSETN:
@@ -386,6 +389,49 @@ ttioctl(tp, com, data, flag)
 	 * Process the ioctl.
 	 */
 	switch (com) {
+	case FIONBIO:
+		break;	/* XXX remove */
+
+	case FIOASYNC:
+		if (*(int *)data)
+			tp->t_state |= TS_ASYNC;
+		else
+			tp->t_state &= ~TS_ASYNC;
+		break;
+
+	/* return number of characters immediately available */
+	case FIONREAD:
+		*(off_t*) data = ttnread(tp);
+		break;
+
+	case TIOCCONS:			/* become virtual console */
+		if (*(int*) data) {
+			if (constty && constty != tp
+					&&
+					ISSET(constty->t_state, TS_CARR_ON | TS_ISOPEN)
+							== (TS_CARR_ON | TS_ISOPEN))
+				return (EBUSY);
+#ifndef	UCONSOLE
+			if (error == suser())
+				return (error);
+#endif
+			constty = tp;
+		} else if (tp == constty)
+			constty = NULL;
+		break;
+
+	case TIOCDRAIN: 		/* wait till output drained */
+		if (error == ttywait(tp))
+			return (error);
+		break;
+
+	case TIOCGETA:
+	{ /* get termios struct */
+		struct termios *t = (struct termios*) data;
+
+		bcopy(&tp->t_termios, t, sizeof(struct termios));
+		break;
+	}
 
 	/* get discipline number */
 	case TIOCGETD:
@@ -439,14 +485,75 @@ ttioctl(tp, com, data, flag)
 		break;
 	}
 
-	/* return number of characters immediately available */
-	case FIONREAD:
-		*(off_t *)data = ttnread(tp);
-		break;
-
 	case TIOCOUTQ:
 		*(int *)data = tp->t_outq.c_cc;
 		break;
+
+	case TIOCSETA:			/* set termios struct */
+	case TIOCSETAW: 		/* drain output, set */
+	case TIOCSETAF:
+	{ 						/* drn out, fls in, set */
+		register struct termios *t = (struct termios*) data;
+
+		s = spltty();
+		if (com == TIOCSETAW || com == TIOCSETAF) {
+			if (error == ttywait(tp)) {
+				splx(s);
+				return (error);
+			}
+			if (com == TIOCSETAF)
+				ttyflush(tp, FREAD);
+		}
+		if (!ISSET(t->c_cflag, CIGNORE)) {
+			/*
+			 * Set device hardware.
+			 */
+			if (tp->t_param && (error = (*tp->t_param)(tp, t))) {
+				splx(s);
+				return (error);
+			} else {
+				if (!ISSET(tp->t_state, TS_CARR_ON) &&
+				ISSET(tp->t_cflag, CLOCAL) &&
+				!ISSET(t->c_cflag, CLOCAL)) {
+					CLR(tp->t_state, TS_ISOPEN);
+					SET(tp->t_state, TS_WOPEN);
+					ttwakeup(tp);
+				}
+				tp->t_cflag = t->c_cflag;
+				tp->t_ispeed = t->c_ispeed;
+				tp->t_ospeed = t->c_ospeed;
+			}
+			ttsetwater(tp);
+		}
+		if (com != TIOCSETAF) {
+			if (ISSET(t->c_lflag, ICANON) != ISSET(tp->t_lflag, ICANON))
+				if (ISSET(t->c_lflag, ICANON)) {
+					SET(tp->t_lflag, PENDIN);
+					ttwakeup(tp);
+				} else {
+					struct clist tq;
+
+					catq(&tp->t_rawq, &tp->t_canq);
+					tq = tp->t_rawq;
+					tp->t_rawq = tp->t_canq;
+					tp->t_canq = tq;
+					CLR(tp->t_lflag, PENDIN);
+				}
+		}
+		tp->t_iflag = t->c_iflag;
+		tp->t_oflag = t->c_oflag;
+		/*
+		 * Make the EXTPROC bit read only.
+		 */
+		if (ISSET(tp->t_lflag, EXTPROC))
+			SET(t->c_lflag, EXTPROC);
+		else
+			CLR(t->c_lflag, EXTPROC);
+		tp->t_lflag = t->c_lflag | ISSET(tp->t_lflag, PENDIN);
+		bcopy(t->c_cc, tp->t_cc, sizeof(t->c_cc));
+		splx(s);
+		break;
+	}
 
 	case TIOCSTOP:
 		s = spltty();
@@ -526,16 +633,6 @@ ttioctl(tp, com, data, flag)
 		break;
 	}
 
-	case FIONBIO:
-		break;	/* XXX remove */
-
-	case FIOASYNC:
-		if (*(int *)data)
-			tp->t_state |= TS_ASYNC;
-		else
-			tp->t_state &= ~TS_ASYNC;
-		break;
-
 	case TIOCGETC:
 		bcopy((caddr_t)&tp->t_intrc, data, sizeof (struct tchars));
 		break;
@@ -595,6 +692,18 @@ ttioctl(tp, com, data, flag)
 
 	case TIOCGPGRP:
 		*(int *)data = tp->t_pgrp;
+		break;
+
+	case TIOCSCTTY: 	/* become controlling tty */
+		/* Session ctty vnode pointer set in vnode layer. */
+		if (!SESS_LEADER(u->u_procp)
+				|| ((u->u_procp->p_session->s_ttyvp || tp->t_session)
+						&& (tp->t_session != u->u_procp->p_session)))
+			return (EPERM);
+		tp->t_session = u->u_procp->p_session;
+		tp->t_pgrp = u->u_procp->p_pgrp;
+		u->u_procp->p_session->s_ttyp = tp;
+		u->u_procp->p_flag |= P_CONTROLT;
 		break;
 
 	case TIOCSWINSZ:
@@ -671,7 +780,7 @@ ttnread(tp)
  *
  * This routine will go away when all the drivers have been updated/converted
 */
-
+int
 ttselect(dev, rw)
 	register dev_t dev;
 	int rw;
@@ -712,7 +821,9 @@ ttyselect(tp,rw)
 	}
 	splx(s);
 	return (0);
-	win: splx(s);
+
+win:
+	splx(s);
 	return (1);
 }
 
