@@ -1,5 +1,5 @@
-/*-
- * Copyright (c) 1990, 1993
+/*
+ * Copyright (c) 1988, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,17 +29,18 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)atexit.h	8.2 (Berkeley) 7/3/94
  */
 
-/* must be at least 32 to guarantee ANSI conformance */
-#define	ATEXIT_SIZE	32
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)atof.c	8.1 (Berkeley) 6/4/93";
+#endif /* LIBC_SCCS and not lint */
 
-struct atexit {
-	struct atexit 	*next;					/* next in list */
-	int 			ind;					/* next index in this table */
-	void 			(*fns[ATEXIT_SIZE])();	/* the table itself */
-};
+#include <stdlib.h>
+#include <stddef.h>
 
-extern struct atexit *__atexit;				/* points to head of LIFO stack */
+double
+atof(ascii)
+	const char *ascii;
+{
+	return (strtod(ascii, NULL));
+}

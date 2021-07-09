@@ -92,7 +92,7 @@ __BEGIN_DECLS
 void 	 abort (void);
 int	 	 abs (int);
 int	 	 atexit (void (*)(void));
-//double	 atof (const char *);
+double	 atof (const char *);
 int	 	 atoi (const char *);
 long	 atol (const char *);
 void	 *bsearch (const void *, const void *, size_t, size_t, int (*)(const void *, const void *));
@@ -108,7 +108,7 @@ void	 qsort (void *, size_t, size_t, int (*)(const void *, const void *));
 int		 rand (void);
 void	 *realloc (void *, size_t);
 void	 srand (unsigned);
-//double	 strtod (const char *, char **);
+double	 strtod (const char *, char **);
 long	 strtol (const char *, char **, int);
 unsigned long
 	 	 strtoul (const char *, char **, int);
