@@ -52,11 +52,11 @@ __RCSID("$NetBSD: stat_flags.c,v 1.18 2003/10/27 00:12:41 lukem Exp $");
 
 #include "stat_flags.h"
 
-#define	SAPPEND(s) do {							\
-	if (prefix != NULL)						\
-		(void)strlcat(string, prefix, sizeof(string));		\
+#define	SAPPEND(s) do {									\
+	if (prefix != NULL)									\
+		(void)strlcat(string, prefix, sizeof(string));	\
 	(void)strlcat(string, s, sizeof(string));			\
-	prefix = ",";							\
+	prefix = ",";										\
 } while (/* CONSTCOND */ 0)
 
 /*
@@ -93,21 +93,21 @@ flags_to_string(u_long flags, const char *def)
 	return (string);
 }
 
-#define	TEST(a, b, f) {							\
-	if (!strcmp(a, b)) {						\
-		if (clear) {						\
+#define	TEST(a, b, f) {					\
+	if (!strcmp(a, b)) {				\
+		if (clear) {					\
 			if (clrp)					\
-				*clrp |= (f);				\
+				*clrp |= (f);			\
 			if (setp)					\
-				*setp &= ~(f);				\
+				*setp &= ~(f);			\
 		} else {						\
 			if (setp)					\
-				*setp |= (f);				\
+				*setp |= (f);			\
 			if (clrp)					\
-				*clrp &= ~(f);				\
-		}							\
+				*clrp &= ~(f);			\
+		}								\
 		break;							\
-	}								\
+	}									\
 }
 
 /*

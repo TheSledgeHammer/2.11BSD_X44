@@ -40,7 +40,13 @@ CPPFLAGS+=	-no-cpp-precomp
 CPPFLAGS+=	-I. -I./include -I${.CURDIR} -I${.CURDIR}/sys 			\
 		-DHAVE_NBTOOL_CONFIG_H=1 -D_FILE_OFFSET_BITS=64
 
-.PATH:		${.CURDIR}/../../lib/libc/gen 							\
+#${.CURDIR}/../../lib/libc/cdb 							\
+
+.PATH:		${.CURDIR}/../../lib/libc/compat-4.1					\
+			${.CURDIR}/../../lib/libc/compat-4.3					\
+			${.CURDIR}/../../lib/libc/compat-netbsd					\
+			${.CURDIR}/../../lib/libc/compat-sys5					\
+			${.CURDIR}/../../lib/libc/gen 							\
 			${.CURDIR}/../../lib/libc/hash 							\
 			${.CURDIR}/../../lib/libc/hash/md2 						\
 			${.CURDIR}/../../lib/libc/hash/md5 						\
@@ -48,10 +54,6 @@ CPPFLAGS+=	-I. -I./include -I${.CURDIR} -I${.CURDIR}/sys 			\
 			${.CURDIR}/../../lib/libc/hash/sha1 					\
 			${.CURDIR}/../../lib/libc/hash/sha2 					\
 			${.CURDIR}/../../lib/libc/md 							\
-			${.CURDIR}/../../lib/libc/compat-4.1					\
-			${.CURDIR}/../../lib/libc/compat-4.3					\
-			${.CURDIR}/../../lib/libc/compat-netbsd					\
-			${.CURDIR}/../../lib/libc/compat-sys5					\
 			${.CURDIR}/../../lib/libc/quad 							\
 			${.CURDIR}/../../lib/libc/regex 						\
 			${.CURDIR}/../../lib/libc/stdio 						\

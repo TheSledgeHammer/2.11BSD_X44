@@ -13,7 +13,8 @@ libmp/			4.3
 libpc/			4.3
 libom/			4.3  (used for both libom.a and libm.a)
 libplot/		4.3
-libtermlib/		4.3
+libutil/		4.4
+libtermlib/		4.3/4.4 (updated to be equivalent to 4.4BSD)
 liby/			4.3
 
 Notes

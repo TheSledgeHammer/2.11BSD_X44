@@ -32,4 +32,4 @@
  */
 
 char	*flags_to_string(u_long, const char *);
-int	 string_to_flags(char **, u_long *, u_long *);
+int	 	string_to_flags(char **, u_long *, u_long *);

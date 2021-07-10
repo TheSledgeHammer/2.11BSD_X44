@@ -19,12 +19,14 @@ A General todo list. Don't hesitate to add to this list. :)
 ## lib
 
 - libc:
-	stdio:
-		- Incomplete: filbuf.c
-		- add missing manpages
 	- Update Makefiles with manpage's MLINKS
 
 ## libexec
+
+## usr.lib
+- libcurses: to add
+- libterminfo: 2.11BSD codebase. Very likely needs updating
+- libutil: Missing all newer files beyond 4.4BSD-Lite2
 
 ## sbin
 
