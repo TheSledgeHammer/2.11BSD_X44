@@ -72,26 +72,13 @@ You can cross-build 211BSD_X44 from most UNIX-like operating systems. To build f
 
 ./build.sh -U -u -j4 -m i386 -O ~/obj release
 
-NOTICE: The above build script will not produce a successful build. 
+NOTICE: The above build script will not produce a successful build.
 It is only recommended at this stage for testing the cross-compiler or adding new tools.
 To build just the tools for i386, in the src directory:
 
 ./build.sh -U -u -j4 -m i386 tools
 
 Please read the following for NetBSD guide: <https://www.netbsd.org/docs/guide/en/chap-build.html>
-
-## Cross-Compiling: (see: "/toolchains")
-
-- There are 3 different toolchain scripts:
-  - GNU GCC Toolchain
-  - Clang/LLVM Toolchain
-  - NetBSD's Toolchain (recommended)
-
-### Using the NetBSD Toolchain
-
-- Please read the following for how the toolchain works: <https://www.netbsd.org/docs/guide/en/chap-build.html>
-- Then run: ./netbsdtoolchain.sh
-- To retrieve the NetBSD source and compile NetBSD's Tools
 
 ## Contribution
 
