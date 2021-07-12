@@ -196,7 +196,7 @@ efi_main(EFI_HANDLE Ximage, EFI_SYSTEM_TABLE *Xsystab)
 	conout->EnableCursor(conout, TRUE);
 	conout->ClearScreen(conout);
 
-	printf("\n>> FreeBSD EFI boot block\n");
+	printf("\n>> 211BSD EFI boot block\n");
 	printf("   Loader path: %s\n\n", PATH_LOADER_EFI);
 	printf("   Initializing modules:");
 	for (i = 0; i < num_boot_modules; i++) {
@@ -277,13 +277,13 @@ efi_exit(EFI_STATUS s)
 	BS->FreePages(heap, EFI_SIZE_TO_PAGES(heapsize));
 	BS->Exit(IH, s, 0, NULL);
 }
-
+/*
 void
 exit(int error __unused)
 {
 	efi_exit(EFI_LOAD_ERROR);
 }
-
+*/
 /*
  * OK. We totally give up. Exit back to EFI with a sensible status so
  * it can try the next option on the list.

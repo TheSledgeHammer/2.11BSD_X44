@@ -43,19 +43,19 @@
 #include <devel/arch/i386/include/mcontext.h>
 
 typedef struct {
-	void			*ss_sp;			/* signal stack base */
-	size_t			ss_size;		/* signal stack length */
-	int				ss_flags;		/* SS_DISABLE and/or SS_ONSTACK */
+	void					*ss_sp;			/* signal stack base */
+	size_t					ss_size;		/* signal stack length */
+	int						ss_flags;		/* SS_DISABLE and/or SS_ONSTACK */
 } stack_t;
 
 struct __ucontext {
-	unsigned int	uc_flags;		/* properties */
-	ucontext_t * 	uc_link;		/* context to resume */
-	sigset_t		uc_sigmask;		/* signals blocked in this context */
-	stack_t			uc_stack;		/* the stack used by this context */
-	mcontext_t		uc_mcontext;	/* machine state */
+	unsigned int			uc_flags;		/* properties */
+	ucontext_t * 			uc_link;		/* context to resume */
+	sigset_t				uc_sigmask;		/* signals blocked in this context */
+	stack_t					uc_stack;		/* the stack used by this context */
+	mcontext_t				uc_mcontext;	/* machine state */
 #if defined(_UC_MACHINE_PAD)
-	long			__uc_pad[_UC_MACHINE_PAD];
+	long					__uc_pad[_UC_MACHINE_PAD];
 #endif
 };
 typedef struct __ucontext	ucontext_t;
@@ -65,10 +65,10 @@ typedef struct __ucontext	ucontext_t;
 #endif
 
 /* uc_flags */
-#define _UC_SIGMASK	0x01			/* valid uc_sigmask */
-#define _UC_STACK	0x02			/* valid uc_stack */
-#define _UC_CPU		0x04			/* valid GPR context in uc_mcontext */
-#define _UC_FPU		0x08			/* valid FPU context in uc_mcontext */
+#define _UC_SIGMASK			0x01			/* valid uc_sigmask */
+#define _UC_STACK			0x02			/* valid uc_stack */
+#define _UC_CPU				0x04			/* valid GPR context in uc_mcontext */
+#define _UC_FPU				0x08			/* valid FPU context in uc_mcontext */
 
 #ifdef _KERNEL
 struct proc;
@@ -77,5 +77,7 @@ void	getucontext(struct proc *, ucontext_t *);
 int		setucontext(struct proc *, const ucontext_t *);
 void	cpu_getmcontext(struct proc *, mcontext_t *, unsigned int *);
 int		cpu_setmcontext(struct proc *, const mcontext_t *, unsigned int);
+
+void	getucontext_sa(struct proc *, ucontext_t *);
 #endif /* _KERNEL */
 #endif /* !_SYS_UCONTEXT_H_ */

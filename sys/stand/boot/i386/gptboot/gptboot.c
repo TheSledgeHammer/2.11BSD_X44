@@ -19,6 +19,7 @@
 #include <sys/dirent.h>
 #include <sys/reboot.h>
 #include <sys/disklabel.h>
+#include <sys/uuid.h>
 
 #include <machine/bootinfo.h>
 #include <machine/elf_machdep.h>
@@ -312,10 +313,10 @@ exit(int x)
 static void
 load(void)
 {
-    union {
-	struct exec ex;
-	Elf32_Ehdr eh;
-    } hdr;
+	union {
+		struct exec ex;
+		Elf32_Ehdr eh;
+	} hdr;
     static Elf32_Phdr ep[2];
     static Elf32_Shdr es[2];
     caddr_t p;
@@ -715,9 +716,9 @@ xgetc(int fn)
     if (OPT_CHECK(RBX_NOINTR))
 	return 0;
     for (;;) {
-	if (ioctrl & IO_KEYBOARD && getc(1))
+	if ((ioctrl & IO_KEYBOARD) && getc(1))
 	    return fn ? 1 : getc(0);
-	if (ioctrl & IO_SERIAL && sio_ischar())
+	if ((ioctrl & IO_SERIAL) && sio_ischar())
 	    return fn ? 1 : sio_getc();
 	if (fn)
 	    return 0;

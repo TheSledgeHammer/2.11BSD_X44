@@ -93,7 +93,7 @@
 #define	KDASSERT(x) 			assert(x)
 #define	KASSERT(x) 				assert(x)
 #define	htbc_alloc(s) 			malloc(s)
-#define	htbc_free(a, s) 		free(a)
+#define	htbc_free(a) 			free(a)
 #define	htbc_calloc(n, s) 		calloc((n), (s))
 
 /* locks on htbc */
@@ -143,6 +143,8 @@ struct htbc {
 	int 										ht_dealloccnt;		/* total count */
 	int 										ht_dealloclim;		/* max count */
 };
+
+#define	HTBC_INODETRK_SIZE 83
 
 static struct htbc_dealloc 						*htbc_dealloc;
 struct htbc_hashchain							*htbc_blockchain;				/* add to htbc structure */
@@ -247,12 +249,77 @@ htbc_start(htp, mp, vp, off, count, blksize)
 	ht->ht_deallocblks = htbc_alloc(sizeof(*ht->ht_deallocblks) * ht->ht_dealloclim);
 	ht->ht_dealloclens = htbc_alloc(sizeof(*ht->ht_dealloclens) * ht->ht_dealloclim);
 
+	htbc_inodetrk_init(ht, HTBC_INODETRK_SIZE);
+
 	return (0);
+
+//errout:
+}
+
+/*
+ * Like wapbl_flush, only discards the transaction
+ * completely
+ */
+
+void
+htbc_discard(struct htbc *ht)
+{
+	struct buf *bp;
+	int i;
+
+	while ((bp = LIST_FIRST(&ht->ht_bufs)) != NULL) {
+
+	}
+
+	ht->ht_dealloccnt = 0;
+
+	KASSERT(ht->ht_bufbytes == 0);
+	KASSERT(ht->ht_bcount == 0);
+	KASSERT(ht->ht_bufcount == 0);
+	KASSERT(LIST_EMPTY(&ht->ht_bufs));
 }
 
 int
 htbc_stop(struct htbc *ht, int force)
 {
+	struct vnode *vp;
+	int error;
+	error = htbc_flush(ht, 1);
+	if (error) {
+		if (force)
+			htbc_discard(ht);
+		else
+			return error;
+	}
+
+	/* Unlinked inodes persist after a flush */
+	if (ht->ht_inohashcnt) {
+		if (force) {
+			htbc_discard(ht);
+		} else {
+			return EBUSY;
+		}
+	}
+	KASSERT(ht->ht_bufbytes == 0);
+	KASSERT(ht->ht_bcount == 0);
+	KASSERT(ht->ht_bufcount == 0);
+	KASSERT(LIST_EMPTY(&ht->ht_bufs));
+	KASSERT(ht->ht_dealloccnt == 0);
+/*
+	KASSERT(SIMPLEQ_EMPTY(&ht->ht_entries));
+	KASSERT(ht->ht_inohashcnt == 0);
+
+	vp = ht->ht_logvp;
+*/
+	htbc_discard(ht);
+	htbc_free(ht->ht_hc_scratch);
+
+	htbc_free(ht->ht_deallocblks);
+	htbc_free(ht->ht_dealloclens);
+
+	htbc_inodetrk_free(ht);
+	htbc_free(ht);
+
 	return (0);
 }
 
