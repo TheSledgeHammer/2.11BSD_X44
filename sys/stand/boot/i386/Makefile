@@ -4,7 +4,7 @@ NO_OBJ=t
 
 .include <bsd.init.mk>
 
-SUBDIR=		boot0 btx boot2 cdboot libi386 loader
+SUBDIR=		boot0 boot2 btx cdboot libi386 loader
 
 .if ${LOADER_GPT_SUPPORT} == "yes"
 SUBDIR+= gptboot
@@ -14,6 +14,6 @@ SUBDIR+= gptboot
 SUBDIR+= mbr
 .endif		
 
-INCSDIR= 		/usr/include/stand/boot/i386
+INCSDIR= 	/usr/include/stand/boot/i386
 
 .include <bsd.kinc.mk>

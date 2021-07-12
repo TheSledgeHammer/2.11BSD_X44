@@ -12,9 +12,9 @@ BOOTSRC?=					${KERNSRCDIR}/stand/boot
 LIBKERN?= 					${KERNSRCDIR}/lib/libkern
 LIBSA?=						${KERNSRCDIR}/lib/libsa
 
-#EFISRC=					${BOOTSRC}/efi
-#EFIINC=					${EFISRC}/include
-#EFIINCMD=					${EFIINC}/${MACHINE}
+EFISRC=						${BOOTSRC}/efi
+EFIINC=						${EFISRC}/include
+EFIINCMD=					${EFIINC}/${MACHINE}
 DLOADER=					${BOOTSRC}/dloader
 LDRSRC=						${BOOTSRC}/common
 #UBOOTSRC=					${BOOTSRC}/uboot

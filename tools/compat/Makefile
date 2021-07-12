@@ -60,7 +60,7 @@ CPPFLAGS+=	-I. -I./include -I${.CURDIR} -I${.CURDIR}/sys 			\
 			${.CURDIR}/../../lib/libc/stdlib 						\
 			${.CURDIR}/../../lib/libc/string 						\
 			${.CURDIR}/../../usr.lib/libutil 						\
-			${.CURDIR}/../../usr.bin/lex
+			${.CURDIR}/../../contrib/flex/dist/src
 
 DPSRCS+=		defs.mk
 CLEANFILES+=	config.log config.status configure.lineno *.stamp

@@ -2,10 +2,10 @@
 
 .include <bsd.loader.mk>
 
-SUBDIR= 	common dloader
+SUBDIR= 	common dloader #efi
 
 .if ${LOADER_MACHINE} == "i386" || ${LOADER_MACHINE_ARCH} == "i386"
-SUBDIR+= 	i386
+SUBDIR+= 		i386
 
 # Enable the following.
 HAVE_BCACHE=	yes
