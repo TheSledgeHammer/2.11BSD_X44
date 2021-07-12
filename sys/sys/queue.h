@@ -38,8 +38,18 @@
 #define	_SYS_QUEUE_H_
 
 /*
- * This file defines three types of data structures: lists, tail queues,
- * and circular queues.
+ * This file defines three types of data structures: singly-linked lists,
+ * lists, simple queues, tail queues, and circular queues.
+ *
+ * A singly-linked list is headed by a single forward pointer. The
+ * elements are singly linked for minimum space and pointer manipulation
+ * overhead at the expense of O(n) removal for arbitrary elements. New
+ * elements can be added to the list after an existing element or at the
+ * head of the list.  Elements being removed from the head of the list
+ * should use the explicit macro for this purpose for optimum
+ * efficiency. A singly-linked list may only be traversed in the forward
+ * direction.  Singly-linked lists are ideal for applications with large
+ * datasets and few or no removals or for implementing a LIFO queue.
  *
  * A list is headed by a single forward pointer (or an array of forward
  * pointers for a hash table header). The elements are doubly linked
@@ -72,6 +82,80 @@
  *
  * For details on the use of these macros, see the queue(3) manual page.
  */
+
+/*
+ * Singly-linked List definitions.
+ */
+#define	SLIST_HEAD(name, type)											\
+struct name {															\
+	struct type *slh_first;	/* first element */							\
+}
+
+#define	SLIST_HEAD_INITIALIZER(head)									\
+	{ NULL }
+
+#define	SLIST_ENTRY(type)												\
+struct {																\
+	struct type *sle_next;	/* next element */							\
+}
+
+/*
+ * Singly-linked List access methods.
+ */
+#define	SLIST_FIRST(head)		((head)->slh_first)
+#define	SLIST_END(head)			NULL
+#define	SLIST_EMPTY(head)		((head)->slh_first == NULL)
+#define	SLIST_NEXT(elm, field)	((elm)->field.sle_next)
+
+#define	SLIST_FOREACH(var, head, field)									\
+	for((var) = (head)->slh_first;										\
+	    (var) != SLIST_END(head);										\
+	    (var) = (var)->field.sle_next)
+
+#define	SLIST_FOREACH_SAFE(var, head, field, tvar)						\
+	for ((var) = SLIST_FIRST((head));									\
+	    (var) != SLIST_END(head) &&										\
+	    ((tvar) = SLIST_NEXT((var), field), 1);							\
+	    (var) = (tvar))
+
+/*
+ * Singly-linked List functions.
+ */
+#define	SLIST_INIT(head) do {											\
+	(head)->slh_first = SLIST_END(head);								\
+} while (/*CONSTCOND*/0)
+
+#define	SLIST_INSERT_AFTER(slistelm, elm, field) do {					\
+	(elm)->field.sle_next = (slistelm)->field.sle_next;					\
+	(slistelm)->field.sle_next = (elm);									\
+} while (/*CONSTCOND*/0)
+
+#define	SLIST_INSERT_HEAD(head, elm, field) do {						\
+	(elm)->field.sle_next = (head)->slh_first;							\
+	(head)->slh_first = (elm);											\
+} while (0)
+
+#define	SLIST_REMOVE_AFTER(slistelm, field) do {						\
+	(slistelm)->field.sle_next =										\
+	    SLIST_NEXT(SLIST_NEXT((slistelm), field), field);				\
+} while (0)
+
+#define	SLIST_REMOVE_HEAD(head, field) do {								\
+	(head)->slh_first = (head)->slh_first->field.sle_next;				\
+} while (0)
+
+#define	SLIST_REMOVE(head, elm, type, field) do {						\
+	if ((head)->slh_first == (elm)) {									\
+		SLIST_REMOVE_HEAD((head), field);								\
+	}																	\
+	else {																\
+		struct type *curelm = (head)->slh_first;						\
+		while(curelm->field.sle_next != (elm))							\
+			curelm = curelm->field.sle_next;							\
+		curelm->field.sle_next =										\
+		    curelm->field.sle_next->field.sle_next;						\
+	}																	\
+} while (0)
 
 /*
  * List definitions.
@@ -173,7 +257,6 @@ struct {																\
 #define	SIMPLEQ_END(head)			NULL
 #define	SIMPLEQ_EMPTY(head)			((head)->sqh_first == SIMPLEQ_END(head))
 #define	SIMPLEQ_NEXT(elm, field)	((elm)->field.sqe_next)
-#define SIMPLEQ_LAST(head)			((head)->sqh_last)
 
 #define	SIMPLEQ_FOREACH(var, head, field)								\
 	for ((var) = ((head)->sqh_first);									\
@@ -277,9 +360,10 @@ struct {																\
 #define	TAILQ_END(head)				(NULL)
 #define	TAILQ_NEXT(elm, field)		((elm)->field.tqe_next)
 //#define	TAILQ_PREV(elm, field)		((elm)->field.tqe_prev)
-#define	TAILQ_LAST(head, headname) 										\
+#define	TAILQ_LAST(head, headname) \
 		(*(((struct headname *)(void *)((head)->tqh_last))->tqh_last))
-#define	TAILQ_PREV(elm, headname, field) 								\
+
+#define	TAILQ_PREV(elm, headname, field) \
 		(*(((struct headname *)(void *)((elm)->field.tqe_prev))->tqh_last))
 #define	TAILQ_EMPTY(head)			(TAILQ_FIRST(head) == TAILQ_END(head))
 
