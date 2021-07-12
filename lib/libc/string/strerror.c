@@ -31,11 +31,13 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)strerror.c	8.1.1 (2.11BSD) 1996/3/15";
 #endif /* LIBC_SCCS and not lint */
 
 #include <string.h>
+#include <limits.h>
 
 char *
 strerror(num)
@@ -49,7 +51,7 @@ strerror(num)
 
 	errnum = num;				/* convert to unsigned */
 	if (p == syserrlst(errnum))
-		return(p);
+		return (p);
 
 	/* Do this by hand, so we don't include stdio(3). */
 	t = tmp;
@@ -61,5 +63,5 @@ strerror(num)
 		if (t <= tmp)
 			break;
 	}
-	return(ebuf);
+	return (ebuf);
 }

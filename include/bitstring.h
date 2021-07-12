@@ -69,47 +69,47 @@ typedef	unsigned char bitstr_t;
 	(name)[_bit_byte(bit)] &= ~_bit_mask(bit)
 
 				/* clear bits start ... stop in bitstring */
-#define	bit_nclear(name, start, stop) { \
-	register bitstr_t *_name = name; \
-	register int _start = start, _stop = stop; \
-	while (_start <= _stop) { \
-		bit_clear(_name, _start); \
-		_start++; \
-		} \
+#define	bit_nclear(name, start, stop) { 			\
+	register bitstr_t *_name = name; 				\
+	register int _start = start, _stop = stop; 		\
+	while (_start <= _stop) { 						\
+		bit_clear(_name, _start);					\
+		_start++; 									\
+		} 											\
 }
 
 				/* set bits start ... stop in bitstring */
-#define	bit_nset(name, start, stop) { \
-	register bitstr_t *_name = name; \
-	register int _start = start, _stop = stop; \
-	while (_start <= _stop) { \
-		bit_set(_name, _start); \
-		_start++; \
-		} \
+#define	bit_nset(name, start, stop) { 				\
+	register bitstr_t *_name = name; 				\
+	register int _start = start, _stop = stop; 		\
+	while (_start <= _stop) { 						\
+		bit_set(_name, _start); 					\
+		_start++; 									\
+		} 											\
 }
 
 				/* find first bit clear in name */
-#define	bit_ffc(name, nbits, value) { \
-	register bitstr_t *_name = name; \
+#define	bit_ffc(name, nbits, value) { 				\
+	register bitstr_t *_name = name; 				\
 	register int _bit, _nbits = nbits, _value = -1; \
-	for (_bit = 0; _bit < _nbits; ++_bit) \
-		if (!bit_test(_name, _bit)) { \
-			_value = _bit; \
-			break; \
-		} \
-	*(value) = _value; \
+	for (_bit = 0; _bit < _nbits; ++_bit) 			\
+		if (!bit_test(_name, _bit)) { 				\
+			_value = _bit; 							\
+			break; 									\
+		} 											\
+	*(value) = _value; 								\
 }
 
 				/* find first bit set in name */
-#define	bit_ffs(name, nbits, value) { \
-	register bitstr_t *_name = name; \
+#define	bit_ffs(name, nbits, value) { 				\
+	register bitstr_t *_name = name; 				\
 	register int _bit, _nbits = nbits, _value = -1; \
-	for (_bit = 0; _bit < _nbits; ++_bit) \
-		if (bit_test(_name, _bit)) { \
-			_value = _bit; \
-			break; \
-		} \
-	*(value) = _value; \
+	for (_bit = 0; _bit < _nbits; ++_bit) 			\
+		if (bit_test(_name, _bit)) { 				\
+			_value = _bit; 							\
+			break; 									\
+		} 											\
+	*(value) = _value; 								\
 }
 
 #endif /* !_BITSTRING_H_ */

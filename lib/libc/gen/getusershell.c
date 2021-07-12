@@ -24,18 +24,18 @@ static char sccsid[] = "@(#)getusershell.c	5.5 (Berkeley) 7/21/88";
 #include <sys/stat.h>
 #include <ctype.h>
 #include <stdio.h>
-
-#define SHELLS "/etc/shells"
+#include <stdlib.h>
+#include <unistd.h>
+#include <paths.h>
 
 /*
  * Do not add local shells here.  They should be added in /etc/shells
  */
-static char *okshells[] =
-    { "/bin/sh", "/bin/csh", 0 };
+static char *okshells[] = { _PATH_BSHELL, _PATH_CSHELL, NULL };
 
 static char **shells, *strings;
 static char **curshell = NULL;
-extern char **initshells();
+extern char **initshells(void);
 
 /*
  * Get a list of shells from SHELLS, if it exists.
@@ -53,6 +53,7 @@ getusershell()
 	return (ret);
 }
 
+void
 endusershell()
 {
 	
@@ -65,6 +66,7 @@ endusershell()
 	curshell = NULL;
 }
 
+void
 setusershell()
 {
 
@@ -80,27 +82,27 @@ initshells()
 	extern char *malloc(), *calloc();
 
 	if (shells != NULL)
-		free((char *)shells);
+		free((char*) shells);
 	shells = NULL;
 	if (strings != NULL)
 		free(strings);
 	strings = NULL;
-	if ((fp = fopen(SHELLS, "r")) == (FILE *)0)
-		return(okshells);
+	if ((fp = fopen(_PATH_SHELLS, "r")) == (FILE*) 0)
+		return (okshells);
 	if (fstat(fileno(fp), &statb) == -1) {
-		(void)fclose(fp);
-		return(okshells);
+		(void) fclose(fp);
+		return (okshells);
 	}
-	if ((strings = malloc((unsigned)statb.st_size)) == NULL) {
-		(void)fclose(fp);
-		return(okshells);
+	if ((strings = malloc((unsigned) statb.st_size)) == NULL) {
+		(void) fclose(fp);
+		return (okshells);
 	}
-	shells = (char **)calloc((unsigned)statb.st_size / 3, sizeof (char *));
+	shells = (char**) calloc((unsigned) statb.st_size / 3, sizeof(char*));
 	if (shells == NULL) {
-		(void)fclose(fp);
+		(void) fclose(fp);
 		free(strings);
 		strings = NULL;
-		return(okshells);
+		return (okshells);
 	}
 	sp = shells;
 	cp = strings;
@@ -114,7 +116,7 @@ initshells()
 			cp++;
 		*cp++ = '\0';
 	}
-	*sp = (char *)0;
-	(void)fclose(fp);
+	*sp = (char*) 0;
+	(void) fclose(fp);
 	return (shells);
 }

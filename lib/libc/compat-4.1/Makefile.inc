@@ -9,3 +9,4 @@
 .PATH: 	${ARCHDIR}/compat-4.1 ${.CURDIR}/compat-4.1
 SRCS+=	ftime.c gtty.c nice.c pause.c rand.c stty.c times.c utime.c
 
+MAN+=   nice.3 pause.3 rand.3 times.3 utime.3

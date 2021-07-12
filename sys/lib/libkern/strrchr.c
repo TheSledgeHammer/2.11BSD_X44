@@ -30,6 +30,7 @@
  */
 
 #include <sys/cdefs.h>
+#include <sys/null.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 #if 0
 static char sccsid[] = "@(#)rindex.c	8.1 (Berkeley) 6/4/93";

@@ -56,10 +56,10 @@
 #include <sys/sysctl.h>
 #include <vm/include/vm.h>
 
-sysctlfn kern_sysctl;
-sysctlfn hw_sysctl;
+sysctlfn 		kern_sysctl;
+sysctlfn 		hw_sysctl;
 #ifdef DEBUG
-sysctlfn debug_sysctl;
+sysctlfn 		debug_sysctl;
 #endif
 extern sysctlfn vm_sysctl;
 extern sysctlfn vfs_sysctl;
@@ -119,11 +119,11 @@ __sysctl()
 		fn = NET_SYSCTL;
 		break;
 #endif
-//#ifdef notyet
+#ifdef notyet
 	case CTL_VFS:
 		fn = vfs_sysctl;
 		break;
-//#endif
+#endif
 	case CTL_MACHDEP:
 		fn = cpu_sysctl;
 		break;
@@ -548,6 +548,102 @@ sysctl_rdstruct(oldp, oldlenp, newp, sp, len)
 	*oldlenp = len;
 	if (oldp)
 		error = copyout(sp, oldp, len);
+	return (error);
+}
+
+/*
+ * Validate parameters and get old / set new parameters
+ * for an quad-valued sysctl function.
+ */
+int
+sysctl_quad(oldp, oldlenp, newp, newlen, valp)
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+	quad_t *valp;
+{
+	int error = 0;
+
+	if (oldp && *oldlenp < sizeof(quad_t))
+		return (ENOMEM);
+	if (newp && newlen != sizeof(quad_t))
+		return (EINVAL);
+	*oldlenp = sizeof(quad_t);
+	if (oldp)
+		error = copyout(valp, oldp, sizeof(quad_t));
+	if (error == 0 && newp)
+		error = copyin(newp, valp, sizeof(quad_t));
+	return (error);
+}
+
+/*
+ * As above, but read-only.
+ */
+int
+sysctl_rdquad(oldp, oldlenp, newp, val)
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	quad_t *val;
+{
+	int error = 0;
+
+	if (oldp && *oldlenp < sizeof(quad_t))
+		return (ENOMEM);
+	if (newp)
+		return (EPERM);
+	*oldlenp = sizeof(quad_t);
+	if (oldp)
+		error = copyout((caddr_t) &val, oldp, sizeof(quad_t));
+	return (error);
+}
+
+/*
+ * Validate parameters and get old / set new parameters
+ * for an bool-valued sysctl function.
+ */
+int
+sysctl_bool(oldp, oldlenp, newp, newlen, valp)
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+	boolean_t *valp;
+{
+	int error = 0;
+
+	if (oldp && *oldlenp < sizeof(boolean_t))
+		return (ENOMEM);
+	if (newp && newlen != sizeof(boolean_t))
+		return (EINVAL);
+	*oldlenp = sizeof(boolean_t);
+	if (oldp)
+		error = copyout(valp, oldp, sizeof(boolean_t));
+	if (error == 0 && newp)
+		error = copyin(newp, valp, sizeof(boolean_t));
+	return (error);
+}
+
+/*
+ * As above, but read-only.
+ */
+int
+sysctl_rdbool(oldp, oldlenp, newp, val)
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	boolean_t *val;
+{
+	int error = 0;
+
+	if (oldp && *oldlenp < sizeof(boolean_t))
+		return (ENOMEM);
+	if (newp)
+		return (EPERM);
+	*oldlenp = sizeof(boolean_t);
+	if (oldp)
+		error = copyout((caddr_t) &val, oldp, sizeof(boolean_t));
 	return (error);
 }
 

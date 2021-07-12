@@ -43,11 +43,11 @@
 
 #if !defined(_ANSI_SOURCE)
 typedef struct _physadr {
-	int r[1];
+	int 	r[1];
 } *physadr;
 
 typedef struct label_t {
-	int val[6];
+	int 	val[6];
 } label_t;
 #endif
 
@@ -141,7 +141,11 @@ typedef	__int32_t			__time_t;
 typedef	__uint32_t			__uintfptr_t;
 typedef	__uint32_t			__uintptr_t;
 
-typedef	int					___wchar_t;
+typedef	int					__wchar_t;
+typedef int					__wint_t;
+typedef	int					__rune_t;
+typedef	void *				__wctrans_t;
+typedef	void *				__wctype_t;
 
 #define	__WCHAR_MIN			__INT_MIN	/* min value for a wchar_t */
 #define	__WCHAR_MAX			__INT_MAX	/* max value for a wchar_t */

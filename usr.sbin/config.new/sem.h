@@ -42,20 +42,19 @@
  *	@(#)sem.h	8.1 (Berkeley) 6/6/93
  */
 
-void		enddefs __P((const char *));
+void			enddefs (const char *);
 
-void		setdefmaxusers __P((int, int, int));
-void		setmaxusers __P((int));
-int		defattr __P((const char *, struct nvlist *));
-void		defdev __P((struct devbase *, int, struct nvlist *,
-			struct nvlist *, struct nvlist *, struct nvlist *));
-struct devbase *getdevbase __P((const char *name));
-struct attr    *getattr __P((const char *name));
-void		setmajor __P((struct devbase *d, int n));
-void		addconf __P((struct config *));
-void		setconf __P((struct nvlist **, const char *, struct nvlist *));
-void		adddev __P((const char *, const char *, struct nvlist *, int));
-void		addpseudo __P((const char *name, int number));
-const char     *ref __P((const char *name));
-const char     *starref __P((const char *name));
-const char     *wildref __P((const char *name));
+void			setdefmaxusers (int, int, int);
+void			setmaxusers (int);
+int				defattr (const char *, struct nvlist *);
+void			defdev (struct devbase *, int, struct nvlist *, struct nvlist *, struct nvlist *, struct nvlist *);
+struct devbase 	*getdevbase (const char *name);
+struct attr    	*getattr (const char *name);
+void			setmajor (struct devbase *d, int n);
+void			addconf (struct config *);
+void			setconf (struct nvlist **, const char *, struct nvlist *);
+void			adddev (const char *, const char *, struct nvlist *, int);
+void			addpseudo (const char *name, int number);
+const char     	*ref (const char *name);
+const char     	*starref (const char *name);
+const char     	*wildref (const char *name);

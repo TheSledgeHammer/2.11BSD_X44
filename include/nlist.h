@@ -35,6 +35,7 @@
 
 #ifndef	_NLIST_H_
 #define	_NLIST_H_
+
 #include <sys/cdefs.h>
 #include <sys/types.h>
 
@@ -45,7 +46,7 @@
 
 struct	oldnlist {			/* XXX - compatibility/conversion aid */
 	char	n_name[8];		/* symbol name */
-	int	n_type;				/* type flag */
+	int		n_type;				/* type flag */
 unsigned int	n_value;	/* value */
 };
 
@@ -94,9 +95,9 @@ struct	nlist {
 #define	N_FORMAT	"%06o"		/* namelist value format; XXX */
 #define	N_STAB		0x0e0		/* mask for debugger symbols -- stab(5) */
 
-
 __BEGIN_DECLS
 int nlist(const char *, struct nlist *);
 int __fdnlist(int, struct nlist *);		/* XXX for libkvm */
 __END_DECLS
+
 #endif	/* !_NLIST_H_ */

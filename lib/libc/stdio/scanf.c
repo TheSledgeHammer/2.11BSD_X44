@@ -1,39 +1,120 @@
+/*	$NetBSD: sscanf.c,v 1.22 2018/02/04 01:13:45 mrg Exp $	*/
+
+/*-
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Chris Torek.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)scanf.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
-#include	<stdio.h>
+#include "namespace.h"
 
-int
-scanf(fmt, args)
-	char *fmt;
-	register int args;
+#include <assert.h>
+#include <errno.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+#include <stddef.h>
+
+static int
+eofread(cookie, buf, len)
+	void *cookie;
+	char *buf;
+	int len;
 {
-	return(_doscan(stdin, fmt, &args));
+	return (0);
 }
 
 int
-fscanf(iop, fmt, args)
-	FILE *iop;
-	char *fmt;
-	register int args;
+scanf(char const *fmt, ...)
 {
-	return(_doscan(iop, fmt, &args));
+	int ret;
+	va_list ap;
+
+	va_start(ap, fmt);
+	ret = _doscan(stdin, fmt, ap);
+	va_end(ap);
+	return(ret);
 }
 
 int
-sscanf(str, fmt, args)
-	register char *str;
-	char *fmt;
-	register int args;
+fscanf(FILE *fp, char const *fmt, ...)
 {
+	int ret;
+	va_list ap;
+
+	va_start(ap, fmt);
+	ret = _doscan(stdin, fmt, ap);
+	va_end(ap);
+	return (ret);
+}
+
+int
+vscanf(const char *fmt, va_list ap)
+{
+	return (_doscan(stdin, fmt, ap));
+}
+
+int
+sscanf(const char *str, char const *fmt, ...)
+{
+	int ret;
+	va_list ap;
 	FILE _strbuf;
 
-	_strbuf._flag = _IOREAD|_IOSTRG;
-	_strbuf._ptr = _strbuf._base = str;
-	_strbuf._cnt = 0;
-	while (*str++)
-		_strbuf._cnt++;
-	_strbuf._bufsiz = _strbuf._cnt;
-	return(_doscan(&_strbuf, fmt, &args));
+	_strbuf._flags = _IOREAD|_IOSTRG;
+	_strbuf._bf._base = _strbuf._p = (unsigned char *)str;
+	_strbuf._bf._size = _strbuf._r = strlen(str);
+	_strbuf._read = eofread;
+	_strbuf._ub._base = NULL;
+	_strbuf._lb._base = NULL;
+	va_start(ap, fmt);
+	ret = _doscan(&_strbuf, fmt, ap);
+	va_end(ap);
+	return (ret);
+}
+
+int
+vsscanf(const char *str, const char *fmt, va_list ap)
+{
+	int ret;
+	FILE _strbuf;
+
+	_strbuf._flags = __SRD;
+	_strbuf._bf._base = _strbuf._p = (unsigned char *)str;
+	_strbuf._bf._size = _strbuf._r = strlen(str);
+	_strbuf._read = eofread;
+	_strbuf._ub._base = NULL;
+	_strbuf._lb._base = NULL;
+	return (_doscan(&_strbuf, fmt, ap));
 }

@@ -5,9 +5,11 @@ unix?=			We run 2.11BSD.
 
 .SUFFIXES: 		.out .a .o .c .cc .C .cxx .cpp .F .f .r .y .l .s .S .cl .p .h .sh .m4
 
+
 AR?=			ar
 ARFLAGS?=		rl
 RANLIB?=		ranlib
+MV?=			mv -f
 
 AS?=			as
 AFLAGS?=
@@ -54,7 +56,7 @@ LFLAGS?=
 LEX.l?=			${LEX} ${LFLAGS}
 
 LINT?=			lint
-LINTFLAGS?=		-chapbxzF
+LINTFLAGS?=		-chapbrxzgFS
 
 LORDER?=		lorder
 
@@ -68,6 +70,10 @@ COMPILE.p?=		${PC} ${PFLAGS} ${CPPFLAGS} -c
 LINK.p?=		${PC} ${PFLAGS} ${CPPFLAGS} ${LDFLAGS}
 
 SHELL?=			sh
+
+SIZE?=			size
+
+TSORT?= 		tsort -q
 
 YACC?=			yacc
 YFLAGS?=

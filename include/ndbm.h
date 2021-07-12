@@ -6,6 +6,12 @@
  *	@(#)ndbm.h	5.1.1 (2.11BSD GTE) 12/31/93
  */
 
+#ifndef _NDBM_H_
+#define	_NDBM_H_
+
+#include <sys/cdefs.h>
+#include <stdint.h>
+#include <db.h>
 /*
  * Hashed key data base library.
  */
@@ -42,8 +48,8 @@ typedef struct {
 #define dbm_clearerr(db)	((db)->dbm_flags &= ~_DBM_IOERR)
 
 /* for flock(2) and fstat(2) */
-#define dbm_dirfno(db)	((db)->dbm_dirf)
-#define dbm_pagfno(db)	((db)->dbm_pagf)
+#define dbm_dirfno(db)		((db)->dbm_dirf)
+#define dbm_pagfno(db)		((db)->dbm_pagf)
 
 typedef struct {
 	char	*dptr;

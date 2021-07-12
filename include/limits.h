@@ -36,9 +36,29 @@
 #ifndef _LIMITS_H_
 #define	_LIMITS_H_
 
-/*
- * We don't need this crud at the moment so save on abuse of the C
- * preprocessor by not doing the defines.
+
+#if defined(_POSIX_C_SOURCE)
+#define	_POSIX_AIO_LISTIO_MAX	2
+#define	_POSIX_AIO_MAX			1
+#define	_POSIX_ARG_MAX			4096
+#define	_POSIX_CHILD_MAX		25
+#define	_POSIX_HOST_NAME_MAX	255
+#define	_POSIX_LINK_MAX			8
+#define	_POSIX_LOGIN_NAME_MAX	9
+#define	_POSIX_MAX_CANON		255
+#define	_POSIX_MAX_INPUT		255
+#define	_POSIX_MQ_OPEN_MAX		8
+#define	_POSIX_MQ_PRIO_MAX		32
+#define	_POSIX_NAME_MAX			14
+#define	_POSIX_NGROUPS_MAX		8
+#define	_POSIX_OPEN_MAX			20
+#define	_POSIX_PATH_MAX			256
+#define	_POSIX_PIPE_BUF			512
+#define	_POSIX_RE_DUP_MAX		255
+#define	_POSIX_SSIZE_MAX		32767
+#define	_POSIX_STREAM_MAX		8
+#define	_POSIX_SYMLINK_MAX		255
+#define	_POSIX_SYMLOOP_MAX		8
 
 #define	_POSIX_ARG_MAX			4096
 #define	_POSIX_CHILD_MAX		6
@@ -63,9 +83,20 @@
 #define	_POSIX2_LINE_MAX		2048
 #define	_POSIX2_RE_DUP_MAX		255
 
-*/
+#endif /* _POSIX_C_SOURCE */
+
+#define MB_LEN_MAX		32	/* Allow ISO/IEC 2022 */
 
 #include <machine/limits.h>
+
+#ifdef __CHAR_UNSIGNED__
+# define CHAR_MIN     0
+# define CHAR_MAX     UCHAR_MAX
+#else
+# define CHAR_MIN     SCHAR_MIN
+# define CHAR_MAX     SCHAR_MAX
+#endif
+
 #include <sys/syslimits.h>
 
 #endif /* !_LIMITS_H_ */

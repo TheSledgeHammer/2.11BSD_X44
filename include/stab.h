@@ -6,6 +6,9 @@
  *	@(#)stab.h	5.1 (Berkeley) 5/30/85
  */
 
+#ifndef _STAB_H_
+#define _STAB_H_
+
 /* IF YOU ADD DEFINITIONS, ADD THEM TO nm.c as well */
 /*
  * This file gives definitions supplementing <a.out.h>
@@ -40,3 +43,5 @@
  * for the berkeley pascal compiler, pc(1):
  */
 #define	N_PC	0x30		/* global pascal symbol: name,,0,subtype,line */
+
+#endif /* !_STAB_H_ */

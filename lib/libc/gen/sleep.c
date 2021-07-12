@@ -10,6 +10,8 @@
 #include <stdio.h>	/* For NULL */
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/signal.h>
+#include <unistd.h>
 
 /*
  * This implements the sleep(3) function using only 3 system calls instead of 

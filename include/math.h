@@ -5,6 +5,12 @@
  *
  *	@(#)math.h	1.1 (2.10BSD Berkeley) 12/1/86
  */
+#ifndef _MATH_H_
+#define _MATH_H_
+
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
 
 extern	double	fabs(), floor(), ceil(), fmod(), ldexp();
 extern	double	sqrt(), hypot(), atof();
@@ -16,3 +22,7 @@ extern	double	j0(), j1(), jn(), y0(), y1(), yn();
 
 #define	HUGE	1.701411733192644270e38
 #define	LOGHUGE	39
+
+__END_DECLS
+
+#endif /* _MATH_H_ */

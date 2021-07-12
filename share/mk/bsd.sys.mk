@@ -1,23 +1,51 @@
-#	$NetBSD: bsd.sys.mk,v 1.34 1999/01/31 09:17:20 mrg Exp $
+#	$NetBSD: bsd.sys.mk,v 1.111.2.1.2.1 2005/05/31 21:41:02 tron Exp $
 #
-# Overrides used for NetBSD source tree builds.
+# Build definitions used for NetBSD source tree builds.
 
-.if defined(WARNS) && ${WARNS} == 1
-CFLAGS+= -Wall -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith
-.endif
-.if !defined(NOGCCERROR)
-CFLAGS+= -Werror
-.endif
-CFLAGS+= ${CWARNFLAGS}
+.if !defined(_BSD_SYS_MK_)
+_BSD_SYS_MK_=1
 
-.if defined(DESTDIR)
-CPPFLAGS+= -nostdinc -idirafter ${DESTDIR}/usr/include
-LINTFLAGS+= -d ${DESTDIR}/usr/include
+.if !empty(.INCLUDEDFROMFILE:MMakefile*)
+error1:
+	@(echo "bsd.sys.mk should not be included from Makefiles" >& 2; exit 1)
+.endif
+.if !defined(_BSD_OWN_MK_)
+error2:
+	@(echo "bsd.own.mk must be included before bsd.sys.mk" >& 2; exit 1)
 .endif
 
-.if defined(AUDIT)
-CPPFLAGS+= -D__AUDIT__
+.if defined(WARNS)
+.if ${WARNS} > 0
+CFLAGS+=	-Wall -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith
+#CFLAGS+=	-Wmissing-declarations -Wredundant-decls -Wnested-externs
+# Add -Wno-sign-compare.  -Wsign-compare is included in -Wall as of GCC 3.3,
+# but our sources aren't up for it yet. Also, add -Wno-traditional because
+# gcc includes #elif in the warnings, which is 'this code will not compile
+# in a traditional environment' warning, as opposed to 'this code behaves
+# differently in traditional and ansi environments' which is the warning
+# we wanted, and now we don't get anymore.
+CFLAGS+=	-Wno-sign-compare -Wno-traditional
+# XXX Delete -Wuninitialized by default for now -- the compiler doesn't
+# XXX always get it right.
+CFLAGS+=	-Wno-uninitialized
 .endif
+.if ${WARNS} > 1
+CFLAGS+=	-Wreturn-type -Wswitch -Wshadow
+.endif
+.if ${WARNS} > 2
+CFLAGS+=	-Wcast-qual -Wwrite-strings
+.endif
+.endif
+
+.if defined(WFORMAT) && defined(FORMAT_AUDIT)
+.if ${WFORMAT} > 1
+CFLAGS+=	-Wnetbsd-format-audit -Wno-format-extra-args
+.endif
+.endif
+
+CPPFLAGS+=	${AUDIT:D-D__AUDIT__}
+CFLAGS+=	${CWARNFLAGS} ${NOGCCERROR:D:U-Werror}
+LINTFLAGS+=	${DESTDIR:D-d ${DESTDIR}/usr/include}
 
 # Helpers for cross-compiling
 HOST_CC?=	cc
@@ -108,3 +136,5 @@ YFLAGS+=-d
 		${HOST_COMPILE.c} -o ${.TARGET} ${.TARGET:R}.tab.c
 		rm -f ${.TARGET:R}.tab.c
 .endif
+
+.endif	# !defined(_BSD_SYS_MK_)

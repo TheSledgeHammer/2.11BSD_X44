@@ -1,8 +1,15 @@
-#	@(#)Makefile	8.1 (Berkeley) 6/4/93
+#	$NetBSD: Makefile,v 1.32 2013/02/07 20:15:07 christos Exp $
+
+.include <bsd.own.mk>
+
+WARNS=	2
 
 LIB=	compat
-CFLAGS+=-DLIBC_SCCS -DSYSLIBC_SCCS
-AINC=	-I${.CURDIR}/lib/libc/arch/${MACHINE_ARCH}
+CPPFLAGS+=-DLIBC_SCCS -DSYSLIBC_SCCS -D__LIBCOMPAT_SOURCE__
+AFLAGS+=-I${NETBSDSRCDIR}/lib/libc/arch/${MACHINE_ARCH}
+.if defined(DESTDIR)
+AFLAGS+=-nostdinc -isystem ${DESTDIR}/usr/include
+.endif
 
 .PATH:	${.CURDIR}/4.1/${MACHINE} ${.CURDIR}/4.1 \
 		${.CURDIR}/4.3/${MACHINE} ${.CURDIR}/4.3 \

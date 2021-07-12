@@ -4,6 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)stty.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
@@ -11,13 +12,12 @@ static char sccsid[] = "@(#)stty.c	5.2 (Berkeley) 3/9/86";
 /*
  * Writearound to old stty system call.
  */
-
+#include <sys/ioctl.h>
 #include <sgtty.h>
 
 stty(fd, ap)
 	int fd;
 	struct sgtty *ap;
 {
-
 	return(ioctl(fd, TIOCSETP, ap));
 }

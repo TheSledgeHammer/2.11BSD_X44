@@ -1,6 +1,9 @@
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)strrchr.c	5.2 (berkeley) 86/03/09";
 #endif LIBC_SCCS and not lint
+
+#include <string.h>
 
 /*
  * Return the ptr in sp at which the character c last
@@ -8,8 +11,6 @@ static char sccsid[] = "@(#)strrchr.c	5.2 (berkeley) 86/03/09";
  *
  * This routine is just "rindex" renamed.
  */
-
-#define NULL 0
 
 char *
 strrchr(sp, c)

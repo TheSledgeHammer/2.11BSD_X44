@@ -266,8 +266,8 @@ void		*memmove (void *, const void *, size_t);
 int	 		pmatch (const char *, const char *, const char **);
 u_int32_t 	arc4random (void);
 void	 	arc4randbytes (void *, size_t);
-void		qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));
-void		qsort_r(void *base, size_t nmemb, size_t size, void *thunk, int (*compar)(void *, const void *, const void *));
+void		qsort(void *, size_t, size_t, int (*)(const void *, const void *));
+void		qsort_r(void *, size_t, size_t, void *, int (*)(void *, const void *, const void *));
 u_long	 	random (void);
 char		*rindex (const char *, int);
 int	 		scanc (u_int, const u_char *, const u_char *, int);
@@ -277,6 +277,7 @@ size_t	 	strlcpy (char *, const char *, size_t);
 size_t	 	strlcat (char *, const char *, size_t);
 int	 		strncasecmp (const char *, const char *, size_t);
 u_long	 	strtoul (const char *, char **, int);
+void	 	hexdump(void (*)(const char *, ...) __printflike(1, 2), const char *, const void *, size_t);
 
 #define __KASSERTSTR  "kernel %sassertion \"%s\" failed: file \"%s\", line %d "
 

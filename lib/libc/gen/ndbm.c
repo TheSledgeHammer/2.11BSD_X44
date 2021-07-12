@@ -108,6 +108,7 @@ err:
 	return (item);
 }
 
+int
 dbm_delete(db, key)
 	register DBM *db;
 	datum key;
@@ -136,6 +137,7 @@ dbm_delete(db, key)
 	return (0);
 }
 
+int
 dbm_store(db, key, dat, replace)
 	register DBM *db;
 	datum key, dat;

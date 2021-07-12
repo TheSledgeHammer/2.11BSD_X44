@@ -119,6 +119,6 @@
 #define	_SC_TZNAME_MAX			27
 
 /* configurable system strings */
-#define	_CS_PATH		 1
+#define	_CS_PATH		 		1
 
 #endif /* !_SYS_UNISTD_H_ */

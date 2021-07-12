@@ -12,6 +12,8 @@
  *				   Place into the public domain.
  *      --------------------------------------------------              
 */
+#ifndef	_VMF_H_
+#define	_VMF_H_
 
 #include <sys/types.h>
 
@@ -24,12 +26,12 @@ struct vspace {
 	int     		v_fd;           /* file for swapping */
 	off_t   		v_foffset;      /* offset for computing file addresses */
 	int     		v_maxsegno;     /* number of segments in this space */
-	};
+};
 
 struct dlink {              		/* general double link structure */
 	struct dlink 	*fwd;      		/* forward link */
 	struct dlink 	*back;     		/* back link */
-	};
+};
 
 struct	vseg {                    	/* structure of a segment in memory */
 	struct	dlink	s_link;			/* for linking into lru list */
@@ -38,8 +40,8 @@ struct	vseg {                    	/* structure of a segment in memory */
 	int				s_lock_count;
 	int     		s_flags;
 	union {
-		int		_winfo[WORDSPERSEG];/* the actual segment */
-		char	_cinfo[BYTESPERSEG];
+		int			_winfo[WORDSPERSEG];/* the actual segment */
+		char		_cinfo[BYTESPERSEG];
 		} v_un;
 	};
 
@@ -49,15 +51,17 @@ struct	vseg {                    	/* structure of a segment in memory */
 /* masks for s_flags */
 #define S_DIRTY 01              	/* segment has been modified */
 
-	long	nswaps;         		/* number of swaps */
-	long	nmapsegs;       		/* number of mapseg calls */
+long	nswaps;         			/* number of swaps */
+long	nmapsegs;       			/* number of mapseg calls */
 
-	int	vminit(), vmopen();
-	struct	vseg	*vmmapseg();
-	void	vmlock(), vmunlock(), vmclrseg(), vmmodify();
-	void	vmflush(), vmclose();
+int		vminit(), vmopen();
+struct	vseg	*vmmapseg();
+void	vmlock(), vmunlock(), vmclrseg(), vmmodify();
+void	vmflush(), vmclose();
 
 typedef	long	VADDR;
-#define	VMMODIFY(seg) (seg->s_flags |= S_DIRTY)
-#define	VSEG(va) ((short)(va >> LOG2BPS))
-#define	VOFF(va) ((u_short)va % BYTESPERSEG)
+#define	VMMODIFY(seg) 	(seg->s_flags |= S_DIRTY)
+#define	VSEG(va) 		((short)(va >> LOG2BPS))
+#define	VOFF(va) 		((u_short)va % BYTESPERSEG)
+
+#endif /* !_VMF_H_ */

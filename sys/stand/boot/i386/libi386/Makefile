@@ -35,12 +35,12 @@ CFLAGS+= -DSMBIOS_NETWORK_ENDIAN_UUID
 .endif
 
 # Include simple terminal emulation (cons25-compatible)
-CFLAGS+= -DTERM_EMU
+CFLAGS+= 	-DTERM_EMU
 
 # XXX: make alloca() useable
-CFLAGS+= -Dalloca=__builtin_alloca
+CFLAGS+= 	-Dalloca=__builtin_alloca
 
-CFLAGS+=	-I${LDRSRC} -I${BOOTSRC}/i386/common \
-			-I${SYSDIR}/dev/acpica/include
+CFLAGS+=	-I${LDRSRC} -I${BOOTSRC}/i386/common 
+			#-I${SYSDIR}/dev/acpica/include
 
 .include <bsd.lib.mk>

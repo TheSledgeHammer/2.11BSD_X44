@@ -63,7 +63,7 @@
  * respective subsystem header files.
  */
 
-#define CTL_MAXNAME	12	/* largest number of components supported */
+#define CTL_MAXNAME		12	/* largest number of components supported */
 
 /*
  * Each subsystem defined by sysctl defines a list of variables
@@ -82,6 +82,8 @@ struct ctlname {
 #define	CTLTYPE_STRING	3	/* name describes a string */
 #define	CTLTYPE_LONG	4	/* name describes a 32-bit number */
 #define	CTLTYPE_STRUCT	5	/* name describes a structure */
+#define	CTLTYPE_QUAD	6	/* name describes a 64-bit number */
+#define	CTLTYPE_BOOL	7	/* name describes a bool */
 
 /*
  * Top-level identifiers
@@ -191,7 +193,7 @@ struct ctlname {
  * KERN_PROC subtype ops return arrays of augmented proc structures:
  */
 struct kinfo_proc {
-	struct	proc kp_proc;						/* proc structure */
+	struct	proc 		kp_proc;				/* proc structure */
 	struct	eproc {
 		struct	proc 	*e_paddr;				/* address of proc */
 

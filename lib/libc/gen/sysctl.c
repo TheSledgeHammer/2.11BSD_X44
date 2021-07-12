@@ -39,9 +39,11 @@ static char sccsid[] = "@(#)sysctl.c	8.2.2 (2.11BSD GTE) 1996/11/27";
 #include <sys/sysctl.h>
 #include <errno.h>
 #include <paths.h>
+#include <stdio.h>
+#include <unistd.h>
 
 extern	int	errno;
-static char _PATH_STDPATH[]="/usr/bin:/bin:/usr/ucb:/sbin:/usr/sbin:/usr/local:/usr/new";
+//static char _PATH_STDPATH[]="/usr/bin:/bin:/usr/ucb:/sbin:/usr/sbin:/usr/local:/usr/new";
 
 
 int
@@ -90,23 +92,28 @@ sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 
 	switch (name[1]) {
 	case USER_BC_BASE_MAX:
+		*(int *)oldp = BC_BASE_MAX;
+		return (0);
 	case USER_BC_SCALE_MAX:
-		*(int *)oldp = 99;
+		*(int *)oldp = BC_SCALE_MAX;
 		return (0);
 	case USER_BC_DIM_MAX:
-		*(int *)oldp = 2048;
+		*(int *)oldp = BC_DIM_MAX;
 		return (0);
 	case USER_BC_STRING_MAX:
-		*(int *)oldp = 1000;
+		*(int *)oldp = BC_STRING_MAX;
+		return (0);
+	case USER_COLL_WEIGHTS_MAX:
+		*(int *)oldp = COLL_WEIGHTS_MAX;
 		return (0);
 	case USER_EXPR_NEST_MAX:
-		*(int *)oldp = 32;
+		*(int *)oldp = EXPR_NEST_MAX;
 		return (0);
 	case USER_LINE_MAX:
-		*(int *)oldp = 1024;
+		*(int *)oldp = LINE_MAX;
 		return (0);
 	case USER_RE_DUP_MAX:
-		*(int *)oldp = 255;
+		*(int *)oldp = RE_DUP_MAX;
 		return (0);
 	case USER_COLL_WEIGHTS_MAX:
 	case USER_POSIX2_VERSION:
@@ -121,10 +128,10 @@ sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		*(int *)oldp = 0;
 		return (0);
 	case USER_STREAM_MAX:
-		*(int *)oldp = 20;
+		*(int *)oldp = FOPEN_MAX;
 		return (0);
 	case USER_TZNAME_MAX:
-		*(int *)oldp = 63;
+		*(int *)oldp = NAME_MAX;
 		return (0);
 	default:
 		errno = EINVAL;

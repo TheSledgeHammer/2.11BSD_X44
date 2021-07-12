@@ -17,8 +17,16 @@
  *	@(#)utmp.h	5.6.1 (2.11BSD) 1996/11/27
  */
 
-#define	_PATH_UTMP	"/var/run/utmp"
-#define	_PATH_WTMP	"/usr/adm/wtmp"
+#ifndef	_UTMP_H_
+#define	_UTMP_H_
+
+#include <sys/cdefs.h>
+#include <time.h> /* for time_t */
+#include <lastlog.h>
+
+#define	_PATH_UTMP		"/var/run/utmp"
+//#define	_PATH_WTMP		"/usr/adm/wtmp"
+#define	_PATH_WTMP		"/var/log/wtmp"
 
 #define	UT_NAMESIZE	15
 #define	UT_LINESIZE	8
@@ -30,3 +38,10 @@ struct utmp {
 	char	ut_host[UT_HOSTSIZE];
 	long	ut_time;
 };
+
+__BEGIN_DECLS
+int utmpname(const char *);
+void setutent(void);
+void endutent(void);
+__END_DECLS
+#endif /* !_UTMP_H_ */

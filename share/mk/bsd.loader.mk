@@ -1,0 +1,80 @@
+#	$211BSD: Makefile,v 1.0 2021/05/25 23:59:27 Exp $
+#  	Bootloader 
+
+.if !defined(_BSD_LOADER_MK_)
+_BSD_LOADER_MK_=1
+
+.include <bsd.own.mk>
+
+# Directories
+BOOTSTAND?=					${KERNSRCDIR}/stand
+BOOTSRC?=					${KERNSRCDIR}/stand/boot
+LIBKERN?= 					${KERNSRCDIR}/lib/libkern
+LIBSA?=						${KERNSRCDIR}/lib/libsa
+
+EFISRC=						${BOOTSRC}/efi
+EFIINC=						${EFISRC}/include
+EFIINCMD=					${EFIINC}/${MACHINE}
+DLOADER=					${BOOTSRC}/dloader
+LDRSRC=						${BOOTSRC}/common
+#UBOOTSRC=					${BOOTSRC}/uboot
+LIBCSRC=					/lib/libc
+
+BOOTOBJ=					${BOOTSTAND}
+
+# BINDIR is where we install
+BINDIR?=					/boot
+
+# Machine support
+LOADER_MACHINE?=			${MACHINE}
+LOADER_MACHINE_ARCH?=		${MACHINE_ARCH}
+
+# Filesystem support
+LOADER_CD9660_SUPPORT?=		yes
+LOADER_MSDOS_SUPPORT?=		yes
+LOADER_UFS_SUPPORT?=		yes
+LOADER_EXT2FS_SUPPORT?=  	no
+
+# Partition support
+LOADER_GPT_SUPPORT?=		no
+LOADER_MBR_SUPPORT?=		yes
+
+# Network support
+LOADER_NET_SUPPORT?=		no
+
+# Standard options:
+# Options used when building standalone components
+CFLAGS+=		-nostdinc
+CFLAGS+=		-ffreestanding -fshort-wchar -Wformat -D_STANDALONE
+LDFLAGS+=		#-nostdlib
+CPPFLAGS+=		-D_STANDALONE
+
+### find out what to use for libkern
+KERN_AS=		library
+.include 		"${LIBKERN}/Makefile.inc"
+
+### find out what to use for libsa
+SA_AS=			library
+SAMISCMAKEFLAGS+="SA_USE_LOADFILE=yes"
+.include 		"${LIBSA}/Makefile.inc"
+
+CLEANFILES+=	vers.c
+VERSION_FILE?=	${.CURDIR}/version
+
+vers.c: ${LDRSRC}/newvers.sh ${VERSION_FILE}
+	sh ${LDRSRC}/newvers.sh ${REPRO_FLAG} ${VERSION_FILE} \
+	    ${NEWVERSWHAT}
+
+.if !empty(HELP_FILES)
+HELP_FILES+=	${LDRSRC}/help.common
+
+CLEANFILES+=	loader.help
+FILES+=			loader.help
+
+loader.help: ${HELP_FILES}
+	cat ${HELP_FILES} | awk -f ${LDRSRC}/merge_help.awk > ${.TARGET}
+.endif
+
+.include <bsd.sys.mk>
+
+.endif	# !defined(_BSD_LOADER_MK_)

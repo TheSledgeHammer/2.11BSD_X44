@@ -1,20 +1,60 @@
-#	$NetBSD: bsd.prog.mk,v 1.55 1996/04/08 21:19:26 jtc Exp $
-#	@(#)bsd.prog.mk	5.26 (Berkeley) 6/25/91
+#	$NetBSD: bsd.prog.mk,v 1.198.2.1 2004/05/22 17:36:11 he Exp $
+#	@(#)bsd.prog.mk	8.2 (Berkeley) 4/2/94
 
-.if exists(${.CURDIR}/../Makefile.inc)
-.include "${.CURDIR}/../Makefile.inc"
+.ifndef HOSTPROG
+
+.include <bsd.init.mk>
+.include <bsd.shlib.mk>
+.include <bsd.gcc.mk>
+
+.if defined(PROG_CXX)
+PROG=	${PROG_CXX}
 .endif
 
-.include <bsd.own.mk>
+##### Basic targets
+realinstall:	proginstall scriptsinstall
+clean:			cleanprog
 
-.SUFFIXES: .out .o .c .cc .C .y .l .s .8 .7 .6 .5 .4 .3 .2 .1 .0
+##### PROG specific flags.
+COPTS+=     ${COPTS.${PROG}}
+CPPFLAGS+=  ${CPPFLAGS.${PROG}}
+CXXFLAGS+=  ${CXXFLAGS.${PROG}}
+LDADD+=     ${LDADD.${PROG}}
+LDFLAGS+=   ${LDFLAGS.${PROG}}
+LDSTATIC+=  ${LDSTATIC.${PROG}}
 
-CFLAGS+=		${COPTS}
+##### Default values
+CPPFLAGS+=	${DESTDIR:D-nostdinc ${CPPFLAG_ISYSTEM} ${DESTDIR}/usr/include}
+CXXFLAGS+=	${DESTDIR:D-nostdinc++ ${CPPFLAG_ISYSTEMXX} ${DESTDIR}/usr/include/g++}
+CFLAGS+=	${COPTS}
+MKDEP_SUFFIXES?=	.o .ln
 
-CRTBEGIN?=      ${DESTDIR}/usr/lib/crtbegin.o
-CRTEND?=        ${DESTDIR}/usr/lib/crtend.o
+# ELF platforms depend on crti.o, crtbegin.o, crtend.o, and crtn.o
+.if ${OBJECT_FMT} == "ELF"
+.ifndef LIBCRTBEGIN
+LIBCRTBEGIN=	${DESTDIR}/usr/lib/crti.o ${_GCC_CRTBEGIN}
+.MADE: ${LIBCRTBEGIN}
+.endif
+.ifndef LIBCRTEND
+LIBCRTEND=	${_GCC_CRTEND} ${DESTDIR}/usr/lib/crtn.o
+.MADE: ${LIBCRTEND}
+.endif
+_SHLINKER=	${SHLINKDIR}/ld.elf_so
+.else
+LIBCRTBEGIN?=
+LIBCRTEND?=
+_SHLINKER=	${SHLINKDIR}/ld.so
+.endif
 
-LIBCRT0?=		${DESTDIR}/usr/lib/crt0.o
+.ifndef LIBCRT0
+LIBCRT0=	${DESTDIR}/usr/lib/crt0.o
+.MADE: ${LIBCRT0}
+.endif
+
+##### Installed system library definitions
+#     E.g. LIBC?=${DESTDIR}/usr/lib/libc.a
+#     etc..
+#
 LIBC?=			${DESTDIR}/usr/lib/libc.a
 LIBCOMPAT?=		${DESTDIR}/usr/lib/libcompat.a
 LIBCRYPT?=		${DESTDIR}/usr/lib/libcrypt.a
@@ -45,118 +85,213 @@ LIBWRAP?=		${DESTDIR}/usr/lib/libwrap.a
 LIBY?=			${DESTDIR}/usr/lib/liby.a
 LIBZ?=			${DESTDIR}/usr/lib/libz.a
 
+.ifndef LIBSTDCXX
+LIBSTDCXX=	${DESTDIR}/usr/lib/libstdc++.a
+.MADE: ${LIBSTDCXX}
+.endif
+
+##### Build and install rules
 .if defined(SHAREDSTRINGS)
 CLEANFILES+=strings
 .c.o:
-		${CC} -E ${CFLAGS} ${.IMPSRC} | xstr -c -
-		@${CC} ${CFLAGS} -c x.c -o ${.TARGET}
-		@rm -f x.c
+	${CC} -E ${CFLAGS} ${.IMPSRC} | xstr -c -
+	@${CC} ${CFLAGS} -c x.c -o ${.TARGET}
+	@rm -f x.c
 
-.cc.o:
-		${CXX} -E ${CXXFLAGS} ${.IMPSRC} | xstr -c -
-		@mv -f x.c x.cc
-		@${CXX} ${CXXFLAGS} -c x.cc -o ${.TARGET}
-		@rm -f x.cc
-
-.C.o:
-		${CXX} -E ${CXXFLAGS} ${.IMPSRC} | xstr -c -
-		@mv -f x.c x.C
-		@${CXX} ${CXXFLAGS} -c x.C -o ${.TARGET}
-		@rm -f x.C
+.cc.o .cpp.o .cxx.o .C.o:
+	${CXX} -E ${CXXFLAGS} ${.IMPSRC} | xstr -c -
+	@mv -f x.c x.cc
+	@${CXX} ${CXXFLAGS} -c x.cc -o ${.TARGET}
+	@rm -f x.cc
 .endif
 
+.if !empty(_APPEND_SRCS:M[Yy][Ee][Ss])
+SRCS+=		${SRCS.${_P}}	# For bsd.dep.mk
+.endif
 
 .if defined(PROG)
-SRCS?=	${PROG}.c
-.if !empty(SRCS:N*.h:N*.sh)
-OBJS+=	${SRCS:N*.h:N*.sh:R:S/$/.o/g}
-LOBJS+=	${LSRCS:.c=.ln} ${SRCS:M*.c:.c=.ln}
+.if defined(PROG_CXX)
+SRCS?=		${PROG}.cc
+.else
+SRCS?=		${PROG}.c
+.endif
+
+DPSRCS+=		${SRCS:M*.l:.l=.c} ${SRCS:M*.y:.y=.c}
+DPSRCS+=		${YHEADER:D${SRCS:M*.y:.y=.h}}
+CLEANFILES+=	${SRCS:M*.l:.l=.c} ${SRCS:M*.y:.y=.c}
+CLEANFILES+=	${YHEADER:D${SRCS:M*.y:.y=.h}}
+
+.if !empty(SRCS:N*.h:N*.sh:N*.fth)
+OBJS+=		${SRCS:N*.h:N*.sh:N*.fth:R:S/$/.o/g}
+LOBJS+=		${LSRCS:.c=.ln} ${SRCS:M*.c:.c=.ln}
 .endif
 
 .if defined(OBJS) && !empty(OBJS)
-.if defined(DESTDIR)
+.NOPATH: ${OBJS} ${PROG} ${SRCS:M*.[ly]:C/\..$/.c/} ${YHEADER:D${SRCS:M*.y:.y=.h}}
 
-${PROG}: ${LIBCRT0} ${OBJS} ${LIBC} ${DPADD}
-		${CC} ${LDFLAGS} ${LDSTATIC} -o ${.TARGET} -nostdlib -L${DESTDIR}/usr/lib ${LIBCRT0} ${OBJS} ${LDADD} -lgcc -lc -lgcc
+_PROGLDOPTS=
+.if ${SHLINKDIR} != "/usr/libexec"	# XXX: change or remove if ld.so moves
+.if ${OBJECT_FMT} == "ELF"
+_PROGLDOPTS+=	-Wl,-dynamic-linker=${_SHLINKER}
+.endif
+.endif
+.if ${SHLIBDIR} != "/usr/lib"
+_PROGLDOPTS+=	-Wl,-rpath-link,${DESTDIR}${SHLIBDIR}:${DESTDIR}/usr/lib \
+		-R${SHLIBDIR} \
+		-L${DESTDIR}${SHLIBDIR}
+.elif ${SHLIBINSTALLDIR} != "/usr/lib"
+_PROGLDOPTS+=	-Wl,-rpath-link,${DESTDIR}${SHLIBINSTALLDIR}:${DESTDIR}/usr/lib \
+		-L${DESTDIR}${SHLIBINSTALLDIR}
+.endif
 
+.if defined(PROG_CXX)
+_CCLINK=	${CXX}
+.if ${USE_LIBSTDCXX} == "no"
+_SUPCXX=	-lsupc++ -lm
 .else
+_SUPCXX=	-lstdc++ -lm
+.endif
+.else
+_CCLINK=	${CC}
+.endif
 
-${PROG}: ${LIBCRT0} ${OBJS} ${LIBC} ${DPADD}
-		${CC} ${LDFLAGS} ${LDSTATIC} -o ${.TARGET} ${OBJS} ${LDADD}
+.gdbinit:
+	rm -f .gdbinit
+.if defined(DESTDIR) && !empty(DESTDIR)
+	echo "set solib-absolute-prefix ${DESTDIR}" > .gdbinit
+.else
+	touch .gdbinit
+.endif
+.for __gdbinit in ${GDBINIT}
+	echo "source ${__gdbinit}" >> .gdbinit
+.endfor
 
+${OBJS} ${LOBJS}: ${DPSRCS}
+
+${PROG}: .gdbinit ${LIBCRT0} ${OBJS} ${LIBC} ${LIBCRTBEGIN} ${LIBCRTEND} ${DPADD}
+.if !commands(${PROG})
+	${_MKTARGET_LINK}
+.if defined(DESTDIR)
+	${_CCLINK} -Wl,-nostdlib \
+	    ${LDFLAGS} ${LDSTATIC} -o ${.TARGET} ${_PROGLDOPTS} \
+	    -B${_GCC_CRTDIR}/ -B${DESTDIR}/usr/lib/  \
+	    ${OBJS} ${LDADD} \
+	    -L${_GCC_LIBGCCDIR} -L${DESTDIR}/usr/lib
+.else
+	${_CCLINK} ${LDFLAGS} ${LDSTATIC} -o ${.TARGET} ${_PROGLDOPTS} ${OBJS} ${LDADD}
 .endif	# defined(DESTDIR)
+.endif	# !commands(${PROG})
+
+${PROG}.ro: ${OBJS} ${DPADD}
+	${LD} -r -dc -o ${.TARGET} ${OBJS}
+
 .endif	# defined(OBJS) && !empty(OBJS)
 
-.if	!defined(MAN)
+.if !defined(MAN)
 MAN=	${PROG}.1
 .endif	# !defined(MAN)
 .endif	# defined(PROG)
 
-.MAIN: all
-all: ${PROG} _SUBDIRUSE
+realall: ${PROG} ${SCRIPTS}
 
-.if !target(clean)
-clean: _SUBDIRUSE
-		rm -f a.out [Ee]rrs mklog core *.core \
-	    	${PROG} ${OBJS} ${LOBJS} ${CLEANFILES}
-.endif
+cleanprog: .PHONY cleanobjs cleanextra
+	rm -f a.out [Ee]rrs mklog core *.core .gdbinit ${PROG}
 
-cleandir: _SUBDIRUSE clean
-
-.if !target(install)
-.if !target(beforeinstall)
-beforeinstall:
-.endif
-.if !target(afterinstall)
-afterinstall:
+cleanobjs: .PHONY
+.if defined(OBJS) && !empty(OBJS)
+	rm -f ${OBJS} ${LOBJS}
 .endif
 
-.if !target(realinstall)
-realinstall:
-.if defined(PROG)
-		install ${COPY} ${STRIP} -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
-	    	${PROG} ${DESTDIR}${BINDIR}
+cleanextra: .PHONY
+.if defined(CLEANFILES) && !empty(CLEANFILES)
+	rm -f ${CLEANFILES}
 .endif
-.if defined(HIDEGAME)
-		(cd ${DESTDIR}/usr/games; rm -f ${PROG}; ln -s dm ${PROG})
+
+.if defined(PROG) && !target(proginstall)
+PROGNAME?=${PROG}
+
+proginstall:: ${DESTDIR}${BINDIR}/${PROGNAME}
+.PRECIOUS: ${DESTDIR}${BINDIR}/${PROGNAME}
+
+__proginstall: .USE
+	${_MKTARGET_INSTALL}
+	${INSTALL_FILE} -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
+		${STRIPFLAG} ${SYSPKGTAG} ${.ALLSRC} ${.TARGET}
+
+.if ${MKUPDATE} == "no"
+${DESTDIR}${BINDIR}/${PROGNAME}! ${PROG} __proginstall
+.if !defined(BUILD) && !make(all) && !make(${PROG})
+${DESTDIR}${BINDIR}/${PROGNAME}! .MADE
+.endif
+.else
+${DESTDIR}${BINDIR}/${PROGNAME}: ${PROG} __proginstall
+.if !defined(BUILD) && !make(all) && !make(${PROG})
+${DESTDIR}${BINDIR}/${PROGNAME}: .MADE
+.endif
 .endif
 .endif
 
-install: maninstall _SUBDIRUSE
-.if defined(LINKS) && !empty(LINKS)
-		@set ${LINKS}; \
-		while test $$# -ge 2; do \
-			l=${DESTDIR}$$1; \
-			shift; \
-			t=${DESTDIR}$$1; \
-			shift; \
-			echo $$t -\> $$l; \
-			rm -f $$t; \
-			ln $$l $$t; \
-		done; true
+.if !target(proginstall)
+proginstall::
+.endif
+.PHONY:		proginstall
+
+.if defined(SCRIPTS) && !target(scriptsinstall)
+SCRIPTSDIR?=${BINDIR}
+SCRIPTSOWN?=${BINOWN}
+SCRIPTSGRP?=${BINGRP}
+SCRIPTSMODE?=${BINMODE}
+
+scriptsinstall:: ${SCRIPTS:@S@${DESTDIR}${SCRIPTSDIR_${S}:U${SCRIPTSDIR}}/${SCRIPTSNAME_${S}:U${SCRIPTSNAME:U${S:T:R}}}@}
+.PRECIOUS: ${SCRIPTS:@S@${DESTDIR}${SCRIPTSDIR_${S}:U${SCRIPTSDIR}}/${SCRIPTSNAME_${S}:U${SCRIPTSNAME:U${S:T:R}}}@}
+
+__scriptinstall: .USE
+	${_MKTARGET_INSTALL}
+	${INSTALL_FILE} \
+	    -o ${SCRIPTSOWN_${.ALLSRC:T}:U${SCRIPTSOWN}} \
+	    -g ${SCRIPTSGRP_${.ALLSRC:T}:U${SCRIPTSGRP}} \
+	    -m ${SCRIPTSMODE_${.ALLSRC:T}:U${SCRIPTSMODE}} \
+	    ${SYSPKGTAG} ${.ALLSRC} ${.TARGET}
+
+.for S in ${SCRIPTS:O:u}
+.if ${MKUPDATE} == "no"
+${DESTDIR}${SCRIPTSDIR_${S}:U${SCRIPTSDIR}}/${SCRIPTSNAME_${S}:U${SCRIPTSNAME:U${S:T:R}}}! ${S} __scriptinstall
+.if !defined(BUILD) && !make(all) && !make(${S})
+${DESTDIR}${SCRIPTSDIR_${S}:U${SCRIPTSDIR}}/${SCRIPTSNAME_${S}:U${SCRIPTSNAME:U${S:T:R}}}! .MADE
+.endif
+.else
+${DESTDIR}${SCRIPTSDIR_${S}:U${SCRIPTSDIR}}/${SCRIPTSNAME_${S}:U${SCRIPTSNAME:U${S:T:R}}}: ${S} __scriptinstall
+.if !defined(BUILD) && !make(all) && !make(${S})
+${DESTDIR}${SCRIPTSDIR_${S}:U${SCRIPTSDIR}}/${SCRIPTSNAME_${S}:U${SCRIPTSNAME:U${S:T:R}}}: .MADE
+.endif
+.endif
+.endfor
 .endif
 
-maninstall:   afterinstall
-afterinstall: realinstall
-realinstall:  beforeinstall
+.if !target(scriptsinstall)
+scriptsinstall::
 .endif
+.PHONY:		scriptsinstall
 
-.if !target(lint)
 lint: ${LOBJS}
 .if defined(LOBJS) && !empty(LOBJS)
-		@${LINT} ${LINTFLAGS} ${LDFLAGS:M-L*} ${LOBJS} ${LDADD}
-.endif
+	${LINT} ${LINTFLAGS} ${LDFLAGS:C/-L[  ]*/-L/Wg:M-L*} ${LOBJS} ${LDADD}
 .endif
 
-.if !defined(NOMAN)
+##### Pull in related .mk logic
+LINKSOWN?= ${BINOWN}
+LINKSGRP?= ${BINGRP}
+LINKSMODE?= ${BINMODE}
 .include <bsd.man.mk>
-.endif
-
-.if !defined(NONLS)
 .include <bsd.nls.mk>
-.endif
-
-.include <bsd.obj.mk>
-.include <bsd.dep.mk>
-.include <bsd.subdir.mk>
+.include <bsd.files.mk>
+.include <bsd.inc.mk>
+.include <bsd.links.mk>
 .include <bsd.sys.mk>
+.include <bsd.dep.mk>
+.include <bsd.clang-analyze.mk>
+.include <bsd.clean.mk>
+
+${TARGETS}:	# ensure existence
+
+.endif	# HOSTPROG

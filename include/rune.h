@@ -56,11 +56,11 @@ __BEGIN_DECLS
 char	*mbrune (const char *, rune_t);
 char	*mbrrune (const char *, rune_t);
 char	*mbmb (const char *, char *);
-long	 fgetrune (FILE *);
+long	fgetrune (FILE *);
 int	 	fputrune (rune_t, FILE *);
 int	 	fungetrune (rune_t, FILE *);
 int	 	setrunelocale (char *);
-void	 setinvalidrune (rune_t);
+void	setinvalidrune (rune_t);
 __END_DECLS
 
 #endif	/*! _RUNE_H_ */

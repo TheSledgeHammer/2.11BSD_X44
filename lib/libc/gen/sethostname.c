@@ -38,6 +38,7 @@ static char sccsid[] = "@(#)sethostname.c	8.1.1 (2.11BSD) 1997/11/30";
 #include <sys/param.h>
 #include <sys/sysctl.h>
 
+int
 sethostname(name, namelen)
 	char *name;
 	int namelen;

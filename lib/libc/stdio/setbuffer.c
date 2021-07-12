@@ -34,13 +34,14 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)setbuffer.c	8.1.1 (2.11BSD) 1997/7/29";
 #endif /* LIBC_SCCS and not lint */
 
+#include <errno.h>
 #include <stdio.h>
 #include <stddef.h>
-#include <sys/types.h>
 
 void
 setbuffer(fp, buf, size)
@@ -59,6 +60,5 @@ int
 setlinebuf(fp)
 	FILE *fp;
 {
-
 	return (setvbuf(fp, (char *)NULL, _IOLBF, (size_t)0));
 }

@@ -33,6 +33,12 @@
  *	@(#)mpool.h	8.1 (Berkeley) 6/2/93
  */
 
+#ifndef _MPOOL_H_
+#define _MPOOL_H_
+
+#include <sys/cdefs.h>
+#include <sys/queue.h>
+
 /*
  * The memory pool scheme is a simple one.  Each in memory page is referenced
  * by a bucket which is threaded in three ways.  All active pages are threaded
@@ -46,15 +52,15 @@
 
 /* The BKT structures are the elements of the lists. */
 typedef struct BKT {
-	struct BKT	*hnext;		/* next hash bucket */
-	struct BKT	*hprev;		/* previous hash bucket */
-	struct BKT	*cnext;		/* next free/lru bucket */
-	struct BKT	*cprev;		/* previous free/lru bucket */
-	void		*page;		/* page */
-	pgno_t		pgno;		/* page number */
+	struct BKT	*hnext;			/* next hash bucket */
+	struct BKT	*hprev;			/* previous hash bucket */
+	struct BKT	*cnext;			/* next free/lru bucket */
+	struct BKT	*cprev;			/* previous free/lru bucket */
+	void		*page;			/* page */
+	pgno_t		pgno;			/* page number */
 
-#define	MPOOL_DIRTY	0x01		/* page needs to be written */
-#define	MPOOL_PINNED	0x02		/* page is pinned into memory */
+#define	MPOOL_DIRTY		0x01	/* page needs to be written */
+#define	MPOOL_PINNED	0x02	/* page is pinned into memory */
 	unsigned long	flags;		/* flags */
 } BKT;
 
@@ -74,11 +80,11 @@ typedef struct MPOOL {
 	pgno_t	maxcache;		/* Max number of cached pages. */
 	pgno_t	npages;			/* Number of pages in the file. */
 	u_long	pagesize;		/* File page size. */
-	int	fd;			/* File descriptor. */
-					/* Page in conversion routine. */
-	void    (*pgin) __P((void *, pgno_t, void *));
-					/* Page out conversion routine. */
-	void    (*pgout) __P((void *, pgno_t, void *));
+	int		fd;				/* File descriptor. */
+							/* page in conversion routine */
+	void    (*pgin)(void *, pgno_t, void *);
+							/* page out conversion routine */
+	void    (*pgout)(void *, pgno_t, void *);
 	void	*pgcookie;		/* Cookie for page in/out routines. */
 #ifdef STATISTICS
 	unsigned long	cachehit;
@@ -121,15 +127,16 @@ typedef struct MPOOL {
 #endif
 
 __BEGIN_DECLS
-MPOOL	*mpool_open __P((DBT *, int, pgno_t, pgno_t));
-void	 mpool_filter __P((MPOOL *, void (*)(void *, pgno_t, void *),
-	    void (*)(void *, pgno_t, void *), void *));
-void	*mpool_new __P((MPOOL *, pgno_t *));
-void	*mpool_get __P((MPOOL *, pgno_t, u_int));
-int	 mpool_put __P((MPOOL *, void *, u_int));
-int	 mpool_sync __P((MPOOL *));
-int	 mpool_close __P((MPOOL *));
+MPOOL	*mpool_open (DBT *, int, pgno_t, pgno_t);
+void	 mpool_filter (MPOOL *, void (*)(void *, pgno_t, void *), void (*)(void *, pgno_t, void *), void *);
+void	*mpool_new (MPOOL *, pgno_t *);
+void	*mpool_get (MPOOL *, pgno_t, u_int);
+int	 	mpool_put (MPOOL *, void *, u_int);
+int	 	mpool_sync (MPOOL *);
+int	 	mpool_close (MPOOL *);
 #ifdef STATISTICS
-void	 mpool_stat __P((MPOOL *));
+void	 mpool_stat (MPOOL *);
 #endif
 __END_DECLS
+
+#endif /* _MPOOL_H_ */

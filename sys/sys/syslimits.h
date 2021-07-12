@@ -47,6 +47,8 @@
 #define	OPEN_MAX		  	64		/* max open files per process */
 #define	PATH_MAX		 	1024	/* max bytes in pathname */
 #define	PIPE_BUF		  	512		/* max bytes for atomic pipe writes */
+#define	GID_MAX		2147483647U		/* max value for a gid_t (2^31-2) */
+#define	UID_MAX		2147483647U		/* max value for a uid_t (2^31-2) */
 
 #define	BC_BASE_MAX		   	99		/* max ibase/obase values in bc(1) */
 #define	BC_DIM_MAX		 	2048	/* max array elements in bc(1) */

@@ -52,16 +52,16 @@
 /*
  * Make ioconf.c.
  */
-static int cforder __P((const void *, const void *));
-static int emitcfdata __P((FILE *));
-static int emitexterns __P((FILE *));
-static int emithdr __P((FILE *));
-static int emitloc __P((FILE *));
-static int emitpseudo __P((FILE *));
-static int emitpv __P((FILE *));
-static int emitroots __P((FILE *));
-static int emitvec __P((FILE *));
-static char *vecname __P((char *, const char *, int));
+static int cforder (const void *, const void *);
+static int emitcfdata (FILE *);
+static int emitexterns (FILE *);
+static int emithdr (FILE *);
+static int emitloc (FILE *);
+static int emitpseudo (FILE *);
+static int emitpv (FILE *);
+static int emitroots (FILE *);
+static int emitvec (FILE *);
+static char *vecname (char *, const char *, int);
 
 static const char *s_i386;
 

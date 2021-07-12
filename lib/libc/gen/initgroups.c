@@ -11,12 +11,13 @@ static char sccsid[] = "@(#)initgroups.c	5.3 (Berkeley) 4/27/86";
 /*
  * initgroups
  */
-#include <stdio.h>
 #include <sys/param.h>
+#include <stdio.h>
 #include <grp.h>
 
 struct group *getgrent();
 
+int
 initgroups(uname, agroup)
 	char *uname;
 	int agroup;
@@ -34,14 +35,14 @@ initgroups(uname, agroup)
 		for (i = 0; grp->gr_mem[i]; i++)
 			if (!strcmp(grp->gr_mem[i], uname)) {
 				if (ngroups == NGROUPS) {
-fprintf(stderr, "initgroups: %s is in too many groups\n", uname);
+					fprintf(stderr, "initgroups: %s is in too many groups\n",
+							uname);
 					goto toomany;
 				}
 				groups[ngroups++] = grp->gr_gid;
 			}
 	}
-toomany:
-	endgrent();
+	toomany: endgrent();
 	if (setgroups(ngroups, groups) < 0) {
 		perror("setgroups");
 		return (-1);

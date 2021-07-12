@@ -43,6 +43,7 @@
  */
 
 #include <ctype.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #if __STDC__
@@ -52,8 +53,8 @@
 #endif
 #include "config.h"
 
-static void nomem __P((void));
-static void vxerror __P((const char *, int, const char *, va_list));
+static void nomem (void);
+static void vxerror (const char *, int, const char *, va_list);
 
 /* 
  * Malloc, with abort on error.

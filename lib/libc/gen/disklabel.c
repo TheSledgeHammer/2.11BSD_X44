@@ -42,9 +42,14 @@ static char sccsid[] = "@(#)disklabel.c	5.17.1 (2.11BSD) 4/10/95";
 
 #define DKTYPENAMES
 #include <sys/disklabel.h>
-#include <stdio.h>
-#include <string.h>
 
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+/*
 extern	int	errno;
 
 static	char *dgetstr();
@@ -54,6 +59,10 @@ static	long dgetnum(), _gtnumdflt();
 static	dgetflag();
 static	gettype();
 static	error();
+*/
+
+static int	error (int);
+static int	gettype (char *, char **);
 
 #define getnumdflt(field, dname, dflt) field=_gtnumdflt(dname,(long)dflt)
 
@@ -190,7 +199,7 @@ static	char *ddecode();
  * from the diskcap file.  Parse is very rudimentary;
  * we just notice escaped newlines.
  */
-static
+static int
 dgetent(bp, name)
 	char *bp, *name;
 {
@@ -250,7 +259,7 @@ dgetent(bp, name)
  * against each such name.  The normal : terminator after the last
  * name (before the first field) stops us.
  */
-static
+static int
 dnamatch(np)
 	char *np;
 {
@@ -332,7 +341,7 @@ dgetnum(id)
  * of the buffer.  Return 1 if we find the option, or 0 if it is
  * not given.
  */
-static
+static int
 dgetflag(id)
 	char *id;
 {
@@ -429,7 +438,7 @@ nextc:
 	return (str);
 }
 
-static
+static int
 gettype(t, names)
 	char *t;
 	char **names;

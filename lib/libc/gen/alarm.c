@@ -14,6 +14,7 @@ static char sccsid[] = "@(#)alarm.c	5.2 (Berkeley) 3/9/86";
 #include <sys/time.h>
 #include <unistd.h>
 
+unsigned int
 alarm(secs)
 	int secs;
 {

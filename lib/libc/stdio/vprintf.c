@@ -15,20 +15,20 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)vprintf.c	5.2 (Berkeley) 6/27/88";
 #endif /* LIBC_SCCS and not lint */
 
+#include <sys/ansi.h>
+#include <assert.h>
+#include <errno.h>
 #include <stdio.h>
-#include <varargs.h>
 
 int
 vprintf(fmt, ap)
-	char *fmt;
-	va_list ap;
+	char const *fmt;
+	_BSD_VA_LIST_ ap;
 {
-	int len;
-
-	len = _doprnt(fmt, ap, stdout);
-	return (ferror(stdout) ? EOF : len);
+	return (vfprintf(stdout, fmt, ap));
 }

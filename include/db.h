@@ -117,14 +117,14 @@ typedef struct {
 #define	R_DUP		0x01	/* duplicate keys */
 	u_long	flags;
 	u_int	cachesize;	/* bytes to cache */
-	int	maxkeypage;	/* maximum keys per page */
-	int	minkeypage;	/* minimum keys per page */
+	int	maxkeypage;		/* maximum keys per page */
+	int	minkeypage;		/* minimum keys per page */
 	u_int	psize;		/* page size */
-	int	(*compare)	/* comparison function */
-	    __P((const DBT *, const DBT *));
+	int	(*compare)		/* comparison function */
+		(const DBT *, const DBT *);
 	size_t	(*prefix)	/* prefix function */
-	    __P((const DBT *, const DBT *));
-	int	lorder;		/* byte order */
+		(const DBT *, const DBT *);
+	int	lorder;			/* byte order */
 } BTREEINFO;
 
 #define	HASHMAGIC	0x061561
@@ -136,9 +136,9 @@ typedef struct {
 	u_int	ffactor;	/* fill factor */
 	u_int	nelem;		/* number of elements */
 	u_int	cachesize;	/* bytes to cache */
-	u_int32_t		/* hash function */
-		(*hash) __P((const void *, size_t));
-	int	lorder;		/* byte order */
+	u_int32_t			/* hash function */
+		(*hash) (const void *, size_t);
+	int	lorder;			/* byte order */
 } HASHINFO;
 
 /* Structure used to pass parameters to the record routines. */

@@ -20,8 +20,10 @@ void
 closedir(dirp)
 	register DIR *dirp;
 {
+	seekdir(dirp, dirp->dd_rewind);	/* free seekdir storage */
 	close(dirp->dd_fd);
 	dirp->dd_fd = -1;
 	dirp->dd_loc = 0;
-	free(dirp);
+	(void)free((void *)dirp->dd_buf);
+	(void)free((void *)dirp);
 }

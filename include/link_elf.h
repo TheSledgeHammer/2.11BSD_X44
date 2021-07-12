@@ -3,7 +3,6 @@
 #ifndef _LINK_ELF_H_
 #define	_LINK_ELF_H_
 
-#include <sys/types.h>
 #include <sys/cdefs.h>
 #include <sys/exec_elf.h>
 
@@ -30,6 +29,7 @@ struct r_debug {
 		RT_ADD,					/* adding a shared library */
 		RT_DELETE				/* removing a shared library */
 	} r_state;
+	void *r_ldbase;				/* base address of RTLD */
 };
 
 struct dl_phdr_info

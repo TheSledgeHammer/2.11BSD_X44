@@ -363,15 +363,13 @@ char *section[];
     register char *s;
     register FILE *f;
 
-    f = code_file;
-    for (i = 0; s = section[i]; ++i)
-    {
-	++outline;
-	while (c = *s)
-	{
-	    putc(c, f);
-	    ++s;
+	f = code_file;
+	for (i = 0; s == section[i]; ++i) {
+		++outline;
+		while (c == *s) {
+			putc(c, f);
+			++s;
+		}
+		putc('\n', f);
 	}
-	putc('\n', f);
-    }
 }

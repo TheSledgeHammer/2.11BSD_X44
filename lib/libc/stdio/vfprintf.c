@@ -15,34 +15,99 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)vfprintf.c	5.2 (Berkeley) 6/27/88";
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+#include <sys/ansi.h>
+#include <sys/types.h>
+
+#include <assert.h>
+#include <errno.h>
+#include <stdarg.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
-#include <varargs.h>
+#include <stdlib.h>
+#include <string.h>
+#include <wchar.h>
+
+//#include "reentrant.h"
+#include "local.h"
+//#include "fvwrite.h"
+#include "extern.h"
+
+static int __sprint __P((FILE *, struct __suio *));
+static int __sbprintf __P((FILE *, const char *, va_list))
+     __attribute__((__format__(__printf__, 2, 0)));
+
+/*
+ * Flush out all the vectors defined by the given uio,
+ * then reset it so that it can be reused.
+ */
+static int
+__sprint(fp, uio)
+	FILE *fp;
+	register struct __suio *uio;
+{
+	register int err;
+
+	if (uio->uio_resid == 0) {
+		uio->uio_iovcnt = 0;
+		return (0);
+	}
+	err = __sfvwrite(fp, uio);
+	uio->uio_resid = 0;
+	uio->uio_iovcnt = 0;
+	return (err);
+}
+
+/*
+ * Helper function for `fprintf to unbuffered unix file': creates a
+ * temporary buffer.  We only work on write-only files; this avoids
+ * worries about ungetc buffers and so forth.
+ */
+static int
+__sbprintf(fp, fmt, ap)
+	register FILE *fp;
+	const char *fmt;
+	va_list ap;
+{
+	int ret;
+	FILE fake;
+	unsigned char buf[BUFSIZ];
+
+	/* copy the important variables */
+	fake._flags = fp->_flags & ~__SNBF;
+	fake._file = fp->_file;
+	fake._cookie = fp->_cookie;
+	fake._write = fp->_write;
+
+	/* set up the buffer */
+	fake._bf._base = fake._p = buf;
+	fake._bf._size = fake._w = sizeof(buf);
+	fake._lbfsize = 0;	/* not actually used, but Just In Case */
+
+	/* do the work, then copy any error status */
+	ret = vfprintf(&fake, fmt, ap);
+	if (ret >= 0 && fflush(&fake))
+		ret = EOF;
+	if (fake._flags & __SERR)
+		fp->_flags |= __SERR;
+	return (ret);
+}
 
 int
 vfprintf(iop, fmt, ap)
 	FILE *iop;
-	char *fmt;
-	va_list ap;
+	const char *fmt;
+	_BSD_VA_LIST_  ap;
 {
 	int len;
-	char localbuf[BUFSIZ];
 
-	if (iop->_flag & _IONBF) {
-		iop->_flag &= ~_IONBF;
-		iop->_ptr = iop->_base = localbuf;
-		len = _doprnt(fmt, ap, iop);
-		(void) fflush(iop);
-		iop->_flag |= _IONBF;
-		iop->_base = NULL;
-		iop->_bufsiz = 0;
-		iop->_cnt = 0;
-	} else
-		len = _doprnt(fmt, ap, iop);
+	len = doprnt(iop, fmt, ap);
 
-	return (ferror(iop) ? EOF : len);
+	return (len);
 }

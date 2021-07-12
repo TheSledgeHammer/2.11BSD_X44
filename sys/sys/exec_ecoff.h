@@ -104,6 +104,7 @@ struct ecoff_symhdr {
 	int32_t				cbRfdOffset;	/* byte offset to start of relative file descriptors */
 	int32_t				iextMax;		/* number of external symbols */
 	int32_t				cbExtOffset;	/* byte offset to start of external symbols */
+	int32_t				esymMax;
 };
 
 /* ECOFF local symbol entry */

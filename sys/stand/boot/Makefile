@@ -1,37 +1,19 @@
 # $FreeBSD: src/sys/boot/Makefile,v 1.18 2003/08/16 02:48:20 obrien Exp $
 
-BOOTSRC?=		/sys/stand/boot
-LIBKERN?= 		/sys/lib/libkern
-LIBSA?=			/sys/lib/libsa
+.include <bsd.loader.mk>
 
-#EFISRC=		${BOOTSRC}/efi
-#EFIINC=		${EFISRC}/include
-#EFIINCMD=		${EFIINC}/${MACHINE}
-DLOADER=		${BOOTSRC}/dloader
-LDRSRC=			${BOOTSRC}/common
-#UBOOTSRC=		${BOOTSRC}/uboot
-LIBCSRC=		/lib/libc
+SUBDIR= 	common dloader #efi
 
-BOOTOBJ=		/sys/stand
+.if ${LOADER_MACHINE} == "i386" || ${LOADER_MACHINE_ARCH} == "i386"
+SUBDIR+= 		i386
 
-# BINDIR is where we install
-BINDIR?=		/boot
+# Enable the following.
+HAVE_BCACHE=	yes
+HAVE_ISABUS=	yes
+HAVE_PNP=		yes
+.endif
 
-# Standard options:
-# Options used when building standalone components
-CFLAGS+=		-nostdinc
-CFLAGS+=		-ffreestanding -fshort-wchar -Wformat -D_STANDALONE
-LDFLAGS+=		#-nostdlib
-CPPFLAGS+=		-D_STANDALONE
+INCSDIR= 	/usr/include/stand/boot
 
-### find out what to use for libkern
-KERN_AS=		library
-.include 		"${LIBKERN}/Makefile.inc"
-
-### find out what to use for libsa
-SA_AS=			library
-SAMISCMAKEFLAGS+="SA_USE_LOADFILE=yes"
-.include 		"${LIBSA}/Makefile.inc"
-
-.include <bsd.subdir.mk>
+.include <bsd.kinc.mk>
 		

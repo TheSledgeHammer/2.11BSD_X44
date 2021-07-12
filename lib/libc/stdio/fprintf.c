@@ -3,32 +3,25 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)fprintf.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
+#include <assert.h>
+#include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stddef.h>
 
-fprintf(iop, fmt, args)
-	register FILE *iop;
-	char *fmt;
-
+int
+fprintf(FILE *iop, const char *fmt, ...)
 {
-	char localbuf[BUFSIZ];
+	int ret;
+	va_list ap;
 
-	if (iop->_flag & _IONBF) {
-		iop->_flag &= ~_IONBF;
-		iop->_ptr = iop->_base = localbuf;
-		iop->_bufsiz = BUFSIZ;
-		_doprnt(fmt, &args, iop);
-		fflush(iop);
-		iop->_flag |= _IONBF;
-		iop->_base = NULL;
-		iop->_bufsiz = NULL;
-		iop->_cnt = 0;
-	} else
-		_doprnt(fmt, &args, iop);
-	return(ferror(iop)? EOF: 0);
+	va_start(ap, fmt);
+	ret = vfprintf(iop, fmt, ap);
+	va_end(ap);
+	return (ret);
 }

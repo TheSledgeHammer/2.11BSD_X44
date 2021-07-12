@@ -1,103 +1,147 @@
+/* $NetBSD: nlist.c,v 1.21 2003/08/07 16:42:54 agc Exp $ */
+
 /*
- * Copyright (c) 1989 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that: (1) source distributions retain this entire copyright
- * notice and comment, and (2) distributions including binaries display
- * the following acknowledgement:  ``This product includes software
- * developed by the University of California, Berkeley and its contributors''
- * in the documentation or other materials provided with the distribution
- * and in all advertising materials mentioning features or use of this
- * software. Neither the name of the University nor the names of its
- * contributors may be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
+/*
+ * Copyright (c) 1996 Christopher G. Demetriou.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)nlist.c	5.7.1 (2.11BSD GTE) 12/31/93";
+#if 0
+static char sccsid[] = "@(#)nlist.c	8.1 (Berkeley) 6/4/93";
+#else
+__RCSID("$NetBSD: nlist.c,v 1.21 2003/08/07 16:42:54 agc Exp $");
+#endif
+#endif /* LIBC_SCCS and not lint */
+
+#include "namespace.h"
+#include <sys/param.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/file.h>
+
+#include <assert.h>
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <a.out.h>			/* for 'struct nlist' declaration */
+
+#if 0
+#ifdef __weak_alias
+__weak_alias(nlist,_nlist)
+#endif
 #endif
 
-#include <sys/types.h>
-#include <sys/file.h>
-#include <a.out.h>
-#include <stdio.h>
+#include "nlist_private.h"
 
-typedef struct nlist NLIST;
-#define	_strx	n_un.n_strx
-#define	_name	n_un.n_name
-#define	ISVALID(p)	(p->_name && p->_name[0])
-
+static const struct {
+	int	(*fdnlist) __P((int, struct nlist *));
+} fdnlist_fmts[] = {
+#ifdef NLIST_AOUT
+	{	__fdnlist_aout		},
+#endif
+#ifdef NLIST_COFF
+	{	__fdnlist_coff		},
+#endif
+#ifdef NLIST_ECOFF
+	{	__fdnlist_ecoff		},
+#endif
+#ifdef NLIST_ELF32
+	{	__fdnlist_elf32		},
+#endif
+#ifdef NLIST_ELF64
+	{	__fdnlist_elf64		},
+#endif
+};
+	
+int
 nlist(name, list)
-	char *name;
-	NLIST *list;
+	const char *name;
+	struct nlist *list;
 {
-	register NLIST *p, *s;
-	struct xexec ebuf;
-	FILE *fstr, *fsym;
-	NLIST nbuf;
-	off_t strings_offset, symbol_offset, symbol_size, lseek();
-	int entries, len, maxlen;
-	char sbuf[128];
+	int fd, n;
 
-	entries = -1;
+	_DIAGASSERT(name != NULL);
+	_DIAGASSERT(list != NULL);
 
-	if (!(fsym = fopen(name, "r")))
+	fd = open(name, O_RDONLY, 0);
+	if (fd < 0)
 		return (-1);
-	if (fread((char*) &ebuf, 1, sizeof(ebuf), fsym) < sizeof(ebuf.e)||
-	N_BADMAG(ebuf.e))
-		goto done1;
+	n = __fdnlist(fd, list);
+	(void)close(fd);
+	return (n);
+}
 
-	symbol_offset = N_SYMOFF(ebuf);
-	symbol_size = ebuf.e.a_syms;
-	strings_offset = N_STROFF(ebuf);
-	if (fseek(fsym, symbol_offset, L_SET))
-		goto done1;
+int
+__fdnlist(fd, list)
+	int fd;
+	struct nlist *list;
+{
+	size_t i;
+	int rv;
 
-	if (!(fstr = fopen(name, "r")))
-		goto done1;
+	_DIAGASSERT(fd != -1);
+	_DIAGASSERT(list != NULL);
 
-	/*
-	 * clean out any left-over information for all valid entries.
-	 * Type and value defined to be 0 if not found; historical
-	 * versions cleared other and desc as well.  Also figure out
-	 * the largest string length so don't read any more of the
-	 * string table than we have to.
-	 */
-	for (p = list, entries = maxlen = 0; ISVALID(p); ++p, ++entries) {
-		p->n_type = 0;
-		p->n_ovly = 0;
-		p->n_value = 0;
-		if ((len = strlen(p->_name)) > maxlen)
-			maxlen = len;
-	}
-	if (++maxlen > sizeof(sbuf)) { /* for the NULL */
-		(void) fprintf(stderr, "nlist: sym 2 big\n");
-		entries = -1;
-		goto done2;
-	}
-
-	for (s = &nbuf; symbol_size; symbol_size -= sizeof(NLIST)) {
-		if (fread((char*) s, sizeof(NLIST), 1, fsym) != 1)
-			goto done2;
-		if (!s->_strx)
-			continue;
-		if (fseek(fstr, strings_offset + s->_strx, L_SET))
-			goto done2;
-		(void) fread(sbuf, sizeof(sbuf[0]), maxlen, fstr);
-		for (p = list; ISVALID(p); p++)
-			if (!strcmp(p->_name, sbuf)) {
-				p->n_value = s->n_value;
-				p->n_type = s->n_type;
-				p->n_ovly = s->n_ovly;
-				if (!--entries)
-					goto done2;
-			}
-	}
-	done2: (void) fclose(fstr);
-	done1: (void) fclose(fsym);
-	return (entries);
+	for (i = 0; i < sizeof(fdnlist_fmts) / sizeof(fdnlist_fmts[0]); i++)
+		if ((rv = (*fdnlist_fmts[i].fdnlist)(fd, list)) != -1)
+			return (rv);
+	return (-1);
 }

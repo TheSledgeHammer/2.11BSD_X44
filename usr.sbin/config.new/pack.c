@@ -85,7 +85,7 @@
  * (So it goes.)
  */
 
-typedef int (*vec_cmp_func) __P((const void *, int, int));
+typedef int (*vec_cmp_func) (const void *, int, int);
 
 #define	TAILHSIZE	128
 #define	PVHASH(i)	((i) & (TAILHSIZE - 1))
@@ -100,21 +100,21 @@ static int locspace;
 static int pvecspace;
 static int longest_pvec;
 
-static void packdevi __P((void));
-static void packlocs __P((void));
-static void packpvec __P((void));
+static void packdevi (void);
+static void packlocs (void);
+static void packpvec (void);
 
-static void addparents __P((struct devi *src, struct devi *dst));
-static int nparents __P((struct devi **, struct devbase *, int));
-static int sameas __P((struct devi *, struct devi *));
-static int findvec __P((const void *, int, int, vec_cmp_func, int));
-static int samelocs __P((const void *, int, int));
-static int addlocs __P((const char **, int));
-static int loclencmp __P((const void *, const void *));
-static int samepv __P((const void *, int, int));
-static int addpv __P((short *, int));
-static int pvlencmp __P((const void *, const void *));
-static void resettails __P((void));
+static void addparents (struct devi *src, struct devi *dst);
+static int nparents (struct devi **, struct devbase *, int);
+static int sameas (struct devi *, struct devi *);
+static int findvec (const void *, int, int, vec_cmp_func, int);
+static int samelocs (const void *, int, int);
+static int addlocs (const char **, int);
+static int loclencmp (const void *, const void *);
+static int samepv (const void *, int, int);
+static int addpv (short *, int);
+static int pvlencmp (const void *, const void *);
+static void resettails (void);
 
 void
 pack()

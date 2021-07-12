@@ -13,21 +13,21 @@
 
 #ifndef _POSIX_SOURCE
 struct ostat {
-	u_int16_t st_dev;				/* inode's device */
-	ino_t	  st_ino;				/* inode's number */
-	mode_t	  st_mode;				/* inode protection mode */
-	nlink_t	  st_nlink;				/* number of hard links */
-	u_int16_t st_uid;				/* user ID of the file's owner */
-	u_int16_t st_gid;				/* group ID of the file's group */
-	u_int16_t st_rdev;				/* device type */
-	int32_t	  st_size;				/* file size, in bytes */
-	struct	timespec st_atimespec;	/* time of last access */
-	struct	timespec st_mtimespec;	/* time of last data modification */
-	struct	timespec st_ctimespec;	/* time of last file status change */
-	int32_t	  st_blksize;			/* optimal blocksize for I/O */
-	int32_t	  st_blocks;			/* blocks allocated for file */
-	u_int32_t st_flags;				/* user defined flags for file */
-	u_int32_t st_gen;				/* file generation number */
+	u_int16_t 			st_dev;			/* inode's device */
+	ino_t	  			st_ino;			/* inode's number */
+	mode_t	  			st_mode;		/* inode protection mode */
+	nlink_t	  			st_nlink;		/* number of hard links */
+	u_int16_t 			st_uid;			/* user ID of the file's owner */
+	u_int16_t 			st_gid;			/* group ID of the file's group */
+	u_int16_t 			st_rdev;		/* device type */
+	int32_t	  			st_size;		/* file size, in bytes */
+	struct	timespec 	st_atimespec;	/* time of last access */
+	struct	timespec 	st_mtimespec;	/* time of last data modification */
+	struct	timespec 	st_ctimespec;	/* time of last file status change */
+	int32_t	  			st_blksize;		/* optimal blocksize for I/O */
+	int32_t	  			st_blocks;		/* blocks allocated for file */
+	u_int32_t 			st_flags;		/* user defined flags for file */
+	u_int32_t 			st_gen;			/* file generation number */
 };
 #endif /* !_POSIX_SOURCE */
 
@@ -53,9 +53,9 @@ struct	stat {
 	quad_t				st_spare4[3];
 };
 
-#define st_atime st_atime.ts_sec
-#define st_mtime st_mtime.ts_sec
-#define st_ctime st_ctime.ts_sec
+#define st_atim 		st_atime.tv_sec
+#define st_mtim 		st_mtime.tv_sec
+#define st_ctim 		st_ctime.tv_sec
 
 #define	S_IFMT	 0170000		/* type of file */
 #define	S_IFDIR	 0040000		/* directory */

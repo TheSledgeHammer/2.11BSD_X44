@@ -40,7 +40,7 @@ static char sccsid[] = "@(#)wait.c	5.4 (Berkeley) 2/23/91";
 #include <sys/wait.h>
 #include <sys/resource.h>
 
-int
+pid_t
 wait(istat)
 	int *istat;
 {

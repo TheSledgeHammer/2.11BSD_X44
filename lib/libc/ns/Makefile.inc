@@ -6,6 +6,7 @@
 #	@(#)Makefile	6.1 (Berkeley) 1/29/86
 #
 .PATH: ${ARCHDIR}/ns ${.CURDIR}/ns
+
 SRCS+=	ns_addr.c ns_ntoa.c
 
 .include "${ARCHDIR}/ns/Makefile.inc"

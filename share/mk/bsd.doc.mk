@@ -1,56 +1,72 @@
-#	$NetBSD: bsd.doc.mk,v 1.20 1994/07/26 19:42:37 mycroft Exp $
+#	$NetBSD: bsd.doc.mk,v 1.63 2004/01/29 01:48:45 lukem Exp $
 #	@(#)bsd.doc.mk	8.1 (Berkeley) 8/14/93
 
-BIB?=		bib
-EQN?=		eqn
-GREMLIN?=	grn
-GRIND?=		vgrind -f
-INDXBIB?=	indxbib
-PIC?=		pic
-REFER?=		refer
-ROFF?=		groff -M/usr/share/tmac ${MACROS} ${PAGES}
-SOELIM?=	soelim
-TBL?=		tbl
+.include <bsd.init.mk>
 
-.PATH: ${.CURDIR}
+##### Basic targets
+clean:		cleandoc
+realinstall:	docinstall
 
-.if !target(all)
-.MAIN: all
-all: paper.ps
-.endif
-
+##### Build rules
 .if !target(paper.ps)
 paper.ps: ${SRCS}
-	${ROFF} ${SRCS} > ${.TARGET}
+	${_MKTARGET_FORMAT}
+	${TOOL_ROFF_PS} ${MACROS} ${PAGES} ${.ALLSRC} > ${.TARGET}
 .endif
 
-.if !target(print)
-print: paper.ps
-	lpr -P${PRINTER} paper.ps
+.if ${MKSHARE} != "no"
+realall:	paper.ps
 .endif
 
-.if !target(manpages)
-manpages:
+##### Install rules
+docinstall::	# ensure existence
+.PHONY:		docinstall
+
+.if ${MKDOC} != "no"
+__docinstall: .USE
+	${_MKTARGET_INSTALL}
+	${INSTALL_FILE} -o ${DOCOWN} -g ${DOCGRP} -m ${DOCMODE} ${SYSPKGTAG} \
+		${.ALLSRC} ${.TARGET}
+
+FILES?=		${SRCS}
+
+.for F in Makefile ${FILES:O:u} ${EXTRA}
+_F:=		${DESTDIR}${DOCDIR}/${DIR}/${F}		# installed path
+
+.if ${MKUPDATE} == "no"
+${_F}!		${F} __docinstall			# install rule
+.if !defined(BUILD) && !make(all) && !make(${F})
+${_F}!		.MADE					# no build at install
+.endif
+.else
+${_F}:		${F} __docinstall			# install rule
+.if !defined(BUILD) && !make(all) && !make(${F})
+${_F}:		.MADE					# no build at install
+.endif
 .endif
 
-.if !target(obj)
-obj:
-.endif
+docinstall::	${_F}
+.PRECIOUS:	${_F}					# keep if install fails
+.endfor
 
-clean cleandir:
+.undef _F
+.endif # ${MKDOC} != "no"
+
+##### Clean rules
+cleandoc: .PHONY
 	rm -f paper.* [eE]rrs mklog ${CLEANFILES}
 
-FILES?=	${SRCS}
-install:
-	install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
-	    Makefile ${FILES} ${EXTRA} ${DESTDIR}${BINDIR}/${DIR}
+##### Custom rules
+.if !target(print)
+print: .PHONY paper.ps
+	lpr -P${PRINTER} ${.ALLSRC}
+.endif
 
-spell: ${SRCS}
-	spell ${SRCS} | sort | comm -23 - spell.ok > paper.spell
+spell: .PHONY ${SRCS}
+	spell ${.ALLSRC} | sort | comm -23 - spell.ok > paper.spell
 
-BINDIR?=	/usr/share/doc
-BINGRP?=	bin
-BINOWN?=	root
-BINMODE?=	444
+##### Pull in related .mk logic
+.include <bsd.obj.mk>
+.include <bsd.sys.mk>
 
-.include <bsd.own.mk>
+${TARGETS}:	# ensure existence

@@ -8,14 +8,20 @@
  * Sys5 compat routine
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)memccpy.c	5.2 (Berkeley) 86/03/09";
 #endif
 
-char *
+#include <assert.h>
+#include <string.h>
+
+void *
 memccpy(t, f, c, n)
-	register char *t, *f;
-	register c, n;
+	void *t;
+	const void *f;
+	int c;
+	size_t n;
 {
 	while (--n >= 0)
 		if ((*t++ = *f++) == c)

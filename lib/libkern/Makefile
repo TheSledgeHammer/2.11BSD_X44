@@ -1,6 +1,6 @@
 #
 #	@(#)Makefile	1.2 (2.11BSD GTE) 1996/3/26
-#
+#	$NetBSD: Makefile,v 1.7 2016/01/23 21:22:46 christos Exp $
 # This is the Makefile for 'libkern.a'.  These are the specially compiled
 # versions of libc.a routines which the kernel and network use.
 #
@@ -10,12 +10,16 @@
 # C library is installed) rather than compiling the sources each time 
 # a kernel is compiled..
 
-DEFS=	-DKERNEL
-CFLAGS=	 -O ${DEFS} -I../libc/arch/${MACHINE}/gen
-CPP=		/lib/cpp -P ${DEFS} -I../libc/arch/${MACHINE}/gen
-AS=		/bin/as -u
-PREFIX=	/usr/src/lib/libc/arch/${MACHINE}
 
+.include <bsd.obj.mk>		# Pull in OBJDIR name rules.
+.include <bsd.own.mk>
+.include <bsd.klinks.mk>
+
+LIBISPRIVATE?=	yes
+LIB=			kern
+DBG=			-Os
+
+S= ${NETBSDSRCDIR}/sys
 CPPFLAGS+= -nostdinc -I${.OBJDIR} -I${S} -I${S}/arch
 
 CPPFLAGS+= -D_STANDALONE
@@ -33,20 +37,9 @@ KERNDIR=	${S}/lib/libkern
 
 .include "${KERNDIR}/Makefile.libkern"
 
-KQSRCS=	adddi3.c anddi3.c ashldi3.c ashrdi3.c cmpdi2.c divdi3.c iordi3.c \
-		lshldi3.c lshrdi3.c moddi3.c muldi3.c negdi2.c notdi2.c qdivrem.c \
-		subdi3.c ucmpdi2.c udivdi3.c umoddi3.c xordi3.c
-KSRCS=	bcmp.c ffs.c index.c mcount.c rindex.c strcat.c strcmp.c strcpy.c \
-		strlen.c strncpy.c
-		
-libkern: libkern.gen libkern.${MACHINE}
-
-libkern.gen: ${KQSRCS} ${KSRCS}
-	cp -p ${.CURDIR}/quad/quad.h ${.ALLSRC} /sys/libkern
-
-libkern.${MACHINE}:: ${KMSRCS}
-.if defined(KMSRCS) && !empty(KMSRCS)
-	cp -p ${.ALLSRC} /sys/libkern/${MACHINE}
+.BEGIN:
+	@echo no ARCHSUBDIR for ${MACHINE_ARCH} nor ${MACHINE_CPU}
+	@false
 .endif
 
 .include <bsd.lib.mk>

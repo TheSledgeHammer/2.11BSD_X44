@@ -7,15 +7,24 @@
 /*
  * Sys5 compat routine
  */
-
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)memchr.c	5.2 (Berkeley) 86/03/09";
 #endif
 
-char *
+#if !defined(_KERNEL) && !defined(_STANDALONE)
+#include <assert.h>
+#include <string.h>
+#else
+#include <lib/libkern/libkern.h>
+#define	NULL		((char *)0)
+#endif
+
+void *
 memchr(s, c, n)
-	register char *s;
-	register c, n;
+	const void *s;
+	register unsigned char c;
+	register size_t n;
 {
 	while (--n >= 0)
 		if (*s++ == c)

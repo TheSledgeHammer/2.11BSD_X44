@@ -2,9 +2,13 @@
 static char sccsid[] = "@(#)getpass.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
+#include <sys/termios.h>
+#include <sys/signal.h>
+
 #include <stdio.h>
 #include <signal.h>
 #include <sgtty.h>
+#include <unistd.h>
 
 char *
 getpass(prompt)

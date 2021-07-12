@@ -11,24 +11,13 @@ static char sccsid[] = "@(#)valloc.c	5.2 (Berkeley) 3/9/86";
 #include <stdlib.h>
 #include <unistd.h>
 
-char	*malloc();
-
-char *
+void *
 valloc(i)
-	int i;
+	size_t i;
 {
-#ifdef pdp11
-	/*
-	 * page boudaries don't mean anything on a PDP-11 and the cost in
-	 * memory is just too prohibitive to blindly use the non-PDP-11
-	 * algorithm.
-	 */
-	return(malloc(i));
-#else !pdp11
 	int valsiz = getpagesize(), j;
-	char *cp = malloc(i + (valsiz-1));
+	void *cp = malloc(i + (valsiz-1));
 
 	j = ((int)cp + (valsiz-1)) &~ (valsiz-1);
-	return ((char *)j);
-#endif pdp11
+	return ((void *)j);
 }

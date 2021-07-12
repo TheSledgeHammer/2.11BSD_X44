@@ -42,21 +42,35 @@
 #ifndef _UNISTD_H_
 #define	_UNISTD_H_
 
+#include <machine/ansi.h>
+#include <sys/cdefs.h>
 #include <sys/types.h>
-/* #include <sys/unistd.h> */
+#include <sys/unistd.h>
 
-#define	 STDIN_FILENO	0	/* standard input file descriptor */
+#define STDIN_FILENO	0	/* standard input file descriptor */
 #define	STDOUT_FILENO	1	/* standard output file descriptor */
 #define	STDERR_FILENO	2	/* standard error file descriptor */
 
-#ifndef NULL
-#define	NULL			0	/* null pointer constant */
-#endif
+#include <sys/null.h>
 
+__BEGIN_DECLS
 void	 		_exit();
 int	 			access();
 unsigned int	alarm();
+int	 			chdir();
+int	 			chown();
+int	 			close();
+size_t		 	confstr();
+int	 			dup();
+int	 			dup2();
+int	 			execl();
+int	 			execle();
+int	 			execlp();
+int	 			execv();
+int	 			execve();
+int	 			execvp();
 pid_t	 		fork();
+//long	 		fpathconf();
 gid_t	 		getegid();
 uid_t			geteuid();
 gid_t			getgid();
@@ -91,6 +105,7 @@ void	 		usleep();
 pid_t	 		vfork();
 
 extern	char	*optarg;		/* getopt(3) external variables */
-extern	int	opterr, optind, optopt;
+extern	int		opterr, optind, optopt;
+__END_DECLS
 
 #endif /* !_UNISTD_H_ */

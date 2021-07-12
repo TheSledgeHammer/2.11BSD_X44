@@ -54,20 +54,20 @@
  * Make the Makefile.
  */
 
-static int emitdefs __P((FILE *));
-static int emitobjs __P((FILE *));
-static int emitcfiles __P((FILE *));
-static int emitsfiles __P((FILE *));
-static int emitfiles __P((FILE *, int));
-static int emitrules __P((FILE *));
-static int emitload __P((FILE *));
+static int emitdefs (FILE *);
+static int emitobjs (FILE *);
+static int emitcfiles (FILE *);
+static int emitsfiles (FILE *);
+static int emitfiles (FILE *, int);
+static int emitrules (FILE *);
+static int emitload (FILE *);
 
 int
 mkmakefile()
 {
 	register FILE *ifp, *ofp;
 	register int lineno;
-	register int (*fn) __P((FILE *));
+	register int (*fn)(FILE *);
 	register char *ofname;
 	char line[BUFSIZ], ifname[200];
 

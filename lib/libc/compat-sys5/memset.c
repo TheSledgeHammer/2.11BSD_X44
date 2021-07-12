@@ -7,17 +7,29 @@
 /*
  * Sys5 compat routine
  */
-
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)memset.c	5.2 (Berkeley) 86/03/09";
 #endif
 
-char *
+#include <sys/types.h>
+
+#if !defined(_KERNEL) && !defined(_STANDALONE)
+#include <assert.h>
+#include <limits.h>
+#include <string.h>
+#else
+#include <lib/libkern/libkern.h>
+#include <machine/limits.h>
+#endif
+
+void *
 memset(s, c, n)
-	register char *s;
-	register c, n;
+	void  *s;
+	int c;
+	size_t n;
 {
-	register char *p = s;
+	u_char *p = s;
 
 	while (--n >= 0)
 		*s++ = c;

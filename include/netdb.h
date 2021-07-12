@@ -12,6 +12,13 @@
  *	@(#)netdb.h	5.9.1 (2.11BSD GTE) 12/31/93
  */
 
+#ifndef _NETDB_H_
+#define	_NETDB_H_
+
+#include <sys/cdefs.h>
+#include <machine/endian_machdep.h>
+#include <sys/ansi.h>
+
 /*
  * Structures returned by network
  * data base library.  All addresses
@@ -20,11 +27,11 @@
  * for use in system calls).
  */
 struct	hostent {
-	char	*h_name;			/* official name of host */
-	char	**h_aliases;		/* alias list */
-	int		h_addrtype;			/* host address type */
-	int		h_length;			/* length of address */
-	char	**h_addr_list;		/* list of addresses from name server */
+	char		*h_name;			/* official name of host */
+	char		**h_aliases;		/* alias list */
+	int			h_addrtype;			/* host address type */
+	int			h_length;			/* length of address */
+	char		**h_addr_list;		/* list of addresses from name server */
 #define	h_addr	h_addr_list[0]	/* address, for backward compatiblity */
 };
 
@@ -40,16 +47,16 @@ struct	netent {
 };
 
 struct	servent {
-	char	*s_name;		/* official service name */
-	char	**s_aliases;	/* alias list */
-	int		s_port;			/* port # */
-	char	*s_proto;		/* protocol to use */
+	char		*s_name;		/* official service name */
+	char		**s_aliases;	/* alias list */
+	int			s_port;			/* port # */
+	char		*s_proto;		/* protocol to use */
 };
 
 struct	protoent {
-	char	*p_name;		/* official protocol name */
-	char	**p_aliases;	/* alias list */
-	int		p_proto;		/* protocol # */
+	char		*p_name;		/* official protocol name */
+	char		**p_aliases;	/* alias list */
+	int			p_proto;		/* protocol # */
 };
 
 struct hostent	*gethostbyname(), *gethostbyaddr(), *gethostent();
@@ -69,3 +76,6 @@ struct protoent	*getprotobyname(), *getprotobynumber(), *getprotoent();
 #define	NO_ADDRESS		NO_DATA		/* no address, look for MX record */
 
 unsigned long	gethostid();
+
+
+#endif /* !_NETDB_H_ */

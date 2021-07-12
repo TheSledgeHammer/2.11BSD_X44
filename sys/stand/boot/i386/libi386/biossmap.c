@@ -33,7 +33,7 @@
  */
 #include <sys/param.h>
 
-#include <machine/pc/bios.h>
+#include <machine/bios.h>
 #include <machine/psl.h>
 
 #include <lib/libsa/stand.h>

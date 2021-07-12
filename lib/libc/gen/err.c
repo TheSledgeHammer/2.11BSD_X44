@@ -35,13 +35,12 @@
 static char sccsid[] = "@(#)err.c	8.1.1 (2.11BSD GTE) 2/3/95";
 #endif /* LIBC_SCCS and not lint */
 
+#include <err.h>
+#include <errno.h>
 #include <stdio.h>
-
-#ifdef __STDC__
+#include <stdlib.h>
+#include <string.h>
 #include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
 
 extern	int	errno;
 extern	char *__progname;		/* Program name, from crt0. */

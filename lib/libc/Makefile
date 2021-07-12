@@ -1,9 +1,26 @@
+#	$NetBSD: Makefile,v 1.173 2020/05/16 18:31:47 christos Exp $
+#	@(#)Makefile	4.19.2 (2.11BSD) 1997/8/28
+#	@(#)Makefile	8.2 (Berkeley) 2/3/94
+#
+# All library objects contain sccsid strings by default; they may be
+# excluded as a space-saving measure.  To produce a library that does
+# not contain these strings, delete -DLIBC_SCCS and -DSYSLIBC_SCCS
+# from CPPFLAGS below.  To remove these strings from just the system call
+# stubs, remove just -DSYSLIBC_SCCS from CPPFLAGS.
+#
+# The NLS (message catalog) functions are always in libc.  To choose that
+# strerror(), perror(), strsignal(), psignal(), etc. actually call the NLS
+# functions, put -DNLS on the CPPFLAGS line below.
+#
+# The YP functions are always in libc. To choose that getpwent() and friends
+# actually call the YP functions, put -DYP on the CPPFLAGS line below.
+#
+# The Hesiod functions are always in libc. To choose that getpwent() and friends
+# actually call the Hesiod functions, put -DHESIOD on the CPPFLAGS line below.
 #
 # Copyright (c) 1980 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
-#
-#	@(#)Makefile	4.19.2 (2.11BSD) 1997/8/28
 #
 # The system has two monitoring schemes, utilizing either ``prof''
 # or ``gprof''. DFLMON determines the default profiler; mon.o
@@ -41,20 +58,43 @@
 #	the host lookup routines that use /etc/hosts.
 #
 
-LIB=c
-CPPFLAGS+=	-I${.CURDIR}/include -I${.CURDIR}
-AINC=		-I${.CURDIR}/${MACHINE}
-CLEANFILES+=tags
+.include "Makefile.inc"
 
+LIB=		c
+CPPFLAGS+=	-I${.CURDIR}/include -I${.CURDIR}
+
+LIBCDIR=	${.CURDIR}
+
+.if exists (${ARCHDIR}/Makefile.inc)
+.PATH:	${ARCHDIR}
+.include "${ARCHDIR}/Makefile.inc"
+.endif
+
+.if exists (${ARCHDIR}/genassym.cf)
+DPSRCS+=		assym.h
+CLEANFILES+=	assym.h assym.h.tmp
+
+assym.h: ${ARCHDIR}/genassym.cf
+	${_MKTARGET_CREATE}
+	${TOOL_GENASSYM} -- ${CC} ${CFLAGS:N-Wa,*} \
+		${CPPFLAGS} ${CPPFLAGS.assym.h} ${PROF} \
+		${GENASSYM_CPPFLAGS} < ${ARCHDIR}/genassym.cf > assym.h.tmp && \
+	mv -f assym.h.tmp assym.h
+.endif
+
+#.include "${.CURDIR}/cdb/Makefile.inc"
 .include "${.CURDIR}/db/Makefile.inc"
 .include "${.CURDIR}/dlfcn/Makefile.inc"
 .include "${.CURDIR}/compat-4.1/Makefile.inc"
-.include "${.CURDIR}/compat-43/Makefile.inc"
+.include "${.CURDIR}/compat-4.3/Makefile.inc"
+.include "${.CURDIR}/compat-netbsd/Makefile.inc"
 .include "${.CURDIR}/compat-sys5/Makefile.inc"
 .include "${.CURDIR}/gen/Makefile.inc"
 .include "${.CURDIR}/gmon/Makefile.inc"
+.include "${.CURDIR}/hash/Makefile.inc"
 .include "${.CURDIR}/inet/Makefile.inc"
 .include "${.CURDIR}/locale/Makefile.inc"
+.include "${.CURDIR}/md/Makefile.inc"
 .include "${.CURDIR}/net/Makefile.inc"
 .include "${.CURDIR}/ns/Makefile.inc"
 .include "${.CURDIR}/quad/Makefile.inc"
@@ -63,6 +103,7 @@ CLEANFILES+=tags
 .include "${.CURDIR}/stdlib/Makefile.inc"
 .include "${.CURDIR}/string/Makefile.inc"
 .include "${.CURDIR}/termios/Makefile.inc"
+.include "${.CURDIR}/time/Makefile.inc"
 
 beforeinstall: tags
 	install -c -o bin -g bin -m 444 tags /var/db/libc.tags

@@ -38,6 +38,13 @@
 #ifndef	_UTIME_H_
 #define	_UTIME_H_
 
+#include <machine/ansi.h>
+
+#ifdef	_BSD_TIME_T_
+typedef	_BSD_TIME_T_	time_t;
+#undef	_BSD_TIME_T_
+#endif
+
 struct utimbuf {
 	time_t actime;		/* Access time */
 	time_t modtime;		/* Modification time */
@@ -46,7 +53,7 @@ struct utimbuf {
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int utime __P((const char *, const struct utimbuf *));
+int utime(const char *, const struct utimbuf *);
 __END_DECLS
 
 #endif /* !_UTIME_H_ */

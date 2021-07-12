@@ -19,13 +19,22 @@
 static char sccsid[] = "@(#)getpwent.c	5.9.1 (2.11BSD) 1996/1/12";
 #endif /* LIBC_SCCS and not lint */
 
+#include <sys/param.h>
 #include <sys/types.h>
+#include <sys/file.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/file.h>
 #include <stdio.h>
 #include <pwd.h>
 #include <ndbm.h>
+
+#include <fcntl.h>
+#include <db.h>
+#include <syslog.h>
+#include <utmp.h>
+#include <errno.h>
+#include <unistd.h>
+#include <limits.h>
 
 static DBM *_pw_db;
 static FILE *_pw_fp;

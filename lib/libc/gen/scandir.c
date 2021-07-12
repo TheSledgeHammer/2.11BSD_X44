@@ -22,6 +22,7 @@ static char sccsid[] = "@(#)scandir.c	5.2 (Berkeley) 3/9/86";
 #include <stdlib.h>
 #include <string.h>
 
+int
 scandir(dirname, namelist, select, dcomp)
 	char *dirname;
 	struct direct *(*namelist[]);
@@ -87,6 +88,7 @@ scandir(dirname, namelist, select, dcomp)
 /*
  * Alphabetic order comparison routine for those who want it.
  */
+int
 alphasort(d1, d2)
 	struct direct **d1, **d2;
 {
