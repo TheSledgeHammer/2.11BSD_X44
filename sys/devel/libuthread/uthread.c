@@ -43,6 +43,7 @@
 
 extern struct uthread uthread0;
 struct uthread *curuthread = &uthread0;
+int	uthread_create_now;
 
 void
 uthread_init(kt, ut)
@@ -53,118 +54,186 @@ uthread_init(kt, ut)
 	int error;
 
 	/* initialize current uthread(0) */
-    ut = &uthread0;
+    ut = &kthread0->kt_uthreado = &uthread0;
     curuthread = ut;
-
-    /* Initialize uthread structures. */
-    utqinit();
 
     /* set up uthreads */
     alluthread = (struct uthread *)ut;
     ut->ut_prev = (struct uthread **)&alluthread;
+    tgrphash[0] = &pgrp0;
+    kthread0->kt_uthreado = ut;
 
-    /* Set thread to idle & waiting */
-    ut->ut_stat |= UT_SIDL | UT_SWAIT | UT_SREADY;
+	/* give the uthread the same creds as the initial kthread */
+	ut->ut_ucred = kt->kt_ucred;
+	crhold(ut->ut_ucred);
 
     /* setup uthread locks */
     uthread_lock_init(uthread_lkp, ut);
     uthread_rwlock_init(uthread_rwl, ut);
 
-	/* uthread overseer */
-	if(newthread(kt->kt_procp, 0))
-		panic("uthread overseer creation");
-	if(rval[1])
-		ut = kt->kt_uthreado;
-		ut->ut_flag |= KT_INMEM | KT_SYSTEM;
-
-		/* initialize uthreadpools  */
-		uthreadpools_init();
+	/* initialize uthreadpools  */
+	uthreadpool_init();
 }
 
 int
-uthread_create(uthread_t ut)
+uthread_create(func, arg, newkp, name)
+	void (*func)(void *);
+	void *arg;
+	struct kthread **newkp;
+	const char 		*name;
 {
-	struct uthread *newthread;
+	struct kthread *kt;
 	register_t rval[2];
 
-	if(newuthread(0)) {
-		panic("uthread creation");
+	error = newproc(0);
+	if(__predict_false(error != 0)) {
+		panic("uthread_create");
+		return (error);
 	}
+
 	if(rval[1]) {
-		newthread = ut;
-		newthread->ut_flag |= UT_INMEM | UT_SYSTEM;
+		kt->kt_flag |= KT_SYSTEM | KT_NOCLDWAIT;
+		kt->kt_uthreado->ut_flag |= UT_INMEM | UT_SYSTEM;
 	}
 
-	return (0);
-}
+	/* Name it as specified. */
+	bcopy(kt->kt_uthreado->ut_comm, name, MAXCOMLEN);
 
-int
-uthread_join(uthread_t ut)
-{
-	return (0);
-}
-
-int
-uthread_cancel(uthread_t ut)
-{
-	return (0);
-}
-
-int
-uthread_exit(uthread_t ut)
-{
-	return (0);
-}
-
-int
-uthread_detach(uthread_t ut)
-{
-	return (0);
-}
-
-int
-uthread_equal(uthread_t ut1, uthread_t ut2)
-{
-	if(ut1 > ut2) {
-		return (1);
-	} else if(ut1 < ut2) {
-		return (-1);
+	if (newkp != NULL) {
+		*newkp = kt;
 	}
 	return (0);
 }
 
-int
-uthread_kill(uthread_t ut)
+/*
+ * Cause a kernel thread to exit.  Assumes the exiting thread is the
+ * current context.
+ */
+void
+uthread_exit(ecode)
+	int ecode;
 {
-	return (0);
+	/*
+	 * XXX What do we do with the exit code?  Should we even bother
+	 * XXX with it?  The parent (kthread0) isn't going to do much with
+	 * XXX it.
+	 */
+	if (ecode != 0) {
+		printf("WARNING: thread `%s' (%d) exits with status %d\n", curkthread->kt_comm, curkthread->kt_tid, ecode);
+	}
+	exit(W_EXITCODE(ecode, 0));
+
+	for (;;);
+}
+
+struct uthread_queue {
+	SIMPLEQ_ENTRY(uthread_queue) 	uq_q;
+	void 							(*uq_func)(void *);
+	void 							*uq_arg;
+};
+
+SIMPLEQ_HEAD(, uthread_queue) uthread_queue = SIMPLEQ_HEAD_INITIALIZER(uthread_queue);
+
+void
+uthread_create_deferred(void (*func)(void *), void *arg)
+{
+	struct uthread_queue *uq;
+	if (uthread_create_now) {
+		(*func)(arg);
+		return;
+	}
+
+	uq = malloc(sizeof *uq, M_TEMP, M_NOWAIT | M_ZERO);
+	if (uq == NULL) {
+		panic("unable to allocate kthread_queue");
+	}
+
+	uq->uq_func = func;
+	uq->uq_arg = arg;
+
+	SIMPLEQ_INSERT_TAIL(&uthread_queue, uq, uq_q);
 }
 
 void
-uthreadpool_itc_send(itpc, utpool)
+uthread_run_deferred_queue(void)
+{
+	struct uthread_queue *uq;
+
+	/* No longer need to defer uthread creation. */
+	uthread_create_now = 1;
+
+	while ((uq = SIMPLEQ_FIRST(&uthread_queue)) != NULL) {
+		SIMPLEQ_REMOVE_HEAD(&uthread_queue, uq_q);
+		(*uq->uq_func)(uq->uq_arg);
+		free(uq, M_TEMP, sizeof(*uq));
+	}
+}
+
+void
+uthreadpool_itpc_send(itpc, utpool, cmd)
 	struct threadpool_itpc *itpc;
     struct uthreadpool *utpool;
+    int cmd;
 {
-    /* command / action */
+    /* sync itpc to threadpool */
 	itpc->itc_utpool = utpool;
 	itpc->itc_jobs = utpool->utp_jobs;
-	/* send flagged jobs */
 	utpool->utp_issender = TRUE;
 	utpool->utp_isreciever = FALSE;
+
+	/* command / action */
+	switch(cmd) {
+	case ITPC_SCHEDULE:
+		uthreadpool_schedule_job(utpool, utpool->utp_jobs);
+		break;
+
+	case ITPC_CANCEL:
+		uthreadpool_cancel_job(utpool, utpool->utp_jobs);
+		break;
+
+	case ITPC_DESTROY:
+		uthreadpool_job_destroy(utpool->utp_jobs);
+		break;
+
+	case ITPC_DONE:
+		uthreadpool_job_done(utpool->utp_jobs);
+		break;
+	}
+
 	itpc_check_uthreadpool(itpc, utpool);
 
 	/* update job pool */
 }
 
 void
-uthreadpool_itc_recieve(itpc, utpool)
+uthreadpool_itpc_recieve(itpc, utpool, cmd)
 	struct threadpool_itpc *itpc;
-	struct uthreadpool *utpool;
+	struct uthreadpool 		*utpool;
+	int cmd;
 {
-    /* command / action */
+	/* sync itpc to threadpool */
 	itpc->itc_utpool = utpool;
 	itpc->itc_jobs = utpool->utp_jobs;
 	utpool->utp_issender = FALSE;
 	utpool->utp_isreciever = TRUE;
+
+	/* command / action */
+	switch(cmd) {
+	case ITPC_SCHEDULE:
+		uthreadpool_schedule_job();
+		break;
+	case ITPC_CANCEL:
+		uthreadpool_cancel_job();
+		break;
+	case ITPC_DESTROY:
+		uthreadpool_job_destroy(itpc->itc_jobs);
+		utpool->utp_jobs = itpc->itc_jobs;
+		break;
+	case ITPC_DONE:
+		uthreadpool_job_done();
+		break;
+	}
+
 	itpc_verify_uthreadpool(itpc, utpool);
 
 	/* update job pool */

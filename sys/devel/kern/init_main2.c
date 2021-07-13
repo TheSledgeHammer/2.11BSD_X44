@@ -121,6 +121,7 @@ main(framep)
 {
 	register struct proc *p;
 	register struct kthread *kt;
+	register struct uthread *ut;
 	register struct filedesc0 *fdp;
 	register struct pdevinit *pdev;
 	register int i;
@@ -335,6 +336,10 @@ main(framep)
 	if (kthread_create(vm_pageout, NULL, NULL, "pagedaemon")) {
 		panic("fork pager");
 	}
+
+	/* initialize uthread0 & uthreadpool system */
+	uthread_init(kt, ut);
+	uthread_run_deferred_queue();
 
 	/* Initialize exec structures */
 	exec_init();

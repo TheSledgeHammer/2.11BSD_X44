@@ -26,7 +26,7 @@
   - Kernel Threads: (85% Complete)
     - Machine-Dependent Code
     - Bug Testing
-  - User Threads/Fibres: Work in Progress (50-75% Complete)
+  - User Threads/Fibres: Work in Progress (70% Complete)
     - PThreads Support
     - IPC Improvements
 - Scheduler: (95% Complete)
@@ -40,8 +40,8 @@
       - LFS2: 64-bit support via UFS/FFS2
       - LFS1: 32-bit support via UFS/FFS1
     - UFS1/UFS2:
-    - Journaling:
-    - Dirhash: Work in Progress
+      - Journaling:
+      - Dirhash: Work in Progress
 - New Filesystems (In Kernel):
   - Union (BSD's)
   - EXT2/3/4

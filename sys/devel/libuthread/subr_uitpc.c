@@ -26,7 +26,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/devel/sys/threadpool.h>
+#include <devel/sys/threadpool.h>
 #include "uthread.h"
 
 /* UThreadpool ITPC */

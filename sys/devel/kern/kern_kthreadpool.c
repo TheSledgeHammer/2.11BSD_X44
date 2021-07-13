@@ -149,7 +149,7 @@ kthreadpool_create(struct kthreadpool *ktpool, u_char pri)
 
 	ktflags = 0;
 	if(pri) {
-		error = kthread_create(&kthreadpool_overseer_thread, &ktpool->ktp_overseer, &p, "pooloverseer/%d@%d");
+		error = kthread_create(&kthreadpool_overseer_thread, &ktpool->ktp_overseer, &p, "kthread pooloverseer/%d@%d");
 	}
 	if(error) {
 		goto fail;
@@ -299,7 +299,7 @@ kthreadpool_overseer_thread(void *arg)
 			ktflags |= KTHREAD_MPSAFE;
 			if (ktpool->ktp_pri < PUSER)
 				ktflags |= KTHREAD_TS;
-			error = kthread_create(&kthreadpool_thread, kthread, &p, "poolthread/%d@%d");
+			error = kthread_create(&kthreadpool_thread, kthread, &p, "kthread poolthread/%d@%d");
 
 			simple_lock(&ktpool->ktp_lock);
 			if (error) {
@@ -629,7 +629,7 @@ kthreadpool_percpu_get(struct kthreadpool_percpu **ktpool_percpup, u_char pri)
 void
 kthreadpool_percpu_put(struct kthreadpool_percpu *ktpool_percpu, u_char pri)
 {
-	KASSERT(kthreadpool_pri_is_valid(pri));
+	//KASSERT(kthreadpool_pri_is_valid(pri));
 
 	simple_lock(&kthreadpools_lock);
 	KASSERT(ktpool_percpu == kthreadpool_lookup_percpu(pri));

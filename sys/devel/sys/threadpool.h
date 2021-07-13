@@ -110,8 +110,19 @@ struct threadpool_itpc {
 
 extern struct itc_threadpool itpc;
 
-void	kthreadpool_init(void);
+/* Threadpool ITPC Commands */
+enum itpc_cmds {
+	ITPC_SCHEDULE,
+	ITPC_CANCEL,
+	ITPC_DESTROY,
+	ITPC_DONE
+};
 
+/* General ITPC */
+void 	itpc_threadpool_init(void);
+
+/* kthreadpools */
+void	kthreadpool_init(void);
 int		kthreadpool_get(struct kthreadpool **, u_char);
 void	kthreadpool_put(struct kthreadpool *, u_char);
 
@@ -123,17 +134,17 @@ void	threadpool_schedule_job(struct kthreadpool *, struct threadpool_job *);
 void	threadpool_cancel_job(struct kthreadpool *, struct threadpool_job *);
 bool	threadpool_cancel_job_async(struct kthreadpool *, struct threadpool_job *);
 
-/* General ITPC */
-void 	itpc_threadpool_init(void);
+/* uthreadpools */
+void	uthreadpool_init(void);
+int		uthreadpool_get(struct uthreadpool **, u_char);
+void	uthreadpool_put(struct uthreadpool *, u_char);
 
-void 	itpc_kthreadpool_enqueue(struct threadpool_itpc *, pid_t);
-void 	itpc_kthreadpool_dequeue(struct threadpool_itpc *, pid_t);
-void 	itpc_check_kthreadpool(struct threadpool_itpc *, pid_t);
-void 	itpc_verify_kthreadpool(struct threadpool_itpc *, pid_t);
+void	uthreadpool_job_init(struct threadpool_job *, threadpool_job_fn_t, lock_t, const char *, ...);
+void	uthreadpool_job_destroy(struct threadpool_job *);
+void	uthreadpool_job_done(struct threadpool_job *);
 
-void 	itpc_uthreadpool_enqueue(struct threadpool_itpc *, pid_t);
-void 	itpc_uthreadpool_dequeue(struct threadpool_itpc *, pid_t);
-void 	itpc_check_uthreadpool(struct threadpool_itpc *, pid_t);
-void 	itpc_verify_uthreadpool(struct threadpool_itpc *, pid_t);
+void	uthreadpool_schedule_job(struct uthreadpool *, struct threadpool_job *);
+void	uthreadpool_cancel_job(struct uthreadpool *, struct threadpool_job *);
+bool	uthreadpool_cancel_job_async(struct uthreadpool *, struct threadpool_job *);
 
 #endif /* SYS_THREADPOOL_H_ */

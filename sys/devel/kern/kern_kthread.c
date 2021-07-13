@@ -72,7 +72,7 @@ kthread_init(p, kt)
     kthread_rwlock_init(kthread_rwl, kt);
 
     /* initialize kthreadpools */
-    kthreadpools_init();
+    kthreadpool_init();
 }
 
 /*
@@ -177,30 +177,33 @@ kthread_run_deferred_queue(void)
 
 /* Threadpool's FIFO Queue (IPC) */
 void
-kthreadpool_itc_send(itpc, ktpool)
+kthreadpool_itpc_send(itpc, ktpool)
 	struct threadpool_itpc *itpc;
     struct kthreadpool *ktpool;
 {
-    /* command / action */
+     /* sync itpc to threadpool */
     itpc->itc_ktpool = ktpool;
     itpc->itc_jobs = ktpool->ktp_jobs;  /* add/ get current job */
 	/* send flagged jobs */
 	ktpool->ktp_issender = TRUE;
 	ktpool->ktp_isreciever = FALSE;
+	/* command / action */
 
 	/* update job pool */
 }
 
 void
-kthreadpool_itc_recieve(itpc, ktpool)
+kthreadpool_itpc_recieve(itpc, ktpool)
 	struct threadpool_itpc *itpc;
     struct kthreadpool *ktpool;
 {
-    /* command / action */
+    /* sync itpc to threadpool */
 	itpc->itc_ktpool = ktpool;
 	itpc->itc_jobs = ktpool->ktp_jobs; /* add/ get current job */
 	ktpool->ktp_issender = FALSE;
 	ktpool->ktp_isreciever = TRUE;
+    /* command / action */
+
 
 	/* update job pool */
 }

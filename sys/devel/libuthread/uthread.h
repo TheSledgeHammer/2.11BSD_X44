@@ -36,56 +36,57 @@
 /* user threads */
 typedef struct uthread 	*uthread_t;
 struct uthread {
-	struct uthread		*ut_nxt;		/* linked list of allocated thread slots */
+	struct uthread		*ut_nxt;				/* linked list of allocated thread slots */
 	struct uthread		**ut_prev;
 
-	struct uthread 		*ut_forw;		/* Doubly-linked run/sleep queue. */
+	struct uthread 		*ut_forw;				/* Doubly-linked run/sleep queue. */
 	struct uthread 		*ut_back;
 
-	int	 				ut_flag;		/* T_* flags. */
-	char 				ut_stat;		/* TS* thread status. */
-	char 				ut_lock;		/* Thread lock count. */
+	int	 				ut_flag;				/* T_* flags. */
+	char 				ut_stat;				/* TS* thread status. */
+	char 				ut_lock;				/* Thread lock count. */
 
-	short				ut_uid;			/* user id, used to direct tty signals */
-	pid_t 				ut_tid;			/* unique thread id */
-	pid_t 				ut_ptid;		/* thread id of parent */
+	short				ut_uid;					/* user id, used to direct tty signals */
+	pid_t 				ut_tid;					/* unique thread id */
+	pid_t 				ut_ptid;				/* thread id of parent */
 
 	/* Substructures: */
-	struct pcred 	 	*ut_cred;		/* Thread owner's identity. */
-	struct filedesc 	*ut_fd;			/* Ptr to open files structure. */
-	struct pstats 	 	*ut_stats;		/* Accounting/statistics (THREAD ONLY). */
-	struct sigacts 		*ut_sigacts;	/* Signal actions, state (THREAD ONLY). */
+	struct pcred 	 	*ut_cred;				/* Thread owner's identity. */
+	struct filedesc 	*ut_fd;					/* Ptr to open files structure. */
+	struct pstats 	 	*ut_stats;				/* Accounting/statistics (THREAD ONLY). */
+	struct sigacts 		*ut_sigacts;			/* Signal actions, state (THREAD ONLY). */
 
 #define	ut_ucred		ut_cred->pc_ucred
 
-	struct user 		*ut_userp;		/* pointer to user */
-	struct kthread		*ut_kthreadp;	/* pointer to kernel threads */
+	struct user 		*ut_userp;				/* pointer to user */
+	struct kthread		*ut_kthreadp;			/* pointer to kernel threads */
 
-	LIST_ENTRY(proc)	ut_hash;		/* hashed based on t_tid & p_pid for kill+exit+... */
-	struct uthread    	*ut_pgrpnxt;	/* Pointer to next thread in thread group. */
-    struct uthread      *ut_pptr;		/* pointer to process structure of parent */
-    struct uthread 		*ut_ostptr;	 	/* Pointer to older sibling processes. */
+	LIST_ENTRY(proc)	ut_hash;				/* hashed based on t_tid & p_pid for kill+exit+... */
+	struct uthread    	*ut_pgrpnxt;			/* Pointer to next thread in thread group. */
+    struct uthread      *ut_pptr;				/* pointer to process structure of parent */
+    struct uthread 		*ut_ostptr;	 			/* Pointer to older sibling processes. */
 
 #define	ut_startzero	ut_ysptr
 
-	struct uthread 		*ut_ysptr;	 	/* Pointer to younger siblings. */
-	struct uthread 		*ut_cptr;	 	/* Pointer to youngest living child. */
+	struct uthread 		*ut_ysptr;	 			/* Pointer to younger siblings. */
+	struct uthread 		*ut_cptr;	 			/* Pointer to youngest living child. */
 
 #define	ut_endzero		ut_startcopy
 #define	ut_startcopy	ut_sigmask
 
-	u_char				ut_pri;			/* thread priority, negative is high */
+	u_char				ut_pri;					/* thread priority, negative is high */
+	char				ut_comm[MAXCOMLEN+1];	/* p: basename of last exec file */
 
-	struct pgrp 	    *ut_pgrp;       /* Pointer to proc group. */
+	struct pgrp 	    *ut_pgrp;       		/* Pointer to proc group. */
 
 #define ut_endcopy
 
-	struct uthread 		*ut_link;		/* linked list of running uthreads */
+	struct uthread 		*ut_link;				/* linked list of running uthreads */
 
     short               ut_locks;
     short               ut_simple_locks;
 
-    char				*ut_name;		/* (: name, optional */
+    char				*ut_name;				/* (: name, optional */
 };
 #define	ut_session		ut_pgrp->pg_session
 #define	ut_tgid			ut_pgrp->pg_id
@@ -166,28 +167,27 @@ extern struct uthreadpool_thread 		utpool_thread;
 extern lock_t 							uthreadpool_lock;
 
 /* UThread */
-void uthread_init(kthread_t, uthread_t);
-int uthread_create(uthread_t ut);
-int uthread_join(uthread_t ut);
-int uthread_cancel(uthread_t ut);
-int uthread_exit(uthread_t ut);
-int uthread_detach(uthread_t ut);
-int uthread_equal(uthread_t ut1, uthread_t ut2);
-int uthread_kill(uthread_t ut);
+void 			uthread_init (struct kthread *, struct uthread *);
+int	 			uthread_create(void (*)(void *), void *, struct kthread **, const char *);
+int 			uthread_exit (int);
+void			uthread_create_deferred(void (*)(void *), void *);
+void			uthread_run_deferred_queue(void);
 
 struct uthread *utfind (pid_t);
 int				leaveutgrp(uthread_t);
 
 /* UThread ITPC */
-extern void uthreadpool_itc_send(struct threadpool_itpc *, struct uthreadpool *);
-extern void uthreadpool_itc_receive(struct threadpool_itpc *, struct uthreadpool *);
-extern void	itpc_add_uthreadpool(struct threadpool_itpc *, struct uthreadpool *);
-extern void	itpc_remove_uthreadpool(struct threadpool_itpc *, struct uthreadpool *);
+extern void 	uthreadpool_itpc_send(struct threadpool_itpc *, struct uthreadpool *);
+extern void 	uthreadpool_itpc_receive(struct threadpool_itpc *, struct uthreadpool *);
+extern void		itpc_add_uthreadpool(struct threadpool_itpc *, struct uthreadpool *);
+extern void		itpc_remove_uthreadpool(struct threadpool_itpc *, struct uthreadpool *);
+void 			itpc_check_uthreadpool(struct threadpool_itpc *, pid_t);
+void 			itpc_verify_uthreadpool(struct threadpool_itpc *, pid_t);
 
 /* UThread Lock */
-int 		uthread_lock_init(lock_t, uthread_t);
-int 		uthread_lockmgr(lock_t, u_int, uthread_t);
-int 		uthread_rwlock_init(rwlock_t, uthread_t);
-int 		uthread_rwlockmgr(rwlock_t, u_int, uthread_t);
+int 			uthread_lock_init(lock_t, uthread_t);
+int 			uthread_lockmgr(lock_t, u_int, uthread_t);
+int 			uthread_rwlock_init(rwlock_t, uthread_t);
+int 			uthread_rwlockmgr(rwlock_t, u_int, uthread_t);
 
 #endif /* SYS_UTHREADS_H_ */
