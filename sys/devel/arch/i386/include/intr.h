@@ -10,4 +10,6 @@
 #define LIR_IPI		31
 #define LIR_TIMER	30
 
+#define I386_NIPI	9
+
 #endif /* _X86_INTRDEFS_H_ */

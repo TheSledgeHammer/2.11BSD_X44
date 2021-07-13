@@ -73,20 +73,11 @@ Of Interest Todo:
 	- efi: For common efi code.
 		- Makfiles:
 			- Adjust makefiles. 
-			- For arch/efi: add boot_efi. To specify support on compilation.
-			and to use the efi ldscript instead of the normal boot.ldscript
 		- loader:
 			- efiserialio.c
 			- missing efi commands
-		- arch:
-			- Place into arch folder
 	- commands: needs work
 	- install: not present
-- boot/arch:
-	- i386:
-		- pxeldr
-- boot/uboot:
-	- disks: struct disk_devdesc
 
 ## ufs:
 

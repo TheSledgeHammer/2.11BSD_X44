@@ -71,7 +71,6 @@ struct sigcontext {
 	int	sc_ss;
 	int	sc_ap;		/* ap to restore */
 
-
 	int	sc_trapno;	/* XXX should be above */
 	int	sc_err;
 };

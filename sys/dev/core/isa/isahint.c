@@ -49,7 +49,6 @@ isahint_match(parent, cf, aux)
 	int i;
 
 	for (i = resource_query_string(-1, resname, buf); i != -1; i = resource_query_string(i, resname, buf)) {
-		//isahint_add_device(parent, resource_query_name(i), resource_query_unit(i));
 		return (0);
 	}
 	return (1);

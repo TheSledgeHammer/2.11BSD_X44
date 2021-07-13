@@ -51,5 +51,5 @@ struct mdproc {
 #define	MDP_USEDFPU		0x0001	/* has used the FPU */
 #define	MDP_OWEUPC		0x0002	/* Owe process an addupc() call at next ast. */
 
-extern struct user *proc0paddr;
-extern vm_offset_t proc0kstack;
+extern struct user 		*proc0paddr;
+extern vm_offset_t 		proc0kstack;

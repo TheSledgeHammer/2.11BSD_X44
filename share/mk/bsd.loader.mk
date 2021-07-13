@@ -36,7 +36,7 @@ LOADER_UFS_SUPPORT?=		yes
 LOADER_EXT2FS_SUPPORT?=  	no
 
 # Partition support
-LOADER_GPT_SUPPORT?=		no
+LOADER_GPT_SUPPORT?=		yes
 LOADER_MBR_SUPPORT?=		yes
 
 # Network support

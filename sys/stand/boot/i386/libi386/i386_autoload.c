@@ -28,30 +28,17 @@
 /* __FBSDID("$FreeBSD$"); */
 
 /*
- * U-Boot-specific module functionality.
+ * i386-specific module functionality.
+ *
  */
 
-#include <lib/libsa/stand.h>
-#include <string.h>
-
-#if defined(LOADER_FDT_SUPPORT)
-#include <fdt_platform.h>
-#endif
-
-#include "bootstrap.h"
-#include "libuboot.h"
-
+/*
+ * Use voodoo to load modules required by current hardware.
+ */
 int
-uboot_autoload(void)
+i386_autoload(void)
 {
-#if defined(LOADER_FDT_SUPPORT)
-	int err;
 
-	if ((err = fdt_setup_fdtp()) != 0) {
-		printf("No valid device tree blob found!\n");
-		return (err);
-	}
-#endif
-
-	return(0);
+    /* XXX use PnP to locate stuff here */
+    return(0);
 }

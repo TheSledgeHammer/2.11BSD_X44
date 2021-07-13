@@ -75,6 +75,15 @@ ssize_t		i386_copyin(const void *src, vm_offset_t dest, const size_t len);
 ssize_t		i386_copyout(const vm_offset_t src, void *dest, const size_t len);
 ssize_t		i386_readin(const int fd, vm_offset_t dest, const size_t len);
 
+int			i386_autoload(void);
+int			i386_getdev(void **vdev, const char *devspec, const char **path);
+char		*i386_fmtdev(void *vdev);
+int			i386_setcurrdev(struct env_var *ev, int flags, const void *value);
+
+/* disk format: use slices or traditional */
+void		bsd_slices(struct i386_devdesc currdev, int major, int biosdev);
+void		bsd_traditional(struct i386_devdesc currdev, int major, int biosdev);
+
 struct preloaded_file;
 void		bios_getmem(void);
 
@@ -149,7 +158,3 @@ extern uint32_t relocator_ebx;
 extern uint32_t relocator_edx;
 extern uint32_t relocator_ebp;
 extern uint16_t relocator_a20_enabled;
-
-int			i386_getdev(void **vdev, const char *devspec, const char **path);
-char		*i386_fmtdev(void *vdev);
-int			i386_setcurrdev(struct env_var *ev, int flags, const void *value);

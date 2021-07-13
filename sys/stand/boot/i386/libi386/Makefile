@@ -4,11 +4,12 @@
 
 LIB=	i386
 
-SRCS=	bio.c biosdisk.c biosmem.c biospnp.c biospci.c\
-		biossmap.c bootexec.c bootinfo.c bootload.c \
-		comconsole.c devicename.c relocater_tramp.S \
-		i386_copy.c i386_ksyms.c nullconsole.c _setjmp.S \
-		smbios.c spinconsole.c time.c vidconsole.c
+SRCS=	bio.c biosdisk.c biosmem.c biospnp.c biospci.c	\
+		biossmap.c bootexec.c bootinfo.c bootload.c 	\
+		comconsole.c devicename.c relocater_tramp.S 	\
+		i386_autoload.c i386_copy.c i386_ksyms.c 		\
+		nullconsole.c _setjmp.S smbios.c spinconsole.c 	\
+		time.c vidconsole.c
 		
 
 BOOT_COMCONSOLE_PORT?= 0x3f8

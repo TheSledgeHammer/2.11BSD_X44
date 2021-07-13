@@ -46,25 +46,59 @@
 
 #include <vm/include/vm_extern.h>
 
-#include <devel/arch/i386/apic/apic.h>
+#include <arch/i386/include/atomic.h>
 #include <arch/i386/include/cpu.h>
+
+#include <devel/arch/i386/apic/apic.h>
 #include <devel/arch/i386/apic/lapicreg.h>
 #include <devel/arch/i386/apic/lapicvar.h>
+#include <devel/sys/smp.h>
 
-/* TODO: Fix Up Below Methods */
+void i386_ipi_nop(struct cpu_info *);
+void i386_ipi_halt(struct cpu_info *);
+void i386_ipi_wbinvd(struct cpu_info *);
+
+#if NNPX > 0
+void i386_ipi_synch_fpu(struct cpu_info *);
+void i386_ipi_flush_fpu(struct cpu_info *);
+#else
+#define i386_ipi_synch_fpu NULL
+#define i386_ipi_flush_fpu NULL
+#endif
+
+#ifdef MTRR
+void i386_ipi_reload_mtrr(struct cpu_info *);
+#else
+#define i386_ipi_reload_mtrr 0
+#endif
+
+void (*ipifunc[I386_NIPI])(struct cpu_info *) = {
+		i386_ipi_halt,
+		i386_ipi_nop,
+		i386_ipi_flush_fpu,
+		i386_ipi_synch_fpu,
+		i386_ipi_reload_mtrr,
+#if 0
+		gdt_reload_cpu,
+#else
+		NULL,
+#endif
+		i386_setperf_ipi,
+		i386_ipi_wbinvd,
+};
 
 int
 i386_send_ipi(struct cpu_info *ci, int ipimask)
 {
 	int ret;
 
-	x86_atomic_setbits_l(&ci->ci_ipis, ipimask);
+	i386_atomic_setbits_l(&ci->cpu_ipis, ipimask);
 
 	/* Don't send IPI to CPU which isn't (yet) running. */
 	if (!(ci->cpu_flags & CPUF_RUNNING))
 		return ENOENT;
 
-	ret = x86_ipi(LAPIC_IPI_VECTOR, ci->cpu_apic_id, LAPIC_DLMODE_FIXED);
+	ret = i386_ipi(LAPIC_IPI_VECTOR, ci->cpu_apic_id, LAPIC_DLMODE_FIXED);
 	if (ret != 0) {
 		printf("ipi of %x from %s to %s failed\n",
 		    ipimask,
@@ -78,8 +112,7 @@ i386_send_ipi(struct cpu_info *ci, int ipimask)
 void
 i386_self_ipi(int vector)
 {
-	i82489_writereg(LAPIC_ICRLO,
-	    vector | LAPIC_DLMODE_FIXED | LAPIC_LVL_ASSERT | LAPIC_DEST_SELF);
+	lapic_write(LAPIC_ICRLO, vector | LAPIC_DLMODE_FIXED | LAPIC_LVL_ASSERT | LAPIC_DEST_SELF);
 }
 
 void
@@ -87,38 +120,41 @@ i386_broadcast_ipi(int ipimask)
 {
 	struct cpu_info *ci, *self = curcpu();
 	int count = 0;
+	int cii;
 
-	CPU_INFO_ITERATOR cii;
-
-	for (CPU_INFO_FOREACH(cii, ci)) {
-		if (ci == self)
+	CPU_FOREACH(cii) {
+		if(ci == self) {
 			continue;
-		if ((ci->ci_flags & CPUF_RUNNING) == 0)
+		}
+		if ((ci->cpu_flags & CPUF_RUNNING) == 0) {
 			continue;
-		x86_atomic_setbits_l(&ci->ci_ipis, ipimask);
+		}
+		i386_atomic_setbits_l(&ci->cpu_ipis, ipimask);
 		count++;
 	}
-	if (!count)
+	if (!count) {
 		return;
+	}
 
-	i82489_writereg(LAPIC_ICRLO, LAPIC_IPI_VECTOR | LAPIC_DLMODE_FIXED | LAPIC_LVL_ASSERT |
-	    LAPIC_DEST_ALLEXCL);
+	lapic_write(LAPIC_ICRLO, LAPIC_IPI_VECTOR | LAPIC_DLMODE_FIXED | LAPIC_LVL_ASSERT | LAPIC_DEST_ALLEXCL);
 }
 
 void
 i386_multicast_ipi(int cpumask, int ipimask)
 {
 	struct cpu_info *ci;
-	CPU_INFO_ITERATOR cii;
+	int cii;
 
 	cpumask &= ~(1U << cpu_number());
-	if (cpumask == 0)
+	if (cpumask == 0) {
 		return;
+	}
 
-	for (CPU_INFO_FOREACH(cii, ci)) {
-		if ((cpumask & (1U << ci->cpu_cpuid)) == 0)
+	CPU_FOREACH(cii) {
+		if ((cpumask & (1U << ci->cpu_cpuid)) == 0) {
 			continue;
-		x86_send_ipi(ci, ipimask);
+		}
+		i386_send_ipi(ci, ipimask);
 	}
 }
 
@@ -129,13 +165,67 @@ i386_ipi_handler(void)
 	u_int32_t pending;
 	int bit;
 
-	pending = x86_atomic_testset_ul(&ci->cpu_ipis, 0);
+	pending = i386_atomic_testset_ul(&ci->cpu_ipis, 0);
 
-	KDASSERT((pending >> X86_NIPI) == 0);
+	KDASSERT((pending >> I386_NIPI) == 0);
 	while ((bit = ffs(pending)) != 0) {
 		bit--;
 		pending &= ~(1<<bit);
 		ci->cpu_ipi_events[bit].ev_count++;
 		(*ipifunc[bit])(ci);
 	}
+}
+
+/* TODO: Fix Up Below Methods */
+
+void
+i386_ipi_nop(struct cpu_info *ci)
+{
+
+}
+
+void
+i386_ipi_halt(struct cpu_info *ci)
+{
+	npxsave_cpu(ci, 1);
+	intr_disable();
+	lapic_disable();
+	wbinvd();
+	ci->cpu_flags &= ~CPUF_RUNNING;
+	wbinvd();
+
+	for (;;) {
+		asm volatile("hlt");
+	}
+}
+
+#if NNPX > 0
+void
+i386_ipi_flush_fpu(struct cpu_info *ci)
+{
+	if (ci->ci_fpsaveproc == ci->ci_fpcurproc)
+		npxsave_cpu(ci, 0);
+}
+
+void
+i386_ipi_synch_fpu(struct cpu_info *ci)
+{
+	if (ci->ci_fpsaveproc == ci->ci_fpcurproc)
+		npxsave_cpu(ci, 1);
+}
+#endif
+
+#ifdef MTRR
+void
+i386_ipi_reload_mtrr(struct cpu_info *ci)
+{
+	if (mem_range_softc.mr_op != NULL)
+		mem_range_softc.mr_op->reload(&mem_range_softc);
+}
+#endif
+
+void
+i386_ipi_wbinvd(struct cpu_info *ci)
+{
+	wbinvd();
 }

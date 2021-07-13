@@ -138,10 +138,10 @@ struct	proc {
 	struct  rusage    	p_ru;			/* exit information */
 	struct  k_rusage    p_kru;			/* exit information kernel */
 
-	struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
-	char				*p_name;		/* (: name, optional */
+	//struct kthread		*p_kthreado;	/* kthread overseer (original kthread)  */
+	//char				*p_name;		/* (: name, optional */
 
-	struct gsched		*p_gsched;		/* global scheduler */
+	//struct gsched		*p_gsched;		/* global scheduler */
 
 	//union vm_pseudo_segment *p_psegp;
 	//struct vm_text		*p_textp;		/* text */

@@ -164,9 +164,9 @@ main(void)
     extract_currdev();				/* set $currdev and $loaddev */
     setenv("LINES", "24", 1);		/* optional */
 
-    //bios_getsmap();
+    bios_getsmap();
 
-	//archsw.arch_autoload = i386_autoload;
+	archsw.arch_autoload = i386_autoload;
 	archsw.arch_getdev = i386_getdev;
 	archsw.arch_copyin = i386_copyin;
 	archsw.arch_copyout = i386_copyout;
@@ -201,6 +201,8 @@ extract_currdev(void)
 		} else {
 		    /* we don't know what our boot device is */
 		    currdev.d_kind.biosdisk.slice = -1;
+		    currdev.d_kind.biosdisk.adaptor = -1;
+		    currdev.d_kind.biosdisk.controller = -1;
 		    currdev.d_kind.biosdisk.partition = 0;
 		    biosdev = -1;
 		}
@@ -208,6 +210,8 @@ extract_currdev(void)
 	} else if ((initial_bootdev & B_MAGICMASK) != B_DEVMAGIC) {
 		/* The passed-in boot device is bad */
 	    currdev.d_kind.biosdisk.slice = -1;
+	    currdev.d_kind.biosdisk.adaptor = -1;
+	    currdev.d_kind.biosdisk.controller = -1;
 	    currdev.d_kind.biosdisk.partition = 0;
 		biosdev = -1;
 	} else {
@@ -263,4 +267,23 @@ isa_outb(int port, int value)
 {
 
 	outb(port, value);
+}
+
+void
+bsd_slices(struct i386_devdesc currdev, int major, int biosdev)
+{
+	currdev.d_kind.biosdisk.slice = B_SLICE(initial_bootdev) - 1;
+	currdev.d_kind.biosdisk.partition = B_PARTITION(initial_bootdev);
+	biosdev = initial_bootinfo->bi_bios.bi_bios_dev;
+	major = B_TYPE(initial_bootdev);
+}
+
+void
+bsd_traditional(struct i386_devdesc currdev, int major, int biosdev)
+{
+	currdev.d_kind.biosdisk.adaptor = B_ADAPTOR(initial_bootdev) << 4;
+	currdev.d_kind.biosdisk.controller = B_CONTROLLER(initial_bootdev) - 1;
+    currdev.d_kind.biosdisk.partition = B_PARTITION(initial_bootdev);
+	biosdev = initial_bootinfo->bi_bios.bi_bios_dev;
+	major = B_TYPE(initial_bootdev);
 }

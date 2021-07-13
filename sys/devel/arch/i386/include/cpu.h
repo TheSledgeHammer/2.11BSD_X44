@@ -28,12 +28,17 @@
 #ifndef _I386_CPU_H_
 #define _I386_CPU_H_
 
+#include <devel/arch/i386/include/intr.h>
+
 struct percpu;
 
 struct cpu_info {
 	struct cpu_info 		*cpu_self;			/* self-pointer */
 	struct device 			*cpu_dev;			/* pointer to our device */
 	struct percpu			cpu_percpu;			/* pointer to percpu info, when NCPUS > 1 */
+
+	u_int32_t				cpu_ipis; 			/* interprocessor interrupts pending */
+	struct evcnt			cpu_ipi_events[I386_NIPI];
 
 	u_int					cpu_cpuid;			/* This cpu number */
 	u_int					cpu_cpumask;		/* This cpu mask */
@@ -113,5 +118,4 @@ curcpu(void)
 			);
 	return (ci);
 }
-
 #endif /* !_I386_CPU_H_ */

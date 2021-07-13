@@ -134,12 +134,8 @@ static int pckbd_is_console(pckbport_tag_t, pckbport_slot_t);
 
 int pckbdprobe(struct device *, struct cfdata *, void *);
 void pckbdattach(struct device *, struct device *, void *);
-/*
-struct cfdriver pckbd_cd = {
-		NULL, "pckbd", pckbdprobe, pckbdattach, DV_DULL, sizeof(struct pckbd_softc)
-};
-*/
-CFDRIVER_DECL(NULL, pckbd, &ss_cops, DV_DULL, sizeof(struct pckbd_softc));
+
+CFDRIVER_DECL(NULL, pckbd, &pckbd_cops, DV_DULL, sizeof(struct pckbd_softc));
 CFOPS_DECL(pckbd, pckbdprobe, pckbdattach, NULL, NULL);
 
 int		pckbd_enable(void *, int);
@@ -178,12 +174,11 @@ const struct wskbd_mapdata pckbd_keymapdata = {
 void	(*pckbd_bell_fn)(void *, u_int, u_int, u_int, int);
 void	*pckbd_bell_fn_arg;
 
-void	pckbd_bell(u_int, u_int, u_int, int);
+void		pckbd_bell(u_int, u_int, u_int, int);
 
-int	pckbd_set_xtscancode(pckbport_tag_t, pckbport_slot_t);
-int	pckbd_init(struct pckbd_internal *, pckbport_tag_t, pckbport_slot_t,
-			int);
-void	pckbd_input(void *, int);
+int			pckbd_set_xtscancode(pckbport_tag_t, pckbport_slot_t);
+int			pckbd_init(struct pckbd_internal *, pckbport_tag_t, pckbport_slot_t, int);
+void		pckbd_input(void *, int);
 
 static int	pckbd_decode(struct pckbd_internal *, int, u_int *, int *);
 static int	pckbd_led_encode(int);

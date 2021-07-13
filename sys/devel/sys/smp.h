@@ -104,8 +104,8 @@ extern int 			smp_cpus;
 extern volatile int smp_started;
 extern int 			smp_threads_per_core;
 
-extern cpuset_t all_cpus;
-extern cpuset_t cpuset_domain[MAXMEMDOM]; 	/* CPUs in each NUMA domain. */
+extern cpuset_t 	all_cpus;
+extern cpuset_t 	cpuset_domain[MAXMEMDOM]; 	/* CPUs in each NUMA domain. */
 
 struct cpu_group {
 
@@ -131,6 +131,29 @@ struct cpu_group {
 		if (!CPU_ABSENT((i))) {					\
 		}										\
 	}
+
+static __inline int
+cpu_first(void)
+{
+	int i;
+
+	for (i = 0;; i++)
+		if (!CPU_ABSENT(i))
+			return (i);
+}
+
+static __inline int
+cpu_next(int i)
+{
+
+	for (;;) {
+		i++;
+		if (i > mp_maxid)
+			i = 0;
+		if (!CPU_ABSENT(i))
+			return (i);
+	}
+}
 
 #define	CPU_FIRST()	cpu_first()
 #define	CPU_NEXT(i)	cpu_next((i))
