@@ -78,7 +78,9 @@ To build just the tools for i386, in the src directory:
 
 ./build.sh -U -u -j4 -m i386 tools
 
-Please read the following for NetBSD guide: <https://www.netbsd.org/docs/guide/en/chap-build.html>
+Please read the following NetBSD guide for more information: 
+
+<https://www.netbsd.org/docs/guide/en/chap-build.html>
 
 ## Contribution
 
