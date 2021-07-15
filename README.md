@@ -17,7 +17,8 @@
   - 95% Complete: without SMP, Threads & limited PAE
   - 60-80% Complete: with SMP, PAE & limited Threads
 - AMD64 (Planned)
-- Arm (32-Bit/64-Bit) (Planned)
+- Arm 	(32-Bit/64-Bit) (Planned)
+- Riscv (32-Bit/64-Bit) (Planned)
 
 ## Current Project Aims
 
@@ -48,7 +49,6 @@
   - NTFS
   - HPFS
   - HFS
-  - UDF
   - NFS
   - SMB/CIFS
   - PUFFS or FUSE

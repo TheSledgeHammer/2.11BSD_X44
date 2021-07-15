@@ -84,35 +84,6 @@ slab_startup(start, end)
 
 #define SLAB_BUCKET_HASH_COUNT (MINBUCKET + 16)
 
-long
-bucket_hash(bucket, size)
-	struct kmembuckets *bucket;
-	long size;
-{
-	int indx = BUCKETINDX(size);
-	Fnv32_t hash1 = fnv_32_buf(&bucket[indx], sizeof(&bucket[indx]), FNV1_32_INIT) % SLAB_BUCKET_HASH_COUNT;
-	Fnv32_t hash2 = (((unsigned long)bucket[indx])%SLAB_BUCKET_HASH_COUNT);
-	return (hash1^hash2);
-}
-
-long
-bucket_hash(slab)
-	slab_t slab;
-{
-	Fnv32_t hash1 = fnv_32_buf(&slab, sizeof(&slab), FNV1_32_INIT) % SLAB_BUCKET_HASH_COUNT;
-	return (hash1);
-}
-
-slab_bucket(slab)
-	struct slab *slab;
-{
-	struct kbucketlist *bucket;
-	struct kmembuckets *kbp;
-
-
-	bucket = &slab_kbuckets[bucket_hash(slab)];
-}
-
 /* Start of Routines for Slab Allocator using Kmembuckets */
 struct slab *
 slab_create(slab)
@@ -121,37 +92,8 @@ slab_create(slab)
     if(slab == NULL) {
         memset(slab, 0, sizeof(struct slab *));
     }
+
     return (slab);
-}
-
-void
-slab_malloc(size, mtype, flags)
-	unsigned long size;
-	int mtype, flags;
-{
-	register struct slab *slab;
-	register struct kmembuckets *kbp;
-	long indx;
-
-	indx = BUCKETINDX(size);
-	slab = slab_create(CIRCLEQ_FIRST(&slab_list));
-	slab_insert(slab, size, type, flags);
-
-	slab->s_size = size;
-	slab->s_mtype = mtype;
-	slab->s_flags = flags;
-
-	slabmeta(slab, size, mtype, flags);
-
-	if(slab->s_flags == SLAB_FULL) {
-		CIRCLEQ_FOREACH(slab, &slab_list, s_list) {
-			if(slab->s_flags == SLAB_PARTIAL) {
-				slab->s_bucket = bucket_search(slab, slab->s_meta, SLAB_PARTIAL);
-			} else {
-				slab->s_bucket = bucket_search(slab, slab->s_meta, SLAB_EMPTY);
-			}
-		}
-	}
 }
 
 /*
@@ -159,33 +101,63 @@ slab_malloc(size, mtype, flags)
  * block of memory to be allocated
  */
 struct kmembuckets *
-bucket_search(slab, meta, sflags)
+bucket_search(slab, meta, size, flags)
 	slab_t slab;
 	slab_metadata_t meta;
-	int sflags;
+	unsigned long size;
+	int flags;
 {
+	register slab_t next;
 	register struct kmembuckets *kbp;
 	long indx, bsize;
 	int bslots, aslots, fslots;
 
-	for (indx = 0; indx < MINBUCKET + 16; indx++) {
-		bsize = BUCKETSIZE(indx);
-		bslots = BUCKET_SLOTS(bsize);
-		aslots = ALLOCATED_SLOTS(slab->s_size);
-		fslots = SLOTSFREE(bslots, aslots);
-		switch(sflags) {
-		case SLAB_PARTIAL:
-			if (bsize > meta->sm_bsize && bslots > meta->sm_bslots && fslots > meta->sm_fslots) {
-				kbp = slab->s_bucket[index];
-				slabmeta(slab, slab->s_size, slab->s_mtype, slab->s_flags);
+	indx = BUCKETINDX(size);
+	bsize = BUCKETSIZE(indx);
+	bslots = BUCKET_SLOTS(bsize);
+	aslots = ALLOCATED_SLOTS(slab->s_size);
+	fslots = SLOTSFREE(bslots, aslots);
+
+	slab = CIRCLEQ_FIRST(&slab_list[indx]);
+	slab_insert(slab, size, type, flags);
+
+	switch (flags) {
+	case SLAB_FULL:
+		next = CIRCLEQ_NEXT(slab, s_list);
+		CIRCLEQ_FOREACH(next, &slab_list[indx], s_list) {
+			if(next != slab) {
+				if(next->s_flags == SLAB_PARTIAL) {
+					slab = next;
+					if (bsize > meta->sm_bsize && bslots > meta->sm_bslots && fslots > meta->sm_fslots) {
+						kbp = slab->s_bucket[index];
+						slabmeta(slab, slab->s_size);
+					}
+				}
+				if(next->s_flags == SLAB_EMPTY) {
+					slab = next;
+					kbp = slab->s_bucket[index];
+					slabmeta(slab, slab->s_size);
+				}
 				return (kbp);
+			} else {
+				return (NULL);
 			}
-			break;
-		case SLAB_EMPTY:
+		}
+		break;
+
+	case SLAB_PARTIAL:
+		if (bsize > meta->sm_bsize && bslots > meta->sm_bslots && fslots > meta->sm_fslots) {
 			kbp = slab->s_bucket[index];
-			slabmeta(slab, slab->s_size, slab->s_mtype, slab->s_flags);
+			slabmeta(slab, slab->s_size);
 			return (kbp);
 		}
+		break;
+
+	case SLAB_EMPTY:
+		kbp = slab->s_bucket[index];
+		slabmeta(slab, slab->s_size);
+		return (kbp);
 	}
 	return (NULL);
 }
+

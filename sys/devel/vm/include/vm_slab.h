@@ -49,6 +49,8 @@ struct slab {
     CIRCLEQ_ENTRY(slab)         s_list;                                         /* slab list entry */
 
     slab_metadata_t             s_meta;                                         /* slab metadata */
+    void						*s_metaaddr;
+
     u_long                      s_size;											/* slab size */
     int							s_mtype;                                        /* malloc type */
     int                         s_stype;            							/* slab type: see below */

@@ -52,20 +52,32 @@
 #include <devel/sys/malloctypes.h>
 #include <devel/vm/include/vm_slab.h>
 
-#define SLAB_BUCKET_HASH_COUNT (MINBUCKET + 16)
+#define SLAB_BUCKET_HASH_COUNT 		(MINBUCKET + 16)
 
-struct slablist 					slab_list[MINBUCKET + 16];
+struct slablist 					slab_list[SLAB_BUCKET_HASH_COUNT];
 struct slab_cache_list 				slab_cache_list;
 
 simple_lock_data_t					slab_list_lock;
 simple_lock_data_t					slab_cache_list_lock;
 
+void
+slab_init()
+{
+	register int i;
+
+	simple_lock_init(&slab_list_lock, "slab_list_lock");
+	simple_lock_init(&slab_cache_list_lock, "slab_cache_list_lock");
+
+	for(i = 0; i < SLAB_BUCKET_HASH_COUNT; i++) {
+		CIRCLEQ_INIT(&slab_list[i]);
+	}
+}
+
 /* slab metadata */
 void
-slabmeta(slab, size, mtype, flags)
+slabmeta(slab, size)
 	slab_t 	slab;
 	u_long  size;
-	int		mtype, flags;
 {
 	register slab_metadata_t meta;
 	u_long indx;
@@ -233,6 +245,7 @@ slab_insert(slab, size, mtype, flags)
 	slab->s_flags = flags;
 
     slabs = &slab_list[BUCKETINDX(size)];
+
     slab_lock(&slab_list_lock);
 	if (indx < 10) {
 		slab->s_stype = SLAB_SMALL;
@@ -243,6 +256,9 @@ slab_insert(slab, size, mtype, flags)
 	}
 	slab_unlock(&slab_list_lock);
     slab_count++;
+
+    /* update metadata */
+	slabmeta(slab, size);
 }
 
 void
