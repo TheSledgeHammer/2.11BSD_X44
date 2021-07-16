@@ -178,7 +178,7 @@ static void
 i8259_setup(struct softpic *spic, struct cpu_info *ci, int pin, int idtvec, int type)
 {
 	if(cpu_is_primary(ci)) {
-		softpic_pic_addroute(spic, pin, ci, pin, idtvec, type, FALSE, PIC_I8259);
+		softpic_pic_addroute(spic, ci, pin, idtvec, type, FALSE, PIC_I8259);
 		i8259_reinit_irqs();
 	}
 }

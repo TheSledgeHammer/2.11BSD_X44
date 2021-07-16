@@ -34,9 +34,10 @@
 #include <sys/lock.h>
 #include <sys/malloc.h>
 #include <sys/memrange.h>
-#include <sys/percpu.h>
 #include <sys/proc.h>
 #include <sys/sysctl.h>
+
+#include <devel/sys/percpu.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_param.h>
@@ -427,12 +428,25 @@ smp_targeted_tlb_shootdown(cpuset_t mask, u_int vector, pmap_t pmap,
 	uint32_t generation;
 	int cpu;
 
+	curcpu_cb(pmap, addr1, addr2);
+
 	smp_tlb_addr1 = addr1;
 	smp_tlb_addr2 = addr2;
 	smp_tlb_pmap = pmap;
 
 	generation = ++smp_tlb_generation;
+
+	curcpu_cb(pmap, addr1, addr2);
+	while ((cpu = CPU_FFS(&other_cpus)) != 0) {
+		cpu--;
+		CPU_CLR(cpu, &other_cpus);
+		p_cpudone = &cpuid_to_percpu[cpu]->pc_smp_tlb_done;
+		while (*p_cpudone != generation)
+			ia32_pause();
+	}
+	return;
 }
+
 /*
  * Handlers for TLB related IPIs
  */
@@ -447,7 +461,8 @@ invltlb_handler(pmap_t smp_tlb_pmap)
 	} else {
 		invltlb();
 	}
-	PERCPU_SET(smp_tlb_done, generation);
+
+	__PERCPU_SET(smp_tlb_done, generation);
 }
 
 static void
@@ -457,28 +472,37 @@ invlpg_handler(vm_offset_t smp_tlb_addr1)
 
 	generation = smp_tlb_generation;	/* Overlap with serialization */
 	if (smp_tlb_pmap == kernel_pmap) {
-
+		invlpg(smp_tlb_addr1);
 	}
-	invlpg(smp_tlb_addr1);
 
-	PERCPU_SET(smp_tlb_done, generation);
+	__PERCPU_SET(smp_tlb_done, generation);
 }
 
 static void
 invlrng_handler(vm_offset_t smp_tlb_addr1, vm_offset_t smp_tlb_addr2)
 {
 	vm_offset_t addr, addr2;
+	uint32_t generation;
 
 	addr = smp_tlb_addr1;
 	addr2 = smp_tlb_addr2;
-	do {
-		invlpg(addr);
-		addr += PAGE_SIZE;
-	} while (addr < addr2);
+	generation = smp_tlb_generation;	/* Overlap with serialization */
+	if (smp_tlb_pmap == kernel_pmap) {
+		do {
+			invlpg(addr);
+			addr += PAGE_SIZE;
+		} while (addr < addr2);
+	}
+
+	__PERCPU_SET(smp_tlb_done, generation);
 }
 
 static void
-invlcache_handler(void)
+invlcache_handler()
 {
+	uint32_t generation;
+
+	generation = smp_tlb_generation;
 	wbinvd();
+	__PERCPU_SET(smp_tlb_done, generation);
 }

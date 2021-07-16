@@ -37,6 +37,8 @@ extern unsigned int bootMP_size;
 extern int cpu_logical;
 extern int cpu_cores;
 
+struct lock_object smp_tlb_lock;
+
 /* IPI handlers (FreeBSD) */
 #define	IDTVEC(name)	__CONCAT(X, name)
 extern	IDTVEC(invltlb),					/* TLB shootdowns - global */
@@ -49,6 +51,9 @@ extern	IDTVEC(invltlb),					/* TLB shootdowns - global */
 		IDTVEC(cpustop),					/* CPU stops & waits to be restarted */
 		IDTVEC(cpususpend),					/* CPU suspends & waits to be resumed */
 		IDTVEC(rendezvous);					/* handle CPU rendezvous */
+
+
+typedef void (*smp_invl_cb_t)(struct pmap *, vm_offset_t addr1, vm_offset_t addr2);
 
 /* functions in mpboot.s */
 void 	bootMP(void);

@@ -48,6 +48,8 @@
 #include <sys/user.h>
 #include <sys/extent.h>
 
+#include <machine/param.h>
+
 #include <devel/sys/percpu.h>
 #include <devel/sys/malloctypes.h>
 

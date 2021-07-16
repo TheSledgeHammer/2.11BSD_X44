@@ -710,8 +710,8 @@ mpbios_cpus(struct device *self)
 	/* use default addresses */
 	pe.apic_id = lapic_cpu_number();
 	pe.cpu_flags = PROCENTRY_FLAG_EN | PROCENTRY_FLAG_BP;
-	pe.cpu_signature = cpu_info.ci_signature;
-	pe.feature_flags = cpu_info.ci_feature_flags;
+	//pe.cpu_signature = cpu_info.ci_signature;
+	//pe.feature_flags = cpu_info.ci_feature_flags;
 
 	mpbios_cpu((u_int8_t*) &pe, self);
 

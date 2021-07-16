@@ -41,7 +41,6 @@
 #include <machine/cpu.h>
 #include <machine/param.h>
 
-
 #include <devel/arch/i386/include/cpu.h>
 #include <devel/arch/i386/include/percpu.h>
 

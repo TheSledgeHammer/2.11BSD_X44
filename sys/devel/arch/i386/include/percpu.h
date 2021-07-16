@@ -30,15 +30,16 @@
 
 extern struct percpu 				__percpu[];
 
-#define	PERCPU_MD_FIELDS 														\
-	struct	cpu_info				*pc_cpuinfo;		/* Self-reference */	\
-	struct	segment_descriptor 		pc_common_tssd;								\
-	struct	segment_descriptor 		*pc_tss_gdt;								\
-	struct	segment_descriptor 		*pc_fsgs_gdt;								\
-	struct	i386tss 				*pc_common_tssp;							\
-	int								pc_currentldt;								\
-	u_int   						pc_acpi_id;			/* ACPI CPU id */		\
-	u_int							pc_apic_id;			/* APIC CPU id */		\
+#define	PERCPU_MD_FIELDS 																\
+	struct	cpu_info				*pc_cpuinfo;		/* Self-reference */			\
+	struct	segment_descriptor 		pc_common_tssd;										\
+	struct	segment_descriptor 		*pc_tss_gdt;										\
+	struct	segment_descriptor 		*pc_fsgs_gdt;										\
+	struct	i386tss 				*pc_common_tssp;									\
+	int								pc_currentldt;										\
+	u_int   						pc_acpi_id;			/* ACPI CPU id */				\
+	u_int							pc_apic_id;			/* APIC CPU id */				\
+	uint32_t 						pc_smp_tlb_done;	/* TLB op acknowledgement */	\
 
 #ifdef _KERNEL
 #define	PERCPU_PTR(pc, name)		((pc)->pc_##name)
@@ -47,6 +48,15 @@ extern struct percpu 				__percpu[];
 #define PERCPU_ADD(pc, name, val)   (PERCPU_PTR(pc, name) += (val))
 
 #define	IS_BSP(pc)					(PERCPU_GET(pc, cpuid) == 0)
+
+#define __PERCPU_PTR(name)			(__percpu_offset(pc_ ## name))
+#define __PERCPU_SET(name, val)		(__PERCPU_PTR(name) = (val))
+#define __PERCPU_GET(name)      	(__PERCPU_PTR(name))
+#define __PERCPU_ADD(name, val)   	(__PERCPU_PTR(name) += (val))
+
+#define	__percpu_offset(name)		offsetof(struct percpu, name)
+
+#define	__percpu_type(name)			__typeof(((struct percpu *)0)->name)
 
 struct kthread *
 __curkthread(void)

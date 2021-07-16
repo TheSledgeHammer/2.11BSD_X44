@@ -143,6 +143,7 @@
 #include <sys/queue.h>
 #include <sys/user.h>
 
+#include <devel/arch/i386/apic/lapicvar.h>
 #include <devel/arch/i386/isa/icu.h>
 #include <arch/i386/include/intr.h>
 #include <arch/i386/include/pic.h>
@@ -375,13 +376,6 @@ fakeintr()
 	intr_calculatemasks();
 
 	idepth = -1;
-}
-
-int
-fakeintr(arg)
-	void *arg;
-{
-	return (0);
 }
 
 void *

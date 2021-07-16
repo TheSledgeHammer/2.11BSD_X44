@@ -40,7 +40,7 @@
 
 #include <sys/queue.h>
 
-/* Softpic, acts as a selector for which PIC/APIC to use: see pic_machdep.c */
+/* Softpic, acts as a selector for which PIC/APIC to use: see softpic.c */
 struct softpic {
     struct cpu_info         *sp_cpu;
     struct intrsource       sp_intsrc;

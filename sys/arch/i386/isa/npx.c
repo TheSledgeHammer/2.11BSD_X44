@@ -136,15 +136,6 @@ struct npx_softc {
 	void                *sc_ih;
 };
 
-/*
-struct cfdriver npx_cd = {
-		NULL, "npx", &npx_cops, DV_DULL, sizeof(struct npx_softc)
-};
-
-struct cfops npx_cops = {
-		npx_probe, npx_attach, NULL, NULL
-};
-*/
 CFDRIVER_DECL(NULL, npx, &npx_cops, DV_DULL, sizeof(struct npx_softc));
 CFOPS_DECL(npx, npx_probe, npx_attach, NULL, NULL);
 

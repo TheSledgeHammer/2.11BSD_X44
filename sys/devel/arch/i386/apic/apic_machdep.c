@@ -36,9 +36,13 @@
 #include <sys/queue.h>
 #include <sys/user.h>
 
+#include <devel/arch/i386/apic/lapicvar.h>
 #include <devel/arch/i386/isa/icu.h>
 #include <arch/i386/include/intr.h>
 #include <arch/i386/include/pic.h>
+
+//#define	IDTVEC(name)	__CONCAT(X, name)
+//extern 	IDTVEC(apic_intr), IDTVEC(x2apic_intr);
 
 int  intr_shared_edge;
 

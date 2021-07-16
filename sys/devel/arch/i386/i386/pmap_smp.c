@@ -129,7 +129,7 @@ pmap_invalidate_page(pmap, va)
 	if (smp_started) {
 		if (!(read_eflags() & PSL_I))
 			panic("%s: interrupts disabled", __func__);
-		mtx_lock_spin(&smp_tlb_mtx);
+		simple_lock(&smp_tlb_lock);
 	} else
 		critical_enter();
 	/*
@@ -150,7 +150,7 @@ pmap_invalidate_page(pmap, va)
 			smp_masked_invlpg(pmap->pm_active & other_cpus, va);
 	}
 	if (smp_started) {
-		mtx_unlock_spin(&smp_tlb_mtx);
+		simple_unlock(&smp_tlb_lock);
 	} else {
 		critical_exit();
 	}
@@ -168,7 +168,7 @@ pmap_invalidate_range(pmap, sva, eva)
 	if (smp_started) {
 		if (!(read_eflags() & PSL_I))
 			panic("%s: interrupts disabled", __func__);
-		mtx_lock_spin(&smp_tlb_mtx);
+		simple_lock(&smp_tlb_lock);
 	} else
 		critical_enter();
 	/*
@@ -191,7 +191,7 @@ pmap_invalidate_range(pmap, sva, eva)
 			smp_masked_invlpg_range(pmap->pm_active & other_cpus, sva, eva);
 	}
 	if (smp_started)
-		mtx_unlock_spin(&smp_tlb_mtx);
+		simple_unlock(&smp_tlb_lock);
 	else
 		critical_exit();
 }
@@ -206,7 +206,7 @@ pmap_invalidate_all(pmap)
 	if (smp_started) {
 		if (!(read_eflags() & PSL_I))
 			panic("%s: interrupts disabled", __func__);
-		mtx_lock_spin(&smp_tlb_mtx);
+		simple_lock(&smp_tlb_lock);
 	} else
 		critical_enter();
 	/*
@@ -227,7 +227,7 @@ pmap_invalidate_all(pmap)
 			smp_masked_invltlb(pmap->pm_active & other_cpus);
 	}
 	if (smp_started)
-		mtx_unlock_spin(&smp_tlb_mtx);
+		simple_unlock(&smp_tlb_lock);
 	else
 		critical_exit();
 }
