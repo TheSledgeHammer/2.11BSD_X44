@@ -34,24 +34,26 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)rune.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/errno.h>
 
 #include <ctype.h>
-#include <errno.h>
 #include <limits.h>
 #include <rune.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-extern int		_none_init __P((_RuneLocale *));
-extern int		_UTF2_init __P((_RuneLocale *));
-extern int		_EUC_init __P((_RuneLocale *));
-static _RuneLocale	*_Read_RuneMagi __P((FILE *));
+extern int			_none_init (_RuneLocale *);
+extern int			_UTF2_init (_RuneLocale *);
+extern int			_UTF8_init (_RuneLocale *);
+extern int			_EUC_init (_RuneLocale *);
+static _RuneLocale	*_Read_RuneMagi (FILE *);
 
 static char *PathLocale = 0;
 
@@ -84,17 +86,20 @@ setrunelocale(encoding)
 
 	if ((rl = _Read_RuneMagi(fp)) == 0) {
 		fclose(fp);
-		return(EFTYPE);
+		return (EFTYPE);
 	}
 
 	if (!rl->encoding[0] || !strcmp(rl->encoding, "UTF2")) {
-		return(_UTF2_init(rl));
+		return (_UTF2_init(rl));
+	} else if (!strcmp(rl->encoding, "UTF-8")) {
+		return (_UTF8_init(rl));
 	} else if (!strcmp(rl->encoding, "NONE")) {
-		return(_none_init(rl));
+		return (_none_init(rl));
 	} else if (!strcmp(rl->encoding, "EUC")) {
-		return(_EUC_init(rl));
-	} else
-		return(EINVAL);
+		return (_EUC_init(rl));
+	} else {
+		return (EINVAL);
+	}
 }
 
 void

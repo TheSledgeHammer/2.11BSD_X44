@@ -61,9 +61,9 @@ static char sccsid[] = "@(#)bt_open.c	8.5 (Berkeley) 2/21/94";
 #include <db.h>
 #include "btree.h"
 
-static int byteorder __P((void));
-static int nroot __P((BTREE *));
-static int tmp __P((void));
+static int byteorder (void);
+static int nroot (BTREE *);
+static int tmp (void);
 
 /*
  * __BT_OPEN -- Open a btree.
@@ -120,7 +120,7 @@ __bt_open(fname, flags, mode, openinfo, dflags)
 		 */
 		if (b.psize &&
 		    (b.psize < MINPSIZE || b.psize > MAX_PAGE_OFFSET + 1 ||
-		    b.psize & sizeof(indx_t) - 1))
+		    (b.psize & sizeof(indx_t) - 1)))
 			goto einval;
 
 		/* Minimum number of keys per page; absolute minimum is 2. */
@@ -242,7 +242,7 @@ __bt_open(fname, flags, mode, openinfo, dflags)
 		if (m.m_magic != BTREEMAGIC || m.m_version != BTREEVERSION)
 			goto eftype;
 		if (m.m_psize < MINPSIZE || m.m_psize > MAX_PAGE_OFFSET + 1 ||
-		    m.m_psize & sizeof(indx_t) - 1)
+		    (m.m_psize & sizeof(indx_t) - 1))
 			goto eftype;
 		if (m.m_flags & ~SAVEMETA)
 			goto eftype;
@@ -275,7 +275,7 @@ __bt_open(fname, flags, mode, openinfo, dflags)
 	t->bt_psize = b.psize;
 
 	/* Set the cache size; must be a multiple of the page size. */
-	if (b.cachesize && b.cachesize & b.psize - 1)
+	if (b.cachesize && (b.cachesize & b.psize - 1))
 		b.cachesize += (~b.cachesize & b.psize - 1) + 1;
 	if (b.cachesize < b.psize * MINCACHE)
 		b.cachesize = b.psize * MINCACHE;

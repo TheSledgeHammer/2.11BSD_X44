@@ -48,62 +48,54 @@
 #include <sys/cdefs.h>
 #include <sys/ansi.h>
 #include <runetype.h>
-/*
-#define	_U	01
-#define	_L	02
-#define	_N	04
-#define	_S	010
-#define _P	020
-#define _C	040
-#define _X	0100
-#define	_B	0200
-*/
 
-#define	_A	0x00000100L		/* Alpha */
-#define	_C	0x00000200L		/* Control */
-#define	_D	0x00000400L		/* Digit */
-#define	_G	0x00000800L		/* Graph */
-#define	_L	0x00001000L		/* Lower */
-#define	_P	0x00002000L		/* Punct */
-#define	_S	0x00004000L		/* Space */
-#define	_U	0x00008000L		/* Upper */
-#define	_X	0x00010000L		/* X digit */
-#define	_B	0x00020000L		/* Blank */
-#define	_R	0x00040000L		/* Print */
-#define	_I	0x00080000L		/* Ideogram */
-#define	_T	0x00100000L		/* Special */
-#define	_Q	0x00200000L		/* Phonogram */
-#define	_N	0x00400000L		/* ??? */
+#define	_CTYPE_A		0x00000100L		/* Alpha */
+#define	_CTYPE_C		0x00000200L		/* Control */
+#define	_CTYPE_D		0x00000400L		/* Digit */
+#define	_CTYPE_G		0x00000800L		/* Graph */
+#define	_CTYPE_L		0x00001000L		/* Lower */
+#define	_CTYPE_P		0x00002000L		/* Punct */
+#define	_CTYPE_S		0x00004000L		/* Space */
+#define	_CTYPE_U		0x00008000L		/* Upper */
+#define	_CTYPE_X		0x00010000L		/* X digit */
+#define	_CTYPE_B		0x00020000L		/* Blank */
+#define	_CTYPE_R		0x00040000L		/* Print */
+#define	_CTYPE_I		0x00080000L		/* Ideogram */
+#define	_CTYPE_T		0x00100000L		/* Special */
+#define	_CTYPE_Q		0x00200000L		/* Phonogram */
+#define	_CTYPE_SW0		0x20000000L		/* 0 width character */
+#define	_CTYPE_SW1		0x40000000L		/* 1 width character */
+#define	_CTYPE_SW2		0x80000000L		/* 2 width character */
+#define	_CTYPE_SW3		0xc0000000L		/* 3 width character */
 
-extern	char	_ctype_[];
-
-#define	isalpha(c)	((_ctype_+1)[c]&(_U|_L))
-#define	isupper(c)	((_ctype_+1)[c]&_U)
-#define	islower(c)	((_ctype_+1)[c]&_L)
-#define	isdigit(c)	((_ctype_+1)[c]&_N)
-#define	isxdigit(c)	((_ctype_+1)[c]&(_N|_X))
-#define	isspace(c)	((_ctype_+1)[c]&_S)
-#define ispunct(c)	((_ctype_+1)[c]&_P)
-#define isalnum(c)	((_ctype_+1)[c]&(_U|_L|_N))
-#define isprint(c)	((_ctype_+1)[c]&(_P|_U|_L|_N|_B))
-#define isgraph(c)	((_ctype_+1)[c]&(_P|_U|_L|_N))
-#define iscntrl(c)	((_ctype_+1)[c]&_C)
-#define isascii(c)	((unsigned)(c)<=0177)
-#define toupper(c)	((c)-'a'+'A')
-#define tolower(c)	((c)-'A'+'a')
-#define toascii(c)	((c)&0177)
+extern	char			_ctype_[];
+#define	isalpha(c)		((_ctype_+1)[c]&(_CTYPE_U|_CTYPE_L))
+#define	isupper(c)		((_ctype_+1)[c]&_CTYPE_U)
+#define	islower(c)		((_ctype_+1)[c]&_CTYPE_L)
+#define	isdigit(c)		((_ctype_+1)[c]&_CTYPE_N)				/* ANSI -- locale independent */
+#define	isxdigit(c)		((_ctype_+1)[c]&(_CTYPE_N|_CTYPE_X)) 	/* ANSI -- locale independent */
+#define	isspace(c)		((_ctype_+1)[c]&_CTYPE_S)
+#define ispunct(c)		((_ctype_+1)[c]&_CTYPE_P)
+#define isalnum(c)		((_ctype_+1)[c]&(_CTYPE_U|_CTYPE_L|_CTYPE_N))
+#define isprint(c)		((_ctype_+1)[c]&(_CTYPE_P|_CTYPE_U|_CTYPE_L|_CTYPE_N|_CTYPE_B))
+#define isgraph(c)		((_ctype_+1)[c]&(_CTYPE_P|_CTYPE_U|_CTYPE_L|_CTYPE_N))
+#define iscntrl(c)		((_ctype_+1)[c]&_CTYPE_C)
+#define isascii(c)		((unsigned)(c)<=0177)
+#define toupper(c)		((c)-'a'+'A')
+#define tolower(c)		((c)-'A'+'a')
+#define toascii(c)		((c)&0177)
 
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
 #define	isascii(c)		((c & ~0x7F) == 0)
 #define toascii(c)		((c) & 0x7F)
 #define	digittoint(c)	__istype((c), 0xFF)
-#define	isideogram(c)	__istype((c), _I)
-#define	isphonogram(c)	__istype((c), _T)
-#define	isspecial(c)	__istype((c), _Q)
-#define isblank(c)		__istype((c), _B)
+#define	isideogram(c)	__istype((c), _CTYPE_I)
+#define	isphonogram(c)	__istype((c), _CTYPE_T)
+#define	isspecial(c)	__istype((c), _CTYPE_Q)
+#define isblank(c)		__istype((c), _CTYPE_B)
 #define	isrune(c)		__istype((c),  0xFFFFFF00L)
-#define	isnumber(c)		__istype((c), _D)
-#define	ishexnumber(c)	__istype((c), _X)
+#define	isnumber(c)		__istype((c), _CTYPE_D)
+#define	ishexnumber(c)	__istype((c), _CTYPE_X)
 #endif
 
 /* See comments in <machine/ansi.h> about _BSD_RUNE_T_. */

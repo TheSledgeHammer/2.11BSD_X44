@@ -39,8 +39,8 @@ static char sccsid[] = "@(#)vfprintf.c	5.2 (Berkeley) 6/27/88";
 //#include "fvwrite.h"
 #include "extern.h"
 
-static int __sprint __P((FILE *, struct __suio *));
-static int __sbprintf __P((FILE *, const char *, va_list))
+static int __sprint (FILE *, struct __suio *);
+static int __sbprintf (FILE *, const char *, va_list)
      __attribute__((__format__(__printf__, 2, 0)));
 
 /*

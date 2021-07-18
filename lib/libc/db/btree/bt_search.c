@@ -34,6 +34,7 @@
  * SUCH DAMAGE.
  */
 
+
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)bt_search.c	8.6 (Berkeley) 3/15/94";
 #endif /* LIBC_SCCS and not lint */
@@ -45,8 +46,8 @@ static char sccsid[] = "@(#)bt_search.c	8.6 (Berkeley) 3/15/94";
 #include <db.h>
 #include "btree.h"
 
-static int bt_snext __P((BTREE *, PAGE *, const DBT *, int *));
-static int bt_sprev __P((BTREE *, PAGE *, const DBT *, int *));
+static int bt_snext (BTREE *, PAGE *, const DBT *, int *);
+static int bt_sprev (BTREE *, PAGE *, const DBT *, int *);
 
 /*
  * __BT_SEARCH -- Search a btree for a key.

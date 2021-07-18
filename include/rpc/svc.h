@@ -74,12 +74,11 @@ enum xprt_stat {
  * Server side transport handle
  */
 typedef struct __rpc_svcxprt {
-	int		xp_sock;
+	int			xp_sock;
 	u_short		xp_port;	 /* associated port number */
 	struct xp_ops {
 		/* receive incomming requests */
-		bool_t	(*xp_recv) __P((struct __rpc_svcxprt *,
-			    struct rpc_msg *));
+		bool_t	(*xp_recv) __P((struct __rpc_svcxprt *, struct rpc_msg *));
 		/* get transport status */
 		enum xprt_stat (*xp_stat) __P((struct __rpc_svcxprt *));
 		/* get arguments */
@@ -94,7 +93,7 @@ typedef struct __rpc_svcxprt {
 		/* destroy this struct */
 		void	(*xp_destroy) __P((struct __rpc_svcxprt *));
 	} *xp_ops;
-	int		xp_addrlen;	 /* length of remote address */
+	int			xp_addrlen;	 /* length of remote address */
 	struct sockaddr_in xp_raddr;	 /* remote address */
 	struct opaque_auth xp_verf;	 /* raw response verifier */
 	caddr_t		xp_p1;		 /* private */

@@ -39,6 +39,7 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)isctype.c	8.3 (Berkeley) 2/24/94";
 #endif /* LIBC_SCCS and not lint */
@@ -51,7 +52,7 @@ int
 isalnum(c)
 	int c;
 {
-	return(__istype((c), (_A|_D)));
+	return(__istype((c), (_CTYPE_A|_CTYPE_D)));
 }
 
 #undef isalpha
@@ -59,7 +60,7 @@ int
 isalpha(c)
 	int c;
 {
-	return (__istype((c), _A));
+	return (__istype((c), _CTYPE_A));
 }
 
 #undef isascii
@@ -67,7 +68,7 @@ int
 isascii(c)
 	int c;
 {
-	return((c & ~0x7F) == 0);
+	return ((c & ~0x7F) == 0);
 }
 
 #undef isblank
@@ -75,7 +76,7 @@ int
 isblank(c)
 	int c;
 {
-	return (__istype((c), _B));
+	return (__istype((c), _CTYPE_B));
 }
 
 #undef iscntrl
@@ -83,7 +84,7 @@ int
 iscntrl(c)
 	int c;
 {
-	return (__istype((c), _C));
+	return (__istype((c), _CTYPE_C));
 }
 
 #undef isdigit
@@ -91,7 +92,7 @@ int
 isdigit(c)
 	int c;
 {
-	return (__isctype((c), _D));
+	return (__isctype((c), _CTYPE_D));
 }
 
 #undef isgraph
@@ -99,7 +100,7 @@ int
 isgraph(c)
 	int c;
 {
-	return (__istype((c), _G));
+	return (__istype((c), _CTYPE_G));
 }
 
 #undef islower
@@ -107,7 +108,7 @@ int
 islower(c)
 	int c;
 {
-	return (__istype((c), _L));
+	return (__istype((c), _CTYPE_L));
 }
 
 #undef isprint
@@ -115,7 +116,7 @@ int
 isprint(c)
 	int c;
 {
-	return (__istype((c), _R));
+	return (__istype((c), _CTYPE_R));
 }
 
 #undef ispunct
@@ -123,7 +124,7 @@ int
 ispunct(c)
 	int c;
 {
-	return (__istype((c), _P));
+	return (__istype((c), _CTYPE_P));
 }
 
 #undef isspace
@@ -131,7 +132,7 @@ int
 isspace(c)
 	int c;
 {
-	return (__istype((c), _S));
+	return (__istype((c), _CTYPE_S));
 }
 
 #undef isupper
@@ -139,7 +140,7 @@ int
 isupper(c)
 	int c;
 {
-	return (__istype((c), _U));
+	return (__istype((c), _CTYPE_U));
 }
 
 #undef isxdigit
@@ -147,7 +148,7 @@ int
 isxdigit(c)
 	int c;
 {
-	return (__isctype((c), _X));
+	return (__isctype((c), _CTYPE_X));
 }
 
 #undef toascii

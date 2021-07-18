@@ -64,8 +64,8 @@ static char sccsid[] = "@(#)vfprintf.c	5.2 (Berkeley) 6/27/88";
 #define	BUF		(MAXEXP+MAXFRACT+1)	/* + decimal point */
 #define	DEFPREC		6
 
-static char *cvt __P((double, int, int, char *, int *, int, int *));
-static int exponent __P((char *, int, int));
+static char *cvt (double, int, int, char *, int *, int, int *);
+static int exponent (char *, int, int);
 
 #else /* no FLOATING_POINT */
 

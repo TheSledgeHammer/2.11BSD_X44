@@ -34,6 +34,7 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)table.c	8.1 (Berkeley) 6/27/93";
 #endif /* LIBC_SCCS and not lint */
@@ -43,49 +44,161 @@ static char sccsid[] = "@(#)table.c	8.1 (Berkeley) 6/27/93";
 #include <ctype.h>
 #include <rune.h>
 
-extern rune_t	_none_sgetrune __P((const char *, size_t, char const **));
-extern int	_none_sputrune __P((rune_t, char *, size_t, char **));
-extern int	_none_init __P((char *, char **));
+extern rune_t	_none_sgetrune (const char *, size_t, char const **);
+extern int		_none_sputrune (rune_t, char *, size_t, char **);
+extern int		_none_init (char *, char **);
 
 _RuneLocale _DefaultRuneLocale = {
     _RUNE_MAGIC_1,
-    "none",
+    "NONE",
     _none_sgetrune,
     _none_sputrune,
     0xFFFD,
 
-    {	/*00*/	_C,		_C,		_C,		_C,
-		_C,		_C,		_C,		_C,
-	/*08*/	_C,		_C|_S|_B,	_C|_S,		_C|_S,
-		_C|_S,		_C|_S,		_C,		_C,
-	/*10*/	_C,		_C,		_C,		_C,
-		_C,		_C,		_C,		_C,
-	/*18*/	_C,		_C,		_C,		_C,
-		_C,		_C,		_C,		_C,
-	/*20*/	_S|_B|_R,	_P|_R|_G,	_P|_R|_G,	_P|_R|_G,
-		_P|_R|_G,	_P|_R|_G,	_P|_R|_G,	_P|_R|_G,
-	/*28*/	_P|_R|_G,	_P|_R|_G,	_P|_R|_G,	_P|_R|_G,
-		_P|_R|_G,	_P|_R|_G,	_P|_R|_G,	_P|_R|_G,
-	/*30*/	_D|_R|_G|_X|0,	_D|_R|_G|_X|1,	_D|_R|_G|_X|2,	_D|_R|_G|_X|3,
-		_D|_R|_G|_X|4,	_D|_R|_G|_X|5,	_D|_R|_G|_X|6,	_D|_R|_G|_X|7,
-	/*38*/	_D|_R|_G|_X|8,	_D|_R|_G|_X|9,	_P|_R|_G,	_P|_R|_G,
-		_P|_R|_G,	_P|_R|_G,	_P|_R|_G,	_P|_R|_G,
-	/*40*/	_P|_R|_G, _U|_X|_R|_G|_A|10, _U|_X|_R|_G|_A|11, _U|_X|_R|_G|_A|12,
-		_U|_X|_R|_G|_A|13, _U|_X|_R|_G|_A|14, _U|_X|_R|_G|_A|15, _U|_R|_G|_A,
-	/*48*/	_U|_R|_G|_A,	_U|_R|_G|_A,	_U|_R|_G|_A,	_U|_R|_G|_A,
-		_U|_R|_G|_A,	_U|_R|_G|_A,	_U|_R|_G|_A,	_U|_R|_G|_A,
-	/*50*/	_U|_R|_G|_A,	_U|_R|_G|_A,	_U|_R|_G|_A,	_U|_R|_G|_A,
-		_U|_R|_G|_A,	_U|_R|_G|_A,	_U|_R|_G|_A,	_U|_R|_G|_A,
-	/*58*/	_U|_R|_G|_A,	_U|_R|_G|_A,	_U|_R|_G|_A,	_P|_R|_G,
-		_P|_R|_G,	_P|_R|_G,	_P|_R|_G,	_P|_R|_G,
-	/*60*/	_P|_R|_G, _L|_X|_R|_G|_A|10, _L|_X|_R|_G|_A|11, _L|_X|_R|_G|_A|12,
-		_L|_X|_R|_G|_A|13, _L|_X|_R|_G|_A|14, _L|_X|_R|_G|_A|15, _L|_R|_G|_A,
-	/*68*/	_L|_R|_G|_A,	_L|_R|_G|_A,	_L|_R|_G|_A,	_L|_R|_G|_A,
-		_L|_R|_G|_A,	_L|_R|_G|_A,	_L|_R|_G|_A,	_L|_R|_G|_A,
-	/*70*/	_L|_R|_G|_A,	_L|_R|_G|_A,	_L|_R|_G|_A,	_L|_R|_G|_A,
-		_L|_R|_G|_A,	_L|_R|_G|_A,	_L|_R|_G|_A,	_L|_R|_G|_A,
-	/*78*/	_L|_R|_G|_A,	_L|_R|_G|_A,	_L|_R|_G|_A,	_P|_R|_G,
-		_P|_R|_G,	_P|_R|_G,	_P|_R|_G,	_C,
+    {	/*00*/
+    	_CTYPE_C,
+		_CTYPE_C,
+		_CTYPE_C,
+		_CTYPE_C,
+		_CTYPE_C,
+		_CTYPE_C,
+		_CTYPE_C,
+		_CTYPE_C,
+		/*08*/
+		_CTYPE_C,
+		_CTYPE_C|_CTYPE_S|_CTYPE_B,
+		_CTYPE_C|_CTYPE_S,
+		_CTYPE_C|_CTYPE_S,
+		_CTYPE_C|_CTYPE_S,
+		_CTYPE_C|_CTYPE_S,
+		_CTYPE_C,
+		_CTYPE_C,
+		/*10*/
+		_CTYPE_C,
+		_CTYPE_C,
+		_CTYPE_C,
+		_CTYPE_C,
+		_CTYPE_C,
+		_CTYPE_C,
+		_CTYPE_C,
+		_CTYPE_C,
+		/*18*/
+		_CTYPE_C,
+		_CTYPE_C,
+		_CTYPE_C,
+		_CTYPE_C,
+		_CTYPE_C,
+		_CTYPE_C,
+		_CTYPE_C,
+		_CTYPE_C,
+		/*20*/
+		_CTYPE_S|_CTYPE_B|_CTYPE_R,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		/*28*/
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		/*30*/
+		_CTYPE_D|_CTYPE_R|_CTYPE_G|_CTYPE_X|0,
+		_CTYPE_D|_CTYPE_R|_CTYPE_G|_CTYPE_X|1,
+		_CTYPE_D|_CTYPE_R|_CTYPE_G|_CTYPE_X|2,
+		_CTYPE_D|_CTYPE_R|_CTYPE_G|_CTYPE_X|3,
+		_CTYPE_D|_CTYPE_R|_CTYPE_G|_CTYPE_X|4,
+		_CTYPE_D|_CTYPE_R|_CTYPE_G|_CTYPE_X|5,
+		_CTYPE_D|_CTYPE_R|_CTYPE_G|_CTYPE_X|6,
+		_CTYPE_D|_CTYPE_R|_CTYPE_G|_CTYPE_X|7,
+		/*38*/
+		_CTYPE_D|_CTYPE_R|_CTYPE_G|_CTYPE_X|8,
+		_CTYPE_D|_CTYPE_R|_CTYPE_G|_CTYPE_X|9,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		/*40*/
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_U|_CTYPE_X|_CTYPE_R|_CTYPE_G|_CTYPE_A|10,
+		_CTYPE_U|_CTYPE_X|_CTYPE_R|_CTYPE_G|_CTYPE_A|11,
+		_CTYPE_U|_CTYPE_X|_CTYPE_R|_CTYPE_G|_CTYPE_A|12,
+		_CTYPE_U|_CTYPE_X|_CTYPE_R|_CTYPE_G|_CTYPE_A|13,
+		_CTYPE_U|_CTYPE_X|_CTYPE_R|_CTYPE_G|_CTYPE_A|14,
+		_CTYPE_U|_CTYPE_X|_CTYPE_R|_CTYPE_G|_CTYPE_A|15,
+		_CTYPE_U|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		/*48*/
+		_CTYPE_U|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_U|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_U|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_U|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_U|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_U|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_U|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_U|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		/*50*/
+		_CTYPE_U|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_U|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_U|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_U|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_U|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_U|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_U|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_U|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		/*58*/
+		_CTYPE_U|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_U|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_U|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		/*60*/
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_L|_CTYPE_X|_CTYPE_R|_CTYPE_G|_CTYPE_A|10,
+		_CTYPE_L|_CTYPE_X|_CTYPE_R|_CTYPE_G|_CTYPE_A|11,
+		_CTYPE_L|_CTYPE_X|_CTYPE_R|_CTYPE_G|_CTYPE_A|12,
+		_CTYPE_L|_CTYPE_X|_CTYPE_R|_CTYPE_G|_CTYPE_A|13,
+		_CTYPE_L|_CTYPE_X|_CTYPE_R|_CTYPE_G|_CTYPE_A|14,
+		_CTYPE_L|_CTYPE_X|_CTYPE_R|_CTYPE_G|_CTYPE_A|15,
+		_CTYPE_L|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		/*68*/
+		_CTYPE_L|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_L|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_L|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_L|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_L|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_L|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_L|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_L|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		/*70*/
+		_CTYPE_L|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_L|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_L|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_L|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_L|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_L|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_L|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_L|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		/*78*/
+		_CTYPE_L|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_L|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_L|_CTYPE_R|_CTYPE_G|_CTYPE_A,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_P|_CTYPE_R|_CTYPE_G,
+		_CTYPE_C,
     },
     {	0x00,	0x01,	0x02,	0x03,	0x04,	0x05,	0x06,	0x07,
      	0x08,	0x09,	0x0a,	0x0b,	0x0c,	0x0d,	0x0e,	0x0f,
@@ -154,7 +267,6 @@ _RuneLocale _DefaultRuneLocale = {
      	0xf8,	0xf9,	0xfa,	0xfb,	0xfc,	0xfd,	0xfe,	0xff,
     },
 };
-
 _RuneLocale *_CurrentRuneLocale = &_DefaultRuneLocale;
 
 int __mb_cur_max = 1;

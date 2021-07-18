@@ -48,8 +48,8 @@ static char sccsid[] = "@(#)bt_seq.c	8.2 (Berkeley) 9/7/93";
 #include <db.h>
 #include "btree.h"
 
-static int	 bt_seqadv __P((BTREE *, EPG *, int));
-static int	 bt_seqset __P((BTREE *, EPG *, DBT *, int));
+static int	 bt_seqadv (BTREE *, EPG *, int);
+static int	 bt_seqset (BTREE *, EPG *, DBT *, int);
 
 /*
  * Sequential scan support.

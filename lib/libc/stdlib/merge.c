@@ -100,7 +100,7 @@ mergesort(base, nmemb, size, cmp)
 	void *base;
 	size_t nmemb;
 	register size_t size;
-	int (*cmp) __P((const void *, const void *));
+	int (*cmp) (const void *, const void *);
 {
 	register int i, sense;
 	int big, iflag;
@@ -258,7 +258,7 @@ COPY:	    			b = t;
 void
 setup(list1, list2, n, size, cmp)
 	size_t n, size;
-	int (*cmp) __P((const void *, const void *));
+	int (*cmp) (const void *, const void *);
 	u_char *list1, *list2;
 {
 	int i, length, size2, tmp, sense;
@@ -333,7 +333,7 @@ static void
 insertionsort(a, n, size, cmp)
 	u_char *a;
 	size_t n, size;
-	int (*cmp) __P((const void *, const void *));
+	int (*cmp) (const void *, const void *);
 {
 	u_char *ai, *s, *t, *u, tmp;
 	int i;

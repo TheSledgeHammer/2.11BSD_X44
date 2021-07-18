@@ -92,7 +92,7 @@ __weak_alias(nlist,_nlist)
 #include "nlist_private.h"
 
 static const struct {
-	int	(*fdnlist) __P((int, struct nlist *));
+	int	(*fdnlist) (int, struct nlist *);
 } fdnlist_fmts[] = {
 #ifdef NLIST_AOUT
 	{	__fdnlist_aout		},

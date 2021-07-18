@@ -34,6 +34,7 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)setlocale.c	8.1 (Berkeley) 7/4/93";
 #endif /* LIBC_SCCS and not lint */
@@ -76,8 +77,8 @@ static char new_categories[_LC_LAST][32];
 static char current_locale_string[_LC_LAST * 33];
 static char *PathLocale;
 
-static char	*currentlocale __P((void));
-static char	*loadlocale __P((int));
+static char	*currentlocale (void);
+static char	*loadlocale (int);
 
 char *
 setlocale(category, locale)

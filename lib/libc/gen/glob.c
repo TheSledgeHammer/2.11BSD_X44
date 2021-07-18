@@ -128,32 +128,32 @@ typedef char Char;
 #define	ismeta(c)	(((c)&M_QUOTE) != 0)
 
 
-static int	 compare __P((const void *, const void *));
-static void	 g_Ctoc __P((const Char *, char *));
-static int	 g_lstat __P((Char *, struct stat *, glob_t *));
-static DIR	*g_opendir __P((Char *, glob_t *));
-static Char	*g_strchr __P((Char *, int));
+static int	 compare (const void *, const void *);
+static void	 g_Ctoc (const Char *, char *);
+static int	 g_lstat (Char *, struct stat *, glob_t *);
+static DIR	*g_opendir (Char *, glob_t *);
+static Char	*g_strchr (Char *, int);
 #ifdef notdef
-static Char	*g_strcat __P((Char *, const Char *));
+static Char	*g_strcat (Char *, const Char *);
 #endif
-static int	 g_stat __P((Char *, struct stat *, glob_t *));
-static int	 glob0 __P((const Char *, glob_t *));
-static int	 glob1 __P((Char *, glob_t *));
-static int	 glob2 __P((Char *, Char *, Char *, glob_t *));
-static int	 glob3 __P((Char *, Char *, Char *, Char *, glob_t *));
-static int	 globextend __P((const Char *, glob_t *));
-static const Char *	 globtilde __P((const Char *, Char *, glob_t *));
-static int	 globexp1 __P((const Char *, glob_t *));
-static int	 globexp2 __P((const Char *, const Char *, glob_t *, int *));
-static int	 match __P((Char *, Char *, Char *));
+static int	 g_stat (Char *, struct stat *, glob_t *);
+static int	 glob0 (const Char *, glob_t *);
+static int	 glob1 (Char *, glob_t *);
+static int	 glob2 (Char *, Char *, Char *, glob_t *);
+static int	 glob3 (Char *, Char *, Char *, Char *, glob_t *);
+static int	 globextend (const Char *, glob_t *);
+static const Char *	 globtilde (const Char *, Char *, glob_t *);
+static int	 globexp1 (const Char *, glob_t *);
+static int	 globexp2 (const Char *, const Char *, glob_t *, int *);
+static int	 match (Char *, Char *, Char *);
 #ifdef DEBUG
-static void	 qprintf __P((const char *, Char *));
+static void	 qprintf (const char *, Char *);
 #endif
 
 int
 glob(pattern, flags, errfunc, pglob)
 	const char *pattern;
-	int flags, (*errfunc) __P((const char *, int));
+	int flags, (*errfunc) (const char *, int);
 	glob_t *pglob;
 {
 	const u_char *patnext;

@@ -34,6 +34,7 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)none.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
@@ -44,8 +45,8 @@ static char sccsid[] = "@(#)none.c	8.1 (Berkeley) 6/4/93";
 #include <errno.h>
 #include <stdlib.h>
 
-rune_t	_none_sgetrune __P((const char *, size_t, char const **));
-int	_none_sputrune __P((rune_t, char *, size_t, char **));
+rune_t	_none_sgetrune (const char *, size_t, char const **);
+int		_none_sputrune (rune_t, char *, size_t, char **);
 
 int
 _none_init(rl)
@@ -55,7 +56,7 @@ _none_init(rl)
 	rl->sputrune = _none_sputrune;
 	_CurrentRuneLocale = rl;
 	__mb_cur_max = 1;
-	return(0);
+	return (0);
 }
 
 rune_t

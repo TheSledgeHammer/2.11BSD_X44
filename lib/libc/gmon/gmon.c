@@ -54,8 +54,8 @@ static int	s_scale;
 
 #define ERR(s) write(2, s, sizeof(s))
 
-void	moncontrol __P((int));
-static int hertz __P((void));
+void	moncontrol (int);
+static int hertz (void);
 
 void
 monstartup(lowpc, highpc)

@@ -70,17 +70,17 @@
 #define	ISLAST(p)	(p->n_un.n_name == 0 || p->n_un.n_name[0] == 0)
 
 #ifdef NLIST_AOUT
-int	__fdnlist_aout __P((int, struct nlist *));
+int	__fdnlist_aout (int, struct nlist *);
 #endif
 #ifdef NLIST_COFF
-int	__fdnlist_coff __P((int, struct nlist *));
+int	__fdnlist_coff (int, struct nlist *);
 #endif
 #ifdef NLIST_ECOFF
-int	__fdnlist_ecoff __P((int, struct nlist *));
+int	__fdnlist_ecoff (int, struct nlist *);
 #endif
 #ifdef NLIST_ELF32
-int	__fdnlist_elf32 __P((int, struct nlist *));
+int	__fdnlist_elf32 (int, struct nlist *);
 #endif
 #ifdef NLIST_ELF64
-int	__fdnlist_elf64 __P((int, struct nlist *));
+int	__fdnlist_elf64 (int, struct nlist *);
 #endif
