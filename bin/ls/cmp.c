@@ -37,7 +37,7 @@
 #if 0
 static char sccsid[] = "@(#)cmp.c	8.1 (Berkeley) 5/31/93";
 #else
-__RCSID("$NetBSD: cmp.c,v 1.17 2003/08/07 09:05:14 agc Exp $");
+/* __RCSID("$NetBSD: cmp.c,v 1.17 2003/08/07 09:05:14 agc Exp $"); */
 #endif
 #endif /* not lint */
 
@@ -57,11 +57,11 @@ __RCSID("$NetBSD: cmp.c,v 1.17 2003/08/07 09:05:14 agc Exp $");
 #define MTIMENSEC_CMP(x, op, y) ((x)->st_mtimensec op (y)->st_mtimensec)
 #else
 #define ATIMENSEC_CMP(x, op, y) \
-	((x)->st_atimespec.tv_nsec op (y)->st_atimespec.tv_nsec)
+	((x)->st_atime.tv_nsec op (y)->st_atime.tv_nsec)
 #define CTIMENSEC_CMP(x, op, y) \
-	((x)->st_ctimespec.tv_nsec op (y)->st_ctimespec.tv_nsec)
+	((x)->st_ctime.tv_nsec op (y)->st_ctime.tv_nsec)
 #define MTIMENSEC_CMP(x, op, y) \
-	((x)->st_mtimespec.tv_nsec op (y)->st_mtimespec.tv_nsec)
+	((x)->st_mtime.tv_nsec op (y)->st_mtime.tv_nsec)
 #endif
 
 int

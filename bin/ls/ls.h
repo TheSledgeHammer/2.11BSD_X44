@@ -1,4 +1,4 @@
-/*	$NetBSD: ls.h,v 1.16 2003/12/26 06:19:19 grant Exp $	*/
+/*	$NetBSD: ls.h,v 1.19 2014/02/20 18:56:36 christos Exp $	*/
 
 /*
  * Copyright (c) 1989, 1993
@@ -39,26 +39,30 @@
 extern long blocksize;		/* block size units */
 
 extern int f_accesstime;	/* use time of last access */
-extern int f_flags;		/* show flags associated with a file */
+extern int f_flags;			/* show flags associated with a file */
 extern int f_grouponly;		/* long listing without owner */
 extern int f_humanize;		/* humanize size field */
-extern int f_inode;		/* print inode */
+extern int f_commas;        /* separate size field with commas */
+extern int f_inode;			/* print inode */
 extern int f_longform;		/* long listing format */
-extern int f_octal;		/* print octal escapes for nongraphic characters */
+extern int f_octal;			/* print octal escapes for nongraphic characters */
 extern int f_octal_escape;	/* like f_octal but use C escapes if possible */
 extern int f_sectime;		/* print the real time for all files */
-extern int f_size;		/* list size in short listing */
+extern int f_size;			/* list size in short listing */
 extern int f_statustime;	/* use time of last mode change */
-extern int f_type;		/* add type character for non-regular files */
+extern int f_type;			/* add type character for non-regular files */
 extern int f_typedir;		/* add type character for directories */
 extern int f_nonprint;		/* show unprintables as ? */
+extern int f_fullpath;		/* print full pathname, not filename */
+extern int f_leafonly;		/* when recursing, print leaf names only */
 
 typedef struct {
 	FTSENT *list;
 	u_int64_t btotal;
 	u_int64_t stotal;
+	int bcfile;
 	int entries;
-	int maxlen;
+	unsigned int maxlen;
 	int s_block;
 	int s_flags;
 	int s_group;

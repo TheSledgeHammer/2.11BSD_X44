@@ -333,50 +333,54 @@ char *salt;
 	int temp;
 	static char block[66], iobuf[16];
 
-	for(i=0; i<66; i++)
+	for (i = 0; i < 66; i++)
 		block[i] = 0;
-	for(i=0; (c= *pw) && i<64; pw++){
-		for(j=0; j<7; j++, i++)
-			block[i] = (c>>(6-j)) & 01;
+	for (i = 0; (c = *pw) && i < 64; pw++) {
+		for (j = 0; j < 7; j++, i++)
+			block[i] = (c >> (6 - j)) & 01;
 		i++;
 	}
-	
+
 	setkey(block);
-	
-	for(i=0; i<66; i++)
+
+	for (i = 0; i < 66; i++)
 		block[i] = 0;
 
-	for(i=0;i<2;i++){
+	for (i = 0; i < 2; i++) {
 		c = *salt++;
 		iobuf[i] = c;
-		if(c>'Z') c -= 6;
-		if(c>'9') c -= 7;
+		if (c > 'Z')
+			c -= 6;
+		if (c > '9')
+			c -= 7;
 		c -= '.';
-		for(j=0;j<6;j++){
-			if((c>>j) & 01){
-				temp = E[6*i+j];
-				E[6*i+j] = E[6*i+j+24];
-				E[6*i+j+24] = temp;
-				}
+		for (j = 0; j < 6; j++) {
+			if ((c >> j) & 01) {
+				temp = E[6 * i + j];
+				E[6 * i + j] = E[6 * i + j + 24];
+				E[6 * i + j + 24] = temp;
 			}
 		}
-	
-	for(i=0; i<25; i++)
-		encrypt(block,0);
-	
-	for(i=0; i<11; i++){
-		c = 0;
-		for(j=0; j<6; j++){
-			c <<= 1;
-			c |= block[6*i+j];
-			}
-		c += '.';
-		if(c>'9') c += 7;
-		if(c>'Z') c += 6;
-		iobuf[i+2] = c;
 	}
-	iobuf[i+2] = 0;
-	if(iobuf[1]==0)
+
+	for (i = 0; i < 25; i++)
+		encrypt(block, 0);
+
+	for (i = 0; i < 11; i++) {
+		c = 0;
+		for (j = 0; j < 6; j++) {
+			c <<= 1;
+			c |= block[6 * i + j];
+		}
+		c += '.';
+		if (c > '9')
+			c += 7;
+		if (c > 'Z')
+			c += 6;
+		iobuf[i + 2] = c;
+	}
+	iobuf[i + 2] = 0;
+	if (iobuf[1] == 0)
 		iobuf[1] = iobuf[0];
-	return(iobuf);
+	return (iobuf);
 }

@@ -31,7 +31,7 @@ struct ostat {
 };
 #endif /* !_POSIX_SOURCE */
 
-struct	stat {
+struct stat {
 	dev_t				st_dev;		/* inode's device */
 	ino_t				st_ino;		/* inode's number */
 	mode_t	 			st_mode;	/* inode protection mode */

@@ -1,4 +1,4 @@
-/*	$NetBSD: extern.h,v 1.15 2003/09/14 19:16:05 jschauma Exp $	*/
+/*	$NetBSD: extern.h,v 1.17 2011/08/29 14:44:21 joerg Exp $	*/
 
 /*-
  * Copyright (c) 1991, 1993
@@ -45,12 +45,9 @@ int	 revsizecmp(const FTSENT *, const FTSENT *);
 int	 ls_main(int, char *[]);
 
 int	 printescaped(const char *);
-void	 printacol(DISPLAY *);
-void	 printcol(DISPLAY *);
-void	 printlong(DISPLAY *);
-void	 printscol(DISPLAY *);
-void	 printstream(DISPLAY *);
+void printacol(DISPLAY *);
+void printcol(DISPLAY *);
+void printlong(DISPLAY *);
+void printscol(DISPLAY *);
+void printstream(DISPLAY *);
 int	 safe_print(const char *);
-void	 usage(void);
-
-#include "stat_flags.h"

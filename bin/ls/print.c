@@ -1,4 +1,4 @@
-/*	$NetBSD: print.c,v 1.38 2003/12/26 06:19:19 grant Exp $	*/
+/*	$NetBSD: print.c,v 1.57 2020/05/17 23:34:11 christos Exp $	*/
 
 /*
  * Copyright (c) 1989, 1993, 1994
@@ -37,7 +37,7 @@
 #if 0
 static char sccsid[] = "@(#)print.c	8.5 (Berkeley) 7/28/94";
 #else
-__RCSID("$NetBSD: print.c,v 1.38 2003/12/26 06:19:19 grant Exp $");
+__RCSID("$NetBSD: print.c,v 1.57 2020/05/17 23:34:11 christos Exp $");
 #endif
 #endif /* not lint */
 
@@ -46,6 +46,7 @@ __RCSID("$NetBSD: print.c,v 1.38 2003/12/26 06:19:19 grant Exp $");
 
 #include <err.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <fts.h>
 #include <grp.h>
 #include <pwd.h>
@@ -60,19 +61,16 @@ __RCSID("$NetBSD: print.c,v 1.38 2003/12/26 06:19:19 grant Exp $");
 #include "ls.h"
 #include "extern.h"
 
-extern int termwidth;
-
 static int	printaname(FTSENT *, int, int);
 static void	printlink(FTSENT *);
 static void	printtime(time_t);
 static int	printtype(u_int);
 
-static time_t	now;
-
 #define	IS_NOPRINT(p)	((p)->fts_number == NO_PRINT)
 
 void
-printscol(DISPLAY *dp)
+printscol(dp)
+	DISPLAY *dp;
 {
 	FTSENT *p;
 
@@ -85,77 +83,47 @@ printscol(DISPLAY *dp)
 }
 
 void
-printlong(DISPLAY *dp)
+printlong(dp)
+	DISPLAY *dp;
 {
 	struct stat *sp;
 	FTSENT *p;
 	NAMES *np;
-	char buf[20], szbuf[5];
+	char buf[20];
 
-	now = time(NULL);
-
-	if (dp->list->fts_level != FTS_ROOTLEVEL && (f_longform || f_size)) {
-		if (f_humanize) {
-			if ((humanize_number(szbuf, sizeof(szbuf), dp->stotal,
-			    "", HN_AUTOSCALE,
-			    (HN_DECIMAL | HN_B | HN_NOSPACE))) == -1)
-				err(1, "humanize_number");
-			(void)printf("total %s\n", szbuf);
-		} else {
-			(void)printf("total %llu\n",
-			    (long long)(howmany(dp->btotal, blocksize)));
-		}
-	}
+	if (dp->list->fts_level != FTS_ROOTLEVEL && (f_longform || f_size))
+		(void)printf("total %lu\n", howmany(dp->btotal, blocksize));
 
 	for (p = dp->list; p; p = p->fts_link) {
 		if (IS_NOPRINT(p))
 			continue;
 		sp = p->fts_statp;
 		if (f_inode)
-			(void)printf("%*lu ", dp->s_inode,
-			    (unsigned long)sp->st_ino);
-		if (f_size && !f_humanize) {
-			(void)printf("%*llu ", dp->s_block,
-			    (long long)howmany(sp->st_blocks, blocksize));
-		}
+			(void)printf("%*lu ", dp->s_inode, sp->st_ino);
+		if (f_size)
+			(void)printf("%*qd ",
+			    dp->s_block, howmany(sp->st_blocks, blocksize));
 		(void)strmode(sp->st_mode, buf);
 		np = p->fts_pointer;
-		(void)printf("%s %*lu ", buf, dp->s_nlink,
-		    (unsigned long)sp->st_nlink);
-		if (!f_grouponly)
-			(void)printf("%-*s  ", dp->s_user, np->user);
-		(void)printf("%-*s  ", dp->s_group, np->group);
+		(void)printf("%s %*u %-*s  %-*s  ", buf, dp->s_nlink,
+		    sp->st_nlink, dp->s_user, np->user, dp->s_group,
+		    np->group);
 		if (f_flags)
 			(void)printf("%-*s ", dp->s_flags, np->flags);
 		if (S_ISCHR(sp->st_mode) || S_ISBLK(sp->st_mode))
-			(void)printf("%*u, %*u ",
-			    dp->s_major, major(sp->st_rdev), dp->s_minor,
-			    minor(sp->st_rdev));
+			(void)printf("%3d, %3d ", major(sp->st_rdev), minor(sp->st_rdev));
+		else if (dp->bcfile)
+			(void)printf("%*s%*qd ", 8 - dp->s_size, "", dp->s_size, sp->st_size);
 		else
-			if (f_humanize) {
-				if ((humanize_number(szbuf, sizeof(szbuf),
-				    sp->st_size, "", HN_AUTOSCALE,
-				    (HN_DECIMAL | HN_B | HN_NOSPACE))) == -1)
-					err(1, "humanize_number");
-				(void)printf("%*s ", dp->s_size, szbuf);
-			} else {
-				(void)printf("%*llu ", dp->s_size,
-				    (long long)sp->st_size);
-			}
+			(void)printf("%*qd ", dp->s_size, sp->st_size);
 		if (f_accesstime)
 			printtime(sp->st_atime);
 		else if (f_statustime)
 			printtime(sp->st_ctime);
 		else
 			printtime(sp->st_mtime);
-		if (f_octal || f_octal_escape)
-			(void)safe_print(p->fts_name);
-		else if (f_nonprint)
-			(void)printescaped(p->fts_name);
-		else
-			(void)printf("%s", p->fts_name);
-
-		if (f_type || (f_typedir && S_ISDIR(sp->st_mode)))
+		(void)printf("%s", p->fts_name);
+		if (f_type)
 			(void)printtype(sp->st_mode);
 		if (S_ISLNK(sp->st_mode))
 			printlink(p);
@@ -163,34 +131,18 @@ printlong(DISPLAY *dp)
 	}
 }
 
+#define	TAB	8
+
 void
-printcol(DISPLAY *dp)
+printcol(dp)
+	DISPLAY *dp;
 {
+	extern int termwidth;
 	static FTSENT **array;
 	static int lastentries = -1;
 	FTSENT *p;
-	int base, chcnt, col, colwidth, num;
-	int numcols, numrows, row;
-	char szbuf[5];
-
-	colwidth = dp->maxlen;
-	if (f_inode)
-		colwidth += dp->s_inode + 1;
-	if (f_size) {
-		if (f_humanize)
-			colwidth += dp->s_size + 1;
-		else
-			colwidth += dp->s_block + 1;
-	}
-	if (f_type || f_typedir)
-		colwidth += 1;
-
-	colwidth += 1;
-
-	if (termwidth < 2 * colwidth) {
-		printscol(dp);
-		return;
-	}
+	int base, chcnt, cnt, col, colwidth, num;
+	int endcol, numcols, numrows, row;
 
 	/*
 	 * Have to do random access in the linked list -- build a table
@@ -208,32 +160,39 @@ printcol(DISPLAY *dp)
 		if (p->fts_number != NO_PRINT)
 			array[num++] = p;
 
+	colwidth = dp->maxlen;
+	if (f_inode)
+		colwidth += dp->s_inode + 1;
+	if (f_size)
+		colwidth += dp->s_block + 1;
+	if (f_type)
+		colwidth += 1;
+
+	colwidth = (colwidth + TAB) & ~(TAB - 1);
+	if (termwidth < 2 * colwidth) {
+		printscol(dp);
+		return;
+	}
+
 	numcols = termwidth / colwidth;
-	colwidth = termwidth / numcols;		/* spread out if possible */
 	numrows = num / numcols;
 	if (num % numcols)
 		++numrows;
 
-	if (dp->list->fts_level != FTS_ROOTLEVEL && (f_longform || f_size)) {
-		if (f_humanize) {
-			if ((humanize_number(szbuf, sizeof(szbuf), dp->stotal,
-			    "", HN_AUTOSCALE,
-			    (HN_DECIMAL | HN_B | HN_NOSPACE))) == -1)
-				err(1, "humanize_number");
-			(void)printf("total %s\n", szbuf);
-		} else {
-			(void)printf("total %llu\n",
-			    (long long)(howmany(dp->btotal, blocksize)));
-		}
-	}
+	if (dp->list->fts_level != FTS_ROOTLEVEL && (f_longform || f_size))
+		(void)printf("total %lu\n", howmany(dp->btotal, blocksize));
 	for (row = 0; row < numrows; ++row) {
+		endcol = colwidth;
 		for (base = row, chcnt = col = 0; col < numcols; ++col) {
-			chcnt = printaname(array[base], dp->s_inode,
-			    f_humanize ? dp->s_size : dp->s_block);
+			chcnt += printaname(array[base], dp->s_inode,
+			    dp->s_block);
 			if ((base += numrows) >= num)
 				break;
-			while (chcnt++ < colwidth)
-				(void)putchar(' ');
+			while ((cnt = (chcnt + TAB & ~(TAB - 1))) <= endcol) {
+				(void)putchar('\t');
+				chcnt = cnt;
+			}
+			endcol += colwidth;
 		}
 		(void)putchar('\n');
 	}
@@ -245,7 +204,6 @@ printacol(DISPLAY *dp)
 	FTSENT *p;
 	int chcnt, col, colwidth;
 	int numcols;
-	char szbuf[5];
 
 	colwidth = dp->maxlen;
 	if (f_inode)
@@ -269,18 +227,8 @@ printacol(DISPLAY *dp)
 	numcols = termwidth / colwidth;
 	colwidth = termwidth / numcols;		/* spread out if possible */
 
-	if (dp->list->fts_level != FTS_ROOTLEVEL && (f_longform || f_size)) {
-		if (f_humanize) {
-			if ((humanize_number(szbuf, sizeof(szbuf), dp->stotal,
-			    "", HN_AUTOSCALE,
-			    (HN_DECIMAL | HN_B | HN_NOSPACE))) == -1)
-				err(1, "humanize_number");
-			(void)printf("total %s\n", szbuf);
-		} else {
-			(void)printf("total %llu\n",
-			    (long long)(howmany(dp->btotal, blocksize)));
-		}
-	}
+	printtotal(dp);				/* "total: %u\n" */
+
 	chcnt = col = 0;
 	for (p = dp->list; p; p = p->fts_link) {
 		if (IS_NOPRINT(p))
@@ -311,7 +259,7 @@ printstream(DISPLAY *dp)
 	if (f_size) {
 		if (f_humanize)
 			extwidth += dp->s_size + 1;
-		else 
+		else
 			extwidth += dp->s_block + 1;
 	}
 	if (f_type)
@@ -322,7 +270,7 @@ printstream(DISPLAY *dp)
 			continue;
 		if (col > 0) {
 			(void)putchar(','), col++;
-			if (col + 1 + extwidth + p->fts_namelen >= termwidth)
+			if (col + 1 + extwidth + (int)p->fts_namelen >= termwidth)
 				(void)putchar('\n'), col = 0;
 			else
 				(void)putchar(' '), col++;
@@ -333,46 +281,35 @@ printstream(DISPLAY *dp)
 	(void)putchar('\n');
 }
 
+
 /*
  * print [inode] [size] name
  * return # of characters printed, no trailing characters.
  */
 static int
-printaname(FTSENT *p, int inodefield, int sizefield)
+printaname(p, inodefield, sizefield)
+	FTSENT *p;
+	u_long sizefield, inodefield;
 {
 	struct stat *sp;
 	int chcnt;
-	char szbuf[5];
 
 	sp = p->fts_statp;
 	chcnt = 0;
 	if (f_inode)
-		chcnt += printf("%*lu ", inodefield, (unsigned long)sp->st_ino);
-	if (f_size) {
-		if (f_humanize) {
-			if ((humanize_number(szbuf, sizeof(szbuf), sp->st_size,
-			    "", HN_AUTOSCALE,
-			    (HN_DECIMAL | HN_B | HN_NOSPACE))) == -1)
-				err(1, "humanize_number");
-			chcnt += printf("%*s ", sizefield, szbuf);
-		} else {
-			chcnt += printf("%*llu ", sizefield,
-			    (long long)howmany(sp->st_blocks, blocksize));
-		}
-	}
-	if (f_octal || f_octal_escape)
-		chcnt += safe_print(p->fts_name);
-	else if (f_nonprint)
-		chcnt += printescaped(p->fts_name);
-	else
-		chcnt += printf("%s", p->fts_name);
-	if (f_type || (f_typedir && S_ISDIR(sp->st_mode)))
+		chcnt += printf("%*lu ", (int)inodefield, sp->st_ino);
+	if (f_size)
+		chcnt += printf("%*qd ",
+		    (int)sizefield, howmany(sp->st_blocks, blocksize));
+	chcnt += printf("%s", p->fts_name);
+	if (f_type)
 		chcnt += printtype(sp->st_mode);
 	return (chcnt);
 }
 
 static void
-printtime(time_t ftime)
+printtime(ftime)
+	time_t ftime;
 {
 	int i;
 	char *longstring;
@@ -385,7 +322,7 @@ printtime(time_t ftime)
 	if (f_sectime)
 		for (i = 11; i < 24; i++)
 			(void)putchar(longstring[i]);
-	else if (ftime + SIXMONTHS > now && ftime - SIXMONTHS < now)
+	else if (ftime + SIXMONTHS > time(NULL))
 		for (i = 11; i < 16; ++i)
 			(void)putchar(longstring[i]);
 	else {
@@ -397,7 +334,8 @@ printtime(time_t ftime)
 }
 
 static int
-printtype(u_int mode)
+printtype(mode)
+	u_int mode;
 {
 	switch (mode & S_IFMT) {
 	case S_IFDIR:
@@ -424,7 +362,8 @@ printtype(u_int mode)
 }
 
 static void
-printlink(FTSENT *p)
+printlink(p)
+	FTSENT *p;
 {
 	int lnklen;
 	char name[MAXPATHLEN + 1], path[MAXPATHLEN + 1];
@@ -439,11 +378,5 @@ printlink(FTSENT *p)
 		return;
 	}
 	path[lnklen] = '\0';
-	(void)printf(" -> ");
-	if (f_octal || f_octal_escape)
-		(void)safe_print(path);
-	else if (f_nonprint)
-		(void)printescaped(path);
-	else
-		(void)printf("%s", path);
+	(void)printf(" -> %s", path);
 }

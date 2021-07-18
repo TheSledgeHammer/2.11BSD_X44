@@ -1,4 +1,4 @@
-.\"	$NetBSD: ls.1,v 1.48 2003/12/26 11:19:50 wiz Exp $
+.\"	$NetBSD: ls.1,v 1.81 2020/05/16 18:31:45 christos Exp $
 .\"
 .\" Copyright (c) 1980, 1990, 1991, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
@@ -32,7 +32,7 @@
 .\"
 .\"     @(#)ls.1	8.7 (Berkeley) 7/29/94
 .\"
-.Dd December 26, 2003
+.Dd August 10, 2016
 .Dt LS 1
 .Os
 .Sh NAME
@@ -40,19 +40,19 @@
 .Nd list directory contents
 .Sh SYNOPSIS
 .Nm
-.Op Fl AaBbCcdFfghikLlmnopqRrSsTtuWwx1
+.Op Fl 1AaBbCcdFfghikLlMmnOoPpqRrSsTtuWwXx
 .Op Ar
 .Sh DESCRIPTION
-For each operand that names a
+For each
 .Ar file
-of a type other than
+operand that names a file of a type other than
 directory,
 .Nm
 displays its name as well as any requested,
 associated information.
-For each operand that names a
+For each
 .Ar file
-of type directory,
+operand that names a file of type directory,
 .Nm
 displays the names of files contained
 within that directory, as well as any requested, associated
@@ -67,6 +67,11 @@ lexicographical order.
 .Pp
 The following options are available:
 .Bl -tag -width indent
+.It Fl \&1
+(The numeric digit
+.Dq one ) .
+Force output to be one entry per line.
+This is the default when output is not to a terminal.
 .It Fl A
 List all entries except for
 .Ql \&.
@@ -78,7 +83,7 @@ Include directory entries whose names begin with a
 dot
 .Pq Sq \&. .
 .It Fl B
-Force printing of non-printable characters in file names as \\xxx, where xxx
+Force printing of non-graphic characters in file names as \exxx, where xxx
 is the numeric value of the character in octal.
 .It Fl b
 As
@@ -87,10 +92,19 @@ but use C escape codes whenever possible.
 .It Fl C
 Force multi-column output; this is the default when output is to a terminal.
 .It Fl c
-Use time when file status was last changed for sorting or printing.
+Use time when file status was last changed,
+instead of time of last modification of the file for printing
+.Pq Fl l
+or sorting
+.Pq Fl t .
+Overrides
+.Fl u .
 .It Fl d
 Directories are listed as plain files (not searched recursively) and
-symbolic links in the argument list are not indirected through.
+symbolic links in the argument list are not followed.
+Turns off
+.Fl R
+if also given.
 .It Fl F
 Display a slash
 .Pq Sq \&/
@@ -113,43 +127,65 @@ after each that is a
 .Tn FIFO .
 .It Fl f
 Output is not sorted.
+This option implies
+.Fl a .
 .It Fl g
 The same as
 .Fl l ,
 except that the owner is not printed.
 .It Fl h
 Modifies the
-.Fl s
-and
 .Fl l
+and
+.Fl s
 options, causing the sizes to be reported in bytes displayed in a human
 readable format.
 Overrides
-.Fl k .
+.Fl k
+and
+.Fl M .
 .It Fl i
 For each file, print the file's file serial number (inode number).
 .It Fl k
 Modifies the
 .Fl s
 option, causing the sizes to be reported in kilobytes.
-See also
+Overrides
 .Fl h .
 .It Fl L
-If argument is a symbolic link, list the file or directory the link references
-rather than the link itself.
+For each file, if it's a link, evaluate file information and file type
+of the referenced file and not the link itself; however still print
+the link name, unless used with
+.Fl l ,
+for example.
 .It Fl l
 (The lowercase letter
 .Dq ell ) .
 List in long format.
 (See below.)
-If the output is to a terminal, a total sum for all the file
-sizes is output on a line before the long listing.
+.It Fl M
+Modifies the
+.Fl l
+and
+.Fl s
+options, causing the sizes or block counts reported to be separated with
+commas (or a locale appropriate separator) resulting in a more readable
+output.
+Overrides
+.Fl h ;
+does not override
+.Fl k .
 .It Fl m
 Stream output format; list files across the page, separated by commas.
 .It Fl n
-Display the user and group IDs numerically rather than converting
-to a user or group name in a long
-.Pq Fl l
+The same as
+.Fl l ,
+except that
+the owner and group IDs are displayed numerically rather than converting
+to a owner or group name.
+.It Fl O
+Output only leaf files (not directories), eliding other
+.Nm
 output.
 .It Fl o
 Include the file flags in a long
@@ -161,17 +197,21 @@ is displayed.
 (See
 .Xr chflags 1
 for a list of possible flags and their meanings.)
+.It Fl P
+Print the full pathname for each file.
 .It Fl p
 Display a slash
 .Pq Sq \&/
 immediately after each pathname that is a directory.
 .It Fl q
-Force printing of non-graphic characters in file names as
+Force printing of non-printable characters in file names as
 the character
 .Sq \&? ;
 this is the default when output is to a terminal.
 .It Fl R
 Recursively list subdirectories encountered.
+See also
+.Fl d .
 .It Fl r
 Reverse the order of the sort to get reverse
 lexicographical order or the smallest or oldest entries first.
@@ -179,7 +219,12 @@ lexicographical order or the smallest or oldest entries first.
 Sort by size, largest file first.
 .It Fl s
 Display the number of file system blocks actually used by each file, in units
-of 512 bytes, where partial units are rounded up to the next integer value.
+of 512 bytes or
+.Ev BLOCKSIZE
+(see
+.Sx ENVIRONMENT )
+where partial units are rounded up to the
+next integer value.
 If the output is to a terminal, a total sum for all the file
 sizes is output on a line before the listing.
 .It Fl T
@@ -196,49 +241,52 @@ order.
 .It Fl u
 Use time of last access,
 instead of last modification
-of the file for sorting
-.Pq Fl t
-or printing
-.Pq Fl l .
+of the file for printing
+.Pq Fl l
+or sorting
+.Pq Fl t .
+Overrides
+.Fl c .
+.It Fl W
+Display whiteouts when scanning directories.
 .It Fl w
 Force raw printing of non-printable characters.
 This is the default when output is not to a terminal.
-.It Fl W
-Display whiteouts when scanning directories.
 .It Fl x
 Multi-column output sorted across the page rather than down the page.
-.It Fl \&1
-(The numeric digit
-.Dq one ) .
-Force output to be one entry per line.
-This is the default when output is not to a terminal.
+.It Fl X
+Don't cross mount points when recursing.
 .El
 .Pp
 The
 .Fl B ,
 .Fl b ,
-.Fl w ,
+.Fl q ,
 and
-.Fl q
+.Fl w
 options all override each other; the last one specified determines
 the format used for non-printable characters.
 .Pp
 The
 .Fl 1 ,
 .Fl C ,
+.Fl g ,
 .Fl l ,
 .Fl m ,
 and
 .Fl x
 options all override each other; the last one specified determines
-the format used.
-.Pp
-The
-.Fl c
+the format used with the exception that if both
+.Fl l
 and
-.Fl u
-options override each other; the last one specified determines
-the file time used.
+.Fl g
+are specified,
+.Fl l
+will always override
+.Fl g ,
+even if
+.Fl g
+was specified last.
 .Pp
 By default,
 .Nm
@@ -251,11 +299,11 @@ options are specified.
 .Pp
 File information is displayed with one or more
 .Aq blank
-separating the information associated with the
+characters separating the information associated with the
 .Fl i ,
-.Fl s ,
+.Fl l ,
 and
-.Fl l
+.Fl s
 options.
 .Ss The Long Format
 If the
@@ -288,11 +336,14 @@ pathname
 .El
 .Pp
 In addition, for each directory whose contents are displayed, the total
-number of 512-byte blocks used by the files in the directory is displayed
-on a line by itself immediately before the information for the files in the
-directory.
+number of file system blocks in units of 512 bytes or
+.Ev BLOCKSIZE
+(see
+.Sx ENVIRONMENT )
+used by the files in the directory is displayed on a line by itself
+immediately before the information for the files in the directory.
 .Pp
-If the owner or group names are not a known user or group name,
+If the owner or group names are not a known owner or group name,
 or the
 .Fl n
 option is given,
@@ -303,7 +354,7 @@ the major and minor device numbers for the file are displayed
 in the size field.
 If the file is a symbolic link the pathname of the
 linked-to file is preceded by
-.Dq \-\*[Gt] .
+.Dq \-> .
 .Pp
 The file mode printed under the
 .Fl l
@@ -313,6 +364,12 @@ The entry type character describes the type of file, as
 follows:
 .Pp
 .Bl -tag -width 4n -offset indent -compact
+.It Sy \-
+Regular file.
+.It Sy a
+Archive state 1.
+.It Sy A
+Archive state 2.
 .It Sy b
 Block special file.
 .It Sy c
@@ -321,14 +378,12 @@ Character special file.
 Directory.
 .It Sy l
 Symbolic link.
-.It Sy s
-Socket link.
 .It Sy p
 FIFO.
+.It Sy s
+Socket link.
 .It Sy w
 Whiteout.
-.It Sy \-
-Regular file.
 .El
 .Pp
 The next three fields
@@ -383,7 +438,7 @@ but not execute or search permission.
 (See
 .Xr chmod 1
 or
-.Xr sticky 8 . )
+.Xr sticky 7 . )
 .It Sy t
 The sticky bit is set (mode
 .Li 1000 ) ,
@@ -391,19 +446,29 @@ and is searchable or executable.
 (See
 .Xr chmod 1
 or
-.Xr sticky 8 . )
+.Xr sticky 7 . )
 .El
 .El
 .Pp
-The number of bytes displayed for a directory is a function of the
-number of
-.Xr dirent 5
-structures in the directory, not all of which may be allocated to
-any existing file.
-.Sh EXIT STATUS
+The next field contains a
+plus
+.Pq Ql +
+character if the file has an ACL, or a
+space
+.Pq Ql " "
+if it does not.
 The
 .Nm
-utility exits 0 on success, and \*[Gt]0 if an error occurs.
+utility does not show the actual ACL;
+use
+.Xr getfacl 1
+to do this.
+.Pp
+The number of bytes displayed for a directory is a function of the
+number of
+.Xr dirent 3
+structures in the directory, not all of which may be allocated to
+any existing file.
 .Sh ENVIRONMENT
 The following environment variables affect the execution of
 .Nm :
@@ -412,11 +477,11 @@ The following environment variables affect the execution of
 If the environment variable
 .Ev BLOCKSIZE
 is set, and the
-.Fl h
-and
 .Fl k
-options are not specified, the block counts
+option is not specified, the block counts
 (see
+.Fl l
+and
 .Fl s )
 will be displayed in units of that size block.
 .It Ev COLUMNS
@@ -437,6 +502,8 @@ See
 .Xr environ 7
 for more information.
 .El
+.Sh EXIT STATUS
+.Ex -std
 .Sh COMPATIBILITY
 The group field is now automatically included in the long listing for
 files in order to be compatible with the
@@ -446,10 +513,10 @@ specification.
 .Xr chflags 1 ,
 .Xr chmod 1 ,
 .Xr stat 2 ,
+.Xr dirent 3 ,
 .Xr getbsize 3 ,
-.Xr dir 5 ,
-.Xr symlink 7 ,
-.Xr sticky 8
+.Xr sticky 7 ,
+.Xr symlink 7
 .Sh STANDARDS
 The
 .Nm
@@ -460,4 +527,4 @@ specification.
 An
 .Nm
 utility appeared in
-.At v5 .
+.At v1 .
