@@ -1,0 +1,37 @@
+Application	Version
+-----------	-------
+cat/		4.4BSD-Lite2
+chflags/	2.11
+chio/		NetBSD
+chmod/		NetBSD
+chpass/		2.11
+cp/			4.4BSD-Lite2
+csh/		4.4BSD-Lite2
+date/		4.4BSD-Lite2
+dd/			4.4BSD-Lite2
+df/			4.4BSD-Lite2
+domainname/	NetBSD
+echo/		4.4BSD-Lite2
+ed/
+expr/		NetBSD
+hostname/	4.4BSD-Lite2
+kenv/		FreeBSD
+kill/		NetBSD
+ln/			4.4BSD-Lite2
+ls/			NetBSD
+mkdir/		4.4BSD-Lite2
+mt/
+mv/			4.4BSD-Lite2
+passwd/		2.11BSD
+pax/		4.4BSD-Lite2
+ping/		2.11BSD
+ps/			4.4BSD-Lite2
+rm/			NetBSD
+rmdir/		NetBSD
+sh/			4.4BSD-Lite2
+sleep/		NetBSD
+stty/		NetBSD
+sync/		NetBSD
+sysctl/		2.11
+tcsh/		FreeBSD
+test/		NetBSD

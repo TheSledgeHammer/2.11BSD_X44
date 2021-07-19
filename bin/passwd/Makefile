@@ -17,7 +17,8 @@
 #	@(#)Makefile	5.4.2 (2.11BSD) 1996/12/1
 #
 
-PROG= 	passwd
-MAN=	passwd.1
+PROG= 	pwd
+SRCS=	pwd.c passwd.c
+MAN=	pwd.1 passwd.1
 
 .include <bsd.prog.mk>
