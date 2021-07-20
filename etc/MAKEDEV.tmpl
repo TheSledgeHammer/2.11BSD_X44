@@ -1,0 +1,67 @@
+
+#
+# Device "make" file.  Valid special arguments:
+#	all			makes all known devices, including local devices.
+#				Tries to make the 'standard' number of each type.
+#	init		A set of devices that is used for MFS /dev by init.
+#				May be equal to "all".
+#	floppy		devices to be put on install floppies
+#	ramdisk		devices to be put into INSTALL kernel ramdisks.
+#	std			standard devices
+#	local		configuration specific devices
+#	wscons		make wscons devices
+#	usbs		make USB devices
+
+# Disks:
+#	ccd*		concatenated disk devices
+#	cd*			SCSI or ATAPI CD-ROM
+#	sd*			SCSI disks
+#	wd*			"winchester" disk drives (ST506,IDE,ESDI,RLL,...)
+#	fd*			"floppy" disk drives (3 1/2", 5 1/4")
+#	md*			memory pseudo-disk devices
+#	vnd*		"file" pseudo-disks
+#
+# Tapes:
+#	st*			SCSI tape drives
+#
+# Terminals/Console ports:
+#	tty[01]*	standard serial ports
+#	ttyE*		wscons - Workstation console ("wscons") glass-tty emulators
+#	ttyv0		pccons
+#	ttyC?		NS16550 ("com") serial ports
+#
+# Pseudo terminals:
+#	ptm			pty master device
+#	pty*		Set of 62 master pseudo terminals
+#	tty*		Set of 62 slave pseudo terminals
+#
+# Pointing devices:
+#	wsmouse* 	wscons mouse events
+#	lms*		Logitech bus mouse
+#	mms*		Microsoft bus mouse
+#	pms*		PS/2 mouse
+#	mouse		mouse (provides events, for X11)
+#
+# Keyboard devices:
+#	wskbd*		wscons keyboard events
+#	kbd			raw keyboard (provides events, for X11)
+#	kbdctl		keyboard control
+#
+# USB devices:
+#	usb*		USB control devices
+#	uhid*		USB generic HID devices
+#	ugen*		USB generic devices
+#
+# Special purpose devices:
+#	audio*		Audio devices
+#	bpf			Berkeley Packet Filter
+#	ch*			SCSI media changer
+#	midi*		MIDI
+#	pci*		PCI bus access devices
+#	speaker		PC speaker		(XXX - installed)
+#	ss*			SCSI scanner
+#	uk*			unknown SCSI device
+#	video*		Video V4L2 devices
+#	wsfont*		console font control
+#	wsmux*		wscons event multiplexor
+#

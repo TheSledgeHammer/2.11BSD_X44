@@ -40,10 +40,10 @@
 
 .MAKEOVERRIDES+=	USETOOLS
 
-TZDIR=		/usr/share/zoneinfo
-LOCALTIME?=	UTC
-CKSUM?=		${TOOL_CKSUM}
-MAKESUMS=	MAKE=${MAKE:Q} CKSUM=${CKSUM:Q} ${HOST_SH} ${NETBSDSRCDIR}/distrib/sets/makesums
+TZDIR=			/usr/share/zoneinfo
+LOCALTIME?=		UTC
+CKSUM?=			${TOOL_CKSUM}
+MAKESUMS=		MAKE=${MAKE:Q} CKSUM=${CKSUM:Q} ${HOST_SH} ${NETBSDSRCDIR}/distrib/sets/makesums
 DISTRIBVER!=	${HOST_SH} ${NETBSDSRCDIR}/sys/conf/osrelease.sh
 
 GZIP_FLAGS= -9 ${GZIP_N_FLAG}
@@ -101,15 +101,15 @@ INSTALLATION_DIRS=	binary binary/sets binary/kernel installation
 BINOWN= root
 BINGRP= wheel
 UTMPGRP= utmp
-BIN1+=	auto_master bootptab changelist csh.cshrc csh.login \
-	csh.logout daily daily.conf dm.conf envsys.conf floppytab ftpchroot \
-	ftpusers gettytab gpio.conf group hosts hosts.lpd inetd.conf \
-	locate.conf login.conf mailer.conf man.conf monthly monthly.conf \
-	mrouted.conf named.conf netconfig networks newsyslog.conf \
-	nsswitch.conf ntp.conf passwd.conf pkgpath.conf phones printcap \
-	profile protocols rbootd.conf rc rc.conf rc.local rc.subr \
-	rc.shutdown remote rpc security security.conf services shells \
-	shrc sysctl.conf syslog.conf weekly weekly.conf wscons.conf
+BIN1+=	auto_master bootptab changelist csh.cshrc csh.login 				\
+		csh.logout daily daily.conf dm.conf envsys.conf floppytab ftpchroot \
+		ftpusers gettytab gpio.conf group hosts hosts.lpd inetd.conf 		\
+		locate.conf login.conf mailer.conf man.conf monthly monthly.conf 	\
+		mrouted.conf named.conf netconfig networks newsyslog.conf 			\
+		nsswitch.conf ntp.conf passwd.conf pkgpath.conf phones printcap 	\
+		profile protocols rbootd.conf rc rc.conf rc.local rc.subr 			\
+		rc.shutdown remote rpc security security.conf services shells 		\
+		shrc sysctl.conf syslog.conf weekly weekly.conf wscons.conf
 
 # Use machine-specific disktab if it exists, or the MI one otherwise
 .if exists(etc.${MACHINE}/disktab)
