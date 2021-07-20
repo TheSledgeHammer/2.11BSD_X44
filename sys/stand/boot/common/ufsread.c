@@ -279,7 +279,7 @@ boot2_ufs_read_size(boot2_ino_t boot2_inode, void *buf, size_t nbyte, size_t *fs
 		blkmap = indmap = 0;
 	}
 	s = buf;
-	size = DIP(di_size);
+	size = DIP(size);
 	n = size - fs_off;
 	if (nbyte > n)
 		nbyte = n;
