@@ -26,6 +26,13 @@
  * $FreeBSD$
  */
 
+/*
+ * TODO:
+ * Fix Following:
+ * - dsname()
+ * - dssize()
+ */
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
@@ -39,6 +46,37 @@
 #include <sys/user.h>
 #include <sys/stat.h>
 #include <sys/diskslice.h>
+#include <sys/conf.h>
+
+int
+slicesw_open(dev, flags, devtype, p)
+	dev_t dev;
+	int flags, devtype;
+	struct proc *p;
+{
+	if (cdev_open(dev, flags, devtype, p) != 0) {
+		return (-1);
+	}
+	if (bdev_open(dev, flags, devtype, p) != 0) {
+		return (-1);
+	}
+	return (0);
+}
+
+int
+slicesw_close(dev, flags, devtype, p)
+	dev_t dev;
+	int flags, devtype;
+	struct proc *p;
+{
+	if (cdev_close(dev, flags, devtype, p) != 0) {
+		return (-1);
+	}
+	if (bdev_close(dev, flags, devtype, p) != 0) {
+		return (-1);
+	}
+	return (0);
+}
 
 dev_t
 makediskslice(dev, unit, slice, part)
@@ -479,11 +517,12 @@ dsmakeslicestruct(nslices, lp)
 char *
 dsname(dev, unit, slice, part, partname)
 	dev_t	dev;
-	int	unit;
-	int	slice;
-	int	part;
+	int		unit;
+	int		slice;
+	int		part;
 	char	*partname;
 {
+	struct dkdevice *dk;
 	static char name[32];
 	const char *dname;
 
@@ -529,7 +568,7 @@ dsopen(dev, mode, flags, sspp, lp)
 	struct diskslices *ssp;
 	int unit;
 
-	dev->si_bsize_phys = lp->d_secsize;
+	//dev->si_bsize_phys = lp->d_secsize;
 
 	unit = dkunit(dev);
 	if (lp->d_secsize % DEV_BSIZE) {
@@ -605,7 +644,7 @@ dsopen(dev, mode, flags, sspp, lp)
 		sname = dsname(dev, unit, slice, RAW_PART, partname);
 #else
 		*partname='\0';
-		sname = dev1->si_name;
+		sname = dsname(dev, unit, slice, RAW_PART, partname);
 #endif
 		/*
 		 * XXX this should probably only be done for the need_init
@@ -687,10 +726,10 @@ dssize(dev, sspp)
 	part = dkpart(dev);
 	ssp = *sspp;
 	if (ssp == NULL || slice >= ssp->dss_nslices || !(ssp->dss_slices[slice].ds_openmask & (1 << part))) {
-		if (cdev_open(dev, FREAD, S_IFCHR, (struct proc*) NULL) != 0) {
+		if (slicesw_open(dev, FREAD, S_IFCHR, (struct proc*) NULL) != 0) {
 			return (-1);
 		}
-		devsw(dev)->d_close(dev, FREAD, S_IFCHR, (struct proc*) NULL);
+		slicesw_close(dev, FREAD, S_IFCHR, (struct proc*) NULL);
 		ssp = *sspp;
 	}
 	lp = ssp->dss_slices[slice].ds_label;
@@ -715,7 +754,6 @@ free_ds_label(ssp, slice)
 	free(lp, M_DEVBUF);
 	set_ds_label(ssp, slice, (struct disklabel*) NULL);
 }
-
 
 static char *
 fixlabel(sname, sp, lp, writeflag)
@@ -841,7 +879,6 @@ set_ds_labeldevs(dev, ssp)
 	struct diskslices *ssp;
 {
 }
-
 
 static void
 set_ds_wlabel(ssp, slice, wlabel)

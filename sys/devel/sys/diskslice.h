@@ -66,7 +66,7 @@ struct diskslices {
 #define	dkslice(dev)					((minor(dev) >> 16) & 0x1f)
 #define	dksparebits(dev)       			((minor(dev) >> 25) & 0x7f)
 
-struct bio;
+struct buf;
 struct disklabel;
 
 dev_t makediskslice(dev_t, int, int, int);

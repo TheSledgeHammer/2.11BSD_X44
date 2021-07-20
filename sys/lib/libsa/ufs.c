@@ -69,7 +69,9 @@
 #include <sys/param.h>
 #include <sys/time.h>
 #include <ufs/ffs/fs.h>
+#include <ufs/ufs/inode.h>
 #include <ufs/ufs/dinode.h>
+#include <ufs/ufs/ufsmount.h>
 #include <ufs/ufs/dir.h>
 #include <libsa/stand.h>
 
@@ -79,7 +81,8 @@
 struct file {
 	off_t			f_seekp;				/* seek pointer */
 	struct fs		*f_fs;					/* pointer to super-block */
-	struct dinode	f_di;					/* copy of on-disk inode */
+	struct inode	*f_ip;					/* copy of on-disk inode */
+
 	int				f_nindir[NIADDR];		/* number of blocks mapped by indirect block at level i */
 	char			*f_blk[NIADDR];			/* buffer for indirect block at level i */
 	u_int			f_blksize[NIADDR]; 		/* size of buffer */
@@ -121,7 +124,8 @@ read_inode(inumber, f)
 		register struct dinode *dp;
 
 		dp = (struct dinode *)buf;
-		fp->f_di = dp[ino_to_fsbo(fs, inumber)];
+
+		DIP(fp->f_ip, dp[ino_to_fsbo(fs, inumber)]);
 	}
 
 	/*
@@ -182,7 +186,8 @@ block_map(f, file_block, disk_block_p)
 
 	if (file_block < NDADDR) {
 		/* Direct block. */
-		*disk_block_p = fp->f_di.di_db[file_block];
+		*disk_block_p = DIP(fp->f_ip, db[file_block]);
+
 		return (0);
 	}
 
@@ -204,7 +209,7 @@ block_map(f, file_block, disk_block_p)
 		return (EFBIG);
 	}
 
-	ind_block_num = fp->f_di.di_ib[level];
+	ind_block_num = DIP(fp->f_ip, ib[level]);
 
 	for (; level >= 0; level--) {
 		if (ind_block_num == 0) {
@@ -264,7 +269,7 @@ buf_read_file(f, buf_p, size_p)
 
 	off = blkoff(fs, fp->f_seekp);
 	file_block = lblkno(fs, fp->f_seekp);
-	block_size = dblksize(fs, &fp->f_di, file_block);
+	block_size = dblksize(fs, DIP(fp->f_ip, db), file_block); //dblksize(fs, &fp->f_di, file_block);
 
 	if (file_block != fp->f_buf_blkno) {
 		rc = block_map(f, file_block, &disk_block);
@@ -299,8 +304,8 @@ buf_read_file(f, buf_p, size_p)
 	/*
 	 * But truncate buffer at end of file.
 	 */
-	if (*size_p > fp->f_di.di_size - fp->f_seekp)
-		*size_p = fp->f_di.di_size - fp->f_seekp;
+	if (*size_p > DIP(fp->f_ip, size) - fp->f_seekp)
+		*size_p = DIP(fp->f_ip, size) - fp->f_seekp;
 
 	return (0);
 }
@@ -326,7 +331,7 @@ search_directory(name, f, inumber_p)
 	length = strlen(name);
 
 	fp->f_seekp = 0;
-	while (fp->f_seekp < fp->f_di.di_size) {
+	while (fp->f_seekp < DIP(fp->f_ip, size)) {
 		rc = buf_read_file(f, &buf, &buf_size);
 		if (rc)
 			return (rc);
@@ -427,7 +432,7 @@ ufs_open(path, f)
 		/*
 		 * Check that current node is a directory.
 		 */
-		if ((fp->f_di.di_mode & IFMT) != IFDIR) {
+		if ((DIP(fp->f_ip, mode) & IFMT) != IFDIR) {
 			rc = ENOTDIR;
 			goto out;
 		}
@@ -470,13 +475,13 @@ ufs_open(path, f)
 		/*
 		 * Check for symbolic link.
 		 */
-		if ((fp->i_mode & IFMT) == IFLNK) {
-			int link_len = fp->f_di.di_size;
+		if ((DIP(fp->f_ip, mode) & IFMT) == IFLNK) {
+			int link_len = DIP(fp->f_ip, size);//fp->f_di.di_size;
 			int len;
 
 			len = strlen(cp) + 1;
 
-			if (fp->f_di.di_size >= MAXPATHLEN - 1 ||
+			if (DIP(fp->f_ip, size) >= MAXPATHLEN - 1 ||
 			    ++nlinks > MAXSYMLINKS) {
 				rc = ENOENT;
 				goto out;
@@ -573,7 +578,7 @@ ufs_read(f, start, size, resid)
 	int rc = 0;
 
 	while (size != 0) {
-		if (fp->f_seekp >= fp->f_di.di_size)
+		if (fp->f_seekp >= DIP(fp->f_ip, size))
 			break;
 
 		rc = buf_read_file(f, &buf, &buf_size);
@@ -625,7 +630,7 @@ ufs_seek(f, offset, where)
 		fp->f_seekp += offset;
 		break;
 	case SEEK_END:
-		fp->f_seekp = fp->f_di.di_size - offset;
+		fp->f_seekp = DIP(fp->f_ip, size) - offset;
 		break;
 	default:
 		return (-1);
@@ -641,9 +646,9 @@ ufs_stat(f, sb)
 	register struct file *fp = (struct file *)f->f_fsdata;
 
 	/* only important stuff */
-	sb->st_mode = fp->f_di.di_mode;
-	sb->st_uid = fp->f_di.di_uid;
-	sb->st_gid = fp->f_di.di_gid;
-	sb->st_size = fp->f_di.di_size;
+	sb->st_mode = DIP(fp->f_ip, mode);//fp->f_di.di_mode;
+	sb->st_uid = DIP(fp->f_ip, uid);//fp->f_di.di_uid;
+	sb->st_gid = DIP(fp->f_ip, gid);//fp->f_di.di_gid;
+	sb->st_size = DIP(fp->f_ip, size);//fp->f_di.di_size;
 	return (0);
 }
