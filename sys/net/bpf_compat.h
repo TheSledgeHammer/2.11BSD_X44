@@ -43,7 +43,7 @@
  * a fixed offset from the associated mbuf.  Sorry for this kludge.
  */
 #define malloc(size, type, canwait) bpf_alloc(size, canwait)
-#define free(cp, type) m_free(*(struct mbuf **)(cp - 8))
+#define free(cp, type) 				m_free(*(struct mbuf **)(cp - 8))
 #define M_WAITOK M_WAIT
 
 /* This mapping works for our purposes. */

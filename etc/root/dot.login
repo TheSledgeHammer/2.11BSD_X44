@@ -1,14 +1,6 @@
-unset noglob
-set path=(/bin /etc /sbin /usr/sbin /usr/ucb /usr/bin /usr/local /usr/new)
-umask 26
-stty dec erase ^H kill ^U eof ^D
-set prompt="[\!] root--> "
+#	$NetBSD: dot.login,v 1.10 2016/03/08 09:51:15 mlelstv Exp $
 
-if ( "$TERM" == dialup || "$TERM" == network) then
-  setenv TERM vt100
-  echo -n "Terminal ($TERM)? "
-  set argv = "$<"
-  if ( "$argv" != '' ) setenv TERM "$argv"
+# Do not display in 'su -' case
+if ( ! $?SU_FROM ) then
+	echo "We recommend that you create a non-root account and use su(1) for root access."
 endif
-
-biff y

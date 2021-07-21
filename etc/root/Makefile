@@ -1,3 +1,4 @@
+#	$NetBSD: Makefile,v 1.4 2012/11/17 23:08:38 uwe Exp $
 #
 # Public domain - 1997/1/10 - sms
 #
@@ -7,13 +8,17 @@
 #  specified on the command line when doing a "make DESTDIR=/mnt distribution".
 #  This is aimed at avoiding overwriting the system disk's /etc files.
 
-DESTDIR=/foobar
-OWN=root
-GRP=wheel
+CONFIGFILES=			dot.cshrc dot.klogin dot.login dot.profile dot.shrc
 
-all install depend lint clean tags:
+FILESDIR=				/root
+FILESMODE=				644
+FILESMODE_dot.klogin=	600
+.for F in ${CONFIGFILES}
+FILESNAME_${F}=			${F:S/dot//}
+.endfor
 
-distribution:
-	install -c -o ${OWN} -g ${GRP} -m 644 dot.cshrc ${DESTDIR}/.cshrc
-	install -c -o ${OWN} -g ${GRP} -m 644 dot.login ${DESTDIR}/.login
-	install -c -o ${OWN} -g ${GRP} -m 644 dot.profile ${DESTDIR}/.profile
+CONFIGLINKS=			/root/.cshrc	/.cshrc 	\
+						/root/.profile	/.profile
+
+.include <bsd.files.mk>
+.include <bsd.links.mk>

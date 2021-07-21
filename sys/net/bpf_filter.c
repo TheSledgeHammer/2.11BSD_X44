@@ -44,6 +44,7 @@
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/endian.h>
 
 #ifdef sun
 #include <netinet/in.h>
@@ -53,34 +54,22 @@
 #define BPF_ALIGN
 #endif
 
-#ifndef BPF_ALIGN
-#define EXTRACT_SHORT(p)	((u_short)ntohs(*(u_short *)p))
-#define EXTRACT_LONG(p)		(ntohl(*(u_long *)p))
-#else
-#define EXTRACT_SHORT(p)\
-	((u_short)\
-		((u_short)*((u_char *)p+0)<<8|\
-		 (u_short)*((u_char *)p+1)<<0))
-#define EXTRACT_LONG(p)\
-		((u_long)*((u_char *)p+0)<<24|\
-		 (u_long)*((u_char *)p+1)<<16|\
-		 (u_long)*((u_char *)p+2)<<8|\
-		 (u_long)*((u_char *)p+3)<<0)
-#endif
+#define EXTRACT_SHORT(p)	be16dec(p)
+#define EXTRACT_LONG(p)		be32dec(p)
 
 #ifdef KERNEL
 #include <sys/mbuf.h>
-#define MINDEX(m, k) \
-{ \
-	register int len = m->m_len; \
- \
-	while (k >= len) { \
-		k -= len; \
-		m = m->m_next; \
-		if (m == 0) \
-			return 0; \
-		len = m->m_len; \
-	} \
+#define MINDEX(m, k) 				\
+{ 									\
+	register int len = m->m_len; 	\
+									\
+	while (k >= len) { 				\
+		k -= len; 					\
+		m = m->m_next; 				\
+		if (m == 0) 				\
+			return 0; 				\
+		len = m->m_len; 			\
+	} 								\
 }
 
 static int

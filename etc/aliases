@@ -11,11 +11,22 @@
 #
 
 # Basic system aliases -- these MUST be present
-MAILER-DAEMON:postmaster
-postmaster:root
-help:root
-sysadmin:root
+MAILER-DAEMON:	postmaster
+postmaster:		root
+help:			root
+sysadmin:		root
+
+# General redirections for pseudo accounts.
+toor:			root
+daemon:			root
+bin:			root
+games:			root
+postfix:		postmaster
+named:			root
+ntpd:			root
+sshd:			root
+nobody:			root
 
 # Aliases to handle mail to msgs and news
-msgs: "|/usr/ucb/msgs -s"
-rnews:"|/usr/local/uurec"
+#msgs: 			"|/usr/ucb/msgs -s"
+#rnews:			"|/usr/local/uurec"

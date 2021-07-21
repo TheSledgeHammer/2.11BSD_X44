@@ -316,9 +316,11 @@ lofs_statfs(mp, sbp, p)
 }
 
 int
-lofs_sync(mp, waitfor)
-struct mount *mp;
-int waitfor;
+lofs_sync(mp, waitfor, cred, p)
+	struct mount *mp;
+	int waitfor;
+	struct ucred *cred;
+	struct proc *p;
 {
 	return (0);
 }

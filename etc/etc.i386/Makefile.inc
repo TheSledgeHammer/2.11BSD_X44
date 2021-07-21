@@ -3,14 +3,12 @@
 #	etc.i386/Makefile.inc -- i386-specific etc Makefile targets
 #
 
-KERNEL_SETS=		GENERIC GENERIC_TINY GENERIC_LAPTOP \
-			GENERIC_DIAGNOSTIC GENERIC_PS2TINY GENERIC.MP
+KERNEL_SETS=		GENERIC.i386
 
 BUILD_KERNELS=		INSTALL INSTALL_SMALL INSTALL_TINY \
-			INSTALL_LAPTOP INSTALL_PS2
+					INSTALL_LAPTOP INSTALL_PS2
 
-INSTALLATION_DIRS+=	installation/misc	\
-			installation/floppy
+INSTALLATION_DIRS+=	installation/misc installation/floppy
 
 # i386 specific distrib stuff
 snap_md_post:

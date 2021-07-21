@@ -1028,7 +1028,7 @@ lofs_advlock(ap)
 	} */ *ap;
 {
 
-	return VOP_ADVLOCK(LOFSVP(ap->a_vp), ap->a_id, ap->a_op, ap->a_fl, ap->a_flags);
+	return (VOP_ADVLOCK(LOFSVP(ap->a_vp), ap->a_id, ap->a_op, ap->a_fl, ap->a_flags));
 }
 
 /*

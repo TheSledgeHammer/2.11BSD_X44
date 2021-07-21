@@ -40,11 +40,11 @@
 
 .MAKEOVERRIDES+=	USETOOLS
 
-TZDIR=			/usr/share/zoneinfo
-LOCALTIME?=		UTC
-CKSUM?=			${TOOL_CKSUM}
-MAKESUMS=		MAKE=${MAKE:Q} CKSUM=${CKSUM:Q} ${HOST_SH} ${NETBSDSRCDIR}/distrib/sets/makesums
-DISTRIBVER!=	${HOST_SH} ${NETBSDSRCDIR}/sys/conf/osrelease.sh
+TZDIR=				/usr/share/zoneinfo
+LOCALTIME?=			UTC
+CKSUM?=				${TOOL_CKSUM}
+MAKESUMS=			MAKE=${MAKE:Q} CKSUM=${CKSUM:Q} ${HOST_SH} ${NETBSDSRCDIR}/distrib/sets/makesums
+DISTRIBVER!=		${HOST_SH} ${NETBSDSRCDIR}/sys/conf/osrelease.sh
 
 GZIP_FLAGS= -9 ${GZIP_N_FLAG}
 
@@ -267,7 +267,7 @@ FILESDIR_minfree=	/var/crash
 FILESMODE_minfree=	600
 
 CONFIGSYMLINKS+=	${TZDIR}/${LOCALTIME}	/etc/localtime \
-			/usr/sbin/rmt		/etc/rmt
+					/usr/sbin/rmt		/etc/rmt
 
 
 # install-etc-files --
@@ -305,39 +305,39 @@ install-etc-files: .PHONY .MAKE check_DESTDIR MAKEDEV
 	${ETC_INSTALL_OBJ_FILE} -o ${BINOWN} -g ${BINGRP} -m 555 \
 	    MAKEDEV ${DESTDIR}/dev
 .for owner group mode file in \
-		${BINOWN} operator	664	/etc/dumpdates  \
-		${BINOWN} operator	600	/etc/skeykeys \
-		root wheel		600	/var/at/at.deny \
-		root wheel		644	/var/db/locate.database \
-		${BINOWN} ${BINGRP}	600	/var/log/authlog \
-		root wheel		600	/var/log/cron \
+		${BINOWN} operator		664	/etc/dumpdates  \
+		${BINOWN} operator		600	/etc/skeykeys \
+		root wheel				600	/var/at/at.deny \
+		root wheel				644	/var/db/locate.database \
+		${BINOWN} ${BINGRP}		600	/var/log/authlog \
+		root wheel				600	/var/log/cron \
 		${BINOWN} ${UTMPGRP}	664	/var/log/lastlog \
 		${BINOWN} ${UTMPGRP}	664	/var/log/lastlogx \
-		${BINOWN} ${BINGRP}	640	/var/log/lpd-errs \
-		${BINOWN} ${BINGRP}	600	/var/log/maillog \
-		${BINOWN} ${BINGRP}	644	/var/log/messages \
-		${BINOWN} ${BINGRP}	600	/var/log/secure \
+		${BINOWN} ${BINGRP}		640	/var/log/lpd-errs \
+		${BINOWN} ${BINGRP}		600	/var/log/maillog \
+		${BINOWN} ${BINGRP}		644	/var/log/messages \
+		${BINOWN} ${BINGRP}		600	/var/log/secure \
 		${BINOWN} ${UTMPGRP}	664	/var/log/wtmp \
 		${BINOWN} ${UTMPGRP}	664	/var/log/wtmpx \
-		${BINOWN} ${BINGRP}	600	/var/log/xferlog \
-		daemon staff		664	/var/msgs/bounds \
+		${BINOWN} ${BINGRP}		600	/var/log/xferlog \
+		daemon staff			664	/var/msgs/bounds \
 		${BINOWN} ${UTMPGRP}	664	/var/run/utmp \
 		${BINOWN} ${UTMPGRP}	664	/var/run/utmpx \
-		games games		664	/var/games/atc_score \
-		games games		664	/var/games/battlestar.log \
-		games games		664	/var/games/cfscores \
-		games games		664	/var/games/criblog \
-		games games		660	/var/games/hackdir/perm \
-		games games		660	/var/games/hackdir/record \
-		games games		664	/var/games/larn/llog12.0 \
-		games games		664	/var/games/larn/lscore12.0 \
-		games games		664	/var/games/larn/playerids \
-		games games		664	/var/games/robots_roll \
-		games games		664	/var/games/rogue.scores \
-		games games		664	/var/games/saillog \
-		games games		664	/var/games/snakerawscores \
-		games games		664	/var/games/snake.log \
-		games games		664	/var/games/tetris.scores
+		games games				664	/var/games/atc_score \
+		games games				664	/var/games/battlestar.log \
+		games games				664	/var/games/cfscores \
+		games games				664	/var/games/criblog \
+		games games				660	/var/games/hackdir/perm \
+		games games				660	/var/games/hackdir/record \
+		games games				664	/var/games/larn/llog12.0 \
+		games games				664	/var/games/larn/lscore12.0 \
+		games games				664	/var/games/larn/playerids \
+		games games				664	/var/games/robots_roll \
+		games games				664	/var/games/rogue.scores \
+		games games				664	/var/games/saillog \
+		games games				664	/var/games/snakerawscores \
+		games games				664	/var/games/snake.log \
+		games games				664	/var/games/tetris.scores
 	${_MKMSG_INSTALL} ${DESTDIR}${file}
 	if [ ! -e ${DESTDIR}${file} -o -s ${DESTDIR}${file} ]; then \
 		${ETC_INSTALL_FILE} -o ${owner} -g ${group} -m ${mode} \

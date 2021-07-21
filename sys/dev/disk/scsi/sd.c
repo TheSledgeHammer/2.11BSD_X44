@@ -96,11 +96,7 @@ int		sd_reassign_blocks (struct sd_softc *, u_long);
 int		sd_get_optparms (struct sd_softc *, int, struct disk_parms *);
 int		sd_get_parms (struct sd_softc *, int);
 static int sd_mode_sense (struct sd_softc *, struct scsi_mode_sense_data *, int, int);
-/*
-struct cfdriver sd_cd = {
-	NULL, "sd", sdmatch, sdattach, DV_DISK, sizeof(struct sd_softc)
-};
-*/
+
 CFDRIVER_DECL(NULL, sd, &sd_cops, DV_DISK, sizeof(struct sd_softc));
 CFOPS_DECL(sd, sdmatch, sdattach, NULL, NULL);
 

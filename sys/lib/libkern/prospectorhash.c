@@ -24,7 +24,7 @@
  * For more information, please refer to <http://unlicense.org/>
  *
  * Original Works from:
- * Seeto: https://github.com/skeeto/hash-prospector
+ * Skeeto: https://github.com/skeeto/hash-prospector
  *
  * hash_prospector.c: Integter Hash Functions
  */

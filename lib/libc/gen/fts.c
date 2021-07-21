@@ -173,7 +173,7 @@ fts_open(argv, options, compar)
 	return (sp);
 
 mem3:	fts_lfree(root);
-	free(parent);
+		free(parent);
 mem2:	free(sp->fts_path);
 mem1:	free(sp);
 	return (NULL);
@@ -254,7 +254,7 @@ fts_close(sp)
  * Special case a root of "/" so that slashes aren't appended which would
  * cause paths to be written as "//foo".
  */
-#define	NAPPEND(p)							\
+#define	NAPPEND(p)												\
 	(p->fts_level == FTS_ROOTLEVEL && p->fts_pathlen == 1 &&	\
 	    p->fts_path[0] == '/' ? 0 : p->fts_pathlen)
 
