@@ -4,6 +4,7 @@
 
 .include 	"/usr/man/Makefile.inc"
 
-SUBDIR= 	adb font font fontinfo learn lint me misc mk ms pascal tabset term termcap tmac zoneinfo
+SUBDIR= 	adb font font fontinfo learn lint me misc mk ms pascal \
+			tabset term termcap tmac wscons zoneinfo
 
 .include <bsd.subdir.mk>

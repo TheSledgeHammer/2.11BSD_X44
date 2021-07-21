@@ -1,0 +1,9 @@
+root::0:0::0:0:The Man &:/root:/bin/sh
+toor:*:0:0::0:0:Bourne-again Superuser:/root:/bin/sh
+daemon:*:1:1::0:0:The devil himself:/:/sbin/nologin
+sys:*:4:2::0:0:Operating System:/tmp:/sbin/nologin
+operator:*:2:5::0:0:System &:/usr/guest/operator:/sbin/nologin
+bin:*:3:7::0:0:Binaries Commands and Source:/:/sbin/nologin
+uucp:*:66:1::0:0:UNIX-to-UNIX Copy:/nonexistent:/sbin/nologin
+nobody:*:32767:31::::Nobody:/nonexistent:/sbin/nologin
+ingres:*:39:74::0:0:INGRES Owner:/usr/ingres:/bin/csh
