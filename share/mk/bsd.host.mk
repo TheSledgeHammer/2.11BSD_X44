@@ -36,7 +36,7 @@ HOST_RANLIB?=		ranlib
 HOST_LN?=			ln
 
 # HOST_SH must be an absolute path
-HOST_SH?=			/bin/sh
+HOST_SH?=			/bin/tcsh
 
 .if !defined(HOST_OSTYPE)
 _HOST_OSNAME!=	uname -s

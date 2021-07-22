@@ -213,13 +213,6 @@ TOOL_CPP.pcc=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-pcpp
 TOOL_CXX.pcc=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-p++
 .endif	# EXTERNAL_TOOLCHAIN		
 
-#
-# Make sure DESTDIR is set, so that builds with these tools always
-# get appropriate -nostdinc, -nostdlib, etc. handling.  The default is
-# <empty string>, meaning start from /, the root directory.
-#
-DESTDIR?=
-
 # Don't append another copy of sysroot (coming from COMPATCPPFLAGS etc.)
 # because it confuses Coverity. Still we need to cov-configure specially
 # for each specific sysroot argument.
@@ -472,7 +465,6 @@ check_RELEASEDIR: .PHONY .NOTMAIN
 .endif
 .endif
 
-
 .if ${USETOOLS} == "yes"						# {
 #
 # Make sure DESTDIR is set, so that builds with these tools always
@@ -480,7 +472,7 @@ check_RELEASEDIR: .PHONY .NOTMAIN
 # <empty string>, meaning start from /, the root directory.
 #
 DESTDIR?=
-.endif									# }
+.endif											# }
 
 #
 # Build a dynamically linked /bin and /sbin, with the necessary shared
@@ -591,29 +583,27 @@ MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsd
 
 TARGETS+=		all clean cleandir depend dependall includes 					\
 				install lint obj regress tags html analyze describe 		
-PHONY_NOTMAIN =	all clean cleandir depend dependall distclean includes 			\
+.PHONY:			all clean cleandir depend dependall distclean includes 			\
 				install lint obj regress beforedepend afterdepend 				\
 				beforeinstall afterinstall realinstall realdepend realall 		\
 				html subdir-all subdir-install subdir-depend analyze describe 	\
-.PHONY:		${PHONY_NOTMAIN}
-.NOTMAIN:	${PHONY_NOTMAIN}
 
 .if ${NEED_OWN_INSTALL_TARGET} != "no"
 .if !target(install)
-install:	beforeinstall .WAIT subdir-install realinstall .WAIT afterinstall
-beforeinstall:
-subdir-install:
-realinstall:
-afterinstall:
+install:		.NOTMAIN beforeinstall .WAIT subdir-install realinstall .WAIT afterinstall
+beforeinstall:	.NOTMAIN
+subdir-install:	.NOTMAIN beforeinstall
+realinstall:	.NOTMAIN beforeinstall
+afterinstall:	.NOTMAIN subdir-install realinstall
 .endif
-all:		realall subdir-all
-subdir-all:
-realall:
-depend:		realdepend subdir-depend
-subdir-depend:
-realdepend:
-distclean:	cleandir
-cleandir:	clean
+all:			.NOTMAIN realall subdir-all
+subdir-all:		.NOTMAIN
+realall:		.NOTMAIN
+depend:			.NOTMAIN realdepend subdir-depend
+subdir-depend:	.NOTMAIN
+realdepend:		.NOTMAIN
+distclean:		.NOTMAIN cleandir
+cleandir:		.NOTMAIN clean
 
 dependall:	.NOTMAIN realdepend .MAKE
 	@cd "${.CURDIR}"; ${MAKE} realall

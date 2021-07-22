@@ -2,7 +2,6 @@
 #	$Id: Makefile,v 1.6 1994/06/30 05:33:39 cgd Exp $
 
 PROG=	make
-CFLAGS+= -I${.CURDIR} -DPOSIX
 SRCS=	arch.c buf.c compat.c cond.c dir.c for.c hash.c job.c main.c 		\
 		make.c parse.c str.c suff.c targ.c var.c
 SRCS+=	lstAppend.c lstAtEnd.c lstAtFront.c lstClose.c lstConcat.c 			\

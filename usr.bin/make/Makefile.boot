@@ -8,31 +8,36 @@
 # See config.h and the various #ifdef directives for further configuration.
 #
 
-PROG=		bmake
-MACHINE=	i386
-MACHINE_ARCH=	i386
-CC=		gcc
-CFLAGS=		-O -g
-EXTRA_CFLAGS=
-EXTRA_LIBS=
+CC=gcc -O -g
+
+.c.o:
+		${CC} ${CFLAGS} -c $< -o $@
+
+MACHINE=i386
+MACHINE_ARCH=i386
+CPPFLAGS= 	-DTARGET_MACHINE=\"${MACHINE}\" \
+			-DTARGET_MACHINE_ARCH=\"${MACHINE_ARCH}\" \
+			-DMAKE_MACHINE=\"${MACHINE}\"
 
 OBJ=	arch.o buf.o compat.o cond.o dir.o for.o hash.o job.o main.o make.o \
     	parse.o str.o suff.o targ.o var.o util.o
 
-.c.o:
-	${CC} ${CPPFLAGS} ${CFLAGS} ${EXTRA_CFLAGS} -c $< -o $@
+LIBOBJ= lst.lib/lstAppend.o lst.lib/lstAtEnd.o lst.lib/lstAtFront.o \
+		lst.lib/lstClose.o lst.lib/lstConcat.o lst.lib/lstDatum.o \
+		lst.lib/lstDeQueue.o lst.lib/lstDestroy.o lst.lib/lstDupl.o \
+		lst.lib/lstEnQueue.o lst.lib/lstFind.o lst.lib/lstFindFrom.o \
+		lst.lib/lstFirst.o lst.lib/lstForEach.o lst.lib/lstForEachFrom.o \
+		lst.lib/lstInit.o lst.lib/lstInsert.o lst.lib/lstIsAtEnd.o \
+		lst.lib/lstIsEmpty.o lst.lib/lstLast.o lst.lib/lstMember.o \
+		lst.lib/lstNext.o lst.lib/lstOpen.o lst.lib/lstRemove.o \
+		lst.lib/lstReplace.o lst.lib/lstSucc.o
 
-CPPFLAGS= \
-	-DTARGET_MACHINE=\"${MACHINE}\" \
-	-DTARGET_MACHINE_ARCH=\"${MACHINE_ARCH}\" \
-	-DMAKE_MACHINE=\"${MACHINE}\"
-
-${PROG}: ${OBJS}
-#	@echo 'make of ${PROG} and make.0 started.'
-	${CC} ${CFLAGS} ${OBJS} -o $@ ${EXTRA_LIBS}
+bmake: ${OBJ} ${LIBOBJ}
+#	@echo 'make of make and make.0 started.'
+	${CC} ${CFLAGS} ${OBJ} ${LIBOBJ} -o bmake ${LIBS}
 	@ls -l $@
 #	nroff -h -man make.1 > make.0
-#	@echo 'make of ${PROG} and make.0 completed.'
+#	@echo 'make of make and make.0 completed.'
 
 clean:
-	rm -f ${OBJS} ${PROG}
+	rm -f ${OBJ} ${LIBOBJ} ${PORTOBJ} bmake

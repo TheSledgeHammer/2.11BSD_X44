@@ -87,9 +87,9 @@ static char sccsid[] = "@(#)targ.c	8.3 (Berkeley) 4/28/95";
 #include	  "hash.h"
 #include	  "dir.h"
 
-static Lst        allTargets;	/* the list of all targets found so far */
-static Lst	  allGNs;	/* List of all the GNodes */
-static Hash_Table targets;	/* a hash table of same */
+static Lst      	allTargets;	/* the list of all targets found so far */
+static Lst	  		allGNs;		/* List of all the GNodes */
+static Hash_Table 	targets;	/* a hash table of same */
 
 #define HTSIZE	191		/* initial size of hash table */
 
