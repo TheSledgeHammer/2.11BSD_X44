@@ -51,7 +51,7 @@ struct ufml_mount {
 	struct ufml_union_mount		*ufmlm_unionmnt;/* Union Mounts */
 };
 
-#ifdef KERNEL
+//#ifdef KERNEL
 /*
  * A cache of vnode references
  */

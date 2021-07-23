@@ -27,10 +27,10 @@
  */
 
 
-#include "devel/ufs/ufml/ufml.h"
-#include "devel/ufs/ufml/ufml_meta.h"
-#include "devel/ufs/ufml/ufml_extern.h"
-#include "devel/ufs/ufml/ufml_ops.h"
+#include "devel/ufml/ufml.h"
+#include "devel/ufml/ufml_meta.h"
+#include "devel/ufml/ufml_extern.h"
+#include "devel/ufml/ufml_ops.h"
 
 /* Check encryption types to see if the encryption algorithm is supported */
 int

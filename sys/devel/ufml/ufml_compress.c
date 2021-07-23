@@ -26,10 +26,10 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "devel/ufs/ufml/ufml.h"
-#include "devel/ufs/ufml/ufml_meta.h"
-#include "devel/ufs/ufml/ufml_extern.h"
-#include "devel/ufs/ufml/ufml_ops.h"
+#include "devel/ufml/ufml.h"
+#include "devel/ufml/ufml_meta.h"
+#include "devel/ufml/ufml_extern.h"
+#include "devel/ufml/ufml_ops.h"
 
 /* Check compression types to see if the compression format is supported */
 int

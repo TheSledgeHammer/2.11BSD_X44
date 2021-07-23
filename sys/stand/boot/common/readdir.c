@@ -28,13 +28,12 @@
 
 #include <sys/cdefs.h>
 
-#include <lib/libsa/stand.h>
-#include <lib/libsa/loadfile.h>
-
 #include <sys/param.h>
 #include <sys/dirent.h>
 
-//#include <efi/libefi/efifsdev.h>
+#include <lib/libsa/stand.h>
+#include <lib/libsa/loadfile.h>
+
 #include <bootstrap.h>
 
 struct dirent *
@@ -52,8 +51,7 @@ readdirfd(int fd)
 		return (NULL);
 	}
 
-	/* XXXwill be f->f_ops->fo_readdir)(f, &dir); when/if we fix stand.h */
-	errno = FS_READDIR(f, &dir);
+	errno = (f->f_ops->readdir)(f, &dir);
 
 	if (errno)
 		return (NULL);

@@ -171,7 +171,6 @@ static int sblock_try[] = SBLOCKSEARCH;
 #define DIP(field) fs->fs_magic == FS_UFS1_MAGIC ? dp1.field : dp2.field
 #endif
 
-
 static ufs_ino_t inomap;
 static ufs2_daddr_t blkmap, indmap;
 
@@ -199,8 +198,7 @@ boot2_ufs_init(void)
 				(fs->fs_magic == FS_UFS2_MAGIC &&
 						fs->fs_sblockloc == sblock_try[n])
 #else
-				fs->fs_magic == FS_UFS1_MAGIC
-				|| (fs->fs_magic == FS_UFS2_MAGIC
+				fs->fs_magic == FS_UFS1_MAGIC || (fs->fs_magic == FS_UFS2_MAGIC
 						&& fs->fs_sblockloc == sblock_try[n])
 #endif
 		) && fs->fs_bsize <= MAXBSIZE

@@ -92,6 +92,16 @@ struct file {
 	daddr_t			f_buf_blkno;			/* block number of data block */
 };
 
+
+get_ufs(ip)
+	struct inode *ip;
+{
+	void *buf;
+	if(ip->i_ump->um_fstype == UFS1) {
+		buf = sizeof(struct ufs1_dinode *);
+	}
+}
+
 /*
  * Read a new inode into a file structure.
  */
@@ -121,11 +131,13 @@ read_inode(inumber, f)
 	}
 
 	{
-		register struct dinode *dp;
-
-		dp = (struct dinode *)buf;
-
-		DIP(fp->f_ip, dp[ino_to_fsbo(fs, inumber)]);
+		if(fp->f_ip->i_ump->um_fstype == UFS1) {
+			struct ufs1_dinode *dp = (struct ufs1_dinode *)buf;
+			DIP(fp->f_ip, dp[ino_to_fsbo(fs, inumber)]);
+		} else {
+			struct ufs2_dinode *dp = (struct ufs2_dinode *)buf;
+			DIP(fp->f_ip, dp[ino_to_fsbo(fs, inumber)]);
+		}
 	}
 
 	/*
@@ -269,7 +281,7 @@ buf_read_file(f, buf_p, size_p)
 
 	off = blkoff(fs, fp->f_seekp);
 	file_block = lblkno(fs, fp->f_seekp);
-	block_size = dblksize(fs, DIP(fp->f_ip, db), file_block); //dblksize(fs, &fp->f_di, file_block);
+	block_size = dblksize(fs, DIP(fp->f_ip, db), file_block);
 
 	if (file_block != fp->f_buf_blkno) {
 		rc = block_map(f, file_block, &disk_block);

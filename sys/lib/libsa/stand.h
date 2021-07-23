@@ -85,6 +85,7 @@ struct fs_ops {
 	int					(*write) (struct open_file *, char *, u_int, u_int *);
 	off_t				(*seek) (struct open_file *, off_t, int);
 	int					(*stat) (struct open_file *, struct stat *);
+	 int				(*readdir)(struct open_file *, struct dirent *);
 };
 extern struct fs_ops 	file_system[];
 

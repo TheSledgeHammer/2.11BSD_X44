@@ -241,6 +241,7 @@ struct fs {
 	int32_t	 		fs_cpc;				/* cyl per cycle in postbl */
 	int16_t	 		fs_opostbl[16][8];	/* old rotation block list head */
 	int32_t	 		fs_sparecon[50];	/* reserved for future constants */
+	int64_t	 		fs_sblockloc;		/* byte offset of standard superblock */
 	int32_t	 		fs_contigsumsize;	/* size of cluster summary array */
 	int32_t	 		fs_maxsymlinklen;	/* max length of an internal symlink */
 	int32_t	 		fs_inodefmt;		/* format of on-disk inodes */

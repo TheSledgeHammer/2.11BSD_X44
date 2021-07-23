@@ -53,8 +53,8 @@
 
 #include <vm/include/vm.h>		/* for vnode_pager_setsize */
 
-#include <devel/ufs/ufml/ufml.h>
-#include <devel/ufs/ufml/ufml_union.h>
+#include <devel/ufml/ufml.h>
+#include <devel/ufml/ufml_union.h>
 
 /* must be power of two, otherwise change UFML_HASH() */
 #define NHASH 			32
