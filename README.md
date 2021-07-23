@@ -64,7 +64,7 @@ Or
 
 ## Porting
 
-2.11BSD_X44 is entirely open to being ported to different architectures.
+2.11BSD_X44 is open to being ported to different architectures.
 Though due to limited access to hardware, testing of 2.11BSD_X44 on that architecture will be dependent on the individual/group (especially more exotic hardware).
 
 ## Building: (Work in Progress)

@@ -1,3 +1,5 @@
+/*	$NetBSD: pathnames.h,v 1.18 2020/11/29 09:27:40 rillig Exp $	*/
+
 /*
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -30,10 +28,26 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)pathnames.h	8.2 (Berkeley) 4/28/95
+ *	from: @(#)pathnames.h	5.2 (Berkeley) 6/1/90
  */
 
-#define	_PATH_OBJDIR		"obj"
-#define	_PATH_DEFSHELLDIR	"/bin"
-#define	_PATH_DEFSYSMK		"sys.mk"
-#define	_PATH_DEFSYSPATH	"/usr/share/mk"
+#ifndef MAKE_NATIVE
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+#else
+#include <paths.h>
+#endif
+
+#define _PATH_OBJDIR		"obj"
+#define _PATH_OBJDIRPREFIX	"/usr/obj"
+#ifndef _PATH_DEFSHELLDIR
+#define _PATH_DEFSHELLDIR	"/bin"
+#endif
+#define _PATH_DEFSYSMK		"sys.mk"
+#ifndef _PATH_DEFSYSPATH
+#define _PATH_DEFSYSPATH	"/usr/share/mk"
+#endif
+#ifndef _PATH_TMP
+#define _PATH_TMP		"/tmp/"		/* with trailing slash */
+#endif

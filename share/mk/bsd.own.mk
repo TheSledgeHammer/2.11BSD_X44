@@ -213,24 +213,6 @@ TOOL_CPP.pcc=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-pcpp
 TOOL_CXX.pcc=		${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-p++
 .endif	# EXTERNAL_TOOLCHAIN		
 
-# Don't append another copy of sysroot (coming from COMPATCPPFLAGS etc.)
-# because it confuses Coverity. Still we need to cov-configure specially
-# for each specific sysroot argument.
-# Also don't add a sysroot at all if a rumpkernel build.
-.if !defined(HOSTPROG) && !defined(HOSTLIB) && !defined(RUMPRUN)
-.  if ${DESTDIR} != ""
-.	if empty(CPPFLAGS:M*--sysroot=*)
-CPPFLAGS+=	--sysroot=${DESTDIR}
-.	endif
-LDFLAGS+=	--sysroot=${DESTDIR}
-.  else
-.	if empty(CPPFLAGS:M*--sysroot=*)
-CPPFLAGS+=	--sysroot=/
-.	endif
-LDFLAGS+=	--sysroot=/
-.  endif
-.endif
-
 DBSYM=				${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-dbsym
 INSTALL=			${TOOLDIR}/bin/${MACHINE_GNU_PLATFORM}-install
 LEX=				${TOOLDIR}/bin/${_TOOL_PREFIX}lex

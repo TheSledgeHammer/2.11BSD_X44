@@ -1,7 +1,36 @@
-.\" Copyright (c) 1988, 1989 by Adam de Boor
-.\" Copyright (c) 1989 by Berkeley Softworks
+.\"	$NetBSD: tutorial.ms,v 1.14 2020/12/18 15:47:34 rillig Exp $
 .\" Copyright (c) 1988, 1989, 1993
 .\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Adam de Boor.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\" Copyright (c) 1988, 1989 by Adam de Boor
+.\" Copyright (c) 1989 by Berkeley Softworks
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Adam de Boor.
@@ -34,16 +63,24 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"	@(#)tutorial.ms	8.4 (Berkeley) 4/28/95
+.\"	@(#)tutorial.ms	8.1 (Berkeley) 8/18/93
 .\"
 .EH 'PSD:12-%''PMake \*- A Tutorial'
 .OH 'PMake \*- A Tutorial''PSD:12-%'
+.\" Ix is an indexing macro similar to .IX but I've disabled it for now
+.\" Since that would require 2 passes and I am not in the mood for that.
+.de Ix
+..
+.\" Rd is section (region) define and Rm is region mention? Again disable for
+.\" now.
+.de Rd
+..
+.de Rm
+..
 .\" xH is a macro to provide numbered headers that are automatically stuffed
 .\" into a table-of-contents, properly indented, etc. If the first argument
 .\" is numeric, it is taken as the depth for numbering (as for .NH), else
 .\" the default (1) is assumed.
-.\"
-.\" $Id: tutorial.ms,v 1.4 89/01/08 20:20:22 adam Exp Locker: adam $
 .\"
 .\" @P The initial paragraph distance.
 .\" @Q The piece of section number to increment (or 0 if none given)
@@ -80,6 +117,15 @@
 .de No
 .br
 .ne 0.5i
+.ie n \{\
+.nr g3 \w'NOTE '
+.po -\\n(g3u
+.br
+NOTE
+.br
+.po +\\n(g3u
+.\}
+.el \{\
 .po -0.5i
 .br
 .mk 
@@ -87,14 +133,15 @@
 .nr g4 \\n(.s
 .sp -1
 .\" .st cf
-\D's -1u'\D't 5u'
+\D't 5u'
 .sp -1
-\h'50u'\D'l 71u 0u'\D'l 50u 50u'\D'l 0u 71u'\D'l -50u 50u'\D'l -71u 0u'\D'l -50u -50u'\D'l 0u -71u'\D'l 50u -50u'
+\h'50u'
 .sp -1
 \D't 3u'
 .sp -1
 .sp 7u
-\h'53u'\D'p 14 68u 0u 46u 46u 0u 68u -46u 46u -68u 0u -47u -46u 0u -68u 47u -46u'
+\h'53u'
+\d\D'p -0.19i 0.0i 0.0i -0.13i 0.30i 0.0i 0.0i 0.13i'
 .sp -1
 .ft R
 .ps 6
@@ -104,18 +151,20 @@
 \h'85u'\v'0.85n'\h-\w\\*(g9u/2u\&\\*(g9
 .sp |\\n(g8u
 .sp 166u
-\D't 3u'\D's -1u'
+\D't 3u'
 .br
 .po
 .rt 
 .ft \\n(g3
 .ps \\n(g4
+.\}
 ..
 .de Bp
 .ie !\\n(.$ .IP \(bu 2
 .el .IP "\&" 2
 ..
-.po +.3i
+.ie n .po +\w'NOTE  'u
+.el .po +.3i
 .TL
 PMake \*- A Tutorial
 .AU
@@ -150,7 +199,7 @@ be familiar. PMake's most important feature is its ability to run
 several different jobs at once, making the creation of systems
 considerably faster. It also has a great deal more functionality than
 Make. Throughout the text, whenever something is mentioned that is an
-important difference between PMake and Make (i.e.  something that will
+important difference between PMake and Make (i.e. something that will
 cause a makefile to fail if you don't do something about it), or is
 simply important, it will be flagged with a little sign in the left
 margin, like this:
@@ -599,7 +648,7 @@ likely freeze if you execute something that produces thousands of
 bytes of output (8 Kb is the limit on many UNIX systems).
 .LP
 The value of a variable may be retrieved by enclosing the variable
-name in parentheses or curly braces and preceeding the whole thing
+name in parentheses or curly braces and preceding the whole thing
 with a dollar sign.
 .LP
 For example, to set the variable CFLAGS to the string
@@ -1272,6 +1321,15 @@ administrator. If locking is on,
 will turn it off, and vice versa. Note that this locking will not
 prevent \fIyou\fP from invoking PMake twice in the same place \*- if
 you own the lock file, PMake will warn you about it but continue to execute.
+.IP "\fB\-m\fP \fIdirectory\fP"
+.Ix 0 def flags -m
+Tells PMake another place to search for included makefiles via the <...>
+style.  Several
+.B \-m
+options can be given to form a search path.  If this construct is used the
+default system makefile search path is completely overridden.
+To be explained in chapter 3, section 3.2.
+.Rm 2 3.2
 .IP \fB\-n\fP
 .Ix 0 def flags -n
 This flag tells PMake not to execute the commands needed to update the
@@ -1417,7 +1475,7 @@ the screen from being filled with garbage even more indecipherable
 than you usually see. PMake has two ways of doing this, one of which
 provides for much cleaner output and a clear separation between the
 output of different jobs, the other of which provides a more immediate
-response so one can tell what is really happpening. The former is done
+response so one can tell what is really happening. The former is done
 by notifying you when the creation of a target starts, capturing the
 output and transferring it to the screen all at once when the job
 finishes. The latter is done by catching the output of the shell (and
@@ -1521,7 +1579,7 @@ using the
 .Ix 0 ref !=
 .Ix 0 ref variable assignment shell-output
 operator.  Variables may be expanded (their value inserted) by enclosing
-their name in parentheses or curly braces, prceeded by a dollar sign.
+their name in parentheses or curly braces, preceded by a dollar sign.
 A dollar sign may be escaped with another dollar sign. Variables are
 not expanded if PMake doesn't know about them. There are seven local
 variables:
@@ -1587,7 +1645,7 @@ suffix is usually a text file to be processed by Troff with the \-ms
 macro package, and so on.
 One of the best aspects of both Make and PMake comes from their
 understanding of how the suffix of a file pertains to its contents and
-their ability to do things with a file based soley on its suffix. This
+their ability to do things with a file based solely on its suffix. This
 ability comes from something known as a transformation rule. A
 transformation rule specifies how to change a file with one suffix
 into a file with another suffix.
@@ -1860,15 +1918,15 @@ Suff_FindDeps (jive.c)
 	applying .l -> .c to "jive.l"
 Suff_FindDeps (jive.l)
 Examining jive.l...modified 17:16:01 Oct 4, 1987...up-to-date
-Examining jive.c...non-existent...out-of-date
+Examining jive.c...nonexistent...out-of-date
 --- jive.c ---
 lex jive.l
 \&.\|.\|. meaningless lex output deleted .\|.\|.
 mv lex.yy.c jive.c
-Examining jive.o...non-existent...out-of-date
+Examining jive.o...nonexistent...out-of-date
 --- jive.o ---
 cc -c jive.c
-Examining jive.out...non-existent...out-of-date
+Examining jive.out...nonexistent...out-of-date
 --- jive.out ---
 cc -o jive.out jive.o
 .DE
@@ -1912,11 +1970,15 @@ or this
 .DE
 The difference between the two is where PMake searches for the file:
 the first way, PMake will look for
-the file only in the system makefile directory (to find out what that
-directory is, give PMake the
+the file only in the system makefile directory (or directories)
+(to find out what that directory is, give PMake the
 .B \-h
 flag).
 .Ix 0 ref flags -h
+The system makefile directory search path can be overridden via the
+.B \-m
+option.
+.Ix 0 ref flags -m
 For files in double-quotes, the search is more complex:
 .RS
 .IP 1)
@@ -2588,7 +2650,7 @@ in the variable to be replaced by
 .I replacement-string ,
 unless the
 .CW g
-flag is given at the end, in which case all occurences of the string
+flag is given at the end, in which case all occurrences of the string
 are replaced. The substitution is performed on each word in the
 variable in turn. If 
 .I search-string
@@ -2599,7 +2661,7 @@ the string must match starting at the beginning of the word. If
 ends with a
 .CW $ ,
 the string must match to the end of the word (these two may be
-combined to force an exact match). If a backslash preceeds these two
+combined to force an exact match). If a backslash precedes these two
 characters, however, they lose their special meaning. Variable
 expansion also occurs in the normal fashion inside both the
 .I search-string
@@ -2624,7 +2686,7 @@ character is replaced by the
 unless it is preceded by a backslash.
 You are allowed to use any character except
 colon or exclamation point to separate the two strings. This so-called
-delimiter character may be placed in either string by preceeding it
+delimiter character may be placed in either string by preceding it
 with a backslash.
 .IP T
 .Ix 0 def :T
@@ -2809,7 +2871,7 @@ current directory. While people have suggested that PMake should read
 the directories each time, my experience suggests that the caching seldom
 causes problems. In addition, not caching the directories slows things
 down enormously because of PMake's attempts to apply transformation
-rules through non-existent files \*- the number of extra file-system
+rules through nonexistent files \*- the number of extra file-system
 searches is truly staggering, especially if many files without
 suffixes are used and the null suffix isn't changed from
 .CW .out .
@@ -2927,10 +2989,10 @@ looks like this:
 .DS
 .SM
 #
-# Rules for making libraries. The object files that make up the library are
-# removed once they are archived.
+# Rules for making libraries. The object files that make up the library
+# are removed once they are archived.
 #
-# To make several libararies in parallel, you should define the variable
+# To make several libraries in parallel, you should define the variable
 # "many_libraries". This will serialize the invocations of ranlib.
 #
 # To use, do something like this:
@@ -2954,19 +3016,19 @@ ARFLAGS		?= crl
 
 #
 # Re-archive the out-of-date members and recreate the library's table of
-# contents using ranlib. If many_libraries is defined, put the ranlib off
-# til the end so many libraries can be made at once.
+# contents using ranlib. If many_libraries is defined, put the ranlib
+# off til the end so many libraries can be made at once.
 #
 MAKELIB		: .USE .PRECIOUS
 	ar $(ARFLAGS) $(.TARGET) $(.OODATE)
 #ifndef no_ranlib
 # ifdef many_libraries
 	...
-# endif many_libraries
+# endif /* many_libraries */
 	ranlib $(.TARGET)
-#endif no_ranlib
+#endif /* no_ranlib */
 
-#endif _MAKELIB_MK
+#endif /* _MAKELIB_MK */
 .DE
 .xH 2 On the Condition...
 .Rd 1
@@ -3054,8 +3116,8 @@ identify the system on which PMake is being run.
 The syntax is
 .CW exists( \fIfile\fP\c
 .CW )
-and is true if the file can be found on the global search path (i.e.
-that defined by
+and is true if the file can be found on the global search path
+(i.e. that defined by
 .CW .PATH
 targets, not by
 .CW .PATH \fIsuffix\fP
@@ -3168,7 +3230,7 @@ FORMATTER	= ditroff -Plaser_printer
 FORMATTER	= nroff -Pdot_matrix_printer
 #endif
 .DE
-would wreak havok if you tried
+would wreak havoc if you tried
 .CW "pmake draft print" '' ``
 since you would use the same formatter for each target. As I said,
 this all gets somewhat complicated.
@@ -3289,7 +3351,7 @@ within that loop will be printed, etc. The specification runs like
 this:
 .DS
 #
-# This is a shell specification to have the bourne shell echo
+# This is a shell specification to have the Bourne shell echo
 # the commands just before executing them, rather than when it reads
 # them. Useful if you want to see how variables are being expanded, etc.
 #
@@ -3325,7 +3387,7 @@ When the echo off command is executed, the shell will print
 .CW \-x
 flag (rather than the
 .CW \-v
-flag PMake usually uses)). PMake will remove all occurences of this
+flag PMake usually uses)). PMake will remove all occurrences of this
 string from the output, so you don't notice extra commands you didn't
 put there.
 .Bp

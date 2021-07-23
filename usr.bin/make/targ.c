@@ -1,6 +1,38 @@
+/*	$NetBSD: targ.c,v 1.168 2021/04/03 12:01:00 rillig Exp $	*/
+
 /*
  * Copyright (c) 1988, 1989, 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Adam de Boor.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+
+/*
  * Copyright (c) 1989 by Berkeley Softworks
  * All rights reserved.
  *
@@ -36,630 +68,550 @@
  * SUCH DAMAGE.
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)targ.c	8.3 (Berkeley) 4/28/95";
-#endif /* not lint */
-
-/*-
- * targ.c --
- *	Functions for maintaining the Lst allTargets. Target nodes are
- * kept in two structures: a Lst, maintained by the list library, and a
- * hash table, maintained by the hash library.
+/*
+ * Maintaining the targets and sources, which are both implemented as GNode.
  *
  * Interface:
- *	Targ_Init 	    	Initialization procedure.
+ *	Targ_Init	Initialize the module.
  *
- *	Targ_End 	    	Cleanup the module
+ *	Targ_End	Clean up the module.
  *
- *	Targ_NewGN	    	Create a new GNode for the passed target
- *	    	  	    	(string). The node is *not* placed in the
- *	    	  	    	hash table, though all its fields are
- *	    	  	    	initialized.
+ *	Targ_List	Return the list of all targets so far.
  *
- *	Targ_FindNode	    	Find the node for a given target, creating
- *	    	  	    	and storing it if it doesn't exist and the
- *	    	  	    	flags are right (TARG_CREATE)
+ *	GNode_New	Create a new GNode for the passed target
+ *			(string). The node is *not* placed in the
+ *			hash table, though all its fields are
+ *			initialized.
  *
- *	Targ_FindList	    	Given a list of names, find nodes for all
- *	    	  	    	of them. If a name doesn't exist and the
- *	    	  	    	TARG_NOCREATE flag was given, an error message
- *	    	  	    	is printed. Else, if a name doesn't exist,
- *	    	  	    	its node is created.
+ *	Targ_FindNode	Find the node, or return NULL.
  *
- *	Targ_Ignore	    	Return TRUE if errors should be ignored when
- *	    	  	    	creating the given target.
+ *	Targ_GetNode	Find the node, or create it.
  *
- *	Targ_Silent	    	Return TRUE if we should be silent when
- *	    	  	    	creating the given target.
+ *	Targ_NewInternalNode
+ *			Create an internal node.
  *
- *	Targ_Precious	    	Return TRUE if the target is precious and
- *	    	  	    	should not be removed if we are interrupted.
+ *	Targ_FindList	Given a list of names, find nodes for all
+ *			of them, creating them as necessary.
+ *
+ *	Targ_Precious	Return true if the target is precious and
+ *			should not be removed if we are interrupted.
+ *
+ *	Targ_Propagate	Propagate information between related nodes.
+ *			Should be called after the makefiles are parsed
+ *			but before any action is taken.
  *
  * Debugging:
- *	Targ_PrintGraph	    	Print out the entire graphm all variables
- *	    	  	    	and statistics for the directory cache. Should
- *	    	  	    	print something for suffixes, too, but...
+ *	Targ_PrintGraph
+ *			Print out the entire graph, all variables and
+ *			statistics for the directory cache. Should print
+ *			something for suffixes, too, but...
  */
 
-#include	  <stdio.h>
-#include	  <time.h>
-#include	  "make.h"
-#include	  "hash.h"
-#include	  "dir.h"
+#include <time.h>
 
-static Lst      	allTargets;	/* the list of all targets found so far */
-static Lst	  		allGNs;		/* List of all the GNodes */
-static Hash_Table 	targets;	/* a hash table of same */
+#include "make.h"
+#include "dir.h"
 
-#define HTSIZE	191		/* initial size of hash table */
+/*	"@(#)targ.c	8.2 (Berkeley) 3/19/94"	*/
+MAKE_RCSID("$NetBSD: targ.c,v 1.168 2021/04/03 12:01:00 rillig Exp $");
 
-static int TargPrintOnlySrc __P((ClientData, ClientData));
-static int TargPrintName __P((ClientData, ClientData));
-static int TargPrintNode __P((ClientData, ClientData));
-static void TargFreeGN __P((ClientData));
-
-/*-
- *-----------------------------------------------------------------------
- * Targ_Init --
- *	Initialize this module
- *
- * Results:
- *	None
- *
- * Side Effects:
- *	The allTargets list and the targets hash table are initialized
- *-----------------------------------------------------------------------
+/*
+ * All target nodes that appeared on the left-hand side of one of the
+ * dependency operators ':', '::', '!'.
  */
+static GNodeList allTargets = LST_INIT;
+static HashTable allTargetsByName;
+
+#ifdef CLEANUP
+static GNodeList allNodes = LST_INIT;
+
+static void GNode_Free(void *);
+#endif
+
 void
-Targ_Init ()
+Targ_Init(void)
 {
-    allTargets = Lst_Init (FALSE);
-    Hash_InitTable (&targets, HTSIZE);
+	HashTable_Init(&allTargetsByName);
 }
 
-/*-
- *-----------------------------------------------------------------------
- * Targ_End --
- *	Finalize this module
- *
- * Results:
- *	None
- *
- * Side Effects:
- *	All lists and gnodes are cleared
- *-----------------------------------------------------------------------
- */
 void
-Targ_End ()
+Targ_End(void)
 {
-	Lst_Destroy(allTargets, NOFREE);
-	if (allGNs)
-		Lst_Destroy(allGNs, TargFreeGN);
-	Hash_DeleteTable(&targets);
+	Targ_Stats();
+#ifdef CLEANUP
+	Lst_Done(&allTargets);
+	HashTable_Done(&allTargetsByName);
+	Lst_DoneCall(&allNodes, GNode_Free);
+#endif
 }
 
-/*-
- *-----------------------------------------------------------------------
- * Targ_NewGN  --
- *	Create and initialize a new graph node
+void
+Targ_Stats(void)
+{
+	HashTable_DebugStats(&allTargetsByName, "targets");
+}
+
+/*
+ * Return the list of all targets, which are all nodes that appear on the
+ * left-hand side of a dependency declaration such as "target: source".
+ * The returned list does not contain pure sources.
+ */
+GNodeList *
+Targ_List(void)
+{
+	return &allTargets;
+}
+
+/*
+ * Create a new graph node, but don't register it anywhere.
  *
- * Results:
- *	An initialized graph node with the name field filled with a copy
- *	of the passed name
+ * Graph nodes that appear on the left-hand side of a dependency line such
+ * as "target: source" are called targets.  XXX: In some cases (like the
+ * .ALLTARGETS variable), all nodes are called targets as well, even if they
+ * never appear on the left-hand side.  This is a mistake.
  *
- * Side Effects:
- *	The gnode is added to the list of all gnodes.
- *-----------------------------------------------------------------------
+ * Typical names for graph nodes are:
+ *	"src.c" (an ordinary file)
+ *	"clean" (a .PHONY target)
+ *	".END" (a special hook target)
+ *	"-lm" (a library)
+ *	"libc.a(isspace.o)" (an archive member)
  */
 GNode *
-Targ_NewGN (name)
-    char           *name;	/* the name to stick in the new node */
+GNode_New(const char *name)
 {
-    register GNode *gn;
+	GNode *gn;
 
-	gn = (GNode*) emalloc(sizeof(GNode));
-	gn->name = strdup(name);
-	gn->path = (char*) 0;
-	if (name[0] == '-' && name[1] == 'l') {
-		gn->type = OP_LIB;
-	} else {
-		gn->type = 0;
-	}
-	gn->unmade = 0;
-	gn->make = FALSE;
+	gn = bmake_malloc(sizeof *gn);
+	gn->name = bmake_strdup(name);
+	gn->uname = NULL;
+	gn->path = NULL;
+	gn->type = name[0] == '-' && name[1] == 'l' ? OP_LIB : OP_NONE;
+	gn->flags = GNF_NONE;
 	gn->made = UNMADE;
-	gn->childMade = FALSE;
-	gn->mtime = gn->cmtime = 0;
-	gn->iParents = Lst_Init(FALSE);
-	gn->cohorts = Lst_Init(FALSE);
-	gn->parents = Lst_Init(FALSE);
-	gn->children = Lst_Init(FALSE);
-	gn->successors = Lst_Init(FALSE);
-	gn->preds = Lst_Init(FALSE);
-	gn->context = Lst_Init(FALSE);
-	gn->commands = Lst_Init(FALSE);
+	gn->unmade = 0;
+	gn->mtime = 0;
+	gn->youngestChild = NULL;
+	Lst_Init(&gn->implicitParents);
+	Lst_Init(&gn->parents);
+	Lst_Init(&gn->children);
+	Lst_Init(&gn->order_pred);
+	Lst_Init(&gn->order_succ);
+	Lst_Init(&gn->cohorts);
+	gn->cohort_num[0] = '\0';
+	gn->unmade_cohorts = 0;
+	gn->centurion = NULL;
+	gn->checked_seqno = 0;
+	HashTable_Init(&gn->vars);
+	Lst_Init(&gn->commands);
 	gn->suffix = NULL;
+	gn->fname = NULL;
+	gn->lineno = 0;
 
-	if (allGNs == NULL)
-		allGNs = Lst_Init(FALSE);
-	Lst_AtEnd(allGNs, (ClientData) gn);
+#ifdef CLEANUP
+	Lst_Append(&allNodes, gn);
+#endif
 
-	return (gn);
+	return gn;
 }
 
-/*-
- *-----------------------------------------------------------------------
- * TargFreeGN  --
- *	Destroy a GNode
- *
- * Results:
- *	None.
- *
- * Side Effects:
- *	None.
- *-----------------------------------------------------------------------
- */
+#ifdef CLEANUP
 static void
-TargFreeGN (gnp)
-    ClientData gnp;
+GNode_Free(void *gnp)
 {
-    GNode *gn = (GNode *) gnp;
+	GNode *gn = gnp;
 
+	free(gn->name);
+	free(gn->uname);
+	free(gn->path);
 
-    free(gn->name);
-	if (gn->path)
-		free(gn->path);
+	/* Don't free gn->youngestChild since it is not owned by this node. */
 
-	Lst_Destroy(gn->iParents, NOFREE);
-	Lst_Destroy(gn->cohorts, NOFREE);
-	Lst_Destroy(gn->parents, NOFREE);
-	Lst_Destroy(gn->children, NOFREE);
-	Lst_Destroy(gn->successors, NOFREE);
-	Lst_Destroy(gn->preds, NOFREE);
-	Lst_Destroy(gn->context, NOFREE);
-	Lst_Destroy(gn->commands, NOFREE);
-	free((Address) gn);
+	/*
+	 * In the following lists, only free the list nodes, but not the
+	 * GNodes in them since these are not owned by this node.
+	 */
+	Lst_Done(&gn->implicitParents);
+	Lst_Done(&gn->parents);
+	Lst_Done(&gn->children);
+	Lst_Done(&gn->order_pred);
+	Lst_Done(&gn->order_succ);
+	Lst_Done(&gn->cohorts);
+
+	/*
+	 * Do not free the variables themselves, even though they are owned
+	 * by this node.
+	 *
+	 * XXX: For the nodes that represent targets or sources (and not
+	 * SCOPE_GLOBAL), it should be safe to free the variables as well,
+	 * since each node manages the memory for all its variables itself.
+	 *
+	 * XXX: The GNodes that are only used as variable scopes (SCOPE_CMD,
+	 * SCOPE_GLOBAL, SCOPE_INTERNAL) are not freed at all (see Var_End,
+	 * where they are not mentioned).  These might be freed at all, if
+	 * their variable values are indeed not used anywhere else (see
+	 * Trace_Init for the only suspicious use).
+	 */
+	HashTable_Done(&gn->vars);
+
+	/*
+	 * Do not free the commands themselves, as they may be shared with
+	 * other nodes.
+	 */
+	Lst_Done(&gn->commands);
+
+	/*
+	 * gn->suffix is not owned by this node.
+	 *
+	 * XXX: gn->suffix should be unreferenced here.  This requires a
+	 * thorough check that the reference counting is done correctly in
+	 * all places, otherwise a suffix might be freed too early.
+	 */
+
+	free(gn);
+}
+#endif
+
+/* Get the existing global node, or return NULL. */
+GNode *
+Targ_FindNode(const char *name)
+{
+	return HashTable_FindValue(&allTargetsByName, name);
 }
 
+/* Get the existing global node, or create it. */
+GNode *
+Targ_GetNode(const char *name)
+{
+	bool isNew;
+	HashEntry *he = HashTable_CreateEntry(&allTargetsByName, name, &isNew);
+	if (!isNew)
+		return HashEntry_Get(he);
 
-/*-
- *-----------------------------------------------------------------------
- * Targ_FindNode  --
- *	Find a node in the list using the given name for matching
+	{
+		GNode *gn = Targ_NewInternalNode(name);
+		HashEntry_Set(he, gn);
+		return gn;
+	}
+}
+
+/*
+ * Create a node, register it in .ALLTARGETS but don't store it in the
+ * table of global nodes.  This means it cannot be found by name.
  *
- * Results:
- *	The node in the list if it was. If it wasn't, return NILGNODE of
- *	flags was TARG_NOCREATE or the newly created and initialized node
- *	if it was TARG_CREATE
- *
- * Side Effects:
- *	Sometimes a node is created and added to the list
- *-----------------------------------------------------------------------
+ * This is used for internal nodes, such as cohorts or .WAIT nodes.
  */
 GNode *
-Targ_FindNode (name, flags)
-    char           *name;	/* the name to find */
-    int             flags;	/* flags governing events when target not
-				 * found */
+Targ_NewInternalNode(const char *name)
 {
-    GNode         *gn;	      /* node in that element */
-    Hash_Entry	  *he;	      /* New or used hash entry for node */
-    Boolean	  isNew;      /* Set TRUE if Hash_CreateEntry had to create */
-			      /* an entry for the node */
-
-
-    if (flags & TARG_CREATE) {
-		he = Hash_CreateEntry(&targets, name, &isNew);
-		if (isNew) {
-			gn = Targ_NewGN(name);
-			Hash_SetValue(he, gn);
-			(void) Lst_AtEnd(allTargets, (ClientData) gn);
-		}
-	} else {
-		he = Hash_FindEntry(&targets, name);
-	}
-
-	if (he == (Hash_Entry*) NULL) {
-		return (NILGNODE);
-	} else {
-		return ((GNode*) Hash_GetValue(he));
-	}
+	GNode *gn = GNode_New(name);
+	Global_Append(".ALLTARGETS", name);
+	Lst_Append(&allTargets, gn);
+	DEBUG1(TARG, "Adding \"%s\" to all targets.\n", gn->name);
+	if (doing_depend)
+		gn->flags |= FROM_DEPEND;
+	return gn;
 }
 
-/*-
- *-----------------------------------------------------------------------
- * Targ_FindList --
- *	Make a complete list of GNodes from the given list of names 
- *
- * Results:
- *	A complete list of graph nodes corresponding to all instances of all
- *	the names in names. 
- *
- * Side Effects:
- *	If flags is TARG_CREATE, nodes will be created for all names in
- *	names which do not yet have graph nodes. If flags is TARG_NOCREATE,
- *	an error message will be printed for each name which can't be found.
- * -----------------------------------------------------------------------
+/*
+ * Return the .END node, which contains the commands to be run when
+ * everything else has been made.
  */
-Lst
-Targ_FindList (names, flags)
-    Lst        	   names;	/* list of names to find */
-    int            flags;	/* flags used if no node is found for a given
-				 * name */
+GNode *
+Targ_GetEndNode(void)
 {
-    Lst            nodes;	/* result list */
-    register LstNode  ln;		/* name list element */
-    register GNode *gn;		/* node in tLn */
-    char    	  *name;
+	/*
+	 * Save the node locally to avoid having to search for it all
+	 * the time.
+	 */
+	static GNode *endNode = NULL;
 
-    nodes = Lst_Init (FALSE);
-
-	if (Lst_Open(names) == FAILURE) {
-		return (nodes);
+	if (endNode == NULL) {
+		endNode = Targ_GetNode(".END");
+		endNode->type = OP_SPECIAL;
 	}
-	while ((ln = Lst_Next(names)) != NILLNODE) {
-		name = (char*) Lst_Datum(ln);
-		gn = Targ_FindNode(name, flags);
-		if (gn != NILGNODE) {
-			/*
-			 * Note: Lst_AtEnd must come before the Lst_Concat so the nodes
-			 * are added to the list in the order in which they were
-			 * encountered in the makefile.
-			 */
-			(void) Lst_AtEnd(nodes, (ClientData) gn);
-			if (gn->type & OP_DOUBLEDEP) {
-				(void) Lst_Concat(nodes, gn->cohorts, LST_CONCNEW);
-			}
-		} else if (flags == TARG_NOCREATE) {
-			Error("\"%s\" -- target unknown.", name);
-		}
-	}
-	Lst_Close(names);
-	return (nodes);
+	return endNode;
 }
 
-/*-
- *-----------------------------------------------------------------------
- * Targ_Ignore  --
- *	Return true if should ignore errors when creating gn
- *
- * Results:
- *	TRUE if should ignore errors
- *
- * Side Effects:
- *	None
- *-----------------------------------------------------------------------
- */
-Boolean
-Targ_Ignore (gn)
-    GNode          *gn;		/* node to check for */
-{
-	if (ignoreErrors || (gn->type & OP_IGNORE)) {
-		return (TRUE);
-	} else {
-		return (FALSE);
-	}
-}
-
-/*-
- *-----------------------------------------------------------------------
- * Targ_Silent  --
- *	Return true if be silent when creating gn
- *
- * Results:
- *	TRUE if should be silent
- *
- * Side Effects:
- *	None
- *-----------------------------------------------------------------------
- */
-Boolean
-Targ_Silent (gn)
-    GNode          *gn;		/* node to check for */
-{
-	if (beSilent || (gn->type & OP_SILENT)) {
-		return (TRUE);
-	} else {
-		return (FALSE);
-	}
-}
-
-/*-
- *-----------------------------------------------------------------------
- * Targ_Precious --
- *	See if the given target is precious
- *
- * Results:
- *	TRUE if it is precious. FALSE otherwise
- *
- * Side Effects:
- *	None
- *-----------------------------------------------------------------------
- */
-Boolean
-Targ_Precious (gn)
-    GNode          *gn;		/* the node to check */
-{
-	if (allPrecious || (gn->type & (OP_PRECIOUS | OP_DOUBLEDEP))) {
-		return (TRUE);
-	} else {
-		return (FALSE);
-	}
-}
-
-/******************* DEBUG INFO PRINTING ****************/
-
-static GNode	  *mainTarg;	/* the main target, as set by Targ_SetMain */
-/*- 
- *-----------------------------------------------------------------------
- * Targ_SetMain --
- *	Set our idea of the main target we'll be creating. Used for
- *	debugging output.
- *
- * Results:
- *	None.
- *
- * Side Effects:
- *	"mainTarg" is set to the main target's node.
- *-----------------------------------------------------------------------
- */
+/* Add the named nodes to the list, creating them as necessary. */
 void
-Targ_SetMain (gn)
-    GNode   *gn;  	/* The main target we'll create */
+Targ_FindList(GNodeList *gns, StringList *names)
 {
-    mainTarg = gn;
-}
+	StringListNode *ln;
 
-static int
-TargPrintName (gnp, ppath)
-    ClientData     gnp;
-    ClientData	    ppath;
-{
-	GNode *gn = (GNode*) gnp;
-	printf("%s ", gn->name);
-#ifdef notdef
-	if (ppath) {
-		if (gn->path) {
-			printf("[%s]  ", gn->path);
-		}
-		if (gn == mainTarg) {
-			printf("(MAIN NAME)  ");
-		}
+	for (ln = names->first; ln != NULL; ln = ln->next) {
+		const char *name = ln->datum;
+		GNode *gn = Targ_GetNode(name);
+		Lst_Append(gns, gn);
 	}
-#endif /* notdef */
-	return (ppath ? 0 : 0);
 }
 
-
-int
-Targ_PrintCmd (cmd, dummy)
-    ClientData cmd;
-    ClientData dummy;
+/* See if the given target is precious. */
+bool
+Targ_Precious(const GNode *gn)
 {
-    printf ("\t%s\n", (char *) cmd);
-    return (dummy ? 0 : 0);
+	/* XXX: Why are '::' targets precious? */
+	return allPrecious || gn->type & (OP_PRECIOUS | OP_DOUBLEDEP);
 }
 
-/*-
- *-----------------------------------------------------------------------
- * Targ_FmtTime --
- *	Format a modification time in some reasonable way and return it.
- *
- * Results:
- *	The time reformatted.
- *
- * Side Effects:
- *	The time is placed in a static area, so it is overwritten
- *	with each call.
- *
- *-----------------------------------------------------------------------
+/*
+ * The main target to be made; only for debugging output.
+ * See mainNode in parse.c for the definitive source.
  */
-char *
-Targ_FmtTime (time)
-    time_t    time;
-{
-    struct tm	  	*parts;
-    static char	  	buf[40];
-    static char	  	*months[] = {
-	"Jan", "Feb", "Mar", "Apr", "May", "Jun",
-	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    };
+static GNode *mainTarg;
 
-    parts = localtime(&time);
-
-    sprintf (buf, "%d:%02d:%02d %s %d, 19%d",
-	     parts->tm_hour, parts->tm_min, parts->tm_sec,
-	     months[parts->tm_mon], parts->tm_mday, parts->tm_year);
-    return(buf);
-}
-    
-/*-
- *-----------------------------------------------------------------------
- * Targ_PrintType --
- *	Print out a type field giving only those attributes the user can
- *	set.
- *
- * Results:
- *
- * Side Effects:
- *
- *-----------------------------------------------------------------------
- */
+/* Remember the main target to make; only used for debugging. */
 void
-Targ_PrintType (type)
-    register int    type;
+Targ_SetMain(GNode *gn)
 {
-    register int    tbit;
-    
-#ifdef __STDC__
-#define PRINTBIT(attr)	case CONCAT(OP_,attr): printf("." #attr " "); break
-#define PRINTDBIT(attr) case CONCAT(OP_,attr): if (DEBUG(TARG)) printf("." #attr " "); break
-#else
-#define PRINTBIT(attr) 	case CONCAT(OP_,attr): printf(".attr "); break
-#define PRINTDBIT(attr)	case CONCAT(OP_,attr): if (DEBUG(TARG)) printf(".attr "); break
-#endif /* __STDC__ */
+	mainTarg = gn;
+}
+
+static void
+PrintNodeNames(GNodeList *gnodes)
+{
+	GNodeListNode *ln;
+
+	for (ln = gnodes->first; ln != NULL; ln = ln->next) {
+		GNode *gn = ln->datum;
+		debug_printf(" %s%s", gn->name, gn->cohort_num);
+	}
+}
+
+static void
+PrintNodeNamesLine(const char *label, GNodeList *gnodes)
+{
+	if (Lst_IsEmpty(gnodes))
+		return;
+	debug_printf("# %s:", label);
+	PrintNodeNames(gnodes);
+	debug_printf("\n");
+}
+
+void
+Targ_PrintCmds(GNode *gn)
+{
+	StringListNode *ln;
+
+	for (ln = gn->commands.first; ln != NULL; ln = ln->next) {
+		const char *cmd = ln->datum;
+		debug_printf("\t%s\n", cmd);
+	}
+}
+
+/*
+ * Format a modification time in some reasonable way and return it.
+ * The formatted time is placed in a static area, so it is overwritten
+ * with each call.
+ */
+const char *
+Targ_FmtTime(time_t tm)
+{
+	static char buf[128];
+
+	struct tm *parts = localtime(&tm);
+	(void)strftime(buf, sizeof buf, "%H:%M:%S %b %d, %Y", parts);
+	return buf;
+}
+
+/* Print out a type field giving only those attributes the user can set. */
+void
+Targ_PrintType(int type)
+{
+	int tbit;
 
 	type &= ~OP_OPMASK;
 
-	while (type) {
+	while (type != 0) {
 		tbit = 1 << (ffs(type) - 1);
 		type &= ~tbit;
 
 		switch (tbit) {
-		PRINTBIT(OPTIONAL)
-;			PRINTBIT(USE);
-			PRINTBIT(EXEC);
-			PRINTBIT(IGNORE);
-			PRINTBIT(PRECIOUS);
-			PRINTBIT(SILENT);
-			PRINTBIT(MAKE);
-			PRINTBIT(JOIN);
-			PRINTBIT(INVISIBLE);
-			PRINTBIT(NOTMAIN);
-			PRINTDBIT(LIB);
-			/*XXX: MEMBER is defined, so CONCAT(OP_,MEMBER) gives OP_"%" */
-			case OP_MEMBER: if (DEBUG(TARG)) printf(".MEMBER "); break;
-			PRINTDBIT(ARCHV);
+#define PRINTBIT(bit, attr) case bit: debug_printf(" " attr); break
+#define PRINTDBIT(bit, attr) case bit: DEBUG0(TARG, " " attr); break
+		PRINTBIT(OP_OPTIONAL, ".OPTIONAL");
+		PRINTBIT(OP_USE, ".USE");
+		PRINTBIT(OP_EXEC, ".EXEC");
+		PRINTBIT(OP_IGNORE, ".IGNORE");
+		PRINTBIT(OP_PRECIOUS, ".PRECIOUS");
+		PRINTBIT(OP_SILENT, ".SILENT");
+		PRINTBIT(OP_MAKE, ".MAKE");
+		PRINTBIT(OP_JOIN, ".JOIN");
+		PRINTBIT(OP_INVISIBLE, ".INVISIBLE");
+		PRINTBIT(OP_NOTMAIN, ".NOTMAIN");
+		PRINTDBIT(OP_LIB, ".LIB");
+		PRINTDBIT(OP_MEMBER, ".MEMBER");
+		PRINTDBIT(OP_ARCHV, ".ARCHV");
+		PRINTDBIT(OP_MADE, ".MADE");
+		PRINTDBIT(OP_PHONY, ".PHONY");
+#undef PRINTBIT
+#undef PRINTDBIT
 		}
 	}
 }
 
-/*-
- *-----------------------------------------------------------------------
- * TargPrintNode --
- *	print the contents of a node
- *-----------------------------------------------------------------------
- */
-static int
-TargPrintNode (gnp, passp)
-    ClientData   gnp;
-    ClientData	 passp;
+const char *
+GNodeMade_Name(GNodeMade made)
 {
-    GNode         *gn = (GNode *) gnp;
-    int	    	  pass = *(int *) passp;
-	if (!OP_NOP(gn->type)) {
-		printf("#\n");
-		if (gn == mainTarg) {
-			printf("# *** MAIN TARGET ***\n");
-		}
-		if (pass == 2) {
-			if (gn->unmade) {
-				printf("# %d unmade children\n", gn->unmade);
-			} else {
-				printf("# No unmade children\n");
-			}
-			if (!(gn->type & (OP_JOIN | OP_USE | OP_EXEC))) {
-				if (gn->mtime != 0) {
-					printf("# last modified %s: %s\n", Targ_FmtTime(gn->mtime),
-							(gn->made == UNMADE ?
-									"unmade" :
-									(gn->made == MADE ?
-											"made" :
-											(gn->made == UPTODATE ?
-													"up-to-date" :
-													"error when made"))));
-				} else if (gn->made != UNMADE) {
-					printf("# non-existent (maybe): %s\n",
-							(gn->made == MADE ?
-									"made" :
-									(gn->made == UPTODATE ?
-											"up-to-date" :
-											(gn->made == ERROR ?
-													"error when made" :
-													"aborted"))));
-				} else {
-					printf("# unmade\n");
-				}
-			}
-			if (!Lst_IsEmpty(gn->iParents)) {
-				printf("# implicit parents: ");
-				Lst_ForEach(gn->iParents, TargPrintName, (ClientData) 0);
-				fputc('\n', stdout);
-			}
-		}
-		if (!Lst_IsEmpty(gn->parents)) {
-			printf("# parents: ");
-			Lst_ForEach(gn->parents, TargPrintName, (ClientData) 0);
-			fputc('\n', stdout);
-		}
+	switch (made) {
+	case UNMADE:    return "unmade";
+	case DEFERRED:  return "deferred";
+	case REQUESTED: return "requested";
+	case BEINGMADE: return "being made";
+	case MADE:      return "made";
+	case UPTODATE:  return "up-to-date";
+	case ERROR:     return "error when made";
+	case ABORTED:   return "aborted";
+	default:        return "unknown enum_made value";
+	}
+}
 
-		printf("%-16s", gn->name);
-		switch (gn->type & OP_OPMASK) {
-		case OP_DEPENDS:
-			printf(": ");
-			break;
-		case OP_FORCE:
-			printf("! ");
-			break;
-		case OP_DOUBLEDEP:
-			printf(":: ");
-			break;
+static const char *
+GNode_OpName(const GNode *gn)
+{
+	switch (gn->type & OP_OPMASK) {
+	case OP_DEPENDS:
+		return ":";
+	case OP_FORCE:
+		return "!";
+	case OP_DOUBLEDEP:
+		return "::";
+	}
+	return "";
+}
+
+/* Print the contents of a node. */
+void
+Targ_PrintNode(GNode *gn, int pass)
+{
+	debug_printf("# %s%s", gn->name, gn->cohort_num);
+	GNode_FprintDetails(opts.debug_file, ", ", gn, "\n");
+	if (gn->flags == 0)
+		return;
+
+	if (!GNode_IsTarget(gn))
+		return;
+
+	debug_printf("#\n");
+	if (gn == mainTarg)
+		debug_printf("# *** MAIN TARGET ***\n");
+
+	if (pass >= 2) {
+		if (gn->unmade > 0)
+			debug_printf("# %d unmade children\n", gn->unmade);
+		else
+			debug_printf("# No unmade children\n");
+		if (!(gn->type & (OP_JOIN | OP_USE | OP_USEBEFORE | OP_EXEC))) {
+			if (gn->mtime != 0) {
+				debug_printf("# last modified %s: %s\n",
+				    Targ_FmtTime(gn->mtime),
+				    GNodeMade_Name(gn->made));
+			} else if (gn->made != UNMADE) {
+				debug_printf("# nonexistent (maybe): %s\n",
+				    GNodeMade_Name(gn->made));
+			} else
+				debug_printf("# unmade\n");
 		}
+		PrintNodeNamesLine("implicit parents", &gn->implicitParents);
+	} else {
+		if (gn->unmade != 0)
+			debug_printf("# %d unmade children\n", gn->unmade);
+	}
+
+	PrintNodeNamesLine("parents", &gn->parents);
+	PrintNodeNamesLine("order_pred", &gn->order_pred);
+	PrintNodeNamesLine("order_succ", &gn->order_succ);
+
+	debug_printf("%-16s%s", gn->name, GNode_OpName(gn));
+	Targ_PrintType(gn->type);
+	PrintNodeNames(&gn->children);
+	debug_printf("\n");
+	Targ_PrintCmds(gn);
+	debug_printf("\n\n");
+	if (gn->type & OP_DOUBLEDEP)
+		Targ_PrintNodes(&gn->cohorts, pass);
+}
+
+void
+Targ_PrintNodes(GNodeList *gnodes, int pass)
+{
+	GNodeListNode *ln;
+
+	for (ln = gnodes->first; ln != NULL; ln = ln->next)
+		Targ_PrintNode(ln->datum, pass);
+}
+
+/* Print only those targets that are just a source. */
+static void
+PrintOnlySources(void)
+{
+	GNodeListNode *ln;
+
+	for (ln = allTargets.first; ln != NULL; ln = ln->next) {
+		GNode *gn = ln->datum;
+		if (GNode_IsTarget(gn))
+			continue;
+
+		debug_printf("#\t%s [%s]", gn->name, GNode_Path(gn));
 		Targ_PrintType(gn->type);
-		Lst_ForEach(gn->children, TargPrintName, (ClientData) 0);
-		fputc('\n', stdout);
-		Lst_ForEach(gn->commands, Targ_PrintCmd, (ClientData) 0);
-		printf("\n\n");
-		if (gn->type & OP_DOUBLEDEP) {
-			Lst_ForEach(gn->cohorts, TargPrintNode, (ClientData) &pass);
-		}
+		debug_printf("\n");
 	}
-	return (0);
 }
 
-/*-
- *-----------------------------------------------------------------------
- * TargPrintOnlySrc --
- *	Print only those targets that are just a source.
- *
- * Results:
- *	0.
- *
- * Side Effects:
- *	The name of each file is printed preceeded by #\t
- *
- *-----------------------------------------------------------------------
- */
-static int
-TargPrintOnlySrc(gnp, dummy)
-    ClientData 	  gnp;
-    ClientData 	  dummy;
-{
-    GNode   	  *gn = (GNode *) gnp;
-	if (OP_NOP(gn->type))
-		printf("#\t%s [%s]\n", gn->name, gn->path ? gn->path : gn->name);
-
-	return (dummy ? 0 : 0);
-}
-
-/*-
- *-----------------------------------------------------------------------
- * Targ_PrintGraph --
- *	print the entire graph. heh heh
- *
- * Results:
- *	none
- *
- * Side Effects:
- *	lots o' output
- *-----------------------------------------------------------------------
+/*
+ * Input:
+ *	pass		1 => before processing
+ *			2 => after processing
+ *			3 => after processing, an error occurred
  */
 void
-Targ_PrintGraph (pass)
-    int	    pass; 	/* Which pass this is. 1 => no processing
-			 * 2 => processing done */
+Targ_PrintGraph(int pass)
 {
-	printf("#*** Input graph:\n");
-	Lst_ForEach(allTargets, TargPrintNode, (ClientData) &pass);
-	printf("\n\n");
-	printf("#\n#   Files that are only sources:\n");
-	Lst_ForEach(allTargets, TargPrintOnlySrc, (ClientData) 0);
-	printf("#*** Global Variables:\n");
-	Var_Dump(VAR_GLOBAL);
-	printf("#*** Command-line Variables:\n");
-	Var_Dump(VAR_CMD);
-	printf("\n");
+	debug_printf("#*** Input graph:\n");
+	Targ_PrintNodes(&allTargets, pass);
+	debug_printf("\n");
+	debug_printf("\n");
+
+	debug_printf("#\n");
+	debug_printf("#   Files that are only sources:\n");
+	PrintOnlySources();
+
+	debug_printf("#*** Global Variables:\n");
+	Var_Dump(SCOPE_GLOBAL);
+
+	debug_printf("#*** Command-line Variables:\n");
+	Var_Dump(SCOPE_CMDLINE);
+
+	debug_printf("\n");
 	Dir_PrintDirectories();
-	printf("\n");
+	debug_printf("\n");
+
 	Suff_PrintAll();
+}
+
+/*
+ * Propagate some type information to cohort nodes (those from the '::'
+ * dependency operator).
+ *
+ * Should be called after the makefiles are parsed but before any action is
+ * taken.
+ */
+void
+Targ_Propagate(void)
+{
+	GNodeListNode *ln, *cln;
+
+	for (ln = allTargets.first; ln != NULL; ln = ln->next) {
+		GNode *gn = ln->datum;
+		GNodeType type = gn->type;
+
+		if (!(type & OP_DOUBLEDEP))
+			continue;
+
+		for (cln = gn->cohorts.first; cln != NULL; cln = cln->next) {
+			GNode *cohort = cln->datum;
+
+			cohort->type |= type & ~OP_OPMASK;
+		}
+	}
 }
