@@ -30,6 +30,9 @@
 #define	_PATH_STDPATH \
 	"/usr/bin:/bin:/usr/sbin:/sbin:/usr/contrib/bin:/usr/old/bin"
 
+#define _PATH_DEVTAB_PATHS \
+	"/usr/local/etc:/etc:/etc/defaults"
+
 #define	_PATH_BSHELL	"/bin/sh"
 #define	_PATH_CSHELL	"/bin/csh"
 #define	_PATH_CP		"/bin/cp"

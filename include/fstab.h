@@ -18,7 +18,8 @@
  * then use concatenation of fs_file and "quotas" to locate
  * quota file.
  */
-#define	FSTAB		"/etc/fstab"
+#define	FSTAB			"/etc/fstab"
+#define _PATH_FSTAB 	FSTAB
 
 #define	FSTAB_RW	"rw"	/* read/write device */
 #define	FSTAB_RQ	"rq"	/* read/write with quotas */
@@ -29,16 +30,24 @@
 struct	fstab{
 	char	*fs_spec;		/* block special device name */
 	char	*fs_file;		/* file system path prefix */
+	char	*fs_vfstype;	/* File system type, ufs, nfs */
+	char	*fs_mntops;		/* Mount options ala -o */
 	char	*fs_type;		/* FSTAB_* */
 	int		fs_freq;		/* dump frequency, in days */
 	int		fs_passno;		/* pass number on parallel dump */
 };
 
+
+/* getdevpath(3) */
+#define _HAVE_GETDEVPATH	1	/* allow code conditionalization */
+#define GETDEVPATH_RAWDEV	0x0001
+
 #include <sys/cdefs.h>
 
-struct	fstab *getfsent();
-struct	fstab *getfsspec();
-struct	fstab *getfsfile();
-struct	fstab *getfstype();
-int	setfsent();
-int	endfsent();
+struct	fstab 	*getfsent(void);
+struct	fstab 	*getfsspec(char *name);
+struct	fstab 	*getfsfile(char *name);
+struct	fstab 	*getfstype(void);
+int				setfsent(void);
+int				endfsent(void);
+char			*getdevpath(const char *devname, int flags);

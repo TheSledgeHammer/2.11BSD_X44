@@ -31,11 +31,12 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)fstab.c	8.1.1 (2.11BSD) 1996/1/15";
 #endif /* LIBC_SCCS and not lint */
 
-#include <errno.h>
+#include <sys/errno.h>
 #include <fstab.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,12 +44,39 @@ static char sccsid[] = "@(#)fstab.c	8.1.1 (2.11BSD) 1996/1/15";
 #include <unistd.h>
 #include <sys/uio.h>
 
-extern	char	*__progname;
+//extern	char	*__progname;
 static FILE *_fs_fp;
 static struct fstab _fs_fstab;
+static char *path_fstab;
+static char fstab_path[PATH_MAX];
+static int fsp_set = 0;
 
 static void error(int);
 static int fstabscan(void);
+
+void
+setfstab(const char *file)
+{
+
+	if (file == NULL) {
+		path_fstab = _PATH_FSTAB;
+	} else {
+		strncpy(fstab_path, file, PATH_MAX);
+		fstab_path[PATH_MAX - 1] = '\0';
+		path_fstab = fstab_path;
+	}
+	fsp_set = 1;
+}
+
+const char *
+getfstab(void)
+{
+
+	if (fsp_set)
+		return (path_fstab);
+	else
+		return (_PATH_FSTAB);
+}
 
 static int
 fstabscan()

@@ -3,6 +3,6 @@
 
 .include <bsd.own.mk>
 
-SUBDIR=	btxld config mtree paxctl pwd_mkdb
+SUBDIR=	boot0cfg btxld config mtree paxctl pwd_mkdb
 
 .include <bsd.subdir.mk>
