@@ -76,40 +76,4 @@ struct advvm_bfs {
 };
 typedef struct advvm_bfs			advvm_bfs_t;
 
-/* Virtual Disks */
-
-/*
- * stgDescT - Describes a contiguous set of available (free) vd blocks.
- * These structures are used to maintain a list of free disk space.  There
- * is a free list in each vd structure.  The list is ordered by virtual
- * disk block (it could also be ordered by the size of each contiguous
- * set of blocks in the future).
- */
-struct advvm_stgdesc {
-	uint32_t						avd_startcluster;	/* vd cluster number of first free cluster */
-	uint32_t						avd_numcluster;		/* number of free clusters */
-
-	struct advvm_stgdesc 			*avd_prev;
-	struct advvm_stgdesc 			*avd_next;
-};
-
-/*
- * vd - this structure describes a virtual disk, including accessed
- * bitfile references, its size, i/o queues, name, id, and an
- * access handle for the metadata.
- */
-struct advvm_vdisk {
-	struct advvm_domain 			*avd_domain;		/* domain pointer for ds */
-	struct vnode					*avd_vp;			/* device access (temp vnode *) */
-	u_int 							avd_magic;			/* magic number: structure validation */
-	uint32_t						avd_vdindex;		/* 1-based virtual disk index */
-
-	uint32_t						avd_vdsize;			/* count of vdSectorSize blocks in vd */
-	int 							avd_vdsector; 		/* Sector size, in bytes, normally 512 */
-	uint32_t						avd_vdcluster;		/* num clusters in vd */
-
-	uint32_t						avd_numcluster;		/* num blks each stg bitmap bit */
-	struct advvm_stgdesc			*avd_freelist;		/* ptr to list of free storage descriptors */
-};
-
 #endif /* _ADVVM_BITFILE_H_ */

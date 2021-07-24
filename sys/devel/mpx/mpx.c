@@ -33,6 +33,7 @@
 #include <sys/kernel.h>
 #include <sys/vnode.h>
 #include <sys/conf.h>
+#include <sys/lock.h>
 #include <sys/file.h>
 #include <sys/errno.h>
 #include <sys/malloc.h>
@@ -100,7 +101,7 @@ mpx_ioctl(fp, cmd, data, p)
 	struct proc *p;
 {
 	struct mpx *mpx = fp->f_data;
-	MPX_LOCK(mpx);
+	MPX_LOCK(mpx->mpx_pair);
 
 	switch (cmd) {
 	case FIONBIO:
@@ -109,12 +110,12 @@ mpx_ioctl(fp, cmd, data, p)
 	case FIONREAD:
 		if (!(fp->f_flag & FREAD)) {
 			*(int *)data = 0;
-			MPX_UNLOCK(mpx);
+			MPX_UNLOCK(mpx->mpx_pair);
 			return (0);
 		}
 		break;
 	case FIOSETOWN:
-		MPX_UNLOCK(mpx);
+		MPX_UNLOCK(mpx->mpx_pair);
 		error = fsetown(&mpx->mpx_pgid, (*(int *)data));
 		goto out_unlocked;
 
@@ -122,7 +123,7 @@ mpx_ioctl(fp, cmd, data, p)
 		return fgetown(mpx->mpx_pgid, data);
 	}
 
-	MPX_UNLOCK(mpx);
+	MPX_UNLOCK(mpx->mpx_pair);
 
 out_unlocked:
 	return (error);
@@ -151,6 +152,7 @@ mpx_init()
 	struct mpx *mpx;
 	MALLOC(mpx, struct mpx *, sizeof(struct mpx *), M_MPX, M_WAITOK);
 	LIST_INIT(mpx->mpx_head);
+	simple_lock_init(mpx->mpx_pair, "mpx_lock");
 }
 
 
@@ -164,6 +166,11 @@ mpx_get_group(dev)
 		return (ENXIO);
 	}
 	return (groups[d]);
+}
+
+mpx_get_pgrp()
+{
+
 }
 
 struct mpx_chan *
@@ -282,7 +289,7 @@ mpxchan()
 			return;
 		gvp = gfp->f_data;
 		gp = &gvp->v_mpxgroup;
-		if (gp->mpg_vnode != gip) {
+		if (gp->mpg_vnode != gvp) {
 			u.u_error = ENXIO;
 			return;
 		}
@@ -324,7 +331,7 @@ mpxchan()
 				i = vap->va_mode & IFMT;
 				u.u_error = EEXIST;
 				if (i == IFMPC || i == IFMPB) {
-					i = minor(ip->i_un.i_rdev);
+					i = minor(vap->va_rdev);
 					gp = groups[i];
 					if (gp && gp->mpg_vnode == vp)
 						u.u_error = EBUSY;
@@ -332,7 +339,7 @@ mpxchan()
 				vput(vp);
 				return;
 			}
-			if (u.u_error)
+			if (u->u_error)
 				return;
 			vp = maknode((vec.m_arg[1] & 0777) + IFMPC);
 			if (vp == NULL)
@@ -347,8 +354,8 @@ mpxchan()
 			groups[i] = NULL;
 			return;
 		}
-		ip->i_un.i_rdev = (daddr_t) (mpxdev + i);
-		vp->vu_count++;
+		vap->va_rdev = (daddr_t) (mpxdev + i);
+		vp->v_usecount++;
 		vrele(vp);
 
 		gp = &vp->v_mpxgroup;
@@ -377,15 +384,15 @@ mpxchan()
 	case JOIN:
 		if ((fp = getf(vec.m_arg[0])) == NULL)
 			return;
-		ip = fp->f_inode;
-		switch (ip->i_mode & IFMT) {
+		vp = fp->f_data;
+		switch (vap->va_mode & IFMT) {
 
 		case IFMPC:
 			if ((fp->f_flag & FMP) != FMP) {
 				u.u_error = ENXIO;
 				return;
 			}
-			ngp = &ip->i_un.i_group;
+			ngp = &vp->v_group;
 			if (mtree(ngp, gp) == NULL)
 				return;
 			fp->f_count++;
@@ -393,7 +400,7 @@ mpxchan()
 			return;
 
 		case IFCHR:
-			dev = (dev_t) ip->i_un.i_rdev;
+			dev = (dev_t) vap->va_rdev;
 			tp = cdevsw[major(dev)].d_ttys;
 			if (tp == NULL) {
 				u.u_error = ENXIO;
@@ -409,7 +416,7 @@ mpxchan()
 				return;
 			}
 			tp->t_chan = cp;
-			cp->mpc_fy = fp;
+			cp->mpc_group->mpg_file = fp;
 			fp->f_count++;
 			cp->mpc_ttyp = tp;
 			cp->mpc_line = tp->t_line;
@@ -459,17 +466,17 @@ mpxchan()
 			mxfalloc(((struct mpx_group*) cp)->mpg_file);
 			return;
 		}
-		if ((fp = cp->mpc_fy) != NULL) {
+		if ((fp = cp->mpc_group->mpg_file) != NULL) {
 			mxfalloc( fp);
 			return;
 		}
 		if ((fp = falloc()) == NULL)
 			return;
-		fp->f_inode = gip;
-		gip->i_count++;
+		fp->f_vnode = gvp;
+		gvp->v_usecount++;
 		fp->f_un.f_chan = cp;
 		fp->f_flag = (vec.m_arg[2]) ? (FMPY) : (FMPX);
-		cp->c_fy = fp;
+		cp->mpc_group->mpg_file = fp;
 		return;
 
 		/*
@@ -484,9 +491,9 @@ mpxchan()
 			return;
 		}
 		cp->mpc_flags = XGRP;
-		cp->mpc_file = NULL;
-		cp->c_ttyp = cp->c_ottyp = (struct tty*) cp;
-		cp->c_line = cp->c_oline = mpxline;
+		cp->mpc_group->mpg_file = NULL;
+		cp->mpc_ttyp = cp->mpc_ottyp = (struct tty*) cp;
+		cp->mpc_line = cp->mpc_oline = mpxline;
 		u.u_r.r_val1 = cpx(cp);
 		return;
 
@@ -508,14 +515,14 @@ mpxchan()
 			u.u_error = ENXIO;
 			return;
 		}
-		dev = (dev_t) ip->i_un.i_rdev;
+		dev = (dev_t) vap->va_rdev;
 		tp = cdevsw[major(dev)].d_ttys;
 		if (tp == NULL) {
 			u.u_error = ENXIO;
 			return;
 		}
 		tp = &tp[minor(dev)];
-		if (!(chfp->f_flag & FMPY)) {
+		if (!(chfp->f_flag && FMPY)) {
 			u.u_error = ENXIO;
 			return;
 		}
@@ -526,13 +533,13 @@ mpxchan()
 		}
 		i = vec.m_arg[2];
 		if (i >= 0) {
-			cp->c_ottyp = tp;
-			cp->c_oline = tp->t_line;
+			cp->mpc_ottyp = tp;
+			cp->mpc_oline = tp->t_line;
 		}
 		if (i <= 0) {
 			tp->t_chan = cp;
-			cp->c_ttyp = tp;
-			cp->c_line = tp->t_line;
+			cp->mpc_ttyp = tp;
+			cp->mpc_line = tp->t_line;
 		}
 		u.u_r.r_val1 = 0;
 		return;
@@ -552,7 +559,7 @@ mpxchan()
 		if (vec.m_arg[2])
 			pp->p_pgrp = vec.m_arg[2];
 		if (gp != NULL)
-			cp->mpc_pgrp = pp->p_pgrp;
+			cp->mpc_group->mpg_pgrp = pp->p_pgrp;
 		u.u_r.r_val1 = pp->p_pgrp;
 		return;
 	}
@@ -563,7 +570,7 @@ mpxchan()
 			u.u_error = ENXIO;
 			return;
 		}
-		signal(cp->c_pgrp, vec.m_arg[2]);
+		signal(cp->mpc_pgrp, vec.m_arg[2]);
 		u.u_r.r_val1 = vec.m_arg[2];
 		return;
 
@@ -598,13 +605,13 @@ mpx_detach(cp)
 		master->mpg_chans[index] = NULL;
 		return;
 	} else if ((cp->mpc_flags & PORT) && cp->mpc_ttyp != NULL) {
-		struct mpx_group *cpg = mpx_get_chan_group(cp);
+		struct mpx_group *cpg = mpx_get_group(cp);
 		closef(cpg->mpg_file);
 		chdrain(cp);
 		chfree(cp);
 		return;
 	}
-	if (cp->mpc_file && (cp->mpc_flags & WCLOSE) == 0) {
+	if (mpx_get_group(cp)->mpg_file && (cp->mpc_flags & WCLOSE) == 0) {
 		cp->mpc_flags |= WCLOSE;
 		chwake(cp);
 	} else {
@@ -707,6 +714,7 @@ mdown(sub, master)
 	return (maxdepth + 1);
 }
 
+#include <sys/tty.h>
 /*
  * Mcread and mcwrite move data on an mpx file.
  * Transfer addr and length is controlled by mxread/mxwrite.
@@ -731,7 +739,7 @@ mcread(cp)
 		rele(mpxip);
 	}
 	if (cp->mpc_flags & PORT)
-		return (cp->mpc_ctlx.c_cc + cp->c_ttyp->t_rawq.c_cc);
+		return (cp->mpc_ctlx.c_cc + cp->mpc_ttyp->t_rawq.c_cc);
 	else
 		return (cp->mpc_ctlx.c_cc + cp->cx.datq.c_cc);
 
@@ -765,12 +773,13 @@ register struct mpx_chan *cp;
  */
 void
 msread(fmp, cp)
+	int fmp;
 	register struct mpx_chan *cp;
 {
 	register struct clist *q;
 	int s;
 
-	q = (fmp & FMPX) ? &cp->cx.datq : &cp->cy.datq;
+	q = (fmp && FMPX) ? &cp->cx.datq : &cp->cy.datq;
 	s = spl6();
 	while (q->c_cc == 0) {
 		if (cp->mpc_flags & EOTMARK) {
@@ -799,12 +808,13 @@ msread(fmp, cp)
 
 void
 mswrite(fmp, cp)
+	int fmp;
 	register struct mpx_chan *cp;
 {
 	register struct clist *q;
 	register int cc;
 
-	q = (fmp & FMPX) ? &cp->cy.datq : &cp->cx.datq;
+	q = (fmp && FMPX) ? &cp->cy.datq : &cp->cx.datq;
 	while (u.u_count) {
 		spl6();
 		if (cp->mpc_flags & WCLOSE) {
@@ -819,7 +829,7 @@ mswrite(fmp, cp)
 				return;
 			}
 			sdata( cp);
-			cp->c_flags |= BLOCK;
+			cp->mpc_flags |= BLOCK;
 			sleep((caddr_t) q + 1, TTOPRI);
 			spl0();
 			continue;
@@ -829,7 +839,7 @@ mswrite(fmp, cp)
 		if (cc < 0)
 			break;
 	}
-	if (fmp & FMPX) {
+	if (fmp && FMPX) {
 		if (cp->mpc_flags & YGRP)
 			sdata( cp);
 		else

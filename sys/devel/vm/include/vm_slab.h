@@ -43,10 +43,9 @@ struct slab_metadata {
 };
 typedef struct slab_metadata    *slab_metadata_t;
 
-struct slablist;
-CIRCLEQ_HEAD(slablist, slab);
 struct slab {
     CIRCLEQ_ENTRY(slab)         s_list;                                         /* slab list entry */
+    struct kmembuckets			*s_bucket;										/* slab kmembucket */
 
     slab_metadata_t             s_meta;                                         /* slab metadata */
     void						*s_metaaddr;
@@ -58,28 +57,18 @@ struct slab {
     int							s_flags;										/* slab flags */
     int                         s_refcount;
     int                         s_usecount;                                     /* usage counter for slab caching */
-
-    struct kmembuckets			*s_bucket;										/* slab kmembucket */
-    struct extent				*s_extent;										/* slab extent */
 };
 typedef struct slab             *slab_t;
 
-struct slab_cache_list;
-TAILQ_HEAD(slab_cache_list, slab_cache);
 struct slab_cache {
-	TAILQ_ENTRY(slab_cache)		sc_cache_links;
-	slab_t						sc_slab;
+	CIRCLEQ_HEAD(, slab)		sc_head;
+
 };
 typedef struct slab_cache      *slab_cache_t;
 
-struct slab_cache_list	        slab_cache_list;
-int			                    slab_cache_count;                               /* number of items in cache */
-
-struct slablist			        slab_list;
+struct slab			        	slab_list;
 int			                    slab_count;                                     /* number of items in slablist */
 
-#define slab_cache_lock(lock)	simple_lock(lock)
-#define slab_cache_unlock(lock)	simple_unlock(lock)
 #define slab_lock(lock)			simple_lock(lock)
 #define slab_unlock(lock)		simple_unlock(lock)
 
@@ -102,12 +91,12 @@ int			                    slab_count;                                     /* num
 #define SLOTSFREE(bsize, size)  (BUCKET_SLOTS(bsize) - ALLOCATED_SLOTS(size)) 	/* free slots in bucket (s = size) */
 
 /* proto types */
-void	slab_create(slab_t);
-void 	slab_malloc(u_long, int, int);
-void 	slab_free(void *, int);
-slab_t	slab_object(struct slablist *, long);
-slab_t  slab_lookup(u_long, int);
-void	slab_insert(slab_t, u_long, int, int);
-void	slab_remove(slab_t);
+void				slab_init(void);
+slab_t				slab_object(slab_cache_t, long);
+slab_t  			slab_lookup(slab_cache_t, long, int);
+void				slab_insert(slab_cache_t, long, int, int);
+void				slab_remove(slab_cache_t, long);
+struct kmembuckets 	*slab_kmembucket(slab_t);
+struct kmembuckets 	*kmembucket_search(slab_cache_t, slab_metadata_t, long, int, int);
 
 #endif /* _VM_SLAB_H_ */

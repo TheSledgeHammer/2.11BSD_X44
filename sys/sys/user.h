@@ -29,7 +29,7 @@
 #include <sys/types.h>
 #include <sys/ucred.h>
 #include <vm/include/vm.h>			/* XXX */
-//#endif
+
 /*
  * data that doesn't need to be referenced while the process is swapped.
  * The user block is USIZE*64 bytes long; resides at virtual kernel loc

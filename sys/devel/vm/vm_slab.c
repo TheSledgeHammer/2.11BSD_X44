@@ -43,7 +43,6 @@
  * TODO:
  * - allocate slab_cache
  * - setup slab routines to use kmembuckets instead of BUCKETINDX(size)
- * - Implement suitable hash algorithms
  */
 
 #include <sys/extent.h>
@@ -52,25 +51,20 @@
 #include <devel/sys/malloctypes.h>
 #include <devel/vm/include/vm_slab.h>
 
-#define SLAB_BUCKET_HASH_COUNT 		(MINBUCKET + 16)
-
-struct slablist 					slab_list[SLAB_BUCKET_HASH_COUNT];
-struct slab_cache_list 				slab_cache_list;
-
-simple_lock_data_t					slab_list_lock;
-simple_lock_data_t					slab_cache_list_lock;
+struct slab_cache       *slabCache;
+struct slab 			slab_list[MINBUCKET + 16];
+simple_lock_data_t		slab_list_lock;
 
 void
 slab_init()
 {
-	register int i;
-
 	simple_lock_init(&slab_list_lock, "slab_list_lock");
-	simple_lock_init(&slab_cache_list_lock, "slab_cache_list_lock");
 
-	for(i = 0; i < SLAB_BUCKET_HASH_COUNT; i++) {
-		CIRCLEQ_INIT(&slab_list[i]);
-	}
+	slabCache = (slab_cache_t) rmalloc(coremap, sizeof(slab_cache_t));
+
+	CIRCLEQ_INIT(&slabCache->sc_head);
+
+	slab_count = 0;
 }
 
 /* slab metadata */
@@ -108,115 +102,31 @@ slabmeta(slab, size)
 	}
 }
 
-/* slab cache routines */
-
-long
-slab_cache_hash(slab)
-	slab_t slab;
+slab_t
+slab_object(cache, size)
+    slab_cache_t cache;
+    long    size;
 {
-	Fnv32_t hash1 = fnv_32_buf(&slab, sizeof(&slab), FNV1_32_INIT) % SLAB_BUCKET_HASH_COUNT;
-	Fnv32_t hash2 = (((unsigned long)slab)%SLAB_BUCKET_HASH_COUNT);
-	return (hash1^hash2);
-}
-
-void
-slab_cache_insert(slab)
-	slab_t slab;
-{
-	struct slab_cache_list *cache;
-	slab_cache_t			entry;
-
-	if(slab == NULL) {
-		return;
-	}
-
-	cache = &slab_cache_list[cache_hash(slab)];
-	entry = malloc(sizeof(slab_cache_t));			/* TODO allocate */
-	entry->sc_slab = slab;
-
-	slab_cache_lock(&slab_cache_list_lock);
-	TAILQ_INSERT_HEAD(cache, entry, sc_cache_links);
-	slab_cache_unlock(&slab_cache_list_lock);
-	slab_cache_count++;
-}
-
-void
-slab_cache_remove(slab)
-	slab_t slab;
-{
-	struct slab_cache_list *cache;
-	slab_cache_t			entry;
-
-	cache = &slab_cache_list[cache_hash(slab)];
-	slab_cache_lock(&slab_cache_list_lock);
-	for(entry = TAILQ_FIRST(cache); entry != NULL; entry = TAILQ_NEXT(entry, sc_cache_links)) {
-		slab = entry->sc_slab;
-		if(slab) {
-			TAILQ_REMOVE(cache, entry, sc_cache_links);
-			slab_cache_count--;
-			slab_cache_unlock(&slab_cache_list_lock);
-		}
-	}
-}
-
-slab_cache_t
-slab_cache_lookup(slab)
-	slab_t slab;
-{
-	struct slab_cache_list *cache;
-	slab_cache_t			entry;
-
-	cache = &slab_cache_list[cache_hash(slab)];
-	slab_cache_lock(&slab_cache_list_lock);
-	for(entry = TAILQ_FIRST(cache); entry != NULL; entry = TAILQ_NEXT(entry, sc_cache_links)) {
-		slab = entry->sc_slab;
-		if(slab) {
-			TAILQ_REMOVE(cache, entry, sc_cache_links);
-			slab_cache_count--;
-			slab_cache_unlock(&slab_cache_list_lock);
-			return (cache);
-		}
-	}
-	slab_cache_unlock(&slab_cache_list_lock);
-	return (NULL);
-}
-
-/* slab routines */
-
-long
-slab_bucket_hash(bucket)
-	struct kmembuckets *bucket;
-{
-	Fnv32_t hash1 = fnv_32_buf(&bucket, sizeof(&bucket), FNV1_32_INIT) % SLAB_BUCKET_HASH_COUNT;
-	Fnv32_t hash2 = (((unsigned long)bucket)%SLAB_BUCKET_HASH_COUNT);
-	return (hash1^hash2);
+    register slab_t   slab;
+    if(LARGE_OBJECT(size)) {
+        slab = CIRCLEQ_LAST(&cache->sc_head);
+    } else {
+        slab = CIRCLEQ_FIRST(&cache->sc_head);
+    }
+    return (slab);
 }
 
 slab_t
-slab_object(slabs, size)
-	struct slablist   *slabs;
-	long    size;
+slab_lookup(cache, size, mtype)
+	slab_cache_t 	cache;
+	long    		size;
+	int 			mtype;
 {
-	register slab_t   slab;
-	if(LARGE_OBJECT(size)) {
-		slab = CIRCLEQ_LAST(slabs);
-	} else {
-		slab = CIRCLEQ_FIRST(slabs);
-	}
-	return (slab);
-}
-
-slab_t
-slab_lookup(size, mtype)
-	long    size;
-	int 	mtype;
-{
-    struct slablist   *slabs;
     register slab_t   slab;
 
-    slabs = &slab_list[BUCKETINDX(size)];
+    slab = &slab_list[BUCKETINDX(size)];
     slab_lock(&slab_list_lock);
-	for(slab = slab_object(slabs, size); slab != NULL; slab = CIRCLEQ_NEXT(slab, s_list)) {
+	for(slab = slab_object(cache, size); slab != NULL; slab = CIRCLEQ_NEXT(slab, s_list)) {
 		if(slab->s_size == size && slab->s_mtype == mtype) {
 			slab_unlock(&slab_list_lock);
 			return (slab);
@@ -227,32 +137,28 @@ slab_lookup(size, mtype)
 }
 
 void
-slab_insert(slab, size, mtype, flags)
-    slab_t  slab;
-    u_long  size;
-    int	    mtype, flags;
+slab_insert(cache, size, mtype, flags)
+	slab_cache_t cache;
+    long  		size;
+    int	    	mtype, flags;
 {
-    register struct slablist  *slabs;
+    register slab_t slab;
     register u_long indx;
-
-    if(slab == NULL) {
-        return;
-    }
 
 	indx = BUCKETINDX(size);
 	slab->s_size = size;
 	slab->s_mtype = mtype;
 	slab->s_flags = flags;
 
-    slabs = &slab_list[BUCKETINDX(size)];
+    slab = &slab_list[BUCKETINDX(size)];
 
     slab_lock(&slab_list_lock);
 	if (indx < 10) {
 		slab->s_stype = SLAB_SMALL;
-		  CIRCLEQ_INSERT_HEAD(slabs, slab, s_list);
+		  CIRCLEQ_INSERT_HEAD(cache->sc_head, slab, s_list);
 	} else {
 		slab->s_stype = SLAB_LARGE;
-		CIRCLEQ_INSERT_TAIL(slabs, slab, s_list);
+		CIRCLEQ_INSERT_TAIL(cache->sc_head, slab, s_list);
 	}
 	slab_unlock(&slab_list_lock);
     slab_count++;
@@ -262,14 +168,91 @@ slab_insert(slab, size, mtype, flags)
 }
 
 void
-slab_remove(slab)
-	slab_t  slab;
+slab_remove(cache, size)
+	slab_cache_t cache;
+	long  	size;
 {
-	struct slablist *slabs;
+	slab_t slab;
 
-	slabs = &slab_list[BUCKETINDX(slab->s_size)];
+	slab = &slab_list[BUCKETINDX(size)];
 	slab_lock(&slab_list_lock);
-	CIRCLEQ_REMOVE(slabs, slab, s_list);
+	CIRCLEQ_REMOVE(cache->sc_head, slab, s_list);
 	slab_unlock(&slab_list_lock);
 	slab_count--;
 }
+
+struct kmembuckets *
+slab_kmembucket(slab)
+	slab_t slab;
+{
+    if(slab->s_bucket != NULL) {
+        return (slab->s_bucket);
+    }
+    return (NULL);
+}
+
+/*
+ * search array for an empty bucket or partially full bucket that can fit
+ * block of memory to be allocated
+ */
+struct kmembuckets *
+kmembucket_search(cache, meta, size, mtype, flags)
+	slab_cache_t    cache;
+	slab_metadata_t meta;
+	long size;
+	int mtype, flags;
+{
+	register slab_t slab, next;
+	register struct kmembuckets *kbp;
+	long indx, bsize;
+	int bslots, aslots, fslots;
+
+	slab = slab_lookup(cache, size, mtype);
+
+	indx = BUCKETINDX(size);
+	bsize = BUCKETSIZE(indx);
+	bslots = BUCKET_SLOTS(bsize);
+	aslots = ALLOCATED_SLOTS(slab->s_size);
+	fslots = SLOTSFREE(bslots, aslots);
+
+	switch (flags) {
+	case SLAB_FULL:
+		next = CIRCLEQ_NEXT(slab, s_list);
+		CIRCLEQ_FOREACH(next, &cache->sc_head, s_list) {
+			if(next != slab) {
+				if(next->s_flags == SLAB_PARTIAL) {
+					slab = next;
+					if (bsize > meta->sm_bsize && bslots > meta->sm_bslots && fslots > meta->sm_fslots) {
+						kbp = slab_kmembucket(slab);
+						slabmeta(slab, slab->s_size);
+						return (kbp);
+					}
+				}
+				if(next->s_flags == SLAB_EMPTY) {
+					slab = next;
+					kbp = slab_kmembucket(slab);
+					slabmeta(slab, slab->s_size);
+					return (kbp);
+				}
+			}
+			return (NULL);
+		}
+		break;
+
+	case SLAB_PARTIAL:
+		if (bsize > meta->sm_bsize && bslots > meta->sm_bslots && fslots > meta->sm_fslots) {
+			kbp = slab_kmembucket(slab);
+			slabmeta(slab, slab->s_size);
+			return (kbp);
+		}
+		break;
+
+	case SLAB_EMPTY:
+		kbp = slab_kmembucket(slab);
+		slabmeta(slab, slab->s_size);
+		return (kbp);
+	}
+	return (NULL);
+}
+
+

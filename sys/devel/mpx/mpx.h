@@ -47,6 +47,7 @@
 #include <sys/vnode.h>
 #include <sys/fcntl.h>
 #include <sys/queue.h>
+#include <sys/lock.h>
 #include <sys/user.h>
 
 /* belongs in vnode.h */
@@ -73,10 +74,16 @@ struct mpx_chan {
 		struct	mpx_chan			*c_chan;
 	} cy;
 	struct	clist					mpc_ctly;
+
+
+	struct	tty						*mpc_ttyp;
+	struct	tty						*mpc_ottyp;
+	char							mpc_line;
+	char							mpc_oline;
 };
 
 struct mpx_schan {
-	LIST_ENTRY(channel)			 	mps_entry;
+	LIST_ENTRY(mpx_schan)			mps_entry;
 	char 							mps_index;
 	int 							mps_flags;
 	struct mpx_group				*mps_group;
@@ -85,13 +92,16 @@ struct mpx_schan {
 };
 
 struct chan_list;
+LIST_HEAD(chan_list, mpx_schan);
 struct mpx {
-	LIST_HEAD(chan_list, mpx_schan) mpx_head;
+	struct chan_list 				mpx_head;
 	struct mpxpair					*mpx_pair;
 	struct mpx_chan 				*mpx_chan;
 	int 							mpx_state;
 	ino_t							mpx_ino;
 	struct file						*mpx_pgid;
+
+	//struct prgp						*mpx_pgrp; 	/* proc group */
 };
 
 /*
