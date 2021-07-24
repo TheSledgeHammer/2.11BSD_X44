@@ -1,96 +1,179 @@
+/* $NetBSD: tputs.c,v 1.5 2019/10/03 18:02:05 christos Exp $ */
+
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 2009 The NetBSD Foundation, Inc.
+ *
+ * This code is derived from software contributed to The NetBSD Foundation
+ * by Roy Marples.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <sys/cdefs.h>
-#if	!defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)tputs.c	5.1 (Berkeley) 6/5/85";
-#endif not lint
+__RCSID("$NetBSD: tputs.c,v 1.5 2019/10/03 18:02:05 christos Exp $");
 
-#include <sgtty.h>
+#include <assert.h>
 #include <ctype.h>
+#include <stdio.h>
+#include <string.h>
+#include <term_private.h>
+#include <term.h>
 
 /*
  * The following array gives the number of tens of milliseconds per
  * character for each speed as returned by gtty.  Thus since 300
  * baud returns a 7, there are 33.3 milliseconds per char at 300 baud.
  */
-static short tmspc10[] = {
+static const short tmspc10[] = {
 	0, 2000, 1333, 909, 743, 666, 500, 333, 166, 83, 55, 41, 20, 10, 5
 };
 
-short	ospeed;
-char	PC;
+short ospeed;
+char PC;
 
-/*
- * Put the character string cp out, with padding.
- * The number of affected lines is affcnt, and the routine
- * used to output one character is outc.
- */
-tputs(cp, affcnt, outc)
-	register char *cp;
-	int affcnt;
-	int (*outc)();
+static int
+_ti_calcdelay(const char **str, int affcnt, int *mand)
 {
-	register int i = 0;
-	register int mspc10;
+	int i;
 
-	if (cp == 0)
-		return;
-
-	/*
-	 * Convert the number representing the delay.
-	 */
-	if (isdigit(*cp)) {
-		do
-			i = i * 10 + *cp++ - '0';
-		while (isdigit(*cp));
-	}
+	i = 0;
+	/* Convert the delay */
+	while (isdigit(*(const unsigned char *)*str))
+		i = i * 10 + *(*str)++ - '0';
 	i *= 10;
-	if (*cp == '.') {
-		cp++;
-		if (isdigit(*cp))
-			i += *cp - '0';
-		/*
-		 * Only one digit to the right of the decimal point.
-		 */
-		while (isdigit(*cp))
-			cp++;
+	if (*(*str) == '.') {
+		(*str)++;
+		if (isdigit(*(const unsigned char *)*str))
+			i += *(*str) - '0';
+		while (isdigit(*(const unsigned char *)*str))
+			(*str)++;
+	}
+	if (*(*str) == '*') {
+		(*str)++;
+		i *= affcnt;
+	} else if (*(*str) == '/') {
+		(*str)++;
+		if (mand != NULL)
+			*mand = 1;
+	}
+	return i;
+}
+
+static void
+_ti_outputdelay(int delay, short os, char pc,
+    int (*outc)(int, void *), void *args)
+{
+	int mspc10;
+
+	if (delay < 1 || os < 1 || (size_t)os >= __arraycount(tmspc10))
+		return;
+
+	mspc10 = tmspc10[os];
+	delay += mspc10 / 2;
+	for (delay /= mspc10; delay > 0; delay--)
+		outc(pc, args);
+}
+
+static int
+_ti_puts(int dodelay, short os, char pc,
+    const char *str, int affcnt, int (*outc)(int, void *), void *args)
+{
+	int taildelay, delay, mand;
+
+	if (str == NULL)
+		return OK;
+
+	taildelay = _ti_calcdelay(&str, affcnt, NULL);
+
+	/* Output the string with embedded delays */
+	for (; *str != '\0'; str++) {
+		if (str[0] != '$' ||
+		    str[1] != '<' ||
+		    !(isdigit((const unsigned char)str[2]) || str[2] == '.') ||
+		    strchr(str + 3, '>') == NULL)
+		{
+			outc(*str, args);
+		} else {
+			str += 2;
+			mand = 0;
+			delay = _ti_calcdelay(&str, affcnt, &mand);
+			if (dodelay != 0 || mand != 0)
+				_ti_outputdelay(delay, os, pc, outc, args);
+		}
 	}
 
-	/*
-	 * If the delay is followed by a `*', then
-	 * multiply by the affected lines count.
-	 */
-	if (*cp == '*')
-		cp++, i *= affcnt;
+	/* Delay if needed */
+	if (dodelay)
+		_ti_outputdelay(taildelay, os, pc, outc, args);
 
-	/*
-	 * The guts of the string.
-	 */
-	while (*cp)
-		(*outc)(*cp++);
+	return OK;
+}
 
-	/*
-	 * If no delay needed, or output speed is
-	 * not comprehensible, then don't try to delay.
-	 */
-	if (i == 0)
-		return;
-	if (ospeed <= 0 || ospeed >= (sizeof tmspc10 / sizeof tmspc10[0]))
-		return;
+int
+ti_puts(const TERMINAL *term, const char *str, int affcnt,
+    int (*outc)(int, void *), void *args)
+{
+	int dodelay;
+	char pc;
 
-	/*
-	 * Round up by a half a character frame,
-	 * and then do the delay.
-	 * Too bad there are no user program accessible programmed delays.
-	 * Transmitting pad characters slows many
-	 * terminals down and also loads the system.
-	 */
-	mspc10 = tmspc10[ospeed];
-	i += mspc10 / 2;
-	for (i /= mspc10; i > 0; i--)
-		(*outc)(PC);
+	_DIAGASSERT(term != NULL);
+	_DIAGASSERT(str != NULL);
+	_DIAGASSERT(outc != NULL);
+
+	dodelay = (str == t_bell(term) ||
+	    str == t_flash_screen(term) ||
+	    (t_xon_xoff(term) == 0 && t_padding_baud_rate(term) != 0));
+
+	if (t_pad_char(term) == NULL)
+	    pc = '\0';
+	else
+	    pc = *t_pad_char(term);
+	return _ti_puts(dodelay, term->_ospeed, pc,
+	    str, affcnt, outc, args);
+}
+
+int
+ti_putp(const TERMINAL *term, const char *str)
+{
+
+	_DIAGASSERT(term != NULL);
+	_DIAGASSERT(str != NULL);
+	return ti_puts(term, str, 1,
+	    (int (*)(int, void *))(void *)putchar, NULL);
+}
+
+int
+tputs(const char *str, int affcnt, int (*outc)(int))
+{
+
+	_DIAGASSERT(str != NULL);
+	_DIAGASSERT(outc != NULL);
+	return _ti_puts(1, ospeed, PC, str, affcnt,
+	    (int (*)(int, void *))(void *)outc, NULL);
+}
+
+int
+putp(const char *str)
+{
+
+	_DIAGASSERT(str != NULL);
+	return tputs(str, 1, putchar);
 }

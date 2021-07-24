@@ -41,7 +41,6 @@ CPPFLAGS+=	-I${NETBSDSRCDIR}/usr.sbin/mtree \
 DPADD+= ${LIBUTIL}
 LDADD+= -lutil
 .endif
-.endif
 
 MAN=	pax.1
 

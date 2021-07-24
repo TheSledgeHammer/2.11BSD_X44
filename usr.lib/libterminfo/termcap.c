@@ -1,350 +1,604 @@
+/* $NetBSD: termcap.c,v 1.24 2020/04/05 14:53:39 martin Exp $ */
+
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 2009 The NetBSD Foundation, Inc.
+ *
+ * This code is derived from software contributed to The NetBSD Foundation
+ * by Roy Marples.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <sys/cdefs.h>
-#if	!defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)termcap.c	5.1 (Berkeley) 6/5/85";
-#endif not lint
+__RCSID("$NetBSD: termcap.c,v 1.24 2020/04/05 14:53:39 martin Exp $");
 
-#define	BUFSIZ		1024
-#define MAXHOP		32	/* max number of tc= indirections */
-#define	E_TERMCAP	"/etc/termcap"
-
+#include <assert.h>
 #include <ctype.h>
-/*
- * termcap - routines for dealing with the terminal capability data base
- *
- * BUG:		Should use a "last" pointer in tbuf, so that searching
- *		for capabilities alphabetically would not be a n**2/2
- *		process when large numbers of capabilities are given.
- * Note:	If we add a last pointer now we will screw up the
- *		tc capability. We really should compile termcap.
- *
- * Essentially all the work here is scanning and decoding escapes
- * in string capabilities.  We don't use stdio because the editor
- * doesn't, and because living w/o it is not hard.
- */
+#include <errno.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+#include <term_private.h>
+#include <term.h>
+#include <termcap.h>
+#include <unistd.h>
+#include <stdio.h>
 
-static	char *tbuf;
-static	int hopcount;	/* detect infinite loops in termcap, init 0 */
-char	*tskip();
-char	*tgetstr();
-char	*tdecode();
-char	*getenv();
+#include "termcap_map.c"
+#include "termcap_hash.c"
 
-/*
- * Get an entry for terminal name in buffer bp,
- * from the termcap file.  Parse is very rudimentary;
- * we just notice escaped newlines.
- */
-tgetent(bp, name)
-	char *bp, *name;
+char *UP;
+char *BC;
+
+/* ARGSUSED */
+int
+tgetent(__unused char *bp, const char *name)
 {
-	register char *cp;
-	register int c;
-	register int i = 0, cnt = 0;
-	char ibuf[BUFSIZ];
-	int tf;
+	int errret;
+	static TERMINAL *last = NULL;
 
-	tbuf = bp;
-	tf = -1;
-#ifndef V6
-	cp = getenv("TERMCAP");
-	/*
-	 * TERMCAP can have one of two things in it. It can be the
-	 * name of a file to use instead of /etc/termcap. In this
-	 * case it better start with a "/". Or it can be an entry to
-	 * use so we don't have to read the file. In this case it
-	 * has to already have the newlines crunched out.
-	 */
-	if (cp && *cp) {
-		if (*cp == '/') {
-			tf = open(cp, 0);
-		} else {
-			tbuf = cp;
-			c = tnamatch(name);
-			tbuf = bp;
-			if (c) {
-				strcpy(bp,cp);
-				return(tnchktc());
-			}
+	_DIAGASSERT(name != NULL);
+
+	/* Free the old term */
+	if (cur_term != NULL) {
+		if (last != NULL && cur_term != last)
+			del_curterm(last);
+		last = cur_term;
+	}
+	errret = -1;
+	if (setupterm(name, STDOUT_FILENO, &errret) != 0)
+		return errret;
+
+	if (last == NULL)
+		last = cur_term;
+
+	if (pad_char != NULL)
+		PC = pad_char[0];
+	UP = __UNCONST(cursor_up);
+	BC = __UNCONST(cursor_left);
+	return 1;
+}
+
+int
+tgetflag(const char *id2)
+{
+	uint32_t ind;
+	size_t i;
+	TERMUSERDEF *ud;
+	const char id[] = { id2[0], id2[0] ? id2[1] : '\0', '\0' };
+
+	if (cur_term == NULL)
+		return 0;
+
+	ind = _t_flaghash((const unsigned char *)id, strlen(id));
+	if (ind < __arraycount(_ti_cap_flagids)) {
+		if (strcmp(id, _ti_cap_flagids[ind].id) == 0)
+			return cur_term->flags[_ti_cap_flagids[ind].ti];
+	}
+	for (i = 0; i < cur_term->_nuserdefs; i++) {
+		ud = &cur_term->_userdefs[i];
+		if (ud->type == 'f' && strcmp(ud->id, id) == 0)
+			return ud->flag;
+	}
+	return 0;
+}
+
+int
+tgetnum(const char *id2)
+{
+	uint32_t ind;
+	size_t i;
+	TERMUSERDEF *ud;
+	const TENTRY *te;
+	const char id[] = { id2[0], id2[0] ? id2[1] : '\0', '\0' };
+
+	if (cur_term == NULL)
+		return -1;
+
+	ind = _t_numhash((const unsigned char *)id, strlen(id));
+	if (ind < __arraycount(_ti_cap_numids)) {
+		te = &_ti_cap_numids[ind];
+		if (strcmp(id, te->id) == 0) {
+			if (!VALID_NUMERIC(cur_term->nums[te->ti]))
+				return ABSENT_NUMERIC;
+			return cur_term->nums[te->ti];
 		}
 	}
-	if (tf < 0)
-		tf = open(E_TERMCAP, 0);
-#else
-	tf = open(E_TERMCAP, 0);
-#endif
-	if (tf < 0)
-		return (-1);
-	for (;;) {
-		cp = bp;
-		for (;;) {
-			if (i == cnt) {
-				cnt = read(tf, ibuf, BUFSIZ);
-				if (cnt <= 0) {
-					close(tf);
-					return (0);
-				}
-				i = 0;
-			}
-			c = ibuf[i++];
-			if (c == '\n') {
-				if (cp > bp && cp[-1] == '\\'){
-					cp--;
-					continue;
-				}
-				break;
-			}
-			if (cp >= bp+BUFSIZ) {
-				write(2,"Termcap entry too long\n", 23);
-				break;
-			} else
-				*cp++ = c;
-		}
-		*cp = 0;
-
-		/*
-		 * The real work for the match.
-		 */
-		if (tnamatch(name)) {
-			close(tf);
-			return(tnchktc());
+	for (i = 0; i < cur_term->_nuserdefs; i++) {
+		ud = &cur_term->_userdefs[i];
+		if (ud->type == 'n' && strcmp(ud->id, id) == 0) {
+			if (!VALID_NUMERIC(ud->num))
+				return ABSENT_NUMERIC;
+			return ud->num;
 		}
 	}
+	return -1;
 }
 
-/*
- * tnchktc: check the last entry, see if it's tc=xxx. If so,
- * recursively find xxx and append that entry (minus the names)
- * to take the place of the tc=xxx entry. This allows termcap
- * entries to say "like an HP2621 but doesn't turn on the labels".
- * Note that this works because of the left to right scan.
- */
-tnchktc()
-{
-	register char *p, *q;
-	char tcname[16];	/* name of similar terminal */
-	char tcbuf[BUFSIZ];
-	char *holdtbuf = tbuf;
-	int l;
-
-	p = tbuf + strlen(tbuf) - 2;	/* before the last colon */
-	while (*--p != ':')
-		if (p<tbuf) {
-			write(2, "Bad termcap entry\n", 18);
-			return (0);
-		}
-	p++;
-	/* p now points to beginning of last field */
-	if (p[0] != 't' || p[1] != 'c')
-		return(1);
-	strcpy(tcname,p+3);
-	q = tcname;
-	while (*q && *q != ':')
-		q++;
-	*q = 0;
-	if (++hopcount > MAXHOP) {
-		write(2, "Infinite tc= loop\n", 18);
-		return (0);
-	}
-	if (tgetent(tcbuf, tcname) != 1) {
-		hopcount = 0;		/* unwind recursion */
-		return(0);
-	}
-	for (q=tcbuf; *q != ':'; q++)
-		;
-	l = p - holdtbuf + strlen(q);
-	if (l > BUFSIZ) {
-		write(2, "Termcap entry too long\n", 23);
-		q[BUFSIZ - (p-tbuf)] = 0;
-	}
-	strcpy(p, q+1);
-	tbuf = holdtbuf;
-	hopcount = 0;			/* unwind recursion */
-	return(1);
-}
-
-/*
- * Tnamatch deals with name matching.  The first field of the termcap
- * entry is a sequence of names separated by |'s, so we compare
- * against each such name.  The normal : terminator after the last
- * name (before the first field) stops us.
- */
-tnamatch(np)
-	char *np;
-{
-	register char *Np, *Bp;
-
-	Bp = tbuf;
-	if (*Bp == '#')
-		return(0);
-	for (;;) {
-		for (Np = np; *Np && *Bp == *Np; Bp++, Np++)
-			continue;
-		if (*Np == 0 && (*Bp == '|' || *Bp == ':' || *Bp == 0))
-			return (1);
-		while (*Bp && *Bp != ':' && *Bp != '|')
-			Bp++;
-		if (*Bp == 0 || *Bp == ':')
-			return (0);
-		Bp++;
-	}
-}
-
-/*
- * Skip to the next field.  Notice that this is very dumb, not
- * knowing about \: escapes or any such.  If necessary, :'s can be put
- * into the termcap file in octal.
- */
-static char *
-tskip(bp)
-	register char *bp;
-{
-
-	while (*bp && *bp != ':')
-		bp++;
-	if (*bp == ':')
-		bp++;
-	return (bp);
-}
-
-/*
- * Return the (numeric) option id.
- * Numeric options look like
- *	li#80
- * i.e. the option string is separated from the numeric value by
- * a # character.  If the option is not found we return -1.
- * Note that we handle octal numbers beginning with 0.
- */
-tgetnum(id)
-	char *id;
-{
-	register int i, base;
-	register char *bp = tbuf;
-
-	for (;;) {
-		bp = tskip(bp);
-		if (*bp == 0)
-			return (-1);
-		if (*bp++ != id[0] || *bp == 0 || *bp++ != id[1])
-			continue;
-		if (*bp == '@')
-			return(-1);
-		if (*bp != '#')
-			continue;
-		bp++;
-		base = 10;
-		if (*bp == '0')
-			base = 8;
-		i = 0;
-		while (isdigit(*bp))
-			i *= base, i += *bp++ - '0';
-		return (i);
-	}
-}
-
-/*
- * Handle a flag option.
- * Flag options are given "naked", i.e. followed by a : or the end
- * of the buffer.  Return 1 if we find the option, or 0 if it is
- * not given.
- */
-tgetflag(id)
-	char *id;
-{
-	register char *bp = tbuf;
-
-	for (;;) {
-		bp = tskip(bp);
-		if (!*bp)
-			return (0);
-		if (*bp++ == id[0] && *bp != 0 && *bp++ == id[1]) {
-			if (!*bp || *bp == ':')
-				return (1);
-			else if (*bp == '@')
-				return(0);
-		}
-	}
-}
-
-/*
- * Get a string valued option.
- * These are given as
- *	cl=^Z
- * Much decoding is done on the strings, and the strings are
- * placed in area, which is a ref parameter which is updated.
- * No checking on area overflow.
- */
 char *
-tgetstr(id, area)
-	char *id, **area;
+tgetstr(const char *id2, char **area)
 {
-	register char *bp = tbuf;
+	uint32_t ind;
+	size_t i;
+	TERMUSERDEF *ud;
+	const char *str;
+	const char id[] = { id2[0], id2[0] ? id2[1] : '\0', '\0' };
 
-	for (;;) {
-		bp = tskip(bp);
-		if (!*bp)
-			return (0);
-		if (*bp++ != id[0] || *bp == 0 || *bp++ != id[1])
-			continue;
-		if (*bp == '@')
-			return(0);
-		if (*bp != '=')
-			continue;
-		bp++;
-		return (tdecode(bp, area));
+	if (cur_term == NULL)
+		return NULL;
+
+	str = NULL;
+	ind = _t_strhash((const unsigned char *)id, strlen(id));
+	if (ind < __arraycount(_ti_cap_strids)) {
+		if (strcmp(id, _ti_cap_strids[ind].id) == 0) {
+			str = cur_term->strs[_ti_cap_strids[ind].ti];
+			if (str == NULL)
+				return NULL;
+		}
 	}
+	if (str != NULL)
+		for (i = 0; i < cur_term->_nuserdefs; i++) {
+			ud = &cur_term->_userdefs[i];
+			if (ud->type == 's' && strcmp(ud->id, id) == 0)
+				str = ud->str;
+		}
+
+	/* XXX: FXIXME
+	 * We should fix sgr0(me) as it has a slightly different meaning
+	 * for termcap. */
+
+	if (str != NULL && area != NULL && *area != NULL) {
+		char *s;
+		s = *area;
+		strcpy(*area, str);
+		*area += strlen(*area) + 1;
+		return s;
+	}
+
+	return __UNCONST(str);
 }
 
-/*
- * Tdecode does the grung work to decode the
- * string capability escapes.
- */
-static char *
-tdecode(str, area)
-	register char *str;
-	char **area;
+char *
+tgoto(const char *cm, int destcol, int destline)
 {
-	register char *cp;
-	register int c;
-	register char *dp;
-	int i;
+	_DIAGASSERT(cm != NULL);
+	return tiparm(cm, destline, destcol);
+}
 
-	cp = *area;
-	while ((c = *str++) && c != ':') {
-		switch (c) {
+#ifdef TERMINFO_COMPILE
+static const char *
+flagname(const char *key)
+{
+	uint32_t idx;
 
-		case '^':
-			c = *str++ & 037;
+	idx = _t_flaghash((const unsigned char *)key, strlen(key));
+	if (idx < __arraycount(_ti_cap_flagids) &&
+	    strcmp(key, _ti_cap_flagids[idx].id) == 0)
+		return _ti_flagid(_ti_cap_flagids[idx].ti);
+	return key;
+}
+
+static const char *
+numname(const char *key)
+{
+	uint32_t idx;
+
+	idx = _t_numhash((const unsigned char *)key, strlen(key));
+	if (idx < __arraycount(_ti_cap_numids) &&
+	    strcmp(key, _ti_cap_numids[idx].id) == 0)
+		return _ti_numid(_ti_cap_numids[idx].ti);
+	return key;
+}
+
+static const char *
+strname(const char *key)
+{
+	uint32_t idx;
+
+	idx = _t_strhash((const unsigned char *)key, strlen(key));
+	if (idx < __arraycount(_ti_cap_strids) &&
+	    strcmp(key, _ti_cap_strids[idx].id) == 0)
+		return _ti_strid(_ti_cap_strids[idx].ti);
+
+	if (strcmp(key, "tc") == 0)
+		return "use";
+
+	return key;
+}
+
+/* Print a parameter if needed */
+static size_t
+printparam(char **dst, char p, bool *nop)
+{
+	if (*nop) {
+		*nop = false;
+		return 0;
+	}
+
+	*(*dst)++ = '%';
+	*(*dst)++ = 'p';
+	*(*dst)++ = '0' + p;
+	return 3;
+}
+
+/* Convert a termcap character into terminfo equivalents */
+static size_t
+printchar(char **dst, const char **src)
+{
+	char v;
+	size_t l;
+
+	l = 4;
+	v = *++(*src);
+	if (v == '\\') {
+		v = *++(*src);
+		switch (v) {
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+			v = 0;
+			while (isdigit((unsigned char) **src))
+				v = 8 * v + (*(*src)++ - '0');
+			(*src)--;
 			break;
-
-		case '\\':
-			dp = "E\033^^\\\\::n\nr\rt\tb\bf\f";
-			c = *str++;
-nextc:
-			if (*dp++ == c) {
-				c = *dp++;
-				break;
-			}
-			dp++;
-			if (*dp)
-				goto nextc;
-			if (isdigit(c)) {
-				c -= '0', i = 2;
-				do
-					c <<= 3, c |= *str++ - '0';
-				while (--i && isdigit(*str));
-			}
+		case '\0':
+			v = '\\';
 			break;
 		}
-		*cp++ = c;
+	} else if (v == '^')
+		v = *++(*src) & 0x1f;
+	*(*dst)++ = '%';
+	if (isgraph((unsigned char )v) &&
+	    v != ',' && v != '\'' && v != '\\' && v != ':')
+	{
+		*(*dst)++ = '\'';
+		*(*dst)++ = v;
+		*(*dst)++ = '\'';
+	} else {
+		*(*dst)++ = '{';
+		if (v > 99) {
+			*(*dst)++ = '0'+ v / 100;
+			l++;
+		}
+		if (v > 9) {
+			*(*dst)++ = '0' + ((int) (v / 10)) % 10;
+			l++;
+		}
+		*(*dst)++ = '0' + v % 10;
+		*(*dst)++ = '}';
 	}
-	*cp++ = 0;
-	str = *area;
-	*area = cp;
-	return (str);
+	return l;
 }
+
+/* Convert termcap commands into terminfo commands */
+static const char fmtB[] = "%p0%{10}%/%{16}%*%p0%{10}%m%+";
+static const char fmtD[] = "%p0%p0%{2}%*%-";
+static const char fmtIf[] = "%p0%p0%?";
+static const char fmtThen[] = "%>%t";
+static const char fmtElse[] = "%+%;";
+
+static char *
+strval(const char *val)
+{
+	char *info, *ip, c, p;
+	const char *ps, *pe;
+	bool nop;
+	size_t len, l;
+
+	len = 1024; /* no single string should be bigger */
+	info = ip = malloc(len);
+	if (info == NULL)
+		return 0;
+
+	/* Move the = */
+	*ip++ = *val++;
+
+	/* Set ps and pe to point to the start and end of the padding */
+	if (isdigit((unsigned char)*val)) {
+		for (ps = pe = val;
+		     isdigit((unsigned char)*val) || *val == '.';
+		     val++)
+			pe++;
+		if (*val == '*') {
+			val++;
+			pe++;
+		}
+	} else
+		ps = pe  = NULL;
+
+	nop = false;
+	l = 0;
+	p = 1;
+	for (; *val != '\0'; val++) {
+		if (l + 2 > len)
+			goto elen;
+		if (*val != '%') {
+			if (*val == ',') {
+				if (l + 3 > len)
+					goto elen;
+				*ip++ = '\\';
+				l++;
+			}
+			*ip++ = *val;
+			l++;
+			continue;
+		}
+		switch (c = *++(val)) {
+		case 'B':
+			if (l + sizeof(fmtB) > len)
+				goto elen;
+			memcpy(ip, fmtB, sizeof(fmtB) - 1);
+			/* Replace the embedded parameters with real ones */
+			ip[2] += p;
+			ip[19] += p;
+			ip += sizeof(fmtB) - 1;
+			l += sizeof(fmtB) - 1;
+			nop = true;
+			continue;
+		case 'D':
+			if (l + sizeof(fmtD) > len)
+				goto elen;
+			memcpy(ip, fmtD, sizeof(fmtD) - 1);
+			/* Replace the embedded parameters with real ones */
+			ip[2] += p;
+			ip[5] += p;
+			ip += sizeof(fmtD) - 1;
+			l += sizeof(fmtD) - 1;
+			nop = true;
+			continue;
+		case 'r':
+			/* non op as switched below */
+			break;
+		case '2': /* FALLTHROUGH */
+		case '3': /* FALLTHROUGH */
+		case 'd':
+			if (l + 7 > len)
+				goto elen;
+			l += printparam(&ip, p, &nop);
+			*ip++ = '%';
+			if (c != 'd') {
+				*ip++ = c;
+				l++;
+			}
+			*ip++ = 'd';
+			l += 2;
+			break;
+		case '+':
+			if (l + 13 > len)
+				goto elen;
+			l += printparam(&ip, p, &nop);
+			l += printchar(&ip, &val);
+			*ip++ = '%';
+			*ip++ = c; 
+			*ip++ = '%';
+			*ip++ = 'c';
+			l += 7;
+			break;
+		case '>':
+			if (l + sizeof(fmtIf) + sizeof(fmtThen) +
+			    sizeof(fmtElse) + (6 * 2) > len)
+				goto elen;
+
+			memcpy(ip, fmtIf, sizeof(fmtIf) - 1);
+			/* Replace the embedded parameters with real ones */
+			ip[2] += p;
+			ip[5] += p;
+			ip += sizeof(fmtIf) - 1;
+			l += sizeof(fmtIf) - 1;
+			l += printchar(&ip, &val);
+			memcpy(ip, fmtThen, sizeof(fmtThen) - 1);
+			ip += sizeof(fmtThen) - 1;
+			l += sizeof(fmtThen) - 1;
+			l += printchar(&ip, &val);
+			memcpy(ip, fmtElse, sizeof(fmtElse) - 1);
+			ip += sizeof(fmtElse) - 1;
+			l += sizeof(fmtElse) - 1;
+			l += 16;
+			nop = true;
+			continue;
+		case '.':
+			if (l + 6 > len)
+				goto elen;
+			l += printparam(&ip, p, &nop);
+			*ip++ = '%';
+			*ip++ = 'c';
+			l += 2;
+			break;
+		default:
+			/* Hope it matches a terminfo command. */
+			*ip++ = '%';
+			*ip++ = c;
+			l += 2;
+			if (c == 'i')
+				continue;
+			break;
+		}
+		/* Swap p1 and p2 */
+		p = 3 - p;
+	}
+
+	/* \E\ is valid termcap.
+	 * We need to escape the final \ for terminfo. */
+	if (l > 2 && info[l - 1] == '\\' &&
+	    (info[l - 2] != '\\' && info[l - 2] != '^'))
+	{
+		if (l + 1 > len)
+			goto elen;
+		*ip++ = '\\';
+	}
+
+	/* Add our padding at the end. */
+	if (ps != NULL) {
+		size_t n = (size_t)(pe - ps);
+		if (l + n + 4 > len)
+			goto elen;
+		*ip++ = '$';
+		*ip++ = '<';
+		strncpy(ip, ps, n);
+		ip += n;
+		*ip++ = '/';
+		*ip++ = '>';
+	}
+
+	*ip = '\0';
+	return info;
+
+elen:
+	free(info);
+	errno = ENOMEM;
+	return NULL;
+}
+
+typedef struct {
+	const char *name;
+	const char *cap;
+} DEF_INFO;
+
+static DEF_INFO def_infos[] = {
+	{ "bel",	"^G" },
+	{ "cr",		"^M" },
+	{ "cud1",	"^J" },
+	{ "ht",		"^I" },
+	{ "ind",	"^J" },
+	{ "kbs",	"^H" },
+	{ "kcub1",	"^H" },
+	{ "kcud1",	"^J" },
+	{ "nel",	"^M^J" }
+};
+
+char *
+captoinfo(char *cap)
+{
+	char *info, *ip, *token, *val, *p, tok[3];
+	const char *name;
+	size_t len, lp, nl, vl, rl;
+	int defs[__arraycount(def_infos)], fv;
+
+	_DIAGASSERT(cap != NULL);
+
+	len = strlen(cap) * 2;
+	len += __arraycount(def_infos) * (5 + 4 + 3); /* reserve for defs */
+	info = ip = malloc(len);
+	if (info == NULL)
+		return NULL;
+
+	memset(defs, 0, sizeof(defs));
+	lp = 0;
+	tok[2] = '\0';
+	for (token = _ti_get_token(&cap, ':');
+	     token != NULL;
+	     token = _ti_get_token(&cap, ':'))
+	{
+		if (token[0] == '\0')
+			continue;
+		name = token;
+		val = p = NULL;
+		fv = 0;
+		nl = 0;
+		if (token[1] != '\0') {
+			tok[0] = token[0];
+			tok[1] = token[1];
+			nl = 1;
+			if (token[2] == '\0') {
+				name = flagname(tok);
+				val = NULL;
+			} else if (token[2] == '#') {
+				name = numname(tok);
+				val = token + 2;
+			} else if (token[2] == '=') {
+				name = strname(tok);
+				val = strval(token + 2);
+				fv = 1;
+			} else
+				nl = 0;
+		}
+		/* If not matched we may need to convert padding still. */
+		if (nl == 0) {
+			p = strchr(name, '=');
+			if (p != NULL) {
+				val = strval(p);
+				*p = '\0';
+				fv = 1;
+			}
+		}
+
+		/* See if this sets a default. */
+		for (nl = 0; nl < __arraycount(def_infos); nl++) {
+			if (strcmp(name, def_infos[nl].name) == 0) {
+				defs[nl] = 1;
+				break;
+			}
+		}
+
+		nl = strlen(name);
+		if (val == NULL)
+			vl = 0;
+		else
+			vl = strlen(val);
+		rl = nl + vl + 3; /* , \0 */
+
+		if (lp + rl > len) {
+			if (rl < 256)
+				len += 256;
+			else
+				len += rl;
+			p = realloc(info, len);
+			if (p == NULL) {
+				if (fv == 1)
+					free(val);
+				return NULL;
+			}
+			info = p;
+		}
+
+		if (ip != info) {
+			*ip++ = ',';
+			*ip++ = ' ';
+		}
+
+		strcpy(ip, name);
+		ip += nl;
+		if (val != NULL) {
+			strcpy(ip, val);
+			ip += vl;
+			if (fv == 1)
+				free(val);
+		}
+	}
+
+	/* Add any defaults not set above. */
+	for (nl = 0; nl < __arraycount(def_infos); nl++) {
+		if (defs[nl] == 0) {
+			*ip++ = ',';
+			*ip++ = ' ';
+			strcpy(ip, def_infos[nl].name);
+			ip += strlen(def_infos[nl].name);
+			*ip++ = '=';
+			strcpy(ip, def_infos[nl].cap);
+			ip += strlen(def_infos[nl].cap);
+		}
+	}
+
+	*ip = '\0';
+	return info;
+}
+#endif

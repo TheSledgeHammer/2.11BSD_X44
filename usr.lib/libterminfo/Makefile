@@ -1,50 +1,110 @@
-#
-# Copyright (c) 1980 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
-#
-#	@(#)Makefile	5.1 (Berkeley) 6/5/85
-#
-DEFS= -DNOSCCS
-CFLAGS=	-O -DCM_N -DCM_GT -DCM_B -DCM_D $(DEFS)
-LD = ld
-SRCS=	termcap.c tgoto.c tputs.c
-OBJS=	termcap.o tgoto.o tputs.o
-TAGSFILE=tags
+#	$NetBSD: Makefile,v 1.23 2020/04/05 12:31:02 roy Exp $
 
-.c.o:
-	$(CC) $(CFLAGS) -c -p $*.c
-	$(LD) $(LDFLAGS) -x -r -o profiled/$*.o $*.o
-	$(CC) $(CFLAGS) -c $*.c
-	$(LD) $(LDFLAGS) -X -r $*.o
-	mv a.out $*.o
+.include <bsd.own.mk>
 
-termcap.a termcap_p.a: ${OBJS}
-	ar cr termcap.a ${OBJS}
-	cd profiled; ar cr ../termcap_p.a ${OBJS}
+USE_SHLIBDIR=	yes
 
-install: termcap.a termcap_p.a
-	install -c termcap.a ${DESTDIR}/usr/lib/libtermcap.a
-	-rm -f ${DESTDIR}/usr/lib/libtermlib.a
-	ln ${DESTDIR}/usr/lib/libtermcap.a ${DESTDIR}/usr/lib/libtermlib.a
-	ranlib ${DESTDIR}/usr/lib/libtermcap.a
-	install -c termcap_p.a ${DESTDIR}/usr/lib/libtermcap_p.a
-	-rm -f ${DESTDIR}/usr/lib/libtermlib_p.a
-	ln ${DESTDIR}/usr/lib/libtermcap_p.a ${DESTDIR}/usr/lib/libtermlib_p.a
-	ranlib ${DESTDIR}/usr/lib/libtermcap_p.a
+LIB=		terminfo
+WARNS?=		5
 
-tags:
-	cwd=`pwd`; \
-	for i in ${SRCS}; do \
-		ctags -a -f ${TAGSFILE} $$cwd/$$i; \
-	done
+CPPFLAGS+=	-I${.CURDIR}
 
-clean:
-	-rm -f *.o profiled/*.o
-	-rm -f termcap.a termcap_p.a
+SRCS=		term.c ti.c setupterm.c curterm.c tparm.c tputs.c
+SRCS+=		hash.c
+INCS=		term.h
+INCSDIR=	/usr/include
 
-VGRIND=	csh /usr/ucb/vgrind
-vgrind:
-	cp /dev/null index
-	${VGRIND} -h "Termcap library" termcap.c tputs.c tgoto.c
-	${VGRIND} -h "Termcap library" -x index
+# For ramdisks there is no database to read from so remove compat
+# and the need to read from them.
+# While here, remove the ability to compile terminfo descriptions
+# from $TERMINFO as well.
+# This means the library requires any terminal needed built into it.
+.if !defined(SMALLPROG)
+CPPFLAGS+=	-DTERMINFO_COMPILE -DTERMINFO_DB -DTERMINFO_COMPAT
+SRCS+=		compile.c
+.endif
+
+COPTS.tparm.c = -Wno-format-nonliteral
+
+MAN=		terminfo.3 terminfo.5
+MLINKS=		terminfo.3 setupterm.3 \
+			terminfo.3 set_curterm.3 terminfo.3 del_curterm.3 \
+			terminfo.3 termname.3 terminfo.3 longname.3 \
+			terminfo.3 tigetnum.3 terminfo.3 tigetflag.3 \
+			terminfo.3 tigetstr.3 terminfo.3 tparm.3 terminfo.3 tputs.3 \
+			terminfo.3 putp.3 \
+			terminfo.3 ti_setupterm.3 terminfo.3 ti_getflag.3 \
+			terminfo.3 ti_getnum.3 terminfo.3 ti_getstr.3 \
+			terminfo.3 tiparm.3 terminfo.3 ti_tiparm.3 \
+			terminfo.3 ti_puts.3 terminfo.3 ti_putp.3
+
+# Build in termcap emulation
+SRCS+=		termcap.c
+INCS+=		termcap.h
+MAN+=		termcap.3
+MLINKS+=	termcap.3 tgetent.3 termcap.3 tgetflag.3 termcap.3 tgetnum.3 \
+			termcap.3 tgetstr.3 termcap.3 tgoto.3
+
+CPPFLAGS+=	-I${.OBJDIR}
+
+.include <Makefile.hash>
+
+# Generate our man pages
+terminfo.5: genman terminfo.5.in term.h termcap_map.c
+		@echo "Generating terminfo man pages"
+		${SCRIPT_ENV} ${HOST_SH} ${.ALLSRC} > ${.TARGET}
+
+CLEANFILES+=	terminfo.5
+
+man: terminfo.5
+
+.include <bsd.shlib.mk>
+
+.if ${MKLINKLIB} != "no"
+SYMLINKS+=	libterminfo.a ${LIBDIR}/libtermcap.a
+SYMLINKS+=	libterminfo.a ${LIBDIR}/libtermlib.a
+.endif
+
+.if ${MKPROFILE} != "no"
+SYMLINKS+=	libterminfo_p.a ${LIBDIR}/libtermcap_p.a
+SYMLINKS+=	libterminfo_p.a ${LIBDIR}/libtermlib_p.a
+.endif
+
+.if ${MKPIC} != "no"
+
+.if ${MKPICINSTALL} != "no"
+SYMLINKS+=	libterminfo_pic.a ${LIBDIR}/libtermcap_pic.a
+SYMLINKS+=	libterminfo_pic.a ${LIBDIR}/libtermlib_pic.a
+.endif
+
+.if exists(${.CURDIR}/shlib_version)
+SYMLINKS+=	libterminfo.so.${SHLIB_FULLVERSION} \
+		${_LIBSODIR}/libtermcap.so.0.6
+SYMLINKS+=	libterminfo.so.${SHLIB_FULLVERSION} \
+		${_LIBSODIR}/libtermlib.so.0.6
+.if ${_LIBSODIR} != ${LIBDIR}
+SYMLINKS+=	libterminfo.so.${SHLIB_FULLVERSION} \
+		${LIBDIR}/libtermcap.so.0.6
+SYMLINKS+=	libterminfo.so.${SHLIB_FULLVERSION} \
+		${LIBDIR}/libtermlib.so.0.6
+.endif
+
+SYMLINKS+=	libterminfo.so.${SHLIB_MAJOR} \
+		${_LIBSODIR}/libtermcap.so.0
+SYMLINKS+=	libterminfo.so ${_LIBSODIR}/libtermcap.so
+SYMLINKS+=	libterminfo.so.${SHLIB_MAJOR} \
+		${_LIBSODIR}/libtermlib.so.0
+SYMLINKS+=	libterminfo.so ${_LIBSODIR}/libtermlib.so
+.if ${_LIBSODIR} != ${LIBDIR}
+SYMLINKS+=	libterminfo.so.${SHLIB_MAJOR} \
+		${LIBDIR}/libtermcap.so.0
+SYMLINKS+=	libterminfo.so ${LIBDIR}/libtermcap.so
+SYMLINKS+=	libterminfo.so.${SHLIB_MAJOR} \
+		${LIBDIR}/libtermlib.so.0
+SYMLINKS+=	libterminfo.so ${LIBDIR}/libtermlib.so
+.endif
+.endif	# exists shlib_version
+
+.endif	# ${MKPIC} != "no"
+
+.include <bsd.lib.mk>

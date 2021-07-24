@@ -1,25 +1,25 @@
 Application	Version
 -----------	-------
-lib2648/		4.3
-libF77/			4.3
-libI77/			4.3
-libU77/			4.3
-libcurses/		4.3  (some long/int fixes to tstp.c)
+lib2648/		UNIMPLEMENTED
+libF77/			UNIMPLEMENTED
+libI77/			UNIMPLEMENTED
+libU77/			UNIMPLEMENTED
+libcurses/		UNIMPLEMENTED
 libdbm/			4.3
-libg/				UNIMPLEMENTED (4.3 should be ported)
-libln/			4.3
-libm/			4.3  (no attempt made to convert yet - won't run on a PDP11)
+libg/			UNIMPLEMENTED (4.3 should be ported)
+libln/			UNIMPLEMENTED
+libm/			UNIMPLEMENTED  4.3 (no attempt made to convert yet - won't run on a PDP11)
 libmp/			4.3
-libpc/			4.3
+libpc/			UNIMPLEMENTED
 libom/			4.3  (used for both libom.a and libm.a)
-libplot/		4.3
+libplot/		UNIMPLEMENTED
+libterminfo/	NetBSD
 libutil/		4.4
-libtermlib/		4.3/4.4 (updated to be equivalent to 4.4BSD)
 liby/			4.3
 
 Notes
 -----
-libm/		We haven't made any effort to convert the new math library for
+libm/	We haven't made any effort to convert the new math library for
 		the PDP-11 yet (if it's even possible).  If anyone does it for
 		us, PLEASE #ifdef your changes on "pdp11".  A PDP support
 		subdirectory would be nice too ...  In any case, till that
