@@ -138,13 +138,6 @@ typedef	_BSD_TIMER_T_		timer_t;
 #undef	_BSD_TIMER_T_
 #endif
 
-/* BSD-style unsigned bits types */
-typedef uregister_t			u_register_t;
-typedef	uint8_t				u_int8_t;
-typedef	uint16_t			u_int16_t;
-typedef	uint32_t			u_int32_t;
-typedef	uint64_t			u_int64_t;
-
 #if defined(_KERNEL) || defined(_STANDALONE)
 #define SET(t, f)			((t) |= (f))
 #define	ISSET(t, f)			((t) & (f))

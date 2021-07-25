@@ -1,11 +1,11 @@
-/*	$NetBSD: stdint.h,v 1.8 2018/11/06 16:26:44 maya Exp $	*/
+/*	$NetBSD: dirname.c,v 1.14 2018/09/27 00:45:34 kre Exp $	*/
 
 /*-
- * Copyright (c) 2001, 2004 The NetBSD Foundation, Inc.
+ * Copyright (c) 1997, 2002 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by Klaus Klein.
+ * by Klaus Klein and Jason R. Thorpe.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,78 +29,73 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _SYS_STDINT_H_
-#define _SYS_STDINT_H_
-
 #include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+__RCSID("$NetBSD: dirname.c,v 1.14 2018/09/27 00:45:34 kre Exp $");
+#endif /* !LIBC_SCCS && !lint */
 
-#include <machine/types.h>
+#include "namespace.h"
+#include <sys/param.h>
+#include <libgen.h>
+#include <limits.h>
+#include <string.h>
 
-#ifndef	_BSD_INT8_T_
-typedef	__int8_t		int8_t;
-#define	_BSD_INT8_T_
+#ifdef __weak_alias
+__weak_alias(dirname,_dirname)
 #endif
 
-#ifndef	_BSD_UINT8_T_
-typedef	__uint8_t		uint8_t;
-#define	_BSD_UINT8_T_
+static size_t
+xdirname_r(const char *path, char *buf, size_t buflen)
+{
+	const char *endp;
+	size_t len;
+
+	/*
+	 * If `path' is a null pointer or points to an empty string,
+	 * return a pointer to the string ".".
+	 */
+	if (path == NULL || *path == '\0') {
+		path = ".";
+		len = 1;
+		goto out;
+	}
+
+	/* Strip trailing slashes, if any. */
+	endp = path + strlen(path) - 1;
+	while (endp != path && *endp == '/')
+		endp--;
+
+	/* Find the start of the dir */
+	while (endp > path && *endp != '/')
+		endp--;
+
+	if (endp == path) {
+		path = *endp == '/' ? "/" : ".";
+		len = 1;
+		goto out;
+	}
+
+	do
+		endp--;
+	while (endp > path && *endp == '/');
+
+	len = endp - path + 1;
+out:
+	if (buf != NULL && buflen != 0) {
+		buflen = MIN(len, buflen - 1);
+		if (buf != path)
+			memcpy(buf, path, buflen);
+		buf[buflen] = '\0';
+	}
+	return len;
+}
+
+#if !HAVE_DIRNAME
+char *
+dirname(char *path)
+{
+	static char result[PATH_MAX];
+	(void)xdirname_r(path, result, sizeof(result));
+	return result;
+}
 #endif
-
-#ifndef	_BSD_INT16_T_
-typedef	__int16_t		int16_t;
-#define	_BSD_INT16_T_
-#endif
-
-#ifndef	_BSD_UINT16_T_
-typedef	__uint16_t		uint16_t;
-#define	_BSD_UINT16_T_
-#endif
-
-#ifndef	_BSD_INT32_T_
-typedef	__int32_t		int32_t;
-#define	_BSD_INT32_T_
-#endif
-
-#ifndef	_BSD_UINT32_T_
-typedef	__uint32_t		uint32_t;
-#define	_BSD_UINT32_T_
-#endif
-
-#ifndef	_BSD_INT64_T_
-typedef	__int64_t		int64_t;
-#define	_BSD_INT64_T_
-#endif
-
-#ifndef	_BSD_UINT64_T_
-typedef	u_int64_t		uint64_t;
-#define	_BSD_UINT64_T_
-#endif
-
-#ifndef	_BSD_INTPTR_T_
-typedef	__intptr_t		intptr_t;
-#define	_BSD_INTPTR_T_
-#endif
-
-#ifndef	_BSD_UINTPTR_T_
-typedef	__uintptr_t		uintptr_t;
-#define	_BSD_UINTPTR_T_
-#endif
-
-#ifndef _BSD_REGISTER_T_
-typedef	__register_t 	register_t;
-#define _BSD_REGISTER_T_
-#endif
-
-#ifndef _BSD_UREGISTER_T_
-typedef	__uregister_t 	uregister_t;
-#define _BSD_UREGISTER_T_
-#endif
-
-/* BSD-style unsigned bits types */
-typedef uregister_t			u_register_t;
-typedef	uint8_t				u_int8_t;
-typedef	uint16_t			u_int16_t;
-typedef	uint32_t			u_int32_t;
-typedef	uint64_t			u_int64_t;
-
-#endif /* !_SYS_STDINT_H_ */

@@ -13,7 +13,7 @@ SRCS=		atoll.c basename.c cdbr.c cdbw.c dirname.c 					\
 			mi_vector_hash.c mkdtemp.c 									\
 			mkstemp.c pread.c putc_unlocked.c pwcache.c pwrite.c 		\
 			pw_scan.c 													\
-			raise_default_signal.c rb.c reallocarr.c reallocarray.c 	\
+			raise_default_signal.c reallocarr.c reallocarray.c 	\
 			rmd160.c rmd160hl.c 										\
 			regcomp.c regerror.c regexec.c regfree.c 					\
 			setenv.c setgroupent.c 										\
@@ -40,9 +40,8 @@ CPPFLAGS+=	-no-cpp-precomp
 CPPFLAGS+=	-I. -I./include -I${.CURDIR} -I${.CURDIR}/sys 			\
 		-DHAVE_NBTOOL_CONFIG_H=1 -D_FILE_OFFSET_BITS=64
 
-#${.CURDIR}/../../lib/libc/cdb 							\
-
-.PATH:		${.CURDIR}/../../lib/libc/compat-4.1					\
+.PATH:		${.CURDIR}/../../lib/libc/cdb 							\
+			${.CURDIR}/../../lib/libc/compat-4.1					\
 			${.CURDIR}/../../lib/libc/compat-4.3					\
 			${.CURDIR}/../../lib/libc/compat-netbsd					\
 			${.CURDIR}/../../lib/libc/compat-sys5					\

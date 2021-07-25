@@ -4,8 +4,8 @@
 
 INCSDIR= 	/usr/include/sys
 
-INCS=		acct.h ansi.h ataio.h atomic.h audioio.h boot.h						\
-			buf.h bus.h callout.h cdefs_aout.h cdefs_elf.h cdefs.h 				\
+INCS=		acct.h ansi.h ataio.h atomic.h audioio.h bitops.h boot.h			\
+			buf.h bus.h callout.h cdbr.h cdefs_aout.h cdefs_elf.h cdefs.h 		\
 			cdio.h chio.h clist.h conf.h device.h devsw.h						\
 			dirent.h disk.h disklabel.h disktype.h dk.h dkbad.h dmap.h			\
 			domain.h endian.h errno.h event.h eventvar.h exec_aout.h 			\
@@ -25,6 +25,7 @@ INCS=		acct.h ansi.h ataio.h atomic.h audioio.h boot.h						\
 			videoio.h vlimit.h vmmeter.h vnode.h wait.h
 
 INCSYMLINKS=\
+		sys/cdbr.h 		/usr/include/cdbr.h 	\
 		sys/exec_elf.h 	/usr/include/elf.h 		\
 		sys/fcntl.h 	/usr/include/fcntl.h 	\
 		sys/poll.h 		/usr/include/poll.h 	\
