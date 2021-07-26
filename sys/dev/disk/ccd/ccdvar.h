@@ -192,7 +192,7 @@ struct ccd_softc {
 	struct ccdiinfo	 	*sc_itable;		/* interleave table */
 	struct ccdgeom  	sc_geom;		/* pseudo geometry info */
 	char		 		sc_xname[8];	/* XXX external name */
-	struct disk	 		sc_dkdev;		/* generic disk device info */
+	struct dkdevice		sc_dkdev;		/* generic disk device info */
 	LIST_HEAD(, ccdbuf) sc_freelist;	/* component buffer freelist */
 	int					sc_freecount;	/* number of entries */
 	int					sc_hiwat;		/* freelist high water mark */

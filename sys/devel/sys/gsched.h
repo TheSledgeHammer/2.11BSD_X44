@@ -104,7 +104,7 @@ struct gsched {
     struct gsched_cfs 		*gsc_cfs;		/* completely fair scheduler */
 };
 
-/* Linux Concept: Scheduler Domains: Hyperthreading, multi-cpu */
+/* Scheduler Domains: Hyperthreading, multi-cpu */
 /* Not Implemented */
 union gsched_group {
 	CIRCLEQ_ENTRY(gsd_group) gsg_entry;

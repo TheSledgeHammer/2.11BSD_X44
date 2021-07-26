@@ -78,6 +78,36 @@ slicesw_close(dev, flags, devtype, p)
 	return (0);
 }
 
+int
+dkdriver_open(dkdrv, dev, flags, devtype, p)
+	struct dkdriver *dkdrv;
+	dev_t dev;
+	int flags, devtype;
+	struct proc *p;
+{
+	int rv;
+	rv = (*dkdrv->d_open)(dev, flags, devtype, p);
+	if(rv != 0) {
+		return (-1);
+	}
+	return (rv);
+}
+
+int
+dkdriver_close(dkdrv, dev, flags, devtype, p)
+	struct dkdriver *dkdrv;
+	dev_t dev;
+	int flags, devtype;
+	struct proc *p;
+{
+	int rv;
+	rv = (*dkdrv->d_close)(dev, flags, devtype, p);
+	if(rv != 0) {
+		return (-1);
+	}
+	return (rv);
+}
+
 dev_t
 makediskslice(dev, unit, slice, part)
 	dev_t dev;

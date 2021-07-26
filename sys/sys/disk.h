@@ -173,7 +173,7 @@ void	disk_detach (struct dkdevice *);
 void	disk_busy (struct dkdevice *);
 void	disk_unbusy (struct dkdevice *, long);
 void	disk_resetstat (struct dkdevice *);
-struct	disk *disk_find (char *);
+struct	dkdevice *disk_find (char *);
 
 struct device;
 void	dk_establish (struct dkdevice *, struct device *);

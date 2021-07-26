@@ -870,6 +870,21 @@ set_interrupt_apic_ids(void)
 			continue;
 		}
 
-		//intr_add_cpu(i);
+		intr_add_cpu(i);
 	}
+}
+
+/*
+ * Add a CPU to our mask of valid CPUs that can be destinations of
+ * interrupts.
+ */
+void
+intr_add_cpu(u_int cpu)
+{
+	if (cpu >= NCPUS)
+		panic("%s: Invalid CPU ID", __func__);
+	if (bootverbose)
+		printf("INTR: Adding local APIC %d as a target\n", cpu_apic_ids[cpu]);
+
+	CPU_SET(cpu, &intr_cpus);
 }

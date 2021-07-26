@@ -68,7 +68,7 @@ disk_init()
  * Searches the disklist for the disk corresponding to the
  * name provided.
  */
-struct disk *
+struct dkdevice *
 disk_find(name)
 	char *name;
 {

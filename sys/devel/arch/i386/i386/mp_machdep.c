@@ -417,15 +417,14 @@ start_ap(int apic_id)
 
 /* Variables needed for SMP tlb shootdown. */
 vm_offset_t smp_tlb_addr1, smp_tlb_addr2;
-pmap_t smp_tlb_pmap;
-volatile uint32_t smp_tlb_generation;
+pmap_t 				smp_tlb_pmap;
+volatile u_int32_t 	smp_tlb_generation;
 
 static void
-smp_targeted_tlb_shootdown(cpuset_t mask, u_int vector, pmap_t pmap,
-    vm_offset_t addr1, vm_offset_t addr2, smp_invl_cb_t curcpu_cb)
+smp_targeted_tlb_shootdown(cpuset_t mask, u_int vector, pmap_t pmap, vm_offset_t addr1, vm_offset_t addr2, smp_invl_cb_t curcpu_cb)
 {
-	volatile uint32_t *p_cpudone;
-	uint32_t generation;
+	volatile u_int32_t *p_cpudone;
+	u_int32_t generation;
 	int cpu;
 
 	curcpu_cb(pmap, addr1, addr2);
@@ -453,7 +452,7 @@ smp_targeted_tlb_shootdown(cpuset_t mask, u_int vector, pmap_t pmap,
 static void
 invltlb_handler(pmap_t smp_tlb_pmap)
 {
-	uint32_t generation;
+	u_int32_t generation;
 
 	generation = smp_tlb_generation;
 	if (smp_tlb_pmap == kernel_pmap) {
@@ -468,7 +467,7 @@ invltlb_handler(pmap_t smp_tlb_pmap)
 static void
 invlpg_handler(vm_offset_t smp_tlb_addr1)
 {
-	uint32_t generation;
+	u_int32_t generation;
 
 	generation = smp_tlb_generation;	/* Overlap with serialization */
 	if (smp_tlb_pmap == kernel_pmap) {
@@ -482,7 +481,7 @@ static void
 invlrng_handler(vm_offset_t smp_tlb_addr1, vm_offset_t smp_tlb_addr2)
 {
 	vm_offset_t addr, addr2;
-	uint32_t generation;
+	u_int32_t generation;
 
 	addr = smp_tlb_addr1;
 	addr2 = smp_tlb_addr2;
@@ -500,7 +499,7 @@ invlrng_handler(vm_offset_t smp_tlb_addr1, vm_offset_t smp_tlb_addr2)
 static void
 invlcache_handler()
 {
-	uint32_t generation;
+	u_int32_t generation;
 
 	generation = smp_tlb_generation;
 	wbinvd();

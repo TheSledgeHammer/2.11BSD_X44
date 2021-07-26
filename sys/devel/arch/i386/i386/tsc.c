@@ -37,7 +37,10 @@
 #include <sys/time.h>
 #include <sys/kernel.h>
 #include <sys/user.h>
+#include <sys/stdint.h>
+#include <sys/types.h>
 
+#include <devel/sys/timecounter.h>
 #include <devel/arch/i386/include/cpu.h>
 
 #include <arch/i386/include/cpu.h>
@@ -45,7 +48,10 @@
 #include <arch/i386/include/cputypes.h>
 #include <arch/i386/include/specialreg.h>
 
-uint64_t	tsc_freq;
+#include <arch/i386/include/ansi.h>
+#include <arch/i386/include/types.h>
+
+u_int64_t	tsc_freq;
 int			tsc_is_invariant;
 int			tsc_perf_stat;
 
@@ -75,7 +81,7 @@ static struct timecounter tsc_timecounter = {
  * tsc_freq_intel(), when available.
  */
 static bool
-tsc_freq_cpuid(uint64_t *res)
+tsc_freq_cpuid(u_int64_t *res)
 {
 	u_int regs[4];
 
@@ -103,7 +109,7 @@ tsc_freq_intel(void)
 {
 	char brand[48];
 	u_int regs[4];
-	uint64_t freq;
+	u_int64_t freq;
 	char *p;
 	u_int i;
 
@@ -160,7 +166,7 @@ tsc_freq_intel(void)
 static void
 probe_tsc_freq(void)
 {
-	uint64_t tmp_freq, tsc1, tsc2;
+	u_int64_t tmp_freq, tsc1, tsc2;
 	int no_cpuid_override;
 
 	if (cpu_power_ecx & CPUID_PERF_STAT) {
@@ -334,7 +340,7 @@ init_TSC(void)
 static void														\
 tsc_read_##x(void *arg)											\
 {																\
-	uint64_t *tsc = arg;										\
+	u_int64_t *tsc = arg;										\
 	u_int cpu = PCPU_GET(cpuid);								\
 																\
 	__asm __volatile("cpuid" : : : "eax", "ebx", "ecx", "edx");	\
@@ -350,7 +356,7 @@ TSC_READ(2)
 static void
 comp_smp_tsc(void *arg)
 {
-	uint64_t *tsc;
+	u_int64_t *tsc;
 	int64_t d1, d2;
 	u_int cpu = PCPU_GET(cpuid);
 	u_int i, j, size;
@@ -372,7 +378,7 @@ comp_smp_tsc(void *arg)
 static void
 adj_smp_tsc(void *arg)
 {
-	uint64_t *tsc;
+	u_int64_t *tsc;
 	int64_t d, min, max;
 	u_int cpu = PCPU_GET(cpuid);
 	u_int first, i, size;
@@ -407,7 +413,7 @@ adj_smp_tsc(void *arg)
 		"adcl %%esi, %%edx\n\t"
 		"wrmsr\n"
 		: /* No output */
-		: "D" ((uint32_t)d), "S" ((uint32_t)(d >> 32))
+		: "D" ((u_int32_t)d), "S" ((uint32_t)(d >> 32))
 		: "ax", "cx", "dx", "cc"
 	);
 }
@@ -415,7 +421,7 @@ adj_smp_tsc(void *arg)
 static int
 test_tsc(int adj_max_count)
 {
-	uint64_t *data, *tsc;
+	u_int64_t *data, *tsc;
 	u_int i, size, adj;
 
 	if ((!smp_tsc && !tsc_is_invariant) || vm_guest)
@@ -474,7 +480,7 @@ retry:
 static void
 init_TSC_tc(void)
 {
-	uint64_t max_freq;
+	u_int64_t max_freq;
 	int shift;
 
 	if ((cpu_feature & CPUID_TSC) == 0 || tsc_disabled)
@@ -650,7 +656,7 @@ tsc_freq_changing(void *arg, const struct cf_level *level, int *status)
 static void
 tsc_freq_changed(void *arg, const struct cf_level *level, int status)
 {
-	uint64_t freq;
+	u_int64_t freq;
 
 	/* If there was an error during the transition, don't do anything. */
 	if (tsc_disabled || status != 0)
@@ -666,7 +672,7 @@ static int
 sysctl_machdep_tsc_freq(SYSCTL_HANDLER_ARGS)
 {
 	int error;
-	uint64_t freq;
+	u_int64_t freq;
 
 	freq = atomic_load_acq_64(&tsc_freq);
 	if (freq == 0)
@@ -688,7 +694,7 @@ tsc_get_timecount(struct timecounter *tc /*__unused */)
 static inline u_int
 tsc_get_timecount_low(struct timecounter *tc)
 {
-	uint32_t rv;
+	u_int32_t rv;
 
 	__asm __volatile("rdtsc; shrd %%cl, %%edx, %0"
 	    : "=a" (rv) : "c" ((int)(intptr_t)tc->tc_priv) : "edx");

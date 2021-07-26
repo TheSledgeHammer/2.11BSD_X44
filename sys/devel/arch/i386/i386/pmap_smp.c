@@ -80,7 +80,12 @@ invltlb_glob(void)
 	invltlb();
 }
 
-#ifdef I386_CPU
+static void
+pmap_invalidate_cache(void)
+{
+	wbinvd();
+}
+
 /*
  * i386 only has "invalidate everything" and no SMP to worry about.
  */
@@ -113,7 +118,6 @@ pmap_invalidate_all(pmap)
 	}
 }
 
-#else /* !I386_CPU */
 #ifdef SMP
 /*
  * For SMP, these functions have to use the IPI mechanism for coherence.
@@ -130,8 +134,8 @@ pmap_invalidate_page(pmap, va)
 		if (!(read_eflags() & PSL_I))
 			panic("%s: interrupts disabled", __func__);
 		simple_lock(&smp_tlb_lock);
-	} else
-		critical_enter();
+	}
+
 	/*
 	 * We need to disable interrupt preemption but MUST NOT have
 	 * interrupts disabled here.
@@ -151,8 +155,6 @@ pmap_invalidate_page(pmap, va)
 	}
 	if (smp_started) {
 		simple_unlock(&smp_tlb_lock);
-	} else {
-		critical_exit();
 	}
 }
 
@@ -169,8 +171,8 @@ pmap_invalidate_range(pmap, sva, eva)
 		if (!(read_eflags() & PSL_I))
 			panic("%s: interrupts disabled", __func__);
 		simple_lock(&smp_tlb_lock);
-	} else
-		critical_enter();
+	}
+
 	/*
 	 * We need to disable interrupt preemption but MUST NOT have
 	 * interrupts disabled here.
@@ -190,10 +192,9 @@ pmap_invalidate_range(pmap, sva, eva)
 		if (pmap->pm_active & other_cpus)
 			smp_masked_invlpg_range(pmap->pm_active & other_cpus, sva, eva);
 	}
-	if (smp_started)
+	if (smp_started) {
 		simple_unlock(&smp_tlb_lock);
-	else
-		critical_exit();
+	}
 }
 
 __inline void
@@ -207,8 +208,8 @@ pmap_invalidate_all(pmap)
 		if (!(read_eflags() & PSL_I))
 			panic("%s: interrupts disabled", __func__);
 		simple_lock(&smp_tlb_lock);
-	} else
-		critical_enter();
+	}
+
 	/*
 	 * We need to disable interrupt preemption but MUST NOT have
 	 * interrupts disabled here.
@@ -226,10 +227,9 @@ pmap_invalidate_all(pmap)
 		if (pmap->pm_active & other_cpus)
 			smp_masked_invltlb(pmap->pm_active & other_cpus);
 	}
-	if (smp_started)
+	if (smp_started) {
 		simple_unlock(&smp_tlb_lock);
-	else
-		critical_exit();
+	}
 }
 #else /* !SMP */
 
@@ -269,4 +269,3 @@ pmap_invalidate_all(pmap)
 	}
 }
 #endif /* !SMP */
-#endif /* !I386_CPU */

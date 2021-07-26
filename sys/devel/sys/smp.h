@@ -14,6 +14,7 @@
 #ifndef _SYS_SMP_H_
 #define _SYS_SMP_H_
 
+#include <devel/sys/cpuset.h>
 #include <sys/queue.h>
 
 /*
@@ -44,6 +45,7 @@ struct topo_node {
 	struct topo_node						*parent;
 	TAILQ_HEAD(topo_children, topo_node)	children;
 	TAILQ_ENTRY(topo_node)					siblings;
+	cpuset_t								cpuset;
 	topo_node_type							type;
 	uintptr_t								subtype;
 	hwid_t									hwid;

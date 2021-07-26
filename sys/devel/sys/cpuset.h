@@ -34,6 +34,8 @@
 #ifndef _SYS_CPUSET_H_
 #define _SYS_CPUSET_H_
 
+#include <devel/sys/bitset.h>
+
 #ifdef _KERNEL
 #define	CPU_SETSIZE	NCPUS
 #endif
@@ -44,8 +46,15 @@
 #define	CPU_SETSIZE	CPU_MAXSIZE
 #endif
 
+BITSET_DEFINE(_cpuset, CPU_SETSIZE);
+typedef struct _cpuset cpuset_t;
 
-#ifdef _KERNEL
+#define	CPU_ISSET(n, p)			BIT_ISSET(CPU_SETSIZE, n, p)
+#define	CPU_SET(n, p)			BIT_SET(CPU_SETSIZE, n, p)
+#define	CPU_EMPTY(p)			BIT_EMPTY(CPU_SETSIZE, p)
+#define	CPU_FFS(p)				BIT_FFS(CPU_SETSIZE, p)
+
+//#ifdef _KERNEL
 #include <sys/queue.h>
 
 LIST_HEAD(setlist, cpuset);
@@ -57,7 +66,7 @@ struct cpuset {
 	LIST_ENTRY(cpuset)	cs_siblings;	/* (c) Sibling set link. */
 	struct setlist		cs_children;	/* (c) List of children. */
 };
-typedef struct cpuset cpuset_t;
+typedef struct cpuset 	cpuset_t;
 
 #else
 
