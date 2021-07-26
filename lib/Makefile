@@ -17,6 +17,10 @@
 
 SUBDIR=		csu .WAIT
 
+.if (${MKGCC} != "no")
+SUBDIR+=	../contrib/external/${EXTERNAL_GCC_SUBDIR}/lib/libgcc .WAIT
+.endif
+
 SUBDIR+=	libc
 SUBDIR+=	.WAIT
 
@@ -32,6 +36,7 @@ SUBDIR+=	libarch libcompat
 SUBDIR+=	libkern
 .endif
 
+SUBDIR+=	../contrib/external/flex/lib
 SUBDIR+=	../contrib/external/elftoolchain/lib
 
 .include <bsd.buildinstall.mk>

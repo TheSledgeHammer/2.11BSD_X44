@@ -101,15 +101,10 @@ INSTALLATION_DIRS=	binary binary/sets binary/kernel installation
 BINOWN= root
 BINGRP= wheel
 UTMPGRP= utmp
-BIN1+=	auto_master bootptab changelist csh.cshrc csh.login 				\
-		csh.logout daily daily.conf dm.conf envsys.conf floppytab ftpchroot \
-		ftpusers gettytab gpio.conf group hosts hosts.lpd inetd.conf 		\
-		locate.conf login.conf mailer.conf man.conf monthly monthly.conf 	\
-		mrouted.conf named.conf netconfig networks newsyslog.conf 			\
-		nsswitch.conf ntp.conf passwd.conf pkgpath.conf phones printcap 	\
-		profile protocols rbootd.conf rc rc.conf rc.local rc.subr 			\
-		rc.shutdown remote rpc security security.conf services shells 		\
-		shrc sysctl.conf syslog.conf weekly weekly.conf wscons.conf
+BIN1+=	csh.cshrc csh.login csh.logout gettytab group hosts locate.conf 	\
+		login.conf man.conf passwd.conf phones profile protocols rc 		\
+		rc.firewall rc.network rc.resume rc.shutdown rc.subr rc.suspend 	\
+		rc.sysctl services shells shrc syslog.conf wscons.conf
 
 # Use machine-specific disktab if it exists, or the MI one otherwise
 .if exists(etc.${MACHINE}/disktab)
@@ -304,64 +299,64 @@ install-etc-files: .PHONY .MAKE check_DESTDIR MAKEDEV
 	${_MKMSG_INSTALL} ${DESTDIR}/dev/MAKEDEV
 	${ETC_INSTALL_OBJ_FILE} -o ${BINOWN} -g ${BINGRP} -m 555 \
 	    MAKEDEV ${DESTDIR}/dev
-.for owner group mode file in \
-		${BINOWN} operator		664	/etc/dumpdates  \
-		${BINOWN} operator		600	/etc/skeykeys \
-		root wheel				600	/var/at/at.deny \
-		root wheel				644	/var/db/locate.database \
-		${BINOWN} ${BINGRP}		600	/var/log/authlog \
-		root wheel				600	/var/log/cron \
-		${BINOWN} ${UTMPGRP}	664	/var/log/lastlog \
-		${BINOWN} ${UTMPGRP}	664	/var/log/lastlogx \
-		${BINOWN} ${BINGRP}		640	/var/log/lpd-errs \
-		${BINOWN} ${BINGRP}		600	/var/log/maillog \
-		${BINOWN} ${BINGRP}		644	/var/log/messages \
-		${BINOWN} ${BINGRP}		600	/var/log/secure \
-		${BINOWN} ${UTMPGRP}	664	/var/log/wtmp \
-		${BINOWN} ${UTMPGRP}	664	/var/log/wtmpx \
-		${BINOWN} ${BINGRP}		600	/var/log/xferlog \
-		daemon staff			664	/var/msgs/bounds \
-		${BINOWN} ${UTMPGRP}	664	/var/run/utmp \
-		${BINOWN} ${UTMPGRP}	664	/var/run/utmpx \
-		games games				664	/var/games/atc_score \
-		games games				664	/var/games/battlestar.log \
-		games games				664	/var/games/cfscores \
-		games games				664	/var/games/criblog \
-		games games				660	/var/games/hackdir/perm \
-		games games				660	/var/games/hackdir/record \
-		games games				664	/var/games/larn/llog12.0 \
-		games games				664	/var/games/larn/lscore12.0 \
-		games games				664	/var/games/larn/playerids \
-		games games				664	/var/games/robots_roll \
-		games games				664	/var/games/rogue.scores \
-		games games				664	/var/games/saillog \
-		games games				664	/var/games/snakerawscores \
-		games games				664	/var/games/snake.log \
-		games games				664	/var/games/tetris.scores
+.for owner group mode file in 									\
+		${BINOWN} operator		664	/etc/dumpdates  			\
+		${BINOWN} operator		600	/etc/skeykeys 				\
+		root wheel				600	/var/at/at.deny 			\
+		root wheel				644	/var/db/locate.database 	\
+		${BINOWN} ${BINGRP}		600	/var/log/authlog 			\
+		root wheel				600	/var/log/cron 				\
+		${BINOWN} ${UTMPGRP}	664	/var/log/lastlog 			\
+		${BINOWN} ${UTMPGRP}	664	/var/log/lastlogx 			\
+		${BINOWN} ${BINGRP}		640	/var/log/lpd-errs 			\
+		${BINOWN} ${BINGRP}		600	/var/log/maillog 			\
+		${BINOWN} ${BINGRP}		644	/var/log/messages 			\
+		${BINOWN} ${BINGRP}		600	/var/log/secure 			\
+		${BINOWN} ${UTMPGRP}	664	/var/log/wtmp 				\
+		${BINOWN} ${UTMPGRP}	664	/var/log/wtmpx 				\
+		${BINOWN} ${BINGRP}		600	/var/log/xferlog 			\
+		daemon staff			664	/var/msgs/bounds 			\
+		${BINOWN} ${UTMPGRP}	664	/var/run/utmp 				\
+		${BINOWN} ${UTMPGRP}	664	/var/run/utmpx 				\
+#		games games				664	/var/games/atc_score 		\
+#		games games				664	/var/games/battlestar.log 	\
+#		games games				664	/var/games/cfscores 		\
+#		games games				664	/var/games/criblog 			\
+#		games games				660	/var/games/hackdir/perm 	\
+#		games games				660	/var/games/hackdir/record 	\
+#		games games				664	/var/games/larn/llog12.0 	\
+#		games games				664	/var/games/larn/lscore12.0 	\
+#		games games				664	/var/games/larn/playerids 	\
+#		games games				664	/var/games/robots_roll 		\
+#		games games				664	/var/games/rogue.scores 	\
+#		games games				664	/var/games/saillog 			\
+#		games games				664	/var/games/snakerawscores 	\
+#		games games				664	/var/games/snake.log 		\
+#		games games				664	/var/games/tetris.scores
 	${_MKMSG_INSTALL} ${DESTDIR}${file}
 	if [ ! -e ${DESTDIR}${file} -o -s ${DESTDIR}${file} ]; then \
-		${ETC_INSTALL_FILE} -o ${owner} -g ${group} -m ${mode} \
+		${ETC_INSTALL_FILE} -o ${owner} -g ${group} -m ${mode} 	\
 			/dev/null ${DESTDIR}${file}; \
 	else true; fi
 .endfor
-.for subdir in . defaults autofs bluetooth iscsi mtree namedb pam.d powerd rc.d root skel ssh
+.for subdir in . defaults mtree periodic rc.d root
 	${MAKEDIRTARGET} ${subdir} configinstall
 .endfor
-	${MAKEDIRTARGET} ${NETBSDSRCDIR}/external/bsd/dhcpcd/sbin/dhcpcd configinstall
-	${MAKEDIRTARGET} ${NETBSDSRCDIR}/usr.bin/mail configinstall
-.if (${MKPF} != "no")
-	${MAKEDIRTARGET} ${NETBSDSRCDIR}/usr.sbin/pf configinstall
-.endif
-	${MAKEDIRTARGET} ${NETBSDSRCDIR}/crypto/external/bsd/openssh/bin configinstall
-.if (${MKPOSTFIX} != "no")
-	${MAKEDIRTARGET} ${NETBSDSRCDIR}/external/ibm-public/postfix configinstall
-.endif
-.if (${MKATF} != "no")
-	${MAKEDIRTARGET} ${NETBSDSRCDIR}/external/bsd/atf/etc/atf configinstall
-.endif
-.if (${MKKYUA} != "no")
-	${MAKEDIRTARGET} ${NETBSDSRCDIR}/external/bsd/kyua-cli/etc/kyua configinstall
-.endif
+#	${MAKEDIRTARGET} ${NETBSDSRCDIR}/external/bsd/dhcpcd/sbin/dhcpcd configinstall
+#	${MAKEDIRTARGET} ${NETBSDSRCDIR}/usr.bin/mail configinstall
+#.if (${MKPF} != "no")
+#	${MAKEDIRTARGET} ${NETBSDSRCDIR}/usr.sbin/pf configinstall
+#.endif
+#	${MAKEDIRTARGET} ${NETBSDSRCDIR}/crypto/external/bsd/openssh/bin configinstall
+#.if (${MKPOSTFIX} != "no")
+#	${MAKEDIRTARGET} ${NETBSDSRCDIR}/external/ibm-public/postfix configinstall
+#.endif
+#.if (${MKATF} != "no")
+#	${MAKEDIRTARGET} ${NETBSDSRCDIR}/external/bsd/atf/etc/atf configinstall
+#.endif
+#.if (${MKKYUA} != "no")
+#	${MAKEDIRTARGET} ${NETBSDSRCDIR}/external/bsd/kyua-cli/etc/kyua configinstall
+#.endif
 
 
 # install-obsolete-lists --

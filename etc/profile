@@ -1,0 +1,4 @@
+ 3 lines (3 sloc) 98 Bytes
+#	$NetBSD: profile,v 1.1 1997/06/21 06:07:39 mikel Exp $
+#
+# System-wide .profile file for sh(1).

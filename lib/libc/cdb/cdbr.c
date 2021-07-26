@@ -43,14 +43,14 @@
 #endif
 
 #if !HAVE_NBTOOL_CONFIG_H
-#include "../../../include/bitops.h"
+#include "bitops.h"
 #endif
 #if !HAVE_NBTOOL_CONFIG_H || HAVE_SYS_ENDIAN_H
 #include <sys/endian.h>
 #endif
 
 #if defined(_KERNEL) || defined(_STANDALONE)
-#include <sys/cdbr.h>
+#include <cdbr.h>
 #include <sys/systm.h>
 #include <lib/libkern/libkern.h>
 #define SET_ERRNO(val)
@@ -59,7 +59,7 @@
 #else
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include "../../../include/cdbr.h"
+#include <cdbr.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
@@ -67,6 +67,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/ansi.h>
 #define SET_ERRNO(val) errno = (val)
 #endif
 

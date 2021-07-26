@@ -192,7 +192,7 @@ mpool_get(mp, pgno, flags)
 	 * If asking for a specific page that is already in the cache, find
 	 * it and return it.
 	 */
-	if (b = mpool_look(mp, pgno)) {
+	if (b == mpool_look(mp, pgno)) {
 #ifdef STATISTICS
 		++mp->pageget;
 #endif
@@ -323,7 +323,7 @@ mpool_sync(mp)
 	BKT *b;
 
 	for (b = mp->lru.cprev; b != (BKT *)&mp->lru; b = b->cprev)
-		if (b->flags & MPOOL_DIRTY && mpool_write(mp, b) == RET_ERROR)
+		if ((b->flags & MPOOL_DIRTY) && mpool_write(mp, b) == RET_ERROR)
 			return (RET_ERROR);
 	return (fsync(mp->fd) ? RET_ERROR : RET_SUCCESS);
 }
@@ -354,7 +354,7 @@ mpool_bkt(mp)
 	 */
 	for (b = mp->lru.cprev; b != (BKT *)&mp->lru; b = b->cprev)
 		if (!(b->flags & MPOOL_PINNED)) {
-			if (b->flags & MPOOL_DIRTY &&
+			if ((b->flags & MPOOL_DIRTY) &&
 			    mpool_write(mp, b) == RET_ERROR)
 				return (NULL);
 			rmhash(b);

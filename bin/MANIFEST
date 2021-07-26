@@ -1,10 +1,10 @@
 Application	Version
 -----------	-------
 cat/		4.4BSD-Lite2
-chflags/	2.11
+chflags/	2.11BSD
 chio/		NetBSD
 chmod/		NetBSD
-chpass/		2.11
+chpass/		2.11BSD
 cp/			4.4BSD-Lite2
 csh/		4.4BSD-Lite2
 date/		4.4BSD-Lite2
@@ -12,7 +12,7 @@ dd/			4.4BSD-Lite2
 df/			4.4BSD-Lite2
 domainname/	NetBSD
 echo/		4.4BSD-Lite2
-ed/
+ed/			NetBSD
 expr/		NetBSD
 hostname/	4.4BSD-Lite2
 kenv/		FreeBSD
@@ -26,12 +26,14 @@ passwd/		2.11BSD
 pax/		4.4BSD-Lite2
 ping/		2.11BSD
 ps/			4.4BSD-Lite2
+rcp/		4.4BSD-Lite2
 rm/			NetBSD
+rmail/		2.11BSD
 rmdir/		NetBSD
 sh/			4.4BSD-Lite2
 sleep/		NetBSD
 stty/		NetBSD
 sync/		NetBSD
-sysctl/		2.11
+sysctl/		2.11BSD
 tcsh/		FreeBSD
 test/		NetBSD

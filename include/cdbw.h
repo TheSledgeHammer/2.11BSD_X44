@@ -35,6 +35,7 @@
 #define	_CDBW_H
 
 #include <sys/cdefs.h>
+#include <sys/types.h>
 #include <stddef.h>
 
 struct cdbw;
