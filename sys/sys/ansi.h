@@ -43,17 +43,17 @@
 #include <machine/ansi.h>
 
 typedef char *				__caddr_t;		/* core address */
-typedef u_int32_t			__gid_t;		/* group id */
-typedef u_int32_t			__in_addr_t;	/* IP(v4) address */
-typedef uint16_t			__in_port_t;	/* "Internet" port number */
-typedef uint32_t			__mode_t;		/* file permissions */
-typedef int64_t				__off_t;		/* file offset */
-typedef int32_t				__pid_t;		/* process id */
-typedef uint8_t				__sa_family_t;	/* socket address family */
+typedef __uint32_t			__gid_t;		/* group id */
+typedef __uint32_t			__in_addr_t;	/* IP(v4) address */
+typedef __uint16_t			__in_port_t;	/* "Internet" port number */
+typedef __uint32_t			__mode_t;		/* file permissions */
+typedef __int64_t			__off_t;		/* file offset */
+typedef __int32_t			__pid_t;		/* process id */
+typedef __uint8_t			__sa_family_t;	/* socket address family */
 typedef unsigned int		__socklen_t;	/* socket-related datum length */
-typedef u_int32_t			__uid_t;		/* user id */
-typedef	u_int64_t			__fsblkcnt_t;	/* fs block count (statvfs) */
-typedef	u_int64_t			__fsfilcnt_t;	/* fs file count */
+typedef __uint32_t			__uid_t;		/* user id */
+typedef	__uint64_t			__fsblkcnt_t;	/* fs block count (statvfs) */
+typedef	__uint64_t			__fsfilcnt_t;	/* fs file count */
 
 struct __tag_wctrans_t;
 

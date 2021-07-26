@@ -33,7 +33,6 @@
 #define _SYS_STDINT_H_
 
 #include <sys/cdefs.h>
-
 #include <machine/types.h>
 
 #ifndef	_BSD_INT8_T_
@@ -72,7 +71,7 @@ typedef	__int64_t		int64_t;
 #endif
 
 #ifndef	_BSD_UINT64_T_
-typedef	u_int64_t		uint64_t;
+typedef	__uint64_t		uint64_t;
 #define	_BSD_UINT64_T_
 #endif
 
@@ -95,12 +94,5 @@ typedef	__register_t 	register_t;
 typedef	__uregister_t 	uregister_t;
 #define _BSD_UREGISTER_T_
 #endif
-
-/* BSD-style unsigned bits types */
-typedef uregister_t			u_register_t;
-typedef	uint8_t				u_int8_t;
-typedef	uint16_t			u_int16_t;
-typedef	uint32_t			u_int32_t;
-typedef	uint64_t			u_int64_t;
 
 #endif /* !_SYS_STDINT_H_ */

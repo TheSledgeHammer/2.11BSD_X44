@@ -17,27 +17,27 @@
 PROG=	lex
 CPPFLAGS+=-I. -I${.CURDIR} -DVERSION=\"${VERSION}\"
 SRCS=	 \
-buf.c \
-ccl.c \
-dfa.c \
-ecs.c \
-filter.c \
-gen.c \
-main.c \
-misc.c \
-nfa.c \
-options.c \
-parse.y \
-regex.c \
-scan.l \
-scanflags.c \
-scanopt.c \
-skel.c \
-sym.c \
-tables.c \
-tables_shared.c \
-tblcmp.c \
-yylex.c
+		buf.c \
+		ccl.c \
+		dfa.c \
+		ecs.c \
+		filter.c \
+		gen.c \
+		main.c \
+		misc.c \
+		nfa.c \
+		options.c \
+		parse.y \
+		regex.c \
+		scan.l \
+		scanflags.c \
+		scanopt.c \
+		skel.c \
+		sym.c \
+		tables.c \
+		tables_shared.c \
+		tblcmp.c \
+		yylex.c
 
 YHEADER=1
 CLEANFILES+=skel.c
@@ -51,7 +51,7 @@ DPADD+=${LIBM}
 MAN = flex.1
 
 LINKS=	${BINDIR}/lex ${BINDIR}/flex \
-	${BINDIR}/lex ${BINDIR}/flex++
+		${BINDIR}/lex ${BINDIR}/flex++
 MLINKS=	flex.1 lex.1 
 
 skel.c: flex.skl mkskel.sh flexint.h tables_shared.h
@@ -72,11 +72,11 @@ scan.c: scan.l
 scan.o yylex.o: parse.h
 
 # Ugh. Generates too large offsets with -O2.
-.if defined(HAVE_GCC) && ${HAVE_GCC} >= 7 && ${ACTIVE_CC} == "gcc"
-. if ${MACHINE_CPU} == "m68k" && empty(CFLAGS:M-O0)
-COPTS.scan.c+=        -O1
-. endif
-.endif
+#.if defined(HAVE_GCC) && ${HAVE_GCC} >= 7 && ${ACTIVE_CC} == "gcc"
+#. if ${MACHINE_CPU} == "m68k" && empty(CFLAGS:M-O0)
+#COPTS.scan.c+=        -O1
+#. endif
+#.endif
 
 COPTS.filter.c+=	${GCC_NO_FORMAT_TRUNCATION}
 COPTS.misc.c+=		${GCC_NO_FORMAT_TRUNCATION}

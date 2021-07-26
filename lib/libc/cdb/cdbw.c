@@ -50,7 +50,7 @@
 #include <unistd.h>
 
 //#if !HAVE_NBTOOL_CONFIG_H
-#include <sys/bitops.h>
+#include "../../../include/bitops.h"
 #else
 static inline int
 my_fls32(uint32_t n)

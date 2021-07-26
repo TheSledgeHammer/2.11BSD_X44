@@ -43,7 +43,7 @@
 #endif
 
 #if !HAVE_NBTOOL_CONFIG_H
-#include <sys/bitops.h>
+#include "../../../include/bitops.h"
 #endif
 #if !HAVE_NBTOOL_CONFIG_H || HAVE_SYS_ENDIAN_H
 #include <sys/endian.h>
@@ -59,7 +59,7 @@
 #else
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <cdbr.h>
+#include "../../../include/cdbr.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>

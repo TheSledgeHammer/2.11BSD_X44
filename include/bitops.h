@@ -31,6 +31,7 @@
 #ifndef _SYS_BITOPS_H_
 #define _SYS_BITOPS_H_
 
+#include <sys/cdefs.h>
 #include <sys/stdint.h>
 
 /*
@@ -277,8 +278,7 @@ fast_divide32_prepare(uint32_t _div, uint32_t * __restrict _m,
 
 /* ARGSUSED */
 static __inline uint32_t
-fast_divide32(uint32_t _v, uint32_t _div __unused, uint32_t _m, uint8_t _s1,
-    uint8_t _s2)
+fast_divide32(uint32_t _v, uint32_t _div __unused, uint32_t _m, uint8_t _s1, uint8_t _s2)
 {
 	uint32_t _t;
 
