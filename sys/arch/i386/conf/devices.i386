@@ -21,7 +21,8 @@ major	{wd = 0}
 # System bus types
 #
 define 	mainbus { }
-device	mainbus: isabus, eisabus, pcibus, 	mainbus
+device	mainbus: apmbus, isabus, eisabus, 
+		pcibus,
 attach	mainbus at root
 file	arch/i386/i386/mainbus.c	    	mainbus
 
@@ -89,9 +90,3 @@ file	dev/core/isa/i82365_isa.c		   pcic_isa
 # PCIC pcmcia contoller on PCI bus.
 attach	pcic at pci with pcic_pci
 file	dev/core/pci/i82365_pci.c		   pcic_pci
-
-# miscellaneous pseudo-devices
-# cmos(4) pseudo-device
-pseudo-device							   cmos
-
-pseudo-device							   ksyms

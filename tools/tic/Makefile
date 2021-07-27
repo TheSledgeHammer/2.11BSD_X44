@@ -5,11 +5,11 @@ HOST_SRCDIR=	usr.bin/tic
 
 # We need our libterminfo to compile compat and write to the database
 CPPFLAGS+=	-DTERMINFO_COMPILE -DTERMINFO_COMPAT -DTERMINFO_DB
-HOST_SRCS=	compile.c hash.c
+#HOST_SRCS=	compile.c hash.c
 
 TERMINFODIR=	${NETBSDSRCDIR}/usr.lib/libterminfo
 
 .include "${.CURDIR}/../Makefile.host"
-.include "${TERMINFODIR}/Makefile.hash"
+#.include "${TERMINFODIR}/Makefile.hash"
 
 .PATH:	 ${TERMINFODIR}

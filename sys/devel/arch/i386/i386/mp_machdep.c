@@ -433,7 +433,7 @@ ipi_startup(apic_id, vector)
  */
 
 /* Variables needed for SMP tlb shootdown. */
-vm_offset_t smp_tlb_addr1, smp_tlb_addr2;
+vm_offset_t 		smp_tlb_addr1, smp_tlb_addr2;
 pmap_t 				smp_tlb_pmap;
 volatile u_int32_t 	smp_tlb_generation;
 

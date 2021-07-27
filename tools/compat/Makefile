@@ -4,7 +4,7 @@ HOSTLIB=	nbcompat
 
 .include <bsd.hostinit.mk>
 
-SRCS=		atoll.c basename.c cdbr.c cdbw.c dirname.c 					\
+SRCS=		atoll.c basename.c dirname.c 								\
 			dprintf.c fgetln.c flock.c fparseln.c fpurge.c 				\
 			getcap.c getline.c getmode.c getopt_long.c gettemp.c 		\
 			heapsort.c getsubopt.c 										\
@@ -40,7 +40,7 @@ CPPFLAGS+=	-no-cpp-precomp
 CPPFLAGS+=	-I. -I./include -I${.CURDIR} -I${.CURDIR}/sys 			\
 		-DHAVE_NBTOOL_CONFIG_H=1 -D_FILE_OFFSET_BITS=64
 
-.PATH:		${.CURDIR}/../../lib/libc/cdb 							\
+.PATH:		 							\
 			${.CURDIR}/../../lib/libc/compat-4.1					\
 			${.CURDIR}/../../lib/libc/compat-4.3					\
 			${.CURDIR}/../../lib/libc/compat-netbsd					\

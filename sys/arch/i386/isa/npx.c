@@ -187,8 +187,9 @@ fpu_save(union savefpu *addr)
 		fxsave(&addr->sv_xmm);
 		/* FXSAVE doesn't FNINIT like FNSAVE does -- so do it here. */
 		fninit();
-	} else
+	} else {
 		fnsave(&addr->sv_87);
+	}
 }
 
 static int

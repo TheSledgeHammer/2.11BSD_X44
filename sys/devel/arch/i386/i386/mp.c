@@ -43,6 +43,39 @@
 #include <devel/arch/i386/include/cpu.h>
 #include <devel/arch/i386/include/percpu.h>
 
+/* belongs in cpufunc.h */
+static __inline u_int
+bsrl(u_int mask)
+{
+	u_int	result;
+
+	__asm("bsrl %1,%0" : "=r" (result) : "rm" (mask) : "cc");
+	return (result);
+}
+
+#define	HAVE_INLINE_FFS
+
+static __inline int
+ffs(int mask)
+{
+	/*
+	 * Note that gcc-2's builtin ffs would be used if we didn't declare
+	 * this inline or turn off the builtin.  The builtin is faster but
+	 * broken in gcc-2.4.5 and slower but working in gcc-2.5 and later
+	 * versions.
+	 */
+	 return (mask == 0 ? mask : (int)bsfl((u_int)mask) + 1);
+}
+
+#define	HAVE_INLINE_FLS
+
+static __inline int
+fls(int mask)
+{
+	return (mask == 0 ? mask : (int)bsrl((u_int)mask) + 1);
+}
+
+
 /* lock region used by kernel profiling */
 int	mcount_lock;
 

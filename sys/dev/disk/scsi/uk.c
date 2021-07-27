@@ -54,11 +54,7 @@ struct uk_softc {
 
 int ukmatch (struct device *, void *, void *);
 void ukattach (struct device *, struct device *, void *);
-/*
-struct cfdriver uk_cd = {
-	NULL, "uk", ukmatch, ukattach, DV_DULL, sizeof(struct uk_softc)
-};
-*/
+
 CFDRIVER_DECL(NULL, uk, &uk_cops, DV_DULL, sizeof(struct uk_softc));
 CFOPS_DECL(uk, ukmatch, ukattach, NULL, NULL);
 

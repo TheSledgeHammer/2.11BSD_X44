@@ -54,6 +54,7 @@ struct cdevsw {
 	int			(*d_poll)(dev_t dev, int events, struct proc *p);
 	caddr_t		(*d_mmap)(dev_t dev, off_t off, int flag);
 	int			(*d_strategy)(struct buf *bp);
+	int			(*d_kqfilter)(dev_t, struct knote *);
 	int			(*d_discard)(dev_t dev, off_t pos, off_t len);
 	int			d_type;
 };

@@ -54,6 +54,7 @@ file	kern/subr_disk.c
 file	kern/subr_extent.c
 file	kern/subr_hints.c
 file	kern/subr_log.c
+file	kern/subr_power.c
 file	kern/subr_prf.c
 file	kern/subr_prof.c
 file	kern/subr_rmap.c

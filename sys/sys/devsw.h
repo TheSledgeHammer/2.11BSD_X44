@@ -152,14 +152,15 @@ dev_t							devsw_io_blktochr(dev_t);
 #define	dev_type_ioctl(n) 		int n(dev_t, u_long, caddr_t, int, struct proc *)
 #define dev_type_start(n)		int n(struct tty *)
 #define	dev_type_stop(n)		int n(struct tty *, int)
-#define	dev_type_tty(n)			struct tty * n(dev_t)
+#define	dev_type_tty(n)			struct tty *n(dev_t)
 #define dev_type_select(n)		int n(dev_t, int, struct proc *)
 #define	dev_type_poll(n)		int n(dev_t, int, struct proc *)
 #define	dev_type_mmap(n)		caddr_t n(dev_t, off_t, int)
 #define	dev_type_strategy(n)	int n(dev_t, int, int, struct proc *)
 #define dev_type_modem(n)		int n(struct tty *, int)
 #define dev_type_rint(n)		int n(int, struct tty *)
-#define dev_type_discard(n)		int n (dev_t, off_t, off_t)
+#define dev_type_kqfilter(n)	int n(dev_t, struct knote *)
+#define dev_type_discard(n)		int n(dev_t, off_t, off_t)
 #define	dev_type_dump(n)		int n(dev_t)
 #define	dev_type_size(n)		daddr_t n(dev_t)
 
@@ -184,6 +185,7 @@ dev_type_select(cdev_select);
 dev_type_poll(cdev_poll);
 dev_type_mmap(cdev_mmap);
 dev_type_strategy(cdev_strategy);
+dev_type_kqfilter(cdev_kqfilter);
 dev_type_discard(cdev_discard);
 
 /* linesw-specific types */
@@ -212,6 +214,7 @@ dev_type_poll(line_poll);
 #define	nostrategy			(enodev)
 #define	nomodem				(enodev)
 #define	norint				(enodev)
+#define	nokqfilter			seltrue_kqfilter
 #define	nodiscard			(enodev)
 #define	nodump				(enodev)
 #define	nosize				(enodev)
@@ -231,6 +234,7 @@ dev_type_poll(line_poll);
 #define	nullstrategy		(nullop)
 #define	nullmodem			(nullop)
 #define	nullrint			(nullop)
+#define	nullkqfilter		(nullop)
 #define	nulldiscard			(nullop)
 #define	nulldump			(nullop)
 #define	nullsize			(nullop)

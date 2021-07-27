@@ -1156,6 +1156,22 @@ cdev_strategy(struct buf *bp)
 	return (rv);
 }
 
+int
+cdev_kqfilter(dev_t dev, struct knote *kn)
+{
+	const struct cdevsw *c;
+	int rv, error;
+
+	error = devsw_io_lookup(dev, c, CDEVTYPE);
+	if(error != 0) {
+		return (error);
+	}
+
+	rv = (*c->d_kqfilter)(dev, kn);
+
+	return (rv);
+}
+
 daddr_t
 cdev_discard(dev_t dev, off_t pos, off_t len)
 {

@@ -58,13 +58,8 @@ void i386_ipi_nop(struct cpu_info *);
 void i386_ipi_halt(struct cpu_info *);
 void i386_ipi_wbinvd(struct cpu_info *);
 
-#if NNPX > 0
+
 void i386_ipi_synch_fpu(struct cpu_info *);
-void i386_ipi_flush_fpu(struct cpu_info *);
-#else
-#define i386_ipi_synch_fpu NULL
-#define i386_ipi_flush_fpu NULL
-#endif
 
 #ifdef MTRR
 void i386_ipi_reload_mtrr(struct cpu_info *);
@@ -75,15 +70,9 @@ void i386_ipi_reload_mtrr(struct cpu_info *);
 void (*ipifunc[I386_NIPI])(struct cpu_info *) = {
 		i386_ipi_halt,
 		i386_ipi_nop,
-		i386_ipi_flush_fpu,
 		i386_ipi_synch_fpu,
 		i386_ipi_reload_mtrr,
-#if 0
-		gdt_reload_cpu,
-#else
 		NULL,
-#endif
-		i386_setperf_ipi,
 		i386_ipi_wbinvd,
 };
 
@@ -178,6 +167,10 @@ i386_ipi_handler(void)
 
 /* TODO: Fix Up Below Methods */
 
+/*
+ * Common x86 IPI handlers.
+ */
+
 void
 i386_ipi_nop(struct cpu_info *ci)
 {
@@ -187,9 +180,7 @@ i386_ipi_nop(struct cpu_info *ci)
 void
 i386_ipi_halt(struct cpu_info *ci)
 {
-	npxsave_cpu(ci, 1);
 	intr_disable();
-	lapic_disable();
 	wbinvd();
 	ci->cpu_flags &= ~CPUF_RUNNING;
 	wbinvd();
@@ -199,23 +190,12 @@ i386_ipi_halt(struct cpu_info *ci)
 	}
 }
 
-#if NNPX > 0
-void
-i386_ipi_flush_fpu(struct cpu_info *ci)
-{
-	if (ci->ci_fpsaveproc == ci->ci_fpcurproc) {
-		npxsave_cpu(ci, 0);
-	}
-}
 
-void
+static void
 i386_ipi_synch_fpu(struct cpu_info *ci)
 {
-	if (ci->ci_fpsaveproc == ci->ci_fpcurproc) {
-		npxsave_cpu(ci, 1);
-	}
+	panic("%s: impossible", __func__);
 }
-#endif
 
 #ifdef MTRR
 void
@@ -225,9 +205,3 @@ i386_ipi_reload_mtrr(struct cpu_info *ci)
 		mem_range_softc.mr_op->reload(&mem_range_softc);
 }
 #endif
-
-void
-i386_ipi_wbinvd(struct cpu_info *ci)
-{
-	wbinvd();
-}

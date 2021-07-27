@@ -15,7 +15,7 @@ INCS=		acct.h ansi.h ataio.h atomic.h audioio.h boot.h	buf.h bus.h 		\
 			ioctl_compat.h ioctl.h kenv.h kernel.h ksyms.h ktrace.h				\
 			lock.h lockf.h malloc.h map.h mbuf.h memrange.h midiio.h			\
 			mman.h mount.h msgbuf.h mtio.h namei.h null.h param.h				\
-			poll.h proc.h protosw.h ptrace.h pty.h queue.h reboot.h				\
+			poll.h power.h proc.h protosw.h ptrace.h pty.h queue.h reboot.h		\
 			resource.h resourcevar.h rwlock.h scanio.h scsiio.h select.h		\
 			signal.h signalvar.h socket.h socketvar.h stat.h stdarg.h			\
 			stdbool.h stdint.h syscall.h syscallargs.h sysctl.h syslimits.h		\

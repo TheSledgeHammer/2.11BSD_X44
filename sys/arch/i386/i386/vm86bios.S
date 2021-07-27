@@ -135,7 +135,6 @@ ENTRY(vm86_bioscall)
 		/*
 		 * Return via doreti
 		 */
-		MEXITCOUNT
 		jmp	doreti
 
 

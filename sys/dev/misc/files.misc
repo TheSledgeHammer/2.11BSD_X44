@@ -2,6 +2,7 @@
 #
 # Misc Configuration Files
 
+include 	"dev/misc/apm/files.apm"
 include 	"dev/misc/pccons/files.pccons"
 include 	"dev/misc/wscons/files.wscons"
 include 	"dev/misc/wsfont/files.wsfont"

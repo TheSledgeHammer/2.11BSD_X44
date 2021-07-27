@@ -3,7 +3,7 @@
 INCSDIR= /usr/include/dev/misc/wscons
 
 INCS=	ascii.h wscons_callbacks.h wscons_raster.h wscons_rfont.h wsconsio.h \
-	wsdisplay_usl_io.h wsdisplayvar.h wsemulvar.h wseventvar.h \
-	wskbdvar.h wsksymdef.h wsksymvar.h wsmousevar.h
+		wsdisplay_usl_io.h wsdisplayvar.h wsemulvar.h wseventvar.h \
+		wskbdvar.h wsksymdef.h wsksymvar.h wsmousevar.h
 
 .include <bsd.kinc.mk>

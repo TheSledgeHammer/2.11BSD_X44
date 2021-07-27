@@ -54,7 +54,7 @@ typedef struct _cpuset cpuset_t;
 #define	CPU_EMPTY(p)			BIT_EMPTY(CPU_SETSIZE, p)
 #define	CPU_FFS(p)				BIT_FFS(CPU_SETSIZE, p)
 
-//#ifdef _KERNEL
+#ifdef _KERNEL
 #include <sys/queue.h>
 
 LIST_HEAD(setlist, cpuset);

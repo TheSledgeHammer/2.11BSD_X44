@@ -10,21 +10,21 @@
 
 NOOBJ=		# defined
 
-INCS=	a.out.h ar.h assert.h atomic.h bitops.h bitstring.h cdbr.h 		 \
-		cdbw.h cpio.h ctype.h curses.h db.h dbm.h dirent.h disktab.h	 \ 	
-		dlfcn.h err.h errlst.h errno.h fcntl.h fnmatch.h frame.h fstab.h \
-		fts.h glob.h grp.h ident.h kenv.h kvm.h lastlog.h libgen.h 		 \
-		limits.h link_aout.h link_elf.h link.h math.h memory.h mp.h 	 \
-		mpool.h mtab.h nl_types.h ndbm.h netdb.h nlist.h paths.h pcc.h 	 \
-		pwd.h ranlib.h regex.c regexp.h resolv.h rune.h runetype.h 		 \
-		setjmp.h sgtty.h signal.h stab.h stddef.h stdio.h stdlib.h 		 \
-		string.h stringlist.h strings.h struct.h sysexits.h tar.h time.h \
-		ttyent.h tzfile.h ulimit.h unistd.h util.h utime.h utmp.h 		 \
+INCS=	a.out.h ar.h assert.h atomic.h bitstring.h  		 				\
+		cpio.h ctype.h curses.h db.h dbm.h dirent.h disktab.h	 			\ 	
+		dlfcn.h err.h errlst.h errno.h fcntl.h fnmatch.h frame.h fstab.h 	\
+		fts.h glob.h grp.h ident.h kenv.h kvm.h lastlog.h libgen.h 		 	\
+		limits.h link_aout.h link_elf.h link.h math.h memory.h mp.h 	 	\
+		mpool.h mtab.h nl_types.h ndbm.h netdb.h nlist.h paths.h pcc.h 	 	\
+		pwd.h ranlib.h regex.c regexp.h resolv.h rune.h runetype.h 		 	\
+		setjmp.h sgtty.h signal.h stab.h stddef.h stdio.h stdlib.h 		 	\
+		string.h stringlist.h strings.h struct.h sysexits.h tar.h time.h 	\
+		ttyent.h tzfile.h ulimit.h unistd.h util.h utime.h utmp.h 		 	\
 		varargs.h vfont.h vis.h vmf.h wchar.h wctype.h
 INCS+=	md2.h md4.h md5.h rmd160.h sha1.h sha2.h sha3.h
 INCS+=	arpa/ftp.h arpa/inet.h arpa/nameser.h arpa/telnet.h arpa/tftp.h
 INCS+=	OLD/dk.h OLD/psout.h
-INCS+=	protocols/dumprestore.h protocols/routed.h protocols/rwhod.h 	\
+INCS+=	protocols/dumprestore.h protocols/routed.h protocols/rwhod.h 		\
 		protocols/talkd.h protocols/timed.h
 
 .include <bsd.own.mk>

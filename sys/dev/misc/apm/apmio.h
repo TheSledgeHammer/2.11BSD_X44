@@ -38,25 +38,26 @@
 #define __DEV_APM_APMIO_H__
 
 struct apm_event_info {
-	u_int type;
-	u_int index;
-	u_int spare[8];
+	u_int 	type;
+	u_int 	index;
+	u_int 	spare[8];
 };
 
 struct apm_power_info {
-	u_char battery_state;
-	u_char ac_state;
-	u_char battery_life;
-	u_char spare1;
-	u_int minutes_left;		/* estimate */
-	u_int nbattery;
-	u_int batteryid;
-	u_int spare2[4];
+	u_char 	battery_state;
+	u_char 	ac_state;
+	u_char 	battery_life;
+	u_char 	minutes_valid;
+	u_int 	minutes_left;		/* estimate */
+	u_int 	nbattery;
+	u_int 	batteryid;
+	u_int 	battery_flags;
+	u_int 	spare2[3];
 };
 
 struct apm_ctl {
-	u_int dev;
-	u_int mode;
+	u_int 	dev;
+	u_int 	mode;
 };
 
 #define	APM_IOC_REJECT		_IOW('A', 0, struct apm_event_info) /* reject request # */
