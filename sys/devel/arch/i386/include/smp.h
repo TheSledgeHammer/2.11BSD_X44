@@ -23,6 +23,13 @@
 #include <i386/include/intr.h>
 #include <i386/include/pcb.h>
 
+#define LAPIC_IPI_INTS 				0xf0
+#define	IPI_INVLOP					(LAPIC_IPI_INTS + 1)	/* TLB Shootdown IPIs, amd64 */
+#define	IPI_INVLTLB					(LAPIC_IPI_INTS + 1)	/* TLB Shootdown IPIs, i386 */
+#define	IPI_INVLPG					(LAPIC_IPI_INTS + 2)
+#define	IPI_INVLRNG					(LAPIC_IPI_INTS + 3)
+#define	IPI_INVLCACHE				(LAPIC_IPI_INTS + 4)
+
 struct pmap;
 
 /* global data in mp.c */

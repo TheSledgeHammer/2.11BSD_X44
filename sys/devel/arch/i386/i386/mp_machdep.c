@@ -390,8 +390,7 @@ install_ap_tramp(void)
 static int
 start_ap(int apic_id)
 {
-	int vector, ms;
-	int cpus;
+	int vector, ms, cpus, error;
 
 	/* calculate the vector */
 	vector = (boot_address >> 12) & 0xff;
@@ -399,16 +398,34 @@ start_ap(int apic_id)
 	/* used as a watchpoint to signal AP startup */
 	cpus = mp_naps;
 
-	i386_ipi_startup(apic_id, vector);
+	ipi_startup(apic_id, vector);
 
 	/* Wait up to 5 seconds for it to start. */
 	for (ms = 0; ms < 5000; ms++) {
 		if (mp_naps > cpus) {
-			return 1; /* return SUCCESS */
+			return (1); /* return SUCCESS */
 		}
 		delay(1000);
 	}
-	return 0; /* return FAILURE */
+	return (0); /* return FAILURE */
+}
+
+static void
+ipi_startup(apic_id, vector)
+	int apic_id, vector;
+{
+	int error;
+	error = i386_ipi_init(apic_id);
+	if (error != 0) {
+		printf("i386_ipi_init was unsuccessful: %d apic_id: \n", apic_id);
+	}
+	delay(10000);
+
+	error = i386_ipi_startup(apic_id, vector);
+	if (error != 0) {
+		printf("i386_ipi_startup was unsuccessful: %d apic_id: %d vector: \n", apic_id, vector);
+	}
+	delay(200);
 }
 
 /*
@@ -444,6 +461,30 @@ smp_targeted_tlb_shootdown(cpuset_t mask, u_int vector, pmap_t pmap, vm_offset_t
 			ia32_pause();
 	}
 	return;
+}
+
+void
+smp_masked_invltlb(cpuset_t mask, pmap_t pmap, smp_invl_cb_t curcpu_cb)
+{
+	smp_targeted_tlb_shootdown(mask, IPI_INVLTLB, pmap, 0, 0, curcpu_cb);
+}
+
+void
+smp_masked_invlpg(cpuset_t mask, vm_offset_t addr, pmap_t pmap, smp_invl_cb_t curcpu_cb)
+{
+	smp_targeted_tlb_shootdown(mask, IPI_INVLPG, pmap, addr, 0, curcpu_cb);
+}
+
+void
+smp_masked_invlpg_range(cpuset_t mask, vm_offset_t addr1, vm_offset_t addr2, pmap_t pmap, smp_invl_cb_t curcpu_cb)
+{
+	smp_targeted_tlb_shootdown(mask, IPI_INVLRNG, pmap, addr1, addr2, curcpu_cb);
+}
+
+void
+smp_cache_flush(smp_invl_cb_t curcpu_cb)
+{
+	smp_targeted_tlb_shootdown(all_cpus, IPI_INVLCACHE, NULL, 0, 0, curcpu_cb);
 }
 
 /*

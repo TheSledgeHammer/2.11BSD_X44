@@ -203,15 +203,17 @@ i386_ipi_halt(struct cpu_info *ci)
 void
 i386_ipi_flush_fpu(struct cpu_info *ci)
 {
-	if (ci->ci_fpsaveproc == ci->ci_fpcurproc)
+	if (ci->ci_fpsaveproc == ci->ci_fpcurproc) {
 		npxsave_cpu(ci, 0);
+	}
 }
 
 void
 i386_ipi_synch_fpu(struct cpu_info *ci)
 {
-	if (ci->ci_fpsaveproc == ci->ci_fpcurproc)
+	if (ci->ci_fpsaveproc == ci->ci_fpcurproc) {
 		npxsave_cpu(ci, 1);
+	}
 }
 #endif
 
