@@ -40,7 +40,10 @@
 #include <sys/smp.h>
 #include <sys/user.h>
 
-cpuset_t all_cpus;
+#include <devel/sys/malloctypes.h>
+
+
+cpuset_t 			all_cpus;
 
 int mp_ncpus;
 /* export this for libkvm consumers. */
@@ -74,11 +77,11 @@ mp_start(pc)
 	if (smp_disabled != 0 || cpu_mp_probe() == 0) {
 		mp_ncores = 1;
 		mp_ncpus = 1;
-		//CPU_SETOF(PERCPU_GET(pc, cpuid), &all_cpus);
+		CPU_SETOF(PERCPU_GET(pc, cpuid), &all_cpus);
 		return;
 	}
 
-	cpu_mp_start(pc); /* TODO: add percpu here */
+	cpu_mp_start(pc);
 	printf("FreeBSD/SMP: Multiprocessor System Detected: %d CPUs\n", mp_ncpus);
 
 	if (mp_ncores < 0) {
@@ -88,7 +91,7 @@ mp_start(pc)
 	cpu_mp_announce();
 }
 
-//#ifdef SMP
+#ifdef SMP
 void
 topo_init_node(struct topo_node *node)
 {

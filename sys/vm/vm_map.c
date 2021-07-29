@@ -790,14 +790,13 @@ vm_map_lookup_entry(map, address, entry)
     boolean_t use_tree = FALSE;
 
 	/*
-	 *	Start looking either from the head of the
+	 *	Start looking either from the head or tail of the
 	 *	list, or from the hint.
 	 */
 
 	simple_lock(&map->hint_lock);
 	cur = map->hint;
 	simple_unlock(&map->hint_lock);
-
 
 	if(address < cur->start) {
 		if(vm_map_search_prev_entry(map, address, cur)) {

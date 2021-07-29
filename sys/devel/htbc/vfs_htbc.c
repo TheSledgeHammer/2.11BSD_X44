@@ -293,6 +293,7 @@ htbc_stop(struct htbc *ht, int force)
 	}
 
 	/* Unlinked inodes persist after a flush */
+	/*
 	if (ht->ht_inohashcnt) {
 		if (force) {
 			htbc_discard(ht);
@@ -300,6 +301,7 @@ htbc_stop(struct htbc *ht, int force)
 			return EBUSY;
 		}
 	}
+	*/
 	KASSERT(ht->ht_bufbytes == 0);
 	KASSERT(ht->ht_bcount == 0);
 	KASSERT(ht->ht_bufcount == 0);
@@ -733,13 +735,13 @@ htbc_register_inode(chain, ino, mode)
 	register struct htbc_htransaction *trans;
 	union ht_ino *hti;
 
-	haschain_lock(chain);
+	hashchain_lock(chain);
 	trans = htbc_lookup_transaction(chain);
 	if(htbc_inode_get(chain, ino) == NULL) {
 		hti->u_ino = ino;
 		hti->u_imode = mode;
 		trans->ht_inocnt++;
-		haschain_unlock(chain);
+		hashchain_unlock(chain);
 	}
 }
 
@@ -752,13 +754,13 @@ htbc_unregister_inode(chain, ino, mode)
 	register struct htbc_htransaction *trans;
 	union ht_u_ino *hti;
 
-	haschain_lock(chain);
+	hashchain_lock(chain);
 	trans = htbc_lookup_transaction(chain);
 	hti = htbc_inode_get(ino, mode);
 	if(hti) {
 		KASSERT(hti == NULL);
 		trans->ht_inocnt--;
-		haschain_unlock(chain);
+		hashchain_unlock(chain);
 	}
 }
 

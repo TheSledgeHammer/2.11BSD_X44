@@ -215,11 +215,14 @@ extract_currdev(void)
 	    currdev.d_kind.biosdisk.partition = 0;
 		biosdev = -1;
 	} else {
-	    //currdev.d_kind.biosdisk.slice = B_SLICE(initial_bootdev) - 1;
+		/*
+	    currdev.d_kind.biosdisk.slice = B_SLICE(initial_bootdev) - 1;
 		currdev.d_kind.biosdisk.slice = (B_ADAPTOR(initial_bootdev) << 4) + B_CONTROLLER(initial_bootdev) - 1;
 	    currdev.d_kind.biosdisk.partition = B_PARTITION(initial_bootdev);
 		biosdev = initial_bootinfo->bi_bios.bi_bios_dev;
 		major = B_TYPE(initial_bootdev);
+		*/
+		set_diskformat(currdev, major, biosdev);
 
 		/*
 		 * If we are booted by an old bootstrap, we have to guess at the BIOS
@@ -248,25 +251,30 @@ extract_currdev(void)
 	env_setenv("loaddev", EV_VOLATILE, i386_fmtdev(&currdev), env_noset, env_nounset);
 }
 
-/* provide this for panic, as it's not in the startup code */
 void
-exit(int code)
+set_diskformat(struct i386_devdesc currdev, int major, int biosdev)
 {
-    __exit(code);
-}
+	if (dvar_istrue(dvar_get("bsd_slices")) && !dvar_istrue(dvar_get("bsd_traditional"))) {
+		bsd_slices(currdev, major, biosdev);
+		printf("bsd slices format set");
+		goto success;
+	}
+	if (dvar_istrue(dvar_get("bsd_traditional")) && !dvar_istrue(dvar_get("bsd_slices"))) {
+		bsd_traditional(currdev, major, biosdev);
+		printf("bsd traditional format set");
+		goto success;
+	}
+	if (dvar_istrue(dvar_get("bsd_slices")) && dvar_istrue(dvar_get("bsd_traditional"))) {
+		printf("cannot set disk format to both \n");
+		goto defacto;
+	}
 
-/* ISA bus access functions for PnP. */
-static int
-isa_inb(int port)
-{
-	return (inb(port));
-}
+success:
+	printf("successfully \n");
 
-static void
-isa_outb(int port, int value)
-{
-
-	outb(port, value);
+defacto:
+	printf("disk format set to default (bsd_slices) \n");
+	bsd_slices(currdev, major, biosdev);
 }
 
 void
@@ -286,4 +294,25 @@ bsd_traditional(struct i386_devdesc currdev, int major, int biosdev)
     currdev.d_kind.biosdisk.partition = B_PARTITION(initial_bootdev);
 	biosdev = initial_bootinfo->bi_bios.bi_bios_dev;
 	major = B_TYPE(initial_bootdev);
+}
+
+/* provide this for panic, as it's not in the startup code */
+void
+exit(int code)
+{
+    __exit(code);
+}
+
+/* ISA bus access functions for PnP. */
+static int
+isa_inb(int port)
+{
+	return (inb(port));
+}
+
+static void
+isa_outb(int port, int value)
+{
+
+	outb(port, value);
 }

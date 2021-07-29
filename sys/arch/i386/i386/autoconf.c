@@ -139,6 +139,8 @@ md_device_init(devsw)
 	struct devswtable *devsw;
 {
 	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &cmos_cdevsw, NULL);			/* CMOS Interface */
+	DEVSWIO_CONFIG_INIT(devsw, 1, NULL, &apm_cdevsw, NULL);				/* Power Management (APM) Interface */
+
 }
 
 /*

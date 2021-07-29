@@ -58,9 +58,10 @@
 #define M_ADVVM			88 	/* AdvVM structures structures */
 #define M_UFS211		89	/* UFS211 bufmap structure */
 #define M_PERCPU		90	/* percpu structure */
+#define M_TOPO			91	/* cpu topology structure */
 
-#define M_MPX			91	/* multiplexor structure */
-#define M_VMPSEG		92	/* pseudo-segment structure */
+#define M_MPX			92	/* multiplexor structure */
+#define M_VMPSEG		93	/* pseudo-segment structure */
 
 /* Overlay Malloc */
 #define overlay_malloc(size, type, flags) 				\

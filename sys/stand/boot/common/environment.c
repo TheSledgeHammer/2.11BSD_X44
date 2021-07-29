@@ -1,6 +1,4 @@
 /*	$NetBSD: environment.c,v 1.4 2014/10/18 08:33:25 snj Exp $	*/
-
-
 /*
  * Copyright (c) 1998 Michael Smith.
  * All rights reserved.
@@ -68,8 +66,7 @@ env_getenv(const char *name)
  * If (value) is NULL, the variable is set but has no value.
  */
 int
-env_setenv(const char *name, int flags, const void *value,
-	   ev_sethook_t sethook, ev_unsethook_t unsethook)
+env_setenv(const char *name, int flags, const void *value, ev_sethook_t sethook, ev_unsethook_t unsethook)
 {
 	struct env_var *ev, *curr, *last;
 

@@ -202,7 +202,7 @@ softpic_pic_addroute(spic, ci, pin, idtvec, type, isapic, pictemplate)
 	spic->sp_intsrc.is_pic = softpic_handle_pic(spic);
 	pic = spic->sp_intsrc.is_pic;
 	if (pic != NULL) {
-		(*pic->pic_addroute)(spic, pin, idtvec, type);
+		(*pic->pic_addroute)(spic, ci, pin, idtvec, type);
 	}
 }
 

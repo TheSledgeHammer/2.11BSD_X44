@@ -253,6 +253,81 @@ membar_datadep_consumer(void)
 	__tmp;											\
 })
 
+#ifdef _LP64
+#define	__HAVE_ATOMIC64_LOADSTORE	1
+#define	__ATOMIC_SIZE_MAX			8
+#else
+#define	__ATOMIC_SIZE_MAX			4
+#endif
+
+/*
+ * We assume that access to an aligned pointer to a volatile object of
+ * at most __ATOMIC_SIZE_MAX bytes is guaranteed to be atomic.  This is
+ * an assumption that may be wrong, but we hope it won't be wrong
+ * before we just adopt the C11 atomic API.
+ */
+#define	__ATOMIC_PTR_CHECK(p) do					      	\
+{									      					\
+	CTASSERT(sizeof(*(p)) <= __ATOMIC_SIZE_MAX);			\
+	KASSERT(((uintptr_t)(p) & (sizeof(*(p)) - 1)) == 0);	\
+} while (0)
+
+#define __BEGIN_ATOMIC_LOAD(p, v) 							\
+	__typeof__(*(p)) v = *(p)
+#define __END_ATOMIC_LOAD(v) 								\
+	v
+#define __DO_ATOMIC_STORE(p, v) 							\
+	*p = v
+
+#define	atomic_load_relaxed(p)						      	\
+({									      					\
+	const volatile __typeof__(*(p)) *__al_ptr = (p);		\
+	__ATOMIC_PTR_CHECK(__al_ptr);					      	\
+	__BEGIN_ATOMIC_LOAD(__al_ptr, __al_val);			    \
+	__END_ATOMIC_LOAD(__al_val);					      	\
+})
+
+#define	atomic_load_consume(p)						      	\
+({									      					\
+	const volatile __typeof__(*(p)) *__al_ptr = (p);		\
+	__ATOMIC_PTR_CHECK(__al_ptr);					      	\
+	__BEGIN_ATOMIC_LOAD(__al_ptr, __al_val);			    \
+	membar_datadep_consumer();					      		\
+	__END_ATOMIC_LOAD(__al_val);					      	\
+})
+
+/*
+ * We want {loads}-before-{loads,stores}.  It is tempting to use
+ * membar_enter, but that provides {stores}-before-{loads,stores},
+ * which may not help.  So we must use membar_sync, which does the
+ * slightly stronger {loads,stores}-before-{loads,stores}.
+ */
+#define	atomic_load_acquire(p)						      	\
+({									      					\
+	const volatile __typeof__(*(p)) *__al_ptr = (p);		\
+	__ATOMIC_PTR_CHECK(__al_ptr);					      	\
+	__BEGIN_ATOMIC_LOAD(__al_ptr, __al_val);			    \
+	membar_sync();							      			\
+	__END_ATOMIC_LOAD(__al_val);					      	\
+})
+
+#define	atomic_store_relaxed(p,v)					      	\
+({									      					\
+	volatile __typeof__(*(p)) *__as_ptr = (p);			    \
+	__typeof__(*(p)) __as_val = (v);				      	\
+	__ATOMIC_PTR_CHECK(__as_ptr);					      	\
+	__DO_ATOMIC_STORE(__as_ptr, __as_val);				    \
+})
+
+#define	atomic_store_release(p,v)					    	\
+({									     	 				\
+	volatile __typeof__(*(p)) *__as_ptr = (p);			    \
+	__typeof__(*(p)) __as_val = (v);				      	\
+	__ATOMIC_PTR_CHECK(__as_ptr);					      	\
+	membar_exit();							      			\
+	__DO_ATOMIC_STORE(__as_ptr, __as_val);				    \
+})
+
 #endif /* _KERNEL */
 
 #endif /* _SYS_ATOMIC_H_ */
