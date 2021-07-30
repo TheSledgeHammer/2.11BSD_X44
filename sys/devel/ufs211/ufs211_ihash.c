@@ -66,7 +66,7 @@ ufs211_ihinit()
 struct vnode  *
 ufs211_ihashfind(dev, ino)
 	register dev_t dev;
-	register ufs211_ino_t ino;
+	register ino_t ino;
 {
 	register struct ufs211_inode *ip;
 
@@ -123,7 +123,7 @@ ufs211_ihashins(ip)
 	struct ufs211_ihashhead *ipp;
 
 	/* lock the inode, then put it on the appropriate hash list */
-	lockmgr(&ip->i_lock, LK_EXCLUSIVE, (struct simplelock *)0, p);
+	lockmgr(&ip->i_lock, LK_EXCLUSIVE, &ufs211_ihash, p);
 
 	simple_lock(&ufs211_ihash);
 	ipp = INOHASH(ip->i_dev, ip->i_number);

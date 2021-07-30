@@ -20,11 +20,11 @@
 */
 
 //struct ufs211_direct {
-	//ufs211_ino_t	d_ino;						/* inode number of entry */
+	//ino_t				d_ino;						/* inode number of entry */
 	//u_short			d_reclen;					/* length of this record */
 	//u_int8_t  		d_type; 					/* file type, see below */
 	//u_short			d_namlen;					/* length of string in d_name */
-	//char			d_name[UFS211_MAXNAMLEN+1];	/* name must be no longer than this */
+	//char				d_name[UFS211_MAXNAMLEN+1];	/* name must be no longer than this */
 //};
 
 /*
@@ -84,7 +84,7 @@ struct ufs211_dirdesc {
 	long					dd_loc;
 	long					dd_size;
 	char					dd_buf[UFS211_DIRBLKSIZ];
-	struct 	ufs211_direct	dd_cur;
+	struct 	direct			dd_cur;
 };// DIR;
 
 /*
@@ -97,12 +97,12 @@ struct ufs211_dirdesc {
 #define dotdot_name			dtdt_name
 
 struct ufs211_dirtemplate {
-	ufs211_ino_t			dot_ino;
+	ino_t					dot_ino;
 	u_short					dot_reclen;
 	u_int8_t				dot_type;
 	u_short					dot_namlen;
 	char					dot_name[2];		/* must be multiple of 4 */
-	ufs211_ino_t			dotdot_ino;
+	ino_t					dotdot_ino;
 	u_short					dotdot_reclen;
 	u_int8_t				dotdot_type;
 	u_short					dotdot_namlen;
@@ -113,11 +113,11 @@ struct ufs211_dirtemplate {
  * This is the old format of directories, sanz type element.
  */
 struct ufs211_odirtemplate {
-	ufs211_ino_t			dot_ino;
+	ino_t					dot_ino;
 	int16_t					dot_reclen;
 	u_int16_t				dot_namlen;
 	char					dot_name[4];	/* must be multiple of 4 */
-	ufs211_ino_t			dotdot_ino;
+	ino_t					dotdot_ino;
 	int16_t					dotdot_reclen;
 	u_int16_t				dotdot_namlen;
 	char					dotdot_name[4];	/* ditto */

@@ -33,7 +33,7 @@
  */
 /*
  * boot2 encapsulated ABI.  The boot2 standalone code provides these functions
- * to the boot2 add-on modules (ufsread.c and hammer2.c).
+ * to the boot2 add-on modules (ufsread.c).
  */
 
 #ifndef _BOOT_COMMON_BOOT2_H_
@@ -56,8 +56,8 @@ typedef uint32_t boot2_ino_t;
 
 struct boot2_fsapi {
 	int 		(*fsinit)(void);
-	boot2_ino_t (*fslookup)(const char *);
-	ssize_t 	(*fsread)(boot2_ino_t, void *, size_t);
+	uint32_t 	(*fslookup)(const char *);
+	ssize_t 	(*fsread)(uint32_t, void *, size_t);
 };
 
 /*

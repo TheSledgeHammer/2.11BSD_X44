@@ -206,7 +206,7 @@ preload_ksyms(struct bootinfo *bi, struct preloaded_file *fp)
 		shbuf = alloc(shlen);
 
 		bcopy((void*) shaddr, shbuf, shlen);
-		boot_ksyms_addr_set(&ehdr, shbuf, (void*) (KERNBASE + fp->f_marks[MARK_SYM]));
+		ksyms_addr_set(&ehdr, shbuf, (void*) (KERNBASE + fp->f_marks[MARK_SYM]));
 		bcopy(shbuf, (void*) shaddr, shlen);
 
 		free(shbuf, shlen);

@@ -25,7 +25,7 @@
 #define	DOUBLE				1	/* index of double indirect block */
 #define	TRIPLE				2	/* index of triple indirect block */
 
-static void	ufs211_trsingle(struct ufs211_inode *, caddr_t, ufs211_daddr_t, int);
+static void	ufs211_trsingle(struct ufs211_inode *, caddr_t, daddr_t, int);
 
 /*
  * Check accessed and update flags on
@@ -84,7 +84,7 @@ ufs211_updat(ip, ta, tm, waitfor)
 #else
 	dp->di_icom2 = tip->i_ic2;
 #endif
-	bcopy(ip->i_addr, dp->di_addr, NADDR * sizeof (ufs211_daddr_t));
+	bcopy(ip->i_addr, dp->di_addr, NADDR * sizeof (daddr_t));
 	ufs211_mapout(bp);
 	if (waitfor && ((ip->i_fs->fs_flags & MNT_ASYNC) == 0)) {
 		bwrite(bp);
@@ -107,10 +107,10 @@ ufs211_trunc(oip,length, ioflags)
 	u_long length;
 	int	ioflags;
 {
-	ufs211_daddr_t lastblock;
+	daddr_t lastblock;
 	register int i;
 	register struct ufs211_inode *ip;
-	ufs211_daddr_t bn, lastiblock[NIADDR];
+	daddr_t bn, lastiblock[NIADDR];
 	struct buf *bp;
 	int offset, level;
 	struct ufs211_inode tip;
@@ -271,12 +271,12 @@ updret:
 void
 ufs211_indirtrunc(ip, bn, lastbn, level, aflags)
 	struct ufs211_inode *ip;
-	ufs211_daddr_t bn, lastbn;
+	daddr_t bn, lastbn;
 	int level;
 	int aflags;
 {
 	register struct buf *bp;
-	ufs211_daddr_t nb, last;
+	daddr_t nb, last;
 	long factor;
 
 	/*
@@ -304,7 +304,7 @@ ufs211_indirtrunc(ip, bn, lastbn, level, aflags)
 	 * and update on disk copy first.
 	 */
 	{
-		register ufs211_daddr_t *bap;
+		register daddr_t *bap;
 		register struct buf *cpy;
 
 		bp = bread(ip->i_dev, bn);
@@ -315,8 +315,8 @@ ufs211_indirtrunc(ip, bn, lastbn, level, aflags)
 		cpy = geteblk();
 		copy(bftopaddr(bp), bftopaddr(cpy), btoc(DEV_BSIZE));
 		ufs211_mapin(bp);
-		bap = (ufs211_daddr_t *) bp;
-		bzero((caddr_t)&bap[last + 1], (u_int)(NINDIR - (last + 1)) * sizeof(ufs211_daddr_t));
+		bap = (daddr_t *) bp;
+		bzero((caddr_t)&bap[last + 1], (u_int)(NINDIR - (last + 1)) * sizeof(daddr_t));
 		ufs211_mapout(bp);
 		if (aflags & B_SYNC)
 			bwrite(bp);
@@ -336,10 +336,10 @@ ufs211_indirtrunc(ip, bn, lastbn, level, aflags)
 	if (level == SINGLE)
 		ufs211_trsingle(ip, bp, last, aflags);
 	else {
-		register ufs211_daddr_t *bstart, *bstop;
+		register daddr_t *bstart, *bstop;
 
 		ufs211_mapin(bp);
-		bstart = (ufs211_daddr_t *) bp;
+		bstart = (daddr_t *) bp;
 		bstop = &bstart[last];
 		bstart += NINDIR - 1;
 		/*
@@ -349,7 +349,7 @@ ufs211_indirtrunc(ip, bn, lastbn, level, aflags)
 			nb = *bstart;
 			if (nb) {
 				ufs211_mapout(bp);
-				ufs211_indirtrunc(ip,nb,(ufs211_daddr_t)-1, level-1, aflags);
+				ufs211_indirtrunc(ip,nb,(daddr_t)-1, level-1, aflags);
 				free(ip, nb);
 				ufs211_mapin(bp);
 			}
@@ -376,14 +376,14 @@ static void
 ufs211_trsingle(ip, bp,last, aflags)
 	register struct ufs211_inode *ip;
 	caddr_t bp;
-	ufs211_daddr_t last;
+	daddr_t last;
 	int aflags;
 {
-	register ufs211_daddr_t *bstart, *bstop;
-	ufs211_daddr_t blarray[NINDIR];
+	register daddr_t *bstart, *bstop;
+	daddr_t blarray[NINDIR];
 
 	ufs211_mapin(bp);
-	bcopy(bp, blarray, NINDIR * sizeof(ufs211_daddr_t));
+	bcopy(bp, blarray, NINDIR * sizeof(daddr_t));
 	ufs211_mapout(bp);
 	bstart = &blarray[NINDIR - 1];
 	bstop = &blarray[last];

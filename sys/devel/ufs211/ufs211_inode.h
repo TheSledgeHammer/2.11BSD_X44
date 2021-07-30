@@ -41,8 +41,8 @@ struct ufs211_inode {
 	struct	vnode  			*i_devvp;				/* Vnode for block I/O. */
 	u_short					i_flag;
 	u_short					i_count;				/* reference count */
-	ufs211_dev_t			i_dev;					/* device where inode resides */
-	ufs211_ino_t			i_number;				/* i number, 1-to-1 with device address */
+	dev_t					i_dev;					/* device where inode resides */
+	ino_t					i_number;				/* i number, 1-to-1 with device address */
 	u_short					i_id;					/* unique identifier */
 	struct	 ufs211_fs 		*i_fs;					/* file sys associated with this inode */
 	struct	 lockf 			*i_lockf;				/* Head of byte-level lock list. */
@@ -53,7 +53,7 @@ struct ufs211_inode {
 	ufs211_doff_t	  		i_endoff;				/* End of useful stuff in directory. */
 	ufs211_doff_t	  		i_diroff;				/* Offset in dir, where we found last entry. */
 	ufs211_doff_t	 		i_offset;				/* Offset of free space in directory. */
-	ufs211_ino_t	  		i_ino;					/* Inode number of found directory. */
+	ino_t	  				i_ino;					/* Inode number of found directory. */
 	u_int32_t 				i_reclen;				/* Size of found directory entry. */
 	union {
 		struct {
@@ -66,10 +66,10 @@ struct ufs211_inode {
 		struct	proc 		*I_wsel;				/* pipe write select */
 	} i_un1;
 	union {
-		ufs211_daddr_t		I_addr[NADDR];			/* normal file/directory */
+		daddr_t				I_addr[NADDR];			/* normal file/directory */
 		struct {
-			ufs211_daddr_t	I_db[NDADDR];			/* normal file/directory */
-			ufs211_daddr_t	I_ib[NIADDR];
+			daddr_t			I_db[NDADDR];			/* normal file/directory */
+			daddr_t			I_ib[NIADDR];
 		} i_f;
 		struct {
 			/*
@@ -78,11 +78,11 @@ struct ufs211_inode {
 			 * files.
 			 */
 			u_short			I_dummy;
-			ufs211_dev_t	I_rdev;					/* dev type */
+			dev_t			I_rdev;					/* dev type */
 		} i_d;
 	} i_un2;
 	union {
-		ufs211_daddr_t		if_lastr;				/* last read (read-ahead) */
+		daddr_t				if_lastr;				/* last read (read-ahead) */
 		struct	socket 		*is_socket;
 		struct	{
 			struct ufs211_inode  *if_freef;			/* free list forward */
@@ -94,7 +94,7 @@ struct ufs211_inode {
 		u_short				ic_nlink;				/* number of links to file */
 		uid_t				ic_uid;					/* owner's user id */
 		gid_t				ic_gid;					/* owner's group id */
-		ufs211_off_t		ic_size;				/* number of bytes in file */
+		off_t				ic_size;				/* number of bytes in file */
 	} i_ic1;
 /*
  * Can't afford another 4 bytes and mapping the flags out would be prohibitively
@@ -112,7 +112,7 @@ struct ufs211_inode {
  */
 struct ufs211_dinode {
 	struct	ufs211_icommon1     di_icom1;
-	ufs211_daddr_t		        di_addr[7];			/* 7 block addresses 4 bytes each */
+	daddr_t		        		di_addr[7];			/* 7 block addresses 4 bytes each */
 	u_short				        di_reserved[5];		/* pad of 10 to make total size 64 */
 	u_short				        di_flag;			/* 100: Status flags (chflags). */
 	u_short				        di_size;
@@ -205,7 +205,7 @@ struct ufid {
 	u_int16_t 		ufid_len;	/* Length of structure. */
 	u_int16_t 		ufid_pad;	/* Force 32-bit alignment. */
 	int32_t	  		ufid_gen;	/* Generation number. */
-	ufs211_ino_t    ufid_ino;	/* File number (ino). */
+	ino_t   	 	ufid_ino;	/* File number (ino). */
 };
 
 #endif /* _UFS211_INODE_H_ */

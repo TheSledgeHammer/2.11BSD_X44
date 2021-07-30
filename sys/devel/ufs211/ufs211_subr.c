@@ -42,7 +42,7 @@ syncip(ip)
 	register struct buf *lastbufp;
 	long lbn, lastlbn;
 	register int s;
-	ufs211_daddr_t blkno;
+	daddr_t blkno;
 
 	lastlbn = howmany(ip->i_size, DEV_BSIZE);
 	if (lastlbn < nbuf / 2) {
@@ -79,7 +79,7 @@ syncip(ip)
 int
 badblock(fp, bn)
 	register struct ufs211_fs *fp;
-	ufs211_daddr_t bn;
+	daddr_t bn;
 {
 
 	if (bn < fp->fs_isize || bn >= fp->fs_fsize) {
@@ -101,7 +101,7 @@ badblock(fp, bn)
  */
 struct ufs211_fs *
 getfs(dev)
-	ufs211_dev_t dev;
+	dev_t dev;
 {
 	register struct ufs211_mount *mp;
 	register struct ufs211_fs *fs;
@@ -135,7 +135,7 @@ getfs(dev)
  */
 int
 getfsx(dev)
-	ufs211_dev_t dev;
+	dev_t dev;
 {
 	register struct ufs211_mount *mp;
 

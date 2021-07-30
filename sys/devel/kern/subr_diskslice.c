@@ -32,6 +32,7 @@
  * - dsname()
  * - dssize()
  */
+
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -48,45 +49,25 @@
 #include <sys/diskslice.h>
 #include <sys/conf.h>
 
-int
-slicesw_open(dev, flags, devtype, p)
-	dev_t dev;
-	int flags, devtype;
-	struct proc *p;
-{
-	if (cdev_open(dev, flags, devtype, p) != 0) {
-		return (-1);
-	}
-	if (bdev_open(dev, flags, devtype, p) != 0) {
-		return (-1);
-	}
-	return (0);
-}
+#include <ufs/ffs/fs.h>
+
+static struct dkdevice 	*dk;
 
 int
-slicesw_close(dev, flags, devtype, p)
+dkdriver_open(dev, flags, devtype, p)
 	dev_t dev;
 	int flags, devtype;
 	struct proc *p;
 {
-	if (cdev_close(dev, flags, devtype, p) != 0) {
-		return (-1);
-	}
-	if (bdev_close(dev, flags, devtype, p) != 0) {
-		return (-1);
-	}
-	return (0);
-}
+	register struct dkdevice *disk;
+	register struct dkdriver *driver;
+	int unit, rv;
 
-int
-dkdriver_open(dkdrv, dev, flags, devtype, p)
-	struct dkdriver *dkdrv;
-	dev_t dev;
-	int flags, devtype;
-	struct proc *p;
-{
-	int rv;
-	rv = (*dkdrv->d_open)(dev, flags, devtype, p);
+	unit = dkunit(dev);
+	disk = &dk[unit];
+	driver = disk->dk_driver;
+
+	rv = (*driver->d_open)(dev, flags, devtype, p);
 	if(rv != 0) {
 		return (-1);
 	}
@@ -94,18 +75,60 @@ dkdriver_open(dkdrv, dev, flags, devtype, p)
 }
 
 int
-dkdriver_close(dkdrv, dev, flags, devtype, p)
-	struct dkdriver *dkdrv;
+dkdriver_close(dev, flags, devtype, p)
 	dev_t dev;
 	int flags, devtype;
 	struct proc *p;
 {
-	int rv;
-	rv = (*dkdrv->d_close)(dev, flags, devtype, p);
-	if(rv != 0) {
+	register struct dkdevice *disk;
+	register struct dkdriver *driver;
+	int unit, rv;
+
+	unit = dkunit(dev);
+	disk = &dk[unit];
+	driver = disk->dk_driver;
+
+	rv = (*driver->d_close)(dev, flags, devtype, p);
+	if (rv != 0) {
 		return (-1);
 	}
 	return (rv);
+}
+
+static struct disklabel *
+clone_label(lp)
+	struct disklabel *lp;
+{
+	struct disklabel *lp1;
+
+	lp1 = malloc(sizeof *lp1, M_DEVBUF, M_WAITOK);
+	*lp1 = *lp;
+	lp = NULL;
+	if (lp1->d_typename[0] == '\0')
+		strncpy(lp1->d_typename, "amnesiac", sizeof(lp1->d_typename));
+	if (lp1->d_packname[0] == '\0')
+		strncpy(lp1->d_packname, "fictitious", sizeof(lp1->d_packname));
+	if (lp1->d_nsectors == 0)
+		lp1->d_nsectors = 32;
+	if (lp1->d_ntracks == 0)
+		lp1->d_ntracks = 64;
+	lp1->d_secpercyl = lp1->d_nsectors * lp1->d_ntracks;
+	lp1->d_ncylinders = lp1->d_secperunit / lp1->d_secpercyl;
+	if (lp1->d_rpm == 0)
+		lp1->d_rpm = 3600;
+	if (lp1->d_interleave == 0)
+		lp1->d_interleave = 1;
+	if (lp1->d_npartitions < RAW_PART + 1)
+		lp1->d_npartitions = MAXPARTITIONS;
+	if (lp1->d_bbsize == 0)
+		lp1->d_bbsize = BBSIZE;
+	if (lp1->d_sbsize == 0)
+		lp1->d_sbsize = SBSIZE;
+	lp1->d_partitions[RAW_PART].p_size = lp1->d_secperunit;
+	lp1->d_magic = DISKMAGIC;
+	lp1->d_magic2 = DISKMAGIC;
+	lp1->d_checksum = dkcksum(lp1);
+	return (lp1);
 }
 
 dev_t
@@ -458,10 +481,6 @@ dsioctl(dev, cmd, data, flags, sspp)
 		return (error);
 
 	case DIOCWLABEL:
-#ifndef __alpha__
-		if (slice == WHOLE_DISK_SLICE)
-			return (ENODEV);
-#endif
 		if (!(flags & FWRITE))
 			return (EBADF);
 		set_ds_wlabel(ssp, slice, *(int*) data != 0);
@@ -527,8 +546,7 @@ dsmakeslicestruct(nslices, lp)
 	struct diskslice *sp;
 	struct diskslices *ssp;
 
-	ssp = malloc(offsetof(struct diskslices, dss_slices) + nslices * sizeof *sp,
-			M_DEVBUF, M_WAITOK);
+	ssp = malloc(offsetof(struct diskslices, dss_slices) + nslices * sizeof *sp, M_DEVBUF, M_WAITOK);
 	ssp->dss_first_bsd_slice = COMPATIBILITY_SLICE;
 	ssp->dss_nslices = nslices;
 	ssp->dss_oflags = 0;
@@ -552,11 +570,12 @@ dsname(dev, unit, slice, part, partname)
 	int		part;
 	char	*partname;
 {
-	struct dkdevice *dk;
+	struct dkdevice *disk;
 	static char name[32];
 	const char *dname;
 
-	dname = devsw(dev)->d_name;
+	disk = &dk[dkunit(dev)];
+	dname = disk->dk_name;
 	if (strlen(dname) > 16) {
 		dname = "nametoolong";
 	}
@@ -602,8 +621,7 @@ dsopen(dev, mode, flags, sspp, lp)
 
 	unit = dkunit(dev);
 	if (lp->d_secsize % DEV_BSIZE) {
-		printf("%s: invalid sector size %lu\n", devtoname(dev),
-		    (u_long)lp->d_secsize);
+		printf("%s: invalid sector size %lu\n", devtoname(dev), (u_long)lp->d_secsize);
 		return (EINVAL);
 	}
 
@@ -756,10 +774,10 @@ dssize(dev, sspp)
 	part = dkpart(dev);
 	ssp = *sspp;
 	if (ssp == NULL || slice >= ssp->dss_nslices || !(ssp->dss_slices[slice].ds_openmask & (1 << part))) {
-		if (slicesw_open(dev, FREAD, S_IFCHR, (struct proc*) NULL) != 0) {
+		if (dkdriver_open(dev, FREAD, S_IFCHR, (struct proc*) NULL) != 0) {
 			return (-1);
 		}
-		slicesw_close(dev, FREAD, S_IFCHR, (struct proc*) NULL);
+		dkdriver_close(dev, FREAD, S_IFCHR, (struct proc*) NULL);
 		ssp = *sspp;
 	}
 	lp = ssp->dss_slices[slice].ds_label;

@@ -73,7 +73,7 @@ dskread(void *buf, uint64_t lba, int nblk)
 
 #include "ufsread.c"
 
-static struct dmadat __dmadat;// __aligned(512);
+static struct ufs_dmadat 	__dmadat;// __aligned(512);
 static char ufs_buffer[BSD_LABEL_BUFFER];// __aligned(512);
 
 static int

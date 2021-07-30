@@ -62,6 +62,8 @@ disk_init()
 {
 	TAILQ_INIT(&disklist);
 	disk_count = 0;
+
+
 }
 
 /*
@@ -234,7 +236,6 @@ disk_resetstat(diskp)
  * cylinder number has to be maintained in the `b_resid'
  * field.
  */
-#define	b_cylinder	b_resid
 
 void
 disksort(ap, bp)
@@ -254,14 +255,14 @@ disksort(ap, bp)
 	 * must locate the second request list and add ourselves to it.
 	 */
 	bq = ap->b_actf;
-	if (bp->b_cylinder < bq->b_cylinder) {
+	if (bp->b_cylin < bq->b_cylin) {
 		while (bq->b_actf) {
 			/*
 			 * Check for an ``inversion'' in the normally ascending
 			 * cylinder numbers, indicating the start of the second
 			 * request list.
 			 */
-			if (bq->b_actf->b_cylinder < bq->b_cylinder) {
+			if (bq->b_actf->b_cylin < bq->b_cylin) {
 				/*
 				 * Search the second request list for the first
 				 * request at a larger cylinder number.  We go
@@ -269,10 +270,10 @@ disksort(ap, bp)
 				 * go at end.
 				 */
 				do {
-					if (bp->b_cylinder < bq->b_actf->b_cylinder) {
+					if (bp->b_cylin < bq->b_actf->b_cylin) {
 						goto insert;
 					}
-					if (bp->b_cylinder == bq->b_actf->b_cylinder
+					if (bp->b_cylin == bq->b_actf->b_cylin
 							&& bp->b_blkno < bq->b_actf->b_blkno) {
 						goto insert;
 					}
@@ -300,9 +301,9 @@ disksort(ap, bp)
 		 * request list), or if the next request is a larger cylinder
 		 * than our request.
 		 */
-		if (bq->b_actf->b_cylinder < bq->b_cylinder
-				|| bp->b_cylinder < bq->b_actf->b_cylinder
-				|| (bp->b_cylinder == bq->b_actf->b_cylinder
+		if (bq->b_actf->b_cylin < bq->b_cylin
+				|| bp->b_cylin < bq->b_actf->b_cylin
+				|| (bp->b_cylin == bq->b_actf->b_cylin
 						&& bp->b_blkno < bq->b_actf->b_blkno)) {
 			goto insert;
 		}
@@ -312,7 +313,8 @@ disksort(ap, bp)
 	 * Neither a second list nor a larger request... we go at the end of
 	 * the first list, which is the same as the end of the whole schebang.
 	 */
-insert:	bp->b_actf = bq->b_actf;
+insert:
+	bp->b_actf = bq->b_actf;
 	bq->b_actf = bp;
 }
 
@@ -347,7 +349,7 @@ readdisklabel(dev, strat, lp)
 	bp->b_blkno = LABELSECTOR;
 	bp->b_bcount = lp->d_secsize;
 	bp->b_flags = B_BUSY | B_READ;
-	bp->b_cylinder = LABELSECTOR / lp->d_secpercyl;
+	bp->b_cylin = LABELSECTOR / lp->d_secpercyl;
 	(*strat)(bp);
 	if (biowait(bp)) {
 		msg = "I/O error";

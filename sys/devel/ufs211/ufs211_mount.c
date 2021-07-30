@@ -35,7 +35,7 @@ smount()
 		int		flags;
 	} *uap = (struct a *)u->u_ap;
 
-	ufs211_dev_t dev;
+	dev_t dev;
 	register struct ufs211_inode *ip;
 	register struct ufs211_fs *fs;
 	struct nameidata nd;
@@ -151,7 +151,7 @@ mount_updname(fs, on, from, lenon, lenfrom)
 /* this routine has races if running twice */
 struct ufs211_fs *
 mountfs(dev, flags, ip)
-	ufs211_dev_t dev;
+	dev_t dev;
 	int flags;
 	struct ufs211_inode *ip;
 {
@@ -212,7 +212,7 @@ found:
 	mp->m_dev = dev;
 	fs = &mp->m_filsys;
 	ufs211_mapin(tp);
-	bcopy(tp, (caddr_t)fs, sizeof(struct ufs211_fs));
+	bcopy(tp, (caddr_t) fs, sizeof(struct ufs211_fs));
 	ufs211_mapout(tp);
 	brelse(tp);
 	tp = 0;
@@ -262,7 +262,7 @@ int
 unmount1(fname)
 	caddr_t fname;
 {
-	ufs211_dev_t dev;
+	dev_t dev;
 	register struct ufs211_mount *mp;
 	register struct ufs211_inode *ip;
 	register int error;
@@ -318,9 +318,9 @@ found:
 int
 getmdev(pdev, fname)
 	caddr_t fname;
-	ufs211_dev_t *pdev;
+	dev_t *pdev;
 {
-	register ufs211_dev_t dev;
+	register dev_t dev;
 	register struct ufs211_inode *ip;
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;

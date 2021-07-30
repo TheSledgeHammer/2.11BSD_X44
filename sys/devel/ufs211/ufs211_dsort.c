@@ -16,6 +16,7 @@
 #include <sys/dk.h>
 #include <sys/user.h>
 
+/*
 void
 ufs211_disksort(dp, bp)
 	register struct buf *dp, *bp;
@@ -47,10 +48,11 @@ ufs211_disksort(dp, bp)
 		tp = dp->b_actb;
 	bp->av_forw = tp->av_forw;
 	tp->av_forw = bp;
-	if (tp == dp->b_actb)
+	if (tp == dp->b_actb) {
 		dp->b_actb = bp;
+	}
 }
-
+*/
 
 /*
  * Allocate iostat disk monitoring slots for a driver.  If slots already

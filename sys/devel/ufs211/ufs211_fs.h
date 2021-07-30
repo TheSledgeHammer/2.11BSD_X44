@@ -21,11 +21,11 @@
  */
 #define UFS211_BBSIZE		    DEV_BSIZE
 #define UFS211_SBSIZE		    DEV_BSIZE
-#define	UFS211_BBLOCK		    ((ufs211_daddr_t)(0))
-#define	UFS211_SBLOCK		    ((ufs211_daddr_t)(UFS211_BBLOCK + UFS211_BBSIZE / DEV_BSIZE))
+#define	UFS211_BBLOCK		    ((daddr_t)(0))
+#define	UFS211_SBLOCK		    ((daddr_t)(UFS211_BBLOCK + UFS211_BBSIZE / DEV_BSIZE))
 
-#define	UFS211_SUPERB		    ((ufs211_daddr_t)1)	    /* block number of the super block */
-#define	UFS211_ROOTINO		    ((ufs211_ino_t)2)	    /* i number of all roots */
+#define	UFS211_SUPERB		    ((daddr_t)1)	    	/* block number of the super block */
+#define	UFS211_ROOTINO		    ((ino_t)2)	    		/* i number of all roots */
 #define	UFS211_LOSTFOUNDINO	    (UFS211_ROOTINO + 1)
 
 #define	UFS211_NICINOD		    100						/* number of superblock inodes */
@@ -40,23 +40,23 @@
 
 struct ufs211_fs {
 	u_short			fs_isize;				/* first block after i-list */
-	ufs211_daddr_t	fs_fsize;				/* size in blocks of entire volume */
+	daddr_t			fs_fsize;				/* size in blocks of entire volume */
 	short			fs_nfree;				/* number of addresses in fs_free */
-	ufs211_daddr_t	fs_free[UFS211_NICFREE];/* free block list */
+	daddr_t			fs_free[UFS211_NICFREE];/* free block list */
 	short			fs_ninode;				/* number of inodes in fs_inode */
-	ufs211_ino_t	fs_inode[UFS211_NICINOD];/* free inode list */
+	ino_t			fs_inode[UFS211_NICINOD];/* free inode list */
 	char			fs_flock;				/* lock during free list manipulation */
 	char			fs_fmod;				/* super block modified flag */
 	char			fs_ilock;				/* lock during i-list manipulation */
 	char			fs_ronly;				/* mounted read-only flag */
 	time_t			fs_time;				/* last super block update */
-	ufs211_daddr_t	fs_tfree;				/* total free blocks */
-	ufs211_ino_t	fs_tinode;				/* total free inodes */
+	daddr_t			fs_tfree;				/* total free blocks */
+	ino_t			fs_tinode;				/* total free inodes */
 	short			fs_step;				/* optimal step in free list pattern */
 	short			fs_cyl;					/* number of blocks per pattern */
 	char			fs_fsmnt[UFS211_MAXMNTLEN];	/* ordinary file mounted on */
-	ufs211_ino_t	fs_lasti;				/* start place for circular search */
-	ufs211_ino_t	fs_nbehind;				/* est # free inodes before s_lasti */
+	ino_t			fs_lasti;				/* start place for circular search */
+	ino_t			fs_nbehind;				/* est # free inodes before s_lasti */
 	u_short			fs_flags;				/* mount time flags */
 	int	 			fs_magic;				/* magic number */
 /* actually longer */
@@ -64,7 +64,7 @@ struct ufs211_fs {
 
 struct ufs211_fblk {
 	short			df_nfree;				/* number of addresses in df_free */
-	ufs211_daddr_t	df_free[UFS211_NICFREE];/* free block list */
+	daddr_t			df_free[UFS211_NICFREE];/* free block list */
 };
 
 /* see ufs211_bufmap.c */
@@ -79,8 +79,8 @@ struct ufs211_bufmap {
  * Turn file system block numbers into disk block addresses.
  * This maps file system blocks to device size blocks.
  */
-#define	fsbtodb(b)	((ufs211_daddr_t)((ufs211_daddr_t)(b)<<1))
-#define	dbtofsb(b)	((ufs211_daddr_t)((ufs211_daddr_t)(b)>>1))
+#define	fsbtodb(b)	((daddr_t)((daddr_t)(b)<<1))
+#define	dbtofsb(b)	((daddr_t)((daddr_t)(b)>>1))
 
 /*
  * Macros for handling inode numbers:
@@ -88,7 +88,7 @@ struct ufs211_bufmap {
  * inode number to file system block address.
  */
 #define	itoo(x)		((int)(((x) + 2 * INOPB - 1) % INOPB))
-#define	itod(x)		((ufs211_daddr_t)((((u_int)(x) + 2 * INOPB - 1) / INOPB)))
+#define	itod(x)		((daddr_t)((((u_int)(x) + 2 * INOPB - 1) / INOPB)))
 
 /*
  * The following macros optimize certain frequently calculated
@@ -116,7 +116,7 @@ struct ufs211_bufmap {
 /*
  * NINDIR is the number of indirects in a file system block.
  */
-#define	NINDIR		(DEV_BSIZE / sizeof(ufs211_daddr_t))
+#define	NINDIR		(DEV_BSIZE / sizeof(daddr_t))
 #define	NSHIFT		8		    /* log2(NINDIR) */
 #define	NMASK		0377L		/* NINDIR - 1 */
 

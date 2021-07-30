@@ -35,7 +35,7 @@
 #include "paths.h"
 #include "proto.h"
 
-static void efi_panic(EFI_STATUS s, const char *fmt, ...) __dead2 __printflike(2, 3);
+static void efi_panic(EFI_STATUS s, const char *fmt, ...);// __dead2 __printflike(2, 3);
 
 const boot_module_t *boot_modules[] =
 {

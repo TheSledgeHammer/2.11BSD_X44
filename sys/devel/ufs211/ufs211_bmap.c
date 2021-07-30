@@ -28,17 +28,17 @@
  * block number of the next block of the file in rablock
  * for use in read-ahead.
  */
-ufs211_daddr_t
+daddr_t
 ufs211_bmap1(ip, bn, rwflg, flags)
 	register struct ufs211_inode *ip;
-	ufs211_daddr_t bn;
+	daddr_t bn;
 	int rwflg, flags;
 {
 	register int i;
 	register struct buf *bp;
 	struct buf *nbp;
 	int j, sh;
-	ufs211_daddr_t nb, *bap, ra;
+	daddr_t nb, *bap, ra;
 	int async = ip->i_fs->fs_flags & MNT_ASYNC;
 
 	if (bn < 0) {

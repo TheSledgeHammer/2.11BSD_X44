@@ -323,7 +323,7 @@ struct disklabel *getdiskbyname();
 
 /* Here for compatability with 2.11BSD */
 memaddr	disklabelalloc();
-#define	LABELDESC	(((btoc(sizeof (struct disklabel)) - 1) << 8) | RW)
+#define	LABELDESC	(((btoc(sizeof (struct disklabel)) - 1) << 8))
 
 #include <sys/cdefs.h>
 

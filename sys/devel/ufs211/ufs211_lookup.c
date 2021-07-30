@@ -200,7 +200,7 @@ ufs211_lookup(ap)
 		if ((dp->i_offset & bmask) == 0) {
 			if (bp != NULL)
 				brelse(bp);
-			if (error == VOP_BLKATOFF(vdp, (ufs211_off_t) dp->i_offset, NULL, &bp))
+			if (error == VOP_BLKATOFF(vdp, (off_t) dp->i_offset, NULL, &bp))
 				return (error);
 			entryoffsetinblock = 0;
 		}
@@ -736,7 +736,7 @@ ufs211_direnter2(ip, dirp, dvp, cnp)
 	error = VOP_BWRITE(bp);
 	dp->i_flag |= IN_CHANGE | IN_UPDATE;
 	if (!error && dp->i_endoff && dp->i_endoff < dp->i_size)
-		error = VOP_TRUNCATE(dvp, (ufs211_off_t)dp->i_endoff, IO_SYNC, cnp->cn_cred, cnp->cn_proc);
+		error = VOP_TRUNCATE(dvp, (off_t)dp->i_endoff, IO_SYNC, cnp->cn_cred, cnp->cn_proc);
 	return (error);
 }
 
@@ -767,7 +767,7 @@ ufs211_dirremove(dvp, cnp)
 		/*
 		 * Whiteout entry: set d_ino to WINO.
 		 */
-		if(u->u_error == VOP_BLKATOFF(dvp, (ufs211_off_t)dp->i_offset, (char **)&ep, &bp))
+		if(u->u_error == VOP_BLKATOFF(dvp, (off_t)dp->i_offset, (char **)&ep, &bp))
 			return (u->u_error);
 		ep->d_ino = WINO;
 		ep->d_type = DT_WHT;
@@ -780,7 +780,7 @@ ufs211_dirremove(dvp, cnp)
 		/*
 		 * First entry in block: set d_ino to zero.
 		 */
-		if(u->u_error == VOP_BLKATOFF(dvp, (ufs211_off_t)dp->i_offset, (char **)&ep, &bp))
+		if(u->u_error == VOP_BLKATOFF(dvp, (off_t)dp->i_offset, (char **)&ep, &bp))
 			return (u->u_error);
 		ep->d_ino = 0;
 		u->u_error = VOP_BWRITE(bp);
@@ -790,7 +790,7 @@ ufs211_dirremove(dvp, cnp)
 	/*
 	 * Collapse new free space into previous entry.
 	 */
-	if (u->u_error == VOP_BLKATOFF(dvp, (ufs211_off_t)(dp->i_offset - dp->i_count), (char **)&ep, &bp))
+	if (u->u_error == VOP_BLKATOFF(dvp, (off_t)(dp->i_offset - dp->i_count), (char **)&ep, &bp))
 		return (u->u_error);
 	ep->d_reclen += dp->i_reclen;
 	error = VOP_BWRITE(bp);
@@ -812,7 +812,7 @@ ufs211_dirrewrite(dp, ip, cnp)
 	struct direct *ep;
 	struct vnode *vdp = UFS211_ITOV(dp);
 
-	if (u->u_error == VOP_BLKATOFF(vdp, (ufs211_off_t)dp->i_offset, (char **)&ep, &bp)) {
+	if (u->u_error == VOP_BLKATOFF(vdp, (off_t)dp->i_offset, (char **)&ep, &bp)) {
 		return (u->u_error);
 	}
 	ep->d_ino = ip->i_number;
@@ -836,19 +836,19 @@ ufs211_dirrewrite(dp, ip, cnp)
 struct buf *
 ufs211_blkatoff(ip, offset, res)
 	struct ufs211_inode *ip;
-	ufs211_off_t offset;
+	off_t offset;
 	char **res;
 {
 	register struct ufs211_fs *fs = ip->i_fs;
-	ufs211_daddr_t lbn = lblkno(offset);
+	daddr_t lbn = lblkno(offset);
 	register struct buf *bp;
-	ufs211_daddr_t bn;
+	daddr_t bn;
 	char *junk;
 
 	bn = bmap(ip, lbn, B_READ, 0);
 	if (u->u_error)
 		return (0);
-	if (bn == (ufs211_daddr_t)-1) {
+	if (bn == (daddr_t)-1) {
 		dirbad(ip, offset, "hole in dir");
 		return (0);
 	}
@@ -875,9 +875,9 @@ ufs211_blkatoff(ip, offset, res)
 int
 ufs211_dirempty(ip, parentino)
 	register struct ufs211_inode *ip;
-	ufs211_ino_t parentino;
+	ino_t parentino;
 {
-	register ufs211_off_t off;
+	register off_t off;
 	struct ufs211_dirtemplate dbuf;
 	register struct direct *dp = (struct direct *)&dbuf;
 	int error, count;
@@ -943,7 +943,7 @@ ufs211_checkpath(source, target)
 			break;
 		}
 		error = rdwri(UIO_READ, ip, (caddr_t)&dirbuf, 
-				sizeof(struct dirtemplate), (ufs211_off_t)0,
+				sizeof(struct ufs211_dirtemplate), (off_t)0,
 				UIO_SYSSPACE, IO_UNIT, (int *)0);
 		if (error != 0)
 			break;
@@ -1011,7 +1011,7 @@ nchinit()
  */
 void
 nchinval(dev)
-	register ufs211_dev_t dev;
+	register dev_t dev;
 {
 	register struct namecache *ncp, *nxtcp;
 

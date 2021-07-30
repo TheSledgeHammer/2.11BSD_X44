@@ -27,28 +27,24 @@
  *
  * @(#)ufs211_extern.h	1.00
  */
-/* 2.11BSD bit-length for UFS */
-typedef u_short	 ufs211_ino_t;
-typedef long	 ufs211_daddr_t;
-typedef long	 ufs211_off_t;
-typedef dev_t	 ufs211_dev_t;
-typedef u_short	 ufs211_mode_t;
-typedef	u_int	 ufs211_size_t;
-typedef	u_int	 ufs211_doff_t;
 
-int				 updlock;					/* lock for sync */
-ufs211_daddr_t	 rablock;					/* block to be read ahead */
+/* 2.11BSD bit-length for UFS */
+typedef	u_int	 		ufs211_size_t;
+typedef	u_int	 		ufs211_doff_t;
+
+int				 		updlock;			/* lock for sync */
+daddr_t	 				rablock;			/* block to be read ahead */
 
 struct ufs211_args {
 	struct mount 	    *ufs211_vfs;
 	struct vnode 	    *ufs211_rootvp;	    /* block device mounted vnode */
 };
 
-#define	DEV_BSHIFT		10			/* log2(DEV_BSIZE) */
+#define	DEV_BSHIFT		10					/* log2(DEV_BSIZE) */
 #define	DEV_BMASK		(DEV_BSIZE - 1)
 
 struct buf;
-//struct ufs211_direct;
+struct direct;
 struct disklabel;
 struct ufid;
 struct flock;
@@ -67,28 +63,18 @@ struct vnode;
 
 __BEGIN_DECLS
 int	ufs211_makeinode (int, struct vnode *, struct vnode **, struct componentname *);
-int ufs211_bmap1 (struct ufs211_inode *, ufs211_daddr_t, int, int);
-
-char *ufs211_readdisklabel(ufs211_dev_t, int (*)(), struct disklabel *);
-int ufs211_setdisklabel(struct disklabel *, struct disklabel *, u_short);
-int ufs211_writedisklabel(ufs211_dev_t, int (*)(), struct disklabel *);
-int	ufs211_dkcksum(struct disklabel *);
-int ioctldisklabel(ufs211_dev_t, int, caddr_t, struct dkdevice *, disk, int (*)());
-int	partition_check(struct buf *, struct dkdevice *);
-
-void ufs211_disksort (struct buf *, struct buf *);
+int ufs211_bmap1 (struct ufs211_inode *, daddr_t, int, int);
+//int ioctldisklabel(dev_t, int, caddr_t, struct dkdevice *, disk, int (*)());
 void dk_alloc(int *, int, char *, long);
-
-void ufs211_trsingle(struct ufs211_inode *, caddr_t, ufs211_daddr_t, int);
-
+void ufs211_trsingle(struct ufs211_inode *, caddr_t, daddr_t, int);
 void ufs211_dirbad(struct ufs211_inode *, off_t, char *);
 int ufs211_dirbadentry(struct direct *, int);
 int ufs211_direnter(struct ufs211_inode *, struct direct *, struct vnode *, struct componentname *);
 int ufs211_dirremove(struct vnode *, struct componentname *);
 int ufs211_dirrewrite(struct ufs211_inode *, struct ufs211_inode *, struct componentname *);
-int ufs211_dirempty(struct ufs211_inode *, ufs211_ino_t);
+int ufs211_dirempty(struct ufs211_inode *, ino_t);
 int ufs211_checkpath(struct ufs211_inode *, struct ufs211_inode *);
-struct buf *ufs211_blkatoff(struct ufs211_inode *, ufs211_off_t, char **);
+struct buf *ufs211_blkatoff(struct ufs211_inode *, off_t, char **);
 void blkflush(struct vnode *, daddr_t);
 int ufs211_init(struct vfsconf *);
 void ufs211_mapin(struct buf *);

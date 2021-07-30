@@ -176,7 +176,7 @@ chkdq(ip, change, force)
  * Check the inode limit, applying corrective action.
  */
 chkiq(dev, ip, uid, force)
-	ufs211_dev_t dev;
+	dev_t dev;
 	uid_t uid;
 	register struct ufs211_inode *ip;
 	int force;

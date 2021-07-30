@@ -1326,7 +1326,7 @@ ufs211_strategy(ap)
 	register struct buf *bp = ap->a_bp;
 	register struct vnode *vp = bp->b_vp;
 	struct ufs211_inode *ip;
-	ufs211_daddr_t blkno;
+	daddr_t blkno;
 	int error;
 
 	ip = UFS211_VTOI(vp);

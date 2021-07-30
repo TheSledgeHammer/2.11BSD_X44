@@ -34,7 +34,7 @@ balloc(ip, flags)
 	register struct ufs211_fs *fs;
 	register struct buf *bp;
 	int async;
-	ufs211_daddr_t bno;
+	daddr_t bno;
 
 	fs = ip->i_fs;
 	async = fs->fs_flags & MNT_ASYNC;
@@ -74,10 +74,10 @@ balloc(ip, flags)
 		fs->fs_fmod = 0;
 		fs->fs_time = time.tv_sec;
 		{
-			register struct fs *fps;
+			register struct ufs211_fs *fps;
 
 			ufs211_mapin(bp);
-			fps = (struct fs *)bp;
+			fps = (struct ufs211_fs *)bp;
 			*fps = *fs;
 		}
 		ufs211_mapout(bp);
@@ -135,9 +135,9 @@ ialloc(pip)
 	register struct ufs211_inode *ip;
 	int i;
 	struct ufs211_dinode *dp;
-	ufs211_ino_t ino;
-	ufs211_daddr_t adr;
-	ufs211_ino_t inobas;
+	ino_t ino;
+	daddr_t adr;
+	ino_t inobas;
 	int first;
 	struct vnode *vp;
 	char	*emsg = "no inodes free";
@@ -238,7 +238,7 @@ fromtop:
  */
 free(ip, bno)
 	struct ufs211_inode *ip;
-	ufs211_daddr_t bno;
+	daddr_t bno;
 {
 	register struct ufs211_fs *fs;
 	register struct buf *bp;
@@ -284,7 +284,7 @@ free(ip, bno)
 void
 ifree(ip, ino)
 	struct ufs211_inode *ip;
-	ufs211_ino_t ino;
+	ino_t ino;
 {
 	register struct ufs211_fs *fs;
 

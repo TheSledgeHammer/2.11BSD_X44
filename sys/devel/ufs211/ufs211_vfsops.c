@@ -281,7 +281,7 @@ ufs211_sync(mp)
 int
 ufs211_vget(mp, ino, vpp)
 	struct mount *mp;
-	ufs211_ino_t ino;
+	ino_t ino;
 	struct vnode **vpp;
 {
 	struct proc *p = curproc; /* XXX */
@@ -290,7 +290,7 @@ ufs211_vget(mp, ino, vpp)
 	struct ufs211_mount *ump;
 	struct buf *bp;
 	struct vnode *vp;
-	ufs211_dev_t dev;
+	dev_t dev;
 	int i, type, error;
 
 	ump = VFSTOUFS211(mp);

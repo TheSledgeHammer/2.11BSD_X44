@@ -36,9 +36,6 @@
 
 #include <devel/sys/bitset.h>
 
-
-
-
 #ifdef _KERNEL
 #define	CPU_SETSIZE		NCPUS
 #endif
@@ -84,6 +81,12 @@ typedef struct _cpuset cpuset_t;
 #define	CPUSET_FSET					BITSET_FSET(_NCPUWORDS)
 #define	CPUSET_T_INITIALIZER		BITSET_T_INITIALIZER
 
+/*
+ * Reserved cpuset identifiers.
+ */
+#define	CPUSET_INVALID	-1
+#define	CPUSET_DEFAULT	0
+
 #ifdef _KERNEL
 #include <sys/queue.h>
 
@@ -95,8 +98,12 @@ struct cpuset {
 	LIST_ENTRY(cpuset)	cs_link;		/* (c) All identified sets. */
 	LIST_ENTRY(cpuset)	cs_siblings;	/* (c) Sibling set link. */
 	struct setlist		cs_children;	/* (c) List of children. */
+	cpusetid_t			cs_id;			/* (s) Id or INVALID. */
+	struct cpuset		*cs_parent;		/* (s) Pointer to our parent. */
+	cpuset_t			cs_mask;		/* bitmask of valid cpus. */
 };
 typedef struct cpuset 	cpuset_t;
+typedef	int				cpusetid_t;
 
 #define CPU_SET_ROOT    0x0001  		/* Set is a root set. */
 #define CPU_SET_RDONLY  0x0002  		/* No modification allowed. */

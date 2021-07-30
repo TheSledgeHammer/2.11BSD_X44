@@ -109,7 +109,7 @@ struct dkdevice {
 	struct dkdriver 		*dk_driver;				/* pointer to driver */
 	daddr_t					dk_labelsector;			/* sector containing label */
 	struct disklabel 		dk_label;				/* label */
-	struct partition 		dk_parts[MAXPARTITIONS];/* inkernel portion */
+	struct partition 		dk_parts[MAXPARTITIONS];/* in-kernel portion */
 	struct cpu_disklabel 	*dk_cpulabel;
 };
 
