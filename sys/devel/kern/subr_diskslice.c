@@ -52,7 +52,7 @@
 #include <ufs/ffs/fs.h>
 
 static struct dkdevice 	*dk;
-
+/*
 int
 dkdriver_open(dev, flags, devtype, p)
 	dev_t dev;
@@ -94,6 +94,7 @@ dkdriver_close(dev, flags, devtype, p)
 	}
 	return (rv);
 }
+*/
 
 static struct disklabel *
 clone_label(lp)
@@ -467,8 +468,9 @@ dsioctl(dev, cmd, data, flags, sspp)
 
 	case DIOCWDINFO:
 		error = dsioctl(dev, DIOCSDINFO, data, flags, &ssp);
-		if (error != 0)
+		if (error != 0) {
 			return (error);
+		}
 		/*
 		 * XXX this used to hack on dk_openpart to fake opening
 		 * partition 0 in case that is used instead of dkpart(dev).
@@ -481,8 +483,9 @@ dsioctl(dev, cmd, data, flags, sspp)
 		return (error);
 
 	case DIOCWLABEL:
-		if (!(flags & FWRITE))
+		if (!(flags & FWRITE)) {
 			return (EBADF);
+		}
 		set_ds_wlabel(ssp, slice, *(int*) data != 0);
 		return (0);
 
@@ -618,7 +621,6 @@ dsopen(dev, mode, flags, sspp, lp)
 	int unit;
 
 	//dev->si_bsize_phys = lp->d_secsize;
-
 	unit = dkunit(dev);
 	if (lp->d_secsize % DEV_BSIZE) {
 		printf("%s: invalid sector size %lu\n", devtoname(dev), (u_long)lp->d_secsize);
@@ -926,6 +928,7 @@ set_ds_labeldevs(dev, ssp)
 	dev_t	dev;
 	struct diskslices *ssp;
 {
+
 }
 
 static void

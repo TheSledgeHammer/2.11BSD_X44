@@ -317,18 +317,18 @@ struct partinfo {
 
 #endif /* LOCORE */
 
+struct dkdevice;
+char	*readdisklabel (struct dkdevice *, int);
+int		setdisklabel (struct dkdevice *, struct disklabel *);
+int		writedisklabel (struct dkdevice *, int);
+int		ioctldisklabel(struct dkdevice *, int, dev_t, int, caddr_t, int);
+int		dkcksum(struct disklabel *);
+int		partition_check(struct buf *, struct dkdevice *);
+int		dkoverlapchk(struct disklabel *, int, dev_t, size_t, char *);
+
 #if !defined(KERNEL) && !defined(LOCORE)
-
-struct disklabel *getdiskbyname();
-
-/* Here for compatability with 2.11BSD */
-memaddr	disklabelalloc();
 #define	LABELDESC	(((btoc(sizeof (struct disklabel)) - 1) << 8))
-
 #include <sys/cdefs.h>
-
-__BEGIN_DECLS
-struct disklabel *getdiskbyname (const char *);
-__END_DECLS
+#endif
 
 #endif	/* _SYS_DISKLABEL_H_ */

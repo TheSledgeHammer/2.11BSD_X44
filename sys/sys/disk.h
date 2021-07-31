@@ -109,6 +109,7 @@ struct dkdevice {
 	struct dkdriver 		*dk_driver;				/* pointer to driver */
 	daddr_t					dk_labelsector;			/* sector containing label */
 	struct disklabel 		dk_label;				/* label */
+	struct diskslice		dk_slice;				/* slice */
 	struct partition 		dk_parts[MAXPARTITIONS];/* in-kernel portion */
 	struct cpu_disklabel 	*dk_cpulabel;
 };
@@ -174,16 +175,7 @@ void	disk_busy (struct dkdevice *);
 void	disk_unbusy (struct dkdevice *, long);
 void	disk_resetstat (struct dkdevice *);
 struct	dkdevice *disk_find (char *);
-
-struct device;
-void	dk_establish (struct dkdevice *, struct device *);
 void	disksort (struct buf *, struct buf *);
-char	*readdisklabel (struct dkdevice *, int);
-int		setdisklabel (struct dkdevice *, struct disklabel *);
-int		writedisklabel (struct dkdevice *, int);
-int		dkcksum(struct disklabel *);
 int		diskerr (struct dkdevice *, struct buf *, char *, int, int);
-int		partition_check(struct	buf *, struct	dkdevice *);
-int		dkoverlapchk(struct disklabel *, int, dev_t, size_t, char *);
 #endif
 #endif /* _SYS_DISK_H_ */

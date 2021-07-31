@@ -118,7 +118,7 @@ pmap_invalidate_all(pmap)
 	}
 }
 
-#ifdef SMP
+//#ifdef SMP
 /*
  * For SMP, these functions have to use the IPI mechanism for coherence.
  */
@@ -205,8 +205,9 @@ pmap_invalidate_all(pmap)
 	u_int other_cpus;
 
 	if (smp_started) {
-		if (!(read_eflags() & PSL_I))
+		if (!(read_eflags() & PSL_I)) {
 			panic("%s: interrupts disabled", __func__);
+		}
 		simple_lock(&smp_tlb_lock);
 	}
 

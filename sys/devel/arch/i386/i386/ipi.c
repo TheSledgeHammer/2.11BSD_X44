@@ -57,8 +57,6 @@
 void i386_ipi_nop(struct cpu_info *);
 void i386_ipi_halt(struct cpu_info *);
 void i386_ipi_wbinvd(struct cpu_info *);
-
-
 void i386_ipi_synch_fpu(struct cpu_info *);
 
 #ifdef MTRR

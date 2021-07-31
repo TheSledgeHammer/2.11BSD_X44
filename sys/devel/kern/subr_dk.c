@@ -24,9 +24,8 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *
  */
+
 #include <sys/param.h>
 #include <sys/buf.h>
 #include <sys/disk.h>
@@ -41,24 +40,26 @@ struct buf			dktab;
 struct buf			dkutab[];
 struct dkdevice 	*dk;
 
+struct dkdriver dkdisks = {
+		.d_open = dkdriver_open,
+		.d_close = dkdriver_close
+};
+
 int
-dkdriver_open(dev, flags, devtype, p)
+dkdriver_open(disk, dev, flags, mode, p)
+	struct dkdevice *disk;
 	dev_t dev;
-	int flags, devtype;
+	int flags, mode;
 	struct proc *p;
 {
-	register struct dkdevice *disk;
 	register struct dkdriver *driver;
-	int unit, part, mask, mode, rv;
+	int ret, part, mask, rv;
 
-	unit = dkunit(dev);
-	disk = &dk[unit];
 	driver = disk->dk_driver;
-	/*
+
 	while (disk->dk_flags & (DKF_OPENING | DKF_CLOSING)) {
 		sleep(disk, PRIBIO);
 	}
-	*/
 
 	if ((disk->dk_flags & DKF_ALIVE) == 0) {
 		disk->dk_dev->d_type[unit] = 0;
@@ -68,7 +69,7 @@ dkdriver_open(dev, flags, devtype, p)
 		disk->dk_flags |= DKF_OPENING;
 		dkgetinfo(disk, dev);
 		disk->dk_flags &= ~DKF_OPENING;
-		//wakeup(disk);
+		wakeup(disk);
 	}
 	disk->dk_label = LABELDESC;
 	part = disk->dk_label->d_npartitions;
@@ -77,16 +78,19 @@ dkdriver_open(dev, flags, devtype, p)
 	}
 	mask = 1 << dkpart(dev);
 	dkoverlapchk(disk->dk_openmask, dev, disk->dk_label, disk->dk_name);
-	if (mode == S_IFCHR) {
-		disk->dk_copenmask |= mask;
-	} else if (mode == S_IFBLK) {
-		disk->dk_bopenmask |= mask;
-	} else {
-		return (EINVAL);
-	}
-	disk->dk_openmask |= mask;
 
-	rv = (*driver->d_open)(dev, flags, devtype, p);
+	switch(mode) {
+	case S_IFCHR:
+		disk->dk_copenmask |= mask;
+		break;
+	case S_IFBLK:
+		disk->dk_bopenmask |= mask;
+		break;
+	}
+
+	disk->dk_openmask = disk->dk_bopenmask | disk->dk_copenmask;
+
+	rv = (*driver->d_open)(dev, flags, mode, p);
 	if(rv != 0) {
 		return (-1);
 	}
@@ -94,20 +98,32 @@ dkdriver_open(dev, flags, devtype, p)
 }
 
 int
-dkdriver_close(dev, flags, devtype, p)
+dkdriver_close(disk, dev, flags, mode, p)
+	struct dkdevice *disk;
 	dev_t dev;
-	int flags, devtype;
+	int flags, mode;
 	struct proc *p;
 {
-	register struct dkdevice *disk;
 	register struct dkdriver *driver;
-	int unit, rv;
+	int part, mask, rv;
 
-	unit = dkunit(dev);
-	disk = &dk[unit];
 	driver = disk->dk_driver;
 
-	rv = (*driver->d_close)(dev, flags, devtype, p);
+	if (mode == S_IFCHR) {
+		disk->dk_copenmask |= mask;
+	} else if (mode == S_IFBLK) {
+		disk->dk_bopenmask |= mask;
+	} else {
+		return (EINVAL);
+	}
+	disk->dk_openmask = disk->dk_bopenmask | disk->dk_copenmask;
+
+	if (disk->dk_openmask == 0) {
+		disk->dk_flags |= DKF_CLOSING;
+	}
+	disk->dk_flags &= ~(DKF_CLOSING | DKF_WANTED | DKF_ALIVE | DKF_ONLINE);
+
+	rv = (*driver->d_close)(dev, flags, mode, p);
 	if (rv != 0) {
 		return (-1);
 	}
@@ -162,6 +178,11 @@ done:
 	biodone(bp);
 }
 
+dkdriver_start(unit)
+{
+
+}
+
 /*
  * Allocate iostat disk monitoring slots for a driver.  If slots already
  * allocated (*dkn >= 0) or not enough slots left to satisfy request simply
@@ -195,24 +216,6 @@ dk_alloc(dkn, slots, name, wps)
 			*wp++ = wps;
 		}
 	}
-}
-
-int
-dk_attach(addr, unit)
-	struct dkdevice *addr;
-	int unit;
-{
-	if (dk_n < 0) {
-		dk_alloc(&dk_n, NDK + 1, addr->dk_name, addr->dk_bps);
-		if (dk_n >= 0) {
-			&dk_wps[dk_n + NDK] = 0;
-		}
-	}
-	if (unit != 0) {
-		return (0);
-	}
-	dk = addr;
-	return (1);
 }
 
 void

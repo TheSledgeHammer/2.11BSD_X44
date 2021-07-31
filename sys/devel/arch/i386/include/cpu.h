@@ -28,7 +28,7 @@
 #ifndef _I386_CPU_H_
 #define _I386_CPU_H_
 
-#include <devel/arch/i386/include/intr.h>
+#include <arch/i386/include/intr.h>
 
 struct percpu;
 

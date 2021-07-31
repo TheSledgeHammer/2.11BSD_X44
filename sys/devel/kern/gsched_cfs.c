@@ -241,29 +241,30 @@ cfs_schedcpu(p)
 	/* run-through red-black tree */
 	struct proc *nxt;
 	struct proc *left;
-	for(p = RB_FIRST(gsched_cfs_rbtree, cfs)->cfs_proc; p != NULL; p = nxt) {
+
+	for (p = RB_FIRST(gsched_cfs_rbtree, cfs)->cfs_proc; p != NULL; p = nxt) {
 		nxt = RB_NEXT(gsched_cfs_rbtree, cfs, p)->cfs_proc;
 		left = RB_LEFT(cfs, cfs_entry)->cfs_proc;
 		/* found proc on left-side of tree */
-		if(p == left) {
+		if (p == left) {
 			/* sort run queue */
 			gsched_sort(p, nxt);
 			/* start deadline counter */
-			while(cpticks < cfs->cfs_cpticks) {
+			while (cpticks < cfs->cfs_cpticks) {
 				cpticks++;
 				/* Test if deadline was reached before end of scheduling period */
-				if(cfs->cfs_cpticks == cpticks) {
+				if (cfs->cfs_cpticks == cpticks) {
 					/* test if time doesn't equal the base scheduling period */
-					if(cfs->cfs_time != cfs->cfs_bsched) {
+					if (cfs->cfs_time != cfs->cfs_bsched) {
 						goto runout;
 						break;
 					} else {
 						goto out;
 						break;
 					}
-				} else if(cfs->cfs_cpticks != cpticks) {
+				} else if (cfs->cfs_cpticks != cpticks) {
 					/* test if time equals the base scheduling period */
-					if(cfs->cfs_time == cfs->cfs_bsched) {
+					if (cfs->cfs_time == cfs->cfs_bsched) {
 						goto runout;
 						break;
 					}
@@ -274,6 +275,8 @@ cfs_schedcpu(p)
 					break;
 				}
 			}
+		} else {
+			goto out;
 		}
 	}
 

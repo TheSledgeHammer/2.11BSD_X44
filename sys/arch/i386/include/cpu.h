@@ -109,7 +109,8 @@ struct 	pcb;
 void	savectx (struct pcb *);
 
 /* clock.c */
-extern u_int	tsc_freq;
+extern u_int tsc_freq;
+
 void	startrtclock(void);
 int		clockintr(void *);
 int		gettick();

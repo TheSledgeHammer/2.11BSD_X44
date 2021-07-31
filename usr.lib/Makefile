@@ -18,9 +18,7 @@
 
 .include <bsd.own.mk>
 
-SUBDIR= libdbm libmp libom libterminfo libutil libvmf liby libz
-
-#libcurses
+SUBDIR= libcurses libdbm libmp libom libterminfo libutil libvmf liby libz
 
 .include <bsd.buildinstall.mk>
 .include <bsd.subdir.mk>

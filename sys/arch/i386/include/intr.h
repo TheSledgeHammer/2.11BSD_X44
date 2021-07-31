@@ -53,12 +53,21 @@
 #define	IST_EDGE		2	/* edge-triggered */
 #define	IST_LEVEL		3	/* level-triggered */
 
+/*
+ * Local APIC masks and software interrupt masks, in order
+ * of priority.  Must not conflict with SIR_* below.
+ */
+#define LIR_IPI			33
+#define LIR_TIMER		32
+
 /* Soft interrupt masks. */
 #define	SIR_CLOCK		31
 #define	SIR_NET			30
 #define	SIR_SERIAL		29
 
 #define IREENT_MAGIC	0x18041969
+
+#define I386_NIPI		9
 
 #ifndef _LOCORE
 

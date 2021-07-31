@@ -86,11 +86,6 @@ unsigned int 	cfs_decay(struct proc *, u_char);
 unsigned int 	cfs_update(struct proc *, u_char);
 int				cfs_schedcpu(struct proc *);
 
-/* Not implemented */
-#define NCFSQS 	        8 					    					/* 8 CFS Queues */
-#define CFQS 	        (NQS/NCFSQS)		    					/* Number of CFS Queues to Number of Run Queues (32/8 = 4) */
-extern struct sched_cfs cfs_runq[CFQS];  							/* cfs run-queues */
-
 #endif /* _SYS_GSCHED_CFS_H */
 
 /*
