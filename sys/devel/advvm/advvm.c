@@ -96,12 +96,17 @@ const struct cdevsw advvm_cdev = {
 		.d_type = D_DISK
 };
 
-static const struct dkdriver advvm_driver = {
-
-};
-
 CFDRIVER_DECL(NULL, advvm, &advvm_cops, DV_DISK, sizeof(struct advvm_softc));
 CFOPS_DECL(advvm, advvm_match, advvm_attach, advvm_detach, advvm_activate);
+
+struct dkdriver advvm_dkdriver = {
+		.d_open = advvm_open,
+		.d_close = advvm_close,
+		.d_strategy = advvm_strategy,
+		.d_minphys = advvm_minphys,
+		.d_start = advvm_start,
+		.d_mklabel = advvm_mklabel,
+};
 
 struct advvm_header *
 advvm_set_header(magic, label, block)
@@ -232,6 +237,18 @@ advvm_strategy(dev_t dev, int fflag, int devtype, struct proc *p)
 }
 
 int
+advvm_minphys(dev_t dev, int fflag, int devtype, struct proc *p)
+{
+	return (0);
+}
+
+int
+advvm_start()
+{
+	return (0);
+}
+
+int
 advvm_ioctl(dev_t dev, int cmd, caddr_t data, int fflag, struct proc *p)
 {
 	return (0);
@@ -243,4 +260,10 @@ advvm_size(dev_t dev)
 	int size;
 
 	return (size);
+}
+
+int
+advvm_mklabel()
+{
+	return (0);
 }

@@ -854,10 +854,11 @@ cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 
 	switch (name[0]) {
 	case CPU_CONSDEV:
-		if (cn_tab != NULL)
+		if (cn_tab != NULL) {
 			consdev = cn_tab->cn_dev;
-		else
+		} else {
 			consdev = NODEV;
+		}
 		return (sysctl_rdstruct(oldp, oldlenp, newp, &consdev, sizeof(consdev)));
 	case CPU_BIOSBASEMEM:
 		return (sysctl_rdint(oldp, oldlenp, newp, biosbasemem));

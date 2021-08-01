@@ -109,6 +109,12 @@ static const struct {
 #ifdef NLIST_ELF64
 	{	__fdnlist_elf64		},
 #endif
+#ifdef NLIST_XCOFF32
+	{	__fdnlist_xcoff32	},
+#endif
+#ifdef NLIST_XCOFF64
+	{	__fdnlist_xcoff64	},
+#endif
 };
 	
 int

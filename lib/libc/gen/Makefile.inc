@@ -16,12 +16,12 @@ SRCS+=	alarm.c closedir.c crypt.c ctermid.c ctype_.c daemon.c devname.c 	 \
 		getpwent.c getloadavg.c getmntinfo.c getttyent.c getttynam.c 		 \
 		getusershell.c getwd.c glob.c initgroups.c insque.c isatty.c ndbm.c  \
 		nlist.c nlist_aout.c nlist_coff.c nlist_ecoff.c nlist_elf32.c 		 \
-		nlist_elf64.c opendir.c popen.c psignal.c pwcache.c readdir.c 		 \
-		regex.c remque.c scandir.c seekdir.c sethostname.c setmode.c 		 \
-		siginterrupt.c siglist.c signal.c sigsetops.c sleep.c sysctl.c 		 \
-		syserrlst.c syslog.c telldir.c time.c timezone.c ttyname.c ttyslot.c \
-		ualarm.c usleep.c valloc.c vis.c uname.c unvis.c wait.c wait3.c 	 \
-		waitpid.c
+		nlist_elf64.c nlist_xcoff32.c nlist_xcoff64.c copendir.c popen.c	 \
+		psignal.c pwcache.c readdir.c regex.c remque.c scandir.c seekdir.c 	 \
+		sethostname.c setmode.c siginterrupt.c siglist.c signal.c sigsetops.c \
+		sleep.c sysctl.c syserrlst.c syslog.c telldir.c time.c timezone.c 	 \
+		ttyname.c ttyslot.c ualarm.c usleep.c valloc.c vis.c uname.c unvis.c \
+		wait.c wait3.c waitpid.c
 
 # machine-dependent gen sources
 .include "${ARCHDIR}/gen/Makefile.inc"

@@ -53,10 +53,8 @@
 #define ECOFF_SEGMENT_ALIGNMENT(ep) \
 	(((ep)->f.f_flags & ECOFF_FLAG_EXEC) == 23 ? 8 : 16) /* not correct for i386 */
 
-
 struct 	proc;
 struct 	exec_linker;
-//void	cpu_exec_ecoff_setregs (struct proc *, struct exec_linker *, u_long);
 #endif	/* _KERNEL */
 
 #endif /* _I386_ECOFF_MACHDEP_H_ */

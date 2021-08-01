@@ -168,13 +168,6 @@ i386_ipi_handler(void)
 /*
  * Common x86 IPI handlers.
  */
-
-void
-i386_ipi_nop(struct cpu_info *ci)
-{
-
-}
-
 void
 i386_ipi_halt(struct cpu_info *ci)
 {

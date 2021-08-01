@@ -37,13 +37,13 @@
 #include <sys/proc.h>
 #include <sys/sysctl.h>
 
-#include <devel/sys/percpu.h>
-
 #include <vm/include/vm.h>
 #include <vm/include/vm_param.h>
 #include <vm/include/pmap.h>
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_extern.h>
+
+#include <devel/sys/percpu.h>
 
 #include <arch/i386/include/cputypes.h>
 #include <arch/i386/include/pcb.h>
@@ -547,93 +547,4 @@ invlcache_handler()
 	generation = smp_tlb_generation;
 	wbinvd();
 	__PERCPU_SET(smp_tlb_done, generation);
-}
-
-/* FreeBSD 5.1 SMP with a few updates */
-volatile int smp_tlb_wait;
-
-static void
-smp_tlb_shootdown(u_int vector, vm_offset_t addr1, vm_offset_t addr2)
-{
-	u_int ncpu;
-	register_t eflags;
-
-	ncpu = mp_ncpus - 1;	/* does not shootdown self */
-	if (ncpu < 1) {
-		return; 			/* no other cpus */
-	}
-	eflags = read_eflags();
-	if ((eflags & PSL_I) == 0) {
-		panic("absolutely cannot call smp_ipi_shootdown with interrupts already disabled");
-	}
-	simple_lock(&smp_tlb_lock);
-	smp_tlb_addr1 = addr1;
-	smp_tlb_addr2 = addr2;
-	atomic_store_relaxed(&smp_tlb_wait, 0);
-	i386_self_ipi(vector);
-	while (smp_tlb_wait < ncpu) {
-		ia32_pause();
-	}
-	simple_unlock(&smp_tlb_lock);
-}
-
-static __inline u_int32_t
-popcnt(u_int32_t m)
-{
-	m = (m & 0x55555555) + ((m & 0xaaaaaaaa) >> 1);
-	m = (m & 0x33333333) + ((m & 0xcccccccc) >> 2);
-	m = (m & 0x0f0f0f0f) + ((m & 0xf0f0f0f0) >> 4);
-	m = (m & 0x00ff00ff) + ((m & 0xff00ff00) >> 8);
-	m = (m & 0x0000ffff) + ((m & 0xffff0000) >> 16);
-	return (m);
-}
-
-static void
-smp_targeted_tlb_shootdown(u_int mask, u_int vector, pmap_t pmap, vm_offset_t addr1, vm_offset_t addr2, smp_invl_cb_t curcpu_cb)
-{
-	volatile u_int32_t *p_cpudone;
-	u_int32_t generation;
-	int ncpu, othercpus;
-	register_t eflags;
-
-	othercpus = mp_ncpus - 1;
-	if (mask == (u_int) -1) {
-		ncpu = othercpus;
-		if (ncpu < 1) {
-			return;
-		}
-	} else {
-		/* XXX there should be a pcpu self mask */
-		mask &= ~(1 << &cpuid_to_percpu[ncpu]);
-		if (mask == 0) {
-			return;
-		}
-		ncpu = popcnt(mask);
-		if (ncpu > othercpus) {
-			/* XXX this should be a panic offence */
-			printf("SMP: tlb shootdown to %d other cpus (only have %d)\n", ncpu,
-					othercpus);
-			ncpu = othercpus;
-		}
-		/* XXX should be a panic, implied by mask == 0 above */
-		if (ncpu < 1) {
-			return;
-		}
-	}
-	eflags = read_eflags();
-	if ((eflags & PSL_I) == 0) {
-		panic("absolutely cannotcall smp_targeted_ipi_shootdown with interrupts already disabled");
-	}
-
-	simple_lock(&smp_tlb_lock);
-	curcpu_cb(pmap, addr1, addr2);
-	smp_tlb_addr1 = addr1;
-	smp_tlb_addr2 = addr2;
-	atomic_store_relaxed(&smp_tlb_wait, 0);
-	generation = ++smp_tlb_generation;
-	curcpu_cb(pmap, addr1, addr2);
-	while (smp_tlb_wait < ncpu) {
-			ia32_pause();
-	}
-	simple_lock(&smp_tlb_lock);
 }

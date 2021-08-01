@@ -445,8 +445,7 @@ npxintr(void *arg)
 	IPRINTF(("Intr"));
 
 	if (p == 0 || npx_type == NPX_NONE) {
-		printf("npxintr: p = %p, curproc = %p, npx_type = %d\n", p, curproc,
-				npx_type);
+		printf("npxintr: p = %p, curproc = %p, npx_type = %d\n", p, curproc, npx_type);
 		panic("npxintr: came from nowhere");
 	}
 
@@ -710,3 +709,27 @@ npxsave(void)
 	npxproc = 0;
 	stts();
 }
+
+/*
+void
+npxsave_cpu(ci, save)
+	struct cpu_info *ci;
+	int save;
+{
+	struct proc *p;
+	int s;
+
+	KDASSERT(ci == curcpu());
+
+	if (npxproc != ci->cpu_self) {
+		return;
+	}
+	p = npxproc;
+
+	if (save) {
+
+	}
+
+	splx(s);
+}
+*/

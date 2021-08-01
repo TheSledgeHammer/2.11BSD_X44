@@ -46,24 +46,6 @@
 
 int  intr_shared_edge;
 
-void
-intr_apic_vectors()
-{
-	int idx;
-	for(idx = 0; idx < MAX_INTR_SOURCES; idx++) {
-		setidt(idx, &IDTVEC(apic_intr), 0, SDT_SYS386IGT, SEL_KPL);
-	}
-}
-
-void
-intr_x2apic_vectors()
-{
-	int idx;
-	for(idx = 0; idx < MAX_INTR_SOURCES; idx++) {
-		setidt(idx, &IDTVEC(x2apic_intr), 0, SDT_SYS386IGT, SEL_KPL);
-	}
-}
-
 void *
 apic_intr_establish(irq, type, level, ih_fun, ih_arg)
 	int irq;

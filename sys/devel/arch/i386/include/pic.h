@@ -52,10 +52,7 @@ struct softpic {
     int                     sp_apicid;
     int						sp_type;
     boolean_t               sp_isapic;
-
     struct mp_intr_map 		*sp_map;
-
-    u_int 					sp_edgetrigger:1;
 };
 
 /*

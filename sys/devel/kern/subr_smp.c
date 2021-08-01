@@ -43,7 +43,7 @@
 #include <devel/sys/malloctypes.h>
 
 
-cpuset_t 			all_cpus;
+cpuset_t all_cpus;
 
 int mp_ncpus;
 /* export this for libkvm consumers. */
@@ -234,7 +234,6 @@ topo_next_nonchild_node(struct topo_node *top, struct topo_node *node)
 void
 topo_set_pu_id(struct topo_node *node, cpuid_t id)
 {
-
 	KASSERT(node->type == TOPO_TYPE_PU ("topo_set_pu_id: wrong node type: %u", node->type));
 	KASSERT(CPU_EMPTY(&node->cpuset) && node->cpu_count == 0 ("topo_set_pu_id: cpuset already not empty"));
 	node->id = id;

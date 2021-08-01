@@ -97,11 +97,7 @@ int		cd_reset (struct cd_softc *);
 int		cd_read_subchannel (struct cd_softc *, int, int, int, struct cd_sub_channel_info *, int );
 int		cd_read_toc (struct cd_softc *, int, int, struct cd_toc_entry *, int );
 int		cd_get_parms (struct cd_softc *, int);
-/*
-struct cfdriver cd_cd = {
-	NULL, "cd", cdmatch, cdattach, DV_DISK, sizeof(struct cd_softc)
-};
-*/
+
 CFDRIVER_DECL(NULL, cd, &cd_cops, DV_DISK, sizeof(struct cd_softc));
 CFOPS_DECL(cd, cdmatch, cdattach, NULL, NULL);
 

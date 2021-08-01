@@ -40,11 +40,6 @@ struct buf			dktab;
 struct buf			dkutab[];
 struct dkdevice 	*dk;
 
-struct dkdriver dkdisks = {
-		.d_open = dkdriver_open,
-		.d_close = dkdriver_close
-};
-
 int
 dkdriver_open(disk, dev, flags, mode, p)
 	struct dkdevice *disk;
@@ -53,8 +48,9 @@ dkdriver_open(disk, dev, flags, mode, p)
 	struct proc *p;
 {
 	register struct dkdriver *driver;
-	int ret, part, mask, rv;
+	int ret, part, mask, rv, unit;
 
+	unit = dkunit(dev);
 	driver = disk->dk_driver;
 
 	while (disk->dk_flags & (DKF_OPENING | DKF_CLOSING)) {
@@ -90,10 +86,14 @@ dkdriver_open(disk, dev, flags, mode, p)
 
 	disk->dk_openmask = disk->dk_bopenmask | disk->dk_copenmask;
 
-	rv = (*driver->d_open)(dev, flags, mode, p);
-	if(rv != 0) {
-		return (-1);
+	if(disk->dk_openmask == 0) {
+		rv = (*driver->d_open)(dev, flags, mode, p);
+		if (rv) {
+			goto done;
+		}
 	}
+
+done:
 	return (rv);
 }
 
@@ -116,6 +116,14 @@ dkdriver_close(disk, dev, flags, mode, p)
 	} else {
 		return (EINVAL);
 	}
+	switch(mode) {
+	case S_IFCHR:
+		disk->dk_copenmask |= mask;
+		break;
+	case S_IFBLK:
+		disk->dk_bopenmask |= mask;
+		break;
+	}
 	disk->dk_openmask = disk->dk_bopenmask | disk->dk_copenmask;
 
 	if (disk->dk_openmask == 0) {
@@ -123,10 +131,14 @@ dkdriver_close(disk, dev, flags, mode, p)
 	}
 	disk->dk_flags &= ~(DKF_CLOSING | DKF_WANTED | DKF_ALIVE | DKF_ONLINE);
 
-	rv = (*driver->d_close)(dev, flags, mode, p);
-	if (rv != 0) {
-		return (-1);
+	if((disk->dk_flags & DKF_CLOSING) == 0) {
+		rv = (*driver->d_close)(dev, flags, mode, p);
+		if (rv) {
+			goto done;
+		}
 	}
+
+done:
 	return (rv);
 }
 
@@ -178,44 +190,10 @@ done:
 	biodone(bp);
 }
 
-dkdriver_start(unit)
+int
+dkdriver_start()
 {
 
-}
-
-/*
- * Allocate iostat disk monitoring slots for a driver.  If slots already
- * allocated (*dkn >= 0) or not enough slots left to satisfy request simply
- * ignore it.
- */
-void
-dk_alloc(dkn, slots, name, wps)
-	int  *dkn;	/* pointer to number for iostat */
-	int  slots;	/* number of iostat slots requested */
-	char *name;	/* name of device */
-	long wps;	/* words per second transfer rate */
-{
-	int i;
-	register char **np;
-	register int *up;
-	register long *wp;
-
-	if (*dkn < 0 && dk_n + slots <= DK_NDRIVE) {
-		/*
-		 * Allocate and initialize the slots
-		 */
-		*dkn = dk_n;
-		np = &dk_name[dk_n];
-		up = &dk_unit[dk_n];
-		wp = &dk_wps[dk_n];
-		dk_n += slots;
-
-		for (i = 0; i < slots; i++) {
-			*np++ = name;
-			*up++ = i;
-			*wp++ = wps;
-		}
-	}
 }
 
 void

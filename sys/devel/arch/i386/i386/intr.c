@@ -160,28 +160,31 @@ int 				intrtype[MAX_INTR_SOURCES];
 int 				intrmask[MAX_INTR_SOURCES];
 int 				intrlevel[MAX_INTR_SOURCES];
 
-struct intrsource *
-intrsource_create(struct pic *pic, int pin)
+void
+intr_default_setup()
 {
-	struct intrsource *isrc;
-
-	isrc = &intrsrc[pin];
-	isrc->is_pic = pic;
-	isrc->is_pin = pin;
-
-	return (isrc);
+	/* icu & apic vectors */
+	intr_legacy_vectors();
+	intr_apic_vectors();
+	intr_x2apic_vectors();
 }
 
-struct intrhand *
-intrhand_create(struct pic *pic, int irq)
+void
+intr_apic_vectors()
 {
-	struct intrhand *ihnd;
+	int idx;
+	for(idx = 0; idx < MAX_INTR_SOURCES; idx++) {
+		setidt(idx, &IDTVEC(apic_intr), 0, SDT_SYS386IGT, SEL_KPL);
+	}
+}
 
-	ihnd = &intrhand[irq];
-	ihnd->ih_pic = pic;
-	ihnd->ih_irq = irq;
-
-	return (ihnd);
+void
+intr_x2apic_vectors()
+{
+	int idx;
+	for(idx = 0; idx < MAX_INTR_SOURCES; idx++) {
+		setidt(idx, &IDTVEC(x2apic_intr), 0, SDT_SYS386IGT, SEL_KPL);
+	}
 }
 
 void
@@ -192,7 +195,6 @@ intr_legacy_vectors()
 		int idx = ICU_OFFSET + i;
 		setidt(idx, &IDTVEC(legacy_intr), 0, SDT_SYS386IGT, SEL_KPL);
 	}
-
 	i8259_default_setup();
 }
 

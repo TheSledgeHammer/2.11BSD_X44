@@ -118,7 +118,7 @@ pmap_invalidate_all(pmap)
 	}
 }
 
-//#ifdef SMP
+#ifdef SMP
 /*
  * For SMP, these functions have to use the IPI mechanism for coherence.
  */

@@ -65,6 +65,8 @@
 /* #define	NLIST_ECOFF */
 /* #define	NLIST_ELF32 */
 /* #define	NLIST_ELF64 */
+/* #define	NLIST_XCOFF32 */
+/* #define	NLIST_XCOFF64 */
 #endif
 
 #define	ISLAST(p)	(p->n_un.n_name == 0 || p->n_un.n_name[0] == 0)
@@ -83,4 +85,10 @@ int	__fdnlist_elf32 (int, struct nlist *);
 #endif
 #ifdef NLIST_ELF64
 int	__fdnlist_elf64 (int, struct nlist *);
+#endif
+#ifdef NLIST_XCOFF32
+int	__fdnlist_xcoff32 (int, struct nlist *);
+#endif
+#ifdef NLIST_XCOFF64
+int	__fdnlist_xcoff64 (int, struct nlist *);
 #endif

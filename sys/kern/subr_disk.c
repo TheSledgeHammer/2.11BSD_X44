@@ -63,7 +63,6 @@ disk_init()
 {
 	TAILQ_INIT(&disklist);
 	disk_count = 0;
-
 }
 
 /*

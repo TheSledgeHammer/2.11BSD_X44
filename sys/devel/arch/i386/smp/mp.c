@@ -43,39 +43,6 @@
 #include <devel/arch/i386/include/cpu.h>
 #include <devel/arch/i386/include/percpu.h>
 
-/* belongs in cpufunc.h */
-static __inline u_int
-bsrl(u_int mask)
-{
-	u_int	result;
-
-	__asm("bsrl %1,%0" : "=r" (result) : "rm" (mask) : "cc");
-	return (result);
-}
-
-#define	HAVE_INLINE_FFS
-
-static __inline int
-ffs(int mask)
-{
-	/*
-	 * Note that gcc-2's builtin ffs would be used if we didn't declare
-	 * this inline or turn off the builtin.  The builtin is faster but
-	 * broken in gcc-2.4.5 and slower but working in gcc-2.5 and later
-	 * versions.
-	 */
-	 return (mask == 0 ? mask : (int)bsfl((u_int)mask) + 1);
-}
-
-#define	HAVE_INLINE_FLS
-
-static __inline int
-fls(int mask)
-{
-	return (mask == 0 ? mask : (int)bsrl((u_int)mask) + 1);
-}
-
-
 /* lock region used by kernel profiling */
 int	mcount_lock;
 
@@ -723,6 +690,7 @@ cpu_add(u_int apic_id, char boot_cpu)
 		boot_cpu_id = apic_id;
 		cpu_info[apic_id].cpu_bsp = 1;
 	}
+	mp_ncpus++;
 	if (bootverbose) {
 		printf("SMP: Added CPU %u (%s)\n", apic_id, boot_cpu ? "BSP" : "AP");
 	}
@@ -903,21 +871,6 @@ set_interrupt_apic_ids(void)
 			continue;
 		}
 
-		intr_add_cpu(i);
+		//intr_add_cpu(i);
 	}
-}
-
-/*
- * Add a CPU to our mask of valid CPUs that can be destinations of
- * interrupts.
- */
-void
-intr_add_cpu(u_int cpu)
-{
-	if (cpu >= NCPUS)
-		panic("%s: Invalid CPU ID", __func__);
-	if (bootverbose)
-		printf("INTR: Adding local APIC %d as a target\n", cpu_apic_ids[cpu]);
-
-	CPU_SET(cpu, &intr_cpus);
 }
