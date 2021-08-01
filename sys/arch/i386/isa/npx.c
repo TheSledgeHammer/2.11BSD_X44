@@ -69,7 +69,9 @@
 
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
+
 #include <i386/isa/icu.h>
+#include <i386/include/cpu.h>
 
 /*
  * 387 and 287 Numeric Coprocessor Extension (NPX) Driver.
@@ -108,8 +110,6 @@
 
 void						npxexit(void);
 
-struct proc					*npxproc;
-
 static	enum npx_type		npx_type;
 static	int					npx_nointr;
 volatile u_int				npx_intrs_while_probing;
@@ -119,7 +119,8 @@ extern int 					i386_fpu_present;
 extern int 					i386_fpu_exception;
 extern int 					i386_fpu_fdivbug;
 struct npx_softc			*npx_softc;	/* XXXSMP: per-cpu */
-int (*npxdna_func)(struct proc *) = npxdna_notset;
+
+int (*npxdna_func)(struct cpu_info *) = npxdna_notset;
 
 enum npx_type {
 	NPX_NONE = 0,
@@ -193,13 +194,13 @@ fpu_save(union savefpu *addr)
 }
 
 static int
-npxdna_notset(struct proc *p)
+npxdna_notset(struct cpu_info *ci)
 {
 	panic("npxdna vector not initialized");
 }
 
 static int
-npxdna_empty(struct proc *p)
+npxdna_empty(struct cpu_info *ci)
 {
 
 	/* raise a DNA TRAP, math_emulate would take over eventually */
@@ -433,7 +434,8 @@ npx_attach(struct device *parent, struct device *self, void *aux)
 int
 npxintr(void *arg)
 {
-	register struct proc *p = npxproc;
+	struct cpu_info *ci = curcpu();
+	register struct proc *p = ci->cpu_npxproc;
 	union savefpu *addr;
 	struct intrframe *frame = arg;
 	struct npx_softc *sc;
@@ -441,7 +443,6 @@ npxintr(void *arg)
 
 	sc = npx_softc;
 
-	//uvmexp.traps++;
 	IPRINTF(("Intr"));
 
 	if (p == 0 || npx_type == NPX_NONE) {
@@ -458,8 +459,9 @@ npxintr(void *arg)
 	 * If we're saving, ignore the interrupt.  The FPU will generate
 	 * another one when we restore the state later.
 	 */
-	if (npx_nointr != 0)
+	if (ci->cpu_fpsaving) {
 		return (1);
+	}
 
 #ifdef DIAGNOSTIC
 	/*
@@ -552,28 +554,6 @@ npxintr(void *arg)
 }
 
 /*
- * Wrapper for the fpu_save operation.  We set the TS bit in the saved CR0 for
- * this process, so that it will get a DNA exception on the FPU instruction and
- * force a reload.  This routine is always called with npx_nointr set, so that
- * any pending exception will be thrown away.  (It will be caught again if/when
- * the FPU state is restored.)
- *
- * This routine is always called at spl0.  If it might called with the NPX
- * interrupt masked, it would be necessary to forcibly unmask the NPX interrupt
- * so that it could succeed.
- */
-static __inline void
-npxsave1(void)
-{
-	struct proc *p = npxproc;
-	struct pcb *pcb;
-
-	fpu_save(&p->p_addr->u_pcb.pcb_savefpu);
-	p->p_addr->u_pcb.pcb_cr0 |= CR0_TS;
-	fwait();
-}
-
-/*
  * Implement device not available (DNA) exception
  *
  * If we were the last process to use the FPU, we can simply return.
@@ -581,72 +561,108 @@ npxsave1(void)
  * saved state.
  */
 static int
-npxdna_xmm(struct proc *p)
+npxdna_xmm(struct cpu_info *ci)
 {
+	struct proc *p;
+	int s;
 
-#ifdef DIAGNOSTIC
-	if (cpl != 0 || npx_nointr != 0)
-		panic("npxdna: masked");
+	KDASSERT(i386_use_fxsave == 1);
+
+	if (ci->cpu_fpsaving) {
+		printf("recursive npx trap; cr0=%x\n", rcr0());
+		return (0);
+	}
+	s = splipi();
+#ifdef SMP
+	p = ci->cpu_curproc;
+#else
+	p = curproc;
 #endif
-
-	p->p_addr->u_pcb.pcb_cr0 &= ~CR0_TS;
-	clts();
 
 	/*
 	 * Initialize the FPU state to clear any exceptions.  If someone else
 	 * was using the FPU, save their state (which does an implicit
 	 * initialization).
 	 */
-	npx_nointr = 1;
-	if (npxproc != 0 && npxproc != p) {
+	if (ci->cpu_npxproc != NULL) {
 		IPRINTF(("Save"));
-		npxsave1();
+		npxsave_cpu(ci, 1);
 	} else {
+		clts();
 		IPRINTF(("Init"));
 		fninit();
 		fwait();
+		stts();
 	}
-	npx_nointr = 0;
-	npxproc = p;
+	splx(s);
+	IPRINTF(("%s: done saving\n", ci->cpu_dev->dv_xname));
+	KDASSERT(ci->cpu_npxproc == NULL);
+
+	p->p_addr->u_pcb.pcb_cr0 &= ~CR0_TS;
+	clts();
+	s = splipi();
+	ci->cpu_npxproc = p;
+	p->p_addr->u_pcb.pcb_fpcpu = ci;
+	splx(s);
 
 	if ((p->p_md.md_flags & MDP_USEDFPU) == 0) {
 		fldcw(&p->p_addr->u_pcb.pcb_savefpu.sv_xmm.sv_env.en_cw);
 		p->p_md.md_flags |= MDP_USEDFPU;
-	} else
+	} else {
 		fxrstor(&p->p_addr->u_pcb.pcb_savefpu.sv_xmm);
+	}
 
 	return (1);
 }
 
 static int
-npxdna_s87(struct proc *p)
+npxdna_s87(struct cpu_info *ci)
 {
-#ifdef DIAGNOSTIC
-	if (cpl != 0 || npx_nointr != 0)
-		panic("npxdna: masked");
+	struct proc *p;
+	int s;
+
+	KDASSERT(i386_use_fxsave == 0);
+
+	if (ci->cpu_fpsaving) {
+		printf("recursive npx trap; cr0=%x\n", rcr0());
+		return (0);
+	}
+
+	s = splipi();
+#ifdef SMP
+	p = ci->cpu_curproc;
+#else
+	p = curproc;
 #endif
 
-	struct user *u;
-
-	p->p_addr->u_pcb.pcb_cr0 &= ~CR0_TS;
-	clts();
+	IPRINTF(("%s: dna for lwp %p\n", ci->cpu_dev->dv_xname, l));
 
 	/*
 	 * Initialize the FPU state to clear any exceptions.  If someone else
 	 * was using the FPU, save their state (which does an implicit
 	 * initialization).
 	 */
-	npx_nointr = 1;
-	if (npxproc != 0 && npxproc != p) {
+	if (ci->cpu_npxproc != NULL) {
 		IPRINTF(("Save"));
-		npxsave1();
+		npxsave_cpu(ci, 1);
 	} else {
+		clts();
 		IPRINTF(("Init"));
 		fninit();
 		fwait();
+		stts();
 	}
-	npx_nointr = 0;
-	npxproc = p;
+	splx(s);
+
+	IPRINTF(("%s: done saving\n", ci->cpu_dev->dv_xname));
+	KDASSERT(ci->cpu_npxproc == NULL);
+
+	p->p_addr->u_pcb.pcb_cr0 &= ~CR0_TS;
+	clts();
+	s = splipi();
+	ci->cpu_npxproc = p;
+	p->p_addr->u_pcb.pcb_fpcpu = ci;
+	splx(s);
 
 	if ((p->p_md.md_flags & MDP_USEDFPU) == 0) {
 		fldcw(&p->p_addr->u_pcb.pcb_savefpu.sv_87.sv_env.en_cw);
@@ -675,13 +691,36 @@ npxdna_s87(struct proc *p)
  * Drop the current FPU state on the floor.
  */
 void
-npxdrop(void)
+npxdrop(struct cpu_info *ci)
 {
-	struct proc *p = npxproc;
-
-	npxproc = 0;
+	struct proc *p;
+	p = ci->cpu_npxproc;
+	p = 0;
 	stts();
 	p->p_addr->u_pcb.pcb_cr0 |= CR0_TS;
+}
+
+/*
+ * Wrapper for the fpu_save operation.  We set the TS bit in the saved CR0 for
+ * this process, so that it will get a DNA exception on the FPU instruction and
+ * force a reload.  This routine is always called with npx_nointr set, so that
+ * any pending exception will be thrown away.  (It will be caught again if/when
+ * the FPU state is restored.)
+ *
+ * This routine is always called at spl0.  If it might called with the NPX
+ * interrupt masked, it would be necessary to forcibly unmask the NPX interrupt
+ * so that it could succeed.
+ */
+
+static __inline void
+npxsave1(void)
+{
+	struct cpu_info *ci = curcpu();
+	struct proc *p = ci->cpu_npxproc;
+
+	fpu_save(&p->p_addr->u_pcb.pcb_savefpu);
+	p->p_addr->u_pcb.pcb_cr0 |= CR0_TS;
+	fwait();
 }
 
 /*
@@ -693,24 +732,23 @@ npxdrop(void)
  * called when forking or core dumping, so the lazy reload at worst forces us
  * to trap once per fork(), and at best saves us a reload once per fork().
  */
+
 void
 npxsave(void)
 {
+	struct cpu_info *ci = curcpu();
+	struct proc *p = ci->cpu_npxproc;
 
-#ifdef DIAGNOSTIC
-	if (cpl != 0 || npx_nointr != 0)
-		panic("npxsave: masked");
-#endif
 	IPRINTF(("Fork"));
 	clts();
-	npx_nointr = 1;
+	ci->cpu_fpsaving = 1;
 	npxsave1();
-	npx_nointr = 0;
-	npxproc = 0;
+	ci->cpu_fpsaving = 0;
+	p->p_addr->u_pcb.pcb_fpcpu = NULL;
+	ci->cpu_npxproc = NULL;
 	stts();
 }
 
-/*
 void
 npxsave_cpu(ci, save)
 	struct cpu_info *ci;
@@ -721,15 +759,93 @@ npxsave_cpu(ci, save)
 
 	KDASSERT(ci == curcpu());
 
-	if (npxproc != ci->cpu_self) {
+	p = ci->cpu_npxproc;
+	if (p == NULL) {
 		return;
 	}
-	p = npxproc;
+
+	IPRINTF(("%s: fp CPU %s lwp %p\n", ci->cpu_dev->dv_xname, save? "save" : "flush", l));
 
 	if (save) {
-
+#ifdef DIAGNOSTIC
+		if (ci->cpu_fpsaving != 0) {
+			panic("npxsave_cpu: recursive save!");
+		}
+#endif
+		/*
+		 * Set ci->ci_fpsaving, so that any pending exception will be
+		 * thrown away.  (It will be caught again if/when the FPU
+		 * state is restored.)
+		 *
+		 * XXX on i386 and earlier, this routine should always be
+		 * called at spl0; if it might called with the NPX interrupt
+		 * masked, it would be necessary to forcibly unmask the NPX
+		 * interrupt so that it could succeed.
+		 * XXX this is irrelevant on 486 and above (systems
+		 * which report FP failures via traps rather than irq13).
+		 * XXX punting for now..
+		 */
+		clts();
+		ci->cpu_fpsaving = 1;
+		fpu_save(&p->p_addr->u_pcb.pcb_savefpu);
+		ci->cpu_fpsaving = 0;
 	}
+	/*
+	 * We set the TS bit in the saved CR0 for this process, so that it
+	 * will get a DNA exception on any FPU instruction and force a reload.
+	 */
+	stts();
+	p->p_addr->u_pcb.pcb_cr0 |= CR0_TS;
 
+	s = splipi();
+	p->p_addr->u_pcb.pcb_fpcpu = NULL;
+	ci->cpu_npxproc = NULL;
 	splx(s);
 }
-*/
+
+void
+npxsave_proc(struct proc *p, int save)
+{
+	struct cpu_info *ci = curcpu();
+	struct cpu_info *oci;
+
+	KDASSERT(p->p_addr != NULL);
+
+	oci = p->p_addr->u_pcb.pcb_fpcpu;
+	if (oci == NULL)
+		return;
+
+	IPRINTF(("%s: fp %s proc %p\n", ci->cpu_dev->dv_xname, save? "save" : "flush", p));
+#if defined(SMP)
+	if (oci == ci) {
+		int s = splipi();
+		npxsave_cpu(ci, save);
+		splx(s);
+	} else {
+#ifdef DIAGNOSTIC
+		int spincount;
+#endif
+		IPRINTF(("%s: fp ipi to %s %s proc %p\n",
+						ci->cpu_dev->dv_xname,
+						oci->cpu_dev->dv_xname,
+						save? "save" : "flush", p));
+
+		i386_send_ipi(oci, save ? I386_IPI_SYNCH_FPU : I386_IPI_FLUSH_FPU);
+#ifdef DIAGNOSTIC
+		spincount = 0;
+#endif
+		while (p->p_addr->u_pcb.pcb_fpcpu != NULL) {
+#ifdef DIAGNOSTIC
+			spincount++;
+			if (spincount > 10000000) {
+				panic("fp_save ipi didn't");
+			}
+		}
+	}
+#endif
+
+#else
+	KASSERT(ci->cpu_npxproc == p);
+	npxsave_cpu(ci, save);
+#endif
+}

@@ -40,13 +40,70 @@
 
 #include <sys/queue.h>
 
+/* Softpic, acts as a selector for which PIC/APIC to use: see softpic.c */
+struct softpic {
+    struct cpu_info         *sp_cpu;
+    struct intrsource       sp_intsrc;
+    struct intrhand         sp_inthnd;
+    int                     sp_template;
+    unsigned int 			sp_vector:8;
+    int                     sp_irq;
+    int                     sp_pin;
+    int                     sp_apicid;
+    int						sp_type;
+    boolean_t               sp_isapic;
+    struct mp_intr_map 		*sp_map;
+};
+
 /*
- * Interrupt handler chains.  intr_establish() inserts a handler into
+ * Methods that a PIC provides to mask/unmask a given interrupt source,
+ * "turn on" the interrupt on the CPU side by setting up an IDT entry, and
+ * return the vector associated with this source.
+ */
+struct pic {
+	int 					pic_type;
+	void					(*pic_hwmask)(struct softpic *, int);
+	void 					(*pic_hwunmask)(struct softpic *, int);
+	void 					(*pic_addroute)(struct softpic *, struct cpu_info *, int, int, int);
+	void 					(*pic_delroute)(struct softpic *, struct cpu_info *, int, int, int);
+	void					(*pic_register)(void *);
+	TAILQ_ENTRY(pic) 		pic_entry;
+};
+
+/*
+ * PIC types.
+ */
+#define PIC_I8259			0
+#define PIC_IOAPIC			1
+#define PIC_LAPIC			2
+#define PIC_SOFT			3
+
+/*
+ * An interrupt source.  The upper-layer code uses the PIC methods to
+ * control a given source.  The lower-layer PIC drivers can store additional
+ * private data in a given interrupt source such as an interrupt pin number
+ * or an I/O APIC pointer.
+ */
+struct intrsource {
+	struct pic 				*is_pic;
+    struct intrhand     	*is_handlers;	/* handler chain */
+	u_long 					*is_count;
+	u_long 					*is_straycount;
+	u_int 					is_index;
+	u_int 					is_domain;
+	u_int 					is_cpu;
+	int						is_type;
+	int 					is_pin;
+	int  					is_minlevel;
+	int 					is_maxlevel;
+};
+
+/*
+ * Interrupt handler chains.  isa_intr_establish() inserts a handler into
  * the list.  The handler is called with its (single) argument.
  */
-
 struct intrhand {
-    //struct pic          	*ih_pic;
+    struct pic          	*ih_pic;
 	int						(*ih_fun)(void *);
 	void					*ih_arg;
 	u_long					ih_count;
@@ -56,5 +113,21 @@ struct intrhand {
 	int						ih_flags;
 	int						ih_irq;
 };
+
+
+extern struct lock_object 	*icu_lock;
+extern int 					intr_shared_edge;		/* This system has shared edge interrupts */
+
+/* softpic.c */
+extern struct softpic		*intrspic;
+
+void						softpic_pic_init(void *);
+int							softpic_register_pic(struct pic *);
+struct pic 					*softpic_handle_pic(struct softpic *);
+void						softpic_pic_hwmask(struct softpic *, int, boolean_t, int);
+void						softpic_pic_hwunmask(struct softpic *, int, boolean_t, int);
+void						softpic_pic_addroute(struct softpic *, struct cpu_info *, int, int, int, boolean_t, int);
+void						softpic_pic_delroute(struct softpic *, struct cpu_info *, int, int, int, boolean_t, int);
+struct softpic 				*softpic_intr_handler(struct softpic *, int, int, boolean_t, int);
 
 #endif /* _I386_PIC_H_ */

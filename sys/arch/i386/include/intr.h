@@ -45,7 +45,8 @@
 #define	IPL_CLOCK		1	/* clock */
 #define	IPL_HIGH		1	/* everything */
 #define	IPL_SERIAL		0	/* serial */
-#define	NIPL			10
+#define IPL_IPI			0	/* inter-processor interrupts */
+#define	NIPL			16
 
 /* Interrupt sharing types. */
 #define	IST_NONE		0	/* none */
@@ -135,7 +136,7 @@ spllower(ncpl)
 #define	splclock()		splraise(imask[IPL_CLOCK])
 #define	splstatclock()	splclock()
 #define	splserial()		splraise(imask[IPL_SERIAL])
-
+#define splipi()		splraise(IPL_IPI)
 /*
  * Software interrupt masks
  *

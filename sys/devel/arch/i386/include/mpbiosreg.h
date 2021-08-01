@@ -48,7 +48,6 @@
 /*
  * Multiprocessor config table entry types.
  */
-
 #define MPS_MCT_CPU		0
 #define MPS_MCT_BUS		1
 #define MPS_MCT_IOAPIC	2

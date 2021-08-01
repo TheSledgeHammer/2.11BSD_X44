@@ -46,6 +46,8 @@
 #include <machine/psl.h>
 #include <machine/frame.h>
 #include <machine/segments.h>
+//#include <machine/cpuinfo.h>
+#include <arch/i386/include/cpuinfo.h>
 
 struct pmap;
 /*
@@ -58,8 +60,6 @@ struct pmap;
 #define	cpu_swapin(p)				/* nothing */
 #define cpu_setstack(p, ap)			(p)->p_md.md_regs[SP] = ap
 #define cpu_set_init_frame(p, fp)	(p)->p_md.md_regs = fp
-
-#define cpu_number					NCPUS	/* number of cpus available */
 
 /*
  * Arguments to hardclock, softclock and gatherstats

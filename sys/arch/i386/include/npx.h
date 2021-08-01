@@ -41,7 +41,7 @@
  * W. Jolitz 1/90
  */
 
-#ifndef	_NPX_H_
+#ifndef	_I386_NPX_H_
 
 /* Default x87 control word. */
 #define	___NPX87___		0x037f
@@ -133,4 +133,17 @@ struct	emcsts {
 	long				em_tar;				/* memory mapped temp A register when swtched */
 	long				em_dl;				/* memory mapped D low register when swtched */
 };
-#endif _NPX_H_
+
+static __inline struct proc *
+npxproc()
+{
+	struct cpu_info *ci = curcpu();
+	struct proc *p;
+
+	KASSERT(ci->cpu_npxproc == p);
+	p = ci->cpu_npxproc;
+
+	return (p);
+}
+
+#endif _I386_NPX_H_

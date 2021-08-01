@@ -96,7 +96,7 @@
 
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
-#include <i386/isa/isa_machdep.h>
+#include <arch/i386/isa/isa_machdep.h>
 
 #include <arch/i386/include/intr.h>
 #include <arch/i386/isa/icu.h>
@@ -105,6 +105,17 @@
 #include <vm/include/vm.h>
 
 #define	LEGAL_IRQ(x)	((x) >= 0 && (x) < ICU_LEN && (x) != 2)
+
+/*
+ * Handle a NMI, possibly a machine check.
+ * return true to panic system, false to ignore.
+ */
+int
+isa_nmi()
+{
+	log(LOG_CRIT, "NMI port 61 %x, port 70 %x\n", inb(0x61), inb(0x70));
+	return (0);
+}
 
 int
 isa_intr_alloc(ic, mask, type, irq)
@@ -279,4 +290,21 @@ isa_intr_disestablish(ic, arg)
 #endif
 
 	intr_disestablish(ih);
+}
+
+void
+isa_attach_hook(parent, self, iba)
+	struct device *parent, *self;
+	struct isabus_attach_args *iba;
+{
+	extern int isa_has_been_seen;
+
+	/*
+	 * Notify others that might need to know that the ISA bus
+	 * has now been attached.
+	 */
+	if (isa_has_been_seen) {
+		panic("isaattach: ISA bus already seen!");
+	}
+	isa_has_been_seen = 1;
 }

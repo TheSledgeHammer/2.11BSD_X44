@@ -36,8 +36,8 @@
  *	@(#)icu.h	8.1 (Berkeley) 6/11/93
  */
 
-#ifndef	__ICU__
-#define	__ICU__
+#ifndef	__I386_ICU__
+#define	__I386_ICU__
 
 #ifndef	LOCORE
 
@@ -46,11 +46,13 @@
  */
 extern	unsigned short		imen;		/* interrupt mask enable */
 extern	unsigned short		cpl;		/* current priority level mask */
+extern unsigned short		ipending;
+//extern unsigned short		idepth;
 
-extern	unsigned short 		highmask;	/* group of interrupts masked with splhigh() */
-extern	unsigned short 		ttymask; 	/* group of interrupts masked with spltty() */
-extern	unsigned short 		biomask; 	/* group of interrupts masked with splbio() */
-extern	unsigned short 		netmask; 	/* group of interrupts masked with splimp() */
+//extern	unsigned short 		highmask;	/* group of interrupts masked with splhigh() */
+//extern	unsigned short 		ttymask; 	/* group of interrupts masked with spltty() */
+//extern	unsigned short 		biomask; 	/* group of interrupts masked with splbio() */
+//extern	unsigned short 		netmask; 	/* group of interrupts masked with splimp() */
 
 #define	INTREN(s)			imen &= ~(s)
 #define	INTRDIS(s)			imen |= (s)
@@ -138,4 +140,7 @@ extern	unsigned short 		netmask; 	/* group of interrupts masked with splimp() */
 #define	ICU_OFFSET				32			/* 0-31 are processor exceptions */
 #define	ICU_LEN					16			/* 32-47 are ISA interrupts */
 
-#endif	__ICU__
+#define MAX_INTR_SOURCES 		ICU_OFFSET
+#define NUM_LEGACY_IRQS			ICU_LEN
+
+#endif	/* __I386_ICU__ */

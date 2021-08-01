@@ -5,17 +5,19 @@
 SYSDIR?=	/sys
 
 TI386=	${SYSDIR}/arch/i386/tags
-SI386=	${SYSDIR}/arch/i386/eisa/*.[ch] \
+SI386=	${SYSDIR}/arch/i386/apic/*.[ch] \
+		${SYSDIR}/arch/i386/eisa/*.[ch] \
 		${SYSDIR}/arch/i386/i386/*.[ch] \
 		${SYSDIR}/arch/i386/include/*.h \
 		${SYSDIR}/arch/i386/isa/*.[ch] 	\
 		${SYSDIR}/arch/i386/pci/*.[ch] 	\
-AI386=	${SYSDIR}/arch/i386/i386/*.S	\
+AI386=	${SYSDIR}/arch/i386/apic/*.S	\
+		${SYSDIR}/arch/i386/i386/*.S	\
 		${SYSDIR}/arch/i386/isa/*.S		\
 		
 
 # Directories in which to place tags links
-DI386=	eisa isa include pci
+DI386=	apic eisa isa include pci
 
 .include "../../kern/Make.tags.inc"
 
