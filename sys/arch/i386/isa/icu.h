@@ -140,6 +140,8 @@ extern unsigned short		ipending;
 #define	ICU_OFFSET				32			/* 0-31 are processor exceptions */
 #define	ICU_LEN					16			/* 32-47 are ISA interrupts */
 
+#define	LEGAL_IRQ(x)			((x) >= 0 && (x) < ICU_LEN && (x) != 2)
+
 #define MAX_INTR_SOURCES 		ICU_OFFSET
 #define NUM_LEGACY_IRQS			ICU_LEN
 

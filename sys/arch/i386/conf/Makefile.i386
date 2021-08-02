@@ -49,18 +49,21 @@ LIBKERN=		${KERNLIB_PROF}
 ##
 ## (4) local objects, compile rules, and dependencies
 ##
-MD_OBJS=	locore.o support.o vector.o icu.o
+MD_OBJS=	locore.o support.o apicvector.o legacyvector.o icu.o
 MD_CFILES=
-MD_SFILES=	${I386}/i386/locore.S ${I386}/i386/support.S ${I386}/isa/vector.S \
-			${I386}/isa/icu.S 
+MD_SFILES=	${I386}/i386/locore.S ${I386}/i386/support.S ${I386}/apic/apicvector.S\
+			${I386}/apic/legacyvector.S ${I386}/isa/icu.S 
 
 locore.o: ${I386}/i386/locore.S assym.h
 	${NORMAL_S}
 
-spl.o: ${I386}/i386/support.S assym.h
+support.o: ${I386}/i386/support.S assym.h
 	${NORMAL_S}
 
-vector.o: ${I386}/isa/vector.S assym.h
+apicvector.o: ${I386}/apic/apicvector.S assym.h
+	${NORMAL_S}
+	
+legacyvector.o: ${I386}/apic/legacyvector.S assym.h
 	${NORMAL_S}
 
 lock_stubs.o: ${I386}/isa/icu.S assym.h

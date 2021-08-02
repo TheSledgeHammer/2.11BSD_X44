@@ -9,8 +9,13 @@ an offical release is made.)
 
 - Arch:
   - i386: (Partially implemented in arch/i386)
-    - x86 related content. (To be implemented)
-      - lapic, ioapic, tsc, intr, pmap etc..
+	- smp/multi-cpu:
+		- machine-independent code: 90% complete
+			- smp-related methods for cpu
+		- machine-dependent code: 75% complete
+			- boot: considering FreeBSD's mpboot.s
+			- smp: alloction to assign interrupts to CPUs
+			- tsc: missing struct timecounter
 
 - ADVVM (AdvVM): Logical Volume Manager
   - A Volume Manager for BSD.

@@ -11,5 +11,8 @@ INCS=		ansi.h aout_machdep.h asm.h atomic.h bios.h bootinfo.h			\
 			pmap_pae.h pmap.h proc.h profile.h psl.h pte.h reg.h reloc.h 	\
 			segments.h setjmp.h signal.h specialreg.h stdarg.h sysarch.h 	\
 			trap.h tss.h types.h vm86.h vmparam.h xcoff_machdep.h
-			
+
+INCS+= 		apic/apic.h apic/ioapicreg.h apic/ioapicvar.h apic/lapicreg.h 	\
+			apic/lapicvar.h
+	
 .include <bsd.kinc.mk>

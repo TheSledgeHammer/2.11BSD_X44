@@ -971,9 +971,8 @@ init386(first)
 	initializecpu();		/* Initialize CPU registers */
 	initializecpucache();
 
-#if	NISA > 0
-	isa_defaultirq();
-#endif
+	softpic_init();			/* Initialize softpic pic selector */
+	intr_default_setup();	/* Initialize vectors */
 
 	splhigh();
 	enable_intr();

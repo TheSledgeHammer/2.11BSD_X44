@@ -38,7 +38,7 @@
 
 #include <arch/i386/include/pic.h>
 #include <arch/i386/include/intr.h>
-#include <devel/arch/i386/isa/icu.h>
+#include <arch/i386/isa/icu.h>
 
 struct softpic 					 	*intrspic;
 static TAILQ_HEAD(pic_list, pic) 	pichead;

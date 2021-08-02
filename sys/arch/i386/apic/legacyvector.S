@@ -43,7 +43,7 @@
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>
 
-#include <i386/apic/apicvector.s.h>
+#include <i386/apic/apicvector.S>
 
 #define ICU_HARDWARE_MASK
 

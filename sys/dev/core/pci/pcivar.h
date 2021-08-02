@@ -85,6 +85,12 @@ struct pcibus_attach_args {
 	int					pba_bus;		/* PCI bus number */
 
 	/*
+	 * Pointer to the pcitag of our parent bridge.  If there is no
+	 * parent bridge, then we assume we are a root bus.
+	 */
+	pcitag_t			*pba_bridgetag;
+
+	/*
 	 * Interrupt swizzling information.  These fields
 	 * are only used by secondary busses.
 	 */

@@ -143,18 +143,17 @@
 #include <sys/queue.h>
 #include <sys/user.h>
 
-#include <devel/arch/i386/apic/lapicvar.h>
-#include <devel/arch/i386/isa/icu.h>
+#include <arch/i386/include/apic/lapicvar.h>
+
+#include <arch/i386/isa/icu.h>
 #include <arch/i386/include/intr.h>
 #include <arch/i386/include/pic.h>
+
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
 
 struct intrsource 	*intrsrc[MAX_INTR_SOURCES];
 struct intrhand 	*intrhand[MAX_INTR_SOURCES];
-
-struct intrhand 	fake_timer_intrhand;
-struct intrhand 	fake_ipi_intrhand;
 
 int 				intrtype[MAX_INTR_SOURCES];
 int 				intrmask[MAX_INTR_SOURCES];
@@ -345,39 +344,12 @@ init_intrmask()
 	imask[IPL_SERIAL] |= imask[IPL_HIGH];
 }
 
-void
-fakeintr()
+int
+fakeintr(arg)
+	void *arg;
 {
-#if (NLAPIC > 0) || defined(SMP)
-	struct intrsource *isp;
-#endif
-#if NLAPIC > 0
-	static int first = 1;
-#if defined(SMP)
-	int i;
-#endif
-#endif
-#if NLAPIC > 0
-	isp = (struct intrsource *)malloc(sizeof(*isp), M_DEVBUF, M_WAITOK);
-	fake_timer_intrhand.ih_pic = &lapic_template;
-	fake_timer_intrhand.ih_level = IPL_CLOCK;
-	isp->is_handlers = &fake_timer_intrhand;
-	isp->is_pic = pic;
-	&intrsrc[LIR_TIMER] = isp;
-	first = 0;
-#ifdef SMP
-	isp = (struct intrsource *)malloc(sizeof(*isp), M_DEVBUF, M_WAITOK);
-	fake_ipi_intrhand.ih_pic = &lapic_template;
-	fake_ipi_intrhand.ih_level = IPL_HIGH;
-	isp->is_handlers = &fake_ipi_intrhand;
-	isp->is_pic = pic;
-	&intrsrc[LIR_IPI] = isp;
-#endif
-#endif
-
 	intr_calculatemasks();
-
-	idepth = -1;
+	return (0);
 }
 
 void *

@@ -514,10 +514,11 @@ pci_intr_establish(pc, ih, level, func, arg)
 	int level, (*func) (void *);
 	void *arg;
 {
-	if (ih == 0 || ih >= ICU_LEN || ih == 2)
+	if (ih == 0 || ih >= ICU_LEN || ih == 2) {
 		panic("pci_intr_establish: bogus handle 0x%x\n", ih);
+	}
 
-	return isa_intr_establish(NULL, ih, IST_LEVEL, level, func, arg);
+	return (isa_intr_establish(NULL, ih, IST_LEVEL, level, func, arg));
 }
 
 void
@@ -525,5 +526,5 @@ pci_intr_disestablish(pc, cookie)
 	pci_chipset_tag_t pc;
 	void *cookie;
 {
-	return isa_intr_disestablish(NULL, cookie);
+	return (isa_intr_disestablish(NULL, cookie));
 }

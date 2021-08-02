@@ -91,9 +91,9 @@
 
 #include <arch/i386/include/cpu.h>
 #include <arch/i386/include/pic.h>
-#include <arch/i386/apic/apic.h>
-#include <arch/i386/apic/ioapicreg.h>
-#include <arch/i386/apic/ioapicvar.h>
+#include <arch/i386/include/apic/apic.h>
+#include <arch/i386/include/apic/ioapicreg.h>
+#include <arch/i386/include/apic/ioapicvar.h>
 
 #define ioapic_lock_init(lock) 	simple_lock_init(lock, "ioapic_lock")
 #define ioapic_lock(lock) 		simple_lock(lock)

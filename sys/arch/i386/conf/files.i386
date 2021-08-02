@@ -8,6 +8,14 @@ maxpartitions 16
 
 maxusers 2 16 64
 
+file	arch/i386/apic/apic_machdep.c
+file	arch/i386/apic/apic.c
+file	arch/i386/apic/apicvector.S
+file	arch/i386/apic/i8259.c
+file	arch/i386/apic/ioapic.c
+file	arch/i386/apic/lapic.c
+file	arch/i386/apic/legacyvector.S
+
 file	arch/i386/i386/aout_machdep.c	 exec_aout
 file    arch/i386/i386/autoconf.c
 file    arch/i386/i386/bios.c
@@ -34,13 +42,18 @@ file    arch/i386/i386/pmap_nopae.c
 file    arch/i386/i386/pmap_pae.c
 file    arch/i386/i386/pmap.c
 file    arch/i386/i386/process_machdep.c
-file    arch/i386/i386/support.s
+file    arch/i386/i386/support.S
 file    arch/i386/i386/sys_machdep.c
 file    arch/i386/i386/trap.c
 file    arch/i386/i386/vm_machdep.c
-file    arch/i386/isa/vector.s
 file	dev/misc/cons/cons.c			cons
 file    netns/ns_cksum.c	            ns
+
+file    arch/i386/i386.new/cpu.c
+file    arch/i386/i386.new/intr.c
+file    arch/i386/i386.new/ipi.c
+file    arch/i386/i386.new/softintr.c
+file    arch/i386/i386.new/softpic.c
 
 # i386 Devices & Drivers
 include "arch/i386/conf/devices.i386"

@@ -26,13 +26,9 @@ A General todo list. Don't hesitate to add to this list. :)
 ## arch:
 - i386/x86: (Merged under i386)
 	- swapgeneric.c: Update... Contains deprecated code.
-	- smp/multi-cpu:
-		- machine-independent code: 90% complete
-			- smp-related methods for cpu
-		- machine-dependent code: 75% complete
-			- boot: considering FreeBSD's mpboot.s
-			- smp: alloction to assign interrupts to CPUs
-			- tsc: missing struct timecounter
+	- Fix IO so it can use apic appropriatly. (pci, eisa, etc..)
+		- Temp solution: All IO are still using the isa_intr routine
+		which is utilizing legacyvectors
 
 ## devel: (planned)
 - Code planned for future integration

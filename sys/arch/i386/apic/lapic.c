@@ -63,9 +63,9 @@
 #include <arch/i386/include/specialreg.h>
 #include <arch/i386/include/mpconfig.h>
 
-#include <arch/i386/apic/apic.h>
-#include <arch/i386/apic/lapicreg.h>
-#include <arch/i386/apic/lapicvar.h>
+#include <arch/i386/include/apic/apic.h>
+#include <arch/i386/include/apic/lapicreg.h>
+#include <arch/i386/include/apic/lapicvar.h>
 
 #define lapic_lock_init(lock) 	simple_lock_init(lock, "lapic_lock")
 #define lapic_lock(lock) 		simple_lock(lock)

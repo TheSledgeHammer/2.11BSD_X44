@@ -33,10 +33,10 @@
  */
  
 #include <arch/i386/isa/icu.h>
-#include <arch/i386/apic/ioapicreg.h>
-#include <arch/i386/apic/ioaaicvar.h>
-#include <arch/i386/apic/lapicreg.h>
-#include <arch/i386/apic/lapicvar.h>
+#include <arch/i386/include/apic/ioapicreg.h>
+#include <arch/i386/include/apic/ioaaicvar.h>
+#include <arch/i386/include/apic/lapicreg.h>
+#include <arch/i386/include/apic/lapicvar.h>
 
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>
