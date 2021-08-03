@@ -49,9 +49,9 @@
 #include <arch/i386/include/atomic.h>
 #include <arch/i386/include/cpu.h>
 
-#include <devel/arch/i386/apic/apic.h>
-#include <devel/arch/i386/apic/lapicreg.h>
-#include <devel/arch/i386/apic/lapicvar.h>
+#include <arch/i386/apic/apic.h>
+#include <arch/i386/apic/lapicreg.h>
+#include <arch/i386/apic/lapicvar.h>
 #include <devel/sys/smp.h>
 
 void i386_ipi_nop(struct cpu_info *);

@@ -41,7 +41,7 @@
 #include <sys/types.h>
 
 #include <devel/sys/timecounter.h>
-#include <devel/arch/i386/include/cpu.h>
+#include <arch/i386/include/cpu.h>
 
 #include <arch/i386/include/cpu.h>
 #include <arch/i386/include/cpufunc.h>

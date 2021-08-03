@@ -14,9 +14,26 @@
 #ifndef _SYS_SMP_H_
 #define _SYS_SMP_H_
 
-#include <devel/sys/cpuset.h>
+#include <machine/cpu.h>
 #include <sys/queue.h>
 
+/* FreeBSD 5.x SMP (Possibility) */
+struct cpu_group {
+	u_int					cg_mask;
+	int						cg_count;
+	int						cg_children;
+	struct cpu_group 		*cg_child;
+};
+
+union cpu_topo {
+	struct {
+		struct cpu_info		*ct_cpuinfo;
+		struct topo_node 	*ct_node;
+		cpuid_t 			ct_id;
+	};
+};
+
+/* FreeBSD Current SMP */
 /*
  * Types of nodes in the topological tree.
  */
@@ -41,11 +58,12 @@ typedef enum topo_node_type topo_node_type;
 typedef	unsigned int hwid_t;
 /* Logical CPU idenitifier. */
 typedef	int cpuid_t;
+
 struct topo_node {
 	struct topo_node						*parent;
 	TAILQ_HEAD(topo_children, topo_node)	children;
 	TAILQ_ENTRY(topo_node)					siblings;
-	cpuset_t								cpuset;
+	union cpu_top							cpuset;
 	topo_node_type							type;
 	uintptr_t								subtype;
 	hwid_t									hwid;
@@ -106,57 +124,24 @@ extern int 			smp_cpus;
 extern volatile int smp_started;
 extern int 			smp_threads_per_core;
 
-extern cpuset_t 	all_cpus;
-extern cpuset_t 	cpuset_domain[MAXMEMDOM]; 	/* CPUs in each NUMA domain. */
-
-struct cpu_group {
-
-};
+extern u_int 		all_cpus;
 
 /*
  * Macro allowing us to determine whether a CPU is absent at any given
  * time, thus permitting us to configure sparse maps of cpuid-dependent
  * (per-CPU) structures.
  */
-#define	CPU_ABSENT(x_cpu)	(!CPU_ISSET(x_cpu, &all_cpus))
+#define	CPU_ABSENT(x_cpu)	((all_cpus & (1 << (x_cpu))) == 0)
 
-/*
- * Macros to iterate over non-absent CPUs.  CPU_FOREACH() takes an
- * integer iterator and iterates over the available set of CPUs.
- * CPU_FIRST() returns the id of the first non-absent CPU.  CPU_NEXT()
- * returns the id of the next non-absent CPU.  It will wrap back to
- * CPU_FIRST() once the end of the list is reached.  The iterators are
- * currently implemented via inline functions.
- */
-#define	CPU_FOREACH(i)							\
-	for ((i) = 0; (i) <= mp_maxid; (i)++) {		\
-		if (!CPU_ABSENT((i))) {					\
-		}										\
-	}
+struct cpu_info;
 
-static __inline int
-cpu_first(void)
-{
-	int i;
+#ifndef CPU_INFO_ITERATOR
+#define	CPU_INFO_ITERATOR		int
+#define	CPU_INFO_FOREACH(cii, ci)	\
+	(void)cii, ci = curcpu(); ci != NULL; ci = NULL
+#endif
+#ifndef CPU_IS_PRIMARY
+#define	CPU_IS_PRIMARY(ci)	((void)ci, 1)
+#endif
 
-	for (i = 0;; i++)
-		if (!CPU_ABSENT(i))
-			return (i);
-}
-
-static __inline int
-cpu_next(int i)
-{
-
-	for (;;) {
-		i++;
-		if (i > mp_maxid)
-			i = 0;
-		if (!CPU_ABSENT(i))
-			return (i);
-	}
-}
-
-#define	CPU_FIRST()	cpu_first()
-#define	CPU_NEXT(i)	cpu_next((i))
 #endif /* _SYS_SMP_H_ */

@@ -36,7 +36,7 @@
 #include <sys/malloc.h>
 #include <sys/user.h>
 
-#include <devel/arch/i386/include/cpu.h>
+#include <arch/i386/include/cpu.h>
 
 struct cpu_softc {
 	struct device 		*sc_dev;		/* device tree glue */

@@ -87,7 +87,7 @@ i386_send_ipi(struct cpu_info *ci, int ipimask)
 
 	/* Don't send IPI to CPU which isn't (yet) running. */
 	if (!(ci->cpu_flags & CPUF_RUNNING))
-		return ENOENT;
+		return (ENOENT);
 
 	ret = i386_ipi(LAPIC_IPI_VECTOR, ci->cpu_apic_id, LAPIC_DLMODE_FIXED);
 	if (ret != 0) {
@@ -97,7 +97,7 @@ i386_send_ipi(struct cpu_info *ci, int ipimask)
 		    ci->cpu_dev->dv_xname);
 	}
 
-	return ret;
+	return (ret);
 }
 
 void
@@ -111,9 +111,9 @@ i386_broadcast_ipi(int ipimask)
 {
 	struct cpu_info *ci, *self = curcpu();
 	int count = 0;
-	int cii;
+	CPU_INFO_ITERATOR cii;
 
-	CPU_FOREACH(cii) {
+	for (CPU_INFO_FOREACH(cii, ci)) {
 		if(ci == self) {
 			continue;
 		}
@@ -134,14 +134,14 @@ void
 i386_multicast_ipi(int cpumask, int ipimask)
 {
 	struct cpu_info *ci;
-	int cii;
+	CPU_INFO_ITERATOR cii;
 
 	cpumask &= ~(1U << cpu_number());
 	if (cpumask == 0) {
 		return;
 	}
 
-	CPU_FOREACH(cii) {
+	for (CPU_INFO_FOREACH(cii, ci)) {
 		if ((cpumask & (1U << ci->cpu_cpuid)) == 0) {
 			continue;
 		}
