@@ -41,6 +41,7 @@
 #include <sys/user.h>
 
 #include <devel/sys/malloctypes.h>
+#include <devel/sys/cputopo.h>
 
 u_int 	all_cpus;
 
@@ -241,7 +242,7 @@ topo_set_pu_id(struct topo_node *node, cpuid_t id)
 	node->subtype = 1;
 
 	while ((node = node->parent) != NULL) {
-		KASSERT(!CPU_ISSET(id, &node->cpuset)("logical ID %u is already set in node %p", id, node));
+		KASSERT(!CPU_ISSET(&node->cpuset, id)("logical ID %u is already set in node %p", id, node));
 		CPU_SET(&node->cpuset, id);
 		node->cpu_count++;
 	}

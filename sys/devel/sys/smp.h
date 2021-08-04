@@ -113,7 +113,6 @@ enum topo_level {
 #define	TOPO_FOREACH(i, root)	\
 	for (i = root; i != NULL; i = topo_next_node(root, i))
 
-
 #endif
 
 extern u_int 		mp_maxid;
@@ -125,23 +124,4 @@ extern volatile int smp_started;
 extern int 			smp_threads_per_core;
 
 extern u_int 		all_cpus;
-
-/*
- * Macro allowing us to determine whether a CPU is absent at any given
- * time, thus permitting us to configure sparse maps of cpuid-dependent
- * (per-CPU) structures.
- */
-#define	CPU_ABSENT(x_cpu)	((all_cpus & (1 << (x_cpu))) == 0)
-
-struct cpu_info;
-
-#ifndef CPU_INFO_ITERATOR
-#define	CPU_INFO_ITERATOR		int
-#define	CPU_INFO_FOREACH(cii, ci)	\
-	(void)cii, ci = curcpu(); ci != NULL; ci = NULL
-#endif
-#ifndef CPU_IS_PRIMARY
-#define	CPU_IS_PRIMARY(ci)	((void)ci, 1)
-#endif
-
 #endif /* _SYS_SMP_H_ */

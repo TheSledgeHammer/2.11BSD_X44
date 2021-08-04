@@ -53,7 +53,7 @@
 #include <arch/i386/include/vm86.h>
 
 #include <devel/arch/i386/include/smp.h>
-#include <devel/arch/i386/include/cpu.h>
+#include <arch/i386/include/cpu.h>
 #include <devel/arch/i386/include/percpu.h>
 
 /* FreeBSD 5.1 SMP with a few updates */
@@ -119,7 +119,7 @@ smp_targeted_tlb_shootdown1(u_int mask, u_int vector, pmap_t pmap, vm_offset_t a
 			return;
 		}
 	} else {
-		/* XXX there should be a pcpu self mask */
+		/* XXX there should be a percpu self mask */
 		mask &= ~(1 << &cpuid_to_percpu[ncpu]);
 		if (mask == 0) {
 			return;

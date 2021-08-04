@@ -221,8 +221,8 @@ pmap_invalidate_all(pmap)
 		invltlb();
 		smp_invltlb();
 	} else {
-		cpumask = PCPU_GET(cpumask);
-		other_cpus = PCPU_GET(other_cpus);
+		cpumask = PERCPU_GET(cpumask);
+		other_cpus = PERCPU_GET(other_cpus);
 		if (pmap->pm_active & cpumask)
 			invltlb();
 		if (pmap->pm_active & other_cpus)
@@ -269,4 +269,5 @@ pmap_invalidate_all(pmap)
 		invltlb();
 	}
 }
+
 #endif /* !SMP */

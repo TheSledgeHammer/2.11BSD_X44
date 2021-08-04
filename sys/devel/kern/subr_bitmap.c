@@ -27,12 +27,12 @@
  */
 
 /*
- * Cpu_top (MI & MD related) is an interface to the underlying Bitset/hash array.
+ * Cpu_top (MI & MD related) is an interface to the underlying Bitmap/hash array.
  * With the main goal of transferring information about the smp topology (topo_node)
  * to the cpu (cpu_info).
  *
  * Backing Store:
- * Bitset/hash array uses a tailq with an integer hash function (triple32) to store
+ * Bitmap/hash array uses a list with an integer hash function (triple32) to store
  * information.
  */
 
@@ -43,74 +43,30 @@
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 #include <sys/queue.h>
+#include <sys/lock.h>
 #include <sys/user.h>
 
-#include <devel/sys/smp.h>
-
-struct bitlist;
-TAILQ_HEAD(bitlist, bitmap);
-struct bitmap {
-    TAILQ_ENTRY(bitmap) entry;
-    union {
-        uint32_t        value;
-    };
-};
-typedef struct bitmap   bitmap_t;
-//extern struct bitlist 	bitset[];
-//extern bitset_counter;
-
-union cpu_top {
-    uint32_t 			ct_mask;
-};
-typedef union cpu_top 	ctop_t;
+#include <devel/sys/bitmap.h>
+#include <devel/sys/malloctypes.h>
 
 #define BITHASH_MASK 256
 struct bitlist       bitset[BITHASH_MASK];
-int 				 bitset_counter;
-ctop_t 				 *ctop;
+int 				 bitmap_counter;
+struct lock_object   *bitmap_lock;
+
+#define bitmap_lock(lock) 	(simple_lock(lock))
+#define bitmap_unlock(lock) (simple_unlock(lock))
 
 void
-ctop_init()
-{
-	ctop = (ctop_t *)malloc(sizeof(ctop_t *));
-	bitset_init();
-}
-
-void
-ctop_add(top, val)
-	ctop_t *top;
-    int val;
-{
-    top = ctop;
-    top->ct_mask = val;
-    bitmap_insert(val);
-}
-
-uint32_t
-ctop_get(top)
-	ctop_t *top;
-{
-    top = ctop;
-    return (bitmap_search(top->ct_mask)->value);
-}
-
-void
-ctop_remove(top)
-	ctop_t *top;
-{
-    top = ctop;
-    bitmap_remove(top->ct_mask);
-}
-
-/* bitset functions */
-static void
-bitset_init()
+bitmap_init()
 {
     int i;
-    bitset_counter = 0;
+    bitmap_counter = 0;
+
+    simple_lock_init(&bitmap_lock, "bitmap_lock");
 
     for(i = 0; i < BITHASH_MASK; i++) {
-        TAILQ_INIT(&bitset[i]);
+    	LIST_INIT(&bitset[i]);
     }
 }
 
@@ -119,49 +75,57 @@ bithash(value)
     uint32_t value;
 {
     uint32_t hash1 = triple32(value)%BITHASH_MASK;
+
     return (hash1);
 }
 
-static void
+void
 bitmap_insert(value)
-    uint32_t value;
+	uint64_t value;
 {
     register struct bitlist *head;
     register bitmap_t *mask;
 
     head = &bitset[bithash(value)];
-    mask = (bitmap_t *)malloc(sizeof(bitmap_t *));
+    mask = (bitmap_t *)malloc(sizeof(bitmap_t *), M_BITMAP, M_WAITOK);
     mask->value = value;
-    TAILQ_INSERT_HEAD(head, mask, entry);
-    bitset_counter++;
+    bitmap_lock(&bitmap_lock);
+    LIST_INSERT_HEAD(head, mask, entry);
+    bitmap_unlock(&bitmap_lock);
+    bitmap_counter++;
 }
 
-static bitmap_t *
+bitmap_t *
 bitmap_search(value)
-    uint32_t value;
+	uint64_t value;
 {
     register struct bitlist *head;
     register bitmap_t *mask;
     head = &bitset[bithash(value)];
-    for(mask = TAILQ_FIRST(head); mask != NULL; mask = TAILQ_NEXT(mask, entry)) {
+    bitmap_lock(&bitmap_lock);
+    for(mask = LIST_FIRST(head); mask != NULL; mask = LIST_NEXT(mask, entry)) {
         if(mask->value == value) {
+        	 bitmap_unlock(&bitmap_lock);
             return (mask);
         }
     }
+    bitmap_unlock(&bitmap_lock);
     return (NULL);
 }
 
-static void
+void
 bitmap_remove(value)
-    uint32_t value;
+	uint64_t value;
 {
     register struct bitlist *head;
     register bitmap_t       *map;
     head = &bitset[bithash(value)];
-    for(map = TAILQ_FIRST(head); map != NULL; map = TAILQ_NEXT(map, entry)) {
+    bitmap_lock(&bitmap_lock);
+    for(map = LIST_FIRST(head); map != NULL; map = LIST_NEXT(map, entry)) {
         if(map->value == value) {
-            TAILQ_REMOVE(head, map, entry);
-            bitset_counter--;
+        	LIST_REMOVE(map, entry);
+            bitmap_unlock(&bitmap_lock);
+            bitmap_counter--;
         }
     }
 }

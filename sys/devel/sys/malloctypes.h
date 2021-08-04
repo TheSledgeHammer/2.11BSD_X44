@@ -62,6 +62,7 @@
 
 #define M_MPX			92	/* multiplexor structure */
 #define M_VMPSEG		93	/* pseudo-segment structure */
+#define M_BITMAP	 	94  /* bitmap structure */
 
 /* Overlay Malloc */
 #define overlay_malloc(size, type, flags) 				\

@@ -41,9 +41,6 @@ struct cpu_info {
 	struct proc				*cpu_npxproc;		/* current owner of the FPU */
 	int						cpu_fpsaving;		/* save in progress */
 
-	u_int32_t				cpu_ipis; 			/* interprocessor interrupts pending */
-	struct evcnt			cpu_ipi_events[I386_NIPI];
-
 	u_int					cpu_cpuid;			/* This cpu number */
 	u_int					cpu_cpumask;		/* This cpu mask */
 	size_t					cpu_size;			/* This cpu's size */
@@ -57,6 +54,16 @@ struct cpu_info {
 	int						cpu_bsp:1;
 	int						cpu_disabled:1;
 	int						cpu_hyperthread:1;
+
+
+	u_int32_t				cpu_ipis; 			/* interprocessor interrupts pending */
+	struct evcnt			cpu_ipi_events[I386_NIPI];
+
+	volatile u_int32_t 		cpu_tlb_ipi_mask;
+	int 					cpu_tlbstate;		/* one of TLBSTATE_ states. see below */
+	#define	TLBSTATE_VALID	0					/* all user tlbs are valid */
+	#define	TLBSTATE_LAZY	1					/* tlbs are valid but won't be kept uptodate */
+	#define	TLBSTATE_STALE	2					/* we might have stale user tlbs */
 };
 extern struct cpu_info 		*cpu_info;			/* static allocation of cpu_info */
 
@@ -111,6 +118,24 @@ extern struct cpu_ops 		cpu_ops;
 
 extern void (*delay_func)(int);
 extern void (*initclock_func)(void);
+
+/*
+ * Macro allowing us to determine whether a CPU is absent at any given
+ * time, thus permitting us to configure sparse maps of cpuid-dependent
+ * (per-CPU) structures.
+ */
+#define	CPU_ABSENT(x_cpu)	((all_cpus & (1 << (x_cpu))) == 0)
+
+struct cpu_info;
+
+#ifndef CPU_INFO_ITERATOR
+#define	CPU_INFO_ITERATOR			int
+#define	CPU_INFO_FOREACH(cii, ci)	\
+	(void)cii, ci = curcpu(); ci != NULL; ci = NULL
+#endif
+#ifndef CPU_IS_PRIMARY
+#define	CPU_IS_PRIMARY(ci)	((void)ci, 1)
+#endif
 
 __inline static struct cpu_info *
 curcpu(void)
