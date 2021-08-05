@@ -53,12 +53,6 @@ extern	IDTVEC(invltlb),					/* TLB shootdowns - global */
 		IDTVEC(invlrng),					/* TLB shootdowns - page range */
 		IDTVEC(invlcache);					/* Write back and invalidate cache */
 
-//		IDTVEC(ipi_intr_bitmap_handler), 	/* Bitmap based IPIs */
-//		IDTVEC(ipi_swi),					/* Runs delayed SWI */
-//		IDTVEC(cpustop),					/* CPU stops & waits to be restarted */
-//		IDTVEC(cpususpend),					/* CPU suspends & waits to be resumed */
-//		IDTVEC(rendezvous);					/* handle CPU rendezvous */
-
 /*
 void	invltlb_handler(void);
 void	invlpg_handler(void);

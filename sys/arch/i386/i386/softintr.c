@@ -37,7 +37,7 @@
 #include <sys/queue.h>
 #include <sys/user.h>
 
-#include <arch/i386/include/pic.h>
+#include <machine/pic.h>
 
 struct pic softintr_template = {
 		.pic_type = PIC_SOFT,

@@ -110,9 +110,9 @@ int pci_mode = -1;
 #define	PCI_MODE2_ENABLE_REG	0x0cf8
 #define	PCI_MODE2_FORWARD_REG	0x0cfa
 
-#define _m1tag(b, d, f) \
+#define _m1tag(b, d, f) 				\
 	(PCI_MODE1_ENABLE | ((b) << 16) | ((d) << 11) | ((f) << 8))
-#define _id(v, p) \
+#define _id(v, p) 						\
 	(((v) << PCI_VENDOR_SHIFT) | ((p) << PCI_PRODUCT_SHIFT))
 #define _qe(bus, dev, fcn, vend, prod) \
 	{_m1tag(bus, dev, fcn), _id(vend, prod)}

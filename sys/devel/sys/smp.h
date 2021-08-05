@@ -124,4 +124,11 @@ extern volatile int smp_started;
 extern int 			smp_threads_per_core;
 
 extern u_int 		all_cpus;
+
+/*
+ * Macro allowing us to determine whether a CPU is absent at any given
+ * time, thus permitting us to configure sparse maps of cpuid-dependent
+ * (per-CPU) structures.
+ */
+#define	CPU_ABSENT(x_cpu)	((all_cpus & (1 << (x_cpu))) == 0)
 #endif /* _SYS_SMP_H_ */

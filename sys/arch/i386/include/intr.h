@@ -171,5 +171,9 @@ softintr(mask)
 #define	setsoftnet()	softintr(SIR_NET)
 #define	setsoftserial()	softintr(SIR_SERIAL)
 
+int 	i386_send_ipi(struct cpu_info *, int);
+void 	i386_broadcast_ipi(int);
+void 	i386_ipi_handler(void);
+
 #endif /* !_LOCORE */
 #endif /* !_I386_INTR_H_ */

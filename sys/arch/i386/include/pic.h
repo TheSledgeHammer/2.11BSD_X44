@@ -114,20 +114,35 @@ struct intrhand {
 	int						ih_irq;
 };
 
+struct pcibus_attach_args;
+struct cpu_info;
 
 extern struct lock_object 	*icu_lock;
 extern int 					intr_shared_edge;		/* This system has shared edge interrupts */
-
-/* softpic.c */
 extern struct softpic		*intrspic;
 
-void						softpic_pic_init(void *);
-int							softpic_register_pic(struct pic *);
-struct pic 					*softpic_handle_pic(struct softpic *);
-void						softpic_pic_hwmask(struct softpic *, int, boolean_t, int);
-void						softpic_pic_hwunmask(struct softpic *, int, boolean_t, int);
-void						softpic_pic_addroute(struct softpic *, struct cpu_info *, int, int, int, boolean_t, int);
-void						softpic_pic_delroute(struct softpic *, struct cpu_info *, int, int, int, boolean_t, int);
-struct softpic 				*softpic_intr_handler(struct softpic *, int, int, boolean_t, int);
+/* softpic.c */
+void			softpic_pic_init(void *);
+int				softpic_register_pic(struct pic *);
+struct pic 		*softpic_handle_pic(struct softpic *);
+void			softpic_pic_hwmask(struct softpic *, int, boolean_t, int);
+void			softpic_pic_hwunmask(struct softpic *, int, boolean_t, int);
+void			softpic_pic_addroute(struct softpic *, struct cpu_info *, int, int, int, boolean_t, int);
+void			softpic_pic_delroute(struct softpic *, struct cpu_info *, int, int, int, boolean_t, int);
+struct softpic 	*softpic_intr_handler(struct softpic *, int, int, boolean_t, int);
 
+/* intr.c */
+void 			*intr_establish(boolean_t, int, int, int, int, int (*)(void *), void *);
+void			intr_disestablish(struct intrhand *);
+int				fakeintr(void *);
+
+void			intr_default_setup();
+void			intr_calculatemasks();
+
+void 			intr_add_pcibus(struct pcibus_attach_args *);
+int	 			intr_find_mpmapping(int, int, int *);
+
+/* apic_machdep.c */
+void 			*apic_intr_establish(int, int, int, int (*)(void *), void *);
+void			apic_intr_disestablish(void *);
 #endif /* _I386_PIC_H_ */

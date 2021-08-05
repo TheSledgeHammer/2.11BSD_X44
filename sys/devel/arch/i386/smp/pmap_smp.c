@@ -74,18 +74,7 @@
 
 #include <sys/cdefs.h>
 
-void
-invltlb_glob(void)
-{
-	invltlb();
-}
-
-static void
-pmap_invalidate_cache(void)
-{
-	wbinvd();
-}
-
+#ifdef I386_CPU
 /*
  * i386 only has "invalidate everything" and no SMP to worry about.
  */
@@ -117,7 +106,7 @@ pmap_invalidate_all(pmap)
 		invltlb();
 	}
 }
-
+#else /* !I386_CPU */
 #ifdef SMP
 /*
  * For SMP, these functions have to use the IPI mechanism for coherence.
@@ -271,3 +260,4 @@ pmap_invalidate_all(pmap)
 }
 
 #endif /* !SMP */
+#endif /* !I386_CPU */

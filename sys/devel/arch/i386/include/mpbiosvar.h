@@ -47,7 +47,7 @@
 #if !defined(_LOCORE)
 
 #include <devel/arch/i386/include/mpbiosreg.h>
-#include <devel/arch/i386/include/mpconfig.h>
+#include <arch/i386/include/mpconfig.h>
 
 struct pcibus_attach_args;
 

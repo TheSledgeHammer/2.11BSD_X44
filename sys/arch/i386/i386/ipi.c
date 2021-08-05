@@ -46,13 +46,11 @@
 
 #include <vm/include/vm_extern.h>
 
-#include <arch/i386/include/atomic.h>
-#include <arch/i386/include/cpu.h>
-
-#include <arch/i386/include/apic/apic.h>
-#include <arch/i386/include/apic/lapicreg.h>
-#include <arch/i386/include/apic/lapicvar.h>
-#include <devel/sys/smp.h>
+#include <machine/atomic.h>
+#include <machine/cpu.h>
+#include <machine/apic/apic.h>
+#include <machine/apic/lapicreg.h>
+#include <machine/apic/lapicvar.h>
 
 void i386_ipi_halt(struct cpu_info *);
 

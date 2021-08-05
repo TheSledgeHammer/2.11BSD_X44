@@ -52,20 +52,23 @@
 
 #include <dev/core/ic/i8253reg.h>
 
-#include <arch/i386/isa/isa_machdep.h> 			/* XXX intrhand */
+#include <machine/isa/isa_machdep.h> 			/* XXX intrhand */
 
-#include <arch/i386/include/cpu.h>
-#include <arch/i386/include/pic.h>
-#include <arch/i386/include/intr.h>
-#include <arch/i386/include/pio.h>
-#include <arch/i386/include/pmap.h>
-#include <arch/i386/include/pte.h>
-#include <arch/i386/include/specialreg.h>
-#include <arch/i386/include/mpconfig.h>
+#include <machine/cpu.h>
+#include <machine/pic.h>
+#include <machine/intr.h>
+#include <machine/pio.h>
+#include <machine/pmap.h>
+#include <machine/pte.h>
+#include <machine/specialreg.h>
 
-#include <arch/i386/include/apic/apic.h>
-#include <arch/i386/include/apic/lapicreg.h>
-#include <arch/i386/include/apic/lapicvar.h>
+#include <machine/apic/apic.h>
+#include <machine/apic/lapicreg.h>
+#include <machine/apic/lapicvar.h>
+
+#ifdef SMP
+#include <machine/mpconfig.h>
+#endif
 
 #define lapic_lock_init(lock) 	simple_lock_init(lock, "lapic_lock")
 #define lapic_lock(lock) 		simple_lock(lock)
@@ -278,7 +281,7 @@ lapic_set_lvt(void)
 		lint1 |= LAPIC_LVT_MASKED;
 	}
 	lapic_write(LAPIC_LVINT1, lint1);
-#ifdef SMP
+
 	for (i = 0; i < mp_nintr; i++) {
 		mpi = &mp_intrs[i];
 		if (mpi->ioapic == NULL && (mpi->cpu_id == MPS_ALL_APICS || mpi->cpu_id == ci->cpu_cpuid)) {
@@ -292,7 +295,7 @@ lapic_set_lvt(void)
 		}
 	}
 
-//#ifdef SMP
+#ifdef SMP
 	if (mp_verbose) {
 			apic_format_redir (ci->cpu_dev->dv_xname, "timer", 0, 0, lapic_read(LAPIC_LVTT));
 			apic_format_redir (ci->cpu_dev->dv_xname, "pcint", 0, 0, lapic_read(LAPIC_PCINT));

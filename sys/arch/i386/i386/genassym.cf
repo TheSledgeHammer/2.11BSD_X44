@@ -104,10 +104,6 @@ define PSL_MBO				PSL_MBO
 define PSL_AC				PSL_AC
 define PSL_ID				PSL_ID
 
-ifdef SYSVSHM
-define SHMMAXPGS 			SHMMAXPGS
-endif
-
 define USRSTACK 			USRSTACK
 define MSGBUFPTECNT 		btoc(sizeof (struct msgbuf))
 define NMBCLUSTERS 			NMBCLUSTERS
@@ -184,12 +180,10 @@ define ENOENT  				ENOENT
 define EFAULT  				EFAULT
 define ENAMETOOLONG 		ENAMETOOLONG
 
-if NISA > 0
 define IH_FUN				offsetof(struct intrhand, ih_fun)
 define IH_ARG				offsetof(struct intrhand, ih_arg)
 define IH_COUNT				offsetof(struct intrhand, ih_count)
 define IH_NEXT				offsetof(struct intrhand, ih_next)
-endif
 
 define IS_HANDLERS			offsetof(struct intrsource, is_handlers)
 define IS_PIC				offsetof(struct intrsource, is_pic)
@@ -198,12 +192,24 @@ define IS_PIN				offsetof(struct intrsource, is_pin)
 define IS_TYPE				offsetof(struct intrsource, is_type)
 define IS_MAXLEVEL			offsetof(struct intrsource, is_maxlevel)
 
-define IREENT_MAGIC			IREENT_MAGIC
-
 if NIOAPIC > 0
+define SPIC_IOAPIC			offsetof(struct softpic, sp_intsrc.is_pic)
 define IOAPIC_SC_REG		offsetof(struct ioapic_softc, sc_reg)
 define IOAPIC_SC_DATA		offsetof(struct ioapic_softc, sc_data)
-endif
+#endif
+
+define IPL_NONE				IPL_NONE
+define IPL_SOFTCLOCK		IPL_SOFTCLOCK
+define IPL_SOFTNET			IPL_SOFTNET
+define IPL_SOFTSERIAL		IPL_SOFTSERIAL
+define IPL_CLOCK			IPL_CLOCK
+define IPL_HIGH				IPL_HIGH
+define IPL_IPI				IPL_IPI
+
+define LIR_IPI				LIR_IPI
+define LIR_TIMER			LIR_TIMER
+
+define IREENT_MAGIC			IREENT_MAGIC
 
 define BOOTINFO_SIZE		sizeof(struct bootinfo)
 define BI_VERSION			offsetof(struct bootinfo, bi_version)

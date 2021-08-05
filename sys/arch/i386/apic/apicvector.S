@@ -32,11 +32,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
  
-#include <arch/i386/isa/icu.h>
-#include <arch/i386/include/apic/ioapicreg.h>
-#include <arch/i386/include/apic/ioaaicvar.h>
-#include <arch/i386/include/apic/lapicreg.h>
-#include <arch/i386/include/apic/lapicvar.h>
+#include "assym.h"
+
+#include <machine/isa/icu.h>
+#include <machine/apic/ioapicreg.h>
+#include <machine/apic/ioaaicvar.h>
+#include <machine/apic/lapicreg.h>
+#include <machine/apic/lapicvar.h>
 
 #include <dev/isa/isareg.h>
 #include <dev/isa/isavar.h>
@@ -176,7 +178,7 @@ IDTVEC(lapic_resume_ltimer)
 		movl	IS_PIC(%ebp),%edi										;\
 		movl	IS_PIN(%ebp),%esi										;\
 		leal	0x10(%esi,%esi,1),%esi									;\
-		movl	PIC_IOAPIC(%edi),%edi									;\
+		movl	SPIC_IOAPIC(%edi),%edi									;\
 		movl	IOAPIC_SC_REG(%edi),%ebx								;\
 		movl	%esi, (%ebx)											;\
 		movl	IOAPIC_SC_DATA(%edi),%ebx								;\
@@ -193,7 +195,7 @@ IDTVEC(lapic_resume_ltimer)
 		movl	IS_PIC(%ebp),%edi										;\
 		movl	IS_PIN(%ebp),%esi										;\
 		leal	0x10(%esi,%esi,1),%esi									;\
-		movl	PIC_IOAPIC(%edi),%edi									;\
+		movl	SPIC_IOAPIC(%edi),%edi									;\
 		movl	IOAPIC_SC_REG(%edi),%ebx								;\
 		movl	IOAPIC_SC_DATA(%edi),%eax								;\
 		movl	%esi, (%ebx)											;\

@@ -45,6 +45,7 @@
 
 #include <devel/sys/percpu.h>
 
+#include <arch/i386/include/cpu.h>
 #include <arch/i386/include/cputypes.h>
 #include <arch/i386/include/pcb.h>
 #include <arch/i386/include/psl.h>
@@ -55,7 +56,6 @@
 #include <arch/i386/include/vm86.h>
 
 #include <devel/arch/i386/include/smp.h>
-#include <devel/arch/i386/include/cpu.h>
 #include <devel/arch/i386/include/percpu.h>
 
 #define WARMBOOT_TARGET		0
@@ -132,24 +132,6 @@ cpu_mp_start(pc)
 	setidt(IPI_INVLTLB, &IDTVEC(invltlb), 0, SDT_SYS386IGT, SEL_KPL);
 	setidt(IPI_INVLPG, &IDTVEC(invlpg), 0, SDT_SYS386IGT, SEL_KPL);
 	setidt(IPI_INVLRNG, &IDTVEC(invlrng), 0, SDT_SYS386IGT, SEL_KPL);
-
-	/* Install an inter-CPU IPI for cache invalidation. */
-	setidt(IPI_INVLCACHE, &IDTVEC(invlcache), 0, SDT_SYS386IGT, SEL_KPL);
-
-	/* Install an inter-CPU IPI for all-CPU rendezvous */
-	setidt(IPI_RENDEZVOUS, &IDTVEC(rendezvous), 0, SDT_SYS386IGT, SEL_KPL);
-
-	/* Install generic inter-CPU IPI handler */
-	setidt(IPI_BITMAP_VECTOR, &IDTVEC(ipi_intr_bitmap_handler), 0, SDT_SYS386IGT, SEL_KPL);
-
-	/* Install an inter-CPU IPI for CPU stop/restart */
-	setidt(IPI_STOP, &IDTVEC(cpustop), 0, SDT_SYS386IGT, SEL_KPL);
-
-	/* Install an inter-CPU IPI for CPU suspend/resume */
-	setidt(IPI_SUSPEND, &IDTVEC(cpususpend), 0, SDT_SYS386IGT, SEL_KPL);
-
-	/* Install an IPI for calling delayed SWI */
-	setidt(IPI_SWI, &IDTVEC(ipi_swi), 0, SDT_SYS386IGT, SEL_KPL);
 
 	/* Set boot_cpu_id if needed. */
 	if (boot_cpu_id == -1) {
@@ -282,7 +264,7 @@ start_all_aps(void)
 		apic_id = cpu_apic_ids[cpu];
 
 		/* allocate and set up a boot stack data page */
-		bootstacks[cpu] = (char*) kmem_alloc(KSTACK_PAGES * PAGE_SIZE);
+		bootstacks[cpu] = (char*) kmem_alloc(kernel_map, KSTACK_PAGES * PAGE_SIZE);
 		/* setup a vector to our boot code */
 		*((volatile u_short*) WARMBOOT_OFF) = WARMBOOT_TARGET;
 		*((volatile u_short*) WARMBOOT_SEG) = (boot_address >> 4);
@@ -405,7 +387,7 @@ start_ap(int apic_id)
 		if (mp_naps > cpus) {
 			return (1); /* return SUCCESS */
 		}
-		delay(1000);
+		delay_func(1000);
 	}
 	return (0); /* return FAILURE */
 }
@@ -419,132 +401,11 @@ ipi_startup(apic_id, vector)
 	if (error != 0) {
 		printf("i386_ipi_init was unsuccessful: %d apic_id: \n", apic_id);
 	}
-	delay(10000);
+	delay_func(10000);
 
 	error = i386_ipi_startup(apic_id, vector);
 	if (error != 0) {
 		printf("i386_ipi_startup was unsuccessful: %d apic_id: %d vector: \n", apic_id, vector);
 	}
-	delay(200);
-}
-
-/*
- * Flush the TLB on other CPU's
- */
-
-/* Variables needed for SMP tlb shootdown. */
-
-vm_offset_t 		smp_tlb_addr1, smp_tlb_addr2;
-pmap_t 				smp_tlb_pmap;
-volatile u_int32_t 	smp_tlb_generation;
-
-static void
-smp_targeted_tlb_shootdown(cpuset_t mask, u_int vector, pmap_t pmap, vm_offset_t addr1, vm_offset_t addr2, smp_invl_cb_t curcpu_cb)
-{
-	volatile u_int32_t *p_cpudone;
-	u_int32_t generation;
-	int cpu;
-
-	curcpu_cb(pmap, addr1, addr2);
-
-	smp_tlb_addr1 = addr1;
-	smp_tlb_addr2 = addr2;
-	smp_tlb_pmap = pmap;
-
-	generation = ++smp_tlb_generation;
-
-	curcpu_cb(pmap, addr1, addr2);
-	while ((cpu = CPU_FFS(&other_cpus)) != 0) {
-		cpu--;
-		CPU_CLR(cpu, &other_cpus);
-		p_cpudone = &cpuid_to_percpu[cpu]->pc_smp_tlb_done;
-		while (*p_cpudone != generation) {
-			ia32_pause();
-		}
-	}
-	return;
-}
-
-void
-smp_masked_invltlb(cpuset_t mask, pmap_t pmap, smp_invl_cb_t curcpu_cb)
-{
-	smp_targeted_tlb_shootdown(mask, IPI_INVLTLB, pmap, 0, 0, curcpu_cb);
-}
-
-void
-smp_masked_invlpg(cpuset_t mask, vm_offset_t addr, pmap_t pmap, smp_invl_cb_t curcpu_cb)
-{
-	smp_targeted_tlb_shootdown(mask, IPI_INVLPG, pmap, addr, 0, curcpu_cb);
-}
-
-void
-smp_masked_invlpg_range(cpuset_t mask, vm_offset_t addr1, vm_offset_t addr2, pmap_t pmap, smp_invl_cb_t curcpu_cb)
-{
-	smp_targeted_tlb_shootdown(mask, IPI_INVLRNG, pmap, addr1, addr2, curcpu_cb);
-}
-
-void
-smp_cache_flush(smp_invl_cb_t curcpu_cb)
-{
-	smp_targeted_tlb_shootdown(all_cpus, IPI_INVLCACHE, NULL, 0, 0, curcpu_cb);
-}
-
-/*
- * Handlers for TLB related IPIs
- */
-static void
-invltlb_handler(pmap_t smp_tlb_pmap)
-{
-	u_int32_t generation;
-
-	generation = smp_tlb_generation;
-	if (smp_tlb_pmap == kernel_pmap) {
-		invltlb_glob();
-	} else {
-		invltlb();
-	}
-
-	__PERCPU_SET(smp_tlb_done, generation);
-}
-
-static void
-invlpg_handler(vm_offset_t smp_tlb_addr1)
-{
-	u_int32_t generation;
-
-	generation = smp_tlb_generation;	/* Overlap with serialization */
-	if (smp_tlb_pmap == kernel_pmap) {
-		invlpg(smp_tlb_addr1);
-	}
-
-	__PERCPU_SET(smp_tlb_done, generation);
-}
-
-static void
-invlrng_handler(vm_offset_t smp_tlb_addr1, vm_offset_t smp_tlb_addr2)
-{
-	vm_offset_t addr, addr2;
-	u_int32_t generation;
-
-	addr = smp_tlb_addr1;
-	addr2 = smp_tlb_addr2;
-	generation = smp_tlb_generation;	/* Overlap with serialization */
-	if (smp_tlb_pmap == kernel_pmap) {
-		do {
-			invlpg(addr);
-			addr += PAGE_SIZE;
-		} while (addr < addr2);
-	}
-
-	__PERCPU_SET(smp_tlb_done, generation);
-}
-
-static void
-invlcache_handler()
-{
-	u_int32_t generation;
-
-	generation = smp_tlb_generation;
-	wbinvd();
-	__PERCPU_SET(smp_tlb_done, generation);
+	delay_func(200);
 }

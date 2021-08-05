@@ -87,8 +87,8 @@ extern 	IDTVEC(lapic_intr_ipi), IDTVEC(lapic_intr_tlb), IDTVEC(lapic_intr_ltimer
 		IDTVEC(x2apic_intr_ipi), IDTVEC(x2apic_intr_tlb), IDTVEC(x2apic_intr_ltimer),
 		IDTVEC(apic_level_stubs), IDTVEC(apic_edge_stubs), IDTVEC(x2apic_level_stubs),
 		IDTVEC(x2apic_edge_stubs), IDTVEC(i8259_stubs), IDTVEC(spurious),
-		IDTVEC(apic_intr), IDTVEC(x2apic_intr), /* apic_machdep.c */
-		IDTVEC(legacy_intr); 					/* intr.c */
+		IDTVEC(apic_intr), IDTVEC(x2apic_intr), 								/* apic_machdep.c */
+		IDTVEC(legacy_intr); 													/* intr.c */
 
 struct cpu_info;
 

@@ -22,6 +22,7 @@ file    arch/i386/i386/bios.c
 file    arch/i386/i386/bus_dma.c
 file    arch/i386/i386/bus_space.c
 file    arch/i386/i386/consinit.c
+file    arch/i386/i386/cpu.c
 file	arch/i386/i386/db_disasm.c	   	 ddb
 file	arch/i386/i386/db_interface.c	 ddb
 file	arch/i386/i386/db_trace.c	     ddb
@@ -30,6 +31,8 @@ file    arch/i386/i386/gdt.c
 file    arch/i386/i386/identcpu.c
 file    arch/i386/i386/in_cksum.c	     inet
 file    arch/i386/i386/initcpu.c
+file    arch/i386/i386/intr.c
+file    arch/i386/i386/ipi.c
 file    arch/i386/i386/k6_mem.c
 file    arch/i386/i386/kobj_machdep.c
 file    arch/i386/i386/machdep.c
@@ -42,18 +45,14 @@ file    arch/i386/i386/pmap_nopae.c
 file    arch/i386/i386/pmap_pae.c
 file    arch/i386/i386/pmap.c
 file    arch/i386/i386/process_machdep.c
+file    arch/i386/i386/softintr.c
+file    arch/i386/i386/softpic.c
 file    arch/i386/i386/support.S
 file    arch/i386/i386/sys_machdep.c
 file    arch/i386/i386/trap.c
 file    arch/i386/i386/vm_machdep.c
 file	dev/misc/cons/cons.c			cons
 file    netns/ns_cksum.c	            ns
-
-file    arch/i386/i386.new/cpu.c
-file    arch/i386/i386.new/intr.c
-file    arch/i386/i386.new/ipi.c
-file    arch/i386/i386.new/softintr.c
-file    arch/i386/i386.new/softpic.c
 
 # i386 Devices & Drivers
 include "arch/i386/conf/devices.i386"

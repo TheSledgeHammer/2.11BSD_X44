@@ -84,16 +84,16 @@
 
 #include <vm/include/vm_extern.h>
 
-#include <arch/i386/isa/isa_machdep.h> 			/* XXX intrhand */
-#include <arch/i386/include/pio.h>
-#include <arch/i386/include/pmap.h>
-#include <arch/i386/include/intr.h>
+#include <i386/isa/isa_machdep.h> 			/* XXX intrhand */
+#include <machine/pio.h>
+#include <machine/pmap.h>
+#include <machine/intr.h>
+#include <machine/cpu.h>
+#include <machine/pic.h>
 
-#include <arch/i386/include/cpu.h>
-#include <arch/i386/include/pic.h>
-#include <arch/i386/include/apic/apic.h>
-#include <arch/i386/include/apic/ioapicreg.h>
-#include <arch/i386/include/apic/ioapicvar.h>
+#include <machine/apic/apic.h>
+#include <machine/apic/ioapicreg.h>
+#include <machine/apic/ioapicvar.h>
 
 #define ioapic_lock_init(lock) 	simple_lock_init(lock, "ioapic_lock")
 #define ioapic_lock(lock) 		simple_lock(lock)
@@ -110,6 +110,7 @@ static void ioapic_addroute(struct softpic *, struct cpu_info *, int, int, int);
 static void ioapic_delroute(struct softpic *, struct cpu_info *, int, int, int);
 void		ioapic_register_pic();
 
+int ioapic_bsp_id = 0;
 int ioapic_cold = 1;
 
 struct lock_object *icu_lock;
@@ -284,9 +285,11 @@ ioapic_attach(struct device *parent, struct device *self, void *aux)
 		ioapic_vecbase += sc->sc_apic_sz;
 	}
 
+#ifdef SMP
 	if (mp_verbose) {
 		printf(", %s mode",	aaa->flags & IOAPIC_PICMODE ? "PIC" : "virtual wire");
 	}
+#endif
 
 	printf(", version %x, %d pins\n", sc->sc_apic_vers, sc->sc_apic_sz);
 
@@ -368,7 +371,7 @@ apic_set_redir(struct ioapic_softc *sc, int pin, int idt_vec, struct cpu_info *c
 		 * CPUs.  but there's no point in doing that until after
 		 * most interrupts run without the kernel lock.
 		 */
-		redhi |= (ci->cpu_apic_id << IOAPIC_REDHI_DEST_SHIFT);
+		redhi |= (ioapic_bsp_id << IOAPIC_REDHI_DEST_SHIFT);
 
 		/* XXX derive this bit from BIOS info */
 		if (pp->sp_type == IST_LEVEL) {
@@ -386,9 +389,12 @@ apic_set_redir(struct ioapic_softc *sc, int pin, int idt_vec, struct cpu_info *c
 	}
 	ioapic_write(sc, IOAPIC_REDLO(pin), redlo);
 	ioapic_write(sc, IOAPIC_REDHI(pin), redhi);
+
+#ifdef SMP
 	if (mp_verbose) {
 		ioapic_print_redir(sc, "int", pin);
 	}
+#endif
 }
 
 /*

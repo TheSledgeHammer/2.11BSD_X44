@@ -120,14 +120,14 @@
 #include <arch/i386/include/cpuvar.h>
 #include <arch/i386/include/bus_dma.h>
 #include <arch/i386/include/bus_space.h>
+#include <arch/i386/include/cpu.h>
+#include <arch/i386/apic/apic.h>
+#include <arch/i386/apic/ioapicreg.h>
+#include <arch/i386/apic/ioapicvar.h>
+#include <arch/i386/apic/lapicreg.h>
+#include <arch/i386/apic/lapicvar.h>
 
-#include <devel/arch/i386/include/cpu.h>
 #include <devel/arch/i386/include/mpbiosvar.h>
-#include <devel/arch/i386/apic/apic.h>
-#include <devel/arch/i386/apic/ioapicreg.h>
-#include <devel/arch/i386/apic/ioapicvar.h>
-#include <devel/arch/i386/apic/lapicreg.h>
-#include <devel/arch/i386/apic/lapicvar.h>
 
 #include <dev/core/isa/isareg.h>
 
@@ -697,8 +697,8 @@ mpbios_cpu(ent, self)
 		caa.cpu_role = CPU_ROLE_AP;
 
 	caa.caa_name = "cpu";
-	caa.cpu_number = entry->apic_id;
-	caa.cpu_func = &mp_cpu_funcs;
+	caa.cpu_apic_id = entry->apic_id;
+	//caa.cpu_func = &mp_cpu_funcs;
 
 	config_found_sm(self, &caa, mp_print, mp_match);
 }

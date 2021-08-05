@@ -80,9 +80,9 @@
 #include <sys/queue.h>
 #include <sys/user.h>
 
-#include <arch/i386/isa/icu.h>
-#include <arch/i386/include/intr.h>
-#include <arch/i386/include/pic.h>
+#include <i386/isa/icu.h>
+#include <machine/intr.h>
+#include <machine/pic.h>
 
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>

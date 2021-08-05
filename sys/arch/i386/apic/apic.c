@@ -37,8 +37,8 @@
 #include <sys/types.h>
 #include <sys/systm.h>
 
-#include <arch/i386/include/apic/apic.h>
-#include <arch/i386/include/apic/lapicreg.h>
+#include <machine/apic/apic.h>
+#include <machine/apic/lapicreg.h>
 
 const char redirlofmt[] = "\177\20"
 	"f\0\10vector\0"

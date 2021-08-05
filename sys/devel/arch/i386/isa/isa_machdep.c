@@ -205,10 +205,24 @@ isa_intr_establish(ic, irq, type, level, ih_fun, ih_arg)
 	ih = intr_establish(FALSE, PIC_I8259, irq, type, level, ih_fun, ih_arg);
 
 #if NIOAPIC > 0
-	if (mp_busses != NULL) {
-		int airq;
+	struct pic *pic;
+	struct ioapic_softc *ioapic = NULL;
+	uint64_t mpih = 0;
+	int pin;
 
-		return (apic_intr_establish(airq, type, level, ih_fun, ih_arg));
+	if (mp_busses != NULL) {
+		if (intr_find_mpmapping(mp_isa_bus, irq, &mpih) == 0 || intr_find_mpmapping(mp_eisa_bus, irq, &mpih) == 0) {
+			if (!APIC_IRQ_ISLEGACY(mpih)) {
+				pin = APIC_IRQ_PIN(mpih);
+				ioapic = ioapic_find(APIC_IRQ_APIC(mpih));
+				if (ioapic == NULL) {
+					printf("isa_intr_establish: unknown apic %d\n", APIC_IRQ_APIC(mpih));
+					return (NULL);
+				}
+				pic = &ioapic->sc_pic;
+			}
+		}
+		return (apic_intr_establish(pin, type, level, ih_fun, ih_arg));
 	}
 #endif
 
@@ -272,7 +286,7 @@ isa_intr_disestablish(ic, arg)
 	struct intrhand *ih = arg;
 
 #if NIOAPIC > 0
-	if (irq & APIC_INT_VIA_APIC) {
+	if (ih->ih_irq & APIC_INT_VIA_APIC) {
 		apic_intr_disestablish(arg);
 		return;
 	}

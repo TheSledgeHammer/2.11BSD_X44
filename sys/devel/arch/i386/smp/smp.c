@@ -56,12 +56,33 @@
 #include <arch/i386/include/cpu.h>
 #include <devel/arch/i386/include/percpu.h>
 
+/* TODO:
+ * modify: smp_tlb_shootdown & smp_targeted_tlb_shootdown
+ *
+ * config:
+ * options 	COUNT_XINVLTLB_HITS	# Counters for TLB events
+ */
+
 /* FreeBSD 5.1 SMP with a few updates */
+
 /*
  * Flush the TLB on other CPU's
  */
-
 /* Variables needed for SMP tlb shootdown. */
+
+#ifdef COUNT_XINVLTLB_HITS
+u_int 				xhits_gbl[NCPUS];
+u_int 				xhits_pg[NCPUS];
+u_int 				xhits_rng[NCPUS];
+
+u_int 				ipi_global;
+u_int 				ipi_page;
+u_int 				ipi_range;
+u_int 				ipi_range_size;
+u_int 				ipi_masked_global;
+u_int 				ipi_masked_page;
+u_int 				ipi_masked_range;
+u_int 				ipi_masked_range_size;
 
 vm_offset_t 		smp_tlb_addr1, smp_tlb_addr2;
 pmap_t 				smp_tlb_pmap;
@@ -93,6 +114,46 @@ smp_tlb_shootdown(u_int vector, vm_offset_t addr1, vm_offset_t addr2)
 	simple_unlock(&smp_tlb_lock);
 }
 
+/*
+ * This is about as magic as it gets.  fortune(1) has got similar code
+ * for reversing bits in a word.  Who thinks up this stuff??
+ *
+ * Yes, it does appear to be consistently faster than:
+ * while (i = ffs(m)) {
+ *	m >>= i;
+ *	bits++;
+ * }
+ * and
+ * while (lsb = (m & -m)) {	// This is magic too
+ * 	m &= ~lsb;		// or: m ^= lsb
+ *	bits++;
+ * }
+ * Both of these latter forms do some very strange things on gcc-3.1 with
+ * -mcpu=pentiumpro and/or -march=pentiumpro and/or -O or -O2.
+ * There is probably an SSE or MMX popcnt instruction.
+ *
+ * I wonder if this should be in libkern?
+ *
+ * XXX Stop the presses!  Another one:
+ * static __inline u_int32_t
+ * popcnt1(u_int32_t v)
+ * {
+ *	v -= ((v >> 1) & 0x55555555);
+ *	v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
+ *	v = (v + (v >> 4)) & 0x0F0F0F0F;
+ *	return (v * 0x01010101) >> 24;
+ * }
+ * The downside is that it has a multiply.  With a pentium3 with
+ * -mcpu=pentiumpro and -march=pentiumpro then gcc-3.1 will use
+ * an imull, and in that case it is faster.  In most other cases
+ * it appears slightly slower.
+ *
+ * Another variant (also from fortune):
+ * #define BITCOUNT(x) (((BX_(x)+(BX_(x)>>4)) & 0x0F0F0F0F) % 255)
+ * #define  BX_(x)     ((x) - (((x)>>1)&0x77777777)            \
+ *                          - (((x)>>2)&0x33333333)            \
+ *                          - (((x)>>3)&0x11111111))
+ */
 static __inline u_int32_t
 popcnt(u_int32_t m)
 {
@@ -105,7 +166,7 @@ popcnt(u_int32_t m)
 }
 
 static void
-smp_targeted_tlb_shootdown1(u_int mask, u_int vector, pmap_t pmap, vm_offset_t addr1, vm_offset_t addr2, smp_invl_cb_t curcpu_cb)
+smp_targeted_tlb_shootdown(u_int mask, u_int vector, pmap_t pmap, vm_offset_t addr1, vm_offset_t addr2, smp_invl_cb_t curcpu_cb)
 {
 	volatile u_int32_t *p_cpudone;
 	u_int32_t generation;
@@ -127,8 +188,7 @@ smp_targeted_tlb_shootdown1(u_int mask, u_int vector, pmap_t pmap, vm_offset_t a
 		ncpu = popcnt(mask);
 		if (ncpu > othercpus) {
 			/* XXX this should be a panic offence */
-			printf("SMP: tlb shootdown to %d other cpus (only have %d)\n", ncpu,
-					othercpus);
+			printf("SMP: tlb shootdown to %d other cpus (only have %d)\n", ncpu, othercpus);
 			ncpu = othercpus;
 		}
 		/* XXX should be a panic, implied by mask == 0 above */
@@ -165,122 +225,125 @@ smp_targeted_tlb_shootdown1(u_int mask, u_int vector, pmap_t pmap, vm_offset_t a
 void
 smp_invltlb(void)
 {
-	smp_tlb_shootdown(IPI_INVLTLB, 0, 0);
+	if (smp_started) {
+		smp_tlb_shootdown(IPI_INVLTLB, 0, 0);
+#ifdef COUNT_XINVLTLB_HITS
+		ipi_global++;
+#endif
+	}
 }
 
 void
 smp_invlpg(vm_offset_t addr)
 {
-	smp_tlb_shootdown(IPI_INVLPG, addr, 0);
+	if (smp_started) {
+		smp_tlb_shootdown(IPI_INVLPG, addr, 0);
+#ifdef COUNT_XINVLTLB_HITS
+		ipi_page++;
+#endif
+	}
 }
 
 void
 smp_invlpg_range(vm_offset_t addr1, vm_offset_t addr2)
 {
-	smp_tlb_shootdown(IPI_INVLRNG, addr1, addr2);
+	if (smp_started) {
+		smp_tlb_shootdown(IPI_INVLRNG, addr1, addr2);
+#ifdef COUNT_XINVLTLB_HITS
+		ipi_range++;
+		ipi_range_size += (addr2 - addr1) / PAGE_SIZE;
+#endif
+	}
 }
 
 void
 smp_masked_invltlb(u_int mask, pmap_t pmap, smp_invl_cb_t curcpu_cb)
 {
-	smp_targeted_tlb_shootdown1(mask, IPI_INVLTLB, pmap, 0, 0, curcpu_cb);
+	if (smp_started) {
+		smp_targeted_tlb_shootdown(mask, IPI_INVLTLB, pmap, 0, 0, curcpu_cb);
+#ifdef COUNT_XINVLTLB_HITS
+		ipi_masked_global++;
+#endif
+	}
 }
 
 void
 smp_masked_invlpg(u_int mask, vm_offset_t addr, pmap_t pmap, smp_invl_cb_t curcpu_cb)
 {
-	smp_targeted_tlb_shootdown1(mask, IPI_INVLPG, pmap, addr, 0, curcpu_cb);
+	if (smp_started) {
+		smp_targeted_tlb_shootdown(mask, IPI_INVLPG, pmap, addr, 0, curcpu_cb);
+#ifdef COUNT_XINVLTLB_HITS
+		ipi_masked_page++;
+#endif
+	}
 }
 
 void
 smp_masked_invlpg_range(u_int mask, vm_offset_t addr1, vm_offset_t addr2, pmap_t pmap, smp_invl_cb_t curcpu_cb)
 {
-	smp_targeted_tlb_shootdown1(mask, IPI_INVLRNG, pmap, addr1, addr2, curcpu_cb);
+	if (smp_started) {
+		smp_targeted_tlb_shootdown(mask, IPI_INVLRNG, pmap, addr1, addr2, curcpu_cb);
+#ifdef COUNT_XINVLTLB_HITS
+		ipi_masked_range++;
+		ipi_masked_range_size += (addr2 - addr1) / PAGE_SIZE;
+#endif
+	}
+}
+
+/*
+ * Handlers for TLB related IPIs
+ */
+void
+invltlb_handler(void)
+{
+	u_int32_t generation;
+
+#ifdef COUNT_XINVLTLB_HITS
+	xhits_gbl[PERCPU_GET(cpuid)]++;
+#endif /* COUNT_XINVLTLB_HITS */
+
+	generation = smp_tlb_generation;
+	if (smp_tlb_pmap == kernel_pmap) {
+		invltlb();
+	}
+	__PERCPU_SET(smp_tlb_done, generation);
 }
 
 void
-smp_cache_flush(smp_invl_cb_t curcpu_cb)
+invlpg_handler(void)
 {
-	smp_targeted_tlb_shootdown1(all_cpus, IPI_INVLCACHE, NULL, 0, 0, curcpu_cb);
+	u_int32_t generation;
+
+#ifdef COUNT_XINVLTLB_HITS
+	xhits_pg[PERCPU_GET(cpuid)]++;
+#endif /* COUNT_XINVLTLB_HITS */
+
+	generation = smp_tlb_generation;	/* Overlap with serialization */
+	if (smp_tlb_pmap == kernel_pmap) {
+		invlpg(smp_tlb_addr1);
+	}
+	__PERCPU_SET(smp_tlb_done, generation);
 }
 
-u_int ipi_global;
-u_int ipi_page;
-u_int ipi_range;
-u_int ipi_range_size;
-
-u_int ipi_masked_global;
-u_int ipi_masked_page;
-u_int ipi_masked_range;
-u_int ipi_masked_range_size;
-
-/*
- * CTL_MACHDEP definitions.
- */
-#define	CPU_CONSDEV			1	/* dev_t: console terminal device */
-#define	CPU_BIOSBASEMEM		2	/* int: bios-reported base mem (K) */
-#define	CPU_BIOSEXTMEM		3	/* int: bios-reported ext. mem (K) */
-#define SMP_IPI_GLOBAL		4
-#define SMP_IPI_PAGE		5
-#define SMP_IPI_RANGE		6
-#define SMP_IPI_RANGE_SIZE	7
-
-#define	CPU_MAXID			8	/* number of valid machdep ids */
-
-#define CTL_MACHDEP_NAMES { 				\
-	{ 0, 0 }, 								\
-	{ "console_device", CTLTYPE_STRUCT }, 	\
-	{ "biosbasemem", CTLTYPE_INT }, 		\
-	{ "biosextmem", CTLTYPE_INT }, 			\
-	{ "smp_ipi_global", CTLTYPE_INT }, 		\
-	{ "smp_ipi_page", CTLTYPE_INT }, 		\
-	{ "smp_ipi_range", CTLTYPE_INT }, 		\
-	{ "smp_ipi_range_size", CTLTYPE_INT }, 	\
-
-/*
- * Attributes associated with symmetric multiprocessing. (placed in cpu_sysctl)
- */
-int
-cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
-	int *name;
-	u_int namelen;
-	void *oldp;
-	size_t *oldlenp;
-	void *newp;
-	size_t newlen;
-	struct proc *p;
+void
+invlrng_handler(void)
 {
-	/* all sysctl names at this level are terminal */
-	if (namelen != 1)
-		return (ENOTDIR); /* overloaded */
+	vm_offset_t addr, addr2;
+	u_int32_t generation;
 
-	switch (name[0]) {
-	case CPU_CONSDEV:
-		if (cn_tab != NULL) {
-			consdev = cn_tab->cn_dev;
-		} else {
-			consdev = NODEV;
-		}
-		return (sysctl_rdstruct(oldp, oldlenp, newp, &consdev, sizeof(consdev)));
-	case CPU_BIOSBASEMEM:
-		return (sysctl_rdint(oldp, oldlenp, newp, biosbasemem));
-	case CPU_BIOSEXTMEM:
-		return (sysctl_rdint(oldp, oldlenp, newp, biosextmem));
+#ifdef COUNT_XINVLTLB_HITS
+	xhits_rng[PERCPU_GET(cpuid)]++;
+#endif /* COUNT_XINVLTLB_HITS */
 
-#ifdef SMP
-	case SMP_IPI_GLOBAL:
-		return (sysctl_int(oldp, oldlenp, newp, sizeof(ipi_global), &ipi_global));
-
-	case SMP_IPI_PAGE:
-		return (sysctl_int(oldp, oldlenp, newp, sizeof(ipi_page), &ipi_page));
-
-	case SMP_IPI_RANGE:
-		return (sysctl_int(oldp, oldlenp, newp, sizeof(ipi_range), &ipi_range));
-
-	case SMP_IPI_RANGE_SIZE:
-		return (sysctl_int(oldp, oldlenp, newp, sizeof(ipi_range_size), &ipi_range_size));
-#endif /* !SMP */
-	default:
-		return (EOPNOTSUPP);
+	addr = smp_tlb_addr1;
+	addr2 = smp_tlb_addr2;
+	generation = smp_tlb_generation;	/* Overlap with serialization */
+	if(smp_tlb_pmap == kernel_pmap) {
+		do {
+			invlpg(addr);
+			addr += PAGE_SIZE;
+		} while (addr < addr2);
 	}
+
+	__PERCPU_SET(smp_tlb_done, generation);
 }

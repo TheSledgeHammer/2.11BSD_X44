@@ -36,7 +36,7 @@
 #include <sys/malloc.h>
 #include <sys/user.h>
 
-#include <arch/i386/include/cpu.h>
+#include <machine/cpu.h>
 
 struct cpu_softc {
 	struct device 		*sc_dev;		/* device tree glue */
@@ -81,7 +81,7 @@ cpu_attach(parent, self, aux)
 	struct cpu_softc *sc = (struct cpu_softc *)self;
 	struct cpu_attach_args *caa = (struct cpu_attach_args *)aux;
 	struct cpu_info *ci;
-#if defined(SMP)
+#ifdef SMP
 	int cpunum = caa->cpu_apic_id;
 #endif
 	caa->cpu_acpi_id = 0xffffffff;
@@ -89,7 +89,7 @@ cpu_attach(parent, self, aux)
 	if (caa->cpu_role == CPU_ROLE_AP) {
 		cpu_alloc(ci);
 		memset(ci, 0, sizeof(*ci));
-#if defined(SMP)
+#ifdef SMP
 		if (cpu_info[cpunum] != NULL) {
 			panic("cpu at apic id %d already attached?", cpunum);
 		}
@@ -97,7 +97,7 @@ cpu_attach(parent, self, aux)
 #endif
 	} else {
 		ci = &cpu_info;
-#if defined(SMP)
+#ifdef SMP
 		if(cpunum != lapic_cpu_number()) {
 			panic("%s: running CPU is at apic %d instead of at expected %d", sc->sc_dev->dv_xname, lapic_cpu_number(), cpunum);
 		}
@@ -110,7 +110,7 @@ cpu_attach(parent, self, aux)
 	sc->sc_info = ci;
 	ci->cpu_dev = self;
 	ci->cpu_apic_id = caa->cpu_apic_id;
-	ci->cpu_acpi_id = caa->cpu_acpi_id;
+	//ci->cpu_acpi_id = caa->cpu_acpi_id;
 #ifdef SMP
 	cpu_init(ci, caa->cpu_apic_id, sizeof(struct cpu_info));
 #else
@@ -135,7 +135,7 @@ cpu_attach(parent, self, aux)
 		lapic_calibrate_timer(ci);
 #endif
 #if NIOAPIC > 0
-
+		ci->cpu_apic_id = caa->cpu_apic_id;
 #endif
 		break;
 	case CPU_ROLE_AP:
@@ -143,7 +143,7 @@ cpu_attach(parent, self, aux)
 		 * report on an AP
 		 */
 		printf("apid %d (application processor)\n", caa->cpu_apic_id);
-#if defined(SMP)
+#ifdef SMP
 		init_secondary(ci);
 		ci->ci_flags |= CPUF_PRESENT | CPUF_AP;
 #else
@@ -173,7 +173,9 @@ cpu_hatch(void *v)
 	struct cpu_info *ci = (struct cpu_info *)v;
 	int s;
 
+#if NLAPIC > 0
 	lapic_enable();
 	lapic_set_lvt();
 	lapic_write_tpri(0);
+#endif
 }

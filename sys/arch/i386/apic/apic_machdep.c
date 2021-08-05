@@ -36,10 +36,10 @@
 #include <sys/queue.h>
 #include <sys/user.h>
 
-#include <arch/i386/apic/lapicvar.h>
-#include <arch/i386/isa/icu.h>
-#include <arch/i386/include/intr.h>
-#include <arch/i386/include/pic.h>
+#include <machine/intr.h>
+#include <machine/pic.h>
+#include <machine/apic/lapicvar.h>
+#include <i386/isa/icu.h>
 
 int  intr_shared_edge;
 

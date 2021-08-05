@@ -61,6 +61,14 @@
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
 
+#if NIOAPIC > 0
+#include <machine/apic/ioapicvar.h>
+#endif
+
+#if NLAPIC > 0
+#include <machine/apic/lapicvar.h>
+#endif
+
 /*
  * Generic configuration;  all in one
  */
@@ -114,6 +122,10 @@ configure()
 		panic("cpu_configure: mainbus not configured");
 	}
 
+#if NIOAPIC > 0
+	ioapic_enable();
+#endif
+
 	/*
 	 * Configure device structures
 	 */
@@ -127,6 +139,10 @@ configure()
 	swapconf();
 
 	spl0();
+
+#if NLAPIC > 0
+	lapic_write_tpri(0);
+#endif
 
 	cold = 0;
 }

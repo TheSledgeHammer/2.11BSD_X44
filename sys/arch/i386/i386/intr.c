@@ -143,11 +143,10 @@
 #include <sys/queue.h>
 #include <sys/user.h>
 
-#include <arch/i386/include/apic/lapicvar.h>
-
-#include <arch/i386/isa/icu.h>
-#include <arch/i386/include/intr.h>
-#include <arch/i386/include/pic.h>
+#include <i386/isa/icu.h>
+#include <machine/apic/lapicvar.h>
+#include <machine/intr.h>
+#include <machine/pic.h>
 
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
@@ -403,3 +402,119 @@ intr_disestablish(ih)
 		intrtype[irq] = IST_NONE;
 	}
 }
+
+#if NIOAPIC > 0
+static int intr_scan_bus(int, int, int *);
+#if NPCI > 0
+static int intr_find_pcibridge(int, pcitag_t *, pci_chipset_tag_t *);
+#endif
+#endif
+
+/*
+ * List to keep track of PCI buses that are probed but not known
+ * to the firmware. Used to
+ *
+ * XXX should maintain one list, not an array and a linked list.
+ */
+#if (NPCI > 0) && (NIOAPIC > 0)
+struct intr_extra_bus {
+	int 						bus;
+	pcitag_t 					*pci_bridge_tag;
+	pci_chipset_tag_t 			pci_chipset_tag;
+	LIST_ENTRY(intr_extra_bus) 	list;
+};
+
+LIST_HEAD(, intr_extra_bus) intr_extra_buses =
+    LIST_HEAD_INITIALIZER(intr_extra_buses);
+
+void
+intr_add_pcibus(struct pcibus_attach_args *pba)
+{
+	struct intr_extra_bus *iebp;
+
+	iebp = malloc(sizeof(struct intr_extra_bus), M_TEMP, M_WAITOK);
+	iebp->bus = pba->pba_bus;
+	iebp->pci_chipset_tag = pba->pba_pc;
+	iebp->pci_bridge_tag = pba->pba_bridgetag;
+	LIST_INSERT_HEAD(&intr_extra_buses, iebp, list);
+}
+
+static int
+intr_find_pcibridge(int bus, pcitag_t *pci_bridge_tag,pci_chipset_tag_t *pci_chipset_tag)
+{
+	struct intr_extra_bus *iebp;
+	struct mp_bus *mpb;
+
+	if (bus < 0)
+		return (ENOENT);
+
+	if (bus < mp_nbus) {
+		mpb = &mp_busses[bus];
+		if (mpb->mb_pci_bridge_tag == NULL)
+			return ENOENT;
+		*pci_bridge_tag = *mpb->mb_pci_bridge_tag;
+		*pci_chipset_tag = mpb->mb_pci_chipset_tag;
+		return (0);
+	}
+
+	LIST_FOREACH(iebp, &intr_extra_buses, list) {
+		if (iebp->bus == bus) {
+			if (iebp->pci_bridge_tag == NULL)
+				return (ENOENT);
+			*pci_bridge_tag = *iebp->pci_bridge_tag;
+			*pci_chipset_tag = iebp->pci_chipset_tag;
+			return (0);
+		}
+	}
+	return (ENOENT);
+}
+#endif
+
+#if NIOAPIC > 0
+int
+intr_find_mpmapping(int bus, int pin, int *handle)
+{
+#if NPCI > 0
+	int dev, func;
+	pcitag_t pci_bridge_tag;
+	pci_chipset_tag_t pci_chipset_tag;
+#endif
+
+#if NPCI > 0
+	while (intr_scan_bus(bus, pin, handle) != 0) {
+		if (intr_find_pcibridge(bus, &pci_bridge_tag, &pci_chipset_tag) != 0) {
+			return (ENOENT);
+		}
+		dev = pin >> 2;
+		pin = pin & 3;
+		pin = PPB_INTERRUPT_SWIZZLE(pin + 1, dev) - 1;
+		pci_decompose_tag(pci_chipset_tag, pci_bridge_tag, &bus, &dev, &func);
+		pin |= (dev << 2);
+	}
+	return (0);
+#else
+	return (intr_scan_bus(bus, pin, handle));
+#endif
+}
+
+static int
+intr_scan_bus(int bus, int pin, int *handle)
+{
+	struct mp_intr_map *mip, *intrs;
+
+	if (bus < 0 || bus >= mp_nbus)
+		return ENOENT;
+
+	intrs = mp_busses[bus].mb_intrs;
+	if (intrs == NULL)
+		return (ENOENT);
+
+	for (mip = intrs; mip != NULL; mip = mip->next) {
+		if (mip->bus_pin == pin) {
+			*handle = mip->ioapic_ih;
+			return (0);
+		}
+	}
+	return (ENOENT);
+}
+#endif

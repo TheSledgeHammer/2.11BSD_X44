@@ -65,13 +65,11 @@
 #include <machine/trap.h>
 #include <machine/specialreg.h>
 #include <machine/segments.h>
-#include <machine/i8259.h>
+
+#include <i386/isa/icu.h>
 
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
-
-#include <i386/isa/icu.h>
-#include <i386/include/cpu.h>
 
 /*
  * 387 and 287 Numeric Coprocessor Extension (NPX) Driver.

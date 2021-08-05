@@ -67,8 +67,6 @@ struct mp_intr_map {
 	int 					sflags;					/* other, software flags (see below) */
 };
 
-#define MPI_OVR				0x0001					/* Was overridden by an ACPI OVR */
-
 #if defined(_KERNEL)
 extern int 					mp_verbose;
 extern struct mp_bus 		*mp_busses;
@@ -78,5 +76,4 @@ extern int 					mp_isa_bus, mp_eisa_bus;
 extern int 					mp_nbus;
 #endif
 #endif
-
 #endif /* _I386_MPCONFIG_H */

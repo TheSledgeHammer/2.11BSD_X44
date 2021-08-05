@@ -44,74 +44,15 @@
 /*
  * Interrupt "level" mechanism variables, masks, and macros
  */
-extern	unsigned short		imen;		/* interrupt mask enable */
-extern	unsigned short		cpl;		/* current priority level mask */
-extern unsigned short		ipending;
-//extern unsigned short		idepth;
+extern	unsigned short			imen;		/* interrupt mask enable */
+extern	unsigned short			cpl;		/* current priority level mask */
+extern unsigned short			ipending;
+//extern unsigned short			idepth;
 
-//extern	unsigned short 		highmask;	/* group of interrupts masked with splhigh() */
-//extern	unsigned short 		ttymask; 	/* group of interrupts masked with spltty() */
-//extern	unsigned short 		biomask; 	/* group of interrupts masked with splbio() */
-//extern	unsigned short 		netmask; 	/* group of interrupts masked with splimp() */
-
-#define	INTREN(s)			imen &= ~(s)
-#define	INTRDIS(s)			imen |= (s)
-#define	INTRMASK(msk,s)		msk |= (s)
-#define INTRUNMASK(msk,s)	(msk &= ~(s))
-
-#else
-
-/*
- * Macro's for interrupt level priority masks (used in interrupt vector entry)
- */
-
-/* Mask a group of interrupts atomically */
-#define	INTR_HEAD(unit,mask,offst) 	\
-	pushl	$ offst ; 				\
-	pushl	$ T_ASTFLT ; 			\
-	pushal ; 						\
-	movb	$0x20,%al ; 			\
-
-#define INTR_TAIL(unit,mask,offst) 	\
-	outb	%al,$ IO_ICU1 ; 		\
-	pushl	%ds ; 					\
-	pushl	%es ; 					\
-	movw	$0x10, %ax ; 			\
-	movw	%ax, %ds ; 				\
-	movw	%ax,%es ; 				\
-	incl	_cnt+V_INTR ; 			\
-	incl	_isa_intr + offst * 4 ; \
-	movzwl	_cpl,%eax ; 			\
-	pushl	%eax ; 					\
-	pushl	$ unit ; 				\
-	orw		mask ,%ax ; 			\
-	movw	%ax,_cpl ; 				\
-	orw		_imen,%ax ; 			\
-	outb	%al,$ IO_ICU1+1 ; 		\
-	movb	%ah,%al ; 				\
-	outb	%al,$ IO_ICU2+1	; 		\
-	sti ;
-
-#define INTR1(unit,mask,offst) 		\
-	INTR_HEAD(unit,mask,offst) 		\
-	INTR_TAIL(unit,mask,offst)
-
-#define INTR2(unit,mask,offst) 		\
-	INTR_HEAD(unit,mask,offst) 		\
-	outb	%al,$ IO_ICU2 ; 		\
-	INTR_TAIL(unit,mask,offst)
-
-/* Interrupt vector exit macros */
-
-/* First eight interrupts (ICU1) */
-#define	INTREXIT1					\
-	jmp	doreti
-
-/* Second eight interrupts (ICU2) */
-#define	INTREXIT2					\
-	jmp	doreti
-
-#endif
+#define	INTREN(s)				imen &= ~(s)
+#define	INTRDIS(s)				imen |= (s)
+#define	INTRMASK(msk,s)			msk |= (s)
+#define INTRUNMASK(msk,s)		(msk &= ~(s))
 
 /*
  * Interrupt enable bits -- in order of priority

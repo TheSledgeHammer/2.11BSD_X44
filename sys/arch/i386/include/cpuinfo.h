@@ -28,7 +28,8 @@
 #ifndef _I386_CPUINFO_H_
 #define _I386_CPUINFO_H_
 
-#include <arch/i386/include/intr.h>
+#include <sys/cputopo.h>
+#include <machine/intr.h>
 
 struct percpu;
 
@@ -36,10 +37,7 @@ struct cpu_info {
 	struct cpu_info 		*cpu_self;			/* self-pointer */
 	struct device 			*cpu_dev;			/* pointer to our device */
 	struct percpu			cpu_percpu;			/* pointer to percpu info, when NCPUS > 1 */
-
 	struct proc				*cpu_curproc;		/* current owner of the processor */
-	struct proc				*cpu_npxproc;		/* current owner of the FPU */
-	int						cpu_fpsaving;		/* save in progress */
 
 	u_int					cpu_cpuid;			/* This cpu number */
 	u_int					cpu_cpumask;		/* This cpu mask */
@@ -55,7 +53,14 @@ struct cpu_info {
 	int						cpu_disabled:1;
 	int						cpu_hyperthread:1;
 
+	/* npx */
+	struct proc				*cpu_npxproc;		/* current owner of the FPU */
+	int						cpu_fpsaving;		/* save in progress */
 
+
+	ctop_t 					*cpu_cpuset;		/* cpu topology */
+
+	/* ipi's & tlb */
 	u_int32_t				cpu_ipis; 			/* interprocessor interrupts pending */
 	struct evcnt			cpu_ipi_events[I386_NIPI];
 
@@ -95,7 +100,6 @@ extern struct cpu_ops 		cpu_ops;
 #define cpu_percpu(ci)		((ci)->cpu_percpu)
 
 #define cpu_number() 		(curcpu()->cpu_cpuid)				/* number of cpus available */
-//#define cpu_number			NCPUS
 
 /*
  * Processor flag notes: The "primary" CPU has certain MI-defined
@@ -118,13 +122,6 @@ extern struct cpu_ops 		cpu_ops;
 
 extern void (*delay_func)(int);
 extern void (*initclock_func)(void);
-
-/*
- * Macro allowing us to determine whether a CPU is absent at any given
- * time, thus permitting us to configure sparse maps of cpuid-dependent
- * (per-CPU) structures.
- */
-#define	CPU_ABSENT(x_cpu)	((all_cpus & (1 << (x_cpu))) == 0)
 
 struct cpu_info;
 

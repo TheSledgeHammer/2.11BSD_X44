@@ -1,0 +1,12 @@
+#	$NetBSD: GENERIC,v 1.114.2.11 1998/07/27 15:33:32 mellon Exp $
+#
+#	GENERIC_SMP -- enable smp and everything that's currently supported
+#	
+#	NOTICE: It is strongly advised against compiling with SMP support. 
+#	As it's is incomplete and will likely cause issues. 
+#
+
+include 		"arch/i386/conf/GENERIC.i386"
+
+# To make a SMP kernel, the next option is needed
+options 		SMP				# multiprocessor support

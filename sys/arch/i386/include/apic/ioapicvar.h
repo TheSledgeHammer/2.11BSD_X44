@@ -57,17 +57,31 @@ struct ioapic_softc {
 	volatile u_int32_t		*sc_data;			/* KVA of ioapic data */
 };
 
-#define APIC_INT_VIA_APIC	0x10000000
-#define APIC_INT_VIA_MSG	0x20000000
-#define APIC_INT_APIC_MASK	0x00ff0000
-#define APIC_INT_APIC_SHIFT	16
-#define APIC_INT_PIN_MASK	0x0000ff00
-#define APIC_INT_PIN_SHIFT	8
-#define APIC_INT_LINE_MASK	0x000000ff
+/*
+ * MP: intr_handle_t is bitfielded.
+ * ih&0xff -> legacy irq number.
+ * ih&0x10000000 -> if 0, old-style isa irq; if 1, routed via ioapic.
+ * (ih&0xff0000)>>16 -> ioapic id.
+ * (ih&0x00ff00)>>8 -> ioapic pin.
+ *
+ * MSI/MSI-X:
+ * (ih&0x000ff80000000000)>>43 -> MSI/MSI-X device id.
+ * (ih&0x000007ff00000000)>>32 -> MSI/MSI-X vector id in a device.
+ */
+#define APIC_INT_VIA_APIC		0x10000000
+#define APIC_INT_VIA_MSG		0x20000000
+#define APIC_INT_APIC_MASK		0x00ff0000
+#define APIC_INT_APIC_SHIFT		16
+#define APIC_INT_PIN_MASK		0x0000ff00
+#define APIC_INT_PIN_SHIFT		8
+#define APIC_INT_LINE_MASK		0x000000ff
 
-#define APIC_IRQ_APIC(x) 	((x & APIC_INT_APIC_MASK) >> APIC_INT_APIC_SHIFT)
-#define APIC_IRQ_PIN(x) 	((x & APIC_INT_PIN_MASK) >> APIC_INT_PIN_SHIFT)
+#define APIC_IRQ_APIC(x) 		((x & APIC_INT_APIC_MASK) >> APIC_INT_APIC_SHIFT)
+#define APIC_IRQ_PIN(x) 		((x & APIC_INT_PIN_MASK) >> APIC_INT_PIN_SHIFT)
+#define APIC_IRQ_ISLEGACY(x) 	(bool)(!((x) & APIC_INT_VIA_APIC))
+#define APIC_IRQ_LEGACY_IRQ(x) 	(int)((x) & 0xff)
 
+void ioapic_print_redir(struct ioapic_softc *, const char *, int);
 struct ioapic_softc 		*ioapic_find(int);
 struct ioapic_softc 		*ioapic_find_bybase(int);
 

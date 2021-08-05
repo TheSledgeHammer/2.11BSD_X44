@@ -94,13 +94,14 @@
 #include <machine/cpufunc.h>
 #include <machine/segments.h>
 
+#include <machine/intr.h>
+#include <machine/pic.h>
+
+#include <i386/isa/isa_machdep.h>
+#include <i386/isa/icu.h>
+
 #include <dev/core/isa/isareg.h>
 #include <dev/core/isa/isavar.h>
-#include <arch/i386/isa/isa_machdep.h>
-
-#include <arch/i386/include/intr.h>
-#include <arch/i386/isa/icu.h>
-#include <arch/i386/include/pic.h>
 
 #include <vm/include/vm.h>
 
@@ -214,12 +215,24 @@ isa_intr_establish(ic, irq, type, level, ih_fun, ih_arg)
 	ih = intr_establish(FALSE, PIC_I8259, irq, type, level, ih_fun, ih_arg);
 
 #if NIOAPIC > 0
-	if (mp_busses != NULL) {
-		int airq;
-		ih = intr_establish(TRUE, PIC_IOAPIC, irq, type, level, ih_fun, ih_arg);
-		int airq = ih->ih_irq;
+	struct pic *pic;
+	struct ioapic_softc *ioapic = NULL;
+	uint64_t mpih = 0;
+	int pin;
 
-		return (apic_intr_establish(airq, type, level, ih_fun, ih_arg));
+	if (mp_busses != NULL) {
+		if (intr_find_mpmapping(mp_isa_bus, irq, &mpih) == 0 || intr_find_mpmapping(mp_eisa_bus, irq, &mpih) == 0) {
+			if (!APIC_IRQ_ISLEGACY(mpih)) {
+				pin = APIC_IRQ_PIN(mpih);
+				ioapic = ioapic_find(APIC_IRQ_APIC(mpih));
+				if (ioapic == NULL) {
+					printf("isa_intr_establish: unknown apic %d\n", APIC_IRQ_APIC(mpih));
+					return (NULL);
+				}
+				pic = &ioapic->sc_pic;
+			}
+		}
+		return (apic_intr_establish(pin, type, level, ih_fun, ih_arg));
 	}
 #endif
 

@@ -34,14 +34,17 @@
 
 #include <vm/include/vm_param.h>
 
+#include <arch/i386/include/cpu.h>
 #include <arch/i386/include/cputypes.h>
 #include <arch/i386/include/param.h>
 #include <arch/i386/include/specialreg.h>
 #include <arch/i386/include/vmparam.h>
 
 #include <devel/sys/smp.h>
-#include <devel/arch/i386/include/cpu.h>
+#include <devel/sys/cputopo.h>
+
 #include <devel/arch/i386/include/percpu.h>
+
 
 /* lock region used by kernel profiling */
 int	mcount_lock;
@@ -704,8 +707,9 @@ cpu_mp_setmaxid(void)
 	 * mp_ncpus and mp_maxid should be already set by calls to cpu_add().
 	 * If there were no calls to cpu_add() assume this is a UP system.
 	 */
-	if (mp_ncpus == 0)
+	if (mp_ncpus == 0) {
 		mp_ncpus = 1;
+	}
 }
 
 int
@@ -859,18 +863,46 @@ set_interrupt_apic_ids(void)
 
 	for (i = 0; i < NCPUS; i++) {
 		apic_id = cpu_apic_ids[i];
-		if (apic_id == -1)
+		if (apic_id == -1) {
 			continue;
-		if (cpu_info[apic_id].cpu_bsp)
+		}
+		if (cpu_info[apic_id].cpu_bsp) {
 			continue;
-		if (cpu_info[apic_id].cpu_disabled)
+		}
+		if (cpu_info[apic_id].cpu_disabled) {
 			continue;
+		}
 
 		/* Don't let hyperthreads service interrupts. */
 		if (cpu_info[apic_id].cpu_hyperthread && !hyperthreading_intr_allowed) {
 			continue;
 		}
 
-		//intr_add_cpu(i);
+		intr_add_cpu(i);
+	}
+}
+
+/*
+ * Add a CPU to our mask of valid CPUs that can be destinations of
+ * interrupts.
+ */
+void
+intr_add_cpu(u_int cpu)
+{
+	if (cpu >= NCPUS) {
+		panic("%s: Invalid CPU ID", __func__);
+	}
+	if (bootverbose) {
+		printf("INTR: Adding local APIC %d as a target\n", cpu_apic_ids[cpu]);
+	}
+	CPU_SET(cpu_info[cpu].cpu_cpuset, cpu);
+}
+
+intr_init_cpus(void)
+{
+	int i;
+
+	if (!CPU_ISSET(current_cpu[i], &intr_cpus) || !CPU_ISSET(current_cpu[i], &cpuset_domain[i])) {
+
 	}
 }

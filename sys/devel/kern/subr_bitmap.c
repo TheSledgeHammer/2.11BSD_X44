@@ -72,7 +72,7 @@ bitmap_init()
 
 uint32_t
 bithash(value)
-    uint32_t value;
+	uint64_t value;
 {
     uint32_t hash1 = triple32(value)%BITHASH_MASK;
 
