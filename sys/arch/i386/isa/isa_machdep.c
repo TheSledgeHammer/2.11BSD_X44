@@ -296,7 +296,7 @@ isa_intr_disestablish(ic, arg)
 	struct intrhand *ih = arg;
 
 #if NIOAPIC > 0
-	if (irq & APIC_INT_VIA_APIC) {
+	if (ih->ih_irq & APIC_INT_VIA_APIC) {
 		apic_intr_disestablish(arg);
 		return;
 	}

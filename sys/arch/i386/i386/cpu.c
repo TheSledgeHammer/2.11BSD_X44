@@ -135,7 +135,7 @@ cpu_attach(parent, self, aux)
 		lapic_calibrate_timer(ci);
 #endif
 #if NIOAPIC > 0
-		ci->cpu_apic_id = caa->cpu_apic_id;
+		ioapic_bsp_id = caa->cpu_apic_id;
 #endif
 		break;
 	case CPU_ROLE_AP:
