@@ -119,6 +119,65 @@ nospace:
 }
 
 /*
+ * Free a block or fragment.
+ *
+ * Place the specified disk block back on the free list of the
+ * specified device.
+ */
+free(ip, bno)
+	struct ufs211_inode *ip;
+	daddr_t bno;
+{
+	register struct ufs211_fs *fs;
+	register struct buf *bp;
+	struct ufs211_fblk *fbp;
+
+	fs = ip->i_fs;
+	if (badblock(fs, bno)) {
+		printf("bad block %D, ino %d\n", bno, ip->i_number);
+		return;
+	}
+	while (fs->fs_flock)
+		sleep((caddr_t)&fs->fs_flock, PINOD);
+	if (fs->fs_nfree <= 0) {
+		fs->fs_nfree = 1;
+		fs->fs_free[0] = 0;
+	}
+	if (fs->fs_nfree >= UFS211_NICFREE) {
+		fs->fs_flock++;
+		bp = getblk(ip->i_dev, bno);
+		ufs211_mapin(bp);
+		fbp = (FBLKP) bp;
+		*fbp = *((FBLKP)&fs->fs_nfree);
+		ufs211_mapout(bp);
+		fs->fs_nfree = 0;
+		if (fs->fs_flags & MNT_ASYNC)
+			bdwrite(bp);
+		else
+			bwrite(bp);
+		fs->fs_flock = 0;
+		wakeup((caddr_t)&fs->fs_flock);
+	}
+	fs->fs_free[fs->fs_nfree++] = bno;
+	fs->fs_tfree++;
+	fs->fs_fmod = 1;
+}
+
+/*
+ * Fserr prints the name of a file system with an error diagnostic.
+ *
+ * The form of the error message is:
+ *	fs: error message
+ */
+void
+fserr(fp, cp)
+	struct ufs211_fs *fp;
+	char *cp;
+{
+	printf("%s: %s\n", fp->fs_fsmnt, cp);
+}
+
+/*
  * Allocate an inode in the file system.
  *
  * Allocate an unused I node on the specified device.  Used with file
@@ -231,51 +290,6 @@ fromtop:
 }
 
 /*
- * Free a block or fragment.
- *
- * Place the specified disk block back on the free list of the
- * specified device.
- */
-free(ip, bno)
-	struct ufs211_inode *ip;
-	daddr_t bno;
-{
-	register struct ufs211_fs *fs;
-	register struct buf *bp;
-	struct ufs211_fblk *fbp;
-
-	fs = ip->i_fs;
-	if (badblock(fs, bno)) {
-		printf("bad block %D, ino %d\n", bno, ip->i_number);
-		return;
-	}
-	while (fs->fs_flock)
-		sleep((caddr_t)&fs->fs_flock, PINOD);
-	if (fs->fs_nfree <= 0) {
-		fs->fs_nfree = 1;
-		fs->fs_free[0] = 0;
-	}
-	if (fs->fs_nfree >= UFS211_NICFREE) {
-		fs->fs_flock++;
-		bp = getblk(ip->i_dev, bno);
-		ufs211_mapin(bp);
-		fbp = (FBLKP) bp;
-		*fbp = *((FBLKP)&fs->fs_nfree);
-		ufs211_mapout(bp);
-		fs->fs_nfree = 0;
-		if (fs->fs_flags & MNT_ASYNC)
-			bdwrite(bp);
-		else
-			bwrite(bp);
-		fs->fs_flock = 0;
-		wakeup((caddr_t)&fs->fs_flock);
-	}
-	fs->fs_free[fs->fs_nfree++] = bno;
-	fs->fs_tfree++;
-	fs->fs_fmod = 1;
-}
-
-/*
  * Free an inode.
  *
  * Free the specified I node on the specified device.  The algorithm
@@ -299,18 +313,4 @@ ifree(ip, ino)
 	}
 	fs->fs_inode[fs->fs_ninode++] = ino;
 	fs->fs_fmod = 1;
-}
-
-/*
- * Fserr prints the name of a file system with an error diagnostic.
- *
- * The form of the error message is:
- *	fs: error message
- */
-void
-fserr(fp, cp)
-	struct ufs211_fs *fp;
-	char *cp;
-{
-	printf("%s: %s\n", fp->fs_fsmnt, cp);
 }

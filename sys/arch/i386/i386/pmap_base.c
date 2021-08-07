@@ -337,9 +337,9 @@ pmap_check_wiring(char *str, vm_offset_t va)
 }
 
 void
-pads(pmap_t pm)
+pmap_pads(pmap_t pm)
 {
-	pmap_args_ptr->pads(pm);
+	pmap_args_ptr->pmap_pads(pm);
 }
 
 u_int

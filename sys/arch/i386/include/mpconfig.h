@@ -14,7 +14,7 @@
 
 #include <machine/bus_dma.h>
 #include <machine/bus_space.h>
-#include <machine/pci_machdep.h>
+#include <arch/i386/pci/pci_machdep.h>
 
 /*
  * Interrupt typess

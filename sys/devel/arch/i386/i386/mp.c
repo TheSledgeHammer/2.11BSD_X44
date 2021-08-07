@@ -816,7 +816,7 @@ init_secondary_tail(pc)
 
 	/* Determine if we are a logical CPU. */
 	if (cpu_info[PERCPU_GET(pc, apic_id)].cpu_hyperthread) {
-		CPU_SET(cpuid, &logical_cpus_mask);
+		CPU_SET(&logical_cpus_mask, cpuid);
 	}
 
 	if (bootverbose)
@@ -896,13 +896,4 @@ intr_add_cpu(u_int cpu)
 		printf("INTR: Adding local APIC %d as a target\n", cpu_apic_ids[cpu]);
 	}
 	CPU_SET(cpu_info[cpu].cpu_cpuset, cpu);
-}
-
-intr_init_cpus(void)
-{
-	int i;
-
-	if (!CPU_ISSET(current_cpu[i], &intr_cpus) || !CPU_ISSET(current_cpu[i], &cpuset_domain[i])) {
-
-	}
 }

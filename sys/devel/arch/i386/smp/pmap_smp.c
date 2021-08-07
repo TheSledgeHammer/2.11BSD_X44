@@ -232,8 +232,9 @@ pmap_invalidate_page(pmap, va)
 	pmap_t pmap;
 	vm_offset_t va;
 {
-	if (pmap == kernel_pmap || pmap->pm_active)
+	if (pmap == kernel_pmap || pmap->pm_active) {
 		invlpg(va);
+	}
 }
 
 __inline void

@@ -114,20 +114,20 @@
 #include <vm/include/vm_param.h>
 #include <vm/include/vm_extern.h>
 
-#include <arch/i386/include/param.h>
-#include <arch/i386/include/vmparam.h>
-#include <arch/i386/include/specialreg.h>
-#include <arch/i386/include/cpuvar.h>
-#include <arch/i386/include/bus_dma.h>
-#include <arch/i386/include/bus_space.h>
-#include <arch/i386/include/cpu.h>
-#include <arch/i386/apic/apic.h>
-#include <arch/i386/apic/ioapicreg.h>
-#include <arch/i386/apic/ioapicvar.h>
-#include <arch/i386/apic/lapicreg.h>
-#include <arch/i386/apic/lapicvar.h>
+#include <machine/param.h>
+#include <machine/vmparam.h>
+#include <machine/specialreg.h>
+#include <machine/cpuvar.h>
+#include <machine/bus_dma.h>
+#include <machine/bus_space.h>
+#include <machine/cpu.h>
+#include <machine/apic/apic.h>
+#include <machine/apic/ioapicreg.h>
+#include <machine/apic/ioapicvar.h>
+#include <machine/apic/lapicreg.h>
+#include <machine/apic/lapicvar.h>
 
-#include <devel/arch/i386/include/mpbiosvar.h>
+#include <machine/mpbiosvar.h>
 
 #include <dev/core/isa/isareg.h>
 
@@ -172,23 +172,23 @@ struct mp_map {
 };
 
 int mp_print (void *, const char *);
-int mp_match (struct device *,struct cfdata *,void *);
-static const void *mpbios_search (struct device *, paddr_t, int, struct mp_map *);
+int mp_match (struct device *, struct cfdata *, void *);
+static const void *mpbios_search (struct device *, caddr_t, int, struct mp_map *);
 static inline int mpbios_cksum (const void *,int);
 
 static void mp_cfg_special_intr (const struct mpbios_int *, u_int32_t *);
-static void mp_print_special_intr (int intr);
+static void mp_print_special_intr (int);
 
 static void mp_cfg_pci_intr (const struct mpbios_int *, u_int32_t *);
-static void mp_print_pci_intr (int intr);
+static void mp_print_pci_intr (int);
 
 #ifdef I386_MPBIOS_SUPPORT_EISA
-static void mp_print_eisa_intr (int intr);
+static void mp_print_eisa_intr (int);
 static void mp_cfg_eisa_intr (const struct mpbios_int *, u_int32_t *);
 #endif
 
 static void mp_cfg_isa_intr (const struct mpbios_int *, u_int32_t *);
-static void mp_print_isa_intr (int intr);
+static void mp_print_isa_intr (int);
 
 static void mpbios_cpus (struct device *);
 static void mpbios_cpu (const u_int8_t *, struct device *);
@@ -196,7 +196,7 @@ static void mpbios_bus (const u_int8_t *, struct device *);
 static void mpbios_ioapic (const u_int8_t *, struct device *);
 static void mpbios_int (const u_int8_t *, int, struct mp_intr_map *);
 
-static const void *mpbios_map (paddr_t, int, struct mp_map *);
+static const void *mpbios_map (caddr_t, int, struct mp_map *);
 static void mpbios_unmap (struct mp_map *);
 
 /*
@@ -698,7 +698,7 @@ mpbios_cpu(ent, self)
 
 	caa.caa_name = "cpu";
 	caa.cpu_apic_id = entry->apic_id;
-	//caa.cpu_func = &mp_cpu_funcs;
+	caa.cpu_ops = &cpu_ops;
 
 	config_found_sm(self, &caa, mp_print, mp_match);
 }
@@ -710,8 +710,9 @@ mpbios_cpus(struct device *self)
 	/* use default addresses */
 	pe.apic_id = lapic_cpu_number();
 	pe.cpu_flags = PROCENTRY_FLAG_EN | PROCENTRY_FLAG_BP;
-	//pe.cpu_signature = cpu_info.ci_signature;
-	//pe.feature_flags = cpu_info.ci_feature_flags;
+
+	//pe.cpu_signature = CPUID_TO_MODEL();//cpu_info.ci_signature;
+	//pe.feature_flags = (cpu_feature | cpu_feature2 | amd_feature | amd_feature2);
 
 	mpbios_cpu((u_int8_t*) &pe, self);
 

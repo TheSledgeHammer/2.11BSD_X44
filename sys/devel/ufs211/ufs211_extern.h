@@ -64,8 +64,6 @@ struct vnode;
 __BEGIN_DECLS
 int	ufs211_makeinode (int, struct vnode *, struct vnode **, struct componentname *);
 int ufs211_bmap1 (struct ufs211_inode *, daddr_t, int, int);
-//int ioctldisklabel(dev_t, int, caddr_t, struct dkdevice *, disk, int (*)());
-void dk_alloc(int *, int, char *, long);
 void ufs211_trsingle(struct ufs211_inode *, caddr_t, daddr_t, int);
 void ufs211_dirbad(struct ufs211_inode *, off_t, char *);
 int ufs211_dirbadentry(struct direct *, int);

@@ -92,7 +92,7 @@ static void 	i8259_hwunmask(struct softpic *, int);
 static void 	i8259_setup(struct softpic *, struct cpu_info *, int, int, int);
 static void		i8259_reinit_irqs(void);
 
-unsigned short 	i8259_imen = imen;
+//unsigned short 	imen;
 
 struct pic i8259_template = {
 		.pic_type = PIC_I8259,
@@ -144,10 +144,10 @@ i8259_hwmask(struct softpic *spic, int pin)
 
 	if (pin > 7) {
 		port = IO_ICU2 + 1;
-		byte = i8259_imen >> 8;
+		byte = imen >> 8;
 	} else {
 		port = IO_ICU1 + 1;
-		byte = i8259_imen & 0xff;
+		byte = imen & 0xff;
 	}
 	outb(port, byte);
 }
@@ -160,16 +160,16 @@ i8259_hwunmask(struct softpic *spic, int pin)
 	softpic_pic_hwunmask(spic, pin, FALSE, PIC_I8259);
 
 	disable_intr();
-	i8259_imen &= ~(1 << pin);
+	imen &= ~(1 << pin);
 #ifdef PIC_MASKDELAY
 	delay(10);
 #endif
 	if (pin > 7) {
 		port = IO_ICU2 + 1;
-		byte = i8259_imen >> 8;
+		byte = imen >> 8;
 	} else {
 		port = IO_ICU1 + 1;
-		byte = i8259_imen & 0xff;
+		byte = imen & 0xff;
 	}
 	outb(port, byte);
 	enable_intr();
@@ -206,9 +206,9 @@ i8259_reinit_irqs(void)
 	if (irqs >= 0x100) { 			/* any IRQs >= 8 in use */
 		irqs |= 1 << IRQ_SLAVE;
 	}
-	i8259_imen = ~irqs;
-	outb(IO_ICU1 + 1, i8259_imen);
-	outb(IO_ICU2 + 1, i8259_imen >> 8);
+	imen = ~irqs;
+	outb(IO_ICU1 + 1, imen);
+	outb(IO_ICU2 + 1, imen >> 8);
 }
 
 void
@@ -221,11 +221,11 @@ i8259_reinit(void)
 unsigned
 i8259_setmask(unsigned mask)
 {
-	unsigned old = i8259_imen;
+	unsigned old = imen;
 
-	i8259_imen = mask;
-	outb(IO_ICU1 + 1, i8259_imen);
-	outb(IO_ICU2 + 1, i8259_imen >> 8);
+	imen = mask;
+	outb(IO_ICU1 + 1, imen);
+	outb(IO_ICU2 + 1, imen >> 8);
 
 	return (old);
 }

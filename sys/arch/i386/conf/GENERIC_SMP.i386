@@ -10,3 +10,5 @@ include 		"arch/i386/conf/GENERIC.i386"
 
 # To make a SMP kernel, the next option is needed
 options 		SMP				# multiprocessor support
+
+

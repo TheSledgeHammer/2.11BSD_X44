@@ -29,11 +29,20 @@ file	arch/i386/i386/mainbus.c	    	mainbus
 # attribute used to bring in BIOS trampoline code for real-mode probing
 # of certain devices/BIOS features
 define bioscall
-file	arch/i386/i386/bioscall.s	    	bioscall 					needs-flag
+file	arch/i386/i386/bioscall.S	    	bioscall 					needs-flag
+
+# CPUS
+define cpu { [apid = -1] }
+device cpu
+attach cpu at mainbus
+file   arch/i386/i386/cpu.c					cpu
 
 # CMOS RAM #
 defpseudo cmos
 file	arch/i386/isa/cmos.c				cmos 						needs-flag
+
+# MP configuration using Intel SMP specification 1.4
+file 	arch/i386/i386/mpbios.c			   mpbios
 
 # PCI-only drivers
 file	arch/i386/pci/pci_machdep.c	    	pci
@@ -80,7 +89,7 @@ defflag	PCIC_ISA_ALLOC_IOSIZE
 defflag	PCIC_ISA_INTR_ALLOC_MASK
 
 device	pcic: pcmciabus
-#device	pcic {[controller = -1], [socket = -1]}
+device	pcic {[controller = -1], [socket = -1]}
 file	dev/core/ic/i82365.c			   pcic
 
 # PCIC pcmcia controller on ISA bus.
@@ -90,3 +99,13 @@ file	dev/core/isa/i82365_isa.c		   pcic_isa
 # PCIC pcmcia contoller on PCI bus.
 attach	pcic at pci with pcic_pci
 file	dev/core/pci/i82365_pci.c		   pcic_pci
+
+# PIC (Apic)
+define  lapic
+device 	ioapic: lapic
+attach 	ioapic at mainbus
+file	arch/i386/apic/apic_machdep.c	   ioapic | lapic
+file	arch/i386/apic/apic.c			   ioapic | lapic
+file	arch/i386/apic/apicvector.S		   ioapic | lapic
+file	arch/i386/apic/ioapic.c			   ioapic 					needs-flag
+file	arch/i386/apic/lapic.c			   lapic 					needs-flag

@@ -126,7 +126,9 @@ struct pmap {
 	struct pmap_statistics	pm_stats;		/* pmap statistics */
 	long					pm_ptpages;		/* more stats: PT pages */
 	int 					pm_flags;		/* see below */
+
 	int						pm_active;		/* active on cpus */
+	u_int32_t 				pm_cpus;		/* mask of CPUs using pmap */
 };
 typedef struct pmap			*pmap_t;
 

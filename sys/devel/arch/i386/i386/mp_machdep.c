@@ -185,7 +185,7 @@ init_secondary(ci)
 
 	r_gdt.rd_limit = NGDT * sizeof(gdt[0]) - 1;
 	r_gdt.rd_base = (int) &gdt[myid * NGDT];
-	lgdt(&r_gdt);			/* does magic intra-segment return */
+	lgdt(&r_gdt);									/* does magic intra-segment return */
 
 	r_idt.rd_limit = sizeof(struct gate_descriptor) * NIDT - 1;
 	r_idt.rd_base = (int)idt;

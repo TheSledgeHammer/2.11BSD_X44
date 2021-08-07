@@ -1956,7 +1956,7 @@ pmap_pvdump(pa)
 	for (pv = pa_to_pvh(pa); pv; pv = pv->pv_next) {
 		printf(" -> pmap %x, va %x, flags %x", pv->pv_pmap, pv->pv_va,
 				pv->pv_flags);
-		pads(pv->pv_pmap);
+		pmap_pads(pv->pv_pmap);
 	}
 	printf(" ");
 }
@@ -1990,11 +1990,11 @@ pmap_check_wiring(str, va)
 
 /* print address space of pmap*/
 void
-pads(pm)
-pmap_t pm;
+pmap_pads(pm)
+	pmap_t pm;
 {
 	unsigned va, i, j;
-	struct pte *ptep;
+	register int *ptep;
 
 	if (pm == kernel_pmap)
 		return;
@@ -2131,7 +2131,7 @@ struct pmap_args pmap_arg = {
 		.pmap_changebit 		= &pmap_changebit,
 		.pmap_pvdump 			= &pmap_pvdump,
 		.pmap_check_wiring 		= &pmap_check_wiring,
-		.pads 					= &pads,
+		.pmap_pads 				= &pmap_pads,
 		.pmap_get_kcr3 			= &pmap_get_kcr3,
 		.pmap_get_cr3 			= &pmap_get_cr3,
 		.pmap_cmap3 			= &pmap_cmap3,

@@ -28,7 +28,7 @@
 #ifndef _I386_CPUINFO_H_
 #define _I386_CPUINFO_H_
 
-#include <sys/cputopo.h>
+//#include <sys/cputopo.h>
 #include <machine/intr.h>
 
 struct percpu;
@@ -57,18 +57,10 @@ struct cpu_info {
 	struct proc				*cpu_npxproc;		/* current owner of the FPU */
 	int						cpu_fpsaving;		/* save in progress */
 
-
-	ctop_t 					*cpu_cpuset;		/* cpu topology */
-
 	/* ipi's & tlb */
 	u_int32_t				cpu_ipis; 			/* interprocessor interrupts pending */
 	struct evcnt			cpu_ipi_events[I386_NIPI];
-
 	volatile u_int32_t 		cpu_tlb_ipi_mask;
-	int 					cpu_tlbstate;		/* one of TLBSTATE_ states. see below */
-	#define	TLBSTATE_VALID	0					/* all user tlbs are valid */
-	#define	TLBSTATE_LAZY	1					/* tlbs are valid but won't be kept uptodate */
-	#define	TLBSTATE_STALE	2					/* we might have stale user tlbs */
 };
 extern struct cpu_info 		*cpu_info;			/* static allocation of cpu_info */
 
@@ -99,7 +91,7 @@ extern struct cpu_ops 		cpu_ops;
 #define cpu_apic_id(ci)		((ci)->cpu_apic_id)
 #define cpu_percpu(ci)		((ci)->cpu_percpu)
 
-#define cpu_number() 		(curcpu()->cpu_cpuid)				/* number of cpus available */
+#define cpu_number() 		(curcpu()->cpu_cpuid) /* number of cpus available */
 
 /*
  * Processor flag notes: The "primary" CPU has certain MI-defined

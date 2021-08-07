@@ -80,7 +80,9 @@
 
 struct pmap_tlb_shootdown_job {
 	TAILQ_ENTRY(pmap_tlb_shootdown_job) 	pj_list;
-	vaddr_t 								pj_va;			/* virtual address */
+	vm_offset_t 							pj_va;			/* virtual address */
+	vm_offset_t 							pj_addr1;
+	vm_offset_t 							pj_addr2;
 	pmap_t 									pj_pmap;		/* the pmap which maps the address */
 	struct pmap_tlb_shootdown_job 			*pj_nextfree;
 };
@@ -108,6 +110,21 @@ void						  	pmap_tlb_shootdown_job_put(struct pmap_tlb_shootdown_q *, struct pm
 struct lock_object pmap_tlb_shootdown_job_lock;
 union pmap_tlb_shootdown_job_al *pj_page, *pj_free;
 
+void
+pmap_init()
+{
+	int i;
+	pj_page = (void *)kmem_alloc(kernel_map, PAGE_SIZE);
+	if (pj_page == NULL) {
+		panic("pmap_init: pj_page");
+	}
+	for (i = 0; i < (PAGE_SIZE / sizeof (union pmap_tlb_shootdown_job_al) - 1); i++) {
+		pj_page[i].pja_job.pj_nextfree = &pj_page[i + 1].pja_job;
+	}
+	pj_page[i].pja_job.pj_nextfree = NULL;
+	pj_free = &pj_page[0];
+}
+
 /*
  * Initialize the TLB shootdown queues.
  */
@@ -123,12 +140,10 @@ pmap_tlb_init()
 
 void
 pmap_tlb_shootnow(pmap, cpumask)
-	pmap_t pmap;
+	pmap_t 	pmap;
 	int32_t cpumask;
 {
-	struct cpu_info *self;
-
-	struct cpu_info *ci;
+	struct cpu_info *ci, *self;
 	CPU_INFO_ITERATOR cii;
 	int s;
 #ifdef DIAGNOSTIC
@@ -155,8 +170,7 @@ pmap_tlb_shootnow(pmap, cpumask)
 			continue;
 		if (cpumask & (1U << ci->cpu_cpuid)) {
 			if (i386_send_ipi(ci, I386_IPI_TLB) != 0) {
-				i386_atomic_clearbits_l(&self->cpu_tlb_ipi_mask,
-						(1U << ci->cpu_cpuid));
+				i386_atomic_clearbits_l(&self->cpu_tlb_ipi_mask, (1U << ci->cpu_cpuid));
 			}
 		}
 	}
@@ -192,7 +206,7 @@ pmap_tlb_shootdown(mask, pmap, addr)
 	s = splipi();
 
 	for (CPU_INFO_FOREACH(cii, ci)) {
-		if(pmap == kernel_pmap || pmap->pm_active) {
+		if (pmap == kernel_pmap || pmap->pm_active) {
 			continue;
 		}
 		if (ci != self && !(ci->cpu_flags & CPUF_RUNNING)) {
@@ -210,6 +224,14 @@ pmap_tlb_shootdown(mask, pmap, addr)
 			simple_unlock(&pq->pq_slock);
 			continue;
 		}
+#ifdef I386_CPU
+		if (cpu_class == CPUCLASS_386) {
+			pq->pq_flush++;
+			*mask |= 1U << ci->ci_cpuid;
+			simple_unlock(&pq->pq_slock);
+			continue;
+		}
+#endif
 		pj = pmap_tlb_shootdown_job_get(pq);
 		if (pj == NULL) {
 			/*
@@ -238,44 +260,6 @@ pmap_tlb_shootdown(mask, pmap, addr)
 }
 
 /*
- * pmap_do_tlb_shootdown_checktlbstate: check and update ci_tlbstate.
- *
- * => called at splipi.
- * => return TRUE if we need to maintain user tlbs.
- */
-static __inline boolean_t
-pmap_do_tlb_shootdown_checktlbstate(mask, pmap, ci)
-	u_int mask;
-	pmap_t pmap;
-	struct cpu_info *ci;
-{
-
-	KASSERT(ci == curcpu());
-
-	if (ci->cpu_tlbstate == TLBSTATE_LAZY) {
-		if((pmap == kernel_pmap || pmap->pm_active) != 0) {
-			/*
-			 * mostly KASSERT(ci->cpu_pmap->pm_cpus & (1U << ci->cpu_cpuid));
-			 */
-
-			/*
-			 * we no longer want tlb shootdown ipis for this pmap.
-			 * mark the pmap no longer in use by this processor.
-			 */
-
-			i386_atomic_clearbits_l(mask, 1U << ci->cpu_cpuid);
-			ci->cpu_tlbstate = TLBSTATE_STALE;
-		}
-	}
-
-	if (ci->cpu_tlbstate == TLBSTATE_STALE) {
-		return (FALSE);
-	}
-
-	return (TRUE);
-}
-
-/*
  * pmap_do_tlb_shootdown:
  *
  *	Process pending TLB shootdown operations for this processor.
@@ -301,19 +285,14 @@ pmap_do_tlb_shootdown(pmap, self)
 
 	simple_lock(&pq->pq_slock);
 	if (pq->pq_flush) {
-		pmap_do_tlb_shootdown_checktlbstate(cpu_id, pmap, self);
 		tlbflush();
 		pq->pq_flush = 0;
-		pmap_tlb_shootdown_q_drain(pq);
 	} else {
+		pmap_tlb_shootdown_q_drain(pq);
 		while ((pj = TAILQ_FIRST(&pq->pq_head)) != NULL) {
 			TAILQ_REMOVE(&pq->pq_head, pj, pj_list);
-			if (pj->pj_pmap == kernel_pmap) {
+			if (pj->pj_pmap == kernel_pmap || pj->pj_pmap == pmap) {
 				invlpg(pj->pj_va);
-			} else if (pj->pj_pmap == pmap) {
-				if (pmap_do_tlb_shootdown_checktlbstate(cpu_id, pmap, self)) {
-					invlpg(pj->pj_va);
-				}
 			}
 			pmap_tlb_shootdown_job_put(pq, pj);
 		}

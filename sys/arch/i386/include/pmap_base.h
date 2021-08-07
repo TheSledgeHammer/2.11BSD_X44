@@ -82,7 +82,7 @@ struct pmap_args {
 	void (*pmap_changebit)(vm_offset_t pa, int bit, boolean_t setem);
 	void (*pmap_pvdump)(vm_offset_t pa);
 	void (*pmap_check_wiring)(char *str, vm_offset_t va);
-	void (*pads)(pmap_t pm);
+	void (*pmap_pads)(pmap_t pm);
 	u_int (*pmap_get_kcr3)(void);
 	u_int (*pmap_get_cr3)(pmap_t pmap);
 	caddr_t (*pmap_cmap3)(caddr_t pa, u_int pte_flags);

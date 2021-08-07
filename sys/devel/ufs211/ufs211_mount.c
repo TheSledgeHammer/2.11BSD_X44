@@ -27,110 +27,6 @@
 #include "ufs211/ufs211_quota.h"
 
 void
-smount()
-{
-	register struct a {
-		char	*fspec;
-		char	*freg;
-		int		flags;
-	} *uap = (struct a *)u->u_ap;
-
-	dev_t dev;
-	register struct ufs211_inode *ip;
-	register struct ufs211_fs *fs;
-	struct nameidata nd;
-	struct nameidata *ndp = &nd;
-	struct ufs211_mount *mp;
-	u_int lenon, lenfrom;
-	int error = 0;
-	char mnton[MNAMELEN], mntfrom[MNAMELEN];
-
-	if (u->u_error == getmdev(&dev, uap->fspec))
-		return;
-	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->freg);
-	if ((ip = namei(ndp)) == NULL)
-		return;
-	if ((ip->i_mode & UFS211_IFMT) != UFS211_IFDIR) {
-		error = ENOTDIR;
-		goto cmnout;
-	}
-	/*
-	 * The following two copyinstr calls will not fault because getmdev() or
-	 * namei() would have returned an error for invalid parameters.
-	 */
-	copyinstr(uap->freg, mnton, sizeof(mnton) - 1, &lenon);
-	copyinstr(uap->fspec, mntfrom, sizeof(mntfrom) - 1, &lenfrom);
-
-	if (uap->flags & MNT_UPDATE) {
-		fs = ip->i_fs;
-		mp = ((int)fs - offsetof(mp, mp->m_filsys));
-		if (ip->i_number != UFS211_ROOTINO) {
-			error = EINVAL; /* Not a mount point */
-			goto cmnout;
-		}
-		/*
-		 * Check that the device passed in is the same one that is in the mount
-		 * table entry for this mount point.
-		 */
-		if (dev != mp->m_dev) {
-			error = EINVAL; /* not right mount point */
-			goto cmnout;
-		}
-		/*
-		 * This is where the RW to RO transformation would be done.  It is, for now,
-		 * too much work to port pages of code to do (besides which most
-		 * programs get very upset at having access yanked out from under them).
-		 */
-		if (fs->fs_ronly == 0 && (uap->flags & MNT_RDONLY)) {
-			error = EPERM; /* ! RW to RO updates */
-			goto cmnout;
-		}
-		/*
-		 * However, going from RO to RW is easy.  Then merge in the new
-		 * flags (async, sync, nodev, etc) passed in from the program.
-		 */
-		if (fs->fs_ronly && ((uap->flags & MNT_RDONLY) == 0)) {
-			fs->fs_ronly = 0;
-			mp->m_flags &= ~MNT_RDONLY;
-		}
-#define	_MF (MNT_NOSUID | MNT_NODEV | MNT_NOEXEC | MNT_ASYNC | MNT_SYNCHRONOUS | MNT_NOATIME)
-		mp->m_flags &= ~_MF;
-		mp->m_flags |= (uap->flags & _MF);
-#undef _MF
-		iput(ip);
-		u->u_error = 0;
-		goto updname;
-	} else {
-		/*
-		 * This is where a new mount (not an update of an existing mount point) is
-		 * done.
-		 *
-		 * The directory being mounted on can have no other references AND can not
-		 * currently be a mount point.  Mount points have an inode number of (you
-		 * guessed it) ROOTINO which is 2.
-		 */
-		if (ip->i_count != 1 || (ip->i_number == UFS211_ROOTINO)) {
-			error = EBUSY;
-			goto cmnout;
-		}
-		fs = mountfs(dev, uap->flags, ip);
-		if (fs == 0)
-			return;
-	}
-/*
- * Lastly, both for new mounts and updates of existing mounts, update the
- * mounted-on and mounted-from fields.
-*/
-updname:
-	mount_updname(fs, mnton, mntfrom, lenon, lenfrom);
-	return;
-cmnout:
-	iput(ip);
-	u->u_error = error;
-	return;
-}
-
-void
 mount_updname(fs, on, from, lenon, lenfrom)
 	struct	ufs211_fs	*fs;
 	char	*on, *from;
@@ -178,18 +74,16 @@ mountfs(dev, flags, ip)
  * XXX - the lack of an ioctl entry point.
 */
 	chrdev = blktochr(dev);
-	if	(chrdev == NODEV)
-		ioctl = NULL;	
+	if (chrdev == NODEV)
+		ioctl = NULL;
 	else
 		ioctl = cdevsw[chrdev].d_ioctl;
-	if	(ioctl && !(*ioctl)(dev, DIOCGPART, &dpart, FREAD))
-		{
-		if	(dpart.part->p_fstype != FS_V71K)
-			{
+	if (ioctl && !(*ioctl)(dev, DIOCGPART, &dpart, FREAD)) {
+		if (dpart.part->p_fstype != FS_V71K) {
 			error = EINVAL;
 			goto out;
-			}
 		}
+	}
 	needclose = 1;
 	tp = bread(dev, UFS211_SBLOCK);
 	if (tp->b_flags & B_ERROR)
@@ -298,7 +192,7 @@ found:
 	 * Here we have to iflush again to get rid of the quota inode.
 	 * A drag, but it would be ugly to cheat, & this doesn't happen often
 	 */
-	(void)iflush(dev, (struct inode *)NULL);
+	(void)iflush(dev, (struct ufs211_inode *)NULL);
 #endif
 	ip = mp->m_inodp;
 	ip->i_flag &= ~UFS211_IMOUNT;
@@ -331,17 +225,121 @@ getmdev(pdev, fname)
 	ip = namei(ndp);
 	if (ip == NULL) {
 		if (u->u_error == ENOENT)
-			return (ENODEV); /* needs translation */
+			return (ENODEV);
 		return (u->u_error);
 	}
-	if ((ip->i_mode&UFS211_IFMT) != UFS211_IFBLK) {
+	if ((ip->i_mode & UFS211_IFMT) != UFS211_IFBLK) {
 		iput(ip);
 		return (ENOTBLK);
 	}
-	dev = (dev_t)ip->i_rdev;
+	dev = (dev_t) ip->i_rdev;
 	iput(ip);
 	if (major(dev) >= nblkdev)
 		return (ENXIO);
 	*pdev = dev;
 	return (0);
+}
+
+void
+smount()
+{
+	register struct a {
+		char	*fspec;
+		char	*freg;
+		int		flags;
+	} *uap = (struct a *)u->u_ap;
+
+	dev_t dev;
+	register struct ufs211_inode *ip;
+	register struct ufs211_fs *fs;
+	struct nameidata nd;
+	struct nameidata *ndp = &nd;
+	struct ufs211_mount *mp;
+	u_int lenon, lenfrom;
+	int error = 0;
+	char mnton[MNAMELEN], mntfrom[MNAMELEN];
+
+	if (u->u_error == getmdev(&dev, uap->fspec))
+		return;
+	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->freg);
+	if ((ip = namei(ndp)) == NULL)
+		return;
+	if ((ip->i_mode & UFS211_IFMT) != UFS211_IFDIR) {
+		error = ENOTDIR;
+		goto cmnout;
+	}
+	/*
+	 * The following two copyinstr calls will not fault because getmdev() or
+	 * namei() would have returned an error for invalid parameters.
+	 */
+	copyinstr(uap->freg, mnton, sizeof(mnton) - 1, &lenon);
+	copyinstr(uap->fspec, mntfrom, sizeof(mntfrom) - 1, &lenfrom);
+
+	if (uap->flags & MNT_UPDATE) {
+		fs = ip->i_fs;
+		mp = ((int)fs - offsetof(mp, mp->m_filsys));
+		if (ip->i_number != UFS211_ROOTINO) {
+			error = EINVAL; /* Not a mount point */
+			goto cmnout;
+		}
+		/*
+		 * Check that the device passed in is the same one that is in the mount
+		 * table entry for this mount point.
+		 */
+		if (dev != mp->m_dev) {
+			error = EINVAL; /* not right mount point */
+			goto cmnout;
+		}
+		/*
+		 * This is where the RW to RO transformation would be done.  It is, for now,
+		 * too much work to port pages of code to do (besides which most
+		 * programs get very upset at having access yanked out from under them).
+		 */
+		if (fs->fs_ronly == 0 && (uap->flags & MNT_RDONLY)) {
+			error = EPERM; /* ! RW to RO updates */
+			goto cmnout;
+		}
+		/*
+		 * However, going from RO to RW is easy.  Then merge in the new
+		 * flags (async, sync, nodev, etc) passed in from the program.
+		 */
+		if (fs->fs_ronly && ((uap->flags & MNT_RDONLY) == 0)) {
+			fs->fs_ronly = 0;
+			mp->m_flags &= ~MNT_RDONLY;
+		}
+#define	_MF (MNT_NOSUID | MNT_NODEV | MNT_NOEXEC | MNT_ASYNC | MNT_SYNCHRONOUS | MNT_NOATIME)
+		mp->m_flags &= ~_MF;
+		mp->m_flags |= (uap->flags & _MF);
+#undef _MF
+		iput(ip);
+		u->u_error = 0;
+		goto updname;
+	} else {
+		/*
+		 * This is where a new mount (not an update of an existing mount point) is
+		 * done.
+		 *
+		 * The directory being mounted on can have no other references AND can not
+		 * currently be a mount point.  Mount points have an inode number of (you
+		 * guessed it) ROOTINO which is 2.
+		 */
+		if (ip->i_count != 1 || (ip->i_number == UFS211_ROOTINO)) {
+			error = EBUSY;
+			goto cmnout;
+		}
+		fs = mountfs(dev, uap->flags, ip);
+		if (fs == 0)
+			return;
+	}
+/*
+ * Lastly, both for new mounts and updates of existing mounts, update the
+ * mounted-on and mounted-from fields.
+*/
+updname:
+	mount_updname(fs, mnton, mntfrom, lenon, lenfrom);
+	return;
+cmnout:
+	iput(ip);
+	u->u_error = error;
+	return;
 }

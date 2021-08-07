@@ -46,8 +46,8 @@
 
 #if !defined(_LOCORE)
 
-#include <devel/arch/i386/include/mpbiosreg.h>
-#include <arch/i386/include/mpconfig.h>
+#include <machine/mpbiosreg.h>
+#include <machine/mpconfig.h>
 
 struct pcibus_attach_args;
 
@@ -56,7 +56,6 @@ void mpbios_scan(struct device *);
 int mpbios_probe(struct device *);
 int mpbios_pci_attach_hook(struct device *, struct device *, struct pcibus_attach_args *);
 int mpbios_scan_pci(struct device *, struct pcibus_attach_args *, cfprint_t);
-
 
 extern int mpbios_scanned;
 #endif
