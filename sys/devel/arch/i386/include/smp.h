@@ -17,7 +17,7 @@
 
 #include <sys/bus.h>
 
-#include <devel/arch/i386/isa/icu.h>
+#include <arch/i386/isa/icu.h>
 
 #include <i386/include/frame.h>
 #include <i386/include/intr.h>
@@ -28,7 +28,7 @@
 #define	IPI_INVLTLB		(LAPIC_IPI_INTS + 1)	/* TLB Shootdown IPIs, i386 */
 #define	IPI_INVLPG		(LAPIC_IPI_INTS + 2)
 #define	IPI_INVLRNG		(LAPIC_IPI_INTS + 3)
-#define	IPI_INVLCACHE	(LAPIC_IPI_INTS + 4)
+//#define	IPI_INVLCACHE	(LAPIC_IPI_INTS + 4)
 
 struct pmap;
 
@@ -53,20 +53,26 @@ extern	IDTVEC(invltlb),					/* TLB shootdowns - global */
 		IDTVEC(invlrng),					/* TLB shootdowns - page range */
 		IDTVEC(invlcache);					/* Write back and invalidate cache */
 
-/*
-void	invltlb_handler(void);
-void	invlpg_handler(void);
-void	invlrng_handler(void);
-void	invlcache_handler(void);
-*/
-typedef void (*smp_invl_cb_t)(struct pmap *, vm_offset_t addr1, vm_offset_t addr2);
-
-void 	smp_masked_invltlb(cpuset_t, pmap_t, smp_invl_cb_t);
-void	smp_masked_invlpg(cpuset_t, vm_offset_t, pmap_t, smp_invl_cb_t);
-void	smp_masked_invlpg_range(cpuset_t, vm_offset_t, vm_offset_t, pmap_t, smp_invl_cb_t);
+void 	smp_masked_invltlb(u_int, pmap_t);
+void	smp_masked_invlpg(u_int, vm_offset_t, pmap_t);
+void	smp_masked_invlpg_range(u_int, vm_offset_t, vm_offset_t, pmap_t);
 void	smp_cache_flush(smp_invl_cb_t);
 
 /* functions in mpboot.s */
 void 	bootMP(void);
+
+/* intr.h */
+#define I386_IPI_HALT			0x00000001
+#define I386_IPI_MICROSET		0x00000002
+#define I386_IPI_FLUSH_FPU		0x00000004
+#define I386_IPI_SYNCH_FPU		0x00000008
+#define I386_IPI_TLB			0x00000010
+#define I386_IPI_MTRR			0x00000020
+#define I386_IPI_GDT			0x00000040
+
+/* pmap.h */
+void	pmap_tlb_shootdown(pmap_t, vaddr_t, pt_entry_t, int32_t *);
+void	pmap_tlb_shootnow(int32_t);
+void	pmap_do_tlb_shootdown(struct cpu_info *);
 
 #endif /* _I386_SMP_H_ */

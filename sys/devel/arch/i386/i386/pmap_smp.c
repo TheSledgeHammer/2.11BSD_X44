@@ -74,39 +74,6 @@
 
 #include <sys/cdefs.h>
 
-#ifdef I386_CPU
-/*
- * i386 only has "invalidate everything" and no SMP to worry about.
- */
-static __inline void
-pmap_invalidate_page(pmap, va)
-	pmap_t pmap;
-	vm_offset_t va;
-{
-	if (pmap == kernel_pmap || pmap->pm_active) {
-		invltlb();
-	}
-}
-
-static __inline void
-pmap_invalidate_range(pmap, sva, eva)
-	pmap_t pmap;
-	vm_offset_t sva, eva;
-{
-	if (pmap == kernel_pmap || pmap->pm_active) {
-		invltlb();
-	}
-}
-
-static __inline void
-pmap_invalidate_all(pmap)
-	pmap_t pmap;
-{
-	if (pmap == kernel_pmap || pmap->pm_active) {
-		invltlb();
-	}
-}
-#else /* !I386_CPU */
 #ifdef SMP
 /*
  * For SMP, these functions have to use the IPI mechanism for coherence.
@@ -269,6 +236,4 @@ pmap_invalidate_all(pmap)
 		invltlb();
 	}
 }
-
 #endif /* !SMP */
-#endif /* !I386_CPU */

@@ -1792,35 +1792,6 @@ pmap_phys_address(ppn)
 	return(i386_ptob(ppn));
 }
 
-static __inline void
-pmap_invalidate_page(pmap, va)
-	pmap_t pmap;
-	vm_offset_t va;
-{
-	if (pmap == kernel_pmap || pmap->pm_active) {
-		invltlb();
-	}
-}
-
-static __inline void
-pmap_invalidate_range(pmap, sva, eva)
-	pmap_t pmap;
-	vm_offset_t sva, eva;
-{
-	if (pmap == kernel_pmap || pmap->pm_active) {
-		invltlb();
-	}
-}
-
-static __inline void
-pmap_invalidate_all(pmap)
-	pmap_t pmap;
-{
-	if (pmap == kernel_pmap || pmap->pm_active) {
-		invltlb();
-	}
-}
-
 /*
  * Miscellaneous support routines follow
  */
@@ -2099,7 +2070,7 @@ pmap_bios16_enter(void)
 	*h->pte = vm86phystk | PG_RW | PG_V;
 	h->orig_ptd = *h->ptd;
 	*h->ptd = vtophys(h->pte) | PG_RW | PG_V;
-	//pmap_invalidate_all_int(kernel_pmap); /* XXX insurance for now */
+	//pmap_invalidate_all(kernel_pmap); /* XXX insurance for now */
 	return (h);
 }
 
@@ -2113,7 +2084,7 @@ pmap_bios16_leave(void *arg)
 	/*
 	 * XXX only needs to be invlpg(0) but that doesn't work on the 386
 	 */
-	//pmap_invalidate_all_int(kernel_pmap);
+	//pmap_invalidate_all(kernel_pmap);
 	free(h->pte, M_TEMP); /* ... and free it */
 }
 

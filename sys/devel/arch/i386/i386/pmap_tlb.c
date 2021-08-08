@@ -51,6 +51,117 @@
 
 #include <devel/sys/smp.h>
 
+/******************** SMP TLB code ********************/
+#ifdef COUNT_XINVLTLB_HITS
+u_int 				xhits_gbl[NCPUS];
+u_int 				xhits_pg[NCPUS];
+u_int 				xhits_rng[NCPUS];
+
+u_int 				ipi_masked_global;
+u_int 				ipi_masked_page;
+u_int 				ipi_masked_range;
+u_int 				ipi_masked_range_size;
+
+vm_offset_t 		smp_tlb_addr1, smp_tlb_addr2;
+volatile int 		smp_tlb_wait;
+
+static __inline u_int32_t
+popcnt(u_int32_t m)
+{
+	m = (m & 0x55555555) + ((m & 0xaaaaaaaa) >> 1);
+	m = (m & 0x33333333) + ((m & 0xcccccccc) >> 2);
+	m = (m & 0x0f0f0f0f) + ((m & 0xf0f0f0f0) >> 4);
+	m = (m & 0x00ff00ff) + ((m & 0xff00ff00) >> 8);
+	m = (m & 0x0000ffff) + ((m & 0xffff0000) >> 16);
+	return (m);
+}
+
+static void
+smp_targeted_tlb_shootdown(u_int mask, u_int vector, pmap_t pmap, vm_offset_t addr1, vm_offset_t addr2)
+{
+	int ncpu, othercpus;
+	register_t eflags;
+
+	if (mask == (u_int)-1) {
+		ncpu = othercpus;
+		if (ncpu < 1) {
+			return;
+		}
+	} else {
+		mask &= ~(1 << &cpuid_to_percpu[ncpu]);
+		if (mask == 0) {
+			return;
+		}
+		ncpu = popcnt(mask);
+		if (ncpu > othercpus) {
+			printf("SMP: tlb shootdown to %d other cpus (only have %d)\n", ncpu, othercpus);
+			ncpu = othercpus;
+		}
+		if (ncpu < 1) {
+			return;
+		}
+	}
+
+	eflags = read_eflags();
+	if ((eflags & PSL_I) == 0) {
+		panic("absolutely cannot call smp_targeted_ipi_shootdown with interrupts already disabled");
+	}
+
+	simple_lock(&smp_tlb_lock);
+	smp_tlb_addr1 = addr1;
+	smp_tlb_addr2 = addr2;
+	atomic_store_rel_int(&smp_tlb_wait, 0);
+
+	if (mask == (u_int)-1) {
+		i386_broadcast_ipi(vector);
+	} else {
+		i386_multicast_ipi(mask, vector);
+	}
+	while (smp_tlb_wait < ncpu) {
+		ncpu--;
+		pmap_tlb_shootdown(pmap, addr1, addr2, mask);
+		pmap_tlb_shootnow(pmap, mask);
+	}
+	simple_unlock(&smp_tlb_lock);
+	return;
+}
+
+void
+smp_masked_invltlb(u_int mask, pmap_t pmap)
+{
+	if (smp_started) {
+		smp_targeted_tlb_shootdown(mask, IPI_INVLTLB, pmap, 0, 0);
+#ifdef COUNT_XINVLTLB_HITS
+		ipi_masked_global++;
+#endif
+	}
+}
+
+void
+smp_masked_invlpg(u_int mask, vm_offset_t addr, pmap_t pmap)
+{
+	if (smp_started) {
+		smp_targeted_tlb_shootdown(mask, IPI_INVLPG, pmap, addr, 0);
+#ifdef COUNT_XINVLTLB_HITS
+		ipi_masked_page++;
+#endif
+	}
+}
+
+void
+smp_masked_invlpg_range(u_int mask, vm_offset_t addr1, vm_offset_t addr2, pmap_t pmap)
+{
+	if (smp_started) {
+		smp_targeted_tlb_shootdown(mask, IPI_INVLRNG, pmap, addr1, addr2);
+#ifdef COUNT_XINVLTLB_HITS
+		ipi_masked_range++;
+		ipi_masked_range_size += (addr2 - addr1) / PAGE_SIZE;
+#endif
+	}
+}
+
+#endif
+
 /******************** TLB shootdown code ********************/
 
 /*
@@ -69,21 +180,12 @@
  * purpose allocator for speed.
  */
 
-/* intr.h */
-#define I386_IPI_HALT			0x00000001
-#define I386_IPI_MICROSET		0x00000002
-#define I386_IPI_FLUSH_FPU		0x00000004
-#define I386_IPI_SYNCH_FPU		0x00000008
-#define I386_IPI_TLB			0x00000010
-#define I386_IPI_MTRR			0x00000020
-#define I386_IPI_GDT			0x00000040
-
 struct pmap_tlb_shootdown_job {
 	TAILQ_ENTRY(pmap_tlb_shootdown_job) 	pj_list;
 	vm_offset_t 							pj_va;			/* virtual address */
 	vm_offset_t 							pj_sva;			/* virtual address start */
 	vm_offset_t 							pj_eva;			/* virtual address end */
-	pt_entry_t 								pj_pte;			/* the PTE bits */
+ // pt_entry_t 								pj_pte;			/* the PTE bits */
 	pmap_t 									pj_pmap;		/* the pmap which maps the address */
 	struct pmap_tlb_shootdown_job 			*pj_nextfree;
 };
@@ -96,7 +198,7 @@ union pmap_tlb_shootdown_job_al {
 
 struct pmap_tlb_shootdown_q {
 	TAILQ_HEAD(, pmap_tlb_shootdown_job) 	pq_head;
-	int 									pq_pte;			/* aggregate PTE bits */
+//	int 									pq_pte;			/* aggregate PTE bits */
 	int 									pq_count;		/* number of pending requests */
 	struct lock_object						pq_slock;		/* spin lock on queue */
 	int 									pq_flush;		/* pending flush */
