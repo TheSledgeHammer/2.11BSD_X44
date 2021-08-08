@@ -409,3 +409,115 @@ ipi_startup(apic_id, vector)
 	}
 	delay_func(200);
 }
+
+//#ifdef COUNT_XINVLTLB_HITS
+u_int 				xhits_gbl[NCPUS];
+u_int 				xhits_pg[NCPUS];
+u_int 				xhits_rng[NCPUS];
+
+u_int 				ipi_global;
+u_int 				ipi_page;
+u_int 				ipi_range;
+u_int 				ipi_range_size;
+u_int 				ipi_masked_global;
+u_int 				ipi_masked_page;
+u_int 				ipi_masked_range;
+u_int 				ipi_masked_range_size;
+
+vm_offset_t 		smp_tlb_addr1, smp_tlb_addr2;
+volatile int 		smp_tlb_wait;
+
+static __inline u_int32_t
+popcnt(u_int32_t m)
+{
+	m = (m & 0x55555555) + ((m & 0xaaaaaaaa) >> 1);
+	m = (m & 0x33333333) + ((m & 0xcccccccc) >> 2);
+	m = (m & 0x0f0f0f0f) + ((m & 0xf0f0f0f0) >> 4);
+	m = (m & 0x00ff00ff) + ((m & 0xff00ff00) >> 8);
+	m = (m & 0x0000ffff) + ((m & 0xffff0000) >> 16);
+	return (m);
+}
+
+static void
+smp_targeted_tlb_shootdown(u_int mask, u_int vector, pmap_t pmap, vm_offset_t addr1, vm_offset_t addr2)
+{
+	int ncpu, othercpus;
+	register_t eflags;
+
+	if (mask == (u_int)-1) {
+		ncpu = othercpus;
+		if (ncpu < 1) {
+			return;
+		}
+	} else {
+		mask &= ~(1 << &cpuid_to_percpu[ncpu]);
+		if (mask == 0) {
+			return;
+		}
+		ncpu = popcnt(mask);
+		if (ncpu > othercpus) {
+			printf("SMP: tlb shootdown to %d other cpus (only have %d)\n", ncpu, othercpus);
+			ncpu = othercpus;
+		}
+		if (ncpu < 1) {
+			return;
+		}
+	}
+
+	eflags = read_eflags();
+	if ((eflags & PSL_I) == 0) {
+		panic("absolutely cannot call smp_targeted_ipi_shootdown with interrupts already disabled");
+	}
+
+	simple_lock(&smp_tlb_lock);
+	smp_tlb_addr1 = addr1;
+	smp_tlb_addr2 = addr2;
+	atomic_store_rel_int(&smp_tlb_wait, 0);
+
+	if (mask == (u_int)-1) {
+		i386_broadcast_ipi(vector);
+	} else {
+		i386_multicast_ipi(mask, vector);
+	}
+	while (smp_tlb_wait < ncpu) {
+		ncpu--;
+		pmap_tlb_shootdown(pmap, addr1, addr2, mask);
+		pmap_tlb_shootnow(pmap, mask);
+	}
+	simple_unlock(&smp_tlb_lock);
+	return;
+}
+
+void
+smp_masked_invltlb(u_int mask, pmap_t pmap)
+{
+	if (smp_started) {
+		smp_targeted_tlb_shootdown(mask, IPI_INVLTLB, pmap, 0, 0);
+#ifdef COUNT_XINVLTLB_HITS
+		ipi_masked_global++;
+#endif
+	}
+}
+
+void
+smp_masked_invlpg(u_int mask, vm_offset_t addr, pmap_t pmap)
+{
+	if (smp_started) {
+		smp_targeted_tlb_shootdown(mask, IPI_INVLPG, pmap, addr, 0);
+#ifdef COUNT_XINVLTLB_HITS
+		ipi_masked_page++;
+#endif
+	}
+}
+
+void
+smp_masked_invlpg_range(u_int mask, vm_offset_t addr1, vm_offset_t addr2, pmap_t pmap)
+{
+	if (smp_started) {
+		smp_targeted_tlb_shootdown(mask, IPI_INVLRNG, pmap, addr1, addr2);
+#ifdef COUNT_XINVLTLB_HITS
+		ipi_masked_range++;
+		ipi_masked_range_size += (addr2 - addr1) / PAGE_SIZE;
+#endif
+	}
+}

@@ -120,8 +120,9 @@ pmap_invalidate_page(pmap, va)
 	u_int other_cpus;
 
 	if (smp_started) {
-		if (!(read_eflags() & PSL_I))
+		if (!(read_eflags() & PSL_I)) {
 			panic("%s: interrupts disabled", __func__);
+		}
 		simple_lock(&smp_tlb_lock);
 	}
 
@@ -137,10 +138,12 @@ pmap_invalidate_page(pmap, va)
 	} else {
 		cpumask = PERCPU_GET(cpumask);
 		other_cpus = PERCPU_GET(other_cpus);
-		if (pmap->pm_active & cpumask)
+		if (pmap->pm_active & cpumask) {
 			invlpg(va);
-		if (pmap->pm_active & other_cpus)
+		}
+		if (pmap->pm_active & other_cpus) {
 			smp_masked_invlpg(pmap->pm_active & other_cpus, va);
+		}
 	}
 	if (smp_started) {
 		simple_unlock(&smp_tlb_lock);
@@ -157,8 +160,9 @@ pmap_invalidate_range(pmap, sva, eva)
 	vm_offset_t addr;
 
 	if (smp_started) {
-		if (!(read_eflags() & PSL_I))
+		if (!(read_eflags() & PSL_I)) {
 			panic("%s: interrupts disabled", __func__);
+		}
 		simple_lock(&smp_tlb_lock);
 	}
 
@@ -169,17 +173,21 @@ pmap_invalidate_range(pmap, sva, eva)
 	 * XXX critical sections disable interrupts again
 	 */
 	if (pmap == kernel_pmap || pmap->pm_active == all_cpus) {
-		for (addr = sva; addr < eva; addr += PAGE_SIZE)
+		for (addr = sva; addr < eva; addr += PAGE_SIZE) {
 			invlpg(addr);
+		}
 		smp_invlpg_range(sva, eva);
 	} else {
 		cpumask = PERCPU_GET(cpumask);
 		other_cpus = PERCPU_GET(other_cpus);
-		if (pmap->pm_active & cpumask)
-			for (addr = sva; addr < eva; addr += PAGE_SIZE)
+		if (pmap->pm_active & cpumask) {
+			for (addr = sva; addr < eva; addr += PAGE_SIZE) {
 				invlpg(addr);
-		if (pmap->pm_active & other_cpus)
+			}
+		}
+		if (pmap->pm_active & other_cpus) {
 			smp_masked_invlpg_range(pmap->pm_active & other_cpus, sva, eva);
+		}
 	}
 	if (smp_started) {
 		simple_unlock(&smp_tlb_lock);
@@ -212,10 +220,12 @@ pmap_invalidate_all(pmap)
 	} else {
 		cpumask = PERCPU_GET(cpumask);
 		other_cpus = PERCPU_GET(other_cpus);
-		if (pmap->pm_active & cpumask)
+		if (pmap->pm_active & cpumask) {
 			invltlb();
-		if (pmap->pm_active & other_cpus)
+		}
+		if (pmap->pm_active & other_cpus) {
 			smp_masked_invltlb(pmap->pm_active & other_cpus);
+		}
 	}
 	if (smp_started) {
 		simple_unlock(&smp_tlb_lock);

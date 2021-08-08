@@ -1792,10 +1792,39 @@ pmap_phys_address(ppn)
 	return(i386_ptob(ppn));
 }
 
+static __inline void
+pmap_invalidate_page(pmap, va)
+	pmap_t pmap;
+	vm_offset_t va;
+{
+	if (pmap == kernel_pmap || pmap->pm_active) {
+		invltlb();
+	}
+}
+
+static __inline void
+pmap_invalidate_range(pmap, sva, eva)
+	pmap_t pmap;
+	vm_offset_t sva, eva;
+{
+	if (pmap == kernel_pmap || pmap->pm_active) {
+		invltlb();
+	}
+}
+
+static __inline void
+pmap_invalidate_all(pmap)
+	pmap_t pmap;
+{
+	if (pmap == kernel_pmap || pmap->pm_active) {
+		invltlb();
+	}
+}
+
 /*
  * Miscellaneous support routines follow
  */
-
+void
 i386_protection_init()
 {
 	register int *kp, prot;

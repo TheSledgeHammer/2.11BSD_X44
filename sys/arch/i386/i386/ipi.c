@@ -75,6 +75,7 @@ void (*ipifunc[I386_NIPI])(struct cpu_info *) = {
 		i386_ipi_reload_mtrr,
 		NULL,
 };
+//pmap_do_tlb_shootdown
 
 int
 i386_send_ipi(struct cpu_info *ci, int ipimask)

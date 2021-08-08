@@ -82,7 +82,7 @@ mp_start(pc)
 	}
 
 	cpu_mp_start(pc);
-	printf("FreeBSD/SMP: Multiprocessor System Detected: %d CPUs\n", mp_ncpus);
+	printf("211BSD/SMP: Multiprocessor System Detected: %d CPUs\n", mp_ncpus);
 
 	if (mp_ncores < 0) {
 		mp_ncores = mp_ncpus;
