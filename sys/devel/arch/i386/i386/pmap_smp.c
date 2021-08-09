@@ -101,7 +101,6 @@ pmap_invalidate_page(pmap, va)
 	 */
 	if (pmap == kernel_pmap || pmap->pm_active == all_cpus) {
 		invlpg(va);
-		smp_invlpg(va);
 	} else {
 		cpumask = PERCPU_GET(cpumask);
 		other_cpus = PERCPU_GET(other_cpus);
@@ -143,7 +142,6 @@ pmap_invalidate_range(pmap, sva, eva)
 		for (addr = sva; addr < eva; addr += PAGE_SIZE) {
 			invlpg(addr);
 		}
-		smp_invlpg_range(sva, eva);
 	} else {
 		cpumask = PERCPU_GET(cpumask);
 		other_cpus = PERCPU_GET(other_cpus);
@@ -183,7 +181,6 @@ pmap_invalidate_all(pmap)
 	 */
 	if (pmap == kernel_pmap || pmap->pm_active == all_cpus) {
 		invltlb();
-		smp_invltlb();
 	} else {
 		cpumask = PERCPU_GET(cpumask);
 		other_cpus = PERCPU_GET(other_cpus);

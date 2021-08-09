@@ -42,8 +42,8 @@
  * Access per-CPU data. 
  */
 //#define	PCPU(member)	%fs:PC_ ## member
-#define	PCPU(member)	member
-#define	PCPU_ADDR(member, reg)						\
+#define	PERCPU(member)	member
+#define	PERCPU_ADDR(member, reg)					\
 		movl %fs:PC_PRVSPACE, reg ;					\
 		addl $PC_ ## member, reg
 
@@ -70,8 +70,8 @@ ENTRY(vm86_bioscall)
 		pushl	%edi
 		pushl	%gs
 
-		movl	PCPU(CURTHREAD),%ecx
-		cmpl	%ecx,PCPU(FPCURTHREAD)	/* do we need to save fp? */
+		movl	PERCPU(CURTHREAD),%ecx
+		cmpl	%ecx,PERCPU(FPCURTHREAD)	/* do we need to save fp? */
 		jne		1f
 		pushl	%edx
 		movl	TD_PCB(%ecx),%ecx
@@ -89,11 +89,11 @@ ENTRY(vm86_bioscall)
 		rep
 		movsl							/* copy frame to new stack */
 
-		movl	PCPU(CURPCB),%eax
+		movl	PERCPU(CURPCB),%eax
 		pushl	%eax					/* save curpcb */
-		movl	%edx,PCPU(CURPCB)		/* set curpcb to vm86pcb */
+		movl	%edx,PERCPU(CURPCB)		/* set curpcb to vm86pcb */
 
-		movl	PCPU(TSS_GDT),%ebx		/* entry in GDT */
+		movl	PERCPU(TSS_GDT),%ebx	/* entry in GDT */
 		movl	0(%ebx),%eax
 		movl	%eax,SCR_TSS0(%edx)		/* save first word */
 		movl	4(%ebx),%eax
@@ -158,7 +158,7 @@ ENTRY(vm86_biosret)
 		popl	%eax
 		movl	%eax,%cr3				/* install old page table */
 
-		movl	PCPU(TSS_GDT),%ebx		/* entry in GDT */
+		movl	PERCPU(TSS_GDT),%ebx	/* entry in GDT */
 		movl	SCR_TSS0(%edx),%eax
 		movl	%eax,0(%ebx)			/* restore first word */
 		movl	SCR_TSS1(%edx),%eax
@@ -166,7 +166,7 @@ ENTRY(vm86_biosret)
 		movl	$GPROC0_SEL*8,%esi		/* GSEL(entry, SEL_KPL) */
 		ltr		%si
 
-		popl	PCPU(CURPCB)			/* restore curpcb/curproc */
+		popl	PERCPU(CURPCB)			/* restore curpcb/curproc */
 		movl	SCR_ARGFRAME(%edx),%edx	/* original stack frame */
 		movl	TF_TRAPNO(%edx),%eax	/* return (trapno) */
 

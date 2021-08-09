@@ -40,7 +40,7 @@ CPPFLAGS+=	-no-cpp-precomp
 CPPFLAGS+=	-I. -I./include -I${.CURDIR} -I${.CURDIR}/sys 			\
 		-DHAVE_NBTOOL_CONFIG_H=1 -D_FILE_OFFSET_BITS=64
 
-.PATH:		 							\
+.PATH:		 														\
 			${.CURDIR}/../../lib/libc/compat-4.1					\
 			${.CURDIR}/../../lib/libc/compat-4.3					\
 			${.CURDIR}/../../lib/libc/compat-netbsd					\

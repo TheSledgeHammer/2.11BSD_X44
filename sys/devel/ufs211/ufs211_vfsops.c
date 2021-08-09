@@ -295,6 +295,9 @@ ufs211_vget(mp, ino, vpp)
 
 	ump = VFSTOUFS211(mp);
 	dev = ump->m_dev;
+	if ((*vpp = ufs211_ihashget(dev, ino)) != NULL) {
+		return (0);
+	}
 
 	/* Allocate a new vnode/inode. */
 	if (error == getnewvnode(VT_UFS211, mp, ufs211_vnodeops, &vp)) {
@@ -311,6 +314,40 @@ ufs211_vget(mp, ino, vpp)
 	ip->i_dev = dev;
 	ip->i_number = ino;
 
+	ufs211_ihashins(ip);
+
+	if (error == bread(ump->um_devvp, fsbtodb(itoo(ino)), (int)fs->fs_fsize, NOCRED, &bp)) {
+		/*
+		 * The inode does not contain anything useful, so it would
+		 * be misleading to leave it on its hash chain. With mode
+		 * still zero, it will be unlinked and returned to the free
+		 * list by vput().
+		 */
+		vput(vp);
+		brelse(bp);
+		*vpp = NULL;
+		return (error);
+	}
+	brelse(bp);
+
+	/*
+	 * Initialize the vnode from the inode, check for aliases.
+	 * Note that the underlying vnode may have changed.
+	 */
+	if (error == ufs211_vinit(mp, &ufs211_specops, &ufs211_fifoops, &vp)) {
+		vput(vp);
+		*vpp = NULL;
+		return (error);
+	}
+	/*
+	 * Finish inode initialization now that aliasing has been resolved.
+	 */
+	ip->i_devvp = ump->um_devvp;
+	VREF(ip->i_devvp);
+
+	if (fs->fs_magic == FS_UFS211_MAGIC) {
+		ip->i_din  = *((struct ufs211_dinode *)bp->b_data + itod(ino));
+	}
 	*vpp = vp;
 	return (0);
 }
@@ -331,6 +368,7 @@ ufs211_fhtovp(mp, fhp, nam, vpp, exflagsp, credanonp)
 	if (ufhp->ufid_ino < UFS211_ROOTINO) {
 		return (ESTALE);
 	}
+	return (0);
 }
 
 int
@@ -383,5 +421,8 @@ ufs211_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	size_t newlen;
 	struct proc *p;
 {
+	/* all sysctl names at this level are terminal */
+	if (namelen != 1)
+		return (ENOTDIR); /* overloaded */
 	return (0);
 }

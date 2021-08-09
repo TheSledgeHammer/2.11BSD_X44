@@ -54,7 +54,7 @@ ufs211_lookup(ap)
 	register struct direct *ep; 		/* the current directory entry */
 	int entryoffsetinblock; 			/* offset of ep in bp's buffer */
 	enum {NONE, COMPACT, FOUND} slotstatus;
-	ufs211_off_t slotoffset = -1;		/* offset of area with free space */
+	off_t slotoffset = -1;				/* offset of area with free space */
 	int slotsize;						/* size of area at slotoffset */
 	int slotfreespace;					/* amount of space free in slot */
 	int slotneeded;						/* size of the entry we're seeking */
@@ -919,32 +919,32 @@ ufs211_dirempty(ip, parentino)
 /*
  * Check if source directory is in the path of the target directory.
  * Target is supplied locked, source is unlocked.
- * The target is always iput() before returning.
+ * The target is always vput() before returning.
  */
 int
 ufs211_checkpath(source, target)
 	struct ufs211_inode *source, *target;
 {
 	struct ufs211_dirtemplate dirbuf;
-	register struct ufs211_inode *ip;
-	register int error = 0;
+	struct vnode *vp;
+	register int error;
 
-	ip = target;
-	if (ip->i_number == source->i_number) {
+	vp = UFS211_ITOV(target);
+	if (target->i_number == source->i_number) {
 		error = EEXIST;
 		goto out;
 	}
-	if (ip->i_number == UFS211_ROOTINO)
+	if (target->i_number == UFS211_ROOTINO)
 		goto out;
 
 	for (;;) {
-		if ((ip->i_mode&UFS211_IFMT) != UFS211_IFDIR) {
+		if (vp->v_type != VDIR) {
 			error = ENOTDIR;
 			break;
 		}
-		error = rdwri(UIO_READ, ip, (caddr_t)&dirbuf, 
-				sizeof(struct ufs211_dirtemplate), (off_t)0,
-				UIO_SYSSPACE, IO_UNIT, (int *)0);
+		error = vn_rdwr(UIO_READ, vp, (caddr_t) &dirbuf,
+				sizeof(struct ufs211_dirtemplate), (off_t) 0, UIO_SYSSPACE,
+				IO_NODELOCKED, u->u_cred, (int*) 0, (struct proc*) 0);
 		if (error != 0)
 			break;
 		if (dirbuf.dotdot_namlen != 2 ||
@@ -959,90 +959,20 @@ ufs211_checkpath(source, target)
 		}
 		if (dirbuf.dotdot_ino == UFS211_ROOTINO)
 			break;
-		iput(ip);
-		ip = iget(ip->i_dev, ip->i_fs, dirbuf.dotdot_ino);
-		if (ip == NULL) {
+		vput(vp);
+		if (error == VFS_VGET(vp->v_mount, dirbuf.dotdot_ino, &vp)) {
 			error = u->u_error;
+			vp = NULL;
 			break;
 		}
 	}
 
 out:
-	if (error == ENOTDIR)
+	if (error == ENOTDIR) {
 		printf("checkpath: .. !dir\n");
-	if (ip != NULL)
-		iput(ip);
+	}
+	if (vp != NULL) {
+		vput(vp);
+	}
 	return (error);
-}
-
-/*
- * Name cache initialization, from main() when we are booting
- */
-void
-nchinit()
-{
-	register union nchash *nchp;
-	register struct namecache *ncp;
-
-	nchhead = 0;
-	nchtail = &nchhead;
-	for (ncp = namecache; ncp < &namecache[nchsize]; ncp++) {
-		ncp->nc_forw = ncp;			/* hash chain */
-		ncp->nc_back = ncp;
-		ncp->nc_nxt = NULL;			/* lru chain */
-		*nchtail = ncp;
-		ncp->nc_prev = nchtail;
-		nchtail = &ncp->nc_nxt;
-		/* all else is zero already */
-	}
-	for (nchp = nchash; nchp < &nchash[NCHHASH]; nchp++) {
-		nchp->nch_head[0] = nchp;
-		nchp->nch_head[1] = nchp;
-	}
-}
-
-/*
- * Cache flush, called when filesys is umounted to
- * remove entries that would now be invalid
- *
- * The line "nxtcp = nchhead" near the end is to avoid potential problems
- * if the cache lru chain is modified while we are dumping the
- * inode.  This makes the algorithm O(n^2), but do you think I care?
- */
-void
-nchinval(dev)
-	register dev_t dev;
-{
-	register struct namecache *ncp, *nxtcp;
-
-	for (ncp = nchhead; ncp; ncp = nxtcp) {
-		nxtcp = ncp->nc_nxt;
-		if (ncp->nc_vp == NULL)
-			continue;
-		/* free the resources we had */
-		ncp->nc_dvp;
-		/*
-		ncp->nc_idev = NODEV;
-		ncp->nc_dev = NODEV;
-		ncp->nc_id = NULL;
-		ncp->nc_ino = 0;
-		*/
-		ncp->nc_vp = NULL;
-		remque(ncp);		/* remove entry from its hash chain */
-		ncp->nc_forw = ncp;	/* and make a dummy one */
-		ncp->nc_back = ncp;
-		/* delete this entry from LRU chain */
-		*ncp->nc_prev = nxtcp;
-		if (nxtcp)
-			nxtcp->nc_prev = ncp->nc_prev;
-		else
-			nchtail = ncp->nc_prev;
-		/* cause rescan of list, it may have altered */
-		nxtcp = nchhead;
-		/* put the now-free entry at head of LRU */
-		ncp->nc_nxt = nxtcp;
-		ncp->nc_prev = &nchhead;
-		nxtcp->nc_prev = &ncp->nc_nxt;
-		nchhead = ncp;
-	}
 }

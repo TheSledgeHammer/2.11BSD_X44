@@ -242,9 +242,15 @@
  *	}
  *
  */
-#define ALIGNBYTES				ALIGNBYTES
+#define ALIGNBYTES					ALIGNBYTES
+#ifndef ALIGN
+#define	ALIGN(p)					(((uintptr_t)(p) + ALIGNBYTES) & ~ALIGNBYTES)
+#endif
 #ifndef ALIGNED_POINTER
-#define	ALIGNED_POINTER(p,t)	((((uintptr_t)(p)) & ((sizeof(t)) - 1)) == 0)
+#define	ALIGNED_POINTER(p,t)		((((uintptr_t)(p)) & (__alignof(t) - 1)) == 0)
+#endif
+#ifndef ALIGNED_POINTER_LOAD
+#define	ALIGNED_POINTER_LOAD(q,p,t)	(*(q) = *((const t *)(p)))
 #endif
 
 #endif /* _SYS_PARAM_H_ */

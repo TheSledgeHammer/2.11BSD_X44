@@ -62,7 +62,7 @@
  * data types (int, long, ...).   The result is u_int and must be cast to
  * any desired pointer type.
  */
-#define	ALIGNBYTES		3
+#define	ALIGNBYTES	3
 #define	ALIGN(p)		(((u_int)(p) + ALIGNBYTES) &~ ALIGNBYTES)
 
 

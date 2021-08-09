@@ -154,6 +154,7 @@ ufs_mknod(ap)
 	struct vattr *vap = ap->a_vap;
 	struct vnode **vpp = ap->a_vpp;
 	struct inode *ip;
+	ino_t ino;
 	int error;
 
 	if (error ==

@@ -105,9 +105,9 @@ typedef unsigned long ulong_t;
 #include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <grp.h>
 #include <limits.h>
 #include <paths.h>
-#include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -121,13 +121,6 @@ typedef unsigned long ulong_t;
 #endif
 #if HAVE_SYS_SYSLIMITS_H
 #include <sys/syslimits.h>
-#endif
-#if HAVE_SYS_SYSMACROS_H
-/* major(), minor() on SVR4 */
-#include <sys/sysmacros.h>
-#endif
-#if HAVE_INTTYPES_H
-#include <inttypes.h>
 #endif
 #if HAVE_STDDEF_H
 #include <stddef.h>
@@ -157,7 +150,6 @@ typedef unsigned long ulong_t;
 #undef __UNVOLATILE
 #endif
 #define __UNVOLATILE(a)        ((void *)(unsigned long)(volatile void *)(a))
-
 
 #undef __predict_false
 #define __predict_false(x) (x)
@@ -217,7 +209,7 @@ struct group;
 #undef __arraycount
 #define	__arraycount(__x)	(sizeof(__x) / sizeof(__x[0]))
 #undef __USE
-#define __USE(a) ((void)(a))
+#define __USE(a) 		((void)(a))
 #undef __type_min_s
 #define __type_min_s(t) ((t)((1ULL << (sizeof(t) * NBBY - 1))))
 #undef __type_max_s
@@ -301,14 +293,12 @@ int fpurge(FILE *);
 #if !HAVE_DIRFD
 #if HAVE_DIR_DD_FD
 #define dirfd(dirp) ((dirp)->dd_fd)
-#elif HAVE_DIR___DD_FD
-#define dirfd(dirp) ((dirp)->__dd_fd)
 #else
 /*XXX: Very hacky but no other way to bring this into scope w/o defining
   _NETBSD_SOURCE which we're avoiding. */
 #ifdef __NetBSD__
 struct _dirdesc {
-        int     dd_fd;          /* file descriptor associated with directory */
+	int     dd_fd;          /* file descriptor associated with directory */
 	long    dd_loc;         /* offset in current buffer */
 	long    dd_size;        /* amount of data returned by getdents */
 	char    *dd_buf;        /* data buffer */
@@ -400,19 +390,31 @@ int flock(int, int);
 char *fparseln(FILE *, size_t *, size_t *, const char [3], int);
 #endif
 
-#if !HAVE_DECL_GETDELIM
+#if !HAVE_GETDELIM
 ssize_t getdelim(char **, size_t *, int, FILE *);
 #endif
-#if !HAVE_DECL_GETLINE
+#if !HAVE_GETLINE
 ssize_t getline(char **, size_t *, FILE *);
 #endif
 
-#if !HAVE_DECL_ISSETUGID
+#if !HAVE_ISSETUGID
 int issetugid(void);
 #endif
 
-#if !HAVE_DECL_ISBLANK && !defined(isblank)
+#if !HAVE_ISBLANK && !defined(isblank)
 #define isblank(x) ((x) == ' ' || (x) == '\t')
+#endif
+
+#if !HAVE_LCHFLAGS
+int lchflags(const char *, u_long);
+#endif
+
+#if !HAVE_LCHMOD
+int lchmod(const char *, mode_t);
+#endif
+
+#if !HAVE_LCHOWN
+int lchown(const char *, uid_t, gid_t);
 #endif
 
 #define __nbcompat_bswap16(x)	((((x) << 8) & 0xff00) | (((x) >> 8) & 0x00ff))
@@ -444,123 +446,47 @@ int issetugid(void);
 #define bswap64(x)	__nbcompat_bswap64(x)
 #endif
 
-#if !HAVE_DECL_MKSTEMP
+#if !HAVE_MKSTEMP
 int mkstemp(char *);
 #endif
 
-#if !HAVE_DECL_MKDTEMP
+#if !HAVE_MKDTEMP
 char *mkdtemp(char *);
 #endif
 
 #if !HAVE_MKSTEMP || !HAVE_MKDTEMP
-/* This is a prototype for the internal function defined in
- * src/lib/libc/stdio/gettemp.c */
-int __nbcompat_gettemp(char *, int *, int);
+/* This is a prototype for the internal function. */
+int gettemp(char *, int *, int);
 #endif
 
-#if !HAVE_DECL_PREAD
+#if !HAVE_PREAD
 ssize_t pread(int, void *, size_t, off_t);
 #endif
 
-#define heapsort __nbcompat_heapsort
-#if !HAVE_DECL_HEAPSORT
+#if !HAVE_HEAPSORT
 int heapsort (void *, size_t, size_t, int (*)(const void *, const void *));
 #endif
+/* Make them use our version */
+#  define heapsort __nbcompat_heapsort
 
-char	       *flags_to_string(unsigned long, const char *);
-int		string_to_flags(char **, unsigned long *, unsigned long *);
-
-/*
- * HAVE_X_FROM_Y and HAVE_PWCACHE_FOODB go together, because we cannot
- * supply an implementation of one without the others -- some parts are
- * libc internal and this varies from system to system.
- *
- * XXX this is dubious anyway: we assume (see HAVE_DECLs below) that if the
- * XXX host system has all of these functions, all of their interfaces
- * XXX and interactions are exactly the same as in our libc/libutil -- ugh.
- */
-#if !HAVE_USER_FROM_UID || !HAVE_UID_FROM_USER || !HAVE_GROUP_FROM_GID || \
-    !HAVE_GID_FROM_GROUP || !HAVE_PWCACHE_USERDB || !HAVE_PWCACHE_GROUDB
+#if !HAVE_PWCACHE_USERDB
+int uid_from_user(const char *, uid_t *);
+int pwcache_userdb(int (*)(int), void (*)(void),
+		struct passwd * (*)(const char *), struct passwd * (*)(uid_t));
+int gid_from_group(const char *, gid_t *);
+int pwcache_groupdb(int (*)(int), void (*)(void),
+		struct group * (*)(const char *), struct group * (*)(gid_t));
+#endif
 /* Make them use our version */
 #  define user_from_uid __nbcompat_user_from_uid
-#  define uid_from_user __nbcompat_uid_from_user
-#  define pwcache_userdb __nbcompat_pwcache_userdb
+/* Make them use our version */
 #  define group_from_gid __nbcompat_group_from_gid
-#  define gid_from_group __nbcompat_gid_from_group
-#  define pwcache_groupdb __nbcompat_pwcache_groupdb
-#endif
 
-#if !HAVE_DECL_UID_FROM_USER
-int uid_from_user(const char *, uid_t *);
-#endif
-
-#if !HAVE_DECL_USER_FROM_UID
-const char *user_from_uid(uid_t, int);
-#endif
-
-#if !HAVE_DECL_PWCACHE_USERDB
-int pwcache_userdb(int (*)(int), void (*)(void),
-                struct passwd * (*)(const char *), struct passwd * (*)(uid_t));
-#endif
-
-#if !HAVE_DECL_GID_FROM_GROUP
-int gid_from_group(const char *, gid_t *);
-#endif
-
-#if !HAVE_DECL_GROUP_FROM_GID
-const char *group_from_gid(gid_t, int);
-#endif
-
-#if !HAVE_DECL_PWCACHE_GROUPDB
-int pwcache_groupdb(int (*)(int), void (*)(void),
-    struct group * (*)(const char *), struct group * (*)(gid_t));
-#endif
-
-#if !HAVE_DECL_STRLCAT
-size_t		strlcat(char *, const char *, size_t);
-#endif
-#if !HAVE_DECL_STRLCPY
-size_t		strlcpy(char *, const char *, size_t);
-#endif
-#if !HAVE_DECL_STRNDUP
-char		*strndup(const char *, size_t);
-#endif
-#if !HAVE_DECL_STRNLEN
-size_t		strnlen(const char *, size_t);
-#endif
-#if !HAVE_DECL_STRCASECMP
-int		strcasecmp(const char *, const char *);
-#endif
-#if !HAVE_DECL_STRNCASECMP
-int		strncasecmp(const char *, const char *, size_t);
-#endif
-#if !HAVE_DECL_LCHFLAGS
-int		lchflags(const char *, unsigned long);
-#endif
-#if !HAVE_DECL_LCHMOD
-int		lchmod(const char *, mode_t);
-#endif
-#if !HAVE_DECL_LCHOWN
-int		lchown(const char *, uid_t, gid_t);
-#endif
-
-#if !HAVE_DECL_PWRITE
+#if !HAVE_PWRITE
 ssize_t pwrite(int, const void *, size_t, off_t);
 #endif
 
-#if !HAVE_RAISE_DEFAULT_SIGNAL
-int raise_default_signal(int);
-#endif
-
-#if !HAVE_DECL_REALLOCARR
-int reallocarr(void *, size_t, size_t);
-#endif
-
-#if !HAVE_DECL_REALLOCARRAY
-void *reallocarray(void *, size_t, size_t);
-#endif
-
-#if !HAVE_DECL_SETENV
+#if !HAVE_SETENV
 int setenv(const char *, const char *, int);
 #endif
 
@@ -572,71 +498,53 @@ int setgroupent(int);
 int setpassent(int);
 #endif
 
-#if !HAVE_DECL_GETPROGNAME
+#if !HAVE_SETPROGNAME || defined(__NetBSD__)
 const char *getprogname(void);
-#endif
-#if !HAVE_DECL_SETPROGNAME
 void setprogname(const char *);
 #endif
 
-#if !HAVE_SNPRINTB_M
-int snprintb(char *, size_t, const char *, uint64_t);
-int snprintb_m(char *, size_t, const char *, uint64_t, size_t);
-#endif
-
-#if !HAVE_DECL_SNPRINTF && !defined(snprintf)
+#if !HAVE_SNPRINTF
 int snprintf(char *, size_t, const char *, ...);
 #endif
 
-#if !HAVE_DECL_STRMODE
-void strmode(mode_t, char *);
+#if !HAVE_STRLCAT
+size_t strlcat(char *, const char *, size_t);
 #endif
 
-#if !HAVE_DECL_STRNDUP
-char *strndup(const char *, size_t);
+#if !HAVE_STRLCPY
+size_t strlcpy(char *, const char *, size_t);
 #endif
 
-#if !HAVE_DECL_STRSEP
+#if !HAVE_STRSEP || defined(__NetBSD__)
 char *strsep(char **, const char *);
 #endif
 
-#if !HAVE_DECL_STRSUFTOLL
+#if !HAVE_STRSUFTOLL
 long long strsuftoll(const char *, const char *, long long, long long);
-long long strsuftollx(const char *, const char *,
-			long long, long long, char *, size_t);
+long long strsuftollx(const char *, const char *, long long, long long, char *, size_t);
 #endif
 
-#if !HAVE_DECL_STRTOLL
+#if !HAVE_STRTOLL
 long long strtoll(const char *, char **, int);
 #endif
 
-#if !HAVE_DECL_STRTOI
-intmax_t strtoi(const char * __restrict, char ** __restrict, int,
-    intmax_t, intmax_t, int *);
-#endif
-
-#if !HAVE_DECL_STRTOU
-uintmax_t strtou(const char * __restrict, char ** __restrict, int,
-    uintmax_t, uintmax_t, int *);
-#endif
-
-#if !HAVE_DECL_USER_FROM_UID
+#if !HAVE_USER_FROM_UID
 const char *user_from_uid(uid_t, int);
 #endif
 
-#if !HAVE_DECL_GROUP_FROM_GID
+#if !HAVE_GROUP_FROM_GID
 const char *group_from_gid(gid_t, int);
 #endif
 
-#if !HAVE_DECL_VASPRINTF
+#if !HAVE_VASPRINTF
 int vasprintf(char **, const char *, va_list);
 #endif
 
-#if !HAVE_DECL_VASNPRINTF
+#if !HAVE_VASNPRINTF
 int vasnprintf(char **, size_t, const char *, va_list);
 #endif
 
-#if !HAVE_DECL_VSNPRINTF && !defined(vsnprintf)
+#if !HAVE_VSNPRINTF
 int vsnprintf(char *, size_t, const char *, va_list);
 #endif
 
@@ -697,272 +605,6 @@ void *setmode(const char *);
 #define O_CLOEXEC 0
 #endif
 
-/* <inttypes.h> */
-
-#if UCHAR_MAX == 0xffU			/* char is an 8-bit type */
-#ifndef PRId8
-#define PRId8 "hhd"
-#endif
-#ifndef PRIi8
-#define PRIi8 "hhi"
-#endif
-#ifndef PRIo8
-#define PRIo8 "hho"
-#endif
-#ifndef PRIu8
-#define PRIu8 "hhu"
-#endif
-#ifndef PRIx8
-#define PRIx8 "hhx"
-#endif
-#ifndef PRIX8
-#define PRIX8 "hhX"
-#endif
-#ifndef SCNd8
-#define SCNd8 "hhd"
-#endif
-#ifndef SCNi8
-#define SCNi8 "hhi"
-#endif
-#ifndef SCNo8
-#define SCNo8 "hho"
-#endif
-#ifndef SCNu8
-#define SCNu8 "hhu"
-#endif
-#ifndef SCNx8
-#define SCNx8 "hhx"
-#endif
-#ifndef SCNX8
-#define SCNX8 "hhX"
-#endif
-#endif					/* char is an 8-bit type */
-#if ! (defined(PRId8) && defined(PRIi8) && defined(PRIo8) && \
-	defined(PRIu8) && defined(PRIx8) && defined(PRIX8))
-#error "Don't know how to define PRI[diouxX]8"
-#endif
-#if ! (defined(SCNd8) && defined(SCNi8) && defined(SCNo8) && \
-	defined(SCNu8) && defined(SCNx8) && defined(SCNX8))
-#error "Don't know how to define SCN[diouxX]8"
-#endif
-
-#if USHRT_MAX == 0xffffU		/* short is a 16-bit type */
-#ifndef PRId16
-#define PRId16 "hd"
-#endif
-#ifndef PRIi16
-#define PRIi16 "hi"
-#endif
-#ifndef PRIo16
-#define PRIo16 "ho"
-#endif
-#ifndef PRIu16
-#define PRIu16 "hu"
-#endif
-#ifndef PRIx16
-#define PRIx16 "hx"
-#endif
-#ifndef PRIX16
-#define PRIX16 "hX"
-#endif
-#ifndef SCNd16
-#define SCNd16 "hd"
-#endif
-#ifndef SCNi16
-#define SCNi16 "hi"
-#endif
-#ifndef SCNo16
-#define SCNo16 "ho"
-#endif
-#ifndef SCNu16
-#define SCNu16 "hu"
-#endif
-#ifndef SCNx16
-#define SCNx16 "hx"
-#endif
-#ifndef SCNX16
-#define SCNX16 "hX"
-#endif
-#endif					/* short is a 16-bit type */
-#if ! (defined(PRId16) && defined(PRIi16) && defined(PRIo16) && \
-	defined(PRIu16) && defined(PRIx16) && defined(PRIX16))
-#error "Don't know how to define PRI[diouxX]16"
-#endif
-#if ! (defined(SCNd16) && defined(SCNi16) && defined(SCNo16) && \
-	defined(SCNu16) && defined(SCNx16) && defined(SCNX16))
-#error "Don't know how to define SCN[diouxX]16"
-#endif
-
-#if UINT_MAX == 0xffffffffU		/* int is a 32-bit type */
-#ifndef PRId32
-#define PRId32 "d"
-#endif
-#ifndef PRIi32
-#define PRIi32 "i"
-#endif
-#ifndef PRIo32
-#define PRIo32 "o"
-#endif
-#ifndef PRIu32
-#define PRIu32 "u"
-#endif
-#ifndef PRIx32
-#define PRIx32 "x"
-#endif
-#ifndef PRIX32
-#define PRIX32 "X"
-#endif
-#ifndef SCNd32
-#define SCNd32 "d"
-#endif
-#ifndef SCNi32
-#define SCNi32 "i"
-#endif
-#ifndef SCNo32
-#define SCNo32 "o"
-#endif
-#ifndef SCNu32
-#define SCNu32 "u"
-#endif
-#ifndef SCNx32
-#define SCNx32 "x"
-#endif
-#ifndef SCNX32
-#define SCNX32 "X"
-#endif
-#endif					/* int is a 32-bit type */
-#if ULONG_MAX == 0xffffffffU		/* long is a 32-bit type */
-#ifndef PRId32
-#define PRId32 "ld"
-#endif
-#ifndef PRIi32
-#define PRIi32 "li"
-#endif
-#ifndef PRIo32
-#define PRIo32 "lo"
-#endif
-#ifndef PRIu32
-#define PRIu32 "lu"
-#endif
-#ifndef PRIx32
-#define PRIx32 "lx"
-#endif
-#ifndef PRIX32
-#define PRIX32 "lX"
-#endif
-#ifndef SCNd32
-#define SCNd32 "ld"
-#endif
-#ifndef SCNi32
-#define SCNi32 "li"
-#endif
-#ifndef SCNo32
-#define SCNo32 "lo"
-#endif
-#ifndef SCNu32
-#define SCNu32 "lu"
-#endif
-#ifndef SCNx32
-#define SCNx32 "lx"
-#endif
-#ifndef SCNX32
-#define SCNX32 "lX"
-#endif
-#endif					/* long is a 32-bit type */
-#if ! (defined(PRId32) && defined(PRIi32) && defined(PRIo32) && \
-	defined(PRIu32) && defined(PRIx32) && defined(PRIX32))
-#error "Don't know how to define PRI[diouxX]32"
-#endif
-#if ! (defined(SCNd32) && defined(SCNi32) && defined(SCNo32) && \
-	defined(SCNu32) && defined(SCNx32) && defined(SCNX32))
-#error "Don't know how to define SCN[diouxX]32"
-#endif
-
-#if ULONG_MAX == 0xffffffffffffffffU	/* long is a 64-bit type */
-#ifndef PRId64
-#define PRId64 "ld"
-#endif
-#ifndef PRIi64
-#define PRIi64 "li"
-#endif
-#ifndef PRIo64
-#define PRIo64 "lo"
-#endif
-#ifndef PRIu64
-#define PRIu64 "lu"
-#endif
-#ifndef PRIx64
-#define PRIx64 "lx"
-#endif
-#ifndef PRIX64
-#define PRIX64 "lX"
-#endif
-#ifndef SCNd64
-#define SCNd64 "ld"
-#endif
-#ifndef SCNi64
-#define SCNi64 "li"
-#endif
-#ifndef SCNo64
-#define SCNo64 "lo"
-#endif
-#ifndef SCNu64
-#define SCNu64 "lu"
-#endif
-#ifndef SCNx64
-#define SCNx64 "lx"
-#endif
-#ifndef SCNX64
-#define SCNX64 "lX"
-#endif
-#endif					/* long is a 64-bit type */
-#if ULLONG_MAX == 0xffffffffffffffffU	/* long long is a 64-bit type */
-#ifndef PRId64
-#define PRId64 "lld"
-#endif
-#ifndef PRIi64
-#define PRIi64 "lli"
-#endif
-#ifndef PRIo64
-#define PRIo64 "llo"
-#endif
-#ifndef PRIu64
-#define PRIu64 "llu"
-#endif
-#ifndef PRIx64
-#define PRIx64 "llx"
-#endif
-#ifndef PRIX64
-#define PRIX64 "llX"
-#endif
-#ifndef SCNd64
-#define SCNd64 "lld"
-#endif
-#ifndef SCNi64
-#define SCNi64 "lli"
-#endif
-#ifndef SCNo64
-#define SCNo64 "llo"
-#endif
-#ifndef SCNu64
-#define SCNu64 "llu"
-#endif
-#ifndef SCNx64
-#define SCNx64 "llx"
-#endif
-#ifndef SCNX64
-#define SCNX64 "llX"
-#endif
-#endif					/* long long is a 64-bit type */
-#if ! (defined(PRId64) && defined(PRIi64) && defined(PRIo64) && \
-	defined(PRIu64) && defined(PRIx64) && defined(PRIX64))
-#error "Don't know how to define PRI[diouxX]64"
-#endif
-#if ! (defined(SCNd64) && defined(SCNi64) && defined(SCNo64) && \
-	defined(SCNu64) && defined(SCNx64) && defined(SCNX64))
-#error "Don't know how to define SCN[diouxX]64"
-#endif
-
 /* <limits.h> */
 
 #ifndef UID_MAX
@@ -1018,8 +660,11 @@ void *setmode(const char *);
 #ifndef _PATH_DEFTAPE
 #define _PATH_DEFTAPE "/dev/nrst0"
 #endif
-#ifndef _PATH_VI
-#define _PATH_VI "/usr/bin/vi"
+
+/* <stdarg.h> */
+
+#ifndef _BSD_VA_LIST_
+#define _BSD_VA_LIST_ va_list
 #endif
 
 /* <stdint.h> */
@@ -1207,10 +852,8 @@ __GEN_ENDIAN_DEC(64, le)
 
 #undef BIG_ENDIAN
 #undef LITTLE_ENDIAN
-#undef PDP_ENDIAN
 #define BIG_ENDIAN 4321
 #define LITTLE_ENDIAN 1234
-#define PDP_ENDIAN 3412
 
 #undef BYTE_ORDER
 #if WORDS_BIGENDIAN
@@ -1219,9 +862,9 @@ __GEN_ENDIAN_DEC(64, le)
 #define BYTE_ORDER LITTLE_ENDIAN
 #endif
 
-/* all references of DEV_BSIZE in tools are for NetBSD's file images */
-#undef DEV_BSIZE
+#ifndef DEV_BSIZE
 #define DEV_BSIZE (1 << 9)
+#endif
 
 #undef MIN
 #undef MAX
@@ -1236,9 +879,6 @@ __GEN_ENDIAN_DEC(64, le)
 #endif
 #ifndef MAXPHYS
 #define MAXPHYS (64 * 1024)
-#endif
-#ifndef MAXHOSTNAMELEN
-#define MAXHOSTNAMELEN	256
 #endif
 
 /* XXX needed by makefs; this should be done in a better way */
@@ -1264,7 +904,7 @@ __GEN_ENDIAN_DEC(64, le)
 /* <sys/stat.h> */
 
 #ifndef ALLPERMS
-#define ALLPERMS (S_ISUID|S_ISGID|S_ISTXT|S_IRWXU|S_IRWXG|S_IRWXO)
+#define ALLPERMS 	(S_ISUID|S_ISGID|S_ISTXT|S_IRWXU|S_IRWXG|S_IRWXO)
 #endif
 #ifndef DEFFILEMODE
 #define DEFFILEMODE (S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)
@@ -1342,9 +982,9 @@ __GEN_ENDIAN_DEC(64, le)
 #ifdef makedev
 #undef makedev
 #endif
-#define makedev(x,y)    ((dev_t)((((x) <<  8) & 0x000fff00) | 	\
-						(((y) << 12) & 0xfff00000) | 			\
-						(((y) <<  0) & 0x000000ff)))
+#define makedev(x,y)    ((dev_t)((((x) <<  8) & 0x000fff00) | \
+			(((y) << 12) & 0xfff00000) | \
+			(((y) <<  0) & 0x000000ff)))
 #ifndef NBBY
 #define NBBY 8
 #endif
@@ -1359,8 +999,9 @@ __GEN_ENDIAN_DEC(64, le)
 
 /* Has quad_t but these prototypes don't get pulled into scope. w/o we lose */
 #ifdef __NetBSD__
-quad_t   strtoq(const char *, char **, int);
-u_quad_t strtouq(const char *, char **, int);
+quad_t   strtoq __P((const char *, char **, int));
+u_quad_t strtouq __P((const char *, char **, int));
 #endif
+
 
 #endif	/* !__NETBSD_COMPAT_DEFS_H__ */
