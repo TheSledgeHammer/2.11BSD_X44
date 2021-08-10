@@ -45,9 +45,7 @@
 #include <sys/queue.h>
 #include <sys/lock.h>
 #include <sys/user.h>
-
-#include <devel/sys/bitmap.h>
-#include <devel/sys/malloctypes.h>
+#include <sys/bitmap.h>
 
 #define BITHASH_MASK 256
 struct bitlist       bitset[BITHASH_MASK];

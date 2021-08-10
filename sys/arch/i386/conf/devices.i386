@@ -42,7 +42,7 @@ defpseudo cmos
 file	arch/i386/isa/cmos.c				cmos 						needs-flag
 
 # MP configuration using Intel SMP specification 1.4
-file 	arch/i386/i386/mpbios.c			   mpbios
+file 	arch/i386/i386/mpbios.c			   mpbios   
 
 # PCI-only drivers
 file	arch/i386/pci/pci_machdep.c	    	pci

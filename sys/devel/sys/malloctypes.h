@@ -57,12 +57,9 @@
 #define M_VMSLAB		87 	/* VM slab structures */
 #define M_ADVVM			88 	/* AdvVM structures structures */
 #define M_UFS211		89	/* UFS211 bufmap structure */
-#define M_PERCPU		90	/* percpu structure */
-#define M_TOPO			91	/* cpu topology structure */
 
 #define M_MPX			92	/* multiplexor structure */
 #define M_VMPSEG		93	/* pseudo-segment structure */
-#define M_BITMAP	 	94  /* bitmap structure */
 
 /* Overlay Malloc */
 #define overlay_malloc(size, type, flags) 				\

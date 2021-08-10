@@ -1,6 +1,6 @@
 # include	"../ingres.h"
 # include	"../access.h"
-# include	"../aux.h"
+# include	"../_aux.h"
 # include	"../lock.h"
 # include	"../unix.h"
 

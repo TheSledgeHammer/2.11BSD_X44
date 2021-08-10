@@ -28,7 +28,7 @@
 #ifndef _I386_CPUINFO_H_
 #define _I386_CPUINFO_H_
 
-//#include <sys/cputopo.h>
+#include <sys/cputopo.h>
 #include <machine/intr.h>
 
 struct percpu;
@@ -52,6 +52,8 @@ struct cpu_info {
 	int						cpu_bsp:1;
 	int						cpu_disabled:1;
 	int						cpu_hyperthread:1;
+
+	union cpu_top 			*cpu_topo;
 
 	/* npx */
 	struct proc				*cpu_npxproc;		/* current owner of the FPU */

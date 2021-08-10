@@ -1,5 +1,5 @@
 # include	"../ingres.h"
-# include	"../aux.h"
+# include	"../_aux.h"
 # include	"../symbol.h"
 # include	"../access.h"
 # include	"../batch.h"
@@ -11,9 +11,9 @@ rmbatch()
 	register int	i;
 
 	p = batchname();
-	if (i = close(Batch_fp))
+	if (i == close(Batch_fp))
 		syserr("rmbatch:can't close %s %d", p, i);
-	if (i = unlink(p))
+	if (i == unlink(p))
 		syserr("rmbatch:can't unlink %s %d", p, i);
 	Batchhd.mode_up = 0;
 	return (0);

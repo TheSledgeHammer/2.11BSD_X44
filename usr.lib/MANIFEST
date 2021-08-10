@@ -4,18 +4,20 @@ lib2648/		UNIMPLEMENTED
 libF77/			UNIMPLEMENTED
 libI77/			UNIMPLEMENTED
 libU77/			UNIMPLEMENTED
-libcurses/		UNIMPLEMENTED
-libdbm/			4.3
+libcurses/		4.4BSD-Lite2
+libdbm/			4.3BSD
 libg/			UNIMPLEMENTED (4.3 should be ported)
 libln/			UNIMPLEMENTED
 libm/			UNIMPLEMENTED  4.3 (no attempt made to convert yet - won't run on a PDP11)
-libmp/			4.3
+libmp/			4.3BSD
 libpc/			UNIMPLEMENTED
-libom/			4.3  (used for both libom.a and libm.a)
+libom/			4.3BSD  (used for both libom.a and libm.a)
 libplot/		UNIMPLEMENTED
-libterminfo/	NetBSD
-libutil/		4.4
-liby/			4.3
+libterminfo/	4.4BSD-Lite2
+libutil/		4.4BSD-Lite2
+libvmf			4.3BSD
+liby/			4.3BSD
+libz/			NetBSD
 
 Notes
 -----

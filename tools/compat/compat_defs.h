@@ -344,17 +344,17 @@ void vwarnx(const char *, va_list);
 #endif
 
 #if !HAVE_ESETFUNC
-void (*esetfunc(void (*)(int, const char *, ...)))(int, const char *, ...);
-size_t estrlcpy(char *, const char *, size_t);
-size_t estrlcat(char *, const char *, size_t);
-char *estrdup(const char *);
-char *estrndup(const char *, size_t);
-void *ecalloc(size_t, size_t);
-void *emalloc(size_t);
-void *erealloc(void *, size_t);
-FILE *efopen(const char *, const char *);
-int easprintf(char **, const char *, ...);
-int evasprintf(char **, const char *, va_list);
+void 	(*esetfunc(void (*)(int, const char *, ...)))(int, const char *, ...);
+size_t 	estrlcpy(char *, const char *, size_t);
+size_t 	estrlcat(char *, const char *, size_t);
+char 	*estrdup(const char *);
+char 	*estrndup(const char *, size_t);
+void 	*ecalloc(size_t, size_t);
+void 	*emalloc(size_t);
+void 	*erealloc(void *, size_t);
+FILE 	*efopen(const char *, const char *);
+int 	easprintf(char **, const char *, ...);
+int 	evasprintf(char **, const char *, va_list);
 #endif
 
 #if !HAVE_DECL_FGETLN
@@ -699,15 +699,15 @@ char *alloca ();
 #define cgetustr __nbcompat_cgetustr
 
 char	*cgetcap(char *, const char *, int);
-int	 cgetclose(void);
-int	 cgetent(char **, const char * const *, const char *);
-int	 cgetfirst(char **, const char * const *);
-int	 cgetmatch(const char *, const char *);
-int	 cgetnext(char **, const char * const *);
-int	 cgetnum(char *, const char *, long *);
-int	 cgetset(const char *);
-int	 cgetstr(char *, const char *, char **);
-int	 cgetustr(char *, const char *, char **);
+int	 	cgetclose(void);
+int	 	cgetent(char **, char **, const char *);
+int	 	cgetfirst(char **, char **);
+int	 	cgetmatch(const char *, const char *);
+int	 	cgetnext(char **, char **);
+int	 	cgetnum(char *, const char *, long *);
+int	 	cgetset(const char *);
+int	 	cgetstr(char *, const char *, char **);
+int	 	cgetustr(char *, const char *, char **);
 
 /* <sys/endian.h> */
 

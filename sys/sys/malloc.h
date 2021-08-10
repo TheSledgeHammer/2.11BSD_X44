@@ -124,8 +124,11 @@
 #define M_USB			72	/* USB general */
 #define	M_TTY			73	/* allocated tty structures */
 #define M_KEVENT 		74	/* kevents/knotes */
-#define	M_TEMP			75	/* misc temporary data buffers */
-#define	M_LAST			76	/* Must be last type + 1 */
+#define M_TOPO			75	/* cpu topology structure */
+#define M_BITMAP		76	/* bitmap structure */
+#define M_PERCPU		77	/* percpu structure */
+#define	M_TEMP			78	/* misc temporary data buffers */
+#define	M_LAST			79	/* Must be last type + 1 */
 
 #define INITKMEMNAMES {						\
 	"free",			/* 0 M_FREE */ 			\
@@ -203,7 +206,10 @@
 	"usb",			/* 72 M_USB */			\
 	"tty",			/* 73 M_TTY */			\
 	"kevent",		/* 74 M_KEVENT */		\
-	"temp",			/* 75 M_TEMP */ 		\
+	"cpu topo",		/* 75 M_TOPO */			\
+	"bitmap",		/* 76 M_BITMAP */		\
+	"percpu",		/* 77 M_PERCPU */		\
+	"temp",			/* 78 M_TEMP */ 		\
 }
 
 struct kmemstats {

@@ -171,8 +171,18 @@ softintr(mask)
 #define	setsoftnet()	softintr(SIR_NET)
 #define	setsoftserial()	softintr(SIR_SERIAL)
 
+#define I386_IPI_HALT		0x00000001
+#define I386_IPI_MICROSET	0x00000002
+#define I386_IPI_FLUSH_FPU	0x00000004
+#define I386_IPI_SYNCH_FPU	0x00000008
+#define I386_IPI_TLB		0x00000010
+#define I386_IPI_MTRR		0x00000020
+#define I386_IPI_GDT		0x00000040
+
 int 	i386_send_ipi(struct cpu_info *, int);
+void	i386_self_ipi(int);
 void 	i386_broadcast_ipi(int);
+void 	i386_multicast_ipi(int);
 void 	i386_ipi_handler(void);
 
 #endif /* !_LOCORE */

@@ -38,8 +38,8 @@
 #include <sys/user.h>
 #include <sys/threadpool.h>
 #include <sys/kthread.h>
-#include <sys/percpu.h>
 #include <sys/malloctypes.h>
+#include "../../sys/percpu.h"
 
 struct kthreadpool_thread 				ktpool_thread;
 struct lock	 							*kthreadpools_lock;

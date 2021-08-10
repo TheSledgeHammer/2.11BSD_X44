@@ -29,12 +29,12 @@
  * $FreeBSD$
  */
 
-#include <machine/asm.h>					/* miscellaneous asm macros */
-#include <devel/arch/i386/apic/ioapicreg.h>
-#include <devel/arch/i386/apic/lapicreg.h>
-#include <machine/specialreg.h>
+#include "assym.h"
 
-//#include "assym.inc"
+#include <machine/asm.h>					/* miscellaneous asm macros */
+#include <machine/apic/ioapicreg.h>
+#include <machine/apic/lapicreg.h>
+#include <machine/specialreg.h>
 
 /*
  * this code MUST be enabled here and in mp_machdep.c

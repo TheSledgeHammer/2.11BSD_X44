@@ -126,7 +126,6 @@
 #include <machine/apic/ioapicvar.h>
 #include <machine/apic/lapicreg.h>
 #include <machine/apic/lapicvar.h>
-
 #include <machine/mpbiosvar.h>
 
 #include <dev/core/isa/isareg.h>

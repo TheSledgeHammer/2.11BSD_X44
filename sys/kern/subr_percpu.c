@@ -47,13 +47,10 @@
 #include <sys/malloc.h>
 #include <sys/user.h>
 #include <sys/extent.h>
+#include <sys/percpu.h>
 
 #include <machine/param.h>
-
-#include <devel/sys/percpu.h>
-#include <devel/sys/malloctypes.h>
-
-#include <devel/arch/i386/include/cpu.h>
+#include <machine/cpu.h>
 
 struct percpu *cpuid_to_percpu[NCPUS];
 struct cpuhead cpuhead = LIST_HEAD_INITIALIZER(cpuhead);
@@ -75,7 +72,7 @@ percpu_init(pc, ci, size)
 	pc->pc_cpumask = cpu_cpumask(ci);
 	cpuid_to_percpu[ci->cpu_cpuid] = pc;
 	LIST_INSERT_HEAD(&cpuhead, pc, pc_entry);
-	pc->pc_acpi_id = cpu_acpi_id(ci);
+	//pc->pc_acpi_id = cpu_acpi_id(ci);
 	pc->pc_offset = percpu_offset_cpu(cpu_cpuid(ci));
 }
 

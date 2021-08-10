@@ -41,8 +41,6 @@
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_extern.h>
 
-#include <devel/sys/percpu.h>
-
 #include <arch/i386/include/cputypes.h>
 #include <arch/i386/include/pcb.h>
 #include <arch/i386/include/psl.h>
@@ -55,6 +53,7 @@
 #include <devel/arch/i386/include/smp.h>
 #include <arch/i386/include/cpu.h>
 #include <devel/arch/i386/include/percpu.h>
+#include "../../../../sys/percpu.h"
 
 /* TODO:
  * modify: smp_tlb_shootdown & smp_targeted_tlb_shootdown

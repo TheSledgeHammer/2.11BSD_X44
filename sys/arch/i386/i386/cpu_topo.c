@@ -31,20 +31,16 @@
 #include <sys/bus.h>
 #include <sys/malloc.h>
 #include <sys/memrange.h>
+#include <sys/cputopo.h>
 
 #include <vm/include/vm_param.h>
 
-#include <arch/i386/include/cpu.h>
-#include <arch/i386/include/cputypes.h>
-#include <arch/i386/include/param.h>
-#include <arch/i386/include/specialreg.h>
-#include <arch/i386/include/vmparam.h>
-
-#include <devel/sys/smp.h>
-#include <devel/sys/cputopo.h>
-
-#include <devel/arch/i386/include/percpu.h>
-
+#include <machine/cpu.h>
+#include <machine/cputypes.h>
+#include <machinee/param.h>
+#include <machine/specialreg.h>
+#include <machine/vmparam.h>
+#include <machine/percpu.h>
 
 /* lock region used by kernel profiling */
 int	mcount_lock;
@@ -593,7 +589,7 @@ cpu_mp_announce(void)
 	const char *hyperthread;
 	struct topo_analysis topology;
 
-	printf("FreeBSD/SMP: ");
+	printf("211BSD/SMP: ");
 	if (topo_analyze(&topo_root, 1, &topology)) {
 		printf("%d package(s)", topology.entities[TOPO_LEVEL_PKG]);
 		if (topology.entities[TOPO_LEVEL_GROUP] > 1)
@@ -612,7 +608,7 @@ cpu_mp_announce(void)
 	printf("\n");
 
 	if (disabled_cpus) {
-		printf("FreeBSD/SMP Online: ");
+		printf("211BSD/SMP Online: ");
 		if (topo_analyze(&topo_root, 0, &topology)) {
 			printf("%d package(s)", topology.entities[TOPO_LEVEL_PKG]);
 			if (topology.entities[TOPO_LEVEL_GROUP] > 1)
@@ -664,7 +660,7 @@ cpu_mp_announce(void)
 	}
 }
 
-static void
+void
 cpu_alloc(ci)
 	struct cpu_info *ci;
 {
@@ -702,26 +698,42 @@ cpu_add(u_int apic_id, char boot_cpu)
 void
 cpu_mp_setmaxid(void)
 {
-
 	/*
 	 * mp_ncpus and mp_maxid should be already set by calls to cpu_add().
 	 * If there were no calls to cpu_add() assume this is a UP system.
 	 */
-	if (mp_ncpus == 0) {
-		mp_ncpus = 1;
-	}
+	mp_maxid = NCPUS - 1;
 }
 
 int
 cpu_mp_probe(void)
 {
-
 	/*
 	 * Always record BSP in CPU map so that the mbuf init code works
 	 * correctly.
 	 */
-	CPU_SETOF(0, &all_cpus);
-	return (mp_ncpus > 1);
+	all_cpus = 1;
+	if (mp_ncpus == 0) {
+		/*
+		 * No CPUs were found, so this must be a UP system.  Setup
+		 * the variables to represent a system with a single CPU
+		 * with an id of 0.
+		 */
+		mp_ncpus = 1;
+		return (0);
+	}
+
+	/* At least one CPU was found. */
+	if (mp_ncpus == 1) {
+		/*
+		 * One CPU was found, so this must be a UP system with
+		 * an I/O APIC.
+		 */
+		return (0);
+	}
+
+	/* At least two CPUs were found. */
+	return (1);
 }
 
 /* Allocate memory for the AP trampoline. */
@@ -814,9 +826,9 @@ init_secondary_tail(pc)
 		printf("%s%d%s", smp_cpus == 2 ? "Launching APs: " : "", cpuid, smp_cpus == mp_ncpus ? "\n" : " ");
 	}
 
-	/* Determine if we are a logical CPU. */
+	/* Determine if we are a hyperthread. */
 	if (cpu_info[PERCPU_GET(pc, apic_id)].cpu_hyperthread) {
-		CPU_SET(&logical_cpus_mask, cpuid);
+		CPU_SET(cpu_info[PERCPU_GET(pc, apic_id)].cpu_topo, cpuid);
 	}
 
 	if (bootverbose)
@@ -895,5 +907,5 @@ intr_add_cpu(u_int cpu)
 	if (bootverbose) {
 		printf("INTR: Adding local APIC %d as a target\n", cpu_apic_ids[cpu]);
 	}
-	CPU_SET(cpu_info[cpu].cpu_cpuset, cpu);
+	CPU_SET(cpu_info[cpu].cpu_topo, cpu);
 }

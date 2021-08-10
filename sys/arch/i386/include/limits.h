@@ -68,6 +68,12 @@
 #define	LONG_MAX	2147483647L					/* max value for a long */
 #define	LONG_MIN	(-2147483647L-1L)			/* min value for a long */
 
+#if defined(_ISOC99_SOURCE) || (__STDC_VERSION__ - 0) >= 199901L
+#define	ULLONG_MAX	0xffffffffffffffffULL		/* max unsigned long long */
+#define	LLONG_MAX	0x7fffffffffffffffLL		/* max signed long long */
+#define	LLONG_MIN	(-0x7fffffffffffffffLL-1) 	/* min signed long long */
+#endif
+
 #if !defined(_ANSI_SOURCE)
 #define	SSIZE_MAX	INT_MAX						/* max value for a ssize_t */
 

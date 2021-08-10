@@ -77,16 +77,22 @@
  *	and to when physical maps must be made correct.
  */
 
+#include <sys/cdefs.h>
+
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/malloc.h>
 #include <sys/msgbuf.h>
-
+#include <sys/memrange.h>
+#include <sys/sysctl.h>
+#include <sys/cputopo.h>
 #include <vm/include/vm.h>
 #include <vm/include/vm_param.h>
 
 #include <machine/param.h>
+#include <machine/cpu.h>
+#include <machine/atomic.h>
 #include <machine/specialreg.h>
 #include <machine/vmparam.h>
 #include <machine/pte.h>
@@ -148,6 +154,35 @@ int pmapvacflush = 0;
 #define	PVF_PROTECT	0x04
 #define	PVF_TOTAL	0x80
 #endif
+
+struct pmap_tlb_shootdown_job {
+	TAILQ_ENTRY(pmap_tlb_shootdown_job) 	pj_list;
+	vm_offset_t 							pj_va;			/* virtual address */
+	vm_offset_t 							pj_sva;			/* virtual address start */
+	vm_offset_t 							pj_eva;			/* virtual address end */
+ // pt_entry_t 								pj_pte;			/* the PTE bits */
+	pmap_t 									pj_pmap;		/* the pmap which maps the address */
+	struct pmap_tlb_shootdown_job 			*pj_nextfree;
+};
+
+#define PMAP_TLB_SHOOTDOWN_JOB_ALIGN 32
+union pmap_tlb_shootdown_job_al {
+	struct pmap_tlb_shootdown_job 			pja_job;
+	char 									pja_align[PMAP_TLB_SHOOTDOWN_JOB_ALIGN];
+};
+
+struct pmap_tlb_shootdown_q {
+	TAILQ_HEAD(, pmap_tlb_shootdown_job) 	pq_head;
+//	int 									pq_pte;			/* aggregate PTE bits */
+	int 									pq_count;		/* number of pending requests */
+	struct lock_object						pq_slock;		/* spin lock on queue */
+	int 									pq_flush;		/* pending flush */
+} pmap_tlb_shootdown_q[NCPUS];
+
+#define	PMAP_TLB_MAXJOBS					16
+
+struct lock_object 				pmap_tlb_shootdown_job_lock;
+union pmap_tlb_shootdown_job_al *pj_page, *pj_free;
 
 #define SYSTEM 				0xFE000000					/* virtual address of system start */
 #define SYSPDROFF 			0x3F8						/* Page dir index of System Base (i.e. KPTDI_FIRST) */
@@ -2088,53 +2123,539 @@ pmap_bios16_leave(void *arg)
 	free(h->pte, M_TEMP); /* ... and free it */
 }
 
-/* PMap Arguments */
+#ifdef SMP
+/*
+ * For SMP, these functions have to use the IPI mechanism for coherence.
+ */
+__inline void
+pmap_invalidate_page(pmap, va)
+	pmap_t pmap;
+	vm_offset_t va;
+{
+	u_int cpumask;
+	u_int other_cpus;
+
+	if (smp_started) {
+		if (!(read_eflags() & PSL_I)) {
+			panic("%s: interrupts disabled", __func__);
+		}
+		simple_lock(&smp_tlb_lock);
+	}
+
+	/*
+	 * We need to disable interrupt preemption but MUST NOT have
+	 * interrupts disabled here.
+	 * XXX we may need to hold schedlock to get a coherent pm_active
+	 * XXX critical sections disable interrupts again
+	 */
+	if (pmap == kernel_pmap || pmap->pm_active == all_cpus) {
+		invlpg(va);
+	} else {
+		cpumask = PERCPU_GET(cpumask);
+		other_cpus = PERCPU_GET(other_cpus);
+		if (pmap->pm_active & cpumask) {
+			invlpg(va);
+		}
+		if (pmap->pm_active & other_cpus) {
+			smp_masked_invlpg(pmap->pm_active & other_cpus, va);
+		}
+	}
+	if (smp_started) {
+		simple_unlock(&smp_tlb_lock);
+	}
+}
+
+__inline void
+pmap_invalidate_range(pmap, sva, eva)
+	pmap_t pmap;
+	vm_offset_t sva, eva;
+{
+	u_int cpumask;
+	u_int other_cpus;
+	vm_offset_t addr;
+
+	if (smp_started) {
+		if (!(read_eflags() & PSL_I)) {
+			panic("%s: interrupts disabled", __func__);
+		}
+		simple_lock(&smp_tlb_lock);
+	}
+
+	/*
+	 * We need to disable interrupt preemption but MUST NOT have
+	 * interrupts disabled here.
+	 * XXX we may need to hold schedlock to get a coherent pm_active
+	 * XXX critical sections disable interrupts again
+	 */
+	if (pmap == kernel_pmap || pmap->pm_active == all_cpus) {
+		for (addr = sva; addr < eva; addr += PAGE_SIZE) {
+			invlpg(addr);
+		}
+	} else {
+		cpumask = PERCPU_GET(cpumask);
+		other_cpus = PERCPU_GET(other_cpus);
+		if (pmap->pm_active & cpumask) {
+			for (addr = sva; addr < eva; addr += PAGE_SIZE) {
+				invlpg(addr);
+			}
+		}
+		if (pmap->pm_active & other_cpus) {
+			smp_masked_invlpg_range(pmap->pm_active & other_cpus, sva, eva);
+		}
+	}
+	if (smp_started) {
+		simple_unlock(&smp_tlb_lock);
+	}
+}
+
+__inline void
+pmap_invalidate_all(pmap)
+	pmap_t pmap;
+{
+	u_int cpumask;
+	u_int other_cpus;
+
+	if (smp_started) {
+		if (!(read_eflags() & PSL_I)) {
+			panic("%s: interrupts disabled", __func__);
+		}
+		simple_lock(&smp_tlb_lock);
+	}
+
+	/*
+	 * We need to disable interrupt preemption but MUST NOT have
+	 * interrupts disabled here.
+	 * XXX we may need to hold schedlock to get a coherent pm_active
+	 * XXX critical sections disable interrupts again
+	 */
+	if (pmap == kernel_pmap || pmap->pm_active == all_cpus) {
+		invltlb();
+	} else {
+		cpumask = PERCPU_GET(cpumask);
+		other_cpus = PERCPU_GET(other_cpus);
+		if (pmap->pm_active & cpumask) {
+			invltlb();
+		}
+		if (pmap->pm_active & other_cpus) {
+			smp_masked_invltlb(pmap->pm_active & other_cpus);
+		}
+	}
+	if (smp_started) {
+		simple_unlock(&smp_tlb_lock);
+	}
+}
+#else /* !SMP */
+
+/*
+ * Normal, non-SMP, 486+ invalidation functions.
+ * We inline these within pmap.c for speed.
+ */
+__inline void
+pmap_invalidate_page(pmap, va)
+	pmap_t pmap;
+	vm_offset_t va;
+{
+	if (pmap == kernel_pmap || pmap->pm_active) {
+		invlpg(va);
+	}
+}
+
+__inline void
+pmap_invalidate_range(pmap, sva, eva)
+	pmap_t pmap;
+	vm_offset_t sva, eva;
+{
+	vm_offset_t addr;
+
+	if (pmap == kernel_pmap || pmap->pm_active) {
+		for (addr = sva; addr < eva; addr += PAGE_SIZE) {
+			invlpg(addr);
+		}
+	}
+}
+
+__inline void
+pmap_invalidate_all(pmap)
+	pmap_t pmap;
+{
+	if (pmap == kernel_pmap || pmap->pm_active) {
+		invltlb();
+	}
+}
+#endif /* !SMP */
+
+/******************** TLB shootdown code ********************/
+
+/*
+ * TLB Shootdown:
+ *
+ * When a mapping is changed in a pmap, the TLB entry corresponding to
+ * the virtual address must be invalidated on all processors.  In order
+ * to accomplish this on systems with multiple processors, messages are
+ * sent from the processor which performs the mapping change to all
+ * processors on which the pmap is active.  For other processors, the
+ * ASN generation numbers for that processor is invalidated, so that
+ * the next time the pmap is activated on that processor, a new ASN
+ * will be allocated (which implicitly invalidates all TLB entries).
+ *
+ * Shootdown job queue entries are allocated using a simple special-
+ * purpose allocator for speed.
+ */
+
+void
+pmap_init()
+{
+	int i;
+	pj_page = (void *)kmem_alloc(kernel_map, PAGE_SIZE);
+	if (pj_page == NULL) {
+		panic("pmap_init: pj_page");
+	}
+	for (i = 0; i < (PAGE_SIZE / sizeof (union pmap_tlb_shootdown_job_al) - 1); i++) {
+		pj_page[i].pja_job.pj_nextfree = &pj_page[i + 1].pja_job;
+	}
+	pj_page[i].pja_job.pj_nextfree = NULL;
+	pj_free = &pj_page[0];
+}
+
+/*
+ * Initialize the TLB shootdown queues.
+ */
+void
+pmap_tlb_init()
+{
+	simple_lock_init(&pmap_tlb_shootdown_job_lock, "pmap_tlb_shootdown_job_lock");
+	for (i = 0; i < NCPUS; i++) {
+		TAILQ_INIT(&pmap_tlb_shootdown_q[i].pq_head);
+		simple_lock_init(&pmap_tlb_shootdown_q[i].pq_slock, "pmap_tlb_shootdown_lock");
+	}
+}
+
+void
+pmap_tlb_shootnow(pmap, cpumask)
+	pmap_t 	pmap;
+	int32_t cpumask;
+{
+	struct cpu_info *self;
+#ifdef SMP
+	struct cpu_info *ci;
+	CPU_INFO_ITERATOR cii;
+	int s;
+#endif
+#ifdef DIAGNOSTIC
+	int count = 0;
+#endif
+
+	if (cpumask == 0) {
+		return;
+	}
+
+	self = curcpu();
+#ifdef SMP
+	s = splipi();
+	self->cpu_tlb_ipi_mask = cpumask;
+#endif
+	pmap_do_tlb_shootdown(pmap, self);
+
+#ifdef SMP
+	splx(s);
+
+	/*
+	 * Send the TLB IPI to other CPUs pending shootdowns.
+	 */
+	for (CPU_INFO_FOREACH(cii, ci)) {
+		if (ci == self)
+			continue;
+		if (cpumask & (1U << ci->cpu_cpuid)) {
+			if (i386_send_ipi(ci, I386_IPI_TLB) != 0) {
+				i386_atomic_clearbits_l(&self->cpu_tlb_ipi_mask, (1U << ci->cpu_cpuid));
+			}
+		}
+	}
+	while (self->cpu_tlb_ipi_mask != 0) {
+#ifdef DIAGNOSTIC
+		if (count++ > 10000000) {
+			panic("TLB IPI rendezvous failed (mask %x)", self->cpu_tlb_ipi_mask);
+		}
+#endif
+		ia32_pause();
+	}
+#endif
+}
+
+/*
+ * pmap_tlb_shootdown:
+ *
+ *	Cause the TLB entry for pmap/va to be shot down.
+ */
+void
+pmap_tlb_shootdown(pmap, addr1, addr2, mask)
+	pmap_t 		pmap;
+	vm_offset_t addr1, addr2;
+	int32_t 	*mask;
+{
+	struct cpu_info *ci, *self;
+	struct pmap_tlb_shootdown_q *pq;
+	struct pmap_tlb_shootdown_job *pj;
+	CPU_INFO_ITERATOR cii;
+	int s;
+
+
+	if (pmap_initialized == FALSE /*|| cpus_attached == 0*/) {
+		invlpg(addr1);
+		return;
+	}
+
+	self = curcpu();
+
+	s = splipi();
+
+#if 0
+	printf("dshootdown %lx\n", addr1);
+#endif
+
+	for (CPU_INFO_FOREACH(cii, ci)) {
+		if (pmap == kernel_pmap || pmap->pm_active) {
+			continue;
+		}
+		if (ci != self && !(ci->cpu_flags & CPUF_RUNNING)) {
+			continue;
+		}
+
+		pq = &pmap_tlb_shootdown_q[ci->cpu_cpuid];
+		simple_lock(&pq->pq_slock);
+
+		/*
+		 * If there's a global flush already queued, or a
+		 * non-global flush, and this pte doesn't have the G
+		 * bit set, don't bother.
+		 */
+		if (pq->pq_flush > 0) {
+			simple_unlock(&pq->pq_slock);
+			continue;
+		}
+#ifdef I386_CPU
+		if (cpu_class == CPUCLASS_386) {
+			pq->pq_flush++;
+			*mask |= 1U << ci->ci_cpuid;
+			simple_unlock(&pq->pq_slock);
+			continue;
+		}
+#endif
+		pj = pmap_tlb_shootdown_job_get(pq);
+		//pq->pq_pte |= pte;
+		if (pj == NULL) {
+			/*
+			* Couldn't allocate a job entry.
+ 			* Kill it now for this CPU, unless the failure
+ 			* was due to too many pending flushes; otherwise,
+ 			* tell other cpus to kill everything..
+ 			*/
+			if (ci == self && pq->pq_count < PMAP_TLB_MAXJOBS) {
+				invlpg(addr1);
+				simple_unlock(&pq->pq_slock);
+				continue;
+			} else {
+				pmap_tlb_shootdown_q_drain(pq);
+				*mask |= 1U << ci->cpu_cpuid;
+			}
+		} else {
+			pj->pj_pmap = pmap;
+			pj->pj_sva = addr1;
+			pj->pj_eva = addr2;
+			//pj->pj_pte = pte;
+			TAILQ_INSERT_TAIL(&pq->pq_head, pj, pj_list);
+			*mask |= 1U << ci->cpu_cpuid;
+		}
+		simple_unlock(&pq->pq_slock);
+	}
+	splx(s);
+}
+
+/*
+ * pmap_do_tlb_shootdown:
+ *
+ *	Process pending TLB shootdown operations for this processor.
+ */
+void
+pmap_do_tlb_shootdown(pmap, self)
+	pmap_t pmap;
+	struct cpu_info *self;
+{
+	u_long cpu_id = self->cpu_cpuid;
+	struct pmap_tlb_shootdown_q *pq = &pmap_tlb_shootdown_q[cpu_id];
+	struct pmap_tlb_shootdown_job *pj;
+	int s;
+#ifdef SMP
+	struct cpu_info *ci;
+	CPU_INFO_ITERATOR cii;
+#endif
+
+	KASSERT(self == curcpu());
+
+	s = splipi();
+
+	simple_lock(&pq->pq_slock);
+	if (pq->pq_flush) {
+		tlbflush();
+		pq->pq_flush = 0;
+		pmap_tlb_shootdown_q_drain(pq);
+	} else {
+		if (pq->pq_flush) {
+			tlbflush();
+		}
+		while ((pj = TAILQ_FIRST(&pq->pq_head)) != NULL) {
+			TAILQ_REMOVE(&pq->pq_head, pj, pj_list);
+			if (/*(pj->pj_pte & pmap_pg_g) || */ pj->pj_pmap == kernel_pmap || pj->pj_pmap == pmap) {
+				invlpg(pj->pj_va);
+			}
+			pmap_tlb_shootdown_job_put(pq, pj);
+		}
+		pq->pq_flush /*= pq->pq_pte*/ = 0;
+	}
+#ifdef SMP
+	for (CPU_INFO_FOREACH(cii, ci)) {
+		i386_atomic_clearbits_l(&ci->cpu_tlb_ipi_mask, (1U << cpu_id));
+	}
+#endif
+	simple_unlock(&pq->pq_slock);
+
+	splx(s);
+}
+
+/*s
+ * pmap_tlb_shootdown_q_drain:
+ *
+ *	Drain a processor's TLB shootdown queue.  We do not perform
+ *	the shootdown operations.  This is merely a convenience
+ *	function.
+ *
+ *	Note: We expect the queue to be locked.
+ */
+void
+pmap_tlb_shootdown_q_drain(pq)
+	struct pmap_tlb_shootdown_q *pq;
+{
+	struct pmap_tlb_shootdown_job *pj;
+
+	while ((pj = TAILQ_FIRST(&pq->pq_head)) != NULL) {
+		TAILQ_REMOVE(&pq->pq_head, pj, pj_list);
+		pmap_tlb_shootdown_job_put(pq, pj);
+	}
+}
+
+/*
+ * pmap_tlb_shootdown_job_get:
+ *
+ *	Get a TLB shootdown job queue entry.  This places a limit on
+ *	the number of outstanding jobs a processor may have.
+ *
+ *	Note: We expect the queue to be locked.
+ */
+struct pmap_tlb_shootdown_job *
+pmap_tlb_shootdown_job_get(pq)
+	struct pmap_tlb_shootdown_q *pq;
+{
+	struct pmap_tlb_shootdown_job *pj;
+
+	if (pq->pq_count >= PMAP_TLB_MAXJOBS) {
+		return (NULL);
+	}
+
+	simple_lock(&pmap_tlb_shootdown_job_lock);
+	if (pj_free == NULL) {
+		simple_unlock(&pmap_tlb_shootdown_job_lock);
+		return (NULL);
+	}
+	pj = &pj_free->pja_job;
+	pj_free = (union pmap_tlb_shootdown_job_al*) pj_free->pja_job.pj_nextfree;
+	simple_unlock(&pmap_tlb_shootdown_job_lock);
+
+	pq->pq_count++;
+	return (pj);
+}
+
+/*
+ * pmap_tlb_shootdown_job_put:
+ *
+ *	Put a TLB shootdown job queue entry onto the free list.
+ *
+ *	Note: We expect the queue to be locked.
+ */
+void
+pmap_tlb_shootdown_job_put(pq, pj)
+	struct pmap_tlb_shootdown_q 	*pq;
+	struct pmap_tlb_shootdown_job 	*pj;
+{
+#ifdef DIAGNOSTIC
+	if (pq->pq_count == 0) {
+		panic("pmap_tlb_shootdown_job_put: queue length inconsistency");
+	}
+#endif
+	simple_lock(&pmap_tlb_shootdown_job_lock);
+	pj->pj_nextfree = &pj_free->pja_job;
+	pj_free = (union pmap_tlb_shootdown_job_al*) pj;
+	simple_unlock(&pmap_tlb_shootdown_job_lock);
+
+	pq->pq_count--;
+}
+
+/* Pmap Arguments */
 struct pmap_args pmap_arg = {
-		.pmap_cold_map 			= &pmap_cold_map,
-		.pmap_cold_mapident 	= &pmap_cold_mapident,
-		.pmap_remap_lower 		= &pmap_remap_lower,
-		.pmap_cold 				= &pmap_cold,
-		.pmap_set_nx 			= &pmap_set_nx,
-		.pmap_bootstrap 		= &pmap_bootstrap,
-		.pmap_isvalidphys 		= &pmap_isvalidphys,
-		.pmap_bootstrap_alloc 	= &pmap_bootstrap_alloc,
-		.pmap_init 				= &pmap_init,
-		.pmap_map 				= &pmap_map,
-		.pmap_create 			= &pmap_create,
-		.pmap_pinit 			= &pmap_pinit,
-		.pmap_destroy 			= &pmap_destroy,
-		.pmap_release 			= &pmap_release,
-		.pmap_reference 		= &pmap_reference,
-		.pmap_remove 			= &pmap_remove,
-		.pmap_remove_all 		= &pmap_remove_all,
-		.pmap_copy_on_write 	= &pmap_copy_on_write,
-		.pmap_protect 			= &pmap_protect,
-		.pmap_enter 			= &pmap_enter,
-		.pmap_page_protect 		= &pmap_page_protect,
-		.pmap_change_wiring 	= &pmap_change_wiring,
-		.pmap_pte 				= &pmap_pte,
-		.pmap_extract 			= &pmap_extract,
-		.pmap_copy 				= &pmap_copy,
-		.pmap_update 			= &pmap_update,
-		.pmap_collect 			= &pmap_collect,
-		.pmap_activate 			= &pmap_activate,
-		.pmap_zero_page 		= &pmap_zero_page,
-		.pmap_copy_page 		= &pmap_copy_page,
-		.pmap_pageable 			= &pmap_pageable,
-		.pmap_clear_modify 		= &pmap_clear_modify,
-		.pmap_clear_reference 	= &pmap_clear_reference,
-		.pmap_is_referenced 	= &pmap_is_referenced,
-		.pmap_is_modified 		= &pmap_is_modified,
-		.pmap_phys_address 		= &pmap_phys_address,
-		.i386_protection_init 	= &i386_protection_init,
-		.pmap_testbit 			= &pmap_testbit,
-		.pmap_changebit 		= &pmap_changebit,
-		.pmap_pvdump 			= &pmap_pvdump,
-		.pmap_check_wiring 		= &pmap_check_wiring,
-		.pmap_pads 				= &pmap_pads,
-		.pmap_get_kcr3 			= &pmap_get_kcr3,
-		.pmap_get_cr3 			= &pmap_get_cr3,
-		.pmap_cmap3 			= &pmap_cmap3,
-		.pmap_bios16_enter 		= &pmap_bios16_enter,
-		.pmap_bios16_leave 		= &pmap_bios16_leave,
+		.pmap_cold_map 				= &pmap_cold_map,
+		.pmap_cold_mapident 		= &pmap_cold_mapident,
+		.pmap_remap_lower 			= &pmap_remap_lower,
+		.pmap_cold 					= &pmap_cold,
+		.pmap_set_nx 				= &pmap_set_nx,
+		.pmap_bootstrap 			= &pmap_bootstrap,
+		.pmap_isvalidphys 			= &pmap_isvalidphys,
+		.pmap_bootstrap_alloc 		= &pmap_bootstrap_alloc,
+		.pmap_init 					= &pmap_init,
+		.pmap_map 					= &pmap_map,
+		.pmap_create 				= &pmap_create,
+		.pmap_pinit 				= &pmap_pinit,
+		.pmap_destroy 				= &pmap_destroy,
+		.pmap_release 				= &pmap_release,
+		.pmap_reference 			= &pmap_reference,
+		.pmap_remove 				= &pmap_remove,
+		.pmap_remove_all 			= &pmap_remove_all,
+		.pmap_copy_on_write 		= &pmap_copy_on_write,
+		.pmap_protect 				= &pmap_protect,
+		.pmap_enter 				= &pmap_enter,
+		.pmap_page_protect 			= &pmap_page_protect,
+		.pmap_change_wiring 		= &pmap_change_wiring,
+		.pmap_pte 					= &pmap_pte,
+		.pmap_extract 				= &pmap_extract,
+		.pmap_copy 					= &pmap_copy,
+		.pmap_update 				= &pmap_update,
+		.pmap_collect 				= &pmap_collect,
+		.pmap_activate 				= &pmap_activate,
+		.pmap_zero_page 			= &pmap_zero_page,
+		.pmap_copy_page 			= &pmap_copy_page,
+		.pmap_pageable 				= &pmap_pageable,
+		.pmap_clear_modify 			= &pmap_clear_modify,
+		.pmap_clear_reference 		= &pmap_clear_reference,
+		.pmap_is_referenced 		= &pmap_is_referenced,
+		.pmap_is_modified 			= &pmap_is_modified,
+		.pmap_phys_address 			= &pmap_phys_address,
+		.i386_protection_init 		= &i386_protection_init,
+		.pmap_testbit 				= &pmap_testbit,
+		.pmap_changebit 			= &pmap_changebit,
+		.pmap_pvdump 				= &pmap_pvdump,
+		.pmap_check_wiring 			= &pmap_check_wiring,
+		.pmap_pads 					= &pmap_pads,
+		.pmap_get_kcr3 				= &pmap_get_kcr3,
+		.pmap_get_cr3 				= &pmap_get_cr3,
+		.pmap_cmap3 				= &pmap_cmap3,
+		.pmap_bios16_enter 			= &pmap_bios16_enter,
+		.pmap_bios16_leave 			= &pmap_bios16_leave,
+		.pmap_invalidate_page 		= &pmap_invalidate_page,
+		.pmap_invalidate_range 		= &pmap_invalidate_range,
+		.pmap_invalidate_all 		= &pmap_invalidate_all,
+		.pmap_tlb_init 				= &pmap_tlb_init,
+		.pmap_tlb_shootnow 			= &pmap_tlb_shootnow,
+		.pmap_tlb_shootdown 		= &pmap_tlb_shootdown,
+		.pmap_do_tlb_shootdown 		= &pmap_do_tlb_shootdown,
+		.pmap_tlb_shootdown_q_drain = &pmap_tlb_shootdown_q_drain,
+		.pmap_tlb_shootdown_job_get = &pmap_tlb_shootdown_job_get,
+		.pmap_tlb_shootdown_job_put = &pmap_tlb_shootdown_job_put
 };

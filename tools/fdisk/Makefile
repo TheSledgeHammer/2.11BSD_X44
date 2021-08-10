@@ -2,7 +2,7 @@
 
 HOSTPROGNAME=	${MACHINE_GNU_PLATFORM}-fdisk
 HOST_SRCDIR=	sbin/fdisk
-HOST_SRCS=	disklabel.c
+HOST_SRCS=		disklabel.c
 
 HOST_CPPFLAGS=	-DDEFAULT_BOOTDIR=\"${DESTDIR}/usr/mdec\"
 

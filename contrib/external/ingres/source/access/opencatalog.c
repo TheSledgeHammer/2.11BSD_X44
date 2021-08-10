@@ -1,5 +1,5 @@
 # include	"../ingres.h"
-# include	"../aux.h"
+# include	"../_aux.h"
 # include	"../unix.h"
 # include	"../access.h"
 

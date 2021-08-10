@@ -58,6 +58,7 @@ extern struct percpu 				__percpu[];
 
 #define	__percpu_type(name)			__typeof(((struct percpu *)0)->name)
 
+/*
 struct kthread *
 __curkthread(void)
 {
@@ -66,7 +67,6 @@ __curkthread(void)
 			: "m" (*(char *)offsetof(struct percpu, pc_curkthread)));
 	return (kt);
 }
-
+*/
 #endif /* _KERNEL */
-
 #endif /* _MACHINE_PERCPU_H_ */

@@ -225,3 +225,4 @@ define KERNBASE				KERNBASE
 
 define VM86_FRAMESIZE		sizeof(struct vm86frame)
 define VM86_STACK_SPACE 	VM86_STACK_SPACE
+

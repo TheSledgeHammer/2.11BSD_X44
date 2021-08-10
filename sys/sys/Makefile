@@ -4,9 +4,9 @@
 
 INCSDIR= 	/usr/include/sys
 
-INCS=		acct.h ansi.h ataio.h atomic.h audioio.h boot.h	buf.h bus.h 		\
-			callout.h cdefs_aout.h cdefs_elf.h cdefs.h cdio.h chio.h clist.h 	\
-			conf.h device.h devsw.h 											\
+INCS=		acct.h ansi.h ataio.h atomic.h audioio.h bitmap.h boot.h buf.h 		\
+			bus.h callout.h cdefs_aout.h cdefs_elf.h cdefs.h cdio.h chio.h 		\
+			clist.h conf.h cputopo.h device.h devsw.h 							\
 			dirent.h disk.h disklabel.h disktype.h dk.h dkbad.h dmap.h			\
 			domain.h endian.h errno.h event.h eventvar.h exec_aout.h 			\
 			exec_coff.h exec_ecoff.h exec_elf.h exec_linker.h exec_macho.h 		\
@@ -14,7 +14,7 @@ INCS=		acct.h ansi.h ataio.h atomic.h audioio.h boot.h	buf.h bus.h 		\
 			fdio.h file.h filedesc.h fnv_hash.h fperr.h gmon.h ioccom.h			\
 			ioctl_compat.h ioctl.h kenv.h kernel.h ksyms.h ktrace.h				\
 			lock.h lockf.h malloc.h map.h mbuf.h memrange.h midiio.h			\
-			mman.h mount.h msgbuf.h mtio.h namei.h null.h param.h				\
+			mman.h mount.h msgbuf.h mtio.h namei.h null.h param.h percpu.h		\
 			poll.h power.h proc.h protosw.h ptrace.h pty.h queue.h reboot.h		\
 			resource.h resourcevar.h rwlock.h scanio.h scsiio.h select.h		\
 			signal.h signalvar.h socket.h socketvar.h stat.h stdarg.h			\
@@ -24,7 +24,7 @@ INCS=		acct.h ansi.h ataio.h atomic.h audioio.h boot.h	buf.h bus.h 		\
 			uio.h un.h unistd.h unpcb.h user.h utsname.h uuid.h vcmd.h 			\
 			videoio.h vlimit.h vmmeter.h vnode.h wait.h
 
-INCSYMLINKS=\
+INCSYMLINKS=									\
 		sys/exec_elf.h 	/usr/include/elf.h 		\
 		sys/fcntl.h 	/usr/include/fcntl.h 	\
 		sys/poll.h 		/usr/include/poll.h 	\

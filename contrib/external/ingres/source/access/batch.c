@@ -1,5 +1,5 @@
 # include	"../ingres.h"
-# include	"../aux.h"
+# include	"../_aux.h"
 # include	"../catalog.h"
 # include	"../symbol.h"
 # include	"../access.h"

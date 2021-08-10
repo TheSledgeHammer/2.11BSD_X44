@@ -144,8 +144,7 @@ cpu_attach(parent, self, aux)
 		 */
 		printf("apid %d (application processor)\n", caa->cpu_apic_id);
 #ifdef SMP
-		init_secondary(ci);
-		ci->ci_flags |= CPUF_PRESENT | CPUF_AP;
+		cpu_smp_init(ci);
 #else
 		printf("%s: not started\n", sc->sc_dev->dv_xname);
 #endif
@@ -179,3 +178,45 @@ cpu_hatch(void *v)
 	lapic_write_tpri(0);
 #endif
 }
+
+#ifdef SMP
+u_int all_cpus;
+int mp_ncpus;
+/* export this for libkvm consumers. */
+int mp_maxcpus = NCPUS;
+
+int smp_disabled = 0;			/* has smp been disabled? */
+int smp_cpus = 1;				/* how many cpu's running */
+int smp_threads_per_core = 1;	/* how many SMT threads are running per core */
+int mp_ncores = -1;				/* how many physical cores running */
+int smp_topology = 0;			/* Which topology we're using. */
+
+void
+cpu_smp_init(ci)
+	struct cpu_info *ci;
+{
+	//init_secondary(ci);
+	ci->cpu_flags |= CPUF_PRESENT | CPUF_AP;
+
+	cpu_mp_setmaxid();
+	KASSERT(mp_ncpus >= 1 ("%s: CPU count < 1", __func__));
+	KASSERT(mp_ncpus > 1 || mp_maxid == 0 ("%s: one CPU but mp_maxid is not zero", __func__));
+	KASSERT(mp_maxid >= mp_ncpus - 1 ("%s: counters out of sync: max %d, count %d", __func__, mp_maxid, mp_ncpus));
+
+	if (smp_disabled != 0 || cpu_mp_probe() == 0) {
+		mp_ncores = 1;
+		mp_ncpus = 1;
+		all_cpus = PERCPU_GET(ci->cpu_percpu, cpumask);
+		return;
+	}
+
+	cpu_mp_start(ci->cpu_percpu);
+	printf("211BSD/SMP: Multiprocessor System Detected: %d CPUs\n", mp_ncpus);
+
+	if (mp_ncores < 0) {
+		mp_ncores = mp_ncpus;
+	}
+
+	cpu_mp_announce();
+}
+#endif

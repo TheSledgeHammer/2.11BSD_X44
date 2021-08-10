@@ -371,3 +371,63 @@ pmap_bios16_leave(void *handle)
 {
 	pmap_args_ptr->pmap_bios16_leave(handle);
 }
+
+void
+pmap_invalidate_page(pmap_t pmap, vm_offset_t va)
+{
+	pmap_args_ptr->pmap_invalidate_page(pmap, va);
+}
+
+void
+pmap_invalidate_range(pmap_t pmap, vm_offset_t sva, vm_offset_t eva)
+{
+	pmap_args_ptr->pmap_invalidate_range(pmap, sva, eva);
+}
+
+void
+pmap_invalidate_all(pmap_t pmap)
+{
+	pmap_args_ptr->pmap_invalidate_all(pmap);
+}
+
+void
+pmap_tlb_init(void)
+{
+	pmap_args_ptr->pmap_tlb_init();
+}
+
+void
+pmap_tlb_shootnow(pmap_t pmap, int32_t mask)
+{
+	pmap_args_ptr->pmap_tlb_shootnow(pmap, mask);
+}
+
+void
+pmap_tlb_shootdown(pmap_t pmap, vm_offset_t addr1, vm_offset_t addr2, int32_t *mask)
+{
+	pmap_args_ptr->pmap_tlb_shootdown(pmap, addr1, addr2, mask);
+}
+
+void
+pmap_do_tlb_shootdown(pmap_t pmap, struct cpu_info *self)
+{
+	pmap_args_ptr->pmap_do_tlb_shootdown(pmap, self);
+}
+
+void
+pmap_tlb_shootdown_q_drain(struct pmap_tlb_shootdown_q *pq)
+{
+	pmap_args_ptr->pmap_tlb_shootdown_q_drain(pq);
+}
+
+struct pmap_tlb_shootdown_job *
+pmap_tlb_shootdown_job_get(struct pmap_tlb_shootdown_q *pq)
+{
+	return (pmap_args_ptr->pmap_tlb_shootdown_job_get(pq));
+}
+
+void
+pmap_tlb_shootdown_job_put(struct pmap_tlb_shootdown_q *pq, struct pmap_tlb_shootdown_job *pj)
+{
+	pmap_args_ptr->pmap_tlb_shootdown_job_put(pq, pj);
+}

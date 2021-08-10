@@ -1,7 +1,6 @@
 #	$NetBSD: Makefile,v 1.4 2002/12/08 20:20:01 thorpej Exp $
 
 HOSTPROGNAME=	${_TOOL_PREFIX}lex
-#HOST_SRCDIR=	usr.bin/lex
 HOST_SRCDIR=	contrib/flex/bin
 
 .include "${.CURDIR}/../Makefile.host"

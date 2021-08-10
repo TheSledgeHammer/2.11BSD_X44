@@ -90,13 +90,13 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		.WAIT texinfo 															\
 		.WAIT tic 																\
 		.WAIT ${TOOLCHAIN_BITS} 												\
-		db ingres																\
+		db																		\
 		file lint1 																\
 		sortinfo 																\
 		.WAIT menuc mklocale mknod msgc 										\
 		.WAIT disklabel 														\
 		.WAIT paxctl 															\
-#		.WAIT fdisk 															\
+		.WAIT btxld boot0cfg													\
 		pwd_mkdb vgrind															\														
 SUBDIR+= stat .WAIT config
 

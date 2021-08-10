@@ -1,7 +1,7 @@
 # include	"../ingres.h"
 # include	"../access.h"
 # include	"../symbol.h"
-# include	"../aux.h"
+# include	"../_aux.h"
 
 icompare(ax, bx, frmt, frml)
 char	*ax, *bx, frmt, frml;

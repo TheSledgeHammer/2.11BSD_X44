@@ -38,11 +38,11 @@
 #include <sys/param.h>
 #include <sys/queue.h>
 #include <sys/resource.h>
+
 #include <machine/cpu.h>
 #include <machine/param.h>
-
-#include <devel/arch/i386/include/cpu.h>
-#include <devel/arch/i386/include/percpu.h>
+#include <machine/cpu.h>
+#include <machine/percpu.h>
 
 struct cpu_info;
 

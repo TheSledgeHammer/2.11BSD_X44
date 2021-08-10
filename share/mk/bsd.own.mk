@@ -225,6 +225,8 @@ TSORT=				${TOOLDIR}/bin/${_TOOL_PREFIX}tsort -q
 YACC=				${TOOLDIR}/bin/${_TOOL_PREFIX}yacc
 
 TOOL_AWK=			${TOOLDIR}/bin/${_TOOL_PREFIX}awk
+TOOL_BOOT0CFG=		${TOOLDIR}/bin/${_TOOL_PREFIX}boot0cfg
+TOOL_BTXLD=			${TOOLDIR}/bin/${_TOOL_PREFIX}btxld
 TOOL_CAP_MKDB=		${TOOLDIR}/bin/${_TOOL_PREFIX}cap_mkdb
 TOOL_CAT=			${TOOLDIR}/bin/${_TOOL_PREFIX}cat
 TOOL_CKSUM=			${TOOLDIR}/bin/${_TOOL_PREFIX}cksum
@@ -256,7 +258,6 @@ TOOL_GROFF_ENV= 															\
 TOOL_GROFF=			${TOOL_GROFF_ENV} ${TOOLDIR}/bin/${_TOOL_PREFIX}groff ${GROFF_FLAGS}
 
 TOOL_HEXDUMP=		${TOOLDIR}/bin/${_TOOL_PREFIX}hexdump
-TOOL_INGRESS=		${TOOLDIR}/bin/${_TOOL_PREFIX}ingres
 TOOL_INDXBIB=		${TOOLDIR}/bin/${_TOOL_PREFIX}indxbib
 TOOL_INSTALLBOOT=	${TOOLDIR}/bin/${_TOOL_PREFIX}installboot
 TOOL_INSTALL_INFO=	${TOOLDIR}/bin/${_TOOL_PREFIX}install-info
@@ -333,6 +334,8 @@ TOOL_CXX.pcc=		p++
 
 TOOL_ASN1_COMPILE=	asn1_compile
 TOOL_AWK=			awk
+TOOL_BOOT0CFG=		boot0cfg
+TOOL_BTXLD=			btxld
 TOOL_CAP_MKDB=		cap_mkdb
 TOOL_CAT=			cat
 TOOL_CKSUM=			cksum

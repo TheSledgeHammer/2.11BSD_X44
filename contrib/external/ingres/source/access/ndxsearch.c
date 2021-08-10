@@ -37,7 +37,7 @@
 */
 
 # include	"../ingres.h"
-# include	"../aux.h"
+# include	"../_aux.h"
 # include	"../symbol.h"
 # include	"../access.h"
 # include	"../lock.h"

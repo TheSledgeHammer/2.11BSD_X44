@@ -1,5 +1,5 @@
 # include	"../ingres.h"
-# include	"../aux.h"
+# include	"../_aux.h"
 # include	"../access.h"
 
 findbest(dx, tidx, tuple, need, checkdups)

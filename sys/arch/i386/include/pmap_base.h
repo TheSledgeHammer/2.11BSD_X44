@@ -88,6 +88,17 @@ struct pmap_args {
 	caddr_t (*pmap_cmap3)(caddr_t pa, u_int pte_flags);
 	void *(*pmap_bios16_enter)(void);
 	void (*pmap_bios16_leave)(void *handle);
+	/* SMP & TLB */
+	void (*pmap_invalidate_page)(pmap_t, vm_offset_t);
+	void (*pmap_invalidate_range)(pmap_t, vm_offset_t, vm_offset_t);
+	void (*pmap_invalidate_all)(pmap_t);
+	void (*pmap_tlb_init)(void);
+	void (*pmap_tlb_shootnow)(pmap_t, int32_t);
+	void (*pmap_tlb_shootdown)(pmap_t, vm_offset_t, vm_offset_t, int32_t *);
+	void (*pmap_do_tlb_shootdown)(pmap_t, struct cpu_info *);
+	void (*pmap_tlb_shootdown_q_drain)(struct pmap_tlb_shootdown_q *);
+	struct pmap_tlb_shootdown_job *(*pmap_tlb_shootdown_job_get)(struct pmap_tlb_shootdown_q *);
+	void (*pmap_tlb_shootdown_job_put)(struct pmap_tlb_shootdown_q *, struct pmap_tlb_shootdown_job *);
 };
 
 void	pmap_cold(void);

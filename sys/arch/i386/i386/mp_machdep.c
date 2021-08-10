@@ -36,6 +36,8 @@
 #include <sys/memrange.h>
 #include <sys/proc.h>
 #include <sys/sysctl.h>
+#include <sys/cputopo.h>
+#include <sys/percpu.h>
 
 #include <vm/include/vm.h>
 #include <vm/include/vm_param.h>
@@ -43,20 +45,17 @@
 #include <vm/include/vm_kern.h>
 #include <vm/include/vm_extern.h>
 
-#include <devel/sys/percpu.h>
-
-#include <arch/i386/include/cpu.h>
-#include <arch/i386/include/cputypes.h>
-#include <arch/i386/include/pcb.h>
-#include <arch/i386/include/psl.h>
-#include <arch/i386/include/pte.h>
-#include <arch/i386/include/param.h>
-#include <arch/i386/include/specialreg.h>
-#include <arch/i386/include/vmparam.h>
-#include <arch/i386/include/vm86.h>
-
-#include <devel/arch/i386/include/smp.h>
-#include <devel/arch/i386/include/percpu.h>
+#include <machine/cpu.h>
+#include <machine/cputypes.h>
+#include <machine/pcb.h>
+#include <machine/psl.h>
+#include <machine/pte.h>
+#include <machine/param.h>
+#include <machine/specialreg.h>
+#include <machine/vmparam.h>
+#include <machine/vm86.h>
+#include <machine/smp.h>
+#include <machine/percpu.h>
 
 #define WARMBOOT_TARGET		0
 #define WARMBOOT_OFF		(PMAP_MAP_LOW + 0x0467)

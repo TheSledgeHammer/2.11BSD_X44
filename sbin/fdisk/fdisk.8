@@ -1,663 +1,519 @@
-.\"	$NetBSD: fdisk.8,v 1.92 2020/05/24 21:01:49 wiz Exp $
+.\" $FreeBSD: src/sbin/i386/fdisk/fdisk.8,v 1.17.2.11 2002/04/25 16:25:12 trhodes Exp $
 .\"
-.Dd May 24, 2020
+.Dd February 14, 2020
 .Dt FDISK 8
 .Os
 .Sh NAME
 .Nm fdisk
-.Nd MS-DOS partition maintenance program
+.Nd PC slice table (MBR) maintenance program
 .Sh SYNOPSIS
 .Nm
-.Op Fl aBFfgIiSuv
-.Oo
-.Fl 0 | 1 | 2 | 3 | E Ar number
-.Op Fl s Oo Ar id Oc Ns Oo / Ns Oo Ar start Oc Ns Oo / Ns Oo Ar size Oc Ns Oo / Ns Oo Ar bootmenu Oc Oc Oc Oc
-.Oc
-.Op Fl r Ar bootfile | Fl w Ar bootfile
-.Op Fl A Ar ptn_alignment Ns Bq Ar /ptn_0_offset
-.Op Fl b Ar cylinders/heads/sectors
-.Op Fl c Ar bootcode
-.Op Fl T Ar disktype
-.Op Fl t Ar disktab
-.Op Fl z Ar sectorsize
-.Op Ar device
+.Op Fl BCEIaistux
+.Op Fl b Ar bootcode
+.Op Fl p Ar diskimage
+.Op Fl 1234
+.Op Ar disk
 .Nm
-.Fl l
+.Fl f Ar configfile
+.Op Fl itv
+.Op Ar disk
+.Sh PROLOGUE
+In order for the BIOS to boot the kernel,
+certain conventions must be adhered to.
+Sector 0 of the disk must contain an MBR, which contain boot code,
+a slice table,
+and a magic number.
+BIOS slices can be used to break the disk up into several pieces.
+.Dx
+slices are called partitions under DOS
+.Dq ( partition
+has another meaning under
+.Dx ,
+see
+.Xr disklabel 8 ) .
+.Dx
+supports 30 MBR slices, s1-s4 will be DOS primary partitions,
+s5-s30 will be DOS partitions in extended DOS partitions.
+The BIOS brings in sector 0 and verifies the magic number.
+The sector
+0 boot code then searches the slice table to determine which
+slice is marked
+.Em active .
+This boot code then brings in the bootstrap from the
+.Em active
+slice and, if marked bootable, runs it.
+Under DOS,
+you can have one or more slices with one
+.Em active .
+The DOS
+.Nm
+program can be used to divide space on the disk into slices and set one
+.Em active .
 .Sh DESCRIPTION
 The
-.Nm
-program is used to display or update the
-.Em "master boot record"
-or
-.Em MBR
-in the first sector (sector 0)
-of a disk that uses the MBR style of partitioning.
-The following
-.Nx
-ports use this style of disk partitioning:
-amd64, arc, bebox, cobalt, hpcarm, hpcmips, hpcsh, i386, macppc,
-mvmeppc, netwinder, ofppc, playstation2, and prep.
-.Pp
-The MBR contains bootable code, a partition table,
-an indication of which partition is
-.Sq active ,
-and (optionally, depending on the boot code) a menu
-for selecting a partition to be booted.
-There can be at most 4 partitions defined in sector 0,
-one of which can be an extended
-partition which can be split into any number of sub-partitions (then called
-logical partitions).
-.Pp
-The boot code in the MBR is usually invoked by the BIOS or firmware,
-and the MBR passes control to the next stage boot code
-stored in the first sector of the partition to be booted
-(the
-.Em "partition boot record"
-or
-.Em PBR ) .
-.Pp
-After booting,
-.Nx
-does not use the partitioning done by
+.Dx
+program,
 .Nm ,
-instead it uses a
-.Nx
-disklabel saved in sector 1 of the
-.Nx
-partition.
-See
-.Xr mbrlabel 8
-for a way of using information from the MBR
-to construct a
-.Nx
-disklabel.
+serves a similar purpose to the DOS program.
+The first form is used to
+display slice information or to interactively edit the slice table.
+The second is used to write a slice table using a
+.Ar configfile
+and is designed to be used by other scripts/programs.
 .Pp
-The standard MBR boot code will only boot the
-.Sq active
-partition.
-However,
-.Nx
-contains additional boot programs which allow the user to
-interactively select which of the partitions to boot.
-The
-.Sq mbr_ext
-code will also boot
-.Nx
-from an extended partition but will not work on old systems that do not
-support LBA reads, the
-.Sq mbr_com0
-and
-.Sq mbr_com0_9600
-will read and write from a serial port.
-At the start the
-.Nm
-program will determine whether the disk sector 0 is valid as a boot sector.
-(This is determined by checking the magic number.)
-If not,
-.Nm
-will initialise the boot code as well as the partition table.
-During this, all four partitions will be marked empty.
-.Pp
-The flags
-.Fl a ,
-.Fl i
-or
-.Fl u
-are used to indicate that the partition data is to be updated.
-The
-.Nm
-program will enter an interactive conversational mode.
-This mode is designed not to change any data unless you explicitly tell it to;
-.Nm
-selects defaults for its questions to guarantee that behaviour.
-.Pp
-If partition data is going to be updated and the disk carries GUID Partition
-Tables,
-.Nm
-will remove both primary and backup GPT headers from the disk unless the
-.Fl g
-flag is specified.
-See
-.Xr gpt 8
-for information on how to manipulate GUID Partition Tables.
-.Pp
-.Nm
-will calculate the correct
-.Em cylinder ,
-.Em head ,
-and
-.Em sector
-values for any partition you edit.
-If you specify
-.Fl v
-you will be asked whether you want to specify them yourself.
-.Pp
-Finally, when all the data for the first sector has been accumulated,
-.Nm
-will ask if you really want to write the new partition table.
-Only if you reply affirmatively to this question will
-.Nm
-write anything to the disk.
-.Pp
-Available options:
-.Bl -tag -width Ds
-.It Fl 0
-Specify partition slot 0 to be printed or updated.
-.It Fl 1
-Specify partition slot 1 to be printed or updated.
-.It Fl 2
-Specify partition slot 2 to be printed or updated.
-.It Fl 3
-Specify partition slot 3 to be printed or updated.
-.It Fl A Ar ptn_alignment Ns Bq Ar /ptn_0_offset
-Specify the alignment for all partitions and optionally the offset for the
-first partition of the disk and of logical partitions.
-If
-.Ar ptn_alignment
-is specified and
-.Ar ptn_0_offset
-is not specified, then the offset is set to the alignment.
-If
-.Fl A
-is not specified, then the alignment of the first partition is inspected.
-If it ends on a 2048 sector boundary, then the alignment is set to 2048,
-if the start is a power of 2 less than, or equal to 2048 then the offset
-is set to the start sector.
-If the first partition is not defined then the alignment and offset for disks
-larger than 128GB is set to 2048 (1MB).
-In all other cases the alignment default to a cylinder
-and the offset to a track (both using the BIOS geometry).
-The 1MB alignment is the same as that used by recent windows versions.
+Options are:
+.Bl -tag -width indent
 .It Fl a
-Change the active partition.
-In interactive mode this question will be asked after the partitions
-have been processed.
+Change the active slice only.
+Ignored if
+.Fl f
+is given.
+.It Fl b Ar bootcode
+Get the boot code from the file
+.Ar bootcode .
+Default is
+.Pa /boot/mbr .
+.It Fl p Ar diskimage
+The disk image is specified as a normal file instead of as a device,
+which is useful when building emulated disks for vmware, bochs, etc.\&
 .It Fl B
-On an i386 or amd64 system, interactively update the boot selector settings.
-These include the default boot partition and the timeout value for the prompt.
-(The boot selector permits the user to interactively select the boot
-partition, and thus which operating system is run, at system boot time; see
-.Xr x86/mbr 8
-for more information.)
-.It Fl b Ar cylinders/heads/sectors
-Specify the BIOS geometry parameters for
-.Ar cylinders ,
-.Ar heads ,
-and
-.Ar sectors .
-It is used only in conjunction with the
-.Fl u
-flag.
-If not specified the BIOS geometry will be obtained using sysctl (i386 and
-amd64) or by solving the simultaneous equations from the existing partition
-information.
-If that fails then either the geometry from the disklabel or 63 sectors and
-16 heads is used.
-For modern disks larger than about 8GB, and where the BIOS is configured
-to use LBA-Assisted translation, a setting of
-.Fl b Ar 1023/255/63
-is likely to work.
-.\" see http://web.inter.nl.net/hcc/J.Steunebrink/bioslim.htm#LBA
-.\" for a table of C/H/S values used in LBA-Assisted translation mode
-.It Fl c Ar bootcode
-Specify the filename that
-.Nm
-should read the bootcode from.
-If the name of a directory is specified, then
-.Nm
-will look for files with the default names in that directory.
-The default is to read from
-.Pa /usr/mdec/mbr ,
-.Pa /usr/mdec/mbr_bootsel
-or
-.Pa /usr/mdec/mbr_ext
-depending on whether
-.Ar bootmenu
-was specified for any partitions
-on an i386 machine, and leave the bootcode empty for other
-machines.
-.It Fl E Ar number
-Specify logical partition
-.Ar number
-to be printed or updated.
-If the specified logical partition does not exist on updating partition data
-an additional logical partition will be created.
-.It Fl F
-Indicate that
-.Ar device
-is a regular file.
-Unless the geometry of
-.Ar device
-is told to
-.Nm
-by
-.Fl T Ar disktype ,
-.Nm
-will count the 512-byte sectors in
-.Ar device
-and produce a fake geometry.
-If
-.Ar device
-is a regular file,
-.Fl F
-will be used implicitly.
-.It Fl f
-Run
-.Nm
-in a non-interactive mode.
-In this mode, you can only change the disk parameters by using the
-.Fl b
-flag.
-This is provided only so scripts or other programs may use
-.Nm
-as part of an automatic installation process.
-.Pp
-Using the
+Reinitialize the boot code contained in sector 0 of the disk.
+Ignored if
 .Fl f
-flag with
-.Fl u
-makes it impossible to specify the starting and ending
-.Ar cylinder ,
-.Ar head ,
-and
-.Ar sector
-fields
-.Pq only Ar start No and Ar size No can be specified by Fl s No option .
-They will be automatically computed using the BIOS geometry.
-.It Fl g
-Preserve existing GPT headers when updating partitions.
-.It Fl I
-Ignore errors from overlapping partitions.
-Some devices (cameras CHDK) require overlapping partitions to support
-bigger than 4GB cards.
-The
+is given.
+.It Fl C
+Set CHS fields to wrapped values.
+Normally the CHS fields for a slice are set to all 1's if they
+would otherwise wrap.
+This typically causes BIOSes to properly detect
+that the disk should be put in Large mode.
+This option may be needed on very old PCs.
+.It Fl E
+Use TRIM to erase the device/partition before creating the file system.
+The underlying device must have the TRIM sysctl enabled.
+Only devices that support TRIM will have such a sysctl option
+.Va ( kern.cam.da.X.trim_enabled ) .
+For use with the
 .Fl I
-flag ignores overlapping error checks and does not fix them, allowing these
-incorrect configurations to be used.
-.It Fl i
-Explicitly request initialisation of the master boot code
-(similar to what
-.Ic fdisk /mbr
-does under
-.Tn MS-DOS ) ,
-even if the magic number in the first sector is ok.
-The partition table is left alone by this (but see above).
-.It Fl l
-Lists known
-.Em sysid
-values and exit.
-.It Fl r Ar bootfile
-Read the boot record from file
-.Ar bootfile
-instead of the specified disk.
-The geometry information used is still that of the disk volume.
-Any changes are written back to the file.
-.It Fl S
-When used with no other flags print a series of
-.Pa /bin/sh
-commands for setting variables to the partition information.
-This could be used by installation scripts.
-.It Fl s Oo Ar id Oc Ns Oo / Ns Oo Ar start Oc Ns Oo / Ns Oo Ar size Oc Ns Oo / Ns Oo Ar bootmenu Oc Oc Oc Oc
-Specify the partition
-.Ar id ,
-.Ar start ,
-.Ar size ,
-and
-.Ar bootmenu .
-If the optional arguments are not provided, they stay as before or
-use the same defaults as the interactive mode, if new.
-This flag requires the use of a partition selection flag
-.Pq Fl 0 , 1 , 2 , 3 , No or Fl E Ar number .
-.It Fl T Ar disktype
-Use the disklabel
-.Ar disktype
-instead of the disklabel on
-.Ar device .
-.It Fl t Ar disktab
-Read
-.Ar disktype
-from the named
-.Xr disktab 5
-file instead of from
-.Pa /etc/disktab .
-.It Fl u
-Update partition data, including
-.Em id , start , No and Em size .
-Unless
-.Fl f
-option
-.Pq non-interactive mode
-is specified,
-.Nm
-will display the partitions and interactively ask which one you want to edit.
-.Nm
-will step through each field showing the old value and asking for a new one.
-The
-.Em start
-and
-.Em size
-can be specified in blocks (NN),
-cylinders (NNc or NNcyl),
-megabytes (NNm or NNMB),
-or gigabytes (NNg or NNGB), values in megabytes and gigabytes
-will be rounded to the nearest cylinder boundary.
-The
-.Em size
-may be specified as
-.Em $
-in which case the partition will extend to the end of the available free space.
-.Pp
-In a non-interactive mode
-.Pq specified by Fl f No option ,
-partition data should be specified by
-.Fl s
+or
+.Fl u
 option.
-A partition selection option
-.Pq Fl 0 , 1 , 2 , 3 , No or Fl E Ar number
-should also be specified to select a partition slot to be updated.
+.It Fl f Ar configfile
+Set slice values using the file
+.Ar configfile .
+The
+.Ar configfile
+always modifies existing slices, unless
+.Fl i
+is also given, in which case all existing slices are deleted (marked
+as
+.Dq unused )
+before the
+.Ar configfile
+is read.
+The
+.Ar configfile
+can be
+.Sq - ,
+in which case
+.Ar stdin
+is read.
+See
+.Sx CONFIGURATION FILE ,
+below, for file syntax.
 .Pp
-.Nm
-will not allow you to create partitions which overlap.
-If
-.Fl u
-and
-.Fl s
-are specified in a non-interactive mode
-then the details of the specified partition will be changed.
-Any other partitions which overlap the requested part of the disk will be
-silently deleted.
-.Pp
-If
-.Em bootmenu
-is specified for any partition
-.Nm
-will determine whether the installed boot code supports the bootselect code,
-if it does not you will be asked whether you want to install the required
-boot code.
-To remove a
-.Em bootmenu
-label, simply press
-.Aq space
-followed by
-.Aq return .
+.Em WARNING :
+when
+.Fl f
+is used, you are not asked if you really want to write the slices
+table (as you are in the interactive mode).
+Use with caution!
+.It Fl i
+Initialize sector 0 of the disk.
+This implies
+.Fl u ,
+unless
+.Fl f
+is given.
+.It Fl I
+Initialize the contents of sector 0
+for one
+.Dx
+slice covering the entire disk.
+.It Fl s
+Print a summary of all slices on the disk and exit.
+All other options will be ignored.
+.It Fl t
+Test mode; do not write slice values.
+Generally used with the
+.Fl f
+option to see what would be written to the slice table.
+Implies
+.Fl v .
+.It Fl u
+Is used for updating (editing) sector 0 of the disk.
+Ignored if
+.Fl f
+is given.
 .It Fl v
-Be more verbose, specifying
-.Fl v
-more than once may increase the amount of output.
+Be verbose.
+When
+.Fl f
+is used,
+.Nm
+prints out the slice table that is written to the disk.
+.It Fl x
+Expand the last valid slice in an existing fdisk table to fit
+the device.  Used to expand traditional DOS labels when the underlying
+storage has been enlarged, or the image has been copied to a larger
+device.
 .Pp
-Using
-.Fl v
-with
-.Fl u
-allows the user to change more parameters than normally permitted.
-.It Fl w Ar bootfile
-Write the modified partition table to file
-.Ar bootfile
-instead of the disk.
-.It Fl z Ar sectorsize
-Specify a sector size other than 512, for devices that only
-support larger sector sizes.
-The sector size needs to be a power of two greater than 512.
+This feature does not work on GPT partitions, use 'gpt expand device'
+instead.
+.It Fl 1234
+Operate on a single fdisk entry only.
+Ignored if
+.Fl f
+is given.
 .El
 .Pp
-When called with no arguments, it prints the partition table.
+The final disk name can be provided as a
+.Sq bare
+disk name only, e.g.\&
+.Pa da0 ,
+or as a fully qualified device node under
+.Pa /dev .
+If omitted, the disks
+.Pa ad0 ,
+.Pa da0
+and
+.Pa vkd0
+are searched in that order, until one is found to respond.
+.Pp
+When called without options,
+.Nm
+prints the sector 0 slice table.
 An example follows:
 .Bd -literal
-    Disk: /dev/rwd0d
-    NetBSD disklabel disk geometry:
-    cylinders: 16383, heads: 16, sectors/track: 63 (1008 sectors/cylinder)
-    total sectors: 40032696
+	******* Working on device /dev/ad0 *******
+	parameters extracted from in-core disklabel are:
+	cylinders=769 heads=15 sectors/track=33 (495 blks/cyl)
 
-    BIOS disk geometry:
-    cylinders: 1023, heads: 255, sectors/track: 63 (16065 sectors/cylinder)
-    total sectors: 40032696
+	parameters to be used for BIOS calculations are:
+	cylinders=769 heads=15 sectors/track=33 (495 blks/cyl)
 
-    Partition table:
-    0: NetBSD (sysid 169)
-	bootmenu: net 1.5.
-	start 4209030, size 8289540 (4048 MB, Cyls 262-778), Active
-    1: Primary DOS with 32 bit FAT (sysid 11)
-	bootmenu: win98
-	start 63, size 4208967 (2055 MB, Cyls 0-262)
-    2: NetBSD (sysid 169)
-	bootmenu: current
-	start 32515560, size 7517136 (3670 MB, Cyls 2024-2491/234/40)
-    3: Ext. partition - LBA (sysid 15)
-	start 12498570, size 20016990 (9774 MB, Cyls 778-2024)
-    Extended partition table:
-    E0: NetBSD (sysid 169)
-	bootmenu: test
-	start 12498633, size 12305727 (6009 MB, Cyls 778-1544)
-    E1: Primary DOS with 32 bit FAT (sysid 11)
-	start 24804423, size 4096512 (2000 MB, Cyls 1544-1799)
-    E2: Primary DOS with 32 bit FAT (sysid 11)
-	start 28900998, size 3614562 (1765 MB, Cyls 1799-2024)
-    Bootselector enabled, infinite timeout.
-    First active partition: 0
+	Warning: BIOS sector numbering starts with sector 1
+	Information from DOS bootblock is:
+	The data for partition 1 is:
+	sysid 108,(DragonFly BSD)
+	    start 495, size 380160 (185 Meg), flag 0
+		beg: cyl 1/ sector 1/ head 0;
+		end: cyl 768/ sector 33/ head 14
+	The data for partition 2 is:
+	sysid 164,(unknown)
+	    start 378180, size 2475 (1 Meg), flag 0
+		beg: cyl 764/ sector 1/ head 0;
+		end: cyl 768/ sector 33/ head 14
+	The data for partition 3 is:
+	<UNUSED>
+	The data for partition 4 is:
+	sysid 99,(ISC UNIX, other System V/386, GNU HURD or Mach)
+	    start 380656, size 224234 (109 Meg), flag 80
+		beg: cyl 769/ sector 2/ head 0;
+		end: cyl 197/ sector 33/ head 14
 .Ed
 .Pp
-This example disk is divided into four partitions, the last of which is
-an extended partition.
-The logical partitions of the extended partition are also shown.
-In this case there is no free space in either the disk or in the extended
-partition.
-.Pp
-The various fields in each partition entry are:
-.Bd -filled -offset 4n -compact
-.Em ptn_number : id_name
-(sysid
-.Em id_number )
-.Ed
-.Bd -filled -offset 8n -compact
-bootmenu:
-.Em bootmenu
-.br
-start
-.Em start ,
-size
-.Em size ( MB
-MB, Cyls
-.Em first Ns No - Ns Em next )
-.Op , Active
-.Ed
-.Bl -tag -width "bootmenu"
-.It Em ptn_number
-is the number of the partition.
-.It Em id_name
-is the name of the filesystem type or operating system that uses this partition.
-.It Em id_number
-is the number that identifies the partition type.
-169 decimal is used for
-.Nx
-partitions,
-15 decimal to create an extended partition
-and 0 to mark a partition as unused.
-Use
-.Nm
-.Fl l
-to list the known partition types.
-.It Em bootmenu
-is the menu prompt output by the interactive boot code for this partition.
-This line is omitted if the prompt is not defined.
-.It Em start , Em size
-are the start address and size of the partition in sectors.
-.It Em MB
-is the size of the partition in megabytes.
-.It Em first , Em next
-are the bounds of this partition displayed as cylinder/head/sector.
-If the partition starts (or ends) on a cylinder boundary the head and
-sector values are omitted.
-If
-.Fl v
-is not specified the start of logical partitions and the first partition
-on the disk are rounded down to include the mandatory red tape in the
-preceding track.
-.It Active
-is output if this is the active partition.
+The disk is divided into three slices that happen to fill the disk.
+The second slice overlaps the end of the first.
+(Used for debugging purposes.)
+.Bl -tag -width "cyl, sector and head"
+.It Em "sysid"
+is used to label the slice.
+.Dx
+reserves the magic number 108 decimal (6C in hexadecimal).
+.It Em start No and Em size
+fields provide the start address
+and size of a slice in sectors.
+.It Em "flag 80"
+specifies that this is the active slice.
+.It Em cyl , sector No and Em head
+fields are used to specify the beginning and end addresses of the slice.
+.It Em Note :
+these numbers are calculated using BIOS's understanding of the disk geometry
+and saved in the bootblock.
 .El
 .Pp
-If the
-.Fl v
-flag is specified, the beginning and end of each partition are also
-displayed as follows:
-.Bd -filled -offset 4n -compact
-beg: cylinder
-.Em cylinder ,
-head
-.Em head ,
-sector
-.Em sector
-.br
-end: cylinder
-.Em cylinder ,
-head
-.Em head ,
-sector
-.Em sector
-.Ed
-.Bl -tag -width "bootmenu"
-.It Em "cylinder" , Em "head" , Em "sector"
-are the beginning or ending address of a partition.
+The
+.Fl i
+and
+.Fl u
+flags are used to indicate that the slice data is to be updated.
+Unless the
+.Fl f
+option is also given,
+.Nm
+will enter a conversational mode.
+In this mode, no changes will be written to disk unless you explicitly tell
+.Nm
+to.
 .Pp
-.Em Note :
-these numbers are read from the bootblock, so are the values calculated
-by a previous run of
-.Nm .
-.El
+.Nm Fdisk
+will display each slice and ask whether you want to edit it.
+If you say yes,
+.Nm
+will step through each field, show you the old value,
+and ask you for a new one.
+When you are done with the slice,
+.Nm
+will display it and ask you whether it is correct.
+.Nm Fdisk
+will then proceed to the next entry.
 .Pp
-.Nm
-attempts to check whether each partition is bootable,
-by checking the magic number and some other characteristics
-of the first sector of each partition (the PBR).
-If the partition does not appear to be bootable,
-.Nm
-will print a line containing
-.Dq "PBR is not bootable"
-followed by an error message.
-If the partition is bootable, and if the
-.Fl v
-flag is specified,
-.Nm
-will print
-.Dq "PBR appears to be bootable" .
-If the
-.Fl v
-flag is specified more than once,
-.Nm
-will print the heading
-.Dq "Information from PBR:"
-followed by one or more lines of information gleaned from the PBR;
-this additional information may be incorrect or misleading,
-because different operating systems use different PBR formats.
-Note that, even if no errors are reported, an attempt to boot
-from the partition might fail.
-.Nx
-partitions may be made bootable using
-.Xr installboot 8 .
+Getting the
+.Em cyl , sector ,
+and
+.Em head
+fields correct is tricky, so by default,
+they will be calculated for you;
+you can specify them if you choose to though.
+.Pp
+After all the slices are processed,
+you are given the option to change the
+.Em active
+slice.
+Finally, when all the new data for sector 0 has been accumulated,
+you are asked to confirm whether you really want to rewrite it.
+.Pp
+The difference between the
+.Fl u
+and
+.Fl i
+flags is that
+the
+.Fl u
+flag just edits (updates) the fields as they appear on the disk,
+while the
+.Fl i
+flag is used to
+.Dq initialize
+sector 0;
+it will set up the last BIOS slice to use the whole disk for
+.Dx
+and make it active.
 .Sh NOTES
-This program is only available (and useful) on systems with PC-platform-style
-MBR partitioning.
-.Pp
-Traditionally the partition boundaries should be on cylinder boundaries
-using the BIOS geometry, with the exception of the first partition,
-which traditionally begins in the second track of the first cylinder
-(cylinder 0, head 1, sector 1).
-Although the BIOS geometry is typically different from the geometry
-reported by the drive, neither will match the actual physical geometry
-for modern disks (the actual geometry will vary across the disk).
-Keeping the partition boundaries on cylinder boundaries makes partitioning
-a driver easier as only relatively small numbers need be entered.
-.Pp
-The automatic calculation of the starting cylinder and
-other parameters uses
-a set of figures that represent what the BIOS thinks is the
-geometry of the drive.
-The default values should be correct for the system on which
+The automatic calculation of starting cylinder etc.\& uses
+a set of figures that represent what the BIOS thinks the
+geometry of the drive is.
+These figures are taken from the in-core disklabel by default,
+but
 .Nm
-is run; however, if you move the disk to a different system, the
-BIOS of that system might use a different geometry translation.
+initially gives you an opportunity to change them.
+This allows you to create a bootblock that can work with drives
+that use geometry translation under the BIOS.
 .Pp
-If you run the equivalent of
+If you hand craft your disk layout,
+please make sure that the
+.Dx
+slice starts on a cylinder boundary.
+A number of decisions made later may assume this.
+(This might not be necessary later.)
+.Pp
+Editing an existing slice will most likely result in the loss of
+all data in that slice.
+.Pp
+You should run
 .Nm
-on a different operating system then the
-.Ar bootmenu
-strings associated with extended partitions may be lost.
-.Pp
-Editing an existing partition is risky, and may cause you to
-lose all the data in that partition.
-.Pp
-You should run this program interactively once or twice to see how it works.
-This is completely safe as long as you answer the last question in the negative.
-You can also specify
-.Fl w Ar bootfile
-to write the output to a file and later specify
-.Fl r Ar bootfile
-to read back the updated information.
-This can be done without having write access to the disk volume.
-.Sh FILES
-.Bl -tag -width /usr/mdec/mbrxxxxxxxx -compact
-.It Pa /usr/mdec/mbr
-Default location of i386 bootcode
-.It Pa /usr/mdec/mbr_bootsel
-Default location of i386 bootselect code
-.It Pa /usr/mdec/mbr_ext
-Default location of i386 bootselect for extended partitions (i.e.,
-.Nx
-on logical partitions)
+interactively once or twice to see how it works.
+This is completely safe as long as you answer the last question
+in the negative.
+There are subtleties that
+.Nm
+detects that are not fully explained in this manual page.
+.Sh CONFIGURATION FILE
+When the
+.Fl f
+option is given, a disk's slice table can be written using values
+from a
+.Ar configfile .
+The syntax of this file is very simple;
+each line is either a comment or a specification, as follows:
+.Bl -tag -width Ds
+.It Xo
+.Ic #
+.Ar comment ...
+.Xc
+Lines beginning with a
+.Sq #
+are comments and are ignored.
+.It Xo
+.Ic g
+.Ar spec1
+.Ar spec2
+.Ar spec3
+.Xc
+Set the BIOS geometry used in slice calculations.
+There must be
+three values specified, with a letter preceding each number:
+.Bl -tag -width Ds
+.Sm off
+.It Cm c Ar num
+.Sm on
+Set the number of cylinders to
+.Ar num .
+.Sm off
+.It Cm h Ar num
+.Sm on
+Set the number of heads to
+.Ar num .
+.Sm off
+.It Cm s Ar num
+.Sm on
+Set the number of sectors/track to
+.Ar num .
 .El
-.Sh EXAMPLES
-Update MBR partition data of
-.Pa /dev/rwd0d
-in interactive mode:
 .Pp
-.Dl Ic fdisk -u /dev/rwd0d
+These specs can occur in any order, as the leading letter determines
+which value is which; however, all three must be specified.
 .Pp
-Change active MBR partition of
-.Pa /dev/rwd0d
-in interactive mode:
+This line must occur before any lines that specify slice
+information.
 .Pp
-.Dl Ic fdisk -a /dev/rwd0d
+It is an error if the following is not true:
+.Bd -literal -offset indent
+1 \(<= number of cylinders
+1 \(<= number of heads \(<= 256
+1 \(<= number of sectors/track < 64
+.Ed
 .Pp
-Install MBR bootcode
-.Pa /usr/mdec/mbr_bootsel
-into
-.Pa /dev/rwd0d :
+The number of cylinders should be less than or equal to 1024, but this
+is not enforced, although a warning will be printed.
+Note that a bootable
+.Dx
+slice (the
+.Dq Pa /
+file system) must lie completely within the
+first 1024 cylinders, if
+.Dq packet
+mode isn't used, see
+.Xr boot0cfg 8 ;
+if this is not true, booting may fail.
+Non-bootable slices do not have this restriction.
 .Pp
-.Dl Ic fdisk -c /usr/mdec/mbr_bootsel /dev/rwd0d
+Example (all of these are equivalent), for a disk with 1019 cylinders,
+39 heads, and 63 sectors:
+.Bd -literal -offset indent
+g       c1019   h39     s63
+g       h39     c1019   s63
+g       s63     h39     c1019
+.Ed
+.It Xo
+.Ic p
+.Ar slice
+.Ar type
+.Ar start
+.Ar length
+.Xc
+Set the slice given by
+.Ar slice
+(1-4) to type
+.Ar type ,
+starting at sector
+.Ar start
+for
+.Ar length
+sectors.
 .Pp
-Set MBR partition data for slot 0 of
-.Pa /dev/rwd0d
-specifying values without prompt:
+Only those slices explicitly mentioned by these lines are modified;
+any slice not referenced by a
+.Cm p
+line will not be modified.
+However, if an invalid slice table is present, or the
+.Fl i
+option is specified, all existing slice entries will be cleared
+(marked as unused), and these
+.Cm p
+lines will have to be used to
+explicitly set slice information.
+If multiple slices need to be
+set, multiple
+.Cm p
+lines must be specified; one for each slice.
 .Pp
-.Dl Ic fdisk -f -u -0 -s 169/63/2097089 /dev/rwd0d
+These slice lines must occur after any geometry specification lines,
+if one is present.
 .Pp
-Make partition slot 0 of
-.Pa /dev/rwd0d
-active without prompt:
+The
+.Ar type
+is 108 for
+.Dx
+slices.
+Specifying a slice type of zero is
+the same as clearing the slice and marking it as unused; however,
+dummy values (such as
+.Sq 0 )
+must still be specified for
+.Ar start
+and
+.Ar length .
 .Pp
-.Dl Ic fdisk -f -a -0 /dev/rwd0d
+Note: the start offset will be rounded upwards to a head boundary if
+necessary, and the end offset will be rounded downwards to a cylinder
+boundary if necessary.
 .Pp
-Initialize and create MBR partition data using bootcode
-.Pa destdir/usr/mdec/mbr
-without prompt against 1GB disk image file
-.Pa diskimg :
+Example: to clear slice 4 and mark it as unused:
+.Bd -literal -offset indent
+p       4       0       0       0
+.Ed
 .Pp
-.Dl Ic fdisk -f -i -b 130/255/63 -c destdir/usr/mdec/mbr -F diskimg
+Example: to set slice 1 to a
+.Dx
+slice, starting at sector 1
+for 2503871 sectors (note: these numbers will be rounded upwards and
+downwards to correspond to head and cylinder boundaries):
+.Bd -literal -offset indent
+p       1       108     1       2503871
+.Ed
+.It Xo
+.Ic a
+.Ar slice
+.Xc
+Make
+.Ar slice
+the active slice.
+Can occur anywhere in the config file, but only
+one must be present.
+If no
+.Cm a
+line is present, all slices of the disk are made inactive.
 .Pp
-Create MBR partition data for slot 0 which has an active
-.Nx
-partition using whole disk without prompt against 1GB disk image file
-.Pa diskimg :
+Example: to make slice 1 the active slice:
+.Bd -literal -offset indent
+a       1
+.Ed
+.El
+.Sh FILES
+.Bl -tag -width /boot/mbr -compact
+.It Pa /boot/mbr
+The default boot code
+.El
+.Sh COMPATIBILITY
+Due to the use of 32 bit to store the number of sectors in the MBR,
+.Nm
+can at most use 2^32 - 1 sectors.
+For the prevalent sector size of 512B this means a maximum of 2TB.
+Larger disks should be partitioned using
+.Xr gpt 8 .
 .Pp
-.Dl Ic fdisk -f -a -u -0 -s 169/63/2097089 -F diskimg
+The MBR that
+.Nm
+manipulates, is used by many different OSs, but the exact requirements seems to differ,
+it can be a hassle to get multiple OSs to recognize the same MBR.
+Some OSs will require that slices are located at cylinder boundaries.
 .Sh SEE ALSO
-.Xr disktab 5 ,
-.Xr boot 8 ,
+.Xr boot0cfg 8 ,
 .Xr disklabel 8 ,
 .Xr gpt 8 ,
-.Xr installboot 8 ,
-.Xr mbrlabel 8 ,
-.Xr x86/mbr 8
+.Xr newfs 8
 .Sh HISTORY
 A version of
 .Nm
@@ -674,11 +530,30 @@ It was ported to
 by
 .An Julian Elischer Aq Mt julian@tfs.com .
 .Sh BUGS
-The word
-.Sq partition
-is used to mean both an MBR partition and a
-.Nx
-partition, sometimes in the same sentence.
+Only slices s1-s4
+.Pq primary DOS partitions
+can be changed by
+.Nm ,
+s5-s30
+.Pq slices in extended DOS partitions
+can't be changed by
+.Nm .
 .Pp
-There are subtleties that the program detects that are not explained in
-this manual page.
+The default boot code will not necessarily handle all slice types
+correctly, in particular those introduced since MS-DOS 6.x.
+.Pp
+The entire program should be made more user-friendly.
+.Pp
+Most users new to
+.Dx
+do not understand the difference between
+.Ar slice
+and
+.Ar partition
+causing difficulty to adjust.
+.Pp
+You cannot use this command to completely dedicate a disk to
+.Dx .
+The
+.Xr disklabel 8
+command must be used for this.
