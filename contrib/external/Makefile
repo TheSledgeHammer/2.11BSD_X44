@@ -2,6 +2,6 @@
 
 .include <bsd.own.mk>
 
-SUBDIR+= binutils compat elftoolchain ingres
+SUBDIR+= compat elftoolchain ingres
 
 .include <bsd.subdir.mk>
