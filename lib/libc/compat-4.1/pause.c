@@ -14,6 +14,7 @@ static char sccsid[] = "@(#)pause.c	5.2.1 (2.11BSD) 1997/9/9";
 /*
  * Backwards compatible pause.
  */
+void
 pause()
 {
 	sigset_t set;

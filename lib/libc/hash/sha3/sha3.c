@@ -57,7 +57,7 @@ __RCSID("$NetBSD: sha3.c,v 1.2 2020/05/30 18:40:28 riastradh Exp $");
 #endif
 
 #include <sys/endian.h>
-#include <sys/sha3.h>
+#include <sha3.h>
 
 #include "keccak.h"
 

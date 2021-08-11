@@ -3,4 +3,4 @@
 HOSTPROGNAME=	${_TOOL_PREFIX}db
 HOST_SRCDIR=	usr.bin/db
 
-.include "${.CURDIR}/../Makefile.host"
+.include 		"${.CURDIR}/../Makefile.host"

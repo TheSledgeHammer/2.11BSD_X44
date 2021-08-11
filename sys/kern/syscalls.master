@@ -65,7 +65,7 @@
 19	STD			{ int lseek(); }
 20  STD     	{ int getpid(); }
 21  STD     	{ int mount(); }
-22  STD     	{ int umount(); }
+22  STD     	{ int unmount(); }
 23  STD     	{ int __sysctl(); }
 24  STD     	{ int getuid(); }
 25  STD     	{ int geteuid(); }

@@ -169,7 +169,7 @@ char *copy_c_code()
 
 
 if_c_code(chr)
-char	chr;
+	char	chr;
 {
 	for ( ; ; )
 	{

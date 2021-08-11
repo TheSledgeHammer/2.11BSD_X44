@@ -15,6 +15,7 @@ static char sccsid[] = "@(#)nice.c	5.2 (Berkeley) 3/9/86";
 /*
  * Backwards compatible nice.
  */
+int
 nice(incr)
 	int incr;
 {

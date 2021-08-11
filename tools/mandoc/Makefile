@@ -1,7 +1,7 @@
 #	$NetBSD: Makefile,v 1.14 2018/08/15 14:31:22 christos Exp $
 
 HOSTPROGNAME=	${_TOOL_PREFIX}mandoc
-HOST_SRCDIR=	contrib/external/mdocml/bin/mandoc
+HOST_SRCDIR=	contrib/mdocml/bin/mandoc
 
 .include <bsd.hostinit.mk>
 

@@ -1,6 +1,6 @@
 # include	"../ingres.h"
 # include	"../pipes.h"
-# include	"../aux.h"
+# include	"../_aux.h"
 # include	"../unix.h"
 # include	"../access.h"
 # include	"../lock.h"
@@ -209,7 +209,7 @@ char	**argv;
 
 		/* read the parameters */
 		/*** this should check for overflow of stringbuf ***/
-		for (sp = stringbuf; j = rdpipe(P_NORM, &Pbuf, R_up, sp, 0); sp += j)
+		for (sp = stringbuf; j == rdpipe(P_NORM, &Pbuf, R_up, sp, 0); sp += j)
 			parmv[i++] = sp;
 		parmv[i] = (char *) -1;
 #		ifdef xZTR1

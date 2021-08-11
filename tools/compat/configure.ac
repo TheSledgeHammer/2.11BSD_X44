@@ -69,21 +69,20 @@ AC_CHECK_LIB(z, gzdopen,,
 # Make sure certain required headers are available.
 # These are not necessarily required by the code, but they are not
 # currently conditionalized.
-AC_CHECK_HEADERS(sys/ioctl.h sys/mman.h sys/param.h \
-	sys/socket.h sys/stat.h sys/time.h sys/types.h sys/utsname.h \
-	sys/wait.h assert.h ctype.h errno.h fcntl.h grp.h limits.h locale.h \
-	netdb.h pwd.h signal.h stdarg.h stdio.h stdlib.h string.h \
+AC_CHECK_HEADERS(sys/ioctl.h sys/mman.h sys/param.h 						\
+	sys/socket.h sys/stat.h sys/time.h sys/types.h sys/utsname.h 			\
+	sys/wait.h assert.h ctype.h errno.h fcntl.h grp.h limits.h locale.h 	\
+	netdb.h pwd.h signal.h stdarg.h stdio.h stdlib.h string.h 				\
 	termios.h unistd.h,,
 	AC_MSG_ERROR([standard system header file not found]))
 
 # Find headers that may not be available.
 AC_HEADER_DIRENT
-AC_CHECK_HEADERS(sys/mtio.h sys/sysmacros.h sys/syslimits.h stdio_ext.h \
-	getopt.h features.h malloc.h sys/poll.h pthread.h stddef.h sys/uio.h)
-AC_CHECK_HEADERS(sys/bswap.h machine/bswap.h sys/cdefs.h machine/endian.h \
-	sys/endian.h sys/featuretest.h err.h inttypes.h libgen.h paths.h \
-	libgen.h stdint.h util.h resolv.h arpa/nameser.h,,
-	[test -f include/$ac_header || touch include/$ac_header])
+AC_CHECK_HEADERS(sys/mtio.h sys/syslimits.h getopt.h malloc.h sys/poll.h 	\
+	stddef.h sys/uio.h)
+AC_CHECK_HEADERS(sys/cdefs.h machine/endian_machdep.h sys/endian.h 			\
+	err.h libgen.h paths.h libgen.h stdint.h util.h resolv.h 				\
+	arpa/nameser.h,, [test -f include/$ac_header || touch include/$ac_header])
 AC_CHECK_HEADERS(rpc/types.h,,
 	[echo '#include "nbtool_config.h"' >include/$ac_header.new
 	echo '#include "'$srcdir/../../common/include/$ac_header'"' \
@@ -219,10 +218,10 @@ AC_CHECK_DECLS(sys_signame,,, [#include <signal.h>])
 
 # Library functions (where a .h check isn't enough).
 AC_FUNC_ALLOCA
-AC_CHECK_FUNCS(atoll asprintf asnprintf basename devname dirfd dirname \
-	dprintf esetfunc fgetln flock fpurge __fpurge futimes getline \
-	getopt getopt_long group_from_gid gid_from_group \
-	heapsort isblank issetugid lchflags lchmod lchown lutimes mkstemp \
+AC_CHECK_FUNCS(atoll asprintf asnprintf basename devname dirfd dirname 	\
+	dprintf esetfunc fgetln flock fpurge __fpurge futimes getline 		\
+	getopt getopt_long group_from_gid gid_from_group 					\
+	heapsort isblank issetugid lchflags lchmod lchown lutimes mkstemp 	\
 	mkdtemp poll pread putc_unlocked pwcache_userdb pwcache_groupdb \
 	pwrite raise_default_signal random reallocarr reallocarray setenv \
 	setgroupent setprogname setpassent \

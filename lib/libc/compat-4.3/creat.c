@@ -38,6 +38,7 @@ static char sccsid[] = "@(#)creat.c	8.1.1 (2.11BSD) 1997/8/28";
 
 #include <fcntl.h>
 
+int
 creat(path, mode)
 	char *path;
 	mode_t mode;

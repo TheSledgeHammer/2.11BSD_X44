@@ -46,7 +46,8 @@ __UINT
 _FUNCNAME(const char *nptr, char **endptr, int base)
 #else
 #include <locale.h>
-#include "setlocale_local.h"
+#include <string.h>
+
 #define INT_FUNCNAME_(pre, name, post)	pre ## name ## post
 #define INT_FUNCNAME(pre, name, post)	INT_FUNCNAME_(pre, name, post)
 

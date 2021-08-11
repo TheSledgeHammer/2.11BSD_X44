@@ -34,6 +34,7 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)getcap.c	8.3 (Berkeley) 3/25/94";
 #endif /* LIBC_SCCS and not lint */
@@ -524,7 +525,7 @@ tc_exp:	{
 		(void)close(fd);
 	*len = rp - record - 1;	/* don't count NUL */
 	if (r_end > rp)
-		if ((record = 
+		if ((record =
 		     realloc(record, (size_t)(rp - record))) == NULL) {
 			errno = ENOMEM;
 			return (-2);
@@ -1035,7 +1036,7 @@ nfcmp(nf, rec)
 {
 	char *cp, tmp;
 	int ret;
-	
+
 	for (cp = rec; *cp != ':'; cp++)
 		;
 	

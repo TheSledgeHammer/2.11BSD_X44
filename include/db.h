@@ -116,15 +116,15 @@ typedef struct __db {
 typedef struct {
 #define	R_DUP		0x01	/* duplicate keys */
 	u_long	flags;
-	u_int	cachesize;	/* bytes to cache */
-	int	maxkeypage;		/* maximum keys per page */
-	int	minkeypage;		/* minimum keys per page */
-	u_int	psize;		/* page size */
-	int	(*compare)		/* comparison function */
+	u_int	cachesize;		/* bytes to cache */
+	int		maxkeypage;		/* maximum keys per page */
+	int		minkeypage;		/* minimum keys per page */
+	u_int	psize;			/* page size */
+	int		(*compare)		/* comparison function */
 		(const DBT *, const DBT *);
-	size_t	(*prefix)	/* prefix function */
+	size_t	(*prefix)		/* prefix function */
 		(const DBT *, const DBT *);
-	int	lorder;			/* byte order */
+	int	lorder;				/* byte order */
 } BTREEINFO;
 
 #define	HASHMAGIC	0x061561

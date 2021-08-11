@@ -42,6 +42,7 @@ __RCSID("$NetBSD: pw_scan.c,v 1.23 2012/03/13 21:13:36 christos Exp $");
 #if defined(_LIBC)
 #include "namespace.h"
 #endif
+#include <sys/syslimits.h>
 #include <sys/types.h>
 
 #include <assert.h>
@@ -53,6 +54,7 @@ __RCSID("$NetBSD: pw_scan.c,v 1.23 2012/03/13 21:13:36 christos Exp $");
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <util.h>
 
 #ifdef _LIBC
 #include "pw_private.h"

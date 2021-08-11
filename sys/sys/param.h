@@ -43,7 +43,9 @@
 #ifndef LOCORE
 #include <sys/types.h>
 #endif
+#include <sys/ansi.h>
 
+#include <sys/null.h>
 /*
  * Machine-independent constants
  */
@@ -70,6 +72,7 @@
 #include <sys/uio.h>
 #include <sys/ucred.h>
 #include <sys/user.h>
+#include <vm/include/vm_param.h>
 #endif
 
 /* Signals */
@@ -252,5 +255,4 @@
 #ifndef ALIGNED_POINTER_LOAD
 #define	ALIGNED_POINTER_LOAD(q,p,t)	(*(q) = *((const t *)(p)))
 #endif
-
 #endif /* _SYS_PARAM_H_ */

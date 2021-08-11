@@ -8,9 +8,9 @@ AR=ar
 ARFLAGS=rvuc
 
 OBJS=	index.o create.o modify.o modupdate.o destroy.o userdestroy.o \
-	purgetup.o print.o help.o copy.o save.o rupdate.o update.o convert.o \
-	secupdate.o rdwrbatch.o resetrel.o get_seq_atts.o dbuproctab.o \
-	display.o pr_tree.o readtree.o pr_prot.o rmqm.o get_p_tid.o
+		purgetup.o print.o help.o copy.o save.o rupdate.o update.o convert.o \
+		secupdate.o rdwrbatch.o resetrel.o get_seq_atts.o dbuproctab.o \
+		display.o pr_tree.o readtree.o pr_prot.o rmqm.o get_p_tid.o
 
 all: dbulib overlaya overlayc overlayi overlaym overlayn overlayg ksort
 

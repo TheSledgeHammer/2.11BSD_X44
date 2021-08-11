@@ -15,6 +15,7 @@ static char sccsid[] = "@(#)gtty.c	5.2 (Berkeley) 3/9/86";
 
 #include <sgtty.h>
 
+int
 gtty(fd, ap)
 	int fd;
 	struct sgtty *ap;

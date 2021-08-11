@@ -34,12 +34,12 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/systm.h>
+#include <sys/unistd.h>
 #include <sys/null.h>
 
 #ifdef _STANDALONE
 #include <lib/libkern/libkern.h>
 #endif
-
 
 void
 __assert(func, file, line, expression)

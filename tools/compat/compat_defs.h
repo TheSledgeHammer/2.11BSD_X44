@@ -243,9 +243,6 @@ struct group;
 #else
 # define dirent direct
 # define NAMLEN(dirent) ((dirent)->d_namlen)
-# if HAVE_SYS_NDIR_H
-#  include <sys/ndir.h>
-# endif
 # if HAVE_SYS_DIR_H
 #  include <sys/dir.h>
 # endif
@@ -345,12 +342,6 @@ void vwarnc(int, const char *, va_list);
 #if !HAVE_DECL_VWARNX
 void vwarnx(const char *, va_list);
 #endif
-
-#if !HAVE_DECL_MI_VECTOR_HASH
-void     mi_vector_hash(const void * __restrict, size_t, uint32_t,
-    uint32_t[3]);
-#endif
-
 
 #if !HAVE_ESETFUNC
 void (*esetfunc(void (*)(int, const char *, ...)))(int, const char *, ...);
@@ -471,11 +462,9 @@ int heapsort (void *, size_t, size_t, int (*)(const void *, const void *));
 
 #if !HAVE_PWCACHE_USERDB
 int uid_from_user(const char *, uid_t *);
-int pwcache_userdb(int (*)(int), void (*)(void),
-		struct passwd * (*)(const char *), struct passwd * (*)(uid_t));
+int pwcache_userdb(int (*)(int), void (*)(void), struct passwd * (*)(const char *), struct passwd * (*)(uid_t));
 int gid_from_group(const char *, gid_t *);
-int pwcache_groupdb(int (*)(int), void (*)(void),
-		struct group * (*)(const char *), struct group * (*)(gid_t));
+int pwcache_groupdb(int (*)(int), void (*)(void), struct group * (*)(const char *), struct group * (*)(gid_t));
 #endif
 /* Make them use our version */
 #  define user_from_uid __nbcompat_user_from_uid
@@ -780,61 +769,6 @@ int	 cgetustr(char *, const char *, char **);
 #define le64toh(x)	htole64(x)
 #endif
 
-#define __GEN_ENDIAN_ENC(bits, endian) \
-static void \
-endian ## bits ## enc(void *dst, uint ## bits ## _t u) \
-{ \
-	u = hto ## endian ## bits (u); \
-	memcpy(dst, &u, sizeof(u)); \
-}
-#if !HAVE_DECL_BE16ENC
-__GEN_ENDIAN_ENC(16, be)
-#endif
-#if !HAVE_DECL_BE32ENC
-__GEN_ENDIAN_ENC(32, be)
-#endif
-#if !HAVE_DECL_BE64ENC
-__GEN_ENDIAN_ENC(64, be)
-#endif
-#if !HAVE_DECL_LE16ENC
-__GEN_ENDIAN_ENC(16, le)
-#endif
-#if !HAVE_DECL_LE32ENC
-__GEN_ENDIAN_ENC(32, le)
-#endif
-#if !HAVE_DECL_LE64ENC
-__GEN_ENDIAN_ENC(64, le)
-#endif
-#undef __GEN_ENDIAN_ENC
-
-#define __GEN_ENDIAN_DEC(bits, endian) \
-static uint ## bits ## _t \
-endian ## bits ## dec(const void *buf) \
-{ \
-	uint ## bits ## _t u; \
-	memcpy(&u, buf, sizeof(u)); \
-	return endian ## bits ## toh (u); \
-}
-#if !HAVE_DECL_BE16DEC
-__GEN_ENDIAN_DEC(16, be)
-#endif
-#if !HAVE_DECL_BE32DEC
-__GEN_ENDIAN_DEC(32, be)
-#endif
-#if !HAVE_DECL_BE64DEC
-__GEN_ENDIAN_DEC(64, be)
-#endif
-#if !HAVE_DECL_LE16DEC
-__GEN_ENDIAN_DEC(16, le)
-#endif
-#if !HAVE_DECL_LE32DEC
-__GEN_ENDIAN_DEC(32, le)
-#endif
-#if !HAVE_DECL_LE64DEC
-__GEN_ENDIAN_DEC(64, le)
-#endif
-#undef __GEN_ENDIAN_DEC
-
 /* <sys/mman.h> */
 
 #ifndef MAP_FILE
@@ -1002,6 +936,5 @@ __GEN_ENDIAN_DEC(64, le)
 quad_t   strtoq __P((const char *, char **, int));
 u_quad_t strtouq __P((const char *, char **, int));
 #endif
-
 
 #endif	/* !__NETBSD_COMPAT_DEFS_H__ */

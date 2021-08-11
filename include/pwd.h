@@ -28,8 +28,26 @@
 #define	_PATH_MKPASSWD		"/etc/mkpasswd"
 #define	_PATH_PTMP			"/etc/ptmp"
 
-#define	_PW_KEYBYNAME		'0'
-#define	_PW_KEYBYUID		'1'
+#define	_PW_KEYBYNAME		'0'		/* stored by name */
+#define	_PW_KEYBYUID		'1'		/* stored by uid */
+#define	_PW_KEYBYNUM		'2'		/* stored by entry in the "file" */
+
+#define	_PASSWORD_EFMT1		'_'		/* extended DES encryption format */
+#define	_PASSWORD_NONDES	'$'		/* non-DES encryption formats */
+
+#define	_PASSWORD_LEN		128		/* max length, not counting NUL */
+
+#define _PASSWORD_NOUID		0x01	/* flag for no specified uid. */
+#define _PASSWORD_NOGID		0x02	/* flag for no specified gid. */
+#define _PASSWORD_NOCHG		0x04	/* flag for no specified change. */
+#define _PASSWORD_NOEXP		0x08	/* flag for no specified expire. */
+
+#define _PASSWORD_OLDFMT	0x10	/* flag to expect an old style entry */
+#define _PASSWORD_NOWARN	0x20	/* no warnings for bad entries */
+
+#define _PASSWORD_WARNDAYS	14		/* days to warn about expiry */
+#define _PASSWORD_CHGNOW	-1		/* special day to force password change at next login */
+#endif
 
 struct passwd {
 	char	*pw_name;			/* user name */

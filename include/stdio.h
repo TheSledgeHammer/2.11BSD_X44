@@ -234,6 +234,13 @@ __END_DECLS
 #define	stdout		(&_iob[1])
 #define	stderr		(&_iob[2])
 
+
+#define	FPARSELN_UNESCESC	0x01
+#define	FPARSELN_UNESCCONT	0x02
+#define	FPARSELN_UNESCCOMM	0x04
+#define	FPARSELN_UNESCREST	0x08
+#define	FPARSELN_UNESCALL	0x0f
+
 /*
  * Functions defined in ANSI C standard.
  */

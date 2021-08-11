@@ -31,7 +31,7 @@
 
 #if defined(_KERNEL) || defined(_STANDALONE)
 #include <sys/param.h>
-#include <sys/md5.h>
+#include <md5.h>
 #include <lib/libkern/libkern.h>
 #else
 #include <sys/cdefs.h>

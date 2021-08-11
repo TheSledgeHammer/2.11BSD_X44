@@ -39,6 +39,7 @@ static char sccsid[] = "@(#)sigcompat.c	8.1.1 (2.11BSD) 1997/8/28";
 #include <sys/param.h>
 #include <sys/signal.h>
 
+int
 sigvec(signo, sv, osv)
 	int signo;
 	register struct sigvec *sv, *osv;
@@ -79,6 +80,7 @@ sigblock(mask)
 	return(omask);
 }
 
+int
 sigpause(mask)
 	long mask;
 {

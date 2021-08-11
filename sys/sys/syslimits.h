@@ -59,4 +59,6 @@
 #define	LINE_MAX 			2048	/* max bytes in an input line */
 #define	RE_DUP_MAX		   	255		/* max RE's in interval notation */
 
+#define	LOGIN_NAME_MAX		17		/* max login name length incl. NUL */
+
 #endif

@@ -65,7 +65,6 @@
 #define	ALIGNBYTES	3
 #define	ALIGN(p)		(((u_int)(p) + ALIGNBYTES) &~ ALIGNBYTES)
 
-
 #define	NBPG			4096				/* bytes/page (PAGE SIZE) */
 #define NBPDE			1024				/* page directory size in bytes (PDE SIZE) */
 

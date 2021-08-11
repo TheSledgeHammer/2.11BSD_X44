@@ -6,6 +6,7 @@ static char sccsid[] = "@(#)getgrent.c	5.2 (Berkeley) 3/9/86";
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <string.h>
 #include <grp.h>
 
 #define	MAXGRP	200
@@ -19,7 +20,7 @@ static char line[256+1];
 static struct group group;
 static int _gr_stayopen;
 static char *gr_mem[MAXGRP];
-static int grscan(), start_gr();
+//static int grscan(), start_gr();
 
 
 void
@@ -99,7 +100,7 @@ getgrgid(gid)
 	return(rval ? &group : NULL);
 }
 
-static
+static int
 grscan(search, gid, name)
 	register int search, gid;
 	register char *name;

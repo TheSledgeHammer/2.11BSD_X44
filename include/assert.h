@@ -45,30 +45,63 @@
  * multiple times, with and without NDEBUG defined.
  */
 
+#include <sys/cdefs.h>
+#include <sys/null.h>
+
 #undef assert
 #undef _assert
 
 #ifdef NDEBUG
-#define	assert(e)	((void)0)
-#define	_assert(e)	((void)0)
-#else
-#define	_assert(e)	assert(e)
+# ifndef __lint__
+#  define assert(e)	(__static_cast(void,0))
+# else /* !__lint__ */
+#  define assert(e)
+# endif /* __lint__ */
+#else /* !NDEBUG */
 #ifdef __STDC__
-#define	assert(e)	((e) ? (void)0 : __assert(__FILE__, __LINE__, #e))
-#else	/* PCC */
-#define	assert(e)	((e) ? (void)0 : __assert(__FILE__, __LINE__, "e"))
+#  define assert(e) ((e) ? __static_cast(void,0) : __assert13(__FILE__, __LINE__, __assert_function__, #e))
+# else	/* PCC */
+#  define assert(e)	((e) ? __static_cast(void,0) : __assert13(__FILE__, __LINE__, __assert_function__, "e"))
 #endif
 #endif
-
-#include <sys/cdefs.h>
-
-__BEGIN_DECLS
-void __assert (const char *, int, const char *);
-__END_DECLS
-# ifndef NDEBUG
-# define _assert(ex)	{if (!(ex)){fprintf(stderr,"Assertion failed: file \"%s\", line %d\n", __FILE__, __LINE__);exit(1);}}
-# define assert(ex)	_assert(ex)
-# else
-# define _assert(ex)
-# define assert(ex)
+#undef _DIAGASSERT
+#if !defined(_DIAGNOSTIC)
+# if !defined(__lint__)
+#  define _DIAGASSERT(e) (__static_cast(void,0))
+# else /* !__lint__ */
+#  define _DIAGASSERT(e)
+# endif /* __lint__ */
+#else /* _DIAGNOSTIC */
+# if __STDC__
+#  define _DIAGASSERT(e) ((e) ? __static_cast(void,0) : __diagassert13(__FILE__, __LINE__, __assert_function__, #e))
+# else	/* !__STDC__ */
+#  define _DIAGASSERT(e) ((e) ? __static_cast(void,0) : __diagassert13(__FILE__, __LINE__, __assert_function__, "e"))
 # endif
+#endif /* _DIAGNOSTIC */
+
+
+#if defined(__lint__)
+#define	__assert_function__	(__static_cast(const void *,0))
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#define	__assert_function__	__func__
+#elif __GNUC_PREREQ__(2, 6)
+#define	__assert_function__	__PRETTY_FUNCTION__
+#else
+#define	__assert_function__	(__static_cast(const void *,0))
+#endif
+
+#ifndef __ASSERT_DECLARED
+#define __ASSERT_DECLARED
+__BEGIN_DECLS
+void __assert(const char *, int, const char *);
+void __assert13(const char *, int, const char *, const char *);
+void __diagassert(const char *, int, const char *);
+void __diagassert13(const char *, int, const char *, const char *);
+__END_DECLS
+#endif /* __ASSERT_DECLARED */
+
+#if defined(_ISOC11_SOURCE) || (__STDC_VERSION__ - 0) >= 201101L
+#ifndef static_assert
+#define static_assert _Static_assert
+#endif /* static_assert */
+#endif
