@@ -552,6 +552,12 @@ pmap_bootstrap(firstaddr, loadaddr)
 
 	virtual_avail = va;
 
+	/*
+	 * Initialize the TLB shootdown queues.
+	 */
+	pmap_tlb_init();
+	simple_lock_init(&smp_tlb_lock, "smp_tlb_lock");
+
 	pmap_init_pat();
 }
 
@@ -738,11 +744,22 @@ pmap_init(phys_start, phys_end)
 		printf("pmap_init: %x bytes (%x pgs): tbl %x attr %x\n", s, npg, pv_table, pmap_attributes);
 #endif
 
+	pj_page = (void *)kmem_alloc(kernel_map, PAGE_SIZE);
+	if (pj_page == NULL) {
+		panic("pmap_init: pj_page");
+	}
+	for (i = 0; i < (PAGE_SIZE / sizeof (union pmap_tlb_shootdown_job_al) - 1); i++) {
+		pj_page[i].pja_job.pj_nextfree = &pj_page[i + 1].pja_job;
+	}
+	pj_page[i].pja_job.pj_nextfree = NULL;
+	pj_free = &pj_page[0];
+
 	/*
 	 * Now it is safe to enable pv_table recording.
 	 */
 	vm_first_phys = phys_start;
 	vm_last_phys = phys_end;
+
 	pmap_initialized = TRUE;
 }
 
@@ -2105,7 +2122,7 @@ pmap_bios16_enter(void)
 	*h->pte = vm86phystk | PG_RW | PG_V;
 	h->orig_ptd = *h->ptd;
 	*h->ptd = vtophys(h->pte) | PG_RW | PG_V;
-	//pmap_invalidate_all(kernel_pmap); /* XXX insurance for now */
+	pmap_invalidate_all(kernel_pmap); /* XXX insurance for now */
 	return (h);
 }
 
@@ -2119,7 +2136,7 @@ pmap_bios16_leave(void *arg)
 	/*
 	 * XXX only needs to be invlpg(0) but that doesn't work on the 386
 	 */
-	//pmap_invalidate_all(kernel_pmap);
+	pmap_invalidate_all(kernel_pmap);
 	free(h->pte, M_TEMP); /* ... and free it */
 }
 
@@ -2302,21 +2319,6 @@ pmap_invalidate_all(pmap)
  * purpose allocator for speed.
  */
 
-void
-pmap_init()
-{
-	int i;
-	pj_page = (void *)kmem_alloc(kernel_map, PAGE_SIZE);
-	if (pj_page == NULL) {
-		panic("pmap_init: pj_page");
-	}
-	for (i = 0; i < (PAGE_SIZE / sizeof (union pmap_tlb_shootdown_job_al) - 1); i++) {
-		pj_page[i].pja_job.pj_nextfree = &pj_page[i + 1].pja_job;
-	}
-	pj_page[i].pja_job.pj_nextfree = NULL;
-	pj_free = &pj_page[0];
-}
-
 /*
  * Initialize the TLB shootdown queues.
  */
@@ -2328,6 +2330,11 @@ pmap_tlb_init()
 		TAILQ_INIT(&pmap_tlb_shootdown_q[i].pq_head);
 		simple_lock_init(&pmap_tlb_shootdown_q[i].pq_slock, "pmap_tlb_shootdown_lock");
 	}
+
+	/*
+	 * ensure the TLB is sync'd with reality by flushing it...
+	 */
+	tlbflush();
 }
 
 void
