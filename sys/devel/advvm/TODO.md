@@ -15,5 +15,5 @@
 ## Filesets:
 
 
-## Virtual_Disks: (advvm_vdisk.c/.h)
+## Virtual_Disks: (advvm_bitfile.c/.h)
 - To implement routines & functions

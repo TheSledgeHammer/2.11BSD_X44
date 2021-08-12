@@ -72,7 +72,7 @@ int ufs211_dirremove(struct vnode *, struct componentname *);
 int ufs211_dirrewrite(struct ufs211_inode *, struct ufs211_inode *, struct componentname *);
 int ufs211_dirempty(struct ufs211_inode *, ino_t);
 int ufs211_checkpath(struct ufs211_inode *, struct ufs211_inode *);
-struct buf *ufs211_blkatoff1(struct ufs211_inode *, off_t, char **);
+struct buf *ufs211_blkatoff(struct ufs211_inode *, off_t, char **);
 void blkflush(struct vnode *, daddr_t);
 int ufs211_init(struct vfsconf *);
 void ufs211_mapin(struct buf *);

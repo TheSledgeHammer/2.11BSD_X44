@@ -126,7 +126,7 @@ fsfind(const char *name, uint32_t * ino)
 	return 0;
 }
 
-uint32_t
+static uint32_t
 boot_lookup(const char *path)
 {
 	static char name[UFS_MAXNAMLEN + 1];
@@ -342,11 +342,11 @@ fsread_size(uint32_t inode, void *buf, size_t nbyte, size_t *fsizep)
 	if (fsizep != NULL)
 		*fsizep = size;
 
-	return (nbyte);
+	return nbyte;
 }
 
-ssize_t
+static ssize_t
 boot_fsread(uint32_t inode, void *buf, size_t nbyte)
 {
-	return (fsread_size(inode, buf, nbyte, NULL));
+	return fsread_size(inode, buf, nbyte, NULL);
 }

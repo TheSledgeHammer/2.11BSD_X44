@@ -313,5 +313,6 @@ isa_inb(int port)
 static void
 isa_outb(int port, int value)
 {
+
 	outb(port, value);
 }

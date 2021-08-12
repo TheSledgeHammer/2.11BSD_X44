@@ -65,7 +65,10 @@
 #include <machine/apic/apic.h>
 #include <machine/apic/lapicreg.h>
 #include <machine/apic/lapicvar.h>
+
+#ifdef SMP
 #include <machine/mpconfig.h>
+#endif
 
 #define lapic_lock_init(lock) 	simple_lock_init(lock, "lapic_lock")
 #define lapic_lock(lock) 		simple_lock(lock)
@@ -278,7 +281,7 @@ lapic_set_lvt(void)
 		lint1 |= LAPIC_LVT_MASKED;
 	}
 	lapic_write(LAPIC_LVINT1, lint1);
-
+#ifdef SMP
 	for (i = 0; i < mp_nintr; i++) {
 		mpi = &mp_intrs[i];
 		if (mpi->ioapic == NULL && (mpi->cpu_id == MPS_ALL_APICS || mpi->cpu_id == ci->cpu_cpuid)) {
@@ -292,7 +295,7 @@ lapic_set_lvt(void)
 		}
 	}
 
-#ifdef SMP
+
 	if (mp_verbose) {
 			apic_format_redir (ci->cpu_dev->dv_xname, "timer", 0, 0, lapic_read(LAPIC_LVTT));
 			apic_format_redir (ci->cpu_dev->dv_xname, "pcint", 0, 0, lapic_read(LAPIC_PCINT));

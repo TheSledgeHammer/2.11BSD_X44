@@ -2,6 +2,6 @@
 
 .include <bsd.own.mk>
 
-SUBDIR+= compat elftoolchain groff
+SUBDIR+= compat elftoolchain ingres
 
 .include <bsd.subdir.mk>

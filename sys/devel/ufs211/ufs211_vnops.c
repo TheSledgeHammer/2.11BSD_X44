@@ -98,7 +98,7 @@ struct vnodeops ufs211_vnodeops = {
 		.vop_vfree = ufs211_vfree,			/* vfree */
 		.vop_truncate = ufs211_truncate,	/* truncate */
 		.vop_update = ufs211_update,		/* update */
-		.vop_bwrite = vn_bwrite,			/* bwrite */
+		.vop_bwrite = ufs211_bwrite,		/* bwrite */
 		(struct vnodeops *)NULL = (int(*)())NULL
 };
 
@@ -144,7 +144,7 @@ struct vnodeops ufs211_specops = {
 		.vop_vfree = ufs211_vfree,			/* vfree */
 		.vop_truncate = spec_truncate,		/* truncate */
 		.vop_update = ufs211_update,		/* update */
-		.vop_bwrite = vn_bwrite,			/* bwrite */
+		.vop_bwrite = ufs211_bwrite,		/* bwrite */
 		(struct vnodeops *)NULL = (int(*)())NULL
 };
 
@@ -191,7 +191,7 @@ struct vnodeops ufs211_fifoops = {
 		.vop_vfree = ufs211_vfree,			/* vfree */
 		.vop_truncate = fifo_truncate,		/* truncate */
 		.vop_update = ufs211_update,		/* update */
-		.vop_bwrite = vn_bwrite,			/* bwrite */
+		.vop_bwrite = ufs211_bwrite,		/* bwrite */
 		(struct vnodeops *)NULL = (int(*)())NULL
 };
 #endif /* FIFO */
@@ -702,7 +702,7 @@ ufs211_remove(ap)
 	int error;
 
 	ip = UFS211_VTOI(vp);
-	if ((ip->i_flags & (IMMUTABLE | APPEND)) || (UFS211_VTOI(dvp)->i_flags & APPEND)) {
+	if ((ip->i_flags & (IMMUTABLE | APPEND)) || (VTOI(dvp)->i_flags & APPEND)) {
 		error = EPERM;
 		goto out;
 	}
@@ -994,8 +994,8 @@ abortit:
 		panic("ufs_rename: lost from startdir");
 	(void) relookup(fdvp, &fvp, fcnp);
 	if (fvp != NULL) {
-		xp = UFS211_VTOI(fvp);
-		dp = UFS211_VTOI(fdvp);
+		xp = VTOI(fvp);
+		dp = VTOI(fdvp);
 	} else {
 		/*
 		 * From name has disappeared.
@@ -1441,7 +1441,7 @@ ufs211_link(ap)
 		VOP_ABORTOP(tdvp, cnp);
 		goto out2;
 	}
-	ip = UFS211_VTOI(vp);
+	ip = VTOI(vp);
 	if ((nlink_t)ip->i_nlink >= LINK_MAX) {
 		VOP_ABORTOP(tdvp, cnp);
 		error = EMLINK;
@@ -1615,7 +1615,7 @@ ufs211_mkdir(ap)
 	 */
 	if (error == VOP_VALLOC(dvp, dmode, cnp->cn_cred, &tvp))
 		goto out;
-	ip = UFS211_VTOI(tvp);
+	ip = VTOI(tvp);
 	ip->i_uid = cnp->cn_cred->cr_uid;
 	ip->i_gid = dp->i_gid;
 #ifdef QUOTA
@@ -1798,35 +1798,6 @@ int
 ufs211_blkatoff(ap)
 	struct vop_blkatoff_args *ap;
 {
-	struct ufs211_inode *ip;
-	register struct ufs211_fs *fs;
-	register struct buf *bp;
-	daddr_t lbn, bn;
-	char *junk;
-	int error;
-
-	ip = UFS211_VTOI(ap->a_vp);
-	fs = ip->i_fs;
-	lbn = lblkno(ap->a_offset);
-	bn = ufs211_bmap1(ip, lbn, B_READ, 0);
-
-	if (u->u_error) {
-		return (u->u_error);
-	}
-	if (bn == (daddr_t)-1) {
-		ufs211_dirbad(ip, ap->a_offset, "hole in dir");
-	}
-	if (error == bread(ap->a_vp, lbn, bn, NOCRED, &bp)) {
-		if (bp->b_flags & B_ERROR) {
-			brelse(bp);
-			return (error);
-		}
-	}
-	junk = (caddr_t)bp->b_data;
-	if (ap->a_res) {
-		*ap->a_res = junk + (u_int)blkoff(ap->a_offset);
-	}
-	*ap->a_bpp = bp;
 	return (0);
 }
 
@@ -1834,10 +1805,6 @@ int
 ufs211_valloc(ap)
 	struct vop_valloc_args *ap;
 {
-	/* TODO:
-	 * a modified version of ufs211's balloc(ip, flags)
-	 */
-
 	return (0);
 }
 
@@ -1845,9 +1812,6 @@ int
 ufs211_vfree(ap)
 	struct vop_vfree_args *ap;
 {
-	/* TODO:
-	 * a modified version of ufs211's free(ip, bno)
-	 */
 	return (0);
 }
 
@@ -1870,6 +1834,7 @@ int
 ufs211_update(ap)
 	struct vop_update_args *ap;
 {
+	register struct vnode *vp = ap->a_vp;
 	register struct ufs211_inode *ip;
 
 	ip = UFS211_VTOI(ap->a_vp);

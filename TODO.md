@@ -26,7 +26,9 @@ A General todo list. Don't hesitate to add to this list. :)
 ## arch:
 - i386/x86: (Merged under i386)
 	- swapgeneric.c: Update... Contains deprecated code.
-	- Update IO(pci, eisa, etc): To use the intr routines over the isa_intr routines
+	- Fix IO so it can use apic appropriatly. (pci, eisa, etc..)
+		- Temp solution: All IO are still using the isa_intr routine
+		which is utilizing legacyvectors
 
 ## devel: (planned)
 - Code planned for future integration
@@ -37,6 +39,12 @@ A General todo list. Don't hesitate to add to this list. :)
 - Essential Driver Support:
 	- usb: 								Work in progress
 		- add: vhci, xhci
+	- wscons/pccons:						Work in progress
+		- double check wscons for errors/mistakes
+- cfops update:
+	- double check com.c needs cfdriver declaration
+	- to use detach & activate routines
+	
 ## fs:
 
 
