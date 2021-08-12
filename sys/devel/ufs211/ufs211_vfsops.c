@@ -267,7 +267,7 @@ ufs211_sync(mp)
 	 * of each file system is still in the buffer cache.
 	 */
 	if (fs->fs_fmod) {
-		bp = getblk(mp->m_dev, UFS211_SUPERB);
+		bp = getblk(mp->m_dev, UFS211_SUPERB, fs->fs_fsize, 0, 0);
 		fs->fs_fmod = 0;
 		fs->fs_time = time.tv_sec;
 		bcopy(fs, bp, sizeof(struct ufs211_fs));

@@ -107,7 +107,6 @@
 /*
  * Local data and functions.
  */
-
 static void	install_ap_tramp(void);
 static int	start_all_aps(void);
 static int	start_ap(int apic_id);
@@ -128,9 +127,9 @@ cpu_mp_start(pc)
 	}
 
 	/* Install an inter-CPU IPI for TLB invalidation */
-	setidt(IPI_INVLTLB, &IDTVEC(invltlb), 0, SDT_SYS386IGT, SEL_KPL);
-	setidt(IPI_INVLPG, &IDTVEC(invlpg), 0, SDT_SYS386IGT, SEL_KPL);
-	setidt(IPI_INVLRNG, &IDTVEC(invlrng), 0, SDT_SYS386IGT, SEL_KPL);
+	setidt(IPI_INVLTLB, &IDTVEC(pmap_invalidate_all), 0, SDT_SYS386IGT, SEL_KPL);
+	setidt(IPI_INVLPG, &IDTVEC(pmap_invalidate_page), 0, SDT_SYS386IGT, SEL_KPL);
+	setidt(IPI_INVLRNG, &IDTVEC(pmap_invalidate_range), 0, SDT_SYS386IGT, SEL_KPL);
 
 	/* Set boot_cpu_id if needed. */
 	if (boot_cpu_id == -1) {
@@ -454,10 +453,9 @@ smp_targeted_tlb_shootdown(u_int mask, u_int vector, pmap_t pmap, vm_offset_t ad
 		panic("absolutely cannot call smp_targeted_ipi_shootdown with interrupts already disabled");
 	}
 
-	simple_lock(&smp_tlb_lock);
 	smp_tlb_addr1 = addr1;
 	smp_tlb_addr2 = addr2;
-	atomic_store_rel_int(&smp_tlb_wait, 0);
+	atomic_store_relaxed(&smp_tlb_wait, 0);
 
 	if (mask == (u_int)-1) {
 		i386_broadcast_ipi(vector);
@@ -469,7 +467,6 @@ smp_targeted_tlb_shootdown(u_int mask, u_int vector, pmap_t pmap, vm_offset_t ad
 		pmap_tlb_shootdown(pmap, addr1, addr2, mask);
 		pmap_tlb_shootnow(pmap, mask);
 	}
-	simple_unlock(&smp_tlb_lock);
 	return;
 }
 

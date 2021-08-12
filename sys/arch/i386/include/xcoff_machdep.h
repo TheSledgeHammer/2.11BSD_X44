@@ -41,7 +41,6 @@
 	u_long cprmask[4]; 				\
     u_long gp_value
 
-
 #ifdef _KERNEL
 #define XCOFF_MAGIC_I386			0x1fe
 #define	XCOFF_BADMAG(ex)			\
@@ -58,5 +57,4 @@ struct 	exec_linker;
 struct xcoff_symhdr {
 
 };
-
 #endif /* _I386_XCOFF_MACHDEP_H_ */

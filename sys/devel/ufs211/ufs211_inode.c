@@ -52,10 +52,11 @@ ufs211_updat(ip, ta, tm, waitfor)
 		return;
 	if (tip->i_fs->fs_ronly)
 		return;
-	bp = bread(tip->i_dev, itod(tip->i_number));
-	if (bp->b_flags & B_ERROR) {
-		brelse(bp);
-		return;
+	if (bread(tip->i_devvp, itod(tip->i_number), tip->i_fs->fs_fsize, u->u_cred, &bp)) {
+		if (bp->b_flags & B_ERROR) {
+			brelse(bp);
+			return;
+		}
 	}
 #ifdef EXTERNALITIMES
 	xicp2 = &((struct icommon2 *)SEG5)[ip - inode];
@@ -173,11 +174,12 @@ ufs211_trunc(oip,length, ioflags)
 		bn = bmap(oip, lblkno(length), B_WRITE, aflags);
 		if (u->u_error || bn < 0)
 			return;
-		bp = bread(oip->i_dev, bn);
-		if (bp->b_flags & B_ERROR) {
-			u->u_error = EIO;
-			brelse(bp);
-			return;
+		if(bread(oip->i_devvp, bn, oip->i_fs->fs_fsize, u->u_ucred, &bp)){
+			if (bp->b_flags & B_ERROR) {
+				u->u_error = EIO;
+				brelse(bp);
+				return;
+			}
 		}
 		ufs211_mapin(bp);
 		bzero(bp + offset, (u_int)(DEV_BSIZE - offset));
@@ -307,10 +309,11 @@ ufs211_indirtrunc(ip, bn, lastbn, level, aflags)
 		register daddr_t *bap;
 		register struct buf *cpy;
 
-		bp = bread(ip->i_dev, bn);
-		if (bp->b_flags&B_ERROR) {
-			brelse(bp);
-			return;
+		if (bread(ip->i_devvp, bn, ip->i_fs->fs_fsize, u->u_ucred, &bp)) {
+			if (bp->b_flags & B_ERROR) {
+				brelse(bp);
+				return;
+			}
 		}
 		cpy = geteblk();
 		copy(bftopaddr(bp), bftopaddr(cpy), btoc(DEV_BSIZE));

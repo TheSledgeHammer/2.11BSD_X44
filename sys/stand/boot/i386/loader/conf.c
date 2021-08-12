@@ -43,9 +43,9 @@
 
 /* Exported for libstand */
 struct devsw *devsw[] = {
-    &bioscd,
-    &biosdisk,
-    NULL
+		&bioscd,
+		&biosdisk,
+		NULL
 };
 
 struct fs_ops *file_system[] = {
@@ -63,9 +63,9 @@ extern struct file_format	i386_aout;
 extern struct file_format	i386_elf;
 
 struct file_format *file_formats[] = {
-	&i386_aout,
-    &i386_elf,
-    NULL
+		&i386_aout,
+		&i386_elf,
+		NULL
 };
 
 /*
@@ -79,10 +79,10 @@ extern struct console comconsole;
 extern struct console nullconsole;
 
 struct console *consoles[] = {
-    &vidconsole,
-    &comconsole,
-    &nullconsole,
-    NULL
+		&vidconsole,
+		&comconsole,
+		&nullconsole,
+		NULL
 };
 
 extern struct pnphandler isapnphandler;
@@ -90,8 +90,8 @@ extern struct pnphandler biospnphandler;
 extern struct pnphandler biospcihandler;
 
 struct pnphandler *pnphandlers[] = {
-    &biospnphandler,		/* should go first, as it may set isapnp_readport */
-    &isapnphandler,
-    &biospcihandler,
-    NULL
+		&biospnphandler,		/* should go first, as it may set isapnp_readport */
+		&isapnphandler,
+		&biospcihandler,
+		NULL
 };

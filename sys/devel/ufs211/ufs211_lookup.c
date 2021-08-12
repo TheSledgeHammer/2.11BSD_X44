@@ -825,45 +825,6 @@ ufs211_dirrewrite(dp, ip, cnp)
 }
 
 /*
- * Return buffer with contents of block "offset"
- * from the beginning of directory "ip".  If "res"
- * is non-zero, fill it in with a pointer to the
- * remaining space in the directory.
- *
- * A mapin() of the buffer is done even if "res" is zero so that the
- * mapout() done later will have something to work with.
- */
-struct buf *
-ufs211_blkatoff(ip, offset, res)
-	struct ufs211_inode *ip;
-	off_t offset;
-	char **res;
-{
-	register struct ufs211_fs *fs = ip->i_fs;
-	daddr_t lbn = lblkno(offset);
-	register struct buf *bp;
-	daddr_t bn;
-	char *junk;
-
-	bn = bmap(ip, lbn, B_READ, 0);
-	if (u->u_error)
-		return (0);
-	if (bn == (daddr_t)-1) {
-		dirbad(ip, offset, "hole in dir");
-		return (0);
-	}
-	bp = bread(ip->i_dev, bn);
-	if (bp->b_flags & B_ERROR) {
-		brelse(bp);
-		return (0);
-	}
-	junk = (caddr_t)bp->b_data;
-	if (res)
-		*res = junk + (u_int)blkoff(offset);
-	return (bp);
-}
-
-/*
  * Check if a directory is empty or not.
  * Inode supplied must be locked.
  *
@@ -944,7 +905,7 @@ ufs211_checkpath(source, target)
 		}
 		error = vn_rdwr(UIO_READ, vp, (caddr_t) &dirbuf,
 				sizeof(struct ufs211_dirtemplate), (off_t) 0, UIO_SYSSPACE,
-				IO_NODELOCKED, u->u_cred, (int*) 0, (struct proc*) 0);
+				IO_NODELOCKED, u->u_ucred, (int*) 0, (struct proc*) 0);
 		if (error != 0)
 			break;
 		if (dirbuf.dotdot_namlen != 2 ||

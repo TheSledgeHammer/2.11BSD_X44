@@ -37,7 +37,7 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 	register int i;
 	register struct buf *bp;
 	struct buf *nbp;
-	int j, sh;
+	int j, sh, error;
 	daddr_t nb, *bap, ra;
 	int async = ip->i_fs->fs_flags & MNT_ASYNC;
 
@@ -119,8 +119,8 @@ ufs211_bmap1(ip, bn, rwflg, flags)
 	 * fetch through the indirect blocks
 	 */
 	for (; j <= 3; j++) {
-		bp = bread(ip->i_dev, nb);
-		if ((bp->b_flags & B_ERROR) || bp->b_resid) {
+		error = bread(ip->i_dev, nb, ip->i_fs->fs_fsize, u->u_ucred, &bp);
+		if (error == 0 && ((bp->b_flags & B_ERROR) || bp->b_resid)) {
 			brelse(bp);
 			return ((daddr_t) 0);
 		}
