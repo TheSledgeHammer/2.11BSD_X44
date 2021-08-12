@@ -238,6 +238,7 @@ TOOL_CTAGS=			${TOOLDIR}/bin/${_TOOL_PREFIX}ctags
 TOOL_CTFCONVERT=	${TOOLDIR}/bin/${_TOOL_PREFIX}ctfconvert
 TOOL_CTFMERGE=		${TOOLDIR}/bin/${_TOOL_PREFIX}ctfmerge
 TOOL_CVSLATEST=		${TOOLDIR}/bin/${_TOOL_PREFIX}cvslatest
+TOOL_DATE=			${TOOLDIR}/bin/${_TOOL_PREFIX}date
 TOOL_DB=			${TOOLDIR}/bin/${_TOOL_PREFIX}db
 TOOL_DISKLABEL=		${TOOLDIR}/bin/${_TOOL_PREFIX}disklabel
 TOOL_DTC=			${TOOLDIR}/bin/${_TOOL_PREFIX}dtc
@@ -252,7 +253,7 @@ TOOL_GREP=			${TOOLDIR}/bin/${_TOOL_PREFIX}grep
 GROFF_SHARE_PATH=	${TOOLDIR}/share/groff
 TOOL_GROFF_ENV= 															\
     GROFF_ENCODING= 														\
-    GROFF_BIN_PATH=${TOOLDIR}/lib/groff 									\
+    GROFF_BIN_PATH=	${TOOLDIR}/lib/groff 									\
     GROFF_FONT_PATH=${GROFF_SHARE_PATH}/site-font:${GROFF_SHARE_PATH}/font 	\
     GROFF_TMAC_PATH=${GROFF_SHARE_PATH}/site-tmac:${GROFF_SHARE_PATH}/tmac
 TOOL_GROFF=			${TOOL_GROFF_ENV} ${TOOLDIR}/bin/${_TOOL_PREFIX}groff ${GROFF_FLAGS}
@@ -731,6 +732,14 @@ MKCATPAGES:=	no
 MKHTML:=		no
 .endif
 
+_MANINSTALL=	maninstall
+.if ${MKCATPAGES} != "no"
+_MANINSTALL+=	catinstall
+.endif
+.if ${MKHTML} != "no"
+_MANINSTALL+=	htmlinstall
+.endif
+
 .if ${MKLINKLIB} == "no"
 MKLINT:=		no
 MKPICINSTALL:=	no
@@ -880,5 +889,9 @@ _MKTARGET_LINK?=	${_MKMSG_LINK} ${.CURDIR:T}/${.TARGET}
 _MKTARGET_LEX?=		${_MKMSG_LEX} ${.CURDIR:T}/${.TARGET}
 _MKTARGET_REMOVE?=	${_MKMSG_REMOVE} ${.TARGET}
 _MKTARGET_YACC?=	${_MKMSG_YACC} ${.CURDIR:T}/${.TARGET}
+
+.if ${MKMANDOC} == "yes"
+TARGETS+=	lintmanpages
+.endif
 
 .endif	# !defined(_BSD_OWN_MK_)

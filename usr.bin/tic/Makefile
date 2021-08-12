@@ -3,11 +3,11 @@
 PROG=		tic
 WARNS=		4
 
-CPPFLAGS+=	-I${.CURDIR}/../../usr.lib/libterminfo
+CPPFLAGS+=	-I${.CURDIR}/../../usr.lib/libtermcap
 
 .ifndef HOSTPROG
 LDADD+=		-lterminfo -lutil
-DPADD+=		${LIBTERMINFO} ${LIBUTIL}
+DPADD+=		${LIBTERMCAP} ${LIBUTIL}
 .endif
 
 .include <bsd.prog.mk>

@@ -10,6 +10,7 @@
 #define	_SYS_STAT_H_
 
 #include <sys/time.h>
+#include <sys/types.h>		/* XXX */
 
 #ifndef _POSIX_SOURCE
 struct ostat {
@@ -24,6 +25,7 @@ struct ostat {
 	struct	timespec 	st_atimespec;	/* time of last access */
 	struct	timespec 	st_mtimespec;	/* time of last data modification */
 	struct	timespec 	st_ctimespec;	/* time of last file status change */
+	struct	timespec  	st_birthtimespec;/* time of creation */
 	int32_t	  			st_blksize;		/* optimal blocksize for I/O */
 	int32_t	  			st_blocks;		/* blocks allocated for file */
 	u_int32_t 			st_flags;		/* user defined flags for file */
@@ -32,21 +34,22 @@ struct ostat {
 #endif /* !_POSIX_SOURCE */
 
 struct stat {
-	dev_t				st_dev;		/* inode's device */
-	ino_t				st_ino;		/* inode's number */
-	mode_t	 			st_mode;	/* inode protection mode */
-	nlink_t				st_nlink;	/* number of hard links */
-	uid_t				st_uid;		/* user ID of the file's owner */
-	gid_t				st_gid;		/* group ID of the file's group */
-	dev_t				st_rdev;	/* device type */
-	off_t				st_size;	/* file size, in bytes */
-	struct	timespec	st_atime;	/* time of last access */
-	struct	timespec	st_mtime;	/* time of last data modification */
-	struct	timespec 	st_ctime;	/* time of last file status change */
-	unsigned long		st_blksize;	/* optimal blocksize for I/O */
-	quad_t				st_blocks;	/* blocks allocated for file */
-	unsigned long		st_flags;	/* user defined flags for file */
-	unsigned long		st_gen;		/* file generation number */
+	dev_t				st_dev;			/* inode's device */
+	ino_t				st_ino;			/* inode's number */
+	mode_t	 			st_mode;		/* inode protection mode */
+	nlink_t				st_nlink;		/* number of hard links */
+	uid_t				st_uid;			/* user ID of the file's owner */
+	gid_t				st_gid;			/* group ID of the file's group */
+	dev_t				st_rdev;		/* device type */
+	off_t				st_size;		/* file size, in bytes */
+	struct	timespec	st_atime;		/* time of last access */
+	struct	timespec	st_mtime;		/* time of last data modification */
+	struct	timespec 	st_ctime;		/* time of last file status change */
+	struct	timespec  	st_birthtime;	/* time of creation */
+	unsigned long		st_blksize;		/* optimal blocksize for I/O */
+	quad_t				st_blocks;		/* blocks allocated for file */
+	unsigned long		st_flags;		/* user defined flags for file */
+	unsigned long		st_gen;			/* file generation number */
 	int					st_spare1;
 	int					st_spare2;
 	long				st_spare3;
@@ -56,6 +59,11 @@ struct stat {
 #define st_atim 		st_atime.tv_sec
 #define st_mtim 		st_mtime.tv_sec
 #define st_ctim 		st_ctime.tv_sec
+
+#define st_atimensec	st_atime.tv_nsec
+#define st_mtimensec	st_mtime.tv_nsec
+#define st_ctimensec	st_ctime.tv_nsec
+#define st_birthtimensec st_atime.tv_nsec
 
 #define	S_IFMT	 0170000		/* type of file */
 #define	S_IFDIR	 0040000		/* directory */

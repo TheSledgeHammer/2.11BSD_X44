@@ -6,8 +6,8 @@
 #  Makefile for misc data files (lib.b from 'bc', usw.)
 #
 
-SRCS= eign lib.b Mail.help Mail.tildehelp units gprof.callg gprof.flat \
-	vlpmacs mkproto.data
+SRCS= 	eign lib.b Mail.help Mail.tildehelp units gprof.callg gprof.flat \
+		vlpmacs mkproto.data
 
 all:	${SRCS}
 

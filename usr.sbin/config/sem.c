@@ -88,9 +88,9 @@ static char *extend(char *, const char *);
 static int split(const char *, size_t, char *, size_t, int *);
 static void selectbase(struct devbase *, struct deva *);
 static const char **fixloc(const char *, struct attr *, struct loclist *);
-static const char *makedevstr(devmajor_t, devminor_t);
-static const char *major2name(devmajor_t);
-static devmajor_t dev2major(struct devbase *);
+static const char *makedevstr(int32_t, devminor_t);
+static const char *major2name(int32_t);
+static int32_t  dev2major(struct devbase *);
 
 extern const char *yyfile;
 extern int vflag;
@@ -872,7 +872,7 @@ expandattr(struct attr *a, void (*callback)(struct attr *))
  * as a root/dumps "on" device in a configuration.
  */
 void
-setmajor(struct devbase *d, devmajor_t n)
+setmajor(struct devbase *d, int32_t  n)
 {
 
 	if (d != &errdev && d->d_major != NODEVMAJOR)
@@ -883,7 +883,7 @@ setmajor(struct devbase *d, devmajor_t n)
 }
 
 const char *
-major2name(devmajor_t maj)
+major2name(int32_t  maj)
 {
 	struct devbase *dev;
 	struct devm *dm;
@@ -902,7 +902,7 @@ major2name(devmajor_t maj)
 	return (NULL);
 }
 
-devmajor_t
+int32_t
 dev2major(struct devbase *dev)
 {
 	struct devm *dm;
@@ -921,7 +921,7 @@ dev2major(struct devbase *dev)
  * Make a string description of the device at maj/min.
  */
 static const char *
-makedevstr(devmajor_t maj, devminor_t min)
+makedevstr(int32_t  maj, int32_t  min)
 {
 	const char *devicename;
 	char buf[32];
@@ -948,8 +948,8 @@ resolve(struct nvlist **nvp, const char *name, const char *what,
 	struct nvlist *nv;
 	struct devbase *dev;
 	const char *cp;
-	devmajor_t maj;
-	devminor_t min;
+	int32_t  maj;
+	int32_t  min;
 	size_t i, l;
 	int unit;
 	char buf[NAMESIZE];
@@ -1847,7 +1847,7 @@ delpseudo(const char *name, int nowarn)
 }
 
 void
-adddevm(const char *name, devmajor_t cmajor, devmajor_t bmajor,
+adddevm(const char *name, int32_t cmajor, int32_t bmajor,
 	struct condexpr *cond, struct nvlist *nv_nodes)
 {
 	struct devm *dm;

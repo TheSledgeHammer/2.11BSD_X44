@@ -272,19 +272,19 @@ struct pspec {
 struct devbase {
 	const char *d_name;		/* e.g., "sd" */
 	TAILQ_ENTRY(devbase) d_next;
-	int 	d_level;
-	struct devbase *d_levelparent;
-	int	d_isdef;		/* set once properly defined */
-	int	d_ispseudo;		/* is a pseudo-device */
-	devmajor_t d_major;		/* used for "root on sd0", e.g. */
-	struct	attrlist *d_attrs;	/* attributes, if any */
-	int	d_umax;			/* highest unit number + 1 */
-	struct	devi *d_ihead;		/* first instance, if any */
-	struct	devi **d_ipp;		/* used for tacking on more instances */
-	struct	deva *d_ahead;		/* first attachment, if any */
-	struct	deva **d_app;		/* used for tacking on attachments */
-	struct	attr *d_classattr;	/* device class attribute (if any) */
-	struct	where d_where;
+	int 				d_level;
+	struct devbase 		*d_levelparent;
+	int					d_isdef;		/* set once properly defined */
+	int					d_ispseudo;		/* is a pseudo-device */
+	int32_t  			d_major;		/* used for "root on sd0", e.g. */
+	struct	attrlist 	*d_attrs;	/* attributes, if any */
+	int					d_umax;			/* highest unit number + 1 */
+	struct	devi 		*d_ihead;		/* first instance, if any */
+	struct	devi 		**d_ipp;		/* used for tacking on more instances */
+	struct	deva 		*d_ahead;		/* first attachment, if any */
+	struct	deva 		**d_app;		/* used for tacking on attachments */
+	struct	attr 		*d_classattr;	/* device class attribute (if any) */
+	struct	where	 	d_where;
 };
 
 struct deva {
@@ -419,13 +419,13 @@ struct prefix {
  * Device major informations.
  */
 struct devm {
-	TAILQ_ENTRY(devm) dm_next;
-	const char	*dm_name;	/* [bc]devsw name */
-	devmajor_t	dm_cmajor;	/* character major */
-	devmajor_t	dm_bmajor;	/* block major */
-	struct condexpr	*dm_opts;	/* options */
-	struct nvlist	*dm_devnodes;	/* information on /dev nodes */
-	struct where dm_where;
+	TAILQ_ENTRY(devm) 	dm_next;
+	const char			*dm_name;	/* [bc]devsw name */
+	int32_t 			dm_cmajor;	/* character major */
+	int32_t 			dm_bmajor;	/* block major */
+	struct condexpr		*dm_opts;	/* options */
+	struct nvlist		*dm_devnodes;	/* information on /dev nodes */
+	struct where 		dm_where;
 };
 
 /*
@@ -487,40 +487,38 @@ TAILQ_HEAD(devitq, devi);
 TAILQ_HEAD(devmtq, devm);
 TAILQ_HEAD(pspectq, pspec);
 
-extern struct devbasetq allbases;	/* list of all devbase structures */
-extern struct devatq alldevas;		/* list of all devbase attachments */
-extern struct conftq allcf;		/* list of configured kernels */
-extern struct devitq alldevi,		/* list of all instances */
-		     allpseudo;		/* list of all pseudo-devices */
-extern struct devmtq alldevms;		/* list of all device-majors */
-extern struct pspectq allpspecs;	/* list of all parent specs */
-extern int	ndevi;			/* number of devi's (before packing) */
-extern int	npspecs;		/* number of parent specs */
-extern devmajor_t maxbdevm;		/* max number of block major */
-extern devmajor_t maxcdevm;		/* max number of character major */
-extern int	do_devsw;		/* 0 if pre-devsw config */
-extern int	oktopackage;		/* 0 before setmachine() */
-extern int	devilevel;		/* used for devi->i_level */
+extern struct devbasetq 	allbases;		/* list of all devbase structures */
+extern struct devatq 		alldevas;		/* list of all devbase attachments */
+extern struct conftq 		allcf;			/* list of configured kernels */
+extern struct devitq 		alldevi,		/* list of all instances */
+		     	 	 	 	allpseudo;		/* list of all pseudo-devices */
+extern struct devmtq 		alldevms;		/* list of all device-majors */
+extern struct pspectq 		allpspecs;		/* list of all parent specs */
+extern int					ndevi;			/* number of devi's (before packing) */
+extern int					npspecs;		/* number of parent specs */
+extern int32_t  			maxbdevm;		/* max number of block major */
+extern int32_t  			maxcdevm;		/* max number of character major */
+extern int					do_devsw;		/* 0 if pre-devsw config */
+extern int					oktopackage;	/* 0 before setmachine() */
+extern int					devilevel;		/* used for devi->i_level */
 
 extern struct filelist		allfiles;	/* list of all kernel source files */
 extern struct filelist		allcfiles;	/* list of all .c files */
 extern struct filelist		allsfiles;	/* list of all .S files */
 extern struct filelist		allofiles;	/* list of all .o files */
 
-extern struct prefixlist	prefixes,	/* prefix stack */
-				allprefixes;	/* all prefixes used
-						 * (after popped) */
-extern struct prefixlist	buildprefixes,	/* build prefix stack */
-				allbuildprefixes;/* all build prefixes used
-						  * (after popped) */
+extern struct prefixlist	prefixes,			/* prefix stack */
+							allprefixes;		/* all prefixes used (after popped) */
+extern struct prefixlist	buildprefixes,		/* build prefix stack */
+							allbuildprefixes;	/* all build prefixes used (after popped) */
 
-extern struct attr allattr;
-extern struct devi **packed;	/* arrayified table for packed devi's */
-extern size_t npacked;		/* size of packed table, <= ndevi */
+extern struct attr 	allattr;
+extern struct devi 	**packed;		/* arrayified table for packed devi's */
+extern size_t 		npacked;		/* size of packed table, <= ndevi */
 
 extern struct locators {			/* loc[] table for config */
-	const char **vec;
-	int	used;
+	const char 	**vec;
+	int			used;
 } locators;
 
 struct numconst {

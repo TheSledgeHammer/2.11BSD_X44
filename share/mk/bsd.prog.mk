@@ -32,11 +32,11 @@ MKDEP_SUFFIXES?=	.o .ln
 # ELF platforms depend on crti.o, crtbegin.o, crtend.o, and crtn.o
 .if ${OBJECT_FMT} == "ELF"
 .ifndef LIBCRTBEGIN
-LIBCRTBEGIN=	${DESTDIR}/usr/lib/crti.o ${_GCC_CRTBEGIN}
+LIBCRTBEGIN=	${DESTDIR}/usr/lib/${MLIBDIR:D${MLIBDIR}/}crti.o ${_GCC_CRTBEGIN}
 .MADE: ${LIBCRTBEGIN}
 .endif
 .ifndef LIBCRTEND
-LIBCRTEND=	${_GCC_CRTEND} ${DESTDIR}/usr/lib/crtn.o
+LIBCRTEND=	${_GCC_CRTEND} ${DESTDIR}/usr/lib/${MLIBDIR:D${MLIBDIR}/}crtn.o
 .MADE: ${LIBCRTEND}
 .endif
 _SHLINKER=	${SHLINKDIR}/ld.elf_so
@@ -47,7 +47,7 @@ _SHLINKER=	${SHLINKDIR}/ld.so
 .endif
 
 .ifndef LIBCRT0
-LIBCRT0=	${DESTDIR}/usr/lib/crt0.o
+LIBCRT0=	${DESTDIR}/usr/lib/${MLIBDIR:D${MLIBDIR}/}crt0.o
 .MADE: ${LIBCRT0}
 .endif
 
@@ -57,33 +57,15 @@ LIBCRT0=	${DESTDIR}/usr/lib/crt0.o
 #
 LIBC?=			${DESTDIR}/usr/lib/libc.a
 LIBCOMPAT?=		${DESTDIR}/usr/lib/libcompat.a
-LIBCRYPT?=		${DESTDIR}/usr/lib/libcrypt.a
-LIBCURSES?=		${DESTDIR}/usr/lib/libcurses.a
-LIBDBM?=		${DESTDIR}/usr/lib/libdbm.a
-LIBDES?=		${DESTDIR}/usr/lib/libdes.a
-LIBEDIT?=		${DESTDIR}/usr/lib/libedit.a
-LIBGCC?=		${DESTDIR}/usr/lib/libgcc.a
-LIBKDB?=		${DESTDIR}/usr/lib/libkdb.a
-LIBKRB?=		${DESTDIR}/usr/lib/libkrb.a
-LIBKVM?=		${DESTDIR}/usr/lib/libkvm.a
-LIBL?=			${DESTDIR}/usr/lib/libl.a
-LIBM?=			${DESTDIR}/usr/lib/libm.a
-LIBMP?=			${DESTDIR}/usr/lib/libmp.a
-LIBNTP?=		${DESTDIR}/usr/lib/libntp.a
-LIBOBJC?=		${DESTDIR}/usr/lib/libobjc.a
-LIBPC?=			${DESTDIR}/usr/lib/libpc.a
-LIBPCAP?=		${DESTDIR}/usr/lib/libpcap.a
-LIBPLOT?=		${DESTDIR}/usr/lib/libplot.a
-LIBPOSIX?=		${DESTDIR}/usr/lib/libposix.a
-LIBRESOLV?=		${DESTDIR}/usr/lib/libresolv.a
-LIBRPCSVC?=		${DESTDIR}/usr/lib/librpcsvc.a
-LIBSKEY?=		${DESTDIR}/usr/lib/libskey.a
-LIBTERMCAP?=	${DESTDIR}/usr/lib/libtermcap.a
-LIBTELNET?=		${DESTDIR}/usr/lib/libtelnet.a
-LIBUTIL?=		${DESTDIR}/usr/lib/libutil.a
-LIBWRAP?=		${DESTDIR}/usr/lib/libwrap.a
-LIBY?=			${DESTDIR}/usr/lib/liby.a
-LIBZ?=			${DESTDIR}/usr/lib/libz.a
+LIBCURSES?=		${DESTDIR}/usr.lib/libcurses.a
+LIBDBM?=		${DESTDIR}/usr.lib/libdbm.a
+LIBMP?=			${DESTDIR}/usr.lib/libmp.a
+LIBOM?=			${DESTDIR}/usr.lib/libom.a
+LIBTERMCAP?=	${DESTDIR}/usr.lib/libtermcap.a
+LIBUTIL?=		${DESTDIR}/usr.lib/libutil.a
+LIBVMF?=		${DESTDIR}/usr.lib/libvmf.a
+LIBY?=			${DESTDIR}/usr.lib/liby.a
+LIBZ?=			${DESTDIR}/usr.lib/libz.a
 
 .ifndef LIBSTDCXX
 LIBSTDCXX=	${DESTDIR}/usr/lib/libstdc++.a

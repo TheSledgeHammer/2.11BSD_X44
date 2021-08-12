@@ -786,7 +786,7 @@ format1(const struct stat *st,
 		gottime = 1;
 		secs = st->st_atime;
 #if HAVE_STRUCT_STAT_ST_MTIMENSEC
-		nsecs = st->st_atimensec;
+		nsecs = st->st_atime.tv_nsec;
 #endif
 		/* FALLTHROUGH */
 	case SHOW_st_mtime:
@@ -794,7 +794,7 @@ format1(const struct stat *st,
 			gottime = 1;
 			secs = st->st_mtime;
 #if HAVE_STRUCT_STAT_ST_MTIMENSEC
-			nsecs = st->st_mtimensec;
+			nsecs = st->st_mtime.tv_nsec;
 #endif
 		}
 		/* FALLTHROUGH */
@@ -803,7 +803,7 @@ format1(const struct stat *st,
 			gottime = 1;
 			secs = st->st_ctime;
 #if HAVE_STRUCT_STAT_ST_MTIMENSEC
-			nsecs = st->st_ctimensec;
+			nsecs = st->st_ctime.tv_nsec;
 #endif
 		}
 #if HAVE_STRUCT_STAT_ST_BIRTHTIME
@@ -813,7 +813,7 @@ format1(const struct stat *st,
 			gottime = 1;
 			secs = st->st_birthtime;
 #if HAVE_STRUCT_STAT_ST_BIRTHTIMENSEC
-			nsecs = st->st_birthtimensec;
+			nsecs = st->st_birthtime.tv_nsec;
 #endif /* HAVE_STRUCT_STAT_ST_BIRTHTIMENSEC */
 		}
 #endif /* HAVE_STRUCT_STAT_ST_BIRTHTIME */
