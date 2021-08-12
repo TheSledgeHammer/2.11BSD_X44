@@ -54,7 +54,10 @@ balloc(ip, flags)
 	} while (badblock(fs, bno));
 	if (fs->fs_nfree <= 0) {
 		fs->fs_flock++;
-		bp = bread(ip->i_dev, bno);
+		error = bread(ip->i_devvp, bno, (int)fs->fs_fsize, u->u_ucred, &bp);
+		if (error) {
+			continue;
+		}
 		if (((bp->b_flags & B_ERROR) == 0) && (bp->b_resid == 0)) {
 			register struct ufs211_fblk *fbp;
 			ufs211_mapin(bp);
@@ -70,7 +73,7 @@ balloc(ip, flags)
 		 * use some of the blocks in this freeblock, then crash
 		 * without a sync.
 		 */
-		bp = getblk(ip->i_dev, UFS211_SUPERB);
+		bp = getblk(ip->i_devvp, UFS211_SUPERB, fs->fs_fsize, 0, 0);
 		fs->fs_fmod = 0;
 		fs->fs_time = time.tv_sec;
 		{
@@ -90,7 +93,7 @@ balloc(ip, flags)
 		if (fs->fs_nfree <= 0)
 			goto nospace;
 	}
-	bp = getblk(ip->i_dev, bno);
+	bp = getblk(ip->i_devvp, bno, fs->fs_fsize, 0, 0);
 	bp->b_resid = 0;
 	if (flags & B_CLRBUF)
 		clrbuf(bp);
@@ -145,7 +148,7 @@ free(ip, bno)
 	}
 	if (fs->fs_nfree >= UFS211_NICFREE) {
 		fs->fs_flock++;
-		bp = getblk(ip->i_dev, bno);
+		bp = getblk(ip->i_devvp, bno, fs->fs_fsize, 0, 0);
 		ufs211_mapin(bp);
 		fbp = (FBLKP) bp;
 		*fbp = *((FBLKP)&fs->fs_nfree);

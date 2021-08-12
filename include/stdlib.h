@@ -162,5 +162,21 @@ unsigned long long
 		strtouq (const char *, char **, int);
 #endif
 #endif
+
+/*
+ * ISO C99
+ */
+#if defined(_ISOC99_SOURCE) || (__STDC_VERSION__ - 0) >= 199901L
+/* LONGLONG */
+long long int	atoll(const char *);
+#endif
+
+#if (_POSIX_C_SOURCE - 0) >= 200809L
+char *mkdtemp(char *);
+int	 mkstemp(char *);
+
+int	 getsubopt(char **, char * const *, char **);
+#endif
+
 __END_DECLS
 #endif /* _STDLIB_H_ */

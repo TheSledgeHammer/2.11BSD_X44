@@ -155,6 +155,7 @@ int pmapvacflush = 0;
 #define	PVF_TOTAL	0x80
 #endif
 
+/* TLB Shootdown job queue */
 struct pmap_tlb_shootdown_job {
 	TAILQ_ENTRY(pmap_tlb_shootdown_job) 	pj_list;
 	vm_offset_t 							pj_va;			/* virtual address */
@@ -184,6 +185,7 @@ struct pmap_tlb_shootdown_q {
 struct lock_object 				pmap_tlb_shootdown_job_lock;
 union pmap_tlb_shootdown_job_al *pj_page, *pj_free;
 
+/* System, pte's & apte's addresses */
 #define SYSTEM 				0xFE000000					/* virtual address of system start */
 #define SYSPDROFF 			0x3F8						/* Page dir index of System Base (i.e. KPTDI_FIRST) */
 
@@ -556,7 +558,6 @@ pmap_bootstrap(firstaddr, loadaddr)
 	 * Initialize the TLB shootdown queues.
 	 */
 	pmap_tlb_init();
-	simple_lock_init(&smp_tlb_lock, "smp_tlb_lock");
 
 	pmap_init_pat();
 }
@@ -2150,13 +2151,11 @@ pmap_invalidate_page(pmap, va)
 	vm_offset_t va;
 {
 	u_int cpumask;
-	u_int other_cpus;
 
 	if (smp_started) {
 		if (!(read_eflags() & PSL_I)) {
 			panic("%s: interrupts disabled", __func__);
 		}
-		simple_lock(&smp_tlb_lock);
 	}
 
 	/*
@@ -2168,17 +2167,12 @@ pmap_invalidate_page(pmap, va)
 	if (pmap == kernel_pmap || pmap->pm_active == all_cpus) {
 		invlpg(va);
 	} else {
-		cpumask = PERCPU_GET(cpumask);
-		other_cpus = PERCPU_GET(other_cpus);
+		cpumask = __PERCPU_GET(cpumask);
 		if (pmap->pm_active & cpumask) {
 			invlpg(va);
+		} else {
+			smp_masked_invlpg(cpumask, va, pmap);
 		}
-		if (pmap->pm_active & other_cpus) {
-			smp_masked_invlpg(pmap->pm_active & other_cpus, va);
-		}
-	}
-	if (smp_started) {
-		simple_unlock(&smp_tlb_lock);
 	}
 }
 
@@ -2188,14 +2182,12 @@ pmap_invalidate_range(pmap, sva, eva)
 	vm_offset_t sva, eva;
 {
 	u_int cpumask;
-	u_int other_cpus;
 	vm_offset_t addr;
 
 	if (smp_started) {
 		if (!(read_eflags() & PSL_I)) {
 			panic("%s: interrupts disabled", __func__);
 		}
-		simple_lock(&smp_tlb_lock);
 	}
 
 	/*
@@ -2209,19 +2201,13 @@ pmap_invalidate_range(pmap, sva, eva)
 			invlpg(addr);
 		}
 	} else {
-		cpumask = PERCPU_GET(cpumask);
-		other_cpus = PERCPU_GET(other_cpus);
+		cpumask = __PERCPU_GET(cpumask);
 		if (pmap->pm_active & cpumask) {
 			for (addr = sva; addr < eva; addr += PAGE_SIZE) {
 				invlpg(addr);
 			}
 		}
-		if (pmap->pm_active & other_cpus) {
-			smp_masked_invlpg_range(pmap->pm_active & other_cpus, sva, eva);
-		}
-	}
-	if (smp_started) {
-		simple_unlock(&smp_tlb_lock);
+		smp_masked_invlpg_range(cpumask, sva, eva, pmap);
 	}
 }
 
@@ -2230,13 +2216,11 @@ pmap_invalidate_all(pmap)
 	pmap_t pmap;
 {
 	u_int cpumask;
-	u_int other_cpus;
 
 	if (smp_started) {
 		if (!(read_eflags() & PSL_I)) {
 			panic("%s: interrupts disabled", __func__);
 		}
-		simple_lock(&smp_tlb_lock);
 	}
 
 	/*
@@ -2248,17 +2232,11 @@ pmap_invalidate_all(pmap)
 	if (pmap == kernel_pmap || pmap->pm_active == all_cpus) {
 		invltlb();
 	} else {
-		cpumask = PERCPU_GET(cpumask);
-		other_cpus = PERCPU_GET(other_cpus);
+		cpumask = __PERCPU_GET(cpumask);
 		if (pmap->pm_active & cpumask) {
 			invltlb();
 		}
-		if (pmap->pm_active & other_cpus) {
-			smp_masked_invltlb(pmap->pm_active & other_cpus);
-		}
-	}
-	if (smp_started) {
-		simple_unlock(&smp_tlb_lock);
+		smp_masked_invltlb(cpumask, pmap);
 	}
 }
 #else /* !SMP */

@@ -10,7 +10,7 @@ CONFIGURE_ARGS+=	--without-x
 
 TMACDIR=	${TOOLDIR}/share/groff/tmac
 SITETMACDIR=	${TOOLDIR}/share/groff/site-tmac
-GROFFDIR=	${.CURDIR}/../../contrib/external/gnu/groff
+GROFFDIR=	${.CURDIR}/../../contrib/external/groff
 
 # Add gnuwrap hack directly to the Makefile.
 _NOWRAPPER=1

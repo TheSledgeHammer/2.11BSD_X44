@@ -30,6 +30,7 @@
 
 #include <sys/extent.h>
 #include <sys/tree.h>
+#include <sys/null.h>
 
 //#include <lib/libkern/libkern.h>
 

@@ -31,16 +31,26 @@
  * SUCH DAMAGE.
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
 #include <sys/cdefs.h>
 #if	defined(DOSCCS) && !defined(lint)
 static char sccsid[] = "@(#)getsubopt.c	8.1.1 (2.11BSD) 1996/1/11";
 #endif /* not lint */
+
+#include "namespace.h"
 
 #include <assert.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
 #include <unistd.h>
+
+#ifdef __weak_alias
+__weak_alias(getsubopt,_getsubopt)
+#endif
 
 /*
  * The SVID interface to getsubopt provides no way of figuring out which
@@ -53,7 +63,7 @@ char *suboptarg;
 int
 getsubopt(optionp, tokens, valuep)
 	register char **optionp, **valuep;
-	register char **tokens;
+	register char * const *tokens;
 {
 	register int cnt;
 	register char *p;

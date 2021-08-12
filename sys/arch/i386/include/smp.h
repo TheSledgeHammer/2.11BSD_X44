@@ -53,9 +53,6 @@ extern volatile int 	smp_started;
 extern int 				smp_threads_per_core;
 extern u_int 			all_cpus;
 
-
-struct lock_object 		smp_tlb_lock;
-
 /* IPI handlers (FreeBSD) */
 #define	IDTVEC(name)	__CONCAT(X, name)
 extern	IDTVEC(invltlb),					/* TLB shootdowns - global */

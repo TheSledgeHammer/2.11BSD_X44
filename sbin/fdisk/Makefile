@@ -1,6 +1,11 @@
-# $FreeBSD: src/sbin/i386/fdisk/Makefile,v 1.5.2.1 2001/04/25 10:58:19 ru Exp $
+# $FreeBSD$
 
 PROG=	fdisk
+SRCS=	fdisk.c
+WARNS?=	4
 MAN=	fdisk.8
 
 .include <bsd.prog.mk>
+
+test:	${PROG}
+	sh ${.CURDIR}/runtest.sh
