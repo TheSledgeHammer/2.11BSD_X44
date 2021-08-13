@@ -56,8 +56,6 @@
 #define M_HTREE			86	/* vfs htree structure */
 #define M_VMSLAB		87 	/* VM slab structures */
 #define M_ADVVM			88 	/* AdvVM structures structures */
-#define M_UFS211		89	/* UFS211 bufmap structure */
-
 #define M_MPX			92	/* multiplexor structure */
 #define M_VMPSEG		93	/* pseudo-segment structure */
 

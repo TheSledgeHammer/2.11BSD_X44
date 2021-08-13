@@ -86,17 +86,17 @@ struct ufs211_dquot {
             struct	ufs211_dquot **Dq_freeb;
 		} dq_f;
 	} dq_u;
-	short	dq_flags;
-#define	DQ_LOCK		0x01		/* this quota locked (no MODS) */
-#define	DQ_WANT		0x02		/* wakeup on unlock */
-#define	DQ_MOD		0x04		/* this quota modified since read */
-#define	DQ_FAKE		0x08		/* no limits here, just usage */
-#define	DQ_BLKS		0x10		/* has been warned about blk limit */
-#define	DQ_INODS	0x20		/* has been warned about inode limit */
-	short	dq_cnt;			    /* count of active references */
-	uid_t	dq_uid;			    /* user this applies to */
-	dev_t	dq_dev;			    /* filesystem this relates to */
-	struct ufs211_dqblk dq_dqb;	/* actual usage & quotas */
+	short				dq_flags;
+#define	DQ_LOCK			0x01		/* this quota locked (no MODS) */
+#define	DQ_WANT			0x02		/* wakeup on unlock */
+#define	DQ_MOD			0x04		/* this quota modified since read */
+#define	DQ_FAKE			0x08		/* no limits here, just usage */
+#define	DQ_BLKS			0x10		/* has been warned about blk limit */
+#define	DQ_INODS		0x20		/* has been warned about inode limit */
+	short				dq_cnt;		/* count of active references */
+	uid_t				dq_uid;		/* user this applies to */
+	dev_t				dq_dev;		/* filesystem this relates to */
+	struct ufs211_dqblk dq_dqb;		/* actual usage & quotas */
 };
 
 #define	dq_own		    dq_u.Dq_own

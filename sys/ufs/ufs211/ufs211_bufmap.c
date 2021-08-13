@@ -31,9 +31,8 @@
 #include <sys/malloc.h>
 #include <sys/buf.h>
 #include <sys/user.h>
-#include <devel/sys/malloctypes.h>
 
-#include "../../ufs/ufs211/ufs211_fs.h"
+#include <ufs211_fs.h>
 
 struct ufs211_bufmap *ufs211buf;
 

@@ -90,20 +90,20 @@ struct ufs211_inode {
 		} i_fr;
 	} i_un3;
 	struct ufs211_icommon1 {
-		u_short				ic_mode;				/* mode and type of file */
-		u_short				ic_nlink;				/* number of links to file */
-		uid_t				ic_uid;					/* owner's user id */
-		gid_t				ic_gid;					/* owner's group id */
-		off_t				ic_size;				/* number of bytes in file */
+		u_short					ic_mode;				/* mode and type of file */
+		u_short					ic_nlink;				/* number of links to file */
+		uid_t					ic_uid;					/* owner's user id */
+		gid_t					ic_gid;					/* owner's group id */
+		off_t					ic_size;				/* number of bytes in file */
 	} i_ic1;
 /*
  * Can't afford another 4 bytes and mapping the flags out would be prohibitively
  * expensive.  So, a 'u_short' is used for the flags - see the comments in
  * stat.h for more information.
 */
-	u_short			        i_flags;				/* user changeable flags */
-	struct ufs211_icommon2  i_ic2;
-	struct ufs211_dinode	i_din;					/* dinode ptr */
+	u_short			        	i_flags;				/* user changeable flags */
+	struct ufs211_icommon2  	i_ic2;
+	struct ufs211_dinode		i_din;					/* dinode ptr */
 };
 
 /*
@@ -146,8 +146,6 @@ struct ufs211_dinode {
 #define	i_freeb			i_un3.i_fr.if_freeb
 #define	i_lastr			i_un3.if_lastr
 #define	i_socket		i_un3.is_socket
-//#define	i_forw			i_chain[0]
-//#define	i_back			i_chain[1]
 
 #define	di_flags		i_din.di_flag
 #define	di_blocks		i_din.di_blocks
