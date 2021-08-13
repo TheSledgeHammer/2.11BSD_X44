@@ -98,7 +98,8 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		.WAIT paxctl 															\
 		.WAIT fdisk																\
 		.WAIT btxld boot0cfg													\
-		pwd_mkdb vgrind															\														
+		pwd_mkdb vgrind															
+														
 SUBDIR+= stat .WAIT config
 
 .if ${MKLLVM} != "no" || ${MKLLVMRT} != "no"

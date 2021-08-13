@@ -49,13 +49,13 @@ an offical release is made.)
 - UFML: A Fossil + Venti inspired filesystem layer
   - LOFS based, intended to support to UFS, FFS, MFS & LFS.
   - Planned Features:
-  - Snapshots
-  - Versioning
-  - Archive
-  - Compression
-  - Encryption
+    - Snapshots
+    - Versioning
+    - Archive
+    - Compression
+    - Encryption
 
-- UFS211: A port of 2.11BSD's UFS Filesystem.
+- UFS211: A port of 2.11BSD's UFS Filesystem. (See: "/ufs/ufs211")
   - Vnode integration
   - Planned:
     - UFML Support
