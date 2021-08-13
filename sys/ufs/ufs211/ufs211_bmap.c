@@ -15,10 +15,10 @@
 #include <sys/conf.h>
 #include <sys/uio.h>
 
-#include "ufs211/ufs211_dir.h"
-#include "ufs211/ufs211_extern.h"
-#include "ufs211/ufs211_fs.h"
-#include "ufs211/ufs211_inode.h"
+#include "../../ufs/ufs211/ufs211_dir.h"
+#include "../../ufs/ufs211/ufs211_extern.h"
+#include "../../ufs/ufs211/ufs211_fs.h"
+#include "../../ufs/ufs211/ufs211_inode.h"
 
 /*
  * Bmap defines the structure of file system storage

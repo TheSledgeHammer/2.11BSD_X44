@@ -48,12 +48,12 @@
 #include <vm/include/vm.h>
 #include <miscfs/specfs/specdev.h>
 
-#include <ufs211/ufs211_dir.h>
-#include <ufs211/ufs211_extern.h>
-#include <ufs211/ufs211_fs.h>
-#include <ufs211/ufs211_inode.h>
-#include <ufs211/ufs211_mount.h>
-#include <ufs211/ufs211_quota.h>
+#include "../../ufs/ufs211/ufs211_dir.h"
+#include "../../ufs/ufs211/ufs211_extern.h"
+#include "../../ufs/ufs211/ufs211_fs.h"
+#include "../../ufs/ufs211/ufs211_inode.h"
+#include "../../ufs/ufs211/ufs211_mount.h"
+#include "../../ufs/ufs211/ufs211_quota.h"
 
 struct vnodeops ufs211_vnodeops = {
 		.vop_lookup = ufs211_lookup,		/* lookup */

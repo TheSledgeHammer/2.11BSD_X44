@@ -7,7 +7,7 @@ SUBDIR=	cat chflags chio chmod chpass cp csh date dd df domainname 		\
 
 .include <bsd.subdir.mk>
 
-# Missing: ed mt tcsh
+# Missing:mt
 
 #
 # 2.11BSD Bin Directory:

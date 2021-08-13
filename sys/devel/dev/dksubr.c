@@ -48,7 +48,7 @@ dk_init(dksc, dev, dtype)
 	dksc->sc_dtype = dtype;
 	dksc->sc_dev = dev;
 
-	strlcpy(dksc->sc_xname, dev->d_name, DK_NAMELEN);
+	strlcpy(dksc->sc_xname, dev->dv_xname, DK_NAMELEN);
 	dksc->sc_dkdev.dk_name = dksc->sc_xname;
 }
 

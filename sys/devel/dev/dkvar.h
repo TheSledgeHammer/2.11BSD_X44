@@ -41,5 +41,5 @@ struct dksoftc {
 	int					sc_dtype;
 };
 
-
+//ioctldisklabel(disk, dkdriver_strategy, dev, cmd, data, flags);
 #endif /* SYS_DEVEL_DEV_DKVAR_H_ */

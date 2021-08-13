@@ -3,7 +3,7 @@
 
 .include <bsd.own.mk>
 
-SUBDIR=	fdisk mknod
+SUBDIR=	disklabel fdisk init mknod
 
 # support for various file systems
 #SUBDIR+= newfs dumpfs

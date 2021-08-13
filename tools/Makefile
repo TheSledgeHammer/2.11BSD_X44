@@ -96,24 +96,25 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		.WAIT menuc mklocale mknod msgc 										\
 		.WAIT disklabel 														\
 		.WAIT paxctl 															\
+		.WAIT fdisk																\
 		.WAIT btxld boot0cfg													\
 		pwd_mkdb vgrind															\														
 SUBDIR+= stat .WAIT config
 
 .if ${MKLLVM} != "no" || ${MKLLVMRT} != "no"
-SUBDIR+= \
-	llvm .WAIT \
+SUBDIR+= 						\
+	llvm .WAIT 					\
 	llvm-lib/libLLVMDemangle llvm-lib/libLLVMSupport llvm-lib/libLLVMTableGen .WAIT \
 	llvm-tblgen
 .endif
 .if ${MKLLVM} != "no"
-SUBDIR+= \
+SUBDIR+= 						\
 	llvm-clang-tblgen
 .endif
 .if ${MKLLVM} != "no" && !defined(EXTERNAL_TOOLCHAIN)
-SUBDIR+= \
-	.WAIT llvm-include .WAIT \
-	llvm-lib .WAIT \
+SUBDIR+= 						\
+	.WAIT llvm-include .WAIT 	\
+	llvm-lib .WAIT 				\
 	llvm-clang
 .endif
 

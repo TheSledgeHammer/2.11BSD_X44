@@ -40,8 +40,8 @@
 #include <sys/proc.h>
 
 #include <devel/sys/malloctypes.h>
-#include <ufs211/ufs211_inode.h>
-#include <ufs211/ufs211_extern.h>
+#include "../../ufs/ufs211/ufs211_extern.h"
+#include "../../ufs/ufs211/ufs211_inode.h"
 
 LIST_HEAD(ufs211_ihashhead, ufs211_inode) *ihashtbl;	/* inode LRU cache, stolen */
 u_long	ihash;											/* size of hash table - 1 */

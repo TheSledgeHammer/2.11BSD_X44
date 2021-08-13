@@ -34,6 +34,7 @@
  * $FreeBSD: src/sbin/init/init.c,v 1.38.2.8 2001/10/22 11:27:32 des Exp $
  */
 
+#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
@@ -70,7 +71,7 @@
 #include <login_cap.h>
 #endif
 
-#include "mntopts.h"
+//#include "mntopts.h"
 #include "pathnames.h"
 
 /*

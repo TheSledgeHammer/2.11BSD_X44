@@ -4,6 +4,7 @@
 include										"conf/devices"
 include 									"ddb/files.ddb"
 include 									"dev/files.dev"
+include 									"ufs/ufs211/files.ufs211"
 
 # Kernel Sources
 file	kern/exec_aout.c					exec_aout
@@ -186,6 +187,7 @@ file	ufs/ufs/ufs_lookup.c				ffs | lfs | mfs
 file	ufs/ufs/ufs_quota.c					quota & (ffs | lfs | mfs)
 file	ufs/ufs/ufs_vfsops.c				ffs | lfs | mfs
 file	ufs/ufs/ufs_vnops.c					ffs | lfs | mfs
+
 # VM Sources
 file	vm/device_pager.c	    			devpager
 file	vm/swap_pager.c		    			swappager

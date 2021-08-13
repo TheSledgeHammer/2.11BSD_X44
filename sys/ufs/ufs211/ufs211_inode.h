@@ -5,7 +5,7 @@
  *
  *	@(#)inode.h	1.4 (2.11BSD GTE) 1995/12/24
  */
-#include "ufs211/ufs211_dir.h"
+#include "../../ufs/ufs211/ufs211_dir.h"
 
 /*
  * The I node is the focus of all file activity in UNIX.

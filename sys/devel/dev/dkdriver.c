@@ -48,6 +48,12 @@ struct dkdriver dkd = {
 		.d_mklabel = 	dkdriver_mklabel
 };
 
+#define DKDRIVER_DECL(name, strat, minphys, open, close, dump, start, mklabel)	\
+	struct dkdriver (name##_dkdrv) = { (#name), (strat), (minphys), (open), (close), (dump), (start), (mklabel) }
+
+
+DKDRIVER_DECL(default, dkdriver_strategy, dkdriver_minphys, dkdriver_open, dkdriver_close, dkdriver_dump, dkdriver_start, dkdriver_mklabel);
+
 void
 dkdriver_strategy(disk, bp)
 	struct dkdevice *disk;
@@ -174,7 +180,7 @@ dkdriver_mklabel(disk, fstype)
 	u_int8_t fstype;
 {
 	register struct dkdriver *driver;
-	register struct  disklabel *lp;
+	register struct disklabel *lp;
 
 	driver = disk->dk_driver;
 	lp = disk->dk_label;

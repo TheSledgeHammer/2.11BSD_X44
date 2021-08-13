@@ -11,10 +11,10 @@
 #include <sys/mount.h>
 #include <sys/kernel.h>
 #include <sys/buf.h>
-#include "devel/ufs211/ufs211_dir.h"
-#include "devel/ufs211/ufs211_fs.h"
-#include "devel/ufs211/ufs211_inode.h"
-#include "devel/ufs211/ufs211_quota.h"
+#include "../../ufs/ufs211/ufs211_dir.h"
+#include "../../ufs/ufs211/ufs211_fs.h"
+#include "../../ufs/ufs211/ufs211_inode.h"
+#include "../../ufs/ufs211/ufs211_quota.h"
 
 typedef	struct ufs211_fblk *FBLKP;
 
