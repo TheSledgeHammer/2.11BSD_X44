@@ -1,4 +1,4 @@
-/*	$NetBSD: dirname.c,v 1.14 2018/09/27 00:45:34 kre Exp $	*/
+/*	$NetBSD: dirname.c,v 1.7 2002/10/17 11:36:39 tron Exp $	*/
 
 /*-
  * Copyright (c) 1997, 2002 The NetBSD Foundation, Inc.
@@ -44,58 +44,49 @@ __RCSID("$NetBSD: dirname.c,v 1.14 2018/09/27 00:45:34 kre Exp $");
 __weak_alias(dirname,_dirname)
 #endif
 
-static size_t
-xdirname_r(const char *path, char *buf, size_t buflen)
+
+#if !HAVE_DIRNAME
+char *
+dirname(path)
+	char *path;
 {
-	const char *endp;
+	static char singledot[] = ".";
+	static char result[PATH_MAX];
+	char *lastp;
 	size_t len;
 
 	/*
 	 * If `path' is a null pointer or points to an empty string,
 	 * return a pointer to the string ".".
 	 */
-	if (path == NULL || *path == '\0') {
-		path = ".";
-		len = 1;
-		goto out;
-	}
+	if ((path == NULL) || (*path == '\0'))
+		return (singledot);
 
 	/* Strip trailing slashes, if any. */
-	endp = path + strlen(path) - 1;
-	while (endp != path && *endp == '/')
-		endp--;
+	lastp = path + strlen(path) - 1;
+	while (lastp != path && *lastp == '/')
+		lastp--;
 
-	/* Find the start of the dir */
-	while (endp > path && *endp != '/')
-		endp--;
+	/* Terminate path at the last occurence of '/'. */
+	do {
+		if (*lastp == '/') {
+			/* Strip trailing slashes, if any. */
+			while (lastp != path && *lastp == '/')
+				lastp--;
 
-	if (endp == path) {
-		path = *endp == '/' ? "/" : ".";
-		len = 1;
-		goto out;
-	}
+			/* ...and copy the result into the result buffer. */
+			len = (lastp - path) + 1 /* last char */;
+			if (len > (PATH_MAX - 1))
+				len = PATH_MAX - 1;
 
-	do
-		endp--;
-	while (endp > path && *endp == '/');
+			memcpy(result, path, len);
+			result[len] = '\0';
 
-	len = endp - path + 1;
-out:
-	if (buf != NULL && buflen != 0) {
-		buflen = MIN(len, buflen - 1);
-		if (buf != path)
-			memcpy(buf, path, buflen);
-		buf[buflen] = '\0';
-	}
-	return len;
-}
+			return (result);
+		}
+	} while (--lastp >= path);
 
-#if !HAVE_DIRNAME
-char *
-dirname(char *path)
-{
-	static char result[PATH_MAX];
-	(void)xdirname_r(path, result, sizeof(result));
-	return result;
+	/* No /'s found, return a pointer to the string ".". */
+	return (singledot);
 }
 #endif

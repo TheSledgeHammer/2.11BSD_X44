@@ -68,7 +68,22 @@ SUBDIR+=	../contrib/external/gnu/mpc/lib/libmpc
 #==================== 1st library dependency barrier ====================
 SUBDIR+=	.WAIT
 
-SUBDIR+= 	${USRLIBDIR}/libcurses
+SUBDIR+= 	${USRLIBDIR}/libcurses		# depends on libterminfo/libtermcap
+SUBDIR+=	${USRLIBDIR}/libedit		# depends on libterminfo
+
+
+.if (${MKBINUTILS} != "no")
+SUBDIR+=	../contrib/external/gnu/${EXTERNAL_BINUTILS_SUBDIR}/lib	# libbfd depends on libz
+.endif
+#==================== 2nd library dependency barrier ====================
+SUBDIR+=	.WAIT
+
+SUBDIR+=	../contrib/external/file/lib	# depends on libz, libbz2, libxz
+
+#==================== 3rd library dependency barrier ====================
+SUBDIR+=	.WAIT
+
+SUBDIR+=	../contrib/external/mdocml/lib
 
 .include <bsd.buildinstall.mk>
 .include <bsd.subdir.mk>

@@ -32,10 +32,10 @@ _ARCH_INCS+=	${sh3mach}/include/endian_machdep.h
 .endfor
 
 _INCS=		disktab.h
-_SYSINCS=	bootblock.h \
-		disklabel.h disklabel_acorn.h disklabel_gpt.h disklabel_rdb.h \
-		dkbad.h \
-		exec_elf.h exec_ecoff.h
+_SYSINCS=	boot.h 		\
+			disklabel.h \
+			dkbad.h 	\
+			exec_elf.h exec_ecoff.h
 
 HOST_CPPFLAGS+=	-I${TOOLDIR}/include -I${TOOLDIR}/include/nbinclude
 

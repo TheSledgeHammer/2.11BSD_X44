@@ -95,7 +95,7 @@ typedef	__register_t 	register_t;
 typedef	__uregister_t 	uregister_t;
 #define _BSD_UREGISTER_T_
 #endif
-/*
+
 #ifndef _BSD_INTMAX_T_
 typedef	__intmax_t		intmax_t;
 #define _BSD_INTMAX_T_
@@ -105,5 +105,5 @@ typedef	__intmax_t		intmax_t;
 typedef	__uintmax_t		uintmax_t;
 #define _BSD_UINTMAX_T_
 #endif
-*/
+
 #endif /* !_SYS_STDINT_H_ */

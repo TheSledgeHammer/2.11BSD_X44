@@ -1,4 +1,4 @@
-/*	$NetBSD: basename.c,v 1.11 2014/07/16 10:52:26 christos Exp $	*/
+/*	$NetBSD: basename.c,v 1.5 2002/10/17 02:06:04 thorpej Exp $	*/
 
 /*-
  * Copyright (c) 1997, 2002 The NetBSD Foundation, Inc.
@@ -39,63 +39,46 @@ __RCSID("$NetBSD: basename.c,v 1.11 2014/07/16 10:52:26 christos Exp $");
 #include <libgen.h>
 #include <string.h>
 #include <limits.h>
-#include <string.h>
 
 #ifdef __weak_alias
 __weak_alias(basename,_basename)
 #endif
 
-static size_t
-xbasename_r(const char *path, char *buf, size_t buflen)
+#if !HAVE_BASENAME
+char *
+basename(path)
+	char *path;
 {
-	const char *startp, *endp;
+	static char singledot[] = ".";
+	static char result[PATH_MAX];
+	char *p, *lastp;
 	size_t len;
 
 	/*
 	 * If `path' is a null pointer or points to an empty string,
 	 * return a pointer to the string ".".
 	 */
-	if (path == NULL || *path == '\0') {
-		startp = ".";
-		len = 1;
-		goto out;
-	}
+	if ((path == NULL) || (*path == '\0'))
+		return (singledot);
 
 	/* Strip trailing slashes, if any. */
-	endp = path + strlen(path) - 1;
-	while (endp != path && *endp == '/')
-		endp--;
-
-	/* Only slashes -> "/" */
-	if (endp == path && *endp == '/') {
-		startp = "/";
-		len = 1;
-		goto out;
-	}
+	lastp = path + strlen(path) - 1;
+	while (lastp != path && *lastp == '/')
+		lastp--;
 
 	/* Now find the beginning of this (final) component. */
-	for (startp = endp; startp > path && *(startp - 1) != '/'; startp--)
-		continue;
+	p = lastp;
+	while (p != path && *(p - 1) != '/')
+		p--;
 
 	/* ...and copy the result into the result buffer. */
-	len = (endp - startp) + 1 /* last char */;
-out:
-	if (buf != NULL && buflen != 0) {
-		buflen = MIN(len, buflen - 1);
-		memcpy(buf, startp, buflen);
-		buf[buflen] = '\0';
-	}
-	return len;
+	len = (lastp - p) + 1 /* last char */;
+	if (len > (PATH_MAX - 1))
+		len = PATH_MAX - 1;
+
+	memcpy(result, p, len);
+	result[len] = '\0';
+
+	return (result);
 }
-
-#if !HAVE_BASENAME
-
-char *
-basename(char *path) {
-	static char result[PATH_MAX];
-
-	(void)xbasename_r(path, result, sizeof(result));
-	return result;
-}
-
 #endif

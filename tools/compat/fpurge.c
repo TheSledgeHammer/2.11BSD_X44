@@ -46,7 +46,7 @@ int
 fpurge(FILE *fp)
 {
 #if HAVE___FPURGE
-	__fpurge(fp);
+	fpurge(fp);
 #endif
 	return 0;
 }
