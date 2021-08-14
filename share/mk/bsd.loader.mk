@@ -1,5 +1,5 @@
 #	$211BSD: Makefile,v 1.0 2021/05/25 23:59:27 Exp $
-#  	Bootloader 
+#  	FreeBSD BTX Bootloader 
 
 .if !defined(_BSD_LOADER_MK_)
 _BSD_LOADER_MK_=1

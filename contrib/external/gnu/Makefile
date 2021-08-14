@@ -2,6 +2,6 @@
 
 .include <bsd.own.mk>
 
-SUBDIR+= gmp mpc mpfr
+SUBDIR+= autoconf binutils gmp mpc mpfr
 
 .include <bsd.subdir.mk>

@@ -12,6 +12,6 @@ __RCSID("$NetBSD: rmd160hl.c,v 1.6 2008/04/13 02:04:32 dholland Exp $");
 #endif /* LIBC_SCCS and not lint */
 
 #define	HASH_ALGORITHM	RMD160
-#define HASH_INCLUDE	<rmd160.h>
+#define HASH_INCLUDE	<sys/rmd160.h>
 
 #include "../hashhl.c"

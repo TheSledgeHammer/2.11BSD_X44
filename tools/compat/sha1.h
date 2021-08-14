@@ -2,4 +2,4 @@
 
 /* We unconditionally use the NetBSD sha1 in libnbcompat. */
 #include "nbtool_config.h"
-#include "../../include/sha1.h"
+#include "../../sys/sys/sha1.h"

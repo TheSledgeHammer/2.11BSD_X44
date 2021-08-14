@@ -100,7 +100,7 @@ static const unsigned char *pad[] = {
  * XXX This should not be visible, but due to an accident, it is
  * XXX so it must remain so.
  */
-/*static*/ void MD2Transform (MD2_CTX *);
+/*static*/ void MD2Transform __P((MD2_CTX *));
 
 #ifdef __weak_alias
 __weak_alias(MD2Init,_MD2Init)

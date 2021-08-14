@@ -2,4 +2,4 @@
 
 /* We unconditionally use the NetBSD rmd160 in libnbcompat. */
 #include "nbtool_config.h"
-#include "../../include/rmd160.h"
+#include "../../sys/sys/rmd160.h"

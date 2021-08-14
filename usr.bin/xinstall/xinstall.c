@@ -679,7 +679,7 @@ install(char *from_name, char *to_name, u_int flags)
 #endif
 	}
 
-	if (flags & DIRECTORY || strcmp(from_name, _PATH_DEVNULL) != 0) {
+	if ((flags & DIRECTORY) || strcmp(from_name, _PATH_DEVNULL) != 0) {
 		devnull = 0;
 		if (!dolink) {
 			if (!S_ISREG(from_sb.st_mode))
@@ -689,7 +689,7 @@ install(char *from_name, char *to_name, u_int flags)
 		if (flags & DIRECTORY) {
 			(void)snprintf(pathbuf, sizeof(pathbuf), "%s/%s",
 			    to_name,
-			    (p = strrchr(from_name, '/')) ? ++p : from_name);
+			    (p == strrchr(from_name, '/')) ? ++p : from_name);
 			to_name = pathbuf;
 		}
 	} else {
@@ -707,7 +707,7 @@ install(char *from_name, char *to_name, u_int flags)
 	 */
 #if ! HAVE_NBTOOL_CONFIG_H
 	if (stat(to_name, &to_sb) == 0 &&
-	    to_sb.st_flags & (NOCHANGEBITS))
+	    (to_sb.st_flags & (NOCHANGEBITS)))
 		(void)chflags(to_name, to_sb.st_flags & ~(NOCHANGEBITS));
 #endif
 	if (dorename) {

@@ -49,7 +49,7 @@ __RCSID("$NetBSD: md4c.c,v 1.5 2012/03/20 16:21:41 matt Exp $");
 #else
 
 #include <sys/param.h>
-#include <md4.h>
+#include <sys/md4.h>
 #include <lib/libkern/libkern.h>
 
 #endif /* !_KERNEL && !_STANDALONE */

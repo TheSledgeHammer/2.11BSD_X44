@@ -56,7 +56,6 @@ typedef	_BSD_SIZE_T_	size_t;
 #include <sys/cdefs.h>
 
 #include <strings.h>
-
 __BEGIN_DECLS
 
 void	*memchr (const void *, int, size_t);
