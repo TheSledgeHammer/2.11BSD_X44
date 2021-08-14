@@ -38,12 +38,12 @@
 
 #include <sys/cdefs.h>
 
-#define brk		_brk
+#define brk			_brk
 #define catclose	_catclose
 #define catgets		_catgets
 #define catopen		_catopen
 #define daylight	_daylight
-#define err		_err
+#define err			_err
 #define errx		_errx
 #ifdef _REENTRANT
 #define fileno		_fileno
@@ -89,14 +89,14 @@
 #define RMD160File		_RMD160File
 #define RMD160Final		_RMD160Final
 #define RMD160Init		_RMD160Init
-#define RMD160Transform		_RMD160Transform
-#define RMD160Update		_RMD160Update
+#define RMD160Transform	_RMD160Transform
+#define RMD160Update	_RMD160Update
 #define SHA1Data		_SHA1Data
 #define SHA1End			_SHA1End
 #define SHA1File		_SHA1File
 #define SHA1Final		_SHA1Final
 #define SHA1Init		_SHA1Init
-#define SHA1Transform		_SHA1Transform
+#define SHA1Transform	_SHA1Transform
 #define SHA1Update		_SHA1Update
 #define a64l			_a64l
 #define adjtime			_adjtime
@@ -105,12 +105,12 @@
 #define asctime_r		_asctime_r
 #define asprintf		_asprintf
 #define atoll			_atoll
-#define authnone_create		_authnone_create
-#define authunix_create		_authunix_create
+#define authnone_create	_authnone_create
+#define authunix_create	_authunix_create
 #define authunix_create_default _authunix_create_default
 #define basename		_basename
-#define bindresvport		_bindresvport
-#define bindresvport_sa		_bindresvport_sa
+#define bindresvport	_bindresvport
+#define bindresvport_sa	_bindresvport_sa
 #define bm_comp			_bm_comp
 #define bm_exec			_bm_exec
 #define bm_free			_bm_free

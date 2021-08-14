@@ -958,13 +958,13 @@ int	 	cgetustr(char *, const char *, char **);
 #undef minor
 #endif
 #define minor(x)        ((int32_t)((((x) & 0xfff00000) >> 12) | \
-                                   (((x) & 0x000000ff) >>  0)))
+                        (((x) & 0x000000ff) >>  0)))
 #ifdef makedev
 #undef makedev
 #endif
-#define makedev(x,y)    ((dev_t)((((x) <<  8) & 0x000fff00) | \
-			(((y) << 12) & 0xfff00000) | \
-			(((y) <<  0) & 0x000000ff)))
+#define makedev(x,y)    ((dev_t)((((x) <<  8) & 0x000fff00) | 	\
+						(((y) << 12) & 0xfff00000) | 			\
+						(((y) <<  0) & 0x000000ff)))
 #ifndef NBBY
 #define NBBY 8
 #endif
@@ -979,8 +979,8 @@ int	 	cgetustr(char *, const char *, char **);
 
 /* Has quad_t but these prototypes don't get pulled into scope. w/o we lose */
 #ifdef __NetBSD__
-quad_t   strtoq __P((const char *, char **, int));
-u_quad_t strtouq __P((const char *, char **, int));
+quad_t   strtoq (const char *, char **, int);
+u_quad_t strtouq (const char *, char **, int);
 #endif
 
 #endif	/* !__NETBSD_COMPAT_DEFS_H__ */

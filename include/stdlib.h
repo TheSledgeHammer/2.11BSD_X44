@@ -168,7 +168,7 @@ unsigned long long
  */
 #if defined(_ISOC99_SOURCE) || (__STDC_VERSION__ - 0) >= 199901L
 /* LONGLONG */
-long long int	atoll(const char *);
+long long int atoll(const char *);
 #endif
 
 #if (_POSIX_C_SOURCE - 0) >= 200809L
@@ -177,6 +177,28 @@ int	 mkstemp(char *);
 
 int	 getsubopt(char **, char * const *, char **);
 #endif
+
+/* inttypes */
+intmax_t	strtoimax(const char * __restrict, char ** __restrict, int);
+uintmax_t	strtoumax(const char * __restrict, char ** __restrict, int);
+intmax_t	wcstoimax(const wchar_t * __restrict, wchar_t ** __restrict, int);
+uintmax_t	wcstoumax(const wchar_t * __restrict, wchar_t ** __restrict, int);
+
+intmax_t	imaxabs(intmax_t);
+
+typedef struct {
+	intmax_t quot;
+	intmax_t rem;
+} imaxdiv_t;
+
+imaxdiv_t	imaxdiv(intmax_t, intmax_t);
+
+intmax_t	strtoi(const char * __restrict, char ** __restrict, int, intmax_t, intmax_t, int *);
+uintmax_t	strtou(const char * __restrict, char ** __restrict, int, uintmax_t, uintmax_t, int *);
+
+/* i18n variations */
+intmax_t	strtoi_l(const char * __restrict, char ** __restrict, int, intmax_t, intmax_t, int *, locale_t);
+uintmax_t	strtou_l(const char * __restrict, char ** __restrict, int, uintmax_t, uintmax_t, int *, locale_t);
 
 __END_DECLS
 #endif /* _STDLIB_H_ */
