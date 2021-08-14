@@ -1,9 +1,9 @@
-/* $NetBSD: extern.h,v 1.13 2003/07/26 20:34:12 salo Exp $ */
+/* $NetBSD: exec_ecoff.c,v 1.7 2009/04/18 11:30:30 tsutsui Exp $ */
 
 /*
  * Copyright (c) 1997 Christopher G. Demetriou
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -19,7 +19,7 @@
  *          information about NetBSD.
  * 4. The name of the author may not be used to endorse or promote products
  *    derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
  * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -30,37 +30,55 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  * <<Id: LICENSE,v 1.2 2000/06/14 15:57:33 cgd Exp>>
  */
 
-#ifdef NLIST_AOUT
-int	check_aout(int, const char *);
-int	hide_aout(int, const char *);
-#endif
-#ifdef NLIST_COFF
-int	check_coff(int, const char *);
-int	hide_coff(int, const char *);
-#endif
-#ifdef NLIST_ECOFF
-int	check_ecoff(int, const char *);
-int	hide_ecoff(int, const char *);
-#endif
-#ifdef NLIST_ELF32
-int	check_elf32(int, const char *);
-int	hide_elf32(int, const char *);
-#endif
-#ifdef NLIST_ELF64
-int	check_elf64(int, const char *);
-int	hide_elf64(int, const char *);
-#endif
-#ifdef NLIST_XCOFF32
-int	check_xcoff32(int, const char *);
-int	hide_xcoff32(int, const char *);
-#endif
-#ifdef NLIST_XCOFF64
-int	check_xcoff64(int, const char *);
-int	hide_xcoff64(int, const char *);
-#endif
+#include <sys/cdefs.h>
 
-int	in_keep_list(const char *symbol);
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+
+#include "extern.h"
+
+#if (defined(NLIST_XCOFF32) && (XCOFFSIZE == 32)) || \
+    (defined(NLIST_XCOFF64) && (XCOFFSIZE == 64))
+
+#include <sys/exec_xcoff.h>
+
+int
+XCOFFNAMEEND(check)(int fd, const char *filename)
+{
+	struct xcoff_exechdr eh;
+	struct stat sb;
+
+	/*
+	 * Check the header to make sure it's an ECOFF file (of the
+	 * appropriate size).
+	 */
+	if (fstat(fd, &sb) == -1)
+		return 0;
+	if (sb.st_size < (off_t)sizeof eh)
+		return 0;
+	if (read(fd, &eh, sizeof eh) != sizeof eh)
+		return 0;
+
+	if (XCOFF_BADMAG(&eh))
+		return 0;
+
+	return 1;
+}
+
+int
+XCOFFNAMEEND(hide)(int fd, const char *filename)
+{
+
+	fprintf(stderr, "%s: XCOFF executables not currently supported\n", filename);
+	return 1;
+}
+
+#endif /* defined(NLIST_ECOFF) */

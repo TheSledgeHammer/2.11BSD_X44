@@ -3,13 +3,29 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
+
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)strcasecmp.c	1.2 (Berkeley) 7/2/87";
 #endif LIBC_SCCS and not lint
 
+#if !defined(_KERNEL) && !defined(_STANDALONE)
+#include "namespace.h"
+#include <assert.h>
+#include <ctype.h>
 #include <string.h>
-
+#ifdef __weak_alias
+__weak_alias(strcasecmp,_strcasecmp)
+__weak_alias(strncasecmp,_strncasecmp)
+#endif
+#else
+#include <lib/libkern/libkern.h>
+#include <machine/limits.h>
+#endif
 /*
  * This array is designed for mapping upper and lower case letter
  * together for a case independent comparison.  The mappings are

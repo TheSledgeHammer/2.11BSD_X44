@@ -1,9 +1,7 @@
-/* $NetBSD: extern.h,v 1.13 2003/07/26 20:34:12 salo Exp $ */
-
 /*
- * Copyright (c) 1997 Christopher G. Demetriou
+ * Copyright (c) 2021 Martin Kelly
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -19,7 +17,7 @@
  *          information about NetBSD.
  * 4. The name of the author may not be used to endorse or promote products
  *    derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
  * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -30,37 +28,11 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
- * <<Id: LICENSE,v 1.2 2000/06/14 15:57:33 cgd Exp>>
+ *
  */
 
-#ifdef NLIST_AOUT
-int	check_aout(int, const char *);
-int	hide_aout(int, const char *);
-#endif
-#ifdef NLIST_COFF
-int	check_coff(int, const char *);
-int	hide_coff(int, const char *);
-#endif
-#ifdef NLIST_ECOFF
-int	check_ecoff(int, const char *);
-int	hide_ecoff(int, const char *);
-#endif
-#ifdef NLIST_ELF32
-int	check_elf32(int, const char *);
-int	hide_elf32(int, const char *);
-#endif
-#ifdef NLIST_ELF64
-int	check_elf64(int, const char *);
-int	hide_elf64(int, const char *);
-#endif
-#ifdef NLIST_XCOFF32
-int	check_xcoff32(int, const char *);
-int	hide_xcoff32(int, const char *);
-#endif
-#ifdef NLIST_XCOFF64
-int	check_xcoff64(int, const char *);
-int	hide_xcoff64(int, const char *);
-#endif
+#include <sys/cdefs.h>
 
-int	in_keep_list(const char *symbol);
+#define	XCOFFSIZE		64
+
+#include "exec_xcoff32.c"

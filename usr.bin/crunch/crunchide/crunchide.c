@@ -230,6 +230,12 @@ static struct {
 #ifdef NLIST_ELF64
 	{	"ELF64",	check_elf64,	hide_elf64,	},
 #endif
+#ifdef NLIST_XCOFF32
+	{	"XCOFF32",	check_xcoff32,	hide_xcoff32,	},
+#endif
+#ifdef NLIST_XCOFF64
+	{	"XCOFF64",	check_xcoff64,	hide_xcoff64,	},
+#endif
 };
 
 static int

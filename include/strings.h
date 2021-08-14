@@ -32,16 +32,18 @@ typedef	_BSD_SIZE_T_	size_t;
 
 __BEGIN_DECLS
 /* Routines described in string(3) */
+/*
 char	*strcat(), *strncat(), *strcpy(), *strncpy(), *index(), *rindex();
 int		strcmp(), strncmp(), strcasecmp(), strncasecmp(), strlen();
-
+*/
 /* Routines described in memory(BA_LIB); System V compatibility */
+/*
 char	*memccpy(), *memchr(), *memcpy(), *memset(), *strchr(),
 		*strdup(), *strpbrk(), *strrchr(), *strsep(), *strtok();
 int		memcmp(), strcspn(), strspn();
-
+*/
 /* Routines from ANSI X3J11 */
-char	*strerror();
+//char	*strerror();
 __END_DECLS
 
 #include <string.h>
