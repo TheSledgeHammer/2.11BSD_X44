@@ -15,8 +15,6 @@
 
 .include <bsd.own.mk>
 
-
-
 SUBDIR=		csu .WAIT
 
 .if (${MKGCC} != "no")
@@ -51,15 +49,15 @@ SUBDIR+=	../contrib/external/flex/lib
 SUBDIR+=	../contrib/external/elftoolchain/lib
 
 .if (${MKGCC} != "no")
-SUBDIR+=	../external/contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libobjc
-SUBDIR+=	../external/contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libgomp
+SUBDIR+=	../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libobjc
+SUBDIR+=	../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libgomp
 # Should probably move GMP, MPFR and MPC builds into the GCC >= 4.5
 # specific build area, but we get better parallelism this way.
 # We don't build compat versions of these.
 . if !defined(MLIBDIR) && (${MKGCCCMDS} != "no")
-SUBDIR+=	../external/contrib/gnu/gmp/lib/libgmp
-SUBDIR+=	../external/contrib/gnu/mpfr/lib/libmpfr
-SUBDIR+=	../external/contrib/gnu/mpc/lib/libmpc
+SUBDIR+=	../contrib/external/gnu/gmp/lib/libgmp
+SUBDIR+=	../contrib/external/gnu/mpfr/lib/libmpfr
+SUBDIR+=	../contrib/external/gnu/mpc/lib/libmpc
 . endif
 .endif
 
