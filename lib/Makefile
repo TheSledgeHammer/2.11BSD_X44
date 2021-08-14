@@ -45,7 +45,7 @@ SUBDIR+=  	${USRLIBDIR}/libdbm 	\
 SUBDIR+=	libkern
 .endif
 
-SUBDIR+=	../contrib/external/flex/lib
+SUBDIR+=	../contrib/flex/lib
 SUBDIR+=	../contrib/external/elftoolchain/lib
 
 .if (${MKGCC} != "no")
