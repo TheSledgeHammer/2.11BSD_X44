@@ -140,8 +140,7 @@ preempt(p)
 	struct proc *p;
 {
 	setrq(p);
-	u->u_stats->p_ru.ru_nvcsw++;
-	p->p_stats->p_ru.ru_nvcsw = u->u_stats->p_ru.ru_nvcsw;
+	p->p_stats->p_ru.ru_nvcsw++;
 	swtch();
 }
 

@@ -84,24 +84,9 @@ ufs211_mount(mp, path, data, ndp, p)
 	mode_t accessmode;
 
 	ump = VFSTOUFS211(mp);
-}
 
-/*
- * Make a filesystem operational.
- * Nothing to do at the moment.
- */
-/* ARGSUSED */
-int
-ufs211_start(mp, flags, p)
-	struct mount *mp;
-	int flags;
-	struct proc *p;
-{
-	struct ufs211_mount *ump;
-	ump = VFSTOUFS211(mp);
 	return (0);
 }
-
 
 int
 ufs211_unmount(mp, mntflags, p)
@@ -115,6 +100,22 @@ ufs211_unmount(mp, mntflags, p)
 
 	ump = VFSTOUFS211(mp);
 
+	return (0);
+}
+
+
+/*
+ * Make a filesystem operational.
+ * Nothing to do at the moment.
+ */
+/* ARGSUSED */
+int
+ufs211_start(mp, flags, p)
+	struct mount *mp;
+	int flags;
+	struct proc *p;
+{
+	return (0);
 }
 
 /*
@@ -125,17 +126,10 @@ ufs211_root(mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
 {
-	struct ufs211_mount *ump;
 	struct vnode *nvp;
 	int error;
 
-	if(error == VFSTOUFS211(mp)) {
-		return (error);
-	} else {
-		ump = VFSTOUFS211(mp);
-	}
-
-	if (error == VFS_VGET(ump, UFS211_ROOTINO, &nvp))
+	if (error == VFS_VGET(mp, (ino_t)UFS211_ROOTINO, &nvp))
 		return (error);
 	*vpp = nvp;
 	return (0);
@@ -224,17 +218,29 @@ ufs211_statfs(mp, sbp, p)
 	register struct statfs *sbp;
 	struct proc *p;
 {
-	register struct	ufs211_inode *ip;
 	register struct ufs211_mount *ump;
 	register struct ufs211_fs *fs;
-	struct nameidata nd;
-	register struct nameidata *ndp = &nd;
 
 	ump = VFSTOUFS211(mp);
-	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path);
-
-	ump = (struct ufs211_mount *)((int)ip->i_fs - offsetof(struct ufs211_mount, m_filsys));
-	u->u_error = statfs1(mp, uap->m_buf);
+	fs = ump->m_filsys;
+	if (fs->fs_magic != FS_UFS211_MAGIC) {
+		panic("ufs211_statfs");
+	}
+	sbp->f_bsize = fs->fs_fsize;
+	//sbp->f_iosize = fs->fs_iosize;
+	//sbp->f_blocks = fs->fs_dsize;
+	sbp->f_bfree = fs->fs_tfree;
+	//sbp->f_bavail = fs->
+	//sbp->f_files = fs->
+	sbp->f_ffree =  fs->fs_inode;
+	if (sbp != &mp->mnt_stat) {
+		sbp->f_type = mp->mnt_vfc->vfc_typenum;
+		bcopy((caddr_t) mp->mnt_stat.f_mntonname,
+				(caddr_t) &sbp->f_mntonname[0], MNAMELEN);
+		bcopy((caddr_t) mp->mnt_stat.f_mntfromname,
+				(caddr_t) &sbp->f_mntfromname[0], MNAMELEN);
+	}
+	return (0);
 }
 
 /*
@@ -353,21 +359,27 @@ ufs211_vget(mp, ino, vpp)
 }
 
 int
-ufs211_fhtovp(mp, fhp, nam, vpp, exflagsp, credanonp)
-	register struct mount *mp;
-	struct fid *fhp;
-	struct mbuf *nam;
+ufs211_fhtovp(mp, ufhp, vpp)
+	struct mount *mp;
+	struct ufid *ufhp;
 	struct vnode **vpp;
-	int *exflagsp;
-	struct ucred **credanonp;
 {
-	register struct ufid *ufhp;
-	struct ufs211_fs *fs;
+	struct ufs211_inode *ip;
+	struct vnode *nvp;
+	int error;
 
-	fs = VFSTOUFS211(mp)->m_filsys;
-	if (ufhp->ufid_ino < UFS211_ROOTINO) {
+	error = VFS_VGET(mp, ufhp->ufid_ino, &nvp);
+	if (error) {
+		*vpp = NULLVP;
+		return (error);
+	}
+	ip = UFS211_VTOI(nvp);
+	if (ip->i_mode == 0 || ufhp->ufid_ino < UFS211_ROOTINO) {
+		vput(nvp);
+		*vpp = NULLVP;
 		return (ESTALE);
 	}
+	*vpp = nvp;
 	return (0);
 }
 

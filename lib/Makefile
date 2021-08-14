@@ -15,10 +15,12 @@
 
 .include <bsd.own.mk>
 
+
+
 SUBDIR=		csu .WAIT
 
 .if (${MKGCC} != "no")
-SUBDIR+=	../contrib/external/${EXTERNAL_GCC_SUBDIR}/lib/libgcc .WAIT
+SUBDIR+=	../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libgcc .WAIT
 .endif
 
 SUBDIR+=	libc
@@ -32,12 +34,43 @@ SUBDIR+=	.WAIT
 
 SUBDIR+=	libarch libcompat
 
+USRLIBDIR= 	../usr.lib
+SUBDIR+=  	${USRLIBDIR}/libdbm 	\
+			${USRLIBDIR}/libmp 		\
+			${USRLIBDIR}/libtermcap \
+			${USRLIBDIR}/libutil 	\
+			${USRLIBDIR}/libvmf 	\
+			${USRLIBDIR}/liby 		\
+			${USRLIBDIR}/libz
+
 .if !defined(BSD_MK_COMPAT_FILE)
 SUBDIR+=	libkern
 .endif
 
 SUBDIR+=	../contrib/external/flex/lib
 SUBDIR+=	../contrib/external/elftoolchain/lib
+
+.if (${MKGCC} != "no")
+SUBDIR+=	../external/contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libobjc
+SUBDIR+=	../external/contrib/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libgomp
+# Should probably move GMP, MPFR and MPC builds into the GCC >= 4.5
+# specific build area, but we get better parallelism this way.
+# We don't build compat versions of these.
+. if !defined(MLIBDIR) && (${MKGCCCMDS} != "no")
+SUBDIR+=	../external/contrib/gnu/gmp/lib/libgmp
+SUBDIR+=	../external/contrib/gnu/mpfr/lib/libmpfr
+SUBDIR+=	../external/contrib/gnu/mpc/lib/libmpc
+. endif
+.endif
+
+#
+# Libraries that depend upon any listed previously
+# (and those that depend upon these [and ...])
+#
+#==================== 1st library dependency barrier ====================
+SUBDIR+=	.WAIT
+
+SUBDIR+= 	${USRLIBDIR}/libcurses
 
 .include <bsd.buildinstall.mk>
 .include <bsd.subdir.mk>

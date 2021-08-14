@@ -65,4 +65,6 @@ int	wsmousedevprint (void *, const char *);
 /*
  * Callbacks from the mouse driver to the wsmouse interface driver.
  */
+#define WSMOUSE_INPUT_DELTA		0
 void wsmouse_input (struct device *kbddev, u_int btns, int dx, int dy, int dz);
+

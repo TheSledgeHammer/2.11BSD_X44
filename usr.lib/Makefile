@@ -16,9 +16,9 @@
 # the 4.3BSD version of ucb/pascal.
 #
 
-.include <bsd.own.mk>
+#.include <bsd.own.mk>
 
-SUBDIR= libcurses libdbm libmp libom libtermcap libutil libvmf liby libz
+#SUBDIR+= libcurses libdbm libmp libom libtermcap libutil libvmf liby libz
 
-.include <bsd.buildinstall.mk>
-.include <bsd.subdir.mk>
+#.include <bsd.buildinstall.mk>
+#.include <bsd.subdir.mk>

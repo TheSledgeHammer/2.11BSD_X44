@@ -82,7 +82,6 @@ assym.h: ${ARCHDIR}/genassym.cf
 	mv -f assym.h.tmp assym.h
 .endif
 
-#.include "${.CURDIR}/cdb/Makefile.inc"
 .include "${.CURDIR}/db/Makefile.inc"
 .include "${.CURDIR}/dlfcn/Makefile.inc"
 .include "${.CURDIR}/compat-4.1/Makefile.inc"

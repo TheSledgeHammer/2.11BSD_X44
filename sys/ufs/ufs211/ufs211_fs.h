@@ -59,7 +59,7 @@ struct ufs211_fs {
 	ino_t			fs_nbehind;				/* est # free inodes before s_lasti */
 	u_short			fs_flags;				/* mount time flags */
 	int	 			fs_magic;				/* magic number */
-/* actually longer */
+	/* actually longer */
 };
 
 struct ufs211_fblk {

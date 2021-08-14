@@ -241,7 +241,7 @@ ufs_fhtovp(mp, ufhp, vpp)
 	struct vnode *nvp;
 	int error;
 
-	error = VFS_VGET(mp, ufhp->ufid_ino, LK_EXCLUSIVE, &nvp);
+	error = VFS_VGET(mp, ufhp->ufid_ino, &nvp);
 	if (error) {
 		*vpp = NULLVP;
 		return (error);
