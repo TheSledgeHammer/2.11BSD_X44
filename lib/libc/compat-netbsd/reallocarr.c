@@ -52,7 +52,7 @@ __weak_alias(reallocarr, _reallocarr)
 
 #define SQRT_SIZE_MAX (((size_t)1) << (sizeof(size_t) * CHAR_BIT / 2))
 
-#if !HAVE_REALLOCARR
+#if !HAVE_REALLOCARR || !HAVE_DECL_REALLOCARR
 int
 reallocarr(void *ptr, size_t number, size_t size)
 {

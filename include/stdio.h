@@ -46,7 +46,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
-#include <sys/ansi.h>
+#include <machine/ansi.h>
 #include <sys/null.h>
 
 #ifdef	_BSD_SIZE_T_

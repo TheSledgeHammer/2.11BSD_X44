@@ -68,7 +68,7 @@ __weak_alias(warnc, _warnc)
 __weak_alias(warnx, _warnx)
 #endif
 
-#if !HAVE_ERR_H || !HAVE_DECL_ERRC
+#if !HAVE_ERR_H || !HAVE_DECL_ERR
 void
 err(int eval, const char *fmt, ...)
 {
@@ -78,7 +78,9 @@ err(int eval, const char *fmt, ...)
 	verr(eval, fmt, ap);
 	va_end(ap);
 }
+#endif
 
+#if !HAVE_ERR_H || !HAVE_DECL_ERRC
 void
 errc(int eval, int code, const char *fmt, ...)
 {
@@ -88,7 +90,9 @@ errc(int eval, int code, const char *fmt, ...)
 	verrc(eval, code, fmt, ap);
 	va_end(ap);
 }
+#endif
 
+#if !HAVE_ERR_H || !HAVE_DECL_ERRX
 void
 errx(int eval, const char *fmt, ...)
 {
@@ -97,7 +101,9 @@ errx(int eval, const char *fmt, ...)
 	verrx(eval, fmt, ap);
 	va_end(ap);
 }
+#endif
 
+#if !HAVE_ERR_H || !HAVE_DECL_VERR
 void
 verr(eval, fmt, ap)
 	int eval;
@@ -116,7 +122,9 @@ verr(eval, fmt, ap)
 	(void)fputc('\n', stderr);
 	exit(eval);
 }
+#endif
 
+#if !HAVE_ERR_H || !HAVE_DECL_VERRC
 void
 verrc(int eval, int code, const char *fmt, va_list ap)
 {
@@ -128,7 +136,9 @@ verrc(int eval, int code, const char *fmt, va_list ap)
 	(void)fprintf(stderr, "%s\n", strerror(code));
 	exit(eval);
 }
+#endif
 
+#if !HAVE_ERR_H || !HAVE_DECL_VERRX
 void
 verrx(eval, fmt, ap)
 	int eval;
@@ -141,7 +151,9 @@ verrx(eval, fmt, ap)
 	(void)fputc('\n', stderr);
 	exit(eval);
 }
+#endif
 
+#if !HAVE_ERR_H || !HAVE_DECL_VWARN
 void
 vwarn(fmt, ap)
 	char *fmt;
@@ -158,7 +170,9 @@ vwarn(fmt, ap)
 	(void)fputs(strerror(sverrno), stderr);
 	(void)fputc('\n', stderr);
 }
+#endif
 
+#if !HAVE_ERR_H || !HAVE_DECL_VWARNC
 void
 vwarnc(int code, const char *fmt, va_list ap)
 {
@@ -169,7 +183,9 @@ vwarnc(int code, const char *fmt, va_list ap)
 	}
 	(void)fprintf(stderr, "%s\n", strerror(code));
 }
+#endif
 
+#if !HAVE_ERR_H || !HAVE_DECL_VWARNX
 void
 vwarnx(fmt, ap)
 	char *fmt;
@@ -180,7 +196,9 @@ vwarnx(fmt, ap)
 		(void)vfprintf(stderr, fmt, ap);
 	(void)fputc('\n', stderr);
 }
+#endif
 
+#if !HAVE_ERR_H || !HAVE_DECL_WARN
 void
 warn(const char *fmt, ...)
 {
@@ -190,7 +208,9 @@ warn(const char *fmt, ...)
 	vwarn(fmt, ap);
 	va_end(ap);
 }
+#endif
 
+#if !HAVE_ERR_H || !HAVE_DECL_WARNC
 void
 warnc(int code, const char *fmt, ...)
 {
@@ -200,7 +220,9 @@ warnc(int code, const char *fmt, ...)
 	vwarnc(code, fmt, ap);
 	va_end(ap);
 }
+#endif
 
+#if !HAVE_ERR_H || !HAVE_DECL_WARNX
 void
 warnx(const char *fmt, ...)
 {

@@ -53,7 +53,10 @@ typedef	_BSD_SIZE_T_	size_t;
 #undef	_BSD_SIZE_T_
 #endif
 
-#if defined(_BSD_WCHAR_T_) && !defined(__cplusplus)
+#ifdef	_BSD_WCHAR_T_
+#ifndef _ANSI_SOURCE
+typedef	_BSD_WCHAR_T_	rune_t;
+#endif
 typedef	_BSD_WCHAR_T_	wchar_t;
 #undef	_BSD_WCHAR_T_
 #endif

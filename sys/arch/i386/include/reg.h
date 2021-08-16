@@ -35,7 +35,7 @@
  *
  *	@(#)reg.h	8.1 (Berkeley) 6/11/93
  */
-#include <machine/types.h>
+#include <machine/machtypes.h>
 /*
  * Location of the users' stored
  * registers within appropriate frame of 'trap' and 'syscall', relative to

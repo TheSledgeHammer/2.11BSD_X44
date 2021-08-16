@@ -44,6 +44,7 @@ __RCSID("$NetBSD: reallocarray.c,v 1.11 2021/02/26 19:25:12 christos Exp $");
 #include <stdlib.h>
 #include <string.h>
 
+#if !HAVE_REALLOCARRAY || !HAVE_DECL_REALLOCARRAY
 void *
 reallocarray(void *optr, size_t nmemb, size_t size)
 {
@@ -58,3 +59,4 @@ reallocarray(void *optr, size_t nmemb, size_t size)
 	errno = e;
 	return NULL;
 }
+#endif

@@ -188,7 +188,7 @@ AC_CHECK_DECLS([basename, dirname],,, [
 #include <libgen.h>
 ])
 
-AC_CHECK_DECLS([raise_default_signal],,, [
+#AC_CHECK_DECLS([raise_default_signal],,, [
 #include <util.h>
 ])
 
@@ -240,7 +240,7 @@ AC_CHECK_DECLS([strcasecmp, strncasecmp, strlcpy, strlcat, strndup,
 		strnlen, strsep],,,[
 #include <string.h>
 ])
-AC_CHECK_DECLS([strsuftoll, mi_vector_hash],,,[#include <stdlib.h>])
+#AC_CHECK_DECLS([strsuftoll, mi_vector_hash],,,[#include <stdlib.h>])
 AC_CHECK_DECLS([lchflags, lchmod, lchown],,,[
 #include <sys/stat.h>
 #include <unistd.h>
@@ -257,13 +257,13 @@ AC_CHECK_DECLS([htobe16, htobe32, htobe64, htole16, htole32, htole64,
 		be16toh, be32toh, be64toh, le16toh, le32toh, le64toh],,,
 		[#include <sys/types.h>])
 
-AC_CHECK_DECLS([bswap16, bswap32, bswap64],,, [#include <machine/bswap.h>])
+#AC_CHECK_DECLS([bswap16, bswap32, bswap64],,, [#include <machine/bswap.h>])
 
 AC_CHECK_DECLS([be16enc, le16enc, be16dec, le16dec, be32enc, le32enc,
 		be32dec, le32dec, be64enc, le64enc, be64dec, le64dec],,,
 		[#include <sys/endian.h>])
 
-AC_CHECK_DECLS([fstatvfs],,, [#include <sys/statvfs.h>])
+#AC_CHECK_DECLS([fstatvfs],,, [#include <sys/statvfs.h>])
 
 AC_CHECK_DECLS([setgroupent, setpassent],,, [
 #include <sys/types.h>

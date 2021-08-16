@@ -49,7 +49,7 @@
 #include <arch/i386/include/specialreg.h>
 
 #include <arch/i386/include/ansi.h>
-#include <arch/i386/include/types.h>
+#include "../../../../arch/i386/include/machtypes.h"
 
 u_int64_t	tsc_freq;
 int			tsc_is_invariant;

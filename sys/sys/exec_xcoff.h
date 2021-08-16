@@ -33,7 +33,7 @@
 #ifndef _SYS_EXEC_XCOFF_H_
 #define _SYS_EXEC_XCOFF_H_
 
-#include <machine/types.h>
+#include <machine/machtypes.h>
 #include <machine/xcoff_machdep.h>
 
 typedef struct {
