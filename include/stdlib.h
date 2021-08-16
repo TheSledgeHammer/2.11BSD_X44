@@ -53,10 +53,7 @@ typedef	_BSD_SIZE_T_	size_t;
 #undef	_BSD_SIZE_T_
 #endif
 
-#ifdef	_BSD_WCHAR_T_
-#ifndef _ANSI_SOURCE
-typedef	_BSD_WCHAR_T_	rune_t;
-#endif
+#if defined(_BSD_WCHAR_T_) && !defined(__cplusplus)
 typedef	_BSD_WCHAR_T_	wchar_t;
 #undef	_BSD_WCHAR_T_
 #endif
@@ -163,14 +160,6 @@ long long
 unsigned long long
 		strtouq (const char *, char **, int);
 #endif
-#endif
-
-/*
- * ISO C99
- */
-#if defined(_ISOC99_SOURCE) || (__STDC_VERSION__ - 0) >= 199901L
-/* LONGLONG */
-long long int	atoll (const char *);
 #endif
 __END_DECLS
 #endif /* _STDLIB_H_ */

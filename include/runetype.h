@@ -41,6 +41,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/ansi.h>
+#include <machine/ansi.h>
 #include <sys/null.h>
 
 #include <stdio.h> /* for FILE* */

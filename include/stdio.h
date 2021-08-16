@@ -46,7 +46,7 @@
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
-#include <machine/ansi.h>
+#include <sys/ansi.h>
 #include <sys/null.h>
 
 #ifdef	_BSD_SIZE_T_
@@ -277,7 +277,7 @@ int	 	putc (int, FILE *);
 int	 	putchar (int);
 int	 	puts (const char *);
 int	 	remove (const char *);
-//int	 	rename  (const char *, const char *);
+int	 	rename  (const char *, const char *);
 void 	rewind (FILE *);
 int	 	scanf (const char *, ...);
 void 	setbuf (FILE *, char *);
@@ -334,7 +334,6 @@ int	 	snprintf (char *, size_t, const char *, ...);
 int	 	vsnprintf (char *, size_t, const char *, _BSD_VA_LIST_);
 int	 	vscanf (const char *, _BSD_VA_LIST_);
 int	 	vsscanf (const char *, const char *, _BSD_VA_LIST_);
-//FILE	*zopen (const char *, const char *, int);
 __END_DECLS
 
 /*
