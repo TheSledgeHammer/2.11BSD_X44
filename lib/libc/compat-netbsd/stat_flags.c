@@ -46,12 +46,11 @@ static char sccsid[] = "@(#)stat_flags.c	8.2 (Berkeley) 7/28/94";
 
 #include <sys/types.h>
 #include <sys/stat.h>
+
 #include <fts.h>
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
-
-#include "util.h"
 
 #define	SAPPEND(s) do {									\
 	if (prefix != NULL)									\

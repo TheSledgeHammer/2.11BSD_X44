@@ -14,7 +14,6 @@ static char sccsid[] = "@(#)strcasecmp.c	1.2 (Berkeley) 7/2/87";
 #endif LIBC_SCCS and not lint
 
 #if !defined(_KERNEL) && !defined(_STANDALONE)
-#include "namespace.h"
 #include <assert.h>
 #include <ctype.h>
 #include <string.h>

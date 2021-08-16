@@ -1,4 +1,4 @@
-.\"	$NetBSD: getopt_long.3,v 1.20 2018/12/09 20:29:53 christos Exp $
+.\"	$NetBSD: getopt_long.3,v 1.14 2003/08/07 16:43:40 agc Exp $
 .\"
 .\" Copyright (c) 1988, 1991, 1993
 .\"	The Regents of the University of California.  All rights reserved.
@@ -29,7 +29,7 @@
 .\"
 .\"     @(#)getopt.3	8.5 (Berkeley) 4/27/95
 .\"
-.Dd December 9, 2018
+.Dd April 1, 2000
 .Dt GETOPT_LONG 3
 .Os
 .Sh NAME
@@ -40,7 +40,7 @@
 .Sh SYNOPSIS
 .In getopt.h
 .Ft int
-.Fn getopt_long "int argc" "char * const *argv" "const char *optstring" "struct option *long_options" "int *index"
+.Fn getopt_long "int argc" "char * const *argv" "const char *optstring" "struct option *long options" "int *index"
 .Sh DESCRIPTION
 The
 .Fn getopt_long
@@ -86,11 +86,6 @@ It is possible to combine these methods, providing for long options
 processing with short option equivalents for some options.
 Less frequently used options would be processed as long options only.
 .Pp
-Abbreviated long option names are accepted when
-.Fn getopt_long
-processes long options if the abbreviation is unique.
-An exact match is always preferred for a defined long option.
-.Pp
 The
 .Fn getopt_long
 call requires a structure to be initialized describing the long options.
@@ -113,7 +108,7 @@ The
 field should be one of:
 .Bl -tag -width "optional_argument"
 .It Li no_argument
-no argument to the option is expected.
+no argument to the option is expect.
 .It Li required_argument
 an argument to the option is required.
 .It Li optional_argument
@@ -143,21 +138,6 @@ and setting
 to the corresponding short option will make this function act just
 like
 .Xr getopt 3 .
-.Pp
-If the
-.Fa index
-field is not
-.Dv NULL ,
-the integer it points to will be set to the index of the long option
-in the
-.Fa long_options
-array.
-.Pp
-The last element of the
-.Fa long_options
-array has to be filled with zeroes (see
-.Sx EXAMPLES
-section).
 .Sh EXAMPLES
 .Bd -literal -compact
 extern char *optarg;
@@ -168,8 +148,8 @@ int daggerset;
 /* options descriptor */
 static struct option longopts[] = {
 	{ "buffy",	no_argument,		0, 		'b' },
-	{ "fluoride",	required_argument,	0, 	       	'f' },
-	{ "daggerset",	no_argument,		&daggerset,	1 },
+	{ "floride",	required_argument,	0, 	       	'f' },
+	{ "daggerset",	no_argument,		\*[Am]daggerset,	1 },
 	{ NULL,		0,			NULL, 		0 }
 };
 
@@ -180,7 +160,7 @@ while ((ch = getopt_long(argc, argv, "bf:", longopts, NULL)) != -1)
 		bflag = 1;
 		break;
 	case 'f':
-		if ((fd = open(optarg, O_RDONLY, 0)) < 0) {
+		if ((fd = open(optarg, O_RDONLY, 0)) \*[Lt] 0) {
 			(void)fprintf(stderr,
 			    "myname: %s: %s\en", optarg, strerror(errno));
 			exit(1);
@@ -189,7 +169,7 @@ while ((ch = getopt_long(argc, argv, "bf:", longopts, NULL)) != -1)
 	case 0:
 		if(daggerset) {
 			fprintf(stderr,"Buffy will use her dagger to "
-				       "apply fluoride to dracula's teeth\en");
+				       "apply floride to dracula's teeth\en");
 		}
 		break;
 	case '?':
@@ -304,7 +284,3 @@ implementation appeared in 1.5.
 The implementation can completely replace
 .Xr getopt 3 ,
 but right now we are using separate code.
-.Pp
-The
-.Fa argv
-argument is not really const.

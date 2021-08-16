@@ -1,3 +1,5 @@
+.\"	$NetBSD: strtol.3,v 1.22 2003/09/08 17:54:33 wiz Exp $
+.\"
 .\" Copyright (c) 1990, 1991, 1993
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
@@ -13,11 +15,7 @@
 .\" 2. Redistributions in binary form must reproduce the above copyright
 .\"    notice, this list of conditions and the following disclaimer in the
 .\"    documentation and/or other materials provided with the distribution.
-.\" 3. All advertising materials mentioning features or use of this software
-.\"    must display the following acknowledgement:
-.\"	This product includes software developed by the University of
-.\"	California, Berkeley and its contributors.
-.\" 4. Neither the name of the University nor the names of its contributors
+.\" 3. Neither the name of the University nor the names of its contributors
 .\"    may be used to endorse or promote products derived from this software
 .\"    without specific prior written permission.
 .\"
@@ -33,25 +31,36 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"     @(#)strtol.3	8.1 (Berkeley) 6/4/93
+.\"     from: @(#)strtol.3	8.1 (Berkeley) 6/4/93
 .\"
-.Dd June 4, 1993
+.Dd August 11, 2002
 .Dt STRTOL 3
 .Os
 .Sh NAME
-.Nm strtol, strtoq
-.Nd convert string value to a long or quad_t integer
+.Nm strtol ,
+.Nm strtoll ,
+.Nm strtoimax ,
+.Nm strtoq
+.Nd "convert string value to a long, long long, intmax_t or quad_t integer"
+.Sh LIBRARY
+.Lb libc
 .Sh SYNOPSIS
-.Fd #include <stdlib.h>
-.Fd #include <limits.h>
-.Ft long
-.Fn strtol "char *nptr" "char **endptr" "int base"
-
-.Fd #include <sys/types.h>
-.Fd #include <stdlib.h>
-.Fd #include <limits.h>
+.In stdlib.h
+.In limits.h
+.Ft long int
+.Fn strtol "const char * restrict nptr" "char ** restrict endptr" "int base"
+.Ft long long int
+.Fn strtoll "const char * restrict nptr" "char ** restrict endptr" "int base"
+.Pp
+.In inttypes.h
+.Ft intmax_t
+.Fn strtoimax "const char * restrict nptr" "char ** restrict endptr" "int base"
+.Pp
+.In sys/types.h
+.In stdlib.h
+.In limits.h
 .Ft quad_t
-.Fn strtoq "char *nptr" "char **endptr" "int base"
+.Fn strtoq "const char * restrict nptr" "char ** restrict endptr" "int base"
 .Sh DESCRIPTION
 The
 .Fn strtol
@@ -59,7 +68,23 @@ function
 converts the string in
 .Fa nptr
 to a
-.Em long
+.Em long int
+value.
+The
+.Fn strtoll
+function
+converts the string in
+.Fa nptr
+to a
+.Em long long int
+value.
+The
+.Fn strtoimax
+function
+converts the string in
+.Fa nptr
+to an
+.Em intmax_t
 value.
 The
 .Fn strtoq
@@ -138,17 +163,93 @@ unless the value would underflow or overflow.
 If an underflow occurs,
 .Fn strtol
 returns
-.Dv LONG_MIN .
+.Dv LONG_MIN ,
+.Fn strtoll
+returns
+.Dv LLONG_MIN ,
+and
+.Fn strtoimax
+returns
+.Dv INTMAX_MIN .
 If an overflow occurs,
 .Fn strtol
 returns
-.Dv LONG_MAX .
-In both cases,
+.Dv LONG_MAX ,
+.Fn strtoll
+returns
+.Dv LLONG_MAX ,
+and
+.Fn strtoimax
+returns
+.Dv INTMAX_MAX .
+In these cases,
 .Va errno
 is set to
 .Er ERANGE .
+.Sh EXAMPLES
+Ensuring that a string is a valid number (i.e., in range and containing no
+trailing characters) requires clearing
+.Va errno
+beforehand explicitly since
+.Va errno
+is not changed on a successful call to
+.Fn strtol ,
+and the return value of
+.Fn strtol
+cannot be used unambiguously to signal an error:
+.Bd -literal -offset indent
+char *ep;
+long lval;
+
+\&...
+
+errno = 0;
+lval = strtol(buf, &ep, 10);
+if (buf[0] == '\e0' || *ep != '\e0')
+	goto not_a_number;
+if (errno == ERANGE && (lval == LONG_MAX || lval == LONG_MIN))
+	goto out_of_range;
+.Ed
+.Pp
+This example will accept
+.Dq 12
+but not
+.Dq 12foo
+or
+.Dq 12\en .
+If trailing whitespace is acceptable, further checks must be done on
+.Va *ep ;
+alternately, use
+.Xr sscanf 3 .
+.Pp
+If
+.Fn strtol
+is being used instead of
+.Xr atoi 3 ,
+error checking is further complicated because the desired return value is an
+.Li int
+rather than a
+.Li long ;
+however, on some architectures integers and long integers are the same size.
+Thus the following is necessary:
+.Bd -literal -offset indent
+char *ep;
+int ival;
+long lval;
+
+\&...
+
+errno = 0;
+lval = strtol(buf, &ep, 10);
+if (buf[0] == '\e0' || *ep != '\e0')
+	goto not_a_number;
+if ((errno == ERANGE && (lval == LONG_MAX || lval == LONG_MIN)) ||
+    (lval > INT_MAX || lval < INT_MIN))
+	goto out_of_range;
+ival = lval;
+.Ed
 .Sh ERRORS
-.Bl -tag -width [ERANGE]
+.Bl -tag -width Er
 .It Bq Er ERANGE
 The given string was out of range; the value converted has been clamped.
 .El
@@ -156,13 +257,22 @@ The given string was out of range; the value converted has been clamped.
 .Xr atof 3 ,
 .Xr atoi 3 ,
 .Xr atol 3 ,
+.Xr atoll 3 ,
 .Xr strtod 3 ,
-.Xr strtoul 3
+.Xr strtoul 3 ,
+.Xr strtoull 3 ,
+.Xr strtoumax 3
 .Sh STANDARDS
 The
 .Fn strtol
 function
 conforms to
 .St -ansiC .
+The
+.Fn strtoll
+and
+.Fn strtoimax
+functions conform to
+.St -isoC-99 .
 .Sh BUGS
 Ignores the current locale.

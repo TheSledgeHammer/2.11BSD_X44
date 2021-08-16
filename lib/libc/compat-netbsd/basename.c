@@ -1,11 +1,11 @@
-/*	$NetBSD: basename.c,v 1.5 2002/10/17 02:06:04 thorpej Exp $	*/
+/*	$NetBSD: basename.c,v 1.2 2000/01/22 22:19:09 mycroft Exp $	*/
 
 /*-
- * Copyright (c) 1997, 2002 The NetBSD Foundation, Inc.
+ * Copyright (c) 1997 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by Klaus Klein and Jason R. Thorpe.
+ * by Klaus Klein.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -15,6 +15,13 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *        This product includes software developed by the NetBSD
+ *        Foundation, Inc. and its contributors.
+ * 4. Neither the name of The NetBSD Foundation nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -31,14 +38,12 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
-__RCSID("$NetBSD: basename.c,v 1.11 2014/07/16 10:52:26 christos Exp $");
+__RCSID("$NetBSD: basename.c,v 1.2 2000/01/22 22:19:09 mycroft Exp $");
 #endif /* !LIBC_SCCS && !lint */
 
 #include "namespace.h"
-#include <sys/param.h>
 #include <libgen.h>
 #include <string.h>
-#include <limits.h>
 
 #ifdef __weak_alias
 __weak_alias(basename,_basename)
@@ -50,9 +55,7 @@ basename(path)
 	char *path;
 {
 	static char singledot[] = ".";
-	static char result[PATH_MAX];
-	char *p, *lastp;
-	size_t len;
+	char *p;
 
 	/*
 	 * If `path' is a null pointer or points to an empty string,
@@ -62,23 +65,14 @@ basename(path)
 		return (singledot);
 
 	/* Strip trailing slashes, if any. */
-	lastp = path + strlen(path) - 1;
-	while (lastp != path && *lastp == '/')
-		lastp--;
+	p = path + strlen(path) - 1;
+	while (*p == '/' && p != path)
+		*p-- = '\0';
 
-	/* Now find the beginning of this (final) component. */
-	p = lastp;
-	while (p != path && *(p - 1) != '/')
-		p--;
-
-	/* ...and copy the result into the result buffer. */
-	len = (lastp - p) + 1 /* last char */;
-	if (len > (PATH_MAX - 1))
-		len = PATH_MAX - 1;
-
-	memcpy(result, p, len);
-	result[len] = '\0';
-
-	return (result);
+	/* Return pointer to the final pathname component. */
+	if (((p = strrchr(path, '/')) == NULL) || (*(p + 1) == '\0'))
+		return (path);
+	else
+		return (p + 1);
 }
 #endif

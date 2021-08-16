@@ -1,4 +1,4 @@
-/*	$NetBSD: fparseln.c,v 1.10 2009/10/21 01:07:45 snj Exp $	*/
+/*	$NetBSD: fparseln.c,v 1.2.2.4 2004/06/22 21:42:28 tron Exp $	*/
 
 /*
  * Copyright (c) 1997 Christos Zoulas.  All rights reserved.
@@ -11,6 +11,11 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by Christos Zoulas.
+ * 4. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -24,9 +29,13 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
-__RCSID("$NetBSD: fparseln.c,v 1.10 2009/10/21 01:07:45 snj Exp $");
+__RCSID("$NetBSD: fparseln.c,v 1.2.2.4 2004/06/22 21:42:28 tron Exp $");
 #endif /* LIBC_SCCS and not lint */
 
 #include "namespace.h"
@@ -41,21 +50,7 @@ __RCSID("$NetBSD: fparseln.c,v 1.10 2009/10/21 01:07:45 snj Exp $");
 __weak_alias(fparseln,_fparseln)
 #endif
 
-#if ! HAVE_FPARSELN || BROKEN_FPARSELN
-
-#ifndef HAVE_NBTOOL_CONFIG_H
-#include "reentrant.h"
-#include "local.h"
-#else
-#define FLOCKFILE(fp)
-#define FUNLOCKFILE(fp)
-#endif
-
-#if defined(_REENTRANT) && !HAVE_NBTOOL_CONFIG_H
-#define __fgetln(f, l) __fgetstr(f, l, '\n')
-#else
-#define __fgetln(f, l) fgetln(f, l)
-#endif
+#if ! HAVE_FPARSELN
 
 static int isescaped(const char *, const char *, int);
 
@@ -74,7 +69,7 @@ isescaped(const char *sp, const char *p, int esc)
 
 	/* No escape character */
 	if (esc == '\0')
-		return 0;
+		return 1;
 
 	/* Count the number of escape characters that precede ours */
 	for (ne = 0, cp = p; --cp >= sp && *cp == esc; ne++)
@@ -119,15 +114,13 @@ fparseln(FILE *fp, size_t *size, size_t *lineno, const char str[3], int flags)
 	 */
 	nl  = '\n';
 
-	FLOCKFILE(fp);
-
 	while (cnt) {
 		cnt = 0;
 
 		if (lineno)
 			(*lineno)++;
 
-		if ((ptr = __fgetln(fp, &s)) == NULL)
+		if ((ptr = fgetln(fp, &s)) == NULL)
 			break;
 
 		if (s && com) {		/* Check and eliminate comments */
@@ -150,22 +143,15 @@ fparseln(FILE *fp, size_t *size, size_t *lineno, const char str[3], int flags)
 			cp = &ptr[s - 1];
 
 			if (*cp == con && !isescaped(ptr, cp, esc)) {
-				s--;	/* forget continuation char */
+				s--;	/* forget escape */
 				cnt = 1;
 			}
 		}
 
-		if (s == 0) {
-			/*
-			 * nothing to add, skip realloc except in case
-			 * we need a minimal buf to return an empty line
-			 */
-			if (cnt || buf != NULL)
-				continue;
-		}
+		if (s == 0 && buf != NULL)
+			continue;
 
 		if ((cp = realloc(buf, len + s + 1)) == NULL) {
-			FUNLOCKFILE(fp);
 			free(buf);
 			return NULL;
 		}
@@ -175,8 +161,6 @@ fparseln(FILE *fp, size_t *size, size_t *lineno, const char str[3], int flags)
 		len += s;
 		buf[len] = '\0';
 	}
-
-	FUNLOCKFILE(fp);
 
 	if ((flags & FPARSELN_UNESCALL) != 0 && esc && buf != NULL &&
 	    strchr(buf, esc) != NULL) {
@@ -246,4 +230,4 @@ line 6
 */
 
 #endif /* TEST */
-#endif	/* ! HAVE_FPARSELN || BROKEN_FPARSELN */
+#endif	/* ! HAVE_FPARSELN */

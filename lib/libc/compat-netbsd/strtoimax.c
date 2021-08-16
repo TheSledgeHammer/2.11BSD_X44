@@ -43,7 +43,6 @@ __RCSID("$NetBSD: strtoimax.c,v 1.3 2003/08/07 16:43:44 agc Exp $");
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
-#include <inttypes.h>
 #include <stddef.h>
 
 #ifdef __weak_alias
@@ -166,4 +165,13 @@ _strtoimax(nptr, endptr, base)
 		/* LINTED interface specification */
 		*endptr = (char *)(any ? s - 1 : nptr);
 	return (acc);
+}
+
+intmax_t
+strtoimax(nptr, endptr, base)
+	const char *nptr;
+	char **endptr;
+	int base;
+{
+	return _strtoimax(nptr, endptr, base);
 }

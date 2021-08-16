@@ -1,11 +1,11 @@
-/*	$NetBSD: dirname.c,v 1.7 2002/10/17 11:36:39 tron Exp $	*/
+/*	$NetBSD: dirname.c,v 1.2 2000/01/22 22:19:09 mycroft Exp $	*/
 
 /*-
- * Copyright (c) 1997, 2002 The NetBSD Foundation, Inc.
+ * Copyright (c) 1997 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by Klaus Klein and Jason R. Thorpe.
+ * by Klaus Klein.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -15,6 +15,13 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *        This product includes software developed by the NetBSD
+ *        Foundation, Inc. and its contributors.
+ * 4. Neither the name of The NetBSD Foundation nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -31,7 +38,7 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
-__RCSID("$NetBSD: dirname.c,v 1.14 2018/09/27 00:45:34 kre Exp $");
+__RCSID("$NetBSD: dirname.c,v 1.2 2000/01/22 22:19:09 mycroft Exp $");
 #endif /* !LIBC_SCCS && !lint */
 
 #include "namespace.h"
@@ -51,42 +58,24 @@ dirname(path)
 	char *path;
 {
 	static char singledot[] = ".";
-	static char result[PATH_MAX];
-	char *lastp;
-	size_t len;
+	char *p;
 
 	/*
-	 * If `path' is a null pointer or points to an empty string,
-	 * return a pointer to the string ".".
+	 * If `path' is a null pointer or points to an empty string, or does
+	 * not contain a '/', return a pointer to the string ".".
 	 */
-	if ((path == NULL) || (*path == '\0'))
+	if ((path == NULL) || (*path == '\0') || (strchr(path, '/') == NULL))
 		return (singledot);
 
 	/* Strip trailing slashes, if any. */
-	lastp = path + strlen(path) - 1;
-	while (lastp != path && *lastp == '/')
-		lastp--;
+	p = path + strlen(path) - 1;
+	while (*p == '/' && p != path)
+		*p-- = '\0';
 
 	/* Terminate path at the last occurence of '/'. */
-	do {
-		if (*lastp == '/') {
-			/* Strip trailing slashes, if any. */
-			while (lastp != path && *lastp == '/')
-				lastp--;
+	if ((p = strrchr(path, '/')) != NULL)
+		*(p + (p == path ? 1 : 0)) = '\0';
 
-			/* ...and copy the result into the result buffer. */
-			len = (lastp - path) + 1 /* last char */;
-			if (len > (PATH_MAX - 1))
-				len = PATH_MAX - 1;
-
-			memcpy(result, path, len);
-			result[len] = '\0';
-
-			return (result);
-		}
-	} while (--lastp >= path);
-
-	/* No /'s found, return a pointer to the string ".". */
-	return (singledot);
+	return (path);
 }
 #endif

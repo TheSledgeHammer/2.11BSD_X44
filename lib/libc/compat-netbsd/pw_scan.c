@@ -1,4 +1,4 @@
-/*	$NetBSD: pw_scan.c,v 1.23 2012/03/13 21:13:36 christos Exp $	*/
+/*	$NetBSD: pw_scan.c,v 1.13 2003/10/27 00:12:42 lukem Exp $	*/
 
 /*
  * Copyright (c) 1987, 1993, 1994, 1995
@@ -36,7 +36,7 @@
 #else
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
-__RCSID("$NetBSD: pw_scan.c,v 1.23 2012/03/13 21:13:36 christos Exp $");
+__RCSID("$NetBSD: pw_scan.c,v 1.13 2003/10/27 00:12:42 lukem Exp $");
 #endif /* LIBC_SCCS and not lint */
 
 #if defined(_LIBC)
@@ -61,108 +61,32 @@ __RCSID("$NetBSD: pw_scan.c,v 1.23 2012/03/13 21:13:36 christos Exp $");
 #endif
 #endif /* ! HAVE_NBTOOL_CONFIG_H */
 
-static int
-gettime(time_t *res, const char *p, int *flags, int dowarn, int flag)
-{
-	long long l;
-	char *ep;
-	const char *vp;
-
-	if (*p == '\0') {
-		*flags |= flag;
-		*res = 0;
-		return 1;
-	}
-	l = strtoll(p, &ep, 0);
-	if (p == ep || *ep != '\0') {
-		vp = "Invalid number";
-		goto done;
-	}
-	if (errno == ERANGE && (l == LLONG_MAX || l == LLONG_MIN)) {
-		vp = strerror(errno);
-		goto done;
-	}
-	_DIAGASSERT(__type_fit(time_t, l));
-	*res = (time_t)l;
-	return 1;
-done:
-	if (dowarn) {
-		warnx("%s `%s' for %s time", vp, p,
-		    flag == _PASSWORD_NOEXP ? "expiration" : "change");
-	}
-	return 0;
-
-}
-
-static int
-getid(unsigned long *res, const char *p, int *flags, int dowarn, int flag)
-{
-	unsigned long ul;
-	char *ep;
-
-	if (*p == '\0') {
-		*flags |= flag;
-		*res = 0;
-		return 1;
-	}
-	ul = strtoul(p, &ep, 0);
-	if (p == ep || *ep != '\0') {
-		ep = __UNCONST("Invalid number");
-		goto done;
-	}
-	if (errno == ERANGE && ul == ULONG_MAX) {
-		ep = strerror(errno);
-		goto done;
-	}
-	if (ul > *res) {
-		ep = strerror(ERANGE);
-		goto done;
-	}
-
-	*res = ul;
-	return 1;
-done:
-	if (dowarn)
-		warnx("%s %s `%s'", ep, 
-		    flag == _PASSWORD_NOUID ? "uid" : "gid", p);
-	return 0;
-
-}
-
 int
 #ifdef _LIBC
-__pw_scan(char *bp, struct passwd *pw, int *flags)
+__pw_scan(bp, pw, flags)
 #else
-pw_scan( char *bp, struct passwd *pw, int *flags)
+pw_scan(bp, pw, flags)
 #endif
+	char *bp;
+	struct passwd *pw;
+	int *flags;
 {
 	unsigned long id;
-	time_t ti;
 	int root, inflags;
-	int dowarn;
+	char *ep;
 	const char *p, *sh;
 
 	_DIAGASSERT(bp != NULL);
 	_DIAGASSERT(pw != NULL);
 
-	if (flags) {
+	inflags = 0;
+	if (flags != (int *)NULL) {
 		inflags = *flags;
 		*flags = 0;
-	} else {
-		inflags = 0;
-		flags = &inflags;
 	}
-	dowarn = !(inflags & _PASSWORD_NOWARN);
 
 	if (!(pw->pw_name = strsep(&bp, ":")))		/* login */
 		goto fmt;
-	if (strlen(pw->pw_name) > (LOGIN_NAME_MAX - 1)) {
-		if (dowarn)
-			warnx("username too long, `%s' > %d", pw->pw_name,
-			    LOGIN_NAME_MAX - 1);
-		return 0;
-	}
-
 	root = !strcmp(pw->pw_name, "root");
 
 	if (!(pw->pw_passwd = strsep(&bp, ":")))	/* passwd */
@@ -170,30 +94,35 @@ pw_scan( char *bp, struct passwd *pw, int *flags)
 
 	if (!(p = strsep(&bp, ":")))			/* uid */
 		goto fmt;
-
-	id = UID_MAX;
-	if (!getid(&id, p, flags, dowarn, _PASSWORD_NOUID))
-		return 0;
-
+	id = strtoul(p, &ep, 10);
 	if (root && id) {
-		if (dowarn)
+		if (!(inflags & _PASSWORD_NOWARN))
 			warnx("root uid should be 0");
-		return 0;
+		return (0);
 	}
-
+	if (id > UID_MAX || *ep != '\0') {
+		if (!(inflags & _PASSWORD_NOWARN))
+			warnx("invalid uid '%s'", p);
+		return (0);
+	}
 	pw->pw_uid = (uid_t)id;
+	if ((*p == '\0') && (flags != (int *)NULL))
+		*flags |= _PASSWORD_NOUID;
 
 	if (!(p = strsep(&bp, ":")))			/* gid */
 		goto fmt;
-
-	id = GID_MAX;
-	if (!getid(&id, p, flags, dowarn, _PASSWORD_NOGID))
-		return 0;
-
+	id = strtoul(p, &ep, 10);
+	if (id > GID_MAX || *ep != '\0') {
+		if (!(inflags & _PASSWORD_NOWARN))
+			warnx("invalid gid '%s'", p);
+		return (0);
+	}
 	pw->pw_gid = (gid_t)id;
+	if ((*p == '\0') && (flags != (int *)NULL))
+		*flags |= _PASSWORD_NOGID;
 
 	if (inflags & _PASSWORD_OLDFMT) {
-		pw->pw_class = __UNCONST("");
+		pw->pw_class = "";
 		pw->pw_change = 0;
 		pw->pw_expire = 0;
 		*flags |= (_PASSWORD_NOCHG | _PASSWORD_NOEXP);
@@ -201,17 +130,15 @@ pw_scan( char *bp, struct passwd *pw, int *flags)
 		pw->pw_class = strsep(&bp, ":");	/* class */
 		if (!(p = strsep(&bp, ":")))		/* change */
 			goto fmt;
-		if (!gettime(&ti, p, flags, dowarn, _PASSWORD_NOCHG))
-			return 0;
-		pw->pw_change = ti;
-
+		pw->pw_change = atol(p);
+		if ((*p == '\0') && (flags != (int *)NULL))
+			*flags |= _PASSWORD_NOCHG;
 		if (!(p = strsep(&bp, ":")))		/* expire */
 			goto fmt;
-		if (!gettime(&ti, p, flags, dowarn, _PASSWORD_NOEXP))
-			return 0;
-		pw->pw_expire = ti;
+		pw->pw_expire = atol(p);
+		if ((*p == '\0') && (flags != (int *)NULL))
+			*flags |= _PASSWORD_NOEXP;
 	}
-
 	pw->pw_gecos = strsep(&bp, ":");		/* gecos */
 	pw->pw_dir = strsep(&bp, ":");			/* directory */
 	if (!(pw->pw_shell = strsep(&bp, ":")))		/* shell */
@@ -222,7 +149,7 @@ pw_scan( char *bp, struct passwd *pw, int *flags)
 	if (root && *p)					/* empty == /bin/sh */
 		for (setusershell();;) {
 			if (!(sh = getusershell())) {
-				if (dowarn)
+				if (!(inflags & _PASSWORD_NOWARN))
 					warnx("warning, unknown root shell");
 				break;
 			}
@@ -233,10 +160,10 @@ pw_scan( char *bp, struct passwd *pw, int *flags)
 
 	if ((p = strsep(&bp, ":")) != NULL) {			/* too many */
 fmt:		
-		if (dowarn)
+		if (!(inflags & _PASSWORD_NOWARN))
 			warnx("corrupted entry");
-		return 0;
+		return (0);
 	}
 
-	return 1;
+	return (1);
 }

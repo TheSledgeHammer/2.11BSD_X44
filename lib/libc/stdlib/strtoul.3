@@ -1,3 +1,5 @@
+.\"	$NetBSD: strtoul.3,v 1.19 2003/09/08 17:54:33 wiz Exp $
+.\"
 .\" Copyright (c) 1990, 1991, 1993
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
@@ -13,11 +15,7 @@
 .\" 2. Redistributions in binary form must reproduce the above copyright
 .\"    notice, this list of conditions and the following disclaimer in the
 .\"    documentation and/or other materials provided with the distribution.
-.\" 3. All advertising materials mentioning features or use of this software
-.\"    must display the following acknowledgement:
-.\"	This product includes software developed by the University of
-.\"	California, Berkeley and its contributors.
-.\" 4. Neither the name of the University nor the names of its contributors
+.\" 3. Neither the name of the University nor the names of its contributors
 .\"    may be used to endorse or promote products derived from this software
 .\"    without specific prior written permission.
 .\"
@@ -33,25 +31,36 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"     @(#)strtoul.3	8.1 (Berkeley) 6/4/93
+.\"     from: @(#)strtoul.3	8.1 (Berkeley) 6/4/93
 .\"
-.Dd June 4, 1993
+.Dd August 11, 2002
 .Dt STRTOUL 3
 .Os
 .Sh NAME
-.Nm strtoul, strtouq
-.Nd convert a string to an unsigned long or uquad_t integer
+.Nm strtoul ,
+.Nm strtoull ,
+.Nm strtoumax ,
+.Nm strtouq
+.Nd "convert a string to an unsigned long, unsigned long long, uintmax_t or uquad_t integer"
+.Sh LIBRARY
+.Lb libc
 .Sh SYNOPSIS
-.Fd #include <stdlib.h>
-.Fd #include <limits.h>
-.Ft unsigned long
-.Fn strtoul "const char *nptr" "char **endptr" "int base"
-
-.Fd #include <sys/types.h>
-.Fd #include <stdlib.h>
-.Fd #include <limits.h>
+.In stdlib.h
+.In limits.h
+.Ft unsigned long int
+.Fn strtoul "const char * restrict nptr" "char ** restrict endptr" "int base"
+.Ft unsigned long long int
+.Fn strtoull "const char * restrict nptr" "char ** restrict endptr" "int base"
+.Pp
+.In inttypes.h
+.Ft uintmax_t
+.Fn strtoumax "const char * restrict nptr" "char ** restrict endptr" "int base"
+.Pp
+.In sys/types.h
+.In stdlib.h
+.In limits.h
 .Ft u_quad_t
-.Fn strtouq "const char *nptr" "char **endptr" "int base"
+.Fn strtouq "const char * restrict nptr" "char ** restrict endptr" "int base"
 .Sh DESCRIPTION
 The
 .Fn strtoul
@@ -59,7 +68,23 @@ function
 converts the string in
 .Fa nptr
 to an
-.Em unsigned long
+.Em unsigned long int
+value.
+The
+.Fn strtoull
+function
+converts the string in
+.Fa nptr
+to an
+.Em unsigned long long int
+value.
+The
+.Fn strtoumax
+function
+converts the string in
+.Fa nptr
+to an
+.Em uintmax_t
 value.
 The
 .Fn strtouq
@@ -141,23 +166,79 @@ unless the original (non-negated) value would overflow;
 in the latter case,
 .Fn strtoul
 returns
-.Dv ULONG_MAX
-and sets the global variable
+.Dv ULONG_MAX ,
+.Fn strtoull
+returns
+.Dv ULLONG_MAX ,
+.Fn strtoumax
+returns
+.Dv UINTMAX_MAX ,
+and the global variable
 .Va errno
-to
+is set to
 .Er ERANGE .
+.Pp
+There is no way to determine if
+.Fn strtoul
+has processed a negative number (and returned an unsigned value) short of
+examining the string in
+.Fa nptr
+directly.
+.Sh EXAMPLES
+Ensuring that a string is a valid number (i.e., in range and containing no
+trailing characters) requires clearing
+.Va errno
+beforehand explicitly since
+.Va errno
+is not changed on a successful call to
+.Fn strtoul ,
+and the return value of
+.Fn strtoul
+cannot be used unambiguously to signal an error:
+.Bd -literal -offset indent
+char *ep;
+unsigned long ulval;
+
+\&...
+
+errno = 0;
+ulval = strtoul(buf, &ep, 10);
+if (buf[0] == '\e0' || *ep != '\e0')
+	goto not_a_number;
+if (errno == ERANGE && ulval == ULONG_MAX)
+	goto out_of_range;
+.Ed
+.Pp
+This example will accept
+.Dq 12
+but not
+.Dq 12foo
+or
+.Dq 12\en .
+If trailing whitespace is acceptable, further checks must be done on
+.Va *ep ;
+alternately, use
+.Xr sscanf 3 .
 .Sh ERRORS
-.Bl -tag -width [ERANGE]
+.Bl -tag -width Er
 .It Bq Er ERANGE
 The given string was out of range; the value converted has been clamped.
 .El
 .Sh SEE ALSO
-.Xr strtol 3
+.Xr strtoimax 3 ,
+.Xr strtol 3 ,
+.Xr strtoll 3
 .Sh STANDARDS
 The
 .Fn strtoul
 function
 conforms to
 .St -ansiC .
+The
+.Fn strtoull
+and
+.Fn strtoumax
+functions conform to
+.St -isoC-99 .
 .Sh BUGS
 Ignores the current locale.

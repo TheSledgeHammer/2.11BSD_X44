@@ -20,7 +20,6 @@
 static char sccsid[] = "@(#)vfprintf.c	5.2 (Berkeley) 6/27/88";
 #endif /* LIBC_SCCS and not lint */
 
-#include "namespace.h"
 #include <sys/ansi.h>
 #include <sys/types.h>
 

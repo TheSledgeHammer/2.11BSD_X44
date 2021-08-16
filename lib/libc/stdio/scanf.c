@@ -37,8 +37,6 @@
 static char sccsid[] = "@(#)scanf.c	5.2 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
 
-#include "namespace.h"
-
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>

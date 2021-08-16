@@ -1,4 +1,4 @@
-/*	$NetBSD: strlcat.c,v 1.4 2013/01/23 07:57:27 matt Exp $	*/
+/*	$NetBSD: strlcat.c,v 1.16 2003/10/27 00:12:42 lukem Exp $	*/
 /*	$OpenBSD: strlcat.c,v 1.10 2003/04/12 21:56:39 millert Exp $	*/
 
 /*
@@ -17,14 +17,13 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#if !defined(_KERNEL) && !defined(_STANDALONE)
 #if HAVE_NBTOOL_CONFIG_H
 #include "nbtool_config.h"
 #endif
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
-__RCSID("$NetBSD: strlcat.c,v 1.4 2013/01/23 07:57:27 matt Exp $");
+__RCSID("$NetBSD: strlcat.c,v 1.16 2003/10/27 00:12:42 lukem Exp $");
 #endif /* LIBC_SCCS and not lint */
 
 #ifdef _LIBC
@@ -40,10 +39,6 @@ __weak_alias(strlcat, _strlcat)
 # endif
 #endif
 
-#else
-#include <lib/libkern/libkern.h>
-#endif /* !_KERNEL && !_STANDALONE */
-
 #if !HAVE_STRLCAT
 /*
  * Appends src to string dst of size siz (unlike strncat, siz is the
@@ -53,9 +48,15 @@ __weak_alias(strlcat, _strlcat)
  * If retval >= siz, truncation occurred.
  */
 size_t
-strlcat(char *dst, const char *src, size_t siz)
+#ifdef _LIBC
+_strlcat(dst, src, siz)
+#else
+strlcat(dst, src, siz)
+#endif
+	char *dst;
+	const char *src;
+	size_t siz;
 {
-#if 1
 	char *d = dst;
 	const char *s = src;
 	size_t n = siz;
@@ -82,20 +83,5 @@ strlcat(char *dst, const char *src, size_t siz)
 	*d = '\0';
 
 	return(dlen + (s - src));	/* count does not include NUL */
-#else
-	_DIAGASSERT(dst != NULL);
-	_DIAGASSERT(src != NULL);
-
-	/*
-	 * Find length of string in dst (maxing out at siz).
-	 */
-	size_t dlen = strnlen(dst, siz);
-
-	/*
-	 * Copy src into any remaining space in dst (truncating if needed).
-	 * Note strlcpy(dst, src, 0) returns strlen(src).
-	 */
-	return dlen + strlcpy(dst + dlen, src, siz - dlen);
-#endif
 }
 #endif

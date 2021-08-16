@@ -254,10 +254,6 @@ struct group;
 
 /* Prototypes for replacement functions. */
 
-#if !HAVE_DECL_ATOLL
-long long int atoll(const char *);
-#endif
-
 #if !HAVE_DECL_ASPRINTF
 int asprintf(char **, const char *, ...);
 #endif
@@ -360,9 +356,6 @@ int 	evasprintf(char **, const char *, va_list);
 
 #if !HAVE_DECL_FGETLN
 char *fgetln(FILE *, size_t *);
-#endif
-#if !HAVE_DECL_DPRINTF
-int dprintf(int, const char *, ...);
 #endif
 
 #if !HAVE_FLOCK
@@ -529,11 +522,6 @@ const char *getprogname(void);
 void setprogname(const char *);
 #endif
 
-#if !HAVE_SNPRINTB_M
-int snprintb(char *, size_t, const char *, uint64_t);
-int snprintb_m(char *, size_t, const char *, uint64_t, size_t);
-#endif
-
 #if !HAVE_DECL_SNPRINTF
 int snprintf(char *, size_t, const char *, ...);
 #endif
@@ -546,21 +534,8 @@ void strmode(mode_t, char *);
 char *strsep(char **, const char *);
 #endif
 
-#if !HAVE_DECL_STRSUFTOLL
-long long strsuftoll(const char *, const char *, long long, long long);
-long long strsuftollx(const char *, const char *, long long, long long, char *, size_t);
-#endif
-
 #if !HAVE_DECL_STRTOLL
 long long strtoll(const char *, char **, int);
-#endif
-
-#if !HAVE_DECL_STRTOI
-intmax_t strtoi(const char * __restrict, char ** __restrict, int, intmax_t, intmax_t, int *);
-#endif
-
-#if !HAVE_DECL_STRTOU
-uintmax_t strtou(const char * __restrict, char ** __restrict, int, uintmax_t, uintmax_t, int *);
 #endif
 
 #if !HAVE_USER_FROM_UID
@@ -699,7 +674,7 @@ void *setmode(const char *);
 /* <stdarg.h> */
 
 #ifndef _BSD_VA_LIST_
-#define _BSD_VA_LIST_ va_list
+#define _BSD_VA_LIST_ 	va_list
 #endif
 
 /* <stdint.h> */
@@ -733,16 +708,16 @@ char *alloca ();
 #endif
 
 /* avoid prototype conflicts with host */
-#define cgetcap __nbcompat_cgetcap
-#define cgetclose __nbcompat_cgetclose
-#define cgetent __nbcompat_cgetent
-#define cgetfirst __nbcompat_cgetfirst
-#define cgetmatch __nbcompat_cgetmatch
-#define cgetnext __nbcompat_cgetnext
-#define cgetnum __nbcompat_cgetnum
-#define cgetset __nbcompat_cgetset
-#define cgetstr __nbcompat_cgetstr
-#define cgetustr __nbcompat_cgetustr
+#define cgetcap 	__nbcompat_cgetcap
+#define cgetclose 	__nbcompat_cgetclose
+#define cgetent 	__nbcompat_cgetent
+#define cgetfirst 	__nbcompat_cgetfirst
+#define cgetmatch 	__nbcompat_cgetmatch
+#define cgetnext 	__nbcompat_cgetnext
+#define cgetnum 	__nbcompat_cgetnum
+#define cgetset 	__nbcompat_cgetset
+#define cgetstr 	__nbcompat_cgetstr
+#define cgetustr 	__nbcompat_cgetustr
 
 char	*cgetcap(char *, const char *, int);
 int	 	cgetclose(void);
@@ -971,16 +946,16 @@ int	 	cgetustr(char *, const char *, char **);
 
 #if !HAVE_U_QUAD_T
 /* #define, not typedef, as quad_t exists as a struct on some systems */
-#define quad_t long long
-#define u_quad_t unsigned long long
-#define strtoq strtoll
-#define strtouq strtoull
+#define quad_t 		long long
+#define u_quad_t 	unsigned long long
+#define strtoq 		strtoll
+#define strtouq 	strtoull
 #endif
 
 /* Has quad_t but these prototypes don't get pulled into scope. w/o we lose */
 #ifdef __NetBSD__
-quad_t   strtoq (const char *, char **, int);
-u_quad_t strtouq (const char *, char **, int);
+quad_t   strtoq(const char *, char **, int);
+u_quad_t strtouq(const char *, char **, int);
 #endif
 
 #endif	/* !__NETBSD_COMPAT_DEFS_H__ */

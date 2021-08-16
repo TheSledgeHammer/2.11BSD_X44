@@ -40,7 +40,6 @@ static char sccsid[] = "@(#)vsnprintf.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/ansi.h>
-#include "namespace.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -52,7 +51,7 @@ vsnprintf(str, n, fmt, ap)
 	char *str;
 	size_t n;
 	const char *fmt;
-	_BSD_VA_LIST_ ap;
+	va_list ap;
 {
 	int ret;
 	FILE f;

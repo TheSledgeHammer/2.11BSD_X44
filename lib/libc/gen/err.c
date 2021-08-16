@@ -31,10 +31,16 @@
  * SUCH DAMAGE.
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)err.c	8.1.1 (2.11BSD GTE) 2/3/95";
 #endif /* LIBC_SCCS and not lint */
+
+#include "namespace.h"
 
 #include <err.h>
 #include <errno.h>
@@ -45,8 +51,24 @@ static char sccsid[] = "@(#)err.c	8.1.1 (2.11BSD GTE) 2/3/95";
 
 extern	int	errno;
 extern	char *__progname;		/* Program name, from crt0. */
-static	void	putprog(), putcolsp();
+//static	void	putprog(), putcolsp();
 
+#ifdef __weak_alias
+__weak_alias(err, _err)
+__weak_alias(errc, _errc)
+__weak_alias(verrx, _verrx)
+__weak_alias(verr, _verr)
+__weak_alias(verrc, _verrc)
+__weak_alias(verrx, _verrx)
+__weak_alias(vwarn, _vwarn)
+__weak_alias(vwarnc, _vwarnc)
+__weak_alias(vwarnx, _vwarnx)
+__weak_alias(warn, _warn)
+__weak_alias(warnc, _warnc)
+__weak_alias(warnx, _warnx)
+#endif
+
+#if !HAVE_ERR_H || !HAVE_DECL_ERRC
 void
 err(int eval, const char *fmt, ...)
 {
@@ -54,6 +76,25 @@ err(int eval, const char *fmt, ...)
 
 	va_start(ap, fmt);
 	verr(eval, fmt, ap);
+	va_end(ap);
+}
+
+void
+errc(int eval, int code, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	verrc(eval, code, fmt, ap);
+	va_end(ap);
+}
+
+void
+errx(int eval, const char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	verrx(eval, fmt, ap);
 	va_end(ap);
 }
 
@@ -77,12 +118,15 @@ verr(eval, fmt, ap)
 }
 
 void
-errx(int eval, const char *fmt, ...)
+verrc(int eval, int code, const char *fmt, va_list ap)
 {
-	va_list ap;
-	va_start(ap, fmt);
-	verrx(eval, fmt, ap);
-	va_end(ap);
+	(void)fprintf(stderr, "%s: ", getprogname());
+	if (fmt != NULL) {
+		(void)vfprintf(stderr, fmt, ap);
+		(void)fprintf(stderr, ": ");
+	}
+	(void)fprintf(stderr, "%s\n", strerror(code));
+	exit(eval);
 }
 
 void
@@ -96,16 +140,6 @@ verrx(eval, fmt, ap)
 		(void)vfprintf(stderr, fmt, ap);
 	(void)fputc('\n', stderr);
 	exit(eval);
-}
-
-void
-warn(const char *fmt, ...)
-{
-	va_list ap;
-
-	va_start(ap, fmt);
-	vwarn(fmt, ap);
-	va_end(ap);
 }
 
 void
@@ -126,13 +160,14 @@ vwarn(fmt, ap)
 }
 
 void
-warnx(const char *fmt, ...)
+vwarnc(int code, const char *fmt, va_list ap)
 {
-	va_list ap;
-
-	va_start(ap, fmt);
-	vwarnx(fmt, ap);
-	va_end(ap);
+	(void)fprintf(stderr, "%s: ", getprogname());
+	if (fmt != NULL) {
+		(void)vfprintf(stderr, fmt, ap);
+		(void)fprintf(stderr, ": ");
+	}
+	(void)fprintf(stderr, "%s\n", strerror(code));
 }
 
 void
@@ -145,6 +180,37 @@ vwarnx(fmt, ap)
 		(void)vfprintf(stderr, fmt, ap);
 	(void)fputc('\n', stderr);
 }
+
+void
+warn(const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	vwarn(fmt, ap);
+	va_end(ap);
+}
+
+void
+warnc(int code, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	vwarnc(code, fmt, ap);
+	va_end(ap);
+}
+
+void
+warnx(const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	vwarnx(fmt, ap);
+	va_end(ap);
+}
+#endif
 
 /*
  * Helper routines.  Repeated constructs of the form "%s: " used up too

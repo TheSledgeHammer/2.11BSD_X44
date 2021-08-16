@@ -124,3 +124,13 @@ _strtoumax(nptr, endptr, base)
 		*endptr = (char *)(any ? s - 1 : nptr);
 	return (acc);
 }
+
+uintmax_t
+strtoumax(nptr, endptr, base)
+	const char *nptr;
+	char **endptr;
+	int base;
+{
+
+	return _strtoumax(nptr, endptr, base);
+}

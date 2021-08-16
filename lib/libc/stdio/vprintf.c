@@ -28,7 +28,7 @@ static char sccsid[] = "@(#)vprintf.c	5.2 (Berkeley) 6/27/88";
 int
 vprintf(fmt, ap)
 	char const *fmt;
-	_BSD_VA_LIST_ ap;
+	va_list ap;
 {
 	return (vfprintf(stdout, fmt, ap));
 }

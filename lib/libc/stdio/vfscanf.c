@@ -39,7 +39,6 @@
 static char sccsid[] = "@(#)vfscanf.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
-#include "namespace.h"
 #include <assert.h>
 #include <ctype.h>
 #include <inttypes.h>

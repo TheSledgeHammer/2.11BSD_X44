@@ -279,8 +279,6 @@ terminate(int signo)
 	if (currfn != NULL)
 		(void)remove(currfn);
 
-	if (signo != 0)
-		(void)raise_default_signal(signo);
 	exit(signo != 0 ? 1 : 0);
 }
 

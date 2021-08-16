@@ -32,7 +32,7 @@ int
 vsprintf(str, fmt, ap)
 	char *str;
 	const char *fmt;
-	_BSD_VA_LIST_ ap;
+	va_list ap;
 {
 	int ret;
 	FILE f;

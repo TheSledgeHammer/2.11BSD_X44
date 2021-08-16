@@ -5,4 +5,4 @@
  * Public domain.
  */
 
-int	__pw_scan __P((char *bp, struct passwd *pw, int *flags));
+int	__pw_scan (char *bp, struct passwd *pw, int *flags);

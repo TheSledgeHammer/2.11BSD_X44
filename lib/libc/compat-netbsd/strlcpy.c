@@ -1,4 +1,4 @@
-/*	$NetBSD: strlcpy.c,v 1.3 2007/06/04 18:19:27 christos Exp $	*/
+/*	$NetBSD: strlcpy.c,v 1.14 2003/10/27 00:12:42 lukem Exp $	*/
 /*	$OpenBSD: strlcpy.c,v 1.7 2003/04/12 21:56:39 millert Exp $	*/
 
 /*
@@ -17,14 +17,13 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#if !defined(_KERNEL) && !defined(_STANDALONE)
 #if HAVE_NBTOOL_CONFIG_H
 #include "nbtool_config.h"
 #endif
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
-__RCSID("$NetBSD: strlcpy.c,v 1.3 2007/06/04 18:19:27 christos Exp $");
+__RCSID("$NetBSD: strlcpy.c,v 1.14 2003/10/27 00:12:42 lukem Exp $");
 #endif /* LIBC_SCCS and not lint */
 
 #ifdef _LIBC
@@ -39,10 +38,6 @@ __RCSID("$NetBSD: strlcpy.c,v 1.3 2007/06/04 18:19:27 christos Exp $");
 __weak_alias(strlcpy, _strlcpy)
 # endif
 #endif
-#else
-#include <lib/libkern/libkern.h>
-#endif /* !_KERNEL && !_STANDALONE */
-
 
 #if !HAVE_STRLCPY
 /*
@@ -51,7 +46,14 @@ __weak_alias(strlcpy, _strlcpy)
  * Returns strlen(src); if retval >= siz, truncation occurred.
  */
 size_t
-strlcpy(char *dst, const char *src, size_t siz)
+#ifdef _LIBC
+_strlcpy(dst, src, siz)
+#else
+strlcpy(dst, src, siz)
+#endif
+	char *dst;
+	const char *src;
+	size_t siz;
 {
 	char *d = dst;
 	const char *s = src;
