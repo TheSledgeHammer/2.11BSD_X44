@@ -249,5 +249,4 @@ le64enc(void *pp, uint64_t u)
 	le32enc(p, (uint32_t)(u & 0xffffffffU));
 	le32enc(p + 4, (uint32_t)(u >> 32));
 }
-
 #endif /* !_SYS_ENDIAN_H_ */

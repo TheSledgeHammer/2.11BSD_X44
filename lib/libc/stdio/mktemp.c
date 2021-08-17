@@ -20,6 +20,12 @@ static char sccsid[] = "@(#)mktemp.c	5.4 (Berkeley) 9/14/87";
 #define	YES	1
 #define	NO	0
 
+#ifdef __weak_alias
+__weak_alias(mkdtemp,_mkdtemp)
+__weak_alias(mkstemp,_mkstemp)
+__weak_alias(mktemp,_mktemp)
+#endif
+
 int _gettemp(char *, int);
 
 char *
@@ -29,6 +35,7 @@ mkdtemp(as)
 	return (_gettemp(as, (int *)NULL) ? as : (char *)NULL);
 }
 
+char *
 mkstemp(as)
 	char	*as;
 {
@@ -47,7 +54,7 @@ mktemp(as)
 static int
 _gettemp(as, doopen)
 	char	*as;
-	register int	*doopen;
+	register int *doopen;
 {
 	extern int	errno;
 	register char	*start, *trv;

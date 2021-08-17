@@ -60,8 +60,31 @@ __RCSID("$NetBSD: gettemp.c,v 1.13 2003/12/05 00:57:36 uebayasi Exp $");
 #else
 #include "reentrant.h"
 #include "local.h"
-#define	GETTEMP		__gettemp
+#define	GETTEMP		_gettemp
 #endif
+
+char *
+_mkdtemp(path)
+	char	*path;
+{
+	return (GETTEMP(path, NULL, 1) ? as : NULL);
+}
+
+char *
+_mkstemp(path)
+	char	*path;
+{
+	int	fd;
+
+	return (GETTEMP(path, &fd, 0) ? fd : -1);
+}
+
+char *
+_mktemp(path)
+	char	*path;
+{
+	return(GETTEMP(path, NULL, 0) ? as : NULL);
+}
 
 int
 GETTEMP(path, doopen, domkdir)

@@ -5,6 +5,9 @@
 #
 
 # This needs to be before bsd.init.mk
+.if defined(BSD_MK_COMPAT_FILE)
+.include <${BSD_MK_COMPAT_FILE}>
+.endif
 
 .if !defined(_BSD_OWN_MK_)
 _BSD_OWN_MK_=1
@@ -40,23 +43,6 @@ TOOLCHAIN_MISSING?=	no
 #
 # What GCC is used?
 #
-.if ${MACHINE} == "alpha" || 		\
-    ${MACHINE} == "hppa" || 		\
-    ${MACHINE} == "ia64" || 		\
-    ${MACHINE} == "sparc" || 		\
-    ${MACHINE} == "sparc64" || 		\
-    ${MACHINE} == "vax" || 			\
-    ${MACHINE_ARCH} == "i386" || 	\
-    ${MACHINE_ARCH} == "x86_64" || 	\
-    ${MACHINE_CPU} == "aarch64" || 	\
-    ${MACHINE_CPU} == "mips" || 	\
-    ${MACHINE_CPU} == "powerpc" || 	\
-    ${MACHINE_CPU} == "riscv"
-HAVE_GCC?=	10
-.else
-HAVE_GCC?=	9
-.endif
-
 #
 # We import the old gcc as "gcc.old" when upgrading.  EXTERNAL_GCC_SUBDIR is
 # set to the relevant subdirectory in src/external/gpl3 for his HAVE_GCC.
@@ -235,9 +221,6 @@ TOOL_COMPILE_ET=	${TOOLDIR}/bin/${_TOOL_PREFIX}compile_et
 TOOL_CONFIG=		${TOOLDIR}/bin/${_TOOL_PREFIX}config
 TOOL_CRUNCHGEN=		MAKE=${.MAKE:Q} ${TOOLDIR}/bin/${_TOOL_PREFIX}crunchgen
 TOOL_CTAGS=			${TOOLDIR}/bin/${_TOOL_PREFIX}ctags
-TOOL_CTFCONVERT=	${TOOLDIR}/bin/${_TOOL_PREFIX}ctfconvert
-TOOL_CTFMERGE=		${TOOLDIR}/bin/${_TOOL_PREFIX}ctfmerge
-TOOL_CVSLATEST=		${TOOLDIR}/bin/${_TOOL_PREFIX}cvslatest
 TOOL_DATE=			${TOOLDIR}/bin/${_TOOL_PREFIX}date
 TOOL_DB=			${TOOLDIR}/bin/${_TOOL_PREFIX}db
 TOOL_DISKLABEL=		${TOOLDIR}/bin/${_TOOL_PREFIX}disklabel
@@ -265,7 +248,6 @@ TOOL_INSTALL_INFO=	${TOOLDIR}/bin/${_TOOL_PREFIX}install-info
 TOOL_JOIN=			${TOOLDIR}/bin/${_TOOL_PREFIX}join
 TOOL_LLVM_TBLGEN=	${TOOLDIR}/bin/${_TOOL_PREFIX}llvm-tblgen
 TOOL_M4=			${TOOLDIR}/bin/${_TOOL_PREFIX}m4
-TOOL_MACPPCFIXCOFF=	${TOOLDIR}/bin/${_TOOL_PREFIX}macppc-fixcoff
 TOOL_MAKEFS=		${TOOLDIR}/bin/${_TOOL_PREFIX}makefs
 TOOL_MAKEINFO=		${TOOLDIR}/bin/${_TOOL_PREFIX}makeinfo
 TOOL_MAKEKEYS=		${TOOLDIR}/bin/${_TOOL_PREFIX}makekeys
@@ -345,9 +327,6 @@ TOOL_COMPILE_ET=	compile_et
 TOOL_CONFIG=		config
 TOOL_CRUNCHGEN=		crunchgen
 TOOL_CTAGS=			ctags
-TOOL_CTFCONVERT=	ctfconvert
-TOOL_CTFMERGE=		ctfmerge
-TOOL_CVSLATEST=		cvslatest
 TOOL_DATE=			date
 TOOL_DB=			db
 TOOL_DISKLABEL=		disklabel
@@ -362,15 +341,12 @@ TOOL_GPT=			gpt
 TOOL_GREP=			grep
 TOOL_GROFF=			groff
 TOOL_HEXDUMP=		hexdump
-TOOL_HP300MKBOOT=	hp300-mkboot
-TOOL_HPPAMKBOOT=	hppa-mkboot
 TOOL_INDXBIB=		indxbib
 TOOL_INSTALLBOOT=	installboot
 TOOL_INSTALL_INFO=	install-info
 TOOL_JOIN=			join
 TOOL_LLVM_TBLGEN=	llvm-tblgen
 TOOL_M4=			m4
-TOOL_MACPPCFIXCOFF=	macppc-fixcoff
 TOOL_MAKEFS=		makefs
 TOOL_MAKEINFO=		makeinfo
 TOOL_MAKEKEYS=		makekeys
@@ -381,9 +357,6 @@ TOOL_MANDOC_HTML=	mandoc -Thtml
 TOOL_MANDOC_LINT=	mandoc -Tlint
 TOOL_MDSETIMAGE=	mdsetimage
 TOOL_MENUC=			menuc
-TOOL_ARMELF2AOUT=	arm-elf2aout
-TOOL_M68KELF2AOUT=	m68k-elf2aout
-TOOL_MIPSELF2ECOFF=	mips-elf2ecoff
 TOOL_MKCSMAPPER=	mkcsmapper
 TOOL_MKESDB=		mkesdb
 TOOL_MKLOCALE=		mklocale
@@ -402,7 +375,6 @@ TOOL_PIC=			pic
 TOOL_PIGZ=			pigz
 TOOL_XZ=			xz
 TOOL_PKG_CREATE=	pkg_create
-TOOL_POWERPCMKBOOTIMAGE=powerpc-mkbootimage
 TOOL_PWD_MKDB=		pwd_mkdb
 TOOL_REFER=			refer
 TOOL_ROFF_ASCII=	nroff
@@ -629,12 +601,7 @@ MK${var}:=	yes
 # Coverity does not like PIE
 .if !defined(COVERITY_TOP_CONFIG) && \
     (${MACHINE_ARCH} == "i386" || \
-    ${MACHINE_ARCH} == "x86_64" || \
-    ${MACHINE_CPU} == "arm" || \
-    ${MACHINE_CPU} == "m68k" || \
-    ${MACHINE_CPU} == "mips" || \
-    ${MACHINE_CPU} == "sh3" || \
-    ${MACHINE} == "sparc64")
+    ${MACHINE_ARCH} == "x86_64")
 MKPIE?=		yes
 .else
 MKPIE?=		no

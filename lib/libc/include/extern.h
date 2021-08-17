@@ -28,19 +28,19 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 extern char *__minbrk;
-int __getcwd __P((char *, size_t));
-int __getlogin __P((char *, size_t));
-int __setlogin __P((const char *));
-void _resumecontext __P((void));
-const char *__strerror __P((int , char *, size_t));
-const char *__strsignal __P((int , char *, size_t));
-char *__dtoa __P((double, int, int, int *, int *, char **));
-int __sysctl __P((int *, unsigned int, void *, size_t *, void *, size_t));
+int __getcwd (char *, size_t);
+int __getlogin (char *, size_t);
+int __setlogin (const char *);
+void _resumecontext (void);
+const char *__strerror (int , char *, size_t);
+const char *__strsignal (int , char *, size_t);
+char *__dtoa (double, int, int, int *, int *, char **);
+int __sysctl (int *, unsigned int, void *, size_t *, void *, size_t);
 
 struct sigaction;
-int __sigaction_sigtramp __P((int, const struct sigaction *,
-    struct sigaction *, const void *, int));
+int __sigaction_sigtramp (int, const struct sigaction *, struct sigaction *, const void *, int);
 __END_DECLS

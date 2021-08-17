@@ -90,7 +90,7 @@ assym.h: ${ARCHDIR}/genassym.cf
 .include "${.CURDIR}/compat-sys5/Makefile.inc"
 .include "${.CURDIR}/gen/Makefile.inc"
 .include "${.CURDIR}/gmon/Makefile.inc"
-.include "${.CURDIR}/hash/Makefile.inc"
+#.include "${.CURDIR}/hash/Makefile.inc"
 .include "${.CURDIR}/inet/Makefile.inc"
 .include "${.CURDIR}/locale/Makefile.inc"
 .include "${.CURDIR}/net/Makefile.inc"

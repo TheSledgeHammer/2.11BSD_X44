@@ -50,7 +50,6 @@ static char sccsid[] = "@(#)vfprintf.c	5.2 (Berkeley) 6/27/88";
 #include <string.h>
 #include <wchar.h>
 
-//#include "reentrant.h"
 #include "local.h"
 #include "fvwrite.h"
 #include "extern.h"

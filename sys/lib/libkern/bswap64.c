@@ -11,7 +11,6 @@ __RCSID("$NetBSD: bswap64.c,v 1.5 2003/12/04 13:57:31 keihan Exp $");
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include <machine/bswap.h>
 
 #undef bswap64
 
