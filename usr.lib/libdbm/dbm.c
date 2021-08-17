@@ -17,6 +17,7 @@ static DBM *cur_db = NODB;
 
 static char no_db[] = "dbm: no open database\n";
 
+int
 dbminit(file)
 	char *file;
 {
@@ -57,6 +58,7 @@ datum key;
 	return (dbm_fetch(cur_db, key));
 }
 
+int
 delete(key)
 datum key;
 {
@@ -69,6 +71,7 @@ datum key;
 	return (dbm_delete(cur_db, key));
 }
 
+int
 store(key, dat)
 datum key, dat;
 {

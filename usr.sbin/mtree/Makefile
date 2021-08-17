@@ -17,4 +17,6 @@ LDADD+= -lutil
 CPPFLAGS+=	-I${NETBSDSRCDIR}/sbin/mknod
 .PATH:		${NETBSDSRCDIR}/sbin/mknod
 
+.PATH:		${NETBSDSRCDIR}/usr.bin/cksum
+
 .include <bsd.prog.mk>

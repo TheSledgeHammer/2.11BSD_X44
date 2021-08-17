@@ -24,7 +24,7 @@ INCS=		acct.h ansi.h ataio.h atomic.h audioio.h bitmap.h boot.h buf.h 		\
 			tree.h tty.h ttychars.h ttydefaults.h ttydev.h types.h ucred.h		\
 			uio.h un.h unistd.h unpcb.h user.h utsname.h uuid.h vcmd.h 			\
 			videoio.h vlimit.h vmmeter.h vnode.h wait.h			
-INCS+=		md4.h md5.h rmd160.h sha1.h sha2.h sha3.h
+#INCS+=		md4.h md5.h rmd160.h sha1.h sha2.h sha3.h
 
 INCSYMLINKS=									\
 		sys/exec_elf.h 	/usr/include/elf.h 		\
@@ -35,10 +35,5 @@ INCSYMLINKS=									\
 		sys/stdint.h 	/usr/include/stdint.h 	\
 		sys/syslog.h 	/usr/include/syslog.h 	\
 		sys/termios.h 	/usr/include/termios.h 	\
-		sys/rmd160.h 	/usr/include/rmd160.h 	\
-		sys/sha1.h 		/usr/include/sha1.h 	\
-		sys/sha2.h 		/usr/include/sha2.h 	\
-		sys/md4.h 		/usr/include/md4.h 		\
-		sys/md5.h 		/usr/include/md5.h
 
 .include <bsd.kinc.mk>

@@ -55,16 +55,16 @@ __RCSID("$NetBSD: compare.c,v 1.60 2021/04/03 13:37:18 simonb Exp $");
 #include <unistd.h>
 
 #ifndef NO_MD5
-#include <md5.h>
+#include "../../include/hash/md5.h"
 #endif
 #ifndef NO_RMD160
-#include <rmd160.h>
+#include "../../include/hash/rmd160.h"
 #endif
 #ifndef NO_SHA1
-#include <sha1.h>
+#include "../../include/hash/sha1.h"
 #endif
 #ifndef NO_SHA2
-#include <sha2.h>
+#include "../../include/hash/sha2.h"
 #endif
 
 #include "extern.h"

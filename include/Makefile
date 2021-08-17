@@ -22,6 +22,8 @@ INCS=	a.out.h ar.h assert.h atomic.h bitstring.h  		 				\
 		ttyent.h tzfile.h ulimit.h unistd.h util.h utime.h utmp.h 		 	\
 		varargs.h vfont.h vis.h vmf.h wchar.h wctype.h
 INCS+=	arpa/ftp.h arpa/inet.h arpa/nameser.h arpa/telnet.h arpa/tftp.h
+INCS+=	hash/md2.h hash/md4.h hash/md5.h hash/rmd160.h hash/sha1.h 			\
+		hash/sha2.h hash/sha3.h
 INCS+=	OLD/dk.h OLD/psout.h
 INCS+=	protocols/dumprestore.h protocols/routed.h protocols/rwhod.h 		\
 		protocols/talkd.h protocols/timed.h

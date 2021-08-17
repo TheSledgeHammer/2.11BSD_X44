@@ -68,7 +68,7 @@ __RCSID("$NetBSD: create.c,v 1.76 2018/11/18 23:03:36 sevan Exp $");
 #include <rmd160.h>
 #endif
 #ifndef NO_SHA1
-#include <sha1.h>
+#include  <sha1.h>
 #endif
 #ifndef NO_SHA2
 #include <sha2.h>
@@ -79,10 +79,10 @@ __RCSID("$NetBSD: create.c,v 1.76 2018/11/18 23:03:36 sevan Exp $");
 #define	INDENTNAMELEN	15
 #define	MAXLINELEN	80
 
-static gid_t gid;
-static uid_t uid;
-static mode_t mode;
-static u_long flags;
+static gid_t 	gid;
+static uid_t 	uid;
+static mode_t 	mode;
+static u_long 	flags;
 
 #ifdef __FreeBSD__
 #define	FTS_CONST const
@@ -92,8 +92,7 @@ static u_long flags;
 
 static int	dcmp(const FTSENT *FTS_CONST *, const FTSENT *FTS_CONST *);
 static void	output(FILE *, int, int *, const char *, ...)__printflike(4, 5);
-static int	statd(FILE *, FTS *, FTSENT *, uid_t *, gid_t *, mode_t *,
-    u_long *);
+static int	statd(FILE *, FTS *, FTSENT *, uid_t *, gid_t *, mode_t *, u_long *);
 static void	statf(FILE *, int, FTSENT *);
 
 void
@@ -329,7 +328,7 @@ statf(FILE *fp, int indent, FTSENT *p)
 #else
 #define MTREE_MAXFLAGS	1
 #endif
-#define	MTREE_MAXS 16
+#define	MTREE_MAXS 		16
 
 static int
 statd(FILE *fp, FTS *t, FTSENT *parent, uid_t *puid, gid_t *pgid, mode_t *pmode,

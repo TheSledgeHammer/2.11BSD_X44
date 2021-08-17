@@ -92,15 +92,15 @@ AC_CHECK_HEADERS(rpc/types.h,,
 	else
 		mv -f include/$ac_header.new include/$ac_header
 	fi])
-AC_CHECK_HEADERS(netconfig.h,,
-	[echo '#include "nbtool_config.h"' >include/$ac_header.new
-	echo '#include "'$srcdir/../../include/$ac_header'"' \
-		>>include/$ac_header.new
-	if cmp include/$ac_header.new include/$ac_header >/dev/null 2>&1; then
-		rm -f include/$ac_header.new
-	else
-		mv -f include/$ac_header.new include/$ac_header
-	fi])
+#AC_CHECK_HEADERS(netconfig.h,,
+#	[echo '#include "nbtool_config.h"' >include/$ac_header.new
+#	echo '#include "'$srcdir/../../include/$ac_header'"' \
+#		>>include/$ac_header.new
+#	if cmp include/$ac_header.new include/$ac_header >/dev/null 2>&1; then
+#		rm -f include/$ac_header.new
+#	else
+#		mv -f include/$ac_header.new include/$ac_header
+#	fi])
 
 # Typedefs.
 AC_TYPE_SIZE_T
@@ -218,16 +218,16 @@ AC_CHECK_DECLS(sys_signame,,, [#include <signal.h>])
 
 # Library functions (where a .h check isn't enough).
 AC_FUNC_ALLOCA
-AC_CHECK_FUNCS(atoll asprintf asnprintf basename devname dirfd dirname 	\
+AC_CHECK_FUNCS(asprintf asnprintf basename devname dirfd dirname 		\
 	dprintf esetfunc fgetln flock fpurge __fpurge futimes getline 		\
 	getopt getopt_long group_from_gid gid_from_group 					\
 	heapsort isblank issetugid lchflags lchmod lchown lutimes mkstemp 	\
-	mkdtemp poll pread putc_unlocked pwcache_userdb pwcache_groupdb \
-	pwrite raise_default_signal random reallocarr reallocarray setenv \
-	setgroupent setprogname setpassent \
-	snprintb_m snprintf strlcat strlcpy strmode \
-	strcasecmp strncasecmp strndup strnlen strsep strsuftoll strtoi \
-	strtoll strtou \
+	mkdtemp poll pread putc_unlocked pwcache_userdb pwcache_groupdb 	\
+	pwrite raise_default_signal random reallocarr reallocarray setenv 	\
+	setgroupent setprogname setpassent 									\
+	snprintb_m snprintf strlcat strlcpy strmode 						\
+	strcasecmp strncasecmp strndup strnlen strsep strsuftoll strtoi 	\
+	strtoll strtou 														\
 	user_from_uid uid_from_user vasprintf vasnprintf vsnprintf)
 
 AC_CHECK_DECLS([user_from_uid, uid_from_user, pwcache_userdb],,,[

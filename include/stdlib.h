@@ -154,6 +154,9 @@ char	*setstate(char *);
 void	srandom(unsigned long);
 void	unsetenv(const char *);
 
+void	*reallocarray(void *, size_t, size_t);
+int		reallocarr(void *, size_t, size_t);
+
 #ifndef __STRICT_ANSI__
 long long
 		strtoq (const char *, char **, int);
@@ -161,5 +164,7 @@ unsigned long long
 		strtouq (const char *, char **, int);
 #endif
 #endif
+
+
 __END_DECLS
 #endif /* _STDLIB_H_ */

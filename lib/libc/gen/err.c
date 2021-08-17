@@ -68,7 +68,7 @@ __weak_alias(warnc, _warnc)
 __weak_alias(warnx, _warnx)
 #endif
 
-#if !HAVE_ERR_H || !HAVE_DECL_ERR
+#if !HAVE_DECL_ERR
 void
 err(int eval, const char *fmt, ...)
 {
@@ -80,7 +80,7 @@ err(int eval, const char *fmt, ...)
 }
 #endif
 
-#if !HAVE_ERR_H || !HAVE_DECL_ERRC
+#if !HAVE_DECL_ERRC
 void
 errc(int eval, int code, const char *fmt, ...)
 {
@@ -92,7 +92,7 @@ errc(int eval, int code, const char *fmt, ...)
 }
 #endif
 
-#if !HAVE_ERR_H || !HAVE_DECL_ERRX
+#if !HAVE_DECL_ERRX
 void
 errx(int eval, const char *fmt, ...)
 {
@@ -103,7 +103,7 @@ errx(int eval, const char *fmt, ...)
 }
 #endif
 
-#if !HAVE_ERR_H || !HAVE_DECL_VERR
+#if !HAVE_DECL_VERR
 void
 verr(eval, fmt, ap)
 	int eval;
@@ -124,7 +124,7 @@ verr(eval, fmt, ap)
 }
 #endif
 
-#if !HAVE_ERR_H || !HAVE_DECL_VERRC
+#if !HAVE_DECL_VERRC
 void
 verrc(int eval, int code, const char *fmt, va_list ap)
 {
@@ -138,7 +138,7 @@ verrc(int eval, int code, const char *fmt, va_list ap)
 }
 #endif
 
-#if !HAVE_ERR_H || !HAVE_DECL_VERRX
+#if !HAVE_DECL_VERRX
 void
 verrx(eval, fmt, ap)
 	int eval;
@@ -153,7 +153,7 @@ verrx(eval, fmt, ap)
 }
 #endif
 
-#if !HAVE_ERR_H || !HAVE_DECL_VWARN
+#if !HAVE_DECL_VWARN
 void
 vwarn(fmt, ap)
 	char *fmt;
@@ -172,7 +172,7 @@ vwarn(fmt, ap)
 }
 #endif
 
-#if !HAVE_ERR_H || !HAVE_DECL_VWARNC
+#if !HAVE_DECL_VWARNC
 void
 vwarnc(int code, const char *fmt, va_list ap)
 {
@@ -185,7 +185,7 @@ vwarnc(int code, const char *fmt, va_list ap)
 }
 #endif
 
-#if !HAVE_ERR_H || !HAVE_DECL_VWARNX
+#if !HAVE_DECL_VWARNX
 void
 vwarnx(fmt, ap)
 	char *fmt;
@@ -198,7 +198,7 @@ vwarnx(fmt, ap)
 }
 #endif
 
-#if !HAVE_ERR_H || !HAVE_DECL_WARN
+#if !HAVE_DECL_WARN
 void
 warn(const char *fmt, ...)
 {
@@ -210,7 +210,7 @@ warn(const char *fmt, ...)
 }
 #endif
 
-#if !HAVE_ERR_H || !HAVE_DECL_WARNC
+#if !HAVE_DECL_WARNC
 void
 warnc(int code, const char *fmt, ...)
 {
@@ -222,7 +222,7 @@ warnc(int code, const char *fmt, ...)
 }
 #endif
 
-#if !HAVE_ERR_H || !HAVE_DECL_WARNX
+#if !HAVE_DECL_WARNX
 void
 warnx(const char *fmt, ...)
 {

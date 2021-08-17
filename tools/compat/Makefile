@@ -44,12 +44,10 @@ CPPFLAGS+=	-I. -I./include -I${.CURDIR} -I${.CURDIR}/sys 			\
 			${.CURDIR}/../../lib/libc/compat-sys5					\
 			${.CURDIR}/../../lib/libc/gen 							\
 			${.CURDIR}/../../lib/libc/hash 							\
-			${.CURDIR}/../../lib/libc/hash/md2 						\
-			${.CURDIR}/../../lib/libc/hash/md5 						\
+			${.CURDIR}/../../lib/libc/hash/md 						\
 			${.CURDIR}/../../lib/libc/hash/rmd160 					\
 			${.CURDIR}/../../lib/libc/hash/sha1 					\
 			${.CURDIR}/../../lib/libc/hash/sha2 					\
-			${.CURDIR}/../../lib/libc/md 							\
 			${.CURDIR}/../../lib/libc/quad 							\
 			${.CURDIR}/../../lib/libc/regex 						\
 			${.CURDIR}/../../lib/libc/stdio 						\
@@ -65,7 +63,7 @@ CLEANDIRFILES+=	defs.mk config.cache confdefs.h
 # Get components of Berkeley DB.
 _CURDIR:=	${.CURDIR}
 .CURDIR:=	${_CURDIR}/../../lib/libc
-.include "${.CURDIR}/db/Makefile.inc"
+.include 	"${.CURDIR}/db/Makefile.inc"
 .CURDIR:=	${_CURDIR}
 
 SRCS:=		${SRCS:M*.c}

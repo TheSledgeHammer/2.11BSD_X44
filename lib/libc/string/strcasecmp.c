@@ -17,6 +17,7 @@ static char sccsid[] = "@(#)strcasecmp.c	1.2 (Berkeley) 7/2/87";
 #include <assert.h>
 #include <ctype.h>
 #include <string.h>
+
 #ifdef __weak_alias
 __weak_alias(strcasecmp,_strcasecmp)
 __weak_alias(strncasecmp,_strncasecmp)
@@ -76,6 +77,7 @@ strcasecmp(s1, s2)
 			return (0);
 	return (cm[*s1] - cm[*--s2]);
 }
+#endif
 
 int
 strncasecmp(s1, s2, n)

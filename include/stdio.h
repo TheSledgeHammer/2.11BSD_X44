@@ -290,6 +290,10 @@ int	 	ungetc (int, FILE *);
 int	 	vfprintf (FILE *, const char *, _BSD_VA_LIST_);
 int	 	vprintf (const char *, _BSD_VA_LIST_);
 int	 	vsprintf (char *, const char *, _BSD_VA_LIST_);
+
+int	 	asprintf(char ** __restrict, const char * __restrict, ...);
+char	*fparseln(FILE *, size_t *, size_t *, const char[3], int);
+int	 	vasprintf(char ** __restrict, const char * __restrict, __va_list);
 __END_DECLS
 
 /*
@@ -298,7 +302,6 @@ __END_DECLS
 #ifndef _ANSI_SOURCE
 #define	L_cuserid	9		/* size for cuserid(); UT_NAMESIZE + 1 */
 #define	L_ctermid	1024	/* size for ctermid(); PATH_MAX */
-
 
 __BEGIN_DECLS
 char	*ctermid (char *);

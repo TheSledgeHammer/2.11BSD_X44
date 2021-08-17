@@ -6,12 +6,12 @@ HOST_SRCDIR=	contrib/mdocml/bin/mandoc
 .include <bsd.hostinit.mk>
 
 NETBSD_MINOR!=	${HOST_SH} ${NETBSDSRCDIR}/sys/conf/osrelease.sh -n
-NETBSD_OSNAME=	"NetBSD ${NETBSD_MINOR}"
+NETBSD_OSNAME=	"211BSD ${NETBSD_MINOR}"
 
 HOST_CPPFLAGS+=	-DOSNAME=${NETBSD_OSNAME:Q} -DHAVE_CONFIG_H -I.
 HOST_CPPFLAGS+= -D_OPENBSD_SOURCE
 
-DPSRCS+=	config.h
+DPSRCS+=		config.h
 
 CLEANFILES+=	config.log config.h Makefile.local
 

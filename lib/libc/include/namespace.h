@@ -60,7 +60,7 @@
 #define strlcpy			_strlcpy
 #define strtoimax		_strtoimax
 #define strtoll			_strtoll
-#define strtoull		_strtoull
+//#define strtoull		_strtoull
 #define strtoumax		_strtoumax
 #define sys_errlist		_sys_errlist
 #define sys_nerr		_sys_nerr

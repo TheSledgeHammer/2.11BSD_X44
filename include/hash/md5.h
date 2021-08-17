@@ -29,11 +29,8 @@
  * documentation and/or software.
  */
 
-#ifndef _SYS_MD5_H_
-#define _SYS_MD5_H_
-
-#include <sys/cdefs.h>
-//#include <sys/types.h>
+#ifndef _MD5_H_
+#define _MD5_H_
 
 #define MD5_DIGEST_LENGTH			16
 #define	MD5_DIGEST_STRING_LENGTH	33

@@ -34,7 +34,7 @@ WA(MDNAME(Data),CONCAT(_,MDNAME(Data)))
 
 #include <sys/types.h>
 
-#include MDINCLUDE
+//#include MDINCLUDE
 #include <assert.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -43,7 +43,9 @@ WA(MDNAME(Data),CONCAT(_,MDNAME(Data)))
 #include <unistd.h>
 
 char *
-MDNAME(End)(MDNAME(_CTX) *ctx, char *buf)
+MDNAME(End)(ctx, buf)
+	MDNAME(_CTX) *ctx;
+	char *buf;
 {
 	int i;
 	unsigned char digest[16];

@@ -6,11 +6,8 @@
  * 100% Public Domain
  */
 
-#ifndef _SYS_SHA1_H_
-#define	_SYS_SHA1_H_
-
-#include <sys/cdefs.h>
-#include <sys/types.h>
+#ifndef _SHA1_H_
+#define	_SHA1_H_
 
 #define SHA1_DIGEST_LENGTH			20
 #define SHA1_DIGEST_STRING_LENGTH	41
@@ -35,4 +32,4 @@ char	*SHA1Data(const uint8_t *, size_t, char *);
 #endif /* _KERNEL */
 __END_DECLS
 
-#endif /* _SYS_SHA1_H_ */
+#endif /* _SHA1_H_ */

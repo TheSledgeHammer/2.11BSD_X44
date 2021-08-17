@@ -106,10 +106,10 @@ __RCSID("$NetBSD: xinstall.c,v 1.126 2020/10/30 20:05:00 rillig Exp $");
 #include <spawn.h>
 #endif
 
-#include <md5.h>
-#include <rmd160.h>
-#include <sha1.h>
-#include <sha2.h>
+#include "../../include/hash/md5.h"
+#include "../../include/hash/rmd160.h"
+#include "../../include/hash/sha1.h"
+#include "../../include/hash/sha2.h"
 
 #include "pathnames.h"
 #include "mtree.h"

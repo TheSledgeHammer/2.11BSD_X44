@@ -47,7 +47,7 @@
 
 #define _PASSWORD_WARNDAYS	14		/* days to warn about expiry */
 #define _PASSWORD_CHGNOW	-1		/* special day to force password change at next login */
-#endif
+
 
 struct passwd {
 	char	*pw_name;			/* user name */
@@ -62,9 +62,12 @@ struct passwd {
 	long	pw_expire;			/* account expiration */
 };
 
-struct passwd *getpwent(), *getpwuid(), *getpwnam();
-void endpwent(), setpwfile();
-int setpassent(), setpwent();
-
-
+__BEGIN_DECLS
+struct passwd 	*getpwent(void);
+struct passwd 	*getpwuid(uid_t);
+struct passwd 	*getpwnam(char *);
+void			setpwent(void);
+void	 		endpwent(void);
+int 			setpassent(int);
+__END_DECLS
 #endif /* !_PWD_H_ */

@@ -1,4 +1,4 @@
 /*	$NetBSD: sha1.h,v 1.2 2013/03/12 01:52:55 christos Exp $	*/
 
 /* We unconditionally use the NetBSD SHA1 in libnbcompat. */
-#include "../../include/sha1.h"
+#include "../../../include/hash/sha1.h"

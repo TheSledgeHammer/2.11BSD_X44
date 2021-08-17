@@ -39,7 +39,7 @@ __RCSID("$NetBSD: md2.c,v 1.7 2012/06/25 22:32:44 abs Exp $");
 #include <sys/types.h>
 
 #include <assert.h>
-#include <md2.h>
+#include "../../../../include/hash/md2.h"
 #include <string.h>
 
 #if HAVE_NBTOOL_CONFIG_H

@@ -146,11 +146,13 @@ start_pw()
 	return(0);
 }
 
+
 setpwent()
 {
-	return(setpassent(0));
+	return (setpassent(0));
 }
 
+int
 setpassent(stayopen)
 	int stayopen;
 {
@@ -245,7 +247,7 @@ fetch_pw(key)
 	if (!(p = key.dptr))
 		return(0);
 	t = line;
-#define	EXPAND(e)	e = t; while (*t++ = *p++);
+#define	EXPAND(e)	(e) = t; while (*t++ = *p++);
 	EXPAND(_pw_passwd.pw_name);
 	EXPAND(_pw_passwd.pw_passwd);
 	bcopy(p, (char *)&_pw_passwd.pw_uid, sizeof(int));

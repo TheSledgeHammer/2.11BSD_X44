@@ -29,11 +29,8 @@
  * documentation and/or software.
  */
 
-#ifndef _SYS_MD4_H_
-#define _SYS_MD4_H_
-
-#include <sys/cdefs.h>
-#include <sys/types.h>
+#ifndef _MD4_H_
+#define _MD4_H_
 
 #define MD4_DIGEST_LENGTH 16
 #define MD4_DIGEST_STRING_LENGTH 33

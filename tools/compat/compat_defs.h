@@ -309,6 +309,7 @@ struct _dirdesc {
 #endif
 #endif
 
+#if !HAVE_ERR_H
 #if !HAVE_DECL_ERR
 void err(int, const char *, ...);
 #endif
