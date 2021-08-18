@@ -20,8 +20,6 @@ static char line[256+1];
 static struct group group;
 static int _gr_stayopen;
 static char *gr_mem[MAXGRP];
-//static int grscan(), start_gr();
-
 
 void
 setgrent()
@@ -53,8 +51,8 @@ endgrent()
 
 static char *
 grskip(p,c)
-register char *p;
-register c;
+	register char *p;
+	register c;
 {
 	while( *p && *p != c ) ++p;
 	if( *p ) *p++ = 0;
@@ -107,7 +105,7 @@ grscan(search, gid, name)
 {
 	register char *cp, **m;
 	char *bp;
-	char *fgets(), *strsep(), *index();
+	//char *fgets(), *strsep(), *index();
 
 	for (;;) {
 		if (!fgets(line, sizeof(line), grf))

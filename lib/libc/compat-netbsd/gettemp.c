@@ -58,7 +58,6 @@ __RCSID("$NetBSD: gettemp.c,v 1.13 2003/12/05 00:57:36 uebayasi Exp $");
 #if HAVE_NBTOOL_CONFIG_H
 #define	GETTEMP		gettemp
 #else
-#include "reentrant.h"
 #include "local.h"
 #define	GETTEMP		_gettemp
 #endif

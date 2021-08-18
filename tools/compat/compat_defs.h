@@ -247,9 +247,6 @@ struct group;
 # if HAVE_SYS_DIR_H
 #  include <sys/dir.h>
 # endif
-# if HAVE_NDIR_H
-#  include <ndir.h>
-# endif
 #endif
 
 /* Prototypes for replacement functions. */
@@ -309,7 +306,6 @@ struct _dirdesc {
 #endif
 #endif
 
-#if !HAVE_ERR_H
 #if !HAVE_DECL_ERR
 void err(int, const char *, ...);
 #endif
@@ -387,9 +383,11 @@ ssize_t getline(char **, size_t *, FILE *);
 int issetugid(void);
 #endif
 
+/*
 #if !HAVE_ISBHAVE_DECL_ISBLANK && !defined(isblank)
 #define isblank(x) ((x) == ' ' || (x) == '\t')
 #endif
+*/
 
 #define __nbcompat_bswap16(x)	((((x) << 8) & 0xff00) | (((x) >> 8) & 0x00ff))
 
@@ -492,10 +490,6 @@ int lchown(const char *, uid_t, gid_t);
 
 #if !HAVE_DECL_PWRITE
 ssize_t pwrite(int, const void *, size_t, off_t);
-#endif
-
-#if !HAVE_RAISE_DEFAULT_SIGNAL
-int raise_default_signal(int);
 #endif
 
 #if !HAVE_DECL_REALLOCARR

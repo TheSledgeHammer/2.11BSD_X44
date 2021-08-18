@@ -70,7 +70,7 @@ typedef	short int						__int16_t;
 typedef	unsigned short int     			__uint16_t;
 typedef	int								__int32_t;
 typedef	unsigned int	       			__uint32_t;
-#ifdef __COMPILER_INT64__
+#ifdef __LP64__
 typedef	__COMPILER_INT64__				__int64_t;
 typedef	__COMPILER_UINT64__    			__uint64_t;
 #else
@@ -88,7 +88,7 @@ typedef	short int		 				int_least16_t;
 typedef	unsigned short int				uint_least16_t;
 typedef	int			 					int_least32_t;
 typedef	unsigned int					uint_least32_t;
-#ifdef __COMPILER_INT64__
+#ifdef __LP64__
 typedef	__COMPILER_INT64__	 			int_least64_t;
 typedef	__COMPILER_UINT64__				uint_least64_t;
 #else
@@ -106,7 +106,7 @@ typedef	int			  					int_fast16_t;
 typedef	unsigned int		 			uint_fast16_t;
 typedef	int			  					int_fast32_t;
 typedef	unsigned int		 			uint_fast32_t;
-#ifdef __COMPILER_INT64__
+#ifdef __LP64__
 typedef	__COMPILER_INT64__	  			int_fast64_t;
 typedef	__COMPILER_UINT64__	 			uint_fast64_t;
 #else
@@ -126,7 +126,7 @@ typedef	unsigned long					__uintptr_t;
 
 /* 7.18.1.5 Greatest-width integer types */
 
-#ifdef __COMPILER_INT64__
+#ifdef __LP64__
 typedef	__COMPILER_INT64__	      		intmax_t;
 typedef	unsigned __COMPILER_INT64__ 	uintmax_t;
 #else

@@ -82,6 +82,24 @@ AC_CHECK_HEADERS(sys/mtio.h sys/syslimits.h getopt.h malloc.h sys/poll.h 		\
 AC_CHECK_HEADERS(sys/cdefs.h machine/endian_machdep.h sys/endian.h 				\
 	err.h libgen.h paths.h libgen.h stdint.h util.h resolv.h 					\
 	arpa/nameser.h,, [test -f include/$ac_header || touch include/$ac_header])
+AC_CHECK_HEADERS(rpc/types.h,,
+	[echo '#include "nbtool_config.h"' >include/$ac_header.new
+	echo '#include "'$srcdir/../../common/include/$ac_header'"' 				\
+		>>include/$ac_header.new
+	if cmp include/$ac_header.new include/$ac_header >/dev/null 2>&1; then
+		rm -f include/$ac_header.new
+	else
+		mv -f include/$ac_header.new include/$ac_header
+	fi])
+AC_CHECK_HEADERS(netconfig.h,,
+	[echo '#include "nbtool_config.h"' >include/$ac_header.new
+	echo '#include "'$srcdir/../../include/$ac_header'"' 						\
+		>>include/$ac_header.new
+	if cmp include/$ac_header.new include/$ac_header >/dev/null 2>&1; then
+		rm -f include/$ac_header.new
+	else
+		mv -f include/$ac_header.new include/$ac_header
+	fi])
 
 # Typedefs.
 AC_TYPE_SIZE_T
@@ -89,7 +107,7 @@ AC_CHECK_TYPES([id_t, long long, u_long, u_char, u_short, u_int, u_quad_t])
 AC_CHECK_TYPES([uchar_t, ushort_t, uint_t, ulong_t])
 AC_CHECK_TYPE(socklen_t, [AC_DEFINE([HAVE_SOCKLEN_T], 1,
 			  [Define if you have the socklen_t type.])],,
-[#include <sys/types.h> #include <sys/socket.h>])
+	[#include <sys/types.h> #include <sys/socket.h>])
 AC_MSG_CHECKING([for enum uio_rw])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
@@ -231,7 +249,7 @@ AC_CHECK_DECLS([htobe16, htobe32, htobe64, htole16, htole32, htole64,
 		be16toh, be32toh, be64toh, le16toh, le32toh, le64toh],,,
 		[#include <sys/types.h>])
 
-AC_CHECK_DECLS([bswap16, bswap32, bswap64],,, [#include <lib/lib/libkern.h>])
+AC_CHECK_DECLS([bswap16, bswap32, bswap64],,, [#include <sys/endian.h>])
 
 AC_CHECK_DECLS([be16dec, le16dec, be16enc, le16enc, 
 		be32dec, le32dec, be32enc, le32enc,

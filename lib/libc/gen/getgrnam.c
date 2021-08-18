@@ -9,7 +9,7 @@ static char sccsid[] = "@(#)getgrnam.c	5.2 (Berkeley) 3/9/86";
 
 struct group *
 getgrnam(name)
-register char *name;
+	register char *name;
 {
 	register struct group *p;
 	struct group *getgrent();

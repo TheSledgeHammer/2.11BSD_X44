@@ -6,7 +6,7 @@ static char sccsid[] = "@(#)getgrgid.c	5.2 (Berkeley) 3/9/86";
 
 struct group *
 getgrgid(gid)
-register gid;
+	register gid;
 {
 	register struct group *p;
 	struct group *getgrent();

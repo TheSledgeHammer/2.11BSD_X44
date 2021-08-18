@@ -36,6 +36,15 @@ static char sccsid[] = "@(#)getpwent.c	5.9.1 (2.11BSD) 1996/1/12";
 #include <unistd.h>
 #include <limits.h>
 
+#ifdef __weak_alias
+__weak_alias(getpwent,_getpwent)
+__weak_alias(getpwnam,_getpwnam)
+__weak_alias(getpwuid,_getpwuid)
+__weak_alias(setpwent,_setpwent)
+__weak_alias(setpassent,_setpassent)
+__weak_alias(endpwent,_endpwent)
+#endif
+
 static DBM *_pw_db;
 static FILE *_pw_fp;
 static struct passwd _pw_passwd;
