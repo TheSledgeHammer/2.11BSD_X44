@@ -62,7 +62,7 @@ typedef struct slab             *slab_t;
 
 struct slab_cache {
 	CIRCLEQ_HEAD(, slab)		sc_head;
-
+	struct slab					sc_link;
 };
 typedef struct slab_cache      *slab_cache_t;
 
