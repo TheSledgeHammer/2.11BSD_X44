@@ -77,7 +77,6 @@ strcasecmp(s1, s2)
 			return (0);
 	return (cm[*s1] - cm[*--s2]);
 }
-#endif
 
 int
 strncasecmp(s1, s2, n)

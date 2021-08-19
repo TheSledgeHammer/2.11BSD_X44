@@ -36,7 +36,9 @@
 #if !HAVE_PREAD
 #include <unistd.h>
 
-ssize_t pread(int d, void *buf, size_t nbytes, off_t offset) {
+ssize_t
+pread(int d, void *buf, size_t nbytes, off_t offset)
+{
 	off_t oldoff = lseek(d, offset, SEEK_SET);
 	int olderrno;
 	ssize_t nr;

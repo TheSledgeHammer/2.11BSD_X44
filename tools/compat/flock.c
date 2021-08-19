@@ -40,7 +40,8 @@
 #include <errno.h>
 #include <fcntl.h>
 
-int flock(int fd, int op) {
+int
+flock(int fd, int op) {
 	int rc = 0;
 
 #if defined(F_SETLK) && defined(F_SETLKW)

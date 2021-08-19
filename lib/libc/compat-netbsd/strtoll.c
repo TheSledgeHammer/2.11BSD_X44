@@ -68,11 +68,7 @@ __weak_alias(strtoll, _strtoll)
  */
 /* LONGLONG */
 long long int
-#ifdef _LIBC
-_strtoll(nptr, endptr, base)
-#else
 strtoll(nptr, endptr, base)
-#endif
 	const char *nptr;
 	char **endptr;
 	int base;
@@ -184,14 +180,3 @@ strtoll(nptr, endptr, base)
 	return (acc);
 }
 #endif
-
-/* LONGLONG */
-long long int
-strtoll(nptr, endptr, base)
-	const char *nptr;
-	char **endptr;
-	int base;
-{
-	return _strtoll(nptr, endptr, base);
-}
-

@@ -6,7 +6,8 @@
 #include <grp.h>
 
 int
-setgroupent(int stayopen) {
+setgroupent(int stayopen)
+{
 	setgrent();
 	return 1;
 }

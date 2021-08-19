@@ -5,14 +5,15 @@ libF77/			UNIMPLEMENTED
 libI77/			UNIMPLEMENTED
 libU77/			UNIMPLEMENTED
 libcurses/		4.4BSD-Lite2
-libdbm/			4.3BSD
+libdbm/			4.3BSD		 	
 libedit/		4.4BSD-Lite2
 libg/			UNIMPLEMENTED (4.3 should be ported)
 libln/			UNIMPLEMENTED
 libm/			UNIMPLEMENTED  4.3 (no attempt made to convert yet - won't run on a PDP11)
 libmp/			4.3BSD
+libndbm/		2.11BSD		   (ndbm before it was merged into Berkely DB)
 libpc/			UNIMPLEMENTED
-libom/			4.3BSD  (used for both libom.a and libm.a)
+libom/			4.3BSD  	   (used for both libom.a and libm.a)
 libplot/		UNIMPLEMENTED
 libtermcap/		4.4BSD-Lite2
 libutil/		4.4BSD-Lite2

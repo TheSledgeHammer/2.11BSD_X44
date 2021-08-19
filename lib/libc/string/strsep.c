@@ -55,7 +55,7 @@ static char sccsid[] = "@(#)strsep.c	8.1.1 (2.11BSD) 1996/1/11";
 char *
 strsep(stringp, delim)
 	register char **stringp;
-	char *delim;
+	const char *delim;
 {
 	register char *s;
 	register char *spanp;

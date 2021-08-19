@@ -51,7 +51,7 @@ static char sccsid[] = "@(#)err.c	8.1.1 (2.11BSD GTE) 2/3/95";
 
 extern	int	errno;
 extern	char *__progname;		/* Program name, from crt0. */
-//static	void	putprog(), putcolsp();
+static	void	putprog(), putcolsp();
 
 #ifdef __weak_alias
 __weak_alias(err, _err)

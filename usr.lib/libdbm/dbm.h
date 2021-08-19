@@ -6,16 +6,9 @@
  *	@(#)dbm.h	5.1 (Berkeley) 3/27/86
  */
 
-#ifndef NULL
-/*
- * this is lunacy, we no longer use it (and never should have
- * unconditionally defined it), but, this whole file is for
- * backwards compatability - someone may rely on this.
- */
-#define	NULL	((char *) 0)
-#endif
+#include <sys/null.h>
 
-#include <ndbm.h>
+#include "../libndbm/ndbm.h"
 
 datum	fetch();
 datum	firstkey();

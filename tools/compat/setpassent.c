@@ -6,7 +6,8 @@
 #include <pwd.h>
 
 int
-setpassent(int stayopen) {
+setpassent(int stayopen)
+{
 	setpwent();
 	return 1;
 }

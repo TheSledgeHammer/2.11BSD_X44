@@ -14,7 +14,7 @@ SRCS+=	alarm.c assert.c closedir.c crypt.c ctermid.c ctype_.c daemon.c 	 	\
 		fstab.c fts.c gcvt.c getcap.c getdevpath.c getgrent.c getgrgid.c 	  	\
 		etgrnam.c getlogin.c getgrouplist.c gethostname.c getpagesize.c 	 	\
 		getpass.c getpwent.c getloadavg.c getmntinfo.c getttyent.c getttynam.c 	\
-		getusershell.c getwd.c glob.c initgroups.c insque.c isatty.c ndbm.c  	\
+		getusershell.c getwd.c glob.c initgroups.c insque.c isatty.c  			\
 		nlist.c nlist_aout.c nlist_coff.c nlist_ecoff.c nlist_elf32.c 		 	\
 		nlist_elf64.c nlist_xcoff32.c nlist_xcoff64.c copendir.c popen.c	 	\
 		psignal.c pwcache.c readdir.c regex.c remque.c scandir.c seekdir.c 	 	\

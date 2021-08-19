@@ -4,6 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)ndbm.c	5.3 (Berkeley) 3/9/86";
 #endif LIBC_SCCS and not lint
@@ -14,8 +15,9 @@ static char sccsid[] = "@(#)ndbm.c	5.3 (Berkeley) 3/9/86";
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
-#include <dbm.h>
-#include <ndbm.h>
+
+#include "ndbm.h"
+#include "../libdbm/dbm.h"
 
 #define BYTESIZ 8
 #undef setbit

@@ -11,7 +11,7 @@
 NOOBJ=		# defined
 
 INCS=	a.out.h ar.h assert.h atomic.h bitstring.h  		 				\
-		cpio.h ctype.h curses.h db.h dbm.h dirent.h disktab.h	 			\ 	
+		cpio.h ctype.h curses.h db.h dirent.h disktab.h	 					\ 	
 		dlfcn.h err.h errlst.h errno.h fcntl.h fnmatch.h frame.h fstab.h 	\
 		fts.h glob.h grp.h ident.h kenv.h kvm.h lastlog.h libgen.h 		 	\
 		limits.h link_aout.h link_elf.h link.h math.h memory.h mp.h 	 	\
