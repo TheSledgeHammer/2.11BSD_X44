@@ -6,7 +6,7 @@
 #include <getopt.h>
 #endif
 
-#define option __nbcompat_option
+#define option 		__nbcompat_option
 #define getopt_long __nbcompat_getopt_long
 
 #undef no_argument

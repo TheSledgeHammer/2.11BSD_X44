@@ -13,6 +13,8 @@ static char sccsid[] = "@(#)ndbm.c	5.3 (Berkeley) 3/9/86";
 #include <sys/file.h>
 #include <stdio.h>
 #include <errno.h>
+#include <unistd.h>
+#include <dbm.h>
 #include <ndbm.h>
 
 #define BYTESIZ 8
@@ -339,6 +341,7 @@ setbit(db)
 static datum
 makdatum(buf, n)
 	char buf[PBLKSIZ];
+	int n;
 {
 	register short *sp;
 	register t;
@@ -455,6 +458,7 @@ dcalchash(item)
 static
 delitem(buf, n)
 	char buf[PBLKSIZ];
+	int n;
 {
 	register short *sp, *sp1;
 	register i1, i2;

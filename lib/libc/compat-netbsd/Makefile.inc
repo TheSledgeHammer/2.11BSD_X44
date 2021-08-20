@@ -5,7 +5,7 @@
 .PATH: 	${ARCHDIR}/compat-netbsd ${.CURDIR}/compat-netbsd
 
 SRCS+= 	_getpwent.c asprintf.c basename.c dirname.c efun.c fparseln.c 			\
-		getopt_long.c gettemp.c pw_scan.c reallocarr.c reallocarray.c 			\
+		getopt_long.c gettemp.c pw_scan.c pwcache.c reallocarr.c reallocarray.c \
 		stat_flags.c strlcat.c strlcpy.c strndup.c strnlen.c strtoimax.c 		\
 		strtoll.c strtoumax.c strtouq.c vasprintf.c
 
