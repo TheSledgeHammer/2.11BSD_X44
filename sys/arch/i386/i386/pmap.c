@@ -782,12 +782,17 @@ pmap_map(virt, start, end, prot)
 	if (pmapdebug & PDB_FOLLOW)
 		printf("pmap_map(%x, %x, %x, %x)\n", virt, start, end, prot);
 #endif
+	vm_offset_t va, sva;
+
+	va = sva = virt;
 	while (start < end) {
-		pmap_enter(kernel_pmap, virt, start, prot, FALSE);
-		virt += PAGE_SIZE;
+		pmap_enter(kernel_pmap, va, start, prot, FALSE);
+		va += PAGE_SIZE;
 		start += PAGE_SIZE;
 	}
-	return (virt);
+	pmap_invalidate_range(kernel_pmap, sva, va);
+	*virt = va;
+	return (sva);
 }
 
 /*
@@ -1109,6 +1114,7 @@ pmap_remove_all(pa)
 		    pmap_pte_pa(pmap_pte(pv->pv_pmap, pv->pv_va)) != pa)
 			panic("pmap_remove_all: bad mapping");
 #endif
+		pmap_invalidate_page(pv->pv_pmap, pv->pv_va);
 		pmap_remove(pv->pv_pmap, pv->pv_va, pv->pv_va + PAGE_SIZE);
 	}
 	splx(s);
@@ -1398,6 +1404,7 @@ validate:
 		va += I386_PAGE_SIZE;
 	} while (++ix != i386pagesperpage);
 	pte--;
+	pmap_invalidate_page(pmap, va);
 #ifdef DEBUGx
 cache, tlb flushes
 #endif
@@ -1507,6 +1514,7 @@ pmap_pte(pmap, va)
 	if (pmapdebug & PDB_FOLLOW)
 		printf("pmap_pte(%x, %x) ->\n", pmap, va);
 #endif
+	pd_entry_t newpf;
 	pd_entry_t *pde;
 
 	pde = pmap_pde(pmap, va);
@@ -1516,15 +1524,18 @@ pmap_pte(pmap, va)
 		/* are we current address space or kernel? */
 		if (pmap->pm_pdir[PTDPTDI] == PTDpde || pmap == kernel_pmap) {
 			return ((pt_entry_t *) vtopte(va));
-		}
-
-		/* otherwise, we are alternate address space */
-		else {
+		} else {
+			/* otherwise, we are alternate address space */
 			if (pmap->pm_pdir[PTDPTDI] != APTDpde) {
 				APTDpde = pmap->pm_pdir[PTDPTDI];
 				tlbflush();
 			}
-			return ((pt_entry_t *) avtopte(va));
+			newpf = *pde & PG_FRAME;
+			if ((*PMAP2 & PG_FRAME) != newpf) {
+				*PMAP2 = newpf | PG_RW | PG_V | PG_A | PG_M;
+				pmap_invalidate_page(kernel_pmap, (vm_offset_t)PADDR2);
+			}
+			return ((pt_entry_t *)(avtopte(va)));
 		}
 	}
 	return(0);
@@ -1568,7 +1579,8 @@ pmap_extract(pmap, va)
  *
  *	This routine is only advisory and need not do anything.
  */
-void pmap_copy(dst_pmap, src_pmap, dst_addr, len, src_addr)
+void
+pmap_copy(dst_pmap, src_pmap, dst_addr, len, src_addr)
 	pmap_t		dst_pmap;
 	pmap_t		src_pmap;
 	vm_offset_t	dst_addr;
@@ -1589,7 +1601,8 @@ void pmap_copy(dst_pmap, src_pmap, dst_addr, len, src_addr)
  *	Generally used to insure that a thread about
  *	to run will see a semantically correct world.
  */
-void pmap_update()
+void
+pmap_update()
 {
 #ifdef DEBUG
 	if (pmapdebug & PDB_FOLLOW)

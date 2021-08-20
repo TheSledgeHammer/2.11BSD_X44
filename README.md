@@ -13,9 +13,7 @@
 
 ## Architecture Support
 
-- i386/x86 (In Development)
-  - 95% Complete: without SMP, Threads & limited PAE
-  - 60-80% Complete: with SMP, PAE & limited Threads
+- i386/x86 (In Development): 90% Complete 
 - AMD64 (Planned)
 - Arm 	(32-Bit/64-Bit) (Planned)
 - Riscv (32-Bit/64-Bit) (Planned)
@@ -23,6 +21,8 @@
 ## Current Project Aims
 
 - Improve 2.11BSD's Dual Control (Proc & User)
+- Instruction & Data (I&D) Seperation (See devel folder)
+- Pseudo Segmentation (See devel folder)
 - Threading (Hybrid N/M):  
   - Kernel Threads: (85% Complete)
     - Machine-Dependent Code

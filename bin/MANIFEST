@@ -20,7 +20,7 @@ kill/		NetBSD
 ln/			4.4BSD-Lite2
 ls/			NetBSD
 mkdir/		4.4BSD-Lite2
-mt/
+mt/			UNIMPLEMENTED
 mv/			4.4BSD-Lite2
 passwd/		2.11BSD
 pax/		4.4BSD-Lite2

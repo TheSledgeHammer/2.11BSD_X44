@@ -10,6 +10,9 @@ MAN=	install.1
 .PATH:		${NETBSDSRCDIR}/usr.sbin/mtree
 CPPFLAGS+=	-I${NETBSDSRCDIR}/usr.sbin/mtree
 
+.PATH:		${NETBSDSRCDIR}/usr.bin/cksum
+CPPFLAGS+=	-I${NETBSDSRCDIR}/usr.bin/cksum
+
 .if (${HOSTPROG:U} == "")
 CPPFLAGS+=	-DHAVE_POSIX_SPAWN
 DPADD+= ${LIBUTIL}

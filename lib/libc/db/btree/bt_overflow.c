@@ -1,5 +1,7 @@
+/*	$NetBSD: bt_overflow.c,v 1.12 2003/08/07 16:42:41 agc Exp $	*/
+
 /*-
- * Copyright (c) 1990, 1993
+ * Copyright (c) 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -13,11 +15,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -34,10 +32,16 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_overflow.c	8.2 (Berkeley) 2/21/94";
+#if 0
+static char sccsid[] = "@(#)bt_overflow.c	8.5 (Berkeley) 7/16/94";
+#else
+__RCSID("$NetBSD: bt_overflow.c,v 1.12 2003/08/07 16:42:41 agc Exp $");
+#endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
 #include <sys/param.h>
 
 #include <stdio.h>
@@ -69,7 +73,7 @@ static char sccsid[] = "@(#)bt_overflow.c	8.2 (Berkeley) 2/21/94";
  *
  * Parameters:
  *	t:	tree
- *	p:	pointer to { pgno_t, size_t }
+ *	p:	pointer to { pgno_t, u_int32_t }
  *	buf:	storage address
  *	bufsz:	storage size
  *
@@ -81,15 +85,16 @@ __ovfl_get(t, p, ssz, buf, bufsz)
 	BTREE *t;
 	void *p;
 	size_t *ssz;
-	char **buf;
+	void **buf;
 	size_t *bufsz;
 {
 	PAGE *h;
 	pgno_t pg;
-	size_t nb, plen, sz;
+	size_t nb, plen;
+	u_int32_t sz;
 
 	memmove(&pg, p, sizeof(pgno_t));
-	memmove(&sz, (char *)p + sizeof(pgno_t), sizeof(size_t));
+	memmove(&sz, (char *)p + sizeof(pgno_t), sizeof(u_int32_t));
 	*ssz = sz;
 
 #ifdef DEBUG
@@ -98,7 +103,8 @@ __ovfl_get(t, p, ssz, buf, bufsz)
 #endif
 	/* Make the buffer bigger as necessary. */
 	if (*bufsz < sz) {
-		if ((*buf = (char *)realloc(*buf, sz)) == NULL)
+		*buf = (char *)(*buf == NULL ? malloc(sz) : realloc(*buf, sz));
+		if (*buf == NULL)
 			return (RET_ERROR);
 		*bufsz = sz;
 	}
@@ -113,7 +119,7 @@ __ovfl_get(t, p, ssz, buf, bufsz)
 			return (RET_ERROR);
 
 		nb = MIN(sz, plen);
-		memmove(p, (char *)h + BTDATAOFF, nb);
+		memmove(p, (char *)(void *)h + BTDATAOFF, nb);
 		mpool_put(t->bt_mp, h, 0);
 
 		if ((sz -= nb) == 0)
@@ -142,7 +148,8 @@ __ovfl_put(t, dbt, pg)
 	PAGE *h, *last;
 	void *p;
 	pgno_t npg;
-	size_t nb, plen, sz;
+	size_t nb, plen;
+	u_int32_t sz;
 
 	/*
 	 * Allocate pages and copy the key/data record into them.  Store the
@@ -160,7 +167,7 @@ __ovfl_put(t, dbt, pg)
 		h->lower = h->upper = 0;
 
 		nb = MIN(sz, plen);
-		memmove((char *)h + BTDATAOFF, p, nb);
+		memmove((char *)(void *)h + BTDATAOFF, p, nb);
 
 		if (last) {
 			last->nextpg = h->pgno;
@@ -181,7 +188,7 @@ __ovfl_put(t, dbt, pg)
  *
  * Parameters:
  *	t:	tree
- *	p:	pointer to { pgno_t, size_t }
+ *	p:	pointer to { pgno_t, u_int32_t }
  *
  * Returns:
  *	RET_ERROR, RET_SUCCESS
@@ -193,10 +200,11 @@ __ovfl_delete(t, p)
 {
 	PAGE *h;
 	pgno_t pg;
-	size_t plen, sz;
+	size_t plen;
+	u_int32_t sz;
 
 	memmove(&pg, p, sizeof(pgno_t));
-	memmove(&sz, (char *)p + sizeof(pgno_t), sizeof(size_t));
+	memmove(&sz, (char *)p + sizeof(pgno_t), sizeof(u_int32_t));
 
 #ifdef DEBUG
 	if (pg == P_INVALID || sz == 0)

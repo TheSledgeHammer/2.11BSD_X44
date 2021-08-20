@@ -155,23 +155,22 @@ static char	*digest;
 #define	HASUID		0x04		/* Tell install the uid was given */
 #define	HASGID		0x08		/* Tell install the gid was given */
 
-static void	afterinstall(const char *, const char *, int);
-static void	backup(const char *);
-static char   *copy(int, char *, int, char *, off_t);
-static int	do_link(char *, char *);
-static void	do_symlink(char *, char *);
-static void	install(char *, char *, u_int);
-static void	install_dir(char *, u_int);
-static void	makelink(char *, char *);
-static void	metadata_log(const char *, const char *, struct timeval *,
-	    const char *, const char *, off_t);
-static int	parseid(char *, id_t *);
-static void 	run(const char *, const char *, const char *, int);
-static void	strip(const char *);
+static void			afterinstall(const char *, const char *, int);
+static void			backup(const char *);
+static char  	 	*copy(int, char *, int, char *, off_t);
+static int			do_link(char *, char *);
+static void			do_symlink(char *, char *);
+static void			install(char *, char *, u_int);
+static void			install_dir(char *, u_int);
+static void			makelink(char *, char *);
+static void			metadata_log(const char *, const char *, struct timeval *, const char *, const char *, off_t);
+static int			parseid(char *, id_t *);
+static void 		run(const char *, const char *, const char *, int);
+static void			strip(const char *);
 __dead static void	usage(void);
-static char   	*xbasename(char *);
-static char   	*xdirname(char *);
-static int		needshell(const char *, int);
+static char   		*xbasename(char *);
+static char   		*xdirname(char *);
+static int			needshell(const char *, int);
 
 int
 main(int argc, char *argv[])

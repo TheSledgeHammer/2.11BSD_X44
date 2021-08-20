@@ -43,33 +43,11 @@ fixpt_t	ccpu = 		0.95122942450071400909 * FSCALE;		/* exp(-1/20) */
 #define	CCPU_SHIFT	11
 
 void
-ccpu_shift(p)
-	register struct proc *p;
-{
-	register int s;
-
-	s = splstatclock();	/* prevent state changes */
-
-	/*
-	 * p_pctcpu is only for ps.
-	 */
-#if	(FSHIFT >= CCPU_SHIFT)
-	p->p_pctcpu += (hz == 100)?
-		((fixpt_t) p->p_cpticks) << (FSHIFT - CCPU_SHIFT):
-	        	100 * (((fixpt_t) p->p_cpticks)
-			<< (FSHIFT - CCPU_SHIFT)) / hz;
-#else
-	p->p_pctcpu += ((FSCALE - ccpu) * (p->p_cpticks * FSCALE / hz)) >> FSHIFT;
-#endif
-	p->p_cpticks = 0;
-}
-
-void
 schedcpu(arg)
 	void *arg;
 {
 	register struct proc *p;
-	register int a;
+	register int a, s;
 
 	wakeup((caddr_t)&lbolt);
 	for (p = allproc; p != NULL; p = p->p_nxt) {
@@ -92,9 +70,22 @@ schedcpu(arg)
 			if (p->p_slptime != 127)
 				p->p_slptime++;
 		p->p_pctcpu = (p->p_pctcpu * ccpu) >> FSHIFT;
-		if (p->p_slptime > 1)
+		if (p->p_slptime > 1) {
 			continue;
-		ccpu_shift(p);
+		}
+		s = splstatclock();			/* prevent state changes */
+		/*
+		 * p_pctcpu is only for ps.
+		 */
+#if	(FSHIFT >= CCPU_SHIFT)
+		p->p_pctcpu += (hz == 100)?
+			((fixpt_t) p->p_cpticks) << (FSHIFT - CCPU_SHIFT):
+		        	100 * (((fixpt_t) p->p_cpticks)
+				<< (FSHIFT - CCPU_SHIFT)) / hz;
+#else
+		p->p_pctcpu += ((FSCALE - ccpu) * (p->p_cpticks * FSCALE / hz)) >> FSHIFT;
+#endif
+		p->p_cpticks = 0;
 		a = (p->p_cpu & 0377) * SCHMAG + p->p_nice;
 		if (a < 0)
 			a = 0;

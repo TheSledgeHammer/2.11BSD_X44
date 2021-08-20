@@ -1,3 +1,5 @@
+/*	$NetBSD: db.c,v 1.13 2003/08/07 16:42:42 agc Exp $	*/
+
 /*-
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,10 +29,16 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)db.c	8.4 (Berkeley) 2/21/94";
+#else
+__RCSID("$NetBSD: db.c,v 1.13 2003/08/07 16:42:42 agc Exp $");
+#endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
 #include <sys/types.h>
 
 #include <errno.h>
@@ -43,11 +47,17 @@ static char sccsid[] = "@(#)db.c	8.4 (Berkeley) 2/21/94";
 #include <stdio.h>
 
 #include <db.h>
+static int __dberr __P((void));
+
+#ifdef __weak_alias
+__weak_alias(dbopen,_dbopen)
+#endif
 
 DB *
 dbopen(fname, flags, mode, type, openinfo)
 	const char *fname;
-	int flags, mode;
+	int flags;
+	mode_t mode;
 	DBTYPE type;
 	const void *openinfo;
 {
@@ -61,13 +71,13 @@ dbopen(fname, flags, mode, type, openinfo)
 		switch (type) {
 		case DB_BTREE:
 			return (__bt_open(fname, flags & USE_OPEN_FLAGS,
-			    mode, openinfo, flags & DB_FLAGS));
+			    mode, openinfo, (int)(flags & DB_FLAGS)));
 		case DB_HASH:
 			return (__hash_open(fname, flags & USE_OPEN_FLAGS,
-			    mode, openinfo, flags & DB_FLAGS));
+			    mode, openinfo, (int)(flags & DB_FLAGS)));
 		case DB_RECNO:
 			return (__rec_open(fname, flags & USE_OPEN_FLAGS,
-			    mode, openinfo, flags & DB_FLAGS));
+			    mode, openinfo, (int)(flags & DB_FLAGS)));
 		}
 	errno = EINVAL;
 	return (NULL);
@@ -90,10 +100,10 @@ __dbpanic(dbp)
 	DB *dbp;
 {
 	/* The only thing that can succeed is a close. */
-	dbp->del = (int (*)())__dberr;
-	dbp->fd = (int (*)())__dberr;
-	dbp->get = (int (*)())__dberr;
-	dbp->put = (int (*)())__dberr;
-	dbp->seq = (int (*)())__dberr;
-	dbp->sync = (int (*)())__dberr;
+	dbp->del = (int (*)(const struct __db *, const DBT*, u_int))__dberr;
+	dbp->fd = (int (*)(const struct __db *))__dberr;
+	dbp->get = (int (*)(const struct __db *, const DBT*, DBT *, u_int))__dberr;
+	dbp->put = (int (*)(const struct __db *, DBT *, const DBT *, u_int))__dberr;
+	dbp->seq = (int (*)(const struct __db *, DBT *, DBT *, u_int))__dberr;
+	dbp->sync = (int (*)(const struct __db *, u_int))__dberr;
 }

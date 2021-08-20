@@ -278,7 +278,6 @@ isa_intr_establish(ic, irq, type, level, ih_fun, ih_arg)
 	ih->ih_arg = ih_arg;
 	ih->ih_next = NULL;
 	ih->ih_level = level;
-	ih->ih_flags = flags;
 	ih->ih_irq = irq;
 	*p = ih;
 

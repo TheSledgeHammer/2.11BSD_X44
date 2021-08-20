@@ -1,3 +1,5 @@
+/*	$NetBSD: ndbm.h,v 1.10 2003/08/07 09:44:10 agc Exp $	*/
+
 /*-
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -13,11 +15,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -39,39 +37,52 @@
 #ifndef _NDBM_H_
 #define	_NDBM_H_
 
+#include <sys/cdefs.h>
 #include <db.h>
 
+#if defined(_NETBSD_SOURCE)
 /* Map dbm interface onto db(3). */
 #define DBM_RDONLY	O_RDONLY
+#endif
 
 /* Flags to dbm_store(). */
 #define DBM_INSERT      0
 #define DBM_REPLACE     1
 
+#if defined(_NETBSD_SOURCE)
 /*
  * The db(3) support for ndbm(3) always appends this suffix to the
  * file name to avoid overwriting the user's original database.
  */
 #define	DBM_SUFFIX	".db"
+#endif
 
 typedef struct {
-	char 	*dptr;
-	int 	dsize;
+	void 	*dptr;
+	int 	dsize;		/* XXX */
 } datum;
 
 typedef DB DBM;
+#if defined(_NETBSD_SOURCE)
 #define	dbm_pagfno(a)	DBM_PAGFNO_NOT_AVAILABLE
+#endif
 
 __BEGIN_DECLS
-void	dbm_close (DBM *);
-int	 	dbm_delete (DBM *, datum);
-datum	dbm_fetch (DBM *, datum);
-datum	dbm_firstkey (DBM *);
-long	dbm_forder (DBM *, datum);
-datum	dbm_nextkey (DBM *);
-DBM		*dbm_open (const char *, int, int);
-int	 	dbm_store (DBM *, datum, datum, int);
-int	 	dbm_dirfno (DBM *);
+void	 dbm_close (DBM *);
+int		 dbm_delete (DBM *, datum);
+datum	 dbm_fetch (DBM *, datum);
+datum	 dbm_firstkey (DBM *);
+#if defined(_NETBSD_SOURCE)
+long	 dbm_forder (DBM *, datum);
+#endif
+datum	 dbm_nextkey (DBM *);
+DBM		 *dbm_open (const char *, int, mode_t);
+int		 dbm_store (DBM *, datum, datum, int);
+int		 dbm_error (DBM *);
+int		 dbm_clearerr (DBM *);
+#if defined(_NETBSD_SOURCE)
+int		 dbm_dirfno (DBM *);
+#endif
 __END_DECLS
 
 #endif /* !_NDBM_H_ */

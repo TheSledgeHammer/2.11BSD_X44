@@ -1,3 +1,5 @@
+/*	$NetBSD: ndbm.c,v 1.17.2.1 2004/04/30 03:46:39 jmc Exp $	*/
+
 /*-
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -13,11 +15,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -34,22 +32,41 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ndbm.c	8.2 (Berkeley) 9/11/93";
+#if 0
+static char sccsid[] = "@(#)ndbm.c	8.4 (Berkeley) 7/21/94";
+#else
+__RCSID("$NetBSD: ndbm.c,v 1.17.2.1 2004/04/30 03:46:39 jmc Exp $");
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 /*
  * This package provides a dbm compatible interface to the new hashing
  * package described in db(3).
  */
-
+#include "namespace.h"
 #include <sys/param.h>
 
-#include <ndbm.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 
+#include <ndbm.h>
 #include "hash.h"
+
+#ifdef __weak_alias
+__weak_alias(dbm_clearerr,_dbm_clearerr)
+__weak_alias(dbm_close,_dbm_close)
+__weak_alias(dbm_delete,_dbm_delete)
+__weak_alias(dbm_dirfno,_dbm_dirfno)
+__weak_alias(dbm_error,_dbm_error)
+__weak_alias(dbm_fetch,_dbm_fetch)
+__weak_alias(dbm_firstkey,_dbm_firstkey)
+__weak_alias(dbm_nextkey,_dbm_nextkey)
+__weak_alias(dbm_open,_dbm_open)
+__weak_alias(dbm_store,_dbm_store)
+#endif
 
 /*
  * Returns:
@@ -59,7 +76,8 @@ static char sccsid[] = "@(#)ndbm.c	8.2 (Berkeley) 9/11/93";
 extern DBM *
 dbm_open(file, flags, mode)
 	const char *file;
-	int flags, mode;
+	int flags;
+	mode_t mode;
 {
 	HASHINFO info;
 	char path[MAXPATHLEN];
@@ -67,11 +85,15 @@ dbm_open(file, flags, mode)
 	info.bsize = 4096;
 	info.ffactor = 40;
 	info.nelem = 1;
-	info.cachesize = NULL;
+	info.cachesize = 0;
 	info.hash = NULL;
 	info.lorder = 0;
-	(void)strcpy(path, file);
-	(void)strcat(path, DBM_SUFFIX);
+	(void)strncpy(path, file, sizeof(path) - 1);
+	(void)strncat(path, DBM_SUFFIX, sizeof(path) - strlen(path) - 1);
+	if ((flags & O_ACCMODE) == O_WRONLY) {
+		flags &= ~O_WRONLY;
+		flags |= O_RDWR;
+	}
 	return ((DBM *)__hash_open(path, flags, mode, &info, 0));
 }
 
@@ -92,15 +114,20 @@ dbm_fetch(db, key)
 	DBM *db;
 	datum key;
 {
-	datum retval;
+	datum retdata;
 	int status;
+	DBT dbtkey, dbtretdata;
 
-	status = (db->get)(db, (DBT *)&key, (DBT *)&retval, 0);
+	dbtkey.data = key.dptr;
+	dbtkey.size = key.dsize;
+	status = (db->get)(db, &dbtkey, &dbtretdata, 0);
 	if (status) {
-		retval.dptr = NULL;
-		retval.dsize = 0;
+		dbtretdata.data = NULL;
+		dbtretdata.size = 0;
 	}
-	return (retval);
+	retdata.dptr = dbtretdata.data;
+	retdata.dsize = dbtretdata.size;
+	return (retdata);
 }
 
 /*
@@ -113,11 +140,14 @@ dbm_firstkey(db)
 	DBM *db;
 {
 	int status;
-	datum retdata, retkey;
+	datum retkey;
+	DBT dbtretkey, dbtretdata;
 
-	status = (db->seq)(db, (DBT *)&retkey, (DBT *)&retdata, R_FIRST);
+	status = (db->seq)(db, &dbtretkey, &dbtretdata, R_FIRST);
 	if (status)
-		retkey.dptr = NULL;
+		dbtretkey.data = NULL;
+	retkey.dptr = dbtretkey.data;
+	retkey.dsize = dbtretkey.size;
 	return (retkey);
 }
 
@@ -131,13 +161,17 @@ dbm_nextkey(db)
 	DBM *db;
 {
 	int status;
-	datum retdata, retkey;
+	datum retkey;
+	DBT dbtretkey, dbtretdata;
 
-	status = (db->seq)(db, (DBT *)&retkey, (DBT *)&retdata, R_NEXT);
+	status = (db->seq)(db, &dbtretkey, &dbtretdata, R_NEXT);
 	if (status)
-		retkey.dptr = NULL;
+		dbtretkey.data = NULL;
+	retkey.dptr = dbtretkey.data;
+	retkey.dsize = dbtretkey.size;
 	return (retkey);
 }
+
 /*
  * Returns:
  *	 0 on success
@@ -149,8 +183,11 @@ dbm_delete(db, key)
 	datum key;
 {
 	int status;
+	DBT dbtkey;
 
-	status = (db->del)(db, (DBT *)&key, 0);
+	dbtkey.data = key.dptr;
+	dbtkey.size = key.dsize;
+	status = (db->del)(db, &dbtkey, 0);
 	if (status)
 		return (-1);
 	else
@@ -164,13 +201,19 @@ dbm_delete(db, key)
  *	 1 if DBM_INSERT and entry exists
  */
 extern int
-dbm_store(db, key, content, flags)
+dbm_store(db, key, data, flags)
 	DBM *db;
-	datum key, content;
+	datum key, data;
 	int flags;
 {
-	return ((db->put)(db, (DBT *)&key, (DBT *)&content,
-	    (flags == DBM_INSERT) ? R_NOOVERWRITE : 0));
+	DBT dbtkey, dbtdata;
+
+	dbtkey.data = key.dptr;
+	dbtkey.size = key.dsize;
+	dbtdata.data = data.dptr;
+	dbtdata.size = data.dsize;
+	return ((db->put)(db, &dbtkey, &dbtdata,
+	    (u_int)((flags == DBM_INSERT) ? R_NOOVERWRITE : 0)));
 }
 
 extern int
@@ -180,7 +223,7 @@ dbm_error(db)
 	HTAB *hp;
 
 	hp = (HTAB *)db->internal;
-	return (hp->errno);
+	return (hp->err);
 }
 
 extern int
@@ -190,7 +233,7 @@ dbm_clearerr(db)
 	HTAB *hp;
 
 	hp = (HTAB *)db->internal;
-	hp->errno = 0;
+	hp->err = 0;
 	return (0);
 }
 

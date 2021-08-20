@@ -1,5 +1,7 @@
+/*	$NetBSD: page.h,v 1.7 2003/08/07 16:42:43 agc Exp $	*/
+
 /*-
- * Copyright (c) 1990, 1993
+ * Copyright (c) 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -13,11 +15,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -33,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)page.h	8.1 (Berkeley) 6/6/93
+ *	@(#)page.h	8.2 (Berkeley) 5/31/94
  */
 
 /*
@@ -73,20 +71,20 @@
  * You might as well do this up front.
  */
 
-#define	PAIRSIZE(K,D)	(2*sizeof(u_short) + (K)->size + (D)->size)
-#define BIGOVERHEAD	(4*sizeof(u_short))
-#define KEYSIZE(K)	(4*sizeof(u_short) + (K)->size);
-#define OVFLSIZE	(2*sizeof(u_short))
+#define	PAIRSIZE(K,D)	(2*sizeof(u_int16_t) + (K)->size + (D)->size)
+#define BIGOVERHEAD	(4*sizeof(u_int16_t))
+#define KEYSIZE(K)	(4*sizeof(u_int16_t) + (K)->size);
+#define OVFLSIZE	(2*sizeof(u_int16_t))
 #define FREESPACE(P)	((P)[(P)[0]+1])
 #define	OFFSET(P)	((P)[(P)[0]+2])
 #define PAIRFITS(P,K,D) \
 	(((P)[2] >= REAL_KEY) && \
 	    (PAIRSIZE((K),(D)) + OVFLSIZE) <= FREESPACE((P)))
-#define PAGE_META(N)	(((N)+3) * sizeof(u_short))
+#define PAGE_META(N)	(((N)+3) * sizeof(u_int16_t))
 
 typedef struct {
 	BUFHEAD *newp;
 	BUFHEAD *oldp;
 	BUFHEAD *nextp;
-	u_short next_addr;
+	u_int16_t next_addr;
 }       SPLIT_RETURN;

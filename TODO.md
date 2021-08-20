@@ -8,20 +8,37 @@ A General todo list. Don't hesitate to add to this list. :)
 
 # usr/ (User & OS Libraries):
 ## lib:
-- libkvm
-		
+- libc:
+	- hash: u/int32 issues
+
 ## libexec:
 
 ## sbin:
 - fsck: replace references to ufs_daddr_t
-		
+
+## share:
+
+## tools:
+
+## usr.bin:
+- xinstall:
+	- can't use libc hash (see lib above).
+	- using cksum as workaround
+
+## usr.lib:
+- libkvm
+
+## usr.sbin:
+- mtree: 
+	- can't use libc hash (see lib above). 
+	- using cksum as workaround
+
 # usr/sys/ (Kernel):
 ## conf:
 
 ## kern:
-- event/kqfilter: implemented but unused.
-- diskslice:
-	- devsw: lines 525, 567, 643, 725 & 728
+- event/kqfilter: implement in device io
+- diskslices
 	
 ## arch:
 - i386/x86: (Merged under i386)
@@ -37,13 +54,8 @@ A General todo list. Don't hesitate to add to this list. :)
 	
 ## dev:
 - Essential Driver Support:
-	- usb: 								Work in progress
+	- usb:
 		- add: vhci, xhci
-	- wscons/pccons:						Work in progress
-		- double check wscons for errors/mistakes
-- cfops update:
-	- double check com.c needs cfdriver declaration
-	- to use detach & activate routines
 	
 ## fs:
 

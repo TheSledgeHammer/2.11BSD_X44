@@ -33,10 +33,6 @@ CPPFLAGS+=	-DMLIBDIR=\"${MLIBDIR}\"
 
 CPPFLAGS+=	-DNLS
 
-.if (${USE_YP} != "no")
-CPPFLAGS+=	-DYP
-.endif
-
 # Set lint to exit on warnings
 #LINTFLAGS+=	-w
 # ignore 'empty translation unit' warnings.

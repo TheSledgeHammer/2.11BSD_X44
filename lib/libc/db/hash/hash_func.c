@@ -1,3 +1,5 @@
+/*	$NetBSD: hash_func.c,v 1.9.2.1 2004/06/22 07:15:27 tron Exp $	*/
+
 /*-
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -13,11 +15,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -34,8 +32,17 @@
  * SUCH DAMAGE.
  */
 
+#if HAVE_NBTOOL_CONFIG_H
+#include "nbtool_config.h"
+#endif
+
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
+#if 0
 static char sccsid[] = "@(#)hash_func.c	8.2 (Berkeley) 2/21/94";
+#else
+__RCSID("$NetBSD: hash_func.c,v 1.9.2.1 2004/06/22 07:15:27 tron Exp $");
+#endif
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -45,14 +52,16 @@ static char sccsid[] = "@(#)hash_func.c	8.2 (Berkeley) 2/21/94";
 #include "page.h"
 #include "extern.h"
 
-static u_int32_t hash1 __P((const void *, size_t));
-static u_int32_t hash2 __P((const void *, size_t));
-static u_int32_t hash3 __P((const void *, size_t));
-static u_int32_t hash4 __P((const void *, size_t));
+#if 0
+static u_int32_t hash1 __P((const void *, size_t)) __attribute__((__unused__));
+static u_int32_t hash2 __P((const void *, size_t)) __attribute__((__unused__));
+static u_int32_t hash3 __P((const void *, size_t)) __attribute__((__unused__));
+#endif
+static u_int32_t hash4 __P((const void *, size_t)) __attribute__((__unused__));
 
 /* Global default hash function */
 u_int32_t (*__default_hash) __P((const void *, size_t)) = hash4;
-
+#if 0
 /*
  * HASH FUNCTIONS
  *
@@ -160,6 +169,7 @@ hash3(keyarg, len)
 	}
 	return (h);
 }
+#endif
 
 /* Hash function from Chris Torek. */
 static u_int32_t

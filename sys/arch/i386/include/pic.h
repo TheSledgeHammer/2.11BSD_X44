@@ -110,7 +110,6 @@ struct intrhand {
 	struct intrhand 		*ih_next;
     struct intrhand 		*ih_prev;
 	int						ih_level;
-	int						ih_flags;
 	int						ih_irq;
 };
 

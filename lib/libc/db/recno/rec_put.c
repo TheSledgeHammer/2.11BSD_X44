@@ -1,5 +1,7 @@
+/*	$NetBSD: rec_put.c,v 1.13 2003/08/07 16:42:44 agc Exp $	*/
+
 /*-
- * Copyright (c) 1990, 1993
+ * Copyright (c) 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -31,10 +29,16 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_put.c	8.3 (Berkeley) 3/1/94";
+#if 0
+static char sccsid[] = "@(#)rec_put.c	8.7 (Berkeley) 8/18/94";
+#else
+__RCSID("$NetBSD: rec_put.c,v 1.13 2003/08/07 16:42:44 agc Exp $");
+#endif
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
 #include <sys/types.h>
 
 #include <errno.h>
@@ -66,7 +70,7 @@ __rec_put(dbp, key, data, flags)
 	u_int flags;
 {
 	BTREE *t;
-	DBT tdata;
+	DBT fdata, tdata;
 	recno_t nrec;
 	int status;
 
@@ -78,11 +82,38 @@ __rec_put(dbp, key, data, flags)
 		t->bt_pinned = NULL;
 	}
 
+	/*
+	 * If using fixed-length records, and the record is long, return
+	 * EINVAL.  If it's short, pad it out.  Use the record data return
+	 * memory, it's only short-term.
+	 */
+	if (F_ISSET(t, R_FIXLEN) && data->size != t->bt_reclen) {
+		if (data->size > t->bt_reclen)
+			goto einval;
+
+		if (t->bt_rdata.size < t->bt_reclen) {
+			t->bt_rdata.data = t->bt_rdata.data == NULL ?
+			    malloc(t->bt_reclen) :
+			    realloc(t->bt_rdata.data, t->bt_reclen);
+			if (t->bt_rdata.data == NULL)
+				return (RET_ERROR);
+			t->bt_rdata.size = t->bt_reclen;
+		}
+		memmove(t->bt_rdata.data, data->data, data->size);
+		memset((char *)t->bt_rdata.data + data->size,
+		    t->bt_bval, t->bt_reclen - data->size);
+		fdata.data = t->bt_rdata.data;
+		fdata.size = t->bt_reclen;
+	} else {
+		fdata.data = data->data;
+		fdata.size = data->size;
+	}
+
 	switch (flags) {
 	case R_CURSOR:
-		if (!ISSET(t, B_SEQINIT))
+		if (!F_ISSET(&t->bt_cursor, CURS_INIT))
 			goto einval;
-		nrec = t->bt_rcursor;
+		nrec = t->bt_cursor.rcursor;
 		break;
 	case R_SETCURSOR:
 		if ((nrec = *(recno_t *)key->data) == 0)
@@ -115,11 +146,11 @@ einval:		errno = EINVAL;
 	 * already in the database.  If skipping records, create empty ones.
 	 */
 	if (nrec > t->bt_nrecs) {
-		if (!ISSET(t, R_EOF | R_INMEM) &&
+		if (!F_ISSET(t, R_EOF | R_INMEM) &&
 		    t->bt_irec(t, nrec) == RET_ERROR)
 			return (RET_ERROR);
 		if (nrec > t->bt_nrecs + 1) {
-			if (ISSET(t, R_FIXLEN)) {
+			if (F_ISSET(t, R_FIXLEN)) {
 				if ((tdata.data =
 				    (void *)malloc(t->bt_reclen)) == NULL)
 					return (RET_ERROR);
@@ -133,18 +164,18 @@ einval:		errno = EINVAL;
 				if (__rec_iput(t,
 				    t->bt_nrecs, &tdata, 0) != RET_SUCCESS)
 					return (RET_ERROR);
-			if (ISSET(t, R_FIXLEN))
+			if (F_ISSET(t, R_FIXLEN))
 				free(tdata.data);
 		}
 	}
 
-	if ((status = __rec_iput(t, nrec - 1, data, flags)) != RET_SUCCESS)
+	if ((status = __rec_iput(t, nrec - 1, &fdata, flags)) != RET_SUCCESS)
 		return (status);
 
 	if (flags == R_SETCURSOR)
-		t->bt_rcursor = nrec;
+		t->bt_cursor.rcursor = nrec;
 	
-	SET(t, R_MODIFIED);
+	F_SET(t, R_MODIFIED);
 	return (__rec_ret(t, NULL, nrec, key, NULL));
 }
 
@@ -169,9 +200,9 @@ __rec_iput(t, nrec, data, flags)
 	DBT tdata;
 	EPG *e;
 	PAGE *h;
-	indx_t index, nxtindex;
+	indx_t idx, nxtindex;
 	pgno_t pg;
-	size_t nbytes;
+	u_int32_t nbytes;
 	int dflags, status;
 	char *dest, db[NOVFLSIZE];
 
@@ -186,8 +217,8 @@ __rec_iput(t, nrec, data, flags)
 			return (RET_ERROR);
 		tdata.data = db;
 		tdata.size = NOVFLSIZE;
-		*(pgno_t *)db = pg;
-		*(size_t *)(db + sizeof(pgno_t)) = data->size;
+		*(pgno_t *)(void *)db = pg;
+		*(u_int32_t *)(void *)(db + sizeof(pgno_t)) = data->size;
 		dflags = P_BIGDATA;
 		data = &tdata;
 	} else
@@ -200,7 +231,7 @@ __rec_iput(t, nrec, data, flags)
 		return (RET_ERROR);
 
 	h = e->page;
-	index = e->index;
+	idx = e->index;
 
 	/*
 	 * Add the specified key/data pair to the tree.  The R_IAFTER and
@@ -210,13 +241,13 @@ __rec_iput(t, nrec, data, flags)
 	 */
 	switch (flags) {
 	case R_IAFTER:
-		++index;
+		++idx;
 		break;
 	case R_IBEFORE:
 		break;
 	default:
 		if (nrec < t->bt_nrecs &&
-		    __rec_dleaf(t, h, index) == RET_ERROR) {
+		    __rec_dleaf(t, h, (u_int32_t)idx) == RET_ERROR) {
 			mpool_put(t->bt_mp, h, 0);
 			return (RET_ERROR);
 		}
@@ -229,24 +260,25 @@ __rec_iput(t, nrec, data, flags)
 	 * the offset array, shift the pointers up.
 	 */
 	nbytes = NRLEAFDBT(data->size);
-	if (h->upper - h->lower < nbytes + sizeof(indx_t)) {
-		status = __bt_split(t, h, NULL, data, dflags, nbytes, index);
+	if ((u_int32_t) (h->upper - h->lower) < nbytes + sizeof(indx_t)) {
+		status = __bt_split(t, h, NULL, data, dflags, nbytes,
+		    (u_int32_t)idx);
 		if (status == RET_SUCCESS)
 			++t->bt_nrecs;
 		return (status);
 	}
 
-	if (index < (nxtindex = NEXTINDEX(h)))
-		memmove(h->linp + index + 1, h->linp + index,
-		    (nxtindex - index) * sizeof(indx_t));
+	if (idx < (nxtindex = NEXTINDEX(h)))
+		memmove(h->linp + idx + 1, h->linp + idx,
+		    (nxtindex - idx) * sizeof(indx_t));
 	h->lower += sizeof(indx_t);
 
-	h->linp[index] = h->upper -= nbytes;
-	dest = (char *)h + h->upper;
+	h->linp[idx] = h->upper -= nbytes;
+	dest = (char *)(void *)h + h->upper;
 	WR_RLEAF(dest, data, dflags);
 
 	++t->bt_nrecs;
-	SET(t, B_MODIFIED);
+	F_SET(t, B_MODIFIED);
 	mpool_put(t->bt_mp, h, MPOOL_DIRTY);
 
 	return (RET_SUCCESS);

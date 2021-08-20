@@ -1,5 +1,7 @@
+/*	$NetBSD: extern.h,v 1.9 2003/08/07 16:42:41 agc Exp $	*/
+
 /*-
- * Copyright (c) 1991, 1993
+ * Copyright (c) 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -10,11 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -30,41 +28,45 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)extern.h	8.3 (Berkeley) 2/21/94
+ *	@(#)extern.h	8.10 (Berkeley) 7/20/94
  */
 
-int	 __bt_close (DB *);
-int	 __bt_cmp (BTREE *, const DBT *, EPG *);
-int	 __bt_crsrdel (BTREE *, EPGNO *);
-int	 __bt_defcmp (const DBT *, const DBT *);
-size_t	 __bt_defpfx (const DBT *, const DBT *);
-int	 __bt_delete (const DB *, const DBT *, u_int);
-int	 __bt_dleaf (BTREE *, PAGE *, int);
-int	 __bt_fd (const DB *);
-EPG	*__bt_first (BTREE *, const DBT *, int *);
-int	 __bt_free (BTREE *, PAGE *);
-int	 __bt_get (const DB *, const DBT *, DBT *, u_int);
-PAGE	*__bt_new (BTREE *, pgno_t *);
-void	 __bt_pgin (void *, pgno_t, void *);
-void	 __bt_pgout (void *, pgno_t, void *);
-int	 __bt_push (BTREE *, pgno_t, int);
-int	 __bt_put (const DB *dbp, DBT *, const DBT *, u_int);
-int	 __bt_ret (BTREE *, EPG *, DBT *, DBT *);
-EPG	*__bt_search (BTREE *, const DBT *, int *);
-int	 __bt_seq (const DB *, DBT *, DBT *, u_int);
-int	 __bt_split (BTREE *, PAGE *,
-	    const DBT *, const DBT *, int, size_t, indx_t);
-int	 __bt_sync (const DB *, u_int);
+#ifndef _BTREE_EXTERN_H_
+#define _BTREE_EXTERN_H_
+int	 __bt_close __P((DB *));
+int	 __bt_cmp __P((BTREE *, const DBT *, EPG *));
+int	 __bt_crsrdel __P((BTREE *, EPGNO *));
+int	 __bt_defcmp __P((const DBT *, const DBT *));
+size_t	 __bt_defpfx __P((const DBT *, const DBT *));
+int	 __bt_delete __P((const DB *, const DBT *, u_int));
+int	 __bt_dleaf __P((BTREE *, const DBT *, PAGE *, u_int));
+int	 __bt_fd __P((const DB *));
+int	 __bt_free __P((BTREE *, PAGE *));
+int	 __bt_get __P((const DB *, const DBT *, DBT *, u_int));
+PAGE	*__bt_new __P((BTREE *, pgno_t *));
+void	 __bt_pgin __P((void *, pgno_t, void *));
+void	 __bt_pgout __P((void *, pgno_t, void *));
+int	 __bt_push __P((BTREE *, pgno_t, int));
+int	 __bt_put __P((const DB *dbp, DBT *, const DBT *, u_int));
+int	 __bt_ret __P((BTREE *, EPG *, DBT *, DBT *, DBT *, DBT *, int));
+EPG	*__bt_search __P((BTREE *, const DBT *, int *));
+int	 __bt_seq __P((const DB *, DBT *, DBT *, u_int));
+void	 __bt_setcur __P((BTREE *, pgno_t, u_int));
+int	 __bt_split __P((BTREE *, PAGE *,
+	    const DBT *, const DBT *, int, size_t, u_int32_t));
+int	 __bt_sync __P((const DB *, u_int));
 
-int	 __ovfl_delete (BTREE *, void *);
-int	 __ovfl_get (BTREE *, void *, size_t *, char **, size_t *);
-int	 __ovfl_put (BTREE *, const DBT *, pgno_t *);
+int	 __ovfl_delete __P((BTREE *, void *));
+int	 __ovfl_get __P((BTREE *, void *, size_t *, void **, size_t *));
+int	 __ovfl_put __P((BTREE *, const DBT *, pgno_t *));
 
 #ifdef DEBUG
-void	 __bt_dnpage (DB *, pgno_t);
-void	 __bt_dpage (PAGE *);
-void	 __bt_dump (DB *);
+void	 __bt_dmpage __P((PAGE *));
+void	 __bt_dnpage __P((DB *, pgno_t));
+void	 __bt_dpage __P((PAGE *));
+void	 __bt_dump __P((DB *));
 #endif
 #ifdef STATISTICS
-void	 __bt_stat (DB *);
+void	 __bt_stat __P((DB *));
 #endif
+#endif /* _BTREE_EXTERN_H_ */

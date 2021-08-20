@@ -54,11 +54,11 @@
  * Mode 2 is historical and deprecated by the Revision 2.0 specification.
  */
 union i386_pci_tag_u {
-	u_int32_t mode1;
+	u_int32_t 		mode1;
 	struct {
-		u_int16_t port;
-		u_int8_t enable;
-		u_int8_t forward;
+		u_int16_t 	port;
+		u_int8_t 	enable;
+		u_int8_t 	forward;
 	} mode2;
 };
 
