@@ -39,7 +39,7 @@ __RCSID("$NetBSD: md2.c,v 1.7 2012/06/25 22:32:44 abs Exp $");
 #include <sys/types.h>
 
 #include <assert.h>
-#include "../../../../include/hash/md2.h"
+#include <md2.h>
 #include <string.h>
 
 #if HAVE_NBTOOL_CONFIG_H
@@ -164,7 +164,7 @@ MD2Final(unsigned char digest[16], MD2_CTX *context)
 /*static*/ void
 MD2Transform(MD2_CTX *context)
 {
-	uint32_t l, j, k, t;
+	u_int32_t l, j, k, t;
 
 	/* set block "3" and update "checksum" */
 	for (l = context->C[15], j = 0; j < 16; j++) {

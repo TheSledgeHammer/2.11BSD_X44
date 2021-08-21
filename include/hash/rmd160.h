@@ -33,15 +33,16 @@
 
 /* RMD160 context. */
 typedef struct RMD160Context {
-	uint32_t 	state[5];						/* state */
-	uint64_t 	count;							/* number of bits, modulo 2^64 */
+	u_int32_t 	state[5];						/* state */
+	u_int64_t 	count;							/* number of bits, modulo 2^64 */
 	u_char 		buffer[RMD160_BLOCK_LENGTH];	/* input buffer */
+	u_int32_t	buflen;							/* number of chars in bbuffer */
 } RMD160_CTX;
 
 __BEGIN_DECLS
 void	 RMD160Init(RMD160_CTX *);
-void	 RMD160Transform(uint32_t [5], const u_char [64]);
-void	 RMD160Update(RMD160_CTX *, const u_char *, uint32_t);
+void	 RMD160Transform(u_int32_t [5], const u_char [64]);
+void	 RMD160Update(RMD160_CTX *, const u_char *, u_int32_t);
 void	 RMD160Final(u_char [RMD160_DIGEST_LENGTH], RMD160_CTX *);
 #ifndef _KERNEL
 char	*RMD160End(RMD160_CTX *, char *);

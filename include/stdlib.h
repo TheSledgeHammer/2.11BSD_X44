@@ -53,7 +53,7 @@ typedef	_BSD_SIZE_T_	size_t;
 #undef	_BSD_SIZE_T_
 #endif
 
-#if defined(_BSD_WCHAR_T_) && !defined(__cplusplus)
+#ifdef	_BSD_WCHAR_T_
 typedef	_BSD_WCHAR_T_	wchar_t;
 #undef	_BSD_WCHAR_T_
 #endif
@@ -158,13 +158,13 @@ void	*reallocarray(void *, size_t, size_t);
 int		reallocarr(void *, size_t, size_t);
 
 #ifndef __STRICT_ANSI__
-long long
-		strtoq (const char *, char **, int);
-unsigned long long
-		strtouq (const char *, char **, int);
+long long strtoq (const char *, char **, int);
+unsigned long long strtouq (const char *, char **, int);
 #endif
 #endif
 
+intmax_t	strtoimax (const char * __restrict, char ** __restrict, int);
+uintmax_t	strtoumax (const char * __restrict, char ** __restrict, int);
 
 __END_DECLS
 #endif /* _STDLIB_H_ */

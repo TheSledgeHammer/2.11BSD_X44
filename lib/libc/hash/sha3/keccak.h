@@ -36,7 +36,7 @@
 #define	keccakf1600	_netbsd_keccakf1600
 
 __BEGIN_DECLS
-void	keccakf1600(uint64_t[25]);
+void	keccakf1600(u_int64_t[25]);
 __END_DECLS
 
 #endif	/* KECCAK_H */

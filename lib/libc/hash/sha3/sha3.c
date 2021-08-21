@@ -57,7 +57,7 @@ __RCSID("$NetBSD: sha3.c,v 1.2 2020/05/30 18:40:28 riastradh Exp $");
 #endif
 
 #include <sys/endian.h>
-#include "../../../../include/hash/sha3.h"
+#include <sha3.h>
 
 #include "keccak.h"
 
@@ -114,9 +114,9 @@ sha3_init(struct sha3 *C, unsigned rw)
 }
 
 static void
-sha3_update(struct sha3 *C, const uint8_t *data, size_t len, unsigned rw)
+sha3_update(struct sha3 *C, const u_int8_t *data, size_t len, unsigned rw)
 {
-	uint64_t T;
+	u_int64_t T;
 	unsigned ib, iw;		/* index of byte/word */
 
 	assert(0 < C->nb);
@@ -125,7 +125,7 @@ sha3_update(struct sha3 *C, const uint8_t *data, size_t len, unsigned rw)
 	if ((C->nb % 8) != 0) {
 		T = 0;
 		for (ib = 0; ib < MIN(len, C->nb % 8); ib++)
-			T |= (uint64_t)data[ib] << (8*ib);
+			T |= (u_int64_t)data[ib] << (8*ib);
 		C->A[rw - (C->nb + 7)/8] ^= T << (8*(8 - (C->nb % 8)));
 		C->nb -= ib;
 		data += ib;
@@ -186,14 +186,14 @@ partial:
 	assert((C->nb % 8) == 0);
 	T = 0;
 	for (ib = 0; ib < len; ib++)
-		T |= (uint64_t)data[ib] << (8*ib);
+		T |= (u_int64_t)data[ib] << (8*ib);
 	C->A[rw - C->nb/8] ^= T;
 	C->nb -= ib;
 	assert(0 < C->nb);
 }
 
 static void
-sha3_final(uint8_t *h, unsigned d, struct sha3 *C, unsigned rw)
+sha3_final(u_int8_t *h, unsigned d, struct sha3 *C, unsigned rw)
 {
 	unsigned nw, iw;
 
@@ -204,7 +204,7 @@ sha3_final(uint8_t *h, unsigned d, struct sha3 *C, unsigned rw)
 	nw = (C->nb + 7)/8;
 	assert(0 < nw);
 	assert(nw <= rw);
-	C->A[rw - nw] ^= (uint64_t)0x06 << (8*(8*nw - C->nb));
+	C->A[rw - nw] ^= (u_int64_t)0x06 << (8*(8*nw - C->nb));
 	C->A[rw - 1] ^= 0x8000000000000000ULL;
 
 	/* Permute one last time.  */
@@ -217,7 +217,7 @@ sha3_final(uint8_t *h, unsigned d, struct sha3 *C, unsigned rw)
 	d -= 8*iw;
 	if (0 < d) {
 		/* For SHA3-224, we need to expose a partial word.  */
-		uint64_t T = C->A[iw];
+		u_int64_t T = C->A[iw];
 		do {
 			*h++ = T & 0xff;
 			T >>= 8;
@@ -228,7 +228,7 @@ sha3_final(uint8_t *h, unsigned d, struct sha3 *C, unsigned rw)
 }
 
 static void
-shake_final(uint8_t *h, unsigned d, struct sha3 *C, unsigned rw)
+shake_final(u_int8_t *h, unsigned d, struct sha3 *C, unsigned rw)
 {
 	unsigned nw, iw;
 
@@ -238,7 +238,7 @@ shake_final(uint8_t *h, unsigned d, struct sha3 *C, unsigned rw)
 	nw = (C->nb + 7)/8;
 	assert(0 < nw);
 	assert(nw <= rw);
-	C->A[rw - nw] ^= (uint64_t)0x1f << (8*(8*nw - C->nb));
+	C->A[rw - nw] ^= (u_int64_t)0x1f << (8*(8*nw - C->nb));
 	C->A[rw - 1] ^= 0x8000000000000000ULL;
 
 	/* Permute, reveal first rw words of state, repeat.  */
@@ -266,7 +266,7 @@ shake_final(uint8_t *h, unsigned d, struct sha3 *C, unsigned rw)
 		 * reveal them.
 		 */
 		if (0 < d) {
-			uint64_t T = C->A[iw];
+			u_int64_t T = C->A[iw];
 			do {
 				*h++ = T & 0xff;
 				T >>= 8;
@@ -286,14 +286,14 @@ SHA3_224_Init(SHA3_224_CTX *C)
 }
 
 void
-SHA3_224_Update(SHA3_224_CTX *C, const uint8_t *data, size_t len)
+SHA3_224_Update(SHA3_224_CTX *C, const u_int8_t *data, size_t len)
 {
 
 	sha3_update(&C->C224, data, len, sha3_rate(SHA3_224_DIGEST_LENGTH));
 }
 
 void
-SHA3_224_Final(uint8_t h[SHA3_224_DIGEST_LENGTH], SHA3_224_CTX *C)
+SHA3_224_Final(u_int8_t h[SHA3_224_DIGEST_LENGTH], SHA3_224_CTX *C)
 {
 
 	sha3_final(h, SHA3_224_DIGEST_LENGTH, &C->C224,
@@ -308,14 +308,14 @@ SHA3_256_Init(SHA3_256_CTX *C)
 }
 
 void
-SHA3_256_Update(SHA3_256_CTX *C, const uint8_t *data, size_t len)
+SHA3_256_Update(SHA3_256_CTX *C, const u_int8_t *data, size_t len)
 {
 
 	sha3_update(&C->C256, data, len, sha3_rate(SHA3_256_DIGEST_LENGTH));
 }
 
 void
-SHA3_256_Final(uint8_t h[SHA3_256_DIGEST_LENGTH], SHA3_256_CTX *C)
+SHA3_256_Final(u_int8_t h[SHA3_256_DIGEST_LENGTH], SHA3_256_CTX *C)
 {
 
 	sha3_final(h, SHA3_256_DIGEST_LENGTH, &C->C256,
@@ -330,14 +330,14 @@ SHA3_384_Init(SHA3_384_CTX *C)
 }
 
 void
-SHA3_384_Update(SHA3_384_CTX *C, const uint8_t *data, size_t len)
+SHA3_384_Update(SHA3_384_CTX *C, const u_int8_t *data, size_t len)
 {
 
 	sha3_update(&C->C384, data, len, sha3_rate(SHA3_384_DIGEST_LENGTH));
 }
 
 void
-SHA3_384_Final(uint8_t h[SHA3_384_DIGEST_LENGTH], SHA3_384_CTX *C)
+SHA3_384_Final(u_int8_t h[SHA3_384_DIGEST_LENGTH], SHA3_384_CTX *C)
 {
 
 	sha3_final(h, SHA3_384_DIGEST_LENGTH, &C->C384,
@@ -352,14 +352,14 @@ SHA3_512_Init(SHA3_512_CTX *C)
 }
 
 void
-SHA3_512_Update(SHA3_512_CTX *C, const uint8_t *data, size_t len)
+SHA3_512_Update(SHA3_512_CTX *C, const u_int8_t *data, size_t len)
 {
 
 	sha3_update(&C->C512, data, len, sha3_rate(SHA3_512_DIGEST_LENGTH));
 }
 
 void
-SHA3_512_Final(uint8_t h[SHA3_512_DIGEST_LENGTH], SHA3_512_CTX *C)
+SHA3_512_Final(u_int8_t h[SHA3_512_DIGEST_LENGTH], SHA3_512_CTX *C)
 {
 
 	sha3_final(h, SHA3_512_DIGEST_LENGTH, &C->C512,
@@ -374,14 +374,14 @@ SHAKE128_Init(SHAKE128_CTX *C)
 }
 
 void
-SHAKE128_Update(SHAKE128_CTX *C, const uint8_t *data, size_t len)
+SHAKE128_Update(SHAKE128_CTX *C, const u_int8_t *data, size_t len)
 {
 
 	sha3_update(&C->C128, data, len, sha3_rate(128/8));
 }
 
 void
-SHAKE128_Final(uint8_t *h, size_t d, SHAKE128_CTX *C)
+SHAKE128_Final(u_int8_t *h, size_t d, SHAKE128_CTX *C)
 {
 
 	shake_final(h, d, &C->C128, sha3_rate(128/8));
@@ -395,25 +395,25 @@ SHAKE256_Init(SHAKE256_CTX *C)
 }
 
 void
-SHAKE256_Update(SHAKE256_CTX *C, const uint8_t *data, size_t len)
+SHAKE256_Update(SHAKE256_CTX *C, const u_int8_t *data, size_t len)
 {
 
 	sha3_update(&C->C256, data, len, sha3_rate(256/8));
 }
 
 void
-SHAKE256_Final(uint8_t *h, size_t d, SHAKE256_CTX *C)
+SHAKE256_Final(u_int8_t *h, size_t d, SHAKE256_CTX *C)
 {
 
 	shake_final(h, d, &C->C256, sha3_rate(256/8));
 }
 
 static void
-sha3_selftest_prng(void *buf, size_t len, uint32_t seed)
+sha3_selftest_prng(void *buf, size_t len, u_int32_t seed)
 {
-	uint8_t *p = buf;
+	u_int8_t *p = buf;
 	size_t n = len;
-	uint32_t t, a, b;
+	u_int32_t t, a, b;
 
 	a = 0xdead4bad * seed;
 	b = 1;
@@ -429,19 +429,19 @@ sha3_selftest_prng(void *buf, size_t len, uint32_t seed)
 int
 SHA3_Selftest(void)
 {
-	static const uint8_t d224_0[] = { /* SHA3-224(0-bit) */
+	static const u_int8_t d224_0[] = { /* SHA3-224(0-bit) */
 		0x6b,0x4e,0x03,0x42,0x36,0x67,0xdb,0xb7,
 		0x3b,0x6e,0x15,0x45,0x4f,0x0e,0xb1,0xab,
 		0xd4,0x59,0x7f,0x9a,0x1b,0x07,0x8e,0x3f,
 		0x5b,0x5a,0x6b,0xc7,
 	};
-	static const uint8_t d256_0[] = { /* SHA3-256(0-bit) */
+	static const u_int8_t d256_0[] = { /* SHA3-256(0-bit) */
 		0xa7,0xff,0xc6,0xf8,0xbf,0x1e,0xd7,0x66,
 		0x51,0xc1,0x47,0x56,0xa0,0x61,0xd6,0x62,
 		0xf5,0x80,0xff,0x4d,0xe4,0x3b,0x49,0xfa,
 		0x82,0xd8,0x0a,0x4b,0x80,0xf8,0x43,0x4a,
 	};
-	static const uint8_t d384_0[] = { /* SHA3-384(0-bit) */
+	static const u_int8_t d384_0[] = { /* SHA3-384(0-bit) */
 		0x0c,0x63,0xa7,0x5b,0x84,0x5e,0x4f,0x7d,
 		0x01,0x10,0x7d,0x85,0x2e,0x4c,0x24,0x85,
 		0xc5,0x1a,0x50,0xaa,0xaa,0x94,0xfc,0x61,
@@ -449,7 +449,7 @@ SHA3_Selftest(void)
 		0xc3,0x71,0x38,0x31,0x26,0x4a,0xdb,0x47,
 		0xfb,0x6b,0xd1,0xe0,0x58,0xd5,0xf0,0x04,
 	};
-	static const uint8_t d512_0[] = { /* SHA3-512(0-bit) */
+	static const u_int8_t d512_0[] = { /* SHA3-512(0-bit) */
 		0xa6,0x9f,0x73,0xcc,0xa2,0x3a,0x9a,0xc5,
 		0xc8,0xb5,0x67,0xdc,0x18,0x5a,0x75,0x6e,
 		0x97,0xc9,0x82,0x16,0x4f,0xe2,0x58,0x59,
@@ -459,14 +459,14 @@ SHA3_Selftest(void)
 		0xf5,0x00,0x19,0x9d,0x95,0xb6,0xd3,0xe3,
 		0x01,0x75,0x85,0x86,0x28,0x1d,0xcd,0x26,
 	};
-	static const uint8_t shake128_0_41[] = { /* SHAKE128(0-bit, 41) */
+	static const u_int8_t shake128_0_41[] = { /* SHAKE128(0-bit, 41) */
 		0x7f,0x9c,0x2b,0xa4,0xe8,0x8f,0x82,0x7d,
 		0x61,0x60,0x45,0x50,0x76,0x05,0x85,0x3e,
 		0xd7,0x3b,0x80,0x93,0xf6,0xef,0xbc,0x88,
 		0xeb,0x1a,0x6e,0xac,0xfa,0x66,0xef,0x26,
 		0x3c,0xb1,0xee,0xa9,0x88,0x00,0x4b,0x93,0x10,
 	};
-	static const uint8_t shake256_0_73[] = { /* SHAKE256(0-bit, 73) */
+	static const u_int8_t shake256_0_73[] = { /* SHAKE256(0-bit, 73) */
 		0x46,0xb9,0xdd,0x2b,0x0b,0xa8,0x8d,0x13,
 		0x23,0x3b,0x3f,0xeb,0x74,0x3e,0xeb,0x24,
 		0x3f,0xcd,0x52,0xea,0x62,0xb8,0x1b,0x82,
@@ -477,19 +477,19 @@ SHA3_Selftest(void)
 		0x40,0x29,0x2e,0xac,0xb3,0xb7,0xc4,0xbe,
 		0x14,0x1e,0x96,0x61,0x6f,0xb1,0x39,0x57,0x69,
 	};
-	static const uint8_t d224_1600[] = { /* SHA3-224(200 * 0xa3) */
+	static const u_int8_t d224_1600[] = { /* SHA3-224(200 * 0xa3) */
 		0x93,0x76,0x81,0x6a,0xba,0x50,0x3f,0x72,
 		0xf9,0x6c,0xe7,0xeb,0x65,0xac,0x09,0x5d,
 		0xee,0xe3,0xbe,0x4b,0xf9,0xbb,0xc2,0xa1,
 		0xcb,0x7e,0x11,0xe0,
 	};
-	static const uint8_t d256_1600[] = { /* SHA3-256(200 * 0xa3) */
+	static const u_int8_t d256_1600[] = { /* SHA3-256(200 * 0xa3) */
 		0x79,0xf3,0x8a,0xde,0xc5,0xc2,0x03,0x07,
 		0xa9,0x8e,0xf7,0x6e,0x83,0x24,0xaf,0xbf,
 		0xd4,0x6c,0xfd,0x81,0xb2,0x2e,0x39,0x73,
 		0xc6,0x5f,0xa1,0xbd,0x9d,0xe3,0x17,0x87,
 	};
-	static const uint8_t d384_1600[] = { /* SHA3-384(200 * 0xa3) */
+	static const u_int8_t d384_1600[] = { /* SHA3-384(200 * 0xa3) */
 		0x18,0x81,0xde,0x2c,0xa7,0xe4,0x1e,0xf9,
 		0x5d,0xc4,0x73,0x2b,0x8f,0x5f,0x00,0x2b,
 		0x18,0x9c,0xc1,0xe4,0x2b,0x74,0x16,0x8e,
@@ -497,7 +497,7 @@ SHA3_Selftest(void)
 		0x76,0x19,0x7a,0x31,0xfd,0x55,0xee,0x98,
 		0x9f,0x2d,0x70,0x50,0xdd,0x47,0x3e,0x8f,
 	};
-	static const uint8_t d512_1600[] = { /* SHA3-512(200 * 0xa3) */
+	static const u_int8_t d512_1600[] = { /* SHA3-512(200 * 0xa3) */
 		0xe7,0x6d,0xfa,0xd2,0x20,0x84,0xa8,0xb1,
 		0x46,0x7f,0xcf,0x2f,0xfa,0x58,0x36,0x1b,
 		0xec,0x76,0x28,0xed,0xf5,0xf3,0xfd,0xc0,
@@ -507,7 +507,7 @@ SHA3_Selftest(void)
 		0xe5,0x89,0xc5,0x1c,0xa1,0xa4,0xa8,0x41,
 		0x6d,0xf6,0x54,0x5a,0x1c,0xe8,0xba,0x00,
 	};
-	static const uint8_t shake128_1600_41[] = {
+	static const u_int8_t shake128_1600_41[] = {
 		/* SHAKE128(200 * 0xa3, 41) */
 		0x13,0x1a,0xb8,0xd2,0xb5,0x94,0x94,0x6b,
 		0x9c,0x81,0x33,0x3f,0x9b,0xb6,0xe0,0xce,
@@ -515,7 +515,7 @@ SHA3_Selftest(void)
 		0xd3,0x91,0x74,0x57,0x38,0x5d,0xa0,0x37,
 		0xcf,0x23,0x2e,0xf7,0x16,0x4a,0x6d,0x1e,0xb4,
 	};
-	static const uint8_t shake256_1600_73[] = {
+	static const u_int8_t shake256_1600_73[] = {
 		/* SHAKE256(200 * 0xa3, 73) */
 		0xcd,0x8a,0x92,0x0e,0xd1,0x41,0xaa,0x04,
 		0x07,0xa2,0x2d,0x59,0x28,0x86,0x52,0xe9,
@@ -527,7 +527,7 @@ SHA3_Selftest(void)
 		0x4c,0xd8,0xe0,0x6f,0x0a,0xe6,0x61,0x0b,
 		0x10,0x48,0xa7,0xf6,0x4e,0x10,0x74,0xcd,0x62,
 	};
-	static const uint8_t d0[] = {
+	static const u_int8_t d0[] = {
 		0x5d,0x3e,0x45,0xdd,0x9b,0x6b,0xda,0xf8,
 		0xe6,0xe6,0xb8,0x72,0xfb,0xc5,0x0d,0x0a,
 		0x4f,0x52,0x65,0xb4,0x11,0xf1,0xa1,0x0c,
@@ -538,7 +538,7 @@ SHA3_Selftest(void)
 		0xd6,0x69,0x97,0xc7,0xcb,0xe2,0x73,0xca,
 	};
 	static const unsigned mlen[] = { 0, 3, 128, 129, 255 };
-	uint8_t m[255], d[73];
+	u_int8_t m[255], d[73];
 	struct sha3 sha3;
 	SHA3_224_CTX *sha3224 = (SHA3_224_CTX *)&sha3;
 	SHA3_256_CTX *sha3256 = (SHA3_256_CTX *)&sha3;

@@ -77,11 +77,11 @@ __RCSID("$NetBSD: sha2.c,v 1.24 2013/06/09 19:46:56 christos Exp $");
  * unsigned 128-bit integer (represented using a two-element array of
  * 64-bit words):
  */
-#define ADDINC128(w,n)	{ \
-	(w)[0] += (uint64_t)(n); \
-	if ((w)[0] < (n)) { \
-		(w)[1]++; \
-	} \
+#define ADDINC128(w,n)	{ 		\
+	(w)[0] += (u_int64_t)(n); 	\
+	if ((w)[0] < (n)) { 		\
+		(w)[1]++; 				\
+	} 							\
 }
 
 /*** THE SIX LOGICAL FUNCTIONS ****************************************/
@@ -122,15 +122,15 @@ __RCSID("$NetBSD: sha2.c,v 1.24 2013/06/09 19:46:56 christos Exp $");
  * only.
  */
 static void SHA512_Last(SHA512_CTX *);
-void SHA224_Transform(SHA224_CTX *, const uint32_t*);
-void SHA256_Transform(SHA256_CTX *, const uint32_t*);
-void SHA384_Transform(SHA384_CTX *, const uint64_t*);
-void SHA512_Transform(SHA512_CTX *, const uint64_t*);
+void SHA224_Transform(SHA224_CTX *, const u_int32_t*);
+void SHA256_Transform(SHA256_CTX *, const u_int32_t*);
+void SHA384_Transform(SHA384_CTX *, const u_int64_t*);
+void SHA512_Transform(SHA512_CTX *, const u_int64_t*);
 
 
 /*** SHA-XYZ INITIAL HASH VALUES AND CONSTANTS ************************/
 /* Hash constant words K for SHA-256: */
-static const uint32_t K256[64] = {
+static const u_int32_t K256[64] = {
 	0x428a2f98UL, 0x71374491UL, 0xb5c0fbcfUL, 0xe9b5dba5UL,
 	0x3956c25bUL, 0x59f111f1UL, 0x923f82a4UL, 0xab1c5ed5UL,
 	0xd807aa98UL, 0x12835b01UL, 0x243185beUL, 0x550c7dc3UL,
@@ -150,7 +150,7 @@ static const uint32_t K256[64] = {
 };
 
 /* Initial hash value H for SHA-224: */
-static const uint32_t sha224_initial_hash_value[8] = {
+static const u_int32_t sha224_initial_hash_value[8] = {
 	0xc1059ed8UL,
 	0x367cd507UL,
 	0x3070dd17UL,
@@ -162,7 +162,7 @@ static const uint32_t sha224_initial_hash_value[8] = {
 };
 
 /* Initial hash value H for SHA-256: */
-static const uint32_t sha256_initial_hash_value[8] = {
+static const u_int32_t sha256_initial_hash_value[8] = {
 	0x6a09e667UL,
 	0xbb67ae85UL,
 	0x3c6ef372UL,
@@ -174,7 +174,7 @@ static const uint32_t sha256_initial_hash_value[8] = {
 };
 
 /* Hash constant words K for SHA-384 and SHA-512: */
-static const uint64_t K512[80] = {
+static const u_int64_t K512[80] = {
 	0x428a2f98d728ae22ULL, 0x7137449123ef65cdULL,
 	0xb5c0fbcfec4d3b2fULL, 0xe9b5dba58189dbbcULL,
 	0x3956c25bf348b538ULL, 0x59f111f1b605d019ULL,
@@ -218,7 +218,7 @@ static const uint64_t K512[80] = {
 };
 
 /* Initial hash value H for SHA-384 */
-static const uint64_t sha384_initial_hash_value[8] = {
+static const u_int64_t sha384_initial_hash_value[8] = {
 	0xcbbb9d5dc1059ed8ULL,
 	0x629a292a367cd507ULL,
 	0x9159015a3070dd17ULL,
@@ -230,7 +230,7 @@ static const uint64_t sha384_initial_hash_value[8] = {
 };
 
 /* Initial hash value H for SHA-512 */
-static const uint64_t sha512_initial_hash_value[8] = {
+static const u_int64_t sha512_initial_hash_value[8] = {
 	0x6a09e667f3bcc908ULL,
 	0xbb67ae8584caa73bULL,
 	0x3c6ef372fe94f82bULL,
@@ -284,34 +284,34 @@ SHA256_Init(SHA256_CTX *context)
 
 /* Unrolled SHA-256 round macros: */
 
-#define ROUND256_0_TO_15(a,b,c,d,e,f,g,h)	\
-	W256[j] = be32dec(data);		\
-	++data;					\
-	T1 = (h) + Sigma1_256(e) + Ch((e), (f), (g)) + \
-             K256[j] + W256[j]; \
-	(d) += T1; \
-	(h) = T1 + Sigma0_256(a) + Maj((a), (b), (c)); \
+#define ROUND256_0_TO_15(a,b,c,d,e,f,g,h)						\
+	W256[j] = be32dec(data);									\
+	++data;														\
+	T1 = (h) + Sigma1_256(e) + Ch((e), (f), (g)) + 				\
+             K256[j] + W256[j]; 								\
+	(d) += T1; 													\
+	(h) = T1 + Sigma0_256(a) + Maj((a), (b), (c)); 				\
 	j++
 
-#define ROUND256(a,b,c,d,e,f,g,h)	\
-	s0 = W256[(j+1)&0x0f]; \
-	s0 = sigma0_256(s0); \
-	s1 = W256[(j+14)&0x0f]; \
-	s1 = sigma1_256(s1); \
-	T1 = (h) + Sigma1_256(e) + Ch((e), (f), (g)) + K256[j] + \
-	     (W256[j&0x0f] += s1 + W256[(j+9)&0x0f] + s0); \
-	(d) += T1; \
-	(h) = T1 + Sigma0_256(a) + Maj((a), (b), (c)); \
+#define ROUND256(a,b,c,d,e,f,g,h)								\
+	s0 = W256[(j+1)&0x0f]; 										\
+	s0 = sigma0_256(s0); 										\
+	s1 = W256[(j+14)&0x0f]; 									\
+	s1 = sigma1_256(s1); 										\
+	T1 = (h) + Sigma1_256(e) + Ch((e), (f), (g)) + K256[j] + 	\
+	     (W256[j&0x0f] += s1 + W256[(j+9)&0x0f] + s0); 			\
+	(d) += T1; 													\
+	(h) = T1 + Sigma0_256(a) + Maj((a), (b), (c)); 				\
 	j++
 
 void 
-SHA256_Transform(SHA256_CTX *context, const uint32_t *data)
+SHA256_Transform(SHA256_CTX *context, const u_int32_t *data)
 {
-	uint32_t	a, b, c, d, e, f, g, h, s0, s1;
-	uint32_t	T1, *W256;
+	u_int32_t	a, b, c, d, e, f, g, h, s0, s1;
+	u_int32_t	T1, *W256;
 	int		j;
 
-	W256 = (uint32_t *)context->buffer;
+	W256 = (u_int32_t *)context->buffer;
 
 	/* Initialize registers with the prev. intermediate value */
 	a = context->state[0];
@@ -365,13 +365,13 @@ SHA256_Transform(SHA256_CTX *context, const uint32_t *data)
 #else /* SHA2_UNROLL_TRANSFORM */
 
 void
-SHA256_Transform(SHA256_CTX *context, const uint32_t *data)
+SHA256_Transform(SHA256_CTX *context, const u_int32_t *data)
 {
-	uint32_t	a, b, c, d, e, f, g, h, s0, s1;
-	uint32_t	T1, T2, *W256;
+	u_int32_t	a, b, c, d, e, f, g, h, s0, s1;
+	u_int32_t	T1, T2, *W256;
 	int		j;
 
-	W256 = (uint32_t *)(void *)context->buffer;
+	W256 = (u_int32_t *)(void *)context->buffer;
 
 	/* Initialize registers with the prev. intermediate value */
 	a = context->state[0];
@@ -442,7 +442,7 @@ SHA256_Transform(SHA256_CTX *context, const uint32_t *data)
 #endif /* SHA2_UNROLL_TRANSFORM */
 
 int
-SHA256_Update(SHA256_CTX *context, const uint8_t *data, size_t len)
+SHA256_Update(SHA256_CTX *context, const u_int8_t *data, size_t len)
 {
 	unsigned int	freespace, usedspace;
 
@@ -465,7 +465,7 @@ SHA256_Update(SHA256_CTX *context, const uint8_t *data, size_t len)
 			len -= freespace;
 			data += freespace;
 			SHA256_Transform(context,
-			    (uint32_t *)(void *)context->buffer);
+			    (u_int32_t *)(void *)context->buffer);
 		} else {
 			/* The buffer is not yet full */
 			memcpy(&context->buffer[usedspace], data, len);
@@ -485,7 +485,7 @@ SHA256_Update(SHA256_CTX *context, const uint8_t *data, size_t len)
 	if ((uintptr_t)data % 4 == 0) {
 		while (len >= SHA256_BLOCK_LENGTH) {
 			SHA256_Transform(context,
-			    (const uint32_t *)(const void *)data);
+			    (const u_int32_t *)(const void *)data);
 			context->bitcount += SHA256_BLOCK_LENGTH << 3;
 			len -= SHA256_BLOCK_LENGTH;
 			data += SHA256_BLOCK_LENGTH;
@@ -494,7 +494,7 @@ SHA256_Update(SHA256_CTX *context, const uint8_t *data, size_t len)
 		while (len >= SHA256_BLOCK_LENGTH) {
 			memcpy(context->buffer, data, SHA256_BLOCK_LENGTH);
 			SHA256_Transform(context,
-			    (const uint32_t *)(const void *)context->buffer);
+			    (const u_int32_t *)(const void *)context->buffer);
 			context->bitcount += SHA256_BLOCK_LENGTH << 3;
 			len -= SHA256_BLOCK_LENGTH;
 			data += SHA256_BLOCK_LENGTH;
@@ -512,7 +512,7 @@ SHA256_Update(SHA256_CTX *context, const uint8_t *data, size_t len)
 }
 
 static int
-SHA224_256_Final(uint8_t digest[], SHA256_CTX *context, size_t len)
+SHA224_256_Final(u_int8_t digest[], SHA256_CTX *context, size_t len)
 {
 	unsigned int	usedspace;
 	size_t i;
@@ -539,7 +539,7 @@ SHA224_256_Final(uint8_t digest[], SHA256_CTX *context, size_t len)
 				}
 				/* Do second-to-last transform: */
 				SHA256_Transform(context,
-				    (uint32_t *)(void *)context->buffer);
+				    (u_int32_t *)(void *)context->buffer);
 
 				/* And set-up for the last transform: */
 				memset(context->buffer, 0,
@@ -558,7 +558,7 @@ SHA224_256_Final(uint8_t digest[], SHA256_CTX *context, size_t len)
 		    &context->bitcount, sizeof(context->bitcount));
 
 		/* Final transform: */
-		SHA256_Transform(context, (uint32_t *)(void *)context->buffer);
+		SHA256_Transform(context, (u_int32_t *)(void *)context->buffer);
 
 		for (i = 0; i < len / 4; i++)
 			be32enc(digest + 4 * i, context->state[i]);
@@ -572,7 +572,7 @@ SHA224_256_Final(uint8_t digest[], SHA256_CTX *context, size_t len)
 }
 
 int
-SHA256_Final(uint8_t digest[], SHA256_CTX *context)
+SHA256_Final(u_int8_t digest[], SHA256_CTX *context)
 {
 	return SHA224_256_Final(digest, context, SHA256_DIGEST_LENGTH);
 }
@@ -594,19 +594,19 @@ SHA224_Init(SHA224_CTX *context)
 }
 
 int
-SHA224_Update(SHA224_CTX *context, const uint8_t *data, size_t len)
+SHA224_Update(SHA224_CTX *context, const u_int8_t *data, size_t len)
 {
 	return SHA256_Update((SHA256_CTX *)context, data, len);
 }
 
 void
-SHA224_Transform(SHA224_CTX *context, const uint32_t *data)
+SHA224_Transform(SHA224_CTX *context, const u_int32_t *data)
 {
 	SHA256_Transform((SHA256_CTX *)context, data);
 }
 
 int
-SHA224_Final(uint8_t digest[], SHA224_CTX *context)
+SHA224_Final(u_int8_t digest[], SHA224_CTX *context)
 {
 	return SHA224_256_Final(digest, (SHA256_CTX *)context,
 	    SHA224_DIGEST_LENGTH);
@@ -651,10 +651,10 @@ SHA512_Init(SHA512_CTX *context)
 	j++
 
 void
-SHA512_Transform(SHA512_CTX *context, const uint64_t *data)
+SHA512_Transform(SHA512_CTX *context, const u_int64_t *data)
 {
-	uint64_t	a, b, c, d, e, f, g, h, s0, s1;
-	uint64_t	T1, *W512 = (uint64_t *)context->buffer;
+	u_int64_t	a, b, c, d, e, f, g, h, s0, s1;
+	u_int64_t	T1, *W512 = (u_int64_t *)context->buffer;
 	int		j;
 
 	/* Initialize registers with the prev. intermediate value */
@@ -708,10 +708,10 @@ SHA512_Transform(SHA512_CTX *context, const uint64_t *data)
 #else /* SHA2_UNROLL_TRANSFORM */
 
 void
-SHA512_Transform(SHA512_CTX *context, const uint64_t *data)
+SHA512_Transform(SHA512_CTX *context, const u_int64_t *data)
 {
-	uint64_t	a, b, c, d, e, f, g, h, s0, s1;
-	uint64_t	T1, T2, *W512 = (void *)context->buffer;
+	u_int64_t	a, b, c, d, e, f, g, h, s0, s1;
+	u_int64_t	T1, T2, *W512 = (void *)context->buffer;
 	int		j;
 
 	/* Initialize registers with the prev. intermediate value */
@@ -783,7 +783,7 @@ SHA512_Transform(SHA512_CTX *context, const uint64_t *data)
 #endif /* SHA2_UNROLL_TRANSFORM */
 
 int
-SHA512_Update(SHA512_CTX *context, const uint8_t *data, size_t len)
+SHA512_Update(SHA512_CTX *context, const u_int8_t *data, size_t len)
 {
 	unsigned int	freespace, usedspace;
 
@@ -806,7 +806,7 @@ SHA512_Update(SHA512_CTX *context, const uint8_t *data, size_t len)
 			len -= freespace;
 			data += freespace;
 			SHA512_Transform(context,
-			    (uint64_t *)(void *)context->buffer);
+			    (u_int64_t *)(void *)context->buffer);
 		} else {
 			/* The buffer is not yet full */
 			memcpy(&context->buffer[usedspace], data, len);
@@ -826,7 +826,7 @@ SHA512_Update(SHA512_CTX *context, const uint8_t *data, size_t len)
 	if ((uintptr_t)data % 8 == 0) {
 		while (len >= SHA512_BLOCK_LENGTH) {
 			SHA512_Transform(context,
-			    (const uint64_t*)(const void *)data);
+			    (const u_int64_t*)(const void *)data);
 			ADDINC128(context->bitcount, SHA512_BLOCK_LENGTH << 3);
 			len -= SHA512_BLOCK_LENGTH;
 			data += SHA512_BLOCK_LENGTH;
@@ -875,7 +875,7 @@ SHA512_Last(SHA512_CTX *context)
 			}
 			/* Do second-to-last transform: */
 			SHA512_Transform(context,
-			    (uint64_t *)(void *)context->buffer);
+			    (u_int64_t *)(void *)context->buffer);
 
 			/* And set-up for the last transform: */
 			memset(context->buffer, 0,
@@ -895,11 +895,11 @@ SHA512_Last(SHA512_CTX *context)
 	    &context->bitcount[0], sizeof(context->bitcount[0]));
 
 	/* Final transform: */
-	SHA512_Transform(context, (uint64_t *)(void *)context->buffer);
+	SHA512_Transform(context, (u_int64_t *)(void *)context->buffer);
 }
 
 int
-SHA512_Final(uint8_t digest[], SHA512_CTX *context)
+SHA512_Final(u_int8_t digest[], SHA512_CTX *context)
 {
 	size_t i;
 
@@ -934,19 +934,19 @@ SHA384_Init(SHA384_CTX *context)
 }
 
 int
-SHA384_Update(SHA384_CTX *context, const uint8_t *data, size_t len)
+SHA384_Update(SHA384_CTX *context, const u_int8_t *data, size_t len)
 {
 	return SHA512_Update((SHA512_CTX *)context, data, len);
 }
 
 void
-SHA384_Transform(SHA512_CTX *context, const uint64_t *data)
+SHA384_Transform(SHA512_CTX *context, const u_int64_t *data)
 {
 	SHA512_Transform((SHA512_CTX *)context, data);
 }
 
 int
-SHA384_Final(uint8_t digest[], SHA384_CTX *context)
+SHA384_Final(u_int8_t digest[], SHA384_CTX *context)
 {
 	size_t i;
 

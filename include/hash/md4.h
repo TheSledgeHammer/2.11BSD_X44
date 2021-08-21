@@ -32,15 +32,15 @@
 #ifndef _MD4_H_
 #define _MD4_H_
 
-#define MD4_DIGEST_LENGTH 16
-#define MD4_DIGEST_STRING_LENGTH 33
-#define MD4_BLOCK_LENGTH 64
+#define MD4_DIGEST_LENGTH 			16
+#define MD4_DIGEST_STRING_LENGTH 	33
+#define MD4_BLOCK_LENGTH 			64
 
 /* MD4 context. */
 typedef struct MD4Context {
-	uint32_t state[4];	/* state (ABCD) */
-	uint32_t count[2];	/* number of bits, modulo 2^64 (lsb first) */
-	unsigned char buffer[MD4_BLOCK_LENGTH]; /* input buffer */
+	u_int32_t  		state[4];					/* state (ABCD) */
+	u_int32_t  		count[2];					/* number of bits, modulo 2^64 (lsb first) */
+	unsigned char 	buffer[MD4_BLOCK_LENGTH]; 	/* input buffer */
 } MD4_CTX;
 
 __BEGIN_DECLS

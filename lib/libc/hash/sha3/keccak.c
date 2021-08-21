@@ -51,17 +51,17 @@ __RCSID("$NetBSD: keccak.c,v 1.1 2017/11/30 05:47:24 riastradh Exp $");
 	(X) = 4; STMT;							      \
 } while (0)
 
-static inline secret uint64_t
-rol64(secret uint64_t v, unsigned c)
+static inline secret u_int64_t
+rol64(secret u_int64_t v, unsigned c)
 {
 
 	return ((v << c) | (v >> (64 - c)));
 }
 
 static inline void
-keccakf1600_theta(secret uint64_t A[25])
+keccakf1600_theta(secret u_int64_t A[25])
 {
-	secret uint64_t C0, C1, C2, C3, C4;
+	secret u_int64_t C0, C1, C2, C3, C4;
 	unsigned y;
 
 	C0 = C1 = C2 = C3 = C4 = 0;
@@ -82,9 +82,9 @@ keccakf1600_theta(secret uint64_t A[25])
 }
 
 static inline void
-keccakf1600_rho_pi(secret uint64_t A[25])
+keccakf1600_rho_pi(secret u_int64_t A[25])
 {
-	secret uint64_t T, U;
+	secret u_int64_t T, U;
 
 	/*
 	 * Permute by (x,y) |---> (y, 2x + 3y mod 5) starting at (1,0),
@@ -118,9 +118,9 @@ keccakf1600_rho_pi(secret uint64_t A[25])
 }
 
 static inline void
-keccakf1600_chi(secret uint64_t A[25])
+keccakf1600_chi(secret u_int64_t A[25])
 {
-	secret uint64_t B0, B1, B2, B3, B4;
+	secret u_int64_t B0, B1, B2, B3, B4;
 	unsigned y;
 
 	FOR5(y, {
@@ -138,7 +138,7 @@ keccakf1600_chi(secret uint64_t A[25])
 }
 
 static void
-keccakf1600_round(secret uint64_t A[25])
+keccakf1600_round(secret u_int64_t A[25])
 {
 
 	keccakf1600_theta(A);
@@ -147,13 +147,13 @@ keccakf1600_round(secret uint64_t A[25])
 }
 
 void
-keccakf1600(secret uint64_t A[25])
+keccakf1600(secret u_int64_t A[25])
 {
 	/*
 	 * RC[i] = \sum_{j = 0,...,6} rc(j + 7i) 2^(2^j - 1),
 	 * rc(t) = (x^t mod x^8 + x^6 + x^5 + x^4 + 1) mod x in GF(2)[x]
 	 */
-	static const uint64_t RC[24] = {
+	static const u_int64_t RC[24] = {
 		0x0000000000000001ULL,
 		0x0000000000008082ULL,
 		0x800000000000808aULL,

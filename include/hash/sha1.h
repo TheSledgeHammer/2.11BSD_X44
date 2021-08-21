@@ -14,21 +14,21 @@
 #define SHA1_BLOCK_LENGTH			64
 
 typedef struct {
-	uint32_t state[5];
-	uint32_t count[2];
-	uint8_t buffer[SHA1_BLOCK_LENGTH];
+	u_int32_t state[5];
+	u_int32_t count[2];
+	u_int8_t buffer[SHA1_BLOCK_LENGTH];
 } SHA1_CTX;
 
 __BEGIN_DECLS
-void	SHA1Transform(uint32_t[5], const uint8_t[64]);
+void	SHA1Transform(u_int32_t[5], const u_int8_t[64]);
 void	SHA1Init(SHA1_CTX *);
-void	SHA1Update(SHA1_CTX *, const uint8_t *, unsigned int);
-void	SHA1Final(uint8_t[SHA1_DIGEST_LENGTH], SHA1_CTX *);
+void	SHA1Update(SHA1_CTX *, const u_int8_t *, unsigned int);
+void	SHA1Final(u_int8_t[SHA1_DIGEST_LENGTH], SHA1_CTX *);
 #ifndef _KERNEL
 char	*SHA1End(SHA1_CTX *, char *);
 char	*SHA1FileChunk(const char *, char *, off_t, off_t);
 char	*SHA1File(const char *, char *);
-char	*SHA1Data(const uint8_t *, size_t, char *);
+char	*SHA1Data(const u_int8_t *, size_t, char *);
 #endif /* _KERNEL */
 __END_DECLS
 

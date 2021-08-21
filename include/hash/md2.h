@@ -9,9 +9,9 @@
 
 /* MD2 context. */
 typedef struct MD2Context {
-	uint32_t i;
-	unsigned char C[16];		/* checksum */
-	unsigned char X[48];		/* input buffer */
+	u_int32_t  		i;
+	unsigned char 	C[16];		/* checksum */
+	unsigned char 	X[48];		/* input buffer */
 } MD2_CTX;
 
 __BEGIN_DECLS

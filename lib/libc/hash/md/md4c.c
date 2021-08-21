@@ -39,7 +39,7 @@ __RCSID("$NetBSD: md4c.c,v 1.5 2012/03/20 16:21:41 matt Exp $");
 #include <sys/types.h>
 
 #include <assert.h>
-#include "../../../../include/hash/md4.h"
+#include <md4.h>
 #include <string.h>
 
 #if HAVE_NBTOOL_CONFIG_H
@@ -57,8 +57,8 @@ __RCSID("$NetBSD: md4c.c,v 1.5 2012/03/20 16:21:41 matt Exp $");
 #if !HAVE_MD4_H
 
 typedef unsigned char *POINTER;
-typedef uint16_t UINT2;
-typedef uint32_t UINT4;
+typedef u_int16_t UINT2;
+typedef u_int32_t UINT4;
 
 /*
  * Constants for MD4Transform routine.

@@ -7,11 +7,8 @@ PROG=	xinstall
 SRCS=	xinstall.c getid.c
 MAN=	install.1
 
-.PATH:		${NETBSDSRCDIR}/usr.sbin/mtree
-CPPFLAGS+=	-I${NETBSDSRCDIR}/usr.sbin/mtree
-
-.PATH:		${NETBSDSRCDIR}/usr.bin/cksum
-CPPFLAGS+=	-I${NETBSDSRCDIR}/usr.bin/cksum
+.PATH:		${NETBSDSRCDIR}/usr.sbin/mtree		${NETBSDSRCDIR}/usr.bin/cksum
+CPPFLAGS+=	-I${NETBSDSRCDIR}/usr.sbin/mtree	-I${NETBSDSRCDIR}/usr.bin/cksum
 
 .if (${HOSTPROG:U} == "")
 CPPFLAGS+=	-DHAVE_POSIX_SPAWN

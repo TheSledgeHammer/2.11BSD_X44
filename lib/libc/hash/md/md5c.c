@@ -42,7 +42,7 @@ __RCSID("$NetBSD: md5c.c,v 1.5 2012/03/20 16:21:41 matt Exp $");
 #include <sys/types.h>
 #include <assert.h>
 #include <string.h>
-#include "../../../../include/hash/md5.h"
+#include <md5.h>
 #endif /* _KERNEL || _STANDALONE */
 
 #if HAVE_NBTOOL_CONFIG_H
@@ -54,8 +54,8 @@ __RCSID("$NetBSD: md5c.c,v 1.5 2012/03/20 16:21:41 matt Exp $");
 #define	ZEROIZE(d, l)		memset((d), 0, (l))
 
 typedef unsigned char *POINTER;
-typedef uint16_t UINT2;
-typedef uint32_t UINT4;
+typedef u_int16_t UINT2;
+typedef u_int32_t UINT4;
 
 /*
  * Constants for MD5Transform routine.

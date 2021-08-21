@@ -171,7 +171,7 @@ MPCOBJ!=	cd ${MPC}/lib/libmpc && ${PRINTOBJDIR}
 MPFROBJ!=	cd ${MPFR}/lib/libmpfr && ${PRINTOBJDIR}
 GMPOBJ!=	cd ${GMP}/lib/libgmp && ${PRINTOBJDIR}
 
-.include "../../external/lgpl3/gmp/Makefile.arch"
+.include "../../contrib/external/gnu/gmp/Makefile.arch"
 
 NATIVE_CONFIGURE_ARGS+=	\
 			--with-mpc-lib=${MPCOBJ} \
