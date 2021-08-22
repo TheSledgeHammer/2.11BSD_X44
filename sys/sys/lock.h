@@ -61,7 +61,6 @@ struct lock {
     char					*lk_wmesg;			/* resource sleeping (for tsleep) */
     int						lk_timo;			/* maximum sleep time (for tsleep) */
 };
-
 typedef struct lock       	*lock_t;
 
 /*
@@ -183,7 +182,7 @@ struct lock_type {
 
 /* lock holder */
 struct lock_holder {
-	pid_t						lh_pid;
+	u_char						lh_pid;
 	struct pgrp 				*lh_pgrp;
 
 	struct proc 				*lh_proc;

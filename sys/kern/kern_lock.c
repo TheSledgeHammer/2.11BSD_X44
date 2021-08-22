@@ -49,7 +49,7 @@
 
 void	lock_pause(struct lock *, int);
 void	lock_acquire(struct lock *, int, int, int);
-void	count(struct proc *, short);
+void	count(struct lock *, short);
 
 struct lock_holder *kernel_lockholder;
 
@@ -185,7 +185,7 @@ lockmgr(lkp, flags, interlkp, pid)
 			if (error)
 				break;
 			lkp->lk_sharecount++;
-			//COUNT(pid, 1);
+			COUNT(lkp, 1);
 			break;
 		}
 		/*
@@ -193,7 +193,7 @@ lockmgr(lkp, flags, interlkp, pid)
 		 * An alternative would be to fail with EDEADLK.
 		 */
 		lkp->lk_sharecount++;
-		//COUNT(pid, 1);
+		COUNT(lkp, 1);
 		/* fall into downgrade */
 		break;
 
@@ -216,7 +216,7 @@ lockmgr(lkp, flags, interlkp, pid)
 		 */
 		if (lkp->lk_flags & LK_WANT_UPGRADE) {
 			lkp->lk_sharecount--;
-			//COUNT(pid, -1);
+			COUNT(lkp, -1);
 			error = EBUSY;
 			break;
 		}
@@ -235,7 +235,7 @@ lockmgr(lkp, flags, interlkp, pid)
 		if (LOCKHOLDER_PID(lkp->lk_lockholder) == pid || lkp->lk_sharecount <= 0)
 			panic("lockmgr: upgrade exclusive lock");
 		lkp->lk_sharecount--;
-		//COUNT(pid, -1);
+		COUNT(lkp, -1);
 		/*
 		 * If we are just polling, check to see if we will block.
 		 */
@@ -261,7 +261,7 @@ lockmgr(lkp, flags, interlkp, pid)
 			if (lkp->lk_exclusivecount != 0)
 				panic("lockmgr: non-zero exclusive count");
 			lkp->lk_exclusivecount = 1;
-			//COUNT(pid, 1);
+			COUNT(lkp, 1);
 			break;
 		}
 		/*
@@ -282,7 +282,7 @@ lockmgr(lkp, flags, interlkp, pid)
 			if ((extflags & LK_CANRECURSE) == 0)
 				panic("lockmgr: locking against myself");
 			lkp->lk_exclusivecount++;
-			//COUNT(pid, 1);
+			COUNT(lkp, 1);
 			break;
 		}
 		/*
@@ -315,7 +315,7 @@ lockmgr(lkp, flags, interlkp, pid)
 		if (lkp->lk_exclusivecount != 0)
 			panic("lockmgr: non-zero exclusive count");
 		lkp->lk_exclusivecount = 1;
-		//COUNT(pid, 1);
+		COUNT(lkp, 1);
 		break;
 
 	case LK_RELEASE:
@@ -332,7 +332,7 @@ lockmgr(lkp, flags, interlkp, pid)
 			}
 		} else if (lkp->lk_sharecount != 0) {
 			lkp->lk_sharecount--;
-			//COUNT(pid, -1);
+			COUNT(lkp, -1);
 		}
 		if (lkp->lk_waitcount)
 			wakeup((void *)lkp);
@@ -374,7 +374,7 @@ lockmgr(lkp, flags, interlkp, pid)
 		lkp->lk_flags |= LK_DRAINING | LK_HAVE_EXCL;
 		LOCKHOLDER_PID(lkp->lk_lockholder) = pid;
 		lkp->lk_exclusivecount = 1;
-		//COUNT(p, 1);
+		COUNT(lkp, 1);
 		break;
 
 	default:
@@ -454,13 +454,27 @@ lock_acquire(lkp, error, extflags, wanted)
 }
 
 void
-count(p, x)
-	struct proc p;
+count(lkp, x)
+	struct lock	*lkp;
 	short x;
 {
-	if(p) {
+	if (PROC_LOCKHOLDER(lkp->lk_lockholder)) {
+		struct proc p = PROC_LOCKHOLDER(lkp->lk_lockholder);
 		p->p_locks += x;
+		return;
 	}
+	/*
+	if(KTHREAD_LOCKHOLDER(lkp->lk_lockholder)) {
+		struct kthread *kt = KTHREAD_LOCKHOLDER(lkp->lk_lockholder);
+		kt->kt_locks += x;
+		return;
+	}
+	if(UTHREAD_LOCKHOLDER(lkp->lk_lockholder)) {
+		struct uthread *ut = UTHREAD_LOCKHOLDER(lkp->lk_lockholder);
+		ut->ut_locks += x;
+		return;
+	}
+	*/
 }
 
 /* Simple lock Interface: Compatibility with existing lock infrastructure */
@@ -599,8 +613,16 @@ void
 lockholder_init(proc)
 	struct proc *proc;
 {
+	/*
+	register struct kthread *kthread;
+	register struct uthread *uthread;
+	kthread = proc->p_kthreado;
+	uthread = kthread->kt_uthreado;
+	*/
 	lockholder_alloc(&kernel_lockholder);
 	set_proc_lockholder(&kernel_lockholder, proc);
+	//set_kthread_lockholder(&kernel_lockholder, kthread);
+	//set_uthread_lockholder(&kernel_lockholder, uthread);
 }
 
 void

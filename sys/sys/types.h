@@ -16,7 +16,7 @@
 /* Machine type dependent parameters. */
 #include <machine/ansi.h>
 #include <machine/endian_machdep.h>
-//#include <machine/machtypes.h>
+#include <machine/machtypes.h>
 
 typedef	unsigned char		u_char;
 typedef	unsigned short		u_short;
