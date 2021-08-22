@@ -39,6 +39,9 @@
 #ifndef __SHA2_H__
 #define __SHA2_H__
 
+#include <sys/cdefs.h>
+#include <sys/types.h>
+
 /*** SHA-224/256/384/512 Various Length Definitions ***********************/
 #define SHA224_BLOCK_LENGTH			64
 #define SHA224_DIGEST_LENGTH		28

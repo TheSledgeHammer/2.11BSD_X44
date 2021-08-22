@@ -34,7 +34,7 @@ WA(MDNAME(Data),CONCAT(_,MDNAME(Data)))
 
 #include <sys/types.h>
 
-//#include MDINCLUDE
+#include MDINCLUDE
 #include <assert.h>
 #include <fcntl.h>
 #include <errno.h>

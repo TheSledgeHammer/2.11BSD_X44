@@ -11,6 +11,9 @@
 __RCSID("$NetBSD: md2hl.c,v 1.4 2008/04/13 02:04:31 dholland Exp $");
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+#include <md2.h>
+
 #define	HASH_ALGORITHM	MD2
 #define HASH_INCLUDE	<md2.h>
 

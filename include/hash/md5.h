@@ -32,6 +32,9 @@
 #ifndef _MD5_H_
 #define _MD5_H_
 
+#include <sys/cdefs.h>
+#include <sys/types.h>
+
 #define MD5_DIGEST_LENGTH			16
 #define	MD5_DIGEST_STRING_LENGTH	33
 #define MD5_BLOCK_LENGTH			64

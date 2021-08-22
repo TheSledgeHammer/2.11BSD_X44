@@ -34,12 +34,12 @@ __RCSID("$NetBSD: hmac.c,v 1.5 2017/10/05 09:59:04 roy Exp $");
 #include <string.h>
 #include <stdlib.h>
 
-#include "../../../include/hash/md2.h"
-#include "../../../include/hash/md4.h"
-#include "../../../include/hash/md5.h"
-#include "../../../include/hash/rmd160.h"
-#include "../../../include/hash/sha1.h"
-#include "../../../include/hash/sha2.h"
+#include <md2.h>
+#include <md4.h>
+#include <md5.h>
+#include <rmd160.h>
+#include <sha1.h>
+#include <sha2.h>
 
 #define HMAC_SIZE	128
 #define HMAC_IPAD	0x36
@@ -51,8 +51,8 @@ static const struct hmac {
 	size_t digsize;
 	size_t blocksize;
 	void (*init)(void *);
-	void (*update)(void *, const uint8_t *, unsigned int);
-	void (*final)(uint8_t *, void *);
+	void (*update)(void *, const u_int8_t *, unsigned int);
+	void (*final)(u_int8_t *, void *);
 } hmacs[] = {
 	{
 		"md2", sizeof(MD2_CTX), MD2_DIGEST_LENGTH, MD2_BLOCK_LENGTH,
@@ -118,10 +118,10 @@ hmac(const char *name,
     const void *text, size_t tlen,
     void *digest, size_t dlen)
 {
-	uint8_t ipad[HMAC_SIZE], opad[HMAC_SIZE], d[HMAC_SIZE];
-	const uint8_t *k = key;
+	u_int8_t ipad[HMAC_SIZE], opad[HMAC_SIZE], d[HMAC_SIZE];
+	const u_int8_t *k = key;
 	const struct hmac *h;
-	uint64_t c[32];
+	u_int64_t c[32];
 	void *p;
 
 	if ((h = hmac_find(name)) == NULL)

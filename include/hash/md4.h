@@ -32,6 +32,9 @@
 #ifndef _MD4_H_
 #define _MD4_H_
 
+#include <sys/cdefs.h>
+#include <sys/types.h>
+
 #define MD4_DIGEST_LENGTH 			16
 #define MD4_DIGEST_STRING_LENGTH 	33
 #define MD4_BLOCK_LENGTH 			64

@@ -16,9 +16,9 @@ SRCS=		basename.c dirname.c fgetln.c flock.c fparseln.c fpurge.c 	\
 			strcasecmp.c strndup.c strnlen.c strsep.c strtoll.c 		\
 			unvis.c vis.c fts.c glob.c efun.c
 
-#SRCS+= 	md2.c md2hl.c md4c.c md4hl.c md5c.c md5hl.c rmd160.c 		\
-#			rmd160hl.c sha1.c sha1hl.c sha2.c sha256hl.c sha384hl.c 	\
-#			sha512hl.c
+SRCS+= 		md2.c md2hl.c md4c.c md4hl.c md5c.c md5hl.c rmd160.c 		\
+			rmd160hl.c sha1.c sha1hl.c sha2.c sha256hl.c sha384hl.c 	\
+			sha512hl.c
 
 BUILD_OSTYPE!=  uname -s
 
@@ -39,6 +39,11 @@ CPPFLAGS+=	-I. -I./include -I${.CURDIR} -I${.CURDIR}/sys 			\
 			${.CURDIR}/../../lib/libc/compat-netbsd					\
 			${.CURDIR}/../../lib/libc/compat-sys5					\
 			${.CURDIR}/../../lib/libc/gen 							\
+			${.CURDIR}/../../lib/libc/hash 							\
+			${.CURDIR}/../../lib/libc/hash/md 						\
+			${.CURDIR}/../../lib/libc/hash/rmd160 					\
+			${.CURDIR}/../../lib/libc/hash/sha1 					\
+			${.CURDIR}/../../lib/libc/hash/sha2 					\
 			${.CURDIR}/../../lib/libc/quad 							\
 			${.CURDIR}/../../lib/libc/regex 						\
 			${.CURDIR}/../../lib/libc/stdio 						\
@@ -46,12 +51,6 @@ CPPFLAGS+=	-I. -I./include -I${.CURDIR} -I${.CURDIR}/sys 			\
 			${.CURDIR}/../../lib/libc/string 						\
 			${.CURDIR}/../../usr.lib/libutil 						\
 			${.CURDIR}/../../contrib/flex/dist/src
-			
-			#${.CURDIR}/../../lib/libc/hash 						\
-			#${.CURDIR}/../../lib/libc/hash/md 						\
-			#${.CURDIR}/../../lib/libc/hash/rmd160 					\
-			#${.CURDIR}/../../lib/libc/hash/sha1 					\
-			#${.CURDIR}/../../lib/libc/hash/sha2 					\
 
 DPSRCS+=		defs.mk
 CLEANFILES+=	config.log config.status configure.lineno *.stamp

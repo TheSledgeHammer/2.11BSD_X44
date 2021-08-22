@@ -9,6 +9,9 @@
 #ifndef _SHA1_H_
 #define	_SHA1_H_
 
+#include <sys/cdefs.h>
+#include <sys/types.h>
+
 #define SHA1_DIGEST_LENGTH			20
 #define SHA1_DIGEST_STRING_LENGTH	41
 #define SHA1_BLOCK_LENGTH			64

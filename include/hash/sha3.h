@@ -29,6 +29,9 @@
 #ifndef	_SHA3_H
 #define	_SHA3_H
 
+#include <sys/cdefs.h>
+#include <sys/types.h>
+
 struct sha3 {
 	u_int64_t 	A[25];
 	unsigned 	nb;		/* number of bytes remaining to fill buffer */

@@ -617,7 +617,10 @@ level of source directory"
 #
 valid_MACHINE_ARCH='
 MACHINE=amd64		MACHINE_ARCH=x86_64
+MACHINE=evbarm		MACHINE_ARCH=			NO_DEFAULT
 MACHINE=i386		MACHINE_ARCH=i386
+MACHINE=riscv		MACHINE_ARCH=riscv64	ALIAS=riscv64 DEFAULT
+MACHINE=riscv		MACHINE_ARCH=riscv32	ALIAS=riscv32
 '
 
 # getarch -- find the default MACHINE_ARCH for a MACHINE,

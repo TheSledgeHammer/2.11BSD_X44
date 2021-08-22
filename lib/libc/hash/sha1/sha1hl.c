@@ -11,6 +11,9 @@
 __RCSID("$NetBSD: sha1hl.c,v 1.4 2008/04/13 02:04:32 dholland Exp $");
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+#include <sha1.h>
+
 #define	HASH_ALGORITHM	SHA1
 #define HASH_INCLUDE	<sha1.h>
 

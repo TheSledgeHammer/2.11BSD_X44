@@ -10,6 +10,9 @@
 __RCSID("$NetBSD: md4hl.c,v 1.7 2005/09/26 03:01:41 christos Exp $");
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
+#include <md4.h>
+
 #define	MDALGORITHM	MD4
 #define MDINCLUDE	<md4.h>
 

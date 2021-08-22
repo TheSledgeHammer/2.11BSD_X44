@@ -16,6 +16,29 @@ MAKECONF?=	/etc/mk.conf
 .-include "${MAKECONF}"
 
 #
+# CPU model, derived from MACHINE_ARCH
+#
+MACHINE_CPU= ${MACHINE_ARCH::C/e?arm.*/arm/:S/aarch64eb/aarch64/:C/riscv../riscv/}
+
+#
+# Subdirectory used below ${RELEASEDIR} when building a release
+#
+.if !empty(MACHINE:Mevbarm)
+RELEASEMACHINEDIR?=	${MACHINE}-${MACHINE_ARCH}
+.else
+RELEASEMACHINEDIR?=	${MACHINE}
+.endif
+
+#
+# Subdirectory or path component used for the following paths:
+#   distrib/${RELEASEMACHINE}
+#   distrib/notes/${RELEASEMACHINE}
+#   etc/etc.${RELEASEMACHINE}
+# Used when building a release.
+#
+RELEASEMACHINE?=	${MACHINE}
+
+#
 # NEED_OWN_INSTALL_TARGET is set to "no" by pkgsrc/mk/bsd.pkg.mk to
 # ensure that things defined by <bsd.own.mk> (default targets,
 # INSTALL_FILE, etc.) are not conflicting with bsd.pkg.mk.
@@ -521,9 +544,18 @@ MKGCC:= no
 #
 SHLIB_VERSION_FILE?= ${.CURDIR}/shlib_version
 
+# For each ${MACHINE_CPU}, list the ports that use it.
+MACHINES.aarch64=	evbarm
+MACHINES.arm=		evbarm
+MACHINES.i386=		i386
+MACHINES.riscv=		riscv
+MACHINES.x86_64=	amd64
+
 #
 # GNU sources and packages sometimes see architecture names differently.
 #
+GNU_ARCH.aarch64eb=aarch64_be
+GNU_ARCH.earm=arm
 GNU_ARCH.i386=i486
 GCC_CONFIG_ARCH.i386=i486
 GCC_CONFIG_TUNE.i386=nocona
@@ -534,7 +566,12 @@ MACHINE_GNU_ARCH=${GNU_ARCH.${MACHINE_ARCH}:U${MACHINE_ARCH}}
 # In order to identify NetBSD to GNU packages, we sometimes need
 # an "elf" tag for historically a.out platforms.
 #
-.if ${OBJECT_FMT} == "ELF" && (${MACHINE_ARCH} == "i386")
+.if (!empty(MACHINE_ARCH:Mearm*))
+MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsdelf-${MACHINE_ARCH:C/eb//:C/v[4-7]//:S/earm/eabi/}
+.elif ${OBJECT_FMT} == "ELF" &&  		\
+	(${MACHINE_GNU_ARCH} == "arm" || 	\
+	${MACHINE_GNU_ARCH} == "armeb" || 	\
+	${MACHINE_ARCH} == "i386")
 MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsdelf
 .else
 MACHINE_GNU_PLATFORM?=${MACHINE_GNU_ARCH}--netbsd

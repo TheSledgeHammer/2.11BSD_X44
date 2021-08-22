@@ -3,6 +3,9 @@
 #ifndef _MD2_H_
 #define _MD2_H_
 
+#include <sys/cdefs.h>
+#include <sys/types.h>
+
 #define	MD2_DIGEST_LENGTH			16
 #define	MD2_DIGEST_STRING_LENGTH	33
 #define	MD2_BLOCK_LENGTH			16

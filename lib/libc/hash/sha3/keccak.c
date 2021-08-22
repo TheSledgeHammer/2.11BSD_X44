@@ -42,13 +42,13 @@ __RCSID("$NetBSD: keccak.c,v 1.1 2017/11/30 05:47:24 riastradh Exp $");
 
 #define	secret	/* can't use in variable-time operations, should zero */
 
-#define	FOR5(X, STMT) do						      \
-{									      \
-	(X) = 0; STMT;							      \
-	(X) = 1; STMT;							      \
-	(X) = 2; STMT;							      \
-	(X) = 3; STMT;							      \
-	(X) = 4; STMT;							      \
+#define	FOR5(X, STMT) do						    \
+{									      			\
+	(X) = 0; STMT;							     	\
+	(X) = 1; STMT;							      	\
+	(X) = 2; STMT;							      	\
+	(X) = 3; STMT;							      	\
+	(X) = 4; STMT;							      	\
 } while (0)
 
 static inline secret u_int64_t
