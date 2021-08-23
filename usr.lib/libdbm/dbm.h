@@ -8,7 +8,7 @@
 
 #include <sys/null.h>
 
-#include "../libndbm/ndbm.h"
+#include "ndbm.h"
 
 datum	fetch();
 datum	firstkey();

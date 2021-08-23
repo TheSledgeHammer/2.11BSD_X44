@@ -12,8 +12,8 @@ WARNS?=		5
 
 CPPFLAGS+=	-I${.CURDIR}
 
-SRCS= 		dbm.c
-INCS= 		dbm.h
+SRCS= 		dbm.c ndbm.c
+INCS= 		dbm.h ndbm.h
 INCSDIR=	/usr/include
 
 .include <bsd.lib.mk>

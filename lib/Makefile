@@ -34,7 +34,6 @@ SUBDIR+=	libarch libcompat
 
 USRLIBDIR= 	../usr.lib
 SUBDIR+=  	${USRLIBDIR}/libdbm 	\
-			${USRLIBDIR}/libndbm 	\
 			${USRLIBDIR}/libmp 		\
 			${USRLIBDIR}/libtermcap \
 			${USRLIBDIR}/libutil 	\

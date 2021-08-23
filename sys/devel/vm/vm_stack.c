@@ -186,19 +186,18 @@ vm_psegment_extent_suballoc(pseg, size, boundary, type, flags)
 	u_long 			boundary;
 	int 			type, flags;
 {
-	register struct extent ex;
+	caddr_t addr;
 	int 	error;
-
-	ex = pseg->ps_extent;
 
 	switch (type) {
 	case PSEG_DATA:
 		vm_data_t data = pseg->ps_data;
 		if (data != NULL) {
-			error = extent_alloc(ex, size, SEGMENT_SIZE, boundary, flags, data->psx_dresult);
+			error = extent_alloc(pseg->ps_extent, size, SEGMENT_SIZE, boundary, flags, data->psx_dresult);
 			if (error) {
 				printf("vm_psegment_extent_suballoc: data extent allocated: addr %s size %l", data->psx_daddr, size);
 			} else {
+				addr = data->psx_daddr;
 				goto out;
 			}
 		}
@@ -206,10 +205,11 @@ vm_psegment_extent_suballoc(pseg, size, boundary, type, flags)
 	case PSEG_STACK:
 		vm_stack_t stack = pseg->ps_stack;
 		if (stack != NULL) {
-			error = extent_alloc(ex, size, SEGMENT_SIZE, boundary, flags, stack->psx_sresult);
+			error = extent_alloc(pseg->ps_extent, size, SEGMENT_SIZE, boundary, flags, stack->psx_sresult);
 			if (error) {
 				printf("vm_psegment_extent_suballoc: stack extent allocated: addr %s size %l", stack->psx_saddr, size);
 			} else {
+				addr = stack->psx_saddr;
 				goto out;
 			}
 		}
@@ -217,10 +217,11 @@ vm_psegment_extent_suballoc(pseg, size, boundary, type, flags)
 	case PSEG_TEXT:
 		vm_text_t text = pseg->ps_text;
 		if (text != NULL) {
-			error = extent_alloc(ex, size, SEGMENT_SIZE, boundary, flags, text->psx_tresult);
+			error = extent_alloc(pseg->ps_extent, size, SEGMENT_SIZE, boundary, flags, text->psx_tresult);
 			if (error) {
 				printf("vm_psegment_extent_suballoc: text extent allocated: addr %s size %l", text->psx_taddr, size);
 			} else {
+				addr = text->psx_taddr;
 				goto out;
 			}
 		}
@@ -228,7 +229,7 @@ vm_psegment_extent_suballoc(pseg, size, boundary, type, flags)
 	}
 
 out:
-	extent_free(ex, addr, size, flags);
+	vm_psegment_extent_free(pseg, size, addr, type, flags);
 	panic("vm_psegment_extent_suballoc: was unable to be allocated");
 }
 

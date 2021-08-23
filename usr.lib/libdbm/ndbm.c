@@ -16,8 +16,7 @@ static char sccsid[] = "@(#)ndbm.c	5.3 (Berkeley) 3/9/86";
 #include <errno.h>
 #include <unistd.h>
 
-#include "ndbm.h"
-#include "../libdbm/dbm.h"
+#include "dbm.h"
 
 #define BYTESIZ 8
 #undef setbit

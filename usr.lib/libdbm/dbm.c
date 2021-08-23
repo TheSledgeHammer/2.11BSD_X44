@@ -9,7 +9,6 @@ static char sccsid[] = "@(#)dbm.c	5.3 (Berkeley) 85/08/15";
 #endif not lint
 
 #include	"dbm.h"
-#include 	"../libndbm/ndbm.h"
 
 #define	NODB	((DBM *)0)
 
