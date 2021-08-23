@@ -56,6 +56,7 @@ __RCSID("$NetBSD: sha2.c,v 1.24 2013/06/09 19:46:56 christos Exp $");
 
 #include "namespace.h"
 #include <string.h>
+#include <stdint.h>
 
 #endif
 
@@ -80,8 +81,8 @@ __RCSID("$NetBSD: sha2.c,v 1.24 2013/06/09 19:46:56 christos Exp $");
 #define ADDINC128(w,n)	{ 		\
 	(w)[0] += (u_int64_t)(n); 	\
 	if ((w)[0] < (n)) { 		\
-		(w)[1]++; 				\
-	} 							\
+		(w)[1]++; 		\
+	} 				\
 }
 
 /*** THE SIX LOGICAL FUNCTIONS ****************************************/
@@ -284,23 +285,23 @@ SHA256_Init(SHA256_CTX *context)
 
 /* Unrolled SHA-256 round macros: */
 
-#define ROUND256_0_TO_15(a,b,c,d,e,f,g,h)						\
-	W256[j] = be32dec(data);									\
-	++data;														\
+#define ROUND256_0_TO_15(a,b,c,d,e,f,g,h)					\
+	W256[j] = be32dec(data);						\
+	++data;									\
 	T1 = (h) + Sigma1_256(e) + Ch((e), (f), (g)) + 				\
-             K256[j] + W256[j]; 								\
-	(d) += T1; 													\
+             K256[j] + W256[j]; 						\
+	(d) += T1; 								\
 	(h) = T1 + Sigma0_256(a) + Maj((a), (b), (c)); 				\
 	j++
 
-#define ROUND256(a,b,c,d,e,f,g,h)								\
-	s0 = W256[(j+1)&0x0f]; 										\
-	s0 = sigma0_256(s0); 										\
-	s1 = W256[(j+14)&0x0f]; 									\
-	s1 = sigma1_256(s1); 										\
-	T1 = (h) + Sigma1_256(e) + Ch((e), (f), (g)) + K256[j] + 	\
+#define ROUND256(a,b,c,d,e,f,g,h)						\
+	s0 = W256[(j+1)&0x0f]; 							\
+	s0 = sigma0_256(s0); 							\
+	s1 = W256[(j+14)&0x0f]; 						\
+	s1 = sigma1_256(s1); 							\
+	T1 = (h) + Sigma1_256(e) + Ch((e), (f), (g)) + K256[j] + 		\
 	     (W256[j&0x0f] += s1 + W256[(j+9)&0x0f] + s0); 			\
-	(d) += T1; 													\
+	(d) += T1; 								\
 	(h) = T1 + Sigma0_256(a) + Maj((a), (b), (c)); 				\
 	j++
 
@@ -630,24 +631,24 @@ SHA512_Init(SHA512_CTX *context)
 #ifdef SHA2_UNROLL_TRANSFORM
 
 /* Unrolled SHA-512 round macros: */
-#define ROUND512_0_TO_15(a,b,c,d,e,f,g,h)	\
-	W512[j] = be64dec(data);		\
-	++data;					\
-	T1 = (h) + Sigma1_512(e) + Ch((e), (f), (g)) + \
-             K512[j] + W512[j]; \
-	(d) += T1, \
-	(h) = T1 + Sigma0_512(a) + Maj((a), (b), (c)), \
+#define ROUND512_0_TO_15(a,b,c,d,e,f,g,h)				\
+	W512[j] = be64dec(data);					\
+	++data;								\
+	T1 = (h) + Sigma1_512(e) + Ch((e), (f), (g)) + 			\
+             K512[j] + W512[j]; 					\
+	(d) += T1, 							\
+	(h) = T1 + Sigma0_512(a) + Maj((a), (b), (c)), 			\
 	j++
 
-#define ROUND512(a,b,c,d,e,f,g,h)	\
-	s0 = W512[(j+1)&0x0f]; \
-	s0 = sigma0_512(s0); \
-	s1 = W512[(j+14)&0x0f]; \
-	s1 = sigma1_512(s1); \
-	T1 = (h) + Sigma1_512(e) + Ch((e), (f), (g)) + K512[j] + \
-             (W512[j&0x0f] += s1 + W512[(j+9)&0x0f] + s0); \
-	(d) += T1; \
-	(h) = T1 + Sigma0_512(a) + Maj((a), (b), (c)); \
+#define ROUND512(a,b,c,d,e,f,g,h)					\
+	s0 = W512[(j+1)&0x0f]; 						\
+	s0 = sigma0_512(s0); 						\
+	s1 = W512[(j+14)&0x0f]; 					\
+	s1 = sigma1_512(s1); 						\
+	T1 = (h) + Sigma1_512(e) + Ch((e), (f), (g)) + K512[j] + 	\
+             (W512[j&0x0f] += s1 + W512[(j+9)&0x0f] + s0); 		\
+	(d) += T1; 							\
+	(h) = T1 + Sigma0_512(a) + Maj((a), (b), (c)); 			\
 	j++
 
 void
