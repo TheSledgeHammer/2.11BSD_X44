@@ -790,6 +790,60 @@ int	 	cgetustr(char *, const char *, char **);
 #if !HAVE_DECL_LE64TOH
 #define le64toh(x)	htole64(x)
 #endif
+#define __GEN_ENDIAN_ENC(bits, endian) 			\
+static void 						\
+endian ## bits ## enc(void *dst, u_int ## bits ## _t u) \
+{ 							\
+	u = hto ## endian ## bits (u); 			\
+	memcpy(dst, &u, sizeof(u)); 			\
+}
+#if !HAVE_DECL_BE16ENC
+__GEN_ENDIAN_ENC(16, be)
+#endif
+#if !HAVE_DECL_BE32ENC
+__GEN_ENDIAN_ENC(32, be)
+#endif
+#if !HAVE_DECL_BE64ENC
+__GEN_ENDIAN_ENC(64, be)
+#endif
+#if !HAVE_DECL_LE16ENC
+__GEN_ENDIAN_ENC(16, le)
+#endif
+#if !HAVE_DECL_LE32ENC
+__GEN_ENDIAN_ENC(32, le)
+#endif
+#if !HAVE_DECL_LE64ENC
+__GEN_ENDIAN_ENC(64, le)
+#endif
+#undef __GEN_ENDIAN_ENC
+
+#define __GEN_ENDIAN_DEC(bits, endian) 			\
+static u_int ## bits ## _t 				\
+endian ## bits ## dec(const void *buf) 			\
+{ 							\
+	u_int ## bits ## _t u; 				\
+	memcpy(&u, buf, sizeof(u)); 			\
+	return endian ## bits ## toh (u); 		\
+}
+#if !HAVE_DECL_BE16DEC
+__GEN_ENDIAN_DEC(16, be)
+#endif
+#if !HAVE_DECL_BE32DEC
+__GEN_ENDIAN_DEC(32, be)
+#endif
+#if !HAVE_DECL_BE64DEC
+__GEN_ENDIAN_DEC(64, be)
+#endif
+#if !HAVE_DECL_LE16DEC
+__GEN_ENDIAN_DEC(16, le)
+#endif
+#if !HAVE_DECL_LE32DEC
+__GEN_ENDIAN_DEC(32, le)
+#endif
+#if !HAVE_DECL_LE64DEC
+__GEN_ENDIAN_DEC(64, le)
+#endif
+#undef __GEN_ENDIAN_DEC
 
 /* <sys/mman.h> */
 
