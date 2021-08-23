@@ -11,6 +11,14 @@
 
 #include <sys/queue.h>
 
+#include <arch/i386/include/param.h>
+#include <arch/i386/include/vmparam.h>
+
+/* Tell whether virtual page numbers are in text|data|stack segment */
+#define	isassv(p, v)	((v) >= BTOPUSRSTACK - (p)->p_ssize)
+#define	isatsv(p, v)	(((v) - LOWPAGES) < (p)->p_tsize)
+#define	isadsv(p, v)	(((v) - LOWPAGES) >= stoc(ctos((p)->p_tsize)) && (v) < LOWPAGES + (p)->p_tsize + (p)->p_dsize + (p)->p_mmsize)
+
 /*
  * Text structure
  * One allocated per pure
@@ -23,20 +31,20 @@ struct txtlist;
 TAILQ_HEAD(txtlist, vm_text);
 struct vm_text {
     /* text extent info */
-	segsz_t 				sp_tsize;				/* text size */
-	caddr_t					sp_taddr;				/* text addr */
-    int 					sp_tflag;				/* text flags */
-    u_long					sp_tresult;				/* text extent */
+	segsz_t 				psx_tsize;				/* text size */
+	caddr_t					psx_taddr;				/* text addr */
+    int 					psx_tflag;				/* text flags */
+    u_long					psx_tresult;			/* text extent */
 
-    TAILQ_ENTRY(vm_text)  	x_list;					/* text freelist */
-    swblk_t					x_ptdaddr;				/* disk address of page table */
-    caddr_t	                x_daddr;				/* segment's disk address */
-    caddr_t                 x_caddr;				/* core address, if loaded */
-    size_t	                x_size;					/* size (clicks) */
-    struct vnode            *x_vptr;    			/* vnode pointer */
-    u_char	                x_count;				/* reference count */
-    u_char	                x_ccount;				/* number of loaded references */
-    u_char	                x_flag;					/* traced, written flags */
+    TAILQ_ENTRY(vm_text)  	psx_list;				/* text freelist */
+    swblk_t					psx_ptdaddr;			/* disk address of page table */
+    caddr_t	                psx_daddr;				/* segment's disk address */
+    caddr_t                 psx_caddr;				/* core address, if loaded */
+    size_t	                psx_size;				/* size (clicks) */
+    struct vnode            *psx_vptr;    			/* vnode pointer */
+    u_char	                psx_count;				/* reference count */
+    u_char	                psx_ccount;				/* number of loaded references */
+    u_char	                psx_flag;				/* traced, written flags */
     char	                dummy;					/* room for one more */
 };
 
@@ -58,16 +66,16 @@ struct vm_text {
  * Text table statistics
  */
 struct vm_xstats {
-    u_long	                xs_alloc;			    /* calls to xalloc */
-    u_long	                xs_alloc_inuse;		    /* found in use/sticky */
-    u_long	                xs_alloc_cachehit;		/* found in cache */
-    u_long	                xs_alloc_cacheflush;	/* flushed cached text */
-    u_long	                xs_alloc_unused;		/* flushed unused cached text */
-    u_long	                xs_free;			    /* calls to xfree */
-    u_long	                xs_free_inuse;		    /* still in use/sticky */
-    u_long	                xs_free_cache;		    /* placed in cache */
-    u_long	                xs_free_cacheswap;		/* swapped out to place in cache */
-    u_long					xs_purge;				/* calls to xpurge */
+    u_long	                psxs_alloc;			    /* calls to xalloc */
+    u_long	                psxs_alloc_inuse;		    /* found in use/sticky */
+    u_long	                psxs_alloc_cachehit;		/* found in cache */
+    u_long	                psxs_alloc_cacheflush;	/* flushed cached text */
+    u_long	                psxs_alloc_unused;		/* flushed unused cached text */
+    u_long	                psxs_free;			    /* calls to xfree */
+    u_long	                psxs_free_inuse;		    /* still in use/sticky */
+    u_long	                psxs_free_cache;		    /* placed in cache */
+    u_long	                psxs_free_cacheswap;		/* swapped out to place in cache */
+    u_long					psxs_purge;				/* calls to xpurge */
 };
 
 extern

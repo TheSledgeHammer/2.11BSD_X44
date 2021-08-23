@@ -65,7 +65,7 @@ rwlock_init(rwl, prio, wmesg, timo, flags)
 
 	/* lock holder */
 	rwl->rwl_lockholder = &kernel_lockholder;
-	LOCKHOLDER_PID(rwl->rwl_lockholder) = RW_NOTHREAD;
+	LOCKHOLDER_PID(rwl->rwl_lockholder) = RW_NOPROC;
 }
 
 int
@@ -95,8 +95,8 @@ rwlockmgr(rwl, flags, interlkp, pid)
 	error = 0;
 
 	if (!pid) {
-		pid = RW_THREAD;
-		LOCKHOLDER_PID(rwl->rwl_lockholder) = RW_THREAD;
+		pid = RW_KERNPROC;
+		LOCKHOLDER_PID(rwl->rwl_lockholder) = RW_KERNPROC;
 	}
 	rwlock_lock(&rwl);
 	if (flags & RW_INTERLOCK) {
@@ -126,7 +126,7 @@ rwlockmgr(rwl, flags, interlkp, pid)
 		rwl->rwl_writercount += rwl->rwl_readercount;
 		rwl->rwl_readercount = 0;
 		rwl->rwl_flags &= ~RW_HAVE_READ;
-		LOCKHOLDER_PID(rwl->rwl_lockholder) = RW_NOTHREAD;
+		LOCKHOLDER_PID(rwl->rwl_lockholder) = RW_NOPROC;
 		if (rwl->rwl_waitcount)
 			wakeup((void *)rwl);
 		break;
@@ -151,7 +151,7 @@ rwlockmgr(rwl, flags, interlkp, pid)
 		rwl->rwl_readercount += rwl->rwl_writercount;
 		rwl->rwl_writercount = 1;
 		rwl->rwl_flags &= ~RW_HAVE_WRITE;
-		LOCKHOLDER_PID(rwl->rwl_lockholder) = RW_NOTHREAD;
+		LOCKHOLDER_PID(rwl->rwl_lockholder) = RW_NOPROC;
 		if (rwl->rwl_waitcount)
 			wakeup((void *)rwl);
 		break;
@@ -195,7 +195,7 @@ rwlock_read_held(rwl)
 	register struct lock_object_cpu *cpu = lock->lo_cpus[cpu_number()];
 	if (rwl == NULL)
 		return 0;
-	return (cpu->loc_my_ticket & RW_HAVE_WRITE) == 0 && (cpu->loc_my_ticket & RW_THREAD) != 0;
+	return (cpu->loc_my_ticket & RW_HAVE_WRITE) == 0 && (cpu->loc_my_ticket & RW_KERNPROC) != 0;
 }
 
 /*
@@ -213,7 +213,7 @@ rwlock_write_held(rwl)
 	register struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
 	if (rwl == NULL)
 		return (0);
-	return (cpu->loc_my_ticket & (RW_HAVE_WRITE | RW_THREAD)) == (RW_HAVE_WRITE | curproc);
+	return (cpu->loc_my_ticket & (RW_HAVE_WRITE | RW_KERNPROC)) == (RW_HAVE_WRITE | curproc);
 }
 
 /*
@@ -231,7 +231,7 @@ rwlock_lock_held(rwl)
 	register struct lock_object_cpu *cpu = &lock->lo_cpus[cpu_number()];
 	if (rwl == NULL)
 		return 0;
-	return (cpu->loc_my_ticket & RW_THREAD) != 0;
+	return (cpu->loc_my_ticket & RW_KERNPROC) != 0;
 }
 
 int lock_wait_time = 100;

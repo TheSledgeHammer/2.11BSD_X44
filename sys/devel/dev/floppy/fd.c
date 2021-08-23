@@ -117,7 +117,8 @@
 #include <sys/proc.h>
 #include <sys/fdio.h>
 #include <sys/bus.h>
-#include <sys/conf.h>
+//#include <sys/conf.h>
+#include <sys/errno.h>
 #include <sys/devsw.h>
 
 #include <vm/include/vm_extern.h>
@@ -142,8 +143,8 @@
 #include <dev/core/isa/isavar.h>
 #include <dev/core/isa/isadmavar.h>
 
-#include <dev/disk/floppy/fdreg.h>
-#include <dev/disk/floppy/fdcvar.h>
+#include <devel/dev/floppy/fdreg.h>
+#include <devel/dev/floppy/fdcvar.h>
 
 //#if defined(i386)
 
@@ -157,7 +158,7 @@
 
 #endif /* i386 */
 
-#include <dev/disk/floppy/fdvar.h>
+#include <dev/floppy/fdvar.h>
 
 #define FDUNIT(dev)	(minor(dev) / 8)
 #define FDTYPE(dev)	(minor(dev) % 8)
@@ -261,8 +262,8 @@ void fdctimeout (void *arg);
 void fdcpseudointr (void *arg);
 void fdcretry (struct fdc_softc *fdc);
 void fdfinish (struct fd_softc *fd, struct buf *bp);
-__inline const struct fd_type *fd_dev_to_type (struct fd_softc *, dev_t);
-int fdformat (dev_t, struct ne7_fd_formb *, struct proc *);
+__inline const struct fd_type *fd_dev_to_type (struct fd_softc *, struct device);
+int fdformat (struct device, struct ne7_fd_formb *, struct proc *);
 
 void	fd_mountroot_hook (struct device *);
 
@@ -270,8 +271,8 @@ void	fd_mountroot_hook (struct device *);
  * Arguments passed between fdcattach and fdprobe.
  */
 struct fdc_attach_args {
-	int fa_drive;
-	const struct fd_type *fa_deftype;
+	int 					fa_drive;
+	const struct fd_type 	*fa_deftype;
 };
 
 /*
@@ -566,7 +567,7 @@ fd_nvtotype(fdc, nvraminfo, drive)
 __inline const struct fd_type *
 fd_dev_to_type(fd, dev)
 	struct fd_softc *fd;
-	dev_t dev;
+	struct device *dev;
 {
 	u_int type = FDTYPE(dev);
 
@@ -695,7 +696,7 @@ fdfinish(fd, bp)
 
 int
 fdread(dev, uio, flags)
-	dev_t dev;
+	struct device *dev;
 	struct uio *uio;
 	int flags;
 {
@@ -705,7 +706,7 @@ fdread(dev, uio, flags)
 
 int
 fdwrite(dev, uio, flags)
-	dev_t dev;
+	struct device *dev;
 	struct uio *uio;
 	int flags;
 {
@@ -814,7 +815,7 @@ out_fdc(iot, ioh, x)
 
 int
 fdopen(dev, flags, mode, p)
-	dev_t dev;
+	struct device *dev;
 	int flags;
 	int mode;
 	struct proc *p;
@@ -844,7 +845,7 @@ fdopen(dev, flags, mode, p)
 
 int
 fdclose(dev, flags, mode, p)
-	dev_t dev;
+	struct device *dev;
 	int flags;
 	int mode;
 	struct proc *p;
@@ -1307,7 +1308,7 @@ fdcretry(fdc)
 
 int
 fdioctl(dev, cmd, addr, flag, p)
-	dev_t dev;
+	struct device *dev;
 	u_long cmd;
 	caddr_t addr;
 	int flag;
@@ -1516,7 +1517,7 @@ fdioctl(dev, cmd, addr, flag, p)
 
 int
 fdformat(dev, finfo, p)
-	dev_t dev;
+	struct device *dev;
 	struct ne7_fd_formb *finfo;
 	struct proc *p;
 {

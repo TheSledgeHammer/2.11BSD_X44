@@ -120,12 +120,12 @@ vm_vsxalloc(xp)
 	register long blk;
 	register swblk_t *dp;
 	swblk_t vsbase;
-	if (ctod(xp->x_size) > NXDAD * dmtext) {
+	if (ctod(xp->psx_size) > NXDAD * dmtext) {
 		return (0);
 	}
-	dp = xp->x_daddr;
-	for (vsbase = 0; vsbase < ctod(xp->x_size); vsbase += dmtext) {
-		blk = ctod(xp->x_size) - vsbase;
+	dp = xp->psx_daddr;
+	for (vsbase = 0; vsbase < ctod(xp->psx_size); vsbase += dmtext) {
+		blk = ctod(xp->psx_size) - vsbase;
 		if (blk > dmtext) {
 			blk = dmtext;
 		}
@@ -134,10 +134,10 @@ vm_vsxalloc(xp)
 			return (0);
 		}
 	}
-	if (xp->x_flag & XPAGV) {
-		xp->x_ptdaddr = rmalloc(swapmap, (long)ctod(clrnd(ctopt(xp->x_size))));
-		if (xp->x_ptdaddr == 0) {
-			vm_vsxfree(xp, (long)xp->x_size);
+	if (xp->psx_flag & XPAGV) {
+		xp->psx_ptdaddr = rmalloc(swapmap, (long)ctod(clrnd(ctopt(xp->psx_size))));
+		if (xp->psx_ptdaddr == 0) {
+			vm_vsxfree(xp, (long)xp->psx_size);
 			return (0);
 		}
 	}
@@ -158,7 +158,7 @@ vm_vsxfree(xp, ts)
 	swblk_t 		vsbase;
 
 	ts = ctod(ts);
-	dp = xp->x_daddr;
+	dp = xp->psx_daddr;
 	for (vsbase = 0; vsbase < ts; vsbase += dmtext) {
 		blk = ts - vsbase;
 		if (blk > dmtext) {
@@ -167,9 +167,9 @@ vm_vsxfree(xp, ts)
 		rmfree(swapmap, blk, *dp);
 		*dp++ = 0;
 	}
-	if ((xp->x_flag & XPAGV) && xp->x_ptdaddr) {
-		rmfree(swapmap, (long)ctod(clrnd(ctopt(xp->x_size))), xp->x_ptdaddr);
-		xp->x_ptdaddr = 0;
+	if ((xp->psx_flag & XPAGV) && xp->psx_ptdaddr) {
+		rmfree(swapmap, (long)ctod(clrnd(ctopt(xp->psx_size))), xp->psx_ptdaddr);
+		xp->psx_ptdaddr = 0;
 	}
 }
 

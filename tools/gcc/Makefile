@@ -49,10 +49,10 @@ COMMON_CONFIGURE_ARGS+=	--with-tune=${GCC_CONFIG_TUNE.${MACHINE_ARCH}}
 
 # Too many CPUs have one or both of these bugs, the common code should
 # default to safety.
-.if ${MACHINE_CPU} == "aarch64"
-COMMON_CONFIGURE_ARGS+=	--enable-fix-cortex-a53-835769 \
-			--enable-fix-cortex-a53-843419
-.endif
+#.if ${MACHINE_CPU} == "aarch64"
+#COMMON_CONFIGURE_ARGS+=	--enable-fix-cortex-a53-835769 \
+#			--enable-fix-cortex-a53-843419
+#.endif
 
 .if ${HAVE_GCC} >= 7
 COMMON_CONFIGURE_ARGS+=	--with-default-libstdcxx-abi=new

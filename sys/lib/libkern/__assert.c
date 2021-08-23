@@ -64,7 +64,7 @@ kern_assert(const char *fmt, ...)
 		return;
 #endif
 	va_start(ap, fmt);
-	vpanic(fmt, ap);
+	panic(fmt, ap);		/* vpanic unsupported */
 	va_end(ap);
 
 	/*

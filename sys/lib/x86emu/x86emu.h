@@ -128,10 +128,10 @@ struct x86emu_regs {
 	 *  Extern interrupt        1 bits
 	 *  Halted                  1 bits
 	 */
-	uint32_t			mode;
-	volatile int		intr;   /* mask of pending interrupts */
-	uint8_t				intno;
-	uint8_t				__pad[3];
+	uint32_t				mode;
+	volatile int			intr;   /* mask of pending interrupts */
+	uint8_t					intno;
+	uint8_t					__pad[3];
 };
 
 struct x86emu {

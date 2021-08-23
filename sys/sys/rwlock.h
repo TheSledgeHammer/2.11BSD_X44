@@ -47,8 +47,8 @@ struct rwlock {
 };
 typedef struct rwlock       *rwlock_t;
 
-#define RW_THREAD  			LK_KERNPROC
-#define RW_NOTHREAD    		LK_NOPROC
+#define RW_KERNPROC  		LK_KERNPROC
+#define RW_NOPROC   		LK_NOPROC
 
 /* These are flags that are passed to the rwlockmgr routine. */
 #define RW_TYPE_MASK	    0x0FFFFFFF

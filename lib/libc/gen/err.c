@@ -105,10 +105,7 @@ errx(int eval, const char *fmt, ...)
 
 #if !HAVE_DECL_VERR
 void
-verr(eval, fmt, ap)
-	int eval;
-	char *fmt;
-	va_list ap;
+verr(int eval, const char *fmt, va_list ap)
 {
 	int sverrno;
 
@@ -155,9 +152,7 @@ verrx(eval, fmt, ap)
 
 #if !HAVE_DECL_VWARN
 void
-vwarn(fmt, ap)
-	char *fmt;
-	va_list ap;
+vwarn(const char *fmt, va_list ap)
 {
 	int sverrno;
 
@@ -187,9 +182,7 @@ vwarnc(int code, const char *fmt, va_list ap)
 
 #if !HAVE_DECL_VWARNX
 void
-vwarnx(fmt, ap)
-	char *fmt;
-	va_list ap;
+vwarnx(const char *fmt, va_list ap)
 {
 	putprog();
 	if (fmt != NULL)

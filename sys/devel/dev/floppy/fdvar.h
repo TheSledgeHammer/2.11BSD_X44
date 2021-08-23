@@ -36,6 +36,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/queue.h>
+
 /*
  * Floppies come in various flavors, e.g., 1.2MB vs 1.44MB; here is how
  * we tell them apart.

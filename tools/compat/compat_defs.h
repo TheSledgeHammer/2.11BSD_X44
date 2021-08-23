@@ -315,6 +315,9 @@ void errc(int, int, const char *, ...);
 #if !HAVE_DECL_ERRX
 void errx(int, const char *, ...);
 #endif
+#if !HAVE_DECL_VERR
+void verr(int, const char *, va_list);
+#endif
 #if !HAVE_DECL_VERRC
 void verrc(int, int, const char *, va_list);
 #endif
@@ -329,6 +332,9 @@ void warnc(int, const char *, ...);
 #endif
 #if !HAVE_DECL_WARNX
 void warnx(const char *, ...);
+#endif
+#if !HAVE_DECL_VWARN
+void vwarn(const char *, va_list);
 #endif
 #if !HAVE_DECL_VWARNC
 void vwarnc(int, const char *, va_list);

@@ -70,6 +70,8 @@
  *	@(#)fd.c	7.4 (Berkeley) 5/25/91
  */
 
+#include <sys/queue.h>
+
 /*
  * Floppy formatting facilities merged from FreeBSD fd.c driver:
  *	Id: fd.c,v 1.53 1995/03/12 22:40:56 joerg Exp

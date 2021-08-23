@@ -55,6 +55,8 @@
 #define	USRTEXT					0
 #define	USRSTACK				0xFDBFE000
 #define	BTOPUSRSTACK			(0xFDC00-(UPAGES))	/* btop(USRSTACK) */
+#define	LOWPAGES				0
+#define HIGHPAGES				UPAGES
 
 /*
  * Virtual memory related constants, all in bytes

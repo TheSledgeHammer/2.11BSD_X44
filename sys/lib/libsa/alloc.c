@@ -123,5 +123,5 @@ calloc(size1, size2)
 
 	/* alloc will crib for me. */
 
-	return(ptr);
+	return (ptr);
 }

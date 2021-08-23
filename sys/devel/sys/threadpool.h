@@ -29,8 +29,8 @@
 #ifndef SYS_THREADPOOL_H_
 #define SYS_THREADPOOL_H_
 
-#include <libuthread/uthread.h>
 #include <sys/kthread.h>
+#include <libuthread/uthread.h>
 
 /*
  * Two Threadpools:

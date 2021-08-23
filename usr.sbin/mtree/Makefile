@@ -14,7 +14,7 @@ DPADD+= ${LIBUTIL}
 LDADD+= -lutil
 .endif
 
-CPPFLAGS+=	-I${NETBSDSRCDIR}/sbin/mknod	-I${NETBSDSRCDIR}/usr.bin/cksum
-.PATH:		${NETBSDSRCDIR}/sbin/mknod		${NETBSDSRCDIR}/usr.bin/cksum	
+CPPFLAGS+=	-I${NETBSDSRCDIR}/sbin/mknod
+.PATH:		${NETBSDSRCDIR}/sbin/mknod	
 
 .include <bsd.prog.mk>

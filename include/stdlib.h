@@ -154,6 +154,10 @@ char	*setstate(char *);
 void	srandom(unsigned long);
 void	unsetenv(const char *);
 
+char	*mktemp (char *);
+char	*mkdtemp (char *);
+int	 	mkstemp (char *);
+
 void	*reallocarray(void *, size_t, size_t);
 int		reallocarr(void *, size_t, size_t);
 
@@ -161,6 +165,14 @@ int		reallocarr(void *, size_t, size_t);
 long long strtoq (const char *, char **, int);
 unsigned long long strtouq (const char *, char **, int);
 #endif
+#endif
+
+/*
+ * ISO C99
+ */
+#if defined(_ISOC99_SOURCE) || (__STDC_VERSION__ - 0) >= 199901L
+/* LONGLONG */
+long long int	strtoll (const char * __restrict, char ** __restrict, int);
 #endif
 
 intmax_t	strtoimax (const char * __restrict, char ** __restrict, int);

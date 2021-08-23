@@ -182,7 +182,7 @@ struct lock_type {
 
 /* lock holder */
 struct lock_holder {
-	u_char						lh_pid;
+	pid_t						lh_pid;
 	struct pgrp 				*lh_pgrp;
 
 	struct proc 				*lh_proc;

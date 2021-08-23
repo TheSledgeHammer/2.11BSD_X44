@@ -40,10 +40,10 @@ vm_segment_expand(p, pseg, newsize, type)
 	caddr_t a1, a2;
 
 	if (type == PSEG_DATA) {
-		n = pseg->ps_data.sp_dsize;
-		pseg->ps_data.sp_dsize = newsize;
-		p->p_dsize = pseg->ps_data.sp_dsize;
-		a1 = pseg->ps_data.sp_daddr;
+		n = pseg->ps_data.psx_dsize;
+		pseg->ps_data.psx_dsize = newsize;
+		p->p_dsize = pseg->ps_data.psx_dsize;
+		a1 = pseg->ps_data.psx_daddr;
 		vm_psegment_expand(pseg, newsize, a1, PSEG_DATA);
 		if (n >= newsize) {
 			n -= newsize;
@@ -52,22 +52,22 @@ vm_segment_expand(p, pseg, newsize, type)
 			return;
 		}
 	} else {
-		n = pseg->ps_stack.sp_ssize;
-		pseg->ps_stack.sp_ssize = newsize;
-		p->p_ssize = pseg->ps_stack.sp_ssize;
-		a1 = pseg->ps_stack.sp_saddr;
+		n = pseg->ps_stack.psx_ssize;
+		pseg->ps_stack.psx_ssize = newsize;
+		p->p_ssize = pseg->ps_stack.psx_ssize;
+		a1 = pseg->ps_stack.psx_saddr;
 		vm_psegment_expand(pseg, newsize, a1, PSEG_STACK);
 		if (n >= newsize) {
 			n -= newsize;
-			pseg->ps_stack.sp_saddr += n;
-			p->p_saddr = pseg->ps_stack.sp_saddr;
+			pseg->ps_stack.psx_saddr += n;
+			p->p_saddr = pseg->ps_stack.psx_saddr;
 			vm_psegment_extent_free(pseg, n, a1, PSEG_STACK, 0);
 			rmfree(coremap, n, a1);
 			return;
 		}
 	}
 	if (type == PSEG_STACK) {
-		a1 = pseg->ps_stack.sp_saddr;
+		a1 = pseg->ps_stack.psx_saddr;
 		i = newsize - n;
 		a2 = a1 + i;
 		/*
@@ -90,15 +90,15 @@ vm_segment_expand(p, pseg, newsize, type)
 		}
 	}
 	if (type == PSEG_STACK) {
-		pseg->ps_stack.sp_saddr = a2;
-		p->p_saddr = pseg->ps_stack.sp_saddr;
+		pseg->ps_stack.psx_saddr = a2;
+		p->p_saddr = pseg->ps_stack.psx_saddr;
 		/*
 		 * Make the copy put the stack at the top of the new area.
 		 */
 		a2 += newsize - n;
 	} else {
-		pseg->ps_data.sp_daddr = a2;
-		p->p_daddr = pseg->ps_data.sp_daddr;
+		pseg->ps_data.psx_daddr = a2;
+		p->p_daddr = pseg->ps_data.psx_daddr;
 	}
 	bcopy(a1, a2, n);
 	rmfree(coremap, n, a1);
@@ -189,22 +189,22 @@ estabur(data, stack, text, dsize, ssize, tsize, sep, flags)
 	switch(sep) {
 	case PSEG_NOSEP:
 		if (flags == SEG_RO) {
-			TEXT_SEGMENT(text, tsize, text->sp_taddr, SEG_RO);
+			TEXT_SEGMENT(text, tsize, text->psx_taddr, SEG_RO);
 		} else {
-			TEXT_SEGMENT(text, tsize, text->sp_taddr, SEG_RW);
+			TEXT_SEGMENT(text, tsize, text->psx_taddr, SEG_RW);
 		}
-		DATA_SEGMENT(data, dsize, data->sp_daddr, SEG_RW);
-		STACK_SEGMENT(stack, ssize, stack->sp_saddr, SEG_RW);
+		DATA_SEGMENT(data, dsize, data->psx_daddr, SEG_RW);
+		STACK_SEGMENT(stack, ssize, stack->psx_saddr, SEG_RW);
 		return (0);
 
 	case PSEG_SEP:
 		if (flags == SEG_RO) {
-			TEXT_SEGMENT(text, tsize, text->sp_taddr, SEG_RO);
+			TEXT_SEGMENT(text, tsize, text->psx_taddr, SEG_RO);
 		} else {
-			TEXT_SEGMENT(text, tsize, text->sp_taddr, SEG_RW);
+			TEXT_SEGMENT(text, tsize, text->psx_taddr, SEG_RW);
 		}
-		DATA_SEGMENT(data, dsize, data->sp_daddr, SEG_RW);
-		STACK_SEGMENT(stack, ssize, stack->sp_saddr, SEG_RW);
+		DATA_SEGMENT(data, dsize, data->psx_daddr, SEG_RW);
+		STACK_SEGMENT(stack, ssize, stack->psx_saddr, SEG_RW);
 		return (0);
 	}
 	return (1);
