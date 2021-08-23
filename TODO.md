@@ -8,8 +8,6 @@ A General todo list. Don't hesitate to add to this list. :)
 
 # usr/ (User & OS Libraries):
 ## lib:
-- libc:
-	- hash: u/int32 issues
 
 ## libexec:
 
@@ -21,17 +19,11 @@ A General todo list. Don't hesitate to add to this list. :)
 ## tools:
 
 ## usr.bin:
-- xinstall:
-	- can't use libc hash (see lib above).
-	- using cksum as workaround
 
 ## usr.lib:
 - libkvm
 
 ## usr.sbin:
-- mtree: 
-	- can't use libc hash (see lib above). 
-	- using cksum as workaround
 
 # usr/sys/ (Kernel):
 ## conf:
@@ -43,9 +35,6 @@ A General todo list. Don't hesitate to add to this list. :)
 ## arch:
 - i386/x86: (Merged under i386)
 	- swapgeneric.c: Update... Contains deprecated code.
-	- Fix IO so it can use apic appropriatly. (pci, eisa, etc..)
-		- Temp solution: All IO are still using the isa_intr routine
-		which is utilizing legacyvectors
 
 ## devel: (planned)
 - Code planned for future integration

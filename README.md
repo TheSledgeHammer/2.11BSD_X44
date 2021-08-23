@@ -33,7 +33,7 @@
 - Scheduler: (95% Complete)
   - Bug Testing
 - Networking:
-  - Firewall/ Packet Filter: NPF or PF & IPFW
+  - Firewall/ Packet Filter: NPF, PF & IPFilter
   - IPv6
 - Filesystem Updates:
   - UFS/FFS/LFS:
@@ -51,6 +51,7 @@
   - HFS
   - NFS
   - SMB/CIFS
+  - UDF
   - PUFFS or FUSE
 
 ## Development
