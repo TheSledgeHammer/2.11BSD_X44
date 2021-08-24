@@ -106,5 +106,4 @@ Please read the following NetBSD guide for more information:
 1. Use of profanity.
    - Will not accept code that contains profanity.
 2. No abuse of others
-
-- Constructive criticism is welcome
+   - Constructive criticism is welcome
