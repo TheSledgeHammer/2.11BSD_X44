@@ -61,6 +61,7 @@ dev_type_write(cnwrite);
 dev_type_stop(cnstop);
 dev_type_ioctl(cnioctl);
 dev_type_poll(cnpoll);
+dev_type_kqfilter(cnkqfilter);
 
 const struct cdevsw cons_cdevsw = {
 		.d_open = cnopen,
@@ -73,6 +74,7 @@ const struct cdevsw cons_cdevsw = {
 		.d_select = noselect,
 		.d_poll = cnpoll,
 		.d_mmap = nommap,
+		.d_kqfilter = cnkqfilter,
 		.d_strategy = nostrategy,
 		.d_discard = nodiscard,
 		.d_type = D_TTY
@@ -289,6 +291,22 @@ cnpoll(dev, events, p)
 }
 
 int
+cnkqfilter(dev_t dev, struct knote *kn)
+{
+	int error;
+
+	/*
+	 * Redirect the kqfilter, if that's appropriate.
+	 * I don't want to think of the possible side effects
+	 * of console redirection here.
+	 */
+	if (!cn_redirect(&dev, 0, &error))
+		return error;
+	return cdev_kqfilter(dev, kn);
+}
+
+
+int
 cngetc()
 {
 	if (cn_tab == NULL)
@@ -326,6 +344,24 @@ cnpollc(on)
 	if (on)
 		++refcount;
 }
+
+void
+cnbell(u_int pitch, u_int period, u_int volume)
+{
+
+	if (cn_tab == NULL || cn_tab->cn_bell == NULL)
+		return;
+	(*cn_tab->cn_bell)(cn_tab->cn_dev, pitch, period, volume);
+}
+
+void
+cnflush(void)
+{
+	if (cn_tab == NULL || cn_tab->cn_flush == NULL)
+		return;
+	(*cn_tab->cn_flush)(cn_tab->cn_dev);
+}
+
 
 void
 nullcnpollc(dev, on)

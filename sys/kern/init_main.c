@@ -149,6 +149,7 @@ main(framep)
 	kmem_rmapinit();
 
 	ksyms_init();
+	prf_init();
 
 	/* Initialize callouts, part 1. */
 	callout_startup();

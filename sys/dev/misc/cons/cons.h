@@ -39,14 +39,16 @@
  */
 
 struct consdev {
-	void		(*cn_probe)(struct consdev *);	/* probe hardware and fill in consdev info */
-	void		(*cn_init)(struct consdev *);	/* turn on as console */
-	int			(*cn_getc)(dev_t);				/* kernel getchar interface */
-	void		(*cn_putc)(dev_t, int);			/* kernel putchar interface */
-	void		(*cn_pollc)(dev_t, int); 		/* turn on and off polling */
-	struct	tty *cn_tp;							/* tty structure for console device */
-	dev_t		cn_dev;							/* major/minor of device */
-	int			cn_pri;							/* pecking order; the higher the better */
+	void		(*cn_probe)(struct consdev *);			/* probe hardware and fill in consdev info */
+	void		(*cn_init)(struct consdev *);			/* turn on as console */
+	int			(*cn_getc)(dev_t);						/* kernel getchar interface */
+	void		(*cn_putc)(dev_t, int);					/* kernel putchar interface */
+	void		(*cn_pollc)(dev_t, int); 				/* turn on and off polling */
+	void		(*cn_bell)(dev_t, u_int, u_int, u_int);	/* ring bell */
+	void		(*cn_flush)(dev_t);						/* flush output */
+	struct	tty *cn_tp;									/* tty structure for console device */
+	dev_t		cn_dev;									/* major/minor of device */
+	int			cn_pri;									/* pecking order; the higher the better */
 };
 
 /* values for cn_pri - reflect our policy for console selection */
@@ -71,6 +73,8 @@ int		cnread (dev_t, struct uio *, int);
 int		cnwrite (dev_t, struct uio *, int);
 int		cnioctl (dev_t, u_long, caddr_t, int, struct proc *);
 int		cnpoll (dev_t, int, struct proc *);
+void	cnbell(u_int, u_int, u_int);
+void	cnflush(void);
 int		cngetc (void);
 void	cnputc (int);
 void	cnpollc (int);
@@ -83,16 +87,23 @@ void	nullcnpollc (dev_t, int);
 #define	dev_type_cngetc(n)	int n (dev_t)
 #define	dev_type_cnputc(n)	void n (dev_t, int)
 #define	dev_type_cnpollc(n)	void n (dev_t, int)
+#define	dev_type_cnbell(n)	void n(dev_t, u_int, u_int, u_int)
+#define	dev_type_cnflush(n)	void n(dev_t)
 
 #define	dev_decl(n,t)		__CONCAT(dev_type_,t)(__CONCAT(n,t))
 #define	dev_init(n,t)		__CONCAT(n,t)
 
 #define	cons_decl(n) 												\
 	dev_decl(n,cnprobe); dev_decl(n,cninit); dev_decl(n,cngetc); 	\
-	dev_decl(n,cnputc); dev_decl(n,cnpollc);
+	dev_decl(n,cnputc); dev_decl(n,cnpollc); dev_decl(n,cnbell);	\
+	dev_decl(n,cnflush);
 
 #define	cons_init(n) { 												\
 	dev_init(n,cnprobe), dev_init(n,cninit), dev_init(n,cngetc), 	\
-	dev_init(n,cnputc), dev_init(n,cnpollc) 						\
+	dev_init(n,cnputc), dev_init(n,cnpollc), NULL, NULL,			\
 	0, 0 }
+
+#define	cons_init_bell(n) { 										\
+	dev_init(n,cnprobe), dev_init(n,cninit), dev_init(n,cngetc), 	\
+	dev_init(n,cnputc), dev_init(n,cnpollc), dev_init(n,cnbell) }
 #endif

@@ -96,11 +96,11 @@ int 	eopnotsupp (void);
 int 	einval (void);
 int 	nonet (void);
 
-int		selscan (fd_set *ibits, *obits, int nfd, int retval);
-int		seltrue (dev_t dev, int flag);
-void	selwakeup (struct proc *p, long coll);
+int		selscan (fd_set *, *, int, int);
+int		seltrue (dev_t, int );
+void	selwakeup (struct proc *, long);
 
-void 	*hashinit (int count, int type, u_long *hashmask);
+void 	*hashinit (int, int, u_long *);
 
 #ifdef __GNUC__
 volatile void panic (const char *, ...);
@@ -112,58 +112,62 @@ void	addlog (const char *, ...);
 void	log (int, const char *, ...);
 
 /* subr_prf.c */
-typedef struct session *tpr_t;
 void	printf (const char *, ...);
 int		sprintf (char *buf, const char *, ...);
+int		snprintf (char *, size_t, const char *, ...);
+void	vprintf (const char *, _BSD_VA_LIST_);
+int		vsprintf (char *, const char *, _BSD_VA_LIST_);
+int		vsnprintf (char *, size_t, const char *, _BSD_VA_LIST_);
+
 void	ttyprintf (struct tty *, const char *, ...);
-void	tprintf (tpr_t, const char *fmt, ...);
+void	uprintf (const char *, ...);
 char 	*bitmask_snprintf(u_quad_t, const char *, char *, size_t);
 
-void 	bcopy (const void *from, void *to, u_int len);
-void 	ovbcopy (const void *from, void *to, u_int len);
-void 	bzero (void *buf, u_int len);
+void 	bcopy (const void *, void *, u_int);
+void 	ovbcopy (const void *, void *, u_int);
+void 	bzero (void *, u_int);
 
-int		copystr (void *kfaddr, void *kdaddr, u_int len, u_int *done);
-int		copyinstr (void *udaddr, void *kaddr, u_int len, u_int *done);
-int		copyoutstr (void *kaddr, void *udaddr, u_int len, u_int *done);
-int		copyin (void *udaddr, void *kaddr, u_int len);
-int		copyout (void *kaddr, void *udaddr, u_int len);
+int		copystr (void *, void *, u_int, u_int *);
+int		copyinstr (void *, void *, u_int, u_int *);
+int		copyoutstr (void *, void *, u_int, u_int *);
+int		copyin (void *, void *, u_int);
+int		copyout (void *, void *, u_int);
 
-int		fubyte (void *base);
+int		fubyte (void *);
 #ifdef notdef
-int		fuibyte (void *base);
+int		fuibyte (void *);
 #endif
-int		subyte (void *base, int byte);
-int		suibyte (void *base, int byte);
-int		fuword (void *base);
-int		fuiword (void *base);
-int		suword (void *base, int word);
-int		suiword (void *base, int word);
+int		subyte (void *, int);
+int		suibyte (void *, int);
+int		fuword (void *);
+int		fuiword (void *);
+int		suword (void *, int);
+int		suiword (void *, int);
 
 int		hzto (struct timeval *tv);
-void 	timeout (void (*func)(void *), void *arg, int ticks);
-void 	untimeout (void (*func)(void *), void *arg);
+void 	timeout (void (*func)(void *), void *, int);
+void 	untimeout (void (*func)(void *), void *);
 void	realitexpire (void *);
 
-void 	hardclock (struct clockframe *frame, caddr_t pc);
-void 	softclock (struct clockframe *frame, caddr_t pc);
+void 	hardclock (struct clockframe *, caddr_t);
+void 	softclock (struct clockframe *, caddr_t);
 void	initclocks (void);
 
 /* kern_environment.c / kenv.h */
-char	*kern_getenv(const char *name);
-void	freeenv(char *env);
-int		getenv_int(const char *name, int *data);
-int		getenv_uint(const char *name, unsigned int *data);
-int		getenv_long(const char *name, long *data);
-int		getenv_ulong(const char *name, unsigned long *data);
-int		getenv_string(const char *name, char *data, int size);
-int		getenv_int64(const char *name, int64_t *data);
-int		getenv_uint64(const char *name, uint64_t *data);
-int		getenv_quad(const char *name, quad_t *data);
-int		kern_setenv(const char *name, const char *value);
-int		kern_unsetenv(const char *name);
-int		testenv(const char *name);
-int		getenv_array(const char *name, void *data, int size, int *psize, int type_size, bool allow_signed);
+char	*kern_getenv(const char *);
+void	freeenv(char *);
+int		getenv_int(const char *, int *);
+int		getenv_uint(const char *, unsigned int *);
+int		getenv_long(const char *, long *data);
+int		getenv_ulong(const char *, unsigned long *);
+int		getenv_string(const char *, char *, int );
+int		getenv_int64(const char *, int64_t *);
+int		getenv_uint64(const char *, uint64_t *);
+int		getenv_quad(const char *, quad_t *);
+int		kern_setenv(const char *, const char *);
+int		kern_unsetenv(const char *);
+int		testenv(const char *);
+int		getenv_array(const char *, void *, int, int *, int, bool);
 
 #define	GETENV_UNSIGNED	false	/* negative numbers not allowed */
 #define	GETENV_SIGNED	true	/* negative numbers allowed */

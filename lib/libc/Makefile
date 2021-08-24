@@ -97,6 +97,7 @@ assym.h: ${ARCHDIR}/genassym.cf
 .include "${.CURDIR}/ns/Makefile.inc"
 .include "${.CURDIR}/quad/Makefile.inc"
 .include "${.CURDIR}/regex/Makefile.inc"
+.include "${.CURDIR}/ssp/Makefile.inc"
 .include "${.CURDIR}/stdio/Makefile.inc"
 .include "${.CURDIR}/stdlib/Makefile.inc"
 .include "${.CURDIR}/string/Makefile.inc"

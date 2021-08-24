@@ -30,7 +30,9 @@ INCS+=	protocols/dumprestore.h protocols/routed.h protocols/rwhod.h 		\
 
 .include <bsd.own.mk>
 
-INCSDIR=	/usr/include
+INCS+=  ssp/ssp.h ssp/stdio.h ssp/string.h ssp/strings.h ssp/unistd.h
+
+INCSDIR= 	/usr/include
 
 SUBDIR=		rpc
 

@@ -4,7 +4,6 @@
 
 INCSDIR= 	/usr/include/sys
 
-
 INCS=		acct.h ansi.h ataio.h atomic.h audioio.h bitmap.h boot.h buf.h 		\
 			bus.h callout.h cdefs_aout.h cdefs_elf.h cdefs.h cdio.h chio.h 		\
 			clist.h conf.h cputopo.h device.h devsw.h 							\
@@ -16,15 +15,14 @@ INCS=		acct.h ansi.h ataio.h atomic.h audioio.h bitmap.h boot.h buf.h 		\
 			ioctl_compat.h ioctl.h kenv.h kernel.h ksyms.h ktrace.h				\
 			lock.h lockf.h malloc.h map.h mbuf.h memrange.h midiio.h			\
 			mman.h mount.h msgbuf.h mtio.h namei.h null.h param.h percpu.h		\
-			poll.h power.h proc.h protosw.h ptrace.h pty.h queue.h reboot.h		\
-			resource.h resourcevar.h rwlock.h scanio.h scsiio.h select.h		\
-			signal.h signalvar.h socket.h socketvar.h stat.h stdarg.h			\
+			poll.h power.h prf.h proc.h protosw.h ptrace.h pty.h queue.h 		\
+			reboot.h resource.h resourcevar.h rwlock.h scanio.h scsiio.h 		\
+			select.h signal.h signalvar.h socket.h socketvar.h stat.h stdarg.h	\
 			stdbool.h stdint.h syscall.h syscallargs.h sysctl.h syslimits.h		\
 			syslog.h systm.h tablet.h termios.h time.h timeb.h times.h trace.h	\
 			tree.h tty.h ttychars.h ttydefaults.h ttydev.h types.h ucred.h		\
 			uio.h un.h unistd.h unpcb.h user.h utsname.h uuid.h vcmd.h 			\
 			videoio.h vlimit.h vmmeter.h vnode.h wait.h			
-#INCS+=		md4.h md5.h rmd160.h sha1.h sha2.h sha3.h
 
 INCSYMLINKS=									\
 		sys/exec_elf.h 	/usr/include/elf.h 		\
