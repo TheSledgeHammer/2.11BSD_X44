@@ -4,7 +4,7 @@
 
 PROG=	yacc
 SRCS=	closure.c error.c lalr.c lr0.c main.c mkpar.c output.c reader.c \
-	symtab.c verbose.c warshall.c graph.c mstring.c btyaccpar.c
+		symtab.c verbose.c warshall.c graph.c mstring.c btyaccpar.c
 
 CPPFLAGS+=	-DMAXTABLE=INT_MAX
 CPPFLAGS+=	-DGCC_NORETURN=__dead

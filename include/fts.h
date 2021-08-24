@@ -116,10 +116,12 @@ typedef struct _ftsent {
 #define	FTS_NSOK	11			/* no stat(2) requested */
 #define	FTS_SL		12			/* symbolic link */
 #define	FTS_SLNONE	13			/* symbolic link without target */
+#define	FTS_W		14			/* whiteout object */
 	unsigned short 	fts_info;	/* user flags for FTSENT structure */
 
-#define	FTS_DONTCHDIR	 0x01	/* don't chdir .. to the parent */
-#define	FTS_SYMFOLLOW	 0x02	/* followed a symlink to get here */
+#define	FTS_DONTCHDIR	0x01	/* don't chdir .. to the parent */
+#define	FTS_SYMFOLLOW	0x02	/* followed a symlink to get here */
+#define	FTS_ISW		 	0x04	/* this is a whiteout object */
 	unsigned short 	fts_flags;	/* private flags for FTSENT structure */
 
 #define	FTS_AGAIN	 1			/* read node again */

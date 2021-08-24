@@ -1,7 +1,7 @@
 #	$NetBSD: Makefile,v 1.8 2018/09/28 14:45:16 maya Exp $
 #
 
-GNUHOSTDIST=	${.CURDIR}/../../external/bsd/file/dist
+GNUHOSTDIST=	${.CURDIR}/../../external/file/dist
 
 CONFIGURE_ENV+=	CC=${HOST_CC:Q} \
 				CFLAGS=${HOST_CFLAGS:Q} \

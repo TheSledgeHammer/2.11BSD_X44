@@ -53,7 +53,7 @@ TOOLCHAIN_BITS+= pcc
 .endif
 
 .if ${TOOLCHAIN_MISSING} == "no" || defined(EXTERNAL_TOOLCHAIN)
-TOOLCHAIN_BITS+= dbsym
+TOOLCHAIN_BITS+= dbsym mdsetimage
 .endif
 
 LINT_BITS=
@@ -85,7 +85,7 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		cap_mkdb crunchgen ctags gencat hexdump 								\
 		${LINT_BITS} 															\
 		makewhatis mtree .WAIT uudecode 										\
-		cat rpcgen join lorder m4 mkdep tsort .WAIT yacc .WAIT awk .WAIT lex 	\
+		cat join lorder m4 mkdep tsort .WAIT yacc .WAIT awk .WAIT lex 	\
 		pax																		\
 		.WAIT texinfo 															\
 		.WAIT tic 																\

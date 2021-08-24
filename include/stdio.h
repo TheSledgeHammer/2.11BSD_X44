@@ -328,9 +328,9 @@ int	 	getw (FILE *);
 int	 	pclose (FILE *);
 FILE	*popen (const char *, const char *);
 int	 	putw (int, FILE *);
-void	    setbuffer (FILE *, char *, int);
+void	setbuffer (FILE *, char *, int);
 int	 	setlinebuf (FILE *);
-char	    *tempnam (const char *, const char *);
+char	*tempnam (const char *, const char *);
 int	    snprintf(char * __restrict, size_t, const char * __restrict, ...);
 int	    vsnprintf(char * __restrict, size_t, const char * __restrict, __va_list);
 int	    vasprintf(char ** __restrict, const char * __restrict, __va_list);
@@ -410,8 +410,8 @@ static __inline int __sputc(int _c, FILE *_p) {
 #endif /* __BSD_VISIBLE */
 #endif /* __POSIX_VISIBLE >= 199506 */
 
-#define	getchar()		getc(stdin)
-#define	putchar(x)		putc(x, stdout)
+#define	getchar()			getc(stdin)
+#define	putchar(x)			putc(x, stdout)
 #define getchar_unlocked()	getc_unlocked(stdin)
 #define putchar_unlocked(c)	putc_unlocked(c, stdout)
 

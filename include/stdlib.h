@@ -77,6 +77,11 @@ typedef struct {
 } lldiv_t;
 #endif
 
+typedef struct {
+	quad_t 	quot;		/* quotient */
+	quad_t 	rem;		/* remainder */
+} qdiv_t;
+
 #include <sys/null.h>
 
 #define	EXIT_FAILURE	1
@@ -138,6 +143,7 @@ int	 	cgetnum(char *, const char *, long *);
 int	 	cgetset(const char *);
 int	 	cgetstr(char *, const char *, char **);
 int	 	cgetustr(char *, const char *, char **);
+void	csetexpandtc(int);
 
 int		daemon(int, int);
 char	*devname(int, int);
@@ -153,6 +159,8 @@ long	random(void);
 char	*setstate(char *);
 void	srandom(unsigned long);
 void	unsetenv(const char *);
+
+char	*realpath(const char * __restrict, char * __restrict);
 
 char	*mktemp (char *);
 char	*mkdtemp (char *);

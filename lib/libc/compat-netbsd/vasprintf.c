@@ -37,6 +37,7 @@ __RCSID("$NetBSD: vasprintf.c,v 1.7 2000/01/21 19:51:37 mycroft Exp $");
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include "local.h"
 
 int
 vasprintf(str, fmt, ap)
@@ -57,7 +58,7 @@ vasprintf(str, fmt, ap)
 	if (f._bf._base == NULL)
 		goto err;
 	f._bf._size = f._w = 127;		/* Leave room for the NUL */
-	ret = vfprintf(&f, fmt, ap);
+	ret = vfprintf_unlocked(&f, fmt, ap);
 	if (ret == -1)
 		goto err;
 	*f._p = '\0';

@@ -36,12 +36,17 @@
 
 #include <sys/cdefs.h>
 
+#include "namespace.h"
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 
 #include "local.h"
+
+#ifdef __weak_alias
+__weak_alias(snprintf,_snprintf)
+#endif
 
 int
 snprintf(char *str, size_t n, char const *fmt, ...)

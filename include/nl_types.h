@@ -72,7 +72,7 @@ struct _nls_msg_hdr {
 
 #endif
 
-#define	NL_SETD		1
+#define	NL_SETD			1
 #define NL_CAT_LOCALE   1
 
 typedef struct __nl_cat_d {
@@ -86,14 +86,7 @@ __BEGIN_DECLS
 nl_catd  catopen(const char *, int);
 char    *catgets(nl_catd, int, int, const char *) __format_arg(4);
 int	 	catclose(nl_catd);
-__END_DECLS
-
-#  ifndef __LOCALE_T_DECLARED
-typedef struct _locale		*locale_t;
-#  define __LOCALE_T_DECLARED
-__BEGIN_DECLS
 nl_catd  catopen_l(const char *, int, locale_t);
 __END_DECLS
-#endif
 
 #endif	/* _NL_TYPES_H_ */

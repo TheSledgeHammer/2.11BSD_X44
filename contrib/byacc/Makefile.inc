@@ -6,7 +6,7 @@ WARNS=4
 
 BINDIR?= /usr/bin
 
-IDIST=	${NETBSDSRCDIR}/external/bsd/byacc/dist
+IDIST=	contrib/byacc/dist
 
 CPPFLAGS+= -DHAVE_CONFIG_H -I${.CURDIR}/../include -I${IDIST}
 CWARNFLAGS+=	-Wno-missing-noreturn

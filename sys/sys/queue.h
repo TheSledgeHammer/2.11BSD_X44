@@ -100,25 +100,6 @@ struct {																\
 }
 
 /*
- * Singly-linked List access methods.
- */
-#define	SLIST_FIRST(head)		((head)->slh_first)
-#define	SLIST_END(head)			NULL
-#define	SLIST_EMPTY(head)		((head)->slh_first == NULL)
-#define	SLIST_NEXT(elm, field)	((elm)->field.sle_next)
-
-#define	SLIST_FOREACH(var, head, field)									\
-	for((var) = (head)->slh_first;										\
-	    (var) != SLIST_END(head);										\
-	    (var) = (var)->field.sle_next)
-
-#define	SLIST_FOREACH_SAFE(var, head, field, tvar)						\
-	for ((var) = SLIST_FIRST((head));									\
-	    (var) != SLIST_END(head) &&										\
-	    ((tvar) = SLIST_NEXT((var), field), 1);							\
-	    (var) = (tvar))
-
-/*
  * Singly-linked List functions.
  */
 #define	SLIST_INIT(head) do {											\
@@ -157,6 +138,25 @@ struct {																\
 	}																	\
 } while (0)
 
+#define	SLIST_FOREACH(var, head, field)									\
+	for((var) = (head)->slh_first;										\
+	    (var) != SLIST_END(head);										\
+	    (var) = (var)->field.sle_next)
+
+#define	SLIST_FOREACH_SAFE(var, head, field, tvar)						\
+	for ((var) = SLIST_FIRST((head));									\
+	    (var) != SLIST_END(head) &&										\
+	    ((tvar) = SLIST_NEXT((var), field), 1);							\
+	    (var) = (tvar))
+
+/*
+ * Singly-linked List access methods.
+ */
+#define	SLIST_FIRST(head)		((head)->slh_first)
+#define	SLIST_END(head)			NULL
+#define	SLIST_EMPTY(head)		((head)->slh_first == NULL)
+#define	SLIST_NEXT(elm, field)	((elm)->field.sle_next)
+
 /*
  * List definitions.
  */
@@ -166,7 +166,7 @@ struct name {															\
 }
 
 #define	LIST_HEAD_INITIALIZER(head)	{ 									\
-	NULL, &(head).lh_first												\
+	NULL																\
 }
 
 #define LIST_ENTRY(type)												\
@@ -174,34 +174,6 @@ struct {																\
 	struct type *le_next;		/* next element */						\
 	struct type **le_prev;		/* address of previous next element */	\
 }
-
-/*
- * List access methods.
- */
-#define	LIST_FIRST(head)		((head)->lh_first)
-#define	LIST_END(head)			NULL
-#define	LIST_EMPTY(head)		((head)->lh_first == LIST_END(head))
-#define	LIST_NEXT(elm, field)	((elm)->field.le_next)
-
-#define	LIST_FOREACH(var, head, field)									\
-	for ((var) = ((head)->lh_first);									\
-	    (var) != LIST_END(head);										\
-	    (var) = ((var)->field.le_next))
-
-#define	LIST_FOREACH_SAFE(var, head, field, tvar)						\
-	for ((var) = LIST_FIRST((head));									\
-	    (var) != LIST_END(head) &&										\
-	    ((tvar) = LIST_NEXT((var), field), 1);							\
-	    (var) = (tvar))
-
-#define	LIST_MOVE(head1, head2, field) do {								\
-	LIST_INIT((head2));													\
-	if (!LIST_EMPTY((head1))) {											\
-		(head2)->lh_first = (head1)->lh_first;							\
-		(head2)->lh_first->field.le_prev = &(head2)->lh_first;			\
-		LIST_INIT((head1));												\
-	}																	\
-} while (0)
 
 /*
  * List functions.
@@ -232,6 +204,34 @@ struct {																\
 	*(elm)->field.le_prev = (elm)->field.le_next;						\
 }
 
+#define	LIST_FOREACH(var, head, field)									\
+ 	for ((var) = ((head)->lh_first);									\
+ 	    (var) != LIST_END(head);										\
+ 	    (var) = ((var)->field.le_next))
+
+#define	LIST_FOREACH_SAFE(var, head, field, tvar)						\
+ 	for ((var) = LIST_FIRST((head));									\
+ 	    (var) != LIST_END(head) &&										\
+ 	    ((tvar) = LIST_NEXT((var), field), 1);							\
+ 	    (var) = (tvar))
+
+#define	LIST_MOVE(head1, head2, field) do {								\
+	LIST_INIT((head2));													\
+	if (!LIST_EMPTY((head1))) {											\
+		(head2)->lh_first = (head1)->lh_first;							\
+		(head2)->lh_first->field.le_prev = &(head2)->lh_first;			\
+		LIST_INIT((head1));												\
+	}																	\
+} while (0)
+
+/*
+ * List access methods.
+ */
+#define	LIST_FIRST(head)		((head)->lh_first)
+#define	LIST_END(head)			NULL
+#define	LIST_EMPTY(head)		((head)->lh_first == LIST_END(head))
+#define	LIST_NEXT(elm, field)	((elm)->field.le_next)
+
 /*
  * Simple queue definitions.
  */
@@ -249,25 +249,6 @@ struct name {															\
 struct {																\
 	struct type *sqe_next;	/* next element */							\
 }
-
-/*
- * Simple queue access methods.
- */
-#define	SIMPLEQ_FIRST(head)			((head)->sqh_first)
-#define	SIMPLEQ_END(head)			NULL
-#define	SIMPLEQ_EMPTY(head)			((head)->sqh_first == SIMPLEQ_END(head))
-#define	SIMPLEQ_NEXT(elm, field)	((elm)->field.sqe_next)
-
-#define	SIMPLEQ_FOREACH(var, head, field)								\
-	for ((var) = ((head)->sqh_first);									\
-	    (var) != SIMPLEQ_END(head);										\
-	    (var) = ((var)->field.sqe_next))
-
-#define	SIMPLEQ_FOREACH_SAFE(var, head, field, next)					\
-	for ((var) = ((head)->sqh_first);									\
-	    (var) != SIMPLEQ_END(head) &&									\
-	    ((next = ((var)->field.sqe_next)), 1);							\
-	    (var) = (next))
 
 /*
  * Simple queue functions.
@@ -319,6 +300,17 @@ struct {																\
 	}																	\
 } while (0)
 
+#define	SIMPLEQ_FOREACH(var, head, field)								\
+	for ((var) = ((head)->sqh_first);									\
+	    (var) != SIMPLEQ_END(head);										\
+	    (var) = ((var)->field.sqe_next))
+
+#define	SIMPLEQ_FOREACH_SAFE(var, head, field, next)					\
+	for ((var) = ((head)->sqh_first);									\
+	    (var) != SIMPLEQ_END(head) &&									\
+	    ((next = ((var)->field.sqe_next)), 1);							\
+	    (var) = (next))
+
 #define	SIMPLEQ_CONCAT(head1, head2) do {								\
 	if (!SIMPLEQ_EMPTY((head2))) {										\
 		*(head1)->sqh_last = (head2)->sqh_first;						\
@@ -333,6 +325,13 @@ struct {																\
 	    ((struct type *)(void *)										\
 		((char *)((head)->sqh_last) - offsetof(struct type, field))))
 
+/*
+ * Simple queue access methods.
+ */
+#define	SIMPLEQ_FIRST(head)			((head)->sqh_first)
+#define	SIMPLEQ_END(head)			NULL
+#define	SIMPLEQ_EMPTY(head)			((head)->sqh_first == SIMPLEQ_END(head))
+#define	SIMPLEQ_NEXT(elm, field)	((elm)->field.sqe_next)
 
 /*
  * Tail queue definitions.

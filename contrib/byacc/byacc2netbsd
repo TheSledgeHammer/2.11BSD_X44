@@ -48,7 +48,7 @@
 if [ $# -ne 2 ]; then echo "byacc2netbsd src dest"; exit 1; fi
 
 r=$1
-d=$2/src/external/bsd/byacc/dist
+d=$2/src/contrib/byacc/dist
 
 case "$d" in
 	/*)

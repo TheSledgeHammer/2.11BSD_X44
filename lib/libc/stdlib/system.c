@@ -36,15 +36,21 @@
 static char sccsid[] = "@(#)system.c	5.10.1 (2.11BSD) 1999/10/24";
 #endif /* LIBC_SCCS and not lint */
 
+#include "namespace.h"
 #include <sys/types.h>
 #include <sys/signal.h>
 #include <sys/wait.h>
+#include <errno.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <unistd.h>
+#include <paths.h>
 
+int
 system(command)
-	char *command;
+	const char *command;
 {
 	union wait pstat;
 	register int pid;

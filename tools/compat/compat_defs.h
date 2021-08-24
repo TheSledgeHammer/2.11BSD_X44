@@ -709,23 +709,23 @@ char *alloca ();
 #endif
 
 /* avoid prototype conflicts with host */
-#define cgetcap 	__nbcompat_cgetcap
-#define cgetclose 	__nbcompat_cgetclose
-#define cgetent 	__nbcompat_cgetent
-#define cgetfirst 	__nbcompat_cgetfirst
-#define cgetmatch 	__nbcompat_cgetmatch
-#define cgetnext 	__nbcompat_cgetnext
-#define cgetnum 	__nbcompat_cgetnum
-#define cgetset 	__nbcompat_cgetset
-#define cgetstr 	__nbcompat_cgetstr
-#define cgetustr 	__nbcompat_cgetustr
+#define cgetcap __nbcompat_cgetcap
+#define cgetclose __nbcompat_cgetclose
+#define cgetent __nbcompat_cgetent
+#define cgetfirst __nbcompat_cgetfirst
+#define cgetmatch __nbcompat_cgetmatch
+#define cgetnext __nbcompat_cgetnext
+#define cgetnum __nbcompat_cgetnum
+#define cgetset __nbcompat_cgetset
+#define cgetstr __nbcompat_cgetstr
+#define cgetustr __nbcompat_cgetustr
 
 char	*cgetcap(char *, const char *, int);
 int	 	cgetclose(void);
-int	 	cgetent(char **, char **, const char *);
-int	 	cgetfirst(char **, char **);
+int	 	cgetent(char **, const char * const *, const char *);
+int	 	cgetfirst(char **, const char * const *);
 int	 	cgetmatch(const char *, const char *);
-int	 	cgetnext(char **, char **);
+int	 	cgetnext(char **, const char * const *);
 int	 	cgetnum(char *, const char *, long *);
 int	 	cgetset(const char *);
 int	 	cgetstr(char *, const char *, char **);
