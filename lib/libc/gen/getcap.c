@@ -73,11 +73,11 @@ __weak_alias(cgetstr,_cgetstr)
 __weak_alias(cgetustr,_cgetustr)
 #endif
 
-#define	BFRAG		1024
-#define	BSIZE		1024
-#define	ESC		('[' & 037)	/* ASCII ESC */
+#define	BFRAG			1024
+#define	BSIZE			1024
+#define	ESC				('[' & 037)	/* ASCII ESC */
 #define	MAX_RECURSION	32		/* maximum getent recursion */
-#define	SFRAG		100		/* cgetstr mallocs in SFRAG chunks */
+#define	SFRAG			100		/* cgetstr mallocs in SFRAG chunks */
 
 #define RECOK	(char)0
 #define TCERR	(char)1
@@ -106,36 +106,38 @@ cgetset(ent)
 	if (ent == NULL) {
 		if (toprec)
 			free(toprec);
-                toprec = NULL;
-                topreclen = 0;
-                return (0);
-        }
-        topreclen = strlen(ent);
-        if ((toprec = malloc (topreclen + 1)) == NULL) {
+		toprec = NULL;
+		topreclen = 0;
+		return (0);
+	}
+	topreclen = strlen(ent);
+	if ((toprec = malloc(topreclen + 1)) == NULL) {
 		errno = ENOMEM;
-                return (-1);
+		return (-1);
 	}
 	gottoprec = 0;
 
-	source=ent;
-	dest=toprec;
+	source = ent;
+	dest = toprec;
 	while (*source) { /* Strip whitespace */
 		*dest++ = *source++; /* Do not check first field */
 		while (*source == ':') {
-			check=source+1;
-			while (*check && (isspace((unsigned char)*check) ||
-			    (*check=='\\' && isspace((unsigned char)check[1]))))
+			check = source + 1;
+			while (*check
+					&& (isspace((unsigned char) *check)
+							|| (*check == '\\'
+									&& isspace((unsigned char) check[1]))))
 				++check;
-			if( *check == ':' )
-				source=check;
+			if (*check == ':')
+				source = check;
 			else
 				break;
 
 		}
 	}
-	*dest=0;
+	*dest = 0;
 
-        return (0);
+	return (0);
 }
 
 /*
@@ -172,9 +174,8 @@ cgetcap(buf, cap, type)
 		for (;;)
 			if (*bp == '\0')
 				return (NULL);
-			else
-				if (*bp++ == ':')
-					break;
+			else if (*bp++ == ':')
+				break;
 
 		/*
 		 * Try to match (cap, type) in buf.
@@ -188,7 +189,7 @@ cgetcap(buf, cap, type)
 		if (type == ':') {
 			if (*bp != '\0' && *bp != ':')
 				continue;
-			return(bp);
+			return (bp);
 		}
 		if (*bp != type)
 			continue;
@@ -209,7 +210,8 @@ cgetcap(buf, cap, type)
  */
 int
 cgetent(buf, db_array, name)
-	char **buf, **db_array;
+	char **buf;
+	const char * const *db_array;
 	const char *name;
 {
 	size_t dummy;
@@ -219,6 +221,12 @@ cgetent(buf, db_array, name)
 	_DIAGASSERT(name != NULL);
 
 	return (getent(buf, &dummy, db_array, -1, name, 0, NULL));
+}
+
+void
+csetexpandtc(int etc)
+{
+	expandtc = etc;
 }
 
 /*
@@ -241,7 +249,8 @@ cgetent(buf, db_array, name)
  */
 static int
 getent(cap, len, db_array, fd, name, depth, nfield)
-	char **cap, **db_array, *nfield;
+	char **cap, *nfield;
+	const char * const *db_array;
 	const char *name;
 	size_t *len;
 	int fd, depth;
@@ -650,12 +659,12 @@ cdbget(capdbp, bp, name)
 	_DIAGASSERT(name != NULL);
 
 	/* LINTED key is not modified */
-	key.data = (char *)name;
+	key.data = (char*) name;
 	key.size = strlen(name);
 
 	for (;;) {
 		/* Get the reference. */
-		switch(capdbp->get(capdbp, &key, &data, 0)) {
+		switch (capdbp->get(capdbp, &key, &data, 0)) {
 		case -1:
 			return (-2);
 		case 1:
@@ -663,15 +672,15 @@ cdbget(capdbp, bp, name)
 		}
 
 		/* If not an index to another record, leave. */
-		if (((char *)data.data)[0] != SHADOW)
+		if (((char*) data.data)[0] != SHADOW)
 			break;
 
-		key.data = (char *)data.data + 1;
+		key.data = (char*) data.data + 1;
 		key.size = data.size - 1;
 	}
-	
-	*bp = (char *)data.data + 1;
-	return (((char *)(data.data))[0] == TCERR ? 1 : 0);
+
+	*bp = (char*) data.data + 1;
+	return (((char*) (data.data))[0] == TCERR ? 1 : 0);
 }
 
 /*
@@ -702,29 +711,28 @@ cgetmatch(buf, name)
 					return (0);
 				else
 					break;
-			} else
-				if (*bp++ != *np++)
-					break;
+			} else if (*bp++ != *np++)
+				break;
 
 		/*
 		 * Match failed, skip to next name in record.
 		 */
 		if (bp > buf)
-			bp--;	/* a '|' or ':' may have stopped the match */
+			bp--; /* a '|' or ':' may have stopped the match */
 		else
 			return (-1);
 		for (;;)
 			if (*bp == '\0' || *bp == ':')
-				return (-1);	/* match failed totally */
-			else
-				if (*bp++ == '|')
-					break;	/* found next name */
+				return (-1); /* match failed totally */
+			else if (*bp++ == '|')
+				break; /* found next name */
 	}
 }
 
 int
 cgetfirst(buf, db_array)
-	char **buf, **db_array;
+	char **buf;
+	const char * const *db_array;
 {
 
 	_DIAGASSERT(buf != NULL);
@@ -742,13 +750,13 @@ int
 cgetclose()
 {
 	if (pfp != NULL) {
-		(void)fclose(pfp);
+		(void) fclose(pfp);
 		pfp = NULL;
 	}
 	dbp = NULL;
 	gottoprec = 0;
 	slash = 0;
-	return(0);
+	return (0);
 }
 
 /*
@@ -758,8 +766,8 @@ cgetclose()
  */
 int
 cgetnext(bp, db_array)
-        char **bp;
-	char **db_array;
+    char **bp;
+	const char * const *db_array;
 {
 	size_t len;
 	int status, done;
@@ -773,10 +781,10 @@ cgetnext(bp, db_array)
 		dbp = db_array;
 
 	if (pfp == NULL && (pfp = fopen(*dbp, "r")) == NULL) {
-		(void)cgetclose();
+		(void) cgetclose();
 		return (-1);
 	}
-	for(;;) {
+	for (;;) {
 		if (toprec && !gottoprec) {
 			gottoprec = 1;
 			line = toprec;
@@ -784,17 +792,16 @@ cgetnext(bp, db_array)
 			line = fgetln(pfp, &len);
 			if (line == NULL && pfp) {
 				if (ferror(pfp)) {
-					(void)cgetclose();
+					(void) cgetclose();
 					return (-1);
 				} else {
-					(void)fclose(pfp);
+					(void) fclose(pfp);
 					pfp = NULL;
 					if (*++dbp == NULL) {
-						(void)cgetclose();
+						(void) cgetclose();
 						return (0);
-					} else if ((pfp =
-					    fopen(*dbp, "r")) == NULL) {
-						(void)cgetclose();
+					} else if ((pfp = fopen(*dbp, "r")) == NULL) {
+						(void) cgetclose();
 						return (-1);
 					} else
 						continue;
@@ -805,8 +812,8 @@ cgetnext(bp, db_array)
 				slash = 0;
 				continue;
 			}
-			if (isspace((unsigned char)*line) ||
-			    *line == ':' || *line == '#' || slash) {
+			if (isspace((unsigned char) *line) || *line == ':' || *line == '#'
+					|| slash) {
 				if (line[len - 2] == '\\')
 					slash = 1;
 				else
@@ -817,8 +824,7 @@ cgetnext(bp, db_array)
 				slash = 1;
 			else
 				slash = 0;
-		}			
-
+		}
 
 		/* 
 		 * Line points to a name line.
@@ -845,10 +851,10 @@ cgetnext(bp, db_array)
 				line = fgetln(pfp, &len);
 				if (line == NULL && pfp) {
 					if (ferror(pfp)) {
-						(void)cgetclose();
+						(void) cgetclose();
 						return (-1);
 					}
-					(void)fclose(pfp);
+					(void) fclose(pfp);
 					pfp = NULL;
 					*np = '\0';
 					break;
@@ -859,7 +865,7 @@ cgetnext(bp, db_array)
 		if (len > sizeof(buf))
 			return -1;
 		rp = buf;
-		for(cp = nbuf; *cp != '\0'; cp++)
+		for (cp = nbuf; *cp != '\0'; cp++)
 			if (*cp == '|' || *cp == ':')
 				break;
 			else
@@ -876,7 +882,7 @@ cgetnext(bp, db_array)
 		 */
 		status = getent(bp, &dummy, db_array, -1, buf, 0, NULL);
 		if (status == -2 || status == -3)
-			(void)cgetclose();
+			(void) cgetclose();
 
 		return (status + 1);
 	}
@@ -921,7 +927,7 @@ cgetstr(buf, cap, str)
 	 */
 	if ((mem = malloc(SFRAG)) == NULL) {
 		errno = ENOMEM;
-		return (-2);	/* couldn't even allocate the first fragment */
+		return (-2); /* couldn't even allocate the first fragment */
 	}
 	m_room = SFRAG;
 	mp = mem;
@@ -936,42 +942,49 @@ cgetstr(buf, cap, str)
 		if (*bp == '^') {
 			bp++;
 			if (*bp == ':' || *bp == '\0')
-				break;	/* drop unfinished escape */
+				break; /* drop unfinished escape */
 			*mp++ = *bp++ & 037;
 		} else if (*bp == '\\') {
 			bp++;
 			if (*bp == ':' || *bp == '\0')
-				break;	/* drop unfinished escape */
+				break; /* drop unfinished escape */
 			if ('0' <= *bp && *bp <= '7') {
 				int n, i;
 
 				n = 0;
-				i = 3;	/* maximum of three octal digits */
+				i = 3; /* maximum of three octal digits */
 				do {
 					n = n * 8 + (*bp++ - '0');
 				} while (--i && '0' <= *bp && *bp <= '7');
 				*mp++ = n;
-			}
-			else switch (*bp++) {
-				case 'b': case 'B':
+			} else
+				switch (*bp++) {
+				case 'b':
+				case 'B':
 					*mp++ = '\b';
 					break;
-				case 't': case 'T':
+				case 't':
+				case 'T':
 					*mp++ = '\t';
 					break;
-				case 'n': case 'N':
+				case 'n':
+				case 'N':
 					*mp++ = '\n';
 					break;
-				case 'f': case 'F':
+				case 'f':
+				case 'F':
 					*mp++ = '\f';
 					break;
-				case 'r': case 'R':
+				case 'r':
+				case 'R':
 					*mp++ = '\r';
 					break;
-				case 'e': case 'E':
+				case 'e':
+				case 'E':
 					*mp++ = ESC;
 					break;
-				case 'c': case 'C':
+				case 'c':
+				case 'C':
 					*mp++ = ':';
 					break;
 				default:
@@ -979,9 +992,9 @@ cgetstr(buf, cap, str)
 					 * Catches '\', '^', and
 					 *  everything else.
 					 */
-					*mp++ = *(bp-1);
+					*mp++ = *(bp - 1);
 					break;
-			}
+				}
 		} else
 			*mp++ = *bp++;
 		m_room--;
@@ -1002,7 +1015,7 @@ cgetstr(buf, cap, str)
 			mp = mem + size;
 		}
 	}
-	*mp++ = '\0';	/* loop invariant let's us do this */
+	*mp++ = '\0'; /* loop invariant let's us do this */
 	m_room--;
 	len = mp - mem - 1;
 
@@ -1058,7 +1071,7 @@ cgetustr(buf, cap, str)
 	 */
 	if ((mem = malloc(SFRAG)) == NULL) {
 		errno = ENOMEM;
-		return (-2);	/* couldn't even allocate the first fragment */
+		return (-2); /* couldn't even allocate the first fragment */
 	}
 	m_room = SFRAG;
 	mp = mem;
@@ -1089,7 +1102,7 @@ cgetustr(buf, cap, str)
 			mp = mem + size;
 		}
 	}
-	*mp++ = '\0';	/* loop invariant let's us do this */
+	*mp++ = '\0'; /* loop invariant let's us do this */
 	m_room--;
 	len = mp - mem - 1;
 

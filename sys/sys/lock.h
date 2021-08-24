@@ -191,11 +191,11 @@ struct lock_holder {
 };
 
 /* lock holder macros */
-#define LOCKHOLDER_PID(h)	((h)->lh_pid)
-#define LOCKHOLDER_PGRP(h)	((h)->lh_pgrp)
-#define PROC_LOCKHOLDER(h)	((h)->lh_proc)
-//#define KTHREAD_LOCKHOLDER(h)	((h)->lh_kthread)
-//#define UTHREAD_LOCKHOLDER(h)	((h)->lh_uthread)
+#define LOCKHOLDER_PID(h)		((h)->lh_pid)
+#define LOCKHOLDER_PGRP(h)		((h)->lh_pgrp)
+#define PROC_LOCKHOLDER(h)		((h)->lh_proc)
+#define KTHREAD_LOCKHOLDER(h)	((h)->lh_kthread)
+#define UTHREAD_LOCKHOLDER(h)	((h)->lh_uthread)
 
 #ifdef KERNEL
 extern struct lock_holder 		*kernel_lockholder;
@@ -213,13 +213,12 @@ void 			simple_unlock(struct lock_object *);
 int				simple_lock_try(struct lock_object *);
 
 void			lockholder_init(struct proc *);
-void 			set_proc_lockholder(struct lock_holder *, struct proc *);
-struct proc 	*get_proc_lockholder(struct lock_holder *);
-
+void 			set_proc_lock(struct lock_holder *, struct proc *);
+struct proc 	*get_proc_lock(struct lock_holder *);
 /*
-void 			set_kthread_lockholder(struct lock_holder *, struct kthread *);
-struct kthread 	*get_kthread_lockholder(struct lock_holder *);
-void 			set_uthread_lockholder(struct lock_holder *, struct uthread *);
-struct uthread 	*get_uthread_lockholder(struct lock_holder *);
+void 			set_kthread_lock(struct lock_holder *, struct kthread *);
+struct kthread 	*get_kthread_lock(struct lock_holder *);
+void 			set_uthread_lock(struct lock_holder *, struct uthread *);
+struct uthread 	*get_uthread_lock(struct lock_holder *);
 */
 #endif /* !_SYS_LOCK_H_ */

@@ -128,8 +128,9 @@
 #define M_BITMAP		76	/* bitmap structure */
 #define M_PERCPU		77	/* percpu structure */
 #define M_UFS211		78	/* UFS211 bufmap */
-#define	M_TEMP			79	/* misc temporary data buffers */
-#define	M_LAST			80	/* Must be last type + 1 */
+#define M_LOCK			79	/* lock structures */
+#define	M_TEMP			80	/* misc temporary data buffers */
+#define	M_LAST			81	/* Must be last type + 1 */
 
 #define INITKMEMNAMES {						\
 	"free",			/* 0 M_FREE */ 			\
@@ -211,6 +212,7 @@
 	"bitmap",		/* 76 M_BITMAP */		\
 	"percpu",		/* 77 M_PERCPU */		\
 	"ufs211 buf",	/* M_UFS211 */			\
+	"kernel lock",	/* M_LOCK */			\
 	"temp",			/* 78 M_TEMP */ 		\
 }
 

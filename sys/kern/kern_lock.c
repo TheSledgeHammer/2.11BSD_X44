@@ -605,8 +605,8 @@ static void
 lockholder_alloc(holder)
 	struct lock_holder *holder;
 {
+	MALLOC(holder, struct lock_holder *, M_LOCK, M_WAITOK);
 	memset(holder, 0, sizeof(struct lock_holder));
-	//holder = rmalloc(holder, sizeof(struct lock_holder));
 }
 
 void
@@ -614,21 +614,21 @@ lockholder_init(proc)
 	struct proc *proc;
 {
 	/*
-	register struct kthread *kthread;
-	register struct uthread *uthread;
+	struct kthread *kthread;
+	struct uthread *uthread;
 	kthread = proc->p_kthreado;
 	uthread = kthread->kt_uthreado;
 	*/
 	lockholder_alloc(&kernel_lockholder);
-	set_proc_lockholder(&kernel_lockholder, proc);
-	//set_kthread_lockholder(&kernel_lockholder, kthread);
-	//set_uthread_lockholder(&kernel_lockholder, uthread);
+	PROC_LOCKHOLDER(kernel_lockholder) = proc;
+	//KTHREAD_LOCKHOLDER(kernel_lockholder) = kthread;
+	//UTHREAD_LOCKHOLDER(kernel_lockholder) = uthread;
 }
 
 void
-set_proc_lockholder(holder, proc)
-	struct lock_holder *holder;
-	struct proc *proc;
+set_proc_lock(holder, proc)
+	struct lock_holder 	*holder;
+	struct proc 		*proc;
 {
 	holder->lh_pid = proc->p_pid;
 	holder->lh_pgrp = proc->p_pgrp;
@@ -636,7 +636,7 @@ set_proc_lockholder(holder, proc)
 }
 
 struct proc *
-get_proc_lockholder(holder)
+get_proc_lock(holder)
 	struct lock_holder 	*holder;
 {
 	if(PROC_LOCKHOLDER(holder)->p_pid == holder->lh_pid) {
@@ -647,7 +647,7 @@ get_proc_lockholder(holder)
 
 /*
 void
-set_kthread_lockholder(holder, kthread)
+set_kthread_lock(holder, kthread)
 	struct lock_holder 	*holder;
 	struct kthread 		*kthread;
 {
@@ -657,7 +657,7 @@ set_kthread_lockholder(holder, kthread)
 }
 
 struct kthread *
-get_kthread_lockholder(holder)
+get_kthread_lock(holder)
 	struct lock_holder 	*holder;
 {
 	if(KTHREAD_LOCKHOLDER(holder)->kt_tid == holder->lh_pid) {
@@ -667,7 +667,7 @@ get_kthread_lockholder(holder)
 }
 
 void
-set_uthread_lockholder(holder, uthread)
+set_uthread_lock(holder, uthread)
 	struct lock_holder 	*holder;
 	struct uthread 		*uthread;
 {
@@ -677,7 +677,7 @@ set_uthread_lockholder(holder, uthread)
 }
 
 struct uthread *
-get_uthread_lockholder(holder)
+get_uthread_lock(holder)
 	struct lock_holder 	*holder;
 {
 	if(UTHREAD_LOCKHOLDER(holder)->ut_tid == holder->lh_pid) {

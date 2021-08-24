@@ -1,4 +1,3 @@
 # $NetBSD: Makefile.inc,v 1.1 2010/08/07 18:01:33 joerg Exp $
 
-CFLAGS+=	  -DCRT_IRELOC_REL
 CPPFLAGS+=	-DELFSIZE=32
