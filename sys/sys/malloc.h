@@ -211,9 +211,9 @@
 	"cpu topo",		/* 75 M_TOPO */			\
 	"bitmap",		/* 76 M_BITMAP */		\
 	"percpu",		/* 77 M_PERCPU */		\
-	"ufs211 buf",	/* M_UFS211 */			\
-	"kernel lock",	/* M_LOCK */			\
-	"temp",			/* 78 M_TEMP */ 		\
+	"ufs211 buf",	/* 78 M_UFS211 */			\
+	"kernel lock",	/* 79 M_LOCK */			\
+	"temp",			/* 80 M_TEMP */ 		\
 }
 
 struct kmemstats {
