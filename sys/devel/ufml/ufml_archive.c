@@ -31,48 +31,42 @@
 #include "devel/ufml/ufml_extern.h"
 #include "devel/ufml/ufml_ops.h"
 
-/* Check archive types to see if the archive format is supported */
 int
-ufml_check_archive(vp, type)
-	struct vnode *vp;
-	enum ufml_archtype type;
+ufml_archive(ap)
+	struct uop_archive_args *ap;
 {
-	int error;
-	struct ufml_metadata *meta = VTOUFML(vp)->ufml_meta;
+	struct ufml_node *ip = ap->a_up;
+	struct ufml_metadata *meta = ip->ufml_meta;
+	int fs, type;
 
-	switch (type) {
-	case UFML_AR:
-		meta->ufml_archive = UFML_AR;
-		error = 0;
-		break;
-	case UFML_CPIO:
-		meta->ufml_archive = UFML_CPIO;
-		error = 0;
-		break;
-	default:
-		meta->ufml_archive = UFML_TAR;
-		error = 0;
-		break;
+	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
+		fs = meta->ufml_filesystem;
+		if (ufml_check_archive(meta, meta->ufml_archive) > 0) {
+			type = meta->ufml_archive;
+			return (UOP_ARCHIVE(ip, ap->a_vp, ap->a_mp, fs, type));
+		}
+		return (UOP_ARCHIVE(ip, ap->a_vp, ap->a_mp, fs, 0));
 	}
 
-	if (error != 0) {
-		return (1);
+	return (ENIVAL);
+}
+
+int
+ufml_extract(ap)
+	struct uop_extract_args *ap;
+{
+	struct ufml_node *ip = ap->a_up;
+	struct ufml_metadata *meta = ip->ufml_meta;
+	int fs, type;
+
+	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
+		fs = meta->ufml_filesystem;
+		if (ufml_check_archive(meta, meta->ufml_archive) > 0) {
+			type = meta->ufml_archive;
+			return (UOP_EXTRACT(ip, ap->a_vp, ap->a_mp, fs, type));
+		}
+		return (UOP_EXTRACT(ip, ap->a_vp, ap->a_mp, fs, 0));
 	}
 
-	return (error);
+	return (ENIVAL);
 }
-
-int
-ufml_archive()
-{
-	return (0);
-}
-
-int
-ufml_extract()
-{
-	return (0);
-}
-
-
-

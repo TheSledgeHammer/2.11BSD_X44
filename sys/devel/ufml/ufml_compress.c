@@ -31,53 +31,42 @@
 #include "devel/ufml/ufml_extern.h"
 #include "devel/ufml/ufml_ops.h"
 
-/* Check compression types to see if the compression format is supported */
 int
-ufml_check_compression(vp, type)
-	struct vnode *vp;
-	enum ufml_comptype type;
+ufml_compress(ap)
+	struct uop_compress_args *ap;
 {
-	int error;
-	struct ufml_metadata *meta = VTOUFML(vp)->ufml_meta;
+	struct ufml_node *ip = ap->a_up;
+	struct ufml_metadata *meta = ip->ufml_meta;
+	int fs, type;
 
-	switch (type) {
-	case UFML_GZIP:
-		meta->ufml_compress = UFML_GZIP;
-		error = 0;
-		break;
-	case UFML_LZIP:
-		meta->ufml_compress = UFML_LZIP;
-		error = 0;
-		break;
-	case UFML_LZMA:
-		meta->ufml_compress = UFML_LZMA;
-		error = 0;
-		break;
-	case UFML_XZ:
-		meta->ufml_compress = UFML_XZ;
-		error = 0;
-		break;
-	default:
-		meta->ufml_compress = UFML_BZIP2;
-		error = 0;
-		break;
+	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
+		fs = meta->ufml_filesystem;
+		if (ufml_check_compression(meta, meta->ufml_compress) > 0) {
+			type = meta->ufml_compress;
+			return (UOP_COMPRESS(ip, ap->a_vp, ap->a_mp, fs, type));
+		}
+		return (UOP_COMPRESS(ip, ap->a_vp, ap->a_mp, fs, 0));
 	}
 
-	if (error != 0) {
-		return (1);
-	}
-
-	return (error);
+	return (ENIVAL);
 }
 
 int
-ufml_compress()
+ufml_decompress(ap)
+	struct uop_decompress_args *ap;
 {
-	return (0);
-}
+	struct ufml_node *ip = ap->a_up;
+	struct ufml_metadata *meta = ip->ufml_meta;
+	int fs, type;
 
-int
-ufml_decompress()
-{
-	return (0);
+	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
+		fs = meta->ufml_filesystem;
+		if (ufml_check_compression(meta, meta->ufml_compress) > 0) {
+			type = meta->ufml_compress;
+			return (UOP_DECOMPRESS(ip, ap->a_vp, ap->a_mp, fs, type));
+		}
+		return (UOP_DECOMPRESS(ip, ap->a_vp, ap->a_mp, fs, 0));
+	}
+
+	return (ENIVAL);
 }

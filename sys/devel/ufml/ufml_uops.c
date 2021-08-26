@@ -50,9 +50,11 @@ uops_alloc(uops)
 }
 
 int
-uop_archive(up, vp)
+uop_archive(up, vp, mp, fstype, archive)
 	struct ufml_node *up;
 	struct vnode *vp;
+	struct mount *mp;
+	int fstype, archive;
 {
 	struct uop_archive_args ap;
 	int error;
@@ -60,183 +62,244 @@ uop_archive(up, vp)
 	ap.a_head.a_ops = &uops;
 	ap.a_up = up;
 	ap.a_vp = vp;
+	ap.a_mp = mp;
+	ap.a_fstype = fstype;
+	ap.a_type = archive;
 
 	if(uops.uop_archive == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = uops.uop_archive(up, vp);
+	error = uops.uop_archive(up, vp, mp, fstype, archive);
 
 	return (error);
 }
 
 int
-uop_extract(vp)
+uop_extract(up, vp, mp, fstype, archive)
+	struct ufml_node *up;
 	struct vnode *vp;
+	struct mount *mp;
+	int fstype, archive;
 {
 	struct uop_extract_args ap;
 	int error;
 
 	ap.a_head.a_ops = &uops;
+	ap.a_up = up;
 	ap.a_vp = vp;
+	ap.a_mp = mp;
+	ap.a_fstype = fstype;
+	ap.a_type = archive;
 
 	if(uops.uop_extract == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = uops.uop_extract(vp);
+	error = uops.uop_extract(up, vp, mp, fstype, archive);
 
 	return (error);
 }
 
 int
-uop_compress(vp)
+uop_compress(up, vp, mp, fstype, compress)
+	struct ufml_node *up;
 	struct vnode *vp;
+	struct mount *mp;
+	int fstype, compress;
 {
 	struct uop_compress_args ap;
 	int error;
 
 	ap.a_head.a_ops = &uops;
+	ap.a_up = up;
 	ap.a_vp = vp;
+	ap.a_mp = mp;
+	ap.a_fstype = fstype;
+	ap.a_type = compress;
 
 	if(uops.uop_compress == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = uops.uop_compress(vp);
+	error = uops.uop_compress(up, vp, mp, fstype, compress);
 
 	return (error);
 }
 
 int
-uop_decompress(vp)
+uop_decompress(up, vp, mp, fstype, compress)
+	struct ufml_node *up;
 	struct vnode *vp;
+	struct mount *mp;
+	int fstype, compress;
 {
 	struct uop_decompress_args ap;
 	int error;
 
 	ap.a_head.a_ops = &uops;
+	ap.a_up = up;
 	ap.a_vp = vp;
+	ap.a_mp = mp;
+	ap.a_fstype = fstype;
+	ap.a_type = compress;
 
 	if(uops.uop_decompress == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = uops.uop_decompress(vp);
+	error = uops.uop_decompress(up, vp, mp, fstype, compress);
 
 	return (error);
 }
 
 int
-uop_encrypt(vp)
+uop_encrypt(up, vp, mp, fstype, encrypt)
+	struct ufml_node *up;
 	struct vnode *vp;
+	struct mount *mp;
+	int fstype, encrypt;
 {
 	struct uop_encrypt_args ap;
 	int error;
 
 	ap.a_head.a_ops = &uops;
+	ap.a_up = up;
 	ap.a_vp = vp;
-
+	ap.a_mp = mp;
+	ap.a_fstype = fstype;
+	ap.a_type = encrypt;
 	if(uops.uop_encrypt == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = uops.uop_encrypt(vp);
+	error = uops.uop_encrypt(up, vp, mp, fstype, encrypt);
 
 	return (error);
 }
 
 int
-uop_decrypt(vp)
+uop_decrypt(up, vp, mp, fstype, encrypt)
+	struct ufml_node *up;
 	struct vnode *vp;
+	struct mount *mp;
+	int fstype, encrypt;
 {
 	struct uop_decrypt_args ap;
 	int error;
 
 	ap.a_head.a_ops = &uops;
+	ap.a_up = up;
 	ap.a_vp = vp;
+	ap.a_mp = mp;
+	ap.a_fstype = fstype;
+	ap.a_type = encrypt;
 
 	if(uops.uop_decrypt == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = uops.uop_decrypt(vp);
+	error = uops.uop_decrypt(up, vp, mp, fstype, encrypt);
 
 	return (error);
 }
 
 int
-uop_snapshot_write(vp)
+uop_snapshot_write(up, vp, mp, fstype)
+	struct ufml_node *up;
 	struct vnode *vp;
+	struct mount *mp;
+	int fstype;
 {
 	struct uop_snapshot_write_args ap;
 	int error;
 
 	ap.a_head.a_ops = &uops;
+	ap.a_up = up;
 	ap.a_vp = vp;
+	ap.a_mp = mp;
+	ap.a_fstype = fstype;
 
 	if(uops.uop_snapshot_write == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = uops.uop_snapshot_write(vp);
+	error = uops.uop_snapshot_write(up, vp, mp, fstype);
 
 	return (error);
 }
 
 int
-uop_snapshot_read(vp)
+uop_snapshot_read(up, vp, mp, fstype)
+	struct ufml_node *up;
 	struct vnode *vp;
+	struct mount *mp;
+	int fstype;
 {
 	struct uop_snapshot_read_args ap;
 	int error;
 
 	ap.a_head.a_ops = &uops;
+	ap.a_up = up;
 	ap.a_vp = vp;
+	ap.a_mp = mp;
+	ap.a_fstype = fstype;
 
 	if(uops.uop_snapshot_read == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = uops.uop_snapshot_read(vp);
+	error = uops.uop_snapshot_read(up, vp, mp, fstype);
 
 	return (error);
 }
 
 int
-uop_snapshot_delete(vp)
+uop_snapshot_delete(up, vp, mp, fstype)
+	struct ufml_node *up;
 	struct vnode *vp;
+	struct mount *mp;
+	int fstype;
 {
 	struct uop_snapshot_delete_args ap;
 	int error;
 
 	ap.a_head.a_ops = &uops;
+	ap.a_up = up;
 	ap.a_vp = vp;
+	ap.a_mp = mp;
+	ap.a_fstype = fstype;
 
 	if(uops.uop_snapshot_delete == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = uops.uop_snapshot_delete(vp);
+	error = uops.uop_snapshot_delete(up, vp, mp, fstype);
 
 	return (error);
 }
 
 int
-uop_snapshot_commit(vp)
+uop_snapshot_commit(up, vp, mp, fstype)
+	struct ufml_node *up;
 	struct vnode *vp;
+	struct mount *mp;
+	int fstype;
 {
 	struct uop_snapshot_commit_args ap;
 	int error;
 
 	ap.a_head.a_ops = &uops;
+	ap.a_up = up;
 	ap.a_vp = vp;
+	ap.a_mp = mp;
+	ap.a_fstype = fstype;
 
 	if(uops.uop_snapshot_commit == NULL) {
 		return (EOPNOTSUPP);
 	}
 
-	error = uops.uop_snapshot_commit(vp);
+	error = uops.uop_snapshot_commit(up, vp, mp, fstype);
 
 	return (error);
 }

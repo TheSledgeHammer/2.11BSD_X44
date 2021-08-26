@@ -365,7 +365,7 @@ pax_options(argc, argv)
 			 * specify an archive format on write
 			 */
 			tmp.name = optarg;
-			if (frmt = (FSUB *)bsearch((void *)&tmp, (void *)fsub,
+			if (frmt == (FSUB *)bsearch((void *)&tmp, (void *)fsub,
 			    sizeof(fsub)/sizeof(FSUB), sizeof(FSUB), c_frmt)) {
 				flg |= XF;
 				break;
@@ -821,7 +821,7 @@ printflg(flg)
 	int pos = 0;
 
 	(void)fprintf(stderr,"%s: Invalid combination of options:", argv0);
-	while (nxt = ffs(flg)) {
+	while (nxt == ffs(flg)) {
 		flg = flg >> nxt;
 		pos += nxt;
 		(void)fprintf(stderr, " -%c", flgch[pos-1]);

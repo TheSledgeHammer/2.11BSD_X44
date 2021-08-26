@@ -37,16 +37,30 @@ struct ufml_metadata {
 
 	char 				*ufml_name; 		/* name */
 	u_quad_t			ufml_size; 			/* size */
-	u_long				ufml_flags;			/* flags defined for file */
+	u_long				ufml_flag;			/* flag see below */
 	struct timespec		ufml_atime;			/* time of last access */
+	int32_t				ufml_atimensec;		/* Last access time. */
 	struct timespec		ufml_mtime;			/* time of last modification */
+	int32_t				ufml_mtimensec;		/* Last modified time. */
 	struct timespec		ufml_ctime;			/* time file changed */
-
+	int32_t				ufml_ctimensec;		/* Last inode change time. */
+	uint64_t	    	ufml_modrev;	    /* modrev for NFSv4 */
 	enum ufml_fstype 	ufml_filesystem; 	/* Supported fs types (for create) */
 	enum ufml_archtype 	ufml_archive;		/* archive types (for create) */
 	enum ufml_comptype 	ufml_compress;		/* compression types (for create) */
 	enum ufml_enctype 	ufml_encrypt;		/* encryption types (for create) */
 };
+
+/* These flags are kept in ufml_flag. */
+#define	IN_ACCESS			0x0001		/* Access time update request. */
+#define	IN_CHANGE			0x0002		/* Inode change time update request. */
+#define	IN_UPDATE			0x0004		/* Modification time update request. */
+#define	IN_MODIFIED			0x0008		/* Inode has been modified. */
+#define	IN_RENAME			0x0010		/* Inode is being renamed. */
+#define	IN_SHLOCK			0x0020		/* File has shared lock. */
+#define	IN_EXLOCK			0x0040		/* File has exclusive lock. */
+#define	IN_HASHED			0x0080		/* Inode is on hash list */
+#define	IN_LAZYMOD			0x0100		/* Modified, but don't write yet. */
 
 /* UFML Supported File system Types */
 enum ufml_fstype { UFML_UFS, UFML_FFS, UFML_MFS, UFML_LFS };
@@ -61,11 +75,11 @@ enum ufml_comptype { UFML_BZIP2, UFML_GZIP, UFML_LZIP, UFML_LZMA, UFML_XZ };
 enum ufml_enctype { UFML_TWOFISH };
 
 /* Macros to other supported filesystems */
-#define UFMLTOUFS(vp)	(VTOI(vp))			/* UFS */
-#define UFMLTOFFS(vp)	(VTOI(vp)->i_fs)	/* FFS */
-#define UFMLTOMFS(vp)	(VTOMFS(vp))		/* MFS */
-#define UFMLTOLFS(vp)	(VTOI(vp)->i_lfs)	/* LFS */
+#define UFMLTOUFS(vp)		(VTOI(vp))			/* UFS */
+#define UFMLTOFFS(vp)		(VTOI(vp)->i_fs)	/* FFS */
+#define UFMLTOMFS(vp)		(VTOMFS(vp))		/* MFS */
+#define UFMLTOLFS(vp)		(VTOI(vp)->i_lfs)	/* LFS */
 
-#define UFMLTOUFS211(vp) (UFS211_VTOI(vp))	/* UFS211 */
+#define UFMLTOUFS211(vp) 	(UFS211_VTOI(vp))	/* UFS211 */
 
 #endif /* UFS_UFML_META_H_ */

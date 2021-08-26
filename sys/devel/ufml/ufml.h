@@ -48,7 +48,6 @@ struct ufml_args {
 struct ufml_mount {
 	struct mount				*ufmlm_vfs;
 	struct vnode				*ufmlm_rootvp;	/* Reference to root ufml_node */
-	struct ufml_union_mount		*ufmlm_unionmnt;/* Union Mounts */
 };
 
 #ifdef KERNEL
@@ -61,9 +60,7 @@ struct ufml_node {
 
 	struct ufml_metadata		*ufml_meta;		/* Node metadata (from ufml_ops.h) */
 	struct ufmlops				*ufml_op;		/* UFML operations vector */
-
-	struct ufml_union_node		*ufml_union;	/* Union Space */
-#define ufml_lowervp			ufml_union->uun_lowervp
+	struct vnode	        	*ufml_lowervp;	/* underlying object */
 };
 
 extern int 						ufml_node_create (struct mount *mp, struct vnode *target, struct vnode **vpp);

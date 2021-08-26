@@ -43,7 +43,7 @@ static char sccsid[] = "@(#)ar_subs.c	8.2 (Berkeley) 4/18/94";
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <sys/param.h>
-#include <signal.h>
+#include <sys/signal.h>
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>

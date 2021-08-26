@@ -31,25 +31,61 @@
 #include "devel/ufml/ufml_extern.h"
 
 int
-ufml_snapshot_write()
+ufml_snapshot_write(ap)
+	struct uop_snapshot_write_args *ap;
 {
-	return (0);
+	struct ufml_node *ip = ap->a_up;
+	struct ufml_metadata *meta = ip->ufml_meta;
+	int fs;
+
+	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
+		fs = meta->ufml_filesystem;
+		return (UOP_SNAPSHOT_WRITE(ip, ap->a_vp, ap->a_mp, fs));
+	}
+	return (ENIVAL);
 }
 
 int
-ufml_read_snapshot_read()
+ufml_read_snapshot_read(ap)
+	struct uop_snapshot_read_args *ap;
 {
-	return (0);
+	struct ufml_node *ip = ap->a_up;
+	struct ufml_metadata *meta = ip->ufml_meta;
+	int fs;
+
+	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
+		fs = meta->ufml_filesystem;
+		return (UOP_SNAPSHOT_READ(ip, ap->a_vp, ap->a_mp, fs));
+	}
+	return (ENIVAL);
 }
 
 int
-ufml_snapshot_commit()
+ufml_snapshot_delete(ap)
+	struct uop_snapshot_delete_args *ap;
 {
-	return (0);
+	struct ufml_node *ip = ap->a_up;
+	struct ufml_metadata *meta = ip->ufml_meta;
+	int fs;
+
+	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
+		fs = meta->ufml_filesystem;
+		return (UOP_SNAPSHOT_DELETE(ip, ap->a_vp, ap->a_mp, fs));
+	}
+	return (ENIVAL);
 }
 
 int
-ufml_snapshot_delete()
+ufml_snapshot_commit(ap)
+	struct uop_snapshot_commit_args *ap;
 {
-	return (0);
+	struct ufml_node *ip = ap->a_up;
+	struct ufml_metadata *meta = ip->ufml_meta;
+	int fs;
+
+	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
+		fs = meta->ufml_filesystem;
+		return (UOP_SNAPSHOT_COMMIT(ip, ap->a_vp, ap->a_mp, fs));
+	}
+	return (ENIVAL);
 }

@@ -38,7 +38,6 @@
 #include "devel/ufml/ufml_ops.h"
 
 /* UFS's UFML-based vector operations */
-
 int
 ufs_archive(ap)
 	struct uop_archive_args *ap;

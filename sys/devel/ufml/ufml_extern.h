@@ -29,27 +29,28 @@
 #ifndef UFS_UFML_EXTERN_H_
 #define UFS_UFML_EXTERN_H_
 
-int ufml_check_fs(struct vnode *vp, enum ufml_fstype type);
+/* ufml_meta.c */
+int ufml_check_filesystem(struct ufml_metadata *, int);
+int ufml_check_archive(struct ufml_metadata *, int);
+int ufml_check_compression(struct ufml_metadata *, int);
+int ufml_check_encyrpt(struct ufml_metadata *, int);
 
 /* ufml_archive.c */
-int ufml_check_archive(struct vnode *vp, enum ufml_archtype type);
-int ufml_archive();
-int ufml_extract();
+int ufml_archive(struct uop_archive_args *);
+int ufml_extract(struct uop_extract_args *);
 
 /* ufml_compress.c */
-int ufml_check_compression(struct vnode *vp, enum ufml_comptype type);
-int ufml_compress();
-int ufml_decompress();
+int ufml_compress(struct uop_compress_args *);
+int ufml_decompress(struct uop_decompress_args *);
 
 /* ufml_encrypt.c */
-int ufml_check_encyrpt(struct vnode *vp, enum ufml_enctype type);
-int ufml_encrypt();
-int ufml_decrypt();
+int ufml_encrypt(struct uop_encrypt_args *);
+int ufml_decrypt(struct uop_decrypt_args *);
 
 /* ufml_snapshot.c */
-int ufml_snapshot_write();
-int ufml_snapshot_read();
-int ufml_snapshot_delete();
-int ufml_snapshot_commit();
+int ufml_snapshot_write(struct uop_snapshot_write_args *);
+int ufml_snapshot_read(struct uop_snapshot_read_args *);
+int ufml_snapshot_delete(struct uop_snapshot_delete_args *);
+int ufml_snapshot_commit(struct uop_snapshot_commit_args *);
 
 #endif /* UFS_UFML_EXTERN_H_ */

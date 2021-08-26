@@ -32,31 +32,42 @@
 #include "devel/ufml/ufml_extern.h"
 #include "devel/ufml/ufml_ops.h"
 
-/* Check encryption types to see if the encryption algorithm is supported */
 int
-ufml_check_encrypt(vp, type)
-	struct vnode *vp;
-	enum ufml_enctype type;
+ufml_encrypt(ap)
+	struct uop_encrypt_args *ap;
 {
-	struct ufml_metadata *meta = VTOUFML(vp)->ufml_meta;
+	struct ufml_node *ip = ap->a_up;
+	struct ufml_metadata *meta = ip->ufml_meta;
+	int fs, type;
 
-	meta->ufml_filesystem = UFML_TWOFISH;
-
-	if (type != UFML_TWOFISH) {
-		return (1);
+	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
+		fs = meta->ufml_filesystem;
+		if (ufml_check_encryption(meta, meta->ufml_encrypt) > 0) {
+			type = meta->ufml_encrypt;
+			return (UOP_ENCRYPT(ip, ap->a_vp, ap->a_mp, fs, type));
+		}
+		return (UOP_ENCRYPT(ip, ap->a_vp, ap->a_mp, fs, 0));
 	}
 
-	return (0);
+	return (ENIVAL);
 }
 
 int
-ufml_encrypt()
+ufml_decrypt(ap)
+	struct uop_decrypt_args *ap;
 {
-	return (0);
-}
+	struct ufml_node *ip = ap->a_up;
+	struct ufml_metadata *meta = ip->ufml_meta;
+	int fs, type;
 
-int
-ufml_decrypt()
-{
-	return (0);
+	if (ufml_check_filesystem(meta, meta->ufml_filesystem) > 0) {
+		fs = meta->ufml_filesystem;
+		if (ufml_check_encryption(meta, meta->ufml_encrypt) > 0) {
+			type = meta->ufml_encrypt;
+			return (UOP_DECRYPT(ip, ap->a_vp, ap->a_mp, fs, type));
+		}
+		return (UOP_DECRYPT(ip, ap->a_vp, ap->a_mp, fs, 0));
+	}
+
+	return (ENIVAL);
 }

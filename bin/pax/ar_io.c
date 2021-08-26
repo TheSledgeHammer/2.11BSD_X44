@@ -45,7 +45,9 @@ static char sccsid[] = "@(#)ar_io.c	8.2 (Berkeley) 4/18/94";
 #include <sys/ioctl.h>
 #include <sys/mtio.h>
 #include <sys/param.h>
-#include <signal.h>
+#include <sys/errno.h>
+#include <sys/signal.h>
+
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>

@@ -280,38 +280,3 @@ ufml_checkvp(vp, fil, lno)
 	return (a->ufml_lowervp);
 }
 #endif
-
-/* Check filesystem types to see if the filesystem is supported */
-int
-ufml_check_fs(vp, type)
-	struct vnode *vp;
-	enum ufml_fstype type;
-{
-	int error;
-	struct ufml_metadata *meta = VTOUFML(vp)->ufml_meta;
-
-	switch(type) {
-	case UFML_FFS:
-		meta->ufml_filesystem = UFML_FFS;
-		error = 0;
-		break;
-	case UFML_MFS:
-		meta->ufml_filesystem = UFML_MFS;
-		error = 0;
-		break;
-	case UFML_LFS:
-		meta->ufml_filesystem = UFML_LFS;
-		error = 0;
-		break;
-	default:
-		meta->ufml_filesystem = UFML_UFS;
-		error = 0;
-		break;
-	}
-
-	if(error != 0) {
-		return (1);
-	}
-
-	return (error);
-}
