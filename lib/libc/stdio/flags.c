@@ -32,59 +32,59 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)local.h	8.3 (Berkeley) 7/3/94
  */
 
-#include <limits.h>
-#include <stdarg.h>
+#include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)flags.c	8.1 (Berkeley) 6/4/93";
+#endif /* LIBC_SCCS and not lint */
+
+#include <sys/types.h>
+#include <sys/file.h>
+#include <stdio.h>
+#include <errno.h>
 
 /*
- * Information local to this implementation of stdio,
- * in particular, macros and private variables.
+ * Return the (stdio) flags for a given mode.  Store the flags
+ * to be passed to an open() syscall through *optr.
+ * Return 0 on error.
  */
+__sflags(mode, optr)
+	register char *mode;
+	int *optr;
+{
+	register int ret, m, o;
 
-extern int		__sflush (FILE *);
-extern FILE		*__sfp (void);
-extern int		__srefill (FILE *);
-extern int		__sread (void *, char *, int);
-extern int		__swrite (void *, char const *, int);
-extern fpos_t	__sseek (void *, fpos_t, int);
-extern int		__sclose (void *);
-extern void		__sinit (void);
-extern void		_cleanup (void);
-extern void		(*__cleanup) (void);
-extern void		__smakebuf (FILE *);
-extern int		__swhatbuf (FILE *, size_t *, int *);
-extern int		_fwalk (int (*)(FILE *));
-extern int		__swsetup (FILE *);
-extern int		__sflags (const char *, int *);
+	switch (*mode++) {
 
-extern int		__sdidinit;
+	case 'r':	/* open for reading */
+		ret = __SRD;
+		m = O_RDONLY;
+		o = 0;
+		break;
 
-/*
- * Return true iff the given FILE cannot be written now.
- */
-#define	cantwrite(fp) 												\
-	((((fp)->_flags & __SWR) == 0 || (fp)->_bf._base == NULL) && 	\
-	 __swsetup(fp))
+	case 'w':	/* open for writing */
+		ret = __SWR;
+		m = O_WRONLY;
+		o = O_CREAT | O_TRUNC;
+		break;
 
-/*
- * Test whether the given stdio file has an active ungetc buffer;
- * release such a buffer, without restoring ordinary unread data.
- */
-#define	HASUB(fp) ((fp)->_ub._base != NULL)
-#define	FREEUB(fp) { 					\
-	if ((fp)->_ub._base != (fp)->_ubuf) \
-		free((char *)(fp)->_ub._base); 	\
-	(fp)->_ub._base = NULL; 			\
-}
+	case 'a':	/* open for appending */
+		ret = __SWR;
+		m = O_WRONLY;
+		o = O_CREAT | O_APPEND;
+		break;
 
-/*
- * test for an fgetln() buffer.
- */
-#define	HASLB(fp) ((fp)->_lb._base != NULL)
-#define	FREELB(fp) { 					\
-	free((char *)(fp)->_lb._base); 		\
-	(fp)->_lb._base = NULL; 			\
+	default:	/* illegal mode */
+		errno = EINVAL;
+		return (0);
+	}
+
+	/* [rwa]\+ or [rwa]b\+ means read and write */
+	if (*mode == '+' || (*mode == 'b' && mode[1] == '+')) {
+		ret = __SRW;
+		m = O_RDWR;
+	}
+	*optr = m | o;
+	return (ret);
 }

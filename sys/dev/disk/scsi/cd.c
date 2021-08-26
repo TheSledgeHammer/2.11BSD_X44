@@ -100,15 +100,7 @@ int		cd_get_parms (struct cd_softc *, int);
 
 CFDRIVER_DECL(NULL, cd, &cd_cops, DV_DISK, sizeof(struct cd_softc));
 CFOPS_DECL(cd, cdmatch, cdattach, NULL, NULL);
-
-struct dkdriver cddkdriver = {
-		.d_open = cdopen,
-		.d_close = cdclose,
-		.d_strategy = cdstrategy,
-		.d_minphys = cdminphys,
-		.d_start = cdstart,
-		.d_mklabel = cdgetdisklabel,
-};
+DKDRIVER_DECL(cd, cdstrategy, cdminphys, cdopen, cdclose, cdioctl, cddump, cdstart, cdgetdisklabel);
 
 struct scsi_device cd_switch = {
 	NULL,			/* use default error handler */
@@ -203,7 +195,7 @@ cdattach(parent, self, aux)
 	/*
 	 * Initialize and attach the disk structure.
 	 */
-	cd->sc_dk.dk_driver = &cddkdriver;
+	cd->sc_dk.dk_driver = &cd_dkdrv;
 	cd->sc_dk.dk_name = cd->sc_dev.dv_xname;
 	disk_attach(&cd->sc_dk);
 

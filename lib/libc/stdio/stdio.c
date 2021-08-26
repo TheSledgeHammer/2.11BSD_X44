@@ -32,59 +32,74 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)local.h	8.3 (Berkeley) 7/3/94
  */
 
-#include <limits.h>
-#include <stdarg.h>
+#include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)stdio.c	8.1 (Berkeley) 6/4/93";
+#endif /* LIBC_SCCS and not lint */
+
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
+#include "local.h"
 
 /*
- * Information local to this implementation of stdio,
- * in particular, macros and private variables.
+ * Small standard I/O/seek/close functions.
+ * These maintain the `known seek offset' for seek optimisation.
  */
-
-extern int		__sflush (FILE *);
-extern FILE		*__sfp (void);
-extern int		__srefill (FILE *);
-extern int		__sread (void *, char *, int);
-extern int		__swrite (void *, char const *, int);
-extern fpos_t	__sseek (void *, fpos_t, int);
-extern int		__sclose (void *);
-extern void		__sinit (void);
-extern void		_cleanup (void);
-extern void		(*__cleanup) (void);
-extern void		__smakebuf (FILE *);
-extern int		__swhatbuf (FILE *, size_t *, int *);
-extern int		_fwalk (int (*)(FILE *));
-extern int		__swsetup (FILE *);
-extern int		__sflags (const char *, int *);
-
-extern int		__sdidinit;
-
-/*
- * Return true iff the given FILE cannot be written now.
- */
-#define	cantwrite(fp) 												\
-	((((fp)->_flags & __SWR) == 0 || (fp)->_bf._base == NULL) && 	\
-	 __swsetup(fp))
-
-/*
- * Test whether the given stdio file has an active ungetc buffer;
- * release such a buffer, without restoring ordinary unread data.
- */
-#define	HASUB(fp) ((fp)->_ub._base != NULL)
-#define	FREEUB(fp) { 					\
-	if ((fp)->_ub._base != (fp)->_ubuf) \
-		free((char *)(fp)->_ub._base); 	\
-	(fp)->_ub._base = NULL; 			\
+__sread(cookie, buf, n)
+	void *cookie;
+	char *buf;
+	int n;
+{
+	register FILE *fp = cookie;
+	register int ret;
+	
+	ret = read(fp->_file, buf, n);
+	/* if the read succeeded, update the current offset */
+	if (ret >= 0)
+		fp->_offset += ret;
+	else
+		fp->_flags &= ~__SOFF;	/* paranoia */
+	return (ret);
 }
 
-/*
- * test for an fgetln() buffer.
- */
-#define	HASLB(fp) ((fp)->_lb._base != NULL)
-#define	FREELB(fp) { 					\
-	free((char *)(fp)->_lb._base); 		\
-	(fp)->_lb._base = NULL; 			\
+__swrite(cookie, buf, n)
+	void *cookie;
+	char const *buf;
+	int n;
+{
+	register FILE *fp = cookie;
+
+	if (fp->_flags & __SAPP)
+		(void) lseek(fp->_file, (off_t)0, SEEK_END);
+	fp->_flags &= ~__SOFF;	/* in case FAPPEND mode is set */
+	return (write(fp->_file, buf, n));
+}
+
+fpos_t
+__sseek(cookie, offset, whence)
+	void *cookie;
+	fpos_t offset;
+	int whence;
+{
+	register FILE *fp = cookie;
+	register off_t ret;
+	
+	ret = lseek(fp->_file, (off_t)offset, whence);
+	if (ret == -1L)
+		fp->_flags &= ~__SOFF;
+	else {
+		fp->_flags |= __SOFF;
+		fp->_offset = ret;
+	}
+	return (ret);
+}
+
+__sclose(cookie)
+	void *cookie;
+{
+
+	return (close(((FILE *)cookie)->_file));
 }

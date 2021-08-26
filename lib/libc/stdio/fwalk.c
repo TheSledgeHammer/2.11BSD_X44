@@ -32,59 +32,30 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)local.h	8.3 (Berkeley) 7/3/94
  */
 
-#include <limits.h>
-#include <stdarg.h>
+#include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)fwalk.c	8.1 (Berkeley) 6/4/93";
+#endif /* LIBC_SCCS and not lint */
 
-/*
- * Information local to this implementation of stdio,
- * in particular, macros and private variables.
- */
+#include <errno.h>
+#include <stddef.h>
+#include <stdio.h>
+#include "local.h"
+#include "glue.h"
 
-extern int		__sflush (FILE *);
-extern FILE		*__sfp (void);
-extern int		__srefill (FILE *);
-extern int		__sread (void *, char *, int);
-extern int		__swrite (void *, char const *, int);
-extern fpos_t	__sseek (void *, fpos_t, int);
-extern int		__sclose (void *);
-extern void		__sinit (void);
-extern void		_cleanup (void);
-extern void		(*__cleanup) (void);
-extern void		__smakebuf (FILE *);
-extern int		__swhatbuf (FILE *, size_t *, int *);
-extern int		_fwalk (int (*)(FILE *));
-extern int		__swsetup (FILE *);
-extern int		__sflags (const char *, int *);
+_fwalk(function)
+	register int (*function)();
+{
+	register FILE *fp;
+	register int n, ret;
+	register struct glue *g;
 
-extern int		__sdidinit;
-
-/*
- * Return true iff the given FILE cannot be written now.
- */
-#define	cantwrite(fp) 												\
-	((((fp)->_flags & __SWR) == 0 || (fp)->_bf._base == NULL) && 	\
-	 __swsetup(fp))
-
-/*
- * Test whether the given stdio file has an active ungetc buffer;
- * release such a buffer, without restoring ordinary unread data.
- */
-#define	HASUB(fp) ((fp)->_ub._base != NULL)
-#define	FREEUB(fp) { 					\
-	if ((fp)->_ub._base != (fp)->_ubuf) \
-		free((char *)(fp)->_ub._base); 	\
-	(fp)->_ub._base = NULL; 			\
-}
-
-/*
- * test for an fgetln() buffer.
- */
-#define	HASLB(fp) ((fp)->_lb._base != NULL)
-#define	FREELB(fp) { 					\
-	free((char *)(fp)->_lb._base); 		\
-	(fp)->_lb._base = NULL; 			\
+	ret = 0;
+	for (g = &__sglue; g != NULL; g = g->next)
+		for (fp = g->iobs, n = g->niobs; --n >= 0; fp++)
+			if (fp->_flags != 0)
+				ret |= (*function)(fp);
+	return (ret);
 }

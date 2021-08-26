@@ -336,6 +336,9 @@ int	    vsnprintf(char * __restrict, size_t, const char * __restrict, __va_list)
 int	    vasprintf(char ** __restrict, const char * __restrict, __va_list);
 int	    vscanf(const char * __restrict, __va_list);
 int	    vsscanf(const char * __restrict, const char * __restrict, __va_list);
+
+ssize_t	 getdelim(char ** __restrict, size_t * __restrict, int, FILE * __restrict);
+ssize_t	 getline(char ** __restrict, size_t * __restrict, FILE * __restrict);
 __END_DECLS
 
 /*

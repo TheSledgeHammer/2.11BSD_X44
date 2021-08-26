@@ -24,44 +24,9 @@
 # 		regex routines and must define NET2_REGEX.
 # 		Pax may not compile if this not (un)defined properly.
 
-.include <bsd.own.mk>
-
 PROG=   pax
-SRCS=	ar_io.c ar_subs.c buf_subs.c file_subs.c ftree.c		\
-		gen_subs.c options.c pat_rep.c pax.c sel_subs.c tables.c\
-		tar.c tty_subs.c
-
-SRCS+=		getid.c spec.c misc.c pack_dev.c cpio.c
-CPPFLAGS+=	-I${NETBSDSRCDIR}/usr.sbin/mtree \
-			-I${NETBSDSRCDIR}/sbin/mknod
-.PATH:		${NETBSDSRCDIR}/usr.sbin/mtree \
-			${NETBSDSRCDIR}/sbin/mknod
-
-.if (${HOSTPROG:U} == "")
-DPADD+= ${LIBUTIL}
-LDADD+= -lutil
-.endif
-
-MAN=	pax.1
-
-.if defined(HOSTPROG)
-CPPFLAGS+=	-DHOSTPROG
-.else	# {	! HOSTPROG
-
-# XXX: Interix does not have it; we need a conditional for it.
-CPPFLAGS+=	-DHAVE_SYS_MTIO_H
-
-.if ${MKBSDTAR} == "no"
-LINKS+=	${BINDIR}/pax ${BINDIR}/tar
-SYMLINKS+=${BINDIR}/tar /usr/bin/tar
-MAN+=tar.1
-
-LINKS+=	${BINDIR}/pax ${BINDIR}/cpio
-SYMLINKS+=${BINDIR}/cpio /usr/bin/cpio
-MAN+=cpio.1
-.endif
-.endif	# }	! HOSTPROG
-
-COPTS.tar.c+=	${GCC_NO_STRINGOP_TRUNCATION}
+SRCS=	ar_io.c ar_subs.c buf_subs.c cache.c cpio.c file_subs.c ftree.c	\
+		gen_subs.c options.c pat_rep.c pax.c sel_subs.c tables.c tar.c	\
+		tty_subs.c
 
 .include <bsd.prog.mk>

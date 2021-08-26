@@ -165,6 +165,10 @@ struct disksort_stats {
 #define dkpart(dev)			(minor(dev) & 07)
 #define dkminor(unit, part)	(((unit) << 3) | (part))
 
+/* dkdriver declaration */
+#define DKDRIVER_DECL(name, strat, minphys, open, close, ioctl, dump, start, mklabel)	\
+	struct dkdriver (name##_dkdrv) = { (#name), (strat), (minphys), (open), (close), (ioctl), (dump), (start), (mklabel) }
+
 #ifdef KERNEL
 extern	int disk_count;			/* number of disks in global disklist */
 

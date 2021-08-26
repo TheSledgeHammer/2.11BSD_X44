@@ -33,58 +33,15 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)local.h	8.3 (Berkeley) 7/3/94
+ *	@(#)glue.h	8.1 (Berkeley) 6/4/93
  */
-
-#include <limits.h>
-#include <stdarg.h>
 
 /*
- * Information local to this implementation of stdio,
- * in particular, macros and private variables.
+ * The first few FILEs are statically allocated; others are dynamically
+ * allocated and linked in via this glue structure.
  */
-
-extern int		__sflush (FILE *);
-extern FILE		*__sfp (void);
-extern int		__srefill (FILE *);
-extern int		__sread (void *, char *, int);
-extern int		__swrite (void *, char const *, int);
-extern fpos_t	__sseek (void *, fpos_t, int);
-extern int		__sclose (void *);
-extern void		__sinit (void);
-extern void		_cleanup (void);
-extern void		(*__cleanup) (void);
-extern void		__smakebuf (FILE *);
-extern int		__swhatbuf (FILE *, size_t *, int *);
-extern int		_fwalk (int (*)(FILE *));
-extern int		__swsetup (FILE *);
-extern int		__sflags (const char *, int *);
-
-extern int		__sdidinit;
-
-/*
- * Return true iff the given FILE cannot be written now.
- */
-#define	cantwrite(fp) 												\
-	((((fp)->_flags & __SWR) == 0 || (fp)->_bf._base == NULL) && 	\
-	 __swsetup(fp))
-
-/*
- * Test whether the given stdio file has an active ungetc buffer;
- * release such a buffer, without restoring ordinary unread data.
- */
-#define	HASUB(fp) ((fp)->_ub._base != NULL)
-#define	FREEUB(fp) { 					\
-	if ((fp)->_ub._base != (fp)->_ubuf) \
-		free((char *)(fp)->_ub._base); 	\
-	(fp)->_ub._base = NULL; 			\
-}
-
-/*
- * test for an fgetln() buffer.
- */
-#define	HASLB(fp) ((fp)->_lb._base != NULL)
-#define	FREELB(fp) { 					\
-	free((char *)(fp)->_lb._base); 		\
-	(fp)->_lb._base = NULL; 			\
-}
+struct glue {
+	struct glue *next;
+	int			niobs;
+	FILE		*iobs;
+} __sglue;

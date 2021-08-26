@@ -53,11 +53,7 @@
 
 int		pcibmatch (struct device *, void *, void *);
 void	pcibattach (struct device *, struct device *, void *);
-/*
-struct cfdriver pcib_cd = {
-	NULL, "pcib", pcibmatch, pcibattach, DV_DULL, sizeof(struct device)
-};
-*/
+
 CFDRIVER_DECL(NULL, pcib, &pcib_cops, DV_DULL, sizeof(struct device));
 CFOPS_DECL(pcib, pcibmatch, pcibattach, NULL, NULL);
 

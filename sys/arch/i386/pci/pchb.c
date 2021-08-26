@@ -61,11 +61,7 @@ int		pchbmatch (struct device *, struct cfdata *, void *);
 void	pchbattach (struct device *, struct device *, void *);
 
 int		pchb_print (void *, const char *);
-/*
-struct cfdriver pchb_cd = {
-	NULL, "pchb", pchbmatch, pchbattach, DV_DULL, sizeof(struct device)
-};
-*/
+
 CFDRIVER_DECL(NULL, pchb, &pchb_cops, DV_DULL, sizeof(struct device));
 CFOPS_DECL(pchb, pchbmatch, pchbattach, NULL, NULL);
 

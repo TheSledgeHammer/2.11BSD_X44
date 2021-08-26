@@ -167,13 +167,10 @@ struct wd_softc {
 int		wdprobe	(struct device *, struct cfdata *, void *);
 void	wdattach (struct device *, struct device *, void *);
 int		wdprint	(void *, char *);
-/*
-struct cfdriver wd_cd = {
-		NULL, "wd", wdprobe, wdattach, DV_DISK, sizeof(struct wd_softc)
-};
-*/
+
 CFDRIVER_DECL(NULL, wd, &wd_cops, DV_DISK, sizeof(struct wd_softc));
 CFOPS_DECL(wd, wdprobe, wdattach, NULL, NULL);
+DKDRIVER_DECL(wd, wdstrategy, NULL, wdopen, wdclose, wdioctl, wddump, wdstart, wdgetdisklabel);
 
 static dev_type_open(wdopen);
 static dev_type_close(wdclose);
@@ -237,8 +234,6 @@ void  wdrestart (void*);
 int   wd_get_params (struct wd_softc *, u_int8_t, struct ataparams *);
 void  wd_flushcache (struct wd_softc *, int);
 void  wd_shutdown (void*);
-
-struct dkdriver wddkdriver = { wdstrategy };
 
 #ifdef HAS_BAD144_HANDLING
 static void bad144intern (struct wd_softc *);
@@ -356,7 +351,7 @@ wdattach(parent, self, aux)
 	/*
 	 * Initialize and attach the disk structure.
 	 */
-	wd->sc_dk.dk_driver = &wddkdriver;
+	wd->sc_dk.dk_driver = &wd_dkdrv;
 	wd->sc_dk.dk_name = wd->sc_dev.dv_xname;
 	disk_attach(&wd->sc_dk);
 	wd->sc_wdc_bio.lp = wd->sc_dk.dk_label;

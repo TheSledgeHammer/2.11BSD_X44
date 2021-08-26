@@ -57,22 +57,22 @@ register struct tm *	timeptr;
 extern char *		getenv();
 extern char *		strcpy();
 extern char *		strcat();
-struct tm *		offtime();
+struct tm *			offtime();
 
 struct ttinfo {				/* time type information */
-	long		tt_gmtoff;	/* GMT offset in seconds */
+	long	tt_gmtoff;	/* GMT offset in seconds */
 	int		tt_isdst;	/* used to set tm_isdst */
 	int		tt_abbrind;	/* abbreviation list index */
 };
 
 struct state {
-	int		timecnt;
-	int		typecnt;
-	int		charcnt;
-	time_t		ats[TZ_MAX_TIMES];
+	int				timecnt;
+	int				typecnt;
+	int				charcnt;
+	time_t			ats[TZ_MAX_TIMES];
 	unsigned char	types[TZ_MAX_TIMES];
 	struct ttinfo	ttis[TZ_MAX_TYPES];
-	char		chars[TZ_MAX_CHARS + 1];
+	char			chars[TZ_MAX_CHARS + 1];
 };
 
 static struct state	s;

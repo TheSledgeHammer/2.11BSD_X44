@@ -13,7 +13,7 @@
 #include <sys/types.h>
 #include <sys/signal.h>
 
-#ifndef	NSIG
+//#ifndef	NSIG
 #define NSIG				32
 
 #define	SIGHUP				1	/* hangup */

@@ -32,59 +32,61 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)local.h	8.3 (Berkeley) 7/3/94
  */
 
-#include <limits.h>
-#include <stdarg.h>
+#include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)wsetup.c	8.1 (Berkeley) 6/4/93";
+#endif /* LIBC_SCCS and not lint */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include "local.h"
 
 /*
- * Information local to this implementation of stdio,
- * in particular, macros and private variables.
+ * Various output routines call wsetup to be sure it is safe to write,
+ * because either _flags does not include __SWR, or _buf is NULL.
+ * _wsetup returns 0 if OK to write, nonzero otherwise.
  */
+__swsetup(fp)
+	register FILE *fp;
+{
+	/* make sure stdio is set up */
+	if (!__sdidinit)
+		__sinit();
 
-extern int		__sflush (FILE *);
-extern FILE		*__sfp (void);
-extern int		__srefill (FILE *);
-extern int		__sread (void *, char *, int);
-extern int		__swrite (void *, char const *, int);
-extern fpos_t	__sseek (void *, fpos_t, int);
-extern int		__sclose (void *);
-extern void		__sinit (void);
-extern void		_cleanup (void);
-extern void		(*__cleanup) (void);
-extern void		__smakebuf (FILE *);
-extern int		__swhatbuf (FILE *, size_t *, int *);
-extern int		_fwalk (int (*)(FILE *));
-extern int		__swsetup (FILE *);
-extern int		__sflags (const char *, int *);
+	/*
+	 * If we are not writing, we had better be reading and writing.
+	 */
+	if ((fp->_flags & __SWR) == 0) {
+		if ((fp->_flags & __SRW) == 0)
+			return (EOF);
+		if (fp->_flags & __SRD) {
+			/* clobber any ungetc data */
+			if (HASUB(fp))
+				FREEUB(fp);
+			fp->_flags &= ~(__SRD|__SEOF);
+			fp->_r = 0;
+			fp->_p = fp->_bf._base;
+		}
+		fp->_flags |= __SWR;
+	}
 
-extern int		__sdidinit;
-
-/*
- * Return true iff the given FILE cannot be written now.
- */
-#define	cantwrite(fp) 												\
-	((((fp)->_flags & __SWR) == 0 || (fp)->_bf._base == NULL) && 	\
-	 __swsetup(fp))
-
-/*
- * Test whether the given stdio file has an active ungetc buffer;
- * release such a buffer, without restoring ordinary unread data.
- */
-#define	HASUB(fp) ((fp)->_ub._base != NULL)
-#define	FREEUB(fp) { 					\
-	if ((fp)->_ub._base != (fp)->_ubuf) \
-		free((char *)(fp)->_ub._base); 	\
-	(fp)->_ub._base = NULL; 			\
-}
-
-/*
- * test for an fgetln() buffer.
- */
-#define	HASLB(fp) ((fp)->_lb._base != NULL)
-#define	FREELB(fp) { 					\
-	free((char *)(fp)->_lb._base); 		\
-	(fp)->_lb._base = NULL; 			\
+	/*
+	 * Make a buffer if necessary, then set _w.
+	 */
+	if (fp->_bf._base == NULL)
+		__smakebuf(fp);
+	if (fp->_flags & __SLBF) {
+		/*
+		 * It is line buffered, so make _lbfsize be -_bufsize
+		 * for the putc() macro.  We will change _lbfsize back
+		 * to 0 whenever we turn off __SWR.
+		 */
+		fp->_w = 0;
+		fp->_lbfsize = -fp->_bf._size;
+	} else
+		fp->_w = fp->_flags & __SNBF ? 0 : fp->_bf._size;
+	return (0);
 }

@@ -99,6 +99,7 @@ static int sd_mode_sense (struct sd_softc *, struct scsi_mode_sense_data *, int,
 
 CFDRIVER_DECL(NULL, sd, &sd_cops, DV_DISK, sizeof(struct sd_softc));
 CFOPS_DECL(sd, sdmatch, sdattach, NULL, NULL);
+DKDRIVER_DECL(sd, sdstrategy, sdminphys, sdopen, sdclose, sdioctl, sddump, sdstart, sdgetdisklabel);
 
 static dev_type_open(sdopen);
 static dev_type_close(sdclose);
@@ -132,16 +133,6 @@ const struct cdevsw sd_cdevsw = {
 		.d_mmap = nommap,
 		.d_discard = nodiscard,
 		.d_type = D_DISK
-};
-
-static const struct dkdriver sddkdriver = {
-		.d_open = sdopen,
-		.d_close = sdclose,
-		.d_strategy = sdstrategy,
-		.d_minphys = sdminphys,
-		.d_start = sdstart,
-		.d_dump = sddump,
-		.d_mklabel = sdgetdisklabel,
 };
 
 struct scsi_device sd_switch = {
@@ -207,7 +198,7 @@ sdattach(parent, self, aux)
 	/*
 	 * Initialize and attach the disk structure.
 	 */
-	sd->sc_dk.dk_driver = &sddkdriver;
+	sd->sc_dk.dk_driver = &sd_dkdrv;
 	sd->sc_dk.dk_name = sd->sc_dev.dv_xname;
 	disk_attach(&sd->sc_dk);
 

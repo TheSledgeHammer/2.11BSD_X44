@@ -69,6 +69,17 @@ struct tzhead {
 #define	SECS_PER_DAY	((long) SECS_PER_HOUR * HOURS_PER_DAY)
 #define	MONS_PER_YEAR	12
 
+/* 4.4BSD Compatibility */
+#define	SECSPERMIN		SECS_PER_MIN
+#define	MINSPERHOUR		MINS_PER_HOUR
+#define	HOURSPERDAY		HOURS_PER_DAY
+#define	DAYSPERWEEK		DAYS_PER_WEEK
+#define	DAYSPERNYEAR	DAYS_PER_NYEAR
+#define	DAYSPERLYEAR	DAYS_PER_LYEAR
+#define	SECSPERHOUR		SECS_PER_HOUR
+#define	SECSPERDAY		SECS_PER_DAY
+#define	MONSPERYEAR		MONS_PER_YEAR
+
 #define	TM_SUNDAY		0
 #define	TM_MONDAY		1
 #define	TM_TUESDAY		2
@@ -101,7 +112,7 @@ struct tzhead {
 ** that will probably do.
 */
 
-#define	isleap(y) (((y) % 4) == 0 && ((y) % 100) != 0 || ((y) % 400) == 0)
+#define	isleap(y) 		(((y) % 4) == 0 && ((y) % 100) != 0 || ((y) % 400) == 0)
 
 /*
 ** Since everything in isleap is modulo 400 (or a factor of 400), we know that
@@ -115,6 +126,6 @@ struct tzhead {
 ** We use this to avoid addition overflow problems.
 */
 
-#define isleap_sum(a, b)	isleap((a) % 400 + (b) % 400)
+#define isleap_sum(a, b) 	isleap((a) % 400 + (b) % 400)
 
 #endif /* !_TZFILE_H_ */

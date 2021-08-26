@@ -32,59 +32,88 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ */
+
+#include <sys/cdefs.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)makebuf.c	8.1 (Berkeley) 6/4/93";
+#endif /* LIBC_SCCS and not lint */
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "local.h"
+
+/*
+ * Allocate a file buffer, or switch to unbuffered I/O.
+ * Per the ANSI C standard, ALL tty devices default to line buffered.
  *
- *	@(#)local.h	8.3 (Berkeley) 7/3/94
+ * As a side effect, we set __SOPT or __SNPT (en/dis-able fseek
+ * optimisation) right after the fstat() that finds the buffer size.
  */
+void
+__smakebuf(fp)
+	register FILE *fp;
+{
+	register void *p;
+	register int flags;
+	size_t size;
+	int couldbetty;
 
-#include <limits.h>
-#include <stdarg.h>
-
-/*
- * Information local to this implementation of stdio,
- * in particular, macros and private variables.
- */
-
-extern int		__sflush (FILE *);
-extern FILE		*__sfp (void);
-extern int		__srefill (FILE *);
-extern int		__sread (void *, char *, int);
-extern int		__swrite (void *, char const *, int);
-extern fpos_t	__sseek (void *, fpos_t, int);
-extern int		__sclose (void *);
-extern void		__sinit (void);
-extern void		_cleanup (void);
-extern void		(*__cleanup) (void);
-extern void		__smakebuf (FILE *);
-extern int		__swhatbuf (FILE *, size_t *, int *);
-extern int		_fwalk (int (*)(FILE *));
-extern int		__swsetup (FILE *);
-extern int		__sflags (const char *, int *);
-
-extern int		__sdidinit;
-
-/*
- * Return true iff the given FILE cannot be written now.
- */
-#define	cantwrite(fp) 												\
-	((((fp)->_flags & __SWR) == 0 || (fp)->_bf._base == NULL) && 	\
-	 __swsetup(fp))
-
-/*
- * Test whether the given stdio file has an active ungetc buffer;
- * release such a buffer, without restoring ordinary unread data.
- */
-#define	HASUB(fp) ((fp)->_ub._base != NULL)
-#define	FREEUB(fp) { 					\
-	if ((fp)->_ub._base != (fp)->_ubuf) \
-		free((char *)(fp)->_ub._base); 	\
-	(fp)->_ub._base = NULL; 			\
+	if (fp->_flags & __SNBF) {
+		fp->_bf._base = fp->_p = fp->_nbuf;
+		fp->_bf._size = 1;
+		return;
+	}
+	flags = __swhatbuf(fp, &size, &couldbetty);
+	if ((p = malloc(size)) == NULL) {
+		fp->_flags |= __SNBF;
+		fp->_bf._base = fp->_p = fp->_nbuf;
+		fp->_bf._size = 1;
+		return;
+	}
+	__cleanup = _cleanup;
+	flags |= __SMBF;
+	fp->_bf._base = fp->_p = p;
+	fp->_bf._size = size;
+	if (couldbetty && isatty(fp->_file))
+		flags |= __SLBF;
+	fp->_flags |= flags;
 }
 
 /*
- * test for an fgetln() buffer.
+ * Internal routine to determine `proper' buffering for a file.
  */
-#define	HASLB(fp) ((fp)->_lb._base != NULL)
-#define	FREELB(fp) { 					\
-	free((char *)(fp)->_lb._base); 		\
-	(fp)->_lb._base = NULL; 			\
+int
+__swhatbuf(fp, bufsize, couldbetty)
+	register FILE *fp;
+	size_t *bufsize;
+	int *couldbetty;
+{
+	struct stat st;
+
+	if (fp->_file < 0 || fstat(fp->_file, &st) < 0) {
+		*couldbetty = 0;
+		*bufsize = BUFSIZ;
+		return (__SNPT);
+	}
+
+	/* could be a tty iff it is a character device */
+	*couldbetty = (st.st_mode & S_IFMT) == S_IFCHR;
+	if (st.st_blksize <= 0) {
+		*bufsize = BUFSIZ;
+		return (__SNPT);
+	}
+
+	/*
+	 * Optimise fseek() only if it is a regular file.  (The test for
+	 * __sseek is mainly paranoia.)  It is safe to set _blksize
+	 * unconditionally; it will only be used if __SOPT is also set.
+	 */
+	*bufsize = st.st_blksize;
+	fp->_blksize = st.st_blksize;
+	return ((st.st_mode & S_IFMT) == S_IFREG && fp->_seek == __sseek ?
+	    __SOPT : __SNPT);
 }

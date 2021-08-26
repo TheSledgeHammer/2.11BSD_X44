@@ -62,7 +62,7 @@ static char sccsid[] = "@(#)gen_subs.c	8.1 (Berkeley) 5/31/93";
  */
 #define MODELEN 20
 #define DATELEN 64
-#define SIXMONTHS	 ((DAYSPERNYEAR / 2) * SECSPERDAY)
+#define SIXMONTHS	 ((DAYS_PER_NYEAR / 2) * SECS_PER_DAY)
 #define CURFRMT		"%b %e %H:%M"
 #define OLDFRMT		"%b %e  %Y"
 #ifndef UT_NAMESIZE

@@ -36,55 +36,94 @@
 
 #include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)wbuf.c	8.1 (Berkeley) 6/4/93";
+static char sccsid[] = "@(#)refill.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
-#include <stddef.h>
+#include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "local.h"
 
+static
+lflush(fp)
+	FILE *fp;
+{
+
+	if ((fp->_flags & (__SLBF|__SWR)) == __SLBF|__SWR)
+		return (__sflush(fp));
+	return (0);
+}
+
 /*
- * Write the given character into the (probably full) buffer for
- * the given file.  Flush the buffer out if it is or becomes full,
- * or if c=='\n' and the file is line buffered.
+ * Refill a stdio buffer.
+ * Return EOF on eof or error, 0 otherwise.
  */
-__swbuf(c, fp)
-	register int c;
+__srefill(fp)
 	register FILE *fp;
 {
-	register int n;
 
-	/*
-	 * In case we cannot write, or longjmp takes us out early,
-	 * make sure _w is 0 (if fully- or un-buffered) or -_bf._size
-	 * (if line buffered) so that we will get called again.
-	 * If we did not do this, a sufficient number of putc()
-	 * calls might wrap _w from negative to positive.
-	 */
-	fp->_w = fp->_lbfsize;
-	if (cantwrite(fp))
+	/* make sure stdio is set up */
+	if (!__sdidinit)
+		__sinit();
+
+	fp->_r = 0;		/* largely a convenience for callers */
+
+	/* SysV does not make this test; take it out for compatibility */
+	if (fp->_flags & __SEOF)
 		return (EOF);
-	c = (unsigned char)c;
+
+	/* if not already reading, have to be reading and writing */
+	if ((fp->_flags & __SRD) == 0) {
+		if ((fp->_flags & __SRW) == 0) {
+			errno = EBADF;
+			return (EOF);
+		}
+		/* switch to reading */
+		if (fp->_flags & __SWR) {
+			if (__sflush(fp))
+				return (EOF);
+			fp->_flags &= ~__SWR;
+			fp->_w = 0;
+			fp->_lbfsize = 0;
+		}
+		fp->_flags |= __SRD;
+	} else {
+		/*
+		 * We were reading.  If there is an ungetc buffer,
+		 * we must have been reading from that.  Drop it,
+		 * restoring the previous buffer (if any).  If there
+		 * is anything in that buffer, return.
+		 */
+		if (HASUB(fp)) {
+			FREEUB(fp);
+			if ((fp->_r = fp->_ur) != 0) {
+				fp->_p = fp->_up;
+				return (0);
+			}
+		}
+	}
+
+	if (fp->_bf._base == NULL)
+		__smakebuf(fp);
 
 	/*
-	 * If it is completely full, flush it out.  Then, in any case,
-	 * stuff c into the buffer.  If this causes the buffer to fill
-	 * completely, or if c is '\n' and the file is line buffered,
-	 * flush it (perhaps a second time).  The second flush will always
-	 * happen on unbuffered streams, where _bf._size==1; fflush()
-	 * guarantees that putc() will always call wbuf() by setting _w
-	 * to 0, so we need not do anything else.
+	 * Before reading from a line buffered or unbuffered file,
+	 * flush all line buffered output files, per the ANSI C
+	 * standard.
 	 */
-	n = fp->_p - fp->_bf._base;
-	if (n >= fp->_bf._size) {
-		if (fflush(fp))
-			return (EOF);
-		n = 0;
+	if (fp->_flags & (__SLBF|__SNBF))
+		(void) _fwalk(lflush);
+	fp->_p = fp->_bf._base;
+	fp->_r = (*fp->_read)(fp->_cookie, (char *)fp->_p, fp->_bf._size);
+	fp->_flags &= ~__SMOD;	/* buffer contents are again pristine */
+	if (fp->_r <= 0) {
+		if (fp->_r == 0)
+			fp->_flags |= __SEOF;
+		else {
+			fp->_r = 0;
+			fp->_flags |= __SERR;
+		}
+		return (EOF);
 	}
-	fp->_w--;
-	*fp->_p++ = c;
-	if (++n == fp->_bf._size || ((fp->_flags & __SLBF) && c == '\n'))
-		if (fflush(fp))
-			return (EOF);
-	return (c);
+	return (0);
 }
