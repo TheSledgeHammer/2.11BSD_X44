@@ -47,7 +47,7 @@
  * Order of Change:
  * Process/Kernel:
  * 1. Process requests a change is size of segment regions
- * 2. Run X kernel call (vmcmd most likely)
+ * 2. Run X kernel call (vcmd (exec) most likely)
  * 3. Runs through vmspace execution
  * 4. return result
  *

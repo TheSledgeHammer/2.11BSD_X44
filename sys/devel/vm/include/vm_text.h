@@ -13,11 +13,7 @@
 
 #include <arch/i386/include/param.h>
 #include <arch/i386/include/vmparam.h>
-
-/* Tell whether virtual page numbers are in text|data|stack segment */
-#define	isassv(p, v)	((v) >= BTOPUSRSTACK - (p)->p_ssize)
-#define	isatsv(p, v)	(((v) - LOWPAGES) < (p)->p_tsize)
-#define	isadsv(p, v)	(((v) - LOWPAGES) >= stoc(ctos((p)->p_tsize)) && (v) < LOWPAGES + (p)->p_tsize + (p)->p_dsize + (p)->p_mmsize)
+#include <devel/vm/include/vmmac.h>
 
 /*
  * Text structure
@@ -36,6 +32,7 @@ struct vm_text {
     int 					psx_tflag;				/* text flags */
     u_long					psx_tresult;			/* text extent */
 
+    /* vm_text generic */
     TAILQ_ENTRY(vm_text)  	psx_list;				/* text freelist */
     swblk_t					psx_ptdaddr;			/* disk address of page table */
     caddr_t	                psx_daddr;				/* segment's disk address */
@@ -88,7 +85,7 @@ simple_lock_data_t			vm_text_list_lock;
 #define xunlock(lock)		simple_unlock(lock);
 
 void	vm_text_init(vm_psegment_t, u_long, int);
-void	vm_xalloc(struct vnode *);
+void	vm_xalloc(struct vnode *, u_long, off_t);
 void	vm_xfree();
 void	vm_xexpand(struct proc *, vm_text_t);
 void	vm_xccdec(vm_text_t);

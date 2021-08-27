@@ -24,9 +24,17 @@
 # 		regex routines and must define NET2_REGEX.
 # 		Pax may not compile if this not (un)defined properly.
 
+.include <bsd.own.mk>
+
 PROG=   pax
 SRCS=	ar_io.c ar_subs.c buf_subs.c cache.c cpio.c file_subs.c ftree.c	\
 		gen_subs.c options.c pat_rep.c pax.c sel_subs.c tables.c tar.c	\
 		tty_subs.c
 
+SRCS+=		getid.c spec.c misc.c pack_dev.c cpio.c
+CPPFLAGS+=	-I${NETBSDSRCDIR}/usr.sbin/mtree \
+			-I${NETBSDSRCDIR}/sbin/mknod
+.PATH:		${NETBSDSRCDIR}/usr.sbin/mtree \
+			${NETBSDSRCDIR}/sbin/mknod
+		
 .include <bsd.prog.mk>

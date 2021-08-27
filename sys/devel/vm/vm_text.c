@@ -34,17 +34,20 @@ vm_text_init(xp)
 /*
  * Attach to a shared text segment.  If there is no shared text, just
  * return.  If there is, hook up to it.  If it is not available from
- * core or swap, it has to be read in from the inode (ip); the written
+ * core or swap, it has to be read in from the vnode (vp); the written
  * bit is set to force it to be written out as appropriate.  If it is
  * not available from core, a swap has to be done to get it back.
  */
 void
-vm_xalloc(vp)
+vm_xalloc(vp, tsize, toff)
 	register struct vnode *vp;
+	u_long 	tsize;
+	off_t 	toff;
 {
 	register vm_text_t xp;
 	register struct proc *p;
 
+	p = vp->v_proc;
 	while ((xp == vp->v_text) != NULL) {
 		if (xp->psx_flag & XLOCK) {
 			xwait(xp);
@@ -84,11 +87,13 @@ vm_xalloc(vp)
 	if (p->p_flag & SPAGV) {
 		xp->psx_flag |= XPAGV;
 	}
-	//xp->psx_size = clrnd(btoc(ep->a_text));
+
+	xp->psx_size = clrnd(btoc(tsize));
+	/* 2.11BSD overlays were here */
 	if((xp->psx_daddr = vm_vsxalloc(xp)) == NULL) {
 		/* flush text cache and try again */
 		if (vm_xpurge() == 0 || vm_vsxalloc(xp) == NULL) {
-			//swkill(p, "xalloc: no swap space");
+			swkill(p, "xalloc: no swap space");
 			return;
 		}
 	}
@@ -100,7 +105,7 @@ vm_xalloc(vp)
 	VREF(vp);
 	p->p_textp = xp;
 
-	(void) vn_rdwr(UIO_READ, vp, base, len, offset, UIO_USERSPACE, ioflg, p->p_cred, aresid, p);
+	(void) vn_rdwr(UIO_READ, vp, (caddr_t)ctob(tptov(p, 0)), tsize, toff, UIO_USERSPACE, (IO_UNIT|IO_NODELOCKED), p->p_cred, (int *)0, p);
 	p->p_flag &= ~P_SLOCK;
 	xp->psx_flag |= XWRIT;
 	xp->psx_flag &= ~XLOAD;

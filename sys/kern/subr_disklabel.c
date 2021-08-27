@@ -209,7 +209,7 @@ ioctldisklabel(disk, strat, dev, cmd, data, flag)
 	int	flag;
 {
   register struct disklabel *lp;
-
+  int error;
   disk->dk_label = LABELDESC;
   bcopy((struct disklabel *)disk->dk_label, lp, sizeof (*lp));
 
@@ -260,10 +260,10 @@ ioctldisklabel(disk, strat, dev, cmd, data, flag)
 		bcopy((struct disklabel*) disk->dk_label, lp, sizeof(*lp));
 		bcopy(&lp->d_partitions, &disk->dk_parts, sizeof(lp->d_partitions));
 
-		flags = disk->dk_flags;
+		flag = disk->dk_flags;
 		disk->dk_flags |= (DKF_ALIVE | DKF_WLABEL);
 		error = writedisklabel(dev & ~7, strat, lp);
-		disk->dk_flags = flags;
+		disk->dk_flags = flag;
 		return (error);
 	}
 	return (EINVAL);

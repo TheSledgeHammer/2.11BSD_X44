@@ -50,7 +50,7 @@ struct vm_stack {
 };
 
 /*
- * Text structure
+ * Text structure (vm_text.h placeholder)
  */
 
 
@@ -73,14 +73,14 @@ union vm_pseudo_segment {
 #define PSEG_TEXT			3			/* text segment */
 
 /* pseudo-segment flags */
-#define PSEG_SEP			(PSEG_DATA | PSEG_STACK)
-#define PSEG_NOSEP			(PSEG_DATA | PSEG_STACK | PSEG_TEXT)
+#define PSEG_SEP			(PSEG_DATA | PSEG_STACK)				/* I&D seperation */
+#define PSEG_NOSEP			(PSEG_DATA | PSEG_STACK | PSEG_TEXT)	/* No I&D seperation */
 
 /* pseudo-segment macros */
 #define DATA_SEGMENT(data, dsize, daddr, dflag) {		\
-	(data)->psx_dsize = (dsize);							\
-	(data)->psx_daddr = (daddr);							\
-	(data)->psx_dflag = (dflag);							\
+	(data)->psx_dsize = (dsize);						\
+	(data)->psx_daddr = (daddr);						\
+	(data)->psx_dflag = (dflag);						\
 };
 
 #define DATA_EXPAND(data, dsize, daddr) {				\
@@ -110,9 +110,9 @@ union vm_pseudo_segment {
 };
 
 #define TEXT_SEGMENT(text, tsize, taddr, tflag) {		\
-	(text)->psx_tsize = (tsize);							\
-	(text)->psx_taddr = (taddr);							\
-	(text)->psx_tflag = (tflag);							\
+	(text)->psx_tsize = (tsize);						\
+	(text)->psx_taddr = (taddr);						\
+	(text)->psx_tflag = (tflag);						\
 };
 
 #define TEXT_EXPAND(text, tsize, taddr) {				\

@@ -59,6 +59,7 @@ struct tzhead {
 
 #define	TZ_MAX_CHARS	50	/* Maximum number of abbreviation characters */
 
+/* 211BSD & SysV Compatibility */
 #define	SECS_PER_MIN	60
 #define	MINS_PER_HOUR	60
 #define	HOURS_PER_DAY	24
@@ -69,7 +70,7 @@ struct tzhead {
 #define	SECS_PER_DAY	((long) SECS_PER_HOUR * HOURS_PER_DAY)
 #define	MONS_PER_YEAR	12
 
-/* 4.4BSD Compatibility */
+/* BSD Compatibility */
 #define	SECSPERMIN		SECS_PER_MIN
 #define	MINSPERHOUR		MINS_PER_HOUR
 #define	HOURSPERDAY		HOURS_PER_DAY

@@ -287,6 +287,17 @@ swap(blkno, coreaddr, count, vp, rdflg)
 }
 
 /*
+ * rout is the name of the routine where we ran out of swap space.
+ */
+void
+swkill(p, rout)
+	register struct proc *p;
+	char *rout;
+{
+	tprintf(u->u_ttyp, "sorry, pid %d killed in %s: no swap space\n", p->p_pid, rout);
+}
+
+/*
  * Swap out process p if segmented.
  * NOTE: Likely to be run within the current swapout method as needed
  */

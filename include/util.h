@@ -81,19 +81,39 @@ void	login(struct utmp *);
 int		login_tty(int);
 int		logout(const char *);
 void	logwtmp(const char *, const char *, const char *);
-int		pw_lock(int retries);
+int		pw_lock(int);
 int		pw_mkdb(void);
 int		pw_abort(void);
 void	pw_init(void);
-void	pw_edit(int notsetuid, const char *filename);
+void	pw_edit(int, const char *);
 void	pw_prompt(void);
-void	pw_copy(int ffd, int tfd, struct passwd *pw);
-int		pw_scan(char *bp, struct passwd *pw, int *flags);
-void	pw_error(const char *name, int err, int eval);
+void	pw_copy(int, int, struct passwd *);
+int		pw_scan(char *, struct passwd *, int *);
+void	pw_error(const char *, int, int);
 int		openpty(int *, int *, char *, struct termios *, struct winsize *);
 pid_t	forkpty(int *, char *, struct termios *, struct winsize *);
 int		getmaxpartitions(void);
 int		getrawpartition(void);
+
+/* stat_flags.c */
+char 	*flags_to_string(u_long, const char *);
+int		string_to_flags(char **, u_long *, u_long *);
+
+/* efun.c: Error checked functions */
+void		(*esetfunc(void (*)(int, const char *, ...)))(int, const char *, ...);
+size_t 		estrlcpy(char *, const char *, size_t);
+size_t 		estrlcat(char *, const char *, size_t);
+char 		*estrdup(const char *);
+char 		*estrndup(const char *, size_t);
+//intmax_t	estrtoi(const char *, int, intmax_t, intmax_t);
+//uintmax_t	estrtou(const char *, int, uintmax_t, uintmax_t);
+void 		*ecalloc(size_t, size_t);
+void 		*emalloc(size_t);
+void 		*erealloc(void *, size_t);
+void 		ereallocarr(void *, size_t, size_t);
+struct __sFILE	*efopen(const char *, const char *);
+int	 		easprintf(char ** __restrict, const char * __restrict, ...)	__printflike(2, 3);
+int			evasprintf(char ** __restrict, const char * __restrict, __va_list) __printflike(2, 0);
 __END_DECLS
 
 #endif /* !_UTIL_H_ */

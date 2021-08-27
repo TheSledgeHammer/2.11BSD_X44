@@ -884,12 +884,10 @@ set_interrupt_apic_ids(void)
 		if (cpu_info[apic_id].cpu_disabled) {
 			continue;
 		}
-
 		/* Don't let hyperthreads service interrupts. */
 		if (cpu_info[apic_id].cpu_hyperthread && !hyperthreading_intr_allowed) {
 			continue;
 		}
-
 		intr_add_cpu(i);
 	}
 }
