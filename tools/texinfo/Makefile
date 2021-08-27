@@ -1,6 +1,6 @@
 #	$NetBSD: Makefile,v 1.11 2013/06/14 16:10:02 tsutsui Exp $
 
-MODULE=		texinfo
+MODULE=	 texinfo
 
 CONFIGURE_ARGS=	--program-prefix=${_TOOL_PREFIX}
 

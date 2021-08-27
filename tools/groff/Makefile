@@ -27,8 +27,6 @@ _post_conf: .USE
 	  echo '.ORDER: $$(ALLDIRS) dot';\
 	  echo '.ORDER: all install' ) >> build/Makefile
 
-
-
 .include "${.CURDIR}/../Makefile.gnuhost"
 .-include "${TOOLDIR}/share/compat/defs.mk"
 

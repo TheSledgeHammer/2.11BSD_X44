@@ -26,11 +26,7 @@ HOST_CFLAGS+=-O2 -no-cpp-precomp
 
 MAKE_PROGRAM?=	${MAKE}
 
-.for i in 3 2
-.if exists(${.CURDIR}/../../contrib/external/${MODULE}/dist)
-GNUHOSTDIST?=	${.CURDIR}/../../contrib/external/${MODULE}/dist
-.endif
-.endfor
+GNUHOSTDIST?=	${.CURDIR}/../../contrib/external/gnu/${MODULE}/dist
 
 FIND_ARGS+=	\! \( -type d \( \
 			-name 'CVS' -o \
@@ -51,22 +47,22 @@ _GNU_CFGSRC!=	find ${GNUHOSTDIST} ${FIND_ARGS} \
 .MAKEOVERRIDES+= _GNU_CFGSRC
 .endif
 
-CONFIGURE_ENV+= 						\
-		AR=${HOST_AR:Q} 				\
-		AWK=${TOOL_AWK:Q} 				\
-		CC=${HOST_CC:Q} 				\
+CONFIGURE_ENV+= 					\
+		AR=${HOST_AR:Q} 			\
+		AWK=${TOOL_AWK:Q} 			\
+		CC=${HOST_CC:Q} 			\
 		CFLAGS=${HOST_CFLAGS:Q} 		\
 		CONFIG_SHELL=${HOST_SH:Q} 		\
-		CPPFLAGS=${HOST_CPPFLAGS:Q} 	\
-		CXX=${HOST_CXX:Q} 				\
-		CXXFLAGS=${HOST_CXXFLAGS:Q} 	\
-		INSTALL=${HOST_INSTALL_FILE:Q} 	\
+		CPPFLAGS=${HOST_CPPFLAGS:Q} 		\
+		CXX=${HOST_CXX:Q} 			\
+		CXXFLAGS=${HOST_CXXFLAGS:Q} 		\
+		INSTALL=${HOST_INSTALL_FILE:Q} 		\
 		LDFLAGS=${HOST_LDFLAGS:Q} 		\
-		LEX=${LEX:Q} 					\
-		FLEX=${LEX:Q} 					\
-		M4=${TOOL_M4:Q} 				\
+		LEX=${LEX:Q} 				\
+		FLEX=${LEX:Q} 				\
+		M4=${TOOL_M4:Q} 			\
 		MAKE=${MAKE_PROGRAM:Q} 			\
-		PATH="${TOOLDIR}/bin:$$PATH" 	\
+		PATH="${TOOLDIR}/bin:$$PATH" 		\
 		RANLIB=${HOST_RANLIB:Q} 		\
 		YACC=${YACC:Q}
 
@@ -80,7 +76,6 @@ CONFIGURE_ARGS+=--disable-shared
 .if ${MAKEVERBOSE} == 0
 CONFIGURE_ARGS+=--silent
 .endif
-
 
 .if ${MAKE_PROGRAM} == ${MAKE}
 .ifndef _NOWRAPPER

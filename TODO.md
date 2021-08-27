@@ -6,6 +6,24 @@ A General todo list. Don't hesitate to add to this list. :)
 - Makefiles
 - Bug Fixes &/or missing critical content
 
+## Compiler/Tools:
+- Can't Compile
+	- pax
+- Tool to Remove (Alternative)
+	- Groff (Mandoc)
+- Unimplemented:
+	- LLVM/Clang
+	- rpcgen
+	- GDB	(Would be nice to remove)
+	- GCC	(Would be nice to remove)
+	- gettext
+	- pigz
+	- makefs
+	- date
+- To Add (when needed)
+	- xz
+	- zic
+
 # usr/ (User & OS Libraries):
 ## lib:
 

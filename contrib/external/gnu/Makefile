@@ -2,6 +2,10 @@
 
 .include <bsd.own.mk>
 
-SUBDIR+= autoconf binutils gmp mpc mpfr
+.if ${MKBINUTILS} != "no"
+SUBDIR+=	${EXTERNAL_BINUTILS_SUBDIR}
+.endif
+
+SUBDIR+= autoconf gmp mpc mpfr texinfo
 
 .include <bsd.subdir.mk>

@@ -86,7 +86,7 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		${LINT_BITS} 															\
 		makewhatis mtree .WAIT uudecode 										\
 		cat join lorder m4 mkdep tsort .WAIT yacc .WAIT awk .WAIT lex 			\
-		xz-include .WAIT xz-lib pax												\
+		.WAIT 																	\
 		.WAIT texinfo 															\
 		.WAIT tic 																\
 		.WAIT ${TOOLCHAIN_BITS} 												\
