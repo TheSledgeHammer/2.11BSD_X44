@@ -105,6 +105,6 @@ wq' | ed Makefile.in > /dev/null 2>&1
 echo done
 
 echo You can import now.  Use the following command:
-echo cvs -d cvs.netbsd.org:/cvsroot import src/external/bsd/file/dist CHRISTOS FILE${file_vers%.*}_${file_vers#*.}
+echo cvs -d cvs.netbsd.org:/cvsroot import src/contrib/file/dist CHRISTOS FILE${file_vers%.*}_${file_vers#*.}
 
 exit 0

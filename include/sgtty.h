@@ -5,7 +5,6 @@
 
 #ifndef	_IOCTL_
 #include <sys/ioctl.h>
-#include <sys/cdefs.h>
 #endif
 
 __BEGIN_DECLS

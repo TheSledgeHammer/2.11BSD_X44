@@ -16,8 +16,8 @@
 #define	_NETDB_H_
 
 #include <sys/cdefs.h>
-#include <machine/endian_machdep.h>
-#include <sys/ansi.h>
+//#include <machine/endian_machdep.h>
+//#include <sys/ansi.h>
 
 /*
  * Structures returned by network

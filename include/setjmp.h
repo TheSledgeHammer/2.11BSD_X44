@@ -57,7 +57,6 @@
 typedef long sigjmp_buf[_JBLEN + 1];
 #endif /* not ANSI */
 
-
 typedef _BSD_JBSLOT_T_ jmp_buf[_JBLEN] _JB_ATTRIBUTES;
 
 typedef long jmp_buf[_JBLEN];

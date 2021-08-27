@@ -44,10 +44,12 @@
 #ifndef	_STDIO_H_
 #define	_STDIO_H_
 
-#include <sys/cdefs.h>
+#if !defined(_ANSI_SOURCE) && !defined(__STRICT_ANSI__)
 #include <sys/types.h>
+#endif
+
+#include <sys/cdefs.h>
 #include <sys/ansi.h>
-#include <sys/null.h>
 
 #ifdef	_BSD_SIZE_T_
 typedef	_BSD_SIZE_T_	size_t;
@@ -65,6 +67,7 @@ typedef __va_list 		va_list;
 #endif
 #endif
 
+#include <sys/null.h>
 /*
  * This is fairly grotesque, but pure ANSI code must not inspect the
  * innards of an fpos_t anyway.  The library internally uses off_t,

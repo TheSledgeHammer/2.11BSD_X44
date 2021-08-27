@@ -22,7 +22,6 @@
 
 #include <sys/cdefs.h>
 #include <time.h> /* for time_t */
-#include <lastlog.h>
 
 #define	_PATH_UTMP		"/var/run/utmp"
 //#define	_PATH_WTMP		"/usr/adm/wtmp"

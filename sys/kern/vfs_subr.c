@@ -483,7 +483,7 @@ vinvalbuf(vp, flags, cred, p, slpflag, slptimeo)
 	int s, error;
 
 	if (flags & V_SAVE) {
-		if (error == VOP_FSYNC(vp, cred, MNT_WAIT, p))
+		if (error == VOP_FSYNC(vp, cred, MNT_WAIT, V_SAVE, p))
 			return (error);
 		if (vp->v_dirtyblkhd.lh_first != NULL)
 			panic("vinvalbuf: dirty bufs");

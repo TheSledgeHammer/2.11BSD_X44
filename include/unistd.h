@@ -41,11 +41,15 @@
 
 #ifndef _UNISTD_H_
 #define	_UNISTD_H_
-
 #include <machine/ansi.h>
+#include <machine/machtypes.h>
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/unistd.h>
+
+#if _FORTIFY_SOURCE > 0
+#include <ssp/unistd.h>
+#endif
 
 #define STDIN_FILENO	0	/* standard input file descriptor */
 #define	STDOUT_FILENO	1	/* standard output file descriptor */
@@ -54,7 +58,7 @@
 #include <sys/null.h>
 
 __BEGIN_DECLS
-void	 		_exit();
+void	 		_exit(int);
 int	 			access();
 unsigned int	alarm();
 int	 			chdir();
@@ -70,7 +74,7 @@ int	 			execv();
 int	 			execve();
 int	 			execvp();
 pid_t	 		fork();
-//long	 		fpathconf();
+long	 		fpathconf();
 gid_t	 		getegid();
 uid_t			geteuid();
 gid_t			getgid();
@@ -106,6 +110,7 @@ pid_t	 		vfork();
 
 extern	char	*optarg;		/* getopt(3) external variables */
 extern	int		opterr, optind, optopt;
+
 __END_DECLS
 
 #endif /* !_UNISTD_H_ */

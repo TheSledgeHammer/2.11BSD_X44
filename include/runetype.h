@@ -42,9 +42,6 @@
 #include <sys/cdefs.h>
 #include <sys/ansi.h>
 #include <machine/ansi.h>
-#include <sys/null.h>
-
-#include <stdio.h> /* for FILE* */
 
 #ifdef  _BSD_WCHAR_T_
 typedef _BSD_WCHAR_T_	rune_t;
@@ -72,19 +69,9 @@ typedef	_BSD_WCTYPE_T_	wctype_t;
 #undef	_BSD_WCTYPE_T_
 #endif
 
-#ifdef	_BSD_SIZE_T_
-typedef	_BSD_SIZE_T_	size_t;
-#undef	_BSD_SIZE_T_
-#endif
-
 #ifndef WEOF
 #define	WEOF 			((wint_t)-1)
 #endif
-
-#define getwc(f) 		fgetwc(f)
-#define getwchar() 		getwc(stdin)
-#define putwc(wc, f) 	fputwc((wc), (f))
-#define putwchar(wc) 	putwc((wc), stdout)
 
 #define	_CACHED_RUNES	(1 <<8 )	/* Must be a power of 2 */
 #define	_CRMASK			(~(_CACHED_RUNES - 1))
@@ -125,8 +112,8 @@ typedef struct {
 	_RuneRange		maplower_ext;
 	_RuneRange		mapupper_ext;
 
-	void		*variable;	/* Data which depends on the encoding */
-	int			variable_len;	/* how long that data is */
+	void			*variable;	/* Data which depends on the encoding */
+	int				variable_len;	/* how long that data is */
 } _RuneLocale;
 
 #define	_RUNE_MAGIC_1	"RuneMagi"	/* Indicates version 0 of RuneLocale */

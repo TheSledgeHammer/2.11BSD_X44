@@ -46,7 +46,7 @@
  */
 
 #include <sys/cdefs.h>
-#include <sys/null.h>
+//#include <sys/null.h>
 
 #undef assert
 #undef _assert

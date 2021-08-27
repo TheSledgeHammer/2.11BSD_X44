@@ -38,8 +38,6 @@ typedef	char *				caddr_t;	/* core address */
 typedef unsigned long		vaddr_t;	/* virtual address */
 typedef	u_long				ino_t;		/* inode number*/
 typedef	long				swblk_t;	/* swap offset */
-typedef	u_long				size_t;
-typedef	int	    			ssize_t;
 typedef	long				time_t;		/* time? */
 typedef	u_long				dev_t;		/* device number */
 typedef	quad_t				off_t;		/* file offset */
@@ -50,6 +48,9 @@ typedef	u_short				mode_t;		/* permissions */
 typedef	unsigned long		cpuid_t;
 typedef char				bool_t;		/* boolean */
 typedef long				memaddr;	/* core or swap address */
+
+typedef	u_long				size_t;
+typedef	int	    			ssize_t;
 
  typedef struct	_quad {
 	long 					val[2];

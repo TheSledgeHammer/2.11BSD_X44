@@ -36,20 +36,15 @@
 #ifndef _UTIL_H_
 #define _UTIL_H_
 
-
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/ansi.h>
-#include <sys/ioctl.h>
-#include <stdio.h>
-#include <pwd.h>
-#include <termios.h>
-#include <utmp.h>
 
 #ifdef  _BSD_TIME_T_
 typedef _BSD_TIME_T_    time_t;
 #undef  _BSD_TIME_T_
 #endif
+
 #ifdef  _BSD_SIZE_T_
 typedef _BSD_SIZE_T_    size_t;
 #undef  _BSD_SIZE_T_
@@ -77,27 +72,27 @@ struct termios;
 struct utmp;
 struct winsize;
 
-void	login(struct utmp *);
-int		login_tty(int);
-int		logout(const char *);
-void	logwtmp(const char *, const char *, const char *);
-int		pw_lock(int);
-int		pw_mkdb(void);
-int		pw_abort(void);
-void	pw_init(void);
-void	pw_edit(int, const char *);
-void	pw_prompt(void);
-void	pw_copy(int, int, struct passwd *);
-int		pw_scan(char *, struct passwd *, int *);
-void	pw_error(const char *, int, int);
-int		openpty(int *, int *, char *, struct termios *, struct winsize *);
-pid_t	forkpty(int *, char *, struct termios *, struct winsize *);
-int		getmaxpartitions(void);
-int		getrawpartition(void);
+void		login(struct utmp *);
+int			login_tty(int);
+int			logout(const char *);
+void		logwtmp(const char *, const char *, const char *);
+int			pw_lock(int);
+int			pw_mkdb(void);
+int			pw_abort(void);
+void		pw_init(void);
+void		pw_edit(int, const char *);
+void		pw_prompt(void);
+void		pw_copy(int, int, struct passwd *);
+int			pw_scan(char *, struct passwd *, int *);
+void		pw_error(const char *, int, int);
+int			openpty(int *, int *, char *, struct termios *, struct winsize *);
+pid_t		forkpty(int *, char *, struct termios *, struct winsize *);
+int			getmaxpartitions(void);
+int			getrawpartition(void);
 
 /* stat_flags.c */
-char 	*flags_to_string(u_long, const char *);
-int		string_to_flags(char **, u_long *, u_long *);
+char 		*flags_to_string(u_long, const char *);
+int			string_to_flags(char **, u_long *, u_long *);
 
 /* efun.c: Error checked functions */
 void		(*esetfunc(void (*)(int, const char *, ...)))(int, const char *, ...);

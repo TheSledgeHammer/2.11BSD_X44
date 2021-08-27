@@ -85,8 +85,8 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		cap_mkdb crunchgen ctags gencat hexdump 								\
 		${LINT_BITS} 															\
 		makewhatis mtree .WAIT uudecode 										\
-		cat join lorder m4 mkdep tsort .WAIT yacc .WAIT awk .WAIT lex 	\
-		pax																		\
+		cat join lorder m4 mkdep tsort .WAIT yacc .WAIT awk .WAIT lex 			\
+		xz-include .WAIT xz-lib pax												\
 		.WAIT texinfo 															\
 		.WAIT tic 																\
 		.WAIT ${TOOLCHAIN_BITS} 												\
@@ -100,7 +100,7 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		.WAIT btxld boot0cfg													\
 		pwd_mkdb vgrind															
 														
-SUBDIR+= stat .WAIT config
+SUBDIR+= stat .WAIT config xz-bin
 
 .if ${MKLLVM} != "no" || ${MKLLVMRT} != "no"
 SUBDIR+= 						\

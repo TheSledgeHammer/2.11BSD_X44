@@ -7,6 +7,7 @@
  */
 #ifndef _MTAB_H_
 #define _MTAB_H_
+
 /*
  * Mounted device accounting file.
  */

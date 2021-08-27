@@ -45,8 +45,6 @@
 #ifndef	_CTYPE_H_
 #define _CTYPE_H_
 
-#include <sys/cdefs.h>
-#include <sys/ansi.h>
 #include <runetype.h>
 
 #define	_CTYPE_A		0x00000100L		/* Alpha */

@@ -30,6 +30,8 @@ typedef	_BSD_SIZE_T_	size_t;
 #include <sys/null.h>
 #include <sys/cdefs.h>
 
+#include <machine/machtypes.h>
+
 __BEGIN_DECLS
 /* Routines described in string(3) */
 char	*strcat(), *strncat(), *strcpy(), *strncpy(), *index(), *rindex();
@@ -45,4 +47,9 @@ char	*strerror();
 __END_DECLS
 
 #include <string.h>
+
+#if _FORTIFY_SOURCE > 0
+#include <ssp/strings.h>
+#endif
+
 #endif /* !defined(_STRINGS_H_) */

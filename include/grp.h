@@ -38,7 +38,6 @@
 #define	_GRP_H_
 
 #include <sys/cdefs.h>
-#include <sys/types.h>
 
 struct	group { /* see getgrent(3) */
 	char	*gr_name;			/* group name */

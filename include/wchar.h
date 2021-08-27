@@ -66,7 +66,7 @@
 #define _WCHAR_H_
 
 #include <sys/cdefs.h>
-#include <machine/ansi.h>
+#include <sys/ansi.h>
 #include <sys/null.h>
 
 #include <stdio.h> /* for FILE* */
@@ -93,6 +93,13 @@ typedef	_BSD_SIZE_T_	size_t;
 
 #ifndef WEOF
 #define	WEOF 			((wint_t)-1)
+#endif
+
+#if defined(_POSIX_C_SOURCE)
+#ifndef __VA_LIST_DECLARED
+typedef __va_list va_list;
+#define __VA_LIST_DECLARED
+#endif
 #endif
 
 #define getwc(f) 		fgetwc(f)

@@ -10,9 +10,10 @@
 /*
  * Definitions of the Sys5 compat memory manipulation routines
  */
-
+/*
 extern char *memccpy();
 extern char *memchr();
 extern int 	memcmp();
 extern char *memcpy();
 extern char *memset();
+*/

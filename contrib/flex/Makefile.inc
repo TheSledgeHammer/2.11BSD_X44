@@ -6,7 +6,7 @@ WARNS?=	1
 
 BINDIR?= /usr/bin
 
-IDIST=	${NETBSDSRCDIR}/external/bsd/flex/dist/src
+IDIST=	${NETBSDSRCDIR}/contrib/flex/dist/src
 .if !empty(TOOL_SED:M*/*) && !exists(${TOOL_SED})
 VERSION = 3.x
 .else

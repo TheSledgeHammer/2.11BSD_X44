@@ -37,5 +37,5 @@ struct	ERRLST {
 		short	lenmsg;
 };
 
-#define	ERRMAGIC	012345
+#define	ERRMAGIC		012345
 #define	_PATH_SYSERRLST	"/etc/syserrlst"

@@ -44,6 +44,7 @@
 
 #ifndef _STRING_H_
 #define	_STRING_H_
+
 #include <machine/ansi.h>
 
 #ifdef	_BSD_SIZE_T_
@@ -54,8 +55,6 @@ typedef	_BSD_SIZE_T_	size_t;
 #include <sys/null.h>
 
 #include <sys/cdefs.h>
-
-#include <strings.h>
 
 __BEGIN_DECLS
 
@@ -100,5 +99,9 @@ char	*strsep (char **, const char *);
 void	swab (const void *, void *, size_t);
 #endif
 __END_DECLS
+
+#if _FORTIFY_SOURCE > 0
+#include <ssp/string.h>
+#endif
 
 #endif /* _STRING_H_ */

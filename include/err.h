@@ -45,8 +45,8 @@
  * for utilities to have to include one of them to include err.h, so we get
  * _BSD_VA_LIST_ from <machine/ansi.h> and use it.
  */
+#include <machine/ansi.h>
 #include <sys/cdefs.h>
-#include <stdarg.h>
 
 __BEGIN_DECLS
 __dead void	err (int, const char *, ...) __attribute__((format (printf, 2, 3), __dead));

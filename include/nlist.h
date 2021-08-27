@@ -37,7 +37,7 @@
 #define	_NLIST_H_
 
 #include <sys/cdefs.h>
-#include <sys/types.h>
+//#include <sys/types.h>
 
 /*
  * Symbol table entry format.  The #ifdef's are so that programs including
@@ -47,7 +47,7 @@
 struct	oldnlist {			/* XXX - compatibility/conversion aid */
 	char	n_name[8];		/* symbol name */
 	int		n_type;				/* type flag */
-unsigned int	n_value;	/* value */
+	unsigned int	n_value;	/* value */
 };
 
 struct	nlist {

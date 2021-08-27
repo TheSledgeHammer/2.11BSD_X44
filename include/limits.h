@@ -36,7 +36,6 @@
 #ifndef _LIMITS_H_
 #define	_LIMITS_H_
 
-
 #if defined(_POSIX_C_SOURCE)
 #define	_POSIX_AIO_LISTIO_MAX	2
 #define	_POSIX_AIO_MAX			1

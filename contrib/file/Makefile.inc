@@ -1,7 +1,7 @@
 #	$NetBSD: Makefile.inc,v 1.7 2019/12/17 18:59:39 christos Exp $
 
 WARNS=4
-DIST=${NETBSDSRCDIR}/external/bsd/file/dist
+DIST=${NETBSDSRCDIR}/contrib/file/dist
 
 .include <bsd.own.mk>
 
@@ -22,7 +22,7 @@ CPPFLAGS+=	-I${.CURDIR}/../include -I${DIST}/src
 
 .PATH:		${DIST}/src ${DIST}/doc
 
-DPLIBS+=     lzma    ${NETBSDSRCDIR}/external/public-domain/xz/lib
+DPLIBS+=     lzma    ${NETBSDSRCDIR}/contrib/xz/lib
 DPLIBS+=     bz2     ${NETBSDSRCDIR}/lib/libbz2
 DPLIBS+=     z       ${NETBSDSRCDIR}/lib/libz
 
