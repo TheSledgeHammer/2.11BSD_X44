@@ -12,7 +12,7 @@ _TOP=$3
 _PLATFORM=$4
 _MACHINE_SUBDIR=$5
 _VPATH=`grep VPATH ${_TMPDIR}/Makefile | sed 's,^.*=[ 	]*,,'`
-_GDB=external/gpl3/gdb
+_GDB=contrib/external/gnu/gdb
 
 . $_TOP/tools/gcc/mknative.common
 

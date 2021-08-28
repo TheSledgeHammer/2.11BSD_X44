@@ -88,7 +88,7 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		cat join lorder m4 mkdep tsort .WAIT yacc .WAIT awk .WAIT lex 			\
 		.WAIT 																	\
 		.WAIT texinfo 															\
-		.WAIT tic 																\
+		.WAIT 																	\
 		.WAIT ${TOOLCHAIN_BITS} 												\
 		cksum db																\
 		file lint1 																\
@@ -100,7 +100,7 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		.WAIT btxld boot0cfg													\
 		pwd_mkdb vgrind															
 														
-SUBDIR+= stat .WAIT config xz-bin
+SUBDIR+= stat .WAIT config
 
 .if ${MKLLVM} != "no" || ${MKLLVMRT} != "no"
 SUBDIR+= 						\

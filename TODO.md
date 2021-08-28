@@ -9,14 +9,14 @@ A General todo list. Don't hesitate to add to this list. :)
 ## Compiler/Tools:
 - Can't Compile
 	- pax
-- Tool to Remove (Alternative)
+	- tic
+- Tools to Remove (Alternative)
 	- Groff (Mandoc)
 - Unimplemented:
 	- LLVM/Clang
 	- rpcgen
 	- GDB	(Would be nice to remove)
 	- GCC	(Would be nice to remove)
-	- gettext
 	- pigz
 	- makefs
 	- date

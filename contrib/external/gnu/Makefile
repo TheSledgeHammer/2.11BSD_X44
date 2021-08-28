@@ -2,10 +2,26 @@
 
 .include <bsd.own.mk>
 
+.if ${MKBSDGREP} == "no"
+SUBDIR+=	grep
+.endif
+
+.if ${MKGROFF} != "no"
+SUBDIR+=    groff
+.endif
+
 .if ${MKBINUTILS} != "no"
 SUBDIR+=	${EXTERNAL_BINUTILS_SUBDIR}
 .endif
 
-SUBDIR+= autoconf gmp mpc mpfr texinfo
+.if ${MKGCC} != "no"
+SUBDIR+=	${EXTERNAL_GCC_SUBDIR}
+.endif
+
+.if ${MKGDB} != "no"
+SUBDIR+=    ${EXTERNAL_GDB_SUBDIR}
+.endif
+
+SUBDIR+= autoconf gettext gmp mpc mpfr texinfo
 
 .include <bsd.subdir.mk>

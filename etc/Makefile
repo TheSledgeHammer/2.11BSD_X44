@@ -155,7 +155,7 @@ distribution: .PHONY .MAKE check_DESTDIR distrib-dirs
 .endif	# !INSTALL_DONE
 	${MAKEDIRTARGET} . install-etc-files
 . if ${MKX11} != "no"
-	${MAKEDIRTARGET} ${NETBSDSRCDIR}/external/mit/xorg distribution
+	${MAKEDIRTARGET} ${NETBSDSRCDIR}/contrib/external/xorg distribution
 . endif
 . if ${MKEXTSRC} != "no"
 	${MAKEDIRTARGET} ${NETBSDSRCDIR}/extsrc distribution

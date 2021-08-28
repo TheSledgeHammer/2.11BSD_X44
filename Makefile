@@ -167,7 +167,7 @@ afterinstall: .PHONY .MAKE
 	${MAKEDIRTARGET} share/man makedb
 .endif
 .if (${MKUNPRIVED} != "no" && ${MKINFO} != "no")
-	${MAKEDIRTARGET} external/gpl2/texinfo/bin/install-info infodir-meta
+	${MAKEDIRTARGET} contrib/external/gnu/texinfo/bin/install-info infodir-meta
 .endif
 .if !defined(NOPOSTINSTALL)
 	${MAKEDIRTARGET} . postinstall-check
@@ -482,7 +482,7 @@ do-compat-lib: .PHONY .MAKE
 	${MAKEDIRTARGET} compat build_install BOOTSTRAP_SUBDIRS="../../../lib"
 
 do-sanitizer: .PHONY .MAKE
-	${MAKEDIRTARGET} external/bsd/compiler_rt build_install
+	${MAKEDIRTARGET} contrib/compiler_rt build_install
 
 do-sanitizer-tools: .PHONY .MAKE
 .if !exists(${TOOLDIR}/lib/clang) && ${HAVE_LLVM:Uno} == "yes"
