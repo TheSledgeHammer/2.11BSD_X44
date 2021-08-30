@@ -6,7 +6,6 @@ Inspired from Plan 9's Fossil & Venti Filesystems.
 UFML:
 - LOFS/NULLFS Based
 - UFML Upper layer:
-	- Union mounts?
 	- Features: Format Support (To Implement)
 		- Archive: tar, cpio, ar
 		- Checksums:

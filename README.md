@@ -69,7 +69,9 @@ Or
 Though due to limited access to hardware, testing of 2.11BSD_X44 on that architecture will be dependent on the individual/group (especially more exotic hardware).
 
 ## Building: (Work in Progress)
-You can cross-build 211BSD_X44 from most UNIX-like operating systems. To build for i386, in the src directory:
+You can cross-build 211BSD_X44 from most UNIX-like operating systems. 
+
+To build for i386, in the src directory:
 
 ./build.sh -U -u -j4 -m i386 -O ~/obj release
 

@@ -1,6 +1,6 @@
 #	$211BSD: Makefile,v 1.0 2021/05/25 23:59:27 Exp $
 
-SUBDIR=		fdesc fifofs lofs specfs
+SUBDIR=		fdesc fifofs lofs specfs union
 
 INCSDIR= 	/usr/include/miscfs
 

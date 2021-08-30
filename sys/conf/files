@@ -2,9 +2,11 @@
 
 # Common Kernel Source Files
 include										"conf/devices"
+include 									"conf/filesystems"
+include 									"conf/network"
+
 include 									"ddb/files.ddb"
 include 									"dev/files.dev"
-include 									"ufs/ufs211/files.ufs211"
 
 # Kernel Sources
 file	kern/exec_aout.c					exec_aout
@@ -93,100 +95,6 @@ file	kern/vfs_subr.c
 file	kern/vfs_syscalls.c
 file	kern/vfs_vnops.c
 file	kern/vfs_vops.c
-# FS Sources
-file 	fs/isofs/cd9660/cd9660_bmap.c		cd9660
-file 	fs/isofs/cd9660/cd9660_lookup.c		cd9660
-file 	fs/isofs/cd9660/cd9660_node.c		cd9660
-file 	fs/isofs/cd9660/cd9660_rrip.c		cd9660
-file 	fs/isofs/cd9660/cd9660_util.c		cd9660
-file 	fs/isofs/cd9660/cd9660_vfsops.c		cd9660
-file 	fs/isofs/cd9660/cd9660_vnops.c		cd9660
-file 	fs/msdosfs/msdosfs_conv.c			msdosfs
-file 	fs/msdosfs/msdosfs_denode.c			msdosfs
-file 	fs/msdosfs/msdosfs_fat.c			msdosfs
-file 	fs/msdosfs/msdosfs_lookup.c			msdosfs
-file 	fs/msdosfs/msdosfs_vfsops.c			msdosfs
-file 	fs/msdosfs/msdosfs_vnops.c			msdosfs
-# Miscfs Sources
-file	miscfs/deadfs/dead_vnops.c
-file	miscfs/fdesc/fdesc_vfsops.c			fdesc
-file	miscfs/fdesc/fdesc_vnops.c	    	fdesc
-file	miscfs/fifofs/fifo_vnops.c	    	fifo
-file	miscfs/lofs/lofs_subr.c       		lofs
-file	miscfs/lofs/lofs_vfsops.c     		lofs
-file	miscfs/lofs/lofs_vnops.c      		lofs
-file	miscfs/specfs/spec_vnops.c
-# Network Sources
-file    net/af.c
-file	net/bpf.c		        			bpfilter
-file	net/bpf_filter.c	    			bpfilter | ppp
-file	net/if.c
-file	net/if_loop.c		    			loop
-file	net/if_sl.c		        			sl
-file	net/radix.c
-file	net/raw_cb.c
-file	net/raw_usrreq.c
-file	net/route.c
-file	netimp/if_imp.c		    			imp
-file	netimp/if_imphost.c	    			imp
-file	netimp/raw_imp.c	    			imp
-file	netinet/if_ether.c	    			ether
-file	netinet/igmp.c		    			inet
-file	netinet/in_pcb.c	    			inet
-file	netinet/in_proto.c	    			inet
-file	netinet/in.c		    			inet
-file	netinet/ip_icmp.c	    			inet
-file	netinet/ip_input.c	    			inet
-file	netinet/ip_mroute.c					inet & mrouting	
-file	netinet/ip_output.c	    			inet
-file	netinet/raw_ip.c	    			inet
-file	netinet/tcp_debug.c	    			inet
-file	netinet/tcp_input.c	    			inet
-file	netinet/tcp_output.c				inet
-file	netinet/tcp_subr.c	    			inet
-file	netinet/tcp_timer.c	    			inet
-file	netinet/tcp_usrreq.c				inet
-file	netinet/udp_usrreq.c				inet
-file	netns/idp_usrreq.c	    			ns
-file	netns/ns_error.c	    			ns
-file	netns/ns_input.c	   				ns
-file	netns/ns_ip.c		    			ns
-file	netns/ns_output.c	    			ns
-file	netns/ns_pcb.c		    			ns
-file	netns/ns_proto.c	    			ns
-file	netns/ns.c		        			ns
-file	netns/spp_debug.c	    			ns
-file	netns/spp_usrreq.c	    			ns
-# UFS Sources
-file	ufs/ffs/ffs_alloc.c					ffs | mfs
-file	ufs/ffs/ffs_balloc.c				ffs | mfs
-file	ufs/lfs/ffs_inode.c					ffs | mfs
-file	ufs/lfs/ffs_subr.c					ffs | mfs
-file	ufs/lfs/ffs_tables.c				ffs | mfs
-file	ufs/lfs/ffs_vfsops.c				ffs | mfs
-file	ufs/lfs/ffs_vnops.c					ffs | mfs 
-file	ufs/lfs/lfs_alloc.c	    			lfs
-file	ufs/lfs/lfs_bio.c	    			lfs
-file	ufs/lfs/lfs_balloc.c				lfs
-file	ufs/lfs/lfs_cksum.c	    			lfs
-file	ufs/lfs/lfs_debug.c	    			lfs
-file	ufs/lfs/lfs_inode.c	    			lfs
-file	ufs/lfs/lfs_segment.c				lfs
-file	ufs/lfs/lfs_subr.c	    			lfs
-file	ufs/lfs/lfs_syscalls.c				lfs
-file	ufs/lfs/lfs_vfsops.c				lfs
-file	ufs/lfs/lfs_vnops.c	    			lfs
-file	ufs/mfs/mfs_vfsops.c				mfs
-file	ufs/mfs/mfs_vnops.c					mfs
-file	ufs/ufs/ufs_bmap.c					ffs | lfs | mfs
-file	ufs/ufs/ufs_disksubr.c				ffs | lfs | mfs
-file	ufs/ufs/ufs_extern.c				ffs | lfs | mfs
-file	ufs/ufs/ufs_ihash.c					ffs | lfs | mfs
-file	ufs/ufs/ufs_inode.c					ffs | lfs | mfs
-file	ufs/ufs/ufs_lookup.c				ffs | lfs | mfs
-file	ufs/ufs/ufs_quota.c					quota & (ffs | lfs | mfs)
-file	ufs/ufs/ufs_vfsops.c				ffs | lfs | mfs
-file	ufs/ufs/ufs_vnops.c					ffs | lfs | mfs
 
 # VM Sources
 file	vm/device_pager.c	    			devpager

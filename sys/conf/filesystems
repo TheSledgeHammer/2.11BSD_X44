@@ -1,0 +1,63 @@
+#	@(#)filesystems 211BSD 30/8/21
+# 	Filsystem Sources
+
+# FS Sources
+file 	fs/isofs/cd9660/cd9660_bmap.c		cd9660
+file 	fs/isofs/cd9660/cd9660_lookup.c		cd9660
+file 	fs/isofs/cd9660/cd9660_node.c		cd9660
+file 	fs/isofs/cd9660/cd9660_rrip.c		cd9660
+file 	fs/isofs/cd9660/cd9660_util.c		cd9660
+file 	fs/isofs/cd9660/cd9660_vfsops.c		cd9660
+file 	fs/isofs/cd9660/cd9660_vnops.c		cd9660
+file 	fs/msdosfs/msdosfs_conv.c			msdosfs
+file 	fs/msdosfs/msdosfs_denode.c			msdosfs
+file 	fs/msdosfs/msdosfs_fat.c			msdosfs
+file 	fs/msdosfs/msdosfs_lookup.c			msdosfs
+file 	fs/msdosfs/msdosfs_vfsops.c			msdosfs
+file 	fs/msdosfs/msdosfs_vnops.c			msdosfs
+
+# Miscfs Sources
+file	miscfs/deadfs/dead_vnops.c
+file	miscfs/fdesc/fdesc_vfsops.c			fdesc
+file	miscfs/fdesc/fdesc_vnops.c	    	fdesc
+file	miscfs/fifofs/fifo_vnops.c	    	fifo
+file	miscfs/lofs/lofs_subr.c       		lofs
+file	miscfs/lofs/lofs_vfsops.c     		lofs
+file	miscfs/lofs/lofs_vnops.c      		lofs
+file	miscfs/specfs/spec_vnops.c
+file	miscfs/union/union_subr.c			union
+file 	miscfs/union/union_vfsops.c			union
+file	miscfs/union/union_vnops.c			union
+
+# UFS Sources
+file	ufs/ffs/ffs_alloc.c					ffs | mfs
+file	ufs/ffs/ffs_balloc.c				ffs | mfs
+file	ufs/lfs/ffs_inode.c					ffs | mfs
+file	ufs/lfs/ffs_subr.c					ffs | mfs
+file	ufs/lfs/ffs_tables.c				ffs | mfs
+file	ufs/lfs/ffs_vfsops.c				ffs | mfs
+file	ufs/lfs/ffs_vnops.c					ffs | mfs 
+file	ufs/lfs/lfs_alloc.c	    			lfs
+file	ufs/lfs/lfs_bio.c	    			lfs
+file	ufs/lfs/lfs_balloc.c				lfs
+file	ufs/lfs/lfs_cksum.c	    			lfs
+file	ufs/lfs/lfs_debug.c	    			lfs
+file	ufs/lfs/lfs_inode.c	    			lfs
+file	ufs/lfs/lfs_segment.c				lfs
+file	ufs/lfs/lfs_subr.c	    			lfs
+file	ufs/lfs/lfs_syscalls.c				lfs
+file	ufs/lfs/lfs_vfsops.c				lfs
+file	ufs/lfs/lfs_vnops.c	    			lfs
+file	ufs/mfs/mfs_vfsops.c				mfs
+file	ufs/mfs/mfs_vnops.c					mfs
+file	ufs/ufs/ufs_bmap.c					ffs | lfs | mfs
+file	ufs/ufs/ufs_disksubr.c				ffs | lfs | mfs
+file	ufs/ufs/ufs_extern.c				ffs | lfs | mfs
+file	ufs/ufs/ufs_ihash.c					ffs | lfs | mfs
+file	ufs/ufs/ufs_inode.c					ffs | lfs | mfs
+file	ufs/ufs/ufs_lookup.c				ffs | lfs | mfs
+file	ufs/ufs/ufs_quota.c					quota & (ffs | lfs | mfs)
+file	ufs/ufs/ufs_vfsops.c				ffs | lfs | mfs
+file	ufs/ufs/ufs_vnops.c					ffs | lfs | mfs
+
+include 									"ufs/ufs211/files.ufs211"

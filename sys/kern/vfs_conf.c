@@ -54,6 +54,7 @@ extern	int ffs_mountroot();
 extern	struct vfsops lfs_vfsops;
 extern	int lfs_mountroot();
 extern	struct vfsops mfs_vfsops;
+extern	struct vfsops ufs211_vfsops;
 extern	int mfs_mountroot();
 extern	struct vfsops cd9660_vfsops;
 extern	int cd9660_mountroot();
@@ -62,7 +63,7 @@ extern	struct vfsops lofs_vfsops;
 extern	struct vfsops nfs_vfsops;
 //extern	int nfs_mountroot();
 extern	struct vfsops ufml_vfsops;
-extern	struct vfsops ufs211_vfsops;
+extern	struct vfsops union_vfsops;
 
 /*
  * Set up the filesystem operations for vnodes.
@@ -82,6 +83,11 @@ static struct vfsconf vfsconflist[] = {
 	/* Memory-based Filesystem */
 #ifdef MFS
 	{ &mfs_vfsops, "mfs", 3, 0, MNT_LOCAL, mfs_mountroot, NULL },
+#endif
+
+	/* 2.11BSD UFS Filesystem  */
+#ifdef UFS211
+	{ &ufs211_vfsops, "ufs211", 17, 0, MNT_LOCAL, NULL, NULL }
 #endif
 
 	/* ISO9660 (aka CDROM) Filesystem */
@@ -114,9 +120,9 @@ static struct vfsconf vfsconflist[] = {
 	{ &ufml_vfsops, "ufml", 16, 0, 0, NULL, NULL }
 #endif
 
-	/* 2.11BSD UFS Filesystem  */
-#ifdef UFS211
-	{ &ufs211_vfsops, "ufs211", 17, 0, MNT_LOCAL, NULL, NULL }
+	/* Union (translucent) Filesystem */
+#ifdef UNION
+	{ &union_vfsops, "union", 15, 0, 0, NULL, NULL },
 #endif
 };
 
