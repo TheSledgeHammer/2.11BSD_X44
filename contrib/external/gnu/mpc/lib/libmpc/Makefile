@@ -12,8 +12,8 @@ INCSDIR=      /usr/include
 
 LIB=	mpc
 
-LIBDPLIBS+= gmp ${.CURDIR}/../../../../lgpl3/gmp/lib/libgmp
-LIBDPLIBS+= mpfr ${.CURDIR}/../../../../lgpl3/mpfr/lib/libmpfr
+LIBDPLIBS+= gmp ${.CURDIR}/../../../../gnu/gmp/lib/libgmp
+LIBDPLIBS+= mpfr ${.CURDIR}/../../../../gnu/mpfr/lib/libmpfr
 
 SRCS=	\
 	abs.c \
@@ -103,8 +103,8 @@ CPPFLAGS+=	-I${.CURDIR}
 
 # Find <mpfr.h> and <gmp.h>
 .include "../../../gmp/Makefile.arch"
-CPPFLAGS+=	-I${NETBSDSRCDIR}/external/lgpl3/gmp/lib/libgmp/arch/${GMP_MACHINE_ARCH}
-CPPFLAGS+=	-I${NETBSDSRCDIR}/external/lgpl3/mpfr/dist/src
+CPPFLAGS+=	-I${NETBSDSRCDIR}/contrib/external/gnu/gmp/lib/libgmp/arch/${GMP_MACHINE_ARCH}
+CPPFLAGS+=	-I${NETBSDSRCDIR}/contrib/external/gnu/mpfr/dist/src
 
 .include <bsd.lib.mk>
 

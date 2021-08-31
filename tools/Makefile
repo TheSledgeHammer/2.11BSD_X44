@@ -86,7 +86,7 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		${LINT_BITS} 															\
 		makewhatis mtree .WAIT uudecode 										\
 		cat join lorder m4 mkdep tsort .WAIT yacc .WAIT awk .WAIT lex 			\
-		.WAIT 																	\
+		xz-include .WAIT grep xz-lib											\
 		.WAIT texinfo 															\
 		.WAIT 																	\
 		.WAIT ${TOOLCHAIN_BITS} 												\
@@ -98,9 +98,9 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		.WAIT paxctl 															\
 		.WAIT fdisk																\
 		.WAIT btxld boot0cfg													\
-		pwd_mkdb vgrind															
+		pwd_mkdb vgrind	zic													
 														
-SUBDIR+= stat .WAIT config
+SUBDIR+= stat .WAIT config xz-bin
 
 .if ${MKLLVM} != "no" || ${MKLLVMRT} != "no"
 SUBDIR+= 						\
@@ -130,9 +130,9 @@ SUBDIR+=	mandoc
 SUBDIR+=	autoconf .WAIT gettext
 .endif
 
-#.if ${USE_PIGZGZIP} != "no"
-#SUBDIR+=	pigz
-#.endif
+.if ${USE_PIGZGZIP} != "no"
+SUBDIR+=	pigz
+.endif
 
 #.if ${MKX11} != "no"
 #SUBDIR+=	makestrs

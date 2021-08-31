@@ -70,18 +70,26 @@ TOOLCHAIN_MISSING?=	no
 # We import the old gcc as "gcc.old" when upgrading.  EXTERNAL_GCC_SUBDIR is
 # set to the relevant subdirectory in src/external/gpl3 for his HAVE_GCC.
 #
-HAVE_GCC?=					10
+.if ${HAVE_GCC} == 			9
+EXTERNAL_GCC_SUBDIR?=		gcc.old
+.elif ${HAVE_GCC} == 		10
 EXTERNAL_GCC_SUBDIR?=		gcc
 .else
 EXTERNAL_GCC_SUBDIR?=		/does/not/exist
+.endif
+.else
+MKGCCCMDS?=					no
 .endif
 
 #
 # What binutils is used?
 #
 HAVE_BINUTILS?=				234
+
 .if ${HAVE_BINUTILS} == 	234
 EXTERNAL_BINUTILS_SUBDIR=	binutils
+.elif ${HAVE_BINUTILS} == 	231
+EXTERNAL_BINUTILS_SUBDIR=	binutils.old
 .else
 EXTERNAL_BINUTILS_SUBDIR=	/does/not/exist
 .endif
@@ -90,16 +98,45 @@ EXTERNAL_BINUTILS_SUBDIR=	/does/not/exist
 # What GDB is used?
 #
 HAVE_GDB?=					1100
+
 .if ${HAVE_GDB} == 			1100
 EXTERNAL_GDB_SUBDIR=		gdb
+.elif ${HAVE_GDB} == 		830
+EXTERNAL_GDB_SUBDIR=		gdb.old
 .else
 EXTERNAL_GDB_SUBDIR=		/does/not/exist
 .endif
 
-.if empty(.MAKEFLAGS:M-V*)
-PRINTOBJDIR=	${MAKE} -V .OBJDIR
+.if !empty(MACHINE_ARCH:Mearm*)
+_LIBC_COMPILER_RT.${MACHINE_ARCH}=	yes
+.endif
+
+_LIBC_COMPILER_RT.aarch64=		yes
+_LIBC_COMPILER_RT.aarch64eb=	yes
+_LIBC_COMPILER_RT.i386=			yes
+_LIBC_COMPILER_RT.x86_64=		yes
+
+.if ${HAVE_LLVM:Uno} == "yes" && ${_LIBC_COMPILER_RT.${MACHINE_ARCH}:Uno} == "yes"
+HAVE_LIBGCC?=	no
 .else
-PRINTOBJDIR=	echo # prevent infinite recursion
+HAVE_LIBGCC?=	yes
+.endif
+
+# Should libgcc have unwinding code?
+.if ${HAVE_LLVM:Uno} == "yes" || !empty(MACHINE_ARCH:Mearm*)
+HAVE_LIBGCC_EH?=	no
+.else
+HAVE_LIBGCC_EH?=	yes
+.endif
+
+.if empty(.MAKEFLAGS:tW:M*-V .OBJDIR*)
+.if defined(MAKEOBJDIRPREFIX) || defined(MAKEOBJDIR)
+PRINTOBJDIR=	${MAKE} -r -V .OBJDIR -f /dev/null xxx
+.else
+PRINTOBJDIR=	${MAKE} -V .OBJDIR
+.endif
+.else
+PRINTOBJDIR=	echo /error/bsd.own.mk/PRINTOBJDIR # avoid infinite recursion
 .endif
 
 #
@@ -774,10 +811,6 @@ _NEEDS_LIBCXX.x86_64=	yes
 MKLIBCXX:=		yes
 .endif
 
-#
-# Bootloader is supported
-#
-MKBOOT?=	 	yes
 
 #
 # install(1) parameters.
@@ -813,6 +846,48 @@ INSTALL_LINK?=		${INSTALL} ${INSTPRIV} ${HRDLINK} ${RENAME}
 INSTALL_SYMLINK?=	${INSTALL} ${INSTPRIV} ${SYMLINK} ${RENAME}
 HOST_INSTALL_FILE?=	${INSTALL} ${COPY} ${PRESERVE} ${RENAME}
 .endif
+
+#
+# Set defaults for the USE_xxx variables.
+#
+
+#
+# Bootloader is supported
+#
+MKBOOT?=	 	yes
+
+#
+# USE_* options which default to "no".
+#
+# For now, disable pigz as compressor by default
+.for var in USE_PIGZGZIP
+${var}?= no
+.endfor
+
+# Default to USE_XZ_SETS on some 64bit architectures where decompressor
+# memory will likely not be in short supply.
+# Since pigz can not create .xz format files currently, disable .xz
+# format if USE_PIGZGZIP is enabled.
+.if ${USE_PIGZGZIP} == "no" && \
+		(${MACHINE} == "amd64" || \
+		 ${MACHINE} == "sparc64" || \
+		 ${MACHINE_CPU} == "aarch64")
+USE_XZ_SETS?= yes
+.else
+USE_XZ_SETS?= no
+.endif 
+
+#
+# TOOL_GZIP and friends.  These might refer to TOOL_PIGZ or to the host gzip.
+#
+.if ${USE_PIGZGZIP} != "no"
+TOOL_GZIP=		${TOOL_PIGZ}
+GZIP_N_FLAG?=	-nT
+.else
+TOOL_GZIP=		gzip
+GZIP_N_FLAG?=	-n
+.endif
+TOOL_GZIP_N=	${TOOL_GZIP} ${GZIP_N_FLAG}
 
 #
 # MAKEDIRTARGET dir target [extra make(1) params]

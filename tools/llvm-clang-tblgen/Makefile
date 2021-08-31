@@ -2,6 +2,6 @@
 
 HOSTPROGNAME=	${_TOOL_PREFIX}clang-tblgen
 HOSTPROG_CXX=	${_TOOL_PREFIX}clang-tblgen
-HOST_SRCDIR=	external/contrib/llvm/bin/clang-tblgen
+HOST_SRCDIR=	contrib/llvm/bin/clang-tblgen
 
 .include "${.CURDIR}/../Makefile.host"

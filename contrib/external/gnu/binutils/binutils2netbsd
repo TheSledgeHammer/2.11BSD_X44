@@ -48,6 +48,6 @@ find "$DIR" -name testsuite -exec rm -fr {} +
 find "$DIR" -name .gitignore -rm
 
 echo You can import now.  Use the following command:
-echo cvs import src/external/gpl3/binutils/dist FSF binutils-X-YY-Z
+echo cvs import src/contrib/external/gnu/binutils/dist FSF binutils-X-YY-Z
 
 exit 0

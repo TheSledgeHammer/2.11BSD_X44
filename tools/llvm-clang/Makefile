@@ -2,7 +2,7 @@
 
 HOSTPROGNAME=	${MACHINE_GNU_PLATFORM}-clang
 HOSTPROG_CXX=	${MACHINE_GNU_PLATFORM}-clang
-HOST_SRCDIR=	external/contrib/llvm/bin/clang
+HOST_SRCDIR=	contrib/llvm/bin/clang
 
 .include "${.CURDIR}/../Makefile.host"
 

@@ -2,6 +2,6 @@
 
 HOSTPROGNAME=	${_TOOL_PREFIX}llvm-tblgen
 HOSTPROG_CXX=	${_TOOL_PREFIX}llvm-tblgen
-HOST_SRCDIR=	external/contrib/llvm/bin/tblgen
+HOST_SRCDIR=	contrib/llvm/bin/tblgen
 
 .include "${.CURDIR}/../Makefile.host"

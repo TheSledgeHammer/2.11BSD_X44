@@ -71,9 +71,9 @@ XCOFFNAMEEND(__fdnlist)(fd, list)
 	struct nlist *list;
 {
 	struct nlist *p;
-	struct xcoff32_exechdr *exechdrp;
-	struct xcoff32_symhdr *symhdrp;
-	struct xcoff32_extsym *esyms;
+	struct xcoff_exechdr *exechdrp;
+	struct xcoff_symhdr *symhdrp;
+	struct xcoff_extsym *esyms;
 	struct stat st;
 	char *mappedfile;
 	size_t mappedsize;

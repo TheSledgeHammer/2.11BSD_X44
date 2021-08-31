@@ -23,6 +23,6 @@ CPPFLAGS+=	-I${.CURDIR}/../include -I${DIST}/src
 .PATH:		${DIST}/src ${DIST}/doc
 
 DPLIBS+=     lzma    ${NETBSDSRCDIR}/contrib/xz/lib
-DPLIBS+=     bz2     ${NETBSDSRCDIR}/lib/libbz2
-DPLIBS+=     z       ${NETBSDSRCDIR}/lib/libz
+DPLIBS+=     bz2     ${NETBSDSRCDIR}/usr.lib/libbz2
+DPLIBS+=     z       ${NETBSDSRCDIR}/usr.lib/libz
 

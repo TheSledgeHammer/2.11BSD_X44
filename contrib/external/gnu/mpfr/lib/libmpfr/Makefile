@@ -287,7 +287,7 @@ CPPFLAGS+=	-I. \
 
 # Find <gmp.h>
 .include "../../../gmp/Makefile.arch"
-CPPFLAGS+=	-I${NETBSDSRCDIR}/external/lgpl3/gmp/lib/libgmp/arch/${GMP_MACHINE_ARCH}
+CPPFLAGS+=	-I${NETBSDSRCDIR}/contrib/external/gnu/gmp/lib/libgmp/arch/${GMP_MACHINE_ARCH}
 CPPFLAGS+=	-I${MPFRDIST}/src
 
 # IEEE FP support.  No VAX here.

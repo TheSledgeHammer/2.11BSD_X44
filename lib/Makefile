@@ -68,6 +68,9 @@ SUBDIR+=	../contrib/external/gnu/mpc/lib/libmpc
 #==================== 1st library dependency barrier ====================
 SUBDIR+=	.WAIT
 
+
+SUBDIR+=	../contrib/xz/lib			# depends on libpthread
+
 SUBDIR+= 	${USRLIBDIR}/libcurses		# depends on libterminfo/libtermcap
 SUBDIR+=	${USRLIBDIR}/libedit		# depends on libterminfo
 
@@ -75,15 +78,37 @@ SUBDIR+=	${USRLIBDIR}/libedit		# depends on libterminfo
 .if (${MKBINUTILS} != "no")
 SUBDIR+=	../contrib/external/gnu/${EXTERNAL_BINUTILS_SUBDIR}/lib	# libbfd depends on libz
 .endif
+
+.if (${MKGCC} != "no" && ${MKCXX} != "no" && ${MKLIBSTDCXX} != "no")
+SUBDIR+=	../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libstdc++-v3
+SUBDIR+=	../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libsupc++
+.endif
+
+.if (${MKLLVMRT} != "no" && (!defined(MLIBDIR) || ${MKCOMPATX11} != "no"))
+SUBDIR+=	../contrib/llvm/include
+.endif
+
 #==================== 2nd library dependency barrier ====================
 SUBDIR+=	.WAIT
 
-SUBDIR+=	../contrib/external/file/lib	# depends on libz, libbz2, libxz
+.if (${MKGCC} != "no" && ${MKCXX} != "no" && ${MKLIBSTDCXX} != "no")
+.for sanitizer in asan lsan ubsan
+.if exists(../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/lib${sanitizer})
+SUBDIR+= ../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/lib${sanitizer}
+.endif
+.endfor
+.endif
+
+.if (${MKLLVMRT} != "no" && (!defined(MLIBDIR) || ${MKCOMPATX11} != "no"))
+SUBDIR+=	../contrib/llvm/librt
+.endif
+
+SUBDIR+=	../contrib/file/lib	# depends on libz, libbz2, libxz
 
 #==================== 3rd library dependency barrier ====================
 SUBDIR+=	.WAIT
 
-SUBDIR+=	../contrib/external/mdocml/lib
+SUBDIR+=	../contrib/mdocml/lib
 
 .include <bsd.buildinstall.mk>
 .include <bsd.subdir.mk>

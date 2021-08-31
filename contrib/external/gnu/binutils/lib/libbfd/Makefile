@@ -31,7 +31,7 @@ BINDIR=/usr/lib
 SHLIB_MAJOR=	17
 SHLIB_MINOR=	0
 
-LIBDPLIBS+=	z	${.CURDIR}/../../../../../lib/libz
+LIBDPLIBS+=	z	${.CURDIR}/../../../../../usr.lib/libz
 
 GCPPFLAGS=	${G_archdefs} ${G_DEFS} ${G_INCLUDES} ${G_TDEFAULTS}
 GCPPFLAGS+=	${G_HAVEVECS}

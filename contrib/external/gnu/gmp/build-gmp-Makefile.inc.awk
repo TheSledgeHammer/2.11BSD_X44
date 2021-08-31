@@ -5,7 +5,7 @@
 	# $5 = dst
 
 	sub(/mpn\//, "", $5)
-	sub(/.*external\/lgpl3\/gmp\/dist\//, "", $3)
+	sub(/.*contrib\/external\/gnu\/gmp\/dist\//, "", $3)
 
 	#srcname = $3
 	#sub(/mpn\//, "", srcname)
