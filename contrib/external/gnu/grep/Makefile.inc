@@ -6,7 +6,7 @@ SANITIZER_RENAME_SYMBOL+=	regcomp regerror regexec regfree
 
 WARNS=	0
 
-IDIST=	${NETBSDSRCDIR}/external/gpl2/grep/dist
+IDIST=	${NETBSDSRCDIR}/contrib/external/gnu/grep/dist
 
 CPPFLAGS+=	-DLOCALEDIR=\"/usr/share/locale\" -DHAVE_CONFIG_H \
 		-I${.CURDIR}/../include -I${IDIST}/lib -I${IDIST}/src

@@ -69,7 +69,7 @@ echo done
 
 cat << EOF
 To import:
-cvs -d cvs.netbsd.org:/cvsroot import src/external/gpl2/grep/dist FSF grep-X-Y
+cvs -d cvs.netbsd.org:/cvsroot import src/contrib/external/gnu/grep/dist FSF grep-X-Y
 
 Then run configure, make, merge the config.h file and the gmo files in the po
 dir.
