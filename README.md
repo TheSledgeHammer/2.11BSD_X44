@@ -44,7 +44,6 @@
       - Journaling:
       - Dirhash: Work in Progress
 - New Filesystems (In Kernel):
-  - Union (BSD's)
   - EXT2/3/4
   - NTFS
   - HPFS
