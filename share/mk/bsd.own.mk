@@ -70,7 +70,7 @@ TOOLCHAIN_MISSING?=	no
 # We import the old gcc as "gcc.old" when upgrading.  EXTERNAL_GCC_SUBDIR is
 # set to the relevant subdirectory in src/external/gpl3 for his HAVE_GCC.
 #
-.if ${HAVE_GCC} == 			9
+.if ${HAVE_GCC} == 		9
 EXTERNAL_GCC_SUBDIR?=		gcc.old
 .elif ${HAVE_GCC} == 		10
 EXTERNAL_GCC_SUBDIR?=		gcc
@@ -78,13 +78,13 @@ EXTERNAL_GCC_SUBDIR?=		gcc
 EXTERNAL_GCC_SUBDIR?=		/does/not/exist
 .endif
 .else
-MKGCCCMDS?=					no
+MKGCCCMDS?=			no
 .endif
 
 #
 # What binutils is used?
 #
-HAVE_BINUTILS?=				234
+HAVE_BINUTILS?=			234
 
 .if ${HAVE_BINUTILS} == 	234
 EXTERNAL_BINUTILS_SUBDIR=	binutils
@@ -97,9 +97,9 @@ EXTERNAL_BINUTILS_SUBDIR=	/does/not/exist
 #
 # What GDB is used?
 #
-HAVE_GDB?=					1100
+HAVE_GDB?=			1100
 
-.if ${HAVE_GDB} == 			1100
+.if ${HAVE_GDB} == 		1100
 EXTERNAL_GDB_SUBDIR=		gdb
 .elif ${HAVE_GDB} == 		830
 EXTERNAL_GDB_SUBDIR=		gdb.old
@@ -112,7 +112,7 @@ _LIBC_COMPILER_RT.${MACHINE_ARCH}=	yes
 .endif
 
 _LIBC_COMPILER_RT.aarch64=		yes
-_LIBC_COMPILER_RT.aarch64eb=	yes
+_LIBC_COMPILER_RT.aarch64eb=		yes
 _LIBC_COMPILER_RT.i386=			yes
 _LIBC_COMPILER_RT.x86_64=		yes
 
@@ -811,7 +811,6 @@ _NEEDS_LIBCXX.x86_64=	yes
 MKLIBCXX:=		yes
 .endif
 
-
 #
 # install(1) parameters.
 #
@@ -868,10 +867,7 @@ ${var}?= no
 # memory will likely not be in short supply.
 # Since pigz can not create .xz format files currently, disable .xz
 # format if USE_PIGZGZIP is enabled.
-.if ${USE_PIGZGZIP} == "no" && \
-		(${MACHINE} == "amd64" || \
-		 ${MACHINE} == "sparc64" || \
-		 ${MACHINE_CPU} == "aarch64")
+.if ${USE_PIGZGZIP} == "no" && (${MACHINE} == "amd64")
 USE_XZ_SETS?= yes
 .else
 USE_XZ_SETS?= no
