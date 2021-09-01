@@ -147,9 +147,9 @@ char	*grep_strdup(const char *str);
 void	 printline(struct str *line, int sep, regmatch_t *matches, int m);
 
 /* queue.c */
-void	 enqueue(struct str *x);
-void	 printqueue(void);
-void	 clearqueue(void);
+void	 	enqueue(struct str *x);
+void	 	printqueue(void);
+void	 	clearqueue(void);
 
 /* file.c */
 void		 grep_close(struct file *f);
@@ -157,6 +157,6 @@ struct file	*grep_open(const char *path);
 char		*grep_fgetln(struct file *f, size_t *len);
 
 /* fastgrep.c */
-int		 fastcomp(fastgrep_t *, const char *);
-void		 fgrepcomp(fastgrep_t *, const char *);
-int		 grep_search(fastgrep_t *, const unsigned char *, size_t, regmatch_t *);
+int		 	fastcomp(fastgrep_t *, const char *);
+void		fgrepcomp(fastgrep_t *, const char *);
+int			grep_search(fastgrep_t *, const unsigned char *, size_t, regmatch_t *);
