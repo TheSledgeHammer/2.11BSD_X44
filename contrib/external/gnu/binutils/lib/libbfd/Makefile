@@ -37,9 +37,9 @@ GCPPFLAGS=	${G_archdefs} ${G_DEFS} ${G_INCLUDES} ${G_TDEFAULTS}
 GCPPFLAGS+=	${G_HAVEVECS}
 
 CPPFLAGS+=	-I${.CURDIR}/arch/${BFD_MACHINE_ARCH} -I${DIST}/include -I. \
-		-I${DIST}/bfd ${GCPPFLAGS:M-D*} ${GCPPFLAGS:M-I*:N-I.*} \
-		-DDEBUGDIR=\"${DEBUGDIR}\" -DLIBDIR=\"${LIBDIR}\" \
-		-DBINDIR=\"${BINDIR}\"
+			-I${DIST}/bfd ${GCPPFLAGS:M-D*} ${GCPPFLAGS:M-I*:N-I.*} \
+			-DDEBUGDIR=\"${DEBUGDIR}\" -DLIBDIR=\"${LIBDIR}\" \
+			-DBINDIR=\"${BINDIR}\"
 
 .if (${BFD_MACHINE_ARCH} == "vax")
 CPPFLAGS.elf.c +=	-O0
@@ -50,17 +50,17 @@ COPTS.elfxx-mips.c+=	-Wno-stack-protector
 COPTS.elf.c+=		${${ACTIVE_CC} == "gcc" && ${HAVE_GCC:U0} >= 10:? -Wno-overflow :}
 
 GSRCS=		${G_libbfd_la_OBJECTS:libbfd.lo=lib_bfd.lo} \
-		${G_libbfd_la_DEPENDENCIES:M*.lo}
+			${G_libbfd_la_DEPENDENCIES:M*.lo}
 SRCS=		${GSRCS:.lo=.c}
 
-DPSRCS+=	elf32-target.h elf64-target.h targmatch.h \
-		elf32-ia64.c elf64-ia64.c peigen.c pepigen.c \
-		elf32-riscv.c elf64-riscv.c elf32-aarch64.c elf64-aarch64.c \
-		pex64igen.c
-CLEANFILES+=	elf32-target.h elf64-target.h targmatch.h \
-		elf32-ia64.c elf64-ia64.c peigen.c pepigen.c \
-		elf32-riscv.c elf64-riscv.c elf32-aarch64.c elf64-aarch64.c \
-		pex64igen.c
+DPSRCS+=		elf32-target.h elf64-target.h targmatch.h 					\
+				elf32-ia64.c elf64-ia64.c peigen.c pepigen.c 				\
+				elf32-riscv.c elf64-riscv.c elf32-aarch64.c elf64-aarch64.c \
+				pex64igen.c
+CLEANFILES+=	elf32-target.h elf64-target.h targmatch.h 					\
+				elf32-ia64.c elf64-ia64.c peigen.c pepigen.c 				\
+				elf32-riscv.c elf64-riscv.c elf32-aarch64.c elf64-aarch64.c \
+				pex64igen.c
 
 TEXINFO=	bfd.texinfo
 INFOFLAGS=	-I${DIST}/bfd/doc

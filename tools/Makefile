@@ -86,7 +86,7 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		${LINT_BITS} 															\
 		makewhatis mtree .WAIT uudecode 										\
 		cat join lorder m4 mkdep tsort .WAIT yacc .WAIT awk .WAIT lex 			\
-		xz-include .WAIT xz-lib											\
+		xz-include .WAIT grep xz-lib											\
 		.WAIT texinfo 															\
 		.WAIT 																	\
 		.WAIT ${TOOLCHAIN_BITS} 												\
@@ -98,7 +98,7 @@ SUBDIR=	host-mkdep compat binstall .WAIT mktemp .WAIT sed .WAIT genassym 		\
 		.WAIT paxctl 															\
 		.WAIT fdisk																\
 		.WAIT btxld boot0cfg													\
-		pwd_mkdb vgrind	zic													
+		pwd_mkdb vgrind													
 														
 SUBDIR+= stat .WAIT config xz-bin
 
