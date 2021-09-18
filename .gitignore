@@ -15,6 +15,8 @@
 *.code-workspace
 *.metadata
 *.dist
+*.codelite
+*.workspace
 
 sys/devel/arch/i386/include/pmap.h
 sys/devel/arch/i386/i386/pmap.c
