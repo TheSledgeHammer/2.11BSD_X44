@@ -1,0 +1,15 @@
+{
+ "selected_config": "Debug",
+ "configs": [{
+   "name": "Debug",
+   "flags": 0,
+   "compile_flags": [],
+   "executable": "",
+   "arguments": "",
+   "environment": "",
+   "compiler": "gnu gcc",
+   "remoteFolder": "",
+   "remoteAccount": "",
+   "workingDirectory": ""
+  }]
+}
