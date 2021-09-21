@@ -87,8 +87,8 @@
 #include <dev/core/isa/isavar.h>
 #include <dev/core/isa/isadmavar.h>
 
-#include <dev/disk/floppy/fdreg.h>
-#include <dev/disk/floppy/fdcvar.h>
+#include <devel/dev/floppy/fdreg.h>
+#include <devel/dev/floppy/fdcvar.h>
 
 int		fdc_isa_probe(struct device *, struct cfdata *, void *);
 void	fdc_isa_attach(struct device *, struct device *, void *);
