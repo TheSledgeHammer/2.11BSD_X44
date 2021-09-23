@@ -46,7 +46,7 @@ SUBDIR+=	libkern
 .endif
 
 SUBDIR+=	../contrib/flex/lib
-SUBDIR+=	../contrib/external/elftoolchain/lib
+SUBDIR+=	../contrib/elftoolchain/lib
 
 .if (${MKGCC} != "no")
 SUBDIR+=	../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libobjc
@@ -79,6 +79,10 @@ SUBDIR+=	${USRLIBDIR}/libedit		# depends on libterminfo
 SUBDIR+=	../contrib/external/gnu/${EXTERNAL_BINUTILS_SUBDIR}/lib	# libbfd depends on libz
 .endif
 
+.if (${MKLIBCXX} != "no")
+SUBDIR+=	../contrib/libc++
+.endif
+
 .if (${MKGCC} != "no" && ${MKCXX} != "no" && ${MKLIBSTDCXX} != "no")
 SUBDIR+=	../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libstdc++-v3
 SUBDIR+=	../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/libsupc++
@@ -103,7 +107,9 @@ SUBDIR+= ../contrib/external/gnu/${EXTERNAL_GCC_SUBDIR}/lib/lib${sanitizer}
 SUBDIR+=	../contrib/llvm/librt
 .endif
 
-SUBDIR+=	../contrib/file/lib	# depends on libz, libbz2, libxz
+SUBDIR+=	../contrib/libarchive/lib	# depends on libxz
+
+SUBDIR+=	../contrib/file/lib			# depends on libz, libbz2, libxz
 
 #==================== 3rd library dependency barrier ====================
 SUBDIR+=	.WAIT

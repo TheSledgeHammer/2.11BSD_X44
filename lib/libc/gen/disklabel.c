@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
+#include <sys/cdefs.h>
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)disklabel.c	5.17.1 (2.11BSD) 4/10/95";
 #endif /* LIBC_SCCS and not lint */

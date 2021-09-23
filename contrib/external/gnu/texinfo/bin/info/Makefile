@@ -11,7 +11,7 @@ SRCS=		dir.c display.c dribble.c echo-area.c filesys.c \
 COMMONDIR!=cd ${.CURDIR}/../../lib && ${PRINTOBJDIR}
 
 CPPFLAGS+=	-I${IDIST}/info -I${COMMONDIR} \
-		-DDEFAULT_INFOPATH=\"/usr/pkg/info:/usr/X11R6/info:/usr/X11/info:/usr/local/info:/usr/share/info:/usr/info\"
+			-DDEFAULT_INFOPATH=\"/usr/pkg/info:/usr/X11R6/info:/usr/X11/info:/usr/local/info:/usr/share/info:/usr/info\"
 LDADD+=		-lterminfo
 DPADD+=		${LIBTERMINFO}
 

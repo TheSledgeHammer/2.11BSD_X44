@@ -11,14 +11,14 @@ LDADD=		-lz -lbz2 -llzma
 SCRIPTS=	gzexe zdiff zforce zgrep zmore znew
 
 MLINKS+=	gzip.1 gunzip.1 \
-		gzip.1 gzcat.1 \
-		gzip.1 zcat.1 \
-		zdiff.1 zcmp.1 \
-		zgrep.1 zegrep.1 \
-		zgrep.1 zfgrep.1 \
-		zmore.1 zless.1
+			gzip.1 gzcat.1 \
+			gzip.1 zcat.1 \
+			zdiff.1 zcmp.1 \
+			zgrep.1 zegrep.1 \
+			zgrep.1 zfgrep.1 \
+			zmore.1 zless.1
 
-LINKS+=		${BINDIR}/gzip ${BINDIR}/gunzip \
+LINKS+=	${BINDIR}/gzip ${BINDIR}/gunzip \
 		${BINDIR}/gzip ${BINDIR}/gzcat \
 		${BINDIR}/gzip ${BINDIR}/zcat \
 		${BINDIR}/zdiff ${BINDIR}/zcmp \

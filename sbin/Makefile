@@ -3,15 +3,17 @@
 
 .include <bsd.own.mk>
 
-SUBDIR=	disklabel fdisk init mknod
+SUBDIR=	disklabel fdisk fsck init ldconfig mknod mount 
 
 # support for various file systems
-#SUBDIR+= newfs dumpfs
-#SUBDIR+= newlfs dumplfs
-#SUBDIR+= mount_cd9660
-#SUBDIR+= mount_fdesc
-#SUBDIR+= mount_lfs
-#SUBDIR+= mount_lofs
-#SUBDIR+= mount_msdos
+SUBDIR+= newfs dumpfs
+SUBDIR+= newlfs dumplfs
+SUBDIR+= newfs_msdos fsck_msdos
+SUBDIR+= mount_cd9660
+SUBDIR+= mount_fdesc
+SUBDIR+= mount_lfs
+SUBDIR+= mount_lofs
+SUBDIR+= mount_msdos
+SUBDIR+= mount_union
 
 .include <bsd.subdir.mk>

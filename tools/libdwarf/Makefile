@@ -58,7 +58,7 @@ SRCS= 					\
 	libdwarf_sections.c	\
 	libdwarf_str.c
 
-ELFTOOLCHAIN_DIR=	${.CURDIR}/../../contrib/external/elftoolchain/dist
+ELFTOOLCHAIN_DIR=	${.CURDIR}/../../contrib/elftoolchain/dist
 LIBDWARF_DIR=		${ELFTOOLCHAIN_DIR}/libdwarf
 LIBELF_DIR=			${ELFTOOLCHAIN_DIR}/libelf
 COMMON_DIR=			${ELFTOOLCHAIN_DIR}/common

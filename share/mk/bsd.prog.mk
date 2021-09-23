@@ -62,6 +62,7 @@ LIBDBM?=		${DESTDIR}/usr.lib/libdbm.a
 LIBMP?=			${DESTDIR}/usr.lib/libmp.a
 LIBOM?=			${DESTDIR}/usr.lib/libom.a
 LIBTERMCAP?=	${DESTDIR}/usr.lib/libtermcap.a
+LIBTERMINFO=	LIBTERMCAP
 LIBUTIL?=		${DESTDIR}/usr.lib/libutil.a
 LIBVMF?=		${DESTDIR}/usr.lib/libvmf.a
 LIBY?=			${DESTDIR}/usr.lib/liby.a

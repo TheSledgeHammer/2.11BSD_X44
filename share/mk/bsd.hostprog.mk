@@ -29,6 +29,7 @@ LIBPLOT?=			/usr/lib/libplot.a
 LIBPOSIX?=			/usr/lib/libposix.a
 LIBRESOLV?=			/usr/lib/libresolv.a
 LIBTERMCAP?=		/usr/lib/libtermcap.a
+LIBTERMINFO=		LIBTERMCAP
 LIBUTIL?=			/usr/lib/libutil.a
 LIBWRAP?=			/usr/lib/libwrap.a
 LIBY?=				/usr/lib/liby.a

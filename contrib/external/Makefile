@@ -2,6 +2,6 @@
 
 .include <bsd.own.mk>
 
-SUBDIR+= compat elftoolchain gnu
+SUBDIR+= compat gnu
 
 .include <bsd.subdir.mk>
